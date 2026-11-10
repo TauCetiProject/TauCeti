@@ -9,11 +9,11 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Topology.GDelta.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.RingTheory.Complex
 import Mathlib.Topology.Algebra.Module.Cardinality
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
+import TauCeti.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -236,24 +236,18 @@ theorem countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero
   set M := LinearMap.toMatrixAlgEquiv basisOneI A
   have hM : M.det = 1 := by rw [← hdet, hA]
   -- Multiplication by `exp (θ i)` is the rotation `R(-θ)` in the basis `(1, i)`, and
-  -- `det (1 - (M R) ^ n) = det (1 - (R M) ^ n)` because `R (M R) ^ n = (R M) ^ n R`.
-  have key (θ : ℝ) (n : ℕ) : LinearMap.det (1 - (A * Algebra.lmul ℝ ℂ (exp (θ * I))) ^ n) =
-      (1 - ((Matrix.SpecialLinearGroup.rotation (-θ) : Matrix _ _ ℝ) * M) ^ n).det := by
+  -- `det (1 - (M R) ^ n) = det (1 - (R M) ^ n)` (`Matrix.det_one_sub_mul_pow_comm`).
+  have key (θ : ℝ) {n : ℕ} (hn : n ≠ 0) :
+      LinearMap.det (1 - (A * Algebra.lmul ℝ ℂ (exp (θ * I))) ^ n) =
+        (1 - ((Matrix.SpecialLinearGroup.rotation (-θ) : Matrix _ _ ℝ) * M) ^ n).det := by
     have hR : LinearMap.toMatrixAlgEquiv basisOneI (Algebra.lmul ℝ ℂ (exp (θ * I))) =
         (Matrix.SpecialLinearGroup.rotation (-θ) : Matrix (Fin 2) (Fin 2) ℝ) := by
-      rw [hτ, ← Algebra.leftMulMatrix_apply, Algebra.leftMulMatrix_complex,
-        Matrix.SpecialLinearGroup.coe_rotation, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im,
-        Real.cos_neg, Real.sin_neg, neg_neg]
-    rw [hdet, map_sub, map_one, map_pow, map_mul, hR]
-    set R := (Matrix.SpecialLinearGroup.rotation (-θ) : Matrix (Fin 2) (Fin 2) ℝ)
-    rcases n with _ | n
-    · simp
-    have hsc : SemiconjBy R (M * R) (R * M) := by simp [SemiconjBy, mul_assoc]
-    rw [pow_succ', mul_assoc, Matrix.det_one_sub_mul_comm, (hsc.pow_right n).eq, mul_assoc,
-      ← pow_succ]
+      rw [hτ, ← Algebra.leftMulMatrix_apply, Algebra.leftMulMatrix_complex]
+      simp [Matrix.SpecialLinearGroup.coe_rotation, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
+    rw [hdet, map_sub, map_one, map_pow, map_mul, hR, Matrix.det_one_sub_mul_pow_comm _ _ hn]
   refine ((Matrix.SpecialLinearGroup.countable_setOf_exists_det_one_sub_pow_rotation_mul_eq_zero
     hM).preimage neg_injective).mono fun θ hθ ↦ ?_
   obtain ⟨n, hn, h⟩ := hθ
-  exact ⟨n, hn, by rwa [key] at h⟩
+  exact ⟨n, hn, by rwa [key θ hn] at h⟩
 
 end LinearMap

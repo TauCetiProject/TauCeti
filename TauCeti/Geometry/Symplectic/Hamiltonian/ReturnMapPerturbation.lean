@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.RadialTwist
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Topology.Algebra.Module.Cardinality
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Nondegenerate
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 
@@ -38,8 +38,8 @@ Since `ψ` is the time-one map of a Hamiltonian flow it preserves the area form
 `φ` is.
 
 The Hamiltonian is a radial twist `w ↦ -θ G(‖w - p‖²) / 2` (`TauCeti.radialHamiltonian`) for a
-smooth profile `G` equal to the identity near `0` and vanishing on `[r² / 4, ∞)`. Its time-one map
-is the rotation by the angle `θ` near `p`
+smooth profile `G` equal to the identity near `0` and vanishing on `[r² / 4, ∞)`
+(`TauCeti.exists_contDiff_cutoff_id`). Its time-one map is the rotation by the angle `θ` near `p`
 (`TauCeti.hasFDerivAt_hamiltonianFlow_radialHamiltonian_center`) and the identity near the other
 orbit points, so the linearized return map of `φ ∘ ψ` is `A` composed with multiplication by
 `exp (θ i)` (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). Only countably many angles make some
@@ -73,23 +73,6 @@ namespace TauCeti
 open Complex Filter Metric Topology
 open scoped ContDiff
 
-/-- A smooth profile `G` on `ℝ` with `G s = s` near `0`, vanishing on `[R, ∞)`, whose derivative
-is bounded. The radial Hamiltonian of `θ G` is a twist by the angle `θ` near its centre. -/
-private theorem exists_twistProfile {R : ℝ} (hR : 0 < R) :
-    ∃ G : ℝ → ℝ, ContDiff ℝ ∞ G ∧ (∀ s, R ≤ s → G s = 0) ∧
-      (∀ᶠ s in 𝓝 0, HasDerivAt G 1 s) ∧ ∃ C, ∀ s, |deriv G s| ≤ C := by
-  have hid : ContDiffOn ℝ (⊤ : ℕ∞) id (ball (0 : ℝ) R) := contDiffOn_id
-  obtain ⟨G, hG, hGc, hGU, -, hG0⟩ := hid.exists_contDiff_eventuallyEq_on_isCompact
-    isCompact_singleton isOpen_ball (Set.singleton_subset_iff.2 (mem_ball_self hR))
-  refine ⟨G, hG, fun s hs ↦ image_eq_zero_of_notMem_tsupport fun h ↦ ?_, ?_, ?_⟩
-  · have h' := hGU h
-    rw [mem_ball, Real.dist_0_eq_abs] at h'
-    exact (abs_lt.1 h').2.not_ge hs
-  · filter_upwards [(hG0 0 rfl).eventuallyEq_nhds] with s hs
-    exact (hasDerivAt_id s).congr_of_eventuallyEq hs
-  · obtain ⟨C, hC⟩ := (hG.continuous_deriv (by simp)).bounded_above_of_compact_support hGc.deriv
-    exact ⟨C, fun s ↦ by simpa using hC s⟩
-
 /-- **A localized Hamiltonian twist makes a periodic orbit nondegenerate in all iterates.** Let
 `p` be a periodic point of period `k > 0` of a map `φ` of the plane, continuous along the orbit,
 whose linearized return map `A` has determinant one, and let `r > 0` be at most the distance from
@@ -111,8 +94,18 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero {φ : ℂ → ℂ}
         (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k] p = p ∧
         ∃ B : ℂ →L[ℝ] ℂ, HasFDerivAt (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k]
           B p ∧ ∀ n ≠ 0, (1 - B ^ n).det ≠ 0 := by
-  obtain ⟨G₁, hG₁, hG₁R, hG₁0, C, hC⟩ := exists_twistProfile (by positivity : 0 < r ^ 2 / 4)
-  have hC0 : 0 ≤ C := (abs_nonneg _).trans (hC 0)
+  -- A smooth cutoff `G₁` of the identity, vanishing on `[r² / 4, ∞)`, with bounded derivative.
+  obtain ⟨G₁, hG₁, -, hG₁R', hG₁d⟩ := exists_contDiff_cutoff_id (by positivity : 0 < r ^ 2 / 8)
+    (by nlinarith : r ^ 2 / 8 < r ^ 2 / 4)
+  have hG₁R (s : ℝ) (hs : r ^ 2 / 4 ≤ s) : G₁ s = 0 := hG₁R' s (hs.trans (le_abs_self s))
+  have hG₁0 : ∀ᶠ s in 𝓝 0, HasDerivAt G₁ 1 s :=
+    (eventually_abs_sub_lt 0 (by positivity : 0 < r ^ 2 / 8)).mono fun s hs ↦
+      hG₁d s (by simpa using hs)
+  have hG₁c : HasCompactSupport G₁ :=
+    HasCompactSupport.intro (isCompact_closedBall 0 (r ^ 2 / 4)) fun s hs ↦
+      hG₁R' s (by simpa using hs : r ^ 2 / 4 < |s|).le
+  obtain ⟨C, hC⟩ := (hG₁.continuous_deriv (by simp)).bounded_above_of_compact_support hG₁c.deriv
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   -- Choose a small angle `θ` outside the countable set of degenerate angles.
   obtain ⟨θ, hθ, hθ0, hθε⟩ :=
     ((LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero hdet).dense_compl
@@ -148,7 +141,7 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero {φ : ℂ → ℂ}
           norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt hX hGdiff
             (fun s ↦ by
               rw [hG_def, deriv_const_mul_field', abs_mul, abs_of_pos hθ0]
-              exact mul_le_mul_of_nonneg_left (hC s) hθ0.le) hGR w 1
+              exact mul_le_mul_of_nonneg_left (by simpa using hC s) hθ0.le) hGR w 1
       _ ≤ ε := by
         rw [abs_one, one_mul, show r ^ 2 / 4 = (r / 2) ^ 2 by ring,
           Real.sqrt_sq (by positivity)]
