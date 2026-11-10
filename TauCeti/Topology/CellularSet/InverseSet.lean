@@ -45,8 +45,8 @@ The proof has three steps.
   on `Q \ X`, extended by the identity on `X`, is a continuous injection of `Q` into `U`: near
   `X` it is the identity, and elsewhere the inverse of `f` is continuous because `Q` is compact
   (`ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`). Its image is a cell
-  containing `X` in its interior, and iterating with `U` shrinking to `X` exhibits `X` as
-  cellular.
+  containing `X` in its interior, so `X` has arbitrarily small cell neighbourhoods and is
+  cellular (`TauCeti.isCellularSet_of_forall_isOpen`).
 
 ## Main results
 
@@ -218,52 +218,17 @@ theorem isCellularSet_closedBall_inter_preimage (hn : 2 ≤ finrank ℝ E)
     (hy' : y ∈ f '' closedBall 0 1) :
     IsCellularSet E (closedBall (0 : E) 1 ∩ f ⁻¹' {y}) := by
   set X := closedBall (0 : E) 1 ∩ f ⁻¹' {y}
-  have hX : IsClosed X := hf.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
   have hXb : X ⊆ ball 0 1 := fun x hx ↦ by
     rw [← closedBall_sdiff_sphere]
     exact ⟨hx.1, fun h ↦ hy ⟨x, h, hx.2⟩⟩
-  have hδ (i : ℕ) : (0 : ℝ) < 1 / ((i : ℝ) + 1) := Nat.one_div_pos_of_nat
-  -- A choice of shrinking step for every open set containing `X`.
-  have step (U : Set E) : ∃ g : E → E, IsOpen U → X ⊆ U → ContinuousOn g (closedBall 0 1) ∧
-      InjOn g (closedBall 0 1) ∧ MapsTo g (closedBall 0 1) U ∧ ∀ x ∈ X, g x = x := by
-    by_cases h : IsOpen U ∧ X ⊆ U
-    · obtain ⟨g, hg⟩ := exists_mapsTo_of_isOpen hn hEF hf hinj hy hy' h.1 h.2
-      exact ⟨g, fun _ _ ↦ hg⟩
-    · exact ⟨id, fun hU hXU ↦ absurd ⟨hU, hXU⟩ h⟩
-  choose G hG using step
-  -- The cells: `e 0` is the identity, and `e (i + 1)` maps the closed ball into the open cell
-  -- `e i '' ball 0 1` and into the `1 / (i + 1)`-neighbourhood of `X`.
-  obtain ⟨e, he0, hesucc⟩ : ∃ e : ℕ → E → E, e 0 = id ∧
-      ∀ i, e (i + 1) = G (e i '' ball 0 1 ∩ thickening (1 / ((i : ℝ) + 1)) X) :=
-    ⟨fun n ↦ Nat.rec (motive := fun _ ↦ E → E) id
-      (fun i ei ↦ G (ei '' ball 0 1 ∩ thickening (1 / ((i : ℝ) + 1)) X)) n, rfl, fun _ ↦ rfl⟩
-  have hU (i : ℕ) (hc : ContinuousOn (e i) (closedBall 0 1)) (hi : InjOn (e i) (closedBall 0 1))
-      (hfix : ∀ x ∈ X, e i x = x) :
-      IsOpen (e i '' ball 0 1 ∩ thickening (1 / ((i : ℝ) + 1)) X) ∧
-        X ⊆ e i '' ball 0 1 ∩ thickening (1 / ((i : ℝ) + 1)) X :=
-    ⟨(isOpen_ball.image_of_continuousOn_of_injOn (E := E) (F := E) (hc.mono ball_subset_closedBall)
-      (hi.mono ball_subset_closedBall) rfl).inter isOpen_thickening,
-      fun x hx ↦ ⟨⟨x, hXb hx, hfix x hx⟩, self_subset_thickening (hδ i) X hx⟩⟩
-  have he (i : ℕ) : ContinuousOn (e i) (closedBall 0 1) ∧ InjOn (e i) (closedBall 0 1) ∧
-      ∀ x ∈ X, e i x = x := by
-    induction i with
-    | zero => exact ⟨he0 ▸ continuousOn_id, he0 ▸ injOn_id _, fun x _ ↦ by rw [he0, id]⟩
-    | succ i ih =>
-      obtain ⟨hc, hi, -, hfix⟩ := hesucc i ▸ hG _ (hU i ih.1 ih.2.1 ih.2.2).1
-        (hU i ih.1 ih.2.1 ih.2.2).2
-      exact ⟨hc, hi, hfix⟩
-  have hmaps (i : ℕ) : MapsTo (e (i + 1)) (closedBall 0 1)
-      (e i '' ball 0 1 ∩ thickening (1 / ((i : ℝ) + 1)) X) :=
-    hesucc i ▸ (hG _ (hU i (he i).1 (he i).2.1 (he i).2.2).1 (hU i (he i).1 (he i).2.1
-      (he i).2.2).2).2.2.1
-  refine (isCellularSet_iff E).2 ⟨e, fun i ↦ (he i).1, fun i ↦ (he i).2.1,
-    fun i ↦ (hmaps i).image_subset.trans inter_subset_left, ?_⟩
-  refine Subset.antisymm (fun x hx ↦ hX.closure_subset_iff.2 subset_rfl ?_)
-    fun x hx ↦ mem_iInter.2 fun i ↦ ⟨x, hXb hx |> ball_subset_closedBall, (he i).2.2 x hx⟩
-  -- A point of every cell is within `1 / (i + 1)` of `X` for every `i`.
-  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨i, hi⟩ := exists_nat_one_div_lt hε
-  obtain ⟨z, hz, hxz⟩ := mem_thickening_iff.1 ((hmaps i).image_subset (mem_iInter.1 hx (i + 1))).2
-  exact ⟨z, hz, hxz.trans hi⟩
+  refine isCellularSet_of_forall_isOpen
+    (hf.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton) fun U hU hXU ↦ ?_
+  obtain ⟨g, hgc, hgi, hgU, hgfix⟩ := exists_mapsTo_of_isOpen hn hEF hf hinj hy hy' hU hXU
+  -- The open cell `g '' ball 0 1` is open by invariance of domain, and contains `X` since `g`
+  -- fixes it.
+  refine ⟨g, hgc, hgi, fun x hx ↦ ?_, hgU.image_subset⟩
+  rw [(isOpen_ball.image_of_continuousOn_of_injOn (E := E) (F := E)
+    (hgc.mono ball_subset_closedBall) (hgi.mono ball_subset_closedBall) rfl).interior_eq]
+  exact ⟨x, hXb hx, hgfix x hx⟩
 
 end TauCeti
