@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Translation
@@ -154,23 +154,10 @@ private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : 
     (∑ i, (fderiv ℝ (fun w ↦ u w i) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w i) z I ^ 2)) / 2 ≤
       energyIntegrand x u z +
         (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 := by
+  -- The coupling `2 ⟪ξ, K ζ⟫`, with `|K| = |∇₁ α|`, is at least `-|∇₁ α| |u|²`.
+  have hcpl := neg_mul_norm_sq_le_coupling (le_refl ‖covariantDerivative x z 1‖) (u z)
   rw [energyIntegrand, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, Fin.sum_univ_four]
-  set c := (covariantDerivative x z 1).im
-  set d := (covariantDerivative x z 1).re
-  set δ := ‖covariantDerivative x z 1‖ + 1
-  have hδ : 0 < δ := by positivity
-  have hcd : c ^ 2 + d ^ 2 ≤ δ ^ 2 := by
-    have h : ‖covariantDerivative x z 1‖ ^ 2 = d ^ 2 + c ^ 2 := by
-      rw [Complex.sq_norm, Complex.normSq_apply]
-      ring
-    nlinarith [norm_nonneg (covariantDerivative x z 1)]
-  -- The coupling `2 ⟪ξ, K ζ⟫`, with `|K| = |∇₁ α| < δ`, is at least `-δ |u|²`.
-  have hcpl : -(δ * (u z 0 ^ 2 + u z 1 ^ 2 + u z 2 ^ 2 + u z 3 ^ 2)) ≤
-      2 * (c * (u z 0 * u z 2 + u z 1 * u z 3) + d * (u z 1 * u z 2 - u z 0 * u z 3)) := by
-    refine le_of_mul_le_mul_left ?_ hδ
-    nlinarith [sq_nonneg (δ * u z 0 + (c * u z 2 - d * u z 3)),
-      sq_nonneg (δ * u z 1 + (d * u z 2 + c * u z 3)),
-      mul_le_mul_of_nonneg_right hcd (add_nonneg (sq_nonneg (u z 2)) (sq_nonneg (u z 3)))]
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at hcpl
   have hP : 0 ≤ (x z 2 ^ 2 + x z 3 ^ 2) * (u z 0 ^ 2 + u z 1 ^ 2) := by positivity
   have hQ : 0 ≤ (x z 2 ^ 2 + x z 3 ^ 2) * (u z 2 ^ 2 + u z 3 ^ 2) := by positivity
   nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z 1 - 2 * (x z 0 * u z 3)),
@@ -178,26 +165,6 @@ private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : 
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z 1 + 2 * (x z 0 * u z 2)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z I + 2 * (x z 1 * u z 2)),
     sq_nonneg (u z 0), sq_nonneg (u z 1), sq_nonneg (u z 2), sq_nonneg (u z 3)]
-
-/-- The squared operator norm of the derivative of a variation is at most twice the sum of the
-squared partial derivatives of its components. -/
-private theorem norm_fderiv_sq_le {u : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hu : DifferentiableAt ℝ u z) :
-    ‖fderiv ℝ u z‖ ^ 2 ≤
-      2 * ∑ i, (fderiv ℝ (fun w ↦ u w i) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w i) z I ^ 2) := by
-  have hD := (fderiv ℝ u z).opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis
-    orthonormalBasisOneI
-  simp only [Fintype.card_fin, Nat.cast_ofNat, Fin.sum_univ_two, coe_orthonormalBasisOneI,
-    Matrix.cons_val_zero, Matrix.cons_val_one] at hD
-  -- The squared norm of a directional derivative is the sum over the components.
-  have hcomp (v : ℂ) : ‖fderiv ℝ u z v‖ ^ 2 = ∑ i, fderiv ℝ (fun w ↦ u w i) z v ^ 2 := by
-    rw [EuclideanSpace.real_norm_sq_eq]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have h : HasFDerivAt (fun w ↦ u w i) ((EuclideanSpace.proj i).comp (fderiv ℝ u z)) z :=
-      (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp z hu.hasFDerivAt
-    rw [h.fderiv]
-    rfl
-  rwa [hcomp, hcomp, ← Finset.sum_add_distrib] at hD
 
 /-- **The Gårding inequality for the gauge-fixed vortex operator on a disc.** For a `C¹` field `x`
 and a radius `r`, there is a constant `C` such that every `C²` variation `u` vanishing outside the
@@ -231,7 +198,7 @@ theorem exists_integral_norm_fderiv_sq_le (hx : ContDiff ℝ 1 x) (r : ℝ) :
   -- Pointwise, `|Du|² ≤ 2 (|∂₁u|² + |∂₂u|²) ≤ 4 E + 4 M |u|²` for the energy integrand `E`.
   have hpt (z : ℂ) :
       ‖fderiv ℝ u z‖ ^ 2 ≤ 4 * energyIntegrand x u z + 4 * max M 1 * ‖u z‖ ^ 2 := by
-    have hD := norm_fderiv_sq_le (hu.differentiable two_ne_zero z)
+    have hD := norm_fderiv_sq_le_two_mul_sum_sq u z
     have hS := sum_sq_div_two_le (x := x) u z
     have hMu : (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 ≤
         max M 1 * ‖u z‖ ^ 2 := by

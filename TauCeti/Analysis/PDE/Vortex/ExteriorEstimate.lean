@@ -256,28 +256,37 @@ theorem integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero
     inner_gaugeFixedAdjoint_gaugeFixedOperator_add_laplacian (hx.differentiable one_ne_zero z)
       hy.contDiffAt (hsol z))
 
+/-- The coupling `2 ⟪ξ, K ζ⟫` of the energy identity
+`integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`, where `K` is multiplication by
+`i conj w` written in real coordinates on `v = (ξ, ζ)`, is at least `-δ |v|²` whenever
+`|w| ≤ δ`. -/
+theorem neg_mul_norm_sq_le_coupling {w : ℂ} {δ : ℝ} (hw : ‖w‖ ≤ δ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    -(δ * ‖v‖ ^ 2) ≤ 2 * (w.im * (v 0 * v 2 + v 1 * v 3) + w.re * (v 1 * v 2 - v 0 * v 3)) := by
+  rcases ((norm_nonneg w).trans hw).eq_or_lt with hδ | hδ
+  · obtain rfl : w = 0 := norm_le_zero_iff.mp (hδ ▸ hw)
+    simp [← hδ]
+  have hcd : w.im ^ 2 + w.re ^ 2 ≤ δ ^ 2 := by
+    have h := pow_le_pow_left₀ (norm_nonneg _) hw 2
+    rw [Complex.sq_norm, Complex.normSq_apply] at h
+    linarith
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  refine le_of_mul_le_mul_left ?_ hδ
+  nlinarith [sq_nonneg (δ * v 0 + (w.im * v 2 - w.re * v 3)),
+    sq_nonneg (δ * v 1 + (w.re * v 2 + w.im * v 3)),
+    mul_le_mul_of_nonneg_right hcd (add_nonneg (sq_nonneg (v 2)) (sq_nonneg (v 3)))]
+
 private theorem mul_norm_sq_le_inner_gaugeFixedAdjoint_gaugeFixedOperator_add_laplacian {z : ℂ}
     (hx : DifferentiableAt ℝ x z) (hy : ContDiffAt ℝ 2 y z) (hsol : y z ≠ 0 → equation x z = 0)
-    {a δ : ℝ} (hδ : 0 < δ) (ha : a + δ ≤ 1 / 4)
+    {a δ : ℝ} (ha : a + δ ≤ 1 / 4)
     (hP : a + δ ≤ 3 * (x z 2 ^ 2 + x z 3 ^ 2) / 2 - 1 / 8)
     (hcov : ‖covariantDerivative x z 1‖ ≤ δ) :
     a * ‖y z‖ ^ 2 ≤
       ⟪gaugeFixedAdjoint x (gaugeFixedOperator x y) z, y z⟫ + Δ (fun w ↦ ‖y w‖ ^ 2) z / 2 := by
-  rw [inner_gaugeFixedAdjoint_gaugeFixedOperator_add_laplacian hx hy hsol,
-    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  have hcd : (covariantDerivative x z 1).im ^ 2 + (covariantDerivative x z 1).re ^ 2 ≤ δ ^ 2 := by
-    have h := pow_le_pow_left₀ (norm_nonneg _) hcov 2
-    rw [Complex.sq_norm, Complex.normSq_apply] at h
-    linarith
   -- The coupling `2 ⟪ξ, K ζ⟫`, with `|K| = |∇₁ α| ≤ δ`, is at least `-δ (|ξ|² + |ζ|²)`.
-  set c := (covariantDerivative x z 1).im
-  set d := (covariantDerivative x z 1).re
-  have hcpl : -(δ * (y z 0 ^ 2 + y z 1 ^ 2 + y z 2 ^ 2 + y z 3 ^ 2)) ≤
-      2 * (c * (y z 0 * y z 2 + y z 1 * y z 3) + d * (y z 1 * y z 2 - y z 0 * y z 3)) := by
-    refine le_of_mul_le_mul_left ?_ hδ
-    nlinarith [sq_nonneg (δ * y z 0 + (c * y z 2 - d * y z 3)),
-      sq_nonneg (δ * y z 1 + (d * y z 2 + c * y z 3)),
-      mul_le_mul_of_nonneg_right hcd (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3)))]
+  have hcpl := neg_mul_norm_sq_le_coupling hcov (y z)
+  rw [inner_gaugeFixedAdjoint_gaugeFixedOperator_add_laplacian hx hy hsol]
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at hcpl ⊢
   have hP' : a + δ ≤ x z 2 ^ 2 + x z 3 ^ 2 := by linarith
   nlinarith [mul_le_mul_of_nonneg_right hP' (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1))),
     mul_le_mul_of_nonneg_right hP (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3))),
@@ -290,11 +299,11 @@ private theorem mul_norm_sq_le_inner_gaugeFixedAdjoint_gaugeFixedOperator_add_la
 
 /-- The gauge-fixed vortex operator has squared `L²` lower bound `a` on any compactly supported `C²`
 variation supported where the vortex equation holds, the section potential satisfies
-`3 |α|² / 8 - 1 / 8 ≥ a + δ` and `|∇₁ α| ≤ δ`, for some `δ > 0` with `a + δ ≤ 1 / 4`. This is
+`3 |α|² / 8 - 1 / 8 ≥ a + δ` and `|∇₁ α| ≤ δ`, for some `δ` with `a + δ ≤ 1 / 4`. This is
 a support-local estimate, not a global spectral gap for all vortices. -/
 theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator
     (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 2 y) (hc : HasCompactSupport y)
-    (hsol : ∀ z, y z ≠ 0 → equation x z = 0) {a δ : ℝ} (hδ : 0 < δ) (ha : a + δ ≤ 1 / 4)
+    (hsol : ∀ z, y z ≠ 0 → equation x z = 0) {a δ : ℝ} (ha : a + δ ≤ 1 / 4)
     (hP : ∀ z, y z ≠ 0 → a + δ ≤ 3 * (x z 2 ^ 2 + x z 3 ^ 2) / 2 - 1 / 8)
     (hcov : ∀ z, y z ≠ 0 → ‖covariantDerivative x z 1‖ ≤ δ) :
     a * (∫ z, ‖y z‖ ^ 2 ∂μ) ≤ ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ := by
@@ -310,7 +319,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator
       by positivity
     simpa [hz] using hs
   · exact mul_norm_sq_le_inner_gaugeFixedAdjoint_gaugeFixedOperator_add_laplacian
-      (hx.differentiable one_ne_zero z) hy.contDiffAt (fun _ ↦ hsol z hz) hδ ha (hP z hz)
+      (hx.differentiable one_ne_zero z) hy.contDiffAt (fun _ ↦ hsol z hz) ha (hP z hz)
       (hcov z hz)
 
 /-- **Exterior coercivity of the gauge-fixed vortex operator.** For an actual vortex with
@@ -341,8 +350,8 @@ theorem exists_exterior_integral_norm_sq_gaugeFixedOperator_ge
   rw [← Metric.cobounded_eq_cocompact] at he
   obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
   refine ⟨max R 1, by positivity, fun y hy hyc hzero ↦
-    mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator hx hy hyc (fun z _ ↦ hsol z) hδ
-      (by rw [hδdef]; linarith) (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
+    mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator hx hy hyc (fun z _ ↦ hsol z)
+      (δ := δ) (by rw [hδdef]; linarith) (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
   · have hzR : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
     exact (hR (le_trans (le_max_left R 1) hzR.le)).1.le
   · have hzR : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
