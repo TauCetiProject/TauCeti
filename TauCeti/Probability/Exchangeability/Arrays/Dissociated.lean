@@ -306,10 +306,10 @@ theorem JointlyDissociated.indepFun_arrayDiag (h : JointlyDissociated μ X) {i i
 
 /-- A random variable independent of itself generates an almost surely trivial σ-algebra. -/
 private theorem measure_preimage_eq_zero_or_one_of_indepFun_self [IsProbabilityMeasure μ]
-    {Y : Ω → α} (hY : Measurable Y) (hindep : IndepFun Y Y μ) {s : Set α}
+    {Y : Ω → α} (hindep : IndepFun Y Y μ) {s : Set α}
     (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
   ProbabilityTheory.measure_eq_zero_or_one_of_indepSet_self
-    ((indepFun_iff_indepSet_preimage hY hY).mp hindep s s hs hs)
+    (hindep.indepSet_of_measurableSet ⟨s, hs, rfl⟩ ⟨s, hs, rfl⟩)
 
 /-- **Dissociation makes a constant array trivial.** If every entry of a jointly dissociated array
 is one and the same random variable `Y`, then `Y` generates an almost surely trivial σ-algebra.
@@ -317,9 +317,9 @@ is one and the same random variable `Y`, then `Y` generates an almost surely tri
 In particular, the array `X (i, j) = U` built from global noise alone is separately exchangeable,
 but dissociating it would make `U` degenerate. -/
 theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsProbabilityMeasure μ]
-    {Y : Ω → α} (hY : Measurable Y) (h : JointlyDissociated μ fun _ => Y) {s : Set α}
+    {Y : Ω → α} (h : JointlyDissociated μ fun _ => Y) {s : Set α}
     (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
-  measure_preimage_eq_zero_or_one_of_indepFun_self hY
+  measure_preimage_eq_zero_or_one_of_indepFun_self
     ((jointlyDissociated_iff.mp h (fun _ => 0) (fun _ => 1) (by simp)).comp
       (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))) hs
 
@@ -328,12 +328,12 @@ Separate dissociation asks `X (i, j)` and `X (j, i)` to be independent, so if th
 are equal, they are self-independent. This applies in particular to symmetric arrays. -/
 theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsProbabilityMeasure μ]
     (h : SeparatelyDissociated μ X) {i j : ℕ} (hij : i ≠ j)
-    (hsymm : X (j, i) = X (i, j)) (hX : Measurable (X (i, j)))
+    (hsymm : X (j, i) = X (i, j))
     {s : Set α} (hs : MeasurableSet s) :
     μ (X (i, j) ⁻¹' s) = 0 ∨ μ (X (i, j) ⁻¹' s) = 1 := by
   have hindep := h.indepFun_apply hij hij.symm
   rw [hsymm] at hindep
-  exact measure_preimage_eq_zero_or_one_of_indepFun_self hX hindep hs
+  exact measure_preimage_eq_zero_or_one_of_indepFun_self hindep hs
 
 end Consequences
 
