@@ -18,7 +18,9 @@ A one-form `α` on a manifold `M` gives at each point its **contact flat map**
 `α♭_x : T_x M → T_x^* M`, `v ↦ ι_v dα + α(v) α` (`TauCeti.SmoothForm.contactFlat`). It is the sum
 of the flat map `v ↦ ι_v dα` of the two-form `dα` and of the rank-one map `v ↦ α(v) α`, and these
 maps form a smooth section of the bundle `Hom(TM, Hom(TM, ℝ))`
-(`TauCeti.SmoothForm.contMDiff_contactFlat`).
+(`TauCeti.SmoothForm.contMDiff_contactFlat`). The same coordinate computation applies along any
+base map (`TauCeti.SmoothForm.contMDiff_totalSpaceMk_of_apply_eq_add_mul`), for instance to the
+contact flat maps of a family of forms depending smoothly on a parameter.
 
 For a contact form on a finite-dimensional manifold, the flat map `v ↦ ι_v dα` alone is never
 invertible, since an alternating form in odd dimension is degenerate. Adding `α ⊗ α` repairs this:
@@ -46,6 +48,8 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
 
 * `TauCeti.SmoothForm.contactFlat`: the contact flat map `v ↦ ι_v dα + α(v) α` at a point.
 * `TauCeti.SmoothForm.contMDiff_contactFlat`: the contact flat maps form a smooth section.
+* `TauCeti.SmoothForm.contMDiff_totalSpaceMk_of_apply_eq_add_mul`: families of maps
+  `v ↦ σ(v, ·) + a(v) a` along a base map are as regular as `σ` and `a`.
 * `TauCeti.SmoothForm.IsContactForm.isInvertible_contactFlat`: for a contact form in finite
   dimensions the contact flat maps are invertible.
 * `TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`: the preimage of `α` is
@@ -93,27 +97,62 @@ theorem contactFlat_apply (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpac
     α.contactFlat x v w = mextDeriv α.1 x ![v, w] + α.1 x ![v] * α.1 x ![w] := by
   simp [contactFlat, SmoothBundleForm.eval₂_apply]
 
+/-- **Contact flat maps along a base map.** Let `σ` be a family of alternating maps of two tangent
+vectors and `a` a family of covectors along a base map `b : N → M`, both `C^n`. Then the bilinear
+maps `Φ y = σ(·, ·) + a ⊗ a` form a `C^n` family in the bundle `Hom(TM, Hom(TM, ℝ))`. For `b = id`,
+`σ = dα` and `a = α` these are the contact flat maps of a one-form `α`
+(`TauCeti.SmoothForm.contMDiff_contactFlat`); for the slices of a one-form on a product `P × M` they
+are the contact flat maps of the slices. -/
+theorem contMDiff_totalSpaceMk_of_apply_eq_add_mul {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M}
+    {σ : (y : N) → TangentSpace I (b y) [⋀^Fin 2]→L[ℝ] ℝ}
+    {a : (y : N) → TangentSpace I (b y) →L[ℝ] ℝ}
+    {Φ : (y : N) → TangentSpace I (b y) →L[ℝ] TangentSpace I (b y) →L[ℝ] ℝ}
+    (hσ : ContMDiff J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b y) (σ y)))
+    (ha : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x ↦ TangentSpace I x →L[ℝ] Trivial M ℝ x)
+        (b y) (a y)))
+    (hΦ : ∀ y v w, Φ y v w = σ y ![v, w] + a y v * a y w) :
+    ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b y) (Φ y)) :=
+    fun x₀ ↦ by
+  have hσ₀ := (contMDiffAt_continuousAlternatingMap_bundle _).1 (hσ x₀)
+  have ha₀ := (contMDiffAt_hom_bundle _).1 (ha x₀)
+  rw [contMDiffAt_hom_bundle]
+  -- In coordinates, `Φ` is `flatL` applied to the coordinates of `σ`, plus `smulRight` applied
+  -- twice to the coordinates of `a`.
+  refine ⟨hσ₀.1, (((ContinuousAlternatingMap.flatL ℝ E ℝ).contDiff.comp_contMDiffAt hσ₀.2).add
+    (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
+      ha₀.2).clm_apply ha₀.2)).congr_of_eventuallyEq ?_⟩
+  filter_upwards [hσ₀.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt E (TangentSpace I) (b x₀)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I) (b x₀)))] with y hy
+  ext v w
+  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) (x := b y) hy hy (Set.mem_univ _), hΦ]
+  simp only [Pi.add_apply, Function.comp_apply, add_apply,
+    ContinuousAlternatingMap.flatL_apply_apply]
+  rw [ContinuousLinearMap.inCoordinates_eq (E' := Trivial M ℝ) (x := b y) hy
+      (by simp [Trivial.eq_trivialization M ℝ])]
+  simp only [Trivial.eq_trivialization M ℝ, ContinuousAlternatingMap.inCoordinates,
+    Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_compContinuousAlternatingMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, LinearMap.id_coe, id_eq]
+  congr 2
+  ext i
+  fin_cases i <;> exact (Trivialization.symmL_apply _ hy _).symm
+
 /-- **The contact flat maps form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
-        (α.contactFlat x)) := by
-  refine (SmoothTwoForm.contMDiff_flat _).add_section fun x₀ ↦ ?_
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, ?_⟩
-  have hα := ((contMDiffAt_hom_bundle _).1 ((degreeOneEquiv α).contMDiff x₀)).2
-  -- In coordinates, `α ⊗ α` is `smulRight` applied twice to the coordinate expression of `α`.
-  refine (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
-    hα).clm_apply hα).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt E (TangentSpace I) x₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt E (TangentSpace I) x₀)] with y hy
-  ext v w
-  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _)]
-  simp only [Function.comp_apply]
-  rw [ContinuousLinearMap.inCoordinates_eq (E' := Trivial M ℝ) hy
-    (by simp [Trivial.eq_trivialization M ℝ])]
-  simp [Trivial.eq_trivialization M ℝ]
+        (α.contactFlat x)) :=
+  contMDiff_totalSpaceMk_of_apply_eq_add_mul (b := fun x ↦ x) (mextDerivₗ I 1 α).contMDiff
+    (degreeOneEquiv α).contMDiff fun x v w ↦ by simp
 
 /-! ### Contact flat maps of contact forms -/
 

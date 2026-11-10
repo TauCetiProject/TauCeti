@@ -87,16 +87,22 @@ theorem mdifferentiableAt_ofSubsingleton_iff
   exact (L.symm.mdifferentiableAt.comp x₀ h).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun x ↦ by simp [L])
 
-/-- A family of fibrewise linear maps is `C^n` at `x₀` as a section of the bundle of linear maps
-`TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n` at `x₀`. -/
-theorem contMDiffAt_ofSubsingleton_iff {n : WithTop ℕ∞}
-    {α : (x : M) → TangentSpace I x →L[ℝ] V x} {x₀ : M} :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n (fun x ↦
-        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) x
-          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)))
+/-- A family of fibrewise linear maps along a base map `b : N → M` is `C^n` at `x₀` as a map to
+the bundle of linear maps `TangentSpace I x →L[ℝ] V x` exactly when the family of degree-one
+alternating maps it defines is `C^n` at `x₀`. For `b = id` these are sections. -/
+theorem contMDiffAt_ofSubsingleton_iff {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M}
+    {α : (y : N) → TangentSpace I (b y) →L[ℝ] V (b y)} {x₀ : N} :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n (fun y ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F)
+          (E := fun x ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] V x) (b y)
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I (b y)) (V (b y)) (0 : Fin 1)
+            (α y)))
         x₀ ↔
-      ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x))
-        x₀ := by
+      ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] F)) n
+        (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun x ↦ TangentSpace I x →L[ℝ] V x) (b y)
+          (α y)) x₀ := by
   let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
     (ι := Fin 1) 0).toContinuousLinearEquiv
   rw [contMDiffAt_continuousAlternatingMap_bundle, contMDiffAt_hom_bundle]

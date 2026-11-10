@@ -47,8 +47,9 @@ Fibrewise composition preserves joint `Cⁿ` regularity along any common base ma
 (`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
 `ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
 
-Negation of a hom-bundle section along any base map preserves its regularity
-(`ContMDiff.clm_bundle_neg`). Interchanging the inputs of a smooth bilinear bundle map preserves
+Negation, addition and multiplication by a scalar function of hom-bundle sections along any base
+map preserve their regularity (`ContMDiff.clm_bundle_neg`, `ContMDiff.clm_bundle_add`,
+`ContMDiff.clm_bundle_smul`). Interchanging the inputs of a smooth bilinear bundle map preserves
 smoothness
 (`ContMDiffWithinAt.clm_bundle_flip`), without a choice of fibre norms. This permits
 contraction of a smooth tensor in any input slot.
@@ -332,6 +333,42 @@ theorem ContMDiff.clm_bundle_neg
   refine ⟨h.1, ?_⟩
   simpa only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_neg,
     ContinuousLinearMap.neg_comp] using h.2.neg
+
+/-- Adding two hom-bundle sections along the same base map preserves their regularity. -/
+theorem ContMDiff.clm_bundle_add {A' : ∀ y, V (b y) →L[𝕜] W (b y)}
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y)))
+    (hA' : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A' y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y + A' y)) := by
+  intro x
+  have h := hA x
+  have h' := hA' x
+  rw [contMDiffAt_hom_bundle] at h h' ⊢
+  refine ⟨h.1, ?_⟩
+  simpa only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_add,
+    ContinuousLinearMap.add_comp, Pi.add_def] using h.2.add h'.2
+
+/-- Multiplying a hom-bundle section along a base map by a scalar function of the same
+regularity preserves its regularity. -/
+theorem ContMDiff.clm_bundle_smul {c : M → 𝕜} (hc : ContMDiff IM 𝓘(𝕜) n c)
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (c y • A y)) := by
+  intro x
+  have h := hA x
+  rw [contMDiffAt_hom_bundle] at h ⊢
+  refine ⟨h.1, ?_⟩
+  refine ((hc x).smul h.2).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.smul_comp, Pi.smul_apply']
 
 end Neg
 
