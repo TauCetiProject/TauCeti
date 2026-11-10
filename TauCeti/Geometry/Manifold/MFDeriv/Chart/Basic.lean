@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
@@ -103,6 +104,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `MDifferentiableAt.differentiableWithinAt_fderivWithin_extChart_comp_eq_zero`: where the manifold
   differential vanishes at a point of differentiability, the coordinate expression in extended
   charts is differentiable within the model range with zero derivative.
+* `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`: the preferred chart of `M × 𝕜` is the
+  identity on `𝕜`, so the derivative of a coordinate expression in the direction `(0, 1)` is the
+  derivative along `𝕜`, read without any chart.
+* `ContMDiff.continuous_deriv_prodMk`: the derivative along `𝕜` of a `C¹` function on `M × 𝕜` is
+  continuous.
 -/
 
 public section
@@ -859,5 +865,54 @@ theorem mfderiv_extChartAt_eq_id (x : M) :
   (hasMFDerivAt_extChartAt_self x).mfderiv
 
 end ExtChartAtSelf
+
+section TimeDerivative
+
+/-! ### The derivative along the scalar factor of `M × 𝕜` -/
+
+open Filter
+
+variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X]
+  [ChartedSpace H X] {f : X × 𝕜 → F}
+
+/-- **The derivative along `𝕜` in coordinates.** At the chart image of a point `(x, s)` of the
+chart source, the derivative of the coordinate expression of `f : X × 𝕜 → F` in the direction
+`(0, 1)` is the derivative of the slice of `f` through `x`. -/
+theorem fderiv_comp_extChartAt_symm_apply_zero_one {z : X × 𝕜} {x : X} {s : 𝕜}
+    (hx : x ∈ (extChartAt I z.1).source)
+    (hf : DifferentiableAt 𝕜 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) (extChartAt I z.1 x, s)) :
+    fderiv 𝕜 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) (extChartAt I z.1 x, s) (0, 1) =
+      deriv (fun s' ↦ f (x, s')) s := by
+  have h : HasDerivAt (fun s' : 𝕜 ↦ (extChartAt I z.1 x, s')) ((0 : E), (1 : 𝕜)) s :=
+    HasDerivAt.prodMk (hasDerivAt_const _ _) (hasDerivAt_id _)
+  rw [← comp_extChartAt_symm_prodMk_left z hx]
+  exact ((hf.hasFDerivAt.comp_hasDerivAt s h).deriv).symm
+
+/-- **The derivative along `𝕜` of a `C¹` function on `X × 𝕜` is continuous.** On a boundaryless
+manifold `X`, the map `(x, t) ↦ ∂ₜ f (x, t)` is continuous; near each point it is the derivative of
+the coordinate expression of `f` in the direction of the last factor, which is unchanged by the
+charts. -/
+theorem _root_.ContMDiff.continuous_deriv_prodMk [I.Boundaryless]
+    (hf : ContMDiff (I.prod 𝓘(𝕜)) 𝓘(𝕜, F) 1 f) :
+    Continuous fun z : X × 𝕜 ↦ deriv (fun s ↦ f (z.1, s)) z.2 := by
+  refine continuous_iff_continuousAt.2 fun z₀ ↦ ?_
+  set G := f ∘ (extChartAt (I.prod 𝓘(𝕜)) z₀).symm with hG
+  have hG₀ : ContDiffAt 𝕜 1 G (extChartAt I z₀.1 z₀.1, z₀.2) := by
+    simpa [hG, extChartAt_prod_modelSpace_apply] using
+      contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.1 (hf z₀)
+  -- The chart image of `(x, t)`, which tends to that of `z₀`.
+  have hφ : ContinuousAt (fun z : X × 𝕜 ↦ (extChartAt I z₀.1 z.1, z.2)) z₀ :=
+    ((continuousAt_extChartAt z₀.1).comp continuousAt_fst).prodMk continuousAt_snd
+  have hsrc : ∀ᶠ z : X × 𝕜 in 𝓝 z₀, z.1 ∈ (extChartAt I z₀.1).source :=
+    continuousAt_fst.preimage_mem_nhds (extChartAt_source_mem_nhds z₀.1)
+  -- Near `z₀`, the derivative along `𝕜` is the derivative of `G` in the direction `(0, 1)`.
+  have heq : (fun z : X × 𝕜 ↦ fderiv 𝕜 G (extChartAt I z₀.1 z.1, z.2) (0, 1)) =ᶠ[𝓝 z₀]
+      fun z ↦ deriv (fun s ↦ f (z.1, s)) z.2 := by
+    filter_upwards [hsrc, hφ.eventually (hG₀.eventually (by simp))] with z hz hzG
+    exact fderiv_comp_extChartAt_symm_apply_zero_one hz (hzG.differentiableAt one_ne_zero)
+  refine ContinuousAt.congr ?_ heq
+  exact ((hG₀.continuousAt_fderiv one_ne_zero).comp_of_eq hφ rfl).clm_apply continuousAt_const
+
+end TimeDerivative
 
 end TauCeti
