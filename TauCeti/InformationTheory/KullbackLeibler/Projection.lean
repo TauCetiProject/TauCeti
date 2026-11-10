@@ -46,7 +46,7 @@ how far `σ` is from `π.fitLaw f μ`.
 * `MeasureTheory.Measure.rnDeriv_fitLaw` and `MeasureTheory.Measure.fitLaw_withDensity`: the
   projection has density `dμ/d(f₊π) ∘ f` against `π`, so a law with density `g` against `f₊π` is
   fitted by the density `g ∘ f`.
-* `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
+* `MeasureTheory.Measure.fitLaw_apply_singleton`: when the target has measurable singletons, the
   projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
   `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
 * `TauCeti.klDiv_eq_klDiv_map_add_klDiv_fitLaw`: the Pythagorean identity above.
@@ -143,13 +143,41 @@ theorem fitLaw_eq_self [SigmaFinite μ] (hf : Measurable f) (h : π.map f = μ) 
   conv_rhs => rw [← withDensity_one (μ := π)]
   exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_self _))
 
-/-- On spaces with measurable singletons, the projection reweights the mass of each point `ω` by
-the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
-theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+/-- On spaces with measurable singletons for the target, the projection reweights the mass of each
+point `ω` by the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
+theorem fitLaw_apply_singleton [MeasurableSingletonClass X]
     [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (ω : Ω) :
     π.fitLaw f μ {ω} = μ {f ω} / π.map f {f ω} * π {ω} := by
-  rw [fitLaw_def, withDensity_apply _ (measurableSet_singleton ω), lintegral_singleton]
+  have hg : Measurable fun a ↦ μ.rnDeriv (π.map f) (f a) :=
+    (measurable_rnDeriv _ _).comp hf
+  have hω : π.fitLaw f μ {ω} = μ.rnDeriv (π.map f) (f ω) * π {ω} := by
+    refine le_antisymm ?_ ?_
+    · have hL : MeasurableSet {a | μ.rnDeriv (π.map f) (f a) = μ.rnDeriv (π.map f) (f ω)} :=
+        measurableSet_eq_fun hg measurable_const
+      have ht := (measurableSet_toMeasurable π {ω}).inter hL
+      calc π.fitLaw f μ {ω}
+          ≤ π.fitLaw f μ (toMeasurable π {ω} ∩ _) :=
+            measure_mono (Set.subset_inter (subset_toMeasurable _ _) fun a (ha : a = ω) ↦ ha ▸ rfl)
+        _ = ∫⁻ a in toMeasurable π {ω} ∩ _, μ.rnDeriv (π.map f) (f a) ∂π :=
+            withDensity_apply _ ht
+        _ = ∫⁻ a in toMeasurable π {ω} ∩ _, μ.rnDeriv (π.map f) (f ω) ∂π :=
+            setLIntegral_congr_fun ht fun a ha ↦ ha.2
+        _ = μ.rnDeriv (π.map f) (f ω) * π (toMeasurable π {ω} ∩ _) := setLIntegral_const _ _
+        _ ≤ μ.rnDeriv (π.map f) (f ω) * π {ω} := by
+            exact mul_le_mul_right ((measure_mono Set.inter_subset_left).trans_eq
+              (measure_toMeasurable ({ω} : Set Ω))) _
+    · have hrestrict : π.restrict {ω} = π {ω} • Measure.dirac ω := by
+        ext t ht
+        rw [restrict_apply ht, smul_apply, dirac_apply' _ ht, smul_eq_mul]
+        by_cases hωt : ω ∈ t
+        · simp [hωt]
+        · simp [hωt, Set.inter_singleton_eq_empty.2 hωt]
+      calc μ.rnDeriv (π.map f) (f ω) * π {ω}
+          = ∫⁻ a in {ω}, μ.rnDeriv (π.map f) (f a) ∂π := by
+            rw [hrestrict, lintegral_smul_measure, lintegral_dirac' _ hg, smul_eq_mul, mul_comm]
+        _ ≤ π.fitLaw f μ {ω} := withDensity_apply_le _ _
+  rw [hω]
   rcases eq_or_ne (π {ω}) 0 with h | h
   · rw [h, mul_zero, mul_zero]
   have hle : π {ω} ≤ π.map f {f ω} := by
@@ -159,7 +187,7 @@ theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingleto
 
 /-- The real-mass form of `MeasureTheory.Measure.fitLaw_apply_singleton`: the projection reweights
 the real mass of each point `ω` by `μ.real {f ω} / (π.map f).real {f ω}`. -/
-theorem fitLaw_real_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+theorem fitLaw_real_singleton [MeasurableSingletonClass X]
     [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (ω : Ω) :
     (π.fitLaw f μ).real {ω} = μ.real {f ω} / (π.map f).real {f ω} * π.real {ω} := by
