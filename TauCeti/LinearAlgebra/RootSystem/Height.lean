@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
-import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Height and integral relations among roots
@@ -125,12 +125,8 @@ theorem RootPairing.Base.exists_dual_eq_one_on_root {ι 𝕜 V N : Type*} [Field
     [AddCommGroup V] [Module 𝕜 V] [AddCommGroup N] [Module 𝕜 N]
     {P : RootPairing ι 𝕜 V N} (b : P.Base) :
     ∃ g : Module.Dual 𝕜 V, ∀ i : b.support, g (P.root i) = 1 := by
-  let hli := b.linearIndepOn_root.linearIndependent.linearIndepOn_id
-  let B := Module.Basis.extend hli
-  refine ⟨B.sumCoords, fun i ↦ ?_⟩
-  have hi := Module.Basis.subset_extend hli ⟨i, rfl⟩
-  simpa only [B, Module.Basis.coe_extend] using
-    B.sumCoords_self_apply (i := ⟨P.root i, hi⟩)
+  obtain ⟨g, hg⟩ := Module.exists_dual_forall_apply_eq_one b.linearIndepOn_root
+  exact ⟨g, fun i ↦ hg i i.property⟩
 
 namespace RootPairing
 

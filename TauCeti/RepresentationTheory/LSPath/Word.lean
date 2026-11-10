@@ -80,16 +80,14 @@ theorem raiseWord_singleton (i : ι) (π : PLPath 𝕜 V) :
 /-- Concatenating words composes their partial lowering actions. -/
 theorem lowerWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     lowerWord F x (v ++ w) π = (lowerWord F x v π).bind (lowerWord F x w) := by
-  induction v generalizing π with
-  | nil => simp
-  | cons i v ih => simp only [List.cons_append, lowerWord_cons, ih, Option.bind_assoc]
+  unfold lowerWord
+  exact List.foldlM_append
 
 /-- Concatenating words composes their partial raising actions. -/
 theorem raiseWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     raiseWord F x (v ++ w) π = (raiseWord F x v π).bind (raiseWord F x w) := by
-  induction v generalizing π with
-  | nil => simp
-  | cons i v ih => simp only [List.cons_append, raiseWord_cons, ih, Option.bind_assoc]
+  unfold raiseWord
+  exact List.foldlM_append
 
 /-- Lowering along a word and raising along its reversal are partial inverses. -/
 theorem lowerWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
