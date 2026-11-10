@@ -107,6 +107,7 @@ theorem parabolicHom_wordProd (ω : List B) :
   | cons i ω ih => simp [wordProd_cons, ih]
 
 /-- **The identity of index types induces the identity of `W`.** -/
+@[simp]
 theorem parabolicHom_id (hid : ∀ i j, M i j = M (id i) (id j)) :
     cs.parabolicHom cs hid = MonoidHom.id W :=
   cs.ext_simple fun i ↦ parabolicHom_simple cs hid i
@@ -121,12 +122,14 @@ theorem parabolicHom_comp {B'' W'' : Type*} [Group W''] {M'' : CoxeterMatrix B''
 
 /-- **Reindexing a Coxeter system along `e` does not change the group**: the homomorphism of
 `CoxeterSystem.parabolicHom` from `cs` to `cs.reindex e` along `e` is the identity of `W`. -/
+@[simp]
 theorem parabolicHom_reindex (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
     cs.parabolicHom (cs.reindex e) he = MonoidHom.id W :=
   cs.ext_simple fun i ↦ by simp
 
 /-- On the presented Coxeter groups, the homomorphism of `CoxeterSystem.parabolicHom` along a
 bijection `e` is the inverse of Mathlib's isomorphism `CoxeterMatrix.reindexGroupEquiv`. -/
+@[simp]
 theorem _root_.CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex (M : CoxeterMatrix B)
     (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
     M.toCoxeterSystem.parabolicHom (M.reindex e).toCoxeterSystem he =

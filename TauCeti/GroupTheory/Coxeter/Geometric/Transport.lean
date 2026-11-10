@@ -13,14 +13,13 @@ public import TauCeti.GroupTheory.Coxeter.Restriction
 Let `M : CoxeterMatrix B` and `M' : CoxeterMatrix B'` be Coxeter matrices and `f : B → B'` a map
 along which they agree, `M i j = M' (f i) (f j)`. The linear map
 `Finsupp.lmapDomain ℝ ℝ f : (B →₀ ℝ) →ₗ[ℝ] (B' →₀ ℝ)` sends the `i`-th simple root `αᵢ` to the
-simple root `α'_{f i}`. This file shows that it is compatible with every piece of the standard
-geometric representation (`CoxeterSystem.geometricRepresentation`):
-
-* it carries the canonical form of `M` to that of `M'`, `B'(E u, E v) = B(u, v)`;
-* it intertwines the `i`-th simple reflection with the `f i`-th one, `E σᵢ = σ'_{f i} E`;
-* it intertwines the geometric representation of `W` with that of `W'` pulled back along the
-  homomorphism `CoxeterSystem.parabolicHom` sending `s i` to `s' (f i)`,
-  `E ρ(w) = ρ'(φ w) E`.
+simple root `α'_{f i}`. It carries the canonical form of `M` to that of `M'`,
+`B'(E u, E v) = B(u, v)` (`CoxeterMatrix.geometricForm_mapDomain_mapDomain`), and intertwines the
+`i`-th simple reflection with the `f i`-th one, `E σᵢ = σ'_{f i} E`
+(`CoxeterMatrix.mapDomain_geometricReflection`). This file shows that it is compatible with the
+standard geometric representation (`CoxeterSystem.geometricRepresentation`) itself: it
+intertwines the geometric representation of `W` with that of `W'` pulled back along the
+homomorphism `CoxeterSystem.parabolicHom` sending `s i` to `s' (f i)`, `E ρ(w) = ρ'(φ w) E`.
 
 Two instances are the ones that matter. When `f` is a bijection `e : B ≃ B'` and `M'` is
 `M.reindex e`, the map is the coordinate equivalence `Finsupp.domLCongr e`, and the geometric
@@ -35,8 +34,6 @@ is the restriction of the ambient one. Composites of such maps are handled by
 
 ## Main results
 
-* `CoxeterMatrix.geometricForm_mapDomain_mapDomain`: the canonical forms are compatible.
-* `CoxeterMatrix.mapDomain_geometricReflection`: the simple reflections are intertwined.
 * `CoxeterSystem.mapDomain_geometricRepresentation`,
   `CoxeterSystem.lmapDomain_comp_geometricRepresentation`: the geometric representations are
   intertwined along `CoxeterSystem.parabolicHom`.
@@ -50,37 +47,6 @@ is the restriction of the ambient one. Composites of such maps are handled by
 -/
 
 public section
-
-namespace CoxeterMatrix
-
-variable {B B' : Type*} {M : CoxeterMatrix B} {M' : CoxeterMatrix B'} {f : B → B'}
-
-/-- **The canonical forms are compatible with a map of index types** along which the Coxeter
-matrices agree: the induced map of free real vector spaces is an isometry. -/
-theorem geometricForm_mapDomain_mapDomain (hf : ∀ i j, M i j = M' (f i) (f j))
-    (u v : B →₀ ℝ) :
-    M'.geometricForm (u.mapDomain f) (v.mapDomain f) = M.geometricForm u v := by
-  induction u using Finsupp.induction_linear with
-  | zero => simp
-  | add u₁ u₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, LinearMap.add_apply, h₁, h₂]
-  | single i a =>
-    induction v using Finsupp.induction_linear with
-    | zero => simp
-    | add v₁ v₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, h₁, h₂]
-    | single j b => simp [Finsupp.mapDomain_single, hf]
-
-/-- **The simple reflections are intertwined by a map of index types** along which the Coxeter
-matrices agree: the induced map sends the `i`-th simple reflection to the `f i`-th one. -/
-theorem mapDomain_geometricReflection (hf : ∀ i j, M i j = M' (f i) (f j)) (i : B)
-    (v : B →₀ ℝ) :
-    (M.geometricReflection i v).mapDomain f =
-      M'.geometricReflection (f i) (v.mapDomain f) := by
-  have hform := geometricForm_mapDomain_mapDomain hf (Finsupp.single i 1) v
-  rw [Finsupp.mapDomain_single] at hform
-  rw [geometricReflection_apply, geometricReflection_apply, Finsupp.mapDomain_sub,
-    Finsupp.mapDomain_smul, Finsupp.mapDomain_single, hform]
-
-end CoxeterMatrix
 
 namespace CoxeterSystem
 
