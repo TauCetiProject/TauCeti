@@ -88,7 +88,9 @@ theorem oneForm_flux_eq_inner (X Y : ℂ → ℝ) (z v : ℂ) :
     neg_re, neg_mul, I_re, I_im]
   ring
 
-/-- Flux is inner product with the unit outward normal, multiplied by speed. -/
+/-- Flux is inner product with the unit outward normal, multiplied by speed. For `v ≠ 0` the
+vector `‖v‖⁻¹ • (-I * v)` is the unit outward normal; for `v = 0` it is `0` by the convention
+`0⁻¹ = 0`, and both sides vanish. -/
 theorem oneForm_flux_eq_inner_unitNormal_mul_speed (X Y : ℂ → ℝ) (z v : ℂ) :
     oneForm (fun z ↦ -Y z) X z v =
       ⟪(⟨X z, Y z⟩ : ℂ), (‖v‖⁻¹ : ℝ) • (-I * v)⟫_ℝ * ‖v‖ := by
