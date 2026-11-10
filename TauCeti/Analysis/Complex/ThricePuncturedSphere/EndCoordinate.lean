@@ -188,21 +188,15 @@ theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
   rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
   simp
 
-/-- The real part of the exponent of the end lifts. -/
-private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
-  rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
-    Complex.re_ofReal_mul]
-
 /-- On the part `s ≥ 0` of an input end `q`, the end lift stays within distance `1` of `0` or
 `1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
 theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 ≤ z.re) :
     ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
   have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
-    rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
-      Complex.norm_exp]
-    have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
-      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
+    rw [norm_cylindricalEndLift_sub_endCenter, norm_endScale hq]
+    have : Real.exp (-(2 * π * z.re)) ≤ 1 := by
+      rw [Real.exp_le_one_iff]
       nlinarith [Real.pi_pos]
     linarith
   have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
@@ -221,9 +215,11 @@ theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
 `2 exp (2πR)` about `0`. -/
 theorem two_mul_exp_le_norm_cylindricalEndLift_inf {R : ℝ} {z : ℂ} (hz : z.re ≤ -R) :
     2 * Real.exp (2 * π * R) ≤ ‖inf.cylindricalEndLift z‖ := by
-  rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp, re_neg_two_pi_mul]
-  have h : 2 * π * R ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
-  linarith [Real.exp_le_exp.2 h]
+  have h := norm_cylindricalEndLift_sub_endCenter inf z
+  rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+  rw [h]
+  gcongr
+  nlinarith [Real.pi_pos]
 
 /-- The logarithmic end coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)`. It inverts the end
 lift (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate and its

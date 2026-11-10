@@ -558,9 +558,7 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
     (injective_exchangeMap hc).injOn (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
     (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _),
+    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _),
     perturbationPullback_exchangeMap_stdComplexLineReal hc₀ hc₁,
     perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
   simp only [comp_apply]

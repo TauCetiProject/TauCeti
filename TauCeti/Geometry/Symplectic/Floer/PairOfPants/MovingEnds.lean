@@ -267,11 +267,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
     negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith)]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
@@ -433,9 +429,7 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     (realChart_injective fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)).injOn
     (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
     (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) 1)
-    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I)
-    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) 1)
-    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
+    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   rfl
 
