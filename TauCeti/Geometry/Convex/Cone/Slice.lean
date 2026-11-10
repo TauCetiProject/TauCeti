@@ -236,10 +236,11 @@ theorem comap_inl_hull_eq_hull_zeroSliceGenerators (s : Finset (V × K))
   intro x hx
   have hx' : (x, (0 : K)) ∈ hull K (s : Set (V × K)) := hx
   obtain ⟨c, hfst, hheight⟩ := exists_sum_smul_of_mem_hull hx'
+  dsimp only at hfst hheight
   have hterm : ∀ z ∈ s, (c z : K) * z.2 = 0 :=
     (Finset.sum_eq_zero_iff_of_nonneg (fun z hz => mul_nonneg (c z).property (hs z hz))).mp
       hheight
-  rw [← show ∑ z ∈ s, (c z : K) • z.1 = x from hfst]
+  rw [← hfst]
   apply Submodule.sum_mem
   intro z hz
   by_cases hz0 : z.2 = 0
