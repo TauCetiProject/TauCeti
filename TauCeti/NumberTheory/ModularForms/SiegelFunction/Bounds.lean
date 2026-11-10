@@ -138,22 +138,30 @@ theorem norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
   rw [siegelFunction_zero_half_pow_twelve hτ, norm_mul, norm_mul, norm_pow]
   norm_num
 
+/-- The nome `q = e^{2π i τ}` has norm less than `1` only on the upper half-plane. -/
+private theorem im_pos_of_norm_exp_lt_one {τ : ℂ} (hq : ‖cexp (2 * π * I * τ)‖ < 1) :
+    0 < τ.im := by
+  rw [UpperHalfPlane.norm_exp_two_pi_I_mul, Real.exp_lt_one_iff] at hq
+  by_contra! h
+  nlinarith [Real.pi_pos, mul_nonpos_of_nonneg_of_nonpos Real.pi_pos.le h]
+
 /-- With `A = |q| < 1/2`, `|g_{(0, 1/2)}(τ)¹²| ≤ 4096 A (1 + A / (1 - 2A))²⁴` on the upper
 half-plane. -/
-theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ} (hτ : 0 < τ.im)
+theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ}
     (hq : 2 * ‖cexp (2 * π * I * τ)‖ < 1) :
     ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 + ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 := by
   have h := norm_tprod_one_add_pow_sub_one_le hq
   have := norm_le_norm_add_norm_sub' (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) 1
   rw [norm_one] at this
-  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
+  have hA := norm_nonneg (cexp (2 * π * I * τ))
+  rw [norm_siegelFunction_zero_half_pow_twelve (im_pos_of_norm_exp_lt_one (by linarith))]
   gcongr
   linarith
 
 /-- With `A = |q| < 1/3`, `4096 A (1 - A / (1 - 2A))²⁴ ≤ |g_{(0, 1/2)}(τ)¹²|` on the upper
 half-plane. -/
-theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
+theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ}
     (hq : 3 * ‖cexp (2 * π * I * τ)‖ < 1) :
     4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 ≤
@@ -164,7 +172,7 @@ theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
     linarith
   have := norm_sub_norm_le (1 : ℂ) (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)))
   rw [norm_one, norm_sub_rev] at this
-  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
+  rw [norm_siegelFunction_zero_half_pow_twelve (im_pos_of_norm_exp_lt_one (by linarith))]
   gcongr
   linarith
 
