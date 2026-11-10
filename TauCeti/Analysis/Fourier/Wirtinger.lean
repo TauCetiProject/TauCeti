@@ -287,11 +287,16 @@ loop. For a symplectic form `B` the left side is twice the symplectic area enclo
 and this is the isoperimetric inequality. -/
 theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) (hab : a < b) {f f' : ℝ → V}
+    (B : V →L[ℝ] V →L[ℝ] G) (hab : a < b) {f f' : ℝ → V}
     (hf : ∀ x ∈ [[a, b]], HasDerivAt f (f' x) x) (hfab : f a = f b)
     (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
     ‖∫ x in a..b, B (f x) (f' x)‖ ≤
       ‖B‖ * ((b - a) / (2 * π)) * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+  by_cases hG : CompleteSpace G
+  swap
+  · rw [intervalIntegral.integral_of_le hab.le, integral_of_not_completeSpace hG, norm_zero]
+    exact mul_nonneg (mul_nonneg (norm_nonneg B) (div_nonneg (sub_nonneg.2 hab.le) (by positivity)))
+      (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ by positivity)
   set m := ⨍ y in a..b, f y
   set c := (b - a) / (2 * π)
   have hc : 0 < c := div_pos (sub_pos.2 hab) (by positivity)

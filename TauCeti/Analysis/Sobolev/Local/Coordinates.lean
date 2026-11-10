@@ -27,9 +27,9 @@ They also show that testing one basis is equivalent to testing every basis.
 
 public noncomputable section
 
-open MeasureTheory
+open TauCeti MeasureTheory
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -40,7 +40,7 @@ variable {ι : Type*} [Finite ι]
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
 in the same Sobolev class. -/
-theorem _root_.Module.Basis.memWkpLoc_iff (b : Module.Basis ι ℝ F) :
+theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun z => b.repr (f z) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
@@ -57,8 +57,8 @@ theorem _root_.Module.Basis.memWkpLoc_iff (b : Module.Basis ι ℝ F) :
 
 /-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
 codomain is needed. -/
-theorem _root_.Module.Basis.memLpLoc_iff (b : Module.Basis ι ℝ F) :
+theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
     MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
   simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
 
-end TauCeti
+end Module.Basis
