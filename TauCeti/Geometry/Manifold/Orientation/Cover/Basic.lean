@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Topology.VectorBundle.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Orientation.Proper
+public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Topology.SeparatedMap
 
 /-!
 # The orientation double cover of a manifold
@@ -22,6 +24,10 @@ orientable if and only if its orientation double cover is disconnected
 (`TauCeti.Manifold.OrientationCover.orientable_iff_not_connectedSpace`). The deck involution
 reversing orientations is `TauCeti.VectorBundleOrientationCover.deck`.
 
+Each fibre of the projection has two points, so the projection is proper
+(`TauCeti.Manifold.OrientationCover.isProperMap_proj`). Hence the orientation cover of a
+Hausdorff, respectively σ-compact, manifold is Hausdorff, respectively σ-compact.
+
 ## Main definitions
 
 * `TauCeti.Manifold.OrientationCover I M`: the orientation double cover of `M`.
@@ -29,6 +35,7 @@ reversing orientations is `TauCeti.VectorBundleOrientationCover.deck`.
 ## Main results
 
 * `TauCeti.Manifold.OrientationCover.isCoveringMap_proj`: the projection is a covering map.
+* `TauCeti.Manifold.OrientationCover.isProperMap_proj`: the projection is proper.
 * `TauCeti.Manifold.OrientationCover.orientable_iff_exists_section`: `M` is orientable if and
   only if its orientation double cover has a continuous section.
 * `TauCeti.Manifold.OrientationCover.orientable_iff_not_connectedSpace`: a connected `M` is
@@ -63,6 +70,20 @@ variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
 theorem isCoveringMap_proj :
     IsCoveringMap (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   VectorBundleOrientationCover.isCoveringMap_proj (Fintype.card_fin _)
+
+/-- The projection of the orientation double cover of a manifold is proper. -/
+theorem isProperMap_proj :
+    IsProperMap (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
+  VectorBundleOrientationCover.isProperMap_proj (Fintype.card_fin _)
+
+/-- The orientation double cover of a Hausdorff manifold is Hausdorff. -/
+instance instT2Space [T2Space M] : T2Space (OrientationCover I M) :=
+  (isCoveringMap_proj I M).t2Space
+
+/-- The orientation double cover of a σ-compact manifold is σ-compact. -/
+instance instSigmaCompactSpace [SigmaCompactSpace M] :
+    SigmaCompactSpace (OrientationCover I M) :=
+  (isProperMap_proj I M).sigmaCompactSpace
 
 variable {I M}
 

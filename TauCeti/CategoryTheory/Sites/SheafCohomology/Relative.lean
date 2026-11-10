@@ -300,8 +300,7 @@ private lemma cohomologyPresheaf_map_comp_symm (n : ℕ) :
   apply (F.H'AddEquivExt n U).injective
   simp only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom, Function.comp_apply,
     AddEquiv.apply_symm_apply]
-  rw [cohomologyPresheaf_map_apply, AddEquiv.apply_symm_apply]
-  rfl
+  exact F.cohomologyPresheaf_map_apply i n x
 
 section exact
 
@@ -313,8 +312,7 @@ private lemma δ_comp_symm {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
     (δ F i h).comp (F.H'AddEquivExt n₀ U).symm.toAddMonoidHom =
       (relativeFreeYonedaSequence_shortExact J i).extClass.precomp F h := by
   ext x
-  exact congrArg ((relativeFreeYonedaSequence_shortExact J i).extClass.precomp F h)
-    (AddEquiv.apply_symm_apply _ x)
+  rfl
 
 /-- The long exact sequence of the pair is exact at `Hⁿ(V, F)`: a class on `V` comes from
 relative cohomology exactly when its restriction to `U` vanishes. -/

@@ -291,6 +291,13 @@ theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
   simp
 
+/-- A domain connects a generator to itself exactly when its `α`- and `β`-parts are cycles, that
+is, when its boundary is a combination of whole curves. This does not depend on the generator. -/
+theorem isDomainBetween_self_iff_arcBoundary_eq_zero {x : H.Generator} {E : Region → ℤ} :
+    H.IsDomainBetween x x E ↔
+      H.alphaArcBoundary (H.alphaBoundary E) = 0 ∧ H.betaArcBoundary (H.betaBoundary E) = 0 := by
+  simp
+
 namespace IsDomainBetween
 
 variable {x y w : H.Generator} {D E : Region → ℤ}
@@ -304,12 +311,6 @@ theorem add (hD : H.IsDomainBetween x y D) (hE : H.IsDomainBetween y w E) :
 /-- Reversing a domain from `x` to `y` gives a domain from `y` to `x`. -/
 theorem neg (hD : H.IsDomainBetween x y D) : H.IsDomainBetween y x (-D) := by
   refine ⟨?_, ?_⟩ <;> simp only [map_neg, hD.1, hD.2, neg_sub]
-
-/-- Every integer multiple of a domain from `x` to itself is a domain from `x` to itself. -/
-theorem zsmul {D : Region → ℤ} (hD : H.IsDomainBetween x x D) (k : ℤ) :
-    H.IsDomainBetween x x (k • D) := by
-  simp only [isDomainBetween_iff, sub_self, map_zsmul] at hD ⊢
-  exact ⟨by rw [hD.1, smul_zero], by rw [hD.2, smul_zero]⟩
 
 /-- On an `α`-curve where `x` and `y` differ, the point of `x` is a corner of every domain from
 `x` to `y`, at which the boundary of its `α`-part has coefficient `-1`. -/
@@ -383,6 +384,17 @@ theorem isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains [Subsingleton 
   simp only [mem_periodicDomains_iff, isDomainBetween_iff, sub_self, map_sub, map_zsmul,
     alphaBoundary_one, betaBoundary_one, smul_zero, sub_zero, Pi.sub_apply, Pi.smul_apply,
     Pi.one_apply, smul_eq_mul, mul_one, Subsingleton.elim _ z, implies_true, true_and]
+
+/-- In a diagram with at most one basepoint, a nonnegative domain `E` from `x` to itself is a
+periodic domain plus a nonnegative number of copies of the whole surface: with a basepoint `z`,
+that number is `n_z(E)`, and without one `E` is itself periodic. -/
+theorem IsDomainBetween.exists_nonneg_sub_smul_one_mem_periodicDomains [Subsingleton Basepoint]
+    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) (hE₀ : 0 ≤ E) :
+    ∃ m : ℤ, 0 ≤ m ∧ E - m • 1 ∈ H.periodicDomains := by
+  rcases isEmpty_or_nonempty Basepoint with hB | ⟨⟨z⟩⟩
+  · exact ⟨0, le_rfl, by simpa using isDomainBetween_self_iff.mp ⟨hE, isEmptyElim⟩⟩
+  · exact ⟨E (H.basepoint z), hE₀ _,
+      (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE⟩
 
 variable (H) in
 /-- The supplied region incidence system is weakly admissible when every nonzero periodic domain
