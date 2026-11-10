@@ -71,13 +71,10 @@ theorem projection_principalCompletionEquiv_symm (k : ℕ) (p : MvPowerSeries σ
 theorem principalCompletionEquiv_toCompletion (p : MvPolynomial σ R) :
     principalCompletionEquiv σ R ((𝔉).toCompletion p) = p := by
   apply (principalCompletionEquiv σ R).symm.injective
-  refine (𝔉).completion_ext fun k => ?_
-  rw [RingEquiv.symm_apply_apply, projection_principalCompletionEquiv_symm,
-    AlgFiltration.projection_toCompletion, Ideal.Quotient.eq, Ideal.algFiltration_ideal,
-    MvPolynomial.mem_pow_idealOfVars_iff']
-  intro n hn
-  rw [MvPolynomial.coeff_sub, MvPowerSeries.coeff_truncTotal _ hn, MvPolynomial.coeff_coe,
-    sub_self]
+  rw [RingEquiv.symm_apply_apply]
+  simp only [principalCompletionEquiv, RingEquiv.symm_trans_apply, RingEquiv.symm_symm,
+    AlgEquiv.coe_toRingEquiv, MvPowerSeries.toAdicCompletionAlgEquiv_apply,
+    MvPowerSeries.toAdicCompletion_coe, AdicCompletion.algFiltrationCompletionEquiv_of]
 
 /-- Truncating the power series associated to a completed polynomial recovers its finite-order
 projection. -/
@@ -139,20 +136,22 @@ theorem principalCompletionMap_toCompletion (φ : R →+* S) (p : MvPolynomial �
 @[simp]
 theorem principalCompletionMap_id :
     (RingHom.id R).principalCompletionMap (σ := σ) = RingHom.id (𝔉[R]).completion := by
-  refine RingHom.ext fun x => (𝔉[R]).completion_ext fun k => ?_
-  obtain ⟨p, hp⟩ := Ideal.Quotient.mk_surjective ((𝔉[R]).projection k x)
-  rw [projection_principalCompletionMap _ k x p hp, RingHom.id_apply, ← hp, MvPolynomial.map_id]
+  have hmap : MvPolynomial.map (RingHom.id R) = RingHom.id (MvPolynomial σ R) :=
+    RingHom.ext MvPolynomial.map_id
+  unfold principalCompletionMap
+  simpa only [hmap] using (𝔉[R]).mapCompletion_id
 
 /-- Changes of coefficients compose. -/
 theorem principalCompletionMap_comp (φ : R →+* S) (ψ : S →+* T) :
     (ψ.comp φ).principalCompletionMap (σ := σ) =
       ψ.principalCompletionMap.comp φ.principalCompletionMap := by
-  refine RingHom.ext fun x => (𝔉[T]).completion_ext fun k => ?_
-  obtain ⟨p, hp⟩ := Ideal.Quotient.mk_surjective ((𝔉[R]).projection k x)
-  rw [RingHom.comp_apply, projection_principalCompletionMap _ k x p hp,
-    projection_principalCompletionMap ψ k (φ.principalCompletionMap x) (MvPolynomial.map φ p)
-      (projection_principalCompletionMap _ k x p hp).symm,
-    MvPolynomial.map_map]
+  have hmap : MvPolynomial.map (σ := σ) (ψ.comp φ) =
+      (MvPolynomial.map ψ).comp (MvPolynomial.map φ) :=
+    RingHom.ext fun p => (MvPolynomial.map_map φ ψ p).symm
+  unfold principalCompletionMap
+  simp only [hmap]
+  rw [← AlgFiltration.mapCompletion_comp]
+  simp only [Function.id_comp]
 
 end RingHom
 
