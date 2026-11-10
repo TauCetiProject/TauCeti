@@ -49,9 +49,10 @@ first on test paths (in `TauCeti.Analysis.ODE.EnergyEstimate.Global`) and then, 
 closed range. The cokernel is the
 orthogonal complement of the range, which lies in the kernel of the formal adjoint
 `-d/ds + A†` (`TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_le_map_ker`). That operator
-is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`. The family
-`-A†` has limits `-A±†`, which again have Lyapunov forms
-(`ContinuousLinearMap.HasLyapunovForm.neg_adjoint`), so that kernel is finite dimensional too.
+is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`. Like the kernel
+of `D_A`, that kernel is finite dimensional because `E` is
+(`TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`); the Lyapunov forms are needed
+only for the closed range.
 
 ## Main declarations
 
@@ -172,7 +173,7 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
   have := (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
     hAL).completeSpace_coe
   obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
-  -- The coefficient `-A†` of `D_{-A†}` has limits `-A±†`, which have Lyapunov forms.
+  -- The coefficient `-A†` of `D_{-A†}` is continuous and represented a.e. by `-BL`.
   have hadj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous
   have hnegBL : ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
