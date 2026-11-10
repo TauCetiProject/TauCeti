@@ -196,7 +196,6 @@ theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank �
     finrank ℝ (deRhamCohomology (𝓡 0) (sphere (0 : E) 1) 0) = 2 := by
   obtain ⟨e⟩ := nonempty_sphere (E := E) (m := 0) Fact.out
   have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
-  have := finite_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   rw [finrank_deRhamCohomology_zero_of_discreteTopology, Nat.card_coe_set_eq, hS,
     Set.ncard_pair (fun h ↦ ne_neg_of_mem_unit_sphere ℝ e (Subtype.ext h) : (e : E) ≠ -e)]
