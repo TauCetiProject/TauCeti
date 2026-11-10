@@ -81,13 +81,14 @@ variable (V : Type*) [AddCommGroup V] [Module k V]
 `A` on the left factor of `A ⊗[k] V` with the action `(a • f) x = f (x * a)` on `Hom_k(A, V)`, see
 `LinearMap.IsFrobeniusFunctional.tensorEquivLinearMap_smul_apply`. -/
 noncomputable def tensorEquivLinearMap : A ⊗[k] V ≃ₗ[k] (A →ₗ[k] V) :=
-  TensorProduct.congr (LinearEquiv.ofBijective _ hφ.isPerfPair.bijective_right)
-    (LinearEquiv.refl k V) ≪≫ₗ dualTensorHomEquiv k A V
+  TensorProduct.congr
+      (LinearEquiv.ofBijective ((mul k A).compr₂ φ).flip hφ.isPerfPair.bijective_right)
+      (LinearEquiv.refl k V) ≪≫ₗ dualTensorHomEquiv k A V
 
 @[simp]
 theorem tensorEquivLinearMap_tmul_apply (a : A) (v : V) (x : A) :
-    hφ.tensorEquivLinearMap V (a ⊗ₜ v) x = φ (x * a) • v :=
-  (rfl)
+    hφ.tensorEquivLinearMap V (a ⊗ₜ v) x = φ (x * a) • v := by
+  simp [tensorEquivLinearMap, LinearEquiv.ofBijective_apply]
 
 /-- The isomorphism `A ⊗[k] V ≃ₗ[k] (A →ₗ[k] V)` is `A`-linear, for the action of `A` on the left
 factor of the tensor product and the action `(c • f) x = f (x * c)` on linear maps. -/
