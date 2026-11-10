@@ -21,7 +21,8 @@ on `U ∖ H` and let its restriction to `U ∩ H` be a weak solution of the dive
 `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = ℓ` in `U ∩ H`,
 
 tested against `H¹₀(U ∩ H)`, for a bounded linear functional `ℓ` on `H¹₀(U ∩ H)`. So `u` has zero
-boundary values on the flat part `U ∩ ∂H` of the boundary of `U ∩ H`. Then the **odd reflection**
+boundary values on the flat part `U ∩ ∂H` of the boundary of `U ∩ H`. If the reflected
+coefficients `a'`, `b'`, `c'` below are essentially bounded on `U`, then the **odd reflection**
 `w = u - u ∘ ρ`, which agrees with `u` on `U ∩ H` and with `-u ∘ ρ` on the other side, is a weak
 solution on all of `U` of the reflected equation
 
