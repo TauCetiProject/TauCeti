@@ -53,6 +53,7 @@ theorem quotientOrthogonalEquivDual_symm_apply_eq_mk_iff (B : LinearMap.BilinFor
     (B.quotientOrthogonalEquivDual hB W).symm α = Submodule.Quotient.mk v ↔
       ∀ w : W, B w v = α w := by
   rw [LinearEquiv.symm_apply_eq]
-  exact (LinearMap.ext_iff).trans (forall_congr' fun w ↦ eq_comm)
+  exact (LinearMap.ext_iff).trans
+    (forall_congr' fun w ↦ by rw [quotientOrthogonalEquivDual_mk_apply, eq_comm])
 
 end LinearMap.BilinForm
