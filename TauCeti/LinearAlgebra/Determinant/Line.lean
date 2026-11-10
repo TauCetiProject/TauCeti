@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Determinant lines of modules and of linear maps
@@ -33,6 +34,20 @@ carried out here. This file sets up the pointwise object:
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
   isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts.
 
+An automorphism of a free module acts on its determinant line by its determinant
+(`LinearEquiv.detLineCongr_apply_eq_det_smul`). Consequently, automorphisms `e₁` of the source and
+`e₂` of the target of `f` commuting with `f` act on the determinant line of `f` by
+`det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms they induce on the kernel and on
+the cokernel (`LinearMap.detLineCongr_apply_eq_det_smul`). If a unit `c` acts by multiplication
+on both the source and the target of `f`, the induced transport of the determinant line of `f` is
+multiplication by `c ^ ind f`, with `ind f = dim (ker f) - dim (coker f)`
+(`LinearMap.detLineCongr_apply_of_forall_eq_smul`). For `c = -1` this is the sign
+`(-1) ^ (dim (ker f) + dim (coker f))` (`LinearMap.detLineCongr_neg_apply`); for instance, complex
+conjugation of a connection acts on its imaginary-valued deformations, and on the determinant line
+of the real deformation operator, by this sign. This application to charge conjugation in
+Seiberg–Witten theory follows [Taubes, *SW ⇒ Gr*] and [Morgan, *The Seiberg–Witten equations*];
+the linear algebra itself is standard.
+
 ## Main definitions
 
 * `TauCeti.detLine R V`: the top exterior power `⋀[R]^(finrank R V) V`.
@@ -49,15 +64,27 @@ carried out here. This file sets up the pointwise object:
   module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
+* `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
+  its determinant.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
   finite-dimensional kernel and cokernel has dimension one.
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
+  determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
+* `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
+  target acts on the determinant line by `c ^ ind f`.
+* `LinearMap.detLineCongr_neg_apply`: negation of source and target acts on the determinant line
+  by `(-1) ^ (dim (ker f) + dim (coker f))`.
 
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   AMS Colloquium Publications 52, 2012, Section A.2 (determinant line bundles).
+* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996) (charge conjugation).
+* J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
+  four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996 (charge conjugation).
 * D. Quillen, *Determinants of Cauchy–Riemann operators over a Riemann surface*,
   Funct. Anal. Appl. **19** (1985), 31–34.
 -/
@@ -131,6 +158,14 @@ theorem detLineCongr_trans (e : V ≃ₗ[R] W) (e' : W ≃ₗ[R] U) :
 theorem detLineCongr_symm (e : V ≃ₗ[R] W) : (detLineCongr e).symm = detLineCongr e.symm := by
   refine LinearEquiv.ext fun x ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
+  simp
+
+/-- An automorphism of a free module acts on its determinant line by multiplication by its
+determinant. -/
+theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x : detLine R V) :
+    detLineCongr e x = LinearMap.det (e : V →ₗ[R] V) • x := by
+  refine Subtype.ext ?_
+  rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
 
 end LinearEquiv
@@ -296,6 +331,61 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   refine LinearEquiv.ext fun z ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
+
+/-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
+determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
+`e₁` and `e₂` induce on the kernel and on the cokernel of `f`. -/
+theorem detLineCongr_apply_eq_det_smul (f : M →ₗ[R] N) [Module.Free R (ker f)]
+    [Module.Free R (N ⧸ range f)] {e₁ : M ≃ₗ[R] M} {e₂ : N ≃ₗ[R] N}
+    (h : f ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (z : f.detLine) :
+    f.detLineCongr e₁ e₂ h z =
+      (LinearEquiv.det
+          (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) *
+        (LinearEquiv.det (Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z := by
+  set k₂ := Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁.surjective h)
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    -- The dual factor is precomposed with the inverse of multiplication by `det k₂`.
+    have hφ : φ ∘ₗ (LinearEquiv.detLineCongr k₂).symm.toLinearMap =
+        ((LinearEquiv.det k₂)⁻¹ : Rˣ) • φ := by
+      refine LinearMap.ext fun y ↦ ?_
+      have hy : (LinearEquiv.detLineCongr k₂).symm y = ((LinearEquiv.det k₂)⁻¹ : Rˣ) • y := by
+        rw [LinearEquiv.symm_apply_eq, LinearEquiv.detLineCongr_apply_eq_det_smul,
+          ← LinearEquiv.coe_det, ← Units.smul_def, smul_inv_smul]
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy, LinearMap.smul_apply, Units.smul_def,
+        Units.smul_def, map_smul]
+    rw [detLineCongr_tmul, LinearEquiv.detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
+/-- Let `e₁` and `e₂` act on the source and target of `f` as multiplication by the same unit `c`.
+Transport along the commuting square they form multiplies the determinant line of `f` by
+`c ^ ind f`, where `ind f = dim (ker f) - dim (coker f)` is the index of `f`. -/
+theorem detLineCongr_apply_of_forall_eq_smul (f : M →ₗ[R] N) [Module.Free R (ker f)]
+    [Module.Free R (N ⧸ range f)] {e₁ : M ≃ₗ[R] M} {e₂ : N ≃ₗ[R] N}
+    (h : f ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (c : Rˣ) (he₁ : ∀ x, e₁ x = c • x)
+    (he₂ : ∀ y, e₂ y = c • y) (z : f.detLine) :
+    f.detLineCongr e₁ e₂ h z =
+      (c ^ ((finrank R (ker f) : ℤ) - finrank R (N ⧸ range f)) : Rˣ) • z := by
+  -- Both induced automorphisms are multiplication by `c`, so their determinants are powers of `c`.
+  rw [detLineCongr_apply_eq_det_smul,
+    LinearEquiv.det_eq_pow_of_forall_eq_smul _ c fun x ↦ Subtype.ext (by simp [he₁]),
+    LinearEquiv.det_eq_pow_of_forall_eq_smul _ c fun y ↦ ?_, zpow_sub, zpow_natCast, zpow_natCast]
+  obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
+  simp [he₂]
+
+/-- Negation of source and target multiplies the determinant line of `f` by
+`(-1) ^ (dim (ker f) + dim (coker f))`, the sign of the parity of the index of `f`. -/
+theorem detLineCongr_neg_apply (f : M →ₗ[R] N) [Module.Free R (ker f)]
+    [Module.Free R (N ⧸ range f)] (z : f.detLine) :
+    f.detLineCongr (LinearEquiv.neg R) (LinearEquiv.neg R) (by ext; simp) z =
+      (-1 : R) ^ (finrank R (ker f) + finrank R (N ⧸ range f)) • z := by
+  have h : ((-1 : Rˣ) ^ ((finrank R (ker f) : ℤ) - finrank R (N ⧸ range f))) =
+      (-1) ^ (finrank R (ker f) + finrank R (N ⧸ range f)) := by
+    rw [zpow_sub, zpow_natCast, zpow_natCast, ← inv_pow, inv_neg_one, ← pow_add]
+  rw [detLineCongr_apply_of_forall_eq_smul f _ (-1) (fun x ↦ by simp) (fun y ↦ by simp), h,
+    Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
 
 end CommRing
 
