@@ -52,6 +52,15 @@ theorem iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤
   simpa only [Function.comp_def, ContinuousLinearMap.inr_apply, Prod.mk_add_mk,
     add_zero, zero_add, iteratedFDeriv_comp_add_left] using h
 
+/-- An iterated derivative in the second variable is bounded by the total iterated derivative:
+`‖Dᵐ (y ↦ f (p, y)) x‖ ≤ ‖Dᵐ f (p, x)‖`. -/
+theorem norm_iteratedFDeriv_prod_right_le (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n)
+    (p : P) (x : E) :
+    ‖iteratedFDeriv 𝕜 m (fun y ↦ f (p, y)) x‖ ≤ ‖iteratedFDeriv 𝕜 m f (p, x)‖ := by
+  rw [iteratedFDeriv_prod_right hf m hm]
+  exact (iteratedFDeriv 𝕜 m f (p, x)).norm_compContinuous_linearIsometry_le
+    fun _ ↦ LinearIsometry.inr 𝕜 P E
+
 /-- The iterated derivatives in the second variable of a `C^n` function are jointly continuous
 in the parameter and the evaluation point, through order `n`. -/
 theorem continuous_iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n) :
