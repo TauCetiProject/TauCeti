@@ -30,7 +30,7 @@ for every non-integer `z`. Evaluating at `z = i y` turns cotangents into hyperbo
 
 ## Main results
 
-* `TauCeti.cot_ofReal_mul_I`: the cotangent at an imaginary argument;
+* `Complex.cot_mul_I`: the cotangent at an imaginary argument;
 * `TauCeti.hasSum_cotTerm_two_mul`: the odd-pole part of the cotangent expansion;
 * `TauCeti.hasSum_pi_div_two_mul_tanh`: the partial-fraction expansion of `tanh (π y / 2)`.
 -/
@@ -40,14 +40,13 @@ public section
 open Complex
 open scoped Real
 
-namespace TauCeti
-
 /-- The cotangent at an imaginary argument is a hyperbolic cotangent:
-`cot (x i) = -(cosh x / sinh x) i` for every real `x` (both sides vanish at `x = 0`). -/
-theorem cot_ofReal_mul_I (x : ℝ) : cot (x * I) = -((Real.cosh x / Real.sinh x : ℝ) : ℂ) * I := by
-  rw [cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, ← div_div, div_I, ← ofReal_cosh, ← ofReal_sinh,
-    ofReal_div]
+`cot (z i) = -(cosh z / sinh z) i` for every complex `z` (both sides vanish at `z = 0`). -/
+theorem Complex.cot_mul_I (z : ℂ) : cot (z * I) = -(cosh z / sinh z) * I := by
+  rw [cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, ← div_div, div_I]
   ring
+
+namespace TauCeti
 
 /-- Halving the argument of the cotangent term doubles the pole index:
 `cotTerm (z / 2) n = 2 cotTerm z (2 n + 1)`, both sides collecting the poles at `± (2 n + 2)`. -/
@@ -95,33 +94,26 @@ theorem hasSum_pi_div_two_mul_tanh (y : ℝ) :
       I * cotTerm (y * I) (2 * n) = ((2 * y / (y ^ 2 + (2 * n + 1) ^ 2) : ℝ) : ℂ) := by
     have hd : ((y : ℂ) ^ 2 + (2 * n + 1) ^ 2) ≠ 0 := by
       exact_mod_cast (by positivity : (0 : ℝ) < y ^ 2 + (2 * n + 1) ^ 2).ne'
-    have h₁ : (y : ℂ) * I - ((2 * n : ℕ) + 1) ≠ 0 := by
-      intro h0
-      simpa [hy] using congrArg Complex.im h0
-    have h₂ : (y : ℂ) * I + ((2 * n : ℕ) + 1) ≠ 0 := by
-      intro h0
-      simpa [hy] using congrArg Complex.im h0
-    rw [cotTerm]
-    push_cast at h₁ h₂ ⊢
-    rw [div_add_div _ _ h₁ h₂, mul_div_assoc', div_eq_div_iff (mul_ne_zero h₁ h₂) hd]
-    linear_combination (2 * y * (2 * n + 1) ^ 2) * I_sq
+    have hmul : (y * I + (2 * n + 1)) * (y * I - (2 * n + 1)) =
+        -((y : ℂ) ^ 2 + (2 * n + 1) ^ 2) := by
+      linear_combination (y : ℂ) ^ 2 * I_sq
+    rw [cotTerm_identity hz]
+    push_cast
+    rw [hmul]
+    field_simp
+    linear_combination -(y : ℂ) * I_sq
   simp only [hterm] at h
   rw [← Complex.hasSum_ofReal]
   convert h using 1
   -- At `z = i y` the cotangents become hyperbolic cotangents, `cot (i x) = -i coth x`, and
   -- `coth (2 u) - coth u / 2 = tanh u / 2` for `u = π y / 2`.
-  set u := π * y / 2 with hu
-  have e₁ : (π : ℂ) * (y * I) = ((2 * u : ℝ) : ℂ) * I := by rw [hu]; push_cast; ring
-  have e₂ : (π : ℂ) * (y * I / 2) = (u : ℂ) * I := by rw [hu]; push_cast; ring
-  have hs : Real.sinh u ≠ 0 := Real.sinh_ne_zero.mpr <| by
-    rw [hu]
-    exact div_ne_zero (mul_ne_zero Real.pi_ne_zero hy) two_ne_zero
-  have hc : Real.cosh u ≠ 0 := (Real.cosh_pos u).ne'
-  rw [e₁, e₂, cot_ofReal_mul_I, cot_ofReal_mul_I, Real.cosh_two_mul, Real.sinh_two_mul,
-    Real.tanh_eq_sinh_div_cosh]
-  have hs' : (Real.sinh u : ℂ) ≠ 0 := ofReal_ne_zero.mpr hs
-  have hc' : (Real.cosh u : ℂ) ≠ 0 := ofReal_ne_zero.mpr hc
-  push_cast at hs' hc' ⊢
+  have hs : sinh (π * y / 2 : ℂ) ≠ 0 := by
+    exact_mod_cast Real.sinh_ne_zero.mpr (show π * y / 2 ≠ 0 by positivity)
+  have hc : cosh (π * y / 2 : ℂ) ≠ 0 := by exact_mod_cast (Real.cosh_pos (π * y / 2)).ne'
+  rw [show (π : ℂ) * (y * I) = 2 * (π * y / 2) * I by ring,
+    show (π : ℂ) * (y * I / 2) = π * y / 2 * I by ring, cot_mul_I, cot_mul_I, cosh_two_mul,
+    sinh_two_mul]
+  push_cast [Real.tanh_eq_sinh_div_cosh]
   field_simp
   rw [I_sq]
   ring
