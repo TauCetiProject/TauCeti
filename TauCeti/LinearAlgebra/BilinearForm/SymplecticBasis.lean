@@ -42,8 +42,6 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
 * `LinearMap.BilinForm.IsAlt.nondegenerate_iff_ne_zero_of_finrank_eq_two`: on a two-dimensional
   space an alternating form is nondegenerate exactly when it is nonzero, since a single
   hyperbolic pair already spans the plane.
-* `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal`: a hyperbolic pair spans a complement
-  of its orthogonal complement.
 * `LinearMap.BilinForm.IsAlt.restrict_nondegenerate_orthogonal_span_pair`: a nondegenerate
   alternating form stays nondegenerate on the orthogonal complement of a hyperbolic pair.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair`: adjoining a
@@ -103,41 +101,6 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 variable {B : BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
 include hB hfe
-
-/-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
-theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have h1 := congrArg (B f) hst
-  have h2 := congrArg (B e) hst
-  simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
-    add_zero, zero_add, mul_neg, map_zero, neg_eq_zero] at h1 h2
-  exact ⟨h1, h2⟩
-
-/-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
-of the hyperbolic pair `e, f`. -/
-theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
-    u - B f u • e + B e u • f ∈ B.orthogonal (span R {e, f}) := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  simp [orthogonal, hfe, hef, hB.self_eq_zero]
-
-/-- The span of a hyperbolic pair `e, f` and its orthogonal complement are complementary: the
-span carries a nondegenerate form, so no nondegeneracy of the ambient form is needed. -/
-theorem IsAlt.isCompl_span_pair_orthogonal :
-    IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
-    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
-  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
-    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
-      simpa [orthogonal] using hv'
-    simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
-      add_zero, zero_add, mul_neg, neg_eq_zero] at he hf
-    simp [he, hf]
-  · refine mem_sup.2 ⟨B f u • e - B e u • f, sub_mem (smul_mem _ _ (subset_span (by simp)))
-      (smul_mem _ _ (subset_span (by simp))), u - B f u • e + B e u • f,
-      hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u, by abel⟩
 
 /-- The restriction of a nondegenerate alternating form to the orthogonal complement of the span
 of a hyperbolic pair is nondegenerate. -/
@@ -272,17 +235,7 @@ section HyperbolicPair
 variable {e f : V} (hfe : B f e = 1)
 include hfe
 
-omit hnd in
-/-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
-theorem IsAlt.finrank_orthogonal_span_pair_add_two :
-    finrank K (B.orthogonal (span K {e, f})) + 2 = finrank K V := by
-  have h := Submodule.finrank_add_eq_of_isCompl (hB.isCompl_span_pair_orthogonal hfe)
-  have hU : finrank K (span K {e, f}) = 2 := by
-    rw [← Matrix.range_cons_cons_empty e f ![], finrank_span_eq_card
-      (hB.linearIndependent_pair_of_apply_eq_one hfe), Fintype.card_fin]
-  omega
-
-omit hnd in
+omit hnd [FiniteDimensional K V] in
 /-- **Adjoining a hyperbolic pair to a symplectic basis of the orthogonal complement of its span
 gives a symplectic basis.** The new basis puts `e` and `f` in the positions `inl 0` and `inr 0`
 and shifts the given basis of the complement to the successor positions. -/
@@ -292,6 +245,11 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     ∃ b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V,
       (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧
         ⇑b = Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) := by
+  -- The ambient space is the sum of the plane spanned by `e, f` and its orthogonal complement.
+  have : FiniteDimensional K (span K {e, f}) := FiniteDimensional.span_of_finite K (Set.toFinite _)
+  have : FiniteDimensional K (B.orthogonal (span K {e, f})) := Module.Finite.of_basis c
+  have : FiniteDimensional K V :=
+    Module.Finite.equiv (Submodule.prodEquivOfIsCompl _ _ (hB.isCompl_span_pair_orthogonal hfe))
   have hecf : ∀ x, B e (c x) = 0 ∧ B f (c x) = 0 := fun x => by
     simpa [orthogonal] using (c x).2
   have hec : ∀ x, B e (c x) = 0 := fun x => (hecf x).1

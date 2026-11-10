@@ -75,6 +75,9 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-pairing splits off.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
+* `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
+  `LinearMap.BilinForm.IsAlt.finrank_orthogonal_span_pair_add_two`: a hyperbolic pair of an
+  alternating form spans a complement of its orthogonal complement, which has codimension two.
 * `LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal`: for a reflexive form, a
   restriction is nondegenerate exactly when the submodule meets its orthogonal complement in zero,
   in any dimension.
@@ -590,6 +593,50 @@ theorem IsRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons {B : LinearMap.
   rw [hcd]
   exact Fin.cases hx htu i
 
+section HyperbolicPair
+
+open Submodule
+
+variable {B : LinearMap.BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
+include hB hfe
+
+/-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
+theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
+  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  rw [LinearIndependent.pair_iff]
+  intro s t hst
+  have h1 := congrArg (B f) hst
+  have h2 := congrArg (B e) hst
+  simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
+    add_zero, zero_add, mul_neg, map_zero, neg_eq_zero] at h1 h2
+  exact ⟨h1, h2⟩
+
+/-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
+of the hyperbolic pair `e, f`. -/
+theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
+    u - B f u • e + B e u • f ∈ B.orthogonal (span R {e, f}) := by
+  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  simp [orthogonal, hfe, hef, hB.self_eq_zero]
+
+/-- The span of a hyperbolic pair `e, f` and its orthogonal complement are complementary: the
+span carries a nondegenerate form, so no nondegeneracy of the ambient form is needed. -/
+theorem IsAlt.isCompl_span_pair_orthogonal :
+    IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
+  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
+    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
+  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
+    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
+      simpa [orthogonal] using hv'
+    simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
+      add_zero, zero_add, mul_neg, neg_eq_zero] at he hf
+    simp [he, hf]
+  · refine mem_sup.2 ⟨B f u • e - B e u • f, sub_mem (smul_mem _ _ (subset_span (by simp)))
+      (smul_mem _ _ (subset_span (by simp))), u - B f u • e + B e u • f,
+      hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u, by abel⟩
+
+end HyperbolicPair
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
@@ -648,6 +695,15 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
   have horth := B.finrank_orthogonal hB W
   have hmono := Submodule.finrank_mono h
   have hle := Submodule.finrank_le W
+  omega
+
+/-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
+theorem IsAlt.finrank_orthogonal_span_pair_add_two (hB : B.IsAlt) {e f : V} (hfe : B f e = 1) :
+    finrank K (B.orthogonal (Submodule.span K {e, f})) + 2 = finrank K V := by
+  have h := Submodule.finrank_add_eq_of_isCompl (hB.isCompl_span_pair_orthogonal hfe)
+  have hU : finrank K (Submodule.span K {e, f}) = 2 := by
+    rw [← Matrix.range_cons_cons_empty e f ![], finrank_span_eq_card
+      (hB.linearIndependent_pair_of_apply_eq_one hfe), Fintype.card_fin]
   omega
 
 variable [Invertible (2 : K)]
