@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.FinFour.Cube
 public import TauCeti.RepresentationTheory.CharacterTable.Determined
 public import TauCeti.RepresentationTheory.Symmetric.Four.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
 import TauCeti.RepresentationTheory.FDRep.Basic
 import TauCeti.RepresentationTheory.Induction.Permutation
 
@@ -162,7 +163,7 @@ theorem char_cubeVertexRepresentation :
           ((standardRepresentation k (Fin 4)).prod
             (Representation.charTwist (signLinearCharacter k (Fin 4))
               (standardRepresentation k (Fin 4)))))).character := by
-  refine character_eq_of_symmetricGroupFourClassData_rep fun j ↦ ?_
+  refine symmetricGroupFourClassData.character_eq_of_rep fun j ↦ ?_
   simp only [Representation.char_prod, Representation.char_trivial,
     Representation.char_ofLinearCharacter, Representation.char_charTwist,
     coe_signLinearCharacter_symmetricGroupFourClassData_rep,
@@ -180,7 +181,7 @@ theorem char_cubeEdgeRepresentation :
             ((standardRepresentation k (Fin 4)).prod
               (Representation.charTwist (signLinearCharacter k (Fin 4))
                 (standardRepresentation k (Fin 4))))))).character := by
-  refine character_eq_of_symmetricGroupFourClassData_rep fun j ↦ ?_
+  refine symmetricGroupFourClassData.character_eq_of_rep fun j ↦ ?_
   simp only [Representation.char_prod, Representation.char_trivial,
     Representation.char_charTwist, coe_signLinearCharacter_symmetricGroupFourClassData_rep,
     char_standardRepresentation_symmetricGroupFourClassData_rep,
