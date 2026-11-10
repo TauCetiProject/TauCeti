@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 
 /-!
@@ -47,23 +48,6 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {X : Type*}
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- The three-term estimate
-`‖Aᵢ ∘ Bᵢ - A ∘ B‖ ≤ ‖Aᵢ - A‖ ‖Bᵢ - B‖ + ‖Aᵢ - A‖ ‖B‖ + ‖A‖ ‖Bᵢ - B‖`. -/
-private theorem enorm_clm_comp_sub_le (A' A : F →L[𝕜] G) (B' B : E →L[𝕜] F) :
-    ‖A'.comp B' - A.comp B‖ₑ ≤
-      ‖A' - A‖ₑ * ‖B' - B‖ₑ + ‖A' - A‖ₑ * ‖B‖ₑ + ‖A‖ₑ * ‖B' - B‖ₑ := by
-  have hsplit : A'.comp B' - A.comp B =
-      (A' - A).comp (B' - B) + (A' - A).comp B + A.comp (B' - B) := by
-    ext v
-    simp only [add_apply, sub_apply,
-      ContinuousLinearMap.coe_comp, Function.comp_apply, map_sub]
-    abel
-  rw [hsplit]
-  calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
-        (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
-    _ ≤ _ := by
-        gcongr <;> exact ContinuousLinearMap.opENorm_comp_le _ _
-
 /-- **`L¹` convergence of compositions.** If `Aᵢ → A` uniformly on `s`, with `‖A‖ ≤ C` on `s`, and
 `Bᵢ → B` in `L¹(s)` with `B` integrable on `s`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`. -/
 theorem tendsto_setLIntegral_enorm_clm_comp_sub {A' : ι → α → F →L[𝕜] G} {A : α → F →L[𝕜] G}
@@ -88,7 +72,8 @@ theorem tendsto_setLIntegral_enorm_clm_comp_sub {A' : ι → α → F →L[𝕜]
     ((hB' i).sub hBm).enorm
   calc ∫⁻ x in s, ‖(A' i x).comp (B' i x) - (A x).comp (B x)‖ₑ ∂μ
       ≤ ∫⁻ x in s, ((e i + C) * ‖B' i x - B x‖ₑ + e i * ‖B x‖ₑ) ∂μ := by
-        refine setLIntegral_mono' hs fun x hx => (enorm_clm_comp_sub_le _ _ _ _).trans ?_
+        refine setLIntegral_mono' hs fun x hx =>
+          (ContinuousLinearMap.enorm_comp_sub_comp_le _ _ _ _).trans ?_
         have hex : ‖A' i x - A x‖ₑ ≤ e i :=
           le_iSup₂ (f := fun x (_ : x ∈ s) => ‖A' i x - A x‖ₑ) x hx
         have hCx : ‖A x‖ₑ ≤ C := by
