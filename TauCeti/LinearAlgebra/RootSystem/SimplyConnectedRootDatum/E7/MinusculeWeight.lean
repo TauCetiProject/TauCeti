@@ -31,8 +31,7 @@ negative. The sign supplies the entries of the invariant alternating form of the
 carrier.
 
 Twice the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
-The table is exactly the set of weights with coordinates in `[-1, 1]` and quadratic value `3`
-under this form.
+The table is exactly the set of weights with quadratic value `3` under this form.
 
 ## Main declarations
 
@@ -40,8 +39,8 @@ under this form.
 * `TauCeti.DynkinType.e7TwiceInverse`: the integral twice-inverse Cartan matrix.
 * `TauCeti.DynkinType.cartanMatrix_E7_mul_e7TwiceInverse`: its product with the Cartan matrix
   is twice the identity.
-* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three`: weights
-  with coordinates in `[-1, 1]` and quadratic value `3` belong to the table.
+* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_quadratic_eq_three`: weights with
+  quadratic value `3` belong to the table.
 * `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
   the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
@@ -136,12 +135,26 @@ private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
   simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
   decide +kernel
 
-/-- An integral weight with simple-coroot coordinates in `[-1, 1]` and quadratic value `3`
-under twice the inverse Cartan matrix belongs to the minuscule table. -/
-theorem mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three (w : Fin 7 → ℤ)
-    (hw : ∀ i, -1 ≤ w i ∧ w i ≤ 1)
+private theorem quadratic_e7TwiceInverse_nonneg (v : Fin 7 → ℤ) :
+    0 ≤ ∑ i, (∑ j, e7TwiceInverse i j * v j) * v i := by
+  simp [e7TwiceInverse, Fin.sum_univ_seven]
+  nlinarith [sq_nonneg (2 * v 0 + 2 * v 1 + 3 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (3 * v 1 + 2 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (5 * v 2 + 4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (4 * v 3 + 3 * v 4 + 2 * v 5 + v 6),
+    sq_nonneg (3 * v 4 + 2 * v 5 + v 6), sq_nonneg (2 * v 5 + v 6), sq_nonneg (v 6)]
+
+/-- An integral weight with quadratic value `3` under twice the inverse Cartan matrix belongs to
+the minuscule table. -/
+theorem mem_range_e7MinusculeWeight_of_quadratic_eq_three (w : Fin 7 → ℤ)
     (hn : (∑ i, (∑ j, e7TwiceInverse i j * w j) * w i) = 3) :
     w ∈ Set.range e7MinusculeWeight := by
+  have hw (i : Fin 7) : -1 ≤ w i ∧ w i ≤ 1 := by
+    have h := quadratic_e7TwiceInverse_nonneg
+      (fun j ↦ 2 * w j - w i * (CartanMatrix.E 7 j i))
+    fin_cases i <;>
+      simp [CartanMatrix.E_seven_eq, e7TwiceInverse, Fin.sum_univ_seven] at h hn ⊢ <;>
+      constructor <;> nlinarith
   let v : Fin 7 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
   have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
     funext i
