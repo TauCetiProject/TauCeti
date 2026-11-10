@@ -133,6 +133,18 @@ lemma qExpansionOrderAtCusp_const (h : ℝ) (c : ℂ) : qExpansionOrderAtCusp h 
       rw [UpperHalfPlane.cuspFunction_const]
       exact hc)
 
+/-- At width `0` the cusp function is constant, so the cusp order is the junk value `0`. -/
+lemma qExpansionOrderAtCusp_zero_width : qExpansionOrderAtCusp 0 g = 0 := by
+  have hc : cuspFunction 0 g = cuspFunction 0 (fun _ : ℍ ↦ g (ofComplex 0)) := by
+    funext q
+    simp only [UpperHalfPlane.cuspFunction, Function.Periodic.cuspFunction, Function.comp_def,
+      Function.Periodic.invQParam]
+    simp
+  have hq : qExpansion 0 g = qExpansion 0 (fun _ : ℍ ↦ g (ofComplex 0)) := by
+    ext n
+    simp only [qExpansion_coeff, hc]
+  rw [qExpansionOrderAtCusp_def, hq, ← qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_const]
+
 /-- The constant-one function has cusp order zero. -/
 @[simp]
 lemma qExpansionOrderAtCusp_one (h : ℝ) : qExpansionOrderAtCusp h (1 : ℍ → ℂ) = 0 :=
@@ -311,10 +323,12 @@ lemma cuspFunction_eventually_ne_zero [ModularFormClass F Γ k] (hh : 0 < h)
 /-- The width rescaling for a modular form, with the periodicity, boundedness, and
 holomorphy supplied by the class machinery. -/
 lemma qExpansionOrderAtCusp_nat_mul_of_mem_strictPeriods [ModularFormClass F Γ k] {m : ℕ}
-    (hh : 0 < h) (hm : 0 < m) (hΓ : h ∈ Γ.strictPeriods) :
-    qExpansionOrderAtCusp (m * h) ⇑f = m * qExpansionOrderAtCusp h ⇑f :=
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) :
+    qExpansionOrderAtCusp (m * h) ⇑f = m * qExpansionOrderAtCusp h ⇑f := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp [qExpansionOrderAtCusp_zero_width]
   have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
-  qExpansionOrderAtCusp_nat_mul hh hm (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ)
+  exact qExpansionOrderAtCusp_nat_mul hh hm (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ)
     (ModularFormClass.bdd_at_infty f) (ModularFormClass.holo f)
 
 /-- For a nonzero modular form the cusp function does not vanish identically near `0`,
