@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
 public import TauCeti.AlgebraicTopology.Sphere.Zero
@@ -45,8 +46,8 @@ distinct and are the only two path components.
   `TauCeti.sphereEquator u` orthogonal to a nonzero vector `u` is the image of a generalized loop
   out of `I^k` that covers it off the base point and identifies only boundary points of the cube.
 * `TauCeti.zerothHomotopy_mk_neg_ne_of_finrank_eq_two` and
-  `TauCeti.zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two`: in dimension two, the circle minus
-  `p` and `-p` has exactly two path components, those of `x` and of `-x`.
+  `TauCeti.zerothHomotopy_mk_eq_or_eq_neg`: in dimension two, the circle minus `p` and `-p` has
+  exactly two path components, those of `x` and of `-x`.
 
 ## References
 
@@ -243,27 +244,52 @@ theorem zerothHomotopy_mk_neg_ne_of_finrank_eq_two {x : sphere (0 : E) 1}
   exact zerothHomotopy_mk_neg_ne (finrank_orthogonal_span_eq_one hE)
     (equatorHomotopyEquiv p ⟨x, hx⟩) (Quotient.sound hj)
 
-/-- **A punctured circle has no third arc.** On the unit circle of a two-dimensional real inner
-product space minus two antipodal points `p` and `-p`, every point lies in the path component of
-`x` or in that of `-x`. -/
-theorem zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two {x : sphere (0 : E) 1}
+omit hE in
+/-- **A punctured sphere has no third arc.** On the unit sphere of a real inner product space
+minus two antipodal points `p` and `-p`, every point lies in the path component of `x` or in that
+of `-x`. In dimension two these are the two distinct arcs of the circle
+(`TauCeti.zerothHomotopy_mk_neg_ne_of_finrank_eq_two`); in every other dimension the equator is
+connected and the path component of `x` is everything. -/
+theorem zerothHomotopy_mk_eq_or_eq_neg {x : sphere (0 : E) 1}
     (hx : x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)))
     (y : ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
     ZerothHomotopy.mk y = ZerothHomotopy.mk ⟨x, hx⟩ ∨
       ZerothHomotopy.mk y =
         ZerothHomotopy.mk ⟨-x, neg_mem_compl_singleton_inter_compl_singleton_neg hx⟩ := by
-  -- The retraction of `y` onto the equator, a zero-sphere, is that of `x` or its antipode.
-  have hy := (sphere_eq_pair_of_finrank_eq_one (finrank_orthogonal_span_eq_one hE)
-    (equatorHomotopyEquiv p ⟨x, hx⟩).2).subset (equatorHomotopyEquiv p y).2
   rw [← zerothHomotopy_mk_equatorHomotopyEquiv_symm p y]
-  rcases hy with hy | hy
-  · left
-    rw [Subtype.ext hy, zerothHomotopy_mk_equatorHomotopyEquiv_symm]
-  · right
-    rw [← zerothHomotopy_mk_equatorHomotopyEquiv_symm p
-        ⟨-x, neg_mem_compl_singleton_inter_compl_singleton_neg hx⟩,
-      equatorHomotopyEquiv_neg p hx, Subtype.ext ((Set.mem_singleton_iff.mp hy).trans
-        (coe_neg_sphere _).symm)]
+  by_cases hE : finrank ℝ (ℝ ∙ (p : E))ᗮ = 1
+  · -- The retraction of `y` onto the equator, a zero-sphere, is that of `x` or its antipode.
+    have hy := (sphere_eq_pair_of_finrank_eq_one hE
+      (equatorHomotopyEquiv p ⟨x, hx⟩).2).subset (equatorHomotopyEquiv p y).2
+    rcases hy with hy | hy
+    · left
+      rw [Subtype.ext hy, zerothHomotopy_mk_equatorHomotopyEquiv_symm]
+    · right
+      rw [← zerothHomotopy_mk_equatorHomotopyEquiv_symm p
+          ⟨-x, neg_mem_compl_singleton_inter_compl_singleton_neg hx⟩,
+        equatorHomotopyEquiv_neg p hx, Subtype.ext ((Set.mem_singleton_iff.mp hy).trans
+          (coe_neg_sphere _).symm)]
+  · -- Otherwise the equator is a connected sphere, so the retractions of `x` and `y` are joined.
+    left
+    have hrank : 1 < Module.rank ℝ (ℝ ∙ (p : E))ᗮ := by
+      by_contra hle
+      push Not at hle
+      have : Module.Finite ℝ (ℝ ∙ (p : E))ᗮ :=
+        Module.rank_lt_aleph0_iff.1 (hle.trans_lt Cardinal.one_lt_aleph0)
+      have hle1 : finrank ℝ (ℝ ∙ (p : E))ᗮ ≤ 1 := by
+        rw [← Module.finrank_eq_rank] at hle
+        exact_mod_cast hle
+      have h0 : finrank ℝ (ℝ ∙ (p : E))ᗮ = 0 := by omega
+      have := Module.finrank_zero_iff.1 h0
+      have hn := mem_sphere_zero_iff_norm.1 (equatorHomotopyEquiv p ⟨x, hx⟩).2
+      rw [Subsingleton.elim (equatorHomotopyEquiv p ⟨x, hx⟩ : (ℝ ∙ (p : E))ᗮ) 0] at hn
+      simp at hn
+    have : PathConnectedSpace (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :=
+      isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hrank 0 zero_le_one)
+    rw [← zerothHomotopy_mk_equatorHomotopyEquiv_symm p ⟨x, hx⟩]
+    exact ZerothHomotopy.sound
+      ((PathConnectedSpace.somePath (equatorHomotopyEquiv p y)
+        (equatorHomotopyEquiv p ⟨x, hx⟩)).map (equatorHomotopyEquiv p).symm.continuous)
 
 end Circle
 
