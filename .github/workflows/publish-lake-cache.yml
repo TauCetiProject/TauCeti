@@ -41,10 +41,8 @@ jobs:
   publish:
     # A NEW ephemeral runner for this job, separate from the candidate sandbox.
     # Direct labels request no privileged container, cache volume, git mirror or tool cache.
-    # Priority zero precedes compiler jobs; run-ID assignment prevents cross-run pickup.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    # Staging uses reserved disposable control guests; other publishers retain their cloud route.
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}
