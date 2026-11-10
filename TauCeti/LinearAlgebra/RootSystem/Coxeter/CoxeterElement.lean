@@ -15,16 +15,16 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 The Dynkin diagram of a base of a finite reduced crystallographic root system is a forest
 (`RootPairing.isAcyclic_graph_coxeterMatrixOfBase`), so the conjugacy of Coxeter elements on a
 forest (`CoxeterSystem.isConj_wordProd_of_perm`) applies to the Coxeter system
-`TauCeti.weylCoxeterSystem` of the Weyl group: any two products of the simple reflections of a set
-of simple roots, each taken once, are conjugate in the Weyl group. In particular all Coxeter
-elements of the Weyl group are conjugate, so their common order and their eigenvalues on the
-reflection representation depend only on the root system.
+`TauCeti.weylCoxeterSystem` of the Weyl group: for a base `b`, any two orderings of the same set of
+distinct simple reflections of `b` have conjugate products in the Weyl group. In particular all
+Coxeter elements of `b` are conjugate, so their common order and their eigenvalues on the
+reflection representation depend only on `b`.
 
 ## Main results
 
 * `RootPairing.isConj_wordProd_of_perm`: for a reduced root system, rearranging a product of
-  distinct simple reflections gives a conjugate element of the Weyl group; in particular all
-  Coxeter elements of the Weyl group are conjugate.
+  distinct simple reflections of a base `b` gives a conjugate element of the Weyl group; in
+  particular all Coxeter elements of `b` are conjugate.
 
 ## References
 
