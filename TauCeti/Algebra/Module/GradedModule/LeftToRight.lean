@@ -104,17 +104,14 @@ theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R
   rw [leftToRight_smul G H]
   rw [opAlgEquiv_op_op, G.quadraticTwist_apply_of_mem ha,
     H.quadraticTwist_apply_of_mem hx]
-  -- Without a scalar tower, the sign `((u : ℤˣ) : R)` still commutes with the `A`-action: for
-  -- `u = -1` both sides are negatives of `a • y`.
+  -- Without a scalar tower, the sign `((u : ℤˣ) : R)` still commutes with the `A`-action: on an
+  -- additive group an integer cast scalar is the integer multiple, which commutes with every
+  -- additive action.
   let _ := Module.addCommMonoidToAddCommGroup R (M := M)
   have hsign (u : ℤˣ) (y : M) : ((u : ℤ) : R) • (a • y) = a • (((u : ℤ) : R) • y) ∧
       (((u : ℤ) : R) • a) • y = ((u : ℤ) : R) • (a • y) := by
-    rcases Int.units_eq_one_or u with rfl | rfl
-    · simp
-    · simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one]
-      refine ⟨?_, ?_⟩
-      · rw [neg_one_smul R (a • y), neg_one_smul R y, smul_neg]
-      · rw [neg_one_smul R a, neg_smul, neg_one_smul R (a • y)]
+    simp only [Int.cast_smul_eq_zsmul R]
+    exact ⟨smul_comm _ _ _, smul_assoc _ _ _⟩
   rw [(hsign _ _).2, ← (hsign _ _).1, smul_smul]
   have hax : a • x ∈ H.piece (p + q) := SetLike.GradedSMul.smul_mem ha hx
   rw [map_smul, H.quadraticTwist_apply_of_mem hax]
