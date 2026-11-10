@@ -49,6 +49,11 @@ the position and the frequency.
 * `TauCeti.ClassicalSymbol.exists_sharp_sub_cutoffSymbol_principal_comp`: **the principal symbol
   of a composition**. For classical `a` and `b`, the symbol `a # b` differs from the cut-off
   composition `χ(ξ) (σ(a) ∘ σ(b))` of the principal symbols by a symbol of order `m' + m - 1`.
+* `TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left`,
+  `TauCeti.Symbol.coefficient_sharpTerm_eq_sum_right`: the coefficient of `sharpTerm a b k` only
+  depends on the coefficients of `a` and `b`, linearly, also for factors of different orders; and
+  `TauCeti.Symbol.const_sharpTerm_succ`, `TauCeti.Symbol.sharpTerm_const_succ`: the terms of
+  positive index of a formal composition with a constant symbol vanish.
 
 The spaces `W` and `U` are complete: `U` for the Bochner integral defining `a # b`, which is zero
 by convention otherwise, and `W` for the Fourier inversion of `b̂` that identifies the `t = 0`
@@ -159,6 +164,97 @@ theorem coefficient_sharpTerm (a : Symbol n W U m') (b : Symbol n V W m) (k : �
     push_cast
     field_simp
     ring
+
+/-! The coefficients of the terms depend only on, and linearly on, the coefficients of the
+factors. -/
+
+/-- The mixed derivatives of a symbol whose coefficient is a linear combination of coefficients of
+other symbols. -/
+private theorem mixedDeriv_coefficient_eq_sum {ι : Type*} (s : Finset ι) {μ : ι → ℝ} (c : ι → ℂ)
+    (a' : ∀ i, Symbol n V W (μ i)) {a : Symbol n V W m}
+    (h : a.coefficient = ∑ i ∈ s, c i • (a' i).coefficient) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β a.coefficient x ξ = ∑ i ∈ s, c i • mixedDeriv α β (a' i).coefficient x ξ := by
+  rw [h, mixedDeriv_sum (f := fun i ↦ c i • (a' i).coefficient)
+    fun i _ ↦ (a' i).contDiff_coefficient.const_smul (c i)]
+  exact sum_congr rfl fun i _ ↦ mixedDeriv_const_smul (a' i).contDiff_coefficient _ _ _ _ _
+
+/-- **Linearity in the first factor.** If the coefficient of `a` is the linear combination
+`∑ᵢ cᵢ a'ᵢ` of the coefficients of symbols `a'ᵢ`, of arbitrary orders, then the coefficient of
+`sharpTerm a b k` is `∑ᵢ cᵢ sharpTerm a'ᵢ b k`. -/
+theorem coefficient_sharpTerm_eq_sum_left {ι : Type*} (s : Finset ι) {μ : ι → ℝ} (c : ι → ℂ)
+    (a' : ∀ i, Symbol n W U (μ i)) {a : Symbol n W U m'}
+    (h : a.coefficient = ∑ i ∈ s, c i • (a' i).coefficient) (b : Symbol n V W m) (k : ℕ) :
+    (a.sharpTerm b k).coefficient = ∑ i ∈ s, c i • ((a' i).sharpTerm b k).coefficient := by
+  funext ⟨x, ξ⟩
+  rw [Finset.sum_apply]
+  simp only [Pi.smul_apply, coefficient_sharpTerm, mixedDeriv_coefficient_eq_sum s c a' h,
+    ContinuousLinearMap.finsetSum_comp, ContinuousLinearMap.smul_comp, smul_sum]
+  rw [sum_comm]
+  exact sum_congr rfl fun i _ ↦ sum_congr rfl fun w _ ↦ smul_comm _ (c i) _
+
+/-- **Linearity in the second factor.** If the coefficient of `b` is the linear combination
+`∑ᵢ cᵢ b'ᵢ` of the coefficients of symbols `b'ᵢ`, of arbitrary orders, then the coefficient of
+`sharpTerm a b k` is `∑ᵢ cᵢ sharpTerm a b'ᵢ k`. -/
+theorem coefficient_sharpTerm_eq_sum_right {ι : Type*} (s : Finset ι) {μ : ι → ℝ} (c : ι → ℂ)
+    (b' : ∀ i, Symbol n V W (μ i)) {b : Symbol n V W m}
+    (h : b.coefficient = ∑ i ∈ s, c i • (b' i).coefficient) (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b k).coefficient = ∑ i ∈ s, c i • (a.sharpTerm (b' i) k).coefficient := by
+  funext ⟨x, ξ⟩
+  rw [Finset.sum_apply]
+  simp only [Pi.smul_apply, coefficient_sharpTerm, mixedDeriv_coefficient_eq_sum s c b' h,
+    ContinuousLinearMap.comp_finsetSum, ContinuousLinearMap.comp_smul, smul_sum]
+  rw [sum_comm]
+  exact sum_congr rfl fun i _ ↦ sum_congr rfl fun w _ ↦ smul_comm _ (c i) _
+
+/-- **Additivity in the first factor**, for summands of arbitrary orders. -/
+theorem coefficient_sharpTerm_add_left {μ₁ μ₂ : ℝ} {a : Symbol n W U m'} {a₁ : Symbol n W U μ₁}
+    {a₂ : Symbol n W U μ₂} (h : a.coefficient = a₁.coefficient + a₂.coefficient)
+    (b : Symbol n V W m) (k : ℕ) :
+    (a.sharpTerm b k).coefficient =
+      (a₁.sharpTerm b k).coefficient + (a₂.sharpTerm b k).coefficient := by
+  funext ⟨x, ξ⟩
+  simp only [Pi.add_apply, coefficient_sharpTerm, h,
+    mixedDeriv_add a₁.contDiff_coefficient a₂.contDiff_coefficient,
+    ContinuousLinearMap.add_comp, sum_add_distrib, smul_add]
+
+/-- **Additivity in the second factor**, for summands of arbitrary orders. -/
+theorem coefficient_sharpTerm_add_right {μ₁ μ₂ : ℝ} {b : Symbol n V W m} {b₁ : Symbol n V W μ₁}
+    {b₂ : Symbol n V W μ₂} (h : b.coefficient = b₁.coefficient + b₂.coefficient)
+    (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b k).coefficient =
+      (a.sharpTerm b₁ k).coefficient + (a.sharpTerm b₂ k).coefficient := by
+  funext ⟨x, ξ⟩
+  simp only [Pi.add_apply, coefficient_sharpTerm, h,
+    mixedDeriv_add b₁.contDiff_coefficient b₂.contDiff_coefficient,
+    ContinuousLinearMap.comp_add, sum_add_distrib, smul_add]
+
+/-- The terms of positive index of the formal composition of a constant symbol with any symbol
+vanish, since they involve frequency derivatives of the constant. -/
+@[simp]
+theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) :
+    (const T).sharpTerm b (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_sharpTerm, coefficient_zero, Pi.zero_apply]
+  rw [sum_eq_zero fun w _ ↦ ?_, smul_zero]
+  have hw : List.ofFn w ≠ [] := by simp
+  simpa [funext (coefficient_const T)] using
+    congrArg (·.comp (mixedDeriv (List.ofFn w) [] b.coefficient x ξ))
+      (mixedDeriv_comp_fst (fun _ : CoordinateSpace n ↦ T) [] hw x ξ)
+
+/-- The terms of positive index of the formal composition of any symbol with a constant symbol
+vanish, since they involve position derivatives of the constant. -/
+@[simp]
+theorem sharpTerm_const_succ (a : Symbol n W U m') (T : V →L[ℂ] W) (k : ℕ) :
+    a.sharpTerm (const T) (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_sharpTerm, coefficient_zero, Pi.zero_apply]
+  rw [sum_eq_zero fun w _ ↦ ?_, smul_zero]
+  have hw : List.ofFn w ≠ [] := by simp
+  rw [funext (coefficient_const T), mixedDeriv_nil_comp_fst (fun _ : CoordinateSpace n ↦ T),
+    coordinateDeriv_const T hw, Pi.zero_apply, ContinuousLinearMap.comp_zero]
 
 /-- **Leibniz rule in the position** for the terms of the composition expansion. -/
 theorem spatialDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
