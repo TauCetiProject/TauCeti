@@ -24,11 +24,11 @@ closure of `K` contains every primitive root of unity found in an algebraic clos
 
 public section
 
-namespace TauCeti
+namespace IsPrimitiveRoot
 
 /-- A separably closed field `E` over a field `K` contains a primitive `n`-th root of unity as soon
 as some domain `M` over `K` does. -/
-theorem _root_.IsPrimitiveRoot.exists_isPrimitiveRoot_of_isSepClosed (K : Type*) {E M : Type*}
+theorem exists_isPrimitiveRoot_of_isSepClosed (K : Type*) {E M : Type*}
     [Field K] [Field E] [IsSepClosed E] [Algebra K E] [CommRing M] [IsDomain M] [Algebra K M]
     {n : ℕ} {ζ : M} (hζ : IsPrimitiveRoot ζ n) :
     ∃ ξ : E, IsPrimitiveRoot ξ n := by
@@ -41,4 +41,4 @@ theorem _root_.IsPrimitiveRoot.exists_isPrimitiveRoot_of_isSepClosed (K : Type*)
   have : NeZero (n : E) := .nat_of_injective (algebraMap K E).injective
   exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot E n
 
-end TauCeti
+end IsPrimitiveRoot
