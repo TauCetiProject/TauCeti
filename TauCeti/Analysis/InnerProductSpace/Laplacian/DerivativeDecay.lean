@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
