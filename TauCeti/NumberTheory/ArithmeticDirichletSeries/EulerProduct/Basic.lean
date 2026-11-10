@@ -541,19 +541,30 @@ theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q 
 
 /-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
 `p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
-theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ} (hp : p.Prime)
+theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ}
     {P Q : HeightOneSpectrum (𝓞 K)} (hP : Ideal.absNorm P.asIdeal = p)
     (hQ : Ideal.absNorm Q.asIdeal = p) (k : ℕ) :
     ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
       (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
+  have hp : 1 < p := hP ▸ NumberField.HeightOneSpectrum.one_lt_absNorm P
   rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
     (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
-      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
-    Nat.sum_divisors_prime_pow hp]
-  rw [Finset.sum_congr rfl fun i hi ↦ by
-    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.pos,
-      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
-  simp
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b)]
+  have hsub : (Finset.range (k + 1)).image (p ^ ·) ⊆ (p ^ k).divisors := fun d hd ↦ by
+    obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hd
+    exact Nat.mem_divisors.mpr ⟨pow_dvd_pow p (Finset.mem_range_succ_iff.mp hi),
+      (pow_pos (by omega) _).ne'⟩
+  rw [← Finset.sum_subset hsub fun d hd hnd ↦ ?_,
+    Finset.sum_image fun i _ j _ h ↦ Nat.pow_right_injective hp h]
+  · rw [Finset.sum_congr rfl fun i hi ↦ by
+      rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) (by omega),
+        localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
+    simp
+  · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ P, zero_mul]
+    rintro ⟨n, hn⟩
+    rw [hP] at hn
+    exact hnd (Finset.mem_image.mpr ⟨n, Finset.mem_range_succ_iff.mpr
+      ((Nat.pow_dvd_pow_iff_le_right hp).mp (hn ▸ Nat.dvd_of_mem_divisors hd)), hn⟩)
 
 end IdealArithmeticFunction
 
