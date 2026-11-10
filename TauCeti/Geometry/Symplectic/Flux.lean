@@ -411,18 +411,13 @@ theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2}
   rw [exactForms_succ]
   refine ⟨-⟨homotopyOperator (homotopyOperator τ.1), (IsSmoothForm.homotopyOperator
     (IsSmoothForm.homotopyOperator τ.isSmoothForm)).mem_smoothBundleForms⟩,
-    Subtype.ext (funext fun x ↦ ?_)⟩
-  -- The homotopy operator is additive on the continuous forms `Ψ^* σ - Φ^* σ` and `Φ^* σ`.
-  have hadd := homotopyOperator_add
-    ((SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ -
-      SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le
-        (by simp))
-    ((SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le
-        (by simp))
-  rw [Submodule.coe_sub, sub_add_cancel] at hadd
-  rw [map_neg, Submodule.coe_neg, Pi.neg_apply, mextDerivₗ_apply, Submodule.coe_sub,
-    Pi.sub_apply, coe_fluxForm, coe_fluxForm, hadd, Pi.add_apply, add_sub_cancel_right, key,
-    Pi.neg_apply]
+    Subtype.ext ?_⟩
+  -- The flux forms are `h (Ψ^* σ)` and `h (Φ^* σ)`, and `h` commutes with their difference.
+  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_sub, coe_fluxForm, coe_fluxForm,
+    ← homotopyOperator_sub
+      ((SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).isSmoothForm.of_le (by simp))
+      ((SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le (by simp)),
+    key]
 
 /-- **Homotopy invariance of the flux.** Diffeotopies whose motions are joined by a smooth homotopy
 fixing both time ends have the same flux with respect to every closed two-form preserved by their

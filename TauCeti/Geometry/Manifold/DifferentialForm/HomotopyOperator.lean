@@ -54,7 +54,8 @@ the unit tangent vector at every time.
 
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
-* `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_add`, `TauCeti.homotopyOperator_sub`: `h` is additive on continuous
+  forms.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
   a map `g` with invertible derivatives.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
@@ -398,6 +399,15 @@ theorem homotopyOperator_add [IsManifold I 1 M]
       (prod_mono (singleton_subset_iff.2 hxs) subset_rfl)
   rw [Pi.add_apply, key, key, key, mpullbackWithin_add]
   exact cylinderHomotopy_add_apply (hc hφ) (hc hψ)
+
+/-- The homotopy operator commutes with subtraction of continuous forms, on a `C¹` manifold
+possibly with boundary or corners. -/
+theorem homotopyOperator_sub [IsManifold I 1 M]
+    {φ ψ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) (hψ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 ψ) :
+    homotopyOperator (φ - ψ) = homotopyOperator φ - homotopyOperator ψ := by
+  rw [sub_eq_add_neg, homotopyOperator_add hφ hψ.neg, ← neg_one_smul ℝ ψ, homotopyOperator_smul,
+    neg_one_smul, sub_eq_add_neg]
 
 /-- **The cochain-homotopy identity** for the homotopy operator on the cylinder `M × [0, 1]`:
 for a `C¹` form `φ` with values in a Banach space on a `C²` manifold, possibly with boundary or
