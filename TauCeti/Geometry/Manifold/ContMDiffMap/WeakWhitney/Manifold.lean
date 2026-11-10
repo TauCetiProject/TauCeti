@@ -95,7 +95,7 @@ private theorem contDiffOn_chartJet_limit
     have hv' : H ⟨y, hy⟩ = h ((extChartAt I x).symm y) :=
       tendsto_nhds_unique hv (hpoint _)
     exact (Subtype.val_injective.extend_apply H (fun _ ↦ 0) ⟨y, hy⟩).trans hv'
-  refine ⟨(contDiffOn_extend U H (fun _ ↦ 0)).congr heq.symm, fun m hm z ↦ ?_⟩
+  refine ⟨(contMDiffOn_extend U H (fun _ ↦ 0)).contDiffOn.congr heq.symm, fun m hm z ↦ ?_⟩
   have hz : iteratedFDerivWithin 𝕜 m (Function.extend Subtype.val H (fun _ ↦ 0)) U z =
       g x ⟨m, hm⟩ z := by
     simpa only [openWeakWhitneyJet_apply, openIteratedFDerivContinuousMap_apply] using
