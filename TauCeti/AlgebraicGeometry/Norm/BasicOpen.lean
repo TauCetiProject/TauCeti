@@ -5,6 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.RingTheory.Norm.Projective
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
@@ -46,36 +47,34 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
   let := f.moduleFinite_app_of_isAffineOpen hU
   let := hproj
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  obtain ⟨p, rfl⟩ : x ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
-  have hxU : hU.fromSpec p ∈ U := hx
-  let : p.asIdeal.IsPrime := p.isPrime
-  have hmap (q : Spec Γ(Y, f ⁻¹ᵁ U)) :
-      f (hV.fromSpec q) = hU.fromSpec (PrimeSpectrum.comap (f.app U).hom q) := by
-    have h := congrArg (fun g ↦ g q) (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl)
-    simpa only [Scheme.Hom.comp_apply, Spec.map_apply, ← Scheme.Hom.app_eq_appLE] using h.symm
+  let p := hU.primeIdealOf ⟨x, hx⟩
   have hnorm := not_congr (Algebra.projectiveNorm_mem_iff (p := p.asIdeal) (x := s))
-  -- `erw` identifies the opens on `Spec` with their prime-spectrum model.
-  erw [← Scheme.Hom.mem_preimage, hU.fromSpec_preimage_basicOpen,
-    PrimeSpectrum.mem_basicOpen]
+  rw [hU.mem_basicOpen_iff_notMem_primeIdealOf hx]
   refine hnorm.trans ⟨?_, ?_⟩
   · intro h y hy
-    obtain ⟨q, rfl⟩ : y ∈ Set.range hV.fromSpec := by
-      rw [hV.range_fromSpec]
-      exact (Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hxU)
-    erw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen,
-      PrimeSpectrum.mem_basicOpen]
+    have hyU : y ∈ f ⁻¹ᵁ U := (Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hx)
+    rw [hV.mem_basicOpen_iff_notMem_primeIdealOf hyU]
     intro hs
     apply h
-    -- The norm criterion asks for a prime above `p` containing `s`.
-    refine ⟨q.asIdeal, ⟨q.isPrime, ⟨?_⟩⟩, hs⟩
-    rw [hmap] at hy
-    exact (congrArg PrimeSpectrum.asIdeal (hU.fromSpec.isOpenEmbedding.injective hy)).symm
+    refine ⟨(hV.primeIdealOf ⟨y, hyU⟩).asIdeal, ⟨inferInstance, ⟨?_⟩⟩, hs⟩
+    have hcomap := IsAffineOpen.comap_primeIdealOf_appLE U hU (f ⁻¹ᵁ U) hV le_rfl hyU
+    have hcomap' : (hV.primeIdealOf ⟨y, hyU⟩).comap (f.app U).hom = p := by
+      convert! hcomap using 1
+      · rw [Scheme.Hom.app_eq_appLE]
+      · exact congrArg hU.primeIdealOf (Subtype.ext hy.symm)
+    exact (congrArg PrimeSpectrum.asIdeal hcomap').symm
   · intro h
     rintro ⟨q, ⟨hq, hqp⟩, hs⟩
     let q' : Spec Γ(Y, f ⁻¹ᵁ U) := ⟨q, hq⟩
     have hqp' : PrimeSpectrum.comap (f.app U).hom q' = p :=
       PrimeSpectrum.ext hqp.over.symm
-    have hmem := h (hV.fromSpec q') (by rw [hmap, hqp'])
+    have hmap : f (hV.fromSpec q') = x := by
+      have hm := congrArg (fun g ↦ g q')
+        (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl)
+      simpa only [Scheme.Hom.comp_apply, Spec.map_apply, ← Scheme.Hom.app_eq_appLE,
+        hqp', p, hU.fromSpec_primeIdealOf] using hm.symm
+    have hmem := h (hV.fromSpec q') hmap
+    -- `erw` crosses the semireducible identification of scheme opens with spectrum opens.
     erw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen,
       PrimeSpectrum.mem_basicOpen] at hmem
     exact hmem hs
