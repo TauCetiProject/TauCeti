@@ -65,6 +65,31 @@ namespace SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+section NotCompleteSpace
+
+variable {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℂ F₂] [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
+
+/-- Into a space which is not complete, the convolution of Schwartz functions is `0`, as the
+inverse Fourier transform defining it is. -/
+theorem convolution_eq_zero_of_not_completeSpace_target (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃)
+    (hF₃ : ¬CompleteSpace F₃) (f : 𝓢(E, F₁)) (g : 𝓢(E, F₂)) : convolution B f g = 0 := by
+  simp [convolution, fourierInv_eq_zero_of_not_completeSpace hF₃]
+
+/-- If the first factor takes values in a space which is not complete, the convolution of Schwartz
+functions is `0`, as the Fourier transform of that factor is. -/
+theorem convolution_eq_zero_of_not_completeSpace_left (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃)
+    (hF₁ : ¬CompleteSpace F₁) (f : 𝓢(E, F₁)) (g : 𝓢(E, F₂)) : convolution B f g = 0 := by
+  simp [convolution, fourier_eq_zero_of_not_completeSpace hF₁]
+
+/-- If the second factor takes values in a space which is not complete, the convolution of
+Schwartz functions is `0`, as the Fourier transform of that factor is. -/
+theorem convolution_eq_zero_of_not_completeSpace_right (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃)
+    (hF₂ : ¬CompleteSpace F₂) (f : 𝓢(E, F₁)) (g : 𝓢(E, F₂)) : convolution B f g = 0 := by
+  simp [convolution, fourier_eq_zero_of_not_completeSpace hF₂]
+
+end NotCompleteSpace
+
 /-- On Schwartz functions, the multiplier with a Schwartz symbol `σ` is convolution with the
 Schwartz function `𝓕⁻ σ`. -/
 theorem fourierMultiplierCLM_eq_convolution (σ : 𝓢(E, ℂ)) :
@@ -77,7 +102,8 @@ theorem fourierMultiplierCLM_eq_convolution (σ : 𝓢(E, ℂ)) :
     congr 1
     ext ξ
     simp [smulLeftCLM_apply_apply σ.hasTemperateGrowth]
-  · simp [fourierMultiplierCLM_apply, convolution, fourier_eq_zero_of_not_completeSpace hF]
+  · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF,
+      convolution_eq_zero_of_not_completeSpace_target _ hF]
 
 /-- The multiplier with a Schwartz symbol `σ` on Schwartz functions, as an integral against the
 kernel `𝓕⁻ σ`: `T_σ φ x = ∫ 𝓕⁻ σ (x - y) • φ y`. -/
@@ -129,9 +155,9 @@ theorem fourierInv_convolution_apply [CompleteSpace F₃] (B : F₁ →L[ℂ] F�
       rw [fourierInv_coe, fourierInv_coe, fourierInv_coe, hconv, Real.fourierInv_eq_fourier_neg,
         Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg,
         Real.fourier_bilin_convolution_eq B f.integrable g.integrable]
-    · simp [convolution, fourier_eq_zero_of_not_completeSpace hF₂,
+    · simp [convolution_eq_zero_of_not_completeSpace_right _ hF₂,
         fourierInv_eq_zero_of_not_completeSpace hF₂]
-  · simp [convolution, fourier_eq_zero_of_not_completeSpace hF₁,
+  · simp [convolution_eq_zero_of_not_completeSpace_left _ hF₁,
       fourierInv_eq_zero_of_not_completeSpace hF₁]
 
 /-- The inverse Fourier transform of a convolution of Schwartz functions is the pairing of their
@@ -154,8 +180,8 @@ theorem fourier_pairing [CompleteSpace F₁] [CompleteSpace F₂] (B : F₁ →L
       _ = 𝓕 (𝓕⁻ (convolution B (𝓕 f) (𝓕 g))) := by rw [fourierInv_convolution]
       _ = convolution B (𝓕 f) (𝓕 g) := fourier_fourierInv_eq _
   · ext ξ
-    simp [convolution, fourier_eq_zero_of_not_completeSpace hF,
-      fourierInv_eq_zero_of_not_completeSpace hF]
+    simp [convolution_eq_zero_of_not_completeSpace_target _ hF,
+      fourier_eq_zero_of_not_completeSpace hF]
 
 /-- The Fourier transform of a pointwise product of Schwartz functions, as an integral:
 `𝓕 (B (f ·) (g ·)) ξ = ∫ t, B (𝓕 f t) (𝓕 g (ξ - t))`. -/
