@@ -18,8 +18,8 @@ This file proves this by repeated integration by parts in the frequency.
 
 Multiplying the input by the displacement `⟪x - y, v⟫` and evaluating `Op(a)` at `x` amounts to
 replacing the symbol by `i ∂_{ξ, v} a`, a symbol of one order lower
-(`TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub`, a rearrangement of the integration by parts
-`TauCeti.inner_smul_quantizeSchwartzValue`). Summing over the coordinates, multiplying
+(`TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub` in
+`TauCeti.Analysis.Pseudodifferential.Quantization`). Summing over the coordinates, multiplying
 by `‖x - y‖ ^ (2N)` replaces `a` by `(-Δ_ξ)^N a`
 (`TauCeti.Symbol.quantizeSchwartzValue_smulLeftCLM_norm_sub_pow`). Once `m - 2N < -n`, the symbol
 `Δ_ξ^N a` has an absolutely convergent kernel, so for an input `u` vanishing near `x`,
@@ -34,10 +34,6 @@ convergent kernel itself.
 
 ## Main results
 
-* `TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub`:
-  `Op(a) (⟪x - ·, v⟫ u) (x) = i Op(∂_{ξ, v} a) u (x)`.
-* `TauCeti.Symbol.quantizeSchwartzValue_smulLeftCLM_norm_sub_pow`:
-  `Op(a) (‖x - ·‖^(2N) u) (x) = (-1)^N Op(Δ_ξ^N a) u (x)`.
 * `TauCeti.Symbol.offDiagonalKernel_eq`: the off-diagonal kernel is
   `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` for every `N` with `m - 2N < -n`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
@@ -62,118 +58,12 @@ noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-! ### Integration by parts in the frequency -/
-
-/-- **Multiplication by the displacement.** If `ξ ↦ a(x, ξ)` is `C¹`, and it and its frequency
-derivative `∂_{ξ, v} a` in the direction `v` have growth bounds at `x`, then multiplying the input
-by `⟪x - y, v⟫` and evaluating the quantization at `x` replaces `a` by `i ∂_{ξ, v} a`:
-`Op(a) (⟪x - ·, v⟫ u) (x) = i Op(∂_{ξ, v} a) u (x)`. In terms of `D = -i ∂`, the coefficient
-becomes `-D_{ξ, v} a`, as for the kernel in `TauCeti.inner_smul_quantizationKernel`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_inner_sub {a : E × E → V →L[ℂ] W} {x : E}
-    {C C' m m' : ℝ} (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ))
-    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (v : E)
-    (hC' : ∀ ξ, ‖fderiv ℝ (fun η ↦ a (x, η)) ξ v‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
-    (u : 𝓢(E, V)) :
-    quantizeSchwartzValue a (SchwartzMap.smulLeftCLM V (fun y ↦ ⟪x - y, v⟫) u) x =
-      Complex.I • quantizeSchwartzValue (fun p ↦ fderiv ℝ (fun η ↦ a (p.1, η)) p.2 v) u x := by
-  -- `⟪x - y, v⟫ u + ⟪y, v⟫ u = ⟪x, v⟫ u`, so this is `inner_smul_quantizeSchwartzValue`.
-  have hu : SchwartzMap.smulLeftCLM V (fun y ↦ ⟪x - y, v⟫) u +
-      SchwartzMap.smulLeftCLM V (⟪·, v⟫) u = (⟪x, v⟫ : ℂ) • u := by
-    have h : (fun y ↦ ⟪x - y, v⟫) + (⟪·, v⟫) = fun _ ↦ ⟪x, v⟫ := by
-      funext y
-      simp [inner_sub_left]
-    rw [← add_apply, ← SchwartzMap.smulLeftCLM_add (by fun_prop) (by fun_prop), h,
-      SchwartzMap.smulLeftCLM_const, smul_apply, ContinuousLinearMap.id_apply, Complex.coe_smul]
-  have h := quantizeSchwartzValue_add_right ha.continuous.aestronglyMeasurable hC
-    (SchwartzMap.smulLeftCLM V (fun y ↦ ⟪x - y, v⟫) u) (SchwartzMap.smulLeftCLM V (⟪·, v⟫) u)
-  rw [hu, quantizeSchwartzValue_smul_right, Complex.coe_smul,
-    inner_smul_quantizeSchwartzValue ha hC v hC' u, add_comm] at h
-  exact (add_right_cancel h).symm
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W]
 
 namespace Symbol
 
-/-! ### Symbols -/
-
 variable {n : ℕ} {m : ℝ}
-
-private lemma hasTemperateGrowth_coord_sub (x : CoordinateSpace n) (j : Fin n) :
-    (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth :=
-  (EuclideanSpace.proj j).hasTemperateGrowth.comp (by fun_prop : (x - ·).HasTemperateGrowth)
-
-/-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
-`(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_coord_sub (a : Symbol n V W m) (j : Fin n)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (fun y ↦ (x - y) j) u) x =
-      Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient u x := by
-  -- `(x - y)_j u + y_j u = x_j u`, so this is `ofLp_smul_quantizeSchwartzValue`.
-  have hg : (fun y : CoordinateSpace n ↦ y j).HasTemperateGrowth :=
-    (EuclideanSpace.proj j).hasTemperateGrowth
-  have hu : SchwartzMap.smulLeftCLM V (fun y ↦ (x - y) j) u +
-      SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u = (x j : ℂ) • u := by
-    have h : (fun y : CoordinateSpace n ↦ (x - y) j) + (fun y ↦ y j) = fun _ ↦ x j := by
-      funext y
-      simp
-    rw [← add_apply, ← SchwartzMap.smulLeftCLM_add (hasTemperateGrowth_coord_sub x j) hg, h,
-      SchwartzMap.smulLeftCLM_const, smul_apply, ContinuousLinearMap.id_apply, Complex.coe_smul]
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  have h := quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable
-    hC (SchwartzMap.smulLeftCLM V (fun y ↦ (x - y) j) u)
-    (SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u)
-  rw [hu, quantizeSchwartzValue_smul_right, Complex.coe_smul, ofLp_smul_quantizeSchwartzValue,
-    add_comm] at h
-  exact (add_right_cancel h).symm
-
-/-- **Multiplication by the squared distance.** Multiplying the input by `‖x - y‖²` and
-evaluating the quantization at `x` replaces the symbol by `-Δ_ξ a`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_norm_sub_sq (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ 2) u) x =
-      -quantizeSchwartzValue (frequencyLaplacian a).coefficient u x := by
-  have hsq : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2) =
-      fun y ↦ ∑ j, ((fun y : CoordinateSpace n ↦ (x - y) j) * fun y ↦ (x - y) j) y := by
-    funext y
-    rw [EuclideanSpace.real_norm_sq_eq]
-    simp [sq]
-  have htg := hasTemperateGrowth_coord_sub x
-  rw [hsq, SchwartzMap.smulLeftCLM_sum fun j _ ↦ (htg j).mul (htg j), sum_apply,
-    quantizeSchwartzValue_sum_right, frequencyLaplacian_eq_sum, quantizeSchwartzValue_sum_left,
-    ← Finset.sum_neg_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [← SchwartzMap.smulLeftCLM_smulLeftCLM_apply (htg j) (htg j),
-    quantizeSchwartzValue_smulLeftCLM_coord_sub,
-    quantizeSchwartzValue_smulLeftCLM_coord_sub, coefficient_inclusion, smul_smul,
-    Complex.I_mul_I, neg_one_smul]
-
-/-- **Multiplication by a power of the squared distance.** Multiplying the input by
-`‖x - y‖ ^ (2N)` and evaluating the quantization at `x` replaces the symbol by `(-Δ_ξ)^N a`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_norm_sub_pow (N : ℕ) (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient
-        (SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ (2 * N)) u) x =
-      (-1 : ℝ) ^ N • quantizeSchwartzValue (frequencyLaplacianPow N a).coefficient u x := by
-  induction N generalizing m with
-  | zero =>
-    simp
-  | succ N ih =>
-    have h : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ (2 * (N + 1))) =
-        (fun y ↦ ‖x - y‖ ^ 2) * fun y ↦ ‖x - y‖ ^ (2 * N) := by
-      funext y
-      simp only [Pi.mul_apply]
-      ring
-    have hc : quantizeSchwartzValue (frequencyLaplacianPow (N + 1) a).coefficient u x =
-        quantizeSchwartzValue (frequencyLaplacianPow N (frequencyLaplacian a)).coefficient u x :=
-      by rw [coefficient_frequencyLaplacianPow_succ]
-    have h2 : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2).HasTemperateGrowth := by
-      simpa using Function.hasTemperateGrowth_norm_sub_pow x 1
-    rw [h, ← SchwartzMap.smulLeftCLM_smulLeftCLM_apply h2
-        (Function.hasTemperateGrowth_norm_sub_pow x N),
-      quantizeSchwartzValue_smulLeftCLM_norm_sub_sq, ih, hc, pow_succ, mul_smul, neg_one_smul,
-      smul_neg]
 
 private lemma sub_two_mul_floor_lt (m : ℝ) (n : ℕ) :
     m - 2 * ((⌊(m + n) / 2⌋₊ + 1 : ℕ) : ℝ) < -n := by
@@ -210,7 +100,7 @@ theorem offDiagonalKernel_eq (a : Symbol n V W m) {N : ℕ} (hN : m - 2 * N < -n
     rw [quantizationKernel_frequencyLaplacianPow_add a hN k, smul_smul]
     congr 1
     have h1 : ((-1 : ℝ)) ^ (N + k) * (-1) ^ k = (-1) ^ N := by
-      rw [pow_add, mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, mul_one]
+      simp [pow_add, mul_assoc, ← mul_pow]
     rw [neg_pow, ← h1]
     field_simp
     ring
