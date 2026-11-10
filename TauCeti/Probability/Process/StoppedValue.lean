@@ -30,7 +30,7 @@ preimage decomposition `MeasureTheory.stoppedValue_preimage_eq`. This file prove
 These are the measurability facts needed to state the strong Markov property of a chain with values
 in an arbitrary measurable space.
 
-Even for uncountable time, an everywhere finite stopping time with countable range permits
+Even for uncountable time, a stopping time with countable range permits
 strongly measurable gluing, without any topology on time or separability assumption on the
 values. Capping such a time at each deterministic horizon shows that a strongly adapted
 process remains strongly adapted after stopping, including on a raw filtration.
@@ -114,51 +114,68 @@ theorem Adapted.measurable_stoppedValue (hu : Adapted f u) (hτ : IsStoppingTime
 
 end CountableTime
 
-/-- An adapted process evaluated at an everywhere finite, countable-range stopping time is
-strongly measurable for the stopping sigma algebra. Neither path regularity nor a topology on
-time is required. The countability assumption is on the range of the time, not on all times. -/
+/-- An adapted process evaluated at a countable-range stopping time is strongly measurable for the
+stopping sigma algebra. Neither path regularity nor a topology on time is required, and the time
+may take the value `⊤`, where the stopped value is the process at the junk index
+`(⊤ : WithTop ι).untopA`. The countability assumption is on the range of the time, not on all
+times. -/
 theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
     {E : Type*} [TopologicalSpace E] [Zero E] [LinearOrder ι]
     {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
-    (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) (hfin : ∀ ω, τ ω ≠ ⊤) :
+    (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) :
     StronglyMeasurable[hτ.measurableSpace] (stoppedValue X τ) := by
   classical
+  have := hc.to_subtype
   let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
   have hR : R.Countable := hc.preimage WithTop.coe_injective
-  have := hR.to_subtype
-  let s : R → Set Ω := fun i ↦ {ω | τ ω = i.val}
-  have heq (ω : Ω) : ((τ ω).untopA : WithTop ι) = τ ω := by
-    simp [WithTop.untopA_eq_untop, hfin ω]
+  let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
   have hs : IndexedPartition s := IndexedPartition.mk' s
-    (fun i j hij ↦ Set.disjoint_left.2 fun ω hi hj ↦
-      hij (Subtype.ext (WithTop.coe_injective (hi.symm.trans hj))))
-    (fun i ↦ by obtain ⟨ω, hω⟩ := i.property; exact ⟨ω, hω⟩)
-    (fun ω ↦ ⟨⟨(τ ω).untopA, ⟨ω, (heq ω).symm⟩⟩, (heq ω).symm⟩)
-  have hslice (i : R) : MeasurableSet[ℱ i.val] (s i) :=
-    hτ.measurableSet_eq_of_countable_range hc i.val
-  have hind (i : R) : StronglyMeasurable[hτ.measurableSpace] ((s i).indicator (X i.val)) := by
-    refine StronglyMeasurable.stronglyMeasurable_of_measurableSpace_le_on (hslice i)
-      (fun t ht ↦ ?_) ((hX i.val).indicator (hslice i)) (fun ω hω ↦ Set.indicator_of_notMem hω _)
-    rw [Set.inter_comm, hτ.measurableSet_inter_eq_iff, Set.inter_comm]
-    exact ht
-  have hm (i : R) : MeasurableSet[hτ.measurableSpace] (s i) :=
-    hτ.measurableSet_eq_of_countable_range' hc i.val
+    (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
+      hvw (Subtype.ext (hv.symm.trans hw)))
+    (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
+    (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
+  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} := by
+    have : {ω | τ ω = ⊤} = (⋃ i ∈ R, {ω | τ ω = i})ᶜ := by
+      ext ω
+      cases h : τ ω with
+      | top => simp [h]
+      | coe i =>
+        simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
+    rw [this]
+    exact (MeasurableSet.biUnion hR fun i _ ↦ hτ.measurableSet_eq_of_countable_range' hc i).compl
+  have hind (v : Set.range τ) :
+      StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
+    obtain ⟨v, hv⟩ := v
+    induction v using WithTop.recTopCoe with
+    | top =>
+      refine StronglyMeasurable.stronglyMeasurable_of_measurableSpace_le_on
+        (m := ⨆ i, ℱ i) (hτ.measurableSpace_le' _ htop) (fun t ht ↦ ⟨ht, fun i ↦ ?_⟩)
+        (((hX _).mono (le_iSup ℱ _)).indicator (hτ.measurableSpace_le' _ htop))
+        (fun ω hω ↦ Set.indicator_of_notMem hω _)
+      have : {ω | τ ω = ⊤} ∩ t ∩ {ω | τ ω ≤ i} = ∅ := by
+        ext ω
+        simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+        rintro ⟨⟨h, -⟩, h'⟩
+        simp [h] at h'
+      rw [this]
+      exact @MeasurableSet.empty _ (ℱ i)
+    | coe i =>
+      have hslice : MeasurableSet[ℱ i] (s ⟨i, hv⟩) := hτ.measurableSet_eq_of_countable_range hc i
+      refine StronglyMeasurable.stronglyMeasurable_of_measurableSpace_le_on hslice
+        (fun t ht ↦ ?_) ((hX i).indicator hslice) (fun ω hω ↦ Set.indicator_of_notMem hω _)
+      rw [Set.inter_comm, hτ.measurableSet_inter_eq_iff, Set.inter_comm]
+      exact ht
+  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) := by
+    obtain ⟨v, hv⟩ := v
+    induction v using WithTop.recTopCoe with
+    | top => exact htop
+    | coe i => exact hτ.measurableSet_eq_of_countable_range' hc i
   let : MeasurableSpace Ω := hτ.measurableSpace
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
   rw [IndexedPartition.piecewise_apply, Set.indicator_of_mem (hs.mem_index ω)]
-  exact stoppedValue_of_eq (hs.mem_index ω)
-
-/-- An adapted process evaluated at a bounded, countable-range stopping time is strongly
-measurable for the stopping sigma algebra, without any path regularity assumption. -/
-theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
-    {E : Type*} [TopologicalSpace E] [Zero E] [LinearOrder ι]
-    {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
-    (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) {T : ι}
-    (hb : ∀ ω, τ ω ≤ T) :
-    StronglyMeasurable[hτ.measurableSpace] (stoppedValue X τ) :=
-  hX.stronglyMeasurable_stoppedValue_of_countable_range hτ hc
-    (fun ω ↦ ne_top_of_le_ne_top WithTop.coe_ne_top (hb ω))
+  simp only [stoppedValue]
+  rw [(hs.mem_index ω : τ ω = _)]
 
 /-- Stopping a strongly adapted process at a countable-range stopping time preserves literal
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
@@ -171,8 +188,8 @@ theorem StronglyAdapted.stoppedProcess_of_countable_range
   rw [stoppedProcess_eq_stoppedValue]
   intro t
   have hct := ((Set.countable_singleton (t : WithTop ι)).mono Set.range_const_subset).range_min hc
-  exact (hX.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
-    ((isStoppingTime_const ℱ t).min hτ) hct (fun _ ↦ min_le_left _ _)).mono
+  exact (hX.stronglyMeasurable_stoppedValue_of_countable_range
+    ((isStoppingTime_const ℱ t).min hτ) hct).mono
       (((isStoppingTime_const ℱ t).min hτ).measurableSpace_le_of_le_const
         (fun _ ↦ min_le_left _ _))
 
