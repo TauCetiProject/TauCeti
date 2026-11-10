@@ -69,6 +69,7 @@ theorem IsAperiodic.eventually_pos_parallelComp_pow_apply_singleton
   rw [parallelComp_pow_apply_singleton]
   exact ENNReal.mul_pos_iff.mpr ⟨hn, hm⟩
 
+omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- The independent product of two irreducible aperiodic kernels is irreducible with respect
 to counting measure. -/
 theorem IsAperiodic.isIrreducible_parallelComp

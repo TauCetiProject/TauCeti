@@ -132,14 +132,11 @@ theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : S
 
 /-- A kernel is irreducible with respect to the counting measure if and only if every state
 reaches every state. -/
-theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
+theorem isIrreducible_count_iff_forall_reaches :
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Reaches x y := by
   constructor
   · intro h x y
-    have hpos : Measure.count {y} > 0 := by
-      rw [Measure.count_singleton y]
-      exact one_pos
-    exact h.irreducible (measurableSet_singleton y) hpos x
+    exact exists_pos_pow_apply_singleton x y
   · intro h
     refine ⟨?_⟩
     intro s hs hA x
@@ -150,7 +147,7 @@ theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
 
 /-- A kernel is irreducible with respect to the counting measure if and only if every pair of
 states communicates. -/
-theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S] :
+theorem isIrreducible_count_iff_forall_communicates :
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Communicates x y := by
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
