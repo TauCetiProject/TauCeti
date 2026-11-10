@@ -22,6 +22,8 @@ A nonempty compact subset of an open interval lies in the interior of a smaller 
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
+A continuous function on a half-infinite interval, above `v`, tending to `v` at infinity and to `+∞`
+at the finite endpoint, has image `Ioi v`.
 The image of a half-infinite real interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
@@ -48,6 +50,9 @@ A path that starts in an open set and leaves it has a first exit time.
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
+* `ContinuousOn.image_Ioi_eq_Ioi_of_tendsto`, `ContinuousOn.image_Iio_eq_Ioi_of_tendsto` — a
+  continuous function on a half-infinite interval that stays above `v`, tends to `v` at infinity
+  and to `+∞` at the finite endpoint has image `Ioi v`.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
@@ -261,5 +266,27 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     (hsv.trans htv.symm)
   have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
   exact hvm (hsv.symm.trans (congrArg f hsm))
+
+/-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Ioi_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMaxOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Ioi p)) (hpos : ∀ x ∈ Ioi p, v < d x)
+    (htop : Tendsto d atTop (𝓝 v)) (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi v :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
+
+/-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMinOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
+    (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
+  ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
 
 end TauCeti
