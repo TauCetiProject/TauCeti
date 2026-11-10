@@ -27,6 +27,8 @@ measure to a symmetric set, or weighting it by an even density, keeps it inversi
 
 ## Main results
 
+* `MeasurableSub₂.measurableNeg`, `MeasurableSub₂.measurableAdd`: a group with measurable
+  subtraction on pairs has measurable negation and measurable translations.
 * `Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
   equal to the number of translates times the measure of the original set.
 * `Measure.measure_inter_addSubgroup_eq_zero_of_encard_le`: if `x + w j ∈ Z` holds for at most
@@ -49,6 +51,26 @@ open MeasureTheory Set
 open scoped ENNReal Pointwise
 
 namespace TauCeti
+
+/-- A group with measurable subtraction on pairs has measurable negation. -/
+theorem _root_.MeasurableSub₂.measurableNeg {G : Type*} [AddGroup G] [MeasurableSpace G]
+    [MeasurableSub₂ G] : MeasurableNeg G :=
+  ⟨by
+    convert (measurable_const (a := (0 : G))).sub measurable_id using 1
+    funext x
+    simp⟩
+
+/-- A group with measurable subtraction on pairs has measurable translations. -/
+theorem _root_.MeasurableSub₂.measurableAdd {G : Type*} [AddGroup G] [MeasurableSpace G]
+    [MeasurableSub₂ G] : MeasurableAdd G := by
+  have := MeasurableSub₂.measurableNeg (G := G)
+  refine ⟨fun c ↦ ?_, fun c ↦ ?_⟩
+  · convert (measurable_const (a := c)).sub (measurable_neg (G := G)) using 1
+    funext x
+    simp [sub_neg_eq_add]
+  · convert (measurable_id (α := G)).sub (measurable_const (a := -c)) using 1
+    funext x
+    simp [sub_neg_eq_add]
 
 variable {E : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
 
