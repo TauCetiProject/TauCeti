@@ -25,7 +25,8 @@ scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
-`HasCompactSupport.fderiv`.
+`HasCompactSupport.fderiv`. `ContinuousAlternatingMap.apply_const_eq_sum_single` expands a
+one-form on `ι → 𝕜` in the standard basis.
 -/
 
 public section
@@ -47,6 +48,21 @@ theorem ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair
   have h₁ : (1 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ v) := by
     funext i; fin_cases i; rfl
   simp [alternatizeUncurryFin_apply, h₀, h₁, sub_eq_add_neg]
+
+/-- A one-form on `ι → 𝕜` is determined by its values on the standard basis vectors:
+`A(v) = ∑ᵢ vᵢ A(eᵢ)`. -/
+theorem ContinuousAlternatingMap.apply_const_eq_sum_single {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (A : (ι → 𝕜) [⋀^Fin 1]→L[𝕜] F) (v : ι → 𝕜) :
+    A (fun _ ↦ v) = ∑ i, v i • A (fun _ ↦ Pi.single i 1) := by
+  set L := (ofSubsingleton 𝕜 (ι → 𝕜) F (0 : Fin 1)).symm A
+  have hL (w : ι → 𝕜) : A (fun _ ↦ w) = L w := rfl
+  simp only [hL]
+  conv_lhs => rw [← Finset.univ_sum_single v]
+  refine (_root_.map_sum L _ _).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [← _root_.map_smul]
+  congr 1
+  ext j
+  simp [Pi.single_apply]
 
 namespace TauCeti
 
