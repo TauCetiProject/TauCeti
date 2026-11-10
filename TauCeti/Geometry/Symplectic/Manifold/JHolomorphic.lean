@@ -417,6 +417,7 @@ theorem IsPseudoholomorphicAt.of_comp (hvu : IsPseudoholomorphicAt j K (v ∘ u)
       mfderiv I I'' (v ∘ u) x w' = mfderiv I' I'' v (u x) (mfderiv I I' u x w') := by
     rw [mfderiv_comp x hv.mdifferentiableAt hu, ContinuousLinearMap.comp_apply]
   rw [← hchain, hvu.mfderiv_apply_commute, hchain, hv.mfderiv_apply_commute]
+  -- The two sides differ only by `(v ∘ u) x = v (u x)` in the point at which `K` is evaluated.
   rfl
 
 /-- The composition of pseudoholomorphic maps is pseudoholomorphic within a set at a point. -/

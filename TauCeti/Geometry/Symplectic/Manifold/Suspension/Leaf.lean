@@ -500,8 +500,7 @@ theorem exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt [I.Boundar
       (hv.mdifferentiableAt (by simp))
   -- The orbit torus is a pseudoholomorphic immersion, so the Cauchy–Riemann equation of `u`
   -- lifts to `v`. The orbit torus is the periodic torus `periodicTorus φ h`.
-  have hPO : periodicTorus φ h = orbitTorus φ h :=
-    funext fun p ↦ by rw [periodicTorus_apply, orbitTorus_apply]
+  have hPO := periodicTorus_eq_orbitTorus h
   have hvhol (c' : C) :
       IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.addCircleProd 1 d) v c' := by
     have hP : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.addCircleProd 1 d) J

@@ -16,9 +16,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 # Periodic tori in symplectic suspensions
 
 A periodic point `x` of a diffeomorphism `φ`, with positive period `d`, determines the torus
-`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`. For a `C^n` diffeomorphism with `1 ≤ n` of a
-finite-dimensional boundaryless fiber manifold it is a `C^n` immersion, and is an embedding
-exactly when `d` is the least period of `x`. Its image is the product of the independent
+`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`; it is the orbit torus
+`TauCeti.SmoothMappingTorus.orbitTorus` of the closed orbit through `x`
+(`TauCeti.SmoothMappingTorus.periodicTorus_eq_orbitTorus`). For a `C^n` diffeomorphism with
+`1 ≤ n` of a finite-dimensional boundaryless fiber manifold it is a `C^n` immersion, and is an
+embedding exactly when `d` is the least period of `x`. Its image is the product of the independent
 time circle with the closed suspension orbit, so changing the starting point along the
 periodic orbit does not change this image.
 
@@ -87,6 +89,11 @@ factor. -/
 @[simp]
 theorem periodicTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) :
     periodicTorus φ hx p = (p.1, closedOrbit φ hx p.2) := (rfl)
+
+/-- The periodic torus is the orbit torus of the same closed orbit
+(`TauCeti.SmoothMappingTorus.orbitTorus`); both send `(s, θ)` to `(s, γ θ)`. -/
+theorem periodicTorus_eq_orbitTorus : periodicTorus φ hx = orbitTorus φ hx :=
+  funext fun p ↦ by rw [periodicTorus_apply, orbitTorus_apply]
 
 /-- The image is the product of the independent time circle with the closed suspension orbit. -/
 theorem range_periodicTorus :
