@@ -32,7 +32,9 @@ it, are shown to be analytic across it.
 The file also records the one-variable removable singularity at infinity used to extend
 functions to the Riemann sphere: if a smooth map `u : ℂ → E` is holomorphic near infinity and
 tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is smooth
-(`TauCeti.contDiff_update_comp_inv`).
+(`TauCeti.contDiff_update_comp_inv`). For compactly supported `u` this holds without
+holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
+(`HasCompactSupport.contDiff_update_comp_inv`).
 
 ## Main results
 
@@ -211,8 +213,8 @@ section Infinity
 open Bornology
 open scoped ContDiff
 
-omit [NormedSpace ℂ E] [CompleteSpace E] in
-private theorem update_comp_inv_eventuallyEq {u : ℂ → E} {s : ℂ} (hs : s ≠ 0) :
+private theorem update_comp_inv_eventuallyEq {G : Type*} [Zero G] {u : ℂ → G} {s : ℂ}
+    (hs : s ≠ 0) :
     update (fun y ↦ u y⁻¹) 0 0 =ᶠ[𝓝 s] fun y ↦ u y⁻¹ := by
   filter_upwards [eventually_ne_nhds hs] with y hy using update_of_ne hy _ _
 
@@ -238,6 +240,29 @@ theorem contDiff_update_comp_inv {u : ℂ → E} (hu : ContDiff ℝ ∞ u) {R : 
       exact (((hhol _ hR).comp s (differentiableAt_inv hs0)).congr_of_eventuallyEq
         (update_comp_inv_eventuallyEq hs0)).differentiableWithinAt
     exact ((hd.contDiffOn isOpen_ball).contDiffAt (ball_mem_nhds 0 hr)).restrict_scalars ℝ
+  · exact (hu.contDiffAt.comp s ((contDiffAt_inv ℂ hs).restrict_scalars ℝ)).congr_of_eventuallyEq
+      (update_comp_inv_eventuallyEq hs)
+
+/-- If a smooth map `u` on `ℂ` is compactly supported, then `s ↦ u (1 / s)`, extended by `0` at
+`s = 0`, is smooth: it vanishes near `s = 0`. -/
+theorem _root_.HasCompactSupport.contDiff_update_comp_inv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {u : ℂ → G} (hc : HasCompactSupport u) (hu : ContDiff ℝ ∞ u) :
+    ContDiff ℝ ∞ (update (fun s ↦ u s⁻¹) 0 0) := by
+  rw [contDiff_iff_contDiffAt]
+  intro s
+  rcases eq_or_ne s 0 with rfl | hs
+  · obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+    have hR1 : 0 < max R 1 := lt_max_of_lt_right one_pos
+    refine (contDiffAt_const (c := (0 : G))).congr_of_eventuallyEq ?_
+    filter_upwards [ball_mem_nhds (0 : ℂ) (inv_pos.2 hR1)] with y hy
+    rcases eq_or_ne y 0 with rfl | hy0
+    · simp
+    rw [update_of_ne hy0]
+    refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
+    have hyR := hR h
+    rw [mem_closedBall, dist_zero_right, norm_inv] at hyR
+    rw [mem_ball, dist_zero_right] at hy
+    linarith [le_max_left R 1, (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR1).1 hy]
   · exact (hu.contDiffAt.comp s ((contDiffAt_inv ℂ hs).restrict_scalars ℝ)).congr_of_eventuallyEq
       (update_comp_inv_eventuallyEq hs)
 

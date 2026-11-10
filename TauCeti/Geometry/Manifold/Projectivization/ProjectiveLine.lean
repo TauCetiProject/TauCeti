@@ -21,6 +21,9 @@ inverse of the corresponding affine chart and misses exactly one point
 (`TauCeti.ProjectiveLine.injective_mfderiv_affineParam` and
 `TauCeti.ProjectiveLine.surjective_mfderiv_affineParam`), and together the two coordinates detect
 smoothness of functions (`TauCeti.ProjectiveLine.contMDiff_of_contDiff_comp_affineParam`).
+A smooth function `u` on `ℂ` with `s ↦ u (1 / s)` smooth across `s = 0` after setting it to `0`
+there, read in one affine chart and extended by `0` at the remaining point, is smooth on the
+projective line (`TauCeti.ProjectiveLine.contMDiff_indicator_affineOpen`).
 
 ## References
 
@@ -150,6 +153,47 @@ theorem surjective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h
     (f := (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t).toLinearMap)).1
     (injective_mfderiv_affineParam i t)
+
+/-! ### Extension by zero from an affine chart -/
+
+section ExtendByZero
+
+variable {G : Type*}
+
+/-- A function `u` on `ℂ`, read in the affine chart `i` and extended by `0` off the affine open
+`i`, is `u` again in the affine coordinate `i`. -/
+theorem indicator_affineOpen_comp_affineParam [Zero G] (i : Fin 2) (u : ℂ → G) :
+    (affineOpen (K := ℂ) i).indicator (fun x ↦ u (affineChart (K := ℂ) (n := 1) i x 0)) ∘
+      affineParam i = u :=
+  funext fun t ↦ by simp
+
+/-- For `i ≠ j`, a function `u` on `ℂ`, read in the affine chart `i` and extended by `0` off the
+affine open `i`, is `s ↦ u (1 / s)` in the affine coordinate `j`, with value `0` at the point
+`s = 0` that the affine coordinate `i` misses. -/
+theorem indicator_affineOpen_comp_affineParam_of_ne [Zero G] {i j : Fin 2} (hij : i ≠ j)
+    (u : ℂ → G) :
+    (affineOpen (K := ℂ) i).indicator (fun x ↦ u (affineChart (K := ℂ) (n := 1) i x 0)) ∘
+      affineParam j = update (fun s ↦ u s⁻¹) 0 0 :=
+  funext fun s ↦ by
+    rcases eq_or_ne s 0 with rfl | hs
+    · simp [indicator_of_notMem (affineParam_zero_notMem_affineOpen hij)]
+    · rw [comp_apply, affineParam_inv hij.symm hs, update_of_ne hs]
+      simp
+
+/-- **Extension by zero from an affine chart.** If `u` is smooth on `ℂ` and `s ↦ u (1 / s)`,
+extended by `0` at `s = 0`, is smooth, then `u` read in the affine chart `i` and extended by `0`
+off the affine open `i` is a smooth function on the projective line. -/
+theorem contMDiff_indicator_affineOpen [NormedAddCommGroup G] [NormedSpace ℝ G] (i : Fin 2)
+    {u : ℂ → G} (hu : ContDiff ℝ ∞ u) (hinv : ContDiff ℝ ∞ (update (fun s ↦ u s⁻¹) 0 0)) :
+    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) ∞
+      ((affineOpen (K := ℂ) i).indicator fun x ↦ u (affineChart (K := ℂ) (n := 1) i x 0)) := by
+  obtain ⟨j, hij⟩ : ∃ j, i ≠ j := by fin_cases i <;> simp
+  refine contMDiff_of_contDiff_comp_affineParam fun l ↦ ?_
+  obtain rfl | rfl : l = i ∨ l = j := by omega
+  · rwa [indicator_affineOpen_comp_affineParam]
+  · rwa [indicator_affineOpen_comp_affineParam_of_ne hij]
+
+end ExtendByZero
 
 end ProjectiveLine
 

@@ -8,11 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Liouville
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Plane
 public import TauCeti.Geometry.Manifold.Projectivization.ProjectiveLine
-import Mathlib.Geometry.Manifold.Complex
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Holomorphic
 
 /-!
-# Holomorphic functions and one-forms on the projective line
+# The projective line has no holomorphic one-forms
 
 A holomorphic one-form on the complex projective line `ℂℙ¹ = ℙ ℂ (Fin 2 → ℂ)`, that is a smooth
 complex-valued one-form of type `(1,0)` which is `∂bar`-closed, vanishes
@@ -31,10 +29,6 @@ The two affine coordinates are `TauCeti.ProjectiveLine.affineParam`. Pulled-back
 on the overlap by `TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`, and a smooth
 form is determined by its pullback along either coordinate
 (`TauCeti.ProjectiveLine.mpullback_affineParam_injective`).
-
-A smooth function on `ℂℙ¹` with vanishing `∂bar` is holomorphic on a compact connected
-complex manifold, hence constant
-(`TauCeti.SmoothForm.delBar_eq_zero_iff_exists_eq_const_projectivization`).
 
 ## References
 
@@ -178,20 +172,6 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
     refine (congrArg _ (funext fun k ↦ ?_)).trans h
     fin_cases k
     rfl
-
-/-- **The kernel of `∂bar` on functions over the projective line is the constants.** A smooth
-function `f` on `ℂℙ¹` satisfies `∂bar f = 0` exactly when it is constant: it is then holomorphic on
-a compact connected complex manifold. -/
-theorem delBar_eq_zero_iff_exists_eq_const_projectivization
-    (f : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F 0) :
-    (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))).delBar f = 0 ↔
-      ∃ c : F, ∀ x, f.1 x 0 = c := by
-  rw [delBar_ofComplexManifold_eq_zero_iff]
-  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace h
-    exact ⟨c, fun x ↦ congrFun hc x⟩
-  · rw [funext hc]
-    exact mdifferentiable_const
 
 end SmoothForm
 

@@ -72,7 +72,8 @@ compact-support left and right inverse identities are available in this module.
 * `HasCompactSupport.contDiff_cauchyTransform`,
   `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
   `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
-  supported smooth data is smooth, holomorphic off `tsupport f`, and tends to `0` at infinity.
+  supported smooth data is smooth and holomorphic off `tsupport f`, and that of compactly
+  supported integrable data tends to `0` at infinity.
 
 ## References
 
@@ -497,9 +498,9 @@ theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsup
   exact h.const_smul _
 
 omit [CompleteSpace F] in
-/-- The Cauchy transform of a compactly supported continuous map tends to `0` at infinity. -/
+/-- The Cauchy transform of a compactly supported integrable map tends to `0` at infinity. -/
 theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasCompactSupport c)
-    (hs : Continuous c) :
+    (hi : Integrable c) :
     Tendsto (cauchyTransform c) (cobounded ℂ) (𝓝 0) := by
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   have hbound : ∀ᶠ w in cobounded ℂ,
@@ -507,8 +508,8 @@ theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasComp
     filter_upwards [tendsto_norm_cobounded_atTop.eventually
       (eventually_gt_atTop (max (2 * R) 0))] with w hw
     rw [le_mul_inv_iff₀ ((le_max_right _ _).trans_lt hw), mul_comm ‖cauchyTransform c w‖]
-    exact norm_mul_norm_cauchyTransform_le ((subset_tsupport c).trans hR)
-      (hs.integrable_of_hasCompactSupport hc) ((le_max_left _ _).trans hw.le)
+    exact norm_mul_norm_cauchyTransform_le ((subset_tsupport c).trans hR) hi
+      ((le_max_left _ _).trans hw.le)
   have hlim : Tendsto (fun w : ℂ ↦ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹) (cobounded ℂ) (𝓝 0) := by
     simpa using (tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).const_mul
       (2 * π⁻¹ * ∫ z, ‖c z‖)

@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
+import Mathlib.Geometry.Manifold.Complex
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The `∂bar`-closed functions are the holomorphic functions
@@ -39,6 +42,10 @@ cohomology `H^(0,0)` of `M` with coefficients in `F`, since there are no forms o
 * `TauCeti.SmoothAlmostComplexStructure.delBar_ofComplexManifold_apply_eq_zero_iff`,
   `TauCeti.SmoothAlmostComplexStructure.delBar_ofComplexManifold_eq_zero_iff`: on a complex
   manifold, `∂bar f = 0` exactly when `f` is holomorphic.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply_eq_conjWirtingerDeriv`: on a complex
+  vector space, `∂bar f` is the conjugate Wirtinger derivative of `f`.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_eq_zero_iff_exists_eq_const_of_compactSpace`:
+  on a compact connected complex manifold, `∂bar f = 0` exactly when `f` is constant.
 * `TauCeti.kerDelBarZeroEquiv`: the `∂bar`-closed smooth functions are the holomorphic
   functions.
 
@@ -113,6 +120,29 @@ function `f` satisfies `∂bar f = 0` exactly when it is holomorphic. -/
 theorem delBar_ofComplexManifold_eq_zero_iff (f : SmoothForm 𝓘(ℝ, E) M F 0) :
     (ofComplexManifold E M).delBar f = 0 ↔ MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) (fun y ↦ f.1 y 0) := by
   rw [delBar_eq_zero_iff_isPseudoholomorphic, isPseudoholomorphic_ofComplexManifold_iff]
+
+/-- **`∂bar` on a complex vector space is the conjugate Wirtinger derivative.** For a smooth
+function `f` on the model space `E` with its complex structure, `∂bar f` evaluated on a tangent
+vector `v` is the conjugate Wirtinger derivative of `f` in the direction `v`. -/
+theorem delBar_apply_apply_eq_conjWirtingerDeriv (f : SmoothForm 𝓘(ℝ, E) E F 0) (x v : E) :
+    ((ofComplexManifold E E).delBar f).1 x ![v] = conjWirtingerDeriv (fun y ↦ f.1 y 0) x v := by
+  have e (w : E) : mvfderiv 𝓘(ℝ, E) (fun y ↦ f.1 y 0) x w = fderiv ℝ (fun y ↦ f.1 y 0) x w :=
+    mvfderiv_eq_fderiv_apply _ x w
+  refine (delBar_apply_apply _ f x v).trans ?_
+  rw [conjWirtingerDeriv_apply, ofComplexManifold_apply, e, e]
+
+/-- **The kernel of `∂bar` on functions over a compact connected complex manifold is the
+constants.** A smooth function `f` satisfies `∂bar f = 0` exactly when it is constant: it is then
+holomorphic on a compact connected complex manifold. -/
+theorem delBar_eq_zero_iff_exists_eq_const_of_compactSpace [CompactSpace M]
+    [PreconnectedSpace M] (f : SmoothForm 𝓘(ℝ, E) M F 0) :
+    (ofComplexManifold E M).delBar f = 0 ↔ ∃ c : F, ∀ x, f.1 x 0 = c := by
+  rw [delBar_ofComplexManifold_eq_zero_iff]
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace h
+    exact ⟨c, fun x ↦ congrFun hc x⟩
+  · rw [funext hc]
+    exact mdifferentiable_const
 
 end ComplexManifold
 
