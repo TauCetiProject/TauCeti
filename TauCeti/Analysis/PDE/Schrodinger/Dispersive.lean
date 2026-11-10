@@ -57,6 +57,9 @@ dominated convergence.
   dispersive estimate.
 * `TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`: the dispersive estimate from `Lᵖ` to `L^q`,
   `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents with `2 ≤ q ≤ ∞`.
+* `TauCeti.norm_fourierInv_phaseSymbol_smul_fourier_le`: for a Schwartz function `f`, the
+  dispersive estimate holds at every point for the Schwartz representative
+  `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)` of `S(t) f`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -309,6 +312,57 @@ theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q 
     ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
   congr 3
   ring
+
+/-! ### The dispersive estimate at every point -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Schrödinger symbol `exp(-4π² i t ‖ξ‖²)` has temperate growth. -/
+theorem hasTemperateGrowth_phaseSymbol_laplacianSymbol (t : ℝ) :
+    (phaseSymbol (laplacianSymbol (E := E)) t).HasTemperateGrowth := by
+  have h : phaseSymbol (laplacianSymbol (E := E)) t =
+      fun ξ ↦ cexp (((t * -(4 * π ^ 2 * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) := by
+    ext ξ
+    rw [phaseSymbol_apply, laplacianSymbol_apply]
+  rw [h]
+  exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
+
+/-- **The dispersive estimate for Schwartz functions, at every point.** For `t ≠ 0` and a Schwartz
+function `f`, the Schwartz function `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)`, which represents `S(t) f`,
+satisfies `|S(t) f (x)| ≤ (4π|t|)^(-n/2) ‖f‖₁` at every point `x`, not only almost everywhere. -/
+theorem norm_fourierInv_phaseSymbol_smul_fourier_le {t : ℝ} (ht : t ≠ 0) (f : 𝓢(E, F)) (x : E) :
+    ‖𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) x‖ ≤
+      (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖ := by
+  set c : ℝ := (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖
+  have hg := hasTemperateGrowth_phaseSymbol_laplacianSymbol (E := E) t
+  set G : 𝓢(E, F) := 𝓕⁻ (SchwartzMap.smulLeftCLM F (phaseSymbol laplacianSymbol t) (𝓕 f))
+  have hG : ∀ y, G y = 𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) y :=
+    fun y ↦ by
+      have h : ⇑(SchwartzMap.smulLeftCLM F (phaseSymbol laplacianSymbol t) (𝓕 f)) =
+          fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ := by
+        funext ξ
+        rw [SchwartzMap.smulLeftCLM_apply_apply hg, SchwartzMap.fourier_coe]
+      simp only [G, SchwartzMap.fourierInv_coe, h]
+  have hfourier : ∀ ξ, 𝓕 G ξ = phaseSymbol laplacianSymbol t ξ • 𝓕 f ξ := fun ξ ↦ by
+    rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.smulLeftCLM_apply_apply hg]
+  have hL2 := SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
+    (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp hfourier
+  have hae := norm_schrodingerPropagator_apply_le ht (f.toLp 2)
+    (f.integrable.congr (f.coeFn_toLp 2).symm)
+  rw [schrodingerPropagator_def, phasePropagator_def, ← hL2] at hae
+  have hint : ∫ y, ‖(f.toLp 2 : E → F) y‖ = ∫ y, ‖f y‖ :=
+    integral_congr_ae (by filter_upwards [f.coeFn_toLp 2] with y hy; rw [hy])
+  rw [hint] at hae
+  have hae' : ∀ᵐ y ∂volume, ‖G y‖ ≤ c := by
+    filter_upwards [hae, G.coeFn_toLp 2] with y h₁ h₂
+    rwa [h₂] at h₁
+  -- `G` is continuous, so the almost-everywhere bound holds everywhere.
+  have hU : IsOpen {y | c < ‖G y‖} := isOpen_lt continuous_const G.continuous.norm
+  have h0 : volume {y | c < ‖G y‖} = 0 := by
+    rw [ae_iff] at hae'
+    simpa only [not_le] using hae'
+  rw [hU.measure_eq_zero_iff (μ := volume)] at h0
+  rw [← hG]
+  exact not_lt.1 fun hx ↦ (Set.eq_empty_iff_forall_notMem.1 h0 x) hx
 
 /-! ### The evolution of a Gaussian -/
 
