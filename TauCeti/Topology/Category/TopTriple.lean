@@ -132,9 +132,14 @@ lemma homSnd_comp_outerMap (φ : T ⟶ T') :
   (φ.hom.naturality _).symm
 
 @[ext]
-lemma hom_ext {φ ψ : T ⟶ T'} (h₀ : homThd φ = homThd ψ) (h₁ : homSnd φ = homSnd ψ)
-    (h₂ : homFst φ = homFst ψ) : φ = ψ :=
-  ObjectProperty.hom_ext _ (ComposableArrows.hom_ext₂ h₀ h₁ h₂)
+lemma hom_ext {φ ψ : T ⟶ T'} (h₂ : homFst φ = homFst ψ) : φ = ψ := by
+  have : Mono T'.outerMap := (TopCat.mono_iff_injective _).2 T'.isEmbedding_outerMap.injective
+  have : Mono T'.innerMap := (TopCat.mono_iff_injective _).2 T'.isEmbedding_innerMap.injective
+  have h₁ : homSnd φ = homSnd ψ :=
+    (cancel_mono T'.outerMap).1 (by rw [homSnd_comp_outerMap, homSnd_comp_outerMap, h₂])
+  have h₀ : homThd φ = homThd ψ :=
+    (cancel_mono T'.innerMap).1 (by rw [homThd_comp_innerMap, homThd_comp_innerMap, h₁])
+  exact ObjectProperty.hom_ext _ (ComposableArrows.hom_ext₂ h₀ h₁ h₂)
 
 -- The three pair functors are `abbrev`s rather than `def`s so that the two spaces of each pair
 -- stay visible to unification; the maps of pairs below are built from identity morphisms whose
