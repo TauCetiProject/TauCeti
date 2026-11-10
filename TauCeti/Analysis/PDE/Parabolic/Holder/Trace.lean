@@ -237,6 +237,12 @@ theorem spatialTrace_add (f g : ParabolicC2HolderSpace α E F hab) (t : Icc a b)
     (f + g).spatialTrace t = f.spatialTrace t + g.spatialTrace t :=
   (spatialTraceL t).map_add f g
 
+/-- Spatial restriction preserves subtraction. -/
+@[simp]
+theorem spatialTrace_sub (f g : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :
+    (f - g).spatialTrace t = f.spatialTrace t - g.spatialTrace t :=
+  (spatialTraceL t).map_sub f g
+
 /-- Spatial restriction preserves scalar multiplication. -/
 @[simp]
 theorem spatialTrace_smul (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) :

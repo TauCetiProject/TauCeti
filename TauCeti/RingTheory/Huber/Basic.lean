@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
@@ -477,9 +478,28 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
     P.ringOfDefinition ≤ powerBoundedSubring A := fun _ ha ↦
   mem_powerBoundedSubring.mpr (P.isBounded_ringOfDefinition.isPowerBounded_of_mem ha)
 
+/-- A ring of definition is closed, being an open additive subgroup. -/
+theorem isClosed_ringOfDefinition [IsTopologicalAddGroup A] (P : PairOfDefinition A) :
+    IsClosed (P.ringOfDefinition : Set A) :=
+  P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
+
+/-- A sum of elements of `c A₀` lies in `c A₀`, for `c` a unit: the set is closed, being the
+image of the closed subring `A₀` under multiplication by a unit. -/
+theorem mem_smul_of_hasSum [IsTopologicalRing A] (P : PairOfDefinition A) {c : A} (hc : IsUnit c)
+    {ι : Type*} {f : ι → A} {s : A} (hs : HasSum f s)
+    (hf : ∀ i, f i ∈ c • (P.ringOfDefinition : Set A)) :
+    s ∈ c • (P.ringOfDefinition : Set A) := by
+  obtain ⟨u, rfl⟩ := hc
+  simp only [Set.mem_smul_set, SetLike.mem_coe] at hf ⊢
+  refine ⟨↑u⁻¹ * s, (hs.mul_left _).mem (s := P.ringOfDefinition) P.isClosed_ringOfDefinition
+    fun i ↦ ?_, ?_⟩
+  · obtain ⟨r, hr, hfi⟩ := hf i
+    rwa [← hfi, smul_eq_mul, Units.inv_mul_cancel_left]
+  · rw [smul_eq_mul, Units.mul_inv_cancel_left]
+
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
-def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+def map {B : Type*} [CommRing B] [TopologicalSpace B]
     (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) : PairOfDefinition B := by
   let A₀ : Subring B := P.ringOfDefinition.map f
   let f₀ : P.ringOfDefinition →+* A₀ :=
@@ -507,7 +527,7 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 image of the original one. -/
 @[simp]
 theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
     (P.map f hf).ringOfDefinition = P.ringOfDefinition.map f :=
   (rfl)
 
@@ -515,7 +535,7 @@ theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
 under the map `A₀ → f(A₀)` induced by `f`. -/
 @[simp]
 theorem map_idealOfDefinition {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
+    [TopologicalSpace B] (P : PairOfDefinition A) (f : A →+* B)
     (hf : IsOpenQuotientMap f) :
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
       ((f.comp P.ringOfDefinition.subtype).codRestrict
@@ -528,7 +548,7 @@ theorem map_idealOfDefinition {B : Type*} [CommRing B]
 `P.idealImage n` under `f`. -/
 @[simp]
 theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
     (n : ℕ) :
     (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
   set f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
@@ -663,9 +683,7 @@ complete: being an open subgroup it is closed, hence complete, and its topology 
 instance PairOfDefinition.isAdicComplete_idealOfDefinition (P : PairOfDefinition A) :
     IsAdicComplete P.idealOfDefinition P.ringOfDefinition := by
   have : IsUniformAddGroup P.ringOfDefinition := P.ringOfDefinition.toAddSubgroup.isUniformAddGroup
-  have hclosed : IsClosed (P.ringOfDefinition : Set A) :=
-    P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
-  have : CompleteSpace P.ringOfDefinition := hclosed.completeSpace_coe
+  have : CompleteSpace P.ringOfDefinition := P.isClosed_ringOfDefinition.completeSpace_coe
   exact P.isAdic_idealOfDefinition.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
 
 end Complete

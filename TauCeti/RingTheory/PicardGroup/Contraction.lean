@@ -24,6 +24,7 @@ sequences cancel a common factor `det E ⊗ (det E)^*`.
 
 ## Main declarations
 
+* `Module.Invertible.linearEquiv_tmul`: the value `ξ ⊗ ℓ ↦ ξ ℓ` of the contraction.
 * `Module.Invertible.leftCancelDualEquiv`: the isomorphism `M ⊗ (M^* ⊗ P) ≃ P`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_tmul`: its value `ℓ ⊗ (ξ ⊗ p) ↦ ξ ℓ • p`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_apply`: its value on duals.
@@ -48,11 +49,16 @@ def leftCancelDualEquiv : M ⊗[R] (Dual R M ⊗[R] P) ≃ₗ[R] P :=
 
 variable {R M P}
 
+/-- `Module.Invertible.linearEquiv` is the contraction `ξ ⊗ ℓ ↦ ξ ℓ`. -/
+@[simp]
+theorem linearEquiv_tmul (ξ : Dual R M) (ℓ : M) : linearEquiv R M (ξ ⊗ₜ ℓ) = ξ ℓ := by
+  simp [linearEquiv]
+
 /-- `Module.Invertible.leftCancelDualEquiv` sends `ℓ ⊗ (ξ ⊗ p)` to `ξ ℓ • p`. -/
 @[simp]
 theorem leftCancelDualEquiv_tmul_tmul (ℓ : M) (ξ : Dual R M) (p : P) :
     leftCancelDualEquiv R M P (ℓ ⊗ₜ (ξ ⊗ₜ p)) = ξ ℓ • p := by
-  simp [leftCancelDualEquiv, linearEquiv]
+  simp [leftCancelDualEquiv]
 
 /-- On a dual `P = N^*`, `Module.Invertible.leftCancelDualEquiv` evaluates the tensor product of
 functionals: the image of `ℓ ⊗ t` takes the value `t (ℓ ⊗ x)` at `x`, with `t` read as a

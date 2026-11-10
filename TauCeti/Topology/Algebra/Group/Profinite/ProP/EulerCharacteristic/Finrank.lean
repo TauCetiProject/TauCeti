@@ -159,7 +159,7 @@ theorem finrank_cohomFp_zero_sub_finrank_cohomFp_one_openSubgroup
         Module.finrank (ZMod p) (cohomFp p G 1)) :=
   hG.finrank_cohomFp_zero_sub_finrank_cohomFp_one_openSubgroup hfg
     (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
-      (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) U
+      (IsAddPGroup.of_card (hA.trans (pow_one p).symm))) U
 
 /-- **The three-term Euler formula under `cd_p G ≤ 2`.** For a topologically finitely generated
 profinite pro-`p` group `G` with `cd_p G ≤ 2` and `H²(G, 𝔽_p)` finite, and an open
@@ -176,7 +176,7 @@ theorem finrank_cohomFp_zero_sub_finrank_cohomFp_one_add_finrank_cohomFp_two_ope
         Module.finrank (ZMod p) (cohomFp p G 1) + Module.finrank (ZMod p) (cohomFp p G 2)) :=
   hG.finrank_cohomFp_zero_sub_finrank_cohomFp_one_add_finrank_cohomFp_two_openSubgroup hfg
     (fun A _ _ _ _ _ _ hA _ ↦ cohomologicalDimensionLE_iff.mp hcd A
-      (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm)) 3 (by norm_num)) U
+      (IsAddPGroup.of_card (hA.trans (pow_one p).symm)) 3 (by norm_num)) U
 
 end CohomologicalDimensionLE
 

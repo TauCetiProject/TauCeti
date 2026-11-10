@@ -209,7 +209,7 @@ theorem sq_rectIntegral_le_measureReal_mul_l2sq (K : SymmKernel Ω μ) (S T : Se
             ∫ p in S ×ˢ T, K p.1 p.2 ^ 2 ∂(μ.prod μ) :=
       MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
         (measure_ne_top _ _)
-        K.integrable_uncurry.integrableOn (K.integrable_sq μ).integrableOn
+        (K.integrable_sq μ).integrableOn
     _ ≤ (μ.prod μ).real (S ×ˢ T) * ∫ p, K p.1 p.2 ^ 2 ∂(μ.prod μ) := by
       exact mul_le_mul_of_nonneg_left
         (setIntegral_le_integral (K.integrable_sq μ) (ae_of_all _ fun _ => sq_nonneg _))

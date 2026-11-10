@@ -43,6 +43,8 @@ the tensor algebra are determined by their values on generators.
 * The instance `GradedAlgebra (tensorAlgebraPiece G)`.
 * `TauCeti.decompose_tensorAlgebra_ι`: the homogeneous components of a generator are the
   generators of its homogeneous components.
+* `TauCeti.koszulTwist_tensorAlgebraPiece_ι`: the Koszul twist of the tensor algebra twists each
+  generator.
 * `TauCeti.isHomogeneous_tensorAlgebraLift`: the lift of a degree-preserving linear map into a
   graded algebra preserves input degree.
 * `TauCeti.tensorAlgebraGradedAlgHom_ext`: graded algebra maps out of the tensor algebra agree
@@ -152,6 +154,21 @@ theorem decompose_tensorAlgebra_ι (G : InternalGrading R M) (x : M) (p : ℤ) :
   have h := (isHomogeneous_tensorAlgebra_ι G).map_decompose p x
   rw [add_zero] at h
   exact h.symm
+
+/-- The Koszul twist of the tensor algebra, graded by input degree, twists each generator by the
+Koszul twist of the grading of the generators.  This is the value on generators of the Koszul
+automorphism `koszulTwistAlgEquiv (tensorAlgebraPiece G) n`. -/
+@[simp]
+theorem koszulTwist_tensorAlgebraPiece_ι (G : InternalGrading R M) (n : ℤ) (x : M) :
+    (InternalGrading.ofDecomposition (tensorAlgebraPiece G)).koszulTwist n (TensorAlgebra.ι R x) =
+      TensorAlgebra.ι R (G.koszulTwist n x) := by
+  have h : (InternalGrading.ofDecomposition (tensorAlgebraPiece G)).koszulTwist n ∘ₗ
+      TensorAlgebra.ι R = TensorAlgebra.ι R ∘ₗ G.koszulTwist n :=
+    G.linearMap_ext fun p x hx ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply,
+        InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ (ι_mem_tensorAlgebraPiece G hx),
+        G.koszulTwist_apply_of_mem hx, map_smul]
+  exact LinearMap.congr_fun h x
 
 section Lift
 

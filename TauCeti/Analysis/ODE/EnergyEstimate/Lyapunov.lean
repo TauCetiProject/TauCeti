@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.EnergyEstimate.Global
@@ -18,9 +18,9 @@ Let `A : ℝ → End(E)` be a continuous family of operators on a finite-dimensi
 space `E`, with limits `A±` at `±∞` that have Lyapunov forms
 (`ContinuousLinearMap.HasLyapunovForm`): there are symmetric `S±` and `c > 0` with
 `c ‖v‖² ≤ ⟪S± (A± v), v⟫`. By the inertia theorem this says exactly that `A±` are hyperbolic, with
-no eigenvalue on the imaginary axis; only the easy half of that equivalence is formalized, in
-`TauCeti.Analysis.InnerProductSpace.LyapunovForm`. This file proves
-that the trajectory operator
+no eigenvalue on the imaginary axis
+(`ContinuousLinearMap.hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`).
+This file proves that the trajectory operator
 
 `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)`
 
@@ -62,6 +62,8 @@ is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `
 * `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm`: the
   cokernel of `D_A` is finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`: `D_A` is Fredholm.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_forall_eq_zero`: the same conclusion
+  when the limits `A±` are hyperbolic, with no purely imaginary eigenvalue.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: combined with the degenerate-limit
   results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, for a continuous family
   with symmetric limits `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
@@ -216,6 +218,25 @@ theorem isFredholm_trajectoryOperator_of_hasLyapunovForm
     (finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL)
     (finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
       hAL)
+
+open ContinuousLinearMap in
+/-- **The trajectory operator with hyperbolic limits is Fredholm**, hyperbolicity stated through
+eigenvalues. For a continuous family `A` of operators on a finite-dimensional real inner product
+space whose limits at `±∞` have no purely imaginary eigenvalue (no `ω` and `v, w`, not both zero,
+with `A± v = -ω • w` and `A± w = ω • v`), `u ↦ u' + A u` is a Fredholm operator from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)`. -/
+theorem isFredholm_trajectoryOperator_of_forall_eq_zero
+    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : ∀ (ω : ℝ) (v w : E), Aminus v = -ω • w → Aminus w = ω • v → v = 0 ∧ w = 0)
+    (hplus : ∀ (ω : ℝ) (v w : E), Aplus v = -ω • w → Aplus w = ω • v → v = 0 ∧ w = 0)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).IsFredholm :=
+  isFredholm_trajectoryOperator_of_hasLyapunovForm hA
+    (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hminus)
+    (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hplus) hbot htop
+    AL hAL
 
 /-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
 continuous family of operators on a finite-dimensional real inner product space with symmetric

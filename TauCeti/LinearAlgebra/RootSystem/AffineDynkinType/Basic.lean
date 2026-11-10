@@ -477,6 +477,15 @@ lemma cartanMatrix_apply_of_not_adj {t : AffineDynkinType} {i j : Fin t.nodes} (
     exact (h ((SimpleGraph.top_adj i j).2 hij)).elim
   · simp [cartanMatrix_apply ht, hij, h]
 
+open scoped Classical in
+/-- The affine `E₆` Cartan matrix entries, with the conditional indexed by `Fin 7`: the Cartan API
+is indexed by `Fin E6.nodes`, whose implicit decidability instance is opaque outside its
+module, so adjacency is decided classically. -/
+lemma cartanMatrix_E6_apply (i j : Fin 7) : E6.cartanMatrix i j =
+    if i = j then 2 else if E6.graph.Adj i j then -1 else 0 := by
+  convert cartanMatrix_apply isGraphical_E6 i j using 1
+  split_ifs <;> first | rfl | contradiction
+
 /-- The generalized Cartan matrix of an affine simply-laced diagram is symmetric, `A₁` included:
 away from `A₁` the matrix is `2I - A` and an adjacency matrix is symmetric, while at `A₁` the
 explicit multiplicity-two matrix `!![2, -2; -2, 2]` is symmetric outright. -/

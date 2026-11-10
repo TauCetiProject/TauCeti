@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Star
+import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # Reflection and real affine changes of Fueter regular functions
@@ -62,7 +63,6 @@ theorem fueterRight_eq_star_fueterLeft {D D' : ℍ →L[ℝ] ℍ}
 Fueter regular function at the conjugate point. -/
 theorem RightFueterAt.star_star (hf : RightFueterAt f q) :
     LeftFueterAt (fun x ↦ star (f (star x))) (star q) := by
-  let : StarModule ℝ ℍ := ⟨fun r h ↦ by simp⟩
   have hd := hf.differentiableAt.hasFDerivAt.star_star
   apply hd.leftFueterAt_iff.mpr
   rw [fueterLeft_eq_star_fueterRight (D := fderiv ℝ f q) (fun h ↦ by simp),
@@ -71,7 +71,6 @@ theorem RightFueterAt.star_star (hf : RightFueterAt f q) :
 /-- Reflecting a left Fueter regular function exchanges it with right regularity. -/
 theorem LeftFueterAt.star_star (hf : LeftFueterAt f q) :
     RightFueterAt (fun x ↦ star (f (star x))) (star q) := by
-  let : StarModule ℝ ℍ := ⟨fun r h ↦ by simp⟩
   have hd := hf.differentiableAt.hasFDerivAt.star_star
   apply hd.rightFueterAt_iff.mpr
   rw [fueterRight_eq_star_fueterLeft (D := fderiv ℝ f q) (fun h ↦ by simp),

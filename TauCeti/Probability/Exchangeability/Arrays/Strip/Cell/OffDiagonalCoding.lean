@@ -305,7 +305,7 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
       (measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1.swap)).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi) m' hm'
     (fun _ : V₂ => inferInstance) (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.1, x p.1.swap)) ρ).2
-  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm' hm
+  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'
   intro p
   obtain ⟨⟨i, j⟩, hp⟩ := p
   have hi : i ∉ S := hp.1
