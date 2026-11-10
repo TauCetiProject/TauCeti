@@ -11,9 +11,9 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 /-!
 # Multilinear maps in coordinates
 
-The value of a multilinear map `f` on arguments `m i` in a module with a finite basis `b` is the
-sum, over all choices `s` of one basis index for each argument, of the products of the coordinates
-`b.repr (m i) (s i)` times the value of `f` on the basis vectors `b (s i)`
+The value of a multilinear map `f` on arguments `m i`, each in a module `M i` with a finite basis
+`b i`, is the sum, over all choices `s` of one basis index for each argument, of the products of
+the coordinates `(b i).repr (m i) (s i)` times the value of `f` on the basis vectors `b i (s i)`
 (`MultilinearMap.apply_eq_sum_prod_repr_smul`). This expresses `f` through finitely many scalar
 coefficients, which is how pairings of multilinear maps with families of vectors reduce to scalar
 pairings.
@@ -23,16 +23,16 @@ public section
 
 namespace MultilinearMap
 
-variable {R ι κ M N : Type*} [CommSemiring R] [Fintype ι] [DecidableEq ι] [Fintype κ]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+variable {R ι N : Type*} {κ M : ι → Type*} [CommSemiring R] [Fintype ι] [DecidableEq ι]
+  [∀ i, Fintype (κ i)] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [AddCommMonoid N]
+  [Module R N]
 
-/-- **Multilinear maps in coordinates.** For a finite basis `b`,
-`f m = ∑ s, (∏ i, b.repr (m i) (s i)) • f (fun i ↦ b (s i))`. -/
-theorem apply_eq_sum_prod_repr_smul (f : MultilinearMap R (fun _ : ι ↦ M) N)
-    (b : Module.Basis κ R M) (m : ι → M) :
-    f m = ∑ s : ι → κ, (∏ i, b.repr (m i) (s i)) • f fun i ↦ b (s i) := by
-  conv_lhs => rw [show m = fun i ↦ ∑ j, b.repr (m i) j • b j from
-    funext fun i ↦ (b.sum_repr (m i)).symm]
+/-- **Multilinear maps in coordinates.** For finite bases `b i` of the modules `M i`,
+`f m = ∑ s, (∏ i, (b i).repr (m i) (s i)) • f (fun i ↦ b i (s i))`. -/
+theorem apply_eq_sum_prod_repr_smul (f : MultilinearMap R M N)
+    (b : ∀ i, Module.Basis (κ i) R (M i)) (m : ∀ i, M i) :
+    f m = ∑ s : ∀ i, κ i, (∏ i, (b i).repr (m i) (s i)) • f fun i ↦ b i (s i) := by
+  conv_lhs => rw [← funext fun i ↦ (b i).sum_repr (m i)]
   rw [f.map_sum]
   simp_rw [f.map_smul_univ]
 

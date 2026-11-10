@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.LinearAlgebra.Multilinear.Basis
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Mollified discs
@@ -151,22 +152,7 @@ theorem contDiff_discMollification {n : ℕ∞} (hρ : ContDiff ℝ n ρ) (hσ :
   -- The two sides differ only by unfolding the local abbreviation `D`.
   rfl
 
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A continuous function on `E × ℂ` that vanishes on `(E \ K) × D` for a compact `K` is
-integrable for `μ × vol|_D`. -/
-private theorem integrable_prod_restrict_closedBall [IsFiniteMeasureOnCompacts μ] [SFinite μ]
-    {G : E × ℂ → ℝ} (hG : Continuous G) {K : Set E} (hK : IsCompact K)
-    (hGK : ∀ y z, z ∈ closedBall z₀ r → y ∉ K → G (y, z) = 0) :
-    Integrable G (μ.prod (volume.restrict (closedBall z₀ r))) := by
-  rw [← Measure.restrict_univ (μ := μ), Measure.prod_restrict]
-  refine IntegrableOn.of_forall_sdiff_eq_zero
-    (hG.continuousOn.integrableOn_compact (hK.prod (isCompact_closedBall z₀ r)))
-    (MeasurableSet.univ.prod measurableSet_closedBall) fun q hq ↦ ?_
-  exact hGK q.1 q.2 hq.1.2 fun h ↦ hq.2 ⟨h, hq.1.2⟩
-
-variable [Fintype κ]
+variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [Fintype κ]
 
 /-- **The averaging identity for a mollified disc.** For a continuous two-form `Θ`, a continuous
 compactly supported weight `ρ`, a `C¹` disc `σ`, a basis `b` and an additive Haar measure `μ` on
@@ -192,16 +178,17 @@ theorem integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul
   -- First swap: integrate over the translations first.
   have h₁ : Integrable (Function.uncurry fun p z ↦ ρ p * Θ (σ z + p) (t z))
       (μ.prod (volume.restrict (closedBall z₀ r))) := by
-    refine integrable_prod_restrict_closedBall
+    refine integrable_prod_restrict_of_continuous
       ((hρ.comp continuous_fst).mul (hev.comp ((hσc.comp continuous_snd).add continuous_fst
-        |>.prodMk continuous_snd))) hρc fun p z _ hp ↦ ?_
+        |>.prodMk continuous_snd))) hρc (isCompact_closedBall z₀ r) fun p z _ hp ↦ ?_
     simp [image_eq_zero_of_notMem_tsupport hp]
   -- Second swap: integrate over the disc first.
   have h₂ : Integrable (Function.uncurry fun y z ↦ ρ (y - σ z) * Θ y (t z))
       (μ.prod (volume.restrict (closedBall z₀ r))) := by
-    refine integrable_prod_restrict_closedBall
+    refine integrable_prod_restrict_of_continuous
       ((hρ.comp (continuous_fst.sub (hσc.comp continuous_snd))).mul hev)
-      (IsCompact.add hρc ((isCompact_closedBall z₀ r).image hσc)) fun y z hz hy ↦ ?_
+      (IsCompact.add hρc ((isCompact_closedBall z₀ r).image hσc)) (isCompact_closedBall z₀ r)
+      fun y z hz hy ↦ ?_
     simp [image_eq_zero_of_notMem_tsupport fun h ↦
       hy ⟨y - σ z, h, σ z, mem_image_of_mem σ hz, sub_add_cancel y (σ z)⟩]
   -- In coordinates, `Θ(y)(∂ₛσ z, ∂ₜσ z)` is a finite sum of products.
@@ -210,7 +197,7 @@ theorem integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul
         Θ y (fun i ↦ b (s i)) := by
     -- Evaluate `Θ y` as the underlying multilinear map to expand it in coordinates.
     rw [show Θ y (t z) = (Θ y).toMultilinearMap (t z) from rfl,
-      MultilinearMap.apply_eq_sum_prod_repr_smul _ b, Finset.mul_sum]
+      MultilinearMap.apply_eq_sum_prod_repr_smul _ fun _ ↦ b, Finset.mul_sum]
     simp [t, Fin.prod_univ_two, mul_assoc]
   have hcoef (s : Fin 2 → κ) : Continuous (discMollification b ρ σ z₀ r s) :=
     (contDiff_discMollification (n := 0) (contDiff_zero.2 hρ) hσ s).continuous

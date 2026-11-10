@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Topology.Discrete
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
 import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
 
@@ -61,10 +63,11 @@ to the current of the limiting curve. The integer charges of discs whose boundar
 `|α|` is bounded below are the quantities whose limits are compared there with the local
 intersection numbers of discs with the limiting curve; that comparison is not part of this file.
 
-What this file does prove is that these integers stabilize along a weakly convergent family of
-cutoff currents. If the boundary circles of all the translated discs `σ + p`, `‖p‖ ≤ δ`, lie in
-`{χ(|α|²) = 1}`, homotopy invariance makes their charges equal, so averaging over `p` against a
-weight `ρ` of integral one supported in that ball does not change the charge of `σ`. By the
+What this file does prove is that these integers stabilize along a family of cutoff currents
+whose coefficients `Θ(y)(v, w)` converge as distributions. If the boundary circles of all the
+translated discs `σ + p`, `‖p‖ ≤ δ`, lie in `{χ(|α|²) = 1}`, homotopy invariance makes their
+charges equal, so averaging over `p` against a weight `ρ` of integral one supported in that ball
+does not change the charge of `σ`. By the
 averaging identity for mollified discs
 (`TauCeti.integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul`), the averaged
 charge is a finite sum of pairings of the coefficients `Θ(y)(e i, e j)` of the cutoff current
@@ -302,16 +305,6 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn {E : Type*}
 
 /-! ### Mollified charges and their limits -/
 
-/-- The pullback of a two-form by a disc, evaluated on `(∂ₛ, ∂ₜ)`, is the form evaluated on the
-tangent vectors `(∂ₛσ z, ∂ₜσ z)`. -/
-private theorem compContinuousLinearMap_fderiv_apply {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (Θ : E [⋀^Fin 2]→L[ℝ] ℝ) (σ : ℂ → E) (z : ℂ) :
-    Θ.compContinuousLinearMap (fderiv ℝ σ z) ![1, I] = Θ ![fderiv ℝ σ z 1, fderiv ℝ σ z I] := by
-  rw [compContinuousLinearMap_apply]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
-
 /-- **The disc charge as a pairing with a test field.** Let `σ` be a `C²` disc such that the
 boundary circle of every translated disc `σ + p`, `‖p‖ ≤ δ`, lies in `{χ(|α|²) = 1}`, and let `ρ`
 be a continuous weight of integral one supported in the closed ball of radius `δ` about `0`.
@@ -357,7 +350,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification
       (fun _ _ ↦ hσ.add contDiff_const)
       ((hσ.continuous.comp continuous_snd).add continuous_fst).continuousOn hbd hp
       (Metric.mem_closedBall_self hδ)
-    simpa only [fderiv_add_const, compContinuousLinearMap_fderiv_apply, add_zero] using h
+    simpa only [fderiv_add_const, compContinuousLinearMap_apply_vecCons_two, add_zero] using h
   have hρc' (p : E) : ρ p * ∫ z in Metric.closedBall z₀ r,
         cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
       ρ p * ∫ z in Metric.closedBall z₀ r,
@@ -367,7 +360,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification
     · rw [image_eq_zero_of_notMem_tsupport hp, zero_mul, zero_mul]
   rw [← integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul (b := e) hΘ hρ hρc
     (hσ.of_le one_le_two)]
-  simp_rw [hρc', integral_mul_const, hρ₁, one_mul, compContinuousLinearMap_fderiv_apply]
+  simp_rw [hρc', integral_mul_const, hρ₁, one_mul, compContinuousLinearMap_apply_vecCons_two]
 
 /-- **Stabilization of the disc charges.** Let `(bₖ, αₖ)` be a family of abelian Higgs pairs along
 a filter `l`, with cutoff currents `Θₖ`, and let `σ` be a `C²` disc. Suppose that eventually
@@ -409,19 +402,6 @@ theorem exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq {ι E : 
     obtain ⟨n, -, hn⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr (hα k) (hb k) hχ
       hχ₀ hσ fun θ ↦ by simpa using hk 0 (Metric.mem_closedBall_self hδ.le) θ
     exact ⟨n, hn⟩
-  -- Two such charges within `π` of the limit are equal.
-  have hev := hint.and (hc.eventually (Metric.ball_mem_nhds _ Real.pi_pos))
-  obtain ⟨k₀, ⟨n₀, hn₀⟩, hk₀⟩ := hev.exists
-  refine ⟨n₀, hev.mono fun k ⟨⟨n, hn⟩, hk⟩ ↦ ?_⟩
-  have hd : |2 * π * (n - n₀)| < 2 * π := by
-    have := (dist_triangle_right (c k) (c k₀) (∑ s, L s)).trans_lt
-      (add_lt_add (Metric.mem_ball.1 hk) (Metric.mem_ball.1 hk₀))
-    rwa [Real.dist_eq, hn, hn₀, ← mul_sub, ← two_mul] at this
-  rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)] at hd
-  have h1 : |((n - n₀ : ℤ) : ℝ)| < 1 := by
-    push_cast
-    exact (mul_lt_iff_lt_one_right (by positivity)).1 hd
-  have h2 : |n - n₀| < 1 := by exact_mod_cast h1
-  exact hn.trans (by rw [sub_eq_zero.1 (Int.abs_lt_one_iff.1 h2)])
+  exact hc.exists_eventually_eq_mul_intCast (by positivity) hint
 
 end TauCeti.SeibergWitten
