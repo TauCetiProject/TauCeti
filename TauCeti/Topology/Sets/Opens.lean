@@ -29,6 +29,8 @@ indexed by.
   viewed as a subspace, is the trace of an open set contained in `Ω`.
 * `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
   space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
+* `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
+  family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
@@ -85,6 +87,12 @@ theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpa
     ∃ V : Opens X, K ⊆ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
   obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
   exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
+
+/-- An open set lies below the supremum of a family of open sets exactly when their underlying
+sets cover it. -/
+theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
+    U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
+  rw [← SetLike.coe_subset_coe, coe_iSup]
 
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=

@@ -584,9 +584,10 @@ theorem integrableExpSet_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
 /-- **The moment-generating function of a Laplace law** with location `μ` and positive scale `b`,
 on its exact finiteness domain. -/
 @[simp]
-theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
+theorem mgf_id_laplaceMeasure (μ : ℝ) {t : ℝ}
     (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
     mgf id (laplaceMeasure μ b) t = Real.exp (μ * t) / (1 - b ^ 2 * t ^ 2) := by
+  have hb : 0 < b := inv_pos.mp (by linarith [ht.1, ht.2])
   have hmeasure : Integrable (fun y : ℝ => Real.exp (t * y)) (laplaceMeasure μ b) :=
     (integrable_exp_mul_laplaceMeasure_iff hb μ t).2 ht
   have hint : Integrable
@@ -633,11 +634,11 @@ theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
 /-- **The cumulant-generating function of a Laplace law** is the real logarithm of its mgf on
 the exact finiteness domain. -/
 @[simp]
-theorem cgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
+theorem cgf_id_laplaceMeasure (μ : ℝ) {t : ℝ}
     (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
     cgf id (laplaceMeasure μ b) t =
       Real.log (Real.exp (μ * t) / (1 - b ^ 2 * t ^ 2)) := by
-  rw [cgf, mgf_id_laplaceMeasure hb μ ht]
+  rw [cgf, mgf_id_laplaceMeasure μ ht]
 
 private theorem charFun_laplaceMeasure_zero_loc (hb : 0 < b) (t : ℝ) :
     charFun (laplaceMeasure 0 b) t = ((1 / (1 + b ^ 2 * t ^ 2) : ℝ) : ℂ) := by
