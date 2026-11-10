@@ -15,6 +15,12 @@ If each subgroup in a finite list normalizes the join of the subsequent subgroup
 is their ordered set product. Thus every element has one factor from each subgroup, in the
 specified order. This is the group-theoretic collection argument for height-ordered root groups;
 it does not assert uniqueness of the factors.
+
+This is the list-indexed counterpart of `Subgroup.mem_iSup_iff_exists_ofFn_prod` in
+`TauCeti.Algebra.Group.Subgroup.OrderedProduct`, using the same induction and Mathlib's binary
+normalized-join formula. That module also provides
+`TauCeti.mem_biSup_iff_exists_list_prod_map`, which allows arbitrary orders under stronger,
+height-graded commutator hypotheses. Here only normalization of successive suffixes is required.
 -/
 
 public section
@@ -25,7 +31,8 @@ variable {ι G : Type*} [Group G]
 
 /-- If each subgroup normalizes the join of those after it, every element of the join has an
 ordered factorization. The list has no repetitions so the factors may be indexed by `ι`. -/
-theorem mem_iSup_list_iff_exists_prod (H : ι → Subgroup G) (l : List ι) (hl : l.Nodup)
+theorem mem_biSup_iff_exists_list_prod_map_of_le_normalizer
+    (H : ι → Subgroup G) (l : List ι) (hl : l.Nodup)
     (hn : ∀ p i s, l = p ++ i :: s → H i ≤ normalizer (⨆ j ∈ s, H j : Subgroup G)) (g : G) :
     g ∈ (⨆ i ∈ l, H i) ↔
       ∃ f : ι → G, (∀ i ∈ l, f i ∈ H i) ∧ (l.map f).prod = g := by
