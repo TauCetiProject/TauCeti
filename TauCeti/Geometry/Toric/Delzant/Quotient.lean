@@ -14,7 +14,7 @@ public import TauCeti.Topology.Algebra.ProperAction.Basic
 
 Let `i : N →+ V` be an integral lattice and let `(u, c)` be a facet presentation of a polytope
 `Δ = {y ∈ V* | c j ≤ ⟨y, u j⟩ for every j}`. The torus `T = (ℝ / 2πℤ)^ι` acts on `ℂ^ι` by
-`z_j ↦ exp(-i θ_j) z_j` (`TauCeti.Toric.torusRotation`), with moment map
+`z_j ↦ exp(-i θ_j) z_j` (`TauCeti.torusRotation`), with moment map
 `⟨μ(z), t⟩ = Σ_j t_j (½ |z_j|² + c_j)` (`TauCeti.Toric.delzantMomentMap`). The kernel torus
 `N_Δ = ker (T → V / 2π i(N))` of `TauCeti.Toric.facetTorusHom` preserves the zero level `Z` of its
 moment map (`TauCeti.Toric.delzantLevel`), and Delzant's construction realizes `Δ` as the moment
@@ -59,8 +59,6 @@ The smooth structure on `M_Δ` and its reduced symplectic form are not construct
 
 ## Main definitions
 
-* `TauCeti.Toric.torusRotation θ`: the rotation `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι` by
-  `θ ∈ (ℝ / 2πℤ)^ι`, and with it the action of `(ℝ / 2πℤ)^ι` on the level `Z`.
 * `TauCeti.Toric.DelzantQuotient i u c`: the orbit space `Z / N_Δ`, with the action of the residual
   torus `(ℝ / 2πℤ)^ι / N_Δ`.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap`: the moment map `M_Δ → V*` of the residual
@@ -100,131 +98,6 @@ namespace TauCeti.Toric
 
 variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {u : ι → N} {c : ι → ℝ}
-
-/-! ### The rotation torus -/
-
-/-- The rotation `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι` by angles `θ ∈ (ℝ / 2πℤ)^ι`, in the real
-coordinates `z_j = q_j + i p_j`. On representatives it is `TauCeti.weightRotation (-θ)`
-(`TauCeti.Toric.torusRotation_coe`). -/
-def torusRotation (θ : ι → AddCircle (2 * π)) :
-    (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) →L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun x ↦
-        (WithLp.toLp 2 fun j ↦ cos_periodic.lift (θ j) * x.1 j + sin_periodic.lift (θ j) * x.2 j,
-          WithLp.toLp 2 fun j ↦
-            -(sin_periodic.lift (θ j) * x.1 j) + cos_periodic.lift (θ j) * x.2 j)
-      map_add' := fun x y ↦ by ext j <;> simp <;> ring
-      map_smul' := fun a x ↦ by ext j <;> simp <;> ring }
-
-/-- On representatives `t : ι → ℝ` of the angles, the rotation of `ℂ^ι` by `t` modulo `2π` is
-`z_j ↦ exp(-i t_j) z_j`, the weight-model rotation by `-t`. -/
-@[simp]
-theorem torusRotation_coe (t : ι → ℝ) :
-    torusRotation (fun j ↦ (t j : AddCircle (2 * π))) = weightRotation (-t) := by
-  ext x j <;> simp [torusRotation, cos_neg, sin_neg]
-
-omit [Fintype ι] in
-/-- Every element of the torus `(ℝ / 2πℤ)^ι` has a representative in `ℝ^ι`. -/
-private theorem exists_coe_eq (θ : ι → AddCircle (2 * π)) :
-    ∃ t : ι → ℝ, (fun j ↦ (t j : AddCircle (2 * π))) = θ := by
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  exact ⟨t, funext ht⟩
-
-@[simp]
-theorem torusRotation_zero :
-    torusRotation (0 : ι → AddCircle (2 * π)) = ContinuousLinearMap.id ℝ _ := by
-  simpa [← Pi.zero_def] using torusRotation_coe (0 : ι → ℝ)
-
-/-- Rotations compose by adding angles. -/
-theorem torusRotation_add (θ θ' : ι → AddCircle (2 * π)) :
-    torusRotation (θ + θ') = (torusRotation θ).comp (torusRotation θ') := by
-  obtain ⟨t, rfl⟩ := exists_coe_eq θ
-  obtain ⟨t', rfl⟩ := exists_coe_eq θ'
-  rw [torusRotation_coe, torusRotation_coe, ← weightRotation_add, ← neg_add, ← torusRotation_coe]
-  simp only [Pi.add_def, Pi.add_apply, QuotientAddGroup.mk_add]
-
-/-- The rotation `z_j ↦ exp(-i θ_j) z_j` preserves each modulus `|z_j|`. -/
-@[simp]
-theorem torusRotation_apply_normSq (θ : ι → AddCircle (2 * π))
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (j : ι) :
-    (torusRotation θ x).1 j ^ 2 + (torusRotation θ x).2 j ^ 2 = x.1 j ^ 2 + x.2 j ^ 2 := by
-  obtain ⟨t, rfl⟩ := exists_coe_eq θ
-  rw [torusRotation_coe]
-  exact ((exists_weightRotation_apply_eq_iff x _).1 ⟨-t, rfl⟩ j).symm
-
-/-- **Stabilizers of the rotation torus.** The rotation by `θ ∈ (ℝ / 2πℤ)^ι` fixes `z ∈ ℂ^ι`
-exactly when `θ_j = 0` for every coordinate `z_j` that is nonzero. -/
-theorem torusRotation_apply_eq_self_iff (θ : ι → AddCircle (2 * π))
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    torusRotation θ x = x ↔ ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → θ j = 0 := by
-  obtain ⟨t, rfl⟩ := exists_coe_eq θ
-  rw [torusRotation_coe, weightRotation_apply_eq_self_iff]
-  refine forall_congr' fun j ↦ imp_congr_right fun _ ↦ ?_
-  rw [AddCircle.coe_eq_zero_iff]
-  refine ⟨fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩⟩
-  · rw [zsmul_eq_mul]
-    simp only [Pi.neg_apply] at hk
-    push_cast
-    linarith
-  · rw [zsmul_eq_mul] at hk
-    simp only [Pi.neg_apply]
-    push_cast
-    linarith
-
-/-- The action of the rotation torus is jointly continuous. -/
-theorem continuous_torusRotation :
-    Continuous fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-      torusRotation p.1 p.2 := by
-  have hcos : Continuous (cos_periodic.lift : AddCircle (2 * π) → ℝ) :=
-    continuous_quot_lift _ continuous_cos
-  have hsin : Continuous (sin_periodic.lift : AddCircle (2 * π) → ℝ) :=
-    continuous_quot_lift _ continuous_sin
-  have hθ (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
-      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.1 j :=
-    (continuous_apply j).comp continuous_fst
-  have h1 (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
-      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.2.1 j :=
-    (PiLp.continuous_apply 2 _ j).comp (continuous_fst.comp continuous_snd)
-  have h2 (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
-      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.2.2 j :=
-    (PiLp.continuous_apply 2 _ j).comp (continuous_snd.comp continuous_snd)
-  refine Continuous.prodMk ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
-    ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
-  · exact ((hcos.comp (hθ j)).mul (h1 j)).add ((hsin.comp (hθ j)).mul (h2 j))
-  · exact (((hsin.comp (hθ j)).mul (h1 j)).neg).add ((hcos.comp (hθ j)).mul (h2 j))
-
-/-- The moment map is invariant under the rotation torus. -/
-@[simp]
-theorem delzantMomentMap_torusRotation (θ : ι → AddCircle (2 * π))
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    delzantMomentMap c (torusRotation θ x) = delzantMomentMap c x := by
-  obtain ⟨t, rfl⟩ := exists_coe_eq θ
-  rw [torusRotation_coe, delzantMomentMap_weightRotation]
-
-/-- The level is invariant under the rotation torus. -/
-@[simp]
-theorem torusRotation_mem_delzantLevel_iff (θ : ι → AddCircle (2 * π))
-    {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι} :
-    torusRotation θ x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i u c := by
-  simp [mem_delzantLevel]
-
-/-- The action `z_j ↦ exp(-i θ_j) z_j` of the torus `(ℝ / 2πℤ)^ι` on the level `Z`. -/
-instance : AddAction (ι → AddCircle (2 * π)) (delzantLevel i u c) where
-  -- The underlying point of `θ +ᵥ x` is `torusRotation θ x` by definition, so the action laws
-  -- are those of `torusRotation` evaluated at `x`.
-  vadd θ x := ⟨torusRotation θ x, (torusRotation_mem_delzantLevel_iff θ).2 x.2⟩
-  zero_vadd x := Subtype.ext (DFunLike.congr_fun torusRotation_zero x.1)
-  add_vadd θ θ' x := Subtype.ext (DFunLike.congr_fun (torusRotation_add θ θ') x.1)
-
-@[simp]
-theorem coe_vadd_delzantLevel (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
-    ((θ +ᵥ x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
-      torusRotation θ x :=
-  (rfl)
-
-instance : ContinuousVAdd (ι → AddCircle (2 * π)) (delzantLevel i u c) :=
-  ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))⟩
 
 /-! ### The quotient by the kernel torus -/
 
@@ -422,10 +295,8 @@ theorem continuous_reducedMomentMap :
   -- On `v = β_ℝ t`, the reduced moment map evaluates to the component `⟨μ, t⟩`.
   obtain ⟨t, rfl⟩ := hβ v
   refine ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp
-    ((continuous_delzantMomentMap c).comp continuous_subtype_val)).congr fun x ↦ ?_
-  rw [Function.comp_apply, Function.comp_apply, delzantMomentMap_eq_comp_reducedMomentMap hβ x,
-    ContinuousLinearMap.apply_apply, ContinuousLinearMap.comp_apply,
-    LinearMap.coe_toContinuousLinearMap', Function.comp_apply]
+    ((continuous_delzantMomentMap c).comp continuous_subtype_val)).congr fun x ↦ by
+      simp [delzantMomentMap_eq_comp_reducedMomentMap hβ x]
 
 /-- **The fibres of the reduced moment map are the orbits of the residual torus.** -/
 theorem reducedMomentMap_eq_reducedMomentMap_iff {q q' : DelzantQuotient i u c} :

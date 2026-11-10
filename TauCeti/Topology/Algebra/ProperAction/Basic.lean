@@ -34,7 +34,9 @@ theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] 
     [MulAction G X] [TopologicalSpace X] [T2Space X] [ContinuousSMul G X] : ProperSMul G X :=
   properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 _ _ hxx ↦ by
     obtain ⟨g, -, hg⟩ := isCompact_univ.ultrafilter_le_nhds (𝒰.map Prod.fst) (by simp)
-    have hg : Filter.Tendsto (Prod.fst : G × X → G) 𝒰 (nhds g) := hg
+    -- `Tendsto Prod.fst 𝒰 (𝓝 g)` is by definition `map Prod.fst 𝒰 ≤ 𝓝 g`.
+    rw [Ultrafilter.coe_map] at hg
+    change Filter.Tendsto (Prod.fst : G × X → G) 𝒰 (nhds g) at hg
     exact ⟨g, tendsto_nhds_unique (hg.smul ((continuous_snd.tendsto _).comp hxx))
       ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
 

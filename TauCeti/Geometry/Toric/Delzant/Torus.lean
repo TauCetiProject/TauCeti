@@ -243,22 +243,6 @@ section Closed
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
 
-/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is closed in `V`: it is discrete
-for `p ≠ 0`, and zero for `p = 0`. -/
-theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
-    IsClosed ((p • i).range : Set V) := by
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp
-  have := hi.discreteTopology
-  have h : IsClosed (LinearMap.range i.toIntLinearMap : Set V) :=
-    (LinearMap.range i.toIntLinearMap).toAddSubgroup.isClosed_of_discreteTopology
-  have hrange : ((p • i).range : Set V) =
-      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
-    ext v
-    simp [eq_comm]
-  rw [hrange]
-  exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
-
 /-- **The kernel torus is closed.** For an integral lattice `i`, the kernel of the homomorphism
 `(ℝ / pℤ)^ι → V / p i(N)` is a closed subgroup; for `p ≠ 0` it is therefore a compact subgroup of
 the torus `(ℝ / pℤ)^ι`. -/
