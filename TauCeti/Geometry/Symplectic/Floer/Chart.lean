@@ -27,6 +27,7 @@ analysis of `TauCeti.Geometry.Symplectic.Floer`, carried out for a symplectic ve
 applies to a manifold target.
 
 The pointwise symplectic linear algebra of such a map is in
+`TauCeti.Geometry.Symplectic.Manifold.TwoForm` and
 `TauCeti.Geometry.Symplectic.Hamiltonian.Manifold`: `dφ_x` is injective
 (`TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`), and if it is also surjective it
 carries the Hamiltonian vector field of `g ∘ φ` at `x` to the Hamiltonian vector field of `g` for

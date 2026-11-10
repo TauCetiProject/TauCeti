@@ -59,19 +59,18 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V]
   [InnerProductSpace ℝ V]
 
-/-- The pointwise hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.perturbedFDeriv_comp` for a
-smooth partial diffeomorphism `φ` at a point `x` of its source, and coordinate Hamiltonians
-`K(z, φ⁻¹ y)` differentiable in `y` at `φ x`. -/
+/-- The hypotheses on a Hamiltonian `K` of
+`TauCeti.SmoothTwoForm.IsNondegenerate.perturbedFDeriv_comp` at a point `x` of the source of a
+smooth partial diffeomorphism `φ`, when the coordinate Hamiltonians `K(z, φ⁻¹ y)` are `C³` near
+`(z, φ x)`: `K z` is its coordinate expression composed with `φ` near `x`, and that expression is
+differentiable at `φ x`. -/
 private theorem chart_hyps (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {x : M}
     (hx : x ∈ φ.source) {K : ℝ × ℝ → M → ℝ} {W : Set ((ℝ × ℝ) × V)} (hW : IsOpen W)
     (hK : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ K p.1 (φ.symm p.2)) W) {z : ℝ × ℝ}
     (hzx : (z, φ x) ∈ W) :
-    MDifferentiableAt I 𝓘(ℝ, V) φ x ∧ Surjective (mvfderiv I φ x) ∧
-      K z =ᶠ[𝓝 x] (fun y ↦ K z (φ.symm y)) ∘ φ ∧
+    K z =ᶠ[𝓝 x] (fun y ↦ K z (φ.symm y)) ∘ φ ∧
       DifferentiableAt ℝ (fun y ↦ K z (φ.symm y)) (φ x) := by
-  refine ⟨φ.mdifferentiableAt (by simp) hx, fun w ↦ ?_, ?_, ?_⟩
-  · obtain ⟨v, hv⟩ := (φ.isInvertible_mfderiv (by simp) hx).surjective w
-    exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
+  refine ⟨?_, ?_⟩
   · filter_upwards [φ.open_source.mem_nhds hx] with y hy
     exact congrArg (K z) (φ.toPartialEquiv.left_inv hy).symm
   · have h := ((hK.differentiableOn (by norm_num)) _ hzx).differentiableAt (hW.mem_nhds hzx)
@@ -101,8 +100,10 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNonde
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) J'
         (ω₀.perturbedFDeriv (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u)
           z).toLinearMap := by
-  obtain ⟨hφx, hsurj, hKs₁, hKs₂⟩ := chart_hyps φ hx hW hKs hzx
-  obtain ⟨-, -, hKt₁, hKt₂⟩ := chart_hyps φ hx hW hKt hzx
+  have hφx := φ.mdifferentiableAt (by simp) hx
+  have hsurj := (φ.bijective_mvfderiv (by simp) hx).surjective
+  obtain ⟨hKs₁, hKs₂⟩ := chart_hyps φ hx hW hKs hzx
+  obtain ⟨hKt₁, hKt₂⟩ := chart_hyps φ hx hW hKt hzx
   exact ⟨hω.floerEnergyDensity_comp hu hφx hsurj hφ hKs₁ hKt₁ hKs₂ hKt₂,
     (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ hKs₁ hKt₁ hKs₂ hKt₂
       hJJ').2 hfl⟩
@@ -158,9 +159,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (hω : ω.
   -- In the chart, `J'` is tamed by `ω₀` over `D × φ(C)`.
   have hJ't : ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
     rintro z hz _ ⟨x, hx, rfl⟩
-    have hW' : (z, φ x) ∈ W := hDCW ⟨hz, x, hx, rfl⟩
-    exact tames_of_isComplexLinearMap_mvfderiv hω (chart_hyps φ (hCφ hx) hW hKs hW').2.1
-      (hφ x hx) (hJJ' z hz x hx) (hJt z hz x hx)
+    exact tames_of_isComplexLinearMap_mvfderiv hω
+      (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
+      (hJt z hz x hx)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
     hDCW hJ't

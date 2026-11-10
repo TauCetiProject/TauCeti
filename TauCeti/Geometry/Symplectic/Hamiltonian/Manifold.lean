@@ -79,12 +79,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 
 The same holds pointwise for a map `φ : M → V` into a vector space with a constant symplectic form
 `ω₀` that pulls `ω₀` back to a nondegenerate `σ` at a single point `x`, such as a Darboux chart:
-its differential at `x` is injective
-(`TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`), carries the Hamiltonian vector field
-of `g ∘ φ` to that of `g` when it is surjective
-(`TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`), and carries a
-tamed almost complex structure on `T_x M` to one tamed by `ω₀`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`).
+when its differential at `x` is surjective, it carries the Hamiltonian vector field of `g ∘ φ` to
+that of `g` (`TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`).
 
 ## Main declarations
 
@@ -654,34 +650,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω₀ : Symplec
   {x : M}
 
 namespace IsNondegenerate
-
-/-- **A symplectic chart is an immersion.** If `φ` pulls the symplectic form `ω₀` back to the
-nondegenerate form `σ` at `x`, its differential at `x` is injective. -/
-theorem injective_mvfderiv (hσ : σ.IsNondegenerate)
-    (hform : ∀ v w : TangentSpace I x, σ.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w)) :
-    Function.Injective (mvfderiv I φ x) := by
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  -- `v` pairs to zero with every tangent vector, so it vanishes by nondegeneracy of `σ_x`.
-  refine (hσ.symplecticFormAt x).separatingLeft v fun w ↦ ?_
-  have h := (hσ.symplecticFormAt_apply x v w).trans (hform v w)
-  rw [hv] at h
-  exact h.trans (LinearMap.map_zero₂ _ _)
-
-/-- **Taming in a symplectic chart.** Let `φ` have surjective differential at `x` and pull the
-symplectic form `ω₀` back to the nondegenerate form `σ` at `x`. If `J` is tamed by `σ_x` and `J'`
-is `J` read in the chart, `dφ ∘ J = J' ∘ dφ`, then `J'` is tamed by `ω₀`. -/
-theorem tames_of_isComplexLinearMap_mvfderiv (hσ : σ.IsNondegenerate)
-    (hsurj : Function.Surjective (mvfderiv I φ x))
-    (hform : ∀ v w : TangentSpace I x, σ.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    {J : AlmostComplexStructure (TangentSpace I x)} {J' : AlmostComplexStructure V}
-    (hJ : IsComplexLinearMap J J' (mvfderiv I φ x).toLinearMap)
-    (hJt : (hσ.symplecticFormAt x).Tames J) : ω₀.Tames J' := by
-  intro w hw
-  obtain ⟨v, rfl⟩ := hsurj w
-  have hJv := LinearMap.congr_fun hJ v
-  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
-  rw [← hJv, ← hform, ← symplecticFormAt_apply]
-  exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V]
 
