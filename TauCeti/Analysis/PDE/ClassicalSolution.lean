@@ -65,7 +65,7 @@ namespace TauCeti
 
 namespace PDE
 
-open InnerProductSpace Laplacian MeasureTheory Metric Set Filter TopologicalSpace
+open InnerProductSpace Laplacian _root_.MeasureTheory Metric Set Filter TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
