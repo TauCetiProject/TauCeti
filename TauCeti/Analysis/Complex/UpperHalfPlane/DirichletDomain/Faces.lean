@@ -73,7 +73,10 @@ theorem smul_eq_of_nontrivial_dirichletFace_inter {p : ℍ} {g g' : G} (hg : g �
   exact eq_of_dist_eq_dist_of_dist_eq_dist hg.symm hg'.symm hxy (mem_dirichletFace.mp hx.1).2
     (mem_dirichletFace.mp hy.1).2 (mem_dirichletFace.mp hx.2).2 (mem_dirichletFace.mp hy.2).2
 
-/-- On its supporting bisector the face imposes just the Dirichlet-domain inequalities. -/
+/-- Restricted along `geodesicLine (perpBisector p (g • p))`, the face imposes just the
+Dirichlet-domain inequalities. For an index `g` moving the centre this line is the supporting
+bisector of the face; for an index fixing the centre it is an arbitrary line through the centre,
+and the face is the whole domain. -/
 @[simp]
 theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g =
@@ -83,7 +86,10 @@ theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
   · rw [dirichletFace_eq_inter_range_geodesicLine hg, preimage_inter,
       preimage_range, inter_univ]
 
-/-- The parameters of an equality face on its supporting bisector form an interval. -/
+/-- The parameters of an equality face along `geodesicLine (perpBisector p (g • p))` form an
+interval. For an index `g` moving the centre this line is the supporting bisector of the face; for
+an index fixing the centre it is an arbitrary line through the centre, and the face is the whole
+domain. -/
 theorem ordConnected_preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     (geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g).OrdConnected := by
   rw [preimage_geodesicLine_dirichletFace]
