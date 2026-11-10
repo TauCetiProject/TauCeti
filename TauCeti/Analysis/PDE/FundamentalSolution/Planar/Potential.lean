@@ -128,6 +128,21 @@ private lemma abs_planarNewtonianKernel_sub_sub_le {z y : ℂ} {R : ℝ} (hy : �
       ≤ (2 * Real.pi)⁻¹ * (2 * (R / ‖z‖)) := by gcongr
     _ = Real.pi⁻¹ * (R / ‖z‖) := by field_simp
 
+/-- Moving the pole of the planar Newtonian kernel changes it by a function vanishing at
+infinity: `G(z - y) - G z → 0` as `z → ∞`. -/
+theorem tendsto_planarNewtonianKernel_sub_sub_cocompact (y : ℂ) :
+    Tendsto (fun z ↦ planarNewtonianKernel (z - y) - planarNewtonianKernel z) (cocompact ℂ)
+      (𝓝 0) := by
+  set R := max ‖y‖ 1
+  have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hlim : Tendsto (fun z : ℂ ↦ Real.pi⁻¹ * (R / ‖z‖)) (cocompact ℂ) (𝓝 0) := by
+    have h := (tendsto_inv_atTop_zero.comp (tendsto_norm_cocompact_atTop (E := ℂ))).const_mul R
+    simpa [Function.comp_def, div_eq_mul_inv] using h.const_mul Real.pi⁻¹
+  refine squeeze_zero_norm' ?_ hlim
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (2 * R)] with z hz
+  rw [Real.norm_eq_abs]
+  exact abs_planarNewtonianKernel_sub_sub_le (le_max_left _ _) hz (by linarith)
+
 /-- **The planar Newtonian potential grows logarithmically.** For `f` continuous with compact
 support on `ℂ`, `(G ⋆ f) z - G z • ∫ f → 0` as `z → ∞`: far from the support of `f`, the
 potential is that of a point mass `∫ f` at the origin. -/

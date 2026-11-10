@@ -67,6 +67,11 @@ theorem planarNewtonianKernel_neg (z : ℂ) :
     planarNewtonianKernel (-z) = planarNewtonianKernel z := by
   simp [planarNewtonianKernel]
 
+/-- The planar Newtonian kernel is radial: its value only depends on the norm of its argument. -/
+theorem planarNewtonianKernel_eq_of_norm_eq {z w : ℂ} (h : ‖z‖ = ‖w‖) :
+    planarNewtonianKernel z = planarNewtonianKernel w := by
+  rw [planarNewtonianKernel_def, planarNewtonianKernel_def, h]
+
 /-- The planar Newtonian kernel is invariant under multiplication by a unit complex number. -/
 theorem planarNewtonianKernel_unit_mul {u z : ℂ} (hu : ‖u‖ = 1) :
     planarNewtonianKernel (u * z) = planarNewtonianKernel z := by
