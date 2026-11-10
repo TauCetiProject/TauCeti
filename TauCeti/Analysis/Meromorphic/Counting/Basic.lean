@@ -48,6 +48,16 @@ theorem divisorCount_def (f : 𝕜 → E) (U R : Set 𝕜) :
 theorem zeroCount_def (f : 𝕜 → E) (U R : Set 𝕜) :
     zeroCount f U R = ∑ᶠ z ∈ R, (MeromorphicOn.divisor f U z).toNat := (rfl)
 
+/-- Over a finite set the signed count is the finite sum of the divisor values. -/
+@[simp] theorem divisorCount_coe_finset (f : 𝕜 → E) (U : Set 𝕜) (s : Finset 𝕜) :
+    divisorCount f U s = ∑ z ∈ s, MeromorphicOn.divisor f U z :=
+  finsum_mem_coe_finset _ _
+
+/-- Over a finite set the zero count is the finite sum of the positive multiplicities. -/
+@[simp] theorem zeroCount_coe_finset (f : 𝕜 → E) (U : Set 𝕜) (s : Finset 𝕜) :
+    zeroCount f U s = ∑ z ∈ s, (MeromorphicOn.divisor f U z).toNat :=
+  finsum_mem_coe_finset _ _
+
 /-- Finite signed divisor support also gives finite support for the positive multiplicities. -/
 theorem zeroCount_support_finite
     (hR : (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
