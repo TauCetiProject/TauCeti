@@ -62,21 +62,14 @@ private theorem pbwScale_coe (a : ℕ) (b : ℤ) :
     _ = q ^ (2 * b * a) := by ring_nf
 
 omit [Fact (q ≠ 0)] in
-/-- At `q = 0` the generator `F` vanishes, since `K F = q⁻¹ ^ 2 • F K = 0` and `K` is a unit. -/
-private theorem f_eq_zero_of_eq_zero (hq : q = 0) : f q = 0 := by
-  have h : (kUnit q : UqSl2 q) * f q = 0 := by
-    rw [kUnit_val, k_mul_f, hq]
-    simp
-  exact (kUnit q).mul_right_eq_zero.1 h
-
-omit [Fact (q ≠ 0)] in
 /-- Moving `F` past an arbitrary integer power of `K` multiplies by `q ^ (2b)`. -/
 theorem f_mul_kUnit_zpow (b : ℤ) :
     f q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       q ^ (2 * b) •
         (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
   by_cases hq : q = 0
-  · simp [f_eq_zero_of_eq_zero q hq]
+  · subst hq
+    simp
   have : Fact (q ≠ 0) := ⟨hq⟩
   have hk : f q * k q = q ^ (2 : ℤ) • (k q * f q) := by
     rw [k_mul_f, smul_smul, zpow_ofNat, ← mul_pow, mul_inv_cancel₀ Fact.out, one_pow, one_smul]
@@ -128,7 +121,8 @@ theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
       q ^ (2 * b * a) •
         (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q ^ a) := by
   by_cases hq : q = 0
-  · rcases a with _ | a <;> simp [f_eq_zero_of_eq_zero q hq]
+  · subst hq
+    rcases a with _ | a <;> simp
   have : Fact (q ≠ 0) := ⟨hq⟩
   induction a with
   | zero => simp
