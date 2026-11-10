@@ -218,6 +218,7 @@ theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure �
     -- Without a measurable version of `X` the mean is `0`, so the integrand of the variance
     -- vanishes on `{X = 0}`, a set of full outer measure; hence the variance is `0`.
     have hev : evariance X μ = 0 := by
+      rw [evariance]
       refine lintegral_eq_zero_of_measure_setOf_eq_zero ?_
       refine le_antisymm (measure_mono (subset_univ _)) ?_
       rw [measure_univ, ← hfull]
