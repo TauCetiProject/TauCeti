@@ -92,7 +92,7 @@ theorem weightTorusToBaseChangeCoordinateMap_surjective :
     weightTorusIntegralCoordinateMap weightTorusIntegralCoordinateMap_surjective
     (baseChangeCoordinateIso R)
     (_root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
         (G := SplitTorus.characterGroup (Fin 4))))
 
 /-- The defining ideal of the weight torus inside the specialized integral tripled carrier. -/
@@ -199,7 +199,7 @@ theorem map_baseChangeHopfIdeal_weightTorusIntegralDefiningIdeal :
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (baseChangeCoordinateIso R).symm
     (_root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
         (G := SplitTorus.characterGroup (Fin 4))))
     weightTorusIntegralCoordinateMap_surjective
     (weightTorusToBaseChangeCoordinateMap_surjective R) ?_

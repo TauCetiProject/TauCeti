@@ -63,6 +63,35 @@ private lemma nat_card_setOf_eq_sum {A : Type*} [Fintype A] (P : A → Prop) :
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
   simp [Set.mem_ofPred_eq]
 
+/-- Cancelling the left factor `w` in the defining condition of the fibre of the multiplicity. -/
+private lemma mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G)
+    (j : DecompQuotient Γ₂ Γ₃ h) :
+    ((w * ((j.out : G) * h) : G) : G ⧸ Γ₃) = (d : G ⧸ Γ₃) ↔
+      (((j.out : G) * h : G) : G ⧸ Γ₃) = ((w⁻¹ * d : G) : G ⧸ Γ₃) := by
+  simp only [QuotientGroup.eq, mul_inv_rev, mul_assoc]
+
+/-- The fibre of the multiplicity over a fixed first representative has at most one element. -/
+private lemma subsingleton_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
+    Subsingleton {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} :=
+  ⟨fun j₁ j₂ ↦ Subtype.ext (mk_out_mul_injective Γ₂ Γ₃ h
+    (((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₁.2).trans
+      ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₂.2).symm))⟩
+
+/-- The fibre of the multiplicity over a fixed first representative is nonempty exactly when
+`w⁻¹d ∈ Γ₂hΓ₃`. -/
+private lemma exists_mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
+    (∃ j : DecompQuotient Γ₂ Γ₃ h, (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)) ↔
+      w⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := by
+  constructor
+  · rintro ⟨j, hj⟩
+    have hj' := QuotientGroup.eq.mp ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d j).mp hj)
+    exact mem_doubleCoset.mpr ⟨j.out, j.out.2, _, hj', by rw [mul_inv_cancel_left]⟩
+  · intro hd
+    rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
+    obtain ⟨j, hj⟩ := hd
+    rw [mem_leftCoset_iff] at hj
+    exact ⟨j, (mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d j).mpr (QuotientGroup.eq.mpr hj)⟩
+
 open Classical in
 /-- The fibre of the multiplicity over a fixed first representative: for fixed `w`, there is
 exactly one representative `τⱼ` with `w τⱼ h Γ₃ = d Γ₃` if `w⁻¹d ∈ Γ₂hΓ₃`, and none
@@ -70,46 +99,41 @@ otherwise. -/
 lemma nat_card_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
     Nat.card {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} =
       if w⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ then 1 else 0 := by
-  have hcond : ∀ j : DecompQuotient Γ₂ Γ₃ h,
-      ((w * ((j.out : G) * h) : G) : G ⧸ Γ₃) = (d : G ⧸ Γ₃) ↔
-        (((j.out : G) * h : G) : G ⧸ Γ₃) = ((w⁻¹ * d : G) : G ⧸ Γ₃) := by
-    intro j
-    simp only [QuotientGroup.eq, mul_inv_rev, mul_assoc]
+  have hex := exists_mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d
+  have := subsingleton_fiber Γ₂ Γ₃ h w d
   split_ifs with hd
   · rw [Nat.card_eq_one_iff_unique]
-    constructor
-    · exact ⟨fun j₁ j₂ ↦ Subtype.ext (mk_out_mul_injective Γ₂ Γ₃ h
-        (((hcond _).mp j₁.2).trans ((hcond _).mp j₂.2).symm))⟩
-    · rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
-      obtain ⟨j, hj⟩ := hd
-      rw [mem_leftCoset_iff] at hj
-      exact ⟨⟨j, (hcond j).mpr (QuotientGroup.eq.mpr hj)⟩⟩
+    exact ⟨inferInstance, ⟨⟨(hex.mpr hd).choose, (hex.mpr hd).choose_spec⟩⟩⟩
   · have : IsEmpty {j : DecompQuotient Γ₂ Γ₃ h |
         (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
       rw [Set.isEmpty_coe_sort, Set.eq_empty_iff_forall_notMem]
-      intro j hj
-      have hj' := QuotientGroup.eq.mp ((hcond j).mp hj)
-      exact hd (mem_doubleCoset.mpr ⟨j.out, j.out.2, _, hj', by
-        rw [mul_inv_cancel_left]⟩)
+      exact fun j hj ↦ hd (hex.mp ⟨j, hj⟩)
     rw [Nat.card_of_isEmpty]
 
 /-- Shimura's multiplicity as a one-sided count: the second component of a pair in the fibre
 is determined by the first, so `m(g, h; d)` counts the representatives `σᵢ` with
 `(σᵢg)⁻¹d ∈ Γ₂hΓ₃`. -/
-theorem multiplicity_eq_card_filter (g h d : G) [Finite (DecompQuotient Γ₁ Γ₂ g)]
-    [Finite (DecompQuotient Γ₂ Γ₃ h)] :
+theorem multiplicity_eq_card_filter (g h d : G) :
     multiplicity Γ₁ Γ₂ Γ₃ g h d =
       Nat.card {i : DecompQuotient Γ₁ Γ₂ g | ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃} := by
   classical
-  have : Fintype (DecompQuotient Γ₁ Γ₂ g) := Fintype.ofFinite _
-  have step1 : Nat.card {p : DecompQuotient Γ₁ Γ₂ g × DecompQuotient Γ₂ Γ₃ h |
-      ((p.1.out : G) * g * ((p.2.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} =
-      ∑ i : DecompQuotient Γ₁ Γ₂ g, Nat.card {j : DecompQuotient Γ₂ Γ₃ h |
-        ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
-    exact nat_card_prod_setOf _
-  rw [multiplicity_def, step1, nat_card_setOf_eq_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [nat_card_fiber Γ₂ Γ₃ h ((i.out : G) * g) d]
+  have key : ∀ i : DecompQuotient Γ₁ Γ₂ g,
+      (∃ j : DecompQuotient Γ₂ Γ₃ h,
+        ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)) ↔
+        ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := fun i ↦
+    exists_mk_mul_out_mul_eq_iff Γ₂ Γ₃ h ((i.out : G) * g) d
+  rw [multiplicity_def]
+  refine Nat.card_congr (Equiv.ofBijective
+    (fun p ↦ ⟨p.1.1, (key p.1.1).mp ⟨p.1.2, p.2⟩⟩) ⟨?_, ?_⟩)
+  · rintro ⟨⟨i, j⟩, hp⟩ ⟨⟨i', j'⟩, hp'⟩ heq
+    obtain rfl : i = i' := congrArg Subtype.val heq
+    have := subsingleton_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
+    obtain rfl : j = j' := congrArg Subtype.val (Subsingleton.elim (⟨j, hp⟩ : {j |
+      ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)}) ⟨j', hp'⟩)
+    rfl
+  · rintro ⟨i, hi⟩
+    obtain ⟨j, hj⟩ := (key i).mpr hi
+    exact ⟨⟨(i, j), hj⟩, rfl⟩
 
 /-- Acting on a decomposition quotient moves the chosen representative by an element of `H₁`
 that conjugates into `H₂`: `(u • i).out = u * i.out * c` with `k⁻¹ c k ∈ H₂`.
@@ -239,7 +263,7 @@ private lemma sum_image_mulMap_multiplicity_right [IsHeckeTriple Δ H₁ H₂]
 /-- Joining the right-handed Fubini step with the one-sided count: the right association counts
 pairs of representatives whose product moves `d` into `H₃g₃H₄`. -/
 private lemma sum_multiplicity_eq_card [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
-    [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ) :
+    (g₁ g₂ g₃ d : Δ) :
     ∑ i : DecompQuotient H₁ H₂ (g₁ : G),
         multiplicity H₂ H₃ H₄ (g₂ : G) (g₃ : G) (((i.out : G) * g₁)⁻¹ * d) =
       Nat.card {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G) |
@@ -262,7 +286,7 @@ open Classical in
 cosets `l` of `H₁ E H₃` and the pairs `p`, of the indicator of the two conditions holding
 together. -/
 private lemma multiplicity_mul_multiplicity_eq_sum_indicator [IsHeckeTriple Δ H₁ H₂]
-    [IsHeckeTriple Δ H₂ H₃] [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ)
+    [IsHeckeTriple Δ H₂ H₃] (g₁ g₂ g₃ d : Δ)
     (E : HeckeCoset Δ H₁ H₃) [Fintype (DecompQuotient H₁ H₃ (E.rep : G))] :
     multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) (E.rep : G) *
         multiplicity H₁ H₃ H₄ (E.rep : G) (g₃ : G) (d : G) =
@@ -311,7 +335,7 @@ open Classical in
 whose product moves `d` into `H₃g₃H₄`, using the invariance of the multiplicity across the
 left cosets of a double coset. -/
 private lemma sum_image_mulMap_multiplicity_left [IsHeckeTriple Δ H₁ H₂]
-    [IsHeckeTriple Δ H₂ H₃] [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ) :
+    [IsHeckeTriple Δ H₂ H₃] (g₁ g₂ g₃ d : Δ) :
     ∑ E ∈ Finset.univ.image (mulMap H₁ H₂ H₃ g₁ g₂),
         multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) (E.rep : G) *
           multiplicity H₁ H₃ H₄ (E.rep : G) (g₃ : G) (d : G) =

@@ -82,7 +82,7 @@ structure IsAdaptedPseudoGradient (f : M → ℝ) (X : (x : M) → TangentSpace 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- In a Morse chart for `f` in which `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, the reversed field
 `-X` is the linear field of the negated Morse chart for `-f`. -/
-theorem MorseChart.coord_mfderiv_neg [FiniteDimensional ℝ E] {x : M} (φ : MorseChart E f x)
+theorem MorseChart.coord_mfderiv_neg {x : M} (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
@@ -147,8 +147,6 @@ theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCur
     (fun t ↦ Manifold.hasDerivAt_comp_curve
       (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
-
-variable [FiniteDimensional ℝ E]
 
 /-- **Reversing a pseudo-gradient.** If `X` is a pseudo-gradient adapted to a Morse function `f`,
 then `-X` is a pseudo-gradient adapted to `-f`. -/
