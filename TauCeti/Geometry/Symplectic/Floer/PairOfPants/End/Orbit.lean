@@ -142,9 +142,8 @@ theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (
   · have hH' : positiveEndHamiltonian H q = fun t y ↦ -H q (-t) y := by
       funext t y
       simp [positiveEndHamiltonian_apply, h]
-    have hx' : Periodic (fun t ↦ x (-t)) 1 := fun t ↦ by
-      beta_reduce
-      rw [neg_add, ← sub_eq_add_neg, hx.sub_eq]
+    have hx' : Periodic (fun t ↦ x (-t)) 1 := by
+      simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
     have h' := ω.hamiltonianAction_comp_neg hH hx'
     simp only [neg_neg] at h'
     rw [hH', h]
@@ -251,6 +250,68 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {c M : ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- Uniform tameness `c ‖v‖² ≤ ω(v, J z v)` makes `ω(v, J z v)` positive for `v ≠ 0`. -/
+private theorem apply_pos_of_tame (hc : 0 < c)
+    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) {v : V} (hv : v ≠ 0) : 0 < ω v (J z v) :=
+  (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+
+/-- The positive end chart maps the half-cylinder `(max T₀ 0, ∞) × ℝ` into `S`. -/
+private theorem mapsTo_positiveEndChart (q : Puncture) :
+    MapsTo (positiveEndChart q) (Ioi (max T₀ 0) ×ˢ univ) thricePuncturedSphereReal :=
+  fun _ hz ↦ positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz.1)
+
+omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- Reading the end loop of `u ∘ φ'_q` with the time `±t` of the end gives the end loop of `u`. -/
+private theorem comp_endChart_eq_comp_positiveEndChart (q : Puncture) (s : ℝ) :
+    (fun t ↦ u (endChart q (q.endSign * s, t))) =
+      (fun t ↦ (u ∘ positiveEndChart q) (s, t)) ∘ fun t ↦ q.endSign * t := by
+  funext t
+  simp only [comp_apply, endChart_eq_positiveEndChart]
+
+/-- The hypotheses on `u` over `S` give the hypotheses of a finite-energy Floer half-cylinder for
+`u ∘ φ'_q` over `(max T₀ 0, ∞) × [0, 1]`. -/
+private theorem floer_comp_positiveEndChart
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hJM : ∀ z ∈ thricePuncturedSphereReal, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) (q : Puncture) :
+    (∀ s, max T₀ 0 < s → ∀ t, (u ∘ positiveEndChart q) (s, t) ∈ B) ∧
+      (∀ z ∈ Ioi (max T₀ 0) ×ˢ Icc 0 1, ∀ v,
+        c * ‖v‖ ^ 2 ≤ ω v ((J ∘ positiveEndChart q) z v)) ∧
+      (∀ z ∈ Ioi (max T₀ 0) ×ˢ Icc 0 1, ∀ v, ‖(J ∘ positiveEndChart q) z v‖ ≤ M * ‖v‖) ∧
+      (∀ z ∈ Ioi (max T₀ 0) ×ˢ Icc 0 1,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) ((J ∘ positiveEndChart q) z)
+          (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+            (u ∘ positiveEndChart q) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi (max T₀ 0) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≠ ⊤ := by
+  have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
+    ((hHs q).differentiable one_ne_zero).comp (differentiable_const t |>.prodMk differentiable_id)
+  have hud := hu.differentiableOn one_ne_zero
+  have hmem (z : ℝ × ℝ) (hz : z ∈ Ioi (max T₀ 0) ×ˢ Icc 0 1) :
+      positiveEndChart q z ∈ thricePuncturedSphereReal :=
+    mapsTo_positiveEndChart q ⟨hz.1, mem_univ _⟩
+  refine ⟨fun s hs t ↦ huB _ (mapsTo_positiveEndChart q ⟨hs, mem_univ _⟩),
+    fun z hz v ↦ hJc _ (hmem z hz) v, fun z hz v ↦ hJM _ (hmem z hz) v, fun z hz ↦ ?_,
+    ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
+      hud q (le_max_right _ _) (le_max_left _ _))⟩
+  exact isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
+    ((le_max_left _ _).trans hz.1.le)
+    ((hud _ (hmem z hz)).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds (hmem z hz)))
+    (hfloer _ (hmem z hz))
+
 /-- **A finite-energy Floer pair of pants breaks off an orbit at each end.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be
 `C¹` on `S`, with image in a compact set, solving the Floer equation `(du - X_K)^{0,1} = 0` on `S`
@@ -276,35 +337,17 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_of_floer
     ∃ y : ℝ → V, Periodic y 1 ∧ (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) ∧
       ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (endChart q (q.endSign * σ n, t))) y atTop := by
-  have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
-    ((hHs q).differentiable one_ne_zero).comp (differentiable_const t |>.prodMk differentiable_id)
-  have hud := hu.differentiableOn one_ne_zero
-  have hud' : ∀ z ∈ thricePuncturedSphereReal, DifferentiableAt ℝ u z := fun z hz ↦
-    (hud z hz).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
-  have hmem : ∀ z ∈ Ioi (max T₀ 0) ×ˢ (univ : Set ℝ),
-      positiveEndChart q z ∈ thricePuncturedSphereReal := fun z hz ↦
-    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz.1)
+  obtain ⟨huB', hJc', hJM', hfloer', hE'⟩ :=
+    floer_comp_positiveEndChart hKH hH hHs hu huB hJc hJM hfloer hE q
   -- In the positive end chart, the end is a finite-energy Floer half-cylinder.
   obtain ⟨x, hxper, hx, φ, -, hφ, hux⟩ := exists_periodic_hasDerivAt_tendstoUniformly_of_floer
-    (u := u ∘ positiveEndChart q) (J := J ∘ positiveEndChart q)
     (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (periodic_positiveEndHamiltonian (hH q))
-    (hu.comp (contDiff_positiveEndChart q 1).contDiffOn hmem)
-    (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one]) hB
-    (fun s hs t ↦ huB _ (hmem (s, t) ⟨hs, mem_univ _⟩)) hc
-    (fun z hz v ↦ hJc _ (hmem z ⟨hz.1, mem_univ _⟩) v)
-    (fun z hz v ↦ hJM _ (hmem z ⟨hz.1, mem_univ _⟩) v)
-    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
-      ((le_max_left _ _).trans hz.1.le) (hud' _ (hmem z ⟨hz.1, mem_univ _⟩))
-      (hfloer _ (hmem z ⟨hz.1, mem_univ _⟩)))
-    (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
-      hud q (le_max_right _ _) (le_max_left _ _)))
+    (hu.comp (contDiff_positiveEndChart q 1).contDiffOn (mapsTo_positiveEndChart q))
+    (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one]) hB huB' hc hJc' hJM' hfloer'
+    hE'
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, φ, hφ, ?_⟩
-  have h : (fun n t ↦ u (endChart q (q.endSign * φ n, t))) =
-      fun n ↦ (fun t ↦ (u ∘ positiveEndChart q) (φ n, t)) ∘ fun t ↦ q.endSign * t := by
-    funext n t
-    simp only [comp_apply, endChart_eq_positiveEndChart]
-  rw [h]
+  rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart (u := u) q (φ n)]
   exact hux.comp _
 
 /-- **The actions at the ends of a finite-energy Floer pair of pants.** Under the hypotheses of
@@ -333,39 +376,19 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
         TendstoUniformly (fun n t ↦ u (endChart q (q.endSign * σ n, t))) y atTop) ∧
       Tendsto (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (q.endSign * s, t))))
         atTop (𝓝 (ω.hamiltonianAction (H q) y)) := by
-  have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
-    ((hHs q).differentiable one_ne_zero).comp (differentiable_const t |>.prodMk differentiable_id)
-  have hud := hu.differentiableOn two_ne_zero
-  have hud' : ∀ z ∈ thricePuncturedSphereReal, DifferentiableAt ℝ u z := fun z hz ↦
-    (hud z hz).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
-  have hmem : ∀ z ∈ Ioi (max T₀ 0) ×ˢ (univ : Set ℝ),
-      positiveEndChart q z ∈ thricePuncturedSphereReal := fun z hz ↦
-    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz.1)
+  obtain ⟨huB', hJc', hJM', hfloer', hE'⟩ :=
+    floer_comp_positiveEndChart hKH hH hHs (hu.of_le one_le_two) huB hJc hJM hfloer hE q
   have hper (s : ℝ) : Periodic (fun t ↦ (u ∘ positiveEndChart q) (s, t)) 1 := fun t ↦ by
     simp only [comp_apply, positiveEndChart_add_one]
   -- In the positive end chart, the end is a finite-energy Floer half-cylinder.
   obtain ⟨x, hxper, hx, ⟨φ, -, hφ, hux⟩, hA⟩ :=
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
-      (u := u ∘ positiveEndChart q) (J := J ∘ positiveEndChart q)
       (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (periodic_positiveEndHamiltonian (hH q))
-      (hu.comp (contDiff_positiveEndChart q 2).contDiffOn hmem) (fun s _ ↦ hper s) hB
-      (fun s hs t ↦ huB _ (hmem (s, t) ⟨hs, mem_univ _⟩)) hc
-      (fun z hz v ↦ hJc _ (hmem z ⟨hz.1, mem_univ _⟩) v)
-      (fun z hz v ↦ hJM _ (hmem z ⟨hz.1, mem_univ _⟩) v)
-      (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
-        ((le_max_left _ _).trans hz.1.le) (hud' _ (hmem z ⟨hz.1, mem_univ _⟩))
-        (hfloer _ (hmem z ⟨hz.1, mem_univ _⟩)))
-      (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH
-        hHd hud q (le_max_right _ _) (le_max_left _ _)))
-  have hloop (s : ℝ) : (fun t ↦ u (endChart q (q.endSign * s, t))) =
-      (fun t ↦ (u ∘ positiveEndChart q) (s, t)) ∘ fun t ↦ q.endSign * t := by
-    funext t
-    simp only [comp_apply, endChart_eq_positiveEndChart]
+      (hu.comp (contDiff_positiveEndChart q 2).contDiffOn (mapsTo_positiveEndChart q))
+      (fun s _ ↦ hper s) hB huB' hc hJc' hJM' hfloer' hE'
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ⟨φ, hφ, ?_⟩, ?_⟩
-  · rw [show (fun n t ↦ u (endChart q (q.endSign * φ n, t))) =
-        fun n ↦ (fun t ↦ (u ∘ positiveEndChart q) (φ n, t)) ∘ fun t ↦ q.endSign * t from
-      funext fun n ↦ hloop (φ n)]
+  · rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart (u := u) q (φ n)]
     exact hux.comp _
   -- Reading the loops with the time `±t` of the end multiplies their actions by `±1`.
   have hAq (y : ℝ → V) (hy : Periodic y 1) :
@@ -377,7 +400,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
       fun s ↦ q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q)
         (fun t ↦ (u ∘ positiveEndChart q) (s, t)) :=
     funext fun s ↦ by
-      rw [hloop s]
+      rw [comp_endChart_eq_comp_positiveEndChart q s]
       exact hAq _ (hper s)
   rw [hAs, hAq _ hxper]
   exact hA.const_mul _
@@ -391,8 +414,10 @@ energy over `S`. Then there are `1`-periodic orbits `y_q` of the Hamiltonian vec
 
 `E(u) = A_{H_0}(y_0) + A_{H_1}(y_1) - A_{H_∞}(y_∞) - ∫ R_K(u)`.
 
-The orbits are the asymptotic orbits of
-`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer`. -/
+The orbits are asymptotic orbits of `u` at the ends, as in
+`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer`:
+the loops `t ↦ u(φ_q(±s_n, t))` converge uniformly to `y_q` along some `s_n → ∞`, and the actions
+`A_{H_q}(u(φ_q(±s, ·)))` tend to `A_{H_q}(y_q)` as `s → ∞`. -/
 theorem exists_lintegral_floerEnergyDensity_eq_sum_hamiltonianAction
     (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x v,
       ContDiffAt ℝ 1 (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) (z, x))
@@ -414,22 +439,25 @@ theorem exists_lintegral_floerEnergyDensity_eq_sum_hamiltonianAction
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ y : Puncture → ℝ → V, (∀ q, Periodic (y q) 1 ∧
-        ∀ t, HasDerivAt (y q) (ω.hamiltonianVectorField (H q t) (y q t)) t) ∧
+        (∀ t, HasDerivAt (y q) (ω.hamiltonianVectorField (H q t) (y q t)) t) ∧
+        (∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
+          TendstoUniformly (fun n t ↦ u (endChart q (q.endSign * σ n, t))) (y q) atTop) ∧
+        Tendsto (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (q.endSign * s, t))))
+          atTop (𝓝 (ω.hamiltonianAction (H q) (y q)))) ∧
       ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) =
         ENNReal.ofReal (∑ q, q.endSign * ω.hamiltonianAction (H q) (y q) -
           ∫ z, ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
-  choose y hyper hy _ hA using fun q ↦
+  choose y hy using fun q ↦
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer hKH hH hHs hu hB huB
       hc hJc hJM hfloer hE q
-  refine ⟨y, fun q ↦ ⟨hyper q, hy q⟩, ?_⟩
+  refine ⟨y, hy, ?_⟩
   exact ω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm hK hKH hH
     (fun q ↦ (hHs q).continuous) hu
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg
-      (fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v))
-      (hfloer z hz)) hR hA
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (fun _ hv ↦ apply_pos_of_tame hc hJc hz hv)
+      (hfloer z hz)) hR fun q ↦ (hy q).2.2.2
 
 /-- **The energy identity of the pair-of-pants perturbation with asymptotic orbits.** Let `K` be
 the pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation` of `1`-periodic `C¹`
@@ -438,7 +466,11 @@ equation `(du - X_K)^{0,1} = 0` on `S` for uniformly tame almost complex structu
 energy. Then there are `1`-periodic orbits `y_q` of the Hamiltonian vector fields of the `H_q`
 such that
 
-`E(u) = A_{H_0}(y_0) + A_{H_1}(y_1) - A_{H_∞}(y_∞) - ∫_S R_K(u)`. -/
+`E(u) = A_{H_0}(y_0) + A_{H_1}(y_1) - A_{H_∞}(y_∞) - ∫_S R_K(u)`.
+
+The orbits are asymptotic orbits of `u` at the ends: the loops `t ↦ u(φ_q(±s_n, t))` converge
+uniformly to `y_q` along some `s_n → ∞`, and the actions `A_{H_q}(u(φ_q(±s, ·)))` tend to
+`A_{H_q}(y_q)` as `s → ∞`. -/
 theorem exists_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) (hB : IsCompact B)
@@ -455,7 +487,11 @@ theorem exists_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       u z) ≠ ⊤) :
     ∃ y : Puncture → ℝ → V, (∀ q, Periodic (y q) 1 ∧
-        ∀ t, HasDerivAt (y q) (ω.hamiltonianVectorField (H q t) (y q t)) t) ∧
+        (∀ t, HasDerivAt (y q) (ω.hamiltonianVectorField (H q t) (y q t)) t) ∧
+        (∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
+          TendstoUniformly (fun n t ↦ u (endChart q (q.endSign * σ n, t))) (y q) atTop) ∧
+        Tendsto (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (q.endSign * s, t))))
+          atTop (𝓝 (ω.hamiltonianAction (H q) (y q)))) ∧
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -465,15 +501,15 @@ theorem exists_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z)) := by
-  choose y hyper hy _ hA using fun q ↦
+  choose y hy using fun q ↦
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
       (K := pairOfPantsPerturbation H) (T₀ := 2)
       (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH hHs hu hB huB hc
       hJc hJM hfloer hE q
-  refine ⟨y, fun q ↦ ⟨hyper q, hy q⟩, ?_⟩
+  refine ⟨y, hy, ?_⟩
   exact lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq ω hH hHs hu
-    (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)) hfloer
-    (by simpa only [endChart_mk] using hA)
+    (fun _ hz _ hv ↦ apply_pos_of_tame hc hJc hz hv) hfloer
+    (by simpa only [endChart_mk] using fun q ↦ (hy q).2.2.2)
 
 end SymplecticForm
 
