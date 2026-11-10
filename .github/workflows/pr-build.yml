@@ -1683,17 +1683,14 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
-  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
-  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
-  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
+  # Queue control slots are reserved on tauchonki2 and cannot accept ordinary PR builds.
+  # Publication and finalization run concurrently on separate disposable guests.
   finalize-merge-group-build:
     # Start beside publication so an unacquired publisher cannot suppress terminal reporting.
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
     needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 30
     permissions:
       contents: read  # sparse immutable finalization tools only
@@ -1706,6 +1703,7 @@ jobs:
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
       PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
       BORS_STAGING: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      CI_PUBLISHER_RUNNER_LABELS: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && '["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]' || '' }}
       BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
       BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
       BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
@@ -1728,6 +1726,18 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
+      - name: Install workflow-pinned reserved-publisher validation
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: e017783d06f9f671e69b65991a9bb18019dde699
+          path: queue-finalization-tools
+          sparse-checkout: tauceti_tools/assets/scripts/finalize_batch.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Use the pinned queue finalizer
+        run: cp queue-finalization-tools/tauceti_tools/assets/scripts/finalize_batch.py scripts/finalize_batch.py
+
       - name: Select CI API credentials
         id: ci-api
         uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75

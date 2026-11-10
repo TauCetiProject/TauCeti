@@ -32,7 +32,11 @@ For a symmetric operator on a finite-dimensional inner product space, the eigens
 eigenvalues are mutually orthogonal and span `E`. Hence the point-spectral subspaces selected by
 `Ω` and by its complement are orthogonal complements of each other, the point-spectral subspace is
 the span of the vectors of an ordered eigenbasis whose eigenvalues lie in `Ω`, and its orthogonal
-projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`.
+projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`. When `A` is
+moreover injective, its negative and positive spectral subspaces are complementary. The quadratic
+form `x ↦ re ⟪A x, x⟫` is negative definite on the negative spectral subspace
+`A.pointSpectralSubspace (Iio 0)` and positive definite on the positive spectral subspace
+`A.pointSpectralSubspace (Ioi 0)`.
 
 On a finite-dimensional subspace invariant under a symmetric operator, point-spectral containment
 is equivalent to a quadratic-form bound: the restricted point spectrum lies in `(-∞, a]` exactly

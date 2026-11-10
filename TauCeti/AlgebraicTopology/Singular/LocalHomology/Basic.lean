@@ -533,12 +533,19 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
 for `K` as in `TauCeti.isIso_singularHomologyMap_compl_of_chart` and `E` of finite dimension `n`,
 the relative homology `Hₖ(M, M ∖ φ.symm '' K)` vanishes for `k ≠ n`. -/
 theorem isZero_singularHomology_compl_symm_image_of_ne [FiniteDimensional ℝ E] {n k : ℕ}
-    (hx : x ∈ φ.source) (hK : StarConvex ℝ (φ x) K) (hxK : φ x ∈ K)
+    (hx : x ∈ φ.source) (hK : StarConvex ℝ (φ x) K)
     (hKb : Bornology.IsBounded K) (hKc : IsClosed K) (hLc : IsClosed (φ.symm '' K))
     (hKφ : K ⊆ φ.target) (h : finrank ℝ E = n) (hk : k ≠ n) :
-    IsZero ((TopPair.ofSubset ((φ.symm '' K)ᶜ : Set (TopCat.of M))).singularHomology R k) :=
+    IsZero ((TopPair.ofSubset ((φ.symm '' K)ᶜ : Set (TopCat.of M))).singularHomology R k) := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · -- the subspace is everything, so the identity of the pair factors through the subspace
+    rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
+    exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
+      (TopCat.ofHom (⟨fun m ↦ ⟨m, by simp⟩, by fun_prop⟩ :
+        C(M, ((φ.symm '' (∅ : Set E))ᶜ : Set M)))) rfl k
+  have hxK := hK.mem hne
   have := isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKb hKc hLc hKφ k
-  (isZero_singularHomology_complSingleton_of_ne R φ hx h hk).of_iso
+  exact (isZero_singularHomology_complSingleton_of_ne R φ hx h hk).of_iso
     (asIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M))
       (φ.mapsTo_id_compl_symm_image hx hxK)) R k))
 

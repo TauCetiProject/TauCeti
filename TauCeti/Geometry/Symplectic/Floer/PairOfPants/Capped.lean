@@ -241,7 +241,7 @@ support: it vanishes outside the truncation `S_{L + 3}`. -/
 theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ → M) (v : ℂ) :
     HasCompactSupport fun z ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) (u z) v :=
   HasCompactSupport.of_support_subset_isCompact
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation (L + 3)))
+    (isCompact_preimage_truncation (L + 3))
     fun z hz ↦ by_contra fun h ↦ hz <| by
       have h' : Complex.equivRealProdCLM.symm z ∉ truncation (L + 3) := h
       dsimp only
