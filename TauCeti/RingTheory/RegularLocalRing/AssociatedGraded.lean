@@ -1,0 +1,84 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.Regular.AssociatedGraded
+public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
+
+/-!
+# The associated graded ring of a regular local ring
+
+Let `(R, 𝔪)` be a regular local ring with residue field `κ = R ⧸ 𝔪`, and let `x₁, …, x_d` be a
+regular system of parameters, that is, `d = dim R` elements generating `𝔪`. The associated graded
+ring `gr_𝔪 R = ⨁ ν, 𝔪ᵛ ⧸ 𝔪ᵛ⁺¹` is a `κ`-algebra through its degree-zero part, and sending `Xᵢ` to
+the degree-one class of `xᵢ` is a `κ`-algebra isomorphism `κ[X₁, …, X_d] ≃ gr_𝔪 R`. No coefficient
+field and no equicharacteristic hypothesis is needed: the parameters form a regular sequence, whose
+associated graded ring is a polynomial ring over `κ`.
+
+Consequently `gr_𝔪 R` is a domain, and initial forms multiply: if `x ∈ 𝔪ʳ \ 𝔪ʳ⁺¹` and
+`y ∈ 𝔪ˢ \ 𝔪ˢ⁺¹`, then `x * y ∉ 𝔪ʳ⁺ˢ⁺¹`. This is the input for the multiplicativity of the order
+function `ord(x) = sup {r : x ∈ 𝔪ʳ}` on a regular local ring.
+
+## Main results
+
+* `TauCeti.IsRegularLocalRing.associatedGradedEquiv`: for a regular system of parameters, the
+  isomorphism `κ[X₁, …, X_d] ≃ₐ[κ] gr_𝔪 R`.
+* `TauCeti.IsRegularLocalRing.isDomain_associatedGraded`: `gr_𝔪 R` is a domain.
+* `TauCeti.IsRegularLocalRing.mul_notMem_maximalIdeal_pow_succ`: initial forms multiply.
+
+## References
+
+* H. Matsumura, *Commutative Ring Theory*, Theorem 14.4 and Theorem 17.4.
+* [The Stacks Project, Lemma 10.106.1](https://stacks.math.columbia.edu/tag/00NO).
+-/
+
+public section
+
+open _root_.IsLocalRing Ideal RingTheory.Sequence
+
+namespace TauCeti.IsRegularLocalRing
+
+variable {R : Type*} [CommRing R] [IsRegularLocalRing R]
+
+/-- **The associated graded ring of a regular local ring is a polynomial ring.** For a regular
+system of parameters `rs`, that is, at most `spanFinrank 𝔪 = dim R` elements generating `𝔪`, the
+`κ`-algebra map `κ[X₁, …, X_d] → gr_𝔪 R` sending `Xᵢ` to the degree-one class of the `i`-th
+parameter is an isomorphism, where `κ = R ⧸ 𝔪` is the residue field. -/
+@[stacks 00NO]
+noncomputable def associatedGradedEquiv {rs : List R} (hspan : ofList rs = maximalIdeal R)
+    (hlen : rs.length ≤ (maximalIdeal R).spanFinrank) :
+    MvPolynomial (Fin rs.length) (R ⧸ maximalIdeal R) ≃ₐ[R ⧸ maximalIdeal R]
+      (maximalIdeal R).AssociatedGraded :=
+  (isRegular_of_ofList_eq_maximalIdeal hspan hlen).toIsWeaklyRegular.associatedGradedEquiv hspan
+
+/-- `associatedGradedEquiv` is `Ideal.AssociatedGraded.mvPolynomialHom`. -/
+@[simp]
+theorem associatedGradedEquiv_apply {rs : List R} (hspan : ofList rs = maximalIdeal R)
+    (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (P : MvPolynomial (Fin rs.length) (R ⧸ maximalIdeal R)) :
+    associatedGradedEquiv hspan hlen P = AssociatedGraded.mvPolynomialHom (maximalIdeal R)
+      (fun i ↦ by rw [← hspan]; exact subset_span (List.getElem_mem _) :
+        ∀ i : Fin rs.length, rs[i] ∈ maximalIdeal R) P :=
+  IsWeaklyRegular.associatedGradedEquiv_apply _ hspan P
+
+/-- The associated graded ring of the maximal ideal of a regular local ring is a domain. -/
+instance isDomain_associatedGraded : IsDomain (maximalIdeal R).AssociatedGraded := by
+  obtain ⟨s, hcard, hspan⟩ :=
+    Submodule.FG.exists_span_finset_card_eq_spanFinrank (maximalIdeal R).fg_of_isNoetherianRing
+  have hofList : ofList s.toList = maximalIdeal R := by simpa [ofList] using hspan
+  exact (associatedGradedEquiv hofList (by simp [hcard])).symm.toMulEquiv.isDomain
+
+/-- **Initial forms multiply.** In a regular local ring, if `x ∈ 𝔪ʳ \ 𝔪ʳ⁺¹` and
+`y ∈ 𝔪ˢ \ 𝔪ˢ⁺¹`, then `x * y ∉ 𝔪ʳ⁺ˢ⁺¹`: the initial form of `x * y` is the nonzero product of
+the initial forms of `x` and `y`. -/
+theorem mul_notMem_maximalIdeal_pow_succ {x y : R} {r s : ℕ} (hx : x ∈ maximalIdeal R ^ r)
+    (hx' : x ∉ maximalIdeal R ^ (r + 1)) (hy : y ∈ maximalIdeal R ^ s)
+    (hy' : y ∉ maximalIdeal R ^ (s + 1)) : x * y ∉ maximalIdeal R ^ (r + s + 1) := by
+  have h := mul_ne_zero ((AssociatedGraded.mk_eq_zero_iff ⟨x, hx⟩).not.mpr hx')
+    ((AssociatedGraded.mk_eq_zero_iff ⟨y, hy⟩).not.mpr hy')
+  rwa [AssociatedGraded.mk_mul_mk, Ne, AssociatedGraded.mk_eq_zero_iff] at h
+
+end TauCeti.IsRegularLocalRing
