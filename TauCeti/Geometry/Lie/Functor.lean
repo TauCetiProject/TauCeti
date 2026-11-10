@@ -32,6 +32,8 @@ Lie-group exponential.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
+* `leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap`: the differential formula
+  in the model vector space.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
@@ -150,6 +152,24 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   change e' (e'.symm (φ.toMonoidHom.groupLieAlgebraMap I I' (e D))) = _
   rw [e'.apply_symm_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
+
+/-- In model-vector-space coordinates, the Lie map is the differential at the identity. -/
+@[simp high]
+theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (D : LeftInvariantDerivation I G) :
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
+    leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I') (G := G')
+        (lieMap φ D) =
+      mfderiv I I' (φ : G → G') (1 : G)
+        (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) D) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
+  dsimp only
+  rw [leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply,
+    leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply]
+  exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ D
 
 /-- The Lie map of the identity homomorphism is the identity Lie-algebra homomorphism. -/
 @[simp]
