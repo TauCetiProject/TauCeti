@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Generator
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Adjunction.Additive
+public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # The regular module under an equivalence of finitely generated modules
@@ -76,39 +77,41 @@ variable (R : Type*) [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Lin
 /-- An `R`-linear equivalence between the categories of finitely generated modules identifies the
 endomorphism algebra of the regular module with that of its image. -/
 noncomputable def moduleEndRegularAlgEquiv :
-    Module.End A A ≃ₐ[R] Module.End B (e.functor.obj (FGModuleCat.of A A)) where
-  -- The laws hold by definition after `FGModuleCat.ofHom`, which turns composition of linear maps
-  -- into composition of morphisms and is inverse to `.hom.hom`.
-  toFun f := (e.functor.map (FGModuleCat.ofHom f)).hom.hom
-  invFun g := (e.functor.preimage (FGModuleCat.ofHom g)).hom.hom
-  left_inv f := congrArg (fun φ : FGModuleCat.of A A ⟶ FGModuleCat.of A A ↦ φ.hom.hom)
-    (e.functor.preimage_map (FGModuleCat.ofHom f))
-  right_inv g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_preimage (FGModuleCat.ofHom g))
-  map_mul' f g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_comp (FGModuleCat.ofHom g) (FGModuleCat.ofHom f))
-  map_add' f g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_add (f := FGModuleCat.ofHom f) (g := FGModuleCat.ofHom g))
-  commutes' r := by
-    have h : FGModuleCat.ofHom (algebraMap R (Module.End A A) r) =
-        r • 𝟙 (FGModuleCat.of A A) := by
-      ext
-      exact (Module.algebraMap_end_apply R A A r 1).trans (algebraMap_smul A r (1 : A)).symm
-    refine (congrArg (fun φ : FGModuleCat.of A A ⟶ _ ↦ (e.functor.map φ).hom.hom) h).trans ?_
-    simp only [Functor.map_smul, e.functor.map_id]
-    ext x
-    exact (Module.algebraMap_end_apply R B _ r x).symm
+    Module.End A A ≃ₐ[R] Module.End B (e.functor.obj (FGModuleCat.of A A)) :=
+  -- Transport along `ModuleCat.endRingEquiv`, the inclusion of `FGModuleCat` and `e` itself.
+  AlgEquiv.ofRingEquiv (f := (ModuleCat.endRingEquiv (ModuleCat.of A A)).symm.trans
+    ((((ObjectProperty.fullyFaithfulι _).ringEquivEnd (FGModuleCat.of A A)).symm.trans
+      (e.fullyFaithfulFunctor.ringEquivEnd (FGModuleCat.of A A))).trans
+    (((ObjectProperty.fullyFaithfulι _).ringEquivEnd _).trans (ModuleCat.endRingEquiv _))))
+    fun r ↦ by
+      have h : FGModuleCat.ofHom (algebraMap R (Module.End A A) r) =
+          r • 𝟙 (FGModuleCat.of A A) := by
+        ext
+        exact (Module.algebraMap_end_apply R A A r 1).trans (algebraMap_smul A r (1 : A)).symm
+      simp only [RingEquiv.trans_apply, ModuleCat.endRingEquiv_apply,
+        Functor.FullyFaithful.ringEquivEnd_apply_asHom]
+      rw [Functor.FullyFaithful.ringEquivEnd_symm_apply_asHom]
+      -- The preimage under the inclusion of `FGModuleCat` is `FGModuleCat.ofHom` by definition.
+      change (e.functor.map (FGModuleCat.ofHom (algebraMap R (Module.End A A) r))).hom.hom = _
+      rw [h, Functor.map_smul, e.functor.map_id]
+      ext x
+      exact (Module.algebraMap_end_apply R B _ r x).symm
 
 @[simp]
 theorem moduleEndRegularAlgEquiv_apply (f : Module.End A A) :
-    e.moduleEndRegularAlgEquiv R f = (e.functor.map (FGModuleCat.ofHom f)).hom.hom :=
-  (rfl)
+    e.moduleEndRegularAlgEquiv R f = (e.functor.map (FGModuleCat.ofHom f)).hom.hom := by
+  simp only [moduleEndRegularAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
+    ModuleCat.endRingEquiv_apply, Functor.FullyFaithful.ringEquivEnd_apply_asHom]
+  rw [Functor.FullyFaithful.ringEquivEnd_symm_apply_asHom]
+  rfl
 
 @[simp]
 theorem moduleEndRegularAlgEquiv_symm_apply
     (g : Module.End B (e.functor.obj (FGModuleCat.of A A))) :
-    (e.moduleEndRegularAlgEquiv R).symm g = (e.functor.preimage (FGModuleCat.ofHom g)).hom.hom :=
-  (rfl)
+    (e.moduleEndRegularAlgEquiv R).symm g = (e.functor.preimage (FGModuleCat.ofHom g)).hom.hom := by
+  rw [AlgEquiv.symm_apply_eq, moduleEndRegularAlgEquiv_apply]
+  exact congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
+    (e.functor.map_preimage (FGModuleCat.ofHom g)).symm
 
 /-- An `R`-linear equivalence between the categories of finitely generated modules exhibits `A` as
 the opposite endomorphism algebra of the image of its regular module. -/
