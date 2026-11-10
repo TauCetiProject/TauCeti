@@ -211,6 +211,12 @@ theorem exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace 
   obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
   exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
 
+/-- A growth bound for the frequency slice `ξ ↦ a(x, ξ)` of a symbol at a single position `x`. -/
+theorem exists_bound_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
+    ∃ C, 0 ≤ C ∧ ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+  exact ⟨C, hC0, hC x rfl⟩
+
 section Module
 
 instance : Zero (Symbol n V W m) where

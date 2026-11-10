@@ -682,8 +682,8 @@ theorem ofLp_smul_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
       quantizeSchwartzValue a.coefficient
           (SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u) x +
         Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient u x := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
-  obtain ⟨C', -, hC'⟩ := (frequencyDeriv j a).exists_bound_coefficient {x} isCompact_singleton
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  obtain ⟨C', -, hC'⟩ := (frequencyDeriv j a).exists_bound_coefficient_slice x
   have hcoef : (fun p : CoordinateSpace n × CoordinateSpace n ↦
       fderiv ℝ (fun η ↦ a.coefficient (p.1, η)) p.2 (EuclideanSpace.single j 1)) =
         (frequencyDeriv j a).coefficient := by
@@ -692,8 +692,7 @@ theorem ofLp_smul_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
       coordinateDeriv_nil]
   have h := inner_smul_quantizeSchwartzValue (a := a.coefficient) (x := x)
     ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
-    (fun ξ ↦ hC x rfl ξ) (EuclideanSpace.single j 1)
-    (fun ξ ↦ (congrFun hcoef (x, ξ)).symm ▸ hC' x rfl ξ) u
+    hC (EuclideanSpace.single j 1) (fun ξ ↦ (congrFun hcoef (x, ξ)).symm ▸ hC' ξ) u
   rw [hcoef] at h
   simpa [EuclideanSpace.inner_single_right] using h
 
@@ -880,6 +879,34 @@ theorem continuous_quantizeSchwartzValue_coefficient (a : Symbol n V W m)
     (u : 𝓢(CoordinateSpace n, V)) : Continuous (quantizeSchwartzValue a.coefficient u) :=
   continuous_quantizeSchwartzValue a.contDiff_coefficient.continuous
     (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ hC ↦ hC.2) u
+
+/-- The quantization of a symbol is additive over finite sums of inputs. -/
+theorem quantizeSchwartzValue_sum_right {ι : Type*} (a : Symbol n V W m) (s : Finset ι)
+    (u : ι → 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue a.coefficient (∑ i ∈ s, u i) x =
+      ∑ i ∈ s, quantizeSchwartzValue a.coefficient (u i) x := by
+  classical
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi, quantizeSchwartzValue_add_right
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC, ih]
+
+/-- The quantization is additive over finite sums of symbols. -/
+theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (∑ i ∈ s, a i).coefficient u x =
+      ∑ i ∈ s, quantizeSchwartzValue (a i).coefficient u x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    obtain ⟨C, -, hC⟩ := (a i).exists_bound_coefficient_slice x
+    obtain ⟨C', -, hC'⟩ := (∑ i ∈ s, a i).exists_bound_coefficient_slice x
+    rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
+      quantizeSchwartzValue_add_left ((a i).continuous_coefficient_slice x).aestronglyMeasurable
+        hC ((∑ i ∈ s, a i).continuous_coefficient_slice x).aestronglyMeasurable hC', ih]
 
 /-- The quantization of a symbol with compact spatial support vanishes outside that support. -/
 theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue
