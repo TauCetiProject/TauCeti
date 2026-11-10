@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -133,6 +134,10 @@ theorem map_zero : P 0 = x := by
 theorem mfderiv_injective (v : L) : Injective (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v) :=
   P.isImmersion.mfderiv_injective (by simp) v
 
+/-- The parametrization is differentiable, being an immersion. -/
+theorem mdifferentiableAt (v : L) : MDifferentiableAt 𝓘(ℝ, L) 𝓘(ℝ, E) P v :=
+  (P.isImmersion.contMDiff v).mdifferentiableAt (by simp)
+
 /-- **The tangent space of the unstable manifold.** At `P v`, the tangent space of `W^u(x)` is the
 image of the derivative of the parametrization at `v`. -/
 theorem span_mtangentConeAt_eq_range_mfderiv (hf : IsMorse 𝓘(ℝ, E) f)
@@ -145,8 +150,7 @@ theorem span_mtangentConeAt_eq_range_mfderiv (hf : IsMorse 𝓘(ℝ, E) f)
       (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) (P v))) := by
     rintro _ ⟨u, rfl⟩
     exact Submodule.subset_span (R := ℝ) (M := E) (mfderiv_apply_mem_mtangentConeAt
-      (mdifferentiableAt_of_mfderiv_injective (P.mfderiv_injective v))
-      (Eventually.of_forall P.mem_unstableSet) u)
+      (P.mdifferentiableAt v) (Eventually.of_forall P.mem_unstableSet) u)
   refine (Submodule.eq_of_le_of_finrank_eq (K := ℝ) (V := E) hle ?_).symm
   exact (LinearMap.finrank_range_of_inj (P.mfderiv_injective v)).trans (P.finrank_eq.trans
     (hX.finrank_span_mtangentConeAt_unstableSet hf hx (P.mem_unstableSet v)).symm)
@@ -156,23 +160,15 @@ the time-`t` map of the flow sends `dP_v u` to `dP_{e^t v} (e^t u)`. -/
 theorem mfderiv_flow_mfderiv (t : ℝ) (v u : L) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) (P v) (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v u) =
       mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P (Real.exp t • v) (Real.exp t • u) := by
-  have hP (w : L) : MDifferentiableAt 𝓘(ℝ, L) 𝓘(ℝ, E) P w :=
-    mdifferentiableAt_of_mfderiv_injective (P.mfderiv_injective w)
-  have hcomp : hX.flow t ∘ P = P ∘ fun w : L ↦ Real.exp t • w := funext (P.flow_apply t)
-  have hs : MDifferentiableAt 𝓘(ℝ, L) 𝓘(ℝ, L) (fun w : L ↦ Real.exp t • w) v :=
-    (contDiff_const_smul (n := 1) (Real.exp t)).contMDiff.mdifferentiableAt one_ne_zero
+  have hcomp : hX.flow t ∘ P = fun w ↦ P (0 + Real.exp t • w) := by
+    funext w
+    rw [comp_apply, P.flow_apply, zero_add]
   have h1 := mfderiv_comp_apply (I' := 𝓘(ℝ, E)) v
-    ((hX.contMDiff_flow_apply t).mdifferentiableAt (by simp)) (hP v) u
-  have h2 := mfderiv_comp_apply (I' := 𝓘(ℝ, L)) v (hP (Real.exp t • v)) hs u
-  have hsd : mfderiv 𝓘(ℝ, L) 𝓘(ℝ, L) (fun w : L ↦ Real.exp t • w) v u = Real.exp t • u := by
-    have h : HasMFDerivAt 𝓘(ℝ, L) 𝓘(ℝ, L) (fun w : L ↦ Real.exp t • w) v
-        (Real.exp t • ContinuousLinearMap.id ℝ L) :=
-      ((hasFDerivAt_id (𝕜 := ℝ) v).const_smul (Real.exp t)).hasMFDerivAt
-    -- The tangent spaces of `L` are `L` itself, so this is the evaluation of `e^t • id`.
-    rw [h.mfderiv]
-    rfl
-  rw [hcomp] at h1
-  rw [← h1, h2, hsd]
+    ((hX.contMDiff_flow_apply t).mdifferentiableAt (by simp)) (P.mdifferentiableAt v) u
+  rw [hcomp, mfderiv_comp_const_add_smul_apply, zero_add] at h1
+  rw [← h1]
+  -- The tangent spaces of `L` are `L` itself, so the derivative is linear in `u`.
+  exact (map_smul (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P (Real.exp t • v)) (Real.exp t) u).symm
 
 end UnstableParametrization
 

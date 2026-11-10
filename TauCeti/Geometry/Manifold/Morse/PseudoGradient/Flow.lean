@@ -129,14 +129,12 @@ theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
   rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
 
-/-- The derivative of the time-`t` map of the flow is injective, since the time-`(-t)` map undoes
-it. -/
+/-- The derivative of the time-`t` map of the flow is injective, since that map is a
+diffeomorphism. -/
 theorem injective_mfderiv_flow (t : ℝ) (y : M) :
     Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y) := by
-  have h := (hX.flowDiffeomorph t).mfderiv_symm_apply_mfderiv_apply (by simp) y
   have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
-  rw [hcoe] at h
-  exact Function.LeftInverse.injective h
+  exact hcoe ▸ (hX.flowDiffeomorph t).injective_mfderiv (by simp) y
 
 /-- The derivative of `f` along an orbit of the flow is `df(X)`. -/
 theorem hasDerivAt_comp_flow {y : M} {t : ℝ}

@@ -14,8 +14,8 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Differentials of diffeomorphisms
 
-The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
-diffeomorphism undoes the pullback of vector fields along it.
+The differentials of a diffeomorphism and its inverse undo each other, so they are injective, and
+the differential of a diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, and
 the tangent images of a map, the ranges of its differentials, are unchanged by precomposition
@@ -69,6 +69,11 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
   rw [hss, h.symm_apply_apply] at hh
   exact hh
+
+/-- The differential of a diffeomorphism is injective. -/
+theorem injective_mfderiv (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M) :
+    Function.Injective (mfderiv I J h x) :=
+  (h.mfderivToContinuousLinearEquiv hn x).injective
 
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
