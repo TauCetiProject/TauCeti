@@ -302,36 +302,29 @@ theorem quotientLieHom_surjective_iff_conormalSubspace_eq_bot
       ← LinearMap.dualMap_apply', hf,
       (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).apply_symm_apply]
 
-/-- The kernel of a surjective Hopf-algebra morphism has zero conormal space when the
-differential of the morphism is surjective. -/
-theorem conormalSubspace_ker_eq_bot_of_surjective_of_derivationCompLieHom_surjective
+/-- The kernel of a Hopf-algebra morphism has zero conormal space when the differential of the
+morphism is surjective. -/
+theorem conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective
     {K : Type w} [CommRing K] [HopfAlgebra k K] (f : H →ₐc[k] K)
-    (hf : Function.Surjective f)
     (hdf : Function.Surjective (derivationCompLieHom (B := k) f)) :
     conormalSubspace (ker f) = ⊥ := by
-  have hkerOf : conormalSubspace (kerOfSurjective f hf) = ⊥ := by
-    apply
-      (quotientLieHom_surjective_iff_conormalSubspace_eq_bot
-        (kerOfSurjective f hf)).1
-    intro d
-    obtain ⟨e, he⟩ := hdf d
-    refine ⟨derivationCompLieHom (B := k) (kerLiftBialgHom f hf) e, ?_⟩
-    rw [quotientLieHom_apply, ← derivationCompLieHom_apply]
-    calc
-      derivationCompLieHom (B := k)
-          (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal)
-          (derivationCompLieHom (B := k) (kerLiftBialgHom f hf) e) =
-        ((derivationCompLieHom (B := k)
-            (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal)).comp
-          (derivationCompLieHom (B := k) (kerLiftBialgHom f hf))) e := rfl
-      _ = derivationCompLieHom (B := k)
-          ((kerLiftBialgHom f hf).comp
-            (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal)) e := by
-        rw [derivationCompLieHom_comp]
-      _ = derivationCompLieHom (B := k) f e := by
-        rw [kerLiftBialgHom_comp_mkBialgHom]
-      _ = d := he
-  simpa only [kerOfSurjective_eq_ker] using hkerOf
+  have hdual : Function.Surjective (Bialgebra.cotangentSpaceMap f).dualMap := by
+    intro y
+    obtain ⟨d, hd⟩ := hdf (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) y)
+    refine ⟨(Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).symm d, ?_⟩
+    apply (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).injective
+    rw [LinearMap.dualMap_apply', Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap,
+      LinearEquiv.apply_symm_apply, ← derivationCompLieHom_apply]
+    exact hd
+  have hinj : Function.Injective (Bialgebra.cotangentSpaceMap f) :=
+    LinearMap.dualMap_surjective_iff.mp hdual
+  rw [Submodule.eq_bot_iff]
+  intro y hy
+  obtain ⟨x, hx, rfl⟩ := (mem_conormalSubspace_iff _ y).1 hy
+  apply hinj
+  rw [Bialgebra.cotangentSpaceMap_cotangentMap, map_zero]
+  have hfx : f x = 0 := (mem_ker f).mp hx
+  rw [hfx, map_zero]
 
 /-- In finite dimension, the dimension of the closed subgroup's cotangent space plus its
 conormal dimension is the dimension of the ambient cotangent space. -/

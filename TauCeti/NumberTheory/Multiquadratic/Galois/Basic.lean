@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Normal.Basic
 public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.GroupTheory.Exponent
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.MeasureTheory.Function.Gluing
+import TauCeti.MeasureTheory.Function.LpSeminorm.AeEq
+import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
 # Subsequences converging in `Lᵖ` on compact subsets
@@ -54,21 +56,10 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
     ∃ v : X → F, (∀ K, IsCompact K → K ⊆ Ω → MemLp v p (μ.restrict K)) ∧
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K → K ⊆ Ω →
         Tendsto (fun j => eLpNorm (u (φ j) - v) p (μ.restrict K)) atTop (𝓝 0) := by
-  -- A compact exhaustion `L` of `Ω`.
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
-  let L : ℕ → Set X := fun m => (↑) '' Kx m
-  have hLc (m : ℕ) : IsCompact (L m) := (Kx.isCompact m).image continuous_subtype_val
+  obtain ⟨L, hLc, hLΩ, hLmono, hLsup⟩ :=
+    hΩ.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
   have hLm (m : ℕ) : MeasurableSet (L m) := (hLc m).isClosed.measurableSet
-  have hLΩ (m : ℕ) : L m ⊆ Ω := by
-    rintro _ ⟨x, -, rfl⟩
-    exact x.2
-  have hLmono : Monotone L := fun m m' h => image_mono (Kx.subset h)
-  have hLsup (K : Set X) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ m, K ⊆ L m := by
-    have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
-      Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-    obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
-    exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
   -- A single subsequence converges in every `Lᵖ(L m)`, by sequential compactness of the
   -- product of the compact sets given by `hcpt`.
   let x : ℕ → ∀ m, Lp F p (μ.restrict (L m)) := fun n m =>
@@ -82,23 +73,9 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
       (tendsto_pi_nhds.1 hlim m)).congr fun j =>
         eLpNorm_congr_ae ((MemLp.coeFn_toLp (hu (φ j) (L m) (hLc m) (hLΩ m))).sub .rfl)
   -- The limits are compatible: `a k = a m` almost everywhere on `L k` for `k ≤ m`.
-  have hcompat_le {k m : ℕ} (hkm : k ≤ m) : (a k : X → F) =ᵐ[μ.restrict (L k)] a m := by
-    have hle (j : ℕ) : eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k)) ≤
-        eLpNorm (u (φ j) - ⇑(a k)) p (μ.restrict (L k)) +
-          eLpNorm (u (φ j) - ⇑(a m)) p (μ.restrict (L m)) := by
-      calc eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k))
-          = eLpNorm ((u (φ j) - ⇑(a m)) - (u (φ j) - ⇑(a k))) p (μ.restrict (L k)) := by
-            rw [sub_sub_sub_cancel_left]
-        _ ≤ eLpNorm (u (φ j) - ⇑(a m)) p (μ.restrict (L k)) +
-              eLpNorm (u (φ j) - ⇑(a k)) p (μ.restrict (L k)) := eLpNorm_sub_le Fact.out
-        _ ≤ _ := by
-            rw [add_comm]
-            gcongr
-            exact hLmono hkm
-    have h0 : eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k)) = 0 :=
-      le_antisymm (ge_of_tendsto' (by simpa using (hconv k).add (hconv m)) hle) zero_le
-    filter_upwards [(eLpNorm_eq_zero_iff (zero_lt_one.trans_le Fact.out).ne').1 h0] with y hy
-    simpa [sub_eq_zero] using hy
+  have hcompat_le {k m : ℕ} (hkm : k ≤ m) : (a k : X → F) =ᵐ[μ.restrict (L k)] a m :=
+    ae_eq_of_tendsto_eLpNorm_sub (zero_lt_one.trans_le Fact.out).ne'
+      (μ.restrict_mono_set (hLmono hkm)) (hconv k) (hconv m)
   have hcompat (k m : ℕ) : (a k : X → F) =ᵐ[μ.restrict (L k ∩ L m)] a m := by
     rcases le_total k m with hkm | hmk
     · rw [inter_eq_left.2 (hLmono hkm)]
