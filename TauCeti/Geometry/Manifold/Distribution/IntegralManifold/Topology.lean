@@ -23,7 +23,8 @@ integral immersion.
 No assertion that this bijection is an embedding is made.
 
 The carrier uses `WithTopology` to retain the original ambient manifold and its distribution
-without changing their instances. All parametrizing manifolds have a common boundaryless model.
+without changing their instances. The parametrizing manifolds are boundaryless and share a
+common model, which may itself have boundary.
 Smooth overlap compatibility follows from the integral immersions, rather than being an
 additional hypothesis on the family.
 The parametrizations are `C^m`, with `1 ≤ m`, and the ambient manifold is `C^r` with
@@ -35,6 +36,7 @@ The parametrizations are `C^m`, with `1 ≤ m`, and the ambient manifold is `C^r
   for the intrinsic topology.
 * `TauCeti.chartedSpaceOfIntegralManifolds`: the named intrinsic atlas.
 * `TauCeti.chartedSpaceOfIntegralManifolds_eq`: comparison with the general glued atlas.
+* `TauCeti.exists_contMDiffAt_transition_integral_coinduced`: smooth local transitions.
 * `TauCeti.isManifold_chartedSpaceOfIntegralManifolds`: regularity of the intrinsic atlas.
 * `TauCeti.isLocalDiffeomorph_chartedSpaceOfIntegralManifolds`: local diffeomorphisms from pieces.
 * `TauCeti.isIntegralManifold_ofTopology`: the integral immersion to the original manifold.
@@ -58,11 +60,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [tM : TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {ι : Type*} {U : ι → Type*} [∀ i, TopologicalSpace (U i)] [∀ i, ChartedSpace F (U i)]
-  {m : ℕ∞} {r : ℕ∞ω} [IsManifold I r M] [∀ i, IsManifold 𝓘(ℝ, F) m (U i)]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {ι : Type*} {U : ι → Type*} [∀ i, TopologicalSpace (U i)] [∀ i, ChartedSpace H' (U i)]
+  {m : ℕ∞} {r : ℕ∞ω} [IsManifold I r M] [∀ i, IsManifold J m (U i)]
+  [∀ i, BoundarylessManifold J (U i)]
   [BoundarylessManifold I M]
   {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : ∀ i, U i → M}
-  (hf : ∀ i, IsIntegralManifold 𝓘(ℝ, F) m D (f i))
+  (hf : ∀ i, IsIntegralManifold J m D (f i))
   (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
   (hinv : let _ : IsManifold I 1 M :=
     .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
@@ -106,8 +110,8 @@ parametrization is open.
 The atlas is also defined when the ambient point set is empty. -/
 @[instance_reducible]
 def chartedSpaceOfIntegralManifolds (hcover : ∀ x, ∃ i y, f i y = x) :
-    ChartedSpace F (WithTopology M (⨆ i, coinduced (f i) inferInstance)) :=
-  chartedSpaceOfIsOpenEmbedding (H := F)
+    ChartedSpace H' (WithTopology M (⨆ i, coinduced (f i) inferInstance)) :=
+  chartedSpaceOfIsOpenEmbedding (H := H')
     (isOpenEmbedding_integral_coinduced hf hm hmr hinv hD hinj)
     (integral_coinduced_cover hcover)
 
@@ -118,15 +122,17 @@ theorem chartedSpaceOfIntegralManifolds_eq (hcover : ∀ x, ∃ i y, f i y = x)
     (hcov : ∀ x : WithTopology M (⨆ i, coinduced (f i) inferInstance),
       ∃ i y, (WithTopology.toTopology (⨆ j, coinduced (f j) inferInstance) ∘ f i) y = x) :
     chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover =
-      chartedSpaceOfIsOpenEmbedding (H := F)
+      chartedSpaceOfIsOpenEmbedding (H := H')
         (isOpenEmbedding_integral_coinduced hf hm hmr hinv hD hinj) hcov := by
   rfl
 
 include hf hm hmr hinv hD hinj in
-private theorem integral_coinduced_transition (i j : ι) (x : U i) (y : U j)
+/-- Integral parametrizations at the same intrinsic point have a smooth local transition
+intertwining their maps near that point. -/
+theorem exists_contMDiffAt_transition_integral_coinduced (i j : ι) (x : U i) (y : U j)
     (hxy : WithTopology.toTopology (⨆ l, coinduced (f l) inferInstance) (f i x) =
       WithTopology.toTopology (⨆ l, coinduced (f l) inferInstance) (f j y)) :
-    ∃ T : U i → U j, ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ, F) m T x ∧
+    ∃ T : U i → U j, ContMDiffAt J J m T x ∧
       (WithTopology.toTopology (⨆ l, coinduced (f l) inferInstance) ∘ f j) ∘ T =ᶠ[𝓝 x]
         WithTopology.toTopology (⨆ l, coinduced (f l) inferInstance) ∘ f i := by
   let t := ⨆ i, coinduced (f i) inferInstance
@@ -134,7 +140,7 @@ private theorem integral_coinduced_transition (i j : ι) (x : U i) (y : U j)
   let : TopologicalSpace M := tM
   have hcomp (i : ι) : WithTopology.ofTopology ∘ (WithTopology.toTopology t ∘ f i) = f i :=
     funext fun z ↦ WithTopology.ofTopology_toTopology t (f i z)
-  exact exists_contMDiffAt_transition_of_isImmersion (H := F) (I := 𝓘(ℝ, F))
+  exact exists_contMDiffAt_transition_of_isImmersion (H := H') (I := J)
     (g := WithTopology.ofTopology (t := t))
     (isOpenEmbedding_integral_coinduced hf hm hmr hinv hD hinj)
     (fun i ↦ (hcomp i).symm ▸ (hf i).isImmersion) i j x y hxy
@@ -144,12 +150,13 @@ include hf hm hmr hinv hD hinj in
 Smooth compatibility is a consequence of their common integral tangent distribution. -/
 theorem isManifold_chartedSpaceOfIntegralManifolds (hcover : ∀ x, ∃ i y, f i y = x) :
     letI := chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover
-    IsManifold 𝓘(ℝ, F) m (WithTopology M (⨆ i, coinduced (f i) inferInstance)) := by
+    IsManifold J m (WithTopology M (⨆ i, coinduced (f i) inferInstance)) := by
   rw [chartedSpaceOfIntegralManifolds_eq hf hm hmr hinv hD hinj hcover
     (integral_coinduced_cover hcover)]
   exact isManifold_chartedSpaceOfIsOpenEmbedding
     (isOpenEmbedding_integral_coinduced hf hm hmr hinv hD hinj)
-    (integral_coinduced_cover hcover) (integral_coinduced_transition hf hm hmr hinv hD hinj)
+    (integral_coinduced_cover hcover)
+    (exists_contMDiffAt_transition_integral_coinduced hf hm hmr hinv hD hinj)
 
 include hf hm hmr hinv hD hinj in
 /-- Every integral parametrization in the family is a local diffeomorphism into its intrinsic
@@ -157,13 +164,14 @@ charted carrier. -/
 theorem isLocalDiffeomorph_chartedSpaceOfIntegralManifolds
     (hcover : ∀ x, ∃ i y, f i y = x) (i : ι) :
     letI := chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover
-    IsLocalDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, F) m
+    IsLocalDiffeomorph J J m
       (WithTopology.toTopology (⨆ j, coinduced (f j) inferInstance) ∘ f i) := by
   rw [chartedSpaceOfIntegralManifolds_eq hf hm hmr hinv hD hinj hcover
     (integral_coinduced_cover hcover)]
   exact isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding
     (isOpenEmbedding_integral_coinduced hf hm hmr hinv hD hinj)
-    (integral_coinduced_cover hcover) (integral_coinduced_transition hf hm hmr hinv hD hinj) i
+    (integral_coinduced_cover hcover)
+    (exists_contMDiffAt_transition_integral_coinduced hf hm hmr hinv hD hinj) i
 
 include hf hm hmr hinv hD hinj in
 /-- On a nonempty carrier, the bijection from the intrinsic integral manifold back to the
@@ -171,17 +179,17 @@ original ambient manifold is an integral immersion with exactly the prescribed t
 Nonemptiness is part of the integral-manifold predicate. -/
 theorem isIntegralManifold_ofTopology [Nonempty M] (hcover : ∀ x, ∃ i y, f i y = x) :
     letI := chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover
-    IsIntegralManifold (I := I) 𝓘(ℝ, F) m D
+    IsIntegralManifold (I := I) J m D
       (WithTopology.ofTopology (t := ⨆ i, coinduced (f i) inferInstance)) := by
   let t := ⨆ i, coinduced (f i) inferInstance
   -- A local topology-valued term is also a typeclass candidate; retain the ambient topology.
   let : TopologicalSpace M := tM
   let φ (i : ι) : U i → WithTopology M t := WithTopology.toTopology t ∘ f i
-  let : ChartedSpace F (WithTopology M t) :=
+  let : ChartedSpace H' (WithTopology M t) :=
     chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover
-  let : IsManifold 𝓘(ℝ, F) m (WithTopology M t) :=
+  let : IsManifold J m (WithTopology M t) :=
     isManifold_chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover
-  have hlocal (i : ι) : IsLocalDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, F) m (φ i) :=
+  have hlocal (i : ι) : IsLocalDiffeomorph J J m (φ i) :=
     isLocalDiffeomorph_chartedSpaceOfIntegralManifolds hf hm hmr hinv hD hinj hcover i
   have hcov := integral_coinduced_cover hcover
   have hcomp (i : ι) : WithTopology.ofTopology ∘ φ i = f i :=
