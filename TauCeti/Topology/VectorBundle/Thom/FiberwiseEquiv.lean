@@ -16,7 +16,8 @@ map `v ↦ (g (π v), φ (π v) v)` is continuous: a bundle map covering `g` whi
 every fibre. Being linear and injective on the fibres, it carries nonzero vectors to nonzero
 vectors, so it is a map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.thomPairMapOfFiberwise`).
 On the fibre over `b'` it is the isomorphism of fibre pairs induced by `φ b'`
-(`TauCeti.fiberThomPairMap_comp_thomPairMapOfFiberwise`), and it carries the zero section over
+(`TauCeti.fiberThomPairMap_comp_thomPairMapOfFiberwise`), it covers `g`
+(`TauCeti.thomPairMapOfFiberwise_fst_comp_thomPairProj`), and it carries the zero section over
 `g` to the zero section (`TauCeti.zeroSectionHom_comp_thomPairMapOfFiberwise_fst`).
 
 Hence it pulls Thom classes of `E` back to Thom classes of `E'`
@@ -93,6 +94,15 @@ theorem fiberThomPairMap_comp_thomPairMapOfFiberwise
     ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply]
   -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
   rfl
+
+/-- The map of Thom pairs of a fibrewise isomorphism over `g` covers `g`. -/
+theorem thomPairMapOfFiberwise_fst_comp_thomPairProj
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    TopPair.Hom.fst (thomPairMapOfFiberwise hφ) ≫ thomPairProj F E =
+      thomPairProj F' E' ≫ TopCat.ofHom g :=
+  TopCat.ext fun v ↦ (thomPairProj_apply F E _).trans <|
+    (congrArg TotalSpace.proj (thomPairMapOfFiberwise_fst_apply hφ v)).trans
+      (congrArg g (thomPairProj_apply F' E' v).symm)
 
 end Map
 
