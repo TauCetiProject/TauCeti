@@ -20,8 +20,8 @@ import Mathlib.RingTheory.Ideal.Operations
 Let `L` be an integral lattice, `p` a positive integer and `v ∈ L` a vector whose norm is
 divisible by `p²`. Keep the vectors of `L` whose pairing with `v` is divisible by `p`, and adjoin
 `v / p`. The result `L.neighbor p v` is again an integral lattice on the same rational quadratic
-space. When some lattice vector pairs with `v` coprimely to `p`, the kept vectors are exactly
-`L ∩ L.neighbor p v` and have index `p` in both lattices, so `L.neighbor p v` is a Kneser
+space. The kept vectors are exactly `L ∩ L.neighbor p v`; when some lattice vector pairs with `v`
+coprimely to `p`, they have index `p` in both lattices, so `L.neighbor p v` is a Kneser
 `p`-neighbor of `L`. It is even when `L` is even and the norm of `v` is divisible by `2p²`.
 
 A vector which is only isotropic modulo an odd `p` can be corrected: if `w ∈ L` pairs with `v`
@@ -344,9 +344,9 @@ theorem carrier_inf_neighbor_carrier :
   apply Int.cast_injective (α := ℚ)
   have hp : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
   have hvv : L.form v v = (p : ℚ) ^ 2 * c := by
-    rw [← integralForm_cast, ← integralNorm_apply, hc]
+    rw [← norm_apply, ← integralNorm_cast, hc]
     push_cast
-    rfl
+    ring
   rw [integralForm_cast]
   simp only [map_zsmul, map_smul, smul_eq_mul, zsmul_eq_mul, hvv]
   push_cast
