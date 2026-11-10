@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 public import TauCeti.Analysis.Contour.Residue.Theorem
 
@@ -29,10 +30,6 @@ integral of `d((1 - Σ χᵢ) ω)` is `2πi` times its residue.
 
 ## Main declarations
 
-* `TauCeti.Contour.circleIntegral_eq_residue_of_analyticAt`: the residue theorem on a circle
-  enclosing a single pole.
-* `TauCeti.Contour.dzForm`: the complex-valued real `1`-form `dz` on `ℂ`.
-* `TauCeti.Contour.extDeriv_smul_dzForm_apply`: `d(g dz)(v, w) = dg(v) w - dg(w) v`.
 * `TauCeti.Contour.integral_extDeriv_one_sub_smul_dzForm_closedBall`: the integral of
   `d((1 - χ) f dz)` over the disc is `2πi · Res_c f`.
 * `TauCeti.Contour.integral_mul_fderiv_cutoff_closedBall`: the same statement with the integrand
@@ -52,21 +49,6 @@ open Complex Filter Metric MeasureTheory Set
 open scoped Real Topology
 
 namespace TauCeti.Contour
-
-/-- The complex-valued real `1`-form `dz` on `ℂ`: the identity of `ℂ`, as a real linear map. A
-complex function `g` gives the `1`-form `g dz`, written `fun z ↦ g z • dzForm`. -/
-def dzForm : ℂ [⋀^Fin 1]→L[ℝ] ℂ :=
-  ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℂ (0 : Fin 1) (ContinuousLinearMap.id ℝ ℂ)
-
-@[simp]
-theorem dzForm_apply (v : Fin 1 → ℂ) : dzForm v = v 0 := by
-  simp [dzForm]
-
-/-- The exterior derivative of `g dz` on a pair of vectors: `d(g dz)(v, w) = dg(v) w - dg(w) v`. -/
-theorem extDeriv_smul_dzForm_apply {g : ℂ → ℂ} {z : ℂ} (hg : DifferentiableAt ℝ g z) (v w : ℂ) :
-    extDeriv (fun y ↦ g y • dzForm) z ![v, w] = fderiv ℝ g z v * w - fderiv ℝ g z w * v := by
-  rw [extDeriv_apply_pair, (hg.hasFDerivAt.smul_const dzForm).fderiv]
-  simp
 
 variable {f : ℂ → ℂ} {χ : ℂ → ℝ} {c : ℂ} {R : ℝ}
 
@@ -114,22 +96,6 @@ private theorem integral_cutoff_smul_dzForm_circle (hR : 0 ≤ R)
   rw [hshift]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   simp [hχR _ (circleMap_mem_sphere c hR θ), mul_comm]
-
-/-- **The residue theorem for a single pole on a circle.** If `f` is meromorphic at `c` and
-holomorphic on the punctured closed disc of radius `R > 0` about `c`, then
-`∮_{|z - c| = R} f dz = 2πi · Res_c f`. -/
-theorem circleIntegral_eq_residue_of_analyticAt (hR : 0 < R) (hf : MeromorphicAt f c)
-    (hfa : ∀ z ∈ closedBall c R, z ≠ c → AnalyticAt ℂ f z) :
-    circleIntegral f c R = 2 * π * I * residue f c := by
-  rw [classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR {c} ?_ (by simpa using hR) ?_,
-    Finset.sum_singleton]
-  · intro z hz
-    by_cases hzc : z = c
-    · exact hzc ▸ hf
-    · exact (hfa z hz hzc).meromorphicAt
-  · intro z hz hneg
-    by_contra hzc
-    exact (hfa z hz (by simpa using hzc)).meromorphicOrderAt_nonneg.not_gt hneg
 
 /-- **The residue as the integral of the exterior derivative of a cutoff `1`-form.** Let `f` be
 meromorphic at `c` and holomorphic on the punctured closed disc of radius `R > 0` about `c`, and

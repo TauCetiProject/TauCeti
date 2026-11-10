@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
 public import TauCeti.Analysis.Contour.Residue.Cutoff
 
 /-!
@@ -109,7 +109,7 @@ theorem integral_extDeriv_one_sub_smul_coeff_eq_residue (he : e ∈ maximalAtlas
     (hhol : ∀ y ∈ e.source, e y ∈ closedBall (e x) R → y ≠ x → ω.HolomorphicAt y)
     (hχ : ContDiff ℝ 1 χ) (hχc : χ =ᶠ[𝓝 (e x)] 1) (hχR : ∀ z ∈ sphere (e x) R, χ z = 0) :
     (∫ z in closedBall (e x) R,
-      extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * ω.coeff e y) • Contour.dzForm) z ![1, I]) =
+      extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * ω.coeff e y) • dzForm) z ![1, I]) =
         2 * π * I * ω.residue x := by
   obtain ⟨hf, hfa⟩ := coeff_hypotheses he hx hsub hω hhol
   rw [residue_eq_of_mem_maximalAtlas he hx]

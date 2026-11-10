@@ -30,6 +30,8 @@ stated up to that normal form.
   form: only the poles (points of negative meromorphic order) need lie in `S`.
 * `TauCeti.Contour.classicalResidueTheorem_circle` — the form asking every point of nonzero
   meromorphic order to lie in `S`; a direct corollary since residues at non-poles vanish.
+* `TauCeti.Contour.circleIntegral_eq_residue_of_analyticAt` — a single pole at the centre:
+  `∮_{C(c,R)} f = 2πi · residue f c`.
 
 This is the special case of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3) for a
 round circle.
@@ -353,5 +355,21 @@ theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) :=
   classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR S hf hS
     fun z hz h ↦ hsupp z hz h.ne
+
+/-- **The residue theorem for a single pole on a circle.** If `f` is meromorphic at `c` and
+holomorphic on the punctured closed disc of radius `R > 0` about `c`, then
+`∮_{|z - c| = R} f dz = 2πi · Res_c f`. -/
+theorem circleIntegral_eq_residue_of_analyticAt {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R)
+    (hf : MeromorphicAt f c) (hfa : ∀ z ∈ closedBall c R, z ≠ c → AnalyticAt ℂ f z) :
+    circleIntegral f c R = 2 * π * I * residue f c := by
+  rw [classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR {c} ?_ (by simpa using hR) ?_,
+    Finset.sum_singleton]
+  · intro z hz
+    by_cases hzc : z = c
+    · exact hzc ▸ hf
+    · exact (hfa z hz hzc).meromorphicAt
+  · intro z hz hneg
+    by_contra hzc
+    exact (hfa z hz (by simpa using hzc)).meromorphicOrderAt_nonneg.not_gt hneg
 
 end TauCeti.Contour
