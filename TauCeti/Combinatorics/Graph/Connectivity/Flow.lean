@@ -147,22 +147,31 @@ namespace IsMaximum
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {f : Flow (G.bidirectedCapacity c) s t}
 
-/-- For a maximum `s`–`t` flow `f` of a weighted multigraph, between distinct actual vertices, the
-minimum cuts of the multigraph cut function are the sets of actual vertices containing `s` but not
-`t` whose capacity is the value of `f`. -/
-theorem isMinimum_edgeCutCapacity_iff_val_eq (hst : s ≠ t) (hf : f.IsMaximum)
+/-- For a maximum `s`–`t` flow `f` of a weighted multigraph, the minimum cuts of the multigraph cut
+function are the sets of actual vertices containing `s` but not `t` whose capacity is the value of
+`f`. -/
+theorem isMinimum_edgeCutCapacity_iff_val_eq (hf : f.IsMaximum)
     {S : Finset V(G)} :
     TerminalCut.IsMinimum (G.edgeCutCapacity c) {s} {t} S ↔
       s ∈ S ∧ t ∉ S ∧ f.val = G.edgeCutCapacity c S := by
   classical
+  by_cases hst : s = t
+  · subst hst
+    refine iff_of_false ?_ fun h => h.2.1 h.1
+    intro h
+    exact Finset.disjoint_left.1 h.admissible.disjoint
+      (h.admissible.subset (Finset.mem_singleton_self _)) (Finset.mem_singleton_self _)
   rw [← funext (Graph.arrowSum_bidirectedCapacity c), ← funext (cutBound_zero_left _)]
   exact ((isMaximum_toBoundedFlow f).2 hf).isMinimum_cutBound_iff_val_eq hst
 
-/-- The value of a maximum `s`–`t` flow of a weighted multigraph, between distinct actual
-vertices, is the minimum cut value between `s` and `t` of the multigraph cut function. -/
-theorem val_eq_pairMinimumValue_edgeCutCapacity (hst : s ≠ t) (hf : f.IsMaximum) :
+/-- The value of a maximum `s`–`t` flow of a weighted multigraph is the minimum cut value between
+`s` and `t` of the multigraph cut function. -/
+theorem val_eq_pairMinimumValue_edgeCutCapacity (hf : f.IsMaximum) :
     f.val = TerminalCut.pairMinimumValue (G.edgeCutCapacity c) s t := by
   classical
+  by_cases hst : s = t
+  · subst hst
+    simpa using BoundedFlow.val_eq_zero_of_eq rfl f.toBoundedFlow
   rw [← funext (Graph.arrowSum_bidirectedCapacity c), ← funext (cutBound_zero_left _)]
   exact ((isMaximum_toBoundedFlow f).2 hf).val_eq_pairMinimumValue hst
 
