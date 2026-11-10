@@ -213,17 +213,6 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_d4TripledWeight_eq_top
 
-/-- Two morphisms out of the tripled type-`D₄` carrier agree when they agree on its numbered
-root subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
-
 /-! ## Matrix-valued points -/
 
 /-- The matrix-valued points of the tripled type-`D₄` carrier. -/
