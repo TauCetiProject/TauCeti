@@ -244,8 +244,7 @@ theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 
       have h2 : DifferentiableAt ℝ
           (fun y => h (normalReflection E a (normalReflection E a y))) (normalReflection E a x) :=
         h1.comp (normalReflection E a x) (hasFDerivAt_normalReflection a _).differentiableAt
-      rwa [show (fun y => h (normalReflection E a (normalReflection E a y))) = h from
-        funext fun y => by rw [normalReflection_normalReflection]] at h2
+      simpa only [normalReflection_normalReflection] using h2
     rw [gradient, gradient, fderiv_zero_of_not_differentiableAt hd,
       fderiv_zero_of_not_differentiableAt hdx]
     simp
