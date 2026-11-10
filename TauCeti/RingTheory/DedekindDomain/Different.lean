@@ -125,7 +125,7 @@ theorem pow_dvd_differentIdeal_iff_of_isCoprime
     · rw [nsmul_eq_mul, h, zero_mul]
 
 /-- **Dedekind's different theorem, second part** (Stichtenoth, Theorem 3.5.1(b) and
-Corollary 3.5.5): for a maximal ideal `P` of `B` over a nonzero maximal ideal `p` of `A`, the power
+Corollary 3.5.5): for a maximal ideal `P` of `B` over a maximal ideal `p` of `A`, the power
 `P ^ e(P ∣ p)` divides the different ideal exactly when `P` is not tame, that is, when the residue
 extension at `P` is inseparable or `e(P ∣ p)` vanishes in the residue field `A ⧸ p`.
 
@@ -133,9 +133,39 @@ Together with Mathlib's `pow_sub_one_dvd_differentIdeal`, the different exponent
 therefore `e(P ∣ p) - 1` at the tame primes and at least `e(P ∣ p)` at all others. -/
 theorem pow_ramificationIdx_dvd_differentIdeal_iff
     [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
-    {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P : Ideal B) [P.IsMaximal] [P.LiesOver p] :
+    {p : Ideal A} [p.IsMaximal] (P : Ideal B) [P.IsMaximal] [P.LiesOver p] :
     P ^ P.ramificationIdx A ∣ differentIdeal A B ↔
       ¬ Algebra.IsSeparable (A ⧸ p) (B ⧸ P) ∨ ((P.ramificationIdx A : ℕ) : A ⧸ p) = 0 := by
+  rcases eq_or_ne p ⊥ with rfl | hp
+  · -- `A` is a field, hence so is `B`, and `P = ⊥`: the left side is false, since the different
+    -- is nonzero, and so is the right side, since `B / A` is separable.
+    obtain rfl : P = ⊥ := Ideal.eq_bot_of_under_eq_bot (R := A) (Ideal.LiesOver.over (p := ⊥)).symm
+    have hsep : Algebra.IsSeparable (A ⧸ (⊥ : Ideal A)) (B ⧸ (⊥ : Ideal B)) := by
+      have hA : IsField A := (RingEquiv.quotientBot (R := A)).symm.toMulEquiv.isField
+        ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).1 inferInstance)
+      have hB : IsField B := isField_of_isIntegral_of_isField' hA
+      let _ : Field A := hA.toField
+      let _ : Field B := hB.toField
+      refine Algebra.IsSeparable.of_equiv_equiv
+        ((FractionRing.algEquiv A A).toRingEquiv.trans (RingEquiv.quotientBot (R := A)).symm)
+        ((FractionRing.algEquiv B B).toRingEquiv.trans (RingEquiv.quotientBot (R := B)).symm) ?_
+      refine IsLocalization.ringHom_ext (nonZeroDivisors A) ?_
+      ext a
+      have h2 : algebraMap (FractionRing A) (FractionRing B) (algebraMap A (FractionRing A) a) =
+          algebraMap B (FractionRing B) (algebraMap A B a) := by
+        rw [← IsScalarTower.algebraMap_apply A (FractionRing A) (FractionRing B),
+          IsScalarTower.algebraMap_apply A B (FractionRing B)]
+      simp only [RingHom.comp_apply, h2, RingHom.coe_coe, RingEquiv.toRingHom_trans,
+        AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
+      rfl
+    refine iff_of_false (fun h ↦ differentIdeal_ne_bot (A := A) (B := B) ?_) ?_
+    · rw [Ideal.ramificationIdx_bot_eq_one, pow_one, ← Ideal.zero_eq_bot, zero_dvd_iff,
+        Ideal.zero_eq_bot] at h
+      exact h
+    · rintro (h | h)
+      · exact h hsep
+      · rw [Ideal.ramificationIdx_bot_eq_one, Nat.cast_one] at h
+        exact one_ne_zero h
   have hp' : Ideal.map (algebraMap A B) p ≠ ⊥ :=
     (Ideal.map_eq_bot_iff_of_injective (FaithfulSMul.algebraMap_injective A B)).not.mpr hp
   obtain ⟨Q, h₁, h₂⟩ := Ideal.eq_prime_pow_mul_coprime hp' P
@@ -147,8 +177,7 @@ section Multiplicity
 
 variable [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
 
-variable {p : Ideal A} [p.IsMaximal] (hp : p ≠ ⊥) (P : Ideal B) [P.IsMaximal] [P.LiesOver p]
-include hp
+variable {p : Ideal A} [p.IsMaximal] (P : Ideal B) [P.IsMaximal] [P.LiesOver p]
 
 /-- **Dedekind's different theorem, second part, as a bound on the exponent**: the multiplicity
 of `P` in the different ideal is at least `e(P ∣ p)` exactly when the residue extension is
@@ -157,7 +186,7 @@ theorem ramificationIdx_le_multiplicity_differentIdeal_iff :
     P.ramificationIdx A ≤ multiplicity P (differentIdeal A B) ↔
       ¬ Algebra.IsSeparable (A ⧸ p) (B ⧸ P) ∨ ((P.ramificationIdx A : ℕ) : A ⧸ p) = 0 := by
   rw [← pow_dvd_differentIdeal_iff_le_multiplicity A Ideal.IsPrime.ne_top',
-    pow_ramificationIdx_dvd_differentIdeal_iff A hp P]
+    pow_ramificationIdx_dvd_differentIdeal_iff A (p := p) P]
 
 /-- **Dedekind's different theorem, the tame case, as an exponent**: the multiplicity of `P` in
 the different ideal is exactly `e(P ∣ p) - 1` when the residue extension is separable and
@@ -168,7 +197,7 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
   have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal A P
   have hpos := Ideal.ramificationIdx_pos A P
   rw [← not_not (a := Algebra.IsSeparable (A ⧸ p) (B ⧸ P)), ne_eq, ← not_or,
-    ← ramificationIdx_le_multiplicity_differentIdeal_iff A hp P]
+    ← ramificationIdx_le_multiplicity_differentIdeal_iff A P]
   omega
 
 end Multiplicity
