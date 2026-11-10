@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -17,7 +18,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 Let `g : E → E →L[ℝ] E →L[ℝ] ℝ` be a field of symmetric nondegenerate bilinear forms on a
 finite-dimensional real normed space `E`, as a (pseudo-)Riemannian metric reads in a chart, and
 let `Γ` be its Christoffel symbols of the second kind (`TauCeti.Manifold.christoffelSecondKind`).
-The **kinetic Lagrangian** of `g` is
+The **kinetic Lagrangian** of `g` (`TauCeti.kineticLagrangian`) is
 
 `L(q, v) = g_q(v, v) / 2`.
 
@@ -25,7 +26,7 @@ Its momentum is the covector `∂_v L(q, v) = g_q(v, ·)`
 (`TauCeti.fderiv_kineticLagrangian_snd`), and its derivative in the position is
 `∂_q L(q, v)(u) = Dg_q(u)(v, v) / 2` (`TauCeti.fderiv_kineticLagrangian_fst`). Along a curve `q`
 with velocity `v` and acceleration `a`, the momentum changes at the rate
-`Dg_q(v)(v, ·) + g_q(a, ·)`, and the difference with `∂_q L` is the Christoffel symbol of the first
+`Dg_q(v)(v, ·) + g_q(a, ·)`, and `Dg_q(v)(v, ·) - ∂_q L` is the Christoffel symbol of the first
 kind `Γ₁(v, v)`. So, by nondegeneracy of `g`, **the Euler–Lagrange equation of `L` is the geodesic
 equation**
 
@@ -37,12 +38,12 @@ energy of covectors `H(q, p) = p(g_q⁻¹ p) / 2`
 equations for `H` (`TauCeti.hasDerivAt_linearLegendreMap_iff`). Hence **the Legendre lift
 `s ↦ (q s, g_(q s)(v s, ·))` of a curve solves Hamilton's equations for the kinetic Hamiltonian
 exactly when `q` solves the geodesic equation `q'' = -Γ(q', q')`**
-(`TauCeti.hasDerivAt_linearLegendreMap_kineticLagrangian_iff`): in coordinates, the geodesic flow
-is the Hamiltonian flow of the kinetic energy, transported by the Legendre map.
+(`TauCeti.hasDerivAt_linearLegendreMap_kineticLagrangian_iff`): in coordinates, at each time, the
+geodesic equation is Hamilton's equation for the kinetic energy, transported by the Legendre map.
 
-All statements are pointwise along the curve and need the metric only to be differentiable at the
-current position and symmetric near it; no positivity is assumed, so pseudo-Riemannian metrics are
-included.
+The Euler–Lagrange and Hamilton statements are pointwise along the curve: they assume `E`
+finite-dimensional and the metric differentiable at the current position, symmetric near it and
+nondegenerate there. No positivity is assumed, so pseudo-Riemannian metrics are included.
 
 ## References
 
@@ -60,23 +61,33 @@ open ContinuousLinearMap Filter Topology TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : E → E →L[ℝ] E →L[ℝ] ℝ}
 
-/-! ### Derivatives of the kinetic Lagrangian -/
+/-! ### The kinetic Lagrangian and its derivatives -/
+
+/-- The **kinetic Lagrangian** `L(q, v) = g_q(v, v) / 2` of a field `g` of bilinear forms on `E`,
+as a function on positions and velocities `E × E`. -/
+noncomputable def kineticLagrangian (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x : E × E) : ℝ :=
+  g x.1 x.2 x.2 / 2
+
+/-- The kinetic Lagrangian is half the quadratic form of `g_q` at `v`. -/
+theorem kineticLagrangian_apply (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x : E × E) :
+    kineticLagrangian g x = g x.1 x.2 x.2 / 2 :=
+  (rfl)
 
 /-- The momentum of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` of a symmetric bilinear form
 `g_q` is the covector `g_q(v, ·)`. -/
 theorem fderiv_kineticLagrangian_snd {q : E} (hsymm : (g q).toBilinForm.IsSymm) (v : E) :
-    fderiv ℝ (fun u ↦ g q u u / 2) v = g q v := by
-  have h := ((g q).hasFDerivAt.clm_apply (hasFDerivAt_id v)).mul_const (2⁻¹ : ℝ)
-  simp_rw [div_eq_mul_inv]
-  refine h.fderiv.trans (ContinuousLinearMap.ext fun w ↦ ?_)
+    fderiv ℝ (fun u ↦ kineticLagrangian g (q, u)) v = g q v := by
+  simp_rw [kineticLagrangian_apply, div_eq_mul_inv]
+  refine (((g q).hasFDerivAt_apply_self v).mul_const (2⁻¹ : ℝ)).fderiv.trans
+    (ContinuousLinearMap.ext fun w ↦ ?_)
   simp [isSymm_toBilinForm_iff.1 hsymm w v]
   ring
 
 /-- The derivative in the position of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` is
 `u ↦ Dg_q(u)(v, v) / 2`. -/
 theorem fderiv_kineticLagrangian_fst {q : E} (hg : DifferentiableAt ℝ g q) (v u : E) :
-    fderiv ℝ (fun y ↦ g y v v / 2) q u = fderiv ℝ g q u v v / 2 := by
-  simp_rw [div_eq_mul_inv]
+    fderiv ℝ (fun y ↦ kineticLagrangian g (y, v)) q u = fderiv ℝ g q u v v / 2 := by
+  simp_rw [kineticLagrangian_apply, div_eq_mul_inv]
   rw [fderiv_mul_const ((hg.clm_apply (differentiableAt_const v)).clm_apply
     (differentiableAt_const v)), smul_apply, fderiv_clm_apply_const_apply₂ hg, smul_eq_mul,
     mul_comm]
@@ -94,11 +105,11 @@ theorem eulerLagrange_kineticLagrangian_iff [FiniteDimensional ℝ E]
     (hsymm : ∀ᶠ y in 𝓝 (q t), (g y).toBilinForm.IsSymm)
     (hnd : (g (q t)).toBilinForm.Nondegenerate) (hg : DifferentiableAt ℝ g (q t))
     (hq : HasDerivAt q (v t) t) (hv : HasDerivAt v a t) :
-    HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ g (q s) u u / 2) (v s))
-        (fderiv ℝ (fun y ↦ g y (v t) (v t) / 2) (q t)) t ↔
+    HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ kineticLagrangian g (q s, u)) (v s))
+        (fderiv ℝ (fun y ↦ kineticLagrangian g (y, v t)) (q t)) t ↔
       a = -christoffelSecondKind g (q t) (v t) (v t) := by
   -- Near `t` the momentum is `g_q(v, ·)`, which changes at the rate `Dg_q(v)(v, ·) + g_q(a, ·)`.
-  have hev : (fun s ↦ fderiv ℝ (fun u ↦ g (q s) u u / 2) (v s)) =ᶠ[𝓝 t]
+  have hev : (fun s ↦ fderiv ℝ (fun u ↦ kineticLagrangian g (q s, u)) (v s)) =ᶠ[𝓝 t]
       fun s ↦ g (q s) (v s) :=
     (hq.continuousAt.eventually hsymm).mono fun s hs ↦ fderiv_kineticLagrangian_snd hs (v s)
   have hgq : HasDerivAt (fun s ↦ g (q s)) (fderiv ℝ g (q t) (v t)) t :=
@@ -124,36 +135,37 @@ kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` is the kinetic energy of covectors
 `H(q, p) = p(g_q⁻¹ p) / 2`. Where `g_q` is not invertible both sides vanish, since the inverse is
 then zero by convention. -/
 theorem legendreHamiltonian_kineticLagrangian (z : E × StrongDual ℝ E) :
-    legendreHamiltonian (fun x ↦ g x.1 x.2 x.2 / 2) (fun z ↦ (g z.1).inverse z.2) z =
+    legendreHamiltonian (kineticLagrangian g) (fun z ↦ (g z.1).inverse z.2) z =
       z.2 ((g z.1).inverse z.2) / 2 := by
-  rw [legendreHamiltonian_apply]
+  rw [legendreHamiltonian_apply, kineticLagrangian_apply]
   by_cases h : (g z.1).IsInvertible
   · rw [h.self_apply_inverse]
     ring
   · simp [inverse_of_not_isInvertible h]
 
-/-- **Geodesics are the projections of the kinetic Hamiltonian flow.** Let `q` be a curve, `v` a
-velocity field with derivative `a` at time `t`, and let `g` be differentiable at `q t`, symmetric
-near `q t` and nondegenerate at `q t`. Then the Legendre lift `s ↦ (q s, g_(q s)(v s, ·))` solves
-Hamilton's equations for the kinetic Hamiltonian `H(q, p) = p(g_q⁻¹ p) / 2` at `t` exactly when `v`
-is the velocity of `q` at `t` and the geodesic equation `a = -Γ(v, v)` holds there. -/
+/-- **The geodesic equation is Hamilton's equation for the kinetic energy.** Let `q` be a curve,
+`v` a velocity field with derivative `a` at time `t`, and let `g` be differentiable at `q t`,
+symmetric near `q t` and nondegenerate at `q t`. Then the Legendre lift
+`s ↦ (q s, g_(q s)(v s, ·))` solves Hamilton's equations for the kinetic Hamiltonian
+`H(q, p) = p(g_q⁻¹ p) / 2` at `t` exactly when `v` is the velocity of `q` at `t` and the geodesic
+equation `a = -Γ(v, v)` holds there. -/
 theorem hasDerivAt_linearLegendreMap_kineticLagrangian_iff [FiniteDimensional ℝ E]
     (hsymm : ∀ᶠ y in 𝓝 (q t), (g y).toBilinForm.IsSymm)
     (hnd : (g (q t)).toBilinForm.Nondegenerate) (hg : DifferentiableAt ℝ g (q t))
     (hv : HasDerivAt v a t) :
-    HasDerivAt (fun s ↦ linearLegendreMap (fun x ↦ g x.1 x.2 x.2 / 2) (q s, v s))
+    HasDerivAt (fun s ↦ linearLegendreMap (kineticLagrangian g) (q s, v s))
         ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
-          (legendreHamiltonian (fun x ↦ g x.1 x.2 x.2 / 2) (fun z ↦ (g z.1).inverse z.2))
-          (linearLegendreMap (fun x ↦ g x.1 x.2 x.2 / 2) (q t, v t))) t ↔
+          (legendreHamiltonian (kineticLagrangian g) (fun z ↦ (g z.1).inverse z.2))
+          (linearLegendreMap (kineticLagrangian g) (q t, v t))) t ↔
       HasDerivAt q (v t) t ∧ a = -christoffelSecondKind g (q t) (v t) (v t) := by
   have hinv := isInvertible_of_separatingLeft hnd.1
-  have hmom : fderiv ℝ (fun u ↦ g (q t) u u / 2) (v t) = g (q t) (v t) :=
+  have hmom : fderiv ℝ (fun u ↦ kineticLagrangian g (q t, u)) (v t) = g (q t) (v t) :=
     fderiv_kineticLagrangian_snd hsymm.self_of_nhds (v t)
   -- The inverse of the Legendre map is differentiable at the Legendre lift `(q, g_q(v, ·))`.
-  have hz : linearLegendreMap (fun x ↦ g x.1 x.2 x.2 / 2) (q t, v t) = (q t, g (q t) (v t)) :=
+  have hz : linearLegendreMap (kineticLagrangian g) (q t, v t) = (q t, g (q t) (v t)) :=
     Prod.ext (linearLegendreMap_fst _ _) (by rw [linearLegendreMap_snd]; exact hmom)
   have hw : DifferentiableAt ℝ (fun z : E × StrongDual ℝ E ↦ (g z.1).inverse z.2)
-      (linearLegendreMap (fun x ↦ g x.1 x.2 x.2 / 2) (q t, v t)) := by
+      (linearLegendreMap (kineticLagrangian g) (q t, v t)) := by
     rw [hz]
     have h₁ : DifferentiableAt ℝ (fun z : E × StrongDual ℝ E ↦ g z.1) (q t, g (q t) (v t)) :=
       hg.comp (q t, g (q t) (v t)) differentiableAt_fst
@@ -166,8 +178,8 @@ theorem hasDerivAt_linearLegendreMap_kineticLagrangian_iff [FiniteDimensional �
     exact h₂.clm_apply differentiableAt_snd
   have h₃ : DifferentiableAt ℝ (fun x : E × E ↦ g x.1) (q t, v t) :=
     hg.comp (q t, v t) differentiableAt_fst
-  have hL : DifferentiableAt ℝ (fun x : E × E ↦ g x.1 x.2 x.2 / 2) (q t, v t) := by
-    simp_rw [div_eq_mul_inv]
+  have hL : DifferentiableAt ℝ (kineticLagrangian g) (q t, v t) := by
+    simp_rw [funext (kineticLagrangian_apply g), div_eq_mul_inv]
     exact ((h₃.clm_apply differentiableAt_snd).clm_apply differentiableAt_snd).mul_const _
   rw [hasDerivAt_linearLegendreMap_iff hw hL (by rw [hz]; exact hinv.inverse_apply_self _)]
   exact and_congr_right fun hq ↦ eulerLagrange_kineticLagrangian_iff hsymm hnd hg hq hv
