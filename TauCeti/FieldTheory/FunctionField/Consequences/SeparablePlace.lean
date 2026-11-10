@@ -115,9 +115,9 @@ theorem exists_place_degree_le_finrank_and_isSeparable (hF : IsFunctionField k F
     rw [hdeg] at this
     exact Module.finrank_pos.ne' this
   obtain ⟨γ, hγ⟩ := UniqueFactorizationMonoid.exists_mem_normalizedFactors hφ0 hunit
-  obtain ⟨hirr, hmonic, hdvd⟩ := (Polynomial.mem_normalizedFactors_iff hφ0).mp hγ
+  obtain ⟨hirr, -, hdvd⟩ := (Polynomial.mem_normalizedFactors_iff hφ0).mp hγ
   obtain ⟨P, hP, hrel, hsepres⟩ := Place.exists_restrict_eq_relativeDegree_eq_and_isSeparable
-    (k' := k) hF₁ P₁ hy hmin hsep hmonic hirr hdvd
+    (k' := k) hF₁ P₁ hy hmin hsep hirr hdvd
   subst hP
   refine ⟨P, ?_, ?_⟩
   · rw [Place.degree_eq_degree_restrict_mul_relativeDegree k k⟮x⟯ P, hP₁, one_mul, hrel, ← hdeg]

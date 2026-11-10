@@ -145,17 +145,19 @@ theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decomposit
   rw [stabilizer_eq_decompositionSubgroup, ← fixingSubgroup_decompositionField F P]
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **Over its decomposition field a place is fixed by the whole Galois group** (Stichtenoth,
 Theorem 3.8.2): the decomposition group of `P` in `F' / Z` is everything, because the
 decomposition group of `P` in `F' / F` is by construction the Galois group of `F'` over `Z`. -/
 @[simp]
 theorem decompositionSubgroup_decompositionField_eq_top (P : Place k F') :
     P.integers.decompositionSubgroup (decompositionField F P) = ⊤ := by
-  rw [← stabilizer_eq_decompositionSubgroup]
   ext τ
-  simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
-  rw [← restrictScalars_smul (decompositionField F P) τ P]
-  exact restrictScalars_smul_eq_self F P τ
+  simp only [Subgroup.mem_top, iff_true]
+  have h : τ.restrictScalars F ∈ P.integers.decompositionSubgroup F := by
+    rw [← fixingSubgroup_decompositionField F P]
+    exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
+  exact h
 
 section IsGalois
 
