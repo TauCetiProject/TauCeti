@@ -151,11 +151,13 @@ At `i = j` the two strands coincide, so the cap and the cup land on the same slo
 not an arc of a Brauer diagram: it is not a contraction of the slot `i` against itself, which would
 be quadratic rather than linear, but the rank-one map replacing that slot by the sum of its
 coordinates times the all-ones vector (`TauCeti.orthogonalCupCapAt_self_tprod`). The value on a
-pure tensor `TauCeti.orthogonalCupCapAt_tprod`, which reads the arc through the dot product, and the
-relation `TauCeti.orthogonalCupCapAt_mul_mul_self` therefore carry the hypothesis `i ≠ j`; the
-coordinate formulas, the loop rule, and the strandwise statements —
-`TauCeti.permTensorAction_mul_orthogonalCupCapAt`, the two absorptions of the crossing, and the
-commutation of two generators on disjoint pairs of strands
+pure tensor `TauCeti.orthogonalCupCapAt_tprod`, which reads the arc through the dot product, the
+relation `TauCeti.orthogonalCupCapAt_mul_mul_self`, and the equivariance statements
+`TauCeti.commute_orthogonalCupCapAt_piTensorProductMap` and
+`TauCeti.commute_orthogonalCupCapAt_tensorPower` (the rank-one map above does not commute with the
+orthogonal group) therefore carry the hypothesis `i ≠ j`; the coordinate formulas, the loop rule,
+and the strandwise statements — `TauCeti.permTensorAction_mul_orthogonalCupCapAt`, the two
+absorptions of the crossing, and the commutation of two generators on disjoint pairs of strands
 `TauCeti.commute_orthogonalCupCapAt_of_disjoint` — hold for coincident strands too. -/
 noncomputable def orthogonalCupCapAt (i j : Fin d) : Module.End k (⨂[k]^d (Fin n → k)) :=
   ∑ a : Fin n, ∑ c : Fin n, PiTensorProduct.map (cupCapStrand k n d i j a c)
