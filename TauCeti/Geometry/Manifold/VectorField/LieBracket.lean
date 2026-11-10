@@ -31,6 +31,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
+* `TauCeti.mvfderiv_div_mvfderiv_sub_eq_mlieBracket`: the logarithmic differential `df / f` of a
+  nonvanishing function is closed, i.e. `X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f`.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
@@ -203,6 +205,35 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
 namespace TauCeti
+
+/-- The second derivatives of a scalar function `f` cancel in the commutator of the logarithmic
+differentials `df(U) / f`: the logarithmic differential is closed, so
+`X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f` at a point `p` where `f` is `C^n` with
+`minSmoothness 𝕜 2 ≤ n` and nonzero and the vector fields `X`, `Y` are differentiable. -/
+theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
+    {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt n f p)
+    (hn : minSmoothness 𝕜 2 ≤ n) (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p)
+    (hp : f p ≠ 0) :
+    mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) p (X p) -
+      mvfderiv I (fun x ↦ mvfderiv I f x (X x) / f x) p (Y p) =
+        mvfderiv I f p (mlieBracket I X Y p) / f p := by
+  have hfd := hf.mdifferentiableAt
+    (pos_iff_ne_zero.mp ((by norm_num : (0 : ℕ∞ω) < 2).trans_le (le_minSmoothness.trans hn)))
+  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hX
+  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hY
+  -- The derivative of `df(U) / f` along `Z`, by the quotient rule.
+  have hda {U Z : Π x : M, TangentSpace I x}
+      (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
+      mvfderiv I (fun x ↦ mvfderiv I f x (U x) / f x) p (Z p) =
+        (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
+          (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
+    have hq := congrArg (fun L ↦ L (Z p)) (hdU.hasMFDerivAt.div hfd.hasMFDerivAt hp).mfderiv
+    simp only [mvfderiv_apply_eq_mfderiv_apply]
+    exact hq
+  have hcomm := mvfderiv_mlieBracket hf hn hX hY
+  rw [hda hdY, hda hdX, hcomm]
+  field_simp
+  ring
 
 /-- A tangent vector `v` at `x` is the Lie bracket of the differentiable vector fields `V` and `W`
 at `x` as soon as the differential of the extended chart at `x` sends `v` to the commutator of the
