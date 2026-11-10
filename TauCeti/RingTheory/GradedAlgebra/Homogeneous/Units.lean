@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
@@ -181,14 +182,11 @@ variable {𝒜 ℳ}
 generator of `ℳ`: a unit of degree `-d`. -/
 theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
-  -- An `A`-linear endomorphism of `A` is right multiplication by its value at `1`.
-  have hmul (ψ : A ≃ₗ[A] A) (x : A) : ψ x = x * ψ 1 := by
-    simpa using ψ.map_smul x 1
-  refine ⟨⟨⟨φ 1, φ.symm 1, ?_, ?_⟩, rfl⟩, (hφ _ _).mpr ?_⟩
-  · rw [← hmul φ.symm, LinearEquiv.symm_apply_apply]
-  · rw [← hmul φ, LinearEquiv.apply_symm_apply]
-  · rw [neg_add_cancel]
-    exact SetLike.one_mem_graded 𝒜
+  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
+  refine ⟨(((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map
+    (RingEquiv.moduleEndSelf A).symm).unop, (hφ _ _).mpr ?_⟩
+  rw [neg_add_cancel]
+  exact SetLike.one_mem_graded 𝒜
 
 variable (𝒜 ℳ)
 
