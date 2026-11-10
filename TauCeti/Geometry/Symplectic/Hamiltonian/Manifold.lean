@@ -50,7 +50,12 @@ Hamiltonian is constant along the integral curves of `X`, which is conservation 
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The pairing
 `σ(a - X_f, b) = -σ(b, a) - df(b)` is the integrand of the first variation of the action
 functionals of Hamiltonian dynamics
-(`TauCeti.SmoothTwoForm.IsNondegenerate.apply_sub_hamiltonianVectorField`). The orbits of
+(`TauCeti.SmoothTwoForm.IsNondegenerate.apply_sub_hamiltonianVectorField`). A nonzero value
+`a - X_f` of the obstruction pairs positively with a tangent vector of short chart coordinates,
+which supplies the test direction of the first variation arguments showing that the critical
+points of these functionals solve Hamilton's equation
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_apply_and_eventually_add_smul_mem_target`).
+The orbits of
 `G + f ∘ F`, where `G` is supported in `{F < s}` and `f` is constant on `(-∞, s]`, either stay in
 `{F < s}` as orbits of `G` or lie in a level of `F` as orbits of `f'(c) X_F`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
@@ -319,6 +324,61 @@ theorem continuous_apply_sub_hamiltonianVectorField {H : ℝ → M → ℝ}
     (continuous_const.prodMk continuous_id)).neg.sub
     (Manifold.continuous_mvfderiv_apply_mfderiv hH hw s₀)).congr fun t ↦
     (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
+
+omit [FiniteDimensional ℝ E] in
+/-- **The test direction of a first variation argument.** On a manifold without boundary, a
+nonzero tangent vector `v` at `x₀` pairs positively with the tangent vector at `x₀` of coordinates
+`e` in the tangent-bundle trivialization at `x₀`, for a chart vector `e` short enough that, near
+`x₀`, the points displaced by `c • e` with `|c| ≤ 1` stay in the target of the extended chart at
+`x₀`. -/
+theorem exists_pos_apply_and_eventually_add_smul_mem_target [I.Boundaryless] {x₀ : M}
+    {v : TangentSpace I x₀} (hv : v ≠ 0) :
+    ∃ e : E, 0 < σ.1 x₀ ![v, (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e] ∧
+      ∀ᶠ x in 𝓝 x₀, x ∈ (extChartAt I x₀).source ∧
+        ∀ c : ℝ, |c| ≤ 1 → extChartAt I x₀ x + c • e ∈ (extChartAt I x₀).target := by
+  -- a tangent vector `u` at `x₀` pairing positively with `v`
+  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I x₀, 0 < σ.1 x₀ ![v, u] := by
+    obtain ⟨u, hu⟩ : ∃ u, SmoothBundleForm.eval₂ σ x₀ v u ≠ 0 := by
+      by_contra hcon
+      exact hv (SmoothTwoForm.isNondegenerate_iff_separatingLeft.mp h x₀ _
+        fun u ↦ not_not.mp (not_exists.mp hcon u))
+    rw [SmoothBundleForm.eval₂_apply] at hu
+    refine ⟨σ.1 x₀ ![v, u] • u, ?_⟩
+    rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
+      SmoothBundleForm.eval₂_apply, smul_eq_mul]
+    exact mul_self_pos.mpr hu
+  -- a ball of radius `2ρ` around `ψ x₀` in the target of the extended chart `ψ` at `x₀`
+  obtain ⟨ρ, hρ, hball⟩ :
+      ∃ ρ > 0, Metric.ball (extChartAt I x₀ x₀) (2 * ρ) ⊆ (extChartAt I x₀).target := by
+    obtain ⟨ε, hε, hb⟩ :=
+      Metric.isOpen_iff.mp (isOpen_extChartAt_target (I := I) x₀) _ (mem_extChartAt_target x₀)
+    exact ⟨ε / 2, by positivity, by rwa [mul_div_cancel₀ _ two_ne_zero]⟩
+  -- the chart vector `e`, shorter than `ρ`, of the tangent vector `κ • u` at `x₀`
+  set e₀ : E := (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x₀ u
+  set κ : ℝ := ρ / (‖e₀‖ + 1)
+  have hκ : 0 < κ := by positivity
+  have he : ‖κ • e₀‖ < ρ := by
+    rw [norm_smul, Real.norm_of_nonneg hκ.le, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [norm_nonneg e₀]
+  refine ⟨κ • e₀, ?_, ?_⟩
+  · rw [map_smul, Bundle.Trivialization.symmL_continuousLinearMapAt _
+      (FiberBundle.mem_baseSet_trivializationAt' x₀), ← SmoothBundleForm.eval₂_apply,
+      SmoothBundleForm.eval₂_smul_right, SmoothBundleForm.eval₂_apply, smul_eq_mul]
+    exact mul_pos hκ hu
+  -- near `x₀`, the point `ψ x` lies within `ρ` of `ψ x₀`, and `c • e` is shorter than `ρ`
+  filter_upwards [(isOpen_extChartAt_source (I := I) x₀).mem_nhds (mem_extChartAt_source x₀),
+    (continuousAt_extChartAt (I := I) x₀).preimage_mem_nhds (Metric.ball_mem_nhds _ hρ)]
+    with x hx hxρ
+  refine ⟨hx, fun c hc ↦ hball (Metric.mem_ball.mpr ?_)⟩
+  have hce : ‖c • κ • e₀‖ ≤ ‖κ • e₀‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hc
+  calc dist (extChartAt I x₀ x + c • κ • e₀) (extChartAt I x₀ x₀)
+      ≤ dist (extChartAt I x₀ x) (extChartAt I x₀ x₀) + ‖c • κ • e₀‖ := by
+        rw [dist_eq_norm, dist_eq_norm, add_sub_right_comm]
+        exact norm_add_le _ _
+    _ < ρ + ρ := add_lt_add_of_lt_of_le hxρ (hce.trans he.le)
+    _ = 2 * ρ := by ring
 
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :

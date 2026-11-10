@@ -354,7 +354,8 @@ private theorem IsContractibleLoopActionCritical.integral_mul_apply_eq_zero [I.B
         (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
     intro t
     by_cases htJ : t ∈ J
-    · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ hφ hφJ hc.contMDiff hwc htJ,
+    · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ (hφ.of_le one_le_two) hφJ
+          ((hc.contMDiff t).of_le one_le_two) ((hwc (0, t)).mdifferentiableAt two_ne_zero) htJ,
         ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
         SmoothBundleForm.eval₂_apply, smul_eq_mul]
     · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
@@ -384,56 +385,24 @@ theorem IsContractibleLoopActionCritical.mem_periodicSolutions [I.Boundaryless]
     exact Manifold.hasMFDerivAt_curveVelocity (hγd t₀)
   by_contra hne
   set x₀ := γ t₀
-  -- a tangent vector `u` at `x₀` pairing positively with the obstruction `γ' - X_H` at `t₀`
-  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I x₀, 0 < σ.1 x₀
-      ![Manifold.curveVelocity I γ t₀ - σ.hamiltonianVectorField (H t₀) x₀, u] := by
-    obtain ⟨v, hv⟩ : ∃ v, SmoothBundleForm.eval₂ σ x₀
-        (Manifold.curveVelocity I γ t₀ - σ.hamiltonianVectorField (H t₀) x₀) v ≠ 0 := by
-      by_contra hcon
-      exact sub_ne_zero.mpr hne (SmoothTwoForm.isNondegenerate_iff_separatingLeft.mp h x₀ _
-        fun v ↦ not_not.mp (not_exists.mp hcon v))
-    rw [SmoothBundleForm.eval₂_apply] at hv
-    refine ⟨(σ.1 x₀ ![Manifold.curveVelocity I γ t₀ - σ.hamiltonianVectorField (H t₀) x₀, v]) • v,
-      ?_⟩
-    rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-      SmoothBundleForm.eval₂_apply, smul_eq_mul]
-    exact mul_self_pos.mpr hv
-  -- a ball of radius `2ρ` around `ψ x₀` in the target of the extended chart `ψ` at `x₀`
-  obtain ⟨ρ, hρ, hball⟩ : ∃ ρ > 0,
-      Metric.ball (extChartAt I x₀ x₀) (2 * ρ) ⊆ (extChartAt I x₀).target := by
-    obtain ⟨ε, hε, hb⟩ :=
-      Metric.isOpen_iff.mp (isOpen_extChartAt_target (I := I) x₀) _ (mem_extChartAt_target x₀)
-    exact ⟨ε / 2, by positivity, by rwa [mul_div_cancel₀ _ two_ne_zero]⟩
-  -- a radius `δ ≤ 1/4` of times near `t₀` along which `γ` stays within `ρ` of `x₀` in the chart
-  obtain ⟨δ₀, hδ₀, hδ₀U⟩ := Metric.mem_nhds_iff.mp
-    ((hc.contMDiff.continuous.continuousAt (x := t₀)).preimage_mem_nhds
-      (inter_mem ((isOpen_extChartAt_source (I := I) x₀).mem_nhds (mem_extChartAt_source x₀))
-        ((continuousAt_extChartAt (I := I) x₀).preimage_mem_nhds (Metric.ball_mem_nhds _ hρ))))
+  -- a chart vector `e` whose tangent vector at `x₀` pairs positively with the obstruction
+  -- `γ' - X_H` at `t₀`
+  obtain ⟨e, he, hU⟩ :=
+    h.exists_pos_apply_and_eventually_add_smul_mem_target (sub_ne_zero.mpr hne)
+  -- a radius `δ ≤ 1/4` of times near `t₀` along which `γ` stays in the chart at `x₀` and the
+  -- points displaced by at most `e` stay in the chart target
+  obtain ⟨δ₀, hδ₀, hδ₀U⟩ := Metric.eventually_nhds_iff.mp
+    ((hc.contMDiff.continuous.continuousAt (x := t₀)).eventually hU)
   set δ := min δ₀ (1 / 4)
   have hδ : 0 < δ := lt_min hδ₀ (by norm_num)
   have hδ2 : δ ≤ 1 / 2 := (min_le_right _ _).trans (by norm_num)
-  have hγU : ∀ t, |t - t₀| < δ → γ t ∈ (extChartAt I x₀).source ∧
-      dist (extChartAt I x₀ (γ t)) (extChartAt I x₀ x₀) < ρ := fun t ht ↦
-    hδ₀U (by rw [Metric.mem_ball, Real.dist_eq]; exact ht.trans_le (min_le_left _ _))
-  -- the chart vector `e`, shorter than `ρ`, of tangent vector `κ • u` at `x₀`
-  set e₀ : E := (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x₀ u
-  set κ : ℝ := ρ / (‖e₀‖ + 1)
-  have hκ : 0 < κ := by positivity
-  set e : E := κ • e₀
-  have he : ‖e‖ < ρ := by
-    rw [norm_smul, Real.norm_of_nonneg hκ.le, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-    nlinarith [norm_nonneg e₀]
+  have hγU : ∀ t, |t - t₀| < δ → γ t ∈ (extChartAt I x₀).source ∧ ∀ c : ℝ, |c| ≤ 1 →
+      extChartAt I x₀ (γ t) + c • e ∈ (extChartAt I x₀).target := fun t ht ↦
+    hδ₀U (by rw [Real.dist_eq]; exact ht.trans_le (min_le_left _ _))
   -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
   set g : ℝ → ℝ := fun t ↦ σ.1 (γ t) ![Manifold.curveVelocity I γ t -
     σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
-  have hg₀ : 0 < g t₀ := by
-    have he₀ : (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e = κ • u := by
-      rw [map_smul, Bundle.Trivialization.symmL_continuousLinearMapAt _
-        (FiberBundle.mem_baseSet_trivializationAt' x₀)]
-    simp only [g]
-    rw [he₀, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-      SmoothBundleForm.eval₂_apply, smul_eq_mul]
-    exact mul_pos hκ hu
+  have hg₀ : 0 < g t₀ := he
   have hgper : Periodic g 1 := fun t ↦ by
     simp only [g]
     rw [hγper.curveVelocity_add (hγd _), hP, hc.apply_add_one]
@@ -450,9 +419,9 @@ theorem IsContractibleLoopActionCritical.mem_periodicSolutions [I.Boundaryless]
     intro r hr hrδ
     have hr2 : r ≤ 1 / 2 := hrδ.trans hδ2
     set J := {t | cos (2 * π * r) < cos (2 * π * (t - t₀))}
-    -- on `J`, `γ` stays within `ρ` of `x₀` in the chart, by periodicity
-    have hJγ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source ∧
-        dist (extChartAt I x₀ (γ t)) (extChartAt I x₀ x₀) < ρ := by
+    -- on `J`, `γ` stays in the chart and the displaced points stay in its target, by periodicity
+    have hJγ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source ∧ ∀ c : ℝ, |c| ≤ 1 →
+        extChartAt I x₀ (γ t) + c • e ∈ (extChartAt I x₀).target := by
       intro t ht
       obtain ⟨k, hk⟩ := exists_abs_sub_int_lt_of_cos_lt hr.le ht
       have h' := hγU (t - k * 1) (by
@@ -466,22 +435,11 @@ theorem IsContractibleLoopActionCritical.mem_periodicSolutions [I.Boundaryless]
       (periodicBump_add_one _ _)
       ((tsupport_periodicBump_subset (hcos1 r hr hr2)).trans fun t ht ↦
         (hcosr r hr hr2).trans_le ht)
-    -- the displaced points stay in the ball of radius `2ρ`
-    have hc1' : |c| * periodicBump t₀ (cos (π * r)) t ≤ 1 := by
-      simpa using mul_le_mul hc1 (periodicBump_le_one t₀ (cos (π * r)) t)
-        (periodicBump_nonneg _ _ _) zero_le_one
-    have hce : ‖(c * periodicBump t₀ (cos (π * r)) t) • e‖ ≤ ‖e‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg (periodicBump_nonneg _ _ _)]
-      exact mul_le_of_le_one_left (norm_nonneg e) hc1'
-    refine hball (Metric.mem_ball.mpr ?_)
-    calc dist (extChartAt I x₀ (γ t) + (c * periodicBump t₀ (cos (π * r)) t) • e)
-          (extChartAt I x₀ x₀)
-        ≤ dist (extChartAt I x₀ (γ t)) (extChartAt I x₀ x₀) +
-            ‖(c * periodicBump t₀ (cos (π * r)) t) • e‖ := by
-          rw [dist_eq_norm, dist_eq_norm, add_sub_right_comm]
-          exact norm_add_le _ _
-      _ < ρ + ρ := add_lt_add_of_lt_of_le (hJγ t ht).2 (hce.trans he.le)
-      _ = 2 * ρ := by ring
+    -- the amplitude `c φ(t)` stays in `[-1, 1]`
+    refine (hJγ t ht).2 _ ?_
+    rw [abs_mul, abs_of_nonneg (periodicBump_nonneg _ _ _)]
+    exact (mul_le_mul hc1 (periodicBump_le_one _ _ _) (periodicBump_nonneg _ _ _)
+      zero_le_one).trans_eq (one_mul 1)
   -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
   have hgcont : ContinuousAt g t₀ := by
     refine (hbump δ hδ le_rfl).2.continuousAt.congr ?_

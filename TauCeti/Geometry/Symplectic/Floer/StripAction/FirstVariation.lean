@@ -277,7 +277,8 @@ private theorem apply_mfderiv_sinChartVariation (hJo : IsOpen J)
   · rw [hv, hw0 t]
   -- then the variation field
   by_cases htJ : t ∈ J
-  · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ hφ hφJ hγ hwc htJ,
+  · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ (hφ.of_le one_le_two) hφJ
+        ((hγ t).of_le one_le_two) hwd htJ,
       ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
       SmoothBundleForm.eval₂_apply, smul_eq_mul]
   · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
@@ -353,76 +354,35 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
     exact Manifold.hasMFDerivAt_curveVelocity (hγd t₀)
   by_contra hne
   set x₀ := γ t₀
-  -- a tangent vector `u` at `x₀` pairing positively with the obstruction `γ' - X_H` at `t₀`
-  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I x₀, 0 < ω.1 x₀
-      ![Manifold.curveVelocity I γ t₀ - ω.hamiltonianVectorField (H t₀) x₀, u] := by
-    obtain ⟨v, hv⟩ : ∃ v, SmoothBundleForm.eval₂ ω x₀
-        (Manifold.curveVelocity I γ t₀ - ω.hamiltonianVectorField (H t₀) x₀) v ≠ 0 := by
-      by_contra hcon
-      exact sub_ne_zero.mpr hne (SmoothTwoForm.isNondegenerate_iff_separatingLeft.mp hω x₀ _
-        fun v ↦ not_not.mp (not_exists.mp hcon v))
-    rw [SmoothBundleForm.eval₂_apply] at hv
-    refine ⟨(ω.1 x₀ ![Manifold.curveVelocity I γ t₀ - ω.hamiltonianVectorField (H t₀) x₀, v]) • v,
-      ?_⟩
-    rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-      SmoothBundleForm.eval₂_apply, smul_eq_mul]
-    exact mul_self_pos.mpr hv
-  -- a ball of radius `2ρ` around `ψ x₀` in the target of the extended chart `ψ` at `x₀`
-  obtain ⟨ρ, hρ, hball⟩ :
-      ∃ ρ > 0, ball (extChartAt I x₀ x₀) (2 * ρ) ⊆ (extChartAt I x₀).target := by
-    obtain ⟨ε, hε, hb⟩ :=
-      Metric.isOpen_iff.mp (isOpen_extChartAt_target (I := I) x₀) _ (mem_extChartAt_target x₀)
-    exact ⟨ε / 2, by positivity, by rwa [mul_div_cancel₀ _ two_ne_zero]⟩
-  -- a radius `δ` of times near `t₀` along which `γ` stays within `ρ` of `x₀` in the chart
-  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.mp
-    ((hc.contMDiff.continuous.continuousAt (x := t₀)).preimage_mem_nhds
-      (inter_mem ((isOpen_extChartAt_source (I := I) x₀).mem_nhds (mem_extChartAt_source x₀))
-        ((continuousAt_extChartAt (I := I) x₀).preimage_mem_nhds (ball_mem_nhds _ hρ))))
-  -- the chart vector `e`, shorter than `ρ`, of the tangent vector `κ • u` at `x₀`
-  set e₀ : E := (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x₀ u
-  set κ : ℝ := ρ / (‖e₀‖ + 1)
-  have hκ : 0 < κ := by positivity
-  set e : E := κ • e₀
-  have he : ‖e‖ < ρ := by
-    rw [norm_smul, Real.norm_of_nonneg hκ.le, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-    nlinarith [norm_nonneg e₀]
+  -- a chart vector `e` whose tangent vector at `x₀` pairs positively with the obstruction
+  -- `γ' - X_H` at `t₀`, and a radius `δ` of times near `t₀` along which `γ` stays in the chart at
+  -- `x₀` and the points displaced by at most `e` stay in the chart target
+  obtain ⟨e, he, hU⟩ :=
+    hω.exists_pos_apply_and_eventually_add_smul_mem_target (sub_ne_zero.mpr hne)
+  obtain ⟨δ, hδ, hδU⟩ := Metric.eventually_nhds_iff.mp
+    ((hc.contMDiff.continuous.continuousAt (x := t₀)).eventually hU)
   -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
   set g : ℝ → ℝ := fun t ↦ ω.1 (γ t) ![Manifold.curveVelocity I γ t -
     ω.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
-  have hg₀ : 0 < g t₀ := by
-    have he₀ : (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e = κ • u := by
-      rw [map_smul, Bundle.Trivialization.symmL_continuousLinearMapAt _
-        (FiberBundle.mem_baseSet_trivializationAt' x₀)]
-    simp only [g]
-    rw [he₀, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-      SmoothBundleForm.eval₂_apply, smul_eq_mul]
-    exact mul_pos hκ hu
+  have hg₀ : 0 < g t₀ := he
   -- on a set of times within `δ` of `t₀`, `γ` stays in the chart, and the points displaced by a
   -- profile bounded by `1` stay in the chart target
   have hJ : ∀ {K : Set ℝ}, K ⊆ ball t₀ δ → ∀ t ∈ K, γ t ∈ (extChartAt I x₀).source :=
     fun hK t ht ↦ (hδU (hK ht)).1
   have hT : ∀ {K : Set ℝ} {ψ : ℝ → ℝ}, K ⊆ ball t₀ δ → (∀ t, |ψ t| ≤ 1) → ∀ t ∈ K, ∀ c : ℝ,
-      |c| ≤ 1 → extChartAt I x₀ (γ t) + (c * ψ t) • e ∈ (extChartAt I x₀).target := by
-    intro K ψ hK hψ t ht c hc1
-    have hce : ‖(c * ψ t) • e‖ ≤ ‖e‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_mul]
-      exact mul_le_of_le_one_left (norm_nonneg e)
-        (by simpa using mul_le_mul hc1 (hψ t) (abs_nonneg _) zero_le_one)
-    refine hball (mem_ball.mpr ?_)
-    calc dist (extChartAt I x₀ (γ t) + (c * ψ t) • e) (extChartAt I x₀ x₀)
-        ≤ dist (extChartAt I x₀ (γ t)) (extChartAt I x₀ x₀) + ‖(c * ψ t) • e‖ := by
-          rw [dist_eq_norm, dist_eq_norm, add_sub_right_comm]
-          exact norm_add_le _ _
-      _ < ρ + ρ := add_lt_add_of_lt_of_le (hδU (hK ht)).2 (hce.trans he.le)
-      _ = 2 * ρ := by ring
+      |c| ≤ 1 → extChartAt I x₀ (γ t) + (c * ψ t) • e ∈ (extChartAt I x₀).target :=
+    fun hK hψ t ht c hc1 ↦ (hδU (hK ht)).2 _ (by
+      rw [abs_mul]
+      exact (mul_le_mul hc1 (hψ t) (abs_nonneg _) zero_le_one).trans_eq (one_mul 1))
   have hbump : ∀ {c : ℝ} (b : ContDiffBump c) (t : ℝ), |b t| ≤ 1 := fun b t ↦
     abs_le.mpr ⟨by linarith [b.nonneg (x := t)], b.le_one⟩
   -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
   have hgcont : ContinuousAt g t₀ := by
     let b : ContDiffBump t₀ := ⟨δ / 4, δ / 2, by positivity, by linarith⟩
     have hbJ : tsupport b ⊆ ball t₀ δ := by
+      -- the outer radius of `b` is `δ / 2` by construction
       rw [b.tsupport_eq]
-      exact closedBall_subset_ball (by change δ / 2 < δ; linarith)
+      exact closedBall_subset_ball (half_lt_self hδ)
     refine (continuous_mul_apply_curveVelocity_sub hω hH isOpen_ball (hJ subset_rfl)
       (hT subset_rfl (hbump b)) b.contDiff hbJ hc.contMDiff).continuousAt.congr ?_
     filter_upwards [closedBall_mem_nhds t₀ (by positivity : (0 : ℝ) < δ / 4)] with t ht
@@ -436,8 +396,9 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
   have hrδ : ball t₁ r ⊆ ball t₀ δ := fun t ht ↦ ball_subset_ball (min_le_left _ _) (hrsub ht).2
   let b : ContDiffBump t₁ := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hbJ : tsupport b ⊆ ball t₁ r := by
+    -- the outer radius of `b` is `r / 2` by construction
     rw [b.tsupport_eq]
-    exact closedBall_subset_ball (by change r / 2 < r; linarith)
+    exact closedBall_subset_ball (half_lt_self hr)
   have hint := hc.integral_mul_apply_eq_zero hω hα hH isOpen_ball (fun t ht ↦ (hrsub ht).1)
     (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ
   have hcont := continuous_mul_apply_curveVelocity_sub hω hH isOpen_ball (hJ hrδ)

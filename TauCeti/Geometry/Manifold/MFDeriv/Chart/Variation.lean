@@ -31,8 +31,10 @@ at `x₀`.
 
 The displaced points stay in the chart target only for small amplitudes. Variations defined on the
 whole plane, as functionals on loops or paths require, use the amplitude `sin s` instead of `s`
-(`TauCeti.Manifold.sinChartVariation`): it stays in `[-1, 1]` and has derivative `1` at `s = 0`,
-so the variation is `C²` on the plane and has the same variation field at `s = 0`.
+(`TauCeti.Manifold.sinChartVariation`): it stays in `[-1, 1]` and has derivative `1` at `s = 0`.
+So if the points displaced by amplitudes in `[-1, 1]` stay in the chart target, as they do for a
+displacement `φ t • e` small enough along `J`, then the variation is `C^n` on the whole plane for
+`C^n` data, and it has the same variation field at `s = 0`.
 
 ## Main definitions and results
 
@@ -42,10 +44,11 @@ so the variation is `C²` on the plane and has the same variation field at `s = 
   and the displaced point lies in the chart target.
 * `TauCeti.Manifold.variationField_chartVariation`: its variation field.
 * `TauCeti.Manifold.sinChartVariation`: the chart variation with amplitude `sin s`, a map of the
-  plane whose displaced points stay in the chart for every `s`.
-* `TauCeti.Manifold.contMDiff_sinChartVariation` and
-  `TauCeti.Manifold.mfderiv_sinChartVariation_of_mem`: it is `C²`, with variation field `φ t`
-  times the coordinate vector `e` at `s = 0`.
+  plane.
+* `TauCeti.Manifold.contMDiff_sinChartVariation`: it is `C^n` on the plane for `C^n` data when the
+  points displaced by amplitudes in `[-1, 1]` stay in the chart target.
+* `TauCeti.Manifold.mfderiv_sinChartVariation_of_mem`: its variation field at `s = 0` is `φ t`
+  times the tangent vector of chart coordinates `e`.
 
 ## References
 
@@ -176,7 +179,9 @@ section Sin
 variable (I) in
 /-- The chart variation of `γ` with amplitude `sin s`, as a map of the plane:
 `(s, t) ↦ ψ⁻¹ (ψ (γ t) + (sin s * φ t) • e)` at the parameters of `J`, and `γ` outside `J`. As the
-amplitude stays in `[-1, 1]`, the displaced points stay near `γ` for every `s`. -/
+amplitude stays in `[-1, 1]`, the displaced points stay in the chart target for every `s` as soon as
+those displaced by amplitudes in `[-1, 1]` do, for instance when `φ t • e` is small enough along
+`J`. -/
 def sinChartVariation (γ : ℝ → M) (x₀ : M) (J : Set ℝ) (φ : ℝ → ℝ) (e : E) (z : ℝ × ℝ) : M :=
   chartVariation I γ x₀ J φ e (Real.sin z.1) z.2
 
@@ -208,34 +213,34 @@ theorem mfderiv_sinChartVariation_of_notMem {t : ℝ}
 
 variable [I.Boundaryless]
 
-/-- On a `C²` manifold without boundary, the chart variation with amplitude `sin s` of a `C²`
-curve, for a `C²` profile supported in the open set `J` along which the displaced points stay in
-the chart target, is `C²` on the plane. -/
-theorem contMDiff_sinChartVariation [IsManifold I 2 M] (hJo : IsOpen J)
+/-- On a `C^n` manifold without boundary, the chart variation with amplitude `sin s` of a `C^n`
+curve, for a `C^n` profile supported in the open set `J` along which the points displaced by
+amplitudes in `[-1, 1]` stay in the chart target, is `C^n` on the plane. -/
+theorem contMDiff_sinChartVariation [IsManifold I n M] (hJo : IsOpen J)
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
     (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
       extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
-    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (sinChartVariation I γ x₀ J φ e) := by
+    (hφ : ContDiff ℝ n φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (sinChartVariation I γ x₀ J φ e) := by
   rintro ⟨s, t⟩
-  exact (contMDiffAt_chartVariation (n := 2) hJo hJ hφ hφJ (hγ t)
+  exact (contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t)
     fun htJ ↦ hT t htJ _ (Real.abs_sin_le_one s)).comp (s, t)
     ((Real.contDiff_sin.prodMap contDiff_id).contMDiff (s, t))
 
 /-- The variation field of the chart variation with amplitude `sin s`: at a parameter `t` of `J`
 it is `φ t` times the tangent vector at `γ t` with coordinates `e` in the tangent-bundle
 trivialization at `x₀`. -/
-theorem mfderiv_sinChartVariation_of_mem [IsManifold I 2 M] (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
-    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ)
-    (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (sinChartVariation I γ x₀ J φ e)) {t : ℝ} (htJ : t ∈ J) :
+theorem mfderiv_sinChartVariation_of_mem [IsManifold I 1 M] (hJo : IsOpen J)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 1 φ) (hφJ : tsupport φ ⊆ J)
+    {t : ℝ} (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t)
+    (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (sinChartVariation I γ x₀ J φ e) (0, t)) (htJ : t ∈ J) :
     mfderiv 𝓘(ℝ, ℝ × ℝ) I (sinChartVariation I γ x₀ J φ e) (0, t) (1, 0) =
       φ t • (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e := by
   -- the transverse curve of the chart variation at `t` is differentiable at `s = 0`
   have hd : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s ↦ chartVariation I γ x₀ J φ e s t) 0 :=
-    ((contMDiffAt_chartVariation (n := 2) (e := e) (s := 0) hJo hJ hφ hφJ (hγ t)
+    ((contMDiffAt_chartVariation (n := 1) (e := e) (s := 0) hJo hJ hφ hφJ hγ
       fun htJ ↦ by simpa using (extChartAt I x₀).map_source (hJ t htJ)).comp 0
-      ((contDiff_id.prodMk contDiff_const).contMDiff 0)).mdifferentiableAt two_ne_zero
+      ((contDiff_id.prodMk contDiff_const).contMDiff 0)).mdifferentiableAt one_ne_zero
   -- reparametrizing by `s ↦ sin s`, whose derivative at `0` is `1`, with the base point `sin 0`
   -- normalized to `0`
   have hvel : ∀ y, Real.sin 0 = y →
@@ -246,9 +251,8 @@ theorem mfderiv_sinChartVariation_of_mem [IsManifold I 2 M] (hJo : IsOpen J)
     have h := curveVelocity_comp (c := 1) (by simpa using Real.hasDerivAt_sin 0) hy
     rw [one_smul] at h
     exact h
-  rw [← curveVelocity_eq_mfderiv_fst (f := fun a b ↦ sinChartVariation I γ x₀ J φ e (a, b))
-      ((hw (0, t)).mdifferentiableAt two_ne_zero), hvel 0 Real.sin_zero hd,
-    ← variationField_apply, variationField_chartVariation hJ htJ]
+  rw [← curveVelocity_eq_mfderiv_fst (f := fun a b ↦ sinChartVariation I γ x₀ J φ e (a, b)) hw,
+    hvel 0 Real.sin_zero hd, ← variationField_apply, variationField_chartVariation hJ htJ]
 
 end Sin
 
