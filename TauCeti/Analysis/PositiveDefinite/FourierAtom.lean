@@ -13,6 +13,8 @@ public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Fourier atoms
@@ -27,6 +29,10 @@ It uses Mathlib's `2π` Fourier convention.
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
 * `TauCeti.contDiff_fourierAtom`: Fourier atoms are smooth in the spatial variable.
+* `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom at
+  frequency `q` has norm at most `(2π ‖q‖) ^ k`.
+* `TauCeti.contDiff_tsum_mul_fourierAtom`: a series of Fourier atoms whose coefficients decay
+  faster than every power of the frequency is smooth.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -133,6 +139,48 @@ theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
     ((Complex.ofRealCLM.contDiff.comp
       (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
         contDiff_const)
+
+/-- The `k`-th derivative of the Fourier atom at frequency `q` has norm at most
+`(2π ‖q‖) ^ k`. -/
+theorem norm_iteratedFDeriv_fourierAtom_le (q x : W) (k : ℕ) :
+    ‖iteratedFDeriv ℝ k (fourierAtom q) x‖ ≤ (2 * Real.pi * ‖q‖) ^ k := by
+  -- The atom is `exp ∘ ℓ` for the purely imaginary linear phase `ℓ y = -2πi ⟪y, q⟫`.
+  let ℓ : W →L[ℝ] ℂ := (-2 * Real.pi * Complex.I) • (Complex.ofRealCLM.comp (innerSL ℝ q))
+  have hℓ (y : W) : ℓ y = -2 * Real.pi * Complex.I * ((inner ℝ y q : ℝ) : ℂ) := by
+    simp [ℓ, real_inner_comm]
+  have hfun : fourierAtom q = fun y ↦ Complex.exp (ℓ y) := by
+    ext y
+    rw [fourierAtom_apply, hℓ]
+  have hnorm : ‖ℓ‖ ≤ 2 * Real.pi * ‖q‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y ↦ ?_
+    rw [hℓ]
+    simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
+      Complex.norm_I, mul_one, abs_of_pos Real.pi_pos]
+    have := abs_real_inner_le_norm y q
+    nlinarith [Real.pi_pos, norm_nonneg y, norm_nonneg q, abs_nonneg (inner ℝ y q)]
+  rw [hfun]
+  refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
+  rw [show Complex.exp (ℓ x) = fourierAtom q x by rw [hfun], norm_fourierAtom, one_mul]
+  gcongr
+
+open scoped ContDiff in
+/-- A series `x ↦ ∑' i, c i * fourierAtom (q i) x` of Fourier atoms is smooth when its coefficients
+decay faster than every power of the frequencies: `∑ ‖c i‖ ‖q i‖ ^ k < ∞` for every `k`. -/
+theorem contDiff_tsum_mul_fourierAtom {ι : Type*} (q : ι → W) (c : ι → ℂ)
+    (h : ∀ k : ℕ, Summable fun i ↦ ‖c i‖ * ‖q i‖ ^ k) :
+    ContDiff ℝ ∞ fun x ↦ ∑' i, c i * fourierAtom (q i) x := by
+  refine contDiff_tsum (N := ⊤) (v := fun k i ↦ (2 * Real.pi) ^ k * (‖c i‖ * ‖q i‖ ^ k))
+    (fun i ↦ contDiff_const.mul (contDiff_fourierAtom _)) (fun k _ ↦ (h k).mul_left _)
+    fun k i x _ ↦ ?_
+  have hi : (fun x ↦ c i * fourierAtom (q i) x) = c i • fourierAtom (q i) := by
+    ext x
+    simp only [Pi.smul_apply, smul_eq_mul]
+  rw [hi, iteratedFDeriv_const_smul_apply (contDiff_fourierAtom _).contDiffAt, norm_smul]
+  calc ‖c i‖ * ‖iteratedFDeriv ℝ k (fourierAtom (q i)) x‖
+      ≤ ‖c i‖ * (2 * Real.pi * ‖q i‖) ^ k := by
+        gcongr
+        exact norm_iteratedFDeriv_fourierAtom_le _ _ _
+    _ = (2 * Real.pi) ^ k * (‖c i‖ * ‖q i‖ ^ k) := by ring
 
 end ContDiff
 
