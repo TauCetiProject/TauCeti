@@ -384,12 +384,13 @@ end Free
 
 section Cardinality
 
-variable (k : Type u) [Field k] {G : Type v} [Monoid G] {X Y : Type w} [MulAction G X]
-  [MulAction G Y]
+variable (k : Type u) [Semiring k] [StrongRankCondition k] {G : Type v} [Monoid G]
+  {X Y : Type w} [MulAction G X] [MulAction G Y]
 
 /-- **Equivalent permutation representations come from `G`-sets of the same size.** This needs no
 assumption on the characteristic: an equivalence of representations is in particular a linear
-equivalence, and `k[X]` has dimension `#X` over any field. -/
+equivalence, and `k[X]` is free of rank `#X` over any coefficient semiring with the strong rank
+condition. -/
 theorem natCard_eq_of_nonempty_equiv_ofMulAction
     (h : Nonempty ((Representation.ofMulAction k G X).Equiv
       (Representation.ofMulAction k G Y))) :
