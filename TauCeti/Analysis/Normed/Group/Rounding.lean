@@ -43,9 +43,9 @@ explicitly using `isUltrametricDist_zpowCeilNormedAddCommGroup` and
 ## Main definitions
 
 * `TauCeti.zpowCeil c x`: the least element of `c ^ ℤ ∪ {0}` that is at least `x`.
-* `TauCeti.zpowCeilAddGroupSeminorm hc₀ hc₁ M`: the norm of an ultrametric seminormed group
+* `TauCeti.zpowCeilAddGroupSeminorm hc₀ M`: the norm of an ultrametric seminormed group
   rounded up to `c ^ ℤ ∪ {0}`.
-* `TauCeti.zpowCeilAddGroupNorm hc₀ hc₁ M`: the same construction on a normed group, as a norm.
+* `TauCeti.zpowCeilAddGroupNorm hc₀ M`: the same construction on a normed group, as a norm.
 
 ## Main results
 
@@ -104,8 +104,14 @@ theorem zpowCeil_pos_iff (hc₀ : 0 < c) : 0 < zpowCeil c x ↔ 0 < x := by
   · simpa using hx
 
 /-- The rounding of `x` vanishes exactly when `x ≤ 0`. -/
-theorem zpowCeil_eq_zero_iff (hc₀ : 0 < c) : zpowCeil c x = 0 ↔ x ≤ 0 := by
-  rw [← not_lt, ← zpowCeil_pos_iff hc₀, (zpowCeil_nonneg hc₀.le x).lt_iff_ne', not_not]
+theorem zpowCeil_eq_zero_iff : zpowCeil c x = 0 ↔ x ≤ 0 := by
+  unfold zpowCeil
+  split_ifs with hx
+  · rw [iff_false_right hx.not_ge]
+    rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    · exact zpow_ne_zero _ hc
+  · simpa using hx
 
 /-- A positive number is rounded to an integer power of `c`. -/
 theorem exists_zpowCeil_eq_zpow (hx : 0 < x) : ∃ n : ℤ, zpowCeil c x = c ^ n :=
@@ -190,6 +196,7 @@ omit hc₁ in
 theorem zpowCeil_self : zpowCeil c c = c := by
   simpa using zpowCeil_zpow hc₀ 1
 
+omit hc₁ in
 /-- Rounding up is monotone. -/
 theorem monotone_zpowCeil : Monotone (zpowCeil c) := by
   intro x y hxy
@@ -197,9 +204,14 @@ theorem monotone_zpowCeil : Monotone (zpowCeil c) := by
   · rw [zpowCeil_of_nonpos hx]
     exact zpowCeil_nonneg hc₀.le y
   · have hy := hx.trans_le hxy
-    rw [zpowCeil_of_pos hx, zpowCeil_of_pos hy, zpow_le_zpow_iff_right_of_lt_one₀ hc₀ hc₁,
-      le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
-    exact hxy.trans ((le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hy _).mp le_rfl)
+    rw [zpowCeil_of_pos hx, zpowCeil_of_pos hy]
+    rcases lt_or_ge c 1 with hc₁ | hc₁
+    · rw [zpow_le_zpow_iff_right_of_lt_one₀ hc₀ hc₁,
+        le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
+      exact hxy.trans ((le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hy _).mp le_rfl)
+    · rcases hc₁.eq_or_lt with rfl | hc₁
+      · simp
+      · exact zpow_le_zpow_right₀ hc₁.le (Int.floor_mono (Real.logb_le_logb_of_le hc₁ hx hxy))
 
 omit hc₁ in
 /-- Rounding up is idempotent. -/
@@ -226,7 +238,7 @@ theorem zpowCeil_eq_self_iff : zpowCeil c x = x ↔ x = 0 ∨ ∃ n : ℤ, c ^ n
 /-- **Rounding up is a closure operator onto `c ^ ℤ ∪ {0}`**: for `y` in that set,
 `zpowCeil c x ≤ y ↔ x ≤ y`. -/
 theorem zpowCeil_le_iff (hy : zpowCeil c y = y) : zpowCeil c x ≤ y ↔ x ≤ y :=
-  ⟨(le_zpowCeil hc₀ hc₁ x).trans, fun h ↦ hy ▸ monotone_zpowCeil hc₀ hc₁ h⟩
+  ⟨(le_zpowCeil hc₀ hc₁ x).trans, fun h ↦ hy ▸ monotone_zpowCeil hc₀ h⟩
 
 /-- **Discreteness of the rounded values**: `zpowCeil c x` lies strictly below `c ^ n` exactly
 when `x ≤ c ^ (n + 1)`. In particular `zpowCeil c x < 1 ↔ x ≤ c`. -/
@@ -282,11 +294,12 @@ section Group
 
 variable {M : Type*} [SeminormedAddGroup M]
 
+omit hc₁ in
 /-- **Rounding preserves the ultrametric inequality**. -/
 theorem zpowCeil_norm_add_le_max [IsUltrametricDist M] (m n : M) :
     zpowCeil c ‖m + n‖ ≤ max (zpowCeil c ‖m‖) (zpowCeil c ‖n‖) :=
-  (monotone_zpowCeil hc₀ hc₁ (IsUltrametricDist.norm_add_le_max m n)).trans_eq
-    (monotone_zpowCeil hc₀ hc₁).map_max
+  (monotone_zpowCeil hc₀ (IsUltrametricDist.norm_add_le_max m n)).trans_eq
+    (monotone_zpowCeil hc₀).map_max
 
 /-- **Rounding is compatible with contractive scalar actions**:
 `zpowCeil c ‖a • m‖ ≤ zpowCeil c ‖a‖ * zpowCeil c ‖m‖`. When `‖a‖` lies in `c ^ ℤ ∪ {0}`
@@ -294,7 +307,7 @@ theorem zpowCeil_norm_add_le_max [IsUltrametricDist M] (m n : M) :
 theorem zpowCeil_norm_smul_le {R : Type*} [SeminormedAddGroup R] [SMulZeroClass R M]
     [IsBoundedSMul R M] (a : R) (m : M) :
     zpowCeil c ‖a • m‖ ≤ zpowCeil c ‖a‖ * zpowCeil c ‖m‖ :=
-  (monotone_zpowCeil hc₀ hc₁ (norm_smul_le a m)).trans (zpowCeil_mul_le hc₀ hc₁ (norm_nonneg a) _)
+  (monotone_zpowCeil hc₀ (norm_smul_le a m)).trans (zpowCeil_mul_le hc₀ hc₁ (norm_nonneg a) _)
 
 /-- Rounding the norm on a norm-one ring preserves the original scalar inequality exactly
 when every scalar norm is already fixed by rounding. -/
@@ -311,39 +324,42 @@ theorem zpowCeil_norm_mul_le_iff {R : Type*} [SeminormedRing R] [NormOneClass R]
 
 variable (M)
 
-/-- The norm of an ultrametric seminormed group rounded up to `c ^ ℤ ∪ {0}`, for `0 < c < 1`.
-It satisfies `‖m‖ ≤ zpowCeil c ‖m‖` and, for `‖m‖ ≠ 0`, `c * zpowCeil c ‖m‖ < ‖m‖`, so it is
-bounded-equivalent to the original norm. -/
+/-- The norm of an ultrametric seminormed group rounded to `c ^ ℤ ∪ {0}` by `zpowCeil c`. For
+`0 < c < 1` it is rounded up: it satisfies `‖m‖ ≤ zpowCeil c ‖m‖` and, for `‖m‖ ≠ 0`,
+`c * zpowCeil c ‖m‖ < ‖m‖`, so it is bounded-equivalent to the original norm. -/
 noncomputable def zpowCeilAddGroupSeminorm [IsUltrametricDist M] : AddGroupSeminorm M where
   toFun m := zpowCeil c ‖m‖
   map_zero' := by simp
-  add_le' m n := (zpowCeil_norm_add_le_max hc₀ hc₁ m n).trans <|
+  add_le' m n := (zpowCeil_norm_add_le_max hc₀ m n).trans <|
     max_le_add_of_nonneg (zpowCeil_nonneg hc₀.le _) (zpowCeil_nonneg hc₀.le _)
   neg' m := by simp
 
+omit hc₁ in
 /-- The rounded seminorm of `m` is the rounding of `‖m‖`. -/
 @[simp]
 theorem zpowCeilAddGroupSeminorm_apply [IsUltrametricDist M] (m : M) :
-    zpowCeilAddGroupSeminorm hc₀ hc₁ M m = zpowCeil c ‖m‖ := (rfl)
+    zpowCeilAddGroupSeminorm hc₀ M m = zpowCeil c ‖m‖ := (rfl)
 
+omit hc₁ in
 /-- The rounded seminorm is ultrametric. -/
 theorem isNonarchimedean_zpowCeilAddGroupSeminorm [IsUltrametricDist M] :
-    IsNonarchimedean (zpowCeilAddGroupSeminorm hc₀ hc₁ M) :=
-  zpowCeil_norm_add_le_max hc₀ hc₁
+    IsNonarchimedean (zpowCeilAddGroupSeminorm hc₀ M) :=
+  zpowCeil_norm_add_le_max hc₀
 
 end Group
 
-/-- The norm of an ultrametric normed group rounded up to `c ^ ℤ ∪ {0}`, for `0 < c < 1`, as a
-group norm. -/
+/-- The norm of an ultrametric normed group rounded to `c ^ ℤ ∪ {0}` by `zpowCeil c` (rounded up
+for `0 < c < 1`), as a group norm. -/
 noncomputable def zpowCeilAddGroupNorm (M : Type*) [NormedAddGroup M] [IsUltrametricDist M] :
     AddGroupNorm M where
-  __ := zpowCeilAddGroupSeminorm hc₀ hc₁ M
-  eq_zero_of_map_eq_zero' _ h := norm_le_zero_iff.mp <| (zpowCeil_eq_zero_iff hc₀).mp h
+  __ := zpowCeilAddGroupSeminorm hc₀ M
+  eq_zero_of_map_eq_zero' _ h := norm_le_zero_iff.mp <| zpowCeil_eq_zero_iff.mp h
 
+omit hc₁ in
 /-- The rounded norm of `m` is the rounding of `‖m‖`. -/
 @[simp]
 theorem zpowCeilAddGroupNorm_apply {M : Type*} [NormedAddGroup M] [IsUltrametricDist M]
-    (m : M) : zpowCeilAddGroupNorm hc₀ hc₁ M m = zpowCeil c ‖m‖ := (rfl)
+    (m : M) : zpowCeilAddGroupNorm hc₀ M m = zpowCeil c ‖m‖ := (rfl)
 
 section CompatibleNorm
 
@@ -354,8 +370,8 @@ variable {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M]
 /-- The rounded norm with the original uniformity and topology retained definitionally.
 In particular, completeness and continuity are unchanged. -/
 noncomputable abbrev zpowCeilNormedAddCommGroup : NormedAddCommGroup M :=
-  (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroupOfUniformity <|
-    (zpowCeilAddGroupNorm hc₀ hc₁ M).uniformity_eq_of_le
+  (zpowCeilAddGroupNorm hc₀ M).toNormedAddCommGroupOfUniformity <|
+    (zpowCeilAddGroupNorm hc₀ M).uniformity_eq_of_le
       (C := .mk c⁻¹ (inv_nonneg.mpr hc₀.le)) (D := 1)
       (fun x ↦ by simpa only [zpowCeilAddGroupNorm_apply, NNReal.coe_mk] using
         (le_inv_mul_iff₀ hc₀).2 (mul_zpowCeil_le hc₀ hc₁ (norm_nonneg x)))
@@ -365,7 +381,7 @@ noncomputable abbrev zpowCeilNormedAddCommGroup : NormedAddCommGroup M :=
 theorem isUltrametricDist_zpowCeilNormedAddCommGroup :
     letI := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
     IsUltrametricDist M := by
-  have hadd := zpowCeil_norm_add_le_max (M := M) hc₀ hc₁
+  have hadd := zpowCeil_norm_add_le_max (M := M) hc₀
   let := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
   exact IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm hadd
 
