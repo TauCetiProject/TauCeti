@@ -123,6 +123,19 @@ theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- If the Gaussian `exp (-π y ‖γ + v‖²)` is summable over `v ∈ L` for no height `y > 0`, then the
+series defining `θ_{γ+L}(τ)` is not summable for any `τ`, so `θ_{γ+L}` is identically `0` (the value
+of a `tsum` that is not summable). -/
+theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
+    (h : ∀ y : ℝ, 0 < y → ¬ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
+    thetaCoset L γ = 0 :=
+  funext fun τ => by
+    rw [thetaCoset_apply, Pi.zero_apply]
+    refine tsum_eq_zero_of_not_summable fun hs => h τ.im τ.im_pos <| hs.norm.congr fun v => ?_
+    rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+    congr 1
+    ring
+
 /-- The theta series of the translate `0 + L` is the theta series of `L`. -/
 @[simp]
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
@@ -257,37 +270,50 @@ theorem hasSumLocallyUniformly_thetaSeries :
       (thetaSeries L) := by
   simpa using hasSumLocallyUniformly_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane, as a function of
 `z : ℂ`. -/
 theorem differentiableOn_thetaCoset (γ : E) :
     DifferentiableOn ℂ (thetaCoset L γ ∘ ofComplex) {z : ℂ | 0 < z.im} := by
-  intro z hz
-  set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
-  have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
-  have hzU : z ∈ U := by
-    simp only [U, Set.mem_ofPred_eq]
-    exact half_lt_self hz
-  have hdiff : DifferentiableOn ℂ
-      (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
-    differentiableOn_tsum_of_summable_norm (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
-      (mul_pos Real.pi_pos (half_pos hz)) γ)
-      (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
-      fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
-  refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
-    |>.differentiableWithinAt
-  filter_upwards [hU.mem_nhds hzU] with w hw
-  have hw' : 0 < w.im := lt_trans (half_pos hz) hw
-  simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  by_cases hL : DiscreteTopology L
+  · have := hL
+    intro z hz
+    set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
+    have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
+    have hzU : z ∈ U := by
+      simp only [U, Set.mem_ofPred_eq]
+      exact half_lt_self hz
+    have hdiff : DifferentiableOn ℂ
+        (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
+      differentiableOn_tsum_of_summable_norm
+        (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
+          (mul_pos Real.pi_pos (half_pos hz)) γ)
+        (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
+        fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
+    refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
+      |>.differentiableWithinAt
+    filter_upwards [hU.mem_nhds hzU] with w hw
+    have hw' : 0 < w.im := lt_trans (half_pos hz) hw
+    simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  · have h0 : thetaCoset L γ = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * y)
+          (by positivity) hs)
+    rw [h0]
+    exact differentiableOn_const 0
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane, as a function of `z : ℂ`. -/
 theorem differentiableOn_thetaSeries :
     DifferentiableOn ℂ (thetaSeries L ∘ ofComplex) {z : ℂ | 0 < z.im} := by
   simpa using differentiableOn_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaCoset (γ : E) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaCoset L γ) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaCoset L γ)
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaSeries : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaSeries L) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaSeries L)

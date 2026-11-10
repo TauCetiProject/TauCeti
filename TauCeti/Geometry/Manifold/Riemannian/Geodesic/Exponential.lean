@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -59,6 +60,9 @@ defined for all time.
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
   diffeomorphism at `0`.
+* `TauCeti.Manifold.continuousAt_norm_angular_riemannianExp_zero` and
+  `TauCeti.Manifold.contDiffOn_inner_angular_riemannianExp`: regularity of the differential of the
+  exponential map applied to a fixed tangent vector.
 * `TauCeti.Manifold.radialVariation_eq_maximalGeodesic`,
   `TauCeti.Manifold.contMDiffAt_radialVariation` and
   `TauCeti.Manifold.eventually_acceleration_radialVariation_eq_zero`: the radial variation
@@ -505,6 +509,39 @@ theorem variationField_radialVariation
   rw [variationField_apply, hcurve, curveVelocity_riemannianExp_add_smul hu, zero_smul, add_zero]
 
 end RadialVariation
+
+/-! ### Regularity of the differential along a fixed direction -/
+
+/-- The Riemannian norm of the differential of the exponential map, applied to a fixed tangent
+vector `w` and evaluated along the line `r ↦ r • v`, is continuous at the centre. The norm is the
+varying Riemannian tangent norm, rather than a fixed model-space norm. -/
+theorem continuousAt_norm_angular_riemannianExp_zero [T2Space M] (p : M)
+    (v w : TangentSpace I p) :
+    ContinuousAt (fun r : ℝ ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) 0 := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+      (V := fun x : M ↦ TangentSpace I x)
+  have h := (contMDiffOn_riemannianExp (I := I) (M := M) p).continuousOn_norm_mfderiv
+    (by simp) (isOpen_expDomain p) w
+  have hz : (0 : TangentSpace I p) ∈ expDomain I M p := zero_mem_expDomain p
+  have h0 := h.continuousAt ((isOpen_expDomain p).mem_nhds hz)
+  have h0' : ContinuousAt (fun z : TangentSpace I p ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖)
+      ((fun r : ℝ ↦ r • v) 0) := by simpa only [zero_smul] using h0
+  exact h0'.comp (f := fun r : ℝ ↦ r • v) (x := 0)
+    ((continuous_id.smul continuous_const :
+    Continuous (fun r : ℝ ↦ r • v)).continuousAt)
+
+/-- The squared Riemannian length of the differential of the exponential map, applied to a fixed
+tangent vector `w`, is smooth on the exponential domain. -/
+theorem contDiffOn_inner_angular_riemannianExp [T2Space M] (p : M) (w : TangentSpace I p) :
+    ContDiffOn ℝ ∞ (fun z : TangentSpace I p ↦
+      inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w))
+      (expDomain I M p) :=
+  (contMDiffOn_riemannianExp p).contDiffOn_inner_mfderiv (by simp)
+    (isOpen_expDomain p) w w
 
 end Boundaryless
 

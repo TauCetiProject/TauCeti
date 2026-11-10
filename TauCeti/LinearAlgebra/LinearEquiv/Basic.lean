@@ -15,10 +15,12 @@ import TauCeti.LinearAlgebra.Span.Basic
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining semilinear equivalence.
-Symmetry of a linear automorphism agrees with inversion in its group structure.
+Symmetry of a linear automorphism agrees with inversion in its group structure, and commutes with
+restriction of scalars.
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
+Composites of rescaled linear equivalences rescale by the quotient of the factors.
 -/
 
 public section
@@ -28,6 +30,15 @@ namespace LinearEquiv
 /-- Symmetry of a linear automorphism is its group inverse. -/
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
+
+/-- The inverse of a linear equivalence with restricted scalars is the inverse with restricted
+scalars. -/
+@[simp]
+theorem symm_restrictScalars {R S M M₂ : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
+    [AddCommMonoid M₂] [Module R M] [Module R M₂] [Module S M] [Module S M₂]
+    [LinearMap.CompatibleSMul M M₂ R S] [LinearMap.CompatibleSMul M₂ M R S] (e : M ≃ₗ[S] M₂) :
+    (e.restrictScalars R).symm = e.symm.restrictScalars R :=
+  rfl
 
 /-- Transport stability of a mapped submodule through an intertwining semilinear
 equivalence. -/
@@ -60,6 +71,18 @@ theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
   -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
   rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
     Submodule.map_equiv_eq_comap_symm, L.symm_symm]
+
+/-- If two isomorphisms `M₁` and `M₂` out of a common space are the multiples `c₁` and `c₂` of
+isomorphisms `M₁'` and `M₂'`, with `c₂ ≠ 0`, then `M₁ ∘ M₂⁻¹` is the multiple `c₁ / c₂` of
+`M₁' ∘ M₂'⁻¹`. -/
+theorem apply_symm_eq_div_smul {R A B C : Type*} [Semifield R] [AddCommMonoid A] [Module R A]
+    [AddCommMonoid B] [Module R B] [AddCommMonoid C] [Module R C] (M₁ M₁' : A ≃ₗ[R] B)
+    (M₂ M₂' : A ≃ₗ[R] C) {c₁ c₂ : R} (h₁ : ∀ a, M₁ a = c₁ • M₁' a)
+    (h₂ : ∀ a, M₂ a = c₂ • M₂' a) (hc : c₂ ≠ 0) (v : C) :
+    M₁ (M₂.symm v) = (c₁ / c₂) • M₁' (M₂'.symm v) := by
+  have hv : M₂'.symm v = c₂ • M₂.symm v := by
+    rw [symm_apply_eq, map_smul, ← h₂, apply_symm_apply]
+  rw [h₁, hv, map_smul, smul_smul, div_mul_cancel₀ _ hc]
 
 end LinearEquiv
 
