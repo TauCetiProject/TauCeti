@@ -564,10 +564,11 @@ theorem AtlasCkControl.ball_mem_nhds (c : AtlasCkControl I M n) (f : C^n⟮I, M;
   rw [← c₀.ball_toAtlasCkControl, AtlasCkControl.mem_ball] at hg
   exact hg
 
+omit [IsManifold I n M] in
 /-- A neighbourhood given by an atlas control contains its centre. -/
 theorem AtlasCkControl.mem_ball_self (c : AtlasCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     f ∈ c.ball f :=
-  mem_of_mem_nhds (c.ball_mem_nhds f)
+  AtlasCkControl.mem_ball.mpr fun i _ _ z _ ↦ by simpa using c.tolerance_pos i
 
 /-- **Chart-family independence of the strong Whitney topology.** For any family `A` of charts of
 the maximal atlas whose sources cover `M`, the strong `C^k` neighbourhoods of `f` read in charts
