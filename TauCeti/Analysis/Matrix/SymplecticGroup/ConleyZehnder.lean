@@ -189,14 +189,9 @@ theorem isUnit_symplecticGraphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     have h := posSemidef_conjTranspose_mul_self A
     rw [conjTranspose_eq_transpose_of_trivial] at h
     exact PosDef.one.add_posSemidef h
-  have h := congrArg det (conjTranspose_symplecticGraphFrame_mul_self hA)
-  have hd : ((1 + Aᵀ * A).map ((↑) : ℝ → ℂ)).det = ((1 + Aᵀ * A).det : ℂ) :=
-    (Complex.ofRealHom.map_det _).symm
-  rw [det_mul, det_conjTranspose, hd] at h
-  rw [isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
-  intro h0
-  rw [h0, mul_zero, eq_comm, Complex.ofReal_eq_zero] at h
-  exact hpos.det_pos.ne' h
+  have hu : IsUnit ((1 + Aᵀ * A).map ((↑) : ℝ → ℂ)) := hpos.isUnit.map Complex.ofRealHom.mapMatrix
+  rw [← conjTranspose_symplecticGraphFrame_mul_self hA] at hu
+  exact isUnit_of_mul_isUnit_right hu
 
 /-- The graph frame depends continuously on the matrix. -/
 theorem continuous_symplecticGraphFrame :
@@ -365,6 +360,11 @@ path of graphs of a path `γ` of symplectic matrices, relative to the diagonal, 
 Souriau Maslov index of the path of unitary graph frames. -/
 noncomputable def graphMaslovIndex {A B : GLSymplectic n ℝ} (γ : Path A B) : ℝ :=
   maslovIndex (γ.map continuous_graphFrame)
+
+/-- The graph Maslov index is the Maslov index of the path of unitary graph frames. -/
+theorem graphMaslovIndex_def {A B : GLSymplectic n ℝ} (γ : Path A B) :
+    graphMaslovIndex γ = maslovIndex (γ.map continuous_graphFrame) :=
+  (rfl)
 
 /-- **Homotopy invariance.** Paths of symplectic matrices that are homotopic relative to their
 endpoints have the same graph Maslov index. -/
