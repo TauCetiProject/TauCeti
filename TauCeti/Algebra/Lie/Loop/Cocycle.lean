@@ -491,6 +491,8 @@ theorem twoCocycle_eq_span_sup_range_d₁₂ {Ψ : LinearMap.BilinForm K L} (hΨ
       have : Subsingleton L := by
         refine subsingleton_of_forall_eq 0 fun x ↦ ?_
         refine (LieAlgebra.IsKilling.killingForm_nondegenerate K L).1 x fun y ↦ ?_
+        -- `killingForm K L` is an abbreviation for the trace form `traceForm K L L` of the adjoint
+        -- representation, so the goal is that trace form applied to `x` and `y`.
         change LieModule.traceForm K L L x y = 0
         rw [ht, h0]
         simp
