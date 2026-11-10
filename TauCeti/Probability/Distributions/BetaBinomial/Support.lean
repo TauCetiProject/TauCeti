@@ -70,7 +70,6 @@ theorem support_map_betaBinomialMeasure {E : Type*} [TopologicalSpace E] [T1Spac
 
 /-- The real-cast beta-binomial law is supported on the integer counts from zero through the
 trial count. Invalid shape parameters give empty support. -/
-@[simp]
 theorem support_map_cast_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
     ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)).support =
       if 0 < a ∧ 0 < b then (Nat.cast : ℕ → ℝ) '' Iic n else ∅ :=
