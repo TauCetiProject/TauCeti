@@ -79,6 +79,15 @@ theorem surjective_projectiveIncidenceChartEquations (i : Fin (n + 1)) (a : Fin 
   ext k
   simp [m]
 
+/-- The total chart linearization is onto for any spatial linear map, since variations
+of the native homogeneous coefficients already realize every equation value. -/
+theorem surjective_coprod_projectiveIncidenceChartEquations
+    (D₁ : (Fin n → 𝕜) →L[𝕜] (ι → 𝕜)) (i : Fin (n + 1)) (a : Fin n → 𝕜) :
+    Function.Surjective (D₁.coprod (projectiveIncidenceChartEquations (d := d) i a)) := by
+  apply LinearMap.range_eq_top.mp
+  rw [ContinuousLinearMap.range_coprod,
+    LinearMap.range_eq_top.mpr (surjective_projectiveIncidenceChartEquations i a), sup_top_eq]
+
 end Equations
 
 variable [NontriviallyNormedField 𝕜]
@@ -134,10 +143,11 @@ theorem surjective_fderiv_projectiveIncidenceChartEquations_comp [Finite ι]
     Function.Surjective (fderiv 𝕜 (fun q : (Fin n → 𝕜) × F ↦
       projectiveIncidenceChartEquations i q.1 (Φ q.2)) (a, b)) := by
   rw [(hasFDerivAt_projectiveIncidenceChartEquations_comp Φ i a b).fderiv]
-  apply LinearMap.range_eq_top.mp
-  have hcoef : Function.Surjective ((projectiveIncidenceChartEquations i a).comp Φ) :=
-    (surjective_projectiveIncidenceChartEquations i a).comp hΦ
-  rw [ContinuousLinearMap.range_coprod, LinearMap.range_eq_top.mpr hcoef, sup_top_eq]
+  intro y
+  obtain ⟨⟨x, c⟩, h⟩ := surjective_coprod_projectiveIncidenceChartEquations
+    (fderiv 𝕜 (fun x ↦ projectiveIncidenceChartEquations i x (Φ b)) a) i a y
+  obtain ⟨v, rfl⟩ := hΦ c
+  exact ⟨(x, v), h⟩
 
 end Analytic
 
@@ -171,11 +181,8 @@ theorem surjective_parameterProj_projectiveIncidenceChartEquations_iff [Finite �
   have htotal : Function.Surjective
       ((fderiv ℂ (fun x ↦ projectiveIncidenceChartEquations i x c)
         (Projectivization.affineChart i L)).coprod
-          (projectiveIncidenceChartEquations (d := d) i (Projectivization.affineChart i L))) := by
-    apply LinearMap.range_eq_top.mp
-    rw [ContinuousLinearMap.range_coprod]
-    simp [LinearMap.range_eq_top.mpr
-      (surjective_projectiveIncidenceChartEquations (d := d) i (Projectivization.affineChart i L))]
+          (projectiveIncidenceChartEquations (d := d) i (Projectivization.affineChart i L))) :=
+    surjective_coprod_projectiveIncidenceChartEquations _ i (Projectivization.affineChart i L)
   rw [ContinuousLinearMap.parameterProj_surjective_iff _ _ htotal]
   simpa only [projectiveIncidenceChartEquations_apply] using
     surjective_fderiv_eval_dehomogenize_affineChart_iff i
