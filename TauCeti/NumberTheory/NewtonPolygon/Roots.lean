@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.Mul
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 import TauCeti.RingTheory.PowerSeries.RootBound
+import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
 # Newton slopes, root valuations, and root norms
@@ -57,9 +58,9 @@ assuming that the polynomial splits.
   the width of the finite face of slope `σ` count the roots `α` with `-σ < v α`, with
   `-σ ≤ v α` and with `v α = -σ`.
 * `Polynomial.norm_le_rpow_of_forall_mem_newtonSlopes_eq` and
-  `Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq`: over an ultrametric normed field,
-  every root of a nonzero pure polynomial of slope `m` in any normed field extension has norm at
-  most `b ^ m`, and every nonzero root has norm `b ^ m`.
+  `Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq`: over a normed field with norm
+  `b ^ (-v x)`, every root of a nonzero pure polynomial of slope `m` in any normed field extension
+  has norm at most `b ^ m`, and every nonzero root has norm `b ^ m`.
 
 ## References
 
@@ -220,7 +221,7 @@ end AddValuation
 
 section RootNorm
 
-variable {K L : Type*} [NormedField K] [IsUltrametricDist K]
+variable {K L : Type*} [NormedField K]
   [NormedField L] [NormedAlgebra K L]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
@@ -231,6 +232,7 @@ include hb hv
 `K`, satisfies `‖x‖ ≤ b ^ m`. -/
 theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx : aeval x f = 0) : ‖x‖ ≤ b ^ m := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   have : IsUltrametricDist L := .of_normedAlgebra K
   have hc : 0 < b ^ m := Real.rpow_pos_of_pos (zero_lt_one.trans hb) m
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf
@@ -256,6 +258,7 @@ theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m 
 theorem norm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx0 : x ≠ 0) (hx : aeval x f = 0) :
     ‖x‖ = b ^ m := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   refine le_antisymm (norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hx) ?_
   have hrev0 : f.reverse ≠ 0 := reverse_eq_zero.not.mpr hf
   have hrev_slopes : ∀ s ∈ f.reverse.newtonSlopes v, s = -m := by
