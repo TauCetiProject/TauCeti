@@ -77,17 +77,21 @@ theorem integrable_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn 
   simpa using integrable_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn le_rfl
     (by exact_mod_cast hn₀) ht b
 
+omit [FiniteDimensional ℝ E] in
 /-- In dimension `n > 2`, the squared norm of the differential of a bubble is integrable for
 every additive Haar measure. -/
 theorem integrable_norm_fderiv_bubble_sq (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     Integrable (fun x ↦ ‖fderiv ℝ (bubble t b) x‖ ^ 2) μ := by
   have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega)
   simpa using integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq μ le_rfl
     (by linarith) ht b
 
+omit [FiniteDimensional ℝ E] in
 /-- In dimension `n > 2`, a bubble lies in `L^{pₙ}` for every additive Haar measure. -/
 theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     MemLp (bubble t b) (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega)
   have hp := criticalExponent_pos hn
   refine (integrable_norm_rpow_iff
     (contDiff_bubble (m := 0) ht.ne' b).continuous.aestronglyMeasurable
@@ -135,12 +139,22 @@ private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t :
   exact sub_two_mul_integral_radial hn h₁ h₂
 
 /-- **The energy identity of a bubble**: in dimension `n > 2`,
-`aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) ∫ U_{t,b} ^ pₙ` for every additive Haar measure. -/
-theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq (hn : 2 < finrank ℝ E) {t : ℝ}
+`aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) ∫ U_{t,b} ^ pₙ` for every additive Haar measure. In dimension
+`n ≤ 2` both sides vanish by the conventions for division by zero and for the integral of a
+non-integrable function. -/
+theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq {t : ℝ}
     (ht : 0 < t) (b : E) :
     conformalCoefficient (finrank ℝ E) * ∫ x, ‖fderiv ℝ (bubble t b) x‖ ^ 2 ∂μ =
       (finrank ℝ E : ℝ) * (finrank ℝ E - 1) *
         ∫ x, bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ := by
+  by_cases hn : 2 < finrank ℝ E
+  case neg =>
+    obtain h | h | h : finrank ℝ E = 0 ∨ finrank ℝ E = 1 ∨ finrank ℝ E = 2 := by omega
+    · have : Subsingleton E := Module.finrank_zero_iff.mp h
+      simp [h, Subsingleton.elim (fderiv ℝ (bubble t b) _) 0]
+    · simp [h, conformalCoefficient_def]
+    · have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+      simp [h, conformalCoefficient_def, criticalExponent_def, measureReal_def]
   -- Translate `b` to the origin, pass to polar coordinates, and compare the two radial integrals
   -- with `sub_two_mul_integral_radial`.
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
