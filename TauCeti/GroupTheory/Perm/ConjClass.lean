@@ -22,13 +22,13 @@ sizes.
 
 ## Main results
 
-* `TauCeti.Subgroup.classesOfFullCycleType`: the conjugacy classes of `G` whose members have full
+* `Subgroup.classesOfFullCycleType`: the conjugacy classes of `G` whose members have full
   cycle type `mu`.
-* `TauCeti.Subgroup.iUnionClassesOfFullCycleType`: the set of the elements of `G` of full cycle
+* `Subgroup.iUnionClassesOfFullCycleType`: the set of the elements of `G` of full cycle
   type `mu`, the union of those classes.
-* `TauCeti.Subgroup.mem_iUnionClassesOfFullCycleType`: an element of `G` is a member of one of the
+* `Subgroup.mem_iUnionClassesOfFullCycleType`: an element of `G` is a member of one of the
   classes of type `mu` exactly when it has full cycle type `mu`.
-* `TauCeti.Subgroup.mem_iUnion_classesOfFullCycleType`: that same characterization with the union
+* `Subgroup.mem_iUnion_classesOfFullCycleType`: that same characterization with the union
   of the classes written out.
 -/
 
@@ -60,8 +60,8 @@ theorem mem_classesOfFullCycleType {G : Subgroup (Equiv.Perm α)}
   simp [Subgroup.classesOfFullCycleType]
 
 /-- The elements of `G` of full cycle type `mu`: the union of the conjugacy classes recorded by
-`TauCeti.Subgroup.classesOfFullCycleType`. This is the set whose membership
-`TauCeti.Subgroup.mem_iUnionClassesOfFullCycleType` characterizes, and the set whose size is the
+`Subgroup.classesOfFullCycleType`. This is the set whose membership
+`Subgroup.mem_iUnionClassesOfFullCycleType` characterizes, and the set whose size is the
 sum of those class sizes. -/
 noncomputable def iUnionClassesOfFullCycleType
     (G : Subgroup (Equiv.Perm α)) (mu : Multiset ℕ) : Set G :=
@@ -69,7 +69,7 @@ noncomputable def iUnionClassesOfFullCycleType
 
 /-- **An element of `G` is a member of one of its classes of type `mu` exactly when it has full
 cycle type `mu`.** One cycle type can meet several classes, and this says that the union of the
-classes recorded by `TauCeti.Subgroup.classesOfFullCycleType` is exactly the set of elements of
+classes recorded by `Subgroup.classesOfFullCycleType` is exactly the set of elements of
 that type. -/
 theorem mem_iUnion_classesOfFullCycleType (G : Subgroup (Equiv.Perm α))
     (mu : Multiset ℕ) (g : G) :
@@ -94,8 +94,8 @@ theorem mem_iUnion_classesOfFullCycleType (G : Subgroup (Equiv.Perm α))
     refine Set.mem_iUnion.2 ⟨Subgroup.mem_classesOfFullCycleType.2 ⟨g, rfl, hg⟩, ?_⟩
     exact ConjClasses.mem_carrier_iff_mk_eq.2 rfl
 
-/-- The same characterization as `TauCeti.Subgroup.mem_iUnion_classesOfFullCycleType`, read on the
-named set `TauCeti.Subgroup.iUnionClassesOfFullCycleType`, whose left-hand side is in simp normal
+/-- The same characterization as `Subgroup.mem_iUnion_classesOfFullCycleType`, read on the
+named set `Subgroup.iUnionClassesOfFullCycleType`, whose left-hand side is in simp normal
 form and so normalizes membership to the cycle-type condition. -/
 @[simp]
 theorem mem_iUnionClassesOfFullCycleType {G : Subgroup (Equiv.Perm α)}
