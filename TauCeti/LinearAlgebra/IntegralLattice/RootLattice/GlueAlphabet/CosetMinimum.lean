@@ -244,7 +244,7 @@ theorem glueMinimum_nonneg (t : DynkinType) (ht : t.IsSimplyLaced) (a : t.glueAl
   | G2 => exact absurd ht not_isSimplyLaced_G2
 
 /-- On `Aₙ`, `q(i) = i (n + 1 - i) / (2 (n + 1))` modulo `ℤ`. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_A (n : ℕ)
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_A (n : ℕ)
     (ht : (A n).IsSimplyLaced) (a : (A n).glueAlphabet ht) :
     ((A n).glueAlphabet ht).quadratic a =
       (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
@@ -268,7 +268,7 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_A (n : ℕ)
 
 /-- On `Dₙ` with `n` even, `q(a) = μ(a) / 2` modulo `ℤ`: the quadratic values of the four classes
 of the Klein four model are `0`, `1/2`, `n/8`, `n/8`. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even (n : ℕ)
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even (n : ℕ)
     (ht : (D n).IsSimplyLaced) (hn : Even n)
     (a : (D n).glueAlphabet ht) :
     ((D n).glueAlphabet ht).quadratic a =
@@ -293,7 +293,7 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even (n : ℕ)
 
 /-- On `Dₙ` with `n` odd, `q(a) = μ(a) / 2` modulo `ℤ`: the quadratic values of the four classes
 of the cyclic model are `0`, `n/8`, `1/2`, `n/8`. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd (n : ℕ)
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd (n : ℕ)
     (ht : (D n).IsSimplyLaced) (hn : Odd n)
     (a : (D n).glueAlphabet ht) :
     ((D n).glueAlphabet ht).quadratic a =
@@ -320,7 +320,7 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd (n : ℕ)
     ring
 
 /-- On `E₆`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E6
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E6
     (ht : E6.IsSimplyLaced) (a : E6.glueAlphabet ht) :
     (E6.glueAlphabet ht).quadratic a =
       ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
@@ -344,7 +344,7 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E6
     norm_num
 
 /-- On `E₇`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E7
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E7
     (ht : E7.IsSimplyLaced) (a : E7.glueAlphabet ht) :
     (E7.glueAlphabet ht).quadratic a =
       ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
