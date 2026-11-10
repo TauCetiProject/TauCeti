@@ -114,6 +114,14 @@ namespace QuotSMulTop
 variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
 
+/-- Negation fixes every class modulo twice a module. -/
+@[simp]
+theorem neg_eq_self_two (q : QuotSMulTop (2 : R) M) : -q = q := by
+  refine Submodule.Quotient.induction_on _ q fun m ↦ ?_
+  rw [← Submodule.Quotient.mk_neg, Submodule.Quotient.eq,
+    Submodule.mem_smul_pointwise_iff_exists]
+  exact ⟨-m, Submodule.mem_top, by simp [two_smul]; abel⟩
+
 /-- The `R ⧸ (x)`-action on `M ⧸ x M` is induced by the `R`-action on `M`. -/
 @[simp]
 theorem mk_smul_mk {x : R} (r : R) (m : M) :
