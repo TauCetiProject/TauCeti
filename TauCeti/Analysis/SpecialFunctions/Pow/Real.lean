@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 /-!
 # Real powers
 
-The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-2⁻¹)`. Like
+The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-1 / 2)`. Like
 Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both sides vanish: the
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
@@ -35,6 +35,9 @@ the natural power `y ^ (d - i)`, the form in which spectral values of polynomial
 For `n ≠ 0`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegative `x`, the form in
 which the volume factor `V ^ (1 - 1/n)` of an isoperimetric inequality is raised to the `n`-th
 power.
+
+Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then `C₀ (r / R) ^ α X ≤ 2 (C r ^ α)`
+for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`.
 
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
@@ -71,7 +74,7 @@ with the corresponding integral of `q`-th powers.
 
 ## Main results
 
-* `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
+* `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-1 / 2)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
 * `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
   `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
@@ -96,6 +99,10 @@ with the corresponding integral of `q`-th powers.
 * `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
+* `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
+  `M * R' ^ p < ε`.
+* `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
+  `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -108,9 +115,10 @@ open Filter Topology Asymptotics
 
 namespace Real
 
-/-- The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-2⁻¹)`, for
-every real `x`. -/
-theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-2⁻¹ : ℝ) := by
+/-- The inverse square root is the real power with exponent `-1 / 2`: `(√x)⁻¹ = x ^ (-1 / 2)`,
+for every real `x`. -/
+theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-1 / 2 : ℝ) := by
+  rw [show (-1 / 2 : ℝ) = -2⁻¹ by norm_num]
   rcases le_or_gt 0 x with hx | hx
   · rw [sqrt_eq_rpow, rpow_neg hx, one_div]
   · rw [sqrt_eq_zero'.mpr hx.le, inv_zero, rpow_def_of_neg hx, neg_mul, cos_neg, inv_mul_eq_div,
@@ -127,7 +135,7 @@ sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y
 complete elliptic integral is bounded. -/
 theorem one_sub_mul_one_sub_sq_rpow_neg_one_div_two (x : ℝ) :
     (1 - x) * (1 - x ^ 2) ^ (-1 / 2 : ℝ) = √(1 - x) / √(1 + x) := by
-  rw [show (-1 / 2 : ℝ) = -2⁻¹ by norm_num, ← inv_sqrt_eq_rpow,
+  rw [← inv_sqrt_eq_rpow,
     show 1 - x ^ 2 = (1 - x) * (1 + x) by ring]
   rcases le_or_gt 0 (1 - x) with h | h
   · have hs := mul_self_mul_inv √(1 - x)
@@ -246,6 +254,24 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
 
+/-- For `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy `M * R' ^ p < ε`. -/
+theorem exists_le_mul_rpow_lt_of_neg {M ε p : ℝ} (R : ℝ) (hε : 0 < ε) (hp : p < 0) :
+    ∃ R', R ≤ R' ∧ M * R' ^ p < ε := by
+  have h := (tendsto_rpow_neg_atTop (neg_pos.2 hp)).const_mul M
+  rw [mul_zero] at h
+  simp only [neg_neg] at h
+  exact ((Filter.eventually_ge_atTop R).and (h.eventually_lt_const hε)).exists
+
+/-- If `0 < R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`, then `T ^ S * x ≤ R' ^ (S + 1)`: the bound
+`T ^ S * x ≤ T ^ (S + 1)` followed by antitonicity of `r ↦ r ^ (S + 1)` for a nonpositive
+exponent. -/
+theorem rpow_mul_le_rpow_add_one {T S R' x : ℝ} (hR' : 0 < R') (hTR' : R' ≤ T)
+    (hS1 : S + 1 ≤ 0) (hx : x ≤ T) : T ^ S * x ≤ R' ^ (S + 1) :=
+  have hT : 0 < T := hR'.trans_le hTR'
+  calc T ^ S * x ≤ T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
+    _ = T ^ (S + 1) := (rpow_add_one hT.ne' S).symm
+    _ ≤ R' ^ (S + 1) := rpow_le_rpow_of_nonpos hR' hTR' hS1
+
 /-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
 `ρ` and `n ≠ 0`. -/
 theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (ρ : ℝ) :
@@ -265,6 +291,25 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
     exact (sub_pos.2 this).ne'
   rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
   field_simp
+
+/-- Dividing the base of a real power by a positive number divides the power by the same power
+of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative
+base. -/
+theorem div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) :
+    (r / c) ^ a = r ^ a / c ^ a := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [rpow_def_of_neg hr, rpow_def_of_neg (div_neg_of_neg_of_pos hr hc),
+      rpow_def_of_pos hc, log_div hr.ne hc.ne', sub_mul, exp_sub]
+    ring
+  · exact div_rpow hr hc.le a
+
+/-- Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then
+`C₀ (r / R) ^ α X ≤ 2 (C r ^ α)` for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`. -/
+lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀) (hr : 0 ≤ r)
+    (hR : 0 < R) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
+    C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
+  calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
+    _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
 
 end Real
 

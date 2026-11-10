@@ -169,9 +169,7 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
       HasLaw ((∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U) P m ∧
       U =ᵐ[m] (∇ fun x => (u x).toReal) ∘
         (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U := by
-  have : IsProbabilityMeasure P := by
-    obtain ⟨π, hπ⟩ := exists_isCoupling_of_transportCost_ne_top hfin
-    exact ⟨by rw [hπ.measure_univ_eq, measure_univ]⟩
+  have := isProbabilityMeasure_left_of_transportCost_ne_top hfin
   obtain ⟨u, hconv, hlsc, hbot, hdiff, -, hT, hS, -, hinv⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate hP hUρ hfin
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩

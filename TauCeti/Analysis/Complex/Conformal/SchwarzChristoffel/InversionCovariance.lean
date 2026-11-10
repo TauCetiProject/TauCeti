@@ -81,7 +81,7 @@ theorem logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv
     rw [deriv_schwarzChristoffelPrimitive _ _ _ hφz]
     exact schwarzChristoffelIntegrand_ne_zero _ _ hφz
   -- The chain rule contributes the pole `-2 / z` from the inverse coordinate.
-  have hchain := logDeriv_deriv_comp hFan hφan hnF (by simp [hdφ, hz0])
+  have hchain := logDeriv_deriv_comp hFan hφan hnF
   have hlog : logDeriv (deriv φ) z = -(2 : ℂ) / z := by
     rw [hdφ]
     simpa using logDeriv_zpow z (-2)
@@ -136,7 +136,7 @@ theorem schwarzChristoffelPrimitive_const_sub_inv
       (pow_ne_zero _ (ne_of_mem_of_not_mem hw (by simp)))
   have h := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn
     (Option.elim' 0 (fun i => -(a i - p)⁻¹)) (Option.elim' (-2 - (t + ∑ i, e i)) e) c
-    (fun w hw => (hd w hw).differentiableAt.differentiableWithinAt) hn
+    hn
     (fun _ hw => logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv a e p t ha b hw) hz
   simpa only [(hd c c.im_pos).deriv, div_div, f] using h
 

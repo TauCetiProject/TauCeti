@@ -5,19 +5,23 @@ The policy is in `[services.fleet]` in `tauceti.toml`:
 
 | Build class | Preference order |
 | --- | --- |
-| PR | GitHub → Chris → tauchonki (ineligible) → Namespace |
-| Bors staging | tauchonki → Chris → Namespace → GitHub |
+| PR | GitHub → fleet → Namespace |
+| Bors staging | fleet → Namespace → GitHub |
 
-Chris advertises two shared jobs, each with 16 vCPU and 32 GiB RAM. Any mix of PR
-and staging builds may occupy those two slots. Tauchonki advertises one staging
-job with 32 vCPU and 64 GiB RAM. Each host enforces its slot count; the enrollment
-service also limits the job classes and maximum slots its credential may register.
-Changing a host's classes or resource shape requires draining all its guests.
+`fleet` is a live pool of eligible runners in the configured GitHub runner group,
+not a list of machines in this repository. Adding or replacing a host requires
+no `tauceti.toml` machine-ID entry. Each host controls its concurrency and resource
+limits; its credential controls which CI classes it may register. Registration,
+resizing and retirement update the capacity seen by subsequent pickers.
 
 The picker requires an idle online runner with the requested class, permanent
 machine identity, and unique guest-instance labels. It targets that exact guest
-in the `TauCetiFleet` group. Chris's enrollment name resolves to one permanent
-machine identity; an absent or ambiguous identity disables that machine's choice.
+in the `TauCetiFleet` group. `FLEET_CI_ENABLED`, `FLEET_READ_TOKEN` and
+`FLEET_RUNNER_GROUP_ID` govern access to that group's inventory. Labels on runners
+outside the approved group grant no eligibility. Hosts with missing or ambiguous
+permanent identities are ineligible, as are offline or busy runners. A PR-only
+host cannot receive staging work. Within the fleet tier, jobs spread across
+eligible registered slots; staging-only slots are preferred for staging.
 Queued jobs already targeting a guest count against observed machine capacity.
 A simultaneous picker can still select the same guest; startup recovery handles
 jobs that fail to acquire it.
@@ -39,7 +43,7 @@ and be at most 150 seconds old. This retains the two-minute shared-cache allowan
 Capacity scans use the repository workflow token, preserving the reserve set by
 `PICKER_REPOSITORY_API_RESERVE` (default 250 requests). Incomplete scans cannot
 authorize spare cloud capacity. Fleet placement uses complete online/idle runner
-inventory, class labels and machine limits, retaining any observed queued guest
+inventory and class labels, retaining any observed queued guest
 reservations even when global queue coverage is incomplete. Concurrent or unseen
 reservations can still collide; the acquisition watcher below recovers those runs.
 Staging tries dedicated machines first. If no machine is eligible,
@@ -72,14 +76,19 @@ peak of 32 and p99 of 19; concurrency exceeded 20 for about 2.18 hours. These ar
 actual execution intervals, excluding control jobs; queued builds are included
 in the dispatcher's admission count as an additional precaution.
 
-Routing policy and host configuration are managed separately. Follow the
+Pool priority and live host configuration are managed separately. The repository
+sets the preference between GitHub, fleet and Namespace; operator changes to fleet
+membership or concurrency do not require a project commit. Follow the
 [Fleet enrollment instructions](https://github.com/TauCetiProject/TauCetiFleet/blob/main/services/ci-broker/README.md)
 to issue a machine's invitation with its allowed CI classes and shared slot limit.
 Run `enroll HOST` and `prepare HOST`, then explicitly activate CI with `enable HOST`,
 choosing `--ci pr`, `--ci staging`, or `--ci both`, `--max-jobs`, and the per-job
 `--ci-vcpus` and `--ci-memory-gib` settings.
 
-Before updating a host's installed Fleet release or changing its CI classes,
-slot limit, or guest shape, run `drain HOST` and wait for every guest to finish.
-Drain pauses new worker and CI admissions. After maintenance, explicitly
-re-enable every previously enabled role.
+Prefer Fleet's live-update path for routine software updates, keeping normal
+worker and CI admissions enabled. Use a drain when explicitly retiring a host or
+when a specific change cannot be applied safely to live guests. A drain stops new
+admissions while active work finishes; it is not required merely because another
+host joins the fleet. CI classes and guest shape must continue to match the
+credential and sandbox policy. After maintenance, explicitly re-enable the roles
+that should resume.

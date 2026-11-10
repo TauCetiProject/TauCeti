@@ -167,10 +167,7 @@ theorem integral_hamiltonianCurvature_image_plumbingMap (ω : SymplecticForm V) 
   have hK {w : ℝ × ℝ} (hw : w ∈ B) (y : V) (v : ℂ) :=
     differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap hq hHa hHb hHas hHbs hab
       hL (hB hw) y v
-  -- Differentiability of the plumbed datum in the target and in the domain.
-  have htgt {w : ℝ × ℝ} (hw : w ∈ B) (y : V) (v : ℂ) := (hK hw y v).comp
-    (f := fun y : V ↦ (realChart (q.plumbingMap L) w, y)) y
-    ((differentiableAt_const _).prodMk differentiableAt_id)
+  -- Differentiability of the plumbed datum in the domain.
   have hdom {w : ℝ × ℝ} (hw : w ∈ B) (y : V) (v : ℂ) := (hK hw y v).comp
     (f := fun z : ℝ × ℝ ↦ (z, y)) (realChart (q.plumbingMap L) w)
     (differentiableAt_id.prodMk (differentiableAt_const y))
@@ -178,8 +175,7 @@ theorem integral_hamiltonianCurvature_image_plumbingMap (ω : SymplecticForm V) 
     (realChart_injective (q.plumbingMap_injective L)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
-    (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
-    (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
+    (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)]
   exact setIntegral_congr_fun hBm fun w hw ↦ by
     rw [← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth,
       ω.constSmooth.hamiltonianCurvature_perturbationPullback_plumbedPerturbation hq hab
