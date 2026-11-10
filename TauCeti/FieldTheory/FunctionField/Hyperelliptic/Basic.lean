@@ -121,9 +121,10 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
 rational subfield of index two**.
 
 No hypothesis on the characteristic is made, and no separability is claimed: this is the part of
-Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  In positive
-genus the subfield `k(x)` produced from the divisor has index two; over a rational function field
-it is all of `F`, and `k(x ^ 2)` has index two instead. -/
+Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The subfield
+is `k(x)` for a nonconstant `x` in the Riemann--Roch space of an effective divisor `B` linearly
+equivalent to `A`, and its index is at most two. If `k(x)` has index one, so `k(x) = F`, then `x` is
+replaced by `x ^ 2`, whose subfield has index two; otherwise `k(x)` already has index two. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
