@@ -200,16 +200,10 @@ over any finite set of words containing all of them. -/
 private theorem sum_seminorm_ofFn_le (K : Compacts (CoordinateSpace n)) (a : Symbol n V W m)
     {l : ℕ} {t : Finset (List (Fin n))} (ht : ∀ r : Fin l → Fin n, List.ofFn r ∈ t) :
     ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a ≤
-      ∑ α ∈ t, Symbol.seminorm K α [] a := by
-  calc ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a
-      = ∑ α ∈ Finset.univ.image fun r : Fin l → Fin n ↦ List.ofFn r,
-          Symbol.seminorm K α [] a :=
-        (Finset.sum_image (f := fun α ↦ Symbol.seminorm K α [] a)
-          fun r _ r' _ h ↦ List.ofFn_injective h).symm
-    _ ≤ _ := by
-      refine Finset.sum_le_sum_of_subset_of_nonneg (fun α hα ↦ ?_) fun _ _ _ ↦ apply_nonneg _ _
-      obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hα
-      exact ht r
+      ∑ α ∈ t, Symbol.seminorm K α [] a :=
+  Finset.sum_le_sum_of_injOn List.ofFn List.ofFn_injective.injOn
+    (fun α hα ↦ by obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hα; exact ht r)
+    (fun _ _ ↦ le_rfl) fun _ _ _ ↦ apply_nonneg _ _
 
 /-- **Rapid decay of the Fourier transform in the position, uniformly in the symbol.** For a
 compact set `K` and every `N` there are finitely many words `α` and a constant `C` such that every
