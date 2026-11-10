@@ -119,6 +119,87 @@ example {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (B : ℂ → ℂ ≃L[ℂ] �
     hbB c hc hc01 hcB]
   simp
 
+/-- Multiplication by `z ^ m` on `ℂ`, for `z ≠ 0`, extended by the identity at `0`. -/
+private noncomputable def zpowEquiv (m : ℤ) (z : ℂ) : ℂ ≃L[ℂ] ℂ :=
+  if h : z = 0 then ContinuousLinearEquiv.refl ℂ ℂ
+  else ContinuousLinearEquiv.smulLeft (Units.mk0 (z ^ m) (zpow_ne_zero m h))
+
+private theorem coe_zpowEquiv (m : ℤ) {z : ℂ} (hz : z ≠ 0) :
+    (zpowEquiv m z : ℂ →L[ℂ] ℂ) = z ^ m • ContinuousLinearMap.id ℂ ℂ := by
+  ext
+  simp [zpowEquiv, hz]
+
+private theorem continuousOn_zpowEquiv (m : ℤ) :
+    ContinuousOn (fun z => (zpowEquiv m z : ℂ →L[ℂ] ℂ)) {0}ᶜ := by
+  refine ContinuousOn.congr (f := fun z : ℂ => z ^ m • ContinuousLinearMap.id ℂ ℂ) ?_
+    fun z hz => coe_zpowEquiv m hz
+  exact (continuousOn_zpow₀ m).smul continuousOn_const
+
+private theorem mul_expLoop_ne_zero {ρ : ℝ} (hρ : ρ ≠ 0) (t : I) :
+    ((ρ : ℂ) * (Circle.expLoop t : ℂ)) ≠ 0 :=
+  mul_ne_zero (by exact_mod_cast hρ) (Circle.coe_ne_zero _)
+
+private theorem continuous_zpowEquiv_expLoop (m : ℤ) {ρ : ℝ} (hρ : ρ ≠ 0) :
+    Continuous fun t => (zpowEquiv m (ρ * Circle.expLoop t) : ℂ →L[ℂ] ℂ) :=
+  (continuousOn_zpowEquiv m).comp_continuous (by fun_prop) (mul_expLoop_ne_zero hρ)
+
+private theorem zpowEquiv_expLoop_zero_eq_one (m : ℤ) (ρ : ℝ) :
+    zpowEquiv m (ρ * Circle.expLoop 0) = zpowEquiv m (ρ * Circle.expLoop 1) := by
+  simp only [Circle.expLoop.source, Circle.expLoop.target]
+
+/-- Moving any loop by multiplication by `z ^ m` on the circle of radius `ρ > 0` adds `2 m` to its
+Maslov index. -/
+private theorem maslovIndex_map_zpowEquiv (Λ : TotallyRealLoop ℂ) (m : ℤ) {ρ : ℝ} (hρ : 0 < ρ) :
+    (Λ.map (fun t => zpowEquiv m (ρ * Circle.expLoop t))
+      (continuous_zpowEquiv_expLoop m hρ.ne') (zpowEquiv_expLoop_zero_eq_one m ρ)).maslovIndex =
+      Λ.maslovIndex + 2 * m := by
+  let δ : Path (1 : Circle) 1 :=
+    { toFun := fun t => Circle.exp (2 * π * m * t)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by
+        rw [Set.Icc.coe_one, mul_one, Circle.exp_eq_one]
+        exact ⟨m, by ring⟩ }
+  rw [Λ.maslovIndex_map _ _ _ δ fun t => ?_, Circle.degree_eq_of_sub_eq δ
+    (θ := fun t => 2 * π * m * t) (by fun_prop) (fun _ => rfl) (n := m) (by simp; ring)]
+  have hlin : ((zpowEquiv m (ρ * Circle.expLoop t)).toLinearEquiv : ℂ →ₗ[ℂ] ℂ) =
+      ((ρ : ℂ) * Circle.expLoop t) ^ m • LinearMap.id := by
+    ext
+    simp [zpowEquiv, hρ.ne']
+  rw [hlin, LinearMap.det_smul, LinearMap.det_id, finrank_self, pow_one, mul_one]
+  simp only [mul_zpow, norm_mul, norm_zpow, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hρ,
+    Circle.norm_coe, one_zpow, mul_one]
+  simp only [δ, Path.coe_mk_mk, Circle.coe_exp, Circle.expLoop_apply]
+  rw [← Complex.exp_int_mul]
+  push_cast
+  ring_nf
+
+/-- The individual circle indices are not invariants: multiplication by `z ^ m`, a change of
+trivialization over the annulus `r ≤ ‖z‖ ≤ R` with `0 < r`, moves `(ℂ, ℝ)` on the outer circle to a
+loop of index `2 m` and on the inner circle, read clockwise, to a loop of index `-2 m`; the
+boundary-oriented sum stays `0`, as the loop formula says. -/
+example (m : ℤ) {r R : ℝ} (hr : 0 < r) (hrR : r ≤ R) :
+    ((const isMaximalTotallyReal_span_one).map (fun t => zpowEquiv m (R * Circle.expLoop t))
+      (continuous_zpowEquiv_expLoop m (hr.trans_le hrR).ne')
+      (zpowEquiv_expLoop_zero_eq_one m R)).maslovIndex = 2 * m ∧
+    ((const isMaximalTotallyReal_span_one).map (fun t => zpowEquiv m (r * Circle.expLoop t))
+      (continuous_zpowEquiv_expLoop m hr.ne')
+      (zpowEquiv_expLoop_zero_eq_one m r)).symm.maslovIndex = -(2 * m) ∧
+    ((const isMaximalTotallyReal_span_one).map (fun t => zpowEquiv m (R * Circle.expLoop t))
+      (continuous_zpowEquiv_expLoop m (hr.trans_le hrR).ne')
+      (zpowEquiv_expLoop_zero_eq_one m R)).maslovIndex +
+    ((const isMaximalTotallyReal_span_one).map (fun t => zpowEquiv m (r * Circle.expLoop t))
+      (continuous_zpowEquiv_expLoop m hr.ne')
+      (zpowEquiv_expLoop_zero_eq_one m r)).symm.maslovIndex = 0 := by
+  refine ⟨by rw [maslovIndex_map_zpowEquiv _ m (hr.trans_le hrR), maslovIndex_const, zero_add],
+    by rw [maslovIndex_symm, maslovIndex_map_zpowEquiv _ m hr, maslovIndex_const, zero_add], ?_⟩
+  rw [maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus _ _ hr.le hrR
+    (zpowEquiv m) ((continuousOn_zpowEquiv m).mono fun z hz => ?_) _ _ _ (fun _ => rfl) _ _ _
+    fun _ => rfl]
+  · simp
+  · rintro rfl
+    simp [hr] at hz
+
 end TotallyRealLoop
 
 end TauCeti
