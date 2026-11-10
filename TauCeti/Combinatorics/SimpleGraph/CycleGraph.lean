@@ -46,11 +46,13 @@ theorem eq_add_one_or_eq_add_one_of_cycleGraph_adj {u v : Fin m} (h : (cycleGrap
     · exact Or.inr (by rw [hv, sub_add_cancel])
     · exact Or.inl hv
 
+omit [NeZero m] in
 /-- **No vertex of a cycle graph has three pairwise distinct neighbours**: every degree is at most
 two. -/
 theorem eq_or_eq_or_eq_of_cycleGraph_adj {i j j' j'' : Fin m} (h : (cycleGraph m).Adj i j)
     (h' : (cycleGraph m).Adj i j') (h'' : (cycleGraph m).Adj i j'') :
     j = j' ∨ j' = j'' ∨ j'' = j := by
+  have : NeZero m := ⟨fun hm ↦ by subst hm; exact i.elim0⟩
   rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h with hj | hj <;>
     rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h' with hj' | hj' <;>
       rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h'' with hj'' | hj''
