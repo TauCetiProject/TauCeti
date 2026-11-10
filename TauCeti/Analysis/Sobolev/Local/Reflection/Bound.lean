@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Reflection
-import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import TauCeti.Analysis.Sobolev.WeakDeriv.ImDilation
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -20,12 +20,14 @@ and `D^i g` on `Ω ∩ {0 < im}` are chosen,
 
 `‖D^i (planarReflection d g)‖_{Lᵖ(Ω)} ≤ planarReflectionBound d p * ‖D^i g‖_{Lᵖ(Ω ∩ {0 ≤ im})}`.
 
-The bound is packaged by the predicate `TauCeti.WeakDerivChainLe`, which compares chains of weak
-derivatives level by level. Below the real axis the reflection is `∑ j, d j • g ∘ σ j` for the node
-dilations `σ j = imDilation (higherReflectionNode j)`, so by the weak chain rule its `i`th weak
-derivative is `∑ j, d j • (D^i g ∘ σ j)` with every slot precomposed with `σ j`. The nodes lie in
-`[-1, 0)`, so every `σ j` is a contraction and the precomposition does not increase operator
-norms: the weights, and hence the constant, are the same at every order. Above the axis the
+The bound is packaged by the predicate `TauCeti.WeakDerivChainLe` of
+`TauCeti.Analysis.Sobolev.Local.Basic`, which compares chains of weak derivatives level by level.
+Below the real axis the reflection is `∑ j, d j • g ∘ σ j` for the node dilations
+`σ j = imDilation (higherReflectionNode j)`, so by the weak chain rule
+(`TauCeti.HasWeakFDerivOn.comp_imDilation`) its `i`th weak derivative is `∑ j, d j • (D^i g ∘ σ j)`
+with every slot precomposed with `σ j`. The nodes lie in `[-1, 0)`, so every `σ j` is a
+contraction and the precomposition does not increase operator norms: the weights, and hence the
+constant, are the same at every order. Above the axis the
 derivatives of the reflection are those of `g`, by uniqueness of weak derivatives.
 
 With the Vandermonde weights the constant is `TauCeti.higherReflectionBound k p`, and together with
@@ -35,7 +37,6 @@ With the Vandermonde weights the constant is `TauCeti.higherReflectionBound k p`
 
 ## Main declarations
 
-* `TauCeti.WeakDerivChainLe`: `Lᵖ` bounds for all iterated weak derivatives through order `m`.
 * `TauCeti.weakDerivChainLe_planarReflection`: the all-order bound for the reflection with
   arbitrary weights.
 * `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_bound` and
@@ -57,86 +58,9 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-! ### Bounds for chains of weak derivatives -/
-
-/-- `WeakDerivChainLe p S T C m f g` bounds the iterated weak derivatives of `f` through order `m`
-by those of `g`: the `Lᵖ(S)` norm of `f` is at most `C` times the `Lᵖ(T)` norm of `g`, and for
-every weak derivative `Df` of `f` on the interior of `S` and every weak derivative `Dg` of `g` on
-the interior of `T`, the pair `Df`, `Dg` satisfies the same through order `m - 1`. Since the
-quantification is over all weak derivatives, the bound holds for every choice of the iterated
-derivatives `D^i f` and `D^i g`, `i ≤ m`. -/
-def WeakDerivChainLe (p : ℝ≥0∞) (S T : Set ℂ) (C : ℝ≥0∞) :
-    (m : ℕ) → {F : Type*} → [NormedAddCommGroup F] → [NormedSpace ℝ F] → (ℂ → F) → (ℂ → F) →
-      Prop
-  | 0, _, _, _, f, g => eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T)
-  | m + 1, F, _, _, f, g =>
-      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) ∧
-        ∀ Df Dg : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior S) f Df →
-          HasWeakFDerivOn volume (Opens.interior T) g Dg → WeakDerivChainLe p S T C m Df Dg
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p C : ℝ≥0∞} {S T : Set ℂ}
-  {m : ℕ} {f g : ℂ → F}
-
-/-- At order zero the chain bound is the `Lᵖ` bound. -/
-@[simp]
-theorem weakDerivChainLe_zero_iff :
-    WeakDerivChainLe p S T C 0 f g ↔
-      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) :=
-  Iff.rfl
-
-/-- At a successor order the chain bound is the `Lᵖ` bound together with the chain bound for
-every pair of weak derivatives. -/
-theorem weakDerivChainLe_succ_iff :
-    WeakDerivChainLe p S T C (m + 1) f g ↔
-      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) ∧
-        ∀ Df Dg : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior S) f Df →
-          HasWeakFDerivOn volume (Opens.interior T) g Dg → WeakDerivChainLe p S T C m Df Dg :=
-  Iff.rfl
-
-/-- A chain bound gives the `Lᵖ` bound at order zero. -/
-theorem WeakDerivChainLe.eLpNorm_le (h : WeakDerivChainLe p S T C m f g) :
-    eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) := by
-  cases m with
-  | zero => exact h
-  | succ m => exact h.1
-
-/-- A chain bound passes to every pair of weak derivatives, one order lower. -/
-theorem WeakDerivChainLe.weakFDeriv (h : WeakDerivChainLe p S T C (m + 1) f g)
-    {Df Dg : ℂ → ℂ →L[ℝ] F} (hf : HasWeakFDerivOn volume (Opens.interior S) f Df)
-    (hg : HasWeakFDerivOn volume (Opens.interior T) g Dg) : WeakDerivChainLe p S T C m Df Dg :=
-  h.2 Df Dg hf hg
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-! ### Reflections up to contractions -/
-
-/-- The weak chain rule for a node dilation: if `g` has weak derivative `Dg` on `V`, then
-`g ∘ σ` has weak derivative `z ↦ Dg (σ z) ∘ σ` on every open set that `σ` maps into `V`, for
-`σ = imDilation c`, `c ≠ 0`. -/
-private theorem HasWeakFDerivOn.comp_imDilation {c : ℝ} (hc : c ≠ 0) {U V : Opens ℂ}
-    {g : ℂ → F} {Dg : ℂ → ℂ →L[ℝ] F} (hg : HasWeakFDerivOn volume V g Dg)
-    (hUV : MapsTo (imDilation c) U V) :
-    HasWeakFDerivOn volume U (fun z => g (imDilation c z))
-      fun z => (Dg (imDilation c z)).comp (imDilation c) := by
-  have := hg.completeSpace
-  set a : ℝ≥0∞ := ENNReal.ofReal |c⁻¹|
-  have ha0 : a ≠ 0 := by simp [a, hc]
-  have hatop : a ≠ ∞ := ENNReal.ofReal_ne_top
-  have : (a • (volume : Measure ℂ)).IsAddHaarMeasure := Measure.IsAddHaarMeasure.smul _ ha0 hatop
-  -- Scaling the measure by a finite constant preserves weak derivatives.
-  have hga : HasWeakFDerivOn (a • volume) V g Dg := by
-    refine hasWeakFDerivOn_iff.2 fun v => ?_
-    obtain ⟨hcs, hgi, hDi, hint⟩ :=
-      hasWeakLineDerivOn_iff_testFunction.1 (hasWeakFDerivOn_iff.1 hg v)
-    have hsmul {h : ℂ → F} (hh : LocallyIntegrableOn h V volume) :
-        LocallyIntegrableOn h V (a • volume) := fun x hx => by
-      obtain ⟨t, ht, hti⟩ := hh x hx
-      exact ⟨t, ht, by simpa [IntegrableOn] using hti.smul_measure hatop⟩
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hcs, hsmul hgi, hsmul hDi, fun φ => ?_⟩
-    rw [integral_smul_measure, integral_smul_measure, hint φ, smul_neg]
-  have hΦ : MeasurePreserving (imDilation c) volume (a • volume) :=
-    ⟨(imDilation c).continuous.measurable, map_imDilation_volume hc⟩
-  have h := hga.comp_measurePreserving hΦ
-    (imDilation c).lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
-  simpa [Function.comp_def, ContinuousLinearMap.fderiv] using h
 
 /-- The node dilations are contractions. -/
 private theorem norm_imDilation_higherReflectionNode_le {k : ℕ} (j : Fin k) :
@@ -194,7 +118,7 @@ private theorem IsContractedReflection.eLpNorm_le {p : ℝ≥0∞} (hp : 1 ≤ p
       ‖f z‖ ≤ ‖planarReflection (fun j => |d j|) (fun w => ‖g w‖) z‖ := by
     refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
     filter_upwards [hup', hlo', hax] with z h1 h2 h3 hz
-    rcases lt_or_gt_of_ne (show z.im ≠ 0 from h3) with hneg | hpos
+    rcases lt_or_gt_of_ne h3 with hneg | hpos
     · rw [planarReflection_of_neg _ _ hneg, h2 ⟨hz, hneg⟩]
       refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun j _ => ?_).trans (le_abs_self _))
       rw [norm_smul, Real.norm_eq_abs, smul_eq_mul]
@@ -283,16 +207,17 @@ theorem weakDerivChainLe_planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : 
         WeakDerivChainLe p Ω ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (planarReflectionBound d p) m f g := by
     intro m
     induction m with
-    | zero => exact fun f g h hfm => h.eLpNorm_le hp hΩ hfm
+    | zero => exact fun f g h hfm => weakDerivChainLe_zero_iff.2 (h.eLpNorm_le hp hΩ hfm)
     | succ m ih =>
       intro F _ _ f g h hfm
-      refine ⟨h.eLpNorm_le hp hΩ hfm, fun Df Dg hf hg => ?_⟩
+      refine weakDerivChainLe_succ_iff.2 ⟨h.eLpNorm_le hp hΩ hfm, fun Df Dg hf hg => ?_⟩
       rw [Opens.interior_coe] at hf
       exact ih Df Dg (h.weakFDeriv hΩ hf hg) hf.locallyIntegrableOn_deriv.aestronglyMeasurable
   cases m with
-  | zero => exact eLpNorm_planarReflection_le hp hΩ d g
+  | zero => exact weakDerivChainLe_zero_iff.2 (eLpNorm_planarReflection_le hp hΩ d g)
   | succ m =>
-    refine ⟨eLpNorm_planarReflection_le hp hΩ d g, fun Df Dg hf hg => ?_⟩
+    refine weakDerivChainLe_succ_iff.2
+      ⟨eLpNorm_planarReflection_le hp hΩ d g, fun Df Dg hf hg => ?_⟩
     rw [Opens.interior_coe] at hf
     exact key m Df Dg ((isContractedReflection_planarReflection Ω d g).weakFDeriv hΩ hf hg)
       hf.locallyIntegrableOn_deriv.aestronglyMeasurable
