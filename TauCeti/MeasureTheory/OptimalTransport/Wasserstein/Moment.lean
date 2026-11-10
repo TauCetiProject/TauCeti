@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.FiniteMeasure.UniformIntegrable
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
+public import TauCeti.MeasureTheory.Measure.Portmanteau
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
@@ -79,36 +80,6 @@ variable {X : Type*} [PseudoMetricSpace X]
 variable [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
-/-- The mass of the closed region at distance at least `n` from a basepoint tends to `0` as `n`
-tends to infinity. -/
-theorem tendsto_measure_nndist_ge_atTop (μ : Measure X) [IsFiniteMeasure μ] (x : X) :
-    Tendsto (fun n : ℕ ↦ μ {y | (n : ℝ≥0) ≤ nndist x y}) atTop (𝓝 0) := by
-  have := tendsto_measure_iInter_atTop (μ := μ)
-    (s := fun n : ℕ ↦ {y | (n : ℝ≥0) ≤ nndist x y})
-    (fun n ↦ (isClosed_le continuous_const
-      (continuous_const.nndist continuous_id)).measurableSet.nullMeasurableSet)
-    (fun m n hmn y hy ↦ (Nat.cast_le.2 hmn).trans hy) ⟨0, measure_ne_top _ _⟩
-  have hempty : (⋂ n : ℕ, {y | (n : ℝ≥0) ≤ nndist x y}) = ∅ := by
-    refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_gt (nndist x y)
-    exact (not_le.2 hn) (mem_iInter.1 hy n)
-  simpa [hempty, Function.comp_def] using this
-
-/-- **Mass outside a large ball for a weakly convergent family.** Along a weakly convergent family
-of probability measures, for every `ε > 0` there is a radius `R` such that eventually the mass
-outside the ball of radius `R` about a basepoint is at most `ε`. -/
-theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x : X) {ε : ℝ≥0∞}
-    (hε : 0 < ε) :
-    ∃ R : ℝ≥0, ∀ᶠ i in L, (μs i : Measure X) {y | R ≤ nndist x y} ≤ ε := by
-  have hS (r : ℝ≥0) : IsClosed {y | r ≤ nndist x y} :=
-    isClosed_le continuous_const (continuous_const.nndist continuous_id)
-  obtain ⟨n, hn⟩ := ((tendsto_measure_nndist_ge_atTop (μ : Measure X) x).eventually
-    (gt_mem_nhds hε)).exists
-  refine ⟨n, ?_⟩
-  have hlt := lt_of_le_of_lt
-    (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
-  filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
-
 /-- **Uniformly small moment tails.** Along a weakly convergent family of probability measures
 whose `p`-moments about a basepoint converge to the finite `p`-moment of the limit, the
 `p`-moments have uniformly small tails: for every `ε > 0` there is a radius `R` such that
@@ -126,7 +97,7 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral
   · -- For `p = 0` and `p = ∞` the integrand is `1`, and the claim is a tail bound for the measures.
     have h0 : p.toReal = 0 := le_antisymm (not_lt.1 hq) ENNReal.toReal_nonneg
     simp only [h0, ENNReal.rpow_zero, lintegral_const, one_mul, Measure.restrict_apply_univ]
-    exact exists_measure_nndist_ge_le_of_tendsto h x hε
+    exact ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto h x hε
   set g : X → ℝ≥0 := fun y ↦ nndist x y ^ p.toReal
   have hg : Continuous g := continuous_nndist_rpow_const hq.le x
   have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal :=
