@@ -85,7 +85,8 @@ vanishing diagonal**, over an infinite field `K` and with values in any `K`-vect
 coordinate of the diagonal in a basis of `M` is a polynomial function of the matrix entries (the
 square case of `MultilinearMap.exists_mvPolynomial_eval_eq_apply_const`), and over an infinite
 field the invertible matrices are Zariski dense. -/
-theorem apply_const_eq_zero_of_eq_zero_on_gl (Θ : MultilinearMap (RingHom.id K) (fun _ : ι => Matrix m m K) M)
+theorem apply_const_eq_zero_of_eq_zero_on_gl (Θ : MultilinearMap (RingHom.id K) (fun _ : ι =>
+    Matrix m m K) M)
     (h : ∀ g : GL m K, (Θ fun _ => (g : Matrix m m K)) = 0) (Y : Matrix m m K) :
     (Θ fun _ => Y) = 0 := by
   let b := Module.Free.chooseBasis K M

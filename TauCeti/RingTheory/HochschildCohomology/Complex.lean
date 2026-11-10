@@ -76,13 +76,15 @@ variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalSemiring A]
   [SMulCommClass R R M]
 
 /-- The Hochschild `n`-cocycles: the `n`-cochains annihilated by the Hochschild coboundary. -/
-def hochschildCocycles (n : ℕ) : Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
+def hochschildCocycles (n : ℕ) : Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+    A) M) :=
   LinearMap.ker (hochschildCoboundary R A M n)
 
 variable {R A M} in
 /-- A cochain is a Hochschild cocycle exactly when its Hochschild coboundary vanishes. -/
 @[simp]
-theorem mem_hochschildCocycles_iff {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} :
+theorem mem_hochschildCocycles_iff {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
+    ↦ A) M} :
     φ ∈ hochschildCocycles R A M n ↔ hochschildCoboundary R A M n φ = 0 :=
   LinearMap.mem_ker
 
@@ -135,7 +137,8 @@ section Complex
 /-- The Hochschild cochain complex `C⁰ → C¹ → ⋯`: in degree `n` the `M`-valued `n`-cochains on
 `A`, the multilinear maps in `n + 1` arguments, with the Hochschild coboundary as differential. -/
 def hochschildCochainComplex : CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M))
+  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+      A) M))
     (fun n ↦ ModuleCat.ofHom (hochschildCoboundary R A M n))
     fun _ ↦ ModuleCat.hom_ext (hochschildCoboundary_comp_hochschildCoboundary R A M)
 
@@ -214,7 +217,8 @@ coboundary. -/
 @[simp]
 theorem mk_eq_zero_iff (n : ℕ) (φ : hochschildCocycles R A M n) :
     mk R A M n φ = 0 ↔
-      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n :=
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
     (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCoboundaries R A M) (hochschildCochainComplexXIso R A M)
@@ -224,7 +228,8 @@ theorem mk_eq_zero_iff (n : ℕ) (φ : hochschildCocycles R A M n) :
 coboundary. -/
 theorem mk_eq_mk_iff (n : ℕ) (φ ψ : hochschildCocycles R A M n) :
     mk R A M n φ = mk R A M n ψ ↔
-      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) - ψ ∈ hochschildCoboundaries R A M n :=
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) - ψ ∈ hochschildCoboundaries R A M n :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
     (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCoboundaries R A M) (hochschildCochainComplexXIso R A M)
@@ -247,7 +252,8 @@ theorem linearMap_ext {n : ℕ} {f g : hochschildCohomology R A M n →ₗ[R] N}
 Hochschild cohomology. -/
 def desc (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0) :
     hochschildCohomology R A M n →ₗ[R] N :=
   (mk R A M n).liftOfSurjective (mk_surjective R A M n)
@@ -258,7 +264,8 @@ def desc (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0)
     (φ : hochschildCocycles R A M n) :
     desc n f hf (mk R A M n φ) = f φ :=
@@ -268,7 +275,8 @@ theorem desc_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_comp_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0) :
     desc n f hf ∘ₗ mk R A M n = f :=
   LinearMap.ext (desc_mk n f hf)

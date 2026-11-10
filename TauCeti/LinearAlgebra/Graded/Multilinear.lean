@@ -131,7 +131,8 @@ theorem IsHomogeneous.compMultilinearMap
     {P : (i : κ) → β i → Type uP} {σP : (i : κ) → β i → Type*}
     [∀ i j, AddCommMonoid (P i j)] [∀ i j, Module R (P i j)]
     [∀ i j, SetLike (σP i j) (P i j)]
-    {f : MultilinearMap (RingHom.id R) M N} {g : (i : κ) → MultilinearMap (RingHom.id R) (P i) (M i)}
+    {f : MultilinearMap (RingHom.id R) M N} {g : (i : κ) → MultilinearMap (RingHom.id R) (P i) (M
+        i)}
     {𝒜 : (i : κ) → (j : β i) → ι → σP i j}
     {ℬ : (i : κ) → ι → σM i} {𝒞 : ι → σN}
     {q : ι} {r : κ → ι} (hf : IsHomogeneous f ℬ 𝒞 q)
@@ -192,7 +193,8 @@ theorem IsHomogeneous.neg [NegMemClass σN N] {f : MultilinearMap (RingHom.id R)
 
 /-- A difference of multilinear maps of the same degree has that degree. -/
 @[grind ←]
-theorem IsHomogeneous.sub [AddMemClass σN N] [NegMemClass σN N] {f g : MultilinearMap (RingHom.id R) M N}
+theorem IsHomogeneous.sub [AddMemClass σN N] [NegMemClass σN N] {f g : MultilinearMap (RingHom.id
+    R) M N}
     {𝒜 : (i : κ) → ι → σM i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) (hg : IsHomogeneous g 𝒜 ℬ q) :
     IsHomogeneous (f - g) 𝒜 ℬ q := by

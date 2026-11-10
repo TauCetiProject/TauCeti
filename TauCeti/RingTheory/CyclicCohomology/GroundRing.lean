@@ -170,7 +170,8 @@ private def mkPiRingCocycle (hn : Even n) : M →ₗ[R] cyclicCocycles R R M n :
 
 private theorem coe_mkPiRingCocycle (hn : Even n) (m : M) :
     ((mkPiRingCocycle R M hn m : cyclicCochains R R M n) :
-      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+          R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
   (rfl)
 
 private theorem mkPiRingCocycle_apply_one (hn : Even n) (φ : cyclicCocycles R R M n) :
@@ -242,7 +243,8 @@ theorem mkPiRing_apply (hn : Even n) (m : M) :
 value `φ(1, …, 1)`. -/
 theorem mk_eq_mkPiRing (hn : Even n) (φ : cyclicCocycles R R M n) :
     mk R R M n φ =
-      mkPiRing R M n hn ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) := by
+      mkPiRing R M n hn ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦
+          1) := by
   rw [mkPiRing, LinearMap.comp_apply, mkPiRingCocycle_apply_one]
 
 /-- In even degree every cyclic cohomology class of the ground ring is the class of a product

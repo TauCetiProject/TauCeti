@@ -84,7 +84,8 @@ end LinearMap
 namespace MultilinearMap
 
 /-- The bilinear map `(x, y) ↦ m ![x, y]` of a multilinear map `m` in two variables. -/
-def toBilinMap (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N) : LinearMap.BilinMap R V N :=
+def toBilinMap (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V)
+    N) : LinearMap.BilinMap R V N :=
   LinearMap.mk₂ R (fun x y => m ![x, y])
     (fun x x' y => m.cons_add ![y] x x')
     (fun c x y => m.cons_smul ![y] c x)

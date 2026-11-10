@@ -116,7 +116,8 @@ variable {R : Type*} {A : Type u} {M : Type*} [Semiring R] [Semiring A] [Module 
   [SMulCommClass R R M]
 
 /-- Connes' operator `B` sends a Hochschild `(n + 1)`-cocycle to a cyclic `n`-cocycle. -/
-theorem connesB_mem_cyclicCocycles {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M}
+theorem connesB_mem_cyclicCocycles {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2)
+    ↦ A) M}
     (hφ : φ ∈ hochschildCocycles R A M (n + 1)) :
     (⟨connesB R A M n φ, connesB_mem_cyclicCochains φ⟩ : cyclicCochains R A M n) ∈
       cyclicCocycles R A M n := by

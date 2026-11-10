@@ -346,13 +346,15 @@ theorem oddCocycle₁_apply_U₁ (a₀ : SmoothNoncommutativeTorus θ) :
 /-- `ψ₁ (a₀, U₂) = 0`. -/
 theorem oddCocycle₁_apply_U₂ (a₀ : SmoothNoncommutativeTorus θ) :
     ((oddCocycle₁ θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 1) :
-      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) ![a₀, U₂ θ] = 0 := by
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus
+          θ) ℂ) ![a₀, U₂ θ] = 0 := by
   simp
 
 /-- `ψ₂ (a₀, U₁) = 0`. -/
 theorem oddCocycle₂_apply_U₁ (a₀ : SmoothNoncommutativeTorus θ) :
     ((oddCocycle₂ θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 1) :
-      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) ![a₀, U₁ θ] = 0 := by
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus
+          θ) ℂ) ![a₀, U₁ θ] = 0 := by
   simp
 
 /-- `ψ₂ (a₀, U₂) = 2πi τ (a₀ U₂)`. -/

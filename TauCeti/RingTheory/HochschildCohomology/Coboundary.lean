@@ -213,20 +213,23 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 
 /-- The zeroth coface `(∂₀ψ)(a₀, …, aₙ) = a₀ • ψ(a₁, …, aₙ)`. -/
 private def leftCoface :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
+        : Fin (n + 1) ↦ A) M :=
   (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R (Algebra.lsmul R R M).toLinearMap.flip
 
 /-- The last coface `(∂ₙ₊₁ψ)(a₀, …, aₙ) = ψ(a₀, …, aₙ₋₁) • aₙ`. -/
 private def rightCoface :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
+        : Fin (n + 1) ↦ A) M :=
   (multilinearCurryRightEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R
       ((Algebra.lsmul R R M).toLinearMap ∘ₗ (MulOpposite.opLinearEquiv R).toLinearMap).flip
 
 /-- The inner cofaces, precomposition with the multiplication of two adjacent entries. -/
 private def innerCoface : ∀ {n : ℕ}, Fin n →
-    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
+        : Fin (n + 1) ↦ A) M
   | 0, j => j.elim0
   | _ + 1, j => hochschildCoface R A M j.castSucc
 
@@ -235,21 +238,24 @@ private def innerCoface : ∀ {n : ℕ}, Fin n →
 the first entry on the left, the last coface multiplies by the last entry on the right, and the
 others multiply two adjacent entries. -/
 def hochschildBimoduleCoface (i : Fin (n + 2)) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
+        : Fin (n + 1) ↦ A) M :=
   Fin.cases (leftCoface R A M) (Fin.lastCases (rightCoface R A M) (innerCoface R A M)) i
 
 variable {R A M}
 
 /-- The zeroth coface multiplies by the first entry on the left. -/
 @[simp]
-theorem hochschildBimoduleCoface_zero_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M)
+theorem hochschildBimoduleCoface_zero_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A)
+    M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M 0 ψ a = a 0 • ψ (Fin.tail a) := by
   simp [hochschildBimoduleCoface, leftCoface]
 
 /-- The last coface multiplies by the last entry on the right. -/
 @[simp]
-theorem hochschildBimoduleCoface_last_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M)
+theorem hochschildBimoduleCoface_last_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A)
+    M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M (Fin.last (n + 1)) ψ a =
       op (a (Fin.last n)) • ψ (Fin.init a) := by
@@ -312,7 +318,8 @@ sum `∑ᵢ (-1)ⁱ ∂ᵢ` of the cofaces. Explicitly
 `(δψ)(a₀, …, aₙ) = a₀ ψ(a₁, …, aₙ) + ∑_{j < n} (-1)ʲ⁺¹ ψ(a₀, …, aⱼaⱼ₊₁, …, aₙ)
   + (-1)ⁿ⁺¹ ψ(a₀, …, aₙ₋₁) aₙ`. -/
 def hochschildBimoduleCoboundary (n : ℕ) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
+        : Fin (n + 1) ↦ A) M :=
   ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildBimoduleCoface R A M i
 
 variable {R A M} {n : ℕ}

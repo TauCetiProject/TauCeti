@@ -127,12 +127,6 @@ theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
 
-/-- **Functoriality of the induced map on special linear groups, identity law.** Base change
-along the identity ring hom is the identity. -/
-@[simp]
-theorem map_id {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SpecialLinearGroup n R) := rfl
-
 /-- **Functoriality of the induced map on special linear groups, composition law.** Base change
 along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
 again a single induced map. -/

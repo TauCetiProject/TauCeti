@@ -91,7 +91,8 @@ variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
 
 /-- The lift `φ + s (1 - λ) φ` of a Hochschild `(m + 1)`-cochain `φ` to a total cochain of degree
 `m + 1`, with `φ` in column zero and `s (1 - λ) φ` in column one. -/
-private def cyclicTotalLift {m : ℕ} (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦ A) M) :
+private def cyclicTotalLift {m : ℕ} (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦
+    A) M) :
     cyclicTotalCochains R A M (m + 1) :=
   ⟨Pi.single (m + 1) φ +
       Pi.single m (barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ)),

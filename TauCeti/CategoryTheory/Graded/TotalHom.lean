@@ -292,7 +292,8 @@ arity is determined by its values on composable strings (`IsPathCompatible.ext`)
 there may be no composable string to constrain the operation: when `C` is empty, every nullary
 operation is path-compatible. -/
 structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] (φ : C → C')
-    {n : ℕ} (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')) : Prop where
+    {n : ℕ} (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R
+        C')) : Prop where
   /-- A composable string is sent to a morphism between the images of the endpoints of the
   string. -/
   mem_range_homInclusion (X : Fin (n + 1) → C)
@@ -380,7 +381,8 @@ theorem multilinearMap_apply_mem {M : Type*} [AddCommGroup M] [Module R M] {n : 
 arity is positive: an operation of arity zero is a single element, which no composable string
 constrains when `C` has no objects. -/
 theorem IsPathCompatible.ext {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'}
-    {n : ℕ} {f g : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
+    {n : ℕ} {f g : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R
+        C')}
     (hf : IsPathCompatible φ f) (hg : IsPathCompatible φ g)
     (h : ∀ (X : Fin (n + 2) → C)
       (x : ∀ i : Fin (n + 1), homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
@@ -411,7 +413,8 @@ theorem IsPathCompatible.mem_range_homInclusion_of_chain {C' : Type u'}
 
 /-- **Path compatibility can be tested on homogeneous morphisms.** -/
 theorem isPathCompatible_of_homogeneous {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C']
-    {φ : C → C'} {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    {φ : C → C'} {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C)
+        (TotalHom R C')}
     (mem_range : ∀ (X : Fin (n + 1) → C)
       (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) (d : Fin n → ℤ),
       (∀ i, x i ∈ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece (d i)) →

@@ -20,7 +20,8 @@ import TauCeti.Data.Fin.Tuple.Basic
 Let `(A, d)` be an algebra with a linear map `d`, thought of as an ungraded differential algebra
 (`TauCeti.IsUngradedDGAlgebra`). An **ungraded `A∞` right module** over it is a module `M` with
 operations `m_{n+1} : M ⊗ A^{⊗ n} → M` for every `n ≥ 0`, here
-`act n : MultilinearMap (RingHom.id R) (Fin n → A) (M →ₗ[R] M)`, satisfying for every `m` and `a₁, …, aₙ` the
+`act n : MultilinearMap (RingHom.id R) (Fin n → A) (M →ₗ[R]
+    M)`, satisfying for every `m` and `a₁, …, aₙ` the
 relation
 
 `∑_{i + j = n} m_{j+1}(m_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`

@@ -35,7 +35,8 @@ variable (R : Type*) {n : ℕ} (M : Fin (n + 1) → Type*) (N : Type*) [CommSemi
 /-- Currying the first argument of a multilinear map into its values:
 `f ↦ ((m₁, …, mₙ) ↦ (m₀ ↦ f (m₀, m₁, …, mₙ)))`. -/
 def multilinearCurryFirstEquiv :
-    MultilinearMap (RingHom.id R) M N ≃ₗ[R] MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M i.succ) (M 0 →ₗ[R] N) where
+    MultilinearMap (RingHom.id R) M N ≃ₗ[R] MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M
+        i.succ) (M 0 →ₗ[R] N) where
   toFun f := MultilinearMap.mk'
     (fun m ↦
       { toFun x := f (Fin.cons x m)

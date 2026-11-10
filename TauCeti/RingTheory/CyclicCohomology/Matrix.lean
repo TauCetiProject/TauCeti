@@ -398,7 +398,8 @@ private theorem sum_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype ι
 /-- Matrix extension commutes with the last face, which is the zeroth face of the rotated
 tuple. -/
 private theorem sum_pathEntries_hochschildFace_last {ι : Type*} [Fintype ι] {n : ℕ}
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) (a : Fin (n + 2) → Matrix ι ι A) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) (a : Fin (n + 2) → Matrix ι ι
+        A) :
     ∑ p, φ (pathEntries (hochschildFace (Fin.last (n + 1)) a) p) =
       ∑ q, φ (hochschildFace (Fin.last (n + 1)) (pathEntries a q)) := by
   have h := sum_pathEntries_hochschildFace_castSucc φ 0 (a ∘ (finRotate (n + 2)).symm)

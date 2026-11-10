@@ -730,14 +730,16 @@ noncomputable def ofStasheff (G : InternalGrading R M)
 /-- The grading of the module built from unsuspended operations is the given grading. -/
 @[simp]
 theorem ofStasheff_grading (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI) :
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm
+        hSI) :
     (ofStasheff (AA := AA) G m hm F hFm hSI).grading = G := by
   rw [ofStasheff, ofTaylor_grading]
 
 /-- The Taylor map of the module built from unsuspended operations is the given Taylor map. -/
 @[simp]
 theorem ofStasheff_taylor (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI) :
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm
+        hSI) :
     (ofStasheff (AA := AA) G m hm F hFm hSI).taylor = F := by
   rw [ofStasheff, ofTaylor_taylor]
 

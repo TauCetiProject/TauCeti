@@ -96,7 +96,8 @@ def cyclicCocycles (n : ℕ) : Submodule R (cyclicCochains R A M n) :=
 @[simp]
 theorem mem_cyclicCocycles_iff {n : ℕ} {φ : cyclicCochains R A M n} :
     φ ∈ cyclicCocycles R A M n ↔
-      hochschildCoboundary R A M n (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) = 0 := by
+      hochschildCoboundary R A M n (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) = 0 := by
   rw [cyclicCocycles, LinearMap.mem_ker, ← Subtype.coe_inj, coe_cyclicHochschildCoboundary_apply,
     ZeroMemClass.coe_zero]
 

@@ -101,7 +101,8 @@ map sending `(a₁, …, aₘ)` to the `A`-linear iterated commutator `[⋯[D, a
 manifold acting on smooth sections of vector bundles, its value at `a₁ = ⋯ = aₘ = f` is `m!`
 times the principal symbol of `D` at `df`. -/
 def commutatorSymbol : (m : ℕ) →
-    differentialOperators R A M N m →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin m ↦ A) (M →ₗ[A] N)
+    differentialOperators R A M N m →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin m ↦ A) (M
+        →ₗ[A] N)
   | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R R (fun _ : Fin 0 ↦ A)
       (M →ₗ[A] N)).toLinearMap ∘ₗ toLinearMapOfOrderZero
   | m + 1 => (multilinearCurryLeftEquiv R (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A] N)).symm.toLinearMap ∘ₗ

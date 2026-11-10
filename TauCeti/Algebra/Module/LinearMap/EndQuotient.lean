@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Idempotents

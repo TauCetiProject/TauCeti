@@ -109,7 +109,8 @@ def cyclicTotalPeriodicity (m : ℕ) :
 /-- The periodicity map does not change the family of cochains. -/
 @[simp]
 theorem coe_cyclicTotalPeriodicity_apply {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    (cyclicTotalPeriodicity R A M m x : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M) =
+    (cyclicTotalPeriodicity R A M m x : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1)
+        ↦ A) M) =
       x :=
   (rfl)
 

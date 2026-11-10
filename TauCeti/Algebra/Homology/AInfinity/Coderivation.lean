@@ -96,7 +96,8 @@ theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A �
 after twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous
 letters these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/
 noncomputable def suspensionTaylor (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) : ReducedTensorWords R A →ₗ[R] A :=
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A)
+        A) : ReducedTensorWords R A →ₗ[R] A :=
   DirectSum.toModule R {n : ℕ // 0 < n} A fun n ↦
     PiTensorProduct.lift ((m n.1).compLinearMap fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i))
 
@@ -240,7 +241,8 @@ theorem isSuspension_desuspension (G : InternalGrading R A) (F : ReducedTensorWo
 together with `isSuspension_desuspension`, the uncurved operations and their Taylor maps determine
 each other. -/
 theorem IsSuspension.eq_desuspension {G : InternalGrading R A}
-    {F : ReducedTensorWords R A →ₗ[R] A} {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
+    {F : ReducedTensorWords R A →ₗ[R] A} {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n
+        ↦ A) A}
     (hFm : IsSuspension G F m) (hm0 : m 0 = 0) : m = desuspension G F := by
   funext n
   rcases Nat.eq_zero_or_pos n with rfl | hn

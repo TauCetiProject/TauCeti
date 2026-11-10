@@ -223,7 +223,8 @@ theorem coe_normalizedConnesB (φ : normalizedHochschildCochains R A M (n + 1)) 
 /-- A cyclic normalized cochain of positive degree is killed by `B`. -/
 theorem normalizedConnesB_eq_zero_of_mem_cyclicCochains
     {φ : normalizedHochschildCochains R A M (n + 1)}
-    (hφ : (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n + 1)) :
+    (hφ : (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n
+        + 1)) :
     normalizedConnesB R A M n φ = 0 :=
   Subtype.ext ((coe_normalizedConnesB φ).trans (connesB_eq_zero_of_mem_cyclicCochains hφ))
 
@@ -256,7 +257,8 @@ variable {R A M} {n : ℕ}
 @[simp]
 theorem coe_normalizedHochschildCoboundary (φ : normalizedHochschildCochains R A M n) :
     (normalizedHochschildCoboundary R A M n φ :
-      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) = hochschildCoboundary R A M n φ := (rfl)
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦
+          A) M) = hochschildCoboundary R A M n φ := (rfl)
 
 /-- A normalized cochain is a normalized cocycle exactly when it is a Hochschild cocycle. -/
 theorem normalizedHochschildCoboundary_eq_zero_iff {φ : normalizedHochschildCochains R A M n} :

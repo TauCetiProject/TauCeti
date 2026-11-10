@@ -72,7 +72,8 @@ number of cosets. The caller's finite enumeration of the cosets is retained. -/
     ρ.tensorInducedDiagonal s (r • x) = r ^ Fintype.card (G ⧸ U) •
       ρ.tensorInducedDiagonal s x := by
   apply Subtype.ext
-  simpa using (PiTensorProduct.tprod R : MultilinearMap (RingHom.id R) (fun _ : G ⧸ U ↦ M) _).map_smul_univ
+  simpa using (PiTensorProduct.tprod R : MultilinearMap (RingHom.id R) (fun _ : G ⧸ U ↦ M)
+      _).map_smul_univ
     (fun _ ↦ r) (fun _ ↦ (x : M))
 
 /-- The change-of-transversal comparison fixes the invariant diagonal tensor. -/

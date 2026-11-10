@@ -81,7 +81,8 @@ def trace (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
 /-- On a word of degree `n`, the functional `∫_φ` evaluates `φ` on the part of the coefficient in
 `A` followed by the letters. -/
 @[simp]
-theorem trace_of_word (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) (x : Unitization k A)
+theorem trace_of_word (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) (x :
+    Unitization k A)
     (a : Fin n → A) :
     trace φ (DirectSum.of _ n (word k A x a)) = φ (Fin.cons x.snd a) := by
   rw [trace, LinearMap.comp_apply, ← DirectSum.lof_eq_of k, DirectSum.component.lof_self,
@@ -90,7 +91,8 @@ theorem trace_of_word (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) �
 
 /-- The functional `∫_φ` vanishes on forms of degree other than `n`. -/
 @[simp]
-theorem trace_of_of_ne (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) {m : ℕ} (h : m ≠ n)
+theorem trace_of_of_ne (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) {m : ℕ} (h :
+    m ≠ n)
     (ω : UniversalForms k A m) : trace φ (DirectSum.of _ m ω) = 0 := by
   simp [trace, ← DirectSum.lof_eq_of k, DirectSum.component.of, h]
 
@@ -274,7 +276,8 @@ end Trace
 /-! ### Cyclic cocycles as characters -/
 
 /-- **The functional `∫_φ` is a closed graded trace exactly when `φ` is a cyclic cocycle.** -/
-theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
+theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A)
+    M) :
     IsClosedGradedTrace (R := k) (Ω := ⨁ m, UniversalForms k A m) (grading k A)
         (differential k A) n (trace φ) ↔
       φ ∈ cyclicCochains k A M n ∧ hochschildCoboundary k A M n φ = 0 := by
@@ -296,7 +299,8 @@ theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap (RingHom.id k) (fun _
 theorem isClosedGradedTrace_trace (φ : cyclicCocycles k A M n) :
     IsClosedGradedTrace (R := k) (Ω := ⨁ m, UniversalForms k A m) (grading k A)
       (differential k A) n
-      (trace ((φ : cyclicCochains k A M n) : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M)) :=
+      (trace ((φ : cyclicCochains k A M n) : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦
+          A) M)) :=
   (isClosedGradedTrace_trace_iff _).2
     ⟨(φ : cyclicCochains k A M n).2, (mem_cyclicCocycles_iff k A M).1 φ.2⟩
 

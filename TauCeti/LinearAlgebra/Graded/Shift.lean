@@ -248,7 +248,8 @@ theorem isHomogeneous_shift_iff {f : MultilinearMap (RingHom.id R) M N} {𝒜 : 
 
 /-- Shifting every input grading and the target grading by the same amount `c` changes the degree
 of an arity-`Fintype.card κ` operation by `c - Fintype.card κ • c`. -/
-theorem isHomogeneous_shift_const_iff {f : MultilinearMap (RingHom.id R) M N} {𝒜 : (i : κ) → ι → σM i}
+theorem isHomogeneous_shift_const_iff {f : MultilinearMap (RingHom.id R) M N} {𝒜 : (i : κ) → ι → σM
+    i}
     {ℬ : ι → σN} {q c : ι} :
     IsHomogeneous f (fun i ↦ Graded.shift (𝒜 i) c) (Graded.shift ℬ c) q ↔
       IsHomogeneous f 𝒜 ℬ (q + c - Fintype.card κ • c) := by
@@ -266,7 +267,8 @@ variable {R : Type uR} {κ : Type uκ} {M : Type uM} {σM : Type*}
 suspended grading `sA` exactly when it is homogeneous of degree `2 - n` for the original grading.
 This is the degree content of the square defining the suspended operations `bₙ` of an `A∞`
 algebra from its operations `mₙ`. -/
-theorem isHomogeneous_suspension_iff {f : MultilinearMap (RingHom.id R) (fun _ : κ ↦ M) M} {𝒜 : ℤ → σM} :
+theorem isHomogeneous_suspension_iff {f : MultilinearMap (RingHom.id R) (fun _ : κ ↦ M) M} {𝒜 : ℤ →
+    σM} :
     IsHomogeneous f (fun _ ↦ Graded.shift 𝒜 1) (Graded.shift 𝒜 1) 1 ↔
       IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - Fintype.card κ) := by
   rw [isHomogeneous_shift_const_iff]
@@ -275,7 +277,8 @@ theorem isHomogeneous_suspension_iff {f : MultilinearMap (RingHom.id R) (fun _ :
 /-- The suspension degree bridge for an operation of arity `n`. Reading off `n = 1, 2, 3` gives
 the familiar degrees `1`, `0` and `-1` of the differential, the multiplication and the first
 higher product of an `A∞` algebra. -/
-theorem isHomogeneous_suspension_fin_iff {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) M}
+theorem isHomogeneous_suspension_fin_iff {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n
+    ↦ M) M}
     {𝒜 : ℤ → σM} :
     IsHomogeneous f (fun _ ↦ Graded.shift 𝒜 1) (Graded.shift 𝒜 1) 1 ↔
       IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - n) := by

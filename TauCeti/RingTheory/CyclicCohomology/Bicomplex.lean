@@ -274,7 +274,8 @@ theorem cyclicTotalCochains_mono : Monotone (cyclicTotalCochains R A M) := fun m
 private theorem eq_single_of_forall_lt {m : ℕ}
     {x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M}
     (hx : x ∈ cyclicTotalCochains R A M m) (hlt : ∀ q < m, x q = 0) :
-    x = (Pi.single m (x m) : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M) := by
+    x = (Pi.single m (x m) : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A)
+        M) := by
   funext q
   rcases lt_trichotomy q m with hq | rfl | hq
   · rw [hlt q hq, Pi.single_eq_of_ne hq.ne]
@@ -297,7 +298,8 @@ def cyclicCochainsToTotal (m : ℕ) : cyclicCochains R A M m →ₗ[R] cyclicTot
 /-- A cyclic cochain is included as the family concentrated in row `m`, column zero. -/
 @[simp]
 theorem coe_cyclicCochainsToTotal_apply {m : ℕ} (φ : cyclicCochains R A M m) :
-    (cyclicCochainsToTotal R A M m φ : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M) =
+    (cyclicCochainsToTotal R A M m φ : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1)
+        ↦ A) M) =
       Pi.single m φ.1 :=
   (rfl)
 
@@ -348,7 +350,8 @@ private theorem cyclicTotalDifferentialAux_apply_succ (m q : ℕ)
 /-- If a family vanishes below row `k`, its total differential in row `k` is the horizontal
 differential of its component in row `k`. -/
 private theorem cyclicTotalDifferentialAux_apply_of_forall_lt (m k : ℕ)
-    (x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M) (hx : ∀ q < k, x q = 0) :
+    (x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M) (hx : ∀ q < k, x q =
+        0) :
     cyclicTotalDifferentialAux R A M m x k = cyclicBicomplexHorizontal R A M (m - k) k (x k) := by
   cases k with
   | zero => rw [cyclicTotalDifferentialAux_apply_zero, Nat.sub_zero]
@@ -519,7 +522,8 @@ row `k ≤ m`, and let `y` be a total cochain of degree `m` whose total differen
 in the rows `q < k`. If `k + 1` is invertible, adding a suitable cochain in row `k` to `y` makes
 them agree in the rows `q ≤ k`, by exactness of row `k` away from column zero. -/
 private theorem exists_forall_lt_succ_eq_cyclicTotalDifferentialAux {m k : ℕ} (hk : k ≤ m)
-    (hR : IsUnit ((k : R) + 1)) {x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M}
+    (hR : IsUnit ((k : R) + 1)) {x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦
+        A) M}
     (hdx : cyclicTotalDifferentialAux R A M (m + 1) x k = 0)
     {y : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M}
     (hy : y ∈ cyclicTotalCochains R A M m)
@@ -554,8 +558,10 @@ private theorem exists_eq_single_add_cyclicTotalDifferentialAux {m : ℕ}
     {x : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M}
     (hx : x ∈ cyclicTotalCochains R A M (m + 1))
     (hdx : ∀ q ≤ m, cyclicTotalDifferentialAux R A M (m + 1) x q = 0) :
-    ∃ y ∈ cyclicTotalCochains R A M m, ∃ φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) M,
-      x = (Pi.single (m + 1) φ : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M) +
+    ∃ y ∈ cyclicTotalCochains R A M m, ∃ φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦
+        A) M,
+      x = (Pi.single (m + 1) φ : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A)
+          M) +
         cyclicTotalDifferentialAux R A M m y := by
   -- Kill the components in the rows `q < k`, by induction on `k`, using exactness of the rows
   -- away from column zero.
@@ -579,7 +585,8 @@ coboundary of a cyclic cochain. -/
 private theorem exists_hochschildCoboundary_eq_of_cyclicTotalDifferentialAux_eq_single {m : ℕ}
     (hR : ∀ q < m, IsUnit ((q : R) + 1))
     {y : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ A) M}
-    (hy : y ∈ cyclicTotalCochains R A M m) {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) M}
+    (hy : y ∈ cyclicTotalCochains R A M m) {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2)
+        ↦ A) M}
     (hyφ : cyclicTotalDifferentialAux R A M m y = Pi.single (m + 1) φ) :
     ∃ ψ ∈ cyclicCochains R A M m, hochschildCoboundary R A M m ψ = φ := by
   -- Replace `y` by a cochain `Pi.single m ψ` in column zero with the same differential.

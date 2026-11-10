@@ -73,7 +73,8 @@ attribute [local instance] Comodule.cofree
 evaluates `F` after twisting the input in position `j` (the module input being in position `0`)
 by the Koszul twist of parameter `n - j`. -/
 noncomputable def unsuspend (G : InternalGrading R M) (GA : InternalGrading R A) (n : ℕ)
-    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N :=
+    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦
+        A) N :=
   { toFun x :=
       ((F ∘ₗ TensorProduct.mk R M (TensorPower R n A) (G.koszulTwist n x)
         ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
@@ -104,7 +105,8 @@ theorem apply_tmul_tprod_eq_unsuspend (G : InternalGrading R M) (GA : InternalGr
 /-- On homogeneous inputs, the Koszul twists of the module-first unsuspension multiply to the
 Koszul sign of suspending the module input and all algebra inputs. -/
 theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading R A) {n : ℕ}
-    (φ : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ} (hx : x ∈ G.piece e)
+    (φ : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ} (hx : x ∈
+        G.piece e)
     (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ GA.piece (d i)) :
     φ (G.koszulTwist n x) (fun i : Fin n ↦ GA.koszulTwist ((n : ℤ) - 1 - i) (a i)) =
       negOnePowCast R (n * e + suspExp n d) • evalNat (φ x) a := by

@@ -370,7 +370,8 @@ variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
 
 variable {R A M} in
 /-- Precomposition of a cochain with the contraction of the entries `j` and `j + 1`. -/
-private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n +
+    1) ↦ A) M) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M where
   toFun a := φ (Fin.contractNth j.castSucc (· * ·) a)
   map_update_add' := by
@@ -395,7 +396,8 @@ private theorem contractCoface_apply (j : Fin (n + 1))
 
 variable {R A M} in
 /-- The multilinear map `a ↦ φ (dᵢ a)`, assembled from contractions and a cyclic reindexing. -/
-private def cofaceAux (i : Fin (n + 2)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+private def cofaceAux (i : Fin (n + 2)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+    A) M) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M :=
   Fin.lastCases ((contractCoface 0 φ).domDomCongr (finRotate (n + 2)).symm)
     (fun j ↦ contractCoface j φ) i
@@ -439,7 +441,8 @@ variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A] [AddCommGro
 
 /-- The cyclic `n`-cochains: the multilinear maps `φ` in `n + 1` arguments with
 `φ(aₙ, a₀, …, aₙ₋₁) = (-1)ⁿ φ(a₀, …, aₙ)`. -/
-def cyclicCochains (n : ℕ) : Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) where
+def cyclicCochains (n : ℕ) : Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+    M) where
   carrier := {φ | ∀ a, φ (a ∘ (finRotate (n + 1)).symm) = (-1 : ℤ) ^ n • φ a}
   add_mem' {φ ψ} hφ hψ a := by simp [hφ a, hψ a]
   zero_mem' a := by simp
@@ -465,7 +468,8 @@ theorem cyclicCochains_apply_finRotate_symm (φ : cyclicCochains R A M n)
 variable {R A M} in
 /-- On a constant tuple, a cyclic cochain of odd degree takes a value `v` with `v = -v`. -/
 theorem apply_const_eq_neg_of_mem_cyclicCochains
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hn : Odd n) (x : A) : φ (fun _ ↦ x) = -φ (fun _ ↦ x) := by
   have h := hφ fun _ ↦ x
   simpa only [Function.comp_def, hn.neg_one_pow, neg_one_smul] using h
@@ -474,7 +478,8 @@ variable {R A M} in
 /-- In even degree, a cyclic cochain takes the same value when the single distinguished entry of
 an otherwise constant tuple moves to the first slot. -/
 private theorem apply_update_const_eq_apply_update_const_zero (hn : Even n)
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (e z : A) (k : Fin (n + 1)) :
     φ (Function.update (fun _ ↦ e) k z) = φ (Function.update (fun _ ↦ e) 0 z) := by
   induction k using Fin.induction with
@@ -538,7 +543,8 @@ theorem _root_.MultilinearMap.map_update_mul_of_add_add_mul_eq_zero
 multiplied together is minus the sum of its values on `x` with entry `j + 1` or entry `j`
 deleted. -/
 theorem _root_.MultilinearMap.map_contractNth_castSucc_of_add_add_mul_eq_zero {n : ℕ}
-    (f : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (x : Fin (n + 2) → A) (j : Fin (n + 1))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (x : Fin (n + 2) → A) (j : Fin
+        (n + 1))
     (h : x j.succ + x j.castSucc + x j.castSucc * x j.succ = 0) :
     f (Fin.contractNth j.castSucc (· * ·) x) =
       -(f (Fin.removeNth j.succ x) + f (Fin.removeNth j.castSucc x)) := by
@@ -668,7 +674,8 @@ theorem hochschildCoboundary_two_apply (φ : MultilinearMap (RingHom.id R) (fun 
   simp [sub_eq_add_neg]
 
 /-- A degree-zero cochain is a Hochschild cocycle exactly when it is a trace. -/
-theorem hochschildCoboundary_zero_eq_zero_iff (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) :
+theorem hochschildCoboundary_zero_eq_zero_iff (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦
+    A) M) :
     hochschildCoboundary R A M 0 φ = 0 ↔ ∀ x y : A, φ (fun _ ↦ x * y) = φ (fun _ ↦ y * x) := by
   refine ⟨fun h x y ↦ ?_, fun h ↦ ?_⟩
   · have hxy := DFunLike.congr_fun h ![x, y]
@@ -681,7 +688,8 @@ variable {R A M} in
 /-- All faces fix a constant tuple with idempotent entry, so on such a tuple the Hochschild
 coboundary of a degree-`n` cochain vanishes for even `n` and is the cochain itself for odd `n`. -/
 theorem hochschildCoboundary_apply_const_of_isIdempotentElem
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) {e : A} (he : IsIdempotentElem e) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) {e : A} (he : IsIdempotentElem
+        e) :
     hochschildCoboundary R A M n φ (fun _ ↦ e) = if Even n then 0 else φ (fun _ ↦ e) := by
   simp only [hochschildCoboundary_apply, hochschildFace_const_of_isIdempotentElem he,
     ← Finset.sum_smul]
@@ -691,7 +699,8 @@ theorem hochschildCoboundary_apply_const_of_isIdempotentElem
 /-- The Hochschild coboundary preserves cyclic cochains. When the multiplication is associative,
 so that `b ∘ b = 0`, the cyclic cochains therefore form a subcomplex. -/
 theorem hochschildCoboundary_mem_cyclicCochains
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n) :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n) :
     hochschildCoboundary R A M n φ ∈ cyclicCochains R A M (n + 1) := by
   rw [mem_cyclicCochains_iff] at hφ ⊢
   intro a
@@ -710,7 +719,8 @@ variable {R A M} in
 cyclically adjacent entries `xᵢ`, `xᵢ₊₁` (indices modulo `n + 2`) of a tuple satisfy
 `xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`, then `(bψ)(x₀, …, xₙ₊₁) = 0` for every cyclic `n`-cochain `ψ`. -/
 theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
-    {ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hψ : ψ ∈ cyclicCochains R A M n)
+    {ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hψ : ψ ∈ cyclicCochains R A M
+        n)
     {x : Fin (n + 2) → A}
     (hx : ∀ i, x (finRotate (n + 2) i) + x i + x i * x (finRotate (n + 2) i) = 0) :
     hochschildCoboundary R A M n ψ x = 0 := by
@@ -766,7 +776,8 @@ def cyclicHochschildCoboundary (n : ℕ) :
 /-- The restricted coboundary agrees with `b` on underlying cochains. -/
 @[simp]
 theorem coe_cyclicHochschildCoboundary_apply (φ : cyclicCochains R A M n) :
-    (cyclicHochschildCoboundary R A M n φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) =
+    (cyclicHochschildCoboundary R A M n φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A)
+        M) =
       hochschildCoboundary R A M n φ := by
   simp [cyclicHochschildCoboundary]
 
@@ -803,7 +814,8 @@ variable {R A M : Type*} [Semiring R] [NonUnitalRing A] [Module R A] [IsScalarTo
 and `e` an idempotent. If `y` is tangent to the idempotents at `e`, that is `e y + y e = y`, then
 `φ` vanishes on the tuple `(e, …, e)` with one entry replaced by `y`. -/
 theorem apply_update_const_eq_zero_of_isIdempotentElem {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e y : A} (he : IsIdempotentElem e)
     (hy : e * y + y * e = y) (k : Fin (n + 1)) :
     φ (Function.update (fun _ ↦ e) k y) = 0 := by
@@ -860,7 +872,8 @@ variable [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module R B] [AddCommM
 
 /-- Pulling a cyclic cochain back along a linear map gives a cyclic cochain. -/
 theorem compLinearMap_mem_cyclicCochains (f : A →ₗ[R] B)
-    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M} (hφ : φ ∈ cyclicCochains R B M n) :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M} (hφ : φ ∈ cyclicCochains R B M
+        n) :
     (φ.compLinearMap fun _ ↦ f) ∈ cyclicCochains R A M n :=
   fun a ↦ hφ (f ∘ a)
 
@@ -869,7 +882,8 @@ variable (M) in
 directly rather than from `MultilinearMap.compLinearMapₗ`, which needs `R` to be commutative. -/
 def cyclicCochainsMap (f : A →ₗ[R] B) (n : ℕ) :
     cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n where
-  toFun φ := ⟨(φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M).compLinearMap fun _ ↦ f,
+  toFun φ := ⟨(φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M).compLinearMap fun _ ↦
+      f,
     compLinearMap_mem_cyclicCochains f φ.2⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
