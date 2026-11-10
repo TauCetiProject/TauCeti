@@ -15,6 +15,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.SkewAdjoint
+import TauCeti.Geometry.Symplectic.WittExtension
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.End.SquareZero
 
@@ -32,8 +33,6 @@ bracket.
   under `ω` are linearly dependent.
 * `TauCeti.SymplecticForm.exists_basis_coe_eq_of_apply_eq_one`,
   `TauCeti.SymplecticForm.exists_eq_smul_add_smul`: a pair `(q, p)` with `ω(q, p) = 1` is a basis.
-* `TauCeti.SymplecticForm.exists_isSymplectomorphism_apply_eq`: a linear symplectomorphism between
-  two planes matches any two such pairs.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_forall_apply_eq_of_pair`: endomorphisms acting
   by the same matrix on such pairs are conjugate by a linear symplectomorphism.
 * `TauCeti.SymplecticForm.exists_apply_eq_smul_of_apply_eq_zero`: a nonzero `v` with
@@ -277,24 +276,6 @@ theorem linearMap_ext_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω
   obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
   simp [hq, hp]
 
-/-- If `ω(q, p) = 1` on a symplectic plane `V` and `ω'(q', p') = 1` on a symplectic plane `W`, some
-linear symplectomorphism `V ≃ W` sends `q` to `q'` and `p` to `p'`. In any equal finite dimension
-this is an instance of Witt's extension theorem `exists_isSymplectomorphism_extend`; on planes the
-two pairs are bases and the map is explicit. -/
-theorem exists_isSymplectomorphism_apply_eq (hV : finrank ℝ V = 2) (hW : finrank ℝ W = 2)
-    {q p : V} {q' p' : W} (h : ω q p = 1) (h' : ω' q' p' = 1) :
-    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ e q = q' ∧ e p = p' := by
-  obtain ⟨b, hb⟩ := exists_basis_coe_eq_of_apply_eq_one hV h
-  obtain ⟨b', hb'⟩ := exists_basis_coe_eq_of_apply_eq_one hW h'
-  let e := b.equiv b' (Equiv.refl _)
-  have he0 : e q = q' := by simpa [hb, hb'] using b.equiv_apply 0 b' (Equiv.refl _)
-  have he1 : e p = p' := by simpa [hb, hb'] using b.equiv_apply 1 b' (Equiv.refl _)
-  refine ⟨e, isSymplectomorphism_iff.2 fun v w ↦ ?_, he0, he1⟩
-  obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
-  obtain ⟨x', y', rfl⟩ := exists_eq_smul_add_smul hV h w
-  have he : ∀ s t : ℝ, e (s • q + t • p) = s • q' + t • p' := fun s t ↦ by simp [he0, he1]
-  rw [he, he, ω.apply_smul_add_smul, ω'.apply_smul_add_smul, h, h']
-
 /-- On a symplectic plane, a nonzero vector `v` with `ω(A v, v) = 0` is an eigenvector of `A`. -/
 theorem exists_apply_eq_smul_of_apply_eq_zero (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
     {v : V} (hv : v ≠ 0) (h : ω (A v) v = 0) : ∃ t : ℝ, A v = t • v := by
@@ -334,7 +315,9 @@ theorem exists_isSymplectomorphism_forall_apply_eq_of_pair (hV : finrank ℝ V =
     (hAp : A p = x₂ • q + y₂ • p) (hBq : B q' = x₁ • q' + y₁ • p')
     (hBp : B p' = x₂ • q' + y₂ • p') :
     ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ ∀ v, e (A v) = B (e v) := by
-  obtain ⟨e, he, heq, hep⟩ := exists_isSymplectomorphism_apply_eq hV hW h h'
+  have := Module.finite_of_finrank_eq_succ hV
+  have := Module.finite_of_finrank_eq_succ hW
+  obtain ⟨e, he, heq, hep⟩ := exists_isSymplectomorphism_apply_eq (hV.trans hW.symm) h h'
   refine ⟨e, he, fun v ↦ ?_⟩
   have := linearMap_ext_of_apply_eq_one hV h (f := e.toLinearMap ∘ₗ A)
     (g := B ∘ₗ e.toLinearMap)
