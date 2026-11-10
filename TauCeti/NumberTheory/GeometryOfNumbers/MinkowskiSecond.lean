@@ -566,8 +566,9 @@ about `0`. Let
 `a 0, …, a (n - 1)` be `ℝ`-linearly independent vectors of `L` and `g 0, …, g (n - 1)`
 nonnegative numbers such that every `v ∈ L` with `gauge K v < g j` lies in the span of
 `a 0, …, a (j - 1)`. Then `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
-The gap condition at `0` makes `L` discrete when `K` has nonempty interior, and the full
-independent family then implies that `L` is a full lattice.
+If some `g i` vanishes the bound is trivial. Otherwise, when `K` has nonempty interior, the gap
+condition at index `0` (where `g 0 > 0`) makes `L` discrete, and the full independent family then
+implies that `L` is a full lattice.
 
 Independent lattice vectors realizing the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to
 `K` satisfy the hypothesis with `g = λ`, which gives the classical form
