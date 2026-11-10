@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Extension
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.SeamFamily
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 /-!
 # Seam-compatible families with prescribed values on closed regions
@@ -33,8 +33,8 @@ This file builds such families relative to prescribed data, for families dependi
 
 A closed region `A ⊆ U` of `Λ × X_φ` can be of the form `F × X_φ` for a closed face `F` of the
 parameter space, of the form `Λ × C` for a closed region `C` of `X_φ`, or a union of such sets;
-prescriptions on several regions which agree on their overlaps form one prescribed family on the
-union of their neighbourhoods.
+prescriptions on several regions which agree on the overlaps of their open neighbourhoods form one
+prescribed family on the union of those neighbourhoods.
 
 Given a smooth cutoff `ρ : Λ × X_φ → [0, 1]` with topological support in `U`, the family
 
@@ -42,13 +42,17 @@ Given a smooth cutoff `ρ : Λ × X_φ → [0, 1]` with topological support in `
 
 interpolates in the compatible Cayley chart centred at the background structure
 (`TauCeti.SymplecticForm.Compatible.cayleyInterp`), which keeps every value `σ`-compatible. It is
+the cutoff interpolation `TauCeti.SmoothTwoForm.IsNondegenerate.cutoffInterp` along
+`(λ, ((s, t), x)) ↦ x`, shared with the extension of compatible structures on `M`. It is
 jointly smooth, because the Cayley interpolation is a rational expression in its endpoints
 (`TauCeti.cayleyPathFormula`). It is periodic and seam-compatible, because the cutoff is pulled
 back from the quotient and the Cayley interpolation commutes with conjugation by the linear
 isomorphisms `dφ⁻¹`. It equals `K₁` where `ρ = 1` and `K₀` where `ρ = 0`
 (`TauCeti.SmoothMappingTorus.exists_verticalFamily_eq_of_cutoff`). On a Hausdorff second-countable
-parameter manifold, a closed set `A ⊆ U` of `Λ × X_φ` admits such a cutoff equal to one exactly on
-`A`, so the family equals `K₁` over `A` and `K₀` outside `U`
+finite-dimensional parameter manifold, with `M` second-countable, a closed set `A ⊆ U` of
+`Λ × X_φ` admits such a cutoff equal to one exactly on `A`
+(`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`), so the family equals `K₁` over `A` and
+`K₀` outside `U`
 (`TauCeti.SmoothMappingTorus.exists_verticalFamily_eqOn`). Descending, the block structures `J λ` on
 `X_φ` depend smoothly on `λ`, are compatible with `Ω = ds ∧ dt + σ_v` when `φ` preserves `σ`, and
 have vertical part `K₁` over `A` and `K₀` outside `U`
@@ -102,61 +106,31 @@ variable {K₀ K₁ : Λ → ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (
     (hσn.symplecticFormAt p.2).Compatible (K₁ l p))
   (ρ : Λ × (UnitAddCircle × SmoothMappingTorus φ) → ℝ) (hρ : ∀ y, ρ y ∈ Icc 0 1)
 
-open Classical in
-/-- Over the preimage of `U`, the Cayley interpolation from `K₀` towards `K₁` with weight the
-pulled back cutoff; elsewhere, `K₀`. -/
+/-- The cutoff interpolation `TauCeti.SmoothTwoForm.IsNondegenerate.cutoffInterp` along
+`(λ, ((s, t), x)) ↦ x`, over the preimage of `U` and with the cutoff pulled back along
+`(λ, p) ↦ (λ, q p)`, curried in the parameter. -/
 private def cutoffFamily (l : Λ) (p : (ℝ × ℝ) × M) :
     AlmostComplexStructure (TangentSpace I p.2) :=
-  if h : (l, suspensionCover φ p) ∈ U then
-    (hK₀c l p).cayleyInterp (V := E) (hK₁c l p h) (hρ (l, suspensionCover φ p))
-  else K₀ l p
+  hσn.cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _) (l, p)
 
 private theorem cutoffFamily_of_mem {l : Λ} {p : (ℝ × ℝ) × M}
     (h : (l, suspensionCover φ p) ∈ U) :
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p =
       (hK₀c l p).cayleyInterp (V := E) (hK₁c l p h) (hρ (l, suspensionCover φ p)) :=
-  dite_eq_left h
+  hσn.cutoffInterp_of_mem (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
+    (n := (l, p)) h
 
 private theorem cutoffFamily_of_notMem {l : Λ} {p : (ℝ × ℝ) × M}
     (h : (l, suspensionCover φ p) ∉ U) :
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
-  dite_eq_right h
-
-private theorem compatible_cutoffFamily (l : Λ) (p : (ℝ × ℝ) × M) :
-    (hσn.symplecticFormAt p.2).Compatible (cutoffFamily hσn hK₀c hK₁c ρ hρ l p) := by
-  by_cases h : (l, suspensionCover φ p) ∈ U
-  · rw [cutoffFamily_of_mem hσn hK₀c hK₁c ρ hρ h]
-    exact (hK₀c l p).compatible_cayleyInterp (V := E) (hK₁c l p h) _
-  · rw [cutoffFamily_of_notMem hσn hK₀c hK₁c ρ hρ h]
-    exact hK₀c l p
-
-private theorem cutoffFamily_eq_background {l : Λ} {p : (ℝ × ℝ) × M}
-    (h : ρ (l, suspensionCover φ p) = 0) :
-    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p := by
-  by_cases hU : (l, suspensionCover φ p) ∈ U
-  · rw [cutoffFamily_of_mem hσn hK₀c hK₁c ρ hρ hU]
-    simp only [h]
-    exact (hK₀c l p).cayleyInterp_zero (V := E) (hK₁c l p hU)
-  · exact cutoffFamily_of_notMem hσn hK₀c hK₁c ρ hρ hU
-
-private theorem cutoffFamily_eq_local {l : Λ} {p : (ℝ × ℝ) × M}
-    (hU : (l, suspensionCover φ p) ∈ U) (h : ρ (l, suspensionCover φ p) = 1) :
-    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₁ l p := by
-  rw [cutoffFamily_of_mem hσn hK₀c hK₁c ρ hρ hU]
-  simp only [h]
-  exact (hK₀c l p).cayleyInterp_one (V := E) (hK₁c l p hU)
-
-/-- Over the preimage of `U`, the cutoff family is the Cayley path expression in the operators of
-`K₀` and `K₁`. -/
-private theorem toContinuousLinearMap_cutoffFamily {l : Λ} {p : (ℝ × ℝ) × M}
-    (h : (l, suspensionCover φ p) ∈ U) :
-    LinearMap.toContinuousLinearMap (cutoffFamily hσn hK₀c hK₁c ρ hρ l p).toLinearMap =
-      cayleyPathFormula (ρ (l, suspensionCover φ p))
-        (LinearMap.toContinuousLinearMap (K₀ l p).toLinearMap)
-        (LinearMap.toContinuousLinearMap (K₁ l p).toLinearMap) := by
-  rw [cutoffFamily_of_mem hσn hK₀c hK₁c ρ hρ h]
-  exact (hK₀c l p).toContinuousLinearMap_cayleyInterp (V := E) (hK₁c l p h) _
-    (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
+  hσn.cutoffInterp_of_notMem (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
+    (n := (l, p)) h
 
 /-- Over the preimage of `U`, the cutoff family acts by the Cayley path expression in the
 operators of `K₀` and `K₁`. -/
@@ -166,7 +140,10 @@ private theorem cutoffFamily_apply_of_mem {l : Λ} {p : (ℝ × ℝ) × M}
       cayleyPathFormula (ρ (l, suspensionCover φ p))
         (LinearMap.toContinuousLinearMap (K₀ l p).toLinearMap)
         (LinearMap.toContinuousLinearMap (K₁ l p).toLinearMap) v :=
-  congr($(toContinuousLinearMap_cutoffFamily hσn hK₀c hK₁c ρ hρ h) v)
+  congr($(hσn.toContinuousLinearMap_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
+    (n := (l, p)) h) v)
 
 /-- The cutoff family is periodic in `s`. -/
 private theorem cutoffFamily_add_fst
@@ -245,32 +222,17 @@ private theorem contMDiff_cutoffFamily (hU : IsOpen U)
       (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         r.2.2 (cutoffFamily hσn hK₀c hK₁c ρ hρ r.1 r.2).toLinearMap.toContinuousLinearMap) := by
-  intro r₀
   have hcov := contMDiff_prodMap_suspensionCover (Λ := Λ) (IΛ := IΛ) (φ := φ)
-  by_cases h₀ : (r₀.1, suspensionCover φ r₀.2) ∈ U
-  · -- Over the open preimage of `U` the family is the Cayley path expression.
-    have hW : IsOpen {r : Λ × ((ℝ × ℝ) × M) | (r.1, suspensionCover φ r.2) ∈ U} :=
-      hU.preimage hcov.continuous
-    have hu₁ := SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      (hK₀c r₀.1 r₀.2).tames (hK₁c r₀.1 r₀.2 h₀).tames
-      (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
-    have hu₂ := SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      (hK₀c r₀.1 r₀.2) (hK₁c r₀.1 r₀.2 h₀).tames (b := ρ (r₀.1, suspensionCover φ r₀.2))
-      (by simpa only [abs_of_nonneg (hρ _).1] using (hρ _).2)
-      (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
-    refine (ContMDiffAt.cayleyPathFormula_hom_bundle
-      (contMDiff_snd.comp contMDiff_snd r₀) ((hsρ.comp hcov) r₀) (hK₀ r₀)
-      ((hK₁ r₀ h₀).contMDiffAt (hW.mem_nhds h₀)) hu₁ hu₂).congr_of_eventuallyEq ?_
-    filter_upwards [hW.mem_nhds h₀] with r hr
-    exact congrArg (fun L : E →L[ℝ] E ↦ TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2.2 L)
-      (toContinuousLinearMap_cutoffFamily hσn hK₀c hK₁c ρ hρ hr)
-  · -- Away from the support of the cutoff the family is the background family.
-    have hz : ∀ᶠ y in 𝓝 (r₀.1, suspensionCover φ r₀.2), ρ y = 0 :=
-      notMem_tsupport_iff_eventuallyEq.mp fun h ↦ h₀ (hsupp h)
-    refine (hK₀ r₀).congr_of_eventuallyEq ?_
-    filter_upwards [hcov.continuous.continuousAt.preimage_mem_nhds hz] with r hr
-    rw [cutoffFamily_eq_background hσn hK₀c hK₁c ρ hρ hr]
+  -- The pulled back cutoff has topological support in the preimage of `U`.
+  have hsupp' : tsupport (fun r : Λ × ((ℝ × ℝ) × M) ↦ ρ (r.1, suspensionCover φ r.2)) ⊆
+      {r | (r.1, suspensionCover φ r.2) ∈ U} :=
+    (closure_minimal (t := (fun r : Λ × ((ℝ × ℝ) × M) ↦ (r.1, suspensionCover φ r.2)) ⁻¹'
+      tsupport ρ) (fun _ hr ↦ subset_tsupport ρ hr)
+      ((isClosed_tsupport ρ).preimage hcov.continuous)).trans fun _ hr ↦ hsupp hr
+  exact hσn.contMDiff_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+    (fun r ↦ hK₀c r.1 r.2) (fun r hr ↦ hK₁c r.1 r.2 hr) _ (fun _ ↦ hρ _)
+    (contMDiff_snd.comp contMDiff_snd) (hU.preimage hcov.continuous) hK₀ hK₁ (hsρ.comp hcov)
+    hsupp'
 
 end Cutoff
 
@@ -329,32 +291,16 @@ theorem exists_verticalFamily_eq_of_cutoff (ρ : Λ × (UnitAddCircle × SmoothM
     contMDiff_cutoffFamily hσn hK₀c hK₁c ρ hρ hU hK₀ hK₁ hsρ hsupp,
     cutoffFamily_add_fst hσn hK₀c hK₁c ρ hρ hs₀ hs₁,
     mfderiv_symm_cutoffFamily hσn hK₀c hK₁c ρ hρ ht₀ ht₁,
-    compatible_cutoffFamily hσn hK₀c hK₁c ρ hρ,
-    fun _ _ h ↦ cutoffFamily_eq_local hσn hK₀c hK₁c ρ hρ
-      (hsupp (subset_tsupport ρ (by simp [Function.mem_support, h]))) h,
-    fun _ _ h ↦ cutoffFamily_eq_background hσn hK₀c hK₁c ρ hρ h⟩
-
-/-- On a Hausdorff second-countable finite-dimensional parameter manifold, a closed set of
-`Λ × X_φ` inside an open set has a smooth cutoff, equal to one exactly on the closed set and with
-topological support in the open set. -/
-private theorem exists_cutoff [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ] [T2Space Λ]
-    [SecondCountableTopology Λ] [SecondCountableTopology M] {A : Set (Λ × (UnitAddCircle ×
-      SmoothMappingTorus φ))} (hA : IsClosed A) (hAU : A ⊆ U) (hU : IsOpen U) :
-    ∃ ρ : Λ × (UnitAddCircle × SmoothMappingTorus φ) → ℝ, (∀ y, ρ y ∈ Icc 0 1) ∧
-      ContMDiff (IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I))) 𝓘(ℝ) ∞ ρ ∧ tsupport ρ ⊆ U ∧
-      ∀ y, y ∈ A ↔ ρ y = 1 := by
-  have : LocallyCompactSpace HΛ := IΛ.locallyCompactSpace
-  have : LocallyCompactSpace Λ := ChartedSpace.locallyCompactSpace HΛ Λ
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace (ModelProd ℝ H) := inferInstanceAs (LocallyCompactSpace (ℝ × H))
-  have : LocallyCompactSpace (SmoothMappingTorus φ) :=
-    ChartedSpace.locallyCompactSpace (ModelProd ℝ H) _
-  obtain ⟨V, hV, hAV, hVU⟩ := normal_exists_closure_subset hA hU hAU
-  obtain ⟨ρ, hsρ, hrange, hsupp, hone⟩ :=
-    exists_contMDiff_support_eq_eq_one_iff (IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I))) hV hA hAV
-  refine ⟨ρ, fun y ↦ hrange (mem_range_self y), hsρ, ?_, hone⟩
-  rw [tsupport, hsupp]
-  exact hVU
+    fun l p ↦ hσn.compatible_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+      (fun r ↦ hK₀c r.1 r.2) (fun r hr ↦ hK₁c r.1 r.2 hr) _ (fun _ ↦ hρ _) (l, p),
+    fun l p h ↦ hσn.cutoffInterp_of_eq_one (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+      (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+      (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
+      (n := (l, p)) (hsupp (subset_tsupport ρ (by simp [Function.mem_support, h]))) h,
+    fun l p h ↦ hσn.cutoffInterp_of_eq_zero (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
+      (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
+      (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
+      (n := (l, p)) h⟩
 
 include hK₀ hs₀ ht₀ hK₀c hU hK₁ hs₁ ht₁ hK₁c in
 /-- **Relative seam-compatible families on closed regions.** With the hypotheses of
@@ -377,7 +323,14 @@ theorem exists_verticalFamily_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional �
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, (l, suspensionCover φ p) ∈ A → K l p = K₁ l p) ∧
       (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = K₀ l p) := by
-  obtain ⟨ρ, hρ, hsρ, hsupp, hone⟩ := exists_cutoff (IΛ := IΛ) hA hAU hU
+  have : LocallyCompactSpace HΛ := IΛ.locallyCompactSpace
+  have : LocallyCompactSpace Λ := ChartedSpace.locallyCompactSpace HΛ Λ
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace (ModelProd ℝ H) := inferInstanceAs (LocallyCompactSpace (ℝ × H))
+  have : LocallyCompactSpace (SmoothMappingTorus φ) :=
+    ChartedSpace.locallyCompactSpace (ModelProd ℝ H) _
+  obtain ⟨ρ, hsρ, hρ, hsupp, hone⟩ :=
+    hA.exists_contMDiff_tsupport_subset_eq_one_iff (I := IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I))) hU hAU
   obtain ⟨K, hK, hs, ht, hc, hloc, hbg⟩ := exists_verticalFamily_eq_of_cutoff hσn hK₀ hs₀ ht₀ hK₀c
     hU hK₁ hs₁ ht₁ hK₁c ρ hρ hsρ hsupp
   refine ⟨K, hK, hs, ht, hc, fun l p h ↦ hloc l p ((hone _).mp h), fun l p h ↦ hbg l p ?_⟩
