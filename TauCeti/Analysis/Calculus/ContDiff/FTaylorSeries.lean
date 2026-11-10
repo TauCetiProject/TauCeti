@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import TauCeti.Analysis.Calculus.FDeriv.ClosedCover
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
-# Taylor derivatives in subspaces, through isometries, and under limits
+# Taylor derivative series: transport, limits, and gluing
 
 For `HasFTaylorSeriesUpTo n f q`, if `f` takes values in a closed subspace,
 then the Taylor coefficients `q x m` take values there at every order `m ≤ n`. The proof uses
@@ -26,6 +25,10 @@ Over a real or complex normed field, locally uniform limits of the coefficients 
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
 The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
+
+Taylor series with matching coefficients glue across two closed sets on their union.
+For a closed cover of the whole space this gives a global piecewise Cᵏ criterion.
+Finite sums and constant scalar multiples carry the corresponding coefficientwise series.
 -/
 
 public section
@@ -181,16 +184,20 @@ theorem _root_.HasFTaylorSeriesUpToOn.union_of_isClosed {k : ℕ∞ω} {f : E �
     {p : E → FormalMultilinearSeries 𝕜 E F} {s t : Set E}
     (hfs : HasFTaylorSeriesUpToOn k f p s)
     (hft : HasFTaylorSeriesUpToOn k f p t)
-    (hs : IsClosed s) (ht : IsClosed t) (hcover : s ∪ t = univ) :
+    (hs : IsClosed s) (ht : IsClosed t) :
     HasFTaylorSeriesUpToOn k f p (s ∪ t) := by
   classical
   constructor
   · intro x hx
     exact hx.elim (hfs.zero_eq x) (hft.zero_eq x)
   · intro m hm x _
-    exact (TauCeti.hasFDerivAt_of_isClosed_of_union_eq_univ hs ht hcover
-      (fun hx ↦ hfs.fderivWithin m hm x hx)
-      (fun hx ↦ hft.fderivWithin m hm x hx)).hasFDerivWithinAt
+    apply HasFDerivWithinAt.union
+    · by_cases hx : x ∈ s
+      · exact hfs.fderivWithin m hm x hx
+      · exact HasFDerivWithinAt.of_notMem_closure (by rwa [hs.closure_eq])
+    · by_cases hx : x ∈ t
+      · exact hft.fderivWithin m hm x hx
+      · exact HasFDerivWithinAt.of_notMem_closure (by rwa [ht.closure_eq])
   · intro m hm
     exact (hfs.cont m hm).union_of_isClosed (hft.cont m hm) hs ht
 
@@ -219,19 +226,8 @@ theorem _root_.HasFTaylorSeriesUpToOn.const_smul {k : ℕ∞ω} {f : E → F}
     {p : E → FormalMultilinearSeries 𝕜 E F} {s : Set E}
     (hf : HasFTaylorSeriesUpToOn k f p s) (c : 𝕜) :
     HasFTaylorSeriesUpToOn k (fun x ↦ c • f x) (fun x m ↦ c • p x m) s := by
-  constructor
-  · intro x hx
-    simpa only [ContinuousMultilinearMap.curry0_apply, smul_apply] using
-      congrArg (fun v : F ↦ c • v) (hf.zero_eq x hx)
-  · intro m hm x hx
-    have hder : HasFDerivWithinAt (fun y ↦ c • p y m)
-        (c • (p x m.succ).curryLeft) s x :=
-      (hf.fderivWithin m hm x hx).const_smul c
-    apply hder.congr_fderiv
-    ext v w
-    simp only [ContinuousMultilinearMap.curryLeft_apply, smul_apply]
-  · intro m hm
-    exact (hf.cont m hm).const_smul c
+  exact (hf.continuousLinearMap_comp (c • ContinuousLinearMap.id 𝕜 F)).congr_series
+    (fun m _ x _ ↦ by ext; simp)
 
 /-- Piecewise functions on two closed sets covering the space are Cᵏ when all boundary Taylor
 terms through order k agree. -/
@@ -263,7 +259,7 @@ theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E �
     · simpa only [r, Set.piecewise_eq_of_mem s p q hxs] using
         (hmatch x ⟨hxs, hx⟩ m (by exact_mod_cast hm)).symm
     · simp [r, hxs]
-  have hglobal := hf'.union_of_isClosed hg' hs ht hcover
+  have hglobal := hf'.union_of_isClosed hg' hs ht
   rw [hcover] at hglobal
   exact contDiffOn_univ.mp hglobal.contDiffOn
 
