@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Orientation.Complex
+public import TauCeti.Topology.VectorBundle.Orientation.Complex.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.EulerClass
 
 /-!
@@ -104,11 +104,11 @@ theorem complexEulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
 variable (B) in
 /-- **The Euler class of a trivial complex vector bundle vanishes**: the trivial bundle `B × F` of
 positive complex rank has a nonzero constant section. -/
+@[simp]
 theorem complexEulerClass_trivial : complexEulerClass F (Bundle.Trivial B F) hF = 0 := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  exact complexEulerClass_eq_zero_of_forall_ne_zero F (Bundle.Trivial B F) hF (s := fun _ ↦ v)
-    ((Bundle.Trivial.homeomorphProd B F).symm.continuous.comp
-      (continuous_id.prodMk continuous_const)) fun _ ↦ hv
+  rw [complexEulerClass_def, VectorBundleOrientation.eulerClass_def,
+    TauCeti.eulerClass_trivial_eq_zero]
+  rfl
 
 end TauCeti
