@@ -24,10 +24,11 @@ admissible side in the sense of `TauCeti.TerminalCut.IsAdmissible`, and its capa
 capacity of the arrows leaving it. Either set may be empty, in which case every `A`–`B` flow has
 value zero.
 
-For disjoint `A` and `B` this file proves the max-flow/min-cut theorem between vertex sets: weak
-duality, the augmenting-path optimality criterion, the existence of an `A`–`B` flow and an
-`A`–`B` cut of equal value and capacity, and integrality in an additive subgroup containing the
-capacities. Here an augmenting walk runs from a vertex of `A` to a vertex of `B` along residual
+For arbitrary `A` and `B` this file proves the existence of a maximum `A`–`B` flow, which can be
+taken with values in an additive subgroup containing the capacities. For disjoint `A` and `B` it
+proves the max-flow/min-cut theorem between vertex sets: weak duality, the augmenting-path
+optimality criterion, and the existence of an `A`–`B` flow and an `A`–`B` cut of equal value and
+capacity. Here an augmenting walk runs from a vertex of `A` to a vertex of `B` along residual
 arrows of positive capacity.
 
 The existence results come from the reduction to single terminals. Add a fresh source with an arrow
@@ -490,6 +491,44 @@ namespace SetFlow
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K} {A B : Finset V}
 
+omit [IsOrderedAddMonoid K] in
+/-- The value of an `A`–`B` flow is its total excess on `B \ A`, since a vertex in both `A` and `B`
+is conserved. -/
+theorem val_eq_sum_sdiff (h : SetFlow cap A B) : h.val = ∑ b ∈ B \ A, excessAt h.toFun b := by
+  rw [val_def]
+  exact (sum_subset sdiff_subset fun x hxB hx ↦
+    h.excessAt_eq_zero_of_mem_of_mem (by simpa [hxB] using hx) hxB).symm
+
+omit [IsOrderedAddMonoid K] in
+/-- A flow between `A \ B` and `B \ A` is, with the same arrow assignment, a flow between `A` and
+`B`: a vertex in both sets is conserved. -/
+theorem exists_eq_toFun_of_sdiff (f' : SetFlow cap (A \ B) (B \ A)) :
+    ∃ f : SetFlow cap A B, f.toFun = f'.toFun := by
+  have hz {v : V} (hA : v ∈ A) (hB : v ∈ B) : excessAt f'.toFun v = 0 :=
+    f'.conserve v (by simp [hB]) (by simp [hA])
+  exact ⟨{ toFun := f'.toFun
+           mem_Icc := f'.mem_Icc
+           conserve := fun v hA hB ↦ f'.conserve v (by simp [hA]) (by simp [hB])
+           excessAt_nonpos := fun a ha ↦
+             if hB : a ∈ B then (hz ha hB).le else f'.excessAt_nonpos a (by simp [ha, hB])
+           excessAt_nonneg := fun b hb ↦
+             if hA : b ∈ A then (hz hA hb).ge else f'.excessAt_nonneg b (by simp [hb, hA]) },
+    rfl⟩
+
+omit [IsOrderedAddMonoid K] in
+/-- Conversely, a flow between `A` and `B` is, with the same arrow assignment, a flow between
+`A \ B` and `B \ A`. -/
+theorem exists_sdiff_eq_toFun (h : SetFlow cap A B) :
+    ∃ h' : SetFlow cap (A \ B) (B \ A), h'.toFun = h.toFun :=
+  ⟨{ toFun := h.toFun
+     mem_Icc := h.mem_Icc
+     conserve := fun v hA hB ↦ by
+       by_cases hvA : v ∈ A
+       · exact h.excessAt_eq_zero_of_mem_of_mem hvA (by simpa [hvA] using hA)
+       · exact h.conserve v hvA (by simpa [hvA] using hB)
+     excessAt_nonpos := fun a ha ↦ h.excessAt_nonpos a (mem_sdiff.1 ha).1
+     excessAt_nonneg := fun b hb ↦ h.excessAt_nonneg b (mem_sdiff.1 hb).1 }, rfl⟩
+
 omit [DecidableEq V] in
 /-- **Integrality of maximum `A`–`B` flows.** For nonnegative capacities in an additive subgroup
 `H`, some maximum `A`–`B` flow takes values in `H`. A vertex in both `A` and `B` is conserved, so
@@ -503,39 +542,18 @@ theorem exists_isMaximum_mem (hcap : 0 ≤ cap) (H : AddSubgroup K)
     (setFlowCapacity_nonneg (A := A \ B) (B := B \ A) hcap) H (setFlowCapacity_mem hcapH)
   have hmax : (g.toSetFlow hdisj).IsMaximum := by
     rwa [← isMaximum_toAuxFlow hdisj, Flow.toSetFlow_toAuxFlow]
-  -- A flow between `A \ B` and `B \ A` is a flow between `A` and `B`, and conversely.
-  let f' := g.toSetFlow hdisj
-  have hf'z {v : V} (hA : v ∈ A) (hB : v ∈ B) : excessAt f'.toFun v = 0 :=
-    f'.conserve v (by simp [hB]) (by simp [hA])
-  let f : SetFlow cap A B :=
-    { toFun := f'.toFun
-      mem_Icc := f'.mem_Icc
-      conserve := fun v hA hB ↦ f'.conserve v (by simp [hA]) (by simp [hB])
-      excessAt_nonpos := fun a ha ↦
-        if hB : a ∈ B then (hf'z ha hB).le else f'.excessAt_nonpos a (by simp [ha, hB])
-      excessAt_nonneg := fun b hb ↦
-        if hA : b ∈ A then (hf'z hA hb).ge else f'.excessAt_nonneg b (by simp [hb, hA]) }
-  have hval (h : SetFlow cap A B) : h.val = ∑ b ∈ B \ A, excessAt h.toFun b := by
-    rw [val_def]
-    exact (sum_subset sdiff_subset fun x hxB hx ↦
-      h.excessAt_eq_zero_of_mem_of_mem (by simpa [hxB] using hx) hxB).symm
+  obtain ⟨f, hf⟩ := exists_eq_toFun_of_sdiff (g.toSetFlow hdisj)
   refine ⟨f, ?_, fun _ _ e ↦ ?_⟩
   swap
-  · change f'.toFun e ∈ H
-    simpa [f'] using hgH (AuxTerminalHom.original e)
+  · rw [hf]
+    simpa using hgH (AuxTerminalHom.original e)
   rw [isMaximum_iff]
   intro h
-  let h' : SetFlow cap (A \ B) (B \ A) :=
-    { toFun := h.toFun
-      mem_Icc := h.mem_Icc
-      conserve := fun v hA hB ↦ by
-        by_cases hvA : v ∈ A
-        · exact h.excessAt_eq_zero_of_mem_of_mem hvA (by simpa [hvA] using hA)
-        · exact h.conserve v hvA (by simpa [hvA] using hB)
-      excessAt_nonpos := fun a ha ↦ h.excessAt_nonpos a (mem_sdiff.1 ha).1
-      excessAt_nonneg := fun b hb ↦ h.excessAt_nonneg b (mem_sdiff.1 hb).1 }
-  rw [hval h, hval f]
-  exact isMaximum_iff.1 hmax h'
+  obtain ⟨h', hh'⟩ := exists_sdiff_eq_toFun h
+  have hle := isMaximum_iff.1 hmax h'
+  rw [val_def, val_def] at hle
+  rw [val_eq_sum_sdiff h, val_eq_sum_sdiff f, ← hh', hf]
+  exact hle
 
 omit [DecidableEq V] in
 /-- For nonnegative capacities, a maximum `A`–`B` flow exists. -/

@@ -23,11 +23,12 @@ arbitrary parameters. The sets `A` and `B` are arbitrary, and may be empty or ov
 
 A `σ`–`τ` cut `S` is determined by its original vertices `S.toLeft`, and its capacity is the
 capacity of the new arrows it crosses plus the original capacity leaving `S.toLeft`. A minimum
-`σ`–`τ` cut need not contain all of `A`, so `S.toLeft` need not be a cut between `A` and `B`. When
-`A` and `B` are disjoint, the vertex set `(S.toLeft ∪ A) \ B` contains `A` and avoids `B`; if the
-original capacities are nonnegative, each arrow `σ → a` has capacity at least the total capacity
-leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`, then this
-*normalization* of `S` has original cut capacity at most the capacity of `S`.
+`σ`–`τ` cut need not contain all of `A`, so `S.toLeft` need not be a cut between `A` and `B`. The
+vertex set `(S.toLeft ∪ A) \ B` avoids `B`, and when `A` and `B` are disjoint it also contains `A`,
+so it is a cut between `A` and `B`. If the original capacities are nonnegative, each arrow `σ → a`
+has capacity at least the total capacity leaving `a`, and each arrow `b → τ` at least the total
+capacity entering `b`, then this *normalization* of `S` has original cut capacity at most the
+capacity of `S`, for arbitrary `A` and `B`.
 
 A walk from a vertex of `A` to a vertex of `B` lifts to a walk from `σ` to `τ` through the same
 original vertices, and every walk from `σ` to `τ` contains a walk along original arrows from a
@@ -378,11 +379,9 @@ theorem arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity [PartialOrder K]
   have hBRA : B ∩ (R ∪ (A \ B)) = B ∩ R := by
     rw [inter_union_distrib_left, disjoint_iff_inter_eq_empty.mp sdiff_disjoint.symm, union_empty]
   have hout : arrowSum cap ((A \ B) \ R) univ ≤ ∑ a ∈ A \ R, cσ a := by
+    refine (arrowSum_mono_left hcap (sdiff_subset_sdiff sdiff_le le_rfl) univ).trans ?_
     rw [arrowSum_def]
-    refine (sum_le_sum fun a ha ↦ hcσ a (mem_sdiff.mp (mem_sdiff.mp ha).1).1).trans ?_
-    refine sum_le_sum_of_subset_of_nonneg (sdiff_subset_sdiff sdiff_le le_rfl) fun a ha _ ↦ ?_
-    have h0 : 0 ≤ ∑ w, ∑ e : Q a w, cap e := sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e
-    exact h0.trans (hcσ a (mem_sdiff.mp ha).1)
+    exact sum_le_sum fun a ha ↦ hcσ a (mem_sdiff.mp ha).1
   have hin : arrowSum cap univ (B ∩ R) ≤ ∑ b ∈ B ∩ R, cτ b := by
     rw [arrowSum_def, sum_comm]
     exact sum_le_sum fun b hb ↦ hcτ b (mem_inter.mp hb).1
