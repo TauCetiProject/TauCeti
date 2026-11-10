@@ -120,9 +120,7 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
 
 /-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
-Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption.
-In infinite dimension the index of inertia is zero by convention, and the zero subspace is then a
-witness. -/
+Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption. -/
 theorem exists_submodule_finrank_eq_sigPos_and_posDef (Q : _root_.QuadraticForm R M) :
     ∃ V : Submodule R M, Module.finrank R V = sigPos Q ∧ (Q.restrict V).PosDef := by
   classical
