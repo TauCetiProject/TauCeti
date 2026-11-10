@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Relative cubes homotopic through maps of pairs
 
@@ -408,8 +410,7 @@ theorem mk_eq_mk_iff_homotopicWith [Finite N]
   have := Fintype.ofFinite N
   obtain ⟨γ, hγ⟩ := exists_transport_mk_eq_mk_of_homotopicWith h
   -- The loop `γ` is null-homotopic, so transport along it is the identity.
-  have hγ' : γ.Homotopic (Path.refl _) := Quotient.exact (congrArg FundamentalGroup.toPath
-    (Subsingleton.elim (FundamentalGroup.fromPath ⟦γ⟧) (FundamentalGroup.fromPath ⟦Path.refl _⟧)))
+  have hγ' := subsingleton_fundamentalGroup_iff.1 ‹_› γ
   rw [← hγ, transport_congr hγ', transport_refl, id]
 
 /-- **The relative homotopy class of a map of pairs.** If `B ⊆ Y` is simply connected and `b ∈ B`,

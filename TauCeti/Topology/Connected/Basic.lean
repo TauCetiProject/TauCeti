@@ -15,6 +15,11 @@ A preconnected set covered by a family of pairwise disjoint open sets lies in ea
 family that it meets. This is the form in which connectedness is used to show that a region
 contained in a union of disjoint open cells lies in a single cell.
 
+Dually, when a preconnected set is the union of a locally finite family of closed sets, any two
+nonempty members are joined by a chain of members in which consecutive sets meet
+(`IsPreconnected.transGen_of_iUnion_of_isClosed`). For instance, the irreducible components of a
+connected Noetherian space form a connected intersection graph.
+
 The same principle selects a limit: a function which tends to a finite subset of a Hausdorff
 space along a filter in which arbitrarily small sets have preconnected images tends to a single
 point of that subset (`Filter.Tendsto.exists_mem_tendsto_nhds`). For instance, near a point
@@ -52,6 +57,31 @@ theorem IsPreconnected.subset_of_subset_iUnion {s : Set α} {u : ι → Set α}
   by_cases hji : j = i
   · exact Or.inl (hji ▸ hj)
   · exact Or.inr (mem_iUnion₂.2 ⟨j, hji, hj⟩)
+
+/-- If the union of a locally finite family of closed sets `s i` is preconnected, any two nonempty
+members are joined by a chain of members in which consecutive sets meet. This is the closed
+counterpart of Mathlib's `IsPreconnected.transGen_of_iUnion` for open sets; local finiteness makes
+the unions of subfamilies closed. -/
+theorem IsPreconnected.transGen_of_iUnion_of_isClosed {s : ι → Set α} (hf : LocallyFinite s)
+    (hs : IsPreconnected (⋃ n, s n)) (hs' : ∀ i, IsClosed (s i)) (i j : ι)
+    (hi : (s i).Nonempty) (hj : (s j).Nonempty) :
+    Relation.TransGen (fun a b ↦ (s a ∩ s b).Nonempty) i j := by
+  by_contra hij
+  let S : Set ι := {k | Relation.TransGen (fun a b ↦ (s a ∩ s b).Nonempty) i k}
+  obtain ⟨a, ha⟩ := hi
+  obtain ⟨b, hb⟩ := hj
+  have hiS : i ∈ S := Relation.TransGen.single ⟨a, ha, ha⟩
+  have hcl (T : Set ι) : IsClosed (⋃ k ∈ T, s k) := by
+    rw [biUnion_eq_iUnion]
+    exact (hf.comp_injective Subtype.val_injective).isClosed_iUnion fun k ↦ hs' k
+  -- The members reachable from `i` and the others give two closed sets covering the union.
+  obtain ⟨x, -, hxU, hxV⟩ := isPreconnected_closed_iff.mp hs (⋃ k ∈ S, s k) (⋃ k ∈ Sᶜ, s k)
+    (hcl S) (hcl Sᶜ) (iSup_split s (· ∈ S)).le
+    ⟨a, mem_iUnion_of_mem i ha, mem_iUnion₂_of_mem hiS ha⟩
+    ⟨b, mem_iUnion_of_mem j hb, mem_iUnion₂_of_mem hij hb⟩
+  obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.1 hxU
+  obtain ⟨l, hl, hxl⟩ := mem_iUnion₂.1 hxV
+  exact hl (hk.tail ⟨x, hxk, hxl⟩)
 
 /-- An open set is not preconnected exactly when it is the union of two disjoint nonempty open
 sets. -/

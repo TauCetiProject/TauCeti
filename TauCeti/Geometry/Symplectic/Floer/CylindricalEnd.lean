@@ -7,14 +7,20 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Geometry.Symplectic.Floer.Breaking
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
-# Bounded derivatives of finite-energy Floer solutions on cylindrical ends
+# Bounded derivatives and broken-off orbits of finite-energy Floer solutions on cylindrical ends
 
 On a cylindrical end of a punctured Floer domain, such as an end of a pair of pants or of a Floer
 cylinder, a solution is read in the coordinate `z = s + i t`, with `s` running along the end and
@@ -47,11 +53,28 @@ then its derivative is bounded on every half-plane `s ≥ b` with `b > a`
   The equation bounds `∂ₜu` in terms of `∂ₛu`
   (`TauCeti.Floer.exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one`).
 
-The uniform Lipschitz bound makes the translates `u(· + σ)`, `σ → ∞`, equicontinuous with values in
-`K`. This is the input from which the Arzelà–Ascoli theorem produces the locally uniformly
-convergent translates whose limits `TauCeti.Geometry.Symplectic.Floer.Breaking` identifies as
-Hamiltonian orbits. That extraction, and any decay of `∂ₛu` along the end, are not carried out
-here.
+The same bounds hold for a solution `u : ℝ × ℝ → V` of the Floer equation
+`∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on a half-cylinder `(a, ∞) × ℝ / ℤ`, for a `C³`
+`1`-periodic Hamiltonian `H` and a `C²` `1`-periodic family `J_t(x)` tamed by `ω` on a compact set
+`K` containing the image of `u`, with finite Floer energy over `(a, ∞) × [0, 1]`. Read in the
+complex coordinate, `u` solves the coordinate equation above with `J(z, x) = J_(im z)(x)` and the
+`dt`-component of `X` given by `X_{H_(im z)}`. The taming constant of `J` on `[0, 1] × K` bounds
+`‖∂ₛu‖²` by a multiple of the Floer energy density, so the energy `∫ ‖∂ₛu‖²` is finite too. Hence
+`du` is bounded and `u` is Lipschitz on every half-cylinder `s ≥ b` with `b > a`
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`,
+`TauCeti.SymplecticForm.exists_lipschitzOnWith_of_floer`).
+
+This gives **breaking off an orbit at the end**
+(`TauCeti.SymplecticForm.exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_floer`):
+for every sequence `σ_n → ∞` there are a subsequence `σ_(φ n)` and a `1`-periodic orbit `x` of
+`X_{H_t}` such that the translates `(s, t) ↦ u(s + σ_(φ n), t)` converge to the stationary
+cylinder `(s, t) ↦ x(t)`, locally uniformly on `ℝ × ℝ`. The translates, cut off at `s = b`, are
+uniformly Lipschitz with values in `K`, so the Arzelà–Ascoli theorem
+(`ArzelaAscoli.isCompact_closure_range_of_equicontinuous`) gives a convergent subsequence, and
+`TauCeti.Geometry.Symplectic.Floer.Breaking` identifies every such limit as a stationary cylinder
+over a Hamiltonian orbit. Convergence of the whole end, rather than of a subsequence of
+translates, needs isolated orbits, and the convergence of the derivatives needs elliptic
+estimates; neither is treated here.
 
 ## References
 
@@ -290,3 +313,277 @@ theorem exists_lipschitzOnWith_of_lintegral_ne_top
     exact (hM z hz).trans (Real.le_coe_toNNReal M)
 
 end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {J : ℝ → V → AlmostComplexStructure V}
+  {W : Set (ℝ × V)} {K : Set V} {u : ℝ × ℝ → V} {a : ℝ}
+
+/-- A `1`-periodic family `J_t(x)`, continuous on `ℝ × K` for a compact `K` and tamed by `ω` there,
+has uniform taming and norm constants: `c ‖v‖² ≤ ω(v, J_t(x) v)` and `‖J_t(x) v‖ ≤ M ‖v‖` for
+all `t` and all `x ∈ K`, with `c > 0`. -/
+private theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
+    (hJ : ContinuousOn (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+      (univ ×ˢ K))
+    (hJper : Periodic J 1) (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x)) :
+    ∃ c > 0, ∃ M, ∀ t, ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J t x v) ∧ ‖J t x v‖ ≤ M * ‖v‖ := by
+  set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap
+  have hD : IsCompact (Icc (0 : ℝ) 1 ×ˢ K) := isCompact_Icc.prod hK
+  have hJD : ContinuousOn Jc (Icc (0 : ℝ) 1 ×ˢ K) := hJ.mono (prod_mono (subset_univ _) le_rfl)
+  obtain ⟨c, hc, hJc⟩ := hD.exists_pos_forall_mul_norm_sq_le
+    (b := fun p ↦ ((ContinuousLinearMap.compL ℝ V V ℝ).flip (Jc p)).comp
+      ω.toBilinForm.toContinuousBilinearMap)
+    (((ContinuousLinearMap.compL ℝ V V ℝ).flip.continuous.comp_continuousOn hJD).clm_comp
+      continuousOn_const)
+    (fun p hp v hv ↦ by simpa [Jc] using hJt p.1 p.2 hp.2 v hv)
+  obtain ⟨M, hM⟩ := hD.exists_bound_of_continuousOn hJD
+  refine ⟨c, hc, M, fun t x hx v ↦ ?_⟩
+  have hp : (Int.fract t, x) ∈ Icc (0 : ℝ) 1 ×ˢ K :=
+    ⟨⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩, hx⟩
+  rw [← hJper.apply_fract t]
+  exact ⟨by simpa [Jc] using hJc _ hp v, by simpa [Jc] using (Jc _).le_of_opNorm_le (hM _ hp) v⟩
+
+/-- With `1`-periodic data, the Floer equation over one period `(a, ∞) × [0, 1]` of a
+half-cylinder holds on the whole half-plane `s > a`. -/
+private theorem isComplexLinearMap_perturbedFDeriv_of_periodic (hHper : Periodic H 1)
+    (hJper : Periodic J 1) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {z : ℝ × ℝ} (hz : z ∈ Ioi a ×ˢ univ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V) := by
+  -- Translate `z` into the first period by `w = (0, -⌊t⌋)`.
+  set w : ℝ × ℝ := (0, -⌊z.2⌋)
+  have hw (y : ℝ × ℝ) : y + w = (y.1, y.2 - ⌊z.2⌋) := by ext <;> simp [w, sub_eq_add_neg]
+  have hu (y : ℝ × ℝ) (hy : a < y.1) : u (y + w) = u y := by
+    simpa [hw] using (hper y.1 hy).sub_int_mul_eq (x := y.2) ⌊z.2⌋
+  have hloc : u =ᶠ[𝓝 z] fun y ↦ u (y + w) := by
+    filter_upwards [(isOpen_Ioi.prod isOpen_univ).mem_nhds hz] with y hy
+    exact (hu y hy.1).symm
+  have hKt : (fun y : ℝ × ℝ ↦ H (y + w).2) = fun y ↦ H y.2 := funext fun y ↦ by
+    simpa [hw] using hHper.sub_int_mul_eq (x := y.2) ⌊z.2⌋
+  have hJz : J (z + w).2 = J z.2 := by
+    simpa [hw] using hJper.sub_int_mul_eq (x := z.2) ⌊z.2⌋
+  have hzw : z + w ∈ Ioi a ×ˢ Icc (0 : ℝ) 1 := by
+    rw [hw, Int.self_sub_floor]
+    exact ⟨hz.1, Int.fract_nonneg z.2, (Int.fract_lt_one z.2).le⟩
+  have h := hfloer (z + w) hzw
+  rw [hJz, hu z hz.1, ← ω.perturbedFDeriv_comp_add_right, hKt] at h
+  rwa [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ hloc]
+
+/-- On a finite-energy Floer half-cylinder for a family `J_t(x)` tamed uniformly on `ℝ × K`, the
+energy `∫ ‖∂ₛu‖²` over `(a, ∞) × [0, 1]` is finite. -/
+private theorem setLIntegral_enorm_fderiv_stdComplexLineReal_sq_ne_top (hK : IsCompact K)
+    (hJ : ContinuousOn (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+      (univ ×ˢ K))
+    (hJper : Periodic J 1) (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 ≠ ⊤ := by
+  obtain ⟨c, hc, _, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK hJ hJper hJt
+  refine ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.ofReal_ne_top (r := 2 / c)) hE) ?_
+  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' (measurableSet_Ioi.prod measurableSet_Icc) fun z hz ↦ ?_
+  rw [← ENNReal.ofReal_mul (by positivity), ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  refine ENNReal.ofReal_le_ofReal ?_
+  -- The `ds`-component of the perturbation vanishes, so `‖∂ₛu‖² ≤ (2 / c) e`.
+  simpa [hamiltonianVectorField_const] using ω.norm_fderiv_stdComplexLineReal_sq_le hc
+    (fun w ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) w).1) (hfloer z hz)
+
+/-- In the complex coordinate `e = equivRealProdCLM`, the cylindrical datum `K = H_t dt` of a `C³`
+`1`-periodic Hamiltonian gives the `C²` coefficient `X(z, x) = X_K(e z, x) ∘ e`, periodic under
+`z ↦ z + 1` and `z ↦ z + i`. -/
+private theorem contDiff_hamiltonianOneForm_comp_equivRealProdCLM (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) :
+    ContDiff ℝ 2 (fun q : ℂ × V ↦ (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun w ↦ H w.2)
+      (equivRealProdCLM q.1) q.2).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) ∧
+    (∀ x, Periodic (fun z ↦ (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun w ↦ H w.2)
+      (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) ∧
+    ∀ x, Periodic (fun z ↦ (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun w ↦ H w.2)
+      (equivRealProdCLM z) x).comp (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I := by
+  have h := ω.contDiffOn_hamiltonianOneForm (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) (n := 2)
+    isOpen_univ (contDiff_const (c := (0 : ℝ))).contDiffOn
+    (contDiff_uncurry_cylindrical hH).contDiffOn
+  rw [contDiffOn_univ] at h
+  refine ⟨(h.comp ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_comp
+    contDiff_const, fun x z ↦ ?_, fun x z ↦ ?_⟩ <;> ext w <;> simp [hHper z.im]
+
+/-- **Finite-energy Floer half-cylinders have bounded derivatives.** Let `H` be a `C³`,
+`1`-periodic Hamiltonian and `J_t(x)` a `1`-periodic family of almost complex structures, `C²` on
+an open set `W ⊆ ℝ × V` containing `ℝ × K` for a compact `K ⊆ V`, and tamed by `ω` on `ℝ × K`.
+Let `u` be `C³` on the half-plane `s > a`, with `1`-periodic loops `t ↦ u(s, t)` in `K`, solving
+the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on `(a, ∞) × [0, 1]` with finite
+energy there. Then `du` is bounded on the half-plane `s ≥ b` for every `b > a`. -/
+theorem exists_forall_norm_fderiv_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {b : ℝ} (hab : a < b) :
+    ∃ M, ∀ z : ℝ × ℝ, b ≤ z.1 → ‖fderiv ℝ u z‖ ≤ M := by
+  have hfloer' (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ univ) :=
+    isComplexLinearMap_perturbedFDeriv_of_periodic hHper hJper hper hfloer hz
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
+  have heapp (z : ℂ) : e z = (z.re, z.im) := by simp [he]
+  -- The solution in the complex coordinate, extended `i`-periodically past the end.
+  set v : ℂ → V := fun z ↦ u (z.re, Int.fract z.im) with hv_def
+  set S : Set ℂ := {z | a < z.re}
+  have hS : IsOpen S := isOpen_lt continuous_const continuous_re
+  have hmaps : MapsTo e S (Ioi a ×ˢ univ) := fun z hz ↦ ⟨by rw [heapp]; exact hz, mem_univ _⟩
+  have heq : EqOn v (u ∘ e) S := fun z hz ↦ by
+    simp only [hv_def, comp_apply, heapp, (hper z.re hz).apply_fract]
+  have hderiv (z : ℂ) (hz : z ∈ S) : fderiv ℝ v z = fderiv ℝ (u ∘ e) z :=
+    (heq.eventuallyEq_of_mem (hS.mem_nhds hz)).fderiv_eq
+  -- The coordinate data `J(z, x) = J_(im z)(x)` and `X(z, x) = X_K(e z, x) ∘ e`.
+  set Jc : ℂ × V → V →L[ℝ] V := fun q ↦ (J q.1.im q.2).toLinearMap.toContinuousLinearMap
+  set g : ℂ × V → ℝ × V := fun q ↦ (q.1.im, q.2)
+  have hg : ContDiff ℝ 2 g := (imCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd
+  obtain ⟨hX, hX1, hXI⟩ := contDiff_hamiltonianOneForm_comp_equivRealProdCLM (ω := ω) hH hHper
+  -- The energy `∫ ‖∂ₛv‖²` is the energy `∫ ‖∂ₛu‖²`, since `e` preserves volume.
+  have hfin : ∫⁻ z in Ioi a ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 ≠ ∞ := by
+    have hcongr : ∫⁻ z in Ioi a ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 =
+        ∫⁻ z in measurableEquivRealProd ⁻¹' (Ioi a ×ˢ Icc 0 1),
+          ‖fderiv ℝ u (measurableEquivRealProd z) stdComplexLineReal‖ₑ ^ 2 :=
+      setLIntegral_congr_fun (measurableSet_Ioi.reProdIm measurableSet_Icc) fun z hz ↦ by
+        rw [hderiv z hz.1, fderiv_comp_equivRealProdCLM_one, measurableEquivRealProd_apply, ←
+          he, heapp]
+    rw [hcongr, Complex.volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
+      measurableEquivRealProd.measurableEmbedding
+      (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2)]
+    exact setLIntegral_enorm_fderiv_stdComplexLineReal_sq_ne_top hK (hJ.continuousOn.mono hKW)
+      hJper hJt huK hfloer hE
+  -- The coordinate bound, read back through `e`.
+  obtain ⟨M, hM⟩ := Floer.exists_forall_norm_fderiv_le_of_lintegral_ne_top (J := Jc) (W := g ⁻¹' W)
+    (hW.preimage hg.continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W)) hX.contDiffOn hK
+    (fun q hq ↦ hKW ⟨mem_univ _, hq.2⟩) (fun z x _ w ↦ by simp [Jc]) (fun x z ↦ by simp [Jc])
+    (fun x z ↦ by simp only [Jc, add_im, I_im, hJper z.im]) hX1 hXI hab
+    ((hu.comp e.contDiff.contDiffOn hmaps).congr heq)
+    (fun z ↦ by simp [hv_def, Int.fract_add_one])
+    (fun z hz ↦ by
+      rw [hderiv z hz, heq hz]
+      simpa [Jc, heapp] using ω.fderiv_comp_equivRealProdCLM_I_sub (J := fun w x ↦ J w.2 x)
+        (hfloer' (e z) (hmaps hz)))
+    (fun z hz ↦ by simpa [heq hz, heapp] using huK _ hz z.im) hfin
+  refine ⟨M * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun z hz ↦ ?_⟩
+  have hza : z ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hab.trans_le hz, mem_univ _⟩
+  have hre (y : ℝ × ℝ) : (e.symm y).re = y.1 := by simp [he]
+  have hev : u =ᶠ[𝓝 z] v ∘ e.symm := by
+    filter_upwards [(isOpen_Ioi.prod isOpen_univ).mem_nhds hza] with y hy
+    simpa using (heq (x := e.symm y) (by simpa [S, hre] using hy.1)).symm
+  rw [hev.fderiv_eq, e.symm.comp_right_fderiv]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right
+    (hM _ (by rwa [hre])) (norm_nonneg _))
+
+/-- **Finite-energy Floer half-cylinders are Lipschitz.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`, the solution `u` is Lipschitz on
+the half-plane `s ≥ b` for every `b > a`. -/
+theorem exists_lipschitzOnWith_of_floer (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {b : ℝ} (hab : a < b) :
+    ∃ L : ℝ≥0, LipschitzOnWith L u (Ici b ×ˢ univ) := by
+  obtain ⟨M, hM⟩ := exists_forall_norm_fderiv_le_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper
+    huK hfloer hE hab
+  refine ⟨Real.toNNReal M, ((convex_Ici b).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+    (𝕜 := ℝ) (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
+  · have hz' : z ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hab.trans_le hz.1, mem_univ _⟩
+    exact (hu.differentiableOn (by norm_num) z hz').differentiableAt
+      ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz')
+  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+    exact (hM z hz.1).trans (Real.le_coe_toNNReal M)
+
+/-- **A finite-energy Floer half-cylinder breaks off an orbit along every sequence.** Under the
+hypotheses of `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`, let `σ_n → ∞`.
+There are a subsequence `σ_(φ n)` and a `1`-periodic orbit `x` of the Hamiltonian vector field,
+`x' = X_{H_t}(x)`, such that the translates `(s, t) ↦ u(s + σ_(φ n), t)` converge to the
+stationary cylinder `(s, t) ↦ x(t)` locally uniformly on `ℝ × ℝ`. -/
+theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_floer
+    (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {σ : ℕ → ℝ} (hσ : Tendsto σ atTop atTop) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ x : ℝ → V, Periodic x 1 ∧
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      TendstoLocallyUniformly (fun n z ↦ u (z + (σ (φ n), 0))) (fun z ↦ x z.2) atTop := by
+  have hab : a < a + 1 := lt_add_one a
+  obtain ⟨L, hL⟩ := exists_lipschitzOnWith_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper huK
+    hfloer hE hab
+  obtain ⟨φ, hφ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_comp_add hK hL
+    (fun z hz ↦ huK _ (hab.trans_le hz.1) _) hσ
+  have hσφ : Tendsto (fun n ↦ σ (φ n)) atTop atTop := hσ.comp hφ.tendsto_atTop
+  -- The limit is periodic in `t`, since the translates eventually are at each point.
+  have hgper (z : ℝ × ℝ) : g (z.1, z.2 + 1) = g z := by
+    refine tendsto_nhds_unique ?_ (htr.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z))
+    refine (htr.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (z.1, z.2 + 1))).congr' ?_
+    filter_upwards [hσφ.eventually_gt_atTop (a - z.1)] with n hn
+    have hz (y : ℝ × ℝ) : y + (σ (φ n), 0) = (y.1 + σ (φ n), y.2) := by ext <;> simp
+    rw [hz, hz]
+    exact hper (z.1 + σ (φ n)) (by linarith) z.2
+  -- The limit is a stationary cylinder over a Hamiltonian orbit.
+  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK
+    (hJ.continuousOn.mono hKW) hJper hJt
+  have hEU : Ioi a ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ := prod_mono le_rfl (subset_univ _)
+  have hU : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
+  have hu1 : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ) := hu.of_le (by norm_num)
+  have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
+  have hJc : ∀ z ∈ Ioi a ×ˢ Icc (0 : ℝ) 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z.2 (u z) v) :=
+    fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).1
+  have hJM : ∀ z ∈ Ioi a ×ˢ Icc (0 : ℝ) 1, ∀ v, ‖J z.2 (u z) v‖ ≤ M * ‖v‖ :=
+    fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).2
+  have hs : Tendsto (fun n ↦ σ (φ n)) atTop (cocompact ℝ) := hσφ.mono_right atTop_le_cocompact
+  have hwin (α β : ℝ) : ∀ᶠ n in atTop,
+      Icc (α + σ (φ n)) (β + σ (φ n)) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 := by
+    filter_upwards [hσφ.eventually_gt_atTop (a - α)] with n hn z hz
+    exact ⟨mem_Ioi.2 (by linarith [hz.1.1]), hz.2⟩
+  have hv := htr.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1)
+  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu1 hEU hc hJc hJM
+    hfloer hE hs hwin hv
+  have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH1 hU hu1 hEU hc hJc hJM
+    hfloer hE hs hwin hv
+  set x : ℝ → V := fun t ↦ g (0, t)
+  have hxper : Periodic x 1 := fun t ↦ hgper (0, t)
+  have hxc : Continuous x := g.continuous.comp (continuous_const.prodMk continuous_id)
+  have hgx : (g : ℝ × ℝ → V) = fun z ↦ x z.2 := funext fun z ↦
+    calc g z = g (z.1, Int.fract z.2) :=
+          (Periodic.apply_fract (f := fun t ↦ g (z.1, t)) (fun t ↦ hgper (z.1, t)) z.2).symm
+      _ = x (Int.fract z.2) := hstat z.1 _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+      _ = x z.2 := hxper.apply_fract z.2
+  -- `x' = X_{H_t}(x)` on `[0, 1]` and periodicity give the equation on all of `ℝ`.
+  set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
+  have hY : Continuous Y :=
+    (ω.continuous_uncurry_hamiltonianVectorField hH1).comp (continuous_id.prodMk hxc)
+  have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
+  have hint : ∀ t ∈ Icc (0 : ℝ) 1, x t - x 0 = ∫ τ in 0..t, Y τ := fun t ht ↦
+    (intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1 hxc.continuousOn
+      (fun τ hτ ↦ (hder τ ⟨hτ.1.le, hτ.2.le.trans ht.2⟩).hasDerivAt
+        (Icc_mem_nhds hτ.1 (hτ.2.trans_le ht.2))) (hY.intervalIntegrable _ _)).symm
+  exact ⟨φ, hφ, x, hxper, hasDerivAt_of_periodic_of_sub_eq_integral one_pos hxper hY hYper hint,
+    hgx ▸ htr⟩
+
+end TauCeti.SymplecticForm

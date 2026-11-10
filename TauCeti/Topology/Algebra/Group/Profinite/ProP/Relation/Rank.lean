@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Transgression
 import TauCeti.Data.Set.Finite
 import TauCeti.Data.ZMod.TrivialAction
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.FixedPoints
 
 /-!
 # `H²(G, 𝔽_p)` counts the relations of a pro-`p` group
@@ -61,17 +62,22 @@ finitely generated pro-`p` group with infinitely many relations has an `H²(G, �
 dimension. When `R ⧸ Rᵖ[R, F]` is topologically finitely generated the dimension is the
 natural-number rank, the exponent `r` in the count `p ^ r` above.
 
-The statements are about the order and the dimension of `H²(G, 𝔽_p)`, for the explicit
-continuous cohomology `H2` of the trivial `G`-module `𝔽_p`; the action of `G` on `ZMod p` is
-carried as an instance together with the hypothesis that it is trivial, as in
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.InvariantDual`. The statements about a quotient
-`G ≅ F ⧸ R` of a free pro-`p` group `F` (`TauCeti.finite_H2_iff_of_le_proPFrattini`,
-`TauCeti.natCard_H2_of_le_proPFrattini` and `TauCeti.card_add_finrank_H2_of_isClosed`) carry the
-action of `F` on `𝔽_p` in the same way, as an instance with the hypothesis that it is trivial. The
-`TauCeti.presentedProP` statements about a presentation do not: they supply the trivial action of
-`F` internally, and only the action of `G` appears. The count and the finiteness for a presentation
-on a finite type are also stated on the canonical carrier `cohomFp p G 2` of the relation rank, in
-which no action appears at all (`TauCeti.presentedProP.card_add_finrank_cohomFp_two` and
+The statements are about the order and the dimension of `H²(G, 𝔽_p)`, for the explicit continuous
+cohomology `H2` of the trivial `G`-module `𝔽_p`; the action of `G` on `ZMod p` is carried as an
+instance. A continuous action of a pro-`p` group on `𝔽_p` is automatically trivial
+(`TauCeti.IsProP.smul_zmod_eq_self`), so every statement about a quotient `G ≅ F ⧸ R` of a free
+pro-`p` group `F` or about a presentation derives this triviality and takes only a continuous action
+of `G`: `TauCeti.finite_H2_iff_of_le_proPFrattini`, `TauCeti.natCard_H2_of_le_proPFrattini`,
+`TauCeti.lift_rank_H2_of_le_proPFrattini`, `TauCeti.finrank_H2_of_le_proPFrattini`,
+`TauCeti.finite_H2_of_isClosed`, `TauCeti.natCard_H2_mul_pow_card_of_isClosed`,
+`TauCeti.card_add_finrank_H2_of_isClosed` and all `TauCeti.presentedProP` statements install the
+trivial action of `F` internally. Only the statements that mention the cohomology of `F ⧸ R` with
+coefficients in the fixed points `𝔽_p ^ R`, and the underlying transport equivalences
+`h2QuotientEquiv` and `h2DualEquiv`, carry the action of `F` on `𝔽_p` together with the hypothesis
+that it is trivial, as in `TauCeti.Topology.Algebra.Group.Profinite.ProP.InvariantDual`. The count
+and the finiteness for a presentation on a finite type are also stated on the canonical carrier
+`cohomFp p G 2` of the relation rank, in which no action appears at all
+(`TauCeti.presentedProP.card_add_finrank_cohomFp_two` and
 `TauCeti.presentedProP.module_finite_cohomFp_two_of_finite`).
 
 ## Main results
@@ -244,39 +250,62 @@ theorem h2DualEquiv_h2QuotientEquiv_transgression
   exact (AddEquiv.ofBijective _ _).symm_apply_eq.2 rfl
 
 
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF htriv in
 /-- **Finiteness of `H²(G, 𝔽_p)` for a quotient of a free pro-`p` group.** Let `F` be the free
 pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let `G ≅ F ⧸ R` be a group
-acting trivially on `𝔽_p`, as does `F`. Then `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]`
-is topologically finitely generated. -/
+acting continuously on `𝔽_p`. Then `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]`
+is topologically finitely generated. The action of `G` is automatically trivial
+(`TauCeti.IsProP.smul_zmod_eq_self`). -/
 theorem finite_H2_iff_of_le_proPFrattini :
     Finite (H2 G (ZMod p)) ↔
       IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R) := by
+  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
+  let := trivialZModAction p (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m :=
+    (((isProP_freeProP p X).quotient R).of_equiv e).smul_zmod_eq_self
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
-  rw [← finite_H2_quotient_iff_of_le_proPFrattini hRc hR htrivF]
-  exact (h2QuotientEquiv e htrivF htriv).toEquiv.finite_iff.symm
+  rw [← finite_H2_quotient_iff_of_le_proPFrattini hRc hR (fun _ _ ↦ rfl)]
+  exact (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv.finite_iff.symm
 
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF htriv in
 /-- **`H²(G, 𝔽_p)` counts the generators of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p`
 group.** Let `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup with
-`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting trivially
-on `𝔽_p`, as does `F`. Then `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])` elements, where `d` is the
-topological generator rank. -/
+`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting
+continuously on `𝔽_p`. Then `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])` elements, where `d` is the
+topological generator rank. The action of `G` is automatically trivial: a continuous action of a
+pro-`p` group on `𝔽_p` is trivial (`TauCeti.IsProP.smul_zmod_eq_self`). -/
 theorem natCard_H2_of_le_proPFrattini
     (h : IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R)) :
     Nat.card (H2 G (ZMod p)) =
       p ^ topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h := by
+  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
+  let := trivialZModAction p (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m :=
+    (((isProP_freeProP p X).quotient R).of_equiv e).smul_zmod_eq_self
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
-  rw [← natCard_H2_quotient_of_le_proPFrattini hRc hR htrivF h]
-  exact Nat.card_congr (h2QuotientEquiv e htrivF htriv).toEquiv.symm
+  rw [← natCard_H2_quotient_of_le_proPFrattini hRc hR (fun _ _ ↦ rfl) h]
+  exact Nat.card_congr (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv.symm
 
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF htriv in
 /-- **`dim H²(G, 𝔽_p)` is the rank of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p` group.** Let
 `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let
-`G ≅ F ⧸ R` be a group acting trivially on `𝔽_p`, as does `F`. Then the dimension of `H²(G, 𝔽_p)`
-over `𝔽_p` is the topological generator rank of `R ⧸ Rᵖ[R, F]`. No finiteness hypothesis is needed,
-and the statement is an identity of cardinals; `TauCeti.finrank_H2_of_le_proPFrattini` is the
-finite case. -/
+`G ≅ F ⧸ R` be a group acting continuously on `𝔽_p`, necessarily trivially. Then the dimension of
+`H²(G, 𝔽_p)` over `𝔽_p` is the topological generator rank of `R ⧸ Rᵖ[R, F]`. No finiteness
+hypothesis is needed, and the statement is an identity of cardinals;
+`TauCeti.finrank_H2_of_le_proPFrattini` is the finite case. -/
 theorem lift_rank_H2_of_le_proPFrattini :
     Cardinal.lift.{u} (Module.rank (ZMod p) (H2 G (ZMod p))) =
       Cardinal.lift.{v} (topologicalGeneratorRank (R ⧸ (pLowerCentralStep p R).subgroupOf R)) := by
+  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
+  let := trivialZModAction p (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m :=
+    (((isProP_freeProP p X).quotient R).of_equiv e).smul_zmod_eq_self
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
   -- `R ⧸ Rᵖ[R, F]` is a profinite pro-`p` group: `CompactSpace R` is the instance its topology
   -- and Burnside's basis theorem need beyond those found by instance search.
@@ -286,15 +315,17 @@ theorem lift_rank_H2_of_le_proPFrattini :
   -- Transgression and the duality of `TauCeti.ContCohomology.H1ConjInvariantsEquivOfSmulEqSelf`
   -- identify `H²(G, 𝔽_p)` with the continuous `𝔽_p`-dual of `R ⧸ Rᵖ[R, F]`, additively, hence
   -- `𝔽_p`-linearly; Burnside's basis theorem in cardinal form reads its dimension as the rank.
-  have f := h2DualEquiv hRc hR e htrivF htriv
+  have f := h2DualEquiv hRc hR e (fun _ _ ↦ rfl) htriv
   rw [hQ.topologicalGeneratorRank_eq_rank_continuousZModDual]
   exact (LinearEquiv.ofBijective (f.toAddMonoidHom.toZModLinearMap p) f.bijective).lift_rank_eq
 
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF htriv in
 /-- **`dim H²(G, 𝔽_p)` counts the generators of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p`
 group.** Let `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup with
-`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting trivially
-on `𝔽_p`, as does `F`. Then `H²(G, 𝔽_p)` has dimension `d(R ⧸ Rᵖ[R, F])` over `𝔽_p`, where `d` is
-the topological generator rank. This is the finite case of
+`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting continuously
+on `𝔽_p`, necessarily trivially. Then `H²(G, 𝔽_p)` has dimension `d(R ⧸ Rᵖ[R, F])` over `𝔽_p`, where
+`d` is the topological generator rank. This is the finite case of
 `TauCeti.lift_rank_H2_of_le_proPFrattini`. -/
 theorem finrank_H2_of_le_proPFrattini
     (h : IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R)) :
@@ -302,7 +333,7 @@ theorem finrank_H2_of_le_proPFrattini
       topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h := by
   -- The profinite instances on `R ⧸ Rᵖ[R, F]`, as in `TauCeti.lift_rank_H2_of_le_proPFrattini`.
   have : CompactSpace R := isCompact_iff_compactSpace.mp hRc.isCompact
-  have hrank := lift_rank_H2_of_le_proPFrattini hRc hR e htrivF htriv
+  have hrank := lift_rank_H2_of_le_proPFrattini hRc hR e
   rw [← topologicalGeneratorRankNat_eq_topologicalGeneratorRank h, Cardinal.lift_natCast] at hrank
   rw [Module.finrank, ← Cardinal.toNat_lift.{u}, hrank, Cardinal.toNat_natCast]
 
@@ -348,29 +379,37 @@ theorem natCard_H2_quotient_mul_pow_card_of_isClosed
 
 variable {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
-  (e : freeProP p X ⧸ R ≃ₜ* G) (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
-include e htriv
+  (e : freeProP p X ⧸ R ≃ₜ* G)
+include e
 
-omit [Finite X] in
-/-- **`H²(G, 𝔽_p)` is finite when the relation subgroup is finitely normally generated.** Let `F`
-be the free pro-`p` group on any type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
-topologically finitely generated, and let `G ≅ F ⧸ R` act trivially on `𝔽_p`, as does `F`. Then
-`H²(G, 𝔽_p)` is finite: it is the image of the finite `H¹(R, 𝔽_p)^F` under the transgression, which
-is surjective since `H²(F, 𝔽_p) = 0`. -/
+omit [Finite X] [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF in
+/-- **`H²(G, 𝔽_p)` is finite when the relation subgroup is finitely normally generated.** Let `F` be
+the free pro-`p` group on any type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
+topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
+trivially. Then `H²(G, 𝔽_p)` is finite: it is the image of the finite `H¹(R, 𝔽_p)^F` under the
+transgression, which is surjective since `H²(F, 𝔽_p) = 0`. -/
 theorem finite_H2_of_isClosed
     (h : IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R)) :
     Finite (H2 G (ZMod p)) := by
+  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
+  let := trivialZModAction p (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m :=
+    (((isProP_freeProP p X).quotient R).of_equiv e).smul_zmod_eq_self
   have := hRc
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
-  have := (finite_H1ConjInvariants_iff hRc htrivF).2 h
-  rw [← (h2QuotientEquiv e htrivF htriv).toEquiv.finite_iff]
+  have := (finite_H1ConjInvariants_iff hRc (fun _ _ ↦ rfl)).2 h
+  rw [← (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv.finite_iff]
   exact Finite.of_surjective _ ((transgression_surjective_iff (freeProP p X) (ZMod p) R hRc).2
     (AddMonoidHom.ext fun _ ↦ Subsingleton.elim _ _))
 
-/-- **The five-term count for a group presented by a free pro-`p` group of finite rank.** Let `F`
-be the free pro-`p` group on a finite type `X`, let `R` be a closed normal subgroup with
-`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` act trivially on `𝔽_p`, as
-does `F`. Then `|H²(G, 𝔽_p)| · p ^ #X = p ^ (d(G) + d(R ⧸ Rᵖ[R, F]))`, where `G` is topologically
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF in
+/-- **The five-term count for a group presented by a free pro-`p` group of finite rank.** Let `F` be
+the free pro-`p` group on a finite type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
+topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
+trivially. Then `|H²(G, 𝔽_p)| · p ^ #X = p ^ (d(G) + d(R ⧸ Rᵖ[R, F]))`, where `G` is topologically
 finitely generated as a quotient of `F`. -/
 theorem natCard_H2_mul_pow_card_of_isClosed
     (h : IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R)) :
@@ -378,13 +417,22 @@ theorem natCard_H2_mul_pow_card_of_isClosed
       p ^ (topologicalGeneratorRankNat G ((isTopologicallyFinitelyGenerated_congr e).mp
           ((isTopologicallyFinitelyGenerated_freeProP p X).quotient R)) +
         topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h) := by
+  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
+  let := trivialZModAction p (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m :=
+    (((isProP_freeProP p X).quotient R).of_equiv e).smul_zmod_eq_self
   have := hRc
-  rw [← Nat.card_congr (h2QuotientEquiv e htrivF htriv).toEquiv,
-    natCard_H2_quotient_mul_pow_card_of_isClosed hRc htrivF h, topologicalGeneratorRankNat_congr e]
+  rw [← Nat.card_congr (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv,
+    natCard_H2_quotient_mul_pow_card_of_isClosed hRc (fun _ _ ↦ rfl) h,
+    topologicalGeneratorRankNat_congr e]
 
+omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
+  htrivF in
 /-- **The generator, relation and normal-generator counts of a presentation.** Let `F` be the free
 pro-`p` group on a finite type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
-topologically finitely generated, and let `G ≅ F ⧸ R` act trivially on `𝔽_p`, as does `F`. Then
+topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
+trivially. Then
 
 ```text
 #X + dim H²(G, 𝔽_p) = d(G) + d(R ⧸ Rᵖ[R, F]),
@@ -399,8 +447,8 @@ theorem card_add_finrank_H2_of_isClosed
       topologicalGeneratorRankNat G ((isTopologicallyFinitelyGenerated_congr e).mp
           ((isTopologicallyFinitelyGenerated_freeProP p X).quotient R)) +
         topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h := by
-  have := finite_H2_of_isClosed hRc htrivF e htriv h
-  have key := natCard_H2_mul_pow_card_of_isClosed hRc htrivF e htriv h
+  have := finite_H2_of_isClosed hRc e h
+  have key := natCard_H2_mul_pow_card_of_isClosed hRc e h
   rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod, ← pow_add] at key
   have := Nat.pow_right_injective (Fact.out : p.Prime).two_le key
   omega
@@ -456,11 +504,10 @@ section Count
 variable {X : Type u} [Finite X] {rels : Set (freeProP p X)} {G : Type v} [Group G]
   [TopologicalSpace G] [IsTopologicalGroup G] [DistribMulAction G (ZMod p)]
   [ContinuousSMul G (ZMod p)] (e : presentedProP p X rels ≃ₜ* G)
-  (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
-include e htriv
+include e
 
 /-- **The generator, relation and normal-generator counts of a presentation.** Let `G ≅ ⟨X ∣ rels⟩`
-be a presentation, on a finite type `X`, of a group acting trivially on `𝔽_p`, and let `R` be the
+be a presentation, on a finite type `X`, of a group acting continuously on `𝔽_p`, and let `R` be the
 closed normal closure of the relators, with `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then
 
 ```text
@@ -480,20 +527,14 @@ theorem card_add_finrank_H2
         topologicalGeneratorRankNat ((normalClosure rels).topologicalClosure ⧸
           (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
             (normalClosure rels).topologicalClosure) h := by
-  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
-  exact card_add_finrank_H2_of_isClosed (isClosed_topologicalClosure _) (fun _ _ ↦ rfl) e htriv h
+  exact card_add_finrank_H2_of_isClosed (isClosed_topologicalClosure _) e h
 
 omit [Finite X] in
 /-- **`H²(G, 𝔽_p)` is finite for finitely many relators.** Let `G ≅ ⟨X ∣ rels⟩` be a presentation,
-on any type `X`, by finitely many relators, of a group acting trivially on `𝔽_p`. Then `H²(G, 𝔽_p)`
-is finite. -/
+on any type `X`, by finitely many relators, of a group acting continuously on `𝔽_p`. Then
+`H²(G, 𝔽_p)` is finite. -/
 theorem finite_H2_of_finite (hrels : rels.Finite) : Finite (H2 G (ZMod p)) := by
-  -- The count needs an action of `F` on `𝔽_p`; the trivial one is installed.
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
-  exact finite_H2_of_isClosed (isClosed_topologicalClosure _) (fun _ _ ↦ rfl) e htriv
+  exact finite_H2_of_isClosed (isClosed_topologicalClosure _) e
     (isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_of_finite hrels)
 
 end Count
@@ -531,7 +572,7 @@ theorem card_add_finrank_cohomFp_two
   let := trivialZModAction p G
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
   rw [(cohomFpLinearEquivH2 p G fun _ _ ↦ rfl).finrank_eq]
-  exact card_add_finrank_H2 e (fun _ _ ↦ rfl) h
+  exact card_add_finrank_H2 e h
 
 omit [Finite X] in
 /-- **`H²(G, 𝔽_p)` is finite-dimensional for finitely many relators**, on any type of generators,
@@ -544,7 +585,7 @@ theorem module_finite_cohomFp_two_of_finite (hrels : rels.Finite) :
   have : LocallyCompactSpace G := e.toHomeomorph.locallyCompactSpace_iff.1 inferInstance
   let := trivialZModAction p G
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
-  have := finite_H2_of_finite e (fun _ _ ↦ rfl) hrels
+  have := finite_H2_of_finite e hrels
   exact Module.Finite.equiv (cohomFpLinearEquivH2 p G fun _ _ ↦ rfl).symm
 
 end CohomFp
@@ -554,11 +595,11 @@ section MinimalPresentation
 variable {X : Type u} (rels : Set (freeProP p X)) (hrels : rels ⊆ proPFrattini p (freeProP p X))
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
-  (e : presentedProP p X rels ≃ₜ* G) (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
-include hrels e htriv
+  (e : presentedProP p X rels ≃ₜ* G)
+include hrels e
 
 /-- **Finiteness of `H²(G, 𝔽_p)` from a minimal presentation.** Let `G ≅ ⟨X ∣ rels⟩` be a
-presentation of a group acting trivially on `𝔽_p` whose relators lie in the Frattini subgroup of
+presentation of a group acting continuously on `𝔽_p` whose relators lie in the Frattini subgroup of
 the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the relators. Then
 `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]` is topologically finitely generated. -/
 theorem finite_H2_iff :
@@ -566,14 +607,11 @@ theorem finite_H2_iff :
       IsTopologicallyFinitelyGenerated ((normalClosure rels).topologicalClosure ⧸
         (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
           (normalClosure rels).topologicalClosure) := by
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
   exact finite_H2_iff_of_le_proPFrattini (isClosed_topologicalClosure _)
-    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e (fun _ _ ↦ rfl)
-    htriv
+    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e
 
 /-- **`H²(G, 𝔽_p)` counts the relations of a minimal presentation.** Let `G ≅ ⟨X ∣ rels⟩` be a
-presentation of a group acting trivially on `𝔽_p` whose relators lie in the Frattini subgroup of
+presentation of a group acting continuously on `𝔽_p` whose relators lie in the Frattini subgroup of
 the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the relators, with
 `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])`
 elements, where `d` is the topological generator rank. -/
@@ -585,14 +623,11 @@ theorem natCard_H2
       p ^ topologicalGeneratorRankNat ((normalClosure rels).topologicalClosure ⧸
         (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
           (normalClosure rels).topologicalClosure) h := by
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
   exact natCard_H2_of_le_proPFrattini (isClosed_topologicalClosure _)
-    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e (fun _ _ ↦ rfl)
-    htriv h
+    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e h
 
 /-- **The order of `H²(G, 𝔽_p)` bounds the number of relations.** Let `G ≅ ⟨X ∣ rels⟩` be a
-presentation of a group acting trivially on `𝔽_p` whose relators lie in the Frattini subgroup of
+presentation of a group acting continuously on `𝔽_p` whose relators lie in the Frattini subgroup of
 the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the relators, with
 `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has at most `p ^ n` elements
 exactly when `R` is generated as a closed normal subgroup of `F` by at most `n` elements. -/
@@ -605,12 +640,12 @@ theorem natCard_H2_le_pow_iff
         Subgroup.topologicalClosure
           (normalClosure (Subtype.val '' (s : Set (normalClosure rels).topologicalClosure))) =
           (normalClosure rels).topologicalClosure := by
-  rw [natCard_H2 rels hrels e htriv h, pow_le_pow_iff_right₀ (Fact.out : p.Prime).one_lt,
+  rw [natCard_H2 rels hrels e h, pow_le_pow_iff_right₀ (Fact.out : p.Prime).one_lt,
     (isProP_freeProP p X).topologicalGeneratorRankNat_quotient_pLowerCentralStep_le_iff Fact.out
       (isClosed_topologicalClosure _) h n]
 
 /-- **The relation rank of a pro-`p` group is the dimension of `H²(G, 𝔽_p)`, cardinal form.** Let
-`G ≅ ⟨X ∣ rels⟩` be a presentation of a group acting trivially on `𝔽_p` whose relators lie in the
+`G ≅ ⟨X ∣ rels⟩` be a presentation of a group acting continuously on `𝔽_p` whose relators lie in the
 Frattini subgroup of the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of
 the relators. Then the dimension of `H²(G, 𝔽_p)` over `𝔽_p` is `d(R ⧸ Rᵖ[R, F])`, the relation rank
 of `G`, as an identity of cardinals and with no finiteness hypothesis: a group with infinitely many
@@ -621,16 +656,13 @@ theorem lift_rank_H2 :
       Cardinal.lift.{v} (topologicalGeneratorRank ((normalClosure rels).topologicalClosure ⧸
         (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
           (normalClosure rels).topologicalClosure)) := by
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
   exact lift_rank_H2_of_le_proPFrattini (isClosed_topologicalClosure _)
-    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e (fun _ _ ↦ rfl)
-    htriv
+    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e
 
-/-- **The relation rank of a pro-`p` group is the dimension of `H²(G, 𝔽_p)`.** Let
-`G ≅ ⟨X ∣ rels⟩` be a presentation of a group acting trivially on `𝔽_p` whose relators lie in the
-Frattini subgroup of the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of
-the relators, with `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has dimension
+/-- **The relation rank of a pro-`p` group is the dimension of `H²(G, 𝔽_p)`.** Let `G ≅ ⟨X ∣ rels⟩`
+be a presentation of a group acting continuously on `𝔽_p` whose relators lie in the Frattini
+subgroup of the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the
+relators, with `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has dimension
 `d(R ⧸ Rᵖ[R, F])` over `𝔽_p`, the least number of generators of `R` as a closed normal subgroup of
 `F`. This is the finite case of `TauCeti.presentedProP.lift_rank_H2`. -/
 theorem finrank_H2
@@ -641,14 +673,11 @@ theorem finrank_H2
       topologicalGeneratorRankNat ((normalClosure rels).topologicalClosure ⧸
         (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
           (normalClosure rels).topologicalClosure) h := by
-  let := trivialZModAction p (freeProP p X)
-  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
   exact finrank_H2_of_le_proPFrattini (isClosed_topologicalClosure _)
-    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e (fun _ _ ↦ rfl)
-    htriv h
+    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e h
 
 /-- **The dimension of `H²(G, 𝔽_p)` bounds the number of relations.** Let `G ≅ ⟨X ∣ rels⟩` be a
-presentation of a group acting trivially on `𝔽_p` whose relators lie in the Frattini subgroup of
+presentation of a group acting continuously on `𝔽_p` whose relators lie in the Frattini subgroup of
 the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the relators, with
 `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has dimension at most `n` over
 `𝔽_p` exactly when `R` is generated as a closed normal subgroup of `F` by at most `n` elements. -/
@@ -661,7 +690,7 @@ theorem finrank_H2_le_iff
         Subgroup.topologicalClosure
           (normalClosure (Subtype.val '' (s : Set (normalClosure rels).topologicalClosure))) =
           (normalClosure rels).topologicalClosure := by
-  rw [finrank_H2 rels hrels e htriv h,
+  rw [finrank_H2 rels hrels e h,
     (isProP_freeProP p X).topologicalGeneratorRankNat_quotient_pLowerCentralStep_le_iff Fact.out
       (isClosed_topologicalClosure _) h n]
 
@@ -688,7 +717,7 @@ theorem isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_iff
           (normalClosure rels').topologicalClosure) := by
   let := trivialZModAction p G
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
-  rw [← finite_H2_iff rels hrels e (fun _ _ ↦ rfl), ← finite_H2_iff rels' hrels' e' (fun _ _ ↦ rfl)]
+  rw [← finite_H2_iff rels hrels e, ← finite_H2_iff rels' hrels' e']
 
 /-- **Presentation independence of the relation rank.** For two minimal presentations
 `G ≅ ⟨X ∣ rels⟩` and `G ≅ ⟨Y ∣ rels'⟩` of the same group, with relators in the Frattini subgroups
@@ -713,8 +742,8 @@ theorem topologicalGeneratorRankNat_quotient_pLowerCentralStep_eq
   let := trivialZModAction p G
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
   exact Nat.pow_right_injective (Fact.out : p.Prime).two_le
-    ((natCard_H2 rels hrels e (fun _ _ ↦ rfl) h).symm.trans
-      (natCard_H2 rels' hrels' e' (fun _ _ ↦ rfl) _))
+    ((natCard_H2 rels hrels e h).symm.trans
+      (natCard_H2 rels' hrels' e' _))
 
 end Independence
 

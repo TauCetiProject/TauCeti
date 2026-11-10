@@ -29,8 +29,9 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   induce the same scalar action on a module.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
-* `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
-  identities behind the sign cancellations of twisted differentials.
+* `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
+  `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
+  of twisted differentials.
 * `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
   two signs.
 -/
@@ -150,6 +151,13 @@ theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
     (a - b - 1).negOnePow = -(b - a).negOnePow := by
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   exact ⟨a - b - 1, by omega⟩
+
+/-- Two signs whose exponents differ by an odd integer are opposite. -/
+theorem _root_.Int.negOnePow_eq_neg_of_odd_sub {a b : ℤ} (h : Odd (a - b)) :
+    a.negOnePow = -b.negOnePow := by
+  rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, by omega⟩
 
 /-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
 exponents. -/

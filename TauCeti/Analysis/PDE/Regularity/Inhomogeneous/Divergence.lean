@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -26,11 +27,11 @@ of radius `R` the right-hand side contributes
 
 `(R^(2 - n/r) ‖f‖_{Lʳ} + R^(1 - n/q) ‖F‖_{L^q}) / λ`,
 
-the same scaling as `R^(-n/2) ‖u‖_{L²}`, and the Hölder exponent is at most
-`min (2 - n/r) (1 - n/q)`. No regularity of the coefficients beyond measurability is assumed.
-The condition `q > 2` matters only for `n = 1`, where it is the hypothesis of Stampacchia's
-bound `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence`. The case `F = 0` is
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`, which needs no exponent `q`.
+the same scaling as `R^(-n/2) ‖u‖_{L²}`. No regularity of the coefficients beyond measurability
+is assumed. The condition `q > 2` matters only for `n = 1`, where it is the hypothesis of
+Stampacchia's bound `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence`. The case
+`F = 0` is `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`, which needs no
+exponent `q`.
 
 The right-hand side is split off one ball at a time. On `B = B(x₀, ρ) ⊆ Ω`, the Dirichlet
 problems `-∂ᵢ(aⁱʲ ∂ⱼw₁) = f` and `-∂ᵢ(aⁱʲ ∂ⱼw₂) = ∂ᵢFⁱ` in `B`, `w₁, w₂ ∈ H¹₀(B)`, have solutions
@@ -265,12 +266,10 @@ private theorem exists_forall_exists_ae_abs_sub_le_of_memLp_divergence [Nonempty
   refine ⟨g, hg, ?_⟩
   have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
       (eLpNorm f r (mu.restrict S)).toReal :=
-    ENNReal.toReal_mono hf.eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hρS le_rfl))
+    lpNorm_mono_measure hf (Measure.restrict_mono hρS le_rfl)
   have hFρ : (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal ≤
       (eLpNorm F q (mu.restrict S)).toReal :=
-    ENNReal.toReal_mono hF.eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hρS le_rfl))
+    lpNorm_mono_measure hF (Measure.restrict_mono hρS le_rfl)
   -- `ρ^δ ≤ R^(δ - γ) ρ^γ` for both gains `δ ≥ γ`.
   set γ := min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)
   have hpow : ∀ δ, γ ≤ δ → ρ ^ δ ≤ R ^ (δ - γ) * ρ ^ γ := fun δ hδ =>
@@ -378,9 +377,7 @@ constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱ�
 everywhere on `B(x₀, s)` the function `u` takes values in an interval of length
 
 `C (s / R)^α (R^(-n/2) ‖u‖_{L²(B(x₀, R))} +`
-`(R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} + R^(1 - n/q) ‖F‖_{L^q(B(x₀, R))}) / λ)`.
-
-The exponent `α` is at most `min (2 - n/r) (1 - n/q)`. -/
+`(R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} + R^(1 - n/q) ‖F‖_{L^q(B(x₀, R))}) / λ)`. -/
 theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_divergence [Nonempty ι]
     {lam Lam : ℝ} {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
     (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
@@ -438,9 +435,9 @@ representative of `u` is Hölder continuous on `K` with exponent `α` and consta
 
 `C R^(-α) (R^(-n/2) ‖u‖_{L²(Ω)} + (R^(2 - n/r) ‖f‖_{Lʳ(Ω)} + R^(1 - n/q) ‖F‖_{L^q(Ω)}) / λ)`.
 
-The exponent `α` is at most `min (2 - n/r) (1 - n/q)`. The precise representative agrees with
-`u` almost everywhere on `Ω` (`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the
-coefficients beyond measurability is assumed. -/
+The precise representative agrees with `u` almost everywhere on `Ω`
+(`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the coefficients beyond
+measurability is assumed. -/
 theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty ι]
     {lam Lam : ℝ} {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
     (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
