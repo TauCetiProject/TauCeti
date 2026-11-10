@@ -33,6 +33,10 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+private lemma isFiniteMeasure_option_dirac {X : Type*} [MeasurableSpace X]
+    {x : Option X} : IsFiniteMeasure (x.elim 0 Measure.dirac) := by
+  cases x <;> simp only [Option.elim_none, Option.elim_some] <;> infer_instance
+
 -- Removing the selected occurrence reconstructs the measure and reduces its mass by one,
 -- with truncated subtraction handling the empty measure as well.
 private lemma sub_option_dirac_step {X : Type*} [MeasurableSpace X]
@@ -40,8 +44,7 @@ private lemma sub_option_dirac_step {X : Type*} [MeasurableSpace X]
     (hnone : x = none ↔ ν = 0) :
     (ν - x.elim 0 Measure.dirac) + x.elim 0 Measure.dirac = ν ∧
       (ν - x.elim 0 Measure.dirac) univ = ν univ - 1 := by
-  have : IsFiniteMeasure (x.elim 0 Measure.dirac) := by
-    cases x <;> simp only [Option.elim_none, Option.elim_some] <;> infer_instance
+  have : IsFiniteMeasure (x.elim 0 Measure.dirac) := isFiniteMeasure_option_dirac
   refine ⟨sub_add_cancel_of_le hle, ?_⟩
   cases x with
   | none => simp [hnone.mp rfl]
@@ -107,8 +110,8 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
     | some x =>
       simpa only [atom, h, Option.elim_some] using
         (dirac_le_iff_one_le_apply_singleton _ _).2 (hmass ν x h)
-  have hfinatom (ν : M) : IsFiniteMeasure (atom ν) := by
-    cases h : pick ν <;> simp only [atom, h, Option.elim_none, Option.elim_some] <;> infer_instance
+  have hfinatom (ν : M) : IsFiniteMeasure (atom ν) :=
+    isFiniteMeasure_option_dirac (x := pick ν)
   let step : M → M := fun ν => ⟨ν.val - atom ν, by
     refine ⟨by have := ν.2.1; infer_instance, ?_⟩
     cases h : pick ν with
