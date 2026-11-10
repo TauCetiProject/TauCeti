@@ -86,7 +86,7 @@ theorem lagrangianChart_smul_one (s : ℝ) :
       sin_pi_div_two_sub, sin_arctan, cos_arctan]
     have h : √(1 + s ^ 2) ≠ 0 := by positivity
     apply Complex.ext <;> simp <;> field_simp
-  rw [lagrangianChart, lagrangianChartFrame_smul_one, hpolar,
+  rw [lagrangianChart_def, lagrangianChartFrame_smul_one, hpolar,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by positivity)]
 
 /-- The chart subspace of `1` is `e^{iπ/4} ℝⁿ`. -/
@@ -185,6 +185,7 @@ theorem ofLagrangianChart_apply {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁
   (rfl)
 
 /-- Reversing a chart path is the chart path of the reversed path of matrices. -/
+@[simp]
 theorem ofLagrangianChart_symm {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁)
     (hS : ∀ t, (S t).IsSymm) :
     (ofLagrangianChart S hS).symm =
@@ -194,13 +195,14 @@ theorem ofLagrangianChart_symm {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁)
       Function.comp_apply]
 
 /-- Catenating chart paths gives the chart path of the catenated path of matrices. -/
+@[simp]
 theorem ofLagrangianChart_trans {S₀ S₁ S₂ : Matrix n n ℝ} (S : Path S₀ S₁) (T : Path S₁ S₂)
     (hS : ∀ t, (S t).IsSymm) (hT : ∀ t, (T t).IsSymm) :
     (ofLagrangianChart S hS).trans (ofLagrangianChart T hT) (by simp) =
       ofLagrangianChart (S.trans T) (isSymm_path_trans hS hT) := by
   ext1 t
   rw [trans_apply, ofLagrangianChart_apply, Path.trans_apply]
-  split_ifs <;> rfl
+  split_ifs <;> rw [ofLagrangianChart_apply]
 
 /-- **Paths in the chart have relative Maslov index zero.** Two chart paths of paths of symmetric
 matrices with the same endpoints are joined by the straight-line homotopy of the matrices, which

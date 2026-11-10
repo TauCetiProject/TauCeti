@@ -269,8 +269,14 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The complex matrix `S + i` of a real matrix `S`. It maps `ℝⁿ` onto the subspace
 `{S y + i y | y ∈ ℝⁿ}`, and it is invertible when `S` is symmetric. -/
-@[expose] def lagrangianChartFrame (S : Matrix n n ℝ) : Matrix n n ℂ :=
+def lagrangianChartFrame (S : Matrix n n ℝ) : Matrix n n ℂ :=
   S.map ((↑) : ℝ → ℂ) + Complex.I • 1
+
+omit [Fintype n] in
+/-- The complex matrix `S + i` is `S` cast to `ℂ` plus `i` times the identity. -/
+theorem lagrangianChartFrame_def (S : Matrix n n ℝ) :
+    S.lagrangianChartFrame = S.map ((↑) : ℝ → ℂ) + Complex.I • 1 :=
+  (rfl)
 
 omit [Fintype n] in
 /-- The entries of `S + i`. -/
@@ -305,8 +311,13 @@ theorem det_lagrangianChartFrame_ne_zero {S : Matrix n n ℝ} (hS : S.IsSymm) :
 
 /-- The subspace `{S y + i y | y ∈ ℝⁿ}` of `ℂⁿ`, the image of `ℝⁿ` under `S + i`. For symmetric
 `S` it is a Lagrangian subspace transverse to `ℝⁿ`. -/
-@[expose] def lagrangianChart (S : Matrix n n ℝ) : Submodule ℝ (EuclideanSpace ℂ n) :=
+def lagrangianChart (S : Matrix n n ℝ) : Submodule ℝ (EuclideanSpace ℂ n) :=
   S.lagrangianChartFrame.realImage
+
+/-- The subspace `{S y + i y | y ∈ ℝⁿ}` is the image of `ℝⁿ` under `S + i`. -/
+theorem lagrangianChart_def (S : Matrix n n ℝ) :
+    S.lagrangianChart = S.lagrangianChartFrame.realImage :=
+  (rfl)
 
 /-- The coordinates of `(S + i) x`. -/
 private theorem lagrangianChartFrame_mulVec_apply (S : Matrix n n ℝ) (x : n → ℂ) (i : n) :
@@ -396,13 +407,27 @@ theorem map_lagrangianChartCLE {S : Matrix n n ℝ} (hS : S.IsSymm) :
       EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) = S.lagrangianChart :=
   (realImage_eq_map_toEuclideanCLE _).symm
 
+/-- The automorphism `S + i` acts as the matrix `S + i`. -/
+@[simp]
+theorem lagrangianChartCLE_apply {S : Matrix n n ℝ} (hS : S.IsSymm) (x : EuclideanSpace ℂ n) :
+    lagrangianChartCLE hS x = S.lagrangianChartFrame.toEuclideanLin x :=
+  toEuclideanCLE_apply _ _ x
+
+/-- The automorphism `S + i`, as a continuous linear map, is the continuous linear map of the
+matrix `S + i`. -/
+@[simp]
+theorem coe_lagrangianChartCLE {S : Matrix n n ℝ} (hS : S.IsSymm) :
+    (lagrangianChartCLE hS : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) =
+      toEuclideanCLM (𝕜 := ℂ) S.lagrangianChartFrame :=
+  coe_toEuclideanCLE _ _
+
 /-- The automorphisms `S x + i` of `ℂⁿ` depend continuously on a continuous family `S x` of
 symmetric real matrices. -/
 theorem continuous_lagrangianChartCLE {X : Type*} [TopologicalSpace X] {S : X → Matrix n n ℝ}
     (hS : Continuous S) (hS' : ∀ x, (S x).IsSymm) :
     Continuous fun x ↦
       (lagrangianChartCLE (hS' x) : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) := by
-  simp only [lagrangianChartCLE, coe_toEuclideanCLE, lagrangianChartFrame]
+  simp only [coe_lagrangianChartCLE, lagrangianChartFrame_def]
   exact continuous_toEuclideanCLM.comp
     ((hS.matrix_map Complex.continuous_ofReal).add continuous_const)
 
