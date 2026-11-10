@@ -24,7 +24,7 @@ by `u` and leaves every other coordinate unchanged, as a continuous homomorphism
   coordinates, as a conditional and as a `Function.update`.
 -/
 
-@[expose] public section
+public section
 
 namespace ContinuousMonoidHom
 
@@ -54,9 +54,10 @@ def scaleCoord : Multiplicative (X → R) →ₜ* Multiplicative (X → R) where
 argument if `k = x₀`, and the coordinate of the argument otherwise. -/
 theorem toAdd_scaleCoord_apply (a : Multiplicative (X → R)) (k : X) :
     (scaleCoord x₀ u a).toAdd k = if k = x₀ then u * a.toAdd k else a.toAdd k :=
-  rfl
+  (rfl)
 
 /-- `scaleCoord x₀ u` replaces the coordinate at `x₀` by `u` times it. -/
+@[simp]
 theorem toAdd_scaleCoord (a : Multiplicative (X → R)) :
     (scaleCoord x₀ u a).toAdd = Function.update a.toAdd x₀ (u * a.toAdd x₀) := by
   funext k
