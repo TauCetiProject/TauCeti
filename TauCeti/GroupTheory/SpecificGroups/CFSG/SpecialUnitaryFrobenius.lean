@@ -46,8 +46,8 @@ elements `s` with `s ^ q = ε s` and has a nonzero kernel element
 `TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero`). These are the hypotheses
 of `Matrix.isPretransitive_isotropicPoints` and
 `Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, so `SU_{r+1}(q)` acts transitively on
-the isotropic points of projective space and, in positive rank, an element fixing all of them is
-central.
+the isotropic points of projective space and an element fixing all of them is central (trivially
+so in rank `0`, where the group is trivial).
 
 The field with `q²` elements and its embedding come from `CFSG/Frobenius.lean`, and the entrywise
 description of the special linear matrices with coordinates in it from
@@ -80,8 +80,8 @@ description of the special linear matrices with coordinates in it from
   coordinate are isotropic.
 * `TauCeti.ValidLieTypeIndex.isPretransitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
   transitively on its isotropic points.
-* `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: in
-  positive rank, an element of `SU_{r+1}(q)` fixing every isotropic point is central.
+* `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: an
+  element of `SU_{r+1}(q)` fixing every isotropic point is central (trivially so in rank `0`).
 * `TauCeti.ValidLieTypeIndex.specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup`: the
   coefficient extension carries the finite fixed subgroup onto the fixed subgroup over the closure.
 
@@ -369,9 +369,8 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField
           (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
         (iterateFrobenius _ d.characteristic d.fieldExponent)) := by
   rcases Nat.eq_zero_or_pos r with rfl | hr
-  · obtain rfl : g = 1 := Subtype.ext (Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
-      rw [Fin.fin_one_eq_zero i, Fin.fin_one_eq_zero j]
-      simpa [Matrix.det_fin_one] using g.1.2)
+  · obtain rfl : g = 1 :=
+      Subtype.ext (Subsingleton.elim (α := Matrix.SpecialLinearGroup (Fin 1) _) _ _)
     exact one_mem _
   have : NeZero r := ⟨hr.ne'⟩
   exact mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField

@@ -32,17 +32,20 @@ half-step between two such relations.
 
 Beside them is the action of the odd power on a numbered family of one-parameter maps. A
 half-Frobenius exchanges the long and short simple root subgroups of its carrier, raising the
-parameter of the `i`-th one to the `e_i`-th power, while its square fixes each of them and raises
-the parameter to the `p`-th power. The odd power therefore moves the family exactly once, and
+parameter of the `i`-th one to the `e_i`-th power. Its square then fixes each of them and raises
+the parameter to the `p`-th power, which follows from the index data
+(`TauCeti.SuzukiReeIndex.lengthPerm_lengthPerm` and
+`TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm`) and need not be supplied. The odd power
+therefore moves the family exactly once, and
 
 ```text
 τ ^ (2m+1) (x_i(t)) = x_{σ i}(t ^ (p ^ m * e_i)),
 ```
 
 where `σ` and `e_i` are read off the index itself, as `TauCeti.SuzukiReeIndex.lengthPerm` and
-`TauCeti.SuzukiReeIndex.exponent`, and `p` is its defining characteristic. Only the two displayed
-hypotheses on `τ` are used, so a branch supplies its carrier's isogeny equations and reads the
-Steinberg equation off.
+`TauCeti.SuzukiReeIndex.exponent`, and `p` is its defining characteristic. The family equation
+needs only the half-Frobenius action on the family, so a branch supplies that action on its
+carrier's root subgroups and reads the Steinberg equation off.
 
 Nothing here constructs a half-Frobenius, and nothing asserts that one exists on a given carrier
 or that it is unique; `τ` is a bare endomorphism throughout.
