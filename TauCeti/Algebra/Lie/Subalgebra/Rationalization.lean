@@ -50,7 +50,7 @@ section
 universe u v w
 
 variable {R : Type u} {K : Type v} {L : Type w}
-  [CommRing R] [IsDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
   [LieRing L] [LieAlgebra R L] [LieAlgebra K L] [IsScalarTower R K L]
 
 private theorem rationalizationEquiv_map_lie (M : LieSubalgebra R L)
