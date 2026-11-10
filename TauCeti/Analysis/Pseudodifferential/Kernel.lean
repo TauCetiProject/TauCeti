@@ -205,8 +205,8 @@ theorem continuous_quantizationKernel (ha : Continuous a) {m : ℝ} (hm : m < -f
       ∃ C, ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
     Continuous (Function.uncurry (quantizationKernel a)) := by
   have hweight : Integrable fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
-    simpa only [neg_neg] using integrable_rpow_neg_one_add_norm_smul_sq volume two_pi_pos.ne'
-      (r := -m) (by linarith)
+    simpa only [neg_neg] using (integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := -m)
+      (by linarith)).comp_smul two_pi_pos.ne'
   have hcont : Continuous fun q : (E × E) × E ↦
       𝐞 ⟪q.2, q.1.1 - q.1.2⟫ • a (q.1.1, (2 * π) • q.2) :=
     (Real.continuous_fourierChar.comp (continuous_snd.inner
@@ -656,8 +656,8 @@ private theorem hasFDerivAt_quantizationKernel (a : Symbol n V W m) (hm : m + 1 
     (((le_max_left _ _).trans (Prod.dist_eq (x := p) (y := p₀)).ge).trans (Metric.mem_ball.1 hp).le)
   have hweight :
       Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
-    simpa only [neg_neg] using integrable_rpow_neg_one_add_norm_smul_sq volume two_pi_pos.ne'
-      (r := -(m + 1)) (by simp only [finrank_euclideanSpace_fin]; linarith)
+    simpa only [neg_neg] using (integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := -(m + 1))
+      (by simp only [finrank_euclideanSpace_fin]; linarith)).comp_smul two_pi_pos.ne'
   rw [uncurry_quantizationKernel_eq]
   exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
     (Filter.Eventually.of_forall fun p ↦ (continuous_kernelIntegrand a p).aestronglyMeasurable)
@@ -680,8 +680,8 @@ private theorem fderiv_quantizationKernel_apply (a : Symbol n V W m) (hm : m + 1
     inferInstance
   have hweight :
       Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
-    simpa only [neg_neg] using integrable_rpow_neg_one_add_norm_smul_sq volume two_pi_pos.ne'
-      (r := -(m + 1)) (by simp only [finrank_euclideanSpace_fin]; linarith)
+    simpa only [neg_neg] using (integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := -(m + 1))
+      (by simp only [finrank_euclideanSpace_fin]; linarith)).comp_smul two_pi_pos.ne'
   have hint : Integrable fun ζ ↦ kernelIntegrandFDeriv a ζ p :=
     (hweight.const_mul (C' + 2 * C)).mono'
       (aestronglyMeasurable_kernelIntegrandFDeriv a p)
@@ -718,9 +718,9 @@ theorem norm_sq_smul_quantizationKernel (a : Symbol n V W m) (hm : m < -n)
     (x y : CoordinateSpace n) :
     ‖x - y‖ ^ 2 • quantizationKernel a.coefficient x y =
       quantizationKernel (-frequencyLaplacian a).coefficient x y := by
+  have hle : m - 1 - 1 ≤ m - 2 := by linarith
   have hj (j : Fin n) : quantizationKernel
-      (inclusion (show m - 1 - 1 ≤ m - 2 by linarith)
-        (frequencyDeriv j (frequencyDeriv j a))).coefficient x y =
+      (inclusion hle (frequencyDeriv j (frequencyDeriv j a))).coefficient x y =
       -((x - y) j ^ 2 : ℝ) • quantizationKernel a.coefficient x y := by
     rw [coefficient_inclusion, quantizationKernel_frequencyDeriv _ (by linarith),
       quantizationKernel_frequencyDeriv _ hm, ← Complex.coe_smul]
@@ -747,6 +747,19 @@ private theorem coefficient_negFrequencyLaplacianPow_succ (a : Symbol n V W m) (
     (negFrequencyLaplacianPow a (N + 1)).coefficient =
       (-frequencyLaplacian (negFrequencyLaplacianPow a N)).coefficient := by
   simp [negFrequencyLaplacianPow]
+
+private theorem negFrequencyLaplacianPow_add (a b : Symbol n V W m) (N : ℕ) :
+    negFrequencyLaplacianPow (a + b) N =
+      negFrequencyLaplacianPow a N + negFrequencyLaplacianPow b N := by
+  induction N with
+  | zero => simp only [negFrequencyLaplacianPow, map_add]
+  | succ N ih => simp only [negFrequencyLaplacianPow, ih, map_add, neg_add]
+
+private theorem negFrequencyLaplacianPow_smul (c : ℂ) (a : Symbol n V W m) (N : ℕ) :
+    negFrequencyLaplacianPow (c • a) N = c • negFrequencyLaplacianPow a N := by
+  induction N with
+  | zero => simp only [negFrequencyLaplacianPow, map_smul]
+  | succ N ih => simp only [negFrequencyLaplacianPow, ih, map_smul, ← smul_neg]
 
 /-- For a symbol `a` of order `m < -n`, `‖x - y‖^(2N) K_a(x, y)` is the kernel of `(-Δ_ξ)^N a`. -/
 private theorem norm_sq_pow_smul_quantizationKernel (a : Symbol n V W m) (hm : m < -n) (N : ℕ)
@@ -840,6 +853,29 @@ def offDiagonalKernel (a : Symbol n V W m) (x y : CoordinateSpace n) : V →L[�
 theorem offDiagonalKernel_self (a : Symbol n V W m) (x : CoordinateSpace n) :
     offDiagonalKernel a x x = 0 := by
   simp [offDiagonalKernel]
+
+/-- The kernel off the diagonal of the zero symbol vanishes. -/
+@[simp]
+theorem offDiagonalKernel_zero (x y : CoordinateSpace n) :
+    offDiagonalKernel (0 : Symbol n V W m) x y = 0 := by
+  rw [offDiagonalKernel, ← zero_smul ℂ (0 : Symbol n V W m), negFrequencyLaplacianPow_smul,
+    zero_smul, coefficient_zero, quantizationKernel_zero, smul_zero]
+
+/-- The kernel off the diagonal is additive in the symbol. -/
+theorem offDiagonalKernel_add (a b : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (a + b) x y = offDiagonalKernel a x y + offDiagonalKernel b x y := by
+  rw [offDiagonalKernel, offDiagonalKernel, offDiagonalKernel, negFrequencyLaplacianPow_add,
+    coefficient_add, quantizationKernel_add
+      ((negFrequencyLaplacianPow a _).integrable_coefficient (order_sub_two_mul_lt m n) x)
+      ((negFrequencyLaplacianPow b _).integrable_coefficient (order_sub_two_mul_lt m n) x),
+    smul_add]
+
+/-- The kernel off the diagonal is homogeneous in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_smul (c : ℂ) (a : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (c • a) x y = c • offDiagonalKernel a x y := by
+  rw [offDiagonalKernel, offDiagonalKernel, negFrequencyLaplacianPow_smul, coefficient_smul,
+    quantizationKernel_smul, smul_comm]
 
 /-- The kernel off the diagonal is smooth on `{(x, y) | x ≠ y}`. -/
 theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :

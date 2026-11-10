@@ -624,7 +624,7 @@ theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSp
   simp only [frequencyLaplacian_apply, coefficient_sum, Finset.sum_apply, coefficient_inclusion,
     coefficient_frequencyDeriv]
   refine Finset.sum_congr rfl fun j _ => ?_
-  rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
+  exact (congrFun (coordinateDeriv_append [j] [j] _) ξ).symm
 
 end Deriv
 
