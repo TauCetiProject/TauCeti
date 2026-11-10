@@ -72,7 +72,7 @@ theorem generalizedGammaMeasure_neg_one_eq_inverseGammaMeasure (a s : ℝ) :
   · rw [generalizedGammaMeasure_of_not_valid (by tauto), inverseGammaMeasure_of_not_pos h]
   obtain ⟨ha, hs⟩ := h
   have hscale : (gammaMeasure a 1).map (s⁻¹ * ·) = gammaMeasure a s := by
-    simpa using gammaMeasure_map_const_mul ha zero_lt_one (inv_pos.mpr hs)
+    simpa using gammaMeasure_map_const_mul (a := a) (r := 1) (inv_pos.mpr hs)
   rw [generalizedGammaMeasure_of_valid ha (by norm_num) hs,
     inverseGammaMeasure_of_pos ha hs, ← hscale,
     Measure.map_map (by fun_prop) (by fun_prop)]
@@ -92,7 +92,7 @@ theorem chiMeasure_eq_generalizedGammaMeasure (hk : 0 < k) :
         grind)]
   have hscale : (gammaMeasure (k / 2) 1).map (2 * ·) =
       gammaMeasure (k / 2) (1 / 2) :=
-    gammaMeasure_map_const_mul (half_pos hk) zero_lt_one (by norm_num)
+    gammaMeasure_map_const_mul (by norm_num)
   rw [chiMeasure_eq_map_gammaMeasure hk hs, ← hscale,
     Measure.map_map (by fun_prop) (by fun_prop),
     generalizedGammaMeasure_of_valid (half_pos hk) (by norm_num) (by positivity)]

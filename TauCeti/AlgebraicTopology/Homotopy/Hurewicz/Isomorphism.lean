@@ -197,7 +197,7 @@ private theorem cubicalHurewiczHom_surjective
     apply (K X).moduleCat_iCycles_injective
     apply chainEquiv.injective
     refine (iCycles_basedCycle g hg).trans ?_
-    rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
     exact (D.normalizedCubicalChainComplexXEquiv_retractChainMap_f_apply ℤ (n + 2)
       ((K X).iCycles (n + 2) z)).symm
   rw [hcycle]

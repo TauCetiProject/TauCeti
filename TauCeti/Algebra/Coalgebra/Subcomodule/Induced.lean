@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.OfInjective
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
@@ -35,7 +36,7 @@ subcomodules to be usable as comodules in their own right.
 This is the standard inherited comodule structure on a subcomodule; see Sweedler,
 *Hopf Algebras*, Chapter 2.  The formalization uses Mathlib's
 `LinearMap.codRestrictOfInjective` and flatness preservation of injective maps under tensor
-product.
+product; the comodule laws are inherited along the inclusion by `TauCeti.Comodule.ofInjective`.
 -/
 
 public section
@@ -93,129 +94,23 @@ theorem subtype_rTensor_comp_inducedCoact : (SMulMemClass.subtype N).rTensor C �
   ext n
   exact subtype_rTensor_inducedCoact N n
 
-private theorem subtype_rTensor_tensor_injective :
-    Function.Injective (((SMulMemClass.subtype N).rTensor C).rTensor C) :=
-  Module.Flat.rTensor_preserves_injective_linearMap
-    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N)
-
-omit [Module.Flat R C] in
-private theorem subtype_rTensor_R_injective :
-    Function.Injective ((SMulMemClass.subtype N).rTensor R) :=
-  Module.Flat.rTensor_preserves_injective_linearMap (SMulMemClass.subtype N)
-    Subtype.val_injective
-
-private theorem map_rTensor_inducedCoact (t : N ⊗[R] C) :
-    TensorProduct.map ((SMulMemClass.subtype N).rTensor C) (LinearMap.id : C →ₗ[R] C)
-        (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C) t) =
-      TensorProduct.map (Comodule.coact (R := R) (C := C) (M := M))
-        (LinearMap.id : C →ₗ[R] C)
-        (TensorProduct.map (SMulMemClass.subtype N) (LinearMap.id : C →ₗ[R] C) t) := by
-  rw [TensorProduct.map_map, TensorProduct.map_map, subtype_rTensor_comp_inducedCoact]
-
-omit [Module.Flat R C] in
-private theorem assoc_symm_tmul_natural (n : N) (z : C ⊗[R] C) :
-    (TensorProduct.assoc R M C C).symm (SMulMemClass.subtype N n ⊗ₜ[R] z) =
-      ((SMulMemClass.subtype N).rTensor C).rTensor C
-        ((TensorProduct.assoc R N C C).symm (n ⊗ₜ[R] z)) := by
-  rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map_assoc_symm]
-  simp
-
-omit [Module.Flat R C] in
-private theorem assoc_symm_lTensor_comul_natural (t : N ⊗[R] C) : (TensorProduct.assoc R M C C).symm
-        (Coalgebra.comul.lTensor M ((SMulMemClass.subtype N).rTensor C t)) =
-      ((SMulMemClass.subtype N).rTensor C).rTensor C
-        ((TensorProduct.assoc R N C C).symm (Coalgebra.comul.lTensor N t)) := by
-  induction t with
-  | tmul n c =>
-      simp only [LinearMap.rTensor_def, LinearMap.lTensor_def, TensorProduct.map_tmul,
-        LinearMap.id_coe, id_eq]
-      exact assoc_symm_tmul_natural N n (Coalgebra.comul (R := R) c)
-  | add x y hx hy => simp [hx, hy]
-
-omit [Module.Flat R C] in
-private theorem lTensor_counit_natural (t : N ⊗[R] C) :
-    (SMulMemClass.subtype N).rTensor R (Coalgebra.counit.lTensor N t) =
-      Coalgebra.counit.lTensor M ((SMulMemClass.subtype N).rTensor C t) := by
-  rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, ← LinearMap.comp_apply,
-    LinearMap.lTensor_comp_rTensor]
-
-/-- **Coassociativity of the induced coaction.** This is the first comodule axiom for
-`Subcomodule.inducedCoact`, and the coassociativity field of `Subcomodule.instComodule`. -/
-private theorem inducedCoact_coassoc :
-    TensorProduct.assoc R N C C ∘ₗ N.inducedCoact.rTensor C ∘ₗ N.inducedCoact =
-      Coalgebra.comul.lTensor N ∘ₗ N.inducedCoact := by
-  -- Both sides are determined by their images under the subtype inclusion, so the identity is
-  -- transported from the coassociativity of `M`.
-  ext n
-  apply (subtype_rTensor_tensor_injective N).comp
-    (TensorProduct.assoc R N C C).symm.injective
-  simp only [LinearMap.comp_apply, LinearMap.rTensor_def]
-  calc
-    ((SMulMemClass.subtype N).rTensor C).rTensor C
-        ((TensorProduct.assoc R N C C).symm
-          (TensorProduct.assoc R N C C
-            (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C)
-              (N.inducedCoact n)))) =
-        TensorProduct.map ((SMulMemClass.subtype N).rTensor C) (LinearMap.id : C →ₗ[R] C)
-          (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C)
-            (N.inducedCoact n)) := by
-          rw [LinearEquiv.symm_apply_apply, LinearMap.rTensor_def]
-    _ =
-        (Comodule.coact (R := R) (C := C) (M := M)).rTensor C
-          (Comodule.coact (R := R) (C := C) (M := M) n) := by
-          rw [map_rTensor_inducedCoact]
-          simp only [← LinearMap.rTensor_def, subtype_rTensor_inducedCoact]
-    _ =
-        (TensorProduct.assoc R M C C).symm
-          (Coalgebra.comul.lTensor M
-            (Comodule.coact (R := R) (C := C) (M := M) n)) := by
-          apply (TensorProduct.assoc R M C C).injective
-          simp [Comodule.coassoc_apply (R := R) (C := C) (M := M)]
-    _ =
-        ((SMulMemClass.subtype N).rTensor C).rTensor C
-          ((TensorProduct.assoc R N C C).symm
-            (Coalgebra.comul.lTensor N (N.inducedCoact n))) := by
-          rw [← assoc_symm_lTensor_comul_natural]
-          rw [subtype_rTensor_inducedCoact]
-
-/-- **The counit law for the induced coaction.** This is the second comodule axiom for
-`Subcomodule.inducedCoact`, and the counit field of `Subcomodule.instComodule`. -/
-private theorem inducedCoact_counit :
-    Coalgebra.counit.lTensor N ∘ₗ N.inducedCoact = (TensorProduct.mk R N R).flip 1 := by
-  -- The inclusion is injective on `N ⊗[R] R`, so it suffices to check the identity in `M ⊗[R] R`.
-  ext n
-  apply subtype_rTensor_R_injective N
-  simp only [LinearMap.comp_apply]
-  calc
-    (SMulMemClass.subtype N).rTensor R
-        (Coalgebra.counit.lTensor N (N.inducedCoact n)) =
-        Coalgebra.counit.lTensor M
-          ((SMulMemClass.subtype N).rTensor C (N.inducedCoact n)) := by
-          exact lTensor_counit_natural N (N.inducedCoact n)
-    _ = (n : M) ⊗ₜ[R] 1 := by
-          simp
-    _ = (SMulMemClass.subtype N).rTensor R (n ⊗ₜ[R] 1) := by
-          rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply]
-
 /-- The subtype of a subcomodule carries the inherited right-comodule structure. -/
-noncomputable instance instComodule : Comodule R C N where
-  coact := N.inducedCoact
-  -- The two axioms are `by exact` rather than bare terms: this instance is public, so its body may
-  -- not name a private declaration, while a tactic proof of a `Prop` field may.
-  coassoc := by exact inducedCoact_coassoc N
-  lTensor_counit_comp_coact := by exact inducedCoact_counit N
+noncomputable instance instComodule : Comodule R C N :=
+  Comodule.ofInjective N.inducedCoact (SMulMemClass.subtype N) Subtype.val_injective
+    (Module.Flat.rTensor_preserves_injective_linearMap _ Subtype.val_injective)
+    (subtype_rTensor_comp_inducedCoact N)
 
 /-- The inherited coaction on a subcomodule is `Subcomodule.inducedCoact`. -/
 @[simp]
 theorem induced_coact :
     Comodule.coact (R := R) (C := C) (M := N) = N.inducedCoact :=
-  (rfl)
+  Comodule.ofInjective_coact ..
 
 /-- The inherited coaction, included back into `M ⊗ C`, is the ambient coaction. -/
 theorem subtype_rTensor_coact (n : N) :
     (SMulMemClass.subtype N).rTensor C (Comodule.coact (R := R) (C := C) (M := N) n) =
-      Comodule.coact (R := R) (C := C) (M := M) n :=
-  subtype_rTensor_inducedCoact N n
+      Comodule.coact (R := R) (C := C) (M := M) n := by
+  rw [induced_coact, subtype_rTensor_inducedCoact]
 
 /-- A vector of a subcomodule whose inherited coaction is `v ↦ v ⊗ 1` is fixed by the ambient
 coaction too. -/

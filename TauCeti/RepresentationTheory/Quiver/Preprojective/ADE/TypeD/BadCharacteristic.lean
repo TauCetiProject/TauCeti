@@ -23,7 +23,7 @@ These are statements about zeroth Hochschild homology, not intrinsic formality i
 
 Products are in later-factor-first order. The nonvanishing argument works over every nontrivial
 commutative ring with `2 = 0`, without a field hypothesis. As in the neighboring type-`D`
-modules, select `forkNeighborSetFintype` when writing signless quotient carriers.
+modules, select `SimpleGraph.neighborSetFintypeOfFinite` when writing signless quotient carriers.
 
 ## References
 
@@ -39,7 +39,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def d4ForkNodes {n : ℕ} (hn : 4 ≤ n) : Fin 4 ↪ Fin (DynkinType.D n).rank where
   toFun i := Fin.cast (DynkinType.rank_D n).symm ⟨n - 4 + i.val, by have := i.isLt; omega⟩

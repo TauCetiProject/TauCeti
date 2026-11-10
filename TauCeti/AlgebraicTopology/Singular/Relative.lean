@@ -44,16 +44,6 @@ universe w v u
 
 namespace TopPair
 
-/-- The ambient component of the identity map of a topological pair is the identity. -/
-@[simp]
-lemma Hom.fst_id (P : TopPair.{w}) : Hom.fst (𝟙 P) = 𝟙 P.fst := rfl
-
-/-- The ambient component of a composite map of topological pairs is the composite of the
-ambient components. -/
-@[simp]
-lemma Hom.fst_comp {P Q S : TopPair.{w}} (f : P ⟶ Q) (g : Q ⟶ S) :
-    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g := rfl
-
 /-- The inclusion of the subspace of a topological pair is a monomorphism, since an embedding is
 injective. -/
 instance (P : TopPair.{w}) : Mono P.map :=
@@ -428,6 +418,20 @@ lemma isIso_singularHomologyπ_of_isIso_comp [IsIso (Hom.fst f)] {n : ℕ}
     rw [singularHomologyπ_naturality]
     exact h
   exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) _
+
+/-- For subsets `S' ⊆ S` of `X`, the map `Hₙ(X) ⟶ Hₙ(X, S)` factors through `Hₙ(X) ⟶ Hₙ(X, S')`,
+via the map induced by the identity of `X` as a map of pairs `(X, S') ⟶ (X, S)`. -/
+@[reassoc]
+lemma singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id {X : TopCat.{w}}
+    {S S' : Set X} (h : Set.MapsTo (𝟙 X) S' S) (n : ℕ) :
+    (ofSubset S').singularHomologyπ R n ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) h) R n =
+      (ofSubset S).singularHomologyπ R n := by
+  have hid : SSet.homologyMap (TopCat.toSSet.map (Hom.fst (ofSubsetMap (𝟙 X) h))) R n = 𝟙 _ := by
+    rw [ofSubsetMap_fst]
+    exact (congrArg (SSet.homologyMap · R n) (TopCat.toSSet.map_id X)).trans
+      (SSet.homologyMap_id _ R n)
+  rw [← singularHomologyπ_naturality, hid]
+  exact Category.id_comp _
 
 end Homology
 

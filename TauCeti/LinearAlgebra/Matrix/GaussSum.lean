@@ -22,8 +22,9 @@ quadratic form of `A`. This file proves its two structural properties:
   Gram matrix of a bilinear form on a free module does not depend on the basis;
 * it is multiplicative over block diagonal matrices
   (`Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`), so the Gauss sum of an orthogonal
-  sum of forms is the product of their Gauss sums; for a diagonal matrix it is the product of the
-  one-variable sums `∑_y ψ(d y²)` (`Matrix.sum_addChar_dotProduct_diagonal_mulVec`).
+  sum of forms is the product of their Gauss sums, for any number of summands
+  (`Matrix.sum_addChar_dotProduct_blockDiagonal'_mulVec`); for a diagonal matrix it is the product
+  of the one-variable sums `∑_y ψ(d y²)` (`Matrix.sum_addChar_dotProduct_diagonal_mulVec`).
 
 The Gauss sum of the Gram matrix of a bilinear form, reduced along a ring homomorphism to `S`,
 is therefore the same in every basis
@@ -36,6 +37,8 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 * `Matrix.sum_addChar_dotProduct_transpose_mul_mul_mulVec`: invariance under congruence.
 * `Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`: multiplicativity over block
   diagonal matrices.
+* `Matrix.sum_addChar_dotProduct_blockDiagonal'_mulVec`: multiplicativity over block diagonal
+  matrices with a finite family of blocks.
 * `Matrix.sum_addChar_dotProduct_diagonal_mulVec`: the Gauss sum of a diagonal matrix.
 * `LinearMap.BilinForm.sum_addChar_dotProduct_toMatrix_map_mulVec_eq`: the Gauss sum of a Gram
   matrix does not depend on the basis.
@@ -85,6 +88,27 @@ theorem sum_addChar_dotProduct_diagonal_mulVec (d : n → S) :
   refine Fintype.sum_congr _ _ fun x ↦ ?_
   simp only [mulVec_diagonal, dotProduct, ← AddChar.map_sum_eq_prod]
   exact congrArg ψ (Finset.sum_congr rfl fun i _ ↦ by ring)
+
+/-- **Gauss sums are multiplicative over block diagonal matrices with any number of blocks.** The
+Gauss sum of the block diagonal matrix with blocks `A i` over a finite semiring is the product of
+the Gauss sums of the `A i`. -/
+theorem sum_addChar_dotProduct_blockDiagonal'_mulVec {o : Type*} [Fintype o] [DecidableEq o]
+    {α : o → Type*} [∀ i, Fintype (α i)] [∀ i, DecidableEq (α i)]
+    (A : ∀ i, Matrix (α i) (α i) S) :
+    ∑ x : (Σ i, α i) → S, ψ (x ⬝ᵥ blockDiagonal' A *ᵥ x) =
+      ∏ i, ∑ x : α i → S, ψ (x ⬝ᵥ A i *ᵥ x) := by
+  rw [Finset.prod_univ_sum, ← (Equiv.piCurry fun _ _ ↦ S).symm.sum_comp]
+  refine Fintype.sum_congr _ _ fun y ↦ ?_
+  rw [← AddChar.map_sum_eq_prod]
+  congr 1
+  simp only [dotProduct, mulVec, Fintype.sum_sigma, blockDiagonal'_apply]
+  refine Fintype.sum_congr _ _ fun i ↦ Fintype.sum_congr _ _ fun a ↦ ?_
+  congr 1
+  rw [Finset.sum_eq_single i]
+  · simp [Sigma.uncurry]
+  · intro i' _ hi'
+    simp [Ne.symm hi']
+  · simp
 
 end Matrix
 

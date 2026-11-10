@@ -184,12 +184,14 @@ section CompactFactor
 variable {A : Type*} [Group A] [TopologicalSpace A] [CompactSpace A]
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- The intersection of a nonempty chain of closed subgroups of `A × G`, each projecting onto `G`,
+/-- The intersection of a chain of closed subgroups of `A × G`, each projecting onto `G`,
 projects onto `G` when `A` is compact: the fibre over `g` is a directed intersection of nonempty
 compact sets. -/
 theorem _root_.Subgroup.forall_exists_mem_sInf_of_isChain {c : Set (Subgroup (A × G))}
-    (hne : c.Nonempty) (hchain : IsChain (· ≤ ·) c) (hclosed : ∀ K ∈ c, IsClosed (K : Set (A × G)))
+    (hchain : IsChain (· ≤ ·) c) (hclosed : ∀ K ∈ c, IsClosed (K : Set (A × G)))
     (hsurj : ∀ K ∈ c, ∀ g : G, ∃ a : A, (a, g) ∈ K) (g : G) : ∃ a : A, (a, g) ∈ sInf c := by
+  rcases c.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨1, by simp⟩
   let F : c → Set A := fun K ↦ {a | (a, g) ∈ K.1}
   have : Nonempty c := hne.to_subtype
   have hFclosed (K : c) : IsClosed (F K) :=
@@ -218,7 +220,7 @@ theorem _root_.Subgroup.exists_minimal_isClosed_le (R : Subgroup (A × G))
   refine ⟨sInf c, ⟨(sInf_le hK).trans (hcs hK).1, ?_, ?_⟩, fun K hK ↦ sInf_le hK⟩
   · rw [Subgroup.coe_sInf]
     exact isClosed_biInter fun K hK ↦ (hcs hK).2.1
-  · exact Subgroup.forall_exists_mem_sInf_of_isChain ⟨K, hK⟩ hchain.symm
+  · exact Subgroup.forall_exists_mem_sInf_of_isChain hchain.symm
       (fun K hK ↦ (hcs hK).2.1) fun K hK ↦ (hcs hK).2.2
 
 

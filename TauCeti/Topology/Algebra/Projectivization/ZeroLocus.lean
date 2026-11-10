@@ -294,9 +294,8 @@ noncomputable def complexProjectiveZeroLocusAffineOpenHomeomorph
     (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1)) :
     ↥(complexProjectiveZeroLocus p ∩ Projectivization.affineOpen i) ≃ₜ
       affineZeroLocus fun k ↦ dehomogenize i (p k) :=
-  (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
-    (by simp)
-    (by simpa using image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
+  Projectivization.interAffineOpenHomeomorph
+    (image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
 
 /-- The homeomorphism `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph` is the affine
 chart. -/

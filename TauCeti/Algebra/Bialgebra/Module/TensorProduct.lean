@@ -63,12 +63,12 @@ variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
 
 /-- The representation of `H` on the native tensor product obtained from its coproduct. -/
 noncomputable def tensorAction : H →ₐ[R] Module.End R (M ⊗[R] N) :=
-  (tensorPairAction R H M N).comp (Bialgebra.comulAlgHom R H)
+  (tensorPairAction R M N).comp (Bialgebra.comulAlgHom R H)
 
 /-- The coproduct action is the pair action applied to the coproduct. -/
 theorem tensorAction_apply (h : H) (x : M ⊗[R] N) :
     tensorAction R H M N h x =
-      tensorPairAction R H M N (Coalgebra.comul h) x := (rfl)
+      tensorPairAction R M N (Coalgebra.comul h) x := (rfl)
 
 /-- The coproduct module structure on the tensor carrier. -/
 @[no_expose] noncomputable instance : Module H (Tensor R H M N) :=
@@ -230,7 +230,7 @@ noncomputable def tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
   map_smul' h x := by
     apply (tensorEquiv R H M' N').injective
     simpa [tensorAction_apply] using
-      tensorPairAction_natural R H f g (Coalgebra.comul h) (tensorEquiv R H M N x)
+      tensorPairAction_natural R f g (Coalgebra.comul h) (tensorEquiv R H M N x)
 
 variable {M N} in
 /-- The underlying map of a tensor intertwiner is the native tensor product of maps. -/
@@ -369,7 +369,7 @@ the reassociated iterated coproduct. -/
 private theorem assoc_tensorPairAction_left (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
     TensorProduct.assoc R M N P
         (TensorProduct.congr (tensorEquiv R H M N) (LinearEquiv.refl R P)
-          (tensorPairAction R H (Tensor R H M N) P t (tmul R H m n ⊗ₜ[R] p))) =
+          (tensorPairAction R (Tensor R H M N) P t (tmul R H m n ⊗ₜ[R] p))) =
       TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R)
         (TensorProduct.map ((LinearMap.toSpanSingleton H N n).restrictScalars R)
           ((LinearMap.toSpanSingleton H P p).restrictScalars R))
@@ -388,7 +388,7 @@ variable {M N P} in
 coproduct. -/
 private theorem tensorPairAction_right (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
     TensorProduct.congr (LinearEquiv.refl R M) (tensorEquiv R H N P)
-        (tensorPairAction R H M (Tensor R H N P) t (m ⊗ₜ[R] tmul R H n p)) =
+        (tensorPairAction R M (Tensor R H N P) t (m ⊗ₜ[R] tmul R H n p)) =
       TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R)
         (TensorProduct.map ((LinearMap.toSpanSingleton H N n).restrictScalars R)
           ((LinearMap.toSpanSingleton H P p).restrictScalars R))
@@ -592,7 +592,7 @@ followed by the action on the other factor. -/
 private theorem lid_tensorPairAction (r : Trivial R H) (m : M) (t : H ⊗[R] H) :
     TensorProduct.lid R M
         (TensorProduct.congr (trivialEquiv R H) (LinearEquiv.refl R M)
-          (tensorPairAction R H (Trivial R H) M t (r ⊗ₜ[R] m))) =
+          (tensorPairAction R (Trivial R H) M t (r ⊗ₜ[R] m))) =
       trivialEquiv R H r •
         TensorProduct.lid R H (Coalgebra.counit.rTensor H t) • m := by
   induction t using TensorProduct.inductionOn with
@@ -605,7 +605,7 @@ contraction followed by the action on the other factor. -/
 private theorem rid_tensorPairAction (m : M) (r : Trivial R H) (t : H ⊗[R] H) :
     TensorProduct.rid R M
         (TensorProduct.congr (LinearEquiv.refl R M) (trivialEquiv R H)
-          (tensorPairAction R H M (Trivial R H) t (m ⊗ₜ[R] r))) =
+          (tensorPairAction R M (Trivial R H) t (m ⊗ₜ[R] r))) =
       trivialEquiv R H r •
         TensorProduct.rid R H (Coalgebra.counit.lTensor H t) • m := by
   induction t using TensorProduct.inductionOn with

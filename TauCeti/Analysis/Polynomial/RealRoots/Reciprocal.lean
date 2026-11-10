@@ -114,34 +114,26 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect
       (F x).rootMultiplicity (f i x) = (F x₀).rootMultiplicity (f i x₀) := by
     filter_upwards [hF, hzeroRoots, hmult] with x hx hzr hmx i
     have hi : r i x ≠ 0 := (hzr i).not.2 i.property
-    have hm (x : E) (hx : (F x).natDegree ≤ N) (hi : r i x ≠ 0) :
-        (F x).rootMultiplicity (f i x) =
-          ((F x).reflect N).rootMultiplicity (r i x) := by
-      have h := (F x).rootMultiplicity_reflect hx (Units.mk0 (r i x)⁻¹ (inv_ne_zero hi))
-      simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, inv_inv, f] using h.symm
-    rw [hm x (hx.2 ▸ hdN) hi, hm x₀ (hF.self_of_nhds.2 ▸ hdN) i.property]
+    simp only [f]
+    rw [← (F x).rootMultiplicity_reflect_eq_inv (hx.2 ▸ hdN) hi,
+      ← (F x₀).rootMultiplicity_reflect_eq_inv (hF.self_of_nhds.2 ▸ hdN) i.property]
     exact hmx i i.property
   -- The original zero coordinate is excluded by the nonvanishing constant coefficient.
   have hcover : ∀ᶠ x in 𝓝 x₀, ∀ t,
       (F x).IsRoot t ↔ ∃ i : J, f i x = t := by
     filter_upwards [hF, hzero, hroots, hzeroRoots] with x hx hx0 hxr hzr t
-    have hroot (t : ℝ) (ht : t ≠ 0) :
-        (F x).IsRoot t ↔ ((F x).reflect N).IsRoot t⁻¹ := by
-      have hm := (F x).rootMultiplicity_reflect (hx.2 ▸ hdN) (Units.mk0 t ht)
-      simp only [Units.val_inv_eq_inv_val, Units.val_mk0] at hm
-      rw [← rootMultiplicity_pos hx.1,
-        ← rootMultiplicity_pos (reflect_eq_zero_iff.not.2 hx.1), hm]
+    have hN : (F x).natDegree ≤ N := hx.2 ▸ hdN
     constructor
     · intro ht
       have ht0 : t ≠ 0 := fun hz ↦ hx0 (hz ▸ ht.eq_zero)
-      obtain ⟨i, hi⟩ := (hxr _).1 ((hroot t ht0).1 ht)
+      obtain ⟨i, hi⟩ := (hxr _).1 (((F x).isRoot_reflect_inv_iff hN ht0).2 ht)
       have hi0 : r i x ≠ 0 := hi ▸ inv_ne_zero ht0
       refine ⟨⟨i, (hzr i).not.1 hi0⟩, ?_⟩
       simp only [f, hi, inv_inv]
     · rintro ⟨i, rfl⟩
       have hi : r i x ≠ 0 := (hzr i).not.2 i.property
-      apply (hroot _ (inv_ne_zero hi)).2
-      exact (hxr _).2 ⟨i, by simp⟩
+      refine ((F x).isRoot_reflect_inv_iff hN (inv_ne_zero hi)).1 ?_
+      simpa using (hxr _).2 ⟨i, rfl⟩
   -- Intersect the transport neighborhood with the neighborhood for a fixed ordering.
   obtain ⟨U, hU, hopen, hxU⟩ := eventually_nhds_iff.1
     (Filter.Eventually.and (hV.mem_nhds hxV) (hcover.and htransport))

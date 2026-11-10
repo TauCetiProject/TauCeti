@@ -119,6 +119,26 @@ theorem kostantRootSubgroup_def :
   rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
   rfl
 
+/-- Replacing a generator family by one with the same selected root vector leaves the
+represented root-subgroup morphism unchanged. -/
+theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
+    (hM' : ∀ u ∈ kostantForm e' h, ∀ m ∈ M, ρ u m ∈ M)
+    (i' : I') (hnil' : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (he : e i = e' i') :
+    kostantRootSubgroup e h ρ M hM i hnil b =
+      kostantRootSubgroup e' h ρ M hM' i' hnil' b := by
+  have hcoord : kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
+      kostantRootSubgroupCoordinateMap e' h ρ M hM' i' hnil' b := by
+    apply CommHopfAlgCat.hom_ext
+    apply BialgHom.coe_toAlgHom_injective
+    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
+    intro r s
+    simp only [BialgHom.coe_toAlgHom]
+    rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
+    simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
+      kostantRootSubgroupComodule_coact, he]
+  rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
+
 section Points
 
 variable (A : Type*) [CommRing A]
@@ -193,6 +213,48 @@ theorem pointsMulEquiv_kostantRootSubgroupCoordinateMap
       e h ρ M hM i hnil b A q r s
 
 end Points
+
+/-- **The generic matrix of a root subgroup is its matrix at the universal point of `𝔾ₐ`.** The
+identity of the additive coordinate algebra is a point of `𝔾ₐ` over that algebra, and the
+root-subgroup matrix there is the image of the generic matrix of `GL n` under the root-subgroup
+coordinate morphism. A matrix formula proved at every algebra-valued point is read on the
+coordinate morphism through this equation, which is the only place the universal point is
+handled. The matrix on the right uses the canonical integral algebra structure on the symmetric
+algebra, rather than the one supplied by the bundled coordinate Hopf algebra. -/
+theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
+    (GeneralLinear.genericMatrix ℤ n).map
+        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom =
+      let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
+      letI : Algebra ℤ A := Ring.toIntAlgebra A
+      (kostantRootSubgroupMatrix e h ρ M hM i hnil b
+        (toConv (SymmetricAlgebra.lift
+          (LinearMap.toSpanSingleton ℤ A (SymmetricAlgebra.ι ℤ ℤ 1))))).val := by
+  let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b
+  have hpoint : GeneralLinear.pointToGeneralLinear n
+      (toConv ((toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))).ofConv.comp
+        f.hom.toAlgHom)) =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil b
+        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) :=
+    pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b
+      (AdditiveGroup.coordinateHopfAlgebra ℤ)
+      (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))
+  have hpoint' : GeneralLinear.pointToGeneralLinear n (toConv f.hom.toAlgHom) =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil b
+        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) := by
+    simpa only [AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
+  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+  have hid : SymmetricAlgebra.lift
+      (LinearMap.toSpanSingleton ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)
+        (SymmetricAlgebra.ι ℤ ℤ 1)) = AlgHom.id ℤ _ := by
+    ext
+    simp
+  have hmatrix := congrArg
+    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    hpoint'
+  -- This bridge compares the bundled algebra structure with the canonical integer algebra.
+  -- Both maps are identified explicitly by their value on the symmetric-algebra generator.
+  rw [← hid] at hmatrix
+  exact hmatrix
 
 section SchemePoints
 

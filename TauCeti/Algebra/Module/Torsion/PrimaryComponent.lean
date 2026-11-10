@@ -181,6 +181,14 @@ open scoped DirectSum
 
 variable {R : Type*} [CommRing R]
 
+/-- A module annihilated by `I` is `I`-power torsion. -/
+theorem primaryComponent_eq_top_of_le_annihilator {M : Type*} [AddCommMonoid M]
+    [Module R M] (I : Ideal R) (hI : I ≤ Module.annihilator R M) :
+    I.primaryComponent M = ⊤ := by
+  refine eq_top_iff'.mpr fun m ↦ (I.primaryComponent_mem _ _).mpr ⟨1, ?_⟩
+  rw [pow_one, mem_torsionBySet_iff]
+  exact fun r ↦ Module.mem_annihilator.mp (hI r.2) m
+
 /-- The primary component of a submodule is the preimage of the ambient primary component. -/
 @[simp]
 theorem primaryComponent_comap_subtype {M : Type*} [AddCommMonoid M] [Module R M]

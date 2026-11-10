@@ -27,10 +27,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -61,10 +61,10 @@ jobs:
       # The no-stack bot intentionally uses a different Tools release.
       # Test that exact implementation after the general suite, without another runner.
       - name: Prepare stack-policy tools at the production pin
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@422751ed4ca60d28f4ec80f149505236fd1db408
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@70275ec56d5b1cead0acd03c785bb145353e2fc6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 422751ed4ca60d28f4ec80f149505236fd1db408
+          tools-ref: 70275ec56d5b1cead0acd03c785bb145353e2fc6
           project-directory: .
       - name: Stack-policy regression tests
         run: |
@@ -81,10 +81,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
@@ -144,10 +144,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:

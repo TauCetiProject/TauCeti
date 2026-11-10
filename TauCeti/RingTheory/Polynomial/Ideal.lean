@@ -25,6 +25,9 @@ the localization of `R` away from `r` (`Localization.awayEquivAdjoin`), this is 
 
 No field or Noetherian hypothesis is needed.
 
+Multiplication by `c X - 1` on `B[X]` is injective, since its constant coefficient is a unit
+(`Polynomial.mulLeft_C_mul_X_sub_one_injective`).
+
 ## References
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 4, §3,
@@ -98,3 +101,15 @@ theorem comap_C_map_C_sup_span_C_mul_X_sub_one (I : Ideal R) (r : R) (S : Type*)
     IsLocalization.Away.algebraMap_mem_map_algebraMap_iff r]
 
 end Ideal
+
+namespace Polynomial
+
+/-- Multiplication by `c X - 1` on `B[X]` is injective: its constant coefficient `-1` is a unit,
+so it is a non-zero-divisor. -/
+theorem mulLeft_C_mul_X_sub_one_injective (R : Type*) [CommRing R] {B : Type*} [CommRing B]
+    [Algebra R B] (c : B) : Function.Injective (LinearMap.mulLeft R (C c * X - 1 : B[X])) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  exact mem_nonZeroDivisors_iff_left.1 <| mem_nonZeroDivisors_of_coeff_mem 0 <| by
+    simpa using (isUnit_one.neg : IsUnit (-1 : B)).mem_nonZeroDivisors
+
+end Polynomial

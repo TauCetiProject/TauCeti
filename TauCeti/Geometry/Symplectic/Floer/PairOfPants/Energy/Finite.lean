@@ -226,11 +226,8 @@ theorem sum_endSign_mul_hamiltonianAction_le (ω : SymplecticForm V)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z) := by
-  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  have hTm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-    ((isCompact_truncation R).isClosed.preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
+  have hTm := measurableSet_preimage_truncation R
   -- The signed sum of the end actions is the energy over the truncation `S_R` plus the
   -- integrated curvature.
   have hid : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity

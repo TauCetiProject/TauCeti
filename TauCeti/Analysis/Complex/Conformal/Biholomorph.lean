@@ -53,7 +53,7 @@ noncomputable def _root_.DifferentiableOn.toOpenPartialHomeomorph
     (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hinj : InjOn f U) :
     OpenPartialHomeomorph ℂ ℂ :=
   OpenPartialHomeomorph.ofContinuousOpenRestrict (hinj.toPartialEquiv f U) hf.continuousOn
-    (isOpenMap_restrict_of_differentiableOn_of_injOn hU hf hinj) hU
+    (isOpenEmbedding_domRestrict_of_differentiableOn_of_injOn hU hf hinj).isOpenMap hU
 
 /-- The source of the partial homeomorphism associated to an injective holomorphic map is its
 given domain. -/

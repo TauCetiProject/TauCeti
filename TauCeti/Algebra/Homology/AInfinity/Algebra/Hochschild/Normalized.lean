@@ -235,7 +235,7 @@ private theorem apply_subword_mem_piece
     F (subword R x 0 n) ∈
       𝒜.grading.piece ((∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) + q + 1) := by
   have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n (by omega)
+    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
   simpa [InternalGrading.shift_piece] using hF.map_mem hsub
 
 /-- The Hochschild differential of a normalized cochain vanishes on a homogeneous word containing

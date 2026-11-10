@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 
 /-!
 # Diagonal and off-diagonal blocks of an operator
@@ -299,6 +303,14 @@ theorem commute_reflection_iff {A : E →L[𝕜] E} :
     (h.add_left (Commute.one_left A)).smul_left _
   rwa [sub_add_cancel, ← ofNat_smul_eq_nsmul 𝕜, inv_smul_smul₀ two_ne_zero] at h2
 
+/-- Reflection across an invariant subspace commutes with a symmetric operator. -/
+theorem _root_.LinearMap.IsSymmetric.commute_reflection {A : E →L[𝕜] E}
+    (hA : A.toLinearMap.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) :
+    Commute (U.reflection : E →L[𝕜] E) A :=
+  (U.commute_reflection_iff).2
+    (Submodule.isReducing_coe_iff_commute_starProjection.mp
+      ((hA.isReducing_iff_mem_invtSubmodule U).2 hU))
+
 /-- The off-diagonal part of `A` vanishes exactly when `A` commutes with the orthogonal
 projection onto `U`, that is, when `A` is block diagonal relative to `U ⊕ Uᗮ`. -/
 @[simp]
@@ -383,5 +395,42 @@ theorem diagBlock_orthogonal (A : E →L[𝕜] E) : Uᗮ.diagBlock A = U.diagBlo
 theorem offDiagBlock_orthogonal (A : E →L[𝕜] E) : Uᗮ.offDiagBlock A = U.offDiagBlock A := by
   simp only [offDiagBlock, starProjection_orthogonal', ← ContinuousLinearMap.mul_def]
   noncomm_ring
+
+/-- The two-block lift of the cross-projections `P_{Vᗮ} |_U` and `-(P_{Uᗮ} |_V)ᴴ` through the
+orthogonal decompositions is the difference of the projections `P_U - P_V`. -/
+theorem lift_crossBlocks_eq_starProjection_sub [FiniteDimensional 𝕜 E]
+    (V : Submodule 𝕜 E) [V.HasOrthogonalProjection] :
+    ((V.orthogonalDecomposition.trans (LinearIsometryEquiv.withLpProdComm 2 𝕜 V Vᗮ)).symm :
+        WithLp 2 (Vᗮ × V) →ₗ[𝕜] E) ∘ₗ
+      (((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype).prodMap
+        (-(LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype)))).withLpMap
+          2) ∘ₗ
+      (U.orthogonalDecomposition : E →ₗ[𝕜] WithLp 2 (U × Uᗮ)) =
+      (U.starProjection : E →ₗ[𝕜] E) - (V.starProjection : E →ₗ[𝕜] E) := by
+  ext x
+  simp [WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
+    Submodule.orthogonalDecomposition_apply]
+
+/-- The two-block lift of the residual blocks `P_{Vᗮ} (B - A) |_U` and
+`(P_{Uᗮ} (A - B) |_V)ᴴ` through the orthogonal decompositions is the checkerboard residual
+`(B - A) P_U - P_V (B - A)`. -/
+theorem lift_residualBlocks_eq_comp_sub [FiniteDimensional 𝕜 E]
+    {A B : E →L[𝕜] E} (hAB : ((A - B : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric)
+    (V : Submodule 𝕜 E) [V.HasOrthogonalProjection] :
+    ((V.orthogonalDecomposition.trans (LinearIsometryEquiv.withLpProdComm 2 𝕜 V Vᗮ)).symm :
+        WithLp 2 (Vᗮ × V) →ₗ[𝕜] E) ∘ₗ
+      (((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((B - A : E →L[𝕜] E) : E →ₗ[𝕜] E) ∘ₗ U.subtype)).prodMap
+        (LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((A - B : E →L[𝕜] E) : E →ₗ[𝕜] E) ∘ₗ V.subtype)))).withLpMap 2) ∘ₗ
+      (U.orthogonalDecomposition : E →ₗ[𝕜] WithLp 2 (U × Uᗮ)) =
+      (((B - A : E →L[𝕜] E) : E →ₗ[𝕜] E) ∘ₗ (U.starProjection : E →ₗ[𝕜] E)) -
+        ((V.starProjection : E →ₗ[𝕜] E) ∘ₗ ((B - A : E →L[𝕜] E) : E →ₗ[𝕜] E)) := by
+  simp only [LinearMap.adjoint_comp, Submodule.adjoint_subtype,
+    Submodule.adjoint_orthogonalProjectionOnto_toLinearMap, hAB.adjoint_eq, LinearMap.comp_assoc]
+  ext x
+  simp [WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
+    Submodule.orthogonalDecomposition_apply]
+  module
 
 end Submodule

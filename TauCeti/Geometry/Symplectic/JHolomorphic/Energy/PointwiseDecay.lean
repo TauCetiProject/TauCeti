@@ -64,14 +64,8 @@ private theorem exists_energy_power_bound
     · filter_upwards [ae_restrict_mem
         (measurableSet_ball.diff (measurableSet_singleton z₀))] with z hz
       rw [Real.norm_of_nonneg (sq_nonneg _)]
-      have hI : ‖fderiv ℝ u z I‖ ≤ max M 0 * ‖fderiv ℝ u z 1‖ := by
-        rw [hCR z hz]
-        exact ((J (u z)).le_opNorm _).trans
-          (mul_le_mul_of_nonneg_right ((hJ z hz).trans (le_max_left _ _)) (norm_nonneg _))
-      have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ := by
-        refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
-        exact ((fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w).trans
-          (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg w))
+      have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ :=
+        (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) ((hJ z hz).trans (le_max_left _ _)) le_rfl
       simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) hop 2
   let b := R / 2
   let α := 2 * c / (1 + M) ^ 2
@@ -164,14 +158,8 @@ theorem exists_pos_norm_fderiv_le_rpow
     rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
     nlinarith
   -- The Cauchy--Riemann equation controls the full differential by its real-direction part.
-  have hI : ‖fderiv ℝ u z I‖ ≤ M * ‖fderiv ℝ u z 1‖ := by
-    rw [hCR z hzR]
-    exact ((J (u z)).le_opNorm _).trans
-      (mul_le_mul_of_nonneg_right (hbound z hzR) (norm_nonneg _))
-  have hop : ‖fderiv ℝ u z‖ ≤ (1 + M) * ‖fderiv ℝ u z 1‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
-    exact ((fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w).trans
-      (mul_le_mul_of_nonneg_right (by nlinarith) (norm_nonneg w))
+  have hop : ‖fderiv ℝ u z‖ ≤ (1 + M) * ‖fderiv ℝ u z 1‖ :=
+    (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hzR) (hbound z hzR) le_rfl
   calc
     ‖fderiv ℝ u z‖ ≤ (1 + M) * (Real.sqrt B * d ^ (β - 1)) := by
       exact hop.trans (mul_le_mul_of_nonneg_left hreal (by positivity))
