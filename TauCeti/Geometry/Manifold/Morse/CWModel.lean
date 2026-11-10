@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
-import TauCeti.Geometry.Manifold.Morse.Deformation
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
-import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The CW model of a manifold with a Morse function
@@ -29,18 +27,21 @@ point of index `λ` on the level (`TauCeti.IsMorse.exists_morseCellAttachment_de
 `W` is a CW complex homotopy equivalent to `M_{c-ε}`, the attaching maps can be moved into the
 skeleta of `W` by cellular approximation, and attaching the discs to `W` along them gives a CW
 complex homotopy equivalent to `M_{c+ε}`, with the cells of `W` and one new `λ`-cell for each
-critical point (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction`). So any
-finite CW model of `M_a` extends to a finite CW model of `M_b` with one more `λ`-cell for each
-critical point of index `λ` with value in `(a, b]`, when `a ≤ b` are regular values with compact
-band `f⁻¹[a, b]` (`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_sublevel`). For compact `M`,
+critical point (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction`). So if
+`M_a` has a finite CW model `W`, then `M_b` has a finite CW model whose number of `λ`-cells is that
+of `W` plus the number of critical points of index `λ` with value in `(a, b]`, when `a ≤ b` are
+regular values with compact band `f⁻¹[a, b]`
+(`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_sublevel`). Only the homotopy type and the cell
+counts of the new model are recorded: no inclusion of `W` as a subcomplex, nor any compatibility
+with the inclusion `M_a ⊆ M_b`, is provided. For compact `M`,
 starting below the minimum of `f`, where the sublevel is empty, and ending above its maximum, where
 the sublevel is `M`, gives the CW model of `M`.
 
 ## Main results
 
-* `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_sublevel`: a finite CW model of `M_a` extends
-  to one of `M_b`, adding one `λ`-cell for each critical point of index `λ` with value in
-  `(a, b]`.
+* `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_sublevel`: if `M_a` has a finite CW model,
+  then so does `M_b`, with one more `λ`-cell in the count for each critical point of index `λ`
+  with value in `(a, b]`. No map between the two models is supplied.
 * `TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`: **the CW model of a compact
   manifold.** A compact boundaryless manifold with a Morse function `f` is homotopy equivalent to
   a finite CW complex whose `λ`-cells are counted by the critical points of `f` of index `λ`.
@@ -109,8 +110,9 @@ private theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunction (hf : IsMorse I
         hε.le).isoPushout.symm)).toHomotopyEquiv.trans e
 
 variable (I f) in
-/-- Every finite CW model of `M_s = {f ≤ s}` extends to a finite CW model of `M_t`, with one more
-`m`-cell for each critical point of index `m` with value in `(s, t]`. -/
+/-- For every finite CW model `W` of `M_s = {f ≤ s}` there is a finite CW model of `M_t` with,
+in each dimension `m`, as many `m`-cells as `W` plus one for each critical point of index `m` with
+value in `(s, t]`. No map between the two models is required. -/
 private def CWModelExtends (s t : ℝ) (_ : s ≤ t) : Prop :=
   ∀ (W : Type u) [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)]
     [RelCWComplex.Finite (univ : Set W)], (W ≃ₕ {x | f x ≤ s}) →
@@ -182,11 +184,12 @@ private theorem CWModelExtends.trans {s m t : ℝ} {hsm : s ≤ m} {hmt : m ≤ 
   simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_union]
   tauto
 
-/-- **Relative CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values
-of `f` with compact band `f⁻¹[a, b]`. If `W` is a finite CW complex homotopy equivalent to the
-sublevel `M_a = {f ≤ a}`, then `M_b` is homotopy equivalent to a finite CW complex `W'` with, in
-each dimension `m`, the `m`-cells of `W` and one more `m`-cell for each critical point of index `m`
-with value in `(a, b]`. -/
+/-- **CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values of `f`
+with compact band `f⁻¹[a, b]`. If `W` is a finite CW complex homotopy equivalent to the sublevel
+`M_a = {f ≤ a}`, then `M_b` is homotopy equivalent to a finite CW complex `W'` whose number of
+`m`-cells, in each dimension `m`, is that of `W` plus the number of critical points of index `m`
+with value in `(a, b]`. Only this existence and these cell counts are asserted: `W` is not claimed
+to be a subcomplex of `W'`, and no compatibility with the inclusion `M_a ⊆ M_b` is supplied. -/
 theorem IsMorse.exists_cwComplex_homotopyEquiv_sublevel (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) (W : Type u) [TopologicalSpace W] [T2Space W]
