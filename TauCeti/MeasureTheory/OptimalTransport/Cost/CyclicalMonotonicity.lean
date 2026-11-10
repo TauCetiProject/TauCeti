@@ -35,6 +35,8 @@ require additional hypotheses.
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
 * `TauCeti.isCyclicallyMonotone_add_add_iff` — adding a split cost `a x + b y` does not change
   the cyclically monotone sets;
+* `TauCeti.IsCyclicallyMonotone.closure` — for a continuous cost, the closure of a cyclically
+  monotone set is cyclically monotone;
 * `TauCeti.isCyclicallyMonotone_ofReal_iff` — for a nonnegative real cost, the property is the
   same for the cost and for its image in `ℝ≥0∞`;
 * `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support` — the support of an optimal coupling
@@ -144,6 +146,31 @@ theorem isCyclicallyMonotone_add_add_iff (c : X × Y → M) (a : X → M) (b : Y
   rw [add_le_add_iff_right, add_le_add_iff_right]
 
 end Split
+
+section Closure
+
+variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace M] [ContinuousAdd M]
+  [Preorder M] [OrderClosedTopology M] {c : X × Y → M}
+
+/-- For a continuous cost, the closure of a `c`-cyclically monotone set is `c`-cyclically
+monotone: each defining inequality is a closed condition on the finite family of points. -/
+theorem IsCyclicallyMonotone.closure (hc : Continuous c) {S : Set (X × Y)}
+    (h : IsCyclicallyMonotone c S) : IsCyclicallyMonotone c (_root_.closure S) := by
+  intro n x y hmem σ
+  -- The families of `n` pairs satisfying the inequality for `σ` form a closed set containing `Sⁿ`.
+  have hclosed : IsClosed
+      {v : Fin n → X × Y | ∑ i, c (v i) ≤ ∑ i, c ((v i).1, (v (σ i)).2)} :=
+    isClosed_le (continuous_finsetSum _ fun i _ ↦ hc.comp (continuous_apply i))
+      (continuous_finsetSum _ fun i _ ↦
+        hc.comp ((continuous_apply i).fst.prodMk (continuous_apply (σ i)).snd))
+  have hsub : univ.pi (fun _ ↦ S) ⊆
+      {v : Fin n → X × Y | ∑ i, c (v i) ≤ ∑ i, c ((v i).1, (v (σ i)).2)} :=
+    fun v hv ↦ h n (fun i ↦ (v i).1) (fun i ↦ (v i).2) (fun i ↦ hv i (mem_univ i)) σ
+  have hv : (fun i ↦ (x i, y i)) ∈ univ.pi (fun _ ↦ _root_.closure S) := fun i _ ↦ hmem i
+  rw [← closure_pi_set] at hv
+  exact hclosed.closure_subset_iff.2 hsub hv
+
+end Closure
 
 /-- For a nonnegative real cost, cyclical monotonicity is the same condition for the cost and for
 its image in `ℝ≥0∞`, since `ENNReal.ofReal` is additive and order-reflecting on nonnegative

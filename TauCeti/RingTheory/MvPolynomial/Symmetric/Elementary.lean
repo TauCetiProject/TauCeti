@@ -25,7 +25,9 @@ product in elementary symmetric polynomials.
 
 * `Multiset.esymm_cons`: adjoining an element `a` to a multiset gives
   `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
-* `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`.
+* `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
+  `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
+* `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
@@ -60,6 +62,23 @@ values: `e_{n+1}(0, s) = e_{n+1}(s)`. -/
 theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (n : ℕ) :
     (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
   simp [Multiset.esymm_cons]
+
+/-- Adjoining a zero to a multiset `s` of at most `n` elements appends `0` to its elementary
+symmetric values: `e_{j+1}(0, s)` for `j < n + 1` is `e₁(s), …, eₙ(s), 0`. -/
+theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} (s : Multiset R)
+    (hs : s.card ≤ n) :
+    (fun j : Fin (n + 1) => (0 ::ₘ s).esymm (j + 1)) =
+      Fin.snoc (α := fun _ => R) (fun j : Fin n => s.esymm (j + 1)) 0 := by
+  funext j
+  refine Fin.lastCases ?_ (fun i => ?_) j
+  · rw [Fin.snoc_last, Fin.val_last, Multiset.esymm_cons_zero,
+      Multiset.esymm_of_card_lt (by omega)]
+  · rw [Fin.snoc_castSucc, Fin.val_castSucc, Multiset.esymm_cons_zero]
+
+/-- The first elementary symmetric function of a multiset is its sum: `e₁(s) = ∑_{x ∈ s} x`. This
+is the multiset counterpart of `MvPolynomial.esymm_one`. -/
+theorem Multiset.esymm_one {R : Type*} [CommSemiring R] (s : Multiset R) : s.esymm 1 = s.sum := by
+  simp [Multiset.esymm, Multiset.powersetCard_one]
 
 /-- Removing an element `a` of a multiset `s` from it:
 `e_n(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`. This is the coefficient form of

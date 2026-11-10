@@ -8,6 +8,8 @@ module
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Data.Finset.Inversions
+import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Fintype.Option
 
 /-!
 # Strand diagrams
@@ -33,6 +35,7 @@ product is associative in the form needed for the associativity of the strands a
 * `TauCeti.StrandDiagram α`: an upward partial bijection of the linear order `α`.
 * `TauCeti.StrandDiagram.trans`: the composite of two diagrams, first `φ` and then `ψ`.
 * `TauCeti.StrandDiagram.idOn`: the identity diagram on a finite set, with horizontal strands.
+* `TauCeti.StrandDiagram.single`: the diagram with a single strand.
 * `TauCeti.StrandDiagram.source`, `TauCeti.StrandDiagram.target`: the starting and ending points.
 * `TauCeti.StrandDiagram.endpoint`, `TauCeti.StrandDiagram.startpoint`: the end point of the
   strand from a point, and the starting point of the strand to a point.
@@ -93,6 +96,10 @@ theorem ext {φ ψ : StrandDiagram α} (h : ∀ i, φ i = ψ i) : φ = ψ :=
 
 theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α → α ≃. α) :=
   fun _ _ h ↦ ext fun i ↦ congrArg (fun f : α ≃. α ↦ f i) h
+
+/-- A finite linear order has finitely many strand diagrams. -/
+instance [Finite α] : Finite (StrandDiagram α) :=
+  Finite.of_injective _ DFunLike.coe_injective
 
 /-- Every strand of a diagram goes upwards. -/
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
@@ -172,9 +179,32 @@ theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈
   rw [Option.mem_def, idOn_apply]
   split_ifs with h <;> simp [h]
 
+/-- The diagram with a single strand, from `i` up to `j`. -/
+def single (i j : α) (h : i ≤ j) : StrandDiagram α where
+  toPEquiv := PEquiv.single i j
+  le_of_mem' _ _ hk := by
+    obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
+    exact h
+
+@[simp]
+theorem single_apply (i j : α) (h : i ≤ j) (k : α) :
+    single i j h k = if k = i then some j else none :=
+  (rfl)
+
+theorem mem_single {i j : α} {h : i ≤ j} {k l : α} : l ∈ single i j h k ↔ k = i ∧ l = j :=
+  PEquiv.mem_single_iff _ _ _ _
+
+@[simp]
+theorem single_trans_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
+    (single i j hij).trans (single j k hjk) = single i k (hij.trans hjk) :=
+  toPEquiv_injective (PEquiv.single_trans_single _ _ _)
+
 section Finite
 
 variable [Fintype α]
+
+instance : DecidableEq (StrandDiagram α) :=
+  fun φ ψ ↦ decidable_of_iff (∀ i, φ i = ψ i) ⟨ext, fun h _ ↦ h ▸ rfl⟩
 
 /-- The starting points of the strands of `φ`, the set `S` of the partial bijection `φ : S → T`. -/
 def source (φ : StrandDiagram α) : Finset α :=
@@ -195,6 +225,45 @@ theorem mem_target {φ : StrandDiagram α} {j : α} : j ∈ φ.target ↔ ∃ i,
 theorem apply_eq_none_of_notMem_source {φ : StrandDiagram α} {i : α} (h : i ∉ φ.source) :
     φ i = none :=
   Option.eq_none_iff_forall_ne_some.2 fun j hj ↦ h (mem_source.2 ⟨j, hj⟩)
+
+/-- The end point of the strand starting at a point of the source. -/
+theorem getD_mem {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : (φ i).getD i ∈ φ i := by
+  obtain ⟨j, hj⟩ := mem_source.1 hi
+  rw [Option.mem_def] at hj ⊢
+  simp [hj]
+
+/-- The strand starting at a point of the source goes upwards. -/
+theorem le_getD {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : i ≤ (φ i).getD i :=
+  φ.le_of_mem (getD_mem hi)
+
+/-- The end points of a diagram are the images of its starting points. -/
+theorem target_eq_image (φ : StrandDiagram α) :
+    φ.target = φ.source.image fun i ↦ (φ i).getD i := by
+  ext j
+  simp only [mem_target, Finset.mem_image]
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, mem_source.2 ⟨j, hi⟩, ?_⟩, fun ⟨i, hi, hj⟩ ↦ ⟨i, hj ▸ getD_mem hi⟩⟩
+  rw [Option.mem_def] at hi
+  simp [hi]
+
+/-- Distinct strands of a diagram end at distinct points. -/
+theorem injOn_getD (φ : StrandDiagram α) : Set.InjOn (fun i ↦ (φ i).getD i) φ.source :=
+  fun i hi j hj h ↦ by
+    have h : (φ i).getD i = (φ j).getD j := h
+    exact φ.toPEquiv.inj (getD_mem hi) (h ▸ getD_mem hj)
+
+/-- A diagram has as many end points as starting points. -/
+theorem card_target (φ : StrandDiagram α) : #φ.target = #φ.source := by
+  rw [target_eq_image, card_image_of_injOn φ.injOn_getD]
+
+/-- The starting point of a strand of `φ` lies outside any set disjoint from the source. -/
+theorem notMem_of_mem_of_disjoint_source {φ : StrandDiagram α} {U : Finset α}
+    (hs : Disjoint φ.source U) {i j : α} (hij : j ∈ φ i) : i ∉ U :=
+  disjoint_left.1 hs (mem_source.2 ⟨j, hij⟩)
+
+/-- The end point of a strand of `φ` lies outside any set disjoint from the target. -/
+theorem notMem_of_mem_of_disjoint_target {φ : StrandDiagram α} {U : Finset α}
+    (ht : Disjoint φ.target U) {i j : α} (hij : j ∈ φ i) : j ∉ U :=
+  disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩)
 
 @[simp]
 theorem source_idOn (s : Finset α) : (idOn s).source = s := by
@@ -446,6 +515,34 @@ theorem composable_idOn_right_iff {s : Finset α} {φ : StrandDiagram α} :
     φ.Composable (idOn s) ↔ φ.target = s := by
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩
   rw [trans_idOn_of_target_eq h, inversionCount_idOn, add_zero]
+
+@[simp]
+theorem source_single (i j : α) (h : i ≤ j) : (single i j h).source = {i} := by
+  ext k
+  rw [mem_source, mem_singleton]
+  simp only [mem_single]
+  exact ⟨fun ⟨_, hk, _⟩ ↦ hk, fun hk ↦ ⟨j, hk, rfl⟩⟩
+
+@[simp]
+theorem target_single (i j : α) (h : i ≤ j) : (single i j h).target = {j} := by
+  ext l
+  rw [mem_target, mem_singleton]
+  simp only [mem_single]
+  exact ⟨fun ⟨_, _, hl⟩ ↦ hl, fun hl ↦ ⟨i, rfl, hl⟩⟩
+
+/-- A single strand has no crossing. -/
+@[simp]
+theorem inversionCount_single (i j : α) (h : i ≤ j) : (single i j h).inversionCount = 0 := by
+  rw [inversionCount_def, card_eq_zero, eq_empty_iff_forall_notMem]
+  rintro ⟨a, b⟩ hab
+  obtain ⟨hlt, _, ha, _, hb, -⟩ := mem_inversions.1 hab
+  rw [mem_single] at ha hb
+  exact hlt.ne (ha.1.trans hb.1.symm)
+
+/-- Two single strands meeting end to start are composable. -/
+theorem composable_single_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
+    (single i j hij).Composable (single j k hjk) :=
+  composable_iff.2 ⟨by simp, by simp [single_trans_single]⟩
 
 end Finite
 

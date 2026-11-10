@@ -15,6 +15,8 @@ public import TauCeti.Topology.SeparatedMap
 /-!
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
 
+A map that is a local homeomorphism at each point of an open set sends that set to an open set.
+
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
 subspaces. This file records that for local path-connectedness.
@@ -38,6 +40,8 @@ groupoid.
 
 ## Main results
 
+* `IsLocalHomeomorphOn.isOpen_image`: a local homeomorphism on an open set maps it to an open
+  set.
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
@@ -58,6 +62,12 @@ open Topology
 namespace TauCeti
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B]
+
+/-- The image of an open set under a local homeomorphism on that set is open. -/
+theorem _root_.IsLocalHomeomorphOn.isOpen_image {f : E → B} {s : Set E}
+    (hf : IsLocalHomeomorphOn f s) (hs : IsOpen s) : IsOpen (f '' s) :=
+  isOpen_iff_mem_nhds.2 <| Set.forall_mem_image.2 fun _ hx ↦
+    hf.map_nhds_eq hx ▸ Filter.image_mem_map (hs.mem_nhds hx)
 
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is

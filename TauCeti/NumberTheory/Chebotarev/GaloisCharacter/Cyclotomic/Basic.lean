@@ -121,7 +121,7 @@ section Cyclotomic
 /-- For `F = K(μ_m)`, every prime of `𝓞 F` above a prime `v` of `𝓞 K` outside the support of
 `cyclotomicModulus K m` (that is, with `(m : 𝓞 K) ∉ v.asIdeal`) is unramified over `𝓞 K`. -/
 theorem isUnramifiedAt_of_notMem_cyclotomicModulus_support {K : Type*} [Field K] [NumberField K]
-    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ) [NeZero m]
+    (F : Type*) [Field F] [Algebra K F] (m : ℕ) [NeZero m]
     [IsCyclotomicExtension {m} K F]
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ (cyclotomicModulus K m).support) (Q : Ideal (𝓞 F))
     [Q.IsPrime] [Q.LiesOver v.asIdeal] : Algebra.IsUnramifiedAt (𝓞 K) Q := by

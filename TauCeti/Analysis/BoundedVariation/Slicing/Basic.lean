@@ -165,12 +165,6 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       ((hD.comp L.continuous).clm_apply continuous_const).abs).aestronglyMeasurable
       (.of_forall fun p => (Real.norm_of_nonneg (by positivity)).trans_le (hFle p))
   have hFG (p) : F p + G p ≤ N p := sqrt_mul_abs_apply_sub_apply_le e he _ (hφ p.1)
-  have hG : Integrable G (volume.prod volume) :=
-    hN.mono' ((hD.comp L.continuous).clm_apply
-      ((continuous_subtype_val.comp φ.continuous).comp continuous_fst)).neg.aestronglyMeasurable
-      (.of_forall fun p => by
-        simpa [G, N] using ((fderiv ℝ w (L p)).le_opNorm_of_le (by simpa using hφ p.1)).trans_eq
-          (mul_one _))
   -- The first term is `∫ F`, the second `∫ G` and the right side `∫ N`.
   have h₁ : ∫⁻ y : (ℝ ∙ e)ᗮ, ENNReal.ofReal √(1 - ‖φ y‖ ^ 2) *
       totalVariationOn volume ⊤ (fun t : ℝ => w ((y : E) + t • e)) =
@@ -192,7 +186,7 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       ← hL.lintegral_comp_emb hLe]
     simp [N, ofReal_norm]
   rw [h₁, h₂, h₃]
-  exact MeasureTheory.ofReal_integral_add_ofReal_integral_le hF hG hN
+  exact MeasureTheory.ofReal_integral_add_ofReal_integral_le hN
     (.of_forall fun p => by positivity) (.of_forall hFle) (.of_forall hFG)
 
 /-- The line variations of an integrable function are bounded almost everywhere by an a.e.

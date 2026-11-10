@@ -44,6 +44,11 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
 * `TemperedDistribution.realSobolevFunctions`: the pointwise representatives of these, as a real
   submodule of the functions `E → ℝ`.
+* `TemperedDistribution.exists_memSobolev_ae_eq_of_mem_realSobolevFunctions`: two real functions
+  `f`, `g` in `realSobolevFunctions E s p` give a complex `H^{s,p}` function `f + i g`.
+* `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
+  they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -58,8 +63,6 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
-* `TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`: for `s > dim E / 2`, the Fourier
-  transform of `f ∈ H^s` is an `L¹` function `v` with `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v ∈ L²`.
 
 ## References
 
@@ -341,6 +344,43 @@ theorem mem_realSobolevFunctions_of_ae_eq {s : ℝ} {f g : E → ℝ}
   let ⟨u, hu, huf⟩ := hf
   ⟨u, hu, huf.trans hfg⟩
 
+/-- Two real functions `f`, `g` in `realSobolevFunctions E s p` assemble into a complex `H^{s,p}`
+function: `f + i g` agrees almost everywhere with a complex `Lᵖ` function in `H^{s,p}`. -/
+theorem exists_memSobolev_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {f g : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) (hg : g ∈ realSobolevFunctions E s p) :
+    ∃ h : Lp ℂ p (volume : Measure E), h =ᵐ[volume] (fun x ↦ (f x : ℂ) + Complex.I * g x) ∧
+      MemSobolev s p (h : 𝓢'(E, ℂ)) := by
+  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 hg
+  refine ⟨Complex.ofRealCLM.compLp a + Complex.I • Complex.ofRealCLM.compLp b, ?_, ?_⟩
+  · filter_upwards [Lp.coeFn_add (Complex.ofRealCLM.compLp a)
+        (Complex.I • Complex.ofRealCLM.compLp b),
+      Lp.coeFn_smul Complex.I (Complex.ofRealCLM.compLp b),
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) a,
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) b, hae, hbe]
+      with x h h' ha' hb' ha'' hb''
+    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
+    simp [ha'', hb'']
+  · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure E) p)
+      (Complex.ofRealCLM.compLp a) (Complex.I • Complex.ofRealCLM.compLp b)
+    rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply] at e
+    rw [e]
+    exact ha.add (hb.smul Complex.I)
+
+/-- Every element of `realSobolevFunctions E s p` lies in `Lᵖ`, whatever the order `s`. -/
+theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : MemLp f p volume :=
+  let ⟨u, _, huf⟩ := hf
+  (Lp.memLp u).ae_eq huf
+
+/-- A real function lies in `realSobolevFunctions E 0 p` exactly when it lies in `Lᵖ`. -/
+@[simp]
+theorem mem_realSobolevFunctions_zero_iff {f : E → ℝ} :
+    f ∈ realSobolevFunctions E 0 p ↔ MemLp f p volume :=
+  ⟨memLp_of_mem_realSobolevFunctions,
+    fun hf ↦ ⟨hf.toLp f, memSobolev_zero_iff.2 ⟨_, rfl⟩, hf.coeFn_toLp⟩⟩
+
 /-- For `1 < p < ∞`, the real `H^{s,p}` functions decrease as the order increases. -/
 theorem realSobolevFunctions_mono (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s) :
     realSobolevFunctions E s p ≤ realSobolevFunctions E s' p :=
@@ -358,30 +398,5 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
   simp [h₁, h₂]
 
 end realFunctions
-
-section fourier
-
-open scoped FourierTransform
-
-/-- **The Fourier transform of an `H^s` function, `s > n / 2`.** For `s > dim E / 2` the Fourier
-transform of a Sobolev function `f ∈ H^s` is an `L¹` function `v` for which
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
-theorem MemSobolev.fourier_memL1_and_memLp {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) :
-    ∃ v : Lp ℂ 1 (volume : Measure E), 𝓕 f = (v : 𝓢'(E, ℂ)) ∧
-      MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-  obtain ⟨v, hv⟩ := hf.fourier_memL1 hs
-  obtain ⟨U, hU⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
-  refine ⟨v, hv, (Lp.memLp U).ae_eq ?_⟩
-  -- The `L²` function `U` represents the weight times `v`, by comparing their pairings.
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwc : Continuous fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := hwg.1.continuous
-  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq U ?_ fun φ => ?_
-  · refine locallyIntegrable_iff.2 fun K hK => ?_
-    exact (L1.integrable_coeFn v).integrableOn.continuousOn_mul hwc.continuousOn hK
-  · rw [← hU, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-    simp only [smul_eq_mul]
-
-end fourier
 
 end TemperedDistribution

@@ -510,14 +510,9 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   -- `w` is the point of `Spa (A⟨T/s⟩⟨ρ(p)⟩, ·)` over `y`
   set w := (spaCompletedLocalizationHomeomorph _ _ hP' q.num q.den _ q.hasDenominatorPower).symm
     ⟨y, mem_spaBasicOpen.mp hy⟩
-  have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y := by
-    have h := spaCompletedLocalizationHomeomorph_apply _ _ hP' q.num q.den _
-      q.hasDenominatorPower w
-    have h' : spaCompletedLocalizationHomeomorph _ _ hP' q.num q.den _ q.hasDenominatorPower w =
-        ⟨y, mem_spaBasicOpen.mp hy⟩ :=
-      Homeomorph.apply_symm_apply _ _
-    exact (spaLocToRationalSubset_val _ _ _ _ _ _ w).symm.trans
-      (congrArg Subtype.val (h.symm.trans h'))
+  have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y :=
+    spaComapLoc_spaCompletedLocalizationHomeomorph_symm _ _ hP' q.num q.den _
+      q.hasDenominatorPower ⟨y, mem_spaBasicOpen.mp hy⟩
   have hw := (mem_spa_iff _ _).mp w.2
   have hjy : spaComapLoc P Aplus T s S hden y ∈ spaBasicOpen Aplus p.num p.den := by
     rwa [← locOpensComap_spaBasicOpen, mem_locOpensComap] at hy

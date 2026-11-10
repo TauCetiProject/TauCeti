@@ -53,7 +53,7 @@ field.
 Two features make these weight spaces the arena for the representations cut out of `(kⁿ)^{⊗d}` by
 the symmetric group.  The set of weights is the same as for `Symᵈ(kⁿ)` — the nonnegative integer
 vectors of total degree `d` — because every unordered tuple is the unordered tuple of an ordered
-one (`TauCeti.Sym.ofFn_surjective`).  And the symmetric group acts on each weight space separately
+one (`Sym.ofFn_surjective`).  And the symmetric group acts on each weight space separately
 (`TauCeti.map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le`), because the two actions
 commute; so once `(kⁿ)^{⊗d}` is the internal direct sum of its weight spaces
 (`TauCeti.isInternal_weightSpace_tensorPowerRep`, over a field separating weights), a
@@ -129,10 +129,10 @@ of the unordered tuple of values of `f`. -/
 theorem basis_mem_weightSpace_tensorPowerRep (f : Fin d → Fin n) :
     tensorPowerBasis k n d f ∈
       weightSpace (tensorPowerRep k n d)
-        (weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) := by
+        (weightOfMultiset (Sym.ofFn f : Multiset (Fin n))) := by
   rw [mem_weightSpace_iff]
   intro t
-  rw [tensorPowerRep_diagGL_apply_basis, weightChar_weightOfMultiset, TauCeti.Sym.coe_ofFn,
+  rw [tensorPowerRep_diagGL_apply_basis, weightChar_weightOfMultiset, Sym.coe_ofFn,
     Multiset.map_coe, List.map_ofFn, Multiset.prod_coe, List.prod_ofFn, Function.comp_def,
     Units.coe_prod]
 
@@ -177,7 +177,7 @@ theorem weightSpace_tensorPowerRep_eq_span_image
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l =
       Submodule.span k (tensorPowerBasis k n d ''
-        {f | weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) = l}) :=
+        {f | weightOfMultiset (Sym.ofFn f : Multiset (Fin n)) = l}) :=
   (tensorPowerBasis k n d).weightSpace_eq_span_image
     basis_mem_weightSpace_tensorPowerRep hchar l
 
@@ -185,7 +185,7 @@ theorem weightSpace_tensorPowerRep_eq_span_image
 representation. -/
 theorem weightSpace_tensorPowerRep_eq_bot
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ}
-    (hl : ∀ f : Fin d → Fin n, l ≠ weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) :
+    (hl : ∀ f : Fin d → Fin n, l ≠ weightOfMultiset (Sym.ofFn f : Multiset (Fin n))) :
     weightSpace (tensorPowerRep k n d) l = ⊥ :=
   (tensorPowerBasis k n d).weightSpace_eq_bot
     basis_mem_weightSpace_tensorPowerRep hchar hl
@@ -195,7 +195,7 @@ indices of its basis tensors.** -/
 theorem weightSpace_tensorPowerRep_ne_bot_iff [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l ≠ ⊥ ↔
-      ∃ f : Fin d → Fin n, l = weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) :=
+      ∃ f : Fin d → Fin n, l = weightOfMultiset (Sym.ofFn f : Multiset (Fin n)) :=
   (tensorPowerBasis k n d).weightSpace_ne_bot_iff
     basis_mem_weightSpace_tensorPowerRep hchar l
 
@@ -208,8 +208,8 @@ theorem weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l ≠ ⊥ ↔ (∀ i, 0 ≤ l i) ∧ ∑ i, l i = d := by
   rw [weightSpace_tensorPowerRep_ne_bot_iff hchar l, ← exists_sym_weightOfMultiset_eq_iff l]
-  refine ⟨fun ⟨f, hf⟩ => ⟨TauCeti.Sym.ofFn f, hf.symm⟩, fun ⟨s, hs⟩ => ?_⟩
-  obtain ⟨f, rfl⟩ := TauCeti.Sym.ofFn_surjective s
+  refine ⟨fun ⟨f, hf⟩ => ⟨Sym.ofFn f, hf.symm⟩, fun ⟨s, hs⟩ => ?_⟩
+  obtain ⟨f, rfl⟩ := Sym.ofFn_surjective s
   exact ⟨f, hs.symm⟩
 
 /-- **Every weight of a subrepresentation of `(kⁿ)^{⊗d}` is nonnegative of total degree `d`**:
@@ -244,7 +244,7 @@ theorem finrank_weightSpace_tensorPowerRep
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     Module.finrank k (weightSpace (tensorPowerRep k n d) l) =
       Nat.card {f : Fin d → Fin n //
-        weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) = l} :=
+        weightOfMultiset (Sym.ofFn f : Multiset (Fin n)) = l} :=
   (tensorPowerBasis k n d).finrank_weightSpace_eq_card
     basis_mem_weightSpace_tensorPowerRep hchar l
 

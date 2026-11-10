@@ -85,12 +85,10 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
   -- For each nearby initial point, the chart image of the coordinate flow is an integral curve of
   -- `v` through that point on `Ioo (-ε) ε`.
   have hcurve : ∀ x ∈ φ.source, pa (φ x) →
-      IsMIntegralCurveOn (φ.symm ∘ Φ (φ x)) v (Ioo (-ε) ε) ∧ (φ.symm ∘ Φ (φ x)) 0 = x := by
-    intro x hx hpax
-    refine ⟨IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_, by simp [hΦ0, φ.left_inv hx]⟩
-    refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
-    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hab hpax (hIoo s hs)).2.1
-    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hab hpax (hIoo s hs)).1
+      IsMIntegralCurveOn (φ.symm ∘ Φ (φ x)) v (Ioo (-ε) ε) ∧ (φ.symm ∘ Φ (φ x)) 0 = x :=
+    fun x hx hpax ↦
+    ⟨IsMIntegralCurveOn.of_extChartAt_symm isOpen_Ioo (fun t ht ↦ (hab hpax (hIoo t ht)).1)
+      fun t ht ↦ (hab hpax (hIoo t ht)).2.1, by simp [hΦ0, φ.left_inv hx]⟩
   have hx : ∀ᶠ x in 𝓝 x₀, x ∈ φ.source ∧ pa (φ x) :=
     Filter.Eventually.and (extChartAt_source_mem_nhds (I := I) x₀)
       ((continuousAt_extChartAt x₀).eventually hpa)
@@ -108,14 +106,13 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
     Ioo_subset_Ioo (le_max_right _ _) (min_le_right _ _)
   have h0' : (0 : ℝ) ∈ Ioo a b := ⟨max_lt h0.1 hc0.1, lt_min h0.2 hc0.2⟩
   have hp' : p.2 ∈ Ioo a b := ⟨max_lt hp.2.1 hpcd.1, lt_min hp.2.2 hpcd.2⟩
-  have hγsrc : ∀ t ∈ Ioo a b, (φ.symm ∘ Φ (φ p.1)) t ∈ φ.source := by
-    intro t ht
-    exact φ.map_target (interior_subset (hab hp.1.2 (hIoo t (hsubγ ht))).2.1)
-  have hγu : ∀ t ∈ Ioo a b, φ ((φ.symm ∘ Φ (φ p.1)) t) ∈ o := by
-    intro t ht
-    have htarget' := interior_subset (hab hp.1.2 (hIoo t (hsubγ ht))).2.1
-    rw [Function.comp_apply, φ.right_inv htarget']
-    exact (hab hp.1.2 (hIoo t (hsubγ ht))).2.2
+  have hΦt (t : ℝ) (ht : t ∈ Ioo a b) :
+      Φ (φ p.1) t ∈ interior φ.target ∧ Φ (φ p.1) t ∈ o := (hab hp.1.2 (hIoo t (hsubγ ht))).2
+  have hγsrc : ∀ t ∈ Ioo a b, (φ.symm ∘ Φ (φ p.1)) t ∈ φ.source := fun t ht ↦
+    φ.map_target (interior_subset (hΦt t ht).1)
+  have hγu : ∀ t ∈ Ioo a b, φ ((φ.symm ∘ Φ (φ p.1)) t) ∈ o := fun t ht ↦ by
+    rw [Function.comp_apply, φ.right_inv (interior_subset (hΦt t ht).1)]
+    exact (hΦt t ht).2
   have heq := (hγ.mono hsubγ).eqOn_of_contDiffOn_extChartAt ho
     ((hvu.mono hou).of_le (by simp)) (hδ.mono hsubδ) hγsrc hγu h0' (hγ0.trans hδ0.symm)
   exact hmax.trans (heq hp').symm

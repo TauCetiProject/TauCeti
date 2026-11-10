@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.SmallJump.Basic
 public import TauCeti.Probability.Distributions.Stable.Exponent
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -20,8 +21,8 @@ against the full Levy measure and its integral is
 `∫ x, sin x ∂stableLevyMeasure α β = β * tan (π * α / 2)`.
 
 Thus the negative full sine compensation at full skewness is exactly the standardized `S1`
-location. This identifies the endpoint needed for the one-sided support of a fully skewed stable
-law.
+location. The cutoff compensators converge to the full one as the cutoff tends to zero. This
+identifies the endpoint needed for the one-sided support of a fully skewed stable law.
 
 The calculation writes the power kernel as a Gamma mixture of exponentials. The Laplace transform
 of `sin` is elementary, and the remaining Mellin integral is the existing beta integral for
@@ -37,7 +38,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Real Set
+open Filter MeasureTheory Real Set
+open scoped Topology
 
 namespace TauCeti.Probability
 
@@ -66,6 +68,15 @@ theorem integrable_sin_stableLevyMeasure (halpha : alpha ∈ Ioo 0 1) (hbeta : |
     exact lt_of_lt_of_le (by norm_num : (2 : ℝ)⁻¹ < 1) hx'
   rw [← integrableOn_univ, ← Set.union_compl_self (Metric.ball (0 : ℝ) 1)]
   exact IntegrableOn.union hin hout
+
+/-- Below shape one, the cutoff sine compensators converge to the full sine compensator as the
+cutoff decreases to zero. -/
+theorem tendsto_integral_sin_stableLevyMeasure_nhds (halpha : alpha ∈ Ioo 0 1)
+    (hbeta : |beta| ≤ 1) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure alpha beta)
+      (𝓝[>] 0) (𝓝 (∫ x, sin x ∂stableLevyMeasure alpha beta)) :=
+  (TauCeti.tendsto_integral_abs_gt (integrable_sin_stableLevyMeasure halpha hbeta)
+    Real.sin_zero).mono_left nhdsWithin_le_nhds
 
 /-- For `0 < alpha < 1`, sine compensation against the stable Levy measure is the amount
 subtracted from the standardized `S0` location to obtain the `S1` location. -/

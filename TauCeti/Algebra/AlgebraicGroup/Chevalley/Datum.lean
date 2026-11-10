@@ -240,6 +240,19 @@ theorem coordinateRoot_def (γ : Fin t.numRoots) :
     D.coordinateRoot γ = D.weightLatticeBasis.repr ⟨_, D.root_mem_weightLattice γ⟩ :=
   (rfl)
 
+/-- The coordinate character of the opposite root is the negative coordinate character. -/
+@[simp]
+theorem coordinateRoot_reflectionPerm_self (γ : Fin t.numRoots) :
+    D.coordinateRoot ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) =
+      -D.coordinateRoot γ := by
+  have hneg : (⟨_, D.root_mem_weightLattice
+      ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)⟩ : D.weightLattice) =
+      -⟨_, D.root_mem_weightLattice γ⟩ :=
+    Subtype.ext (by simp only [RootPairing.root_reflectionPerm,
+      RootPairing.reflection_apply_self, Submodule.coe_neg])
+  simpa only [coordinateRoot_def, map_neg, Finsupp.coe_neg] using congrArg
+    (fun μ : D.weightLattice => (D.weightLatticeBasis.repr μ : Fin t.rank → ℤ)) hneg
+
 /-- **The coordinate roots are the coordinates of the roots**: recombining the chosen basis of the
 weight lattice with them recovers the roots. -/
 theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :

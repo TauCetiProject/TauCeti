@@ -32,6 +32,8 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
   isometry equivalence on underlying points.
 * `TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply`: backward evaluation of the
   homeomorphism on underlying points.
+* `TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp`: the point `e^{iθ}` of `Circle`
+  corresponds to `(cos θ, sin θ)`.
 * `TauCeti.EuclideanSpace.sphereIsometryEquivCircle_neg`: the isometry equivalence negates under
   the antipodal map.
 * `TauCeti.EuclideanSpace.sphereHomeomorphCircle_neg`: the homeomorphism negates under
@@ -116,6 +118,15 @@ lemma coe_sphereHomeomorphCircle_symm_apply (z : Circle) :
     (sphereHomeomorphCircle.symm z : EuclideanSpace ℝ (Fin 2)) =
       Complex.orthonormalBasisOneI.repr (z : ℂ) :=
   coe_sphereIsometryEquivCircle_symm_apply z
+
+/-- The point `e^{iθ}` of `Circle` corresponds to the point `(cos θ, sin θ)` of the unit circle
+in `ℝ²`. -/
+lemma coe_sphereHomeomorphCircle_symm_exp (θ : ℝ) :
+    (sphereHomeomorphCircle.symm (Circle.exp θ) : EuclideanSpace ℝ (Fin 2)) =
+      !₂[Real.cos θ, Real.sin θ] := by
+  rw [coe_sphereHomeomorphCircle_symm_apply]
+  ext j
+  fin_cases j <;> simp [Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
 
 /-- The Euclidean-circle isometry negates under the antipodal map. -/
 @[simp]

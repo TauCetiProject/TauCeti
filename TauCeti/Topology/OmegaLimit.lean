@@ -48,8 +48,9 @@ locus, to be a single point.
   the closures of its tails.
 * `TauCeti.isPreconnected_setOf_mapClusterPt_atTop` — the ω-limit set of such a curve, continuous
   on the half-line carrying that tail, is preconnected.
-* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset` — such a curve whose ω-limit set lies
-  in a finite set converges to a point of that set.
+* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected` — such a
+  curve whose ω-limit set lies in a totally disconnected set converges to a point of that set.
+* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset` — the case of a finite set.
 * `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
   under the flow.
 
@@ -101,19 +102,31 @@ theorem isPreconnected_setOf_mapClusterPt_atTop [T2Space X] (hK : IsCompact K)
   · exact ((isPreconnected_Ici (a := (T : ℝ))).image u
       (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2)))).closure
 
+/-- **A curve whose ω-limit points lie in a totally disconnected set converges.** If a curve,
+continuous on a half-line `[a, ∞)`, maps it into a compact set and its ω-limit set lies in a totally
+disconnected set `C`, then it converges to a point of `C`: its ω-limit set is nonempty and
+preconnected, hence a single point. This applies for instance when the points of `C` are isolated
+in `C` (`IsDiscrete C`), as for the nondegenerate periodic orbits of a time-periodic vector field
+in the space of loops. -/
+theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected [T2Space X]
+    (hK : IsCompact K) (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X}
+    (hC : IsTotallyDisconnected C) (hsub : {x | MapClusterPt x atTop u} ⊆ C) :
+    ∃ x ∈ C, Tendsto u atTop (𝓝 x) := by
+  have hev : ∀ᶠ t in atTop, u t ∈ K := by
+    filter_upwards [eventually_ge_atTop a] with t ht using hmaps ht
+  obtain ⟨p, -, hp⟩ := hK.exists_mapClusterPt (tendsto_principal.mpr hev)
+  have hone : ∀ x ∈ K, MapClusterPt x atTop u → x = p := fun x _ hx ↦
+    hC _ hsub (isPreconnected_setOf_mapClusterPt_atTop hK hu hmaps) hx hp
+  exact ⟨p, hsub hp, hK.tendsto_nhds_of_unique_mapClusterPt hev hone⟩
+
 /-- **A curve with finitely many ω-limit points converges.** If a curve, continuous on a half-line
 `[a, ∞)`, maps it into a compact set and its ω-limit set lies in a finite set `C`, then it
 converges to a point of `C`: its ω-limit set is nonempty and preconnected, hence a single point. -/
 theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCompact K)
     (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X} (hC : C.Finite)
-    (hsub : {x | MapClusterPt x atTop u} ⊆ C) : ∃ x ∈ C, Tendsto u atTop (𝓝 x) := by
-  have hev : ∀ᶠ t in atTop, u t ∈ K := by
-    filter_upwards [eventually_ge_atTop a] with t ht using hmaps ht
-  obtain ⟨p, -, hp⟩ := hK.exists_mapClusterPt (tendsto_principal.mpr hev)
-  have hone : ∀ x ∈ K, MapClusterPt x atTop u → x = p := fun x _ hx ↦
-    (hC.subset hsub).isDiscrete.isTotallyDisconnected _ subset_rfl
-      (isPreconnected_setOf_mapClusterPt_atTop hK hu hmaps) hx hp
-  exact ⟨p, hsub hp, hK.tendsto_nhds_of_unique_mapClusterPt hev hone⟩
+    (hsub : {x | MapClusterPt x atTop u} ⊆ C) : ∃ x ∈ C, Tendsto u atTop (𝓝 x) :=
+  exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected hK hu hmaps
+    hC.isDiscrete.isTotallyDisconnected hsub
 
 end TauCeti
 

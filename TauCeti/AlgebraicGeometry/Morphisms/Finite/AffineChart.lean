@@ -96,5 +96,4 @@ lemma Scheme.Hom.exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : 
     IsFinite.SpecMap_iff]
   exact he
 
-
 end AlgebraicGeometry
