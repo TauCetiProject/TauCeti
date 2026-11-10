@@ -9,8 +9,8 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import Mathlib.Topology.Semicontinuity.Basic
-public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 /-!
 # The nuclear gauge of a bounded operator
@@ -183,22 +183,11 @@ theorem nuclearENorm_id_eq_top (hE : ¬ FiniteDimensional 𝕜 E) :
   have hs := (nuclearENorm_ne_top_iff_summable _).1 h
   obtain ⟨n, hn⟩ := ((NNReal.tendsto_atTop_zero_of_summable hs).eventually
     (gt_mem_nhds one_pos)).exists
-  obtain ⟨R, hR, hlt⟩ := exists_rank_le_nnnorm_sub_lt hn
-  have hfin : Module.Finite 𝕜 (LinearMap.range (R : E →ₗ[𝕜] E)) := by
-    rw [← Module.rank_lt_aleph0_iff]
-    exact lt_of_le_of_lt hR Cardinal.natCast_lt_aleph0
-  obtain ⟨x, hx0, hRx⟩ : ∃ x : E, x ≠ 0 ∧ R x = 0 := by
-    by_contra hne
-    push Not at hne
-    have hinj : Function.Injective (R : E →ₗ[𝕜] E).rangeRestrict :=
-      (LinearMap.injective_rangeRestrict_iff _).2 ((injective_iff_map_eq_zero R).2 fun x hx ↦
-        by_contra fun hx0 ↦ hne x hx0 hx)
-    exact hE (Module.Finite.of_injective _ hinj)
-  have hx : 0 < ‖x‖ := norm_pos_iff.2 hx0
-  have h1 : ‖ContinuousLinearMap.id 𝕜 E - R‖ < 1 := by exact_mod_cast hlt
-  have h2 := (ContinuousLinearMap.id 𝕜 E - R).le_opNorm x
-  simp only [sub_apply, id_apply, hRx, sub_zero] at h2
-  nlinarith
+  -- an infinite-dimensional space has rank above every natural number, so `aₙ(id) = 1`
+  have hrank : (n : Cardinal) < Module.rank 𝕜 E :=
+    Cardinal.natCast_lt_aleph0.trans_le
+      (not_lt.1 fun h ↦ hE (Module.rank_lt_aleph0_iff.1 h))
+  simp [hrank] at hn
 
 end Identity
 
