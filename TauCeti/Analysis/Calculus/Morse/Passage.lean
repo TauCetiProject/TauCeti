@@ -114,20 +114,28 @@ theorem splitExitTime_def [Norm Eᵤ] (ε : ℝ) (z : WithLp 2 (Eₛ × Eᵤ)) :
   (rfl)
 
 /-- A point of the entrance face `‖x‖ = ε` has entry time zero. -/
-theorem splitEntryTime_eq_zero [Norm Eₛ] (hε : ε ≠ 0) (hz : ‖z.fst‖ = ε) :
+theorem splitEntryTime_eq_zero [Norm Eₛ] (hz : ‖z.fst‖ = ε) :
     splitEntryTime ε z = 0 := by
-  rw [splitEntryTime, hz, div_self hε, Real.log_one]
+  rw [splitEntryTime, hz]
+  rcases eq_or_ne ε 0 with rfl | hε
+  · simp
+  · rw [div_self hε, Real.log_one]
 
 /-- A point of the exit face `‖y‖ = ε` has exit time zero. -/
-theorem splitExitTime_eq_zero [Norm Eᵤ] (hε : ε ≠ 0) (hz : ‖z.snd‖ = ε) :
+theorem splitExitTime_eq_zero [Norm Eᵤ] (hz : ‖z.snd‖ = ε) :
     splitExitTime ε z = 0 := by
-  rw [splitExitTime, hz, div_self hε, Real.log_one]
+  rw [splitExitTime, hz]
+  rcases eq_or_ne ε 0 with rfl | hε
+  · simp
+  · rw [div_self hε, Real.log_one]
 
-/-- The exit time is nonnegative for a point whose second coordinate is nonzero and lies in the
-closed ball of radius `ε`. -/
-theorem splitExitTime_nonneg [NormedAddCommGroup Eᵤ] (hz : z.snd ≠ 0) (hzε : ‖z.snd‖ ≤ ε) :
-    0 ≤ splitExitTime ε z :=
-  Real.log_nonneg ((one_le_div (norm_pos_iff.2 hz)).2 hzε)
+/-- The exit time is nonnegative for a point whose second coordinate lies in the closed ball of
+radius `ε`. -/
+theorem splitExitTime_nonneg [NormedAddCommGroup Eᵤ] (hzε : ‖z.snd‖ ≤ ε) :
+    0 ≤ splitExitTime ε z := by
+  rcases eq_or_ne z.snd 0 with hz | hz
+  · simp [splitExitTime, hz]
+  · exact Real.log_nonneg ((one_le_div (norm_pos_iff.2 hz)).2 hzε)
 
 /-- The entry time is nonpositive for a point whose first coordinate lies in the closed ball of
 radius `ε`. -/
@@ -288,12 +296,12 @@ def splitPassage (ε : ℝ) :
     rintro z hz
     obtain ⟨hε, hx0⟩ := pos_and_fst_ne_zero_of_entrance hz
     rw [splitEntryTime_splitQuadraticFlow hε.ne' hx0, ← Flow.map_add, sub_add_cancel,
-      splitEntryTime_eq_zero hε.ne' hz.1, Flow.map_zero_apply]
+      splitEntryTime_eq_zero hz.1, Flow.map_zero_apply]
   right_inv' := by
     rintro z hz
     obtain ⟨hε, hy0⟩ := pos_and_snd_ne_zero_of_exit hz
     rw [splitExitTime_splitQuadraticFlow hε.ne' hy0, ← Flow.map_add, sub_add_cancel,
-      splitExitTime_eq_zero hε.ne' hz.1, Flow.map_zero_apply]
+      splitExitTime_eq_zero hz.1, Flow.map_zero_apply]
   continuousOn_toFun := by
     refine splitQuadraticFlow.cont'.comp_continuousOn (ContinuousOn.prodMk ?_ continuousOn_id)
     refine ContinuousOn.log (continuousOn_const.div ?_ ?_) ?_
@@ -393,7 +401,7 @@ theorem norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source
       t ∈ Icc 0 (splitExitTime ε z) := by
   obtain ⟨hε, hx⟩ := pos_and_fst_ne_zero_of_entrance hz
   rw [norm_fst_splitQuadraticFlow_le_iff hε hx, norm_snd_splitQuadraticFlow_le_iff hε hz.2.1,
-    splitEntryTime_eq_zero hε.ne' hz.1, mem_Icc]
+    splitEntryTime_eq_zero hz.1, mem_Icc]
 
 /-- For a point of the exit face, the orbit lies in the box `‖x‖ ≤ ε, ‖y‖ ≤ ε` exactly between
 the entry time and time `0`. -/
@@ -403,7 +411,7 @@ theorem norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_target
       t ∈ Icc (splitEntryTime ε z) 0 := by
   obtain ⟨hε, hy⟩ := pos_and_snd_ne_zero_of_exit hz
   rw [norm_fst_splitQuadraticFlow_le_iff hε hz.2.1, norm_snd_splitQuadraticFlow_le_iff hε hy,
-    splitExitTime_eq_zero hε.ne' hz.1, mem_Icc]
+    splitExitTime_eq_zero hz.1, mem_Icc]
 
 /-! ### Breaking, gluing, and the linear λ-lemma -/
 
@@ -486,9 +494,16 @@ first coordinates `g (r • y₀)` of a disc `y ↦ (g y, y)` in the entrance fa
 stable set. As `r → 0⁺`, the points `(x r, r • y₀)` approach the stable set, and their exit points
 converge to the point `(0, y₀)` of the unstable set. -/
 theorem tendsto_splitPassage_toLp_smul {x : ℝ → Eₛ} {y₀ : Eᵤ}
-    (hx : ∀ᶠ r in 𝓝[>] 0, ‖x r‖ = ε) (hy₀ : ‖y₀‖ = ε) (hε : 0 < ε) :
+    (hx : ∀ᶠ r in 𝓝[>] 0, ‖x r‖ = ε) (hy₀ : ‖y₀‖ = ε) :
     Tendsto (fun r ↦ splitPassage ε (WithLp.toLp 2 (x r, r • y₀))) (𝓝[>] 0)
       (𝓝 (WithLp.toLp 2 (0, y₀))) := by
+  rcases (hy₀ ▸ norm_nonneg y₀ : 0 ≤ ε).eq_or_lt with hε | hε
+  · -- Degenerate case `ε = 0`: all the points involved are `0`.
+    have hy : y₀ = 0 := norm_eq_zero.1 (hy₀.trans hε.symm)
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hx] with r hxr
+    have hx0 : x r = 0 := norm_eq_zero.1 (hxr.trans hε.symm)
+    simp [splitPassage_apply, hx0, hy]
   have hpass : (fun r ↦ WithLp.toLp 2 (r • x r, y₀)) =ᶠ[𝓝[>] (0 : ℝ)]
       fun r ↦ splitPassage ε (WithLp.toLp 2 (x r, r • y₀)) := by
     filter_upwards [self_mem_nhdsWithin] with r hr

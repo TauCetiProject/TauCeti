@@ -92,6 +92,26 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet_sup_ker_fderiv_eq_top
 
 namespace IsNondegenerateCriticalPoint
 
+/-- For `p = q` the intersection `W^u(p) ∩ W^s(p)` is the single point `p`, so the level slice is
+the whole intersection, and `df` vanishes at `y`. -/
+private theorem unstableSet_inter_stableSet_level_self (hp : IsNondegenerateCriticalPoint f p)
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) p) (hyc : f y = c) :
+    Flow.unstableSet (negativeGradientFlow f hf) p ∩ Flow.stableSet (negativeGradientFlow f hf) p ∩
+        {x | f x = c} = Flow.unstableSet (negativeGradientFlow f hf) p ∩
+          Flow.stableSet (negativeGradientFlow f hf) p ∧ fderiv ℝ f y = 0 := by
+  have hzp (z : E) (hz : z ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      Flow.stableSet (negativeGradientFlow f hf) p) : z = p :=
+    Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
+      (isNegativeGradient_negativeGradientFlow f hf)
+      (fun t ↦ (hfs.differentiable (by norm_num)).differentiableAt)
+      hfs.continuous.continuousAt hz
+  have hyp := hzp y ⟨hyu, hys⟩
+  refine ⟨Set.inter_eq_left.2 fun z hz ↦ ?_, hyp ▸ hp.fderiv_eq_zero⟩
+  change f z = c
+  rw [hzp z hz, ← hyp, hyc]
+
 /-- Under transversality, the level slice through `y` is cut out of `W^u(p) ∩ W^s(q)` by a
 transverse regular level set: it is flattened by a `C^n` chart, and its tangent space is that of
 `W^u(p) ∩ W^s(q)` cut by `ker df_y`. -/
@@ -152,13 +172,13 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
         (Submodule.closed_of_finiteDimensional _))⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable
-set of a Morse critical point `p` and the stable set of a different Morse critical point `q` meet
+set of a Morse critical point `p` and the stable set of a Morse critical point `q` meet
 transversally at `y`, and `f y = c`, then near `y` the level slice `W^u(p) ∩ W^s(q) ∩ {f = c}` is
 flattened by a `C^n` chart with `C^n` inverse onto the intersection of the tangent spaces of
 `W^u(p)` and `W^s(q)` with `ker df_y`, for `f` globally `C^(n+1)`. -/
 theorem exists_unstableSet_inter_stableSet_level_chart (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f)
-    (hf : LipschitzWith K (∇ f)) (hpq : p ≠ q)
+    (hf : LipschitzWith K (∇ f))
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
@@ -174,19 +194,27 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hp : IsNondegenerateCrit
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓
             (fderiv ℝ f y).ker := by
+  rcases eq_or_ne p q with rfl | hpq
+  · obtain ⟨hset, hker⟩ := hp.unstableSet_inter_stableSet_level_self
+      (hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))) hf hyu hys hyc
+    obtain ⟨e, hye, he, hes, hS⟩ :=
+      hp.exists_unstableSet_inter_stableSet_chart hq hn hfs hf hyu hys htr
+    refine ⟨e, hye, he, hes, fun z hz ↦ ?_⟩
+    rw [hset, hker]
+    simpa using hS z hz
   obtain ⟨⟨e, hye, he, hes, hS⟩, -⟩ := hp.level_slice hq hn hfs hf hpq hyu hys htr hyc
   rw [hp.span_tangentConeAt_unstableSet_inter_stableSet hq
     (hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))) hf hyu hys htr] at hS
   exact ⟨e, hye, he, hes, isSliceChart_iff.1 hS⟩
 
 /-- **The tangent space of a transverse level slice.** If the unstable set of a Morse critical
-point `p` and the stable set of a different Morse critical point `q` meet transversally at `y`, and
+point `p` and the stable set of a Morse critical point `q` meet transversally at `y`, and
 `f y = c`, then the tangent space of the level slice `W^u(p) ∩ W^s(q) ∩ {f = c}` at `y` is the
 intersection of the tangent spaces of `W^u(p)` and `W^s(q)` with `ker df_y`. -/
 theorem span_tangentConeAt_unstableSet_inter_stableSet_level
     (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hpq : p ≠ q) (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤)
@@ -196,6 +224,10 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet_level
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓
         (fderiv ℝ f y).ker := by
+  rcases eq_or_ne p q with rfl | hpq
+  · obtain ⟨hset, hker⟩ := hp.unstableSet_inter_stableSet_level_self hfs hf hyu hys hyc
+    rw [hset, hker, hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr]
+    simp
   rw [(hp.level_slice hq le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hpq hyu hys htr
       hyc).2, hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr]
 
@@ -252,12 +284,12 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hp : IsNondegenerateCritic
   have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIndex hq
     hfs hf hpq hyu hys htry hyc
   obtain ⟨e, hye, -, -, he⟩ := hp.exists_unstableSet_inter_stableSet_level_chart hq le_rfl
-    (by simpa [one_add_one_eq_two] using hfs) hf hpq hyu hys htry hyc
+    (by simpa [one_add_one_eq_two] using hfs) hf hyu hys htry hyc
   have h0 : Module.finrank ℝ (Submodule.span ℝ (tangentConeAt ℝ
       (Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) y)) = 0 := by
     omega
-  rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs hf hpq hyu hys htry hyc,
+  rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs hf hyu hys htry hyc,
     Submodule.finrank_eq_zero.1 h0] at he
   exact ⟨e, hye, isSliceChart_iff.2 fun z hz ↦ (he z hz).trans (Submodule.mem_bot ℝ)⟩
 
