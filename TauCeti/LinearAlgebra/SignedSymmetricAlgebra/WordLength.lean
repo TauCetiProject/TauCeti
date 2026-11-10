@@ -73,6 +73,7 @@ theorem isInternal_lengthPiece : DirectSum.IsInternal (lengthPiece G) := by
 
 /-- Multiplication adds word lengths. -/
 instance : SetLike.GradedMonoid (lengthPiece G) :=
+  -- Unfold `lengthPiece` as in `lengthPiece_def` to use the submodule-power instance.
   inferInstanceAs (SetLike.GradedMonoid (fun n : ℕ => (generator G).range ^ n))
 
 /-- The signed symmetric algebra is internally graded by word length. -/
@@ -114,29 +115,17 @@ theorem word_mem_lengthPiece {n : ℕ} (x : Fin n → V) :
 theorem lengthPiece_eq_span (n : ℕ) :
     lengthPiece G n = Submodule.span R {a | ∃ x : Fin n → V,
       a = (List.ofFn fun i => generator G (x i)).prod} := by
-  apply le_antisymm
-  · intro a ha
-    refine length_induction G
-      (P := fun n a => a ∈ Submodule.span R {b | ∃ x : Fin n → V,
-        b = (List.ofFn fun i => generator G (x i)).prod}) ?_ ?_ ?_ ha
-    · intro r
-      have h : (1 : SignedSym G) ∈ Submodule.span R {b | ∃ x : Fin 0 → V,
-          b = (List.ofFn fun i => generator G (x i)).prod} :=
-        Submodule.subset_span ⟨Fin.elim0, by simp⟩
-      simpa only [Algebra.algebraMap_eq_smul_one] using Submodule.smul_mem _ r h
-    · intro n a b ha hb
-      exact Submodule.add_mem _ ha hb
-    · intro n x a ha
-      induction ha using Submodule.span_induction with
-      | mem b hb =>
-        obtain ⟨y, rfl⟩ := hb
-        exact Submodule.subset_span ⟨Fin.cons x y, by simp [List.ofFn_succ]⟩
-      | zero => simp
-      | add a b _ _ ha hb => simpa only [mul_add] using Submodule.add_mem _ ha hb
-      | smul r a _ ha => simpa only [mul_smul_comm] using Submodule.smul_mem _ r ha
-  · refine Submodule.span_le.2 ?_
-    rintro a ⟨x, rfl⟩
-    exact word_mem_lengthPiece G x
+  classical
+  rw [lengthPiece_def, Submodule.pow_eq_span_pow_set, LinearMap.coe_range]
+  congr 1
+  ext a
+  rw [Set.mem_pow]
+  constructor
+  · rintro ⟨x, rfl⟩
+    refine ⟨fun i => (x i).2.choose, ?_⟩
+    simp only [(x _).2.choose_spec]
+  · rintro ⟨x, rfl⟩
+    exact ⟨fun i => ⟨generator G (x i), ⟨x i, rfl⟩⟩, rfl⟩
 
 /-- The augmentation vanishes on every positive word length. -/
 theorem augmentation_eq_zero_of_mem_lengthPiece {n : ℕ} {a : SignedSym G}
@@ -160,10 +149,9 @@ theorem decompose_lengthPiece_of_mem {n : ℕ} {a : SignedSym G}
     (ha : a ∈ lengthPiece G n) (m : ℕ) :
     (DirectSum.decompose (lengthPiece G) a m : SignedSym G) = if m = n then a else 0 := by
   classical
-  split_ifs with h
-  · subst m
-    exact DirectSum.decompose_of_mem_same _ ha
-  · exact DirectSum.decompose_of_mem_ne _ ha (Ne.symm h)
+  rw [DirectSum.decompose_of_mem _ ha]
+  simpa only [apply_ite, ZeroMemClass.coe_zero, Subtype.coe_mk, @eq_comm ℕ] using
+    (DirectSum.coe_of_apply (A := lengthPiece G) n m ⟨a, ha⟩)
 
 /-- The length-one projection fixes generators; every other length projection kills them. -/
 @[simp]

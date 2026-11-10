@@ -97,15 +97,14 @@ theorem isInternal_map {B : Type*} [Semiring B] [Algebra R B] (f : A →ₐ[R] B
     funext i
     rw [quotientPiece_def, ← Submodule.map_comp, hcomp]
   rw [← hp]
-  let E := LinearEquiv.ofBijective (DirectSum.coeLinearMap (quotientPiece 𝒜 I))
-    (isInternal_quotientPiece 𝒜 I hker)
-  refine TauCeti.DirectSum.isInternal_of_lof
-    (fun i => Submodule.equivMapOfInjective _ e.toLinearEquiv.injective (quotientPiece 𝒜 I i))
-    (E.trans e.toLinearEquiv) ?_
-  intro i x
-  simp only [LinearEquiv.trans_apply, Submodule.coe_equivMapOfInjective_apply]
-  -- `ofBijective` retains the canonical recomposition map as its forward function.
-  exact congrArg e (DirectSum.coeLinearMap_lof (quotientPiece 𝒜 I) i x)
+  let : DirectSum.Decomposition (quotientPiece 𝒜 I) :=
+    (isInternal_quotientPiece 𝒜 I hker).chooseDecomposition
+  -- Transport via the inverse equivalence, using the existing restriction theorem.
+  refine TauCeti.DirectSum.isInternal_comap (quotientPiece 𝒜 I) _
+    e.symm.toLinearMap e.symm.injective (fun i x => ?_) (fun i x => ?_)
+  · exact Submodule.mem_map_equiv (quotientPiece 𝒜 I i)
+  · rw [LinearMap.range_eq_top.mpr e.symm.surjective]
+    trivial
 
 /-- The images of the graded pieces are independent modulo a homogeneous ideal. -/
 theorem iSupIndep_quotientPiece (hI : I.IsHomogeneous 𝒜) : iSupIndep (quotientPiece 𝒜 I) :=
