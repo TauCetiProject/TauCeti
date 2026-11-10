@@ -18,9 +18,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # The heat convolution solves the heat equation
 
 Let `g` be a measurable, essentially bounded function on a finite-dimensional real inner product
-space `E`, with values in a real normed space (a Banach space for the Laplacian, the heat
-equation and the Hölder bounds). The candidate solution of the Cauchy problem `∂ₜu = Δu`,
-`u(0, ·) = g`, is
+space `E`, with values in a real normed space `F` that need not be complete: when `F` is not
+complete the Bochner integral, hence every convolution `K_t ⋆ g`, is zero, and the statements
+below hold trivially. The candidate solution of the Cauchy problem `∂ₜu = Δu`, `u(0, ·) = g`, is
 `u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. The initial condition holds pointwise
 at every point `x₀` where `g` is continuous (for `F` a Banach space): `u(t, x) → g(x₀)` as
 `(t, x) → (0⁺, x₀)`, which is `TauCeti.tendsto_heatKernel_convolution`. At points where `g` is
