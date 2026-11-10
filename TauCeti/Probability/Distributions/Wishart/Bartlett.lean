@@ -255,8 +255,9 @@ private theorem bartlettCoordinatePDFReal_nonneg (hn : (p : ℝ) - 1 < n) (ij : 
 
 /-- A coordinate vector off the positive-diagonal region has a nonpositive diagonal coordinate,
 where the chi density vanishes. -/
-private theorem prod_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
-    (hx : x ∉ posDiagLowerRegion p) : ∏ ij, bartlettCoordinatePDFReal n ij (x ij) = 0 := by
+private theorem prod_ofReal_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
+    (hx : x ∉ posDiagLowerRegion p) :
+    ∏ ij, ENNReal.ofReal (bartlettCoordinatePDFReal n ij (x ij)) = 0 := by
   obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
   refine Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p)) ?_
   have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
@@ -321,8 +322,7 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
         Set.indicator_of_notMem hxs, mul_zero]
   · rw [Set.indicator_of_notMem hx, Set.indicator_apply_eq_zero]
     intro _
-    rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-      prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero]
+    exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The coordinate laws -/
 
@@ -386,10 +386,7 @@ theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion :
   rw [pi_bartlettCoordinateMeasure_eq_withDensity,
     withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
   refine setLIntegral_eq_zero (measurableSet_posDiagLowerRegion p).compl fun x hx ↦ ?_
-  obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
-  have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
-  exact Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p))
-    (by simp [bartlettCoordinatePDFReal, Set.indicator_of_notMem hmem])
+  exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The Bartlett decomposition -/
 
