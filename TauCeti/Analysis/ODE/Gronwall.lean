@@ -11,6 +11,7 @@ public import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -48,6 +49,9 @@ the vanishing of a function with `‖f'‖ ≤ K ‖f‖` forward from the left 
 Reversing time gives the two-sided version: on `[a, b]` such a function vanishes identically as
 soon as it vanishes at one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
 This is the uniqueness argument for linear differential equations by energy estimates.
+Averaging the reversed Grönwall bound over `[s, s + 1]` shows that such a function, if it is
+square integrable on the line, is bounded by its `L²` norm: `‖f s‖² ≤ exp (2 K) ∫ ‖f‖²`
+(`TauCeti.norm_sq_le_exp_mul_integral_norm_sq`).
 
 ## References
 
@@ -249,5 +253,39 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
       (by simpa using hfc) (fun y hy ↦ by simpa using bound (-y) (hsub (Ico_subset_Icc_self hy)))
       (-x) ⟨by linarith, by linarith [hx.1]⟩
     simpa using key
+
+/-- **A square-integrable path with derivative controlled by its norm is bounded.** If
+`‖u'‖ ≤ K ‖u‖` with `K ≥ 0` and `u` is square integrable on the line, then
+`‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for every `s`. -/
+theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
+    (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
+    (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
+  -- Grönwall backwards in time: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
+  have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
+      ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
+    have hrev (r : ℝ) : HasDerivAt (fun r ↦ u (-r)) (-u' (-r)) r := by
+      simpa [Function.comp_def] using (hu (-r)).scomp r (hasDerivAt_neg r)
+    have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r ↦ u (-r))
+      (f' := fun r ↦ -u' (-r)) (δ := ‖u t‖) (K := K) (ε := 0) (a := -t) (b := -s)
+      (fun r _ ↦ (hrev r).continuousAt.continuousWithinAt)
+      (fun r _ ↦ (hrev r).hasDerivWithinAt) (by simp)
+      (fun r _ ↦ by simpa using hu' (-r)) (-s) ⟨by linarith [ht.1], le_rfl⟩
+    rw [gronwallBound_ε0, neg_neg] at hg
+    have hexp : Real.exp (K * (-s - -t)) ≤ Real.exp K :=
+      Real.exp_le_exp.2 (by nlinarith [ht.1, ht.2])
+    have hle : ‖u s‖ ≤ ‖u t‖ * Real.exp K := hg.trans (by gcongr)
+    calc ‖u s‖ ^ 2 ≤ (‖u t‖ * Real.exp K) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hle 2
+      _ = Real.exp (2 * K) * ‖u t‖ ^ 2 := by rw [two_mul, Real.exp_add]; ring
+  -- Average the pointwise bound over `[s, s + 1]`.
+  have hint : Integrable fun t ↦ ‖u t‖ ^ 2 :=
+    (memLp_two_iff_integrable_sq_norm hu2.aestronglyMeasurable).1 hu2
+  calc ‖u s‖ ^ 2 = ∫ _ in Icc s (s + 1), ‖u s‖ ^ 2 := by simp
+    _ ≤ ∫ t in Icc s (s + 1), Real.exp (2 * K) * ‖u t‖ ^ 2 :=
+      setIntegral_mono_on (by simp) (hint.integrableOn.const_mul _) measurableSet_Icc hback
+    _ = Real.exp (2 * K) * ∫ t in Icc s (s + 1), ‖u t‖ ^ 2 := integral_const_mul _ _
+    _ ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 :=
+      mul_le_mul_of_nonneg_left (setIntegral_le_integral hint (.of_forall fun _ ↦ by positivity))
+        (Real.exp_pos _).le
 
 end TauCeti

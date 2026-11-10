@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
-import Mathlib.Analysis.ODE.Gronwall
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
@@ -68,72 +67,6 @@ open MeasureTheory TopologicalSpace Set Filter
 open scoped ENNReal Topology InnerProductSpace
 
 namespace TauCeti
-
-section Normed
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **A square-integrable path with derivative controlled by its norm is bounded.** If
-`‖u'‖ ≤ K ‖u‖` with `K ≥ 0` and `u` is square integrable on the line, then
-`‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for every `s`. -/
-theorem norm_sq_le_exp_mul_integral_norm_sq {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
-    (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
-    (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
-  -- Grönwall backwards in time: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
-  have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
-      ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
-    have hrev (r : ℝ) : HasDerivAt (fun r ↦ u (-r)) (-u' (-r)) r := by
-      simpa [Function.comp_def] using (hu (-r)).scomp r (hasDerivAt_neg r)
-    have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r ↦ u (-r))
-      (f' := fun r ↦ -u' (-r)) (δ := ‖u t‖) (K := K) (ε := 0) (a := -t) (b := -s)
-      (fun r _ ↦ (hrev r).continuousAt.continuousWithinAt)
-      (fun r _ ↦ (hrev r).hasDerivWithinAt) (by simp)
-      (fun r _ ↦ by simpa using hu' (-r)) (-s) ⟨by linarith [ht.1], le_rfl⟩
-    rw [gronwallBound_ε0, neg_neg] at hg
-    have hexp : Real.exp (K * (-s - -t)) ≤ Real.exp K :=
-      Real.exp_le_exp.2 (by nlinarith [ht.1, ht.2])
-    have hle : ‖u s‖ ≤ ‖u t‖ * Real.exp K := hg.trans (by gcongr)
-    calc ‖u s‖ ^ 2 ≤ (‖u t‖ * Real.exp K) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hle 2
-      _ = Real.exp (2 * K) * ‖u t‖ ^ 2 := by rw [two_mul, Real.exp_add]; ring
-  -- Average the pointwise bound over `[s, s + 1]`.
-  have hint : Integrable fun t ↦ ‖u t‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hu2.aestronglyMeasurable).1 hu2
-  calc ‖u s‖ ^ 2 = ∫ _ in Icc s (s + 1), ‖u s‖ ^ 2 := by simp
-    _ ≤ ∫ t in Icc s (s + 1), Real.exp (2 * K) * ‖u t‖ ^ 2 :=
-      setIntegral_mono_on (by simp) (hint.integrableOn.const_mul _) measurableSet_Icc hback
-    _ = Real.exp (2 * K) * ∫ t in Icc s (s + 1), ‖u t‖ ^ 2 := integral_const_mul _ _
-    _ ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 :=
-      mul_le_mul_of_nonneg_left (setIntegral_le_integral hint (.of_forall fun _ ↦ by positivity))
-        (Real.exp_pos _).le
-
-/-- **Weighted solutions are square-integrable solutions.** Let `w` have derivative `w'` and be
-bounded below. If `u` is a square-integrable solution of `u' + (A - w') u = 0`, then
-`v = exp (w 0 - w) • u` is a square-integrable solution of `v' + A v = 0` with the same initial
-value. In terms of the trajectory operator, the kernel of `D_A` on the weighted space
-`{u | exp w • u ∈ W^{1,2}}` is contained in its kernel on `W^{1,2}`. -/
-theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w w' : ℝ → ℝ}
-    (hw : ∀ s, HasDerivAt w (w' s) s) (hbdd : BddBelow (range w)) :
-    squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) ≤
-      squareIntegrableSolutions A := by
-  intro x hx
-  obtain ⟨u, rfl, hu, hu2⟩ := mem_squareIntegrableSolutions.1 hx
-  obtain ⟨m, hm⟩ := hbdd
-  refine mem_squareIntegrableSolutions.2
-    ⟨fun s ↦ Real.exp (w 0 - w s) • u s, by simp, fun s ↦ ?_, ?_⟩
-  · convert (((hw s).const_sub (w 0)).exp).smul (hu s) using 1
-    simp only [sub_apply, smul_apply, ContinuousLinearMap.id_apply, map_smul]
-    module
-  · have hcont : Continuous fun s ↦ Real.exp (w 0 - w s) • u s :=
-      continuous_iff_continuousAt.2 fun s ↦
-        ((((hw s).const_sub (w 0)).exp).smul (hu s)).continuousAt
-    refine (hu2.const_smul (Real.exp (w 0 - m))).of_le hcont.aestronglyMeasurable
-      (.of_forall fun s ↦ ?_)
-    rw [Pi.smul_apply, norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
-      Real.norm_of_nonneg (Real.exp_pos _).le]
-    gcongr
-    exact hm ⟨s, rfl⟩
-
-end Normed
 
 section Hyperbolic
 
@@ -276,11 +209,8 @@ theorem exists_forall_norm_le_mul_exp_neg (hA : Continuous A)
   obtain ⟨u, hu0, hu, hu2⟩ := mem_squareIntegrableSolutions.1 hx
   -- By uniqueness, `u = exp (w - w 0) • v`.
   have hvw (s : ℝ) : HasDerivAt (fun s ↦ Real.exp (w s - w 0) • v s)
-      (-B s (Real.exp (w s - w 0) • v s)) s := by
-    convert (((hw s).sub_const (w 0)).exp).smul (hv s) using 1
-    simp only [B, I, sub_apply, smul_apply,
-      ContinuousLinearMap.id_apply, map_smul]
-    module
+      (-B s (Real.exp (w s - w 0) • v s)) s :=
+    hasDerivAt_exp_smul_sub_smul_id ((hw s).sub_const (w 0)) (hv s)
   have heq : u = fun s ↦ Real.exp (w s - w 0) • v s :=
     hB.neg.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hu s) (fun s ↦ by simpa using hvw s)
       (t₀ := 0) (by simp [hu0])
@@ -298,8 +228,8 @@ theorem exists_forall_norm_le_mul_exp_neg (hA : Continuous A)
   have hnorm : ‖u s‖ = Real.exp (w s - w 0) * ‖v s‖ := by
     rw [heq, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
   have hv' : ‖v s‖ = Real.exp (w 0) * Real.exp (-w s) * ‖u s‖ := by
-    rw [hnorm, ← mul_assoc, ← Real.exp_add, ← Real.exp_add,
-      show w 0 + -w s + (w s - w 0) = 0 by ring, Real.exp_zero, one_mul]
+    rw [hnorm, Real.exp_sub, Real.exp_neg]
+    field_simp
   rw [hv', mul_right_comm]
   gcongr
 
@@ -315,9 +245,8 @@ theorem exists_forall_norm_le_mul_exp_neg_mul_abs (hA : Continuous A)
     {v : ℝ → E} (hv : ∀ s, HasDerivAt v (-A s (v s)) s) (hv2 : MemLp v 2) :
     ∃ C, ∀ s, ‖v s‖ ≤ C * Real.exp (-(δ * |s|)) := by
   -- Use the weight `w s = δ log (cosh s)`, with slope `δ tanh s` and `w s ≥ δ (|s| - log 2)`.
-  have hw (s : ℝ) : HasDerivAt (fun s ↦ δ * Real.log (Real.cosh s)) (δ * Real.tanh s) s := by
-    convert ((Real.hasDerivAt_cosh s).log (Real.cosh_pos s).ne').const_mul δ using 1
-    rw [Real.tanh_eq_sinh_div_cosh]
+  have hw (s : ℝ) : HasDerivAt (fun s ↦ δ * Real.log (Real.cosh s)) (δ * Real.tanh s) s :=
+    (Real.hasDerivAt_log_cosh s).const_mul δ
   have hbdd : BddBelow (range fun s ↦ δ * Real.log (Real.cosh s)) :=
     ⟨0, by
       rintro _ ⟨s, rfl⟩
@@ -335,16 +264,9 @@ theorem exists_forall_norm_le_mul_exp_neg_mul_abs (hA : Continuous A)
   have hC₀ : 0 ≤ C :=
     nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC 0)) (Real.exp_pos _)
   refine ⟨C * Real.exp (δ * Real.log 2), fun s ↦ (hC s).trans ?_⟩
-  -- `cosh s ≥ exp |s| / 2`, so `δ log (cosh s) ≥ δ |s| - δ log 2`.
-  have hcosh : Real.exp |s| / 2 ≤ Real.cosh s := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_abs_le s]
-  have hlog : |s| - Real.log 2 ≤ Real.log (Real.cosh s) := by
-    have := Real.log_le_log (by positivity) hcosh
-    rwa [Real.log_div (Real.exp_pos _).ne' two_ne_zero, Real.log_exp] at this
   rw [mul_assoc, ← Real.exp_add]
   gcongr
-  nlinarith [mul_le_mul_of_nonneg_left hlog hδ]
+  nlinarith [mul_le_mul_of_nonneg_left (Real.abs_sub_log_two_le_log_cosh s) hδ]
 
 end Hyperbolic
 
