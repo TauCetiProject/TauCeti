@@ -395,6 +395,7 @@ end Finset
 namespace Nat
 
 /-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+@[simp]
 theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
   have h : Finset.Ico a b = (List.range' a (b - a)).toFinset := by
     ext x

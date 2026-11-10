@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.FreeProbability.Cumulant.Free
 public import TauCeti.Probability.FreeProbability.Cumulant.S.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Finset.Sort
-import TauCeti.RingTheory.PowerSeries.SubstInv
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -272,6 +270,14 @@ private theorem momentSeries_mul_eq_subst (hφ : φ 1 = 1) {a b : A} (hmix : Mix
     ← apply_prod_range_eq_firstPartSum hφ hmix, List.range_eq_range', prod_range'_two_mul]
   simp [altWord]
 
+/-- When mixed free cumulants vanish, the first mixed moment factorises:
+`φ (a b) = φ a φ b`. -/
+private theorem apply_mul_of_mixedVanish (hφ : φ 1 = 1) {a b : A} (hmix : MixedVanish φ a b) :
+    φ (a * b) = φ a * φ b := by
+  have h := congrArg (coeff 1) (momentSeries_mul_eq_subst hφ hmix)
+  rw [coeff_momentSeries, pow_one, coeff_one_subst (by simp), coeff_one_freeCumulantSeries] at h
+  simpa using h
+
 /-- *The second functional equation*: `Q(z) = R_a(z P(z)) M_{ba}(z)` with
 `P(z) = ∑_{m ≥ 0} φ ((b a)ᵐ b) zᵐ` and `Q(z) = ∑_{m ≥ 0} φ ((a b)ᵐ a) zᵐ`. -/
 private theorem mk_apply_mul_pow_mul_eq (hφ : φ 1 = 1) {a b : A} (hmix : MixedVanish φ a b) :
@@ -371,12 +377,6 @@ theorem IsFreelyIndependentElements.momentSeries_mul_comm {c : ι → A}
   (isFreelyIndependentElements_iff.mp h).momentSeries_mul_comm hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _)
 
-end Semiring
-
-section Ring
-
-variable [Ring A] [Algebra R A] {φ : A →ₗ[R] R}
-
 /-- *Multiplicativity of the S-series*: if `a ∈ B i` and `b ∈ B j` for `i ≠ j`, with `B` freely
 independent for a normalised `φ`, and the means `φ a` and `φ b` are units, then
 `S_{ab} = S_a S_b`. The mean `φ (a b) = φ a φ b` of `a b` is then a unit too. No traciality of
@@ -384,7 +384,8 @@ independent for a normalised `φ`, and the means `φ a` and `φ b` are units, th
 theorem IsFreelyIndependent.sSeries_mul {B : ι → Subalgebra R A}
     (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : A}
     (ha : a ∈ B i) (hb : b ∈ B j) (hua : IsUnit (φ a)) (hub : IsUnit (φ b)) :
-    sSeries φ (a * b) (by rw [h.apply_mul_of_ne hφ hij ha hb]; exact hua.mul hub) =
+    sSeries φ (a * b)
+        (by rw [apply_mul_of_mixedVanish hφ (mixedVanish h hφ hij ha hb)]; exact hua.mul hub) =
       sSeries φ a hua * sSeries φ b hub :=
   sSeries_mul_of_mixedVanish hφ (mixedVanish h hφ hij ha hb) (mixedVanish h hφ hij.symm hb ha)
     hua hub _
@@ -395,11 +396,15 @@ the product of the S-series of `c i` and of `c j`. -/
 theorem IsFreelyIndependentElements.sSeries_mul {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j)
     (hua : IsUnit (φ (c i))) (hub : IsUnit (φ (c j))) :
-    sSeries φ (c i * c j) (by rw [h.apply_mul_of_ne hφ hij]; exact hua.mul hub) =
+    sSeries φ (c i * c j)
+        (by
+          rw [apply_mul_of_mixedVanish hφ (mixedVanish (isFreelyIndependentElements_iff.mp h) hφ
+            hij (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _))]
+          exact hua.mul hub) =
       sSeries φ (c i) hua * sSeries φ (c j) hub :=
   (isFreelyIndependentElements_iff.mp h).sSeries_mul hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hua hub
 
-end Ring
+end Semiring
 
 end TauCeti
