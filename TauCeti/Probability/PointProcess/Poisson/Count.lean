@@ -52,16 +52,8 @@ parameter equal to the intensity of that interval. This includes empty intervals
 theorem hasLaw_nat_count_Ioc [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) (s t : ℝ≥0) :
     HasLaw (fun ω ↦ ⌊(M ω (Ioc s t)).toNNReal⌋₊)
-      (poissonMeasure (Λ (Ioc s t)).toNNReal) P := by
-  have hc := h.hasLaw (A := Ioc s t) measurableSet_Ioc measure_Ioc_lt_top
-  have hm : Measurable (fun x : ℝ≥0∞ ↦ ⌊x.toNNReal⌋₊) := by fun_prop
-  have hp := (hasLaw_map (P := (poissonMeasure (Λ (Ioc s t)).toNNReal).map
-    (Nat.cast : ℕ → ℝ≥0∞)) hm.aemeasurable).comp hc
-  have hmap : ((poissonMeasure (Λ (Ioc s t)).toNNReal).map (Nat.cast : ℕ → ℝ≥0∞)).map
-      (fun x ↦ ⌊x.toNNReal⌋₊) = poissonMeasure (Λ (Ioc s t)).toNNReal := by
-    rw [Measure.map_map hm Measurable.of_discrete]
-    simp [Function.comp_def]
-  simpa only [hmap, Function.comp_def] using hp
+      (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
+  h.hasLaw_nat_floor measurableSet_Ioc measure_Ioc_lt_top
 
 /-- For homogeneous intensity, the interval count has parameter rate times elapsed time.
 This includes empty intervals and rate zero. -/
@@ -72,23 +64,13 @@ theorem hasLaw_nat_count_Ioc_smul_nnvolume
   simpa only [smul_apply, nnvolume_Ioc, smul_eq_mul, ← ENNReal.coe_mul,
     ENNReal.toNNReal_coe] using h.hasLaw_nat_count_Ioc s t
 
-private theorem ae_count_Ioc_natCast [IsLocallyFiniteMeasure Λ]
-    (h : IsPoissonRandomMeasure P M Λ) (s t : ℝ≥0) :
-    ∀ᵐ ω ∂P, ∃ n : ℕ, M ω (Ioc s t) = n := by
-  have hc := h.hasLaw (A := Ioc s t) measurableSet_Ioc measure_Ioc_lt_top
-  have hmem : ∀ᵐ x ∂P.map (fun ω ↦ M ω (Ioc s t)),
-      x ∈ range (Nat.cast : ℕ → ℝ≥0∞) := by
-    rw [hc.map_eq]
-    exact ae_map_mem_range (countable_range _).measurableSet Measurable.of_discrete.aemeasurable
-  filter_upwards [ae_of_ae_map hc.aemeasurable hmem] with ω ⟨n, hn⟩
-  exact ⟨n, hn.symm⟩
-
 /-- Natural cumulative counts are monotone on one event of full probability. Local finiteness
 of the intensity rules out infinite counts simultaneously on all bounded time intervals. -/
 theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
-  filter_upwards [ae_all_iff.2 (fun n : ℕ ↦ h.ae_count_Ioc_natCast 0 n)] with ω hω
+  filter_upwards [ae_all_iff.2 (fun n : ℕ ↦
+    h.ae_exists_natCast (A := Ioc 0 (n : ℝ≥0)) measurableSet_Ioc measure_Ioc_lt_top)] with ω hω
   have hfin (t : ℝ≥0) : M ω (Ioc 0 t) ≠ ∞ := by
     obtain ⟨n, hn⟩ := hω ⌈t⌉₊
     exact ne_top_of_le_ne_top (by rw [hn]; exact ENNReal.natCast_ne_top n)
@@ -101,14 +83,12 @@ private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :
     (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ - ⌊(M ω (Ioc 0 s)).toNNReal⌋₊) =ᵐ[P]
       (fun ω ↦ ⌊(M ω (Ioc s t)).toNNReal⌋₊) := by
-  filter_upwards [h.ae_count_Ioc_natCast 0 s, h.ae_count_Ioc_natCast s t] with ω hs ht
-  obtain ⟨a, ha⟩ := hs
-  obtain ⟨b, hb⟩ := ht
+  filter_upwards [h.ae_nat_floor_eq (A := Ioc 0 s) measurableSet_Ioc measure_Ioc_lt_top,
+    h.ae_nat_floor_eq (A := Ioc s t) measurableSet_Ioc measure_Ioc_lt_top] with ω hs ht
   have hadd := measure_union (μ := M ω) (s₁ := Ioc 0 s) (s₂ := Ioc s t)
     (Ioc_disjoint_Ioc_of_le (le_refl s)) measurableSet_Ioc
-  rw [Ioc_union_Ioc_eq_Ioc (a := 0) bot_le hst, ha, hb,
-    ← Nat.cast_add] at hadd
-  rw [hadd, ha, hb]
+  rw [Ioc_union_Ioc_eq_Ioc (a := 0) bot_le hst, ← hs, ← ht, ← Nat.cast_add] at hadd
+  rw [hadd]
   simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast, Nat.add_sub_cancel_left]
 
 /-- A cumulative-count increment has Poisson law with parameter equal to the interval intensity.

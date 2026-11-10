@@ -10,6 +10,7 @@ public import Mathlib.Probability.IdentDistrib
 public import TauCeti.Probability.Distributions.Poisson.Basic
 
 import TauCeti.Probability.Independence.Basic
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Poisson random measures
@@ -83,6 +84,39 @@ theorem IsPoissonRandomMeasure.hasLaw (h : IsPoissonRandomMeasure P N Λ)
       ((poissonMeasure (Λ A).toNNReal).map (Nat.cast : ℕ → ℝ≥0∞)) P := by
   exact ((isPoissonRandomMeasure_iff.mp h).2.1 1 (fun _ => A) (fun _ => ⟨hA, hfin⟩)
     (fun i j hij => False.elim (hij (Subsingleton.elim i j)))).2 0
+
+/-- A count on a measurable set of finite intensity is almost surely a natural number. -/
+theorem IsPoissonRandomMeasure.ae_exists_natCast (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, ∃ n : ℕ, N ω A = n := by
+  have hc := h.hasLaw hA hfin
+  have hmem : ∀ᵐ x ∂P.map (fun ω ↦ N ω A),
+      x ∈ Set.range (Nat.cast : ℕ → ℝ≥0∞) := by
+    rw [hc.map_eq]
+    exact ae_map_mem_range (Set.countable_range _).measurableSet Measurable.of_discrete.aemeasurable
+  filter_upwards [ae_of_ae_map hc.aemeasurable hmem] with ω ⟨n, hn⟩
+  exact ⟨n, hn.symm⟩
+
+/-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
+theorem IsPoissonRandomMeasure.ae_nat_floor_eq (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, (⌊(N ω A).toNNReal⌋₊ : ℝ≥0∞) = N ω A := by
+  filter_upwards [h.ae_exists_natCast hA hfin] with ω ⟨n, hn⟩
+  simp [hn]
+
+/-- The natural-valued count on any measurable set of finite intensity has Poisson law. -/
+theorem IsPoissonRandomMeasure.hasLaw_nat_floor (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    HasLaw (fun ω ↦ ⌊(N ω A).toNNReal⌋₊) (poissonMeasure (Λ A).toNNReal) P := by
+  have hc := h.hasLaw hA hfin
+  have hm : Measurable (fun x : ℝ≥0∞ ↦ ⌊x.toNNReal⌋₊) := by fun_prop
+  have hp := (hasLaw_map (P := (poissonMeasure (Λ A).toNNReal).map
+    (Nat.cast : ℕ → ℝ≥0∞)) hm.aemeasurable).comp hc
+  have hmap : ((poissonMeasure (Λ A).toNNReal).map (Nat.cast : ℕ → ℝ≥0∞)).map
+      (fun x ↦ ⌊x.toNNReal⌋₊) = poissonMeasure (Λ A).toNNReal := by
+    rw [Measure.map_map hm Measurable.of_discrete]
+    simp [Function.comp_def]
+  simpa only [hmap, Function.comp_def] using hp
 
 /-- A count on a measurable set of infinite intensity is almost surely infinite. -/
 theorem IsPoissonRandomMeasure.ae_eq_top (h : IsPoissonRandomMeasure P N Λ)
