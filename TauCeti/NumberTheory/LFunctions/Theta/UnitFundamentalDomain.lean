@@ -275,9 +275,20 @@ theorem surfaceMul_symm (c : normOneSurface K) :
 /-- A point of the norm-one hypersurface with coordinates at most `C` has inverse coordinates at
 most `C ^ [K : ℚ]`: the other coordinates cannot make up for a small one. -/
 theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K)
-    {C : ℝ} (hC : 1 ≤ C) (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
+    {C : ℝ} (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
     (y w)⁻¹ ≤ C ^ Module.finrank ℚ K := by
   classical
+  have hC : 1 ≤ C := by
+    by_contra hC
+    push Not at hC
+    have hlt : ∏ v, y v ^ mult v < 1 := by
+      calc ∏ v, y v ^ mult v ≤ ∏ v, C ^ mult v :=
+            prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
+              fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+        _ = C ^ Module.finrank ℚ K := by rw [prod_pow_eq_pow_sum, sum_mult_eq]
+        _ < 1 := pow_lt_one₀ ((hy.1 w).le.trans (hyC w)) hC Module.finrank_pos.ne'
+    rw [← archNorm_apply, hy.2] at hlt
+    exact lt_irrefl _ hlt
   have h1 : 1 ≤ C ^ Module.finrank ℚ K := one_le_pow₀ hC
   have hmul := mul_prod_erase univ (fun v ↦ y v ^ mult v) (mem_univ w)
   rw [← archNorm_apply, hy.2] at hmul
@@ -304,7 +315,7 @@ theorem exists_forall_mem_Icc_of_isBounded {D : Set (realSpace K)} (hD : IsBound
   · have hle (v : InfinitePlace K) : y v ≤ max C 1 :=
       (Real.le_norm_self _).trans ((norm_le_pi_norm y v).trans ((hC y hy).trans (le_max_left _ _)))
     rw [inv_le_comm₀ (by positivity) (hyS.1 w)]
-    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hC' hle w
+    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hle w
   · exact (Real.le_norm_self _).trans ((norm_le_pi_norm y w).trans ((hC y hy).trans
       ((le_max_left _ _).trans (le_self_pow₀ hC' Module.finrank_pos.ne'))))
 
