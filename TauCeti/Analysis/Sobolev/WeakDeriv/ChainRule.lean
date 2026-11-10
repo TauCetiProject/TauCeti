@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -57,10 +58,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Filter MeasureTheory Metric Set TopologicalSpace
 open scoped Convolution ENNReal NNReal Topology
+
+namespace TauCeti
 
 section Core
 
@@ -204,7 +205,7 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
   · refine (tendsto_add_atTop_iff_nat
       (f := fun n => ∫⁻ x in V, ‖g (un n x) - g (u x)‖ₑ ∂μ) N).2 ?_
     exact ((huS.comp_tendstoUniformlyOn hgAt huu).mono hVS).tendsto_setLIntegral_enorm_sub
-      V.isOpen.measurableSet ((measure_mono hVS).trans_lt hVc.measure_lt_top).ne
+      ((measure_mono hVS).trans_lt hVc.measure_lt_top).ne
   · refine (tendsto_add_atTop_iff_nat (f := fun n => ∫⁻ x in V,
       ‖(fderiv ℝ g (un n x)).comp (Dn n x) - (fderiv ℝ g (u x)).comp (Du x)‖ₑ ∂μ) N).2 ?_
     refine tendsto_setLIntegral_enorm_clm_comp_sub

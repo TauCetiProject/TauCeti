@@ -14,11 +14,12 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 /-!
 # Lower Lebesgue integrals under uniform convergence
 
-On a set of finite measure, uniform convergence implies convergence of
-`∫⁻ x in s, ‖f i x - f x‖ₑ` to zero. Combined with `L¹` convergence of a second family, this
-gives `L¹` convergence of pointwise compositions of operator families: if `Aᵢ → A` uniformly on
-`s` with `A` bounded there, and `Bᵢ → B` in `L¹(s)`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`. This is
-how the weak chain rule passes from smooth approximations to the limit.
+On a set of finite measure, uniform convergence implies `L¹` convergence
+(`TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`).
+Combined with `L¹` convergence of a second family, uniform convergence gives `L¹` convergence of
+pointwise compositions of operator families: if `Aᵢ → A` uniformly on `s` with `A` bounded there,
+and `Bᵢ → B` in `L¹(s)`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`. This is how the weak chain rule
+passes from smooth approximations to the limit.
 -/
 
 public section
@@ -29,23 +30,7 @@ open scoped ENNReal NNReal Topology
 namespace TauCeti
 
 variable {ι α : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι} {s : Set α}
-
-/-- On a measurable set of finite measure, uniform convergence gives convergence in `L¹`, written
-with lower Lebesgue integrals. -/
-theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {X : Type*}
-    [SeminormedAddCommGroup X] {f : ι → α → X} {f₀ : α → X} (h : TendstoUniformlyOn f f₀ l s)
-    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
-    Tendsto (fun i => ∫⁻ x in s, ‖f i x - f₀ x‖ₑ ∂μ) l (𝓝 0) := by
-  have h0 := ENNReal.Tendsto.mul_const (b := μ s) h.tendsto_iSup_enorm_sub (Or.inr hμs)
-  rw [zero_mul] at h0
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0
-    (fun _ => zero_le) fun i => ?_
-  calc ∫⁻ x in s, ‖f i x - f₀ x‖ₑ ∂μ ≤ ∫⁻ _ in s, ⨆ x ∈ s, ‖f i x - f₀ x‖ₑ ∂μ :=
-        setLIntegral_mono' hs fun x hx =>
-          le_iSup₂ (f := fun x (_ : x ∈ s) => ‖f i x - f₀ x‖ₑ) x hx
-    _ = _ := setLIntegral_const _ _
-
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- **`L¹` convergence of compositions.** If `Aᵢ → A` uniformly on `s`, with `‖A‖ ≤ C` on `s`, and
