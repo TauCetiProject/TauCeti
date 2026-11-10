@@ -52,7 +52,7 @@ theorem IsPseudoUniformizer.isUnit_pow_sub_pow (hϖ : IsPseudoUniformizer ϖ)
 
 /-- The images of the powers of a pseudouniformizer are distinct in every nonzero target
 ring, even when the ring homomorphism is not continuous. -/
-theorem IsPseudoUniformizer.injective_map_pow (hϖ : IsPseudoUniformizer ϖ)
+theorem IsPseudoUniformizer.map_pow_right_injective (hϖ : IsPseudoUniformizer ϖ)
     {B : Type*} [Ring B] [Nontrivial B] (f : A →+* B) :
     Function.Injective (fun n : ℕ ↦ f (ϖ ^ n)) := by
   intro m n hmn
@@ -76,7 +76,7 @@ infinite. The homomorphism need not be continuous. -/
 theorem RingHom.infinite_of_isTateRing {B : Type*} [Ring B] [Nontrivial B] (f : A →+* B) :
     Infinite B := by
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  exact Infinite.of_injective _ (hϖ.injective_map_pow f)
+  exact Infinite.of_injective _ (hϖ.map_pow_right_injective f)
 
 /-- Every proper quotient of a complete Hausdorff Tate ring is infinite, without any
 closedness assumption on the ideal. -/

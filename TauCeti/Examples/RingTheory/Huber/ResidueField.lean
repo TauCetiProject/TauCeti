@@ -13,8 +13,8 @@ import TauCeti.RingTheory.Huber.LaurentSeries
 # Checks for infinite residue fields of complete Tate rings
 
 These examples test mixed and equal characteristic, exclusion of finite nonzero targets,
-and the necessary properness assumption on quotients. Algebraic residue fields of a Tate
-ring are infinite even when its valuation ring has finite residue field.
+and the necessary properness assumption on quotients. Algebraic residue fields of a complete
+Hausdorff Tate ring are infinite even when its valuation ring has finite residue field.
 -/
 
 namespace TauCeti.Examples
