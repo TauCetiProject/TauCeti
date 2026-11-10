@@ -67,15 +67,17 @@ theorem specialLinearRootSign_mul_self (i j : Fin (r + 1)) :
   split <;> simp [← mul_pow]
 
 /-- The product of opposite root signs depends only on the interval height. -/
-theorem specialLinearRootSign_mul_swap (i j : Fin (r + 1)) (hij : i ≠ j) :
+theorem specialLinearRootSign_mul_swap (i j : Fin (r + 1)) :
     specialLinearRootSign r A i j * specialLinearRootSign r A j i =
       (-1 : A) ^ (Nat.dist i.val j.val - 1) := by
-  rcases lt_or_gt_of_ne hij with h | h
+  rcases lt_trichotomy i j with h | rfl | h
   · rw [specialLinearRootSign_of_lt r A i j h,
       specialLinearRootSign_of_gt r A j i h, one_mul]
     congr 1
     unfold Nat.dist
     omega
+  · rw [specialLinearRootSign_mul_self]
+    simp [Nat.dist]
   · rw [specialLinearRootSign_of_gt r A i j h,
       specialLinearRootSign_of_lt r A j i h, mul_one]
     congr 1
@@ -87,7 +89,7 @@ theorem specialLinearRootSign_mul_swap_eq_neg_one_pow
     (i j : Fin (r + 1)) (hij : i ≠ j) :
     specialLinearRootSign r A i j * specialLinearRootSign r A j i =
       (-1 : A) ^ (i.val + j.val + 1) := by
-  rw [specialLinearRootSign_mul_swap r A i j hij,
+  rw [specialLinearRootSign_mul_swap r A i j,
     neg_one_pow_eq_pow_mod_two (Nat.dist i.val j.val - 1),
     neg_one_pow_eq_pow_mod_two (i.val + j.val + 1)]
   congr 1
