@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.Topology.Algebra.MvPolynomial.Aeval
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # The point topology on points of an affine algebra
@@ -212,14 +213,7 @@ theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial
     ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
   have : DiscreteTopology (σ → R) :=
     (mvPolynomialHomeomorph k R σ).symm.isEmbedding.discreteTopology
-  classical
-  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 (isOpen_discrete ({0} : Set (σ → R))) 0 rfl
-  obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
-  have hmem : Function.update (0 : σ → R) j 1 ∈ (I : Set σ).pi u := fun i hi ↦ by
-    rw [Function.update_of_ne (by rintro rfl; exact hj hi)]
-    exact (hu i hi).2
-  have := congrFun (hsub hmem) j
-  simp at this
+  exact not_discreteTopology_pi this
 
 end CommSemiring
 
