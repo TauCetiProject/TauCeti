@@ -318,7 +318,7 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym (hA : A.IsSymm) {k 
   intro a
   induction a using Nat.recOnPrimeCoprime with
   | zero => intro A _ h0; exact absurd h0 (by decide)
-  | prime_pow p e hp =>
+  | multiplicity_prime_pow p e hp =>
     intro A hA
     exact hA.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym_of_prime_pow hι hp e
   | coprime a b ha hb hab iha ihb =>

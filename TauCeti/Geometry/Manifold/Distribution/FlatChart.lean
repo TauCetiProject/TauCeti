@@ -284,7 +284,7 @@ theorem IsInvolutiveDistribution.exists_flatChart_eventually_sub_mem [FiniteDime
     rw [ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply, ← hflat z hz]
     exact ⟨w, hw, rfl⟩
   have hconst := hf.eventually_sub_mem hfd hs
-    ((e.contMDiffOn_extend he).mdifferentiableOn hm0) e.open_source W.closed_of_finiteDimensional
+    ((e.contMDiffOn_extend he).mdifferentiableOn hm0) e.open_source W.isClosed_of_finiteDimensional
     hDp hxs hxsrc
   have hfc : ContinuousAt f x := hfd.continuousOn.continuousAt (hs.mem_nhds hxs)
   filter_upwards [hconst, hfc (e.open_source.mem_nhds hxsrc)] with y hy hys

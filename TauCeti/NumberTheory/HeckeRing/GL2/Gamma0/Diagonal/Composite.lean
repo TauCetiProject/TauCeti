@@ -352,7 +352,7 @@ theorem heckeTCompositeGamma0_mem_of_forall_prime_dvd
       exact S.sub_mem (S.mul_mem hT h1) (S.mul_mem (S.zsmul_mem hs _) h0)
   -- and every `T_n`, as the product of its prime-power blocks
   induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p v hp hv =>
+  | multiplicity_prime_pow p v hp hv =>
     rw [heckeTCompositeGamma0_prime_pow N hp]
     have hpv : p ∣ p ^ v := dvd_pow_self p hv.ne'
     exact hrec (hT p hp hpv) (hs p hp hpv) v

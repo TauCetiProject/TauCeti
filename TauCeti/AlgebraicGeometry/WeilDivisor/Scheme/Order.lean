@@ -68,9 +68,7 @@ namespace Scheme
 @[simp]
 lemma ord_one {x : X} : X.ord (1 : X.functionField) x = 0 := by
   let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
-  -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
-  have hx_top : x ∈ (⊤ : X.Opens) := by simp
-  simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
+  simp
 
 /-- The order of an inverse is the negative of the order. Both sides vanish at the zero function,
 whose inverse is again zero. -/

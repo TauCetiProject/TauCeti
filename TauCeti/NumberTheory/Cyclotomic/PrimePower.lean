@@ -36,7 +36,7 @@ theorem adjoin_nth_roots_le_iSup_adjoin_prime_pow {K L : Type*} [Field K] [Field
   have hroot (n : ℕ) : n ≠ 0 → n ∣ m → ∀ ζ : L, ζ ^ n = 1 → ζ ∈ F := by
     induction n using Nat.recOnPrimeCoprime with
     | zero => simp
-    | prime_pow p r hp =>
+    | multiplicity_prime_pow p r hp =>
       intro _ hd ζ hζ
       rcases eq_or_ne r 0 with rfl | hr
       · simp only [pow_zero, pow_one] at hζ

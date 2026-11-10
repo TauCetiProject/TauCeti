@@ -162,7 +162,7 @@ theorem exists_isOpen_isInvertible_prod_comp {x₀ : X} (hA : ContinuousAt A x�
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible := by
   have := FiniteDimensional.complete 𝕜 E
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional_quotient
-    (Submodule.closed_of_finiteDimensional (A x₀).range)
+    (Submodule.isClosed_of_finiteDimensional (A x₀).range)
   obtain ⟨q, hq⟩ := (A x₀).ker_closedComplemented_of_finiteDimensional_range
   -- At `x₀` the pair is injective between spaces of equal dimension, hence invertible.
   have hinj := prod_comp_injective hp hq

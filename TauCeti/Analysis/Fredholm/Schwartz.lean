@@ -52,7 +52,7 @@ theorem cofg_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [Com
   have ha : 0 < a := inv_pos.2 (mul_pos hR (by norm_num))
   obtain ⟨W, hW, hsmall⟩ := exists_finiteDimensional_quotient_norm_le K hK (half_pos ha)
   have : FiniteDimensional 𝕜 W := hW
-  have : IsClosed (W : Set F) := W.closed_of_finiteDimensional
+  have : IsClosed (W : Set F) := W.isClosed_of_finiteDimensional
   let A := W.mkQL.comp T
   let B := W.mkQL.comp (T + K)
   let Q : A.NonlinearRightInverse := R.comp W.quotientRightInverse

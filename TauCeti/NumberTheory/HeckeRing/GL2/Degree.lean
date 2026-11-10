@@ -146,7 +146,7 @@ theorem deg_heckeT_prime_pow (hp : p.Prime) (k : ℕ) :
 theorem deg_heckeT (m : ℕ) :
     deg (posDetInt 2) (SLnZ 2) ℤ (heckeT m) = (σ 1) m := by
   induction m using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p k hp _ =>
+  | multiplicity_prime_pow p k hp _ =>
     rw [deg_heckeT_prime_pow p hp k]
     exact_mod_cast (ArithmeticFunction.sigma_one_apply_prime_pow hp).symm
   | zero => simp

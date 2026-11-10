@@ -94,7 +94,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   replace hgv : dg v ≠ 0 := hgv
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule 𝕜 E) : p.ClosedComplemented :=
-    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
+    .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   have hv0 : v ≠ 0 := by rintro rfl; exact hgv (map_zero _)
   have hrange : dg.range = ⊤ :=
     LinearMap.range_eq_top_of_surjective _ (LinearMap.surjective_of_ne_zero fun h ↦
@@ -125,7 +125,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   have hA'F : ∀ z ∈ F, A'.symm z ∈ F := by
     intro z hz
     rw [← SetLike.mem_coe, ← tangentConeAt_preimage_symm_eq hs₀
-      (Submodule.closed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
+      (Submodule.isClosed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
       ← image_mtangentConeAt_eq_tangentConeAt hyq' hA', hmT] at hz
     obtain ⟨u, hu, rfl⟩ := hz
     rwa [ContinuousLinearEquiv.symm_apply_apply]

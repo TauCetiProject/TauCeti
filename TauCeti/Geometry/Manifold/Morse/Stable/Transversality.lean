@@ -99,7 +99,7 @@ theorem finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
     Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f b = Module.finrank ℝ E := by
   obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hf hb hy
-  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
+  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.isClosed_of_finiteDimensional hyq hy]
 
 /-- The tangent space of the unstable manifold of a critical point `a`, at any of its points, has
 dimension `ind a`. -/
@@ -108,7 +108,7 @@ theorem finrank_span_mtangentConeAt_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
     Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y)) =
       manifoldMorseIndex 𝓘(ℝ, E) f a := by
   obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf ha hy
-  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
+  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.isClosed_of_finiteDimensional hyq hy]
 
 /-- The velocity `X y` of the trajectory through a point `y` of a set `S` invariant under the flow
 is tangent to `S`, since the trajectory stays in `S`. This applies to `W^u(a) ∩ W^s(b)`. -/
@@ -159,11 +159,11 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
 
 /-- **The tangent space of a transverse intersection.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
@@ -183,11 +183,11 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the

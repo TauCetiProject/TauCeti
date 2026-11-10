@@ -153,7 +153,7 @@ theorem forall_heckeTCompositeGamma0_eq_coeff_smul_iff
     induction n using Nat.recOnPosPrimePosCoprime with
     | zero => exact (hn rfl).elim
     | one => simp [heckeTCompositeGamma0_one, h₁]
-    | prime_pow p v hp _ =>
+    | multiplicity_prime_pow p v hp _ =>
       rw [heckeTCompositeGamma0_prime_pow N hp]
       exact primePower_eq_coeff_smul_of_relations F h₁ hp (hprime hp) (hpow p hp) v
     | coprime a b ha hb hab iha ihb =>

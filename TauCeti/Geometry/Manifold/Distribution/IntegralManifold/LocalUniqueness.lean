@@ -99,7 +99,7 @@ theorem IsIntegralManifold.exists_plaque_chart_of_flatChart
     exact ⟨w, hw, rfl⟩
   have hplaque := hhor.eventually_sub_mem
     (hf.contMDiff.mdifferentiable hn0).mdifferentiableOn isOpen_univ
-    (hΦsmooth.mdifferentiableOn hn0) hΦopen W.closed_of_finiteDimensional
+    (hΦsmooth.mdifferentiableOn hn0) hΦopen W.isClosed_of_finiteDimensional
     hDp (mem_univ x) hfx
   exact ContMDiffOn.exists_plaque_chart hp hopen hfx hn hx hinj hrange hplaque
 

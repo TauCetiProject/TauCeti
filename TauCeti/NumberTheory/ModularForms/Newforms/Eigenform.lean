@@ -298,7 +298,7 @@ theorem qExpansion_coeff_mem_of_forall_prime {S : Type*} [SetLike S ℂ] [Subrin
       rw [CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
         (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
       exact zero_mem s
-  | prime_pow p r hp =>
+  | multiplicity_prime_pow p r hp =>
       induction r using Nat.twoStepInduction with
       | zero => simp [h₁]
       | one => simpa using ha p hp

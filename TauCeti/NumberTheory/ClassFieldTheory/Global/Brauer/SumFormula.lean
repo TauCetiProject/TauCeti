@@ -111,7 +111,7 @@ theorem sumLocalInv_brLocalization_eq_zero (x : Br K) :
     exact H n hn x hx
   intro n
   induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow ℓ k hℓ _ =>
+  | multiplicity_prime_pow ℓ k hℓ _ =>
     exact fun _ x hx ↦ sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero K hℓ x hx
   | zero => exact fun h0 ↦ absurd h0 (lt_irrefl 0)
   | one =>

@@ -111,7 +111,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
     (n : ℕ) (hnN : Nat.Coprime n N) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F = c • F := by
   induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p v hp hv =>
+  | multiplicity_prime_pow p v hp hv =>
     have hpN : Nat.Coprime p N := hnN.coprime_dvd_left (dvd_pow_self p hv.ne')
     rw [heckeTCompositeGamma0_prime_pow N hp]
     exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp hpN) v
@@ -136,7 +136,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace
     (n : ℕ) (hn : n ≠ 0) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F = c • F := by
   induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p v hp _ =>
+  | multiplicity_prime_pow p v hp _ =>
       rw [heckeTCompositeGamma0_prime_pow N hp]
       by_cases hpN : Nat.Coprime p N
       · exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp) v
