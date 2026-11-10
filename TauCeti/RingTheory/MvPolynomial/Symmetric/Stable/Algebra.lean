@@ -268,6 +268,15 @@ theorem ext_specialization {x y : SymmetricFunction R}
   have := congrArg (homogeneousComponent n) (h d)
   rwa [homogeneousComponent_specialization, homogeneousComponent_specialization] at this
 
+/-- The unit of the symmetric functions of degree zero is the unit of the ring of symmetric
+functions. This is `DirectSum.of_zero_one` stated for `TauCeti.stableSymmetricOne`, the simp
+normal form of the graded unit, where `DirectSum.of_zero_one` itself no longer applies. -/
+@[simp]
+theorem of_stableSymmetricOne :
+    DirectSum.of _ 0 (stableSymmetricOne R) = (1 : SymmetricFunction R) := by
+  rw [← gOne_one_stableSymmetricSubmodule]
+  exact DirectSum.of_zero_one _
+
 end SymmetricFunction
 
 end CommSemiring
