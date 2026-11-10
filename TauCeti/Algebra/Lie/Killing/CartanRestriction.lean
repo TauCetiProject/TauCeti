@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Killing.Basic
 public import TauCeti.Algebra.Lie.Killing.SymmetricAlgebra
 public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
@@ -15,12 +16,12 @@ import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 /-!
 # Restricting polynomial functions on a Killing Lie algebra to a Cartan subalgebra
 
-Let `L` be a finite-dimensional Lie algebra over a field `K` whose Killing form `κ` is
-nondegenerate, and `H` a Cartan subalgebra. The Killing form stays nondegenerate on `H`, so every
-`x : L` has a unique **Killing-orthogonal projection** `π x ∈ H`, characterized by
-`κ(π x, h) = κ(x, h)` for all `h ∈ H`. It is the identity on `H` and vanishes on every root space
-of a nonzero root, so when `H` splits `L` it is the projection of `L` onto `H` along the sum of the
-nonzero root spaces (`TauCeti.coe_killingCartanProjection`).
+Let `L` be a Lie algebra over a field `K` whose Killing form `κ` is nondegenerate (so `L` is
+finite-dimensional, `TauCeti.finite_of_isKilling`), and `H` a Cartan subalgebra. The Killing form
+stays nondegenerate on `H`, so every `x : L` has a unique **Killing-orthogonal projection**
+`π x ∈ H`, characterized by `κ(π x, h) = κ(x, h)` for all `h ∈ H`. It is the identity on `H` and
+vanishes on every root space of a nonzero root, so when `H` splits `L` it is the projection of `L`
+onto `H` along the sum of the nonzero root spaces (`TauCeti.coe_killingCartanProjection`).
 
 Through the Killing identifications `S(L) ≃ S(L*)` (`TauCeti.killingSymmetricEquiv`) and
 `S(H) ≃ S(H*)` (induced by `LieAlgebra.IsKilling.cartanEquivDual`), the symmetric algebras `S(L)`
@@ -100,8 +101,12 @@ theorem genWeightSpace_le_posFittingComp_of_ne_zero {K L M : Type*} [Field K] [L
   obtain ⟨n, hn⟩ := (Module.End.isUnit_iff _ |>.mp (hunit.pow k)).2 ⟨x, hx⟩
   exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
 
-variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [IsKilling K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
+  (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
+
+-- A Lie algebra with nondegenerate Killing form is finite-dimensional; this supplies the
+-- finiteness instance that Mathlib's Cartan-subalgebra and root-system API takes.
+attribute [local instance] finite_of_isKilling
 
 /-! ### The Killing-orthogonal projection onto a Cartan subalgebra -/
 
