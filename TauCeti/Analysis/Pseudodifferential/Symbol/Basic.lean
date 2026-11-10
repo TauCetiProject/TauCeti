@@ -33,6 +33,8 @@ space, and develop the first operations of the symbol calculus:
   correspondingly a frequency increment `v` changes a symbol of order `m` by at most
   `C ‖v‖ ⟨ξ⟩^(m - 1) ⟨v⟩^|m - 1|` (`TauCeti.Symbol.exists_norm_coefficient_add_sub_le`);
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the order
+  by two, and so its iterates `TauCeti.Symbol.iteratedFrequencyLaplacian N` lower it by `2N`;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -676,6 +678,62 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     Pi.zero_apply]
 
 end Deriv
+
+section Laplacian
+
+/-- The frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξ_j} a` of a symbol of order `m`, a symbol of order
+`m - 2`. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  ∑ j, inclusion (by linarith) ∘ₗ frequencyDeriv j ∘ₗ frequencyDeriv j
+
+/-- The coefficient of the frequency Laplacian is the sum of the coefficients of the second
+frequency derivatives `∂²_{ξ_j} a`. -/
+theorem coefficient_frequencyLaplacian_eq_sum (a : Symbol n V W m) :
+    (frequencyLaplacian a).coefficient =
+      ∑ j, (frequencyDeriv j (frequencyDeriv j a)).coefficient := by
+  simp only [frequencyLaplacian, LinearMap.sum_apply, coefficient_sum, LinearMap.coe_comp,
+    Function.comp_apply, coefficient_inclusion]
+
+/-- The coefficient of the frequency Laplacian is the sum of the second frequency derivatives. -/
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j, j] (fun η ↦ a.coefficient (x, η)) ξ := by
+  rw [coefficient_frequencyLaplacian_eq_sum, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [coefficient_frequencyDeriv, show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
+  exact congrArg (coordinateDeriv [j] · ξ) (funext fun η ↦ coefficient_frequencyDeriv j a x η)
+
+/-- The `N`-th iterate `Δ_ξ^N a` of the frequency Laplacian of a symbol of order `m`, a symbol of
+order `m - 2N`. -/
+def iteratedFrequencyLaplacian : (N : ℕ) → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
+  | 0 => inclusion (by simp)
+  | N + 1 => inclusion (by push_cast; linarith) ∘ₗ frequencyLaplacian ∘ₗ
+      iteratedFrequencyLaplacian N
+
+@[simp]
+theorem coefficient_iteratedFrequencyLaplacian_zero (a : Symbol n V W m) :
+    (iteratedFrequencyLaplacian 0 a).coefficient = a.coefficient := (rfl)
+
+@[simp]
+theorem coefficient_iteratedFrequencyLaplacian_succ (N : ℕ) (a : Symbol n V W m) :
+    (iteratedFrequencyLaplacian (N + 1) a).coefficient =
+      (frequencyLaplacian (iteratedFrequencyLaplacian N a)).coefficient := (rfl)
+
+/-- Iterating the frequency Laplacian `N + M` times is iterating it `M` times after `N` times. The
+two symbols have orders `m - 2 (N + M)` and `m - 2N - 2M`, so their coefficients are compared. -/
+theorem coefficient_iteratedFrequencyLaplacian_add (N M : ℕ) (a : Symbol n V W m) :
+    (iteratedFrequencyLaplacian (N + M) a).coefficient =
+      (iteratedFrequencyLaplacian M (iteratedFrequencyLaplacian N a)).coefficient := by
+  induction M with
+  | zero => simp
+  | succ M ih =>
+    funext ⟨x, ξ⟩
+    rw [← add_assoc, coefficient_iteratedFrequencyLaplacian_succ,
+      coefficient_iteratedFrequencyLaplacian_succ, coefficient_frequencyLaplacian,
+      coefficient_frequencyLaplacian, ih]
+
+end Laplacian
 
 section Spatial
 
