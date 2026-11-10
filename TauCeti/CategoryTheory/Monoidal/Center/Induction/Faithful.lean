@@ -100,7 +100,9 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategor
 /-- Induction into the Drinfeld centre is faithful when the tensor unit is simple. -/
 instance induction_faithful : (induction k C).Faithful where
   map_injective {X Y} f g h := by
-    have h' : inductionMap f = inductionMap g := congrArg (fun t ↦ t.f) h
+    have h' : inductionMap f = inductionMap g := by
+      simpa only [induction_map_f, induction_obj, inductionCenterObj_fst] using
+        congrArg (fun t ↦ t.f) h
     have := congrArg (fun t ↦ (inductionUnitSummandIso X).inv ≫
       biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ t ≫
       biproduct.π (inductionSummand Y) (SimpleClasses.classOf (𝟙_ C)) ≫
