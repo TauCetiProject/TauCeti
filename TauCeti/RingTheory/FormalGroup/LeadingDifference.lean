@@ -37,7 +37,7 @@ automatically when `n = pᵏ` with `k` less than the heights of both laws.
 * `FormalGroup.exists_homogeneousComponent_sub_eq_smul_lazardCocycle`: if commutative formal group
   laws `F` and `G` agree below degree `n`, the degree-`n` part of `F - G` is `c C_n` for some `c`.
 * `FormalGroup.homogeneousComponent_sub_eq_smul_lazardCocycle`: if moreover `p = 0` in `R` and
-  `n = pᵏ`, `k ≥ 1`, then `c` is the coefficient of `Xⁿ` in `[p]_G - [p]_F`.
+  `n = pᵏ`, then `c` is the coefficient of `Xⁿ` in `[p]_G - [p]_F`.
 * `FormalGroup.succ_le_order_sub_of_coeff_nsmulSeries_eq`: if commutative formal group laws agree
   below degree `pᵏ` and their `p`-series have the same coefficient in degree `pᵏ`, they agree below
   degree `pᵏ + 1`.

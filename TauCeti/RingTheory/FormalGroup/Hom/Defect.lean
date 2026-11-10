@@ -30,7 +30,7 @@ degree-`n` part of `Φ` is `r C_n` for the Lazard cocycle `C_n = ((X + Y)ⁿ - X
 * If `d_n` is a unit in `R`, replacing `g` by `g - r d_n⁻¹ Xⁿ` makes the defect vanish below
   degree `n + 1` (`FormalGroup.exists_succ_le_order_homDefect_sub_smul_X_pow`). This applies to
   every `n` that is not a power of `p` when `p = 0` in `R`.
-* If `p` is a prime with `p = 0` in `R` and `n = pᵏ` with `k ≥ 1`, the coefficient `r` is the
+* If `p` is a prime with `p = 0` in `R` and `n = pᵏ`, the coefficient `r` is the
   coefficient of `Xⁿ` in `[p]_G(g(X)) - g([p]_F(X))`
   (`FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
   For `g = X + ⋯`, if `[p]_F` and `[p]_G` have order at least `n` and the same coefficient of `Xⁿ`,
