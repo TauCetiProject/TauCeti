@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Sym.Card
+public import Mathlib.Data.Sym.NatCard
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Data.Sym.Basic
@@ -187,13 +187,12 @@ theorem _root_.Module.Basis.map_symmetricPower_of_apply (f : M →ₗ[R] M) (a :
 instance free [Module.Free R M] : Module.Free R (Sym[R]^n M) :=
   Module.Free.of_basis ((Module.Free.chooseBasis R M).symmetricPower n)
 
-/-- The rank of a symmetric power of a finite free module: the number of unordered `n`-tuples of
+/-- The rank of a symmetric power of a free module: the number of unordered `n`-tuples of
 basis indices, `Nat.multichoose (finrank R M) n`. -/
-theorem finrank_eq [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
+theorem finrank_eq [StrongRankCondition R] [Module.Free R M] :
     Module.finrank R (Sym[R]^n M) = Nat.multichoose (Module.finrank R M) n := by
-  classical
-  rw [Module.finrank_eq_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
-    Sym.card_sym_eq_multichoose, Module.finrank_eq_card_chooseBasisIndex]
+  rw [Module.finrank_eq_nat_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
+    Sym.natCard_sym_eq_multichoose, Module.finrank_eq_nat_card_basis (Module.Free.chooseBasis R M)]
 
 /-! ### Traces -/
 
