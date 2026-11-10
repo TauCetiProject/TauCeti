@@ -166,6 +166,13 @@ end TauCeti
 
 namespace ContRepresentation
 
+/-- An action operator composed with the action of the inverse group element is the identity. -/
+theorem comp_inv_self {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [Module R V] (ρ : ContRepresentation R G V) (g : G) :
+    (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id R V := by
+  rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
+  rfl
+
 /-- **Equivariance of the integral Bochner average.** For a left-invariant measure `μ` on `G`, a
 continuous representation `σ` and any map `c : X → F` from a `G`-space, the average
 `y ↦ ∫ g, σ g (c (g⁻¹ • y)) ∂μ` intertwines the action on `X` with `σ`. -/
@@ -173,10 +180,8 @@ theorem integral_apply_inv_smul_smul {G X F : Type*} [Group G] [MeasurableSpace 
     [MeasurableMul G] (μ : Measure G) [μ.IsMulLeftInvariant] [MulAction G X]
     [NormedAddCommGroup F] [NormedSpace ℝ F] (σ : ContRepresentation ℝ G F) (c : X → F) (h : G)
     (y : X) : ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = σ h (∫ g, σ g (c (g⁻¹ • y)) ∂μ) := by
-  have hσ (a b : G) (hab : a * b = 1) (v : F) : σ a (σ b v) = v := by
-    rw [← mul_apply_eq_comp, ← map_mul, hab, map_one, one_apply_eq_self]
-  let L : F ≃L[ℝ] F := ContinuousLinearEquiv.equivOfInverse (σ h) (σ h⁻¹)
-    (hσ _ _ (inv_mul_cancel h)) (hσ _ _ (mul_inv_cancel h))
+  let L : F ≃L[ℝ] F := ContinuousLinearEquiv.equivOfInverse' (σ h) (σ h⁻¹) (comp_inv_self σ h)
+    (by simpa using comp_inv_self σ h⁻¹)
   calc ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = ∫ g, σ (h * g) (c ((h * g)⁻¹ • h • y)) ∂μ :=
         (integral_mul_left_eq_self (fun g ↦ σ g (c (g⁻¹ • h • y))) h).symm
     _ = ∫ g, L (σ g (c (g⁻¹ • y))) ∂μ := by

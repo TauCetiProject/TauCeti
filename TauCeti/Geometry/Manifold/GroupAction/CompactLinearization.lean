@@ -165,8 +165,7 @@ private theorem contDiffOn_and_hasFDerivAt_chart_average [MeasurableSpace G] [Bo
   have hΦfd (g : G) : fderiv ℝ (fun w ↦ Φ (w, g)) (χ x) = ContinuousLinearMap.id ℝ E := by
     have h : HasFDerivAt (fun w ↦ Φ (w, g)) ((σ g).comp (σ g⁻¹)) (χ x) :=
       (σ g).hasFDerivAt.comp (χ x) ((hσ g⁻¹).sub_const (χ x))
-    rw [h.fderiv, ← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one,
-      ContinuousLinearMap.one_def]
+    rw [h.fderiv, ContRepresentation.comp_inv_self]
   have h := hasFDerivAt_integral_smul_of_continuousOn_fderiv (g := fun _ ↦ (1 : ℝ))
     (integrable_const (1 : ℝ)) (μ := haarProb G) hU
     (continuousOn_iteratedFDeriv_zero_partial_iff.1 (hΦcont 0 (by simp)))

@@ -37,30 +37,31 @@ open scoped Topology Manifold ContDiff
 
 section PartialDerivatives
 
-variable {E F EG HG G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] [NormedAddCommGroup EG] [NormedSpace ℝ EG] [TopologicalSpace HG]
-  {IG : ModelWithCorners ℝ EG HG} [IG.Boundaryless] [TopologicalSpace G] [ChartedSpace HG G]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F EG HG G : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup EG]
+  [NormedSpace 𝕜 EG] [TopologicalSpace HG]
+  {IG : ModelWithCorners 𝕜 EG HG} [IG.Boundaryless] [TopologicalSpace G] [ChartedSpace HG G]
   {n : WithTop ℕ∞} [IsManifold IG n G]
 
 /-- **Continuity of partial derivatives with a manifold parameter.** If `Φ : E × G → F` is `C^n`
 on an open set `W`, where `G` is a manifold without boundary, then for every `k ≤ n` the `k`-th
 derivative of `x ↦ Φ (x, p.2)` at `p.1` is continuous in `p` on `W`. -/
 theorem ContMDiffOn.continuousOn_iteratedFDeriv_partial {Φ : E × G → F} {W : Set (E × G)}
-    (hΦ : ContMDiffOn (𝓘(ℝ, E).prod IG) 𝓘(ℝ, F) n Φ W) (hW : IsOpen W) {k : ℕ}
+    (hΦ : ContMDiffOn (𝓘(𝕜, E).prod IG) 𝓘(𝕜, F) n Φ W) (hW : IsOpen W) {k : ℕ}
     (hk : (k : WithTop ℕ∞) ≤ n) :
-    ContinuousOn (fun p : E × G ↦ iteratedFDeriv ℝ k (fun x ↦ Φ (x, p.2)) p.1) W := by
+    ContinuousOn (fun p : E × G ↦ iteratedFDeriv 𝕜 k (fun x ↦ Φ (x, p.2)) p.1) W := by
   intro p hp
   set ψ := extChartAt IG p.2
   -- Read the parameter in the chart `ψ` of `G` at `p.2`, where `Φ` becomes a `C^n` map on an
   -- open subset of the normed space `E × EG`.
   let j : E × EG → E × G := fun q ↦ (q.1, ψ.symm q.2)
   let O : Set (E × EG) := (univ ×ˢ ψ.target) ∩ j ⁻¹' W
-  have hj : ContMDiffOn (𝓘(ℝ, E).prod 𝓘(ℝ, EG)) (𝓘(ℝ, E).prod IG) n j (univ ×ˢ ψ.target) :=
+  have hj : ContMDiffOn (𝓘(𝕜, E).prod 𝓘(𝕜, EG)) (𝓘(𝕜, E).prod IG) n j (univ ×ˢ ψ.target) :=
     contMDiffOn_fst.prodMk ((contMDiffOn_extChartAt_symm p.2).comp contMDiffOn_snd
       fun q hq ↦ hq.2)
   have hO : IsOpen O :=
     hj.continuousOn.isOpen_inter_preimage (isOpen_univ.prod (isOpen_extChartAt_target p.2)) hW
-  have hΦj : ContDiffOn ℝ n (Φ ∘ j) O := by
+  have hΦj : ContDiffOn 𝕜 n (Φ ∘ j) O := by
     rw [← contMDiffOn_iff_contDiffOn, ← contMDiffOn_prod_modelWithCornersSelf_iff]
     exact hΦ.comp (hj.mono inter_subset_left) fun q hq ↦ hq.2
   have hmem : (p.1, ψ p.2) ∈ O :=

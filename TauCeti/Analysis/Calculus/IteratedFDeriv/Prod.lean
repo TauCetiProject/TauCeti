@@ -193,17 +193,18 @@ section PartialDerivatives
 
 universe u v
 
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type u} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
 
 namespace TauCeti
 
 /-- The zeroth iterated partial derivative of `F` in `x` is continuous exactly where `F` is. -/
 theorem continuousOn_iteratedFDeriv_zero_partial_iff {P G : Type*} [TopologicalSpace P]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} {W : Set (E × P)} :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ 0 (fun x ↦ F (x, p.2)) p.1) W ↔
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {F : E × P → G} {W : Set (E × P)} :
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 0 (fun x ↦ F (x, p.2)) p.1) W ↔
       ContinuousOn F W := by
-  have h : (fun p : E × P ↦ iteratedFDeriv ℝ 0 (fun x ↦ F (x, p.2)) p.1) =
-      (continuousMultilinearCurryFin0 ℝ E G).symm ∘ F := by
+  have h : (fun p : E × P ↦ iteratedFDeriv 𝕜 0 (fun x ↦ F (x, p.2)) p.1) =
+      (continuousMultilinearCurryFin0 𝕜 E G).symm ∘ F := by
     ext p
     simp
   rw [h, LinearIsometryEquiv.comp_continuousOn_iff]
@@ -211,53 +212,53 @@ theorem continuousOn_iteratedFDeriv_zero_partial_iff {P G : Type*} [TopologicalS
 /-- The iterated partial derivatives of `F` in `x` stay continuous after composing with a
 continuous linear map `L p.2` that depends continuously on the parameter. -/
 theorem continuousOn_iteratedFDeriv_partial_clm_apply {P G G' : Type*} [TopologicalSpace P]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
-    {F : E × P → G} {L : P → G →L[ℝ] G'} {W : Set (E × P)} {k : ℕ}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+    {F : E × P → G} {L : P → G →L[𝕜] G'} {W : Set (E × P)} {k : ℕ}
     (hL : ContinuousOn (fun p : E × P ↦ L p.2) W)
-    (hF : ∀ p ∈ W, ContDiffAt ℝ k (fun x ↦ F (x, p.2)) p.1)
-    (h : ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W) :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ L p.2 (F (x, p.2))) p.1) W := by
-  refine (((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) G
+    (hF : ∀ p ∈ W, ContDiffAt 𝕜 k (fun x ↦ F (x, p.2)) p.1)
+    (h : ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W) :
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ L p.2 (F (x, p.2))) p.1) W := by
+  refine (((ContinuousLinearMap.compContinuousMultilinearMapL 𝕜 (fun _ : Fin k ↦ E) G
     G').continuous.comp_continuousOn hL).clm_apply h).congr fun p hp ↦ ?_
   exact (L p.2).iteratedFDeriv_comp_left (hF p hp) le_rfl
 
 /-- The iterated partial derivatives of the partial derivative of `F` in `x` are continuous
 wherever those of `F` of one order higher are. -/
 theorem continuousOn_iteratedFDeriv_fderiv_partial {P G : Type*} [TopologicalSpace P]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} {W : Set (E × P)} {k : ℕ}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {F : E × P → G} {W : Set (E × P)} {k : ℕ}
     (hF : ContinuousOn
-      (fun p : E × P ↦ iteratedFDeriv ℝ (k + 1) (fun x ↦ F (x, p.2)) p.1) W) :
+      (fun p : E × P ↦ iteratedFDeriv 𝕜 (k + 1) (fun x ↦ F (x, p.2)) p.1) W) :
     ContinuousOn
-      (fun p : E × P ↦ iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) W := by
-  refine ((continuousMultilinearCurryRightEquiv' ℝ k E G).continuous.comp_continuousOn hF).congr
+      (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fderiv 𝕜 fun x ↦ F (x, p.2)) p.1) W := by
+  refine ((continuousMultilinearCurryRightEquiv' 𝕜 k E G).continuous.comp_continuousOn hF).congr
     fun p _ ↦ ?_
   simp [iteratedFDeriv_succ_eq_comp_right]
 
 end TauCeti
 
-variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {W : Set (E × P)}
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P] {W : Set (E × P)}
 
 /-- **Partial derivatives in the first variable.** If `F` is `C^(m+1)` on an open set
 `W ⊆ E × P`, then the derivative of `x ↦ F (x, p.2)` at `p.1` is `C^m` in `p` on `W`. -/
 theorem ContDiffOn.fderiv_partial_of_isOpen {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {F : E × P → G} {m : WithTop ℕ∞} (hF : ContDiffOn ℝ (m + 1) F W)
+    [NormedSpace 𝕜 G] {F : E × P → G} {m : WithTop ℕ∞} (hF : ContDiffOn 𝕜 (m + 1) F W)
     (hW : IsOpen W) :
-    ContDiffOn ℝ m (fun p : E × P ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1) W := by
+    ContDiffOn 𝕜 m (fun p : E × P ↦ fderiv 𝕜 (fun x ↦ F (x, p.2)) p.1) W := by
   intro p hp
-  have hFp : ContDiffAt ℝ (m + 1) (fun q : (E × P) × E ↦ F (q.2, q.1.2)) (p, p.1) :=
+  have hFp : ContDiffAt 𝕜 (m + 1) (fun q : (E × P) × E ↦ F (q.2, q.1.2)) (p, p.1) :=
     (hF.contDiffAt (hW.mem_nhds hp)).comp (p, p.1) (by fun_prop)
   exact (ContDiffAt.fderiv (f := fun (q : E × P) (x : E) ↦ F (x, q.2)) hFp contDiffAt_fst
     le_rfl).contDiffWithinAt
 
 private theorem ContDiffOn.continuousOn_iteratedFDeriv_partial_aux {G : Type max u v}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (k : ℕ) {F : E × P → G}
-    (hF : ContDiffOn ℝ k F W) (hW : IsOpen W) :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W := by
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (k : ℕ) {F : E × P → G}
+    (hF : ContDiffOn 𝕜 k F W) (hW : IsOpen W) :
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W := by
   induction k generalizing G with
   | zero => exact TauCeti.continuousOn_iteratedFDeriv_zero_partial_iff.2 hF.continuousOn
   | succ k ih =>
       have hD := ih (ContDiffOn.fderiv_partial_of_isOpen (m := k) (by exact_mod_cast hF) hW)
-      refine ((continuousMultilinearCurryRightEquiv' ℝ k E G).symm.continuous.comp_continuousOn
+      refine ((continuousMultilinearCurryRightEquiv' 𝕜 k E G).symm.continuous.comp_continuousOn
         hD).congr fun p _ ↦ ?_
       simp [iteratedFDeriv_succ_eq_comp_right]
 
@@ -265,18 +266,18 @@ private theorem ContDiffOn.continuousOn_iteratedFDeriv_partial_aux {G : Type max
 then for every `k ≤ n` the `k`-th derivative of `x ↦ F (x, p.2)` at `p.1` is continuous in `p`
 on `W`. -/
 theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type v} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {F : E × P → G} {n : WithTop ℕ∞} (hF : ContDiffOn ℝ n F W) (hW : IsOpen W)
+    [NormedSpace 𝕜 G] {F : E × P → G} {n : WithTop ℕ∞} (hF : ContDiffOn 𝕜 n F W) (hW : IsOpen W)
     {k : ℕ} (hk : (k : WithTop ℕ∞) ≤ n) :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W := by
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W := by
   let eG : Type max u v := ULift.{u} G
-  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have hF' : ContDiffOn ℝ k (fun q ↦ isoG.symm (F q)) W :=
+  let isoG : eG ≃L[𝕜] G := ContinuousLinearEquiv.ulift
+  have hF' : ContDiffOn 𝕜 k (fun q ↦ isoG.symm (F q)) W :=
     isoG.symm.contDiff.comp_contDiffOn (hF.of_le hk)
-  have hFp (p : E × P) (hp : p ∈ W) : ContDiffAt ℝ k (fun x ↦ isoG.symm (F (x, p.2))) p.1 :=
+  have hFp (p : E × P) (hp : p ∈ W) : ContDiffAt 𝕜 k (fun x ↦ isoG.symm (F (x, p.2))) p.1 :=
     (hF'.contDiffAt (hW.mem_nhds hp)).comp (g := fun q ↦ isoG.symm (F q))
       (f := fun x : E ↦ (x, p.2)) p.1 (contDiffAt_id.prodMk contDiffAt_const)
   simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
-    TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[ℝ] G))
+    TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[𝕜] G))
       continuousOn_const hFp (ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k hF' hW)
 
 end PartialDerivatives
