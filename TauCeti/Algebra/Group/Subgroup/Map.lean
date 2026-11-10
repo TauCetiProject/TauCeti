@@ -436,18 +436,11 @@ hypothesis supplies surjectivity. When `ψ` is the inclusion of a subgroup `K`, 
 Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surjective, and neither
 subgroup need be normal. -/
 noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
-    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B := by
-  have key : ∀ a b : G, a⁻¹ * b ∈ B.comap ψ ↔ (ψ a)⁻¹ * ψ b ∈ B := fun a b ↦ by
-    rw [Subgroup.mem_comap, map_mul, map_inv]
-  refine Equiv.ofBijective (Quotient.map' ψ fun a b hab ↦
-    QuotientGroup.leftRel_apply.mpr ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))) ⟨?_, ?_⟩
-  · intro x y hxy
-    induction x using QuotientGroup.induction_on with | _ a =>
-    induction y using QuotientGroup.induction_on with | _ b =>
-    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
-  · intro q
-    obtain ⟨g, hg⟩ := hψ q
-    exact ⟨QuotientGroup.mk g, hg⟩
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B :=
+  (Quotient.congrRight fun a b ↦ by
+    simp only [QuotientGroup.leftRel_apply, Setoid.ker_def,
+      QuotientGroup.eq, Subgroup.mem_comap, map_mul, map_inv]).trans
+    (Setoid.quotientKerEquivOfSurjective (fun g : G ↦ (ψ g : H ⧸ B)) hψ)
 
 /-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
 @[simp]
