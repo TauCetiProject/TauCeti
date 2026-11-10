@@ -192,12 +192,10 @@ vector-valued Laurent series. -/
 theorem hahnModuleToOrderCompletion_bijective :
     Function.Bijective (hahnModuleToOrderCompletion R V) := by
   refine ⟨(isUniformEmbedding_hahnModuleToOrderCompletion R V).injective, ?_⟩
-  have hd : DenseRange (hahnModuleToOrderCompletion R V) := by
-    apply (currentOrderTower R V).denseRange_iff.mpr
-    intro x n
-    obtain ⟨u, hu⟩ := ModuleTower.quotientsπ_surjective _
-      (orderSubmodule_natCast_antitone R V) n ((currentOrderTower R V).limπ n x)
-    exact ⟨_root_.HahnModule.tensorProductToHahnModule ℤ R V u, by simpa using hu⟩
+  have hd : DenseRange (hahnModuleToOrderCompletion R V) :=
+    DenseRange.of_comp (g := _root_.HahnModule.tensorProductToHahnModule ℤ R V) <| by
+      convert ModuleTower.denseRange_toLimQuotients _ (orderSubmodule_natCast_antitone R V)
+      exact funext (hahnModuleToOrderCompletion_tensor R V)
   have hc := (isUniformEmbedding_hahnModuleToOrderCompletion R V).isClosedEmbedding.isClosed_range
   intro x
   exact hc.closure_subset (hd x)
