@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Group.Arithmetic
 # Measurable arithmetic operations on subobjects and groups
 
 On an additive group, measurability of subtraction gives measurability of translations
-(`measurableAdd_of_measurableSub₂`).
+(`TauCeti.measurableAdd_of_measurableSub`).
 
 A `SetLike` subobject closed under multiplication (`MulMemClass`) or inversion (`InvMemClass`)
 inherits `MeasurableMul`, `MeasurableMul₂`, and `MeasurableInv` (and their additive counterparts)
@@ -26,8 +26,8 @@ from the ambient measurable space with respect to the subtype σ-algebra.
   addition on `MulMemClass` / `AddMemClass` subobjects.
 * `InvMemClass.measurableInv`, `NegMemClass.measurableNeg`: measurable inversion and negation on
   `InvMemClass` / `NegMemClass` subobjects.
-* `measurableAdd_of_measurableSub₂`: on an additive group, jointly measurable subtraction gives
-  separately measurable addition.
+* `TauCeti.measurableAdd_of_measurableSub`: on an additive group, separately measurable
+  subtraction gives separately measurable addition.
 -/
 
 public section
@@ -48,13 +48,13 @@ instance InvMemClass.measurableInv {G S : Type*} [Inv G] [MeasurableSpace G] [Me
     [SetLike S G] [InvMemClass S G] (s : S) : MeasurableInv s where
   measurable_inv := measurable_subtype_coe.inv.subtype_mk
 
-/-- On an additive group, jointly measurable subtraction gives separately measurable addition. -/
-theorem measurableAdd_of_measurableSub₂ {G : Type*} [AddGroup G] [MeasurableSpace G]
-    [MeasurableSub₂ G] : MeasurableAdd G :=
-  have hneg : Measurable fun x : G ↦ 0 - x := measurable_const.sub measurable_id
-  ⟨fun c ↦ by
-      have h : Measurable fun x : G ↦ c - (0 - x) := measurable_const.sub hneg
-      simpa using h,
-    fun c ↦ by
-      have h : Measurable fun x : G ↦ x - -c := measurable_id.sub_const (-c)
-      simpa using h⟩
+namespace TauCeti
+
+/-- On an additive group, separately measurable subtraction gives separately measurable
+addition. -/
+theorem measurableAdd_of_measurableSub {G : Type*} [AddGroup G] [MeasurableSpace G]
+    [MeasurableSub G] : MeasurableAdd G :=
+  ⟨fun c ↦ by simpa using (measurable_const_sub c).comp (measurable_const_sub (0 : G)),
+    fun c ↦ by simpa using measurable_sub_const (-c)⟩
+
+end TauCeti
