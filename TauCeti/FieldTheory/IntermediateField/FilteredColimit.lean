@@ -1,0 +1,77 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Axel Delaval, Jie Xu, Shitan Xu
+-/
+module
+
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.Algebra.Category.Ring.FilteredColimits
+
+/-!
+# An algebraic extension as a filtered colimit of finite subextensions
+
+The finite intermediate fields form a directed system under inclusion. For an algebraic
+extension `L / K`, their inclusion cocone exhibits `L` as a colimit in commutative rings.
+This supplies the affine inverse system used to descend finitely presented schemes over an
+algebraic extension to a finite subextension.
+
+## Main declarations
+
+* `TauCeti.IntermediateField.FiniteSubextension`: finite intermediate fields ordered by inclusion.
+* `TauCeti.IntermediateField.finiteSubextensionDiagram`: their diagram of commutative rings.
+* `TauCeti.IntermediateField.isColimitFiniteSubextensionCocone`: the extension is its colimit.
+-/
+
+public section
+
+open CategoryTheory Limits
+
+namespace TauCeti.IntermediateField
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+
+/-- Intermediate fields of `L / K` that are finite-dimensional over `K`, ordered by inclusion. -/
+abbrev FiniteSubextension := {E : IntermediateField K L // FiniteDimensional K E}
+
+instance : Nonempty (FiniteSubextension K L) := ⟨⟨⊥, inferInstance⟩⟩
+
+instance : IsDirected (FiniteSubextension K L) (· ≤ ·) where
+  directed E F := by
+    have := E.2
+    have := F.2
+    exact ⟨⟨E.1 ⊔ F.1, inferInstance⟩, (show E.1 ≤ E.1 ⊔ F.1 from le_sup_left),
+      (show F.1 ≤ E.1 ⊔ F.1 from le_sup_right)⟩
+
+instance : IsFiltered (FiniteSubextension K L) :=
+  isFiltered_of_directed_le_nonempty _
+
+/-- The commutative rings underlying finite intermediate fields, with their inclusions. -/
+def finiteSubextensionDiagram : FiniteSubextension K L ⥤ CommRingCat where
+  obj E := .of E.1
+  map f := CommRingCat.ofHom (_root_.IntermediateField.inclusion (leOfHom f)).toRingHom
+
+/-- The inclusion cocone from finite subextensions into the ambient extension. -/
+def finiteSubextensionCocone : Cocone (finiteSubextensionDiagram K L) where
+  pt := .of L
+  ι := { app E := CommRingCat.ofHom (algebraMap E.1 L) }
+
+/-- An algebraic extension is the filtered colimit of its finite intermediate fields.
+
+The forgetful functor reflects filtered colimits. Every element lies in its simple finite
+subextension, and the inclusion of each intermediate field is injective. -/
+noncomputable def isColimitFiniteSubextensionCocone [Algebra.IsAlgebraic K L] :
+    IsColimit (finiteSubextensionCocone K L) := by
+  apply isColimitOfReflects (forget CommRingCat)
+  refine Types.FilteredColimit.isColimitOf' _ _ ?_ ?_
+  · intro x
+    change L at x
+    let E : FiniteSubextension K L :=
+      ⟨_root_.IntermediateField.adjoin K {x},
+        _root_.IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)⟩
+    exact ⟨E, ⟨x, _root_.IntermediateField.mem_adjoin_simple_self K x⟩, rfl⟩
+  · intro E x y hxy
+    have h : x = y := Subtype.ext hxy
+    exact ⟨E, 𝟙 E, by rw [h]⟩
+
+end TauCeti.IntermediateField
