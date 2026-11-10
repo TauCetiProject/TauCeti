@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Idempotent
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
@@ -37,7 +38,9 @@ on matrices entrywise.
   `∂F = d F + F * δ' + δ * F` (`TauCeti.TypeDStructure.morphismDifferential`). It squares to zero,
   is a derivation for the matrix product, which composes morphisms, and the diagonal matrix of
   idempotents `TauCeti.TypeDStructure.idMorphism` is a two-sided unit and a cycle. The cycles are
-  the homomorphisms of type `D` structures and the boundaries their null-homotopic maps.
+  the homomorphisms of type `D` structures and the boundaries their null-homotopic maps. A
+  homomorphism `F` has a mapping cone (`TauCeti.TypeDStructure.cone`), the type `D` structure on
+  the generators of both with coefficient matrix `fromBlocks δ F 0 δ'`.
 * **The box tensor product.** For a differential right `A`-module `(M, dM)`, the box tensor
   product `M ⊠ N = M ⊗ N` over the idempotents has the differential
   `∂ (m ⊗ x) = dM m ⊗ x + ∑ y, m * coeff x y ⊗ y`. In the basis, `M ⊗ N` is the submodule of
@@ -77,6 +80,7 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
+* `TauCeti.TypeDStructure.cone`: the mapping cone of a homomorphism of type `D` structures.
 * `TauCeti.TypeDStructure.iteratedCoeff`: the iterates `δᵏ` of a type `D` structure.
 * `TauCeti.TypeDStructure.IsBounded`: the iterates of a type `D` structure vanish eventually.
 
@@ -167,6 +171,9 @@ variable (N) in
 /-- The **identity morphism**: the diagonal matrix of the idempotents of the generators. -/
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
+
+theorem idMorphism_def [DecidableEq X] : N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
+  (rfl)
 
 @[simp]
 theorem idMorphism_apply [DecidableEq X] (x y : X) :
@@ -311,6 +318,54 @@ theorem morphismDifferential_mem_morphisms (hd : IsUngradedDGAlgebra d) (hι : �
     morphismDifferential N N' F ∈ morphisms N N' :=
   add_mem (add_mem (map_mem_morphisms hd hι hF) (mul_mem_morphisms hF (coeff_mem_morphisms N')))
     (mul_mem_morphisms (coeff_mem_morphisms N) hF)
+
+/-! ### The mapping cone of a homomorphism -/
+
+variable (N N') in
+/-- The **mapping cone** of a homomorphism `F` from `N` to `N'`: the type `D` structure on the
+generators `X ⊕ X'` with the block upper-triangular coefficient matrix `fromBlocks δ F 0 δ'`, which
+satisfies the structure equation because `∂F = 0`
+(`TauCeti.TypeDStructure.map_fromBlocks_add_fromBlocks_mul_fromBlocks`). -/
+def cone (F : Matrix X X' A) (hF : F ∈ morphisms N N') (hF₀ : morphismDifferential N N' F = 0) :
+    TypeDStructure d ι (X ⊕ X') where
+  idem := Sum.elim N.idem N'.idem
+  coeff := Matrix.fromBlocks N.coeff F 0 N'.coeff
+  idem_mul_coeff a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · simp [N.idem_mul_coeff]
+    · simp [(hF x y).1]
+    · simp
+    · simp [N'.idem_mul_coeff]
+  coeff_mul_idem a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · simp [N.coeff_mul_idem]
+    · simp [(hF x y).2]
+    · simp
+    · simp [N'.coeff_mul_idem]
+  map_coeff_add_coeff_mul_coeff := by
+    rw [map_fromBlocks_add_fromBlocks_mul_fromBlocks, hF₀, Matrix.fromBlocks_zero]
+
+@[simp]
+theorem cone_idem {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (hF₀ : morphismDifferential N N' F = 0) : (cone N N' F hF hF₀).idem = Sum.elim N.idem N'.idem :=
+  (rfl)
+
+@[simp]
+theorem cone_coeff {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (hF₀ : morphismDifferential N N' F = 0) :
+    (cone N N' F hF hF₀).coeff = Matrix.fromBlocks N.coeff F 0 N'.coeff :=
+  (rfl)
+
+/-- The differential of a morphism out of a mapping cone which vanishes on the source of the
+homomorphism: `∂ (fromRows 0 G) = fromRows (F * G) (∂G)`. -/
+theorem morphismDifferential_cone_fromRows_zero {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (hF₀ : morphismDifferential N N' F = 0) (G : Matrix X' X'' A) :
+    morphismDifferential (cone N N' F hF hF₀) N'' (Matrix.fromRows 0 G) =
+      Matrix.fromRows (F * G) (morphismDifferential N' N'' G) := by
+  have h0 : (0 : Matrix X X'' A).map d = 0 := Matrix.map_zero d (map_zero d)
+  rw [morphismDifferential_apply, morphismDifferential_apply, cone_coeff, Matrix.fromRows_map,
+    Matrix.fromRows_mul, Matrix.fromBlocks_mul_fromRows, h0]
+  ext (x | x) z <;> simp [add_comm]
 
 /-! ### The box tensor product -/
 

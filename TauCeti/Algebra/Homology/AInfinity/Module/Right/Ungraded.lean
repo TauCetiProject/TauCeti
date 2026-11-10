@@ -63,7 +63,19 @@ Two constructions are developed.
   (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`).
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
-product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
+product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`. Along an
+embedding `Y ↪ X` the matrix module restricts to that of `Y` on paths which cannot leave the range
+(`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_embedding`,
+`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_embedding_of_support`).
+
+**Vanishing on a set.** The higher operations of a module vanish on a set `s` of the algebra
+(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn`) when every `m_{n+1}` with `n ≥ 2` is
+zero as soon as one input lies in `s`: for the idempotents of a bordered algebra, this is the half
+of strict unitality that does not concern `m₂`. For a cycle `e ∈ s` the `A∞` relation along
+`(a₁, …, aₙ, e)` then reduces to `m₂(m_{n+1}(m, a₁, …, aₙ), e) = m_{n+1}(m, a₁, …, aₙ e)`
+(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_act`), so a twisted differential
+`∂^β` with `β e = β` preserves the elements fixed by `m₂(·, e)`
+(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_twistedDifferential`).
 
 ## Main definitions
 
@@ -75,6 +87,7 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   algebra.
 * `TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModule`: a differential right module as
   an `A∞` module.
+* `TauCeti.UngradedAInfinityRightModule.HigherVanishingOn`: the higher operations vanish on a set.
 
 ## Main results
 
@@ -90,6 +103,11 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   height.
 * `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
   upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
+* `TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_act` and
+  `TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_twistedDifferential`: acting by
+  an element on which the higher operations vanish.
+* `TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.matrix`: the higher operations of the
+  matrix module vanish on the matrices with entries in the set or zero.
 
 ## References
 
@@ -307,6 +325,135 @@ theorem twistedDifferential_twistedDifferential [CharP R 2] {β : A} (hβ : d β
     (hdβ ▸ Set.mem_insert_of_mem _ hββU) (hβ ▸ Set.mem_insert _ _) hU' m, hβ]
   simp
 
+/-! ### Vanishing of the higher operations on a set -/
+
+/-- The higher operations of `Mm` **vanish on** the set `s` when every operation `m_{n+1}` with
+`n ≥ 2` algebra inputs is zero as soon as one of its inputs lies in `s`. For `s` the idempotents
+of the ground ring of a bordered algebra this is the vanishing half of the strict unitality of
+Lipshitz, Ozsváth and Thurston: the higher operations of a strictly unital module vanish when one
+input is an idempotent. -/
+def HigherVanishingOn (s : Set A) : Prop :=
+  ∀ n, 2 ≤ n → ∀ a : Fin n → A, (∃ i, a i ∈ s) → Mm.act n a = 0
+
+/-- The defining property of `TauCeti.UngradedAInfinityRightModule.HigherVanishingOn`. -/
+theorem higherVanishingOn_iff {s : Set A} :
+    Mm.HigherVanishingOn s ↔ ∀ n, 2 ≤ n → ∀ a : Fin n → A, (∃ i, a i ∈ s) → Mm.act n a = 0 :=
+  Iff.rfl
+
+/-- An operation with at least two algebra inputs, one of which lies in `s`, vanishes. -/
+theorem HigherVanishingOn.act_eq_zero {Mm : UngradedAInfinityRightModule d M} {s : Set A}
+    (hM : Mm.HigherVanishingOn s) {n : ℕ} (hn : 2 ≤ n) (a : Fin n → A) {i : Fin n}
+    (hi : a i ∈ s) : Mm.act n a = 0 :=
+  hM n hn a ⟨i, hi⟩
+
+/-- Reading an operation through an equality of arities. -/
+private theorem act_eq_act_cast {j j' : ℕ} (h : j = j') (b : Fin j → A) :
+    Mm.act j b = Mm.act j' fun l => b (Fin.cast h.symm l) := by
+  subst h
+  rfl
+
+/-- **`m₁` commutes with the action of a cycle.** If `d e = 0`, over a ring of characteristic two,
+`m₂(m₁(m), e) = m₁(m₂(m, e))`: this is the `A∞` relation of length one along `e`. -/
+theorem act_one_act_zero [CharP R 2] {e : A} (hde : d e = 0) (a : Fin 0 → A) (m : M) :
+    Mm.act 1 (fun _ => e) (Mm.act 0 a m) = Mm.act 0 a (Mm.act 1 (fun _ => e) m) := by
+  obtain rfl : a = fun _ => e := Subsingleton.elim _ _
+  have h := Mm.stasheff 1 (fun _ => e) m
+  have hcomp : ungradedStasheffComp Mm.act 1 (fun _ => e) m =
+      ∑ k ∈ range 2, Mm.act (1 - k) (fun _ => e) (Mm.act k (fun _ => e) m) :=
+    Fin.sum_univ_eq_sum_range (fun k => Mm.act (1 - k) (fun _ => e) (Mm.act k (fun _ => e) m)) 2
+  have hupd : Function.update (fun _ : Fin 1 => e) 0 (d e) = fun _ => 0 := by
+    funext t
+    simp [Fin.fin_one_eq_zero t, hde]
+  rw [hcomp, ungradedStasheffDiff, Fin.sum_univ_one, hupd,
+    (Mm.act 1).map_coord_zero 0 rfl, LinearMap.zero_apply, add_zero, ungradedStasheffMul_succ,
+    Finset.univ_eq_empty, sum_empty, add_zero, sum_range_succ, sum_range_one] at h
+  refine (add_eq_zero_iff_eq_of_charTwo R).mp ?_
+  rw [← h, add_comm]
+
+section HigherVanishingOn
+
+variable {Mm}
+
+/-- **Acting on an output by an element on which the higher operations vanish.** Let the higher
+operations of `Mm` vanish on `s`, and let `e ∈ s` be a cycle, over a ring of characteristic two.
+Then `m₂(m_{n+2}(m, a₁, …, aₙ₊₁), e) = m_{n+2}(m, a₁, …, aₙ, aₙ₊₁ e)`: in the `A∞` relation along
+`(a₁, …, aₙ₊₁, e)` every other term contains an operation of arity at least three fed `e`. -/
+theorem HigherVanishingOn.act_one_act [CharP R 2] {s : Set A} (hM : Mm.HigherVanishingOn s)
+    {e : A} (he : e ∈ s) (hde : d e = 0) (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
+    Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m) =
+      Mm.act (n + 1) (Fin.snoc (Fin.init a) (a (Fin.last n) * e)) m := by
+  set a' : Fin (n + 2) → A := Fin.snoc a e with ha'
+  have h := Mm.stasheff (n + 2) a' m
+  have hlast (i : Fin (n + 2)) (hi : (i : ℕ) = n + 1) : a' i = e := by
+    obtain rfl : i = Fin.last (n + 1) := Fin.ext hi
+    rw [ha', Fin.snoc_last]
+  have hinit (l : Fin (n + 1)) (i : Fin (n + 2)) (hi : (i : ℕ) = l) : a' i = a l := by
+    obtain rfl : i = l.castSucc := Fin.ext hi
+    rw [ha', Fin.snoc_castSucc]
+  have hz (j : ℕ) (b : Fin j → A) (x : M) (hj : 2 ≤ j) (i : Fin j) (hi : b i = e) :
+      Mm.act j b x = 0 := by
+    rw [hM j hj b ⟨i, hi ▸ he⟩, LinearMap.zero_apply]
+  -- Among the composite terms only `m₂(m_{n+2}(m, a), e)` survives.
+  have hcomp : ungradedStasheffComp Mm.act (n + 2) a' m =
+      Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m) := by
+    rw [ungradedStasheffComp, Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
+    refine Eq.trans (congrArg₂ (· + ·) (y' := (0 : M)) (congrArg₂ (· + ·) (x' := (0 : M))
+      (y' := Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m)) ?_ ?_) ?_) (by rw [zero_add, add_zero])
+    · exact sum_eq_zero fun k _ => hz _ _ _ (by simp; omega) ⟨n + 1 - k, by simp; omega⟩
+        (hlast _ (by simp))
+    · rw [Mm.act_eq_act_cast (j' := 1) (by simp),
+        Mm.act_eq_act_cast (j := ((Fin.last (n + 1)).castSucc : ℕ)) (j' := n + 1) (by simp)]
+      congr 3
+      · funext l
+        exact hlast _ (by simp)
+      · funext l
+        exact hinit l _ (by simp)
+    · refine (congrArg (Mm.act _ _) ?_).trans (map_zero _)
+      exact hz _ _ _ (by simp) ⟨n + 1, by simp⟩ (hlast _ rfl)
+  -- Every differential term contains `e` or `d e = 0`.
+  have hdiff : ungradedStasheffDiff Mm.act d (n + 2) a' m = 0 := by
+    refine sum_eq_zero fun l _ => ?_
+    by_cases hl : l = Fin.last (n + 1)
+    · subst hl
+      rw [(Mm.act (n + 2)).map_coord_zero (Fin.last (n + 1))
+        (by simp [hlast (Fin.last (n + 1)) rfl, hde]), LinearMap.zero_apply]
+    · exact hz _ _ _ (by omega) (Fin.last (n + 1))
+        (by simp [Function.update_of_ne (Ne.symm hl), hlast (Fin.last (n + 1)) rfl])
+  -- Among the product terms only the product `aₙ₊₁ e` of the last two inputs survives.
+  have hmul : ungradedStasheffMul Mm.act (n + 2) a' m =
+      Mm.act (n + 1) (Fin.snoc (Fin.init a) (a (Fin.last n) * e)) m := by
+    rw [ungradedStasheffMul_succ, Fin.sum_univ_castSucc, ha', Fin.contractNth_castSucc_last_snoc,
+      sum_eq_zero fun l _ => ?_, zero_add]
+    rw [Fin.contractNth_castSucc_castSucc_snoc]
+    exact hz _ _ _ (by have := l.isLt; omega) (Fin.last n) (by simp)
+  rw [hcomp, hdiff, hmul, add_zero] at h
+  exact (add_eq_zero_iff_eq_of_charTwo R).mp h
+
+/-- **The twisted differential preserves the elements fixed by `e`.** Let the higher operations
+of `Mm` vanish on `s`, let `e ∈ s` be a cycle with `β * e = β`, over a ring of characteristic two.
+If `m₂(m, e) = m`, then `m₂(∂^β m, e) = ∂^β m`. For the idempotents of a bordered algebra this says
+that the box tensor differential preserves the box tensor product over the idempotents. -/
+theorem HigherVanishingOn.act_one_twistedDifferential [CharP R 2] {s : Set A}
+    (hM : Mm.HigherVanishingOn s) {e β : A} (he : e ∈ s) (hde : d e = 0) (hβe : β * e = β)
+    {m : M} (hm : Mm.act 1 (fun _ => e) m = m) :
+    Mm.act 1 (fun _ => e) (Mm.twistedDifferential β m) = Mm.twistedDifferential β m := by
+  have hterm (n : ℕ) :
+      Mm.act 1 (fun _ => e) (Mm.act n (fun _ => β) m) = Mm.act n (fun _ => β) m := by
+    cases n with
+    | zero => rw [Mm.act_one_act_zero hde, hm]
+    | succ n =>
+      rw [hM.act_one_act he hde, hβe]
+      congr 2
+      funext l
+      refine Fin.lastCases ?_ (fun i => ?_) l <;> simp [Fin.init]
+  rw [twistedDifferential_def]
+  by_cases hfin : (Function.support fun n => Mm.act n fun _ => β).Finite
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, map_sum]
+    exact sum_congr rfl fun n _ => hterm n
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, map_zero]
+
+end HigherVanishingOn
+
 /-! ### The module of row vectors over the matrix algebra -/
 
 section Matrix
@@ -486,6 +633,102 @@ noncomputable def matrix :
 theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
 
+variable {X}
+
+/-- The `z`-component of `m₂(φ, F)` in the matrix module is `∑ x, m₂(φ x, F x z)`. -/
+theorem matrixAct_one_apply (F : Matrix X X A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 1 (fun _ => F) φ z = ∑ x, Mm.act 1 (fun _ => F x z) (φ x) := by
+  rw [matrixAct_apply, ← (piFinTwoEquiv fun _ => X).symm.sum_comp, Fintype.sum_prod_type]
+  refine sum_congr rfl fun x _ => ?_
+  refine (Fintype.sum_eq_single z fun y hy => ite_eq_right_iff.mpr fun h => absurd h hy).trans ?_
+  simp only [piFinTwoEquiv_symm_apply, ite_true]
+  congr 2
+  funext l
+  rw [Fin.fin_one_eq_zero l]
+  rfl
+
+/-- In the matrix module, `m₂` with a diagonal matrix acts componentwise. -/
+theorem matrixAct_one_diagonal_apply (v : X → A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 1 (fun _ => Matrix.diagonal v) φ z = Mm.act 1 (fun _ => v z) (φ z) := by
+  rw [matrixAct_one_apply, Fintype.sum_eq_single z fun x hx => ?_]
+  · simp
+  · rw [(Mm.act 1).map_coord_zero 0 (by simp [hx]), LinearMap.zero_apply]
+
+/-- **The higher operations of the matrix module vanish on matrices with entries in `s`.** If the
+higher operations of `Mm` vanish on `s`, those of the matrix module vanish on the matrices all of
+whose entries are `0` or lie in `s`, such as the diagonal matrices of elements of `s`. -/
+theorem HigherVanishingOn.matrix {Mm : UngradedAInfinityRightModule d M} {s : Set A}
+    (hM : Mm.HigherVanishingOn s) :
+    (Mm.matrix X).HigherVanishingOn {P | ∀ x y, P x y = 0 ∨ P x y ∈ s} := by
+  intro n hn F ⟨i, hi⟩
+  refine LinearMap.ext fun φ => funext fun z => ?_
+  rw [matrix_act, matrixAct_apply, LinearMap.zero_apply, Pi.zero_apply]
+  refine sum_eq_zero fun x _ => ?_
+  split_ifs
+  · rcases hi (x i.castSucc) (x i.succ) with h0 | hs
+    · rw [(Mm.act n).map_coord_zero i h0, LinearMap.zero_apply]
+    · rw [hM n hn _ ⟨i, hs⟩, LinearMap.zero_apply]
+  · rfl
+
+variable {Y : Type*} [Fintype Y] [DecidableEq Y]
+
+/-- **Restricting the matrix module along an embedding, at the end of the paths.** If no matrix
+`Fᵢ` on `X` has a nonzero entry into the range of an embedding `e : Y ↪ X` from outside it, then no
+path ending in the range leaves it, so the components of `m_{n+1}(φ, F₁, …, Fₙ)` on the range are
+those of the operation of the matrix module of `Y` along the restricted matrices. -/
+theorem matrixAct_apply_embedding (e : Y ↪ X) {n : ℕ} (F : Fin n → Matrix X X A)
+    (hF : ∀ l w y, w ∉ Set.range e → F l w (e y) = 0) (φ : X → M) (z : Y) :
+    Mm.matrixAct X n F φ (e z) = Mm.matrixAct Y n (fun l => (F l).submatrix e e) (φ ∘ e) z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun x => e ∘ x)
+    (fun x y h => funext fun k => e.injective (congrFun h k)) _ _ (fun x hx => ?_)
+    fun x => by simp [e.injective.eq_iff]).symm
+  split_ifs with hz
+  · -- A path ending in the range of `e` and meeting its complement steps into the range.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hmem (k : Fin (n + 1)) : x k ∈ Set.range e := by
+        induction k using Fin.reverseInduction with
+        | last => exact ⟨z, hz.symm⟩
+        | cast k ih =>
+          by_contra hk
+          obtain ⟨y, hy⟩ := ih
+          exact hne k (by rw [← hy]; exact hF k _ _ hk)
+      exact hx ⟨fun k => (hmem k).choose, funext fun k => (hmem k).choose_spec⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
+/-- **Restricting the matrix module along an embedding, at the start of the paths.** If `φ`
+vanishes off the range of an embedding `e : Y ↪ X`, and no matrix `Fᵢ` has a nonzero entry out of
+the range, then a path starting in the range stays in it, so the components of
+`m_{n+1}(φ, F₁, …, Fₙ)` on the range are those of the operation of the matrix module of `Y` along
+the restricted matrices. -/
+theorem matrixAct_apply_embedding_of_support (e : Y ↪ X) {n : ℕ} (F : Fin n → Matrix X X A)
+    (hF : ∀ l y w, w ∉ Set.range e → F l (e y) w = 0) {φ : X → M}
+    (hφ : ∀ w, w ∉ Set.range e → φ w = 0) (z : Y) :
+    Mm.matrixAct X n F φ (e z) = Mm.matrixAct Y n (fun l => (F l).submatrix e e) (φ ∘ e) z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun x => e ∘ x)
+    (fun x y h => funext fun k => e.injective (congrFun h k)) _ _ (fun x hx => ?_)
+    fun x => by simp [e.injective.eq_iff]).symm
+  split_ifs with hz
+  · by_cases hx0 : x 0 ∈ Set.range e
+    swap
+    · rw [hφ _ hx0, map_zero]
+    -- A path starting in the range of `e` and meeting its complement steps out of the range.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hmem (k : Fin (n + 1)) : x k ∈ Set.range e := by
+        induction k using Fin.induction with
+        | zero => exact hx0
+        | succ k ih =>
+          by_contra hk
+          obtain ⟨y, hy⟩ := ih
+          exact hne k (by rw [← hy]; exact hF k _ _ hk)
+      exact hx ⟨fun k => (hmem k).choose, funext fun k => (hmem k).choose_spec⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
 end Matrix
 
 /-! ### Block upper-triangular matrices -/
@@ -501,27 +744,11 @@ on the `X`-components of `φ` and the `X × X` blocks of the `Fᵢ`. -/
 theorem matrixAct_apply_inl {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
     (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (φ : X ⊕ Y → M) (z : X) :
     Mm.matrixAct (X ⊕ Y) n F φ (Sum.inl z) =
-      Mm.matrixAct X n (fun l => (F l).toBlocks₁₁) (φ ∘ Sum.inl) z := by
-  rw [matrixAct_apply, matrixAct_apply]
-  refine (Fintype.sum_of_injective (fun x => Sum.inl ∘ x)
-    (fun x y h => funext fun k => Sum.inl_injective (congrFun h k)) _ _ (fun x hx => ?_)
-    fun x => by simp [Matrix.toBlocks₁₁]).symm
-  split_ifs with hz
-  · -- A path ending in `X` and meeting `Y` steps from `Y` to `X` somewhere.
-    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
-      by_contra! hne
-      have hleft (k : Fin (n + 1)) : (x k).isLeft := by
-        induction k using Fin.reverseInduction with
-        | last => rw [hz]; rfl
-        | cast k ih =>
-          rcases hxk : x k.castSucc with a | b
-          · rfl
-          · rcases hxs : x k.succ with a' | b'
-            · exact absurd (by rw [hxk, hxs]; exact hF k b a') (hne k)
-            · rw [hxs] at ih; simp at ih
-      exact hx ⟨fun k => (x k).getLeft (hleft k), funext fun k => by simp⟩
-    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
-  · rfl
+      Mm.matrixAct X n (fun l => (F l).toBlocks₁₁) (φ ∘ Sum.inl) z :=
+  Mm.matrixAct_apply_embedding (Function.Embedding.inl) F (fun l w b hw => by
+    rcases w with a | a
+    · exact absurd ⟨a, rfl⟩ hw
+    · exact hF l a b) φ z
 
 /-- **Restricting the matrix module to the second summand.** If no matrix `Fᵢ` on `X ⊕ Y` has a
 nonzero entry from `Y` to `X`, then a path starting in `Y` stays in `Y`, so on row vectors
@@ -530,29 +757,14 @@ matrix module of `Y` along the `Y × Y` blocks of the `Fᵢ`. -/
 theorem matrixAct_sumElim_zero_apply_inr {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
     (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (ψ : Y → M) (z : Y) :
     Mm.matrixAct (X ⊕ Y) n F (Sum.elim 0 ψ) (Sum.inr z) =
-      Mm.matrixAct Y n (fun l => (F l).toBlocks₂₂) ψ z := by
-  rw [matrixAct_apply, matrixAct_apply]
-  refine (Fintype.sum_of_injective (fun x => Sum.inr ∘ x)
-    (fun x y h => funext fun k => Sum.inr_injective (congrFun h k)) _ _ (fun x hx => ?_)
-    fun x => by simp [Matrix.toBlocks₂₂]).symm
-  split_ifs with hz
-  · rcases hx0 : x 0 with a | b
-    · simp
-    -- A path starting in `Y` and meeting `X` steps from `Y` to `X` somewhere.
-    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
-      by_contra! hne
-      have hright (k : Fin (n + 1)) : (x k).isRight := by
-        induction k using Fin.induction with
-        | zero => rw [hx0]; rfl
-        | succ k ih =>
-          rcases hxs : x k.succ with a' | b'
-          · rcases hxk : x k.castSucc with a | b''
-            · rw [hxk] at ih; simp at ih
-            · exact absurd (by rw [hxk, hxs]; exact hF k b'' a') (hne k)
-          · rfl
-      exact hx ⟨fun k => (x k).getRight (hright k), funext fun k => by simp⟩
-    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
-  · rfl
+      Mm.matrixAct Y n (fun l => (F l).toBlocks₂₂) ψ z :=
+  Mm.matrixAct_apply_embedding_of_support (Function.Embedding.inr) F (fun l a w hw => by
+    rcases w with b | b
+    · exact hF l a b
+    · exact absurd ⟨b, rfl⟩ hw) (fun w hw => by
+    rcases w with b | b
+    · rfl
+    · exact absurd ⟨b, rfl⟩ hw) z
 
 /-- **Inserting an off-diagonal block.** Let `δ` and `δ'` be matrices on `X` and `Y`, and `F`
 and `G` matrices from `X` to `Y`. On row vectors supported on `X`, the `Y`-components of
@@ -719,6 +931,15 @@ theorem toUngradedAInfinityRightModule_act_add_two [CharP R 2]
     (hM : IsUngradedDGRightModule d dM) (n : ℕ) :
     hM.toUngradedAInfinityRightModule.act (n + 2) = 0 :=
   (rfl)
+
+/-- The higher operations of a differential module viewed as an `A∞` module vanish on every set. -/
+theorem higherVanishingOn_toUngradedAInfinityRightModule [CharP R 2]
+    (hM : IsUngradedDGRightModule d dM) (s : Set A) :
+    hM.toUngradedAInfinityRightModule.HigherVanishingOn s := by
+  intro n hn a _
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rw [hM.toUngradedAInfinityRightModule_act_add_two n]
+  rfl
 
 end IsUngradedDGRightModule
 
