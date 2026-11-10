@@ -33,22 +33,24 @@ namespace MeasureTheory.Measure
 
 /-- For a lattice law of infinite extended mean, every fixed-window renewal-function
 increment tends to zero, at arbitrary nonnegative observation times. The law may have
-an atom at zero, but is not concentrated there. No particular lattice span is specified. -/
+an atom at zero. No particular lattice span is specified. -/
 theorem IsLattice.tendsto_renewalFunction_add_sub_of_mean_eq_top
     {F : Measure ℝ≥0} [IsProbabilityMeasure F] (hF : F.IsLattice)
-    (hzero : F {0} < 1) (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ (F.renewalFunction (t + x)).toReal -
       (F.renewalFunction t).toReal) atTop (𝓝 0) := by
+  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1
+    (hmean ▸ ENNReal.zero_lt_top)
+  have hzero : F {0} < 1 := by
+    simpa [Function.support] using prob_compl_lt_one_sub_of_lt_prob hpos
+      (measurableSet_support measurable_coe_nnreal_ennreal)
   obtain ⟨a, hmax⟩ := hF.exists_isGreatest_of_measure_zero_lt_one hzero
-  have hm : Monotone (fun t ↦ (F.renewalFunction t).toReal) := by
-    intro s t hst
-    exact ENNReal.toReal_mono (F.renewalFunction_lt_top hzero t).ne
-      (F.monotone_renewalFunction hst)
   have hgrid : Tendsto (fun n : ℕ ↦ (F.renewalFunction (a * (n + 1))).toReal -
       (F.renewalFunction (a * n)).toReal) atTop (𝓝 0) := by
     simpa only [hmean, ENNReal.inv_top, ENNReal.toReal_zero, mul_zero,
       Nat.cast_add, Nat.cast_one, mul_comm] using
       hmax.1.tendsto_renewalFunction_succ_mul_sub hmax
-  exact hm.tendsto_sub_add_of_tendsto_sub_lattice hmax.1.pos hgrid x
+  exact (F.monotone_toReal_renewalFunction hzero).tendsto_sub_add_of_tendsto_sub_lattice
+    hmax.1.pos hgrid x
 
 end MeasureTheory.Measure

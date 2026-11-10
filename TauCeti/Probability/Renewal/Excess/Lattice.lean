@@ -35,19 +35,23 @@ namespace TauCeti.Probability
 
 /-- **Infinite-mean lattice excess escape.** For i.i.d. lattice increments of infinite
 extended mean, the excess eventually exceeds any fixed bound in probability. Observation
-times are arbitrary, and zero increments are allowed provided they are not almost sure. -/
+times are arbitrary, and zero increments are allowed. -/
 theorem tendsto_measureReal_renewalExcess_le_of_isLattice_of_mean_eq_top
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) (hlattice : (P.map (T 0)).IsLattice)
+    (hlattice : (P.map (T 0)).IsLattice)
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hF : (P.map (T 0)) {0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
+  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1
+    (hmean ▸ ENNReal.zero_lt_top)
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    simpa [Function.support, Measure.map_apply (hT 0), Set.preimage_singleton] using
+      prob_compl_lt_one_sub_of_lt_prob hpos
+        (measurableSet_support measurable_coe_nnreal_ennreal)
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
     hT hindep hid hzero x
-    (hlattice.tendsto_renewalFunction_add_sub_of_mean_eq_top hF hmean x)
+    (hlattice.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x)
 
 end TauCeti.Probability
