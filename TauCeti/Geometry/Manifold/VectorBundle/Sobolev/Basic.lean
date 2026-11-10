@@ -91,8 +91,11 @@ a real vector space `S` of sections are read as `F`-valued functions `coord i s`
 point of `image i`. On the overlap `overlap i i' ⊆ image i'` of charts `i` and `i'`, read in chart
 `i'`, the two readings are related through the chart transition `transition i i'` and the linear
 coordinate change `coordChange i i'`. Every family of functions, one per chart, glues to a section
-that agrees at each point of `image i'` with the coordinate change of one of them. Finite bundle
-atlases over manifolds with and without boundary give such data. -/
+that agrees at each point of `image i'` with the coordinate change of one of them. Off the
+overlaps the chart transitions are the identity and the coordinate changes are `1`, so chart data
+are determined by their sets, their readings and their values on the overlaps
+(`TauCeti.SectionChartData.ext`). Finite bundle atlases over manifolds with and without boundary
+give such data. -/
 structure SectionChartData (E : Type*) [TopologicalSpace E] (F : Type*) [NormedAddCommGroup F]
     [NormedSpace ℝ F] (S : Type*) [AddCommGroup S] [Module ℝ S] where
   /-- The number of charts. -/
@@ -109,6 +112,8 @@ structure SectionChartData (E : Type*) [TopologicalSpace E] (F : Type*) [NormedA
   coordChange : Fin n → Fin n → E → F →L[ℝ] F
   /-- A section read in chart `i`. -/
   coord : Fin n → S → E → F
+  transition_of_notMem : ∀ i i', ∀ y ∉ overlap i i', transition i i' y = y
+  coordChange_of_notMem : ∀ i i', ∀ y ∉ overlap i i', coordChange i i' y = 1
   coord_add : ∀ i s t, ∀ y ∈ image i, coord i (s + t) y = coord i s y + coord i t y
   coord_smul : ∀ i (c : ℝ) s, ∀ y ∈ image i, coord i (c • s) y = c • coord i s y
   coord_eq_coordChange : ∀ i i' s, ∀ y ∈ overlap i i',
@@ -122,6 +127,37 @@ section Coordinates
 
 variable {E : Type*} [TopologicalSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
+
+/-- **Extensionality.** Chart data are equal when they have the same sets and readings, and the
+same chart transitions and coordinate changes on the overlaps. -/
+@[ext (iff := false)]
+theorem ext {C C' : SectionChartData E F S} (hn : C.n = C'.n)
+    (himage : ∀ i, C.image i = C'.image (Fin.cast hn i))
+    (hoverlap : ∀ i i', C.overlap i i' = C'.overlap (Fin.cast hn i) (Fin.cast hn i'))
+    (htransition : ∀ i i', ∀ y ∈ C.overlap i i',
+      C.transition i i' y = C'.transition (Fin.cast hn i) (Fin.cast hn i') y)
+    (hcoordChange : ∀ i i', ∀ y ∈ C.overlap i i',
+      C.coordChange i i' y = C'.coordChange (Fin.cast hn i) (Fin.cast hn i') y)
+    (hcoord : ∀ i s, C.coord i s = C'.coord (Fin.cast hn i) s) :
+    C = C' := by
+  cases C with
+  | mk n image overlap _ _ transition coordChange coord htr hcc _ _ _ _ =>
+  cases C' with
+  | mk n' image' overlap' _ _ transition' coordChange' coord' htr' hcc' _ _ _ _ =>
+  obtain rfl : n = n' := hn
+  simp only [Fin.cast_eq_self] at himage hoverlap htransition hcoordChange hcoord
+  obtain rfl : image = image' := funext himage
+  obtain rfl : overlap = overlap' := funext fun i ↦ funext (hoverlap i)
+  obtain rfl : transition = transition' := by
+    funext i i' y
+    by_cases hy : y ∈ overlap i i'
+    exacts [htransition i i' y hy, (htr i i' y hy).trans (htr' i i' y hy).symm]
+  obtain rfl : coordChange = coordChange' := by
+    funext i i' y
+    by_cases hy : y ∈ overlap i i'
+    exacts [hcoordChange i i' y hy, (hcc i i' y hy).trans (hcc' i i' y hy).symm]
+  obtain rfl : coord = coord' := funext fun i ↦ funext (hcoord i)
+  rfl
 
 theorem coord_zero (i : Fin C.n) {y : E} (hy : y ∈ C.image i) : C.coord i 0 y = 0 := by
   simpa using C.coord_smul i 0 0 y hy
@@ -464,6 +500,7 @@ variable {E : Type*} [TopologicalSpace E] {M : Type*} [TopologicalSpace M] [Char
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A : FiniteBundleAtlas E M F V)
 
+open Classical in
 /-- The chart data of a finite bundle atlas: a section is read in chart `i` as `A.coord i s` on the
 image `A.image i` of the chart. At each point the gluing of a family of functions is read off from
 the function of any chart containing the point. -/
@@ -473,12 +510,17 @@ the function of any chart containing the point. -/
   overlap := A.overlap
   isOpen_overlap := A.isOpen_overlap
   overlap_subset_image := A.overlap_subset_image
-  transition := A.transition
-  coordChange i i' y := (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
+  transition i i' := (A.overlap i i').piecewise (A.transition i i') id
+  coordChange i i' := (A.overlap i i').piecewise
+    (fun y ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)) 1
   coord := A.coord
+  transition_of_notMem _ _ _ hy := piecewise_eq_of_notMem _ _ _ hy
+  coordChange_of_notMem _ _ _ hy := piecewise_eq_of_notMem _ _ _ hy
   coord_add i s t _ hy := A.coord_add i s t hy
   coord_smul i c s _ hy := A.coord_smul i c s hy
-  coord_eq_coordChange _ _ s _ hy := A.coord_eq_coordChange s hy
+  coord_eq_coordChange _ _ s _ hy := by
+    rw [piecewise_eq_of_mem _ _ _ hy, piecewise_eq_of_mem _ _ _ hy]
+    exact A.coord_eq_coordChange s hy
   exists_glue f := by
     classical
     let idx : M → Fin A.n := fun x ↦ (A.exists_mem_dom x).choose
@@ -487,9 +529,15 @@ the function of any chart containing the point. -/
     obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
     have hov := A.chart_mem_overlap (hidx x) hx
     refine ⟨idx x, hov, ?_⟩
-    rw [A.coord_eq_coordChange _ hov, A.transition_chart hx, A.coord_chart _ (hidx x),
+    rw [piecewise_eq_of_mem _ _ _ hov, piecewise_eq_of_mem _ _ _ hov,
+      A.coord_eq_coordChange _ hov, A.transition_chart hx, A.coord_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
+
+theorem sectionChartData_transition_of_mem {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
+    A.sectionChartData.transition i i' y = A.transition i i' y := by
+  classical
+  exact piecewise_eq_of_mem _ _ _ hy
 
 end FiniteBundleAtlas
 
@@ -509,9 +557,15 @@ variable (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure] 
 /-- The chart transitions of a finite bundle atlas, being `C¹` diffeomorphisms between open sets,
 carry null sets to null sets. -/
 theorem FiniteBundleAtlas.aeTransition_sectionChartData [IsManifold 𝓘(ℝ, E) 1 M] :
-    A.sectionChartData.AETransition μ :=
-  A.sectionChartData.aeTransition_of_differentiableOn A.differentiableOn_transition
-    (fun _ _ _ hy ↦ A.transition_mem_overlap hy) fun _ _ _ hy ↦ A.transition_transition hy
+    A.sectionChartData.AETransition μ := by
+  refine A.sectionChartData.aeTransition_of_differentiableOn
+    (fun i i' ↦ (A.differentiableOn_transition i i').congr fun _ hy ↦
+      A.sectionChartData_transition_of_mem hy) (fun _ _ _ hy ↦ ?_) fun _ _ _ hy ↦ ?_
+  · rw [A.sectionChartData_transition_of_mem hy]
+    exact A.transition_mem_overlap hy
+  · rw [A.sectionChartData_transition_of_mem hy,
+      A.sectionChartData_transition_of_mem (A.transition_mem_overlap hy)]
+    exact A.transition_transition hy
 
 variable [FiniteDimensional ℝ F]
 

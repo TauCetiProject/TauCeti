@@ -98,6 +98,7 @@ namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
 
+open Classical in
 /-- The chart data of a finite bundle atlas over a base with boundary: a section is read in chart
 `i` as `A.halfCoord i s` on the interior `A.halfImage i` of the image of the chart in `ℂ`. At each
 point the gluing of a family of functions is read off from the function of any chart containing
@@ -108,17 +109,22 @@ the point. -/
   overlap := A.halfOverlap
   isOpen_overlap := A.isOpen_halfOverlap
   overlap_subset_image := A.halfOverlap_subset_halfImage
-  transition := A.halfTransition
-  coordChange i i' z :=
-    (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
+  transition i i' := (A.halfOverlap i i').piecewise (A.halfTransition i i') id
+  coordChange i i' := (A.halfOverlap i i').piecewise (fun z ↦
+    (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)))
+    1
   coord := A.halfCoord
+  transition_of_notMem _ _ _ hz := piecewise_eq_of_notMem _ _ _ hz
+  coordChange_of_notMem _ _ _ hz := piecewise_eq_of_notMem _ _ _ hz
   coord_add i s t _ hz := by
     rw [halfCoord_def, halfCoord_def, halfCoord_def]
     exact A.coord_add i s t (A.mem_halfImage.1 hz).1
   coord_smul i c s _ hz := by
     rw [halfCoord_def, halfCoord_def]
     exact A.coord_smul i c s (A.mem_halfImage.1 hz).1
-  coord_eq_coordChange _ _ s _ hz := A.halfCoord_eq_coordChange s hz
+  coord_eq_coordChange _ _ s _ hz := by
+    rw [piecewise_eq_of_mem _ _ _ hz, piecewise_eq_of_mem _ _ _ hz]
+    exact A.halfCoord_eq_coordChange s hz
   exists_glue f := by
     classical
     let idx : M → Fin A.n := fun x ↦ (A.exists_mem_dom x).choose
@@ -132,10 +138,17 @@ the point. -/
     have hov : z ∈ A.halfOverlap (idx x) i' :=
       A.mem_halfOverlap.2 ⟨by rw [← hxz]; exact A.chart_mem_overlap (hidx x) hx, hz0⟩
     refine ⟨idx x, hov, ?_⟩
-    rw [A.halfCoord_eq_coordChange _ hov, hz', A.halfTransition_coe_chart hx,
+    rw [piecewise_eq_of_mem _ _ _ hov, piecewise_eq_of_mem _ _ _ hov,
+      A.halfCoord_eq_coordChange _ hov, hz', A.halfTransition_coe_chart hx,
       A.halfCoord_coe_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
+
+theorem halfSectionChartData_transition_of_mem {i i' : Fin A.n} {z : ℂ}
+    (hz : z ∈ A.halfOverlap i i') :
+    A.halfSectionChartData.transition i i' z = A.halfTransition i i' z := by
+  classical
+  exact piecewise_eq_of_mem _ _ _ hz
 
 end FiniteBundleAtlas
 
@@ -152,10 +165,15 @@ variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V) (p : ℝ≥0∞) [Fa
 
 /-- **Chart transitions preserve null sets** on the interiors of the chart images. -/
 theorem FiniteBundleAtlas.aeTransition_halfSectionChartData
-    [IsManifold closedUpperHalfPlaneModel 1 M] : A.halfSectionChartData.AETransition volume :=
-  A.halfSectionChartData.aeTransition_of_differentiableOn A.differentiableOn_halfTransition
-    (fun _ _ _ hz ↦ A.halfTransition_mem_halfOverlap hz) fun _ _ _ hz ↦
-      A.halfTransition_halfTransition hz
+    [IsManifold closedUpperHalfPlaneModel 1 M] : A.halfSectionChartData.AETransition volume := by
+  refine A.halfSectionChartData.aeTransition_of_differentiableOn
+    (fun i i' ↦ (A.differentiableOn_halfTransition i i').congr fun _ hz ↦
+      A.halfSectionChartData_transition_of_mem hz) (fun _ _ _ hz ↦ ?_) fun _ _ _ hz ↦ ?_
+  · rw [A.halfSectionChartData_transition_of_mem hz]
+    exact A.halfTransition_mem_halfOverlap hz
+  · rw [A.halfSectionChartData_transition_of_mem hz,
+      A.halfSectionChartData_transition_of_mem (A.halfTransition_mem_halfOverlap hz)]
+    exact A.halfTransition_halfTransition hz
 
 variable [FiniteDimensional ℝ F]
 
