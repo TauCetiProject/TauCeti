@@ -522,7 +522,8 @@ private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2
     linear_combination this
   have e2 : (a * d - b * c) * (2 * (a * b)) = 0 := by
     have := congrFun (congrFun h2 0) 0
-    simp [pinE2, pinVec_eq, det_fin_two, dotProduct, Function.swap, Fin.sum_univ_two, -mul_eq_zero]
+    simp [pinE2, pinVec_eq, det_fin_two, dotProduct, Function.swap, Fin.sum_univ_two,
+      -mul_eq_zero]
       at this
     linear_combination this
   have e3 : (a * d - b * c) * (a * d + b * c) = 1 := by

@@ -117,7 +117,7 @@ theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b 
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
     homogeneousCyclotomic n (c * a) (c * b) = c ^ n.totient * homogeneousCyclotomic n a b := by
-  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← smul_eq_mul (c ^ _),
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
     ← (isHomogeneous_homogenize _).eval_smul]
   simp [Matrix.smul_cons]
 

@@ -210,7 +210,7 @@ theorem mul_measure_exists_le_lt_le_setIntegral [IsFiniteMeasure μ]
   have heq : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} =ᵐ[μ]
       {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
     filter_upwards [hcont] with ω hω
-    exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+    exact ⟨fun ⟨t, ht, h⟩ ↦ by
       obtain ⟨s, hs, hεs⟩ := hS hω ht h
       exact ⟨s, hs, hεs⟩,
       fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩

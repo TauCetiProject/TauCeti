@@ -265,7 +265,7 @@ private theorem toMatrix_extendToGL_apply [NeZero n]
       Pi.smul_apply, smul_eq_mul]
     rw [mul_comm ((s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2), ← mul_assoc,
       inv_mul_cancel₀ z.ne_zero, one_mul]
-  rw [hent, (homogeneousComponent_isHomogeneous d _).eval_smul, smul_eq_mul, ← mul_assoc]
+  rw [hent, (homogeneousComponent_isHomogeneous d _).eval_smul, ← mul_assoc]
   congr 1
   -- `z ^ a * z ^ (-d) = (z ^ n) ^ ((a - d) / n)`, and `z ^ n = det (toGL s * scalar z)`.
   have hdvd : (n : ℤ) ∣ a - d := by

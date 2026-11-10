@@ -270,7 +270,7 @@ theorem freeCumulant_sum_smul {ι : Type*} [DecidableEq α] [Fintype ι] (s : ι
     freeCumulant φ (fun m => ∑ i, c m i • s i) univ =
       ∑ v : α → ι, (∏ m, c m (v m)) * freeCumulant φ (s ∘ v) univ := by
   simp_rw [← freeCumulantMultilinear_apply, MultilinearMap.map_sum, MultilinearMap.map_smul_univ,
-    smul_eq_mul, comp_def]
+    RingHom.id_apply, smul_eq_mul, comp_def]
 
 end Cumulant
 

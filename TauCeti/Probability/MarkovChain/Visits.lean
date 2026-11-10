@@ -169,7 +169,7 @@ theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top [IsFiniteMeasure ν] {y : α
       (by rw [markovChainLaw_setOf_successiveVisit_ne_top ν κ y k, hy, one_pow, mul_one])
       (hσ k).nullMeasurableSet (measure_ne_top _ _)
     filter_upwards [heq] with x hx hH
-    exact (iff_of_eq hx).2 hH
+    exact hx.2 hH
   filter_upwards [ae_all_iff.mpr hk] with x hx hH
   exact forall_successiveVisit_lt_top_iff.mp fun k => lt_top_iff_ne_top.mpr (hx k hH)
 
