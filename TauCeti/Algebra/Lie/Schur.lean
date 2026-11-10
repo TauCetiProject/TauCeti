@@ -53,6 +53,7 @@ two-irreducible dimension count.
   `TauCeti.LieModule.finrank_lieModuleHom_le_one`: the dimension of the morphism space is `1` when
   the two irreducible modules are equivalent and `0` when they are not, packaged as
   `TauCeti.LieModule.finrank_lieModuleHom`.
+  The vanishing criterion `finrank_lieModuleHom_eq_zero_iff` holds over any field.
 
 ## Implementation notes
 
@@ -153,6 +154,32 @@ theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
 
 end CommRing
 
+/-! ### Over an arbitrary field -/
+
+section Field
+
+variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M]
+variable [AddCommGroup N] [Module K N] [LieRingModule L N] [_root_.LieModule K L N]
+variable [FiniteDimensional K M]
+variable [_root_.LieModule.IsIrreducible K L M] [_root_.LieModule.IsIrreducible K L N]
+
+/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
+module vanishes exactly when they are inequivalent**, over any field: a nonzero morphism, which
+exists exactly for equivalent modules, makes the finite-dimensional morphism space nonzero. -/
+theorem finrank_lieModuleHom_eq_zero_iff :
+    finrank K (M →ₗ⁅K,L⁆ N) = 0 ↔ IsEmpty (M ≃ₗ⁅K,L⁆ N) := by
+  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
+  rw [← not_nonempty_iff]
+  intro hne
+  obtain ⟨f, hf⟩ := nonempty_lieModuleEquiv_iff_exists_ne_zero.1 hne
+  have := finite_lieModuleHom_of_isIrreducible (R := K) (L := L) (M := M) (N := N)
+  have := Module.finrank_zero_iff.1 h
+  exact hf (Subsingleton.elim _ _)
+
+end Field
+
 /-! ### Over an algebraically closed field -/
 
 section IsAlgClosed
@@ -196,23 +223,6 @@ theorem finrank_lieModuleHom_eq_one_iff :
   intro hempty
   rw [finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv hempty] at h
   exact zero_ne_one h
-
-omit [_root_.LieModule K L M] in
-/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
-module vanishes exactly when they are inequivalent.** -/
-theorem finrank_lieModuleHom_eq_zero_iff :
-    finrank K (M →ₗ⁅K,L⁆ N) = 0 ↔ IsEmpty (M ≃ₗ⁅K,L⁆ N) := by
-  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
-  rw [← not_nonempty_iff]
-  intro hne
-  obtain ⟨e⟩ := hne
-  -- an equivalence of modules transports the compatibility axioms from `N` to `M`
-  have hl (x : L) (m : M) : e ⁅x, m⁆ = ⁅x, e m⁆ := e.toLieModuleHom.map_lie x m
-  have : _root_.LieModule K L M :=
-    ⟨fun t x m ↦ e.injective (by rw [hl, map_smul, hl, _root_.LieModule.smul_lie]),
-      fun t x m ↦ e.injective (by rw [hl, map_smul, map_smul, hl, _root_.LieModule.lie_smul])⟩
-  rw [finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L ⟨e⟩] at h
-  exact one_ne_zero h
 
 /-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
 module is at most a line.** -/
