@@ -154,6 +154,19 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
     rw [← intervalIntegral.integral_add_adjacent_intervals hfd hft]
     exact (norm_add_le _ _).trans (add_le_add (hsmall hd.le hdt) htail)
 
+/-- A constant bounding a norm almost everywhere against a function that is positive on
+`(0, t)` is nonnegative. -/
+private theorem nonneg_of_ae_norm_le_mul {F : Type*} [NormedAddCommGroup F] {Φ : ℝ → F}
+    {w : ℝ → ℝ} {t C : ℝ} (ht : 0 < t) (hw : ∀ s ∈ Ioo 0 t, 0 < w s)
+    (h : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ C * w s) : 0 ≤ C := by
+  have h' : ∀ᵐ s ∂volume.restrict (Ioo 0 t), 0 ≤ C := by
+    rw [ae_restrict_iff' measurableSet_Ioo]
+    filter_upwards [h] with s hs hs'
+    exact (mul_nonneg_iff_of_pos_right (hw s hs')).1 ((norm_nonneg _).trans (hs ⟨hs'.1, hs'.2.le⟩))
+  have : (ae (volume.restrict (Ioo 0 t))).NeBot :=
+    ae_neBot.2 (Measure.measure_univ_ne_zero.1 (by simp [ht]))
+  exact h'.exists.elim fun _ h => h
+
 open scoped Interval in
 /-- Splitting a singular integral at distance `δ²` from its singular endpoint. If the integrand
 is `O(A (t - s)^((α - 2)/2))`, which is integrable, and also `O(B δ (t - s)^((α - 3)/2))`, which is
@@ -167,23 +180,14 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     (hΦB : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ) :
     ‖∫ s in 0..t, Φ s‖ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
   -- Both constants are nonnegative: the bounds hold at some point `s < t`, where `t - s > 0`.
-  obtain ⟨s, hs, hsA, hsB⟩ : ∃ s ∈ Ioo 0 t, ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2) ∧
-      ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ := by
-    have h : ∀ᵐ s ∂volume.restrict (Ioo 0 t), s ∈ Ioo 0 t ∧
-        ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2) ∧ ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ := by
-      rw [ae_restrict_iff' measurableSet_Ioo]
-      filter_upwards [hΦA, hΦB] with s h₁ h₂ hs
-      exact ⟨hs, h₁ ⟨hs.1, hs.2.le⟩, h₂ ⟨hs.1, hs.2.le⟩⟩
-    have : (ae (volume.restrict (Ioo 0 t))).NeBot :=
-      ae_neBot.2 (Measure.measure_univ_ne_zero.1 (by simp [ht]))
-    obtain ⟨s, hs, h⟩ := h.exists
-    exact ⟨s, hs, h⟩
-  have hts : 0 < t - s := sub_pos.2 hs.2
-  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right (rpow_pos_of_pos hts _)).1
-    ((norm_nonneg _).trans hsA)
+  have hA : 0 ≤ A := nonneg_of_ae_norm_le_mul (Φ := Φ) (w := fun s => (t - s) ^ ((α - 2) / 2)) ht
+    (fun _ hs => rpow_pos_of_pos (sub_pos.2 hs.2) _) hΦA
   have hB : 0 ≤ B := by
-    have := (mul_nonneg_iff_of_pos_right hδ).1 ((norm_nonneg _).trans hsB)
-    exact (mul_nonneg_iff_of_pos_right (rpow_pos_of_pos hts _)).1 this
+    refine (mul_nonneg_iff_of_pos_right hδ).1 (nonneg_of_ae_norm_le_mul (Φ := Φ)
+      (w := fun s => (t - s) ^ ((α - 3) / 2)) (C := B * δ) ht
+      (fun _ hs => rpow_pos_of_pos (sub_pos.2 hs.2) _) ?_)
+    filter_upwards [hΦB] with s h hs
+    exact (h hs).trans_eq (by ring)
   -- Reverse time to put the singular endpoint at zero, then split at scale `δ²`.
   have hrev : ∀ᵐ r ∂volume.restrict (Ioo 0 t),
       ‖Φ (t - r)‖ ≤ A * r ^ (α / 2 - 1) ∧
