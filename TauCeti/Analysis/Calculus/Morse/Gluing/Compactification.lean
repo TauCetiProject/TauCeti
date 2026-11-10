@@ -67,7 +67,7 @@ theorem mem_splitGluingPairs {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × E
 sphere of radius `ε`, then the entrance and exit pairs built from `w` over `Ioc 0 δ` are exactly the
 pairs of the split gluing. -/
 theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {w : ℝ → Eᵤ}
-    (hε : 0 < ε) (hδr : δ ≤ r₀) (hwnorm : ∀ r ∈ Ioc 0 r₀, ‖w r‖ = ε)
+    (hδr : δ ≤ r₀) (hwnorm : ∀ r ∈ Ioc 0 r₀, ‖w r‖ = ε)
     (himage : {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g z.snd ∧
         (splitPassage ε z).snd = k (splitPassage ε z).fst} =
       (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀) :
@@ -75,14 +75,15 @@ theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {w : ℝ → Eᵤ}
       WithLp.toLp 2 (r • g (r • w r), w r))) '' Ioc 0 δ = splitGluingPairs ε δ g k := by
   let F : ℝ → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ) := fun r ↦
     (WithLp.toLp 2 (g (r • w r), r • w r), WithLp.toLp 2 (r • g (r • w r), w r))
-  have hpass {r : ℝ} (hr : r ∈ Ioc 0 δ) :
-      (F r).2 = splitPassage ε (F r).1 :=
-    (splitPassage_toLp_smul (g (r • w r)) (hwnorm r ⟨hr.1, hr.2.trans hδr⟩) hε hr.1).symm
   have hentry {r : ℝ} (hr : r ∈ Ioc 0 δ) :
       (F r).1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
         z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} := by
     rw [himage]
     exact ⟨r, ⟨hr.1, hr.2.trans hδr⟩, rfl⟩
+  have hpass {r : ℝ} (hr : r ∈ Ioc 0 δ) :
+      (F r).2 = splitPassage ε (F r).1 :=
+    (splitPassage_toLp_smul (g (r • w r)) (hwnorm r ⟨hr.1, hr.2.trans hδr⟩)
+      (pos_of_mem_splitPassage_source (hentry hr).1) hr.1).symm
   ext p
   rw [mem_splitGluingPairs]
   constructor
@@ -91,10 +92,11 @@ theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {w : ℝ → Eᵤ}
     refine ⟨hrentry.1, ?_, hrentry.2.2.1, hpass hr, ?_⟩
     · simp only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
         hwnorm r ⟨hr.1, hr.2.trans hδr⟩]
-      exact mul_le_mul_of_nonneg_right hr.2 hε.le
+      exact mul_le_mul_of_nonneg_right hr.2 (pos_of_mem_splitPassage_source hrentry.1).le
     · rw [hpass hr]
       exact hrentry.2.2.2
   · rintro ⟨hsrc, hbound, hgraph, hexit, hkgraph⟩
+    have hε := pos_of_mem_splitPassage_source hsrc
     have hentry' : p.1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
         z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} :=
       ⟨hsrc, hbound.trans (mul_le_mul_of_nonneg_right hδr hε.le), hgraph,
@@ -146,7 +148,7 @@ private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
     exact mul_div_cancel_right₀ r hε.ne'
   refine ⟨F, hF, ?_, by simp [F, a, v, hw₀], hnorm⟩
   -- The existing surjectivity theorem for entrance points also captures every exit pair.
-  exact image_pairs_eq_splitGluingPairs hε le_rfl
+  exact image_pairs_eq_splitGluingPairs le_rfl
     (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage
 
 variable [CompleteSpace Eᵤ]
@@ -210,12 +212,27 @@ theorem exists_homeomorph_closure_splitGluingPairs :
         fun_prop }
   exact ⟨e, fun _ ↦ rfl, hF₀⟩
 
+omit hr₀ in
 /-- The closure of the paired local gluing space is compact, even when the stable and
 unstable ambient spaces are infinite dimensional. -/
 theorem isCompact_closure_splitGluingPairs :
     IsCompact (closure (splitGluingPairs ε r₀ g k)) := by
-  obtain ⟨e, -, -⟩ :=
-    exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
-  exact isCompact_iff_compactSpace.mpr e.compactSpace
+  rcases lt_or_ge 0 r₀ with hr₀ | hr₀
+  · obtain ⟨e, -, -⟩ :=
+      exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
+    exact isCompact_iff_compactSpace.mpr e.compactSpace
+  · have hsub : (splitGluingPairs ε r₀ g k).Subsingleton := by
+      intro p hp q hq
+      have hp0 : p.1.snd = 0 := by
+        simpa using hp.2.1.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
+      have hq0 : q.1.snd = 0 := by
+        simpa using hq.2.1.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
+      have h1 : p.1 = q.1 := by
+        refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
+        · exact (hp.2.2.1.trans (by rw [hp0])).trans (hq.2.2.1.trans (by rw [hq0])).symm
+        · exact hp0.trans hq0.symm
+      exact Prod.ext h1 (by rw [hp.2.2.2.1, hq.2.2.2.1, h1])
+    rw [hsub.isClosed.closure_eq]
+    exact hsub.isCompact
 
 end TauCeti
