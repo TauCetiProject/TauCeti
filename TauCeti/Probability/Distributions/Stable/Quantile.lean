@@ -249,7 +249,7 @@ theorem tendsto_quantile_stableMeasure_neg_one_nhdsGT_zero_of_lt_one
   intro x
   let y := min d x - 1
   apply Measure.cdf_pos_of_mem_support_of_lt μ (y := y)
-  · change y ∈ (stableMeasure α (-1) s m).support
+  · dsimp only [μ]
     rw [support_stableMeasure_neg_one_of_lt_one hα hs]
     exact mem_Iic.2 (by dsimp [y]; linarith [min_le_left d x])
   · dsimp [y]
