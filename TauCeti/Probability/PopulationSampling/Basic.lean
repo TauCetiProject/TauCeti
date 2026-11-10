@@ -27,6 +27,7 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 * `measurable_reindexPopulation` — measurability of the joint selection/population evaluation;
 * `samplePopulation` — sample a random population along an independent random selection;
 * `samplePopulation_map` — measurable observations commute with sampling;
+* `samplePopulation_dirac_comp` — its deterministic-population composition form;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
 * `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
@@ -124,6 +125,16 @@ theorem samplePopulation_map {β : Type*} [MeasurableSpace β] (σ : Measure (ι
     Measure.map_map measurable_reindexPopulation (measurable_id.prodMap hκ),
     samplePopulation_def, Measure.map_map hι measurable_reindexPopulation]
   rfl
+
+/-- Sampling an observed deterministic population along any selection law is the observation's
+pushforward of the original sampling law. -/
+theorem samplePopulation_dirac_comp {β : Type*} [MeasurableSpace β]
+    (σ : Measure (ι → κ)) (x : κ → α) {g : α → β} (hg : Measurable g) :
+    samplePopulation σ (Measure.dirac (g ∘ x)) =
+      (samplePopulation σ (Measure.dirac x)).map (fun y i => g (y i)) := by
+  have hκ : Measurable (fun y : κ → α => fun i => g (y i)) := by fun_prop
+  simpa only [Measure.map_dirac' hκ, Function.comp_def] using
+    samplePopulation_map σ (Measure.dirac x) hg
 
 /-- Evaluating a sampled law by conditioning first on the selection: it averages the laws of the
 selected entries of the population over the selection law. -/

@@ -51,9 +51,7 @@ theorem sampleWithoutReplacement_dirac_comp [Countable κ] (x : κ → α)
     {g : α → β} (hg : Measurable g) :
     sampleWithoutReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
       (sampleWithoutReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
-  have hκ : Measurable (fun y : κ → α => fun i => g (y i)) := by fun_prop
-  simpa only [Measure.map_dirac' hκ, Function.comp_def] using
-    sampleWithoutReplacement_map (ι := ι) (Measure.dirac x) hg
+  simp only [sampleWithoutReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling an observed deterministic population with replacement is the observation's
 pushforward of the original sampling law. -/
@@ -61,8 +59,6 @@ theorem sampleWithReplacement_dirac_comp [Fintype ι] [Countable κ] (x : κ →
     {g : α → β} (hg : Measurable g) :
     sampleWithReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
       (sampleWithReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
-  have hκ : Measurable (fun y : κ → α => fun i => g (y i)) := by fun_prop
-  simpa only [Measure.map_dirac' hκ, Function.comp_def] using
-    sampleWithReplacement_map (ι := ι) (Measure.dirac x) hg
+  simp only [sampleWithReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 end TauCeti.Probability
