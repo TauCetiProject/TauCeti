@@ -9,8 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Sobolev
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
@@ -28,10 +26,11 @@ derivative part of the vacuum adjoint `L₀*`. The remaining zero-order part is 
 linearly on `w`. Hence a weak solution of `L_x y = f` is a weak solution of `L₀ y = g` with
 `g = f - M_{x - x₀}ᵀ y`, and `g ∈ L²` because `x` is bounded. Read through the tempered
 distributions of the components of `y` and `g`, this is the identity `L₀ y = g` of tempered
-fields: compactly supported real test functions determine a tempered distribution
-(`TemperedDistribution.ext_real`), and on Schwartz fields the transpose of the tempered vacuum
-operator is `vacuumAdjoint`. Since `L₀ : H¹ → L²` is bijective on tempered fields
-(`TauCeti.Vortex.memSobolev_temperedVacuumOperator_iff`), `y ∈ H¹`.
+fields (`TauCeti.Vortex.temperedField`): compactly supported real test fields determine a
+tempered field (`TauCeti.Vortex.eq_of_sum_apply_eq`), and on Schwartz fields the transpose of
+the tempered vacuum operator is `vacuumAdjoint`
+(`TauCeti.Vortex.sum_temperedVacuumOperator_apply`). Since `L₀ : H¹ → L²` is bijective on
+tempered fields (`TauCeti.Vortex.memSobolev_temperedVacuumOperator_iff`), `y ∈ H¹`.
 
 A continuous field of the affine space `A_m^s`, `s > 1`, is bounded, so at such a field the
 weak kernel of `L_x` lies in `H¹`, and so does the image of the weak right inverse `Q` of
@@ -97,91 +96,6 @@ private theorem inner_gaugeFixedAdjoint (x η : ℂ → EuclideanSpace ℝ (Fin 
   simp [coupling_apply, couplingFun, PiLp.inner_apply, Fin.sum_univ_four, vacuumField_apply]
   ring
 
-/-! ### Tempered distributions of square-integrable fields -/
-
-private theorem memLp_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (i : Fin 4) : MemLp (fun z ↦ y z i) 2 volume :=
-  (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy
-
-/-- The field of complex tempered distributions of the components of a square-integrable
-field. -/
-private def temperedField {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume) :
-    Fin 4 → 𝓢'(ℂ, ℂ) :=
-  fun i ↦ Lp.toTemperedDistribution (ofRealCLM.compLp ((memLp_apply hy i).toLp _))
-
-private theorem temperedField_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (i : Fin 4) (ψ : 𝓢(ℂ, ℂ)) : temperedField hy i ψ = ∫ z, ψ z * (y z i : ℂ) := by
-  rw [temperedField, Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) ((memLp_apply hy i).toLp _),
-    (memLp_apply hy i).coeFn_toLp] with z h₁ h₂
-  rw [h₁, smul_eq_mul, ofRealCLM_apply, h₂]
-
-/-- The components of a real Schwartz field, as complex Schwartz functions. -/
-private abbrev cpt (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (i : Fin 4) : 𝓢(ℂ, ℂ) :=
-  η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)
-
-@[simp]
-private theorem cpt_apply (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (i : Fin 4) (z : ℂ) :
-    cpt η i z = (η z i : ℂ) :=
-  rfl
-
-/-- Pairing the tempered field of `y` with a real Schwartz field `η` gives `∫ ⟪y, η⟫`. -/
-private theorem sum_temperedField_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : MemLp y 2 volume) (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∑ i, temperedField hy i (cpt η i) = ((∫ z, ⟪y z, η z⟫ : ℝ) : ℂ) := by
-  have hint (i : Fin 4) : Integrable (fun z ↦ η z i * y z i) volume :=
-    (memLp_apply (η.memLp 2) i).integrable_mul (memLp_apply hy i)
-  simp_rw [temperedField_apply, cpt_apply, ← ofReal_mul, integral_complex_ofReal, ← ofReal_sum,
-    ← integral_finsetSum _ fun i _ ↦ hint i]
-  simp_rw [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
-
-/-- On real Schwartz fields, the transpose of the tempered vacuum operator is `vacuumAdjoint`. -/
-private theorem sum_temperedVacuumOperator_apply (T : Fin 4 → 𝓢'(ℂ, ℂ))
-    (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∑ i, temperedVacuumOperator T i (cpt η i) = ∑ i, T i (cpt (vacuumAdjoint η) i) := by
-  have h₀ : cpt (vacuumAdjoint η) 0 =
-      -cpt (∂_{(1 : ℂ)} η) 0 - cpt (∂_{I} η) 1 + (1 / 2 : ℂ) • cpt η 3 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₁ : cpt (vacuumAdjoint η) 1 =
-      -cpt (∂_{I} η) 0 + cpt (∂_{(1 : ℂ)} η) 1 - (1 / 2 : ℂ) • cpt η 2 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₂ : cpt (vacuumAdjoint η) 2 =
-      -cpt (∂_{(1 : ℂ)} η) 2 - cpt (∂_{I} η) 3 + (1 / 2 : ℂ) • cpt η 1 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₃ : cpt (vacuumAdjoint η) 3 =
-      cpt (∂_{I} η) 2 - cpt (∂_{(1 : ℂ)} η) 3 + (1 / 2 : ℂ) • cpt η 0 := by
-    ext z; simp [div_eq_inv_mul]
-  simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumOperator_apply_zero,
-    temperedVacuumOperator_apply_one, temperedVacuumOperator_apply_two,
-    temperedVacuumOperator_apply_three, add_apply, sub_apply, smul_apply, lineDerivOp_apply_apply,
-    TauCeti.lineDerivOp_postcompCLM, map_add, map_sub, map_neg, map_smul, real_smul, smul_eq_mul]
-  push_cast
-  ring
-
-/-- Two tempered fields agree if their pairings with all compactly supported real Schwartz fields
-agree. -/
-private theorem eq_of_sum_apply_eq {U V : Fin 4 → 𝓢'(ℂ, ℂ)}
-    (h : ∀ η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)), HasCompactSupport η →
-      ∑ i, U i (cpt η i) = ∑ i, V i (cpt η i)) : U = V := by
-  funext j
-  refine ext_real fun φ hφ ↦ ?_
-  set η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-    φ.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single j (1 : ℝ)))
-  have hη : HasCompactSupport η := by
-    have : (η : ℂ → EuclideanSpace ℝ (Fin 4)) =
-        ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single j (1 : ℝ)) ∘ φ :=
-      funext fun _ ↦ rfl
-    rw [this]
-    exact hφ.comp_left (map_zero _)
-  have hc (i : Fin 4) :
-      cpt η i = if i = j then φ.postcompCLM ofRealCLM else 0 := by
-    ext z
-    by_cases hij : i = j
-    · subst hij; simp [η]
-    · simp [η, hij]
-  simpa [hc, apply_ite] using h η hη
-
 /-! ### `H¹` regularity -/
 
 /-- **Weak solutions of the gauge-fixed vortex equation lie in `H¹`.** Let `x` be an essentially
@@ -222,12 +136,10 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
     eq_of_sum_apply_eq fun η hη ↦ by
       rw [sum_temperedVacuumOperator_apply, sum_temperedField_apply, sum_temperedField_apply,
         hvac η hη]
-  have hS : ∀ i, MemSobolev 1 2 (temperedField hy i) := by
-    refine memSobolev_temperedVacuumOperator_iff.1 fun i ↦ ?_
-    rw [hT, sub_self]
-    exact memSobolev_zero_iff.2 ⟨_, rfl⟩
-  exact mem_sobolevFields.2 fun i ↦
-    mem_realSobolevFunctions.2 ⟨_, (memLp_apply hy i).coeFn_toLp, hS i⟩
+  refine (mem_sobolevFields_iff_memSobolev_temperedField hy).2 <|
+    memSobolev_temperedVacuumOperator_iff.1 fun i ↦ ?_
+  rw [hT, sub_self]
+  exact memSobolev_zero_temperedField hg i
 
 /-! ### Fields of `A_m^s` and plane vortices -/
 
