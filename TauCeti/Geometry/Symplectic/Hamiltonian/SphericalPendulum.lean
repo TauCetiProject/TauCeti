@@ -172,15 +172,21 @@ private theorem eq_zero_of_sq_le_of_sq_eq_one {j z h : ℝ} (hz : z ^ 2 = 1)
   rw [hz, sub_self, mul_zero] at hj
   exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hj (sq_nonneg j))
 
-private theorem coords_of_mem {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
-    (hx : x ∈ sphericalPendulumPhaseSpace) :
-    x.1 0 ^ 2 + x.1 1 ^ 2 + x.1 2 ^ 2 = 1 ∧
-      x.1 0 * x.2 0 + x.1 1 * x.2 1 + x.1 2 * x.2 2 = 0 := by
-  obtain ⟨hq, hqp⟩ := hx
+/-- The phase space of the spherical pendulum in coordinates: `q₁² + q₂² + q₃² = 1` and
+`q₁ p₁ + q₂ p₂ + q₃ p₃ = 0`. -/
+theorem mem_sphericalPendulumPhaseSpace_iff_coords
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)} :
+    x ∈ sphericalPendulumPhaseSpace ↔
+      x.1 0 ^ 2 + x.1 1 ^ 2 + x.1 2 ^ 2 = 1 ∧
+        x.1 0 * x.2 0 + x.1 1 * x.2 1 + x.1 2 * x.2 2 = 0 := by
   have hq2 := EuclideanSpace.real_norm_sq_eq x.1
-  rw [hq, one_pow, Fin.sum_univ_three] at hq2
-  simp only [PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial] at hqp
-  exact ⟨hq2.symm, by linear_combination hqp⟩
+  rw [Fin.sum_univ_three] at hq2
+  simp only [mem_sphericalPendulumPhaseSpace, PiLp.inner_apply, Fin.sum_univ_three,
+    RCLike.inner_apply, conj_trivial]
+  refine ⟨fun ⟨hq, hqp⟩ ↦ ⟨by rw [← hq2, hq, one_pow], by linear_combination hqp⟩,
+    fun ⟨hq, hqp⟩ ↦ ⟨?_, by linear_combination hqp⟩⟩
+  rw [hq] at hq2
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 hq2
 
 /-- **The reduced energy identity.** On the phase space of the spherical pendulum the square of
 the vertical momentum is determined by the height and the values `(h, j)` of the energy–momentum
@@ -191,7 +197,7 @@ theorem sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.2 2 ^ 2 = 2 * ((sphericalPendulumEnergyMomentum x).1 - x.1 2) * (1 - x.1 2 ^ 2) -
       (sphericalPendulumEnergyMomentum x).2 ^ 2 := by
-  obtain ⟨hq, hqp⟩ := coords_of_mem hx
+  obtain ⟨hq, hqp⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply, EuclideanSpace.real_norm_sq_eq,
     Fin.sum_univ_three] at hq hqp ⊢
@@ -203,7 +209,7 @@ theorem apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.1 2 ∈ Icc (-1) 1 := by
-  obtain ⟨hq, -⟩ := coords_of_mem hx
+  obtain ⟨hq, -⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
   exact ⟨by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)],
     by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)]⟩
 
@@ -346,7 +352,7 @@ theorem fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     (sphericalPendulumEnergyMomentum x).1 = -1 ↔ x = (!₂[0, 0, -1], 0) := by
-  obtain ⟨hq, -⟩ := coords_of_mem hx
+  obtain ⟨hq, -⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply] at hq ⊢
   constructor
