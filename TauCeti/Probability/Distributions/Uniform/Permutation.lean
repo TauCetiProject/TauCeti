@@ -15,7 +15,8 @@ import Mathlib.GroupTheory.GroupAction.SubMulAction.Combination
 A uniform permutation of a finite population sends a fixed set to a uniformly chosen subset of
 the same cardinality. Taking the inverse image gives the uniform law of the positions occupied by
 fixed success labels in a random ordering. This connects permutation-based sampling without
-replacement to uniform sampling of subsets, including empty and full success sets.
+replacement to uniform sampling of subsets, including empty and full success sets. Uniform
+subsets are also transported along embeddings, for instance from `Fin N` into `ℕ`.
 
 The argument uses Mathlib's `Set.powersetCard.isPretransitive`, which gives transitivity of the
 permutation action on subsets of a fixed size.
@@ -78,6 +79,22 @@ theorem map_preimage_uniformOn_perm (s : Finset α) :
   simp [Equiv.Perm.inv_def]
 
 end Finset
+
+namespace Function.Embedding
+
+variable {α β : Type*} [Fintype α]
+    [MeasurableSpace (Finset α)] [MeasurableSingletonClass (Finset α)]
+    [MeasurableSpace (Finset β)] [MeasurableSingletonClass (Finset β)]
+
+/-- An embedding sends a uniform `n`-element subset of a finite type to a uniform `n`-element
+subset of the image of the embedding. This moves positions indexed by `Fin N` into `ℕ`. -/
+theorem map_finsetMap_uniformOn_powersetCard (f : α ↪ β) (n : ℕ) :
+    (uniformOn (Set.powersetCard α n)).map (Finset.map f) =
+      uniformOn ((Finset.univ.map f).powersetCard n : Set (Finset β)) := by
+  rw [Set.powersetCard.coe_finset, Finset.powersetCard_map]
+  exact (Finset.mapEmbedding f).toEmbedding.map_uniformOn_finset _
+
+end Function.Embedding
 
 namespace ProbabilityTheory.HasLaw
 
