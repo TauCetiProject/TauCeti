@@ -180,7 +180,7 @@ to `r` on the levels of `flow T₁ a₁` and `flow T₂ a₂` near this pair lie
 some `B s` with `s` below the end of the arc. -/
 private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
@@ -264,7 +264,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   have hU : U ∈ 𝓝 y₁ := hA₁.mono fun w ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩
   have hV : V ∈ 𝓝 y₂ := hA₂.mono fun w ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₃, h₂⟩
   obtain ⟨r₀, hr₀, g, k, ⟨e, he, he₀⟩, hcl, hpairs, hexh⟩ :=
-    h.exists_homeomorph_closure_splitGluingPairs hf hp hq hpq hqr φ hy₁ hy₁φ hy₂ hy₂φ hloc₁
+    h.exists_homeomorph_closure_splitGluingPairs hf hpq hqr φ hy₁ hy₁φ hy₂ hy₂φ hloc₁
       hloc₂ hε hy₁ε hy₂ε hU hV
   -- The orbits through the points of the gluing pairs run from `p` to `r`.
   have hP : ∀ z ∈ splitGluingPairs ε r₀ g k,
@@ -428,8 +428,7 @@ recorded on two levels, and every broken trajectory is a limit of unbroken ones.
 theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p q r a₁ a₂ : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
@@ -448,7 +447,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
   obtain ⟨T₁, T₂, δ, hδ, B, hBc, hB₀, hBS, hBinj, hBfwd⟩ :=
-    h.exists_gluingArc hf hp hq hr hpq hqr ha₁ ha₂
+    h.exists_gluingArc hf hq hr hpq hqr ha₁ ha₂
   set S := {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
     f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} with hSdef
   have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' ha₁
@@ -605,7 +604,7 @@ recording a trajectory broken at `q` lies in the closure of the pairs recording 
 trajectories from `p` to `r` on the same two levels. -/
 theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {p q r a₁ a₂ : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    {p q r a₁ a₂ : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
@@ -614,7 +613,7 @@ theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     (a₁, a₂) ∈ closure {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
       f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} := by
   obtain ⟨N, δ, hδ, e, he₀, hN, -⟩ :=
-    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hp hq hr hpq hqr ha₁ ha₂
+    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hq hr hpq hqr ha₁ ha₂
   -- The points of the half-open interval `δ / (n + 2)` tend to `0`, and their images are unbroken.
   set u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / (n + 2), by positivity,
     (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩ with hudef

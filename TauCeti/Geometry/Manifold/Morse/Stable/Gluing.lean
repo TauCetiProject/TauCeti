@@ -80,7 +80,6 @@ parameters, whose split coordinates are strictly differentiable at `0` with deri
 such that the expanding component of `ψ'` is invertible. -/
 theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1)
     (φ : MorseChart E f x) (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x)
     (hyφ : y ∈ φ.toChart.source)
@@ -95,7 +94,8 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ hX.flow.unstableSet p → f w = f y →
         ∃ z ∈ V, ι z = w := by
   have hpx : p ≠ x := by rintro rfl; omega
-  obtain ⟨L, q, -, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf hp hy.1
+  obtain ⟨L, q, -, hyq, hq, hs⟩ :=
+    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
   set P := WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
     (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
@@ -193,7 +193,6 @@ field `z ↦ (-wᵢ zᵢ)ᵢ` in `φ`, model orbits that stay in a box inside th
 pseudo-gradient (`TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime`). -/
 theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r y₁ y₂ : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
     (hpx : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1)
     (hxr : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (φ : MorseChart E f x)
@@ -237,7 +236,7 @@ theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedP
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
   obtain ⟨F₁, ι₁, ψ', hι₁0, hι₁, hι₁s, hψ, hψ', hexh₁⟩ :=
-    h.exists_unstableSet_level_param hf hp hx hpx φ hy₁ hy₁φ hloc₁
+    h.exists_unstableSet_level_param hf hpx φ hy₁ hy₁φ hloc₁
   obtain ⟨F₂, ι₂, χ', hι₂0, hι₂, hι₂s, hχ, hχ', hexh₂⟩ :=
     h.exists_stableSet_level_param hf hxr φ hy₂ hy₂φ hloc₂
   -- The broken pair: `y₁` lies on the stable set of `x` and `y₂` on its unstable set.
