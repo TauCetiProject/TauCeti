@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The Morse lemma
@@ -401,8 +402,7 @@ theorem exists_congruence_of_symmetric_family
     ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
       ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
   have hBa : (B a).IsInvertible := ⟨B₀, hB₀⟩
-  have : CompleteSpace E := (completeSpace_congr (e := B₀.toEquiv) B₀.isUniformEmbedding).2
-    inferInstance
+  have : CompleteSpace E := ContinuousLinearMap.completeSpace_of_isInvertible hBa
   have hpair : ContDiff ℝ n fun v ↦ (B a, B v) := contDiff_const.prodMk hB
   have hT : Tendsto (fun v ↦ (B a, B v)) (𝓝 a) (𝓝 (B a, B a)) :=
     hpair.continuous.tendsto a
