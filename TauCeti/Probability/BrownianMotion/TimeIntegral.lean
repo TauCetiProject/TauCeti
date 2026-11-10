@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 
 /-!
 # Mean-square time integration of Brownian motion
@@ -249,19 +250,19 @@ theorem norm_sum_leftRiemannError_sq (hB : IsPreBrownianReal B P)
     (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ) :
     ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 =
       (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3) / 3 := by
-  rw [← real_inner_self_eq_norm_sq, sum_inner, Finset.sum_div]
-  apply Finset.sum_congr rfl
-  intro i hi
-  rw [inner_sum, Finset.sum_eq_single i]
-  · rw [real_inner_self_eq_norm_sq, hB.norm_leftRiemannError_sq (ht (Nat.le_succ i))]
-  · intro j _ hji
-    rcases lt_or_gt_of_ne hji with hij | hij
+  have horth : Pairwise fun i j =>
+      ⟪hB.leftRiemannError (t i) (t (i + 1)),
+        hB.leftRiemannError (t j) (t (j + 1))⟫_ℝ = 0 := by
+    intro i j hij
+    rcases lt_or_gt_of_ne hij with hij | hij
+    · exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ i))
+        (ht (by omega)) (ht (Nat.le_succ j))
     · rw [real_inner_comm]
       exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ j))
         (ht (by omega)) (ht (Nat.le_succ i))
-    · exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ i))
-        (ht (by omega)) (ht (Nat.le_succ j))
-  · exact fun h => (h hi).elim
+  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
+  simp_rw [hB.norm_leftRiemannError_sq (ht (Nat.le_succ _))]
+  rw [Finset.sum_div]
 
 /-- The squared quadrature error is bounded by elapsed time times mesh squared, divided by three. -/
 theorem norm_sum_leftRiemannError_sq_le (hB : IsPreBrownianReal B P)
