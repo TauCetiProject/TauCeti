@@ -219,21 +219,15 @@ omit [Finite ι] in
 `max (v c * ⨆ i, v (x i)) 1`. -/
 lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
     ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
+  rw [Real.mul_iSup_of_nonneg (apply_nonneg v c)]
   by_cases hb : BddAbove (Set.range fun o : Option ι ↦ v (o.elim 1 (c • x)))
   · refine ciSup_le fun o ↦ ?_
     cases o with
     | none => simp
     | some i =>
-      refine le_max_of_le_left ?_
-      rcases (apply_nonneg v c).eq_or_lt with hc | hc
-      · simp [← hc]
-      · have hx : BddAbove (Set.range fun i ↦ v (x i)) := by
-          obtain ⟨M, hM⟩ := hb
-          refine ⟨M / v c, ?_⟩
-          rintro _ ⟨j, rfl⟩
-          rw [le_div_iff₀ hc, mul_comm]
-          simpa [map_mul] using hM ⟨some j, rfl⟩
-        simpa [map_mul] using mul_le_mul_of_nonneg_left (le_ciSup hx i) hc.le
+      refine le_max_of_le_left (le_ciSup_of_le (hb.mono ?_) i (by simp [map_mul]))
+      rintro _ ⟨j, rfl⟩
+      exact ⟨some j, by simp [map_mul]⟩
   · rw [Real.iSup_of_not_bddAbove hb]
     exact zero_le_one.trans (le_max_right _ _)
 
