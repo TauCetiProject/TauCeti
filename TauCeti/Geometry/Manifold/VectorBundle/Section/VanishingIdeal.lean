@@ -40,8 +40,8 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 ## Implementation notes
 
 A section vanishing near `x` is `(1 - χ) s` for a bump function `χ` equal to one near `x`, so it
-lies in `I_x Γ(V)`. Hence the class of a section modulo `I_x Γ(V)` is a local, additive operation,
-and `f s - f(x) s = (f - f(x)) s` shows it is linear over smooth functions through evaluation at
+lies in `I_x Γ(V)`. The class of a section modulo `I_x Γ(V)` is an additive operation, and
+`f s - f(x) s = (f - f(x)) s` shows it is linear over smooth functions through evaluation at
 `x`. The tensoriality criterion `TauCeti.Manifold.eq_of_contMDiff_tensorial`, proved by a cut-off
 local frame expansion, then shows that this class depends only on the value at `x`.
 
@@ -111,11 +111,6 @@ theorem mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero {x : M} {s : Cₛ^∞
     dite_eq_left hu
   -- `Φ` is tensorial, so it only depends on the value at `x`.
   have h := Manifold.eq_of_contMDiff_tensorial (I := I) Φ x
-    (fun hu hu' huu' ↦ by
-      rw [hΦ hu, hΦ hu', Submodule.Quotient.eq]
-      refine mem_smoothVanishingIdeal_smul_top_of_eventuallyEq_zero ?_
-      filter_upwards [huu'] with y hy
-      simp [hy])
     (fun hu hu' ↦ by
       rw [hΦ (hu.add_section hu'), hΦ hu, hΦ hu', ← Submodule.Quotient.mk_add]
       exact congrArg _ (ContMDiffSection.ext fun y ↦ by simp))
