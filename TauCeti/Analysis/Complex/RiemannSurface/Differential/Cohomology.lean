@@ -38,9 +38,6 @@ nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis 
 
 * `TauCeti.RiemannSurface.cechCohomologyZeroIso_hom_comp_differentialSheafCechCohomologyIso_hom`:
   in degree `0` the isomorphism is division by `ω` on global sections.
-* `TauCeti.RiemannSurface.finrank_cechCohomology_differentialSheaf`: `hⁿ(Ω_D) = hⁿ(𝒪_(D + K))`.
-* `TauCeti.RiemannSurface.finiteDimensional_cechCohomology_differentialSheaf_iff`: one of the two
-  spaces is finite-dimensional if and only if the other is.
 * `TauCeti.RiemannSurface.finiteDimensional_cechCohomology_zero_differentialSheaf`: `H⁰(X, Ω_D)`
   is finite-dimensional on a compact connected surface.
 
@@ -81,6 +78,7 @@ variable {ω : OneForm X} (hω : ∀ x, ω.MeromorphicAt x) (hω₀ : ∀ x, ω.
 
 /-- The isomorphism `Hⁿ(X, Ω_D) ≅ Hⁿ(X, 𝒪_(D + div ω))` is the map induced on Čech cohomology by
 the isomorphism of sheaves `Ω_D ≅ 𝒪_(D + div ω)`. -/
+@[simp]
 theorem differentialSheafCechCohomologyIso_hom (n : ℕ) :
     (differentialSheafCechCohomologyIso ω hω hω₀ D n).hom =
       (Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).map
@@ -89,6 +87,7 @@ theorem differentialSheafCechCohomologyIso_hom (n : ℕ) :
 
 /-- The inverse of `Hⁿ(X, Ω_D) ≅ Hⁿ(X, 𝒪_(D + div ω))` is the map induced on Čech cohomology by
 multiplication by `ω`, the inverse of `Ω_D ≅ 𝒪_(D + div ω)`. -/
+@[simp]
 theorem differentialSheafCechCohomologyIso_inv (n : ℕ) :
     (differentialSheafCechCohomologyIso ω hω hω₀ D n).inv =
       (Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).map
@@ -105,32 +104,6 @@ theorem cechCohomologyZeroIso_hom_comp_differentialSheafCechCohomologyIso_hom :
       (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom.hom.app (op ⊤) ≫
         (Topology.cechCohomologyZeroIso (divisorSheaf (D + ω.divisor))).hom :=
   (Topology.cechCohomologyZeroIso_hom_naturality _ _).symm
-
-include hω hω₀ in
-/-- **`hⁿ(Ω_D) = hⁿ(𝒪_(D + div ω))`.** On a compact Riemann surface with a `1`-form `ω` which is
-meromorphic and of finite order everywhere, the degree `n` Čech cohomologies of `Ω_D` and of the
-divisor sheaf of `D + div ω` have the same dimension. -/
-theorem finrank_cechCohomology_differentialSheaf (n : ℕ) :
-    Module.finrank ℂ
-        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
-          (differentialSheaf D).obj) =
-      Module.finrank ℂ
-        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
-          (divisorSheaf (D + ω.divisor)).obj) :=
-  (differentialSheafCechCohomologyIso ω hω hω₀ D n).toLinearEquiv.finrank_eq
-
-include hω hω₀ in
-/-- The degree `n` Čech cohomology of `Ω_D` is finite-dimensional if and only if that of the
-divisor sheaf of `D + div ω` is. -/
-theorem finiteDimensional_cechCohomology_differentialSheaf_iff (n : ℕ) :
-    FiniteDimensional ℂ
-        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
-          (differentialSheaf D).obj) ↔
-      FiniteDimensional ℂ
-        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).obj
-          (divisorSheaf (D + ω.divisor)).obj) :=
-  let e := (differentialSheafCechCohomologyIso ω hω hω₀ D n).toLinearEquiv
-  ⟨fun _ ↦ Module.Finite.equiv e, fun _ ↦ Module.Finite.equiv e.symm⟩
 
 /-- **`H⁰(X, Ω_D)` is finite-dimensional.** On a compact connected Riemann surface the degree `0`
 Čech cohomology of `Ω_D` is finite-dimensional for every divisor `D`, since it is the space of
