@@ -51,8 +51,8 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- **Integration of the Schwarz--Christoffel differential equation.** A holomorphic function
-`f` with holomorphic, nonvanishing derivative on the upper half-plane has pre-Schwarzian
+/-- **Integration of the Schwarz--Christoffel differential equation.** A function
+`f` with nonvanishing derivative on the upper half-plane has pre-Schwarzian
 `∑ i, e i / (z - a i)` exactly when it is `A * F + B` for a nonzero constant `A`, where `F` is
 the normalized Schwarz--Christoffel primitive for the prevertices `a` and exponents `e`.
 
@@ -60,7 +60,6 @@ No separate regularity assumption is needed for `deriv f`: complex differentiabi
 set already implies complex differentiability of the derivative there. -/
 theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {f : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0) :
     (∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
       EqOn f (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet) ↔
@@ -74,7 +73,7 @@ theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff (a e : ι → 
     rw [deriv_schwarzChristoffelPrimitive a e z₀ hz]
     exact schwarzChristoffelIntegrand_ne_zero a e hz
   rw [exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn isOpen_upperHalfPlaneSet
-    (convex_halfSpace_im_gt 0).isPreconnected hf hF hfn hnF]
+    (convex_halfSpace_im_gt 0).isPreconnected hfn hnF]
   constructor
   · intro h z hz
     exact (h hz).trans (logDeriv_deriv_schwarzChristoffelPrimitive a e z₀ hz)
@@ -92,7 +91,6 @@ The denominator is nonzero because the Schwarz--Christoffel integrand has no zer
 half-plane. -/
 theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) {f : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
     (hpre : EqOn (logDeriv (deriv f))
       (fun z => ∑ i, (e i : ℂ) / (z - (a i : ℂ))) upperHalfPlaneSet) :
@@ -100,7 +98,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn
       deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
         schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   obtain ⟨A, _, B, hEq⟩ :=
-    (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e z₀ hf hfn).mpr hpre
+    (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e z₀ hfn).mpr hpre
   have hB : B = f z₀ := by
     simpa using (hEq z₀.im_pos).symm
   have hderiv := hEq.deriv isOpen_upperHalfPlaneSet z₀.im_pos

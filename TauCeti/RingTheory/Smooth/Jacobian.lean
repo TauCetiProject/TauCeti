@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Smooth.Local
 public import Mathlib.RingTheory.Smooth.StandardSmooth
+public import TauCeti.RingTheory.LocalRing.Coordinates
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.Kaehler.Conormal
 
@@ -61,6 +62,8 @@ theorem isStandardSmoothOfRelativeDimension_localizationAway
     simp [Presentation.dimension])
 
 end Algebra.PreSubmersivePresentation
+
+open IsLocalRing
 
 namespace TauCeti
 
@@ -164,5 +167,48 @@ theorem formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq [IsLocalRing P] [IsLocal
   exact hg c' hmem t
 
 end LocalQuotient
+
+section Coordinates
+
+variable {τ κ : Type*} [Fintype ι] [Fintype τ] [Fintype κ] [IsLocalRing Q]
+
+/-- **Complementary relations and coordinates give a formally smooth quotient.** Let `Q` be a local
+formally smooth `K`-algebra whose differentials have a basis `b₀` consisting of the differentials
+of coordinates `x` lying in the maximal ideal, and let `g : τ → Q` and `y : κ → Q` be finite
+families with `card τ + card κ = card ι` which together generate the maximal ideal of `Q`. Then the
+differentials of `g` and `y` form a basis of `Ω[Q⁄K]`, so `Q ⧸ (range g)` is formally smooth by the
+Jacobian criterion. -/
+theorem _root_.Module.Basis.formallySmooth_quotient_of_coordinates
+    (b₀ : Module.Basis ι Q Ω[Q⁄K]) {x : ι → Q} (hx : ∀ i, x i ∈ maximalIdeal Q)
+    (hb₀ : ∀ i, b₀ i = D K Q (x i)) {g : τ → Q} {y : κ → Q}
+    (hcard : Fintype.card τ + Fintype.card κ = Fintype.card ι)
+    (hQy : maximalIdeal Q = Ideal.span (Set.range g) ⊔ Ideal.span (Set.range y)) :
+    Algebra.FormallySmooth K (Q ⧸ Ideal.span (Set.range g)) := by
+  classical
+  set δ : ι → Derivation K Q Q := fun i ↦ (b₀.coord i).compDer (D K Q)
+  have hD (i j : ι) : δ i (x j) = if i = j then 1 else 0 := by
+    simp [δ, ← hb₀, Finsupp.single_apply, eq_comm]
+  set w : τ ⊕ κ → Q := Sum.elim g y
+  have hw : ∀ k, w k ∈ maximalIdeal Q := by
+    rw [hQy]
+    exact Sum.forall.2 ⟨fun t ↦ Ideal.mem_sup_left (Ideal.subset_span ⟨t, rfl⟩),
+      fun j ↦ Ideal.mem_sup_right (Ideal.subset_span ⟨j, rfl⟩)⟩
+  have hspan := span_residue_apply_eq_top_of_le_span_sup_sq
+    hx hD hw (by
+      rw [Set.Sum.elim_range, Ideal.span_union, ← hQy]
+      exact le_sup_left)
+  have hcard' : Fintype.card (τ ⊕ κ) = Fintype.card ι := by rw [Fintype.card_sum, hcard]
+  obtain ⟨b₂, hb₂⟩ := IsLocalRing.exists_basis_of_linearIndependent_residue_coord b₀ hcard'
+    (v := fun k ↦ D K Q (w k)) (linearIndependent_of_top_le_span_of_card_eq_finrank hspan.ge
+      (by rw [Module.finrank_fintype_fun_eq_card, hcard']))
+  -- The quotient is local: the ideal is contained in the maximal ideal, so it is proper.
+  have hne : Ideal.span (Set.range g) ≠ ⊤ :=
+    ne_top_of_le_ne_top (maximalIdeal.isMaximal Q).ne_top (by rw [hQy]; exact le_sup_left)
+  have : Nontrivial (Q ⧸ Ideal.span (Set.range g)) := Ideal.Quotient.nontrivial_iff.2 hne
+  have hloc : IsLocalRing (Q ⧸ Ideal.span (Set.range g)) :=
+    .of_surjective' (Ideal.Quotient.mk _) Ideal.Quotient.mk_surjective
+  exact formallySmooth_quotient_of_basis_kaehlerDifferential b₂ fun t ↦ hb₂ (.inl t)
+
+end Coordinates
 
 end TauCeti

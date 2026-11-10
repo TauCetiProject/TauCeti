@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The real volume of the unit ball
@@ -17,7 +18,7 @@ the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimen
 form used in normalizing constants. It also shows that every finite-dimensional real inner
 product space has a closed ball of volume one about the origin, that a closed ball of
 radius `r` in a one-dimensional space has volume `2 * r`, and that a disc of radius `r` in `ℂ` has
-real volume `π * r ^ 2`.
+real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
 public section
@@ -29,11 +30,16 @@ open MeasureTheory Metric Module Real Set
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [Nontrivial V]
 
-/-- The real volume of the unit ball of a nontrivial real inner product space of dimension `d` is
+omit [Nontrivial V] in
+/-- The real volume of the unit ball of a real inner product space of dimension `d` is
 `π ^ (d / 2) / Γ(d / 2 + 1)`. -/
 theorem volume_real_unitBall :
     volume.real (ball (0 : V) 1) =
       π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · -- In the zero space the unit ball is the whole space.
+    simp [measureReal_def, volume_eq_one_of_subsingleton (nonempty_ball.2 one_pos :
+      (ball (0 : V) 1).Nonempty), finrank_zero_of_subsingleton]
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
     ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
@@ -43,9 +49,7 @@ theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (close
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- In the zero space every closed ball is the whole space, the unit parallelepiped.
     refine ⟨1, one_pos, ?_⟩
-    have hpar := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-    rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
-      ← Subsingleton.eq_univ_of_nonempty (nonempty_closedBall.2 zero_le_one)] at hpar
+    exact volume_eq_one_of_subsingleton (nonempty_closedBall.2 zero_le_one)
   -- Otherwise rescale the unit ball by `vol (ball 0 1) ^ (-1 / n)`.
   set n := finrank ℝ V
   set v := volume.real (ball (0 : V) 1)
@@ -76,5 +80,20 @@ open MeasureTheory Metric Real
 /-- A disc of radius `r ≥ 0` in `ℂ` has real volume `π * r ^ 2`. -/
 theorem volume_real_ball (a : ℂ) {r : ℝ} (hr : 0 ≤ r) : volume.real (ball a r) = π * r ^ 2 := by
   simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
+
+/-- The `L²` norm of a constant `c` on the closed disc of radius `R` in `ℂ` is `‖c‖ R √π`, the
+square root of the disc area `π R²` times `‖c‖`. -/
+theorem eLpNorm_two_indicator_closedBall_const {E : Type*} [NormedAddCommGroup E] (a : ℂ)
+    (c : E) {R : ℝ} (hR : 0 ≤ R) :
+    eLpNorm ((closedBall a R).indicator fun _ ↦ c) 2 volume = ‖c‖ₑ * ENNReal.ofReal (R * √π) := by
+  rw [eLpNorm_indicator_const measurableSet_closedBall.nullMeasurableSet two_ne_zero
+    ENNReal.ofNat_ne_top, Complex.volume_closedBall]
+  congr 1
+  -- The area `R² π` is the square of `R √π`.
+  have harea : ENNReal.ofReal R ^ 2 * NNReal.pi = ENNReal.ofReal (R * √π) ^ 2 := by
+    rw [ENNReal.ofReal_mul hR, mul_pow, ← ENNReal.ofReal_pow (Real.sqrt_nonneg π),
+      Real.sq_sqrt Real.pi_pos.le, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
+  rw [harea, ENNReal.toReal_ofNat, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+  norm_num
 
 end Complex
