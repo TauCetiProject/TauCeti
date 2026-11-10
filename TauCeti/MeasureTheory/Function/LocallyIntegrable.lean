@@ -106,6 +106,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`, with `U` not required to be open.
+* `Continuous.integrable_clm_apply_of_continuousOn`: the same for a continuous compactly
+  supported function to which an operator family continuous on `U` is applied.
 
 A function locally integrable for a measure `ν` becomes locally integrable for any measure `ρ`
 dominating `ν`, when `ν` has a Lebesgue decomposition with respect to `ρ`, after multiplication
@@ -470,6 +472,21 @@ theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [Topological
     (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
   (hb.smul_of_continuousOn_of_tsupport_subset hbU ha).integrable_of_hasCompactSupport
     hbc.smul_left
+
+/-- An operator family `L` continuous on a set `U`, applied to a continuous compactly supported
+function `u` whose support lies in `U`, is integrable, for any measure finite on compact sets. The
+family `L` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_clm_apply_of_continuousOn {𝕜 V W : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] {L : X → V →L[𝕜] W} {u : X → V} {U : Set X} (hu : Continuous u)
+    (huc : HasCompactSupport u) (huU : tsupport u ⊆ U) (hL : ContinuousOn L U) :
+    Integrable (fun x ↦ L x (u x)) μ := by
+  have hK : ContinuousOn (fun x ↦ L x (u x)) (tsupport u) :=
+    (hL.mono huU).clm_apply hu.continuousOn
+  have hsupp : Function.support (fun x ↦ L x (u x)) ⊆ Function.support u :=
+    fun x hx h0 ↦ hx (by simp [h0])
+  rw [← integrableOn_iff_integrable_of_support_subset (hsupp.trans (subset_tsupport u))]
+  exact hK.integrableOn_compact' huc.isCompact (isClosed_tsupport u).measurableSet
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite

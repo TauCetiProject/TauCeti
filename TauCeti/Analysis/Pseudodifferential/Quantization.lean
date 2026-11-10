@@ -276,6 +276,19 @@ theorem quantizeSchwartzValue_add_left {b : E × E → V →L[ℂ] W} {C' m' : �
   exact integral_add (integrable_quantizeSchwartzValue_integrand hmeas hC _)
     (integrable_quantizeSchwartzValue_integrand hmeas' hC' _)
 
+/-- The quantization is additive over finite sums of coefficients at every point `x` where each
+`ξ ↦ b i (x, ξ)` is a.e. strongly measurable and has a growth bound. -/
+theorem quantizeSchwartzValue_sum {ι : Type*} (s : Finset ι) {b : ι → E × E → V →L[ℂ] W}
+    (hmeas : ∀ i ∈ s, AEStronglyMeasurable (fun ξ ↦ b i (x, ξ)))
+    (hC : ∀ i ∈ s, ∃ C m : ℝ, ∀ ξ, ‖b i (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (u : 𝓢(E, V)) :
+    quantizeSchwartzValue (∑ i ∈ s, b i) u x = ∑ i ∈ s, quantizeSchwartzValue (b i) u x := by
+  simp only [quantizeSchwartzValue_def, Finset.sum_apply]
+  rw [← integral_finsetSum s fun i hi ↦ by
+    obtain ⟨C, m, hC⟩ := hC i hi
+    exact integrable_quantizeSchwartzValue_integrand (hmeas i hi) hC (𝓕 u)]
+  congr 1 with ζ
+  simp only [sum_apply, Finset.smul_sum]
+
 /-- The quantization is homogeneous in the coefficient. -/
 @[simp]
 theorem quantizeSchwartzValue_smul_left (c : ℂ) (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
@@ -701,19 +714,6 @@ theorem ofLp_smul_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
   rw [hcoef] at h
   simpa [EuclideanSpace.inner_single_right] using h
 
-/-- The quantization is additive over finite sums of symbols. -/
-theorem quantizeSchwartzValue_sum {m' : ℝ} {ι : Type*} (s : Finset ι) (b : ι → Symbol n V W m')
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (∑ i ∈ s, b i).coefficient u x =
-      ∑ i ∈ s, quantizeSchwartzValue (b i).coefficient u x := by
-  simp only [quantizeSchwartzValue_def, coefficient_sum, Finset.sum_apply]
-  rw [← integral_finsetSum s fun i _ ↦ by
-    obtain ⟨C, -, hC⟩ := (b i).exists_bound_coefficient {x} isCompact_singleton
-    exact integrable_quantizeSchwartzValue_integrand
-      ((b i).continuous_coefficient_slice x).aestronglyMeasurable (hC x rfl) (𝓕 u)]
-  congr 1 with ζ
-  simp only [sum_apply, Finset.smul_sum]
-
 /-- The quantization at a fixed point `x`, as a linear function of the Schwartz input. -/
 private def quantizeAt (a : Symbol n V W m) (x : CoordinateSpace n) :
     𝓢(CoordinateSpace n, V) →ₗ[ℂ] W where
@@ -777,8 +777,13 @@ theorem quantizeSchwartzValue_smulLeftCLM_norm_sub_sq (a : Symbol n V W m)
   rw [hu, ← quantizeAt_apply, map_sum]
   simp only [quantizeAt_apply, quantizeSchwartzValue_smulLeftCLM_sub_apply, smul_smul,
     Complex.I_mul_I, neg_one_smul, Finset.sum_neg_distrib, frequencyLaplacian_apply]
-  rw [quantizeSchwartzValue_sum]
-  simp only [coefficient_inclusion]
+  simp only [coefficient_sum, coefficient_inclusion]
+  rw [quantizeSchwartzValue_sum _
+    (fun j _ ↦ ((frequencyDeriv j (frequencyDeriv j a)).continuous_coefficient_slice x
+      ).aestronglyMeasurable) fun j _ ↦ by
+    obtain ⟨C, -, hC⟩ :=
+      (frequencyDeriv j (frequencyDeriv j a)).exists_bound_coefficient {x} isCompact_singleton
+    exact ⟨C, _, hC x rfl⟩]
 
 /-- **Smoothness.** The quantization `Op(a) u` of a Schwartz function by a symbol is smooth. -/
 theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) :
