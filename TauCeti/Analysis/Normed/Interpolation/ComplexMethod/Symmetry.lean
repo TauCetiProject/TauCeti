@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 
 Reversing the endpoints of a compatible couple and replacing `θ` by `1 - θ` gives the
 same complex interpolation space, with equal norms. The isometry
-`CompatibleCouple.ComplexMethodSpace.symmetry` lies over the canonical identification of
+`CompatibleCouple.ComplexMethodSpace.swap` lies over the canonical identification of
 the sum spaces, so it preserves the element in the common ambient space.
 
 Reflection of an admissible function is `z ↦ F (1 - z)`. Its boundary traces are the original
@@ -48,23 +48,21 @@ theorem IsStripFunction.reflect {F : ℂ → C.SumSpace}
     have hsub : Differentiable ℂ (fun z : ℂ => 1 - z) := by fun_prop
     exact C.sumSwap.toContinuousLinearEquiv.toContinuousLinearMap.differentiable.comp_diffContOnCl
       (hF.diffContOnCl.comp hsub.diffContOnCl fun z hz => by
-        simp only [mem_verticalStrip_iff, mem_Ioo, sub_re, one_re] at hz ⊢
-        constructor <;> linarith)
+        simpa only [sub_mem_verticalStrip_iff, one_re, sub_self, sub_zero] using hz)
   isBounded := by
     refine isBounded_iff_forall_norm_le.2 ⟨‖g‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     rw [C.sumSwap.norm_map]
     apply hF.norm_le
-    simp only [mem_verticalClosedStrip_iff, mem_Icc, sub_re, one_re] at hz ⊢
-    constructor <;> linarith
+    simpa only [sub_mem_verticalClosedStrip_iff, one_re, sub_self, sub_zero] using hz
   apply_mul_I t := by
     have heq : (1 : ℂ) - t * I = 1 + ((-t : ℝ) : ℂ) * I := by push_cast; ring
     rw [heq, hF.apply_one_add_mul_I, sumSwap_sndToSum]
-    rfl
+    simp
   apply_one_add_mul_I t := by
     have heq : (1 : ℂ) - (1 + t * I) = ((-t : ℝ) : ℂ) * I := by push_cast; ring
     rw [heq, hF.apply_mul_I, sumSwap_fstToSum]
-    rfl
+    simp
 
 variable (C)
 
@@ -107,10 +105,7 @@ theorem stripEval_stripTracesSwap (z : ℂ) (g : C.stripTraces) :
   · rw [stripEval_apply,
       stripFunction_eq (C.isStripFunction_stripFunction g).reflect hz, stripEval_apply]
   · have hz' : 1 - z ∉ verticalClosedStrip 0 1 := by
-      intro h
-      apply hz
-      simp only [mem_verticalClosedStrip_iff, mem_Icc, sub_re, one_re] at h ⊢
-      constructor <;> linarith
+      simpa only [sub_mem_verticalClosedStrip_iff, one_re, sub_self, sub_zero] using hz
     simp [C.swap.stripEval_eq_zero hz, C.stripEval_eq_zero hz']
 
 namespace ComplexMethodSpace
@@ -122,28 +117,23 @@ private def reflectionMap (h : θ + η = 1) :
     C.ComplexMethodSpace θ →L[ℂ] C.swap.ComplexMethodSpace η :=
   lift ((mk η).comp C.stripTracesSwap.toContinuousLinearEquiv.toContinuousLinearMap)
     fun g hg => by
-      have heq : (1 : ℂ) - (η : ℂ) = (θ : ℂ) := by
-        rw [← ofReal_one, ← ofReal_sub]
-        congr 1
-        linarith
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
         LinearIsometryEquiv.coe_toContinuousLinearEquiv]
       rw [← map_zero (mk (C := C.swap) η), mk_eq_mk_iff]
-      rw [stripEval_stripTracesSwap, heq, hg]
+      rw [stripEval_stripTracesSwap, ← ofReal_one, ← ofReal_sub,
+        sub_eq_of_eq_add h.symm, hg]
       simp only [map_zero]
 
 private theorem reflectionMap_mk (h : θ + η = 1) (g : C.stripTraces) :
     reflectionMap h (mk θ g) = mk η (C.stripTracesSwap g) := by
   rw [reflectionMap, lift_mk, ContinuousLinearMap.comp_apply]
-  rfl
+  simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 private theorem toSum_reflectionMap (h : θ + η = 1) (u : C.ComplexMethodSpace θ) :
     toSum (reflectionMap h u) = C.sumSwap (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
   rw [reflectionMap_mk, toSum_mk, stripEval_stripTracesSwap, toSum_mk]
-  have hreal : 1 - η = θ := by linarith
-  have heq : (1 : ℂ) - (η : ℂ) = (θ : ℂ) := by exact_mod_cast hreal
-  rw [heq]
+  rw [← ofReal_one, ← ofReal_sub, sub_eq_of_eq_add h.symm]
 
 private theorem reflectionMap_norm_le (h : θ + η = 1) (u : C.ComplexMethodSpace θ) :
     ‖reflectionMap h u‖ ≤ ‖u‖ := by
@@ -160,7 +150,7 @@ private theorem reflectionMap_reflectionMap (h : θ + η = 1) (h' : η + θ = 1)
 /-- **Symmetry of complex interpolation:** exchanging the endpoints and replacing `θ` by
 `1 - θ` preserves the interpolation norm. The isometry identifies the same element of the
 ambient space; no regularity or completeness hypothesis on the endpoints is needed. -/
-def symmetry (C : TauCeti.CompatibleCouple ℂ X₀ X₁ V) (θ : ℝ) :
+def swap (C : TauCeti.CompatibleCouple ℂ X₀ X₁ V) (θ : ℝ) :
     C.ComplexMethodSpace θ ≃ₗᵢ[ℂ] C.swap.ComplexMethodSpace (1 - θ) where
   toFun := reflectionMap (by ring : θ + (1 - θ) = 1)
   invFun := reflectionMap (by ring : (1 - θ) + θ = 1)
@@ -179,22 +169,22 @@ def symmetry (C : TauCeti.CompatibleCouple ℂ X₀ X₁ V) (θ : ℝ) :
 
 /-- On representatives, symmetry reflects the admissible boundary traces. -/
 @[simp]
-theorem symmetry_mk (g : C.stripTraces) :
-    symmetry C θ (mk θ g) = mk (1 - θ) (C.stripTracesSwap g) :=
+theorem swap_mk (g : C.stripTraces) :
+    swap C θ (mk θ g) = mk (1 - θ) (C.stripTracesSwap g) :=
   reflectionMap_mk (by ring) g
 
 /-- Symmetry lies over the canonical identification of the sum spaces. -/
 @[simp]
-theorem toSum_symmetry (u : C.ComplexMethodSpace θ) :
-    toSum (symmetry C θ u) = C.sumSwap (toSum u) :=
+theorem toSum_swap (u : C.ComplexMethodSpace θ) :
+    toSum (swap C θ u) = C.sumSwap (toSum u) :=
   toSum_reflectionMap (by ring) u
 
 /-- The inverse symmetry also lies over the inverse identification of the sum spaces. -/
 @[simp]
-theorem toSum_symmetry_symm (u : C.swap.ComplexMethodSpace (1 - θ)) :
-    toSum ((symmetry C θ).symm u) = C.sumSwap.symm (toSum u) := by
+theorem toSum_swap_symm (u : C.swap.ComplexMethodSpace (1 - θ)) :
+    toSum ((swap C θ).symm u) = C.sumSwap.symm (toSum u) := by
   apply C.sumSwap.injective
-  rw [← toSum_symmetry]
+  rw [← toSum_swap]
   simp only [LinearIsometryEquiv.apply_symm_apply]
 
 end ComplexMethodSpace
