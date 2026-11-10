@@ -96,11 +96,7 @@ private theorem frameCoordinateJet_ofLE (k : ℕ)
       (g.ofLE (m := k) (by simp)).toSymmetricSection) =
       ⇑((e i).frameCoordinates (hU i) g.toSymmetricSection) := by
     funext y
-    have hs : (g.ofLE (m := k) (by simp)).toSymmetricSection y =
-        g.toSymmetricSection y := by
-      apply Subtype.ext
-      simp
-    simp only [Trivialization.frameCoordinates_apply, hs]
+    simp only [Trivialization.frameCoordinates_apply, toSymmetricSection_ofLE_apply]
   ext z
   simp only [ContMDiffMap.chartIteratedFDeriv_self_target_apply, hc]
 

@@ -160,12 +160,7 @@ private theorem coe_symChartMetric_apply (k : ℕ∞)
     Trivialization.frameCoordinates_apply]
   rw [ContMDiffNondegenerateMetric.chartMetric_def, Diffeomorph.coe_coe,
     coe_extChartAtDiffeomorph_symm_apply]
-  have hs : (g.ofLE (m := (k : ℕ∞ω))
-      (by exact_mod_cast le_top)).toSymmetricSection ((extChartAt I x₀).symm z) =
-      g.toSymmetricSection ((extChartAt I x₀).symm z) := by
-    apply Subtype.ext
-    simp only [coe_toSymmetricSection_apply, ofLE_inner]
-  rw [hs]
+  rw [toSymmetricSection_ofLE_apply]
   exact coe_trivializationAt_toSymmetricSection_snd g hz
 
 private theorem symFrameCoordinates_eq_comp (k : ℕ∞)
