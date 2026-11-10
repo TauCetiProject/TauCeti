@@ -259,7 +259,7 @@ private theorem continuous_det_append_kerSection (hT : Continuous T)
     (h : ∀ x, (((T x).coprod D₂).prod q).IsInvertible) {k m : ℕ}
     (bB : Module.Basis (Fin (k + m)) 𝕜 G') (b : Fin k → G) (lift : Fin m → Λ') :
     Continuous fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι b lift) := by
-  have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
+  have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have hA : Continuous fun x ↦ (T x).coprod D₂ := hT.continuousLinearMapCoprod continuous_const
   have hιc : Continuous ι := ι.continuous_of_finiteDimensional
   have hks : Continuous fun x ↦ ((T x).coprod D₂).kerSection q := continuous_kerSection hA h

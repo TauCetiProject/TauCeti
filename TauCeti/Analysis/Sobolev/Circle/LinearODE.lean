@@ -86,7 +86,7 @@ variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 variable (T : ℝ) [hT : Fact (0 < T)] [FiniteDimensional ℂ E]
 
 /-- A finite-dimensional complex space is complete, as needed for continuous representatives. -/
-local instance instCompleteSpaceLinearODE : CompleteSpace E := FiniteDimensional.complete ℂ E
+local instance instCompleteSpaceLinearODE : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
 
 /-- For `s > 1/2`, multiplication by a continuous loop `S` of real-linear maps, as a bounded
 real-linear map `H^s(E) → H⁰(E)`: the continuous representative of `a` is multiplied pointwise by

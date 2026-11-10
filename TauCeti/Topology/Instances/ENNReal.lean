@@ -160,7 +160,7 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     exact (ENNReal.ofReal_pos.2 (div_pos hK hm₀)).ne'
   have h2 : Filter.Tendsto (fun i => M * ‖s i - a‖ₑ) l (𝓝 0) := by
     simpa [Function.comp_def] using
-      (ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto (0 : F)).comp h0) (Or.inr hM))
+      (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
 
 end TauCeti

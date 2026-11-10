@@ -1117,15 +1117,15 @@ theorem setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn {U T A : Set X}
     exact lintegral_mono_set hT
   -- The triangle inequality through `v` and its mean.
   have hdist : AEMeasurable (fun x => ‖v x - u x‖ₑ) (μ.restrict A) :=
-    ((hvU.aestronglyMeasurable.sub huU.aestronglyMeasurable).enorm.mono_measure
+    ((hvU.aestronglyMeasurable.sub huU.aestronglyMeasurable).eNorm.mono_measure
       (Measure.restrict_mono hA le_rfl))
   calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in A, (‖v x - u x‖ₑ + ‖v x - ⨍ y in T, v y ∂μ‖ₑ +
           ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
         refine lintegral_mono fun x => ?_
-        rw [← enorm_neg (v x - u x)]
+        rw [← eNorm_neg (v x - u x)]
         refine le_of_eq_of_le ?_
-          ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
+          ((eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _))
         congr 1
         abel
     _ = ∫⁻ x in A, ‖v x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ +
