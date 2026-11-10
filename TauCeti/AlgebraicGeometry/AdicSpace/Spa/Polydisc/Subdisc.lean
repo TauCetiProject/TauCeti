@@ -170,6 +170,14 @@ theorem closedSubdisc_zero_right (a : K) : closedSubdisc a 0 = ∅ := by
   ext v
   simp
 
+/-- A disc `D(a, |c|)` with `c` a unit is cut out by its defining inequality
+`v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
+theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : IsUnit c) :
+    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
+  ext v
+  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp]
+  exact fun _ ↦ @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ v.1.toValuativeRel _ (hc.map C)
+
 end TopologicalRing
 
 /-! ### Discs over a normed field -/
@@ -177,18 +185,6 @@ end TopologicalRing
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-
-omit [IsUltrametricDist K] in
-/-- A disc `D(a, |c|)` of nonzero radius is cut out by its defining inequality
-`v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
-theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : c ≠ 0) :
-    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
-  ext v
-  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp]
-  intro _ h
-  have h1 := v.1.toValuativeRel.mul_vle_mul_left h (C c⁻¹)
-  rw [← map_mul, mul_inv_cancel₀ hc, zero_mul, map_one] at h1
-  exact v.1.toValuativeRel.not_vle_one_zero h1
 
 /-- **Nested discs**: `D(a, |c|) ⊆ D(b, |d|)` whenever `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. -/
 theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ ‖d‖)
