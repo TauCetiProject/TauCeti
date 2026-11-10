@@ -53,6 +53,12 @@ the diagonal.
   `TauCeti.Symbol.quantizationKernel_frequencyDeriv`: for a symbol `a ∈ S^m_{1,0}` with `m < -n`
   the frequency slices are integrable, the kernel is continuous, and the kernel of `∂_{ξ_j} a` is
   `-i (x - y)_j K_a(x, y)`.
+* `TauCeti.Symbol.quantizationKernel_mixedDeriv_replicate` and
+  `TauCeti.Symbol.one_add_norm_div_pow_mul_norm_quantizationKernel_le`: iterating, the kernel of
+  `∂_{ξ_j}^k a` is `(-i (x - y)_j)^k K_a(x, y)`, so the kernel decays off the diagonal at a rate
+  controlled by the frequency integrals of the derivatives: if `∫ ‖a(x, ξ)‖ dξ ≤ A` and
+  `∫ ‖∂_{ξ_j}^N a(x, ξ)‖ dξ ≤ A R^N` for every `j`, then
+  `(1 + ‖x - y‖ / R)^N ‖K_a(x, y)‖ ≤ 2^N (1 + √n^N) (2π)⁻ⁿ A`.
 
 ## References
 
@@ -343,6 +349,94 @@ theorem quantizationKernel_frequencyDeriv (a : Symbol n V W m) (hm : m < -n) (j 
   rw [EuclideanSpace.inner_single_right, one_mul, conj_trivial] at h
   rw [h, smul_smul]
   simp
+
+/-- **Kernel of an iterated frequency derivative.** For a symbol of order `m < -n`, the kernel of
+`∂_{ξ_j}^k a` is `(-i (x - y)_j)^k K_a(x, y)`. -/
+theorem quantizationKernel_mixedDeriv_replicate (a : Symbol n V W m) (hm : m < -n) (j : Fin n)
+    (k : ℕ) (x y : CoordinateSpace n) :
+    quantizationKernel (fun p ↦ mixedDeriv [] (List.replicate k j) a.coefficient p.1 p.2) x y =
+      (-Complex.I * ((x - y) j : ℂ)) ^ k • quantizationKernel a.coefficient x y := by
+  induction k generalizing m with
+  | zero => simp
+  | succ k ih =>
+    have h : (fun p : CoordinateSpace n × CoordinateSpace n ↦
+        mixedDeriv [] (List.replicate (k + 1) j) a.coefficient p.1 p.2) =
+        fun p ↦ mixedDeriv [] (List.replicate k j) (frequencyDeriv j a).coefficient p.1 p.2 := by
+      funext p
+      rw [mixedDeriv_frequencyDeriv, ← List.replicate_succ']
+    rw [h, ih (frequencyDeriv j a) (by linarith), quantizationKernel_frequencyDeriv a hm,
+      smul_smul, smul_smul, pow_succ, mul_assoc]
+
+/-- For a symbol of order `m < -n`,
+`|(x - y)_j|^k ‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖∂_{ξ_j}^k a(x, ξ)‖ dξ`. -/
+theorem abs_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m) (hm : m < -n) (j : Fin n)
+    (k : ℕ) (x y : CoordinateSpace n) :
+    |(x - y) j| ^ k * ‖quantizationKernel a.coefficient x y‖ ≤
+      ((2 * π) ^ n)⁻¹ * ∫ ξ, ‖mixedDeriv [] (List.replicate k j) a.coefficient x ξ‖ := by
+  have h := norm_quantizationKernel_le
+    (fun p ↦ mixedDeriv [] (List.replicate k j) a.coefficient p.1 p.2) x y
+  rwa [quantizationKernel_mixedDeriv_replicate a hm, norm_smul, norm_pow, norm_mul, norm_neg,
+    Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs,
+    finrank_euclideanSpace_fin] at h
+
+/-- **Decay of the kernel off the diagonal.** Let `a` be a symbol of order `m < -n` and `R > 0`. If
+at the position `x` the frequency slice has `∫ ‖a(x, ξ)‖ dξ ≤ A` and the `N`-th derivatives in
+each frequency coordinate have `∫ ‖∂_{ξ_j}^N a(x, ξ)‖ dξ ≤ A R^N`, then
+`(1 + ‖x - y‖ / R)^N ‖K_a(x, y)‖ ≤ 2^N (1 + √n^N) (2π)⁻ⁿ A` for every `y`.
+
+The hypotheses are compatible with the frequency dilations `a(x, ξ) ↦ a(x, ξ / λ)`, `λ > 0`, which
+multiply `A` by `λⁿ` and `R` by `λ⁻¹`. For a uniform symbol of order `0` multiplied by smooth
+dyadic frequency cutoffs, this makes the estimate uniform over the dyadic pieces and over the
+position `x`. -/
+theorem one_add_norm_div_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m) (hm : m < -n)
+    {x : CoordinateSpace n} {A R : ℝ} (hR : 0 < R) (N : ℕ)
+    (h₀ : ∫ ξ, ‖a.coefficient (x, ξ)‖ ≤ A)
+    (hN : ∀ j, ∫ ξ, ‖mixedDeriv [] (List.replicate N j) a.coefficient x ξ‖ ≤ A * R ^ N)
+    (y : CoordinateSpace n) :
+    (1 + ‖x - y‖ / R) ^ N * ‖quantizationKernel a.coefficient x y‖ ≤
+      2 ^ N * (1 + √n ^ N) * ((2 * π) ^ n)⁻¹ * A := by
+  set K := ‖quantizationKernel a.coefficient x y‖
+  set c : ℝ := ((2 * π) ^ n)⁻¹
+  have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans h₀
+  have hK₀ : K ≤ c * A := by
+    have h := norm_quantizationKernel_le a.coefficient x y
+    rw [finrank_euclideanSpace_fin] at h
+    exact h.trans (by gcongr)
+  -- Away from the diagonal: `(‖x - y‖ / R)^N K ≤ √n^N c A`.
+  have hK₁ : (‖x - y‖ / R) ^ N * K ≤ √n ^ N * (c * A) := by
+    by_cases hz : x - y = 0
+    · rcases N.eq_zero_or_pos with rfl | hN
+      · simpa using hK₀
+      · rw [hz, norm_zero, zero_div, zero_pow hN.ne', zero_mul]
+        positivity
+    -- A coordinate of maximal size controls the norm: `‖x - y‖ ≤ √n |(x - y)_j|`.
+    have : Nonempty (Fin n) := by
+      rcases isEmpty_or_nonempty (Fin n) with h | h
+      · exact absurd (Subsingleton.elim _ _) hz
+      · exact h
+    obtain ⟨j, hj⟩ := Finite.exists_max fun i ↦ |(x - y) i|
+    have hnorm : ‖x - y‖ ≤ √n * |(x - y) j| := by
+      refine ((EuclideanSpace.basisFun (Fin n) ℝ).norm_le_card_mul_iSup_norm_inner
+        (x - y)).trans ?_
+      simp only [Fintype.card_fin, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left,
+        map_one, one_mul, Real.norm_eq_abs]
+      gcongr
+      exact ciSup_le hj
+    calc (‖x - y‖ / R) ^ N * K ≤ (√n * |(x - y) j| / R) ^ N * K := by gcongr
+      _ = √n ^ N * (|(x - y) j| ^ N * K) / R ^ N := by rw [div_pow, mul_pow]; ring
+      _ ≤ √n ^ N * (c * (A * R ^ N)) / R ^ N := by
+        gcongr √n ^ N * ?_ / _
+        exact (a.abs_pow_mul_norm_quantizationKernel_le hm j N x y).trans (by gcongr; exact hN j)
+      _ = √n ^ N * (c * A) := by field_simp
+  calc (1 + ‖x - y‖ / R) ^ N * K ≤ 2 ^ N * (1 + (‖x - y‖ / R) ^ N) * K := by
+        gcongr
+        refine (add_pow_le zero_le_one (by positivity) N).trans ?_
+        rw [one_pow]
+        gcongr
+        exacts [one_le_two, N.sub_le 1]
+    _ = 2 ^ N * (K + (‖x - y‖ / R) ^ N * K) := by ring
+    _ ≤ 2 ^ N * (c * A + √n ^ N * (c * A)) := by gcongr
+    _ = 2 ^ N * (1 + √n ^ N) * c * A := by ring
 
 end Symbol
 

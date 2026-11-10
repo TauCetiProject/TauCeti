@@ -41,6 +41,8 @@ The real module structure of `E` is an ambient one compatible with the complex s
 * `Module.Basis.complexToReal`: the real basis `(b i, I • b i)` underlying a complex basis `b`.
 * `TauCeti.complexOrientation`: the canonical real orientation of a complex vector space, indexed
   by `Fin (2 * finrank ℂ E)`.
+* `TauCeti.complexToRealFamily v`: the real family `(v₀, I • v₀, v₁, I • v₁, …)` underlying a
+  family `v` of vectors of a complex vector space, which for a complex basis is its real basis.
 
 ## Main results
 
@@ -171,6 +173,65 @@ theorem complexOrientation_eq (b : Basis (Fin (finrank ℂ E)) ℂ E) :
   rw [TauCeti.complexOrientation, orientation_complexToReal_eq (finBasis ℂ E) b]
 
 end Module.Basis
+
+namespace TauCeti
+
+/-! ### The real family underlying a complex family -/
+
+section Family
+
+variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F] {m n : ℕ}
+
+/-- The real family `(v₀, I • v₀, v₁, I • v₁, …)` underlying a family `v` of `n` vectors of a
+complex vector space, in the order of `TauCeti.complexRealIndexEquiv`. For a complex basis `b` it is
+the real basis `b.complexToReal` in that order
+(`Module.Basis.coe_complexToReal_reindex_complexRealIndexEquiv`). -/
+noncomputable def complexToRealFamily (v : Fin n → E) : Fin (2 * n) → E := fun j ↦
+  Complex.basisOneI ((complexRealIndexEquiv n).symm j).2 • v ((complexRealIndexEquiv n).symm j).1
+
+/-- The entry of `TauCeti.complexToRealFamily v` at position `2 * i + k` is `v i` for `k = 0` and
+`I • v i` for `k = 1`. -/
+@[simp]
+theorem complexToRealFamily_complexRealIndexEquiv (v : Fin n → E) (i : Fin n) (k : Fin 2) :
+    complexToRealFamily v (complexRealIndexEquiv n (i, k)) = Complex.basisOneI k • v i := by
+  simp [complexToRealFamily]
+
+/-- The real family underlying a complex basis is its real basis `b.complexToReal`, listed as
+`(b₀, I • b₀, b₁, I • b₁, …)`. -/
+theorem _root_.Module.Basis.coe_complexToReal_reindex_complexRealIndexEquiv [Module ℝ E]
+    [IsScalarTower ℝ ℂ E] (b : Basis (Fin n) ℂ E) :
+    ⇑(b.complexToReal.reindex (complexRealIndexEquiv n)) = complexToRealFamily ⇑b := by
+  funext j
+  obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv n).surjective j
+  simp
+
+/-- Taking the underlying real family commutes with complex-linear maps. -/
+theorem complexToRealFamily_comp (f : E →ₗ[ℂ] F) (v : Fin n → E) :
+    complexToRealFamily (f ∘ v) = f ∘ complexToRealFamily v := by
+  funext j
+  simp [complexToRealFamily]
+
+/-- The real family underlying an appended family is the appended real families, up to the
+identification `2 * m + 2 * n = 2 * (m + n)` of index types. -/
+theorem append_complexToRealFamily (u : Fin m → E) (v : Fin n → E) :
+    Fin.append (complexToRealFamily u) (complexToRealFamily v) =
+      complexToRealFamily (Fin.append u v) ∘ Fin.cast (by ring) := by
+  funext j
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) j
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv m).surjective j
+    rw [Fin.append_left, Function.comp_apply,
+      show Fin.cast _ (Fin.castAdd (2 * n) (complexRealIndexEquiv m (i, k))) =
+        complexRealIndexEquiv (m + n) (Fin.castAdd n i, k) from Fin.ext (by simp)]
+    simp
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv n).surjective j
+    rw [Fin.append_right, Function.comp_apply,
+      show Fin.cast _ (Fin.natAdd (2 * m) (complexRealIndexEquiv n (i, k))) =
+        complexRealIndexEquiv (m + n) (Fin.natAdd m i, k) from Fin.ext (by simp; ring)]
+    simp
+
+end Family
+
+end TauCeti
 
 namespace LinearEquiv
 

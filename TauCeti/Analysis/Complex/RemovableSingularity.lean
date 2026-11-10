@@ -37,6 +37,9 @@ it, are shown to be analytic across it.
   functions.
 * `TauCeti.eqOn_conj_extension`: compatibility of continuous extensions with complex conjugation
   of the punctured coordinate, carried through the exceptional hyperplane by continuity.
+* `TauCeti.bddAbove_slice_of_local`, `TauCeti.extension_ne_zero_of_local`: the transverse slices
+  of a function locally equal off the hyperplane to a function continuous on it are bounded, and
+  an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
 
 ## References
 
@@ -84,6 +87,49 @@ lemma eqOn_conj_extension {E ι : Type*} [TopologicalSpace E] {U : Set E} {n a :
     (Complex.continuous_conj.comp_continuousOn ((hgc i).comp hκ hκT)) ?_
   intro b hb
   simp only [hge (σ i) hb, hge i (hκS hb), hσ i b hb, map_mul, map_pow, Complex.conj_conj]
+
+/-- If a function agrees off the hyperplane `z = c` with a function continuous at `(x, c)`, for
+each `x ∈ U`, then its transverse slices are bounded near `c` away from `c`. -/
+theorem bddAbove_slice_of_local {X : Type*} [TopologicalSpace X] {Y : Type*}
+    [SeminormedAddGroup Y] {q : X × ℂ → Y} {U : Set X} {c : ℂ}
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → Y,
+      ContinuousAt v (x, c) ∧ ∀ᶠ p in 𝓝 (x, c), p.2 ≠ c → q p = v p) :
+    ∀ x ∈ U, ∃ t ∈ 𝓝 c, BddAbove (norm ∘ (fun z ↦ q (x, z)) '' (t \ {c})) := by
+  intro x hx
+  obtain ⟨v, hv, heq⟩ := hlocalq x hx
+  have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 c) (𝓝 (x, c)) :=
+    continuous_const.prodMk continuous_id |>.tendsto c
+  obtain ⟨C, hC⟩ := (hv.tendsto.comp hline).norm.isBoundedUnder_le
+  refine ⟨{z | (z ≠ c → q (x, z) = v (x, z)) ∧ ‖v (x, z)‖ ≤ C},
+    (hline.eventually heq).and hC, C, ?_⟩
+  rintro _ ⟨z, ⟨hz, hz0⟩, rfl⟩
+  simpa only [comp_apply, hz.1 hz0] using hz.2
+
+/-- An extension `w` of `q` across the hyperplane `z = c`, continuous along it, agrees with a
+nonvanishing local witness also on the hyperplane, by uniqueness of the limit along a punctured
+slice. Thus no zero is introduced by extension. -/
+theorem extension_ne_zero_of_local {X : Type*} [TopologicalSpace X] {Y : Type*} [Zero Y]
+    [TopologicalSpace Y] [T2Space Y] {q w : X × ℂ → Y} {U : Set X} {s : Set ℂ} {c : ℂ}
+    (hs : IsOpen s) (hc : c ∈ s) (hw : ∀ x ∈ U, ContinuousAt w (x, c))
+    (hwq : EqOn w q (U ×ˢ (s \ {c})))
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → Y,
+      ContinuousAt v (x, c) ∧ v (x, c) ≠ 0 ∧
+        ∀ᶠ p in 𝓝 (x, c), p.2 ≠ c → q p = v p) :
+    ∀ x ∈ U, w (x, c) ≠ 0 := by
+  intro x hx
+  obtain ⟨v, hv, hv0, heq⟩ := hlocalq x hx
+  have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 c) (𝓝 (x, c)) :=
+    continuous_const.prodMk continuous_id |>.tendsto c
+  have hs0 : ∀ᶠ z in 𝓝[≠] c, z ∈ s := nhdsWithin_le_nhds (hs.mem_nhds hc)
+  have heq' : (fun z : ℂ ↦ w (x, z)) =ᶠ[𝓝[≠] c] fun z ↦ v (x, z) := by
+    filter_upwards [(hline.eventually heq).filter_mono nhdsWithin_le_nhds,
+      hs0, self_mem_nhdsWithin] with z hz hzs hz0
+    exact (hwq ⟨hx, hzs, hz0⟩).trans (hz hz0)
+  have hlim : Tendsto (fun z : ℂ ↦ w (x, z)) (𝓝[≠] c) (𝓝 (w (x, c))) :=
+    ((hw x hx).tendsto.comp hline).mono_left nhdsWithin_le_nhds
+  have hlim' : Tendsto (fun z : ℂ ↦ v (x, z)) (𝓝[≠] c) (𝓝 (v (x, c))) :=
+    (hv.tendsto.comp hline).mono_left nhdsWithin_le_nhds
+  exact (tendsto_nhds_unique (hlim.congr' heq') hlim') ▸ hv0
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V × ℂ → E} {U : Set V} {s : Set ℂ}

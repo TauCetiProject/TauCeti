@@ -37,6 +37,8 @@ is a cycle.
 ## Main definitions and results
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
+* `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
+  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
@@ -50,6 +52,8 @@ is a cycle.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
+* `isHomogeneous_linearCombination`: a map out of the free module sending each generator to the
+  matching degree is homogeneous of degree zero.
 * `rowFiniteSignedMap`: the Koszul-signed extension of images of the generators out of the
   free module, with `rowFiniteSignedMap_congr`, `LinearMap.map_rowFiniteSignedMap` and
   `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`, which gives it degree `-1` when each
@@ -57,6 +61,8 @@ is a cycle.
 * `linearCombination_eq_add_rowFiniteSignedMap` and
   `forall_linearCombination_eq_add_rowFiniteSignedMap_iff`: homotopies out of the free module
   are determined on generators.
+* `rowFiniteSignedMap_eq_of_forall_mem_support`: even homotopies out of the free module are
+  checked on the generators in the support of a vector.
 * `TwistingCocycle.toRowFinite` and
   `linearEquivFunOnFinite_rowFiniteTwistedDifferential`: recovery of the finite prototype
   through `Finsupp.linearEquivFunOnFinite`.
@@ -201,6 +207,23 @@ theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) 
     convert m.mem_graded x y using 2
     ring
 
+omit [GradedAlgebra 𝒜] in
+/-- A one-sided cocycle, with `m x y = 0` whenever `ind x ≤ ind y`, whose generator indices are
+bounded below, is **semi-free**: the relation `y ∈ (m.m x).support`, saying that `y` occurs in the
+row of `x`, is well-founded, since it strictly lowers the index. -/
+theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x) :
+    WellFounded fun y x ↦ y ∈ (m.m x).support :=
+  Subrelation.wf (r := InvImage (· < ·) fun x ↦ (ind x - p₀).toNat)
+    (fun {y x} hy ↦ by
+      have hlt : ind y < ind x := by
+        by_contra h
+        exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
+      have := hp₀ y
+      dsimp only [InvImage]
+      omega)
+    (InvImage.wf _ wellFounded_lt)
+
 end RowFiniteTwistingCocycle
 
 section SignedMap
@@ -274,6 +297,43 @@ theorem _root_.LinearMap.map_rowFiniteSignedMap {M' : Type*} [AddCommGroup M'] [
     [Module A M'] [IsScalarTower R A M'] (φ : M →ₗ[A] M') (h : P → M) (f : P →₀ A) :
     φ (rowFiniteSignedMap (𝒜 := 𝒜) h f) = rowFiniteSignedMap (𝒜 := 𝒜) (φ ∘ h) f := by
   simp [rowFiniteSignedMap_apply, Finsupp.sum, map_sum]
+
+/-- The signed extension is additive in the family of images. -/
+theorem rowFiniteSignedMap_add (h h' : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (h + h') =
+      rowFiniteSignedMap (𝒜 := 𝒜) h + rowFiniteSignedMap (𝒜 := 𝒜) h' := by
+  ext x a
+  simp [rowFiniteSignedMap_apply, smul_add]
+
+/-- The signed extension is compatible with negation of the family of images. -/
+theorem rowFiniteSignedMap_neg (h : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (-h) = -rowFiniteSignedMap (𝒜 := 𝒜) h := by
+  ext x a
+  simp [rowFiniteSignedMap_apply]
+
+/-- The signed extension is compatible with subtraction of the families of images. -/
+theorem rowFiniteSignedMap_sub (h h' : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (h - h') =
+      rowFiniteSignedMap (𝒜 := 𝒜) h - rowFiniteSignedMap (𝒜 := 𝒜) h' := by
+  rw [sub_eq_add_neg, rowFiniteSignedMap_add, rowFiniteSignedMap_neg, sub_eq_add_neg]
+
+/-- Substituting finite rows `ν` and then applying a signed extension is the signed extension of
+the images of the rows. -/
+theorem rowFiniteSignedMap_linearCombination {Q : Type uQ} (k : Q → M) (ν : P → Q →₀ A)
+    (f : P →₀ A) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (fun x ↦ rowFiniteSignedMap (𝒜 := 𝒜) k (ν x)) f =
+      rowFiniteSignedMap (𝒜 := 𝒜) k (Finsupp.linearCombination A ν f) := by
+  classical
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg]
+  | single x b =>
+    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | @homogeneous p b =>
+      rw [rowFiniteSignedMap_single _ x b.2, Finsupp.linearCombination_single,
+        rowFiniteSignedMap_smul k b.2]
+    | add b c hb hc => simp only [Finsupp.single_add, map_add, hb, hc]
 
 end SignedMap
 
@@ -370,30 +430,56 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower
   {ℳ : ℤ → Submodule R M} [SetLike.GradedSMul 𝒜 ℳ]
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
+/-- An `A`-linear map out of the free module, sending each generator `x` in the support of a
+vector of total degree `n` to degree `j - ind x`, sends that vector to degree `n + j`. -/
+theorem linearCombination_mem_of_forall_mem_support {g : P → M} {j n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hg : ∀ x ∈ f.support, g x ∈ ℳ (j - ind x)) :
+    Finsupp.linearCombination A g f ∈ ℳ (n + j) := by
+  classical
+  rw [Finsupp.linearCombination_apply, Finsupp.sum]
+  refine Submodule.sum_mem _ fun x hx ↦ ?_
+  have := SetLike.GradedSMul.smul_mem (hf x) (hg x hx)
+  convert this using 2
+  simp only [vadd_eq_add]
+  ring
+
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
 /-- An `A`-linear map out of the free module sends total degree `n` to degree `n` as soon as
 each generator `x` is sent to degree `-ind x`. -/
 theorem linearCombination_mem_of_mem_rowFiniteTotalGrading {g : P → M}
     (hg : ∀ x, g x ∈ ℳ (-ind x)) {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : Finsupp.linearCombination A g f ∈ ℳ n := by
+  simpa using linearCombination_mem_of_forall_mem_support (j := 0) hf fun x _ ↦ by
+    simpa using hg x
+
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
+/-- An `A`-linear map out of the free module sending each generator `x` to degree `-ind x` is
+homogeneous of degree zero. -/
+theorem isHomogeneous_linearCombination {g : P → M} (hg : ∀ x, g x ∈ ℳ (-ind x)) :
+    LinearMap.IsHomogeneous (Finsupp.linearCombination A g) (rowFiniteTotalGrading 𝒜 ind) ℳ 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦ by
+    simpa using linearCombination_mem_of_mem_rowFiniteTotalGrading hg hf
+
+/-- The signed extension of images of degree `j - ind x`, on the generators in the support of a
+vector of total degree `n`, sends that vector to degree `n + j`. -/
+theorem rowFiniteSignedMap_mem_of_forall_mem_support {h : P → M} {j n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hh : ∀ x ∈ f.support, h x ∈ ℳ (j - ind x)) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) := by
   classical
-  rw [Finsupp.linearCombination_apply, Finsupp.sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have := SetLike.GradedSMul.smul_mem (hf x) (hg x)
-  simpa only [vadd_eq_add, add_neg_cancel_right] using this
+  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
+  refine Submodule.sum_mem _ fun x hx ↦ ?_
+  rw [rowFiniteSignedMap_single h x (hf x)]
+  apply Submodule.smul_of_tower_mem
+  have := SetLike.GradedSMul.smul_mem (hf x) (hh x hx)
+  convert this using 2
+  simp only [vadd_eq_add]
+  ring
 
 /-- The signed extension of images of degree `j - ind x` raises total degree by `j`. -/
 theorem rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading {h : P → M} {j : ℤ}
     (hh : ∀ x, h x ∈ ℳ (j - ind x)) {n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) := by
-  classical
-  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  rw [rowFiniteSignedMap_single h x (hf x)]
-  apply Submodule.smul_of_tower_mem
-  have := SetLike.GradedSMul.smul_mem (hf x) (hh x)
-  convert this using 2
-  simp only [vadd_eq_add]
-  ring
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) :=
+  rowFiniteSignedMap_mem_of_forall_mem_support hf fun x _ ↦ hh x
 
 variable [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M} {h : IsDGAlgebra 𝒜 d}
 
@@ -509,6 +595,34 @@ theorem forall_linearCombination_eq_add_rowFiniteSignedMap_iff (hM : IsDGLeftMod
   refine ⟨fun H x ↦ ?_, linearCombination_eq_add_rowFiniteSignedMap hM m⟩
   simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
     h.map_one_eq_zero] using H (Finsupp.single x 1)
+
+/-- **Even homotopies out of the free module are checked generator by generator.** For `L` the
+`A`-linear extension of `l : P → M`, the map `dM ∘ L - L ∘ D` is graded left-linear of odd degree.
+So if it agrees on each generator in the support of `f` with the signed extension of
+`θ : P → M`, then it agrees with it on `f`. -/
+theorem rowFiniteSignedMap_eq_of_forall_mem_support (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) {l θ : P → M} {f : P →₀ A}
+    (hθ : ∀ x ∈ f.support, θ x = dM (l x) - Finsupp.linearCombination A l (m x)) :
+    rowFiniteSignedMap (𝒜 := 𝒜) θ f = dM (Finsupp.linearCombination A l f) -
+      Finsupp.linearCombination A l (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
+  classical
+  rw [← Finsupp.sum_single f, Finsupp.sum]
+  simp only [map_sum]
+  rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  generalize f x = c
+  induction c using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous q a =>
+    rw [rowFiniteSignedMap_single θ x a.2, rowFiniteTwistedDifferential_single m x a.2,
+      Finsupp.linearCombination_single, hM.leibniz a.2, hθ x hx]
+    simp only [map_add, LinearMap.map_smul_of_tower, map_smul, Finsupp.linearCombination_single,
+      smul_sub]
+    abel
+  | add a b ha hb =>
+    simp only [Finsupp.single_add, map_add]
+    rw [ha, hb]
+    abel
 
 end Maps
 

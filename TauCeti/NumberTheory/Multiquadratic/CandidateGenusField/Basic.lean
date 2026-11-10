@@ -163,9 +163,9 @@ candidate genus field *of `ℚ(√d)`*; it specializes the square-class containm
 `CandidateGenusField.Construction` to the chosen factorization and roots. -/
 theorem exists_mem_candidateGenusField_sq_eq {d : ℤ} (hd : Squarefree d) :
     ∃ x ∈ candidateGenusField hd, x ^ 2 = algebraMap ℚ ℂ ((d : ℤ) : ℚ) := by
-  obtain ⟨hs, _, hprod⟩ := genusPrimeDiscriminants_spec hd
+  obtain ⟨_, _, hprod⟩ := genusPrimeDiscriminants_spec hd
   simpa only [candidateGenusField] using
-    exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hs hprod (genusFieldRoot hd)
+    exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hprod (genusFieldRoot hd)
       (fun P => by simp)
 
 end TauCeti.Multiquadratic

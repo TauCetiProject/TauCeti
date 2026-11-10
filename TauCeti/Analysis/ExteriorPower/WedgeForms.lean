@@ -43,10 +43,10 @@ open Finset Module Set Set.powersetCard TauCeti
 
 namespace AbsoluteValue
 
-variable {R : Type*} [CommRing R] [Nontrivial R]
+variable {R : Type*} [CommRing R]
   {ι κ : Type*} [Fintype ι] [LinearOrder ι] [LinearOrder κ]
 
-omit [Nontrivial R] [Fintype ι] [LinearOrder ι] in
+omit [Fintype ι] [LinearOrder ι] in
 /-- Evertse's entrywise estimate passes to each permutation product in the wedge determinant,
 retaining the gain on the top block and the nonnegativity of the common bound. -/
 private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R ℝ)
