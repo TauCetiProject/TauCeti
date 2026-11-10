@@ -66,13 +66,16 @@ theorem isAlgebraic_re_im {α : Type*} {l : Filter α} {R : Type*} [CommRing R] 
     rw [← Germ.coe_add f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]
-    ring
+    rw [Complex.re_eq_add_conj]
+    simp [div_eq_mul_inv]
   · convert (hf.sub hconj).mul (hc (-(Complex.I / 2))) using 1
     rw [← Germ.coe_sub f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    simp [Complex.ext_iff, Complex.mul_re, Complex.mul_im]
+    rw [Complex.im_eq_sub_conj]
+    simp
+    field_simp
+    rw [Complex.I_sq]
     ring
 
 end Filter.Germ

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.RingTheory.Algebraic.Defs
+public import TauCeti.Order.Filter.Germ.Polynomial
 
 /-!
 # Polynomial relations on germs of functions of several variables
@@ -29,8 +30,6 @@ elements.
 
 * `Filter.Germ.mvPolynomialAlgebra`: coordinate polynomials acting on germs as polynomial functions.
 * `Filter.Germ.aeval_coe`: evaluating a polynomial relation at the germ of a function.
-* `Filter.Germ.eval₂_coeRingHom_comp_coe`: the same for coefficients acting through an arbitrary
-  ring homomorphism into functions.
 * `Filter.Germ.isAlgebraic_coe_iff`: algebraic germs are germs of functions satisfying a nonzero
   polynomial relation.
 -/
@@ -59,21 +58,6 @@ theorem mvPolynomialAlgebra_algebraMap_apply [CommSemiring R] (l : Filter (σ �
       ((fun y ↦ MvPolynomial.eval y p : (σ → R) → R) : Germ l R) := by
   rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, coe_coeRingHom]
   congr 1 with y
-
-/-- Evaluating a polynomial with coefficients in `S` at the germ of `f : α → T`, where the
-coefficients act on germs through `u : S →+* (α → T)` followed by the coercion to germs, gives the
-germ of the pointwise evaluations: at `y`, the coefficients are evaluated by `u · y`. -/
-theorem eval₂_coeRingHom_comp_coe {α S T : Type*} [CommSemiring S] [CommSemiring T]
-    (l : Filter α) (u : S →+* (α → T)) (P : S[X]) (f : α → T) :
-    P.eval₂ ((coeRingHom l).comp u) (f : Germ l T) =
-      ((fun y ↦ (P.map ((Pi.evalRingHom (fun _ : α ↦ T) y).comp u)).eval (f y) : α → T) :
-        Germ l T) := by
-  have heval : P.eval₂ u f =
-      (fun y ↦ (P.map ((Pi.evalRingHom (fun _ : α ↦ T) y).comp u)).eval (f y)) := by
-    funext y
-    rw [eval_map]
-    exact hom_eval₂ P u (Pi.evalRingHom (fun _ : α ↦ T) y) f
-  rw [← heval, ← coe_coeRingHom, hom_eval₂]
 
 /-- Evaluating `P : (MvPolynomial σ R)[X]` at the germ of `f` gives the germ of
 `y ↦ P (y, f y)`, where `P (y, t)` is `(P.map (MvPolynomial.eval y)).eval t`. -/
