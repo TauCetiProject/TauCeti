@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Basic
-public import Mathlib.RingTheory.Coalgebra.Convolution
+public import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # The convolution algebra acts on a comodule
@@ -24,37 +24,6 @@ homomorphism to counit-valued derivations gives the differentiated action of an 
 public section
 
 open WithConv TensorProduct
-
-namespace LinearMap
-
-variable {R C : Type*} [CommSemiring R]
-  [AddCommMonoid C] [Module R C] [Coalgebra R C]
-
-/-- The unit of the convolution dual is the coalgebra counit. -/
-@[simp]
-theorem ofConv_one_eq_counit :
-    (1 : WithConv (Module.Dual R C)).ofConv = Coalgebra.counit := by
-  simp [convOne_def]
-
-/-- Multiplication in the convolution dual is successive contraction of comultiplication. -/
-theorem convMul_eq_comp_tensorComponent (f g : WithConv (Module.Dual R C)) :
-    (f * g).ofConv = f.ofConv ∘ₗ tensorComponent g.ofConv ∘ₗ Coalgebra.comul := by
-  have hp : f.ofConv ∘ₗ tensorComponent g.ofConv =
-      LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
-    ext c d
-    simp [mul_comm]
-  rw [← comp_assoc, hp, convMul_def, comp_assoc]
-
-/-- Successive contractions of a comultiplication on the right tensor factor are
-contraction by the convolution product. -/
-theorem tensorComponent_lTensor_comul {M : Type*} [AddCommMonoid M] [Module R M]
-    (f g : WithConv (Module.Dual R C)) (x : M ⊗[R] C) :
-    tensorComponent f.ofConv
-        ((tensorComponent g.ofConv).lTensor M (Coalgebra.comul.lTensor M x)) =
-      tensorComponent (f * g).ofConv x := by
-  simp [lTensor_def, convMul_eq_comp_tensorComponent, comp_assoc]
-
-end LinearMap
 
 namespace TauCeti.Comodule
 

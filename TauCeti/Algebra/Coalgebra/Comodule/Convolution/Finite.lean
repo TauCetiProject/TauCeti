@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
-public import Mathlib.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basis
-import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Reconstructing comodules from actions of a finite coalgebra's dual
@@ -40,29 +38,18 @@ variable {R C M : Type*} [CommSemiring R]
 
 variable [Module.Projective R C] [Module.Finite R C]
 
-private def actionCoactEquiv : M ⊗[R] C ≃ₗ[R] (Module.Dual R C →ₗ[R] M) :=
-  TensorProduct.comm R M C ≪≫ₗ
-    TensorProduct.congr (Module.evalEquiv R C) (.refl R M) ≪≫ₗ
-    dualTensorHomEquiv R (Module.Dual R C) M
-
-private theorem actionCoactEquiv_apply (x : M ⊗[R] C) (φ : Module.Dual R C) :
-    actionCoactEquiv x φ = LinearMap.tensorComponent φ x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul m c => simp [actionCoactEquiv]
-  | add x y hx hy => simp [hx, hy]
-
 variable [Coalgebra R C]
 
 private def actionCoact
     (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) : M →ₗ[R] M ⊗[R] C :=
-  actionCoactEquiv.symm.toLinearMap ∘ₗ
+  LinearMap.tensorComponentEquiv.symm.toLinearMap ∘ₗ
     (ρ.toLinearMap ∘ₗ (WithConv.linearEquiv R (Module.Dual R C)).symm.toLinearMap).flip
 
 private theorem tensorComponent_actionCoact
     (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M)
     (φ : Module.Dual R C) (m : M) :
     LinearMap.tensorComponent φ (actionCoact ρ m) = ρ (toConv φ) m := by
-  rw [← actionCoactEquiv_apply]
+  rw [← LinearMap.tensorComponentEquiv_apply]
   simp only [actionCoact, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply, LinearMap.flip_apply, AlgHom.toLinearMap_apply,
     WithConv.symm_linearEquiv_apply]
