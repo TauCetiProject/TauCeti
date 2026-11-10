@@ -93,8 +93,8 @@ theorem e_mul_f_pow (r : ℕ) :
       hk • (f q ^ (r + 1) * k q) - hkInv • (f q ^ (r + 1) * kInv q)
 
 /-- Commuting `E` past a positive power of `F` leaves a correction `F ^ n (α K + β K⁻¹)` for some
-`α β : ℂ`, for every `q`, including `q = ±1`. The statement does not mention `(q - q⁻¹)⁻¹`; the
-coefficients chosen in the proof do contain it, which is the junk value `0` at `q = ±1`. -/
+`α β : ℂ`, for every `q`, including `q = ±1`, where the correction vanishes and one may take
+`α = β = 0`. -/
 theorem exists_e_mul_f_pow_succ (n : ℕ) : ∃ α β : ℂ,
     e q * f q ^ (n + 1) = f q ^ (n + 1) * e q + f q ^ n * (α • k q + β • kInv q) := by
   refine ⟨quantumInteger q (n + 1) * (q - q⁻¹)⁻¹ * q⁻¹ ^ n,
