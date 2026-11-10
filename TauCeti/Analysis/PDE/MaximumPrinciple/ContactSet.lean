@@ -42,6 +42,9 @@ elliptic operator applied to it, in
 * `TauCeti.PDE.upperContactSet`: the upper contact set of `u` on `Ω`.
 * `TauCeti.PDE.norm_le_of_forall_le_add_inner`: supporting slopes of a bounded function at a
   point with a ball around it are bounded.
+* `TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`: a supporting slope small enough for the
+  affine function to stay above `m` on `Ω` is at most the height of `u` above `m` divided by the
+  distance to the complement of `Ω`.
 * `TauCeti.PDE.mem_upperContactSet_of_frequently`: upper contact sets are upper semicontinuous
   along pointwise convergent sequences of functions uniformly bounded on growing sets `Vₖ`,
   which is how the estimate passes from smooth approximations to their limit.
@@ -56,6 +59,10 @@ elliptic operator applied to it, in
 * `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
   at most the integral of `|det D²u|` over the upper contact set.
 * `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`: the two combined.
+* `TauCeti.PDE.ball_subset_image_gradient_upperContactSet_inter`,
+  `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator_inter`: the same with the contact
+  set restricted to the points where `‖∇u‖ < (u x - m) / diam Ω`, on which the supporting affine
+  functions stay above `m`.
 
 ## References
 
@@ -113,6 +120,46 @@ theorem norm_le_of_forall_le_add_inner {r M : ℝ} (hr : 0 < r) (hball : ball x 
   have h := hinner ▸ hp y hy
   have h1 := le_abs_self (u x) |>.trans (hM x (hball (mem_ball_self hr)))
   have h2 := neg_abs_le (u y) |>.trans' (neg_le_neg (hM y hy))
+  linarith
+
+/-- **Supporting slopes below the height of `u`.** Let `Ω` be bounded and let an affine function
+with slope `p` touch `u` from above on `Ω` at `y`. If `‖p‖ diam Ω ≤ u x₀ - m` for some `x₀ ∈ Ω`,
+then the affine function is at least `m` on `Ω`, so its slope is at most the height of `u y`
+above `m` divided by the distance to the complement: `‖p‖ r ≤ u y - m` whenever
+`ball y r ⊆ Ω`. -/
+theorem norm_mul_le_sub_of_forall_le_add_inner {r m : ℝ} {x₀ : E} (hΩb : Bornology.IsBounded Ω)
+    (hx₀ : x₀ ∈ Ω) (hp : ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫) (hpd : ‖p‖ * diam Ω ≤ u x₀ - m)
+    (hr : 0 < r) (hball : ball y r ⊆ Ω) : ‖p‖ * r ≤ u y - m := by
+  -- The affine function through `(y, u y)` with slope `p` is at least `m` on `Ω`.
+  have hℓ (z : E) (hz : z ∈ Ω) : m ≤ u y + ⟪p, z - y⟫ := by
+    have hd : ‖z - x₀‖ ≤ diam Ω := by
+      rw [← dist_eq_norm]
+      exact dist_le_diam_of_mem hΩb hz hx₀
+    have hzx := neg_le_of_abs_le ((abs_real_inner_le_norm p (z - x₀)).trans
+      (mul_le_mul_of_nonneg_left hd (norm_nonneg p)))
+    have hsplit : ⟪p, z - y⟫ = ⟪p, x₀ - y⟫ + ⟪p, z - x₀⟫ := by
+      rw [← inner_add_right, sub_add_sub_cancel']
+    linarith [hp x₀ hx₀]
+  have hy := hℓ y (hball (mem_ball_self hr))
+  rw [sub_self, inner_zero_right, add_zero] at hy
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simpa using hy
+  have hnp : 0 < ‖p‖ := norm_pos_iff.2 hp0
+  -- Test the affine function at `y - t (p / ‖p‖)` for `t < r`.
+  rw [mul_comm, ← le_div_iff₀ hnp]
+  refine le_of_forall_lt_imp_le_of_dense fun t ht => ?_
+  rcases lt_or_ge t 0 with ht0 | ht0
+  · exact ht0.le.trans (div_nonneg (sub_nonneg.2 hy) hnp.le)
+  set z := y - (t / ‖p‖) • p
+  have hzy : z - y = -((t / ‖p‖) • p) := by simp [z]
+  have hz : z ∈ Ω := hball <| by
+    rw [mem_ball, dist_eq_norm, hzy, norm_neg, norm_smul, Real.norm_of_nonneg (by positivity),
+      div_mul_cancel₀ _ hnp.ne']
+    exact ht
+  have h := hℓ z hz
+  rw [hzy, inner_neg_right, real_inner_smul_right, real_inner_self_eq_norm_sq] at h
+  rw [le_div_iff₀ hnp]
+  have : t / ‖p‖ * ‖p‖ ^ 2 = t * ‖p‖ := by field_simp
   linarith
 
 /-- **Upper semicontinuity of upper contact sets.** Let `uₖ` converge pointwise to `u` on `Ω`, and
@@ -219,6 +266,20 @@ theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.I
   exact ⟨y, ⟨hyΩ, p, hsupp⟩, (eq_gradient_of_forall_le (hΩ.mem_nhds hyΩ)
     (hdiff.differentiableAt (hΩ.mem_nhds hyΩ)) hsupp).symm⟩
 
+/-- **The gradient image of the contact set where the gradient is small.** Under the hypotheses
+of `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`, with `r = (u x - m) / diam Ω`, every
+vector of norm less than `r` is the gradient of `u` at a point of the upper contact set where the
+gradient has norm less than `r`. On that part of the contact set the supporting affine functions
+are at least `m` on `Ω` (`TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`). -/
+theorem ball_subset_image_gradient_upperContactSet_inter {m : ℝ} (hΩb : Bornology.IsBounded Ω)
+    (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω)) (hdiff : DifferentiableOn ℝ u Ω)
+    (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
+    ball 0 ((u x - m) / diam Ω) ⊆
+      ∇ u '' (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω}) := by
+  intro p hp
+  obtain ⟨y, hy, rfl⟩ := ball_subset_image_gradient_upperContactSet hΩb hΩ hcont hdiff hm hx hp
+  exact ⟨y, ⟨hy, mem_ball_zero_iff.1 hp⟩, rfl⟩
+
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- The measure of the gradient image of the upper contact set of a function `C²` on an open set
@@ -243,6 +304,27 @@ theorem addHaar_ball_le_lintegral_abs_det_hessianOperator {m : ℝ}
   (measure_mono (ball_subset_image_gradient_upperContactSet hΩb hΩ hcont
     (hu.differentiableOn two_ne_zero) hm hx)).trans
     (addHaar_image_gradient_upperContactSet_le μ hΩ hu)
+
+/-- **The Aleksandrov measure estimate where the gradient is small.** Under the
+hypotheses of `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`, with
+`r = (u x - m) / diam Ω`, the integral may be restricted to the points of the upper contact set
+where `‖∇u‖ < r`:
+`μ (ball 0 r) ≤ ∫⁻ y in upperContactSet u Ω ∩ {‖∇u‖ < r}, |det D²u(y)| ∂μ`. -/
+theorem addHaar_ball_le_lintegral_abs_det_hessianOperator_inter {m : ℝ}
+    (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
+    (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
+    μ (ball 0 ((u x - m) / diam Ω)) ≤
+      ∫⁻ y in upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω},
+        ENNReal.ofReal |(hessianOperator u y).det| ∂μ := by
+  have hmeas : MeasurableSet (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω}) :=
+    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))).inter
+      (measurableSet_lt (((InnerProductSpace.toDual ℝ E).symm.continuous.measurable.comp
+        (measurable_fderiv ℝ u)).norm) measurable_const)
+  refine (measure_mono (ball_subset_image_gradient_upperContactSet_inter hΩb hΩ hcont
+    (hu.differentiableOn two_ne_zero) hm hx)).trans
+    (addHaar_image_le_lintegral_abs_det_fderiv μ hmeas fun y hy => ?_)
+  exact (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy.1))).hasFDerivAt_gradient
+    |>.hasFDerivWithinAt
 
 end PDE
 
