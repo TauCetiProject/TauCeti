@@ -11,17 +11,18 @@ public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 import Mathlib.RingTheory.Idempotents
 
 /-!
-# The primitive idempotents of the strands algebra and of the algebra of a matching
+# The primitive idempotents of the strands algebra and of the matched subalgebra
 
 Every strand of a strand diagram goes upwards, so the only way a concatenation of diagrams can
 consist of horizontal strands is for each factor to consist of horizontal strands. This file
 turns that observation into the structure of the idempotents of the strands algebra `A(n)` of
-Lipshitz, Ozsváth and Thurston and of its matched subalgebra `A(Z)`.
+Lipshitz, Ozsváth and Thurston and of its matched subalgebra
+`TauCeti.StrandsAlgebra.matchedSubalgebra`.
 
-The *length* of a diagram `φ` (`TauCeti.StrandDiagram.length`) is the total distance its strands
-climb, measured by the positions of their end points in the order of `α`. It is additive under
-concatenation, nonnegative, bounded by `(#α)²`, and it vanishes exactly on the identity diagrams
-`idOn S`. Consequently:
+The *length* of a diagram `φ` (`TauCeti.StrandDiagram.length`, defined with the grading) is the
+total distance its strands climb, measured by the positions of their end points in the order of
+`α`. It is additive under concatenation, nonnegative, bounded by `(#α)²`, and it vanishes exactly
+on the identity diagrams `idOn S`. Consequently:
 
 * the *horizontal part* (`TauCeti.StrandsAlgebra.horizontalPart`), the projection onto the span
   of the idempotents `I(S)`, is an algebra endomorphism, and it is the sum
@@ -42,31 +43,27 @@ the sets `S` containing exactly one point over each element of `s`. An element o
 subalgebra has the same coefficient on all of these `I(S)`, because any two such sets are related
 by moving horizontal strands between matched points one at a time. The same argument then shows
 that the idempotents of the matched subalgebra lying in the corner of `I(s)` are the `c I(s)`
-(`TauCeti.StrandsAlgebra.eq_smul_matchedIdem_of_isIdempotentElem`); for coefficients without
-nontrivial idempotents they are `0` and `I(s)`
-(`TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`). So each nonzero `I(s)`
-is a primitive idempotent of the algebra `A(Z)` of a pointed matched circle, although for a matched
-pair with two points `I(s)` splits in `A(n)` as the sum of the two orthogonal `I(S)`.
+(`TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem`); for coefficients
+without nontrivial idempotents they are `0` and `I(s)`
+(`TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`). This is the corner
+condition that makes each nonzero `I(s)` primitive once the matched subalgebra is given its unit,
+although for a matched pair with two points `I(s)` splits in `A(n)` as the sum of the two
+orthogonal `I(S)`.
 
 ## Main definitions
 
-* `TauCeti.StrandDiagram.length`: the total length of the strands of a diagram.
 * `TauCeti.StrandsAlgebra.horizontalPart`: the projection onto the span of the `I(S)`, as an
   algebra endomorphism.
 
 ## Main results
 
-* `TauCeti.StrandDiagram.length_eq_zero_iff`: a diagram has length zero exactly when it is an
-  identity diagram.
-* `TauCeti.StrandDiagram.trans_eq_idOn_source_iff`: a concatenation is an identity diagram exactly
-  when both factors are.
 * `TauCeti.StrandsAlgebra.horizontalPart_eq_sum`: the horizontal part is `∑ₛ x_{I(S)} I(S)`.
 * `TauCeti.StrandsAlgebra.pow_eq_zero_of_horizontalPart_eq_zero`: elements with zero horizontal
   part are nilpotent.
 * `TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem` and
   `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_idem`: the idempotents of the corner of `I(S)` in
   `A(n)`, and primitivity of `I(S)`.
-* `TauCeti.StrandsAlgebra.eq_smul_matchedIdem_of_isIdempotentElem` and
+* `TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem` and
   `TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`: the idempotents of the
   corner of `I(s)` in the matched subalgebra.
 
@@ -84,109 +81,6 @@ noncomputable section
 open Finset
 
 namespace TauCeti
-
-namespace StrandDiagram
-
-variable {α : Type*} [LinearOrder α] [Fintype α]
-
-/-- The total length of the strands of a diagram `φ : S → T`: the sum, over its strands, of the
-number of points of `α` that the strand climbs, `∑_{x ∈ S} (r (φ x) - r x)` where `r x` is the
-number of points below `x` (`TauCeti.StrandDiagram.length_eq_sum`). It is written through the
-boundary of the class of `φ`, so that it is visibly additive under concatenation. -/
-def length (φ : StrandDiagram α) : ℤ :=
-  ∑ x, (#{y | y < x} : ℤ) * φ.boundary x
-
-theorem length_def (φ : StrandDiagram α) :
-    φ.length = ∑ x, (#{y | y < x} : ℤ) * φ.boundary x :=
-  (rfl)
-
-/-- A strand starts at or below its end point, so fewer points lie below its start. -/
-private theorem card_filter_lt_le_card_filter_lt_endpoint {φ : StrandDiagram α} {x : α}
-    (hx : x ∈ φ.source) : #{y | y < x} ≤ #{y | y < φ.endpoint x} :=
-  card_le_card fun y hy ↦ by
-    simp only [mem_filter, mem_univ, true_and] at hy ⊢
-    exact hy.trans_le (φ.le_of_mem (endpoint_mem hx))
-
-/-- A strand with as many points below its end point as below its start is horizontal. -/
-private theorem endpoint_eq_of_card_filter_lt_eq {φ : StrandDiagram α} {x : α}
-    (hx : x ∈ φ.source) (h : #{y | y < φ.endpoint x} = #{y | y < x}) : φ.endpoint x = x := by
-  by_contra hne
-  have hlt : x < φ.endpoint x := (φ.le_of_mem (endpoint_mem hx)).lt_of_ne (Ne.symm hne)
-  refine h.not_gt (card_lt_card ⟨fun y hy ↦ ?_, fun hsub ↦ ?_⟩)
-  · simp only [mem_filter, mem_univ, true_and] at hy ⊢
-    exact hy.trans hlt
-  · have hxx := hsub (by simpa using hlt)
-    simp at hxx
-
-/-- The length of a diagram is the sum, over its strands, of the number of points the strand
-climbs. -/
-theorem length_eq_sum (φ : StrandDiagram α) :
-    φ.length = ∑ x ∈ φ.source, ((#{y | y < φ.endpoint x} : ℤ) - #{y | y < x}) := by
-  have himage : ∑ x ∈ φ.target, (#{y | y < x} : ℤ) =
-      ∑ x ∈ φ.source, (#{y | y < φ.endpoint x} : ℤ) := by
-    rw [target_eq_image, sum_image φ.injOn_getD]
-    simp only [endpoint_def]
-  simp only [length_def, boundary_apply, mul_sub, mul_ite, mul_one, mul_zero, sum_sub_distrib,
-    sum_ite_mem, univ_inter, himage]
-
-/-- The length of a diagram is nonnegative: every strand goes upwards. -/
-theorem length_nonneg (φ : StrandDiagram α) : 0 ≤ φ.length := by
-  rw [length_eq_sum]
-  exact sum_nonneg fun x hx ↦ sub_nonneg.2 (by
-    exact_mod_cast card_filter_lt_le_card_filter_lt_endpoint hx)
-
-@[simp]
-theorem length_idOn (s : Finset α) : (idOn s).length = 0 := by
-  simp [length_def]
-
-/-- **A diagram has length zero exactly when it is an identity diagram.** -/
-theorem length_eq_zero_iff {φ : StrandDiagram α} : φ.length = 0 ↔ φ = idOn φ.source := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ length_idOn _⟩
-  rw [length_eq_sum] at h
-  have hterm := (sum_eq_zero_iff_of_nonneg fun x hx ↦ sub_nonneg.2 (by
-    exact_mod_cast card_filter_lt_le_card_filter_lt_endpoint hx)).1 h
-  ext i j
-  by_cases hi : i ∈ φ.source
-  · have hend : φ.endpoint i = i :=
-      endpoint_eq_of_card_filter_lt_eq hi (by exact_mod_cast sub_eq_zero.1 (hterm i hi))
-    have hmem := endpoint_mem hi
-    rw [hend] at hmem
-    rw [idOn_apply, ite_eq_left hi, Option.mem_def.1 hmem]
-  · rw [apply_eq_none_of_notMem_source hi, idOn_apply, ite_eq_right hi]
-
-/-- A diagram that is not an identity diagram has positive length. -/
-theorem length_pos {φ : StrandDiagram α} (h : φ ≠ idOn φ.source) : 0 < φ.length :=
-  φ.length_nonneg.lt_of_ne fun h' ↦ h (length_eq_zero_iff.1 h'.symm)
-
-/-- The length of a diagram is at most the square of the number of points. -/
-theorem length_le (φ : StrandDiagram α) : φ.length ≤ Fintype.card α ^ 2 := by
-  have hterm (x : α) : (#{y | y < x} : ℤ) * φ.boundary x ≤ Fintype.card α := by
-    have hb : φ.boundary x ≤ 1 := by
-      rw [boundary_apply]
-      split_ifs <;> norm_num
-    have hr : (#{y | y < x} : ℤ) ≤ Fintype.card α := by
-      exact_mod_cast card_le_univ _
-    calc (#{y | y < x} : ℤ) * φ.boundary x ≤ #{y | y < x} * 1 :=
-          mul_le_mul_of_nonneg_left hb (by positivity)
-      _ ≤ Fintype.card α := by rwa [mul_one]
-  calc φ.length ≤ ∑ _x : α, (Fintype.card α : ℤ) := sum_le_sum fun x _ ↦ hterm x
-    _ = Fintype.card α ^ 2 := by simp [sq]
-
-/-- **Lengths add under concatenation.** -/
-theorem length_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
-    (φ.trans ψ).length = φ.length + ψ.length := by
-  simp only [length_def, boundary_trans_of_target_eq h, Pi.add_apply, mul_add, sum_add_distrib]
-
-/-- **A concatenation is an identity diagram exactly when both factors are.** -/
-theorem trans_eq_idOn_source_iff {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
-    φ.trans ψ = idOn (φ.trans ψ).source ↔ φ = idOn φ.source ∧ ψ = idOn ψ.source := by
-  rw [← length_eq_zero_iff, ← length_eq_zero_iff, ← length_eq_zero_iff,
-    length_trans_of_target_eq h]
-  have := φ.length_nonneg
-  have := ψ.length_nonneg
-  omega
-
-end StrandDiagram
 
 namespace StrandsAlgebra
 
@@ -282,11 +176,24 @@ theorem horizontalPart_eq_sum (x : StrandsAlgebra R α) :
         (fun h ↦ absurd (mem_univ _) h)]
     split_ifs <;> simp
 
+/-- The horizontal part is a projection. -/
+@[simp]
+theorem horizontalPart_horizontalPart (x : StrandsAlgebra R α) :
+    horizontalPart R α (horizontalPart R α x) = horizontalPart R α x := by
+  rw [horizontalPart_eq_sum x, map_sum]
+  simp only [map_smul, horizontalPart_idem]
+
 /-- The horizontal part of `I(S) x` is `x_{I(S)} I(S)`. -/
 theorem idem_mul_horizontalPart (s : Finset α) (x : StrandsAlgebra R α) :
     idem s * horizontalPart R α x = (basis R α).repr x (idOn s) • idem s := by
   simp only [horizontalPart_eq_sum, mul_sum, mul_smul_comm, idem_mul_idem, smul_ite, smul_zero,
     sum_ite_eq, mem_univ, ↓reduceIte]
+
+/-- The horizontal part fixes the idempotents `I(s)` of the matched subalgebra. -/
+@[simp]
+theorem horizontalPart_matchedIdem {β : Type*} [DecidableEq β] (M : α → β) (s : Finset β) :
+    horizontalPart R α (matchedIdem R M s) = matchedIdem R M s := by
+  simp only [matchedIdem_def, map_sum, horizontalPart_idem]
 
 /-! ### The nilpotence of the kernel of the horizontal part -/
 
@@ -367,18 +274,34 @@ section CommRing
 variable {R α : Type*} [CommRing R] [LinearOrder α] [Fintype α]
 
 /-- An idempotent `e` in the corner of an idempotent `i` fixed by the horizontal part, whose own
-horizontal part is `c i` for an idempotent scalar `c`, is `c i`: the difference `e - c i` has zero
-horizontal part, so it is nilpotent, and `e` commutes with `c i`. -/
+horizontal part is `c i`, is `c i`, and `c` is idempotent when `i` has coefficient `1` on some
+diagram: the difference `e - c i` has zero horizontal part, so it is nilpotent, and `e` commutes
+with `c i`. -/
 private theorem eq_smul_of_horizontalPart_eq_smul {e i : StrandsAlgebra R α} {c : R}
-    (he : IsIdempotentElem e) (hi : IsIdempotentElem i) (hih : horizontalPart R α i = i)
-    (hl : i * e = e) (hr : e * i = e) (hc : IsIdempotentElem c)
-    (hhe : horizontalPart R α e = c • i) : e = c • i := by
+    {φ : StrandDiagram α} (he : IsIdempotentElem e) (hi : IsIdempotentElem i)
+    (hih : horizontalPart R α i = i) (hiφ : (basis R α).repr i φ = 1)
+    (hl : i * e = e) (hr : e * i = e) (hhe : horizontalPart R α e = c • i) :
+    IsIdempotentElem c ∧ e = c • i := by
+  have hc : IsIdempotentElem c := by
+    have h := congrArg (fun y ↦ (basis R α).repr y φ) (he.map (horizontalPart R α)).eq
+    simp only [hhe, smul_mul_smul_comm, hi.eq, map_smul, Finsupp.smul_apply, hiφ,
+      smul_eq_mul, mul_one] at h
+    exact h
   have hci : IsIdempotentElem (c • i) := by
     rw [IsIdempotentElem, smul_mul_smul_comm, hc.eq, hi.eq]
-  refine eq_of_isNilpotent_sub_of_isIdempotentElem_of_commute he hci
-    (isNilpotent_of_horizontalPart_eq_zero ?_) ?_
+  refine ⟨hc, eq_of_isNilpotent_sub_of_isIdempotentElem_of_commute he hci
+    (isNilpotent_of_horizontalPart_eq_zero ?_) ?_⟩
   · rw [map_sub, map_smul, hhe, hih, sub_self]
   · rw [Commute, SemiconjBy, mul_smul_comm, hr, smul_mul_assoc, hl]
+
+/-- Over a coefficient ring without idempotents besides `0` and `1`, a multiple of an element by
+an idempotent scalar is `0` or the element itself. -/
+private theorem smul_eq_zero_or_eq_of_isIdempotentElem (hR : IsPrimitiveIdempotent (1 : R))
+    {c : R} (hc : IsIdempotentElem c) (x : StrandsAlgebra R α) : c • x = 0 ∨ c • x = x := by
+  have := hR.nontrivial
+  rcases isPrimitiveIdempotent_one_iff.1 hR c hc with h | h
+  · exact Or.inl (by rw [h, zero_smul])
+  · exact Or.inr (by rw [h, one_smul])
 
 /-- **The idempotents of the corner ring `I(S) A(n) I(S)`** are the multiples `c I(S)` by
 idempotents `c` of the coefficient ring; `c` is the coefficient of the idempotent on `I(S)`. -/
@@ -390,13 +313,9 @@ theorem eq_smul_idem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : Finset �
   have hhe : horizontalPart R α e = c • idem s := by
     conv_lhs => rw [← hl, map_mul, horizontalPart_idem]
     exact idem_mul_horizontalPart s e
-  have hc : IsIdempotentElem c := by
-    have h := congrArg (fun y ↦ (basis R α).repr y (idOn s))
-      ((he.map (horizontalPart R α)).eq)
-    simp only [hhe, smul_mul_smul_comm, (isIdempotentElem_idem s).eq] at h
-    exact (by simpa [idem_def, ← basis_apply, Module.Basis.repr_self_apply] using h : c * c = c)
-  exact ⟨hc, eq_smul_of_horizontalPart_eq_smul he (isIdempotentElem_idem s)
-    (horizontalPart_idem s) hl hr hc hhe⟩
+  refine eq_smul_of_horizontalPart_eq_smul (φ := idOn s) he (isIdempotentElem_idem s)
+    (horizontalPart_idem s) ?_ hl hr hhe
+  rw [idem_def, ← basis_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
 
 /-- **The idempotents `I(S)` of the strands algebra are primitive** when the coefficient ring has
 no idempotents besides `0` and `1`, for instance over a field such as `𝔽₂`. -/
@@ -406,9 +325,8 @@ theorem isPrimitiveIdempotent_idem (hR : IsPrimitiveIdempotent (1 : R)) (s : Fin
   refine isPrimitiveIdempotent_of_eq_zero_or_eq (isIdempotentElem_idem s)
     (by rw [idem_def, ← basis_apply]; exact (basis R α).ne_zero _) fun f hf hl hr ↦ ?_
   obtain ⟨hc, hf'⟩ := eq_smul_idem_of_isIdempotentElem hf hl hr
-  rcases (isPrimitiveIdempotent_one_iff.1 hR) _ hc with h | h
-  · exact Or.inl (by rw [hf', h, zero_smul])
-  · exact Or.inr (by rw [hf', h, one_smul])
+  rw [hf']
+  exact smul_eq_zero_or_eq_of_isIdempotentElem hR hc _
 
 /-! ### Idempotents of the matched subalgebra -/
 
@@ -463,19 +381,17 @@ private theorem repr_idOn_eq_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
 
 /-- **The idempotents of the matched subalgebra in the corner of `I(s)`** are the multiples
 `c I(s)` by idempotents `c` of the coefficient ring. -/
-theorem eq_smul_matchedIdem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : Finset β}
+theorem exists_isIdempotentElem_and_eq_smul_matchedIdem {e : StrandsAlgebra R α} {s : Finset β}
     (hm : e ∈ matchedSubalgebra R M) (he : IsIdempotentElem e)
     (hl : matchedIdem R M s * e = e) (hr : e * matchedIdem R M s = e) :
     ∃ c : R, IsIdempotentElem c ∧ e = c • matchedIdem R M s := by
   by_cases hsec : ∃ S : Finset α, S.image M = s ∧ #S = #s
   · obtain ⟨S₀, hS₀, hcard₀⟩ := hsec
     set c := (basis R α).repr e (idOn S₀)
-    have hhm : horizontalPart R α (matchedIdem R M s) = matchedIdem R M s := by
-      simp only [matchedIdem_def, map_sum, horizontalPart_idem]
     -- The horizontal part of `e` is that of `I(s) e`, and all its coefficients on the sets over
     -- `s` agree with `c`.
     have hhe : horizontalPart R α e = c • matchedIdem R M s := by
-      conv_lhs => rw [← hl, map_mul, hhm, matchedIdem_def, sum_mul]
+      conv_lhs => rw [← hl, map_mul, horizontalPart_matchedIdem, matchedIdem_def, sum_mul]
       rw [matchedIdem_def, smul_sum]
       refine sum_congr rfl fun S hS ↦ ?_
       obtain ⟨hSim, hScard⟩ := (mem_filter.1 hS).2
@@ -483,13 +399,9 @@ theorem eq_smul_matchedIdem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : F
       congr 1
       exact repr_idOn_eq_of_mem_matchedSubalgebra hm _ S S₀ rfl (hSim.trans hS₀.symm)
         (by rw [hSim, hScard]) (by rw [hS₀, hcard₀])
-    have hc : IsIdempotentElem c := by
-      have h := congrArg (fun y ↦ (basis R α).repr y (idOn S₀))
-        ((he.map (horizontalPart R α)).eq)
-      simp only [hhe, smul_mul_smul_comm, (isIdempotentElem_matchedIdem M s).eq] at h
-      exact (by simpa [repr_matchedIdem_apply, hS₀, hcard₀] using h : c * c = c)
-    exact ⟨c, hc, eq_smul_of_horizontalPart_eq_smul he (isIdempotentElem_matchedIdem M s) hhm
-      hl hr hc hhe⟩
+    refine ⟨c, eq_smul_of_horizontalPart_eq_smul (φ := idOn S₀) he
+      (isIdempotentElem_matchedIdem M s) (horizontalPart_matchedIdem M s) ?_ hl hr hhe⟩
+    rw [repr_matchedIdem_apply, source_idOn, ite_eq_left ⟨rfl, hS₀, hcard₀⟩]
   · -- No set lies over `s`, so `I(s) = 0` and hence `e = 0`.
     have h0 : matchedIdem R M s = 0 := by
       rw [matchedIdem_def]
@@ -499,16 +411,13 @@ theorem eq_smul_matchedIdem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : F
 
 /-- **The idempotents `I(s)` do not split in the matched subalgebra** when the coefficient ring
 has no idempotents besides `0` and `1`: the only idempotents of the matched subalgebra in the
-corner of `I(s)` are `0` and `I(s)`, so `I(s)`, when nonzero, is primitive there. -/
+corner of `I(s)` are `0` and `I(s)`. -/
 theorem eq_zero_or_eq_matchedIdem_of_isIdempotentElem (hR : IsPrimitiveIdempotent (1 : R))
     {e : StrandsAlgebra R α} {s : Finset β} (hm : e ∈ matchedSubalgebra R M)
     (he : IsIdempotentElem e) (hl : matchedIdem R M s * e = e)
     (hr : e * matchedIdem R M s = e) : e = 0 ∨ e = matchedIdem R M s := by
-  have := hR.nontrivial
-  obtain ⟨c, hc, rfl⟩ := eq_smul_matchedIdem_of_isIdempotentElem hm he hl hr
-  rcases (isPrimitiveIdempotent_one_iff.1 hR) _ hc with h | h
-  · exact Or.inl (by rw [h, zero_smul])
-  · exact Or.inr (by rw [h, one_smul])
+  obtain ⟨c, hc, rfl⟩ := exists_isIdempotentElem_and_eq_smul_matchedIdem hm he hl hr
+  exact smul_eq_zero_or_eq_of_isIdempotentElem hR hc _
 
 end CommRing
 
