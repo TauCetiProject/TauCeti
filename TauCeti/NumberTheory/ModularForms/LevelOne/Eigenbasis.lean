@@ -45,8 +45,9 @@ comparison we obtain:
   `p` (`levelOneNewformBasis_mem_of_forall_prime`), combining multiplicity one at level one with
   `Module.Basis.self_mem_of_repr_ne_zero_of_forall`, and the resulting prime-Hecke injectivity
   criterion `injective_of_heckeTCuspLevelOne_mem_ker`;
-* the Hecke eigenform equation `Tₙ(E_k) = σ_{k-1}(n) E_k` for the normalized Eisenstein series
-  `ModularForm.E hk` at weight `k ≥ 3` (`heckeTLevelOne_E`), deduced from the multiplicativity
+* the Hecke action `Tₙ(E_k) = σ_{k-1}(n) E_k` on the normalized Eisenstein series
+  `ModularForm.E hk` at weight `k ≥ 3` (`heckeTLevelOne_E`; an eigenform equation for even `k`,
+  trivial for odd `k` where `E_k = 0`), deduced from the multiplicativity
   and prime-power recurrence of `σ_{k-1}` via `forall_heckeTCompositeGamma0_eq_coeff_smul_iff`,
   together with the direct-sum decomposition `M_k(SL(2, ℤ)) = S_k(SL(2, ℤ)) ⊕ ℂ · E_k` at weight
   `k ≥ 3`, and, for even `k ≥ 4`, the resulting trace identity
@@ -74,8 +75,10 @@ comparison we obtain:
 * `TauCeti.heckeTCuspLevelOne_one`, `TauCeti.heckeTCuspLevelOne_prime_pow_add_two`: `T₁ = 1` and
   the recurrence `T_{p^{r+2}} = Tₚ T_{p^{r+1}} - p^{k-1} T_{p^r}` on `CuspForm 𝒮ℒ k`.
 * `TauCeti.heckeTLevelOne_E`, `TauCeti.isCompl_cuspFormSubmodule_span_E`,
-  `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue and the cusp/Eisenstein
-  complement (weight `k ≥ 3`), and the trace of `Tₙ` on `ModularForm 𝒮ℒ k` (even weight `k ≥ 4`).
+  `TauCeti.trace_heckeTLevelOne`: the Hecke action `Tₙ E_k = σ_{k-1}(n) • E_k` on the
+  Eisenstein series (weight `k ≥ 3`; an eigenvalue equation for even `k`, trivial for odd `k`
+  where `E_k = 0`), the cusp/Eisenstein complement (weight `k ≥ 3`), and the trace of `Tₙ` on
+  `ModularForm 𝒮ℒ k` (even weight `k ≥ 4`).
 
 ## References
 
@@ -424,9 +427,10 @@ private lemma heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul_of_coeff {k : 
       hs (r + 1), hs r, hp1]
     ring
 
-/-- **The normalized Eisenstein series `E_k` is a Hecke eigenform** with eigenvalue `σ_{k-1}(n)` at
-every `n ≥ 1` (Serre, *A Course in Arithmetic*, VII.5.3; Diamond–Shurman, Proposition 5.2.3). At odd
-weight `E_k = 0`, so both sides vanish. -/
+/-- **The Hecke action on the normalized Eisenstein series `E_k`**: `Tₙ E_k = σ_{k-1}(n) • E_k` at
+every `n ≥ 1` (Serre, *A Course in Arithmetic*, VII.5.3; Diamond–Shurman, Proposition 5.2.3). For
+even weight `k` this says that `E_k` is a Hecke eigenform with eigenvalue `σ_{k-1}(n)`; at odd
+weight `E_k = 0`, so both sides vanish and the equation carries no eigenvalue content. -/
 theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (n : ℕ) [NeZero n] :
     heckeTLevelOne k n (ModularForm.E hk) =
       (σ (k - 1) n : ℂ) • ModularForm.E hk := by
