@@ -109,12 +109,6 @@ abbrev toFunctor (s : TransportSection L) : D ⥤ Grothendieck L where
     · simp only [Grothendieck.comp_fiber, map_comp]
       erw [eqToHom_trans_assoc (C := L.obj _)]
 
-/-- The transport arrow factors through the fiber inclusion in the target category. -/
-theorem toFunctor_map_factor (s : TransportSection L) {d e : D} (f : d ⟶ e) :
-    s.toFunctor.map f =
-      (Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f) := by
-  exact (Grothendieck.ιNatTrans_app_comp_ι_map (s.toFunctor.map f)).symm
-
 /-- The total functor determines the objects and transport arrows of its section presentation. -/
 theorem toFunctor_injective :
     Function.Injective (toFunctor (L := L)) := by
@@ -276,9 +270,15 @@ noncomputable instance : Groupoid (TransportSection L) where
   inv_comp α := by apply Hom.ext; funext d; simp
   comp_inv α := by apply Hom.ext; funext d; simp
 
+end GroupoidFibers
+
+section TransportAutomorphisms
+
+variable (s : TransportSection L) [∀ {d e : D} (f : d ⟶ e), IsIso (s.map f)]
+
 /-- Fiber automorphisms transported along a section by conjugation. This is reducible
 on objects, retaining the actual automorphism groups as carriers. -/
-noncomputable abbrev automorphismDiagram (s : TransportSection L) : D ⥤ GrpCat.{w} where
+noncomputable abbrev automorphismDiagram : D ⥤ GrpCat.{w} where
   obj d := GrpCat.of (Aut (s.obj d))
   map f := GrpCat.ofHom
     ((Aut.autMulEquivOfIso (asIso (s.map f))).toMonoidHom.comp ((L.map f).toFunctor.mapAut _))
@@ -303,13 +303,13 @@ noncomputable abbrev automorphismDiagram (s : TransportSection L) : D ⥤ GrpCat
 
 /-- Transport acts on the underlying arrow by fiber transport followed by conjugation. -/
 @[simp↓]
-theorem automorphismDiagram_map_apply_hom (s : TransportSection L)
+theorem automorphismDiagram_map_apply_hom
     {d e : D} (f : d ⟶ e) (a : Aut (s.obj d)) :
     ((s.automorphismDiagram.map f) a).asIso.hom =
       inv (s.map f) ≫ (L.map f).toFunctor.map a.asIso.hom ≫ s.map f := (rfl)
 
 /-- Automorphisms of a section are compatible families of fiber automorphisms. -/
-noncomputable def autEquivSections (s : TransportSection L) :
+noncomputable def autEquivSections :
     Aut s ≃* GrpCat.sectionsSubgroup s.automorphismDiagram where
   toFun a := ⟨fun d => (evaluation d).mapAut s a, by
     intro d e f
@@ -337,16 +337,16 @@ noncomputable def autEquivSections (s : TransportSection L) :
   map_mul' a b := by apply Subtype.ext; funext d; exact ((evaluation d).mapAut s).map_mul a b
 
 @[simp]
-theorem autEquivSections_apply (s : TransportSection L) (a : Aut s) (d : D) :
+theorem autEquivSections_apply (a : Aut s) (d : D) :
     (s.autEquivSections a).val d = (evaluation d).mapAut s a := (rfl)
 
 /-- Reconstruction from compatible automorphisms retains their fiberwise arrows. -/
 @[simp]
-theorem autEquivSections_symm_apply_hom (s : TransportSection L)
+theorem autEquivSections_symm_apply_hom
     (a : GrpCat.sectionsSubgroup s.automorphismDiagram) (d : D) :
     (s.autEquivSections.symm a).asIso.hom.app d = (a.val d).asIso.hom := (rfl)
 
-end GroupoidFibers
+end TransportAutomorphisms
 
 section Coefficients
 
