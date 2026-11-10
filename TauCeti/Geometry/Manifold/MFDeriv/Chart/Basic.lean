@@ -104,10 +104,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `MDifferentiableAt.differentiableWithinAt_fderivWithin_extChart_comp_eq_zero`: where the manifold
   differential vanishes at a point of differentiability, the coordinate expression in extended
   charts is differentiable within the model range with zero derivative.
-* `TauCeti.deriv_prodMk_eq_zero_of_eventually_eq`: a function on `X × 𝕜` locally independent of
-  the last coordinate has zero derivative in that coordinate.
-* `TauCeti.comp_extChartAt_symm_prodMk_left` and
-  `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`: the preferred chart of `M × 𝕜` is the
+* `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`: the preferred chart of `M × 𝕜` is the
   identity on `𝕜`, so the derivative of a coordinate expression in the direction `(0, 1)` is the
   derivative along `𝕜`, read without any chart.
 * `ContMDiff.continuous_deriv_prodMk`: the derivative along `𝕜` of a `C¹` function on `M × 𝕜` is
@@ -875,29 +872,8 @@ section TimeDerivative
 
 open Filter
 
-variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- A function on `X × 𝕜` independent of the last coordinate near `(x, t₀)` has zero derivative
-in that coordinate at `(x, t₀)`. -/
-theorem deriv_prodMk_eq_zero_of_eventually_eq [TopologicalSpace X] {f : X × 𝕜 → F} {x : X}
-    {t₀ : 𝕜} (hf : ∀ᶠ z in 𝓝 (x, t₀), f z = f (z.1, t₀)) : deriv (fun s ↦ f (x, s)) t₀ = 0 := by
-  have h : (fun s ↦ f (x, s)) =ᶠ[𝓝 t₀] fun _ ↦ f (x, t₀) :=
-    ((continuous_const.prodMk continuous_id).tendsto t₀).eventually hf
-  rw [h.deriv_eq, deriv_const]
-
-variable [TopologicalSpace X] [ChartedSpace H X]
-
-/-- The slice of the coordinate expression of `f : X × 𝕜 → α` in the preferred chart at `z`
-through the chart image of a point `x` of the chart source is the slice of `f` through `x`. -/
-theorem comp_extChartAt_symm_prodMk_left {α : Type*} {f : X × 𝕜 → α} (z : X × 𝕜) {x : X}
-    (hx : x ∈ (extChartAt I z.1).source) :
-    (fun s ↦ (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) ((extChartAt I z.1 x, s))) =
-      fun s ↦ f (x, s) := by
-  funext s
-  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply,
-    (extChartAt I z.1).left_inv hx]
-
-variable {f : X × 𝕜 → F}
+variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X]
+  [ChartedSpace H X] {f : X × 𝕜 → F}
 
 /-- **The derivative along `𝕜` in coordinates.** At the chart image of a point `(x, s)` of the
 chart source, the derivative of the coordinate expression of `f : X × 𝕜 → F` in the direction

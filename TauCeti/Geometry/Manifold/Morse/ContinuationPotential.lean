@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.ContinuationPotential
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -79,29 +80,6 @@ theorem continuationPotential_comp_extChartAt_symm (z : M × ℝ) :
       continuationPotential C (f ∘ (extChartAt (I.prod 𝓘(ℝ)) z).symm) := by
   funext u
   simp only [comp_apply, continuationPotential_apply, extChartAt_prod_modelSpace_symm_apply]
-
-/-- The space slice of the coordinate expression of `f` at time `s` is the coordinate expression
-of the space slice of `f` at time `s`. -/
-private theorem comp_extChartAt_symm_prodMk_right (z : M × ℝ) (s : ℝ) :
-    (fun v ↦ (f ∘ (extChartAt (I.prod 𝓘(ℝ)) z).symm) (v, s)) =
-      (fun x ↦ f (x, s)) ∘ (extChartAt I z.1).symm := by
-  funext v
-  simp only [comp_apply, extChartAt_prod_modelSpace_symm_apply]
-
-/-- A function on `M × ℝ` independent of the time near `(p, t₀)` has a coordinate expression
-independent of the time near the chart image of `(p, t₀)`. -/
-private theorem eventually_comp_extChartAt_symm_eq {p : M} {t₀ : ℝ}
-    (hf : ∀ᶠ z in 𝓝 (p, t₀), f z = f (z.1, t₀)) :
-    ∀ᶠ w in 𝓝 (extChartAt I p p, t₀),
-      (f ∘ (extChartAt (I.prod 𝓘(ℝ)) (p, t₀)).symm) w =
-        (f ∘ (extChartAt (I.prod 𝓘(ℝ)) (p, t₀)).symm) (w.1, t₀) := by
-  have ht : Tendsto (extChartAt (I.prod 𝓘(ℝ)) (p, t₀)).symm (𝓝 (extChartAt I p p, t₀))
-      (𝓝 (p, t₀)) := by
-    have hc := (continuousAt_extChartAt_symm (I := I.prod 𝓘(ℝ)) (p, t₀)).tendsto
-    rwa [extChartAt_to_inv, extChartAt_prod_modelSpace_apply] at hc
-  filter_upwards [ht.eventually hf] with w hw
-  simp only [comp_apply, extChartAt_prod_modelSpace_symm_apply] at hw ⊢
-  exact hw
 
 /-! ### Smoothness -/
 

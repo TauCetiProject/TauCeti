@@ -31,6 +31,10 @@ The extended chart of a product manifold has the product of the targets of the f
 its target (`TauCeti.extChartAt_prod_target`). On a product `M × E'` with a normed space `E'`, the
 extended chart is the chart of `M` on the first factor and the identity on `E'`
 (`TauCeti.extChartAt_prod_modelSpace_apply`, `TauCeti.extChartAt_prod_modelSpace_symm_apply`).
+Consequently, the slices of a coordinate expression of a function on `M × 𝕜` are the slices of the
+function itself, read in the chart of `M` (`TauCeti.comp_extChartAt_symm_prodMk_left`,
+`TauCeti.comp_extChartAt_symm_prodMk_right`), and local independence of the last coordinate
+passes to coordinate expressions (`TauCeti.eventually_comp_extChartAt_symm_eq`).
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions; for a boundaryless model, their domains are open. A compact
@@ -51,6 +55,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 
 * `TauCeti.extChartAt_prod_modelSpace_apply` and `TauCeti.extChartAt_prod_modelSpace_symm_apply`:
   the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
+* `TauCeti.comp_extChartAt_symm_prodMk_left`, `TauCeti.comp_extChartAt_symm_prodMk_right` and
+  `TauCeti.eventually_comp_extChartAt_symm_eq`: slices of coordinate expressions on `M × 𝕜`.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
@@ -117,6 +123,40 @@ theorem extChartAt_prod_modelSpace_symm_apply {E' : Type*} [NormedAddCommGroup E
     (extChartAt (I.prod 𝓘(𝕜, E')) x).symm u = ((extChartAt I x.1).symm u.1, u.2) := by
   simp only [extChartAt_prod, PartialEquiv.prod_coe_symm, extChartAt_model_space_eq_id,
     PartialEquiv.refl_symm, PartialEquiv.refl_coe, id_eq]
+
+/-- The slice of the coordinate expression of `f : M × 𝕜 → α` in the preferred chart at `z`
+through the chart image of a point `x` of the chart source is the slice of `f` through `x`. -/
+theorem comp_extChartAt_symm_prodMk_left {α : Type*} {f : M × 𝕜 → α} (z : M × 𝕜) {x : M}
+    (hx : x ∈ (extChartAt I z.1).source) :
+    (fun s ↦ (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) ((extChartAt I z.1 x, s))) =
+      fun s ↦ f (x, s) := by
+  funext s
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply,
+    (extChartAt I z.1).left_inv hx]
+
+/-- The slice of the coordinate expression of `f : M × 𝕜 → α` in the preferred chart at `z` at a
+fixed last coordinate `s` is the coordinate expression of the slice of `f` at `s`. -/
+theorem comp_extChartAt_symm_prodMk_right {α : Type*} {f : M × 𝕜 → α} (z : M × 𝕜) (s : 𝕜) :
+    (fun v ↦ (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) (v, s)) =
+      (fun x ↦ f (x, s)) ∘ (extChartAt I z.1).symm := by
+  funext v
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply]
+
+/-- A function on `M × 𝕜` independent of the last coordinate near `(p, t₀)` has a coordinate
+expression in the preferred chart at `(p, t₀)` independent of the last coordinate near the chart
+image of `(p, t₀)`. -/
+theorem eventually_comp_extChartAt_symm_eq {α : Type*} {f : M × 𝕜 → α} {p : M} {t₀ : 𝕜}
+    (hf : ∀ᶠ z in 𝓝 (p, t₀), f z = f (z.1, t₀)) :
+    ∀ᶠ w in 𝓝 (extChartAt I p p, t₀),
+      (f ∘ (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm) w =
+        (f ∘ (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm) (w.1, t₀) := by
+  have ht : Filter.Tendsto (extChartAt (I.prod 𝓘(𝕜)) (p, t₀)).symm (𝓝 (extChartAt I p p, t₀))
+      (𝓝 (p, t₀)) := by
+    have hc := (continuousAt_extChartAt_symm (I := I.prod 𝓘(𝕜)) (p, t₀)).tendsto
+    rwa [extChartAt_to_inv, extChartAt_prod_modelSpace_apply] at hc
+  filter_upwards [ht.eventually hf] with w hw
+  simp only [Function.comp_apply, extChartAt_prod_modelSpace_symm_apply] at hw ⊢
+  exact hw
 
 /-- Near the center of an extended chart, composing a chart representative with the chart
 recovers the original function. No continuity of the function is needed. -/
