@@ -55,14 +55,21 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- **Smooth radial cutoffs with almost optimal Lipschitz constant.** For radii `0 ≤ r < R` and
+/-- **Smooth radial cutoffs with almost optimal Lipschitz constant.** For radii `r < R` and
 every constant `K > 1 / (R - r)`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on
-`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. When `E` is nontrivial, the
-bound `1 / (R - r)` is the optimal Lipschitz constant of such a function. -/
-theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (hr : 0 ≤ r)
+`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. When `0 ≤ r` and `E` is
+nontrivial, the bound `1 / (R - r)` is the optimal Lipschitz constant of such a function. For
+`r < 0` the closed ball is empty and the zero function is a cutoff. -/
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ}
     (hrR : r < R) {K : ℝ≥0} (hK : (R - r)⁻¹ < K) :
     ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
       support ψ ⊆ ball x₀ R ∧ LipschitzWith K ψ := by
+  rcases lt_or_ge r 0 with hr | hr
+  · refine ⟨0, contDiff_const, ?_, ?_, ?_, (LipschitzWith.const' 0).weaken zero_le⟩
+    · rintro _ ⟨x, rfl⟩
+      exact ⟨le_rfl, zero_le_one⟩
+    · simp [closedBall_eq_empty.2 hr]
+    · simp
   have hκ : 0 < (K : ℝ) := (inv_pos.2 (sub_pos.2 hrR)).trans hK
   have hKinv : (K : ℝ)⁻¹ < R - r := (inv_lt_comm₀ (sub_pos.2 hrR) hκ).1 hK
   -- The bump lives on `(a, R)`, where `r < a`, and equals one on an interval of length `1 / K`.
@@ -138,15 +145,15 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     rw [dist_sub_left]
     simpa only [comp_apply, dist_eq_norm] using h.dist_le_mul x y
 
-/-- **Smooth cutoffs on thin shells.** For a radius `r ≥ 0`, a width `h > 0` and a factor
+/-- **Smooth cutoffs on thin shells.** For a radius `r`, a width `h > 0` and a factor
 `t > 1`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on `closedBall x₀ r`,
 vanishing off `ball x₀ (r + h)`, and `t / h`-Lipschitz. This is the form of
 `TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith` used when the width `h` tends to zero. -/
-theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ} (hr : 0 ≤ r)
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ}
     (hh : 0 < h) {t : ℝ≥0} (ht : 1 < t) :
     ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
       support ψ ⊆ ball x₀ (r + h) ∧ LipschitzWith (t * h.toNNReal⁻¹) ψ := by
-  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ hr (by linarith) ?_
+  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ (by linarith) ?_
   rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
   exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
 
