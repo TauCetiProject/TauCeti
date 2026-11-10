@@ -29,7 +29,9 @@ is then a symbol of order `-m` (`TauCeti.Symbol.cutoffInverse`): every mixed der
 (`TauCeti.Symbol.coefficient_comp_coefficient_cutoffInverse`,
 `TauCeti.Symbol.coefficient_cutoffInverse_comp_coefficient`). For `R ≠ 0` this error has compact
 frequency support, and `b` is the pointwise inverse once `‖ξ‖ ≥ 2|R|`
-(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_abs_le`); for `R = 0` the cutoff
+(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_abs_le`), so `b ∘ a - 1` and `a ∘ b - 1`
+are smoothing symbols (`TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
+`TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`); for `R = 0` the cutoff
 `χ(ξ / 0) = χ(0)` vanishes, so `b = 0`. If `a` satisfies uniform estimates and the inverse bound
 holds with a constant independent of the position, `b` satisfies uniform estimates as well
 (`TauCeti.Symbol.IsUniform.cutoffInverse`). This is the first step of the construction of a
@@ -432,6 +434,30 @@ theorem coefficient_cutoffInverse_of_two_mul_abs_le (hR : R ≠ 0) {ξ : Coordin
     rw [norm_smul, norm_inv, Real.norm_eq_abs, le_inv_mul_iff₀ (abs_pos.2 hR)]
     linarith
   simp [χ.apply_eq_one_of_two_le_norm h]
+
+/-- For a nonzero radius `R`, the cut-off inverse is a left inverse of the symbol modulo smoothing
+symbols: `b ∘ a - 1` vanishes at the frequencies `‖ξ‖ ≥ 2 |R|`. -/
+theorem isSmoothing_cutoffInverse_comp_sub (hR : R ≠ 0) :
+    ((a.cutoffInverse χ R hinv hbound).comp a -
+      inclusion (neg_add_cancel m).ge (const (ContinuousLinearMap.id ℂ V))).IsSmoothing :=
+  isSmoothing_iff.2 fun _ => ⟨ofBoundedFrequencySupport _ (Symbol.contDiff_coefficient _) (2 * |R|)
+    (fun x ξ hξ => by
+      rw [coefficient_sub, Pi.sub_apply, coefficient_comp, coefficient_inclusion,
+        coefficient_const, coefficient_cutoffInverse_of_two_mul_abs_le a χ R hinv hbound hR hξ,
+        (hinv x ξ (by linarith [abs_nonneg R])).inverse_comp_self, sub_self]),
+    coefficient_ofBoundedFrequencySupport ..⟩
+
+/-- For a nonzero radius `R`, the cut-off inverse is a right inverse of the symbol modulo smoothing
+symbols: `a ∘ b - 1` vanishes at the frequencies `‖ξ‖ ≥ 2 |R|`. -/
+theorem isSmoothing_comp_cutoffInverse_sub (hR : R ≠ 0) :
+    (a.comp (a.cutoffInverse χ R hinv hbound) -
+      inclusion (add_neg_cancel m).ge (const (ContinuousLinearMap.id ℂ W))).IsSmoothing :=
+  isSmoothing_iff.2 fun _ => ⟨ofBoundedFrequencySupport _ (Symbol.contDiff_coefficient _) (2 * |R|)
+    (fun x ξ hξ => by
+      rw [coefficient_sub, Pi.sub_apply, coefficient_comp, coefficient_inclusion,
+        coefficient_const, coefficient_cutoffInverse_of_two_mul_abs_le a χ R hinv hbound hR hξ,
+        (hinv x ξ (by linarith [abs_nonneg R])).self_comp_inverse, sub_self]),
+    coefficient_ofBoundedFrequencySupport ..⟩
 
 /-- If the symbol satisfies uniform estimates and its inverse satisfies the order `-m` bound with
 a constant independent of the position, the cut-off inverse satisfies uniform estimates. -/
