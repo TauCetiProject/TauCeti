@@ -39,6 +39,12 @@ datum on `Y ×_S S'` to `D`, an isomorphism because it is one over each affine o
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens`: a descent datum
   relative to a surjective, flat and quasi-compact morphism is effective if its restrictions over
   the affine opens of the base are effective.
+* `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong`: effectivity
+  of the base change of a descent datum to an open of the base gives effectivity of its restriction
+  to the preimage of that open.
+* `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong`: a descent
+  datum relative to a surjective, flat and quasi-compact morphism is effective if its base changes
+  to the affine opens of the base are effective.
 
 ## References
 
@@ -498,5 +504,67 @@ theorem exists_baseChange_hom_isIso_of_forall_affineOpens [Surjective p] [Flat p
   choose Y g hg using h
   have : IsIso ((Over.forget S').map (toXHom Y g).hom) := isIso_toX Y g
   exact ⟨glued Y g, toXHom Y g, isIso_of_reflects_iso _ (Over.forget S')⟩
+
+section PullbackAlong
+
+variable {D} {U : S.Opens} {Y₀ : Over U.toScheme}
+  (f : Hom (baseChange (pullback.fst U.ι p) Y₀) (D.pullbackAlong U.ι)) [IsIso f.hom]
+
+/-- An isomorphism from a canonical descent datum to the base change of `D` to an open `U` of `S`
+gives an open immersion `Y₀ ×_S S' ⟶ X`. -/
+instance Hom.isOpenImmersion_ofPullbackAlong_hom_left :
+    IsOpenImmersion f.ofPullbackAlong.hom.left := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  rw [Hom.ofPullbackAlong_hom_left]
+  infer_instance
+
+/-- The open immersion `Y₀ ×_S S' ⟶ X` given by an isomorphism onto the base change of `D` to an
+open `U` of `S` has image the preimage of `U` in `X`. -/
+theorem Hom.opensRange_ofPullbackAlong_hom_left :
+    f.ofPullbackAlong.hom.left.opensRange = (X.hom ≫ p) ⁻¹ᵁ U := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  simp only [Hom.ofPullbackAlong_hom_left]
+  rw [Scheme.Hom.opensRange_comp_of_isIso, Scheme.Hom.opensRange_comp_of_isIso,
+    Scheme.Hom.opensRange_pullbackFst, Scheme.Hom.opensRange_pullbackSnd,
+    Scheme.Opens.opensRange_ι, Scheme.Hom.comp_preimage]
+
+/-- **Effectivity after base change to an open gives effectivity of the restriction.** If the base
+change `D.pullbackAlong U.ι` of `D` to an open `U` of `S` is isomorphic to the canonical descent
+datum on `Y₀ ×_U (U ×_S S')`, then the restriction of `D` to the preimage of `U` in `X` is
+isomorphic to the canonical descent datum on `Y₀ ×_S S'`, with `Y₀` viewed over `S`, compatibly
+with `Hom.ofPullbackAlong`. -/
+theorem Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong :
+    ∃ g : Hom (baseChange p ((Over.map U.ι).obj Y₀)) (D.restrict _ (D.isStable_comp_preimage U)),
+      IsIso g.hom ∧ (D.restrictHom _ _).comp g = f.ofPullbackAlong := by
+  have hrange : Set.range f.ofPullbackAlong.hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U).ι := by
+    rw [← Scheme.Hom.coe_opensRange, f.opensRange_ofPullbackAlong_hom_left,
+      Scheme.Opens.range_ι]
+  let g := f.ofPullbackAlong.codRestrict (D.isStable_comp_preimage U)
+    (hrange.trans (Scheme.Opens.range_ι _)).subset
+  refine ⟨g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
+  suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
+  -- `g.hom.left` is the isomorphism between two open immersions with the same range.
+  have : g.hom.left = (IsOpenImmersion.isoOfRangeEq _ _ hrange).hom := by
+    rw [← cancel_mono ((X.hom ≫ p) ⁻¹ᵁ U).ι, Hom.codRestrict_hom_left_ι,
+      IsOpenImmersion.isoOfRangeEq_hom_fac]
+  rw [Over.forget_map, this]
+  infer_instance
+
+end PullbackAlong
+
+variable {D} in
+/-- **Effectivity of descent data is local on the base**, in terms of base change. Let
+`p : S' ⟶ S` be surjective, flat and quasi-compact, and let `D` be a descent datum relative to `p`
+on `X ⟶ S'`. If, for every affine open `U` of `S`, the base change `D.pullbackAlong U.ι` of `D` to
+`U`, relative to `U ×_S S' ⟶ U`, is effective, then `D` is effective. -/
+theorem exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong [Surjective p] [Flat p]
+    [QuasiCompact p]
+    (h : ∀ U : S.affineOpens, ∃ (Y₀ : Over U.1.toScheme)
+      (f : Hom (baseChange (pullback.fst U.1.ι p) Y₀) (D.pullbackAlong U.1.ι)), IsIso f.hom) :
+    ∃ (Y : Over S) (g : Hom (baseChange p Y) D), IsIso g.hom := by
+  refine exists_baseChange_hom_isIso_of_forall_affineOpens fun U ↦ ?_
+  obtain ⟨Y₀, f, hf⟩ := h U
+  obtain ⟨g, hg, -⟩ := f.exists_baseChange_hom_isIso_restrict_of_pullbackAlong
+  exact ⟨_, g, hg⟩
 
 end TauCeti.DescentDatum
