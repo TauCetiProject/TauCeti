@@ -68,6 +68,10 @@ of positive (negative) square has at most as many members as the positive (negat
 * `QuadraticForm.sigPos_eq_finrank_of_isCompl` and `QuadraticForm.sigNeg_eq_finrank_of_isCompl`:
   a nondegenerate form vanishing on two complementary subspaces `A` and `B` has both indices of
   inertia equal to `dim A`.
+* `QuadraticForm.sigPos_eq_finrank_of_isCompl_of_posDef` and
+  `QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef`: a form which is positive (negative)
+  definite on `A` and negative (positive) semidefinite on a complement of `A` has positive
+  (negative) index of inertia `dim A`.
 * `LinearMap.BilinForm.card_le_sigPos_toQuadraticMap_of_iIsOrtho` and
   `LinearMap.BilinForm.card_le_sigNeg_toQuadraticMap_of_iIsOrtho`: an orthogonal family of
   vectors of positive (negative) square has at most `sigPos` (`sigNeg`) members.
@@ -420,6 +424,30 @@ theorem sigNeg_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nond
     sigNeg Q = Module.finrank K A := by
   rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB, sigPos_eq_finrank_of_isCompl Q hQ hAB hA hB]
 
+omit [IsStrictOrderedRing K] in
+/-- **Sylvester's law of inertia for a definite splitting.** If a quadratic form is positive
+definite on a subspace `A` and negative semidefinite on a complement `B`, its positive index of
+inertia is `dim A`. -/
+theorem sigPos_eq_finrank_of_isCompl_of_posDef (Q : _root_.QuadraticForm K M)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : (Q.restrict A).PosDef)
+    (hB : ∀ x ∈ B, Q x ≤ 0) :
+    sigPos Q = Module.finrank K A := by
+  have hdim := Submodule.finrank_add_eq_of_isCompl hAB
+  have hle := le_sigPos_of_posDef Q hA
+  have hleB := sigPos_add_finrank_le_of_nonpos hB
+  omega
+
+/-- **Sylvester's law of inertia for a definite splitting.** If a quadratic form is negative
+definite on a subspace `A` and positive semidefinite on a complement `B`, its negative index of
+inertia is `dim A`. -/
+theorem sigNeg_eq_finrank_of_isCompl_of_negDef (Q : _root_.QuadraticForm K M)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : ((-Q).restrict A).PosDef)
+    (hB : ∀ x ∈ B, 0 ≤ Q x) :
+    sigNeg Q = Module.finrank K A := by
+  rw [← sigPos_neg]
+  exact sigPos_eq_finrank_of_isCompl_of_posDef (-Q) hAB hA fun x hx ↦
+    neg_nonpos.mpr (hB x hx)
+
 end QuadraticForm
 
 namespace LinearMap.BilinForm
@@ -484,18 +512,6 @@ theorem card_le_sigNeg_toQuadraticMap_of_iIsOrtho {ι : Type*} [Fintype ι]
     (iIsOrtho_def.mpr fun i j hij ↦ by simp [iIsOrtho_def.mp hv i j hij])
     fun i ↦ by simpa using hneg i
   rwa [LinearMap.BilinMap.toQuadraticMap_neg, sigPos_neg] at h
-
-/-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
-bilinear form is positive-semidefinite and nondegenerate. -/
-@[grind =]
-theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate (B : LinearMap.BilinForm K M)
-    (hB : B.IsSymm) :
-    B.toQuadraticMap.PosDef ↔ B.IsPosSemidef ∧ B.Nondegenerate := by
-  have _ : Invertible (2 : K) := invertibleOfNonzero (by norm_num)
-  rw [isPosSemidef_iff_sigNeg_eq_zero B hB,
-    QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
-    LinearMap.BilinForm.nondegenerate_iff_ker_eq_bot,
-    _root_.LinearMap.BilinForm.radical_toQuadraticMap B hB]
 
 /-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
 kernel of the bilinear form and the negative index of the quadratic form both vanish. -/
