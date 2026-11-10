@@ -41,23 +41,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   {f : ℂ → F} {c w : ℂ} {r R : ℝ}
 
-private lemma truncatedCauchyKernel_smul_eq
-    (hs : Function.support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) (z : ℂ) :
-    truncatedCauchyKernel (r + R) z • f (w - z) = z⁻¹ • f (w - z) := by
-  simpa only [truncatedCauchyKernel_def] using
-    (indicator_kernel_smul_sub_eq (K := fun z : ℂ ↦ z⁻¹) hs hw z)
-
-/-- On a fixed output disc, cutting the reciprocal off at the sum of the input and output
-radii preserves the actual Cauchy integral. -/
-theorem integral_sub_inv_smul_eq_truncatedCauchyKernel_smul
-    (hs : Function.support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
-    (∫ z, (w - z)⁻¹ • f z) = ∫ z, truncatedCauchyKernel (r + R) z • f (w - z) := by
-  have h := integral_sub_left_eq_self (fun z : ℂ ↦ (w - z)⁻¹ • f z) volume w
-  simp only [sub_sub_cancel] at h
-  rw [← h]
-  apply integral_congr_ae
-  exact ae_of_all _ fun z ↦ (truncatedCauchyKernel_smul_eq hs hw z).symm
-
 /-- The normalized Cauchy transform has a fixed-disc supremum bound `2(r+R) M` whenever the
 source is supported in the input disc and bounded by `M`. -/
 theorem norm_pi_inv_smul_integral_sub_inv_smul_le

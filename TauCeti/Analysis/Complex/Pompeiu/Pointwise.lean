@@ -40,31 +40,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   {f : ℂ → F} {c w : ℂ} {r R : ℝ} {p q : ENNReal}
 
-private theorem truncated_integrand_eq (hf : support f ⊆ closedBall c r)
-    (hw : w ∈ closedBall c R) (z : ℂ) :
-    truncatedCauchyKernel (r + R) (w - z) • f z = (w - z)⁻¹ • f z := by
-  by_cases hz : f z = 0
-  · simp [hz]
-  have hdist : w - z ∈ closedBall 0 (r + R) := by
-    rw [mem_closedBall_zero_iff, ← dist_eq_norm]
-    exact (dist_triangle w c z).trans (by
-      have := mem_closedBall.mp (hf hz)
-      have := mem_closedBall.mp hw
-      rw [dist_comm c z]
-      linarith)
-  simp [truncatedCauchyKernel_def, indicator_of_mem hdist]
-
-/-- On the output disc, truncating the reciprocal kernel at the sum of the radii leaves
-the Cauchy integral unchanged. No integrability assumption is required for this identity. -/
-theorem cauchyTransform_eq_truncated_convolution (hf : support f ⊆ closedBall c r)
-    (hw : w ∈ closedBall c R) :
-    cauchyTransform f w = (Real.pi : ℂ)⁻¹ •
-      ((truncatedCauchyKernel (r + R)) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f) w := by
-  rw [cauchyTransform_apply, convolution_eq_swap]
-  congr 1
-  exact integral_congr_ae (Filter.Eventually.of_forall fun z ↦
-    (truncated_integrand_eq hf hw z).symm)
-
 /-- Supercritical compactly supported data have an absolutely convergent Cauchy integral at
 every point. The conjugate exponent condition includes the bounded-data endpoint. -/
 theorem integrable_sub_inv_smul_of_memLp [p.HolderConjugate q] (hq : q < 2)
@@ -72,9 +47,11 @@ theorem integrable_sub_inv_smul_of_memLp [p.HolderConjugate q] (hq : q < 2)
     Integrable (fun z ↦ (w - z)⁻¹ • f z) volume := by
   have hw : w ∈ closedBall c (dist w c) := mem_closedBall.mpr le_rfl
   have hk := memLp_truncatedCauchyKernel hq (r + dist w c)
-  have hi := (ConvolutionExists.of_memLp_memLp (ContinuousLinearMap.lsmul ℝ ℂ)
-    hk hf w).integrable_swap
-  exact hi.congr (Filter.Eventually.of_forall (truncated_integrand_eq hs hw))
+  have hi : Integrable (fun z ↦ truncatedCauchyKernel (r + dist w c) z • f (w - z)) := by
+    simpa only [ContinuousLinearMap.lsmul_apply] using
+      (ConvolutionExists.of_memLp_memLp (ContinuousLinearMap.lsmul ℝ ℂ) hk hf w).integrable
+  have hi' := hi.congr (ae_of_all _ (truncatedCauchyKernel_smul_eq hs hw))
+  simpa only [sub_sub_cancel] using hi'.comp_sub_left w
 
 /-- The pointwise Cauchy-transform bound on a fixed output disc. Its explicit kernel factor
 is finite for `q < 2`; the constant is independent of the data and of the pole in that disc. -/
@@ -82,7 +59,7 @@ theorem enorm_cauchyTransform_le [p.HolderConjugate q] (hf : AEStronglyMeasurabl
     (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
     ‖cauchyTransform f w‖ₑ ≤ ENNReal.ofReal Real.pi⁻¹ *
       eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume := by
-  rw [cauchyTransform_eq_truncated_convolution hs hw, enorm_smul]
+  rw [cauchyTransform_eq_truncatedCauchyKernel_convolution hs hw, enorm_smul]
   have hπ : ‖(Real.pi : ℂ)⁻¹‖ₑ = ENNReal.ofReal Real.pi⁻¹ := by
     rw [← ofReal_norm, norm_inv, Complex.norm_real, Real.norm_eq_abs,
       abs_of_pos Real.pi_pos]
@@ -94,13 +71,11 @@ theorem enorm_cauchyTransform_le [p.HolderConjugate q] (hf : AEStronglyMeasurabl
       gcongr
       exact enorm_convolution_le (ContinuousLinearMap.lsmul ℝ ℂ)
         (measurable_truncatedCauchyKernel _).aestronglyMeasurable hf w
-    _ ≤ _ := by
-      calc
-        _ ≤ ENNReal.ofReal Real.pi⁻¹ *
-            (1 * eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume) := by
-          gcongr
-          exact ContinuousLinearMap.opENorm_lsmul_le
-        _ = _ := by rw [one_mul, mul_assoc]
+    _ ≤ ENNReal.ofReal Real.pi⁻¹ *
+        (1 * eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume) := by
+      gcongr
+      exact ContinuousLinearMap.opENorm_lsmul_le
+    _ = _ := by rw [one_mul, mul_assoc]
 
 /-- A finite real bound for the Cauchy transform on a fixed output disc, uniform in the pole
 and in the data. The constant depends only on the two radii and the conjugate exponent. -/
