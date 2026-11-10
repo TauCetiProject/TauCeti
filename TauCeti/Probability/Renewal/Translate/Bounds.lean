@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Renewal.LocalBound
+public import TauCeti.Probability.Renewal.Translate.Basic
 public import TauCeti.MeasureTheory.Measure.Tight.ExponentialWeight
 
 /-!
@@ -29,21 +30,6 @@ open MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
-
-/-- The renewal measure on the real line, translated by `-t`. -/
-def translatedRenewalMeasure (F : Measure ℝ≥0) (t : ℝ) : Measure ℝ :=
-  F.renewalMeasure.map fun s : ℝ≥0 ↦ (s : ℝ) - t
-
-/-- The translated renewal measure is the pushforward of the half-line renewal measure. -/
-theorem translatedRenewalMeasure_def (F : Measure ℝ≥0) (t : ℝ) :
-    F.translatedRenewalMeasure t =
-      F.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) := (rfl)
-
-/-- Evaluation of a translated renewal measure on a measurable set. -/
-theorem translatedRenewalMeasure_apply (F : Measure ℝ≥0) (t : ℝ) {s : Set ℝ}
-    (hs : MeasurableSet s) :
-    F.translatedRenewalMeasure t s = F.renewalMeasure ((fun u : ℝ≥0 ↦ (u : ℝ) - t) ⁻¹' s) := by
-  exact Measure.map_apply (by fun_prop) hs
 
 /-- Translating the renewal measure preserves the uniform local renewal bound, including
 intervals that meet or lie below the original endpoint zero. -/
