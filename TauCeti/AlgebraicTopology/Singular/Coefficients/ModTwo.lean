@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-public import TauCeti.Algebra.Category.ModuleCat.ZModCoefficientSequence
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 
 import TauCeti.Algebra.Category.ModuleCat.AB
 import TauCeti.AlgebraicTopology.Singular.Reduced
@@ -27,11 +27,11 @@ homology, so the integer-module homology is the mod-two homology with its scalar
 (`TopCat.isZero_singularHomology_modTwo_iff`).
 
 The coefficient long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0` relates integral homology to mod-two
-homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)` (more generally, the first map
-of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/m ⟶ 0` induces multiplication by `m`:
-`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`), and its second map induces
-the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)` (`TopCat.singularHomologyReductionModTwo`). Exactness
-says:
+homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)` (the case `m = 2` of
+`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`, from
+`TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence`), and its second map
+induces the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)` (`TopCat.singularHomologyReductionModTwo`).
+Exactness says:
 
 * a class reduces to zero exactly when it is twice a class
   (`TopCat.ker_singularHomologyReductionModTwo`);
@@ -120,26 +120,6 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
   rfl
 
 /-! ### The reduction modulo two -/
-
-/-- The coefficient map `ℤ ⟶ ℤ` of the mod-`m` coefficient sequence induces multiplication by `m`
-on integral singular homology. -/
-theorem singularHomologyFunctor_map_zmodCoefficientSequence_f_app (X : TopCat.{u}) (m n : ℕ) :
-    (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-        (TauCeti.zmodCoefficientSequence.{u} m).f).app X).hom =
-      LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m := by
-  -- Mathlib's `singularHomologyFunctor` is by definition singular chains followed by homology, and
-  -- the first coefficient map is multiplication by `m` (`TauCeti.zmodCoefficientSequence_f`)
-  change (HomologicalComplex.homologyMap (((singularChainComplexFunctor (ModuleCat.{u} ℤ)).map
-    ((m : ℤ) • 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)))).app X) n).hom =
-      LinearMap.lsmul ℤ ((((singularChainComplexFunctor (ModuleCat.{u} ℤ)).obj
-        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X).homology n) m
-  ext x
-  simp only [Functor.map_smul, CategoryTheory.Functor.map_id, NatTrans.app_nsmul, NatTrans.id_app,
-    LinearMap.lsmul_apply, Nat.cast_smul_eq_nsmul]
-  induction m with
-  | zero => simp
-  | succ m ih => simp [succ_nsmul, HomologicalComplex.homologyMap_add, ih]
 
 /-- The **reduction modulo two** `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)`, induced by the coefficient map
 `ℤ ⟶ ℤ/2`. -/
