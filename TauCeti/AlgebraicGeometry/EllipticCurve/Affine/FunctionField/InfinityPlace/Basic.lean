@@ -32,6 +32,12 @@ the other three axioms are the norm's multiplicativity and Mathlib's place at in
   and triple poles at infinity, `ord_∞ x = -2` and `ord_∞ y = -3`, which is what Layer 0 asks for
   by name. They read this file's two `natDegree_norm_*` helpers through
   `Algebra.norm_localization` and Mathlib's polynomial valuation.
+* `WeierstrassCurve.Affine.infinityPlace_genericX` and
+  `WeierstrassCurve.Affine.infinityPlace_genericY`: the same pole values for the generic-point
+  coordinates, in `@[simp]` form. `WeierstrassCurve.Affine.genericY_ne_zero` records that the
+  generic ordinate is a nonzero rational function.
+* `WeierstrassCurve.Affine.infinityPlace_neg_genericX_div_genericY`: the local parameter `-x/y`
+  has value `exp (-1)`, a simple zero at infinity.
 * `WeierstrassCurve.Affine.infinityPlace.algebraMap_eq_sq`: restricting along
   `RatFunc F → W.FunctionField` squares `RatFunc.inftyValuation`, so the place at infinity is
   ramified of index two over the infinite place of `F(x)`.
@@ -54,10 +60,12 @@ the other three axioms are the norm's multiplicativity and Mathlib's place at in
 
 The two coordinate-function values each come in a second `@[simp]` form, stated in the shape simp
 actually normalises them to (the note above `infinityPlace.X` explains why the coordinate forms
-cannot carry the tag themselves). The quotient value gets no restatement of its own: `map_div₀`
-is a simp lemma, so simp decomposes the quotient through the two atomic restatements. The
-machinery that builds the ultrametric inequality is `private`, and the norm-degree theory it
-rests on lives in `FunctionField/Norm.lean`.
+cannot carry the tag themselves). The generic-point forms `infinityPlace_genericX` and
+`infinityPlace_genericY` are also `@[simp]` lemmas. The parameter value is restated as
+`infinityPlace_neg_genericX_div_genericY`, tagged `@[simp↓]` so that `-x/y` evaluates to
+`exp (-1)` before `map_div₀` decomposes the quotient into its coordinate values. The machinery
+that builds the ultrametric inequality is `private`, and the norm-degree theory it rests on
+lives in `FunctionField/Norm.lean`.
 
 ## Roadmap
 
