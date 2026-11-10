@@ -140,40 +140,6 @@ open Module (finrank)
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K L
 
-omit [IsAlgClosed K] [LieAlgebra K L] [LieModule K L M] in
-/-- **A finite-dimensional module has no component of an infinite-dimensional irreducible type.**
-A morphism out of an irreducible `S` into a finite-dimensional module is zero unless `S` is itself
-finite-dimensional, since its kernel is `⊥` or `⊤`. -/
-theorem subsingleton_lieModuleHom_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
-    [LieRingModule L S] [IsIrreducible K L S] (hS : ¬ Module.Finite K S) :
-    Subsingleton (S →ₗ⁅K,L⁆ M) := by
-  have h0 : ∀ f : S →ₗ⁅K,L⁆ M, f = 0 := fun f ↦ by
-    rcases eq_bot_or_eq_top f.ker with h | h
-    · exact absurd (Module.Finite.of_injective f.toLinearMap
-        ((LieModuleHom.ker_eq_bot f).mp h)) hS
-    · exact LieModuleHom.ext fun x ↦ by
-        have : x ∈ f.ker := h ▸ LieSubmodule.mem_top x
-        simpa using this
-  exact ⟨fun f g ↦ (h0 f).trans (h0 g).symm⟩
-
-omit [IsAlgClosed K] in
-/-- The multiplicity in a finite-dimensional module of an infinite-dimensional irreducible type
-is `0`. -/
-theorem isotypicMultiplicity_eq_zero_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
-    [LieRingModule L S] [IsIrreducible K L S] (hS : ¬ Module.Finite K S) :
-    isotypicMultiplicity K L M S = 0 :=
-  have := subsingleton_lieModuleHom_of_not_finite (K := K) (L := L) (M := M) S hS
-  (isotypicMultiplicity_def K L M S).trans Module.finrank_zero_of_subsingleton
-
-omit [IsAlgClosed K] [LieAlgebra K L] [LieModule K L M] in
-/-- A finite-dimensional module has trivial isotypic component for an infinite-dimensional type. -/
-theorem isotypicComponent_eq_bot_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
-    [LieRingModule L S] (hS : ¬ Module.Finite K S) :
-    isotypicComponent K L M S = ⊥ := by
-  rw [isotypicComponent_def, sSup_eq_bot]
-  rintro P ⟨e⟩
-  exact absurd (Module.Finite.equiv e.toLinearEquiv) hS
-
 /-- **An isotypic component is the power of its irreducible type counted by its multiplicity.**
 For a finite-dimensional Lie module `M` over an algebraically closed field and an
 irreducible `S`, its `S`-isotypic component is Lie-equivalent to
@@ -190,8 +156,8 @@ theorem nonempty_lieModuleEquiv_isotypicComponent
       (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
   by_cases hfin : Module.Finite K S
   swap
-  · rw [isotypicComponent_eq_bot_of_not_finite (K := K) (L := L) (M := M) S hfin,
-      isotypicMultiplicity_eq_zero_of_not_finite (K := K) (L := L) (M := M) S hfin]
+  · rw [isotypicComponent_eq_bot_of_not_finite K L M S hfin,
+      isotypicMultiplicity_eq_zero_of_not_finite K L M S hfin]
     exact ⟨{ (0 : _ →ₗ⁅K,L⁆ _) with
       invFun := 0
       left_inv := fun _ ↦ Subsingleton.elim _ _
@@ -258,8 +224,8 @@ theorem finrank_isotypicComponent (S : Type w₁) [AddCommGroup S] [Module K S] 
     finrank K (isotypicComponent K L M S) = isotypicMultiplicity K L M S * finrank K S := by
   by_cases hfin : Module.Finite K S
   swap
-  · rw [isotypicComponent_eq_bot_of_not_finite (K := K) (L := L) (M := M) S hfin,
-      isotypicMultiplicity_eq_zero_of_not_finite (K := K) (L := L) (M := M) S hfin]
+  · rw [isotypicComponent_eq_bot_of_not_finite K L M S hfin,
+      isotypicMultiplicity_eq_zero_of_not_finite K L M S hfin]
     rw [zero_mul]
     exact Module.finrank_zero_of_subsingleton
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_isotypicComponent (K := K) (L := L) (M := M) S
