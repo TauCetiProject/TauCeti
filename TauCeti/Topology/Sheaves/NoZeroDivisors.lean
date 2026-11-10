@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Hom
+public import Mathlib.Algebra.Group.Hom.Defs
+public import Mathlib.Algebra.GroupWithZero.Defs
 public import Mathlib.Topology.Sheaves.Stalks
 
 /-!
@@ -13,8 +14,9 @@ public import Mathlib.Topology.Sheaves.Stalks
 
 If sections on a basis of open neighborhoods of a point have no zero divisors, the stalk
 has no zero divisors. This applies to concrete categories whose objects carry a multiplication
-with zero preserved by the morphisms, and whose forgetful functor preserves filtered colimits;
-neither a unit, associativity, commutativity, an addition nor the sheaf condition is needed.
+and a zero preserved by the morphisms, and whose forgetful functor preserves filtered colimits;
+neither the absorption laws `0 * a = 0 = a * 0`, a unit, associativity, commutativity, an addition
+nor the sheaf condition is needed.
 -/
 
 public section
@@ -28,7 +30,7 @@ namespace TopCat.Presheaf
 variable {C : Type u} [Category.{v} C] [HasColimits.{v} C]
   {FC : C → C → Type*} {CC : C → Type v}
   [∀ R S, FunLike (FC R S) (CC R) (CC S)] [ConcreteCategory C FC]
-  [∀ R, MulZeroClass (CC R)] [∀ R S, MulHomClass (FC R S) (CC R) (CC S)]
+  [∀ R, Mul (CC R)] [∀ R, Zero (CC R)] [∀ R S, MulHomClass (FC R S) (CC R) (CC S)]
   [∀ R S, ZeroHomClass (FC R S) (CC R) (CC S)]
   [PreservesFilteredColimits (forget C)] {X : TopCat.{v}}
 
