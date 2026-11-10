@@ -248,6 +248,14 @@ theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTot
       ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
   simp [fiberwiseMap]
 
+/-- The fibrewise map of a family of composites is the composite of the fibrewise maps. -/
+theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'')]
+    (ψ : ∀ b, E' b → E'' b) (φ : ∀ b, E b → E' b) :
+    fiberwiseMap (F := F) (fun b ↦ ψ b ∘ φ b) = fiberwiseMap ψ ∘ fiberwiseMap φ := by
+  funext x
+  obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+  simp
+
 end FiberwiseMap
 
 section SMul
@@ -292,6 +300,17 @@ end SMul
 manifold `B × F`. -/
 instance : ChartedSpace (ModelProd HB HF) (ManifoldTotalSpace F E) :=
   ChartedSpace.comp (ModelProd HB HF) (B × F) (TotalSpace F E)
+
+/-- The fibrewise map of a family of composites is `C^n` when both fibrewise maps are. -/
+theorem _root_.ContMDiff.fiberwiseMap_comp {E' E'' : B → Type*}
+    [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [TopologicalSpace (TotalSpace F E'')] [∀ b, TopologicalSpace (E'' b)] [FiberBundle F E'']
+    {ψ : ∀ b, E' b → E'' b} {φ : ∀ b, E b → E' b}
+    (hψ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) ψ))
+    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) φ)) :
+    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) fun b ↦ ψ b ∘ φ b) := by
+  rw [ManifoldTotalSpace.fiberwiseMap_comp]
+  exact hψ.comp hφ
 
 /-- The preferred chart at a point is the trivialization at its base point followed by the
 product of the charts of the base and of the fibre at its coordinates. -/
@@ -530,6 +549,16 @@ theorem contMDiffOn_trivialization (e : Trivialization F (π F E)) [MemTrivializ
   refine ((hproj.prodMk (hchange.comp_of_eq (hproj.prodMk hcoord) (by simp [e₀]))
     ).congr_of_eventuallyEq (eventually_of_mem hU fun y hy ↦ ?_)).contMDiffWithinAt
   exact Prod.ext (e.coe_fst' hy.2) (e₀.coordChange_apply_snd e hy.1).symm
+
+/-- The fibre coordinate, in a trivialization of the atlas of a `C^n` fibre bundle, of a map into
+the total space is `C^n` on a set where the map is `C^n` and lies over the base set. -/
+theorem contMDiffOn_trivialization_snd_comp (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {f : M → ManifoldTotalSpace F E} {s : Set M}
+    (hf : ContMDiffOn IM (IB.prod IF) n f s)
+    (hfe : ∀ x ∈ s, ((homeomorph F E).symm (f x)).proj ∈ e.baseSet) :
+    ContMDiffOn IM IF n (fun x ↦ (e ((homeomorph F E).symm (f x))).2) s :=
+  contMDiff_snd.comp_contMDiffOn
+    ((contMDiffOn_trivialization e).comp hf fun x hx ↦ e.mem_source.2 (hfe x hx))
 
 /-- The inverse of a trivialization of the atlas of a `C^n` fibre bundle is `C^n` on its target,
 as a map from the product manifold `B × F` to the total space. -/
