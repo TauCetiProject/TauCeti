@@ -134,8 +134,7 @@ theorem ofReal_dist_le_circleImageLength_of_mem_ball_inter_sphere
     fun θ hθ =>
       circleMap_mem_ball_of_mem_Icc hρ.le (by rw [add_sub_cancel_left]; exact ht₁.1)
         (by rw [add_sub_cancel_left]; exact ht₂.2) hθ hz'.1 hw'.1
-  exact ofReal_dist_le_circleImageLength isOpen_ball hf ζ hρ (by linarith)
-    (by linarith [ht₁.1, ht₂.2, Real.pi_pos]) harc harc
+  exact ofReal_dist_le_circleImageLength isOpen_ball hf ζ hρ (by linarith) harc harc
 
 /-- **The image of `ball c r ∩ sphere ζ ρ` is no wider than its length.** A bound `ε` on
 `TauCeti.circleImageLength f (ball c r) ζ ρ` bounds the diameter of the image of
@@ -190,7 +189,7 @@ theorem exists_diam_image_ball_inter_sphere_le_and_circleImageLength_ne_top
       diam (f '' (ball c r ∩ sphere ζ ρ)) ≤ ε ∧
       IsBounded (f '' (ball c r ∩ sphere ζ ρ)) := by
   obtain ⟨ρ, hρmem, hlen⟩ :=
-    exists_circleImageLength_lt_of_lintegral_ne_top (s := ball c r) f measurableSet_ball ζ hfin
+    exists_circleImageLength_lt_of_lintegral_ne_top (s := ball c r) f ζ hfin
       (ENNReal.ofReal_pos.mpr hε).ne' hR
   have hfin' : circleImageLength f (ball c r) ζ ρ ≠ ⊤ := (hlen.trans ENNReal.ofReal_lt_top).ne
   exact ⟨ρ, hρmem, hfin', diam_image_ball_inter_sphere_le hf hε.le hlen.le,
