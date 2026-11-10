@@ -34,6 +34,7 @@ public section
 namespace TauCeti.IsSerreSystem
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
@@ -46,22 +47,11 @@ theorem weylUnit_conj_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
     (weylUnit hE hF : A) * E j * ↑(weylUnit hE hF)⁻¹ =
       (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ := by
   have hweight : ⁅H i, E j⁆ = (-3 : ℚ) • E j := by
-    rw [hs.lie_H_E, hij, ← Int.cast_smul_eq_zsmul ℚ]
-    norm_num
+    simpa [hij] using hs.lie_H_E_smul i j
   by_cases hH : H i = 0
-  · have hz : E j = 0 := by
-      have hw : (-3 : ℚ) • E j = 0 := by rw [← hweight, hH, zero_lie]
-      exact (smul_eq_zero.mp hw).resolve_left (by norm_num)
-    simp [hz]
-  have ht : IsSl2Triple (H i) (E i) (F i) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self i
-      lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-      lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i }
-  have hne : j ≠ i := by
-    intro h
-    subst j
-    omega
+  · simp [hs.E_eq_zero_of_H_eq_zero hH (by omega : CM i j ≠ 0)]
+  have ht := hs.isSl2Triple hii hH
+  have hne : j ≠ i := ne_of_apply_ne (CM i) (by omega)
   have hlower : ⁅F i, E j⁆ = 0 := by
     rw [← lie_skew, hs.lie_E_F_of_ne j i hne, neg_zero]
   exact ht.weylUnit_conj_of_weight_neg_three hE hF hweight hlower
@@ -74,22 +64,11 @@ theorem weylUnit_conj_F_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
     (weylUnit hE hF : A) * F j * ↑(weylUnit hE hF)⁻¹ =
       -(6⁻¹ : ℚ) • ⁅F i, ⁅F i, ⁅F i, F j⁆⁆⁆ := by
   have hweight : ⁅H i, F j⁆ = (3 : ℚ) • F j := by
-    rw [hs.lie_H_F, hij, ← Int.cast_smul_eq_zsmul ℚ]
-    norm_num
+    simpa [hij] using hs.lie_H_F_smul i j
   by_cases hH : H i = 0
-  · have hz : F j = 0 := by
-      have hw : (3 : ℚ) • F j = 0 := by rw [← hweight, hH, zero_lie]
-      exact (smul_eq_zero.mp hw).resolve_left (by norm_num)
-    simp [hz]
-  have ht : IsSl2Triple (H i) (E i) (F i) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self i
-      lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-      lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i }
-  have hne : i ≠ j := by
-    intro h
-    subst j
-    omega
+  · simp [hs.F_eq_zero_of_H_eq_zero hH (by omega : CM i j ≠ 0)]
+  have ht := hs.isSl2Triple hii hH
+  have hne : i ≠ j := ne_of_apply_ne (CM i) (by omega)
   exact ht.weylUnit_conj_of_weight_three hE hF hweight (hs.lie_E_F_of_ne i j hne)
 
 end TauCeti.IsSerreSystem
