@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AlgebraicIndependent.Transcendental
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+public import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
 # Symmetric polynomials in a disjoint union of two alphabets
@@ -48,40 +49,29 @@ section CommSemiring
 
 variable (R : Type*) [CommSemiring R]
 
-/-- The coefficients of a product of power series over `σ ⊕ τ` whose factors are transported from
-`σ` and from `τ` by renaming: the coefficient of `tⁿ` is a convolution over the antidiagonal. -/
-private theorem coeff_prod_sum_type (a : MvPolynomial σ R → PowerSeries (MvPolynomial σ R))
-    (b : MvPolynomial τ R → PowerSeries (MvPolynomial τ R))
-    (c : MvPolynomial (σ ⊕ τ) R → PowerSeries (MvPolynomial (σ ⊕ τ) R))
-    (ha : ∀ i, c (X (Sum.inl i)) = PowerSeries.map (rename Sum.inl).toRingHom (a (X i)))
-    (hb : ∀ j, c (X (Sum.inr j)) = PowerSeries.map (rename Sum.inr).toRingHom (b (X j)))
-    (n : ℕ) :
-    PowerSeries.coeff n (∏ k, c (X k)) = ∑ p ∈ antidiagonal n,
-      rename Sum.inl (PowerSeries.coeff p.1 (∏ i, a (X i))) *
-        rename Sum.inr (PowerSeries.coeff p.2 (∏ j, b (X j))) := by
-  simp only [Fintype.prod_sum_type, ha, hb, ← map_prod, PowerSeries.coeff_mul,
-    PowerSeries.coeff_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-
 /-- **The elementary symmetric polynomials of a disjoint union of alphabets**:
 `e_n(x, y) = ∑_{i + j = n} e_i(x) e_j(y)`. -/
 theorem esymm_sum_type (n : ℕ) :
     esymm (σ ⊕ τ) R n = ∑ p ∈ antidiagonal n,
       rename Sum.inl (esymm σ R p.1) * rename Sum.inr (esymm τ R p.2) := by
-  have h := coeff_prod_sum_type (σ := σ) (τ := τ) R
-    (fun x => 1 + PowerSeries.C x * PowerSeries.X) (fun x => 1 + PowerSeries.C x * PowerSeries.X)
-    (fun x => 1 + PowerSeries.C x * PowerSeries.X)
-    (fun i => by simp) (fun j => by simp) n
-  simpa only [← mk_esymm_eq_prod_one_add_X, PowerSeries.coeff_mk] using h
+  have h := PowerSeries.coeff_prod_sum_type (rename Sum.inl).toRingHom (rename Sum.inr).toRingHom
+    (fun i : σ => 1 + PowerSeries.C (X i : MvPolynomial σ R) * PowerSeries.X)
+    (fun j : τ => 1 + PowerSeries.C (X j : MvPolynomial τ R) * PowerSeries.X)
+    (fun k => 1 + PowerSeries.C (X k) * PowerSeries.X) (fun i => by simp) (fun j => by simp) n
+  simpa only [← mk_esymm_eq_prod_one_add_X, PowerSeries.coeff_mk, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe] using h
 
 /-- **The complete homogeneous symmetric polynomials of a disjoint union of alphabets**:
 `h_n(x, y) = ∑_{i + j = n} h_i(x) h_j(y)`. -/
 theorem hsymm_sum_type [DecidableEq σ] [DecidableEq τ] (n : ℕ) :
     hsymm (σ ⊕ τ) R n = ∑ p ∈ antidiagonal n,
       rename Sum.inl (hsymm σ R p.1) * rename Sum.inr (hsymm τ R p.2) := by
-  have h := coeff_prod_sum_type (σ := σ) (τ := τ) R (fun x => PowerSeries.mk fun n => x ^ n)
-    (fun x => PowerSeries.mk fun n => x ^ n) (fun x => PowerSeries.mk fun n => x ^ n)
-    (fun i => by ext; simp) (fun j => by ext; simp) n
-  simpa only [← mk_hsymm_eq_prod_mk_pow, PowerSeries.coeff_mk] using h
+  have h := PowerSeries.coeff_prod_sum_type (rename Sum.inl).toRingHom (rename Sum.inr).toRingHom
+    (fun i : σ => PowerSeries.mk fun n => (X i : MvPolynomial σ R) ^ n)
+    (fun j : τ => PowerSeries.mk fun n => (X j : MvPolynomial τ R) ^ n)
+    (fun k => PowerSeries.mk fun n => X k ^ n) (fun i => by ext; simp) (fun j => by ext; simp) n
+  simpa only [← mk_hsymm_eq_prod_mk_pow, PowerSeries.coeff_mk, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe] using h
 
 /-- **The power sums of a disjoint union of alphabets**: `p_n(x, y) = p_n(x) + p_n(y)`. -/
 theorem psum_sum_type (n : ℕ) :

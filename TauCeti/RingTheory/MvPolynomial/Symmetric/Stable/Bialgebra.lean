@@ -49,6 +49,9 @@ sums are primitive.
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 5, Example 25: the comultiplication of `Λ` and the alphabet-splitting description.
+* The bialgebra instance is built with `Bialgebra.ofAlgHom`, following the construction of
+  `SymmetricAlgebra.instBialgebra` and `SymmetricAlgebra.instIsCocomm` in Mathlib's
+  `Mathlib.RingTheory.Bialgebra.SymmetricAlgebra`.
 -/
 
 public section
