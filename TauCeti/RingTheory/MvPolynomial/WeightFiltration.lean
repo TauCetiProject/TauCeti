@@ -371,7 +371,7 @@ theorem _root_.Polynomial.coeff_weightReesHom_mem_weightFiltration (f : (MvPolyn
 
 /-- `weightReesHom` fixes the polynomials in `t` with constant coefficients. -/
 @[simp]
-theorem weightReesHom_map_C (r : R[X]) :
+theorem _root_.Polynomial.weightReesHom_map_C (r : R[X]) :
     weightReesHom R w (r.map (C : R →+* MvPolynomial σ R)) = r.map C := by
   induction r using Polynomial.induction_on' with
   | add p q hp hq => rw [Polynomial.map_add, map_add, hp, hq]
