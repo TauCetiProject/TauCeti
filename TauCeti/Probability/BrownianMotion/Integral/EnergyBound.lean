@@ -80,6 +80,23 @@ theorem elementaryEnergy_nonneg (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
   simpa using monotoneOn_elementaryEnergy (a := a) hτ ω (by simp) (by simp) (Nat.zero_le n)
 
 variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
+
+/-- Square-integrable heights give integrable finite-grid energy. -/
+theorem integrable_elementaryEnergy (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
+    Integrable (elementaryEnergy τ a n) P := by
+  exact integrable_finsetSum _ fun i hi ↦ ((ha₂ i (mem_range.mp hi)).integrable_sq).mul_const _
+
+/-- The elementary Brownian isometry expressed as expected pathwise energy. -/
+theorem IsFilteredPreBrownianReal.integral_sq_sum_mul_sub_eq_integral_elementaryEnergy
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
+    ∫ ω, (∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 ∂P =
+      ∫ ω, elementaryEnergy τ a n ω ∂P := by
+  rw [hW.integral_sq_sum_mul_sub hτ ha ha₂]
+  simp only [elementaryEnergy_def, integral_finsetSum _
+    (fun i hi ↦ ((ha₂ i (mem_range.mp hi)).integrable_sq).mul_const _), integral_mul_const]
 
 /-- The energy including interval `j` is already known at its left endpoint `τ j`.
 This permits energy truncation without anticipation. -/
@@ -93,61 +110,91 @@ theorem stronglyMeasurable_elementaryEnergy (hτ : MonotoneOn τ (Iic n))
     (ℱ.mono (hτ (hij.trans hj.le) hj.le hij))).pow 2).mul stronglyMeasurable_const
 
 /-- Retain precisely the intervals whose inclusion stays within the original cumulative
-energy budget. This auxiliary holding is used only in the probability estimate. -/
-private def energyCutoff (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ) (δ : ℝ) (i : ℕ) (ω : Ω) : ℝ :=
-  if elementaryEnergy τ a (i + 1) ω ≤ δ then a i ω else 0
+energy budget, setting heights on zero-length intervals to zero as well.
+This auxiliary holding is used only in the probability estimate. -/
+private def energyCutoff (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ) (δ : ℝ) (i : ℕ) : Ω → ℝ :=
+  if τ i < τ (i + 1) then {ω | elementaryEnergy τ a (i + 1) ω ≤ δ}.indicator (a i)
+  else 0
+
+private theorem energyCutoff_eq_of_elementaryEnergy_le (hτ : MonotoneOn τ (Iic n))
+    {δ : ℝ} {ω : Ω} (hE : elementaryEnergy τ a n ω ≤ δ) {i : ℕ} (hi : i < n) :
+    energyCutoff τ a δ i ω = if τ i < τ (i + 1) then a i ω else 0 := by
+  have hiδ := (monotoneOn_elementaryEnergy (a := a) hτ ω
+    hi (by simp) hi).trans hE
+  by_cases hstep : τ i < τ (i + 1) <;> simp [energyCutoff, hstep, hiδ]
+
+private theorem stronglyMeasurable_energyCutoff (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (δ : ℝ) {i : ℕ} (hi : i < n) :
+    StronglyMeasurable[ℱ (τ i)] (energyCutoff τ a δ i) := by
+  by_cases hstep : τ i < τ (i + 1)
+  · simp only [energyCutoff, hstep, ite_true]
+    exact (ha i hi).indicator (measurableSet_le
+      (stronglyMeasurable_elementaryEnergy hτ ha hi).measurable measurable_const)
+  · simpa only [energyCutoff, hstep, ite_false] using
+      (stronglyMeasurable_zero : StronglyMeasurable[ℱ (τ i)] (fun _ : Ω ↦ (0 : ℝ)))
+
+private theorem memLp_energyCutoff [IsFiniteMeasure P] (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (δ : ℝ)
+    {i : ℕ} (hi : i < n) : MemLp (energyCutoff τ a δ i) 2 P := by
+  by_cases hstep : τ i < τ (i + 1)
+  · have hdt : 0 < (τ (i + 1) : ℝ) - τ i := sub_pos.mpr (NNReal.coe_lt_coe.mpr hstep)
+    refine MemLp.of_bound ((stronglyMeasurable_energyCutoff hτ ha δ hi).mono
+      (ℱ.le _)).aestronglyMeasurable (Real.sqrt (δ / ((τ (i + 1) : ℝ) - τ i)))
+      (.of_forall fun ω ↦ ?_)
+    simp only [energyCutoff, hstep, ite_true, Set.indicator_apply, mem_ofPred_eq]
+    split_ifs with hE
+    · have hterm : a i ω ^ 2 * ((τ (i + 1) : ℝ) - τ i) ≤ δ := by
+        rw [elementaryEnergy_succ] at hE
+        have hnonneg := elementaryEnergy_nonneg (a := a)
+          (hτ.mono (Iic_subset_Iic.mpr hi.le)) ω
+        linarith
+      simpa only [Real.norm_eq_abs] using Real.abs_le_sqrt ((le_div_iff₀ hdt).2 hterm)
+    · simp [Real.sqrt_nonneg]
+  · simpa only [energyCutoff, hstep, ite_false] using
+      (MemLp.zero : MemLp (fun _ : Ω ↦ (0 : ℝ)) 2 P)
 
 private theorem elementaryEnergy_energyCutoff_le (hτ : MonotoneOn τ (Iic n))
     {δ : ℝ} (hδ : 0 ≤ δ) (ω : Ω) :
     elementaryEnergy τ (energyCutoff τ a δ) n ω ≤ δ := by
-  revert hτ
   induction n with
-  | zero => intro _; simpa using hδ
+  | zero => simpa using hδ
   | succ n ih =>
-    intro hτ
-    rw [elementaryEnergy_succ]
     by_cases hn : elementaryEnergy τ a (n + 1) ω ≤ δ
-    · have heq : elementaryEnergy τ (energyCutoff τ a δ) n ω =
-          elementaryEnergy τ a n ω := by
+    · have heq : elementaryEnergy τ (energyCutoff τ a δ) (n + 1) ω =
+          elementaryEnergy τ a (n + 1) ω := by
         apply sum_congr rfl
         intro i hi
-        have hiδ := (monotoneOn_elementaryEnergy (a := a) hτ ω
-          (Nat.succ_le_succ (mem_range.mp hi).le)
-          (by simp) (Nat.succ_le_succ (mem_range.mp hi).le)).trans hn
-        simp [energyCutoff, hiδ]
-      rw [energyCutoff, ite_eq_left hn, heq, ← elementaryEnergy_succ]
+        have hi' := mem_range.mp hi
+        rw [energyCutoff_eq_of_elementaryEnergy_le hτ hn hi']
+        split_ifs with hstep
+        · rfl
+        · have heq : τ (i + 1) = τ i := le_antisymm (le_of_not_gt hstep)
+            (hτ hi'.le hi' (Nat.le_succ i))
+          simp [heq]
+      rw [heq]
       exact hn
-    · simp only [energyCutoff, hn, ite_false, zero_pow (by decide : 2 ≠ 0), zero_mul, add_zero]
+    · rw [elementaryEnergy_succ]
+      have hzero : energyCutoff τ a δ n ω = 0 := by
+        by_cases hstep : τ n < τ (n + 1) <;> simp [energyCutoff, hstep, hn]
+      simp only [hzero, zero_pow (by decide : 2 ≠ 0), zero_mul, add_zero]
       exact ih (hτ.mono (Iic_subset_Iic.mpr (Nat.le_succ n)))
-
-variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
 
 private theorem measure_abs_sum_mul_sub_energyCutoff_ge_le
     (hW : IsFilteredPreBrownianReal ℱ W P) (hτ : MonotoneOn τ (Iic n))
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) :
+    {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) :
     P {ω | ε ≤ |∑ i ∈ range n,
       energyCutoff τ a δ i ω * (W (τ (i + 1)) ω - W (τ i) ω)|} ≤
         ENNReal.ofReal (δ / ε ^ 2) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   let b := energyCutoff τ a δ
   have hb (i : ℕ) (hi : i < n) : StronglyMeasurable[ℱ (τ i)] (b i) :=
-    (ha i hi).ite (measurableSet_le
-      (stronglyMeasurable_elementaryEnergy hτ ha hi).measurable measurable_const)
-      stronglyMeasurable_zero
-  have hb₂ (i : ℕ) (hi : i < n) : MemLp (b i) 2 P := by
-    exact (ha₂ i hi).indicator (measurableSet_le
-      ((stronglyMeasurable_elementaryEnergy hτ ha hi).mono (ℱ.le _)).measurable
-      (measurable_const (a := δ))).nullMeasurableSet
-  have hbE : Integrable (elementaryEnergy τ b n) P := by
-    exact integrable_finsetSum _ fun i hi ↦ ((hb₂ i (mem_range.mp hi)).integrable_sq).mul_const _
+    stronglyMeasurable_energyCutoff hτ ha δ hi
+  have hb₂ (i : ℕ) (hi : i < n) : MemLp (b i) 2 P :=
+    memLp_energyCutoff hτ ha δ hi
+  have hbE : Integrable (elementaryEnergy τ b n) P := integrable_elementaryEnergy hb₂
   have hsecond : ∫ ω, (∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 ∂P ≤ δ := by
-    rw [hW.integral_sq_sum_mul_sub hτ hb hb₂]
-    have heq : (∑ i ∈ range n, (∫ ω, b i ω ^ 2 ∂P) * ((τ (i + 1) : ℝ) - τ i)) =
-        ∫ ω, elementaryEnergy τ b n ω ∂P := by
-      simp only [elementaryEnergy_def, integral_finsetSum _
-        (fun i hi ↦ ((hb₂ i (mem_range.mp hi)).integrable_sq).mul_const _), integral_mul_const]
-    rw [heq]
+    rw [hW.integral_sq_sum_mul_sub_eq_integral_elementaryEnergy hτ hb hb₂]
     exact (integral_mono_ae hbE (integrable_const δ)
       (.of_forall (elementaryEnergy_energyCutoff_le hτ hδ))).trans_eq (by simp)
   have hcheb := TauCeti.meas_ge_le_integral_norm_sq_div_sq
@@ -158,13 +205,13 @@ private theorem measure_abs_sum_mul_sub_energyCutoff_ge_le
   exact hcheb.trans
     (ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hsecond (sq_nonneg ε)))
 
-/-- **The elementary energy-to-probability estimate.** For square-integrable heights known
-at the left endpoints, large Brownian gains require either large energy or a fluctuation
-with probability at most `δ / ε²`. No bound on the expected original energy is imposed. -/
+/-- **The elementary energy-to-probability estimate.** For heights known at the left
+endpoints, large Brownian gains require either large energy or a fluctuation with probability
+at most `δ / ε²`. No moment hypothesis on the original heights is imposed. -/
 theorem IsFilteredPreBrownianReal.measure_abs_sum_mul_sub_ge_le
     (hW : IsFilteredPreBrownianReal ℱ W P) (hτ : MonotoneOn τ (Iic n))
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) :
+    {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) :
     P {ω | ε ≤ |∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)|} ≤
       ENNReal.ofReal (δ / ε ^ 2) + P {ω | δ < elementaryEnergy τ a n ω} := by
   let b := energyCutoff τ a δ
@@ -175,21 +222,25 @@ theorem IsFilteredPreBrownianReal.measure_abs_sum_mul_sub_ge_le
     by_cases hE : δ < elementaryEnergy τ a n ω
     · exact Or.inr hE
     · left
-      have heq : ∀ i < n, b i ω = a i ω := by
-        intro i hi
-        have hiδ := (monotoneOn_elementaryEnergy (a := a) hτ ω
-          hi (by simp) hi).trans (le_of_not_gt hE)
-        simp [b, energyCutoff, hiδ]
       have hsum : (∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)) =
-          ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω) :=
-        sum_congr rfl fun i hi ↦ by rw [heq i (mem_range.mp hi)]
+          ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω) := by
+        apply sum_congr rfl
+        intro i hi
+        have hi' := mem_range.mp hi
+        dsimp only [b]
+        rw [energyCutoff_eq_of_elementaryEnergy_le hτ (le_of_not_gt hE) hi']
+        split_ifs with hstep
+        · rfl
+        · have heq : τ (i + 1) = τ i := le_antisymm (le_of_not_gt hstep)
+            (hτ hi'.le hi' (Nat.le_succ i))
+          simp [heq]
       simpa only [mem_ofPred_eq, hsum] using hω
   calc
     _ ≤ P ({ω | ε ≤ |∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)|} ∪
         {ω | δ < elementaryEnergy τ a n ω}) := measure_mono hevent
     _ ≤ _ := measure_union_le _ _
     _ ≤ _ := add_le_add
-      (measure_abs_sum_mul_sub_energyCutoff_ge_le hW hτ ha ha₂ hε hδ) le_rfl
+      (measure_abs_sum_mul_sub_energyCutoff_ge_le hW hτ ha hε hδ) le_rfl
 
 /-- Convergence to zero in pathwise square energy in probability implies convergence to
 zero in probability of elementary Brownian integrals. Grids and their sizes may vary;
@@ -199,7 +250,6 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
     {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0} {height : ι → ℕ → Ω → ℝ}
     (hgrid : ∀ k, MonotoneOn (grid k) (Iic (N k)))
     (hheight : ∀ k i, i < N k → StronglyMeasurable[ℱ (grid k i)] (height k i))
-    (hheight₂ : ∀ k i, i < N k → MemLp (height k i) 2 P)
     (henergy : TendstoInMeasure P (fun k ↦ elementaryEnergy (grid k) (height k) (N k))
       l (fun _ ↦ 0)) :
     TendstoInMeasure P (fun k ω ↦ ∑ i ∈ range (N k),
@@ -215,7 +265,7 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
   simp only [sub_zero, Real.norm_eq_abs] at htail
   have hc₂ : 0 < c / 2 := by positivity
   filter_upwards [htail.eventually (gt_mem_nhds hc₂)] with k hk
-  have hbound := hW.measure_abs_sum_mul_sub_ge_le (hgrid k) (hheight k) (hheight₂ k) hε hδ.le
+  have hbound := hW.measure_abs_sum_mul_sub_ge_le (hgrid k) (hheight k) hε hδ.le
   have hreal := ENNReal.toReal_mono (by finiteness) hbound
   simp only [ENNReal.toReal_add ENNReal.ofReal_ne_top (measure_ne_top _ _),
     ENNReal.toReal_ofReal (div_nonneg hδ.le (sq_nonneg ε)), ← measureReal_def] at hreal
