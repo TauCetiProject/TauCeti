@@ -19,8 +19,8 @@ complex structures of the two pieces, on the tangent bundle of a manifold `M` wi
 two-form `σ`, such as a closed symplectic manifold.
 
 Each piece carries the structure `TauCeti.SmoothTwoForm.Compatible.pairOfPantsAlmostComplex`
-built from a compatible base structure and three jointly smooth period-one families of tame end
-structures. When the output family of `S'` is the input family of `S` at `q`, the two structures
+built from a compatible base structure and three families of smooth tame end structures.
+When the output family of `S'` is the input family of `S` at `q`, the two structures
 agree on the cylindrical part of the neck, where both are this common end structure
 (`TauCeti.SmoothTwoForm.Compatible.pairOfPantsAlmostComplex_plumbingMap`). The glued structure
 `TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex` uses the inserted structure, read through
@@ -33,8 +33,9 @@ elsewhere.
 * Off the width-two collar `Re z > L - 2` of the end `q` it is the receiving structure, and off
   the width-two collar `Re z < 2 - L` of the end at `∞` its pullback along `ψ` is the inserted
   structure.
-* For `L > 4` it is smooth jointly in the neck length, the domain point and the target point, as a
-  section of the tangent endomorphism bundle
+* For `L > 4` it is `C^n` jointly in the neck length, the domain point and the target point, as
+  a section of the tangent endomorphism bundle, when the end families of both pieces have period
+  one and are jointly `C^n` on `ℝ × M`
   (`TauCeti.SmoothTwoForm.Compatible.contMDiff_plumbedAlmostComplex`).
 
 Together with the plumbed Hamiltonian perturbation `TauCeti.Floer.plumbedPerturbation`, this is the

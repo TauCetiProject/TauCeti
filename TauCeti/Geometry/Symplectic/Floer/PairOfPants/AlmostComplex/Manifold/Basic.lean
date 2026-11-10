@@ -11,11 +11,11 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
 /-!
 # Pair-of-pants almost complex data on a manifold
 
-Given a compatible base structure and three smooth period-one families of tame structures on
-an actual tangent bundle, construct a smooth domain-dependent tame structure on the
-thrice-punctured sphere. Compatible end data give compatible structures. On each sufficiently
-far cylindrical tail the structure is exactly the prescribed end structure; off the cutoff
-regions it is the base structure.
+Given a compatible base structure and three families of smooth tame structures on an actual
+tangent bundle, construct a domain-dependent family of smooth tame structures on the
+thrice-punctured sphere. Compatible end data give compatible structures. Off the cutoff regions
+the structure is the base structure. When an end family has period one, on each sufficiently far
+cylindrical tail of that end the structure is exactly the prescribed end structure.
 
 More generally, `TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` applies the linear
 end-weighted construction `TauCeti.Floer.endWeightedAlmostComplex` in each tangent fiber, for any
@@ -25,8 +25,9 @@ coordinates of the end structures, so smoothness follows from
 `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`, which works in tangent
 trivializations. Thus no global trivialization or constant target two-form is assumed.
 Neither closedness of the two-form nor compactness of the target is needed. The resulting
-family is jointly smooth in the domain and target variables as a section of the tangent
-endomorphism bundle along the target projection. This is extension of coefficient data, not
+family is jointly `C^n` in the domain and target variables as a section of the tangent
+endomorphism bundle along the target projection, provided the end families have period one and
+are jointly `C^n` on `ℝ × M`. This is extension of coefficient data, not
 regularity of a curve operator.
 
 ## References
