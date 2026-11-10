@@ -73,35 +73,16 @@ theorem posRootsFinset_g2 :
 root table, just as for the integral datum. -/
 theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
     k ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ (k : ℕ) < 6 := by
-  have : NeZero G2.rank := ⟨by simp [rank]⟩
-  have height (k : Fin G2.numRoots) :
-      (G2.rationalBase ht).flip.height k = g2Coroot k 0 + g2Coroot k 1 := by
-    have h := apply_root_eq_height_zsmul (G2.rationalRootSystem ht).flip (G2.rationalBase ht).flip
-      (Pi.evalAddMonoidHom (fun _ : Fin G2.rank ↦ ℚ) 0 +
-        Pi.evalAddMonoidHom (fun _ : Fin G2.rank ↦ ℚ) 1) (c := 1) ?_ k
-    · simp only [AddMonoidHom.add_apply, Pi.evalAddMonoidHom_apply, flip_root,
-        coroot_rationalRootSystem, zsmul_eq_mul, mul_one] at h
-      dsimp +instances only [numRoots, rank] at h
-      rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_coroot] at h
-      exact_mod_cast h.symm
-    · intro j hj
-      rw [Base.flip_support, support_rationalBase, mem_support_simplyConnectedBase] at hj
-      dsimp only [rank] at hj
-      have hj' : j = (⟨0, by simp [numRoots]⟩ : Fin G2.numRoots) ∨
-          j = (⟨1, by simp [numRoots]⟩ : Fin G2.numRoots) := by
-        simp only [Fin.ext_iff]
-        omega
-      rcases hj' with rfl | rfl <;>
-        simp only [AddMonoidHom.add_apply, Pi.evalAddMonoidHom_apply, flip_root,
-          coroot_rationalRootSystem] <;>
-        dsimp +instances only [numRoots, rank] <;>
-        simp [simplyConnectedRootDatum_G2, g2Coroot_apply]
-  rw [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff, height]
-  have htable (i : Fin 12) : 0 < g2Coroot i 0 + g2Coroot i 1 ↔ (i : ℕ) < 6 := by
-    have h := mem_posRoots_g2_iff i
-    rwa [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff,
-      height_flip_g2SimplyConnectedBase] at h
-  exact htable k
+  rw [mem_posRoots, Base.isPos_iff, height_rationalBase]
+  -- The uniform integral base is transported to the native G₂ datum by its assembly equation.
+  have hb := simplyConnectedBase_G2 ht
+  have h : ∀ i : Fin 12, 0 < g2SimplyConnectedBase.height i ↔ (i : ℕ) < 6 := by
+    intro i
+    simpa only [mem_posRoots, Base.isPos_iff] using mem_posRoots_g2_iff i
+  convert h k using 2
+  congr 1
+  · exact simplyConnectedRootDatum_G2 ht
+  · exact heq_of_eqRec_eq _ hb
 
 end DynkinType
 

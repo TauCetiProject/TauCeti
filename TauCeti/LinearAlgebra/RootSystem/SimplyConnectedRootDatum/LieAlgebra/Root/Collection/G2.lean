@@ -62,6 +62,20 @@ local macro "g2_table" : tactic => `(tactic|
    try dsimp +instances only [numRoots, rank]
    decide))
 
+private theorem g2_positive_root_sum_pairs : ∀ i j : Fin 6, i < j →
+    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
+        Set.range (G2.simplyConnectedRootDatum ht).root →
+    (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
+      (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3) := by
+  g2_table
+
+private theorem g2_positive_root_add_ne_zero : ∀ i j : Fin 6,
+    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ≠ 0 := by
+  simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply]
+  g2_table
+
 private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (hij : i < j)
     (u v : A) :
     ⁅chevalleyRootSubgroup ρ M hM hnil (Fin.castAdd 6 i) A (Multiplicative.ofAdd u),
@@ -86,17 +100,13 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
     rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil
       hsum hleft hright]
     exact mem k hk _
+  -- Three sum pairs use the one-factor formula, (0,1) the short–long formula,
+  -- (0,2) the short–short formula; all other pairs commute.
   by_cases hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
       (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
         Set.range (G2.simplyConnectedRootDatum ht).root
-  · have cases : ∀ a b : Fin 6, a < b →
-        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 a) +
-          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 b) ∈
-            Set.range (G2.simplyConnectedRootDatum ht).root →
-        (a = 0 ∧ b = 1) ∨ (a = 0 ∧ b = 2) ∨ (a = 0 ∧ b = 3) ∨
-          (a = 1 ∧ b = 4) ∨ (a = 2 ∧ b = 3) := by
-      g2_table
-    rcases cases i j hij hsum with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
+  · rcases g2_positive_root_sum_pairs i j hij hsum with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · -- State the equality through X: elaboration normalizes both the formula's coefficient/
       -- function lets and its Fin G2.numRoots indices to the concrete Fin (6 + 6) indices.
@@ -123,12 +133,8 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
     · exact one_factor 4 (by decide) (by g2_table) (by g2_table) (by g2_table)
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-  · have hzero : ∀ a b : Fin 6,
-        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 a) +
-          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 b) ≠ 0 := by
-      simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply]
-      g2_table
-    have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum (hzero i j) A u v
+  · have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum
+      (g2_positive_root_add_ne_zero i j) A u v
     rw [commutatorElement_def, hc]
     simp
 

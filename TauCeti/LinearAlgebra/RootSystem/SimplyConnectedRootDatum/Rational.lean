@@ -46,6 +46,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 * `TauCeti.DynkinType.hasCartanType_rationalRootSystem`: the rational system realizes its own
   Dynkin type against the pinned numbering.
 * `TauCeti.DynkinType.pairingIn_rationalRootSystem`: its Cartan integers are those of the datum.
+* `TauCeti.DynkinType.height_rationalBase`: rational base change preserves root heights.
 * `TauCeti.DynkinType.instIsReducedRationalRootSystem` and
   `TauCeti.DynkinType.instIsIrreducibleRationalRootSystem`: the rational system is reduced and
   irreducible.
@@ -153,6 +154,20 @@ instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).Is
 @[simp] theorem pairingIn_rationalRootSystem (i j : Fin t.numRoots) :
     (t.rationalRootSystem ht).pairingIn ℤ i j = (t.simplyConnectedRootDatum ht).pairingIn ℤ i j :=
   pairingIn_rootPairingBaseChange ..
+
+/-- Rational base change preserves the integral height of every root relative to the pinned
+base. Heights are integer-valued for both the integral datum and the rational system. -/
+@[simp] theorem height_rationalBase (i : Fin t.numRoots) :
+    (t.rationalBase ht).height i = (t.simplyConnectedBase ht).height i := by
+  obtain ⟨f, -, -, hf⟩ := (t.simplyConnectedBase ht).exists_root_eq_sum_int i
+  rw [(t.simplyConnectedBase ht).height_eq_sum hf, ← support_rationalBase]
+  apply (t.rationalBase ht).height_eq_sum
+  rw [support_rationalBase]
+  ext k
+  have hk := congrArg (fun x : Fin t.rank → ℤ => (x k : ℚ)) hf
+  simp only [Finset.sum_apply, Pi.smul_apply] at hk ⊢
+  simpa only [root_rationalRootSystem, zsmul_eq_mul, Int.cast_sum, Int.cast_mul,
+    Int.cast_id] using hk
 
 /-! ## The rational system is a root system -/
 
