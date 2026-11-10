@@ -51,24 +51,6 @@ namespace TauCeti.Comodule
 
 attribute [local instance] convolutionModule
 
-section Semiring
-
-variable {R C M : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
-  [AddCommMonoid M] [Module R M] [Comodule R C M]
-
-/-- A nonzero comodule which is projective over the ground ring has a nonzero coefficient space:
-the counit recovers every linear functional from its matrix coefficients. -/
-theorem matrixCoefficientSubmodule_ne_bot [Module.Projective R M] [Nontrivial M] :
-    matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≠ ⊥ := by
-  intro h
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  refine hm ((Module.forall_dual_apply_eq_zero_iff R m).mp fun φ ↦ ?_)
-  rw [← counit_matrixCoefficient (R := R) (C := C) φ m,
-    (Submodule.eq_bot_iff _).mp h _ (matrixCoefficient_mem_submodule (R := R) (C := C) φ m),
-    map_zero]
-
-end Semiring
-
 section Ring
 
 variable {R C M N : Type*} [CommRing R]
