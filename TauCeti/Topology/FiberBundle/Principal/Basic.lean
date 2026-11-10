@@ -238,8 +238,8 @@ theorem division_eq_of_mem_baseSet {e : Trivialization G (π G P)} [e.IsEquivari
 
 omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
-theorem division_self (p : P b) : division G p p = 1 :=
-  inv_mul_cancel _
+theorem division_self (p : P b) : division G p p = 1 := by
+  simp only [division, inv_mul_cancel]
 
 @[simp]
 theorem division_smul_right (p q : P b) (g : G) : division G p (op g • q) = division G p q * g :=
