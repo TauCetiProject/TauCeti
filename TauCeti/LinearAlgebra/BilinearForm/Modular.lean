@@ -299,7 +299,8 @@ theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ n
   have hdvd : ∀ y, r ∣ C x y := fun y ↦ by
     obtain ⟨c, hc⟩ := hx y
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa [mul_assoc] using hc)⟩
-  obtain ⟨f, hf⟩ := LinearMap.exists_smul_eq_of_forall_dvd hr hdvd
+  obtain ⟨f, hf⟩ := LinearMap.exists_smul_eq_of_forall_dvd
+    (isRegular_iff_mem_nonZeroDivisors.mpr hr).left hdvd
   obtain ⟨z, rfl⟩ := hC.bijective_left.2 f
   exact ⟨z, hC.bijective_left.1 (by rw [map_smul, hf])⟩
 
