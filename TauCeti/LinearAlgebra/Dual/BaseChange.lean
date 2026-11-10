@@ -30,7 +30,7 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
-  separate vectors when the original module is free.
+  separate vectors when the original module is projective.
 
 ## References
 
@@ -144,17 +144,25 @@ theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A 
         _ = Module.Dual.baseChange A (b.coord i) (a ⊗ₜ[R] m) := by
           simp [Module.Basis.coord_apply, Algebra.smul_def, mul_comm]
 
-/-- If `M` is free, the base changes of its `R`-linear functionals jointly separate vectors
+/-- If `M` is projective, the base changes of its `R`-linear functionals jointly separate vectors
 in `A ⊗[R] M`. -/
-theorem eq_of_baseChange_eq [Module.Free R M] {x y : A ⊗[R] M}
+theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
     (h : ∀ φ : Module.Dual R M,
       Module.Dual.baseChange A φ x = Module.Dual.baseChange A φ y) : x = y := by
-  let b := Module.Free.chooseBasis R M
-  let bA := (TensorProduct.isBaseChange R M A).basis b
-  apply bA.ext_elem
-  intro i
-  rw [baseChange_coord b i x, baseChange_coord b i y]
-  exact h (b.coord i)
+  -- Embed `M` as a direct summand of a free module `F` and separate in `A ⊗[R] F`.
+  obtain ⟨F, _, _, _, i, s, hsi⟩ := Module.Projective.iff_split.mp ‹Module.Projective R M›
+  have hinj : Function.Injective (i.baseChange A) :=
+    Function.LeftInverse.injective (g := s.baseChange A) fun t ↦ by
+      rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, hsi, LinearMap.baseChange_id,
+        LinearMap.id_apply]
+  have hnat (φ : Module.Dual R F) (t : A ⊗[R] M) :
+      Module.Dual.baseChange A φ (i.baseChange A t) = Module.Dual.baseChange A (φ ∘ₗ i) t := by
+    rw [← baseChangeEvaluation_one_tmul, Module.Dual.baseChangeEvaluation_one_tmul_baseChange,
+      baseChangeEvaluation_one_tmul]
+  let b := Module.Free.chooseBasis R F
+  refine hinj (((TensorProduct.isBaseChange R F A).basis b).ext_elem fun j ↦ ?_)
+  rw [baseChange_coord, baseChange_coord, hnat, hnat]
+  exact h (b.coord j ∘ₗ i)
 
 end TauCeti.Module.Dual
 
