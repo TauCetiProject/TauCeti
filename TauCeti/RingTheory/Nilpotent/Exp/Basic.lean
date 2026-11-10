@@ -190,9 +190,18 @@ theorem exp_zsmul_eq_sum_zsmul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (
     exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x :=
   exp_smul_eq_sum_smul_dividedPower hk t
 
+/-- The exponential of a nonzero integer multiple of a non-nilpotent element is `0` by
+convention. -/
+theorem exp_zsmul_eq_zero_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) {t : ℤ} (ht : t ≠ 0) :
+    exp (t • x) = 0 := by
+  have hnil : ¬ IsNilpotent (t • x) := fun h => hx <| by
+    simpa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, ht] using h.smul ((t : ℚ)⁻¹)
+  rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hnil)]
+  simp
+
 /-- An additive subgroup containing every divided power of an element contains every integral
 exponential of it. For a nilpotent element this is the integrality of root subgroup maps; for a
-non-nilpotent one the exponential is `0` by convention. -/
+non-nilpotent one the exponential is `0` by convention for `t ≠ 0` and `1` for `t = 0`. -/
 theorem exp_zsmul_mem {x : A} {S : Type*} [SetLike S A]
     [AddSubgroupClass S A] {T : S} (hT : ∀ i, Associative.dividedPower i x ∈ T) (t : ℤ) :
     exp (t • x) ∈ T := by
@@ -202,9 +211,7 @@ theorem exp_zsmul_mem {x : A} {S : Type*} [SetLike S A]
     exact sum_mem fun i _ => zsmul_mem (hT i) _
   · obtain rfl | ht := eq_or_ne t 0
     · simpa [Associative.dividedPower_zero] using hT 0
-    · have hnil : ¬ IsNilpotent (t • x) := fun h => hx <| by
-        simpa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, ht] using h.smul ((t : ℚ)⁻¹)
-      rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hnil)]
+    · rw [exp_zsmul_eq_zero_of_not_isNilpotent hx ht]
       simp
 
 section Modules
@@ -213,7 +220,7 @@ variable {V : Type*} [AddCommGroup V] [Module A V]
 
 /-- An additive subgroup of a module that is stable under the action of every divided power of an
 element is stable under the action of every integral exponential of it. For a non-nilpotent
-element the exponential is `0` by convention.
+element the exponential is `0` by convention for `t ≠ 0` and `1` for `t = 0`.
 
 For the divided powers of a Chevalley root vector this says that a root subgroup element preserves
 an admissible lattice. -/
@@ -229,9 +236,7 @@ theorem exp_zsmul_smul_mem {x : A} {S : Type*} [SetLike S V]
       exact zsmul_mem (hM n v hv) _
   · obtain rfl | ht := eq_or_ne t 0
     · simpa using hv
-    · have hnil : ¬ IsNilpotent (t • x) := fun h => hx <| by
-        simpa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, ht] using h.smul ((t : ℚ)⁻¹)
-      rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hnil)]
+    · rw [exp_zsmul_eq_zero_of_not_isNilpotent hx ht]
       simp
 
 end Modules
