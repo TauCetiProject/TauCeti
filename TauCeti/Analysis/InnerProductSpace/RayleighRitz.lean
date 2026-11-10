@@ -233,7 +233,8 @@ theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
     rw [LinearMap.leftSingularVector_def]
     exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
   have hSyl := LinearMap.congr_fun
-    (hA.sylvester_starProjection_orthogonal_comp hU X M) v
+    (((hA.isReducing_iff_mem_invtSubmodule U).mpr hU).sylvester_starProjection_orthogonal_comp
+      X M) v
   have hright :
       ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
     -- Expand composition so the projection can move across the inner product.
