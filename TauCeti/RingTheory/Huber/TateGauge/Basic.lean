@@ -422,15 +422,8 @@ theorem tateGauge_one [T1Space A] [Nontrivial A] (ha : 1 < a)
     have h2 : ((ϖ ^ (-(n * m : ℤ)) : Aˣ) : A) ∈ A₀ := by
       rw [show -(n * m : ℤ) = -n * m by ring, zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val]
       exact pow_mem h1 m
-    have h3 : ((ϖ ^ ((n * m - m : ℤ).toNat) : Aˣ) : A) ∈ A₀ := by
-      rw [Units.val_pow_eq_pow_val]
-      exact pow_mem hϖ _
-    have e : ϖ ^ (-(n * m : ℤ)) * ϖ ^ ((n * m - m : ℤ).toNat) = ϖ ^ (-(m : ℤ)) := by
-      rw [← zpow_natCast, Int.toNat_of_nonneg (by nlinarith), ← zpow_add]
-      congr 1
-      ring
-    rw [mul_one, ← e, Units.val_mul]
-    exact A₀.mul_mem h2 h3
+    refine zpow_neg_mul_mem_of_le hϖ (n := n * m) (by nlinarith [Int.natCast_nonneg m]) ?_
+    simpa using h2
   have h1 : (1 : A) ∈ closure ({0} : Set A) := by
     rw [R0Space.closure_singleton, hb.ker]
     simpa using key
