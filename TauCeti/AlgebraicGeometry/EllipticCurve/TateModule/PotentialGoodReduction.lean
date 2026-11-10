@@ -151,6 +151,7 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
   rw [hτρ'] at hQ'
   rw [← hQP, Affine.Point.map_map, hcomm, ← Affine.Point.map_map, hQ']
 
+omit [FiniteDimensional K L] in
 /-- **The Tate module is unramified over a field of good reduction.** Let `L` be a finite
 extension of `K`, embedded in `K^{alg}` by `ι`, over which `W` acquires good reduction: for a
 change of variables `C` over `L`, the equation `C • W` has coefficients in `𝒪[L]` and unit
@@ -163,6 +164,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup_of_mem_fixi
     {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ inertiaSubgroup K)
     (hσL : σ ∈ ι.fieldRange.fixingSubgroup) :
     W.tateModuleGaloisRepresentation ℓ σ = 1 := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   refine LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext ?_
   rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self]
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup ι C (n := ℓ ^ n)
