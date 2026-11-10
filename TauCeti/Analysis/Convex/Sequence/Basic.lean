@@ -214,8 +214,11 @@ theorem ne_top_of_le_of_le {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
 /-- Every later secant is bounded below by the slope of a finite edge that
 precedes it. The length-zero case is included. -/
 theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
+    (hm : h m ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
     ((j - i : ℕ) : ℝ) * unitSlope h m ≤ (h j).untop₀ - (h i).untop₀ := by
+  rcases hij.eq_or_lt with rfl | hlt
+  · simp
+  have hm' : h (m + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hm hj (Nat.le_succ m) (by omega)
   have hs : ∑ _n ∈ Ico i j, unitSlope h m ≤ ∑ n ∈ Ico i j, unitSlope h n := by
     apply sum_le_sum
     intro n hn
@@ -224,24 +227,29 @@ theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
       ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
         hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ (hmi.trans hin)
   simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+  rw [sum_Ico_sub (fun n => (h n).untop₀) hlt.le] at hs
   simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
 
 /-- Every earlier secant is bounded above by the slope of a finite edge that
 follows its last edge. The length-zero case is included. -/
-theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hjm : j ≤ m + 1) :
+theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hm' : h (m + 1) ≠ ⊤)
+    (hij : i ≤ j) (hjm : j ≤ m + 1) :
     (h j).untop₀ - (h i).untop₀ ≤ ((j - i : ℕ) : ℝ) * unitSlope h m := by
-  have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
-    apply sum_le_sum
-    intro n hn
-    obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
-    exact hh.monotoneOn
-      ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
-        hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
-  simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
-  simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  have hj : h j ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' hij hjm
+  rcases le_or_gt i m with him | hmi
+  · have hm : h m ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' him (Nat.le_succ m)
+    have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
+      apply sum_le_sum
+      intro n hn
+      obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
+      exact hh.monotoneOn
+        ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
+          hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
+    simp only [unitSlope] at hs
+    rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+    simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  · obtain rfl : i = j := by omega
+    simp
 
 /-- The affine line through a finite edge lies below the entire height sequence,
 including indices outside its finite domain. -/
@@ -251,10 +259,10 @@ theorem supportingLine_le {n : ℕ} (hn : h n ≠ ⊤) (hn' : h (n + 1) ≠ ⊤)
   · simp [hk]
   · rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
     rcases le_total n k with hnk | hkn
-    · have hs := hh.mul_slope_le_sub hn hk hn hn' hnk le_rfl
+    · have hs := hh.mul_slope_le_sub hn hk hn hnk le_rfl
       rw [Nat.cast_sub hnk] at hs
       linarith
-    · have hs := hh.sub_le_mul_slope hk hn hn hn' hkn (Nat.le_succ n)
+    · have hs := hh.sub_le_mul_slope hk hn' hkn (Nat.le_succ n)
       rw [Nat.cast_sub hkn] at hs
       nlinarith
 
@@ -269,8 +277,8 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
   · ring_nf
     exact le_rfl
   have hj' : h (j + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hi hk (by omega) hjk'
-  have hleft := hh.sub_le_mul_slope hi hj hj hj' hij (Nat.le_succ j)
-  have hright := hh.mul_slope_le_sub hj hk hj hj' hjk le_rfl
+  have hleft := hh.sub_le_mul_slope hi hj' hij (Nat.le_succ j)
+  have hright := hh.mul_slope_le_sub hj hk hj hjk le_rfl
   rw [Nat.cast_sub hij] at hleft
   rw [Nat.cast_sub hjk] at hright
   have hleft' := mul_le_mul_of_nonneg_left hleft
