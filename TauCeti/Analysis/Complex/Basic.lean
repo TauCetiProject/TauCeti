@@ -134,11 +134,9 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
     have hx0 : x = 0 := norm_le_zero_iff.mp (hr0 ▸ hx)
     simp [hr0, hx0]
   have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyne
-  have hconj : conj y * y = (‖y‖ : ℂ)^2 := by
-    rw [← normSq_eq_conj_mul_self, normSq_eq_norm_sq, ofReal_pow]
   have heq : conj y - (r : ℂ)^2/y = (((‖y‖^2 - r^2 : ℝ) : ℂ))/y := by
     apply (eq_div_iff hyne).mpr
-    rw [sub_mul, div_mul_cancel₀ _ hyne, hconj, ofReal_sub, ofReal_pow, ofReal_pow]
+    rw [sub_mul, div_mul_cancel₀ _ hyne, conj_mul', ofReal_sub, ofReal_pow, ofReal_pow]
   have hgap : ‖y‖-r ≤ ‖x - y‖ := by
     have h := norm_le_norm_add_norm_sub x y
     linarith

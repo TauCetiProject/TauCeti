@@ -142,9 +142,9 @@ theorem lipschitzWith_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤ r) 
   · rw [norm_sub_rev]
     exact (Complex.norm_conj_sub_sq_div_le (y - c) (x - c) hy (not_le.mp hx).le).trans_eq
       (by rw [norm_sub_rev (y - c) (x - c), hd])
-  · have hrn : ‖(r : ℂ)‖ = r := by rw [norm_real, Real.norm_of_nonneg hr]
-    exact (norm_sq_div_sub_sq_div_le (c := (r : ℂ)) (x := x - c) (y := y - c)
-      (hrn.le.trans (not_le.mp hx).le) (hrn.le.trans (not_le.mp hy).le)).trans (by
+  · exact (norm_sq_div_sub_sq_div_le (c := (r : ℂ)) (x := x - c) (y := y - c)
+      ((Complex.norm_of_nonneg hr).le.trans (not_le.mp hx).le)
+      ((Complex.norm_of_nonneg hr).le.trans (not_le.mp hy).le)).trans (by
       rw [hd]
       nlinarith [dist_nonneg (x := x) (y := y)])
 
