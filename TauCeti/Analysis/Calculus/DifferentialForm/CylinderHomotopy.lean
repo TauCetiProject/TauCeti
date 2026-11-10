@@ -170,6 +170,7 @@ theorem intervalIntegrable_curryLeft_inl_of_continuousOn {x : E}
     {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContinuousOn ω ({x} ×ˢ Icc 0 1)) :
     IntervalIntegrable (fun t ↦ ((ω (x, t)).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ))
       volume 0 1 := by
+  simp only [← contractInl_apply]
   refine ContinuousOn.intervalIntegrable ?_
   rw [uIcc_of_le zero_le_one]
   exact contractInl.continuous.comp_continuousOn
