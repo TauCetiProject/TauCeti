@@ -115,7 +115,7 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
-* `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is
+* `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are normed spaces, if `D₁` is
   Fredholm then the projection is Fredholm.
 * `ContinuousLinearMap.kerCoprodMap`, `ContinuousLinearMap.exact_kerCoprodMap` and
   `ContinuousLinearMap.surjective_mkQ_comp_parameterProj`: for `ι : Λ → Λ'` with `D₂' ∘ ι = D₂`,
@@ -590,17 +590,17 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
 
 end Dimension
 
-section Banach
+section Normed
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E Λ F : Type*}
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-variable [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [CompleteSpace Λ]
-variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [T1Space F]
+variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
 variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
-/-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` and `Λ` are Banach
-spaces and `F` has continuous addition and closed points. When the total linearization is
+/-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` and `Λ` are normed
+spaces and `F` has continuous addition. When the total linearization is
 surjective, `ContinuousLinearMap.index_parameterProj` also identifies their indices.
 
 Applying Sard--Smale in the nonlinear setting is a further step requiring a suitable smooth chart,
@@ -614,11 +614,43 @@ theorem isFredholm_parameterProj (hD₁ : IsFredholm D₁) :
       hD₁.isClosed_range.preimage D₂.continuous
   refine ⟨?_, hclosed, finiteDimensional_ker_parameterProj D₁ D₂,
     finiteDimensional_quotient_range_parameterProj D₁ D₂, ?_⟩
-  · let : CompleteSpace (D₁.coprod D₂).ker :=
-      (D₁.coprod D₂).isClosed_ker.completeSpace_coe
-    let : CompleteSpace (parameterProj D₁ D₂).range := hclosed.completeSpace_coe
+  · -- The kernel of `D₁.coprod D₂` is the pullback of the open map `D₁ : E → range D₁` along
+    -- `l ↦ D₂ (-l)`, so the projection to the parameter is open onto its range.
+    have hq : Topology.IsQuotientMap ((D₁ : E →ₗ[𝕜] F).rangeRestrict) := hD₁.isStrictMap
+    have hopen : IsOpenMap ((D₁ : E →ₗ[𝕜] F).rangeRestrict) :=
+      (AddMonoidHom.isOpenQuotientMap_of_isQuotientMap hq).isOpenMap
     rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization]
-    exact (parameterProj D₁ D₂).rangeRestrict.isQuotientMap Set.rangeFactorization_surjective
+    refine IsOpenMap.isQuotientMap ?_ (parameterProj D₁ D₂).continuous.rangeFactorization
+      Set.rangeFactorization_surjective
+    intro W hW
+    rw [isOpen_iff_mem_nhds]
+    rintro _ ⟨k, hk, rfl⟩
+    obtain ⟨T, hT, rfl⟩ := isOpen_induced_iff.1 hW
+    obtain ⟨U, V, hU, hV, hkU, hkV, hUV⟩ := isOpen_prod_iff.1 hT k.1.1 k.1.2 hk
+    obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hopen U hU)
+    have hk0 : D₁ k.1.1 + D₂ k.1.2 = 0 := by simpa using k.2
+    refine Filter.mem_of_superset
+      (((hV.preimage continuous_subtype_val).inter (hO.preimage
+        (D₂.continuous.comp (continuous_neg.comp continuous_subtype_val)))).mem_nhds
+          ⟨hkV, ?_⟩) ?_
+    · have hmem : D₂ (-k.1.2) ∈ (D₁ : E →ₗ[𝕜] F).range :=
+        ⟨k.1.1, by simp [eq_neg_of_add_eq_zero_left hk0]⟩
+      have : (⟨D₂ (-k.1.2), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈ Subtype.val ⁻¹' O := by
+        rw [hOU]
+        exact ⟨k.1.1, hkU, Subtype.ext (by simp [eq_neg_of_add_eq_zero_left hk0])⟩
+      exact this
+    · rintro r ⟨hrV, hrO⟩
+      obtain ⟨y, hy⟩ := r.2
+      have hy0 : D₁ y.1.1 + D₂ y.1.2 = 0 := by simpa using y.2
+      have hyr : y.1.2 = r.1 := hy
+      have hmem : D₂ (-r.1) ∈ (D₁ : E →ₗ[𝕜] F).range :=
+        ⟨y.1.1, by simp [eq_neg_of_add_eq_zero_left hy0, hyr]⟩
+      obtain ⟨x, hxU, hx⟩ : (⟨D₂ (-r.1), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈
+          (D₁ : E →ₗ[𝕜] F).rangeRestrict '' U := by
+        rw [← hOU]
+        exact hrO
+      have hx' : D₁ x = D₂ (-r.1) := congrArg Subtype.val hx
+      refine ⟨⟨(x, r.1), by simp [hx']⟩, hUV ⟨hxU, hrV⟩, Subtype.ext rfl⟩
   · obtain ⟨P, hP⟩ := hD₁.closedComplemented_ker
     refine ⟨(kerEquivKerParameterProj D₁ D₂).toContinuousLinearMap.comp
       (P.comp ((fst 𝕜 E Λ).comp (D₁.coprod D₂).ker.subtypeL)), ?_⟩
@@ -626,6 +658,6 @@ theorem isFredholm_parameterProj (hD₁ : IsFredholm D₁) :
     apply (kerEquivKerParameterProj D₁ D₂).symm.injective
     simpa using hP ((kerEquivKerParameterProj D₁ D₂).symm v)
 
-end Banach
+end Normed
 
 end ContinuousLinearMap
