@@ -288,9 +288,6 @@ theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStr
     {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
   nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
-/-- The final estimate of the energy increment: the gain `ε² ε² M / D`, where `M` exceeds
-`ε n²` and `D ≤ n²`, exceeds `ε⁵`. -/
-
 /-- If `ε * n ^ 2 < M`, `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`, then `ε ^ 5 < g`:
 the gain `ε² ε² M / D` exceeds `ε⁵`. -/
 theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
@@ -303,8 +300,6 @@ theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
     ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
   have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
   nlinarith
-
-
 
 end TauCeti
 
