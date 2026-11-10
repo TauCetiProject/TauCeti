@@ -128,8 +128,8 @@ private theorem collapseKinkComponent_old
         ((D.adjoinKink o b).componentOfOutgoing
           ⟨halfEdgeSuccEquiv n (.inl x.val), by simp [x.property]⟩) =
       (D.adjoinCircle o).componentOfOutgoing ⟨x.val, by simpa using x.property⟩ := by
-  rw [componentOfOutgoing_def]
-  exact collapseKinkOutgoing_inl D o b x
+  simp only [collapseKinkComponent, componentOfOutgoing_def, Sum.elim_inl, Quotient.lift_mk]
+  simpa only [componentOfOutgoing_def] using collapseKinkOutgoing_inl D o b x
 
 private theorem collapseKinkComponent_new (s : Fin 4)
     (hs : (D.adjoinKink o b).orientation (halfEdgeSuccEquiv n (.inr s)) = true) :
@@ -137,7 +137,7 @@ private theorem collapseKinkComponent_new (s : Fin 4)
         ((D.adjoinKink o b).componentOfOutgoing
           ⟨halfEdgeSuccEquiv n (.inr s), hs⟩) =
       Sum.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)) := by
-  rw [componentOfOutgoing_def]
+  simp only [collapseKinkComponent, componentOfOutgoing_def, Sum.elim_inl, Quotient.lift_mk]
   exact collapseKinkOutgoing_inr D o b s hs
 
 private theorem collapseKinkComponent_inr (i : Fin D.crossinglessComponentCount) :
@@ -172,15 +172,18 @@ def adjoinKinkComponentEquiv :
         simp only [card_component, toPDCode_adjoinKink, toPDCode_adjoinCircle,
           componentCount_adjoinKink]⟩)).symm
 
+private theorem adjoinKinkComponentEquiv_symm_apply (c : (D.adjoinKink o b).Component) :
+    (D.adjoinKinkComponentEquiv o b).symm c = collapseKinkComponent D o b c := by
+  simp only [adjoinKinkComponentEquiv, Equiv.symm_symm, Equiv.ofBijective_apply]
+
 /-- Old outgoing representatives are carried by the native half-edge inclusion. -/
 @[simp] theorem adjoinKinkComponentEquiv_componentOfOutgoing
     (x : {x // (D.adjoinCircle o).orientation x = true}) :
     D.adjoinKinkComponentEquiv o b ((D.adjoinCircle o).componentOfOutgoing x) =
       (D.adjoinKink o b).componentOfOutgoing
         ⟨halfEdgeSuccEquiv n (.inl x.val), by simpa using x.property⟩ := by
-  apply (D.adjoinKinkComponentEquiv o b).symm.injective
-  exact (Equiv.symm_apply_apply _ _).trans
-    (collapseKinkComponent_old D o b ⟨x.val, by simpa using x.property⟩).symm
+  rw [← Equiv.eq_symm_apply, adjoinKinkComponentEquiv_symm_apply]
+  exact (collapseKinkComponent_old D o b ⟨x.val, by simpa using x.property⟩).symm
 
 /-- The added-circle label goes to the new crossing's component, represented by slot `1`
 when `o = true` and slot `0` otherwise. These slots are always outgoing. -/
@@ -189,14 +192,14 @@ when `o = true` and slot `0` otherwise. These slots are always outgoing. -/
         (Sum.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount))) =
       (D.adjoinKink o b).componentOfOutgoing
         ⟨halfEdgeSuccEquiv n (.inr (if o then 1 else 0)), by cases o <;> simp⟩ := by
-  apply (D.adjoinKinkComponentEquiv o b).symm.injective
-  exact (Equiv.symm_apply_apply _ _).trans (collapseKinkComponent_new D o b _ _).symm
+  rw [← Equiv.eq_symm_apply, adjoinKinkComponentEquiv_symm_apply]
+  exact (collapseKinkComponent_new D o b _ _).symm
 
 /-- Removing the isolated kink preserves every other crossing-free circle. -/
 @[simp] theorem adjoinKinkComponentEquiv_symm_inr (i : Fin D.crossinglessComponentCount) :
     (D.adjoinKinkComponentEquiv o b).symm (Sum.inr (Fin.cast (by simp) i)) =
       Sum.inr (Fin.cast (by simp) i.castSucc) := by
-  simp only [adjoinKinkComponentEquiv, Equiv.symm_symm, Equiv.ofBijective_apply]
+  rw [adjoinKinkComponentEquiv_symm_apply]
   exact collapseKinkComponent_inr D o b i
 
 /-- All old crossing-free labels are preserved, even when their orientations repeat. -/
@@ -211,15 +214,17 @@ when `o = true` and slot `0` otherwise. These slots are always outgoing. -/
     (D.adjoinKinkComponentEquiv o b).symm
         ((D.adjoinKink o b).componentOfOutgoing
           ⟨halfEdgeSuccEquiv n (.inl x), by simp [hx]⟩) =
-      (D.adjoinCircle o).componentOfOutgoing ⟨x, by simpa using hx⟩ :=
-  collapseKinkComponent_old D o b ⟨x, hx⟩
+      (D.adjoinCircle o).componentOfOutgoing ⟨x, by simpa using hx⟩ := by
+  rw [adjoinKinkComponentEquiv_symm_apply]
+  exact collapseKinkComponent_old D o b ⟨x, hx⟩
 
 /-- Removing the isolated kink restores the particular crossing-free label that was consumed. -/
 @[simp] theorem adjoinKinkComponentEquiv_symm_componentOfOutgoing_inr (s : Fin 4)
     (hs : (D.adjoinKink o b).orientation (halfEdgeSuccEquiv n (.inr s)) = true) :
     (D.adjoinKinkComponentEquiv o b).symm
         ((D.adjoinKink o b).componentOfOutgoing ⟨halfEdgeSuccEquiv n (.inr s), hs⟩) =
-      Sum.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)) :=
-  collapseKinkComponent_new D o b s hs
+      Sum.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)) := by
+  rw [adjoinKinkComponentEquiv_symm_apply]
+  exact collapseKinkComponent_new D o b s hs
 
 end TauCeti.OrientedPDCode
