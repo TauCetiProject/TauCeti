@@ -30,6 +30,11 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 
 ## Main results
 
+* `QuadraticMap.PosDef.comp`: injective pullback preserves positive definiteness.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_iff`: positive definiteness is positivity
+  of the diagonal at nonzero vectors.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂`: an injective pullback preserves
+  positive definiteness of a bilinear form's quadratic map.
 * `QuadraticMap.posDef_smul_iff_of_pos`: a quadratic map is positive definite if and only if
   its multiple by a positive scalar is positive definite.
 * `LinearMap.BilinForm.posDef_toQuadraticMap_add_flip_iff`: symmetrizing a bilinear form
@@ -64,6 +69,14 @@ uses.
 -/
 
 public section
+
+/-- An injective pullback of a positive-definite quadratic map is positive definite. -/
+theorem QuadraticMap.PosDef.comp {R M N P : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [PartialOrder N]
+    [AddCommMonoid P] [Module R P] {Q : QuadraticMap R M N} (hQ : Q.PosDef)
+    (f : P →ₗ[R] M) (hf : Function.Injective f) : (Q.comp f).PosDef := by
+  intro x hx
+  exact hQ (f x) (fun h ↦ hx (hf (h.trans (map_zero f).symm)))
 
 namespace QuadraticMap
 
@@ -100,6 +113,21 @@ theorem posDef_weightedSumSquares_iff {R : Type*} [CommRing R] [LinearOrder R]
 end QuadraticMap
 
 namespace LinearMap.BilinForm
+
+/-- Positive definiteness of a bilinear form's quadratic map is positivity on nonzero vectors. -/
+theorem posDef_toQuadraticMap_iff {R M : Type*} [CommSemiring R] [PartialOrder R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M) :
+    B.toQuadraticMap.PosDef ↔ ∀ x ≠ 0, 0 < B x x := by
+  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
+
+/-- An injective pullback preserves positive definiteness of the diagonal of a bilinear form. -/
+theorem posDef_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R] [PartialOrder R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (B : LinearMap.BilinForm R M) (hB : B.toQuadraticMap.PosDef)
+    (f : N →ₗ[R] M) (hf : Function.Injective f) :
+    (LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ f f)).PosDef := by
+  rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
+  exact hB.comp f hf
 
 /-- Symmetrization preserves and reflects positive-definiteness of a bilinear form's quadratic
 map. -/
