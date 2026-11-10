@@ -15,7 +15,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 A smooth embedding of a boundaryless manifold admits local smooth retractions.
 In particular a smooth map which near a point takes values in the image of the embedding factors
 there through the embedding by a map smooth at that point
-(`Manifold.IsImmersionAt.exists_contMDiffAt_comp_eventuallyEq`). Consequently,
+(`Manifold.IsImmersionAt.exists_contMDiffAt_comp_eventuallyEq`), which does not need the source
+to be boundaryless. Consequently,
 vector-valued smooth data on its source extend to the ambient
 manifold along any closed portion of its image. The ambient extension can be
 supported inside a prescribed open neighbourhood, and has compact support when
@@ -60,12 +61,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
   [I.Boundaryless] {n : ℕ∞ω} {f : M → N} {x : M}
 
-/-- A topological embedding with a `C^n` immersion normal form at `x` admits a
-local `C^n` retraction to its boundaryless source. Its left-inverse law holds for
-every source point whose image is in the chosen neighbourhood, not just for one
-source chart. No immersion or smoothness hypothesis is needed away from `x`. -/
-theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbedding f) :
-    ∃ V : Set N, IsOpen V ∧ f x ∈ V ∧ ∃ r : N → M,
+omit [I.Boundaryless] in
+/-- The local retraction of an embedding with a `C^n` immersion normal form at `x`, on a set `V`
+containing the intersection of the image with a neighbourhood of `f x`. The set `V` is open as
+soon as the target of the extended chart at `x` is. -/
+private theorem exists_contMDiffOn_retraction_aux (h : IsImmersionAt I J n f x)
+    (hf : IsEmbedding f) :
+    ∃ V : Set N, f x ∈ V ∧ (IsOpen (h.domChart.extend I).target → IsOpen V) ∧
+      (∃ O : Set N, IsOpen O ∧ f x ∈ O ∧ ∀ y, f y ∈ O → f y ∈ V) ∧ ∃ r : N → M,
       ContMDiffOn J I n r V ∧ ∀ y, f y ∈ V → r (f y) = y := by
   let q : N → E := fun z => (h.equiv.symm ((h.codChart.extend J) z)).1
   have hq : ContMDiffOn J 𝓘(𝕜, E) n q h.codChart.source :=
@@ -81,9 +84,6 @@ theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbe
     simp only [q, hw, ContinuousLinearEquiv.symm_apply_apply]
   obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.mp h.domChart.open_source
   let V := (h.codChart.source ∩ q ⁻¹' (h.domChart.extend I).target) ∩ W
-  have hV : IsOpen V :=
-    (hq.continuousOn.isOpen_inter_preimage h.codChart.open_source
-      h.domChart.isOpen_extend_target).inter hW
   have hxV : f x ∈ V := by
     refine ⟨⟨h.mem_codChart_source, ?_⟩, ?_⟩
     · rw [mem_preimage, hqf x h.mem_domChart_source]
@@ -92,7 +92,15 @@ theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbe
     · have hx := h.mem_domChart_source
       rw [← hWf] at hx
       exact hx
-  refine ⟨V, hV, hxV, (h.domChart.extend I).symm ∘ q, ?_, ?_⟩
+  refine ⟨V, hxV, fun hT ↦ ?_, ⟨h.codChart.source ∩ W, h.codChart.open_source.inter hW,
+    ⟨h.mem_codChart_source, hxV.2⟩, fun y hy ↦ ⟨⟨hy.1, ?_⟩, hy.2⟩⟩,
+    (h.domChart.extend I).symm ∘ q, ?_, ?_⟩
+  · exact (hq.continuousOn.isOpen_inter_preimage h.codChart.open_source hT).inter hW
+  · have hydom : y ∈ h.domChart.source := by
+      rw [← hWf]
+      exact hy.2
+    rw [mem_preimage, hqf y hydom]
+    exact (h.domChart.extend I).map_source (by rwa [h.domChart.extend_source])
   · have hi := contMDiffOn_extend_symm h.domChart_mem_maximalAtlas
     rw [← h.domChart.extend_target'] at hi
     exact hi.comp (hq.mono fun _ hz => hz.1.1) fun _ hz => hz.1.2
@@ -103,6 +111,17 @@ theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbe
     rw [Function.comp_apply, hqf y hydom]
     exact (h.domChart.extend I).left_inv (by rwa [h.domChart.extend_source])
 
+/-- A topological embedding with a `C^n` immersion normal form at `x` admits a
+local `C^n` retraction to its boundaryless source. Its left-inverse law holds for
+every source point whose image is in the chosen neighbourhood, not just for one
+source chart. No immersion or smoothness hypothesis is needed away from `x`. -/
+theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbedding f) :
+    ∃ V : Set N, IsOpen V ∧ f x ∈ V ∧ ∃ r : N → M,
+      ContMDiffOn J I n r V ∧ ∀ y, f y ∈ V → r (f y) = y := by
+  obtain ⟨V, hxV, hV, -, r, hr, hrf⟩ := h.exists_contMDiffOn_retraction_aux hf
+  exact ⟨V, hV h.domChart.isOpen_extend_target, hxV, r, hr, hrf⟩
+
+omit [I.Boundaryless] in
 /-- A map `g` which is `C^n` at `p`, with `g p = f x`, and which near `p` takes values in the image
 of a topological embedding `f` with a `C^n` immersion normal form at `x`, factors near `p` through
 `f` by a map which is `C^n` at `p` and sends `p` to `x`: compose `g` with a local retraction. -/
@@ -112,11 +131,17 @@ theorem exists_contMDiffAt_comp_eventuallyEq (h : IsImmersionAt I J n f x) (hf :
     {g : P → N} {p : P} (hg : ContMDiffAt K J n g p) (hgp : g p = f x)
     (hrange : ∀ᶠ q in 𝓝 p, g q ∈ range f) :
     ∃ τ : P → M, ContMDiffAt K I n τ p ∧ τ p = x ∧ f ∘ τ =ᶠ[𝓝 p] g := by
-  obtain ⟨V, hV, hxV, r, hr, hrf⟩ := h.exists_contMDiffOn_retraction hf
+  obtain ⟨V, hxV, -, ⟨O, hO, hxO, hOV⟩, r, hr, hrf⟩ := h.exists_contMDiffOn_retraction_aux hf
   have hgV : g p ∈ V := hgp ▸ hxV
-  refine ⟨r ∘ g, (hr.contMDiffAt (hV.mem_nhds hgV)).comp p hg, by
+  have hgO : ∀ᶠ q in 𝓝 p, g q ∈ O :=
+    hg.continuousAt.preimage_mem_nhds (hO.mem_nhds (hgp ▸ hxO))
+  have hmem : ∀ᶠ q in 𝓝 p, g q ∈ V := by
+    filter_upwards [hgO, hrange] with q hqO ⟨y, hy⟩
+    rw [← hy] at hqO ⊢
+    exact hOV y hqO
+  refine ⟨r ∘ g, ((hr _ hgV).comp p hg.contMDiffWithinAt fun q hq ↦ hq).contMDiffAt hmem, by
     rw [Function.comp_apply, hgp, hrf x hxV], ?_⟩
-  filter_upwards [hg.continuousAt.preimage_mem_nhds (hV.mem_nhds hgV), hrange] with q hqV hq
+  filter_upwards [hmem, hrange] with q hqV hq
   obtain ⟨y, hy⟩ := hq
   have hyV : f y ∈ V := hy ▸ hqV
   rw [Function.comp_apply, Function.comp_apply, ← hy, hrf y hyV]
