@@ -244,12 +244,8 @@ theorem killingForm_self_neg (X : 𝔰𝔲₂) (hX : X ≠ 0) :
     killingForm ℝ 𝔰𝔲₂ X X < 0 := by
   obtain ⟨x, rfl⟩ := pauliLieAlgebraEquiv.surjective X
   rw [killingForm_pauliLieAlgebraEquiv]
-  have hx : x ≠ 0 := by
-    intro hx
-    apply hX
-    rw [hx, map_zero]
-  have hn : 0 ≤ x ⬝ᵥ x := Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (x i)
-  have hne : x ⬝ᵥ x ≠ 0 := fun h ↦ hx (dotProduct_self_eq_zero.mp h)
-  exact mul_neg_of_neg_of_pos (by norm_num) (lt_of_le_of_ne hn hne.symm)
+  have hx : x ≠ 0 := (map_ne_zero_iff _ pauliLieAlgebraEquiv.injective).mp hX
+  exact mul_neg_of_neg_of_pos (by norm_num)
+    (by simpa only [star_trivial] using Matrix.dotProduct_star_self_pos_iff.mpr hx)
 
 end TauCeti.SU2
