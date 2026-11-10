@@ -411,11 +411,13 @@ theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoRankTwo_of_not
   exact ⟨e⟩
 
 /-- **The exponent within its valuation and the level above it are free** (corollary to Labute,
-Theorems 4 and 5). For `n ≥ 4` even, a natural exponent `α` of exact divisibility depth `g ≥ 2` and
+Theorems 4 and 5). For `n` even, a natural exponent `α` of exact divisibility depth `g ≥ 2` and
 a finite level `f > g`, the pro-`2` group presented on `n` generators by
 `x₁^{2 + α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is topologically isomorphic to the one
-presented by `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`: both are Demushkin groups of rank
-`n` whose canonical characters have image the twisted subgroup `U^[g]`. -/
+presented by `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. For `n = 0` both groups are
+trivial. For `n = 2` the word has no level factor and reduces to `x₁^{2 + α} (x₁, x₂)`. For
+positive `n` both are Demushkin groups of rank `n` whose canonical characters have image the
+twisted subgroup `U^[g]`. -/
 theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_not_dvd (hn : Even n)
     {a g f : ℕ} (hg : 2 ≤ g) (hag : 2 ^ g ∣ a) (hag' : ¬ 2 ^ (g + 1) ∣ a) (hgf : g < f) :
     Nonempty (presentedProP 2 (Fin n) {demushkinWordTwoEven a f n (freeProPGen 2 n)} ≃ₜ*
@@ -423,20 +425,9 @@ theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_not_dv
   obtain rfl | rfl | hn₃ : n = 0 ∨ n = 2 ∨ 3 < n := by
     obtain ⟨m, hm⟩ := hn
     omega
-  · -- Rank zero: both presented groups are trivial.
-    have hsub : ∀ w : freeProP 2 (Fin 0), Subsingleton (presentedProP 2 (Fin 0) {w}) :=
-      fun w ↦ (presentedProP.mk_surjective 2 {w}).subsingleton
-    have := hsub (demushkinWordTwoEven a f 0 (freeProPGen 2 0))
-    have := hsub (demushkinWordNeTwo (2 + 2 ^ g) 0 (freeProPGen 2 0))
-    refine ⟨{
-      toMulEquiv :=
-        { toFun := fun _ ↦ 1
-          invFun := fun _ ↦ 1
-          left_inv := ?_
-          right_inv := ?_
-          map_mul' := ?_ }
-      continuous_toFun := continuous_const
-      continuous_invFun := continuous_const }⟩ <;> intros <;> apply Subsingleton.elim
+  · -- Rank zero: the free pro-`2` group on no generators is trivial, so the identity carries one
+    -- relator to the other.
+    exact ⟨presentedProP.congrSingleton (ContinuousMulEquiv.refl _) (Subsingleton.elim _ _)⟩
   · -- Rank two: the word is the rank-two word.
     rw [demushkinWordTwoEven_two _ _ _ (freeProPGen_eq_one_of_le (p := 2) (n := 2) (i := 2) le_rfl)]
     exact nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoRankTwo_of_not_dvd hg hag hag'
