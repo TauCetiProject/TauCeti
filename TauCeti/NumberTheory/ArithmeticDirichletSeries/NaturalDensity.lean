@@ -271,14 +271,10 @@ private theorem exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
         rw [norm_mul, Real.norm_of_nonneg ha, Real.norm_eq_abs]
         exact mul_le_mul_of_nonneg_right (hB v) ha
   have hbound := TauCeti.tsum_mul_le_of_summatory_le
-    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) (a := 2) (by norm_num)
+    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) (a := 2)
     (fun v ↦ by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm v) w
     (g := fun t ↦ t ^ (-s)) (fun t _ ↦ hF t)
     (fun t ht ↦ (Real.hasDerivAt_rpow_const (Or.inl (by linarith))).differentiableAt)
-    (fun x _ ↦ by
-      rw [Real.deriv_rpow_const']
-      exact ContinuousOn.integrableOn_Icc <| continuousOn_const.mul <|
-        continuousOn_id.rpow_const fun t ht ↦ Or.inl (by rw [id]; linarith [ht.1]))
     (fun t ht ↦ by
       rw [Real.deriv_rpow_const]
       exact mul_nonpos_of_nonpos_of_nonneg (by linarith) (by positivity))
