@@ -192,12 +192,9 @@ private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ 
     (Lp.memLp _).mono_measure (Measure.restrict_mono hS le_rfl)
   have hmeas : AEStronglyMeasurable (fun x => ∑ i, ∑ j, a x i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ)
-      (volume.restrict S) :=
-    Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-      Finset.aestronglyMeasurable_fun_sum _ fun j _ =>
-        ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha).mul
-          (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-            |>.comp_aestronglyMeasurable hH.aestronglyMeasurable).inner aestronglyMeasurable_const)
+      (volume.restrict S) := by
+    simpa only [Matrix.contraction_apply] using
+      Matrix.aestronglyMeasurable_contraction ha hH.aestronglyMeasurable
   refine (hH.of_le_mul (c := n ^ 2 * Λ) hmeas ?_).ae_eq heq
   filter_upwards [(ae_restrict_iff' hSm).2 haΛ] with x hx
   rw [← Matrix.contraction_apply, Real.norm_eq_abs]

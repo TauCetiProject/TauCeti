@@ -190,15 +190,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     exact Wkp.norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hζ hM₁ hM₂ hζH hwv
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
   have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (T x))
-      (volume.restrict Omega) := by
-    have hTm : AEStronglyMeasurable T (volume.restrict Omega) :=
-      (Lp.aestronglyMeasurable TL).congr hTL
-    simp only [Matrix.contraction_apply]
-    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-      Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
-    exact ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha_meas).mul
-      (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-        |>.comp_aestronglyMeasurable hTm).inner aestronglyMeasurable_const)
+      (volume.restrict Omega) :=
+    Matrix.aestronglyMeasurable_contraction ha_meas ((Lp.aestronglyMeasurable TL).congr hTL)
   have hEle : ∀ᵐ x ∂volume.restrict Omega,
       ‖Matrix.contraction (a x) (T x)‖ ≤ n ^ 2 * Λ * ‖TL x‖ := by
     filter_upwards [hTL, ae_restrict_of_ae haΛ] with x h1 h2

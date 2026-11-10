@@ -18,6 +18,9 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 -- `TauCeti.MeasureTheory.Covering.Vitali` is imported privately: its Vitali summation lemma
 -- appears only inside the proof of `TauCeti.mul_measure_le_of_forall_exists_ball`.
 import TauCeti.MeasureTheory.Covering.Vitali
+-- `TauCeti.MeasureTheory.Measure.Haar.Average` is imported privately: its ball comparison appears
+-- only inside the proof of `TauCeti.setLAverage_ball_le_two_pow_mul_maximalFunction`.
+import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
 # The Hardy–Littlewood maximal function
@@ -412,27 +415,17 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
 within distance `r` of `x` is at most `2 ^ n` times the maximal function of `f` at `x`, `n` being
 the dimension: `B(c, r)` lies in `B(x, 2 r)`, which has `2 ^ n` times its measure. -/
 theorem setLAverage_ball_le_two_pow_mul_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
-    (f : E → F) {x c : E} {r : ℝ} (hr : 0 < r) (hx : dist x c ≤ r) :
+    (f : E → F) {x c : E} {r : ℝ} (hx : dist x c ≤ r) :
     ⨍⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
   have hsub : ball c r ⊆ ball x (2 * r) := fun y hy => by
     rw [mem_ball] at hy ⊢
     linarith [dist_triangle y c x, dist_comm x c]
-  have hvol : μ (ball x (2 * r)) = 2 ^ finrank ℝ E * μ (ball c r) := by
-    rw [Measure.addHaar_ball_of_pos μ x (by positivity : (0 : ℝ) < 2 * r),
-      Measure.addHaar_ball_of_pos μ c hr, ← mul_assoc, mul_pow,
-      ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2 ^ finrank ℝ E),
-      ENNReal.ofReal_pow zero_le_two]
-    norm_num
-  have h0 : (2 : ℝ≥0∞) ^ finrank ℝ E ≠ 0 := pow_ne_zero _ two_ne_zero
-  have htop : (2 : ℝ≥0∞) ^ finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
-  calc ⨍⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ (∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ) / μ (ball c r) := by
-        rw [setLAverage_eq]
-        gcongr
-    _ = 2 ^ finrank ℝ E * ⨍⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := by
-        rw [setLAverage_eq, hvol, ← ENNReal.mul_div_mul_left _ _ h0 htop, mul_div_assoc]
-    _ ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
-        gcongr
-        exact setLAverage_le_maximalFunction μ f x (by positivity)
+  refine (setLAverage_ball_le (μ := μ) (fun y => ‖f y‖ₑ) hr hsub).trans ?_
+  rw [mul_div_cancel_right₀ 2 hr.ne', ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+  gcongr
+  exact setLAverage_le_maximalFunction μ f x (by positivity)
 
 section StrongType
 

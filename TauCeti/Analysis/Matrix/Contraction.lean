@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
 
@@ -24,10 +25,12 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
-* `Matrix.enorm_contraction_le`: the contraction of `H` with `M` is at most
-  `n² (∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
   `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
+* `Matrix.enorm_contraction_le`: the contraction of `H` with `M` is at most
+  `(∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm.
+* `Matrix.aestronglyMeasurable_contraction`: the contraction of almost everywhere strongly
+  measurable fields of matrices and endomorphisms is almost everywhere strongly measurable.
 -/
 
 public section
@@ -106,26 +109,6 @@ theorem abs_contraction_le {M : Matrix (Fin n) (Fin n) ℝ} {ε : ℝ}
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
 
-/-- The contraction of `H` with `M` is at most `n² (∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm: the bound
-`Matrix.abs_contraction_le` with the sum of the absolute values of the entries as the entrywise
-bound. -/
-theorem enorm_contraction_le (M : Matrix (Fin n) (Fin n) ℝ)
-    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
-    ‖contraction M H‖ₑ ≤ ENNReal.ofReal (n ^ 2) * (∑ i, ∑ j, ‖M i j‖ₑ) * ‖H‖ₑ := by
-  have h := abs_contraction_le (ε := ∑ i, ∑ j, |M i j|) (fun i j =>
-    (Finset.single_le_sum (f := fun j => |M i j|) (fun _ _ => abs_nonneg _)
-      (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i => ∑ j, |M i j|)
-        (fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _) (Finset.mem_univ i))) H
-  rw [Real.enorm_eq_ofReal_abs]
-  refine (ENNReal.ofReal_le_ofReal h).trans_eq ?_
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity), ofReal_norm]
-  congr 2
-  rw [ENNReal.ofReal_sum_of_nonneg (f := fun i => ∑ j, |M i j|)
-    fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |M i j|) fun _ _ => abs_nonneg _]
-  exact Finset.sum_congr rfl fun j _ => (Real.enorm_eq_ofReal_abs _).symm
-
 /-- If every entry of `M` is at most `ε` in absolute value, then for a continuous bilinear form
 `B` on `EuclideanSpace ℝ ι`, `|∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ| ≤ (card ι)² ε ‖B‖`. Applied to the second
 derivative of a function, this bounds the principal part `∑ᵢⱼ Mᵢⱼ ∂ᵢ∂ⱼh` of a
@@ -145,5 +128,35 @@ theorem abs_sum_sum_mul_apply_single_single_le {ι : Type*} [Fintype ι] [Decida
     _ = Fintype.card ι ^ 2 * ε * ‖B‖ := by
         simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring
+
+/-- The contraction of `H` with `M` is at most `(∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm. -/
+theorem enorm_contraction_le (M : Matrix (Fin n) (Fin n) ℝ)
+    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
+    ‖contraction M H‖ₑ ≤ (∑ i, ∑ j, ‖M i j‖ₑ) * ‖H‖ₑ := by
+  have h1 : ∀ k : Fin n, ‖EuclideanSpace.single k (1 : ℝ)‖ = 1 := fun k => by simp
+  rw [contraction_apply, Finset.sum_mul]
+  refine (enorm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [Finset.sum_mul]
+  refine (enorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+  rw [enorm_mul]
+  gcongr
+  rw [enorm_le_iff_norm_le, Real.norm_eq_abs]
+  refine (abs_real_inner_le_norm _ _).trans ?_
+  rw [h1, mul_one]
+  exact (H.le_opNorm_of_le (h1 i).le).trans_eq (mul_one _)
+
+/-- The contraction `x ↦ ∑ᵢⱼ bᵢⱼ(x) ⟪H(x) eᵢ, eⱼ⟫` of almost everywhere strongly measurable fields
+`b` and `H` is almost everywhere strongly measurable. -/
+theorem aestronglyMeasurable_contraction {X : Type*} [MeasurableSpace X]
+    {μ : MeasureTheory.Measure X} {b : X → Matrix (Fin n) (Fin n) ℝ}
+    (hb : MeasureTheory.AEStronglyMeasurable b μ)
+    {H : X → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)}
+    (hH : MeasureTheory.AEStronglyMeasurable H μ) :
+    MeasureTheory.AEStronglyMeasurable (fun x => contraction (b x) (H x)) μ := by
+  simp only [contraction_apply]
+  refine Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
+    fun j _ => ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable hb).mul ?_
+  exact ((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i (1 : ℝ))).continuous.inner
+    continuous_const).comp_aestronglyMeasurable hH
 
 end Matrix

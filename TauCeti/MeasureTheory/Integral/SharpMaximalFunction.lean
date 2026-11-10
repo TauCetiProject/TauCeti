@@ -29,7 +29,9 @@ with `C` depending only on the dimension `n` and on `p`, for every integrable `f
 `ℝⁿ = ι → ℝ`, `n ≥ 1`, with balls taken in the sup distance
 (`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`). Some a priori integrability is needed, since
 `f^#` does not see constants. The inequality fails in dimension `0`, where `f^#` vanishes
-identically.
+identically. It is then transported to `EuclideanSpace ℝ ι`, with balls of the Euclidean distance
+and a constant depending only on `ι` and `p`
+(`TauCeti.exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow`).
 
 This is the form in which mean oscillation estimates become `Lᵖ` estimates. In the `W^{2,p}`
 theory of elliptic equations with coefficients of vanishing mean oscillation, one bounds the mean
@@ -667,9 +669,11 @@ private theorem sharpMaximalFunction_comp_toLp_le {f : EuclideanSpace ℝ ι →
   set B := ball (T c) (√(Fintype.card ι) * r)
   set S : Set (EuclideanSpace ℝ ι) := WithLp.ofLp ⁻¹' ball c r
   have hS : MeasurableSet S := measurableSet_ball.preimage (PiLp.continuous_ofLp 2 _).measurable
-  have hTS : T ⁻¹' S = ball c r := rfl
+  have hTS : T ⁻¹' S = ball c r := by
+    ext z
+    rw [Set.mem_preimage, Set.mem_preimage, WithLp.ofLp_toLp]
   have hSB : S ⊆ B := fun x hx => by
-    simpa [B, T] using toLp_mem_ball_sqrt_card_mul (show x.ofLp ∈ ball c r from hx)
+    simpa [B, T] using toLp_mem_ball_sqrt_card_mul (Set.mem_preimage.1 hx)
   have hB0 : volume B ≠ 0 := (measure_ball_pos _ _
     (mul_pos (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)) hr)).ne'
   have hBtop : volume B ≠ ∞ := measure_ball_lt_top.ne
