@@ -35,7 +35,7 @@ matrix of the equivalence is `Matrix.reflMatrix`.
   is `∑ⱼ (2 - Aᵀ) i j * cⱼ - cᵢ`.
 * `Matrix.columnReflection_apply_eq_mulVec`: the equivalence is multiplication by `reflMatrix A i`.
 * `Matrix.sum_columnReflection_smul`: evaluation of a reflected column on any family.
-* `Matrix.columnReflection_submatrix`: compatibility with relabelling the index set.
+* `Matrix.columnReflection_comp_equiv`: compatibility with relabelling the index set.
 * `Matrix.comp_equiv_mem_orbit`: relabelling the index set carries orbits to orbits.
 * `Matrix.orbit_columnReflectionGroup_subset`: an orbit lies in any set containing its starting
   point and stable under all the reflections.
@@ -149,16 +149,11 @@ theorem orbit_columnReflectionGroup_subset {S : Set (κ → ℤ)}
     (hS : ∀ i, ∀ c ∈ S, A.columnReflection hA i c ∈ S) {c : κ → ℤ} (hc : c ∈ S) :
     MulAction.orbit (A.columnReflectionGroup hA) c ⊆ S := by
   rintro _ ⟨⟨g, hg⟩, rfl⟩
-  have hinv (g : (κ → ℤ) ≃ₗ[ℤ] (κ → ℤ)) (hg : g ∈ A.columnReflectionGroup hA) :
-      (∀ d ∈ S, g d ∈ S) ∧ ∀ d ∈ S, g⁻¹ d ∈ S := by
-    induction hg using Subgroup.closure_induction with
-    | mem g hg =>
-      obtain ⟨i, rfl⟩ := hg
-      exact ⟨hS i, hS i⟩
-    | one => exact ⟨fun _ hd ↦ hd, fun _ hd ↦ hd⟩
-    | mul g h _ _ hg hh => exact ⟨fun d hd ↦ hg.1 _ (hh.1 d hd), fun d hd ↦ hh.2 _ (hg.2 d hd)⟩
-    | inv g _ hg => exact ⟨hg.2, by simpa using hg.1⟩
-  exact (hinv g hg).1 c hc
+  refine Subgroup.smul_mem_of_mem_closure_of_mem ?_ ?_ hg hc
+  · rintro _ ⟨i, rfl⟩
+    exact ⟨i, A.columnReflection_symm hA i⟩
+  · rintro _ ⟨i, rfl⟩
+    exact hS i
 
 /-- Reflecting does not change membership in an orbit. -/
 theorem columnReflection_mem_orbit_iff (i : κ) {c d : κ → ℤ} :

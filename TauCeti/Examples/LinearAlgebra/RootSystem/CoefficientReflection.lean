@@ -112,10 +112,8 @@ theorem orbit_cartanB₂_long :
 example :
     (MulAction.orbit (cartanB₂.columnReflectionGroup cartanB₂_apply_same)
       (![1, 0] : Fin 2 → ℤ)).ncard = 4 := by
-  rw [orbit_cartanB₂_long]
-  rw [show ({![1, 0], ![-1, 0], ![1, 2], ![-1, -2]} : Set (Fin 2 → ℤ)) =
-    (({![1, 0], ![-1, 0], ![1, 2], ![-1, -2]} : Finset (Fin 2 → ℤ)) : Set (Fin 2 → ℤ)) by simp]
-  rw [Set.ncard_coe_finset]
+  rw [orbit_cartanB₂_long, ← Finset.coe_singleton, ← Finset.coe_insert, ← Finset.coe_insert,
+    ← Finset.coe_insert, Set.ncard_coe_finset]
   decide
 
 /-- The Bourbaki-numbered Cartan matrix of `B₂` is the matrix used above. -/

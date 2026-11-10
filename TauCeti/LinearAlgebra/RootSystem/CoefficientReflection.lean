@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.Matrix.Cartan.ColumnReflection
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Reflections on simple-root coefficients
@@ -283,7 +282,7 @@ theorem iUnion_orbit_single_eq_range_rootCoefficients :
       exact mem_iUnion.mpr ⟨k, Matrix.neg_mem_orbit_single _ _ hk⟩
     · intro i hi
       refine mem_iUnion.mpr ⟨⟨i, hi⟩, ?_⟩
-      rw [show b.rootCoefficients i = _ from b.rootCoefficients_coe ⟨i, hi⟩]
+      rw [b.rootCoefficients_coe ⟨i, hi⟩]
       exact MulAction.mem_orbit_self _
     · intro i j hi hj
       obtain ⟨k, hk⟩ := mem_iUnion.mp hi
@@ -298,13 +297,10 @@ theorem iUnion_orbit_single_inter_Ici_eq_image_isPos :
     (⋃ k : b.support, MulAction.orbit b.coefficientWeylGroup (Pi.single k 1 : b.support → ℤ)) ∩
         Ici 0 =
       b.rootCoefficients '' {i | b.IsPos i} := by
-  rw [iUnion_orbit_single_eq_range_rootCoefficients]
-  ext c
-  constructor
-  · rintro ⟨⟨i, rfl⟩, hi⟩
-    exact ⟨i, b.zero_le_rootCoefficients_iff.mp hi, rfl⟩
-  · rintro ⟨i, hi, rfl⟩
-    exact ⟨⟨i, rfl⟩, b.zero_le_rootCoefficients_iff.mpr hi⟩
+  rw [iUnion_orbit_single_eq_range_rootCoefficients, ← image_preimage_eq_range_inter]
+  congr 1
+  ext i
+  exact b.zero_le_rootCoefficients_iff
 
 end Orbit
 

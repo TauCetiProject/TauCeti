@@ -178,13 +178,10 @@ theorem iUnion_orbit_single_inter_Ici_eq_image_isPos :
         MulAction.orbit (t.cartanMatrix.columnReflectionGroup t.cartanMatrix_apply_same)
           (Pi.single i 1 : Fin t.rank → ℤ)) ∩ Ici 0 =
       t.simpleRootCoefficients ht '' {k | (t.simplyConnectedBase ht).IsPos k} := by
-  rw [t.iUnion_orbit_single_eq_range_simpleRootCoefficients ht]
-  ext c
-  constructor
-  · rintro ⟨⟨k, rfl⟩, hk⟩
-    exact ⟨k, (t.zero_le_simpleRootCoefficients_iff ht).mp hk, rfl⟩
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨⟨k, rfl⟩, (t.zero_le_simpleRootCoefficients_iff ht).mpr hk⟩
+  rw [t.iUnion_orbit_single_eq_range_simpleRootCoefficients ht, ← image_preimage_eq_range_inter]
+  congr 1
+  ext k
+  exact t.zero_le_simpleRootCoefficients_iff ht
 
 end TauCeti.DynkinType
 
