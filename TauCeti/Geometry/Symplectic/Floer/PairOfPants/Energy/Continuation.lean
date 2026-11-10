@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Symplectic.Floer.Manifold
 
 /-!
@@ -52,6 +53,16 @@ on every such truncation
 the limit, `a_∞ ≤ a_0 + a_1 + ∑ q, (B_q + D_q)` for the limiting actions of the ends
 (`SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPerturbation`).
 The constant is the same for all neck positions `L`, although the necks become arbitrarily long.
+
+Beyond the single height `2 + ∑ q, |L_q|` the datum is `H_q(t) dt` on every end, so the energy
+identity of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity` also applies to it on
+the whole of `S`. For a solution `u` of the Floer equation with tame almost complex structures
+whose end loops have actions converging to `a_q`, the energy is
+`E(u) = a_0 + a_1 - a_∞ - ∫_S R_K(u)`
+(`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq`), and
+`E(u) ≤ a_0 + a_1 - a_∞ + ∑ q, (B_q + D_q)`
+(`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`), whatever
+the neck positions.
 
 ## References
 
@@ -325,5 +336,96 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPertu
         (fun z hz ↦ hJ z (preimage_truncation_subset_thricePuncturedSphereReal R hz))
         fun z hz ↦ hfloer z (preimage_truncation_subset_thricePuncturedSphereReal R hz)
   exact le_of_tendsto_of_tendsto (ha inf) (((ha zero).add (ha one)).add_const _) hev
+
+section WholeEnergy
+
+variable {u : ℝ × ℝ → V}
+
+/-- **The energy identity for the pair of pants with continuation necks.** Let `K` be the
+pair-of-pants perturbation with continuation necks at the positions `L_q` from period-one `C¹`
+inner Hamiltonians `G_q` to outer Hamiltonians `H_q`, and let `u` be a `C²` map from
+`S = ℂ ∖ {0, 1}` to a symplectic vector space which solves the Floer equation
+`(du - X_K)^{0,1} = 0` on `S` for almost complex structures `J(z)` tamed by `ω`, and whose
+curvature term `R_K(u)` is integrable. If on each end `q` the actions `A_{H_q}` of the loops
+`t ↦ u(φ_q(s, t))` tend to `a_q` as `±s → ∞`, then the energy of `u` is
+
+`E(u) = a_0 + a_1 - a_∞ - ∫ R_K(u)`. -/
+theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq (ω : SymplecticForm V)
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    (L : Puncture → ℝ) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z) (ω.perturbedFDeriv
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z))
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun σ ↦ ω.hamiltonianAction (H q)
+      (fun t ↦ u (endChart q (q.endSign * σ, t)))) atTop (𝓝 (a q))) :
+    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) =
+      ENNReal.ofReal (∑ q, q.endSign * a q - ∫ z, ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)) :=
+  lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm ω
+    (fun _ hz x v ↦ contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz x v)
+    (fun _ _ x hw ↦ pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le hw x) hH
+    (fun q ↦ (hHs q).continuous) hu
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)) hR ha
+
+/-- **The energy bound for the pair of pants with continuation necks.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq`, without the
+integrability of the curvature, if `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, then the energy
+of `u` is at most `a_0 + a_1 - a_∞ + ∑ q, (B_q + D_q)`, whatever the neck positions. -/
+theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le (ω : SymplecticForm V)
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) (L : Puncture → ℝ)
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z) (ω.perturbedFDeriv
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun σ ↦ ω.hamiltonianAction (H q)
+      (fun t ↦ u (endChart q (q.endSign * σ, t)))) atTop (𝓝 (a q))) :
+    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≤
+      ENNReal.ofReal (∑ q, q.endSign * a q + ∑ q, (B q + D q)) := by
+  rw [lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq ω hG hH hGs hHs L hu hJ
+    hfloer (integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs hHs hGB
+      hHB hD L hu.continuousOn) ha]
+  refine ENNReal.ofReal_le_ofReal (sub_le_iff_le_add.2 ?_)
+  linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
+    (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦
+      pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+    z (u z)), abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs
+    hHs hGB hHB hD L u]
+
+end WholeEnergy
 
 end TauCeti.SymplecticForm

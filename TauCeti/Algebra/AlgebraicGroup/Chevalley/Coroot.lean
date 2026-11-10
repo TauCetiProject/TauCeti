@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate
 
 /-!
 # Simple coroots of a Chevalley datum
@@ -22,13 +22,18 @@ those values with the rank-one words `n_i(s) n_i(1)⁻¹` in the numbered positi
 simple root subgroups, over every commutative ring. In particular this identifies the coroot
 normalization without treating the full-weight parametrization as the actual torus.
 
-The rank-one identity is supplied by the generic Kostant coroot theory in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot`;
-the additional content here is its comparison with the coordinates of the datum's own torus.
+The rank-one identity is Steinberg's quotient `kostantWeylParam_mul_inv_kostantWeylParam` in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne`, used through its
+matrix-coordinate form `kostantRootSubgroupMatrix_mul_mul_mul_inv` in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate`.
+The additional content here is its comparison with the coordinates of the datum's own torus.
+`simpleCorootParameter_eq_fullWeightTorusRestriction` identifies the simple coroot with restriction
+of a single full-weight coordinate.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Lemma 28(c).
+* R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
@@ -55,6 +60,13 @@ theorem simpleCorootParameter_apply (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) (j : Fin t.rank) :
     D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i :=
   GeneralLinear.weightDiagonalUnits_apply _ s j
+
+/-- A simple coroot parameter is restriction of a single coordinate of the full-weight torus. -/
+theorem simpleCorootParameter_eq_fullWeightTorusRestriction (i : Fin t.rank)
+    (A : Type v) [CommRing A] (s : Aˣ) :
+    D.simpleCorootParameter i A s = D.fullWeightTorusRestriction A (Pi.mulSingle i s) := by
+  ext j
+  simp
 
 /-- Evaluation of any character on a simple coroot is its pairing with that coroot. The
 character is written in the chosen basis of the actual weight lattice. -/
@@ -145,24 +157,15 @@ theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommR
     (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       x (.inl i) s * x (.inr i) (-((s⁻¹ : Aˣ) : A)) * x (.inl i) s *
         (x (.inl i) 1 * x (.inr i) (-1) * x (.inl i) 1)⁻¹ := by
-  dsimp only
-  have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+  have h := kostantRootSubgroupMatrix_mul_mul_mul_inv
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-    D.representation_mem_lattice D.basis D.weight D.isCartanWeightVector_basis
-    (D.isSl2Triple_representation_rootGenerator i)
-    (D.isNilpotent_representation_rootGenerator (.inl i))
-    (D.isNilpotent_representation_rootGenerator (.inr i))
+    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator D.basis D.weight
+    D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
     (t.lie_lieBasis_h_rootGenerator ht (.inl i))
-    (t.lie_lieBasis_h_rootGenerator_inr_neg ht i) (CommAlgCat.of ℤ A) s
-  rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul] at h
-  have hm := congrArg (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) h
-  simp only [map_mul,
-    matrix_kostantRootSubgroupParam (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight,
-    coe_kostantToralRootSubgroupPoints] at hm
-  simp only [MulEquiv.toMonoidHom_eq_coe, D.basisMatrix_kostantCoordinateCocharacter] at hm
-  exact (eq_mul_inv_iff_mul_eq.mpr hm.symm)
+    (t.lie_lieBasis_h_rootGenerator_inr_neg ht i) A s 1
+  rw [coe_simpleCorootPoints_eq_kostantTorusMatrix,
+    simpleCorootParameter_eq_fullWeightTorusRestriction, ← kostantTorusMatrix_weight]
+  simpa only [inv_one, mul_one, Units.val_one] using h.symm
 
 end
 

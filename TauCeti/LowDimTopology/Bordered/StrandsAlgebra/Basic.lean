@@ -99,6 +99,11 @@ def basis : Module.Basis (StrandDiagram α) R (StrandsAlgebra R α) :=
 theorem basis_apply (φ : StrandDiagram α) : basis R α φ = of φ :=
   congrFun Finsupp.coe_basisSingleOne φ
 
+/-- The coordinates of a basis element. -/
+@[simp]
+theorem basis_repr_of (φ : StrandDiagram α) : (basis R α).repr (of φ) = Finsupp.single φ 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
+
 private theorem single_eq_smul_of (φ : StrandDiagram α) (r : R) :
     (Finsupp.single φ r : StrandsAlgebra R α) = r • of φ :=
   (Finsupp.smul_single_one φ r).symm
@@ -117,6 +122,12 @@ def idem (s : Finset α) : StrandsAlgebra R α :=
 
 theorem idem_def (s : Finset α) : (idem s : StrandsAlgebra R α) = of (StrandDiagram.idOn s) :=
   (rfl)
+
+open scoped Classical in
+/-- The coefficients of a sum of basis elements: `1` on the summed diagrams and `0` elsewhere. -/
+theorem repr_sum_of_apply (s : Finset (StrandDiagram α)) (ψ : StrandDiagram α) :
+    (basis R α).repr (∑ φ ∈ s, of φ) ψ = if ψ ∈ s then 1 else 0 := by
+  simp [Finset.sum_apply', Finsupp.single_apply]
 
 variable [Fintype α]
 

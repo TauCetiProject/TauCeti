@@ -79,6 +79,8 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
   `L`.
 * `TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem`: if `β` generates `L`
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
+* `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
+  in the bottom intermediate field, then `[L : K] = 1`.
 
 ## Generating sets
 
@@ -303,5 +305,12 @@ theorem finrank_le_of_adjoin_simple_eq_top_of_pow_mem {E L : Type*} [Field E] [F
     IntermediateField.adjoin.finrank ⟨_, monic_X_pow_sub_C _ hn, hroot⟩]
   exact (natDegree_le_of_dvd (minpoly.dvd E β hroot) (X_pow_sub_C_ne_zero hn.bot_lt _)).trans
     (natDegree_X_pow_sub_C _).le
+
+/-- If `L = K(y)` for an element `y` of the bottom intermediate field, then `[L : K] = 1`. -/
+theorem finrank_eq_one_of_adjoin_eq_top_of_mem_bot {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {y : L} (hgen : IntermediateField.adjoin K {y} = ⊤)
+    (hy : y ∈ (⊥ : IntermediateField K L)) : Module.finrank K L = 1 := by
+  rw [IntermediateField.adjoin_simple_eq_bot_iff.2 hy] at hgen
+  exact IntermediateField.bot_eq_top_iff_finrank_eq_one.mp hgen
 
 end TauCeti.IntermediateField

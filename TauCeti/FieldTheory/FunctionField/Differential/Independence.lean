@@ -115,11 +115,10 @@ namespace TauCeti
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- **The chain rule for Weil differentials, at a common rational place** (Stichtenoth,
-Theorem 4.3.2(a)): over an exact constant field, if `x - a` and `y - b` are prime elements at the
-same rational place, then the Weil differentials of the separating elements `x` and `y` satisfy
-`dy = (dy/dx) · dx`. -/
+Theorem 4.3.2(a)): if `x - a` and `y - b` are prime elements at the same rational place, then the
+Weil differentials of the separating elements `x` and `y` satisfy `dy = (dy/dx) · dx`. -/
 theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {x y : F}
+    (hF : IsFunctionField k F) {x y : F}
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
     (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] {P : Place k F} (hP : P.degree = 1)
     {a b : k} (hxa : P.ord (x - algebraMap k F a) = 1) (hyb : P.ord (y - algebraMap k F b) = 1) :
@@ -127,6 +126,7 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_on
     weilDifferentialOfSeparating hF hy =
       derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
+  have hex := P.isIntegrallyClosedIn_of_degree_eq_one hP
   -- The translate `x - a` is separating, with the same derivative as `x`.
   have hxa' : Transcendental k (x - algebraMap k F a) := fun h ↦ hx <| by
     simpa using (h.isIntegral.add (isIntegral_algebraMap (x := a))).isAlgebraic
@@ -182,7 +182,7 @@ private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_c
   have he := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h P'
   obtain ⟨a, ha⟩ := Place.exists_ord_sub_algebraMap_eq_one_of_ord_aeval_eq_one hdeg he hx0 hq hqx
   obtain ⟨b, hb⟩ := Place.exists_ord_sub_algebraMap_eq_one_of_ord_aeval_eq_one hdeg he hy0 hr hry
-  have hup := weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one hF' hex' hx'
+  have hup := weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one hF' hx'
     hy' hdeg ha hb
   refine weilDifferentialCotrace_injective (k' := k') (F' := F') hF hF' ?_
   rw [weilDifferentialCotrace_smul,
@@ -348,23 +348,23 @@ variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
   (t : Place k F → F) (ht : ∀ P : Place k F, P.ord (t P) = 1)
   [∀ P : Place k F, Algebra.IsSeparable k⟮t P⟯ F]
 
+omit [PerfectField k] in
 include hF hex in
-/-- Over a perfect field, the trace residues `Tr_{F_P/k} res_{P,t_P} (ω / dt_P)` of a Kähler
-differential, computed with a prime element `t_P` at each place `P`, vanish at all but finitely
-many places. The separability of each residue field over `k`
-(`TauCeti.Place.isSeparable_residueField_of_perfectField`) and of `F` over each `k(t_P)`
-(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`) holds automatically over a
-perfect field; it is assumed only so that the trace residues and the coordinates in `dt_P` can be
-stated. This is `TauCeti.finite_support_traceResidue_coord` for the Weil differential attached to
-`ω`, on the constant repartition `1`. -/
+/-- The trace residues `Tr_{F_P/k} res_{P,t_P} (ω / dt_P)` of a Kähler differential, computed with
+a prime element `t_P` at each place `P`, vanish at all but finitely many places. The separability
+of each residue field over `k` (`TauCeti.Place.isSeparable_residueField_of_perfectField`) and of
+`F` over each `k(t_P)` (`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`) holds
+automatically over a perfect field; it is assumed only so that the trace residues and the
+coordinates in `dt_P` can be stated. This is `TauCeti.finite_support_traceResidue_coord` for the
+Weil differential attached to `ω`, on the constant repartition `1`. -/
 theorem finite_support_traceResidue_kaehlerBasisOfSeparating_coord (ω : Ω[F⁄k]) :
     let htr : ∀ P, Transcendental k (t P) :=
       fun P ↦ P.transcendental_of_ord_ne_zero (by simp [ht P])
     (Function.support fun P : Place k F ↦
       P.traceResidue (ht P) ((kaehlerBasisOfSeparating (htr P)).coord () ω)).Finite := by
   intro htr
-  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
-  let := hsep
+  obtain ⟨P₀⟩ := Place.nonempty hF
+  have hx := htr P₀
   -- The coordinates of `ω` in `dt_P` are those of the Weil differential attached to it.
   convert finite_support_traceResidue_coord hF hex t ht
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω)
@@ -373,10 +373,12 @@ theorem finite_support_traceResidue_kaehlerBasisOfSeparating_coord (ω : Ω[F⁄
     coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating]
   simp
 
+omit [PerfectField k] in
 include hF hex in
-/-- **The residue theorem over a perfect field** (Stichtenoth, Corollary 4.3.3 and
-Remark 4.3.7(d)): over a perfect exact constant field, choose a prime element `t_P` at each place
-`P`. Then the trace residues of a Kähler differential `ω` sum to zero,
+/-- **The residue theorem for trace residues** (Stichtenoth, Corollary 4.3.3 and
+Remark 4.3.7(d)): over an exact constant field, choose a prime element `t_P` at each place `P`,
+with the residue fields and `F / k(t_P)` separable (automatic over a perfect field). Then the trace
+residues of a Kähler differential `ω` sum to zero,
 `∑_P Tr_{F_P/k} res_{P,t_P} (ω / dt_P) = 0`, a sum with finitely many nonzero terms
 (`TauCeti.finite_support_traceResidue_kaehlerBasisOfSeparating_coord`). This is the residue
 theorem for Weil differentials `TauCeti.finsum_traceResidue_coord_eq_zero` at `u = 1`, applied to
@@ -388,8 +390,8 @@ theorem finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero (ω : Ω[F⁄
     ∑ᶠ P : Place k F, P.traceResidue (ht P) ((kaehlerBasisOfSeparating (htr P)).coord () ω) =
       0 := by
   intro htr
-  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
-  let := hsep
+  obtain ⟨P₀⟩ := Place.nonempty hF
+  have hx := htr P₀
   -- The coordinates of `ω` in `dt_P` are those of the Weil differential attached to it.
   refine Eq.trans (finsum_congr fun P ↦ ?_) (finsum_traceResidue_coord_eq_zero hF hex t ht
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) 1)

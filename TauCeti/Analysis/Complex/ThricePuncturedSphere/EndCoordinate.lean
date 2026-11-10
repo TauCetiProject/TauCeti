@@ -520,6 +520,23 @@ theorem endSign_mul_re_endCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {w : ℂ
   exact cylindricalEndLift_ne_cylindricalEndLift hqr h h'
     ((q.cylindricalEndLift_endCoord hq).trans (r.cylindricalEndLift_endCoord hr).symm)
 
+/-- The finite puncture other than `c_q` lies on the part `s < 0` of the end `q`. -/
+theorem re_endCoord_lt_zero (hq : q ≠ inf) {v : ℂ} (hv : v = 0 ∨ v = 1)
+    (hvq : v ≠ q.endCenter) : (q.endCoord v).re < 0 := by
+  have hlog : 0 < Real.log 2 := Real.log_pos one_lt_two
+  cases q
+  · rcases hv with rfl | rfl
+    · simp at hvq
+    · rw [re_endCoord]
+      norm_num
+      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
+  · rcases hv with rfl | rfl
+    · rw [re_endCoord]
+      norm_num
+      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
+    · simp at hvq
+  · exact absurd rfl hq
+
 end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.ThricePuncturedSphere
@@ -537,6 +554,19 @@ def truncation (R : ℝ) : Set ℂ :=
 theorem mem_truncation {R : ℝ} {w : ℂ} :
     w ∈ truncation R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R :=
   Iff.rfl
+
+/-- For `R > 0`, the boundary circle `±s = R` of each end lies in the truncation `S_R`. -/
+theorem cylindricalEndLift_mem_truncation (r : Puncture) {R : ℝ} (hR : 0 < R) (t : ℝ) :
+    r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I) ∈ truncation R := by
+  have hr : r.endSign * (r.endCoord (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))).re
+      = R := by
+    simp [← mul_assoc]
+  have hpos := hr ▸ hR
+  refine ⟨(r.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos hpos).1,
+    (r.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos hpos).2, fun q ↦ ?_⟩
+  rcases eq_or_ne r q with rfl | hrq
+  · exact hr.le
+  · exact (endSign_mul_re_endCoord_nonpos hrq hpos).trans hR.le
 
 /-- The truncation is cut out by norm inequalities: it is the closed annulus
 `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
