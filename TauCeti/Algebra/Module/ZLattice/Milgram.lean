@@ -48,16 +48,22 @@ open Module
 
 namespace ZLattice
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {L : Submodule ℤ E} [DiscreteTopology L]
 
 /-- **An even lattice of level dividing `2` has rank divisible by `4`.** -/
 theorem IsEven.four_dvd_finrank_of_level_dvd_two (hL : IsEven L) (h2 : level L ∣ 2) :
     4 ∣ finrank ℝ E := by
-  have h := (ratModel hL.isIntegral).four_dvd_finrank_of_level_dvd_two
-    ((isEven_ratModel_iff hL.isIntegral).mpr hL) (by rwa [level_ratModel])
-    (isPosDef_ratModel hL.isIntegral)
-  rwa [← (ratModel hL.isIntegral).finrank_carrier, finrank_ratModel] at h
+  by_cases hfd : FiniteDimensional ℝ E
+  · have : IsZLattice ℝ L := ⟨by
+      by_contra h
+      exact two_ne_zero (zero_dvd_iff.mp (level_eq_zero_of_span_ne_top h ▸ h2))⟩
+    have h := (ratModel hL.isIntegral).four_dvd_finrank_of_level_dvd_two
+      ((isEven_ratModel_iff hL.isIntegral).mpr hL) (by rwa [level_ratModel])
+      (isPosDef_ratModel hL.isIntegral)
+    rwa [← (ratModel hL.isIntegral).finrank_carrier, finrank_ratModel] at h
+  · rw [finrank_of_not_finite hfd]
+    exact dvd_zero _
 
 /-- **The weight of an even lattice of level dividing `2` is even**: if the rank is `2k`, then
 `k` is even. -/

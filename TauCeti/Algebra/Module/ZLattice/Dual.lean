@@ -264,12 +264,53 @@ instance : IsZLattice ℝ (dual L) where
     rw [dual_span_basis]
     exact ZSpan.span_top _
 
-/-- The dual of the dual of a full lattice in a finite-dimensional space is the lattice. -/
+omit [IsZLattice ℝ L] in
+/-- The dual of the dual of a discrete lattice in a finite-dimensional space is the lattice. -/
 @[simp]
 theorem dual_dual : dual (dual L) = L := by
-  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
-  exact BilinForm.dualSubmodule_dualSubmodule_of_basis (innerₗ E)
-    TauCeti.nondegenerate_inner (BilinForm.isSymm_iff.mpr isSymm_inner) b
+  -- The lattice is full in its real span `K`, where the dual-basis description applies.
+  set K := span ℝ (L : Set E)
+  let L' : Submodule ℤ K := ZLattice.comap ℝ L K.subtype
+  have : DiscreteTopology L' :=
+    ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
+  have : IsZLattice ℝ L' := ⟨Submodule.span_span_coe_preimage⟩
+  have key : dual (dual L') = L' := by
+    obtain ⟨ι, _, _, b, hb⟩ := exists_basis_span_eq ℝ L'
+    rw [← hb]
+    exact BilinForm.dualSubmodule_dualSubmodule_of_basis (innerₗ K)
+      TauCeti.nondegenerate_inner (BilinForm.isSymm_iff.mpr isSymm_inner) b
+  refine le_antisymm (fun y hy ↦ ?_) fun y hy ↦ mem_dual.mpr fun x hx ↦ ?_
+  swap
+  · obtain ⟨m, hm⟩ := mem_dual.mp hx y hy
+    exact ⟨m, by rw [real_inner_comm]; exact hm⟩
+  replace hy := mem_dual.mp hy
+  -- `y` lies in `K`: a vector `u` orthogonal to `K` lies in `L^∨` with all its real multiples.
+  have hyK : y ∈ K := by
+    rw [← Submodule.orthogonal_orthogonal K, Submodule.mem_orthogonal]
+    intro u hu
+    by_contra h0
+    obtain ⟨m, hm⟩ := hy ((2 * inner ℝ u y)⁻¹ • u) (mem_dual.mpr fun w hw ↦ ⟨0, by
+      have hu0 : inner ℝ u w = 0 := by
+        rw [real_inner_comm]
+        exact Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hw) hu
+      rw [real_inner_smul_left, hu0]
+      simp⟩)
+    rw [real_inner_smul_right, real_inner_comm u y] at hm
+    have : (m : ℝ) * 2 = 1 := by
+      rw [← hm]
+      field_simp
+    have : m * 2 = 1 := by exact_mod_cast this
+    omega
+  -- Then `y` lies in `dual (dual L') = L'`, since `L'^∨ ⊆ L^∨` through the inclusion of `K`.
+  have hyL : (⟨y, hyK⟩ : K) ∈ L' := by
+    rw [← key, mem_dual]
+    intro z hz
+    have hzE : (z : E) ∈ dual L := mem_dual.mpr fun w hw ↦ by
+      obtain ⟨m, hm⟩ := mem_dual.mp hz ⟨w, Submodule.subset_span hw⟩ hw
+      exact ⟨m, by simpa using hm⟩
+    obtain ⟨m, hm⟩ := hy z hzE
+    exact ⟨m, by simpa using hm⟩
+  exact hyL
 
 end FiniteDimensional
 

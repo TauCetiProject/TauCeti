@@ -167,6 +167,27 @@ theorem level_dvd_iff {N : ℕ} :
   rw [hmod, Int.cast_sub, Int.cast_mul, Int.cast_natCast]
   linear_combination ha - ((N / level L : ℕ) : ℝ) * hb
 
+/-- A lattice in a finite-dimensional space that does not span has level `0`: a nonzero vector
+`w` orthogonal to the lattice has every real multiple in the dual lattice, and no positive `N` makes
+`N ‖t w‖² / 2` an integer for every real `t`. -/
+theorem level_eq_zero_of_span_ne_top [FiniteDimensional ℝ E] (h : span ℝ (L : Set E) ≠ ⊤) :
+    level L = 0 := by
+  by_contra hN
+  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (mt Submodule.orthogonal_eq_bot_iff.mp h)
+  have hN' : (0 : ℝ) < level L := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hN)
+  have hw' : 0 < ‖w‖ := norm_pos_iff.mpr hw0
+  have hx : ((√(level L : ℝ) * ‖w‖)⁻¹ : ℝ) • w ∈ dual L := mem_dual.mpr fun y hy ↦
+    ⟨0, by
+      rw [real_inner_smul_left, real_inner_comm,
+        Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hy) hw]
+      simp⟩
+  obtain ⟨m, hm⟩ := exists_level_mul_norm_sq_eq hx
+  rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inv_pow, mul_pow, Real.sq_sqrt hN'.le] at hm
+  field_simp at hm
+  have : (1 : ℤ) = 2 * m := by exact_mod_cast hm
+  omega
+
 /-- The level is invariant under linear isometry equivalences. -/
 @[simp]
 theorem level_comap (e : F ≃ₗᵢ[ℝ] E) :
@@ -248,6 +269,7 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
+omit [IsZLattice ℝ L] in
 /-- The level controls the dual inclusion: `level L • x ∈ L` for every `x ∈ L^∨`, that is,
 `level L • L^∨ ≤ L`. -/
 theorem level_nsmul_mem {x : E} (hx : x ∈ dual L) : level L • x ∈ L := by
@@ -262,6 +284,7 @@ theorem level_nsmul_mem {x : E} (hx : x ∈ dual L) : level L • x ∈ L := by
   push_cast
   linear_combination (hc - ha - hb - (level L : ℝ) * norm_add_sq_real x y) / 2
 
+omit [IsZLattice ℝ L] in
 /-- The exponent of the discriminant group divides the level. -/
 theorem exponent_discriminantGroup_dvd_level :
     AddMonoid.exponent (DiscriminantGroup L) ∣ level L := by
@@ -303,7 +326,8 @@ theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprim
     a.Coprime (Nat.card (DiscriminantGroup L)) :=
   (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
-/-- An even full lattice has level one exactly when it is unimodular. -/
+omit [IsZLattice ℝ L] in
+/-- An even lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
   refine ⟨fun h1 ↦ h.isIntegral.isUnimodular_iff.mpr ?_, fun hu ↦ Nat.dvd_one.mp ?_⟩
   · -- At level one the dual lattice is even, hence integral, so it lies in its own dual `L`.
