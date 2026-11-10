@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Detection
 public import TauCeti.Algebra.Polynomial.Laurent.Symmetric
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
@@ -41,6 +42,7 @@ classical specialization at `v = 1` at the same time.
 * `TauCeti.laurentEval_laurentQuantumInteger`: the value at a unit `q` of a field with
   `q - q⁻¹ ≠ 0` is the quantum integer `[r]_q`.
 * `TauCeti.laurentEval_one_laurentQuantumInteger`: the value at `v = 1` is `r`.
+* `TauCeti.laurentQuantumInteger_add`: the addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`.
 * `TauCeti.qInt_add_inv_eq_laurentEval`: the value of `[n]_v` at a unit `u` of a commutative ring
   is the quantum integer `TauCeti.qInt` at the loop parameter `u + u⁻¹`.
 * `TauCeti.sub_inv_mul_qInt_add_inv`: `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
@@ -139,5 +141,13 @@ theorem qInt_add_inv_eq_quantumInteger {K : Type*} [Field K] {q : K} (hq : q - q
   have h := qInt_add_inv_eq_laurentEval (Units.mk0 q (ne_zero_of_sub_inv_ne_zero hq)) n
   rw [laurentEval_laurentQuantumInteger (by simpa using hq)] at h
   simpa using h
+
+/-- The addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`. -/
+theorem laurentQuantumInteger_add (a b : ℤ) :
+    laurentQuantumInteger (a + b) =
+      T a * laurentQuantumInteger b + T (-b) * laurentQuantumInteger a := by
+  refine eq_of_forall_laurentEval_eq fun K _ u hu => ?_
+  simp only [map_add, map_mul, laurentEval_T, laurentEval_laurentQuantumInteger hu,
+    Units.val_zpow_eq_zpow_val, quantumInteger_add]
 
 end TauCeti

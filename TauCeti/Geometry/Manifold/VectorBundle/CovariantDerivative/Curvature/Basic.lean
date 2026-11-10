@@ -287,23 +287,30 @@ theorem curvatureOperator_add_section
   simp only [add_apply]
   abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its first vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_first
     (hX : CMDiff ∞ (T% X)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov (-X) Y σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_first hX.neg_section hX hσ, neg_add_cancel,
-    curvatureOperator_zero_first]
+  funext x
+  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) :=
+    (cov.contMDiff_apply hX hσ).mdifferentiable (by simp)
+  have hinner : (fun y ↦ cov σ y ((-X) y)) = -fun y ↦ cov σ y (X y) :=
+    funext fun y ↦ map_neg (cov σ y) (X y)
+  rw [Pi.neg_apply, curvatureOperator_apply, curvatureOperator_apply, mlieBracket_neg_left, hinner,
+    cov.isCovariantDerivativeOnUniv.neg (hXσd x)]
+  simp only [Pi.neg_apply, map_neg, neg_apply]
+  abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its second vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_second
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (-Y) σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_second hY.neg_section hY hσ, neg_add_cancel,
-    curvatureOperator_zero_second]
+  rw [curvatureOperator_antisymm cov X (-Y) σ, curvatureOperator_neg_first hY hσ, neg_neg,
+    curvatureOperator_antisymm cov Y X σ]
 
 omit [CompleteSpace E] in
 /-- Curvature changes sign when its section argument is negated. -/
@@ -472,24 +479,18 @@ theorem curvatureOperator_congr
     curvatureOperator cov X Y σ x = curvatureOperator cov X' Y σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov Z Y σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hZ' hY hσ hZZ' Filter.EventuallyEq.rfl (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_first hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_first hf hZ hσ) x)
         hX hX' hXX'
     _ = curvatureOperator cov X' Y' σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov X' Z σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hZ' hσ Filter.EventuallyEq.rfl hZZ' (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_second hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_second hf hZ hσ) x)
         hY hY' hYY'
     _ = curvatureOperator cov X' Y' σ' x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V)
         (fun τ ↦ curvatureOperator cov X' Y' τ x) x
-        (fun _ hτ' hττ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hY' hτ' Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl hττ')
         (fun hτ hτ' ↦ congrFun (curvatureOperator_add_section hX' hY' hτ hτ') x)
         (fun hf hτ ↦ congrFun (curvatureOperator_smul_section hf hX' hY' hτ) x)
         hσ hσ' hσσ'

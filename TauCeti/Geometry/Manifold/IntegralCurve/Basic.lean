@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Integral curves in coordinates
@@ -32,6 +34,8 @@ the field.
   field.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
+* `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
+  vector field are the solutions of the autonomous differential equation it defines.
 * `IsMIntegralCurveAt.of_extChartAt_symm`, `IsMIntegralCurveOn.of_extChartAt_symm`: a coordinate
   solution, on a neighbourhood of a time or on an open set of times, gives a manifold integral
   curve.
@@ -147,6 +151,16 @@ theorem isMIntegralCurve_congr_vectorField {M : Type*} [TopologicalSpace M] [Cha
     {γ : ℝ → M} {v w : (x : M) → TangentSpace I x} (hvw : ∀ t, v (γ t) = w (γ t)) :
     IsMIntegralCurve γ v ↔ IsMIntegralCurve γ w :=
   ⟨fun hγ t ↦ hvw t ▸ hγ t, fun hγ t ↦ (hvw t).symm ▸ hγ t⟩
+
+/-- **Integral curves in a vector space.** For the model `𝓘(ℝ, E)` of `E` on itself, a curve is an
+integral curve of a vector field on a set exactly when it solves, on that set, the autonomous
+differential equation `γ' = v ∘ γ` in the sense of Mathlib's `IsIntegralCurveOn`. -/
+theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
+    {v : (x : E) → TangentSpace 𝓘(ℝ, E) x} {s : Set ℝ} :
+    IsMIntegralCurveOn γ v s ↔ IsIntegralCurveOn γ (fun _ x ↦ v x) s := by
+  -- `smulRight 1 w` is `toSpanSingleton ℝ w` by definition (`ContinuousLinearMap.smulRight_id`).
+  exact forall₂_congr fun t _ ↦ hasMFDerivWithinAt_iff_hasFDerivWithinAt.trans
+    (hasDerivWithinAt_iff_hasFDerivWithinAt (f := γ) (f' := (v (γ t) : E))).symm
 
 end TauCeti
 
@@ -279,6 +293,39 @@ private theorem IsMIntegralCurveOn.eventuallyEq_of_contDiffOn_extChartAt
       (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ hteq)
   filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
   exact φ.injOn (hγsrc r hrJ) hrδsrc hr
+
+namespace TauCeti
+
+/-- A curve in the model space which stays in the interior of the chart target and solves the
+coordinate equation of a vector field on an open set of times gives an integral curve of the
+field on the manifold, after applying the inverse extended chart. -/
+theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 1 M] (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E}
+    {s : Set ℝ} (hs : IsOpen s)
+    (hmem : ∀ t ∈ s, f t ∈ interior (extChartAt I a).target)
+    (hderiv : ∀ t ∈ s, HasDerivAt f (trivializationAt E (TangentSpace I) a
+      (⟨(extChartAt I a).symm (f t), v ((extChartAt I a).symm (f t))⟩ :
+        TangentBundle I M)).2 t) :
+    IsMIntegralCurveOn ((extChartAt I a).symm ∘ f) v s := by
+  refine IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_
+  apply IsMIntegralCurveAt.of_extChartAt_symm
+  · filter_upwards [hs.mem_nhds ht] with r hr
+    exact hmem r hr
+  · filter_upwards [hs.mem_nhds ht] with r hr
+    have hw_eq (z : E) : (trivializationAt E (TangentSpace I) a
+        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2 =
+        tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
+          (v ((extChartAt I a).symm z)) := by
+      -- The fibre coordinate of the preferred trivialization is the second coordinate of the
+      -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
+      change (chartAt (ModelProd H E)
+        (⟨a, 0⟩ : TangentBundle I M)
+        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
+          TangentBundle I M)).2 = _
+      exact TangentBundle.coe_chartAt_snd
+    simpa only [hw_eq] using hderiv r hr
+
+end TauCeti
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
