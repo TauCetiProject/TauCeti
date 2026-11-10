@@ -140,14 +140,22 @@ theorem hessianQuadraticForm_norm_sq_sub_comp_add_I_smul_of_mem_maximalAtlas
 
 /-- At a critical point of squared distance along a holomorphic immersion, the real
 Morse index is at most the complex dimension of the source. -/
-theorem manifoldMorseIndex_norm_sq_sub_comp_le [FiniteDimensional ℂ E]
+theorem manifoldMorseIndex_norm_sq_sub_comp_le
     [IsManifold 𝓘(ℂ, E) 2 M]
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x)
     (hinj : Injective (mvfderiv 𝓘(ℂ, E) i x))
     (hcrit : mvfderiv 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
-  have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
-  exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
+  by_cases hE : FiniteDimensional ℂ E
+  · have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
+    exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
+  · -- In infinite dimensions the index is `0` by Mathlib's convention for `sigNeg`.
+    have hER : ¬ FiniteDimensional ℝ E := fun h ↦ hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)
+    rw [manifoldMorseIndex_def, morseIndex_def]
+    have h := sigPos_le_finrank (-hessianQuadraticForm
+      ((fun y ↦ ‖i y - a‖ ^ 2) ∘ (extChartAt 𝓘(ℝ, E) x).symm) (extChartAt 𝓘(ℝ, E) x x))
+    rw [sigPos_neg, Module.finrank_of_not_finite hER] at h
+    exact h.trans (Nat.zero_le _)
 
 /-- Along the inclusion of an open subset of a complex inner product space, the squared distance
 from any point is strictly plurisubharmonic at every point. -/
@@ -159,8 +167,7 @@ theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F
 
 section Immersion
 
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] [IsManifold 𝓘(ℂ, E) ∞ M]
-  [SecondCountableTopology M]
+variable [FiniteDimensional ℂ F] [IsManifold 𝓘(ℂ, E) ∞ M] [SecondCountableTopology M]
 
 /-- **Generic low-index squared-distance Morse functions on a holomorphically immersed manifold.**
 For a smooth holomorphic immersion `i : M → F` of a second-countable complex manifold into a
@@ -175,6 +182,13 @@ theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
         manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · refine Filter.Eventually.of_forall fun a ↦ ⟨?_, fun x ↦ isEmptyElim x⟩
+    rw [← isMorseOn_univ, Set.univ_eq_empty_iff.2 hM]
+    exact isMorseOn_empty
+  have : FiniteDimensional ℂ E :=
+    Module.Finite.of_injective (mvfderiv 𝓘(ℂ, E) i x₀).toLinearMap (hinj x₀)
+  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
   have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)

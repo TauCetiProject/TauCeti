@@ -19,8 +19,11 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
+-- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Orientation.Basic
 
@@ -406,10 +409,15 @@ variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(�
 biholomorphism at `x`, for `n ≠ 0`, its derivative at `x` carries the canonical orientation of `M`
 at `x` to that of `N` at `f x`. -/
 theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation
-    (n : ℕ∞ω) [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N} {x : M}
+    (n : ℕ∞ω) [NeZero n] {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) n f x) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) f x := by
+  -- Only the `C^1` structure is needed, so we lower the regularity of `f` to `1`.
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  have hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) 1 f x :=
+    ⟨Φ.ofLE (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n)), by simpa using hxΦ,
+      by simpa using hfΦ⟩
   -- Read both orientations through the holomorphic chart `e` of `N` at `f x` and a holomorphic
   -- chart `e'` of `M` at `x` agreeing with `e ∘ f` near `x`, whose derivative at `x` is that of
   -- `e` after that of `f`.
@@ -418,8 +426,8 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
     (IsManifold.chart_mem_maximalAtlas (f x)) (mem_chart_source E (f x))
   obtain ⟨L, hL, hmap⟩ :=
     (eq_complexManifoldOrientation_iff (complexManifoldOrientation E N)).1 rfl (f x)
-  have hn : n ≠ 0 := NeZero.ne n
-  have hfR : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) n f x := hf.restrictScalars ℝ
+  have hn : (1 : ℕ∞ω) ≠ 0 := one_ne_zero
+  have hfR : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f x := hf.restrictScalars ℝ
   let D := hfR.mfderivToContinuousLinearEquiv hn
   have hD : (D : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (f x)) =
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x :=
@@ -430,7 +438,7 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
       (mem_chart_source E (f x))) (hfR.mdifferentiableAt hn), ← hL, ← hD]
     exact (ContinuousLinearEquiv.comp_coe D L).symm
   refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2 ?_
-  have hM := map_orientationAt_complexManifoldOrientation n he' hx (D.trans L) hDL
+  have hM := map_orientationAt_complexManifoldOrientation 1 he' hx (D.trans L) hDL
   rw [ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans] at hM
   exact (Orientation.map _ L.toLinearEquiv).injective (hM.trans hmap.symm)
 
@@ -438,7 +446,7 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
 `C^n` biholomorphism `Φ : M → N`, for `n ≠ 0`, carries the canonical orientation of `M` at `x` to
 that of `N` at `Φ x`. -/
 theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation (n : ℕ∞ω)
-    [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N]
+    [NeZero n]
     (Φ : M ≃ₘ^n⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ N) (x : M) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) Φ x :=
@@ -448,7 +456,7 @@ theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation 
 of `N` along any `C^n` local biholomorphism `f : M → N`, for `n ≠ 0`. The arguments `hf'`, `hdf`
 and `hι` are the data that `Manifold.Orientation.pullback` requires; they all follow from `hf`. -/
 theorem _root_.IsLocalDiffeomorph.complexManifoldOrientation_eq_pullback (n : ℕ∞ω) [NeZero n]
-    [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N}
+    {f : M → N}
     (hf : IsLocalDiffeomorph 𝓘(ℂ, E) 𝓘(ℂ, E) n f) (hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f)
     (hdf : ∀ x, (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x).IsInvertible)
     (hι : Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E) :
