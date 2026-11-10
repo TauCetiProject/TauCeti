@@ -14,6 +14,7 @@ public import Mathlib.RepresentationTheory.Equiv
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 public import TauCeti.Analysis.SpringSystem.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
+public import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -649,11 +650,11 @@ theorem leftRegularEquiv_single (g : Multiplicative (ZMod 2) × Multiplicative (
 /-! ### The isotypic projectors -/
 
 /-- The **isotypic projector** of a real character `χ` of `C₂ × C₂` on displacements: the action
-`¼ ∑_g χ(g) g` of the character idempotent of `χ` (every element of `C₂ × C₂` is its own inverse,
-so `χ(g⁻¹) = χ(g)`). -/
+of the character idempotent `TauCeti.charIdempotent` of `χ`, which is `¼ ∑_g χ(g) g` because
+every element of `C₂ × C₂` is its own inverse, so `χ(g⁻¹) = χ(g)`. -/
 noncomputable def isotypicProjector
     (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) : Module.End ℝ (Fin 4 → ℝ) :=
-  (4 : ℝ)⁻¹ • ∑ g, χ g • symmetryRep g
+  symmetryRep.asAlgebraHom (charIdempotent χ.toHomUnits)
 
 /-- The isotypic projector of `χ` written out with the two reflections and their product. -/
 theorem isotypicProjector_apply (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ)
@@ -661,16 +662,17 @@ theorem isotypicProjector_apply (χ : Multiplicative (ZMod 2) × Multiplicative 
     isotypicProjector χ u = (4 : ℝ)⁻¹ • (u + χ (.ofAdd 1, 1) • axisReflection u +
       χ (1, .ofAdd 1) • bisectorReflection u +
       χ (.ofAdd 1, .ofAdd 1) • axisReflection (bisectorReflection u)) := by
-  simp only [isotypicProjector, Fintype.sum_prod_type, sum_cyclicTwo, Prod.mk_one_one, map_one,
+  have hinv : (Multiplicative.ofAdd (1 : ZMod 2))⁻¹ = .ofAdd 1 := by decide
+  have hcard : (Nat.card (Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) : ℝ) = 4 := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_multiplicative, ZMod.card]
+    norm_num
+  rw [isotypicProjector, charIdempotent_eq_sum, hcard, Ring.inverse_eq_inv', map_smul, map_sum]
+  simp only [map_smul, Representation.asAlgebraHom_of, ← map_inv, MonoidHom.coe_toHomUnits,
+    Fintype.sum_prod_type, sum_cyclicTwo, Prod.inv_mk, inv_one, hinv, Prod.mk_one_one, map_one,
     LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self, one_smul,
     symmetryRep_ofAdd_one_one_apply, symmetryRep_one_ofAdd_one_apply,
     symmetryRep_ofAdd_one_ofAdd_one_apply]
   abel_nf
-
-private theorem mul_self_eq_one (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
-    g * g = 1 := by
-  revert g
-  decide
 
 /-- A symmetry applied after the isotypic projector of `χ` acts by the scalar `χ g`: the image of
 the projector is contained in the `χ`-isotypic component. -/
@@ -678,38 +680,14 @@ theorem symmetryRep_mul_isotypicProjector
     (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ)
     (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g * isotypicProjector χ = χ g • isotypicProjector χ := by
-  simp only [isotypicProjector, mul_smul_comm, Finset.mul_sum, ← map_mul]
-  rw [smul_comm (χ g), Finset.smul_sum (r := χ g)]
-  congr 1
-  exact Fintype.sum_equiv (Equiv.mulLeft g) _ _ fun h ↦ by
-    rw [Equiv.coe_mulLeft, smul_smul, ← map_mul, ← mul_assoc, mul_self_eq_one, one_mul]
-
-private theorem isotypicProjector_mul_eq_smul
-    (χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
-    isotypicProjector ψ * isotypicProjector χ =
-      ((4 : ℝ)⁻¹ * ∑ g, ψ g * χ g) • isotypicProjector χ := by
-  nth_rw 1 [isotypicProjector]
-  simp only [smul_mul_assoc, Finset.sum_mul, symmetryRep_mul_isotypicProjector, smul_smul,
-    ← Finset.sum_smul]
-
-private theorem sum_mul_self (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
-    ∑ g, χ g * χ g = 4 := by
-  simp only [← map_mul, mul_self_eq_one, map_one, Finset.sum_const, Finset.card_univ,
-    Fintype.card_prod, Fintype.card_multiplicative, ZMod.card, nsmul_eq_mul]
-  norm_num
-
-private theorem sum_mul_eq_zero {χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ}
-    (h : χ ≠ ψ) : ∑ g, ψ g * χ g = 0 :=
-  sum_hom_units_eq_zero (ψ * χ) fun h₁ ↦ h <| MonoidHom.ext fun g ↦ by
-    have h₁g : ψ g * χ g = 1 := DFunLike.congr_fun h₁ g
-    have hχ : χ g * χ g = 1 := by rw [← map_mul, mul_self_eq_one, map_one]
-    linear_combination ψ g * hχ - χ g * h₁g
+  rw [isotypicProjector, ← Representation.asAlgebraHom_single_one, ← map_mul,
+    single_mul_charIdempotent, MonoidHom.coe_toHomUnits, map_smul]
 
 /-- **The isotypic projectors are idempotent.** -/
 @[simp]
 theorem isotypicProjector_mul_self (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
-    isotypicProjector χ * isotypicProjector χ = isotypicProjector χ := by
-  rw [isotypicProjector_mul_eq_smul, sum_mul_self, inv_mul_cancel₀ (four_ne_zero' ℝ), one_smul]
+    isotypicProjector χ * isotypicProjector χ = isotypicProjector χ :=
+  (isIdempotentElem_charIdempotent χ.toHomUnits).map symmetryRep.asAlgebraHom
 
 /-- The isotypic projectors are idempotent elements of `Module.End ℝ (Fin 4 → ℝ)`. -/
 theorem isIdempotentElem_isotypicProjector
@@ -722,7 +700,10 @@ theorem isIdempotentElem_isotypicProjector
 theorem isotypicProjector_mul_isotypicProjector_of_ne
     {χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ} (h : χ ≠ ψ) :
     isotypicProjector χ * isotypicProjector ψ = 0 := by
-  rw [isotypicProjector_mul_eq_smul, sum_mul_eq_zero h.symm, mul_zero, zero_smul]
+  rw [isotypicProjector, isotypicProjector, ← map_mul,
+    charIdempotent_mul_charIdempotent_of_ne fun hχψ ↦ h <| MonoidHom.ext fun g ↦ by
+      simpa using congrArg Units.val (DFunLike.congr_fun hχψ g),
+    map_zero]
 
 /-- The projector of the trivial character is the orthogonal projection
 `u ↦ (v ⬝ᵥ u / v ⬝ᵥ v) v` onto the stretching mode `v = (1, 0, -1, 0)`, with `v ⬝ᵥ v = 2`. -/
