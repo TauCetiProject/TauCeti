@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.PDE.Vortex.Zeros
 
@@ -38,10 +39,10 @@ direction of `h` (`eq_complexGaugeDirection_of_forall_sectionValue_eq_mul`). If 
 `|α| → 1` at infinity, `h` is square integrable too, and the sub-mean-value inequality forces
 `h = 0`. Therefore:
 
-* `eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul`: at a plane vortex with
-  `|α| → 1`, a continuous `L²` solution of `L_x y = 0` whose section variation is a `C²` multiple
-  of `α` vanishes.
-* `eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_ne_zero`: at a plane vortex
+* `eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul`: at a plane field
+  satisfying the holomorphicity rows of the vortex equation, with `|α| → 1`, a continuous `L²`
+  solution of `L_x y = 0` whose section variation is a `C²` multiple of `α` vanishes.
+* `eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_ne_zero`: at such a field
   with `|α| → 1` and no zeros, the `C²` kernel of `L_x` in `L²` is zero.
 
 At a vortex with zeros of total multiplicity `m`, the quotient `δα / α` of a kernel element is
@@ -129,6 +130,20 @@ theorem complexGaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   ext i
   fin_cases i <;> simp [complexGaugeDirection]
 
+/-- The complexified gauge action preserves addition of functions differentiable at the point. -/
+theorem complexGaugeDirection_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f g : ℂ → ℂ} {z : ℂ}
+    (hf : DifferentiableAt ℝ f z) (hg : DifferentiableAt ℝ g z) :
+    complexGaugeDirection x (f + g) z =
+      complexGaugeDirection x f z + complexGaugeDirection x g z := by
+  ext i
+  fin_cases i <;> simp [fderiv_add hf hg] <;> ring
+
+/-- The complexified gauge action commutes with real scalar multiplication of functions. -/
+theorem complexGaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℂ) (t : ℝ)
+    (z : ℂ) : complexGaugeDirection x (t • f) z = t • complexGaugeDirection x f z := by
+  ext i
+  fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
+
 /-- On imaginary functions `i f` the complexified gauge action is the unitary gauge action
 `gaugeDirection x f`. -/
 theorem complexGaugeDirection_ofReal_mul_I (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f : ℂ → ℝ}
@@ -200,27 +215,14 @@ private theorem fderiv_complexGaugeDirection_apply_three
   simp
   ring
 
-/-- The Laplacian and the symmetry of the second derivatives of `h`, in the coordinate
-frame `(1, i)`. -/
-private theorem laplacian_eq_and_symm (hh : ContDiffAt ℝ 2 h z) :
-    Δ h z = fderiv ℝ (fun w ↦ fderiv ℝ h w 1) z 1 + fderiv ℝ (fun w ↦ fderiv ℝ h w I) z I ∧
-      fderiv ℝ (fun w ↦ fderiv ℝ h w 1) z I = fderiv ℝ (fun w ↦ fderiv ℝ h w I) z 1 := by
-  have hdf := (hh.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  refine ⟨?_, ?_⟩
-  · rw [laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hdf]
-    simp [Fin.sum_univ_two]
-  · have hs := (hh.isSymmSndFDerivAt (by simp)).eq I 1
-    rw [fderiv_clm_apply hdf (differentiableAt_const _),
-      fderiv_clm_apply hdf (differentiableAt_const _)]
-    simpa using hs
-
 /-- **The gauge-fixing row on complexified gauge directions**: at every field,
 `d₀* (complexGaugeDirection x h) = (-Δ h + P h).im`, where `P = p² + q² = |α|² / 4`. -/
 theorem gaugeAdjoint_complexGaugeDirection (hh : ContDiffAt ℝ 2 h z) :
     gaugeAdjoint x (complexGaugeDirection x h) z =
       (-Δ h z + (x z 2 ^ 2 + x z 3 ^ 2) • h z).im := by
   have hdf := (hh.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  obtain ⟨hΔ, hs⟩ := laplacian_eq_and_symm hh
+  have hΔ := laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hdf
+  have hs := fderiv_fderiv_apply_comm hh (by simp) 1 I
   rw [gaugeAdjoint_def, fderiv_complexGaugeDirection_apply_zero hdf,
     fderiv_complexGaugeDirection_apply_one hdf, hΔ, hs]
   simp [-ofReal_pow]
@@ -232,7 +234,8 @@ theorem linearizedEquation_complexGaugeDirection_apply_zero (hh : ContDiffAt ℝ
     linearizedEquation x (complexGaugeDirection x h) z 0 =
       (-Δ h z + (x z 2 ^ 2 + x z 3 ^ 2) • h z).re := by
   have hdf := (hh.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  obtain ⟨hΔ, hs⟩ := laplacian_eq_and_symm hh
+  have hΔ := laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hdf
+  have hs := fderiv_fderiv_apply_comm hh (by simp) 1 I
   rw [linearizedEquation_apply_zero, fderiv_complexGaugeDirection_apply_zero hdf,
     fderiv_complexGaugeDirection_apply_one hdf, hΔ, hs]
   simp [-ofReal_pow]
@@ -415,12 +418,13 @@ private theorem integrable_norm_sq_of_memLp_sectionValue_mul {μ : Measure ℂ}
       nlinarith [sq_nonneg (y z 0), sq_nonneg (y z 1)]
     nlinarith [sq_nonneg ‖h z‖]
 
-/-- **Kernel elements divisible by the section vanish.** At a `C¹` plane vortex with
-`|α| → 1` at infinity, a continuous square-integrable solution `y` of `L_x y = 0` whose section
-variation is `δα = h α` for a `C²` function `h` is zero. No decay rate is assumed. -/
+/-- **Kernel elements divisible by the section vanish.** At a `C¹` plane field satisfying the
+holomorphicity rows of the vortex equation, with `|α| → 1` at infinity, a continuous
+square-integrable solution `y` of `L_x y = 0` whose section variation is `δα = h α` for a `C²`
+function `h` is zero. No decay rate is assumed. -/
 theorem eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul
     {μ : Measure ℂ} [μ.IsAddHaarMeasure]
-    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+    (hx : ContDiff ℝ 1 x) (hhol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hy : Continuous y) (hy₂ : MemLp y 2 μ) (hh : ContDiff ℝ 2 h)
     (hker : ∀ z, gaugeFixedOperator x y z = 0)
@@ -428,7 +432,6 @@ theorem eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun z ↦ x z i := contDiff_euclidean.mp hx i
   have hp : Differentiable ℝ fun z ↦ x z 2 := (hxi 2).differentiable one_ne_zero
   have hq : Differentiable ℝ fun z ↦ x z 3 := (hxi 3).differentiable one_ne_zero
-  have hhol (z : ℂ) : equation x z 1 = 0 ∧ equation x z 2 = 0 := by simp [hsol z]
   -- The zeros of `α` are finite, so their complement is dense.
   have hdense : Dense {z | sectionValue x z ≠ 0} :=
     (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := 1) le_rfl (hxi 0)
@@ -462,19 +465,20 @@ theorem eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul
     norm_eq_zero.mp (sq_eq_zero_iff.mp (by simpa using congrFun hnorm z))
   rw [hyh, h₀, complexGaugeDirection_zero]
 
-/-- **The kernel of `L_x` at a vortex without zeros.** At a `C²` plane vortex whose section has no
-zeros and tends to unit modulus at infinity, every `C²` square-integrable solution of `L_x y = 0`
+/-- **The kernel of `L_x` at a field without zeros.** At a `C²` plane field satisfying the
+holomorphicity rows of the vortex equation, whose section has no zeros and tends to unit modulus
+at infinity, every `C²` square-integrable solution of `L_x y = 0`
 vanishes. -/
 theorem eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_ne_zero
     {μ : Measure ℂ} [μ.IsAddHaarMeasure]
-    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hx : ContDiff ℝ 2 x) (hhol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hne : ∀ z, sectionValue x z ≠ 0) (hy : ContDiff ℝ 2 y) (hy₂ : MemLp y 2 μ)
     (hker : ∀ z, gaugeFixedOperator x y z = 0) : y = 0 := by
   have hxi (i : Fin 4) : ContDiff ℝ 2 fun z ↦ x z i := contDiff_euclidean.mp hx i
   have hyi (i : Fin 4) : ContDiff ℝ 2 fun z ↦ y z i := contDiff_euclidean.mp hy i
   refine eq_zero_of_memLp_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul
-    (h := fun z ↦ sectionValue y z * (sectionValue x z)⁻¹) (hx.of_le (by norm_num)) hsol hlim
+    (h := fun z ↦ sectionValue y z * (sectionValue x z)⁻¹) (hx.of_le (by norm_num)) hhol hlim
     hy.continuous hy₂ ((contDiff_sectionValue (hyi 2) (hyi 3)).mul
       ((contDiff_sectionValue (hxi 2) (hxi 3)).inv hne)) hker fun z ↦ ?_
   rw [inv_mul_cancel_right₀ (hne z)]
