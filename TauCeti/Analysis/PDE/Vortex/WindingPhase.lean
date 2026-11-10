@@ -564,7 +564,7 @@ private theorem norm_fderiv_sub_referenceField_le
     linarith
   have hdW : ‖fderiv ℝ (fun w ↦ (windingPhase m w : ℂ)) z‖ ≤ m := by
     refine ContinuousLinearMap.opNorm_le_bound _ (Nat.cast_nonneg m) fun v ↦ ?_
-    rw [fderiv_coe_eq_mul_gaugeForm (differentiableAt_windingPhase m (hw₀ z hz)),
+    rw [fderiv_coe_eq_mul_gaugeForm,
       gaugeForm_windingPhase m (hw₀ z hz), norm_mul, norm_mul, Circle.norm_coe, norm_I,
       one_mul, one_mul, norm_real, Real.norm_eq_abs, abs_mul, Nat.abs_cast]
     gcongr
