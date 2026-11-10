@@ -114,21 +114,6 @@ theorem projectiveTrace_conj {N : Type*} [AddCommMonoid N] [Module R N] [Module.
     projectiveTrace R N (e.conj f) = projectiveTrace R M f := by
   rw [e.conj_apply, ← projectiveTrace_cyclic, ← comp_assoc, e.symm_comp, id_comp]
 
-/-- On a finite free module the projective trace is Mathlib's trace. -/
-theorem projectiveTrace_eq_trace [Module.Free R M] :
-    projectiveTrace R M = LinearMap.trace R M := by
-  classical
-  let b := Module.Free.chooseBasis R M
-  ext f
-  induction f using induction_on_smulRight with
-  | smulRight φ m =>
-    simp only [projectiveTrace_smulRight, trace_eq_matrix_trace R b, Matrix.trace,
-      Matrix.diag_apply, LinearMap.toMatrix_apply, smulRight_apply, map_smul, Finsupp.smul_apply,
-      smul_eq_mul]
-    conv_lhs => rw [← b.sum_repr m]
-    simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-  | add f g hf hg => simp [hf, hg]
-
 /-- The trace of an endomorphism of `R` is its value at `1`. -/
 @[simp]
 theorem projectiveTrace_self_apply (f : R →ₗ[R] R) : projectiveTrace R R f = f 1 := by
@@ -168,9 +153,31 @@ theorem projectiveTrace_baseChange (A : Type*) [CommSemiring A] [Algebra R A]
 
 end CommSemiring
 
-section CommRing
+section Free
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [Module.Finite R M] [Module.Free R M]
+
+/-- On a finite free module the projective trace is Mathlib's trace. -/
+theorem projectiveTrace_eq_trace :
+    projectiveTrace R M = LinearMap.trace R M := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  ext f
+  induction f using induction_on_smulRight with
+  | smulRight φ m =>
+    simp only [projectiveTrace_smulRight, trace_eq_matrix_trace R b, Matrix.trace,
+      Matrix.diag_apply, LinearMap.toMatrix_apply, smulRight_apply, map_smul, Finsupp.smul_apply,
+      smul_eq_mul]
+    conv_lhs => rw [← b.sum_repr m]
+    simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
+  | add f g hf hg => simp [hf, hg]
+
+end Free
+
+section CommRingAddCommMonoid
+
+variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
   [Module.Finite R M] [Module.Projective R M]
 
 /-- The trace of a nilpotent endomorphism of a finite projective module is nilpotent. -/
@@ -193,6 +200,13 @@ theorem isNilpotent_projectiveTrace_of_isNilpotent {f : M →ₗ[R] M} (hf : IsN
     ⟨k + 1, LinearMap.ext fun x ↦ by rw [key, pow_succ, hk, zero_mul]; simp⟩
   rw [← comp_id f, ← hs, ← comp_assoc, projectiveTrace_cyclic, projectiveTrace_eq_trace]
   exact isNilpotent_trace_of_isNilpotent hf'
+
+end CommRingAddCommMonoid
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [Module.Finite R M] [Module.Projective R M]
 
 /-- The trace of the identity is the locally constant rank: its image in the localisation at a
 prime `p` is the rank of `M` at `p`. -/

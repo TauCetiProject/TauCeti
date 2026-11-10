@@ -252,6 +252,17 @@ theorem range_root (x : X) :
   obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
   exact ⟨k, (D.multiplicity_pos_iff x).1 hk⟩
 
+/-- The shared distinct root set of a finite family is exactly the image of the ordered
+root list of its delineation. Nullified members contribute no roots. -/
+theorem biUnion_roots_toFinset_eq [Fintype ι] (x : X) :
+    Finset.univ.biUnion (fun k ↦ (P k x).roots.toFinset) =
+      Finset.univ.image (fun i ↦ D.root i x) := by
+  classical
+  ext t
+  simp only [Finset.mem_biUnion, Finset.mem_univ, true_and, Multiset.mem_toFinset,
+    mem_roots', Finset.mem_image]
+  exact (Set.ext_iff.1 (D.range_root x) t).symm
+
 /-- Over a nonempty base a family of real polynomials has at most one delineation: the root
 functions are the increasing enumeration of the real roots of the nonzero members, and the
 multiplicities are their root multiplicities. -/
