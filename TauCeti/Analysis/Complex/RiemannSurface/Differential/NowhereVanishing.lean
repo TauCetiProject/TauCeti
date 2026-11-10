@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Geometry.Manifold.Complex
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Nowhere vanishing holomorphic differentials
@@ -27,7 +26,7 @@ at every point, as the complex torus `ℂ / L` does with the descended form `dz`
   (`TauCeti.RiemannSurface.OneForm.holomorphicOneForms_eq_span_singleton_of_apply_ne_zero`,
   `TauCeti.RiemannSurface.OneForm.finrank_holomorphicOneForms_eq_one_of_apply_ne_zero`).
 
-This is the analytic side of the genus-one Checks `h⁰(K) = 1` and `deg K = 0`.
+These give `h⁰(K) = 1` and `deg K = 0` in genus one, as for complex tori.
 
 ## References
 
@@ -47,33 +46,6 @@ open AlgebraicGeometry
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   {ω η : OneForm X} {x : X}
-
-/-- Where `ω` does not vanish, its coefficient in the preferred chart does not vanish. -/
-private theorem coeff_chartAt_ne_zero_of_apply_ne_zero (hx : ω x ≠ 0) :
-    ω.coeff (chartAt ℂ x) (chartAt ℂ x x) ≠ 0 := by
-  intro h0
-  apply hx
-  rw [← (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).1 rfl, h0, zero_smul]
-
-/-- A `1`-form holomorphic at `x` and nonzero at `x` has order zero at `x`. -/
-theorem HolomorphicAt.order_eq_zero (hω : ω.HolomorphicAt x) (hx : ω x ≠ 0) :
-    ω.order x = 0 := by
-  rw [order_def, ((holomorphicAt_def ω x).1 hω).meromorphicOrderAt_eq,
-    analyticOrderAt_eq_zero.2 (Or.inr (coeff_chartAt_ne_zero_of_apply_ne_zero hx))]
-  rfl
-
-/-- The ratio `η / ω` of two `1`-forms holomorphic at `x`, with `ω x ≠ 0`, is holomorphic at
-`x`. -/
-theorem HolomorphicAt.mdifferentiableAt_ratio (hη : η.HolomorphicAt x)
-    (hω : ω.HolomorphicAt x) (hx : ω x ≠ 0) :
-    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (ratio η ω) x := by
-  have hA : AnalyticAt ℂ (η.coeff (chartAt ℂ x) / ω.coeff (chartAt ℂ x)) (chartAt ℂ x x) :=
-    ((holomorphicAt_def η x).1 hη).div ((holomorphicAt_def ω x).1 hω)
-      (coeff_chartAt_ne_zero_of_apply_ne_zero hx)
-  have h := TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x)
-    ((chartAt ℂ x).map_source (mem_chart_source ℂ x))
-    (hA.differentiableAt.congr_of_eventuallyEq ratio_comp_chartAt_symm_eventuallyEq)
-  rwa [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)] at h
 
 section Global
 

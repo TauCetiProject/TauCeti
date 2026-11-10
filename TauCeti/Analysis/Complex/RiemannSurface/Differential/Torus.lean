@@ -67,22 +67,6 @@ def torusDifferential : OneForm (AddAction.orbitRel.Quotient L ℂ) := fun x ↦
 
 variable {L}
 
-/-- The differential of the projection `ℂ → ℂ / L` is the same at every representative of a
-class. -/
-private theorem mfderiv_torusMk_eq {z w : ℂ}
-    (h : Quotient.mk (AddAction.orbitRel L ℂ) z = Quotient.mk (AddAction.orbitRel L ℂ) w)
-    (v : ℂ) :
-    mfderiv 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ)) z v =
-      mfderiv 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ)) w v := by
-  obtain ⟨l, rfl⟩ := Quotient.exact h.symm
-  have hd := TauCeti.mfderiv_addQuotientMk_vadd_apply (I := 𝓘(ℂ)) (n := 1) one_ne_zero
-    ((isLocalDiffeomorphAt_torusMk L (l +ᵥ z)).mdifferentiableAt one_ne_zero) v
-  rw [← hd]
-  congr 1
-  have ht : (fun u : ℂ ↦ l +ᵥ u) = fun u ↦ (l : ℂ) + u := rfl
-  rw [ht, mfderiv_eq_fderiv, fderiv_const_add, fderiv_fun_id]
-  rfl
-
 /-- **The torus differential inverts the projection's differential**: on the differential of the
 projection `ℂ → ℂ / L` at any representative `z` of `x`, the form `torusDifferential L` at `x` is
 the identity. -/
@@ -92,7 +76,7 @@ theorem torusDifferential_apply_mfderiv {x : AddAction.orbitRel.Quotient L ℂ} 
   subst h
   have hz : Quotient.mk (AddAction.orbitRel L ℂ) (Quotient.mk (AddAction.orbitRel L ℂ) z).out =
       Quotient.mk (AddAction.orbitRel L ℂ) z := Quotient.out_eq _
-  rw [← mfderiv_torusMk_eq hz]
+  rw [← Submodule.mfderiv_orbitRelQuotient_mk_eq hz]
   exact ((isLocalDiffeomorphAt_torusMk L _).mfderivToContinuousLinearEquiv
     one_ne_zero).symm_apply_apply v
 
@@ -125,27 +109,25 @@ private theorem exists_eventuallyEq_mvfderiv (x : AddAction.orbitRel.Quotient L 
     simpa only [Quotient.out_eq] using hf.localInverse_mem_source
   have hU : ∀ᶠ y in 𝓝 x, y ∈ hf.localInverse.source :=
     hf.localInverse.open_source.mem_nhds hx
-  refine ⟨hf.localInverse, ?_, ?_⟩
-  · filter_upwards [hU] with y hy
-    exact (hf.contMDiffOn_localInverse.contMDiffAt
+  have hmd : ∀ y ∈ hf.localInverse.source, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hf.localInverse y :=
+    fun y hy ↦ (hf.contMDiffOn_localInverse.contMDiffAt
       (hf.localInverse.open_source.mem_nhds hy)).mdifferentiableAt one_ne_zero
-  · filter_upwards [hU] with y hy
-    have hs : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hf.localInverse y :=
-      (hf.contMDiffOn_localInverse.contMDiffAt
-        (hf.localInverse.open_source.mem_nhds hy)).mdifferentiableAt one_ne_zero
-    have hq : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ))
-        (hf.localInverse y) :=
-      (isLocalDiffeomorphAt_torusMk L _).mdifferentiableAt one_ne_zero
-    have hid : Quotient.mk (AddAction.orbitRel L ℂ) ∘ hf.localInverse =ᶠ[𝓝 y] id :=
-      eventuallyEq_of_mem (hf.localInverse.open_source.mem_nhds hy) hf.localInverse_eqOn_right
-    have hchain := mfderiv_comp y hq hs
-    rw [hid.mfderiv_eq, mfderiv_id] at hchain
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    have hv : mfderiv 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ)) (hf.localInverse y)
-        (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse y v) = v :=
-      (congrArg (fun T ↦ T v) hchain).symm
-    exact (torusDifferential_apply_mfderiv (hf.localInverse_right_inv hy) _).symm.trans
-      (congrArg (torusDifferential L y) hv)
+  refine ⟨hf.localInverse, hU.mono hmd, ?_⟩
+  filter_upwards [hU] with y hy
+  have hs := hmd y hy
+  have hq : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ))
+      (hf.localInverse y) :=
+    (isLocalDiffeomorphAt_torusMk L _).mdifferentiableAt one_ne_zero
+  have hid : Quotient.mk (AddAction.orbitRel L ℂ) ∘ hf.localInverse =ᶠ[𝓝 y] id :=
+    eventuallyEq_of_mem (hf.localInverse.open_source.mem_nhds hy) hf.localInverse_eqOn_right
+  have hchain := mfderiv_comp y hq hs
+  rw [hid.mfderiv_eq, mfderiv_id] at hchain
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hv : mfderiv 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ)) (hf.localInverse y)
+      (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse y v) = v :=
+    (congrArg (fun T ↦ T v) hchain).symm
+  exact (torusDifferential_apply_mfderiv (hf.localInverse_right_inv hy) _).symm.trans
+    (congrArg (torusDifferential L y) hv)
 
 /-- The torus differential is holomorphic. -/
 theorem holomorphicAt_torusDifferential (x : AddAction.orbitRel.Quotient L ℂ) :
