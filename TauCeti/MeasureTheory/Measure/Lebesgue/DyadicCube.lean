@@ -38,6 +38,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
 * `TauCeti.closure_dyadicCube`: the closure of a dyadic cube is a closed sup-norm ball.
+* `TauCeti.ball_subset_dyadicCube`: a dyadic cube contains the open sup-norm ball of half its side
+  length around its centre.
 * `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
   than `2ᵏ`.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
@@ -192,6 +194,17 @@ theorem dyadicCube_subset_closedBall (k : ℤ) (m : ι → ℤ) :
     dyadicCube k m ⊆ closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) := by
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi]
   exact pi_mono fun _ _ => Ico_subset_Icc_self
+
+/-- A dyadic cube contains the open sup-norm ball around its centre whose radius is half its side
+length. -/
+theorem ball_subset_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) ⊆ dyadicCube k m := by
+  intro x hx
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have hi := (dist_le_pi_dist x _ i).trans_lt hx
+  rw [Real.dist_eq, abs_sub_lt_iff] at hi
+  constructor <;> linarith
 
 /-- Up to a null set, a dyadic cube is the closed sup-norm ball around its centre whose radius is
 half its side length. -/
