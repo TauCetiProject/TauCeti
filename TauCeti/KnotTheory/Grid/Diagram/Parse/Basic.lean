@@ -32,7 +32,7 @@ private abbrev Point (height width : Nat) := Fin height × Fin width
 
 private abbrev Pair (height width : Nat) := Point height width × Point height width
 
-/-- The four edge directions present around a box-drawing cell. -/
+/-- The four edge directions present around a box-drawing cell; the default has none. -/
 private structure BoxEdgePresence where
   up : Bool
   down : Bool
@@ -44,39 +44,39 @@ attribute [inherit_doc BoxEdgePresence] instInhabitedBoxEdgePresence.default
 
 private def BoxEdgePresence.toChar : BoxEdgePresence → Char
   | ⟨false, false, false, false⟩ => ' '
-  | ⟨false, false, false, true⟩ => '╶'
-  | ⟨false, false, true, false⟩ => '╴'
-  | ⟨false, false, true, true⟩ => '─'
-  | ⟨false, true, false, false⟩ => '╷'
-  | ⟨false, true, false, true⟩ => '┌'
-  | ⟨false, true, true, false⟩ => '┐'
-  | ⟨false, true, true, true⟩ => '┬'
-  | ⟨true, false, false, false⟩ => '╵'
-  | ⟨true, false, false, true⟩ => '└'
-  | ⟨true, false, true, false⟩ => '┘'
-  | ⟨true, false, true, true⟩ => '┴'
-  | ⟨true, true, false, false⟩ => '│'
-  | ⟨true, true, false, true⟩ => '├'
-  | ⟨true, true, true, false⟩ => '┤'
-  | ⟨true, true, true, true⟩ => '┼'
+  | ⟨false, false, false, true⟩ => '\u2576'
+  | ⟨false, false, true, false⟩ => '\u2574'
+  | ⟨false, false, true, true⟩ => '\u2500'
+  | ⟨false, true, false, false⟩ => '\u2577'
+  | ⟨false, true, false, true⟩ => '\u250c'
+  | ⟨false, true, true, false⟩ => '\u2510'
+  | ⟨false, true, true, true⟩ => '\u252c'
+  | ⟨true, false, false, false⟩ => '\u2575'
+  | ⟨true, false, false, true⟩ => '\u2514'
+  | ⟨true, false, true, false⟩ => '\u2518'
+  | ⟨true, false, true, true⟩ => '\u2534'
+  | ⟨true, true, false, false⟩ => '\u2502'
+  | ⟨true, true, false, true⟩ => '\u251c'
+  | ⟨true, true, true, false⟩ => '\u2524'
+  | ⟨true, true, true, true⟩ => '\u253c'
 
 private def BoxEdgePresence.ofChar : Char → BoxEdgePresence
   | ' ' => ⟨false, false, false, false⟩
-  | '╶' => ⟨false, false, false, true⟩
-  | '╴' => ⟨false, false, true, false⟩
-  | '─' => ⟨false, false, true, true⟩
-  | '╷' => ⟨false, true, false, false⟩
-  | '┌' => ⟨false, true, false, true⟩
-  | '┐' => ⟨false, true, true, false⟩
-  | '┬' => ⟨false, true, true, true⟩
-  | '╵' => ⟨true, false, false, false⟩
-  | '└' => ⟨true, false, false, true⟩
-  | '┘' => ⟨true, false, true, false⟩
-  | '┴' => ⟨true, false, true, true⟩
-  | '│' => ⟨true, true, false, false⟩
-  | '├' => ⟨true, true, false, true⟩
-  | '┤' => ⟨true, true, true, false⟩
-  | '┼' => ⟨true, true, true, true⟩
+  | '\u2576' => ⟨false, false, false, true⟩
+  | '\u2574' => ⟨false, false, true, false⟩
+  | '\u2500' => ⟨false, false, true, true⟩
+  | '\u2577' => ⟨false, true, false, false⟩
+  | '\u250c' => ⟨false, true, false, true⟩
+  | '\u2510' => ⟨false, true, true, false⟩
+  | '\u252c' => ⟨false, true, true, true⟩
+  | '\u2575' => ⟨true, false, false, false⟩
+  | '\u2514' => ⟨true, false, false, true⟩
+  | '\u2518' => ⟨true, false, true, false⟩
+  | '\u2534' => ⟨true, false, true, true⟩
+  | '\u2502' => ⟨true, true, false, false⟩
+  | '\u251c' => ⟨true, true, false, true⟩
+  | '\u2524' => ⟨true, true, true, false⟩
+  | '\u253c' => ⟨true, true, true, true⟩
   | _ => default
 
 private def verticalEnds {n m : Nat} (board : Vector (Vector BoxEdgePresence m) n) :
@@ -140,7 +140,7 @@ private def horizontalEdgesAtOverpasses {width height : Nat}
     Vector (Vector BoxEdgePresence width) height :=
   Vector.ofFn fun row ↦ Vector.ofFn fun col ↦
     let edges := (board.get row).get col
-    if (chars.get row).get col == '│' &&
+    if (chars.get row).get col == '\u2502' &&
         (if h : 0 < col.val then
           let prevCol : Fin width := ⟨col.val - 1, by omega⟩
           let prevChar := (chars.get row).get prevCol
