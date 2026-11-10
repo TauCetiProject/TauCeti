@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Order.Compact
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on real powers
@@ -328,46 +327,26 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
 
-/-- The case `d < 0` of `Real.rpow_neg_le_one_div_two_mul_sq`: the real power of a negative base
-is `|d| ^ y * cos (y π)`, and `cos` has period `2π`. -/
-private theorem rpow_neg_le_one_div_two_mul_sq_of_neg {d p : ℝ} (hd : d < 0)
-    (h2 : 2 ≤ d ^ (p - 2)) : d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
-  have hd' : 0 < -d := neg_pos.2 hd
-  have hneg (y : ℝ) : d ^ y = (-d) ^ y * Real.cos (y * Real.pi) := by
-    rw [Real.rpow_def_of_neg hd, Real.rpow_def_of_pos hd', Real.log_neg_eq_log]
-  have h1 : d ^ (p - 2) = (-d) ^ (p - 2) * Real.cos (p * Real.pi) := by
-    rw [hneg, sub_mul, Real.cos_sub_two_pi]
-  have h3 : d ^ (-p) = (-d) ^ (-p) * Real.cos (p * Real.pi) := by
-    rw [hneg, neg_mul, Real.cos_neg]
-  have hsplit := rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq hd' p
-  rw [h1] at h2
-  rw [h3, hsplit, neg_sq]
-  have hE := rpow_pos_of_pos hd' (p - 2)
-  generalize (-d) ^ (p - 2) = E at hE h2 ⊢
-  have hc1 := Real.cos_le_one (p * Real.pi)
-  generalize Real.cos (p * Real.pi) = c at hc1 h2 ⊢
-  have hc0 : 0 < c := by
-    by_contra h
-    push Not at h
-    nlinarith
-  have hd2pos : 0 < d ^ 2 := by nlinarith [mul_pos hd' hd']
-  have hEc : 2 * c ≤ E := by nlinarith
-  rw [one_div, mul_inv]
-  calc E⁻¹ * (d ^ 2)⁻¹ * c = (E⁻¹ * c) * (d ^ 2)⁻¹ := by ring
-    _ ≤ 2⁻¹ * (d ^ 2)⁻¹ := by
-        gcongr
-        rw [inv_mul_le_iff₀ hE]
-        linarith
-
 /-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
 `0 ^ x ≤ 1`.) -/
 theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (h2 : 2 ≤ d ^ (p - 2)) :
     d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
-  rcases lt_trichotomy d 0 with hd | rfl | hd
-  · exact rpow_neg_le_one_div_two_mul_sq_of_neg hd h2
+  rcases eq_or_ne d 0 with rfl | hd0
   · linarith [zero_rpow_le_one (p - 2)]
-  · rw [rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq hd, one_div, mul_inv]
-    gcongr
+  have hd : 0 < |d| := abs_pos.2 hd0
+  have h2' : 2 ≤ |d| ^ (p - 2) :=
+    h2.trans ((le_abs_self _).trans (abs_rpow_le_abs_rpow _ _))
+  have hsplit : |d| ^ (-p) = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := by
+    rw [← rpow_neg hd.le, ← rpow_natCast, ← rpow_neg hd.le, ← rpow_add hd]
+    congr 1
+    push_cast
+    ring
+  calc d ^ (-p) ≤ |d| ^ (-p) := (le_abs_self _).trans (abs_rpow_le_abs_rpow _ _)
+    _ = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := hsplit
+    _ ≤ 2⁻¹ * (d ^ 2)⁻¹ := by
+        rw [sq_abs]
+        gcongr
+    _ = 1 / (2 * d ^ 2) := by rw [one_div, mul_inv]
 
 /-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
 theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
