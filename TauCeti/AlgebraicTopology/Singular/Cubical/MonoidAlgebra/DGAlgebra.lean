@@ -255,6 +255,11 @@ theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalCha
     cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
   DirectSum.lmap_lof _ n c
 
+/-- The dimension `n` component of a push-forward is the push-forward of the component. -/
+theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebra X R) (n : ℕ) :
+    cubicalChainSumMap R f x n = map R f n (x n) :=
+  DirectSum.lmap_apply _ x n
+
 /-- The push-forward along the identity is the identity. -/
 @[simp]
 theorem cubicalChainSumMap_id : cubicalChainSumMap R (ContinuousMap.id X) = LinearMap.id :=

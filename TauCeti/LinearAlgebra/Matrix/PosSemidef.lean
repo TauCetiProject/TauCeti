@@ -14,8 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
 It provides rank-one and constant matrices, finite Schur products, Schur powers,
-products of weights over unions of finite sets, the quadratic-form characterization, and
-conversion of quadratic forms to nonnegative reals.
+products of weights over unions and symmetric differences of finite sets, the quadratic-form
+characterization, and conversion of quadratic forms to nonnegative reals.
 It also gives block matrix-vector constraints over commutative star-ordered rings with a
 proper star: a null vector of a diagonal block is a null vector of the block above or below it.
 In particular, a zero lower-right diagonal block forces both off-diagonal blocks to vanish.
@@ -33,6 +33,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   products and Schur powers.
 * `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
   `[0, 1]`.
+* `TauCeti.posSemidef_prod_symmDiff`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∆ L j} w a` for weights in
+  `[-1, 1]`.
 * `Matrix.PosSemidef.toBlocks₁₁`, `Matrix.PosSemidef.toBlocks₂₂` and
   `Matrix.PosSemidef.overlapping_blocks`: positivity of principal blocks.
 * `Matrix.PosSemidef.toBlocks₁₂_mulVec_eq_zero` and
@@ -191,6 +193,47 @@ theorem posSemidef_prod_union {ι : Type w} [DecidableEq α] (L : ι → Finset 
       simp only [Matrix.of_apply]
       simp_rw [hterm]
       rw [Finset.prod_ite_mem, Finset.inter_eq_right.mpr (Finset.union_subset (hs i) (hs j))]
+    rw [heq]
+    exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
+
+/-- For real weights `w` in `[-1, 1]` and finite sets `L i`, the matrix
+`(i, j) ↦ ∏_{a ∈ L i ∆ L j} w a` is positive semidefinite. For constant weight `w ≡ r` this is
+the kernel `r ^ #(L i ∆ L j)` of the symmetric-difference metric. -/
+theorem posSemidef_prod_symmDiff {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq α] (L : ι → Finset α)
+    {w : α → ℝ} (hw : ∀ a, |w a| ≤ 1) :
+    Matrix.PosSemidef (fun i j => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) := by
+  -- The sign of `i` at `a`, recording whether `a ∈ L i`.
+  let σ : α → ι → ℝ := fun a i => if a ∈ L i then 1 else -1
+  -- The factor at `a` is `1` when `a` lies in both or neither of `L i`, `L j`, and `w a` otherwise.
+  have hfactor (a : α) : Matrix.PosSemidef (fun i j =>
+      (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
+        ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜)) :=
+    (posSemidef_const_of_nonneg (RCLike.ofReal_nonneg.2 (by linarith [(abs_le.1 (hw a)).1]))).add
+      (posSemidef_rankOne _)
+  have hterm (i j : ι) (a : α) :
+      (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
+        ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜) =
+        ((if a ∈ symmDiff (L i) (L j) then w a else 1 : ℝ) : 𝕜) := by
+    have hsq : √((1 - w a) / 2) * √((1 - w a) / 2) = (1 - w a) / 2 :=
+      Real.mul_self_sqrt (by linarith [(abs_le.1 (hw a)).2])
+    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← RCLike.ofReal_add]
+    congr 1
+    generalize √((1 - w a) / 2) = s at hsq
+    by_cases hi : a ∈ L i <;> by_cases hj : a ∈ L j <;>
+      simp only [σ, hi, hj, Finset.mem_symmDiff, ↓reduceIte] <;> grind
+  refine posSemidef_of_support_posSemidef
+    (fun i j => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) ?_ fun x => ?_
+  · ext i j
+    simp [symmDiff_comm]
+  · let s : Finset α := x.support.biUnion L
+    have hs (i : x.support) : L i ⊆ s := fun a ha => Finset.mem_biUnion.mpr ⟨i, i.property, ha⟩
+    have heq : (Matrix.of fun i j : x.support => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) =
+        (fun i j : x.support => ∏ a ∈ s, ((((1 + w a) / 2 : ℝ) : 𝕜) +
+          star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) * ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜))) := by
+      ext i j
+      simp_rw [Matrix.of_apply, hterm, ← RCLike.ofReal_prod]
+      rw [Finset.prod_ite_mem, Finset.inter_eq_right.mpr
+        ((symmDiff_le_sup (a := L i) (b := L j)).trans (Finset.union_subset (hs i) (hs j)))]
     rw [heq]
     exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
 

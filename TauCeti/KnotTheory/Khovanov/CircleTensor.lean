@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import TauCeti.KnotTheory.Khovanov.EnhancedState
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
@@ -268,13 +269,11 @@ theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTe
   rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
 
 /-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
-theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+theorem reindex_circleX (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
     reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
       circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
-  have := Fintype.ofFinite σ
-  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
-  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-    fiberwiseMul_circleX]
+  simp only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, circleX_apply,
+    map_mul, reindexAlgEquiv_singleAlgHom]
 
 end X
 

@@ -98,6 +98,8 @@ with the corresponding integral of `q`-th powers.
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
+* `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
+  `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
@@ -301,6 +303,25 @@ theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : �
     ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
   calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
     _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
+
+/-- If `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q` with `a, b ≥ 0`, `t > 0` and `q ≥ 0`, then
+`a ^ q ≤ K ^ q * c * t`. -/
+theorem rpow_le_mul_of_mul_le_of_inv_le {a b K c t q : ℝ} (hq : 0 ≤ q)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (h : a * b ≤ K) (hx : t⁻¹ ≤ c * b ^ q) (ht : 0 < t) :
+    a ^ q ≤ K ^ q * c * t := by
+  have hc : 0 ≤ c := by
+    by_contra hc
+    have := mul_nonpos_of_nonpos_of_nonneg (not_le.1 hc).le (Real.rpow_nonneg hb q)
+    linarith [inv_pos.2 ht]
+  have hone : 1 ≤ c * b ^ q * t := by
+    rw [← inv_mul_cancel₀ ht.ne']
+    exact mul_le_mul_of_nonneg_right hx ht.le
+  calc a ^ q ≤ a ^ q * (c * b ^ q * t) := le_mul_of_one_le_right (by positivity) hone
+    _ = (a * b) ^ q * (c * t) := by
+        rw [Real.mul_rpow ha hb]
+        ring
+    _ ≤ K ^ q * (c * t) := by gcongr
+    _ = K ^ q * c * t := by ring
 
 /-- Dividing the base of a real power by a positive number divides the power by the same power
 of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative
