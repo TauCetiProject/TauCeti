@@ -19,8 +19,9 @@ zero, and has exactly the divisor of `f`.
 Its logarithmic derivative is the classical paired sum
 `∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. The series is absolutely convergent at every point
 off the divisor support and converges locally uniformly on its complement to the logarithmic
-derivative of the product. These series results
-assume only that `0` is off the divisor support, which for an entire `f` with `f 0 ≠ 0` is
+derivative of the product. These series results assume only the weighted inverse-square
+summability of the zeros and that `0` is off the divisor support, rather than that `f` is entire
+with `f 0 ≠ 0`; for an entire `f` with `f 0 ≠ 0` the latter condition is
 `AnalyticAt.divisor_apply_eq_zero`. This constructs
 the product and logarithmic-derivative ingredients of Hadamard factorization; it does not
 assume an enumeration of the zeros or choose a representative for the divisor.
@@ -74,9 +75,9 @@ private theorem logDerivWeierstrassFactorOneMul_inv_eq {f : ℂ → ℂ}
     (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support) {z : ℂ}
     (hz : z ∉ (MeromorphicOn.divisor f Set.univ).support)
     (ρ : (MeromorphicOn.divisor f Set.univ).support) :
-    logDerivWeierstrassFactorOneMul ((ρ : ℂ)⁻¹) z = 1 / (z - ρ) + 1 / ρ := by
-  rw [logDerivWeierstrassFactorOneMul_def, neg_inv_sq_mul_div_one_sub_inv_mul
-    (coe_ne_zero_of_mem_divisor_support h0 ρ) (by intro h; exact hz (h ▸ ρ.property))]
+    logDerivWeierstrassFactorOneMul ((ρ : ℂ)⁻¹) z = 1 / (z - ρ) + 1 / ρ :=
+  logDerivWeierstrassFactorOneMul_inv (coe_ne_zero_of_mem_divisor_support h0 ρ)
+    (by intro h; exact hz (h ▸ ρ.property))
 
 private theorem mulSupport_divisor_factor_subset (f : ℂ → ℂ) (z : ℂ) :
     Function.mulSupport (fun ρ : ℂ ↦ weierstrassFactorOne (ρ⁻¹ * z) ^

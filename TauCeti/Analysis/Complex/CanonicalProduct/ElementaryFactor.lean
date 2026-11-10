@@ -16,6 +16,9 @@ public import Mathlib.Analysis.Analytic.Order
 `1 - z`. Its deviation from one is quadratic near zero, which supplies the
 summable majorant for genus-one canonical products. The global logarithmic
 bound supplies the elementary growth estimate used in Hadamard factorization.
+The logarithmic derivative of `E₁(a z)` is the rational term `-a² z / (1 - a z)`, which is
+quadratic in the slope `a` for small `a z` and, at an inverse slope `a = ρ⁻¹`, equals the paired
+fraction `1 / (z - ρ) + 1 / ρ`.
 
 The quadratic estimate uses Mathlib's `Complex.norm_exp_sub_one_sub_id_le` and
 `Complex.norm_exp_sub_one_le`. The simple-zero statement uses
@@ -148,6 +151,31 @@ noncomputable def logDerivWeierstrassFactorOneMul (a z : ℂ) : ℂ :=
 /-- The defining rational expression for the slope-dependent logarithmic derivative. -/
 theorem logDerivWeierstrassFactorOneMul_def (a z : ℂ) :
     logDerivWeierstrassFactorOneMul a z = -a ^ 2 * z / (1 - a * z) := (rfl)
+
+/-- The slope-dependent logarithmic derivative is quadratic in the slope while `‖a * z‖ ≤ 1 / 2`
+keeps its denominator away from zero. -/
+theorem norm_logDerivWeierstrassFactorOneMul_le {a z : ℂ} (h : ‖a * z‖ ≤ 1 / 2) :
+    ‖logDerivWeierstrassFactorOneMul a z‖ ≤ (2 * ‖z‖) * ‖a‖ ^ 2 := by
+  have hden : (1 / 2 : ℝ) ≤ ‖1 - a * z‖ := by
+    have ht := norm_sub_norm_le (1 : ℂ) (a * z)
+    rw [norm_one] at ht
+    linarith
+  calc
+    _ = (‖a‖ ^ 2 * ‖z‖) / ‖1 - a * z‖ := by
+      rw [logDerivWeierstrassFactorOneMul_def, norm_div, norm_mul, norm_neg, norm_pow]
+    _ ≤ (‖a‖ ^ 2 * ‖z‖) / (1 / 2) :=
+      div_le_div_of_nonneg_left (by positivity) (by norm_num) hden
+    _ = (2 * ‖z‖) * ‖a‖ ^ 2 := by ring
+
+/-- At an inverse slope `ρ⁻¹`, the logarithmic derivative is the paired fraction
+`1 / (z - ρ) + 1 / ρ` away from the zero `ρ` of the factor. -/
+theorem logDerivWeierstrassFactorOneMul_inv {ρ z : ℂ} (hρ : ρ ≠ 0) (hz : z ≠ ρ) :
+    logDerivWeierstrassFactorOneMul ρ⁻¹ z = 1 / (z - ρ) + 1 / ρ := by
+  have hd : 1 - ρ⁻¹ * z ≠ 0 := sub_ne_zero.mpr fun h ↦
+    hz ((inv_mul_eq_one₀ hρ).mp h.symm).symm
+  rw [logDerivWeierstrassFactorOneMul_def]
+  field_simp [hρ, hd, sub_ne_zero.mpr hz]
+  ring
 
 /-- The paired rational logarithmic derivative of an elementary factor with a complex slope. -/
 @[simp]

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import TauCeti.Analysis.Analytic.Order
+import TauCeti.Order.Filter.AtTopBot.Finset
 
 /-!
 # Convergence and multiplicities of genus-one canonical products
