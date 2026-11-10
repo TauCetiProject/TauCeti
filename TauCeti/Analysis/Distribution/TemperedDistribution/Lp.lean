@@ -61,9 +61,6 @@ function by a function of temperate growth multiplies the function pointwise
   the tempered distribution of an `L¹` function `v` pairs with `φ` as `∫ φ • 𝓕⁻ v`.
 * `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
   an `L¹` function `v` agrees almost everywhere with `𝓕⁻ v`.
-* `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_sub`,
-  `MeasureTheory.Lp.toTemperedDistribution_smul`, `MeasureTheory.Lp.toTemperedDistribution_sum`:
-  the embedding of `Lᵖ` into tempered distributions is linear.
 * `MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`: the product of the tempered
   distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
   `∫ φ • (g • u)`.
@@ -116,6 +113,11 @@ theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
     ((c • f : Lp F p μ) : 𝓢'(E, F)) = c • (f : 𝓢'(E, F)) :=
   map_smul (toTemperedDistributionCLM F μ p) c f
 
+@[simp]
+theorem toTemperedDistribution_sum {ι : Type*} (t : Finset ι) (f : ι → Lp F p μ) :
+    ((∑ i ∈ t, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (f i : 𝓢'(E, F)) :=
+  map_sum (toTemperedDistributionCLM F μ p) f t
+
 end Linear
 
 section NormedSpace
@@ -147,42 +149,6 @@ theorem smulLeftCLM_toTemperedDistribution_apply {μ : Measure E} [μ.HasTempera
     TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) φ = ∫ x, φ x • g x • u x ∂μ := by
   rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
   simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, mul_comm (g _), mul_smul]
-
-omit [FiniteDimensional ℝ E] in
-/-- The tempered distribution of a sum of `Lᵖ` functions is the sum of their tempered
-distributions. -/
-@[simp]
-theorem toTemperedDistribution_add {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
-    [Fact (1 ≤ p)] (u v : Lp F p μ) :
-    ((u + v : Lp F p μ) : 𝓢'(E, F)) = (u : 𝓢'(E, F)) + (v : 𝓢'(E, F)) :=
-  map_add (toTemperedDistributionCLM F μ p) u v
-
-omit [FiniteDimensional ℝ E] in
-/-- The tempered distribution of a difference of `Lᵖ` functions is the difference of their
-tempered distributions. -/
-@[simp]
-theorem toTemperedDistribution_sub {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
-    [Fact (1 ≤ p)] (u v : Lp F p μ) :
-    ((u - v : Lp F p μ) : 𝓢'(E, F)) = (u : 𝓢'(E, F)) - (v : 𝓢'(E, F)) :=
-  map_sub (toTemperedDistributionCLM F μ p) u v
-
-omit [FiniteDimensional ℝ E] in
-/-- The tempered distribution of a complex multiple of an `Lᵖ` function is the same multiple of
-its tempered distribution. -/
-@[simp]
-theorem toTemperedDistribution_smul {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
-    [Fact (1 ≤ p)] (c : ℂ) (u : Lp F p μ) :
-    ((c • u : Lp F p μ) : 𝓢'(E, F)) = c • (u : 𝓢'(E, F)) :=
-  map_smul (toTemperedDistributionCLM F μ p) c u
-
-omit [FiniteDimensional ℝ E] in
-/-- The tempered distribution of a finite sum of `Lᵖ` functions is the sum of their tempered
-distributions. -/
-@[simp]
-theorem toTemperedDistribution_sum {ι : Type*} {μ : Measure E} [μ.HasTemperateGrowth]
-    {p : ENNReal} [Fact (1 ≤ p)] (t : Finset ι) (u : ι → Lp F p μ) :
-    ((∑ i ∈ t, u i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (u i : 𝓢'(E, F)) :=
-  map_sum (toTemperedDistributionCLM F μ p) u t
 
 omit [FiniteDimensional ℝ E] in
 /-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
