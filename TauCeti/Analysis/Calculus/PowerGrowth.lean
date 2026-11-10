@@ -156,12 +156,6 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     add_le_add (hf hx hy hxy) (mul_le_mul_of_nonneg_left
       (pow_le_pow_left₀ (hσpos x hx).le hxy n) hB)
   have hgs : 0 ≤ g s := add_nonneg hfs (mul_nonneg hB (pow_nonneg hs.le n))
-  have hk : IntervalIntegrable k volume s t := by
-    refine ContinuousOn.intervalIntegrable
-      (continuousOn_const.mul (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_))
-    rw [uIcc_of_le hst] at hσ
-    have := hσpos σ hσ
-    positivity
   -- The forcing term is absorbed into `g = f + B σ ^ n`: `k g ≤ g'` almost everywhere.
   have hkg : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ := by
     filter_upwards [h, (hf.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
@@ -189,7 +183,7 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs ht hC,
       Real.rpow_def_of_pos (by positivity), Real.rpow_def_of_pos (by positivity), ← Real.exp_sub]
     ring_nf
-  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hk hkg
+  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hkg
   rw [hexp, mul_div_assoc', div_le_iff₀ (by positivity)] at key
   simp only [g] at key
   linarith

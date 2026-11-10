@@ -130,18 +130,28 @@ theorem map_neg_map_sub_prod_self {γ G : Type*} [MeasurableSpace γ] [Measurabl
 /-- Reflecting the second coordinate according to the sign of the first preserves the product of
 a measure with a reflection-invariant measure, because every fibre transformation preserves the
 second measure. -/
-theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite ν]
     (hν : ν.map (fun x : ℝ ↦ -x) = ν) :
     MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2))
       (μ.prod ν) (μ.prod ν) := by
-  refine (MeasurePreserving.id μ).skew_product
-    (g := fun y x : ℝ ↦ if y < 0 then -x else x) ?_ ?_
-  · exact Measurable.ite (measurableSet_lt measurable_fst measurable_const)
-      measurable_snd.neg measurable_snd
-  · refine ae_of_all _ fun y ↦ ?_
-    by_cases hy : y < 0
-    · simpa only [hy, ↓reduceIte] using hν
-    · simpa only [hy, ↓reduceIte] using (Measure.map_id' (μ := ν))
+  have hmeas : Measurable fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2) :=
+    measurable_fst.prodMk (Measurable.ite (measurableSet_lt measurable_fst measurable_const)
+      measurable_snd.neg measurable_snd)
+  refine ⟨hmeas, ?_⟩
+  ext s hs
+  rw [map_apply hmeas hs, prod_apply (hmeas hs), prod_apply hs]
+  refine lintegral_congr fun x ↦ ?_
+  by_cases hx : x < 0
+  · have hset : Prod.mk x ⁻¹' (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2)) ⁻¹' s =
+        (fun y : ℝ ↦ -y) ⁻¹' (Prod.mk x ⁻¹' s) := by
+      ext y
+      simp [hx]
+    rw [hset, ← Measure.map_apply measurable_neg (measurable_prodMk_left hs), hν]
+  · have hset : Prod.mk x ⁻¹' (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2)) ⁻¹' s =
+        Prod.mk x ⁻¹' s := by
+      ext y
+      simp [hx]
+    rw [hset]
 
 /-- The quotient of independent coordinates, the numerator having a reflection-invariant law, has
 the same law as the quotient by the absolute value of the denominator. -/

@@ -126,21 +126,22 @@ class PickerWorkflow(unittest.TestCase):
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
         self.assertTrue(expression(condition))
 
-    def test_staging_uses_only_the_two_fast_hosts_and_waits_locally(self):
+    def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
         group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
         config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
-        self.assertEqual(config["staging_order"], ["chungus2", "tauchonki2"])
+        self.assertEqual(config["staging_order"], ["tauchonki2"])
         fallback = ["self-hosted", "linux", "x64", "tauceti-fleet-staging",
-                    "fleet-" + config["machines"]["chungus2"]["machine_id"]]
+                    "fleet-" + config["machines"]["tauchonki2"]["machine_id"]]
         common = dict(event="repository_dispatch", action="tauceti-bors-staging",
                       staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
-        for pool in ("chungus2", "tauchonki2"):
+        for pool in ("tauchonki2",):
             target = dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-staging",
                           "fleet-" + config["machines"][pool]["machine_id"], "fleet-instance-" + "b" * 16])
             self.assertEqual(expression(source, pool=pool, target=json.dumps(target), **common), target)
             self.assertEqual(expression(source, pool=pool, target=json.dumps(target), attempt=2, **common), fallback)
-        for pool, target in (("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
+        for pool, target in (("chungus2", '["self-hosted","tauceti-fleet-staging","fleet-old"]'),
+                             ("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
                              ("chris", '["self-hosted"]'), ("", "")):
             self.assertEqual(expression(source, pool=pool, target=target, **common), fallback)
             self.assertFalse(expression(group, pool=pool, target=target, **common).startswith("tauceti-hosted-bulk-"))

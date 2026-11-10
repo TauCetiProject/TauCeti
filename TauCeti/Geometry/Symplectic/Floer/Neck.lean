@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -17,13 +17,19 @@ it along a long cylindrical neck. In coordinates `z = (s, t)`, inserting a neck 
 the line `s = c` replaces a perturbation datum `K` by `K ∘ (σ × id)`, where the *neck-collapsing
 map* `σ` is the identity for `s ≤ c`, is constant equal to `c` on `[c, c + L]`, and is the
 translation `s ↦ s - L` for `s ≥ c + L`. If `K` is independent of `s` near the line `s = c`, the
-stretched datum is again smooth, and it agrees near every point with a translate of `K`.
+stretched datum is again smooth, and it agrees near every point with a translate of `K`; this holds
+for data on a vector space and on a manifold target alike.
 
-The energy identity `TauCeti.SymplecticForm.integral_floerEnergyDensity` turns curvature bounds
-into energy bounds, but a pointwise curvature bound multiplied by the length of an arbitrarily
-long neck gives no uniform estimate. The point of this file is that, when `K` is cylindrical near
-the neck (`K = H_t dt` there), the curvature of the stretched datum vanishes along the whole neck,
-so its integrated curvature is controlled by that of `K` itself, uniformly in the neck length.
+The energy identity `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity` turns
+curvature bounds into energy bounds, but a pointwise curvature bound multiplied by the length of an
+arbitrarily long neck gives no uniform estimate. The point of this file is that, when `K` is
+cylindrical near the neck (`K = H_t dt` there), the curvature of the stretched datum vanishes along
+the whole neck, so its integrated curvature is controlled by that of `K` itself, uniformly in the
+neck length. The curvature statements are proved for a smooth two-form on a manifold, such as a
+closed symplectic manifold. A symplectic vector space is the case of the constant form
+`TauCeti.SymplecticForm.constSmooth`, from which the `TauCeti.SymplecticForm` curvature statements
+are derived; the vector-space energy estimate needs no integrability hypotheses, since the
+vector-space energy identity `TauCeti.SymplecticForm.integral_floerEnergyDensity` provides them.
 
 ## Main definitions
 
@@ -36,15 +42,21 @@ so its integrated curvature is controlled by that of `K` itself, uniformly in th
 * `TauCeti.Floer.contDiff_neckStretch_family`: inserting a neck whose length depends smoothly on
   a parameter, at a line where the datum is independent of `s`, gives a datum that is smooth
   jointly in the parameter, the domain point and the target point;
-  `TauCeti.Floer.contDiff_uncurry_neckStretch` is the case of a fixed length.
-* `TauCeti.SymplecticForm.hamiltonianCurvature_neckStretch`: the curvature of the stretched datum
+  `TauCeti.Floer.contDiff_uncurry_neckStretch` is the case of a fixed length, and
+  `TauCeti.Floer.contMDiff_uncurry_neckStretch` its version for a manifold target.
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_neckStretch`: the curvature of the stretched datum
   is the curvature of the original datum pulled back along `σ × id`.
-* `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_neckStretch_le`: for a datum that is
+* `TauCeti.SmoothTwoForm.integral_abs_hamiltonianCurvature_neckStretch_le`: for a datum that is
   cylindrical near the neck, the integrated curvature over the stretched rectangle is bounded by
   the integral of any pointwise curvature bound over the original rectangle, uniformly in `L`.
-* `TauCeti.SymplecticForm.abs_integral_floerEnergyDensity_neckStretch_sub_le`: consequently the
-  Floer energy over the stretched rectangle differs from its topological part (symplectic area
-  plus boundary term) by at most that same constant, for every neck length.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_neckStretch_sub_le`:
+  consequently, for a nondegenerate form, the Floer energy over the stretched rectangle differs
+  from its topological part (symplectic area plus boundary term) by at most that same constant,
+  for every neck length.
+* `TauCeti.SymplecticForm.hamiltonianCurvature_neckStretch`,
+  `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_neckStretch_le`,
+  `TauCeti.SymplecticForm.abs_integral_floerEnergyDensity_neckStretch_sub_le`: the same for a
+  symplectic vector space.
 
 ## References
 
@@ -57,6 +69,7 @@ so its integrated curvature is controlled by that of `K` itself, uniformly in th
 public section
 
 open Filter Function MeasureTheory Set Topology
+open scoped Manifold
 
 namespace TauCeti
 
@@ -208,23 +221,45 @@ theorem contDiff_uncurry_neckStretch {E F : Type*} [NormedAddCommGroup E] [Norme
   (contDiff_neckStretch_family (P := ℝ) contDiff_const (fun _ ↦ hL) hK hKd).comp
     ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
+/-- Inserting a neck at a line near which a smooth datum on a manifold is independent of `s` gives
+a smooth datum, jointly in the domain point and the target point. -/
+theorem contMDiff_uncurry_neckStretch {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞} (hL : 0 ≤ L) {K : ℝ × ℝ → M → F}
+    (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry (neckStretch c L K)) := by
+  rintro ⟨z, x⟩
+  -- Near `z` the stretched datum is a translate of `K`, which is smooth.
+  set v : ℝ × ℝ := (neckCollapse c L z.1 - z.1, 0)
+  have htr : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n fun q : (ℝ × ℝ) × M ↦ K (q.1 + v) q.2 :=
+    hKd.comp ((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst |>.prodMk contMDiff_snd)
+  refine (htr (z, x)).congr_of_eventuallyEq ?_
+  filter_upwards [(continuous_fst.tendsto (z, x)).eventually (neckStretch_eventuallyEq hL hK z)]
+    with q hq
+  exact congrFun hq q.2
+
 end NeckStretch
 
 end Floer
 
-namespace SymplecticForm
+/-! ### Manifold targets -/
+
+namespace SmoothTwoForm
 
 open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ks Kt : ℝ × ℝ → V → ℝ} {c L : ℝ}
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I (⊤ : ℕ∞) M] {Ks Kt : ℝ × ℝ → M → ℝ} {c L : ℝ}
 
-/-- **Curvature of a stretched datum.** If the perturbation data are independent of `s` near the
-line `s = c`, the curvature of the datum with a neck of length `L` inserted at `s = c` is the
-curvature of the original datum at `(σ s, t)`, where `σ = neckCollapse c L`. -/
-theorem hamiltonianCurvature_neckStretch (ω : SymplecticForm V) (hL : 0 ≤ L)
+/-- **Curvature of a stretched datum.** For a smooth two-form on a manifold, if the perturbation
+data are independent of `s` near the line `s = c`, the curvature of the datum with a neck of
+length `L` inserted at `s = c` is the curvature of the original datum at `(σ s, t)`, where
+`σ = neckCollapse c L`. -/
+theorem hamiltonianCurvature_neckStretch (ω : SmoothTwoForm I M) (hL : 0 ≤ L)
     (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = Ks (c, t))
-    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (z : ℝ × ℝ) (x : V) :
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (z : ℝ × ℝ) (x : M) :
     ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z x =
       ω.hamiltonianCurvature Ks Kt (neckCollapse c L z.1, z.2) x := by
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (neckStretch_eventuallyEq hL hKs z)
@@ -232,19 +267,20 @@ theorem hamiltonianCurvature_neckStretch (ω : SymplecticForm V) (hL : 0 ≤ L)
   congr 2
   ext <;> simp
 
-/-- **Uniform curvature bound for neck-stretching.** Let `K` be cylindrical near the line `s = c`,
-that is `K_s = 0` and `K_t` independent of `s` there, and let `M` bound the curvature of `K`
-pointwise over the rectangle `[a₁, b₁] × [a₂, b₂]` containing that line. Then for every neck length
-`L ≥ 0` and every map `u`, the integrated curvature of the stretched datum along `u` over the
-stretched rectangle `[a₁, b₁ + L] × [a₂, b₂]` is at most `∫ M` over the original rectangle. -/
-theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V) (hL : 0 ≤ L)
+/-- **Uniform curvature bound for neck-stretching.** Let `ω` be a smooth two-form on a manifold,
+let `K` be cylindrical near the line `s = c`, that is `K_s = 0` and `K_t` independent of `s` there,
+and let `M₀` bound the curvature of `K` pointwise over the rectangle `[a₁, b₁] × [a₂, b₂]`
+containing that line. Then for every neck length `L ≥ 0` and every map `u`, the integrated
+curvature of the stretched datum along `u` over the stretched rectangle `[a₁, b₁ + L] × [a₂, b₂]`
+is at most `∫ M₀` over the original rectangle. -/
+theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SmoothTwoForm I M) (hL : 0 ≤ L)
     (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0) (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t))
-    (u : ℝ × ℝ → V) {M : ℝ × ℝ → ℝ} {a b : ℝ × ℝ} (hac : a.1 ≤ c) (hcb : c ≤ b.1)
-    (hM : ∀ z ∈ Icc a b, ∀ x, |ω.hamiltonianCurvature Ks Kt z x| ≤ M z)
-    (hMi : IntegrableOn M (Icc a b)) :
+    (u : ℝ × ℝ → M) {M₀ : ℝ × ℝ → ℝ} {a b : ℝ × ℝ} (hac : a.1 ≤ c) (hcb : c ≤ b.1)
+    (hM : ∀ z ∈ Icc a b, ∀ x, |ω.hamiltonianCurvature Ks Kt z x| ≤ M₀ z)
+    (hMi : IntegrableOn M₀ (Icc a b)) :
     ∫ z in Icc a (b.1 + L, b.2),
         |ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z (u z)| ≤
-      ∫ z in Icc a b, M z := by
+      ∫ z in Icc a b, M₀ z := by
   set f : ℝ × ℝ → ℝ :=
     fun z ↦ |ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z (u z)|
   have hKs' : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = Ks (c, t) := by
@@ -279,7 +315,7 @@ theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V)
   rw [hsplit hcL hcLb, setIntegral_union hdisj hmeas (hfi₂.mono_set subset_union_left)
     (hfi₂.mono_set subset_union_right)]
   -- Before the neck, the stretched datum is the original one.
-  have h₁ : ∫ z in Ico a.1 c ×ˢ I, f z ≤ ∫ z in Ico a.1 c ×ˢ I, M z := by
+  have h₁ : ∫ z in Ico a.1 c ×ˢ I, f z ≤ ∫ z in Ico a.1 c ×ˢ I, M₀ z := by
     refine setIntegral_mono_on (hfi.mono_set subset_union_left) (hMi.mono_set subset_union_left)
       (measurableSet_Ico.prod measurableSet_Icc) fun z hz ↦ ?_
     rw [hf, neckCollapse_of_le hL hz.1.2.le]
@@ -290,13 +326,98 @@ theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V)
       rw [hf, neckCollapse_of_mem_Icc ⟨hz.1.1, hz.1.2.le⟩,
         ω.hamiltonianCurvature_eq_zero_of_cylindrical hKs hKt, abs_zero]
   -- After the neck, the stretched datum is the translate of the original one by `-L`.
-  have h₃ : ∫ z in Icc (c + L) (b.1 + L) ×ˢ I, f z ≤ ∫ z in Icc c b.1 ×ˢ I, M z := by
+  have h₃ : ∫ z in Icc (c + L) (b.1 + L) ×ˢ I, f z ≤ ∫ z in Icc c b.1 ×ˢ I, M₀ z := by
     refine setIntegral_Icc_prod_le_of_comp_add_le measurableSet_Icc
       (hfi₂.mono_set subset_union_right) (hMi.mono_set subset_union_right) fun z hz ↦ ?_
     rw [hf, Prod.fst_add, neckCollapse_of_ge hL (by linarith [hz.1.1]),
       add_sub_cancel_right, Prod.snd_add, add_zero]
     exact hM z (Or.inr hz) _
   linarith
+
+/-- **Uniform energy estimate for neck-stretching.** Let `ω` be a nondegenerate two-form on a
+manifold. Under the hypotheses of `integral_abs_hamiltonianCurvature_neckStretch_le`, for `C¹`
+perturbation data and a map `u` that is `C¹` near the stretched rectangle, and if the energy density
+and the curvature of the stretched datum along `u` are integrable over the stretched rectangle, the
+Floer energy of `u` for the stretched datum differs from its symplectic area plus the boundary
+integral of the pulled-back stretched one-form by at most `∫ M₀` over the original rectangle, for
+every neck length `L ≥ 0`. -/
+theorem IsNondegenerate.abs_integral_floerEnergyDensity_neckStretch_sub_le [FiniteDimensional ℝ E]
+    {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (hL : 0 ≤ L)
+    (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0) (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t))
+    (hKsd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKtd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt)) {U : Set (ℝ × ℝ)}
+    (hU : IsOpen U) {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) {M₀ : ℝ × ℝ → ℝ}
+    {a b : ℝ × ℝ} (hac : a.1 ≤ c) (hcb : c ≤ b.1) (hab : a.2 ≤ b.2)
+    (habU : Icc a (b.1 + L, b.2) ⊆ U)
+    (hE : IntegrableOn (ω.floerEnergyDensity (neckStretch c L Ks) (neckStretch c L Kt) u)
+      (Icc a (b.1 + L, b.2)))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z
+      (u z)) (Icc a (b.1 + L, b.2)))
+    (hM : ∀ z ∈ Icc a b, ∀ x, |ω.hamiltonianCurvature Ks Kt z x| ≤ M₀ z)
+    (hMi : IntegrableOn M₀ (Icc a b)) :
+    |(∫ z in Icc a (b.1 + L, b.2),
+        ω.floerEnergyDensity (neckStretch c L Ks) (neckStretch c L Kt) u z) -
+      ((∫ z in Icc a (b.1 + L, b.2), (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ((∫ s in a.1..b.1 + L, neckStretch c L Ks (s, a.2) (u (s, a.2))) +
+          (∫ t in a.2..b.2, neckStretch c L Kt (b.1 + L, t) (u (b.1 + L, t))) -
+          (∫ s in a.1..b.1 + L, neckStretch c L Ks (s, b.2) (u (s, b.2))) -
+          ∫ t in a.2..b.2, neckStretch c L Kt (a.1, t) (u (a.1, t))))| ≤
+      ∫ z in Icc a b, M₀ z := by
+  have hKs' : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = Ks (c, t) := by
+    filter_upwards [hKs] with s hs t
+    rw [hs t, hKs.self_of_nhds t]
+  have hab' : a ≤ (b.1 + L, b.2) := ⟨by linarith, hab⟩
+  rw [hω.integral_floerEnergyDensity hU hu
+    (contMDiff_uncurry_neckStretch hL hKs' hKsd).contMDiffOn
+    (contMDiff_uncurry_neckStretch hL hKt hKtd).contMDiffOn hab' habU hE hR]
+  dsimp only
+  rw [sub_sub_cancel_left, abs_neg]
+  exact abs_integral_le_integral_abs.trans
+    (ω.integral_abs_hamiltonianCurvature_neckStretch_le hL hKs hKt u hac hcb hM hMi)
+
+end SmoothTwoForm
+
+/-! ### Symplectic vector spaces
+
+The curvature statements for a symplectic vector space are the case of the constant form
+`TauCeti.SymplecticForm.constSmooth`. -/
+
+namespace SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {Ks Kt : ℝ × ℝ → V → ℝ} {c L : ℝ}
+
+/-- **Curvature of a stretched datum.** If the perturbation data are independent of `s` near the
+line `s = c`, the curvature of the datum with a neck of length `L` inserted at `s = c` is the
+curvature of the original datum at `(σ s, t)`, where `σ = neckCollapse c L`. -/
+theorem hamiltonianCurvature_neckStretch (ω : SymplecticForm V) (hL : 0 ≤ L)
+    (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = Ks (c, t))
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z x =
+      ω.hamiltonianCurvature Ks Kt (neckCollapse c L z.1, z.2) x := by
+  simpa only [hamiltonianCurvature_constSmooth] using
+    ω.constSmooth.hamiltonianCurvature_neckStretch hL hKs hKt z x
+
+/-- **Uniform curvature bound for neck-stretching.** Let `K` be cylindrical near the line `s = c`,
+that is `K_s = 0` and `K_t` independent of `s` there, and let `M` bound the curvature of `K`
+pointwise over the rectangle `[a₁, b₁] × [a₂, b₂]` containing that line. Then for every neck length
+`L ≥ 0` and every map `u`, the integrated curvature of the stretched datum along `u` over the
+stretched rectangle `[a₁, b₁ + L] × [a₂, b₂]` is at most `∫ M` over the original rectangle. -/
+theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V) (hL : 0 ≤ L)
+    (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0) (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t))
+    (u : ℝ × ℝ → V) {M : ℝ × ℝ → ℝ} {a b : ℝ × ℝ} (hac : a.1 ≤ c) (hcb : c ≤ b.1)
+    (hM : ∀ z ∈ Icc a b, ∀ x, |ω.hamiltonianCurvature Ks Kt z x| ≤ M z)
+    (hMi : IntegrableOn M (Icc a b)) :
+    ∫ z in Icc a (b.1 + L, b.2),
+        |ω.hamiltonianCurvature (neckStretch c L Ks) (neckStretch c L Kt) z (u z)| ≤
+      ∫ z in Icc a b, M z := by
+  simpa only [hamiltonianCurvature_constSmooth] using
+    ω.constSmooth.integral_abs_hamiltonianCurvature_neckStretch_le hL hKs hKt u hac hcb
+      (fun z hz x ↦ by simpa only [hamiltonianCurvature_constSmooth] using hM z hz x) hMi
 
 /-- **Uniform energy estimate for neck-stretching.** Under the hypotheses of
 `integral_abs_hamiltonianCurvature_neckStretch_le`, for `C¹` perturbation data and a map `u` that

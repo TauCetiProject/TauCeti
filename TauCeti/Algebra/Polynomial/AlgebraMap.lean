@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
-# Irreducibility under algebra isomorphisms and polynomials in intertwined endomorphisms
+# Irreducibility under algebra isomorphisms, intertwined endomorphisms and faithfulness
 
 Irreducibility of a polynomial after extending its coefficients is invariant under an
 isomorphism of algebras over the coefficient ring.
@@ -22,6 +22,9 @@ If a linear map `σ : M → F` intertwines endomorphisms `f` of `M` and `g` of `
 
 Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an ideal gives
 `(p(x) - p(c)) e ≡ 0` for every polynomial `p` (`Polynomial.aeval_sub_algebraMap_eval_mul_mem`).
+
+A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
+`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
 -/
 
 public section
@@ -65,5 +68,17 @@ theorem aeval_sub_algebraMap_eval_mul_mem {R S : Type*} [CommSemiring R] [CommRi
   rw [eval_map_algebraMap, eval_map_algebraMap, aeval_algebraMap_apply_eq_algebraMap_eval] at hw
   rw [hw, mul_right_comm]
   exact K.mul_mem_right w he
+
+/-- If a monic polynomial `p` over `A` of positive degree divides every polynomial over `A`
+that vanishes at `f : B`, then `A` acts faithfully on `B`: a nonzero constant is not divisible
+by `p`. -/
+theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A B] {p : A[X]}
+    (hp : p.Monic) (hpos : 0 < p.natDegree) {f : B} (hdvd : ∀ q : A[X], aeval f q = 0 → p ∣ q) :
+    FaithfulSMul A B := by
+  rw [faithfulSMul_iff_algebraMap_injective, injective_iff_map_eq_zero]
+  intro a ha
+  by_contra ha0
+  exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
+    (hdvd _ (by rwa [aeval_C]))
 
 end Polynomial
