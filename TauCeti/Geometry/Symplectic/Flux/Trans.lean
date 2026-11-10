@@ -19,7 +19,7 @@ diffeotopies of `M`. Their pointwise composite `Φ.trans Ψ`, with time slices `
 
 for a smooth function `g` (`TauCeti.Diffeotopy.fluxForm_trans_sub_sub_mem_exactForms`), where
 `Flux_{ψ₁^* σ}(φ)` is the flux form of `φ` with respect to the pulled back form `ψ₁^* σ`. When
-`ψ₁` preserves `σ` this says that the flux is additive on pointwise composites
+`φ₁` and `ψ₁` preserve `σ` this says that the flux is additive on pointwise composites
 (`TauCeti.Diffeotopy.flux_trans`):
 
 `Flux(ψ ∘ φ) = Flux(ψ) + Flux(φ)` in `H¹_dR(M)`.
@@ -161,26 +161,12 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold (J.prod (𝓡∂ 1)) ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) (M × unitInterval) :=
     IsManifold.of_le (n := ∞) (by simp)
-  have hslice (c : unitInterval) : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, c) :=
-    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
   have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Ψ.cylinderMap :=
     Ψ.contMDiff_cylinderMap.mdifferentiable (by simp)
   -- `τ = ψ^* σ` on the cylinder and `η = G^* τ` on the double cylinder are closed.
   set τ := SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ
   set η := SmoothForm.mpullback Φ.cylinderRescale Φ.contMDiff_cylinderRescale τ
   have hτ : SmoothForm.IsClosed τ := hσ.mpullback _ _
-  -- The slices of `τ` at the two ends are `σ` and `ψ₁^* σ`.
-  have hτ₀ : SmoothForm.mpullback (fun x ↦ (x, (0 : unitInterval)))
-      (contMDiff_id.prodMk contMDiff_const) τ = σ := by
-    apply Subtype.ext
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-      ← TauCeti.mpullback_comp (hslice 0) hcyl, cylinderMap_comp_zero, TauCeti.mpullback_id]
-  have hτ₁ : SmoothForm.mpullback (fun x ↦ (x, (1 : unitInterval)))
-      (contMDiff_id.prodMk contMDiff_const) τ =
-        SmoothForm.mpullback Ψ.final Ψ.final.contMDiff σ := by
-    apply Subtype.ext
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-      ← TauCeti.mpullback_comp (hslice 1) hcyl, cylinderMap_comp_one, SmoothForm.coe_mpullback]
   -- `L = h_s η` satisfies `d L = F^* τ - τ`, where `F^* τ` is the pullback of `σ` along the
   -- motion of the composite.
   set L := homotopyOperator η.1
@@ -196,8 +182,9 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
     Φ.cylinderRescale_comp_prodMap_one
   have hL₀ := mpullback_homotopyOperator_mpullback_cylinderRescale Φ τ 0 (refl J ∞ M)
     Φ.cylinderRescale_comp_prodMap_zero
-  rw [hτ₁] at hL₁
-  rw [hτ₀, fluxForm_refl, Submodule.coe_zero] at hL₀
+  -- The slices of `τ` at the two ends are `ψ₁^* σ` and `σ`.
+  rw [Ψ.mpullback_slice_one_mpullback_cylinderMap] at hL₁
+  rw [Ψ.mpullback_slice_zero_mpullback_cylinderMap, fluxForm_refl, Submodule.coe_zero] at hL₀
   -- The cochain-homotopy identity in `t` for `L` concludes.
   have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ L := IsSmoothForm.homotopyOperator η.isSmoothForm
   rw [exactForms_succ]

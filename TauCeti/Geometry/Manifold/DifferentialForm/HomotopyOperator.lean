@@ -270,6 +270,22 @@ private theorem curryLeft_mpullbackWithin_cylinder [IsManifold I 1 M] (x₀ : M)
           exact Prod.ext_iff.2 ⟨rfl, zero_smul ℝ _⟩
     _ = _ := rfl
 
+/-- Read in the chart at `x₀`, through the chart derivative `D`, the integrand of the homotopy
+operator is the integrand of the flat cylinder homotopy operator of the pullback of the form to the
+flat cylinder over `s`. -/
+private theorem continuousAlternatingMapCongrLeft_homotopyIntegrand [IsManifold I 1 M] (x₀ : M)
+    {s : Set E} (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn ℝ s)
+    (ψ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) {y : E} (hy : y ∈ s) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) {D : E ≃L[ℝ] E}
+    (hD : (D : E →L[ℝ] E) = mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) y) :
+    D.symm.continuousAlternatingMapCongrLeft (homotopyIntegrand ψ ((extChartAt I x₀).symm y) t) =
+      (ContinuousAlternatingMap.curryLeft (E := E × ℝ) (mpullbackWithin 𝓘(ℝ, E × ℝ)
+        (I.prod (𝓡∂ 1)) (cylinderChart I x₀) (s ×ˢ Icc 0 1) ψ (y, t))
+          (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
+    ContinuousLinearEquiv.symm_symm, hD, curryLeft_mpullbackWithin_cylinder x₀ hs hsu ψ hy ht]
+  exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hy).symm
+
 /-- In the chart at `x₀`, the homotopy operator is the flat cylinder homotopy operator of the
 pullback of the form to the flat cylinder over `s`. -/
 private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Set E}
@@ -300,8 +316,7 @@ private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Se
         refine Eq.trans ?_ (cylinderHomotopy_apply _ y).symm
         refine intervalIntegral.integral_congr fun t ht ↦ ?_
         rw [uIcc_of_le zero_le_one] at ht
-        rw [hL, curryLeft_mpullbackWithin_cylinder x₀ hs hsu ψ hy ht]
-        exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hy).symm
+        exact continuousAlternatingMapCongrLeft_homotopyIntegrand x₀ hs hsu ψ hy ht hD'
 
 /-- The cylinder chart over a subset of the chart target is as smooth as the manifold. -/
 private theorem contMDiffOn_cylinderChart {n : WithTop ℕ∞} [IsManifold I n M] (x₀ : M) {s : Set E}
@@ -418,34 +433,23 @@ private theorem intervalIntegrable_homotopyIntegrand [IsManifold I 1 M]
   obtain ⟨s, hsub, hsu, -, -, hxs, -⟩ :=
     exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt (I := I) x₀
   obtain ⟨D, hD⟩ := isInvertible_mfderivWithin_extChartAt_symm (hsub hxs)
-  -- The derivative of the inverse chart, with the model-space tangent identifications made
-  -- explicit, and composition with it as a linear equivalence.
-  let Dm : E →L[ℝ] E :=
-    mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x₀)
   let D' : E ≃L[ℝ] E := D
-  have hD' : (D' : E →L[ℝ] E) = Dm := hD
   let L : (E [⋀^Fin k]→L[ℝ] F) ≃L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
     D'.symm.continuousAlternatingMapCongrLeft
-  have hL (a : E [⋀^Fin k]→L[ℝ] F) : L a = a.compContinuousLinearMap Dm := by
-    rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
-      ContinuousLinearEquiv.symm_symm, hD']
-  -- The contraction with `(0, 1)` followed by the pullback along `inl`.
-  let C : ((E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
-    ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-      (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F)
-        (n := k)).toContinuousLinearMap.flip (0, 1)
-  set η := mpullbackWithin 𝓘(ℝ, E × ℝ) (I.prod (𝓡∂ 1)) (cylinderChart I x₀) (s ×ˢ Icc 0 1) φ
-  have hη : ContinuousOn (fun t : ℝ ↦ C (η (extChartAt I x₀ x₀, t))) (Icc 0 1) :=
-    C.continuous.comp_continuousOn
-      ((contDiffOn_mpullbackWithin_cylinder (r := 0) x₀ hsub hsu hφ).continuousOn.comp
-        (continuous_const.prodMk continuous_id).continuousOn fun t ht ↦ ⟨hxs, ht⟩)
-  refine ContinuousOn.intervalIntegrable ?_
-  rw [uIcc_of_le zero_le_one]
-  refine (L.symm.continuous.comp_continuousOn hη).congr fun t ht ↦ ?_
-  rw [Function.comp_apply, ContinuousLinearEquiv.eq_symm_apply, hL]
-  have h := curryLeft_mpullbackWithin_cylinder x₀ hsub hsu φ hxs ht
-  rw [extChartAt_to_inv] at h
-  exact (h.trans (congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hsub hsu hxs))).symm
+  -- The integrand of the flat cylinder homotopy operator in the chart is interval integrable.
+  have h := intervalIntegrable_curryLeft_inl_of_continuousOn
+    ((contDiffOn_mpullbackWithin_cylinder (r := 0) x₀ hsub hsu hφ).continuousOn.mono
+      (prod_mono (singleton_subset_iff.2 hxs) subset_rfl))
+  have hL : IntervalIntegrable (fun t ↦ L.symm ((ContinuousAlternatingMap.curryLeft
+      (E := E × ℝ) (mpullbackWithin 𝓘(ℝ, E × ℝ) (I.prod (𝓡∂ 1)) (cylinderChart I x₀)
+        (s ×ˢ Icc 0 1) φ (extChartAt I x₀ x₀, t)) (0, 1)).compContinuousLinearMap
+          (.inl ℝ E ℝ))) volume 0 1 :=
+    ⟨L.symm.integrable_comp_iff.2 h.1, L.symm.integrable_comp_iff.2 h.2⟩
+  refine (intervalIntegrable_congr fun t ht ↦ ?_).mp hL
+  rw [uIoc_of_le zero_le_one] at ht
+  rw [← continuousAlternatingMapCongrLeft_homotopyIntegrand x₀ hsub hsu φ hxs
+    (Ioc_subset_Icc_self ht) (D := D') hD, extChartAt_to_inv]
+  exact L.symm_apply_apply _
 
 /-- **Naturality of the homotopy operator** for continuous forms. Pulling a continuous form on
 the cylinder, with values in a Banach space, back along `g × id` commutes with the homotopy
