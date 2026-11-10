@@ -249,7 +249,7 @@ theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
     IdealSheafData.coe_support_vanishingIdeal, TopologicalSpace.Closeds.coe_mk,
     TopologicalSpace.Closeds.coe_mk]
 
-omit [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] in
+omit hX h₀ h₁ [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] in
 /-- The special fibre is the union of its finitely many irreducible components. -/
 private theorem iUnion_closure_eq_preimage_closedPoint :
     ⋃ c : (toBase.finite_setOf_base_eq_closedPoint
@@ -268,7 +268,7 @@ theorem specialFiberIntersectionMatrix_reflTransGen
     (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R})) (i j) :
     Relation.ReflTransGen
       (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
-  rw [← iUnion_closure_eq_preimage_closedPoint] at hconn
+  rw [← iUnion_closure_eq_preimage_closedPoint toBase hη] at hconn
   have h := hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _)
     (fun _ ↦ isClosed_closure) i j
     ⟨_, subset_closure rfl⟩ ⟨_, subset_closure rfl⟩
@@ -288,10 +288,10 @@ theorem isPreconnected_preimage_closedPoint_iff_reflTransGen :
       (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
   refine ⟨toBase.specialFiberIntersectionMatrix_reflTransGen hX hη h₀ h₁, fun h ↦ ?_⟩
   -- Chained components with positive intersection number meet, so their union is connected.
-  rw [← iUnion_closure_eq_preimage_closedPoint]
+  rw [← iUnion_closure_eq_preimage_closedPoint toBase hη]
   exact IsPreconnected.iUnion_of_reflTransGen (fun _ ↦ isPreconnected_singleton.closure)
-    fun i j ↦ (h i j).mono fun _ _ hab ↦
-      (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab.1).mp hab.2
+    fun i j ↦ Relation.ReflTransGen.mono (fun _ _ hab ↦
+      (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab.1).mp hab.2) _ _ (h i j)
 
 section Multiplicity
 
