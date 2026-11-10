@@ -170,7 +170,7 @@ private lemma slantCross_singularCohomologyKunneth_ιTensorObj_of_ne {p q p' q' 
       singularSlant_singularCross_of_ne _ _ _ _ h' h hp, LinearMap.zero_apply]
   | add u v hu hv => simp only [map_add, hu, hv, add_zero]
 
-variable [hX : ∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
+variable [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
   (𝟙_ (ModuleCat.{w} k))).obj X)]
 
 /-- For finitely generated projective `Hₚ(X; k)`, the Kronecker map of `X` identifies
