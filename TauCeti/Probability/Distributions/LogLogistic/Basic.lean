@@ -115,21 +115,31 @@ theorem isProbabilityMeasure_logLogisticMeasure_iff :
   exact not_isProbabilityMeasure_zero h
 
 /-- **The log-logistic law from a logistic variable.** If `Y` is logistic with location `log a`
-and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. -/
+and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. For `b ≤ 0`
+both laws are zero. -/
 theorem hasLaw_logLogisticMeasure_of_hasLaw_logisticMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a) (hb : 0 < b)
+    {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a)
     (hY : HasLaw Y (logisticMeasure (Real.log a) b⁻¹) P) :
     HasLaw (fun ω => Real.exp (Y ω)) (logLogisticMeasure a b) P := by
-  rw [logLogisticMeasure_of_pos ha hb]
-  exact (hasLaw_map Real.measurable_exp.aemeasurable).comp hY
+  by_cases hb : 0 < b
+  · rw [logLogisticMeasure_of_pos ha hb]
+    exact (hasLaw_map Real.measurable_exp.aemeasurable).comp hY
+  · have hzero : logLogisticMeasure a b = (logisticMeasure (Real.log a) b⁻¹).map Real.exp := by
+      rw [logLogisticMeasure_of_not_pos fun h ↦ hb h.2,
+        logisticMeasure_of_nonpos (inv_nonpos.2 (not_lt.1 hb)), Measure.map_zero]
+    rw [hzero]
+    exact (hasLaw_map Real.measurable_exp.aemeasurable).comp hY
 
 /-- **The logarithm of a log-logistic variable is logistic**, with location `log a` and scale
-`b⁻¹`. -/
-theorem map_log_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) :
+`b⁻¹`. For `b ≤ 0` both laws are zero. -/
+theorem map_log_logLogisticMeasure (ha : 0 < a) :
     (logLogisticMeasure a b).map Real.log = logisticMeasure (Real.log a) b⁻¹ := by
-  rw [logLogisticMeasure_of_pos ha hb,
-    Measure.map_map Real.measurable_log Real.measurable_exp]
-  simp only [Function.comp_def, Real.log_exp, Measure.map_id']
+  by_cases hb : 0 < b
+  · rw [logLogisticMeasure_of_pos ha hb,
+      Measure.map_map Real.measurable_log Real.measurable_exp]
+    simp only [Function.comp_def, Real.log_exp, Measure.map_id']
+  · rw [logLogisticMeasure_of_not_pos fun h ↦ hb h.2,
+      logisticMeasure_of_nonpos (inv_nonpos.2 (not_lt.1 hb)), Measure.map_zero]
 
 /-- A log-logistic variable is almost surely positive, including vacuously at invalid
 parameters. -/
