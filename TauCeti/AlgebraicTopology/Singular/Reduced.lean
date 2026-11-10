@@ -38,7 +38,9 @@ coefficient object indexed by the path components other than that of the point
 An identification of the path components with a type `ι` reindexes this coproduct by the elements
 of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
 A morphism out of zeroth homology is determined by its values on the classes of points
-(`TauCeti.singularHomology₀_hom_ext`).
+(`TauCeti.singularHomology₀_hom_ext`). On a path-connected space with coefficients in a ring `k`,
+every class of `H₀(X; k)` is its augmentation times the class of a point
+(`TauCeti.eq_smul_singularHomology₀Section`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
@@ -96,6 +98,16 @@ lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathCon
     X.singularHomology₀ε R ≫ singularHomology₀Section R x = 𝟙 _ := by
   rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
     IsIso.hom_inv_id]
+
+/-- On a path-connected space, every class of `H₀(X; k)` is a multiple of the class of a point,
+the multiple being its augmentation. -/
+theorem eq_smul_singularHomology₀Section {k : Type w} [Ring k] {X : TopCat.{w}}
+    [PathConnectedSpace X] (x₀ : X)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj X) :
+    x = (X.singularHomology₀ε (ModuleCat.of k k) x : k) •
+      singularHomology₀Section (ModuleCat.of k k) x₀ (1 : k) := by
+  rw [← map_smul, smul_eq_mul, mul_one, ← ConcreteCategory.comp_apply,
+    singularHomology₀ε_singularHomology₀Section, ConcreteCategory.id_apply]
 
 /-- On a path-connected space every self-map induces the identity on zeroth homology. -/
 lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]

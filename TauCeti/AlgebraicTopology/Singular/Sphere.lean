@@ -115,6 +115,11 @@ Coefficients are an object `R` of an abelian category with coproducts.
   of its antipodal map `TauCeti.diskBoundaryNeg`, and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryMap`: an orthogonal map acts on the
   homology of `TopCat.sphere n` by the sign of its determinant.
+* `TauCeti.isZero_singularHomologyFunctor_topCatSphere_of_ne`: the ordinary homology of
+  `TopCat.sphere n` vanishes in positive degrees other than `n`.
+* `TauCeti.singularHomologyTopCatSphereGenerator` and
+  `TauCeti.exists_eq_smul_singularHomologyTopCatSphereGenerator`: with coefficients in a ring `k`,
+  the standard generator of `Hₙ₊₁(TopCat.sphere (n + 1); k)`, of which every class is a multiple.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
@@ -757,6 +762,13 @@ theorem isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne {n k : ℕ} (hk
   (isZero_reducedSingularHomologyFunctor_sphere_of_ne R (finrank_euclideanSpace_ulift_fin (n + 1))
     hk).of_iso ((diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.reducedSingularHomologyIso R k)
 
+/-- **The homology of `TopCat.sphere n` vanishes in positive degrees other than `n`.** -/
+theorem isZero_singularHomologyFunctor_topCatSphere_of_ne {n q : ℕ} (hq : q + 1 ≠ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C (q + 1)).obj R).obj
+      (TopCat.sphere.{w} n)) :=
+  (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne R hq).of_iso
+    ((reducedSingularHomologySuccIso R q).app _).symm
+
 /-- **The standard generator of the reduced homology of `TopCat.sphere n`.**  The reduced
 homology of `TopCat.sphere n` in degree `n` is one copy of the coefficient object, through the
 homeomorphism `TauCeti.diskBoundaryHomeomorph` with the unit sphere of
@@ -857,6 +869,43 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryMap {n : ℕ}
     hdet, Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
 
 end TopCatSphere
+
+section TopCatSphereGenerator
+
+variable (k : Type w) [Ring k]
+
+/-- **The standard generator of `Hₙ₊₁(TopCat.sphere (n + 1); k)`**: the standard generator
+`TauCeti.reducedSingularHomologyTopCatSphereIso` of the reduced homology, included in ordinary
+homology. -/
+def singularHomologyTopCatSphereGenerator (n : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.sphere.{w} (n + 1)) :=
+  (reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app (TopCat.sphere (n + 1))
+    ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1)
+
+lemma singularHomologyTopCatSphereGenerator_def (n : ℕ) :
+    singularHomologyTopCatSphereGenerator k n =
+      (reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app (TopCat.sphere (n + 1))
+        ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1) :=
+  (rfl)
+
+/-- **Every class of `Hₙ₊₁(TopCat.sphere (n + 1); k)` is a multiple of the standard
+generator.** -/
+theorem exists_eq_smul_singularHomologyTopCatSphereGenerator (n : ℕ)
+    (x : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.sphere.{w} (n + 1))) :
+    ∃ r : k, x = r • singularHomologyTopCatSphereGenerator k n := by
+  let E := ((reducedSingularHomologySuccIso (ModuleCat.of k k) n).app
+      (TopCat.sphere.{w} (n + 1))).symm ≪≫
+    reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)
+  refine ⟨E.hom x, ?_⟩
+  have h1 : E.inv (E.hom x) = x := by simp
+  have h2 : E.hom x = (E.hom x : k) • (1 : k) := by rw [smul_eq_mul, mul_one]
+  rw [h2, map_smul] at h1
+  refine h1.symm.trans (congrArg (E.hom x • ·) ?_)
+  simp [E, singularHomologyTopCatSphereGenerator]
+
+end TopCatSphereGenerator
 
 end TauCeti
 
