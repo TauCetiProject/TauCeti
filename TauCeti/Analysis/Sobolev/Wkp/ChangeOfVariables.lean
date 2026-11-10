@@ -410,7 +410,7 @@ with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ`
 variables of order `k` from `U` into `V`. The constant `L` is a bound for the derivatives of
 orders `1` through `k` on `closure U`, and `c` is a positive lower bound for the absolute value
 of the Jacobian determinant there; both exist by compactness. -/
-theorem exists_of_isCompact_closure [FiniteDimensional ℝ E] {Ω : Set E} (hΩ : IsOpen Ω)
+theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
     (hk : 1 ≤ k) (hΦ : ContDiffOn ℝ k Φ Ω) (hinj : InjOn Φ U)
     (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
     (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
