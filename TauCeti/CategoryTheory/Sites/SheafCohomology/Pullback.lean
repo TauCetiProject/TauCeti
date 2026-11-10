@@ -60,6 +60,7 @@ inductions over the affine opens of a quasi-compact quasi-separated scheme, tran
 statement about the cohomology of quasi-coherent sheaves from affine opens to the whole scheme.
 
 * `CategoryTheory.Sheaf.H'.pullback`: the pullback `Hⁿ(U, G) ⟶ Hⁿ(V, pb G)` along `ψ`.
+* `CategoryTheory.Sheaf.H'.pullback_naturality`: compatibility with coefficient morphisms.
 * `CategoryTheory.Sheaf.H'.pullback_comp_map`, `map_comp_pullback`: compatibility with
   restriction.
 * `CategoryTheory.Sheaf.H'.addEquiv₀_pullback`: in degree zero, the pullback of the class of
@@ -283,6 +284,22 @@ lemma pullback_apply (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V : D}
     pullback pb c G n ψ x = (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
       (Ext.mapExactFunctor pb x) (zero_add n) :=
   (rfl)
+
+/-- Pullback of cohomology over an object is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma pullback_naturality {G₁ G₂ : Sheaf J AddCommGrpCat.{v}} (f : G₁ ⟶ G₂) (n : ℕ)
+    {U : C} {V : D} (ψ : V ⟶ u.obj U) :
+    ((Sheaf.cohomologyPresheafFunctor J n).map f).app (op U) ≫ pullback pb c G₂ n ψ =
+      pullback pb c G₁ n ψ ≫
+        ((Sheaf.cohomologyPresheafFunctor K n).map (pb.map f)).app (op V) := by
+  refine AddCommGrpCat.ext fun (x : Ext ((freeYonedaSheafFunctor J).obj U) G₁ n) ↦ ?_
+  -- `H'` and the evaluated cohomology-presheaf maps use the unfolded free-sheaf functor.
+  -- Read both as extensions to apply functoriality of `Ext` without mixed source typings.
+  change (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
+      ((x.comp (Ext.mk₀ f) (add_zero n)).mapExactFunctor pb) (zero_add n) =
+    ((Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
+      (x.mapExactFunctor pb) (zero_add n)).comp (Ext.mk₀ (pb.map f)) (add_zero n)
+  rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀, Ext.comp_assoc_of_third_deg_zero]
 
 /-- Restricting the pullback along `j : V' ⟶ V` is pulling back along `j ≫ ψ`. -/
 @[reassoc]

@@ -164,7 +164,7 @@ theorem isBigO_sum_Icc_norm_id_of_boundary (ha : 0 ≤ a)
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma) :
     (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, ‖a n‖) =O[atTop] fun t ↦ t := by
-  obtain ⟨q, K, hq0, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
-  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq0.le hq1 h
+  obtain ⟨q, K, -, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
+  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq1 h
 
 end TauCeti.LSeries
