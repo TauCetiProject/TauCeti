@@ -104,6 +104,38 @@ theorem ofPMF_toPMF [Countable α] [MeasurableSingletonClass α] (κ : Kernel α
   ext a : 1
   rw [ofPMF_apply, toPMF_toMeasure]
 
+omit [Countable β] in
+/-- A probability measure on a space with measurable singletons is determined by its values on
+singletons when those have total mass one, even if the space is uncountable. -/
+private theorem measure_ext_of_singleton_of_tsum_eq_one {w : β → ℝ≥0∞} (hw : ∑' b, w b = 1)
+    {μ ν : Measure β} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hμ : ∀ b, μ {b} = w b) (hν : ∀ b, ν {b} = w b) : μ = ν := by
+  have hS : (Function.support w).Countable :=
+    Summable.countable_support_ennreal (by rw [hw]; exact ENNReal.one_ne_top)
+  have key : ∀ (m : Measure β) [IsProbabilityMeasure m], (∀ b, m {b} = w b) →
+      ∀ t : Set β, MeasurableSet t → m t = ∑' b : ↥(t ∩ Function.support w), w b := by
+    intro m _ hm t ht
+    have hSm : m (Function.support w) = 1 := by
+      rw [← Set.biUnion_of_singleton (Function.support w),
+        measure_biUnion hS (fun _ _ _ _ h => by simpa using h) fun _ _ => measurableSet_singleton _]
+      simp_rw [hm]
+      rw [← hw]
+      exact tsum_subtype_eq_of_support_subset subset_rfl
+    have hcompl : m (Function.support w)ᶜ = 0 := by
+      rw [prob_compl_eq_zero_iff hS.measurableSet]
+      exact hSm
+    have hts : m t = m (t ∩ Function.support w) := by
+      rw [← measure_inter_add_sdiff t hS.measurableSet,
+        measure_mono_null (fun x (hx : x ∈ t \ Function.support w) => hx.2) hcompl, add_zero]
+    rw [hts]
+    conv_lhs => rw [← Set.biUnion_of_singleton (t ∩ Function.support w)]
+    rw [measure_biUnion (hS.mono Set.inter_subset_right) (fun _ _ _ _ h => by simpa using h)
+        fun _ _ => measurableSet_singleton _]
+    exact tsum_congr fun b => hm _
+  refine Measure.ext fun t ht => ?_
+  rw [key μ hμ t ht, key ν hν t ht]
+
+omit [Countable β] in
 /-- Nonnegative transition weights with row sums one determine a unique Markov kernel. -/
 theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
     [MeasurableSingletonClass α] (p : α → β → ℝ≥0∞) (hp : ∀ a, ∑' b, p a b = 1) :
@@ -111,12 +143,9 @@ theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
   let q : α → PMF β := fun a => ⟨p a, CompleteLattice.summable.hasSum_iff.mpr (hp a)⟩
   refine ⟨ofPMF q, ⟨inferInstance, fun a b => ofPMF_apply_singleton q a b⟩, ?_⟩
   intro κ hκ
-  apply Kernel.ext
-  intro a
-  apply Measure.ext_iff_singleton.mpr
-  intro b
-  rw [ofPMF_apply_singleton, hκ.2]
-  rfl
+  have := hκ.1
+  refine Kernel.ext fun a => ?_
+  exact measure_ext_of_singleton_of_tsum_eq_one (hp a) (hκ.2 a) (ofPMF_apply_singleton q a)
 
 end ToPMF
 
