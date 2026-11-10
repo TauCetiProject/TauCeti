@@ -32,12 +32,15 @@ the empty set is the whole space by its universal definition.
 * `AffineEquiv.recessionCone_image`: transport by the linear part of an affine equivalence.
 * `PointedCone.recessionCone_coe`: the recession cone of a pointed cone is itself.
 * `Set.isClosed_recessionCone`: closed sets have closed recession cones.
+* `Convex.mem_asymptoticCone_iff_forall_add_smul_mem`: asymptotic directions are detected
+  by a single ray from a point of a closed convex set.
 * `Convex.recessionCone_eq_asymptoticCone`: agreement with asymptotic directions for
   nonempty closed convex sets.
 * `AffineMap.eventually_mem_atBot_iff`: the backward-ray eventual-membership criterion.
 
 Adapted from `Mei/Geometry/Convex/Recession.lean` at Mei commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`. The single-ray asymptotic-cone lemmas
+are adapted from the same file at commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`.
 -/
 
 public section
@@ -182,9 +185,31 @@ end Topology
 section Asymptotic
 
 open Filter
+open scoped Topology
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] {P : Set V}
+
+/-- If one ray in direction `v` based at `p` stays in `P`, then `v` is in the asymptotic cone
+of `P`. The points `p + t • v = t • (v + t⁻¹ • p)` tend to infinity in directions tending
+to `v`. -/
+theorem mem_asymptoticCone_of_forall_add_smul_mem {p v : V}
+    (h : ∀ t : ℝ, 0 ≤ t → p + t • v ∈ P) : v ∈ asymptoticCone ℝ P := by
+  have hdir : Tendsto (fun t : ℝ => v + t⁻¹ • p) atTop (𝓝 v) := by
+    simpa using tendsto_const_nhds.add ((tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const p)
+  have hlim := tendsto_id.atTop_smul_nhds_tendsto_asymptoticNhds hdir
+  refine hlim.frequently (((eventually_gt_atTop (0 : ℝ)).mono fun t ht => ?_).frequently)
+  have hp := h t ht.le
+  simpa [smul_add, smul_inv_smul₀ ht.ne', add_comm] using hp
+
+/-- The asymptotic cone of a closed convex set `P` consists of the directions `v` such that the
+ray `p + t • v`, `t ≥ 0`, stays in `P`, for any one base point `p ∈ P`. -/
+theorem _root_.Convex.mem_asymptoticCone_iff_forall_add_smul_mem (hconvex : Convex ℝ P)
+    (hclosed : IsClosed P) {p v : V} (hp : p ∈ P) :
+    v ∈ asymptoticCone ℝ P ↔ ∀ t : ℝ, 0 ≤ t → p + t • v ∈ P :=
+  ⟨fun hv t ht => by
+    simpa [add_comm] using hconvex.smul_vadd_mem_of_isClosed_of_mem_asymptoticCone hclosed ht hv hp,
+    mem_asymptoticCone_of_forall_add_smul_mem⟩
 
 /-- For a nonempty closed convex set, recession and asymptotic directions coincide. -/
 theorem _root_.Convex.recessionCone_eq_asymptoticCone {P : Set V}

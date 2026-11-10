@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.Geometry.Convex.Cone.FiniteGeneration
-public import TauCeti.Geometry.Convex.Cone.Homogenization
+public import TauCeti.Analysis.Convex.Homogenization
 
 /-!
 # Homogenization of convex polyhedra
@@ -127,14 +127,11 @@ theorem homogenization_setOf_forall_eq (g : ι → (V →ᴬ[ℝ] ℝ))
   · simpa using hx
   · obtain ⟨ht, hrows⟩ := TauCeti.mem_homogeneousInequalityCone.mp hz
     rcases ht.eq_or_lt with rfl | ht
-    · -- At height zero, every ray based at `p` stays in the polyhedron.
-      refine mem_homogenization_zero_of_mem_asymptoticCone hpoly.convex hpoly.isClosed hp
-        (mem_asymptoticCone_of_forall_add_smul_mem (p := p) fun s hs i => ?_)
-      have hlin : (g i).contLinear x ≤ 0 := by simpa using hrows i
-      have hval := (g i).map_vadd p (s • x)
-      simp only [vadd_eq_add, map_smul, smul_eq_mul, ContinuousAffineMap.coe_contLinear] at hval
-      rw [add_comm p, hval]
-      exact add_nonpos (mul_nonpos_of_nonneg_of_nonpos hs hlin) (hp i)
+    · apply mem_homogenization_zero_of_mem_recessionCone ⟨p, hp⟩
+      apply (mem_recessionCone_setOf_forall_iff
+        (g := fun i => (g i).toAffineMap) ⟨p, hp⟩).mpr
+      intro i
+      simpa using hrows i
     · refine (hpoly.convex.mem_homogenization_pos_iff hpoly.isClosed ht).mpr fun i => ?_
       have := hrows i
       rw [(g i).homogenize_apply_of_ne_zero x ht.ne'] at this
@@ -155,10 +152,8 @@ theorem asymptoticCone_setOf_forall (g : ι → (V →ᴬ[ℝ] ℝ))
     (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) :
     asymptoticCone ℝ {x : V | ∀ i, g i x ≤ 0} = {v | ∀ i, (g i).contLinear v ≤ 0} := by
   have hpoly := TauCeti.isConvexPolyhedron_setOf_forall g
-  ext v
-  rw [← hpoly.convex.mem_homogenization_zero_iff hne hpoly.isClosed,
-    mem_homogenization_setOf_forall_iff hne]
-  simp
+  rw [← hpoly.convex.recessionCone_eq_asymptoticCone hpoly.isClosed hne]
+  exact recessionCone_setOf_forall_eq (fun i => (g i).toAffineMap) hne
 
 end Set
 
