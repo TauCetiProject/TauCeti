@@ -8,7 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
-public import TauCeti.Algebra.Module.Injective.Coinduced
+public import TauCeti.Algebra.Module.Injective.Dual
+import TauCeti.Algebra.Module.Injective.DivisionRing
 
 /-!
 # Projective and injective modules over a Frobenius algebra coincide
@@ -22,8 +23,9 @@ The key point is that over a Frobenius algebra induced and coinduced modules agr
 `A ⊗[k] V ≅ Hom_k(A, V)`, where `A` acts on `A ⊗[k] V` through the left factor and on
 `Hom_k(A, V)` by `(a • f) x = f (x * a)`. Consequently:
 
-* induced modules `A ⊗[k] V` are injective, since coinduced modules are; every free module is
-  induced, so projective modules, being retracts of free modules, are injective;
+* induced modules `A ⊗[k] V` are injective, since coinduced modules are, see
+  `TauCeti.Algebra.Module.Injective.Dual`; every free module is induced, so projective modules,
+  being retracts of free modules, are injective;
 * every module `M` embeds into the coinduced module `Hom_k(A, M)` by `m ↦ (x ↦ x • m)`, hence into
   the free module `A ⊗[k] M`; when `M` is injective this embedding splits, so `M` is projective.
 
@@ -62,9 +64,9 @@ open TensorProduct
 
 namespace LinearMap.IsFrobeniusFunctional
 
-universe w
+universe u v w
 
-variable {k : Type*} [Field k] {A : Type*} [Ring A] [Algebra k A] [FiniteDimensional k A]
+variable {k : Type u} [Field k] {A : Type v} [Ring A] [Algebra k A] [FiniteDimensional k A]
   {φ : A →ₗ[k] k}
 
 variable (hφ : φ.IsFrobeniusFunctional)
@@ -96,26 +98,27 @@ theorem tensorEquivLinearMap_smul_apply (c : A) (t : A ⊗[k] V) (x : A) :
   | tmul a v => simp [smul_tmul', mul_assoc]
   | add t u ht hu => simp only [smul_add, map_add, LinearMap.add_apply, ht, hu]
 
-/-- Induced modules satisfy Baer's criterion over a Frobenius algebra. -/
-theorem moduleBaer_tensor : Module.Baer A (A ⊗[k] V) :=
-  (hφ.tensorEquivLinearMap V).moduleBaer_of_coinduced (hφ.tensorEquivLinearMap_smul_apply V)
-
-/-- **Induced modules over a Frobenius algebra are injective.** For every `k`-vector space `V`,
-the left `A`-module `A ⊗[k] V` is injective. -/
-theorem moduleInjective_tensor : Module.Injective A (A ⊗[k] V) :=
-  (hφ.moduleBaer_tensor V).injective
-
 end Tensor
+
+/-- **Induced modules over a Frobenius algebra are injective.** For every `k`-vector space `V`
+in a universe in which `k` is small, the left `A`-module `A ⊗[k] V` is injective. -/
+theorem moduleInjective_tensor [Small.{w} k] (V : Type w) [AddCommGroup V] [Module k V] :
+    Module.Injective A (A ⊗[k] V) :=
+  (hφ.tensorEquivLinearMap V).moduleInjective_of_dual_regular
+    (hφ.tensorEquivLinearMap_smul_apply V)
 
 /-- **Projective modules over a Frobenius algebra are injective.** No finiteness is assumed on
 the module. -/
-theorem moduleInjective_of_projective (P : Type*) [AddCommGroup P] [Module A P]
+theorem moduleInjective_of_projective (P : Type w) [AddCommGroup P] [Module A P]
     [Module.Projective A P] : Module.Injective A P := by
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.1 (inferInstance : Module.Projective A P)
   -- The free module `P →₀ A` is the induced module `A ⊗[k] (P →₀ k)`.
   let b := Algebra.TensorProduct.basis A (Finsupp.basisSingleOne : Module.Basis P k (P →₀ k))
-  have hB : Module.Baer A (P →₀ A) := (hφ.moduleBaer_tensor (P →₀ k)).of_equiv b.repr
+  have : Small.{max w u} k := small_max.{w} k
+  have : Small.{max u v w} A := small_max.{max u w} A
+  have hB : Module.Baer A (P →₀ A) :=
+    (Module.Baer.of_injective (hφ.moduleInjective_tensor (P →₀ k))).of_equiv b.repr
   have hP : Module.Baer A P :=
     hB.of_leftInverse s (Finsupp.linearCombination A fun p : P ↦ p) (LinearMap.congr_fun hs)
   exact hP.injective

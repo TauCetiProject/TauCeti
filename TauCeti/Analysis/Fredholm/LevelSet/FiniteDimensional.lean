@@ -146,8 +146,9 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
     (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hstrict hdiff hsurj
       hker hxl)
-  obtain ⟨Q, hQnhds, hQ⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict hsurj
-    hker hxl (inter_mem (hVopen.mem_nhds hV0) (hWopen.mem_nhds hW0))
+  obtain ⟨Q, hQnhds, hQ⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    hstrict (LinearMap.range_eq_top.mpr hsurj) hker hxl
+    (inter_mem (hVopen.mem_nhds hV0) (hWopen.mem_nhds hW0))
   refine ⟨Q, hQnhds, measure_mono_null ?_ hnull⟩
   rintro l' ⟨x', hx'Q, hx'c, hx'bad⟩
   obtain ⟨hwsource, hwV, hwW⟩ := hQ ⟨(x', l'), hx'c⟩ hx'Q
