@@ -427,34 +427,24 @@ theorem ae_infinite_setOf_eq_markovChainLaw_const (a₀ : α) :
   rw [Set.eq_univ_of_forall (s := {n | x n = a₀}) hx]
   exact Set.infinite_univ
 
+omit [Countable α] in
 /-- **The excursions of that chain are empty.** Its excursion law is the point mass at the empty
 word: a chain that never leaves `a₀` returns to `a₀` at every step. -/
 @[simp]
 theorem excursionLaw_const (a₀ : α) :
     excursionLaw (Kernel.const α (Measure.dirac a₀)) a₀ = Measure.dirac ([] : List α) := by
-  refine Measure.ext_of_singleton fun e => ?_
-  by_cases hmem : a₀ ∈ e
-  · have hne : ([] : List α) ≠ e := by
-      rintro rfl
-      exact List.not_mem_nil hmem
-    rw [excursionLaw_apply_singleton_of_mem hmem, Measure.dirac_apply]
-    simp [hne]
-  · rw [excursionLaw_apply_singleton ((ae_infinite_setOf_eq_markovChainLaw_const a₀).mono
-        fun x hx => exists_visitCount_of_infinite hx 1) hmem,
-      Measure.dirac_apply]
-    match e with
-    | [] => simp
-    | b :: t =>
-      have hb : a₀ ≠ b := fun hb => hmem (hb ▸ List.mem_cons_self ..)
-      have hzero : (Kernel.const α (Measure.dirac a₀)) a₀ {b} = 0 := by
-        simp [hb]
-      have hweight : excursionWeight (Kernel.const α (Measure.dirac a₀)) a₀ (b :: t) = 0 := by
-        rw [excursionWeight]
-        simp only [loopPath_cons, loopPath_nil, List.consecutivePairs, List.cons_append,
-          List.tail_cons, List.zip_cons_cons, List.map_cons, List.prod_cons]
-        rw [hzero, zero_mul]
-      rw [hweight]
-      simp
+  have hall : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) (Kernel.const α (Measure.dirac a₀))),
+      ∀ n, x n = a₀ :=
+    ae_all_iff.2 fun n =>
+      HasLaw.ae_eq_of_dirac
+        ⟨(measurable_pi_apply n).aemeasurable, markovChainLaw_const_map_eval a₀ n⟩
+  have hnil : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) (Kernel.const α (Measure.dirac a₀))),
+      excursion x a₀ 0 = [] := by
+    filter_upwards [hall] with x hx
+    refine List.eq_nil_iff_forall_not_mem.2 fun b hb => ?_
+    obtain ⟨n, -, rfl⟩ := List.mem_map.1 (excursion_def x a₀ 0 ▸ hb)
+    simp [hx n] at hb
+  rw [excursionLaw, Measure.map_congr hnil, Measure.map_const, measure_univ, one_smul]
 
 end ReturningChain
 
