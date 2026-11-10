@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -29,14 +31,33 @@ With the parametric Morse lemma this gives the **Morse–Bott lemma** in product
 `1 ≤ n ≤ ∞`, there is a `C^n` change of fibre coordinates `ψ` preserving the base parameter and
 fixing the zero section in which `f` is its constant critical value plus half the vertical Hessian,
 `f z = f (a, 0) + ½ D²(f (z.1, ·))(0) ((ψ z).2, (ψ z).2)`, and the vertical Hessian is invertible
-along the whole zero section of the chart. Diagonalizing the vertical Hessians as quadratic
-forms is not part of this statement: they vary with the base point.
+along the whole zero section of the chart.
+
+The vertical Hessians vary with the base point, but near `a` they are all congruent to the one at
+`a`, by a `C^n` family of invertible operators
+(`TauCeti.exists_congruence_fderiv_fderiv_slice_right`). Following these operators by
+Sylvester coordinates of the vertical Hessian at `a` normalizes the fibre form
+(`OpenPartialHomeomorph.exists_normalized_morseBott_chart`). This is the **normalized Morse–Bott
+lemma** (`TauCeti.exists_normalized_morseBott_chart_of_contDiffOn`): in a `C^n` chart onto an
+open subset of `P × ℝᵐ`, `m = dim F`, preserving the base parameter and fixing the zero section,
+
+`f z = f (a, 0) - Σ_{i < λ} (ψ z).2ᵢ² + Σ_{i ≥ λ} (ψ z).2ᵢ²`,
+
+where `λ` is the Morse index of `f` at `(a, 0)`. That index is the index of the vertical Hessian
+(`TauCeti.morseIndex_slice_right`), since the base directions are null for the Hessian and
+orthogonal to the fibre.
 
 ## Main declarations
 
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
+* `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
+  by a `C^n` family of invertible operators.
+* `OpenPartialHomeomorph.exists_normalized_morseBott_chart`: normalizing the fibre form of a
+  chart in which a function is a constant plus half its vertical Hessian.
+* `TauCeti.exists_normalized_morseBott_chart_of_contDiffOn`: the normalized Morse–Bott lemma in
+  product coordinates.
 
 ## References
 
@@ -168,5 +189,159 @@ theorem exists_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
   rw [hsource'] at hz
   rw [← hconst z.1 hz.1]
   exact hψf z (hsource ▸ ⟨(hball z.1 hz.1).1, hz.2⟩)
+
+/-- **The vertical Hessians are locally congruent.** If `g` is `C^{n+2}` near `(a, 0)` and its
+vertical Hessian `D²(g (a, ·))(0)` is invertible, then near `a` every vertical Hessian
+`D²(g (b, ·))(0)` is congruent to the one at `a` by a `C^n` family of invertible operators `R b`,
+equal to the identity at `a` and with `C^n` inverses. -/
+theorem exists_congruence_fderiv_fderiv_slice_right {g : P × F → ℝ}
+    (hg : ∀ᶠ z in 𝓝 (a, 0), ContDiffAt ℝ (n + 2) g z)
+    (hHa : (fderiv ℝ (fderiv ℝ (fun v ↦ g (a, v))) 0).IsInvertible) :
+    ∃ (R : P → F →L[ℝ] F) (U : Set P), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
+      (∀ b ∈ U, (R b).IsInvertible) ∧ ContDiffOn ℝ n R U ∧
+      ContDiffOn ℝ n (fun b ↦ (R b).inverse) U ∧
+      ∀ b ∈ U, ∀ w w', fderiv ℝ (fderiv ℝ (fun v ↦ g (a, v))) 0 (R b w) (R b w') =
+        fderiv ℝ (fderiv ℝ (fun v ↦ g (b, v))) 0 w w' := by
+  -- Extend `g` from a neighbourhood of `(a, 0)` to a globally `C^{n+2}` function `G`. The
+  -- vertical Hessians of `G` form a globally `C^n` family of symmetric forms.
+  obtain ⟨O, hOsub, hO, haO⟩ := _root_.mem_nhds_iff.mp hg
+  have hgO : ContDiffOn ℝ (n + 2) g O := fun z hz ↦ (hOsub hz).contDiffWithinAt
+  obtain ⟨G, hG, -, hGg⟩ := hgO.exists_contDiff_eventuallyEq_of_finiteDimensional (hO.mem_nhds haO)
+  have hG2 : ContDiff ℝ (n + 2) G := hG
+  let B : P → F →L[ℝ] F →L[ℝ] ℝ := fun b ↦ fderiv ℝ (fderiv ℝ (fun v ↦ G (b, v))) 0
+  have hB : ContDiff ℝ n B :=
+    contDiff_iff_contDiffAt.mpr fun _ ↦ contDiffAt_fderiv_fderiv_slice_right hG2.contDiffAt
+  have hBsymm (b : P) (w w' : F) : B b w w' = B b w' w :=
+    (((hG2.comp (contDiff_const.prodMk contDiff_id)).contDiffAt).of_le
+      le_add_self).isSymmSndFDerivAt (by simp) w w'
+  -- Near `a`, they are the vertical Hessians of `g`.
+  have hBg : ∀ᶠ b in 𝓝 a, B b = fderiv ℝ (fderiv ℝ (fun v ↦ g (b, v))) 0 := by
+    obtain ⟨U₀, V₀, hU₀, haU₀, hV₀, h0V₀, hUV₀⟩ := mem_nhds_prod_iff'.mp hGg
+    filter_upwards [hU₀.mem_nhds haU₀] with b hb
+    have hslice : (fun v ↦ G (b, v)) =ᶠ[𝓝 0] fun v ↦ g (b, v) :=
+      Filter.mem_of_superset (hV₀.mem_nhds h0V₀) fun v hv ↦ hUV₀ (mk_mem_prod hb hv)
+    exact hslice.fderiv.fderiv_eq
+  obtain ⟨A, hA⟩ := hHa
+  obtain ⟨R, W, hW, haW, hRa, hR, hRB⟩ :=
+    exists_congruence_of_symmetric_family hB hBsymm A (hA.trans hBg.self_of_nhds.symm)
+  -- The operators are invertible near `a`, where they are close to the identity.
+  have hRinv : ∀ᶠ b in 𝓝 a, (R b).IsInvertible :=
+    (hR.continuousOn.continuousAt (hW.mem_nhds haW)).eventually
+      (hRa ▸ ⟨ContinuousLinearEquiv.refl ℝ F, rfl⟩ : (R a).IsInvertible).eventually_nhds
+  obtain ⟨U, hUsub, hU, haU⟩ :=
+    _root_.mem_nhds_iff.mp (Filter.inter_mem (hW.mem_nhds haW) (hBg.and hRinv))
+  refine ⟨R, U, hU, haU, hRa, fun b hb ↦ (hUsub hb).2.2, hR.mono fun b hb ↦ (hUsub hb).1,
+    fun b hb ↦ ((hUsub hb).2.2.contDiffAt_map_inverse.comp b
+      (hR.contDiffAt (hW.mem_nhds (hUsub hb).1))).contDiffWithinAt, fun b hb w w' ↦ ?_⟩
+  rw [← hA, ContinuousLinearEquiv.coe_coe, hRB b (hUsub hb).1, (hUsub hb).2.1]
+
+/-- **Normalizing the fibre form of a Morse–Bott chart.** Let `ψ` be a `C^n` chart of `P × F` with
+product source `U ×ˢ V`, preserving the base coordinate in both directions and fixing the zero
+section, in which `g z = c + ½ D²(g (z.1, ·))(0) ((ψ z).2, (ψ z).2)`, where `g` is `C^{n+2}` near
+`(a, 0)` and its vertical Hessian at `a` is invertible. Then a base-dependent linear change of the
+fibre coordinates turns `ψ` into a `C^n` chart `ψ'` onto an open subset of `P × ℝᵐ`, `m = dim F`,
+with the same properties over a smaller base `U' ∋ a`, in which
+
+`g z = c - Σ_{i < λ} (ψ' z).2ᵢ² + Σ_{i ≥ λ} (ψ' z).2ᵢ²`,
+
+where `λ` is the Morse index at `0` of the fibre restriction `v ↦ g (a, v)`. -/
+theorem _root_.OpenPartialHomeomorph.exists_normalized_morseBott_chart
+    (ψ : OpenPartialHomeomorph (P × F) (P × F)) {U : Set P} {V : Set F} (hU : IsOpen U)
+    (haU : a ∈ U) (hsource : ψ.source = U ×ˢ V) (hψfst : ∀ z, (ψ z).1 = z.1)
+    (hψ0 : ∀ b, ψ (b, 0) = (b, 0)) (hψsymm : ∀ z ∈ ψ.target, (ψ.symm z).1 = z.1)
+    (hψ : ContDiffOn ℝ n ψ ψ.source) (hψinv : ContDiffOn ℝ n ψ.symm ψ.target)
+    {g : P × F → ℝ} {c : ℝ} (hg : ∀ᶠ z in 𝓝 (a, 0), ContDiffAt ℝ (n + 2) g z)
+    (hHa : (fderiv ℝ (fderiv ℝ (fun v ↦ g (a, v))) 0).IsInvertible)
+    (hψg : ∀ z ∈ ψ.source,
+      g z = c + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ (fun v ↦ g (z.1, v))) 0 (ψ z).2 (ψ z).2) :
+    ∃ (ψ' : OpenPartialHomeomorph (P × F) (P × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))))
+      (U' : Set P), IsOpen U' ∧ a ∈ U' ∧ U' ⊆ U ∧ ψ'.source = U' ×ˢ V ∧
+      (∀ z, (ψ' z).1 = z.1) ∧ (∀ b, ψ' (b, 0) = (b, 0)) ∧
+      (∀ z ∈ ψ'.target, (ψ'.symm z).1 = z.1) ∧
+      ContDiffOn ℝ n ψ' ψ'.source ∧ ContDiffOn ℝ n ψ'.symm ψ'.target ∧
+      ∀ z ∈ ψ'.source, g z = c + ∑ i,
+        (if i.val < morseIndex (fun v ↦ g (a, v)) 0 then -1 else 1) * (ψ' z).2 i ^ 2 := by
+  set m := Module.finrank ℝ F
+  -- Step 1: the vertical Hessians near `a` are congruent to the one at `a`.
+  obtain ⟨R, U₁, hU₁, haU₁, -, hRinv, hR, hRi, hRH⟩ :=
+    exists_congruence_fderiv_fderiv_slice_right hg hHa
+  set U' := U ∩ U₁ with hU'_def
+  have hU' : IsOpen U' := hU.inter hU₁
+  -- Step 2: Sylvester coordinates `T` for the vertical Hessian at `a`.
+  obtain ⟨T, hT⟩ := exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum
+    (f := fun v ↦ g (a, v))
+    ((hg.self_of_nhds.of_le le_add_self).comp 0 (contDiffAt_const.prodMk contDiffAt_id)) hHa
+  -- Step 3: the fibrewise linear chart `(b, v) ↦ (b, T (R b v))` over `U'`.
+  have hΦ : ContDiffOn ℝ n (fun z : P × F ↦ (z.1, T (R z.1 z.2))) (U' ×ˢ univ) :=
+    contDiffOn_fst.prodMk (T.contDiff.comp_contDiffOn
+      (((hR.mono inter_subset_right).comp (contDiffOn_fst (s := U' ×ˢ univ))
+        fun _ hz ↦ hz.1).clm_apply contDiffOn_snd))
+  have hΦinv : ContDiffOn ℝ n
+      (fun y : P × EuclideanSpace ℝ (Fin m) ↦ (y.1, (R y.1).inverse (T.symm y.2)))
+      (U' ×ˢ univ) :=
+    contDiffOn_fst.prodMk (((hRi.mono inter_subset_right).comp
+      (contDiffOn_fst (s := U' ×ˢ (univ : Set (EuclideanSpace ℝ (Fin m)))))
+      fun _ hy ↦ hy.1).clm_apply (T.symm.contDiff.comp_contDiffOn contDiffOn_snd))
+  let Φ : OpenPartialHomeomorph (P × F) (P × EuclideanSpace ℝ (Fin m)) :=
+    { toFun := fun z ↦ (z.1, T (R z.1 z.2))
+      invFun := fun y ↦ (y.1, (R y.1).inverse (T.symm y.2))
+      source := U' ×ˢ univ
+      target := U' ×ˢ univ
+      map_source' := fun _ hz ↦ ⟨hz.1, mem_univ _⟩
+      map_target' := fun _ hy ↦ ⟨hy.1, mem_univ _⟩
+      left_inv' := fun z hz ↦ by simp [(hRinv z.1 hz.1.2).inverse_apply_self]
+      right_inv' := fun y hy ↦ by simp [(hRinv y.1 hy.1.2).self_apply_inverse]
+      open_source := hU'.prod isOpen_univ
+      open_target := hU'.prod isOpen_univ
+      continuousOn_toFun := hΦ.continuousOn
+      continuousOn_invFun := hΦinv.continuousOn }
+  -- Step 4: the normalized chart is `ψ` followed by `Φ`.
+  refine ⟨ψ.trans Φ, U', hU', ⟨haU, haU₁⟩, inter_subset_left, ?_, fun z ↦ hψfst z,
+    fun b ↦ ?_, fun y hy ↦ hψsymm _ hy.2, ?_, ?_, ?_⟩
+  · ext z
+    simp only [OpenPartialHomeomorph.trans_source, hsource, mem_inter_iff, mem_preimage,
+      mem_prod, mem_univ, and_true, Φ, hψfst, hU'_def]
+    tauto
+  · simp [Φ, hψ0]
+  · exact hΦ.comp (hψ.mono fun _ hz ↦ hz.1) fun _ hz ↦ hz.2
+  · exact hψinv.comp (hΦinv.mono fun _ hy ↦ hy.1) fun _ hy ↦ hy.2
+  · intro z hz
+    have hz₁ : z.1 ∈ U' := hψfst z ▸ (hz.2 : ψ z ∈ U' ×ˢ univ).1
+    have hψ'z : ((ψ.trans Φ) z).2 = T (R z.1 (ψ z).2) := by
+      simp [Φ, hψfst]
+    rw [hψg z hz.1, ← hRH z.1 hz₁.2, hT, hψ'z]
+
+/-- **The normalized Morse–Bott lemma in product coordinates.** Under the hypotheses of
+`TauCeti.exists_morseBott_chart_of_contDiffOn`, there is a `C^n` chart `ψ` from a product
+neighbourhood `U ×ˢ V ⊆ W` of `(a, 0)` onto an open subset of `P × ℝᵐ`, `m = dim F`, preserving
+the base parameter in both directions and fixing the zero section, in which
+
+`f z = f (a, 0) - Σ_{i < λ} (ψ z).2ᵢ² + Σ_{i ≥ λ} (ψ z).2ᵢ²`
+
+on the whole source, where `λ` is the Morse index of `f` at `(a, 0)`. -/
+theorem exists_normalized_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
+    (hf : ContDiffOn ℝ (n + 2) f W) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F))
+    (hn : n ≠ 0) :
+    ∃ (ψ : OpenPartialHomeomorph (P × F) (P × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))))
+      (U : Set P) (V : Set F),
+      IsOpen U ∧ IsOpen V ∧ a ∈ U ∧ (0 : F) ∈ V ∧ ψ.source = U ×ˢ V ∧ U ×ˢ V ⊆ W ∧
+      (∀ z, (ψ z).1 = z.1) ∧ (∀ b, ψ (b, 0) = (b, 0)) ∧
+      (∀ z ∈ ψ.target, (ψ.symm z).1 = z.1) ∧
+      ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
+      ∀ z ∈ ψ.source, f z = f (a, 0) + ∑ i,
+        (if i.val < morseIndex f (a, 0) then -1 else 1) * (ψ z).2 i ^ 2 := by
+  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUVW, hψfst, hψ0, hψsymm, hψ, hψinv, -, hinv,
+    hψf⟩ := exists_morseBott_chart_of_contDiffOn hW hf hcrit hker hn
+  -- `f` is `C^{n+2}` at every point of the open set `U ×ˢ V ⊆ W`.
+  have hfUV : ∀ z ∈ U ×ˢ V, ContDiffAt ℝ (n + 2) f z := fun z hz ↦
+    hf.contDiffAt (Filter.mem_of_superset ((hU.prod hV).mem_nhds hz) hUVW)
+  have ha0 : ((a, 0) : P × F) ∈ U ×ˢ V := mk_mem_prod haU h0V
+  obtain ⟨ψ', U', hU', haU', hU'U, hsource', hψ'fst, hψ'0, hψ'symm, hψ', hψ'inv, hψ'f⟩ :=
+    ψ.exists_normalized_morseBott_chart hU haU hsource hψfst hψ0 hψsymm hψ hψinv
+      (Filter.mem_of_superset ((hU.prod hV).mem_nhds ha0) hfUV) (hinv a haU) hψf
+  rw [morseIndex_slice_right ((hfUV _ ha0).of_le le_add_self) hcrit] at hψ'f
+  exact ⟨ψ', U', V, hU', hV, haU', h0V, hsource', (prod_mono hU'U subset_rfl).trans hUVW,
+    hψ'fst, hψ'0, hψ'symm, hψ', hψ'inv, hψ'f⟩
 
 end TauCeti

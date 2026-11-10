@@ -31,9 +31,14 @@ if `M` is a metric space which is a topological manifold modelled on a finite-di
 `X ⊆ M` is cellular, then for every open `U ⊇ X` there is a continuous surjection `g : M → M` which
 collapses `X` to a single point, whose other fibres are all singletons, and which is the identity
 outside `U` (`TauCeti.IsCellularSet.exists_collapse`). For compact `M` such a map is a quotient
-map onto `M`, so it identifies the quotient of `M` collapsing `X` to a point with `M` itself. This
-is the first step of M. Brown's proof of the generalized Schoenflies theorem, where the
-complementary regions of a bicollared sphere are recognized as cells by collapsing cellular sets.
+map onto `M`, so any continuous surjection onto a Hausdorff space which collapses exactly `X` has
+a target homeomorphic to `M` (`TauCeti.IsCellularSet.nonempty_homeomorph`). More generally, if
+`K` is compact and `X ⊆ U ⊆ K` with `U` open, a map collapsing exactly `X` on `K` identifies `K`
+with its image by a homeomorphism agreeing with the map outside `U`
+(`TauCeti.IsCellularSet.exists_homeomorph_image`). This is how M. Brown's proof of the generalized
+Schoenflies theorem recognizes the closures of the complementary regions of a bicollared sphere as
+cells: each is mapped onto a closed hemisphere by a map whose only fibre with more than one point
+is a cellular set inside the region.
 
 The proof shrinks the cells one after another. If `K` is a compact subset of an open set `V` of `M`
 homeomorphic to `E`, a radial squeeze of `E` (`TauCeti.exists_homeomorph_mapsTo_closedBall`), read
@@ -60,12 +65,18 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 * `TauCeti.IsCellularSet.exists_collapse`: a cellular subset of a manifold is collapsed to one point
   by a continuous surjection, supported in any of its neighbourhoods, whose other fibres are
   singletons.
+* `TauCeti.IsCellularSet.exists_homeomorph_image`: a compact set is homeomorphic to its image
+  under a map which collapses exactly a cellular set inside an open part of it.
+* `TauCeti.IsCellularSet.nonempty_homeomorph`: collapsing a cellular set in a compact manifold to a
+  point gives a space homeomorphic to the manifold.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
 
 ## References
 
 * M. Brown, *A proof of the generalized Schoenflies theorem*, Bull. Amer. Math. Soc. 66 (1960),
   74–76.
+* N. Sahoo, *The Generalized Schoenflies Theorem*, expository notes on Brown's paper, Lemma 3.2
+  (the recognition of a compact set from a map collapsing exactly a cellular set).
 -/
 
 public section
@@ -259,6 +270,76 @@ theorem IsCellularSet.exists_collapse [ChartedSpace E M] {X : Set M} (hX : IsCel
   refine ⟨g, hgc, hgs, hgf, fun x hx ↦ hgU x fun h ↦ hx (hn ?_)⟩
   rw [hθr, zero_add] at h
   exact image_mono ball_subset_closedBall h
+
+/-- **Collapsing a cellular set does not change a compact set.** Let `M` be a metric space which is
+a topological manifold modelled on a finite-dimensional real normed space `E`, let `K ⊆ M` be
+compact, and let `X ⊆ U ⊆ K` with `X` cellular and `U` open. If `f : M → Y` is continuous on `K`,
+with values in a Hausdorff space, and the fibres of `f` on `K` are the set `X` and singletons, then
+`K` is homeomorphic to its image `f '' K`, by a homeomorphism which agrees with `f` outside `U`.
+
+For instance, if `K` is the closure of an open set `U` and `f` carries the frontier of `U` onto the
+boundary sphere of a closed ball `f '' K`, then `K` is a closed cell with frontier the boundary
+sphere; this is how Brown's proof of the generalized Schoenflies theorem recognizes cells. -/
+theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X K U : Set M}
+    (hX : IsCellularSet E X) (hK : IsCompact K) (hU : IsOpen U) (hXU : X ⊆ U) (hUK : U ⊆ K)
+    {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : M → Y} (hf : ContinuousOn f K)
+    (hfX : ∀ x ∈ K, ∀ y ∈ K, f x = f y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
+    ∃ h : K ≃ₜ f '' K, ∀ x : K, (x : M) ∉ U → (h x : Y) = f x := by
+  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
+  -- A collapse `g` of `X` fixing every point outside `U` maps `U`, hence `K`, onto itself.
+  obtain ⟨g, hgc, hgs, hgf, hgU⟩ := hX.exists_collapse hU hXU
+  have hgUU : MapsTo g U U := fun x hx ↦ by
+    by_contra hgx
+    rcases (hgf (g x) x).1 (hgU _ hgx) with h | ⟨h, -⟩
+    · exact hgx (by rwa [h])
+    · exact hgx (hXU h)
+  have hgK : MapsTo g K K := fun x hx ↦ by
+    by_cases hxU : x ∈ U
+    · exact hUK (hgUU hxU)
+    · rwa [hgU x hxU]
+  set G : C(K, K) := ⟨hgK.restrict g K K, hgc.restrict hgK⟩
+  have hGs : Surjective G := by
+    rintro ⟨y, hy⟩
+    obtain ⟨x, rfl⟩ := hgs y
+    have hx : x ∈ K := by
+      by_contra hx
+      exact hx (hgU x (fun h ↦ hx (hUK h)) ▸ hy)
+    exact ⟨⟨x, hx⟩, rfl⟩
+  have hGq : IsQuotientMap G := G.continuous.isClosedMap.isQuotientMap G.continuous hGs
+  -- `G` and the restriction `F` of `f` have the same fibres, so `F` descends along `G`.
+  set F : C(K, f '' K) := ⟨(mapsTo_image f K).restrict f K (f '' K),
+    hf.mapsToRestrict (mapsTo_image f K)⟩
+  have hGF (x y : K) : G x = G y ↔ F x = F y := by
+    simp only [G, F, ContinuousMap.coe_mk, Subtype.ext_iff, MapsTo.val_restrict_apply]
+    rw [hgf, hfX x x.2 y y.2]
+  have hFG : FactorsThrough F G := fun x y h ↦ (hGF x y).1 h
+  set L := hGq.lift F hFG
+  have hLG (x : K) : L (G x) = F x := DFunLike.congr_fun (hGq.lift_comp F hFG) x
+  have hL : Bijective L := by
+    refine ⟨fun y₁ y₂ h ↦ ?_, fun ⟨_, x, hx, rfl⟩ ↦ ⟨G ⟨x, hx⟩, hLG ⟨x, hx⟩⟩⟩
+    obtain ⟨x₁, rfl⟩ := hGs y₁
+    obtain ⟨x₂, rfl⟩ := hGs y₂
+    rwa [hGF, ← hLG, ← hLG]
+  refine ⟨(isHomeomorph_iff_continuous_bijective.2 ⟨L.continuous, hL⟩).homeomorph L,
+    fun x hx ↦ ?_⟩
+  have hGx : G x = x := Subtype.ext (hgU x hx)
+  have hLx : L x = F x := by rw [← hLG, hGx]
+  simp only [IsHomeomorph.homeomorph_apply, hLx, F, ContinuousMap.coe_mk,
+    MapsTo.val_restrict_apply]
+
+/-- **Collapsing a cellular set in a compact manifold.** Let `M` be a compact metric space which is
+a topological manifold modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a
+cellular set. If a continuous surjection `f : M → Y` onto a Hausdorff space collapses `X` to a point
+and is injective elsewhere, then `Y` is homeomorphic to `M`: the quotient of `M` collapsing `X` to a
+point is `M` again. -/
+theorem IsCellularSet.nonempty_homeomorph [ChartedSpace E M] [CompactSpace M] {X : Set M}
+    (hX : IsCellularSet E X) {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : M → Y}
+    (hf : Continuous f) (hfs : Surjective f) (hfX : ∀ x y, f x = f y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
+    Nonempty (M ≃ₜ Y) := by
+  obtain ⟨h, -⟩ := hX.exists_homeomorph_image isCompact_univ isOpen_univ (subset_univ X)
+    subset_rfl hf.continuousOn fun x _ y _ ↦ hfX x y
+  exact ⟨((Homeomorph.Set.univ M).symm.trans h).trans
+    ((Homeomorph.setCongr (image_univ_of_surjective hfs)).trans (Homeomorph.Set.univ Y))⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A closed ball `closedBall x r` with `r ≥ 0` is cellular in `E`: it is the intersection of the
