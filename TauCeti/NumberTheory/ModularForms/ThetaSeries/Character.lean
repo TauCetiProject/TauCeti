@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.GaussSum
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Character
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.PositiveOdd.Slash
 
 /-!
 # The character of a lattice theta series
@@ -22,13 +23,25 @@ an even unimodular lattice. The unit-homomorphism used for modular forms with ch
 `MulChar.equivToUnitHom (hL.thetaCharacter hE)`.
 
 The evaluated Gauss-sum transformation law is expressed in terms of this character at the
-lower-right matrix entry, for matrices in `Γ₀(level L)` with positive lower-left and positive odd
-upper-left entries. This identifies the arithmetic scalar needed for the general theta
-transformation law.
+lower-right matrix entry, first for matrices in `Γ₀(level L)` with positive lower-left and
+positive odd upper-left entries. Negation, left translation by powers of `T`, and the signed
+translations `±T^b` reduce every matrix of `Γ₀(level L)` to that case, which gives the
+**Hecke–Schoeneberg theorem** `Θ_L ∣[k] A = χ_L(d) Θ_L` for every `A = [a, b; c, d] ∈ Γ₀(N)`,
+where `N` is the level of `L` and `2k` its rank.
+
+## Main statements
+
+* `ZLattice.IsEven.thetaCharacter`: the character `χ_L` at the level.
+* `ZLattice.IsEven.thetaCharacter_intCast`, `ZLattice.IsEven.thetaCharacter_neg_one`: its values
+  on integers prime to the level and its parity.
+* `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0`: the transformation law of `Θ_L` under
+  `Γ₀(N)` with nebentypus `χ_L`.
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, third edition, Chapter 3.
+* E. Hecke, *Analytische Arithmetik der positiven quadratischen Formen*, Kgl. Danske Vid. Selsk.
+  Math.-fys. Medd. XVII, 12 (1940).
 * B. Schoeneberg, *Elliptic Modular Functions*, Chapter IX.
 -/
 
@@ -129,5 +142,29 @@ theorem thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd
   rw [hL.thetaSeries_slash_eq_jacobiSym_smul hk A ha hc haodd hN,
     ← signedDiscr_of_finrank_eq L hk, ← hchar, hL.thetaCharacter_intCast hE haN,
     TauCeti.kroneckerSym_eq_jacobiSym _ haodd]
+
+/-- **The Hecke–Schoeneberg theorem.** Let `L` be an even full lattice of rank `2k` and level
+`N`. The theta series of `L` transforms in weight `k` under `Γ₀(N)` with the quadratic nebentypus
+`χ_L`: `Θ_L ∣[k] A = χ_L(d) Θ_L` for every `A = [a, b; c, d] ∈ Γ₀(N)`. -/
+theorem thetaSeries_slash_of_mem_Gamma0 (hL : IsEven L) (hE : Even (finrank ℝ E)) {k : ℕ}
+    (hk : finrank ℝ E = 2 * k) {A : SL(2, ℤ)}
+    (hA : A ∈ CongruenceSubgroup.Gamma0 (level L)) :
+    thetaSeries L ∣[(k : ℤ)] A = hL.thetaCharacter hE (A 1 1 : ℤ) • thetaSeries L := by
+  borelize E
+  refine TauCeti.ModularForm.slash_eq_smul_of_mem_Gamma0_of_pos_odd
+    (by rw [hL.thetaCharacter_neg_one hE hk, zpow_natCast]) (hL.thetaSeries_slash_T k) ?_ hA
+  intro B hB hc ha hao
+  -- A normalized matrix has natural upper-left and lower-left entries, the latter a multiple
+  -- of the level.
+  obtain ⟨a, haeq⟩ := Int.eq_ofNat_of_zero_le ha.le
+  obtain ⟨c, hceq⟩ := Int.eq_ofNat_of_zero_le hc.le
+  have : NeZero c := ⟨by omega⟩
+  have hN : level L ∣ c := by
+    have h := CongruenceSubgroup.mem_Gamma0_iff_dvd.mp hB
+    rw [hceq] at h
+    exact_mod_cast h
+  rw [haeq] at hao
+  exact hL.thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd hE hk B haeq hceq
+    (by exact_mod_cast hao) hN
 
 end ZLattice.IsEven
