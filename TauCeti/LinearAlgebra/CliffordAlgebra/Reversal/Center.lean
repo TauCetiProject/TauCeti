@@ -43,7 +43,7 @@ element is supplied by `CliffordAlgebra.isUnit_prod_map_ι` and the reversal sig
 * `TauCeti.CliffordAlgebra.reverse_add_smul_volume_eq_self_iff`: the fixed-point criterion for an
   anisotropic orthogonal volume element over a field with `2 ≠ 0`.
 * `TauCeti.CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center`: the central fixed-point criterion
-  for a regular quadratic space of positive dimension over a field with `2 ≠ 0`; in odd dimension
+  for a regular finite-dimensional quadratic space over a field with `2 ≠ 0`; in odd dimension
   the central elements of the even Clifford algebra are scalars, so the criterion is trivial.
 * `TauCeti.CliffordAlgebra.forall_mem_center_reverseEven_eq_self_iff`: the criterion for reversal
   to fix the whole centre pointwise.
@@ -142,12 +142,11 @@ theorem reverse_add_smul_volume_eq_self_iff
 /-- In the centre of the even Clifford algebra of a regular quadratic space, an element is fixed
 by reversal exactly when the volume sign is positive or it is a scalar. In odd dimension the centre
 consists of scalars, so both sides hold. -/
-theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
-    (hpos : 0 < finrank K V) {x : even Q}
+theorem reverseEven_eq_self_iff_of_mem_center [FiniteDimensional K V] (hQ : Q.Nondegenerate)
+    {x : even Q}
     (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x ↔
       Even ((finrank K V).choose 2) ∨ ∃ a : K, x = algebraMap K (even Q) a := by
-  have : FiniteDimensional K V := .of_finrank_pos hpos
   by_cases heven : Even (finrank K V)
   swap
   · obtain ⟨a, ha⟩ := Algebra.mem_bot.mp
@@ -156,7 +155,6 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
   have hle : Even l.length := hlen ▸ heven
-  have hne : l ≠ [] := List.length_pos_iff.mp (hlen ▸ hpos)
   obtain ⟨a, b, hab⟩ :=
     (mem_center_even_iff_exists_eq_add_smul_volume hl hle hspan hQl).mp hx
   by_cases hsign : Even ((finrank K V).choose 2)
@@ -189,19 +187,20 @@ theorem forall_mem_center_reverseEven_eq_self_iff (hQ : Q.Nondegenerate)
   constructor
   · intro hfix
     obtain ⟨ω, hω, hω_scalar⟩ := exists_mem_center_even_forall_ne_algebraMap hQ heven hpos
-    rcases (reverseEven_eq_self_iff_of_mem_center hQ hpos hω).mp (hfix ω hω) with
+    rcases (reverseEven_eq_self_iff_of_mem_center hQ hω).mp (hfix ω hω) with
       hsign | ⟨a, ha⟩
     · exact hsign
     · exact False.elim (hω_scalar a ha)
   · intro hsign x hx
-    exact (reverseEven_eq_self_iff_of_mem_center hQ hpos hx).mpr (Or.inl hsign)
+    exact (reverseEven_eq_self_iff_of_mem_center hQ hx).mpr (Or.inl hsign)
 
 /-- In dimension four, the canonical reversal fixes every element of the discriminant algebra,
 the centre of the even Clifford algebra. -/
 theorem reverseEven_eq_self_of_mem_center_of_finrank_eq_four (hQ : Q.Nondegenerate)
     (hV : finrank K V = 4) {x : even Q} (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x := by
-  apply (reverseEven_eq_self_iff_of_mem_center hQ (by omega) hx).mpr
+  have : FiniteDimensional K V := .of_finrank_pos (by omega)
+  apply (reverseEven_eq_self_iff_of_mem_center hQ hx).mpr
   exact Or.inl (by simp [hV, Nat.choose_two_right, Nat.even_iff])
 
 /-- In dimension six, the fixed elements of the discriminant algebra under canonical reversal
@@ -209,8 +208,9 @@ are exactly the scalars. -/
 @[simp] theorem reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six (hQ : Q.Nondegenerate)
     (hV : finrank K V = 6) {x : even Q} (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x ↔ ∃ a : K, x = algebraMap K (even Q) a := by
+  have : FiniteDimensional K V := .of_finrank_pos (by omega)
   simpa [hV, Nat.choose_two_right, Nat.even_iff] using
-    reverseEven_eq_self_iff_of_mem_center hQ (by omega) hx
+    reverseEven_eq_self_iff_of_mem_center hQ hx
 
 /-- In dimension six, reversal acts nontrivially on the centre of the even Clifford algebra.
 This includes both split and nonsplit discriminant algebras. -/
