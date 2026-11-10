@@ -15,6 +15,7 @@ import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -122,13 +123,6 @@ theorem tendsto_cauchyTransform_cobounded (hf : Integrable f)
   have hrem := (cauchyTransform_sub_inv_smul_isBigO hf hsupp).trans_tendsto
     (by simpa using (tendsto_inv₀_cobounded (α := ℂ)).pow 2)
   simpa using hrem.add htail
-
-omit [NormedSpace ℂ F] in
-/-- A point outside the closed disc containing the support of `f` lies outside its closed
-support. -/
-theorem notMem_tsupport_of_support_subset_closedBall (hsupp : support f ⊆ closedBall c r)
-    (hw : (r : ℝ) < ‖w - c‖) : w ∉ tsupport f := fun h ↦
-  (mem_closedBall_iff_norm.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
 
 /-- A pointwise bound for the derivative off the disc:
 `‖(T f)' w‖ ≤ π⁻¹ ‖f‖₁ / (‖w - c‖ - r)²`. -/
