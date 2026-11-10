@@ -67,7 +67,7 @@ mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 namespace_build_cap = 20
 pr_order = ["github", "fleet", "namespace"]
-staging_order = ["chungus2", "tauchonki2"]
+staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.
 [services.fleet.machines.chungus2]
