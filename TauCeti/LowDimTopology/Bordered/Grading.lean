@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Matrix.Grading
 public import TauCeti.LowDimTopology.Bordered.TypeD
 public import TauCeti.Topology.Covering.BalancedProduct.Basic
 
@@ -29,9 +30,9 @@ span `A` independently is never needed for these compatibilities.
   degree `l` when each `coeff x y` is a sum of elements of degrees `g` with
   `g • gr y = l • gr x`, so that `gr (coeff x y ⊗ y) = l • gr x`. More generally a matrix `F` of
   morphisms is homogeneous of degree `c` when `F x y` is a sum of elements of degrees `g` with
-  `g • gr' y = c • gr x` (`TauCeti.homogeneousMatrices`). For central degrees these compose
-  (`TauCeti.mul_mem_homogeneousMatrices`), the identity morphism has degree `1`, and the
-  morphism differential raises the degree by `l`
+  `g • gr' y = c • gr x` (`TauCeti.homogeneousMatrices`, in `TauCeti.Algebra.Matrix.Grading`).
+  For central degrees these compose (`TauCeti.mul_mem_homogeneousMatrices`), the identity
+  morphism has degree `1`, and the morphism differential raises the degree by `l`
   (`TauCeti.TypeDStructure.morphismDifferential_mem_homogeneousMatrices`).
 * **Box tensor products.** A right `A`-module `M` is graded by a family `Mg : S → Submodule R M`
   over a right `G`-set `S`. Since `TauCeti.BalancedProduct` is built from left actions, the right
@@ -49,15 +50,11 @@ span `A` independently is never needed for these compatibilities.
 
 ## Main definitions
 
-* `TauCeti.homogeneousMatrices Ag gr gr' c`: the matrices of coefficients homogeneous of degree
-  `c` from the grading `gr` to the grading `gr'`.
 * `TauCeti.boxGradedPart Mg gr u`: the row vectors of degree `u` in the balanced product of the
   grading sets.
 
 ## Main results
 
-* `TauCeti.mul_mem_homogeneousMatrices`, `TauCeti.map_mem_homogeneousMatrices`: degrees add
-  under products and the entrywise differential shifts them.
 * `TauCeti.TypeDStructure.idMorphism_mem_homogeneousMatrices`,
   `TauCeti.TypeDStructure.morphismDifferential_mem_homogeneousMatrices`: the graded morphism
   complex.
@@ -82,61 +79,9 @@ open MulOpposite
 namespace TauCeti
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {G : Type*} [Group G]
-  (Ag : G → Submodule R A) {T : Type*} [MulAction G T] {X X' X'' : Type*}
+  {Ag : G → Submodule R A} {T : Type*} [MulAction G T] {X X' : Type*}
 
-/-! ### Homogeneous matrices -/
-
-/-- The matrices of coefficients **homogeneous of degree `c`** from the grading `gr : X → T` to
-the grading `gr' : X' → T`: each entry `F x x'` is a sum of elements of the degrees `g` with
-`g • gr' x' = c • gr x`. Read as a map `x ↦ ∑ x', F x x' ⊗ x'`, such a matrix sends a generator
-of degree `t` to a sum of terms of degree `c • t`. -/
-def homogeneousMatrices (gr : X → T) (gr' : X' → T) (c : G) : Submodule R (Matrix X X' A) where
-  carrier := {F | ∀ x x', F x x' ∈ ⨆ g : {g : G // g • gr' x' = c • gr x}, Ag g}
-  add_mem' hF hG x x' := add_mem (hF x x') (hG x x')
-  zero_mem' _ _ := zero_mem _
-  smul_mem' r _ hF x x' := Submodule.smul_mem _ r (hF x x')
-
-variable {Ag}
-
-@[simp]
-theorem mem_homogeneousMatrices_iff {gr : X → T} {gr' : X' → T} {c : G} {F : Matrix X X' A} :
-    F ∈ homogeneousMatrices Ag gr gr' c ↔
-      ∀ x x', F x x' ∈ ⨆ g : {g : G // g • gr' x' = c • gr x}, Ag g :=
-  Iff.rfl
-
-/-- **Degrees add under products**: when `A` is graded, the product of matrices homogeneous of
-degrees `c` and `c'`, with `c'` central, is homogeneous of degree `c * c'`. -/
-theorem mul_mem_homogeneousMatrices [Fintype X']
-    (hA : ∀ {g h : G} {a b : A}, a ∈ Ag g → b ∈ Ag h → a * b ∈ Ag (g * h))
-    {gr : X → T} {gr' : X' → T} {gr'' : X'' → T} {c c' : G} (hc' : c' ∈ Subgroup.center G)
-    {F : Matrix X X' A} {F' : Matrix X' X'' A} (hF : F ∈ homogeneousMatrices Ag gr gr' c)
-    (hF' : F' ∈ homogeneousMatrices Ag gr' gr'' c') :
-    F * F' ∈ homogeneousMatrices Ag gr gr'' (c * c') := by
-  intro x x''
-  rw [Matrix.mul_apply]
-  refine Submodule.sum_mem _ fun x' _ ↦ ?_
-  refine Submodule.iSup_induction _ (motive := fun a ↦ a * F' x' x'' ∈ _) (hF x x') ?_
-    (by rw [zero_mul]; exact zero_mem _) fun a a' ha ha' ↦ by rw [add_mul]; exact add_mem ha ha'
-  rintro ⟨g, hg⟩ a ha
-  refine Submodule.iSup_induction _ (motive := fun b ↦ a * b ∈ _) (hF' x' x'') ?_
-    (by rw [mul_zero]; exact zero_mem _) fun b b' hb hb' ↦ by rw [mul_add]; exact add_mem hb hb'
-  rintro ⟨h, hh⟩ b hb
-  refine Submodule.mem_iSup_of_mem ⟨g * h, ?_⟩ (hA ha hb)
-  rw [mul_smul, hh, smul_smul, Subgroup.mem_center_iff.mp hc' g, mul_smul, hg, smul_smul,
-    Subgroup.mem_center_iff.mp hc' c]
-
-/-- If `d` maps degree `g` to degree `l * g`, the entrywise differential of a matrix homogeneous of
-degree `c` is homogeneous of degree `l * c`. -/
-theorem map_mem_homogeneousMatrices {d : A →ₗ[R] A} {l : G}
-    (hd : ∀ {g : G} {a : A}, a ∈ Ag g → d a ∈ Ag (l * g)) {gr : X → T} {gr' : X' → T} {c : G}
-    {F : Matrix X X' A} (hF : F ∈ homogeneousMatrices Ag gr gr' c) :
-    F.map d ∈ homogeneousMatrices Ag gr gr' (l * c) := by
-  intro x x'
-  rw [Matrix.map_apply]
-  refine Submodule.iSup_induction _ (motive := fun a ↦ d a ∈ _) (hF x x') ?_
-    (by rw [map_zero]; exact zero_mem _) fun a a' ha ha' ↦ by rw [map_add]; exact add_mem ha ha'
-  rintro ⟨g, hg⟩ a ha
-  exact Submodule.mem_iSup_of_mem ⟨l * g, by rw [mul_smul, hg, smul_smul]⟩ (hd ha)
+/-! ### The graded morphism complex -/
 
 namespace TypeDStructure
 
@@ -147,7 +92,7 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {Ag : G → Submodule
 homogeneous of degree `1` for any grading of its generators. -/
 theorem idMorphism_mem_homogeneousMatrices [DecidableEq X] (N : TypeDStructure d ι X)
     (hι : ∀ k, ι k ∈ Ag 1) (gr : X → T) : N.idMorphism ∈ homogeneousMatrices Ag gr gr 1 := by
-  intro x y
+  refine mem_homogeneousMatrices_iff.mpr fun x y ↦ ?_
   rw [idMorphism_apply]
   split_ifs with h
   · subst h
@@ -215,8 +160,8 @@ theorem continuationMap_mem_boxGradedPart [Fintype X]
   refine Submodule.iSup_induction _ (motive := fun m ↦ op (F x x') • m ∈ _) (hφ x) ?_
     (by rw [smul_zero]; exact zero_mem _) fun m m' hm hm' ↦ by rw [smul_add]; exact add_mem hm hm'
   rintro ⟨s, hs⟩ m hm
-  refine Submodule.iSup_induction _ (motive := fun a ↦ op a • m ∈ _) (hF x x') ?_
-    (by rw [op_zero, zero_smul]; exact zero_mem _)
+  refine Submodule.iSup_induction _ (motive := fun a ↦ op a • m ∈ _)
+    (mem_homogeneousMatrices_iff.mp hF x x') ?_ (by rw [op_zero, zero_smul]; exact zero_mem _)
     fun a a' ha ha' ↦ by rw [op_add, add_smul]; exact add_mem ha ha'
   rintro ⟨g, hg⟩ a ha
   refine Submodule.mem_iSup_of_mem ⟨g⁻¹ • s, ?_⟩ (hM hm ha)
