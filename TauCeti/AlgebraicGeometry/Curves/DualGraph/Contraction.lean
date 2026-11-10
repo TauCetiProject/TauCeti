@@ -249,20 +249,20 @@ lemma exists_bridgeNeighbor_eq {u v : G.Vertex} (hu : G.valence u = 2)
   refine ⟨l, ?_⟩
   rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hl, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2]
 
-/-- A vertex of valence one is at most one of the two neighbours of a loopless vertex of valence
-two. -/
-lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2)
-    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (hv : G.valence v = 1) {k : Fin 2}
-    (hk : G.bridgeNeighbor hu k = v) : G.bridgeNeighbor hu k.rev ≠ v := by
+/-- A vertex of valence one is at most one of the two neighbours of a vertex of valence two. -/
+lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2) (hv : G.valence v = 1)
+    {k : Fin 2} (hk : G.bridgeNeighbor hu k = v) : G.bridgeNeighbor hu k.rev ≠ v := by
   intro hk'
   rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk hk'
-  have := congrArg Prod.fst (eq_of_valence_eq_one hv
+  have := eq_of_valence_eq_one hv
     ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)
-    ((G.halfEdgeOfValenceEqTwo hu k.rev).1.1, (G.halfEdgeOfValenceEqTwo hu k.rev).1.2.rev) hk hk')
-  have hne := halfEdgeOfValenceEqTwo_fst_ne hu hloop
+    ((G.halfEdgeOfValenceEqTwo hu k.rev).1.1, (G.halfEdgeOfValenceEqTwo hu k.rev).1.2.rev) hk hk'
+  obtain ⟨h₁, h₂⟩ := Prod.ext_iff.mp this
+  have h : (G.halfEdgeOfValenceEqTwo hu k).1 = (G.halfEdgeOfValenceEqTwo hu k.rev).1 :=
+    Prod.ext h₁ (Fin.rev_injective h₂)
   fin_cases k
-  · exact hne this
-  · exact hne this.symm
+  · exact halfEdgeOfValenceEqTwo_zero_ne_one hu h
+  · exact halfEdgeOfValenceEqTwo_zero_ne_one hu h.symm
 
 /-! ### Edges and half-edges away from a vertex -/
 
@@ -411,23 +411,29 @@ lemma map_val_ends_contractTail (e : (G.contractTail hv).Edge) :
     ((G.contractTail hv).ends e).map Subtype.val = G.ends e.1 := by
   rw [ends_def, ends_def, Sym2.map_mk]
 
-/-- After contracting a tail `v`, a vertex of valence one whose node avoids `v` keeps its
-attachment. -/
+/-- After contracting a tail `v`, a vertex of valence one that survives keeps its attachment. -/
 lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
-    (hatt : G.attachment hu ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 1) :
+    (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 1) :
     ((G.contractTail hv).attachment hu' : G.Vertex) = G.attachment hu := by
-  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
-  rw [← endpoint_rev_eq_attachment hu'
-    (e := ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
-    ← endpoint_rev_eq_attachment hu he]
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G.contractTail hv)
+    (by omega : 0 < (G.contractTail hv).valence ⟨u, huv⟩)
+  rw [← endpoint_rev_eq_attachment hu' he,
+    ← endpoint_rev_eq_attachment hu (congrArg Subtype.val he)]
 
-/-- After contracting a tail `v`, a vertex of valence two whose neighbours differ from `v` keeps
-its neighbours. -/
+/-- After contracting a tail `v`, a vertex of valence two that survives keeps its neighbours. -/
 lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
-    (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
+    (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
     s(((G.contractTail hv).bridgeNeighbor hu' 0 : G.Vertex),
         ((G.contractTail hv).bridgeNeighbor hu' 1 : G.Vertex)) =
       s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
+  have hnb (k : Fin 2) : G.bridgeNeighbor hu k ≠ v := by
+    intro hk
+    rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
+    have := endpoint_rev_eq_attachment hv hk
+    rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2] at this
+    have h := valence_contractTail hv u huv
+    rw [ite_eq_left this.symm, hu', hu] at h
+    omega
   have := congrArg (Sym2.map Subtype.val) ((G.contractTail hv).sym2_bridgeNeighbor_eq hu'
     (h := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
       (G.halfEdgeOfValenceEqTwo hu 0).1.2))
