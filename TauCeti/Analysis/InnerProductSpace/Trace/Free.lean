@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
@@ -73,16 +74,6 @@ theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (tr
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
 
-/-- The trace of an endomorphism of a module that is not finitely generated is zero, by the
-junk-value convention of `LinearMap.trace`. -/
-theorem trace_eq_zero_of_not_finite {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    (h : ¬Module.Finite R M) (f : M →ₗ[R] M) : trace R M f = 0 := by
-  classical
-  have H : ¬∃ s : Finset M, Nonempty (Module.Basis s R M) := by
-    rintro ⟨s, ⟨b⟩⟩
-    exact h (Module.Finite.of_basis b)
-  rw [trace, dite_eq_right H, LinearMap.zero_apply]
-
 /-- A skew-adjoint endomorphism of a real inner product space, one with
 `⟪A u, w⟫ = -⟪u, A w⟫`, has trace zero. -/
 theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
@@ -95,7 +86,7 @@ theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
     have h := hA (b i) (b i)
     rw [real_inner_comm] at h
     linarith
-  · exact trace_eq_zero_of_not_finite hV A
+  · exact DFunLike.congr_fun (TauCeti.LinearMap.trace_eq_zero_of_not_finite hV) A
 
 end LinearMap
 
@@ -183,7 +174,7 @@ theorem trace_traceFreePart (T : E →L[𝕜] E) :
     LinearMap.trace 𝕜 E (traceFreePart 𝕜 E T) = 0 := by
   by_cases hE : Module.Finite 𝕜 E
   swap
-  · exact LinearMap.trace_eq_zero_of_not_finite hE _
+  · exact DFunLike.congr_fun (LinearMap.trace_eq_zero_of_not_finite hE) _
   rcases eq_or_ne (finrank 𝕜 E) 0 with h | h
   · have : Subsingleton E := Module.finrank_zero_iff.mp h
     simp [Subsingleton.elim (traceFreePart 𝕜 E T) 0]
@@ -264,17 +255,14 @@ theorem not_finite_traceFreeSelfAdjoint (hE : ¬Module.Finite ℂ E) :
   intro hfin
   have hS : traceFreeSelfAdjoint E = selfAdjoint.submodule ℝ (E →L[ℂ] E) := by
     ext T
-    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, LinearMap.trace_eq_zero_of_not_finite hE _⟩⟩
+    exact ⟨fun h ↦ h.1,
+      fun h ↦ ⟨h, DFunLike.congr_fun (LinearMap.trace_eq_zero_of_not_finite hE) _⟩⟩
   rw [hS] at hfin
   have : Module.Finite ℝ (selfAdjoint (E →L[ℂ] E)) := hfin
   have hA : Module.Finite ℝ (E →L[ℂ] E) :=
     Module.Finite.of_injective
       ((_root_.realPart : (E →L[ℂ] E) →ₗ[ℝ] selfAdjoint (E →L[ℂ] E)).prod _root_.imaginaryPart)
-      fun x y h ↦ by
-        have h₁ : _root_.realPart x = _root_.realPart y := congrArg Prod.fst h
-        have h₂ : _root_.imaginaryPart x = _root_.imaginaryPart y := congrArg Prod.snd h
-        rw [← _root_.realPart_add_I_smul_imaginaryPart x,
-          ← _root_.realPart_add_I_smul_imaginaryPart y, h₁, h₂]
+      fun _ _ h ↦ ComplexStarModule.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
   have hA' : Module.Finite ℂ (E →L[ℂ] E) := Module.Finite.of_restrictScalars_finite ℝ ℂ _
   have : Nontrivial E := by
     by_contra h
