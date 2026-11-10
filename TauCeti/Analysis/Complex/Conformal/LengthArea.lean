@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Complex.Conformal.Area
 public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
+public import TauCeti.MeasureTheory.Integral.Lebesgue.MeasurableHull
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
@@ -181,17 +182,6 @@ private theorem measurable_indicator_toMeasurable_enorm_deriv (f : ℂ → ℂ) 
     Measurable ((toMeasurable volume s).indicator fun z => ‖deriv f z‖ₑ) :=
   (measurable_deriv f).enorm.indicator (measurableSet_toMeasurable volume s)
 
-/-- The plane integral of the square of the length density of `f` cut off outside a measurable hull
-of `s` is the Dirichlet integral of `f` over `s`: the indicator commutes with squaring, and the
-hull has the same Dirichlet integral. -/
-private theorem lintegral_indicator_toMeasurable_enorm_deriv_sq (f : ℂ → ℂ) (s : Set ℂ) :
-    ∫⁻ z, (toMeasurable volume s).indicator (fun z => ‖deriv f z‖ₑ) z ^ 2 =
-      ∫⁻ z in s, ‖deriv f z‖ₑ ^ 2 := by
-  rw [← Measure.restrict_toMeasurable_of_sfinite s,
-    ← lintegral_indicator (measurableSet_toMeasurable volume s)]
-  refine lintegral_congr fun z => ?_
-  by_cases hz : z ∈ toMeasurable volume s <;> simp [hz]
-
 /-- **The length–area inequality.** The integral of `ℓ ρ ^ 2 / ρ` over all radii, where `ℓ ρ` is
 `TauCeti.circleImageLength f s ζ ρ` — the derivative-weighted angular integral over the part inside
 `s` of the circle of radius `ρ` about `ζ`, an arc length counted with multiplicity when `f` is
@@ -212,7 +202,7 @@ theorem lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq (f : ℂ 
           exact circleImageLength_mono f ζ ρ (subset_toMeasurable volume s)
     _ ≤ ENNReal.ofReal (2 * π) * ∫⁻ z in s, ‖deriv f z‖ₑ ^ 2 := by
         simp only [circleImageLength_def]
-        rw [← lintegral_indicator_toMeasurable_enorm_deriv_sq f s]
+        rw [← lintegral_indicator_toMeasurable_pow volume (fun z => ‖deriv f z‖ₑ) s two_ne_zero]
         exact lintegral_circleLIntegral_sq_div_le_lintegral_sq
           (measurable_indicator_toMeasurable_enorm_deriv f s) ζ
 
@@ -244,7 +234,7 @@ theorem exists_circleImageLength_sq_lt (f : ℂ → ℂ) (ζ : ℂ) {r R : ℝ}
     simp only [circleImageLength_def]
     refine exists_circleLIntegral_sq_lt (measurable_indicator_toMeasurable_enorm_deriv f s) ζ hr
       hrR ?_
-    rwa [lintegral_indicator_toMeasurable_enorm_deriv_sq f s]
+    rwa [lintegral_indicator_toMeasurable_pow volume (fun z => ‖deriv f z‖ₑ) s two_ne_zero]
   refine ⟨ρ, hρ, lt_of_le_of_lt ?_ h⟩
   gcongr
   exact circleImageLength_mono f ζ ρ (subset_toMeasurable volume s)
@@ -281,7 +271,7 @@ theorem exists_circleImageLength_lt_of_lintegral_ne_top (f : ℂ → ℂ) (ζ : 
     simp only [circleImageLength_def]
     refine exists_circleLIntegral_lt_of_lintegral_sq_ne_top
       (measurable_indicator_toMeasurable_enorm_deriv f s) ?_ ζ hc hR
-    rwa [lintegral_indicator_toMeasurable_enorm_deriv_sq f s]
+    rwa [lintegral_indicator_toMeasurable_pow volume (fun z => ‖deriv f z‖ₑ) s two_ne_zero]
   exact ⟨ρ, hρ, (circleImageLength_mono f ζ ρ (subset_toMeasurable volume s)).trans_lt h⟩
 
 /-- **The circles about any point have lower limit `0` in length.** The sharp form of
@@ -301,7 +291,7 @@ theorem liminf_circleImageLength_nhdsGT_eq_zero (f : ℂ → ℂ) (ζ : ℂ)
         simp only [circleImageLength_def]
         refine liminf_circleLIntegral_nhdsGT_eq_zero
           (measurable_indicator_toMeasurable_enorm_deriv f s) ?_ ζ
-        rwa [lintegral_indicator_toMeasurable_enorm_deriv_sq f s]
+        rwa [lintegral_indicator_toMeasurable_pow volume (fun z => ‖deriv f z‖ₑ) s two_ne_zero]
 
 /-! ### The chord bound -/
 
