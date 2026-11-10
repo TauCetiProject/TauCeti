@@ -82,7 +82,6 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le {n
     finite_cellularChainComplex_X C M i).trans_eq ?_
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
   rw [finrank_cellularChainComplex_X]
   push_cast
   ring
@@ -110,7 +109,6 @@ theorem sum_range_monomial_natCard_cell_mul_finrank_eq {n : ℕ}
       finite_cellularChainComplex_X C M i)
     (hX.eq_of_src _ 0)]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
   rw [finrank_cellularChainComplex_X]
 
 end Relative

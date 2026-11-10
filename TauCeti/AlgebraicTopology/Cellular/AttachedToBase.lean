@@ -76,12 +76,11 @@ theorem nonempty_singularHomology_complexBasePair_iso_sigma
     eqToIso (cellularChainComplex_X C R n) ≪≫ cellularChainGroupIso C R n⟩
 
 /-- **The relative homology of a complex attached along its base is free on its cells.** If the
-boundary sphere of every cell of the relative CW complex `(C, D)` lies in `D`, and there are
-finitely many `n`-cells, then `Hₙ(C, D; M)` has dimension the number of `n`-cells times `dim M`,
-for a finite-dimensional module `M` over a division ring. -/
+boundary sphere of every cell of the relative CW complex `(C, D)` lies in `D`, then `Hₙ(C, D; M)`
+has dimension the number of `n`-cells times `dim M`, for a module `M` over a division ring. -/
 theorem finrank_singularHomology_complexBasePair_of_cellFrontier_subset {k : Type w}
-    [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
-    (h : ∀ m (j : cell C m), cellFrontier m j ⊆ D) (n : ℕ) [Finite (cell C n)] :
+    [DivisionRing k] (M : ModuleCat.{w} k)
+    (h : ∀ m (j : cell C m), cellFrontier m j ⊆ D) (n : ℕ) :
     finrank k ((complexBasePair C).singularHomology M n : ModuleCat k) =
       Nat.card (cell C n) * finrank k M := by
   rw [← (cellularSingularHomologyIso C M n).toLinearEquiv.finrank_eq,
