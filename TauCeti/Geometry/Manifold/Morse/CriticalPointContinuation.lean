@@ -98,8 +98,12 @@ private theorem exists_criticalPoint_continuation_self
       manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas he ht hq
     rw [hchart, manifoldMorseIndex_def]
     exact hi
-  have huniq' := eventually_mfderiv_eq_zero_iff_extChartAt_symm (hG.of_le (by norm_num)) htarget
-    huniq
+  -- Near `(p, φ x)` the slices of the `C¹` map `G` in the space variable are differentiable.
+  have hslice : ∀ᶠ q in 𝓝 (p, φ x),
+      DifferentiableAt ℝ (fun v ↦ F (q.1, φ.symm v)) q.2 :=
+    ((hG.of_le (by norm_num)).eventually (by norm_num)).mono fun q hq ↦
+      (hq.comp q.2 (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
+  have huniq' := eventually_mfderiv_eq_zero_iff_extChartAt_symm hslice htarget huniq
   refine ⟨ψ, hψp, hψ, hnd', hindex', huniq', hval, ?_⟩
   simpa only [G, hηp, φ.left_inv hx] using hderiv
 

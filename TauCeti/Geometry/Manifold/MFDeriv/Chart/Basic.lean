@@ -31,10 +31,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
-* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: preferred-chart invariance of
-  manifold differentiability.
-* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
-  manifold derivatives when the source atlas changes.
+* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: invariance of manifold
+  differentiability at a point under changes of the atlas that keep the preferred chart there.
+* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred chart at a point preserves
+  the manifold derivative there when the source atlas changes.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
@@ -44,8 +44,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
-* `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
-  of a `C¹` family in the extended chart at `x` transfers to the manifold.
+* `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: a local description of the critical
+  points of a family, in the extended chart at `x`, transfers to the manifold.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
@@ -103,8 +103,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   image.
 * `MDifferentiableAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
   derivative with the canonical source tangent identification.
-* `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
-  unique derivatives, the derivative of the inverse chart is its derivative within the model range.
+* `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: at a point of a subset of the chart target
+  with unique derivatives there, the derivative of the inverse chart within the subset is its
+  derivative within the model range.
 * `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt` and
   `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
   transport differentiability near a point between a product of manifolds and model spaces
@@ -146,19 +147,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 namespace TauCeti.Manifold
 
 omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
-/-- Preferred charts determine manifold differentiability independently of the rest of the atlas. -/
-theorem mdifferentiableAt_iff_of_chartAt_eq {c c' : ChartedSpace H M}
-    (h : c.chartAt = c'.chartAt) (f : M → M') (x : M) :
+/-- The preferred chart at a point determines manifold differentiability there independently of the
+rest of the atlas. -/
+theorem mdifferentiableAt_iff_of_chartAt_eq {c c' : ChartedSpace H M} {x : M}
+    (h : c.chartAt x = c'.chartAt x) (f : M → M') :
     (letI := c; MDifferentiableAt I I' f x) ↔ (letI := c'; MDifferentiableAt I I' f x) := by
   simp only [mdifferentiableAt_iff, writtenInExtChartAt, extChartAt, chartAt, h]
 
 omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
-/-- Changing the source atlas while retaining its preferred charts preserves manifold derivatives
-for maps to any charted target. -/
-theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
-    (f : M → M') (x : M) :
+/-- Changing the source atlas while retaining its preferred chart at a point preserves the manifold
+derivative there for maps to any charted target. -/
+theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} {x : M}
+    (h : c.chartAt x = c'.chartAt x) (f : M → M') :
     (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
-  have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
+  have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f
   -- Select c as the local atlas for the source-side derivative formula.
   let _ : ChartedSpace H M := c
   by_cases hf : (letI := c; MDifferentiableAt I I' f x)
@@ -257,13 +259,16 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · exact DFunLike.congr_fun h (L w)
 
 open Filter in
-/-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
-of a `C¹` family is, near `(p, extChartAt I x x)`, uniquely `η q.1`, then the zero of the manifold
-derivative of `fun y ↦ f (q.1, y)` near `(p, x)` is uniquely `(extChartAt I x).symm (η q.1)`. -/
-theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace 𝕜 P] {f : P × M → F} {p : P} {x : M} {η : P → E}
-    (hG : ContDiffAt 𝕜 1 (fun q : P × E ↦ f (q.1, (extChartAt I x).symm q.2))
-      (p, extChartAt I x x))
+/-- Transfer of a local description of the critical points from a chart to the manifold. Suppose
+the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)` is differentiable at `q.2`
+and, near `(p, extChartAt I x x)`, has zero derivative at `q.2` exactly when `η q.1 = q.2`, where
+`η q` lies in the chart target for `q` near `p`. Then near `(p, x)` the manifold derivative of
+`fun y ↦ f (q.1, y)` at `q.2` vanishes exactly when `(extChartAt I x).symm (η q.1) = q.2`. No
+critical point is asserted to exist. -/
+theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [TopologicalSpace P]
+    {f : P × M → F} {p : P} {x : M} {η : P → E}
+    (hG : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
+      DifferentiableAt 𝕜 (fun v ↦ f (q.1, (extChartAt I x).symm v)) q.2)
     (htarget : ∀ᶠ q in 𝓝 p, η q ∈ (extChartAt I x).target)
     (huniq : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
       fderiv 𝕜 (fun v ↦ f (q.1, (extChartAt I x).symm v)) q.2 = 0 ↔ η q.1 = q.2) :
@@ -272,13 +277,11 @@ theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [NormedAddCom
   let φ := extChartAt I x
   have hmap : ContinuousAt (fun q : P × M ↦ (q.1, φ q.2)) (p, x) :=
     continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x).comp continuousAt_snd)
-  have hGnear := hmap.eventually (hG.eventually (by norm_num))
   have hsnear : ∀ᶠ q : P × M in 𝓝 (p, x), q.2 ∈ φ.source :=
     continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds x)
-  filter_upwards [hmap.eventually huniq, hGnear, hsnear,
+  filter_upwards [hmap.eventually huniq, hmap.eventually hG, hsnear,
     continuousAt_fst.preimage_mem_nhds htarget] with q hu hg hs ht
-  have hslice : DifferentiableAt 𝕜 ((fun y ↦ f (q.1, y)) ∘ φ.symm) (φ q.2) :=
-    (hg.comp (φ q.2) (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
+  have hslice : DifferentiableAt 𝕜 ((fun y ↦ f (q.1, y)) ∘ φ.symm) (φ q.2) := hg
   rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
   exact hu.trans (φ.symm_apply_eq hs ht).symm
 
@@ -623,14 +626,14 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
 
 end ChartOverlap
 
-/-- On a subset of the chart target with unique derivatives, the derivative of the inverse chart
-within the subset is its derivative within the model range. -/
+/-- At a point of a subset of the chart target at which the subset has unique derivatives, the
+derivative of the inverse chart within the subset is its derivative within the model range. -/
 theorem mfderivWithin_extChartAt_symm_of_subset (x₀ : M) {s : Set E}
-    (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn 𝕜 s) {y : E} (hy : y ∈ s) :
+    (hs : s ⊆ (extChartAt I x₀).target) {y : E} (hy : y ∈ s) (hu : UniqueDiffWithinAt 𝕜 s y) :
     mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm s y =
       mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) y :=
   mfderivWithin_subset (fun _ hz ↦ extChartAt_target_subset_range x₀ (hs hz))
-    (hsu y hy).uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm (hs hy))
+    hu.uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm (hs hy))
 
 end TauCeti
 

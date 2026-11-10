@@ -116,7 +116,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
     let : ChartedSpace H M := enlarged
     have : IsManifold I 1 M := enlargedManifold
     exact (Manifold.mfderiv_eq_of_chartAt_eq (I := I)
-      (c := cM) (c' := enlarged) rfl e x).trans
+      (c := cM) (c' := enlarged) rfl e).trans
       (Manifold.mfderiv_atlas_eq_continuousLinearMapAt (I := I) j hxj)
   have hlin : L.toLinearEquiv = (Z.localTriv j).linearEquivAt ℝ x hxj := by
     ext v

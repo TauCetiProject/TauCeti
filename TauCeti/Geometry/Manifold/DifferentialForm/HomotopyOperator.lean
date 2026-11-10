@@ -291,7 +291,7 @@ private theorem continuousAlternatingMapCongrLeft_homotopyIntegrand [IsManifold 
           (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
   rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
     ContinuousLinearEquiv.symm_symm, hD, curryLeft_mpullbackWithin_cylinder x₀ hs hsu ψ hy ht]
-  exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hy).symm
+  exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hy (hsu y hy)).symm
 
 /-- In the chart at `x₀`, the homotopy operator is the flat cylinder homotopy operator of the
 pullback of the form to the flat cylinder over `s`. -/
@@ -359,7 +359,7 @@ private theorem compContinuousLinearMap_inl_mpullbackWithin_cylinder [IsManifold
       mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, t)) φ x₀ := by
   have hD : mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm s (extChartAt I x₀ x₀) =
       ContinuousLinearMap.id ℝ E :=
-    (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hx).trans
+    (mfderivWithin_extChartAt_symm_of_subset x₀ hs hx (hsu _ hx)).trans
       (mfderivWithin_range_extChartAt_symm (I := I) (x := x₀))
   have hpt : cylinderChart I x₀ (extChartAt I x₀ x₀, (t : ℝ)) = (x₀, t) := by
     rw [cylinderChart_apply, extChartAt_to_inv, projIcc_val]
