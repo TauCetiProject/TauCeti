@@ -217,14 +217,20 @@ carried by the extreme — equivalently i.i.d. — exchangeable laws
 (`infinitePi_mem_extremePoints_exchangeable`), degenerating exactly on the extreme points
 themselves. -/
 theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
-    {π : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure π] :
+    {π : Measure (ProbabilityMeasure α)} :
     Measure.deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
-  rw [exchangeable_extreme_iff_iid]
-  refine ⟨fun ⟨P, hP⟩ => ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_⟩,
-    fun ⟨P, hP⟩ => ⟨P, ?_⟩⟩
-  · simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac]
+  refine ⟨fun h => ?_, fun ⟨P, hP⟩ => ?_⟩
+  · have hprob := (mem_exchangeableProbabilityMeasures_iff.1 h.1).2
+    have hπ : IsProbabilityMeasure π := by
+      refine ⟨?_⟩
+      have hmass := Measure.deFinettiBarycenter_apply π MeasurableSet.univ
+      simpa [measure_univ] using hmass.symm
+    obtain ⟨P, hP⟩ := exchangeable_extreme_iff_iid.1 h
+    exact ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq (by
+      simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac])⟩
   · rw [hP, Measure.deFinettiBarycenter_dirac]
+    exact infinitePi_mem_extremePoints_exchangeable P
 
 end Probability
 

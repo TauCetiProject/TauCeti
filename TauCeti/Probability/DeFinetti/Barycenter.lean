@@ -49,19 +49,16 @@ variable {α : Type*} [MeasurableSpace α]
 /-- **A barycenter is an exchangeable path law.** Drawing `P` from `π` and then an i.i.d.
 `P`-sequence produces a law invariant under every permutation of the time coordinate.
 
-The witness is the canonical conditionally i.i.d. construction `iidMixtureLaw π id`, whose
-coordinate process is exchangeable and whose path law is this barycenter. -/
-theorem exchangeableLaw_deFinettiBarycenter {π : Measure (ProbabilityMeasure α)}
-    [IsProbabilityMeasure π] : ExchangeableLaw (Measure.deFinettiBarycenter π) := by
-  have := isProbabilityMeasure_iidMixtureLaw (π := π) (P := id) measurable_id
-  have hX := exchangeable_iidMixtureLaw (π := π) (P := id) measurable_id
-  have hcoord : ∀ n, AEMeasurable
-      (fun ω : ProbabilityMeasure α × (ℕ → α) => ω.2 n) (iidMixtureLaw π id) :=
-    fun n => ((measurable_pi_apply n).comp measurable_snd).aemeasurable
-  have hlaw := (exchangeable_iff_exchangeableLaw_pathLaw
-    (X := fun n (ω : ProbabilityMeasure α × (ℕ → α)) => ω.2 n) hcoord).mp hX
-  rw [pathLaw_iidMixtureLaw (π := π) (P := id) measurable_id] at hlaw
-  simpa [Measure.deFinettiBarycenter_def] using hlaw
+Each countable power `P^{⊗ℕ}` is exchangeable, and pushing the mixture forward by a time
+permutation pushes each of its components forward. -/
+theorem exchangeableLaw_deFinettiBarycenter {π : Measure (ProbabilityMeasure α)} :
+    ExchangeableLaw (Measure.deFinettiBarycenter π) := by
+  refine ExchangeableLaw.intro fun σ => ?_
+  have hσ : Measurable (permReindex (α := α) σ) := measurable_reindex σ
+  rw [Measure.deFinettiBarycenter_def, Measure.map_bind
+    TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable hσ.aemeasurable]
+  exact congrArg (Measure.bind π)
+    (funext fun P => (exchangeableLaw_infinitePi_const P).map_permReindex σ)
 
 /-- **The mixing law of an exchangeable path law.** Over a standard Borel state space, an
 exchangeable probability measure on `ℕ → α` is the de Finetti barycenter of exactly one mixing

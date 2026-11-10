@@ -186,13 +186,19 @@ theorem mixedIIDWith_of_iCondIndepFun_tailProcess
 `mixedIIDWith_of_iCondIndepFun_tailProcess`: under the same tail conditional-independence
 hypothesis, a contractable process is `MixedIID`. -/
 theorem mixedIID_of_iCondIndepFun_tailProcess
-    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    [StandardBorelSpace Ω] [StandardBorelSpace α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     (hCI : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
       iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
         (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
-    MixedIID μ X :=
-  MixedIID.of_mixingRepresentative
+    MixedIID μ X := by
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · -- On an empty sample space the measure is zero and every identity is between zero measures.
+    refine MixedIID.of_mixingRepresentative (ν := fun ω => isEmptyElim ω)
+      (.intro (fun n => (hX_meas n).aemeasurable) Subsingleton.measurable fun m k _ => ?_)
+    simp [Measure.eq_zero_of_isEmpty μ]
+  have : Nonempty α := ⟨X 0 ω⟩
+  exact MixedIID.of_mixingRepresentative
     (mixedIIDWith_of_iCondIndepFun_tailProcess hX hX_meas hCI)
 
 /-- **Prefix block factorization at the directing measure.** For a contractable process, the
@@ -287,9 +293,15 @@ valued in a standard Borel space, on an arbitrary measurable sample space, is mi
 sharper `conditionallyIID_of_contractable`, which concludes the joint-law disintegration rather than
 only the mixture identity, is in `TauCeti.Probability.DeFinetti.Theorem`. -/
 theorem mixedIID_of_contractable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-    [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    [StandardBorelSpace α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     MixedIID μ X := by
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · -- On an empty sample space the measure is zero and every identity is between zero measures.
+    refine MixedIID.of_mixingRepresentative (ν := fun ω => isEmptyElim ω)
+      (.intro (fun n => (hX_meas n).aemeasurable) Subsingleton.measurable fun m k _ => ?_)
+    simp [Measure.eq_zero_of_isEmpty μ]
+  have : Nonempty α := ⟨X 0 ω⟩
   refine mixedIID_of_mixedIID_pathLaw hX_meas ?_
   have : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_def]; infer_instance
   exact mixedIID_of_contractable_standardBorelOmega
@@ -298,7 +310,7 @@ theorem mixedIID_of_contractable {Ω α : Type*} [MeasurableSpace Ω] [Measurabl
 /-- **de Finetti's theorem, mixture form: exchangeable ⇒ mixed i.i.d.** An exchangeable process
 valued in a standard Borel space, on an arbitrary measurable sample space, is mixed i.i.d. -/
 theorem mixedIID_of_exchangeable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-    [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    [StandardBorelSpace α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Exchangeable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     MixedIID μ X :=
   mixedIID_of_contractable
