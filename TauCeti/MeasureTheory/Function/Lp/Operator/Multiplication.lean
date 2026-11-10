@@ -213,6 +213,23 @@ theorem smulLp_const (c : 𝕜) :
   filter_upwards [coeFn_smulLp hp (const X c) f, Lp.coeFn_smul c f] with x h₁ h₂
   simp only [h₁, h₂, const_apply, Pi.smul_apply]
 
+@[simp]
+theorem smulLp_zero : (0 : X →ᵇ 𝕜).smulLp μ p hp = (0 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (0 : X →ᵇ 𝕜) f,
+    Lp.coeFn_zero E p μ] with x h₁ h₂
+  simp only [h₁, h₂, zero_apply, Pi.zero_apply, zero_smul]
+
+/-- Multiplication by the constant function `1` is the identity operator. -/
+@[simp]
+theorem smulLp_one : (1 : X →ᵇ 𝕜).smulLp μ p hp = (1 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  ext1 f
+  rw [one_apply_eq_self]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (1 : X →ᵇ 𝕜) f] with x h
+  simp only [h, FunLike.coe_one, Pi.one_apply, one_smul]
+
 /-- Multiplication operators by scalar functions compose by multiplying the functions. -/
 @[simp]
 theorem smulLp_mul (φ ψ : X →ᵇ 𝕜) :

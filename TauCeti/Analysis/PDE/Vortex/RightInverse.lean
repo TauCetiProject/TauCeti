@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The weak right inverse of the gauge-fixed operator at a plane vortex
@@ -33,6 +34,13 @@ solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kerne
 `L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
 gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
 bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+
+The compactly supported `C²` test fields (`TauCeti.Vortex.TestField`) embed in `L²`
+(`TauCeti.Vortex.testFieldToLp`), and `L_x*` restricts to a linear map from them into `L²`
+(`TauCeti.Vortex.gaugeFixedAdjointToLp`). The weak kernel of `L_x` is the orthogonal complement of
+the range of this map (`TauCeti.Vortex.mem_orthogonal_range_gaugeFixedAdjointToLp_iff`), and an
+integral lower bound for `L_x*` is a lower bound for it in `L²`
+(`TauCeti.Vortex.sqrt_mul_norm_testFieldToLp_le`).
 
 These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
 property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
@@ -61,18 +69,25 @@ open scoped RealInnerProductSpace Topology
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The compactly supported `C²` test fields. -/
-private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
+/-! ### Test fields in `L²` -/
 
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
+/-- The compactly supported `C²` test fields `ℂ → ℝ⁴`. -/
+abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
+
+/-- A test field is square-integrable. -/
+theorem memLp_testField (η : TestField) : MemLp η 2 μ :=
+  η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport
+
+/-- The formal adjoint `L_x*` of a test field is square-integrable. -/
+theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
     MemLp (gaugeFixedAdjoint x η) 2 μ :=
   (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
     (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
 
+variable (μ) in
 /-- The inclusion of the test fields into `L²`. -/
-private noncomputable def testFieldToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure] :
-    TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport).toLp η
+noncomputable def testFieldToLp : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
+  toFun η := (memLp_testField η).toLp η
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_add η ν))
@@ -80,9 +95,10 @@ private noncomputable def testFieldToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_smul t η))
 
+variable (μ) in
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
-private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
-    (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
+noncomputable def gaugeFixedAdjointToLp (hx : Continuous x) :
+    TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
   toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
@@ -95,6 +111,63 @@ private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaar
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
     rw [FunLike.coe_smul, Pi.smul_apply]
     exact gaugeFixedAdjoint_smul x η t z
+
+/-- The inclusion of a test field into `L²` is its class. -/
+theorem coeFn_testFieldToLp (η : TestField) : testFieldToLp μ η =ᵐ[μ] η :=
+  (memLp_testField η).coeFn_toLp
+
+/-- The class of `L_x* η` in `L²` agrees almost everywhere with `L_x* η`. -/
+theorem coeFn_gaugeFixedAdjointToLp (hx : Continuous x) (η : TestField) :
+    gaugeFixedAdjointToLp μ hx η =ᵐ[μ] gaugeFixedAdjoint x η :=
+  (memLp_gaugeFixedAdjoint hx η).coeFn_toLp
+
+/-- The `L²` pairing with a test field is the integral of the pointwise pairing. -/
+theorem inner_testFieldToLp (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
+    ⟪u, testFieldToLp μ η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
+  L2.inner_toLp u (memLp_testField η)
+
+/-- The `L²` pairing with `L_x* η` is the integral of the pointwise pairing. -/
+theorem inner_gaugeFixedAdjointToLp (hx : Continuous x) (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
+    (η : TestField) :
+    ⟪u, gaugeFixedAdjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
+  L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+
+/-- The squared `L²` norm of a test field is the integral of its squared pointwise norm. -/
+theorem norm_sq_testFieldToLp (η : TestField) :
+    ‖testFieldToLp μ η‖ ^ 2 = ∫ z, ‖η z‖ ^ 2 ∂μ := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact integral_congr_ae ((coeFn_testFieldToLp η).mono fun z hz ↦ by simp only [hz])
+
+/-- The squared `L²` norm of `L_x* η` is the integral of its squared pointwise norm. -/
+theorem norm_sq_gaugeFixedAdjointToLp (hx : Continuous x) (η : TestField) :
+    ‖gaugeFixedAdjointToLp μ hx η‖ ^ 2 = ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact integral_congr_ae ((coeFn_gaugeFixedAdjointToLp hx η).mono fun z hz ↦ by simp only [hz])
+
+/-- The weak kernel of `L_x`, the fields `u ∈ L²` with `∫ ⟪u, L_x* η⟫ = 0` for every compactly
+supported `C²` field `η`, is the orthogonal complement of the range of `L_x*` on test fields. -/
+theorem mem_orthogonal_range_gaugeFixedAdjointToLp_iff (hx : Continuous x)
+    (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
+    u ∈ (LinearMap.range (gaugeFixedAdjointToLp μ hx))ᗮ ↔
+      ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+  rw [Submodule.mem_orthogonal]
+  refine ⟨fun hu η hη hηc ↦ ?_, fun hu ↦ ?_⟩
+  · have h := hu _ ⟨⟨η, hη, hηc, by simp⟩, rfl⟩
+    rwa [real_inner_comm, inner_gaugeFixedAdjointToLp] at h
+  · rintro _ ⟨η, rfl⟩
+    rw [real_inner_comm, inner_gaugeFixedAdjointToLp]
+    exact hu η η.contDiff η.hasCompactSupport
+
+/-- A lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²` on test fields is the lower bound
+`√c ‖η‖ ≤ ‖L_x* η‖` in `L²`. -/
+theorem sqrt_mul_norm_testFieldToLp_le (hx : Continuous x) {c : ℝ} (hc : 0 ≤ c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) (η : TestField) :
+    √c * ‖testFieldToLp μ η‖ ≤ ‖gaugeFixedAdjointToLp μ hx η‖ := by
+  refine le_of_sq_le_sq ?_ (norm_nonneg _)
+  rw [mul_pow, Real.sq_sqrt hc, norm_sq_testFieldToLp, norm_sq_gaugeFixedAdjointToLp]
+  exact hgap η η.contDiff η.hasCompactSupport
 
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
@@ -117,40 +190,16 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
         (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
           ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
         ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
-  set S := gaugeFixedAdjointToLp μ hx
-  set ι := testFieldToLp μ
-  have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
-      ⟪u, S η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
-    L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
-  have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
-      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
-    L2.inner_toLp u (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport)
-  have hnorm {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :
-      ‖hg.toLp g‖ ^ 2 = ∫ z, ‖g z‖ ^ 2 ∂μ := by
-    rw [← real_inner_self_eq_norm_sq, L2.inner_toLp]
-    refine integral_congr_ae ?_
-    filter_upwards [hg.coeFn_toLp] with z hz
-    rw [hz, real_inner_self_eq_norm_sq]
-  -- The gap is the lower bound `√c ‖η‖ ≤ ‖L_x* η‖` in `L²`.
-  have hbound (η : TestField) : √c * ‖ι η‖ ≤ ‖S η‖ := by
-    refine le_of_sq_le_sq ?_ (norm_nonneg _)
-    have hιη : ι η = (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport).toLp η := rfl
-    have hSη : S η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) := rfl
-    rw [mul_pow, Real.sq_sqrt hc.le, hιη, hSη, hnorm, hnorm]
-    exact hgap η η.contDiff η.hasCompactSupport
   obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
-    S ι (Real.sqrt_pos.2 hc) hbound
+    (gaugeFixedAdjointToLp μ hx) (testFieldToLp μ) (Real.sqrt_pos.2 hc)
+    (sqrt_mul_norm_testFieldToLp_le hx hc.le hgap)
   refine ⟨Q, hQn, fun f η hη hηc ↦ ?_, fun f u hu ↦ ?_⟩
   · have h := hQ f ⟨η, hη, hηc, by simp⟩
-    rwa [hS, hι] at h
+    rwa [inner_gaugeFixedAdjointToLp, inner_testFieldToLp] at h
   · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
-    have huK : u ∈ (LinearMap.range S)ᗮ := by
-      rw [Submodule.mem_orthogonal]
-      rintro _ ⟨η, rfl⟩
-      rw [real_inner_comm, hS]
-      exact hu η η.contDiff η.hasCompactSupport
     rw [← L2.inner_def]
-    exact Submodule.inner_left_of_mem_orthogonal huK (hQK f)
+    exact Submodule.inner_left_of_mem_orthogonal
+      ((mem_orthogonal_range_gaugeFixedAdjointToLp_iff hx u).2 hu) (hQK f)
 
 /-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
 equation with `|α| → 1` at infinity. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such

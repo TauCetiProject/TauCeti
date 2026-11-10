@@ -24,9 +24,7 @@ continuous linear maps out of L². On a compact space with a finite measure, the
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), and
-the squared norm of an L² function with values in a real inner product space is the integral of
-its squared pointwise norm (`MeasureTheory.L2.norm_sq_eq_integral_norm_sq`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot.
 Indicators of any countably spanning generating π-system of finite-measure sets have
@@ -120,12 +118,6 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
-
-/-- The squared norm of an L² function is the integral of its squared pointwise norm. -/
-theorem L2.norm_sq_eq_integral_norm_sq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (f : Lp F 2 μ) : ‖f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
-  rw [← real_inner_self_eq_norm_sq, L2.inner_def]
-  simp_rw [real_inner_self_eq_norm_sq]
 
 end MeasureTheory
 
