@@ -154,11 +154,19 @@ theorem existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero (T : 𝓓'(Ω,
   exact ⟨ball x (r / 2), isOpen_ball, mem_ball_self (half_pos hr), T χ, fun φ hφ =>
     apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero μ hT hball hχ hχint hφ⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- Integration against a constant has vanishing directional derivatives. -/
 @[simp]
 theorem lineDerivOp_ofFun_const (μ : Measure E) [μ.IsAddHaarMeasure] (c : F) (v : E) :
     ∂_{v} (ofFun Ω (fun _ ↦ c) μ ⊤) = 0 := by
   ext φ
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In an infinite-dimensional space every test function vanishes.
+    have h0 (χ : 𝓓(Ω, ℝ)) : χ = 0 :=
+      TestFunction.ext <| congrFun <|
+        (χ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ χ.contDiff.continuous).resolve_right hE
+    simp [h0 φ]
   have hd : ∫ x, lineDeriv ℝ φ x v ∂μ = 0 := TestFunction.integral_lineDeriv_eq_zero φ v
   simp [lineDerivOp_apply_apply, ofFun_apply (locallyIntegrableOn_const c), integral_smul_const,
     integral_neg, hd]
