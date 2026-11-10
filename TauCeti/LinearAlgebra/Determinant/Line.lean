@@ -192,20 +192,28 @@ section CommRing
 variable {M' N' M'' N'' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
   [AddCommGroup M''] [Module R M''] [AddCommGroup N''] [Module R N''] {f : M →ₗ[R] N}
 
+/-- The kernel of an injective linear map has rank zero. -/
+theorem finrank_ker_eq_zero_of_injective [Nontrivial R] (hf : Function.Injective f) :
+    finrank R (ker f) = 0 :=
+  have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.mpr (ker_eq_bot.mpr hf)
+  finrank_zero_of_subsingleton
+
+/-- The cokernel of a surjective linear map has rank zero. -/
+theorem finrank_quotient_range_eq_zero_of_surjective [Nontrivial R] (hf : Function.Surjective f) :
+    finrank R (N ⧸ range f) = 0 :=
+  have : Subsingleton (N ⧸ range f) :=
+    Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf)
+  finrank_zero_of_subsingleton
+
 /-- The determinant line of a bijective linear map is `R`. Kernel and cokernel are zero, so their
 determinant lines are spanned by empty exterior products; the isomorphism sends `1 ⊗ φ` to the
 value of `φ` on the empty exterior product of the cokernel
 (`LinearMap.detLineEquivOfBijective_tmul_ιMulti`). -/
 def detLineEquivOfBijective [Nontrivial R] (hf : Function.Bijective f) : f.detLine ≃ₗ[R] R :=
-  have hker : finrank R (ker f) = 0 := by
-    have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.mpr (ker_eq_bot.mpr hf.1)
-    exact finrank_zero_of_subsingleton
-  have hcoker : finrank R (N ⧸ range f) = 0 := by
-    have : Subsingleton (N ⧸ range f) :=
-      Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf.2)
-    exact finrank_zero_of_subsingleton
-  (TensorProduct.congr (TauCeti.detLineEquivOfFinrankEqZero hker)
-      ((TauCeti.detLineEquivOfFinrankEqZero hcoker).symm.dualMap.trans
+  (TensorProduct.congr
+      (TauCeti.detLineEquivOfFinrankEqZero (finrank_ker_eq_zero_of_injective hf.1))
+      ((TauCeti.detLineEquivOfFinrankEqZero
+          (finrank_quotient_range_eq_zero_of_surjective hf.2)).symm.dualMap.trans
         (ringLmapEquivSelf R R R))).trans
     (TensorProduct.lid R R)
 
@@ -286,11 +294,8 @@ theorem detLineEquivOfBijective_detLineCongrKerCoker [Nontrivial R] (hf : Functi
     (hg : Function.Bijective g) (e₁ : ker f ≃ₗ[R] ker g)
     (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) (x : f.detLine) :
     detLineEquivOfBijective hg (detLineCongrKerCoker e₁ e₂ x) = detLineEquivOfBijective hf x := by
-  have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.mpr (ker_eq_bot.mpr hf.1)
-  have hker : finrank R (ker f) = 0 := finrank_zero_of_subsingleton
-  have : Subsingleton (N' ⧸ range g) :=
-    Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hg.2)
-  have hcoker : finrank R (N' ⧸ range g) = 0 := finrank_zero_of_subsingleton
+  have hker := finrank_ker_eq_zero_of_injective hf.1
+  have hcoker := finrank_quotient_range_eq_zero_of_surjective hg.2
   let w : Fin (finrank R (N' ⧸ range g)) → N' ⧸ range g := fun i ↦ (Fin.cast hcoker i).elim0
   induction x using TensorProduct.inductionOn with
   | tmul a φ =>

@@ -119,11 +119,8 @@ trivialization `LinearMap.detLineEquivOfBijective`, which sends the product of t
 products of kernel and cokernel to `1`. -/
 theorem detLineEndEquiv_eq_inv_det_mul (hT : Function.Bijective T) (x : T.detLine) :
     T.detLineEndEquiv x = (LinearMap.det T)⁻¹ * T.detLineEquivOfBijective hT x := by
-  have : Subsingleton (ker T) := Submodule.subsingleton_iff_eq_bot.mpr (ker_eq_bot.mpr hT.1)
-  have hker : finrank K (ker T) = 0 := finrank_zero_of_subsingleton
-  have : Subsingleton (V ⧸ range T) :=
-    Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hT.2)
-  have hcoker : finrank K (V ⧸ range T) = 0 := finrank_zero_of_subsingleton
+  have hker := finrank_ker_eq_zero_of_injective hT.1
+  have hcoker := finrank_quotient_range_eq_zero_of_surjective hT.2
   have hrange : finrank K (range T) = finrank K V := by
     rw [range_eq_top.mpr hT.2, finrank_top]
   let b := Module.finBasis K V

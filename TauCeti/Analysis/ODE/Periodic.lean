@@ -507,6 +507,17 @@ theorem range_twistedLinearOperator_eq_top_iff (hM : Continuous M)
   rw [← Submodule.Quotient.subsingleton_iff, ← Submodule.Quotient.subsingleton_iff,
     (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε).subsingleton_congr]
 
+/-- For `d > 0` and `ε ≠ 0`, `L` is bijective exactly when `ε - Ψ(d)` is. -/
+theorem bijective_twistedLinearOperator_iff (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
+    Function.Bijective (twistedLinearOperator hM hper ε) ↔
+      Function.Bijective ⇑(ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) :=
+  and_congr
+    (LinearMap.ker_eq_bot.symm.trans
+      ((ker_twistedLinearOperator_eq_bot_iff hM hper).trans LinearMap.ker_eq_bot))
+    (LinearMap.range_eq_top.symm.trans
+      ((range_twistedLinearOperator_eq_top_iff hM hper hd hε).trans LinearMap.range_eq_top))
+
 end KernelCokernel
 
 section FiniteDimensional
@@ -568,9 +579,8 @@ theorem bijective_twistedLinearOperator_iff_det_ne_zero (hM : Continuous M)
     (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
     Function.Bijective (twistedLinearOperator hM hper ε) ↔
       LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0 := by
-  rw [Function.Bijective, ← LinearMap.ker_eq_bot, ← LinearMap.range_eq_top,
-    ker_twistedLinearOperator_eq_bot_iff_det_ne_zero,
-    range_twistedLinearOperator_eq_top_iff_det_ne_zero hM hper hd hε, and_self]
+  rw [bijective_twistedLinearOperator_iff hM hper hd hε, ← Module.End.isUnit_iff,
+    LinearMap.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
 
 end FiniteDimensional
 
@@ -619,11 +629,7 @@ theorem detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous M)
         (detLineTwistedLinearOperatorEquiv hM hper hd hε x) =
       (LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)))⁻¹ *
         (twistedLinearOperator hM hper ε).detLineEquivOfBijective hL x := by
-  have hP : Function.Bijective ⇑(ε • (1 : X →ₗ[ℝ] X) - ↑(dysonSeriesLeft M d)) :=
-    ⟨LinearMap.ker_eq_bot.1 ((ker_twistedLinearOperator_eq_bot_iff hM hper).1
-        (LinearMap.ker_eq_bot.2 hL.1)),
-      LinearMap.range_eq_top.1 ((range_twistedLinearOperator_eq_top_iff hM hper hd hε).1
-        (LinearMap.range_eq_top.2 hL.2))⟩
+  have hP := (bijective_twistedLinearOperator_iff hM hper hd hε).1 hL
   rw [LinearMap.detLineEndEquiv_eq_inv_det_mul _ hP, detLineTwistedLinearOperatorEquiv,
     LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP]
 
