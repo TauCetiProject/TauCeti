@@ -189,33 +189,9 @@ theorem genus_formula_of_pow_eq [Algebra.IsSeparable k k'] (hF' : IsFunctionFiel
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       n * (2 * genus k F - 2) + ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
-  have hn : (n : k) ≠ 0 := by
-    intro hnk
-    have hnF : (n : F) = 0 := by
-      rw [← map_natCast (algebraMap k F), hnk, map_zero]
-    have hpos : 0 < n := hfin ▸ Module.finrank_pos
-    -- `X ^ n - C u` is the minimal polynomial of `y`, and its derivative vanishes
-    set f : F[X] := _root_.Polynomial.X ^ n - _root_.Polynomial.C u with hf
-    have hdeg : (minpoly F y).natDegree = n := by
-      rw [← hfin, ← IntermediateField.finrank_top', ← hgen,
-        IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral y)]
-    have hroot : _root_.Polynomial.aeval y f = 0 := by
-      rw [hf, map_sub, _root_.Polynomial.aeval_X_pow, _root_.Polynomial.aeval_C, hy, sub_self]
-    have heq : minpoly F y = f :=
-      (_root_.Polynomial.eq_of_monic_of_dvd_of_natDegree_le
-        (minpoly.monic (Algebra.IsIntegral.isIntegral y))
-        (_root_.Polynomial.monic_X_pow_sub_C u hpos.ne') (minpoly.dvd F y hroot)
-        (by rw [hdeg, _root_.Polynomial.natDegree_X_pow_sub_C])).symm
-    have hcop : IsCoprime f (_root_.Polynomial.derivative f) := by
-      have hsep := Algebra.IsSeparable.isSeparable F y
-      rwa [IsSeparable, heq] at hsep
-    have hd : _root_.Polynomial.derivative f = 0 := by
-      rw [hf, _root_.Polynomial.derivative_sub, _root_.Polynomial.derivative_X_pow,
-        _root_.Polynomial.derivative_C, sub_zero, hnF]
-      simp
-    rw [hd, isCoprime_zero_right, hf, _root_.Polynomial.isUnit_iff_degree_eq_zero,
-      _root_.Polynomial.degree_X_pow_sub_C hpos] at hcop
-    exact hpos.ne' (by exact_mod_cast hcop)
+  have hn : (n : k) ≠ 0 := fun hnk ↦
+    natCast_ne_zero_of_pow_eq_of_finrank_eq hy hgen hfin
+      (by rw [← map_natCast (algebraMap k F), hnk, map_zero])
   have hn0 : (n : ℤ) ≠ 0 := by
     rintro h
     exact hn (by exact_mod_cast congrArg (Int.cast : ℤ → k) h)

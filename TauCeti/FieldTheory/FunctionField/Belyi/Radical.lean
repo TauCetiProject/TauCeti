@@ -15,7 +15,7 @@ import TauCeti.FieldTheory.RatFunc.Transcendental
 /-!
 # Radical algebraic Belyi pairs
 
-Let `F = k(t)(y)` with `y ^ n = u` for a nonzero `u ∈ k(t)`, over a field `k` of characteristic
+Let `F = k(t)(y)` with `y ^ n = u` for `u ∈ k(t)`, over a field `k` of characteristic
 zero. The ramification of a place of `k(t)` in `F` is governed by the order of `u` there: every
 place above `P` has ramification index `n / gcd(n, ord_P u)` (Stichtenoth, Proposition 3.7.3;
 this is `TauCeti.Place.ramificationIdx_eq_of_pow_eq`). So `F` is unramified outside `0`, `1` and
@@ -102,7 +102,7 @@ theorem of_pow_eq (hex : IsIntegrallyClosedIn k F) {y : F} {n : ℕ} {u : RatFun
       (Nat.cast_ne_zero.mpr hn) (hdvd _ hP)
 
 /-- **A radical extension unramified outside `0`, `1` and `∞` with a place of coprime order is a
-Belyi pair**: if `F = k(t)(y)` with `y ^ n = u` for a nonzero `u ∈ k(t)`, `n` divides the order
+Belyi pair**: if `F = k(t)(y)` with `y ^ n = u` for `u ∈ k(t)`, `n` divides the order
 of `u` at every place of `k(t)` other than `0`, `1` and `∞`, and `gcd(n, ord_P u) = 1` at some
 place `P`, then `F` is an algebraic Belyi pair. The place `P` keeps the constant field of `F`
 equal to `k`. -/
