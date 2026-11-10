@@ -13,13 +13,13 @@ import TauCeti.LinearAlgebra.End.RangePow
 /-!
 # Riesz theory for compact perturbations of the identity
 
-Let `K` be a compact operator on a Banach space `X` and write `A = 1 - K`. This file proves the
-three finiteness facts that make `A` a Fredholm operator: its kernel is finite dimensional, its
-range is closed, and its cokernel is finite dimensional. Together they are the operator-theoretic
-half of the Riesz--Schauder theory, and they are what upgrades Mathlib's spectral Fredholm
-alternative for compact operators to a statement about Fredholm operators.
+Let `K` be a compact operator on a normed space `X` over `ℝ` or `ℂ` and write `A = 1 - K`. This
+file proves the three finiteness facts that make `A` a Fredholm operator: its kernel is finite
+dimensional, its range is closed, and its cokernel is finite dimensional. Together they are the
+operator-theoretic half of the Riesz--Schauder theory, and they are what upgrades Mathlib's
+spectral Fredholm alternative for compact operators to a statement about Fredholm operators.
 
-The kernel and closed-range arguments specialize the compact-error estimate API from
+The kernel argument specializes the compact-error estimate API from
 `TauCeti.Analysis.Normed.Operator.Compact.Estimate` using
 `‖x‖ ≤ ‖(1 - K) x‖ + ‖K x‖`. The cokernel argument uses the separation consequence
 `IsCompactOperator.exists_dist_lt_of_norm_le`.
@@ -28,7 +28,9 @@ The kernel and closed-range arguments specialize the compact-error estimate API 
 * For the range, split off a closed complement `M` of `ker A`, which exists because `ker A` is
   finite dimensional. On `M` the operator `A` is bounded below: otherwise a sequence in a fixed
   norm shell with `A xₙ → 0` would, along a subsequence on which `K` converges, converge to a
-  nonzero element of `ker A ⊓ M`. A bounded-below map on a complete space has closed range.
+  nonzero element of `ker A ⊓ M`. If `A xₙ` converges, the `xₙ` are bounded, and along a
+  subsequence on which `K` converges the identity `x = A x + K x` makes `xₙ` converge in `X`, so no
+  completeness of `X` is needed.
 * For the cokernel, run the classical Riesz argument on the decreasing chain of ranges
   `range A ⊇ range A² ⊇ ⋯`. Each `Aⁿ` is again `1` minus a compact operator, so each of these
   ranges is closed, and Riesz's lemma would otherwise produce a separated bounded sequence. Once
@@ -150,7 +152,7 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
   rw [dist_eq_norm] at hlt
   exact (key m n hmn).not_gt hlt
 
-variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
+variable [IsRCLikeNormedField 𝕜]
 
 /-- Every power of a compact perturbation of the identity has closed range. -/
 theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
@@ -159,10 +161,36 @@ theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
   have : CompleteSpace 𝕜 := by
     let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  have h := ((1 - K) ^ n).isClosed_range_of_compact_estimate
-    (hK.isCompactOperator_one_sub_pow n) (C := 1)
-    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x (((1 - K) ^ n) x))
-  simpa only [ContinuousLinearMap.toLinearMap_pow] using h
+  set A : X →L[𝕜] X := (1 - K) ^ n with hA
+  have hK' : IsCompactOperator (1 - A : X →L[𝕜] X) := hK.isCompactOperator_one_sub_pow n
+  have hbound : ∀ x, ‖x‖ ≤ 1 * ‖A x‖ + ‖(1 - A : X →L[𝕜] X) x‖ :=
+    fun x ↦ by simpa using norm_le_norm_add_norm_sub' x (A x)
+  have := A.finiteDimensional_ker_of_compact_estimate hK' hbound
+  obtain ⟨M, hMclosed, hMcompl⟩ :=
+    (Submodule.ClosedComplemented.of_finiteDimensional A.ker).exists_isClosed_isCompl
+  obtain ⟨c, hcpos, hc⟩ := hK'.exists_pos_mul_norm_le_of_disjoint_ker hMclosed
+    (by simpa using hMcompl.disjoint)
+  have hrange : (A.range : Set X) = A '' M := by
+    rw [← Submodule.map_eq_range_iff.mpr hMcompl.codisjoint.symm, Submodule.map_coe]
+    rfl
+  have hpow : LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) = A.range := by
+    rw [hA, ContinuousLinearMap.toLinearMap_pow]
+  rw [hpow]
+  refine isSeqClosed_iff_isClosed.mp fun y z hy hyz ↦ ?_
+  rw [hrange] at hy ⊢
+  choose x hxM hxy using hy
+  obtain ⟨R, hR⟩ := (hyz.norm.bddAbove_range)
+  have hxle : ∀ k, ‖x k‖ ≤ R / c := fun k ↦ by
+    rw [le_div_iff₀ hcpos, mul_comm]
+    exact (hc _ (hxM k)).trans (by simpa [hxy k] using hR ⟨k, rfl⟩)
+  obtain ⟨w, ψ, hψ, hw⟩ := hK'.exists_subseq_tendsto hxle
+  have hsub : Tendsto (fun k ↦ x (ψ k)) atTop (𝓝 (z + w)) := by
+    have := (hyz.comp hψ.tendsto_atTop).add hw
+    simpa [Function.comp_def, hxy] using this
+  have hxM' : z + w ∈ M := hMclosed.mem_of_tendsto hsub (.of_forall fun k ↦ hxM (ψ k))
+  refine ⟨z + w, hxM', ?_⟩
+  exact tendsto_nhds_unique ((A.continuous.tendsto _).comp hsub)
+    (by simpa [Function.comp_def, hxy] using hyz.comp hψ.tendsto_atTop)
 
 /-- The ranges of powers of a compact perturbation of the identity eventually stabilise. -/
 theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub

@@ -111,7 +111,7 @@ theorem _root_.ContinuousLinearMap.finiteDimensional_ker_of_isCompactOperator_co
   T.finiteDimensional_ker_of_compact_estimate hST
     (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
 
-omit [CompleteSpace F] in
+omit [CompleteSpace 𝕜] [CompleteSpace F] in
 /-- An operator on a Banach space with a left parametrix modulo compact operators has closed
 range: if `S ∘ T - 1` is compact then `range T` is closed. -/
 theorem _root_.ContinuousLinearMap.isClosed_range_of_isCompactOperator_comp_sub_one

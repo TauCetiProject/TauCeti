@@ -160,9 +160,12 @@ theorem isClosed_range_of_compact_estimate_of_closedComplemented
 /-- Peetre's lemma: a compact-error estimate gives closed range over real or complex scalars.
 Together with `finiteDimensional_ker_of_compact_estimate`, this proves the upper semi-Fredholm
 property. No completeness of the codomain is required. -/
-theorem isClosed_range_of_compact_estimate [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜]
+theorem isClosed_range_of_compact_estimate [IsRCLikeNormedField 𝕜]
     (hK : IsCompactOperator K)
     (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) : IsClosed (T.range : Set F) := by
+  have : CompleteSpace 𝕜 := by
+    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
   have := T.finiteDimensional_ker_of_compact_estimate hK hbound
   exact T.isClosed_range_of_compact_estimate_of_closedComplemented hK hbound
     (Submodule.ClosedComplemented.of_finiteDimensional T.ker)
