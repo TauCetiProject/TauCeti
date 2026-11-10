@@ -463,23 +463,15 @@ private theorem bijective_trivOperator [Fintype ι] (hX : IsSubbundleFrameOn F L
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y)) :
     Function.Bijective (IsSubbundleFrameOn.trivOperator ℂ F X x₀ y) := by
   set e := trivializationAt F V x₀
-  have hAapply (c : ι → ℂ) : IsSubbundleFrameOn.trivOperator ℂ F X x₀ y c =
-      (e ⟨y, ∑ i, c i • X i y⟩).2 :=
-    IsSubbundleFrameOn.trivOperator_apply hy c
-  refine ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦ ?_, fun w ↦ ?_⟩
-  · have h := hAapply c
-    rw [hc] at h
-    have hc' : ∑ i, c i • X i y = 0 := (e.continuousLinearEquivAt ℂ y hy).injective (by
-      rw [map_zero, Trivialization.continuousLinearEquivAt_apply]
-      exact h.symm)
-    have hli := hL.isTotallyReal.linearIndependent_complex (hX.linearIndependent hyU)
-      (fun i ↦ hX.apply_mem i hyU)
-    funext i
-    exact Fintype.linearIndependent_iff.1 hli c hc' i
-  · have hspan := hL.span_complex_eq_top (hX.span_eq hyU)
-    obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℂ).1
-      (hspan ▸ Submodule.mem_top : e.symm y w ∈ Submodule.span ℂ (range (X · y)))
-    exact ⟨c, by rw [hAapply, hc, e.apply_mk_symm hy]⟩
+  let b := hL.complexBasis (hX.basis hyU)
+  have h : ⇑(IsSubbundleFrameOn.trivOperator ℂ F X x₀ y) =
+      e.continuousLinearEquivAt ℂ y hy ∘ b.equivFun.symm := by
+    funext c
+    rw [Function.comp_apply, IsSubbundleFrameOn.trivOperator_apply hy,
+      Trivialization.continuousLinearEquivAt_apply, Module.Basis.equivFun_symm_apply]
+    simp [b, e]
+  rw [h]
+  exact (ContinuousLinearEquiv.bijective _).comp b.equivFun.symm.bijective
 
 omit [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
