@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Energy
 public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+public import TauCeti.Analysis.ODE.EnergyEstimate.Surjective
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The linearized operator along a gradient trajectory
@@ -41,7 +42,11 @@ When `p ≠ q` the trajectory is not constant, so the kernel is nonzero. Hence i
 surjective, its index is the positive dimension of its kernel, and `ind(q) < ind(p)`: a trajectory
 along which the linearized operator is onto can only lower the Morse index. Surjectivity of `D_γ`
 is the analytic form of the transversality of the unstable set of `p` and the stable set of `q`
-along `γ`; that equivalence is not proved here.
+along `γ`. Its linear half is proved here: `D_γ` is onto exactly when the initial values of the
+solutions of `v' + Hess f(γ) v = 0` decaying at `-∞` and of those decaying at `+∞` span `E`, and
+these two spaces have the dimensions `ind(p)` and `dim E - ind(q)` of the unstable manifold of `p`
+and the stable manifold of `q`. Their identification with the tangent spaces of these manifolds at
+`γ 0` is not proved here.
 
 At the constant trajectory at a nondegenerate critical point the linearized operator has constant
 invertible coefficient, so it is bijective.
@@ -70,6 +75,11 @@ linearized operator is then surjective exactly when the Morse index drops by one
   linearized operator is surjective exactly when `morseIndex f p = morseIndex f q + 1`.
 * `IsIntegralCurve.morseIndex_lt_morseIndex_of_surjective`: if the linearized operator is
   surjective and `p ≠ q`, then the Morse index of `q` is less than that of `p`.
+* `ContDiff.surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top`: the linearized
+  operator is surjective exactly when the solutions decaying at the two ends span `E`.
+* `ContDiff.finrank_squareIntegrableSolutionsAtBot_hessianOperator_comp` and
+  `ContDiff.finrank_squareIntegrableSolutionsAtTop_hessianOperator_comp_add_morseIndex`: these
+  spaces have dimensions `ind(p)` and `dim E - ind(q)`.
 * `TauCeti.IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator`: at the
   constant trajectory at a nondegenerate critical point the linearized operator is bijective.
 
@@ -101,11 +111,7 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (μ : Measure ℝ) :
     MemLp (fun s ↦ hessianOperator f (γ s)) ∞ μ := by
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
-  have hcont : Continuous fun s ↦ hessianOperator f (γ s) := hH.comp hγ
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-    (hcont.isBounded_range_iff_isBigO_atTop_atBot.2
-      ⟨((hH.tendsto q).comp htop).isBigO_one ℝ, ((hH.tendsto p).comp hbot).isBigO_one ℝ⟩)
-  exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
+  exact (hH.comp hγ).memLp_top_of_tendsto ((hH.tendsto p).comp hbot) ((hH.tendsto q).comp htop) μ
 
 end ContDiff
 
@@ -369,3 +375,71 @@ theorem bijective_trajectoryOperator_hessianOperator (hp : IsNondegenerateCritic
 
 end TauCeti.IsNondegenerateCriticalPoint
 
+namespace ContDiff
+
+open TauCeti TauCeti.WeakDerivStep
+
+/-- **The solutions decaying at `-∞` along a path from a nondegenerate critical point.** For a `C²`
+function `f` on a finite-dimensional real inner product space and a continuous path `γ` tending at
+`-∞` to a nondegenerate critical point `p`, the solutions of `v' + Hess f(γ) v = 0` square
+integrable on `(-∞, 0)` form a space of dimension `morseIndex f p`, the dimension of the unstable
+manifold of `p`. -/
+theorem finrank_squareIntegrableSolutionsAtBot_hessianOperator_comp (hf : ContDiff ℝ 2 f)
+    (hγ : Continuous γ) (hp : IsNondegenerateCriticalPoint f p) (hbot : Tendsto γ atBot (𝓝 p)) :
+    Module.finrank ℝ (squareIntegrableSolutionsAtBot fun s ↦ hessianOperator f (γ s)) =
+      morseIndex f p := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hgap, -⟩ := IsIntegralCurve.exists_pos_mul_norm_le_hessianOperator hp hp
+  rw [finrank_squareIntegrableSolutionsAtBot_of_isSymmetric
+      (A := fun s ↦ hessianOperator f (γ s)) (hH.comp hγ)
+      hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hgap ((hH.tendsto p).comp hbot),
+    hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
+
+/-- **The solutions decaying at `+∞` along a path to a nondegenerate critical point.** For a `C²`
+function `f` on a finite-dimensional real inner product space and a continuous path `γ` tending at
+`+∞` to a nondegenerate critical point `q`, the solutions of `v' + Hess f(γ) v = 0` square
+integrable on `(0, ∞)` form a space of dimension `dim E - morseIndex f q`, the dimension of the
+stable manifold of `q`. -/
+theorem finrank_squareIntegrableSolutionsAtTop_hessianOperator_comp_add_morseIndex
+    (hf : ContDiff ℝ 2 f) (hγ : Continuous γ) (hq : IsNondegenerateCriticalPoint f q)
+    (htop : Tendsto γ atTop (𝓝 q)) :
+    Module.finrank ℝ (squareIntegrableSolutionsAtTop fun s ↦ hessianOperator f (γ s)) +
+      morseIndex f q = Module.finrank ℝ E := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hgap, -⟩ := IsIntegralCurve.exists_pos_mul_norm_le_hessianOperator hq hq
+  have hsym := hf.contDiffAt.isSelfAdjoint_hessianOperator (x := q).isSymmetric
+  have hker : LinearMap.ker (hessianOperator f q : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hgap v))
+  have h := (Module.End.pointSpectralSubspace (hessianOperator f q : E →ₗ[ℝ] E)
+    (Ioi 0)).finrank_add_finrank_orthogonal
+  rw [hsym.orthogonal_pointSpectralSubspace_Ioi_zero hker] at h
+  rw [finrank_squareIntegrableSolutionsAtTop_of_isSymmetric
+      (A := fun s ↦ hessianOperator f (γ s)) (hH.comp hγ) hsym hα hgap
+      ((hH.tendsto q).comp htop),
+    hq.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace, h]
+
+/-- **The linearized operator is onto exactly when the decaying solutions span.** Let `f` be a
+`C²` function on a finite-dimensional real inner product space and `γ` a continuous path, such as a
+negative gradient trajectory, from a nondegenerate critical point `p` at `-∞` to a nondegenerate
+critical point `q` at `+∞`. Then `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is
+surjective if and only if the initial values of the solutions of `v' + Hess f(γ) v = 0` square
+integrable on `(-∞, 0)` and of those square integrable on `(0, ∞)` together span `E`. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top (hf : ContDiff ℝ 2 f)
+    (hγ : Continuous γ) (hp : IsNondegenerateCriticalPoint f p)
+    (hq : IsNondegenerateCriticalPoint f q) (hbot : Tendsto γ atBot (𝓝 p))
+    (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      squareIntegrableSolutionsAtBot (fun s ↦ hessianOperator f (γ s)) ⊔
+        squareIntegrableSolutionsAtTop (fun s ↦ hessianOperator f (γ s)) = ⊤ := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hminus, hplus⟩ := IsIntegralCurve.exists_pos_mul_norm_le_hessianOperator hp hq
+  exact surjective_trajectoryOperator_iff_sup_eq_top (hH.comp hγ)
+    (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric
+      hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hminus)
+    (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric
+      hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hplus)
+    ((hH.tendsto p).comp hbot) ((hH.tendsto q).comp htop) AL hAL
+
+end ContDiff

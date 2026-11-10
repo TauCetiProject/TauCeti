@@ -84,6 +84,9 @@ computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) =
   solutions of `v' = -A v` minus that of `v' = A v`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`: the same formula for a
   continuous symmetric family with invertible limits.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm`: for
+  limits with Lyapunov forms and no symmetry, the cokernel is counted by the square-integrable
+  solutions of the formal adjoint equation `w' = A† w`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`:
   the index is the number of negative eigenvalues of `A⁻` minus that of `A⁺`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_forall_hasLyapunovForm`: the index is
@@ -275,6 +278,34 @@ theorem index_trajectoryOperator_eq_finrank_sub_finrank
       (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot hα hminus)
       (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop hα hplus) hbot htop
       AL hAL)
+
+/-- **The index of the trajectory operator with hyperbolic limits counts square-integrable
+solutions.** For a continuous family `A` of operators on a finite-dimensional real inner product
+space whose limits at `±∞` have Lyapunov forms, the index of `D_A u = u' + A u` from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the dimension of the space of square-integrable solutions of
+`v' = -A v` minus that of the square-integrable solutions of the formal adjoint equation
+`w' = A† w`. No symmetry of `A` is assumed; for symmetric `A` this is
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`. -/
+theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm)
+    (hplus : Aplus.HasLyapunovForm) (hbot : Tendsto A atBot (𝓝 Aminus))
+    (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ
+          (squareIntegrableSolutions fun s ↦ -ContinuousLinearMap.adjoint (A s)) := by
+  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
+  have hneg : -BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
+    filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
+    simp only [hs, Pi.neg_apply, hBs]
+  have hadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  rw [index_trajectoryOperator_of_isClosed_range (ae_eq_adjoint_of_ae_eq hAL hBL)
+      (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL),
+    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hadj (-BL) hneg]
 
 end TauCeti.WeakDerivStep
 
