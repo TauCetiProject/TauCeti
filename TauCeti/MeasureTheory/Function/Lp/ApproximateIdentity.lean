@@ -79,10 +79,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ENNReal
+
+namespace TauCeti
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
