@@ -119,8 +119,12 @@ def pullbackHomeomorph :
       (Pullback.continuous_proj F (AssociatedBundle G P F) f)).continuousAt)
       ((trivializationAt G P (f z.proj)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt G P (f z.proj)))] with y hy
+    rcases y with ⟨y, v⟩
     exact (trivializationAt_pullbackEquiv_snd f hy
-      ((pullbackEquiv f y.proj).symm y.2)).trans (by simp [Pullback.lift])
+      ((pullbackEquiv f y).symm v)).trans
+        (by simp only [Function.comp_apply,
+          Pullback.lift_mk (F := F) (E := AssociatedBundle G P F) (f : B' → B) y v,
+          Equiv.apply_symm_apply, Trivialization.coe_coe])
 
 /-- The total-space comparison acts by the fibre comparison. -/
 theorem pullbackHomeomorph_apply

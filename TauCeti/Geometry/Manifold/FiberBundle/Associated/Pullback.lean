@@ -74,28 +74,28 @@ theorem contMDiffWithinAt_pullbackHomeomorph_iff
   · exact trivializationAt_pullbackEquiv_snd f
       (mem_baseSet_trivializationAt G P (f (q x₀).proj)) _
 
+/-- A family is `C^n` in the associated pullback bundle exactly when its image under the
+canonical comparison is `C^n` in the pullback associated bundle. -/
+theorem contMDiff_pullbackHomeomorph_iff
+    {q : M → TotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F)} :
+    ContMDiff IM (IB'.prod IF) n (fun x ↦ ManifoldTotalSpace.homeomorph F _ (q x)) ↔
+      ContMDiff IM (IB'.prod IF) n
+        (fun x ↦ ManifoldTotalSpace.homeomorph F _ (pullbackHomeomorph f (q x))) := by
+  simp only [ContMDiff, ← contMDiffWithinAt_univ,
+    contMDiffWithinAt_pullbackHomeomorph_iff (IB' := IB') (IF := IF) f]
+
 /-- The canonical pullback homeomorphism is a diffeomorphism in the charts through the fibre. -/
 def pullbackDiffeomorph :
     ManifoldTotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F) ≃ₘ^n⟮IB'.prod IF, IB'.prod IF⟯
       ManifoldTotalSpace F ((f : B' → B) *ᵖ (AssociatedBundle G P F)) where
   toEquiv := ((ManifoldTotalSpace.homeomorph F _).symm.trans
     ((pullbackHomeomorph f).trans (ManifoldTotalSpace.homeomorph F _))).toEquiv
-  contMDiff_toFun := by
-    intro x
-    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackHomeomorph_iff
-      (IB' := IB') (IF := IF) f).mp ?_)
-    convert (contMDiffWithinAt_id :
-      ContMDiffWithinAt (IB'.prod IF) (IB'.prod IF) n id univ x) using 1
-    funext y
-    exact (ManifoldTotalSpace.homeomorph F _).apply_symm_apply y
-  contMDiff_invFun := by
-    intro x
-    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackHomeomorph_iff
-      (IB' := IB') (IF := IF) f).mpr ?_)
-    convert (contMDiffWithinAt_id :
-      ContMDiffWithinAt (IB'.prod IF) (IB'.prod IF) n id univ x) using 1
-    funext y
-    exact ((pullbackHomeomorph f).trans (ManifoldTotalSpace.homeomorph F _)).apply_symm_apply y
+  contMDiff_toFun := (contMDiff_pullbackHomeomorph_iff
+    (IB' := IB') (IF := IF) f).mp (contMDiff_id.congr fun y ↦
+      (ManifoldTotalSpace.homeomorph F _).apply_symm_apply y)
+  contMDiff_invFun := (contMDiff_pullbackHomeomorph_iff
+    (IB' := IB') (IF := IF) f).mpr (contMDiff_id.congr fun y ↦
+      ((pullbackHomeomorph f).trans (ManifoldTotalSpace.homeomorph F _)).apply_symm_apply y)
 
 /-- The diffeomorphism is the canonical homeomorphism read through the total-space type copies. -/
 @[simp]
