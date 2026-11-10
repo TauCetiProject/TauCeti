@@ -528,7 +528,7 @@ private theorem exists_contMDiff_homotopy_comp_squeeze {u₀ u₁ : ℝ × ℝ �
 /-- **Homotopy invariance of the integral over a sphere.** On a closed manifold, two `C²` maps of
 the plane sending the boundary of the unit square to `x` which are homotopic as generalized loops
 have the same integral of a closed `C¹` two-form over the square. -/
-theorem rectangleIntegral_eq_of_homotopic [CompleteSpace F] {φ : RoughForm I M F 2}
+theorem rectangleIntegral_eq_of_homotopic {φ : RoughForm I M F 2}
     (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {u₀ u₁ : ℝ × ℝ → M}
     (hu₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u₀) (hu₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u₁)
     {hx₀ : MapsSquareBoundaryTo u₀ x} {hx₁ : MapsSquareBoundaryTo u₁ x}
@@ -544,7 +544,7 @@ theorem rectangleIntegral_eq_of_homotopic [CompleteSpace F] {φ : RoughForm I M 
 /-- **The period of a sphere is its integral.** For a closed `C¹` two-form on a closed manifold and
 a `C²` map of the plane sending the boundary of the unit square to `x`, the period of its class in
 `π₂(M, x)` is the integral of the form over the square. -/
-theorem spherePeriod_mk [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+theorem spherePeriod_mk {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hx : MapsSquareBoundaryTo u x) :
     spherePeriod φ x ⟦squareGenLoop u hu.continuous hx⟧ = rectangleIntegral φ u (0, 0) (1, 1) := by
@@ -557,7 +557,7 @@ theorem spherePeriod_mk [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoo
 
 /-- **Additivity of the period.** For a closed `C¹` two-form on a closed manifold, the period of a
 product in `π₂(M, x)` is the sum of the periods. -/
-theorem spherePeriod_mul [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+theorem spherePeriod_mul {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (a b : π_ 2 M x) :
     spherePeriod φ x (a * b) = spherePeriod φ x a + spherePeriod φ x b := by
   obtain ⟨u, hu, hux, rfl⟩ := exists_contMDiff_squareGenLoop I a
@@ -598,7 +598,7 @@ theorem spherePeriod_mul [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmo
     rectangleIntegral_squareConcat (hφ.of_le (by simp)) (hw.of_le (by simp)) hv'x hu'x, add_comm]
 
 /-- The period of the identity of `π₂(M, x)`, the class of the constant sphere, vanishes. -/
-theorem spherePeriod_one [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+theorem spherePeriod_one {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) : spherePeriod φ x 1 = 0 := by
   have hx : MapsSquareBoundaryTo (fun _ : ℝ × ℝ ↦ x) x := fun _ _ _ _ _ ↦ rfl
   have h : (1 : π_ 2 M x) = ⟦squareGenLoop (fun _ ↦ x) continuous_const hx⟧ :=
@@ -611,14 +611,14 @@ variable (x) in
 Hausdorff, boundaryless and finite-dimensional): the integral of `φ` over spheres, as a
 homomorphism from `π₂(M, x)` to the coefficients. For a symplectic form it is the symplectic area
 of spheres. -/
-def spherePeriodHom [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+def spherePeriodHom {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) : Additive (π_ 2 M x) →+ F where
   toFun a := spherePeriod φ x a.toMul
   map_zero' := spherePeriod_one hφ hdφ
   map_add' a b := spherePeriod_mul hφ hdφ a.toMul b.toMul
 
 @[simp]
-theorem spherePeriodHom_apply [CompleteSpace F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+theorem spherePeriodHom_apply {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (a : Additive (π_ 2 M x)) :
     spherePeriodHom x hφ hdφ a = spherePeriod φ x a.toMul :=
   (rfl)
