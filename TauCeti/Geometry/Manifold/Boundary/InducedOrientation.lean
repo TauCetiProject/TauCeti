@@ -236,7 +236,7 @@ theorem boundaryOrientation_spec_of_isOrientationPreservingAt
   -- Pull the basis `b'` back to the tangent space of `M` by the derivative of `φ`.
   have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x :=
-    ((isImmersion_subtypeVal_boundary M one_ne_zero).contMDiff x).mdifferentiableAt one_ne_zero
+    ((isImmersion_subtypeVal_boundary (k := 1) M).contMDiff x).mdifferentiableAt one_ne_zero
   have hφx : MDifferentiableAt (𝓡∂ (n + 1)) I φ x :=
     mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩
   have hb'' : ⇑(b'.map D.symm.toLinearEquiv) = Fin.cons v (fun i ↦
