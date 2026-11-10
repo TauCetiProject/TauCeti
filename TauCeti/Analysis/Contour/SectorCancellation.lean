@@ -89,9 +89,9 @@ theorem antiderivative_diff_across_crossing_tendsto_zero
   subst h_s
   have hn1 : 1 ≤ n := by omega
   have h_right := antiderivative_diff_at_tangent_target_tendsto_zero_right hL_plus
-    h_deriv_right rfl (h_flat.tangentDeviation_isLittleO_right hn1 hL_plus h_deriv_right) hk hkn
+    h_deriv_right rfl (h_flat.tangentDeviation_isLittleO_right hn1 hL_plus h_deriv_right) hkn
   have h_left := antiderivative_diff_at_tangent_target_tendsto_zero_left hL_minus
-    h_deriv_left rfl (h_flat.tangentDeviation_isLittleO_left hn1 hL_minus h_deriv_left) hk hkn
+    h_deriv_left rfl (h_flat.tangentDeviation_isLittleO_left hn1 hL_minus h_deriv_left) hkn
   have h_sum := (h_right.comp h_plus_to).add (h_left.comp h_minus_to)
   rw [add_zero] at h_sum
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
