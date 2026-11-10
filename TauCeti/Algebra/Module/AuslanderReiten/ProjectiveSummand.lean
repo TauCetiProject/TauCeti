@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.Opposite
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Retract
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -21,8 +22,8 @@ In particular, such a transpose is projective exactly when it is zero.
 
 The results hold over an arbitrary ring. Only the source presenting projective `P₁` need be
 finitely generated; no finiteness is required of `P₀` or of the projective retract. More generally,
-the statements apply to any map between finite projectives whose kernel is superfluous,
-without specifying an augmentation to a presented module.
+the statements apply to any map from a finite projective to a projective whose kernel is
+superfluous, without specifying an augmentation to a presented module.
 
 ## References
 
@@ -41,7 +42,7 @@ variable {A P₀ P₁ : Type*} [Ring A]
   [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
   {p₁ : P₁ →ₗ[A] P₀}
 
-/-- The transpose of a map between finite projectives with superfluous kernel has no
+/-- The transpose of a map from a finite projective to a projective with superfluous kernel has no
 nonzero projective retract. In particular, this applies to finite minimal presentations. -/
 theorem subsingleton_of_retract_auslanderReitenTranspose
     (h : IsSuperfluous (LinearMap.ker p₁))
@@ -74,11 +75,7 @@ theorem subsingleton_of_retract_auslanderReitenTranspose
         simp [hu_apply, q]
       simpa only [LinearMap.lcomp_apply, LinearMap.comp_apply, LinearMap.zero_apply,
         map_zero] using LinearMap.congr_fun heq x
-    -- the dual of a projective module separates points, via a free module it retracts onto
-    obtain ⟨σ, hσ⟩ := Module.Projective.out (R := A) (P := P₀)
-    have hσ0 : σ (p₁ (u x)) = 0 := Finsupp.ext fun i ↦ hφ (Finsupp.lapply i ∘ₗ σ)
-    have h0 := congrArg (Finsupp.linearCombination A id) hσ0
-    rwa [hσ, map_zero] at h0
+    exact (Module.forall_dual_apply_eq_zero_iff A _).mp hφ
   have hrange : LinearMap.range u ≤ LinearMap.ker p₁ :=
     LinearMap.range_le_ker_iff.mpr hp
   have hu_zero : u = 0 := LinearMap.range_eq_bot.mp
@@ -104,8 +101,8 @@ theorem isZero_of_retract_auslanderReitenTranspose
       simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
         congrArg ModuleCat.Hom.hom r.retract))
 
-/-- The transpose of a map between finite projectives with superfluous kernel is projective
-exactly when it is zero. -/
+/-- The transpose of a map from a finite projective to a projective with superfluous kernel is
+projective exactly when it is zero. -/
 @[simp]
 theorem projective_auslanderReitenTranspose_iff_subsingleton
     (h : IsSuperfluous (LinearMap.ker p₁)) :
