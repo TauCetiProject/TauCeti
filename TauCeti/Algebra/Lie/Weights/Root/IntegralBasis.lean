@@ -71,12 +71,6 @@ omit hx in
       (coroot (i : Weight K H L) : L) := by
   simp [rootSimpleCorootFamily]
 
-omit hx in
-private theorem coe_rootSimpleCorootFamily_inr_eq_incl (j : b.support) :
-    (rootSimpleCorootFamily (x := x) b (Sum.inr j) : L) =
-      H.incl ((rootSystem H).coroot j) := by
-  rw [coe_rootSimpleCorootFamily_inr, rootSystem_coroot_apply, LieSubalgebra.coe_incl]
-
 private theorem span_rootSimpleCorootFamily_eq_top :
     Submodule.span K (Set.range fun i : H.root ⊕ b.support =>
       (rootSimpleCorootFamily (x := x) b i : L)) = ⊤ := by
@@ -108,7 +102,7 @@ private theorem span_rootSimpleCorootFamily_eq_top :
     rintro _ ⟨_, ⟨i, hi, rfl⟩, rfl⟩
     let j : b.support := ⟨i, hi⟩
     refine ⟨Sum.inr j, ?_⟩
-    exact (coe_rootSimpleCorootFamily_inr_eq_incl (x := x) b j).symm
+    simp [j, rootSystem_coroot_apply]
 
 private theorem linearIndependent_rootSimpleCorootFamily_ambient :
     LinearIndependent K (fun i : H.root ⊕ b.support =>
@@ -144,7 +138,7 @@ private theorem coroot_mem_map_span_rootSimpleCorootFamily (alpha : Weight K H L
       let j : b.support := ⟨i, hi⟩
       refine ⟨rootSimpleCorootFamily (x := x) b (Sum.inr j),
         Submodule.subset_span ⟨Sum.inr j, rfl⟩, ?_⟩
-      exact coe_rootSimpleCorootFamily_inr_eq_incl (x := x) b j
+      simp [inclℤ, j, rootSystem_coroot_apply]
     have hm := hle hmap
     have ha_coroot : inclℤ ((rootSystem H).coroot a) = (coroot alpha : L) := by
       simp [inclℤ, a, rootSystem_coroot_apply]
