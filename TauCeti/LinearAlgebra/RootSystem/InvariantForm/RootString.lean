@@ -354,16 +354,17 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
     norm_num at hlen
     nlinarith
   have hβpos : 0 < length β := by
-    have hcl := P.pairingIn_pairingIn_mem_set_of_isCrystallographic β α
-    have hx : P.pairingIn ℤ β α = -1 := by simpa [hpair] using P.algebraMap_pairingIn ℤ β α
-    have hy : P.pairingIn ℤ α β = P.pairing α β := by simpa using P.algebraMap_pairingIn ℤ α β
-    rw [hx, hy] at hcl
+    have hx : P.pairingIn ℤ β α = -1 := by
+      have h := P.algebraMap_pairingIn ℤ β α
+      rw [hpair] at h
+      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using h
+    have hy : P.pairingIn ℤ α β = P.pairing α β := by
+      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using P.algebraMap_pairingIn ℤ α β
+    have hneg : P.pairing α β < 0 := by
+      rw [← hy]
+      exact (P.pairingIn_lt_zero_iff ℤ).mpr (by omega)
     have hs := hsym α β
     rw [hpair] at hs
-    have hneg : P.pairing α β < 0 := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hcl
-      rcases hcl with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
-        omega
     nlinarith
   rw [P.chainBotCoeff_eq_zero_iff]
   right
@@ -375,6 +376,22 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
   rw [hpair] at hδlen
   norm_num at hδlen
   nlinarith [hβpos]
+
+end
+
+section
+
+variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing I R M N} [P.IsCrystallographic]
+
+/-- The root string through `j` in direction `i` has no descending root exactly when the string
+through `i` in direction `j` has none. -/
+theorem chainBotCoeff_eq_zero_comm {i j : I} :
+    P.chainBotCoeff i j = 0 ↔ P.chainBotCoeff j i = 0 := by
+  rw [P.chainBotCoeff_eq_zero_iff, P.chainBotCoeff_eq_zero_iff,
+    LinearIndependent.pair_symm_iff, ← P.neg_mem_range_root_iff (x := P.root i - P.root j),
+    neg_sub]
 
 end
 
@@ -401,16 +418,7 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   have htop_le : P.chainTopCoeff i j ≤ 3 := by omega
   have htop'_le : P.chainTopCoeff j i ≤ 3 := by omega
   have hbot : 1 ≤ P.chainBotCoeff i j ↔ 1 ≤ P.chainBotCoeff j i := by
-    rw [← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hij,
-      ← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hji]
-    simp only [one_smul]
-    constructor
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root j - P.root i)).2 h
-      simpa only [neg_sub] using hn
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root i - P.root j)).2 h
-      simpa only [neg_sub] using hn
+    rw [Nat.one_le_iff_ne_zero, Nat.one_le_iff_ne_zero, Ne, Ne, P.chainBotCoeff_eq_zero_comm]
   have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed i j
   have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
   have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
@@ -429,15 +437,7 @@ theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two {i
     have := P.chainTopCoeff_of_not_linearIndependent h
     omega
   have hli' := LinearIndependent.pair_symm_iff.mp hli
-  have hbot' : P.chainBotCoeff j i = 0 := by
-    rw [P.chainBotCoeff_eq_zero_iff]
-    right
-    intro hmem
-    rcases P.chainBotCoeff_eq_zero_iff.mp hbot with h | h
-    · exact h hli
-    · refine h ?_
-      rw [← P.neg_mem_range_root_iff, neg_sub]
-      exact hmem
+  have hbot' : P.chainBotCoeff j i = 0 := P.chainBotCoeff_eq_zero_comm.mp hbot
   have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystallographic i j
   have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
   have hw : P.coxeterWeightIn ℤ i j ≠ 4 :=
