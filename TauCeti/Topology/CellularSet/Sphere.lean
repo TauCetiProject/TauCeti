@@ -10,8 +10,8 @@ public import TauCeti.Topology.CellularSet.Basic
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Geometry.Manifold.LocallyFlat.TwoEuclideanOpens
 import TauCeti.Topology.CellularSet.InverseSet
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.Compactification.OnePoint.Collapse
 
 /-!
