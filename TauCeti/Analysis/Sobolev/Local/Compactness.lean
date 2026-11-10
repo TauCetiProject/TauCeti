@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
+public import TauCeti.MeasureTheory.Function.Gluing
 public import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -30,7 +31,8 @@ a compact operator, `TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`, so th
 a compact subset of the countable product of the spaces `Wkp volume (E n) p k`, one factor for each
 level `n` and each coordinate. A single subsequence therefore converges in every factor at once,
 which replaces the diagonal argument. The limits on the different `E n` agree under restriction,
-by uniqueness of limits, and glue to one function.
+by uniqueness of limits, and glue to one function by
+`TauCeti.exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter`.
 
 ## Main declarations
 
@@ -118,27 +120,20 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
     simpa only [Function.comp_def, hres] using
       ((Wkp.restrictL (hEmono h) k).continuous.tendsto _).comp (hxa' (n', i))
   -- Glue the limits.
-  classical
-  let v : ι → ℂ → ℝ := fun i z =>
-    if h : ∃ n, z ∈ E n then Wkp.value k (a (Nat.find h, i)) z else 0
-  have hv : ∀ i n, Wkp.value k (a (n, i)) =ᵐ[volume.restrict (E n)] v i := fun i n => by
-    have hm : ∀ m, ∀ᵐ z ∂volume, z ∈ E n → z ∈ E m →
-        Wkp.value k (a (m, i)) z = Wkp.value k (a (n, i)) z := by
-      intro m
-      rcases le_total m n with hmn | hnm
-      · have h := (Wkp.value_restrictL_ae (hEmono hmn) k (a (n, i))).symm.trans
-          (by rw [hcompat i hmn])
-        filter_upwards [(ae_restrict_iff' (E m).isOpen.measurableSet).1 h] with z hz _ hzm
-        exact (hz hzm).symm
-      · have h := (Wkp.value_restrictL_ae (hEmono hnm) k (a (m, i))).symm.trans
-          (by rw [hcompat i hnm])
-        filter_upwards [(ae_restrict_iff' (E n).isOpen.measurableSet).1 h] with z hz hzn _
-        exact hz hzn
-    filter_upwards [ae_restrict_of_ae (ae_all_iff.2 hm), ae_restrict_mem (E n).isOpen.measurableSet]
-      with z hz hzn
-    have hex : ∃ n, z ∈ E n := ⟨n, hzn⟩
-    simp only [v, hex, ↓reduceDIte]
-    exact (hz (Nat.find hex) hzn (Nat.find_spec hex)).symm
+  have hcompat_ae : ∀ i {n n'} (h : n ≤ n'),
+      Wkp.value k (a (n, i)) =ᵐ[volume.restrict (E n)] Wkp.value k (a (n', i)) :=
+    fun i n n' h => by
+      rw [← hcompat i h]
+      exact Wkp.value_restrictL_ae (hEmono h) k _
+  choose v hv' using fun i => exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter (μ := volume)
+    (a := fun n => Wkp.value k (a (n, i))) (fun n => (E n).isOpen.measurableSet) fun n n' => by
+      rcases le_total n n' with h | h
+      · rw [inter_eq_left.2 (SetLike.coe_subset_coe.2 (hEmono h))]
+        exact hcompat_ae i h
+      · rw [inter_eq_right.2 (SetLike.coe_subset_coe.2 (hEmono h))]
+        exact (hcompat_ae i h).symm
+  have hv : ∀ i n, Wkp.value k (a (n, i)) =ᵐ[volume.restrict (E n)] v i := fun i n =>
+    (hv' i n).symm
   refine ⟨φ, hφ, v, fun i => ?_, ?_⟩
   · refine memWkpLoc_of_forall_wkp fun W hWc hWΩ => ?_
     obtain ⟨n, hWn⟩ := hWE W hWc hWΩ
