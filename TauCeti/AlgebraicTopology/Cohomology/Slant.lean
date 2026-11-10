@@ -90,7 +90,7 @@ for the cohomology of a product one of whose factors has finitely generated proj
   `TopCat.singularSlant_homologyπ_singularCohomologyMap_snd_eq_self`: the slant product of a class
   pulled back from `Y` by the class of a point of `X`, restated for the point classes
   `TauCeti.singularHomology₀Section` in
-  `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd`.
+  `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self`.
 * `TopCat.singularSlant_eq_slant`: through Eilenberg–Zilber, the slant product is the slant
   product on the tensor product of singular chain complexes.
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
@@ -302,8 +302,8 @@ theorem singularSlant_homologyπ_singularCohomologyMap_snd_eq_self (X Y : TopCat
 class**: `pr₂^* b / [x₀] = b` for the class `[x₀] ∈ H₀(X; R)` of a point `x₀` with coefficient `r`
 (`TauCeti.singularHomology₀Section`), along a coefficient map `u : R ⊗ S ⟶ S` with
 `u (r ⊗ s) = s`. -/
-theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd (X Y : TopCat.{w})
-    (u : R ⊗ S ⟶ S) (q : ℕ) (x₀ : X) (r : R) (hu : ∀ s, u (r ⊗ₜ s) = s)
+theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self
+    (X Y : TopCat.{w}) (u : R ⊗ S ⟶ S) (q : ℕ) (x₀ : X) (r : R) (hu : ∀ s, u (r ⊗ₜ s) = s)
     (b : Y.singularCohomology S k M q) :
     singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r)
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b) = b := by

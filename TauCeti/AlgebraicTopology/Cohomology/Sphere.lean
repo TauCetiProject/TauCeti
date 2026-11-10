@@ -189,33 +189,20 @@ private lemma eq_zero_of_singularSlant_sphere (m q n : ℕ) (h : m + 1 + q = n)
   · -- `H₀` of the sphere is spanned by the class of `x₀`
     subst hp0
     obtain rfl : q' = n := by omega
-    have hx : x = TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀
-        ((TopCat.sphere.{w} (m + 1)).singularHomology₀ε (𝟙_ (ModuleCat.{w} k)) x) :=
-      (ConcreteCategory.congr_hom
-        (TauCeti.singularHomology₀ε_singularHomology₀Section _ x₀) x).symm
-    have hs (r : k) : TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ r =
-        r • TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k) := by
-      rw [← map_smul, smul_eq_mul, mul_one]
-    rw [hx, hs, map_smul, LinearMap.smul_apply, h₀, smul_zero]
+    rw [TauCeti.singularHomology₀_eq_smul_singularHomology₀Section x₀ x, map_smul,
+      LinearMap.smul_apply]
+    -- the spanning lemma writes the coefficient ring `ModuleCat.of k k` rather than
+    -- `𝟙_ (ModuleCat k)`, so `h₀` applies up to definitional unfolding
+    exact (congrArg (_ • ·) h₀).trans (smul_zero _)
   by_cases hpm : p = m + 1
   · -- `H_{m+1}` of the sphere is spanned by the standard generator
     subst hpm
     obtain rfl : q' = q := by omega
-    obtain ⟨y, rfl⟩ : ∃ y, (TauCeti.reducedSingularHomologyι (𝟙_ (ModuleCat.{w} k)) (m + 1)).app
-        (TopCat.sphere.{w} (m + 1)) y = x :=
-      ⟨((TauCeti.reducedSingularHomologySuccIso (𝟙_ (ModuleCat.{w} k)) m).app _).inv x, by
-        rw [← TauCeti.reducedSingularHomologySuccIso_hom]
-        exact Iso.inv_hom_id_apply ((TauCeti.reducedSingularHomologySuccIso _ m).app _) x⟩
-    obtain ⟨r, rfl⟩ : ∃ r : k,
-        (TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv r = y :=
-      ⟨(TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).hom y,
-        Iso.hom_inv_id_apply _ y⟩
-    have hs :
-        (TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv r =
-          r • (TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv
-            (1 : k) := by
-      rw [← map_smul, smul_eq_mul, mul_one]
-    rw [hs, map_smul, map_smul, LinearMap.smul_apply, h₁, smul_zero]
+    rw [TauCeti.singularHomology_topCatSphere_eq_smul_generator m x, map_smul,
+      LinearMap.smul_apply]
+    -- the spanning lemma writes the coefficient ring `ModuleCat.of k k` rather than
+    -- `𝟙_ (ModuleCat k)`, so `h₁` applies up to definitional unfolding
+    exact (congrArg (_ • ·) h₁).trans (smul_zero _)
   · -- the homology of the sphere vanishes in every other degree
     obtain ⟨p, rfl⟩ : ∃ p', p = p' + 1 := ⟨p - 1, by omega⟩
     have hz : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (p + 1)).obj
@@ -265,7 +252,7 @@ private lemma sphereProdSlant_sphereProdCohomologyMap (m q n : ℕ) (h : m + 1 +
   simp only [TauCeti.singularCup_fst_snd_eq_homologyMap_singularCross,
     singularSlant_coefficient_naturality, Iso.hom_inv_id]
   refine ⟨?_, ?_⟩
-  · rw [singularSlant_singularHomology₀Section_singularCohomologyMap_snd _ _ _ _ _ _ _
+  · rw [singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self _ _ _ _ _ _ _
         fun s ↦ (ModuleCat.MonoidalCategory.leftUnitor_hom_apply (1 : k) s).trans (one_smul k s),
       singularSlant_singularCross_of_ne (hp := by omega), add_zero]
   · -- `θ` evaluates to `1` on the standard generator; the sphere API states this with the
@@ -329,20 +316,23 @@ lemma singularCohomologySphereProdEquiv_apply (m q n : ℕ) (h : m + 1 + q = n)
   (rfl)
 
 /-- The inverse of the splitting of the cohomology of `S^{m+1} × Y` sends a class `φ` to its slant
-products by the class of a point and by the standard generator of `H_{m+1}(S^{m+1}; k)`. -/
-@[simp]
+products by the class of any point `x₀` and by the standard generator of `H_{m+1}(S^{m+1}; k)`. -/
 lemma singularCohomologySphereProdEquiv_symm_apply (m q n : ℕ) (h : m + 1 + q = n)
+    (x₀ : TopCat.sphere.{w} (m + 1))
     (φ : (TopCat.sphere.{w} (m + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) n) :
     (singularCohomologySphereProdEquiv Y m q n h).symm φ =
       (singularSlant k _ _ Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom 0 n n (zero_add n)
-        (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k))
-          (Classical.arbitrary (TopCat.sphere.{w} (m + 1))) (1 : k)) φ,
+        (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k)) φ,
        singularSlant k _ _ Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom (m + 1) q n h
         ((TauCeti.reducedSingularHomologyι (𝟙_ (ModuleCat.{w} k)) (m + 1)).app _
           ((TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv
-            (1 : k))) φ) :=
-  (rfl)
+            (1 : k))) φ) := by
+  have : PathConnectedSpace (TopCat.sphere.{w} (m + 1)) :=
+    TauCeti.TopCat.pathConnectedSpace_diskBoundary (by omega)
+  rw [TauCeti.singularHomology₀Section_eq_of_pathConnectedSpace _ x₀ (Classical.arbitrary _)]
+  -- with the point used to define the inverse, both sides agree by definition
+  rfl
 
 end SphereProd
 
