@@ -72,7 +72,7 @@ omit hx in
   simp [rootSimpleCorootFamily]
 
 omit hx in
-@[simp] private theorem coe_rootSimpleCorootFamily_inr_eq_incl (j : b.support) :
+private theorem coe_rootSimpleCorootFamily_inr_eq_incl (j : b.support) :
     (rootSimpleCorootFamily (x := x) b (Sum.inr j) : L) =
       H.incl ((rootSystem H).coroot j) := by
   rw [coe_rootSimpleCorootFamily_inr, rootSystem_coroot_apply, LieSubalgebra.coe_incl]
