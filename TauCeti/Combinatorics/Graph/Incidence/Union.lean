@@ -16,9 +16,9 @@ unions of the corresponding sets in the two graphs. When the graphs have disjoin
 the finite counts add, even at a vertex common to both graphs. In particular, these formulas
 apply to disjoint unions. Parallel edge identities remain distinct and a loop counts once.
 
-The set identities need no finiteness. The counting identities require only finiteness of the
-sets counted at the chosen vertex, not of all edges or vertices. This distinction matters for
-`Set.ncard`, which returns zero on infinite sets.
+The set identities in `TauCeti.Combinatorics.Graph.Union` need no finiteness. The counting
+identities here require only finiteness of the sets counted at the chosen vertex, not of all
+edges or vertices. This distinction matters for `Set.ncard`, which returns zero on infinite sets.
 -/
 
 public section
@@ -30,29 +30,6 @@ universe u v
 namespace Graph.Compatible
 
 variable {α : Type u} {β : Type v} {G H : Graph α β}
-
-/-- Incident edge identities in a compatible union are those incident in either input. -/
-@[simp]
-theorem incidenceSet_union (h : G.Compatible H) (x : α) :
-    h.union.incidenceSet x = G.incidenceSet x ∪ H.incidenceSet x := by
-  ext e
-  simp only [mem_incidenceSet, mem_union, h.union_inc_iff]
-
-/-- Loop identities in a compatible union are those that are loops in either input. -/
-@[simp]
-theorem loopSet_union (h : G.Compatible H) (x : α) :
-    h.union.loopSet x = G.loopSet x ∪ H.loopSet x := by
-  ext e
-  simp only [mem_loopSet, mem_union, h.union_isLoopAt_iff]
-
-/-- Compatibility ensures that a shared edge cannot be a loop in just one input. Consequently,
-nonloop incident edges also commute with union. -/
-theorem incidenceSet_sdiff_loopSet_union (h : G.Compatible H) (x : α) :
-    h.union.incidenceSet x \ h.union.loopSet x =
-      (G.incidenceSet x \ G.loopSet x) ∪ (H.incidenceSet x \ H.loopSet x) := by
-  ext e
-  simp only [mem_sdiff, mem_incidenceSet, mem_loopSet, mem_union,
-    ← Graph.isNonloopAt_iff_inc_not_isLoopAt, h.union_isNonloopAt_iff]
 
 /-- Counts of incident edges add in an edge-disjoint union, including at shared vertices.
 Only the two incidence sets at this vertex need be finite. -/
