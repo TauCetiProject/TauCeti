@@ -304,6 +304,7 @@ theorem lift_comp_algebraMap (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u
     (lift u hu hf).comp (algebraMap A (CompletedAway A f)) = u :=
   RingHom.ext (lift_algebraMap u hu hf)
 
+omit [IsTopologicalRing B] in
 /-- The **universal property of the completed localisation**: a continuous ring homomorphism
 `u : A → B` into a complete Hausdorff linearly topologised ring with `u f` a unit factors
 uniquely through a continuous ring homomorphism `A_{f} → B`. -/
