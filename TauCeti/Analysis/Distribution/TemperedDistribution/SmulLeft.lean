@@ -42,10 +42,10 @@ namespace TemperedDistribution
 open MeasureTheory
 open scoped SchwartzMap LineDeriv
 
-section Deriv
+section TVS
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℂ F]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [AddCommGroup F] [Module ℂ F]
+  [TopologicalSpace F] [IsTopologicalAddGroup F] [ContinuousConstSMul ℂ F]
 
 /-- Multiplication by a function without temperate growth is the junk value `0`, because
 `SchwartzMap.smulLeftCLM` is `0` for such a function. -/
@@ -55,6 +55,13 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
   simp [SchwartzMap.smulLeftCLM, hg]
+
+end TVS
+
+section Deriv
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
 
 /-- **The Leibniz rule for tempered distributions**: for `g` of temperate growth,
 `∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is the classical derivative `x ↦ Dg(x) v`. -/
