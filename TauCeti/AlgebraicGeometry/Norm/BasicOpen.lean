@@ -54,17 +54,16 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
     have h := congrArg (fun g ↦ g q) (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl)
     simpa only [Scheme.Hom.comp_apply, Spec.map_apply, ← Scheme.Hom.app_eq_appLE] using h.symm
   have hnorm := not_congr (Algebra.projectiveNorm_mem_iff (p := p.asIdeal) (x := s))
-  rw [← Scheme.Hom.mem_preimage, hU.fromSpec_preimage_basicOpen]
-  -- Membership in the spectrum's basic open is non-membership in its prime ideal.
-  change Algebra.projectiveNorm Γ(X, U) s ∉ p.asIdeal ↔ _
+  -- `erw` identifies the opens on `Spec` with their prime-spectrum model.
+  erw [← Scheme.Hom.mem_preimage, hU.fromSpec_preimage_basicOpen,
+    PrimeSpectrum.mem_basicOpen]
   refine hnorm.trans ⟨?_, ?_⟩
   · intro h y hy
     obtain ⟨q, rfl⟩ : y ∈ Set.range hV.fromSpec := by
       rw [hV.range_fromSpec]
       exact (Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hxU)
-    rw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen]
-    -- Membership in the spectrum's basic open is non-membership in its prime ideal.
-    change s ∉ q.asIdeal
+    erw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen,
+      PrimeSpectrum.mem_basicOpen]
     intro hs
     apply h
     -- The norm criterion asks for a prime above `p` containing `s`.
@@ -77,7 +76,8 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
     have hqp' : PrimeSpectrum.comap (f.app U).hom q' = p :=
       PrimeSpectrum.ext hqp.over.symm
     have hmem := h (hV.fromSpec q') (by rw [hmap, hqp'])
-    rw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen] at hmem
+    erw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen,
+      PrimeSpectrum.mem_basicOpen] at hmem
     exact hmem hs
 
 /-- The norm open is the complement, within the affine open, of the image of the section's
