@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.Fintype.Perm
 
 public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.NeZero
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
@@ -18,8 +20,11 @@ public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
 
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Basic results about finite ordinal types
@@ -75,6 +80,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
   `open Fin.NatCast`) is nonzero.
 * `Fin.val_one_of_two_le`: the element `1` of `Fin m` has value `1` once `2 ≤ m`.
+* `Fin.two_mul_val_lt_two_mul_add_one` and `Fin.two_mul_val_add_one_lt_two_mul_add_one`: the
+  indices `2 * k` and `2 * k + 1`, for `k : Fin ℓ`, lie in `Fin (2 * ℓ + 1)`.
 * `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
   and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 * `Fin.insertNth_append_castAdd` and `Fin.insertNth_append_natAdd`: insertion into either block
@@ -90,6 +97,8 @@ range, so the value is a `dite` rather than a plain application.
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
 * `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.eq_succ_or_eq_castSucc_or_eq_succAbove`: every index of `Fin (n + 1)` is `i.succ`,
+  `i.castSucc`, or a value `i.succ.succAbove k` with `k ≠ i`.
 * `Fin.ite_even_comp_finRotate_symm`: rotating a tuple of even length alternating between two
   entries swaps the two entries.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
@@ -129,6 +138,8 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
+* `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
+  ends below it and never equals it drops below the level at some step.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -207,6 +218,23 @@ theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
       intro x hx
       simp [Finset.mem_range.mp hx]
     _ = _ := Finset.sum_range_const_sub_succ N k hk
+
+/-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
+coordinates `b i` plus a constant independent of `b`. -/
+theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : Fin N → K) :
+    (∑ i : Fin N, (b i + (2 : K)⁻¹) *
+      (b i + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
+      (∑ i : Fin N, b i * (b i + (N : K) - 2 * (i : K))) +
+        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro i _
+  have h2 : (2 : K) * 2⁻¹ = 1 := mul_inv_cancel₀ (NeZero.ne 2)
+  have h4 : (4 : K)⁻¹ = 2⁻¹ * 2⁻¹ := by
+    rw [← mul_inv]
+    norm_num
+  rw [one_div, h4]
+  linear_combination (b i - (i : K) + 2⁻¹) * h2
 
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
@@ -427,6 +455,17 @@ theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
 theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
   (finRotate _).symm_apply_eq.mpr finRotate_last.symm
 
+/-- An index of `Fin (n + 1)` is `i.succ`, `i.castSucc`, or `i.succ.succAbove k` for some
+`k ≠ i`: the skipped index `i.succ`, its predecessor `i.castSucc = i.succ.succAbove i`, and the
+values of `i.succ.succAbove` away from `i`. -/
+theorem eq_succ_or_eq_castSucc_or_eq_succAbove {n : ℕ} (i : Fin n) (j : Fin (n + 1)) :
+    j = i.succ ∨ j = i.castSucc ∨ ∃ k, k ≠ i ∧ j = i.succ.succAbove k := by
+  obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  · exact .inl rfl
+  by_cases hk : k = i
+  · exact .inr (.inl (hk ▸ Fin.succAbove_succ_self k))
+  · exact .inr (.inr ⟨k, hk, rfl⟩)
+
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
 theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
     (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
@@ -558,6 +597,17 @@ theorem natCast_ne_zero {n a : ℕ} [NeZero n] (ha : a ≠ 0) (han : a < n) : (a
 when `m` is not syntactically of the form `n + 2`. -/
 theorem val_one_of_two_le {m : ℕ} [NeZero m] (hm : 2 ≤ m) : ((1 : Fin m) : ℕ) = 1 := by
   rw [val_one', Nat.mod_eq_of_lt hm]
+
+/-- The even index `2 * k` of a pair `(2 * k, 2 * k + 1)` indexed by `k : Fin ℓ` lies in
+`Fin (2 * ℓ + 1)`. -/
+theorem two_mul_val_lt_two_mul_add_one {ℓ : ℕ} (k : Fin ℓ) : 2 * (k : ℕ) < 2 * ℓ + 1 := by
+  omega
+
+/-- The odd index `2 * k + 1` of a pair `(2 * k, 2 * k + 1)` indexed by `k : Fin ℓ` lies in
+`Fin (2 * ℓ + 1)`. -/
+theorem two_mul_val_add_one_lt_two_mul_add_one {ℓ : ℕ} (k : Fin ℓ) :
+    2 * (k : ℕ) + 1 < 2 * ℓ + 1 := by
+  omega
 
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
@@ -852,6 +902,27 @@ theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {
   obtain ⟨j, hj⟩ := h i hi
   rw [← hj]
   exact hb j.le_last
+
+end TauCeti
+
+namespace Fin
+
+/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
+below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
+theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
+    {c : α} (hne : ∀ i, g i ≠ c)
+    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
+    ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
+  have hk : k ≠ 0 := by
+    rintro rfl
+    exact (h0.trans' hl).false
+  obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ (β := αᵒᵈ)
+    (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
+  exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
+
+end Fin
+
+namespace TauCeti
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by

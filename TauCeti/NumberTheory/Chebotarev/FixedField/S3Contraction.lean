@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.ExceptionalPrimes
 public import TauCeti.NumberTheory.NumberField.SplittingField
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.FieldTheory.GaloisGroups.Cubic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia

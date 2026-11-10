@@ -226,7 +226,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     ((fderiv ℝ f ((Φ.symm k : ↥{p | f p = 0}) : X × Λ)).comp
       (ContinuousLinearMap.inl ℝ X Λ))})
   obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
-    hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
+    (LinearMap.range_eq_top.mpr hsurj) (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
   have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) := by
     filter_upwards [(hfn.of_le hn1).eventually (by simp)] with p hp
     exact hp.differentiableAt one_ne_zero

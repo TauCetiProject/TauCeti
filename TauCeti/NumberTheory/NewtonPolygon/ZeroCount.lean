@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NewtonPolygon.ActiveFace
 public import TauCeti.NumberTheory.NewtonPolygon.Entire
 public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
 public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 
 /-!
 # Counting zeros with multiplicity by Newton polygons
@@ -36,10 +38,20 @@ exact counts with multiplicity on spheres and open discs:
   closed `K` the zeros of `f` there number `l`, counted with multiplicity
   (`PowerSeries.exists_card_eq_isGoodZero_of_isFiniteFace`).
 
+The sphere count also holds in any algebraically closed complete normed field extension `L`, in
+terms of the multiset of zeros of `f` in `L`: the endpoints `l ≤ u` of the face
+are the lowest dominant and distinguished degrees of `f` at `b ^ σ`
+(`PowerSeries.isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon`), the slope
+multiplicity is the width `u - l` of the face, and there are exactly `u - l` zeros on the sphere
+(`TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq`), giving
+`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq`.
+
 A nonzero entire series has a finite face of every slope, so over an algebraically closed field
 the multiplicity of each slope `σ` of its Newton polygon is the number of its zeros of norm
 `b ^ σ`, counted with multiplicity
-(`PowerSeries.IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`). For the Fredholm
+(`PowerSeries.IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`, and
+`PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq` in an
+extension). For the Fredholm
 series `det (1 - T u)` of a compact operator, a zero `a` gives the eigenvalue `a⁻¹`, so this is
 the count by which the slopes of the Fredholm polygon describe the valuations of eigenvalues with
 their algebraic multiplicities.
@@ -58,6 +70,10 @@ their algebraic multiplicities.
 * `PowerSeries.exists_card_eq_isGoodZero_of_isFiniteFace`: over an algebraically closed field,
   the left endpoint of the finite face of slope `σ` is the number of zeros of norm less than
   `b ^ σ`, counted with multiplicity.
+* `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq`,
+  `PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq`: in an
+  algebraically closed complete extension, the multiplicity of the slope of a finite face counts
+  the zeros on the corresponding sphere.
 
 ## References
 
@@ -66,7 +82,7 @@ their algebraic multiplicities.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
   Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §4.
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
-  Publications Mathématiques de l'IHÉS 14 (1962), §3.
+  Publications Mathématiques de l'IHÉS 14 (1962), §§1, 3.
 -/
 
 public section
@@ -196,5 +212,44 @@ theorem IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero (hf : f.IsEnt
   obtain ⟨l, j, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 σ
   exact PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero v hb hv (hf.isRestricted _)
     hface
+
+end PowerSeries
+
+namespace PowerSeries
+
+section ZeroMultiset
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+  (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (L : Type*) [NormedField L] [NormedAlgebra K L]
+  [CompleteSpace L] [IsAlgClosed L] {f : K⟦X⟧}
+
+include hb hv
+
+/-- **Slope multiplicities count zeros on a sphere.** If `f` is restricted at `b ^ σ` and its
+Newton polygon has a finite face of slope `σ`, then in any algebraically closed complete normed
+field extension `L` the multiplicity of the slope `σ` is the number of zeros of `f` with
+`‖x‖ = b ^ σ`, counted with multiplicity. The radius may lie on the boundary of convergence. -/
+theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq {σ : ℝ} {l u : ℕ}
+    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
+  obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hfr) hface
+  rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
+    TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq hu hl
+      (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr]
+
+/-- **Slope multiplicities of entire series count zeros.** For a nonzero entire series `f` and any
+algebraically closed complete normed field extension `L`, the multiplicity of every slope `σ` of
+the Newton polygon of `f` is the number of zeros of `f` in `L` with `‖x‖ = b ^ σ`, counted with
+multiplicity. -/
+theorem IsEntire.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq (hf : f.IsEntire)
+    (hf0 : f ≠ 0) (σ : ℝ) :
+    f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
+  obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 σ
+  exact PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq v hb hv L
+    (hf.isRestricted _) hface
+
+end ZeroMultiset
 
 end PowerSeries

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Rational
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.Algebra.MonoidAlgebra.ProjectiveTrace
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Invariants
@@ -81,8 +82,6 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
   let _ : Module.Finite kG N₀ := padicReduction_module_finite p G N
   let _ : Module.Projective kG M₀ := padicReduction_module_projective p G M
   let _ : Module.Projective kG N₀ := padicReduction_module_projective p G N
-  let _ : Finite (G →₀ ZMod p) := Finite.of_injective _ DFunLike.coe_injective
-  let _ : Finite kG := Finite.of_injective _ MonoidAlgebra.coeff_injective
   let _ : Finite (kG ⧸ Ring.jacobson kG) :=
     Finite.of_surjective (Ideal.Quotient.mk (Ring.jacobson kG))
       Ideal.Quotient.mk_surjective

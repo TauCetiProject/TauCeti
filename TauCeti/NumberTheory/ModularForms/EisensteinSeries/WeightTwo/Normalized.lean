@@ -293,7 +293,6 @@ theorem qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) ∣ N) :
   rw [normalizedCharG2MFRaise_eq_levelRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The `q`-expansion of `E₂^{ψ,φ,t}` is supported on the multiples of `t`. -/
@@ -305,7 +304,6 @@ theorem isSupportedOnDvd_qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) 
   rw [normalizedCharG2MFRaise_eq_levelRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- **The positive coefficients of `E₂^{ψ,φ,t}`** are the twisted divisor sums `σ₁^{ψ,φ}(n / t)`
@@ -318,7 +316,6 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (h :
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharG2MFRaise_eq_levelRaise, ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)]
   split_ifs with htn
   · exact qExpansion_normalizedCharG2MF_coeff ψ φ dvd_rfl h hpar hφ
