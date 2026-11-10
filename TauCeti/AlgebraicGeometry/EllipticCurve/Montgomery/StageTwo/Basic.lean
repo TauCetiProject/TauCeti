@@ -51,23 +51,10 @@ theorem prime_dvd_gcd_cross_of_zsmul_eq_zero (hpn : p ∣ n)
     p ∣ Nat.gcd (R.cross S).val n := by
   apply ((R.cross S).dvd_gcd_val_iff_castHom_eq_zero hpn).mpr
   rw [← Pair.cross_map]
-  -- the coordinate pair of a native point is nonzero, also for `B = 0`, where the model
-  -- `y² = x³` is singular at `(0, 0)`
-  have hne (P : (model A B).toAffine.Point) : coordinates A B P ≠ 0 := by
-    by_cases hB : B = 0
-    · subst hB
-      rcases P with _ | ⟨x, y, hns⟩
-      · simp [← WeierstrassCurve.Affine.Point.zero_def, Pair.eq_zero_iff]
-      · rw [coordinates_some, Ne, Pair.eq_zero_iff]
-        rintro ⟨rfl, -⟩
-        rw [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff] at hns
-        obtain ⟨he, hy⟩ := hns
-        obtain rfl : y = 0 := by simpa using he
-        simp at hy
-    · exact coordinates_ne_zero hB P
   have hcoords := cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hq h
-  have hRS := Pair.cross_eq_zero_trans (hne (m • Q)) hR hcoords
-  exact Pair.cross_eq_zero_trans (hne (j • Q)) hRS (Pair.cross_eq_zero_comm.mp hS)
+  have hRS := Pair.cross_eq_zero_trans (coordinates_ne_zero_of_nontrivial (m • Q)) hR hcoords
+  exact Pair.cross_eq_zero_trans (coordinates_ne_zero_of_nontrivial (j • Q)) hRS
+    (Pair.cross_eq_zero_comm.mp hS)
 
 /-- **Stage-2 detection after the stage-1 multiplier.** If `addOrderOf P ∣ M * q` and
 `q = i * w ± j`, representatives of the coordinates of `[i * w]([M]P)` and `[j]([M]P)`
