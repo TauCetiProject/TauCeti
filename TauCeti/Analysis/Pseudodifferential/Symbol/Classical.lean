@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 
 /-!
 # Classical symbols
@@ -46,6 +47,12 @@ The homogeneous terms enter the expansion through their cut-off terms
   consists of the smoothing classical symbols (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`);
   `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`: two classical symbols differ by a
   smoothing symbol exactly when their homogeneous terms agree;
+* `TauCeti.ClassicalSymbol.exists_term_eq` (Borel summation): every sequence of homogeneous terms
+  of degrees `m - j` is the expansion of a classical symbol of order `m`, by the asymptotic sum
+  `TauCeti.Symbol.exists_asymptoticSum` of their cut-off terms; so
+  `TauCeti.ClassicalSymbol.termsLinearMap` is surjective and `TauCeti.ClassicalSymbol.termsEquiv`
+  identifies the classical symbols of order `m` modulo the smoothing ones with all sequences of
+  homogeneous terms;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
@@ -439,6 +446,46 @@ theorem isSmoothing_toSymbol_sub_iff {a b : ClassicalSymbol n V W m} :
   simp [sub_eq_zero]
 
 end Terms
+
+/-! ### Classical symbols with prescribed homogeneous terms -/
+
+section BorelSummation
+
+/-- **Borel summation of homogeneous terms.** Every sequence of homogeneous symbols `a_{m-j}` of
+degrees `m - j` is the sequence of homogeneous terms of a classical symbol of order `m`. -/
+theorem exists_term_eq
+    (a : ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) :
+    ∃ b : ClassicalSymbol n V W m, b.term = a := by
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  -- An asymptotic sum of the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` is the required full symbol.
+  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
+  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop m <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (a j)
+  refine ⟨⟨Symbol.inclusion (by simp) b, a, χ, fun N => ?_⟩, rfl⟩
+  obtain ⟨r, hr⟩ := hb N
+  exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
+
+/-- Every sequence of homogeneous terms of degrees `m - j` is the expansion of a classical symbol of
+order `m`. -/
+theorem termsLinearMap_surjective : Function.Surjective (termsLinearMap n V W m) :=
+  fun a => (exists_term_eq a).imp fun b hb => (termsLinearMap_apply b).trans hb
+
+variable (n V W m) in
+/-- Classical symbols of order `m` modulo smoothing symbols are the formal sums of homogeneous terms
+of degrees `m - j`: the homogeneous terms identify the quotient by the kernel of
+`TauCeti.ClassicalSymbol.termsLinearMap`, the smoothing classical symbols
+(`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`), with all sequences of homogeneous terms. -/
+def termsEquiv : (ClassicalSymbol n V W m ⧸ LinearMap.ker (termsLinearMap n V W m)) ≃ₗ[ℂ]
+    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) :=
+  (termsLinearMap n V W m).quotKerEquivOfSurjective termsLinearMap_surjective
+
+@[simp]
+theorem termsEquiv_mk (a : ClassicalSymbol n V W m) :
+    termsEquiv n V W m (Submodule.Quotient.mk a) = a.term :=
+  (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a).trans (termsLinearMap_apply a)
+
+end BorelSummation
 
 /-! ### Inclusion of orders -/
 
