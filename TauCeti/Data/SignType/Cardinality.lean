@@ -30,10 +30,10 @@ inertia.
 
 public section
 
-namespace TauCeti
+namespace SignType
 
 /-- The three fibers of a sign-valued function exhaust its domain. -/
-theorem _root_.SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos
+theorem ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos
     {ι : Type*} [Finite ι] (u : ι → SignType) :
     {i | u i = 0}.ncard + {i | u i = -1}.ncard + {i | u i = 1}.ncard = Nat.card ι := by
   have hsigma : Nat.card ι = ∑ s : SignType, Nat.card ↥{i | u i = s} := by
@@ -41,4 +41,4 @@ theorem _root_.SignType.ncard_fiber_zero_add_ncard_fiber_neg_add_ncard_fiber_pos
     exact Nat.card_congr (Equiv.sigmaFiberEquiv u).symm
   simpa [SignType.univ_eq, add_assoc] using hsigma.symm
 
-end TauCeti
+end SignType

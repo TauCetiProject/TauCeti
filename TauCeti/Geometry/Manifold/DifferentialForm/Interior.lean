@@ -261,6 +261,23 @@ theorem RoughForm.interior_self (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 2)) : (ω.interior X).interior X = 0 :=
   bundleInterior_self X ω
 
+/-- A form vanishes on a field into which it was obtained by insertion: if `ι_X ω = α`, then
+`ι_X α = ω(X, X, ...) = 0`. For a one-form `α` and `ω = dα` this says that a primitive vanishes
+on its Liouville field. -/
+theorem RoughForm.interior_eq_zero_of_interior_eq {ω : RoughForm I M F (k + 2)}
+    {α : RoughForm I M F (k + 1)} {X : (x : M) → TangentSpace I x} (h : ω.interior X = α) :
+    α.interior X = 0 := by
+  rw [← h]
+  exact RoughForm.interior_self X ω
+
+/-- Pointwise form of `RoughForm.interior_eq_zero_of_interior_eq` for one-forms: if `ι_X ω = α`
+for a two-form `ω`, then `α_y(X_y) = 0` at every point `y`. -/
+theorem RoughForm.apply_eq_zero_of_interior_eq {ω : RoughForm I M F 2} {α : RoughForm I M F 1}
+    {X : (x : M) → TangentSpace I x} (h : ω.interior X = α) (y : M) : α y ![X y] = 0 := by
+  have h0 := congrArg (fun β : RoughForm I M F 0 ↦ β y ![])
+    (RoughForm.interior_eq_zero_of_interior_eq h)
+  simpa only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] using h0
+
 /-- Interior products by two vector fields anticommute. -/
 theorem RoughForm.interior_swap [IsTopologicalAddGroup F]
     (X Y : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 2)) :

@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharP.Lemmas
 public import TauCeti.FieldTheory.Kummer.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
-
-import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # The tame character of the inertia group
@@ -266,6 +265,12 @@ theorem inertiaKummerCharacter_pow (a : Kˣ) (n : ℕ) :
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
 
+/-- The Kummer character respects integer powers of its argument. -/
+@[simp]
+theorem inertiaKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
+    inertiaKummerCharacter K m hm (a ^ n) = inertiaKummerCharacter K m hm a ^ n := by
+  cases n <;> simp [zpow_natCast, zpow_negSucc]
+
 /-- **Compatibility along the power maps.** For `n ∣ m`, the level-`m` Kummer character raised to
 the power `m / n` is the level-`n` Kummer character, since `α ^ (m / n)` is an `n`-th root of `a`
 whenever `α` is an `m`-th root. -/
@@ -381,6 +386,12 @@ theorem tameKummerCharacter_pow (a : Kˣ) (n : ℕ) :
   ext σ m : 2
   simp
 
+/-- The tame Kummer character respects integer powers of its argument. -/
+@[simp]
+theorem tameKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
+    tameKummerCharacter K (a ^ n) = tameKummerCharacter K a ^ n := by
+  cases n <;> simp [zpow_natCast, zpow_negSucc]
+
 /-- The tame Kummer character of a unit is trivial. -/
 theorem tameKummerCharacter_eq_one_of_mem_unitFiltration_zero {u : Kˣ}
     (hu : u ∈ unitFiltration K 0) : tameKummerCharacter K u = 1 := by
@@ -408,6 +419,39 @@ def inertiaTameCharacter :
 theorem inertiaTameCharacter_eq_tameKummerCharacter {π : Kˣ} (hπ : IsUniformizer K π) :
     inertiaTameCharacter K = tameKummerCharacter K π :=
   tameKummerCharacter_eq_of_isUniformizer (exists_isUniformizer K).choose_spec hπ
+
+/-- The tame Kummer character of `a` is the normalized valuation of `a` times the tame
+character, written multiplicatively. -/
+theorem tameKummerCharacter_eq_inertiaTameCharacter_zpow (a : Kˣ) :
+    tameKummerCharacter K a = inertiaTameCharacter K ^ (normalizedValuation K a).toAdd := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  have hu := tameKummerCharacter_eq_one_of_mem_unitFiltration_zero
+    (mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def π).1 hπ) a)
+  have ha : a = (a * π ^ (-(normalizedValuation K a).toAdd)) *
+      π ^ (normalizedValuation K a).toAdd := by group
+  calc
+    tameKummerCharacter K a = tameKummerCharacter K
+        (a * π ^ (-(normalizedValuation K a).toAdd)) *
+        tameKummerCharacter K (π ^ (normalizedValuation K a).toAdd) := by
+      rw [← tameKummerCharacter_mul, ← ha]
+    _ = inertiaTameCharacter K ^ (normalizedValuation K a).toAdd := by
+      rw [hu, one_mul, tameKummerCharacter_zpow,
+        ← inertiaTameCharacter_eq_tameKummerCharacter hπ]
+
+/-- At level `m`, inertia acts on the `m`-th roots of `a` by the valuation power of the
+level-`m` tame character. -/
+theorem inertiaKummerCharacter_apply_eq_proj_zpow {m : ℕ}
+    (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ) (σ : inertiaSubgroup K) :
+    inertiaKummerCharacter K m hm a σ =
+      PrimeToPTateModule.proj ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩
+        (inertiaTameCharacter K σ) ^ (normalizedValuation K a).toAdd := by
+  calc
+    _ = PrimeToPTateModule.proj ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩
+        (tameKummerCharacter K a σ) :=
+      (proj_tameKummerCharacter_apply a ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩ σ).symm
+    _ = _ := by
+      rw [tameKummerCharacter_eq_inertiaTameCharacter_zpow,
+        ContinuousMonoidHom.zpow_apply, map_zpow]
 
 /-- **The tame character at level `m`.** For a uniformizer `π` of `K`, `m` prime to `p`, and any
 root `α` of `X ^ m − π`, the level-`m` component of the tame character at `σ ∈ I_K` is `σ(α)/α`. -/
