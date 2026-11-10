@@ -28,6 +28,8 @@ stack merges.
   `multiplicity Γ₁ Γ₂ Γ₂ g e d = 1 ↔ Γ₁gΓ₂ = Γ₁dΓ₂`.
 * `DoubleCoset.multiplicity_eq_one_iff_of_mem_left`: for `e ∈ Γ₁`,
   `multiplicity Γ₁ Γ₁ Γ₂ e g d = 1 ↔ Γ₁gΓ₂ = Γ₁dΓ₂`.
+* `HeckeCoset.multiplicity_one_right_eq_zero`, `HeckeCoset.multiplicity_one_left_eq_zero`: the
+  multiplicity of the identity double coset on a Hecke coset vanishes off the diagonal.
 -/
 
 public section
@@ -194,5 +196,23 @@ theorem multiplicity_one_mul (g d : Δ) :
     multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (d : G) = 1 ↔
       mk H₁ H₂ g = mk H₁ H₂ d := by
   rw [multiplicity_eq_one_iff_of_mem_left HeckeCoset.rep_one_mem, HeckeCoset.eq_iff]
+
+/-- The multiplicity for right convolution by the identity double coset vanishes off the
+diagonal. -/
+lemma multiplicity_one_right_eq_zero
+    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
+    multiplicity H₁ H₂ H₂ (g : G) ((1 : HeckeCoset Δ H₂ H₂).rep : G) (A.rep : G) = 0 :=
+  multiplicity_eq_zero_of_mem_right HeckeCoset.rep_one_mem fun h ↦ hA (by
+    rw [← A.mk_rep]
+    exact (HeckeCoset.eq_iff.mpr h).symm)
+
+/-- The multiplicity for left convolution by the identity double coset vanishes off the
+diagonal. -/
+lemma multiplicity_one_left_eq_zero
+    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
+    multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (A.rep : G) = 0 :=
+  multiplicity_eq_zero_of_mem_left HeckeCoset.rep_one_mem fun h ↦ hA (by
+    rw [← A.mk_rep]
+    exact (HeckeCoset.eq_iff.mpr h).symm)
 
 end HeckeCoset
