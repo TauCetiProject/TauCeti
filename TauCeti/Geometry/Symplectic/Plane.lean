@@ -30,7 +30,8 @@ bracket.
 
 * `TauCeti.SymplecticForm.not_linearIndependent_of_apply_eq_zero`: two vectors pairing trivially
   under `ω` are linearly dependent.
-* `TauCeti.SymplecticForm.exists_eq_smul_add_smul`: a pair `(q, p)` with `ω(q, p) = 1` is a basis.
+* `TauCeti.SymplecticForm.exists_basis_coe_eq_of_apply_eq_one`,
+  `TauCeti.SymplecticForm.exists_eq_smul_add_smul`: a pair `(q, p)` with `ω(q, p) = 1` is a basis.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_apply_eq`: a linear symplectomorphism between
   two planes matches any two such pairs.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_forall_apply_eq_of_pair`: endomorphisms acting
@@ -251,17 +252,22 @@ section Pair
 
 variable {W : Type*} [AddCommGroup W] [Module ℝ W] {ω' : SymplecticForm W}
 
+/-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis. -/
+theorem exists_basis_coe_eq_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) :
+    ∃ b : Basis (Fin 2) ℝ V, ⇑b = ![q, p] :=
+  ⟨basisOfLinearIndependentOfCardEqFinrank
+    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
+    (by simp [hV]), coe_basisOfLinearIndependentOfCardEqFinrank _ _⟩
+
 /-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis: every vector is
 `x q + y p`. -/
 theorem exists_eq_smul_add_smul (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) (v : V) :
     ∃ x y : ℝ, v = x • q + y • p := by
-  let b := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
-    (by simp [hV])
+  obtain ⟨b, hb⟩ := exists_basis_coe_eq_of_apply_eq_one hV h
   refine ⟨b.repr v 0, b.repr v 1, ?_⟩
   have hv := b.sum_repr v
-  rw [Fin.sum_univ_two] at hv
-  simpa [b] using hv.symm
+  rw [Fin.sum_univ_two, hb] at hv
+  simpa using hv.symm
 
 /-- In a symplectic plane, two linear maps agreeing on a pair `(q, p)` with `ω(q, p) = 1` are
 equal. -/
@@ -278,15 +284,11 @@ two pairs are bases and the map is explicit. -/
 theorem exists_isSymplectomorphism_apply_eq (hV : finrank ℝ V = 2) (hW : finrank ℝ W = 2)
     {q p : V} {q' p' : W} (h : ω q p = 1) (h' : ω' q' p' = 1) :
     ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ e q = q' ∧ e p = p' := by
-  let b := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
-    (by simp [hV])
-  let b' := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω'.isAlt.linearIndependent_pair_of_apply_eq_one h'))
-    (by simp [hW])
+  obtain ⟨b, hb⟩ := exists_basis_coe_eq_of_apply_eq_one hV h
+  obtain ⟨b', hb'⟩ := exists_basis_coe_eq_of_apply_eq_one hW h'
   let e := b.equiv b' (Equiv.refl _)
-  have he0 : e q = q' := by simpa [e, b, b'] using b.equiv_apply 0 b' (Equiv.refl _)
-  have he1 : e p = p' := by simpa [e, b, b'] using b.equiv_apply 1 b' (Equiv.refl _)
+  have he0 : e q = q' := by simpa [hb, hb'] using b.equiv_apply 0 b' (Equiv.refl _)
+  have he1 : e p = p' := by simpa [hb, hb'] using b.equiv_apply 1 b' (Equiv.refl _)
   refine ⟨e, isSymplectomorphism_iff.2 fun v w ↦ ?_, he0, he1⟩
   obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
   obtain ⟨x', y', rfl⟩ := exists_eq_smul_add_smul hV h w
@@ -304,7 +306,7 @@ theorem exists_apply_eq_smul_of_apply_eq_zero (hV : finrank ℝ V = 2) {A : Modu
   exact ⟨t, ht.symm⟩
 
 /-- On a symplectic plane, if `A² = κ` with `κ < 0`, then `ω(A v, v) ≠ 0` for every `v ≠ 0`. -/
-theorem apply_ne_zero_of_mul_self_eq_neg (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
+theorem apply_ne_zero_of_neg_of_mul_self_eq_smul_one (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
     {κ : ℝ} (hκ : κ < 0) (hAA : A * A = κ • 1) {v : V} (hv : v ≠ 0) : ω (A v) v ≠ 0 := by
   intro h
   obtain ⟨t, ht⟩ := exists_apply_eq_smul_of_apply_eq_zero hV hv h

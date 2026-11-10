@@ -88,6 +88,15 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module 
 
 /-! ### Normal pairs -/
 
+/-- A value `x` of the same sign as `c` can be rescaled to `c` by a positive square. -/
+private theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
+    ∃ μ : ℝ, 0 < μ ∧ μ ^ 2 * x = c := by
+  have hcx : 0 < c / x := div_pos_iff.2 (mul_pos_iff.1 h)
+  have hx : x ≠ 0 := by rintro rfl; simp at h
+  refine ⟨√(c / x), Real.sqrt_pos.2 hcx, ?_⟩
+  rw [Real.sq_sqrt hcx.le]
+  field_simp
+
 /-- **Elliptic normal pairs.** If `A² v = -c² v` and `c ω(A v, v) > 0`, then a positive multiple
 `q` of `v` and the vector `p = -c⁻¹ A q` satisfy `ω(q, p) = 1`, `A q = -c p` and `A p = c q`. On
 the plane they span, the Hamiltonian `ω(A ·, ·) / 2` of `A` is `c (x² + y²) / 2`. -/
@@ -96,15 +105,9 @@ theorem exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul {A : Module.End ℝ 
     ∃ q p : V, ω q p = 1 ∧ A q = -c • p ∧ A p = c • q ∧ ∃ μ : ℝ, 0 < μ ∧ q = μ • v := by
   set x := ω (A v) v
   have hc : c ≠ 0 := by rintro rfl; simp at hv
-  have hx : x ≠ 0 := by rintro hx; simp [hx] at hv
-  set μ := √(c / x)
-  have hμ : μ ^ 2 * x = c := by
-    rw [Real.sq_sqrt (div_pos_iff.2 (mul_pos_iff.1 hv)).le]
-    field_simp
-  have hμ0 : 0 < μ := Real.sqrt_pos.2 (div_pos_iff.2 (mul_pos_iff.1 hv))
+  obtain ⟨μ, hμ0, hμ⟩ := exists_pos_sq_mul_eq_of_mul_pos hv
   refine ⟨μ • v, -(c⁻¹ * μ) • A v, ?_, ?_, ?_, μ, hμ0, rfl⟩
   · have hvAv : ω v (A v) = -x := by rw [← ω.neg_eq]
-    beta_reduce at hvAv ⊢
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hvAv]
     field_simp
     linear_combination hμ
@@ -122,15 +125,9 @@ theorem exists_apply_eq_one_apply_eq_zero_apply_eq_smul {A : Module.End ℝ V} {
     (hAv : A (A v) = 0) (hv : 0 < ε * ω (A v) v) :
     ∃ q p : V, ω q p = 1 ∧ A q = 0 ∧ A p = ε • q ∧ ∃ μ : ℝ, 0 < μ ∧ p = μ • v := by
   have hε : ε ≠ 0 := by rintro rfl; simp at hv
-  have hx : ω (A v) v ≠ 0 := by rintro hx; simp [hx] at hv
-  set μ := √(ε / ω (A v) v)
-  have hμ : μ ^ 2 * ω (A v) v = ε := by
-    rw [Real.sq_sqrt (div_pos_iff.2 (mul_pos_iff.1 hv)).le]
-    field_simp
-  have hμ0 : 0 < μ := Real.sqrt_pos.2 (div_pos_iff.2 (mul_pos_iff.1 hv))
+  obtain ⟨μ, hμ0, hμ⟩ := exists_pos_sq_mul_eq_of_mul_pos hv
   refine ⟨(ε⁻¹ * μ) • A v, μ • v, ?_, ?_, ?_, μ, hμ0, rfl⟩
-  · beta_reduce at hμ ⊢
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  · simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
     field_simp
     linear_combination hμ
   · rw [map_smul, hAv, smul_zero]
@@ -145,7 +142,6 @@ theorem exists_apply_eq_one_apply_eq_neg_smul {A : Module.End ℝ V}
     (hAA : A * A = a ^ 2 • 1) {q : V} (hq : q ≠ 0) (hAq : A q = a • q) :
     ∃ p : V, ω q p = 1 ∧ A p = -a • p := by
   obtain ⟨y, hy⟩ := ω.exists_apply_eq_one hq
-  beta_reduce at hy
   have hAy : ω.toBilinForm q (A y) = -a := by
     have h := (LinearMap.mem_skewAdjointSubmodule A).1 hA q y
     simp only [hAq, map_smul, LinearMap.smul_apply, hy, smul_eq_mul, mul_one, Pi.neg_apply,
@@ -154,8 +150,7 @@ theorem exists_apply_eq_one_apply_eq_neg_smul {A : Module.End ℝ V}
   have hAAy : A (A y) = a ^ 2 • y := by
     simpa using LinearMap.congr_fun hAA y
   refine ⟨(2 * a)⁻¹ • (a • y - A y), ?_, ?_⟩
-  · beta_reduce
-    simp only [map_smul, map_sub, smul_eq_mul, hy, hAy]
+  · simp only [map_smul, map_sub, smul_eq_mul, hy, hAy]
     field_simp
     ring
   · rw [map_smul, map_sub, map_smul, hAAy]
@@ -234,7 +229,7 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
     have hb : 0 < √(-κ) := Real.sqrt_pos.2 (by linarith)
     have hb2 : √(-κ) ^ 2 = -κ := Real.sq_sqrt (by linarith)
     obtain ⟨c, hc2, hcv⟩ :=
-      hchoose _ hb _ (apply_ne_zero_of_mul_self_eq_neg hV hκ0 hAA hv)
+      hchoose _ hb _ (apply_ne_zero_of_neg_of_mul_self_eq_smul_one hV hκ0 hAA hv)
     have hc0 : c ≠ 0 := by rintro rfl; simp at hcv
     obtain ⟨w, hcw⟩ := hsign c hc0 ⟨v, hcv⟩
     have hκc : κ = -(c ^ 2) := by linarith
