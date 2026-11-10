@@ -39,6 +39,8 @@ directly with `curveVelocity`.
   and `b` is `(b - a) ‖curveVelocity I γ a‖² / 2`.
 * `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the squared speed of a maximal
   geodesic is that of its initial velocity.
+* `TauCeti.Manifold.curveVelocity_maximalGeodesic_ne_zero`: hence its velocity vanishes nowhere
+  when its initial velocity is nonzero.
 * `TauCeti.Manifold.energy_maximalGeodesic`: hence its energy between two parameters of its
   maximal interval is `(b - a) ‖v‖² / 2`.
 
@@ -217,6 +219,16 @@ theorem inner_curveVelocity_maximalGeodesic_self [T2Space M]
   have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
   rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
   exact hsquared.trans hinitial
+
+/-- A maximal geodesic with nonzero initial velocity has nonzero velocity at every point of its
+maximal interval. -/
+theorem curveVelocity_maximalGeodesic_ne_zero [T2Space M] {p : M} {v : TangentSpace I p} {t : ℝ}
+    (hv : v ≠ 0) (ht : t ∈ geodesicInterval I M p v) :
+    curveVelocity I (maximalGeodesic I M p v) t ≠ 0 := by
+  intro h
+  have hinner := inner_curveVelocity_maximalGeodesic_self ht
+  rw [h, inner_zero_left, eq_comm, inner_self_eq_zero] at hinner
+  exact hv hinner
 
 /-- On any subinterval of its maximal interval, the energy of a maximal geodesic is half the
 squared norm of its initial velocity times the duration. -/
