@@ -204,7 +204,7 @@ private theorem eq_zero_of_sq_le_of_sq_eq_one {j z h : ℝ} (hz : z ^ 2 = 1)
   exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hj (sq_nonneg j))
 
 /-- The constraints `‖q‖² = 1` and `⟪q, p⟫ = 0` of the phase space, in coordinates. -/
-theorem coords_of_mem_sphericalPendulumPhaseSpace
+theorem sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.1 0 ^ 2 + x.1 1 ^ 2 + x.1 2 ^ 2 = 1 ∧
@@ -224,7 +224,7 @@ theorem sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.2 2 ^ 2 = 2 * ((sphericalPendulumEnergyMomentum x).1 - x.1 2) * (1 - x.1 2 ^ 2) -
       (sphericalPendulumEnergyMomentum x).2 ^ 2 := by
-  obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  obtain ⟨hq, hqp⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply, EuclideanSpace.real_norm_sq_eq,
     Fin.sum_univ_three] at hq hqp ⊢
@@ -236,7 +236,7 @@ theorem apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.1 2 ∈ Icc (-1) 1 := by
-  obtain ⟨hq, -⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  obtain ⟨hq, -⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   exact ⟨by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)],
     by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)]⟩
 
@@ -401,7 +401,7 @@ theorem fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     (sphericalPendulumEnergyMomentum x).1 = -1 ↔ x = (!₂[0, 0, -1], 0) := by
-  obtain ⟨hq, -⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  obtain ⟨hq, -⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply] at hq ⊢
   constructor

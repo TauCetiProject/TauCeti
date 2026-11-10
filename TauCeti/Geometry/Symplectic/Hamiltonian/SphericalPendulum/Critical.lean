@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.PhaseSpace
+import TauCeti.LinearAlgebra.Dual.Annihilator
 
 /-!
 # Critical points and critical values of the spherical pendulum
@@ -148,41 +149,26 @@ private theorem lagrange_cases {q0 q1 q2 p0 p1 p2 l m a b : ℝ}
       · rw [← hr']
         exact (mul_eq_zero.1 h3).resolve_left (pow_ne_zero 2 hl)
 
-/-- **Lagrange multipliers for a map into the plane.** If a linear map `DF` does not map the kernel
-of a linear map `D` onto `ℝ²`, then some `(l, m) ≠ 0` and `c` satisfy
-`l DF₁ + m DF₂ = c₀ D₁ + c₁ D₂`. -/
+/-- **Lagrange multipliers for a map into the plane**, in coordinates: if a linear map `DF` does
+not map the kernel of a linear map `D` onto `ℝ²`, then some `(l, m) ≠ 0` and `c` satisfy
+`l DF₁ + m DF₂ = c₀ D₁ + c₁ D₂`. This reads off
+`LinearMap.exists_ne_zero_comp_eq_comp_of_map_ker_ne_top` in the coordinates of `ℝ²`. -/
 private theorem exists_lagrange_multipliers {E : Type*} [AddCommGroup E] [Module ℝ E]
     {D DF : E →ₗ[ℝ] ℝ × ℝ} (hne : D.ker.map DF ≠ ⊤) :
     ∃ l m : ℝ, (l ≠ 0 ∨ m ≠ 0) ∧ ∃ c : Fin 2 → ℝ,
       ∀ v, l * (DF v).1 + m * (DF v).2 = c 0 * (D v).1 + c 1 * (D v).2 := by
-  -- A nonzero functional `f = l (·).1 + m (·).2` on `ℝ²` kills `DF (ker D)`.
-  obtain ⟨f, hf0, hf⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
-  have hK : ⨅ i, LinearMap.ker
-      (![LinearMap.fst ℝ ℝ ℝ ∘ₗ D, LinearMap.snd ℝ ℝ ℝ ∘ₗ D] i) ≤
-        LinearMap.ker (f ∘ₗ DF) := by
-    intro v hv
-    simp only [Submodule.mem_iInf, LinearMap.mem_ker, Fin.forall_fin_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
-      LinearMap.snd_apply] at hv
-    have hv' : v ∈ D.ker := Prod.ext hv.1 hv.2
-    have hmem : f (DF v) ∈ (D.ker.map DF).map f :=
-      ⟨DF v, ⟨v, hv', rfl⟩, rfl⟩
-    rw [hf, Submodule.mem_bot] at hmem
-    exact hmem
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 (mem_span_of_iInf_ker_le_ker hK)
-  have hf' (w : ℝ × ℝ) : f w = f (1, 0) * w.1 + f (0, 1) * w.2 := by
+  obtain ⟨f, hf0, g, hfg⟩ := LinearMap.exists_ne_zero_comp_eq_comp_of_map_ker_ne_top hne
+  have hcoord (φ : Module.Dual ℝ (ℝ × ℝ)) (w : ℝ × ℝ) :
+      φ w = φ (1, 0) * w.1 + φ (0, 1) * w.2 := by
     conv_lhs => rw [show w = w.1 • ((1 : ℝ), (0 : ℝ)) + w.2 • ((0 : ℝ), (1 : ℝ)) by
       ext <;> simp]
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, mul_comm w.2]
-  refine ⟨f (1, 0), f (0, 1), ?_, c, fun v ↦ ?_⟩
+  refine ⟨f (1, 0), f (0, 1), ?_, ![g (1, 0), g (0, 1)], fun v ↦ ?_⟩
   · by_contra! h
-    exact hf0 (LinearMap.ext fun w ↦ by rw [hf', h.1, h.2]; simp)
-  · have h := LinearMap.congr_fun hc v
-    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.add_apply,
-      LinearMap.smul_apply, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
-      LinearMap.snd_apply, smul_eq_mul] at h
-    rw [← hf', ← h]
+    exact hf0 (LinearMap.ext fun w ↦ by rw [hcoord, h.1, h.2]; simp)
+  · have h := LinearMap.congr_fun hfg v
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, hcoord f, hcoord g] at h
+    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one] using h
 
 /-- In coordinates, the differentials of the constraint map and of the energy–momentum map. -/
 private theorem fderiv_coords (q p a b : EuclideanSpace ℝ (Fin 3)) :
@@ -205,7 +191,7 @@ private theorem pole_or_relativeEquilibrium_of_map_ne_top {q p : EuclideanSpace 
       (fderiv ℝ sphericalPendulumEnergyMomentum (q, p) : _ →ₗ[ℝ] ℝ × ℝ) ≠ ⊤) :
     (p = 0 ∧ q 2 ^ 2 = 1) ∨ (q 0 * p 1 - q 1 * p 0 ≠ 0 ∧ p 2 = 0 ∧
       (q 0 * p 1 - q 1 * p 0) ^ 2 * q 2 + (1 - q 2 ^ 2) ^ 2 = 0) := by
-  obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  obtain ⟨hq, hqp⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   dsimp only at hq hqp
   obtain ⟨l, m, hlm, c, hc⟩ := exists_lagrange_multipliers hne
   have hev (a b : EuclideanSpace ℝ (Fin 3)) :
@@ -243,7 +229,7 @@ private theorem map_ne_top_of_pole_or_relativeEquilibrium {q p : EuclideanSpace 
       (q 0 * p 1 - q 1 * p 0) ^ 2 * q 2 + (1 - q 2 ^ 2) ^ 2 = 0)) :
     (fderiv ℝ sphericalPendulumConstraint (q, p)).ker.map
       (fderiv ℝ sphericalPendulumEnergyMomentum (q, p) : _ →ₗ[ℝ] ℝ × ℝ) ≠ ⊤ := by
-  obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  obtain ⟨hq, hqp⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   dsimp only at hq hqp
   intro htop
   -- At a critical point no tangent vector has image `(1, 0)` under `dF`.
