@@ -248,6 +248,78 @@ theorem euclideanZerothOrderCoeff_apply
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
 
+/-- The Hölder norm of the second-order coefficient field is at most the sum of the Hölder norms
+of its scalar coefficients. -/
+theorem norm_euclideanSecondOrderCoeff_le
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
+  rw [euclideanSecondOrderCoeff]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
+    (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_))
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  -- Evaluating a Hessian at a pair of unit vectors has operator norm at most one.
+  have hH : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ ?_
+    simpa using H.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  calc _ ≤ 1 * ‖a i j‖ * 1 := by
+        gcongr
+        · exact ContinuousLinearMap.opNorm_lsmul_le
+        · exact (HolderSpace.norm_const_le _).trans hH
+    _ = ‖a i j‖ := by ring
+
+/-- The Hölder norm of the first-order coefficient field is at most the sum of the Hölder norms
+of its scalar coefficients. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  rw [euclideanFirstOrderCoeff]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  have hH : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    simpa using v.le_opNorm (EuclideanSpace.single i 1)
+  calc _ ≤ 1 * ‖b i‖ * 1 := by
+        gcongr
+        · exact ContinuousLinearMap.opNorm_lsmul_le
+        · exact (HolderSpace.norm_const_le _).trans hH
+    _ = ‖b i‖ := by ring
+
+/-- An entrywise bound `K` on the scalar coefficients bounds the second-order coefficient field
+by `n² max K 0`, where `n` is the dimension. -/
+theorem norm_euclideanSecondOrderCoeff_le_of_norm_le {K : ℝ}
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    (ha : ∀ i j, ‖a i j‖ ≤ K) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ Fintype.card ι * Fintype.card ι * max K 0 := by
+  refine (norm_euclideanSecondOrderCoeff_le a).trans ?_
+  calc ∑ i, ∑ j, ‖a i j‖ ≤ ∑ _i : ι, ∑ _j : ι, max K 0 :=
+        Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ (ha i j).trans (le_max_left _ _)
+    _ = _ := by simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
+
+/-- An entrywise bound `K` on the scalar coefficients bounds the first-order coefficient field
+by `n max K 0`, where `n` is the dimension. -/
+theorem norm_euclideanFirstOrderCoeff_le_of_norm_le {K : ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} (hb : ∀ i, ‖b i‖ ≤ K) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ Fintype.card ι * max K 0 := by
+  refine (norm_euclideanFirstOrderCoeff_le b).trans ?_
+  calc ∑ i, ‖b i‖ ≤ ∑ _i : ι, max K 0 := Finset.sum_le_sum fun i _ ↦ (hb i).trans (le_max_left _ _)
+    _ = _ := by simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+
+omit [DecidableEq ι] in
+/-- The Hölder norm of the zeroth-order coefficient field is at most that of its scalar
+coefficient. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ := by
+  rw [euclideanZerothOrderCoeff]
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  calc _ ≤ 1 * ‖c‖ * 1 := by
+        gcongr
+        · exact ContinuousLinearMap.opNorm_lsmul_le
+        · exact (HolderSpace.norm_const_le _).trans ContinuousLinearMap.norm_id_le
+    _ = ‖c‖ := by ring
+
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
 `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
