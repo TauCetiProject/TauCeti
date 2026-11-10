@@ -213,12 +213,20 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
 /-- **Order-zero real symbols act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a
 real symbol `g` of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)` for
 every `k`, maps `H^{s,p}` to `H^{s,p}`. This is the Japanese-bracket form of Mihlin's condition in
-`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. -/
+`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. As there, temperate growth of `g` is
+not assumed: without it the multiplier is the junk value `0`. -/
 theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
     (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℝ}
-    (hg : g.HasTemperateGrowth)
     (hgk : ∀ k : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2)) :
     MemSobolev s p (fourierMultiplierCLM F (fun x ↦ (g x : ℂ)) f) := by
+  -- without temperate growth the multiplier is `0`, and the complexification is temperate only
+  -- if `g` is
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · have hc : ¬ (fun x ↦ (g x : ℂ)).HasTemperateGrowth := fun hc ↦ hg <| by
+      simpa using (show (fun x ↦ ((g x : ℂ)).re).HasTemperateGrowth by fun_prop)
+    rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hc]
+    exact (sobolevSubmodule E F s p).zero_mem
   choose C hC using hgk
   set N := finrank ℝ E + 1
   refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (N := N)
@@ -241,7 +249,7 @@ theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ}
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s' p f := by
   rw [← sub_add_cancel s' s, ← memSobolev_besselPotential_iff, besselPotential]
   refine hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_
+    fun k ↦ ?_
   -- The symbol `(1 + ‖x‖ ^ 2) ^ ((s' - s) / 2)` has nonpositive order.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E)
     ((s' - s) / 2) k
@@ -258,7 +266,7 @@ theorem MemSobolev.lineDerivOp_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s : 
   rw [SubNegMonoid.sub_eq_add_neg s 1, add_comm, ← memSobolev_besselPotential_iff,
     besselPotential_neg_one_lineDerivOp_eq f]
   refine (hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_).smul _
+    fun k ↦ ?_).smul _
   -- The symbol `⟪x, m⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` has order `0`.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le m
     (-1 / 2) k
