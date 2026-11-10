@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 public import TauCeti.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Star projections from the continuous functional calculus
@@ -113,7 +114,7 @@ theorem IsSelfAdjoint.continuousWithinAt_cfc_indicator {a : A} (ha : IsSelfAdjoi
     ContinuousOn.cfc_of_mem_nhdsSet (a := id) _
       (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 (iUnion₂_subset fun b hb ↦ hb.2))
       continuousOn_id (fun b hb ↦ hb.1)
-      fun x hx ↦ (continuousOn_const.continuousAt_indicator hx).continuousWithinAt
+      (continuousOn_const.continuousOn_indicator_of_disjoint_frontier disjoint_compl_right)
   refine (hcont.continuousWithinAt ⟨ha, hΩ.subset_compl_left⟩).mono_of_mem_nhdsWithin ?_
   filter_upwards [self_mem_nhdsWithin,
     nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hΩ)]

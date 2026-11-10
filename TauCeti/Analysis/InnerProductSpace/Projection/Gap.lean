@@ -223,18 +223,6 @@ theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : directedProject
   rw [starProjection_eq_self_iff.2 hxV] at hx
   exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
 
-omit [U.HasOrthogonalProjection] in
-/-- If no nonzero vector of `U` is orthogonal to `V`, then the rank of `U` is at most that of `V`:
-the orthogonal projection onto `V` is injective on `U`. -/
-theorem rank_le_of_disjoint_orthogonal (h : Disjoint U Vᗮ) :
-    Module.rank 𝕜 U ≤ Module.rank 𝕜 V := by
-  refine LinearMap.rank_le_of_injective
-    ((V.orthogonalProjectionOnto : E →ₗ[𝕜] V) ∘ₗ U.subtype) fun x y hxy ↦ ?_
-  have hxy' : V.starProjection x = V.starProjection y := by
-    rw [starProjection_apply, starProjection_apply]
-    exact congr_arg ((↑) : V → E) hxy
-  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.2 y.2 hxy'
-
 /-- Two subspaces at gap less than `1` have the same rank. In particular, the rank of the range of
 an orthogonal projection is locally constant in the operator norm. -/
 theorem rank_eq_of_projectionGap_lt_one (h : projectionGap U V < 1) :

@@ -14,6 +14,7 @@ import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Spectral projections of self-adjoint operators
@@ -42,6 +43,8 @@ of a path of self-adjoint Fredholm operators is built:
 
 * `IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range`: the spectral gap at `0`
   of a self-adjoint operator with closed range.
+* `ContinuousLinearMap.cfc_indicator_eq_starProjection_range`: a spectral projection is the
+  orthogonal projection onto its range.
 * `IsSelfAdjoint.cfc_indicator_eq_starProjection_ker`: the spectral projection for a set meeting the
   spectrum only at `0` is the projection onto the kernel.
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
@@ -141,6 +144,20 @@ section Complex
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- The range of a spectral projection of an operator on a complex Hilbert space admits an
+orthogonal projection, since the spectral projection is idempotent and hence has closed range. -/
+instance ContinuousLinearMap.hasOrthogonalProjection_range_cfc_indicator (T : H →L[ℂ] H)
+    (Ω : Set ℝ) : (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range.HasOrthogonalProjection :=
+  ContinuousLinearMap.IsIdempotentElem.hasOrthogonalProjection_range
+    (TauCeti.isStarProjection_cfc_indicator T Ω).isIdempotentElem
+
+/-- A spectral projection of an operator on a complex Hilbert space is the orthogonal projection
+onto its own range. -/
+theorem ContinuousLinearMap.cfc_indicator_eq_starProjection_range (T : H →L[ℂ] H) (Ω : Set ℝ) :
+    cfc (Ω.indicator (1 : ℝ → ℝ)) T = (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range.starProjection :=
+  (isStarProjection_iff_eq_starProjection_range.mp
+    (TauCeti.isStarProjection_cfc_indicator T Ω)).2
+
 namespace IsSelfAdjoint
 
 variable {T : H →L[ℂ] H}
@@ -154,11 +171,9 @@ theorem cfc_indicator_eq_starProjection_ker (hT : IsSelfAdjoint T) {Ω : Set ℝ
     (hΩ : spectrum ℝ T ∩ Ω ⊆ {0}) (hfr : Disjoint (frontier Ω) (spectrum ℝ T)) :
     cfc (Ω.indicator (1 : ℝ → ℝ)) T = T.ker.starProjection := by
   set f := Ω.indicator (1 : ℝ → ℝ)
-  have hf : ContinuousOn f (spectrum ℝ T) := fun x hx ↦
-    (continuousOn_const.continuousAt_indicator (hfr.notMem_of_mem_right hx)).continuousWithinAt
+  have hf : ContinuousOn f (spectrum ℝ T) :=
+    continuousOn_const.continuousOn_indicator_of_disjoint_frontier hfr
   set P := cfc f T
-  obtain ⟨_, hPeq⟩ :=
-    isStarProjection_iff_eq_starProjection_range.mp (TauCeti.isStarProjection_cfc_indicator T Ω)
   -- `T P = 0`, since `x f(x) = 0` on the spectrum.
   have hTP : T * P = 0 := by
     calc T * P = cfc (fun x ↦ x * f x) T := by rw [cfc_mul (fun x ↦ x) f T, cfc_id' ℝ T]
@@ -198,7 +213,7 @@ theorem cfc_indicator_eq_starProjection_ker (hT : IsSelfAdjoint T) {Ω : Set ℝ
     · have hTv : T v = 0 := LinearMap.mem_ker.1 hv
       have h : v - P v = 0 := by simpa [hTv] using congr($hsub v)
       exact (sub_eq_zero.1 h).symm
-  exact hPeq.trans (Submodule.starProjection_inj.2 hrange)
+  exact (T.cfc_indicator_eq_starProjection_range Ω).trans (Submodule.starProjection_inj.2 hrange)
 
 /-! ### Continuity and rank of spectral projections -/
 
@@ -212,13 +227,10 @@ theorem eventually_rank_range_cfc_indicator_eq (hT : IsSelfAdjoint T) {Ω : Set 
         Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range := by
   filter_upwards [hT.continuousWithinAt_cfc_indicator hΩ (Metric.ball_mem_nhds _ one_pos)]
     with S hS
-  obtain ⟨_, hPS⟩ :=
-    isStarProjection_iff_eq_starProjection_range.mp (TauCeti.isStarProjection_cfc_indicator S Ω)
-  obtain ⟨_, hPT⟩ :=
-    isStarProjection_iff_eq_starProjection_range.mp (TauCeti.isStarProjection_cfc_indicator T Ω)
   refine Submodule.rank_eq_of_projectionGap_lt_one _ _ ?_
-  rw [Submodule.projectionGap_def, ← hPS, ← hPT, ← dist_eq_norm]
-  exact hS
+  rw [Submodule.projectionGap_def, ← S.cfc_indicator_eq_starProjection_range Ω,
+    ← T.cfc_indicator_eq_starProjection_range Ω, ← dist_eq_norm]
+  exact Metric.mem_ball.1 hS
 
 end IsSelfAdjoint
 
