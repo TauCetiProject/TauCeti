@@ -51,6 +51,8 @@ singular cohomology is obtained from the one of chain complexes.
   cochain complexes of `k`-modules.
 * `TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor`: `Hom(-, Y)` preserves short
   exactness of degreewise split sequences.
+* `TauCeti.ChainComplex.mono_linearYonedaFunctor_map_op_of_epi_f`: `Hom(-, Y)` takes a degreewise
+  epimorphism to a monomorphism.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
 * `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
   equivalence to a cochain homotopy equivalence in the opposite direction.
@@ -198,6 +200,17 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
     ConcreteCategory.hom (X := (X.unop.linearYonedaObj k Y).X i)
       (Y := (X'.unop.linearYonedaObj k Y).X i) (((linearYonedaFunctor k Y).map φ).f i) g =
         φ.unop.f i ≫ g := rfl
+
+/-- `Hom(-, Y)` takes a chain map that is an epimorphism in every degree to a monomorphism. -/
+lemma mono_linearYonedaFunctor_map_op_of_epi_f {X X' : ChainComplex C α} (φ : X ⟶ X')
+    (h : ∀ i, Epi (φ.f i)) : Mono ((linearYonedaFunctor k Y).map φ.op) := by
+  refine HomologicalComplex.mono_of_mono_f _ fun i ↦ ?_
+  rw [ModuleCat.mono_iff_injective]
+  intro a a' he
+  have := h i
+  have he' : φ.f i ≫ a = φ.f i ≫ a' := (linearYonedaFunctor_map_f_hom_apply k Y φ.op i a).symm.trans
+    (he.trans (linearYonedaFunctor_map_f_hom_apply k Y φ.op i a'))
+  exact (cancel_epi _).1 he'
 
 /-- Precomposition with a scalar multiple of the identity is scalar multiplication on
 `Hom(X, Y)`. -/
