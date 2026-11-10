@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
-import TauCeti.Algebra.Group.Primary.Decomposition
+import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 

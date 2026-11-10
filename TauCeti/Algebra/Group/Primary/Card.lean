@@ -109,11 +109,12 @@ theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : �
   obtain ⟨k, hk⟩ : ∃ k, Nat.card (AddCommGroup.primaryComponent A p) = p ^ k :=
     ⟨_, Nat.eq_prime_pow_of_unique_prime_dvd Nat.card_pos.ne' fun {q} hq hqd ↦
       (Nat.prime_dvd_prime_iff_eq hq hp).mp (dvd_of_prime_dvd_natCard_primaryComponent hq hqd)⟩
-  rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
-    Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite,
-    hp.factorization_pow, Finsupp.add_apply, Finsupp.single_eq_same,
+  have hi : (AddCommGroup.primaryComponent A p).index.factorization p = 0 :=
     Nat.factorization_eq_zero_of_not_dvd
-      (hp.coprime_iff_not_dvd.mp (coprime_index_primaryComponent p).symm), add_zero]
+      (hp.coprime_iff_not_dvd.mp (coprime_index_primaryComponent p).symm)
+  rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
+    Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
+  simp [hp.factorization_pow, hi]
 
 end AddCommGroup
 
