@@ -476,9 +476,9 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     rw [Ne, Quotient.eq_zero_iff_mem, ← hI, mem_comap, ← Quotient.eq_zero_iff_mem, hΦ,
       map_pow]
     exact pow_ne_zero m hg₀
-  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP' (powerResidueSymbol_pow_eq_one hP' hΦP')
-    (powerResidueSymbol_pow_eq_one hP hq) (hρ ?_)
-  rw [mk_powerResidueSymbol hP' hΦP', map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
+  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP' (powerResidueSymbol_pow_eq_one hΦP')
+    (powerResidueSymbol_pow_eq_one hq) (hρ ?_)
+  rw [mk_powerResidueSymbol hP', map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
     ← pow_mul, Nat.mul_div_cancel' hmq, hgq]
 
 /-- `(Φ(P) / P')_m = (N P' / P)_m` at a maximal ideal `P`. -/

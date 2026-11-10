@@ -69,10 +69,7 @@ theorem jacobiSum_powerResidueSymbol_pow_mem (hP : (absNorm P).Coprime n) {a b :
   -- Modulo `P`, the value `(χ ^ c) x` is `x ^ (c k)`, including at `x = 0`.
   have hval (c : ℕ) (hc : c ≠ 0) (x : 𝓞 K ⧸ P) :
       Ideal.Quotient.mk P ((powerResidueSymbol P n ^ c) x) = x ^ (c * k) := by
-    rw [MulChar.pow_apply' _ hc, map_pow]
-    obtain rfl | hx := eq_or_ne x 0
-    · rw [MulChar.map_zero, map_zero, zero_pow hc, zero_pow (mul_ne_zero hc hk)]
-    · rw [mk_powerResidueSymbol hP hx, ← pow_mul, mul_comm]
+    rw [MulChar.pow_apply' _ hc, map_pow, mk_powerResidueSymbol hP, ← pow_mul, mul_comm]
   rw [← Ideal.Quotient.eq_zero_iff_mem, jacobiSum, map_sum]
   simp_rw [map_mul, hval a ha, hval b hb]
   -- Expand `(1 - x) ^ (b k)` and sum the power sums `∑ x, x ^ (a k + j)` with `j ≤ b k`.
