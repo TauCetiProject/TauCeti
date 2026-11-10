@@ -15,7 +15,9 @@ Restricting a measure before pushing it forward along an almost everywhere measu
 decrease the pushforward. This complements Mathlib's
 `MeasureTheory.Measure.map_mono_of_aemeasurable`. Precomposing a function with a measure-preserving
 measurable equivalence does not change its law, even for a function that is not almost everywhere
-measurable (both laws are then `0`).
+measurable. In that case Mathlib's pushforward of a nonzero measure is a fallback Dirac measure,
+the same for the function and for its precomposition, and for the zero measure both pushforwards
+are zero.
 
 ## Main results
 
