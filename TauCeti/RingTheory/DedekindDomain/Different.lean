@@ -149,15 +149,10 @@ theorem pow_ramificationIdx_dvd_differentIdeal_iff
       refine Algebra.IsSeparable.of_equiv_equiv
         ((FractionRing.algEquiv A A).toRingEquiv.trans (RingEquiv.quotientBot (R := A)).symm)
         ((FractionRing.algEquiv B B).toRingEquiv.trans (RingEquiv.quotientBot (R := B)).symm) ?_
-      refine IsLocalization.ringHom_ext (nonZeroDivisors A) ?_
-      ext a
-      have h2 : algebraMap (FractionRing A) (FractionRing B) (algebraMap A (FractionRing A) a) =
-          algebraMap B (FractionRing B) (algebraMap A B a) := by
-        rw [← IsScalarTower.algebraMap_apply A (FractionRing A) (FractionRing B),
-          IsScalarTower.algebraMap_apply A B (FractionRing B)]
-      simp only [RingHom.comp_apply, h2, RingHom.coe_coe, RingEquiv.toRingHom_trans,
-        AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
-      rfl
+      ext x
+      have h := congrArg (RingEquiv.quotientBot B).symm
+        (IsFractionRing.algEquiv_commutes (FractionRing.algEquiv A A) (FractionRing.algEquiv B B) x)
+      simpa using h
     refine iff_of_false (fun h ↦ differentIdeal_ne_bot (A := A) (B := B) ?_) ?_
     · rw [Ideal.ramificationIdx_bot_eq_one, pow_one, ← Ideal.zero_eq_bot, zero_dvd_iff,
         Ideal.zero_eq_bot] at h
