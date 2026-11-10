@@ -64,6 +64,11 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
   null-homotopy is a cube in `E` whose projection is homotopic to the original cube
   (`TauCeti.TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq`).
 
+In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
+`π_{n+1}(E, e) → π_{n+1}(B, b)` (`TauCeti.TopCat.surjective_homotopyGroupMap_of_subsingleton`),
+and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
+(`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Theorem 4.41 and its proof.
@@ -540,5 +545,27 @@ theorem mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (hp : serreFibration
       · exact .inl (.inl (projIcc_eq_zero.2 (by simp [h0])))
       · exact .inl (.inr (projIcc_eq_one.2 (by simp only [h1, Icc.coe_one]; linarith [u.2.2])))
       · exact .inr ht
+
+/-! ### Fibres with a vanishing homotopy group -/
+
+/-- If `π_n(F, e)` is trivial, then every class of `π_{n+1}(B, b)` comes from the total space. -/
+theorem surjective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Finite N]
+    [Subsingleton (HomotopyGroup N (p.fiber b) e)] :
+    Function.Surjective
+      (HomotopyGroup.map (N := Option N) p.hom (Set.mem_singleton_iff.1 e.2)) := fun _ ↦
+  (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2 (Subsingleton.elim _ _)
+
+/-- For `n ≥ 1`, if `π_n(F, e)` is trivial, then `p` induces an injection
+`π_n(E, e) → π_n(B, b)`. -/
+theorem injective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Finite N]
+    [Nonempty N] [Subsingleton (HomotopyGroup N (p.fiber b) e)] :
+    Function.Injective (HomotopyGroup.map (N := N) p.hom (Set.mem_singleton_iff.1 e.2)) := by
+  classical
+  refine (injective_iff_map_eq_one
+    (HomotopyGroup.mapHom (N := N) p.hom (Set.mem_singleton_iff.1 e.2))).2 fun a ha ↦ ?_
+  rw [HomotopyGroup.mapHom_apply, _root_.HomotopyGroup.one_def] at ha
+  obtain ⟨c, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2 ha
+  rw [Subsingleton.elim c ⟦GenLoop.const⟧, HomotopyGroup.map_mk, GenLoop.map_const]
+  exact _root_.HomotopyGroup.one_def.symm
 
 end TauCeti.TopCat
