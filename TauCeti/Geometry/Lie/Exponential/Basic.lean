@@ -86,7 +86,7 @@ theorem mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul [CompleteSpace 
 
 /-- The canonical one-parameter subgroup traces out the curve `t ↦ exp (t v)`. -/
 theorem range_mulInvariantOneParameterSubgroup [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
     Set.range (mulInvariantOneParameterSubgroup v) =
       Set.range fun t : ℝ ↦ mulInvariantExp (t • v) := by
