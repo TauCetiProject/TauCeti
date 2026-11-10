@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -47,9 +48,10 @@ estimates of all mixed derivatives follow from the bound above by induction.
 
 ## Implementation notes
 
-Integrals of the derivatives are linear maps on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`. Instance
-synthesis for integrability on this concrete space fails, so the lemmas that need it are stated
-for an abstract complex Banach space `F` and only then applied to `F = V →L[ℂ] W`.
+Integrals of the derivatives are linear maps on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`. On this
+concrete space the `PseudoMetrizableSpace` instance search behind `AEStronglyMeasurable` exceeds
+the typeclass heartbeat limit, so the lemmas that need it are stated for an abstract complex normed
+space `F` and only then applied to `F = V →L[ℂ] W`.
 
 ## References
 
@@ -163,11 +165,6 @@ private theorem HasCompactSpatialSupport.exists_norm_rightIntegrand_le
     _ = C * 2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖p.2‖ ^ 2) ^ (m / 2) *
           (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by ring
 
-/-- The decay weight `(1 + ‖θ‖) ^ (-(n + 1))` is integrable on `ℝⁿ`. -/
-private theorem integrable_decay :
-    Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
-
 /-- The integrand is jointly continuous in the point and the frequency `θ`. -/
 private theorem HasCompactSpatialSupport.continuous_rightIntegrand
     (hc : c.HasCompactSpatialSupport) :
@@ -186,7 +183,8 @@ private theorem HasCompactSpatialSupport.integrable_rightIntegrand
     (hc : c.HasCompactSpatialSupport) (p : CoordinateSpace n × CoordinateSpace n) :
     Integrable (rightIntegrand c.coefficient p) := by
   obtain ⟨C, -, hC⟩ := hc.exists_norm_rightIntegrand_le
-  exact (integrable_decay.const_mul (C * (1 + ‖p.2‖ ^ 2) ^ (m / 2))).mono'
+  exact (integrable_one_add_norm_rpow_neg_add_one.const_mul
+    (C * (1 + ‖p.2‖ ^ 2) ^ (m / 2))).mono'
     (hc.continuous_rightIntegrand.comp
       (by fun_prop : Continuous fun θ ↦ (p, θ))).aestronglyMeasurable
     (.of_forall fun θ ↦ (hC p θ).trans_eq (by ring))
@@ -201,7 +199,8 @@ private theorem HasCompactSpatialSupport.exists_norm_rightCoeff_le
   refine ⟨C * ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1)), by positivity, fun p ↦ ?_⟩
   calc ‖rightCoeff c.coefficient p‖
       ≤ ∫ θ, C * (1 + ‖p.2‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-        norm_integral_le_of_norm_le (integrable_decay.const_mul _) (.of_forall (hC p))
+        norm_integral_le_of_norm_le (integrable_one_add_norm_rpow_neg_add_one.const_mul _)
+          (.of_forall (hC p))
     _ = C * (∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))) *
           (1 + ‖p.2‖ ^ 2) ^ (m / 2) := by
         rw [integral_const_mul]
@@ -217,8 +216,7 @@ private theorem rightIntegrand_eq_integral (c : CoordinateSpace n × CoordinateS
     (𝐞 (-⟪z - p.1, θ⟫) : ℂ) • c (z, p.2 + (2 * π) • θ)
   have hshift : (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • c (p + (y, (2 * π) • θ))) = ∫ y, g (p.1 + y) := by
     congr 1 with y
-    simp only [g, add_sub_cancel_left]
-    rfl
+    simp only [g, add_sub_cancel_left, Prod.add_def]
   rw [hshift, integral_add_left_eq_self g p.1, rightIntegrand, Real.fourier_eq, ← integral_smul]
   congr 1 with z
   have hphase : -(⟪z, θ⟫ - ⟪p.1, θ⟫) = ⟪p.1, θ⟫ + -⟪z, θ⟫ := by ring
@@ -459,7 +457,7 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_rightCoeff (hc : c.HasCompa
     (.of_forall fun p ↦ (hc.integrable_rightIntegrand p).aestronglyMeasurable)
     (hc.integrable_rightIntegrand p₀) (aestronglyMeasurable_of_continuous_clm
       (hc.continuous_rightDeriv p₀))
-    (.of_forall fun θ p hp ↦ hB p hp θ) (integrable_decay.const_mul B)
+    (.of_forall fun θ p hp ↦ hB p hp θ) (integrable_one_add_norm_rpow_neg_add_one.const_mul B)
     (.of_forall fun θ p _ ↦ ?_)
   have h : (fun p ↦ rightIntegrand c.coefficient p θ) =
       fun p ↦ ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • c.coefficient (p + (y, (2 * π) • θ)) :=
@@ -482,7 +480,7 @@ private theorem HasCompactSpatialSupport.fderiv_rightCoeff_apply (hc : c.HasComp
     ((hc.frequencyDeriv j).integrable_rightIntegrand p).smul (v.2 j)
   obtain ⟨B, -, hB⟩ := hc.exists_norm_rightDeriv_le p
   rw [(hc.hasFDerivAt_rightCoeff p).fderiv, ContinuousLinearMap.integral_apply
-    ((integrable_decay.const_mul B).mono'
+    ((integrable_one_add_norm_rpow_neg_add_one.const_mul B).mono'
       (aestronglyMeasurable_of_continuous_clm (hc.continuous_rightDeriv p))
       (.of_forall (hB p (Metric.mem_ball_self one_pos)))) v]
   simp_rw [hc.rightDeriv_apply]
@@ -738,7 +736,7 @@ private theorem HasCompactSpatialSupport.integrable_fourier_apply_sub
   obtain ⟨C, hC0, hC⟩ := hc.exists_norm_fourier_le
   have hg : Integrable fun η : CoordinateSpace n ↦ (1 + ‖η‖ ^ 2) ^ (m / 2) * ‖𝓕 v η‖ :=
     (𝓕 v).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)
-  have hconv := (integrable_decay (n := n)).convolution_integrand
+  have hconv := (integrable_one_add_norm_rpow_neg_add_one (n := n)).convolution_integrand
     (ContinuousLinearMap.mul ℝ ℝ) hg (μ := volume) (ν := volume)
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun z ↦ c.coefficient (z, (2 * π) • q.1)) q.2 (𝓕 v (q.1 - q.2)) := by
@@ -792,7 +790,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_rightIntegr
   have hf : Integrable fun η : CoordinateSpace n ↦
       C * (2 * π) ^ |m| * ((1 + ‖η‖ ^ 2) ^ (m / 2) * ‖𝓕 v η‖) :=
     ((𝓕 v).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul _
-  refine (hf.mul_prod integrable_decay).mono' hcont.aestronglyMeasurable
+  refine (hf.mul_prod integrable_one_add_norm_rpow_neg_add_one).mono' hcont.aestronglyMeasurable
     (.of_forall fun q ↦ ?_)
   rw [norm_smul, Circle.norm_coe, one_mul]
   calc ‖rightIntegrand c.coefficient (x, (2 * π) • q.1) q.2 (𝓕 v q.1)‖
