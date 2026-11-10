@@ -308,14 +308,14 @@ theorem coord_add (i : Fin A.n) (s t : ∀ x, V x) {y : E} (hy : y ∈ A.image i
 
 /-- The chart coordinates of `x ↦ φ x • s x` are those of `s` multiplied by `φ` read in the
 chart, because the bundle chart is fibrewise linear. -/
-theorem coord_smul_fun (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
+theorem coord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
     A.coord i (fun x ↦ φ x • s x) y = φ ((A.chart i).symm y) • A.coord i s y := by
   have h := A.dom_subset_baseSet i (A.symm_mem_dom hy)
   simp only [coord, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h, map_smul]
 
 theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
     A.coord i (c • s) y = c • A.coord i s y :=
-  A.coord_smul_fun i (fun _ ↦ c) s hy
+  A.coord_fun_smul i (fun _ ↦ c) s hy
 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy

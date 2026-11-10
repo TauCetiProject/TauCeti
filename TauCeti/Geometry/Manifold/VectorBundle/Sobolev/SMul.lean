@@ -112,7 +112,7 @@ def contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) :
       · rw [SobolevData.mapL_apply]
         exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
       · filter_upwards [hs i, ae_restrict_mem (A.image i).isOpen.measurableSet] with y hsy hy
-        rw [hsy, A.coord_smul_fun i φ s hy]
+        rw [hsy, A.coord_fun_smul i φ s hy]
 
 /-- The components in chart `i` of `φ • w` are those of `w` multiplied by `φ` read in chart `i`,
 using `TauCeti.Wkp.contDiffOnSMulL`. -/
@@ -166,9 +166,10 @@ theorem chartValueL_contMDiffSMulL_ae_coord (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(�
       A.coord i fun x ↦ φ x • s x := by
   filter_upwards [chartValueL_contMDiffSMulL_ae hφ w i, hs i,
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hsy hy
-  rw [h, hsy, A.coord_smul_fun i φ s hy]
+  rw [h, hsy, A.coord_fun_smul i φ s hy]
 
 /-- Multiplication by a constant function is scalar multiplication. -/
+@[simp]
 theorem contMDiffSMulL_const (c : ℝ) :
     contMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
   ext1 w
@@ -177,7 +178,6 @@ theorem contMDiffSMulL_const (c : ℝ) :
   exact Wkp.contDiffOnSMulL_const _ _ _ k c _
 
 /-- Multiplication by the constant function `1` is the identity. -/
-@[simp]
 theorem contMDiffSMulL_one :
     contMDiffSMulL A μ p k (contMDiff_const (c := (1 : ℝ))) = ContinuousLinearMap.id ℝ _ := by
   rw [contMDiffSMulL_const, one_smul]
