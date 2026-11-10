@@ -107,8 +107,11 @@ theorem f4ModularDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) 
   rw [f4ModularRootVector_eq]
   congr 1
 
-/-- A short-source second divided power carries a long root to another long root with unit
-coefficient after reduction modulo two. -/
+/-- **The second divided power of a short-source root vector, modulo two.** If the root `γ` is the
+endpoint `β + 2 α` of the double step from `β` along the signed simple root `α`, then the divided
+square carries the root vector of `β` to that of `γ`. If `β` is opposite to `α`, then `γ = α` and
+this is the exceptional opposite-root column. Otherwise `α` is short and `β` and `γ` are long, and
+the coefficient is one after reduction modulo two. -/
 theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
     (k : Fin 4 ⊕ Fin 4) (β γ : Fin 48)
     (h : f4SimplyConnectedRootDatum.root γ =
@@ -133,19 +136,8 @@ theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
     apply f4SimplyConnectedRootDatum.root.injective
     rw [hb, f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
       f4SimplyConnectedRootDatum.reflection_apply_self])
-  have hlen := f4Length_of_root_eq_add_zsmul (f4SignedSimpleRootIndex k) β γ 2 h
-  have hcomm := f4Length_mul_pairing_comm (f4SignedSimpleRootIndex k) β
-  have hbound := abs_pairing_f4SimplyConnectedRootDatum_le_two (f4SignedSimpleRootIndex k) β
-  have hlens : f4Length (f4SignedSimpleRootIndex k) = 1 ∧ f4Length β = 2 := by
-    rcases f4Length_eq_one_or_eq_two (f4SignedSimpleRootIndex k) with hα | hα <;>
-      rcases f4Length_eq_one_or_eq_two β with hβ | hβ <;>
-      rcases f4Length_eq_one_or_eq_two γ with hγ | hγ
-    all_goals first
-      | exact ⟨hα, hβ⟩
-      | exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le _ β γ 2 (hα.trans hβ.symm) hneg
-          le_rfl (by simpa using h)).elim
-      | (rw [hα, hβ, hγ] at hlen; rw [hα, hβ] at hcomm; rw [abs_le] at hbound; omega)
-  obtain ⟨hα, hβ⟩ := hlens
+  obtain ⟨hα, hβ⟩ :=
+    f4Length_eq_one_and_eq_two_of_root_eq_add_two_zsmul (f4SignedSimpleRootIndex k) β γ hneg h
   obtain ⟨ε, hεabs, hε⟩ :=
     exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short
       (f4SignedSimpleRootIndex k) β γ hα hβ h
