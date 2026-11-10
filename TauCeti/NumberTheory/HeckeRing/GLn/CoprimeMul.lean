@@ -159,6 +159,21 @@ end Conjugation
 
 section CoprimeCosets
 
+section ZeroEntry
+
+variable {n}
+
+/-- **A zero entry forces the other tuple to be all ones**: a zero entry makes the determinant `0`,
+and `Nat.Coprime 0 m` holds only for `m = 1`. -/
+private lemma eq_one_of_coprime_of_not_pos {x y : Fin n → ℕ}
+    (hc : Nat.Coprime (∏ i, x i) (∏ i, y i)) (hx : ¬ ∀ i, 0 < x i) : y = 1 := by
+  obtain ⟨i, hi⟩ := not_forall.mp hx
+  have hx0 : (∏ i, x i) = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
+  have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
+  exact funext fun j ↦ Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
+
+end ZeroEntry
+
 /-- **The set-level coprime product** (Shimura, Proposition 3.16, key step): sandwiching any
 `τ ∈ SL_n(ℤ)` between the diagonals of `a` and `b` stays inside the double coset of the
 diagonal of `a * b`, when the determinants are coprime. If an entry is zero, the other tuple
@@ -170,19 +185,13 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
   have h1 : natDiagGL n (1 : Fin n → ℕ) = 1 := natDiagGL_one n
   by_cases ha_pos : ∀ i, 0 < a i
   swap
-  · obtain ⟨i, hi⟩ := not_forall.mp ha_pos
-    have h0 : ∏ j, a j = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-    have hb1 : ∏ j, b j = 1 := by simpa [h0] using hcop
-    obtain rfl : b = 1 := funext fun j ↦ Finset.prod_eq_one_iff.mp hb1 j (Finset.mem_univ j)
+  · obtain rfl := eq_one_of_coprime_of_not_pos hcop ha_pos
     rw [mul_one a, natDiagGL_of_not_pos n ha_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ
   by_cases hb_pos : ∀ i, 0 < b i
   swap
-  · obtain ⟨i, hi⟩ := not_forall.mp hb_pos
-    have h0 : ∏ j, b j = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-    have ha1 : ∏ j, a j = 1 := by simpa [h0] using hcop
-    obtain rfl : a = 1 := funext fun j ↦ Finset.prod_eq_one_iff.mp ha1 j (Finset.mem_univ j)
+  · obtain rfl := eq_one_of_coprime_of_not_pos hcop.symm hb_pos
     rw [one_mul b, natDiagGL_of_not_pos n hb_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ
@@ -539,27 +548,15 @@ the same element. -/
 theorem diagElem_mul_of_coprime (a b : Fin n → ℕ)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) :
     diagElem a * diagElem b = diagElem (a * b) := by
-  have hones : ∀ x y : Fin n → ℕ, Nat.Coprime (∏ i, x i) (∏ i, y i) →
-      ¬(∀ i, 0 < x i) → ∀ j, y j = 1 := by
-    intro x y hc hx j
-    obtain ⟨i, hi⟩ := not_forall.mp hx
-    have hx0 : (∏ i, x i) = 0 :=
-      Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-    have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
-    exact Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
   by_cases ha_pos : ∀ i, 0 < a i
   · by_cases hb_pos : ∀ i, 0 < b i
     · exact diagElem_mul_of_coprime_of_pos n a b ha_pos hb_pos hcop
     · -- `b` is not positive, so coprimality forces `a` to be all ones
-      have ha1 : a = fun _ ↦ 1 := funext (hones b a hcop.symm hb_pos)
-      subst ha1
-      have hmul : ((fun _ : Fin n ↦ 1) * b) = b := funext fun i ↦ Nat.one_mul (b i)
-      rw [hmul, diagElem_one, one_mul]
+      obtain rfl := eq_one_of_coprime_of_not_pos hcop.symm hb_pos
+      rw [one_mul, show (1 : Fin n → ℕ) = fun _ ↦ 1 from rfl, diagElem_one, one_mul]
   · -- `a` is not positive, so coprimality forces `b` to be all ones
-    have hb1 : b = fun _ ↦ 1 := funext (hones a b hcop ha_pos)
-    subst hb1
-    have hmul : (a * fun _ : Fin n ↦ 1) = a := funext fun i ↦ Nat.mul_one (a i)
-    rw [hmul, diagElem_one, mul_one]
+    obtain rfl := eq_one_of_coprime_of_not_pos hcop ha_pos
+    rw [mul_one, show (1 : Fin n → ℕ) = fun _ ↦ 1 from rfl, diagElem_one, mul_one]
 
 end CoprimeIntegrality
 
