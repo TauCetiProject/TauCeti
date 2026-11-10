@@ -58,10 +58,8 @@ theorem norm_iteratedFDeriv_prod_right_le (hf : ContDiff 𝕜 n f) (m : ℕ) (hm
     (p : P) (x : E) :
     ‖iteratedFDeriv 𝕜 m (fun y ↦ f (p, y)) x‖ ≤ ‖iteratedFDeriv 𝕜 m f (p, x)‖ := by
   rw [iteratedFDeriv_prod_right hf m hm]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  refine mul_le_of_le_one_right (norm_nonneg _) ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-  exact pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ..)
+  exact (iteratedFDeriv 𝕜 m f (p, x)).norm_compContinuous_linearIsometry_le
+    fun _ ↦ LinearIsometry.inr 𝕜 P E
 
 /-- The iterated derivatives in the second variable of a `C^n` function are jointly continuous
 in the parameter and the evaluation point, through order `n`. -/

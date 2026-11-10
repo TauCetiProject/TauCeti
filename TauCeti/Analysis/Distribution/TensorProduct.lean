@@ -40,11 +40,12 @@ real test functions it is the product of the pairings,
 
 `(S ⊗ T) ((x, y) ↦ φ x ψ y) = S φ * T ψ`,
 
-and when `V = Ω ×ˢ O` it is the only distribution with this property, because such tensor products
-span a dense subspace of the test functions on `Ω ×ˢ O` (`TestFunction.ext_prodSMulCLM`). The
-tensor product is bilinear, satisfies the Leibniz rule
-`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`, and is supported in the product of the supports;
-the tensor product of the point masses at `a` and `b` is the point mass at `(a, b)`.
+and when `D` is also finite-dimensional and `V = Ω ×ˢ O` it is the only distribution with this
+property, because such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
+(`TestFunction.ext_prodSMulCLM`). The tensor product is bilinear and satisfies the Leibniz rule
+`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`; when `D` is also finite-dimensional it is
+supported in the product of the supports. The tensor product of the point masses at `a` and `b`
+is the point mass at `(a, b)`.
 
 ## Main declarations
 
@@ -69,9 +70,10 @@ Smoothness of `x ↦ T (φ (x, ·))` rests on the finite order of `T` on each co
 `y ↦ φ (x + h, y) - φ (x, y) - Dφ(x, y) (h, 0)` is supported in a fixed compact set and all of its
 derivatives in `y` are `o(‖h‖)` uniformly
 (`HasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le`), so its image under `T` is
-`o(‖h‖)` as well. Iterating the derivative formula bounds the `i`-th derivative of the partial
-pairing by the derivatives of `φ` of order at most `N + i`, where `N` is the order of `T` on the
-second projection of a compact set containing the support of `φ`; this is the continuity estimate.
+`o(‖h‖)` as well (`Distribution.isLittleO_apply_of_norm_iteratedFDeriv_le`). Iterating the
+derivative formula bounds the `i`-th derivative of the partial pairing by the derivatives of `φ` of
+order at most `N + i`, where `N` is the order of `T` on the second projection of a compact set
+containing the support of `φ`; this is the continuity estimate.
 
 ## References
 
@@ -157,36 +159,22 @@ private theorem exists_hasFDerivAt_pairingFun (T : 𝓓'(O, F))
   let K : Compacts D := ⟨Prod.snd '' tsupport φ, φ.hasCompactSupport.image continuous_snd⟩
   have hKO : (K : Set D) ⊆ O := image_subset_iff.2 fun p hp ↦ hO (φ.tsupport_subset hp)
   obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le hKO
-  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
-  intro c hc
-  -- Choose a radius on which all derivatives of order at most `N` of the Taylor remainder of the
-  -- slices are bounded by `c / (C + 1) * ‖h‖`.
-  have hε : 0 < c / (C + 1) := div_pos hc (by linarith)
-  have hrem := fun i ↦ φ.hasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le
-    φ.contDiff (i := i) (by exact_mod_cast le_top) x hε
-  choose r hr hrem using hrem
-  let r₀ := (Finset.range (N + 1)).inf' (by simp) r
-  have hr₀ : 0 < r₀ := (Finset.lt_inf'_iff _).2 fun i _ ↦ hr i
-  filter_upwards [ball_mem_nhds (0 : E) hr₀] with h hh
-  rw [mem_ball_zero_iff] at hh
-  -- The Taylor remainder of the slices, as a test function on `O` supported in `K`.
-  let R : 𝓓(O, ℝ) :=
+  -- The Taylor remainder of the slices, as test functions on `O` supported in `K`.
+  let R (h : E) : 𝓓(O, ℝ) :=
     sliceRight hO φ (x + h) - sliceRight hO φ x - sliceRight hO (∂_{((h, 0) : E × D)} φ) x
-  have hR : (R : D → ℝ) = fun y ↦ φ (x + h, y) - φ (x, y) - fderiv ℝ φ (x, y) (h, 0) := by
+  have hR (h : E) :
+      (R h : D → ℝ) = fun y ↦ φ (x + h, y) - φ (x, y) - fderiv ℝ φ (x, y) (h, 0) := by
     ext y
     simp only [R, sub_apply, sliceRight_apply, TestFunction.lineDerivOp_apply_eq_fderiv]
-  have hRK : tsupport R ⊆ K := tsupport_sliceRight_taylor_subset hO φ x h
-  have hRbound : ∀ i ≤ N, ∀ y, ‖iteratedFDeriv ℝ i R y‖ ≤ c / (C + 1) * ‖h‖ := by
-    intro i hi y
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  refine (isLittleO_apply_of_norm_iteratedFDeriv_le hC hT
+    (.of_forall fun h ↦ tsupport_sliceRight_taylor_subset hO φ x h) fun i _ ε hε ↦ ?_).congr_left
+    fun h ↦ by simp [pairingFun, L]
+  obtain ⟨r, hr, hrem⟩ := φ.hasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le
+    φ.contDiff (i := i) (by exact_mod_cast le_top) x hε
+  exact eventually_nhds_iff_ball.2 ⟨r, hr, fun h hh ↦ by
     rw [hR]
-    exact hrem i h (hh.trans_le (Finset.inf'_le _ (Finset.mem_range.2 (Nat.lt_succ_of_le hi)))) y
-  have hTR : pairingFun T hO φ (x + h) - pairingFun T hO φ x - L h = T R := by
-    simp [R, pairingFun, L]
-  rw [hTR]
-  calc ‖T R‖ ≤ C * (c / (C + 1) * ‖h‖) := hT R hRK _ (by positivity) hRbound
-    _ = C / (C + 1) * (c * ‖h‖) := by ring
-    _ ≤ c * ‖h‖ :=
-      mul_le_of_le_one_left (by positivity) ((div_le_one (by linarith)).2 (by linarith))
+    exact hrem h (mem_ball_zero_iff.1 hh)⟩
 
 private theorem differentiable_pairingFun (T : 𝓓'(O, F))
     (hO : MapsTo Prod.snd (V : Set (E × D)) O) (φ : 𝓓(V, ℝ)) :
@@ -274,8 +262,7 @@ private def pairingSupportedInCLM (T : 𝓓'(O, F))
     (hV : (V : Set (E × D)) ⊆ (Ω : Set E) ×ˢ (O : Set D)) (K : Compacts (E × D))
     (hK : (K : Set (E × D)) ⊆ V) :
     𝓓_{K}(E × D, ℝ) →L[ℝ] 𝓓_{K.map Prod.fst continuous_fst}(E, F) :=
-  letI hO : MapsTo Prod.snd (V : Set (E × D)) O :=
-    mapsTo_iff_subset_preimage.2 (hV.trans (prod_subset_preimage_snd _ _))
+  letI hO : MapsTo Prod.snd (V : Set (E × D)) O := mapsTo_snd_prod.mono_left hV
   letI P : 𝓓_{K}(E × D, ℝ) →ₗ[ℝ] 𝓓_{K.map Prod.fst continuous_fst}(E, F) :=
     { toFun f := ⟨pairingFun T hO (ofSupportedInCLM ℝ hK f),
         contDiff_pairingFun T hO _,
@@ -303,8 +290,7 @@ continuous linear map sending a test function `φ` on `V` to the test function
 `x ↦ T (φ (x, ·))` on `Ω`. -/
 def partialPairing (T : 𝓓'(O, F)) (hV : (V : Set (E × D)) ⊆ (Ω : Set E) ×ˢ (O : Set D)) :
     𝓓(V, ℝ) →L[ℝ] 𝓓(Ω, F) :=
-  letI hO : MapsTo Prod.snd (V : Set (E × D)) O :=
-    mapsTo_iff_subset_preimage.2 (hV.trans (prod_subset_preimage_snd _ _))
+  letI hO : MapsTo Prod.snd (V : Set (E × D)) O := mapsTo_snd_prod.mono_left hV
   TestFunction.limitCLM ℝ
     (fun φ ↦ ⟨pairingFun T hO φ, contDiff_pairingFun T hO φ,
       (φ.hasCompactSupport.image continuous_fst).of_isClosed_subset (isClosed_tsupport _)
@@ -323,8 +309,7 @@ variable (T : 𝓓'(O, F)) {hV : (V : Set (E × D)) ⊆ (Ω : Set E) ×ˢ (O : S
 @[simp]
 theorem partialPairing_apply (φ : 𝓓(V, ℝ)) (x : E) :
     T.partialPairing hV φ x =
-      T (sliceRight (mapsTo_iff_subset_preimage.2 (hV.trans (prod_subset_preimage_snd _ _)))
-        φ x) :=
+      T (sliceRight (mapsTo_snd_prod.mono_left hV) φ x) :=
   (rfl)
 
 /-- **Derivatives of the partial pairing.** The derivative of `x ↦ T (φ (x, ·))` in the direction
@@ -359,6 +344,14 @@ theorem partialPairing_lineDerivOp_zero_prod (φ : 𝓓(V, ℝ)) (w : D) :
 theorem partialPairing_add (T' : 𝓓'(O, F)) :
     (T + T').partialPairing hV = T.partialPairing hV + T'.partialPairing hV := by
   ext φ x
+  simp
+
+/-- The partial pairing is homogeneous in the distribution. -/
+@[simp]
+theorem partialPairing_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (φ : 𝓓(V, ℝ)) :
+    (c • T).partialPairing hV φ = c • T.partialPairing hV φ := by
+  ext x
   simp
 
 end PartialPairing
@@ -443,10 +436,7 @@ theorem smul_tensorProduct (c : ℂ) :
 theorem tensorProduct_smul (c : ℂ) :
     S.tensorProduct (c • T) hV = c • S.tensorProduct T hV := by
   ext φ
-  have h : (c • T).partialPairing hV φ = c • T.partialPairing hV φ := by
-    ext x
-    simp
-  simp [tensorProduct_apply, h]
+  simp [tensorProduct_apply]
 
 /-- **Derivatives of the tensor product.**
 `∂_{(v, w)} (S ⊗ T) = (∂_{v} S) ⊗ T + S ⊗ (∂_{w} T)`. -/
