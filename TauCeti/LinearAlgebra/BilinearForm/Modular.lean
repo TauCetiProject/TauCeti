@@ -373,8 +373,9 @@ theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [D
   have hCG : LinearMap.toMatrix₂ b b C = G := (LinearMap.toMatrix₂ b b).apply_symm_apply G
   refine ⟨C, (LinearMap.toMatrix₂ b b).injective (Matrix.ext fun i j ↦ ?_),
     b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
-  rw [LinearMap.toMatrix₂_apply, LinearMap.toMatrix₂_apply, LinearMap.smul_apply,
-    LinearMap.smul_apply, smul_eq_mul, ← LinearMap.toMatrix₂_apply b b C, hCG, hG]
+  have hC : C (b i) (b j) = G i j := by
+    simpa [LinearMap.toMatrix₂_apply] using congrFun (congrFun hCG i) j
+  simp [LinearMap.toMatrix₂_apply, hC, hG]
 
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the
