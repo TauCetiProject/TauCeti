@@ -233,18 +233,31 @@ theorem conjugateResiduesRingHom_apply [Fact p.Prime] [NeZero e] {α : ZMod p}
     conjugateResiduesRingHom hα x = conjugateResidues α x :=
   funext fun _ => reduceRingHom_apply _ _ _ _
 
-/-- The residue tuple of `0` is `0`.  Unlike the rules for `1` and products this needs no
-primitive root: every coordinate of `0` vanishes, so every residue does. -/
+/-- The residue tuple of `0` is `0`.  Unlike the rule for products this needs no primitive root:
+every coordinate of `0` vanishes, so every residue does. -/
 @[simp]
 theorem conjugateResidues_zero {α : ZMod p} : conjugateResidues α (0 : Cyclotomic e) = 0 := by
   funext j
   simp [conjugateResidues_apply]
 
-/-- The residue tuple of `1` is `1`. -/
+/-- The residue tuple of `1` is `1`.  This needs no primitive root either: coordinate `0` of `1`
+is `1` and all others vanish. -/
 @[simp]
-theorem conjugateResidues_one [Fact p.Prime] [NeZero e] {α : ZMod p}
-    (hα : IsPrimitiveRoot α e) : conjugateResidues α (1 : Cyclotomic e) = 1 := by
-  rw [← conjugateResiduesRingHom_apply hα, map_one]
+theorem conjugateResidues_one {α : ZMod p} : conjugateResidues α (1 : Cyclotomic e) = 1 := by
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · funext j
+    exact absurd j.2 (by simp)
+  · have : NeZero e := ⟨he.ne'⟩
+    funext j
+    have h1 : (1 : Cyclotomic e) = ((1 : ℤ) : Cyclotomic e) := by rw [Int.cast_one]
+    rw [conjugateResidues_apply, reduce_eq_sum, h1, Pi.one_apply]
+    simp only [coeff_intCast]
+    rw [Finset.sum_eq_single ⟨0, Nat.totient_pos.2 he⟩]
+    · simp
+    · intro b _ hb
+      have hb' : (b : ℕ) ≠ 0 := fun h => hb (Fin.ext h)
+      simp only [hb', ↓reduceIte, Int.cast_zero, zero_mul]
+    · simp
 
 /-- Residue tuples add.  Like the residue tuple of `0`, this needs no primitive root: reduction
 is additive in the coordinates. -/
@@ -263,11 +276,15 @@ theorem conjugateResidues_neg {α : ZMod p} (x : Cyclotomic e) :
 
 /-- Residue tuples multiply. -/
 @[simp]
-theorem conjugateResidues_mul [Fact p.Prime] [NeZero e] {α : ZMod p}
+theorem conjugateResidues_mul [Fact p.Prime] {α : ZMod p}
     (hα : IsPrimitiveRoot α e) (x y : Cyclotomic e) :
     conjugateResidues α (x * y) = conjugateResidues α x * conjugateResidues α y := by
-  rw [← conjugateResiduesRingHom_apply hα, map_mul, conjugateResiduesRingHom_apply,
-    conjugateResiduesRingHom_apply]
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · funext j
+    exact absurd j.2 (by simp)
+  · have : NeZero e := ⟨he.ne'⟩
+    rw [← conjugateResiduesRingHom_apply hα, map_mul, conjugateResiduesRingHom_apply,
+      conjugateResiduesRingHom_apply]
 
 /-! ## Evaluation as a Vandermonde system -/
 
