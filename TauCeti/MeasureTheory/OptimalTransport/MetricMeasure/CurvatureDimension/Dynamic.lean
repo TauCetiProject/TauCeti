@@ -353,7 +353,7 @@ theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finra
       (M.finite_bounded _ hb).ne
   have key := internalEnergy_map_smul_add_smul_gradient_le M.reference
     (U := fun r ↦ -(r * r ^ (-N'⁻¹))) (by simp)
-    (convexOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁) (hN.trans hN'))
+    (convexOn_pow_mul_neg_mul_rpow_neg (hN.trans hN'))
     (antitoneOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁)) hconv hbot h₀ hμD
     (by rw [← renyiEntropy_def]; exact hbot' μ₀ hb₀)
     (by rw [← renyiEntropy_def, ← hν]; exact hbot' μ₁ hb₁) ⟨t.2.1, t.2.2⟩

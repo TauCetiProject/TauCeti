@@ -30,7 +30,7 @@ inequality at a positive operator, where the dimension `n` is that of the underl
 
 ## Main results
 
-* `TauCeti.pow_mul_apply_div_pow_eq`: for `r, a > 0`, `aⁿ U(r / aⁿ) = r φ(r^{-1/n} a)`.
+* `TauCeti.pow_mul_apply_div_pow_eq`: for `r > 0`, `aⁿ U(r / aⁿ) = r φ(r^{-1/n} a)`.
 * `TauCeti.pow_mul_apply_div_pow_le`: McCann's pointwise inequality, comparing `aⁿ U(r / aⁿ)` with
   the convex combination of its values at `1` and `a₁` when `(1 - t) + t a₁ ≤ a`.
 * `ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le`: McCann's pointwise inequality at a
@@ -57,14 +57,14 @@ namespace TauCeti
 
 variable {U : ℝ → ℝ} {n : ℕ}
 
-/-- For `r > 0` and `a > 0`, the function `a ↦ aⁿ U(r / aⁿ)` is `r φ(c a)` with
+/-- For `r > 0`, the function `a ↦ aⁿ U(r / aⁿ)` is `r φ(c a)` with
 `φ(s) = sⁿ U(s⁻ⁿ)` and `c = r^{-1/n}`. -/
-theorem pow_mul_apply_div_pow_eq (hn : n ≠ 0) {r : ℝ} (hr : 0 < r) {a : ℝ} (ha : 0 < a) :
+theorem pow_mul_apply_div_pow_eq (hn : n ≠ 0) {r : ℝ} (hr : 0 < r) {a : ℝ} :
     a ^ n * U (r / a ^ n) =
       r * ((r⁻¹ ^ (n⁻¹ : ℝ) * a) ^ n * U ((r⁻¹ ^ (n⁻¹ : ℝ) * a) ^ n)⁻¹) := by
   rw [mul_pow, Real.rpow_inv_natCast_pow (inv_nonneg.2 hr.le) hn,
-    show (r⁻¹ * a ^ n)⁻¹ = r / a ^ n by field_simp]
-  field_simp
+    show (r⁻¹ * a ^ n)⁻¹ = r / a ^ n by rw [mul_inv, inv_inv, div_eq_mul_inv, mul_comm]]
+  rw [← mul_assoc, ← mul_assoc, mul_inv_cancel₀ hr.ne', one_mul]
 
 /-- If `φ(s) = sⁿ U(s⁻ⁿ)` is nonincreasing on `(0, ∞)`, with `n ≠ 0`, then the recession constant
 `U'(∞) = lim U(r) / r` bounds `φ` above on `(0, ∞)`, because `U(r) / r = φ(r^{-1/n})`. -/
@@ -105,8 +105,8 @@ theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
   set c := r⁻¹ ^ (n⁻¹ : ℝ)
   have hc0 : 0 < c := Real.rpow_pos_of_pos (inv_pos.2 hr) _
   have hU1 : U r = r * φ (c * 1) := by
-    simpa using pow_mul_apply_div_pow_eq (U := U) hn hr one_pos
-  rw [pow_mul_apply_div_pow_eq hn hr hapos, hU1, mul_one]
+    simpa using pow_mul_apply_div_pow_eq (U := U) hn hr (a := 1)
+  rw [pow_mul_apply_div_pow_eq hn hr, hU1, mul_one]
   split_ifs with ha₁0
   · -- The degenerate case: compare with `φ (c (1 - t))` and use the bound `L` at `0`.
     subst ha₁0
@@ -121,7 +121,7 @@ theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
     have := mul_le_mul_of_nonneg_left (h₁.trans h₂) hr.le
     linarith
   · have ha₁' : 0 < a₁ := lt_of_le_of_ne ha₁ (Ne.symm ha₁0)
-    rw [pow_mul_apply_div_pow_eq hn hr ha₁']
+    rw [pow_mul_apply_div_pow_eq hn hr]
     have hpos : 0 < 1 - t + t * a₁ := by
       rcases ht.2.eq_or_lt with rfl | ht₁
       · simpa using ha₁'
@@ -139,14 +139,15 @@ theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
     linarith
 
 /-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
-convex and nonincreasing on `(0, ∞)`, where `n ≥ 1` is the dimension of `E`. For a positive operator
+convex and nonincreasing on `(0, ∞)`, where `n` is the dimension of `E`. (In dimension `0` every
+determinant is `1` and the inequality is an equality.) For a positive operator
 `A` on `E`, write `Jₛ = det ((1 - s) • 1 + s • A)`. For `0 < t < 1` and `r ≥ 0`,
 `Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t J₁ U(r / J₁)` when `J₁ ≠ 0`, and
 `Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t L r` when `J₁ = 0`, provided `L` then bounds `φ` above. The
 concavity of `s ↦ Jₛ^{1/n}` is Minkowski's determinant inequality. -/
 theorem _root_.ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
-    {A : E →L[ℝ] E} (hA : A.IsPositive) (hU0 : U 0 = 0)
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A : E →L[ℝ] E} (hA : A.IsPositive)
+    (hU0 : U 0 = 0)
     (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
     (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
     {r t L : ℝ} (hr : 0 ≤ r) (ht₀ : 0 < t) (ht₁ : t < 1)
@@ -155,8 +156,14 @@ theorem _root_.ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le {E : Type
     ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det *
         U (r / ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det) ≤
       (1 - t) * U r + t * (if A.det = 0 then L * r else A.det * U (r / A.det)) := by
+  rcases Nat.eq_zero_or_pos (finrank ℝ E) with h0 | hpos
+  · -- In dimension `0` every determinant is `1`, and both sides equal `U r`.
+    have hdet (B : E →L[ℝ] E) : B.det = 1 := LinearMap.det_eq_one_of_finrank_eq_zero h0 _
+    simp only [hdet, one_mul, div_one, one_ne_zero, ite_false]
+    exact (by ring : U r = (1 - t) * U r + t * U r).le
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hpos
   set n := finrank ℝ E
-  have hn : n ≠ 0 := finrank_pos.ne'
+  have hn : n ≠ 0 := hpos.ne'
   have hn' : (n : ℝ)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 hn)
   have hA' := (ContinuousLinearMap.isPositive_toLinearMap_iff _).2 hA
   have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det :=
@@ -198,7 +205,7 @@ theorem measurable_apply_max_of_convexOn (hn : n ≠ 0)
         ((continuousAt_inv₀ hr.ne').rpow_const (.inl (inv_ne_zero hr.ne'))))
     refine (hcont.congr ?_).continuousWithinAt
     filter_upwards [Ioi_mem_nhds hr] with r' hr'
-    have := pow_mul_apply_div_pow_eq (U := U) hn hr' one_pos
+    have := pow_mul_apply_div_pow_eq (U := U) hn hr' (a := 1)
     simp only [one_pow, div_one, one_mul, mul_one] at this
     rw [max_eq_left (le_of_lt hr'), this]
 
@@ -220,12 +227,13 @@ theorem pow_mul_neg_mul_rpow_neg_eq {s : ℝ} (hs : 0 < s) :
   rw [h₁, h₂]
   field_simp
 
-/-- **The Rényi integrand satisfies the convexity half of McCann's condition.** For `0 < N` and
-`n ≤ N`, the function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is convex on
+/-- **The Rényi integrand satisfies the convexity half of McCann's condition.** For `n ≤ N`, the
+function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is convex on
 `(0, ∞)`. -/
-theorem convexOn_pow_mul_neg_mul_rpow_neg (hN : 0 < N) (hn : (n : ℝ) ≤ N) :
+theorem convexOn_pow_mul_neg_mul_rpow_neg (hn : (n : ℝ) ≤ N) :
     ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹)) :=
-  (((Real.concaveOn_rpow (div_nonneg n.cast_nonneg hN.le) ((div_le_one hN).2 hn)).subset
+  (((Real.concaveOn_rpow (div_nonneg n.cast_nonneg (n.cast_nonneg.trans hn))
+    (div_le_one_of_le₀ hn (n.cast_nonneg.trans hn))).subset
     Ioi_subset_Ici_self (convex_Ioi 0)).neg).congr fun _ hs => (pow_mul_neg_mul_rpow_neg_eq hs).symm
 
 /-- **The Rényi integrand satisfies the monotonicity half of McCann's condition.** For `0 < N`,
