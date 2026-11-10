@@ -228,17 +228,9 @@ theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
       mvfderiv I (fun x ↦ mvfderiv I f x (U x) / f x) p (Z p) =
         (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
           (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
-    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p (Z p) =
-        -(f p ^ 2)⁻¹ * mvfderiv I f p (Z p) := by
-      have hd := TauCeti.mvfderiv_comp_apply_of_differentiableAt
-        (hasDerivAt_inv hp).differentiableAt hfd (Z p)
-      rw [(hasDerivAt_inv hp).hasFDerivAt.fderiv] at hd
-      simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply,
-        smul_eq_mul, mul_comm] using hd
-    simp only [div_eq_mul_inv]
-    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdU (hfd.inv hp)]
-    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-    ring
+    have hq := congrArg (fun L ↦ L (Z p)) (hdU.hasMFDerivAt.div hfd.hasMFDerivAt hp).mfderiv
+    simp only [mvfderiv_apply_eq_mfderiv_apply]
+    exact hq
   have hcomm := mvfderiv_mlieBracket hf hn hX hY
   rw [hda hdY, hda hdX, hcomm]
   field_simp
