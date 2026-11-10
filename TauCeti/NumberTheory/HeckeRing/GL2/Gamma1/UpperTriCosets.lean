@@ -65,6 +65,8 @@ every power of `T = !![1, 1; 0, 1]` lies in `Γ₁(N)`.
   `HeckeRing.GL2.coe_natDiagGL_one_eq_map`, and `HeckeRing.GL2.coe_map_natDiagGL_one`:
   `diag(1, p)` lies in `Δ₀(N)` at every level, and its matrix over `ℚ` (also as the image of an
   integer matrix) and `ℝ`.
+* `HeckeRing.GL2.natDiagGL_one_zero`, `HeckeRing.GL2.natDiagGL_one_one`: `diag(1, 0)` (the junk
+  value) and `diag(1, 1)` are the identity.
 * `HeckeRing.GL2.natDiagGL_mul_mapGL_T_zpow`: `diag(1, p) · Tᵇ = !![1, b; 0, p]`, the
   reverse inclusion in one line.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_of_dvd`: the factorisation
@@ -115,6 +117,15 @@ variable {N p : ℕ}
 anything. This is `natDiagGL_mem_Delta0_of_coprime` with its hypothesis discharged. -/
 lemma natDiagGL_one_mem_Delta0 (N p : ℕ) : natDiagGL 2 ![1, p] ∈ Delta0 N :=
   natDiagGL_mem_Delta0_of_coprime N ![1, p] fun _ ↦ by simp
+
+/-- The junk branch of `natDiagGL` at `diag(1, 0)`: it is the identity. -/
+lemma natDiagGL_one_zero : natDiagGL 2 ![1, 0] = 1 :=
+  natDiagGL_of_not_pos 2 fun h ↦ by simpa using h 1
+
+/-- `diag(1, 1)` is the identity. -/
+@[simp]
+lemma natDiagGL_one_one : natDiagGL 2 ![1, 1] = 1 :=
+  (congrArg (natDiagGL 2) (by ext i; fin_cases i <;> rfl)).trans (natDiagGL_one 2)
 
 /-- The matrix of `diag(1, p)`, for `0 < p`. -/
 lemma coe_natDiagGL_one (hp : 0 < p) :

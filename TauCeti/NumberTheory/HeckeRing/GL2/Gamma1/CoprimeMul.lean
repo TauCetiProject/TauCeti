@@ -73,14 +73,6 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ}
 
-/-- The junk branch of `natDiagGL` at `diag(1, 0)`. -/
-private lemma natDiagGL_one_zero : natDiagGL 2 ![1, 0] = 1 :=
-  natDiagGL_of_not_pos 2 fun h ↦ by simpa using h 1
-
-/-- `diag(1, 1)` is the identity. -/
-private lemma natDiagGL_one_one : natDiagGL 2 ![1, 1] = 1 :=
-  (congrArg (natDiagGL 2) (by ext i; fin_cases i <;> rfl)).trans (natDiagGL_one 2)
-
 /-- **The elements of `Dₙ` are `!![1, *; 0, *]` modulo `N`.** Every element of
 `Γ₁(N) · diag(1, n) · Γ₁(N)` is represented by an integral matrix whose upper-left entry is `1`
 and whose lower-left entry is `0` modulo `N`. -/
@@ -264,12 +256,20 @@ theorem natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset [NeZero N] {m n : ℕ}
 
 /-- **`Dₘₙ = Dₘ · Dₙ` for coprime `m`, `n`.** The product set of the double cosets of `diag(1, m)`
 and `diag(1, n)` at level `Γ₁(N)` is the single double coset of `diag(1, m n)`. -/
-theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
-    (hmn : m.Coprime n) :
+theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hmn : m.Coprime n) :
     doubleCoset (natDiagGL 2 ![1, m * n]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) =
       doubleCoset (natDiagGL 2 ![1, m]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) *
         doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
           ((Gamma1 N).map (mapGL ℚ)) := by
+  -- if `m` or `n` is `0`, coprimality makes the other `1`, and all three diagonals are `1`
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · obtain rfl : n = 1 := by simpa using hmn
+    rw [Nat.zero_mul, natDiagGL_one_zero, natDiagGL_one_one, TauCeti.doubleCoset_one_self]
+    exact (Submonoid.coe_mul_self_eq ((Gamma1 N).map (mapGL ℚ)).toSubmonoid).symm
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · obtain rfl : m = 1 := by simpa using hmn
+    rw [Nat.mul_zero, natDiagGL_one_zero, natDiagGL_one_one, TauCeti.doubleCoset_one_self]
+    exact (Submonoid.coe_mul_self_eq ((Gamma1 N).map (mapGL ℚ)).toSubmonoid).symm
   have hδ : natDiagGL 2 ![1, m] * natDiagGL 2 ![1, n] = natDiagGL 2 ![1, m * n] := by
     rw [natDiagGL_mul 2 _ _ (fun i ↦ by fin_cases i <;> simp [hm]) fun i ↦ by
       fin_cases i <;> simp [hn]]
