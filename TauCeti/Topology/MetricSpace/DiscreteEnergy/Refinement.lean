@@ -164,13 +164,21 @@ theorem discreteEnergyForget_refl (p q : M) (x : Fin n → M) :
 /-- Successive vertex-forgetting agrees with selecting the composite subsequence. -/
 @[simp]
 theorem discreteEnergyForget_trans (r : Fin (m + 2) ↪o Fin (n + 2))
-    (s : Fin (l + 2) ↪o Fin (m + 2)) (h0 : r 0 = 0)
-    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (p q : M) (x : Fin n → M) :
+    (s : Fin (l + 2) ↪o Fin (m + 2)) (p q : M) (x : Fin n → M) :
     discreteEnergyForget s p q (discreteEnergyForget r p q x) =
       discreteEnergyForget (s.trans r) p q x := by
   ext j
-  simp only [discreteEnergyForget_apply, cons_snoc_discreteEnergyForget r h0 hlast,
-    Function.comp_apply, RelEmbedding.trans_apply]
+  -- An increasing selection sends every interior index to an interior index.
+  have hpos : 0 < s j.castSucc.succ :=
+    (Fin.zero_le (s 0)).trans_lt (s.strictMono (Fin.succ_pos _))
+  have hlt : s j.castSucc.succ < Fin.last (m + 1) :=
+    (s.strictMono (Fin.succ_lt_succ_iff.mpr j.castSucc_lt_last)).trans_le (Fin.le_last _)
+  obtain ⟨k, hk⟩ := (s j.castSucc.succ).eq_succ_of_ne_zero (ne_of_gt hpos)
+  obtain ⟨i, hi⟩ := k.eq_castSucc_of_ne_last (by
+    intro h
+    simp only [hk, h, Fin.succ_last, lt_self_iff_false] at hlt)
+  simp only [discreteEnergyForget_apply, RelEmbedding.trans_apply, hk, ← hi,
+    Fin.cons_succ, Fin.snoc_castSucc]
 
 variable [PseudoMetricSpace M]
 
@@ -254,7 +262,7 @@ theorem discreteEnergyForgetMap_trans {t : Fin (n + 2) → ℝ} (ht : StrictMono
       rw [ContinuousMap.comp_apply, discreteEnergyForgetMap_apply,
         discreteEnergyForgetMap_apply]
     _ = discreteEnergyForget (s.trans r) p q x :=
-      discreteEnergyForget_trans r s hr0 hrlast p q x
+      discreteEnergyForget_trans r s p q x
     _ = _ := (discreteEnergyForgetMap_apply ht (s.trans r) _ _ p q c x).symm
 
 end FixedEndpoints
