@@ -663,10 +663,13 @@ Every element lies in the `p`-elementary subgroup built from its `p`-free part.
 
 /-- For every `p` and every element `x`, some Sylow `p`-subgroup of the
 centraliser of the `p`-free part of `x` produces, by
-`TauCeti.pElementaryOfSylow`, a subgroup containing `x`. That subgroup is `p`-elementary by
-`TauCeti.isPElementary_pElementaryOfSylow`; when the Sylow subgroup has finite index in the
-centraliser, which is not asserted here, `TauCeti.not_dvd_relIndex_pElementaryOfSylow` further
-gives the subgroup index prime to `p` there. -/
+`TauCeti.pElementaryOfSylow`, a subgroup containing `x`. When `p` is prime and `x` has finite
+order, so that `p` does not divide the order of `TauCeti.pFreePart p x`, that subgroup is
+`p`-elementary by `TauCeti.isPElementary_pElementaryOfSylow`, and when moreover the Sylow subgroup
+has finite index in the centraliser, which is not asserted here,
+`TauCeti.not_dvd_relIndex_pElementaryOfSylow` gives the subgroup index prime to `p` there.  For
+`p` not prime or `x` of infinite order the `p`-free part is `x` itself and any Sylow subgroup
+works, with no `p`-elementary conclusion. -/
 theorem exists_mem_pElementaryOfSylow (x : G) :
     ∃ P : Sylow p (centralizer ({pFreePart p x} : Set G)),
       x ∈ pElementaryOfSylow (pFreePart p x) P := by

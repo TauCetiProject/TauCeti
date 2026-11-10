@@ -35,6 +35,8 @@ its `p`-free factor.
 * `TauCeti.pFreePart_mem_powers`: the `p`-free part is a natural power in any monoid.
 * `TauCeti.pFreePart_of_orderOf_eq_zero`, `TauCeti.pFreePart_of_not_prime`: the `p`-free part of an
   element of infinite order, or for `p` not prime, is the element itself.
+* `TauCeti.pPart_of_orderOf_eq_zero`, `TauCeti.pPart_of_not_prime`: the matching `p`-parts are
+  trivial.
 * `TauCeti.pFreePart_mul_pPart`: the two factors multiply back to `x`.
 * `TauCeti.commute_pFreePart_pPart`: the two factors commute.
 * `TauCeti.commute_pFreePart`, `TauCeti.commute_pPart`: anything commuting with `x` commutes with
@@ -208,6 +210,14 @@ theorem pPart_mul_pFreePart (p : ℕ) (x : G) : pPart p x * pFreePart p x = x :=
 
 @[simp]
 theorem pPart_one (p : ℕ) : pPart p (1 : G) = 1 := by rw [pPart, pFreePart_one, inv_one, mul_one]
+
+/-- An element of infinite order has trivial `p`-part. -/
+theorem pPart_of_orderOf_eq_zero (p : ℕ) (hx : orderOf x = 0) : pPart p x = 1 := by
+  rw [pPart, pFreePart_of_orderOf_eq_zero p hx, inv_mul_cancel]
+
+/-- For `p` not prime, every element has trivial `p`-part. -/
+theorem pPart_of_not_prime {p : ℕ} (hp : ¬ p.Prime) (x : G) : pPart p x = 1 := by
+  rw [pPart, pFreePart_of_not_prime hp, inv_mul_cancel]
 
 /-- **Conjugation transports the `p`-free part.**  Both factors are powers of `x` cut out by an
 exponent that only depends on the order of `x`, and conjugation preserves orders. -/
