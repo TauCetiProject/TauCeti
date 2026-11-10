@@ -12,14 +12,15 @@ public import Mathlib.Analysis.Complex.Basic
 # The standard symplectic form on complex coordinate space
 
 On `ι → ℂ`, with coordinates `z_j = s_j + i t_j`, the standard symplectic form is
-`ω₀ = Σ_j ds_j ∧ dt_j`, the sum of the standard area forms of the coordinate lines. It tames
-multiplication by `i`, with `ω₀(v, i v) = Σ_j |v_j|²`, and the real locus `ι → ℝ` is a
-Lagrangian subspace.
+`ω₀ = Σ_j ds_j ∧ dt_j`, the sum of the standard area forms of the coordinate lines. It is
+compatible with multiplication by `i`, with `ω₀(v, i v) = Σ_j |v_j|²`, and the real locus
+`ι → ℝ` is a Lagrangian subspace.
 
 ## Main declarations
 
 * `TauCeti.stdComplexPiSymplecticForm`: the form `ω₀(v, w) = Σ_j (Re v_j Im w_j - Im v_j Re w_j)`.
-* `TauCeti.stdComplexPiSymplecticForm_tames`: `ω₀` tames multiplication by `i`.
+* `TauCeti.stdComplexPiSymplecticForm_compatible`: `ω₀` is compatible with multiplication by
+  `i`; in particular it is invariant under and tames multiplication by `i`.
 * `TauCeti.isLagrangian_stdComplexPiSymplecticForm_range_ofReal`: the real locus is Lagrangian.
 
 ## References
@@ -84,10 +85,24 @@ theorem stdComplexPiSymplecticForm_apply_ofComplexModule (v : ι → ℂ) :
       ∑ j, Complex.normSq (v j) :=
   stdComplexPiBilin_apply_ofComplexModule ι v
 
+/-- The standard symplectic form on `ι → ℂ` is invariant under multiplication by `i`. -/
+theorem stdComplexPiSymplecticForm_invariant :
+    (stdComplexPiSymplecticForm ι).Invariant (AlmostComplexStructure.ofComplexModule (ι → ℂ)) := by
+  refine (SymplecticForm.invariant_iff _ _).2 fun v w ↦ ?_
+  simp only [stdComplexPiSymplecticForm_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simpa [AlmostComplexStructure.ofComplexModule_apply] using
+    (SymplecticForm.invariant_iff _ _).1 stdComplexSymplecticForm_invariant (v j) (w j)
+
+/-- The standard symplectic form on `ι → ℂ` is compatible with multiplication by `i`. -/
+theorem stdComplexPiSymplecticForm_compatible :
+    (stdComplexPiSymplecticForm ι).Compatible (AlmostComplexStructure.ofComplexModule (ι → ℂ)) :=
+  .of_tames stdComplexPiSymplecticForm_invariant fun _ hv ↦ stdComplexPiBilin_pos ι hv
+
 /-- The standard symplectic form on `ι → ℂ` tames multiplication by `i`. -/
 theorem stdComplexPiSymplecticForm_tames :
     (stdComplexPiSymplecticForm ι).Tames (AlmostComplexStructure.ofComplexModule (ι → ℂ)) :=
-  fun _ hv ↦ stdComplexPiBilin_pos ι hv
+  stdComplexPiSymplecticForm_compatible.tames
 
 /-- The real locus `ι → ℝ` is a Lagrangian subspace of `ι → ℂ` for the standard symplectic
 form. -/
