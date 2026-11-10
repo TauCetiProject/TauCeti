@@ -60,8 +60,6 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
   Publications 52, 2012, Appendix A.3.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "The manifold inverse-function theorem".
 -/
 
 public section
