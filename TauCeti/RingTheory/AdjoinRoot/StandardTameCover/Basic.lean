@@ -174,13 +174,7 @@ theorem isFiniteProductOfStandardTameCovers_standardTameCover (f : A) {e : ℕ}
     have h₂ : Subsingleton (standardTameCover A f 1) := Module.subsingleton A _
     exact (isFiniteProductOfStandardTameCovers_iff f).mpr
       ⟨Unit, inferInstance, fun _ ↦ 1, fun _ ↦ le_rfl, fun _ ↦ by simp,
-        ⟨{ toFun := fun _ ↦ 0
-           invFun := fun _ ↦ 0
-           left_inv := fun _ ↦ Subsingleton.elim _ _
-           right_inv := fun _ ↦ Subsingleton.elim _ _
-           map_mul' := fun _ _ ↦ Subsingleton.elim _ _
-           map_add' := fun _ _ ↦ Subsingleton.elim _ _
-           commutes' := fun _ ↦ Subsingleton.elim _ _ }⟩⟩
+        ⟨default⟩⟩
   · have he : 1 ≤ e := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at heu
     exact (isFiniteProductOfStandardTameCovers_iff f).mpr
       ⟨Unit, inferInstance, fun _ ↦ e, fun _ ↦ he, fun _ ↦ heu,
