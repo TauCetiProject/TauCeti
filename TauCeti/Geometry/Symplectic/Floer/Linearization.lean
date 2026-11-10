@@ -159,6 +159,38 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
   module
 
+/-- **Continuity of the linearization.** For a `C¹` endomorphism field `J(z, y)` and `C²`
+Hamiltonians `Ks`, `Kt`, the linearized Floer operator along `u` in the direction `ξ` is
+continuous at every point where both `u` and `ξ` are `C¹`. -/
+theorem continuousAt_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hJ : ContDiff ℝ 1 (Function.uncurry J)) (hKs : ContDiff ℝ 2 (Function.uncurry Ks))
+    (hKt : ContDiff ℝ 2 (Function.uncurry Kt)) {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hu : ContDiffAt ℝ 1 u z) (hξ : ContDiffAt ℝ 1 ξ z) :
+    ContinuousAt (ω.floerLinearization J Ks Kt u ξ) z := by
+  have hu₀ : ContDiffAt ℝ 0 u z := hu.of_le (by norm_num)
+  have hdu := (hu.fderiv_right (m := 0) le_rfl).continuousAt
+  have hdξ := (hξ.fderiv_right (m := 0) le_rfl).continuousAt
+  have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 2 (Function.uncurry K)) :
+      ContDiff ℝ 1 fun w : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (K w.1) w.2 :=
+    ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hK
+  have hdX (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 2 (Function.uncurry K)) :
+      ContinuousAt (fun w ↦ fderiv ℝ (ω.hamiltonianVectorField (K w)) (u w)) z :=
+    (ContDiffAt.fderiv (f := fun w y ↦ ω.hamiltonianVectorField (K w) y)
+      (hX K hK).contDiffAt hu₀ le_rfl).continuousAt
+  have hdJ : ContinuousAt (fun w ↦ fderiv ℝ (J w) (u w)) z :=
+    (ContDiffAt.fderiv (f := J) hJ.contDiffAt hu₀ le_rfl).continuousAt
+  have hcu := hu.continuousAt
+  have hXt : ContinuousAt (fun w ↦ ω.hamiltonianVectorField (Kt w) (u w)) z :=
+    (hX Kt hKt).continuous.continuousAt.comp (continuousAt_id.prodMk hcu)
+  have hJu : ContinuousAt (fun w ↦ J w (u w)) z :=
+    hJ.continuous.continuousAt.comp (f := fun w ↦ (w, u w)) (continuousAt_id.prodMk hcu)
+  exact (((hdξ.clm_apply continuousAt_const).sub ((hdX Ks hKs).clm_apply
+    hξ.continuousAt)).add ((hdJ.clm_apply hξ.continuousAt).clm_apply
+      ((hdu.clm_apply continuousAt_const).sub hXt))).add
+    (hJu.clm_apply ((hdξ.clm_apply continuousAt_const).sub
+      ((hdX Kt hKt).clm_apply hξ.continuousAt)))
+
 section Families
 
 variable (ω : SymplecticForm V)
