@@ -303,17 +303,17 @@ theorem IsRowCompact.ringOpNorm_resolventCoeff_le {u : C₀(I, R) →L[R] C₀(I
     ⟨a, mem_insert_self _ _⟩ ⟨b, mem_insert_of_mem (mem_insert_self _ _)⟩
 
 /-- **Uniform tail bound for the Fredholm resolvent.** Suppose `u` is row compact and `r i`
-bounds the `i`-th row of its matrix, and let `ρ > 0`, `0 ≤ q ≤ 1`, `1 ≤ B`, and `T` a finite
+bounds the `i`-th row of its matrix, and let `ρ > 0`, `0 ≤ q`, `1 ≤ B`, and `T` a finite
 set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B` everywhere. Then
 `‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ #T * q ^ (m - #T)`, with truncated subtraction in the
 exponent. The bound depends on `u` only through `r`. -/
 theorem IsRowCompact.ringOpNorm_resolventCoeff_mul_pow_le {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) {r : I → ℝ} (hr : ∀ i j, ‖u.matrixCoeff i j‖ ≤ r i)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hq₁ : q ≤ 1) (hB : 1 ≤ B) (T : Finset I)
+    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset I)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (m : ℕ) :
     ‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ T.card * q ^ (m - T.card) :=
   TauCeti.mul_pow_le_of_forall_prod_le (fun i ↦ (norm_nonneg _).trans (hr i i))
-    (fun _ hc hs ↦ hu.ringOpNorm_resolventCoeff_le hr hc hs) hρ hq₀ hq₁ hB T hT hrB
+    (fun _ hc hs ↦ hu.ringOpNorm_resolventCoeff_le hr hc hs) hρ hq₀ hB T hT hrB
 
 /-- **The Fredholm resolvent is entire.** For a row-compact `u`, the resolvent
 `det (1 - T u) (1 - T u)⁻¹` is a restricted power series at every radius in the Banach ring of
@@ -322,7 +322,7 @@ theorem IsRowCompact.isEntire_resolventSeries {u : C₀(I, R) →L[R] C₀(I, R)
     (hu : u.IsRowCompact) : u.resolventSeries.IsEntire := PowerSeries.isEntire_iff.2 fun c ↦ by
   rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
   simpa only [coeff_resolventSeries] using TauCeti.tendsto_mul_pow_of_forall_prod_le
-    u.rowNorm_nonneg hu.tendsto_rowNorm (fun m ↦ ringOpNorm_nonneg (u.resolventCoeff m))
+    hu.tendsto_rowNorm (fun m ↦ ringOpNorm_nonneg (u.resolventCoeff m))
     (fun _ _ hc hs ↦ hu.ringOpNorm_resolventCoeff_le hu.norm_matrixCoeff_le_rowNorm hc hs) c
 
 end Analytic
