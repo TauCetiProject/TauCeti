@@ -172,14 +172,6 @@ namespace Amplitude
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-- An iterated directional derivative of a derivative in the direction `d` is the iterated
-directional derivative with `d` appended as the first direction to differentiate in. -/
-private theorem iteratedFDerivAlong_singleton (vs : List (CoordinateSpace n ×
-    CoordinateSpace n × CoordinateSpace n)) (d : CoordinateSpace n × CoordinateSpace n ×
-    CoordinateSpace n) (f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) :
-    iteratedFDerivAlong ℝ vs (iteratedFDerivAlong ℝ [d] f) = iteratedFDerivAlong ℝ (vs ++ [d]) f :=
-  (iteratedFDerivAlong_append vs [d] f).symm
-
 private theorem contDiff_iteratedFDerivAlong_singleton (a : Amplitude n V W m)
     (d : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     ContDiff ℝ ∞ (iteratedFDerivAlong ℝ [d] a.coefficient) :=
@@ -192,7 +184,7 @@ def spatialDerivFst (j : Fin n) (a : Amplitude n V W m) : Amplitude n V W m wher
   exists_bound K hK α γ β := by
     obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK (α ++ [j]) γ β
     refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
-    rw [iteratedFDerivAlong_singleton, List.Perm.iteratedFDerivAlong_eq _ a.contDiff_coefficient
+    rw [← iteratedFDerivAlong_append, List.Perm.iteratedFDerivAlong_eq _ a.contDiff_coefficient
       (by simp)]
     · exact hC x y hxy ξ
     · simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
@@ -206,7 +198,7 @@ def spatialDerivSnd (j : Fin n) (a : Amplitude n V W m) : Amplitude n V W m wher
   exists_bound K hK α γ β := by
     obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α (γ ++ [j]) β
     refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
-    rw [iteratedFDerivAlong_singleton, List.Perm.iteratedFDerivAlong_eq _ a.contDiff_coefficient
+    rw [← iteratedFDerivAlong_append, List.Perm.iteratedFDerivAlong_eq _ a.contDiff_coefficient
       (by simp)]
     · exact hC x y hxy ξ
     · simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
@@ -221,25 +213,28 @@ def frequencyDeriv (j : Fin n) (a : Amplitude n V W m) : Amplitude n V W (m - 1)
     obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ (β ++ [j])
     refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
     have h := hC x y hxy ξ
-    rw [iteratedFDerivAlong_singleton]
+    rw [← iteratedFDerivAlong_append]
     simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
       List.append_assoc, List.length_append, List.length_cons, List.length_nil] at h ⊢
     convert h using 3
     push_cast
     ring
 
+@[simp]
 theorem coefficient_spatialDerivFst (j : Fin n) (a : Amplitude n V W m)
     (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     (spatialDerivFst j a).coefficient p =
       fderiv ℝ a.coefficient p (EuclideanSpace.single j 1, 0) := by
   simp [spatialDerivFst]
 
+@[simp]
 theorem coefficient_spatialDerivSnd (j : Fin n) (a : Amplitude n V W m)
     (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     (spatialDerivSnd j a).coefficient p =
       fderiv ℝ a.coefficient p (0, EuclideanSpace.single j 1, 0) := by
   simp [spatialDerivSnd]
 
+@[simp]
 theorem coefficient_frequencyDeriv (j : Fin n) (a : Amplitude n V W m)
     (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     (frequencyDeriv j a).coefficient p =
@@ -284,9 +279,8 @@ private theorem fderiv_slice_snd_apply (a : Amplitude n V W m) (x y ξ v : Coord
       fderiv ℝ a.coefficient (x, y, ξ) (0, v, 0) := by
   have h := (a.contDiff_coefficient.differentiable (by simp) _).hasFDerivAt.comp y
     ((hasFDerivAt_prodMk_right (𝕜 := ℝ) x (y, ξ)).comp y (hasFDerivAt_prodMk_left (𝕜 := ℝ) y ξ))
-  rw [show (fun y ↦ a.coefficient (x, y, ξ)) =
-    a.coefficient ∘ (fun f ↦ (x, f)) ∘ fun e ↦ (e, ξ) from rfl, h.fderiv]
-  rfl
+  simp only [Function.comp_def] at h
+  simp [h.fderiv]
 
 /-- The coordinate derivatives of the input-position slice `y ↦ a(x, y, ξ)` are the mixed
 derivatives `∂_y^γ a`. -/
@@ -456,7 +450,7 @@ theorem HasCompactInputSupport.exists_norm_fourier_slice_le {a : Amplitude n V W
   have h2π : ‖θ‖ ^ N ≤ (2 * π * ‖θ‖) ^ N := by
     gcongr
     nlinarith [Real.two_le_pi, norm_nonneg θ]
-  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
+  rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
     le_div_iff₀ hw]
   calc ‖𝓕 f θ‖ * (1 + ‖θ‖ ^ 2) ^ (r / 2) ≤ ‖𝓕 f θ‖ * (2 ^ N * (1 + ‖θ‖ ^ N)) := by gcongr
     _ = 2 ^ N * (‖𝓕 f θ‖ + ‖θ‖ ^ N * ‖𝓕 f θ‖) := by ring
