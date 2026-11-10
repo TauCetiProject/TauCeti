@@ -173,9 +173,9 @@ theorem energyFormLpVariable_coefficientSymmetricPart_zero_drift_apply (μ : Mea
   rw [energyFormLpVariable_apply, energyFormLpVariable_apply,
     energyFormLpVariable_apply]
   have hUV : Integrable (fun x ↦ energyIntegrand (a x) 0 (c x) (U x) (V x)) μ :=
-    integrable_bilinear_apply_of_memLp hcoeff U V
+    integrable_bilinear_apply_of_memLp hcoeff (Lp.memLp U) (Lp.memLp V)
   have hVU : Integrable (fun x ↦ energyIntegrand (a x) 0 (c x) (V x) (U x)) μ :=
-    integrable_bilinear_apply_of_memLp hcoeff V U
+    integrable_bilinear_apply_of_memLp hcoeff (Lp.memLp V) (Lp.memLp U)
   rw [← integral_add hUV hVU, ← integral_div]
   apply integral_congr_ae
   exact Filter.Eventually.of_forall fun x ↦
