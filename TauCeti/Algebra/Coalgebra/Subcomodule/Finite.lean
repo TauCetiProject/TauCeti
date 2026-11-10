@@ -74,45 +74,19 @@ variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 /-- **Coassociativity, read off in coordinates.** If `coact m` is a finite sum of tensors whose
-left factors lie in `N`, then contracting `coact m` against any functional on `C` gives an element
-whose coaction again lands in `N ⊗[R] C`.
+left factors lie in `N`, then the component of `coact m` selected by any functional on `C` has
+coaction landing again in `N ⊗[R] C`.
 
 The submodule is otherwise arbitrary: containing the left factors is the only property used. -/
-private theorem coact_rid_lTensor_coact_mem_range {m : M} {N : Submodule R M} {s : Finset C}
+private theorem coact_coactComponent_mem_range {m : M} {N : Submodule R M} {s : Finset C}
     {a : C → M} (hm : Comodule.coact (R := R) (C := C) (M := M) m = ∑ c ∈ s, a c ⊗ₜ[R] c)
     (ha : ∀ c ∈ s, a c ∈ N) (f : C →ₗ[R] R) :
-    Comodule.coact (R := R) (C := C) (M := M)
-        (TensorProduct.rid R M (f.lTensor M (Comodule.coact (R := R) (C := C) (M := M) m))) ∈
+    Comodule.coact (R := R) (C := C) (M := M) (Comodule.coactComponent f m) ∈
       LinearMap.range (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C)) := by
-  let g : C ⊗[R] C →ₗ[R] C := (TensorProduct.rid R C).toLinearMap ∘ₗ f.lTensor C
-  have hcontract : Comodule.coact (R := R) (C := C) (M := M) ∘ₗ
-        (TensorProduct.rid R M).toLinearMap ∘ₗ f.lTensor M =
-      (TensorProduct.rid R (M ⊗[R] C)).toLinearMap ∘ₗ f.lTensor (M ⊗[R] C) ∘ₗ
-        (Comodule.coact (R := R) (C := C) (M := M)).rTensor C := by
-    ext n c
-    simp
-  have hassoc : (TensorProduct.rid R (M ⊗[R] C)).toLinearMap ∘ₗ f.lTensor (M ⊗[R] C) ∘ₗ
-        (TensorProduct.assoc R M C C).symm.toLinearMap =
-      TensorProduct.map LinearMap.id g := by
-    ext n c d
-    simp [g, TensorProduct.tmul_smul]
-  have hcoassoc :
-      (Comodule.coact (R := R) (C := C) (M := M)).rTensor C
-          (Comodule.coact (R := R) (C := C) (M := M) m) =
-        (TensorProduct.assoc R M C C).symm
-          (Coalgebra.comul.lTensor M
-            (Comodule.coact (R := R) (C := C) (M := M) m)) := by
-    apply (TensorProduct.assoc R M C C).injective
-    simp
-  have h := LinearMap.congr_fun hcontract (Comodule.coact (R := R) (C := C) (M := M) m)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  rw [h, hcoassoc]
-  have h' := LinearMap.congr_fun hassoc
-    (Coalgebra.comul.lTensor M (Comodule.coact (R := R) (C := C) (M := M) m))
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h'
-  rw [h', hm]
-  simp only [map_sum, LinearMap.lTensor_tmul, TensorProduct.map_tmul, LinearMap.id_apply]
-  exact Submodule.sum_mem _ fun c hc ↦ ⟨(⟨a c, ha c hc⟩ : N) ⊗ₜ[R] g (Coalgebra.comul c), rfl⟩
+  rw [Comodule.coact_coactComponent, hm]
+  simp only [map_sum, LinearMap.lTensor_tmul]
+  exact Submodule.sum_mem _ fun c hc ↦
+    ⟨(⟨a c, ha c hc⟩ : N) ⊗ₜ[R] (LinearMap.tensorComponent f ∘ₗ Coalgebra.comul) c, rfl⟩
 
 /-- **The counit identity, read off in coordinates.** If `coact m` is a finite sum of tensors whose
 left factors lie in `N`, then applying the counit shows that `m` lies in `N`. -/
@@ -136,9 +110,8 @@ theorem exists_finite_subcomodule_mem [Module.Projective R C] (m : M) :
   obtain ⟨σ, hσ⟩ := Module.projective_def'.mp ‹Module.Projective R C›
   let a : C →₀ M := TensorProduct.finsuppScalarRight R R M C
     (σ.lTensor M (Comodule.coact (R := R) (C := C) (M := M) m))
-  have ha (c : C) : a c = TensorProduct.rid R M (((Finsupp.lapply c).comp σ).lTensor M
-      (Comodule.coact (R := R) (C := C) (M := M) m)) := by
-    simp only [a]
+  have ha (c : C) : a c = Comodule.coactComponent ((Finsupp.lapply c).comp σ) m := by
+    simp only [a, Comodule.coactComponent_apply, LinearMap.tensorComponent_def]
     generalize Comodule.coact (R := R) (C := C) (M := M) m = t
     induction t using TensorProduct.inductionOn with
     | tmul n d => simp
@@ -163,7 +136,7 @@ theorem exists_finite_subcomodule_mem [Module.Projective R C] (m : M) :
     refine Submodule.span_induction ?_ (by simp) ?_ ?_ hn
     · rintro _ ⟨c, rfl⟩
       rw [ha c]
-      exact coact_rid_lTensor_coact_mem_range hrepr (fun c _ ↦ ha_mem c) _
+      exact coact_coactComponent_mem_range hrepr (fun c _ ↦ ha_mem c) _
     · intro x y _ _ hx hy
       simpa only [map_add] using (LinearMap.range
         (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C))).add_mem hx hy
