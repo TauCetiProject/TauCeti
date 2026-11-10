@@ -15,16 +15,16 @@ A preconnected set covered by a family of pairwise disjoint open sets lies in ea
 family that it meets. This is the form in which connectedness is used to show that a region
 contained in a union of disjoint open cells lies in a single cell.
 
+Dually, when a preconnected set is the union of a locally finite family of closed sets, any two
+nonempty members are joined by a chain of members in which consecutive sets meet
+(`IsPreconnected.transGen_of_iUnion_of_isClosed`). For instance, the irreducible components of a
+connected Noetherian space form a connected intersection graph.
+
 The same principle selects a limit: a function which tends to a finite subset of a Hausdorff
 space along a filter in which arbitrarily small sets have preconnected images tends to a single
 point of that subset (`Filter.Tendsto.exists_mem_tendsto_nhds`). For instance, near a point
 whose punctured neighbourhoods are connected, a continuous function approaching a finite set
 chooses one of its points.
-
-In a preconnected union of a locally finite family of closed sets, any two nonempty members are
-joined by a chain of members in which consecutive members meet
-(`IsPreconnected.transGen_of_iUnion_of_isClosed`). For instance, the irreducible components of a
-connected Noetherian space form a connected graph under the relation of meeting.
 
 An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
 (`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
@@ -58,29 +58,29 @@ theorem IsPreconnected.subset_of_subset_iUnion {s : Set α} {u : ι → Set α}
   · exact Or.inl (hji ▸ hj)
   · exact Or.inr (mem_iUnion₂.2 ⟨j, hji, hj⟩)
 
-/-- In a preconnected union of a locally finite family of closed sets, for instance a finite one,
-any two nonempty members are joined by a chain of members in which consecutive members meet. This
-is the counterpart for closed covers of `IsPreconnected.transGen_of_iUnion`, which treats open
-covers. -/
-theorem IsPreconnected.transGen_of_iUnion_of_isClosed {s : ι → Set α}
-    (hs : IsPreconnected (⋃ n, s n)) (hf : LocallyFinite s) (hs' : ∀ i, IsClosed (s i)) {i j : ι}
+/-- If the union of a locally finite family of closed sets `s i` is preconnected, any two nonempty
+members are joined by a chain of members in which consecutive sets meet. This is the closed
+counterpart of Mathlib's `IsPreconnected.transGen_of_iUnion` for open sets; local finiteness makes
+the unions of subfamilies closed. -/
+theorem IsPreconnected.transGen_of_iUnion_of_isClosed {s : ι → Set α} (hf : LocallyFinite s)
+    (hs : IsPreconnected (⋃ n, s n)) (hs' : ∀ i, IsClosed (s i)) (i j : ι)
     (hi : (s i).Nonempty) (hj : (s j).Nonempty) :
     Relation.TransGen (fun a b ↦ (s a ∩ s b).Nonempty) i j := by
   by_contra hij
-  -- The members reachable from `i` and the others cover the union by two disjoint closed sets.
   let S : Set ι := {k | Relation.TransGen (fun a b ↦ (s a ∩ s b).Nonempty) i k}
+  obtain ⟨a, ha⟩ := hi
+  obtain ⟨b, hb⟩ := hj
+  have hiS : i ∈ S := Relation.TransGen.single ⟨a, ha, ha⟩
   have hcl (T : Set ι) : IsClosed (⋃ k ∈ T, s k) := by
     rw [biUnion_eq_iUnion]
     exact (hf.comp_injective Subtype.val_injective).isClosed_iUnion fun k ↦ hs' k
-  obtain ⟨a, ha⟩ := hi
-  obtain ⟨b, hb⟩ := hj
-  have hiS : i ∈ S := .single ⟨a, ha, ha⟩
+  -- The members reachable from `i` and the others give two closed sets covering the union.
   obtain ⟨x, -, hxU, hxV⟩ := isPreconnected_closed_iff.mp hs (⋃ k ∈ S, s k) (⋃ k ∈ Sᶜ, s k)
     (hcl S) (hcl Sᶜ) (iSup_split s (· ∈ S)).le
     ⟨a, mem_iUnion_of_mem i ha, mem_iUnion₂_of_mem hiS ha⟩
     ⟨b, mem_iUnion_of_mem j hb, mem_iUnion₂_of_mem hij hb⟩
-  obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.mp hxU
-  obtain ⟨l, hl, hxl⟩ := mem_iUnion₂.mp hxV
+  obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.1 hxU
+  obtain ⟨l, hl, hxl⟩ := mem_iUnion₂.1 hxV
   exact hl (hk.tail ⟨x, hxk, hxl⟩)
 
 /-- An open set is not preconnected exactly when it is the union of two disjoint nonempty open
@@ -163,3 +163,22 @@ theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpa
   rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
     ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
     range_domRestrict]
+
+namespace TauCeti
+
+/-- **Chains of overlaps in a connected open cover.** If the union of the open sets `V i`, `i ∈ t`,
+is preconnected, every nonempty `V j` is joined to a nonempty piece `V i₀` by a chain of pairwise
+overlapping pieces. -/
+theorem reflTransGen_inter_nonempty_of_isOpen_cover {t : Set ι} {V : ι → Set α}
+    (hU : IsPreconnected (⋃ i ∈ t, V i)) (hV : ∀ i ∈ t, IsOpen (V i))
+    {i₀ : ι} (hi₀ : i₀ ∈ t) (hVi₀ : (V i₀).Nonempty) {j : ι} (hj : j ∈ t)
+    (hVj : (V j).Nonempty) :
+    Relation.ReflTransGen (fun i j ↦ i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty) i₀ j := by
+  have hU' : IsPreconnected (⋃ k : t, V k) := by
+    convert hU using 1
+    ext
+    simp
+  exact (hU'.transGen_of_iUnion (fun k ↦ hV k k.2) ⟨i₀, hi₀⟩ ⟨j, hj⟩
+    hVi₀ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
+
+end TauCeti

@@ -325,9 +325,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
   by_cases hx : p.1 ∈ K
   · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul]
     refine ((a.coefficient _).le_opNorm _).trans ?_
-    have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-      (by linarith [Real.two_le_pi]) m (x := (2 * π) • p.2) (y := p.2)
-      (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+    have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m p.2
     calc ‖a.coefficient (p.1, (2 * π) • p.2)‖ * ‖𝓕 u p.2‖
         ≤ C * (1 + ‖(2 * π) • p.2‖ ^ 2) ^ (m / 2) * ‖𝓕 u p.2‖ := by
           gcongr
@@ -385,18 +383,11 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ :
   have hA : ‖A‖ ≤ C₀ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * (t ^ N)⁻¹ := by
     rw [le_mul_inv_iff₀ (by positivity), mul_comm]
     exact hdecay _ _
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-    (by linarith [Real.two_le_pi]) m (x := (2 * π) • ζ) (y := ζ)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
   have hpeetre := one_add_norm_sq_rpow_le_mul_sub (s - m) ξ ζ
   -- The bracket `⟨η⟩ ^ |s - m|` is at most `(1 + ‖η‖) ^ |s - m|`.
-  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| := by
-    calc (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ (t ^ 2) ^ (|s - m| / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg (ξ - ζ)]) (by positivity)
-      _ = t ^ |s - m| := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le]
-          norm_num
-          ring_nf
+  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| :=
+    one_add_norm_sq_rpow_le_one_add_norm_rpow _ (abs_nonneg _)
   have hk : t ^ |s - m| * (t ^ N)⁻¹ = t ^ (-((N : ℝ) - |s - m|)) := by
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
