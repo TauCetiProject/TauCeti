@@ -33,6 +33,53 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+-- Removing the selected occurrence reconstructs the measure and reduces its mass by one,
+-- with truncated subtraction handling the empty measure as well.
+private lemma sub_option_dirac_step {X : Type*} [MeasurableSpace X]
+    (ν : Measure X) (x : Option X) (hle : x.elim 0 Measure.dirac ≤ ν)
+    (hnone : x = none ↔ ν = 0) :
+    (ν - x.elim 0 Measure.dirac) + x.elim 0 Measure.dirac = ν ∧
+      (ν - x.elim 0 Measure.dirac) univ = ν univ - 1 := by
+  have : IsFiniteMeasure (x.elim 0 Measure.dirac) := by
+    cases x <;> simp only [Option.elim_none, Option.elim_some] <;> infer_instance
+  refine ⟨sub_add_cancel_of_le hle, ?_⟩
+  cases x with
+  | none => simp [hnone.mp rfl]
+  | some x =>
+    have hs := congrArg (fun μ : Measure X => μ univ) (sub_add_cancel_of_le hle)
+    simp only [add_apply, Option.elim_some, dirac_apply_of_mem (mem_univ x)] at hs ⊢
+    exact ENNReal.eq_sub_of_add_eq (by simp) hs
+
+private abbrev FiniteIntegerMeasure (X : Type*) [MeasurableSpace X] :=
+  {ν : Measure X // IsFiniteMeasure ν ∧ ν.IsIntegerValued}
+
+private lemma iterate_mass {X : Type*} [MeasurableSpace X]
+    (step : FiniteIntegerMeasure X → FiniteIntegerMeasure X)
+    (hmass : ∀ ν, (step ν).val univ = ν.val univ - 1)
+    (ν : FiniteIntegerMeasure X) (n : ℕ) :
+    (step^[n] ν).val univ = ν.val univ - n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp only [Function.iterate_succ_apply', hmass, ih, tsub_tsub, Nat.cast_add, Nat.cast_one]
+
+private lemma iterate_split {X : Type*} [MeasurableSpace X]
+    (step : FiniteIntegerMeasure X → FiniteIntegerMeasure X)
+    (atom : FiniteIntegerMeasure X → Measure X)
+    (hsplit : ∀ ν, (step ν).val + atom ν = ν.val)
+    (ν : FiniteIntegerMeasure X) (n : ℕ) :
+    (step^[n] ν).val + ∑ i ∈ Finset.range n, atom (step^[i] ν) = ν.val := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_range_succ, Function.iterate_succ_apply']
+    calc
+      (step (step^[n] ν)).val +
+          (∑ i ∈ Finset.range n, atom (step^[i] ν) + atom (step^[n] ν)) =
+          ((step (step^[n] ν)).val + atom (step^[n] ν)) +
+            ∑ i ∈ Finset.range n, atom (step^[i] ν) := by ac_rfl
+      _ = ν.val := by rw [hsplit, ih]
+
 /-- A measurable family of finite integer-valued measures can be enumerated measurably.
 The enumeration stops exactly at the total number of occurrences, and its Dirac sum
 reconstructs the measure. No ordering of the locations or topology on the parameter
@@ -47,7 +94,7 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
   classical
   -- Choose on the space of all finite integer-valued measures, so the same measurable
   -- removal operation can be iterated for every member of the family.
-  let M := {ν : Measure X // IsFiniteMeasure ν ∧ ν.IsIntegerValued}
+  let M := FiniteIntegerMeasure X
   have hcoe : Measurable (fun ν : M => (ν : Measure X)) := measurable_subtype_coe
   obtain ⟨pick, hpick, hnone, hmass⟩ := hcoe.exists_option_one_le_singleton
     (fun ν => ν.2.1) (fun ν => ν.2.2)
@@ -68,59 +115,22 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
     | none => simpa [atom, h] using ν.2.2
     | some x => simpa [atom, h] using ν.2.2.sub_dirac x⟩
   have hstep : Measurable step := (hcoe.measure_sub hatom hfinatom hle).subtype_mk
-  have hsplit (ν : M) : (step ν).val + atom ν = ν.val := by
-    have := hfinatom ν
-    exact sub_add_cancel_of_le (hle ν)
-  have hzero (ν : M) (h : ν.val = 0) : (step ν).val = 0 := by
-    exact le_antisymm (sub_le.trans (by rw [h])) (Measure.zero_le _)
+  have hremove (ν : M) := sub_option_dirac_step ν.val (pick ν) (hle ν) (hnone ν)
   let start : α → M := fun a => ⟨μ a, hfinite a, hint a⟩
   let rem (n : ℕ) (a : α) : M := step^[n] (start a)
   have hrem (n : ℕ) : Measurable (rem n) :=
     (hstep.iterate n).comp (hm.subtype_mk)
-  have hrem_zero (a : α) : (rem 0 a).val = μ a := rfl
-  have hrem_succ (n : ℕ) (a : α) : rem (n + 1) a = step (rem n a) :=
-    Function.iterate_succ_apply' _ _ _
-  -- Every nonempty remainder loses exactly one unit of mass; zero remains zero.
-  have hmass_rem (a : α) (n : ℕ) :
-      (rem n a).val univ = μ a univ - n := by
-    have := hfinite a
-    obtain ⟨k, hk⟩ := (hint a).exists_eq_natCast MeasurableSet.univ (measure_lt_top _ _)
-    rw [hk]
-    induction n with
-    | zero => simp only [Nat.cast_zero, tsub_zero, hrem_zero, hk]
-    | succ n ih =>
-      rw [hrem_succ]
-      by_cases hz : (rem n a).val = 0
-      · have hkn : k ≤ n := by
-          have heq : (k : ℝ≥0∞) ≤ n := tsub_eq_zero_iff_le.mp (by simpa [hz] using ih.symm)
-          exact_mod_cast heq
-        rw [hzero _ hz]
-        simp only [FunLike.coe_zero, Pi.zero_apply]
-        exact (tsub_eq_zero_of_le (Nat.cast_le.mpr (hkn.trans (Nat.le_succ n)))).symm
-      · have hp : pick (rem n a) ≠ none := fun h => hz ((hnone _).mp h)
-        obtain ⟨x, hx⟩ := Option.ne_none_iff_exists'.mp hp
-        have hs := congrArg (fun ν : Measure X => ν univ) (hsplit (rem n a))
-        simp only [add_apply, atom, hx, Option.elim_some, dirac_apply_of_mem (mem_univ x)] at hs
-        have hsub : (step (rem n a)).val univ = (rem n a).val univ - 1 := by
-          exact ENNReal.eq_sub_of_add_eq (by simp) hs
-        rw [hsub, ih]
-        rw [tsub_tsub, Nat.cast_add, Nat.cast_one]
+  -- The one-step mass formula iterates without choosing a natural total mass.
+  have hmass_rem (a : α) (n : ℕ) : (rem n a).val univ = μ a univ - n :=
+    iterate_mass step (fun ν => (hremove ν).2) (start a) n
   let e : α → ℕ → Option X := fun a n => pick (rem n a)
   have henone (a : α) (n : ℕ) : e a n = none ↔ μ a univ ≤ n := by
     rw [hnone, ← measure_univ_eq_zero, hmass_rem, tsub_eq_zero_iff_le]
   refine ⟨e, measurable_pi_iff.2 (fun n => hpick.comp (hrem n)), henone, fun a => ?_⟩
   -- Telescope the removals, then stop at the original (integer) total mass.
   have hprefix (n : ℕ) :
-      (rem n a).val + ∑ i ∈ Finset.range n, atom (rem i a) = μ a := by
-    induction n with
-    | zero => simp [hrem_zero]
-    | succ n ih =>
-      rw [Finset.sum_range_succ, hrem_succ]
-      calc
-        (step (rem n a)).val + (∑ i ∈ Finset.range n, atom (rem i a) + atom (rem n a)) =
-            ((step (rem n a)).val + atom (rem n a)) +
-              ∑ i ∈ Finset.range n, atom (rem i a) := by ac_rfl
-        _ = μ a := by rw [hsplit, ih]
+      (rem n a).val + ∑ i ∈ Finset.range n, atom (rem i a) = μ a :=
+    iterate_split step atom (fun ν => (hremove ν).1) (start a) n
   have := hfinite a
   obtain ⟨k, hk⟩ := (hint a).exists_eq_natCast MeasurableSet.univ (measure_lt_top _ _)
   have hremk : (rem k a).val = 0 := by
