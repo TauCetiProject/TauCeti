@@ -79,6 +79,7 @@ theorem HasMeromorphicContinuation.divisor_entireCompletion_nonneg (U : Set ℂ)
   MeromorphicOn.AnalyticOnNhd.divisor_nonneg (fun z _ ↦ h.analyticAt_entireCompletion z) s
 
 /-- Clearing the poles does not change any zero multiplicity. -/
+@[simp]
 theorem HasMeromorphicContinuation.toNat_divisor_entireCompletion (s : ℂ) :
     (MeromorphicOn.divisor d.entireCompletion univ s).toNat =
       (MeromorphicOn.divisor d.completed univ s).toNat := by
@@ -89,6 +90,7 @@ theorem HasMeromorphicContinuation.toNat_divisor_entireCompletion (s : ℂ) :
     simp
 
 /-- The entire completion has the same zero count as the completed function on every region. -/
+@[simp]
 theorem HasMeromorphicContinuation.zeroCount_entireCompletion (R : Set ℂ) :
     zeroCount d.entireCompletion univ R = zeroCount d.completed univ R := by
   simp_rw [zeroCount_def, h.toNat_divisor_entireCompletion]
