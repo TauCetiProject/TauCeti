@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The boundary model of a Euclidean half-space
@@ -332,26 +333,6 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
-/-- A linear functional nonnegative on the coordinate half-space is determined by its normal
-coefficient. Tangential directions lie in the kernel. -/
-theorem eq_mul_apply_zero_of_nonneg {k : ℕ} [NeZero k]
-    (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ)
-    (hnonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v)
-    (u : EuclideanSpace ℝ (Fin k)) :
-    ν u = ν (EuclideanSpace.single 0 1) * u 0 := by
-  have hker (v : EuclideanSpace ℝ (Fin k)) (hv : v 0 = 0) : ν v = 0 := by
-    refine le_antisymm ?_ (hnonneg v hv.ge)
-    have hn := hnonneg (-v) (by simp [hv])
-    rwa [map_neg, neg_nonneg] at hn
-  let e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
-  have he₀ : e₀ 0 = 1 := by simp [e₀]
-  have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
-  have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
-  calc
-    ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
-    _ = ν e₀ * u 0 := by
-      rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
-
 open Filter Topology in
 /-- A continuous linear functional on `ℝᵏ` which vanishes at a point `p` of the boundary hyperplane
 of the half-space `{y | y 0 ≥ 0}`, and which near `p` within the half-space is positive off the
@@ -398,6 +379,7 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_pos {k : ℕ} [NeZero k]
       have := hν_pos (v + (-ν v / ν e₀) • e₀) (by simp [he₀, ← hv, hδ])
       rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hc.ne'] at this
       simp at this
-  exact ⟨ν e₀, hc, fun u => ν.eq_mul_apply_zero_of_nonneg hν_nonneg u⟩
+  exact ⟨ν e₀, hc, Module.Dual.apply_eq_mul_apply_of_nonneg
+    (EuclideanSpace.projₗ (𝕜 := ℝ) 0) (ν : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] ℝ) he₀ hν_nonneg⟩
 
 end ContinuousLinearMap
