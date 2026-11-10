@@ -38,6 +38,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
 
 * `TopPair.cubicalChainComplex k P`: the relative normalized cubical chain complex of a pair.
 * `TopPair.cubicalChainComplexMap k f`: the chain map induced by a map of pairs.
+* `TopPair.IsCubicalRepresentative k c μ`: a normalized cubical chain of the ambient space is a
+  relative cycle with relative class `μ`; every class has one
+  (`TopPair.exists_isCubicalRepresentative`).
 * `TopPair.cubicalChainComplexXDesc k g hg`: a linear map out of the chains of the ambient space,
   vanishing on the chains of the subspace, descended to the relative chains.
 * `TopPair.cubicalChainOfCube k c`, `TopPair.cubicalCycleOfCube k c hc`: a singular cube as a
@@ -141,6 +144,35 @@ private theorem surjective_cokernel_π_f (P : TopPair.{u}) (n : ℕ) :
     Function.Surjective ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n) :=
   (ModuleCat.epi_iff_surjective _).1
     (shortExact_cubicalChainComplexShortComplex_map_eval k P n).epi_g
+
+/-- A normalized cubical `n`-chain `c` of the ambient space of a pair `(X, A)` **represents** the
+class `μ` of the relative cubical homology `Hₙ(X, A)` when its image in the relative chains is a
+relative cycle whose class is `μ`. -/
+def IsCubicalRepresentative (P : TopPair.{u}) {n : ℕ} (c : NormalizedCubicalChain P.fst k n)
+    (μ : (P.cubicalChainComplex k).homology n) : Prop :=
+  ∃ r : (P.cubicalChainComplex k).cycles n,
+    ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom c =
+        ((P.cubicalChainComplex k).iCycles n).hom r ∧
+      ((P.cubicalChainComplex k).homologyπ n).hom r = μ
+
+variable {k} in
+theorem isCubicalRepresentative_iff {P : TopPair.{u}} {n : ℕ}
+    (c : NormalizedCubicalChain P.fst k n) (μ : (P.cubicalChainComplex k).homology n) :
+    P.IsCubicalRepresentative k c μ ↔ ∃ r : (P.cubicalChainComplex k).cycles n,
+      ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom c =
+          ((P.cubicalChainComplex k).iCycles n).hom r ∧
+        ((P.cubicalChainComplex k).homologyπ n).hom r = μ :=
+  Iff.rfl
+
+/-- Every class of the relative cubical homology of a pair is represented by a chain of the
+ambient space. -/
+theorem exists_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
+    (μ : (P.cubicalChainComplex k).homology n) :
+    ∃ c : NormalizedCubicalChain P.fst k n, P.IsCubicalRepresentative k c μ := by
+  obtain ⟨r, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((P.cubicalChainComplex k).homologyπ n)) μ
+  obtain ⟨c, hc⟩ := surjective_cokernel_π_f k P n (((P.cubicalChainComplex k).iCycles n).hom r)
+  exact ⟨c, r, hc, rfl⟩
 
 /-- A linear map out of the normalized cubical `n`-chains of the ambient space of a pair which
 vanishes on the chains of the subspace, descended to the relative chains
