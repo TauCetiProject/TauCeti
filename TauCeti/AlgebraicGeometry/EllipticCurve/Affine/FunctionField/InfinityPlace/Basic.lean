@@ -34,8 +34,7 @@ the other three axioms are the norm's multiplicativity and Mathlib's place at in
   `Algebra.norm_localization` and Mathlib's polynomial valuation.
 * `WeierstrassCurve.Affine.infinityPlace_genericX` and
   `WeierstrassCurve.Affine.infinityPlace_genericY`: the same pole values for the generic-point
-  coordinates, in `@[simp]` form. `WeierstrassCurve.Affine.genericY_ne_zero` records that the
-  generic ordinate is a nonzero rational function.
+  coordinates, in `@[simp]` form.
 * `WeierstrassCurve.Affine.infinityPlace_neg_genericX_div_genericY`: the local parameter `-x/y`
   has value `exp (-1)`, a simple zero at infinity.
 * `WeierstrassCurve.Affine.infinityPlace.algebraMap_eq_sq`: restricting along
@@ -281,14 +280,6 @@ theorem infinityPlace_genericY :
     W.infinityPlace W.genericY = WithZero.exp 3 := by
   rw [genericY_def]
   exact infinityPlace.mk_Y W
-
-/-- The generic ordinate is a nonzero rational function. -/
-theorem genericY_ne_zero : W.genericY ≠ 0 := by
-  intro h
-  have hv := W.infinityPlace_genericY
-  rw [h, map_zero] at hv
-  exact WithZero.exp_ne_zero hv.symm
-
 
 open scoped Classical in
 /-- **The place at infinity lies over the infinite place of `F(x)`, with ramification index two.**
