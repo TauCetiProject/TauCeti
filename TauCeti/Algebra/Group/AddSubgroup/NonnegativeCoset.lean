@@ -37,13 +37,13 @@ correspondence with domain vectors and control of its fibers.
 
 public section
 
-namespace TauCeti
+namespace AddSubgroup
 
 variable {ι : Type*}
 
 /-- Every nonzero vector of a subgroup `P` of `ι → G` has both a positive and a negative
 coordinate exactly when `0` is the only nonnegative vector of `P`. -/
-theorem _root_.AddSubgroup.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero {G : Type*}
+theorem forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero {G : Type*}
     [AddCommGroup G] [LinearOrder G] [IsOrderedAddMonoid G] (P : AddSubgroup (ι → G)) :
     (∀ p ∈ P, p ≠ 0 → (∃ i, 0 < p i) ∧ ∃ i, p i < 0) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   constructor
@@ -63,7 +63,7 @@ theorem _root_.AddSubgroup.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero {
 
 /-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when it contains
 only finitely many nonnegative vectors: the multiples of a nonzero one are infinitely many. -/
-theorem _root_.AddSubgroup.finite_setOf_mem_nonneg_iff (P : AddSubgroup (ι → ℤ)) :
+theorem finite_setOf_mem_nonneg_iff (P : AddSubgroup (ι → ℤ)) :
     {p | p ∈ P ∧ 0 ≤ p}.Finite ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   refine ⟨fun hfin p hp hp0 => by_contra fun hne => ?_,
     fun h => (Set.finite_singleton 0).subset fun p hp => h p hp.1 hp.2⟩
@@ -73,7 +73,7 @@ theorem _root_.AddSubgroup.finite_setOf_mem_nonneg_iff (P : AddSubgroup (ι → 
 
 /-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when each coset
 `D₀ + P` contains only finitely many nonnegative vectors. -/
-theorem _root_.AddSubgroup.finite_setOf_nonneg_sub_mem_iff [Finite ι]
+theorem finite_setOf_nonneg_sub_mem_iff [Finite ι]
     (P : AddSubgroup (ι → ℤ)) :
     (∀ D₀ : ι → ℤ, {D | 0 ≤ D ∧ D - D₀ ∈ P}.Finite) ↔ ∀ p ∈ P, 0 ≤ p → p = 0 := by
   refine ⟨fun hfin => P.finite_setOf_mem_nonneg_iff.mp
@@ -89,7 +89,7 @@ theorem _root_.AddSubgroup.finite_setOf_nonneg_sub_mem_iff [Finite ι]
 /-- If `0` is the only nonnegative vector of a subgroup `P` of `ι → ℤ`, then a set of
 nonnegative vectors any two of which differ by an element of `P` is finite: it lies in the
 nonnegative part of a single coset of `P`. -/
-theorem _root_.AddSubgroup.finite_of_forall_sub_mem [Finite ι] {P : AddSubgroup (ι → ℤ)}
+theorem finite_of_forall_sub_mem [Finite ι] {P : AddSubgroup (ι → ℤ)}
     (hP : ∀ p ∈ P, 0 ≤ p → p = 0) {s : Set (ι → ℤ)} (hs : ∀ D ∈ s, 0 ≤ D)
     (hsub : ∀ D ∈ s, ∀ D' ∈ s, D' - D ∈ P) : s.Finite := by
   obtain rfl | ⟨D₀, hD₀⟩ := s.eq_empty_or_nonempty
@@ -97,4 +97,4 @@ theorem _root_.AddSubgroup.finite_of_forall_sub_mem [Finite ι] {P : AddSubgroup
   exact (P.finite_setOf_nonneg_sub_mem_iff.mpr hP D₀).subset fun D hD =>
     ⟨hs D hD, hsub D₀ hD₀ D hD⟩
 
-end TauCeti
+end AddSubgroup
