@@ -60,17 +60,14 @@ theorem weylUnit_geckRepresentation_conj_of_cartan_eq_neg_two (i j : Fin t.rank)
           t.geckRepresentation ht
             (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e j))⁆⁆ := by
   let ρ := (t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+  have hnil := (t.lieBasis ht).isNilpotent_e_and_f (t.geckRepresentation ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht) i
   -- Expand the representation composite and signed generators; the Serre matrix is transposed.
   simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
     ((t.isSerreSystem_lieBasis ht).map ρ).weylUnit_conj_of_cartan_eq_neg_two
       (t.cartanMatrix_apply_same i) hji
-      (by simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-          LieAlgebra.Basis.rootGenerator_inl] using
-        t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
-      (by simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-          LieAlgebra.Basis.rootGenerator_inr] using
-        t.isNilpotent_geckRepresentation_rootGenerator ht (.inr i))
+      hnil.1 hnil.2
 
 end
 

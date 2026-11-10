@@ -86,17 +86,12 @@ private theorem kostantWeyl_conj_raising_singleBond (i j : Fin t.rank)
       (M : Set (t.GeckIndex ht → ℚ)) (N i) (hN i) (hNinv i) n (hX j n)
   let φ := (ρ).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   have hs := (t.isSerreSystem_lieBasis ht).map φ
-  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using hnil (.inl k)
-  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inr] using hnil (.inr k)
+  have hnilEF := (t.lieBasis ht).isNilpotent_e_and_f ρ hnil
   have hCeq (k l : Fin t.rank) (hkl : t.cartanMatrix l k = -1) :
       C k l = ⁅X k, X l⁆ := by
     simpa only [C, φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
       LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-      hs.weylUnit_conj_E_of_cartan_eq_neg_one (by simp) hkl (hE k) (hF k)
+      hs.weylUnit_conj_E_of_cartan_eq_neg_one (by simp) hkl (hnilEF k).1 (hnilEF k).2
   have hsign : C i j = -C j i := by rw [hCeq i j hji, hCeq j i hij, lie_skew]
   have hCnil : IsNilpotent (C j i) := by
     obtain ⟨k, hk⟩ := hnil (.inl i)

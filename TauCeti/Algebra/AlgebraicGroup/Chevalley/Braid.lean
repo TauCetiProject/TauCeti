@@ -47,16 +47,11 @@ private theorem weylRestrict_braid (i j : Fin t.rank)
   dsimp only
   let φ := D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   have hs := (t.isSerreSystem_lieBasis ht).map φ
-  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using
-      D.isNilpotent_representation_rootGenerator (.inl k)
-  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inr] using
-      D.isNilpotent_representation_rootGenerator (.inr k)
+  have hnil := (t.lieBasis ht).isNilpotent_e_and_f D.representation
+    D.isNilpotent_representation_rootGenerator
   have h := hs.weylUnit_braid_of_cartan_eq_neg_one
-    (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)
+    (i := i) (j := j) (by simp) (by simp) hji hij
+    (hnil i).1 (hnil i).2 (hnil j).1 (hnil j).2
   ext v
   have hv := congrArg (fun u : (Module.End ℚ D.carrier)ˣ => (u : Module.End ℚ D.carrier) v) h
   simpa only [mul_apply_eq_comp, coe_kostantWeylRestrict_apply, Units.val_mul,
@@ -75,20 +70,16 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
   let n := fun i => kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
     D.representation D.lattice D.representation_mem_lattice
     (D.isNilpotent_representation_rootGenerator (.inl i))
-    (D.isNilpotent_representation_rootGenerator (.inr i)) A
+    (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A)
   have hn : n i * n j * n i = n j * n i * n j := by
     apply Units.ext
-    apply LinearMap.ext
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul r v =>
-      have hv := congrArg (fun e : D.lattice ≃ₗ[ℤ] D.lattice => e v)
-        (D.weylRestrict_braid i j hij hji)
-      simpa only [n, Units.val_mul, kostantWeylGL_val, mul_apply_eq_comp,
-        LinearEquiv.coe_coe, kostantWeylPoints_apply_tmul] using
-        congrArg (fun w => r ⊗ₜ[ℤ] w) hv
-  let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+    simpa only [n, Units.val_mul, kostantWeylGL_val, kostantWeylPoints_toLinearMap,
+      LinearEquiv.coe_toLinearMap_mul, LinearMap.baseChange_mul] using
+      congrArg (fun e : D.lattice ≃ₗ[ℤ] D.lattice =>
+        (e : D.lattice →ₗ[ℤ] D.lattice).baseChange A) (D.weylRestrict_braid i j hij hji)
+  -- Use the same matrix MulEquiv and value-ring carrier as the simple-index formula.
+  let f := Units.map
+    (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv.toMonoidHom
   have hf (k : Fin t.rank) :
       (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
         f (n k) := D.coe_weylElement_simpleIndex_one k A

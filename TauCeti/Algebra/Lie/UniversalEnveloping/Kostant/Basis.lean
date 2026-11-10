@@ -42,6 +42,7 @@ variable {ι L : Type*} [Finite ι] [LieRing L] [LieAlgebra ℚ L]
   {H : _root_.LieSubalgebra ℚ L} (b : _root_.LieAlgebra.Basis ι H)
 
 attribute [local instance] TauCeti.moduleNNRat
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ L
 
@@ -56,6 +57,17 @@ theorem rootGenerator_inl (i : ι) : rootGenerator b (.inl i) = b.e i := (rfl)
 /-- The combined root-generator family evaluates to the lowering generator on the right summand. -/
 @[simp]
 theorem rootGenerator_inr (i : ι) : rootGenerator b (.inr i) = b.f i := (rfl)
+
+/-- Nilpotency of the represented combined root generators gives nilpotency of the raising
+and lowering generators under the induced Lie homomorphism. -/
+theorem isNilpotent_e_and_f {A : Type*} [Ring A] [Algebra ℚ A]
+    (ρ : U →ₐ[ℚ] A)
+    (hnil : ∀ j, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.rootGenerator j))))
+    (i : ι) :
+    IsNilpotent ((ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (b.e i)) ∧
+      IsNilpotent ((ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (b.f i)) := by
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, rootGenerator_inl,
+    rootGenerator_inr] using And.intro (hnil (.inl i)) (hnil (.inr i))
 
 /-- The integral weights of the combined raising and lowering generators against the Cartan
 generators. -/
