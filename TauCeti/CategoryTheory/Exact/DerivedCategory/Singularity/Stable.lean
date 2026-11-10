@@ -25,7 +25,7 @@ For a Frobenius exact structure this is the Keller–Vossieck comparison functor
 ## Main definitions
 
 * `TauCeti.ExactStructure.singleToSingularity`: the functor `C ⥤ D_sg(E)` placing an object in
-  degree zero.
+  degree zero, with its defining comparison `singleToSingularityIso`.
 * `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`.
 
 ## References
@@ -46,10 +46,16 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
   (E : ExactStructure C)
 
 /-- The functor `C ⥤ D_sg(E)` placing an object in degree zero. -/
--- Exposed so that the induced functor on the stable category can be compared with it.
-@[expose] noncomputable def singleToSingularity : C ⥤ E.SingularityCategory :=
+noncomputable def singleToSingularity : C ⥤ E.SingularityCategory :=
   HomotopyCategory.Bounded.singleFunctor C 0 ⋙ BoundedDerivedCategory.Q E ⋙
     SingularityCategory.Q E
+
+/-- The functor `C ⥤ D_sg(E)` places an object in degree zero of `Kᵇ(C)` and passes to the
+quotients `Dᵇ(E)` and `D_sg(E)`. -/
+noncomputable def singleToSingularityIso : E.singleToSingularity ≅
+    HomotopyCategory.Bounded.singleFunctor C 0 ⋙ BoundedDerivedCategory.Q E ⋙
+      SingularityCategory.Q E :=
+  Iso.refl _
 
 instance : E.singleToSingularity.Additive := by
   dsimp only [singleToSingularity]
@@ -70,7 +76,9 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
     (E.isZero_singleToSingularity_obj hP).eq_of_src (E.singleToSingularity.map q) 0, comp_zero]
 
 /-- The functor `stable(E) ⥤ D_sg(E)` induced by placing objects in degree zero. -/
--- Exposed so that its value on the image of a morphism of `C` can be stated.
+-- Exposed because its characteristic lemmas below identify the objects
+-- `stableToSingularity.obj (projectiveStableFunctor.obj X)` and `singleToSingularity.obj X`
+-- definitionally, as Mathlib's `CategoryTheory.Quotient.lift_map_functor_map` does.
 @[expose] noncomputable def stableToSingularity :
     E.ProjectiveStableCategory ⥤ E.SingularityCategory :=
   CategoryTheory.Quotient.lift _ E.singleToSingularity fun _ _ f g h ↦ by
@@ -81,6 +89,11 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
 noncomputable def projectiveStableFunctorCompStableToSingularityIso :
     E.projectiveStableFunctor ⋙ E.stableToSingularity ≅ E.singleToSingularity :=
   CategoryTheory.Quotient.lift.isLift _ _ _
+
+@[simp]
+theorem stableToSingularity_obj_projectiveStableFunctor_obj (X : C) :
+    E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) = E.singleToSingularity.obj X :=
+  rfl
 
 @[simp]
 theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :

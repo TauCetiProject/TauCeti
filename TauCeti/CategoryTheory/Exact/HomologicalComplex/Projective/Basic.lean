@@ -53,6 +53,13 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C}
 
+/-- The terms of the mapping cone of a map between complexes of projectives are projective. -/
+theorem isProjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hK : ∀ n, E.isProjective (K.X n)) (hL : ∀ n, E.isProjective (L.X n)) (n : ℤ) :
+    E.isProjective ((CochainComplex.mappingCone f).X n) :=
+  E.isProjective.prop_of_iso (HomologicalComplex.homotopyCofiber.XIsoBiprod f n (n + 1) rfl).symm
+    (isProjective_biprod (hK _) (hL _))
+
 namespace AcyclicData
 
 variable {P A : CochainComplex C ℤ} (hA : E.AcyclicData A) (φ : P ⟶ A)
@@ -123,7 +130,7 @@ private theorem comm_ofNat (k : ℕ) :
     φ.f (Int.ofNat k + 1) = P.d (Int.ofNat k + 1) (Int.ofNat k + 1 + 1) ≫
       homotopyHom hA φ hP (Int.ofNat k + 1) +
         homotopyHom hA φ hP (Int.ofNat k) ≫ A.d (Int.ofNat k) (Int.ofNat k + 1) :=
-  (P.isZero_of_isStrictlyLE 0 _ (by change (0 : ℤ) < (k : ℤ) + 1; omega)).eq_of_src _ _
+  (P.isZero_of_isStrictlyLE 0 _ (by lia)).eq_of_src _ _
 
 private theorem comm_negSucc_zero :
     φ.f (Int.negSucc 0 + 1) = P.d (Int.negSucc 0 + 1) (Int.negSucc 0 + 1 + 1) ≫

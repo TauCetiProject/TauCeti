@@ -141,13 +141,6 @@ theorem boundedProjective_Q_obj_singleFunctor_obj {P : C} (hP : E.isProjective P
     exact E.isProjective.prop_of_iso (HomologicalComplex.singleObjXSelf _ 0 P).symm hP
   · exact E.isProjective.prop_of_isZero (HomologicalComplex.isZero_single_obj_X _ 0 P n hn)
 
-/-- The terms of the mapping cone of a map between complexes of projectives are projective. -/
-theorem isProjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L)
-    (hK : ∀ n, E.isProjective (K.X n)) (hL : ∀ n, E.isProjective (L.X n)) (n : ℤ) :
-    E.isProjective ((CochainComplex.mappingCone f).X n) :=
-  E.isProjective.prop_of_iso (HomologicalComplex.homotopyCofiber.XIsoBiprod f n (n + 1) rfl).symm
-    (isProjective_biprod (hK _) (hL _))
-
 instance : E.boundedProjective.ContainsZero where
   exists_zero := ⟨_, Functor.map_isZero _ (Functor.map_isZero _
       (IsZero.of_full_of_faithful_of_isZero (CochainComplex.Bounded.ι C)
@@ -176,6 +169,8 @@ instance : E.boundedProjective.IsTriangulatedClosed₃ where
       ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT ((BoundedDerivedCategory.Q E).map_distinguished
         _ (HomotopyCategory.Bounded.quotient_mapTriangle_mappingConeTriangle_mem_distTriang φ))
         e₁ e₂ ?_)⟩⟩
+    -- The first square of `isoTriangleOfIso₁₂`, with the triangle of the mapping cone unfolded to
+    -- its first morphism, the image of `φ`.
     change T.mor₁ ≫ e₂.hom = e₁.hom ≫ (BoundedDerivedCategory.Q E).map
       ((HomotopyCategory.Bounded.quotient C).map φ)
     rw [hg]
@@ -184,55 +179,33 @@ instance : E.boundedProjective.IsTriangulatedClosed₃ where
 instance : E.boundedProjective.IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
 
-omit [HasBinaryBiproducts C] in
-/-- The mapping cone of the inclusion of the top term of a complex is homotopy equivalent to the
-brutal truncation below it, by the degreewise split sequence splitting off the top term. -/
-private theorem nonempty_iso_quotient_obj_mappingCone_ιTop [HasBinaryBiproducts C]
-    (K : CochainComplex C ℤ) (b : ℤ) [K.IsStrictlyLE (b + 1)] :
-    Nonempty ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-      (CochainComplex.mappingCone (K.ιTop (b + 1))) ≅
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-          (K.stupidTrunc (ComplexShape.embeddingUpIntLE b))) := by
-  have key : ∀ (S : ShortComplex (CochainComplex C ℤ))
-      (_ : S = ShortComplex.mk (K.ιTop (b + 1))
-        (K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) (K.ιTop_comp_πStupidTruncLE b))
-      (σ : ∀ n, (S.map (HomologicalComplex.eval C _ n)).Splitting),
-      Nonempty ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-        (CochainComplex.mappingCone (K.ιTop (b + 1))) ≅
-          (_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-            (K.stupidTrunc (ComplexShape.embeddingUpIntLE b))) := by
-    rintro S rfl σ
-    exact ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ _ _
-      (_root_.HomotopyCategory.mappingCone_triangleh_distinguished _)
-      (CochainComplex.trianglehOfDegreewiseSplit_distinguished _ σ) (Iso.refl _) (Iso.refl _)
-      ((Category.comp_id _).trans (Category.id_comp _).symm))⟩
-  exact key _ (K.topShortComplex_eq b) (K.topShortComplexSplitting b)
-
 variable {E} in
 /-- **Splitting off the top term is inverted in the singularity category**: for a bounded complex
 `K` vanishing above degree `n` whose terms below `n` are projective, the inclusion of the top term
 `Kⁿ[-n] ⟶ K` lies in `E.boundedProjective.trW`: its cone is the brutal truncation of `K` below
 `n`, a bounded complex of projectives. -/
 theorem boundedProjective_trW_Q_map_ιTop (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
-    (hW : HomotopyCategory.bounded C ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
-      ((HomologicalComplex.single C (.up ℤ) n).obj (K.X n))))
     (hK : CochainComplex.bounded C K) (hP : ∀ k < n, E.isProjective (K.X k)) :
     E.boundedProjective.trW ((BoundedDerivedCategory.Q E).map
       (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n)) :
-        (⟨_, hW⟩ : HomotopyCategory.Bounded C) ⟶
+        (⟨_, (HomotopyCategory.bounded_quotient_obj_iff _).2
+          ((CochainComplex.bounded_iff C _).2 ⟨n, n, inferInstance, inferInstance⟩)⟩ :
+          HomotopyCategory.Bounded C) ⟶
           ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩)) := by
   obtain ⟨b, rfl⟩ : ∃ b, n = b + 1 := ⟨n - 1, by lia⟩
   rw [← ObjectProperty.inverseImage_trW_iff]
   obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle
     (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop (b + 1))) :
-      (⟨_, hW⟩ : HomotopyCategory.Bounded C) ⟶
+      (⟨_, (HomotopyCategory.bounded_quotient_obj_iff _).2
+        ((CochainComplex.bounded_iff C _).2 ⟨b + 1, b + 1, inferInstance, inferInstance⟩)⟩ :
+        HomotopyCategory.Bounded C) ⟶
         ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩)
   refine ((E.boundedProjective.inverseImage (BoundedDerivedCategory.Q E)).trW_iff_of_distinguished _
     hT).2 ?_
   have e := isoTriangleOfIso₁₂ _ _ ((HomotopyCategory.Bounded.ι C).map_distinguished _ hT)
     (_root_.HomotopyCategory.mappingCone_triangleh_distinguished (K.ιTop (b + 1)))
     (Iso.refl _) (Iso.refl _) (by simp)
-  obtain ⟨e'⟩ := nonempty_iso_quotient_obj_mappingCone_ιTop K b
+  obtain ⟨e'⟩ := HomotopyCategory.nonempty_iso_quotient_obj_mappingCone_ιTop K b
   let L : CochainComplex.Bounded C :=
     ⟨_, CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK b⟩
   refine ⟨L, fun k ↦ ?_, ⟨(BoundedDerivedCategory.Q E).mapIso
