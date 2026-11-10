@@ -84,23 +84,24 @@ theorem coefficientMatrix_castAdd_castAdd_of_castAdd_eq
     SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
     Finsupp.single_apply, (Fin.castAdd_injective m n).eq_iff]
 
+omit [Module.Flat k C] in
 /-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the lower-left block
 of its coefficient matrix vanishes. This is the matrix form of stability of the subcomodule. -/
 theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
     (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i : Fin n) (j : Fin m) :
     coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
-  rw [coefficientMatrix_apply, hb, ← N.subtype_apply (bN j), matrixCoefficient_map]
-  have hcoord : (b.coord (Fin.natAdd m i)).comp N.subtype.toLinearMap = 0 := by
+  have hcoord : (b.coord (Fin.natAdd m i)).comp N.carrier.subtype = 0 := by
     refine bN.ext fun l ↦ ?_
-    simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-      SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
-      Finsupp.single_apply, LinearMap.zero_apply]
+    rw [LinearMap.comp_apply, show N.carrier.subtype (bN l) = b (Fin.castAdd n l) from (hb l).symm]
+    simp only [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, LinearMap.zero_apply]
     refine ite_eq_right fun h ↦ ?_
     have hval := congrArg Fin.val h
     simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
     omega
-  rw [hcoord]
+  obtain ⟨x, hx⟩ := N.coact_mem' (bN j).2
+  rw [coefficientMatrix_apply, hb, matrixCoefficient_def, ← hx, ← LinearMap.comp_apply,
+    ← TensorProduct.map_comp, hcoord]
   simp
 
 end Semiring
