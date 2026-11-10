@@ -35,13 +35,14 @@ variable {K ι : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K] [Fintype ι]
 /-- If a rational polynomial factors with roots `ζ ^ e i`, with all `e i < h`, and has a
 primitive `h`-th root, every residue less than `h` and coprime to `h` occurs in `e`.
 The primitive root already known to be a root need not be `ζ` itself. -/
-theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ ξ : K}
+theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
     (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]}
     (hp : (p.map (algebraMap ℚ K)).IsRoot ξ) {e : ι → ℕ}
     (he : ∀ i, e i < h)
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i)))
     {a : ℕ} (ha : a < h) (hcop : a.Coprime h) : ∃ i, e i = a := by
   classical
+  have hh : 0 < h := Nat.zero_lt_of_lt ha
   have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
   have hdiv : cyclotomic h ℚ ∣ p := by
     rw [hξ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]

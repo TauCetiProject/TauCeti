@@ -54,7 +54,7 @@ theorem exists_degree_sub_one_eq_of_eigenvector_of_jacobian_ne_zero
     {f : n → SymmetricAlgebra K (Module.Dual K V)} (d : n → ℕ)
     (hf : ∀ i, f i ∈ homogeneousSubmodule K (Module.Dual K V) (d i))
     (hinv : ∀ i, f i ∈ ρ.dual.symmetricAlgebraInvariants)
-    (g : G) (v : V) (c : Kˣ) {h : ℕ} (hh : 0 < h)
+    (g : G) (v : V) (c : Kˣ) {h : ℕ}
     (hc : IsPrimitiveRoot (c : K) h) (hv : ρ g v = (c : K) • v) (hv0 : v ≠ 0)
     (hJ : lift (Module.Dual.eval K V v) (jacobian b f) ≠ 0)
     (hd : ∀ i, d i - 1 < h) {p : ℚ[X]}
@@ -68,7 +68,7 @@ theorem exists_degree_sub_one_eq_of_eigenvector_of_jacobian_ne_zero
   have hprod := ρ.charpoly_eq_prod_of_eigenvector_of_jacobian_ne_zero b d hf hinv g v c hv hJ
   have hcinv : IsPrimitiveRoot (↑(c⁻¹) : K) h :=
     IsPrimitiveRoot.coe_units_iff.mpr (IsPrimitiveRoot.coe_units_iff.mp hc).inv
-  exact IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod hh hcinv hc hroot hd
+  exact IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod hcinv hc hroot hd
     (hp.trans hprod) ha hcop
 
 end Representation
