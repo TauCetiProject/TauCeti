@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.CategoryTheory.ObjectProperty
-public import Mathlib.CategoryTheory.Preadditive.LeftExact
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 
 /-!
@@ -91,26 +91,5 @@ noncomputable instance (X : Scheme.{u}) [IsLocallyNoetherian X] :
     Abelian (FinitelyPresentedSheaf X) := inferInstanceAs
       (Abelian (ObjectProperty.FullSubcategory
         (SheafOfModules.isFinitePresentation X.ringCatSheaf)))
-
-/-- The inclusion of coherent sheaves into all module sheaves preserves finite limits. -/
-noncomputable instance preservesFiniteLimits_inclusion (X : Scheme.{u})
-    [IsLocallyNoetherian X] :
-    PreservesFiniteLimits
-      (ObjectProperty.ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)) := by
-  have := ObjectProperty.preservesKernels_ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)
-  exact Functor.preservesFiniteLimits_of_preservesKernels _
-
-/-- The inclusion of finitely presented sheaves preserves finite colimits on any scheme. -/
-noncomputable instance preservesFiniteColimits_inclusion (X : Scheme.{u}) :
-    PreservesFiniteColimits
-      (ObjectProperty.ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)) := by
-  have : HasFiniteBiproducts (FinitelyPresentedSheaf X) :=
-    HasFiniteBiproducts.of_hasFiniteProducts
-  have : HasBinaryBiproducts (FinitelyPresentedSheaf X) :=
-    hasBinaryBiproducts_of_finite_biproducts _
-  have : HasCoequalizers (FinitelyPresentedSheaf X) :=
-    Preadditive.hasCoequalizers_of_hasCokernels
-  have := ObjectProperty.preservesCokernels_ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)
-  exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 end TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf
