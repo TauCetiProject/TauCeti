@@ -423,9 +423,13 @@ section SwapSum
 
 variable [ContinuousAdd V] [T1Space V]
 
+omit [T1Space V] in
+private theorem sumSwap_compat (x : C.inter) :
+    C.swap.sndToSum (C.interFst x) = C.swap.fstToSum (C.interSnd x) :=
+  C.swap.sumSpace_ext (by simpa using C.embed₀_interFst x)
+
 private def sumSwapMap : C.SumSpace →L[𝕜] C.swap.SumSpace :=
-  C.sumLift C.swap.sndToSum C.swap.fstToSum fun x =>
-    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst x)
+  C.sumLift C.swap.sndToSum C.swap.fstToSum C.sumSwap_compat
 
 private theorem sumSwapMap_norm_le (u : C.SumSpace) : ‖C.sumSwapMap u‖ ≤ ‖u‖ := by
   refine le_of_forall_gt fun r hr => ?_
@@ -452,13 +456,11 @@ def sumSwap : C.SumSpace ≃ₗᵢ[𝕜] C.swap.SumSpace :=
 
 @[simp]
 theorem sumSwap_fstToSum (x : X₀) : C.sumSwap (C.fstToSum x) = C.swap.sndToSum x :=
-  C.sumLift_fstToSum _ _ (fun y =>
-    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst y)) x
+  C.sumLift_fstToSum _ _ C.sumSwap_compat x
 
 @[simp]
 theorem sumSwap_sndToSum (x : X₁) : C.sumSwap (C.sndToSum x) = C.swap.fstToSum x :=
-  C.sumLift_sndToSum _ _ (fun y =>
-    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst y)) x
+  C.sumLift_sndToSum _ _ C.sumSwap_compat x
 
 @[simp]
 theorem sumSwap_symm : C.sumSwap.symm = C.swap.sumSwap := (rfl)

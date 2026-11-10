@@ -44,6 +44,18 @@ theorem sub_mem_verticalClosedStrip_iff (w z : ℂ) :
   simp only [mem_verticalClosedStrip_iff, mem_Icc, sub_re]
   constructor <;> rintro ⟨_, _⟩ <;> constructor <;> linarith
 
+/-- Reflection in the middle of the unit strip preserves open-strip membership. -/
+theorem one_sub_mem_verticalStrip_iff :
+    1 - z ∈ verticalStrip 0 1 ↔ z ∈ verticalStrip 0 1 := by
+  simpa only [one_re, sub_self, sub_zero] using
+    sub_mem_verticalStrip_iff (a := 0) (b := 1) (1 : ℂ) z
+
+/-- Reflection in the middle of the unit strip preserves closed-strip membership. -/
+theorem one_sub_mem_verticalClosedStrip_iff :
+    1 - z ∈ verticalClosedStrip 0 1 ↔ z ∈ verticalClosedStrip 0 1 := by
+  simpa only [one_re, sub_self, sub_zero] using
+    sub_mem_verticalClosedStrip_iff (a := 0) (b := 1) (1 : ℂ) z
+
 theorem isOpen_verticalStrip (a b : ℝ) : IsOpen (verticalStrip a b) :=
   isOpen_Ioo.preimage continuous_re
 

@@ -47,14 +47,14 @@ theorem IsStripFunction.reflect {F : ℂ → C.SumSpace}
   diffContOnCl := by
     have hsub : Differentiable ℂ (fun z : ℂ => 1 - z) := by fun_prop
     exact C.sumSwap.toContinuousLinearEquiv.toContinuousLinearMap.differentiable.comp_diffContOnCl
-      (hF.diffContOnCl.comp hsub.diffContOnCl fun z hz => by
-        simpa only [sub_mem_verticalStrip_iff, one_re, sub_self, sub_zero] using hz)
+      (hF.diffContOnCl.comp hsub.diffContOnCl fun _ hz =>
+        one_sub_mem_verticalStrip_iff.2 hz)
   isBounded := by
     refine isBounded_iff_forall_norm_le.2 ⟨‖g‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     rw [C.sumSwap.norm_map]
     apply hF.norm_le
-    simpa only [sub_mem_verticalClosedStrip_iff, one_re, sub_self, sub_zero] using hz
+    exact one_sub_mem_verticalClosedStrip_iff.2 hz
   apply_mul_I t := by
     have heq : (1 : ℂ) - t * I = 1 + ((-t : ℝ) : ℂ) * I := by push_cast; ring
     rw [heq, hF.apply_one_add_mul_I, sumSwap_sndToSum]
@@ -104,8 +104,8 @@ theorem stripEval_stripTracesSwap (z : ℂ) (g : C.stripTraces) :
   by_cases hz : z ∈ verticalClosedStrip 0 1
   · rw [stripEval_apply,
       stripFunction_eq (C.isStripFunction_stripFunction g).reflect hz, stripEval_apply]
-  · have hz' : 1 - z ∉ verticalClosedStrip 0 1 := by
-      simpa only [sub_mem_verticalClosedStrip_iff, one_re, sub_self, sub_zero] using hz
+  · have hz' : 1 - z ∉ verticalClosedStrip 0 1 :=
+      mt one_sub_mem_verticalClosedStrip_iff.1 hz
     simp [C.swap.stripEval_eq_zero hz, C.stripEval_eq_zero hz']
 
 /-- Evaluation of reversed traces at the complementary real parameter agrees with evaluation
