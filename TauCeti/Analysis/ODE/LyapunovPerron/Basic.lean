@@ -863,7 +863,7 @@ theorem tendsto_lyapunovPerronSolution (hN0 : N 0 = 0) (ξ : X) :
   rw [Real.coe_toNNReal t ht] at h
   simpa only [C, mul_right_comm _ (Real.exp _)] using h
 
-include hs hu hα hN in
+include hs hu hN in
 /-- **Weighted bounds for bounded forward solutions.** When the nonlinearity vanishes at the
 origin and `P` is idempotent and commutes with `A`, every solution of `y' = A y + N y` that stays
 bounded on `[0, ∞)` is bounded by a constant times `exp (-β t)` for every `β ≥ 0` with
@@ -876,6 +876,7 @@ theorem norm_le_of_isIntegralCurveOn_of_bounded (hN0 : N 0 = 0) (hP : IsIdempote
   have hsmall : 2 * K * ε < α := by
     have : (2 * K * ε : ℝ) < α := by linarith
     exact_mod_cast this
+  have hα : 0 < α := zero_le.trans_lt hsmall
   have h := norm_lyapunovPerronSolution_le hs hu hα hN hsmall hN0 hβ hβα (y 0) t.toNNReal
   have hyt : y t = lyapunovPerronSolution A P N hs hu hα hN hsmall (y 0) t.toNNReal :=
     eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hN hsmall hP hAP hy hB (mem_Ici.2 ht)
