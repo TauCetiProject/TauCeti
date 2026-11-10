@@ -162,6 +162,12 @@ theorem spinGenerator_apply (j k : Fin n) (s t : Fin n → Bool) :
     spinGenerator q j k s t = if ∀ l ∉ ({j, k} : Finset (Fin n)), s l = t l then
       spinCup q (s j) (s k) * spinCap q (t j) (t k) else 0 := (rfl)
 
+/-- A generator matrix on a single strand vanishes, since the cup vanishes on parallel spins. -/
+@[simp]
+theorem spinGenerator_self (j : Fin n) : spinGenerator q j j = 0 := by
+  ext s t
+  simp [spinGenerator_apply]
+
 /-- Left multiplication by a generator matrix caps the strands `j` and `k` of the row index: the
 row `s` of the product is `cup (s j, s k)` times the `cap`-weighted sum of the rows of `X` at the
 configurations obtained from `s` by resetting the spins on `j` and `k`. -/
@@ -171,7 +177,7 @@ theorem spinGenerator_mul_apply {j k : Fin n}
       spinCup q (s j) (s k) * ∑ b, ∑ c, spinCap q b c * X (update (update s j b) k c) u := by
   classical
   rcases eq_or_ne j k with rfl | hjk
-  · simp [Matrix.mul_apply, spinGenerator_apply]
+  · simp
   rw [Matrix.mul_apply]
   simp only [spinGenerator_apply, ite_mul, zero_mul]
   rw [← Finset.sum_filter]
@@ -212,7 +218,7 @@ theorem spinGenerator_update_update_apply {j k : Fin n} (s u : Fin n → Bool)
       if ∀ l ∉ ({j, k} : Finset (Fin n)), s l = u l
       then spinCup q b c * spinCap q (u j) (u k) else 0 := by
   rcases eq_or_ne j k with rfl | hjk
-  · simp [spinGenerator_apply]
+  · simp
   simp only [spinGenerator_apply,
     forall_notMem_update_eq_iff_of_mem (show k ∈ ({j, k} : Finset (Fin n)) by simp),
     forall_notMem_update_eq_iff_of_mem (show j ∈ ({j, k} : Finset (Fin n)) by simp)]
@@ -235,8 +241,7 @@ on the left. -/
 theorem spinGenerator_zigzag_left {j k l : Fin n} (hkl : k ≠ l) (hjl : j ≠ l) :
     spinGenerator q j k * spinGenerator q k l * spinGenerator q j k = spinGenerator q j k := by
   rcases eq_or_ne j k with rfl | hjk
-  · have h0 : spinGenerator q j j = 0 := by ext s t; simp [spinGenerator_apply]
-    simp [h0]
+  · simp
   ext s u
   rw [mul_assoc, spinGenerator_mul_apply q]
   simp_rw [spinGenerator_mul_apply q]
@@ -258,8 +263,7 @@ on the left. -/
 theorem spinGenerator_zigzag_right {j k l : Fin n} (hjk : j ≠ k) (hjl : j ≠ l) :
     spinGenerator q k l * spinGenerator q j k * spinGenerator q k l = spinGenerator q k l := by
   rcases eq_or_ne k l with rfl | hkl
-  · have h0 : spinGenerator q k k = 0 := by ext s t; simp [spinGenerator_apply]
-    simp [h0]
+  · simp
   ext s u
   rw [mul_assoc, spinGenerator_mul_apply q]
   simp_rw [spinGenerator_mul_apply q]
@@ -283,11 +287,9 @@ theorem spinGenerator_mul_spinGenerator_comm {j k l m : Fin n} (hjl : j ≠ l) (
     (hkl : k ≠ l) (hkm : k ≠ m) :
     spinGenerator q j k * spinGenerator q l m = spinGenerator q l m * spinGenerator q j k := by
   rcases eq_or_ne j k with rfl | hjk
-  · have h0 : spinGenerator q j j = 0 := by ext s t; simp [spinGenerator_apply]
-    simp [h0]
+  · simp
   rcases eq_or_ne l m with rfl | hlm
-  · have h0 : spinGenerator q l l = 0 := by ext s t; simp [spinGenerator_apply]
-    simp [h0]
+  · simp
   ext s u
   rw [spinGenerator_mul_apply q, spinGenerator_mul_apply q]
   have hk : k ∉ ({l, m} : Finset (Fin n)) := by simp [hkl, hkm]
