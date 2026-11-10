@@ -283,6 +283,12 @@ theorem trans_apply (Ψ : Diffeotopy J n M) (p : I × M) :
   rw [congr_fun (_root_.Diffeomorph.coe_trans Φ.toDiffeomorph Ψ.toDiffeomorph) p,
     Function.comp_apply, Φ.toDiffeomorph_apply]
 
+/-- The motion of a composite diffeotopy is the motion of `Ψ` after the level-preserving motion
+`(x, t) ↦ (Φ (t, x), t)` of `Φ`. -/
+theorem cylinderMap_trans (Ψ : Diffeotopy J n M) :
+    (Φ.trans Ψ).cylinderMap = Ψ.cylinderMap ∘ fun p ↦ (Φ.cylinderMap p, p.2) :=
+  funext fun p ↦ by simp
+
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]
 theorem timeSlice_trans (Ψ : Diffeotopy J n M) (t : I) :
