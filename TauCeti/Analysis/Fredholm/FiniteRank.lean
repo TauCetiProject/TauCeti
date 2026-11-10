@@ -27,7 +27,7 @@ hypothesis of `ContinuousLinearMap.IsFredholm.add_hasFiniteRange`.
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
@@ -41,7 +41,7 @@ variable {T K : E →L[𝕜] F}
 
 /-- Finite-rank perturbations of Fredholm operators between Hausdorff topological vector spaces
 over a complete nontrivially normed field preserve the index. -/
-theorem _root_.ContinuousLinearMap.index_add_of_hasFiniteRange
+theorem index_add_of_hasFiniteRange
     (hT : ContinuousLinearMap.IsFredholm T)
     (hK : LinearMap.HasFiniteRange (K : E →ₗ[𝕜] F)) :
     ContinuousLinearMap.index (T + K) = ContinuousLinearMap.index T := by
@@ -64,6 +64,6 @@ theorem _root_.ContinuousLinearMap.index_add_of_hasFiniteRange
   omega
 
 
-end TauCeti
+end ContinuousLinearMap
 
 end

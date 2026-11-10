@@ -29,7 +29,7 @@ Appendix A.1.
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
@@ -43,7 +43,7 @@ variable {A : X →L[𝕜] X}
 
 /-- Over a complete nontrivially normed scalar field, every natural-number power of a Fredholm
 endomorphism is Fredholm. -/
-theorem _root_.ContinuousLinearMap.IsFredholm.pow (hA : ContinuousLinearMap.IsFredholm A) :
+theorem IsFredholm.pow (hA : ContinuousLinearMap.IsFredholm A) :
     ∀ n : ℕ, ContinuousLinearMap.IsFredholm (A ^ n)
   | 0 => by
       rw [pow_zero, ContinuousLinearMap.one_def]
@@ -55,7 +55,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.pow (hA : ContinuousLinearMap.IsFr
 
 /-- The index of the `n`th power of a Fredholm endomorphism is `n` times its index. -/
 @[simp]
-theorem _root_.ContinuousLinearMap.index_pow (A : X →L[𝕜] X) (hA : ContinuousLinearMap.IsFredholm A)
+theorem index_pow (A : X →L[𝕜] X) (hA : ContinuousLinearMap.IsFredholm A)
     (n : ℕ) :
     ContinuousLinearMap.index (A ^ n) = (n : ℤ) * ContinuousLinearMap.index A := by
   induction n with
@@ -74,4 +74,4 @@ theorem _root_.ContinuousLinearMap.index_pow (A : X →L[𝕜] X) (hA : Continuo
 
 end Pow
 
-end TauCeti
+end ContinuousLinearMap
