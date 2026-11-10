@@ -296,7 +296,8 @@ theorem IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner
   · refine IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner
       (cov := cov) hcov 0 (fun y ↦ ?_) x
     rw [zero_smul]
-    rcases (show Module.finrank ℝ E ≤ 2 by omega).lt_or_eq with h1 | h2
+    have hdim : Module.finrank ℝ E ≤ 2 := by omega
+    rcases hdim.lt_or_eq with h1 | h2
     · exact cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y
         (cov.curvatureTensor_eq_zero_of_finrank_le_one y
           (by rw [TauCeti.finrank_tangentSpace]; omega))
