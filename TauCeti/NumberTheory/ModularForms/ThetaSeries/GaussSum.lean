@@ -89,14 +89,29 @@ theorem normalized_gaussSum_eq_jacobiSym (hk : finrank ℝ E = 2 * k) {a c : ℕ
   field_simp
   linear_combination (jacobiSym ((-1) ^ k * Nat.card (DiscriminantGroup L)) a : ℂ) * hI
 
-/-- The evaluated theta transformation law when the first column is positive and the upper-left
+/-- The evaluated theta transformation law when the first column is nonnegative and the upper-left
 entry is odd. The Jacobi symbol here has denominator `a`, not the matrix's lower-right entry;
 passing to a character at the level is a separate arithmetic assertion. -/
 theorem thetaSeries_slash_eq_jacobiSym_smul (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ))
-    {a c : ℕ} [NeZero c] (ha : A 0 0 = a) (hc : A 1 0 = c) (haodd : Odd a)
+    {a c : ℕ} (ha : A 0 0 = a) (hc : A 1 0 = c) (haodd : Odd a)
     (hN : level L ∣ c) :
     thetaSeries L ∣[(k : ℤ)] A =
       (jacobiSym ((-1) ^ k * Nat.card (DiscriminantGroup L)) a : ℂ) • thetaSeries L := by
+  rcases eq_or_ne c 0 with rfl | hc0
+  · -- If `c = 0` then `A = T ^ n`, which fixes `Θ_L`, and `a = 1`.
+    have hc' : A 1 0 = 0 := by simpa using hc
+    have hdet := A.det_coe
+    rw [Matrix.det_fin_two, hc', mul_zero, sub_zero] at hdet
+    have ha1 : A 0 0 = 1 := Int.eq_one_of_mul_eq_one_right (by rw [ha]; positivity) hdet
+    have hd1 : A 1 1 = 1 := by rwa [ha1, one_mul] at hdet
+    have hA : A = ModularGroup.T ^ (A 0 1) := by
+      ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [ha1, hc', hd1, ModularGroup.coe_T_zpow, show (1 : Fin (0 + 2)) = (1 : Fin 2) from rfl]
+    have ha' : a = 1 := by exact_mod_cast ha.symm.trans ha1
+    rw [hA, hL.thetaSeries_slash_T_zpow, ha']
+    simp
+  have : NeZero c := ⟨hc0⟩
   have hac : IsCoprime (a : ℤ) c := by
     simpa only [ha, hc] using A.isCoprime_col 0
   rw [hL.thetaSeries_slash_eq_gaussSum_smul hk A hc hN, ha,

@@ -80,12 +80,38 @@ theorem norm_thetaCoset_le (γ : E) {y : ℝ} (hy : 0 < y) {τ : ℍ} (hτ : y �
   exact tsum_of_norm_bounded (summable_exp_neg_mul_norm_add_sq L (by positivity) γ).hasSum
     fun _ => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
 
-/-- The theta series of a translate of a discrete subgroup is bounded at `i∞`. -/
-theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) :=
-  UpperHalfPlane.isBoundedAtImInfty_iff.mpr
-    ⟨_, 1, fun _ hτ => norm_thetaCoset_le L γ one_pos hτ⟩
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- Either the Gaussian `exp (-π y ‖γ + v‖²)` is summable over `v ∈ L` for some height `y > 0`, or
+the series defining `θ_{γ+L}(τ)` is not summable for any `τ`, and then `θ_{γ+L}` is identically
+`0` (the value of a `tsum` that is not summable). -/
+private theorem exists_summable_exp_neg_or_thetaCoset_eq_zero (γ : E) :
+    (∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) ∨
+      thetaCoset L γ = 0 := by
+  by_contra! h
+  obtain ⟨h1, h0⟩ := h
+  obtain ⟨τ, hτ⟩ := Function.ne_iff.mp h0
+  refine hτ ?_
+  rw [thetaCoset_apply, Pi.zero_apply]
+  refine tsum_eq_zero_of_not_summable fun hs => ?_
+  refine h1 τ.im τ.im_pos <| hs.norm.congr fun v => ?_
+  rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+  congr 1
+  ring
 
-/-- The theta series of a discrete subgroup is bounded at `i∞`. -/
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- The theta series of a translate of a subgroup is bounded at `i∞`. -/
+theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) := by
+  rcases exists_summable_exp_neg_or_thetaCoset_eq_zero L γ with ⟨y, hy, hs⟩ | h
+  · refine UpperHalfPlane.isBoundedAtImInfty_iff.mpr
+      ⟨∑' v : L, Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2), y, fun τ hτ => ?_⟩
+    rw [thetaCoset_apply]
+    exact tsum_of_norm_bounded (g := fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2))
+      hs.hasSum fun _ => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
+  · rw [h]
+    exact UpperHalfPlane.isBoundedAtImInfty_iff.mpr ⟨0, 0, fun _ _ => by simp⟩
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
+/-- The theta series of a subgroup is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_thetaSeries : IsBoundedAtImInfty (thetaSeries L) := by
   simpa using isBoundedAtImInfty_thetaCoset L 0
 
@@ -156,15 +182,32 @@ theorem not_isCuspForm_of_coe_eq_thetaSeries {Γ : Subgroup (GL (Fin 2) ℝ)} [�
   exact coe_ne_thetaSeries L g <| funext fun z =>
     (CuspForm.toModularFormₗ_apply g z).symm.trans (congrFun hf z)
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- For `γ ∉ L` the theta series of the translate `γ + L` tends to `0` at `i∞`, since no vector
 of `γ + L` is zero. -/
 theorem isZeroAtImInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : IsZeroAtImInfty (thetaCoset L γ) := by
   have h (v : L) : γ + (v : E) ≠ 0 := fun h0 => hγ <| by
     rw [eq_neg_of_add_eq_zero_left h0]
     exact neg_mem v.2
-  simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using
-    tendsto_thetaCoset_atImInfty_tsum_ite L γ
+  rcases exists_summable_exp_neg_or_thetaCoset_eq_zero L γ with ⟨y, hy, hs⟩ | h0
+  · have := tendsto_tsum_of_dominated_convergence (𝓕 := atImInfty) (f := fun (τ : ℍ) (v : L) =>
+        cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ)) (g := fun _ => 0) hs (fun v => ?_) ?_
+    · have e : thetaCoset L γ = fun τ : ℍ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
+        funext fun τ => thetaCoset_apply L γ τ
+      rw [UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter, e]
+      simpa only [tsum_zero] using this
+    · rw [tendsto_zero_iff_norm_tendsto_zero]
+      simp_rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+      exact Real.tendsto_exp_atBot.comp <|
+        (tendsto_comap : Tendsto UpperHalfPlane.im atImInfty atTop).const_mul_atTop_of_neg
+          (neg_lt_zero.mpr (mul_pos Real.pi_pos (pow_pos (norm_pos_iff.mpr (h v)) 2)))
+    · filter_upwards [(UpperHalfPlane.atImInfty_mem {τ : ℍ | y ≤ τ.im}).mpr ⟨y, fun _ h => h⟩]
+        with τ hτ v
+      exact norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
+  · rw [h0]
+    exact tendsto_const_nhds
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- For `γ ∉ L` the value of the theta series of `γ + L` at the cusp `∞` is `0`. -/
 theorem valueAtInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : valueAtInfty (thetaCoset L γ) = 0 :=
   (isZeroAtImInfty_thetaCoset L hγ).valueAtInfty_eq_zero
