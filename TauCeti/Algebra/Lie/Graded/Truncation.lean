@@ -8,15 +8,14 @@ module
 public import Mathlib.Algebra.Lie.Graded
 public import Mathlib.Algebra.Lie.Nilpotent
 public import TauCeti.Algebra.Lie.Graded.Quotient
-public import TauCeti.Algebra.PositiveDegrees.Basic
+public import TauCeti.Algebra.PositiveDegrees.Grading
 import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Degree ideals and truncations of positively graded Lie algebras
 
-Let `d` be positive degree data on `N`, with allowed monoid `P` and degree `δ`. A family of
-submodules `ℒ n` is a positive grading for `d` (`TauCeti.IsPositiveGrading`) when `ℒ n = 0`
-unless `n` is a nonzero element of `P`. For a positively graded Lie algebra `L`, the degree ideal
+Let `d` be positive degree data on `N`, with degree `δ`, and let `L` be a Lie algebra positively
+graded for `d` in the sense of `TauCeti.IsPositiveGrading`. The degree ideal
 `TauCeti.degreeIdeal d ℒ k` is the sum of the homogeneous pieces `ℒ n` with `δ n > k`, and the
 quotient `L ⧸ degreeIdeal d ℒ k` is the truncation of `L` retaining the degrees at most `k`.
 
@@ -29,7 +28,6 @@ every commutative ring.
 
 ## Main definitions
 
-* `TauCeti.IsPositiveGrading`: the pieces outside the nonzero allowed degrees vanish.
 * `TauCeti.degreeIdeal`: the Lie ideal spanned by the pieces of degree greater than `k`.
 
 ## Main results
@@ -45,8 +43,8 @@ every commutative ring.
 * `TauCeti.map_mkQ_degreeIdeal_le_center` and `TauCeti.map_mkQ_degreeIdeal_toSubmodule`: the
   kernel of the order `k + 1` truncation onto the order `k` truncation is central, and is the image
   of the pieces of degree `k + 1`.
-* `TauCeti.IsPositiveGrading.quotient` and `TauCeti.quotient_piece_degreeIdeal_eq_bot`: the
-  order `k` truncation is positively graded, with no pieces of degree greater than `k`.
+* `TauCeti.quotient_piece_degreeIdeal_eq_bot`: the order `k` truncation has no pieces of degree
+  greater than `k`; it is positively graded by `TauCeti.IsPositiveGrading.quotient`.
 
 ## References
 
@@ -59,39 +57,6 @@ public section
 open DirectSum
 
 namespace TauCeti
-
-section Grading
-
-variable {N R M : Type*} [AddCommMonoid N] [Semiring R] [AddCommMonoid M] [Module R M]
-
-/-- A family of submodules indexed by `N` is a positive grading for the positive degree data `d`
-when its pieces vanish outside the nonzero allowed degrees, that is, unless the index lies in
-`d.monoid` and is nonzero. -/
-class IsPositiveGrading (d : PositiveDegrees N) (ℳ : N → Submodule R M) : Prop where
-  /-- The pieces indexed outside the allowed monoid vanish. -/
-  eq_bot_of_notMem : ∀ ⦃n⦄, n ∉ d.monoid → ℳ n = ⊥
-  /-- The piece of degree zero vanishes. -/
-  eq_bot_zero : ℳ 0 = ⊥
-
-variable (d : PositiveDegrees N) (ℳ : N → Submodule R M) [IsPositiveGrading d ℳ]
-
-/-- A nonzero homogeneous element of a positive grading has strictly positive degree. -/
-theorem IsPositiveGrading.degree_pos {n : N} {x : M} (hx : x ∈ ℳ n) (hx0 : x ≠ 0) :
-    0 < d.degree n := by
-  by_cases hn : n ∈ d.monoid
-  · refine d.degree_pos hn fun hn0 ↦ hx0 ?_
-    rw [hn0, IsPositiveGrading.eq_bot_zero (d := d) (ℳ := ℳ)] at hx
-    exact (Submodule.mem_bot R).1 hx
-  · rw [IsPositiveGrading.eq_bot_of_notMem (d := d) (ℳ := ℳ) hn] at hx
-    exact absurd ((Submodule.mem_bot R).1 hx) hx0
-
-/-- A homogeneous element of a positive grading whose degree is not positive vanishes. -/
-theorem IsPositiveGrading.eq_zero_of_degree_nonpos {n : N} {x : M} (hx : x ∈ ℳ n)
-    (hn : d.degree n ≤ 0) : x = 0 := by
-  by_contra hx0
-  exact absurd (IsPositiveGrading.degree_pos d ℳ hx hx0) (not_lt.2 hn)
-
-end Grading
 
 section DegreeIdeal
 
@@ -262,33 +227,6 @@ theorem map_mkQ_degreeIdeal_toSubmodule (k : ℕ) :
   exact Submodule.zero_mem _
 
 end DegreeIdeal
-
-section InternalGrading
-
-variable {N : Type} {R M : Type*} [AddCommMonoid N] [DecidableEq N] (d : PositiveDegrees N)
-
-/-- The internal grading carried by a positive decomposition is positive. -/
-instance IsPositiveGrading.ofDecomposition [Semiring R] [AddCommMonoid M] [Module R M]
-    (ℳ : N → Submodule R M) [Decomposition ℳ] [IsPositiveGrading d ℳ] :
-    IsPositiveGrading d (InternalGrading.ofDecomposition ℳ).piece := by
-  rwa [InternalGrading.ofDecomposition_piece]
-
-variable {S : Type*} [Ring R] [Ring S] [SMul R S] [AddCommGroup M] [Module R M] [Module S M]
-  [IsScalarTower R S M]
-
-/-- The quotient of a positive grading by a homogeneous submodule is positive. In particular,
-the truncations of a positively graded Lie algebra are positively graded. -/
-instance IsPositiveGrading.quotient (G : InternalGrading R M N) [IsPositiveGrading d G.piece]
-    (U : Submodule S M) (hU : SetLike.IsHomogeneous G.piece U) :
-    IsPositiveGrading d (G.quotient U hU).piece where
-  eq_bot_of_notMem n hn := by
-    rw [InternalGrading.quotient_piece,
-      IsPositiveGrading.eq_bot_of_notMem (d := d) (ℳ := G.piece) hn, Submodule.map_bot]
-  eq_bot_zero := by
-    rw [InternalGrading.quotient_piece, IsPositiveGrading.eq_bot_zero (d := d) (ℳ := G.piece),
-      Submodule.map_bot]
-
-end InternalGrading
 
 section Truncation
 
