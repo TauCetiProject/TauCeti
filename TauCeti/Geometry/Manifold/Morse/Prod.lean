@@ -74,14 +74,10 @@ theorem comp_fst_add_comp_snd_comp_extChartAt_prod_symm :
   funext p
   simp only [Function.comp_apply, Pi.add_apply, extChartAt_prod, PartialEquiv.prod_coe_symm]
 
-/-- **Nondegenerate critical points of a separated sum.** When the coordinate expressions of `f`
-at `x` and of `g` at `y` are twice continuously differentiable, `(x, y)` is a nondegenerate
+/-- **Nondegenerate critical points of a separated sum.** The point `(x, y)` is a nondegenerate
 critical point of `f ∘ Prod.fst + g ∘ Prod.snd` exactly when `x` is a nondegenerate critical point
-of `f` and `y` is one of `g`. This is not a `simp` lemma: `simp` unfolds `extChartAt` in the
-hypotheses, so the lemma could never discharge them. -/
-theorem isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
-    (hf : ContDiffAt ℝ 2 (f ∘ (extChartAt I x).symm) (extChartAt I x x))
-    (hg : ContDiffAt ℝ 2 (g ∘ (extChartAt I' y).symm) (extChartAt I' y y)) :
+of `f` and `y` is one of `g`. -/
+theorem isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff :
     IsManifoldNondegenerateCriticalPoint (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) ↔
       IsManifoldNondegenerateCriticalPoint I f x ∧
         IsManifoldNondegenerateCriticalPoint I' g y := by
@@ -89,7 +85,7 @@ theorem isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
     isManifoldNondegenerateCriticalPoint_iff I, isManifoldNondegenerateCriticalPoint_iff I',
     comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
   simp only [extChartAt_prod, PartialEquiv.prod_coe]
-  exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff hf hg
+  exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
 
 /-- A pair of nondegenerate critical points of `f` and `g` is a nondegenerate critical point of
 the separated sum `f ∘ Prod.fst + g ∘ Prod.snd`. -/
@@ -97,9 +93,7 @@ theorem IsManifoldNondegenerateCriticalPoint.comp_fst_add_comp_snd
     (hf : IsManifoldNondegenerateCriticalPoint I f x)
     (hg : IsManifoldNondegenerateCriticalPoint I' g y) :
     IsManifoldNondegenerateCriticalPoint (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) :=
-  (isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
-    ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
-    ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt).2 ⟨hf, hg⟩
+  isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff.2 ⟨hf, hg⟩
 
 /-- **The critical points of a separated sum are the pairs of critical points.** On boundaryless
 manifolds, the differential of `f ∘ Prod.fst + g ∘ Prod.snd` vanishes at `(x, y)` exactly when the
