@@ -226,9 +226,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_norm_le (i : ι)
     morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK
         (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
       morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i v) := by
-  rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun_of_norm_le (hw := hw)]
-  exact congrArg _ (congrArg _ (ULift.ext (Subtype.ext
-    ((TopCat.coe_diskRadialPush_one_of_norm_le _ hw).trans (by rw [hv]; norm_num)))))
+  rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun_of_norm_le (hw := hw),
+    TopCat.diskRadialPush_one_of_norm_le _ hw (by rw [hv]; norm_num)]
 
 /-- Outside the disc of radius `1/2` of the cell of `i`, the reattachment map is
 `x ↦ K i (2 - 2‖x‖, x/‖x‖)`, read in the lower sublevel. -/
@@ -241,10 +240,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
       morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
         ⟨K i (t, TopCat.diskBoundaryInclusion (k i) s), hK i t s⟩ := by
   have ht' : σ (TopCat.annulusParam (1 / 2) w) = t := by
-    refine Subtype.ext ?_
-    have := TopCat.add_one_sub_mul_annulusParam (by norm_num : (1 / 2 : ℝ) ≤ 1) hw
-    rw [coe_symm_eq, ht]
-    linarith
+    have := TopCat.one_sub_mul_symm_annulusParam (by norm_num : (1 / 2 : ℝ) ≤ 1) hw
+    exact Subtype.ext (by linarith)
   have hs' : TopCat.annulusDir (by norm_num) ⟨w, hw⟩ = s :=
     ULift.ext (Subtype.ext ((TopCat.coe_annulusDir _ _).trans hs.symm))
   subst ht' hs'

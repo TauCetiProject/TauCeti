@@ -18,7 +18,8 @@ Let `P = Z ∪_a Y` be a pushout square in `TopCat`, with maps `i : B → Y`, `a
 `Y` and to `Z`. Since the unit interval `I` is locally compact, the cylinder `I × P` is again a
 pushout: a map out of `I × P` is glued from maps out of `I × Y` and `I × Z` which agree along `a`,
 as the uncurried form of the map `P → C(I, W)` glued from the curried ones. In particular,
-homotopies between maps out of `P` are glued from homotopies on `Y` and on `Z`.
+homotopies between maps out of `P` are glued from homotopies on `Y` and on `Z`. Likewise a map out
+of the cylinder on a coproduct `∐ᵢ X i` is glued from maps out of the cylinders `I × X i`.
 
 Conversely, a space covered by a closed subspace `A` and finitely many closed pieces `B k`, any two
 of which meet only inside `A`, is the pushout of `A` and the coproduct of the `B k` along the parts
@@ -33,6 +34,8 @@ such as cells or handles, without passing through a quotient.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.sigmaCylinderDesc`: the map out of the cylinder `I × ∐ᵢ X i` on a coproduct glued from
+  maps out of the cylinders `I × X i`.
 * `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
@@ -135,6 +138,30 @@ namespace TopCat
 open CategoryTheory Set Topology
 
 universe u
+
+section SigmaCylinder
+
+open Limits
+
+variable {ι : Type u} {X : ι → TopCat.{u}} {W : Type u} [TopologicalSpace W]
+  (C : ∀ i, C(I × X i, W))
+
+/-- The map out of the cylinder `I × ∐ᵢ X i` on a coproduct which is `C i` on the cylinder over
+`X i`. Since `I` is locally compact, it is the uncurried map out of `∐ᵢ X i` glued from the curried
+maps into `C(I, W)`. -/
+def sigmaCylinderDesc : C(I × (∐ X : TopCat.{u}), W) :=
+  (Sigma.desc fun i ↦ (TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry :
+    X i ⟶ TopCat.of C(I, W))).hom.uncurry.comp ContinuousMap.prodSwap
+
+/-- On the cylinder over `X i`, the map `TopCat.sigmaCylinderDesc` is `C i`. -/
+@[simp]
+theorem sigmaCylinderDesc_ι (t : I) (i : ι) (x : X i) :
+    sigmaCylinderDesc C (t, Sigma.ι X i x) = C i (t, x) :=
+  congrArg (fun g : C(I, W) ↦ g t) (ConcreteCategory.congr_hom
+    (Sigma.ι_comp_desc (fun i ↦ (TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry :
+      X i ⟶ TopCat.of C(I, W))) i) x)
+
+end SigmaCylinder
 
 /-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only

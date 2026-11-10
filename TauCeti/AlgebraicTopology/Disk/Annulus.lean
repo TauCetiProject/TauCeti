@@ -26,8 +26,7 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
   annulus, with a parameter space `P`.
 * `TauCeti.TopCat.diskCylinderPath`: the straight-line homotopy in the cylinder `I × D^k` from
   `w ↦ (1 - s, w / max d ‖w‖)`, with `s` the radial parameter of `w`, to `w ↦ (0, w)`. It fixes
-  the boundary sphere, and reads a map glued by `TauCeti.TopCat.discGlue` from a homotopy of
-  maps of the disk back as the end of that homotopy.
+  the boundary sphere.
 -/
 
 public section
@@ -97,6 +96,13 @@ theorem add_one_sub_mul_annulusParam (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k}
     ring
   · rw [le_antisymm hw₁ hw]
     ring
+
+/-- On the annulus `d ≤ ‖w‖`, the reversed radial parameter `1 - s` of `w` satisfies
+`(1 - d) (1 - s) = 1 - ‖w‖`. -/
+theorem one_sub_mul_symm_annulusParam (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.1‖) :
+    (1 - d) * (σ (annulusParam d w) : ℝ) = 1 - ‖w.down.1‖ := by
+  rw [coe_symm_eq]
+  linear_combination -add_one_sub_mul_annulusParam hd₁ hw
 
 /-- A point of the annulus is recovered from its annulus coordinates. -/
 theorem add_one_sub_mul_annulusParam_smul_annulusDir (hd : 0 < d) (hd₁ : d ≤ 1)
@@ -235,7 +241,6 @@ theorem discGlue_mem_of_norm_eq_one (hd : 0 < d)
     rw [discGlue_apply_of_le_norm hd A B hAB p (not_le.1 h).le,
       annulusParam_of_norm_eq_one hd₁ hw]
     exact hB _ _
-
 
 /-- The end of the radial push with radius `d` sends the point `d • θ` of the ball of radius `d`
 to the point `θ` of the boundary sphere. -/
