@@ -76,6 +76,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   space is covered by the relative interiors of finitely many compact coordinate sets.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
+* `TauCeti.exists_isOpen_mem_iff_extChartAt`: an open subset of the manifold is the trace of an
+  open set of the model, read through an extended chart composed with a continuous linear
+  equivalence.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
@@ -252,6 +255,23 @@ theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
     Set.MapsTo (extChartAt I j ∘ (extChartAt I k).symm) s (Set.range I) := fun _ _ ↦ by
   rw [Function.comp_apply, extChartAt_coe]
   exact Set.mem_range_self _
+
+/-- A subset of `M` that is open is read, through `e ∘ extChartAt I x`, as the trace of an open
+subset of `F` on the image of the source of `extChartAt I x`. -/
+theorem exists_isOpen_mem_iff_extChartAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {e : E ≃L[𝕜] F} (x : M) {u : Set M} (hu : IsOpen u) : ∃ V : Set F, IsOpen V ∧
+      ∀ z ∈ (extChartAt I x).source, e (extChartAt I x z) ∈ V ↔ z ∈ u := by
+  have hg : ContinuousOn (fun w ↦ (extChartAt I x).symm (e.symm w))
+      (e.symm ⁻¹' (extChartAt I x).target) :=
+    (continuousOn_extChartAt_symm x).comp e.symm.continuous.continuousOn fun _ hw ↦ hw
+  obtain ⟨V, hV, hVeq⟩ := continuousOn_iff'.1 hg u hu
+  refine ⟨V, hV, fun z hz ↦ ?_⟩
+  have hzt : e (extChartAt I x z) ∈ e.symm ⁻¹' (extChartAt I x).target := by
+    simpa using (extChartAt I x).map_source hz
+  have := Set.ext_iff.1 hVeq (e (extChartAt I x z))
+  simp only [Set.mem_inter_iff, Set.mem_preimage, hzt, and_true,
+    ContinuousLinearEquiv.symm_apply_apply, (extChartAt I x).left_inv hz] at this
+  exact this.symm
 
 omit [ChartedSpace H M] in
 /-- For a boundaryless model, the domain of the change of coordinates between two charts is

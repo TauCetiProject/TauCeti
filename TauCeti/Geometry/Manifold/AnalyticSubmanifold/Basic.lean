@@ -190,23 +190,6 @@ theorem isMAnalyticSubmanifold_singleton {e : E ≃L[𝕜] Fin n → 𝕜} (a : 
 
 /-! ### Open subsets, zero-dimensional submanifolds, restrictions, and chart transitions -/
 
-/-- A subset of `M` that is open is read, through `e ∘ extChartAt I x`, as the trace of an open
-subset of `Fin n → 𝕜` on the image of the source of `extChartAt I x`. -/
-private theorem exists_isOpen_mem_iff_extChartAt {e : E ≃L[𝕜] Fin n → 𝕜} (x : M)
-    (hu : IsOpen u) : ∃ V : Set (Fin n → 𝕜), IsOpen V ∧
-      ∀ z ∈ (extChartAt I x).source, e (extChartAt I x z) ∈ V ↔ z ∈ u := by
-  have hg : ContinuousOn (fun w ↦ (extChartAt I x).symm (e.symm w))
-      (e.symm ⁻¹' (extChartAt I x).target) :=
-    (continuousOn_extChartAt_symm x).comp e.symm.continuous.continuousOn fun _ hw ↦ hw
-  obtain ⟨V, hV, hVeq⟩ := continuousOn_iff'.1 hg u hu
-  refine ⟨V, hV, fun z hz ↦ ?_⟩
-  have hzt : e (extChartAt I x z) ∈ e.symm ⁻¹' (extChartAt I x).target := by
-    simpa using (extChartAt I x).map_source hz
-  have := Set.ext_iff.1 hVeq (e (extChartAt I x z))
-  simp only [mem_inter_iff, mem_preimage, hzt, and_true, ContinuousLinearEquiv.symm_apply_apply,
-    (extChartAt I x).left_inv hz] at this
-  exact this.symm
-
 section Boundaryless
 
 variable [I.Boundaryless]
