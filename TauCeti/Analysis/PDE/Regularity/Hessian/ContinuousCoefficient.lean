@@ -66,8 +66,8 @@ open scoped ENNReal NNReal InnerProductSpace Topology
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- If every entry of `a` is within `ε` of the corresponding entry of `A`, then `|aᵢⱼ|` is at most
-the sum of the absolute values of the entries of `A` plus `ε`. -/
+/-- If a real number `x` is within `ε` of the entry `A i j`, then `|x|` is at most the sum of the
+absolute values of the entries of `A` plus `ε`. -/
 private theorem abs_le_sum_abs_add {m k : Type*} [Fintype m] [Fintype k] {A : Matrix m k ℝ}
     {i : m} {j : k} {x ε : ℝ} (h : |x - A i j| ≤ ε) : |x| ≤ ∑ i', ∑ j', |A i' j'| + ε := by
   have h1 : |A i j| ≤ ∑ i', ∑ j', |A i' j'| :=
@@ -80,7 +80,7 @@ private theorem abs_le_sum_abs_add {m k : Type*} [Fintype m] [Fintype k] {A : Ma
 
 /-- The arithmetic of the ball estimate: dividing `r² G ≤ C₀ ((2r)²/λ · Lf + T · Lu)` by `r²` and
 enlarging the norms `Lf ≤ F`, `Lu ≤ U` gives `G ≤ C₀ (4/λ + T/r²)(F + U)`. -/
-private theorem interior_bound_of_le_mul_add {C₀ : ℝ≥0} {lam r T F U G Lf Lu : ℝ} (hl0 : 0 < lam)
+private theorem le_mul_mul_add_of_sq_mul_le {C₀ : ℝ≥0} {lam r T F U G Lf Lu : ℝ} (hl0 : 0 < lam)
     (hr0 : 0 < r) (hT0 : 0 ≤ T) (hF0 : 0 ≤ F) (hU0 : 0 ≤ U) (hLf : Lf ≤ F) (hLu : Lu ≤ U)
     (key : r ^ 2 * G ≤ C₀ * ((2 * r) ^ 2 / lam * Lf + T * Lu)) :
     G ≤ C₀ * (4 / lam + T / r ^ 2) * (F + U) := by
@@ -133,14 +133,15 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
     exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq hn hp hp_top
   refine ⟨C₀, δ, hδ, fun {A lam} hl0 hA {Omega x₀ r} hr0 hR {a b c β γ} ha hosc hb hbβ hc hcγ
     u f heq => ?_⟩
-  set Λ := ∑ i, ∑ j, |A i j| + δ * lam with hΛ
-  set T := (1 + (Λ + β * (2 * r) + γ * (2 * r) ^ 2) / lam) ^ 2 with hT
+  set Λ := ∑ i, ∑ j, |A i j| + δ * lam
+  set T := (1 + (Λ + β * (2 * r) + γ * (2 * r) ^ 2) / lam) ^ 2
   have hT0 : 0 ≤ T := sq_nonneg _
   -- The bounds on `Ω` restrict to `B(x₀, 2 r)`.
   have hball_ae : ∀ {P : EuclideanSpace ℝ (Fin n) → Prop},
       (∀ᵐ x ∂(volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))), P x) →
       ∀ᵐ x, x ∈ ball x₀ (2 * r) → P x := fun hP =>
     ((ae_restrict_iff' Omega.isOpen.measurableSet).1 hP).mono fun x hx hxb => hx (hR hxb)
+  -- `abs_le_sum_abs_add` gives the bound `∑ i, ∑ j, |A i j| + δ * lam`, which is `Λ` by definition.
   have haΛ : ∀ y ∈ ball x₀ (2 * r), ∀ i j, |a y i j| ≤ Λ := fun y hy i j =>
     abs_le_sum_abs_add (hosc y hy i j)
   -- The inner radius `r` is below the outer radius `2 r`, with gap exactly `r`.
@@ -152,7 +153,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
     (hc.mono_measure (Measure.restrict_mono hR le_rfl)) (hball_ae hcγ) u f
     (ae_restrict_of_ae_restrict_of_subset hR heq)
   rw [hgap] at key
-  exact interior_bound_of_le_mul_add hl0 hr0 hT0 (norm_nonneg f) (norm_nonneg (Wkp.value 2 u))
+  exact le_mul_mul_add_of_sq_mul_le hl0 hr0 hT0 (norm_nonneg f) (norm_nonneg (Wkp.value 2 u))
     (lpNorm_mono_measure (Lp.memLp f) (Measure.restrict_mono hR le_rfl))
     (lpNorm_mono_measure (Lp.memLp _) (Measure.restrict_mono hR le_rfl)) key
 
