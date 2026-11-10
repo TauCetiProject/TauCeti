@@ -172,13 +172,14 @@ theorem MemSobolev.toBesselPotentialSpace_smul {s : ℝ} {p : ENNReal} [Fact (1 
 summands. -/
 @[simp]
 theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal}
-    [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i, MemSobolev s p (g i))
+    [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i ∈ t, MemSobolev s p (g i))
     (h : MemSobolev s p (∑ i ∈ t, g i)) :
-    h.toBesselPotentialSpace = ∑ i ∈ t, (hg i).toBesselPotentialSpace :=
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.2).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
-    rw [MemSobolev.toBesselPotentialSpace_toDistr]
+    rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
     clear h
-    induction t using Finset.cons_induction with
+    generalize t.attach = u
+    induction u using Finset.cons_induction with
     | empty => simp
     | cons i t hi ih =>
       rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
@@ -189,12 +190,12 @@ theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : 
 theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : Type*}
     {t : Finset ι} {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E}
     [μ.HasTemperateGrowth] {a : ι → ℂ} {f : ι → Lp F q μ}
-    (hf : ∀ i, MemSobolev s p (f i : 𝓢'(E, F)))
+    (hf : ∀ i ∈ t, MemSobolev s p (f i : 𝓢'(E, F)))
     (h : MemSobolev s p ((∑ i ∈ t, a i • f i : Lp F q μ) : 𝓢'(E, F))) :
-    h.toBesselPotentialSpace = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace := by
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, a i • (hf i i.2).toBesselPotentialSpace := by
   simp only [Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul,
-    MemSobolev.toBesselPotentialSpace_sum fun i ↦ (hf i).smul (a i),
-    fun i ↦ (hf i).toBesselPotentialSpace_smul (a i)]
+    MemSobolev.toBesselPotentialSpace_sum fun i hi ↦ (hf i hi).smul (a i),
+    fun (i : t) ↦ (hf i i.2).toBesselPotentialSpace_smul (a i)]
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/

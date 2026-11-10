@@ -30,14 +30,16 @@ everywhere (`TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`)
 (`TemperedDistribution.exists_hasSum_mul_pow`). For an entire function, such as `exp z - 1`,
 there is no condition on `u`; for a function analytic on a disc, such as `log (1 + z)`, the
 condition is a bound on `‖u‖_{H^s}`. This is how analytic functions act on the Sobolev algebra
-without any composition (Moser) estimate. In particular, for a real `f ∈ H^s` the functions
-`exp (c f) - 1`, `cos f - 1` and `sin f` lie in `H^s`.
+without any composition (Moser) estimate. In particular, for `U ∈ H^s` the function `exp U - 1`
+lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and `sin f`.
 
 ## Main declarations
 
 * `TemperedDistribution.exists_hasSum_mul_pow`: a power series without constant term whose
   majorant series converges at `C ‖u‖_{H^s}` maps `u ∈ H^s` to an `H^s` function, which is the
   pointwise sum almost everywhere, with the norm bound above.
+* `TemperedDistribution.exists_memSobolev_ae_eq_exp_sub_one`: for an `L²` function `U ∈ H^s`,
+  `exp U - 1` is an `L²` function in `H^s`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_exp_mul_sub_one`: for a real `f ∈ H^s` and a
   complex constant `c`, `exp (c f) - 1` is an `L²` function in `H^s`.
 * `TemperedDistribution.cos_sub_one_mem_realSobolevFunctions`,
@@ -105,7 +107,8 @@ theorem exists_hasSum_mul_pow {s : ℝ} (hs : finrank ℝ E < 2 * s) :
       simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
         MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hp n).smul (a n)
     have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hv <| by
-      simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul hp, hvF] using
+      simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul
+        fun n _ ↦ hp n, Finset.sum_attach _ fun n ↦ a n • (hp n).toBesselPotentialSpace, hvF] using
         hsum.hasSum.tendsto_sum_nat
     have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n * u x ^ (n + 1) :=
       ae_all_iff.2 fun N ↦ by
@@ -124,18 +127,13 @@ theorem exists_hasSum_mul_pow {s : ℝ} (hs : finrank ℝ E < 2 * s) :
   · rw [hvF, ← tsum_mul_left]
     exact tsum_of_norm_bounded (ha.mul_left R).hasSum hw
 
-/-- **The exponential of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s` and a complex
-constant `c`, the function `exp (c f) - 1` is an `L²` function in `H^s`: it is the exponential
-series of `c f` without its constant term. -/
-theorem exists_memSobolev_ae_eq_exp_mul_sub_one {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : E → ℝ}
-    (hf : f ∈ realSobolevFunctions E s 2) (c : ℂ) :
-    ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x ↦ Complex.exp (c * f x) - 1) ∧
+/-- **The exponential of an `H^s` function, `s > n / 2`.** For an `L²` function `U ∈ H^s`, the
+function `exp U - 1` is an `L²` function in `H^s`: it is the exponential series of `U` without its
+constant term. -/
+theorem exists_memSobolev_ae_eq_exp_sub_one {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {U : Lp ℂ 2 (volume : Measure E)} (hU : MemSobolev s 2 (U : 𝓢'(E, ℂ))) :
+    ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x ↦ Complex.exp (U x) - 1) ∧
       MemSobolev s 2 (v : 𝓢'(E, ℂ)) := by
-  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
-  set U := c • Complex.ofRealCLM.compLp u
-  have hU : MemSobolev s 2 (U : 𝓢'(E, ℂ)) := by
-    rw [Lp.toTemperedDistribution_smul]
-    exact hu.smul c
   obtain ⟨C, hC0, hC⟩ := exists_hasSum_mul_pow hs
   set R := C * ‖hU.toBesselPotentialSpace‖
   -- The exponential series `∑ₙ w ^ (n + 1) / (n + 1)!`, majorized by `∑ₙ Rⁿ / n!`.
@@ -147,16 +145,30 @@ theorem exists_memSobolev_ae_eq_exp_mul_sub_one {s : ℝ} (hs : finrank ℝ E < 
     exact_mod_cast n.le_succ
   obtain ⟨v, hv, hvs, -⟩ := hC hU hsum
   refine ⟨v, ?_, hvs⟩
-  filter_upwards [hv, Lp.coeFn_smul c (Complex.ofRealCLM.compLp u),
-    Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, huf] with x hx hUx hcx hfx
-  have hw : U x = c * f x := by
-    rw [hUx, Pi.smul_apply, hcx, Complex.ofRealCLM_apply, hfx, smul_eq_mul]
-  rw [hw] at hx
+  filter_upwards [hv] with x hx
   refine hx.unique ?_
-  have h := (hasSum_nat_add_iff' 1).2 (NormedSpace.expSeries_div_hasSum_exp (c * f x))
+  have h := (hasSum_nat_add_iff' 1).2 (NormedSpace.expSeries_div_hasSum_exp (U x))
   simp only [Finset.range_one, Finset.sum_singleton, pow_zero, Nat.factorial_zero, Nat.cast_one,
     div_one, ← Complex.exp_eq_exp_ℂ] at h
   simpa only [div_eq_inv_mul] using h
+
+/-- **The exponential of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s` and a complex
+constant `c`, the function `exp (c f) - 1` is an `L²` function in `H^s`. This is
+`exists_memSobolev_ae_eq_exp_sub_one` for the complex function `c f`. -/
+theorem exists_memSobolev_ae_eq_exp_mul_sub_one {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s 2) (c : ℂ) :
+    ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x ↦ Complex.exp (c * f x) - 1) ∧
+      MemSobolev s 2 (v : 𝓢'(E, ℂ)) := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  set U := c • Complex.ofRealCLM.compLp u
+  have hU : MemSobolev s 2 (U : 𝓢'(E, ℂ)) := by
+    rw [Lp.toTemperedDistribution_smul]
+    exact hu.smul c
+  obtain ⟨v, hv, hvs⟩ := exists_memSobolev_ae_eq_exp_sub_one hs hU
+  refine ⟨v, ?_, hvs⟩
+  filter_upwards [hv, Lp.coeFn_smul c (Complex.ofRealCLM.compLp u),
+    Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, huf] with x hx hUx hcx hfx
+  rw [hx, hUx, Pi.smul_apply, hcx, Complex.ofRealCLM_apply, hfx, smul_eq_mul]
 
 /-- **The cosine of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s`, the function
 `cos f - 1` lies in `H^s`: it is the half sum of `exp (i f) - 1` and `exp (-i f) - 1`. -/
