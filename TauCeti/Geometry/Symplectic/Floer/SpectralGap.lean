@@ -5,38 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Geometry.Symplectic.CompatibleMetric
+import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
-# The spectral gap at a nondegenerate orbit and the stationary cylinder estimate
+# The stationary cylinder estimate on the whole cylinder
 
 Let `(V, ω)` be a symplectic vector space, `J_t` a continuous family of almost complex structures
 and `S_t` a continuous family of endomorphisms, with associated forms `g_t = ω(·, J_t ·)`. The
-asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` of `TauCeti.Floer.asymptoticOperator` and the
 stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` of
-`TauCeti.Floer.stationaryCylinderOperator` describe the linearized Floer equation on a cylindrical
-end asymptotic to an orbit with linearized Hamiltonian vector field `S_t`. This file proves the
-quantitative form of their invertibility at a nondegenerate orbit, in the `L²` norms of `g_t`.
+`TauCeti.Floer.stationaryCylinderOperator` describes the linearized Floer equation on a cylindrical
+end asymptotic to an orbit with linearized Hamiltonian vector field `S_t`. The file
+`TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate` bounds `D` below in `L²` on finite
+strips `[a, b] × [0, 1]`, for maps vanishing on the two boundary slices. This file proves the
+estimate on the whole cylinder for maps decaying as `|s| → ∞`, and for the weighted operators
+`D - δ` with `δ` close to `0`.
 
-**The spectral gap.** Suppose that the return map `Ψ(1)` of `ζ' = S_t ζ` fixes no nonzero vector
-and that every `J_t` is `ω`-tame. Then there is a constant `C` with
+**The spectral gap.** If the return map `Ψ(1)` of `ζ' = S_t ζ` satisfies `det (1 - Ψ(1)) ≠ 0`
+and every `J_t` is `ω`-tame, there is a constant `C` with
 
 `∫₀¹ g_t(ζ, ζ) dt ≤ C ∫₀¹ g_t(A ζ, A ζ) dt`
 
-for every `C¹` loop `ζ` with `ζ 1 = ζ 0`
-(`TauCeti.Floer.exists_integral_associatedBilinForm_le_mul_integral_asymptoticOperator`). This is
-the `L²` form of the a priori estimate `‖ζ‖_∞ ≤ C ∫₀¹ ‖ζ' - S ζ‖` for periodic solutions
-(`TauCeti.exists_integral_norm_sq_le_mul_integral_norm_sq`), combined with the fact that `J_t`
-preserves `g_t(v, v)` and that the forms `g_t` are uniformly equivalent to the norm of `V`
-(`TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_and_le_mul_norm_sq`). For compatible
-`J_t` and infinitesimally symplectic `S_t`, `A` is symmetric for the pairing `∫₀¹ g_t`
-(`TauCeti.Floer.integral_associatedBilinForm_asymptoticOperator_comm`), and the estimate bounds
-`A` away from `0` in this norm: a loop with `A ζ = λ ζ` and `C λ² < 1` has `∫₀¹ g_t(ζ, ζ) = 0`.
+for every `C¹` loop `ζ` with `ζ 1 = ζ 0`, where `A ζ = J_t (ζ' - S_t ζ)` is the asymptotic
+operator
+(`TauCeti.Floer.exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOperator`).
+For compatible `J_t` and infinitesimally symplectic `S_t`, `A` is symmetric for the pairing
+`∫₀¹ g_t` (`TauCeti.Floer.integral_associatedBilinForm_asymptoticOperator_comm`), and the estimate
+bounds `A` away from `0` in this norm: a loop with `A ζ = λ ζ` and `C λ² < 1` has
+`∫₀¹ g_t(ζ, ζ) = 0`.
 
 **The stationary cylinder estimate.** Let every `J_t` be `ω`-compatible and every `S_t`
 infinitesimally symplectic, and let `ξ` be a `C²` map of the cylinder, of period one in `t`, which
@@ -49,7 +48,7 @@ whose boundary terms vanish in the limit, gives
 
 with both sides finite
 (`TauCeti.Floer.integrableOn_and_setIntegral_le_setIntegral_stationaryCylinderOperator`). If
-moreover the return map is nondegenerate, the spectral gap on each slice `s = const` bounds
+moreover `det (1 - Ψ(1)) ≠ 0`, the spectral gap on each slice `s = const` bounds
 `∫₀¹ g(ξ, ξ)` by `C ∫₀¹ g(∂t ξ - S ξ, ∂t ξ - S ξ)`, and hence
 
 `∫ g(ξ, ξ) ≤ C ∫ g(D ξ, D ξ)`
@@ -93,64 +92,6 @@ namespace Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
-
-section Loop
-
-/-- **The spectral gap of a nondegenerate asymptotic operator.** Let `J_t` be `ω`-tame and
-continuous on `[0, 1]`, let `S` be continuous, and suppose that the return map `Ψ(1)` of the
-linearized equation `ζ' = S_t ζ` fixes no nonzero vector. Then there is a constant `C ≥ 0` such
-that every `C¹` loop `ζ` with `ζ 1 = ζ 0` satisfies
-`∫₀¹ g_t(ζ, ζ) dt ≤ C ∫₀¹ g_t(A ζ, A ζ) dt` for `g_t = ω(·, J_t ·)` and the asymptotic operator
-`A ζ = J_t (ζ' - S_t ζ)`. -/
-theorem exists_integral_associatedBilinForm_le_mul_integral_asymptoticOperator
-    (hJ : ∀ t ∈ Icc (0 : ℝ) 1, ω.Tames (J t)) (hJc : ContinuousOn J (Icc 0 1))
-    (hSc : Continuous S) (hnd : ∀ v, dysonSeriesLeft S 1 v = v → v = 0) :
-    ∃ C, 0 ≤ C ∧ ∀ ζ : ℝ → V, ContDiff ℝ 1 ζ → ζ 1 = ζ 0 →
-      ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
-        C * ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
-          (asymptoticOperator J S ζ t) := by
-  obtain ⟨a, ha, M, hM, hg⟩ :=
-    SymplecticForm.exists_pos_forall_mul_norm_sq_le_and_le_mul_norm_sq isCompact_Icc hJc hJ
-  have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) :=
-    ContinuousLinearMap.isUnit_smul_one_sub fun v hv ↦ hnd v (by simpa using hv)
-  obtain ⟨C₀, hC₀, hest⟩ := exists_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one hunit
-  refine ⟨M * C₀ / a, by positivity, fun ζ hζ hζ1 ↦ ?_⟩
-  set f : ℝ → V := fun t ↦ deriv ζ t - S t (ζ t)
-  have hf : Continuous f := (hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)
-  have hw (t : ℝ) : HasDerivAt ζ (S t (ζ t) + f t) t := by
-    simpa only [f, add_sub_cancel] using (hζ.differentiable one_ne_zero t).hasDerivAt
-  have hL2 := hest hf hw (by rw [one_smul]; exact hζ1)
-  -- `J_t` preserves `g_t(v, v)`, so `g_t(A ζ, A ζ) = g_t(f, f)` for `f = ζ' - S ζ`.
-  have hA (t : ℝ) : ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
-      (asymptoticOperator J S ζ t) = ω.associatedBilinForm (J t) (f t) (f t) := by
-    rw [asymptoticOperator_def]
-    exact ω.associatedBilinForm_apply_apply_self_eq (J t) (f t)
-  have hgc {p : ℝ → V} (hp : Continuous p) :
-      IntervalIntegrable (fun t ↦ ω.associatedBilinForm (J t) (p t) (p t)) volume 0 1 := by
-    refine ContinuousOn.intervalIntegrable ?_
-    rw [uIcc_of_le zero_le_one]
-    simp only [SymplecticForm.associatedBilinForm_apply]
-    refine ω.continuousOn_apply_comp hp.continuousOn ?_
-    simpa using ((AlmostComplexStructure.continuous_iff.1 continuous_id).comp_continuousOn
-      hJc).clm_apply hp.continuousOn
-  rw [intervalIntegral.integral_congr fun t _ ↦ hA t]
-  calc ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (ζ t) (ζ t)
-      ≤ ∫ t in (0 : ℝ)..1, M * ‖ζ t‖ ^ 2 :=
-        intervalIntegral.integral_mono_on zero_le_one (hgc hζ.continuous)
-          (((hζ.continuous.norm.pow 2).const_mul M).intervalIntegrable _ _) fun t ht ↦ by
-          simpa only [SymplecticForm.associatedBilinForm_apply] using (hg t ht (ζ t)).2
-    _ = M * ∫ t in (0 : ℝ)..1, ‖ζ t‖ ^ 2 := intervalIntegral.integral_const_mul _ _
-    _ ≤ M * (C₀ * ∫ t in (0 : ℝ)..1, ‖f t‖ ^ 2) := mul_le_mul_of_nonneg_left hL2 hM
-    _ = M * C₀ / a * ∫ t in (0 : ℝ)..1, a * ‖f t‖ ^ 2 := by
-        rw [intervalIntegral.integral_const_mul]
-        field_simp
-    _ ≤ M * C₀ / a * ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (f t) (f t) := by
-        refine mul_le_mul_of_nonneg_left (intervalIntegral.integral_mono_on zero_le_one
-          (((hf.norm.pow 2).const_mul a).intervalIntegrable _ _) (hgc hf) fun t ht ↦ ?_)
-          (by positivity)
-        simpa only [SymplecticForm.associatedBilinForm_apply] using (hg t ht (f t)).1
-
-end Loop
 
 section Cylinder
 
@@ -209,7 +150,7 @@ theorem integrableOn_and_setIntegral_le_setIntegral_stationaryCylinderOperator
 
 /-- **The estimate of the stationary cylinder operator at a nondegenerate orbit.** Let each
 `J_t` be `ω`-compatible and depend continuously on `t`, let each `S_t` be infinitesimally
-symplectic, and suppose that the return map `Ψ(1)` of `ζ' = S_t ζ` fixes no nonzero vector. Then
+symplectic, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1)` of `ζ' = S_t ζ`. Then
 there is a constant `C ≥ 0` with the following property. For every `C²` map `ξ` of period one in
 `t` which tends to zero together with `∂t ξ` as `|s| → ∞`, uniformly in `t`, and such that
 `g(D ξ, D ξ)` is integrable on `ℝ × [0, 1]`, where `g_t = ω(·, J_t ·)`, the function `g(ξ, ξ)` is
@@ -217,7 +158,7 @@ integrable on `ℝ × [0, 1]` and `∫ g(ξ, ξ) ≤ C ∫ g(D ξ, D ξ)`. -/
 theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
     (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
-    (hnd : ∀ v, dysonSeriesLeft S 1 v = v → v = 0) :
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
     ∃ C, 0 ≤ C ∧ ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
       Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
         (comap Prod.fst (cocompact ℝ)) (𝓝 0) →
@@ -228,11 +169,9 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
         ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) ≤
           C * ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
             (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) := by
-  have hJc' : Continuous J := AlmostComplexStructure.continuous_iff.2 <|
-    continuous_clm_apply.2 fun v ↦ by
-      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
-  obtain ⟨C, hC, hgap⟩ := exists_integral_associatedBilinForm_le_mul_integral_asymptoticOperator
-    (fun t _ ↦ (hJ t).tames) hJc'.continuousOn hSc hnd
+  obtain ⟨C, hC, hgap⟩ :=
+    exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOperator
+      (fun t ↦ (hJ t).tames) hJc hSc hdet
   refine ⟨C, hC, fun ξ hξ hper hdecay hD ↦ ?_⟩
   have hg0 (t : ℝ) (v : V) := (hJ t).associatedBilinForm_self_nonneg v
   have hgc {p : ℝ × ℝ → V} (hp : Continuous p) :=
@@ -259,7 +198,7 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
         exact (hasDerivAt_slice_right (hξ.differentiable (by norm_num) _)).deriv
       rw [asymptoticOperator_def, hd]
       exact ω.associatedBilinForm_apply_apply_self_eq (J t) _
-    have h := hgap _ hζ (by simpa using hper s 0)
+    have h := hgap hζ (by simpa using hper s 0)
     simp only [hA] at h
     rwa [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
@@ -272,7 +211,7 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
       have hwi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (w z) (w z))
           (Icc (-(n : ℝ)) n ×ˢ Icc 0 1) :=
         (hgc hwc).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-      refine (setIntegral_prod_le_mul_of_forall_setIntegral_le measurableSet_Icc
+      refine (setIntegral_rect_le_mul_of_forall_setIntegral_le
         ((hgc hξ.continuous).continuousOn.integrableOn_compact
           (isCompact_Icc.prod isCompact_Icc)) hwi fun s _ ↦ hslice s).trans
         (mul_le_mul_of_nonneg_left (setIntegral_mono_on hwi ?_
@@ -354,16 +293,15 @@ theorem eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOpera
       LinearMap.smul_apply, smul_eq_mul] at h₂ ⊢
     linear_combination h₁ - δ * h₂
   -- Nondegeneracy of `A - δ` is nondegeneracy of the return map of `ζ' = (S_t - δ J_t) ζ`.
-  have hndδ (v : V) (hv : dysonSeriesLeft Sδ 1 v = v) : v = 0 := by
-    by_contra hne
+  have hdetδ : LinearMap.det ((1 - dysonSeriesLeft Sδ 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 := by
+    intro h
     obtain ⟨ζ, hζ, hζp, hζne, hA⟩ :=
-      (exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
-        (J := J) hSδc hSδp).2 ⟨v, hne, hv⟩
+      (exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := J) hSδc hSδp).2 h
     refine hζne (hδ ζ hζ hζp fun t ↦ ?_)
     have h := hA t
     rwa [Floer.asymptoticOperator_sub_smul, sub_eq_zero] at h
   obtain ⟨C, hC, hest⟩ := Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
-    hJ hJc' hSδ hSδc hndδ
+    hJ hJc' hSδ hSδc hdetδ
   refine ⟨C, hC, fun ξ hξ hper hdecay hD ↦ ?_⟩
   have heq (z : ℝ × ℝ) : Floer.stationaryCylinderOperator J Sδ ξ z =
       Floer.stationaryCylinderOperator J S ξ z - δ • ξ z :=

@@ -31,8 +31,6 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
   differ by at most `C` for almost every point of a probability first factor, the integrals over
   the product measures differ by at most `C`.
-* `TauCeti.setIntegral_prod_le_mul_of_forall_setIntegral_le`: a comparison of all slice integrals
-  `∫ f(x, ·) ≤ C ∫ g(x, ·)` integrates to the same comparison over a product `s ×ˢ t`.
 * `TauCeti.setIntegral_eq_zero_of_forall_prod` is the binary-product specialization of the Dynkin
   (π-λ) step for Bochner integrals: a function whose integral vanishes on every measurable rectangle
   has vanishing integral on every measurable set. Rectangles are a π-system generating the product
@@ -206,23 +204,6 @@ theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbab
     ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
   exact le_trans (norm_integral_le_of_norm_le_const (C := C)
     (by simpa only [Real.norm_eq_abs] using h)) (by simp)
-
-/-- **Comparison of product integrals through their slices.** For `f` and `g` integrable on a
-product `s ×ˢ t` with `s` measurable, if every slice integral `∫_t f(x, ·)` with `x ∈ s` is at
-most `C` times the corresponding slice integral of `g`, then the same comparison holds for the
-integrals over `s ×ˢ t`. -/
-theorem setIntegral_prod_le_mul_of_forall_setIntegral_le [SFinite μ] [SFinite ν]
-    {f g : α × β → ℝ} {C : ℝ} {s : Set α} {t : Set β} (hs : MeasurableSet s)
-    (hf : IntegrableOn f (s ×ˢ t) (μ.prod ν)) (hg : IntegrableOn g (s ×ˢ t) (μ.prod ν))
-    (hle : ∀ x ∈ s, ∫ y in t, f (x, y) ∂ν ≤ C * ∫ y in t, g (x, y) ∂ν) :
-    ∫ z in s ×ˢ t, f z ∂μ.prod ν ≤ C * ∫ z in s ×ˢ t, g z ∂μ.prod ν := by
-  rw [setIntegral_prod f hf, setIntegral_prod g hg, ← integral_const_mul]
-  -- Integrability on the product gives integrability of the slice integrals (Fubini).
-  have hslice {h : α × β → ℝ} (hh : IntegrableOn h (s ×ˢ t) (μ.prod ν)) :
-      IntegrableOn (fun x ↦ ∫ y in t, h (x, y) ∂ν) s μ := by
-    rw [IntegrableOn, ← Measure.prod_restrict] at hh
-    exact hh.integral_prod_left
-  exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul C) hs hle
 
 /-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
 theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]

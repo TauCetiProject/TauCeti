@@ -30,8 +30,9 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
-* `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_and_le_mul_norm_sq`: a continuous
-  family of tame structures over a compact set is uniformly tame, with uniform upper bounds.
+* `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
+  of tame structures continuous on a compact set, the forms `ω(·, J ·)` are uniformly equivalent
+  to the square of the norm.
 -/
 
 public noncomputable section
@@ -91,35 +92,35 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
   filter_upwards [hJ.eventually hA] with y hy v hv
   simpa [ωc] using hy v hv
 
-/-- **Uniform tameness over a compact family.** If a family of complex structures is continuous
-in the operator-norm topology on a compact set `K` and `ω`-tame at every point of `K`, then there
-are constants `a > 0` and `M ≥ 0` with `a ‖v‖² ≤ ω(v, J_x v) ≤ M ‖v‖²` for every `x ∈ K` and
-every vector `v`. -/
-theorem exists_pos_forall_mul_norm_sq_le_and_le_mul_norm_sq {X : Type*} [TopologicalSpace X]
-    {ω : SymplecticForm V} {J : X → AlmostComplexStructure V} {K : Set X} (hK : IsCompact K)
-    (hJc : ContinuousOn J K) (hJ : ∀ x ∈ K, ω.Tames (J x)) :
-    ∃ a > 0, ∃ M, 0 ≤ M ∧ ∀ x ∈ K, ∀ v,
-      a * ‖v‖ ^ 2 ≤ ω v (J x v) ∧ ω v (J x v) ≤ M * ‖v‖ ^ 2 := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  let e : X → V →L[ℝ] V := fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap
-  have hT : IsCompact (e '' K) := hK.image_of_continuousOn
-    ((AlmostComplexStructure.continuous_iff.1 continuous_id).comp_continuousOn hJc)
-  obtain ⟨a, ha, hle⟩ := hT.exists_pos_forall_mul_norm_sq_le_compRight ωc (by
-    rintro _ ⟨x, hx, rfl⟩ v hv
-    simpa [ωc, e] using hJ x hx v hv)
-  obtain ⟨M, hM⟩ := hT.isBounded.exists_norm_le
+/-- **Uniform equivalence of tame metrics.** If a family of complex structures `J_x` is continuous
+in the operator norm on a compact set `K` and `ω`-tame there, the forms `g_x = ω(·, J_x ·)` are
+uniformly equivalent to the square of the norm over `K`: there are constants `a > 0` and `b ≥ 0`
+with `a ‖v‖² ≤ g_x(v, v) ≤ b ‖v‖²` for every `x ∈ K` and every vector `v`. -/
+theorem exists_pos_forall_mul_norm_sq_le_associatedBilinForm (ω : SymplecticForm V)
+    {X : Type*} [TopologicalSpace X] {J : X → AlmostComplexStructure V} {K : Set X}
+    (hK : IsCompact K)
+    (hJ : ContinuousOn (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) K)
+    (hJt : ∀ x ∈ K, ω.Tames (J x)) :
+    ∃ a > 0, ∃ b ≥ 0, ∀ x ∈ K, ∀ v,
+      a * ‖v‖ ^ 2 ≤ ω.associatedBilinForm (J x) v v ∧
+        ω.associatedBilinForm (J x) v v ≤ b * ‖v‖ ^ 2 := by
+  set e : X → V →L[ℝ] V := fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap
+  set ωc := ω.toBilinForm.toContinuousBilinearMap
+  obtain ⟨a, ha, hlow⟩ := (hK.image_of_continuousOn hJ).exists_pos_forall_mul_norm_sq_le_compRight
+    ωc (by
+      rintro _ ⟨x, hx, rfl⟩ v hv
+      simpa [e, ωc] using hJt x hx v hv)
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hJ
   refine ⟨a, ha, ‖ωc‖ * max M 0, by positivity, fun x hx v ↦
-    ⟨by simpa [ωc, e] using hle _ ⟨x, hx, rfl⟩ v, ?_⟩⟩
-  -- The upper bound is `|ω(v, J_x v)| ≤ ‖ω‖ ‖v‖ ‖J_x‖ ‖v‖`.
-  have hJv : ‖J x v‖ ≤ max M 0 * ‖v‖ := by
-    have h := (e x).le_opNorm v
-    simp only [e, LinearMap.coe_toContinuousLinearMap'] at h
-    exact h.trans (mul_le_mul_of_nonneg_right ((hM _ ⟨x, hx, rfl⟩).trans (le_max_left _ _))
-      (norm_nonneg _))
-  calc ω v (J x v) = ωc v (J x v) := by simp [ωc]
-    _ ≤ ‖ωc v (J x v)‖ := Real.le_norm_self _
-    _ ≤ ‖ωc‖ * ‖v‖ * ‖J x v‖ := ωc.le_opNorm₂ _ _
-    _ ≤ ‖ωc‖ * ‖v‖ * (max M 0 * ‖v‖) := mul_le_mul_of_nonneg_left hJv (by positivity)
+    ⟨by simpa [e, ωc] using hlow _ ⟨x, hx, rfl⟩ v, ?_⟩⟩
+  have h₁ : ω.associatedBilinForm (J x) v v = ωc v (e x v) := by simp [e, ωc]
+  rw [h₁]
+  calc ωc v (e x v) ≤ ‖ωc v (e x v)‖ := Real.le_norm_self _
+    _ ≤ ‖ωc‖ * ‖v‖ * ‖e x v‖ := ωc.le_opNorm₂ _ _
+    _ ≤ ‖ωc‖ * ‖v‖ * (max M 0 * ‖v‖) := by
+        gcongr
+        exact (e x).le_opNorm v |>.trans
+          (mul_le_mul_of_nonneg_right ((hM x hx).trans (le_max_left _ _)) (norm_nonneg _))
     _ = ‖ωc‖ * max M 0 * ‖v‖ ^ 2 := by ring
 
 end SymplecticForm
