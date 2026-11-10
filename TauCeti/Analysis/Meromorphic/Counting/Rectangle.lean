@@ -18,11 +18,15 @@ multiplicity is counted once, in the lower piece. The counts are those of the di
 function that is not meromorphic on `U` every count is zero by convention, and no actual zeros are
 counted. The containing closed rectangle is compact, which supplies finite divisor support,
 including at its edges.
+
+As the upper height increases, the zero count is monotone and locally constant from the
+right, even at a height carrying zeros. In particular it is right-continuous. These facts
+allow an asymptotic zero-counting formula to pass from heights avoiding zeros to all heights.
 -/
 
 public section
 
-open Set Complex
+open Set Complex Filter Topology
 
 namespace TauCeti
 
@@ -77,5 +81,70 @@ theorem zeroCount_reProdIm_Ioc_eq_add
   rw [← hsplit]
   exact zeroCount_union hdisjoint (zeroCount_support_finite hfirst)
     (zeroCount_support_finite hsecond)
+
+/-- Increasing the upper height cannot decrease the zero count. The containing closed
+rectangle guarantees that neither sum takes the infinite-support default value. -/
+theorem zeroCount_reProdIm_Ioc_le (ht : t₂ ≤ t₃)
+    (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
+    zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₂) ≤
+      zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃) := by
+  refine zeroCount_mono (S := Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃)
+    (fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2.trans ht⟩) ?_
+  apply zeroCount_support_finite
+  exact MeromorphicOn.divisor_finite_inter_support_of_isCompact
+    (isCompact_Icc.reProdIm isCompact_Icc) hU
+    (fun z hz ↦ ⟨hz.1, hz.2.1.le, hz.2.2⟩)
+
+/-- A half-open rectangle's zero count is locally constant as its top edge moves to the
+right in height. Zeros on the original top edge remain counted. Only inclusion of a compact
+rectangle in the divisor domain is required; without meromorphy the divisor is zero. -/
+theorem eventuallyEq_zeroCount_reProdIm_Ioc (T : ℝ) (hT : T < t₃)
+    (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
+    (fun t ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t)) =ᶠ[𝓝[≥] T]
+      fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ T) := by
+  classical
+  let K := Icc σ₁ σ₂ ×ℂ Icc t₁ t₃
+  have hfin : (K ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
+    MeromorphicOn.divisor_finite_inter_support_of_isCompact
+      (isCompact_Icc.reProdIm isCompact_Icc) hU Subset.rfl
+  -- Finitely many divisor points give a common right neighborhood with no new heights.
+  have hheight : ∀ᶠ t in 𝓝[≥] T, ∀ z ∈ K ∩ Function.support (MeromorphicOn.divisor f U),
+      z.im ≤ t ↔ z.im ≤ T := by
+    apply hfin.eventually_all.mpr
+    intro z _
+    by_cases hz : z.im ≤ T
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      exact iff_of_true (hz.trans ht) hz
+    · filter_upwards [eventually_lt_nhds (lt_of_not_ge hz) |>.filter_mono nhdsWithin_le_nhds]
+        with t ht
+      exact iff_of_false (not_le.mpr ht) hz
+  filter_upwards [hheight,
+    (eventually_lt_nhds hT).filter_mono nhdsWithin_le_nhds] with t ht htop
+  simp only [zeroCount_def, finsum_mem_def]
+  apply finsum_congr
+  intro z
+  by_cases hz : (MeromorphicOn.divisor f U z).toNat = 0
+  · simp [indicator_apply, hz]
+  have hd : z ∈ Function.support (MeromorphicOn.divisor f U) := by
+    intro heq
+    exact hz (by simp [heq])
+  by_cases hK : z ∈ K
+  · have him := ht z ⟨hK, hd⟩
+    have hmem : z ∈ Icc σ₁ σ₂ ×ℂ Ioc t₁ t ↔ z ∈ Icc σ₁ σ₂ ×ℂ Ioc t₁ T := by
+      simp only [mem_reProdIm, mem_Icc, mem_Ioc]
+      tauto
+    simp only [indicator_apply, hmem]
+  · have hzt : z ∉ Icc σ₁ σ₂ ×ℂ Ioc t₁ t :=
+      fun h ↦ hK ⟨h.1, h.2.1.le, h.2.2.trans htop.le⟩
+    have hzT : z ∉ Icc σ₁ σ₂ ×ℂ Ioc t₁ T :=
+      fun h ↦ hK ⟨h.1, h.2.1.le, h.2.2.trans hT.le⟩
+    simp [hzt, hzT]
+
+/-- The natural zero count with its top edge included is right-continuous in height. -/
+theorem continuousWithinAt_zeroCount_reProdIm_Ioc (T : ℝ) (hT : T < t₃)
+    (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
+    ContinuousWithinAt (fun t ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t)) (Ici T) T :=
+  continuousWithinAt_const.congr_of_eventuallyEq
+    (eventuallyEq_zeroCount_reProdIm_Ioc T hT hU) rfl
 
 end TauCeti
