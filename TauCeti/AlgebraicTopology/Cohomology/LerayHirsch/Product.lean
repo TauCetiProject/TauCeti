@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
 
@@ -248,6 +249,9 @@ private lemma lerayHirschProd_eq :
   simp [smul_smul, ← mul_pow, mul_comm q p]
 
 variable (X) [IsSemisimpleRing k]
+
+-- Over a semisimple ring every homology module of `F` is projective, as the Künneth theorem needs.
+attribute [local instance] Module.projective_of_isSemisimpleRing
 
 /-- **The Leray–Hirsch theorem for a product**: over a commutative semisimple ring `k`, for
 instance a field, if the homology `Hₚ(F; k)` is finitely generated in degrees `p ≤ n` and `b p` is
