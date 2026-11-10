@@ -1007,7 +1007,6 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
       L.degree_eq_natCard_gal.symm
   obtain ⟨χ', hχ'⟩ := CharacterModule.exists_apply_eq_inv_addOrderOf
     (Additive.ofMul (Abelianization.of γ))
-    (by rw [addOrderOf_ofMul_eq_orderOf, hof]; exact L.degree_pos.ne')
   obtain ⟨y, hy⟩ := exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap L χ' τ g hg
   refine ⟨y, hy.trans ?_⟩
   have hγ' : (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal) = γ :=
@@ -1108,7 +1107,7 @@ private theorem exists_ideleLocalization_eq_pi_single_aux {E : Ω}
   obtain ⟨ψ, hψ⟩ : ∃ ψ : Additive (ZMod 4)ˣ →+ AddCircle (1 : ℚ),
       ψ (Additive.ofMul (-1)) =
         ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
-    CharacterModule.exists_apply_eq_inv_addOrderOf _ (hneg.trans_ne (by decide))
+    CharacterModule.exists_apply_eq_inv_addOrderOf _
   set χ := ψ.comp (hζ.autToPow K).toAdditive with hχ_def
   have hχ := hζ.isOpen_ker_comp_autToPow (K := K) ψ
   refine ⟨characterCarryCocycle χ hχ a, DFinsupp.ext fun v ↦ ?_, fun u' hu' ↦ ?_, ?_⟩
