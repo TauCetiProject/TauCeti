@@ -73,7 +73,7 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   exact P.isFinitePresentation
 
 /-- The sheaf associated with a finite module is of finite type. -/
-instance isFiniteType_tilde [Module.Finite R M] : (tilde M).IsFiniteType := by
+instance _root_.ModuleCat.isFiniteType_tilde [Module.Finite R M] : (tilde M).IsFiniteType := by
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
   let F := ModuleCat.of R (Fin n → R)
   let p : F ⟶ M := ModuleCat.ofHom f
