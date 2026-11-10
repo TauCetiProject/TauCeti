@@ -269,6 +269,7 @@ theorem secondCovariantDerivative_zero (x : M) :
   simpa using this
 
 /-- The second covariant derivative commutes with multiplication of the section by a constant. -/
+@[simp]
 theorem secondCovariantDerivative_const_smul (c : ℝ) (x : M) :
     cov.secondCovariantDerivative covT (c • σ) x = c • cov.secondCovariantDerivative covT σ x := by
   by_cases hσ : CMDiff ∞ (T% σ)

@@ -113,16 +113,18 @@ theorem roughLaplacian_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
   simp only [roughLaplacian, secondCovariantDerivative_add cov covT hσ hτ x, map_add,
     LinearMap.add_apply, neg_add]
 
-/-- The rough Laplacian commutes with multiplication of a smooth section by a constant. -/
+/-- The rough Laplacian commutes with multiplication of a section by a constant. -/
+@[simp]
 theorem roughLaplacian_const_smul (c : ℝ) (x : M) :
     cov.roughLaplacian covT (c • σ) x = c • cov.roughLaplacian covT σ x := by
   simp only [roughLaplacian, secondCovariantDerivative_const_smul cov covT c x, map_smul,
     LinearMap.smul_apply, smul_neg]
 
-/-- The rough Laplacian commutes with negation of a smooth section. -/
+/-- The rough Laplacian commutes with negation of a section. -/
+@[simp]
 theorem roughLaplacian_neg (x : M) :
     cov.roughLaplacian covT (-σ) x = -cov.roughLaplacian covT σ x := by
-  simpa using roughLaplacian_const_smul cov covT (-1) x
+  rw [← neg_one_smul ℝ σ, roughLaplacian_const_smul, neg_one_smul]
 
 /-- The rough Laplacian commutes with differences of smooth sections. -/
 theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
