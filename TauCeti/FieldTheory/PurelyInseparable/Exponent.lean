@@ -21,8 +21,9 @@ inseparable extension *has* an exponent, but keeps the bound inside the instance
 states the bound, in the pointwise form a caller holding a degree uses and as a bound on
 `IsPurelyInseparable.exponent`.
 
-When `K` is the fraction field of a domain `A`, the exponent also clears denominators: rescaling
-any `K`-basis of `L` gives one whose `p ^ n`-th powers all come from `A`.
+When `K` is the fraction field of a ring `A`, the exponent also clears denominators: any `K`-basis
+of `L` can be rescaled to one whose `p ^ n`-th powers all come from `A`. This needs only an
+exponent, not finite dimensionality.
 
 ## Main results
 
@@ -30,8 +31,9 @@ any `K`-basis of `L` gives one whose `p ^ n`-th powers all come from `A`.
   power of `L` lies in `K`.
 * `TauCeti.IsPurelyInseparable.exponent_le_of_finrank_le_pow`: if `[L : K] ≤ p ^ n`, the exponent
   of `L / K` is at most `n`.
-* `TauCeti.IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap`: over the fraction
-  field of a domain `A`, a basis whose `p ^ n`-th powers lie in the image of `A`.
+* `TauCeti.IsPurelyInseparable.exists_iterateFrobenius_unitsSMul_eq_algebraMap`: over the
+  fraction field of a ring `A`, any basis rescales to one whose `p ^ n`-th powers lie in the image
+  of `A`.
 -/
 
 public section
@@ -40,32 +42,24 @@ namespace TauCeti.IsPurelyInseparable
 
 open _root_.IsPurelyInseparable
 
-/-- **A basis with `p ^ n`-th powers in the base ring.** Let `K` be the fraction field of a domain
-`A` and `L / K` a finite purely inseparable extension of exponent at most `n`. Then `L` has a
-`K`-basis whose vectors have `p ^ n`-th powers in the image of `A`; `g` lists those preimages.
-Start from any basis and multiply each vector by the denominator of its `p ^ n`-th power, which
-lies in `K`. -/
-theorem exists_basis_iterateFrobenius_eq_algebraMap (A K L : Type*) [CommRing A] [IsDomain A]
-    [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra K L] [FiniteDimensional K L]
-    [HasExponent K L] (p : ℕ) [ExpChar K p] {n : ℕ} (hn : exponent K L ≤ n) :
-    ∃ (m : ℕ) (b : Module.Basis (Fin m) K L) (g : Fin m → A), ∀ j,
-      algebraMap A K (g j) = iterateFrobenius K L p hn (b j) := by
-  let b₀ := Module.finBasis K L
-  choose a s hs has using fun j ↦ IsFractionRing.div_surjective (A := A)
-    (iterateFrobenius K L p hn (b₀ j))
-  have hs0 (j) : algebraMap A K (s j) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (hs j)
-  let b := b₀.unitsSMul fun j ↦ Units.mk0 _ (hs0 j)
+/-- **Rescaling a basis so that its `p ^ n`-th powers come from the base ring.** Let `K` be the
+fraction field of `A` and `L / K` a purely inseparable extension of exponent at most `n`. Every
+`K`-basis `b` of `L` can be rescaled by units `w` of `K` so that the `p ^ n`-th power of each
+rescaled vector is the image of an element `g j` of `A`. -/
+theorem exists_iterateFrobenius_unitsSMul_eq_algebraMap (A K L : Type*) [CommRing A] [Field K]
+    [Algebra A K] [IsFractionRing A K] [Field L] [Algebra K L] [HasExponent K L] (p : ℕ)
+    [ExpChar K p] {n : ℕ} (hn : exponent K L ≤ n) {ι : Type*} (b : Module.Basis ι K L) :
+    ∃ (w : ι → Kˣ) (g : ι → A), ∀ j,
+      iterateFrobenius K L p hn (b.unitsSMul w j) = algebraMap A K (g j) := by
+  -- write the `p ^ n`-th power of `b j` as a fraction `a / s` and rescale `b j` by `s`
+  choose x hx using fun j ↦
+    IsLocalization.surj (nonZeroDivisors A) (iterateFrobenius K L p hn (b j))
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero (pow_pos (expChar_pos K p) n).ne'
-  refine ⟨_, b, fun j ↦ s j ^ k * a j, fun j ↦ ?_⟩
-  -- scaling `b₀ j` by `c ∈ K` scales its `p ^ n`-th power by `c ^ p ^ n`
-  have hscale : iterateFrobenius K L p hn (b j) =
-      algebraMap A K (s j) ^ p ^ n * iterateFrobenius K L p hn (b₀ j) := by
-    simp [b, Module.Basis.unitsSMul_apply, Units.smul_def, Algebra.smul_def,
-      iterateFrobenius_algebraMap]
-  -- what remains is denominator arithmetic in `K`
-  rw [hscale, ← has j, hk, map_mul, map_pow]
-  field_simp [hs0 j]
+  refine ⟨fun j ↦ (IsLocalization.map_units K (x j).2).unit, fun j ↦ (x j).2 ^ k * (x j).1,
+    fun j ↦ ?_⟩
+  simp only [Module.Basis.unitsSMul_apply, Units.smul_def, IsUnit.unit_spec, Algebra.smul_def,
+    map_mul, map_pow, iterateFrobenius_algebraMap]
+  rw [hk, ← hx j]
   ring
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L] [IsPurelyInseparable K L]
@@ -75,26 +69,20 @@ variable (K L : Type*) [Field K] [Field L] [Algebra K L] [IsPurelyInseparable K 
 every `a ^ p ^ n` lies in the base field. -/
 theorem pow_mem_of_finrank_le_pow {n : ℕ} (h : Module.finrank K L ≤ p ^ n) (a : L) :
     a ^ p ^ n ∈ (algebraMap K L).range := by
-  rcases ‹ExpChar K p› with _ | ⟨hp⟩
-  · -- in characteristic zero a purely inseparable extension is trivial
-    obtain ⟨k, hk⟩ := IsPurelyInseparable.pow_mem K 1 a
-    simpa using hk
-  · -- the minimal polynomial of `a` is `X ^ p ^ e - c` with `e` its exponent, of degree at most
-    -- `[L : K] ≤ p ^ n`, so `e ≤ n`
-    have he : elemExponent K a ≤ n := by
-      have h1 := minpoly.natDegree_le (A := K) a
-      rw [minpoly_natDegree_eq' K p a] at h1
-      exact (Nat.pow_le_pow_iff_right hp.one_lt).1 (h1.trans h)
-    obtain ⟨b, hb⟩ := elemExponent_def' K p a
-    exact ⟨b ^ p ^ (n - elemExponent K a), by
-      rw [map_pow, hb, ← pow_mul, ← pow_add, Nat.add_sub_cancel' he]⟩
+  -- the minimal polynomial of `a` is `X ^ p ^ e - c` with `e` its exponent, of degree at most
+  -- `[L : K] ≤ p ^ n`, so `e ≤ n`
+  have he : elemExponent K a ≤ n := by
+    rcases ‹ExpChar K p› with _ | ⟨hp⟩
+    · simp [elemExponent_eq_zero_of_charZero]
+    · exact (Nat.pow_le_pow_iff_right hp.one_lt).1 <|
+        minpoly_natDegree_eq' K p a ▸ (minpoly.natDegree_le a).trans h
+  rw [← Nat.add_sub_cancel' he, pow_add, pow_mul]
+  exact pow_mem (elemExponent_def' K p a) _
 
 /-- **The exponent of a purely inseparable extension of degree at most `p ^ n` is at most `n`.** -/
 theorem exponent_le_of_finrank_le_pow {n : ℕ} (h : Module.finrank K L ≤ p ^ n) :
-    exponent K L ≤ n := by
-  by_contra hn
-  obtain ⟨a, ha⟩ := exponent_min' p (not_le.1 hn)
-  exact ha (pow_mem_of_finrank_le_pow K L p h a)
+    exponent K L ≤ n :=
+  not_lt.1 fun hn ↦ (exponent_min' p hn).elim fun a ha ↦ ha (pow_mem_of_finrank_le_pow K L p h a)
 
 end TauCeti.IsPurelyInseparable
 

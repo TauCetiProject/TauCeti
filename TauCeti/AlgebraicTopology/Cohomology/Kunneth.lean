@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Contraction
-public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
+public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
-public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 
 /-!
-# The Künneth theorem for singular cohomology over a field
+# The Künneth theorem for singular cohomology
 
 For topological spaces `X` and `Y`, the cohomology cross products
 `Hᵖ(X; R, M) ⊗ H^q(Y; S, N) ⟶ Hⁿ(X × Y; R ⊗ S, P)` with `p + q = n`, along a coefficient pairing
@@ -23,31 +22,31 @@ For topological spaces `X` and `Y`, the cohomology cross products
 (`TopCat.singularCohomologyKunneth`), whose source is the degree `n` part of the tensor product of
 the graded `k`-modules `H*(X; R, M)` and `H*(Y; S, N)`.
 
-The Kronecker pairing of the cohomology cross product with the homology cross product is the
-product of the Kronecker pairings, `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)`
-(`TopCat.singularHomologyCross_comp_singularKronecker_singularCross`), and vanishes when the
-degrees of `a` and `x` differ
-(`TopCat.singularHomologyCross_comp_singularKronecker_singularCross_of_ne`).
-
-Over a field `k`, or more generally a commutative semisimple ring, with coefficients in `k`
-itself, cohomology is the dual of homology: every module is projective, so the Kronecker map
+With coefficients in a commutative ring `k` itself, suppose that the homology modules `Hₚ(X; k)`
+are projective, and finitely generated for `p ≤ n`. Then the Kronecker map
 `Hᵖ(X; k) ⟶ Hom(Hₚ(X; k), k)` is an isomorphism
-(`TopCat.singularKroneckerEquivOfProjectiveHomology`).  The homology Künneth theorem
-(`TopCat.singularHomologyKunnethIso`) identifies `Hₙ(X × Y; k ⊗ k)` with
-`⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k)`, and when `Hₚ(X; k)` is finitely generated the canonical map
-`Hom(Hₚ(X; k), k) ⊗ Hom(H_q(Y; k), k) ⟶ Hom(Hₚ(X; k) ⊗ H_q(Y; k), k)` is an isomorphism
-(`dualTensorHomEquiv`).  By the pairing identity, under these isomorphisms the cohomology Künneth
-map is the direct sum of these canonical maps, which gives the **Künneth theorem for cohomology
-over a field** (`TopCat.singularCohomologyKunnethIso`): if `Hₚ(X; k)` is finitely generated for
-`p ≤ n`, for instance if `X` has finite CW type
-(`TauCeti.finite_singularHomology_of_finiteCWType`), the cross product induces an isomorphism
+(`TopCat.singularKroneckerEquivOfProjectiveHomology`), and so is the canonical map
+`Hom(Hₚ(X; k), k) ⊗ H^q(Y; k) ⟶ Hom(Hₚ(X; k), H^q(Y; k))` (`dualTensorHomEquiv`). The slant
+products by the classes of `Hₚ(X; k)` (`TopCat.singularSlant`) send a class of
+`Hⁿ(X × Y; k)` to `⨁_{p + q = n} Hom(Hₚ(X; k), H^q(Y; k))`. On cross products they are computed
+by the Kronecker pairing, `(a × b) / x = ⟨a, x⟩ • b`, and vanish when the degrees of `a` and `x`
+differ (`TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne`); so the
+slant products split the Künneth map. They are moreover injective on `Hⁿ(X × Y; k)`
+(`TopCat.eq_zero_of_forall_singularSlant_eq_zero`). This gives the **Künneth theorem for
+cohomology** (`TopCat.singularCohomologyKunnethIso`): the cross product induces an isomorphism
 
 `⨁_{p + q = n} Hᵖ(X; k) ⊗ H^q(Y; k) ≅ Hⁿ(X × Y; k)`.
 
-Only the homology of one factor needs to be finitely generated; no hypothesis is placed on `Y`.
-Here `Hⁿ(X × Y; k)` is computed from the singular chains `C(X × Y; k ⊗ k)`, whose coefficient
-module `k ⊗ k ≅ k` is the one carried by the cross product, and the pairing `k ⊗ k ⟶ k` is
-multiplication.
+No hypothesis is placed on `Y`, and no `Tor` term appears: over `ℤ` this covers every `X` with
+free homology of finite rank, for instance spheres
+(`TopCat.singularCohomologyKunneth_sphere_bijective`, in
+`TauCeti.AlgebraicTopology.Cohomology.Sphere`), but not, say, real projective space. Over
+a commutative semisimple ring, for instance a field, every module is projective
+(`Module.projective_of_isSemisimpleRing`), so there only the finite generation of `Hₚ(X; k)` for
+`p ≤ n` is needed, for instance when `X` has finite CW type
+(`TauCeti.finite_singularHomology_of_finiteCWType`). Here `Hⁿ(X × Y; k)` is computed from the
+singular chains `C(X × Y; k ⊗ k)`, whose coefficient module `k ⊗ k ≅ k` is the one carried by the
+cross product, and the pairing `k ⊗ k ⟶ k` is multiplication.
 
 ## Main definitions and results
 
@@ -56,12 +55,13 @@ multiplication.
   `TopCat.singularCohomologyKunneth_naturality` its naturality in both spaces.
 * `TopCat.singularCohomologyKunnethIso`, `TopCat.isIso_singularCohomologyKunneth` and
   `TopCat.singularCohomologyKunneth_bijective`: the Künneth theorem for cohomology over a
-  commutative semisimple ring, for instance a field.
+  commutative ring, when the homology of one factor is projective and finitely generated.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.2, the cross product and Theorem 3.15, and Section 3.B, the homology Künneth formula.
+  Section 3.2, the cross product and Theorem 3.15, and Section 3.B, the Künneth formulas.
+* E. H. Spanier, *Algebraic Topology*, McGraw–Hill, 1966, Chapter 6 (slant products).
 -/
 
 public section
@@ -125,34 +125,38 @@ lemma singularCohomologyKunneth_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X
 
 end Kunneth
 
-section Semisimple
+section ProjectiveHomology
 
 variable {k : Type w} [CommRing k] (X Y : TopCat.{w})
 
-/-- The evaluation of a class of `Hⁿ(X × Y; k ⊗ k, k)` on the image of
-`Hₚ(X; k) ⊗ H_q(Y; k)` under the homology cross product. -/
-private def restrictCross (p q n : ℕ) (h : p + q = n) :
+-- Prefer the direct colimit instance of `ModuleCat`: with finiteness hypotheses on homology modules
+-- in the local context, instance search otherwise finds the coproducts needed by singular homology
+-- only after a long search.
+attribute [local instance high] ModuleCat.hasColimitsOfShape
+
+/-- The slant products of a class of `Hⁿ(X × Y; k ⊗ k, k)` by the classes of `Hₚ(X; k)`, as a
+linear map to `Hom(Hₚ(X; k), H^q(Y; k))`. -/
+private def slantCross (p q n : ℕ) (h : p + q = n) :
     (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) n →ₗ[k]
-      (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X ⊗
-          ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj Y ⟶
-        𝟙_ (ModuleCat.{w} k)) :=
-  Linear.leftComp k _ (singularHomologyCross X Y _ _ p q n h) ∘ₗ (X ⊗ Y).singularKronecker k n
+      (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X →ₗ[k]
+        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :=
+  (singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (𝟙 _) p q n h).flip
 
-private lemma restrictCross_apply (p q n : ℕ) (h : p + q = n)
+private lemma slantCross_apply (p q n : ℕ) (h : p + q = n)
     (α : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) k
-        (𝟙_ (ModuleCat.{w} k)) n) :
-    restrictCross X Y p q n h α =
-      singularHomologyCross X Y _ _ p q n h ≫ (X ⊗ Y).singularKronecker k n α :=
+        (𝟙_ (ModuleCat.{w} k)) n)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    slantCross X Y p q n h α x = singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (𝟙 _) p q n h x α :=
   rfl
 
-/-- On the summand `Hᵖ'(X; k) ⊗ H^q'(Y; k)`, the Künneth map followed by evaluation on
-`Hₚ(X; k) ⊗ H_q(Y; k)` vanishes when `p ≠ p'`. -/
-private lemma restrictCross_singularCohomologyKunneth_ιTensorObj_of_ne {p q p' q' n : ℕ}
+/-- On the summand `Hᵖ'(X; k) ⊗ H^q'(Y; k)`, the Künneth map followed by the slant products by
+`Hₚ(X; k)` vanishes when `p ≠ p'`. -/
+private lemma slantCross_singularCohomologyKunneth_ιTensorObj_of_ne {p q p' q' n : ℕ}
     (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
     (u : (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p' ⊗
       Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q' :)) :
-    restrictCross X Y p q n h
+    slantCross X Y p q n h
       (singularCohomologyKunneth X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) k
         (λ_ (𝟙_ (ModuleCat.{w} k))).hom n
         (GradedObject.Monoidal.ιTensorObj
@@ -161,62 +165,47 @@ private lemma restrictCross_singularCohomologyKunneth_ιTensorObj_of_ne {p q p' 
           p' q' n h' u)) = 0 := by
   induction u using TensorProduct.inductionOn with
   | tmul a b =>
-    rw [singularCohomologyKunneth_ιTensorObj_tmul, restrictCross_apply,
-      singularHomologyCross_comp_singularKronecker_singularCross_of_ne _ X Y p q h h' hp]
+    ext x
+    rw [singularCohomologyKunneth_ιTensorObj_tmul, slantCross_apply,
+      singularSlant_singularCross_of_ne _ _ _ _ h' h hp, LinearMap.zero_apply]
   | add u v hu hv => simp only [map_add, hu, hv, add_zero]
 
-variable [IsSemisimpleRing k]
+variable [hX : ∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
+  (𝟙_ (ModuleCat.{w} k))).obj X)]
 
-attribute [local instance] Module.projective_of_isSemisimpleRing
-
--- Prefer the direct colimit instance of `ModuleCat`: with finiteness hypotheses on homology modules
--- in the local context, instance search otherwise finds the coproducts needed by singular homology
--- only after a long search.
-attribute [local instance high] ModuleCat.hasColimitsOfShape
-
-/-- For finitely generated `Hₚ(X; k)`, the Kronecker maps identify `Hᵖ(X; k) ⊗ H^q(Y; k)` with the
-dual of `Hₚ(X; k) ⊗ H_q(Y; k)`, through `Hom(A, k) ⊗ Hom(B, k) ≅ Hom(A ⊗ B, k)` for finitely
-generated projective `A`. -/
+/-- For finitely generated projective `Hₚ(X; k)`, the Kronecker map of `X` identifies
+`Hᵖ(X; k) ⊗ H^q(Y; k)` with `Hom(Hₚ(X; k), H^q(Y; k))`, through `Hom(A, k) ⊗ B ≅ Hom(A, B)` for
+finitely generated projective `A`: the class `a ⊗ b` is sent to `x ↦ ⟨a, x⟩ • b`. -/
 private def kroneckerTensorEquiv (p q : ℕ)
     (hp : Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)) :
     TensorProduct k (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) ≃ₗ[k]
-      (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X ⊗
-          ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj Y ⟶
-        𝟙_ (ModuleCat.{w} k)) :=
+      (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X →ₗ[k]
+        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :=
   haveI := hp
   TensorProduct.congr
       ((X.singularKroneckerEquivOfProjectiveHomology _ _ p).trans ModuleCat.homLinearEquiv)
-      ((Y.singularKroneckerEquivOfProjectiveHomology _ _ q).trans ModuleCat.homLinearEquiv) ≪≫ₗ
-    dualTensorHomEquiv k _ _ ≪≫ₗ TensorProduct.lift.equiv (RingHom.id k) _ _ _ ≪≫ₗ
-      (ModuleCat.homLinearEquiv (S := k)
-        (M := ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X ⊗
-          ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj Y)
-        (N := 𝟙_ (ModuleCat.{w} k))).symm
+      (LinearEquiv.refl k _) ≪≫ₗ
+    dualTensorHomEquiv k _ _
 
-private lemma kroneckerTensorEquiv_tmul (p q : ℕ)
+private lemma kroneckerTensorEquiv_tmul_apply (p q : ℕ)
     (hp : Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X))
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    kroneckerTensorEquiv X Y p q hp (a ⊗ₜ b) =
-      (X.singularKronecker k p a ⊗ₘ Y.singularKronecker k q b) ≫
-        (λ_ (𝟙_ (ModuleCat.{w} k))).hom := by
-  refine ModuleCat.MonoidalCategory.tensor_ext fun x y ↦ ?_
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    kroneckerTensorEquiv X Y p q hp (a ⊗ₜ b) x = (X.singularKronecker k p a x : k) • b := by
   simp [kroneckerTensorEquiv]
-  -- `ModuleCat.homLinearEquiv` and its inverse are `ModuleCat.Hom.hom` and `ModuleCat.ofHom`, and
-  -- both sides are `⟨a, x⟩ * ⟨b, y⟩`
-  rfl
 
-/-- On the summand `Hᵖ(X; k) ⊗ H^q(Y; k)`, the Künneth map followed by evaluation on
-`Hₚ(X; k) ⊗ H_q(Y; k)` is the identification `kroneckerTensorEquiv`. -/
-private lemma restrictCross_singularCohomologyKunneth_ιTensorObj (p q n : ℕ) (h : p + q = n)
+/-- On the summand `Hᵖ(X; k) ⊗ H^q(Y; k)`, the Künneth map followed by the slant products by
+`Hₚ(X; k)` is the identification `kroneckerTensorEquiv`. -/
+private lemma slantCross_singularCohomologyKunneth_ιTensorObj (p q n : ℕ) (h : p + q = n)
     (hp : Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X))
     (u : (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p ⊗
       Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q :)) :
-    restrictCross X Y p q n h
+    slantCross X Y p q n h
       (singularCohomologyKunneth X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) k
         (λ_ (𝟙_ (ModuleCat.{w} k))).hom n
         (GradedObject.Monoidal.ιTensorObj
@@ -226,13 +215,14 @@ private lemma restrictCross_singularCohomologyKunneth_ιTensorObj (p q n : ℕ) 
       kroneckerTensorEquiv X Y p q hp u := by
   induction u using TensorProduct.inductionOn with
   | tmul a b =>
-    rw [singularCohomologyKunneth_ιTensorObj_tmul, restrictCross_apply,
-      singularHomologyCross_comp_singularKronecker_singularCross, kroneckerTensorEquiv_tmul]
+    ext x
+    rw [singularCohomologyKunneth_ιTensorObj_tmul, slantCross_apply,
+      singularSlant_singularCross_leftUnitor, kroneckerTensorEquiv_tmul_apply]
   | add u v hu hv => simp only [map_add, hu, hv]
 
 /-- The inverse of the cohomology Künneth map, as a linear map: a class of
 `Hⁿ(X × Y; k ⊗ k, k)` is sent to the sum over `p + q = n` of the preimages under
-`kroneckerTensorEquiv` of its evaluations on the images of `Hₚ(X; k) ⊗ H_q(Y; k)`. -/
+`kroneckerTensorEquiv` of its slant products by the classes of `Hₚ(X; k)`. -/
 private def singularCohomologyKunnethInvAux (n : ℕ)
     (hX : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)) :
@@ -248,7 +238,7 @@ private def singularCohomologyKunnethInvAux (n : ℕ)
       x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)).hom ∘ₗ
     (kroneckerTensorEquiv X Y x.1.1 x.1.2
       (hX _ (by have := Finset.mem_antidiagonal.1 x.2; omega))).symm.toLinearMap ∘ₗ
-      restrictCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)
+      slantCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)
 
 /-- The inverse of the cohomology Künneth map. -/
 private def singularCohomologyKunnethInv (n : ℕ)
@@ -273,7 +263,7 @@ private lemma singularCohomologyKunnethInv_apply (n : ℕ)
         x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)
         ((kroneckerTensorEquiv X Y x.1.1 x.1.2
             (hX _ (by have := Finset.mem_antidiagonal.1 x.2; omega))).symm
-          (restrictCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2) α)) :=
+          (slantCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2) α)) :=
   LinearMap.sum_apply _ _ α
 
 private lemma singularCohomologyKunneth_comp_singularCohomologyKunnethInv (n : ℕ)
@@ -286,14 +276,14 @@ private lemma singularCohomologyKunneth_comp_singularCohomologyKunnethInv (n : �
   ext u
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Category.comp_id]
   rw [singularCohomologyKunnethInv_apply, Fintype.sum_eq_single ⟨(p, q), by simpa using h⟩]
-  · rw [restrictCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
+  · rw [slantCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
       LinearEquiv.symm_apply_apply]
   · intro x hx
     have hxp : x.1.1 ≠ p := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp (by
       have := Finset.mem_antidiagonal.1 x.2
       dsimp only
       omega)))
-    rw [restrictCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y _ h hxp, map_zero, map_zero]
+    rw [slantCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y _ h hxp, map_zero, map_zero]
 
 private lemma singularCohomologyKunnethInv_comp_singularCohomologyKunneth (n : ℕ)
     (hX : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
@@ -302,31 +292,31 @@ private lemma singularCohomologyKunnethInv_comp_singularCohomologyKunneth (n : �
       singularCohomologyKunneth X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) k
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom n = 𝟙 _ := by
   ext α : 2
-  -- classes of `Hⁿ(X × Y; k ⊗ k, k)` are determined by their evaluations on homology classes, and
-  -- the homology Künneth isomorphism decomposes `Hₙ(X × Y; k ⊗ k)` into the images of the
-  -- homology cross products
-  refine ((X ⊗ Y).singularKronecker_bijective_of_projective_homology _ _ n).1 ?_
-  refine (cancel_epi (singularHomologyKunnethIso X Y (𝟙_ (ModuleCat.{w} k))
-    (𝟙_ (ModuleCat.{w} k)) n).hom).1 (GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply,
-    singularHomologyKunnethIso_hom, ι_singularHomologyKunneth_assoc]
-  rw [← restrictCross_apply, ← restrictCross_apply, singularCohomologyKunnethInv_apply, map_sum,
-    map_sum, Fintype.sum_eq_single ⟨(p, q), by simpa using h⟩]
-  · rw [restrictCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
+  -- classes of `Hⁿ(X × Y; k ⊗ k, k)` are determined by their slant products by the homology of
+  -- `X`, and the composite does not change these
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply,
+    ← sub_eq_zero]
+  refine eq_zero_of_forall_singularSlant_eq_zero (𝟙_ (ModuleCat.{w} k)) X Y _
+    fun p q h x ↦ ?_
+  rw [map_sub, sub_eq_zero, ← slantCross_apply, ← slantCross_apply,
+    singularCohomologyKunnethInv_apply, map_sum, map_sum, LinearMap.sum_apply,
+    Fintype.sum_eq_single ⟨(p, q), by simpa using h⟩]
+  · rw [slantCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
       LinearEquiv.apply_symm_apply]
   · intro x hx
     have hxp : p ≠ x.1.1 := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp.symm (by
       have := Finset.mem_antidiagonal.1 x.2
       dsimp only
       omega)))
-    exact restrictCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y h _ hxp _
+    rw [slantCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y h _ hxp, LinearMap.zero_apply]
 
-/-- **The Künneth isomorphism for cohomology**: over a commutative semisimple ring `k`, for
-instance a field, if the homology `Hₚ(X; k)` is finitely generated in degrees `p ≤ n`, the
-cohomology cross product induces an isomorphism
-`⨁_{p + q = n} Hᵖ(X; k) ⊗ H^q(Y; k) ≅ Hⁿ(X × Y; k)`.  Here
-the product is computed from singular chains with coefficients in `k ⊗ k ≅ k`, and the pairing
-`k ⊗ k ⟶ k` is multiplication. -/
+/-- **The Künneth isomorphism for cohomology**: over a commutative ring `k`, if the homology
+`Hₚ(X; k)` is projective in every degree and finitely generated in degrees `p ≤ n`, the cohomology
+cross product induces an isomorphism `⨁_{p + q = n} Hᵖ(X; k) ⊗ H^q(Y; k) ≅ Hⁿ(X × Y; k)`, for
+every space `Y`. Here the product is computed from singular chains with coefficients in
+`k ⊗ k ≅ k`, and the pairing `k ⊗ k ⟶ k` is multiplication. Over a commutative semisimple ring,
+for instance a field, every module is projective (`Module.projective_of_isSemisimpleRing`), so
+only the finite generation of `Hₚ(X; k)` is needed there. -/
 def singularCohomologyKunnethIso (n : ℕ)
     (hX : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)) :
@@ -350,8 +340,8 @@ lemma singularCohomologyKunnethIso_hom (n : ℕ)
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom n :=
   (rfl)
 
-/-- Over a commutative semisimple ring, the cohomology Künneth map is an isomorphism when the
-homology of `X` is finitely generated in degrees `p ≤ n`. -/
+/-- Over a commutative ring, the cohomology Künneth map is an isomorphism when the homology of `X`
+is projective, and finitely generated in degrees `p ≤ n`. -/
 theorem isIso_singularCohomologyKunneth (n : ℕ)
     (hX : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)) :
@@ -359,9 +349,10 @@ theorem isIso_singularCohomologyKunneth (n : ℕ)
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
   (singularCohomologyKunnethIso X Y n hX).isIso_hom
 
-/-- **The Künneth theorem for cohomology**: over a commutative semisimple ring `k`, for instance a
-field, if the homology `Hₚ(X; k)` is finitely generated in degrees `p ≤ n`, the cohomology Künneth
-map `⨁_{p + q = n} Hᵖ(X; k) ⊗ H^q(Y; k) ⟶ Hⁿ(X × Y; k)` is bijective. -/
+/-- **The Künneth theorem for cohomology**: over a commutative ring `k`, if the homology `Hₚ(X; k)`
+is projective in every degree and finitely generated in degrees `p ≤ n`, for instance if it is
+free of finite rank as for spheres and tori, the cohomology Künneth map
+`⨁_{p + q = n} Hᵖ(X; k) ⊗ H^q(Y; k) ⟶ Hⁿ(X × Y; k)` is bijective for every space `Y`. -/
 theorem singularCohomologyKunneth_bijective (n : ℕ)
     (hX : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)) :
@@ -369,6 +360,6 @@ theorem singularCohomologyKunneth_bijective (n : ℕ)
       (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
   (singularCohomologyKunnethIso X Y n hX).toLinearEquiv.bijective
 
-end Semisimple
+end ProjectiveHomology
 
 end TopCat

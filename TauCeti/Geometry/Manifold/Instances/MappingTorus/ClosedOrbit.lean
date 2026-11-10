@@ -383,7 +383,7 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
     have hp : flow φ t (mk φ 0 x) = closedOrbit φ hx t := by simp
     beta_reduce at h
     rwa [hp, ← hc] at h
-  rw [← (AddCircle.mfderiv_comp_coe hd).symm.trans hlift.mfderiv]
+  rw [← AddCircle.mfderiv_comp_coe.symm.trans hlift.mfderiv]
   exact hd.hasMFDerivAt
 
 /-- The velocity of the closed orbit at `θ` is `T (γ θ)`. -/
@@ -421,6 +421,11 @@ theorem range_orbitTorus : range (orbitTorus φ h) = univ ×ˢ range (closedOrbi
 theorem injective_orbitTorus_iff : Injective (orbitTorus φ h) ↔ minimalPeriod φ x = d := by
   rw [← injective_closedOrbit_iff h, orbitTorus, Prod.map_injective]
   exact and_iff_right injective_id
+
+/-- The orbit torus is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_orbitTorus : Continuous (orbitTorus φ h) :=
+  continuous_id.prodMap (continuous_closedOrbit h)
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Fact (0 < (d : ℝ))]
 

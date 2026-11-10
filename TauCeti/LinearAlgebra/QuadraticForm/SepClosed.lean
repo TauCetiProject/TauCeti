@@ -143,12 +143,13 @@ theorem isRepresentedBy_iff_finrank_le_of_isSepClosed
       e.injective.comp LinearMap.inl_injective, fun x ↦ by simp⟩
 
 /-- A form over a separably closed field of characteristic not two has a nonzero isotropic
-vector when its space has dimension at least two. -/
+vector when its space has dimension at least two (the dimension being finite, since `finrank` is
+zero otherwise). -/
 theorem not_anisotropic_of_isSepClosed
     {K W : Type*} [Field K] [IsSepClosed K] [Invertible (2 : K)] [AddCommGroup W] [Module K W]
-    [FiniteDimensional K W] (Q : QuadraticForm K W)
-    (h : 2 ≤ Module.finrank K W) : ¬ Q.Anisotropic := by
+    (Q : QuadraticForm K W) (h : 2 ≤ Module.finrank K W) : ¬ Q.Anisotropic := by
   classical
+  have : FiniteDimensional K W := Module.finite_of_finrank_pos (by omega)
   intro hQ
   have he := Q.equivalent_weightedSumSquares_of_isSepClosed
     (QuadraticMap.separatingLeft_of_anisotropic Q hQ)

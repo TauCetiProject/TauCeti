@@ -58,14 +58,13 @@ theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_ball_i
   have hΓcont : Continuous Γ :=
     continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty
   have hxT : (x : OnePoint ℝ) ∈ T := ⟨x, hx, rfl⟩
-  obtain ⟨ε, hε, hball_range⟩ :=
-    exists_ball_inter_range_eq_ball_inter_image_of_isInducing
-      Γ (hΓcont.isClosedEmbedding hinj).isEmbedding.isInducing hTopen hxT
+  obtain ⟨ε, hε, hball_range⟩ := (hΓcont.isClosedEmbedding hinj).isEmbedding.isInducing
+    |>.exists_ball_inter_range_eq_ball_inter_image (hTopen.mem_nhds hxT)
   have hxΓ : Γ (x : OnePoint ℝ) = schwarzChristoffelBoundary a e z₀ x := by
     simp only [Γ, schwarzChristoffelCompactifiedBoundary_coe]
   rw [hxΓ] at hball_range
   have hend (y : ℝ) : -1 < ∑ i with a i = y, e i :=
-    lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite y
+    forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite y
   have hseg := schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) ha
     (hend p) (hend q)
   refine ⟨ε, hε, ?_⟩

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import Mathlib.Analysis.Matrix.Normed
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Local constancy of the Hermitian signature
@@ -29,7 +30,9 @@ This stability result applies in particular to signature functions of Seifert ma
 away from their singular parameters. Through Gram matrices, it also gives local constancy of the
 negative index of a continuous family of symmetric bilinear forms on a finite-dimensional real
 space at a nondegenerate member, and hence constancy along a preconnected set of nondegenerate
-members.
+members. At a degenerate member the negative index can jump, but only
+upwards: a negative-definite subspace stays negative-definite under small perturbations, so the
+negative index of any continuous family of bilinear forms is lower semicontinuous.
 
 ## References
 
@@ -109,12 +112,13 @@ theorem eventually_signature_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
 /-- The negative index of the quadratic form of a continuous real symmetric matrix family is
 locally constant at a nonsingular member. Only local symmetry of the family is required. -/
 theorem eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
-    {B : X → Matrix ι ι ℝ} {x : X} (hx : (B x).IsHermitian)
+    {B : X → Matrix ι ι ℝ} {x : X}
     (hB : ∀ᶠ y in nhds x, (B y).IsHermitian) (hc : ContinuousAt B x)
     (hdet : IsUnit (B x).det) :
     ∀ᶠ y in nhds x,
       sigNeg ((B y).toQuadraticForm') = sigNeg ((B x).toQuadraticForm') := by
-  filter_upwards [hc.eventually (hx.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
+  filter_upwards
+    [hc.eventually (hB.self_of_nhds.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
     with y hy hhy
   obtain ⟨R, hR, hRB⟩ := hy hhy
   have hRB' : R.transpose * B x * R.transpose.transpose = B y := by
@@ -150,9 +154,32 @@ theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [Topologica
   have hdet : IsUnit (A x).det :=
     isUnit_iff_ne_zero.mpr ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp hnd)
   have hindex := Matrix.IsHermitian.eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt
-    (hHermitian hsymm.self_of_nhds) (hsymm.mono fun _ ↦ hHermitian) hA hdet
+    (hsymm.mono fun _ ↦ hHermitian) hA hdet
   filter_upwards [hindex] with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
+
+/-- **The negative index is lower semicontinuous.** Along a family of continuous bilinear forms
+on a finite-dimensional real space, continuous at `x`, the negative index at nearby parameters is
+at least the negative index at `x`. Neither symmetry nor nondegeneracy is required. -/
+theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [TopologicalSpace X]
+    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hc : ContinuousAt V x) :
+    ∀ᶠ y in 𝓝 x,
+      sigNeg (V x).toBilinForm.toQuadraticMap ≤ sigNeg (V y).toBilinForm.toQuadraticMap := by
+  -- A maximal negative-definite subspace `W` for `V x` stays negative-definite for the forms
+  -- near `V x`, by openness of strict diagonal positivity of the negated restrictions to `W`.
+  obtain ⟨W, hW, hneg⟩ :=
+    exists_finrank_eq_sigNeg_and_negDef (V x).toBilinForm.toQuadraticMap
+  let C : X → W →L[ℝ] W →L[ℝ] ℝ := fun y ↦ -(V y).bilinearComp W.subtypeL W.subtypeL
+  have hC : ContinuousAt C x := by
+    refine continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply (f := fun y ↦ C y v) |>.2
+      fun w ↦ ?_
+    simpa [C] using ((hc.clm_apply continuousAt_const).clm_apply continuousAt_const).neg
+  have hCx : C x ∈ {b : W →L[ℝ] W →L[ℝ] ℝ | ∀ w, w ≠ 0 → 0 < b w w} := fun w hw ↦ by
+    simpa [C] using hneg w (by simpa using hw)
+  filter_upwards [hC.eventually (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hCx)]
+    with y hy
+  rw [← hW]
+  exact le_sigNeg_of_negDef _ fun w hw ↦ by simpa [C] using hy w hw
 
 /-- **The negative index is constant between crossings.** Along a family of symmetric continuous
 bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes

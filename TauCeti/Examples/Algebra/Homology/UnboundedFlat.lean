@@ -118,11 +118,11 @@ theorem not_isKFlat_complex : ¬ complex.IsKFlat := by
   have hPK : (P ⊗ complex).Acyclic :=
     CochainComplex.IsKFlat.acyclic_tensor complex acyclic_complex
   have hKP : (complex ⊗ P).Acyclic := fun i ↦
-    ExactAt.of_iso (hPK i) (koszulBraiding (ZMod 4) complex P).symm
+    ExactAt.of_iso (hPK i) (koszulBraiding (ModuleCat (ZMod 4)) complex P).symm
   have hKN : (complex ⊗ N).Acyclic := fun i ↦
     (exactAt_iff_of_quasiIsoAt (HomologicalComplex.tensorHom (𝟙 complex) π) i).1 (hKP i)
   have hNK : (N ⊗ complex).Acyclic := fun i ↦
-    ExactAt.of_iso (hKN i) (koszulBraiding (ZMod 4) complex N)
+    ExactAt.of_iso (hKN i) (koszulBraiding (ModuleCat (ZMod 4)) complex N)
   exact not_exactAt_residueTensor 0
     (ExactAt.of_iso (hNK 0) tensorResidueIso)
 

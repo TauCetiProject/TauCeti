@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.Instances.Matrix
@@ -233,6 +233,7 @@ section VectorSpace
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
+omit [FiniteDimensional ℝ E] in
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
 nondegenerate bilinear forms are the Christoffel symbols of its coordinate jet. -/
 theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)

@@ -245,6 +245,14 @@ theorem lie_lieBasis_h_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) (j : Fin t.
   rw [rootGeneratorWeight]
   exact (t.lieBasis ht).lie_h_rootGenerator i j
 
+/-- The negative simple-root generator has the opposite Cartan weight to the positive one. -/
+theorem lie_lieBasis_h_rootGenerator_inr_neg (i j : Fin t.rank) :
+    ⁅(t.lieBasis ht).h j, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
+      -((t.rootGeneratorWeight ht (.inl i) j : ℚ) •
+        (t.lieBasis ht).rootGenerator (.inr i)) := by
+  rw [t.lie_lieBasis_h_rootGenerator ht, t.rootGeneratorWeight_inr,
+    t.rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
+
 /-! ## The defining representation -/
 
 /-- **The defining representation of the pinned split Lie algebra**, extended to its universal
@@ -254,11 +262,14 @@ invoked. -/
 def geckRepresentation :
     _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ]
       Module.End ℚ (t.GeckIndex ht → ℚ) :=
-  (t.lieAlgebra ht).matrixRepresentation
+  UniversalEnvelopingAlgebra.representation ℚ (t.lieAlgebra ht) (t.GeckIndex ht → ℚ)
 
-/-- The Geck representation is the defining representation of its matrix Lie subalgebra. -/
+/-- The Geck representation is the universal-enveloping representation of its matrix Lie
+subalgebra on coordinate vectors. -/
 theorem geckRepresentation_def :
-    t.geckRepresentation ht = (t.lieAlgebra ht).matrixRepresentation := (rfl)
+    t.geckRepresentation ht =
+      UniversalEnvelopingAlgebra.representation ℚ (t.lieAlgebra ht) (t.GeckIndex ht → ℚ) :=
+  (rfl)
 
 -- Neither this lemma nor its pointwise form below is a `simp` lemma: `simp` unfolds `ι` through
 -- Mathlib's `UniversalEnvelopingAlgebra.ι_apply`, so a left-hand side mentioning `ι` is not in
@@ -268,7 +279,7 @@ theorem geckRepresentation_ι (x : t.lieAlgebra ht) :
     t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
       Matrix.toLinAlgEquiv' (x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
   rw [geckRepresentation_def]
-  exact LieSubalgebra.matrixRepresentation_ι x
+  exact UniversalEnvelopingAlgebra.representation_ι_matrix x
 
 /-- The pointwise form of `TauCeti.DynkinType.geckRepresentation_ι`: a Lie generator acts by
 multiplying a coordinate vector by its underlying matrix. -/
@@ -276,7 +287,7 @@ theorem geckRepresentation_ι_apply (x : t.lieAlgebra ht) (v : t.GeckIndex ht �
     t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) *ᵥ v := by
   rw [geckRepresentation_def]
-  exact LieSubalgebra.matrixRepresentation_ι_apply x v
+  exact UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- **The defining representation is faithful on the Lie algebra.** Distinct elements of the
 pinned Lie algebra act
@@ -285,7 +296,7 @@ theorem geckRepresentation_ι_injective :
     Function.Injective fun x : t.lieAlgebra ht =>
       t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   rw [geckRepresentation_def]
-  exact LieSubalgebra.matrixRepresentation_ι_injective (t.lieAlgebra ht)
+  exact UniversalEnvelopingAlgebra.representation_ι_injective ℚ (t.lieAlgebra ht) _
 
 /-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
 of endomorphisms of the Geck module. -/
@@ -315,7 +326,7 @@ value ring. -/
 theorem isNilpotent_geckRepresentation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
     IsNilpotent (t.geckRepresentation ht
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-  rw [geckRepresentation_def, LieSubalgebra.isNilpotent_matrixRepresentation_ι_iff]
+  rw [geckRepresentation_def, UniversalEnvelopingAlgebra.isNilpotent_representation_ι_matrix_iff]
   cases i with
   | inl i => simpa only [LieAlgebra.Basis.rootGenerator_inl] using
       t.isNilpotent_coe_lieBasis_e ht i

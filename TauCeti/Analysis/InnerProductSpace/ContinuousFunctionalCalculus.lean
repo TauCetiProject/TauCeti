@@ -1,7 +1,8 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
+  OpenAI GPT-6
 -/
 module
 
@@ -11,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
 # The continuous functional calculus on real and `RCLike` Hilbert spaces
@@ -69,6 +71,9 @@ realification preserves the spectrum of a self-adjoint operator
   self-adjoint operator.
 * `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
   calculus.
+* `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
+  `LinearIsometryEquiv.negPart_conjStarAlgEquiv`: isometric conjugation commutes with the
+  non-unital continuous functional calculus and with positive and negative parts.
 
 ## Acknowledgements
 
@@ -78,6 +83,11 @@ complexification, appears in
 [AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
 (Kitware, Inc.; Apache-2.0). There the calculus is descended through the conjugation of the
 complexification; here it is restricted to the closed range of the complexification map.
+The normal-operator half-plane bound
+`ContinuousLinearMap.nonneg_add_star_sub_smul_of_spectrum_re` is adapted from
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). It turns a lower
+bound `a` on real parts of the spectrum into `W + W† ≥ 2 a I`.
 -/
 
 public section
@@ -292,4 +302,63 @@ theorem norm_rpow_apply_le_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P
   simpa only [one_mul] using (P ^ s).le_of_opNorm_le
     (P.norm_rpow_le_one_of_one_le_of_nonpos hP hs) y
 
+open scoped ComplexOrder ComplexStarModule
+
+/-- A spectral half-plane bound for a normal operator is an order bound
+for its Hermitian part. -/
+theorem nonneg_add_star_sub_smul_of_spectrum_re
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
+    (W : E →L[ℂ] E) [IsStarNormal W] {a : ℝ}
+    (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
+    0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
+  have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    rw [spectrum_realPart' W]
+    rintro _ ⟨z, hz, rfl⟩
+    exact hspec z hz
+  have hpos := smul_nonneg (a := (2 : ℝ)) (by norm_num) (sub_nonneg.mpr hreal)
+  simpa only [smul_sub, realPart_apply_coe, smul_smul, mul_inv_cancel₀ (by norm_num : (2 : ℝ) ≠ 0),
+    one_smul, Algebra.algebraMap_eq_smul_one, Complex.coe_smul] using hpos
+
 end ContinuousLinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Conjugation of bounded operators by a linear isometric equivalence is continuous. -/
+@[fun_prop]
+theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
+  e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
+
+variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]
+
+/-- Conjugation by a linear isometric equivalence commutes with the non-unital continuous
+functional calculus. -/
+theorem cfcₙ_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ) (A : E →L[𝕜] E) :
+    cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) :=
+  (cfcₙ_eq_cfcₙ_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
+    (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
+    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
+      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    f (e.conjStarAlgEquiv A)).trans
+    (congrArg (fun X ↦ e.conjStarAlgEquiv (cfcₙ f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
+
+/-- Conjugation by a linear isometric equivalence commutes with the positive part of a bounded
+operator. -/
+@[simp]
+theorem posPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁺ = e.conjStarAlgEquiv A⁺ := by
+  simpa [CFC.posPart_def] using e.cfcₙ_conjStarAlgEquiv _ A
+
+/-- Conjugation by a linear isometric equivalence commutes with the negative part of a bounded
+operator. -/
+@[simp]
+theorem negPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁻ = e.conjStarAlgEquiv A⁻ := by
+  simpa [CFC.negPart_def] using e.cfcₙ_conjStarAlgEquiv _ A
+
+end LinearIsometryEquiv

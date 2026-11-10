@@ -33,11 +33,14 @@ to `(Δⁿ f)(a)`. This is shared by the Taylor theories of entire series
 ## Main results
 
 * `constantCoeff_taylor`: the constant term of the translate is `f(a)`.
+* `order_taylor_ne_zero_iff`: the translate at `a` has positive order exactly when `f(a) = 0`.
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
 * `taylor_one`: the translate of `1` is `1`.
 * `evalAt_taylor_of_summable`: the Taylor identity `(taylor a f)(b) = f(b + a)` for any series
   whose double series at `(a, b)` is summable with rows converging to `(Δⁿ f)(a)`.
+* `taylor_add_of_summable_norm`, `taylor_mul_of_summable_norm`: translation is additive and
+  multiplicative when all Hasse derivatives have absolutely summable terms at the centre.
 -/
 
 public section
@@ -67,6 +70,11 @@ theorem coeff_taylor (a : R) (f : R⟦X⟧) (n : ℕ) :
 @[simp]
 theorem constantCoeff_taylor (a : R) (f : R⟦X⟧) : constantCoeff (taylor a f) = f.evalAt a := by
   simp [← coeff_zero_eq_constantCoeff_apply]
+
+/-- The Taylor translate at `a` has positive order exactly when `a` is a zero: the order of the
+translate is the multiplicity of the zero. -/
+theorem order_taylor_ne_zero_iff {a : R} {f : R⟦X⟧} : (taylor a f).order ≠ 0 ↔ f.evalAt a = 0 := by
+  rw [order_ne_zero_iff_constCoeff_eq_zero, constantCoeff_taylor]
 
 /-- On polynomials, Taylor translation is `Polynomial.taylor`. -/
 @[simp]
@@ -126,5 +134,42 @@ theorem evalAt_taylor_of_summable {a b : R}
   rw [evalAt_def, evalAt_def, h₁.tsum_eq, h₂.tsum_eq]
 
 end TopologicalRing
+
+section Complete
+
+variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {f : R⟦X⟧}
+
+/-- Taylor translation is additive when all Hasse derivatives have absolutely summable terms
+at the translation point. -/
+theorem taylor_add_of_summable_norm {g : R⟦X⟧} {a : R}
+    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
+    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
+    taylor a (f + g) = taylor a f + taylor a g := by
+  ext n
+  simp only [coeff_taylor, map_add, evalAt_add_of_summable_norm (hf n) (hg n)]
+
+/-- Taylor translation is multiplicative when all Hasse derivatives have absolutely summable
+terms at the translation point. -/
+theorem taylor_mul_of_summable_norm {g : R⟦X⟧} {a : R}
+    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
+    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
+    taylor a (f * g) = taylor a f * taylor a g := by
+  have hmul (i j : ℕ) :
+      Summable fun m ↦ ‖coeff m (hasseDeriv i f * hasseDeriv j g) • a ^ m‖ := by
+    refine (summable_norm_sum_mul_antidiagonal_of_summable_norm (hf i) (hg j)).congr
+      fun m ↦ ?_
+    apply congrArg norm
+    rw [coeff_mul, Finset.sum_smul]
+    exact sum_congr rfl fun p hp ↦ by
+      rw [← mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+  ext n
+  rw [coeff_taylor, hasseDeriv_mul,
+    evalAt_sum_of_summable_norm _
+      (f := fun p : ℕ × ℕ ↦ hasseDeriv p.1 f * hasseDeriv p.2 g)
+      (b := a) (fun p _ ↦ hmul p.1 p.2), coeff_mul]
+  exact sum_congr rfl fun p _ ↦ by
+    rw [evalAt_mul_of_summable_norm (hf p.1) (hg p.2), coeff_taylor, coeff_taylor]
+
+end Complete
 
 end PowerSeries

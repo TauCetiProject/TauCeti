@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
@@ -16,23 +18,32 @@ semiring `k`, the duality `D = Hom_k(-, k)` turns `N` into a *left* `A`-module: 
 a functional `φ` by precomposition with multiplication by `a`, `(a • φ) x = φ (x * a)`.
 Precomposition reverses composition, which is exactly what exchanges the two sides.
 
-This file records that action as the ring homomorphism `TauCeti.dualRightAction`.
+This file records that action as a ring homomorphism. The construction does not use the codomain:
+for a `k`-module `E`, `TauCeti.linearMapRightAction` is the left action on `Hom_k(N, E)`, which is
+the duality above when `E = k`, and `TauCeti.linearMapOpAction` is the right action on `Hom_k(M, E)`
+of a left `A`-module `M`.
 
 On the other side, a semiring `A` with a `k`-module structure commuting with left multiplication
 acts on the right of the dual of its left regular module by
-`(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A
-`k`-linear map `A → Module.Dual k A` that is right `A`-linear for this action is determined by its
-value at `1`; this is `TauCeti.dualLinearMap_apply_apply`.
+`(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A map
+`A → Module.Dual k A` that is equivariant for the right `A`-actions is determined by its value at
+`1`; this is `TauCeti.apply_apply_eq_apply_one_mul`.
 
 ## Main definitions
 
-* `TauCeti.dualRightAction`: the left action of `A` on the `k`-dual of a right `A`-module, as a ring
-  homomorphism into the `k`-linear endomorphisms of the dual.
+* `TauCeti.linearMapOpAction`: the action of `Aᵐᵒᵖ` on `Hom_k(M, E)` for a left `A`-module `M`, by
+  precomposition.
+* `TauCeti.linearMapRightAction`: the action of `A` on `Hom_k(N, E)` for a right `A`-module `N`, by
+  precomposition.
 
 ## Main results
 
-* `TauCeti.dualLinearMap_apply_apply`: a right `A`-linear map from `A` to its dual is determined by
-  its value at `1`.
+* `TauCeti.apply_apply_eq_apply_one_mul`: a map from `A` to its dual that is equivariant for the
+  right `A`-actions is determined by its value at `1`; additivity is not assumed.
+* `LinearEquiv.isScalarTower_of_linearMap`: an equivariant identification with `Hom_k(M, E)` for a
+  right module `M` gives compatible actions of `k` and `A`.
+* `LinearEquiv.isScalarTower_of_dual_regular`: a left `A`-module identified with `Hom_k(A, E)`, with
+  action `(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`.
 
 ## Implementation notes
 
@@ -51,40 +62,90 @@ namespace TauCeti
 
 universe u v w
 
-variable (k : Type u) (N : Type w) {A : Type v} [CommSemiring k] [Semiring A] [AddCommMonoid N]
-  [Module k N] [Module Aᵐᵒᵖ N] [SMulCommClass Aᵐᵒᵖ k N]
+section LinearMap
 
-/-- The **duality** `D = Hom_k(-, k)` turns a right `A`-module `N` into a left `A`-module: the
-scalar `a` sends a functional `φ` to `x ↦ φ (x * a)`.  This records that action as a ring
-homomorphism from `A` to the `k`-linear endomorphisms of `Module.Dual k N`.
+variable (k : Type u) (M : Type w) {A : Type v} (E : Type*) [CommSemiring k] [Semiring A]
+  [AddCommMonoid M] [Module k M] [Module A M] [SMulCommClass A k M] [AddCommMonoid E] [Module k E]
 
-Precomposition reverses composition, which is exactly what makes a *right* action on `N` into a
-*left* action on its dual; the hypothesis `SMulCommClass Aᵐᵒᵖ k N` is what makes multiplication by
-`a` a `k`-linear endomorphism of `N` in the first place. -/
-def dualRightAction : A →+* Module.End k (Module.Dual k N) where
-  toFun a := (Module.toModuleEnd k N (MulOpposite.op a)).dualMap
+/-- The contravariant functor `Hom_k(-, E)` turns a left `A`-module `M` into a right `A`-module: the
+scalar `op a` sends a map `φ` to `x ↦ φ (a • x)`. This records that action as a ring homomorphism
+from `Aᵐᵒᵖ` to the `k`-linear endomorphisms of `M →ₗ[k] E`. -/
+def linearMapOpAction : Aᵐᵒᵖ →+* Module.End k (M →ₗ[k] E) where
+  toFun a := (Module.toModuleEnd k M a.unop).lcomp k E
   map_one' := by ext φ x; simp
   map_mul' a b := by ext φ x; simp [mul_smul]
   map_zero' := by ext φ x; simp
   map_add' a b := by ext φ x; simp [add_smul]
 
 @[simp]
-theorem dualRightAction_apply_apply (a : A) (φ : Module.Dual k N) (x : N) :
-    dualRightAction k N a φ x = φ (MulOpposite.op a • x) := by
-  -- unfolding `dualRightAction` leaves `LinearMap.dualMap` of multiplication by `a`, evaluated by
-  -- `LinearMap.dualMap_apply`
-  simp [dualRightAction, LinearMap.dualMap_apply]
+theorem linearMapOpAction_apply_apply (a : Aᵐᵒᵖ) (φ : M →ₗ[k] E) (x : M) :
+    linearMapOpAction k M E a φ x = φ (a.unop • x) :=
+  (rfl)
+
+end LinearMap
+
+section RightModule
+
+variable (k : Type u) (N : Type w) {A : Type v} (E : Type*) [CommSemiring k] [Semiring A]
+  [AddCommMonoid N] [Module k N] [Module Aᵐᵒᵖ N] [SMulCommClass Aᵐᵒᵖ k N] [AddCommMonoid E]
+  [Module k E]
+
+/-- The contravariant functor `Hom_k(-, E)` turns a right `A`-module `N` into a left `A`-module: the
+scalar `a` sends a map `φ` to `x ↦ φ (x * a)`. This records that action as a ring homomorphism from
+`A` to the `k`-linear endomorphisms of `N →ₗ[k] E`.
+
+Precomposition reverses composition, which is exactly what makes a *right* action on `N` into a
+*left* action on its dual; the hypothesis `SMulCommClass Aᵐᵒᵖ k N` is what makes multiplication by
+`a` a `k`-linear endomorphism of `N` in the first place. -/
+def linearMapRightAction : A →+* Module.End k (N →ₗ[k] E) :=
+  (linearMapOpAction k N E).comp (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)
+
+@[simp]
+theorem linearMapRightAction_apply_apply (a : A) (φ : N →ₗ[k] E) (x : N) :
+    linearMapRightAction k N E a φ x = φ (MulOpposite.op a • x) :=
+  (rfl)
+
+end RightModule
 
 section DomMulAct
 
-variable {k} [Module k A] [SMulCommClass k A A]
+variable {k : Type u} {A : Type v} [CommSemiring k] [Semiring A] [Module k A] [SMulCommClass k A A]
 
-/-- A `k`-linear map from `A` to its dual that is right `A`-linear, for the action
-`DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. -/
-theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
+/-- A map from `A` to its dual that is equivariant for the right `A`-actions, using the action
+`DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. The map need not
+be additive. -/
+theorem apply_apply_eq_apply_one_mul {e : A → Module.Dual k A}
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
   simpa using LinearMap.congr_fun (he 1 a) b
 
 end DomMulAct
 
 end TauCeti
+
+/-- The `A`-action on a module identified equivariantly with `Hom_k(M, E)`, for a right module `M`,
+commutes with the `k`-action. -/
+theorem LinearEquiv.isScalarTower_of_linearMap {k : Type*} {A : Type*} {M : Type*} {N : Type*}
+    {E : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid M] [Module Aᵐᵒᵖ M]
+    [Module k M] [IsScalarTower k Aᵐᵒᵖ M] [AddCommMonoid N] [Module A N] [Module k N]
+    [AddCommMonoid E] [Module k E] (eM : N ≃ₗ[k] (M →ₗ[k] E))
+    (heM : ∀ (a : A) (n : N) (m : M), eM (a • n) m = eM n (MulOpposite.op a • m)) :
+    IsScalarTower k A N :=
+  IsScalarTower.of_algebraMap_smul fun c n ↦ by
+    apply eM.injective
+    ext m
+    simp [heM, ← MulOpposite.algebraMap_apply]
+
+namespace LinearEquiv
+
+variable {k A Q E : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid Q]
+  [Module A Q] [Module k Q] [AddCommMonoid E] [Module k E]
+
+/-- A left `A`-module identified with `Hom_k(A, E)`, with action `(a • φ) x = φ (x * a)`, has
+compatible actions of `k` and `A`. -/
+theorem isScalarTower_of_dual_regular (e : Q ≃ₗ[k] (A →ₗ[k] E))
+    (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
+    IsScalarTower k A Q :=
+  IsScalarTower.of_algebraMap_smul fun c q => e.injective <| LinearMap.ext fun x => by
+    simp [he, ← Algebra.commutes, ← Algebra.smul_def]
+
+end LinearEquiv

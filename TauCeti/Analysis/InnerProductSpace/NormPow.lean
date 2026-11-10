@@ -8,13 +8,15 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Real powers of the norm away from the origin
+# Real powers of the norm
 
 Mathlib computes the derivative of `x ↦ ‖x‖ ^ p` on the whole inner-product space when
 `1 < p`.  Negative powers, which occur in the Newtonian kernel, are smooth only away from the
@@ -35,12 +37,17 @@ The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining i
 chain-rule argument while replacing the global exponent hypothesis with the local condition
 `x ≠ 0`.
 
+For positive exponents, `contDiff_norm_rpow_of_lt` additionally gives global `Cᵏ` regularity
+whenever `k < p`, including the behavior at the origin, on arbitrary real inner-product spaces.
+
 ## Main declarations
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
+* `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
+  in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
@@ -69,6 +76,50 @@ open Filter InnerProductSpace Laplacian Topology
 open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+-- Hyperplane reflection identifies equal-radius jets without compactness of the sphere.
+private theorem norm_iteratedFDeriv_eq_of_norm_eq
+    (p : ℝ) (j : ℕ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) x‖ =
+      ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : (fun x : E ↦ ‖x‖ ^ p) ∘ R = (fun x : E ↦ ‖x‖ ^ p) := by
+    funext z
+    simp
+  have h := R.norm_iteratedFDeriv_comp_right (fun x : E ↦ ‖x‖ ^ p) x j
+  rw [hcomp, Submodule.reflection_sub hxy] at h
+  exact h
+
+/-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
+on an arbitrary real inner-product space. -/
+theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
+    (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
+  have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
+    intro x hx
+    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
+      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+  apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
+    (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
+  intro j hj
+  by_cases hE : Subsingleton E
+  · let := hE
+    exact ⟨0, fun x hx ↦ (hx (Subsingleton.elim _ _)).elim⟩
+  · have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    let e : E := ‖v‖⁻¹ • v
+    have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
+    refine ⟨‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) e‖, fun x hx ↦ ?_⟩
+    let θ : E := ‖x‖⁻¹ • x
+    have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
+    have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous
+      (f := fun x : E ↦ ‖x‖ ^ p) (p := p) (j := j)
+      (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+        Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
+      (norm_pos_iff.mpr hx) (x := θ)
+    have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
+    simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
+      hnorm, mul_comm] using hscale.le
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form
@@ -212,6 +263,23 @@ theorem norm_iteratedFDeriv_two_norm_rpow_le (p : ℝ) {x : E} (hx : x ≠ 0) :
     _ = |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) * (‖m 0‖ * ‖m 1‖) := by
         rw [← h42]
         ring
+
+/-- Away from the origin, the second derivative of the norm has operator norm at least `‖x‖⁻¹`
+when some nonzero direction `v` is orthogonal to `x`: by the Hessian formula for `‖·‖ ^ p` with
+`p = 1`, it takes the value `‖v‖ ^ 2 / ‖x‖` on `v` twice. -/
+theorem inv_norm_le_norm_fderiv_fderiv_norm {x v : E} (hx : x ≠ 0) (hv : v ≠ 0)
+    (hxv : ⟪x, v⟫_ℝ = 0) : ‖x‖⁻¹ ≤ ‖fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x‖ := by
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
+  have hH := iteratedFDeriv_two_norm_rpow_apply 1 hx v v
+  simp only [Real.rpow_one, iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, hxv, mul_zero, zero_add, one_mul, real_inner_self_eq_norm_sq] at hH
+  have hvv : fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x v v = ‖v‖ ^ 2 / ‖x‖ := by
+    rw [hH, show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one, div_eq_inv_mul]
+  have hle := (fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x).le_opNorm₂ v v
+  rw [hvv, Real.norm_of_nonneg (by positivity), div_le_iff₀ hx0] at hle
+  rw [inv_le_iff_one_le_mul₀ hx0]
+  nlinarith [mul_pos hv0 hv0]
 
 /-- Along the line `s ↦ b + s • d`, the Hessian formula of `x ↦ ‖x‖ ^ p`
 (`TauCeti.iteratedFDeriv_two_norm_rpow_apply`) evaluated on two fixed directions `v`, `w` is

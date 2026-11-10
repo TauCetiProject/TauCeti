@@ -55,6 +55,10 @@ The first inequality holds because vectors independent over `K` have images inde
   `Λ`, independent over `K`, the `l`-th of them with image in `μ l • B`.
 * `Submodule.successiveMin_mixedImage_le` and
   `Submodule.successiveMinimum_le_successiveMin_mixedImage`: `λ l ≤ μ l ≤ λ (d * l)`.
+* `Submodule.finrank_span_setOf_mem`: the rank of the lattice points in a positive dilate
+  is the number of successive minima at most the dilation factor.
+* `Submodule.span_setOf_mem_eq_span_image`: any family realizing the minima spans those
+  lattice points with its initial segment of that rank.
 
 ## Implementation notes
 
@@ -352,6 +356,78 @@ theorem successiveMinimum_le_successiveMin_mixedImage
   have hk := hsd (Fin.castLE hle k)
   simp only [Fin.val_castLE, e, finCongr_symm_apply_coe] at hk ⊢
   exact hk.trans (Nat.mul_le_mul_left _ (Nat.lt_succ_iff.1 k.isLt))
+
+open scoped Classical in
+/-- A positive dilate contains lattice points spanning more than `l` dimensions exactly when
+its dilation factor is at least the `l`-th successive minimum. -/
+theorem successiveMinimum_le_iff_lt_finrank_span [DiscreteTopology Λ.mixedImage]
+    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K)))
+    (hl : l < Fintype.card ι) {t : ℝ} (ht : 0 < t) :
+    successiveMinimum Λ B l ≤ t ↔
+      l < finrank K (span K {x | x ∈ Λ ∧
+        (fun j ↦ mixedEmbedding K (x j)) ∈ t • (B : Set (ι → mixedSpace K))}) := by
+  rw [successiveMinimum_le_iff hB hl ht, ← Nat.succ_le_iff,
+    le_finrank_span_iff_exists_linearIndependent]
+  simp only [Set.mem_ofPred_eq]
+
+open scoped Classical in
+/-- The rank of the lattice points in a positive dilate of a convex body is the number of
+successive minima at most the dilation factor. Only indices below the ambient dimension are
+counted, since the minima have junk value zero beyond that dimension. -/
+theorem finrank_span_setOf_mem [DiscreteTopology Λ.mixedImage]
+    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) {t : ℝ} (ht : 0 < t) :
+    finrank K (span K {x | x ∈ Λ ∧
+      (fun j ↦ mixedEmbedding K (x j)) ∈ t • (B : Set (ι → mixedSpace K))}) =
+        (Finset.univ.filter fun l : Fin (Fintype.card ι) ↦ successiveMinimum Λ B l ≤ t).card := by
+  classical
+  simp_rw [successiveMinimum_le_iff_lt_finrank_span hB (Fin.isLt _) ht]
+  rw [Fin.card_filter_val_lt, min_eq_right]
+  exact (span K {x | x ∈ Λ ∧
+    (fun j ↦ mixedEmbedding K (x j)) ∈ t • (B : Set (ι → mixedSpace K))}).finrank_le.trans_eq
+      (Module.finrank_fintype_fun_eq_card K)
+
+open scoped Classical in
+/-- Any family realizing the successive minima spans the lattice points in a positive dilate
+with its first `r` vectors, where `r` is the rank of those lattice points. -/
+theorem span_setOf_mem_eq_span_image [DiscreteTopology Λ.mixedImage]
+    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) {t : ℝ} (ht : 0 < t)
+    {x : Fin (Fintype.card ι) → ι → K} (hx : LinearIndependent K x)
+    (hxΛ : ∀ l, x l ∈ Λ)
+    (hxB : ∀ l : Fin (Fintype.card ι), (fun j ↦ mixedEmbedding K (x l j)) ∈
+      successiveMinimum Λ B l • (B : Set (ι → mixedSpace K))) :
+    span K {a | a ∈ Λ ∧
+      (fun j ↦ mixedEmbedding K (a j)) ∈ t • (B : Set (ι → mixedSpace K))} =
+      span K (x '' {l | l.val < finrank K (span K {a | a ∈ Λ ∧
+        (fun j ↦ mixedEmbedding K (a j)) ∈ t • (B : Set (ι → mixedSpace K))})}) := by
+  classical
+  let U := span K {a | a ∈ Λ ∧
+    (fun j ↦ mixedEmbedding K (a j)) ∈ t • (B : Set (ι → mixedSpace K))}
+  have hle : span K (x '' {l | l.val < finrank K U}) ≤ U := by
+    refine span_le.2 ?_
+    rintro _ ⟨l, hl, rfl⟩
+    have hμ := (successiveMinimum_le_iff_lt_finrank_span hB l.isLt ht).2 hl
+    exact subset_span ⟨hxΛ l, (ConvexBody.gauge_le_iff_mem_smul hB ht).1
+      (((ConvexBody.gauge_le_iff_mem_smul hB
+        (successiveMinimum_pos hB l.isLt)).2 (hxB l)).trans hμ)⟩
+  have hr : finrank K U ≤ Fintype.card ι :=
+    U.finrank_le.trans_eq (Module.finrank_fintype_fun_eq_card K)
+  have hdim : finrank K (span K (x '' {l | l.val < finrank K U})) = finrank K U := by
+    rw [Set.image_eq_range]
+    exact (finrank_span_eq_card (hx.comp _ Subtype.val_injective)).trans
+      (Fintype.card_fin_lt_of_le hr)
+  exact (eq_of_le_of_finrank_eq hle hdim).symm
+
+open scoped Classical in
+-- At the minimum itself the boundary vectors already contribute `l + 1` dimensions.
+example [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) (hl : l < Fintype.card ι) :
+    l < finrank K (span K {x | x ∈ Λ ∧ (fun j ↦ mixedEmbedding K (x j)) ∈
+      successiveMinimum Λ B l • (B : Set (ι → mixedSpace K))}) :=
+  (successiveMinimum_le_iff_lt_finrank_span hB hl (successiveMinimum_pos hB hl)).1 le_rfl
 
 end Lattice
 

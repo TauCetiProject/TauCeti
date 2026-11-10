@@ -186,81 +186,95 @@ private theorem mul_g2ShortPairMonomial (hxy : x * y = y * x + z)
   rw [mul_dividedPower_shortPairMonomial hxy hxz hzy hxw hxs hys hzw hzs hws
     (n - b - c - 2 * d) b c d, hA, eqB, eqC]
 
+-- The reindexing architecture of the next four lemmas follows the proof of the other type-`G₂`
+-- configuration in `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
+
+/-- Reindexing the `x`-derivative term raising the exponent of `z` in the series. -/
+private theorem sum_g2ShortPairMonomial_shift_fst {n k : ℕ} :
+    ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
+      0 < n - p.1 - p.2.1 - 2 * p.2.2},
+      (p.1 + 1) • g2ShortPairMonomial y z w s n (p.1 + 1, p.2.1, p.2.2) =
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
+      q.1 • g2ShortPairMonomial y z w s n q := by
+  refine sum_g2ShortPairMonomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2))
+    (fun q => (q.1 - 1, q.2.1, q.2.2)) (fun q => q.1) ?_ ?_ ?_ ?_
+  · rintro ⟨b, c, d⟩ hp
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ hq
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ _
+    simp
+  · rintro ⟨b, c, d⟩ hq
+    simp [Nat.sub_add_cancel hq.2]
+
+/-- Reindexing the `x`-derivative term raising the exponent of `w` in the series. -/
+private theorem sum_g2ShortPairMonomial_shift_snd_fst {n k : ℕ} :
+    ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | 0 < p.1},
+      (2 * (p.2.1 + 1)) •
+        g2ShortPairMonomial y z w s n (p.1 - 1, p.2.1 + 1, p.2.2) =
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
+      (2 * q.2.1) • g2ShortPairMonomial y z w s n q := by
+  refine sum_g2ShortPairMonomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
+    (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_
+  · rintro ⟨b, c, d⟩ hp
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ hq
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ hp
+    simp [Nat.sub_add_cancel hp.2]
+  · rintro ⟨b, c, d⟩ hq
+    simp [Nat.sub_add_cancel hq.2]
+
+/-- Reindexing the `x`-derivative term raising the exponent of `s` in the series. -/
+private theorem sum_g2ShortPairMonomial_shift_snd_snd {n k : ℕ} :
+    ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
+      1 < n - p.1 - p.2.1 - 2 * p.2.2},
+      (p.2.2 + 1) • g2ShortPairMonomial y z w s n (p.1, p.2.1, p.2.2 + 1) =
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
+      q.2.2 • g2ShortPairMonomial y z w s n q := by
+  refine sum_g2ShortPairMonomial_shift (fun p => (p.1, p.2.1, p.2.2 + 1))
+    (fun q => (q.1, q.2.1, q.2.2 - 1)) (fun q => q.2.2) ?_ ?_ ?_ ?_
+  · rintro ⟨b, c, d⟩ hp
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ hq
+    dsimp at *; omega
+  · rintro ⟨b, c, d⟩ _
+    simp
+  · rintro ⟨b, c, d⟩ hq
+    simp [Nat.sub_add_cancel hq.2]
+
+/-- The three reindexed derivative sums add up to `(k + 1)` times the next series term. -/
+private theorem sum_g2ShortPairMonomial_combine {n k : ℕ} :
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
+      q.1 • g2ShortPairMonomial y z w s n q +
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
+      (2 * q.2.1) • g2ShortPairMonomial y z w s n q +
+    ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
+      q.2.2 • g2ShortPairMonomial y z w s n q =
+    (k + 1) • g2ShortPairSeries y z w s n (k + 1) := by
+  rw [Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
+    Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
+    Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
+    g2ShortPairSeries, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun q hq => ?_
+  rw [← add_smul, ← add_smul]
+  congr 1
+  have := (mem_g2ShortPairSeriesIndex.mp hq).2
+  omega
+
 private theorem mul_g2ShortPairSeries (hxy : x * y = y * x + z)
     (hxz : x * z = z * x + 2 • w) (hzy : z * y = y * z + 2 • s) (hxw : Commute x w)
     (hxs : Commute x s) (hys : Commute y s) (hzw : Commute z w) (hzs : Commute z s)
     (hws : Commute w s) (n k : ℕ) :
     x * g2ShortPairSeries y z w s n k =
       g2ShortPairSeries y z w s n k * x + (k + 1) • g2ShortPairSeries y z w s n (k + 1) := by
-  classical
-  -- The reindexing architecture follows the proof of the other type-`G₂` configuration in
-  -- `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
-  have hshiftA : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
-        0 < n - p.1 - p.2.1 - 2 * p.2.2},
-        (p.1 + 1) • g2ShortPairMonomial y z w s n (p.1 + 1, p.2.1, p.2.2) =
-      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
-        q.1 • g2ShortPairMonomial y z w s n q := by
-    refine sum_g2ShortPairMonomial_shift (fun p => (p.1 + 1, p.2.1, p.2.2))
-      (fun q => (q.1 - 1, q.2.1, q.2.2)) (fun q => q.1) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ _
-      simp
-    · rintro ⟨b, c, d⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hshiftB : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k | 0 < p.1},
-        (2 * (p.2.1 + 1)) •
-          g2ShortPairMonomial y z w s n (p.1 - 1, p.2.1 + 1, p.2.2) =
-      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
-        (2 * q.2.1) • g2ShortPairMonomial y z w s n q := by
-    refine sum_g2ShortPairMonomial_shift (fun p => (p.1 - 1, p.2.1 + 1, p.2.2))
-      (fun q => (q.1 + 1, q.2.1 - 1, q.2.2)) (fun q => 2 * q.2.1) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ hp
-      simp [Nat.sub_add_cancel hp.2]
-    · rintro ⟨b, c, d⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hshiftC : ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
-        1 < n - p.1 - p.2.1 - 2 * p.2.2},
-        (p.2.2 + 1) • g2ShortPairMonomial y z w s n (p.1, p.2.1, p.2.2 + 1) =
-      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
-        q.2.2 • g2ShortPairMonomial y z w s n q := by
-    refine sum_g2ShortPairMonomial_shift (fun p => (p.1, p.2.1, p.2.2 + 1))
-      (fun q => (q.1, q.2.1, q.2.2 - 1)) (fun q => q.2.2) ?_ ?_ ?_ ?_
-    · rintro ⟨b, c, d⟩ hp
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ hq
-      dsimp at *; omega
-    · rintro ⟨b, c, d⟩ _
-      simp
-    · rintro ⟨b, c, d⟩ hq
-      simp [Nat.sub_add_cancel hq.2]
-  have hcombine : ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.1},
-        q.1 • g2ShortPairMonomial y z w s n q +
-      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.1},
-        (2 * q.2.1) • g2ShortPairMonomial y z w s n q +
-      ∑ q ∈ {q ∈ g2ShortPairSeriesIndex n (k + 1) | 0 < q.2.2},
-        q.2.2 • g2ShortPairMonomial y z w s n q =
-      (k + 1) • g2ShortPairSeries y z w s n (k + 1) := by
-    rw [Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      Finset.sum_filter_of_ne (fun q _ hq => Nat.pos_of_ne_zero fun h => hq (by simp [h])),
-      g2ShortPairSeries, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun q hq => ?_
-    rw [← add_smul, ← add_smul]
-    congr 1
-    have := (mem_g2ShortPairSeriesIndex.mp hq).2
-    omega
   rw [g2ShortPairSeries, Finset.mul_sum, Finset.sum_mul,
     Finset.sum_congr rfl fun p _ =>
       mul_g2ShortPairMonomial hxy hxz hzy hxw hxs hys hzw hzs hws n p]
   simp only [Finset.sum_add_distrib, ← Finset.sum_filter]
-  rw [hshiftA, hshiftB, hshiftC, add_assoc, add_assoc, ← add_assoc, ← hcombine]
+  rw [sum_g2ShortPairMonomial_shift_fst, sum_g2ShortPairMonomial_shift_snd_fst,
+    sum_g2ShortPairMonomial_shift_snd_snd, add_assoc, add_assoc, ← add_assoc,
+    ← sum_g2ShortPairMonomial_combine]
   abel
 
 /-! ## The straightening rule -/

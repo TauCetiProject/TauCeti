@@ -90,6 +90,13 @@ theorem regularBilinForm_ι_mul_left (v : M) (x y : CliffordAlgebra Q) :
     regularBilinForm Q (ι Q v * x) y = -regularBilinForm Q x (ι Q v * y) := by
   simp [regularBilinForm_mul_left]
 
+/-- Left multiplication by a vector scales squared lengths by the negative quadratic form. -/
+theorem regularBilinForm_ι_mul_self (v : M) (x : CliffordAlgebra Q) :
+    regularBilinForm Q (ι Q v * x) (ι Q v * x) =
+      -Q v * regularBilinForm Q x x := by
+  rw [regularBilinForm_ι_mul_left]
+  simp [← mul_assoc, ι_sq_scalar, Algebra.algebraMap_eq_smul_one]
+
 /-- The grade involution is an isometry of the regular form. -/
 @[simp]
 theorem regularBilinForm_involute (x y : CliffordAlgebra Q) :

@@ -9,14 +9,15 @@ public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
-import TauCeti.RingTheory.FiniteType.Tensor.Product
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Smoothness of the derived subgroup
 
-Over an algebraically closed field, the derived closed subgroup of a reduced finite-type
-affine group is reduced, and hence smooth. This supplies the smooth subgroup needed when
-applying representation-theoretic induction to the derived subgroup of a solvable group.
+Over a perfect field, the derived closed subgroup of a reduced affine group is reduced, and over
+an algebraically closed field it is smooth when the group is of finite type. This supplies the
+smooth subgroup needed when applying representation-theoretic induction to the derived subgroup
+of a solvable group.
 
 More generally, the derived coordinate ring is reduced over any commutative base when the
 ambient tensor square and the tensor square of the reduced derived coordinate ring are
@@ -72,14 +73,15 @@ theorem isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct
     simpa only [HopfIdeal.reduction_toIdeal, HopfIdeal.bot_toIdeal] using
       congrArg HopfIdeal.toIdeal hred)
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
-variable (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H] [IsReduced H]
-
-/-- The derived closed subgroup of a reduced finite-type affine group over an algebraically
-closed field has reduced coordinate ring. -/
-theorem isReduced_quotient_derivedDefiningIdeal :
+/-- The derived closed subgroup of a reduced affine group over a perfect field has reduced
+coordinate ring. -/
+theorem isReduced_quotient_derivedDefiningIdeal {k : Type u} [Field k] [PerfectField k]
+    (H : _root_.CommHopfAlgCat.{v} k) [IsReduced H] :
     IsReduced (quotient H (derivedDefiningIdeal H)) :=
   isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct H
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+variable (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H] [IsReduced H]
 
 /-- The derived closed subgroup of a reduced finite-type affine group over an algebraically
 closed field is smooth. -/

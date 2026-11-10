@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
+import TauCeti.Analysis.Convolution.Young
 
 /-!
 # Convolution and the Fourier transform on Schwartz space
@@ -20,6 +21,8 @@ functions (Mathlib's `SchwartzMap.fourierMultiplierCLM`) is convolution with the
 This is the convolution theorem `SchwartzMap.fourier_convolution` read backwards. It identifies
 the kernel of a multiplier whose symbol is smooth and rapidly decreasing, which is the form taken
 by the truncated symbols in the Littlewood–Paley proof of the Mihlin–Hörmander multiplier theorem.
+By Young's inequality (`MeasureTheory.eLpNorm_convolution_le`), such a multiplier is bounded in
+every `Lᵖ` norm, `1 ≤ p ≤ ∞`, by the `L¹` norm of its kernel: `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 
 Dually, the Fourier transform turns pointwise products into convolutions: for Schwartz functions
 `f`, `g` and a continuous bilinear map `B`,
@@ -35,6 +38,9 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.fourierMultiplierCLM_eq_convolution`: the multiplier with symbol `σ` is
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
+* `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
+* `SchwartzMap.integrable_fourierInv_sub_smul`: for `u ∈ L²`, the convolution integral
+  `∫ 𝓕⁻ σ (x - y) • u y` converges absolutely at every `x`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
   pairing of the inverse Fourier transforms.
 * `SchwartzMap.fourier_pairing`, `SchwartzMap.fourier_pairing_apply`: the Fourier transform of a
@@ -49,7 +55,7 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 
 public section
 
-open scoped FourierTransform SchwartzMap
+open scoped FourierTransform SchwartzMap ENNReal
 open FourierTransform ContinuousLinearMap MeasureTheory
 open scoped Convolution
 
@@ -76,6 +82,27 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
     fourierMultiplierCLM F σ φ x = ∫ y, 𝓕⁻ σ (x - y) • φ y := by
   rw [fourierMultiplierCLM_eq_convolution, convolution_apply, MeasureTheory.convolution_eq_swap]
   simp only [lsmul_apply]
+
+/-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
+Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
+theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fourierMultiplierCLM F σ φ) p ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 * eLpNorm φ p := by
+  have h : (fourierMultiplierCLM F σ φ : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] φ := by
+    funext x
+    rw [fourierMultiplierCLM_eq_convolution, convolution_apply]
+  rw [h, ← fourierInv_coe]
+  refine (eLpNorm_convolution_le _ (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable
+    φ.continuous.aestronglyMeasurable hp).trans ?_
+  grw [opENorm_lsmul_le, one_mul]
+
+/-- The convolution integral of an `L²` function against the inverse Fourier transform of a
+Schwartz function converges absolutely at every point. -/
+theorem integrable_fourierInv_sub_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (σ : 𝓢(E, ℂ)) (u : Lp G 2 (volume : Measure E)) (x : E) :
+    Integrable (fun y ↦ 𝓕⁻ σ (x - y) • u y) := by
+  have hK : MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume :=
+    ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
+  exact memLp_one_iff_integrable.1 (hK.smul (Lp.memLp u))
 
 section Bilinear
 

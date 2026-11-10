@@ -165,18 +165,7 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
   classical
   have hcover : (univ : Set ℝ) =
       (Iic (a 0) ∪ ⋃ i : Fin n, Icc (a i.castSucc) (a i.succ)) ∪ Ici (a (Fin.last n)) := by
-    ext x
-    simp only [mem_univ, mem_union, mem_iUnion, mem_Iic, mem_Ici, true_iff]
-    by_cases hleft : x ≤ a 0
-    · exact Or.inl (Or.inl hleft)
-    by_cases hright : a (Fin.last n) ≤ x
-    · exact Or.inr hright
-    have hn : n ≠ 0 := by
-      rintro rfl
-      simp only [Fin.last_zero] at hright
-      exact hright (le_of_not_ge hleft)
-    exact Or.inl (Or.inr (exists_mem_Icc_castSucc_succ a hn
-      ⟨(le_of_not_ge hleft), (le_of_not_ge hright)⟩))
+    rw [univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ a, union_right_comm]
   have hbounded (i : Fin n) := schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
     (ha i.castSucc_le_succ) (fun j _ => not_mem_Ioo_castSucc_succ a ha i j)
     (hfinite i.castSucc) (hfinite i.succ)
@@ -202,8 +191,8 @@ theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_
           w.im = (schwarzChristoffelBoundary a e z₀ p).im) := by
   let B := schwarzChristoffelBoundary a e z₀
   have hS : -1 ≤ ∑ i, e i := by rcases hsum with h | h <;> linarith
-  have hp := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p
-  have hq := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q
+  have hp := forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p
+  have hq := forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q
   have hexp : Complex.exp ((Real.pi * ∑ i, e i) * Complex.I) = -1 := by
     rcases hsum with h | h <;> simp [h, neg_mul, Complex.exp_neg, Complex.exp_pi_mul_I]
   have hleftRay : B '' Iic p = (fun t : ℝ => B p + (t : ℂ)) '' Ici 0 := by
