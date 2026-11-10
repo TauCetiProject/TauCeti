@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
 import TauCeti.Probability.Distributions.Beta.Symmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -72,12 +73,18 @@ private theorem abs_entryFactor_le_one (i k : Fin p) (ij : strictLowerTriangle p
   have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
     rw [Real.sqrt_le_one]
     nlinarith [sq_nonneg x]
-  unfold partialCorrelationCholeskyEntryFactor
-  split_ifs <;> simp_all [abs_of_nonneg (Real.sqrt_nonneg _)]
+  by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
+  · rw [partialCorrelationCholeskyEntryFactor_of_coordinate i k ij x hc]
+    exact hx
+  by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
+  · rw [partialCorrelationCholeskyEntryFactor_of_residual i k ij x hr,
+      abs_of_nonneg (Real.sqrt_nonneg _)]
+    exact hs'
+  · rw [partialCorrelationCholeskyEntryFactor_of_other i k ij x hc hr, abs_one]
 
 private theorem entryFactor_of_other_row (i k : Fin p) (ij : strictLowerTriangle p)
     (hi : ij.1.1 ≠ i) (x : ℝ) : partialCorrelationCholeskyEntryFactor i k ij x = 1 := by
-  simp [partialCorrelationCholeskyEntryFactor, hi]
+  simp [hi]
 
 private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
     (ij : strictLowerTriangle p) :
@@ -103,10 +110,10 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
       (by simpa using ha)).congr (by simp)
   by_cases hr : ij.1.1 = i
   · by_cases he : ij.1.2 = k
-    · simpa [partialCorrelationCholeskyEntryFactor, hr, he, a] using hsq
+    · simpa [hr, he, a] using hsq
     · by_cases hl : ij.1.2 < k
-      · simp only [partialCorrelationCholeskyEntryFactor, hr, true_and, he, ↓reduceIte, hl,
-          one_mul]
+      · simp_rw [partialCorrelationCholeskyEntryFactor_of_residual i k ij _ ⟨hr, hl⟩]
+        simp only [hr, true_and, he, ↓reduceIte, hl, one_mul]
         rw [integral_congr_ae ((coordinate_ae_abs_le_one (η := η) ij).mono
           fun x hx ↦ Real.sq_sqrt (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx))),
           integral_sub (integrable_const 1) hint, integral_const, hsq]
@@ -114,8 +121,8 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
         dsimp only [a] at ha ⊢
         field_simp [(by positivity : 2 * lkjPartialCorrelationShape p η ij + 1 ≠ 0)]
         ring
-      · simp [partialCorrelationCholeskyEntryFactor, hr, he, hl]
-  · simp [partialCorrelationCholeskyEntryFactor, hr]
+      · simp [hr, he, hl]
+  · simp [hr]
 
 private theorem twice_shape_add_one (ij : strictLowerTriangle p) :
     2 * lkjPartialCorrelationShape p η ij + 1 =
@@ -277,9 +284,8 @@ private theorem integral_cholesky_mul_zero (hη : 0 < η) {i j : Fin p} (hji : j
     (fun ij x ↦ partialCorrelationCholeskyEntryFactor i k ij x *
       partialCorrelationCholeskyEntryFactor j k ij x)]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [partialCorrelationCholeskyEntryFactor, hji.ne', true_and, and_self,
-    lt_self_iff_false, ↓reduceIte,
-    mul_one, false_and]
+  simp only [partialCorrelationCholeskyEntryFactor_def, hji.ne', true_and, and_self,
+    lt_self_iff_false, ↓reduceIte, mul_one, false_and]
   simpa using integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
     (r := 0) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
     (by simpa using lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩) 1
@@ -311,9 +317,8 @@ private theorem integral_cholesky_cross_zero (hη : 0 < η) {i j k l : Fin p}
       (partialCorrelationCholeskyEntryFactor i l ij x *
         partialCorrelationCholeskyEntryFactor j l ij x))]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [partialCorrelationCholeskyEntryFactor, hji.ne', hkl.ne, hkl, true_and, and_self,
-    lt_self_iff_false,
-    ↓reduceIte, mul_one, false_and, one_mul]
+  simp only [partialCorrelationCholeskyEntryFactor_def, hji.ne', hkl.ne, hkl, true_and, and_self,
+    lt_self_iff_false, ↓reduceIte, mul_one, false_and, one_mul]
   simpa only [pow_one, Real.sqrt_eq_rpow, Nat.not_even_one, ↓reduceIte] using
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
       (r := 1 / 2) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
