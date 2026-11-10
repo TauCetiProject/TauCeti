@@ -114,18 +114,8 @@ theorem mfderiv_apply_commute (he : IsIsothermalChart j e) (hx : x ∈ e.source)
 /-- The inverse of an isothermal chart is pseudoholomorphic at every point of its target, from
 multiplication by `i` to `j`. -/
 theorem isPseudoholomorphicAt_symm (he : IsIsothermalChart j e) (hz : z ∈ e.target) :
-    IsPseudoholomorphicAt (ofComplexManifold ℂ ℂ) j e.symm z := by
-  have hd := he.mdifferentiable
-  have hx : e.symm z ∈ e.source := e.map_target hz
-  refine isPseudoholomorphicAt_of_hasMFDerivAt (hd.mdifferentiableAt_symm hz).hasMFDerivAt
-    fun w ↦ hd.mfderiv_injective hx ?_
-  -- Apply the differential `u` of `e` at `e.symm z`, which inverts that of `e.symm` at `z` and
-  -- carries `j` to multiplication by `i`.
-  have hinv (a : TangentSpace 𝓘(ℝ, ℂ) z) :
-      mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e (e.symm z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e.symm z a) = a :=
-    DFunLike.congr_fun (hd.comp_symm_deriv hz) a
-  rw [he.mfderiv_apply_commute hx, hinv, hinv]
-  exact (ofComplexManifold_apply (E := ℂ) z w).trans (ofComplexManifold_apply (E := ℂ) _ w).symm
+    IsPseudoholomorphicAt (ofComplexManifold ℂ ℂ) j e.symm z :=
+  he.mdifferentiable.isPseudoholomorphicAt_symm hz (he.isPseudoholomorphicAt _ (e.map_target hz))
 
 /-- **The transition between two isothermal charts is holomorphic.** Its differential commutes
 with multiplication by `i`, which is the Cauchy–Riemann equation. -/
