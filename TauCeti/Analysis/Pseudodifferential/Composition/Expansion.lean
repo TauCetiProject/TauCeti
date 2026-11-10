@@ -50,8 +50,8 @@ of `⟨η⟩`, so the remainder is bounded by `C ⟨ξ⟩ ^ (m' + m - N)`.
 
 Both `a # b` and the terms `T_k` satisfy the Leibniz rules for spatial and frequency derivatives,
 hence so does the remainder; the estimates for its derivatives follow by induction on their
-number, as for the composition symbol itself, each frequency derivative lowering the order of one
-of the two symbols by one.
+number, as for the composition symbol itself (`TauCeti.Symbol.exists_bound_mixedDeriv_of_leibniz`),
+each frequency derivative lowering the order of one of the two symbols by one.
 
 ## Main results
 
@@ -493,59 +493,23 @@ private theorem coefficient_frequencyDeriv_sharpRemainder (hb : b.HasCompactSpat
     coefficient_frequencyDeriv_sharp hb, h, Finset.sum_add_distrib]
   abel
 
-/-- The symbol estimates of order `m' + m - N` for the remainder, by induction on the number of
-derivatives: each derivative falls on one of the two symbols by the Leibniz rules, and a frequency
-derivative lowers the order of that symbol by one. -/
-private theorem exists_bound_sharpRemainder [CompleteSpace W] [CompleteSpace U] (N L : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
-      ∀ α β : List (Fin n), α.length + β.length = L → ∀ K : Set (CoordinateSpace n),
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (a.sharpRemainder hb N).coefficient x ξ‖ ≤
-            C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
-  induction L with
-  | zero =>
-    intro m m' a b hb α β hL K hK
-    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
-      simpa [List.length_eq_zero_iff] using hL
-    obtain ⟨C, hC0, hC⟩ := exists_norm_sharpRemainder_le (a := a) hb N hK
-    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
-  | succ L ih =>
-    intro m m' a b hb α β hL K hK
-    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
-    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
-      · simp at hL
-      · -- The innermost derivative is `∂_{xⱼ}`: it falls on `a` or on `b`, keeping both orders.
-        have hlen : α'.length + ([] : List (Fin n)).length = L := by
-          simp only [List.length_append, List.length_singleton, List.length_nil] at hL ⊢
-          omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) b hb α' [] hlen K hK
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen K hK
-        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-        rw [← mixedDeriv_spatialDeriv, spatialDeriv_sharpRemainder, coefficient_add]
-        exact norm_mixedDeriv_add_le ((spatialDeriv j a).sharpRemainder hb N).contDiff_coefficient
-          (a.sharpRemainder (hb.spatialDeriv j) N).contDiff_coefficient (hC₁ x hx ξ) (hC₂ x hx ξ)
-    · -- The innermost derivative is `∂_{ξⱼ}`: it falls on `a` or on `b`, lowering that order.
-      have hlen : α.length + β'.length = L := by
-        simp only [List.length_append, List.length_singleton] at hL
-        omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) b hb α β' hlen K hK
-      obtain ⟨C₂, hC₂0, hC₂⟩ :=
-        ih a (frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen K hK
-      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-      have e₁ : (m' - 1 + m - N - β'.length) / 2 = (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have e₂ : (m' + (m - 1) - N - β'.length) / 2 =
-          (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have h₁ := hC₁ x hx ξ
-      have h₂ := hC₂ x hx ξ
-      rw [e₁] at h₁
-      rw [e₂] at h₂
-      rw [← mixedDeriv_frequencyDeriv, coefficient_frequencyDeriv_sharpRemainder]
-      exact norm_mixedDeriv_add_le ((frequencyDeriv j a).sharpRemainder hb N).contDiff_coefficient
-        (a.sharpRemainder (hb.frequencyDeriv j) N).contDiff_coefficient h₁ h₂
+/-- The symbol estimates of order `m' + m - N` for the remainder: each derivative falls on one of
+the two symbols by the Leibniz rules, and a frequency derivative lowers the order of that symbol by
+one. -/
+private theorem exists_bound_sharpRemainder [CompleteSpace W] [CompleteSpace U]
+    (hb : b.HasCompactSpatialSupport) (N : ℕ) (α β : List (Fin n)) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (a.sharpRemainder hb N).coefficient x ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) :=
+  exists_bound_mixedDeriv_of_leibniz N (fun a _ hb ↦ (a.sharpRemainder hb N).coefficient)
+    (fun _ _ _ ↦ contDiff_coefficient _)
+    (fun _ _ _ j ↦ funext fun q ↦ by
+      rw [← coefficient_add, ← spatialDeriv_sharpRemainder]
+      exact (coefficient_spatialDeriv j _ q.1 q.2).symm)
+    (fun _ _ _ j ↦ funext fun q ↦ by
+      rw [← coefficient_frequencyDeriv_sharpRemainder]
+      exact (coefficient_frequencyDeriv j _ q.1 q.2).symm)
+    (fun a _ hb _ hK ↦ exists_norm_sharpRemainder_le (a := a) hb N hK) a b hb α β hK
 
 end Remainder
 
@@ -563,7 +527,7 @@ theorem exists_sharp_sub_sum_sharpTerm (hb : b.HasCompactSpatialSupport) (N : �
     ∃ r : Symbol n V U (m' + m - N), r.coefficient =
       (a.sharp b hb).coefficient - ∑ k ∈ Finset.range N, (a.sharpTerm b k).coefficient :=
   ⟨⟨(a.sharpRemainder hb N).coefficient, (a.sharpRemainder hb N).contDiff_coefficient,
-    fun K hK α β ↦ exists_bound_sharpRemainder N _ a b hb α β rfl K hK⟩,
+    fun _ hK α β ↦ exists_bound_sharpRemainder hb N α β hK⟩,
     coefficient_sharpRemainder hb N⟩
 
 /-- **The leading term of a composition.** The composition symbol `a # b` and the pointwise
