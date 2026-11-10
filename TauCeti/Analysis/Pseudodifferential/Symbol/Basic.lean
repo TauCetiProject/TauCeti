@@ -660,6 +660,24 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
 
+/-- The frequency Laplacian commutes with raising the order of a symbol. -/
+@[simp]
+theorem frequencyLaplacian_inclusion (h : m ≤ m') (a : Symbol n V W m) :
+    frequencyLaplacian (inclusion h a) = inclusion (by linarith) (frequencyLaplacian a) := by
+  ext ⟨x, ξ⟩
+  simp
+
+/-- The iterated frequency Laplacian does not see the order of a symbol. -/
+@[simp]
+theorem coefficient_frequencyLaplacianPow_inclusion (N : ℕ) (h : m ≤ m') (a : Symbol n V W m) :
+    (frequencyLaplacianPow N (inclusion h a)).coefficient =
+      (frequencyLaplacianPow N a).coefficient := by
+  induction N generalizing m m' with
+  | zero => simp
+  | succ N ih =>
+    rw [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacianPow_succ,
+      frequencyLaplacian_inclusion, ih]
+
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (frequencyDeriv j a).HasCompactSpatialSupport := by

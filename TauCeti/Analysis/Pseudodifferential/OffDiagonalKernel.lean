@@ -106,6 +106,34 @@ theorem offDiagonalKernel_eq (a : Symbol n V W m) {N : ℕ} (hN : m - 2 * N < -n
     ring
   rw [offDiagonalKernel, ← key _ (sub_two_mul_floor_lt m n) N, add_comm, key _ hN]
 
+/-- The off-diagonal kernel is additive in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_add (a b : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (a + b) x y = offDiagonalKernel a x y + offDiagonalKernel b x y := by
+  have hN := sub_two_mul_floor_lt m n
+  rw [offDiagonalKernel, map_add, coefficient_add,
+    quantizationKernel_add (integrable_coefficient _ hN x) (integrable_coefficient _ hN x),
+    smul_add, offDiagonalKernel, offDiagonalKernel]
+
+/-- The off-diagonal kernel is homogeneous in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_smul (c : ℂ) (a : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (c • a) x y = c • offDiagonalKernel a x y := by
+  rw [offDiagonalKernel, map_smul, coefficient_smul, quantizationKernel_smul, smul_comm,
+    offDiagonalKernel]
+
+/-- The off-diagonal kernel does not depend on the order in which a symbol is regarded. -/
+@[simp]
+theorem offDiagonalKernel_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m)
+    (x y : CoordinateSpace n) :
+    offDiagonalKernel (inclusion h a) x y = offDiagonalKernel a x y := by
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  have hN' := sub_two_mul_floor_lt m' n
+  have hN : m - 2 * ((⌊(m' + n) / 2⌋₊ + 1 : ℕ) : ℝ) < -n := by linarith
+  rw [offDiagonalKernel_eq _ hN' hxy, offDiagonalKernel_eq a hN hxy,
+    coefficient_frequencyLaplacianPow_inclusion]
+
 /-- For a symbol of order `m < -n`, the off-diagonal kernel is the absolutely convergent kernel
 `TauCeti.quantizationKernel`. -/
 theorem offDiagonalKernel_eq_quantizationKernel (a : Symbol n V W m) (hm : m < -n)
