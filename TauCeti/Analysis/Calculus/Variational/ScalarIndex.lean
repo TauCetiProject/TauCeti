@@ -6,8 +6,8 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
-public import Mathlib.Analysis.Calculus.LocalExtr.Basic
-public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+public import Mathlib.Algebra.QuadraticDiscriminant
+public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.Normed.Group.Bounded
 
@@ -55,9 +55,80 @@ noncomputable def scalarIndex (B C : ℝ → ℝ) (c : ℝ) (f : ℝ → ℝ) : 
 noncomputable def scalarMixedIndex (B C : ℝ → ℝ) (c : ℝ) (f g : ℝ → ℝ) : ℝ :=
   ∫ s in 0..c, scalarMixedIndexDensity B C f g s
 
+/-- The defining formula for the scalar index density. -/
+theorem scalarIndexDensity_def (B C f : ℝ → ℝ) (s : ℝ) :
+    scalarIndexDensity B C f s =
+      deriv f s ^ 2 + B s * f s * deriv f s + C s * f s ^ 2 := by rfl
+
+/-- The defining formula for the polarized scalar index density. -/
+theorem scalarMixedIndexDensity_def (B C f g : ℝ → ℝ) (s : ℝ) :
+    scalarMixedIndexDensity B C f g s =
+      deriv f s * deriv g s + B s / 2 * (deriv f s * g s + f s * deriv g s) +
+        C s * f s * g s := by rfl
+
+/-- The scalar index is the integral of its density. -/
+theorem scalarIndex_def (B C : ℝ → ℝ) (c : ℝ) (f : ℝ → ℝ) :
+    scalarIndex B C c f = ∫ s in 0..c, scalarIndexDensity B C f s := by rfl
+
+/-- The mixed scalar index is the integral of its density. -/
+theorem scalarMixedIndex_def (B C : ℝ → ℝ) (c : ℝ) (f g : ℝ → ℝ) :
+    scalarMixedIndex B C c f g = ∫ s in 0..c, scalarMixedIndexDensity B C f g s := by rfl
+
+/-- The polarized density is symmetric in its weights. -/
+theorem scalarMixedIndexDensity_comm (B C f g : ℝ → ℝ) (s : ℝ) :
+    scalarMixedIndexDensity B C f g s = scalarMixedIndexDensity B C g f s := by
+  unfold scalarMixedIndexDensity
+  ring
+
+/-- On the diagonal the polarized density equals the quadratic density. -/
+@[simp] theorem scalarMixedIndexDensity_self (B C f : ℝ → ℝ) (s : ℝ) :
+    scalarMixedIndexDensity B C f f s = scalarIndexDensity B C f s := by
+  unfold scalarMixedIndexDensity scalarIndexDensity
+  ring
+
+/-- The zero weight has zero quadratic density. -/
+@[simp] theorem scalarIndexDensity_zero (B C : ℝ → ℝ) (s : ℝ) :
+    scalarIndexDensity B C 0 s = 0 := by
+  simp [scalarIndexDensity]
+
+/-- The polarized density vanishes when its first weight is zero. -/
+@[simp] theorem scalarMixedIndexDensity_zero_left (B C g : ℝ → ℝ) (s : ℝ) :
+    scalarMixedIndexDensity B C 0 g s = 0 := by
+  simp [scalarMixedIndexDensity]
+
+/-- The polarized density vanishes when its second weight is zero. -/
+@[simp] theorem scalarMixedIndexDensity_zero_right (B C f : ℝ → ℝ) (s : ℝ) :
+    scalarMixedIndexDensity B C f 0 s = 0 := by
+  rw [scalarMixedIndexDensity_comm, scalarMixedIndexDensity_zero_left]
+
+/-- The polarized integral is symmetric in its weights. -/
+theorem scalarMixedIndex_comm (B C : ℝ → ℝ) (c : ℝ) (f g : ℝ → ℝ) :
+    scalarMixedIndex B C c f g = scalarMixedIndex B C c g f := by
+  unfold scalarMixedIndex
+  simp_rw [scalarMixedIndexDensity_comm B C f g]
+
+/-- On the diagonal the polarized integral equals the quadratic index. -/
+@[simp] theorem scalarMixedIndex_self (B C : ℝ → ℝ) (c : ℝ) (f : ℝ → ℝ) :
+    scalarMixedIndex B C c f f = scalarIndex B C c f := by
+  simp [scalarMixedIndex, scalarIndex]
+
+/-- The zero weight has zero scalar index. -/
+@[simp] theorem scalarIndex_zero (B C : ℝ → ℝ) (c : ℝ) : scalarIndex B C c 0 = 0 := by
+  simp [scalarIndex]
+
+/-- The mixed index vanishes when its first weight is zero. -/
+@[simp] theorem scalarMixedIndex_zero_left (B C : ℝ → ℝ) (c : ℝ) (g : ℝ → ℝ) :
+    scalarMixedIndex B C c 0 g = 0 := by
+  simp [scalarMixedIndex]
+
+/-- The mixed index vanishes when its second weight is zero. -/
+@[simp] theorem scalarMixedIndex_zero_right (B C : ℝ → ℝ) (c : ℝ) (f : ℝ → ℝ) :
+    scalarMixedIndex B C c f 0 = 0 := by
+  simp [scalarMixedIndex]
+
 /-- C¹ weights and continuous coefficients give a continuous scalar index density on an open
 interval. -/
-theorem scalarIndexDensity_continuousOn (B C f : ℝ → ℝ) (U : Set ℝ)
+theorem continuousOn_scalarIndexDensity (B C f : ℝ → ℝ) (U : Set ℝ)
     (hU : IsOpen U) (hB : ContinuousOn B U) (hC : ContinuousOn C U)
     (hf : ContDiffOn ℝ 1 f U) : ContinuousOn (scalarIndexDensity B C f) U := by
   have hd := (hf.deriv_of_isOpen hU (m := 0) (by simp)).continuousOn
@@ -65,7 +136,7 @@ theorem scalarIndexDensity_continuousOn (B C f : ℝ → ℝ) (U : Set ℝ)
     (hC.mul (hf.continuousOn.pow 2))
 
 /-- The polarized index density is continuous for C¹ weights and continuous coefficients. -/
-theorem scalarMixedIndexDensity_continuousOn (B C f g : ℝ → ℝ) (U : Set ℝ)
+theorem continuousOn_scalarMixedIndexDensity (B C f g : ℝ → ℝ) (U : Set ℝ)
     (hU : IsOpen U) (hB : ContinuousOn B U) (hC : ContinuousOn C U)
     (hf : ContDiffOn ℝ 1 f U) (hg : ContDiffOn ℝ 1 g U) :
     ContinuousOn (scalarMixedIndexDensity B C f g) U := by
@@ -84,11 +155,11 @@ theorem scalarIndex_add_mul (B C f g : ℝ → ℝ) (c : ℝ) (hc : 0 ≤ c)
     scalarIndex B C c (fun s ↦ f s + t * g s) = scalarIndex B C c f +
       (2 * t) * scalarMixedIndex B C c f g + t ^ 2 * scalarIndex B C c g := by
   have hfi : IntervalIntegrable (scalarIndexDensity B C f) MeasureTheory.volume 0 c :=
-    ((scalarIndexDensity_continuousOn B C f U hU hB hC hf).mono hKU).intervalIntegrable_of_Icc hc
+    ((continuousOn_scalarIndexDensity B C f U hU hB hC hf).mono hKU).intervalIntegrable_of_Icc hc
   have hgi : IntervalIntegrable (scalarIndexDensity B C g) MeasureTheory.volume 0 c :=
-    ((scalarIndexDensity_continuousOn B C g U hU hB hC hg).mono hKU).intervalIntegrable_of_Icc hc
+    ((continuousOn_scalarIndexDensity B C g U hU hB hC hg).mono hKU).intervalIntegrable_of_Icc hc
   have hmi : IntervalIntegrable (scalarMixedIndexDensity B C f g) MeasureTheory.volume 0 c :=
-    ((scalarMixedIndexDensity_continuousOn B C f g U hU hB hC hf hg).mono hKU)
+    ((continuousOn_scalarMixedIndexDensity B C f g U hU hB hC hf hg).mono hKU)
       |>.intervalIntegrable_of_Icc hc
   unfold scalarIndex scalarMixedIndex
   calc
@@ -109,20 +180,6 @@ theorem scalarIndex_add_mul (B C f g : ℝ → ℝ) (c : ℝ) (hc : 0 ≤ c)
       rw [intervalIntegral.integral_add (hfi.add (hmi.const_mul _)) (hgi.const_mul _),
         intervalIntegral.integral_add hfi (hmi.const_mul _),
         intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul]
-
-/-- A quadratic polynomial with zero constant term that is nonnegative everywhere has zero linear
-coefficient. -/
-private theorem linear_coefficient_of_nonneg_quadratic (a b : ℝ)
-    (h : ∀ t : ℝ, 0 ≤ a * t + b * t ^ 2) : a = 0 := by
-  have hmin : IsLocalMin (fun t : ℝ ↦ a * t + b * t ^ 2) 0 := by
-    apply Filter.Eventually.of_forall
-    intro t
-    simpa using h t
-  have hd : HasDerivAt (fun t : ℝ ↦ a * t + b * t ^ 2) a 0 := by
-    convert! ((hasDerivAt_id (0 : ℝ)).const_mul a).add
-      ((hasDerivAt_pow 2 (0 : ℝ)).const_mul b) using 1
-    norm_num
-  exact hmin.hasDerivAt_eq_zero hd
 
 /-- Equality in a universal scalar index lower bound makes the linear weight stationary against
 every smooth weight vanishing at zero. -/
@@ -145,21 +202,24 @@ theorem scalarIndex_stationary (B C : ℝ → ℝ) (c : ℝ) (hc : 0 < c)
     have hcc : c / c = 1 := div_self hc.ne'
     rw [hcc] at h
     nlinarith
-  have h := linear_coefficient_of_nonneg_quadratic _ _ hq
-  linarith
+  have h := discrim_le_zero (a := scalarIndex B C c w - d * w c ^ 2)
+    (b := 2 * (scalarMixedIndex B C c (fun s ↦ s / c) w - d * w c)) (c := 0)
+    (fun t ↦ by simpa only [pow_two, add_zero, zero_add, add_comm] using hq t)
+  unfold discrim at h
+  nlinarith [sq_nonneg (scalarMixedIndex B C c (fun s ↦ s / c) w - d * w c)]
 
 /-- Integration by parts separates the terminal coefficient of the linear weight from the interior
 potential. -/
 theorem scalarMixedIndex_linear_boundary (B C : ℝ → ℝ) (c : ℝ) (hc : 0 < c)
     (U : Set ℝ) (hU : IsOpen U) (hKU : Set.Icc 0 c ⊆ U)
     (hB : ContDiffOn ℝ 1 B U) (hC : ContinuousOn C U)
-    (w : ℝ → ℝ) (hw : ContDiffOn ℝ ∞ w U) (hw0 : w 0 = 0) :
+    (w : ℝ → ℝ) (hw : ContDiffOn ℝ 1 w U) (hw0 : w 0 = 0) :
     scalarMixedIndex B C c (fun s ↦ s / c) w = (1 / c + B c / 2) * w c +
       ∫ s in 0..c, (C s - deriv B s / 2) * (s / c) * w s := by
   let Q : ℝ → ℝ := fun s ↦ (1 / c + B s / 2 * (s / c)) * w s
   have hQ : ContDiffOn ℝ 1 Q U :=
     (contDiffOn_const.add ((hB.div_const 2).mul (contDiffOn_id.div_const c))).mul
-      (hw.of_le (by simp))
+      hw
   have hQi : IntervalIntegrable (deriv Q) MeasureTheory.volume 0 c :=
     (((hQ.deriv_of_isOpen hU (m := 0) (by simp)).continuousOn).mono hKU)
       |>.intervalIntegrable_of_Icc hc.le
@@ -177,6 +237,7 @@ theorem scalarMixedIndex_linear_boundary (B C : ℝ → ℝ) (c : ℝ) (hc : 0 <
     have hyd : HasDerivAt (fun r : ℝ ↦ r / c) (1 / c) s :=
       (hasDerivAt_id s).div_const c
     have hQd := ((((hBd.div_const 2).mul hyd).const_add (1 / c)).mul hwd).deriv
+    -- Q names exactly the pointwise product differentiated above.
     change deriv Q s = _ at hQd
     dsimp only [scalarMixedIndexDensity]
     rw [hQd, hyd.deriv]
@@ -197,15 +258,6 @@ theorem scalarMixedIndex_linear_boundary (B C : ℝ → ℝ) (c : ℝ) (hc : 0 <
     _ = _ := by
       rw [intervalIntegral.integral_add hQi hRi, hFTC]
       simp only [Q, div_self hc.ne', mul_one, hw0, mul_zero, sub_zero]
-
-/-- The exact integral of the normalized nonnegative integer power on a positive compact interval.
--/
-private theorem integral_normalized_power (c : ℝ) (hc : 0 < c) (m : ℕ) :
-    (∫ s in 0..c, (s / c) ^ m) = c / (m + 1 : ℝ) := by
-  simp_rw [div_pow]
-  rw [intervalIntegral.integral_div, integral_pow]
-  simp only [zero_pow (Nat.succ_ne_zero _), sub_zero, pow_succ]
-  field_simp [hc.ne']
 
 /-- A sharp universal scalar index lower bound fixes the terminal coefficient; normalized powers
 force the bounded interior error to zero. -/
@@ -230,7 +282,7 @@ theorem scalarIndex_boundary_rigidity (B C : ℝ → ℝ) (c : ℝ) (hc : 0 < c)
     have hwc : w c = 1 := by simp [w, hc.ne']
     have hstat := scalarIndex_stationary B C c hc U hU hKU hB.continuousOn hC
       d hcompare heq w hw hw0
-    rw [scalarMixedIndex_linear_boundary B C c hc U hU hKU hB hC w hw hw0,
+    rw [scalarMixedIndex_linear_boundary B C c hc U hU hKU hB hC w (hw.of_le (by simp)) hw0,
       hwc, mul_one, mul_one] at hstat
     have hpower : (fun s ↦ (C s - deriv B s / 2) * (s / c) * w s) =
         fun s ↦ R s * (s / c) ^ (m + 2) := by
@@ -252,7 +304,7 @@ theorem scalarIndex_boundary_rigidity (B C : ℝ → ℝ) (c : ℝ) (hc : 0 < c)
         rw [norm_mul, Real.norm_of_nonneg hp]
         exact mul_le_mul_of_nonneg_right (hK s ⟨hs.1.le, hs.2⟩) hp)) hki
     rw [← ha, Real.norm_eq_abs, intervalIntegral.integral_const_mul,
-      integral_normalized_power c hc (m + 2)] at hi
+      integral_div_pow c (m + 2)] at hi
     simpa only [Nat.cast_add, Nat.cast_ofNat, show (2 : ℝ) + 1 = 3 by norm_num,
       add_assoc, mul_div_assoc] using hi
   have ha0 : a = 0 := by

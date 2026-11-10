@@ -63,6 +63,18 @@ open scoped Nat
 
 namespace TauCeti
 
+/-- The normalized integer power integrates to `c / (m + 1)` from zero to `c`,
+including a zero or negative endpoint. -/
+theorem integral_div_pow (c : ℝ) (m : ℕ) :
+    (∫ s in 0..c, (s / c) ^ m) = c / (m + 1 : ℝ) := by
+  by_cases hc : c = 0
+  · simp [hc]
+  simp_rw [div_pow]
+  rw [intervalIntegral.integral_div, integral_pow]
+  simp only [zero_pow (Nat.succ_ne_zero _), sub_zero, pow_succ]
+  field_simp [hc]
+
+
 /-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
 `r > -1`, wherever `c` lies. -/
 theorem intervalIntegrable_sub_const_rpow {r : ℝ} (hr : -1 < r) (c a b : ℝ) :
