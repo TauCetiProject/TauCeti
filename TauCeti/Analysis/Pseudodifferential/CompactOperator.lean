@@ -166,10 +166,8 @@ theorem IsSmoothing.exists_isCompactOperator_quantizeSobolev {a : Symbol n V W m
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
           ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
   obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - r - 1)
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp hc
   rw [← hb]
-  exact b.exists_isCompactOperator_quantizeSobolev
-    (hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ hb ▸ hKa x hx ξ⟩) (by linarith)
+  exact b.exists_isCompactOperator_quantizeSobolev (hc.of_coefficient_eq hb) (by linarith)
 
 end FiniteDimensional
 
