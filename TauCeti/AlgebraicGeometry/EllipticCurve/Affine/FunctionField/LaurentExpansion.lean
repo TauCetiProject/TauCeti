@@ -125,14 +125,6 @@ theorem valuation_functionFieldLaurentExpansion (f : W.toAffine.FunctionField) :
     (Valuation.surjective_of_map_eq_exp_neg_one W.toAffine.infinityPlace
       W.toAffine.infinityPlace_neg_genericX_div_genericY) hequiv) f
 
-/-- The valuation of the Laurent expansion represents the same place as infinity. -/
-theorem isEquiv_comap_functionFieldLaurentExpansion :
-    ((Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).comap
-      W.functionFieldLaurentExpansion.toRingHom).IsEquiv W.toAffine.infinityPlace := by
-  apply Valuation.IsEquiv.of_eq
-  ext f
-  exact W.valuation_functionFieldLaurentExpansion f
-
 /-- A rational function is regular at infinity exactly when its expansion has no negative powers. -/
 theorem exists_powerSeries_functionFieldLaurentExpansion_iff (f : W.toAffine.FunctionField) :
     (∃ g : K⟦X⟧, (g : K⸨X⸩) = W.functionFieldLaurentExpansion f) ↔
