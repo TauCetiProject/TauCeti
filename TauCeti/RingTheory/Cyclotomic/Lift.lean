@@ -233,14 +233,15 @@ theorem conjugateResiduesRingHom_apply [Fact p.Prime] [NeZero e] {α : ZMod p}
     conjugateResiduesRingHom hα x = conjugateResidues α x :=
   funext fun _ => reduceRingHom_apply _ _ _ _
 
-/-- The residue tuple of `0` is `0`.  Unlike the rules for `1` and products this needs no
-primitive root: every coordinate of `0` vanishes, so every residue does. -/
+/-- The residue tuple of `0` is `0`.  Unlike the rule for products this needs no primitive root:
+every coordinate of `0` vanishes, so every residue does. -/
 @[simp]
 theorem conjugateResidues_zero {α : ZMod p} : conjugateResidues α (0 : Cyclotomic e) = 0 := by
   funext j
   simp [conjugateResidues_apply]
 
-/-- The residue tuple of `1` is `1`. -/
+/-- The residue tuple of `1` is `1`.  This needs no primitive root either: coordinate `0` of `1`
+is `1` and all others vanish. -/
 @[simp]
 theorem conjugateResidues_one {α : ZMod p} : conjugateResidues α (1 : Cyclotomic e) = 1 := by
   rcases Nat.eq_zero_or_pos e with rfl | he
