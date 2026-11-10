@@ -78,6 +78,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
     ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
       gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
 
+omit [Finite I] in
 include he₀ hne hbP in
 /-- **Pairing a projective class against a simple class.** The q-Euler pairing of `x` with `[Sᵢ]`
 is the diagonal graded dimension `gdim(eᵢ • Sᵢ)` times the conjugate of the `i`th projective
@@ -87,12 +88,16 @@ theorem gradedProjectiveExtEuler_simple_eq_mul_invert_repr
     gradedProjectiveExtEuler 𝒜 x (LaurentK0.of.{uA} _ (S i)) =
       (S i).obj.smulGradedDimension (e i) * invert (bP.repr x i) := by
   classical
-  let : Fintype I := Fintype.ofFinite I
-  conv_lhs => rw [← bP.sum_repr x]
-  simp only [map_sum, LinearMap.sum_apply, LinearMap.map_smulₛₗ, LinearMap.smul_apply, hbP,
+  conv_lhs => rw [← bP.linearCombination_repr x]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, map_sum, LinearMap.sum_apply,
+    LinearMap.map_smulₛₗ, LinearMap.smul_apply, hbP,
     gradedProjectiveExtEuler_basis S he he₀ hI hne]
-  simp [mul_comm]
+  simp only [smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq', Finsupp.mem_support_iff]
+  split_ifs with h
+  · exact mul_comm _ _
+  · rw [not_not.mp h, map_zero, mul_zero]
 
+omit [Finite I] in
 include he₀ hne hbP in
 /-- The projective coordinate of a module generated in degree `d` is a single monomial,
 scaled by the idempotent dimension of its degree-zero simple target. -/
@@ -120,6 +125,7 @@ section NeZero
 variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
   (hS : IsExhaustiveGradedSimpleFamily S)
 
+omit [Finite I] in
 include he₀ hI hne hself hbP in
 /-- The q-Euler pairing separates projective classes when every diagonal graded dimension
 `gdim(eᵢ • Sᵢ)` is nonzero. -/
@@ -150,6 +156,7 @@ theorem gradedProjectiveExtEuler_flip_injective :
     ← gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀ hI hne hself hS]
   exact DFunLike.congr_fun hxy _
 
+omit [Finite I] in
 include he he₀ hI hne hself hS hbP in
 /-- **Both radicals of the projective/module q-Euler pairing vanish** when every diagonal graded
 dimension `gdim(eᵢ • Sᵢ)` is nonzero. This does not identify either side with the dual of the
@@ -164,7 +171,7 @@ theorem gradedProjectiveExtEuler_nondegenerate :
     exact LinearMap.ker_eq_bot_of_injective
       (gradedProjectiveExtEuler_flip_injective S he he₀ hne hself hS)
 
-include he he₀ hI hne hself hS hbP in
+include he he₀ hI hne hS hbP in
 /-- **The q-Euler pairing identifies the projective group with the dual of the module group
 exactly when every diagonal graded dimension is a unit.** Every linear functional on
 `G₀^gr(mod A)` is `χ_q(x, -)` for exactly one projective class `x` if and only if each
@@ -174,27 +181,46 @@ theorem gradedProjectiveExtEuler_bijective_iff :
       ∀ i, IsUnit ((S i).obj.smulGradedDimension (e i)) := by
   classical
   let : Fintype I := Fintype.ofFinite I
-  let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
-  have hbS (i : I) : bS i = LaurentK0.of.{uA} _ (S i) :=
-    gradedSimpleClassBasisOfNeZero_apply S he he₀ hne hself hS i
   have hpair := gradedProjectiveExtEuler_simple_eq_mul_invert_repr S he he₀ hI hne bP hbP
+  have key (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0) :
+      Function.Bijective (gradedProjectiveExtEuler 𝒜) ↔
+        ∀ i, IsUnit ((S i).obj.smulGradedDimension (e i)) := by
+    let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
+    have hbS (i : I) : bS i = LaurentK0.of.{uA} _ (S i) :=
+      gradedSimpleClassBasisOfNeZero_apply S he he₀ hne hself hS i
+    constructor
+    · -- The `i`th coordinate functional is represented, and pairing its representative with
+      -- `[Sᵢ]` exhibits an inverse of `gdim(eᵢ • Sᵢ)`.
+      intro h i
+      obtain ⟨x, hx⟩ := h.2 (bS.coord i)
+      have hxi := DFunLike.congr_fun hx (bS i)
+      rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, hbS,
+        hpair] at hxi
+      exact IsUnit.of_mul_eq_one _ hxi
+    · intro hu
+      refine ⟨gradedProjectiveExtEuler_injective S he he₀ hI hne bP hbP hself, fun f => ?_⟩
+      refine ⟨∑ i, invert ((↑(hu i).unit⁻¹ : LaurentPolynomial ℤ) * f (bS i)) • bP i, ?_⟩
+      refine bS.ext fun j => ?_
+      conv_lhs => rw [hbS j, hpair, bP.repr_sum_self, involutive_invert (R := ℤ) _]
+      exact (hu j).unit.mul_inv_cancel_left _
   constructor
-  · -- The `i`th coordinate functional is represented, and pairing its representative with `[Sᵢ]`
-    -- exhibits an inverse of `gdim(eᵢ • Sᵢ)`.
-    intro h i
-    obtain ⟨x, hx⟩ := h.2 (bS.coord i)
-    have hxi := DFunLike.congr_fun hx (bS i)
-    rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, hbS,
-      hpair] at hxi
-    exact IsUnit.of_mul_eq_one _ hxi
+  · intro h
+    -- A vanishing diagonal graded dimension makes `χ_q([A eᵢ], -)` vanish on the spanning
+    -- simple classes, contradicting injectivity.
+    refine (key fun i hi ↦ ?_).mp h
+    have hzero : gradedProjectiveExtEuler 𝒜 (bP i) = gradedProjectiveExtEuler 𝒜 0 := by
+      refine LinearMap.ext_on (span_range_laurentK0_of_eq_top S hS) ?_
+      rintro _ ⟨j, rfl⟩
+      rw [map_zero, LinearMap.zero_apply, hpair, Module.Basis.repr_self, Finsupp.single_apply]
+      split_ifs with hij
+      · subst hij
+        rw [hi, zero_mul]
+      · rw [map_zero, mul_zero]
+    exact bP.ne_zero i (h.1 hzero)
   · intro hu
-    refine ⟨gradedProjectiveExtEuler_injective S he he₀ hI hne bP hbP hself, fun f => ?_⟩
-    refine ⟨∑ i, invert ((↑(hu i).unit⁻¹ : LaurentPolynomial ℤ) * f (bS i)) • bP i, ?_⟩
-    refine bS.ext fun j => ?_
-    conv_lhs => rw [hbS j, hpair, bP.repr_sum_self, involutive_invert (R := ℤ) _]
-    exact (hu j).unit.mul_inv_cancel_left _
+    exact (key fun i ↦ (hu i).ne_zero).mpr hu
 
-include he he₀ hI hne hself hS hbP in
+include he he₀ hI hne hS hbP in
 /-- **The q-Euler pairing identifies the module group with the semilinear dual of the projective
 group exactly when every diagonal graded dimension is a unit.** Every `q ↦ q⁻¹` semilinear
 functional on `K₀^gr(proj A)` is `χ_q(-, y)` for exactly one module class `y` if and only if each
@@ -204,22 +230,31 @@ theorem gradedProjectiveExtEuler_flip_bijective_iff :
       ∀ i, IsUnit ((S i).obj.smulGradedDimension (e i)) := by
   classical
   let : Fintype I := Fintype.ofFinite I
-  let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
-  have hpair (i : I) (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
-      gradedProjectiveExtEuler 𝒜 (bP i) y = (S i).obj.smulGradedDimension (e i) * bS.repr y i := by
-    rw [hbP, gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀ hI hne hself hS]
   constructor
-  · -- The conjugated `i`th projective coordinate is represented by some module class `y`, and
-    -- pairing `[A eᵢ]` with `y` exhibits an inverse of `gdim(eᵢ • Sᵢ)`.
+  · -- The conjugated `i`th projective coordinate is represented by some module class `y`. Writing
+    -- `y` in the spanning simple classes, pairing `[A eᵢ]` with `y` exhibits an inverse of
+    -- `gdim(eᵢ • Sᵢ)`.
     intro h i
     obtain ⟨y, hy⟩ := h.2
       ((invert (R := ℤ)).toRingEquiv.toRingHom.toSemilinearMap.comp (bP.coord i))
     have hyi : gradedProjectiveExtEuler 𝒜 (bP i) y = 1 := by
       rw [← LinearMap.flip_apply, hy, LinearMap.comp_apply, RingHom.coe_toSemilinearMap,
         Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, map_one]
-    rw [hpair] at hyi
-    exact IsUnit.of_mul_eq_one _ hyi
+    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun (LaurentPolynomial ℤ)).mp
+      (span_range_laurentK0_of_eq_top S hS ▸ Submodule.mem_top (x := y))
+    simp only [map_sum, map_smul, gradedProjectiveExtEuler_simple_eq_mul_invert_repr S he he₀ hI hne
+      bP hbP, Module.Basis.repr_self, Finsupp.single_apply, apply_ite (invert (R := ℤ)), map_zero,
+      mul_ite, mul_zero, smul_eq_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true, map_one,
+      mul_one] at hyi
+    exact IsUnit.of_mul_eq_one (c i) (by rw [mul_comm]; exact hyi)
   · intro hu
+    have hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0 := fun i ↦ (hu i).ne_zero
+    let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
+    have hpair (i : I) (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
+        gradedProjectiveExtEuler 𝒜 (bP i) y =
+          (S i).obj.smulGradedDimension (e i) * bS.repr y i := by
+      rw [hbP, gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀ hI hne hself
+        hS]
     refine ⟨gradedProjectiveExtEuler_flip_injective S he he₀ hne hself hS, fun f => ?_⟩
     refine ⟨∑ i, ((↑(hu i).unit⁻¹ : LaurentPolynomial ℤ) * f (bP i)) • bS i, ?_⟩
     refine bP.ext fun j => ?_
