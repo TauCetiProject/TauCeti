@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.RingTheory.Valuation.Discrete.Frobenius
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 
 /-!
 # Frobenius and separating elements of a function field
@@ -201,8 +202,8 @@ theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [Per
     (hprime : (Module.finrank k⟮x⟯ F).Prime) (hsep : ¬ Algebra.IsSeparable k⟮x⟯ F) :
     ∃ y : F, y ^ p = x ∧ k⟮y⟯ = ⊤ := by
   have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos hprime.pos
-  have hx : Transcendental k x :=
-    transcendental_of_finiteDimensional_adjoin hF.exists_transcendental.choose_spec
+  have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
+  have hx : Transcendental k x := transcendental_of_isAlgebraic_adjoin
   cases (inferInstance : ExpChar F p) with
   | zero => exact (hsep inferInstance).elim
   | prime hp =>
