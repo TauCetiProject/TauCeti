@@ -216,7 +216,7 @@ private theorem exists_norm_scaledSharp_le (hb : b.HasCompactSpatialSupport)
 /-- At `t = 1` the family is the composition symbol. -/
 private theorem scaledSharp_one (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
     scaledSharp a b 1 x ξ = (a.sharp b hb).coefficient (x, ξ) := by
-  simp only [scaledSharp, sharpIntegrand, one_mul, coefficient_sharp]
+  simp only [scaledSharp, sharpIntegrand_apply, one_mul, coefficient_sharp]
 
 /-- At `t = 0` the family is the pointwise composition, by Fourier inversion. -/
 private theorem scaledSharp_zero [CompleteSpace W] [CompleteSpace U]
@@ -237,7 +237,7 @@ private theorem scaledSharp_zero [CompleteSpace W] [CompleteSpace U]
   calc scaledSharp a b 0 x ξ
       = ∫ η, ContinuousLinearMap.compL ℂ V W U (a.coefficient (x, ξ))
           ((𝐞 ⟪η, x⟫ : ℂ) • 𝓕 f η) := by
-        simp only [scaledSharp, sharpIntegrand, zero_mul, zero_smul, add_zero, map_smul,
+        simp only [scaledSharp, sharpIntegrand_apply, zero_mul, zero_smul, add_zero, map_smul,
           ContinuousLinearMap.compL_apply, f]
     _ = (a.coefficient (x, ξ)).comp (𝓕⁻ (𝓕 f) x) := by
         rw [ContinuousLinearMap.integral_comp_comm _ hint', Real.fourierInv_eq,
@@ -268,13 +268,13 @@ private theorem hasDerivAt_sharpIntegrand (hb : b.HasCompactSpatialSupport) (t :
       (frequencyDeriv j a).coefficient (x, ζ) := by
     rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
   refine (h.congr_of_eventuallyEq (.of_forall fun s ↦ ?_)).congr_deriv ?_
-  · simp only [sharpIntegrand, Pi.smul_apply, Function.comp_apply, ContinuousLinearMap.flip_apply,
-      ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply, Φ,
-      g, B]
+  · simp only [sharpIntegrand_apply, Pi.smul_apply, Function.comp_apply,
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+      ContinuousLinearMap.compL_apply, Φ, g, B]
   rw [ContinuousLinearMap.apply_eq_sum_single (fderiv ℝ g (ξ + (t * (2 * π)) • η)) c, map_sum,
     Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [sharpIntegrand, hb.fourier_spatialDeriv_slice, hgj, map_smul, Φ, c, B,
+  simp only [sharpIntegrand_apply, hb.fourier_spatialDeriv_slice, hgj, map_smul, Φ, c, B,
     ContinuousLinearMap.flip_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.comp_smul, PiLp.smul_apply, smul_smul, EuclideanSpace.inner_single_right,
     ← Complex.coe_smul]

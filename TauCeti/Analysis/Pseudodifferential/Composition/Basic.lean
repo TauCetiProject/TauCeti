@@ -180,10 +180,16 @@ frequency shift `2πη` scaled to `sη`, where `b̂(η, ξ)` is the Fourier tran
 slice `y ↦ b(y, ξ)`. The integrand of `a # b` is the case `s = 2π`, and the cases `s = 2πt` with
 `t ∈ [0, 1]` interpolate between the pointwise composition and `a # b`
 (`TauCeti.Analysis.Pseudodifferential.Composition.Expansion`). -/
-@[expose] def sharpIntegrand (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n)
+def sharpIntegrand (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n)
     (η : CoordinateSpace n) : V →L[ℂ] U :=
   (𝐞 ⟪η, p.1⟫ : ℂ) • (a.coefficient (p.1, p.2 + s • η)).comp
     (𝓕 (fun y ↦ b.coefficient (y, p.2)) η)
+
+theorem sharpIntegrand_apply (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n)
+    (η : CoordinateSpace n) :
+    sharpIntegrand a b s p η = (𝐞 ⟪η, p.1⟫ : ℂ) • (a.coefficient (p.1, p.2 + s • η)).comp
+      (𝓕 (fun y ↦ b.coefficient (y, p.2)) η) :=
+  (rfl)
 
 /-- The integrand `exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) ∘ b̂(η, ξ)` of the composition symbol. -/
 private def compIntegrand (p : CoordinateSpace n × CoordinateSpace n) (η : CoordinateSpace n) :
@@ -198,8 +204,8 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
     compIntegrand a b p η = (𝐞 ⟪η, p.1⟫ : ℂ) •
       (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
         (a.coefficient (p.1, p.2 + (2 * π) • η)) (𝓕 (fun y ↦ b.coefficient (y, p.2)) η) := by
-  simp only [compIntegrand, sharpIntegrand, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    ContinuousLinearMap.compL_apply]
+  simp only [compIntegrand, sharpIntegrand_apply,
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply]
 
 variable (a) in
 /-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
@@ -253,7 +259,7 @@ theorem HasCompactSpatialSupport.exists_norm_sharpIntegrand_le (hb : b.HasCompac
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨C, hC0, hC⟩ := hb.exists_norm_comp_fourier_slice_le a hK r hR
   refine ⟨C, hC0, fun s hs x hx ξ η ↦ ?_⟩
-  rw [sharpIntegrand, norm_smul, Circle.norm_coe, one_mul]
+  rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
   refine hC x hx ξ η _ ?_
   rw [norm_smul, Real.norm_eq_abs]
   gcongr
@@ -395,7 +401,7 @@ private theorem coordinateDeriv_fst_compIntegrand (hb : b.HasCompactSpatialSuppo
       fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ζ)) :=
     funext fun x ↦ by rw [compIntegrand_eq_bilinear, ContinuousLinearMap.flip_apply]
   rw [coordinateDeriv_cons, coordinateDeriv_nil, hf, h.fderiv]
-  simp only [compIntegrand, sharpIntegrand, add_apply, smul_apply,
+  simp only [compIntegrand, sharpIntegrand_apply, add_apply, smul_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, Function.comp_apply,
     innerSL_apply_apply, Ψ, Φ, ContinuousLinearMap.flip_apply,
     ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
@@ -442,7 +448,7 @@ private theorem coordinateDeriv_snd_compIntegrand (hb : b.HasCompactSpatialSuppo
     add_zero, ContinuousLinearMap.precompR_apply,
     ContinuousLinearMap.precompL_apply, ContinuousLinearMap.compL_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hAj, hBj, Φ,
-    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, compIntegrand, sharpIntegrand]
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, compIntegrand, sharpIntegrand_apply]
   rw [smul_add, add_comm]
 
 private theorem differentiableAt_compIntegrand (hb : b.HasCompactSpatialSupport)
@@ -703,7 +709,7 @@ private theorem compCoeff_congr {m₁ m₂ k₁ k₂ : ℝ} {a₁ : Symbol n W U
     {b₁ : Symbol n V W k₁} {b₂ : Symbol n V W k₂} (ha : a₁.coefficient = a₂.coefficient)
     (hb : b₁.coefficient = b₂.coefficient) : compCoeff a₁ b₁ = compCoeff a₂ b₂ := by
   funext p
-  simp only [compCoeff, compIntegrand, sharpIntegrand, ha, hb]
+  simp only [compCoeff, compIntegrand, sharpIntegrand_apply, ha, hb]
 
 theorem add_sharp (a₁ a₂ : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
     (a₁ + a₂).sharp b hb = a₁.sharp b hb + a₂.sharp b hb := by
@@ -713,7 +719,7 @@ theorem add_sharp (a₁ a₂ : Symbol n W U m') (hb : b.HasCompactSpatialSupport
     coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, compCoeff,
     ← integral_add (integrable_compIntegrand hb p) (integrable_compIntegrand hb p)]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [compIntegrand, sharpIntegrand, coefficient_add, Pi.add_apply,
+  simp only [compIntegrand, sharpIntegrand_apply, coefficient_add, Pi.add_apply,
     ContinuousLinearMap.add_comp, smul_add]
 
 theorem sharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
@@ -725,7 +731,7 @@ theorem sharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
     coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, compCoeff,
     ← integral_add (integrable_compIntegrand hb₁ p) (integrable_compIntegrand hb₂ p)]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [compIntegrand, sharpIntegrand, hb₁.fourier_slice_add hb₂,
+  simp only [compIntegrand, sharpIntegrand_apply, hb₁.fourier_slice_add hb₂,
     ContinuousLinearMap.comp_add, smul_add]
 
 @[simp]
@@ -736,7 +742,7 @@ theorem smul_sharp (c : ℂ) (a : Symbol n W U m') (hb : b.HasCompactSpatialSupp
   rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq_compCoeff,
     coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, ← integral_smul]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [compIntegrand, sharpIntegrand, coefficient_smul, Pi.smul_apply,
+  simp only [compIntegrand, sharpIntegrand_apply, coefficient_smul, Pi.smul_apply,
     ContinuousLinearMap.smul_comp, smul_comm c]
 
 @[simp]
@@ -747,8 +753,8 @@ theorem sharp_smul (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) (c : 
   rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq_compCoeff,
     coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, ← integral_smul]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [compIntegrand, sharpIntegrand, hb.fourier_slice_smul, ContinuousLinearMap.comp_smul,
-    smul_comm c]
+  simp only [compIntegrand, sharpIntegrand_apply, hb.fourier_slice_smul,
+    ContinuousLinearMap.comp_smul, smul_comm c]
 
 @[simp]
 theorem zero_sharp (hb : b.HasCompactSpatialSupport) : (0 : Symbol n W U m').sharp b hb = 0 := by
@@ -853,7 +859,7 @@ private theorem integrable_composeIntegrand (hb : b.HasCompactSpatialSupport)
   have hξ : (2 * π) • q.2 + (2 * π) • (q.1 - q.2) = (2 * π) • q.1 := by
     rw [← smul_add, add_sub_cancel]
   have h := hC x rfl ((2 * π) • q.2) (q.1 - q.2)
-  rw [compIntegrand, sharpIntegrand, norm_smul, Circle.norm_coe, one_mul, hξ] at h
+  rw [compIntegrand, sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul, hξ] at h
   rw [Circle.norm_smul, ContinuousLinearMap.mul_apply']
   calc ‖a.coefficient (x, (2 * π) • q.1)
         (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2))‖
@@ -916,7 +922,7 @@ theorem quantizeSchwartzValue_sharp [CompleteSpace W] [CompleteSpace U]
     ContinuousLinearMap.integral_apply (integrable_compIntegrand hb _), Circle.smul_def,
     ← integral_smul]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [hFdef, compIntegrand, sharpIntegrand, add_sub_cancel_right, smul_add, smul_apply,
+  simp only [hFdef, compIntegrand, sharpIntegrand_apply, add_sub_cancel_right, smul_add, smul_apply,
     ContinuousLinearMap.comp_apply, Circle.smul_def, smul_smul, inner_add_left,
     AddChar.map_add_eq_mul, Circle.coe_mul]
   rw [add_comm ((2 * π) • η), mul_comm]
