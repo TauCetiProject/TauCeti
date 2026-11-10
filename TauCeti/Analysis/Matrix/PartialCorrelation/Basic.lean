@@ -194,6 +194,16 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
   simp only [Finset.mem_Iic, not_le] at hk
   rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
 
+/-- The first column of the Gram matrix consists of the first-column partial correlations. -/
+theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
+    {i : Fin (p + 1)} (h : 0 < i) : partialCorrelationGram z i 0 = z ⟨(i, 0), h⟩ := by
+  have hrow : ∀ ij : strictLowerTriangle (p + 1), ij.1.1 ≠ 0 := fun ij h0 ↦
+    Fin.not_lt_zero _ (h0 ▸ ij.2)
+  rw [partialCorrelationGram_apply_eq_sum_Iic, Finset.sum_eq_single_of_mem 0
+      (Finset.mem_Iic.2 le_rfl) fun k hk hk0 ↦ absurd (nonpos_iff_eq_zero.1 (Finset.mem_Iic.1 hk))
+        hk0, partialCorrelationCholesky_apply_of_gt z h, partialCorrelationCholesky_apply_self]
+  simp [Finset.filter_false_of_mem, hrow]
+
 private theorem row_sq_lt_one {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) (i j : Fin p) : partialCorrelationRow z i j ^ 2 < 1 := by
   by_cases h : j < i

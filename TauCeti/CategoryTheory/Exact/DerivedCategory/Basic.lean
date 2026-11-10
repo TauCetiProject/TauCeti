@@ -29,6 +29,10 @@ it does not change the quotient (Bühler, Remark 10.5).
 
 ## Main definitions
 
+* `TauCeti.ExactStructure.homotopyAcyclic`: the objects of the homotopy category isomorphic to the
+  class of an acyclic complex, with no boundedness condition. They form a triangulated
+  subcategory, and `TauCeti.ExactStructure.homotopyAcyclic_trW_quotient_map` shows that a map of
+  complexes with acyclic mapping cone is in its `trW`.
 * `TauCeti.ExactStructure.boundedAcyclic`: the bounded acyclic objects of the homotopy category,
   characterized by `TauCeti.ExactStructure.boundedAcyclic_iff`.
 * `TauCeti.ExactStructure.acyclicBounded`: the same objects in `Kᵇ(C)`
@@ -110,6 +114,62 @@ instance : E.boundedAcyclic.IsTriangulatedClosed₃ where
 
 instance : E.boundedAcyclic.IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
+
+/-- The objects of the homotopy category isomorphic to the class of an acyclic complex. -/
+def homotopyAcyclic : ObjectProperty (HomotopyCategory C (.up ℤ)) := fun X ↦
+  ∃ K : CochainComplex C ℤ, E.acyclic K ∧ Nonempty (X ≅ (HomotopyCategory.quotient C (.up ℤ)).obj K)
+
+/-- An object of the homotopy category is homotopy acyclic exactly when it is isomorphic to the
+class of an acyclic complex. -/
+theorem homotopyAcyclic_iff (X : HomotopyCategory C (.up ℤ)) :
+    E.homotopyAcyclic X ↔
+      ∃ K : CochainComplex C ℤ, E.acyclic K ∧
+        Nonempty (X ≅ (HomotopyCategory.quotient C (.up ℤ)).obj K) :=
+  Iff.rfl
+
+/-- The class of an acyclic complex is homotopy acyclic. -/
+theorem homotopyAcyclic_quotient_obj {K : CochainComplex C ℤ} (ha : E.acyclic K) :
+    E.homotopyAcyclic ((HomotopyCategory.quotient C (.up ℤ)).obj K) :=
+  ⟨K, ha, ⟨Iso.refl _⟩⟩
+
+instance : E.homotopyAcyclic.IsClosedUnderIsomorphisms where
+  of_iso e := fun ⟨K, ha, ⟨e'⟩⟩ ↦ ⟨K, ha, ⟨e.symm ≪≫ e'⟩⟩
+
+instance : E.homotopyAcyclic.ContainsZero where
+  exists_zero := ⟨(HomotopyCategory.quotient C (.up ℤ)).obj 0,
+    Functor.map_isZero _ (isZero_zero _), E.homotopyAcyclic_quotient_obj
+      (E.acyclic.prop_of_isZero (isZero_zero _))⟩
+
+instance : E.homotopyAcyclic.IsStableUnderShift ℤ where
+  isStableUnderShiftBy n := ⟨fun _ ⟨K, ha, ⟨e⟩⟩ ↦ ⟨K⟦n⟧, E.acyclic.le_shift n K ha,
+    ⟨(shiftFunctor _ n).mapIso e ≪≫
+      ((HomotopyCategory.quotient C (.up ℤ)).commShiftIso n).symm.app K⟩⟩⟩
+
+instance : E.homotopyAcyclic.IsTriangulatedClosed₃ where
+  ext₃' T hT := fun ⟨K₁, ha₁, ⟨e₁⟩⟩ ⟨K₂, ha₂, ⟨e₂⟩⟩ ↦ by
+    obtain ⟨f, hf⟩ := (HomotopyCategory.quotient C (.up ℤ)).map_surjective
+      (e₁.inv ≫ T.mor₁ ≫ e₂.hom)
+    refine ObjectProperty.le_isoClosure _ _ ⟨CochainComplex.mappingCone f,
+      E.acyclic_mappingCone f ha₁ ha₂,
+      ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT
+        (HomotopyCategory.mappingCone_triangleh_distinguished f) e₁ e₂ ?_)⟩⟩
+    -- The goal is stated through the triangle of the mapping cone; its first morphism is the
+    -- class of `f`.
+    change T.mor₁ ≫ e₂.hom = e₁.hom ≫ (HomotopyCategory.quotient C (.up ℤ)).map f
+    rw [hf]
+    simp
+
+instance : E.homotopyAcyclic.IsTriangulated where
+  toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
+
+/-- **A map of complexes with acyclic mapping cone is inverted in the derived category**: its class
+in the homotopy category lies in `E.homotopyAcyclic.trW`. -/
+theorem homotopyAcyclic_trW_quotient_map {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hf : E.acyclic (CochainComplex.mappingCone f)) :
+    E.homotopyAcyclic.trW ((HomotopyCategory.quotient C (.up ℤ)).map f) :=
+  (E.homotopyAcyclic.trW_iff_of_distinguished _
+    (HomotopyCategory.mappingCone_triangleh_distinguished f)).2
+      (E.homotopyAcyclic_quotient_obj hf)
 
 /-- The bounded acyclic complexes, as a triangulated subcategory of the bounded homotopy category
 `Kᵇ(C)`. -/

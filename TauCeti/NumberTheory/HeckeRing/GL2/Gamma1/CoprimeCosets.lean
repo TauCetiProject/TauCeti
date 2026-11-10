@@ -312,17 +312,13 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = 
     exact ⟨some ⟨j.val, j.val_lt⟩,
       exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ j.val_lt (mul_comm _ (γ 0 0) ▸ hj)⟩
 
-/-- **The twisted representative lies in none of the upper-triangular cosets.** For `1 < p`
-and `σ` whose lower-right entry is `p`, the right coset of `σ · diag(p, 1)` modulo any
-subgroup `G ≤ SL(2, ℤ)` differs from that of every `!![1, b; 0, p]`. -/
-private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < p)
-    (hσ11 : σ 1 1 = (p : ℤ)) (b : Fin p) :
+/-- **The twisted representative lies in none of the upper-triangular cosets.** For `1 < p`,
+the right coset of `σ · diag(p, 1)` modulo any subgroup `G ≤ SL(2, ℤ)` differs from that of every
+`!![1, b; 0, p]`. -/
+private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < p) (b : Fin p) :
     MulOpposite.op (primeRep σ p (some b)) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) ≠
       MulOpposite.op (primeRep σ p none) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) := by
   have hp0 : 0 < p := by omega
-  have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * σ 1 0 = 1 := by
-    rw [← hσ11]
-    exact fin_two_mul_sub_mul_eq_one σ
   intro heq
   obtain ⟨τ, -, hτeq⟩ := Subgroup.mem_map.mp ((rightCoset_eq_iff _).mp heq)
   have hmul : (mapGL ℚ τ : GL (Fin 2) ℚ) * upperTriRep p b = primeRep σ p none := by
@@ -336,26 +332,36 @@ private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < 
   have h01 : ((τ 0 0 : ℤ) : ℚ) * (b : ℚ) + ((τ 0 1 : ℤ) : ℚ) * (p : ℚ) = ((σ 0 1 : ℤ) : ℚ) := by
     simpa using congrFun (congrFun hmat 0) 1
   rw [h00] at h01
+  have h11 : ((τ 1 0 : ℤ) : ℚ) * (b : ℚ) + ((τ 1 1 : ℤ) : ℚ) * (p : ℚ) = ((σ 1 1 : ℤ) : ℚ) := by
+    simpa using congrFun (congrFun hmat 1) 1
+  have h10 : ((τ 1 0 : ℤ) : ℚ) = ((σ 1 0 : ℤ) : ℚ) * (p : ℚ) := by
+    simpa using congrFun (congrFun hmat 1) 0
+  rw [h10] at h11
+  have hn' : (σ 1 1 : ℤ) = (p : ℤ) * (σ 1 0 * (b : ℕ) + τ 1 1) := by
+    have hQ : ((σ 1 1 : ℤ) : ℚ) = (((p : ℤ) * (σ 1 0 * (b : ℕ) + τ 1 1) : ℤ) : ℚ) := by
+      push_cast at h11 ⊢
+      linarith
+    exact_mod_cast hQ
   have hn : (σ 0 1 : ℤ) = (p : ℤ) * (σ 0 0 * (b : ℕ) + τ 0 1) := by
     have hQ : ((σ 0 1 : ℤ) : ℚ) = (((p : ℤ) * (σ 0 0 * (b : ℕ) + τ 0 1) : ℤ) : ℚ) := by
       push_cast at h01 ⊢
       linarith
     exact_mod_cast hQ
   have hdvd : (p : ℤ) ∣ 1 :=
-    ⟨σ 0 0 - (σ 0 0 * (b : ℕ) + τ 0 1) * σ 1 0, by linear_combination -hσdet - σ 1 0 * hn⟩
+    ⟨σ 0 0 * (σ 1 0 * (b : ℕ) + τ 1 1) - (σ 0 0 * (b : ℕ) + τ 0 1) * σ 1 0, by
+      linear_combination σ 0 0 * hn' - σ 1 0 * hn - fin_two_mul_sub_mul_eq_one σ⟩
   have hle := Int.le_of_dvd one_pos hdvd
   omega
 
 /-- **The `p + 1` right cosets are pairwise distinct**, modulo any subgroup `G ≤ SL(2, ℤ)`,
-whenever `1 < p` and `σ` has lower-right entry `p`. -/
-theorem op_primeRep_smul_injective {G : Subgroup SL(2, ℤ)} (hp : 1 < p)
-    (hσ11 : σ 1 1 = (p : ℤ)) :
+whenever `1 < p`. -/
+theorem op_primeRep_smul_injective {G : Subgroup SL(2, ℤ)} (hp : 1 < p) :
     Function.Injective fun i : Option (Fin p) ↦
       MulOpposite.op (primeRep σ p i) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) := by
   rintro (_ | b₁) (_ | b₂) h
   · rfl
-  · exact absurd h.symm (op_primeRep_smul_some_ne_none hp hσ11 b₂)
-  · exact absurd h (op_primeRep_smul_some_ne_none hp hσ11 b₁)
+  · exact absurd h.symm (op_primeRep_smul_some_ne_none hp b₂)
+  · exact absurd h (op_primeRep_smul_some_ne_none hp b₁)
   · simpa using op_upperTriRep_smul_injective (G := G) (by simpa using h)
 
 /-- **The `Tₚ` double coset at a prime `p ∤ N` is the union of `p + 1` right cosets.**
