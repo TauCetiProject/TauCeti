@@ -128,17 +128,19 @@ theorem hamiltonianCurvature_sum_mul (ω : SmoothTwoForm I M) {β : ι → ℝ �
   have hmul {f : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f x) (c : ℝ) :
       MDifferentiableAt I 𝓘(ℝ) (fun y ↦ c * f y) x := by
     simpa only [Pi.smul_def, smul_eq_mul] using hf.const_smul c
+  have hsmul (c : ℝ) (f : M → ℝ) : (fun y ↦ c * f y) = c • f := by
+    simp only [Pi.smul_def, smul_eq_mul]
   have hcomb : ω.poissonBracket (fun y ↦ ∑ i ∈ s, β i z * Ks i z y)
       (fun y ↦ ∑ i ∈ s, β i z * Kt i z y) x =
         ∑ i ∈ s, ∑ j ∈ s, β i z * β j z * ω.poissonBracket (Ks i z) (Kt j z) x := by
     rw [poissonBracket_fun_sum_left (F := fun i y ↦ β i z * Ks i z y)
       fun i hi ↦ hmul (hKs' i hi) _]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [show (fun y ↦ β i z * Ks i z y) = β i z • Ks i z from rfl,
+    rw [hsmul (β i z) (Ks i z),
       poissonBracket_const_smul_left, smul_eq_mul, poissonBracket_fun_sum_right
       (G := fun j y ↦ β j z * Kt j z y) fun j hj ↦ hmul (hKt' j hj) _, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [show (fun y ↦ β j z * Kt j z y) = β j z • Kt j z from rfl,
+    rw [hsmul (β j z) (Kt j z),
       poissonBracket_const_smul_right, smul_eq_mul]
     ring
   have hbracket : ∑ i ∈ s, ∑ j ∈ s, β i z * β j z *
@@ -333,7 +335,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_sum_const_mul_sub_le
       (hz : z ∈ Icc a b) : MDifferentiableAt I 𝓘(ℝ) (K z) (u z) :=
     (hdiff hK hz).comp (u z) (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
   rw [hω.integral_floerEnergyDensity hU hu (hcomb hKs) (hcomb hKt) hab habU hE hR,
-    show ∀ A B I : ℝ, A + B - I - (A + B) = -I by intros; ring, abs_neg]
+    sub_sub_cancel_left, abs_neg]
   exact abs_integral_le_integral_abs.trans
     (ω.integral_abs_hamiltonianCurvature_sum_const_mul_le hc₀ hc u measurableSet_Icc
       (fun z hz i hi ↦ hleft (hKs i hi) hz) (fun z hz i hi ↦ hleft (hKt i hi) hz)
@@ -528,8 +530,8 @@ theorem abs_integral_floerEnergyDensity_sum_const_mul_sub_le (ω : SymplecticFor
       (hz : z ∈ Icc a b) : DifferentiableAt ℝ (K z) (u z) := by
     have h := (hdiff hK hz).hasFDerivAt.comp (u z) (hasFDerivAt_prodMk_right (𝕜 := ℝ) z (u z))
     exact h.differentiableAt
-  rw [ω.integral_floerEnergyDensity hU hu (hcomb hKs) (hcomb hKt) hab habU,
-    show ∀ A B I : ℝ, A + B - I - (A + B) = -I by intros; ring, abs_neg]
+  rw [ω.integral_floerEnergyDensity hU hu (hcomb hKs) (hcomb hKt) hab habU, sub_sub_cancel_left,
+    abs_neg]
   exact abs_integral_le_integral_abs.trans
     (ω.integral_abs_hamiltonianCurvature_sum_const_mul_le hc₀ hc u measurableSet_Icc
       (fun z hz i hi ↦ hleft (hKs i hi) hz) (fun z hz i hi ↦ hleft (hKt i hi) hz)
