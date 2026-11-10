@@ -162,19 +162,8 @@ theorem quantizeUniformCLM_comp_fourierMultiplierCLM {a : Symbol n V W m}
     (quantizeUniformCLM a ha).comp (SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))) =
       quantizeUniformCLM (a.comp (besselPotential s)) (ha.comp (isUniform_besselPotential s)) := by
-  -- `fun_prop` is slow to find this on `EuclideanSpace`.
-  have hg : (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
-    Complex.ofRealCLM.hasTemperateGrowth.comp
-      (Function.hasTemperateGrowth_one_add_norm_sq_rpow _ (s / 2))
-  ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-    quantizeSchwartzValue_fourierMultiplierCLM hg]
-  have h : (a.comp (besselPotential s)).coefficient = fun p ↦
-      (((1 + ‖(2 * Real.pi)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • a.coefficient p :=
-    funext fun p ↦ by
-      rw [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
-        ContinuousLinearMap.comp_id]
-  rw [h]
+  rw [← quantizeFrequencyCLM_besselWeight]
+  exact quantizeUniformCLM_comp_quantizeFrequencyCLM _ _ ha
 
 /-- **Composition with the Bessel multiplier on the left.** For a symbol `a` with compact
 spatial support, composing Mathlib's Bessel multiplier `J^s`, the Fourier multiplier
@@ -187,9 +176,8 @@ theorem fourierMultiplierCLM_comp_quantizeUniformCLM {a : Symbol n U V m}
           (quantizeUniformCLM a ha.isUniform) =
       quantizeUniformCLM ((besselPotential s).sharp a ha)
         ((isUniform_besselPotential s).sharp_right a ha) := by
-  ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply,
-    ← quantizeSchwartzValue_quantizeUniformCLM, quantizeSchwartzValue_besselPotential]
+  rw [← quantizeFrequencyCLM_besselWeight]
+  exact quantizeFrequencyCLM_comp_quantizeUniformCLM _ _ ha
 
 end Bessel
 
