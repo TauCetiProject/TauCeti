@@ -120,19 +120,20 @@ theorem torsionBy_elementary_eq_bot {ϖ : O} (hϖ : Irreducible ϖ) (r : ℕ) {a
     rw [isSMulRegular_iff_torsionBy_eq_bot, H.torsionBy_eq_bot_iff, H.norm_mk_coe_eq_resultant]
     exact hres j (Finset.mem_univ j)
 
-/-- **A finite cokernel on an elementary module has nonzero resultant.** Let `O` have finite residue
-field and let the `Fⱼ` be distinguished. If `G` has finite cokernel on the elementary module
+/-- **A finite cokernel on an elementary module has nonzero resultant.** Let the `Fⱼ` be
+distinguished. If `G` has finite cokernel on the elementary module
 `O⟦X⟧ʳ × ∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)`, then `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`. -/
-theorem resultant_ne_zero_of_finite_quotSMulTop_elementary [Finite (ResidueField O)] {ϖ : O}
+theorem resultant_ne_zero_of_finite_quotSMulTop_elementary {ϖ : O}
     (r : ℕ) {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]}
     (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (n : Fin b → ℕ)
     (hfin : Finite (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ r m F n))) :
     (∏ j, F j ^ n j).resultant G ≠ 0 := by
   rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _,
     Finset.prod_ne_zero_iff]
-  intro j _
+  intro j _ hzero
   have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
-  rw [← H.norm_mk_coe_eq_resultant, ← H.finite_quotSMulTop_iff]
+  rw [← H.norm_mk_coe_eq_resultant] at hzero
+  refine not_finite_iff_infinite.2 (H.infinite_quotSMulTop hzero) ?_
   -- The cokernel on the horizontal block `j` is a quotient of the cokernel on the whole module.
   let π : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)} :=
     (LinearMap.proj j).comp ((LinearMap.snd O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
@@ -160,16 +161,12 @@ theorem natCard_quotSMulTop_elementary {ϖ : O} (hϖ : Irreducible ϖ) {a b : �
     exact Finset.prod_congr rfl fun i _ ↦
       natCard_quotSMulTop_quotient_span_C_pow hϖ hG.isWeierstrassFactorizationAt (m i)
   · -- The order of a quotient of the Dedekind domain `O` is multiplicative in the ideal.
-    have hmul (s : Finset (Fin b)) : cardQuot (∏ j ∈ s, Ideal.span {(F j ^ n j).resultant G}) =
-        ∏ j ∈ s, cardQuot (Ideal.span {(F j ^ n j).resultant G}) := by
-      induction s using Finset.cons_induction with
-      | empty => rw [Finset.prod_empty, Finset.prod_empty, Ideal.one_eq_top, cardQuot_top]
-      | cons j s hj ih => rw [Finset.prod_cons, Finset.prod_cons, cardQuot_mul, ih]
-    rw [← Ideal.prod_span_singleton, ← cardQuot_apply, hmul]
+    rw [← Ideal.prod_span_singleton, ← Ideal.absNorm_eq_natCard, map_prod]
     refine Finset.prod_congr rfl fun j _ ↦ ?_
     have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
     have hnorm := H.norm_mk_coe_eq_resultant G
-    rw [H.natCard_quotSMulTop (hnorm ▸ hres j (Finset.mem_univ j)), hnorm, cardQuot_apply]
+    rw [H.natCard_quotSMulTop (hnorm ▸ hres j (Finset.mem_univ j)), hnorm,
+      Ideal.absNorm_eq_natCard]
 
 end Elementary
 

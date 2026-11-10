@@ -166,13 +166,10 @@ taken at the actual degrees. -/
 theorem resultant_prod_left_of_monic {ι : Type*} (s : Finset ι) {f : ι → R[X]}
     (hf : ∀ i ∈ s, (f i).Monic) (g : R[X]) :
     (∏ i ∈ s, f i).resultant g = ∏ i ∈ s, (f i).resultant g := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.forall_mem_insert] at hf
-    rw [Finset.prod_insert hi, Finset.prod_insert hi, ← ih hf.2,
-      hf.1.natDegree_mul (monic_prod_of_monic _ _ hf.2), resultant_mul_left _ _ _ _ le_rfl]
+  nontriviality R
+  refine resultant_prod_left s f g _ ?_ le_rfl
+  rw [Finset.prod_congr rfl fun i hi ↦ (hf i hi).leadingCoeff, Finset.prod_const_one]
+  exact one_ne_zero
 
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
 the value at `t` of the reversal of `f` in degree `n`. When `f = ∏ (X - αᵢ)` has degree `n`, both
