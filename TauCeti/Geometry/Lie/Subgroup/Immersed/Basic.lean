@@ -145,8 +145,8 @@ theorem eq_bot_of_isTotallyDisconnected {K : Subgroup G}
     (hK : IsTotallyDisconnected (K : Set G)) : K = ⊥ := by
   let _ : TopologicalSpace d.X := d.topologicalSpace
   let _ : ConnectedSpace d.X := d.connectedSpace
-  have hr : Set.range d.toHom = (K : Set G) :=
-    congrArg (fun L : Subgroup G ↦ (L : Set G)) d.range_eq
+  have hr : Set.range d.toHom = (K : Set G) := by
+    rw [← MonoidHom.coe_range, d.range_eq]
   have hp : IsPreconnected (K : Set G) := by
     rw [← hr]
     exact isPreconnected_range d.contMDiff_toHom.continuous
