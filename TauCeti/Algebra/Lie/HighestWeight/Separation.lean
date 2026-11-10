@@ -69,8 +69,10 @@ of a finite-dimensional module are Weyl stable and integral, so `mu` has a Weyl 
 `TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`. The form is Weyl
 invariant (`RootPairing.InvariantForm.apply_weylGroup_smul`), so
 `⟨mu, mu⟩ = ⟨nu, nu⟩` and the first summand is
-`⟨lam + nu, lam - nu⟩`, which is nonnegative: `lam + nu` is dominant integral and `lam - nu` lies
-in the cone. A nonnegative rational plus a positive one is nonzero.
+`⟨lam + nu, lam - nu⟩ = 2⟨nu, lam - nu⟩ + ⟨lam - nu, lam - nu⟩`, which is nonnegative: `nu` is
+dominant integral and `lam - nu` lies in the cone, hence is integral as a natural combination of
+roots. Dominance of `lam` is not needed for this step. A nonnegative rational plus a positive one is
+nonzero.
 
 ## Main results
 
@@ -85,7 +87,8 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
   weight pairs to a nonnegative rational with every member of the positive root cone.
 * `casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne` (in the
   `TauCeti.IsDominantIntegral` namespace): **the Casimir scalar separates a dominant integral
-  weight from the dominant integral weights strictly below it.**
+  weight `nu` from every weight `lam ≠ nu` above it in the root cone order, that is with
+  `lam - nu` in the positive root cone; `lam` need not be dominant.**
 * `TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`:
   **over an algebraically closed field, the Casimir scalar of a weight of a finite-dimensional
   highest weight module differs from that of the highest weight, except at the highest weight
