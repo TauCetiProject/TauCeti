@@ -33,6 +33,10 @@ that it is a symbol of order `m` whose quantization is the right quantization of
   (`TauCeti.Symbol.spatialDeriv_ofRight`, `TauCeti.Symbol.frequencyDeriv_ofRight`).
 * `TauCeti.Symbol.quantizeSchwartzValue_ofRight`: `Op(b) v (x)` is the right quantization
   `∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ c(y, 2πζ) v(y)) (ζ) dζ` of `c`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_add_smul_le`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_add_smul`:
+  the decay `‖ĉ(θ, ξ + sθ)‖ ≤ C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))` of the shifted Fourier slices and
+  the resulting integrability of `exp(2πi ⟪θ, x⟫) ĉ(θ, ξ + sθ)` in `θ`, for every real `s`.
 
 ## The estimates
 
@@ -127,19 +131,52 @@ private theorem weight_mul_decay_le (θ : CoordinateSpace n) :
   gcongr
   exact one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
 
-/-- The weight `⟨2πθ⟩ ^ |m|` lost to Peetre's inequality is absorbed by the decay of `ĉ`. -/
-private theorem weight_two_pi_mul_le (θ : CoordinateSpace n) :
-    (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) ≤
-      (2 * π) ^ |m| * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
-  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m| θ
-  rw [abs_abs] at hscale
-  calc (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|))
-      ≤ (2 * π) ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) := by
+/-- **Decay of the shifted Fourier slices.** For a symbol `c` of order `m` with compact spatial
+support and a real `s`, `‖ĉ(θ, ξ + sθ)‖ ≤ C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))`: the decay of `ĉ` in
+its first variable absorbs the growth `⟨sθ⟩ ^ |m|` of Peetre's inequality in the shift. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_add_smul_le
+    (hc : c.HasCompactSpatialSupport) (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ θ ξ : CoordinateSpace n, ‖𝓕 (fun z ↦ c.coefficient (z, ξ + s • θ)) θ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
+  obtain ⟨C, hC0, hC⟩ := hc.exists_norm_fourier_le
+  have hr : 1 ≤ max |s| 1 := le_max_right _ _
+  refine ⟨C * 2 ^ (|m| / 2) * max |s| 1 ^ |m|, by positivity, fun θ ξ ↦ ?_⟩
+  -- The bracket of the shift is at most `max |s| 1 ^ |m| ⟨θ⟩ ^ |m|`.
+  have hshift : (1 + ‖s • θ‖ ^ 2) ^ (|m| / 2) ≤ max |s| 1 ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+    have h := one_add_norm_smul_sq_rpow_le hr |m| θ
+    rw [abs_abs] at h
+    refine le_trans ?_ h
+    gcongr
+    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (zero_le_one.trans hr)]
+    gcongr
+    exact le_max_left _ _
+  calc ‖𝓕 (fun z ↦ c.coefficient (z, ξ + s • θ)) θ‖
+      ≤ C * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) * (1 + ‖ξ + s • θ‖ ^ 2) ^ (m / 2) := hC θ _
+    _ ≤ C * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) * (2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+          (max |s| 1 ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2))) := by
         gcongr
-    _ ≤ (2 * π) ^ |m| * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
-        rw [mul_assoc]
+        exact (one_add_norm_add_sq_rpow_le_mul m ξ (s • θ)).trans (by gcongr)
+    _ = C * 2 ^ (|m| / 2) * max |s| 1 ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+          ((1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|))) := by ring
+    _ ≤ C * 2 ^ (|m| / 2) * max |s| 1 ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+          (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
         gcongr
         exact weight_mul_decay_le θ
+
+/-- The shifted integrand `exp(2πi ⟪θ, x⟫) ĉ(θ, ξ + sθ)` is integrable in `θ`, for every real
+`s`. -/
+theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_add_smul
+    (hc : c.HasCompactSpatialSupport) (s : ℝ) (x ξ : CoordinateSpace n) :
+    Integrable fun θ : CoordinateSpace n ↦
+      (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun z ↦ c.coefficient (z, ξ + s • θ)) θ := by
+  obtain ⟨C, -, hC⟩ := hc.exists_norm_fourier_slice_add_smul_le s
+  have h₂ := hc.continuous_fourier_slice.comp (by fun_prop : Continuous
+    fun θ : CoordinateSpace n ↦ ((θ, ξ + s • θ) : CoordinateSpace n × CoordinateSpace n))
+  simp only [Function.comp_def] at h₂
+  exact (integrable_one_add_norm_rpow_neg_add_one.const_mul (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))).mono'
+    ((by fun_prop : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ)).smul
+      h₂).aestronglyMeasurable
+    (.of_forall fun θ ↦ by rw [norm_smul, Circle.norm_coe, one_mul]; exact hC θ ξ)
 
 /-- **The integrand decays in `θ`.**
 `‖exp(2πi ⟪θ, x⟫) ĉ(θ, ξ + 2πθ)‖ ≤ C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))`, uniformly in the position
@@ -148,22 +185,10 @@ private theorem HasCompactSpatialSupport.exists_norm_rightIntegrand_le
     (hc : c.HasCompactSpatialSupport) :
     ∃ C, 0 ≤ C ∧ ∀ p θ, ‖rightIntegrand c.coefficient p θ‖ ≤
       C * (1 + ‖p.2‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
-  obtain ⟨C, hC0, hC⟩ := hc.exists_norm_fourier_le
-  refine ⟨C * 2 ^ (|m| / 2) * (2 * π) ^ |m|, by positivity, fun p θ ↦ ?_⟩
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m p.2 ((2 * π) • θ)
-  have hw := weight_two_pi_mul_le (m := m) θ
+  obtain ⟨C, hC0, hC⟩ := hc.exists_norm_fourier_slice_add_smul_le (2 * π)
+  refine ⟨C, hC0, fun p θ ↦ ?_⟩
   rw [rightIntegrand, norm_smul, Circle.norm_coe, one_mul]
-  calc ‖𝓕 (fun z ↦ c.coefficient (z, p.2 + (2 * π) • θ)) θ‖
-      ≤ C * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) * (1 + ‖p.2 + (2 * π) • θ‖ ^ 2) ^ (m / 2) :=
-        hC θ _
-    _ ≤ C * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) * (2 ^ (|m| / 2) * (1 + ‖p.2‖ ^ 2) ^ (m / 2) *
-          (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2)) := by gcongr
-    _ = C * 2 ^ (|m| / 2) * (1 + ‖p.2‖ ^ 2) ^ (m / 2) * ((1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) *
-          (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|))) := by ring
-    _ ≤ C * 2 ^ (|m| / 2) * (1 + ‖p.2‖ ^ 2) ^ (m / 2) *
-          ((2 * π) ^ |m| * (1 + ‖θ‖) ^ (-((n : ℝ) + 1))) := by gcongr
-    _ = C * 2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖p.2‖ ^ 2) ^ (m / 2) *
-          (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by ring
+  exact hC θ p.2
 
 /-- The integrand is jointly continuous in the point and the frequency `θ`. -/
 private theorem HasCompactSpatialSupport.continuous_rightIntegrand
@@ -181,13 +206,8 @@ private theorem HasCompactSpatialSupport.continuous_rightIntegrand
 /-- The integrand is integrable in `θ`. -/
 private theorem HasCompactSpatialSupport.integrable_rightIntegrand
     (hc : c.HasCompactSpatialSupport) (p : CoordinateSpace n × CoordinateSpace n) :
-    Integrable (rightIntegrand c.coefficient p) := by
-  obtain ⟨C, -, hC⟩ := hc.exists_norm_rightIntegrand_le
-  exact (integrable_one_add_norm_rpow_neg_add_one.const_mul
-    (C * (1 + ‖p.2‖ ^ 2) ^ (m / 2))).mono'
-    (hc.continuous_rightIntegrand.comp
-      (by fun_prop : Continuous fun θ ↦ (p, θ))).aestronglyMeasurable
-    (.of_forall fun θ ↦ (hC p θ).trans_eq (by ring))
+    Integrable (rightIntegrand c.coefficient p) :=
+  hc.integrable_fourierChar_smul_fourier_slice_add_smul (2 * π) p.1 p.2
 
 /-- **The symbol bound.** `‖∫ exp(2πi ⟪θ, x⟫) ĉ(θ, ξ + 2πθ) dθ‖ ≤ C ⟨ξ⟩ ^ m`, uniformly in `x`. -/
 private theorem HasCompactSpatialSupport.exists_norm_rightCoeff_le
@@ -628,6 +648,7 @@ private theorem coefficient_ofRight_eq_rightCoeff (hc : c.HasCompactSpatialSuppo
   (rfl)
 
 /-- The left symbol of a right quantization satisfies its estimates uniformly in the position. -/
+@[simp]
 theorem isUniform_ofRight (hc : c.HasCompactSpatialSupport) : (c.ofRight hc).IsUniform :=
   isUniform_iff.2 fun α β ↦ hc.exists_norm_mixedDeriv_rightCoeff_le α β
 
@@ -656,75 +677,29 @@ section Quantization
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {c : Symbol n V W m}
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The integrand `(y, η) ↦ exp(-2πi ⟪y, ζ - η⟫) c(y, ξ) v̂(η)` of the Fourier transform of
-`y ↦ c(y, ξ) v(y)`, after Fourier inversion of `v`, is integrable. -/
-private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply_fourier
-    (hc : c.HasCompactSpatialSupport) (v : 𝓢(CoordinateSpace n, V)) (ξ ζ : CoordinateSpace n) :
-    Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦
-      (𝐞 (-⟪q.1, ζ - q.2⟫) : ℂ) • c.coefficient (q.1, ξ) (𝓕 v q.2)) (volume.prod volume) := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-  obtain ⟨C, hC0, hC⟩ := c.exists_bound_coefficient K hK
-  have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-      (𝐞 (-⟪q.1, ζ - q.2⟫) : ℂ) • c.coefficient (q.1, ξ) (𝓕 v q.2) :=
-    (by fun_prop : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-      (𝐞 (-⟪q.1, ζ - q.2⟫) : ℂ)).smul (((c.contDiff_coefficient_slice ξ).continuous.comp
-        continuous_fst).clm_apply ((𝓕 v).continuous.comp continuous_snd))
-  have hK1 : Integrable (K.indicator fun _ ↦ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
-    (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
-  refine (hK1.mul_prod (𝓕 v).integrable.norm).mono' hcont.aestronglyMeasurable
-    (.of_forall fun q ↦ ?_)
-  rw [norm_smul, Circle.norm_coe, one_mul]
-  by_cases hq : q.1 ∈ K
-  · rw [Set.indicator_of_mem hq]
-    exact ((c.coefficient _).le_opNorm _).trans
-      (mul_le_mul_of_nonneg_right (hC q.1 hq ξ) (norm_nonneg _))
-  · simp only [hKc q.1 hq, zero_apply, norm_zero]
-    exact mul_nonneg (Set.indicator_nonneg (fun _ _ ↦ by positivity) _) (norm_nonneg _)
-
 /-- **The Fourier transform of a product.** The Fourier transform of `y ↦ c(y, ξ) v(y)` is the
-convolution `∫ ĉ(θ, ξ) v̂(ζ - θ) dθ` of the Fourier transforms. -/
+convolution `∫ ĉ(θ, ξ) v̂(ζ - θ) dθ` of the Fourier transforms: by Fourier inversion
+`c(y, ξ) v(y) = ∫ exp(2πi ⟪η, y⟫) c(y, ξ) v̂(η) dη`, which is the quantization integral of
+`TauCeti.Symbol.HasCompactSpatialSupport.fourier_integral_fourierChar_smul_apply` with the
+constant frequency map `η ↦ ξ`. -/
 private theorem HasCompactSpatialSupport.fourier_apply_eq_integral
     (hc : c.HasCompactSpatialSupport) (v : 𝓢(CoordinateSpace n, V)) (ξ ζ : CoordinateSpace n) :
     𝓕 (fun y ↦ c.coefficient (y, ξ) (v y)) ζ =
       ∫ θ, 𝓕 (fun z ↦ c.coefficient (z, ξ)) θ (𝓕 v (ζ - θ)) := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-  have hslice : Continuous fun z ↦ c.coefficient (z, ξ) :=
-    (c.contDiff_coefficient_slice ξ).continuous
-  set F : CoordinateSpace n × CoordinateSpace n → W := fun q ↦
-    (𝐞 (-⟪q.1, ζ - q.2⟫) : ℂ) • c.coefficient (q.1, ξ) (𝓕 v q.2) with hF
-  have hFint : Integrable F (volume.prod volume) :=
-    hc.integrable_fourierChar_smul_apply_fourier v ξ ζ
-  have hv (y : CoordinateSpace n) : v y = ∫ η, 𝐞 ⟪η, y⟫ • 𝓕 v η := by
-    rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
-  have hvint (y : CoordinateSpace n) : Integrable fun η ↦ 𝐞 ⟪η, y⟫ • 𝓕 v η :=
-    (𝓕 v).integrable.norm.mono' ((by fun_prop : Continuous fun η : CoordinateSpace n ↦
-      (𝐞 ⟪η, y⟫ : ℂ)).smul (𝓕 v).continuous).aestronglyMeasurable
-      (.of_forall fun η ↦ (Circle.norm_smul _ _).le)
-  calc 𝓕 (fun y ↦ c.coefficient (y, ξ) (v y)) ζ = ∫ y, ∫ η, F (y, η) := by
-        rw [Real.fourier_eq]
-        refine integral_congr_ae (.of_forall fun y ↦ ?_)
-        dsimp only
-        rw [hv y, ← (c.coefficient (y, ξ)).integral_comp_comm (hvint y), Circle.smul_def,
-          ← integral_smul]
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        simp only [hF, Circle.smul_def, map_smul, smul_smul, ← Circle.coe_mul,
-          ← AddChar.map_add_eq_mul, inner_sub_right, real_inner_comm y η]
-        congr 3
-        ring
-    _ = ∫ η, ∫ y, F (y, η) := integral_integral_swap hFint
-    _ = ∫ η, 𝓕 (fun z ↦ c.coefficient (z, ξ)) (ζ - η) (𝓕 v η) := by
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        have hint : Integrable fun z ↦ 𝐞 (-⟪z, ζ - η⟫) • c.coefficient (z, ξ) :=
-          (((by fun_prop : Continuous fun z : CoordinateSpace n ↦ (𝐞 (-⟪z, ζ - η⟫) : ℂ)).smul
-            hslice).integrable_of_hasCompactSupport
-              (HasCompactSupport.intro hK fun z hz ↦ by simp [hKc z hz]))
-        dsimp only
-        rw [Real.fourier_eq, ContinuousLinearMap.integral_apply hint]
-        simp only [hF, Circle.smul_def, smul_apply]
-    _ = ∫ θ, 𝓕 (fun z ↦ c.coefficient (z, ξ)) θ (𝓕 v (ζ - θ)) := by
-        rw [← integral_sub_left_eq_self _ volume ζ]
-        simp only [sub_sub_cancel]
+  have hv : (fun y ↦ c.coefficient (y, ξ) (v y)) =
+      fun y ↦ ∫ η, 𝐞 ⟪η, y⟫ • c.coefficient (y, ξ) (𝓕 v η) := by
+    funext y
+    have hvint : Integrable fun η ↦ 𝐞 ⟪η, y⟫ • 𝓕 v η :=
+      (𝓕 v).integrable.norm.mono' ((by fun_prop : Continuous fun η : CoordinateSpace n ↦
+        (𝐞 ⟪η, y⟫ : ℂ)).smul (𝓕 v).continuous).aestronglyMeasurable
+        (.of_forall fun η ↦ (Circle.norm_smul _ _).le)
+    have hvy : v y = ∫ η, 𝐞 ⟪η, y⟫ • 𝓕 v η := by
+      rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
+    rw [hvy, ← (c.coefficient (y, ξ)).integral_comp_comm hvint]
+    simp only [Circle.smul_def, map_smul]
+  rw [hv, hc.fourier_integral_fourierChar_smul_apply v continuous_const
+    ((𝓕 v).integrable.norm.const_mul _), ← integral_sub_left_eq_self _ volume ζ]
+  simp only [sub_sub_cancel]
 
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- The convolution integrand `(ζ, θ) ↦ ĉ(θ, 2πζ) v̂(ζ - θ)` is integrable. -/
