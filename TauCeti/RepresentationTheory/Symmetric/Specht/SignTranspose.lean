@@ -41,6 +41,10 @@ is nonzero, and Schur's lemma makes it bijective.
 * `TauCeti.YoungTableau.spechtIdealSignTransposeEquiv`: `F_t` as an equivalence of representations.
 * `TauCeti.YoungTableau.spechtSubrepresentationTensorSignEquiv`: the resulting equivalence
   `S^μ ⊗ sgn ≃ S^(μᵗ)` between the polytabloid Specht modules of the diagrams `μ` and `μᵗ`.
+* `TauCeti.spechtSubrepresentationCongr`: the transport of a Specht module along an equation of
+  diagrams.
+* `TauCeti.spechtModuleTensorSignIso`: the partition-level isomorphism `S^μ ⊗ sgn ≅ S^(μᵗ)`, chosen
+  by the row-superstandard tableau.
 
 ## Main results
 
@@ -51,6 +55,8 @@ is nonzero, and Schur's lemma makes it bijective.
 * `TauCeti.YoungTableau.spechtIdealSignTranspose_relabelEquiv_apply_coe`: changing the tableau
   changes `F_t` by the sign of the relabelling.
 * `TauCeti.YoungTableau.factorial_div_finrank_spechtIdeal_transpose`: `κ_(tᵗ) = κ_t`.
+* `TauCeti.isoToLinearEquiv_spechtModuleTensorSignIso_apply`: the partition-level isomorphism is
+  the tableau-level equivalence of the row-superstandard tableau.
 * `TauCeti.spechtModule_tensor_sign_iso`: **`S^μ ⊗ sgn ≅ S^(μᵗ)`** in
   `FDRep ℚ (Equiv.Perm (Fin n))`.
 * `TauCeti.spechtChar_conjugate`: **`χ^(μᵗ)(σ) = sgn(σ) χ^μ(σ)`**.
@@ -278,48 +284,87 @@ section Partition
 
 variable {n : ℕ}
 
-/-- `S^μ ⊗ sgn ≃ S^(μᵗ)` with the two diagrams of `n` cells given separately, which is what lets
-the identification of the diagram of `μᵗ` with the transpose of the diagram of `μ` be eliminated. -/
-private theorem nonempty_equiv_tprod_sign {D E : YoungDiagram} (hD : n = D.card) (hE : n = E.card)
-    (h : E = D.transpose) :
-    Nonempty ((Representation.tprod
-        ((spechtSubrepresentation (R := ℚ) D).toRepresentation.comp
-          (finCongr hD).permCongrHom.toMonoidHom)
-        (Representation.ofLinearCharacter (signLinearCharacter ℚ (Fin n)))).Equiv
-      ((spechtSubrepresentation (R := ℚ) E).toRepresentation.comp
-        (finCongr hE).permCongrHom.toMonoidHom)) := by
-  subst h
-  obtain ⟨t⟩ := YoungTableau.nonempty D
-  have hsource : Representation.tprod
-      ((spechtSubrepresentation (R := ℚ) D).toRepresentation.comp
+/-- **Specht modules of equal diagrams are equivalent**, the symmetric groups on their labels both
+being identified with `Sₙ`.  This transports a Specht module along an equation of diagrams such as
+`YoungDiagram.ofPartition_conjugate`. -/
+noncomputable def spechtSubrepresentationCongr {R : Type*} [CommRing R] {D E : YoungDiagram}
+    (h : D = E) (hD : n = D.card) (hE : n = E.card) :
+    Representation.Equiv ((spechtSubrepresentation (R := R) D).toRepresentation.comp
         (finCongr hD).permCongrHom.toMonoidHom)
-      (Representation.ofLinearCharacter (signLinearCharacter ℚ (Fin n))) =
-      ((spechtSubrepresentation (R := ℚ) D).toRepresentation.tprod
-        (Representation.ofLinearCharacter (signLinearCharacter ℚ (Fin D.card)))).comp
-        (finCongr hD).permCongrHom.toMonoidHom := by
-    rw [← signLinearCharacter_comp_permCongrHom (finCongr hD),
-      ← Representation.ofLinearCharacter_comp]
-    -- the action on a tensor product is computed pointwise in the group
-    rfl
-  have htarget : (finCongr hE).permCongrHom.toMonoidHom =
-      (finCongr (YoungDiagram.card_transpose D).symm).permCongrHom.toMonoidHom.comp
-        (finCongr hD).permCongrHom.toMonoidHom := by
-    ext σ x
-    simp [Equiv.permCongr_apply]
-  rw [hsource, htarget, ← MonoidHom.comp_assoc]
-  exact ⟨(YoungTableau.spechtSubrepresentationTensorSignEquiv t).res _⟩
+      ((spechtSubrepresentation (R := R) E).toRepresentation.comp
+        (finCongr hE).permCongrHom.toMonoidHom) := by
+  subst h
+  exact .refl _
+
+/-- Transport along the trivial equation of diagrams is the identity. -/
+@[simp]
+theorem spechtSubrepresentationCongr_rfl {R : Type*} [CommRing R] (D : YoungDiagram)
+    (hD hD' : n = D.card) :
+    spechtSubrepresentationCongr (R := R) rfl hD hD' = .refl _ :=
+  (rfl)
+
+/-- **The isomorphism `S^μ ⊗ sgn_n ≅ S^(μᵗ)`** in `FDRep ℚ (Equiv.Perm (Fin n))`, chosen by the
+row-superstandard tableau of `μ`: it is `YoungTableau.spechtSubrepresentationTensorSignEquiv` of
+that tableau, followed by the transport along the identification
+`YoungDiagram.ofPartition_conjugate` of the diagram of `μᵗ` with the transpose of the diagram of
+`μ`. -/
+noncomputable def spechtModuleTensorSignIso (μ : n.Partition) :
+    spechtModule (R := ℚ) μ ⊗ FDRep.ofLinearCharacter (signLinearCharacter ℚ (Fin n)) ≅
+      spechtModule (R := ℚ) μ.conjugate :=
+  let t := (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau
+  let hD := (YoungDiagram.card_ofPartition μ).symm
+  let e := ((YoungTableau.spechtSubrepresentationTensorSignEquiv t).res
+      (finCongr hD).permCongrHom.toMonoidHom).trans
+    (spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+      (hD.trans (YoungDiagram.card_transpose _).symm)
+      (YoungDiagram.card_ofPartition μ.conjugate).symm)
+  whiskerLeftIso (spechtModule (R := ℚ) μ)
+      (eqToIso (FDRep.ofLinearCharacter_def (signLinearCharacter ℚ (Fin n)))) ≪≫
+    -- `Action.mkIso` rather than `LinearEquiv.toFDRepIso`, whose body is not exposed, so that
+    -- `isoToLinearEquiv_spechtModuleTensorSignIso_apply` can compute the underlying map
+    Action.mkIso (M := spechtModule (R := ℚ) μ ⊗
+        FDRep.of (Representation.ofLinearCharacter (signLinearCharacter ℚ (Fin n))))
+      (N := spechtModule (R := ℚ) μ.conjugate) e.toLinearEquiv.toFGModuleCatIso fun g => by
+      refine FGModuleCat.hom_ext (LinearMap.ext fun x => ?_)
+      have hsource : Representation.tprod
+          ((spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition μ)).toRepresentation.comp
+            (finCongr hD).permCongrHom.toMonoidHom)
+          (Representation.ofLinearCharacter (signLinearCharacter ℚ (Fin n))) =
+          ((spechtSubrepresentation (R := ℚ) (YoungDiagram.ofPartition μ)).toRepresentation.tprod
+            (Representation.ofLinearCharacter
+              (signLinearCharacter ℚ (Fin (YoungDiagram.ofPartition μ).card)))).comp
+            (finCongr hD).permCongrHom.toMonoidHom := by
+        rw [← signLinearCharacter_comp_permCongrHom (finCongr hD),
+          ← Representation.ofLinearCharacter_comp]
+        -- the action on a tensor product is computed pointwise in the group
+        rfl
+      exact (congrArg e (DFunLike.congr_fun (DFunLike.congr_fun hsource g) x)).trans
+        (DFunLike.congr_fun (e.toIntertwiningMap.isIntertwining' g) x)
+
+/-- `S^μ ⊗ sgn_n ≅ S^(μᵗ)` is the equivalence `YoungTableau.spechtSubrepresentationTensorSignEquiv`
+of the row-superstandard tableau of `μ`, transported along `YoungDiagram.ofPartition_conjugate`,
+once the sign representation is unfolded by `FDRep.ofLinearCharacter_def`. -/
+theorem isoToLinearEquiv_spechtModuleTensorSignIso_apply (μ : n.Partition)
+    (x : (spechtModule (R := ℚ) μ ⊗ FDRep.ofLinearCharacter (signLinearCharacter ℚ (Fin n)) :
+      FDRep ℚ (Equiv.Perm (Fin n)))) :
+    FDRep.isoToLinearEquiv (spechtModuleTensorSignIso μ) x =
+      spechtSubrepresentationCongr (YoungDiagram.ofPartition_conjugate μ).symm
+        ((YoungDiagram.card_ofPartition μ).symm.trans (YoungDiagram.card_transpose _).symm)
+        (YoungDiagram.card_ofPartition μ.conjugate).symm
+        (YoungTableau.spechtSubrepresentationTensorSignEquiv
+          (StandardYoungTableau.rowSuperstandard (YoungDiagram.ofPartition μ)).toTableau
+          (FDRep.isoToLinearEquiv (whiskerLeftIso (spechtModule (R := ℚ) μ)
+            (eqToIso (FDRep.ofLinearCharacter_def (signLinearCharacter ℚ (Fin n))))) x)) := by
+  rw [spechtModuleTensorSignIso, FDRep.isoToLinearEquiv_trans, LinearEquiv.trans_apply]
+  exact (Representation.Equiv.trans_apply _ _ _).trans
+    (congrArg _ (Representation.Equiv.res_apply _ _ _))
 
 /-- **The Specht module of the conjugate partition is the sign twist**: `S^μ ⊗ sgn_n ≅ S^(μᵗ)` in
 `FDRep ℚ (Equiv.Perm (Fin n))`. -/
 theorem spechtModule_tensor_sign_iso (μ : n.Partition) :
     Nonempty (spechtModule (R := ℚ) μ ⊗ FDRep.ofLinearCharacter (signLinearCharacter ℚ (Fin n)) ≅
-      spechtModule (R := ℚ) μ.conjugate) := by
-  obtain ⟨e⟩ := nonempty_equiv_tprod_sign (n := n) (D := YoungDiagram.ofPartition μ)
-    (E := YoungDiagram.ofPartition μ.conjugate) (YoungDiagram.card_ofPartition μ).symm
-    (YoungDiagram.card_ofPartition μ.conjugate).symm (YoungDiagram.ofPartition_conjugate μ)
-  rw [FDRep.ofLinearCharacter_def]
-  exact ⟨LinearEquiv.toFDRepIso e.toLinearEquiv fun g x =>
-    DFunLike.congr_fun (e.toIntertwiningMap.isIntertwining' g) x⟩
+      spechtModule (R := ℚ) μ.conjugate) :=
+  ⟨spechtModuleTensorSignIso μ⟩
 
 /-- **The character of the Specht module of the conjugate partition**:
 `χ^(μᵗ)(σ) = sgn(σ) χ^μ(σ)`. -/
