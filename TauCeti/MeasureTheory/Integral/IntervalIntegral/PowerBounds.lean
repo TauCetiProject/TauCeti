@@ -96,10 +96,14 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 at zero and the second at infinity; the resulting bound is uniform in the endpoint `t ≥ 0`. -/
 theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : ℝ}
     (ha : 0 < a) (hb : 0 < b) (hA : 0 ≤ A) (hB : 0 ≤ B) (hd : 0 < d) (ht : 0 ≤ t)
-    (hf : IntervalIntegrable f volume 0 t)
     (hnear : ∀ᵐ r ∂volume.restrict (Ioo 0 t), ‖f r‖ ≤ A * r ^ (a - 1))
     (hfar : ∀ᵐ r ∂volume.restrict (Ioo 0 t), ‖f r‖ ≤ B * r ^ (-b - 1)) :
     ‖∫ r in 0..t, f r‖ ≤ A / a * d ^ a + B / b * d ^ (-b) := by
+  -- A non-integrable function has integral `0`.
+  by_cases hf : IntervalIntegrable f volume 0 t
+  swap
+  · rw [intervalIntegral.integral_undef hf, norm_zero]
+    positivity
   have hnear' : ∀ᵐ r ∂volume, r ∈ Ioc 0 t → ‖f r‖ ≤ A * r ^ (a - 1) := by
     rwa [restrict_Ioo_eq_restrict_Ioc, ae_restrict_iff' measurableSet_Ioc] at hnear
   have hfar' : ∀ᵐ r ∂volume, r ∈ Ioc 0 t → ‖f r‖ ≤ B * r ^ (-b - 1) := by
@@ -158,10 +162,28 @@ integrable away from `s = t`, then using the first bound on `t - δ² < s < t` a
 integration behind parabolic Hölder estimates at two points at distance `δ`. -/
 theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {Φ : ℝ → F} {α δ t A B : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : 0 < t)
-    (hδ : 0 < δ) (hA : 0 ≤ A) (hB : 0 ≤ B) (hΦ : IntervalIntegrable Φ volume 0 t)
+    (hδ : 0 < δ)
     (hΦA : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2))
     (hΦB : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ) :
     ‖∫ s in 0..t, Φ s‖ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
+  -- Both constants are nonnegative: the bounds hold at some point `s < t`, where `t - s > 0`.
+  obtain ⟨s, hs, hsA, hsB⟩ : ∃ s ∈ Ioo 0 t, ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2) ∧
+      ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ := by
+    have h : ∀ᵐ s ∂volume.restrict (Ioo 0 t), s ∈ Ioo 0 t ∧
+        ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2) ∧ ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ := by
+      rw [ae_restrict_iff' measurableSet_Ioo]
+      filter_upwards [hΦA, hΦB] with s h₁ h₂ hs
+      exact ⟨hs, h₁ ⟨hs.1, hs.2.le⟩, h₂ ⟨hs.1, hs.2.le⟩⟩
+    have : (ae (volume.restrict (Ioo 0 t))).NeBot :=
+      ae_neBot.2 (Measure.measure_univ_ne_zero.1 (by simp [ht]))
+    obtain ⟨s, hs, h⟩ := h.exists
+    exact ⟨s, hs, h⟩
+  have hts : 0 < t - s := sub_pos.2 hs.2
+  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right (rpow_pos_of_pos hts _)).1
+    ((norm_nonneg _).trans hsA)
+  have hB : 0 ≤ B := by
+    have := (mul_nonneg_iff_of_pos_right hδ).1 ((norm_nonneg _).trans hsB)
+    exact (mul_nonneg_iff_of_pos_right (rpow_pos_of_pos hts _)).1 this
   -- Reverse time to put the singular endpoint at zero, then split at scale `δ²`.
   have hrev : ∀ᵐ r ∂volume.restrict (Ioo 0 t),
       ‖Φ (t - r)‖ ≤ A * r ^ (α / 2 - 1) ∧
@@ -181,7 +203,7 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
       exact hfar.trans_eq (by ring)
   have hi := norm_intervalIntegral_le_of_rpow_bounds (by linarith : 0 < α / 2)
     (by linarith : 0 < (1 - α) / 2) hA (mul_nonneg hB hδ.le)
-    (sq_pos_of_pos hδ) ht.le (by simpa using (hΦ.comp_sub_left t).symm)
+    (sq_pos_of_pos hδ) ht.le
     (hrev.mono fun _ h => h.1) (hrev.mono fun _ h => h.2)
   have heq : (∫ r in 0..t, Φ (t - r)) = ∫ s in 0..t, Φ s := by
     rw [intervalIntegral.integral_comp_sub_left, sub_self, sub_zero]

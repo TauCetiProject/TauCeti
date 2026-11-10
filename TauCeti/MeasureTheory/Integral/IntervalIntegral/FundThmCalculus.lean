@@ -91,19 +91,23 @@ namespace ContinuousLinearMap
 interior, subtracting a constant from the first argument does not change the integral of
 `B (f x) (f' x)`, since `∫ f' = f b - f a = 0`. -/
 theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) {a b : ℝ} {f f' : ℝ → V}
+    [NormedSpace ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G] (B : V →L[ℝ] V →L[ℝ] G) {a b : ℝ}
+    {f f' : ℝ → V}
     (hfc : ContinuousOn f [[a, b]])
     (hf : ∀ x ∈ Ioo (min a b) (max a b), HasDerivAt f (f' x) x) (hfab : f a = f b)
     (hf'ii : IntervalIntegrable f' volume a b) (m : V)
     (hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b) :
     ∫ x in a..b, B (f x) (f' x) = ∫ x in a..b, B (f x - m) (f' x) := by
-  have hmean : ∫ x in a..b, B m (f' x) = 0 := by
-    rw [(B m).intervalIntegral_comp_comm hf'ii,
-      intervalIntegral.integral_eq_sub_of_hasDeriv_right hfc
-        (fun x hx => (hf x hx).hasDerivWithinAt) hf'ii, hfab, sub_self, map_zero]
   have hBm : IntervalIntegrable (fun x => B m (f' x)) volume a b :=
     ⟨(B m).integrable_comp hf'ii.1, (B m).integrable_comp hf'ii.2⟩
+  -- Without completeness of `G` every integral in `G` vanishes.
+  by_cases hG : CompleteSpace G
+  swap
+  · simp [intervalIntegral, integral_of_not_completeSpace hG]
+  have hmean : ∫ x in a..b, B m (f' x) = 0 := by
+    rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right ((B m).continuous.comp_continuousOn hfc)
+      (fun x hx => ((B m).hasFDerivAt.comp_hasDerivAt x (hf x hx)).hasDerivWithinAt) hBm]
+    simp [hfab]
   rw [← add_zero (∫ x in a..b, B (f x - m) (f' x)), ← hmean,
     ← intervalIntegral.integral_add hint hBm]
   simp [map_sub]

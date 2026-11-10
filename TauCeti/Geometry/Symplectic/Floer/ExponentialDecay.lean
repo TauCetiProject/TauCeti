@@ -277,7 +277,7 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
   -- The `L¹` norm of the defect is at most its `L²` norm.
   have hN0 : 0 ≤ N := integral_nonneg zero_le_one fun _ _ ↦ norm_nonneg _
   have hN2 : N ^ 2 ≤ ∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2 := by
-    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg (η t))
+    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
       ((hηc.norm.pow 2).intervalIntegrable _ _)
     rw [sub_zero, Real.sqrt_one, one_mul] at h
     calc N ^ 2 ≤ √(∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2) ^ 2 := by gcongr
