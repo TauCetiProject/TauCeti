@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
--- Proof-only: regularity of local rings of spectra of regular rings, and codimension bounds.
+-- Proof-only: regularity of local rings and codimension bounds.
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -75,38 +75,6 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-variable (hF hx) in
-/-- The cover of `twoChartModel` by its two charts, the finite chart indexed by `true`. -/
-private noncomputable def chartCover : (twoChartModel hF hx).OpenCover :=
-  Scheme.Cover.mkOfCovers Bool
-    (fun b ↦ bif b then Spec (.of (holomorphyRing {P : Place k F | x ∈ P.integers}))
-      else Spec (.of (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers})))
-    (fun b ↦ match b with
-      | true => ιFinite hF hx
-      | false => ιInfinity hF hx)
-    (fun p ↦ by
-      rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-        ⟨q, rfl⟩ | ⟨q, rfl⟩
-      · exact ⟨true, q, rfl⟩
-      · exact ⟨false, q, rfl⟩)
-    (fun b ↦ by cases b <;> dsimp <;> infer_instance)
-
-/-- On the member of `chartCover` indexed by `true`, which is the finite chart `ιFinite`, the
-structure morphism is `Spec` of the inclusion of the constants. -/
-private theorem chartCover_f_true_over :
-    (chartCover hF hx).f true ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
-      Spec.map (CommRingCat.ofHom
-        (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers}))) :=
-  ιFinite_over hF hx
-
-/-- On the member of `chartCover` indexed by `false`, which is the chart at infinity `ιInfinity`,
-the structure morphism is `Spec` of the inclusion of the constants. -/
-private theorem chartCover_f_false_over :
-    (chartCover hF hx).f false ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
-      Spec.map (CommRingCat.ofHom
-        (algebraMap k (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers}))) :=
-  ιInfinity_over hF hx
-
 /-- **The two-chart model is locally of finite type over `k`**, for `x` transcendental over `k`:
 both charts are spectra of finitely generated `k`-algebras. -/
 theorem locallyOfFiniteType (hxt : Transcendental k x) :
@@ -116,13 +84,13 @@ theorem locallyOfFiniteType (hxt : Transcendental k x) :
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFiniteType)
   refine IsZariskiLocalAtSource.of_openCover (chartCover hF hx) fun b ↦ ?_
   cases b
-  · rw [chartCover_f_false_over]
+  · rw [chartCover_f_false, ιFinite_over]
+    exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt))
+  · rw [chartCover_f_true, ιInfinity_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
       (RingHom.finiteType_algebraMap.mpr
         (finiteType_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)))
-  · rw [chartCover_f_true_over]
-    exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
-      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt))
 
 /-- **The two-chart model is a Noetherian scheme**, for `x` transcendental over `k`: it is of
 finite type over the field `k` and covered by two affine charts. -/

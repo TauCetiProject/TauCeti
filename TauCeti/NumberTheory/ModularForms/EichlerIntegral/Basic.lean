@@ -161,7 +161,7 @@ theorem periodic_eichlerIntegral_comp_ofComplex (n : ℕ) :
   · subst hh
     exact fun x ↦ by simp
   simpa only [comp_def, eichlerIntegral] using
-    (UpperHalfPlane.periodic_qParam_comp_ofComplex hh).comp
+    UpperHalfPlane.periodic_qParam_comp_ofComplex.comp
       (fun q : ℂ ↦ ∑' m : ℕ, ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * q ^ m)
 
 /-- On a half-plane `ε < im w` the terms of the Eichler series are dominated by a summable

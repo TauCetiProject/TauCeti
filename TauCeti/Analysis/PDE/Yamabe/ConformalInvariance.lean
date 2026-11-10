@@ -48,6 +48,7 @@ two metric instances are ever installed on one carrier at once.
 In the namespace `Bundle.ContMDiffRiemannianMetric`, for dot notation on the metric `g`:
 
 * `yamabeQuotient_rescale`: `Q_ĝ(v) = Q_g(u v)`.
+* `yamabeQuotient_eq_rescale_inv_mul`: for a positive smooth `u`, `Q_g(w) = Q_ĝ(w / u)`.
 * `yamabeQuotient_eq_integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow`:
   `Q_g(u) = (∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ)`.
 
@@ -129,6 +130,33 @@ theorem yamabeQuotient_rescale
     integral_energy_rescale g hn hu_pos hv hvc, criticalExponent_def,
     WithMetric.integral_abs_rpow_rescale_rpow (fun x ↦ (hu_pos x).le)]
   simp only [Pi.mul_apply]
+
+/-- **The Yamabe quotient after dividing by a positive function.** In dimension `n ≠ 2`, let `u`
+be a positive smooth function on a manifold without boundary. Writing `w = u (w / u)`, the Yamabe
+quotient of `g` at a compactly supported `C²` function `w` is the Yamabe quotient of
+`ĝ = u ^ (4 / (n - 2)) g` at `w / u`. -/
+theorem yamabeQuotient_eq_rescale_inv_mul
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu_pos : ∀ x, 0 < u x) {w : M → ℝ}
+    (hw : ContMDiff I 𝓘(ℝ) 2 w) (hwc : HasCompactSupport w) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+     letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+       instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric;
+     yamabeQuotient I w) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+         ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2)))
+           (hu.rpow_const_of_ne (fun x ↦ (hu_pos x).ne') _)
+           (fun x ↦ Real.rpow_pos_of_pos (hu_pos x) _)).toRiemannianMetric⟩;
+       letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+         instIsContinuousRiemannianBundle (g.rescale _
+           (hu.rpow_const_of_ne (fun x ↦ (hu_pos x).ne') _)
+           (fun x ↦ Real.rpow_pos_of_pos (hu_pos x) _)).toContinuousRiemannianMetric;
+       yamabeQuotient I fun x ↦ (u x)⁻¹ * w x) := by
+  have huv : (u * fun x ↦ (u x)⁻¹ * w x) = w :=
+    funext fun x ↦ mul_inv_cancel_left₀ (hu_pos x).ne' (w x)
+  rw [g.yamabeQuotient_rescale hn hu_pos (v := fun x ↦ (u x)⁻¹ * w x)
+    (((hu.of_le (by simp)).inv₀ fun x ↦ (hu_pos x).ne').mul hw) hwc.mul_left, huv]
 
 end Rescale
 

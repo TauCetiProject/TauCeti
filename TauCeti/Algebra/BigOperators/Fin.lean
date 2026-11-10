@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -31,7 +32,8 @@ exponent vectors (compare leading partial sums) that triangular expansions in He
 
 A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
-the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`).
+the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
+`(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
 -/
 
 public section
@@ -163,6 +165,16 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
 end Fin
 
 namespace Fintype
+
+/-- A sum over the pairs `(a, b)` with `P a` and second entry `b` is the sum of the values at
+`(a, b)` over the `a` with `P a`. -/
+theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    [AddCommMonoid M] (h : α × β → M) (P : α → Prop) [DecidablePred P] (b : β) :
+    ∑ x ∈ Finset.univ.filter (fun x : α × β ↦ P x.1 ∧ x.2 = b), h x =
+      ∑ a ∈ Finset.univ.filter P, h (a, b) := by
+  rw [Finset.sum_filter, Finset.sum_filter, Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  by_cases hP : P a <;> simp [hP]
 
 /-- **A product over the pairs `Fin 2 → α`** is the double product over their two entries. -/
 @[to_additive /-- **A sum over the pairs `Fin 2 → α`** is the double sum over their two

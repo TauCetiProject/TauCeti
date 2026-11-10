@@ -68,7 +68,7 @@ theorem diskRadialPush_diskBoundaryInclusion (hr : 0 < r) (hr1 : r ≤ 1) (t : I
       TopCat.diskBoundaryInclusion n s :=
   ULift.ext (Subtype.ext ((coe_diskRadialPush_apply_down hr.le t _).trans
     (radialPush_of_norm_eq_one hr hr1 t
-      ((mem_range_diskBoundaryInclusion_iff _).1 (Set.mem_range_self s)))))
+      (norm_diskBoundaryInclusion s))))
 
 /-- At the end, the radial push on the disk sends the shell `r ≤ ‖x‖` into the boundary sphere. -/
 theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.1‖) :
