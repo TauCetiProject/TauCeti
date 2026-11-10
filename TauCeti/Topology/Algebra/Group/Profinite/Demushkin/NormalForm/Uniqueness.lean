@@ -152,7 +152,7 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
   -- Even rank: the image is `{±1}`, `{±1} × U^(f)` or `U^[f]`, and each pins a normal form.
   rcases hG.range_demushkinCharacter_trichotomy_of_demushkinQ_eq_two hq with
     hA | ⟨f, hf, hA⟩ | ⟨f, u, hf, hu, hA⟩
-  · exact exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one hn hr hr' hG hG' hA
+  · exact exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one hn hG hG' hA
       (h.symm.trans hA)
   · -- The image `{±1} × U^(f)` is not procyclic, so it does not occur at rank two, and `n ≥ 4`.
     have hn3 : 3 < n := by
