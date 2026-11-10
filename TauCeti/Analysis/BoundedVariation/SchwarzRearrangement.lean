@@ -105,7 +105,7 @@ theorem totalVariationOn_toReal_schwarzRearrangement_le (hu : Integrable u volum
   · have hlevel : {x | t < v x} =ᵐ[volume]
         {x | ENNReal.ofReal t < schwarzRearrangement volume f x} := by
       filter_upwards [hae] with x hx
-      exact propext (ENNReal.ofReal_lt_iff_lt_toReal htpos.le hx).symm
+      exact (ENNReal.ofReal_lt_iff_lt_toReal htpos.le hx).symm
     have hsource : {x | ENNReal.ofReal t < f x} = {x | t < u x} := by
       ext x
       exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg htpos.le

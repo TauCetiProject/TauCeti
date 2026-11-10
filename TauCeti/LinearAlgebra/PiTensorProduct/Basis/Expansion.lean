@@ -62,13 +62,13 @@ theorem tprod_update_pair_expand {ι ν R : Type*} [DecidableEq ι] [Fintype ν]
     _ = ∑ b : ν, ∑ a : ν, (x a * y b) • PiTensorProduct.tprod R
           (Function.update (Function.update u i (Pi.single a (1 : R))) j (Pi.single b 1)) := by
         rw [(PiTensorProduct.tprod R).map_update_sum]
-        simp only [RingHom.id_apply]
         refine Finset.sum_congr rfl fun b _ => ?_
         rw [(PiTensorProduct.tprod R).map_update_smul, Function.update_comm hij,
           (PiTensorProduct.tprod R).map_update_sum, Finset.smul_sum]
         refine Finset.sum_congr rfl fun a _ => ?_
         rw [(PiTensorProduct.tprod R).map_update_smul, Function.update_comm (Ne.symm hij),
           smul_smul, mul_comm]
+        simp only [RingHom.id_apply]
     _ = _ := Finset.sum_comm
 
 /-- **Congruence at two slots.** Pushing a matrix `A` through the slots `i` and `j` of the weighted

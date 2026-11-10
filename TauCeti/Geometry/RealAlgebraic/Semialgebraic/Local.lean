@@ -371,7 +371,7 @@ theorem _root_.LocallyFinite.isLocallySemialgebraic_iUnion [Finite σ] {ι : Typ
   obtain ⟨V, hV, hI⟩ := hfin x
   refine (SemialgebraicAt.biUnion hI fun i _ => hs i x).congr ?_
   filter_upwards [hV] with y hy
-  simp only [eq_iff_iff, mem_iUnion, exists_prop]
+  simp only [mem_iUnion, exists_prop]
   exact ⟨fun ⟨i, _, hyi⟩ => ⟨i, hyi⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
 /-! ### Bounded locally semialgebraic sets -/

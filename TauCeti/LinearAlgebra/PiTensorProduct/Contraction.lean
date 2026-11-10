@@ -90,7 +90,7 @@ private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm
         update (fun b => v b.val) a' z := by
       exact update_comp_eq_of_injective v Subtype.val_injective a' z
     simp only [update_of_ne (Ne.symm hai), update_of_ne (Ne.symm haj), hup,
-      (PiTensorProduct.tprod R).map_update_smul, RingHom.id_apply]
+      (PiTensorProduct.tprod R).map_update_smul, RingHom.id_apply, smul_comm (B (v i) (v j)) c]
 
 /-- Contract two distinct slots against a bilinear form. The remaining factors keep their
 original indices, restricted to the complement of the contracted pair. -/

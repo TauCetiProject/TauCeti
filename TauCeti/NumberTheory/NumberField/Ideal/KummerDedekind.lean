@@ -100,7 +100,7 @@ theorem map_inertiaDeg_primesOver_eq_factorDegrees (θ : 𝓞 K) {p : ℕ} [Fact
         (fun Q => Q.1.inertiaDeg ℤ) = (minpoly ℤ θ).factorDegrees p := by
   classical
   rw [map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod θ hp,
-    factorDegrees_def, monicFactorsMod, Multiset.toFinset_val]
+    factorDegrees_def, Multiset.toFinset_val]
   exact congrArg (Multiset.map natDegree) <|
     (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
       ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq |>.dedup

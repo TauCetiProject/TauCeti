@@ -234,7 +234,7 @@ theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le
     intro a
     have hsets : {x | a < f x} =ᵐ[μ] {x | a < hf.mk f x} := by
       filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => a < z) hx
+      exact Iff.of_eq (congrArg (fun z : ℝ≥0∞ => a < z) hx)
     rw [Measure.restrict_congr_set hsets]
     exact lintegral_congr_ae (ae_restrict_of_ae hae)
   have hrpow : (fun x => f x ^ p) =ᵐ[μ] fun x => hf.mk f x ^ p :=
@@ -327,7 +327,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
       hvg.mono fun _ hx => congrArg eNorm hx
     have hsets : {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ} =ᵐ[μ] S := by
       filter_upwards [henorm] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx
+      exact Iff.of_eq (congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx)
     calc ∫⁻ x, ‖g₁ x‖ₑ ∂μ
         = ∫⁻ x in S, ‖v x‖ₑ ∂μ := by
           rw [hg₁def]

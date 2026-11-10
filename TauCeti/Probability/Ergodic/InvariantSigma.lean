@@ -165,7 +165,7 @@ theorem mem_fixedSpace_iff_aestronglyMeasurable_invariants {T : Ω → Ω}
       AEStronglyMeasurable[MeasurableSpace.invariants T] f μ := by
   rw [mem_fixedSpace_iff, compMeasurePreserving_eq_self_iff]
   exact
-    (aestronglyMeasurable_invariants_iff_comp_ae_eq hT.quasiMeasurePreserving
+    (aestronglyMeasurable_invariants_iff_comp_ae_eq hT.measurable hT.quasiMeasurePreserving
       (Lp.aestronglyMeasurable f)).symm
 
 /-- The `Lᵖ` fixed space of a measure-preserving endomorphism is the subspace of functions

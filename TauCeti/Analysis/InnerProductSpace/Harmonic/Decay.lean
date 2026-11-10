@@ -518,12 +518,12 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
           (hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x‖ ^ 2) _).symm
       _ ≤ ∫ y in ball (e.symm x₀) (a * ρ), ‖(u ∘ e) y‖ ^ 2 ∂ν :=
           setIntegral_mono_set (hint'.mono_set ((ball_subset_ball hle).trans hsub))
-            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallyLE
+            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallySubset
       _ ≤ 2 ^ n * (a * ρ / (R / b)) ^ n * ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y‖ ^ 2 ∂ν :=
           hdec
       _ ≤ 2 ^ n * (a * ρ / (R / b)) ^ n * ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y‖ ^ 2 ∂ν := by
           refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-          exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
+          exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallySubset
       _ = _ := by
           -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
           -- `∘`, so state the pullback of `I` in the form in which it appears here.

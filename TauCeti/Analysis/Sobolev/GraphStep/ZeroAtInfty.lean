@@ -153,7 +153,7 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
     exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
         (eLpNorm_mono_measure _ volume_restrict_top.ge)
-  · rw [← toReal_enorm]
+  · rw [← toReal_eNorm]
     exact ENNReal.toReal_mono eNorm_ne_top <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
         (eLpNorm_weakFDeriv_apply_one_le u)

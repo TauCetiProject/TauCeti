@@ -143,7 +143,7 @@ private theorem exists_le_one :
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
       fun U _ φ hφU hφ => ?_
-    rw [Measure.setLIntegral_rnDeriv hlam, ← enorm_neg, ← hrep]
+    rw [Measure.setLIntegral_rnDeriv hlam, ← eNorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin φ hφU hφ
   -- Normalize `g` by `k`.
   obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
@@ -293,7 +293,7 @@ theorem ae_eq_polarDensity {σ : Ω → E} (hσ : LocallyIntegrable σ (variatio
 /-- The pairing of `u` with a test vector field `φ` on `Ω` is bounded by `∫ ‖φ‖ d|Du|`. -/
 theorem enorm_integral_divergenceCLM_mul_le_lintegral_enorm (φ : 𝓓(Ω, E)) :
     ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂variationMeasure μ Ω u := by
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, enorm_neg]
+  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, eNorm_neg]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
   filter_upwards [ae_norm_polarDensity_eq_one hu hfin] with x hx
   rw [← ofReal_norm, ← ofReal_norm]

@@ -495,7 +495,7 @@ private theorem tetrahedronSpringMatrix_mulVec_modeBasis (m : Fin 12) :
       fin_cases i <;> try fin_cases j
     all_goals
       simp [tetrahedronModeCoord, tetrahedronModeEigenvalue, Matrix.trace, Fin.sum_univ_three,
-        Function.swap]
+        Function.swap, Matrix.vecHead, Matrix.vecTail]
     all_goals norm_num
   rw [← map_smul, ← hm,
     ← tetrahedronSpringMatrix_mulVec_affineFieldEquiv (tetrahedronModeCoord m).1]

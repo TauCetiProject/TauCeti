@@ -345,7 +345,7 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow
   have hset : ∀ (P : ℝ≥0∞ → Prop) (r : ℝ), ∫⁻ x in {x | P (f x)}, f x ^ r ∂μ =
       ∫⁻ x in {x | P (hf.mk f x)}, hf.mk f x ^ r ∂μ := fun P r => by
     have hsets : {x | P (f x)} =ᵐ[μ] {x | P (hf.mk f x)} :=
-      hae.mono fun x hx => congrArg P hx
+      hae.mono fun x hx => Iff.of_eq (congrArg P hx)
     rw [Measure.restrict_congr_set hsets]
     exact lintegral_congr_ae (ae_restrict_of_ae (hpow r))
   rw [lintegral_congr_ae (hpow p)]
@@ -398,13 +398,15 @@ theorem meas_ofReal_lt_le_add_setLIntegral_rpow (hv : AEMeasurable v μ) (ht : 0
     exact hadd g₁ g₂ hg₁meas hg₂meas
   have hS₀ : ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ = ∫⁻ x in {x | a < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ := by
     rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas Filter.EventuallyEq.rfl hp₀]
-    exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => a < ‖z‖ₑ).symm
+    exact setLIntegral_congr (Filter.Eventually.mono
+      (hv.ae_eq_mk.fun_comp fun z => a < ‖z‖ₑ).symm fun _ h ↦ Iff.of_eq h)
   have hS₁ : ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ = ∫⁻ x in {x | ‖v x‖ₑ ≤ a}, ‖v x‖ₑ ^ p₁ ∂μ := by
     have hSc : Sᶜ = {x | ‖g x‖ₑ ≤ a} := by
       ext x
       simp [hSdef]
     rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas.compl Filter.EventuallyEq.rfl hp₁, hSc]
-    exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ a).symm
+    exact setLIntegral_congr (Filter.Eventually.mono
+      (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ a).symm fun _ h ↦ Iff.of_eq h)
   have hsplit : ∀ (k r : ℝ), 0 < k → ENNReal.ofReal ((k * t) ^ (-r)) =
       ENNReal.ofReal (k ^ (-r)) * ENNReal.ofReal (t ^ (-r)) := fun k r hk => by
     rw [Real.mul_rpow hk.le ht.le, ENNReal.ofReal_mul (Real.rpow_nonneg hk.le _)]
