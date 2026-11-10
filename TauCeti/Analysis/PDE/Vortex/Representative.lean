@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Regularity
 import TauCeti.Analysis.PDE.Vortex.Multiplier
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Smooth framed vortices have representatives in the affine Sobolev field space
@@ -43,6 +43,9 @@ then comes from the vortex equations themselves, in the winding end trivializati
 
 ## Main results
 
+* `TauCeti.Vortex.eventually_gaugeTransform_inv_windingPhase`: outside a compact set, the winding
+  end trivialization of an end-normalized vortex is a smooth vortex with real positive section whose
+  deformation from the vacuum has vanishing gauge-fixing row.
 * `TauCeti.Vortex.sub_referenceField_mem_sobolevFields`: an end-normalized smooth vortex with
   `|α| → 1` differs from `x_ref` by a field in every integer-order Sobolev space.
 * `TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex
@@ -110,36 +113,6 @@ theorem gaugeAdjoint_vacuumField_sub_eq_zero {Y : ℂ → EuclideanSpace ℝ (Fi
   simp only [gaugeAdjoint_def, vacuumField_apply, Pi.sub_apply, PiLp.sub_apply, h₃ z hz]
   simpa using hsum'
 
-/-- A field smooth outside the disc of radius `R₀ > 0` has a smooth cutoff `ψ`, vanishing on the
-disc of radius `R₀ + 1`, equal to the field near every point outside the disc of radius `R₀ + 2`,
-and nowhere larger. -/
-private theorem exists_contDiff_cutoff_field {y : ℂ → EuclideanSpace ℝ (Fin 4)} {R₀ : ℝ}
-    (hR₀ : 0 < R₀) (hy : ∀ z, R₀ < ‖z‖ → ContDiffAt ℝ ∞ y z) :
-    ∃ ψ : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ ψ ∧
-      (∀ z, R₀ + 2 < ‖z‖ → ψ =ᶠ[𝓝 z] y) ∧ ∀ z, ψ z = 0 ∨ (R₀ < ‖z‖ ∧ ‖ψ z‖ ≤ ‖y z‖) := by
-  let b : ContDiffBump (0 : ℂ) := ⟨R₀ + 1, R₀ + 2, by positivity, by linarith⟩
-  set χ : ℂ → ℝ := fun z ↦ 1 - b z
-  have hχ : ContDiff ℝ ∞ χ := contDiff_const.sub b.contDiff
-  have hχ0 {z : ℂ} (hz : ‖z‖ ≤ R₀ + 1) : χ z = 0 := by
-    simp only [χ, b.one_of_mem_closedBall (by simpa using hz), sub_self]
-  have hχ1 {z : ℂ} (hz : R₀ + 2 ≤ ‖z‖) : χ z = 1 := by
-    simp only [χ, b.zero_of_le_dist (by simpa using hz), sub_zero]
-  have hχ01 (z : ℂ) : 0 ≤ χ z ∧ χ z ≤ 1 :=
-    ⟨by simp only [χ, sub_nonneg, b.le_one], by simp only [χ, sub_le_self_iff, b.nonneg]⟩
-  refine ⟨fun z ↦ χ z • y z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun z hz ↦ ?_, fun z ↦ ?_⟩
-  · by_cases hz : ‖z‖ < R₀ + 1
-    · refine contDiffAt_const (c := (0 : EuclideanSpace ℝ (Fin 4))).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hz] with w hw
-      simp only [hχ0 (le_of_lt hw), zero_smul]
-    · exact hχ.contDiffAt.smul (hy z (by linarith))
-  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-    simp only [hχ1 (le_of_lt hw), one_smul]
-  · by_cases hz : ‖z‖ ≤ R₀ + 1
-    · exact .inl (by simp only [hχ0 hz, zero_smul])
-    · refine .inr ⟨by linarith, ?_⟩
-      rw [norm_smul, Real.norm_of_nonneg (hχ01 z).1]
-      exact mul_le_of_le_one_left (norm_nonneg _) (hχ01 z).2
-
 /-- If near every point outside a compact set a smooth field `ψ` agrees with a deformation `y` of
 the vacuum whose gauge-fixing row and vortex defects vanish there, then the gauge-fixing row and
 vortex defects of `ψ` form a smooth compactly supported field, hence lie in every `H^j`. -/
@@ -170,31 +143,60 @@ private theorem gaugeFixedDefect_mem_sobolevFields {ψ y : ℂ → EuclideanSpac
     ext i
     fin_cases i <;> simp
 
+/-- **The winding end trivialization of an end-normalized vortex.** Let `x` be a smooth plane
+vortex whose section is nonzero and equal to `|α|` times the winding phase `(z / |z|)^m` outside a
+compact set. Outside a compact set its end trivialization `Y = (z / |z|)^(-m) · x` is smooth, solves
+the vortex equations, has real positive section, and the gauge-fixing row of its deformation
+`Y - vacuum` from the vacuum vanishes. -/
+theorem eventually_gaugeTransform_inv_windingPhase {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
+    (hne : ∀ᶠ z in cocompact ℂ, sectionValue x z ≠ 0) :
+    ∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ (gaugeTransform (windingPhase m)⁻¹ x) z ∧
+      equation (gaugeTransform (windingPhase m)⁻¹ x) z = 0 ∧
+      0 < gaugeTransform (windingPhase m)⁻¹ x z 2 ∧ gaugeTransform (windingPhase m)⁻¹ x z 3 = 0 ∧
+      gaugeAdjoint vacuumField (gaugeTransform (windingPhase m)⁻¹ x - vacuumField) z = 0 := by
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸
+    (hphase.and hne).and (tendsto_norm_cocompact_atTop.eventually_gt_atTop 0))
+  set U : Set ℂ := {z | R < ‖z‖}
+  have hUo : IsOpen U := isOpen_lt continuous_const continuous_norm
+  have hRU {z : ℂ} (hz : z ∈ U) := hR (show R ≤ ‖z‖ from hz.le)
+  have hU0 {z : ℂ} (hz : z ∈ U) : z ≠ 0 := norm_pos_iff.1 (hRU hz).2
+  set Y := gaugeTransform (windingPhase m)⁻¹ x
+  have hY {z : ℂ} (hz : z ∈ U) : ContDiffAt ℝ ∞ Y z :=
+    contDiffAt_gaugeTransform (contDiffAt_inv_windingPhase m (hU0 hz)) hx.contDiffAt
+  have hYsec {z : ℂ} (hz : z ∈ U) : Y z 2 = ‖sectionValue x z‖ / 2 ∧ Y z 3 = 0 := by
+    have h := sectionValue_gaugeTransform_inv_windingPhase (hRU hz).1.1
+    rw [sectionValue_apply] at h
+    have h₂ := congrArg Complex.re h
+    have h₃ := congrArg Complex.im h
+    simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
+      im_ofNat] at h₂ h₃
+    constructor <;> linarith
+  have hYpos {z : ℂ} (hz : z ∈ U) : 0 < Y z 2 := by
+    rw [(hYsec hz).1]
+    exact half_pos (norm_pos_iff.2 (hRU hz).1.2)
+  have hYsol {z : ℂ} (hz : z ∈ U) : equation Y z = 0 :=
+    (equation_gaugeTransform_eq_zero_iff (contDiffAt_inv_windingPhase m (hU0 hz))
+      fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z (hz : z ∈ U)
+  exact ⟨hY hz, hYsol hz, hYpos hz, (hYsec hz).2,
+    gaugeAdjoint_vacuumField_sub_eq_zero hUo (fun w hw ↦ (hY hw).of_le (by simp))
+      (fun w hw ↦ hYsol hw) (fun w hw ↦ (hYsec hw).2) (fun w hw ↦ hYpos hw) hz⟩
+
 /-- A smooth field which, outside a compact set, is a field `ψ ∈ H^k` with its section multiplied
 by the reference section of `A_m^s`, lies in `H^k`. -/
-private theorem mem_sobolevFields_of_eventually_eq_mul_referenceSection
+private theorem mem_sobolevFields_of_eventually_eq_sectionMul_referenceSection
     {D ψ : ℂ → EuclideanSpace ℝ (Fin 4)} (hD : ContDiff ℝ ∞ D) (hψ : ContDiff ℝ ∞ ψ)
     (f : ContDiffBump (0 : ℝ)) (m : ℕ) {k : ℕ} (hψk : ψ ∈ sobolevFields k) {R : ℝ}
-    (hDψ : ∀ z, R < ‖z‖ → D z = !₂[ψ z 0, ψ z 1,
-      (referenceSection f m z).re * ψ z 2 - (referenceSection f m z).im * ψ z 3,
-      (referenceSection f m z).im * ψ z 2 + (referenceSection f m z).re * ψ z 3]) :
+    (hDψ : ∀ z, R < ‖z‖ → D z = sectionMul (referenceSection f m) ψ z) :
     D ∈ sobolevFields k := by
-  set s : ℂ → ℂ := referenceSection f m
-  set F : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ !₂[ψ z 0, ψ z 1,
-    (s z).re * ψ z 2 - (s z).im * ψ z 3, (s z).im * ψ z 2 + (s z).re * ψ z 3]
-  have hF : F ∈ sobolevFields k := mul_section_mem_sobolevFields_natCast
-    (contDiff_referenceSection f m) (fun n _ ↦ exists_norm_iteratedFDeriv_referenceSection_le f m n)
-    hψk
-  have hFs : ContDiff ℝ ∞ F := by
-    have hr : ContDiff ℝ ∞ fun z ↦ (s z).re := reCLM.contDiff.comp (contDiff_referenceSection f m)
-    have hi : ContDiff ℝ ∞ fun z ↦ (s z).im := imCLM.contDiff.comp (contDiff_referenceSection f m)
-    have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ ψ z i) := contDiff_euclidean.1 hψ i
-    refine contDiff_euclidean.2 fun i ↦ ?_
-    fin_cases i <;> simp only [F, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
-      Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one]
-    exacts [hc 0, hc 1, (hr.mul (hc 2)).sub (hi.mul (hc 3)), (hi.mul (hc 2)).add (hr.mul (hc 3))]
-  have hG : D - F ∈ sobolevFields k :=
-    mem_sobolevFields_of_hasCompactSupport (hD.sub hFs)
+  have hF : sectionMul (referenceSection f m) ψ ∈ sobolevFields k :=
+    mul_section_mem_sobolevFields_natCast (contDiff_referenceSection f m)
+      (fun n _ ↦ exists_norm_iteratedFDeriv_referenceSection_le f m n) hψk
+  have hG : D - sectionMul (referenceSection f m) ψ ∈ sobolevFields k :=
+    mem_sobolevFields_of_hasCompactSupport
+      (hD.sub (contDiff_sectionMul (contDiff_referenceSection f m) hψ))
       (HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) R) fun z hz ↦ by
         rw [hDψ z (by simpa using hz)]
         exact sub_self _) k
@@ -214,99 +216,58 @@ theorem sub_referenceField_mem_sobolevFields {x : ℂ → EuclideanSpace ℝ (Fi
     ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
     hlim hphase f (c := 1 / 4) (by norm_num)
   have hK0 : 0 ≤ K := by simpa using (norm_nonneg _).trans (hK 0)
-  -- A radius beyond which the section is normalized, has modulus above `1 / 2`, and the
-  -- reference field is the winding field.
-  have hev : ∀ᶠ z in cocompact ℂ, (sectionValue x z = ‖sectionValue x z‖ * windingPhase m z ∧
-      1 / 4 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ∧ max 1 f.rOut < ‖z‖ :=
-    (hphase.and (hlim.eventually (lt_mem_nhds (by norm_num)))).and
-      (tendsto_norm_cocompact_atTop.eventually_gt_atTop _)
-  obtain ⟨R, -, hR⟩ :=
-    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hev)
-  set R₀ := max R 1
-  set U : Set ℂ := {z | R₀ < ‖z‖}
-  have hUo : IsOpen U := isOpen_lt continuous_const continuous_norm
-  have hRU {z : ℂ} (hz : z ∈ U) := hR (show R ≤ ‖z‖ from (le_max_left _ _).trans hz.le)
-  have hU0 {z : ℂ} (hz : z ∈ U) : z ≠ 0 :=
-    norm_pos_iff.1 (lt_of_lt_of_le zero_lt_one ((le_max_right R 1).trans hz.le))
-  -- The end trivialization `Y` and its deformation `y = Y - vacuum`.
-  set Y := gaugeTransform (windingPhase m)⁻¹ x
-  set y := Y - vacuumField
-  have hY {z : ℂ} (hz : z ∈ U) : ContDiffAt ℝ ∞ Y z :=
-    contDiffAt_gaugeTransform (contDiffAt_inv_windingPhase m (hU0 hz)) hx.contDiffAt
-  have hYsec {z : ℂ} (hz : z ∈ U) :
-      Y z 2 = ‖sectionValue x z‖ / 2 ∧ Y z 3 = 0 := by
-    have h := sectionValue_gaugeTransform_inv_windingPhase (hRU hz).1.1
-    rw [sectionValue_apply] at h
-    have h₂ := congrArg Complex.re h
-    have h₃ := congrArg Complex.im h
-    simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
-      im_ofNat] at h₂ h₃
-    constructor <;> linarith
-  have hYpos {z : ℂ} (hz : z ∈ U) : 0 < Y z 2 := by
-    rw [(hYsec hz).1]
-    have h := (hRU hz).1.2
-    rw [← sq_norm_sectionValue] at h
-    nlinarith [norm_nonneg (sectionValue x z)]
-  have hYsol {z : ℂ} (hz : z ∈ U) : equation Y z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff (contDiffAt_inv_windingPhase m (hU0 hz))
-      fun i ↦ (hxi i).differentiable (by simp) z).2 (hsol z)
-  have hgauge {z : ℂ} (hz : z ∈ U) : gaugeAdjoint vacuumField y z = 0 :=
-    gaugeAdjoint_vacuumField_sub_eq_zero hUo (fun w hw ↦ (hY hw).of_le (by simp))
-      (fun w hw ↦ hYsol hw) (fun w hw ↦ (hYsec hw).2) (fun w hw ↦ hYpos hw) hz
-  -- On `U`, `y` is the end trivialization of `x - x_ref`.
-  have hyz {z : ℂ} (hz : z ∈ U) :
+  have hne : ∀ᶠ z in cocompact ℂ, sectionValue x z ≠ 0 :=
+    (hlim.eventually (lt_mem_nhds zero_lt_one)).mono fun z hz h ↦ by
+      rw [← sq_norm_sectionValue, h, norm_zero] at hz
+      norm_num at hz
+  -- A radius beyond which the end trivialization has the properties above and the reference field
+  -- is the winding field.
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸
+    (eventually_gaugeTransform_inv_windingPhase hx hsol hphase hne).and
+      (tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)))
+  set R₀ := max R 0
+  have hRU {z : ℂ} (hz : R₀ < ‖z‖) := hR (show R ≤ ‖z‖ from (le_max_left _ _).trans hz.le)
+  -- The deformation `y` of the end trivialization from the vacuum is the end trivialization of
+  -- `x - x_ref`.
+  set y := gaugeTransform (windingPhase m)⁻¹ x - vacuumField
+  have hyz {z : ℂ} (hz : R₀ < ‖z‖) :
       y z = gaugeLinearAction (windingPhase m)⁻¹ (x - referenceField f m) z := by
-    have hr := gaugeTransform_inv_windingPhase_referenceField f m
-      (rOut_le_norm_sq f (hRU hz).2)
+    have hr := gaugeTransform_inv_windingPhase_referenceField f m (rOut_le_norm_sq f (hRU hz).2)
     rw [← gaugeTransform_sub_gaugeTransform, Pi.sub_apply, hr]
     rfl
-  have hynorm {z : ℂ} (hz : z ∈ U) : ‖y z‖ ≤ K * Real.exp (-(1 / 4 * ‖z‖)) := by
-    rw [hyz hz, norm_gaugeLinearAction]
-    exact hK z
   -- Cut `y` off near the origin: `ψ` is smooth, bounded and square integrable.
-  obtain ⟨ψ, hψ, hψU, hψy⟩ := exists_contDiff_cutoff_field (R₀ := R₀) (by positivity)
-    fun z hz ↦ (hY hz).sub contDiff_vacuumField.contDiffAt
+  obtain ⟨ψ, hψ, hψU, hψy⟩ := exists_contDiff_cutoff_outside_closedBall (n := ⊤) (y := y)
+    (R := R₀ + 1) (le_max_right R 0) (by linarith) fun z hz ↦
+      (hRU hz).1.1.sub contDiff_vacuumField.contDiffAt
   have hψbound (z : ℂ) : ‖ψ z‖ ≤ K * Real.exp (-(1 / 4 * ‖z‖)) := by
     rcases hψy z with h | ⟨hz, h⟩
     · rw [h, norm_zero]
       exact (norm_nonneg _).trans (hK z)
-    · exact h.trans (hynorm hz)
+    · rw [hyz hz, norm_gaugeLinearAction] at h
+      exact h.trans (hK z)
   have hψB (z : ℂ) : ‖ψ z‖ ≤ K := (hψbound z).trans (mul_le_of_le_one_right hK0
     (Real.exp_le_one_iff.2 (by nlinarith [norm_nonneg z])))
-  have hψ0 : ψ ∈ sobolevFields 0 := by
-    refine mem_sobolevFields_zero_of_memLp
-      ((memLp_two_iff_integrable_sq_norm hψ.continuous.aestronglyMeasurable).2
-      (((integrable_exp_neg_mul_norm volume (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
-        (K ^ 2)).mono' (hψ.continuous.norm.pow 2).aestronglyMeasurable
-        (ae_of_all _ fun z ↦ ?_)))
-    rw [Real.norm_of_nonneg (sq_nonneg _)]
-    calc ‖ψ z‖ ^ 2 ≤ (K * Real.exp (-(1 / 4 * ‖z‖))) ^ 2 :=
-          pow_le_pow_left₀ (norm_nonneg _) (hψbound z) 2
-      _ = K ^ 2 * Real.exp (-(1 / 2 * ‖z‖)) := by
-          rw [mul_pow, ← Real.exp_nat_mul]
-          ring_nf
   -- The gauge-fixed vortex defect of `ψ` vanishes outside a compact set, so `ψ` lies in every
   -- `H^j`.
-  have hU2 {z : ℂ} (hz : R₀ + 2 < ‖z‖) : z ∈ U := show R₀ < ‖z‖ by linarith
-  have hψk := mem_sobolevFields_of_forall_mem_sobolevFields_equation hψ hψB hψ0
-    (gaugeFixedDefect_mem_sobolevFields hψ hψU (fun z hz ↦ hgauge (hU2 hz))
-      fun z hz ↦ by
-        convert hYsol (hU2 hz) using 2
+  have hψk := mem_sobolevFields_of_forall_mem_sobolevFields_equation hψ hψB
+    (mem_sobolevFields_zero_of_norm_le_mul_exp hψ.continuous.aestronglyMeasurable (by norm_num)
+      hψbound)
+    (gaugeFixedDefect_mem_sobolevFields hψ hψU
+      (fun z hz ↦ (hRU (by linarith)).1.2.2.2.2) fun z hz ↦ by
+        convert (hRU (by linarith)).1.2.1 using 2
         funext w
-        simp only [Pi.add_apply, add_sub_cancel])
+        simp only [y, Pi.add_apply, Pi.sub_apply, add_sub_cancel])
   -- Back in the winding frame: outside a compact set, `x - x_ref` is `ψ` with its section
   -- multiplied by the reference section.
-  refine mem_sobolevFields_of_eventually_eq_mul_referenceSection (R := R₀ + 2)
-    (hx.sub (contDiff_referenceField f m)) hψ f m (hψk k) fun z (hz : R₀ + 2 < ‖z‖) ↦ ?_
-  have hzU : z ∈ U := show R₀ < ‖z‖ by linarith
+  refine mem_sobolevFields_of_eventually_eq_sectionMul_referenceSection (R := R₀ + 1)
+    (hx.sub (contDiff_referenceField f m)) hψ f m (hψk k) fun z (hz : R₀ + 1 < ‖z‖) ↦ ?_
+  have hzU : R₀ < ‖z‖ := by linarith
   have hs : referenceSection f m z = windingPhase m z := by
     rw [referenceSection_eq_phase f m (rOut_le_norm_sq f (hRU hzU).2),
-      coe_windingPhase m (hU0 hzU)]
+      coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f (rOut_le_norm_sq f (hRU hzU).2))]
   rw [← Pi.sub_apply x (referenceField f m) z,
     ← gaugeLinearAction_gaugeLinearAction_inv (windingPhase m) (x - referenceField f m),
-    gaugeLinearAction_apply, ← hyz hzU, hs]
-  have hψz : ψ z = y z := (hψU z hz).eq_of_nhds
-  simp only [hψz]
+    gaugeLinearAction_apply, ← hyz hzU, sectionMul_apply, hs, (hψU z hz).eq_of_nhds]
 
 /-- **Every smooth framed vortex orbit meets the affine Sobolev field space.** A smooth plane
 vortex `x` with the degree-`m` end framing `α (z / |z|)^(-m) → 1` is equivalent under the smooth

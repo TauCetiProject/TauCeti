@@ -17,6 +17,8 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -48,7 +50,8 @@ At integer orders, Sobolev regularity of a `C¹` field is read off from its clas
 for `s ≥ 0` its directional derivatives lie in `sobolevFields s` when it lies in
 `sobolevFields (s + 1)` (`fderiv_apply_mem_sobolevFields`), and conversely
 (`mem_sobolevFields_add_one_of_fderiv_apply`); `sobolevFields 0` consists of the square-integrable
-fields (`integrable_norm_sq_of_mem_sobolevFields_zero`, `mem_sobolevFields_zero_of_memLp`).
+fields (`mem_sobolevFields_zero_iff_memLp`), among them the fields decaying exponentially
+(`mem_sobolevFields_zero_of_norm_le_mul_exp`).
 
 Off the disc where the cutoff is active, the reference field is the field reconstructed from the
 holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
@@ -310,19 +313,35 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
   mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport
     (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s
 
-/-- A field in `sobolevFields 0` has integrable squared norm, the sum of the squares of its
-coordinates. -/
+/-- `sobolevFields 0` consists of the square-integrable fields. -/
+theorem mem_sobolevFields_zero_iff_memLp {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields 0 ↔ MemLp y 2 volume := by
+  simp only [mem_sobolevFields, mem_realSobolevFunctions_zero_iff, memLp_piLp_iff]
+
+/-- A field in `sobolevFields 0` has integrable squared norm. -/
 theorem integrable_norm_sq_of_mem_sobolevFields_zero {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ sobolevFields 0) : Integrable (fun z ↦ ‖y z‖ ^ 2) := by
-  simp_rw [EuclideanSpace.real_norm_sq_eq]
-  exact integrable_finsetSum _ fun i _ ↦
-    (memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)).integrable_sq
+    (hy : y ∈ sobolevFields 0) : Integrable (fun z ↦ ‖y z‖ ^ 2) :=
+  (mem_sobolevFields_zero_iff_memLp.1 hy).integrable_norm_pow two_ne_zero
 
 /-- A square-integrable field lies in `sobolevFields 0`. -/
 theorem mem_sobolevFields_zero_of_memLp {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : MemLp y 2 volume) : y ∈ sobolevFields 0 :=
-  mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_zero_iff.2
-    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy)
+  mem_sobolevFields_zero_iff_memLp.2 hy
+
+/-- An almost everywhere strongly measurable field bounded by `K exp (-c |z|)` with `0 < c` lies in
+`sobolevFields 0`. -/
+theorem mem_sobolevFields_zero_of_norm_le_mul_exp {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : AEStronglyMeasurable y) {K c : ℝ} (hc : 0 < c)
+    (hK : ∀ z, ‖y z‖ ≤ K * Real.exp (-(c * ‖z‖))) : y ∈ sobolevFields 0 := by
+  refine mem_sobolevFields_zero_of_memLp ((memLp_two_iff_integrable_sq_norm hy).2
+    (((integrable_exp_neg_mul_norm volume (mul_pos two_pos hc)).const_mul (K ^ 2)).mono'
+      (hy.norm.pow 2) (ae_of_all _ fun z ↦ ?_)))
+  rw [Real.norm_of_nonneg (sq_nonneg _)]
+  calc ‖y z‖ ^ 2 ≤ (K * Real.exp (-(c * ‖z‖))) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) (hK z) 2
+    _ = K ^ 2 * Real.exp (-(2 * c * ‖z‖)) := by
+        rw [mul_pow, ← Real.exp_nat_mul]
+        ring_nf
 
 /-- **Classical derivatives of Sobolev fields.** For `s ≥ 0`, each directional derivative of a
 `C¹` field in `sobolevFields (s + 1)` lies in `sobolevFields s`. -/

@@ -22,7 +22,7 @@ by expanding the equation and gauge action about a nondecaying reference field.
 
 The matrix version allows mixing the connection and section coordinates and permits different
 bounds for each coefficient. In particular multiplying the section by a smooth complex coefficient
-with bounded derivatives through order `k` preserves the Sobolev fields
+with bounded derivatives through order `k` (`sectionMul`) preserves the Sobolev fields
 (`mul_section_mem_sobolevFields_natCast`); a smooth gauge acts this way through its linear action
 (`gaugeLinearAction_mem_sobolevFields_natCast`). The coefficient may be the winding reference
 section, which is not circle-valued near the origin. Multiplication by a coordinate of a framed
@@ -89,14 +89,41 @@ theorem smul_mem_sobolevFields_natCast (k : ℕ) {ψ : ℂ → ℝ}
     simp [PiLp.smul_apply, smul_eq_mul]
   exact hfield ▸ h
 
+/-- Multiplication of the section `α` of a field by a complex coefficient `g`, fixing the
+connection. For a circle-valued `g` this is the linear gauge action
+(`gaugeLinearAction_eq_sectionMul`). -/
+def sectionMul (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) : ℂ → EuclideanSpace ℝ (Fin 4) :=
+  fun z ↦ !₂[y z 0, y z 1, (g z).re * y z 2 - (g z).im * y z 3,
+    (g z).im * y z 2 + (g z).re * y z 3]
+
+/-- Coordinate formula for the section multiplier. -/
+theorem sectionMul_apply (g : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionMul g y z = !₂[y z 0, y z 1, (g z).re * y z 2 - (g z).im * y z 3,
+      (g z).im * y z 2 + (g z).re * y z 3] := (rfl)
+
+/-- The linear gauge action multiplies the section by the gauge. -/
+theorem gaugeLinearAction_eq_sectionMul (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeLinearAction u y = sectionMul (fun z ↦ (u z : ℂ)) y :=
+  funext (gaugeLinearAction_apply u y)
+
+/-- Multiplying the section of a `Cⁿ` field by a `Cⁿ` coefficient gives a `Cⁿ` field. -/
+theorem contDiff_sectionMul {n : WithTop ℕ∞} {g : ℂ → ℂ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hg : ContDiff ℝ n g) (hy : ContDiff ℝ n y) : ContDiff ℝ n (sectionMul g y) := by
+  have hr : ContDiff ℝ n fun z ↦ (g z).re := Complex.reCLM.contDiff.comp hg
+  have hi : ContDiff ℝ n fun z ↦ (g z).im := Complex.imCLM.contDiff.comp hg
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ y z i) := contDiff_euclidean.1 hy i
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i <;> simp only [sectionMul, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
+    Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one, PiLp.toLp_apply]
+  exacts [hc 0, hc 1, (hr.mul (hc 2)).sub (hi.mul (hc 3)), (hi.mul (hc 2)).add (hr.mul (hc 3))]
+
 /-- **Smooth section multipliers act on Sobolev fields.** Multiplying the section `α` of a field by
 a smooth complex coefficient `g` whose derivatives through order `k` are bounded, and fixing the
 connection, preserves the integer-order Sobolev fields. No decay of `g` is required. -/
 theorem mul_section_mem_sobolevFields_natCast {k : ℕ} {g : ℂ → ℂ} (hg : ContDiff ℝ ∞ g)
     (hbound : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
-    (fun z ↦ !₂[y z 0, y z 1, (g z).re * y z 2 - (g z).im * y z 3,
-      (g z).im * y z 2 + (g z).re * y z 3]) ∈ sobolevFields k := by
+    sectionMul g y ∈ sobolevFields k := by
   have hc (i : Fin 4) := mem_sobolevFields.1 hy i
   have h0 : (fun _ : ℂ ↦ (0 : ℝ)) ∈ realSobolevFunctions ℂ k 2 := zero_mem _
   -- The field is `P y + Re g • Q y + Im g • R y` with constant `P`, `Q`, `R`.
@@ -128,7 +155,7 @@ theorem mul_section_mem_sobolevFields_natCast {k : ℕ} {g : ℂ → ℂ} (hg : 
     (smul_mem_sobolevFields_natCast k (Complex.imCLM.contDiff.comp hg) hMi him hR) using 1
   ext z i
   fin_cases i <;>
-    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+    simp only [sectionMul_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
       Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one, Function.comp_apply,
       Complex.reCLM_apply, Complex.imCLM_apply, Pi.add_apply, PiLp.add_apply, PiLp.smul_apply,
       smul_eq_mul, mul_zero, add_zero, zero_add, mul_neg] <;>
@@ -141,9 +168,8 @@ theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circl
     (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)))
     (hbound : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (u z : ℂ)) z‖ ≤ C)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
-    gaugeLinearAction u y ∈ sobolevFields k := by
-  rw [show gaugeLinearAction u y = _ from funext (gaugeLinearAction_apply u y)]
-  exact mul_section_mem_sobolevFields_natCast hu hbound hy
+    gaugeLinearAction u y ∈ sobolevFields k :=
+  gaugeLinearAction_eq_sectionMul u y ▸ mul_section_mem_sobolevFields_natCast hu hbound hy
 
 /-- **Multiplication by a coordinate of a framed field.** For an integer `n > 1`, multiplying a
 real `H^n` function by a coordinate of a field of `A_m^n` gives an `H^n` function. The

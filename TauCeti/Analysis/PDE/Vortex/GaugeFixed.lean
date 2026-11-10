@@ -323,6 +323,30 @@ theorem gaugeFixedOperatorSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace
       !₂[d 1 * v 0 + d I * v 1, d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3,
         d 1 * v 3 + d I * v 2] := (rfl)
 
+/-- The gauge-fixing row of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_zero (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 0 = d 1 * v 0 + d I * v 1 := (rfl)
+
+/-- The curvature row of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_one (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 1 = d I * v 0 - d 1 * v 1 := (rfl)
+
+/-- The real `∂bar` row of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_two (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 2 = d 1 * v 2 - d I * v 3 := (rfl)
+
+/-- The imaginary `∂bar` row of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_three (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 3 = d 1 * v 3 + d I * v 2 := (rfl)
+
 /-- The symbol of the gauge-fixed operator preserves squared norms up to the squared covector
 norm. -/
 theorem norm_sq_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
@@ -331,6 +355,22 @@ theorem norm_sq_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanS
   simp [gaugeFixedOperatorSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four,
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
+
+/-- The operator symbol commutes with real scaling of the covector. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol (r • d) v = r • gaugeFixedOperatorSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The operator symbol commutes with real scaling of the field value. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d (r • v) = r • gaugeFixedOperatorSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
 
 /-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
 commutator. -/
