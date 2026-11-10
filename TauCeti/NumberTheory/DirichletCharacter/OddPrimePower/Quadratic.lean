@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import Mathlib.Data.ZMod.Coprime
 import TauCeti.Data.ZMod.PrincipalUnits
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 
 /-!
 # Quadratic Dirichlet characters at an odd prime-power level
@@ -34,19 +32,18 @@ with zero, and the classification for values in any commutative ring.
 * `DirichletCharacter.factorsThrough_prime_of_sq_eq_one`: a character of order dividing two at
   level `p ^ k`, `k ≠ 0`, factors through `p`.
 * `DirichletCharacter.conductor_eq_one_or_eq_prime_of_sq_eq_one`: its conductor is `1` or `p`.
-* `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
-  characters are the principal one and the Legendre character.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_changeLevel_quadraticChar`: the classification
-  at level `p ^ k` (the roadmap's `odd_prime_power_classification`).
-* `DirichletCharacter.conductor_changeLevel_quadraticChar`: the lifted Legendre character has
-  conductor `p` when `ringChar R ≠ 2`.
-* `DirichletCharacter.IsQuadratic.apply_intCast_eq_legendreSym`: a nonprincipal quadratic
-  character at level `p ^ k` takes the value `legendreSym p n` at every integer `n`.
-* `DirichletCharacter.natCard_isQuadratic_prime_pow`: there are two quadratic characters at level
-  `p ^ k` for `k ≠ 0` and one at level `1`. They form a group under multiplication by
-  `MulChar.IsQuadratic.mul`.
-* `DirichletCharacter.isQuadratic_of_forall_im_eq_zero`: a complex Dirichlet character with real
-  values is quadratic.
+  at level `p ^ k`.
+* `MulChar.IsQuadratic.apply_intCast_eq_legendreSym`: a nonprincipal quadratic character at level
+  `p ^ k` takes the value `legendreSym p n` at every integer `n`.
+* `DirichletCharacter.natCard_isQuadratic_prime_pow`: with values in a nontrivial ring of
+  characteristic other than `2`, there are two quadratic characters at level `p ^ k` for `k ≠ 0`
+  and one at level `1`. They form a group under multiplication by `MulChar.IsQuadratic.mul`.
+
+The prime-level classification `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`
+and the conductor `p` of the lifted Legendre character,
+`DirichletCharacter.conductor_changeLevel_quadraticChar` (for a nontrivial coefficient ring of
+characteristic other than `2`), are in `TauCeti.NumberTheory.DirichletCharacter.Quadratic`.
 
 ## References
 
@@ -98,51 +95,6 @@ section Classification
 
 variable [CommRing R] {p : ℕ} [Fact p.Prime]
 
-private theorem isQuadratic_one {n : ℕ} : (1 : DirichletCharacter R n).IsQuadratic := by
-  intro a
-  by_cases ha : IsUnit a
-  · exact Or.inr (Or.inl (MulChar.one_apply ha))
-  · exact Or.inl (MulChar.map_nonunit _ ha)
-
-/-- **The quadratic characters at a prime level.** A quadratic Dirichlet character modulo a prime
-`p` is either principal or the Legendre character `quadraticChar (ZMod p)`, with values pushed to
-`R`. -/
-theorem isQuadratic_iff_eq_one_or_eq_quadraticChar (ψ : DirichletCharacter R p) :
-    ψ.IsQuadratic ↔
-      ψ = 1 ∨ ψ = (quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R) := by
-  refine ⟨fun hψ ↦ or_iff_not_imp_left.mpr fun h1 ↦ ?_, ?_⟩
-  · -- `ψ` is `1` at every square unit.
-    have hsq (x : (ZMod p)ˣ) (hx : IsSquare (x : ZMod p)) : ψ x = 1 := by
-      obtain ⟨s, hs⟩ := hx
-      have hs' : IsUnit s := isUnit_of_mul_isUnit_left (hs ▸ x.isUnit)
-      rw [hs, map_mul, ← sq, ← MulChar.pow_apply' ψ two_ne_zero, hψ.sq_eq_one,
-        MulChar.one_apply hs']
-    obtain ⟨u, hu⟩ := MulChar.ne_one_iff.mp h1
-    have hu' : ψ u = -1 := by
-      rcases hψ u with h | h | h
-      · have : Subsingleton R := subsingleton_of_zero_eq_one
-          (isUnit_zero_iff.mp (h ▸ u.isUnit.map ψ))
-        exact absurd (Subsingleton.elim _ _) hu
-      · exact absurd h hu
-      · exact h
-    have hun : ¬IsSquare (u : ZMod p) := fun h ↦ hu (hsq u h)
-    refine MulChar.ext fun x ↦ ?_
-    rw [MulChar.ringHomComp_apply, eq_intCast]
-    by_cases hx : IsSquare (x : ZMod p)
-    · rw [hsq x hx, (quadraticChar_one_iff_isSquare x.ne_zero).mpr hx, Int.cast_one]
-    · rw [quadraticChar_neg_one_iff_not_isSquare.mpr hx]
-      have hxu : ψ ↑(x * u) = 1 := by
-        refine hsq _ ((quadraticChar_one_iff_isSquare (x * u).ne_zero).mp ?_)
-        rw [Units.val_mul, map_mul, quadraticChar_neg_one_iff_not_isSquare.mpr hx,
-          quadraticChar_neg_one_iff_not_isSquare.mpr hun]
-        norm_num
-      rw [Units.val_mul, map_mul, hu'] at hxu
-      push_cast
-      linear_combination -hxu
-  · rintro (rfl | rfl)
-    · exact isQuadratic_one
-    · exact quadraticChar_isQuadratic _ |>.comp _
-
 /-- **The quadratic characters at an odd prime-power level.** For an odd prime `p` and every
 `k`, a Dirichlet character modulo `p ^ k` is quadratic exactly when it is principal or the lift by
 `changeLevel` of the Legendre character `quadraticChar (ZMod p)`. The lift exists only for
@@ -163,34 +115,13 @@ theorem isQuadratic_iff_eq_one_or_eq_changeLevel_quadraticChar (hp2 : p ≠ 2) (
     · exact Or.inl (changeLevel_one hd)
     · exact Or.inr ⟨hd, rfl⟩
   · rintro (rfl | ⟨h, rfl⟩)
-    · exact isQuadratic_one
+    · exact MulChar.isQuadratic_one
     · exact (quadraticChar_isQuadratic _ |>.comp _).changeLevel h
-
-/-- The Legendre character with values in a nontrivial ring `R` of characteristic other than `2`
-is not principal. -/
-theorem quadraticChar_ringHomComp_ne_one [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2) :
-    (quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R) ≠ 1 := by
-  obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one' (F := ZMod p) (by rwa [ZMod.ringChar_zmod_n])
-  refine MulChar.ne_one_iff.mpr ⟨a, ?_⟩
-  rw [MulChar.ringHomComp_apply, ha, map_neg, map_one]
-  exact mt neg_one_eq_one_iff.mp hR
-
-/-- The Legendre character with values in a nontrivial ring `R` of characteristic other than `2`,
-lifted to level `p ^ k`, has conductor `p`. -/
-theorem conductor_changeLevel_quadraticChar [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2)
-    {k : ℕ} (h : p ∣ p ^ k) :
-    (changeLevel h ((quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R))).conductor = p := by
-  have hp : p.Prime := Fact.out
-  have : NeZero (p ^ k) := ⟨pow_ne_zero _ hp.ne_zero⟩
-  have : NeZero p := ⟨hp.ne_zero⟩
-  rw [conductor_changeLevel]
-  refine ((Nat.dvd_prime hp).mp (conductor_dvd_level _)).resolve_left fun h1 ↦ ?_
-  exact quadraticChar_ringHomComp_ne_one hR hp2 (eq_one_iff_conductor_eq_one.mpr h1)
 
 /-- The value of a nonprincipal quadratic character at level `p ^ k` at an integer `n` is the
 Legendre symbol `legendreSym p n`, including the value `0` when `p ∣ n`. (A nonprincipal
 character exists only for `k ≠ 0`.) -/
-theorem IsQuadratic.apply_intCast_eq_legendreSym (hp2 : p ≠ 2) {k : ℕ}
+theorem _root_.MulChar.IsQuadratic.apply_intCast_eq_legendreSym (hp2 : p ≠ 2) {k : ℕ}
     {χ : DirichletCharacter R (p ^ k)} (hχ : χ.IsQuadratic) (h1 : χ ≠ 1) (n : ℤ) :
     χ n = legendreSym p n := by
   have hp : p.Prime := Fact.out
@@ -217,7 +148,7 @@ theorem natCard_isQuadratic_prime_pow [Nontrivial R] (hR : ringChar R ≠ 2) (hp
   split_ifs with hk
   · subst hk
     exact Nat.card_eq_one_iff_exists.mpr
-      ⟨⟨1, isQuadratic_one⟩, fun χ ↦ Subtype.ext (level_one' χ.1 (pow_zero p))⟩
+      ⟨⟨1, MulChar.isQuadratic_one⟩, fun χ ↦ Subtype.ext (level_one' χ.1 (pow_zero p))⟩
   · have h : p ∣ p ^ k := dvd_pow_self p hk
     have hset : {χ : DirichletCharacter R (p ^ k) | χ.IsQuadratic} =
         {1, changeLevel h ((quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R))} := by
@@ -228,24 +159,8 @@ theorem natCard_isQuadratic_prime_pow [Nontrivial R] (hR : ringChar R ≠ 2) (hp
         changeLevel h ((quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R)) := by
       rw [← changeLevel_one h]
       exact fun h' ↦ quadraticChar_ringHomComp_ne_one hR hp2 (changeLevel_injective h h').symm
-    change Nat.card {χ : DirichletCharacter R (p ^ k) | χ.IsQuadratic} = 2
-    rw [Nat.card_coe_set_eq, hset, Set.ncard_pair hne]
+    rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset, Set.ncard_pair hne]
 
 end Classification
-
-/-- **A real character is quadratic.** A Dirichlet character with complex values whose values are
-all real is quadratic: its values at units have absolute value one. -/
-theorem isQuadratic_of_forall_im_eq_zero {N : ℕ} (χ : DirichletCharacter ℂ N)
-    (hχ : ∀ a, (χ a).im = 0) : χ.IsQuadratic := by
-  intro a
-  by_cases ha : IsUnit a
-  · have hnorm : |(χ a).re| = 1 := by
-      rw [Complex.abs_re_eq_norm.mpr (hχ a), ← ha.unit_spec]
-      exact χ.unit_norm_eq_one ha.unit
-    have hre : χ a = ((χ a).re : ℂ) := Complex.ext rfl (by simp [hχ a])
-    rcases abs_eq (zero_le_one' ℝ) |>.mp hnorm with h | h
-    · exact Or.inr (Or.inl (by rw [hre, h, Complex.ofReal_one]))
-    · exact Or.inr (Or.inr (by rw [hre, h, Complex.ofReal_neg, Complex.ofReal_one]))
-  · exact Or.inl (MulChar.map_nonunit χ ha)
 
 end DirichletCharacter
