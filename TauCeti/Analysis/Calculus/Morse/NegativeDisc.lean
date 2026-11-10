@@ -248,7 +248,6 @@ private noncomputable def negativeColumnHomotopy {X : Type*} [TopologicalSpace X
       ⟨fun q ↦ (((ContinuousLinearMap.fst ℝ E F).comp (C q.1)).polarFactor q.2, 0),
         ((hP.comp continuous_fst).clm_apply continuous_snd).prodMk continuous_const⟩
       fun g ↦ ∀ q, ‖g q‖ ≤ ‖C q.1 q.2‖ ∧ -‖(g q).1‖ ^ 2 + ‖(g q).2‖ ^ 2 ≤ -‖q.2‖ ^ 2 :=
-  have := FiniteDimensional.complete ℝ E
   let N : X → E →L[ℝ] E := fun x ↦ (ContinuousLinearMap.fst ℝ E F).comp (C x)
   have hN (x : X) (u : E) : ‖u‖ ≤ ‖N x u‖ := (C x).norm_le_norm_fst_of_norm_sq_sub (hCQ x) u
   -- First contract the positive components, then deform the negative blocks.
@@ -309,7 +308,6 @@ theorem exists_negativeDisc_homotopy_family (hr : 0 < r)
   -- The proof runs the three stages of `HasFDerivAt.exists_negativeDisc_homotopy` with the
   -- parameter `p` carried along. Compactness of `P` gives one linear bound `L` for all rescalings
   -- and one radius, so that a single `δ₀` keeps every stage inside `V`.
-  have := FiniteDimensional.complete ℝ E
   have h0r : (0 : E × F) ∈ ball 0 r := mem_ball_self hr
   obtain ⟨L, hL, ρ, ⟨hρ, hρr⟩, hbound⟩ := exists_forall_norm_derivativeRescale_le_family hr hT hD
   obtain ⟨s, hs, hsV⟩ := Metric.mem_nhds_iff.mp hV
