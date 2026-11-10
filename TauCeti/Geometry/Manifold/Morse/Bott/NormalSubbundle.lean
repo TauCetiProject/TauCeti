@@ -9,10 +9,10 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
-import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Synthesis
+import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The negative and positive normal bundles of a Morse–Bott submanifold
@@ -38,14 +38,15 @@ versions). The negative normal bundle is the bundle whose disc bundle is attache
 critical level of the submanifold is crossed.
 
 The subbundles depend on the metric `g`, but their ranks do not. No eigenbasis of the normal
-Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`,
-the normal Hessian and the metric become `C^k` families `Q` and `G` of bilinear forms on `P`
-(`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization`
-and `TauCeti.contMDiffOn_compl₁₂_symmₗ`). The relative spectral projections of `Q` with respect to
-`G` are then a `C^k` family of operators on `P` whose ranges and kernels read the negative and
-positive normal spaces in the trivialization
-(`TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`), and a `C^k` family of operators of
-constant rank has `C^k` local frames of its ranges (`TauCeti.exists_isSubbundleFrameOn_map_symmₗ`).
+Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`, the
+metric becomes a `C^k` family `G` of bilinear forms on `P`
+(`TauCeti.Manifold.contMDiffOn_compl₁₂_symmₗ`). The projections onto the negative relative spectral
+subspaces of the normal Hessian with respect to `G`, along the positive ones, are then a `C^k`
+family of operators on `P` whose ranges and kernels read the negative and positive normal spaces in
+the trivialization
+(`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`), and a `C^k`
+family of operators of constant rank has `C^k` local frames of its ranges
+(`TauCeti.exists_isSubbundleFrameOn_map_symmₗ`).
 
 ## References
 
@@ -103,37 +104,19 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
   have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀
-  obtain ⟨Q, hQ, hrep⟩ := h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn
-    (le_self_add.trans hk) hf hdim s₀
-  -- The preferred normal-bundle trivialization is the bundle chart at `s₀`.
-  rw [← normalSpaceFiberBundle_trivializationAt] at hQ hrep
   -- The metric read in the trivialization.
   set G : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦
     ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
   have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
-    TauCeti.contMDiffOn_compl₁₂_symmₗ g.contMDiff e
-  -- Over the base set, the inverse trivialization is a linear equivalence onto the normal space.
-  have hL (s : S) (hs : s ∈ e.baseSet) :
-      ((e.linearEquivAt ℝ s hs).symm : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s :=
-    LinearMap.ext fun u ↦ by simp [Trivialization.linearEquivAt_symm_apply, e.symmₗ_apply hs]
-  -- Over the base set, the normal Hessian and the metric read as a nondegenerate form and a
-  -- metric on `P`.
-  have hmaps (s : S) (hs : s ∈ e.baseSet) : (Q s, G s) ∈
-      {x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) | (∀ u v, x.1 u v = x.1 v u) ∧
-        Injective x.1 ∧ (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} :=
-    ⟨fun u v ↦ ((hrep s hs).1 u v).2, (hrep s hs).2, fun u v ↦ by simpa [G] using g.symm s _ _,
-      fun u hu ↦ by
-        simpa [G] using g.pos s _ (by
-          rw [← hL s hs]
-          exact (map_ne_zero_iff _ (e.linearEquivAt ℝ s hs).symm.injective).mpr hu)⟩
-  obtain ⟨Φ, hΦ, hΦp⟩ := exists_contDiffOn_range_eq_relativeSpectralSubspace (P := P)
-  refine ⟨fun s ↦ Φ (Q s, G s), fun s hs ↦ ((hΦ.of_le le_top).contDiffWithinAt
-    (hmaps s hs)).comp_contMDiffWithinAt (f := fun s' ↦ (Q s', G s'))
-      ((hQ s hs).prodMk_space (hG s hs)) hmaps, fun s hs ↦ ?_⟩
-  obtain ⟨hidem, hrange, hker⟩ := hΦp (Q s) (G s) (hmaps s hs).1 (hmaps s hs).2.1
-    (hmaps s hs).2.2.1 (hmaps s hs).2.2.2
-  -- Pulled back along the inverse trivialization, the metric and the normal Hessian are `G s` and
-  -- `Q s`.
+    TauCeti.Manifold.contMDiffOn_compl₁₂_symmₗ e g.contMDiff.contMDiffOn
+  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalProjection hn (le_self_add.trans hk)
+    hf hdim s₀ hG (fun s _ u v ↦ by simpa [G] using g.symm s _ _) fun s hs u hu ↦ by
+      simpa [G] using g.pos s _ ((map_ne_zero_iff _ (e.injective_symmₗ ℝ hs)).mpr hu)
+  -- The normal-bundle trivialization at `s₀` is the bundle chart `e` at `s₀`.
+  simp only [← normalSpaceFiberBundle_trivializationAt] at hp hps
+  refine ⟨p, hp.mono fun s hs ↦ ⟨hs, hs⟩, fun s hs ↦ ?_⟩
+  obtain ⟨hidem, hrange, hker, -, -, -, -, hrank, hnull⟩ := hps s ⟨hs, hs⟩
+  -- Pulled back along the inverse trivialization, the metric is `G s`.
   set L := (e.linearEquivAt ℝ s hs).symm
   have hgL : (g.toRiemannianMetric.inner s).toBilinForm.compl₁₂ (L : P →ₗ[ℝ] i.NormalSpace s hn)
       (L : P →ₗ[ℝ] i.NormalSpace s hn) = (G s).toBilinForm := by
@@ -144,23 +127,12 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
       e.symmₗ_apply hs]
     -- The underlying metric of `g` has the inner products of `g`, by definition.
     rfl
-  have hQL : (h.normalHessian hn s).compl₁₂ (L : P →ₗ[ℝ] i.NormalSpace s hn)
-      (L : P →ₗ[ℝ] i.NormalSpace s hn) = (Q s).toBilinForm := by
-    ext u v
-    simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, L,
-      Trivialization.linearEquivAt_symm_apply, ContinuousLinearMap.toBilinForm_apply]
-    exact ((hrep s hs).1 u v).1
-  have hneg : h.negativeNormalSpace hn g.toRiemannianMetric s =
-      (Φ (Q s, G s)).range.map (L : P →ₗ[ℝ] i.NormalSpace s hn) := by
-    rw [IsCriticalSubmanifold.negativeNormalSpace_def,
-      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hQL, hrange]
-  have hpos : h.positiveNormalSpace hn g.toRiemannianMetric s =
-      (Φ (Q s, G s)).ker.map (L : P →ₗ[ℝ] i.NormalSpace s hn) := by
-    rw [IsCriticalSubmanifold.positiveNormalSpace_def,
-      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hQL, hker]
-  refine ⟨hidem, hL s hs ▸ hneg, hL s hs ▸ hpos, ?_, ?_⟩
-  · rw [← LinearEquiv.finrank_map_eq L, ← hneg, h.finrank_negativeNormalSpace]
-  · rw [← LinearEquiv.finrank_map_eq L, ← hpos, h.finrank_positiveNormalSpace]
+  have hL : (L : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s := e.coe_linearEquivAt_symm ℝ hs
+  refine ⟨hidem, ?_, ?_, hrank, hnull⟩
+  · rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hL,
+      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hrange]
+  · rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hL,
+      ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hker]
 
 /-- **The negative normal bundle of a Morse–Bott submanifold.** Let `i` be a nondegenerate
 critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class `C^{k+1}`, and
@@ -239,8 +211,8 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
   have hker (s : S) (hs : s ∈ (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).baseSet) :
       (1 - p s).range = (p s).ker := by
     have hP : IsIdempotentElem (p s : P →ₗ[ℝ] P) := congr(($((hps s hs).1) : P →ₗ[ℝ] P))
-    rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP]
-    rfl
+    rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP,
+      ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one]
   obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ := exists_isSubbundleFrameOn_map_symmₗ _
     (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
     (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :

@@ -60,7 +60,9 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
 * `ContinuousLinearMap.range_negativeSpectralProjection` and
   `ContinuousLinearMap.ker_negativeSpectralProjection`: its range and kernel are the negative and
   positive relative spectral subspaces of `q` with respect to `h`
-  (`LinearMap.BilinForm.relativeSpectralSubspace`).
+  (`LinearMap.BilinForm.relativeSpectralSubspace`); the range needs no nondegeneracy.
+* `ContinuousLinearMap.negativeSpectralProjection_eq_projection`: for nondegenerate `q`, it is the
+  projection onto the negative relative spectral subspace along the positive one.
 * `ContinuousLinearMap.finrank_range_negativeSpectralProjection` and
   `ContinuousLinearMap.finrank_ker_negativeSpectralProjection`: the rank is the negative index of
   inertia of `q` and the nullity is the positive one.
@@ -358,30 +360,57 @@ theorem finrank_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     · simp [hx0]
     · simpa using (hneg x hx hx0).le
 
-/-- The projection onto the negative relative spectral subspace of `q` along the positive one is
-the negative spectral projection. -/
-private theorem projection_relativeSpectralSubspace_eq_negativeSpectralProjection
-    (hh : IsStrictlyPositive h♯) (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
-    ∃ hc : IsCompl (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0))
-        (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)),
+/-- **The range of the negative spectral projection is the negative relative spectral subspace**:
+the span of the vectors `v` with `q v = μ h v` for some `μ < 0`. -/
+theorem range_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) :
+    (q.negativeSpectralProjection h).range =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) := by
+  obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
+  set W := Module.End.pointSpectralSubspace
+    (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯.toLinearMap (Iio 0)
+  refine (Submodule.eq_of_le_of_finrank_eq
+    (LinearMap.BilinForm.relativeSpectralSubspace_le_iff.mpr fun μ hμ v hv ↦
+      LinearMap.mem_range.mpr ⟨v, ?_⟩) ?_).symm
+  · -- For a relative eigenvector `v`, the vector `CFC.sqrt h♯ v` is an eigenvector of the
+    -- operator representing the pulled-back form, with the same eigenvalue.
+    have hx : CFC.sqrt h♯ v ∈ W := by
+      refine Module.End.eigenspace_le_pointSpectralSubspace hμ
+        (Module.End.mem_eigenspace_iff.mpr (ext_inner_right ℝ fun y ↦ ?_))
+      rw [coe_coe, inner_continuousLinearMapOfBilin_bilinearComp_apply,
+        metricChangeTransport_apply_sqrt_apply hh, RCLike.ofReal_real_eq_id, id_eq,
+        real_inner_smul_left, ← apply_metricChangeTransport_metricChangeTransport hh,
+        metricChangeTransport_apply_sqrt_apply hh]
+      simpa using (LinearMap.BilinForm.mem_relativeEigenspace_iff.mp hv) _
+    simp only [negativeSpectralProjection, coe_coe, mul_apply_eq_comp]
+    rw [Submodule.starProjection_eq_self_iff.mpr hx, metricChangeTransport_apply_sqrt_apply hh]
+  · rw [finrank_range_negativeSpectralProjection hh hq,
+      LinearMap.BilinForm.finrank_relativeSpectralSubspace_Iio (isSymm_toBilinForm_iff.mpr hhs)
+        (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq)]
+
+/-- **The negative spectral projection of a nondegenerate form is the projection onto its negative
+relative spectral subspace along the positive one.** These subspaces are complementary by
+`LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`. -/
+theorem negativeSpectralProjection_eq_projection (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q)
+    (hc : IsCompl (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0))
+      (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0))) :
+    q.negativeSpectralProjection h =
       LinearMap.toContinuousLinearMap
-          ((h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0)).projection
-            (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)) hc) =
-        q.negativeSpectralProjection h := by
+        ((h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0)).projection
+          (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)) hc) := by
   obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
   have hhs' : h.toBilinForm.IsSymm := isSymm_toBilinForm_iff.mpr hhs
   have hhpos' (v : E) (hv : v ≠ 0) : 0 < h.toBilinForm v v := hhpos v hv
   have hqs : q.toBilinForm.IsSymm := isSymm_toBilinForm_iff.mpr hq
   set N := h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0)
   set P := h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)
-  have hc : IsCompl N P := LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi hhs'
-    hhpos' hqs (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])
   -- The vector `v - π v` is the component of `v` in `P`.
   have hsub (v : E) : v - N.projection P hc v ∈ P := by
     rw [← Submodule.projection_eq_self_sub_projection hc]
     exact Submodule.projection_apply_mem hc.symm v
-  refine ⟨hc, (eq_negativeSpectralProjection_iff hh hq hq').mpr ⟨?_, fun u v ↦ ?_, fun u v ↦ ?_,
-    fun u hu ↦ ?_, fun u hu ↦ ?_⟩⟩
+  refine ((eq_negativeSpectralProjection_iff hh hq hq').mpr ⟨?_, fun u v ↦ ?_, fun u v ↦ ?_,
+    fun u hu ↦ ?_, fun u hu ↦ ?_⟩).symm
   · ext u
     exact congr($(Submodule.isIdempotentElem_projection hc) u)
   · exact (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hhs' hqs
@@ -393,23 +422,18 @@ private theorem projection_relativeSpectralSubspace_eq_negativeSpectralProjectio
   · exact LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi hhs' hhpos' hqs
       (hsub u) hu
 
-/-- **The range of the negative spectral projection is the negative relative spectral subspace**:
-the span of the vectors `v` with `q v = μ h v` for some `μ < 0`. -/
-theorem range_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
-    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
-    (q.negativeSpectralProjection h).range =
-      h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) := by
-  obtain ⟨hc, hπ⟩ := projection_relativeSpectralSubspace_eq_negativeSpectralProjection hh hq hq'
-  rw [← hπ, LinearMap.coe_toContinuousLinearMap, Submodule.range_projection]
-
 /-- **The kernel of the negative spectral projection is the positive relative spectral subspace**
 of a nondegenerate `q`: the span of the vectors `v` with `q v = μ h v` for some `μ > 0`. -/
 theorem ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
     (q.negativeSpectralProjection h).ker =
       h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) := by
-  obtain ⟨hc, hπ⟩ := projection_relativeSpectralSubspace_eq_negativeSpectralProjection hh hq hq'
-  rw [← hπ, LinearMap.coe_toContinuousLinearMap, Submodule.ker_projection]
+  obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
+  rw [negativeSpectralProjection_eq_projection hh hq hq'
+    (LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi (isSymm_toBilinForm_iff.mpr hhs)
+      (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq)
+      (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])),
+    LinearMap.coe_toContinuousLinearMap, Submodule.ker_projection]
 
 /-! ### Smooth dependence -/
 
@@ -463,9 +487,7 @@ is a family `Φ` of projections of `P`, indexed by the pairs `(q, h)` of a symme
 bilinear form `q` and a positive definite symmetric bilinear form `h`, which depends real
 analytically on the pair, and whose range is the negative relative spectral subspace of `q` with
 respect to `h` (spanned by the vectors `v` with `q v = μ h v` for some `μ < 0`) and whose kernel is
-the positive one. No inner product on `P` is needed: `Φ` is the negative spectral projection
-`ContinuousLinearMap.negativeSpectralProjection` on a Euclidean space of the same dimension,
-transported to `P`. -/
+the positive one. No inner product on `P` is needed. -/
 theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
     ∃ Φ : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) → P →L[ℝ] P,
       ContDiffOn ℝ ω Φ {x | (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
@@ -507,7 +529,9 @@ theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
       (q.bilinearComp Ts Ts).toBilinForm Ω).map (Ts : W →ₗ[ℝ] P) =
       h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
     have hc (B : P →L[ℝ] P →L[ℝ] ℝ) : (B.bilinearComp Ts Ts).toBilinForm =
-        B.toBilinForm.compl₁₂ (Ts : W →ₗ[ℝ] P) (Ts : W →ₗ[ℝ] P) := rfl
+        B.toBilinForm.compl₁₂ (Ts : W →ₗ[ℝ] P) (Ts : W →ₗ[ℝ] P) := by
+      ext u v
+      simp
     rw [hc, hc]
     exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ T.symm.toLinearEquiv
   have hT : LinearMap.range ((T : P →L[ℝ] W) : P →ₗ[ℝ] W) = ⊤ :=
@@ -519,7 +543,7 @@ theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
       (q := q.bilinearComp Ts Ts) hhp
     ext u
     simpa [Ts] using congr(Ts ($hN.eq (T u)))
-  · rw [← hmap, ← ContinuousLinearMap.range_negativeSpectralProjection hhp hqs hqi,
+  · rw [← hmap, ← ContinuousLinearMap.range_negativeSpectralProjection hhp hqs,
       ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
       LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ hT]
   · rw [← hmap, ← ContinuousLinearMap.ker_negativeSpectralProjection hhp hqs hqi,

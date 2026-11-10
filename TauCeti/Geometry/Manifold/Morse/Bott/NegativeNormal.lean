@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Local negative normal projections of a Morse–Bott submanifold
@@ -22,21 +23,19 @@ spaces are the fibres of the negative normal bundle along which the negative dis
 critical submanifold is attached.
 
 This file shows that these splittings vary smoothly. In the preferred normal-bundle trivialization
-at any point `s₀`, with Euclidean fibre model `P`, write the fibre metric as a `C^k` family `G` of
-positive definite bilinear forms on `P`. Then the projections onto the negative normal spaces
-along the positive ones form a `C^k` family of operators on `P` over the base set of the
-trivialization (or the part of it where `G` is given). Their ranks are the Morse indices of `f`
-and their nullities those of `-f`. The projection at `s` is the negative spectral projection of
-the normal Hessian relative to the fibre metric (`ContinuousLinearMap.negativeSpectralProjection`),
-read in the trivialization. It is smooth because the normal Hessian is a `C^k` family of
-nondegenerate forms in these coordinates
+at any point `s₀`, with fibre model `P`, write the fibre metric as a `C^k` family `G` of positive
+definite bilinear forms on `P`. Then the projections onto the negative normal spaces along the
+positive ones form a `C^k` family of operators on `P` over the base set of the trivialization (or
+the part of it where `G` is given). Their ranges and kernels are the negative and positive
+relative spectral subspaces of the normal Hessian, read in the trivialization, with respect to `G`
+(`LinearMap.BilinForm.relativeSpectralSubspace`); their ranks are the Morse indices of `f` and
+their nullities those of `-f`. The projections come from the real-analytic family of relative
+spectral projections `TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`, applied to the
+normal Hessian, which is a `C^k` family of nondegenerate forms in these coordinates
 (`exists_contMDiffOn_normalHessian_normalSpaceTrivialization`, in the namespace
 `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`).
-No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvectors are needed.
-
-The inner product of `P` only serves as a reference for the construction: the stated properties
-involve the normal Hessian and the fibre metric alone, and they determine the projections
-(`ContinuousLinearMap.eq_negativeSpectralProjection_iff`).
+No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvectors are needed, and
+`P` needs no inner product.
 
 ## Main results
 
@@ -44,7 +43,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
 
 * `IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`: in each
   normal-bundle trivialization, the projections onto the negative normal spaces of a Morse–Bott
-  submanifold relative to a `C^k` fibre metric form a `C^k` family, of rank the Morse index.
+  submanifold relative to a `C^k` fibre metric form a `C^k` family, of rank the Morse index; their
+  ranges and kernels are the negative and positive relative spectral subspaces.
 
 ## References
 
@@ -67,7 +67,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J 1 S]
-  {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P] [FiniteDimensional ℝ P]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 /-- **The negative normal projections of a Morse–Bott submanifold are smooth.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `k ≤ n`, and
@@ -76,7 +76,8 @@ a set `U`, for instance a fibre metric on the normal bundle read in the preferre
 trivialization `e` at `s₀`. Write `N s u v` for the normal Hessian at `s` of the normal vectors
 with coordinates `u` and `v`. Then there is a `C^k` family `p` of operators on `P` over the
 intersection of `U` with the base set of `e` such that each `p s` is a projection whose range and
-kernel are orthogonal for both `G s` and `N s`, with `N s` negative definite on the range and
+kernel are the negative and positive relative spectral subspaces of `N s` with respect to `G s`.
+They are orthogonal for both `G s` and `N s`, with `N s` negative definite on the range and
 positive definite on the kernel. The rank of `p s` is the Morse index of `f` at `i s`, and its
 nullity is the Morse index of `-f`. -/
 theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I (k + 2) M]
@@ -91,6 +92,10 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
       ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet,
         let e := i.normalSpaceTrivialization hn hdim s₀
         IsIdempotentElem (p s) ∧
+        (p s).range = (G s).toBilinForm.relativeSpectralSubspace
+          ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0) ∧
+        (p s).ker = (G s).toBilinForm.relativeSpectralSubspace
+          ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
         (∀ u v, G s (p s u) (v - p s v) = 0) ∧
         (∀ u v, h.normalHessian hn s (e.symm s (p s u)) (e.symm s (v - p s v)) = 0) ∧
         (∀ u, p s u ≠ 0 → h.normalHessian hn s (e.symm s (p s u)) (e.symm s (p s u)) < 0) ∧
@@ -102,47 +107,62 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
   set e := i.normalSpaceTrivialization hn hdim s₀
   obtain ⟨Q, hQ, hrep⟩ :=
     h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
-  have hGH (s : S) (hs : s ∈ U) :
-      IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (G s)) :=
-    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨hGsymm s hs, hGpos s hs⟩
   have hmaps (s : S) (hs : s ∈ U ∩ e.baseSet) :
-      (Q s, G s) ∈ {p : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) |
-        (∀ u v, p.1 u v = p.1 v u) ∧ Function.Injective p.1 ∧
-          IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) p.2)} :=
-    ⟨fun u v ↦ ((hrep s hs.2).1 u v).2, (hrep s hs.2).2, hGH s hs.1⟩
-  refine ⟨fun s ↦ (Q s).negativeSpectralProjection (G s), fun s hs ↦ ?_, fun s hs ↦ ?_⟩
+      (Q s, G s) ∈ {x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) |
+        (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
+          (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} :=
+    ⟨fun u v ↦ ((hrep s hs.2).1 u v).2, (hrep s hs.2).2, hGsymm s hs.1, hGpos s hs.1⟩
+  obtain ⟨Φ, hΦ, hΦp⟩ := exists_contDiffOn_range_eq_relativeSpectralSubspace (P := P)
+  refine ⟨fun s ↦ Φ (Q s, G s), fun s hs ↦ ?_, fun s hs ↦ ?_⟩
   · -- Smoothness: compose the smooth dependence on the pair of forms with the pair of families.
     have hpair := ((hQ s hs.2).mono inter_subset_right).prodMk_space
       ((hG s hs.1).mono inter_subset_left)
-    exact (ContinuousLinearMap.contDiffOn_negativeSpectralProjection.contDiffWithinAt
-      (hmaps s hs)).comp_contMDiffWithinAt (f := fun s' ↦ (Q s', G s')) hpair
-        fun s' hs' ↦ hmaps s' hs'
+    exact ((hΦ.of_le le_top).contDiffWithinAt (hmaps s hs)).comp_contMDiffWithinAt
+      (f := fun s' ↦ (Q s', G s')) hpair fun s' hs' ↦ hmaps s' hs'
   -- In the trivialization the normal Hessian is `Q s`.
-  obtain ⟨hQrep, hinj⟩ := hrep s hs.2
-  replace hs : s ∈ e.baseSet ∧ IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (G s)) :=
-    ⟨hs.2, hGH s hs.1⟩
-  have hsymm (u v : P) : Q s u v = Q s v u := (hQrep u v).2
-  have hN (u v : P) : h.normalHessian hn s (e.symm s u) (e.symm s v) = Q s u v := (hQrep u v).1
+  obtain ⟨hsymm, hinj, -, -⟩ := hmaps s hs
+  have hN (u v : P) : h.normalHessian hn s (e.symm s u) (e.symm s v) = Q s u v :=
+    ((hrep s hs.2).1 u v).1
+  have hQN : (Q s).toBilinForm =
+      (h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s) := by
+    ext u v
+    rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.compl₁₂_apply, e.symmₗ_apply hs.2,
+      e.symmₗ_apply hs.2, hN]
+  obtain ⟨hidem, hrange, hker⟩ := hΦp (Q s) (G s) hsymm hinj (hGsymm s hs.1) (hGpos s hs.1)
+  have hGs : (G s).toBilinForm.IsSymm :=
+    ContinuousLinearMap.isSymm_toBilinForm_iff.mpr (hGsymm s hs.1)
+  have hGp (v : P) (hv : v ≠ 0) : 0 < (G s).toBilinForm v v := hGpos s hs.1 v hv
+  have hQs : (Q s).toBilinForm.IsSymm := ContinuousLinearMap.isSymm_toBilinForm_iff.mpr hsymm
+  -- The range of `p s` is the negative relative spectral subspace, and the complement `v - p s v`
+  -- of its value lies in its kernel, the positive one.
+  have hmem (u : P) := hrange ▸ LinearMap.mem_range_self (Φ (Q s, G s) : P →ₗ[ℝ] P) u
+  have hsub (v : P) : v - Φ (Q s, G s) v ∈
+      (G s).toBilinForm.relativeSpectralSubspace (Q s).toBilinForm (Ioi 0) := by
+    rw [← hker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, sub_eq_zero]
+    exact congr($(hidem.eq) v).symm
   -- The inverse trivialization at `s` is an isometry from `Q s` to the normal Hessian.
   let L : QuadraticMap.IsometryEquiv (Q s).toBilinForm.toQuadraticMap
       (h.normalHessian hn s).toQuadraticMap :=
-    { (e.linearEquivAt ℝ s hs.1).symm with
+    { (e.linearEquivAt ℝ s hs.2).symm with
       map_app' := fun u ↦ by
         simp only [LinearEquiv.toFun_eq_coe, Trivialization.linearEquivAt_symm_apply,
           LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hN] }
-  refine ⟨ContinuousLinearMap.isIdempotentElem_negativeSpectralProjection hs.2,
-    ContinuousLinearMap.metric_apply_negativeSpectralProjection_apply_sub_eq_zero hs.2,
-    fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_, ?_, ?_⟩
+  refine ⟨hidem, hrange.trans (by rw [hQN]), hker.trans (by rw [hQN]),
+    fun u v ↦ (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hGs hQs
+      Iio_disjoint_Ioi_same (hmem u) (hsub v)).1, fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_,
+    ?_, ?_⟩
   · rw [hN]
-    exact ContinuousLinearMap.apply_negativeSpectralProjection_apply_sub_eq_zero hs.2 u v
+    exact (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hGs hQs
+      Iio_disjoint_Ioi_same (hmem u) (hsub v)).2
   · rw [hN]
-    exact ContinuousLinearMap.apply_negativeSpectralProjection_apply_self_lt_zero hsymm hu
+    exact LinearMap.BilinForm.apply_self_neg_of_mem_relativeSpectralSubspace_Iio hGs hGp hQs
+      (hmem u) hu
   · rw [hN]
-    exact ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_pos hs.2
-      hsymm hinj hu
-  · rw [ContinuousLinearMap.finrank_range_negativeSpectralProjection hs.2 hsymm,
+    exact LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi hGs hGp hQs
+      (hsub u) hu
+  · rw [hrange, LinearMap.BilinForm.finrank_relativeSpectralSubspace_Iio hGs hGp hQs,
       QuadraticMap.Equivalent.sigNeg_eq ⟨L⟩, h.sigNeg_normalHessian hn s]
-  · rw [ContinuousLinearMap.finrank_ker_negativeSpectralProjection hs.2 hsymm hinj,
+  · rw [hker, LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi hGs hGp hQs,
       QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

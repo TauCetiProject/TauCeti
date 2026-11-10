@@ -483,25 +483,19 @@ theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → �
       (hci i).smul_section ((hε i).contMDiffAt hy')
     refine (hsec.congr_of_eventuallyEq (Eventually.of_forall fun z ↦ ?_)).contMDiffWithinAt
     simp
-  refine ⟨S ∩ (U₀ ∩ Y ⁻¹' {f | LinearIndependent ℝ f}), fun y hy ↦ hy.2.1,
-    hS.inter (hYc.isOpen_inter_preimage hU₀
-    isOpen_setOfPred_linearIndependent), ⟨⟨⟨x₀, hx₀⟩, ?_, rfl⟩, hx₀, hY₀⟩,
-    fun k y ↦ synthesisMap ℝ (ε · y) (Y y k),
-    ⟨fun k ↦ (hX k).continuousOn.mono fun y hy ↦ hy.2.1, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
-    fun k ↦ (hX k).mono fun y hy ↦ hy.2.1⟩
-  · rw [Set.mem_ofPred_eq, Submodule.range_starProjection]
-    exact hr
-  · exact hy.2.2.map' (synthesisMap ℝ (ε · y))
+  obtain ⟨U, hUS, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq (hS.inter hU₀)
+    (hYc.mono inter_subset_right) (fun y _ k ↦ (W y).starProjection_apply_mem _)
+    (fun y hy ↦ by
+      obtain ⟨⟨z, hzU⟩, hz, rfl⟩ := hy.1
+      rwa [Set.mem_ofPred_eq, Submodule.range_starProjection] at hz)
+    ⟨⟨⟨x₀, hx₀⟩, by rwa [Set.mem_ofPred_eq, Submodule.range_starProjection], rfl⟩, hx₀⟩ hY₀
+  refine ⟨U, fun y hy ↦ (hUS hy).2, hU, hx₀U, fun k y ↦ synthesisMap ℝ (ε · y) (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono fun y hy ↦ (hUS hy).2, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono fun y hy ↦ (hUS hy).2⟩
+  · exact (hYU y hy).1.map' (synthesisMap ℝ (ε · y))
       (LinearMap.ker_eq_bot.mpr ((linearIndependent_iff_injective_synthesisMap _).mp
-        (hli y hy.2.1)))
-  · obtain ⟨⟨⟨z, hzU⟩, hz, rfl⟩, -, hYz⟩ := hy
-    -- `r` independent vectors of the `r`-dimensional space `W z` span it.
-    have hspan : Submodule.span ℝ (range (Y z)) = W z := by
-      refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr
-        (range_subset_iff.mpr fun k ↦ (W z).starProjection_apply_mem _)) ?_
-      rw [Set.mem_ofPred_eq, Submodule.range_starProjection] at hz
-      rw [finrank_span_eq_card hYz, Fintype.card_fin, hz]
-    rw [← hspan, Submodule.map_span, ← range_comp, comp_def]
+        (hli y (hUS hy).2)))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, comp_def]
 
 end OrthogonalProjections
 
@@ -520,8 +514,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 trivialization of `E` in its atlas and let `A y` be operators on the model fibre `F`, depending
 `C^n` on `y` in an open subset `U₀` of the base set of `e`, all of rank `r`. Read through `e`, their
 ranges are subspaces of the fibres `E y`; near every point of `U₀` these have a `C^n` local frame
-of size `r`. Apply `A y` to fixed preimages of a basis of the range of `A x₀`, and read the result
-back through `e`. -/
+of size `r`. -/
 theorem exists_isSubbundleFrameOn_map_symmₗ {r : ℕ} (e : Trivialization F (π F E))
     [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀) (hU₀e : U₀ ⊆ e.baseSet)
     {A : B → F →L[𝕜] F} (hA : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n A U₀)
@@ -538,32 +531,19 @@ theorem exists_isSubbundleFrameOn_map_symmₗ {r : ℕ} (e : Trivialization F (�
     have hY : Y x₀ = fun k ↦ ((β k : (A x₀).range) : F) := funext hu
     rw [hY]
     exact β.linearIndependent.map' (A x₀).range.subtype (Submodule.ker_subtype _)
+  obtain ⟨U, hUU₀, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq hU₀ hYc
+    (fun y _ k ↦ LinearMap.mem_range_self _ _) hr hx₀ hY₀
   -- Read through `e`, a `C^n` family of vectors of `F` is a `C^n` family of sections.
-  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ e.symm y (Y y k))) := by
-    intro y hy
-    refine (e.contMDiffWithinAt_iff (by simpa [e.mem_source] using hU₀e hy)).mpr
-      ⟨contMDiffWithinAt_id, ((hA.clm_apply (contMDiffOn_const (c := u k))) y hy).congr
-        (fun z hz ↦ ?_) ?_⟩
-    · simp [Y, e.apply_mk_symm (hU₀e hz)]
-    · simp [Y, e.apply_mk_symm (hU₀e hy)]
-  refine ⟨U₀ ∩ Y ⁻¹' {f | LinearIndependent 𝕜 f}, inter_subset_left,
-    hYc.isOpen_inter_preimage hU₀ isOpen_setOfPred_linearIndependent, ⟨hx₀, hY₀⟩,
-    fun k y ↦ e.symm y (Y y k),
-    ⟨fun k ↦ (hX k).continuousOn.mono inter_subset_left, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
-    fun k ↦ (hX k).mono inter_subset_left⟩
-  · -- Over the base set, `e.symm y` is injective.
-    have hinj : Function.Injective (e.symmₗ 𝕜 y) := fun v w hvw ↦ by
-      have h := congr(e ⟨y, $hvw⟩)
-      simp only [e.symmₗ_apply (hU₀e hy.1), e.apply_mk_symm (hU₀e hy.1)] at h
-      exact (Prod.mk.inj h).2
-    simpa [Function.comp_def, e.symmₗ_apply (hU₀e hy.1)] using
-      hy.2.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr hinj)
-  · -- `r` independent vectors of the `r`-dimensional range of `A y` span it.
-    have hspan : Submodule.span 𝕜 (range (Y y)) = (A y).range := by
-      refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr
-        (range_subset_iff.mpr fun k ↦ LinearMap.mem_range_self _ _)) ?_
-      rw [finrank_span_eq_card hy.2, Fintype.card_fin, hr y hy.1]
-    rw [← hspan, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e hy.1), comp_def]
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ e.symm y (Y y k))) :=
+    e.contMDiffOn_section_symm hU₀ hU₀e (hA.clm_apply contMDiffOn_const)
+  refine ⟨U, hUU₀, hU, hx₀U, fun k y ↦ e.symm y (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono hUU₀, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono hUU₀⟩
+  · simpa [Function.comp_def, e.symmₗ_apply (hU₀e (hUU₀ hy))] using
+      (hYU y hy).1.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr (e.injective_symmₗ 𝕜
+        (hU₀e (hUU₀ hy))))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e (hUU₀ hy)),
+      comp_def]
 
 end Operators
 

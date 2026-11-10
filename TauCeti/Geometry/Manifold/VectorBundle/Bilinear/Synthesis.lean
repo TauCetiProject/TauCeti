@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.Frame
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
-import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 
 /-!
 # Fields of bilinear forms read through synthesis maps
@@ -24,17 +22,11 @@ operators depend `C^n` on `y`. When the sections form an orthonormal basis at ea
 turns `Q` into a `C^n` family of operators on a fixed Euclidean space, to which the spectral
 calculus of a single space applies.
 
-The same holds when `Q` is read through a trivialization `e` of the atlas: over the base set of
-`e`, the forms `(u, v) ↦ Q y (e.symm y u) (e.symm y v)` on the model fibre are a `C^n` family.
-Here the fibres need no inner product.
-
 ## Main results
 
 * `TauCeti.contMDiffOn_bilinearComp_synthesisMap`: the coordinate bilinear forms are `C^n`.
 * `TauCeti.contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap`: their Riesz
   operators are `C^n`.
-* `TauCeti.contMDiffOn_compl₁₂_symmₗ`: a `C^n` field of bilinear forms read in a
-  trivialization is `C^n` on its base set.
 -/
 
 public section
@@ -82,44 +74,5 @@ theorem contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap {d : �
         (synthesisMap ℝ (ε · y)).toContinuousLinearMap)) U :=
   contDiff_continuousLinearMapOfBilin.contMDiff.comp_contMDiffOn
     (contMDiffOn_bilinearComp_synthesisMap hQ hε)
-
-section Trivialization
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
-  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {n : ℕ∞ω} [ContMDiffVectorBundle n F V IB]
-
-/-- **A `C^n` field of bilinear forms read in a trivialization.** Over the base set of a
-trivialization `e` in the atlas of `V`, a `C^n` field `β` of bilinear forms on the fibres reads as
-the `C^n` family `y ↦ β y (e.symm y ·) (e.symm y ·)` of bilinear forms on the model fibre. -/
-theorem contMDiffOn_compl₁₂_symmₗ {β : ∀ x, V x →L[𝕜] V x →L[𝕜] G}
-    (hβ : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
-      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x (β x)))
-    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
-    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G) n
-      (fun y ↦ ((β y).toLinearMap₁₂.compl₁₂ (e.symmₗ 𝕜 y)
-        (e.symmₗ 𝕜 y)).toContinuousBilinearMap) e.baseSet := by
-  intro y hy
-  -- Each fixed vector of the model fibre reads as a `C^n` section over the base set.
-  have hs (u : F) : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F)) n
-      (fun z ↦ TotalSpace.mk' F z (e.symm z u)) e.baseSet y :=
-    (e.contMDiffWithinAt_iff (by simpa [e.mem_source] using hy)).mpr
-      ⟨contMDiffWithinAt_id, (contMDiffWithinAt_const (c := u)).congr (fun z hz ↦ by
-        simp [e.apply_mk_symm hz]) (by simp [e.apply_mk_symm hy])⟩
-  refine TauCeti.contMDiffWithinAt_clm_apply.mpr fun v ↦
-    TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
-  have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
-    (b := id) (hβ y).contMDiffWithinAt (hs v) (hs w)
-  exact (contMDiffWithinAt_totalSpace.mp h).2.congr
-    (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
-
-end Trivialization
 
 end TauCeti
