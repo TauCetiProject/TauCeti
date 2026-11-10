@@ -722,11 +722,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
     exact ω.hamiltonianCurvature_zero z (u z)
   have hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D := by
-    have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv isOpen_univ
-      hu.contMDiffOn stdComplexLineReal stdComplexLineImag
-    simp only [← SmoothBundleForm.eval₂_apply] at h
-    exact (h.mono (subset_univ D)).integrableOn_compact hD
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D :=
+    ω.integrableOn_eval₂_mfderiv isOpen_univ hu.contMDiffOn hD (subset_univ D) _ _
   have hE := hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn (hK 1) (hK Complex.I)
     hD (subset_univ D) hRi
   have h := integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero
@@ -861,11 +858,8 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
     exact ω.hamiltonianCurvature_zero z (u z)
   have hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (D ∪ T) := by
-    have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hP hu
-      stdComplexLineReal stdComplexLineImag
-    simp only [← SmoothBundleForm.eval₂_apply] at h
-    exact (h.mono hDP).integrableOn_compact (hDc.union hTc)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (D ∪ T) :=
+    ω.integrableOn_eval₂_mfderiv hP hu (hDc.union hTc) hDP _ _
   have hE := hω.integrableOn_floerEnergyDensity hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     hRi
   have h₁ := integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero hm subset_union_right

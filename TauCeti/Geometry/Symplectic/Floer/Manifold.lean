@@ -913,6 +913,17 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
     integral_add (f := fun z ↦ ω.floerEnergyDensity Ks' Kt' u z +
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
 
+/-- **The area density is integrable over compact sets.** If `u` is `C¹` on an open set `U`, then
+over a compact set `C ⊆ U` the two-form evaluated on the derivatives of `u` along two fixed
+vectors, `z ↦ ω_{u(z)}(du_z a, du_z b)`, is integrable. -/
+theorem integrableOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hC : IsCompact C) (hCU : C ⊆ U) (a b : ℝ × ℝ) :
+    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z a)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z b) : ℝ)) C := by
+  have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu a b
+  simp only [← SmoothBundleForm.eval₂_apply] at h
+  exact (h.mono hCU).integrableOn_compact hC
+
 /-- **The energy density is integrable over compact sets, for a manifold target.** Let `u` and the
 perturbation data `K = K_s ds + K_t dt` be `C¹` over an open set `U`, for a nondegenerate two-form
 on a finite-dimensional manifold. Over a compact set `C ⊆ U` over which the curvature `R_K(u)` is
@@ -928,10 +939,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) C) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) C := by
   have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hCU).integrableOn_compact (μ := volume) hC
+  have harea := ω.integrableOn_eval₂_mfderiv hU hu hC hCU stdComplexLineReal stdComplexLineImag
   -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
   have hd {K : ℝ × ℝ → M → ℝ}
       (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
@@ -952,9 +960,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E
 /-- **Shrinking to where the datum lives, for a manifold target.** Let `T ⊆ D` with `D`
 measurable, and let `K_s` and `K_t` vanish near every point of `D \ T`. If the energy density, the
 symplectic area density and the curvature `R_K(u)` are integrable over `D`, then the Floer energy
-minus the symplectic area plus the integrated curvature is the same over `D` as over `T`. On a
-vector-space target, where integrability follows from continuity, this is
-`SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`. -/
+minus the symplectic area plus the integrated curvature is the same over `D` as over `T`. -/
 theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero {D T : Set (ℝ × ℝ)}
     (hD : MeasurableSet D) (hTD : T ⊆ D) (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0)
     (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)

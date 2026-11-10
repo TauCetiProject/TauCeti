@@ -760,10 +760,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     (contMDiffOn_pairOfPantsPerturbation hH hHs Complex.I) hT hTS
     ((integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
       hu.continuousOn).mono_set hTS)
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
-    isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
+  have harea := ω.integrableOn_eval₂_mfderiv isOpen_thricePuncturedSphereReal hu hT hTS
+    stdComplexLineReal stdComplexLineImag
   have hcurv := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
