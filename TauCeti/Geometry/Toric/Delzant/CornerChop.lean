@@ -67,6 +67,7 @@ dimension hypothesis is needed.
 * `TauCeti.Toric.some_mem_activeSet_cornerChop_iff`,
   `TauCeti.Toric.none_mem_activeSet_cornerChop_iff`: its old and new facets.
 * `TauCeti.Toric.notMem_facetPolyhedron_cornerChop`: the chopped corner is removed.
+* `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -124,9 +125,13 @@ theorem cornerChopSupport_some (c : ι → ℝ) (s : Finset ι) (ε : ℝ) (j : 
 
 variable {s : Finset ι} {ε : ℝ} {x : StrongDual ℝ V}
 
+-- The three characterisations below have `high` priority so that `simp` reaches them before the
+-- general `mem_facetPolyhedron` and `mem_activeSet` unfold their left-hand sides.
+
 /-- **The chopped polyhedron.** Chopping the corner where the facets in `s` meet at depth `ε`
 keeps the points of the polyhedron whose coordinates `⟨x, u j⟩ - c j`, for `j ∈ s`, sum to at
 least `ε`. -/
+@[simp high]
 theorem mem_facetPolyhedron_cornerChop_iff :
     x ∈ facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε) ↔
       x ∈ facetPolyhedron i u c ∧ ε ≤ ∑ j ∈ s, (x (i (u j)) - c j) := by
@@ -138,9 +143,6 @@ theorem mem_facetPolyhedron_cornerChop_iff :
 theorem facetPolyhedron_cornerChop_subset :
     facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε) ⊆ facetPolyhedron i u c :=
   fun _ hx ↦ (mem_facetPolyhedron_cornerChop_iff.1 hx).1
-
--- The two characterisations below have `high` priority so that `simp` reaches them before the
--- general `mem_activeSet` unfolds their left-hand sides.
 
 /-- An old facet `j` of the chopped polyhedron is active where it was active before. -/
 @[simp high]
@@ -175,10 +177,24 @@ section Coordinates
 
 variable {v : StrongDual ℝ V} {w : ι → StrongDual ℝ V}
 
+/-- Evaluating a combination of the functionals `w j` dual to the normals `u j`, `j ∈ s`, on a
+normal `u k` picks out the coefficient of `w k`. -/
+private theorem sum_mul_apply_eq [DecidableEq ι]
+    (hw : ∀ j ∈ s, ∀ k ∈ s, w j (i (u k)) = if j = k then 1 else 0) (a : ι → ℝ) {k : ι}
+    (hk : k ∈ s) : ∑ j ∈ s, a j * w j (i (u k)) = a k := by
+  rw [Finset.sum_congr rfl fun j hj ↦ by rw [hw j hj k hk, mul_ite, mul_one, mul_zero],
+    Finset.sum_ite_eq', ite_eq_left hk]
+
+/-- A functional `w j` dual to the normals `u k`, `k ∈ s`, takes the value `1` on their sum. -/
+private theorem sum_apply_eq_one [DecidableEq ι]
+    (hw : ∀ j ∈ s, ∀ k ∈ s, w j (i (u k)) = if j = k then 1 else 0) {j : ι} (hj : j ∈ s) :
+    ∑ k ∈ s, w j (i (u k)) = 1 := by
+  rw [Finset.sum_congr rfl fun k hk ↦ hw j hj k hk, Finset.sum_ite_eq, ite_eq_left hj]
+
 /-- At a smooth vertex `v` of a presentation in an integral lattice, with active facets `s`, there
 are functionals `w j` dual to the active normals, in which every point `x` of `V*` has the
 coordinates `⟨x, u j⟩ - c j` relative to `v`. -/
-private theorem exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
+theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
     (hv : IsSmoothVertex i u c v) (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
     ∃ w : ι → StrongDual ℝ V, (∀ j ∈ s, ∀ k ∈ s, w j (i (u k)) = if j = k then 1 else 0) ∧
       ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j := by
@@ -203,9 +219,7 @@ private theorem exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   obtain ⟨k, hk⟩ := k
   simp only [ContinuousLinearMap.coe_coe, add_apply,
     sum_apply, smul_apply, smul_eq_mul, hB]
-  rw [Finset.sum_eq_single_of_mem k hk fun j hj hjk ↦ by
-      rw [hw j hj k hk, ite_eq_right hjk, mul_zero],
-    hw k hk k hk, ite_eq_left rfl, mul_one, hvs k hk]
+  rw [sum_mul_apply_eq hw _ hk, hvs k hk]
   ring
 
 variable (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
@@ -309,6 +323,9 @@ private theorem exists_activeSet_cornerChop_eq_image
     by_contra! h
     rw [Finset.sum_eq_zero fun j hj ↦ by rw [h j hj, sub_self]] at hnone
     exact hε0.ne hnone
+  -- The active old constraints lie in `s`, other than `j₀`.
+  have hact {k} (hk : x (i (u k)) = c k) : k ∈ s ∧ k ≠ j₀ :=
+    ⟨by_contra fun hks ↦ (hslack hks).ne' hk, fun h ↦ hj₀ne (h ▸ hk)⟩
   -- Two nonzero coordinates would give the nonzero functional `w j₀ - w j₁` vanishing on all
   -- active normals.
   have huniq {j₁} (hj₁ : j₁ ∈ s) (hne : j₁ ≠ j₀) : x (i (u j₁)) = c j₁ := by
@@ -320,16 +337,13 @@ private theorem exists_activeSet_cornerChop_eq_image
       norm_num at this
     cases o with
     | none =>
-      simp only [cornerChopNormal_none, map_sum, map_sum, sub_apply]
-      rw [Finset.sum_sub_distrib, Finset.sum_congr rfl fun k hk ↦ hw j₀ hj₀ k hk,
-        Finset.sum_congr rfl fun k hk ↦ hw j₁ hj₁ k hk, Finset.sum_ite_eq, Finset.sum_ite_eq,
-        ite_eq_left hj₀, ite_eq_left hj₁, sub_self]
+      simp only [cornerChopNormal_none, map_sum, sub_apply]
+      rw [Finset.sum_sub_distrib, sum_apply_eq_one hw hj₀, sum_apply_eq_one hw hj₁, sub_self]
     | some k =>
       have hk : x (i (u k)) = c k := by simpa using ho
-      have hks : k ∈ s := by_contra fun hks ↦ (hslack hks).ne' hk
-      have hk₀ : j₀ ≠ k := fun h ↦ hj₀ne (h ▸ hk)
+      obtain ⟨hks, hk₀⟩ := hact hk
       have hk₁ : j₁ ≠ k := fun h ↦ hj₁ne (h ▸ hk)
-      simp [hw j₀ hj₀ k hks, hw j₁ hj₁ k hks, hk₀, hk₁]
+      simp [hw j₀ hj₀ k hks, hw j₁ hj₁ k hks, hk₀.symm, hk₁]
   refine ⟨j₀, hj₀, Set.ext fun o ↦ ?_⟩
   cases o with
   | none =>
@@ -339,8 +353,7 @@ private theorem exists_activeSet_cornerChop_eq_image
     simp only [mem_activeSet, facetPairing_apply, mem_image, Finset.mem_coe]
     constructor
     · intro hk
-      have hks : k ∈ s := by_contra fun hks ↦ (hslack hks).ne' hk
-      have hk₀ : k ≠ j₀ := fun h ↦ hj₀ne (h ▸ hk)
+      obtain ⟨hks, hk₀⟩ := hact hk
       exact ⟨k, hks, ite_eq_right hk₀⟩
     · rintro ⟨k', hk', hkk'⟩
       split_ifs at hkk' with h
@@ -399,9 +412,8 @@ private theorem exists_activeSet_cornerChop_eq_none [DecidableEq ι] {v : Strong
   have hn : (0 : ℝ) < s.card := Nat.cast_pos.2 hs.card_pos
   set z := v + (ε / s.card) • ∑ j ∈ s, w j
   have hz (k) (hk : k ∈ s) : z (i (u k)) = c k + ε / s.card := by
-    simp only [z, add_apply, smul_apply,
-      sum_apply, smul_eq_mul, hvs k hk]
-    rw [Finset.sum_congr rfl fun j hj ↦ hw j hj k hk, Finset.sum_ite_eq', ite_eq_left hk, mul_one]
+    simp only [z, add_apply, smul_apply, sum_apply, smul_eq_mul, hvs k hk, Finset.mul_sum]
+    rw [sum_mul_apply_eq hw (fun _ ↦ ε / s.card) hk]
   have hzsum : ∑ j ∈ s, (z (i (u j)) - c j) = ε := by
     rw [Finset.sum_congr rfl fun j hj ↦ by rw [hz j hj, add_sub_cancel_left], Finset.sum_const,
       nsmul_eq_mul, mul_div_cancel₀ _ hn.ne']
@@ -434,7 +446,7 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     ∀ᶠ ε in 𝓝[>] 0, IsDelzant i (cornerChopNormal u s) (cornerChopSupport c s ε) := by
   classical
   have hsv := hΔ.isSmoothVertex v hv
-  obtain ⟨w, hw, hx⟩ := exists_coord hi hsv hs
+  obtain ⟨w, hw, hx⟩ := hsv.exists_coord hi hs
   have hsA (j) : j ∈ s ↔ v (i (u j)) = c j := by
     rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply]
   have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := (hsA j).1 hj
