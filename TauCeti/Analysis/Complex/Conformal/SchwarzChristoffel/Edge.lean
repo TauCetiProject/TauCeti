@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Straight boundary arcs of the Schwarz--Christoffel map
@@ -61,6 +62,8 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
   integrand is the continued integrand times the unimodular edge-direction constant.
 * `TauCeti.schwarzChristoffelContinuedIntegrand_ofReal` -- on a prevertex-free real interval the
   continued integrand is the positive real `∏ i, |x - a i| ^ e i`.
+* `TauCeti.schwarzChristoffelContinuedIntegrand_ne_zero` -- the continued integrand does not vanish
+  at a complex point avoiding the prevertices with nonzero exponent.
 * `TauCeti.tendsto_schwarzChristoffelIntegrand_nhdsWithin` -- the boundary value of the integrand
   at a point of such an interval, whose argument is the edge angle.
 * `TauCeti.exists_tendsto_schwarzChristoffelPrimitive_sub_eq` -- the Schwarz--Christoffel map
@@ -317,6 +320,22 @@ theorem schwarzChristoffelContinuedIntegrand_ofReal (a e : ι → ℝ) {c x : �
       have hcast : (a i : ℂ) - (x : ℂ) = ((a i - x : ℝ) : ℂ) := by push_cast; ring
       rw [ite_eq_right h, hcast, ← Complex.ofReal_cpow hx.le, abs_sub_comm, abs_of_pos hx]
 
+/-- The continued Schwarz--Christoffel integrand does not vanish at any complex point avoiding
+the prevertices with nonzero exponent, whatever the reference point: each factor is a nonzero
+base raised to a complex power, or the constant `1` if its exponent is zero. -/
+theorem schwarzChristoffelContinuedIntegrand_ne_zero (a e : ι → ℝ) (c : ℝ) {z : ℂ}
+    (hz : ∀ i, e i ≠ 0 → z ≠ (a i : ℂ)) :
+    schwarzChristoffelContinuedIntegrand a e c z ≠ 0 := by
+  rw [schwarzChristoffelContinuedIntegrand_def, Finset.prod_ne_zero_iff]
+  intro i _
+  rcases eq_or_ne (e i) 0 with he | he
+  · simp [he]
+  · have hbase : (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ≠ 0 := by
+      split_ifs
+      · exact sub_ne_zero.mpr (hz i he)
+      · exact sub_ne_zero.mpr (hz i he).symm
+    exact fun h => hbase ((Complex.cpow_eq_zero_iff _ _).mp h).1
+
 /-- The **boundary value of the Schwarz--Christoffel integrand** at a point of a real interval
 free of prevertices with nonzero exponent: approaching from the upper half-plane, the integrand
 tends to the positive real `∏ i, |x - a i| ^ e i` rotated by the edge angle.  In particular its
@@ -376,10 +395,11 @@ theorem exists_hasDerivAt_schwarzChristoffelPrimitive_continuation
       (hUre z hz)).differentiableAt
         ((isOpen_Ioo.preimage Complex.continuous_re).mem_nhds (hUre z hz))).const_mul C
         |>.differentiableWithinAt
-  apply exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hgdiff
+  apply hgdiff.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
   intro z hz
   have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
-  rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
+  rw [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
+  exact h.hasDerivWithinAt
 
 /-- **The Schwarz--Christoffel map has straight image edges.**  Let every prevertex `a i` with
 nonzero exponent avoid the real interval `Ioo p q`; a prevertex with zero exponent contributes the

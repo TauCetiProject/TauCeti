@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Morrey's inequality for `C¹` functions
@@ -204,7 +205,7 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hpn : (n : ℝ) < p := by exact_mod_cast hp
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   -- The constant: the mean-value factor `(2 r) ^ n / (n μ(ball z r))` is `2 ^ n / (n ω)`.
   have hmeasure : μ (ball z r) = ENNReal.ofReal (r ^ n * ω) := by
     rw [Measure.addHaar_ball_of_pos μ z hr, ← ofReal_measureReal measure_ball_lt_top.ne,
@@ -268,6 +269,19 @@ theorem enorm_sub_le_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff 
   gcongr
   exact Measure.restrict_le_self
 
+/-- The Hölder constant of Morrey's inequality is nonnegative. -/
+private theorem morreyConstant_nonneg (n : ℕ) (m : ℝ) (p : ℝ≥0) (hm : 0 ≤ m)
+    (hp : (n : ℝ≥0) < p) :
+    0 ≤ 2 ^ (n + 1) / (n * m) * (n * m * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+      2 ^ (1 - n / (p : ℝ)) := by
+  have hK : 0 ≤ (n * m * (p - 1) / (p - n) : ℝ) := by
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · simp [hn]
+    have hpn : (n : ℝ) < p := by exact_mod_cast hp
+    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
+  exact mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
+
 /-- **Morrey's inequality, Hölder form.** If `u` is `C¹` on the whole space, `p` exceeds the
 dimension `n` of the space, and the derivative of `u` lies in `Lᵖ`, then `u` is Hölder continuous
 of exponent `1 - n / p`, with constant
@@ -284,16 +298,7 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
     rw [NNReal.coe_sub ((div_le_one (zero_le.trans_lt hp)).2 hp.le), NNReal.coe_one,
       NNReal.coe_div, NNReal.coe_natCast]
   have hα0 : 0 ≤ 1 - n / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
-  have hK : 0 ≤ (n * μ.real (ball 0 1) * (p - 1) / (p - n) : ℝ) := by
-    rcases Nat.eq_zero_or_pos n with hn | hn
-    · simp [hn]
-    have hpn : (n : ℝ) < p := by exact_mod_cast hp
-    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-    exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  have hC : 0 ≤ 2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-      (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-        2 ^ (1 - n / (p : ℝ)) :=
-    mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
+  have hC := morreyConstant_nonneg n (μ.real (ball 0 1)) p measureReal_nonneg hp
   intro x y
   have hdist : edist x y ^ (1 - n / (p : ℝ)) =
       ENNReal.ofReal (‖x - y‖ ^ (1 - n / (p : ℝ))) := by

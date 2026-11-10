@@ -11,7 +11,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.CStarAlgebra.Action.Generator.Core
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
-import TauCeti.Analysis.Complex.PhragmenLindelof
+import TauCeti.Analysis.Complex.PhragmenLindelof.Basic
 import TauCeti.Analysis.SpecificLimits.SqLeMulDoubling
 
 /-!

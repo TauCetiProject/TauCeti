@@ -301,6 +301,49 @@ private lemma simpleCorootsD_mul_conjTranspose (k : ℕ) :
           ite_false, Fin.ext_iff, forkIndex_val, orderSucc_val, ite_eq_right hk2] <;>
         split_ifs <;> first | (exfalso; omega) | norm_num
 
+/-- A relation among the rows of `simpleCorootsD k` has no fork term: the coordinate sum
+annihilates every chain row and doubles the fork row. -/
+private lemma simpleCorootsD_vecMul_eq_zero_last (k : ℕ) {x : Fin (k + 2) → ℚ}
+    (hx' : x ᵥ* simpleCorootsD k = 0) : x (Fin.last (k + 1)) = 0 := by
+  set M := simpleCorootsD k with hM
+  have hrow : ∀ i : Fin (k + 2), ∑ j, M i j = if i.val + 1 < k + 2 then 0 else 2 := by
+    intro i
+    rw [hM, simpleCorootsD, sum_twoTermRows_apply]
+    by_cases h : i.val + 1 < k + 2 <;> norm_num [h]
+  have h0 : ∑ i, x i * ∑ j, M i j = 0 := by
+    calc ∑ i, x i * ∑ j, M i j = ∑ i, ∑ j, x i * M i j := by simp [Finset.mul_sum]
+      _ = ∑ j, ∑ i, x i * M i j := Finset.sum_comm
+      _ = ∑ j, (x ᵥ* M) j := by simp [Matrix.vecMul, dotProduct]
+      _ = 0 := by rw [hx']; simp
+  rw [Fin.sum_univ_castSucc] at h0
+  have hchain : ∀ i : Fin (k + 1), x i.castSucc * ∑ j, M i.castSucc j = 0 := by
+    intro i
+    have hi : (i.castSucc : Fin (k + 2)).val + 1 < k + 2 := by
+      have := i.isLt; simp only [Fin.val_castSucc]; omega
+    rw [hrow, ite_eq_left hi, mul_zero]
+  rw [Finset.sum_congr rfl fun i _ ↦ hchain i] at h0
+  simp only [Finset.sum_const_zero, zero_add] at h0
+  rw [hrow, ite_eq_right (by simp only [Fin.val_last]; omega)] at h0
+  linarith
+
+/-- The chain rows of `simpleCorootsD k` are triangular on the first `k + 1` coordinates. -/
+private lemma simpleCorootsD_submatrix_castSucc_vecMul_injective (k : ℕ) :
+    Function.Injective ((simpleCorootsD k).submatrix Fin.castSucc Fin.castSucc).vecMul := by
+  refine vecMul_injective_of_submatrix_isUpperTriangular id (fun i j hji ↦ ?_) fun i ↦ ?_
+  · have _ : j.val < i.val := hji
+    have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
+    have hcj : ((j.castSucc : Fin (k + 2)) : ℕ) = (j : ℕ) := rfl
+    have _ := i.isLt
+    have _ := j.isLt
+    simp only [Matrix.submatrix_apply, id_eq, simpleCorootsD, twoTermRows_apply,
+      Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
+    split_ifs <;> first | (exfalso; omega) | norm_num
+  · have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
+    have _ := i.isLt
+    simp only [Matrix.submatrix_apply, id_eq, simpleCorootsD, twoTermRows_apply,
+      Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
+    split_ifs <;> first | (exfalso; omega) | norm_num
+
 /-- **The simple coroots of type `Dₙ` are independent.** No coordinate makes the matrix
 triangular, since the fork row shares both of its coordinates with earlier rows, so the argument
 runs in two steps: the coordinate sum kills every chain row, so a relation has no fork term, and
@@ -313,43 +356,7 @@ private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
     calc
       x ᵥ* M = M.vecMulLinear x := (Matrix.vecMulLinear_apply M x).symm
       _ = 0 := hx
-  -- The coordinate sum annihilates every chain row and doubles the fork row.
-  have hrow : ∀ i : Fin (k + 2), ∑ j, M i j = if i.val + 1 < k + 2 then 0 else 2 := by
-    intro i
-    rw [hM, simpleCorootsD, sum_twoTermRows_apply]
-    by_cases h : i.val + 1 < k + 2 <;> norm_num [h]
-  have hlast : x (Fin.last (k + 1)) = 0 := by
-    have h0 : ∑ i, x i * ∑ j, M i j = 0 := by
-      calc ∑ i, x i * ∑ j, M i j = ∑ i, ∑ j, x i * M i j := by simp [Finset.mul_sum]
-        _ = ∑ j, ∑ i, x i * M i j := Finset.sum_comm
-        _ = ∑ j, (x ᵥ* M) j := by simp [Matrix.vecMul, dotProduct]
-        _ = 0 := by rw [hx']; simp
-    rw [Fin.sum_univ_castSucc] at h0
-    have hchain : ∀ i : Fin (k + 1), x i.castSucc * ∑ j, M i.castSucc j = 0 := by
-      intro i
-      have hi : (i.castSucc : Fin (k + 2)).val + 1 < k + 2 := by
-        have := i.isLt; simp only [Fin.val_castSucc]; omega
-      rw [hrow, ite_eq_left hi, mul_zero]
-    rw [Finset.sum_congr rfl fun i _ ↦ hchain i] at h0
-    simp only [Finset.sum_const_zero, zero_add] at h0
-    rw [hrow, ite_eq_right (by simp only [Fin.val_last]; omega)] at h0
-    linarith
-  -- The chain rows are triangular on the first `k + 1` coordinates.
-  have hblock : Function.Injective (M.submatrix Fin.castSucc Fin.castSucc).vecMul := by
-    refine vecMul_injective_of_submatrix_isUpperTriangular id (fun i j hji ↦ ?_) fun i ↦ ?_
-    · have _ : j.val < i.val := hji
-      have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
-      have hcj : ((j.castSucc : Fin (k + 2)) : ℕ) = (j : ℕ) := rfl
-      have _ := i.isLt
-      have _ := j.isLt
-      simp only [Matrix.submatrix_apply, id_eq, hM, simpleCorootsD, twoTermRows_apply,
-        Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
-      split_ifs <;> first | (exfalso; omega) | norm_num
-    · have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
-      have _ := i.isLt
-      simp only [Matrix.submatrix_apply, id_eq, hM, simpleCorootsD, twoTermRows_apply,
-        Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
-      split_ifs <;> first | (exfalso; omega) | norm_num
+  have hlast := simpleCorootsD_vecMul_eq_zero_last k hx'
   have hrestrict : (fun i : Fin (k + 1) ↦ x i.castSucc) ᵥ*
       M.submatrix Fin.castSucc Fin.castSucc = 0 := by
     funext j
@@ -367,7 +374,7 @@ private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
     rw [e1, ← e2]
     simp
   have hzero : (fun i : Fin (k + 1) ↦ x i.castSucc) = 0 := by
-    refine hblock ?_
+    refine simpleCorootsD_submatrix_castSucc_vecMul_injective k ?_
     have hzeroVecMul :
         (fun v ↦ v ᵥ* M.submatrix Fin.castSucc Fin.castSucc) (0 : Fin (k + 1) → ℚ) = 0 := by
       exact Matrix.zero_vecMul _

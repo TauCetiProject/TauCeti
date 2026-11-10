@@ -30,10 +30,10 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 
 ## Main results
 
-* `TauCeti.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two is
-  isomorphic to the path graph on its vertices.
-* `TauCeti.adj_iff_of_iso_pathGraph`: adjacency read through such a numbering is consecutiveness of
-  the numbers.
+* `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
+  is isomorphic to the path graph on its vertices.
+* `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
+  consecutiveness of the numbers.
 * `TauCeti.pathGraphRevIso`: the reversal automorphism of a path graph, which reverses a numbering.
 
 ## References
@@ -48,15 +48,7 @@ namespace TauCeti
 
 open SimpleGraph
 
-variable {V : Type*} {G : SimpleGraph V}
-
-/-! ## Numbering a graph as a path -/
-
-/-- **Adjacency read through a numbering of a graph as a path**: two vertices are adjacent exactly
-when their numbers are consecutive. -/
-theorem adj_iff_of_iso_pathGraph {n : ℕ} (f : G ≃g pathGraph n) (i j : V) :
-    G.Adj i j ↔ (f i : ℕ) + 1 = (f j : ℕ) ∨ (f j : ℕ) + 1 = (f i : ℕ) := by
-  simpa only [pathGraph_adj] using f.map_adj_iff.symm
+/-! ## Reversing a path graph -/
 
 /-- **Reversal is an automorphism of a path graph.** Composing with it reverses a numbering of a
 graph as a path. The body is exported unexposed, so `pathGraphRevIso_apply` is the interface an
@@ -65,10 +57,24 @@ def pathGraphRevIso (n : ℕ) : pathGraph n ≃g pathGraph n where
   toEquiv := Fin.revPerm
   map_rel_iff' := by
     intro i j
-    simp only [pathGraph_adj, Fin.revPerm_apply, Fin.rev]
+    simp only [pathGraph_adj, Fin.revPerm_apply, Fin.val_rev]
     omega
 
 @[simp] theorem pathGraphRevIso_apply {n : ℕ} (i : Fin n) : pathGraphRevIso n i = i.rev := (rfl)
+
+end TauCeti
+
+namespace SimpleGraph
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-! ## Numbering a graph as a path -/
+
+/-- **Adjacency read through a numbering of a graph as a path**: two vertices are adjacent exactly
+when their numbers are consecutive. -/
+theorem Iso.adj_iff_of_pathGraph {n : ℕ} (f : G ≃g pathGraph n) (i j : V) :
+    G.Adj i j ↔ (f i : ℕ) + 1 = (f j : ℕ) ∨ (f j : ℕ) + 1 = (f i : ℕ) := by
+  simpa only [pathGraph_adj] using f.map_adj_iff.symm
 
 /-! ## A finite tree of maximum degree two -/
 
@@ -77,10 +83,8 @@ prepended, and the path was not longest. -/
 private lemma mem_support_of_adj_start {u v x : V} {p : G.Walk u v} (hp : p.IsPath)
     (hmax : ∀ (a b : V) (q : G.Walk a b), q.IsPath → q.length ≤ p.length) (hadj : G.Adj x u) :
     x ∈ p.support := by
-  classical
   by_contra hx
-  have hcons : (Walk.cons hadj p).IsPath := (Walk.cons_isPath_iff hadj p).mpr ⟨hp, hx⟩
-  have hle := hmax x v _ hcons
+  have hle := hmax x v _ ((Walk.cons_isPath_iff hadj p).mpr ⟨hp, hx⟩)
   rw [Walk.length_cons] at hle
   omega
 
@@ -88,11 +92,10 @@ private lemma mem_support_of_adj_start {u v x : V} {p : G.Walk u v} (hp : p.IsPa
 vertex of the path already has two neighbours on it, an endpoint has all of its neighbours on it by
 maximality, so the vertices of the path admit no boundary edge and connectedness forces them to be
 all of the vertices. -/
-private lemma forall_mem_support_of_degree_le_two [Fintype V] [DecidableRel G.Adj]
-    (hconn : G.Connected) (hdeg : ∀ x, G.degree x ≤ 2) {u v : V} {p : G.Walk u v} (hp : p.IsPath)
+private lemma forall_mem_support_of_degree_le_two [G.LocallyFinite] (hconn : G.Connected)
+    (hdeg : ∀ x, G.degree x ≤ 2) {u v : V} {p : G.Walk u v} (hp : p.IsPath)
     (hmax : ∀ (a b : V) (q : G.Walk a b), q.IsPath → q.length ≤ p.length) (x : V) :
     x ∈ p.support := by
-  classical
   by_contra hx
   -- A walk from the first vertex of `p` to `x` crosses out of the vertices of `p`.
   obtain ⟨d, -, ha, hb⟩ := ((hconn.preconnected u x).some).exists_boundary_dart
@@ -103,18 +106,13 @@ private lemma forall_mem_support_of_degree_le_two [Fintype V] [DecidableRel G.Ad
   obtain ⟨i, hi, hile⟩ := Walk.mem_support_iff_exists_getVert.mp ha
   rcases Nat.eq_zero_or_pos i with rfl | hipos
   · rw [Walk.getVert_zero] at hi
-    refine hb (mem_support_of_adj_start hp hmax ?_)
-    rw [hi]
-    exact hab.symm
+    exact hb (mem_support_of_adj_start hp hmax (hi ▸ hab.symm))
   rcases eq_or_lt_of_le hile with hlast | hlt
   · -- `a` is the last vertex of `p`, so `b` could be appended to the reversed path.
     rw [hlast, Walk.getVert_length] at hi
-    have hmax' : ∀ (c e : V) (q : G.Walk c e), q.IsPath → q.length ≤ p.reverse.length := by
-      simpa only [Walk.length_reverse] using hmax
-    have hbv : G.Adj b v := by rw [hi]; exact hab.symm
-    have hbmem := mem_support_of_adj_start hp.reverse hmax' hbv
-    rw [Walk.support_reverse, List.mem_reverse] at hbmem
-    exact hb hbmem
+    have hbmem := mem_support_of_adj_start hp.reverse
+      (by simpa only [Walk.length_reverse] using hmax) (hi ▸ hab.symm)
+    exact hb (by simpa using hbmem)
   -- `a` is an interior vertex: its two neighbours along `p`, together with `b`, are three.
   obtain ⟨k, rfl⟩ : ∃ k, i = k + 1 := ⟨i - 1, by omega⟩
   have hpath : (p.toSubgraph.neighborSet a).ncard = 2 := by
@@ -122,14 +120,11 @@ private lemma forall_mem_support_of_degree_le_two [Fintype V] [DecidableRel G.Ad
     exact hp.ncard_neighborSet_toSubgraph_internal_eq_two (by omega) (by omega)
   have hbnot : b ∉ p.toSubgraph.neighborSet a := fun hba ↦
     hb (p.mem_verts_toSubgraph.mp (p.toSubgraph.neighborSet_subset_verts a hba))
-  have hsub : insert b (p.toSubgraph.neighborSet a) ⊆ G.neighborSet a :=
-    Set.insert_subset hab (p.toSubgraph.neighborSet_subset a)
-  have hle := Set.ncard_le_ncard hsub (Set.toFinite _)
-  have hcard : (insert b (p.toSubgraph.neighborSet a)).ncard = 3 := by
-    rw [Set.ncard_insert_of_notMem hbnot, hpath]
-  have hdeg' : (G.neighborSet a).ncard = G.degree a := by
-    rw [← Set.fintypeCard_eq_ncard, card_neighborSet_eq_degree]
-  have hda := hdeg a
+  have hsub := p.toSubgraph.neighborSet_subset a
+  have hle := Set.ncard_le_ncard (Set.insert_subset hab hsub)
+  rw [Set.ncard_insert_of_notMem hbnot ((G.neighborSet a).toFinite.subset hsub), hpath,
+    ncard_neighborSet] at hle
+  have := hdeg a
   omega
 
 /-- **A finite tree of maximum degree two is a path graph.** Its vertices can be numbered
@@ -137,7 +132,7 @@ private lemma forall_mem_support_of_degree_le_two [Fintype V] [DecidableRel G.Ad
 
 Both hypotheses are needed: a cycle graph is connected with every degree two and is not a path, and
 a star with three arms is a tree that is not one. -/
-theorem IsTree.nonempty_iso_pathGraph_of_degree_le_two [Fintype V] [DecidableRel G.Adj]
+theorem IsTree.nonempty_iso_pathGraph_of_degree_le_two [Fintype V] [G.LocallyFinite]
     (hG : G.IsTree) (hdeg : ∀ x, G.degree x ≤ 2) :
     Nonempty (G ≃g pathGraph (Fintype.card V)) := by
   classical
@@ -146,32 +141,26 @@ theorem IsTree.nonempty_iso_pathGraph_of_degree_le_two [Fintype V] [DecidableRel
   have hsupp : ∀ x : V, x ∈ p.support :=
     forall_mem_support_of_degree_le_two hG.connected hdeg hp hmax
   -- The path is spanning, so it has as many vertices as the graph.
-  have hpHam := hp.isHamiltonian_of_mem hsupp
   have hcard : p.length + 1 = Fintype.card V := by
-    rw [← p.length_support, hpHam.length_support]
+    rw [← p.length_support, (hp.isHamiltonian_of_mem hsupp).length_support]
   -- A tree has one edge fewer than it has vertices, and the path already has that many.
-  have hedges : ∀ {a b : V}, G.Adj a b → s(a, b) ∈ p.edges := by
-    have hsub : p.edges.toFinset ⊆ G.edgeFinset := by
-      intro e he
-      rw [List.mem_toFinset] at he
-      exact SimpleGraph.mem_edgeFinset.mpr (p.edges_subset_edgeSet he)
-    have hpe : p.edges.toFinset.card = p.length := by
-      rw [List.toFinset_card_of_nodup (Walk.edges_nodup_of_support_nodup hp.support_nodup),
+  have heq : p.edges.toFinset = G.edgeFinset := by
+    refine Finset.eq_of_subset_of_card_le (fun e he ↦ ?_) ?_
+    · exact mem_edgeFinset.mpr (p.edges_subset_edgeSet (List.mem_toFinset.mp he))
+    · rw [List.toFinset_card_of_nodup (Walk.edges_nodup_of_support_nodup hp.support_nodup),
         Walk.length_edges]
-    have hGe : G.edgeFinset.card + 1 = Fintype.card V := hG.card_edgeFinset
-    have heq : p.edges.toFinset = G.edgeFinset := Finset.eq_of_subset_of_card_le hsub (by omega)
-    intro a b hab
-    rw [← List.mem_toFinset, heq]
-    exact SimpleGraph.mem_edgeFinset.mpr hab
+      have := hG.card_edgeFinset
+      omega
   -- The path spans every vertex and every edge, so the subgraph it traverses is all of `G`.
   have htop : p.toSubgraph = ⊤ := by
-    refine Subgraph.ext (Set.ext fun x ↦ ?_) ?_
-    · simpa [Walk.mem_verts_toSubgraph] using hsupp x
-    · ext a b
-      simp only [Subgraph.top_adj]
-      exact ⟨fun h ↦ h.adj_sub, fun h ↦ Walk.adj_toSubgraph_iff_mem_edges.mpr (hedges h)⟩
+    ext a b
+    · simpa using hsupp a
+    · rw [Subgraph.top_adj]
+      refine ⟨fun h ↦ h.adj_sub, fun h ↦ Walk.adj_toSubgraph_iff_mem_edges.mpr ?_⟩
+      rw [← List.mem_toFinset, heq]
+      exact mem_edgeFinset.mpr h
   have hiso : p.toSubgraph.coe ≃g G := by rw [htop]; exact Subgraph.topIso
   rw [← hcard]
   exact ⟨(hp.pathGraphIsoToSubgraph.trans hiso).symm⟩
 
-end TauCeti
+end SimpleGraph

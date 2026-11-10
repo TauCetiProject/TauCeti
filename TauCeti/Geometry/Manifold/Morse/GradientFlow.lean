@@ -225,8 +225,7 @@ theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 
     Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
-    (contMDiff_neg_mgradient_one hf)
-    (zero_mem_maximalIntegralCurveInterval (contMDiff_neg_mgradient_one hf).contMDiffAt) hK hmem
+    (contMDiff_neg_mgradient_one hf) hK hmem
 
 /-- Along a trapped forward trajectory of `-grad f`, the function `f` converges to its value at
 every ω-limit point. -/
@@ -295,7 +294,7 @@ omit hK hmem
 /-- **Negative gradient trajectories of a proper Morse function converge.** If `f` is a proper
 Morse function bounded below, the maximal integral curve of `-grad f` through any point converges
 to a critical point of `f`, for any `C¹` Riemannian metric. -/
-theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient [I.Boundaryless]
+theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient
     (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) :
     ∃ p ∈ criticalPoints I f, Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_cast)

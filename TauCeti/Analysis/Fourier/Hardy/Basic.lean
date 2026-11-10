@@ -118,6 +118,16 @@ theorem mem_hardySubmodule_iff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
       exact hardySubmodule.smul_mem _ (fourierBasis_mem_hardySubmodule k)
     · simp [fourierBasis_repr, hf n (by omega)]
 
+/-- Multiplication by a Fourier monomial `e_m` with `m ≥ 0` preserves Hardy space. -/
+theorem fourierLp_natCast_smul_mem_hardySubmodule (m : ℕ)
+    {f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))} (hf : f ∈ hardySubmodule) :
+    (fourierLp (T := 1) ∞ (m : ℤ) • f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) ∈
+      hardySubmodule := by
+  rw [mem_hardySubmodule_iff] at hf ⊢
+  intro n hn
+  rw [fourierCoeff_fourierLp_smul]
+  exact hf _ (by omega)
+
 /-- The nonnegative Fourier modes, viewed in their closed span. -/
 private def hardyMode (n : ℕ) : HardySpace :=
   ⟨fourierBasis (T := 1) (n : ℤ), fourierBasis_mem_hardySubmodule n⟩

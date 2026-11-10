@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.SerreConstruction
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
 import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
@@ -280,6 +281,23 @@ theorem isSerreSystem_serre :
   ad_pow_lie_E_E := ad_pow_lie_serreE_serreE R CM
   ad_pow_lie_F_F := ad_pow_lie_serreF_serreF R CM
 
+section Sl2
+
+variable {R CM} {H E F : B → L}
+
+omit [DecidableEq B] in
+/-- At a node with diagonal Cartan entry two and nonzero Cartan element, a Serre system
+forms an `sl₂` triple. -/
+theorem IsSerreSystem.isSl2Triple
+    (hs : IsSerreSystem R CM H E F) {i : B} (hii : CM i i = 2) (hH : H i ≠ 0) :
+    IsSl2Triple (H i) (E i) (F i) where
+  h_ne_zero := hH
+  lie_e_f := hs.lie_E_F_self i
+  lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
+  lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i
+
+end Sl2
+
 /-! ### Orthogonal generators commute
 
 When `CMᵢⱼ = 0` the higher Serre relation `(ad Eᵢ) ^ (-CMᵢⱼ).toNat ⁅Eᵢ, Eⱼ⁆ = 0` has exponent
@@ -491,20 +509,6 @@ theorem IsSerreSystem.lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : 
   have hswap := h.neg_swap.lie_lie_E_E_F_of_ne hij
   simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
   exact neg_eq_iff_eq_neg.mp hswap
-
-omit [DecidableEq B] in
-/-- The higher raising Serre relation at an entry equal to `-1` is a double bracket. -/
-theorem IsSerreSystem.lie_E_lie_E_E_eq_zero_of_eq_neg_one
-    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
-    ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_E_E i j
-
-omit [DecidableEq B] in
-/-- The higher lowering Serre relation at an entry equal to `-1` is a double bracket. -/
-theorem IsSerreSystem.lie_F_lie_F_F_eq_zero_of_eq_neg_one
-    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
-    ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_F_F i j
 
 end NestedBrackets
 

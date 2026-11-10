@@ -257,6 +257,14 @@ theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
       AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
 
+/-- The morphisms of twisting sheaves send the sections `r / 1` to the sections `f r / 1`. -/
+-- Not a simp lemma: `Scheme.Modules.pushforward_obj_obj` already rewrites its left-hand side.
+theorem twistingSheafMap_app_toTwistingSheaf (U : (Proj 𝒜).Opens) {j : ℕ} (h : (j : ℤ) = n)
+    (r : 𝒜 j) :
+    (twistingSheafMap f hf n).app U (toTwistingSheaf 𝒜 h U r) =
+      toTwistingSheaf ℬ h (map f hf ⁻¹ᵁ U) ⟨f r, Graded.map_mem f r.2⟩ :=
+  comap_toTwistingSheaf f hf Set.Subset.rfl h r
+
 /-- The morphisms of twisting sheaves are multiplicative on sections: they send the product of
 sections of `𝒪(m)` and `𝒪(n)` to the product of their images. -/
 theorem twistingSheafMap_app_mul {m : ℤ} (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))

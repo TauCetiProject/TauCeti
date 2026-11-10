@@ -187,9 +187,11 @@ theorem pauliRotation_mulVec_cross (x y : Fin 3 → ℝ) :
 theorem pauliRotation_mem_orthogonalGroup : pauliRotation U ∈ orthogonalGroup (Fin 3) ℝ :=
   mem_orthogonalGroup_iff_dotProduct_mulVec.mpr (dotProduct_pauliRotation_mulVec U)
 
-/-- `pauliRotation U` has determinant one, since it preserves the cross product. -/
+/-- `pauliRotation U` has determinant one, since it is orthogonal and preserves the cross
+product. -/
 theorem det_pauliRotation : (pauliRotation U).det = 1 :=
-  Matrix.det_eq_one_of_mulVec_cross (dotProduct_pauliRotation_mulVec U)
+  Matrix.det_eq_one_of_mulVec_cross
+    (UnitaryGroup.det_isUnit ⟨_, pauliRotation_mem_orthogonalGroup U⟩)
     (pauliRotation_mulVec_cross U)
 
 /-- `pauliRotation U` is a rotation. -/

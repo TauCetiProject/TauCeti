@@ -116,17 +116,13 @@ theorem hasLaw_hittingAfter_countdownKernel_map_pred (hμ : μ {0} = 0) :
     HasLaw (hittingAfter (fun n (ω : ℕ → ℕ) => ω n) {0} 1)
       (μ.map (fun j : ℕ => (j : WithTop ℕ)))
       (markovChainLaw (dirac 0) (μ.map Nat.pred).countdownKernel) := by
-  have hpos : ∀ᵐ j ∂μ, j ≠ 0 := by
-    apply ae_iff.mpr
-    simpa using hμ
   have heq : (μ.map Nat.pred).map (fun j => ((j + 1 : ℕ) : WithTop ℕ)) =
       μ.map (fun j : ℕ => (j : WithTop ℕ)) := by
-    rw [Measure.map_map (measurable_of_countable _) (measurable_of_countable _)]
-    apply Measure.map_congr
-    filter_upwards [hpos] with j hj
-    exact congrArg (fun j : ℕ => (j : WithTop ℕ)) (Nat.succ_pred_eq_of_ne_zero hj)
-  rw [← heq]
-  exact (μ.map Nat.pred).hasLaw_hittingAfter_countdownKernel
+    calc
+      _ = ((μ.map Nat.pred).map Nat.succ).map (fun j : ℕ => (j : WithTop ℕ)) :=
+        (Measure.map_map (measurable_of_countable _) (measurable_of_countable _)).symm
+      _ = _ := by rw [map_succ_map_pred hμ]
+  simpa only [heq] using (μ.map Nat.pred).hasLaw_hittingAfter_countdownKernel
 
 /-- The extended mean positive return time is the extended mean gap. This identity includes
 infinite means and uses the return time in `WithTop ℕ`, not a real-valued integral. -/

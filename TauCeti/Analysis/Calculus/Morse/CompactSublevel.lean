@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Breaking
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.Morse.Stable
 
 /-!
@@ -55,7 +56,6 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
       y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
   let φ := negativeGradientFlow f hf
   have hanti := negativeGradientFlow_orbit_antitone f hf y
-    (fun _ ↦ hfs.differentiable (by norm_num) _)
   have hmaps : MapsTo (fun t ↦ φ t y) (Ici 0) {z | f z ≤ f y} := by
     intro t ht
     simpa only [Set.mem_ofPred_eq, φ, _root_.Flow.map_zero_apply] using hanti ht
@@ -67,7 +67,7 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))
   have hq' : fderiv ℝ f q = 0 := by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := q), hq, map_zero]
+    rw [← gradient_eq_zero_iff, hq]
   exact ⟨q, (hasNondegenerateCriticalPointsOn_iff.mp hM) (mem_univ q) hq',
     Flow.mem_stableSet.mpr hlim⟩
 
@@ -100,7 +100,7 @@ theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))
   have ha' : fderiv ℝ f a = 0 := by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := a), ha, map_zero]
+    rw [← gradient_eq_zero_iff, ha]
   exact ⟨a, (hasNondegenerateCriticalPointsOn_iff.mp hM) (mem_univ a) ha',
     Flow.mem_unstableSet.mpr hlim⟩
 

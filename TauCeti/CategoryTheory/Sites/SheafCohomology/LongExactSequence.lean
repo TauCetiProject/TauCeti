@@ -65,6 +65,13 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasSheafify J AddCommGrpCat.{w}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})]
   {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
 
+/-- Cohomology takes the identity sheaf map to the identity morphism of abelian groups. -/
+@[simp]
+lemma ofHom_map_id (F : Sheaf J AddCommGrpCat.{w}) (n : ℕ) :
+    AddCommGrpCat.ofHom (map (𝟙 F) n) = 𝟙 (AddCommGrpCat.of (H F n)) := by
+  ext x
+  exact map_id_apply x
+
 /-- A monomorphism of abelian sheaves is injective on cohomology in degree zero. -/
 theorem map_injective {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) [Mono f] :
     Function.Injective (map f 0) := by

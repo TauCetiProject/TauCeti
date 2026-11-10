@@ -537,29 +537,15 @@ theorem betaNumber_ne_betaNumber_add (h : IsRimHook μ ν)
 
 end IsRimHook
 
-/-- **Adding a rim hook moves one bead up.**  Let `ν` have at most `r` rows, and suppose that
-raising its beta-number at the row `j < r` by `s` produces a value that is not already a
-beta-number of `ν` (which forces `s > 0`).  Then there is a rim hook `μ / ν` with `s` cells whose
-bottom row is `j`, and `μ` still has at most `r` rows.  This is the converse of
-`YoungDiagram.IsRimHook.card_add_betaNumber`: the moved bead lands at the first row `a` whose
-beta-number falls below the new value, and the rows `a < i ≤ j` are the beads it jumps over. -/
-theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) (hjr : j < r)
-    (hfree : ∀ i < r, ν.betaNumber r i ≠ ν.betaNumber r j + s) :
-    ∃ μ, IsRimHook μ ν ∧ μ.colLen 0 ≤ r ∧ μ.card = ν.card + s ∧
-      ∃ a, μ.rimHookRows ν = Finset.Icc a j := by
-  classical
-  have hs : 0 < s :=
-    Nat.pos_of_ne_zero fun hs => hfree j hjr (by rw [hs, Nat.add_zero])
-  set v := ν.betaNumber r j + s
-  have hex : ∃ i, ν.betaNumber r i < v := ⟨j, by omega⟩
-  -- The moved bead lands at the first row `a` whose beta-number is smaller than `v`.
-  set a := Nat.find hex
-  have hav : ν.betaNumber r a < v := Nat.find_spec hex
-  have haj : a ≤ j := Nat.find_min' hex (by omega)
-  have hbefore : ∀ i < a, v < ν.betaNumber r i := fun i hi =>
-    lt_of_le_of_ne (Nat.not_lt.mp (Nat.find_min hex hi)) fun hi' => hfree i (by omega) hi'.symm
-  simp only [betaNumber_def] at hav hbefore
-  -- The row lengths of the enlarged diagram.
+/-- The row lengths of the diagram obtained by moving the bead at row `j` up to the first row `a`
+whose beta-number is below the new value `v`: the rows `a < i ≤ j` are shifted down by one, the row
+`a` receives the new bead, and the rows `i < a` and `j < i` are unchanged.  This sequence is
+antitone, and it exceeds the old row lengths exactly on `[a, j]`. -/
+private theorem exists_antitone_rowLen_moveBead {v : ℕ} (haj : a ≤ j)
+    (hav : ν.rowLen a + (r - 1 - a) < v) (hbefore : ∀ i < a, v < ν.rowLen i + (r - 1 - i)) :
+    ∃ g : ℕ → ℕ, Antitone g ∧ g a = v - (r - 1 - a) ∧
+      (∀ i, a < i → i ≤ j → g i = ν.rowLen (i - 1) + 1) ∧ (∀ i, j < i → g i = ν.rowLen i) ∧
+      ∀ i, (ν.rowLen i < g i ↔ a ≤ i ∧ i ≤ j) ∧ ν.rowLen i ≤ g i := by
   set g : ℕ → ℕ := fun i => if i < a then ν.rowLen i else if i = a then v - (r - 1 - a)
     else if i ≤ j then ν.rowLen (i - 1) + 1 else ν.rowLen i with hg
   have hg_lt : ∀ i < a, g i = ν.rowLen i := fun i hi => by simp [hg, hi]
@@ -605,6 +591,32 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
         omega
     · rw [hg_gt _ hji]
       exact h1.trans (hrows i).2
+  exact ⟨g, hgmono, hg_a, hg_mid, hg_gt, hrows⟩
+
+/-- **Adding a rim hook moves one bead up.**  Let `ν` have at most `r` rows, and suppose that
+raising its beta-number at the row `j < r` by `s` produces a value that is not already a
+beta-number of `ν` (which forces `s > 0`).  Then there is a rim hook `μ / ν` with `s` cells whose
+bottom row is `j`, and `μ` still has at most `r` rows.  This is the converse of
+`YoungDiagram.IsRimHook.card_add_betaNumber`: the moved bead lands at the first row `a` whose
+beta-number falls below the new value, and the rows `a < i ≤ j` are the beads it jumps over. -/
+theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) (hjr : j < r)
+    (hfree : ∀ i < r, ν.betaNumber r i ≠ ν.betaNumber r j + s) :
+    ∃ μ, IsRimHook μ ν ∧ μ.colLen 0 ≤ r ∧ μ.card = ν.card + s ∧
+      ∃ a, μ.rimHookRows ν = Finset.Icc a j := by
+  classical
+  have hs : 0 < s :=
+    Nat.pos_of_ne_zero fun hs => hfree j hjr (by rw [hs, Nat.add_zero])
+  set v := ν.betaNumber r j + s
+  have hex : ∃ i, ν.betaNumber r i < v := ⟨j, by omega⟩
+  -- The moved bead lands at the first row `a` whose beta-number is smaller than `v`.
+  set a := Nat.find hex
+  have hav : ν.betaNumber r a < v := Nat.find_spec hex
+  have haj : a ≤ j := Nat.find_min' hex (by omega)
+  have hbefore : ∀ i < a, v < ν.betaNumber r i := fun i hi =>
+    lt_of_le_of_ne (Nat.not_lt.mp (Nat.find_min hex hi)) fun hi' => hfree i (by omega) hi'.symm
+  simp only [betaNumber_def] at hav hbefore
+  obtain ⟨g, hgmono, hg_a, hg_mid, hg_gt, hrows⟩ :=
+    exists_antitone_rowLen_moveBead (ν := ν) haj hav hbefore
   set μ := ofRowLensFin (fun i : Fin r => g i) fun _ _ h => hgmono h
   have hμ : ∀ i, μ.rowLen i = g i := fun i => by
     by_cases hi : i < r

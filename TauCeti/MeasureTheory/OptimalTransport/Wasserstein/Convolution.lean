@@ -67,7 +67,7 @@ variable {G : Type u} [AddMonoid G] [MeasurableSpace G] [MeasurableAdd₂ G] [Ps
 common probability law does not increase the `p`-Wasserstein distance, when the ground distance is
 invariant under right addition. -/
 theorem wassersteinEDist_conv_right_le [IsIsometricVAdd Gᵃᵒᵖ G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (μ ν : Measure G) [SigmaFinite μ]
+    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (μ ν : Measure G)
     (η : Measure G) [IsProbabilityMeasure η] :
     wassersteinEDist p (μ ∗ η) (ν ∗ η) ≤ wassersteinEDist p μ ν :=
   wassersteinEDist_map_prod_le hd hd measurable_add (fun z ↦ (isometry_add_right z).lipschitzWith)
@@ -105,18 +105,18 @@ variable {G : Type u} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] [Pseudo
 common element preserves their Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_add_right [IsIsometricVAdd Gᵃᵒᵖ G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
+    (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (· + a)) (ν.map (· + a)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq hd (MeasurableEquiv.addRight a).measurableEmbedding
+  wassersteinEDist_map_eq (MeasurableEquiv.addRight a).measurableEmbedding
     (isometry_add_right a) μ ν
 
 /-- In a group whose ground distance is invariant under left addition, translating two laws by a
 common element preserves their Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_add_left [IsIsometricVAdd G G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
+    (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (a + ·)) (ν.map (a + ·)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq hd (MeasurableEquiv.addLeft a).measurableEmbedding
+  wassersteinEDist_map_eq (MeasurableEquiv.addLeft a).measurableEmbedding
     (isometry_add_left a) μ ν
 
 end Translation

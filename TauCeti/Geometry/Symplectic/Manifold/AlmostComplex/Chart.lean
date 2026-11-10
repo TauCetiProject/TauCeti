@@ -8,6 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Trivialization
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -19,7 +23,8 @@ Read in the
 trivialization of the tangent bundle at `x`, along the inverse of the extended chart at `x`, the
 structure becomes a map `E → (E →L[ℝ] E)`. It squares to `-1` on the chart target and equals
 `J x` at the chart point. For smooth structures the coordinate field is differentiable there,
-and its derivative at the chart point anticommutes with `J x`.
+and its derivative at the chart point anticommutes with `J x`. More generally, along a chart `ψ`
+of `M` with values in a normed space, `J` reads as the field `dψ ∘ J ∘ dψ⁻¹`.
 
 The finite field is C^n on the full extended target, with ordinary pointwise C^n regularity in
 boundaryless models. `ContMDiffAlmostComplexStructure.chartEquiv` reconstructs an actual structure
@@ -32,8 +37,21 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
 * `ContMDiffAlmostComplexStructure.inChart`, `contDiffOn_inChart`: the full finite coordinate field.
 * `ContMDiffAlmostComplexStructure.chartEquiv`: chart-source reconstruction and both round trips.
 * `ContMDiffAlmostComplexStructure.inChart_extChartAt_eq_conj`: derivative conjugation on overlaps.
+* `ContMDiffAlmostComplexStructure.chartPushforward`: the structure read in the coordinates of a
+  chart with values in a normed space; `chartPushforward_apply_chartPushforward_apply`,
+  `mfderiv_comp_toEndomorphism` and `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
+  the chart derivative intertwines it with `J`, and it is a pullback of `J` read in the extended
+  chart.
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
+* `TauCeti.SmoothAlmostComplexStructure.chartPushforward`: the smooth structure pushed forward
+  along a chart with values in a normed space.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_apply_eq_mfderiv`,
+  `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_apply_eq_mfderiv`: it is `J`
+  conjugated by the derivatives of the chart and of its inverse.
+* `TauCeti.SmoothAlmostComplexStructure.fderiv_extChartAt_comp_apply_eq_inChart`,
+  `TauCeti.SmoothAlmostComplexStructure.fderiv_comp_extChartAt_symm_inChart_apply`: relations
+  between derivatives of maps into and out of `M` involving `J` read in the chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
 * `TauCeti.SmoothAlmostComplexStructure.fderivWithin_inChart_apply_apply`: its derivative at the
@@ -94,6 +112,113 @@ theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorph
     mfderivWithin_range_extChartAt_symm]
   -- Both chart derivatives are the identities on the native model tangent spaces.
   rfl
+
+/-- On the chart target, the finite coordinate field is `J` at the corresponding point,
+conjugated by the derivatives of the chart and of its inverse. -/
+theorem inChart_apply_eq_mfderiv {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hz' : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target hz
+  rw [inChart_def, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hz',
+    TangentBundle.symmL_trivializationAt hz', (extChartAt I x).right_inv hz]
+  -- The trivialization at `x` acts on fibres over its base set by the chart derivatives.
+  rfl
+
+section Pushforward
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- The structure `J` pushed forward along a chart `ψ` of `M` with values in a normed space `G`:
+at `p`, the endomorphism `dψ ∘ J ∘ dψ⁻¹` of `G`, taken at `ψ⁻¹ p` and written with the manifold
+derivatives of `ψ` and of its inverse. On the target of `ψ` this is `J` in the coordinates
+of `ψ`. -/
+def chartPushforward (ψ : OpenPartialHomeomorph M G) (p : G) : G →L[ℝ] G :=
+  (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p)).comp
+    ((J.toEndomorphism (ψ.symm p)).comp (mfderiv 𝓘(ℝ, G) I ψ.symm p))
+
+/-- Evaluate a pushed-forward structure. -/
+theorem chartPushforward_apply (ψ : OpenPartialHomeomorph M G) (p w : G) :
+    J.chartPushforward ψ p w =
+      mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (J (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w)) :=
+  (rfl)
+
+/-- Forgetting regularity does not change the pushed-forward structure. -/
+@[simp]
+theorem chartPushforward_ofLE (h : m ≤ n) (ψ : OpenPartialHomeomorph M G) :
+    (J.ofLE h).chartPushforward ψ = J.chartPushforward ψ := by
+  funext p
+  ext w
+  rw [chartPushforward_apply, chartPushforward_apply, ofLE_apply]
+
+/-- **The pushed-forward structure is an almost complex structure.** At a point of the target
+where the chart and its inverse are differentiable, `ψ_* J` squares to `-1`. -/
+theorem chartPushforward_apply_chartPushforward_apply (ψ : OpenPartialHomeomorph M G) {p : G}
+    (hp : p ∈ ψ.target) (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ (ψ.symm p))
+    (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm p) (w : G) :
+    J.chartPushforward ψ p (J.chartPushforward ψ p w) = -w := by
+  -- Restate the left inverse property at `p`, which is `ψ (ψ.symm p)`.
+  have hleft : ∀ q, ψ (ψ.symm p) = q → ∀ v : TangentSpace I (ψ.symm p),
+      mfderiv 𝓘(ℝ, G) I ψ.symm q (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) v) = v := by
+    rintro q rfl
+    exact ψ.mfderiv_symm_apply_mfderiv_apply (ψ.map_target hp) hψ (by rwa [ψ.right_inv hp])
+  have hright : mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w) = w :=
+    ψ.mfderiv_apply_mfderiv_symm_apply hp hψ hψs w
+  rw [chartPushforward_apply, chartPushforward_apply, hleft p (ψ.right_inv hp), J.apply_apply,
+    map_neg, hright]
+  -- The two negations live on `TangentSpace 𝓘(ℝ, G) p` and on `G`, which agree by definition.
+  rfl
+
+/-- The derivative of a chart intertwines `J` with the pushed-forward structure. -/
+theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy : y ∈ ψ.source)
+    (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ y) (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm (ψ y)) :
+    (mfderiv I 𝓘(ℝ, G) ψ y).comp (J.toEndomorphism y) =
+      (J.chartPushforward ψ (ψ y)).comp (mfderiv I 𝓘(ℝ, G) ψ y) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hleft := ψ.mfderiv_symm_apply_mfderiv_apply hy hψ hψs v
+  -- Generalize `ψ.symm (ψ y)`, which is `y`, so that the tangent spaces can be identified.
+  have key : ∀ z, z = y → mfderiv I 𝓘(ℝ, G) ψ z
+      (J z (mfderiv 𝓘(ℝ, G) I ψ.symm (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v))) =
+        mfderiv I 𝓘(ℝ, G) ψ y (J y v) := by
+    rintro z rfl
+    rw [hleft]
+  exact (key _ (ψ.left_inv hy)).symm
+
+/-- **Pushforward along a chart through the extended chart.** If, near the relevant points, a
+chart `ψ` is `e⁻¹ ∘ χ` and its inverse is `χ⁻¹ ∘ e` for the extended chart `χ` at `x` and an open
+partial homeomorphism `e` of normed spaces, then `ψ_* J` is the pullback by `e` of `J` read in
+`χ`. -/
+theorem chartPushforward_eq_pullbackEnd_inChart [I.Boundaryless] (ψ : OpenPartialHomeomorph M G)
+    (e : OpenPartialHomeomorph G E) {p : G} (hp : e p ∈ (extChartAt I x).target)
+    (hψ : ⇑ψ =ᶠ[𝓝 (ψ.symm p)] e.symm ∘ extChartAt I x)
+    (hψs : ⇑ψ.symm =ᶠ[𝓝 p] (extChartAt I x).symm ∘ e) (he : DifferentiableAt ℝ e p)
+    (hes : DifferentiableAt ℝ e.symm (e p)) :
+    J.chartPushforward ψ p = e.pullbackEnd (J.inChart x) p := by
+  have hy : ψ.symm p = (extChartAt I x).symm (e p) := hψs.eq_of_nhds
+  have hχy : extChartAt I x (ψ.symm p) = e p := by rw [hy, (extChartAt I x).right_inv hp]
+  have hχs : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm (e p) := by
+    have := mdifferentiableWithinAt_extChartAt_symm (I := I) (x := x) hp
+    rwa [I.range_eq_univ, mdifferentiableWithinAt_univ] at this
+  have hχ : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x) (ψ.symm p) := by
+    refine mdifferentiableAt_extChartAt ?_
+    rw [hy, ← extChartAt_source I]
+    exact (extChartAt I x).map_target hp
+  have hes' : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, G) e.symm (extChartAt I x (ψ.symm p)) := by
+    rw [hχy]
+    exact hes.mdifferentiableAt
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  rw [chartPushforward_apply, hψ.mfderiv_eq, mfderiv_comp _ hes' hχ, hψs.mfderiv_eq,
+    mfderiv_comp _ hχs he.mdifferentiableAt, OpenPartialHomeomorph.pullbackEnd_apply,
+    J.inChart_apply_eq_mfderiv x hp, I.range_eq_univ, mfderivWithin_univ, ← hy, hχy,
+    mfderiv_eq_fderiv, mfderiv_eq_fderiv]
+  -- Both sides are the same composite, read on tangent spaces of normed spaces.
+  rfl
+
+end Pushforward
 
 @[simp]
 theorem inChart_ofLE (h : m ≤ n) : (J.ofLE h).inChart x = J.inChart x := by
@@ -279,6 +404,29 @@ theorem toContMDiff_inChart (n : ℕ∞) : (J.toContMDiff n).inChart x = J.inCha
   funext z
   rw [ContMDiffAlmostComplexStructure.inChart_def, toContMDiff_toEndomorphism_apply, inChart_def]
 
+section Pushforward
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- The smooth structure `J` pushed forward along a chart `ψ` of `M` with values in a normed
+space `G`: at `p`, the endomorphism `dψ ∘ J ∘ dψ⁻¹` of `G`, as in
+`ContMDiffAlmostComplexStructure.chartPushforward`. -/
+def chartPushforward (ψ : OpenPartialHomeomorph M G) (p : G) : G →L[ℝ] G :=
+  (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p)).comp
+    ((J.toEndomorphism (ψ.symm p)).comp (mfderiv 𝓘(ℝ, G) I ψ.symm p))
+
+/-- Pushing forward a smooth structure agrees with every finite-regularity specialization. -/
+@[simp]
+theorem toContMDiff_chartPushforward (n : ℕ∞) (ψ : OpenPartialHomeomorph M G) :
+    (J.toContMDiff n).chartPushforward ψ = J.chartPushforward ψ := by
+  funext p
+  ext w
+  rw [ContMDiffAlmostComplexStructure.chartPushforward_apply, toContMDiff_apply]
+  -- The remaining goal unfolds the smooth `chartPushforward` at `w`.
+  rfl
+
+end Pushforward
+
 /-- The smooth coordinate field is smooth on its full chart target. -/
 theorem contDiffOn_inChart : ContDiffOn ℝ ∞ (J.inChart x) (extChartAt I x).target := by
   simpa only [toContMDiff_inChart] using (J.toContMDiff ⊤).contDiffOn_inChart x
@@ -295,6 +443,65 @@ theorem inChart_extChartAt_apply {y : M} (hy : y ∈ (extChartAt I x).source) (u
   rw [(extChartAt I x).left_inv hy,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hy',
     Trivialization.symmL_apply _ hy']
+
+/-- On the chart target, the almost complex structure read in the chart is `J` at the
+corresponding point, conjugated by the derivatives of the chart and of its inverse. -/
+theorem inChart_apply_eq_mfderiv {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  simpa only [toContMDiff_inChart, toContMDiff_apply] using
+    (J.toContMDiff ⊤).inChart_apply_eq_mfderiv x hz w
+
+/-- At the image of a point `y` of the chart at `x`, the almost complex structure read in the chart
+is `J y`, conjugated by the derivatives of the chart at `y` and of its inverse. -/
+theorem inChart_extChartAt_apply_eq_mfderiv {y : M} (hy : y ∈ (extChartAt I x).source) (w : E) :
+    J.inChart x (extChartAt I x y) w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) y
+        (J y (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I)
+          (extChartAt I x y) w)) := by
+  have hy' : y ∈ (chartAt H x).source := by rwa [← extChartAt_source I]
+  rw [inChart_def, (extChartAt I x).left_inv hy, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hy',
+    TangentBundle.symmL_trivializationAt hy']
+  rfl
+
+/-- Read in the extended chart `φ` at `x`, a relation `du(a) = J du(b)` between derivatives at `w`
+of a map `u` from a normed space becomes `d(φ ∘ u)(a) = J_φ d(φ ∘ u)(b)`, for the structure
+`J_φ = J.inChart x` read in the chart. -/
+theorem fderiv_extChartAt_comp_apply_eq_inChart {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : F → M} {w : F} (hu : MDifferentiableAt 𝓘(ℝ, F) I u w)
+    (hw : u w ∈ (extChartAt I x).source) {a b : F}
+    (h : mfderiv 𝓘(ℝ, F) I u w a = J (u w) (mfderiv 𝓘(ℝ, F) I u w b)) :
+    fderiv ℝ (extChartAt I x ∘ u) w a =
+      J.inChart x ((extChartAt I x ∘ u) w) (fderiv ℝ (extChartAt I x ∘ u) w b) := by
+  have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hw)
+    (mfderiv 𝓘(ℝ, F) I u w b))
+  rw [hu.fderiv_extChartAt_comp_apply hw, hu.fderiv_extChartAt_comp_apply hw,
+    Function.comp_apply, h]
+  exact (congrArg _ (congrArg _ hinv)).symm.trans
+    (J.inChart_extChartAt_apply_eq_mfderiv x hw _).symm
+
+/-- On the chart target, the derivative of the coordinate expression `f ∘ φ⁻¹` of a map `f` into a
+normed space, applied after the structure `J.inChart x` read in the chart `φ` at `x`, is the
+derivative of `f` applied after `J`. -/
+theorem fderiv_comp_extChartAt_symm_inChart_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : M → F} {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hf : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) z) (w : E) :
+    fderiv ℝ (f ∘ (extChartAt I x).symm) z (J.inChart x z w) =
+      mvfderiv I f ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hy := (extChartAt I x).map_target hz
+  have h := congr($(mfderiv_eq_fderiv_comp_mfderiv_extChartAt (f := f) hy
+    (by rwa [(extChartAt I x).right_inv hz]))
+    (J ((extChartAt I x).symm z)
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)))
+  rw [(extChartAt I x).right_inv hz] at h
+  rw [J.inChart_apply_eq_mfderiv x hz]
+  -- `h` is the chain rule, up to the identifications of tangent spaces of `E` and `F`.
+  exact h.symm
 
 /-- In the chart, the almost complex structure still squares to `-1`. -/
 theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :

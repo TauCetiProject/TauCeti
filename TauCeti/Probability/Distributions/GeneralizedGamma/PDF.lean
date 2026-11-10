@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.GeneralizedGamma.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!

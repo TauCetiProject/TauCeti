@@ -33,6 +33,9 @@ results.
 * `TauCeti.Manifold.isOpen_geodesicInterval` and
   `TauCeti.Manifold.ordConnected_geodesicInterval` give its interval structure.
 * `TauCeti.Manifold.mem_geodesicInterval_iff` extracts a geodesic witness from membership.
+* `TauCeti.Manifold.IsGeodesicCurveOn.sub_mem_geodesicInterval`: for a geodesic `γ` on an open
+  interval and interior parameters `τ`, `t`, the time `t - τ` lies in the maximal interval with
+  initial data `(γ τ, γ'(τ))`.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_of_inter` gives uniqueness on overlapping intervals
   for a boundaryless Hausdorff manifold.
 * `TauCeti.Manifold.mem_geodesicInterval_smul_iff` is the precise nonzero scalar domain relation.
@@ -122,6 +125,14 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval
     Ioo a b ⊆ geodesicInterval I M p v := by
   intro t ht
   exact ⟨γ, a, b, h, ht⟩
+
+/-- For a geodesic `γ` on an open interval `(a, b)` and `τ, t ∈ (a, b)`, the time `t - τ` lies in
+the maximal interval of the geodesic with initial data `(γ τ, γ'(τ))`. -/
+theorem IsGeodesicCurveOn.sub_mem_geodesicInterval {γ : ℝ → M} {a b τ t : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hτ : τ ∈ Ioo a b) (ht : t ∈ Ioo a b) :
+    t - τ ∈ geodesicInterval I M (γ τ) (curveVelocity I γ τ) :=
+  (hγ.isGeodesicCurveOnFrom_comp_add_const hτ).subset_geodesicInterval
+    ⟨sub_lt_sub_right ht.1 τ, sub_lt_sub_right ht.2 τ⟩
 
 /-- Geodesics with the same initial data agree on the overlap of their intervals. -/
 theorem IsGeodesicCurveOnFrom.eqOn_of_inter

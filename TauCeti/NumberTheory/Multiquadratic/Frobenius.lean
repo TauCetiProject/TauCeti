@@ -62,13 +62,14 @@ namespace NumberField
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
   {p : ℕ} [Fact p.Prime]
 
+omit [NumberField K] in
 /-- **A multiquadratic Frobenius is trivial iff every radicand is a residue.** Let
 `K = ℚ(√d₁, …, √dₙ)` be generated over `ℚ` by the square roots `r i` of the integers `d i`,
 let `p` be an odd prime with `p ∤ d i` for all `i`, and let `σ` be an arithmetic Frobenius at
 an ideal `Q` of `𝓞 K` above `p`. Then `σ = 1` iff every `d i` is a quadratic residue mod `p`.
 Combined with the splitting law, this is the Frobenius-theoretic reading of complete
 splitting. -/
-theorem isArithFrobAt_multiquadratic_eq_one_iff (d : ι → ℤ) (r : ι → K)
+theorem isArithFrobAt_multiquadratic_eq_one_iff [CharZero K] (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(p : ℤ)})]
     {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
@@ -103,14 +104,14 @@ theorem exists_isArithFrobAt_multiquadratic [IsGalois ℚ K] (d : ι → ℤ) (r
 The `signPattern`/`galoisGroupEquiv` API of `TauCeti.NumberTheory.Multiquadratic.Galois.Group`
 is stated for automorphisms of the intermediate field `M = adjoin ℚ (Set.range root)`. To match
 the roadmap's `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` Frobenius-vector statement we take that intermediate field
-(a number field, `NumberField.of_intermediateField`) as the multiquadratic field itself, and
-compute the Frobenius sign pattern there. -/
+(a number field when `L` is, `NumberField.of_intermediateField`) as the multiquadratic field itself,
+and compute the Frobenius sign pattern there. Only characteristic zero of `L` is used. -/
 
 section SignVector
 
 open TauCeti.Multiquadratic
 
-variable {L : Type*} [Field L] [NumberField L] {root : ι → L} {d : ι → ℤ}
+variable {L : Type*} [Field L] [CharZero L] {root : ι → L} {d : ι → ℤ}
 
 /-- The rational algebra structure on the multiquadratic intermediate field. -/
 local instance algebraRatAdjoinRange :

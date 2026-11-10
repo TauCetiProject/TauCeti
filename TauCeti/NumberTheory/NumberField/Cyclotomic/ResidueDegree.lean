@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 
 /-!
 # The residue degree in a cyclotomic extension
@@ -63,10 +64,11 @@ above `𝔭` is the multiplicative order in `(ZMod m)ˣ` of any unit `u` reducin
 theorem inertiaDeg_eq_orderOf_of_val_eq_absNorm {m : ℕ} [NeZero m] {ζ : F}
     (hζ : IsPrimitiveRoot ζ m) [IsCyclotomicExtension {m} K F]
     (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
-    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] [Algebra.IsUnramifiedAt (𝓞 K) Q]
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
     {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     (u : (ZMod m)ˣ) (hu : (u : ZMod m) = Ideal.absNorm 𝔭.asIdeal) :
     Q.inertiaDeg (𝓞 K) = orderOf u := by
+  have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem F m hm Q
   -- A unit of `ZMod m` is determined by its value, so `u` is the character at `σ`.
   have hueq : u = hζ.autToPow K σ :=
     Units.ext (by rw [hu, hσ.autToPow_eq_absNorm hζ 𝔭 hm Q])

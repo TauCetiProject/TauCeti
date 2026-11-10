@@ -221,19 +221,16 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   have hF' : _root_.MeromorphicAt (F ∘ (chartAt ℂ (φ x)).symm)
       (chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm (chartAt ℂ x x)))) := by
     rwa [(chartAt ℂ x).left_inv hcx]
-  have hmult := natCast_localMultiplicity hφ hnc
-  -- The representative of `φ` is not constant near `chartAt ℂ x x`, since its recentred order of
-  -- vanishing is the finite local multiplicity of `φ`.
-  have hnc' : ¬ EventuallyConst (fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
-      (𝓝 (chartAt ℂ x x)) := by
-    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top]
-    simp [(chartAt ℂ x).left_inv hcx, ← hmult]
+  have hnc' := not_eventuallyConst_chartAt_comp_comp_chartAt_symm hφ hnc
   rw [meromorphicOrderAt, _root_.meromorphicOrderAt_congr
       ((comp_comp_chartAt_symm_eventuallyEq (H := ℂ) (H' := ℂ) F
         hφ.self_of_nhds.continuousAt).filter_mono nhdsWithin_le_nhds),
     hF'.meromorphicOrderAt_comp (g := fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
-  simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
+  simp only [(chartAt ℂ x).left_inv hcx,
+    ← natCast_localMultiplicity hφ.self_of_nhds.continuousAt hnc,
+    ENat.map_natCast, WithTop.coe_natCast]
+  simp only [meromorphicOrderAt]
 
 end IsManifold
 

@@ -96,6 +96,12 @@ theorem dirichletData_completed (s : ℂ) :
 theorem dirichletData_polarOrder : (dirichletData χ hχ).polarOrder =
     if N = 1 then Finsupp.single 0 1 + Finsupp.single 1 1 else 0 := (rfl)
 
+/-- A nonprincipal primitive Dirichlet record has no poles. -/
+theorem dirichletData_polarOrder_eq_zero (hne : χ ≠ 1) :
+    (dirichletData χ hχ).polarOrder = 0 := by
+  have hN : N ≠ 1 := fun h ↦ hne (hχ.eq_one_iff.mpr h)
+  simp [dirichletData_polarOrder, hN]
+
 @[simp]
 theorem dirichletData_degree : (dirichletData χ hχ).degree = 1 := by
   simp [AnalyticLFunctionData.degree_def]

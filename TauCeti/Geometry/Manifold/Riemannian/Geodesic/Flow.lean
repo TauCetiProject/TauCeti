@@ -163,11 +163,14 @@ theorem _root_.TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact (z 
     contMDiffOn_maximalGeodesic.mono hUV⟩
 
 /-- A Cⁿ curve of initial states gives a Cⁿ geodesic variation on one product neighbourhood of
-any compact subset of the central maximal interval, for every finite order `n`. Both the variation
+any compact subset of the central maximal interval, including smooth regularity
+`n = ∞`. Both the variation
 parameter and the time domain are open, so derivatives at compact segment endpoints
-are unrestricted. -/
+are unrestricted. The initial-state curve is `C^n` throughout a neighbourhood of zero;
+for `n = ∞`, regularity merely at zero would not suffice. -/
 theorem exists_contMDiffOn_maximalGeodesic_comp_of_isCompact
-    {σ : ℝ → TangentBundle I M} {n : ℕ} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ 0)
+    {σ : ℝ → TangentBundle I M} {n : ℕ∞}
+    (hσ : ∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ q)
     {K : Set ℝ} (hK : IsCompact K)
     (hsub : K ⊆ geodesicInterval I M (σ 0).proj (σ 0).2) :
     ∃ (U V : Set ℝ), IsOpen U ∧ IsOpen V ∧ 0 ∈ U ∧ K ⊆ V ∧
@@ -176,12 +179,12 @@ theorem exists_contMDiffOn_maximalGeodesic_comp_of_isCompact
       ∀ q ∈ U, IsGeodesicCurveOn I (maximalGeodesic I M (σ q).proj (σ q).2) V := by
   obtain ⟨A, V, hA, hV, hσA, hKV, hdom, hflow⟩ :=
     (σ 0).exists_contMDiffOn_maximalGeodesic_of_isCompact hK hsub
-  obtain ⟨W, hW, hσW⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).1 hσ
+  obtain ⟨W, hW, hσW⟩ := eventually_iff_exists_mem.mp hσ
   let U := interior W ∩ interior (σ ⁻¹' A)
   have h0 : 0 ∈ U := ⟨mem_interior_iff_mem_nhds.2 hW,
-    mem_interior_iff_mem_nhds.2 (hσ.continuousAt.preimage_mem_nhds (hA.mem_nhds hσA))⟩
+    mem_interior_iff_mem_nhds.2 (hσ.self_of_nhds.continuousAt.preimage_mem_nhds (hA.mem_nhds hσA))⟩
   have hσU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n σ U :=
-    hσW.mono fun _ hq ↦ interior_subset hq.1
+    fun q hq ↦ (hσW q (interior_subset hq.1)).contMDiffWithinAt
   have hUA : MapsTo σ U A := fun _ hq ↦ (interior_subset (s := σ ⁻¹' A)) hq.2
   refine ⟨U, V, isOpen_interior.inter isOpen_interior, hV, h0, hKV, ?_, ?_⟩
   · have hfst : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst :=

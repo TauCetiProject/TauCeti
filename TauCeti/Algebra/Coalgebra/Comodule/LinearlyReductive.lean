@@ -90,8 +90,8 @@ arbitrary field.
   reducible.
 * `TauCeti.Subcomodule.isCompletelyReducible_of_isAtom`: a simple subcomodule is completely
   reducible.
-* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a free coefficient coalgebra,
-  a comodule is completely reducible as soon as its finite subcomodules are.
+* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a projective coefficient
+  coalgebra, a comodule is completely reducible as soon as its finite subcomodules are.
 * `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a field, a comodule is
   completely reducible exactly when it is the sum of its simple subcomodules.
 * `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`: monoid-algebra coalgebras are linearly
@@ -452,13 +452,13 @@ theorem isCompletelyReducible_of_sSup_eq_top {S : Set (Subcomodule R C V)} (hS :
 
 end Ring
 
-section Free
+section Projective
 
 variable {R : Type u} [CommRing R]
-variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Free R C]
+variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Projective R C]
 variable {V : Type w} [AddCommGroup V] [Module R V] [Comodule R C V]
 
-/-- For a free coefficient coalgebra, a comodule whose finite subcomodules are completely
+/-- For a projective coefficient coalgebra, a comodule whose finite subcomodules are completely
 reducible is completely reducible. -/
 theorem isCompletelyReducible_of_forall_finite
     (h : ∀ F : Subcomodule R C V, Module.Finite R F → IsCompletelyReducible R C F) :
@@ -466,7 +466,7 @@ theorem isCompletelyReducible_of_forall_finite
   isCompletelyReducible_of_sSup_eq_top Subcomodule.sSup_finiteSubcomodules_eq_top
     fun F hF ↦ h F (Subcomodule.mem_finiteSubcomodules.mp hF)
 
-end Free
+end Projective
 
 end Comodule
 
@@ -502,16 +502,15 @@ namespace Comodule
 section Field
 
 variable {k : Type u} [Field k]
-
-section Group
-
-variable {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
-variable {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V]
+variable {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V]
 
 /-- **Complete reducibility as a sum of simple subcomodules.** Over a field, a comodule is
 completely reducible exactly when it is the supremum of its simple subcomodules. -/
 theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
     IsCompletelyReducible k C V ↔ sSup {S : Subcomodule k C V | IsAtom S} = ⊤ := by
+  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   refine ⟨fun hV ↦ ?_, fun h ↦ isCompletelyReducible_of_sSup_eq_top h
     fun _ hS ↦ Subcomodule.isCompletelyReducible_of_isAtom hS⟩
   -- A complement of the sum of the simple subcomodules contains no simple subcomodule.
@@ -523,8 +522,6 @@ theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
     rw [← Subcomodule.toSubmodule_eq_bot, ← le_bot_iff, ← hQ.inf_eq_bot]
     exact le_inf (Subcomodule.toSubmodule_le_toSubmodule.mpr (le_sSup hA))
       (Subcomodule.toSubmodule_le_toSubmodule.mpr hAQ)
-
-end Group
 
 end Field
 
@@ -550,9 +547,9 @@ theorem isCompletelyReducible
 
 /-- Every comodule over a linearly reductive coalgebra is the sum of its simple subcomodules. -/
 theorem sSup_atoms_eq_top
-    {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
+    {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
     (hC : IsLinearlyReductive.{u, v, u} k C)
-    {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V] :
+    {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] :
     sSup {S : Subcomodule k C V | IsAtom S} = ⊤ :=
   Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top.mp hC.isCompletelyReducible
 

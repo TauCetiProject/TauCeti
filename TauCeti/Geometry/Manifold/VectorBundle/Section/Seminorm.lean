@@ -145,6 +145,14 @@ def chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk
     Seminorm 𝕜 Cₛ^n⟮I; F, V⟯ :=
   (ContMDiffMap.chartCkSeminorm x K k hk).comp (frameCoordinates e hU)
 
+/-- A compact frame seminorm is the compact chart seminorm of its coefficient function. -/
+@[simp]
+theorem chartCkSeminorm_apply (x : U) (K : Compacts (extChartAt I x).target)
+    (k : ℕ) (hk : k ≤ n) (s : Cₛ^n⟮I; F, V⟯) :
+    chartCkSeminorm e hU x K k hk s =
+      ContMDiffMap.chartCkSeminorm x K k hk (frameCoordinates e hU s) := by
+  rfl
+
 /-- A `C^k` bound is simultaneous control of every frame-coordinate derivative through order `k`. -/
 theorem chartCkSeminorm_le_iff (x : U) (K : Compacts (extChartAt I x).target)
     (k : ℕ) (hk : k ≤ n) (s : Cₛ^n⟮I; F, V⟯) {r : ℝ} (hr : 0 ≤ r) :

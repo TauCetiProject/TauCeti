@@ -206,8 +206,8 @@ private theorem contMDiffAt_modelChart {n : ℕ∞ω} [IsManifold I n M] {y : Bo
   rw [OpenPartialHomeomorph.coe_trans]
   exact hcoord.comp y hchart
 
-/-- The inverse of the submersion chart is `C^n` wherever `f` is, when `1 ≤ n`. -/
-private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n) {v : E}
+/-- The inverse of the submersion chart is `C^n` wherever `f` is. -/
+private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] {v : E}
     (hv : v ∈ (modelChart hf hx).target)
     (hfv : ContMDiffAt I 𝓘(ℝ) n f
       ((BoundarylessModel.homeomorph I M).symm ((modelChart hf hx).symm v))) :
@@ -225,8 +225,7 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
   have hcoord : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (coordChart hf hx).symm v := by
     rw [contMDiffAt_iff_contDiffAt, coe_coordChart_symm]
     exact (HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem
-      (hasStrictFDerivAt_coord hf) _ _ hvΦ hvD.2
-      ((hg.differentiableAt (zero_lt_one.trans_le hn).ne').hasFDerivAt) hg).comp v
+      (hasStrictFDerivAt_coord hf) _ _ hvΦ hvD.2 hg).comp v
       (coordEquiv hx).contDiff.contDiffAt
   have hchart : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n
       (chartAt E (BoundarylessModel.homeomorph I M x)).symm p := by
@@ -238,14 +237,14 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
 
 /-- The submersion chart, restricted to an open set on which `f` is `C^n`, is a chart of the `C^n`
 maximal atlas of the self-modelled copy of `M`. -/
-private theorem restrOpen_modelChart_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n)
+private theorem restrOpen_modelChart_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M]
     {U : Set (BoundarylessModel I M)} (hU : IsOpen U)
     (hfU : ∀ y ∈ U, ContMDiffAt I 𝓘(ℝ) n f ((BoundarylessModel.homeomorph I M).symm y)) :
     (modelChart hf hx).restrOpen U hU ∈
       IsManifold.maximalAtlas 𝓘(ℝ, E) n (BoundarylessModel I M) := by
   refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ (fun y hy ↦ ?_) fun v hv ↦ ?_
   · exact (contMDiffAt_modelChart hf hx hy.1 (hfU y hy.2)).contMDiffWithinAt
-  · exact (contMDiffAt_modelChart_symm hf hx hn hv.1 (hfU _ hv.2)).contMDiffWithinAt
+  · exact (contMDiffAt_modelChart_symm hf hx hv.1 (hfU _ hv.2)).contMDiffWithinAt
 
 end ScalarSubmersion
 
@@ -364,9 +363,9 @@ theorem apply_scalarSubmersionChartAt_extend_symm {v : E}
     ← sub_eq_iff_eq_add, apply_modelChart_symm hf hx hv,
     ContinuousLinearMap.implicitCoordEquiv_apply]
 
-/-- If `f` is `C^n` on the source of its submersion chart at `x`, `1 ≤ n`, then this chart belongs
+/-- If `f` is `C^n` on the source of its submersion chart at `x`, then this chart belongs
 to the `C^n` maximal atlas of `M`. -/
-theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n)
+theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M]
     (hfn : ∀ y ∈ (scalarSubmersionChartAt hf hx).source, ContMDiffAt I 𝓘(ℝ) n f y) :
     scalarSubmersionChartAt hf hx ∈ IsManifold.maximalAtlas I n M := by
   rw [scalarSubmersionChartAt, BoundarylessModel.originalChart_mem_maximalAtlas_iff]
@@ -376,7 +375,7 @@ theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n 
       Homeomorph.apply_symm_apply]
   refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ (fun y hy ↦ ?_) fun v hv ↦ ?_
   · exact (contMDiffAt_modelChart hf hx hy (hfy y hy)).contMDiffWithinAt
-  · exact (contMDiffAt_modelChart_symm hf hx hn hv
+  · exact (contMDiffAt_modelChart_symm hf hx hv
       (hfy _ ((modelChart hf hx).map_target hv))).contMDiffWithinAt
 
 /-- **A regular point of a scalar function is a submersion point.** If `f` is `C^n` near a regular
@@ -408,7 +407,7 @@ theorem IsRegularPoint.isSubmersionAtOfComplement {n : ℕ∞ω} [IsManifold I n
     have h := mem_scalarSubmersionChartAt_source hf hx
     rwa [scalarSubmersionChartAt, BoundarylessModel.originalChart_source, mem_preimage] at h
   · exact (BoundarylessModel.originalChart_mem_maximalAtlas_iff I φ n).2
-      (restrOpen_modelChart_mem_maximalAtlas hf hx hn hU' fun y hy ↦ hfU _ hy)
+      (restrOpen_modelChart_mem_maximalAtlas hf hx hU' fun y hy ↦ hfU _ hy)
   · rw [BoundarylessModel.originalChart_extend_target] at hv
     rw [comp_apply, comp_apply, BoundarylessModel.originalChart_extend_symm_apply, hφ,
       OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, id_comp]

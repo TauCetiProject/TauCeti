@@ -30,8 +30,10 @@ Locally free lattices are the objects whose classes make up the locally free cla
 order. Free lattices are locally free, and the notion is invariant under isomorphism and additive
 in direct sums. If `A` is not a field, the rank satisfies
 `dim_K (K ⊗[A] M) = n * dim_K (K ⊗[A] Λ)`, so it is determined by `M` when `K ⊗[A] Λ ≠ 0`, and a
-locally free lattice of rank zero vanishes. Over a field there are no height-one primes, so the
-completion condition is vacuous there.
+locally free lattice of rank zero vanishes. If moreover `Λ` is finite over `A`, a locally free
+lattice is a finitely generated projective `Λ`-module: its completions are free, and projectivity
+of a finitely presented module descends from the completions. Over a field there are no
+height-one primes, so the completion condition is vacuous there.
 
 For the monoid algebra `Λ = A[G]`, local freeness of rank one says that every completion has a
 normal basis: an `𝒪_v`-basis indexed by `G` whose elements are the translates `g • b₁` of one
@@ -55,6 +57,10 @@ local freeness does not imply freeness.
   `dim_K (K ⊗[A] M) = n * dim_K (K ⊗[A] Λ)`.
 * `TauCeti.LocallyFree.IsLocallyFreeOfRank.subsingleton`: if `A` is not a field, a locally free
   lattice of rank zero is zero.
+* `TauCeti.LocallyFree.IsLocallyFreeOfRank.finitePresentation`: if `Λ` is finite over `A`, a
+  locally free lattice is finitely presented over `Λ`.
+* `TauCeti.LocallyFree.IsLocallyFreeOfRank.projective`: if `A` is not a field and `Λ` is finite
+  over `A`, a locally free lattice is projective over `Λ`.
 * `TauCeti.LocallyFree.isLocallyFreeOfRank_one_groupRing_iff`: over `A[G]`, local freeness of
   rank one is the existence of a normal basis of every completion.
 * `TauCeti.LocallyFree.isLocallyFreeOfRank_one_of_ne_bot`: a nonzero ideal of `A` is locally
@@ -66,7 +72,8 @@ local freeness does not imply freeness.
 
 * H. Johnston, *Notes on Galois modules*, Definition 10.2 and Example 10.6.
 * J. Voight, *Quaternion algebras*, Graduate Texts in Mathematics 288, Springer, 2021, 20.2.8,
-  where local freeness is defined with the localizations instead of the completions.
+  where local freeness is defined with the localizations instead of the completions, and 20.2.6,
+  where locally free lattices are shown to be projective.
 -/
 
 public section
@@ -168,6 +175,29 @@ theorem finrank (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
 theorem subsingleton (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M 0) : Subsingleton M :=
   (subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor K M hA).mpr fun v ↦
     (h.nonempty_linearEquiv v).some.toEquiv.subsingleton
+
+/-- If `Λ` is finite over `A`, a locally free lattice is finitely presented over `Λ`: `Λ` is left
+noetherian, being finite over the noetherian ring `A`, and `M` is finitely generated over `Λ`
+since it is so over `A`. -/
+theorem finitePresentation [Module.Finite A Λ] (h : IsLocallyFreeOfRank A K Λ M n) :
+    Module.FinitePresentation Λ M :=
+  have := h.finite
+  have := IsNoetherianRing.of_finite A Λ
+  have := Module.Finite.of_restrictScalars_finite A Λ M
+  Module.finitePresentation_of_finite Λ M
+
+/-- **Locally free lattices are projective.** If `A` is not a field and `Λ` is finite over `A`, a
+locally free `Λ`-lattice is a finitely generated projective `Λ`-module: every completion
+`𝒪_v ⊗[A] M ≃ 𝒪_v ⊗[A] Λⁿ` is free over `𝒪_v ⊗[A] Λ`, and projectivity of the finitely
+presented module `M` descends from the completions. Finite generation over `Λ` is
+`finitePresentation`. -/
+theorem projective [Module.Finite A Λ] (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
+    Module.Projective Λ M :=
+  have := h.finitePresentation
+  have (v : HeightOneSpectrum A) : Module.Projective (v.adicCompletionIntegers K ⊗[A] Λ)
+      (v.adicCompletionIntegers K ⊗[A] M) :=
+    .of_equiv (h.nonempty_linearEquiv v).some.symm
+  projective_of_forall_projective_adicCompletionIntegers K hA
 
 end IsLocallyFreeOfRank
 

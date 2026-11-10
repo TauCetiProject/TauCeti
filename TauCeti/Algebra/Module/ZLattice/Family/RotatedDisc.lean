@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.Algebra.Module.ZLattice.Family.AffineQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Stabilizer
@@ -58,8 +59,17 @@ When the action on `X` is free, the orbit space `X / C_m` is a complex manifold
 `p_Q : X / C_m → ℂ` (`TauCeti.torusFamilyAffineQuotientLift`), the projection of the cyclic
 quotient onto the quotient disc, of radius `r ^ m` when `D` has radius `r`. It is a holomorphic
 submersion off its fibre over `0`, which is the image of the central torus. This is the local
-construction of multiple fibres in the reference below; the multiplicity of the central fibre is
-not computed here.
+construction of multiple fibres in the reference below.
+
+The charts of the quotient atlas of `X / C_m` are local sections of the orbit map followed by
+charts of `X`, whose first coordinate is the coordinate `z` of the disc. So in every chart the map
+`p_Q` is `(u, v) ↦ u ^ m`, with no unit factor
+(`TauCeti.torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow`). Its fibre over `0`, the
+central fibre, is therefore cut out in each chart by the first coordinate: it is an embedded
+hypersurface of `X / C_m`, with the charts of the quotient atlas as slice charts. Along the
+first coordinate line of such a chart, transverse to it, `p_Q` vanishes to order exactly `m`: the
+central fibre has multiplicity `m`.
+With holomorphic data these charts are holomorphic charts of the complex manifold `X / C_m`.
 
 ## Main results
 
@@ -80,6 +90,14 @@ not computed here.
 * `TauCeti.range_torusFamilyAffineQuotientLift_rootsOfUnityBall`,
   `TauCeti.preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero`: its image is the disc of
   radius `r ^ m`, and its fibre over `0` is the image of the central torus.
+* `TauCeti.torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow`,
+  `TauCeti.torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow`: in every chart of the
+  quotient atlas, this map is `(u, v) ↦ u ^ m`.
+* `TauCeti.image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero`: in
+  every chart of the quotient atlas, its fibre over `0` is the slice where the first coordinate
+  vanishes.
+* `TauCeti.analyticOrderAt_torusFamilyAffineQuotientLift_rootsOfUnityBall`: along a transverse
+  line through a point of the central fibre, it vanishes to order exactly `m`.
 
 ## References
 
@@ -294,6 +312,126 @@ theorem preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero {u₀ : roo
     exact (pow_eq_zero_iff (NeZero.ne m)).1 h.symm
 
 end RotatedDiscLift
+
+section Charts
+
+variable {m : ℕ} [NeZero m] {r : ℝ}
+  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  (P : rootsOfUnityBall m r → Λ →ₗ[ℤ] E) [∀ z, DiscreteTopology (LinearMap.range (P z))]
+  [∀ z, IsZLattice ℝ (LinearMap.range (P z))]
+  (hcont : ∀ l, Continuous fun z ↦ P z l) (hinj : ∀ z, Function.Injective (P z))
+  (R : rootsOfUnity m ℂ → rootsOfUnityBall m r → E →+ E)
+  (ρ : Representation ℤ (rootsOfUnity m ℂ) Λ)
+  (hequiv : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (l : Λ),
+    P (g • z) (ρ g l) = R g z (P z l))
+  (b : rootsOfUnity m ℂ → rootsOfUnityBall m r →
+    letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
+  (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
+    torusFamilyProjection P (b g z) = g • z)
+  (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
+  (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
+    R (g * h) z v = R g (h • z) (R h z v))
+  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
+  (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
+    b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
+  (hRc : ∀ g : rootsOfUnity m ℂ, Continuous fun p : rootsOfUnityBall m r × E ↦ R g p.1 p.2)
+  (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
+  (hfree : letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
+  {e : letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    OpenPartialHomeomorph (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) (ModelProd ℂ E)}
+  (he : letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
+      hbone hbmul hcont hRc hbc hfree
+    e ∈ atlas (ModelProd ℂ E) (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))))
+
+include he
+
+/-- **The local equation of the cyclic quotient.** Let the `m`-th roots of unity act freely on a
+family of tori `X → D` over the disc by an affine action lifting the rotations. In every chart
+`e` of the quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is
+`(u, v) ↦ u ^ m`. -/
+theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow {w : ModelProd ℂ E}
+    (hw : w ∈ e.target) :
+    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
+      (e.symm w) = w.1 ^ m := by
+  obtain ⟨z, hz⟩ := exists_torusFamilyAffineQuotientLift_symm_eq_of_mem_atlas (H := ℂ) P hcont
+    hinj R ρ hequiv b hb hone hmul hbone hbmul (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+    (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) hRc hbc hfree he
+  obtain ⟨hwz, hw⟩ := hz w hw
+  rw [hw, rootsOfUnityBall.coe_chartAt_symm z hwz]
+
+/-- **The local equation of the cyclic quotient, on its source.** In every chart `e` of the
+quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is the `m`-th power
+of the first coordinate `u` of `e`: `p_Q = u ^ m`. -/
+theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow
+    {x : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))}
+    (hx : x ∈ e.source) :
+    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
+      x = (e x).1 ^ m := by
+  rw [← torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb
+    hone hmul hbone hbmul hRc hbc hfree he (e.map_source hx), e.left_inv hx]
+
+/-- **The central fibre in a chart of the cyclic quotient.** In every chart `e` of the quotient
+atlas of `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m`, which
+is the image of the central torus
+(`TauCeti.preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero`), is the slice of the
+target of `e` on which the first coordinate vanishes. So it is an embedded hypersurface of `Q`,
+cut out in each chart by the first coordinate. -/
+theorem image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero :
+    e '' (e.source ∩ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+      (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) ⁻¹' {0}) =
+      e.target ∩ {w | w.1 = 0} := by
+  rw [e.image_source_inter_eq']
+  ext w
+  refine and_congr_right fun hw ↦ ?_
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq]
+  rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
+      hmul hbone hbmul hRc hbc hfree he hw, pow_eq_zero_iff (NeZero.ne m)]
+
+/-- **The central fibre has multiplicity `m`.** Let `x` be a point of the central fibre of the
+cyclic quotient `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by
+`z ↦ z ^ m`, and let `e` be a chart of the quotient atlas at `x`. Along the transverse line
+`u ↦ e.symm (u, v₀)` through `x`, where `v₀` is the fibre coordinate of `x`, the function `p_Q`
+vanishes at `u = 0` to order exactly `m`. -/
+theorem analyticOrderAt_torusFamilyAffineQuotientLift_rootsOfUnityBall
+    {x : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))}
+    (hx : x ∈ e.source)
+    (hx0 : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
+      x = 0) :
+    analyticOrderAt (fun u : ℂ ↦ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone
+      hbmul (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+      (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) (e.symm ((u, (e x).2) : ℂ × E))) 0 = m := by
+  rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow P hcont hinj R ρ hequiv b hb hone hmul
+    hbone hbmul hRc hbc hfree he hx, pow_eq_zero_iff (NeZero.ne m)] at hx0
+  -- The transverse line stays in the target of `e` near `u = 0`, where `p_Q` reads as `u ^ m`.
+  have hmem : {u : ℂ | ((u, (e x).2) : ℂ × E) ∈ e.target} ∈ nhds (0 : ℂ) := by
+    refine (e.open_target.preimage (Continuous.prodMk_left (e x).2)).mem_nhds ?_
+    rw [Set.mem_ofPred_eq, ← hx0]
+    exact e.map_source hx
+  rw [← analyticOrderAt_centeredMonomial (z₀ := (0 : ℂ)) (n := m)]
+  refine analyticOrderAt_congr (Filter.eventually_of_mem hmem fun u hu ↦ ?_)
+  dsimp only
+  rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
+    hmul hbone hbmul hRc hbc hfree he hu, Pi.pow_apply, sub_zero]
+
+end Charts
 
 section RotatedDisc
 
