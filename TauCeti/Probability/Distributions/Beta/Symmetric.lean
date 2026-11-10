@@ -47,7 +47,10 @@ variable {a q r : ℝ}
 
 variable (a) in
 /-- A centered symmetric Beta variable of shape `a` has density
-`(1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)` on `(-1, 1)`. -/
+`ENNReal.ofReal ((1 - z ^ 2) ^ (a - 1) / B(1 / 2, a))` on `(-1, 1)`, that is, the positive part of
+the real expression `(1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)`. For `0 < a` that expression is
+nonnegative and is the probability density; for a negative shape it can be negative (for
+instance `B(1 / 2, a) < 0` at `a = -1 / 4`), and only its positive part enters. -/
 theorem betaMeasure_map_centered_eq_withDensity :
     (betaMeasure a a).map (fun x ↦ -1 + 2 * x) =
       volume.withDensity ((Set.Ioo (-1) 1).indicator fun z ↦
