@@ -238,11 +238,15 @@ theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUni
     ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
     _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
-/-- An invertible operator bounded below by `M⁻¹` has an inverse of norm at most `M`. -/
-theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit A) {M : ℝ}
+/-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
+`Ring.inverse A = 0` and the bound is trivial. -/
+theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} {M : ℝ}
     (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
-  refine opNorm_le_bound _ hM fun y ↦ ?_
-  simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+  by_cases hA : IsUnit A
+  · refine opNorm_le_bound _ hM fun y ↦ ?_
+    simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+  · rw [Ring.inverse_non_unit _ hA, norm_zero]
+    exact hM
 
 /-- An operator bounded below by `c` is invertible if its distance from an invertible operator is
 less than `c / 2`; in particular `c > 0`. -/
@@ -267,7 +271,7 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
     nlinarith
   have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
     rw [← Ring.inverse_unit]
-    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    apply norm_ringInverse_le_of_forall_norm_le (by positivity)
     intro x
     rw [div_mul_eq_mul_div]
     apply (le_div_iff₀ hc).mpr

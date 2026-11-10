@@ -40,7 +40,9 @@ density pointwise, and no integral needs to be evaluated.
   correlation matrix built from independent centered symmetric Beta partial correlations has the
   LKJ density, in correlation coordinates;
   `map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure` identifies
-  the resulting random matrix with `TauCeti.Probability.lkjMeasure p η`.
+  the resulting random matrix with `TauCeti.Probability.lkjMeasure p η`;
+  `TauCeti.Probability.map_coe_lkjMeasure` restates this, forgetting symmetry, as the law of the
+  Gram matrix `TauCeti.partialCorrelationGram` of the partial correlations.
 * `TauCeti.Probability.map_partialCorrelationOfCorrelationCoordinates_withDensity`: conversely,
   the partial correlations of a correlation matrix with the LKJ density are independent centered
   symmetric Beta variables.
