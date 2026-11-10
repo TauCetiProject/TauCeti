@@ -92,7 +92,57 @@ theorem _root_.Subgroup.profiniteIndex_top : Subgroup.profiniteIndex (⊤ : Subg
 
 section Profinite
 
-variable [IsTopologicalGroup G] [CompactSpace G]
+variable [IsTopologicalGroup G]
+
+/-- An open subgroup of finite index contains an open normal subgroup of finite index, namely its
+normal core. -/
+theorem _root_.OpenSubgroup.exists_openNormalSubgroup_le_of_index_ne_zero (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index ≠ 0) :
+    ∃ N : OpenNormalSubgroup G, N.toSubgroup ≤ U.toSubgroup ∧ N.toSubgroup.index ≠ 0 := by
+  have : U.toSubgroup.FiniteIndex := ⟨hU⟩
+  exact ⟨{ toSubgroup := U.toSubgroup.normalCore
+           isOpen' := Subgroup.isOpen_of_isClosed_of_finiteIndex _
+             (Subgroup.normalCore_isClosed _ U.isClosed) },
+    Subgroup.normalCore_le _, Subgroup.FiniteIndex.index_ne_zero⟩
+
+/-- Primewise form of `profiniteIndex_eq_iSup_openSubgroup`. The two sides of this identity are
+supremums of valuations, in which an infinite index contributes `0`, so no compactness is needed. -/
+theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup G)
+    (ℓ : Nat.Primes) :
+    Subgroup.profiniteIndex H ℓ = ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
+      (padicValNat ℓ U.1.toSubgroup.index : ℕ∞) := by
+  have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
+  rw [Subgroup.profiniteIndex_apply]
+  apply le_antisymm
+  · refine iSup_le fun N ↦ ?_
+    let V : OpenSubgroup G :=
+      { toSubgroup := H ⊔ N.toSubgroup
+        isOpen' := Subgroup.isOpen_of_openSubgroup _ le_sup_right }
+    rw [H.index_map_mk'_eq_index_sup N.toSubgroup]
+    exact le_iSup (fun U : {U : OpenSubgroup G // H ≤ U.toSubgroup} ↦
+      (padicValNat ℓ U.1.toSubgroup.index : ℕ∞)) ⟨V, le_sup_left⟩
+  · refine iSup_le fun U ↦ ?_
+    by_cases hU : U.1.toSubgroup.index = 0
+    · rw [hU]
+      simp [Nat.padicValNat_def]
+    obtain ⟨N, hNU, hN⟩ := U.1.exists_openNormalSubgroup_le_of_index_ne_zero hU
+    have hsup : (H ⊔ N.toSubgroup).index ≠ 0 :=
+      ne_zero_of_dvd_ne_zero hN (Subgroup.index_dvd_of_le le_sup_right)
+    refine (Subgroup.padicValNat_index_le_of_le (sup_le U.2 hNU) hsup ℓ).trans ?_
+    rw [← H.index_map_mk'_eq_index_sup N.toSubgroup]
+    exact le_iSup (fun M : OpenNormalSubgroup G ↦
+      (padicValNat ℓ (H.map (QuotientGroup.mk' M.toSubgroup)).index : ℕ∞)) N
+
+/-- Inclusion of subgroups reverses their supernatural indices. -/
+theorem _root_.Subgroup.profiniteIndex_anti {H K : Subgroup G} (h : H ≤ K) :
+    Subgroup.profiniteIndex K ≤ Subgroup.profiniteIndex H := by
+  refine Supernatural.le_iff.mpr fun ℓ ↦ ?_
+  rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup,
+    Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
+  exact iSup_le fun U ↦ le_iSup (fun U : {U : OpenSubgroup G // H ≤ U.toSubgroup} ↦
+    (padicValNat ℓ U.1.toSubgroup.index : ℕ∞)) ⟨U.1, h.trans U.2⟩
+
+variable [CompactSpace G]
 
 /-- The supernatural index is equivalently the supremum of the ordinary positive indices of
 the images in finite continuous quotients. -/
@@ -109,18 +159,6 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_ofNat (H : Subgroup G) :
     (Supernatural.ofNat_apply
       ⟨(H.map (QuotientGroup.mk' N.toSubgroup)).index,
         Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
-
-/-- Inclusion of subgroups reverses their supernatural indices. -/
-theorem _root_.Subgroup.profiniteIndex_anti {H K : Subgroup G} (h : H ≤ K) :
-    Subgroup.profiniteIndex K ≤ Subgroup.profiniteIndex H := by
-  rw [Subgroup.profiniteIndex_eq_iSup_ofNat, Subgroup.profiniteIndex_eq_iSup_ofNat]
-  refine iSup_le fun N ↦ ?_
-  refine (Supernatural.ofNat_le_ofNat_iff.mpr ?_).trans
-    (le_iSup (fun N : OpenNormalSubgroup G ↦
-      Supernatural.ofNat
-        ⟨(H.map (QuotientGroup.mk' N.toSubgroup)).index,
-          Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩) N)
-  exact PNat.dvd_iff.mpr (Subgroup.index_dvd_of_le (Subgroup.map_mono h))
 
 /-- The profinite index is the least common multiple, in the supernatural lattice, of the
 ordinary indices of the open subgroups containing `H`.
@@ -174,16 +212,6 @@ theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
     apply Supernatural.ofNat_le_ofNat_iff.mpr
     exact PNat.dvd_iff.mpr hdvd
 
-/-- Primewise form of `profiniteIndex_eq_iSup_openSubgroup`. -/
-theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup G)
-    (ℓ : Nat.Primes) :
-    Subgroup.profiniteIndex H ℓ = ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
-      (padicValNat ℓ U.1.toSubgroup.index : ℕ∞) := by
-  rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup, Supernatural.iSup_apply]
-  congr 1
-  funext U
-  exact Supernatural.ofNat_apply _ _
-
 /-- For an open subgroup, the supernatural index is the prime factorization of its ordinary
 index. -/
 @[simp]
@@ -213,6 +241,7 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
     (⟨U.toSubgroup.index,
       Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) ℓ
 
+omit [CompactSpace G] in
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
 This is the shape every *open*-subgroup index in a pro-`q` group takes, and it avoids the
 positivity side condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. Openness is not
@@ -221,8 +250,14 @@ that is not open has an index no finite exponent describes. -/
 theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOpen (H : Set G))
     {q : Nat.Primes} {k : ℕ} (h : H.index = (q : ℕ) ^ k) :
     Subgroup.profiniteIndex H = Supernatural.primePower q k := by
-  have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) :=
-    fun ℓ ↦ OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩ ℓ
+  have hH0 : H.index ≠ 0 := by rw [h]; exact pow_ne_zero _ q.prop.ne_zero
+  have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) := by
+    intro ℓ
+    have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
+    rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
+    refine le_antisymm (iSup_le fun U ↦ Subgroup.padicValNat_index_le_of_le U.2 hH0 ℓ) ?_
+    exact le_iSup (fun U : {U : OpenSubgroup G // H ≤ U.toSubgroup} ↦
+      (padicValNat ℓ U.1.toSubgroup.index : ℕ∞)) ⟨⟨H, hH⟩, le_rfl⟩
   refine Supernatural.ext fun ℓ ↦ ?_
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
   rw [hval, h]
