@@ -335,7 +335,8 @@ theorem finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
 
 omit [FiniteDimensional ℝ E] in
 /-- At a nondegenerate critical point there is a positive-definite tangent subspace of dimension
-the dimension of the manifold minus the Morse index. -/
+the dimension of the manifold minus the Morse index. For a space that is not finite, the dimension
+is `0` by convention and the index is `0`. -/
 theorem IsManifoldNondegenerateCriticalPoint.exists_posDef_subspace_finrank_add_index_eq
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     ∃ W : Submodule ℝ (TangentSpace I x),
