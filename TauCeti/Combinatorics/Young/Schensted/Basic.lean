@@ -169,6 +169,13 @@ theorem IsTableauRows.length_getD_succ_le {rows : List (List α)} (h : IsTableau
       | cons lower rows => simpa using habove.length_le
     | succ i => simpa using ih hrows i
 
+/-- Every row of a tableau below an empty row is empty. Rows beyond the last one are read as
+empty. -/
+theorem IsTableauRows.length_getD_eq_zero_of_le {rows : List (List α)} (h : IsTableauRows rows)
+    {k i : ℕ} (hk : (rows.getD k []).length = 0) (hki : k ≤ i) : (rows.getD i []).length = 0 :=
+  Nat.eq_zero_of_le_zero <| hk ▸
+    antitone_nat_of_succ_le (f := fun i ↦ (rows.getD i []).length) h.length_getD_succ_le hki
+
 /-- Each row of a tableau sits on top of the next one. Rows beyond the last one are read as
 empty. -/
 theorem IsTableauRows.isRowAbove_getD {rows : List (List α)} (h : IsTableauRows rows) (i : ℕ) :
@@ -424,35 +431,14 @@ theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List α)}
       simpa [appendToRow, dropLastOfRow] using
         ih (fun h => hne (mem_cons_of_mem _ h)) (by simpa using hk)
 
-/-- **The rows of `TauCeti.dropLastOfRow k`** at a corner of a tableau: row `k` loses its last
-letter, and every other row is unchanged. Rows beyond the last one are read as empty. -/
-theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
-    (h : rows.IsTableauRows) (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
-    (i : ℕ) :
-    (dropLastOfRow k rows).getD i [] =
-      if i = k then (rows.getD k []).dropLast else rows.getD i [] := by
-  induction rows generalizing k i with
-  | nil => simp at hk
-  | cons row rows ih =>
-    cases k with
-    | zero =>
-      by_cases hd : row.dropLast = []
-      · obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
-        cases i <;> simp [dropLastOfRow, hd]
-      · cases i <;> simp [dropLastOfRow, hd]
-    | succ k =>
-      cases i with
-      | zero => simp [dropLastOfRow]
-      | succ i => simpa [dropLastOfRow] using ih h.tail (by simpa using hk) i
-
-/-- **The row lengths of `TauCeti.dropLastOfRow k`** at a corner: row `k` loses one cell and every
-other row keeps its length, provided that deleting row `k` (when it has a single cell) shifts only
-empty rows. Unlike `TauCeti.getD_dropLastOfRow`, this needs no tableau hypothesis. -/
-theorem length_getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
+/-- **The rows of `TauCeti.dropLastOfRow k`** at a corner: row `k` loses its last letter, and
+every other row is unchanged, provided that deleting row `k` (when it has a single cell) shifts
+only empty rows. Rows beyond the last one are read as empty. -/
+theorem getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
     (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
     (hz : (rows.getD k []).length = 1 → ∀ i, k < i → (rows.getD i []).length = 0) (i : ℕ) :
-    ((dropLastOfRow k rows).getD i []).length =
-      if i = k then (rows.getD k []).length - 1 else (rows.getD i []).length := by
+    (dropLastOfRow k rows).getD i [] =
+      if i = k then (rows.getD k []).dropLast else rows.getD i [] := by
   induction rows generalizing k i with
   | nil => simp at hk
   | cons row rows ih =>
@@ -466,7 +452,7 @@ theorem length_getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
           omega
         have hzero (j : ℕ) : rows[j]?.getD [] = [] := by
           simpa using hz (by simpa using h1) (j + 1) (by omega)
-        cases i <;> simp [dropLastOfRow, hd, hzero, h1]
+        cases i <;> simp [dropLastOfRow, hd, hzero]
       · cases i <;> simp [dropLastOfRow, hd]
     | succ k =>
       cases i with
@@ -1070,18 +1056,12 @@ theorem length_getD_reverseRowInsert_fst {α β : Type*} [LinearOrder β]
   rw [hins, hidx, hshape] at h1
   -- A single-cell row `k` forces all later rows to be empty, because `P` has the same shape.
   have hz : (Q.getD k []).length = 1 → ∀ j, k < j → (Q.getD j []).length = 0 := fun h j hj ↦ by
-    have hk' : (P.getD (k + 1) []).length < (P.getD k []).length := by
-      rw [hshape, hshape]
-      exact hk
-    have h0 : (P.getD (k + 1) []).length = 0 := by rw [hshape] at hk' ⊢; omega
-    have hj' := antitone_nat_of_succ_le (f := fun i ↦ (P.getD i []).length)
-      hP.length_getD_succ_le (show k + 1 ≤ j by omega)
     rw [← hshape]
-    simp only at hj'
-    omega
-  rw [length_getD_dropLastOfRow hk hz i]
+    exact hP.length_getD_eq_zero_of_le (k := k + 1) (by rw [hshape]; omega) hj
+  rw [getD_dropLastOfRow hk hz i]
   split_ifs at h1 ⊢ with hik
   · subst hik
+    rw [length_dropLast]
     omega
   · omega
 

@@ -402,7 +402,8 @@ theorem exists_robinsonSchenstedKnuth_eq_iff {p : List (List β) × List (List �
   · -- The rows above row `k` are unchanged, and none of them ends in `a` by the choice of `k`.
     rw [hrsk] at hi ⊢
     rw [hidx] at hi
-    simp only [getD_dropLastOfRow hQ hcornerQ i, hi.ne, ite_false]
+    simp only [getD_dropLastOfRow hcornerQ
+      (fun _ j hj ↦ hQ.length_getD_eq_zero_of_le (k := k + 1) (by omega) hj) i, hi.ne, ite_false]
     exact hkmin i hi
   · rw [robinsonSchenstedKnuth_append_singleton, hrsk]
     simp only
