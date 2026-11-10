@@ -207,8 +207,9 @@ lemma singularSlant_coefficient_naturality (X Y : TopCat.{w}) {T' : ModuleCat.{w
     (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y)))
     (𝟙 _) (𝟙 _) (((SSet.chainComplexFunctor _).map f).app (toSSet.obj (X ⊗ Y)))
     (by simp) p q n h x φ).trans ?_
-  -- the identity chain maps induce identities; `simp` leaves `x` against `id x`
-  simp
+  -- the identity chain maps induce identities on homology; the remaining `id x` is `x`
+  simp only [op_id, CategoryTheory.Functor.map_id, TauCeti.ChainComplex.linearYonedaFunctor_obj,
+    homologyMap_id, ModuleCat.hom_id, LinearMap.id_coe]
   rfl
 
 /-- **A class pulled back from the first factor has no slant products in positive codegree**: for

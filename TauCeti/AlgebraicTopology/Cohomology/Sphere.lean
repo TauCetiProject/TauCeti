@@ -189,20 +189,25 @@ private lemma eq_zero_of_singularSlant_sphere (m q n : ℕ) (h : m + 1 + q = n)
   · -- `H₀` of the sphere is spanned by the class of `x₀`
     subst hp0
     obtain rfl : q' = n := by omega
-    rw [TauCeti.singularHomology₀_eq_smul_singularHomology₀Section x₀ x, map_smul,
-      LinearMap.smul_apply]
-    -- the spanning lemma writes the coefficient ring `ModuleCat.of k k` rather than
-    -- `𝟙_ (ModuleCat k)`, so `h₀` applies up to definitional unfolding
-    exact (congrArg (_ • ·) h₀).trans (smul_zero _)
+    -- the spanning lemma, restated for the coefficient object `𝟙_ (ModuleCat k)`, whose
+    -- underlying module is `ModuleCat.of k k`
+    have hx : x = (TopCat.sphere.{w} (m + 1)).singularHomology₀ε (𝟙_ (ModuleCat.{w} k)) x •
+        TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k) :=
+      TauCeti.singularHomology₀_eq_smul_singularHomology₀Section x₀ x
+    rw [hx, map_smul, LinearMap.smul_apply, h₀, smul_zero]
   by_cases hpm : p = m + 1
   · -- `H_{m+1}` of the sphere is spanned by the standard generator
     subst hpm
     obtain rfl : q' = q := by omega
-    rw [TauCeti.singularHomology_topCatSphere_eq_smul_generator m x, map_smul,
-      LinearMap.smul_apply]
-    -- the spanning lemma writes the coefficient ring `ModuleCat.of k k` rather than
-    -- `𝟙_ (ModuleCat k)`, so `h₁` applies up to definitional unfolding
-    exact (congrArg (_ • ·) h₁).trans (smul_zero _)
+    -- the spanning lemma, restated for the coefficient object `𝟙_ (ModuleCat k)`
+    have hx : x =
+        (TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).hom
+          (((TauCeti.reducedSingularHomologySuccIso (𝟙_ (ModuleCat.{w} k)) m).app _).inv x) •
+        (TauCeti.reducedSingularHomologyι (𝟙_ (ModuleCat.{w} k)) (m + 1)).app _
+          ((TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv
+            (1 : k)) :=
+      TauCeti.singularHomology_topCatSphere_eq_smul_generator m x
+    rw [hx, map_smul, LinearMap.smul_apply, h₁, smul_zero]
   · -- the homology of the sphere vanishes in every other degree
     obtain ⟨p, rfl⟩ : ∃ p', p = p' + 1 := ⟨p - 1, by omega⟩
     have hz : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (p + 1)).obj
