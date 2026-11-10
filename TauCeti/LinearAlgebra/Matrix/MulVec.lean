@@ -9,7 +9,6 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Group.Hom.Defs
-import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Matrix-vector multiplication
