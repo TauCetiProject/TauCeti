@@ -89,12 +89,13 @@ theorem oneForm_flux_eq_inner (X Y : ℂ → ℝ) (z v : ℂ) :
   ring
 
 /-- Flux is inner product with the unit outward normal, multiplied by speed. -/
-theorem oneForm_flux_eq_inner_unitNormal_mul_speed (X Y : ℂ → ℝ) (z : ℂ)
-    {v : ℂ} (hv : v ≠ 0) :
+theorem oneForm_flux_eq_inner_unitNormal_mul_speed (X Y : ℂ → ℝ) (z v : ℂ) :
     oneForm (fun z ↦ -Y z) X z v =
       ⟪(⟨X z, Y z⟩ : ℂ), (‖v‖⁻¹ : ℝ) • (-I * v)⟫_ℝ * ‖v‖ := by
   rw [oneForm_flux_eq_inner, real_inner_smul_right]
-  field_simp [norm_ne_zero_iff.mpr hv]
+  obtain rfl | hv := eq_or_ne v 0
+  · simp
+  · field_simp [norm_ne_zero_iff.mpr hv]
 
 /-- The raw flux integrand is the usual inner product with the rotated actual velocity. -/
 theorem circulationFun_flux_eq_inner (X Y : ℂ → ℝ) (γ : ℝ → ℂ) (t : ℝ) :
