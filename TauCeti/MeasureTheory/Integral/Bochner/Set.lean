@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -192,15 +193,6 @@ section SupportSubset
 variable {α 𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ}
 
-/-- A multiplier bounded by `K` on a set containing the support of `f` gives `‖g • f‖ ≤ K ‖f‖`
-everywhere. -/
-theorem norm_smul_le_mul_norm_of_support_subset (hsupp : support f ⊆ s)
-    (hK : ∀ x ∈ s, ‖g x‖ ≤ K) (x : α) : ‖g x • f x‖ ≤ K * ‖f x‖ := by
-  by_cases hx : f x = 0
-  · simp [hx]
-  · rw [norm_smul]
-    exact mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _)
-
 /-- An integrable function times a multiplier bounded on a set containing its support is
 integrable. -/
 theorem Integrable.smul_of_support_subset [MeasurableSpace α] {μ : Measure α}
@@ -208,7 +200,7 @@ theorem Integrable.smul_of_support_subset [MeasurableSpace α] {μ : Measure α}
     (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
-    (ae_of_all _ (norm_smul_le_mul_norm_of_support_subset hsupp hK))
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
 
 /-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
 the integrable function `f`, is at most `K ∫ ‖f‖`. -/
@@ -217,7 +209,7 @@ theorem norm_integral_smul_le_of_support_subset [MeasurableSpace α] {μ : Measu
     ‖∫ x, g x • f x ∂μ‖ ≤ K * ∫ x, ‖f x‖ ∂μ := by
   rw [← integral_const_mul]
   exact norm_integral_le_of_norm_le (hf.norm.const_mul K)
-    (ae_of_all _ (norm_smul_le_mul_norm_of_support_subset hsupp hK))
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
 
 end SupportSubset
 
