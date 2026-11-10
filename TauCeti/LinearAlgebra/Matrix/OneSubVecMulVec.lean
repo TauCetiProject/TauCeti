@@ -17,10 +17,11 @@ inverse, the determinant, and the resulting element of the general linear group.
 stated for plain pairs of vectors, and every hypothesis is a value of one of the pairings
 `v ⬝ᵥ u` of the vectors involved.
 
-The products, the commutation and braid relations, and the two-sided inverse hold over an
-arbitrary ring, where the scalar of a product sits between the two vectors:
-`vecMulVec u (c • v)` has entries `u i * c * v j`. The quadratic relation, the determinant and
-the general linear group element are stated over a commutative ring.
+The products, the commutation and braid relations, the two-sided inverse and the general linear
+group element hold over an arbitrary ring, where the scalar of a product sits between the two
+vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The quadratic relation, the
+determinant, the matrix inverse `⁻¹` and the induced linear automorphisms are stated over a
+commutative ring.
 
 ## Main definitions
 
@@ -91,6 +92,20 @@ theorem one_sub_vecMulVec_inv_mul (t : Rˣ) {u v : α → R} (h : v ⬝ᵥ u = (
     Units.inv_mul, mul_one, add_smul, one_smul, vecMulVec_add]
   abel
 
+/-- A rank-one perturbation of the identity as an element of the general linear group, when its
+self-pairing is `t + 1`. -/
+def oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) : GL α R where
+  val := 1 - vecMulVec u v
+  inv := 1 - vecMulVec u (((t⁻¹ : Rˣ) : R) • v)
+  val_inv := one_sub_vecMulVec_mul_inv t h
+  inv_val := one_sub_vecMulVec_inv_mul t h
+
+/-- The matrix underlying `TauCeti.oneSubVecMulVecGL`. -/
+@[simp]
+theorem coe_oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) :
+    (oneSubVecMulVecGL t u v h : Matrix α α R) = 1 - vecMulVec u v :=
+  (rfl)
+
 end Ring
 
 variable [CommRing R]
@@ -108,20 +123,6 @@ theorem det_one_sub_vecMulVec (u v : α → R) : (1 - vecMulVec u v).det = 1 - v
   rw [sub_eq_add_neg, ← neg_vecMulVec, vecMulVec_eq Unit,
     det_one_add_replicateCol_mul_replicateRow, dotProduct_neg]
   ring
-
-/-- A rank-one perturbation of the identity as an element of the general linear group, when its
-self-pairing is `t + 1`. -/
-def oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) : GL α R where
-  val := 1 - vecMulVec u v
-  inv := 1 - ((t⁻¹ : Rˣ) : R) • vecMulVec u v
-  val_inv := by rw [← vecMulVec_smul, one_sub_vecMulVec_mul_inv t h]
-  inv_val := by rw [← vecMulVec_smul, one_sub_vecMulVec_inv_mul t h]
-
-/-- The matrix underlying `TauCeti.oneSubVecMulVecGL`. -/
-@[simp]
-theorem coe_oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) :
-    (oneSubVecMulVecGL t u v h : Matrix α α R) = 1 - vecMulVec u v :=
-  (rfl)
 
 /-- The inverse of a rank-one perturbation of the identity whose self-pairing is `t + 1`.
 
