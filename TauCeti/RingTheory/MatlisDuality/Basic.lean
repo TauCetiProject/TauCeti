@@ -30,6 +30,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.MatlisDual.map` and `TauCeti.MatlisDual.mapOp`: the contravariant action on morphisms of
   left and of right modules, with the isomorphisms `TauCeti.MatlisDual.congr` and
   `TauCeti.MatlisDual.congrOp`.
+* `TauCeti.MatlisDual.dualSelfEquiv`: the isomorphism `D_R (Hom_A(A, A)) ≅ D_R A` of left
+  `A`-modules.
 * `TauCeti.IsInjectiveEnvelope.matlisDualEvalEquiv` and
   `TauCeti.IsInjectiveEnvelope.matlisDualEvalEquivOp`: biduality for modules of finite length, as an
   isomorphism of left and of right `A`-modules.
@@ -250,6 +252,28 @@ theorem congrOp_trans {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A�
   simp
 
 end Right
+
+section Regular
+
+/-- **The dual of the endomorphisms of the regular module**: `D_R (Hom_A(A, A))` is isomorphic to
+`D_R A`, the dual of the right regular module. A functional `θ` on `Hom_A(A, A)` goes to
+`a ↦ θ (x ↦ x * a)`. This is the value `ν A` of the Nakayama functor on the regular module. -/
+def dualSelfEquiv : MatlisDual R E (Module.Dual A A) ≃ₗ[A] MatlisDual R E A :=
+  congrOp (LinearMap.ringLmapEquivSelf A Aᵐᵒᵖ A).symm
+
+@[simp]
+theorem dualSelfEquiv_apply (θ : MatlisDual R E (Module.Dual A A)) (a : A) :
+    equivLinearMap R E A (dualSelfEquiv θ) a =
+      equivLinearMap R E _ θ (LinearMap.toSpanSingleton A A a) := by
+  simp only [dualSelfEquiv, congrOp_apply, LinearMap.ringLmapEquivSelf_symm_apply,
+    Module.End.one_eq_id, LinearMap.smulRight_id]
+
+@[simp]
+theorem dualSelfEquiv_symm_apply (φ : MatlisDual R E A) (ψ : Module.Dual A A) :
+    equivLinearMap R E _ (dualSelfEquiv.symm φ) ψ = equivLinearMap R E A φ (ψ 1) := by
+  simp [dualSelfEquiv]
+
+end Regular
 
 end MatlisDual
 
