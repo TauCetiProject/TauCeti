@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Analytic.Order
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Unique continuation from a similarity factorization
@@ -21,9 +21,9 @@ factorization shape alone, without reference to the equation: `TauCeti.HasSimila
 complex analytic at `z₀`.
 
 Since `Φ` is invertible near `z₀` with locally bounded inverse, `‖ξ‖` and `‖σ‖` are comparable
-near `z₀` (`TauCeti.isTheta_clm_apply_of_isUnit`), so `ξ` inherits from `σ` the zero
-structure of a holomorphic function. For a continuous `ξ` on an open preconnected `Ω ⊆ ℂ` that
-admits a factorization at every zero in `Ω`:
+near `z₀` (`TauCeti.isTheta_clm_apply_of_isUnit`, in `TauCeti.Analysis.Normed.Operator.Basic`),
+so `ξ` inherits from `σ` the zero structure of a holomorphic function. For a continuous `ξ` on an
+open preconnected `Ω ⊆ ℂ` that admits a factorization at every zero in `Ω`:
 
 * a solution vanishing on a nonempty open subset of `Ω`, or near one point, vanishes on `Ω`
   (`TauCeti.eqOn_zero_of_hasSimilarityFactorizationAt_of_eqOn_zero`,
@@ -37,8 +37,9 @@ admits a factorization at every zero in `Ω`:
   (`TauCeti.exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt`). That the order does not
   depend on the factorization is `TauCeti.analyticOrderAt_eq_of_eventually_eq_clm_apply`.
 
-The check of the roadmap is `TauCeti.isTheta_clm_apply_sq_smul`: `Φ z (z ^ 2 • v)` has an
-isolated zero of order `2` at `0` for every `Φ` continuous and invertible at `0` and `v ≠ 0`.
+For example, a continuous invertible family preserves quadratic vanishing:
+`TauCeti.isTheta_clm_apply_sq_smul` shows that `Φ z (z ^ 2 • v)` has an isolated zero of order
+`2` at `0` for every `Φ` continuous and invertible at `0` and `v ≠ 0`.
 
 ## References
 
@@ -51,68 +52,6 @@ public noncomputable section
 open Asymptotics Filter Metric Set Topology
 
 namespace TauCeti
-
-section Comparison
-
-variable {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [CompleteSpace E] {Φ : α → E →L[ℝ] E} {σ : α → E} {a : α}
-
-/-- A family of real-linear maps continuous at `a` and invertible there changes the size of a
-function near `a` only up to constant factors. -/
-theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ a)) :
-    (fun x ↦ Φ x (σ x)) =Θ[𝓝 a] σ := by
-  -- a family of operators bounded near `a` changes a function only up to a constant factor
-  have hbound : ∀ {M : α → E →L[ℝ] E} {τ : α → E}, ContinuousAt M a →
-      (fun x ↦ M x (τ x)) =O[𝓝 a] τ :=
-    fun {M τ} hM ↦ (isBoundedBilinearMap_apply.isBigO_comp (g := M) (h := τ) (l := 𝓝 a)).trans <| by
-      simpa using (hM.norm.tendsto.isBigO_one ℝ).mul (isBigO_refl (fun x ↦ ‖τ x‖) (𝓝 a))
-  refine ⟨hbound hΦ, ?_⟩
-  -- near `a` the operators stay invertible, and `σ` is recovered by applying their inverses
-  have hinv : ContinuousAt (fun x ↦ Ring.inverse (Φ x)) a :=
-    (NormedRing.inverse_continuousAt hΦa.unit).comp_of_eq hΦ hΦa.unit_spec.symm
-  refine (hbound (τ := fun x ↦ Φ x (σ x)) hinv).congr' ?_ EventuallyEq.rfl
-  filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
-  change (Ring.inverse (Φ x) * Φ x) (σ x) = σ x
-  rw [Ring.inverse_mul_cancel _ hx, one_apply_eq_self]
-
-end Comparison
-
-section Order
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {σ : 𝕜 → E} {z₀ : 𝕜}
-
-/-- A function analytic at `z₀` has order `n` there exactly when its size is comparable to
-`‖z - z₀‖ ^ n` near `z₀`. -/
-theorem _root_.AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta (hσ : AnalyticAt 𝕜 σ z₀)
-    {n : ℕ} : analyticOrderAt σ z₀ = n ↔ σ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have htop : analyticOrderAt σ z₀ ≠ ⊤ := by simp [h]
-    have hn : analyticOrderNatAt σ z₀ = n := by
-      exact_mod_cast (Nat.cast_analyticOrderNatAt htop).trans h
-    simpa [hn] using hσ.isTheta_pow_sub htop
-  · rw [hσ.analyticOrderAt_eq_of_isTheta (by fun_prop) h]
-    exact analyticOrderAt_centeredMonomial
-
-/-- A function analytic at `z₀` vanishes identically near `z₀` exactly when it is `O(‖z - z₀‖ⁿ)`
-near `z₀` for every `n`. -/
-theorem _root_.AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO (hσ : AnalyticAt 𝕜 σ z₀) :
-    analyticOrderAt σ z₀ = ⊤ ↔ ∀ n : ℕ, σ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
-  refine ⟨fun h n ↦ ?_, fun h ↦ ?_⟩
-  · have h0 : ∀ᶠ z in 𝓝 z₀, σ z = 0 := analyticOrderAt_eq_top.1 h
-    exact (isBigO_zero _ _).congr' (h0.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
-  · refine ENat.eq_top_iff_forall_ge.2 fun n ↦ ?_
-    have hn : analyticOrderAt (fun z ↦ (z - z₀) ^ n) z₀ = n := analyticOrderAt_centeredMonomial
-    exact hn ▸ hσ.analyticOrderAt_le_of_isBigO (h n)
-
-/-- Powers of `z - z₀` of different exponents are not comparable near `z₀`. -/
-theorem isTheta_pow_sub_pow_sub_iff {m n : ℕ} :
-    ((fun z ↦ (z - z₀) ^ m) =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ n) ↔ m = n := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ isTheta_refl _ _⟩
-  exact_mod_cast ((analyticAt_id.sub analyticAt_const).pow m).analyticOrderAt_eq_natCast_iff_isTheta
-    |>.2 h |>.symm.trans analyticOrderAt_centeredMonomial |>.symm
-
-end Order
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   {ξ σ σ' : ℂ → V} {Φ Φ' : ℂ → V →L[ℝ] V} {z₀ : ℂ} {Ω : Set ℂ}
@@ -332,7 +271,7 @@ theorem exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt
 
 end Global
 
-/-- **Check.** For `v ≠ 0` and any family `Φ` continuous and invertible at `0`, the function
+/-- **Example.** For `v ≠ 0` and any family `Φ` continuous and invertible at `0`, the function
 `z ↦ Φ z (z ^ 2 • v)` has an isolated zero at `0`, comparable in size to `‖z‖ ^ 2`, and the
 holomorphic factor `z ↦ z ^ 2 • v` has order `2` there. -/
 theorem isTheta_clm_apply_sq_smul {v : V} (hv : v ≠ 0) (hΦ : ContinuousAt Φ 0)
