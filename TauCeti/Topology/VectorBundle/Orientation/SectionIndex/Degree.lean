@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex
-public import TauCeti.Topology.VectorBundle.Thom.Class
 
 /-!
 # The local index of a section in local coordinates
@@ -164,14 +163,23 @@ private theorem sectionIndex_eq_singularKronecker {z : M} {U : Set M} (hU : IsOp
           (fiberCoord_preimage_subset hs e hz hUz hUe) (n + 1)
           ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm
             (oM z)).val)).down := by
-  rw [sectionIndex_eq o hF oM hs hU hz hUz, ← sectionThomPairOverMap_comp hs hz hUz,
-    TopPair.singularCohomologyMap_comp_apply,
-    o.singularCohomologyMap_thomPairOver_thomClass hF e hUe ho,
-    ← TopPair.singularCohomologyMap_comp_apply,
-    sectionThomPairOverMap_comp_thomPairOverIso hs e hz hUz hUe,
-    TopPair.singularKronecker_naturality, IsOpenEmbedding.coe_localOrientationEquiv_symm,
-    localHomologyMap_def]
-  rfl
+  -- The mathematical input: the pull-back of the Thom class along `s` is the pull-back of the
+  -- generator selected by `ω` along the fibre coordinate.
+  have hclass : TopPair.singularCohomologyMap
+      (sectionThomPairOverMap hs hz hUz ≫ thomPairOverMap F E (subset_univ U) ≫
+        (thomPairOverUnivIso F E).hom) (n + 1) (o.thomClass hF) =
+      TopPair.singularCohomologyMap
+        (TopPair.ofSubsetMap (TopCat.ofHom (fiberCoord hs e hUe))
+          ((mapsTo_preimage _ _).mono_left
+            (compl_subset_compl.2 (fiberCoord_preimage_subset hs e hz hUz hUe))))
+        (n + 1) (ω.localCohomologyClass hF) := by
+    rw [TopPair.singularCohomologyMap_comp_apply,
+      o.singularCohomologyMap_thomPairOver_thomClass hF e hUe ho,
+      ← TopPair.singularCohomologyMap_comp_apply,
+      sectionThomPairOverMap_comp_thomPairOverIso hs e hz hUz hUe]
+  rw [sectionIndex_eq o hF oM hs hU hz hUz, ← sectionThomPairOverMap_comp hs hz hUz, hclass,
+    TopPair.singularKronecker_naturality, ModuleCat.hom_comp, LinearMap.comp_apply,
+    IsOpenEmbedding.coe_localOrientationEquiv_symm, localHomologyMap_def]
 
 /-- **The local index in a local trivialization.** Let `e` be a linear trivialization of `E` and
 `U` an open neighbourhood of `z` inside its base set, containing no zero of `s` other than `z`, on
@@ -268,37 +276,40 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
     rintro _ rfl
     exact localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt _ (hVo.mem_nhds hzV) hfV hA
       hdet (fun y hy h ↦ hfx y hy (h.trans hf0)) (n + 1)
-  -- The inclusion of `U` into the source of `φ` carries the local orientation of `U` at `z` to
-  -- that of the source.
-  have hincl := φ.open_source.localHomologyMap_inclusion_localOrientationEquiv_symm hU hUφ hz
-    (oM z) (by
-      rintro x (hx : _ = _)
-      have hx' := congrArg Subtype.val hx
-      exact Subtype.ext hx')
-  have ha := o.localHomologyMap_eq_sectionIndex_smul hF oM hs e hU hz
-    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.1 x.2) ((preimage_mono hg).trans hφU)
-  have hb : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (g.comp φU) (S := {⟨z, hz⟩})
-      (T := {0}) ((preimage_mono hg).trans hφU) (n + 1)
-      ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm (oM z)).val =
-      (SignType.sign A.det : ℤ) • (ω.localOrientation hF).val := by
+  -- The translated chart `τ y = φ y - φ z` on the source of `φ`, which reads `oM z` as the local
+  -- orientation selected by `ω` by `hφ`.
+  let τ : C(φ.source, F) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
+  have hτz : τ ⁻¹' {0} ⊆ {⟨z, hUφ hz⟩} := by
+    rintro x hx
+    exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))
+  have hUz' : ContinuousMap.inclusion hUφ ⁻¹' {⟨z, hUφ hz⟩} ⊆ {⟨z, hz⟩} := by
+    rintro x (hx : _ = _)
+    exact Subtype.ext (congrArg Subtype.val hx :)
+  -- On local homology, `g ∘ φU` acts as `sign (det A)` times the restriction of `τ` to `U`: this is
+  -- `key` composed with `φU`, since `φU` followed by the translation by `-φ z` is `τ` on `U`.
+  have hmor : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (g.comp φU) (S := {⟨z, hz⟩})
+      (T := {0}) ((preimage_mono hg).trans hφU) (n + 1) =
+      (SignType.sign A.det : ℤ) • localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (τ.comp (ContinuousMap.inclusion hUφ)) ((preimage_mono hτz).trans hUz') (n + 1) := by
     have hτ : (⟨fun y : V ↦ (0 : F) + (y - φ z), by fun_prop⟩ : C(V, F)).comp φU =
-        (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
-          C(φ.source, F)).comp (ContinuousMap.inclusion hUφ) :=
+        τ.comp (ContinuousMap.inclusion hUφ) :=
       ContinuousMap.ext fun _ ↦ zero_add _
-    -- Integer multiples of morphisms of `ℤ`-modules act on elements by the multiple.
-    have hsmul : ∀ (c : ℤ) {X Y : ModuleCat.{0} ℤ} (u : X ⟶ Y) (v : X), (c • u) v = c • u v :=
-      fun _ _ _ _ _ ↦ rfl
-    rw [← localHomologyMap_comp _ φU g hφU hg, ConcreteCategory.comp_apply, key hf0, hsmul,
-      ← ConcreteCategory.comp_apply]
+    rw [← localHomologyMap_comp _ φU g hφU hg, key hf0, Preadditive.comp_zsmul]
+    -- The composite produced by `key` does not match `localHomologyMap_comp` syntactically.
     erw [localHomologyMap_comp]
+    -- `hτ` also rewrites the map inside the dependent preimage condition, which `rw` cannot.
     simp only [hτ]
-    rw [← localHomologyMap_comp, ConcreteCategory.comp_apply, hincl, hφ]
-    · rintro x (hx : _ = _)
-      have hx' := congrArg Subtype.val hx
-      exact Subtype.ext hx'
-    · rintro x hx
-      exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))
-  rw [← ω.kronecker_localCohomologyClass_zsmul hF (o.sectionIndex hF oM hs z), ← ha, hb,
+  -- Integer multiples of morphisms of `ℤ`-modules act on elements by the multiple.
+  have hsmul : ∀ (c : ℤ) {X Y : ModuleCat.{0} ℤ} (u : X ⟶ Y) (v : X), (c • u) v = c • u v :=
+    fun _ _ _ _ _ ↦ rfl
+  have hb := o.localHomologyMap_eq_sectionIndex_smul hF oM hs e hU hz
+    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.1 x.2) ((preimage_mono hg).trans hφU)
+  -- The inclusion of `U` into the source of `φ` carries the local orientation of `U` at `z` to
+  -- that of the source, which `τ` carries to the local orientation selected by `ω`.
+  rw [hmor, hsmul, ← localHomologyMap_comp _ _ τ hUz' hτz, ConcreteCategory.comp_apply,
+    φ.open_source.localHomologyMap_inclusion_localOrientationEquiv_symm hU hUφ hz (oM z) hUz',
+    hφ] at hb
+  rw [← ω.kronecker_localCohomologyClass_zsmul hF (o.sectionIndex hF oM hs z), ← hb,
     ω.kronecker_localCohomologyClass_zsmul hF]
 
 end VectorBundleOrientation

@@ -509,12 +509,16 @@ theorem singularCohomologyMap_thomPairOver_thomClass (e : Trivialization F (π F
   refine (hF ▸ fun u v ↦ e.singularCohomology_thomPairOver_ext hW
     (R' := ModuleCat.of ℤ (ULift.{w} ℤ)) (K := ℤ) (M' := ModuleCat.of ℤ (ULift.{w} ℤ)) (u := u)
     (v := v)) _ _ fun b hb ↦ ?_
-  rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+  -- Structural step: on the left the fibre over `b` includes into the Thom pair of `E`, and on
+  -- the right it is carried by `e` at `b` onto `(F, F ∖ {0})`.
+  simp only [← TopPair.singularCohomologyMap_comp_apply,
     fiberThomPairOverMap_comp_thomPairOverMap_assoc,
     fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
-    o.singularCohomologyMap_fiberThomPairMap_thomClass hF e (hW hb), ho b hb,
     e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc ℝ hW hb,
     prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
+  -- Mathematical step: the Thom class restricts on that fibre to the generator selected by the
+  -- fibre orientation, which `e` reads as `ω`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e (hW hb), ho b hb]
 
 /-- Reversing the orientation negates the Thom class. -/
 @[simp]
