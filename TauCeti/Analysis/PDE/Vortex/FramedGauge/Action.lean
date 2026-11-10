@@ -33,8 +33,9 @@ The elements of `G_(k+1)` are `C¹` by Sobolev embedding
 derivative and no regularity hypothesis on `u` is needed. Hence `G_(k+1)` preserves `A_m^k`
 (`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`). Conversely, a `C²` gauge carrying one field
 of `A_m^k` into `A_m^k` lies in `G_(k+1)`
-(`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`), so `G_(k+1)` is exactly the set of
-`C²` gauges preserving `A_m^k` (`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`).
+(`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`), so a `C²` gauge preserves
+`A_m^k` exactly when it lies in `G_(k+1)`
+(`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`).
 
 The resulting action of `G_(k+1)` on `A_m^k` is a `MulAction`, given under a `Fact (1 < k)`
 instance, and it is free: an element fixing some field is the identity
