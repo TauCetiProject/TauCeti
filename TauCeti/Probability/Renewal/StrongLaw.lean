@@ -39,12 +39,36 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} {T : ℕ → Ω → ℝ≥0}
 
-/-- Inverting arrival times preserves the limit of reciprocal averages. The hypothesis of
-nonexplosion permits zero increments and ensures that the natural-valued count is the true count. -/
+/-- Inverting arrival times preserves the limit of reciprocal averages. Zero increments are
+permitted; on explosive paths the natural-valued count is zero and the limit `r` is forced to be
+zero. -/
 theorem tendsto_renewalCountNat_div_of_tendsto {ω : Ω} {r : ℝ}
-    (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop)
     (h : Tendsto (fun n : ℕ ↦ (n : ℝ) / (arrival T n ω : ℝ)) atTop (𝓝 r)) :
     Tendsto (fun t : ℝ≥0 ↦ (renewalCountNat T t ω : ℝ) / (t : ℝ)) atTop (𝓝 r) := by
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  swap
+  · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω, Nat.cast_zero, zero_div]
+    obtain ⟨B, hB⟩ : ∃ B : ℝ≥0, ∀ n, arrival T n ω ≤ B := by
+      by_contra hcon
+      push Not at hcon
+      exact hω (tendsto_atTop_atTop_of_monotone (monotone_arrival T ω)
+        fun b ↦ (hcon b).imp fun n hn ↦ hn.le)
+    by_cases hall : ∀ n, arrival T n ω = 0
+    · have : r = 0 := tendsto_nhds_unique h (by simp [hall])
+      simp [this]
+    · push Not at hall
+      obtain ⟨m, hm⟩ := hall
+      have hmpos : 0 < arrival T m ω := pos_iff_ne_zero.2 hm
+      exfalso
+      have hB0 : (0 : ℝ) < B := lt_of_lt_of_le hmpos (hB m)
+      have hlarge : Tendsto (fun n : ℕ ↦ (n : ℝ) / (arrival T n ω : ℝ)) atTop atTop := by
+        refine tendsto_atTop_mono' _ ?_
+          ((tendsto_natCast_atTop_atTop (R := ℝ)).atTop_div_const hB0)
+        filter_upwards [eventually_ge_atTop m] with n hn
+        exact div_le_div_of_nonneg_left (Nat.cast_nonneg _)
+          (by exact_mod_cast hmpos.trans_le (monotone_arrival T ω hn))
+          (by exact_mod_cast hB n)
+      exact not_tendsto_atTop_of_tendsto_nhds h hlarge
   have hN := tendsto_renewalCountNat_atTop hω
   have hN' : Tendsto (fun t ↦ renewalCountNat T t ω + 1) atTop atTop :=
     tendsto_atTop_mono (fun t ↦ Nat.le_succ _) hN
@@ -78,8 +102,7 @@ variable [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
 This includes infinite mean, where the limit is zero. -/
 theorem ae_tendsto_natCast_div_arrival
     (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) :
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ (n : ℝ) / (arrival T n ω : ℝ)) atTop
       (𝓝 (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) := by
   let X (n : ℕ) (ω : Ω) : ℝ := T n ω
@@ -107,15 +130,20 @@ theorem ae_tendsto_natCast_div_arrival
     have hμ : ∫ ω, X 0 ω ∂P = (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal := by
       simpa only [X, ENNReal.ofReal_coe_nnreal] using
         integral_eq_lintegral_of_nonneg_ae hpos (hXm 0).aestronglyMeasurable
-    have hμpos : 0 < ∫ ω, X 0 ω ∂P := by
-      refine lt_of_le_of_ne (integral_nonneg_of_ae hpos) ?_
-      intro heq
-      have hz := (integral_eq_zero_iff_of_nonneg_ae hpos hint).1 heq.symm
-      have hz' : ∀ᵐ ω ∂P, T 0 ω = 0 := by
-        filter_upwards [hz] with ω hω
-        simpa only [X, Pi.zero_apply, NNReal.coe_eq_zero] using hω
-      have hfull : {ω | T 0 ω = 0} =ᵐ[P] univ := hz'.mono fun ω hω ↦ by simp [hω]
-      exact (ne_of_lt hzero) ((measure_congr hfull).trans (measure_univ))
+    by_cases hμpos : 0 < ∫ ω, X 0 ω ∂P
+    swap
+    · have hz := (integral_eq_zero_iff_of_nonneg_ae hpos hint).1
+        (le_antisymm (not_lt.1 hμpos) (integral_nonneg_of_ae hpos))
+      have hz' (n : ℕ) : ∀ᵐ ω ∂P, T n ω = 0 := by
+        have h0 : ∀ᵐ ω ∂P, T 0 ω = 0 := by
+          filter_upwards [hz] with ω hω
+          simpa only [X, Pi.zero_apply, NNReal.coe_eq_zero] using hω
+        exact (hid n).symm.ae_mem_snd (measurableSet_singleton (0 : ℝ≥0)) h0
+      have hlin : ∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P = 0 := by
+        rw [lintegral_eq_zero_iff' (hid 0).aemeasurable_fst.coe_nnreal_ennreal]
+        exact (hz' 0).mono fun ω hω ↦ by simp [hω]
+      filter_upwards [ae_all_iff.2 hz'] with ω hω
+      simp [hlin, arrival_def, hω]
     filter_upwards [strong_law_ae_real X hint hXi hXd] with ω hω
     simpa only [hsum, inv_div, ENNReal.toReal_inv, hμ]
       using hω.inv₀ hμpos.ne'
@@ -127,43 +155,10 @@ Pairwise independence suffices; the identical-distribution hypothesis supplies a
 measurability of the increments. -/
 theorem ae_tendsto_renewalCountNat_div
     (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) :
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     ∀ᵐ ω ∂P, Tendsto (fun t : ℝ≥0 ↦ (renewalCountNat T t ω : ℝ) / (t : ℝ)) atTop
       (𝓝 (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) := by
-  -- Bounded increments have positive mean, so their strong law gives nonexplosion without
-  -- requiring full independence or pointwise measurability of the original increments.
-  let Y (n : ℕ) (ω : Ω) : ℝ := min (T n ω : ℝ) 1
-  have hm : Measurable (fun t : ℝ≥0 ↦ min (t : ℝ) 1) :=
-    measurable_coe_nnreal_real.min measurable_const
-  have hpos : 0 ≤ Y 0 := fun ω ↦ le_min (T 0 ω).coe_nonneg zero_le_one
-  have hint : Integrable (Y 0) P := by
-    refine (integrable_const (1 : ℝ)).mono'
-      (hm.comp_aemeasurable (hid 0).aemeasurable_fst).aestronglyMeasurable ?_
-    exact Eventually.of_forall fun ω ↦ by
-      simpa only [Real.norm_eq_abs, abs_of_nonneg (hpos ω)] using
-        min_le_right (T 0 ω : ℝ) 1
-  have hμpos : 0 < ∫ ω, Y 0 ω ∂P := by
-    refine lt_of_le_of_ne (integral_nonneg hpos) ?_
-    intro heq
-    have hz := (integral_eq_zero_iff_of_nonneg hpos hint).1 heq.symm
-    have hz' : ∀ᵐ ω ∂P, T 0 ω = 0 := by
-      filter_upwards [hz] with ω hω
-      have hz : T 0 ω = 0 ∧ T 0 ω ≤ 1 := by
-        simpa [Y, min_eq_iff, (T 0 ω).coe_nonneg] using hω
-      exact hz.1
-    have hfull : {ω | T 0 ω = 0} =ᵐ[P] univ := hz'.mono fun ω hω ↦ by simp [hω]
-    exact (ne_of_lt hzero) ((measure_congr hfull).trans measure_univ)
-  have hsl := strong_law_ae_real Y hint
-    (fun i j hij ↦ (hindep hij).comp hm hm) (fun n ↦ (hid n).comp hm)
-  filter_upwards [hsl, ae_tendsto_natCast_div_arrival hindep hid hzero] with ω hω hlimit
-  apply tendsto_renewalCountNat_div_of_tendsto _ hlimit
-  apply NNReal.tendsto_coe_atTop.1
-  refine tendsto_atTop_mono' _ ?_
-    (tendsto_natCast_atTop_atTop.atTop_mul_pos hμpos hω)
-  filter_upwards [eventually_gt_atTop (0 : ℕ)] with n hn
-  rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn.ne')]
-  simpa [arrival_def] using
-    (Finset.sum_le_sum fun i (_ : i ∈ Finset.range n) ↦ min_le_left (T i ω : ℝ) 1)
+  filter_upwards [ae_tendsto_natCast_div_arrival hindep hid] with ω hlimit
+  exact tendsto_renewalCountNat_div_of_tendsto hlimit
 
 end TauCeti.Probability
