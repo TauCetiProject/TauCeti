@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.Deriv.Slope
+public import TauCeti.Analysis.Calculus.Deriv.Second
 public import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
@@ -150,27 +151,6 @@ theorem exists_radialExhaustionProfile_deriv_bounds :
     · rw [hsecond, abs_zero]
       exact zero_le_one.trans (le_max_left _ _)
 
-/-- First derivative of the profile after any constant radial rescaling. -/
-theorem radialExhaustionProfile_scaled_deriv (a r : ℝ) :
-    deriv (fun s ↦ radialExhaustionProfile (a * s)) r =
-      a * deriv radialExhaustionProfile (a * r) := by
-  have h := (radialExhaustionProfile_contDiff.differentiable (by simp) (a * r)).hasDerivAt.comp r
-    ((hasDerivAt_id r).const_mul a)
-  simpa only [Function.comp_def, mul_one, mul_comm] using h.deriv
-
-/-- Second derivative of the profile after any constant radial rescaling. -/
-theorem radialExhaustionProfile_scaled_second_deriv (a r : ℝ) :
-    deriv (deriv (fun s ↦ radialExhaustionProfile (a * s))) r =
-      a ^ 2 * deriv (deriv radialExhaustionProfile) (a * r) := by
-  have he : deriv (fun s ↦ radialExhaustionProfile (a * s)) =
-      fun s ↦ a * deriv radialExhaustionProfile (a * s) :=
-    funext (radialExhaustionProfile_scaled_deriv a)
-  rw [he]
-  have hd := (contDiff_infty_iff_deriv.mp radialExhaustionProfile_contDiff).2
-  have h := ((hd.differentiable (by simp) (a * r)).hasDerivAt.comp r
-    ((hasDerivAt_id r).const_mul a)).const_mul a
-  simpa only [Function.comp_def, mul_one, pow_two, mul_assoc, mul_left_comm, mul_comm] using h.deriv
-
 /-- The scalar part `S(exp(c*t)*r)` of an evolving-distance exhaustion barrier.
 For Ricci-flow applications one takes `c = n*K` and supplies the actual distance. -/
 noncomputable def rescaledRadialExhaustionProfile (c t r : ℝ) : ℝ :=
@@ -196,7 +176,8 @@ theorem exists_rescaledRadialExhaustionProfile_deriv_bounds :
   refine ⟨C, hC, fun c t r ↦ ?_⟩
   change |deriv (fun s ↦ radialExhaustionProfile (Real.exp (c * t) * s)) r| ≤ _ ∧
     |deriv (deriv (fun s ↦ radialExhaustionProfile (Real.exp (c * t) * s))) r| ≤ _
-  rw [radialExhaustionProfile_scaled_deriv, radialExhaustionProfile_scaled_second_deriv]
+  rw [deriv_comp_mul_left, TauCeti.deriv_deriv_comp_mul_left]
+  simp only [smul_eq_mul]
   simp only [abs_mul, abs_pow, abs_of_pos (Real.exp_pos _)]
   constructor
   · simpa only [mul_comm] using
