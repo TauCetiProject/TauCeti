@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
 import TauCeti.LinearAlgebra.Determinant.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
 /-!
 # The energy of the input-exchange family
@@ -205,29 +205,17 @@ private theorem lipschitzWith_exchangeShift (hc : |c| ≤ 1) :
         mul_le_mul hc (hμ.trans (by gcongr)) dist_nonneg zero_le_one
     _ = 1 / 2 * dist y y' := by ring
 
-/-- For `|c| ≤ 1` the diffeomorphism `Φ_c` differs from the identity by a `1/2`-Lipschitz map. -/
-private theorem approximatesLinearOn_exchangeMap (hc : |c| ≤ 1) :
-    ApproximatesLinearOn (exchangeMap c)
-      ((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ)) : ℝ × ℝ →L[ℝ] ℝ × ℝ) univ
-      (1 / 2) := by
-  refine LipschitzOnWith.approximatesLinearOn (LipschitzWith.lipschitzOnWith ?_)
-  have h : exchangeMap c - ⇑(ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ × ℝ) =
-      fun y ↦ (exchangeShift c y, 0) := by
-    ext y <;> simp [exchangeMap]
-  rw [h]
-  simpa using (lipschitzWith_exchangeShift hc).prodMk (LipschitzWith.const (0 : ℝ))
-
-private theorem one_half_lt_inv_nnnorm_refl :
-    (1 / 2 : ℝ≥0) < ‖((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)).symm : ℝ × ℝ →L[ℝ] ℝ × ℝ)‖₊⁻¹ := by
-  rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-    ContinuousLinearMap.nnnorm_id, inv_one]
-  norm_num
-
-private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=
-  injOn_univ.1 <| (approximatesLinearOn_exchangeMap hc).injOn (Or.inr one_half_lt_inv_nnnorm_refl)
-
-private theorem surjective_exchangeMap (hc : |c| ≤ 1) : Surjective (exchangeMap c) :=
-  (approximatesLinearOn_exchangeMap hc).surjective (Or.inr one_half_lt_inv_nnnorm_refl)
+/-- For `|c| ≤ 1` the map `Φ_c` is a bijection: it differs from the identity by the
+`1/2`-Lipschitz map `y ↦ (c (1 - μ(|w|)), 0)`. -/
+private theorem bijective_exchangeMap (hc : |c| ≤ 1) : Bijective (exchangeMap c) := by
+  obtain ⟨φ, hφ⟩ := ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith
+    ((contDiff_exchangeShift c).prodMk contDiff_const) one_le_two (K := 1 / 2)
+    (by simpa using (lipschitzWith_exchangeShift hc).prodMk (LipschitzWith.const (0 : ℝ)))
+    (by norm_num)
+  have h : ⇑φ = exchangeMap c := funext fun y ↦ by
+    rw [hφ]
+    ext <;> simp [exchangeMap]
+  exact h ▸ φ.toEquiv.bijective
 
 /-- For `|c| ≤ 1` the diffeomorphism `Φ_c` preserves orientation: its Jacobian determinant is
 `1 + ∂_s` of the displacement, which is at least `1/2`. -/
@@ -404,7 +392,7 @@ private theorem image_exchangeMap_thricePuncturedSphereReal (hc₀ : 0 ≤ c) (h
   have h : thricePuncturedSphereReal = exchangeMap c ⁻¹' thricePuncturedSphereReal :=
     Set.ext fun y ↦ (exchangeMap_mem_iff hc₀ hc₁ y).symm
   conv_lhs => rw [h]
-  exact Set.image_preimage_eq _ (surjective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩))
+  exact Set.image_preimage_eq _ (bijective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩)).2
 
 /-- For `R ≥ 1`, `Φ_c` maps the truncation `S_R` of the pair of pants onto the truncation with
 output end recentred at `c`. -/
@@ -451,7 +439,7 @@ private theorem image_exchangeMap_truncation (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
       rw [he, add_sub_cancel_right]
       exact and_congr (iff_of_true (by linarith) (by linarith))
         (and_congr (iff_of_true (by linarith) (by linarith)) Iff.rfl)
-  rw [h, Set.image_preimage_eq _ (surjective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩))]
+  rw [h, Set.image_preimage_eq _ (bijective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩)).2]
 
 /-! ### The boundary loops -/
 
@@ -526,7 +514,7 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
   rw [← image_exchangeMap_truncation hc₀ hc₁ hR, integral_floerEnergyDensity_image ω
     ((isCompact_truncation R).isClosed.preimage
       Complex.equivRealProdCLM.symm.continuous).measurableSet
-    (injective_exchangeMap hc).injOn
+    (bijective_exchangeMap hc).1.injOn
     (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
     (fun w hw ↦ (hu.differentiableOn two_ne_zero _ (hS hw)).differentiableAt
@@ -555,7 +543,7 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
     (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
   conv_lhs => rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁]
   rw [integral_hamiltonianCurvature_image ω isOpen_thricePuncturedSphereReal.measurableSet
-    (injective_exchangeMap hc).injOn (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
+    (bijective_exchangeMap hc).1.injOn (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
     (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
     (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _),
