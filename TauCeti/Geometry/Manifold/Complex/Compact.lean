@@ -101,11 +101,11 @@ noncomputable def holomorphicEquivOfCompactSpace : C^∞⟮I, M; 𝓘(ℂ, F), F
 
 variable {I M}
 
-/-- The constant corresponding to a holomorphic function is its value at a chosen point. -/
-@[simp]
-theorem holomorphicEquivOfCompactSpace_apply (g : C^∞⟮I, M; 𝓘(ℂ, F), F⟯) :
-    holomorphicEquivOfCompactSpace I M g = g (Classical.arbitrary M) :=
-  (rfl)
+/-- The constant corresponding to a holomorphic function is its value at any point. This is not a
+`simp` lemma, since the point `x` is free on the right. -/
+theorem holomorphicEquivOfCompactSpace_apply (g : C^∞⟮I, M; 𝓘(ℂ, F), F⟯) (x : M) :
+    holomorphicEquivOfCompactSpace I M g = g x :=
+  MDifferentiable.apply_eq_of_compactSpace (g.contMDiff.mdifferentiable (by simp)) _ _
 
 /-- The holomorphic function corresponding to a vector `c` is the constant function `c`. -/
 @[simp]

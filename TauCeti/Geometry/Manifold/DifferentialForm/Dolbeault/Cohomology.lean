@@ -131,9 +131,7 @@ point `x` is free on the right. -/
 theorem zeroZeroEquivOfCompactSpace_mk (φ : closedForms E M F 0 0) (x : M) :
     zeroZeroEquivOfCompactSpace E M F (mk 0 0 φ) = φ.1.1.1 x 0 := by
   rw [← zeroZeroEquiv_mk, zeroZeroEquivOfCompactSpace, LinearEquiv.trans_apply,
-    holomorphicEquivOfCompactSpace_apply]
-  exact MDifferentiable.apply_eq_of_compactSpace
-    ((zeroZeroEquiv E M F (mk 0 0 φ)).contMDiff.mdifferentiable (by simp)) _ _
+    holomorphicEquivOfCompactSpace_apply _ x]
 
 /-- The class corresponding to a vector `c` is the class of the constant function `c`. -/
 @[simp]
