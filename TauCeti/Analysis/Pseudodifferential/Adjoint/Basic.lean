@@ -40,6 +40,11 @@ support.
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
   formal adjoint of the quantization of `a`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay of
+  `â(θ, ξ - sθ)` in `θ`, uniformly for bounded shifts `s`.
+
+The asymptotic expansion `a* ∼ ∑_α (1 / α!) ∂_ξ^α D_x^α a†` of the adjoint symbol is in
+`TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`.
 
 ## The estimates
 
@@ -86,24 +91,32 @@ section Slice
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The decay of `â(θ, ξ - 2πθ)`: for a symbol of order `m` with compact spatial support,
-`‖â(θ, ξ - 2πθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is integrable in `θ`. The decay of `â`
-in its first variable absorbs the growth of Peetre's inequality in the shift `2πθ`. -/
-private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
-    (ha : a.HasCompactSpatialSupport) :
-    ∃ C, 0 ≤ C ∧ ∀ θ ξ : CoordinateSpace n,
-      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
+/-- The decay of `â(θ, ξ - sθ)` for bounded shifts: for a symbol of order `m` with compact spatial
+support and every `R`, `‖â(θ, ξ - sθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m` for all `|s| ≤ R`, which
+is integrable in `θ`. The decay of `â` in its first variable absorbs the growth of Peetre's
+inequality in the shift `sθ`. The adjoint symbol uses the shift `s = 2π`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le
+    (ha : a.HasCompactSpatialSupport) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ θ ξ : CoordinateSpace n,
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
         C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+  set c := max R 1
+  have hc : 1 ≤ c := le_max_right R 1
   set k := ⌈|m|⌉₊
   obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (n + 1 + k)
-  refine ⟨C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m|, by positivity, fun θ ξ ↦ ?_⟩
+  refine ⟨C₀ * 2 ^ (|m| / 2) * c ^ |m|, by positivity, fun s hs θ ξ ↦ ?_⟩
   set t := 1 + ‖θ‖
   have ht : 0 < t := by positivity
   have h1 : 1 ≤ t := le_add_of_nonneg_right (norm_nonneg θ)
-  -- Peetre's inequality for the shift by `2πθ`.
-  have hpeetre := one_add_norm_sq_rpow_le_mul_sub m (ξ - (2 * π) • θ) ξ
+  -- Peetre's inequality for the shift by `sθ`, whose size is at most that of `cθ`.
+  have hpeetre := one_add_norm_sq_rpow_le_mul_sub m (ξ - s • θ) ξ
   rw [sub_sub_cancel_left, norm_neg] at hpeetre
-  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m| θ
+  have hshift : (1 + ‖s • θ‖ ^ 2) ^ (|m| / 2) ≤ (1 + ‖c • θ‖ ^ 2) ^ (|m| / 2) := by
+    gcongr
+    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (zero_le_one.trans hc)]
+    gcongr
+    exact hs.trans (le_max_left R 1)
+  have hscale := one_add_norm_smul_sq_rpow_le hc |m| θ
   rw [abs_abs] at hscale
   -- The bracket `⟨θ⟩ ^ |m|` is at most `(1 + ‖θ‖) ^ k`.
   have hbr : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ k := by
@@ -111,27 +124,37 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
           one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
       _ ≤ t ^ (k : ℝ) := Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil _)
       _ = t ^ k := Real.rpow_natCast t k
-  have hF := hdecay θ (ξ - (2 * π) • θ)
+  have hF := hdecay θ (ξ - s • θ)
   have hpow : t ^ (-((n : ℝ) + 1)) * t ^ (n + 1 + k) = t ^ k := by
     rw [← Real.rpow_natCast, ← Real.rpow_add ht, ← Real.rpow_natCast]
     push_cast
     ring_nf
-  have hkey : t ^ (n + 1 + k) * ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
-      t ^ (n + 1 + k) * (C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m| *
+  have hkey : t ^ (n + 1 + k) * ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+      t ^ (n + 1 + k) * (C₀ * 2 ^ (|m| / 2) * c ^ |m| *
         (t ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) := by
     refine hF.trans ?_
-    calc C₀ * (1 + ‖ξ - (2 * π) • θ‖ ^ 2) ^ (m / 2)
-        ≤ C₀ * (2 ^ (|m| / 2) * ((2 * π) ^ |m| * t ^ k) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+    calc C₀ * (1 + ‖ξ - s • θ‖ ^ 2) ^ (m / 2)
+        ≤ C₀ * (2 ^ (|m| / 2) * (c ^ |m| * t ^ k) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
           gcongr
           refine hpeetre.trans ?_
           gcongr
-          exact hscale.trans (by gcongr)
-      _ = C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m| *
+          exact hshift.trans (hscale.trans (by gcongr))
+      _ = C₀ * 2 ^ (|m| / 2) * c ^ |m| *
             ((t ^ (-((n : ℝ) + 1)) * t ^ (n + 1 + k)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
           rw [hpow]
           ring
       _ = _ := by ring
   exact le_of_mul_le_mul_left hkey (by positivity)
+
+/-- The decay of `â(θ, ξ - 2πθ)`, the case `s = 2π` of
+`HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`. -/
+private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
+    (ha : a.HasCompactSpatialSupport) :
+    ∃ C, 0 ≤ C ∧ ∀ θ ξ : CoordinateSpace n,
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
+        C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_sub_smul_le (2 * π)
+  exact ⟨C, hC0, hC _ (abs_of_pos two_pi_pos).le⟩
 
 /-- The Fourier transform `â(g t, h t)` of a position slice is continuous along continuous maps
 `g`, `h` into the dual position variable and the frequency. -/
