@@ -355,37 +355,47 @@ theorem TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity {R : Finset V}
     (by simp), sdiff_eq_empty_iff_subset.mpr hR.subset,
     disjoint_iff_inter_eq_empty.mp hR.disjoint.symm]
 
-/-- **Normalization of auxiliary cuts.** Let `A` and `B` be disjoint and the original capacities
-nonnegative, and suppose that the arrow from the fresh source to each `a ∈ A` has capacity at least
-the total capacity leaving `a`, and the arrow from each `b ∈ B` to the fresh sink has capacity at
-least the total capacity entering `b`.
+/-- **Normalization of auxiliary cuts.** Let the original capacities be nonnegative, and suppose
+that the arrow from the fresh source to each `a ∈ A` has capacity at least the total capacity
+leaving `a`, and the arrow from each `b ∈ B` to the fresh sink has capacity at least the total
+capacity entering `b`.
 Then for every cut `S` separating the fresh source from the fresh sink, the vertex set
-`(S.toLeft ∪ A) \ B`, which is admissible by `TerminalCut.isAdmissible_union_sdiff`, has original
-cut capacity at most the capacity of `S`. -/
+`(S.toLeft ∪ A) \ B`, which is admissible by `TerminalCut.isAdmissible_union_sdiff` when `A` and
+`B` are disjoint, has original cut capacity at most the capacity of `S`. -/
 theorem arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity [PartialOrder K]
-    [IsOrderedAddMonoid K] (hAB : Disjoint A B) {cap : Assignment Q K} (hcap : 0 ≤ cap)
+    [IsOrderedAddMonoid K] {cap : Assignment Q K} (hcap : 0 ≤ cap)
     {cσ cτ : V → K} (hcσ : ∀ a ∈ A, ∑ w, ∑ e : Q a w, cap e ≤ cσ a)
     (hcτ : ∀ b ∈ B, ∑ v, ∑ e : Q v b, cap e ≤ cτ b) {S : Finset (V ⊕ Bool)}
     (hσ : inr false ∈ S) (hτ : inr true ∉ S) :
     arrowSum cap ((S.toLeft ∪ A) \ B) ((S.toLeft ∪ A) \ B)ᶜ ≤
       arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) S Sᶜ := by
   set R := S.toLeft
-  have hBRA : B ∩ (R ∪ A) = B ∩ R := by
-    rw [inter_union_distrib_left, disjoint_iff_inter_eq_empty.mp hAB.symm, union_empty]
-  have hout : arrowSum cap (A \ R) univ ≤ ∑ a ∈ A \ R, cσ a := by
+  -- Only the part `A \ B` of `A` survives in the cut set, and it is disjoint from `B`.
+  have hT : (R ∪ A) \ B = (R ∪ (A \ B)) \ B := by
+    ext x
+    simp only [mem_sdiff, mem_union]
+    tauto
+  have hBRA : B ∩ (R ∪ (A \ B)) = B ∩ R := by
+    rw [inter_union_distrib_left, disjoint_iff_inter_eq_empty.mp sdiff_disjoint.symm, union_empty]
+  have hout : arrowSum cap ((A \ B) \ R) univ ≤ ∑ a ∈ A \ R, cσ a := by
     rw [arrowSum_def]
-    exact sum_le_sum fun a ha ↦ hcσ a (mem_sdiff.mp ha).1
+    refine (sum_le_sum fun a ha ↦ hcσ a (mem_sdiff.mp (mem_sdiff.mp ha).1).1).trans ?_
+    refine sum_le_sum_of_subset_of_nonneg (sdiff_subset_sdiff sdiff_le le_rfl) fun a ha _ ↦ ?_
+    have h0 : 0 ≤ ∑ w, ∑ e : Q a w, cap e := sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e
+    exact h0.trans (hcσ a (mem_sdiff.mp ha).1)
   have hin : arrowSum cap univ (B ∩ R) ≤ ∑ b ∈ B ∩ R, cτ b := by
     rw [arrowSum_def, sum_comm]
     exact sum_le_sum fun b hb ↦ hcτ b (mem_inter.mp hb).1
-  calc arrowSum cap ((R ∪ A) \ B) ((R ∪ A) \ B)ᶜ
-      = arrowSum cap ((R ∪ A) \ (B ∩ (R ∪ A))) ((R ∪ A) \ (B ∩ (R ∪ A)))ᶜ := by
+  rw [hT]
+  calc arrowSum cap ((R ∪ (A \ B)) \ B) ((R ∪ (A \ B)) \ B)ᶜ
+      = arrowSum cap ((R ∪ (A \ B)) \ (B ∩ (R ∪ (A \ B))))
+          ((R ∪ (A \ B)) \ (B ∩ (R ∪ (A \ B))))ᶜ := by
         rw [sdiff_inter_self_right]
-    _ ≤ arrowSum cap (R ∪ A) (R ∪ A)ᶜ + arrowSum cap univ (B ∩ (R ∪ A)) :=
+    _ ≤ arrowSum cap (R ∪ (A \ B)) (R ∪ (A \ B))ᶜ + arrowSum cap univ (B ∩ (R ∪ (A \ B))) :=
         arrowSum_sdiff_compl_le hcap _ _
-    _ = arrowSum cap (R ∪ (A \ R)) (R ∪ (A \ R))ᶜ + arrowSum cap univ (B ∩ R) := by
+    _ = arrowSum cap (R ∪ ((A \ B) \ R)) (R ∪ ((A \ B) \ R))ᶜ + arrowSum cap univ (B ∩ R) := by
         rw [union_sdiff_self_eq_union, hBRA]
-    _ ≤ arrowSum cap R Rᶜ + arrowSum cap (A \ R) univ + arrowSum cap univ (B ∩ R) := by
+    _ ≤ arrowSum cap R Rᶜ + arrowSum cap ((A \ B) \ R) univ + arrowSum cap univ (B ∩ R) := by
         grw [arrowSum_union_compl_le hcap]
     _ ≤ arrowSum cap R Rᶜ + ∑ a ∈ A \ R, cσ a + ∑ b ∈ B ∩ R, cτ b := by
         grw [hout, hin]
@@ -406,7 +416,7 @@ theorem TerminalCut.IsMinimum.arrowSum_union_sdiff [PartialOrder K] [IsOrderedAd
       arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) S Sᶜ := by
   have hσ : inr false ∈ S := hS.admissible.subset (mem_singleton_self _)
   have hτ : inr true ∉ S := disjoint_right.1 hS.admissible.disjoint (mem_singleton_self _)
-  refine (arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity hAB hcap hcσ hcτ hσ hτ).antisymm ?_
+  refine (arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity hcap hcσ hcτ hσ hτ).antisymm ?_
   rw [← (isAdmissible_union_sdiff hAB S.toLeft).arrowSum_auxTerminalCapacity cap cσ cτ]
   exact hS.le (isAdmissible_iff.2 ⟨by simp, by simp⟩)
 

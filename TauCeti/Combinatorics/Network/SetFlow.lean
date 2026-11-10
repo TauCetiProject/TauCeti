@@ -491,22 +491,56 @@ namespace SetFlow
 variable [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K} {A B : Finset V}
 
 omit [DecidableEq V] in
-/-- **Integrality of maximum `A`–`B` flows.** For disjoint `A` and `B` and nonnegative capacities in
-an additive subgroup `H`, some maximum `A`–`B` flow takes values in `H`. -/
-theorem exists_isMaximum_mem (hAB : Disjoint A B) (hcap : 0 ≤ cap) (H : AddSubgroup K)
+/-- **Integrality of maximum `A`–`B` flows.** For nonnegative capacities in an additive subgroup
+`H`, some maximum `A`–`B` flow takes values in `H`. A vertex in both `A` and `B` is conserved, so
+the flows are those between `A \ B` and `B \ A`, which are disjoint. -/
+theorem exists_isMaximum_mem (hcap : 0 ≤ cap) (H : AddSubgroup K)
     (hcapH : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
     ∃ f : SetFlow cap A B, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H := by
   classical
+  have hdisj : Disjoint (A \ B) (B \ A) := disjoint_sdiff_sdiff
   obtain ⟨g, hg, hgH⟩ := Flow.exists_isMaximum_mem (s := inr false) (t := inr true)
-    (setFlowCapacity_nonneg hcap) H (setFlowCapacity_mem hcapH)
-  refine ⟨g.toSetFlow hAB, ?_, fun _ _ e ↦ by simpa using hgH (AuxTerminalHom.original e)⟩
-  rwa [← isMaximum_toAuxFlow hAB, Flow.toSetFlow_toAuxFlow]
+    (setFlowCapacity_nonneg (A := A \ B) (B := B \ A) hcap) H (setFlowCapacity_mem hcapH)
+  have hmax : (g.toSetFlow hdisj).IsMaximum := by
+    rwa [← isMaximum_toAuxFlow hdisj, Flow.toSetFlow_toAuxFlow]
+  -- A flow between `A \ B` and `B \ A` is a flow between `A` and `B`, and conversely.
+  let f' := g.toSetFlow hdisj
+  have hf'z {v : V} (hA : v ∈ A) (hB : v ∈ B) : excessAt f'.toFun v = 0 :=
+    f'.conserve v (by simp [hB]) (by simp [hA])
+  let f : SetFlow cap A B :=
+    { toFun := f'.toFun
+      mem_Icc := f'.mem_Icc
+      conserve := fun v hA hB ↦ f'.conserve v (by simp [hA]) (by simp [hB])
+      excessAt_nonpos := fun a ha ↦
+        if hB : a ∈ B then (hf'z ha hB).le else f'.excessAt_nonpos a (by simp [ha, hB])
+      excessAt_nonneg := fun b hb ↦
+        if hA : b ∈ A then (hf'z hA hb).ge else f'.excessAt_nonneg b (by simp [hb, hA]) }
+  have hval (h : SetFlow cap A B) : h.val = ∑ b ∈ B \ A, excessAt h.toFun b := by
+    rw [val_def]
+    exact (sum_subset sdiff_subset fun x hxB hx ↦
+      h.excessAt_eq_zero_of_mem_of_mem (by simpa [hxB] using hx) hxB).symm
+  refine ⟨f, ?_, fun _ _ e ↦ ?_⟩
+  swap
+  · change f'.toFun e ∈ H
+    simpa [f'] using hgH (AuxTerminalHom.original e)
+  rw [isMaximum_iff]
+  intro h
+  let h' : SetFlow cap (A \ B) (B \ A) :=
+    { toFun := h.toFun
+      mem_Icc := h.mem_Icc
+      conserve := fun v hA hB ↦ by
+        by_cases hvA : v ∈ A
+        · exact h.excessAt_eq_zero_of_mem_of_mem hvA (by simpa [hvA] using hA)
+        · exact h.conserve v hvA (by simpa [hvA] using hB)
+      excessAt_nonpos := fun a ha ↦ h.excessAt_nonpos a (mem_sdiff.1 ha).1
+      excessAt_nonneg := fun b hb ↦ h.excessAt_nonneg b (mem_sdiff.1 hb).1 }
+  rw [hval h, hval f]
+  exact isMaximum_iff.1 hmax h'
 
 omit [DecidableEq V] in
-/-- For disjoint `A` and `B` and nonnegative capacities, a maximum `A`–`B` flow exists. -/
-theorem exists_isMaximum (hAB : Disjoint A B) (hcap : 0 ≤ cap) :
-    ∃ f : SetFlow cap A B, f.IsMaximum :=
-  let ⟨f, hf, _⟩ := exists_isMaximum_mem hAB hcap ⊤ fun _ _ _ ↦ AddSubgroup.mem_top _
+/-- For nonnegative capacities, a maximum `A`–`B` flow exists. -/
+theorem exists_isMaximum (hcap : 0 ≤ cap) : ∃ f : SetFlow cap A B, f.IsMaximum :=
+  let ⟨f, hf, _⟩ := exists_isMaximum_mem hcap ⊤ fun _ _ _ ↦ AddSubgroup.mem_top _
   ⟨f, hf⟩
 
 /-- **Max-flow/min-cut theorem between vertex sets.** For disjoint `A` and `B` and nonnegative
@@ -515,7 +549,7 @@ capacities, some `A`–`B` flow has value equal to the capacity of some `A`–`B
 theorem exists_val_eq_arrowSum (hAB : Disjoint A B) (hcap : 0 ≤ cap) :
     ∃ f : SetFlow cap A B, ∃ S : Finset V,
       TerminalCut.IsAdmissible A B S ∧ f.val = arrowSum cap S Sᶜ :=
-  let ⟨f, hf⟩ := exists_isMaximum hAB hcap
+  let ⟨f, hf⟩ := exists_isMaximum hcap
   ⟨f, hf.exists_val_eq_arrowSum hAB⟩
 
 end SetFlow
