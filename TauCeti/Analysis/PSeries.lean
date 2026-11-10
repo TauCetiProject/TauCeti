@@ -9,6 +9,7 @@ public import Mathlib.Analysis.PSeries
 public import TauCeti.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.ZetaValues
 
@@ -90,19 +91,6 @@ theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
 
 open Filter Topology
 
-
-private theorem dyadic_rpow_scale (B p : ℝ) (n : ℕ) :
-    ((2 : ℝ) ^ (n + 1)) ^ B * ((2 : ℝ) ^ n) ^ (-p) =
-      2 ^ B * (2 ^ (B - p)) ^ n := by
-  rw [← Real.rpow_natCast_mul (by norm_num : (0 : ℝ) ≤ 2),
-    ← Real.rpow_natCast_mul (by norm_num : (0 : ℝ) ≤ 2),
-    ← Real.rpow_add (by norm_num : (0 : ℝ) < 2),
-    ← Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2),
-    ← Real.rpow_add (by norm_num : (0 : ℝ) < 2)]
-  congr 1
-  push_cast
-  ring
-
 /-- Weighted reciprocal powers are summable when the weighted sublevel counts grow at a
 strictly smaller power. The radii are at least one and every sublevel set is finite. -/
 theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
@@ -153,7 +141,8 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
         (fun t : {i | r i ≤ (2 : ℝ) ^ (n + 1)} ↦ (t : ι)) h))
       (fun i _ ↦ hw i) (fun i ↦ le_rfl) Summable.of_finite Summable.of_finite
   have hscale : ((2 : ℝ) ^ (n + 1)) ^ B * ((2 : ℝ) ^ n) ^ (-p) =
-      2 ^ B * q ^ n := by simpa only [q] using dyadic_rpow_scale B p n
+      2 ^ B * q ^ n := by
+    simpa only [q, sub_eq_add_neg] using Real.pow_succ_rpow_mul_pow_rpow two_pos B (-p) n
   calc
     _ ≤ ∑' i : {i | bin i = n}, w i * ((2 : ℝ) ^ n) ^ (-p) := by
       apply Summable.tsum_le_tsum _ Summable.of_finite Summable.of_finite
