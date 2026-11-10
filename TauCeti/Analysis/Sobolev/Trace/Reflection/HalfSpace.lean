@@ -16,9 +16,9 @@ public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 # Finite-order extension across a half-space boundary
 
 Functions of class Cᵏ on a closed half-space admit Cᵏ extensions by finite reflection.
-The canonical higher-reflection coefficients match time derivatives through order k.
-Local and slab versions support initial-time
-extensions of coordinate vector fields for smooth Ricci-flow restart.
+The `K`-term operator preserves Cⁿ regularity whenever `n < K`.
+Local versions extend near a boundary point; slab versions give Cⁿ regularity of the reflection
+on `Ioo (-T) T ×ˢ A`.
 
 ## References
 
@@ -137,9 +137,24 @@ theorem upperHalfSpace_union_lowerHalfSpace : upperHalfSpace E ∪ lowerHalfSpac
   simp only [mem_union, mem_upperHalfSpace, mem_lowerHalfSpace, mem_univ, iff_true]
   exact le_total 0 x.1
 
-/-- Reflection of each time slice extends a function from the upper half-space. -/
+/-- `K`-term higher-order reflection of `f` along each time line `t ↦ f (t, x.2)`, extending
+`f` from the upper half-space. -/
 def halfSpaceReflection (K : ℕ) (f : ℝ × E → F) (x : ℝ × E) : F :=
   higherReflection K (fun t ↦ f (t, x.2)) x.1
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Half-space reflection is additive in the input. -/
+theorem halfSpaceReflection_add (K : ℕ) (f g : ℝ × E → F) :
+    halfSpaceReflection K (f + g) = halfSpaceReflection K f + halfSpaceReflection K g := by
+  funext x
+  exact congrFun (higherReflection_add K (fun t ↦ f (t, x.2)) (fun t ↦ g (t, x.2))) x.1
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Half-space reflection commutes with real scalar multiplication. -/
+theorem halfSpaceReflection_smul (K : ℕ) (c : ℝ) (f : ℝ × E → F) :
+    halfSpaceReflection K (c • f) = c • halfSpaceReflection K f := by
+  funext x
+  exact congrFun (higherReflection_smul K c (fun t ↦ f (t, x.2))) x.1
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Reflection agrees with the input at nonnegative times. -/
