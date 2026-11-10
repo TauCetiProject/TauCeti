@@ -134,6 +134,7 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
 
 /-- In an ultrametric seminormed ring, multiplication by a perturbation `1 + a` of one with
 `‖a‖ < 1` preserves norms. -/
+@[simp]
 theorem norm_one_add_mul_of_norm_lt_one {A : Type*} [SeminormedRing A] [IsUltrametricDist A]
     {a : A} (ha : ‖a‖ < 1) (x : A) : ‖(1 + a) * x‖ = ‖x‖ := by
   rw [add_mul, one_mul]
