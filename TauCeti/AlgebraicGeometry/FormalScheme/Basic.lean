@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Restrict
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Discrete
 public import Mathlib.AlgebraicGeometry.Scheme
+public import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 /-!
 # Formal schemes of finite ideal type
@@ -60,9 +61,17 @@ instance : Category FormalScheme :=
   inferInstanceAs (Category (InducedCategory LocallyRingedSpace toLocallyRingedSpace))
 
 /-- Forget the formal atlas, retaining the locally ringed space and all its morphisms.
-The object and morphism maps are exposed so sections and points retain their types. -/
+The body is exposed so the types of its morphisms use the original locally ringed spaces. -/
 @[expose] def forgetToLocallyRingedSpace : FormalScheme ⥤ LocallyRingedSpace :=
   inducedFunctor toLocallyRingedSpace
+
+@[simp]
+theorem forgetToLocallyRingedSpace_obj (X : FormalScheme) :
+    forgetToLocallyRingedSpace.obj X = X.toLocallyRingedSpace := (rfl)
+
+-- Keep this rewrite explicit so it does not preempt the specialized simp lemmas below.
+theorem forgetToLocallyRingedSpace_map {X Y : FormalScheme} (f : X ⟶ Y) :
+    forgetToLocallyRingedSpace.map f = f.hom := (rfl)
 
 /-- The formal-scheme category is a full subcategory of locally ringed spaces. -/
 def fullyFaithfulForgetToLocallyRingedSpace : forgetToLocallyRingedSpace.FullyFaithful :=
@@ -115,16 +124,8 @@ theorem isAffineOpen_iff (X : FormalScheme) (U : Opens X) :
     have : LocallyRingedSpace.IsOpenImmersion j := inferInstance
     refine ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
       e.inv ≫ j, inferInstance, ?_⟩
-    ext z
-    constructor
-    · rintro ⟨y, rfl⟩
-      exact (e.inv.base y).property
-    · intro hz
-      refine ⟨e.hom.base ⟨z, hz⟩, ?_⟩
-      -- Expose composition on points before cancelling the isomorphism.
-      erw [LocallyRingedSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-        LocallyRingedSpace.iso_hom_base_inv_base_apply]
-      rfl
+    exact (LocallyRingedSpace.range_iso_inv_ofRestrict U.isOpenEmbedding e).trans
+      Subtype.range_coe
 
 /-- Every formal spectrum is an affine formal open in itself. -/
 @[simp]
@@ -144,15 +145,12 @@ theorem exists_spf_le (X : FormalScheme) (U : Opens X) (x : X) (hx : x ∈ U) :
   obtain ⟨V, ⟨a, rfl⟩, hyV, hVU⟩ := (Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen)
     (show y ∈ (Opens.map i.base).obj U from
       (congrArg (fun z ↦ z ∈ U) hy).mpr hx)
-  have hrange : Set.range (Spf.basicOpenι a).base = (Spf.basicOpen a : Set (Spf.carrier A)) := by
-    rw [Spf.basicOpenι_base]
-    exact Spf.range_comap_completedAway a
-  obtain ⟨z, hz⟩ := hrange.ge hyV
+  obtain ⟨z, hz⟩ := (Spf.range_basicOpenι a).ge hyV
   refine ⟨AdicRing.CompletedAway A a, inferInstance, inferInstance, inferInstance,
     inferInstance, Spf.basicOpenι a ≫ i, inferInstance, ⟨z, ?_⟩, ?_⟩
   · simpa only [LocallyRingedSpace.comp_base, TopCat.coe_comp, Function.comp_apply, hz] using hy
   · rintro _ ⟨w, rfl⟩
-    exact hVU (hrange.le (Set.mem_range_self w))
+    exact hVU ((Spf.range_basicOpenι a).le (Set.mem_range_self w))
 
 /-- The affine formal opens form a basis of the topology. -/
 theorem isBasis_affineOpens (X : FormalScheme) :
@@ -164,8 +162,9 @@ theorem isBasis_affineOpens (X : FormalScheme) :
     ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, f, hf, rfl⟩, hx, hU⟩
 
 /-- Restrict a formal scheme to an open subset, using the restriction of its locally ringed
-space. The affine atlas is obtained by shrinking charts using completed localizations. -/
-noncomputable def restrict (X : FormalScheme) (U : Opens X) : FormalScheme where
+space. The affine atlas is obtained by shrinking charts using completed localizations.
+The carrier is exposed so the underlying restriction morphisms retain their types. -/
+@[expose] noncomputable def restrict (X : FormalScheme) (U : Opens X) : FormalScheme where
   toLocallyRingedSpace := X.toLocallyRingedSpace.restrict U.isOpenEmbedding
   local_spf x := by
     obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_le U x.val x.property
@@ -176,11 +175,8 @@ noncomputable def restrict (X : FormalScheme) (U : Opens X) : FormalScheme where
       intro z hz
       exact ⟨⟨z, hU hz⟩, rfl⟩
     let g := LocallyRingedSpace.IsOpenImmersion.lift j f hfj
-    have hg : LocallyRingedSpace.IsOpenImmersion g := by
-      have := LocallyRingedSpace.IsOpenImmersion.pullback_snd_isIso_of_range_subset j f hfj
-      -- The lift is an inverse pullback projection followed by an open immersion.
-      dsimp only [g, LocallyRingedSpace.IsOpenImmersion.lift]
-      infer_instance
+    have hg : LocallyRingedSpace.IsOpenImmersion g :=
+      LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift j f hfj
     refine ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, g, hg, ?_⟩
     obtain ⟨y, hy⟩ := hx
     refine ⟨y, Subtype.ext ?_⟩
@@ -196,6 +192,11 @@ theorem restrict_toLocallyRingedSpace (X : FormalScheme) (U : Opens X) :
 /-- The inclusion of an open formal subscheme. -/
 noncomputable def ofRestrict (X : FormalScheme) (U : Opens X) : X.restrict U ⟶ X :=
   InducedCategory.homMk (X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding)
+
+-- Keep this rewrite explicit so `range_ofRestrict` remains in simp normal form.
+theorem forgetToLocallyRingedSpace_map_ofRestrict (X : FormalScheme) (U : Opens X) :
+    forgetToLocallyRingedSpace.map (X.ofRestrict U) =
+      X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding := (rfl)
 
 /-- The underlying inclusion of an open formal subscheme is an open immersion. -/
 instance (X : FormalScheme) (U : Opens X) :
@@ -213,6 +214,15 @@ theorem range_ofRestrict (X : FormalScheme) (U : Opens X) :
 noncomputable def restrictTopIso (X : FormalScheme) : X.restrict ⊤ ≅ X :=
   InducedCategory.isoMk X.toLocallyRingedSpace.restrictTopIso
 
+@[simp]
+theorem restrictTopIso_hom (X : FormalScheme) :
+    X.restrictTopIso.hom = X.ofRestrict ⊤ := (rfl)
+
+@[simp]
+theorem forgetToLocallyRingedSpace_map_restrictTopIso_inv (X : FormalScheme) :
+    forgetToLocallyRingedSpace.map X.restrictTopIso.inv =
+      X.toLocallyRingedSpace.restrictTopIso.inv := (rfl)
+
 /-- The restriction of an affine formal scheme to `D(f)` is the formal spectrum of its
 completed localization. -/
 noncomputable def restrictBasicOpenIso (A : Type u) [CommRing A] [TopologicalSpace A]
@@ -220,16 +230,38 @@ noncomputable def restrictBasicOpenIso (A : Type u) [CommRing A] [TopologicalSpa
     (ofSpf A).restrict (Spf.basicOpen f) ≅ ofSpf (AdicRing.CompletedAway A f) :=
   InducedCategory.isoMk (Spf.restrictBasicOpenIso f)
 
+@[simp]
+theorem forgetToLocallyRingedSpace_map_restrictBasicOpenIso_hom (A : Type u)
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] (f : A) :
+    forgetToLocallyRingedSpace.map (restrictBasicOpenIso A f).hom =
+      (Spf.restrictBasicOpenIso f).hom := (rfl)
+
+@[simp]
+theorem forgetToLocallyRingedSpace_map_restrictBasicOpenIso_inv (A : Type u)
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] (f : A) :
+    forgetToLocallyRingedSpace.map (restrictBasicOpenIso A f).inv =
+      (Spf.restrictBasicOpenIso f).inv := (rfl)
+
+/-- The completed-localization comparison factors the inclusion of the basic open. -/
+@[reassoc (attr := simp)]
+theorem restrictBasicOpenIso_inv_ofRestrict (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] (f : A) :
+    (restrictBasicOpenIso A f).inv ≫ (ofSpf A).ofRestrict (Spf.basicOpen f) =
+      InducedCategory.homMk (Spf.basicOpenι f) := by
+  apply forgetToLocallyRingedSpace.map_injective
+  -- `Spf.basicOpen` and the formal-scheme carrier agree only after unfolding their wrappers.
+  erw [Functor.map_comp, forgetToLocallyRingedSpace_map_restrictBasicOpenIso_inv,
+    forgetToLocallyRingedSpace_map_ofRestrict]
+  exact Spf.restrictBasicOpenIso_inv_ofRestrict f
+
 /-- Every basic open in a formal spectrum is affine formal. -/
 @[simp]
 theorem isAffineOpen_basicOpen (A : Type u) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] (f : A) :
     IsAffineOpen (ofSpf A) (Spf.basicOpen f) := by
-  refine ⟨AdicRing.CompletedAway A f, inferInstance, inferInstance, inferInstance,
+  exact ⟨AdicRing.CompletedAway A f, inferInstance, inferInstance, inferInstance,
     inferInstance, Spf.basicOpenι f,
-    Spf.isOpenImmersion_basicOpenι f, ?_⟩
-  rw [Spf.basicOpenι_base]
-  exact Spf.range_comap_completedAway f
+    Spf.isOpenImmersion_basicOpenι f, Spf.range_basicOpenι f⟩
 
 end FormalScheme
 end TauCeti
@@ -239,8 +271,8 @@ namespace AlgebraicGeometry.Scheme
 open TauCeti TauCeti.FormalScheme
 
 /-- An ordinary scheme, regarded as a formal scheme by giving its affine coordinate rings
-the discrete topology. -/
-noncomputable def toFormalScheme (X : Scheme.{u}) : FormalScheme where
+the discrete topology. The carrier is exposed so its points and morphisms retain their types. -/
+@[expose] noncomputable def toFormalScheme (X : Scheme.{u}) : FormalScheme where
   toLocallyRingedSpace := X.toLocallyRingedSpace
   local_spf x := by
     obtain ⟨U, R, ⟨e⟩⟩ := X.local_affine x
@@ -251,25 +283,52 @@ noncomputable def toFormalScheme (X : Scheme.{u}) : FormalScheme where
     have : LocallyRingedSpace.IsOpenImmersion j :=
       LocallyRingedSpace.IsOpenImmersion.ofRestrict _ _
     refine ⟨R, inferInstance, inferInstance, inferInstance, inferInstance,
-      e'.inv ≫ j, inferInstance, e'.hom.base ⟨x, U.2⟩, ?_⟩
-    -- Composition on points must be exposed before the isomorphism cancellation applies.
-    erw [LocallyRingedSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-      LocallyRingedSpace.iso_hom_base_inv_base_apply]
-    rfl
+      e'.inv ≫ j, inferInstance, ?_⟩
+    exact (LocallyRingedSpace.range_iso_inv_ofRestrict U.isOpenEmbedding e').ge
+      ⟨⟨x, U.2⟩, rfl⟩
+
+@[simp]
+theorem toFormalScheme_toLocallyRingedSpace (X : Scheme.{u}) :
+    X.toFormalScheme.toLocallyRingedSpace = X.toLocallyRingedSpace := (rfl)
 
 end AlgebraicGeometry.Scheme
 
 namespace TauCeti.FormalScheme
 
-/-- The fully faithful inclusion of ordinary schemes into formal schemes. -/
-noncomputable def ofScheme : Scheme ⥤ FormalScheme where
+/-- The fully faithful inclusion of ordinary schemes into formal schemes.
+The body is exposed so morphisms have the original schemes' underlying types. -/
+@[expose] noncomputable def ofScheme : Scheme ⥤ FormalScheme where
   obj := Scheme.toFormalScheme
   map f := InducedCategory.homMk f.toLRSHom
+
+@[simp]
+theorem ofScheme_obj (X : Scheme.{u}) : ofScheme.obj X = X.toFormalScheme := (rfl)
+
+-- Keep this rewrite explicit so the underlying-morphism simp lemma below can fire.
+theorem ofScheme_map {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    ofScheme.map f =
+      InducedCategory.homMk (X := ofScheme.obj X) (Y := ofScheme.obj Y) f.toLRSHom := (rfl)
+
+@[simp]
+theorem forgetToLocallyRingedSpace_map_ofScheme_map {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    forgetToLocallyRingedSpace.map (ofScheme.map f) = f.toLRSHom := (rfl)
 
 /-- For a discrete coordinate ring, the ordinary affine scheme is its affine formal scheme. -/
 noncomputable def ofSchemeSpecIso (R : Type u) [CommRing R] [TopologicalSpace R]
     [DiscreteTopology R] : ofScheme.obj (Spec (CommRingCat.of R)) ≅ ofSpf R :=
   InducedCategory.isoMk (Spf.discreteIsoSpec R).symm
+
+@[simp]
+theorem forgetToLocallyRingedSpace_map_ofSchemeSpecIso_hom (R : Type u) [CommRing R]
+    [TopologicalSpace R] [DiscreteTopology R] :
+    forgetToLocallyRingedSpace.map (ofSchemeSpecIso R).hom =
+      (Spf.discreteIsoSpec R).inv := (rfl)
+
+@[simp]
+theorem forgetToLocallyRingedSpace_map_ofSchemeSpecIso_inv (R : Type u) [CommRing R]
+    [TopologicalSpace R] [DiscreteTopology R] :
+    forgetToLocallyRingedSpace.map (ofSchemeSpecIso R).inv =
+      (Spf.discreteIsoSpec R).hom := (rfl)
 
 /-- Viewing schemes as formal schemes does not change their morphisms. -/
 noncomputable def fullyFaithfulOfScheme : ofScheme.FullyFaithful where
@@ -282,7 +341,7 @@ instance : ofScheme.Faithful := fullyFaithfulOfScheme.faithful
 /-- Forgetting the formal atlas of an ordinary scheme recovers the original scheme's
 locally ringed space, on objects and morphisms. -/
 @[simp]
-theorem ofScheme_comp_forget :
+theorem ofScheme_comp_forgetToLocallyRingedSpace :
     ofScheme ⋙ forgetToLocallyRingedSpace = Scheme.forgetToLocallyRingedSpace := (rfl)
 
 end TauCeti.FormalScheme

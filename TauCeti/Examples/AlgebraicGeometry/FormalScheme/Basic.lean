@@ -46,6 +46,29 @@ example (X Y : Scheme) :
     (ofScheme.obj X ⟶ ofScheme.obj Y) ≃ (X ⟶ Y) :=
   (fullyFaithfulOfScheme.homEquiv).symm
 
+-- The forgetful maps and restriction comparisons are characterized without unfolding definitions.
+example (X : FormalScheme) (U : Opens X) :
+    forgetToLocallyRingedSpace.map (X.ofRestrict U) =
+      X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding :=
+  forgetToLocallyRingedSpace_map_ofRestrict X U
+
+example (X : FormalScheme) : X.restrictTopIso.hom = X.ofRestrict ⊤ := by
+  simp only [restrictTopIso_hom]
+
+example {X Y : Scheme} (f : X ⟶ Y) :
+    forgetToLocallyRingedSpace.map (ofScheme.map f) = f.toLRSHom :=
+  forgetToLocallyRingedSpace_map_ofScheme_map f
+
+example (X : Scheme) :
+    forgetToLocallyRingedSpace.obj (ofScheme.obj X) = X.toLocallyRingedSpace := by
+  simp
+
+example (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+    [IsAdicRing A] (f : A) :
+    (restrictBasicOpenIso A f).inv ≫ (ofSpf A).ofRestrict (Spf.basicOpen f) =
+      InducedCategory.homMk (Spf.basicOpenι f) := by
+  simp only [restrictBasicOpenIso_inv_ofRestrict]
+
 section Discrete
 
 /-- The discrete topology used for the finite-ring checks. -/
