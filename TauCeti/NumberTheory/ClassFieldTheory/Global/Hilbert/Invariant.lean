@@ -244,7 +244,7 @@ theorem infiniteHilbertInvariantAt_eq_ite (w : InfinitePlace K) (a b : Kˣ)
     simp
   · rw [ite_eq_right hx]
     rcases w.isReal_or_isComplex with hw | hw
-    · rw [infiniteInvMap_apply_of_isReal w hw]
+    · rw [infiniteInvMap_apply w]
       simpa [realInv_apply, map_eq_zero_iff _ hinj, hx] using
         (ZMod.toRatAddCircle_natCast 2 1).symm
     · have h : (kummerCupPairing (-1) hζ).cup 1 1
