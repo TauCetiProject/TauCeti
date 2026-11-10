@@ -28,7 +28,7 @@ public section
 
 namespace TauCeti.IsFactorSet
 
-variable {k G : Type*} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k G : Type*} [Field k] [IsAlgClosed k] [Group G]
   (α : G → G → kˣ) [IsFactorSet α]
 
 /-- A normalized factor set of a finite group over an algebraically closed field can be
@@ -37,6 +37,9 @@ theorem exists_rescale_pow_card_eq_one :
     ∃ c : G → kˣ, c 1 = 1 ∧ ∀ g h,
       (c g * c h * (c (g * h))⁻¹ * α g h) ^ Nat.card G = 1 := by
   classical
+  rcases finite_or_infinite G with hG | hG
+  swap
+  · exact ⟨fun _ ↦ 1, rfl, fun g h ↦ by simp [Nat.card_eq_zero_of_infinite]⟩
   let := Fintype.ofFinite G
   let b (g : G) : kˣ := ∏ t : G, α g t
   have hb (g h : G) : b (g * h) * α g h ^ Fintype.card G = b h * b g := by

@@ -32,9 +32,10 @@ namespace TauCeti
 
 variable {k G : Type} [Field k] [IsAlgClosed k] [Group G] [Finite G]
 
-/-- Every Schur-multiplier class of a finite group has a factor set whose values are roots of
-unity of order dividing the group order. The representative is realized by the twisted regular
-representation on `G →₀ k`. -/
+omit [Finite G] in
+/-- Every Schur-multiplier class of a group has a factor set whose values are roots of
+unity of order dividing the cardinality of the group. The representative is realized by the
+twisted regular representation on `G →₀ k`. -/
 theorem exists_isFactorSet_pow_card_eq_one_cohomologyClass_eq (x : schurMultiplier k G) :
     ∃ (α : G → G → kˣ) (_ : IsFactorSet α),
       (∀ g h, α g h ^ Nat.card G = 1) ∧

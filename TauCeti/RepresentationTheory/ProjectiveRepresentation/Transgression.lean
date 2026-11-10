@@ -38,6 +38,7 @@ attribute [local instance] trivialMulDistribMulAction
 
 variable (k G : Type) [Field k] [IsAlgClosed k] [Group G] [Finite G]
 
+omit [Finite G] in
 /-- The character transgression of the common finite lifting extension is surjective
 onto `H²(G, kˣ)`, in arbitrary characteristic. -/
 theorem projectiveLiftingFactorSet_characterTransgression_surjective :

@@ -82,7 +82,7 @@ end
 
 section
 
-variable {k G : Type*} [Field k] [Group G] [Finite G]
+variable {k G : Type*} [Field k] [Group G]
   {V : Type*} [AddCommMonoid V] [Module k V]
 
 /-- Every projective representation of a finite group over an algebraically closed field
