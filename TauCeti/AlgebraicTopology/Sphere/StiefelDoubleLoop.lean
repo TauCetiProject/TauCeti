@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation
 public import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
+import Mathlib.Topology.Subpath
 
 /-!
 # The double loops of a sphere swept by orthonormal two-frames
@@ -135,18 +136,19 @@ theorem continuous_meridianLoop : Continuous (meridianLoop p) := by
 
 /-! ### The path of loops `χ_u` -/
 
-/-- The initial segment of the meridian `γ_u` up to time `s`, run on the whole interval. -/
+/-- The initial segment of the meridian `γ_u` up to time `s`, run on the whole interval: the
+subpath of `γ_u` from `0` to `s`, starting at `p`. -/
 def meridianSegment (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s : I) :
-    Path p (sphereMeridian p u s) where
-  toFun t := sphereMeridian p u (s * t)
-  continuous_toFun := continuous_const.sphereMeridian p (by fun_prop)
-  source' := by simp
-  target' := by simp
+    Path p (sphereMeridian p u s) :=
+  ((sphereMeridian p u).subpath 0 s).cast (sphereMeridian p u).source.symm rfl
 
 @[simp]
 theorem meridianSegment_apply (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s t : I) :
-    meridianSegment p u s t = sphereMeridian p u (s * t) :=
-  (rfl)
+    meridianSegment p u s t = sphereMeridian p u (s * t) := by
+  change sphereMeridian p u (Set.Icc.convexComb 0 s t) = _
+  congr 1
+  ext
+  simp [mul_comm]
 
 /-- The loop at `p` running along the meridian `γ_u` up to time `s` and back. -/
 private def meridianBackForth (q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I) : Path p p :=
@@ -155,7 +157,8 @@ private def meridianBackForth (q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I) : P
 private theorem continuous_meridianBackForth : Continuous (meridianBackForth p) := by
   have h₁ : Continuous ↿(fun q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I =>
       meridianSegment p q.1 q.2) :=
-    continuous_fst.fst.sphereMeridian p (by fun_prop)
+    continuous_fst.fst.sphereMeridian p (Set.Icc.continuous_convexComb_prod.comp
+      (continuous_const.prodMk (continuous_fst.snd.prodMk continuous_snd)))
   have h₂ := Path.trans_continuous_family _ h₁ _ (Path.symm_continuous_family _ h₁)
   exact Path.continuous_uncurry_iff.mp h₂
 
@@ -220,17 +223,17 @@ def stiefelDoubleLoop (x : stiefel (ℝ ∙ (p : E))ᗮ 2) : Path (Path.refl p) 
   ((meridianContraction p (stiefelProj _ 2 0 x)).trans (rotatingMeridianLoop p x)).trans
     (meridianContraction p (stiefelProj _ 2 0 x)).symm
 
+theorem stiefelDoubleLoop_def (x : stiefel (ℝ ∙ (p : E))ᗮ 2) :
+    stiefelDoubleLoop p x =
+      ((meridianContraction p (stiefelProj _ 2 0 x)).trans (rotatingMeridianLoop p x)).trans
+        (meridianContraction p (stiefelProj _ 2 0 x)).symm :=
+  (rfl)
+
 private theorem continuous_meridianContraction_stiefelProj :
     Continuous ↿fun x : stiefel (ℝ ∙ (p : E))ᗮ 2 =>
       meridianContraction p (stiefelProj _ 2 0 x) := by
-  have hu : Continuous (stiefelProj (ℝ ∙ (p : E))ᗮ 2 0) := by
-    refine continuous_induced_rng.2 ?_
-    rw [show Subtype.val ∘ stiefelProj (ℝ ∙ (p : E))ᗮ 2 0 =
-        fun v : stiefel (ℝ ∙ (p : E))ᗮ 2 => (v : Fin 2 → (ℝ ∙ (p : E))ᗮ) 0 from
-      funext (coe_stiefelProj 0)]
-    exact (continuous_apply 0).comp continuous_subtype_val
   have hf : Continuous fun q : stiefel (ℝ ∙ (p : E))ᗮ 2 × I => (stiefelProj _ 2 0 q.1, q.2) :=
-    (hu.comp continuous_fst).prodMk continuous_snd
+    ((continuous_stiefelProj 0).comp continuous_fst).prodMk continuous_snd
   -- As in `continuous_meridianLoop`, the composite is elaborated before it is compared with the
   -- uncurried family.
   have h := (continuous_meridianContraction p).comp hf

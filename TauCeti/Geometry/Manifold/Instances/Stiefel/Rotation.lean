@@ -120,12 +120,8 @@ theorem continuous_stiefelRotationFamily : Continuous (stiefelRotationFamily (E 
     (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)
   have hz : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.2 : ℂ) :=
     continuous_subtype_val.comp continuous_snd
-  have h₁ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).1 := by
-    refine continuous_induced_rng.2 ?_
-    rw [show Subtype.val ∘ (fun x => (stiefelRotationFamily x).1) =
-        fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.1 : Fin 2 → E) 0 from
-      funext coe_fst_stiefelRotationFamily]
-    exact hv 0
+  have h₁ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).1 :=
+    (continuous_stiefelProj 0).comp continuous_fst
   have h₂ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).2 := by
     refine continuous_induced_rng.2 ?_
     rw [show Subtype.val ∘ (fun x => (stiefelRotationFamily x).2) =
