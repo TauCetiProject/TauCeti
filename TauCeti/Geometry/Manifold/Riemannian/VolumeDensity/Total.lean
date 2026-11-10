@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Real
 
 The Riemannian volume measure of a compact manifold has finite mass. Its total mass is
 therefore a real number, `TauCeti.riemannianTotalVolume`. This is the volume associated
-to the chosen Riemannian metric, and is preserved by differentiable isometries. The
+to the chosen Riemannian metric, and is preserved by isometries. The
 construction also applies to compact manifolds with boundary or corners.
 
 The volume is the total mass of the Riemannian density of J. M. Lee, *Introduction to
@@ -83,7 +83,8 @@ variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
-/-- A differentiable isometry between compact Riemannian manifolds preserves total volume. -/
+/-- A homeomorphism between compact Riemannian manifolds whose tangent maps preserve the inner
+products preserves total volume. -/
 theorem _root_.Homeomorph.riemannianTotalVolume_eq (Φ : M ≃ₜ N)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :

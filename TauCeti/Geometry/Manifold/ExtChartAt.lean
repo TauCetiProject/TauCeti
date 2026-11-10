@@ -68,7 +68,7 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
-  measurable in the model space.
+  measurable in the model space; `TauCeti.measurableSet_image_extChartAt_iff` gives the converse.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -633,13 +633,23 @@ theorem measurableEmbedding_extChartAt_restrict (x : M) :
     exact measurableSet_extChartAt_target x
   exact e.isEmbedding_restrict.measurableEmbedding hrange
 
+/-- A subset of an extended chart's source is measurable exactly when its image in the model
+space is measurable. -/
+theorem measurableSet_image_extChartAt_iff {s : Set M} (x : M)
+    (hsource : s ⊆ (extChartAt I x).source) :
+    MeasurableSet ((extChartAt I x) '' s) ↔ MeasurableSet s := by
+  have himage : (extChartAt I x) '' s =
+      (extChartAt I x).source.domRestrict (extChartAt I x) '' (Subtype.val ⁻¹' s) := by
+    rw [Set.image_domRestrict, Set.inter_eq_left.mpr hsource]
+  rw [himage, (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image,
+    ← (MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source (I := I) x).measurableSet)
+      |>.measurableSet_image, Subtype.image_preimage_coe, Set.inter_eq_right.mpr hsource]
+
 /-- The image of a measurable subset of an extended chart's source is measurable in the model
 space. -/
 theorem _root_.MeasurableSet.image_extChartAt {s : Set M} (hs : MeasurableSet s) (x : M)
-    (hsource : s ⊆ (extChartAt I x).source) : MeasurableSet ((extChartAt I x) '' s) := by
-  rw [← Set.inter_eq_left.mpr hsource, ← Set.image_domRestrict]
-  exact (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image.mpr
-    (hs.preimage measurable_subtype_coe)
+    (hsource : s ⊆ (extChartAt I x).source) : MeasurableSet ((extChartAt I x) '' s) :=
+  (measurableSet_image_extChartAt_iff x hsource).mpr hs
 
 end BorelModel
 
