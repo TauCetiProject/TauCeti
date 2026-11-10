@@ -246,7 +246,7 @@ end Field
 
 section Expansion
 
-variable {k A S K : Type*} [CommRing k] [CommRing A] [CommRing S] [CommRing K]
+variable {k A S K : Type*} [CommSemiring k] [CommSemiring A] [CommSemiring S] [CommSemiring K]
   [Algebra k A] [Algebra A S] [Algebra k K]
 
 /-- **Truncation of a combination of finite expansions.** Let `Φ : S →+* K⟦X⟧` send the constants
