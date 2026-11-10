@@ -81,9 +81,10 @@ corner pair with `(A ∪ B, C ∪ D)`.
   `(A ∪ B, C ∪ D)`, through `TopCat.smallSingularSubcomplexToUnion`; they are shared with the
   sequence in cohomology.
 * `TopCat.smallSingularPairMap`: the map of these squares induced by a map `f : X ⟶ Y` carrying
-  `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, compatible with `TopCat.toSmallSingularPair`
-  (`TopCat.toSmallSingularPair_comp_smallSingularPairMap`) and with the comparison maps
-  (`TopCat.smallSingularPairToUnion_comp_ofInclusionMap`).
+  `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, functorial in `f`
+  (`TopCat.smallSingularPairMap_id`, `TopCat.smallSingularPairMap_comp`), and compatible with
+  `TopCat.toSmallSingularPair` (`TopCat.toSmallSingularPair_comp_smallSingularPairMap`) and with
+  the comparison maps (`TopCat.smallSingularPairToUnion_comp_ofInclusionMap`).
 * `TopCat.epi_pairMayerVietorisFromBiprod_zero` and `TopCat.mono_pairMayerVietorisToBiprod`:
   surjectivity at the degree-zero endpoint, and injectivity of the first map when
   `Hₖ₊₁(A ∪ B, C ∪ D)` vanishes.
@@ -1004,6 +1005,24 @@ lemma smallSingularPairMap_right :
     (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD).right =
       X.smallSingularSubcomplexMap ![A, B] ![A', B'] f id (Fin.forall_fin_two.2 ⟨hfA, hfB⟩) :=
   (rfl)
+
+@[simp]
+lemma smallSingularPairMap_id :
+    smallSingularPairMap hCA hDB hCA hDB (𝟙 X) (Set.mapsTo_id A) (Set.mapsTo_id B)
+      (Set.mapsTo_id C) (Set.mapsTo_id D) = 𝟙 _ :=
+  MorphismProperty.Arrow.Hom.ext (smallSingularSubcomplexMap_id _) (smallSingularSubcomplexMap_id _)
+
+/-- The maps `TopCat.smallSingularPairMap` respect composition. -/
+@[reassoc]
+lemma smallSingularPairMap_comp {Z : TopCat.{w}} {A'' B'' C'' D'' : Set Z} (hCA'' : C'' ⊆ A'')
+    (hDB'' : D'' ⊆ B'') (g : Y ⟶ Z) (hgA : Set.MapsTo g A' A'') (hgB : Set.MapsTo g B' B'')
+    (hgC : Set.MapsTo g C' C'') (hgD : Set.MapsTo g D' D'') :
+    smallSingularPairMap hCA hDB hCA'' hDB'' (f ≫ g) (hgA.comp hfA) (hgB.comp hfB)
+        (hgC.comp hfC) (hgD.comp hfD) =
+      smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD ≫
+        smallSingularPairMap hCA' hDB' hCA'' hDB'' g hgA hgB hgC hgD :=
+  MorphismProperty.Arrow.Hom.ext (smallSingularSubcomplexMap_comp _ _ _ f g id id _ _)
+    (smallSingularSubcomplexMap_comp _ _ _ f g id id _ _)
 
 /-- The maps `TopCat.toSmallSingularPair` are natural along the maps
 `TopCat.smallSingularPairMap`. -/
