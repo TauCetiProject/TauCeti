@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 public import TauCeti.FieldTheory.Separable.PrimeDegree
+-- Proof-only: `[k(x) : k(x ^ 2)] = 2` for the rational function field in genus zero.
+import TauCeti.FieldTheory.RatFunc.PowerTower
 
 /-!
 # Hyperelliptic function fields
@@ -116,14 +118,14 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
 /-! ### From a divisor of degree two to the index-two subfield -/
 
 /-- **A divisor of degree two whose Riemann--Roch space has dimension at least two produces a
-rational subfield of index two**, as soon as the genus is positive.
+rational subfield of index two**.
 
 No hypothesis on the characteristic is made, and no separability is claimed: this is the part of
-Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The genus
-hypothesis cannot be dropped: over a rational function field the subfield produced would be all
-of `F`. -/
+Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  In positive
+genus the subfield `k(x)` produced from the divisor has index two; over a rational function field
+it is all of `F`, and `k(x ^ 2)` has index two instead. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F ≠ 0)
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
   -- Move `A` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
@@ -154,9 +156,13 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
       Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) :=
     (Divisor.degree_poles hF (Units.mk0 x hx0) hx).symm
   have hpos : 0 < Module.finrank k⟮x⟯ F := Module.finrank_pos
-  have hne : Module.finrank k⟮x⟯ F ≠ 1 := fun h1 ↦ hg (genus_eq_zero_of_adjoin_eq_top hx
-    (IntermediateField.finrank_eq_one_iff_eq_top.mp h1))
-  exact ⟨x, hx, by omega⟩
+  by_cases h1 : Module.finrank k⟮x⟯ F = 1
+  · -- `F = k(x)`, and `k(x ^ 2)` has index two in it
+    have h := hx.relfinrank_adjoin_pow_adjoin 2
+    rw [IntermediateField.finrank_eq_one_iff_eq_top.mp h1,
+      IntermediateField.relfinrank_top_right] at h
+    exact ⟨x ^ 2, hx.pow two_pos, h⟩
+  · exact ⟨x, hx, by omega⟩
 
 /-- **The intrinsic characterization of hyperelliptic function fields** away from characteristic
 two (Stichtenoth, Section VI.2): `F` is hyperelliptic exactly when its genus is at least two and
@@ -174,7 +180,7 @@ theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_a
   refine ⟨fun hhyp ↦ ⟨hhyp.two_le_genus, hhyp.exists_degree_eq_two_and_two_le_dim⟩, ?_⟩
   rintro ⟨hgen, A, hA, hdim⟩
   obtain ⟨x, hx, hrank⟩ :=
-    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim
   have h2' : (2 : k⟮x⟯) ≠ 0 := by
     intro h
     have hmap : algebraMap k k⟮x⟯ (2 : k) = 0 := by rw [map_ofNat]; exact h
@@ -204,7 +210,7 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two (hF : IsFunc
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
   obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
-  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim.ge
+  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim.ge
 
 /-- **Every function field of genus two away from characteristic two is hyperelliptic**
 (Stichtenoth, Lemma 6.2.2). -/
