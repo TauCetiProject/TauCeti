@@ -16,7 +16,8 @@ A based map `f : X → Y`, `f x = y`, induces the continuous monoid homomorphism
 `Ωᴹf = TauCeti.MooreLoopSpace.map f hf` of Moore loop spaces. Normalizing Moore loops to the unit
 interval (`TauCeti.MooreLoopSpace.homotopyEquivPath`) is a homotopy equivalence which carries
 `Ωᴹf` to the fixed-interval loop map `ContinuousMap.loopMap`
-(`TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`), so the two loop maps have the same
+(`TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`, in
+`TauCeti.Topology.PathSpace.Moore.Comparison.Basic`), so the two loop maps have the same
 connectivity. Hence, as for fixed-interval loops, Moore loop maps lower connectivity by one
 (`TauCeti.MooreLoopSpace.isNConnected_map`, `ContinuousMap.IsNConnected.mooreLoopSpaceMap`), and
 the double Moore loop map of an `(n + 2)`-connected map is `n`-connected
@@ -33,8 +34,6 @@ double loop spaces of the fibre and of the total space have the same homology be
 
 ## Main results
 
-* `TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`: normalization to the unit interval
-  intertwines the Moore and fixed-interval loop maps.
 * `TauCeti.MooreLoopSpace.isNConnected_map`: the Moore loop map is `n`-connected when `f` induces
   injections on `π_(k+1)` at `x` for `k < n` and surjections for `k ≤ n`.
 * `ContinuousMap.IsNConnected.mooreLoopSpaceMap`,
@@ -62,14 +61,6 @@ open CategoryTheory AlgebraicTopology HomotopyGroup
 namespace TauCeti.MooreLoopSpace
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
-
-/-- Normalizing Moore loops to the unit interval intertwines the Moore loop map with the
-fixed-interval loop map. -/
-theorem homotopyEquivPath_comp_map (f : C(X, Y)) (hf : f x = y) :
-    (homotopyEquivPath y).toFun.comp (map f hf).toContinuousMap =
-      (f.loopMap hf).comp (homotopyEquivPath x).toFun :=
-  ContinuousMap.ext fun γ ↦ Path.ext (funext fun s ↦ by
-    simp [homotopyEquivPath_apply, toPath_apply])
 
 /-- **Moore loop maps lower connectivity by one.** If a based map `f : X → Y`, `f x = y`, induces
 injections `π_(k+1)(X, x) → π_(k+1)(Y, y)` for `k < n` and surjections for `k ≤ n`, then the

@@ -9,13 +9,15 @@ public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.PathSpace.Loop
 public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Loop maps of `n`-connected maps
 
 A based map `f : X → Y`, `f x = y`, induces the map of fixed-interval loop spaces
-`Ω f : Ω X x → Ω Y y`, `γ ↦ f ∘ γ` (`ContinuousMap.loopMap`). Under the loop-space shift
+`Ω f : Ω X x → Ω Y y`, `γ ↦ f ∘ γ` (`ContinuousMap.loopMap`, defined in
+`TauCeti.Topology.PathSpace.Loop`). Under the loop-space shift
 `π_k(Ω X, refl x) ≅ π_(k+1)(X, x)` the map induced by `Ω f` on homotopy groups is the map induced
 by `f` one degree higher, so connectivity drops by one when passing to loop spaces: if `f`
 induces injections on `π_(k+1)` at `x` for `k < n` and surjections for `k ≤ n`, then `Ω f` is
@@ -38,10 +40,6 @@ These are the homotopy-theoretic inputs of the homology comparisons between doub
 of the fibre and of the total space of a fibration over a highly connected base: there the fibre
 inclusion is highly connected, and so is its double loop map, which therefore induces
 isomorphisms on homology in a range.
-
-## Main definitions
-
-* `ContinuousMap.loopMap`: the map `Ω X x → Ω Y y` of loop spaces induced by a based map.
 
 ## Main results
 
@@ -67,42 +65,6 @@ open Topology.Homotopy HomotopyGroup
 namespace ContinuousMap
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
-
-/-- The map `Ω X x → Ω Y y` of fixed-interval loop spaces induced by a based map `f`, `f x = y`:
-a loop `γ` is sent to `f ∘ γ`. -/
-def loopMap (f : C(X, Y)) (hf : f x = y) : C(Ω X x, Ω Y y) where
-  toFun γ := (γ.map f.continuous).cast hf.symm hf.symm
-  continuous_toFun := continuous_induced_rng.2 <|
-    (ContinuousMap.continuous_postcomp f).comp continuous_induced_dom
-
-@[simp]
-theorem loopMap_apply (f : C(X, Y)) (hf : f x = y) (γ : Ω X x) (t : I) :
-    f.loopMap hf γ t = f (γ t) :=
-  (rfl)
-
-/-- The loop map sends the constant loop to the constant loop. -/
-@[simp]
-theorem loopMap_refl (f : C(X, Y)) (hf : f x = y) : f.loopMap hf (Path.refl x) = Path.refl y :=
-  Path.ext (funext fun _ ↦ hf)
-
-/-- The loop map commutes with concatenation of loops. -/
-@[simp]
-theorem loopMap_trans (f : C(X, Y)) (hf : f x = y) (γ δ : Ω X x) :
-    f.loopMap hf (γ.trans δ) = (f.loopMap hf γ).trans (f.loopMap hf δ) := by
-  ext t
-  simp only [loopMap_apply, Path.trans_apply]
-  split_ifs <;> rfl
-
-/-- The loop map of the identity is the identity. -/
-@[simp]
-theorem loopMap_id : (ContinuousMap.id X).loopMap (rfl : id x = x) = ContinuousMap.id (Ω X x) :=
-  ContinuousMap.ext fun _ ↦ Path.ext (funext fun _ ↦ rfl)
-
-/-- The loop map of a composite is the composite of the loop maps. -/
-theorem loopMap_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z)
-    (f : C(X, Y)) (hf : f x = y) :
-    (g.comp f).loopMap (by rw [comp_apply, hf, hg]) = (g.loopMap hg).comp (f.loopMap hf) :=
-  ContinuousMap.ext fun _ ↦ Path.ext (funext fun _ ↦ rfl)
 
 /-! ### Degree zero -/
 
@@ -160,7 +122,7 @@ on `π_(m+2)`, up to the loop-space shifts. -/
 private theorem pathLoopSpaceMulEquiv_map_loopMap (m : ℕ) (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
     pathLoopSpaceMulEquiv m (map (f.loopMap hf) (f.loopMap_refl hf) a) =
       map f hf (pathLoopSpaceMulEquiv m a) :=
-  f.pathLoopSpaceMulEquiv_map hf (f.loopMap hf) (fun _ _ ↦ rfl) m a
+  f.pathLoopSpaceMulEquiv_map hf (f.loopMap hf) (f.loopMap_apply hf) m a
 
 /-- Prepending a loop commutes with the loop map. -/
 private theorem prepend_comp_loopMap (γ : Ω X x) :
@@ -169,20 +131,14 @@ private theorem prepend_comp_loopMap (γ : Ω X x) :
   ContinuousMap.ext fun δ ↦ by
     simp [Path.prependHomotopyEquiv_apply, loopMap_trans]
 
-/-- Prepending `γ` to the constant loop gives a loop joined to `γ` in the loop space. -/
-private theorem joined_prependHomotopyEquiv_refl (γ : Ω X x) :
-    Joined ((Path.prependHomotopyEquiv γ x).toFun (Path.refl x)) γ := by
-  rw [show (Path.prependHomotopyEquiv γ x).toFun (Path.refl x) = γ.trans (Path.refl x) from
-    Path.prependHomotopyEquiv_apply γ (Path.refl x)]
-  exact Path.joined_iff_homotopic.2 ⟨Path.Homotopy.transRefl γ⟩
-
 /-- The map induced by the loop map on `π_k` is injective at a loop `γ` exactly when it is
 injective at the constant loop. -/
 private theorem injective_map_loopMap_iff (k : ℕ) (γ : Ω X x) :
     Function.Injective (map (N := Fin k) (f.loopMap hf) (rfl : f.loopMap hf γ = _)) ↔
       Function.Injective
         (map (N := Fin k) (f.loopMap hf) (rfl : f.loopMap hf (Path.refl x) = _)) := by
-  rw [← (f.loopMap hf).injective_map_iff_of_path (joined_prependHomotopyEquiv_refl γ).somePath]
+  rw [← (f.loopMap hf).injective_map_iff_of_path
+    (Path.joined_prependHomotopyEquiv_refl γ).somePath]
   exact (Path.prependHomotopyEquiv γ x).isWeakHomotopyEquivalence.injective_map_iff_of_comp_eq
     (Path.prependHomotopyEquiv (f.loopMap hf γ) y).isWeakHomotopyEquivalence
     (prepend_comp_loopMap f hf γ) (Fin k) (Path.refl x)
@@ -193,7 +149,8 @@ private theorem surjective_map_loopMap_iff (k : ℕ) (γ : Ω X x) :
     Function.Surjective (map (N := Fin k) (f.loopMap hf) (rfl : f.loopMap hf γ = _)) ↔
       Function.Surjective
         (map (N := Fin k) (f.loopMap hf) (rfl : f.loopMap hf (Path.refl x) = _)) := by
-  rw [← (f.loopMap hf).surjective_map_iff_of_path (joined_prependHomotopyEquiv_refl γ).somePath]
+  rw [← (f.loopMap hf).surjective_map_iff_of_path
+    (Path.joined_prependHomotopyEquiv_refl γ).somePath]
   exact (Path.prependHomotopyEquiv γ x).isWeakHomotopyEquivalence.surjective_map_iff_of_comp_eq
     (Path.prependHomotopyEquiv (f.loopMap hf γ) y).isWeakHomotopyEquivalence
     (prepend_comp_loopMap f hf γ) (Fin k) (Path.refl x)
