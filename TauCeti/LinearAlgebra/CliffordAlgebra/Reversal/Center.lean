@@ -28,9 +28,9 @@ dimension six its central fixed elements are exactly the scalars. These statemen
 discriminant algebra is a quadratic field or a split quadratic algebra. They determine the
 base over which the canonical involution is linear in the low-dimensional unitary groups.
 
-The centre and uniqueness of its scalar/volume coordinates are supplied by
-`CliffordAlgebra.mem_center_even_iff_exists_eq_add_smul_volume` and
-`CliffordAlgebra.add_smul_volume_injective_of_even_length`; the reversal sign is supplied by
+The centre is supplied by `CliffordAlgebra.mem_center_even_iff_exists_eq_add_smul_volume` and, in
+odd dimension, `CliffordAlgebra.isCentral_even_of_odd_finrank`; the invertibility of the volume
+element is supplied by `CliffordAlgebra.isUnit_prod_map_ι` and the reversal sign by
 `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho`.
 
 ## Main results
@@ -41,9 +41,10 @@ The centre and uniqueness of its scalar/volume coordinates are supplied by
 * `TauCeti.CliffordAlgebra.reverseEven_prod_map_ι_of_pairwise_isOrtho`: reversal on an even
   orthogonal volume element.
 * `TauCeti.CliffordAlgebra.reverse_add_smul_volume_eq_self_iff`: the fixed-point criterion for an
-  even anisotropic orthogonal volume element over a field with `2 ≠ 0`.
+  anisotropic orthogonal volume element over a field with `2 ≠ 0`.
 * `TauCeti.CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center`: the central fixed-point criterion
-  for a regular quadratic space of even positive dimension over a field with `2 ≠ 0`.
+  for a regular quadratic space of positive dimension over a field with `2 ≠ 0`; in odd dimension
+  the central elements of the even Clifford algebra are scalars, so the criterion is trivial.
 * `TauCeti.CliffordAlgebra.forall_mem_center_reverseEven_eq_self_iff`: the criterion for reversal
   to fix the whole centre pointwise.
 * `TauCeti.CliffordAlgebra.reverseEven_eq_self_of_mem_center_of_finrank_eq_four`: pointwise
@@ -105,11 +106,11 @@ end CommRing
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [NeZero (2 : K)] {Q : QuadraticForm K V}
 
-/-- For an even anisotropic orthogonal volume element, reversal fixes `a + b • ω` exactly when
+/-- For an anisotropic orthogonal volume element, reversal fixes `a + b • ω` exactly when
 its reversal sign is positive or its volume coordinate `b` vanishes. -/
 theorem reverse_add_smul_volume_eq_self_iff
     {l : List V} (hl : l.Pairwise Q.IsOrtho)
-    (hlen : Even l.length) (hQl : ∀ v ∈ l, Q v ≠ 0)
+    (hQl : ∀ v ∈ l, Q v ≠ 0)
     (a b : K) :
     reverse (algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod) =
       algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod ↔
@@ -118,16 +119,23 @@ theorem reverse_add_smul_volume_eq_self_iff
   by_cases hsign : Even (l.length.choose 2)
   · simp [hsign, hsign.neg_one_pow]
   have hodd : Odd (l.length.choose 2) := Nat.not_even_iff_odd.mp hsign
-  have hne : l ≠ [] := fun h => hsign (by simp [h])
   simp only [hsign, false_or, hodd.neg_one_pow, neg_one_mul, neg_smul]
   constructor
   · intro h
-    have hcoord : (a, -b) = (a, b) :=
-      add_smul_volume_injective_of_even_length hl hlen hne hQl (by simpa using h)
-    have htwo : (2 : K) * b = 0 := by
-      have := congrArg Prod.snd hcoord
-      linear_combination -this
-    exact (mul_eq_zero.mp htwo).resolve_left (NeZero.ne (2 : K))
+    -- cancelling the scalar summand leaves `2 b ω = 0`, and the volume element `ω` is a unit
+    have hunit : IsUnit (l.map (ι Q)).prod :=
+      isUnit_prod_map_ι (List.prod_ne_zero (by simpa using fun v hv h => hQl v hv h)).isUnit
+    have h2 : (2 * b) • (l.map (ι Q)).prod = 0 := by
+      rw [two_mul, add_smul]
+      nth_rewrite 1 [← add_left_cancel h]
+      exact neg_add_cancel _
+    have h3 : (2 * b) • (l.map (ι Q)).prod = algebraMap K (CliffordAlgebra Q) (2 * b) *
+        (l.map (ι Q)).prod := by rw [Algebra.smul_def]
+    rw [h3] at h2
+    have h4 := hunit.mul_left_eq_zero.mp h2
+    let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+    exact (mul_eq_zero.mp (algebraMap_injective Q (by simpa using h4) : 2 * b = 0)).resolve_left
+      (NeZero.ne (2 : K))
   · rintro rfl
     simp
 
@@ -164,7 +172,7 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
       have hrev := congrArg (fun y : even Q => (y : CliffordAlgebra Q)) hfix
       rw [coe_reverseEven_apply, hab] at hrev
       have hb :=
-        ((reverse_add_smul_volume_eq_self_iff hl hle hQl a b).mp hrev).resolve_left
+        ((reverse_add_smul_volume_eq_self_iff hl hQl a b).mp hrev).resolve_left
           (by simpa only [hlen] using hsign)
       refine ⟨a, Subtype.ext ?_⟩
       simpa [hb] using hab
