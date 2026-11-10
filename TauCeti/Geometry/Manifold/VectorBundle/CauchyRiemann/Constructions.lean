@@ -289,7 +289,6 @@ omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 /-- Transport along `Φ` and then along `Ψ` is transport along the composite. -/
 theorem sectionTransport_trans {X : M → Type*} [∀ x, TopologicalSpace (X x)]
     [∀ x, AddCommGroup (X x)] [∀ x, Module ℂ (X x)] [∀ x, Module ℝ (X x)]
-    [∀ x, IsTopologicalAddGroup (X x)] [∀ x, ContinuousSMul ℝ (X x)]
     [∀ x, IsScalarTower ℝ ℂ (X x)] (Ψ : Π x : M, W x ≃L[ℂ] X x) :
     sectionTransport Ψ (sectionTransport Φ D) =
       sectionTransport (fun x ↦ (Φ x).trans (Ψ x)) D := by
