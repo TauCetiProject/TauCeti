@@ -13,10 +13,9 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Descent
 # The dimension vector of an indecomposable representation is a root
 
 Let `Q` be a finite quiver whose Tits form is positive definite, the numerical side of the ADE
-condition in Gabriel's theorem, and fix a sink-admissible ordering of its vertices. This file
-proves that every finite-dimensional indecomposable representation `M` of `Q` satisfies
-`q(dim M) = 1`, so that its dimension vector is a root of the Tits form
-(`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`).
+condition in Gabriel's theorem. This file proves that every finite-dimensional indecomposable
+representation `M` of `Q` satisfies `q(dim M) = 1`, so that its dimension vector is a root of the
+Tits form (`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`).
 
 This is the half of the Gabriel correspondence saying that the dimension vector of an
 indecomposable *is* a positive root: `dim M` is nonnegative by construction and nonzero by
@@ -50,16 +49,17 @@ itself.
 * `TauCeti.exists_isZero_coxeterFunctor_iterate`: a positive definite Tits form forces a power of
   the Coxeter functor to annihilate every finite-dimensional indecomposable representation.
 * `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: **the dimension vector of a
-  finite-dimensional indecomposable representation is a root of the Tits form**, with
-  `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_posDef` the same statement without an
-  ordering, which is chosen internally (a positive definite Tits form forces acyclicity).
+  finite-dimensional indecomposable representation is a root of the Tits form**. The
+  sink-admissible ordering the proof runs along is chosen internally, since a positive definite
+  Tits form forces acyclicity.
 
 ## Implementation notes
 
 As in `TauCeti.coxeterFunctor` and `TauCeti.exists_vertexPreReflectionList_pow_apply_neg`, the
-sink-admissible ordering is an explicit argument rather than a chosen one: the Coxeter functor and
-the transformation it realizes both depend on the ordering. Every finite acyclic quiver has one,
-by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`.
+sink-admissible ordering is an explicit argument of the supporting results rather than a chosen
+one: the Coxeter functor and the transformation it realizes both depend on the ordering. Every
+finite acyclic quiver has one, by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; the final
+theorem chooses one itself.
 
 For the indecomposable *projectives* over an acyclic quiver the same Tits value is computed
 directly, and without positive definiteness, by
@@ -237,35 +237,26 @@ private theorem titsForm_dimVector_eq_one_of_isZero_iterate (q : _root_.Quiver.{
         ((isZero_coxeterFunctor_obj_iff_isZero_reflectionFunctorList_obj
           q hq hnd hall hl M).mp h0)
 
-/-- **The dimension vector of a finite-dimensional indecomposable representation is a root of the
-Tits form.** For a quiver with positive definite Tits form -- the numerical form of the ADE
-condition -- and any sink-admissible ordering of its vertices, an indecomposable representation
-with finite-dimensional vertex spaces has `q(dim M) = 1`. Since a dimension vector is nonnegative,
-and is nonzero because an indecomposable is not the zero object, `dim M` is a *positive* root.
+/-- **The dimension vector of a finite-dimensional indecomposable representation of a quiver with
+positive definite Tits form is a root.** For a quiver with positive definite Tits form -- the
+numerical form of the ADE condition -- an indecomposable representation with finite-dimensional
+vertex spaces has `q(dim M) = 1`. Since a dimension vector is nonnegative, and is nonzero because an
+indecomposable is not the zero object, `dim M` is a *positive* root.
+
+A quiver with positive definite Tits form is acyclic (`TauCeti.isAcyclic_of_titsForm_posDef`),
+which produces a sink-admissible ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`;
+since the conclusion does not mention the ordering, the choice is made here rather than by the
+caller.
 
 This is the half of Gabriel's correspondence that produces a positive root from an
 indecomposable; the nonvanishing half is `TauCeti.dimVector_ne_zero_of_indecomposable`. -/
-theorem titsForm_dimVector_eq_one_of_indecomposable (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
-    (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V _ q)
-    (hM : Indecomposable M) (hfd : @IsFinDim.{u, v, w, max v w x} k V fld q M) :
-    @titsForm V q fV hq (fun j : V ↦ (@dimVector k V fld q M j : ℤ)) = 1 := by
-  obtain ⟨N, hN⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfd
-  exact titsForm_dimVector_eq_one_of_isZero_iterate q hq hnd hall hl N M hM hfd hN
-
-/-- **The dimension vector of a finite-dimensional indecomposable representation of a quiver with
-positive definite Tits form is a root.** This is the consumer-facing form of
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: a quiver with positive definite Tits form is
-acyclic (`TauCeti.isAcyclic_of_titsForm_posDef`), which produces a sink-admissible ordering by
-`TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`, and since the conclusion does not mention the
-ordering, the choice is made here rather than by the caller. -/
-theorem titsForm_dimVector_eq_one_of_indecomposable_of_posDef [q : _root_.Quiver.{w} V]
+theorem titsForm_dimVector_eq_one_of_indecomposable [q : _root_.Quiver.{w} V]
     [hq : ∀ a b : V, Fintype (a ⟶ b)] (hpd : (titsForm V).PosDef)
     (M : QuiverRep.{u, v, w, max v w x} k V) (hM : Indecomposable M)
     (hfd : IsFinDim.{u, v, w, max v w x} k V M) :
     titsForm V (fun j : V ↦ (dimVector M j : ℤ)) = 1 := by
   obtain ⟨l, hnd, hall, hl⟩ := (isAcyclic_of_titsForm_posDef hpd).exists_isSinkAdmissible
-  exact titsForm_dimVector_eq_one_of_indecomposable q hq hnd hall hl hpd M hM hfd
+  obtain ⟨N, hN⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfd
+  exact titsForm_dimVector_eq_one_of_isZero_iterate q hq hnd hall hl N M hM hfd hN
 
 end TauCeti

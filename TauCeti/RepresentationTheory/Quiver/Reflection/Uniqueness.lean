@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Root
 
 /-!
