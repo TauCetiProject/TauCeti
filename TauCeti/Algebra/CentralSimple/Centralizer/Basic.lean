@@ -297,12 +297,13 @@ end Identification
 
 section DimensionCount
 
-variable {K A : Type*} [Field K] [Ring A] [Nontrivial A] [Algebra K A] [FiniteDimensional K A]
+variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
   (B : Subalgebra K A) [IsSimpleRing (↥B ⊗[K] Aᵐᵒᵖ)]
 
 /-- **The dimension count behind the centralizer theorem**, asking only for what it uses: that `A`
-is finite-dimensional and nonzero over the field `K` — so that the factor of `finrank K A` cancelled
-at the end is nonzero — and that the ring `R = B ⊗[K] Aᵐᵒᵖ` acting on `A` is simple. Then
+is finite-dimensional over the field `K` and that the ring `R = B ⊗[K] Aᵐᵒᵖ` acting on `A` is
+simple, which makes `A` nonzero, so that the factor of `finrank K A` cancelled at the end is
+nonzero. Then
 
   `finrank K B * finrank K C_A(B) = finrank K A`.
 
@@ -320,6 +321,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
     (MulOpposite.opLinearEquiv K (M := A)).finrank_eq.symm,
     ← (centralizerAlgEquivEnd B).toLinearEquiv.finrank_eq] at key
   -- `key : c * (b * a) = a ^ 2`; cancel one factor of `a = finrank K A`.
+  have : Nontrivial A := not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (↥B ⊗[K] Aᵐᵒᵖ) inferInstance
   have ha : 0 < finrank K A := Module.finrank_pos
   refine Nat.eq_of_mul_eq_mul_right ha ?_
   rw [sq] at key
@@ -330,6 +333,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
 ambient algebra is simple. No centrality hypothesis on the subalgebra is needed. -/
 theorem _root_.Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct :
     IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
+  have : Nontrivial A := not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (↥B ⊗[K] Aᵐᵒᵖ) inferInstance
   have : FiniteDimensional K ↥B :=
     FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
   have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
