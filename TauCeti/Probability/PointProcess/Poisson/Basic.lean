@@ -98,14 +98,14 @@ theorem IsPoissonRandomMeasure.ae_exists_natCast (h : IsPoissonRandomMeasure P N
   exact ⟨n, hn.symm⟩
 
 /-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
-theorem IsPoissonRandomMeasure.ae_nat_floor_eq (h : IsPoissonRandomMeasure P N Λ)
+theorem IsPoissonRandomMeasure.ae_natCast_natFloor_eq (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
     ∀ᵐ ω ∂P, (⌊(N ω A).toNNReal⌋₊ : ℝ≥0∞) = N ω A := by
   filter_upwards [h.ae_exists_natCast hA hfin] with ω ⟨n, hn⟩
   simp [hn]
 
 /-- The natural-valued count on any measurable set of finite intensity has Poisson law. -/
-theorem IsPoissonRandomMeasure.hasLaw_nat_floor (h : IsPoissonRandomMeasure P N Λ)
+theorem IsPoissonRandomMeasure.hasLaw_natFloor (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
     HasLaw (fun ω ↦ ⌊(N ω A).toNNReal⌋₊) (poissonMeasure (Λ A).toNNReal) P := by
   have hc := h.hasLaw hA hfin
