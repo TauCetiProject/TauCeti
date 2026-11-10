@@ -19,11 +19,10 @@ A *weight vector* on a `Finset s` is a function `f : X → ℝ≥0∞` with `∑
 weights of a probability measure on its finite carrier are the motivating example.  This file
 records the arithmetic of comparing two weight vectors, and of rounding one onto a grid.
 
-Two weight vectors split against each other: the mass `min (f x) (g x)` matched at `x` and the
-excess `f x - g x` above `g` add up to `f x`.  When `g` is dominated by `f` away from one
-designated atom `x₀` -- so that `g` arises from `f` by transferring weight onto `x₀` -- the
-designated atom can only gain, and it gains exactly the total excess.  Only equality of the two
-finite total masses is used there, not normalization to one.
+When a weight vector `g` is dominated by `f` away from one designated atom `x₀` -- so that `g`
+arises from `f` by transferring weight onto `x₀` -- the designated atom can only gain, and it
+gains exactly the total excess `∑ x ∈ s, (f x - g x)`.  Only equality of the two finite total
+masses is used there, not normalization to one.
 
 A weighted sum with weights summing to one is at most twice its part over the large terms, as
 soon as it is at least twice the threshold separating large terms from small ones.
@@ -35,7 +34,6 @@ dominated away from `x₀` and lose less than `1 / M` each.
 
 ## Main results
 
-* `Finset.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
 * `ENNReal.toReal_sub_add_toReal_sub` -- the excesses in both directions add up to the distance;
 * `TauCeti.sum_mul_le_two_mul_sum_mul_ite` -- a weighted sum is dominated by its large terms;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
@@ -50,12 +48,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {X : Type*}
-
-/-- The mass of `f` matched by `g` and the mass of `f` above `g` add up to `f`. -/
-theorem _root_.Finset.sum_min_add_sum_tsub {α : Type*} [AddCommMonoid α] [LinearOrder α]
-    [CanonicallyOrderedAdd α] [Sub α] [OrderedSub α] (s : Finset X) (f g : X → α) :
-    ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
-  simp_rw [← Finset.sum_add_distrib, add_comm (min _ _), tsub_add_min]
 
 /-- The excess of `a` over `b` and the excess of `b` over `a` add up to their distance: for finite
 `a` and `b`, `(a - b) + (b - a) = |a - b|`, read in `ℝ`. -/
