@@ -218,9 +218,8 @@ theorem discreteEnergyForgetMap_apply {t : Fin (n + 2) → ℝ} (ht : StrictMono
 
 /-- The identity selection induces the identity on the strict energy sublevel.
 
-The target is intentionally definitionally the original sublevel: `RelEmbedding.refl_apply`
-and `Function.comp_id` identify the time tuple `t ∘ RelEmbedding.refl _` with `t`. This
-uses the identity embedding's coercion law, not any unfolding of the energy carrier. -/
+The time tuple `t ∘ RelEmbedding.refl _` is definitionally `t`, so the source and
+target sublevels coincide. -/
 @[simp]
 theorem discreteEnergyForgetMap_refl {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (p q : M) (c : ℝ) :
@@ -234,9 +233,8 @@ theorem discreteEnergyForgetMap_refl {t : Fin (n + 2) → ℝ} (ht : StrictMono 
 
 /-- The continuous sublevel maps commute with further vertex-forgetting.
 
-The two target time tuples agree definitionally by the coercion law
-`RelEmbedding.coe_trans` and `Function.comp_assoc`: `(t ∘ r) ∘ s = t ∘ (s.trans r)`.
-Thus the target sublevels are the same type without transporting either continuous map. -/
+The time tuples `(t ∘ r) ∘ s` and `t ∘ (s.trans r)` are definitionally equal, so
+both sides have the same target sublevel. -/
 @[simp]
 theorem discreteEnergyForgetMap_trans {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (r : Fin (m + 2) ↪o Fin (n + 2)) (s : Fin (l + 2) ↪o Fin (m + 2))
