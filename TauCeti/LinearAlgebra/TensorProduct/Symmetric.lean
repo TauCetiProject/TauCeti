@@ -9,7 +9,6 @@ public import Mathlib.Algebra.DirectSum.LinearMap
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Trace.Square
-import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.RingTheory.TensorProduct.Finite
 
