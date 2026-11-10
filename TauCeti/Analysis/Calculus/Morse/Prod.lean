@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.ODE.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
@@ -74,22 +75,6 @@ theorem hessianQuadraticForm_comp_fst_add_comp_snd (hφ : ContDiffAt ℝ 2 φ a)
   rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_fst_add_comp_snd hφ hψ,
     QuadraticMap.prod_apply, hessianQuadraticForm_apply, hessianQuadraticForm_apply]
   simp [coprodEquivL_apply_apply]
-
-/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `φ` is `Cⁿ` at `a`:
-restrict to the slice `y = b` and subtract the constant `ψ b`. -/
-theorem _root_.ContDiffAt.of_comp_fst_add_comp_snd_left {n : WithTop ℕ∞}
-    (h : ContDiffAt ℝ n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt ℝ n φ a := by
-  have hφ : ContDiffAt ℝ n (fun x ↦ φ x + ψ b) a := by
-    simpa [Function.comp_def] using h.comp (f := fun x : E ↦ (x, b)) a (by fun_prop)
-  simpa using hφ.sub (contDiffAt_const (c := ψ b))
-
-/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `ψ` is `Cⁿ` at `b`:
-restrict to the slice `x = a` and subtract the constant `φ a`. -/
-theorem _root_.ContDiffAt.of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞}
-    (h : ContDiffAt ℝ n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt ℝ n ψ b := by
-  have hψ : ContDiffAt ℝ n (fun y ↦ φ a + ψ y) b := by
-    simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
-  simpa using hψ.sub (contDiffAt_const (c := φ a))
 
 /-- **Nondegenerate critical points of a separated sum.** The separated sum
 `φ ∘ Prod.fst + ψ ∘ Prod.snd` has a nondegenerate critical point at `(a, b)` exactly when `φ` has
