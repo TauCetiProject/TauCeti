@@ -71,11 +71,8 @@ theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
     apply isReal_iff.mpr
     apply ComplexEmbedding.isReal_iff.mpr
     ext x
-    have hx := hN x.property
-    rw [← mem_toSubfield] at hx
-    dsimp only [R] at hx
-    erw [Subfield.toIntermediateField_toSubfield, RingHom.mem_eqLocusField,
-      ComplexEmbedding.conjugate_coe_eq] at hx
+    have hx : ComplexEmbedding.conjugate φ x = φ x :=
+      RingHom.mem_eqLocusField.mp (hN x.property)
     have hxφ : φ (x : M) = w.embedding x :=
       ComplexEmbedding.lift_algebraMap_apply M w.embedding x
     simpa only [ComplexEmbedding.conjugate_coe_eq, hxφ] using hx
