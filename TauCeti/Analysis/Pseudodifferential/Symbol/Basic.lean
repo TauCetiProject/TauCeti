@@ -39,10 +39,9 @@ space, and develop the first operations of the symbol calculus:
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
   `∂_x^{α₁} ∂_ξ^{β₁} b ∘ ∂_x^{α₂} ∂_ξ^{β₂} a`, each of size
-  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`; this estimate holds for every continuous
-  bilinear map (`ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear`). It is bilinear and
-  associative, with the constant symbol `id` as identity, and spatial and frequency derivatives
-  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
+  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`. It is bilinear and associative, with
+  the constant symbol `id` as identity, and spatial and frequency derivatives obey the Leibniz
+  rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
@@ -694,23 +693,6 @@ section Frequency
 
 variable {b : CoordinateSpace n → V →L[ℂ] W}
 
-/-- The frequency-only estimates hold with constants uniform in the position. -/
-private theorem exists_bound_comp_snd (hb : ContDiff ℝ ∞ b)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β (fun p => b p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  rcases eq_or_ne α [] with rfl | hα
-  · obtain ⟨C, hC⟩ := hbound β.length
-    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
-    rw [mixedDeriv_nil_comp_snd]
-    calc ‖coordinateDeriv β b ξ‖ ≤ ‖iteratedFDeriv ℝ β.length b ξ‖ :=
-          norm_coordinateDeriv_le β (hb.of_le (mod_cast le_top)) ξ
-      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
-      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd b hα]⟩
-
 /-- A smooth frequency-only coefficient `a(x, ξ) = b(ξ)` whose derivatives satisfy
 `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`. Its quantization is the Fourier
 multiplier `b(D)` (`TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`). -/
@@ -720,7 +702,8 @@ def ofFrequency (b : CoordinateSpace n → V →L[ℂ] W) (hb : ContDiff ℝ ∞
   coefficient p := b p.2
   contDiff_coefficient := hb.comp contDiff_snd
   exists_bound _ _ α β :=
-    (exists_bound_comp_snd hb hbound α β).imp fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
+    (exists_bound_mixedDeriv_comp_snd (hb.of_le (mod_cast le_top)) (hbound β.length) α).imp
+      fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
 
 variable (hb : ContDiff ℝ ∞ b)
   (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
@@ -731,7 +714,8 @@ theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
 
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
-  isUniform_iff.2 (exists_bound_comp_snd hb hbound)
+  isUniform_iff.2 fun α β =>
+    exists_bound_mixedDeriv_comp_snd (hb.of_le (mod_cast le_top)) (hbound β.length) α
 
 end Frequency
 
@@ -739,53 +723,47 @@ section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
-/-- The **Leibniz estimate** for a continuous bilinear map `B`: bounds `C s t ⟨ξ⟩^(μ - |t|)` and
-`D s t ⟨ξ⟩^(ν - |t|)` on the mixed derivatives of `f` and `g` at `(x, ξ)` of total length at most
-`|α| + |β|` bound the mixed derivative `∂_x^α ∂_ξ^β` of `p ↦ B (f p) (g p)` by `‖B‖` times a
-constant times `⟨ξ⟩^(μ + ν - |β|)`. The constant sums `C s₁ t₁ * D s₂ t₂` over all splittings of
-`α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the Leibniz rule
-`ContinuousLinearMap.mixedDeriv_of_bilinear`. -/
-theorem _root_.ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear {F G H : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] (B : F →L[ℝ] G →L[ℝ] H)
-    {f : CoordinateSpace n × CoordinateSpace n → F} {g : CoordinateSpace n × CoordinateSpace n → G}
-    (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) {x ξ : CoordinateSpace n} {μ ν : ℝ}
-    {C D : List (Fin n) → List (Fin n) → ℝ} (α β : List (Fin n))
-    (hC : ∀ s t, s.length + t.length ≤ α.length + β.length →
-      ‖mixedDeriv s t f x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.length) / 2))
-    (hD : ∀ s t, s.length + t.length ≤ α.length + β.length →
-      ‖mixedDeriv s t g x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.length) / 2)) :
-    ‖mixedDeriv α β (fun p => B (f p) (g p)) x ξ‖ ≤
-      ‖B‖ * (β.sublists'.revzip.map fun t =>
+/-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
+`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+Leibniz rule. -/
+theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
+    (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
+    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
+    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
+    (α β : List (Fin n)) :
+    ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
+      (β.sublists'.revzip.map fun t =>
         (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
-        (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) := by
-  have hlen : ∀ {l : List (Fin n)}, ∀ q ∈ l.sublists'.revzip,
-      q.1.length + q.2.length = l.length := fun q hq => by
-    rw [← List.length_append, (List.revzip_sublists' _ _ _ hq).length_eq]
-  rw [B.mixedDeriv_of_bilinear (hf.of_le (by exact_mod_cast le_top))
-    (hg.of_le (by exact_mod_cast le_top)), ← List.sum_map_mul_left, ← List.sum_map_mul_right]
+        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+  have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).mixedDeriv_of_bilinear
+    (α := α) (β := β) (hb.of_le (by exact_mod_cast le_top)) (ha.of_le (by exact_mod_cast le_top))
+    x ξ
+  simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    ContinuousLinearMap.compL_apply] at h
+  rw [h, ← List.sum_map_mul_right]
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map]
   refine List.sum_le_sum fun t ht => ?_
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
-  rw [List.map_map, ← List.sum_map_mul_left, ← List.sum_map_mul_right]
-  refine List.sum_le_sum fun s hs => ?_
-  have hs' := hlen s hs
-  have ht' := hlen t ht
-  have hC' := hC s.1 t.1 (by omega)
-  have hD' := hD s.2 t.2 (by omega)
-  have hw : (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2) := by
-    rw [← Real.rpow_add (by positivity), ← ht']
+  rw [List.map_map, ← List.sum_map_mul_right]
+  refine List.sum_le_sum fun s _ => ?_
+  have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2) := by
+    rw [← Real.rpow_add (by positivity), ← (List.revzip_sublists' _ _ _ ht).length_eq,
+      List.length_append]
     push_cast
     ring_nf
-  calc ‖B (mixedDeriv s.1 t.1 f x ξ) (mixedDeriv s.2 t.2 g x ξ)‖
-      ≤ ‖B‖ * ‖mixedDeriv s.1 t.1 f x ξ‖ * ‖mixedDeriv s.2 t.2 g x ξ‖ := B.le_opNorm₂ _ _
-    _ ≤ ‖B‖ * (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2)) *
-        (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2)) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left hC' B.opNorm_nonneg) hD' (norm_nonneg _)
-          (mul_nonneg B.opNorm_nonneg ((norm_nonneg _).trans hC'))
-    _ = ‖B‖ * (C s.1 t.1 * D s.2 t.2) * (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) := by
+  calc ‖(mixedDeriv s.1 t.1 b x ξ).comp (mixedDeriv s.2 t.2 a x ξ)‖
+      ≤ ‖mixedDeriv s.1 t.1 b x ξ‖ * ‖mixedDeriv s.2 t.2 a x ξ‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2)) *
+        (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2)) :=
+        mul_le_mul (hC _ _) (hD _ _) (norm_nonneg _) ((norm_nonneg _).trans (hC _ _))
+    _ = C s.1 t.1 * D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
         rw [hw]
         ring
 
@@ -799,33 +777,6 @@ private theorem comp_bound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
     exact List.sum_nonneg fun _ h' => by
       obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
       exact mul_nonneg (hC _ _) (hD _ _)
-
-/-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
-`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
-`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
-Leibniz rule. This is `ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear` for composition, whose
-norm is at most `1`. -/
-theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
-    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
-    (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
-    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
-    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
-    (α β : List (Fin n)) :
-    ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
-      (β.sublists'.revzip.map fun t =>
-        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
-        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
-  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map of norm at most `1`.
-  let B := (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
-  have hB : ‖B‖ ≤ 1 := B.opNorm_le_bound₂ zero_le_one fun u v => by
-    simpa [B] using ContinuousLinearMap.opNorm_comp_le u v
-  have hS := comp_bound_nonneg
-    (fun s t => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC s t)) (by positivity))
-    (fun s t => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD s t)) (by positivity)) α β
-  refine (B.norm_mixedDeriv_le_of_bilinear hb ha α β (fun s t _ => hC s t)
-    (fun s t _ => hD s t)).trans ?_
-  exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_left hS hB) (by positivity)
 
 /-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols of orders `m'` and `m` is a
 symbol of order `m' + m`. For matrix-valued symbols this is the matrix product. -/

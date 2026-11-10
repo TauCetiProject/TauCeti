@@ -336,7 +336,11 @@ end ExponentSum
 
 section Delta
 
-variable [Fact p.Prime] [Finite X] [LinearOrder X]
+variable [Fact p.Prime] [LinearOrder X]
+
+section
+
+variable [Finite X]
 
 variable (p X) in
 /-- **The basis-modification map `δ`**, for `m ≥ 1`: the `𝔽_p`-bilinear map
@@ -389,6 +393,8 @@ theorem basisModificationDelta_degreeOneBasis_inr (hm : 1 ≤ m)
   rw [basisModificationDelta, Module.Basis.constr_basis]
   simp
 
+end
+
 /-- **The value of `δ`**: with `ρ = Σ_i c_i π ξ_i + Σ_{i<k} a_{ik} [ξ_i, ξ_k]`,
 `δ_ρ(v) = Σ_i c_i (π v_i + (p choose 2) • [v_i, ξ_i]) + Σ_{i<k} a_{ik} ([v_i, ξ_k] - [v_k, ξ_i])`.
 -/
@@ -409,6 +415,7 @@ theorem basisModificationDelta_apply [Fintype X] (hm : 1 ≤ m) (ρ : gradedPiec
     map_smul, LinearMap.smul_apply, basisModificationDelta_degreeOneBasis_inl,
     basisModificationDelta_degreeOneBasis_inr]
 
+variable [Finite X] in
 /-- **The class of the moved relator is `δ_ρ(ω)`.** For `m ≥ 1`, `w : X → λ_m(F)` and
 `ρ ∈ gr_1(F)`, the graded deviation of the basis modification `θ_w` on `ρ` is `δ_ρ(ω)`, where
 `ω_i ∈ gr_m(F)` is the class of `w_i`. -/
@@ -433,6 +440,7 @@ theorem gradedDeviation_basisModification (hm : 1 ≤ m)
         gradedDeviation_basisModification_gradedMkZero_of]
   exact LinearMap.congr_fun key ρ
 
+variable [Finite X] in
 /-- **The basis modification `θ_w` moves a relator `r ∈ λ_1(F)` by `δ_ρ(ω)`**: the class in
 `gr_{m+1}(F)` of `r⁻¹ * θ_w r` is `δ_ρ(ω)`, for `m ≥ 1`, where `ρ ∈ gr_1(F)` is the class of `r`
 and `ω_i ∈ gr_m(F)` the class of `w_i`. In particular that class depends only on the classes
@@ -456,7 +464,11 @@ end Delta
 
 section Deriv
 
-variable [Fact p.Prime] [Finite X] [LinearOrder X]
+variable [Fact p.Prime] [LinearOrder X]
+
+section
+
+variable [Finite X]
 
 variable (p X) in
 /-- **The partial derivative `∂_i`** of a class in `gr_1(F)`: the `𝔽_p`-linear map
@@ -566,6 +578,8 @@ theorem span_range_degreeOneDeriv_gradedBracket_gradedMkZero_fin_two :
   revert i
   exact Fin.forall_fin_two.mpr ⟨neg_mem_iff.mp h0, h1⟩
 
+end
+
 /-- **The basis-modification map through the partial derivatives**: for `m ≥ 1`,
 `δ_ρ(v) = π (Σ_i c_i • v_i) + Σ_i [v_i, ∂_i ρ]`, where `c_i` is the coefficient of `π ξ_i` in
 `ρ`. The `p`-power part of `ρ` contributes the single `p`-power `π (Σ_i c_i v_i)`, and all
@@ -623,6 +637,7 @@ theorem basisModificationDelta_smul [Fintype X] (hm : 1 ≤ m) (ρ : gradedPiece
       map_smul, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
   · simp only [← gradedBracketLinear_apply, map_sum, map_smul, LinearMap.smul_apply]
 
+variable [Finite X] in
 /-- **`δ` on a family supported at one generator**: for `v ∈ gr_m(F)`,
 `δ_ρ(single i v) = c_i • π v + [v, ∂_i ρ]`, where `c_i` is the coefficient of `π ξ_i` in `ρ`. -/
 @[simp]
@@ -641,6 +656,7 @@ theorem basisModificationDelta_single [DecidableEq X] (hm : 1 ≤ m)
   simp only [Pi.single_apply, ite_mul, one_mul, zero_mul, ite_smul, one_smul, zero_smul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
+variable [Finite X] in
 /-- **`δ_ρ` realizes every bracket up to a multiple of `π v`** when the partial derivatives of `ρ`
 span `gr_0(F)`: for `v ∈ gr_m(F)` and `y ∈ gr_0(F)` there are coefficients `b : X → 𝔽_p` and a
 scalar `c` with `δ_ρ(b • v) = c • π v + [v, y]`, namely `b` with `Σ_i b_i • ∂_i ρ = y` and
@@ -670,6 +686,7 @@ theorem basisModificationDelta_smul_eq_gradedBracket_of_eq_zero [Fintype X] (hm 
   · rw [hi, hb, zero_mul]
   · rw [hc i hi, mul_zero]
 
+variable [Finite X] in
 /-- **Naturality of `δ` under `π`**: for `m ≥ 1`, `π (δ_ρ(v)) = δ_ρ(π v)`, where `δ_ρ` on the left
 is the map in degree `m` and on the right the map in degree `m + 1`. -/
 theorem gradedPow_basisModificationDelta (hm : 1 ≤ m)
