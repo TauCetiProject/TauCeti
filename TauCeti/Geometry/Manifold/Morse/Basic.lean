@@ -256,10 +256,10 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ E
 
 /-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
 point. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero [ChartedSpace E M]
-    (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    {I : ModelWithCorners ℝ E H} [I.Boundaryless] (hf : IsMorse I f)
+    (hx : mfderiv I 𝓘(ℝ) f x = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
   hf.isManifoldNondegenerateCriticalPoint
     (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm.1 hx)
 

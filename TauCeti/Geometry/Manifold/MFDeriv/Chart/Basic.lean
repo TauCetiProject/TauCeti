@@ -59,8 +59,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   normed space is differentiable whenever its preferred coordinate expression is.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a manifold modelled on its model
-  space, the differential of a map into a normed space vanishes at a point exactly when the
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
+  differential of a map into a normed space vanishes at a point exactly when the
   Fréchet derivative of its preferred-chart coordinate expression does.
 * `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
   derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
@@ -430,6 +430,17 @@ theorem TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm :
     rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf, fderiv_zero_of_not_differentiableAt hd]
     rfl
 
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the differential of a map into a normed space vanishes at `x` if
+and only if the Fréchet derivative of its coordinate expression in the preferred extended chart
+vanishes at `extChartAt I x x`. Both sides are `0` when the map is not differentiable at the
+point. -/
+theorem TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
+    mfderiv I 𝓘(𝕜, F) f x = 0 ↔
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  rw [← TauCeti.mvfderiv_eq_zero_iff, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  exact Iff.rfl
+
 section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
@@ -465,16 +476,6 @@ theorem TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm :
   -- The two sides are the kernel of the same map, viewed as a subspace of the tangent space
   -- `TangentSpace 𝓘(𝕜, E) z` and of `E`; these are the same space by definition.
   rfl
-
-/-- On a manifold modelled on its model space, the differential of a map into a normed space
-vanishes at `z` if and only if the Fréchet derivative of its coordinate expression in the preferred
-extended chart vanishes at `extChartAt 𝓘(𝕜, E) z z`. Both sides are `0` when the map is not
-differentiable at the point. -/
-theorem TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) g z = 0 ↔
-      fderiv 𝕜 (g ∘ (extChartAt 𝓘(𝕜, E) z).symm) (extChartAt 𝓘(𝕜, E) z z) = 0 := by
-  rw [← TauCeti.mvfderiv_eq_zero_iff, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  exact Iff.rfl
 
 /-- On a manifold modelled on its model space, a map into a normed space whose coordinate
 expression in a chart of the `C¹` maximal atlas is differentiable at a coordinate is manifold
