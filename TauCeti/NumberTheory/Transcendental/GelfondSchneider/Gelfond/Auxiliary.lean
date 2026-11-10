@@ -340,14 +340,13 @@ theorem iteratedDeriv_gelfond_auxiliary_natCast {R : Type*} [Ring R] (σ : R →
   ring
 
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function.** Let `K` be a field with
-an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ K` with `β` irrational,
-`σ α = exp λ` and `σ γ = exp (σ β λ)`. Let `η : Fin q → Fin q → K` be nonzero, and suppose that
+an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `β ∈ K` be irrational. Let `η : Fin q → Fin q → K`
+be nonzero, and suppose that
 `R(z) = ∑_{a, b} σ η_{ab} exp (((a + 1) + (b + 1) σ β) λ z)` vanishes to order `n` at every point
 of a nonempty finite set `T` of natural numbers. Then there are `r` with `n ≤ r < q ^ 2` and
 `t₀ ∈ T` such that `R` vanishes to order `r` at every point of `T` and `R⁽ʳ⁾(t₀) ≠ 0`. -/
 theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ : K →+* ℂ)
-    {l : ℂ} (hl : l ≠ 0) {α β γ : K} (hα : σ α = Complex.exp l)
-    (hγ : σ γ = Complex.exp (σ β * l)) (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
+    {l : ℂ} (hl : l ≠ 0) {β : K} (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
     {η : Fin q → Fin q → K} (hη : η ≠ 0) {T : Finset ℕ} (hT : T.Nonempty) {n : ℕ}
     (hn : ∀ k < n, ∀ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
       Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) :
@@ -356,18 +355,40 @@ theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) ∧
       iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
+  classical
   have := σ.charZero
-  have hα₀ : α ≠ 0 := fun h ↦ Complex.exp_ne_zero l (by rw [← hα, h, map_zero])
-  have hγ₀ : γ ≠ 0 := fun h ↦ Complex.exp_ne_zero (σ β * l) (by rw [← hγ, h, map_zero])
-  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero hα₀ hγ₀ hβ hη hT
-  have hr' : iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
-    rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ]
-    exact mul_ne_zero (pow_ne_zero _ hl) ((map_ne_zero σ).2 hr)
-  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ ?_, hr'⟩
+  have hβ' : ∀ r : ℚ, (r : ℂ) ≠ σ β := fun r h ↦ hβ r (σ.injective (by rw [map_ratCast, h]))
+  obtain ⟨t₁, ht₁⟩ := hT
+  obtain ⟨a, b, hab⟩ : ∃ a b, η a b ≠ 0 := by
+    by_contra! h
+    exact hη (funext fun a ↦ funext (h a))
+  have hR : (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) =
+      fun z ↦ ∑ p ∈ (univ : Finset (Fin q × Fin q)), σ (η p.1 p.2) *
+        Complex.exp (((((p.1 + 1 : ℕ) : ℂ) + (p.2 + 1 : ℕ) * σ β) * l) * z) := by
+    funext z
+    rw [Fintype.sum_prod_type]
+  -- At `t₁` the exponential sum has distinct frequencies and a nonzero coefficient.
+  obtain ⟨k, hk, hne⟩ := TauCeti.exists_lt_card_iteratedDeriv_sum_mul_cexp_ne_zero (s := univ)
+    (ρ := fun p : Fin q × Fin q ↦ (((p.1 + 1 : ℕ) : ℂ) + (p.2 + 1 : ℕ) * σ β) * l)
+    (by
+      rintro ⟨a, b⟩ - ⟨a', b'⟩ - h
+      simpa [Fin.val_inj] using TauCeti.ratCast_add_ratCast_mul_injective hβ'
+        (a₁ := ((a + 1 : ℕ), (b + 1 : ℕ)))
+        (a₂ := ((a' + 1 : ℕ), (b' + 1 : ℕ))) (by simpa using mul_right_cancel₀ hl h))
+    (c := fun p ↦ σ (η p.1 p.2)) ⟨(a, b), mem_univ _, (map_ne_zero σ).2 hab⟩ t₁
+  rw [← hR] at hne
+  have hex : ∃ k, ∃ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t ≠ 0 :=
+    ⟨k, t₁, ht₁, hne⟩
+  obtain ⟨t₀, ht₀, hr⟩ := Nat.find_spec hex
+  refine ⟨Nat.find hex, ?_, ?_, t₀, ht₀, fun k' hk' t ht ↦ ?_, hr⟩
   · by_contra! h
-    exact hr' (hn r h t₀ ht₀)
-  · rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ, hzero k hk t ht, map_zero, mul_zero]
+    exact hr (hn _ h t₀ ht₀)
+  · calc Nat.find hex ≤ k := Nat.find_min' hex ⟨t₁, ht₁, hne⟩
+      _ < q ^ 2 := by simpa [sq] using hk
+  · by_contra h
+    exact Nat.find_min hex hk' ⟨t, ht, h⟩
 
 open NumberField in
 /-- **Gelfond's auxiliary function** (Karatarakis–Wiedijk, §3). Let `K` be a number field with an
