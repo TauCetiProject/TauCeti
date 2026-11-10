@@ -85,6 +85,31 @@ noncomputable def restrictFunctorInvCompHomIso {X Y : Scheme.{u}} (e : X ≅ Y) 
   (restrictFunctorComp e.hom e.inv).symm ≪≫
     restrictFunctorCongr e.hom_inv_id ≪≫ restrictFunctorId
 
+-- Explicit open equalities fix the section types before unfolding restriction. In both proofs,
+-- `erw` identifies restricted-section wrappers with the corresponding sections of `M`.
+@[simp]
+lemma restrictFunctorInvCompHomIso_hom_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).hom.app M).app U =
+      M.presheaf.map (eqToHom (show U = e.inv ''ᵁ (e.hom ''ᵁ U) by simp)).op := by
+  simp only [Functor.comp_obj, Functor.id_obj, restrictFunctorInvCompHomIso, Iso.trans_hom,
+    Iso.symm_hom, NatTrans.comp_app, Hom.comp_app, restrictFunctorComp_inv_app_app,
+    Functor.op_obj, eqToHom_op, restrictFunctorCongr_hom_app_app, restrictFunctorId_hom_app_app]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
+@[simp]
+lemma restrictFunctorInvCompHomIso_inv_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).inv.app M).app U =
+      M.presheaf.map (eqToHom (show e.inv ''ᵁ (e.hom ''ᵁ U) = U by simp)).op := by
+  simp only [Functor.id_obj, Functor.comp_obj, restrictFunctorInvCompHomIso, Iso.trans_inv,
+    Iso.symm_inv, Category.assoc, NatTrans.comp_app, Hom.comp_app,
+    restrictFunctorId_inv_app_app, eqToHom_op, restrictFunctorCongr_inv_app_app,
+    restrictFunctorComp_hom_app_app, Functor.op_obj]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
 /-- Restriction to an open subscheme preserves injective module sheaves. In particular,
 restricting the terms of an injective resolution gives injective terms. -/
 private instance restrictFunctorPreservesInjectiveObjectsInclusion {X : Scheme.{u}} (U : X.Opens) :
