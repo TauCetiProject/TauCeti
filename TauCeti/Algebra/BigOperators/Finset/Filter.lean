@@ -23,6 +23,8 @@ level `m ≥ 1`.
 
 * `Finset.prod_filter_or_eq_of_not`, `Finset.sum_filter_or_eq_of_not`: adjoining one point to
   the condition of a filtered product or sum.
+* `Finset.prod_filter_eq_one_of_ne`, `Finset.sum_filter_eq_zero_of_ne`: a filtered product or sum
+  is trivial when every nontrivial factor fails the condition.
 * `Finset.prod_subtype_eq_prod_of_mem`, `Finset.sum_subtype_eq_sum_of_mem`: reindexing a product or
   sum over `Subtype p` to a finite superset `s` when the factors on `s` outside `p` are trivial.
 * `Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one`: the level products of a family are
@@ -42,6 +44,16 @@ theorem _root_.Finset.prod_filter_or_eq_of_not {ι M : Type*} [DecidableEq ι] [
     ∏ i ∈ s with P i ∨ i = c, f i = (∏ i ∈ s with P i, f i) * if c ∈ s then f c else 1 := by
   rw [Finset.filter_or, Finset.prod_union (by grind [Finset.disjoint_filter]), Finset.filter_eq']
   split_ifs <;> simp
+
+/-- If no index of `s` with a nontrivial factor satisfies `p`, the product of `f` over the indices
+of `s` satisfying `p` is `1`. -/
+@[to_additive /-- If no index of `s` with a nonzero term satisfies `p`, the sum of `f` over the
+indices of `s` satisfying `p` is `0`. -/]
+theorem _root_.Finset.prod_filter_eq_one_of_ne {ι M : Type*} [CommMonoid M] {s : Finset ι}
+    {f : ι → M} {p : ι → Prop} [DecidablePred p] (h : ∀ i ∈ s, f i ≠ 1 → ¬p i) :
+    ∏ i ∈ s with p i, f i = 1 :=
+  Finset.prod_eq_one fun i hi =>
+    by_contra fun hfi => h i (Finset.mem_filter.mp hi).1 hfi (Finset.mem_filter.mp hi).2
 
 /-- If `s` contains every element satisfying `p` and `f` equals `1` on `s` outside `p`, then the
 product of `f` over `Subtype p` equals its product over `s`. Unlike `Finset.prod_congr_set`, the
