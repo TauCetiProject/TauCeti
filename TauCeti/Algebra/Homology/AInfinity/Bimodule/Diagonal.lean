@@ -124,7 +124,7 @@ private theorem concatLetter_tmul_taylor_subword {N : ℕ} (z : Fin N → A) {a 
   rw [LinearMap.comp_apply, hc,
     subword_congr R z ((AA.grading.shift 1).twistedTuple 1 z a j)
       (a' := a + j + (l - j + 1 + k)) (by omega) (by omega) fun i hi ↦ ?_,
-    concatLetter_eq_splice (R := R) _ _ (by omega) (by omega), hlen]
+    concatLetter_eq_splice (R := R) _ _ (by omega), hlen]
   rw [twistedTuple_apply_of_not_mem_Ico _ _ _ _ _ _ (by dsimp only; omega)]
   exact congrArg z (Fin.ext (by dsimp only; omega))
 
