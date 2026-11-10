@@ -256,14 +256,13 @@ theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
   have key := mfderiv_comp_apply_of_eq p hF hpair (by rw [flowHittingTime_self]) w
   rw [mfderiv_prodMk (g := fun z ↦ z) hτ mdifferentiableAt_id] at key
   rw [flowTransition_def]
-  refine key.trans <| (mfderiv_prod_eq_add_apply hF).trans ?_
-  rw [mfderiv_flowOf_trajectory_apply hv hT]
+  refine key.trans <| (mfderiv_flowOf_comp_apply (f := fun z ↦ z) hv contMDiffAt_id hT _).trans ?_
   congr 1
   -- The second component of the derivative of `z ↦ (τ z, z)` is the identity.
   -- `mfderiv_id` is stated for `id`, so first rewrite the identity function to `id`.
-  have hid : mfderiv I I (fun z : M ↦ z) p w = w := by
+  have hid : ∀ u : TangentSpace I p, mfderiv I I (fun z : M ↦ z) p u = u := fun u ↦ by
     rw [show (fun z : M ↦ z) = id from rfl, mfderiv_id, ContinuousLinearMap.id_apply]
-  exact congrArg (mfderiv I I (flowOf v T) p) hid
+  exact congrArg (mfderiv I I (flowOf v T) p) ((hid _).trans (hid w))
 
 end Transition
 

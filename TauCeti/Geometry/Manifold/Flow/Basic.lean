@@ -235,12 +235,6 @@ theorem mfderiv_flowOf_comp_apply [IsManifold I 1 M] {v : (x : M) → TangentSpa
     mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × N ↦ flowOf v q.1 (f q.2)) p w =
       w.1 • v (flowOf v p.1 (f p.2)) +
         mfderiv I I (flowOf v p.1) (f p.2) (mfderiv J I f p.2 w.2) := by
-  -- The trajectory through `f s` has velocity `v` at time `t`.
-  have hcurve : HasMFDerivAt 𝓘(ℝ) I (fun r ↦ flowOf v r (f p.2)) p.1
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (flowOf v p.1 (f p.2)))) := by
-    have hdom : {r | (r, f p.2) ∈ flowDomain v} ∈ 𝓝 p.1 :=
-      ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds hp
-    exact ((isMIntegralCurveOn_flowOf hv (f p.2)).isMIntegralCurveAt hdom).hasMFDerivAt
   -- The time-`t` map is differentiable at `f s`.
   have hflow : MDifferentiableAt I I (flowOf v p.1) (f p.2) :=
     (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id hp).mdifferentiableAt
@@ -252,8 +246,8 @@ theorem mfderiv_flowOf_comp_apply [IsManifold I 1 M] {v : (x : M) → TangentSpa
     (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_fst (hf.comp p contMDiffAt_snd)
       hp).mdifferentiableAt one_ne_zero
   refine (mfderiv_prod_eq_add_apply hΦ).trans ?_
-  rw [hcurve.mfderiv]
-  -- `smulRight 1 v` sends `r` to `r • v`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
+  -- The trajectory through `f s` has velocity `v` at time `t`.
+  rw [mfderiv_flowOf_trajectory_apply hv hp]
   exact congrArg₂ (· + ·) rfl (DFunLike.congr_fun hcomp w.2)
 
 omit [CompleteSpace E] in
