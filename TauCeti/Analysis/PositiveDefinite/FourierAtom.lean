@@ -11,9 +11,11 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -33,6 +35,9 @@ It uses Mathlib's `2π` Fourier convention.
   frequency `q` has norm at most `(2π ‖q‖) ^ k`.
 * `TauCeti.contDiff_tsum_mul_fourierAtom`: a series of Fourier atoms whose coefficients decay
   faster than every power of the frequency is smooth.
+* `TauCeti.integral_mul_tsum_mul_fourierAtom`: a compactly supported continuous function is
+  integrated against an absolutely convergent series of Fourier atoms term by term, giving values
+  of its Fourier transform.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -183,6 +188,39 @@ theorem contDiff_tsum_mul_fourierAtom {ι : Type*} (q : ι → W) (c : ι → �
     _ = (2 * Real.pi) ^ k * (‖c i‖ * ‖q i‖ ^ k) := by ring
 
 end ContDiff
+
+section Integral
+
+open MeasureTheory
+open scoped FourierTransform
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+  [MeasurableSpace W] [BorelSpace W]
+
+/-- **Term-by-term integration against a series of Fourier atoms.** For a compactly supported
+continuous function `u` and absolutely summable coefficients `c`,
+`∫ u x ∑' i, c i fourierAtom (q i) x = ∑' i, c i 𝓕 u (q i)`. -/
+theorem integral_mul_tsum_mul_fourierAtom {ι : Type*} [Countable ι] (q : ι → W) {c : ι → ℂ}
+    (hc : Summable fun i ↦ ‖c i‖) {u : W → ℂ} (hu : Continuous u) (hus : HasCompactSupport u) :
+    ∫ x, u x * ∑' i, c i * fourierAtom (q i) x = ∑' i, c i * 𝓕 u (q i) := by
+  have hG (i : ι) : Integrable fun x ↦ u x * (c i * fourierAtom (q i) x) :=
+    (hu.mul (continuous_const.mul (continuous_fourierAtom _))).integrable_of_hasCompactSupport
+      hus.mul_right
+  have hnorm (i : ι) : ∫ x, ‖u x * (c i * fourierAtom (q i) x)‖ = ‖c i‖ * ∫ x, ‖u x‖ := by
+    rw [← integral_const_mul]
+    congr 1
+    ext x
+    rw [norm_mul, norm_mul, norm_fourierAtom, mul_one, mul_comm]
+  simp_rw [← tsum_mul_left (a := u _)]
+  rw [← integral_tsum_of_summable_integral_norm hG (by simpa only [hnorm] using hc.mul_right _)]
+  refine tsum_congr fun i ↦ ?_
+  rw [Real.fourier_eq, ← integral_const_mul]
+  congr 1
+  ext x
+  rw [fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul]
+  ring
+
+end Integral
 
 /-- The Fourier atom `v ↦ fourierAtom v ξ` is continuous and positive definite: by symmetry of
 the real inner product it is the atom `fourierAtom ξ`, whose subtraction kernel is positive
