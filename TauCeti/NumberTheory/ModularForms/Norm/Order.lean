@@ -100,7 +100,7 @@ public lemma orderOfVanishingAt_quotientFunc_le_orderOfVanishingAt_norm (f : F)
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · -- Every coset factor of the zero form is zero, and so is its norm.
     have hq : _root_.SlashInvariantForm.quotientFunc f q = 0 :=
-      Quotient.inductionOn q fun g ↦ (SlashAction.slash_eq_zero_iff k g.val⁻¹ _).2 hf
+      _root_.SlashInvariantForm.quotientFunc_eq_zero f hf q
     simp [hq, (_root_.ModularForm.norm_eq_zero_iff ℋ f).mpr hf]
   · rw [orderOfVanishingAt_norm f hf p]
     exact single_le_finsum q (Set.toFinite _) fun r ↦

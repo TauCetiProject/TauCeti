@@ -71,6 +71,15 @@ namespace TauCeti
 
 namespace SlashInvariantForm
 
+/-- Every coset factor of the zero form is zero: the factor is a slash translate of the form,
+and the slash action of a group element fixes `0`. -/
+lemma _root_.SlashInvariantForm.quotientFunc_eq_zero [SlashInvariantFormClass F 𝒢 k]
+    (hf : (⇑f : ℍ → ℂ) = 0) (q : 𝒬) : quotientFunc f q = 0 := by
+  induction q using Quotient.inductionOn with
+  | h g =>
+    rw [_root_.SlashInvariantForm.quotientFunc_mk]
+    exact (SlashAction.slash_eq_zero_iff k g.val⁻¹ (⇑f : ℍ → ℂ)).2 hf
+
 variable [ModularFormClass F 𝒢 k]
 
 /-- Each translate in the package `quotientFunc` of a modular form is holomorphic. -/
