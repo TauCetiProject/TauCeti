@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import TauCeti.Analysis.Fredholm.Adjoint
 public import TauCeti.Analysis.Fredholm.Parametric
+public import TauCeti.LinearAlgebra.Determinant.Dual
 public import TauCeti.LinearAlgebra.Determinant.Exact
 import TauCeti.LinearAlgebra.Exact
 
@@ -40,6 +42,14 @@ the identifications with the determinant line of `D₁` it is multiplication by
 a stabilizer, including a stabilizer `Λ` to `Λ × Λ''`, and changing it by an isomorphism, so any
 two stabilizations are compared through their product.
 
+For a Fredholm operator `T` between Hilbert spaces the kernel of the adjoint `T†` is the
+orthogonal complement of the range of `T`, and the cokernel of `T†` is a copy of the kernel of
+`T`. So the determinant line of `T†` is the dual of that of `T`
+(`ContinuousLinearMap.detLineAdjointEquivDual`), so over `ℝ` an orientation of either line
+orients the other. On exterior products of kernel vectors the pairing reads each kernel vector in
+the other operator's cokernel through its class
+(`ContinuousLinearMap.detLineAdjointEquivDual_ιMulti_tmul_ιMulti_tmul`).
+
 ## Main results
 
 * `ContinuousLinearMap.IsFredholm.finrank_detLine`: the determinant line of a Fredholm operator is
@@ -52,6 +62,9 @@ two stabilizations are compared through their product.
   injective map `ι : Λ → Λ'` of stabilizers.
 * `ContinuousLinearMap.detLineCoprodEquiv_detLineCoprodMapEquiv`: through
   `ContinuousLinearMap.detLineCoprodEquiv`, the change of stabilizer is a sign.
+* `ContinuousLinearMap.detLineAdjointEquivDual`: the determinant line of the adjoint of a Fredholm
+  operator between Hilbert spaces is the dual of its determinant line, with value
+  `ContinuousLinearMap.detLineAdjointEquivDual_ιMulti_tmul_ιMulti_tmul`.
 
 ## References
 
@@ -182,5 +195,66 @@ theorem detLineCoprodEquiv_detLineCoprodMapEquiv (hι : ∀ l, D₂' (ι l) = D�
   · exact LinearMap.ext fun l ↦ by simp [hι]
 
 end ChangeOfStabilizer
+
+section Adjoint
+
+/-! ### The adjoint operator -/
+
+open scoped InnerProduct
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  {T : E →L[𝕜] F}
+
+/-- **The determinant line of the adjoint.** For a Fredholm operator `T` between Hilbert spaces,
+the kernel of the adjoint `T†` is the orthogonal complement of the range of `T`, a copy of the
+cokernel of `T` (`ContinuousLinearMap.cokerEquivKerAdjoint`), and the cokernel of `T†` is a copy
+of the kernel of `T` (`ContinuousLinearMap.cokerAdjointEquivKer`). The determinant line of `T†`
+is therefore the dual of that of `T`: `x ⊗ ψ` pairs with `u ⊗ φ` to `φ (x) * ψ (u)`, where a vector
+of `ker T†` is read in `F ⧸ range T` and a vector of `ker T` in `E ⧸ range T†` through their
+classes (`ContinuousLinearMap.detLineAdjointEquivDual_tmul_tmul`). This is
+`LinearMap.detLineEquivDualOfKerCoker` for these two identifications. -/
+noncomputable def detLineAdjointEquivDual (hT : IsFredholm T) :
+    (T† : F →ₗ[𝕜] E).detLine ≃ₗ[𝕜] Dual 𝕜 (T : E →ₗ[𝕜] F).detLine :=
+  have := hT.finite_ker
+  have := hT.finite_coker
+  LinearMap.detLineEquivDualOfKerCoker (T.cokerEquivKerAdjoint hT.isClosed_range).symm.toLinearEquiv
+    (T.cokerAdjointEquivKer hT.isClosed_range).toLinearEquiv
+
+/-- The pairing `ContinuousLinearMap.detLineAdjointEquivDual` of the determinant lines of `T†` and
+`T`. The kernel vectors of `T†` and of `T` enter through their classes in the cokernels of `T` and
+of `T†` (`ContinuousLinearMap.detLineAdjointEquivDual_ιMulti_tmul_ιMulti_tmul`). -/
+@[simp]
+theorem detLineAdjointEquivDual_tmul_tmul (hT : IsFredholm T)
+    (x : TauCeti.detLine 𝕜 (T† : F →ₗ[𝕜] E).ker)
+    (ψ : Dual 𝕜 (TauCeti.detLine 𝕜 (E ⧸ (T† : F →ₗ[𝕜] E).range)))
+    (u : TauCeti.detLine 𝕜 (T : E →ₗ[𝕜] F).ker)
+    (φ : Dual 𝕜 (TauCeti.detLine 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range))) :
+    detLineAdjointEquivDual hT (x ⊗ₜ ψ) (u ⊗ₜ φ) =
+      φ (LinearEquiv.detLineCongr (T.cokerEquivKerAdjoint hT.isClosed_range).symm.toLinearEquiv x) *
+        ψ (LinearEquiv.detLineCongr
+          (T.cokerAdjointEquivKer hT.isClosed_range).symm.toLinearEquiv u) := by
+  have := hT.finite_ker
+  have := hT.finite_coker
+  exact LinearMap.detLineEquivDualOfKerCoker_tmul_tmul _ _ x ψ u φ
+
+/-- **The pairing on exterior products.** For families `y` of `dim (ker T†)` vectors of `ker T†`
+and `u` of `dim (ker T)` vectors of `ker T`, `(y₁ ∧ ⋯) ⊗ ψ` pairs with `(u₁ ∧ ⋯) ⊗ φ` to the
+product of the value of `φ` at the exterior product of the classes of the `yᵢ` in `F ⧸ range T`
+and the value of `ψ` at the exterior product of the classes of the `uᵢ` in `E ⧸ range T†`. -/
+theorem detLineAdjointEquivDual_ιMulti_tmul_ιMulti_tmul (hT : IsFredholm T)
+    (y : Fin (finrank 𝕜 (T† : F →ₗ[𝕜] E).ker) → (T† : F →ₗ[𝕜] E).ker)
+    (ψ : Dual 𝕜 (TauCeti.detLine 𝕜 (E ⧸ (T† : F →ₗ[𝕜] E).range)))
+    (u : Fin (finrank 𝕜 (T : E →ₗ[𝕜] F).ker) → (T : E →ₗ[𝕜] F).ker)
+    (φ : Dual 𝕜 (TauCeti.detLine 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range))) :
+    detLineAdjointEquivDual hT (exteriorPower.ιMulti 𝕜 _ y ⊗ₜ ψ) (exteriorPower.ιMulti 𝕜 _ u ⊗ₜ φ) =
+      φ (exteriorPower.ιMulti 𝕜 _ fun i ↦ Submodule.Quotient.mk (y (Fin.cast
+          (T.cokerEquivKerAdjoint hT.isClosed_range).toLinearEquiv.finrank_eq i) : F)) *
+        ψ (exteriorPower.ιMulti 𝕜 _ fun i ↦ Submodule.Quotient.mk (u (Fin.cast
+          (T.cokerAdjointEquivKer hT.isClosed_range).toLinearEquiv.finrank_eq i) : E)) := by
+  simp only [detLineAdjointEquivDual_tmul_tmul, LinearEquiv.detLineCongr_ιMulti]
+  simp [Function.comp_def]
+
+end Adjoint
 
 end ContinuousLinearMap
