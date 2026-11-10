@@ -77,16 +77,15 @@ theorem isHermitian_sampleSecondMoment (v : ι → n → 𝕜) : (sampleSecondMo
 /-- The empirical second-moment matrix is positive semidefinite. -/
 theorem posSemidef_sampleSecondMoment (v : ι → n → 𝕜) :
     (sampleSecondMoment v).PosSemidef := by
+  rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
+  refine (posSemidef_sum _ fun i _ ↦ ?_).smul (by positivity)
   -- Mathlib proves positive semidefiniteness of `vecMulVec a (star a)` only for finite `n`;
   -- `posSemidef_rankOne` holds for every index type.
-  have hrank (a : n → 𝕜) : (vecMulVec a (star a)).PosSemidef := by
-    have heq : vecMulVec a (star a) = fun k l ↦ star (star (a k)) * star (a l) := by
-      ext k l
-      simp [vecMulVec_apply]
-    rw [heq]
-    exact posSemidef_rankOne fun k ↦ star (a k)
-  rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
-  exact (posSemidef_sum _ fun i _ ↦ hrank (v i)).smul (by positivity)
+  have h : vecMulVec (v i) (star (v i)) = fun k l ↦ star (star (v i) k) * star (v i) l := by
+    ext k l
+    simp [vecMulVec_apply]
+  rw [h]
+  exact posSemidef_rankOne (star (v i))
 
 end TauCeti
 
