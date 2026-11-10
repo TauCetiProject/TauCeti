@@ -52,10 +52,9 @@ private theorem coeff_expand_mul_X_pow (f : R[X]) (i j : Fin n) (k : ℕ) :
     simp [coeff_mul_X_pow, i.pos]
   · rw [coeff_mul_X_pow', coeff_expand i.pos]
     split_ifs with hle hdvd
-    · have hmod : (k * n + j) % n = (k * n + j - i + i) % n := by rw [Nat.sub_add_cancel hle]
-      rw [Nat.mul_add_mod_self_right, Nat.add_mod, Nat.mod_eq_zero_of_dvd hdvd, zero_add,
-        Nat.mod_mod, Nat.mod_eq_of_lt j.isLt, Nat.mod_eq_of_lt i.isLt] at hmod
-      exact absurd (Fin.ext hmod.symm) hij
+    · -- `i ≡ k * n + j [MOD n]` with `i, j < n` forces `i = j`.
+      have hmod := (Nat.modEq_iff_dvd' hle).mpr hdvd
+      simp [Nat.ModEq, Nat.mod_eq_of_lt, Fin.val_inj, hij] at hmod
     all_goals rfl
 
 private theorem coeff_sum_expand (f : Fin n → R[X]) (i : Fin n) (k : ℕ) :
