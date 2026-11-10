@@ -143,7 +143,7 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
     (fun x hx ↦ hrel x hx.1)
   let e := Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)
   have he : ⇑e = ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) :=
-    coe_sumArrowHomeomorphProdArrow
+    Homeomorph.coe_sumArrowHomeomorphProdArrow
   have hfst (z : σ ⊕ Unit → ℝ) : (e z).1 = z ∘ Sum.inl := by
     rw [he]
     exact funext (Equiv.sumArrowEquivProdArrow_apply_fst z)
