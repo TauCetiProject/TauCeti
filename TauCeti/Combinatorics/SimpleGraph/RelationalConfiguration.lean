@@ -279,6 +279,12 @@ theorem range_toRelationalConfiguration :
     fun c hc => ⟨relationalConfigurationEquiv.symm ⟨c, hc⟩,
       congrArg Subtype.val (relationalConfigurationEquiv.apply_symm_apply ⟨c, hc⟩)⟩
 
+/-- Encoding simple graphs as configurations is injective. -/
+theorem toRelationalConfiguration_injective :
+    Function.Injective
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+  fun _ _ h ↦ relationalConfigurationEquiv.injective (Subtype.ext h)
+
 /-- On a countable vertex type, encoding simple graphs as configurations is a measurable embedding,
 so laws on simple graphs are the laws on configurations concentrated on simple graphs. -/
 theorem measurableEmbedding_toRelationalConfiguration [Countable V] :
@@ -307,29 +313,27 @@ theorem map_comap_toRelationalConfiguration
     have himage : toRelationalConfiguration '' s = T ∩ {c | IsSimpleGraph c} := by
       have h : toRelationalConfiguration '' s =
           Subtype.val '' (relationalConfigurationEquiv '' s) := by
-        rw [Set.image_image]
-        rfl
+        simp only [Set.image_image, coe_relationalConfigurationEquiv]
       rw [h, ← hTs, Set.image_preimage_eq_inter_range, Subtype.range_coe_subtype]
     rw [himage]
     exact hT.nullMeasurableSet.inter hA
-  have hinj : Function.Injective
-      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-    fun a b h ↦ relationalConfigurationEquiv.injective (Subtype.ext h)
   refine Measure.ext fun T hT ↦ ?_
   rw [Measure.map_apply measurable_toRelationalConfiguration hT,
-    Measure.comap_apply₀ _ _ hinj hnull
+    Measure.comap_apply₀ _ _ toRelationalConfiguration_injective hnull
       (measurable_toRelationalConfiguration hT).nullMeasurableSet,
     Set.image_preimage_eq_inter_range, range_toRelationalConfiguration, ← Measure.restrict_apply hT,
     Measure.restrict_eq_self_of_ae_mem hμ]
 
 /-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
 probability law. -/
-theorem isProbabilityMeasure_comap_toRelationalConfiguration [Countable V]
+theorem isProbabilityMeasure_comap_toRelationalConfiguration
     {μ : Measure (RelationalConfiguration Language.graph V)} [IsProbabilityMeasure μ]
     (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     IsProbabilityMeasure (μ.comap toRelationalConfiguration) :=
-  measurableEmbedding_toRelationalConfiguration.isProbabilityMeasure_comap <| by
-    rwa [range_toRelationalConfiguration]
+  ⟨by
+    rw [← Set.preimage_univ (f := toRelationalConfiguration),
+      ← Measure.map_apply measurable_toRelationalConfiguration .univ,
+      map_comap_toRelationalConfiguration hμ, measure_univ]⟩
 
 /-- The array of the configuration of a simple graph is its adjacency array. -/
 @[simp]
