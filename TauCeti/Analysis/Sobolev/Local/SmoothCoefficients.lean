@@ -84,17 +84,6 @@ private theorem leibniz_eq (χ : ℂ → ℝ) (u : ℂ → F) (D : ℂ → ℂ �
   funext z
   rw [Pi.add_apply, Pi.add_apply, ContinuousLinearMap.smulRight_eq_re_add_im, hR, hR]
 
-/-- The order `k + 1` cast from `ℕ` is the order `k` plus one. -/
-private theorem succ_le_iff_add_one_le {k : ℕ} {n : WithTop ℕ∞} :
-    ((k + 1 : ℕ) : WithTop ℕ∞) ≤ n ↔ (k : WithTop ℕ∞) + 1 ≤ n := by
-  norm_cast
-
-/-- An order `n` with `k + 1 ≤ n` is nonzero. -/
-private theorem ne_zero_of_succ_le {k : ℕ} {n : WithTop ℕ∞} (hk : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ n) :
-    n ≠ 0 := by
-  rintro rfl
-  simp at hk
-
 /-- **Multiplication by a `C^k` factor.** A factor that is `C^n` on an open neighbourhood of `U`,
 with `k ≤ n`, preserves the local Sobolev class `MemWkpLoc p U k`, for every exponent and real
 normed codomain. The weak derivatives are those of the Leibniz rule
@@ -113,11 +102,11 @@ theorem MemWkpLoc.contDiffOn_smul (hu : MemWkpLoc p U k u) (hχ : ContDiffOn ℝ
     have hu' : MemWkpLoc p U k u := hu.of_succ
     obtain ⟨hp, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 hu
     have := hD.completeSpace
-    have hk' : (k : WithTop ℕ∞) + 1 ≤ n := succ_le_iff_add_one_le.1 hk
+    have hk' : (k : WithTop ℕ∞) + 1 ≤ n := by exact_mod_cast hk
     have hkn : (k : WithTop ℕ∞) ≤ n := le_trans (by exact_mod_cast k.le_succ) hk
     refine memWkpLoc_succ_iff.2 ⟨hp.continuousOn_smul (hχ.continuousOn.mono hU), _,
       hD.contDiffOn_smul_of_ne_zero (hχ.mono fun z hz => hU (interior_subset hz))
-        (ne_zero_of_succ_le hk), ?_⟩
+        (lt_of_lt_of_le (by simp) hk).ne', ?_⟩
     rw [leibniz_eq]
     exact (ih hDk hχ hkn).add
       ((ih (hu'.clm_comp _) (hχ.fderiv_apply_of_isOpen Ω.isOpen hk' 1) le_rfl).add
@@ -142,7 +131,7 @@ theorem MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul {D : ℂ → ℂ →L[ℝ] F}
   have := hD.completeSpace
   have hkn : (k : WithTop ℕ∞) ≤ n := le_trans (by simp) hk
   refine ⟨hD.contDiffOn_smul_of_ne_zero (hχ.mono fun z hz => hU (interior_subset hz))
-    (ne_zero_of_succ_le (succ_le_iff_add_one_le.2 hk)), ?_⟩
+    (lt_of_lt_of_le (by simp) hk).ne', ?_⟩
   rw [leibniz_eq]
   exact (hDk.contDiffOn_smul hχ hkn hU).add
     (((hu.clm_comp _).contDiffOn_smul (hχ.fderiv_apply_of_isOpen Ω.isOpen hk 1) le_rfl hU).add
@@ -164,7 +153,7 @@ theorem MemWkpLoc.contDiff_smul_of_tsupport_subset (hu : MemWkpLoc p U k u)
     have hu' : MemWkpLoc p U k u := hu.of_succ
     obtain ⟨hp, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 hu
     have := hD.completeSpace
-    have hk' : (k : WithTop ℕ∞) + 1 ≤ n := succ_le_iff_add_one_le.1 hk
+    have hk' : (k : WithTop ℕ∞) + 1 ≤ n := by exact_mod_cast hk
     have hkn : (k : WithTop ℕ∞) ≤ n := le_trans (by exact_mod_cast k.le_succ) hk
     have hdχ : ∀ v, ContDiff ℝ k (fun z => fderiv ℝ χ z v) := fun v =>
       (hχ.fderiv_right hk').clm_apply contDiff_const
@@ -175,7 +164,7 @@ theorem MemWkpLoc.contDiff_smul_of_tsupport_subset (hu : MemWkpLoc p U k u)
     · -- Glue the Leibniz rule on the interior of `U` with zero off the support of `χ`.
       let V : Opens ℂ := ⟨(tsupport χ)ᶜ, (isClosed_tsupport χ).isOpen_compl⟩
       have h1 := hD.contDiffOn_smul_of_ne_zero (hχ.contDiffOn (s := Opens.interior U))
-        (ne_zero_of_succ_le hk)
+        (lt_of_lt_of_le (by simp) hk).ne'
       have h2 : HasWeakFDerivOn volume V (fun z => χ z • u z)
           (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) := by
         refine ((hasWeakFDerivOn_zero (μ := volume) (Ω := V) (F := F)).congr_ae ?_).congr_ae_deriv
