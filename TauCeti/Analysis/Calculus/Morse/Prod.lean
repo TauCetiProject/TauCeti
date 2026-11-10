@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -40,8 +41,11 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
 * `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
   the pair of gradients, and is Lipschitz when both gradients are.
-* `IsIntegralCurve.separatedSum`: pairs of negative gradient trajectories of the summands are
-  negative gradient trajectories of the separated sum.
+* `TauCeti.hessianOperator_separatedSum_apply`: its Hessian operator acts on each factor by the
+  Hessian operator of the corresponding summand.
+* `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
+  gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
+  the summands.
 * `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
   its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
   Morse index.
@@ -120,7 +124,7 @@ end CompFstAddCompSnd
 section SeparatedSum
 
 open Set
-open scoped Gradient NNReal
+open scoped Gradient NNReal Topology
 
 section Defs
 
@@ -210,6 +214,43 @@ theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ →
   dsimp only
   rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
     WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
+
+/-- **Negative gradient trajectories of a separated sum** are exactly the pairs of negative
+gradient trajectories of the summands. -/
+theorem isIntegralCurve_separatedSum_iff {γ : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (γ s).fst) (hg : ∀ s, DifferentiableAt ℝ g (γ s).snd) :
+    IsIntegralCurve γ (fun _ z ↦ -∇ (separatedSum f g) z) ↔
+      IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ x ↦ -∇ f x) ∧
+        IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ y ↦ -∇ g y) := by
+  refine ⟨fun h ↦ ⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun h ↦ ?_⟩
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
+      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
+      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
+  · exact h.1.separatedSum h.2 hf hg
+
+/-- **The Hessian operator of a separated sum** acts on each factor by the Hessian operator of the
+corresponding summand. -/
+theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst)
+    (hg : ContDiffAt ℝ 2 g z.snd) (w : WithLp 2 (E × F)) :
+    hessianOperator (separatedSum f g) z w =
+      WithLp.toLp 2 (hessianOperator f z.fst w.fst, hessianOperator g z.snd w.snd) := by
+  -- Near `z` the gradient of the sum is the pair of gradients.
+  have hgrad : ∇ (separatedSum f g) =ᶠ[𝓝 z] fun y ↦ WithLp.toLp 2 (∇ f y.fst, ∇ g y.snd) := by
+    filter_upwards [(WithLp.fstL 2 ℝ E F).continuous.continuousAt.eventually
+        (hf.eventually (by simp)),
+      (WithLp.sndL 2 ℝ E F).continuous.continuousAt.eventually (hg.eventually (by simp))]
+      with y hy₁ hy₂
+    exact gradient_separatedSum (hy₁.differentiableAt two_ne_zero)
+      (hy₂.differentiableAt two_ne_zero)
+  have hd := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp z
+    ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
+      (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
+  -- `hd` is stated for the composite with `WithLp.prodContinuousLinearEquiv`, which unfolds to
+  -- the pair map.
+  rw [← fderiv_gradient, hgrad.fderiv_eq, (show HasFDerivAt
+    (fun y : WithLp 2 (E × F) ↦ WithLp.toLp 2 (∇ f y.fst, ∇ g y.snd)) _ z from hd).fderiv]
+  simp
 
 end Gradient
 
