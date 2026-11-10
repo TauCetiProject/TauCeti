@@ -184,21 +184,9 @@ theorem disjoint_cuspNhd {D' : Γ.CuspDatum} {A' : ℝ}
       (Quotient.mk (orbitRel Γ ℍ) '' horodisc D' A')) :
     Disjoint (cuspNhd D A) (cuspNhd D' A') := by
   -- the cusp orbits differ: horodisc images at equivalent cusps share a nonempty horodisc image
-  have hC : D.cuspOrbit ≠ D'.cuspOrbit := fun hC => by
-    obtain ⟨a, ha, hA⟩ :=
-      exists_image_quotientMk_horodisc_eq D D' ((D'.cuspOrbit_eq_iff D).mp hC.symm)
-    set B := max A (A' / a)
-    have h1 : Quotient.mk (orbitRel Γ ℍ) '' horodisc D B ⊆
-        Quotient.mk (orbitRel Γ ℍ) '' horodisc D A :=
-      image_mono (horodisc_antitone D (le_max_left _ _))
-    have h2 : Quotient.mk (orbitRel Γ ℍ) '' horodisc D B ⊆
-        Quotient.mk (orbitRel Γ ℍ) '' horodisc D' A' := by
-      rw [← hA B]
-      refine image_mono (horodisc_antitone D' ?_)
-      calc A' = a * (A' / a) := by field_simp
-        _ ≤ a * B := by gcongr; exact le_max_right _ _
-    obtain ⟨x, hx⟩ := (nonempty_horodisc D B).image (Quotient.mk (orbitRel Γ ℍ))
-    exact disjoint_left.mp h (h1 hx) (h2 hx)
+  have hC : D.cuspOrbit ≠ D'.cuspOrbit := fun hC =>
+    not_disjoint_image_quotientMk_horodisc_of_mem_orbit D D' ((D'.cuspOrbit_eq_iff D).mp hC.symm)
+      A A' h
   rw [disjoint_left]
   rintro x hx hx'
   cases x with
