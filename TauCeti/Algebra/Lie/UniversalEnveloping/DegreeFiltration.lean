@@ -64,8 +64,9 @@ theorem mem_degreeFiltration_ideal_iff (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {
 theorem mem_degreeFiltration_ideal_of_mem_homogeneousSubmodule
     (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {n : Γ} {a : _root_.UniversalEnvelopingAlgebra R L}
     (ha : a ∈ homogeneousSubmodule ℒ n) {k : ℕ} (hn : (k : ℤ) ≤ d n) :
-    a ∈ (degreeFiltration ℒ d hneg).ideal k :=
-  TauCeti.GradedAlgebra.mem_degreeFiltration_ideal_of_mem _ d _ hn ha
+    a ∈ (degreeFiltration ℒ d hneg).ideal k := by
+  rw [degreeFiltration_ideal]
+  exact TauCeti.GradedAlgebra.le_degreeIdeal _ d _ hn a ha
 
 /-- Homogeneous generators of degree at least `k` lie in filtration order `k`. -/
 theorem ι_mem_degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
@@ -79,13 +80,15 @@ degree at least `k`. -/
 theorem degreeFiltration_ideal_le_iff (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ)
     (K : Ideal (_root_.UniversalEnvelopingAlgebra R L)) :
     (degreeFiltration ℒ d hneg).ideal k ≤ K ↔
-      ∀ n, (k : ℤ) ≤ d n → ∀ a ∈ homogeneousSubmodule ℒ n, a ∈ K :=
-  TauCeti.GradedAlgebra.degreeFiltration_ideal_le_iff _ d _ k K
+      ∀ n, (k : ℤ) ≤ d n → ∀ a ∈ homogeneousSubmodule ℒ n, a ∈ K := by
+  rw [degreeFiltration_ideal]
+  exact TauCeti.GradedAlgebra.degreeIdeal_le_iff _ d _ k K
 
 /-- The enveloping degree filtration is separated. -/
 theorem iInf_degreeFiltration_ideal_eq_bot (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
-    (⨅ k : ℕ, (degreeFiltration ℒ d hneg).ideal k) = ⊥ :=
-  TauCeti.GradedAlgebra.iInf_degreeFiltration_ideal_eq_bot _ d _
+    (⨅ k : ℕ, (degreeFiltration ℒ d hneg).ideal k) = ⊥ := by
+  simp only [degreeFiltration_ideal]
+  exact TauCeti.GradedAlgebra.iInf_degreeIdeal_eq_bot _ d _
 
 /-- Every strictly positive degree ideal is contained in the augmentation ideal,
 even when the Lie algebra has a degree-zero part. -/

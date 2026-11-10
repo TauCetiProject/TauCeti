@@ -162,20 +162,4 @@ theorem mem_degreeFiltration_ideal_iff {n : ℕ} {x : A} :
       ∀ i, d i < n → (_root_.DirectSum.decompose 𝒜 x i : A) = 0 := by
   rw [degreeFiltration_ideal, mem_degreeIdeal_iff, TauCeti.DirectSum.mem_degreeTail_iff]
 
-/-- A homogeneous element of degree at least `n` lies in the order-`n` filtration ideal. -/
-theorem mem_degreeFiltration_ideal_of_mem {n : ℕ} {i : ι} (hi : (n : ℤ) ≤ d i) {x : A}
-    (hx : x ∈ 𝒜 i) : x ∈ (degreeFiltration 𝒜 d hneg).ideal n :=
-  le_degreeIdeal 𝒜 d hneg hi x hx
-
-/-- To contain a filtration ideal, it suffices to contain its homogeneous components. -/
-theorem degreeFiltration_ideal_le_iff (n : ℕ) (K : Ideal A) :
-    (degreeFiltration 𝒜 d hneg).ideal n ≤ K ↔
-      ∀ i, (n : ℤ) ≤ d i → ∀ x ∈ 𝒜 i, x ∈ K :=
-  degreeIdeal_le_iff 𝒜 d hneg n K
-
-/-- The degree filtration is separated. -/
-theorem iInf_degreeFiltration_ideal_eq_bot :
-    (⨅ n : ℕ, (degreeFiltration 𝒜 d hneg).ideal n) = ⊥ :=
-  iInf_degreeIdeal_eq_bot 𝒜 d hneg
-
 end TauCeti.GradedAlgebra
