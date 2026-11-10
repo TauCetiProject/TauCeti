@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Convex.FiniteMean
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The empirical second-moment matrix
@@ -29,7 +30,7 @@ entry by entry.
 * `TauCeti.sampleSecondMoment`: the empirical second-moment matrix of a finite sample.
 * `TauCeti.sampleSecondMoment_apply`: its entries are sample means of coordinate products.
 * `TauCeti.isHermitian_sampleSecondMoment`, `TauCeti.posSemidef_sampleSecondMoment`: it is
-  Hermitian, and positive semidefinite in finite dimension.
+  Hermitian and positive semidefinite.
 * `Matrix.sampleCovariance`: the sample covariance matrix `X Xᴴ / n` of a `p × n` data matrix, whose
   columns are the samples; `Matrix.sampleCovariance_eq_sampleSecondMoment` identifies it with the
   empirical second-moment matrix of the columns, and `Matrix.isHermitian_sampleCovariance` and
@@ -76,19 +77,14 @@ theorem isHermitian_sampleSecondMoment (v : ι → n → 𝕜) : (sampleSecondMo
 /-- The empirical second-moment matrix is positive semidefinite. -/
 theorem posSemidef_sampleSecondMoment (v : ι → n → 𝕜) :
     (sampleSecondMoment v).PosSemidef := by
-  -- Mathlib proves positive semidefiniteness of `vecMulVec a (star a)` only for finite `n`; the
-  -- quadratic form on a finitely supported `x` is `star s * s` for `s = ∑ⱼ star (aⱼ) * xⱼ`.
+  -- Mathlib proves positive semidefiniteness of `vecMulVec a (star a)` only for finite `n`;
+  -- `posSemidef_rankOne` holds for every index type.
   have hrank (a : n → 𝕜) : (vecMulVec a (star a)).PosSemidef := by
-    refine ⟨IsHermitian.ext fun k l ↦ by simp [vecMulVec_apply, mul_comm], fun x ↦ ?_⟩
-    have : (x.sum fun i xi ↦ x.sum fun j xj ↦ star xi * vecMulVec a (star a) i j * xj) =
-        star (x.sum fun j xj ↦ star (a j) * xj) * x.sum fun j xj ↦ star (a j) * xj := by
-      simp only [Finsupp.sum, star_sum, Finset.sum_mul, Finset.mul_sum, vecMulVec_apply]
-      rw [Finset.sum_comm]
-      refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-      simp only [star_mul, star_star, Pi.star_apply]
-      ring
-    rw [this]
-    exact star_mul_self_nonneg _
+    have heq : vecMulVec a (star a) = fun k l ↦ star (star (a k)) * star (a l) := by
+      ext k l
+      simp [vecMulVec_apply]
+    rw [heq]
+    exact posSemidef_rankOne fun k ↦ star (a k)
   rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
   exact (posSemidef_sum _ fun i _ ↦ hrank (v i)).smul (by positivity)
 
