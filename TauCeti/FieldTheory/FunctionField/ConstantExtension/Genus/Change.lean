@@ -538,7 +538,7 @@ theorem conormClassGroup_canonicalClass_of_genus_eq :
       canonicalClass (hF.of_constantCompositum_eq_top h) hex' :=
   conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
     (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
-    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex' hg
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex'
 
 /-- **The conorm is injective on divisor classes when the genus does not drop** (Stichtenoth,
 Theorem 3.6.3(f), without separability of `k' / k`): under a finite constant field extension

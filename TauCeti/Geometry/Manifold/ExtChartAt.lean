@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
@@ -56,11 +59,16 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
+* `TauCeti.exists_finite_compact_chart_cover`: a compact manifold modelled on a locally compact
+  space is covered by the relative interiors of finitely many compact coordinate sets.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
+* `TauCeti.exists_contDiffBump_extChartAt_subset`: on a boundaryless manifold, a bump function in
+  the chart at a point of an open set `U`, with closed outer ball in the chart target and image
+  in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
   charts read in the model vector space and moved by a homeomorphism, and their smooth transition
   maps.
@@ -98,6 +106,15 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
     (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
+
+/-- A point of the chart source at `x` whose chart image lies in `s` lies in the extended chart
+source, and its chart image lies in `s ∩ range I`. -/
+theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
+    (hy : y ∈ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
+    y ∈ (extChartAt I x).source ∧ extChartAt I x y ∈ s ∩ Set.range I := by
+  rw [extChartAt_source]
+  exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
+    (by rw [extChartAt_source]; exact hy.1))⟩
 
 /-- Changing extended coordinates transports the coordinate image of a subset of the overlap
 onto its image in the second chart. No differentiability assumption is needed. -/
@@ -397,6 +414,48 @@ theorem exists_finite_precompact_chart_cover [LocallyCompactSpace H] {s : Set M}
     obtain ⟨y, hy, hxy⟩ := Set.mem_iUnion₂.mp (ht hx)
     exact Set.mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa [α] using hxy⟩
 
+/-- The points of a chart source whose coordinates lie in a relatively open subset of the chart
+target form an open subset of the manifold. -/
+theorem isOpen_setOf_extChartAt_mem (x : M) {O : Set (extChartAt I x).target} (hO : IsOpen O) :
+    IsOpen {y : M | ∃ hy : y ∈ (extChartAt I x).source,
+      (⟨extChartAt I x y, (extChartAt I x).map_source hy⟩ : (extChartAt I x).target) ∈ O} := by
+  obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hO
+  have hset : {y : M | ∃ hy : y ∈ (extChartAt I x).source,
+      (⟨extChartAt I x y, (extChartAt I x).map_source hy⟩ : (extChartAt I x).target) ∈
+        Subtype.val ⁻¹' V} = (extChartAt I x).source ∩ extChartAt I x ⁻¹' V := by
+    ext y
+    exact ⟨fun ⟨hy, hyV⟩ ↦ ⟨hy, hyV⟩, fun ⟨hy, hyV⟩ ↦ ⟨hy, hyV⟩⟩
+  rw [hset]
+  exact isOpen_extChartAt_preimage' x hV
+
+/-- A compact manifold modelled on a locally compact space is covered by the relative interiors
+of finitely many compact subsets of extended chart targets. -/
+theorem exists_finite_compact_chart_cover [CompactSpace M] [LocallyCompactSpace H] :
+    ∃ (N : ℕ) (c : Fin N → M) (K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target),
+      ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
+        (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
+          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target) := by
+  obtain ⟨N, α, u, b, hu, hs⟩ := exists_finite_precompact_chart_cover (I := I)
+    (isCompact_univ : IsCompact (Set.univ : Set M))
+  have hK (i : Fin N) :
+      IsCompact (Subtype.val ⁻¹' b i : Set (extChartAt I (α i)).target) := by
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
+      Set.inter_eq_right.mpr (hu i).2.2.2.1]
+    exact (hu i).2.2.1
+  refine ⟨N, α, fun i ↦ ⟨_, hK i⟩, fun y ↦ ?_⟩
+  obtain ⟨i, hyi⟩ := Set.mem_iUnion.mp (hs (Set.mem_univ y))
+  have hy : y ∈ (extChartAt I (α i)).source := (hu i).2.1 hyi
+  refine ⟨i, hy, ?_⟩
+  -- The coordinate points whose inverse chart lies in `u i` form a relatively open set
+  -- inside the compact piece.
+  have hO : IsOpen {z : (extChartAt I (α i)).target | (extChartAt I (α i)).symm z ∈ u i} :=
+    (hu i).1.preimage (continuousOn_iff_continuous_domRestrict.mp
+      (continuousOn_extChartAt_symm (α i)))
+  refine interior_maximal (fun z hz ↦ ?_) hO ?_
+  · have hmem := (hu i).2.2.2.2 (Set.mem_image_of_mem _ hz)
+    rwa [(extChartAt I (α i)).right_inv z.2] at hmem
+  · simpa only [Set.mem_ofPred_eq, (extChartAt I (α i)).left_inv hy] using hyi
+
 /-- A locally compact, sigma-compact Hausdorff manifold has a locally finite cover by compact
 coordinate sets in preferred extended charts. Their inverse images cover the manifold, including
 its boundary when the model has one. -/
@@ -513,6 +572,42 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
   · rw [interior_inter, Metric.isOpen_ball.interior_eq]
     exact Metric.isOpen_ball.inter_closure
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
+
+section ClosedBall
+
+open Metric Set
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {x : M}
+
+/-- Around a point `x` of an open set `U` of a boundaryless manifold, some bump function in the
+chart at `x` has its closed outer ball inside the chart target, with image under the inverse chart
+inside `U`. -/
+theorem exists_contDiffBump_extChartAt_subset [BoundarylessManifold I M] {U : Set M}
+    (hU : IsOpen U) (hx : x ∈ U) :
+    ∃ ρ : ContDiffBump (extChartAt I x x),
+      closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target ∧
+        (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut ⊆ U := by
+  have hU' : (extChartAt I x).symm ⁻¹' U ∈ 𝓝 (extChartAt I x x) :=
+    (continuousAt_extChartAt_symm x).preimage_mem_nhds
+      (by rw [extChartAt_to_inv]; exact hU.mem_nhds hx)
+  have ht : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
+    mem_interior_iff_mem_nhds.1 ((I.isInteriorPoint_iff).1 BoundarylessManifold.isInteriorPoint)
+  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem ht hU')
+  have hball : closedBall (extChartAt I x x) (r / 2) ⊆
+      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U :=
+    (closedBall_subset_ball (half_lt_self hr)).trans hrU
+  refine ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, fun p hp ↦ (hball hp).1, ?_⟩
+  rintro _ ⟨p, hp, rfl⟩
+  exact (hball hp).2
+
+/-- The image under the inverse chart of a closed ball in the chart target is compact. -/
+theorem isCompact_extChartAt_symm_image_closedBall [FiniteDimensional ℝ E] {r : ℝ}
+    (hr : closedBall (extChartAt I x x) r ⊆ (extChartAt I x).target) :
+    IsCompact ((extChartAt I x).symm '' closedBall (extChartAt I x x) r) :=
+  (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hr)
+
+end ClosedBall
 
 end TauCeti
 
