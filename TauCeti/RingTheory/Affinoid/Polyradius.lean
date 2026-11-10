@@ -38,13 +38,20 @@ open _root_.MvPowerSeries
 variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [Finite σ] {r : σ → ℝ} [∀ i, Fact (0 < r i)]
 
+omit [Finite σ] in
+/-- Restricted series at a polyradius and at its absolute value coincide. -/
+theorem _root_.MvPowerSeries.IsRestricted.subring_abs {R : Type*} [NormedRing R]
+    [IsUltrametricDist R] (c : σ → ℝ) :
+    IsRestricted.subring (R := R) (|c ·|) = IsRestricted.subring c :=
+  Subring.ext fun f ↦ isRestricted_abs_iff c f
+
 omit [∀ i, Fact (0 < r i)] in
 /-- Restricted series at polyradii in the divisible hull of the value group form a strictly
 affinoid algebra. The positive exponent and scalar may depend on the variable. -/
 theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm
     (hr : ∀ i, ∃ n : ℕ, 0 < n ∧ ∃ c : Kˣ, r i ^ n = ‖(c : K)‖) :
     IsAffinoidAlgebra K (IsRestricted.subring (R := K) r) := by
-  -- Restricted series at `r` and at `|r|` coincide, and `|r|` is positive by `hr`.
+  -- `|r|` is positive by `hr`.
   have hpos (i : σ) : 0 < |r i| := by
     obtain ⟨n, hn, c, hc⟩ := hr i
     refine abs_pos.2 fun h ↦ ?_
@@ -56,13 +63,12 @@ theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm
         obtain ⟨n, hn, c, hc⟩ := hr i
         have hc' : |r i| ^ n = ‖(c : K)‖ := by rw [← abs_pow, hc, abs_norm]
         exact ⟨n, hn.ne', (c : K)⁻¹, by simp [norm_inv, hc', c.ne_zero]⟩)
-  -- Restricted series at `r` and at `|r|` coincide.
-  let ι : IsRestricted.subring (R := K) (|r ·|) →ₐ[K] IsRestricted.subring (R := K) r :=
-    { Subring.inclusion fun f hf ↦ (isRestricted_abs_iff r f).1 hf with
-      commutes' := fun _ ↦ rfl }
-  have hι : Function.Surjective ι := fun f ↦
-    ⟨⟨f.1, (isRestricted_abs_iff r f.1).2 f.2⟩, rfl⟩
-  exact (isAffinoidAlgebra_tate.of_algHom_finite φ hφ).of_surjective ι hι
+  have hle := (MvPowerSeries.IsRestricted.subring_abs (R := K) r).le
+  refine (isAffinoidAlgebra_tate.of_algHom_finite φ hφ).of_surjective
+    { Subring.inclusion hle with
+      commutes' := fun x ↦ Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring]) }
+    fun f ↦ ⟨⟨f.1, (MvPowerSeries.IsRestricted.subring_abs (R := K) r).ge f.2⟩,
+      Subtype.ext (Subring.coe_inclusion hle _)⟩
 
 omit [Finite σ] in
 /-- Strict affinoidness forces every positive radius into the divisible hull of the value
