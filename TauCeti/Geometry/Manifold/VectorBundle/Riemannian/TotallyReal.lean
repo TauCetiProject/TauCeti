@@ -179,7 +179,8 @@ variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
   {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
 
-local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F V
+local instance instVectorBundleRealTotallyRealMetric : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
 
 /-- **Existence of metrics compatible with a totally real subbundle.** Let `L` be a `C^n` real
 subbundle of a finite-rank `C^n` complex bundle over a σ-compact Hausdorff manifold, whose fibres
