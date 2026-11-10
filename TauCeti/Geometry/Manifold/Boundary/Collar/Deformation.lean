@@ -51,6 +51,21 @@ def collarPart (c : N × Ico (0 : ℝ) 1 → M) (t : ℝ) : Set M :=
   c '' {p | (p.2 : ℝ) < t}
 
 omit [TopologicalSpace M] [TopologicalSpace N] in
+/-- A point lies in the collar of depth less than `t` exactly when it is `c p` for collar
+coordinates `p` of depth less than `t`. -/
+lemma mem_collarPart_iff {x : M} {t : ℝ} :
+    x ∈ collarPart c t ↔ ∃ p : N × Ico (0 : ℝ) 1, (p.2 : ℝ) < t ∧ c p = x :=
+  Iff.rfl
+
+omit [TopologicalSpace M] [TopologicalSpace N] in
+/-- For an injective collar `c` (such as one with `TauCeti.IsCollar f c`), the point `c p` lies in
+the collar of depth less than `t` exactly when `p` has depth less than `t`. -/
+@[simp]
+lemma apply_mem_collarPart_iff (hc : Function.Injective c) {p : N × Ico (0 : ℝ) 1} {t : ℝ} :
+    c p ∈ collarPart c t ↔ (p.2 : ℝ) < t :=
+  ⟨fun ⟨_, hq, hqp⟩ ↦ hc hqp ▸ hq, fun h ↦ ⟨p, h, rfl⟩⟩
+
+omit [TopologicalSpace M] [TopologicalSpace N] in
 /-- The collar of depth less than `t` increases with `t`. -/
 lemma collarPart_mono {s t : ℝ} (h : s ≤ t) : collarPart c s ⊆ collarPart c t :=
   image_mono fun _ hp ↦ lt_of_lt_of_le hp h
@@ -79,10 +94,8 @@ lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x
       have h₀ : q = (q.1, ⟨0, by norm_num⟩) := Prod.ext rfl (Subtype.ext h.symm)
       rw [h₀, hc.apply_zero]
       exact mem_range_self _
-    refine ⟨q.2, hq, ?_⟩
-    rintro ⟨p, hp, hpq⟩
-    rw [hc.isOpenEmbedding.injective hpq] at hp
-    exact lt_irrefl (q.2 : ℝ) hp
+    exact ⟨q.2, hq, (lt_irrefl (q.2 : ℝ)) ∘
+      (apply_mem_collarPart_iff hc.isOpenEmbedding.injective).1⟩
   · exact ⟨1, one_pos, fun ⟨p, _, hp⟩ ↦ hxc ⟨p, hp⟩⟩
 
 /-- The collar coordinates of a point of the collar of depth less than `t`. -/

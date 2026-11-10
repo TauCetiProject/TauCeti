@@ -257,6 +257,7 @@ def fundamentalClassRel :
   (o.existsUnique_fundamentalClassRel hn hι hιf hf).exists.choose
 
 /-- The relative fundamental class restricts to the local orientation at every interior point. -/
+@[simp]
 theorem localHomologyRestriction_fundamentalClassRel (x : M) :
     localHomologyRestriction (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
         (singleton_subset_iff.2 (mem_range_self x)) n (o.fundamentalClassRel hn hι hιf hf) =
