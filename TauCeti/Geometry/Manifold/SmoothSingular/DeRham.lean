@@ -82,8 +82,11 @@ of the de Rham complex, is its integration cochain. -/
 theorem deRhamIntegration_f_inv_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
     (deRhamIntegration I M).f k ((deRhamComplexXIso I k).inv φ) =
       integrationCochain φ.1 := by
-  exact (smoothFormIntegration I M k).congr_arg
-    ((deRhamComplexXIso I k).inv_hom_id_apply φ)
+  -- CochainComplex.ofHom uses the supplied family as its components definitionally;
+  -- expose that component and its composite of module morphisms before cancelling the iso.
+  change smoothFormIntegration I M k
+    ((deRhamComplexXIso I k).hom ((deRhamComplexXIso I k).inv φ)) = _
+  rw [Iso.inv_hom_id_apply, smoothFormIntegration_apply]
 
 /-- The constant function `1`, viewed as a zero-form, integrates to `1` on every smooth
 zero-simplex. This fixes the normalization of the integration map in degree zero. -/
@@ -121,6 +124,24 @@ theorem deRhamIntegration_naturality {f : M → N} (hf : ContMDiff I J ∞ f) :
     ((integrationCochain_naturality hf ψ.1).symm.trans
       (SSet.cochainComplexMap_f_apply _ k _).symm)
 
+/-- The integration cochain of a closed smooth form, bundled as a cocycle. -/
+def integrationCocycle (k : ℕ) (φ : closedForms I M k) :
+    (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
+      ℝ (ModuleCat.of ℝ ℝ)).cycles k :=
+  HomologicalComplex.moduleCatCyclesMk _ (integrationCochain φ.1.1) (k + 1)
+    (CochainComplex.next ℕ k) (by
+      exact (ChainComplex.linearYonedaObj_d_apply k (k + 1) _).trans
+        (d_comp_integrationCochain_eq_zero
+          (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I φ.1).mp φ.2)))
+
+/-- The cochain underlying the integration cocycle is the integration cochain. -/
+@[simp]
+theorem iCycles_integrationCocycle (k : ℕ) (φ : closedForms I M k) :
+    (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
+      ℝ (ModuleCat.of ℝ ℝ)).iCycles k (integrationCocycle I M k φ) =
+        integrationCochain φ.1.1 := by
+  exact HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
+
 namespace deRhamCohomology
 
 /-- The homomorphism from de Rham cohomology to smooth singular cohomology induced by integration.
@@ -130,29 +151,24 @@ def integration (k : ℕ) : deRhamCohomology I M k →ₗ[ℝ]
       ℝ (ModuleCat.of ℝ ℝ)).homology k :=
   (HomologicalComplex.homologyMap (deRhamIntegration I M) k).hom
 
+/-- The map on homology of the integration cochain map is the integration homomorphism. -/
+theorem homologyMap_deRhamIntegration (k : ℕ) :
+    HomologicalComplex.homologyMap (deRhamIntegration I M) k =
+      ModuleCat.ofHom (integration I M k) := (rfl)
+
 /-- The image of a closed form is the cohomology class of its integration cochain. -/
 @[simp]
 theorem integration_mk (k : ℕ) (φ : closedForms I M k) :
     integration I M k (mk I k φ) =
       (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
         ℝ (ModuleCat.of ℝ ℝ)).homologyπ k
-          ((((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
-            ℝ (ModuleCat.of ℝ ℝ)).moduleCatCyclesMk (integrationCochain φ.1.1) (k + 1)
-              (CochainComplex.next ℕ k) (by
-                exact (ChainComplex.linearYonedaObj_d_apply k (k + 1) _).trans
-                  (d_comp_integrationCochain_eq_zero
-                    (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I φ.1).mp φ.2)))) := by
+          (integrationCocycle I M k φ) := by
   rw [integration, mk_eq_moduleCatHomologyClass,
-    HomologicalComplex.moduleCatHomologyClass_apply, ← ModuleCat.comp_apply,
-    HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
-  apply congrArg _
-  apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
-    HomologicalComplex.iCycles_moduleCatCyclesMk]
-  exact (deRhamIntegration_f_inv_apply I M k φ.1).trans
-    (HomologicalComplex.iCycles_moduleCatCyclesMk
-      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
-        ℝ (ModuleCat.of ℝ ℝ)) k (integrationCochain φ.1.1) (k + 1) _ _).symm
+    HomologicalComplex.moduleCatHomologyClass_apply,
+    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  simp only [LinearMap.comp_apply, integrationCocycle]
+  congr 2
+  exact deRhamIntegration_f_inv_apply I M k φ.1
 
 /-- The integration homomorphism is natural under smooth pullback. -/
 theorem integration_naturality {f : M → N} (hf : ContMDiff I J ∞ f) (k : ℕ)
