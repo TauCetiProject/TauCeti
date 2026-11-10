@@ -115,18 +115,24 @@ theorem mobiusOf_den_ne_zero : C c * X + C d ≠ 0 := by
 theorem mobiusOf_mul_den : mobiusOf a b c d * (C c * X + C d) = C a * X + C b :=
   div_mul_cancel₀ _ (mobiusOf_den_ne_zero hdet)
 
-/-- The coefficient `a - c · m` scaled by the denominator is the determinant. -/
+omit hdet in
+/-- The coefficient `a - c · m` scaled by the denominator is the determinant. When the denominator
+vanishes, `c = d = 0` and both sides are `0`. -/
 theorem sub_mul_mobiusOf_mul_den :
     (C a - C c * mobiusOf a b c d) * (C c * X + C d) = C (a * d - b * c) := by
-  have h := mobiusOf_mul_den hdet
-  rw [map_sub, map_mul, map_mul]
-  linear_combination (-(C c)) * h
+  by_cases hD : (C c * X + C d : RatFunc K) = 0
+  · have hcd : ¬ (c ≠ 0 ∨ d ≠ 0) := fun h ↦ mul_X_add_C_ne_zero h hD
+    simp only [not_or, not_not] at hcd
+    simp [hcd.1, hcd.2]
+  · have h : mobiusOf a b c d * (C c * X + C d) = C a * X + C b := div_mul_cancel₀ _ hD
+    rw [map_sub, map_mul, map_mul]
+    linear_combination (-(C c)) * h
 
 /-- **The coefficient `a - c · m` is nonzero**, being the determinant over the denominator. -/
 theorem sub_mul_mobiusOf_ne_zero : C a - C c * mobiusOf a b c d ≠ 0 := by
   intro h0
   refine ((map_eq_zero_iff C C_injective).not.mpr hdet) ?_
-  rw [← sub_mul_mobiusOf_mul_den hdet, h0, zero_mul]
+  rw [← sub_mul_mobiusOf_mul_den, h0, zero_mul]
 
 /-- **The inverse coefficient matrix recovers `X`**: `X · (a - c · m) = d · m - b`, both sides
 being the determinant times `X` over the denominator. -/
