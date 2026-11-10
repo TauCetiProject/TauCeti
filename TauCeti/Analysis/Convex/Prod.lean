@@ -17,7 +17,7 @@ corresponding convex combination of base points. The second inclusion is the set
 for Brunn's concavity principle, which compares fiber volumes by the Brunn–Minkowski inequality.
 
 A strip `|u.1| < a` of a product `𝕜 × W` is convex (`TauCeti.convex_setOf_abs_fst_lt`). Convexity
-transfers between subsets of `V × ℝ` that correspond under a positive rescaling of the height
+transfers between subsets of `V × ℝ` that correspond under a nonzero rescaling of the height
 coordinate (`TauCeti.convex_of_height_scale`).
 -/
 
@@ -52,14 +52,14 @@ theorem convex_setOf_abs_fst_lt {𝕜 W : Type*} [Field 𝕜] [LinearOrder 𝕜]
     ext v; simp [abs_lt]
   exact this ▸ (convex_Ioo (-a) a).linear_preimage _
 
-/-- Rescaling the height coordinate by a positive real `r` transfers convexity from a subset of
+/-- Rescaling the height coordinate by a nonzero real `r` transfers convexity from a subset of
 `V × ℝ` to any subset that corresponds to it under that rescaling. -/
 theorem convex_of_height_scale {V : Type*} [AddCommMonoid V] [SMul ℝ V]
-    {s t : Set (V × ℝ)} {r : ℝ} (hr : 0 < r) (hst : ∀ x τ, (x, τ) ∈ s ↔ (x, r * τ) ∈ t)
+    {s t : Set (V × ℝ)} {r : ℝ} (hr : r ≠ 0) (hst : ∀ x τ, (x, τ) ∈ s ↔ (x, r * τ) ∈ t)
     (h : Convex ℝ s) : Convex ℝ t := by
   intro p hp q hq a b ha hb hab
-  have hp' : (p.1, r⁻¹ * p.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr.ne'] using hp)
-  have hq' : (q.1, r⁻¹ * q.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr.ne'] using hq)
+  have hp' : (p.1, r⁻¹ * p.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr] using hp)
+  have hq' : (q.1, r⁻¹ * q.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr] using hq)
   have := (hst _ _).1 (h hp' hq' ha hb hab)
   convert this using 1
   ext

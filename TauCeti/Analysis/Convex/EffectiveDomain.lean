@@ -100,8 +100,8 @@ theorem convex_epigraph_coe_mul_iff {V : Type*} [AddCommMonoid V] [SMul ℝ V] {
   have hheight (x : V) (t : ℝ) :
       (c : EReal) * f x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
     simp only [EReal.coe_mul, EReal.coe_mul_le_coe_mul_iff hc]
-  refine ⟨convex_of_height_scale (inv_pos.2 hc) fun x τ ↦ ?_,
-    convex_of_height_scale hc fun x τ ↦ (hheight x τ).symm⟩
+  refine ⟨convex_of_height_scale (inv_pos.2 hc).ne' fun x τ ↦ ?_,
+    convex_of_height_scale hc.ne' fun x τ ↦ (hheight x τ).symm⟩
   simp only [mem_ofPred_eq]
   rw [← hheight, mul_inv_cancel_left₀ hc.ne']
 
