@@ -21,7 +21,7 @@ lands in `K` at all, and both readings agree through the convention `index = 0`.
 
 Consequently the index of an intersection of two subgroups of a cyclic group is the least common
 multiple of their indices. The same holds modulo a normal subgroup `N` with cyclic quotient, as
-long as the order of `N` is prime to its index and to the index of one of the two subgroups.
+long as the order of `N` is prime to the index of one of the two subgroups.
 
 ## Main results
 
@@ -170,7 +170,7 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
   have hcyc := IsCyclic.index_inf_eq_lcm (A.map π) (B.map π)
   rw [index_inf, ← hrel, ← index_comap_of_surjective (A.map π) hπ,
     ← index_comap_of_surjective (B.map π) hπ, hA', hB'] at hcyc
-  -- `[G : B] = [B ⊔ N : B] · [G : B ⊔ N]`, and the first factor is prime to the other indices.
+  -- `[G : B] = [B ⊔ N : B] · [G : B ⊔ N]`, and the first factor is prime to `[G : A]`.
   set s := B.relIndex (B ⊔ N)
   have hs : s.Coprime A.index := Nat.Coprime.coprime_dvd_left (hdvd B) hA
   -- Since `s` is prime to `[G : A]`, multiplying `[G : B ⊔ N]` by `s` multiplies the least common
