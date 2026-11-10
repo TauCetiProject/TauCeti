@@ -44,6 +44,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   chart.
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
+* `TauCeti.SmoothAlmostComplexStructure.chartPushforward`: the smooth structure pushed forward
+  along a chart with values in a normed space.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_apply_eq_mfderiv`,
   `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_apply_eq_mfderiv`: it is `J`
   conjugated by the derivatives of the chart and of its inverse.
@@ -144,6 +146,14 @@ theorem chartPushforward_apply (ψ : OpenPartialHomeomorph M G) (p w : G) :
     J.chartPushforward ψ p w =
       mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (J (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w)) :=
   (rfl)
+
+/-- Forgetting regularity does not change the pushed-forward structure. -/
+@[simp]
+theorem chartPushforward_ofLE (h : m ≤ n) (ψ : OpenPartialHomeomorph M G) :
+    (J.ofLE h).chartPushforward ψ = J.chartPushforward ψ := by
+  funext p
+  ext w
+  rw [chartPushforward_apply, chartPushforward_apply, ofLE_apply]
 
 /-- **The pushed-forward structure is an almost complex structure.** At a point of the target
 where the chart and its inverse are differentiable, `ψ_* J` squares to `-1`. -/
@@ -393,6 +403,29 @@ theorem inChart_def (z : E) :
 theorem toContMDiff_inChart (n : ℕ∞) : (J.toContMDiff n).inChart x = J.inChart x := by
   funext z
   rw [ContMDiffAlmostComplexStructure.inChart_def, toContMDiff_toEndomorphism_apply, inChart_def]
+
+section Pushforward
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- The smooth structure `J` pushed forward along a chart `ψ` of `M` with values in a normed
+space `G`: at `p`, the endomorphism `dψ ∘ J ∘ dψ⁻¹` of `G`, as in
+`ContMDiffAlmostComplexStructure.chartPushforward`. -/
+def chartPushforward (ψ : OpenPartialHomeomorph M G) (p : G) : G →L[ℝ] G :=
+  (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p)).comp
+    ((J.toEndomorphism (ψ.symm p)).comp (mfderiv 𝓘(ℝ, G) I ψ.symm p))
+
+/-- Pushing forward a smooth structure agrees with every finite-regularity specialization. -/
+@[simp]
+theorem toContMDiff_chartPushforward (n : ℕ∞) (ψ : OpenPartialHomeomorph M G) :
+    (J.toContMDiff n).chartPushforward ψ = J.chartPushforward ψ := by
+  funext p
+  ext w
+  rw [ContMDiffAlmostComplexStructure.chartPushforward_apply, toContMDiff_apply]
+  -- The remaining goal unfolds the smooth `chartPushforward` at `w`.
+  rfl
+
+end Pushforward
 
 /-- The smooth coordinate field is smooth on its full chart target. -/
 theorem contDiffOn_inChart : ContDiffOn ℝ ∞ (J.inChart x) (extChartAt I x).target := by

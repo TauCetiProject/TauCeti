@@ -241,10 +241,6 @@ theorem adaptedNormalExtension_writtenInExtChartAt_inl {V : Type*} [NormedAddCom
         (writtenInExtChartAt 𝓘(ℝ, V) 𝓘(ℝ, V × V) x₀ (ContinuousLinearMap.inl ℝ V V))
         ((SmoothAlmostComplexStructure.product V).inChart (ContinuousLinearMap.inl ℝ V V x₀)) =
       id := by
-  have hγ : writtenInExtChartAt 𝓘(ℝ, V) 𝓘(ℝ, V × V) x₀ (ContinuousLinearMap.inl ℝ V V) =
-      ContinuousLinearMap.inl ℝ V V := by
-    funext v
-    simp [writtenInExtChartAt]
   have hJ : (SmoothAlmostComplexStructure.product V).inChart (ContinuousLinearMap.inl ℝ V V x₀) =
       fun _ ↦ (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V) := by
     funext z
@@ -252,6 +248,6 @@ theorem adaptedNormalExtension_writtenInExtChartAt_inl {V : Type*} [NormedAddCom
     exact (inCoordinates_tangent_bundle_core_model_space (I := 𝓘(ℝ, V × V))
       (I' := 𝓘(ℝ, V × V)) _ _ _ _ _).trans
         (ContinuousLinearMap.ext fun v ↦ (SmoothAlmostComplexStructure.product_apply z v).trans rfl)
-  rw [hγ, hJ, adaptedNormalExtension_inl]
+  rw [writtenInExtChartAt_model_space, hJ, adaptedNormalExtension_inl]
 
 end TauCeti
