@@ -455,14 +455,17 @@ section PolishFinite
 
 variable [PolishSpace X] [BorelSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
+omit [IsFiniteMeasure ν] in
 /-- Transport with truncated distance admits a maximizing `1`-Lipschitz test function bounded
 by half the cap, for finite measures of equal mass. No first-moment assumption is needed, and
-zero mass and the zero-cap case are included. -/
+zero mass and the zero-cap case are included. Finiteness of `ν` follows from that of `μ` and the
+equal masses. -/
 theorem exists_lipschitzWith_norm_le_integral_sub_integral_eq_transportCost_truncated_dist
     (hR : 0 ≤ R) (hmass : μ univ = ν univ) :
     ∃ f : X → ℝ, LipschitzWith 1 f ∧ (∀ x, ‖f x‖ ≤ R) ∧
       ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) =
         transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ ν := by
+  have : IsFiniteMeasure ν := ⟨hmass ▸ measure_lt_top μ univ⟩
   by_cases hμ : μ = 0
   · have hν : ν = 0 := Measure.measure_univ_eq_zero.1 (hmass ▸ Measure.measure_univ_eq_zero.2 hμ)
     subst μ
@@ -518,10 +521,20 @@ theorem isGreatest_ofReal_integral_sub_integral_boundedLipschitz (hR : 0 ≤ R)
 
 /-- **Bounded-Lipschitz duality in supremum form.** A uniform bound `R` on the test functions
 corresponds to truncation of the ground distance at `2 * R`, for finite measures of equal mass. -/
-theorem transportCost_truncated_dist_eq_iSup (hR : 0 ≤ R) (hmass : μ univ = ν univ) :
+theorem transportCost_truncated_dist_eq_iSup (hmass : μ univ = ν univ) :
     transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ ν =
       ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f) (_ : ∀ x, ‖f x‖ ≤ R),
         ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) := by
+  rcases lt_or_ge R 0 with hR | hR
+  · -- a negative bound leaves no test function unless `X` is empty, and the capped cost is `0`
+    have hc : (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) = fun _ ↦ 0 :=
+      funext fun z ↦ ENNReal.ofReal_of_nonpos ((min_le_right _ _).trans (by linarith))
+    rw [hc, transportCost_zero (exists_isCoupling_iff.2 hmass)]
+    refine (le_antisymm (iSup_le fun f ↦ iSup_le fun _ ↦ iSup_le fun hfb ↦ ?_) zero_le).symm
+    rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
+    · rw [Measure.eq_zero_of_isEmpty μ, Measure.eq_zero_of_isEmpty ν]
+      simp
+    · exact absurd ((hfb x).trans_lt hR) (not_lt.2 (norm_nonneg _))
   obtain ⟨f, hf, hfb, heq⟩ :=
     exists_lipschitzWith_norm_le_integral_sub_integral_eq_transportCost_truncated_dist
       (μ := μ) (ν := ν) hR hmass
@@ -532,12 +545,12 @@ theorem transportCost_truncated_dist_eq_iSup (hR : 0 ≤ R) (hmass : μ univ = �
 
 /-- The absolute-difference form of bounded-Lipschitz duality for finite measures of equal mass.
 The test class is closed under negation, so its signed and absolute suprema coincide. -/
-theorem transportCost_truncated_dist_eq_iSup_abs (hR : 0 ≤ R) (hmass : μ univ = ν univ) :
+theorem transportCost_truncated_dist_eq_iSup_abs (hmass : μ univ = ν univ) :
     transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ ν =
       ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f) (_ : ∀ x, ‖f x‖ ≤ R),
         ENNReal.ofReal |∫ x, f x ∂μ - ∫ x, f x ∂ν| := by
   refine le_antisymm ?_ ?_
-  · rw [transportCost_truncated_dist_eq_iSup hR hmass]
+  · rw [transportCost_truncated_dist_eq_iSup hmass]
     exact iSup_mono fun f ↦ iSup_mono fun _ ↦ iSup_mono fun _ ↦
       ENNReal.ofReal_le_ofReal (le_abs_self _)
   · refine iSup_le fun f ↦ iSup_le fun hf ↦ iSup_le fun hfb ↦ ?_
