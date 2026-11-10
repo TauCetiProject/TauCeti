@@ -114,15 +114,32 @@ theorem IsKillingField.add {X' : Π x : M, TangentSpace I x} (h : IsKillingField
       mlieBracket_add_left hX hX', mlieBracket_add_left hX hX', inner_add_left, inner_add_right]
     ring
 
+omit [CompleteSpace E] in
 /-- A constant multiple of a Killing field is a Killing field. -/
 theorem IsKillingField.const_smul (h : IsKillingField I X) (c : ℝ) :
     IsKillingField I (c • X) where
   contMDiff := h.contMDiff.const_smul_section
   mvfderiv_inner Y Z hY hZ x := by
-    have hX := h.contMDiff.mdifferentiable (by simp) x
-    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x, mlieBracket_const_smul_left hX,
-      mlieBracket_const_smul_left hX, inner_smul_left, inner_smul_right, smul_eq_mul,
-      RCLike.conj_to_real]
+    -- scaling the first field scales the Lie bracket; no differentiability or completeness is
+    -- needed, as `fderivWithin` of a constant multiple is the constant multiple of `fderivWithin`
+    have hbr (W : Π x : M, TangentSpace I x) :
+        mlieBracket I (c • X) W x = c • mlieBracket I X W x := by
+      have hs : UniqueDiffWithinAt ℝ ((extChartAt I x).symm ⁻¹' univ ∩ range I)
+          (extChartAt I x x) := by
+        rw [preimage_univ, univ_inter]
+        exact I.uniqueDiffOn _ (mem_range_self _)
+      have key (V' W' : E → E) :
+          lieBracketWithin ℝ (c • V') W' ((extChartAt I x).symm ⁻¹' univ ∩ range I)
+              (extChartAt I x x) =
+            c • lieBracketWithin ℝ V' W' ((extChartAt I x).symm ⁻¹' univ ∩ range I)
+              (extChartAt I x x) := by
+        simp only [lieBracketWithin, fderivWithin_const_smul_field c hs, Pi.smul_apply, map_smul,
+          smul_apply, smul_sub]
+      simp only [← mlieBracketWithin_univ, mlieBracketWithin_def, mpullbackWithin_const_smul,
+        mpullback]
+      exact (congrArg _ (key _ _)).trans (map_smul _ _ _)
+    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x, hbr, hbr, inner_smul_left,
+      inner_smul_right, smul_eq_mul, RCLike.conj_to_real]
     ring
 
 end LinearCombination
