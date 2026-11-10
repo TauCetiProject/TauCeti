@@ -40,8 +40,8 @@ they differentiate the logarithm of a principal unit logarithmically: `u * D (lo
 
 ## Main results
 
-* `TauCeti.NovikovSeries.coe_exp_of_mem_posIdeal`: the exponential of a series of the positive
-  ideal does not depend on whether it is computed in the nonnegative subring or in the Novikov
+* `TauCeti.NovikovSeries.coe_exp_nonnegSubring`: the exponential of a series of the nonnegative
+  subring does not depend on whether it is computed in the nonnegative subring or in the Novikov
   ring.
 * `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
   along a degree derivation.
@@ -84,16 +84,15 @@ theorem coe_expMulEquiv_symm_apply (u : (posIdeal K N).principalUnitGroup) :
       NormedSpace.log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N) :=
   Ideal.coe_expMulEquiv_symm_apply _ _ u
 
-/-- The exponential of a series of the positive ideal is the same whether it is computed in the
-nonnegative subring or in the Novikov ring. -/
-theorem coe_exp_of_mem_posIdeal {a : nonnegSubring K N} (ha : a ∈ posIdeal K N) :
+/-- The exponential of a series of the nonnegative subring is the same whether it is computed in
+the nonnegative subring or in the Novikov ring. -/
+theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
     ((NormedSpace.exp a : nonnegSubring K N) : NovikovSeries K H N) =
       NormedSpace.exp (a : NovikovSeries K H N) := by
-  have h := (isTopologicallyNilpotent_of_mem_posIdeal' ha).hasSum_exp.map
-    (nonnegSubring K N).subtype continuous_subtype_val
-  rw [NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
-  refine (HasSum.tsum_eq ?_).symm
-  simpa [Function.comp_def] using h
+  rw [NormedSpace.exp_eq_tsum_rat (𝔸 := nonnegSubring K N),
+    NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
+  exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
+    (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
 
 /-- A degree derivation differentiates the logarithm of a principal unit of the nonnegative
 subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/

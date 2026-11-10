@@ -129,13 +129,12 @@ theorem algebraNorm_orbitZeta (hpos : ∀ i, 0 < N (γ i))
       orbitZeta R (N.comp K.subtype)
         (fun p : (i : ι) × Fin (K.index / addOrderOf (γ i : H ⧸ K)) => K.liftClass (γ p.1))
         (fun p n => ε p.1 (addOrderOf (γ p.1 : H ⧸ K) * n)) := by
-  obtain ⟨hpos', hfin'⟩ := pos_tendsto_period_nsmul_addOrderOf K hpos hfin
   obtain ⟨c, hc₀, hc⟩ := hfin.exists_gt_forall_le hpos
   have h := algebraNorm_exp K (orbitLog_mem_posIdeal (K := R) hc₀ hc ε)
   dsimp only at h
   rw [orbitZeta_def, h, trace_eq_index_smul_comap (exists_period_rescale_subtype K) (by simp),
     index_smul_comap_orbitLog K hpos hfin ε, ← orbitZeta_def]
-  exact (orbitZeta_sigma hpos' hfin' (fun i n => ε i (addOrderOf (γ i : H ⧸ K) * n))
+  exact (orbitZeta_sigma (fun i n => ε i (addOrderOf (γ i : H ⧸ K) * n))
     fun i => K.index / addOrderOf (γ i : H ⧸ K)).symm
 
 end FiniteCover

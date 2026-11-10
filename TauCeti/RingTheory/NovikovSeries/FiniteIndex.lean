@@ -200,16 +200,41 @@ end Basis
 
 section Ring
 
-variable [CommRing R] [K.FiniteIndex]
+variable [CommRing R]
 
 /-- Over a nontrivial commutative ring, the rank of the Novikov series on `H` over those on a
-finite-index subgroup `K` is the index of `K`. -/
+subgroup `K` is the index of `K`; for infinite index both are `0`. -/
 theorem finrank_eq_index [Nontrivial R] :
     Module.finrank (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) = K.index := by
-  rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    AddSubgroup.index_eq_card]
+  by_cases hK : K.index = 0
+  · rw [hK]
+    have := AddSubgroup.index_eq_zero_iff_infinite.1 hK
+    have hli : LinearIndependent (NovikovSeries R K (N.comp K.subtype))
+        fun q : H ⧸ K => (single (Quotient.out q) 1 : NovikovSeries R H N) := by
+      classical
+      refine linearIndependent_iff'.2 fun t c ht q hq => ?_
+      ext k
+      have hc (p : H ⧸ K) : (c p • (single (Quotient.out p) 1 : NovikovSeries R H N)).coeff
+          (Quotient.out q + k) = if p = q then (c q).coeff k else 0 := by
+        rw [Algebra.smul_def, mul_comm, coeff_single_mul, one_mul]
+        split_ifs with hpq
+        · subst hpq
+          rw [neg_add_cancel_left, coeff_algebraMap_addSubgroup_coe]
+        · refine coeff_algebraMap_addSubgroup_of_notMem _ fun hmem => hpq ?_
+          rw [← add_assoc, AddSubgroup.add_mem_cancel_right _ k.2] at hmem
+          rw [← Quotient.out_eq' p, ← Quotient.out_eq' q]
+          exact QuotientAddGroup.eq.2 hmem
+      have h := congrArg (fun a : NovikovSeries R H N => a.coeff (Quotient.out q + k)) ht
+      simp only [coeff_sum, coeff_zero, hc] at h
+      simpa [hq] using h
+    rw [Module.finrank, Cardinal.toNat_apply_of_aleph0_le
+      (Cardinal.aleph0_le_lift.1 ((Cardinal.aleph0_le_lift.2 (Cardinal.aleph0_le_mk _)).trans
+        hli.cardinal_lift_le_rank))]
+  · have : K.FiniteIndex := ⟨hK⟩
+    rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+      AddSubgroup.index_eq_card]
 
-variable {K}
+variable {K} [K.FiniteIndex]
 
 /-- The trace of a Novikov series `a` on `H` over the Novikov series on a finite-index subgroup
 `K` is the index `[H : K]` times the restriction of `a` to `K`. -/
