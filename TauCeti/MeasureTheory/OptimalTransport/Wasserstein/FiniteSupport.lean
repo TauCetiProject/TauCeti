@@ -124,16 +124,33 @@ section Perturbation
 variable [PseudoEMetricSpace X]
 
 /-- **Perturbing the weights of a finitely supported law.** If the weights `b` are below the
-weights `a` away from a distinguished point `x₀` of the carrier and the two total masses agree,
-then all the excess mass travels to `x₀`, so the transport cost is at most the `L^p` seminorm of
-the distance to `x₀` against the excess measure. -/
+weights `a` away from a distinguished point `x₀` (which need not lie in the carrier `s`) and the
+two total masses agree, then all the excess mass travels to `x₀`, so the transport cost is at most
+the `L^p` seminorm of the distance to `x₀` against the excess measure. -/
 theorem wassersteinEDist_sum_smul_dirac_le
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞) {s : Finset X} {x₀ : X}
-    (hx₀ : x₀ ∈ s) {a b : X → ℝ≥0∞} (hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y)
+    {a b : X → ℝ≥0∞} (hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y)
     (hfin : ∀ y ∈ s, y ≠ x₀ → a y ≠ ∞) (hsum : ∑ x ∈ s, b x = ∑ x ∈ s, a x) :
     wassersteinEDist p (∑ x ∈ s, a x • Measure.dirac x) (∑ x ∈ s, b x • Measure.dirac x) ≤
       eLpNorm (fun x ↦ edist x x₀) p (∑ y ∈ s, (a y - b y) • Measure.dirac y) := by
   classical
+  by_cases hx₀ : x₀ ∈ s
+  swap
+  · -- away from the carrier the weights agree, so the two laws coincide
+    have hba : ∀ y ∈ s, b y ≤ a y := fun y hy ↦ hab y hy fun h ↦ hx₀ (h ▸ hy)
+    have hfin' : ∑ x ∈ s, b x ≠ ∞ :=
+      ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun y hy ↦ hfin y hy fun h ↦ hx₀ (h ▸ hy))
+        (Finset.sum_le_sum hba)
+    have hsplit : ∑ x ∈ s, a x = ∑ x ∈ s, b x + ∑ x ∈ s, (a x - b x) := by
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun y hy ↦ (add_tsub_cancel_of_le (hba y hy)).symm
+    have hzero : ∑ x ∈ s, (a x - b x) = 0 := by
+      refine (ENNReal.add_right_inj hfin').1 ?_
+      rw [← hsplit, hsum, add_zero]
+    have hab_eq : ∀ y ∈ s, a y = b y := fun y hy ↦
+      le_antisymm (tsub_eq_zero_iff_le.1 (Finset.sum_eq_zero_iff.1 hzero y hy)) (hba y hy)
+    rw [Finset.sum_congr rfl fun y hy ↦ by rw [hab_eq y hy]]
+    exact (wassersteinEDist_self_of_measurable_edist hd p _).trans_le (zero_le)
   have hab' : ∀ y ∈ s.erase x₀, b y ≤ a y := fun y hy ↦
     hab y (Finset.mem_of_mem_erase hy) (Finset.ne_of_mem_erase hy)
   have hsplit : ∀ c : X → ℝ≥0∞,
@@ -228,7 +245,7 @@ theorem exists_nat_weights_wassersteinEDist_le
     rw [hsm, Finset.smul_sum]
     exact Finset.sum_congr rfl fun x _ ↦ (smul_smul _ _ _)
   rw [hν_eq, htarget]
-  refine (wassersteinEDist_sum_smul_dirac_le hd p hx₀ hab (fun y _ _ ↦ measure_ne_top ν _)
+  refine (wassersteinEDist_sum_smul_dirac_le hd p hab (fun y _ _ ↦ measure_ne_top ν _)
     (hb_sum.trans ha_sum.symm)).trans ((ENNReal.rpow_le_rpow_iff ht).1 ?_)
   -- the excess mass is at most `1 / M` at each atom, so its `L^p` seminorm is below `ε`
   rw [eLpNorm_rpow_eq_lintegral hp0 hp (f := fun x ↦ edist x x₀)
@@ -249,7 +266,7 @@ end NatWeights
 
 section DenseRange
 
-variable [PseudoMetricSpace X] [OpensMeasurableSpace X] {u : ℕ → X}
+variable [PseudoMetricSpace X] {u : ℕ → X}
 
 /-- **Quantizing to a dense sequence.** A probability measure is within any prescribed accuracy
 of its pushforward along a measurable map taking values in the range of a dense sequence: sending
@@ -262,7 +279,13 @@ theorem exists_map_range_wassersteinEDist_le
   classical
   have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦ Metric.denseRange_iff.1 hu x δ hδ
   have hidx_meas : Measurable fun x ↦ Nat.find (hidx x) :=
-    measurable_find hidx fun _ ↦ measurableSet_ball
+    measurable_find hidx fun k ↦ by
+      have hball : {x | dist x (u k) < δ} =
+          (fun x ↦ edist x (u k)) ⁻¹' Set.Iio (ENNReal.ofReal δ) := by
+        ext x
+        simp [edist_dist, ENNReal.ofReal_lt_ofReal_iff hδ]
+      rw [hball]
+      exact (hd.comp (measurable_id.prodMk measurable_const)) measurableSet_Iio
   have hT_meas : Measurable fun x ↦ u (Nat.find (hidx x)) :=
     Measurable.of_discrete.comp hidx_meas
   refine ⟨fun x ↦ u (Nat.find (hidx x)), hT_meas, fun x ↦ ⟨_, rfl⟩, ?_⟩

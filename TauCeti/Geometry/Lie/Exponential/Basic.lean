@@ -54,14 +54,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The tangent-space exponential obtained by evaluating the canonical invariant curve at time
 one. This is the tangent-vector precursor of the roadmap's derivation-based `lieExp`. -/
 noncomputable def mulInvariantExp [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) : G :=
   mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd 1)
 
 /-- The tangent-space exponential is the canonical invariant integral curve evaluated at time
 one. -/
 theorem mulInvariantExp_eq_mulInvariantIntegralCurve [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
     mulInvariantExp v = mulInvariantIntegralCurve v 1 1 := by
   rw [mulInvariantExp, mulInvariantOneParameterSubgroup_apply]
@@ -69,7 +69,7 @@ theorem mulInvariantExp_eq_mulInvariantIntegralCurve [CompleteSpace E]
 /-- Scaling a tangent vector corresponds to evaluating its invariant integral curve at the scale
 factor. -/
 theorem mulInvariantExp_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (t : ℝ) :
     mulInvariantExp (t • v) = mulInvariantIntegralCurve v 1 t := by
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve, mulInvariantIntegralCurve_smul, one_mul]
@@ -77,7 +77,7 @@ theorem mulInvariantExp_smul [CompleteSpace E]
 /-- The canonical one-parameter subgroup is the tangent-space exponential along its generating
 line. -/
 theorem mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (t : ℝ) :
     mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd t) = mulInvariantExp (t • v) := by
   rw [mulInvariantOneParameterSubgroup_apply, mulInvariantExp_smul]
@@ -85,7 +85,7 @@ theorem mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul [CompleteSpace 
 /-- The exponential along a line satisfies the one-parameter subgroup law. -/
 @[simp]
 theorem mulInvariantExp_add_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (s t : ℝ) :
     mulInvariantExp ((s + t) • v) = mulInvariantExp (s • v) * mulInvariantExp (t • v) := by
   rw [mulInvariantExp_smul, mulInvariantExp_smul, mulInvariantExp_smul,
@@ -94,7 +94,7 @@ theorem mulInvariantExp_add_smul [CompleteSpace E]
 /-- Scaling a tangent vector by a natural number corresponds to taking the associated group
 element to that power. -/
 theorem mulInvariantExp_nsmul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (m : ℕ) :
     mulInvariantExp (I := I) (G := G) (m • v) = mulInvariantExp v ^ m := by
   have h := map_pow (mulInvariantOneParameterSubgroup (I := I) (G := G) v)
@@ -106,14 +106,14 @@ theorem mulInvariantExp_nsmul [CompleteSpace E]
 /-- The tangent-space exponential sends zero to the group identity. -/
 @[simp]
 theorem mulInvariantExp_zero [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] : mulInvariantExp (0 : GroupLieAlgebra I G) = 1 := by
   simpa using mulInvariantExp_smul (0 : GroupLieAlgebra I G) 0
 
 /-- The tangent-space exponential sends negation to inversion. -/
 @[simp]
 theorem mulInvariantExp_neg [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
     mulInvariantExp (-v) = (mulInvariantExp v)⁻¹ := by
   calc

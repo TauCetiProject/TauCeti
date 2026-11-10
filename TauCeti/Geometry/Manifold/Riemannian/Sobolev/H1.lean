@@ -271,6 +271,16 @@ theorem norm_toLp_le (w : SobolevH1 I M) : ‖toLp w‖ ≤ ‖w‖ := by
     simp only [← sq]
     exact le_add_of_nonneg_right (integral_nonneg fun x ↦ by positivity)
 
+/-- The `L²` norm of the length of the gradient of a smooth function is at most its `H¹` norm. -/
+theorem norm_toLp_norm_mgradient_le (u : C^∞⟮I, M; ℝ⟯) :
+    ‖ContinuousMap.toLp 2 (riemannianVolume I M) ℝ
+        ⟨fun x ↦ ‖mgradient I u x‖,
+          continuous_norm_mgradient (u.contMDiff.of_le (by simp))⟩‖ ≤ ‖ofSmooth u‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
+    ContinuousMap.inner_toLp, norm_ofSmooth_sq]
+  simp only [ContinuousMap.coe_mk, conj_trivial, ← sq]
+  exact le_add_of_nonneg_left (integral_nonneg fun x ↦ sq_nonneg _)
+
 /-- The `L²` inner product of the value of `w ∈ H¹(M)` with a smooth function `φ` is
 `∫ w φ dV`. -/
 theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯) :

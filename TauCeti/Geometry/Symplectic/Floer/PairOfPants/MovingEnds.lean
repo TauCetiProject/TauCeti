@@ -45,7 +45,9 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`).
+  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
+  and likewise for a manifold target with a two-form
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`).
   This bound only needs the smaller supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end
   data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
@@ -384,23 +386,50 @@ end SmoothProd
 
 end TauCeti.Floer
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.SmoothTwoForm
 
 open Floer MeasureTheory
 open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-variable {H : ℝ → V → ℝ} {c a : ℂ}
+variable {H : ℝ → M → ℝ} {c a : ℂ}
 
-variable [FiniteDimensional ℝ V]
+/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
+differentiable in the domain point. -/
+private theorem differentiableAt_inputEndPerturbation_domain (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ c) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ
+      (fun z' ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z') x v) z := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ inputEndPerturbation c a H w x)
+      (Complex.equivRealProdCLM.symm z) :=
+    (contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hz x).comp
+      (f := fun w : ℂ ↦ ((c, a), (w, x))) _
+      (contMDiffAt_const.prodMk (contMDiffAt_id.prodMk contMDiffAt_const))
+  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+
+/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
+differentiable in the target point. -/
+private theorem mdifferentiableAt_inputEndPerturbation_target (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {w : ℂ} (hw : w ≠ c)
+    (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x :=
+  (((contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hw x).comp
+    (f := fun y : M ↦ ((c, a), (w, y))) x
+    (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
+    contMDiffAt_const).mdifferentiableAt one_ne_zero
+
+variable [IsManifold I ⊤ M]
 
 /-- On the image under the affine chart of the plane without its origin, the integrated curvature
-of the input end datum is that of the positive plane datum of `H`, along the reparametrized
-map. -/
+of the input end datum is that of the positive plane datum of `H`, along the reparametrized map,
+for a manifold target. -/
 private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation
-    (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0)
-    (u : ℝ × ℝ → V) :
+    (ω : SmoothTwoForm I M) (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) (u : ℝ × ℝ → M) :
     ∫⁻ z in realChart (c + a * ·) '' {z | Complex.equivRealProdCLM.symm z ≠ 0},
       ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
@@ -414,10 +443,8 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
   have hSm : MeasurableSet S :=
     (measurableSet_singleton 0).compl.preimage Complex.equivRealProdCLM.symm.continuous.measurable
   -- The affine chart maps `S` off the center, where the datum is differentiable.
-  have hdiff {w : ℝ × ℝ} (hw : w ∈ S) (y : V) :
-      DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2)
-        (Complex.equivRealProdCLM.symm (realChart (c + a * ·) w), y) := by
-    refine (contDiffAt_inputEndPerturbation_prod hH hHs ha ?_ y).differentiableAt one_ne_zero
+  have hc {w : ℝ × ℝ} (hw : w ∈ S) :
+      Complex.equivRealProdCLM.symm (realChart (c + a * ·) w) ≠ c := by
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
   -- The pullback of the datum along the affine chart is the positive plane datum.
@@ -432,19 +459,23 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
     (realChart_injective fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)).injOn
     (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
-    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) 1)
-    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
-    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
+    (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hc hw) _ 1)
+    (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hc hw) _ Complex.I)
+    (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ 1)
+    (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ Complex.I),
+    hpull, hpull, equivRealProdCLM_symm_stdComplexLineReal,
+    equivRealProdCLM_symm_stdComplexLineImag]
   rfl
 
-/-- **The integrated curvature of an input end datum.** Let `K` be the input end datum with center
-`c` and nonzero scale `a` of a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, with components
-`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
-every map `u` into the target, the integral of `|R_K(z, u(z))|` over the plane is at most `B`,
-whatever the center and the scale. -/
-theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0) {B : ℝ}
-    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → V) :
+/-- **The integrated curvature of an input end datum, for a manifold target.** Let `K` be the
+input end datum with center `c` and nonzero scale `a` of a period-one `C¹` Hamiltonian `H` on a
+manifold `M` with a two-form `ω`, with `|H| ≤ B`, and write its components in the global
+coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map
+`u` into `M`, the integral of `|R_K(z, u(z))|` over the plane is at most `B`, whatever the center
+and the scale. -/
+theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0)
+    {B : ℝ} (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -470,30 +501,30 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     _ ≤ _ := lintegral_mono_set hcover
     _ ≤ _ := lintegral_union_le _ _ _
     _ = _ := by rw [setLIntegral_measure_zero _ _ hN, add_zero,
-        setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation ω hH hHs
-          ha u]
+        setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation ω hH hHs ha u]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := ω.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH hHs hB
         (u ∘ realChart (c + a * ·))
 
-variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ}
+variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
 /-- **The integrated curvature on a sphere with moving input ends is bounded uniformly in the
-configuration.** Let the input ends have period-one `C¹` Hamiltonians `H i` with `|H i| ≤ B i`,
-nonzero scales `a i` and centers `c i`, such that the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2`
-of the input end data are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and let the
-output end have a period-one `C¹` Hamiltonian `Hout` with `|Hout| ≤ Bout`. Write the components of
-the datum `K` in the global coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and
-`K_t(z) = K(z)(i)`. Then for every map `u` into the target, the integral of `|R_K(z, u(z))|` over
-the plane is at most `∑ i, B i + Bout`. -/
+configuration, for a manifold target.** Let the input ends have period-one `C¹` Hamiltonians `H i`
+on a manifold `M` with a two-form `ω`, with `|H i| ≤ B i`, nonzero scales `a i` and centers `c i`,
+such that the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end data are pairwise
+disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and let the output end have a period-one `C¹`
+Hamiltonian `Hout` with `|Hout| ≤ Bout`. Write the components of the datum `K` in the global
+coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map
+`u` into `M`, the integral of `|R_K(z, u(z))|` over the plane is at most `∑ i, B i + Bout`. -/
 theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
-    (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 1 (uncurry (H i)))
-    (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j =>
       ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
     (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ}
     {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
-    (u : ℝ × ℝ → V) :
+    (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
@@ -529,22 +560,29 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
     have hpre := Complex.volume_preserving_equiv_real_prod.symm.measure_preimage
       (s := Metric.sphere (c i) (r i)) Metric.isClosed_sphere.measurableSet.nullMeasurableSet
     exact hpre.trans (Measure.addHaar_sphere volume (c i) (r i))
-  have hD (i : ι) : ∫⁻ z in D i, f z ≤ ENNReal.ofReal (B i) := by
-    have h {z} (hz : z ∈ D i) (x : V) :=
+  -- Perturbation data that agree on an open set have the same integrated curvature over it.
+  have hcongr {U : Set (ℝ × ℝ)} (hU : IsOpen U) {K : ℂ → M → ℂ →L[ℝ] ℝ}
+      (hK : ∀ z ∈ U, ∀ x, puncturedSpherePerturbation c a H Hout
+        (Complex.equivRealProdCLM.symm z) x = K (Complex.equivRealProdCLM.symm z) x) :
+      ∫⁻ z in U, f z = ∫⁻ z in U, ‖ω.hamiltonianCurvature
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ :=
+    setLIntegral_congr_fun hU.measurableSet fun z hz ↦ by
+      have hev := Filter.eventually_of_mem (hU.mem_nhds hz) hK
+      refine congrArg (‖·‖ₑ)
+        (congrFun (ω.hamiltonianCurvature_congr_of_eventuallyEq ?_ ?_) (u z)) <;>
+      exact hev.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz' x]
+  have hD (i : ι) : ∫⁻ z in D i, f z ≤ ENNReal.ofReal (B i) :=
+    (hcongr (hDo i) fun z hz x ↦
       puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
-        (H := H) (Hout := Hout) (r := r) (fun _ ↦ le_rfl) hsep hout hz x
-    refine (ω.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (hDo i)
-      (fun z hz ↦ funext fun x ↦ by rw [h hz x]) (fun z hz ↦ funext fun x ↦ by rw [h hz x])
-      u).trans_le ((setLIntegral_le_lintegral _ _).trans
+        (r := r) (fun _ ↦ le_rfl) hsep hout hz x).trans_le
+      ((setLIntegral_le_lintegral _ _).trans
         (lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le ω (hH i) (hHs i) (ha i)
           (hB i) u))
-  have hO : ∫⁻ z in O, f z ≤ ENNReal.ofReal Bout := by
-    have h {z} (hz : z ∈ O) (x : V) :=
-      puncturedSpherePerturbation_eq_negativePlanePerturbation (H := H) (Hout := Hout)
-        (fun i ↦ (hz i).le) x
-    refine (ω.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen hOo
-      (fun z hz ↦ funext fun x ↦ by rw [h hz x]) (fun z hz ↦ funext fun x ↦ by rw [h hz x])
-      u).trans_le ((setLIntegral_le_lintegral _ _).trans
+  have hO : ∫⁻ z in O, f z ≤ ENNReal.ofReal Bout :=
+    (hcongr hOo fun z hz x ↦
+      puncturedSpherePerturbation_eq_negativePlanePerturbation (fun i ↦ (hz i).le) x).trans_le
+      ((setLIntegral_le_lintegral _ _).trans
         (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hHout hHouts hBout
           u))
   calc ∫⁻ z, f z = ∫⁻ z in univ, f z := (setLIntegral_univ _).symm
@@ -557,5 +595,58 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
         exact lintegral_iUnion_le _ _
     _ = (∑ i, ∫⁻ z in D i, f z) + ∫⁻ z in O, f z := by rw [tsum_fintype]
     _ ≤ _ := add_le_add (Finset.sum_le_sum fun i _ ↦ hD i) hO
+
+end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SymplecticForm
+
+open Floer MeasureTheory
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+variable {H : ℝ → V → ℝ} {c a : ℂ}
+
+variable [FiniteDimensional ℝ V]
+
+/-- **The integrated curvature of an input end datum.** Let `K` be the input end datum with center
+`c` and nonzero scale `a` of a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, with components
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
+every map `u` into the target, the integral of `|R_K(z, u(z))|` over the plane is at most `B`,
+whatever the center and the scale. -/
+theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : SymplecticForm V)
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) ha hB u
+
+variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ}
+
+/-- **The integrated curvature on a sphere with moving input ends is bounded uniformly in the
+configuration.** Let the input ends have period-one `C¹` Hamiltonians `H i` with `|H i| ≤ B i`,
+nonzero scales `a i` and centers `c i`, such that the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2`
+of the input end data are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and let the
+output end have a period-one `C¹` Hamiltonian `Hout` with `|Hout| ≤ Bout`. Write the components of
+the datum `K` in the global coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and
+`K_t(z) = K(z)(i)`. Then for every map `u` into the target, the integral of `|R_K(z, u(z))|` over
+the plane is at most `∑ i, B i + Bout`. -/
+theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
+    (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 1 (uncurry (H i)))
+    (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ}
+    {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
+    (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) z (u z)‖ₑ ≤ ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
+    hH (fun i ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hsep hout hB hBout u
 
 end TauCeti.SymplecticForm
