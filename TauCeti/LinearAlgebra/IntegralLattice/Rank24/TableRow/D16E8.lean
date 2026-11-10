@@ -19,8 +19,7 @@ lattice is exactly the union of that root lattice and its spinor translate.
 In checkerboard coordinates on the first component and simple-root coordinates
 on the second, membership is therefore membership in `D₁₆⁺` and integrality of
 the eight remaining coordinates. The spinor has norm four and, together with
-the simple roots, generates the table lattice. No replacement gluing construction
-or comparison based only on numerical invariants is used. The decoding argument
+the simple roots, generates the table lattice. The decoding argument
 follows the `D₂₄` comparison by the Tau Ceti contributors in
 `TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.D24`.
 
@@ -78,31 +77,27 @@ private theorem encode_spinorWord :
       RootfulNiemeierType.d16e8.isSimplyLaced_componentType spinorWord = [1, 0] := by
   rw [encodeGlueWord_def]
   simp only [spinorWord, Equiv.symm_apply_apply]
+  -- `List.ofFn` evaluates the two digits at the table's component positions.
   rfl
 
+private theorem spinorWord_one : spinorWord ⟨1, by decide⟩ = 0 :=
+  glueLabelEquiv_zero _ _
+
+private theorem glueGenerators_d16e8 :
+    RootfulNiemeierType.d16e8.glueGenerators = {spinorWord} :=
+  RootfulNiemeierType.d16e8.glueGenerators_eq_singleton (by decide) encode_spinorWord
+
 private theorem glueSubgroup_d16e8 :
-    RootfulNiemeierType.d16e8.glueSubgroup = AddSubgroup.zmultiples spinorWord := by
-  rw [RootfulNiemeierType.glueSubgroup_def, AddSubgroup.zmultiples_eq_closure]
-  congr 1
-  ext w
-  have hwords : RootfulNiemeierType.d16e8.glueWords = {[1, 0]} := by decide
-  rw [RootfulNiemeierType.mem_glueGenerators_iff, hwords, Finset.mem_singleton,
-    ← encode_spinorWord, Set.mem_singleton_iff]
-  exact (encodeGlueWord_injective _ _).eq_iff
+    RootfulNiemeierType.d16e8.glueSubgroup = AddSubgroup.zmultiples spinorWord :=
+  RootfulNiemeierType.d16e8.glueSubgroup_eq_zmultiples (by decide) encode_spinorWord
 
 private theorem spinorWord_zero_class :
     (D 16).glueAlphabetIsometry (by decide) (isSimplyLaced_D 16) (spinorWord ⟨0, by decide⟩) =
       (rootLatticeIsometryCheckerboard 16 (by decide)
         (isSimplyLaced_D 16)).discriminantGroupEquiv.symm (checkerboardSpinorClass 16) := by
-  -- The table label has the component's alphabet type; identifying it with the
-  -- D₁₆ alphabet requires unfolding the component at position zero.
-  erw [glueAlphabetIsometry_D_apply_of_even 16 (by decide) (isSimplyLaced_D 16) (by decide)]
-  have hdigit : FiniteQuadraticModule.Isometry.ofEq
-      (glueAlphabet_D_of_even 16 (isSimplyLaced_D 16) (by decide)) (spinorWord ⟨0, by decide⟩) =
-        (0, 1) :=
-    glueLabelEquiv_D_of_even 16 (isSimplyLaced_D 16) (by decide) 1
-  rw [hdigit, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
-    Isometry.discriminantGroupEquiv_symm]
+  -- Unfolding the table component at zero identifies `spinorWord` with label 1 of D₁₆.
+  exact glueAlphabetIsometry_glueLabelEquiv_one_D_of_even
+    16 (by decide) (isSimplyLaced_D 16) (by decide)
 
 private theorem glueVector_class :
     (Submodule.Quotient.mk ⟨d16e8GlueVector, d16e8GlueVector_mem_dualCarrier⟩ :
@@ -120,10 +115,9 @@ private theorem glueVector_class :
     exact congrArg Submodule.Quotient.mk (Subtype.ext (by
       simp only [coe_piDualCarrierEquiv_apply, Isometry.coe_dualCarrierEquiv_apply,
         d16e8GlueVector_zero]
+      -- The inverse dual-carrier map and inverse ambient isometry have the same function.
       rfl))
-  · have hzero : spinorWord ⟨1, by decide⟩ = 0 := by
-      exact glueLabelEquiv_zero _ _
-    rw [hzero, map_zero]
+  · rw [spinorWord_one, map_zero]
     exact (Submodule.Quotient.mk_eq_zero _).mpr (by
       simp only [mem_carrierInDual_iff, coe_piDualCarrierEquiv_apply,
         d16e8GlueVector_one]
@@ -140,6 +134,7 @@ theorem map_glueSubgroup_d16e8_eq_zmultiples :
         ⟨d16e8GlueVector, d16e8GlueVector_mem_dualCarrier⟩ :
           RootfulNiemeierType.d16e8.rootLattice.DiscriminantGroup) := by
   rw [glueSubgroup_d16e8, AddMonoidHom.map_zmultiples, glueVector_class]
+  -- The additive-hom coercion of `glueWordIsometry` evaluates as the isometry itself.
   rfl
 
 private theorem two_nsmul_glueVector_class :
@@ -151,17 +146,22 @@ private theorem two_nsmul_glueVector_class :
   erw [glueVector_class, ← map_nsmul]
   suffices 2 • spinorWord = 0 by
     erw [this, map_zero]
+    -- Zero in the discriminant quadratic module is zero in its underlying discriminant group.
     rfl
   funext i
   fin_cases i
   · apply ((D 16).glueAlphabetIsometry (by decide) (isSimplyLaced_D 16)).injective
     simp only [Pi.smul_apply]
+    -- `erw` identifies the table component's alphabet with D₁₆ and its quadratic-module
+    -- carrier with the discriminant group, so nsmul passes through both isometries.
     erw [map_nsmul, map_zero, spinorWord_zero_class, ← map_nsmul]
+    -- Both twice-actions are addition to itself; the available spinor-order lemma uses ℤ.
     erw [two_nsmul, ← two_zsmul, two_zsmul_checkerboardSpinorClass_of_even 16 (by decide),
       map_zero]
+    -- The alphabet isometry sends zero to discriminant-group zero definitionally.
     rfl
-  · have hzero : spinorWord ⟨1, by decide⟩ = 0 := glueLabelEquiv_zero _ _
-    simp only [Pi.smul_apply, hzero, smul_zero]
+  · simp only [Pi.smul_apply, spinorWord_one, smul_zero]
+    -- Pi zero evaluates to zero in the table's E₈ alphabet.
     rfl
 
 /-- The literal two-coset carrier of the table lattice `D₁₆ E₈`. -/
@@ -190,19 +190,13 @@ theorem d16e8GlueVector_mem_niemeierD16E8_carrier :
 theorem niemeierD16E8_carrier_eq_sup_span :
     niemeierD16E8.carrier = RootfulNiemeierType.d16e8.rootLattice.carrier ⊔
       Submodule.span ℤ {d16e8GlueVector} := by
-  apply le_antisymm
-  · intro x hx
-    rcases (mem_niemeierD16E8_carrier_iff x).mp hx with hx | hx
-    · exact Submodule.mem_sup_left hx
-    · have hg : d16e8GlueVector ∈
-          RootfulNiemeierType.d16e8.rootLattice.carrier ⊔
-            Submodule.span ℤ {d16e8GlueVector} :=
-        Submodule.mem_sup_right (Submodule.subset_span (Set.mem_singleton _))
-      simpa only [sub_add_cancel] using
-        Submodule.add_mem _ (Submodule.mem_sup_left hx) hg
-  · exact sup_le RootfulNiemeierType.d16e8.rootLattice_carrier_le_lattice_carrier
-      (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
-        d16e8GlueVector_mem_niemeierD16E8_carrier))
+  refine (RootfulNiemeierType.d16e8.lattice_carrier_eq_sup_span
+    (fun _ ↦ ⟨d16e8GlueVector, d16e8GlueVector_mem_dualCarrier⟩) ?_).trans ?_
+  · intro w hw
+    rw [glueGenerators_d16e8, Set.mem_singleton_iff] at hw
+    subst w
+    exact glueVector_class
+  · rw [glueGenerators_d16e8, Set.image_singleton]
 
 /-- In checkerboard coordinates on `D₁₆` and simple-root coordinates on `E₈`,
 the table lattice consists exactly of `D₁₆⁺` and eight integral coordinates. -/

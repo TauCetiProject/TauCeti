@@ -92,6 +92,22 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
   exact Prod.ext (Fin.cast_val_eq_self (i.divNat (m := 2) (n := 2))).symm
     (Fin.cast_val_eq_self (i.modNat (m := 2) (n := 2))).symm
 
+open IntegralLattice in
+/-- For even `Dₙ`, label `1` represents the checkerboard spinor class in simple-root
+coordinates. -/
+theorem glueAlphabetIsometry_glueLabelEquiv_one_D_of_even (n : ℕ) (hv : (D n).Valid)
+    (ht : (D n).IsSimplyLaced) (hn : Even n) :
+    (D n).glueAlphabetIsometry hv ht ((D n).glueLabelEquiv ht (1 : Fin 4)) =
+      (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv.symm
+        (checkerboardSpinorClass n) := by
+  have : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
+  rw [glueAlphabetIsometry_D_apply_of_even n hv ht hn]
+  have hdigit : FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)
+      ((D n).glueLabelEquiv ht (1 : Fin 4)) = (0, 1) :=
+    glueLabelEquiv_D_of_even n ht hn 1
+  rw [hdigit, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
+    Isometry.discriminantGroupEquiv_symm]
+
 /-- In odd rank, type-`D` labels enumerate the cyclic group of order four. -/
 @[simp] theorem glueLabelEquiv_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)
     (i : Fin 4) :
