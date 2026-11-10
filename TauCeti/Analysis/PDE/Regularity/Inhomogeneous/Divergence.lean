@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous.Basic
+import TauCeti.Algebra.Order.Ring.MaxOne
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -307,15 +308,13 @@ private theorem mul_rpow_min_eq {r q : ℝ≥0} {K R lam A₁ A₂ : ℝ} (hR : 
 
 omit [DecidableEq ι] in
 /-- The positivity of the smaller Morrey gain `min (2 - n/r) (1 - n/q)`. -/
-private theorem min_sub_div_pos {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+private theorem min_sub_div_pos {r q : ℝ≥0} (hrn : (Fintype.card ι : ℝ) < 2 * r)
     (hqn : (Fintype.card ι : ℝ) < q) :
     0 < min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q) := by
   have hq0 : (0 : ℝ) < q := (Nat.cast_nonneg _).trans_lt hqn
-  refine lt_min ?_ ?_
-  · rw [sub_pos, div_lt_iff₀ (by exact_mod_cast zero_lt_one.trans hr)]
-    linarith only [hrn]
-  · rw [sub_pos, div_lt_one hq0]
-    exact hqn
+  refine lt_min (two_sub_card_div_pos hrn) ?_
+  rw [sub_pos, div_lt_one hq0]
+  exact hqn
 
 /-! ### Local boundedness -/
 
@@ -356,15 +355,9 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp_divergence [Nonempty ι] {lam La
   obtain ⟨g, hg, hug⟩ := hsplit h ha hf hF hu hR hball
   filter_upwards [hbound h ha hR hball hg hug] with x hx
   refine hx.trans ?_
-  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
-  set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
-    R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
-  rw [mul_div_assoc, mul_assoc]
+  rw [mul_div_assoc K, mul_assoc D]
   gcongr
-  nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 K)) hQ,
-    mul_nonneg (sub_nonneg.2 (le_max_right 1 K)) hP]
+  exact add_mul_le_max_one_mul_add (by positivity) (by have := h.pos; positivity)
 
 /-! ### Oscillation decay -/
 
@@ -401,7 +394,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_divergence [Nonemp
     exists_forall_exists_ae_abs_sub_le_of_memLp_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) (min_sub_div_pos hr hrn hqn)
+      (Lam := Lam) (min_sub_div_pos hrn hqn)
   refine ⟨α, C * max 1 K, hα, hα1, by positivity, ?_⟩
   intro Omega a f F u x₀ R s h ha hf hF hu hs hsR hball
   have hR : 0 < R := by linarith only [hs, hsR]
@@ -410,14 +403,9 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_divergence [Nonemp
   set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
     R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
   have hlen : C * (s / R) ^ α * (Q + K * P) ≤ C * max 1 K * (s / R) ^ α * (Q + P) :=
-    calc C * (s / R) ^ α * (Q + K * P) ≤ C * (s / R) ^ α * (max 1 K * (Q + P)) := by
-          gcongr
-          nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 K)) hQ,
-            mul_nonneg (sub_nonneg.2 (le_max_right 1 K)) hP]
-      _ = _ := by ring
+    (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
+      (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
   filter_upwards [hm'] with x hx
   rw [mul_rpow_min_eq hR] at hx
   exact ⟨hx.1, hx.2.trans (by linarith only [hlen])⟩
@@ -462,23 +450,15 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty 
     exists_forall_exists_ae_abs_sub_le_of_memLp_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) (min_sub_div_pos hr hrn hqn)
+      (Lam := Lam) (min_sub_div_pos hrn hqn)
   refine ⟨α, C * max 1 Ks, hα, hα1, by positivity, ?_⟩
   intro Omega a f F u K R h ha hf hF hu hR hRK
   refine (hhol h ha hR hRK fun x hx => hcmp h ha hf hF hu
     ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
     subset_rfl).mono_const (Real.toNNReal_le_toNNReal ?_)
-  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
-  set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal +
-    R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict Omega)).toReal) / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
   rw [mul_rpow_min_eq hR]
-  calc C * R ^ (-(α : ℝ)) * (Q + Ks * P) ≤ C * R ^ (-(α : ℝ)) * (max 1 Ks * (Q + P)) := by
-        gcongr
-        nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 Ks)) hQ,
-          mul_nonneg (sub_nonneg.2 (le_max_right 1 Ks)) hP]
-    _ = _ := by ring
+  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
+    (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
 
 end PDE
 

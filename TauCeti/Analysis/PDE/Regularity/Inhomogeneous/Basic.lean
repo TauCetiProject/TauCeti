@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+import TauCeti.Algebra.Order.Ring.MaxOne
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
@@ -71,6 +72,7 @@ All in the namespace `TauCeti.PDE`.
   `exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`: the interior oscillation
   estimate and the Hölder continuity of the precise representative, for a function within
   `E ρ^γ` of a weak solution of the homogeneous equation on every ball of radius `ρ ≤ R`.
+* `two_sub_card_div_pos`: the Morrey gain `2 - n/r` of `f ∈ Lʳ` is positive for `r > n/2`.
 * `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le`: on a ball, a weak solution with right-hand
   side `f` is a weak solution of the homogeneous equation up to an error bounded by
   `K ρ^(2 - n/r) ‖f‖_{Lʳ} / λ`.
@@ -105,6 +107,16 @@ namespace PDE
 
 /-! ### Comparison with solutions of the homogeneous equation -/
 
+omit [DecidableEq ι] in
+/-- An almost everywhere bound `|φ| ≤ W` on a ball of positive radius forces `0 ≤ W`. -/
+private theorem nonneg_of_ae_restrict_ball_abs_le {φ : EuclideanSpace ℝ ι → ℝ}
+    {x₀ : EuclideanSpace ℝ ι} {R W : ℝ} (hR : 0 < R)
+    (h : ∀ᵐ x ∂mu.restrict (ball x₀ R), |φ x| ≤ W) : 0 ≤ W := by
+  have : (ae (mu.restrict (ball x₀ R))).NeBot :=
+    ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
+  obtain ⟨x, hx⟩ := h.exists
+  exact (abs_nonneg _).trans hx
+
 /-- **Local boundedness by comparison.** Let `n ≥ 1` be the dimension. There is `D > 0`,
 depending only on `λ`, `Λ`, `n` and the normalization of `mu`, such that the following holds.
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let
@@ -135,11 +147,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   refine ⟨max (√2 * D₀) (√2 * D₀ * √ω + 1), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a u x₀ R W g h ha hR hball hg hug
-  have hW : 0 ≤ W := by
-    have : (ae (mu.restrict (ball x₀ R))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
-    obtain ⟨x, hx⟩ := hug.exists
-    exact (abs_nonneg _).trans hx
+  have hW : 0 ≤ W := nonneg_of_ae_restrict_ball_abs_le hR hug
   -- De Giorgi's bound for `g` on `B(x₀, R/2)`.
   have hgbound := hbound (Omega := ⟨ball x₀ R, isOpen_ball⟩) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
@@ -208,11 +216,7 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le [Nonempty 
   have hρ : 0 < ρ := hs.trans_le hsρ
   have : (ae (mu.restrict (ball x₀ s))).NeBot :=
     ae_restrict_neBot.2 (measure_ball_pos mu x₀ hs).ne'
-  have hW0 : 0 ≤ W := by
-    have : (ae (mu.restrict (ball x₀ ρ))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
-    obtain ⟨x, hx⟩ := hug.exists
-    exact (abs_nonneg _).trans hx
+  have hW0 : 0 ≤ W := nonneg_of_ae_restrict_ball_abs_le hρ hug
   set m := essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ))
   set m₁ := essSup (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ))
   -- `g` lies in `[m - W, m₁ + W]` on `B(x₀, ρ)`.
@@ -277,11 +281,8 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le [No
   have hR : 0 < R := by linarith only [hs, hsR]
   -- The comparison on `B(x₀, R)`, which also shows `E ≥ 0`.
   obtain ⟨gR, hgR, hugR⟩ := hcmp R hR le_rfl
-  have hE : 0 ≤ E := by
-    have : (ae (mu.restrict (ball x₀ R))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
-    obtain ⟨x, hx⟩ := hugR.exists
-    exact (mul_nonneg_iff_of_pos_right (Real.rpow_pos_of_pos hR γ)).1 ((abs_nonneg _).trans hx)
+  have hE : 0 ≤ E := (mul_nonneg_iff_of_pos_right (Real.rpow_pos_of_pos hR γ)).1
+    (nonneg_of_ae_restrict_ball_abs_le hR hugR)
   obtain ⟨Q, hQdef⟩ : ∃ Q : ℝ,
       Q = R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) :=
     ⟨_, rfl⟩
@@ -360,10 +361,8 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le [Nonem
   -- `E ≥ 0`, from the comparison on a ball centred in `K`.
   have hE : 0 ≤ E := by
     obtain ⟨g, -, hug⟩ := hcmp x₁ hx₁ R hR le_rfl
-    have : (ae (mu.restrict (ball x₁ R))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₁ hR).ne'
-    obtain ⟨y, hy⟩ := hug.exists
-    exact (mul_nonneg_iff_of_pos_right (Real.rpow_pos_of_pos hR γ)).1 ((abs_nonneg _).trans hy)
+    exact (mul_nonneg_iff_of_pos_right (Real.rpow_pos_of_pos hR γ)).1
+      (nonneg_of_ae_restrict_ball_abs_le hR hug)
   -- The scaled norm of `u` on such a ball, plus `E R^γ`, is at most `N`.
   obtain ⟨N, hNdef⟩ : ∃ N : ℝ, N =
       R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) + E * R ^ γ :=
@@ -403,6 +402,14 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le [Nonem
     exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le hD.le hN0 hC hM hρ
 
 /-! ### A right-hand side in `Lʳ`: splitting off the right-hand side on a ball -/
+
+omit [DecidableEq ι] in
+/-- The Morrey gain `2 - n/r` of a right-hand side in `Lʳ` is positive when `r > n/2`. -/
+theorem two_sub_card_div_pos {r : ℝ≥0} (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    0 < 2 - (Fintype.card ι : ℝ) / r := by
+  have hr : (0 : ℝ) < r := by linarith only [hrn, (Nat.cast_nonneg _ : (0 : ℝ) ≤ Fintype.card ι)]
+  rw [sub_pos, div_lt_iff₀ hr]
+  linarith only [hrn]
 
 /-- **Splitting off the right-hand side on a ball.** Let `n ≥ 1` be the dimension and let `r > 1`
 with `r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such
@@ -510,21 +517,12 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   refine ⟨D * max 1 K, by positivity, ?_⟩
   intro Omega a f u x₀ R h ha hf hu hR hball
   obtain ⟨g, hg, hug⟩ := hsplit h ha hf hu hR hball
+  have := h.pos
   filter_upwards [hbound h ha hR hball hg hug] with x hx
   refine hx.trans ?_
-  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
-  set P := R ^ (2 - (Fintype.card ι : ℝ) / r) *
-    (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
-  have hKP : K * R ^ (2 - (Fintype.card ι : ℝ) / r) *
-      (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam = K * P := by
-    simp only [P]
-    ring
-  rw [hKP, mul_assoc]
+  rw [mul_assoc K, mul_div_assoc K, mul_assoc D]
   gcongr
-  nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 K)) hQ,
-    mul_nonneg (sub_nonneg.2 (le_max_right 1 K)) hP]
+  exact add_mul_le_max_one_mul_add (by positivity) (by positivity)
 
 /-! ### Oscillation decay -/
 
@@ -591,13 +589,10 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
         (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
           R ^ (2 - (Fintype.card ι : ℝ) / r) *
             (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam)) := by
-  have hγ : 0 < 2 - (Fintype.card ι : ℝ) / r := by
-    rw [sub_pos, div_lt_iff₀ (by exact_mod_cast zero_lt_one.trans hr)]
-    linarith only [hrn]
   obtain ⟨K, hK, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
   obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) hγ
+      (Lam := Lam) (two_sub_card_div_pos hrn)
   refine ⟨α, C * max 1 K, hα, hα1, by positivity, ?_⟩
   intro Omega a f u x₀ R s h ha hf hu hs hsR hball
   have hR : 0 < R := by linarith only [hs, hsR]
@@ -606,18 +601,13 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
   set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := R ^ (2 - (Fintype.card ι : ℝ) / r) *
     (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
   have hKP : K * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam *
       R ^ (2 - (Fintype.card ι : ℝ) / r) = K * P := by
     simp only [P]
     ring
   have hlen : C * (s / R) ^ α * (Q + K * P) ≤ C * max 1 K * (s / R) ^ α * (Q + P) :=
-    calc C * (s / R) ^ α * (Q + K * P) ≤ C * (s / R) ^ α * (max 1 K * (Q + P)) := by
-          gcongr
-          nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 K)) hQ,
-            mul_nonneg (sub_nonneg.2 (le_max_right 1 K)) hP]
-      _ = _ := by ring
+    (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
+      (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
   filter_upwards [hm'] with x hx
   rw [hKP] at hx
   exact ⟨hx.1, hx.2.trans (by linarith only [hlen])⟩
@@ -653,13 +643,10 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
             R ^ (2 - (Fintype.card ι : ℝ) / r) *
               (eLpNorm f r (mu.restrict Omega)).toReal / lam)).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
-  have hγ : 0 < 2 - (Fintype.card ι : ℝ) / r := by
-    rw [sub_pos, div_lt_iff₀ (by exact_mod_cast zero_lt_one.trans hr)]
-    linarith only [hrn]
   obtain ⟨Ks, hKs, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) hγ
+      (Lam := Lam) (two_sub_card_div_pos hrn)
   refine ⟨α, C * max 1 Ks, hα, hα1, by positivity, ?_⟩
   intro Omega a f u K R h ha hf hu hR hRK
   refine (hhol h ha hR hRK fun x hx => hcmp h ha hf hu
@@ -667,18 +654,13 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     subset_rfl).mono_const (Real.toNNReal_le_toNNReal ?_)
   set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
   set P := R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal / lam
-  have hQ : 0 ≤ Q := by positivity
-  have hP : 0 ≤ P := by have := h.pos; positivity
   have hKP : Ks * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
       R ^ (2 - (Fintype.card ι : ℝ) / r) = Ks * P := by
     simp only [P]
     ring
   rw [hKP]
-  calc C * R ^ (-(α : ℝ)) * (Q + Ks * P) ≤ C * R ^ (-(α : ℝ)) * (max 1 Ks * (Q + P)) := by
-        gcongr
-        nlinarith [mul_nonneg (sub_nonneg.2 (le_max_left 1 Ks)) hQ,
-          mul_nonneg (sub_nonneg.2 (le_max_right 1 Ks)) hP]
-    _ = _ := by ring
+  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
+    (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
 
 end PDE
 
