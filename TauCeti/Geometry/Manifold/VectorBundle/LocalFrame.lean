@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
@@ -36,6 +37,8 @@ a time.
   `e.basisAt b hx` of the fibre at a point of `e.baseSet`.
 * `TauCeti.Manifold.localFrameCoeff_localFrame`: the same duality, stated for the frame sections
   themselves.
+* `TauCeti.Manifold.trace_eq_sum_localFrameCoeff`: over the base set, the trace of a fibre
+  endomorphism is the sum of its diagonal local-frame coefficients.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
@@ -91,6 +94,19 @@ theorem localFrameCoeff_localFrame [DecidableEq ι] (hx : x ∈ e.baseSet) (i j 
 theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : ι) :
     e.localFrameCoeff I b i x (e.basisAt b hx j) = if i = j then 1 else 0 := by
   rw [← e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_localFrame b hx]
+
+variable (I) in
+/-- Over the base set of a trivialization, the trace of a fibre endomorphism is the sum of its
+diagonal coefficients in the local frame. -/
+theorem trace_eq_sum_localFrameCoeff [Fintype ι] (hx : x ∈ e.baseSet) (B : V x →ₗ[𝕜] V x) :
+    LinearMap.trace 𝕜 (V x) B = ∑ i, e.localFrameCoeff I b i x (B (e.localFrame b i x)) := by
+  classical
+  rw [LinearMap.trace_eq_matrix_trace 𝕜 (e.basisAt b hx)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, e.localFrame_apply_of_mem_baseSet b hx]
+  have h := e.localFrameCoeff_apply_of_mem_baseSet (I := I) b hx
+    (FiberBundle.extend F (B (e.basisAt b hx i))) i
+  rwa [FiberBundle.extend_apply_self, eq_comm] at h
 
 end
 

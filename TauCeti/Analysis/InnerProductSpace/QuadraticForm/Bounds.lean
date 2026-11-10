@@ -6,7 +6,7 @@ Authors: Jon Crall, GPT 5.6 High
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import TauCeti.Analysis.Normed.Operator.RealAlgebra
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
 # Quadratic-form bounds on subspaces

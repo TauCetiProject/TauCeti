@@ -53,6 +53,8 @@ it extends by the identity to all of `X`, and takes `min 1 (2 f)` as control fun
   strong deformation retraction of the cylinder onto `J`.
 * `TauCeti.NDRPair.hasHomotopyExtensionProperty`: the subset of an NDR pair has the homotopy
   extension property.
+* `TauCeti.NDRPair.restrict`: NDR data restricted to a subspace which its deformation keeps
+  invariant.
 * `TauCeti.NDRPair.ofRetraction`, `TauCeti.nonempty_ndrPair_iff`: **Strøm's theorem**, NDR data
   for a closed subset from a retraction of the cylinder, so that a subset admits NDR data exactly
   when it is closed and has the homotopy extension property.
@@ -258,6 +260,34 @@ protected theorem hasHomotopyExtensionProperty (N : NDRPair A) :
   hasHomotopyExtensionProperty_of_retraction (r := (ContinuousMap.subtypeVal _).comp
       N.cylinderRetraction) N.isClosed (fun z ↦ (N.cylinderRetraction z).2)
     fun z hz ↦ congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
+
+section Restrict
+
+variable {Y : Set X} (hY : ∀ (t : I) (y : X), y ∈ Y → N.deformation (t, y) ∈ Y)
+
+/-- **NDR data restricted to an invariant subspace.** If the deformation of NDR data for `A ⊆ X`
+maps a subset `Y` into itself at all times, then the restrictions of the control function and of
+the deformation to `Y` are NDR data for the trace `Y ∩ A` of `A` on `Y`. -/
+def restrict : NDRPair ((↑) ⁻¹' A : Set Y) where
+  control := N.control.comp (ContinuousMap.subtypeVal Y)
+  control_eq_zero_iff y := N.control_eq_zero_iff y
+  deformation := ⟨fun p ↦ ⟨N.deformation (p.1, p.2), hY p.1 p.2 p.2.2⟩, by fun_prop⟩
+  deformation_zero y := Subtype.ext (N.deformation_zero y)
+  deformation_of_mem t _ hy := Subtype.ext (N.deformation_of_mem t hy)
+  deformation_one_mem hy := N.deformation_one_mem hy
+
+/-- The control function of `NDRPair.restrict` is the restriction of the control function. -/
+@[simp]
+theorem restrict_control_apply (y : Y) : (N.restrict hY).control y = N.control y :=
+  (rfl)
+
+/-- The deformation of `NDRPair.restrict` is the restriction of the deformation. -/
+@[simp]
+theorem coe_restrict_deformation_apply (t : I) (y : Y) :
+    ((N.restrict hY).deformation (t, y) : X) = N.deformation (t, y) :=
+  (rfl)
+
+end Restrict
 
 section OfRetraction
 

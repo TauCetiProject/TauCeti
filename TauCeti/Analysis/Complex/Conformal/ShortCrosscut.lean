@@ -243,7 +243,8 @@ theorem exists_diam_image_ball_inter_sphere_le
     (hb : IsBounded (f '' ball c r)) {ε : ℝ} (hε : 0 < ε) {R : ℝ} (hR : 0 < R) :
     ∃ ρ ∈ Ioo 0 R, diam (f '' (ball c r ∩ sphere ζ ρ)) ≤ ε :=
   exists_diam_image_ball_inter_sphere_le_of_lintegral_ne_top hf
-    (lintegral_enorm_deriv_sq_ne_top_of_isBounded isOpen_ball hf
-      measurableSet_ball.nullMeasurableSet subset_rfl hinj hb) hε hR
+    (lintegral_enorm_deriv_sq_ne_top_of_isBounded
+      (fun _ hz => hf.differentiableAt (isOpen_ball.mem_nhds hz))
+      measurableSet_ball.nullMeasurableSet hinj hb) hε hR
 
 end TauCeti

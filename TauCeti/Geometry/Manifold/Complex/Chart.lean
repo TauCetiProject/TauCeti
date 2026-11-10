@@ -271,9 +271,10 @@ theorem mdifferentiable_of_continuous_of_mdifferentiableOn_compl {s : Set X}
 
 /-- A continuous map between complex curves that is holomorphic off a finite set is
 holomorphic everywhere. -/
-theorem _root_.Set.Finite.mdifferentiable_of_continuous_of_compl [T1Space X] {s : Set X}
+theorem _root_.Set.Finite.mdifferentiable_of_continuous_of_compl {s : Set X}
     (hs : s.Finite) (hc : Continuous f) (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f sᶜ) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f :=
+  have := ChartedSpace.t1Space ℂ X
   mdifferentiable_of_continuous_of_mdifferentiableOn_compl hc hs.compl_mem_codiscrete hf
 
 /-- **A continuous lift of a holomorphic map through a local biholomorphism is holomorphic.** If
@@ -330,11 +331,13 @@ end LocalCriteria
 /-! ### Charts with holomorphic inverse -/
 
 /-- **A homeomorphism onto an open subset of `ℂ` with holomorphic inverse is a holomorphic chart.**
-On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target,
-for some `n ≠ 0`, belongs to the maximal `C^n` atlas. -/
-theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω} (hn : n ≠ 0)
+On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target
+belongs to the maximal `C^n` atlas. -/
+theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω}
     [IsManifold 𝓘(ℂ) n X] (e : OpenPartialHomeomorph X ℂ)
     (he : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n e.symm e.target) : e ∈ maximalAtlas 𝓘(ℂ) n X := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact e.mem_maximalAtlas_of_contMDiffOn (contMDiffOn_zero_iff.2 e.continuousOn) he
   refine e.mem_maximalAtlas_of_contMDiffOn (fun x hx ↦ ?_) he
   let c := chartAt ℂ x
   have hc : c ∈ maximalAtlas 𝓘(ℂ) n X := chart_mem_maximalAtlas x

@@ -103,8 +103,8 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
   refine ⟨fun hG ↦ ?_, IsPGroup.isProP⟩
   -- The trivial open normal subgroup is `⊥` only through its characterization lemma, so
   -- reach `G ⧸ ⊥` by rewriting the subgroup rather than by definitional unfolding.
-  exact (hG (openNormalSubgroupBot G)).of_equiv
-    ((QuotientGroup.quotientMulEquivOfEq (openNormalSubgroupBot_toSubgroup G)).trans
+  exact (hG ⊥).of_equiv
+    ((QuotientGroup.quotientMulEquivOfEq OpenNormalSubgroup.toSubgroup_bot).trans
       QuotientGroup.quotientBot)
 
 /-- The cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is

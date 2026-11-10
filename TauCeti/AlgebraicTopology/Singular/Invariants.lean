@@ -101,9 +101,9 @@ def isLimitMapConeTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R)] {
   -- acted-on object and of the cone point of `hG.transferCone R`.
   have : IsIso (Fintype.card G • 𝟙 (((E.actionFunctor G ⋙
       (singularChainComplexFunctor C).obj R) ⋙ F).obj (SingleObj.star G))) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E ⋙ F).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E ⋙ F).isIso_smul_id_obj _ R
   have : IsIso (Fintype.card G • 𝟙 (F.mapCone (hG.transferCone R)).pt) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B ⋙ F).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B ⋙ F).isIso_smul_id_obj _ R
   refine SingleObj.isLimitMapConeOfTransfer (hG.transferCone R)
     (SSet.chainComplexMap (TopCat.toSSet.map p) R) F ?_ ?_
   · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by

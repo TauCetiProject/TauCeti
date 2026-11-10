@@ -326,7 +326,6 @@ theorem cdf_map_inner_vonMisesFisherMeasure_lt_one_iff (hd : 2 ≤ Module.finran
       (fun y : sphere (0 : E) 1 ↦ ⟪(m : E), (y : E)⟫)) x < 1 ↔ x < 1 := by
   have := isProbabilityMeasure_vonMisesFisherMeasure m hκ
   exact Measure.cdf_lt_one_iff_of_support_eq_Icc _
-    (ae_mem_Ioo_map_inner_vonMisesFisherMeasure hd m)
     (support_map_inner_vonMisesFisherMeasure hd m hκ)
 
 /-- Interior projection quantiles lie in the open unit interval. -/

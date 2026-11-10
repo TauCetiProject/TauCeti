@@ -268,16 +268,23 @@ theorem two_mul_finrank_evenOdd [Nontrivial V] [Module.Finite K (CliffordAlgebra
     exact f.finrank_eq
   rcases (by decide : ∀ c : ZMod 2, c = 0 ∨ c = 1) i with rfl | rfl <;> omega
 
-/-- **Half of a power of two is one power of two down.** Whenever the Clifford algebra of a nonzero
-space is counted by a positive power of two, `CliffordAlgebra.two_mul_finrank_evenOdd` splits that
-count and each half of the `ℤ/2`-grading has dimension `2 ^ (n - 1)`.
+/-- **Half of a power of two is one power of two down.** Whenever the Clifford algebra is counted by
+a positive power of two, `CliffordAlgebra.two_mul_finrank_evenOdd` splits that count and each half
+of the `ℤ/2`-grading has dimension `2 ^ (n - 1)`.
 
 The count of the whole algebra is left as a hypothesis: it is supplied by
 `CliffordAlgebra.finrank_eq_two_pow`. -/
-theorem finrank_evenOdd_of_finrank_eq_two_pow [Nontrivial V]
-    [Module.Finite K (CliffordAlgebra Q)] {n : ℕ} (hn : 0 < n)
+theorem finrank_evenOdd_of_finrank_eq_two_pow {n : ℕ} (hn : 0 < n)
     (hQ : finrank K (CliffordAlgebra Q) = 2 ^ n) (i : ZMod 2) :
     finrank K (evenOdd Q i) = 2 ^ (n - 1) := by
+  -- a positive count forces the algebra to be finite-dimensional, and the space to be nonzero
+  have : Module.Finite K (CliffordAlgebra Q) :=
+    Module.finite_of_finrank_pos (by rw [hQ]; positivity)
+  have : Nontrivial V := by
+    by_contra h
+    have := not_nontrivial_iff_subsingleton.1 h
+    rw [finrank_eq_two_pow Q, Module.finrank_zero_of_subsingleton] at hQ
+    exact hn.ne' (Nat.pow_right_injective le_rfl hQ).symm
   have hhalf := two_mul_finrank_evenOdd Q i
   rw [hQ] at hhalf
   have h2 : 2 * 2 ^ (n - 1) = 2 ^ n := by rw [← pow_succ', Nat.sub_add_cancel hn]

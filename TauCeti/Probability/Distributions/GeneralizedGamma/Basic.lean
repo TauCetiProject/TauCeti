@@ -128,7 +128,7 @@ theorem generalizedGammaMeasure_map_const_mul (hb : 0 < b) :
 theorem generalizedGammaMeasure_one (ha : 0 < a) (hs : 0 < s) :
     generalizedGammaMeasure a 1 s = gammaMeasure a s⁻¹ := by
   rw [generalizedGammaMeasure_of_valid ha one_ne_zero hs]
-  simpa using gammaMeasure_map_const_mul ha zero_lt_one hs
+  simpa using gammaMeasure_map_const_mul (a := a) (r := 1) hs
 
 /-- A power transform of a unit-rate Gamma variable has the generalized gamma law. -/
 theorem hasLaw_generalizedGammaMeasure_of_hasLaw_gammaMeasure

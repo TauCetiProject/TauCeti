@@ -46,6 +46,7 @@ is used for the closure of firm modules under kernels and extensions.
 
 * `TauCeti.Almost.BasicSetup.isFirm_tilde` and `TauCeti.Almost.BasicSetup.isFirm_tilde_tensor`:
   `m~` and every module `m~ ⊗[V] M` are firm.
+* `TauCeti.Almost.BasicSetup.IsFirm.tensorProduct`: a tensor product with a firm module is firm.
 * `TauCeti.Almost.BasicSetup.isFirm_classical`, `TauCeti.Almost.BasicSetup.isFirm_zero_iff` and
   `TauCeti.Almost.BasicSetup.isFirm_self_iff`: every module is firm for the classical setup, only
   the zero module is firm for the zero setup, and `V` is firm only if `m = V`.
@@ -177,6 +178,14 @@ theorem isFirm_tilde_tensor : S.IsFirm (S.tilde ⊗[V] M) := by
   -- `LinearEquiv.ofBijective` and `LinearEquiv.rTensor` have the expected underlying maps.
   exact ((LinearEquiv.ofBijective _ S.isFirm_tilde).rTensor M).bijective.comp
     (LinearEquiv.bijective _)
+
+variable {S M} in
+/-- A tensor product with a firm module is firm: `P ⊗[V] M ≅ P ⊗[V] (m~ ⊗[V] M)` is of the form
+`m~ ⊗[V] (P ⊗[V] M)`. -/
+theorem IsFirm.tensorProduct (P : Type*) [AddCommGroup P] [Module V P] (hM : S.IsFirm M) :
+    S.IsFirm (P ⊗[V] M) :=
+  (LinearEquiv.isFirm_iff S ((LinearEquiv.ofBijective _ hM).symm.lTensor P ≪≫ₗ
+    TensorProduct.leftComm V P S.tilde M)).mpr (S.isFirm_tilde_tensor _)
 
 variable {S M} in
 /-- A firm module that is almost zero is zero: its action map is a surjection from

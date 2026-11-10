@@ -251,7 +251,7 @@ variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G] [Finite G]
   [MulSemiringAction G K] [IsGaloisGroup G ℚ K]
   {F : Type*} [Field F] [NumberField F] [Algebra ℚ F] [Algebra F K] [IsScalarTower ℚ F K]
 
-omit [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [Finite G] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 /-- **The inertia subgroup at an unramified prime meets `H` trivially.** Let `H` be a subgroup of
 `G` whose fixed field is `F`. If `P` is unramified over `𝓞 F`, then the inertia subgroup of `P`
 is disjoint from `H`, since its intersection with `H` is the inertia subgroup of `P` over `𝓞 F`,

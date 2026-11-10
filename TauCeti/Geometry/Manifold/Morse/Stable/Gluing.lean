@@ -182,10 +182,11 @@ Read in the split coordinates, the pairs formed by the entrance point, under the
 orbit of a point of `W^u(p) ∩ {f = f y₁}` near `y₁`, and the exit point of the orbit of a point of
 `W^s(r) ∩ {f = f y₂}` near `y₂`, when the model passage map joins them, form a half-open arc
 `TauCeti.splitGluingPairs`. Its closure is homeomorphic to a closed interval, with the
-broken pair of coordinates of `y₁` and `y₂` as the endpoint `0`; the inverse coordinate is the norm
-of the expanding entrance coordinate divided by `ε`. Every point of the arc comes from points of the
-two level cuts in prescribed neighbourhoods `U` of `y₁` and `V` of `y₂`, and conversely every such
-pair of points near `(y₁, y₂)` whose model orbits are joined by the passage map lies on the arc.
+broken pair of coordinates of `y₁` and `y₂` as the endpoint `0`, and adds no other point; the
+inverse coordinate is the norm of the expanding entrance coordinate divided by `ε`. Every point of
+the arc comes from points of the two level cuts in prescribed neighbourhoods `U` of `y₁` and `V` of
+`y₂`, and conversely every such pair of points near `(y₁, y₂)` whose model orbits are joined by the
+passage map lies on the arc.
 
 The chart `φ` is arbitrary, so this is a statement about the model flow. When `X` is the linear
 field `z ↦ (-wᵢ zᵢ)ᵢ` in `φ`, model orbits that stay in a box inside the chart are the orbits of the
@@ -212,6 +213,8 @@ theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedP
         (∀ q, (e.symm q : ℝ) = ‖q.val.1.snd‖ / ε) ∧
         (e ⟨0, left_mem_Icc.2 hr₀.le⟩).val = (φ.splitCoord (φ.coord (φ.toChart y₁)),
           φ.splitCoord (φ.coord (φ.toChart y₂)))) ∧
+      closure (splitGluingPairs ε r₀ g k) = insert (φ.splitCoord (φ.coord (φ.toChart y₁)),
+        φ.splitCoord (φ.coord (φ.toChart y₂))) (splitGluingPairs ε r₀ g k) ∧
       (∀ q ∈ splitGluingPairs ε r₀ g k,
         (∃ w ∈ U, w ∈ hX.flow.unstableSet p ∧ f w = f y₁ ∧
           splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
@@ -254,10 +257,11 @@ theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedP
   have hV'0 : V' ∈ 𝓝 0 := by
     have hV₂ : ∀ᶠ z in 𝓝 (0 : F₂), ι₂ z ∈ V := hι₂.preimage_mem_nhds (by rwa [hι₂0])
     exact hV₂.and hι₂s
-  obtain ⟨r₀, hr₀, g, k, ⟨e, he, he₀⟩, hpairs, hexh⟩ :=
+  obtain ⟨r₀, hr₀, g, k, ⟨e, he, he₀⟩, hcl, hpairs, hexh⟩ :=
     exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt hψ hψ' hψ₀ hy₁ε hχ hχ' hχ₀
       hy₂ε hε hU'0 hV'0
-  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, ← hψ₀, ← hχ₀, hι₁0, hι₂0]⟩, ?_, ?_⟩
+  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, ← hψ₀, ← hχ₀, hι₁0, hι₂0]⟩,
+    by rw [hcl, ← hψ₀, ← hχ₀, hι₁0, hι₂0], ?_, ?_⟩
   · intro q hq
     obtain ⟨⟨z₁, ⟨hz₁U, hz₁s, hz₁f⟩, hz₁⟩, z₂, ⟨hz₂V, hz₂s, hz₂f⟩, hz₂⟩ := hpairs q hq
     exact ⟨⟨ι₁ z₁, hz₁U, hz₁s, hz₁f, hz₁⟩, ι₂ z₂, hz₂V, hz₂s, hz₂f, hz₂⟩

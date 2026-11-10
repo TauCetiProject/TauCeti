@@ -86,6 +86,23 @@ theorem representation_mem_fundamentalLattice {i : Fin t.rank}
   exact (t.lieBasis ht).representation_mem_highestWeightLattice _
     (by rwa [← t.kostantForm_def ht]) hx
 
+/-- Each simple raising or lowering operator preserves the fundamental lattice. -/
+theorem lie_rootGenerator_mem_fundamentalLattice (i : Fin t.rank)
+    (j : Fin t.rank ⊕ Fin t.rank) {x : t.fundamentalModule ht i}
+    (hx : x ∈ t.fundamentalLattice ht i) :
+    ⁅(t.lieBasis ht).rootGenerator j, x⁆ ∈ t.fundamentalLattice ht i := by
+  have hj := t.dividedPower_mem_kostantForm ht j 1
+  rw [Associative.dividedPower_one] at hj
+  simpa only [representation_ι_apply] using
+    t.representation_mem_fundamentalLattice ht hj hx
+
+/-- The first lowering of the highest weight vector belongs to the fundamental lattice. -/
+theorem lie_lieBasis_f_fundamentalModuleGenerator_mem_fundamentalLattice (i : Fin t.rank) :
+    ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆ ∈ t.fundamentalLattice ht i := by
+  simpa only [LieAlgebra.Basis.rootGenerator_inr] using
+    t.lie_rootGenerator_mem_fundamentalLattice ht i (.inr i)
+      (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i)
+
 /-- `v⁺ᵢ` is a weight vector of weight `Pi.single i 1 = (δᵢⱼ)ⱼ` for the Cartan generators `hⱼ`:
 in the coordinates `μ ↦ (μ(hⱼ))ⱼ`, the fundamental weight `ϖᵢ` is the `i`-th standard basis
 vector. -/

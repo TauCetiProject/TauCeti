@@ -200,7 +200,7 @@ private theorem dualityMap_zModTwist_devissage :
   hG.isProP.dualityMap0_bijective_dualityMap1_bijective_dualityMap2_injective _
     (ZModTwist.moduleBaer _ i) (hG.moduleBaer_H2_zModTwist_demushkinCharacter i)
     (fun A _ _ _ _ _ _ hA _ hAi ↦ hG.dualityMap_zModTwist_of_natCard_eq i A hA hAi) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨i, hM m⟩) hM
+    (fun m ↦ ⟨i, hM m⟩) hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group with coefficients `I(χ)/pⁱ` is
 bijective** on every finite discrete `G`-module `M` killed by `pⁱ`:

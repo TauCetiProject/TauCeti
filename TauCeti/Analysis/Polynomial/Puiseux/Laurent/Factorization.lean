@@ -125,7 +125,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
     -- The trailing coefficient forces each normalized root to have constant finite
     -- order. Dividing by the leading coefficient gives the Laurent exponent and bound.
     obtain ⟨m, w, hw, hw0, hform⟩ := TauCeti.exists_root_eq_zpow_mul_unit
-      (Nat.pos_of_ne_zero hd) (fun i ↦ hsa i _ hx') ((hv.comp hq hqmem) _ hx')
+      (fun i ↦ hsa i _ hx') ((hv.comp hq hqmem) _ hx')
       (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hv0 _ hxR)
       ((hu.comp hq hqmem) _ hx')
       (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hu0 _ hxR) hnorm'

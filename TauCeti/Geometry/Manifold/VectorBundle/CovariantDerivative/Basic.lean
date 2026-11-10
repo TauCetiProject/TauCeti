@@ -22,8 +22,10 @@ section values and fibre vectors.
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
 * `TauCeti.Manifold.covariantDerivative_sum`: a covariant derivative over `u` commutes with finite
   sums of sections differentiable at a point of `u`.
-* `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
-  covariant derivative of a function multiple of a section along a vector field.
+* `CovariantDerivative.covariantDerivative_smul_section_apply` and
+  `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
+  covariant derivative of a function multiple of a section at a tangent vector and along a
+  vector field.
 * `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
   endomorphism-valued one-form on a section.
 * `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
@@ -125,6 +127,16 @@ theorem addOneForm_apply (cov : CovariantDerivative I F V)
     (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x)
     (σ : Π x : M, V x) (x : M) :
     cov.addOneForm A σ x = cov σ x + A x (σ x) := (rfl)
+
+omit [VectorBundle 𝕜 F V] in
+/-- **Leibniz rule at a tangent vector.** The covariant derivative of `f • σ` at `x` along `v` is
+`f x • ∇_v σ + df_x(v) • σ x`, for `f` and `σ` differentiable at `x`. -/
+theorem covariantDerivative_smul_section_apply (cov : CovariantDerivative I F V)
+    {f : M → 𝕜} {σ : Π x : M, V x} {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x)
+    (v : TangentSpace I x) :
+    cov (f • σ) x v = f x • cov σ x v + d% f x v • σ x := by
+  rw [cov.isCovariantDerivativeOnUniv.leibniz hσ hf]
+  simp [add_apply, ContinuousLinearMap.smulRight_apply]
 
 omit [VectorBundle 𝕜 F V] in
 /-- **Leibniz rule along a vector field.** The covariant derivative of `f • σ` along a vector

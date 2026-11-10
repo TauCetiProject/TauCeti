@@ -51,7 +51,7 @@ theorem prime_dvd_gcd_cross_of_zsmul_eq_zero (hpn : p ∣ n) (hB : B ≠ 0)
     p ∣ Nat.gcd (R.cross S).val n := by
   apply ((R.cross S).dvd_gcd_val_iff_castHom_eq_zero hpn).mpr
   rw [← Pair.cross_map]
-  have hcoords := cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq h
+  have hcoords := cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hq h
   have hRS := Pair.cross_eq_zero_trans (coordinates_ne_zero hB (m • Q)) hR hcoords
   exact Pair.cross_eq_zero_trans (coordinates_ne_zero hB (j • Q)) hRS
     (Pair.cross_eq_zero_comm.mp hS)
@@ -86,7 +86,8 @@ theorem exists_two_mul_abs_sub_mul_le_and_prime_dvd_gcd_cross (hpn : p ∣ n) (h
         (S.map (ZMod.castHom hpn (ZMod p))).cross
           (coordinates A B (|(q : ℤ) - i * w| • (M • P))) = 0 →
         p ∣ Nat.gcd (R.cross S).val n := by
-  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le (q : ℤ) hw
+  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le (q : ℤ) hw.ne'
+  rw [abs_of_pos hw] at hi
   refine ⟨i, hi, fun R S hR hS ↦
     prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hpn hB P R S horder ?_ hR hS⟩
   rcases abs_choice ((q : ℤ) - i * w) with h | h <;> rw [h]

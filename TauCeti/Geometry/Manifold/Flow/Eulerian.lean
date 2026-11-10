@@ -5,239 +5,240 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Diffeomorph
-public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 
 /-!
-# Eulerian velocity fields of isotopies
+# The Eulerian velocity field of a smooth family of diffeomorphisms
 
-Let `φ : ℝ → (M ≃ₘ^n M)` be a family of diffeomorphisms of a manifold. Its **Eulerian velocity
-field** at time `t` is the vector field
+Let `φ_t`, `t ∈ ℝ`, be a family of bijections of a manifold `M`, jointly smooth in `(t, x)` and with
+jointly smooth inverses, such as a smooth isotopy. Its **Eulerian velocity field** is the
+time-dependent vector field
 
-`X_t = (∂_t φ_t) ∘ φ_t⁻¹`, that is `X_t (φ_t x) = d/du|_{u = t} φ_u x`
+`X_t = (∂_t φ_t) ∘ φ_t⁻¹`, that is, `X_t(y) = ∂_u|_{u = t} φ_u(φ_t⁻¹ y)`
 
-(`TauCeti.eulerianVelocity`). Unlike the velocity `u ↦ ∂_u φ_u x` of the individual trajectories,
-it is a vector field on `M` at each time, and the trajectories `u ↦ φ_u x` are integral curves of
-the time-dependent field `X` (`TauCeti.hasMFDerivAt_eulerianVelocity`). For every time `t`, `X_t`
-is `C^m` when `φ` is jointly `C^(m + 1)` and its slices are `C^m` diffeomorphisms
-(`TauCeti.contMDiff_eulerianVelocity`).
+(`TauCeti.eulerianField`). It is the time-dependent vector field generating the family: every curve
+`u ↦ φ_u x` has velocity `X_u (φ_u x)` (`TauCeti.hasMFDerivAt_eulerianField`), and the field is
+jointly `C^m` when the family is `C^(m+1)` and its inverses are `C^m`
+(`TauCeti.contMDiff_eulerianField`). Consequently the suspension of `X` is complete
+(`TauCeti.isCompleteVectorField_timeDependentSuspensionField_eulerianField`), and on a Hausdorff
+boundaryless manifold, where integral curves of a `C¹` field are unique, the time-dependent flow of
+`X` from time `s` to time `t` is `φ_t ∘ φ_s⁻¹` (`TauCeti.timeDependentFlowOf_eulerianField`). This
+lets every statement about time-dependent flows be applied to smooth isotopies. Conversely, when
+the suspension of a `C¹` time-dependent field `X` is complete, the time maps of its flow from a
+fixed time form a family whose Eulerian field is `X`
+(`TauCeti.eulerianField_eq_of_coe_eq_timeDependentFlowOf`).
 
-The Eulerian field of the pointwise composite `(φ ψ)_t = φ_t ∘ ψ_t` of two isotopies is
+The field transforms under the pointwise operations on families as follows. For the pointwise
+composition `(φ ψ)_t = φ_t ∘ ψ_t` one has the **product velocity identity**
 
-`X_{φ ψ, t} = X_{φ, t} + (φ_t)_* X_{ψ, t}`
+`X_(φ ψ) = X_φ + (φ_t)_* X_ψ`
 
-(`TauCeti.eulerianVelocity_trans`), where the pushforward `(φ_t)_* X_{ψ, t}` is Mathlib's
-pullback `VectorField.mpullback` by `φ_t⁻¹`; at `φ_t x` it is `(dφ_t)_x X_{ψ, t} x`
-(`Diffeomorph.mpullback_symm_apply_eq_mfderiv`). This pointwise product is not the concatenation
-of paths. Two consequences follow from it, since a constant family has zero Eulerian field: the
-inverse family `φ_t⁻¹` has Eulerian field `-(φ_t⁻¹)_* X_{φ, t}` (`TauCeti.eulerianVelocity_symm`),
-and the conjugate family `g⁻¹ ∘ φ_t ∘ g` by a fixed diffeomorphism `g` has Eulerian field
-`g^* X_{φ, t}` (`TauCeti.eulerianVelocity_conj`). These identities need differentiability only at
-the points involved.
+(`TauCeti.eulerianField_trans`), and for the pointwise inverse `X_(φ⁻¹) = -(φ_t⁻¹)_* X_φ`
+(`TauCeti.eulerianField_symm`). For a fixed bijection `g`, the conjugate family `g⁻¹ ∘ φ_t ∘ g`
+has Eulerian field `g^* X_φ` (`TauCeti.eulerianField_conj`). A constant family has zero velocity
+(`TauCeti.eulerianField_const`).
 
-The slices of a `TauCeti.Diffeotopy`, read along any reparametrization `ℝ → I` of time, are such a
-family, and `TauCeti.Diffeotopy.timeSlice_trans` and `TauCeti.Diffeotopy.timeSlice_symm` rewrite
-the slices of `Diffeotopy.trans ψ φ` and `Diffeotopy.symm φ` into the pointwise composite and
-inverse used here.
-
-## Main definitions
-
-* `TauCeti.eulerianVelocity φ t`: the Eulerian velocity field `(∂_t φ_t) ∘ φ_t⁻¹`.
-
-## Main results
-
-* `TauCeti.hasMFDerivAt_eulerianVelocity`: the trajectories of `φ` are integral curves of its
-  Eulerian field.
-* `TauCeti.contMDiff_eulerianVelocity`: the Eulerian field at each time is `C^m` when `φ` is
-  jointly `C^(m + 1)`.
-* `Diffeomorph.mpullback_symm_apply_eq_mfderiv`: pulling a vector field back by the inverse of a
-  diffeomorphism pushes it forward.
-* `TauCeti.eulerianVelocity_trans`: the product formula for the Eulerian field of a composite.
-* `TauCeti.eulerianVelocity_symm`, `TauCeti.eulerianVelocity_conj`: the Eulerian fields of the
-  inverse and of a conjugate isotopy.
+These are the identities used to define the flux of a symplectic isotopy, whose velocity one-forms
+are the contractions `ι_(X_t) ω` of the symplectic form with the Eulerian field.
 
 ## References
 
-* Dusa McDuff and Dietmar Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
-  Chapter 3 (symplectic isotopies and their generating vector fields) and Chapter 10 (the flux
-  homomorphism).
+* D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford University
+  Press, 2017, Chapter 3 (the time-dependent vector field generating an isotopy) and Chapter 10
+  (the flux homomorphism).
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Theorem 9.48
+  (time-dependent flows).
 -/
 
 public section
 
 noncomputable section
 
-open Set Bundle
-open scoped Manifold ContDiff
+open Set Bundle TauCeti.Manifold
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
-open TauCeti.Manifold (curveVelocity hasMFDerivAt_curveVelocity)
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  (I : ModelWithCorners ℝ E H) [TopologicalSpace M] [ChartedSpace H M]
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  {φ ψ : ℝ → M ≃ₘ^n⟮I, I⟯ M}
-
-/-- The **Eulerian velocity field** `X_t = (∂_t φ_t) ∘ φ_t⁻¹` of a family `φ` of diffeomorphisms
-at time `t`: at `y`, it is the velocity at time `t` of the trajectory `u ↦ φ_u (φ_t⁻¹ y)` through
-`y`. -/
-def eulerianVelocity (φ : ℝ → M ≃ₘ^n⟮I, I⟯ M) (t : ℝ) (y : M) : TangentSpace I y :=
+/-- The **Eulerian velocity field** of a family `φ` of bijections of `M`: the time-dependent vector
+field `X_t(y) = ∂_u|_{u = t} φ_u(φ_t⁻¹ y)`, that is `X_t = (∂_t φ_t) ∘ φ_t⁻¹`. For a smooth isotopy
+it is the time-dependent vector field whose flow is the isotopy. -/
+def eulerianField (φ : ℝ → M ≃ M) (t : ℝ) (y : M) : TangentSpace I y :=
   curveVelocity I (fun u ↦ φ u ((φ t).symm y)) t
 
-/-- At the point `φ_t x`, the Eulerian field is the velocity of the trajectory of `x`. -/
-theorem eulerianVelocity_apply_apply (t : ℝ) (x : M) :
-    eulerianVelocity φ t (φ t x) = curveVelocity I (fun u ↦ φ u x) t := by
-  rw [eulerianVelocity, Diffeomorph.symm_apply_apply]
+variable {I} {φ ψ : ℝ → M ≃ M} {t : ℝ}
 
-/-- The Eulerian field at `y` is the velocity of the trajectory of `φ_t⁻¹ y`. This restates the
-definition, whose body is not exposed across the module boundary. -/
-theorem eulerianVelocity_apply (t : ℝ) (y : M) :
-    eulerianVelocity φ t y = curveVelocity I (fun u ↦ φ u ((φ t).symm y)) t :=
+/-- The Eulerian velocity field at `y` is the velocity at time `t` of the curve
+`u ↦ φ_u(φ_t⁻¹ y)`. This restates the definition, whose body is not exposed. -/
+theorem eulerianField_def (y : M) :
+    eulerianField I φ t y = curveVelocity I (fun u ↦ φ u ((φ t).symm y)) t :=
   (rfl)
 
-/-- A constant family of diffeomorphisms has zero Eulerian field. -/
+/-- At the image point `φ_t x`, the Eulerian velocity field is the velocity at time `t` of the
+curve `u ↦ φ_u x`. -/
 @[simp]
-theorem eulerianVelocity_const (f : M ≃ₘ^n⟮I, I⟯ M) (t : ℝ) :
-    eulerianVelocity (fun _ ↦ f) t = 0 := by
-  funext y
-  exact TauCeti.Manifold.curveVelocity_const _
+theorem eulerianField_apply_apply (x : M) :
+    eulerianField I φ t (φ t x) = curveVelocity I (fun u ↦ φ u x) t := by
+  have h : (fun u ↦ φ u ((φ t).symm (φ t x))) = fun u ↦ φ u x := by
+    simp only [Equiv.symm_apply_apply]
+  rw [eulerianField_def, h]
 
-/-- **The trajectories of an isotopy are integral curves of its Eulerian field.** If the trajectory
-`u ↦ φ_u x` is differentiable at `t`, its velocity there is `X_t (φ_t x)`. -/
-theorem hasMFDerivAt_eulerianVelocity {t : ℝ} {x : M}
-    (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u x) t) :
+/-- **The Eulerian field generates the family.** If the curve `u ↦ φ_u x` is differentiable at
+time `t`, its velocity there is the Eulerian velocity field at its current position,
+`X_t (φ_t x)`. -/
+theorem hasMFDerivAt_eulerianField {x : M}
+    (h : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u x) t) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u x) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (eulerianVelocity φ t (φ t x))) := by
-  rw [eulerianVelocity_apply_apply]
-  exact hasMFDerivAt_curveVelocity hφ
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (eulerianField I φ t (φ t x))) := by
+  rw [eulerianField_apply_apply]
+  exact hasMFDerivAt_curveVelocity h
 
-/-- The pullback of a vector field `V` by the inverse of a `C^n` diffeomorphism `f`, `n ≠ 0`, is its
-pushforward by `f`: at `f x` it is `df_x (V x)`. -/
-theorem _root_.Diffeomorph.mpullback_symm_apply_eq_mfderiv {E' H' M' : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-    [TopologicalSpace M'] [ChartedSpace H' M'] (f : M ≃ₘ^n⟮I, I'⟯ M') (hn : n ≠ 0)
-    (V : Π x : M, TangentSpace I x) (x : M) :
-    VectorField.mpullback I' I f.symm V (f x) = mfderiv I I' f x (V x) := by
-  -- By the chain rule, `d(f⁻¹)_{f x}` sends `df_x v` back to `v`.
-  have hchain (v : TangentSpace I x) : mfderiv I' I f.symm (f x) (mfderiv I I' f x v) = v := by
-    have h := mfderiv_comp x (f.symm.mdifferentiable hn (f x)) (f.mdifferentiable hn x)
-    rw [show (f.symm ∘ f : M → M) = id from funext f.symm_apply_apply, mfderiv_id] at h
-    exact (congrArg (fun L ↦ L v) h).symm
-  have key := (f.symm.isInvertible_mfderiv hn (x := f x)).inverse_apply_self
-    (mfderiv I I' f x (V x))
-  rw [hchain] at key
-  rw [VectorField.mpullback_apply]
-  convert key using 3
-  rw [f.symm_apply_apply]
+/-- A constant family has zero Eulerian velocity. -/
+@[simp]
+theorem eulerianField_const (e : M ≃ M) : eulerianField I (fun _ ↦ e) = 0 := by
+  funext t y
+  exact curveVelocity_const _
 
-/-- **The Eulerian field of a composite isotopy.** The Eulerian field of the pointwise composite
-`(φ ψ)_t = φ_t ∘ ψ_t` is `X_{φ ψ} = X_φ + (φ_t)_* X_ψ`, where the pushforward `(φ_t)_* X_ψ` is the
-pullback by `φ_t⁻¹`. It suffices that `φ` is jointly differentiable at `(t, φ_t⁻¹ y)` and that the
-trajectory of `ψ` through `(φ_t ∘ ψ_t)⁻¹ y` is differentiable at `t`. -/
-theorem eulerianVelocity_trans (hn : n ≠ 0) {t : ℝ} {y : M}
-    (hφ : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, (φ t).symm y))
-    (hψ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u ((ψ t).symm ((φ t).symm y))) t) :
-    eulerianVelocity (fun u ↦ (ψ u).trans (φ u)) t y =
-      eulerianVelocity φ t y + VectorField.mpullback I I (φ t).symm (eulerianVelocity ψ t) y := by
-  -- Write `y = φ_t (ψ_t z)`.
-  obtain ⟨z, rfl⟩ : ∃ z, φ t (ψ t z) = y := ⟨(ψ t).symm ((φ t).symm y), by simp⟩
-  simp only [Diffeomorph.symm_apply_apply] at hφ hψ
-  rw [(φ t).mpullback_symm_apply_eq_mfderiv hn]
-  set v : E := curveVelocity I (fun u ↦ ψ u z) t
-  set D := mfderiv (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, ψ t z)
-  -- The trajectory `u ↦ φ_u (ψ_u z)` is the family `φ` read along `u ↦ (u, ψ_u z)`, whose
-  -- velocity is `(1, v)`.
-  have hcomp : curveVelocity I (fun u ↦ φ u (ψ u z)) t = D ((1 : ℝ), v) := by
-    have hd := hφ.hasMFDerivAt.comp t
-      ((hasMFDerivAt_id (I := 𝓘(ℝ, ℝ)) t).prodMk (hasMFDerivAt_curveVelocity hψ))
-    rw [TauCeti.Manifold.curveVelocity_apply,
-      show (fun u ↦ φ u (ψ u z)) = (fun p : ℝ × M ↦ φ p.1 p.2) ∘ fun u ↦ (id u, ψ u z) from rfl,
-      hd.mfderiv]
-    -- The derivative of `u ↦ (u, ψ_u z)` sends `1` to `(1, v)`; the tangent spaces involved are
-    -- the model spaces only up to unfolding.
-    change D ((1 : ℝ), (1 : ℝ) • v) = D ((1 : ℝ), v)
-    rw [one_smul]
-  -- The total derivative of the family splits into its partial derivatives in time and space.
-  have hsplit : D ((1 : ℝ), v) =
-      mfderiv 𝓘(ℝ, ℝ) I (fun u ↦ φ u (ψ t z)) t (1 : ℝ) + mfderiv I I (φ t) (ψ t z) v :=
-    mfderiv_prod_eq_add_apply hφ
-  have htrans := eulerianVelocity_apply_apply (φ := fun u ↦ (ψ u).trans (φ u)) t z
-  simp only [Diffeomorph.coe_trans, Function.comp_apply] at htrans
-  rw [htrans, hcomp, hsplit, ← TauCeti.Manifold.curveVelocity_apply, eulerianVelocity_apply_apply,
-    eulerianVelocity_apply_apply]
+/-! ### Products and inverses of families -/
 
-/-- **The Eulerian field of the inverse isotopy.** The Eulerian field of the inverse family
-`φ_t⁻¹` is `-(φ_t⁻¹)_* X_{φ, t}`, the pullback of `-X_{φ, t}` by `φ_t`. It suffices that the
-trajectory of `x` under `φ` is differentiable at `t` and that the family of inverses is jointly
-differentiable at `(t, φ_t x)`. -/
-theorem eulerianVelocity_symm (hn : n ≠ 0) {t : ℝ} {x : M}
-    (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u x) t)
-    (hφ' : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ (φ p.1).symm p.2) (t, φ t x)) :
-    eulerianVelocity (fun u ↦ (φ u).symm) t x =
-      -VectorField.mpullback I I (φ t) (eulerianVelocity φ t) x := by
-  have hss : (φ t).symm.symm = φ t := Diffeomorph.ext fun _ ↦ rfl
-  -- The composite `φ_u⁻¹ ∘ φ_u` is the identity, whose Eulerian field vanishes.
-  have h := eulerianVelocity_trans (φ := fun u ↦ (φ u).symm) (ψ := φ) hn (t := t) (y := x)
-    (by simpa only [hss] using hφ') (by simpa only [hss, Diffeomorph.symm_apply_apply] using hφ)
-  simp only [Diffeomorph.self_trans_symm, eulerianVelocity_const, Pi.zero_apply, hss] at h
-  exact eq_neg_of_add_eq_zero_left h.symm
+/-- **The product velocity identity.** The Eulerian field of the pointwise composition
+`(φ ψ)_t = φ_t ∘ ψ_t` of two families is `X_(φ ψ) = X_φ + (φ_t)_* X_ψ`: at the point `φ_t w`, it
+is the sum of `X_φ(φ_t w)` and of the image under `dφ_t` of `X_ψ(w)`. -/
+theorem eulerianField_trans {w : M}
+    (hφ : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, w))
+    (hψ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u ((ψ t).symm w)) t) :
+    eulerianField I (fun u ↦ (ψ u).trans (φ u)) t (φ t w) =
+      eulerianField I φ t (φ t w) + mfderiv I I (φ t) w (eulerianField I ψ t w) := by
+  set γ : ℝ → M := fun u ↦ ψ u ((ψ t).symm w)
+  have hγt : γ t = w := (ψ t).apply_symm_apply w
+  have h := curveVelocity_apply_curve (f := fun u ↦ φ u) (γ := γ) (hγt ▸ hφ) hψ
+  rw [hγt] at h
+  have hfun : (fun u ↦ ((ψ u).trans (φ u)) (((ψ t).trans (φ t)).symm (φ t w))) =
+      fun u ↦ φ u (γ u) := by
+    funext u
+    simp [γ]
+  rw [eulerianField_def, hfun, h, eulerianField_apply_apply, eulerianField_def (φ := ψ) w]
 
-/-- **The Eulerian field of a conjugate isotopy.** For a diffeomorphism `g`, the Eulerian field of
-the conjugate family `g⁻¹ ∘ φ_t ∘ g` is the pullback `g^* X_{φ, t}`. It suffices that the
-trajectory of `φ` through `φ_t⁻¹ (g y)` is differentiable at `t`. -/
-theorem eulerianVelocity_conj (hn : n ≠ 0) (g : M ≃ₘ^n⟮I, I⟯ M) {t : ℝ} {y : M}
-    (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm (g y))) t) :
-    eulerianVelocity (fun u ↦ (g.trans (φ u)).trans g.symm) t y =
-      VectorField.mpullback I I g (eulerianVelocity φ t) y := by
-  have hss : g.symm.symm = g := Diffeomorph.ext fun _ ↦ rfl
-  -- First `X_{φ ∘ g} = X_φ`, since `φ_u ∘ g ∘ (φ_t ∘ g)⁻¹ = φ_u ∘ φ_t⁻¹`.
-  have h₁ : eulerianVelocity (fun u ↦ g.trans (φ u)) t = eulerianVelocity φ t := by
+/-- **The inverse velocity identity.** The Eulerian field of the pointwise inverse
+`t ↦ φ_t⁻¹` of a family is `X_(φ⁻¹) = -(φ_t⁻¹)_* X_φ`: at the point `φ_t⁻¹ z`, it is minus the
+image under `d(φ_t⁻¹)` of `X_φ(z)`. -/
+theorem eulerianField_symm {z : M}
+    (hφ : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ (φ p.1).symm p.2) (t, z))
+    (hφ' : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm z)) t) :
+    eulerianField I (fun u ↦ (φ u).symm) t ((φ t).symm z) =
+      -mfderiv I I (φ t).symm z (eulerianField I φ t z) := by
+  have h := eulerianField_trans (φ := fun u ↦ (φ u).symm) (ψ := φ) (t := t) (w := z) hφ hφ'
+  simp only [Equiv.self_trans_symm, eulerianField_const, Pi.zero_apply] at h
+  rw [eq_neg_iff_add_eq_zero, ← h]
+
+/-- **The conjugation identity.** For a fixed bijection `g`, the Eulerian field of the conjugate
+family `t ↦ g⁻¹ ∘ φ_t ∘ g` is `X_(g⁻¹ φ g) = g^* X_φ`: at the point `g⁻¹ z`, it is the image under
+`d(g⁻¹)` of `X_φ(z)`. -/
+theorem eulerianField_conj (g : M ≃ M) {z : M} (hg : MDifferentiableAt I I g.symm z)
+    (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm z)) t) :
+    eulerianField I (fun u ↦ (g.trans (φ u)).trans g.symm) t (g.symm z) =
+      mfderiv I I g.symm z (eulerianField I φ t z) := by
+  -- Precomposing every map of the family with `g` does not change its Eulerian field.
+  have hright : eulerianField I (fun u ↦ g.trans (φ u)) t = eulerianField I φ t := by
     funext w
-    simp only [eulerianVelocity_apply, Diffeomorph.coe_trans, Diffeomorph.symm_trans',
-      Function.comp_apply]
+    simp only [eulerianField_def, Equiv.trans_apply, Equiv.symm_trans_apply]
     rw [g.apply_symm_apply]
-  -- Then `X_{g⁻¹ ∘ (φ ∘ g)} = (g⁻¹)_* X_{φ ∘ g}`, since `g⁻¹` is constant.
-  have h₂ := eulerianVelocity_trans (φ := fun _ ↦ g.symm) (ψ := fun u ↦ g.trans (φ u)) hn
-    (t := t) (y := y) ((g.symm.mdifferentiable hn _).comp _ mdifferentiableAt_snd)
-    (by simpa only [hss, Diffeomorph.coe_trans, Diffeomorph.symm_trans', Function.comp_apply,
-      Diffeomorph.apply_symm_apply] using hφ)
-  simp only [eulerianVelocity_const, Pi.zero_apply, hss, zero_add] at h₂
-  rw [h₂, h₁]
+  -- Postcomposing with the constant family `g⁻¹` pushes the field forward by `g⁻¹`.
+  have h := eulerianField_trans (φ := fun _ ↦ g.symm) (ψ := fun u ↦ g.trans (φ u)) (t := t)
+    (w := z) (hg.comp _ mdifferentiableAt_snd)
+    (by simpa only [Equiv.trans_apply, Equiv.symm_trans_apply, Equiv.apply_symm_apply] using hφ)
+  simp only [eulerianField_const, Pi.zero_apply, zero_add] at h
+  rw [h, hright]
 
-variable [IsManifold I 1 M]
+/-! ### Smoothness -/
 
-/-- **Regularity of the Eulerian field.** If the family `φ` is jointly `C^r` and its slices are
-`C^n` diffeomorphisms, its Eulerian field at each time is a `C^m` vector field for every `m` with
-`m + 1 ≤ r` and `m ≤ n`. -/
-theorem contMDiff_eulerianVelocity {m : ℕ∞} {r : ℕ∞ω}
-    (hφ : ContMDiff (𝓘(ℝ, ℝ).prod I) I r fun p : ℝ × M ↦ φ p.1 p.2) (hmr : m + 1 ≤ r)
-    (hmn : (m : ℕ∞ω) ≤ n) (t : ℝ) :
-    ContMDiff I I.tangent m fun y ↦ (⟨y, eulerianVelocity φ t y⟩ : TangentBundle I M) := by
-  have hr : r ≠ 0 := by
-    rintro rfl
-    exact absurd hmr (by simp)
-  have hvel := TauCeti.Manifold.contMDiff_mfderiv_apply_one_zero hφ hmr
-  -- The section is the velocity of the family read along `y ↦ (t, φ_t⁻¹ y)`.
-  have hsec : (fun y ↦ (⟨y, eulerianVelocity φ t y⟩ : TangentBundle I M)) =
-      (fun q : ℝ × M ↦ TotalSpace.mk' E (φ q.1 q.2)
-        (mfderiv (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) q ((1 : ℝ), (0 : E)))) ∘
-        fun y ↦ (t, (φ t).symm y) := by
-    funext y
-    have hd := (hφ.mdifferentiable hr) (t, (φ t).symm y)
-    -- The time-direction partial derivative of the family is the velocity of the trajectory.
-    have hsplit : mfderiv (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, (φ t).symm y)
-        ((1 : ℝ), (0 : E)) = mfderiv 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm y)) t (1 : ℝ) +
-          mfderiv I I (φ t) ((φ t).symm y) 0 :=
-      mfderiv_prod_eq_add_apply hd
-    rw [Function.comp_apply, hsplit, _root_.map_zero, add_zero,
-      ← TauCeti.Manifold.curveVelocity_apply, ← eulerianVelocity_apply]
-    exact congrArg (fun z ↦ TotalSpace.mk' E z (eulerianVelocity φ t y))
-      ((φ t).apply_symm_apply y).symm
-  rw [hsec]
-  exact hvel.comp (contMDiff_const.prodMk ((φ t).symm.contMDiff.of_le hmn))
+/-- **The Eulerian field is jointly smooth.** If the family `(t, x) ↦ φ_t x` is `C^n` and its
+inverses `(t, y) ↦ φ_t⁻¹ y` are `C^m`, with `m + 1 ≤ n`, then the Eulerian velocity field is a
+jointly `C^m` time-dependent vector field. -/
+theorem contMDiff_eulerianField [IsManifold I 1 M] {m n : ℕ∞ω} (hmn : m + 1 ≤ n)
+    (hφ : ContMDiff (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ φ p.1 p.2))
+    (hφ' : ContMDiff (𝓘(ℝ, ℝ).prod I) I m (fun p : ℝ × M ↦ (φ p.1).symm p.2)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent m
+      (fun p : ℝ × M ↦ (⟨p.2, eulerianField I φ p.1 p.2⟩ : TangentBundle I M)) := by
+  have hn : 1 ≤ n := le_trans (by simp) hmn
+  -- The Eulerian field is the derivative of `(u, x) ↦ φ_u x` in the direction `(1, 0)` at the
+  -- point `(t, φ_t⁻¹ y)`, and this velocity is `C^m` along `(t, y) ↦ (t, φ_t⁻¹ y)`.
+  refine ((Manifold.contMDiff_mfderiv_apply_one_zero hφ hmn).comp
+    (contMDiff_fst.prodMk hφ')).congr fun p ↦ ?_
+  have hdiff : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun q : ℝ × M ↦ φ q.1 q.2)
+      (p.1, (φ p.1).symm p.2) :=
+    (hφ _).mdifferentiableAt (zero_lt_one.trans_le hn).ne'
+  refine TotalSpace.ext ((φ p.1).apply_symm_apply p.2).symm (heq_of_eq ?_)
+  -- By definition of `tangentMap` and of `equivTangentBundleProd`, the fibre of the left side is
+  -- the derivative of `(u, x) ↦ φ_u x` applied to `(1, 0)`; `change` exposes this unfolding.
+  change eulerianField I φ p.1 p.2 =
+    mfderiv (𝓘(ℝ, ℝ).prod I) I (fun q : ℝ × M ↦ φ q.1 q.2) (p.1, (φ p.1).symm p.2) (1, 0)
+  refine Eq.trans ?_ (mfderiv_prod_eq_add_apply hdiff).symm
+  rw [eulerianField_def, curveVelocity_apply]
+  exact (add_zero _).symm.trans (congrArg₂ (· + ·) rfl (map_zero _).symm)
+
+/-! ### The time-dependent flow of the Eulerian field -/
+
+section Flow
+
+variable (hφ : ∀ x, MDifferentiable 𝓘(ℝ, ℝ) I fun u ↦ φ u x)
+include hφ
+
+/-- If every curve `u ↦ φ_u x` is differentiable, the suspension of the Eulerian field is complete:
+its time-dependent flow is defined for all pairs of times. -/
+theorem isCompleteVectorField_timeDependentSuspensionField_eulerianField :
+    IsCompleteVectorField (timeDependentSuspensionField (eulerianField I φ)) := by
+  refine isCompleteVectorField_iff_maximalIntegralCurveInterval.2 fun ⟨s, x⟩ ↦
+    eq_univ_of_forall fun τ ↦ TauCeti.mem_flowDomain.1 ?_
+  have h := mem_timeDependentFlowDomain_of_hasMFDerivAt (s := s) (t := s + τ)
+    (γ := fun u ↦ φ u ((φ s).symm x)) (a := min s (s + τ) - 1) (b := max s (s + τ) + 1)
+    (fun u _ ↦ hasMFDerivAt_eulerianField (hφ _ u))
+    ⟨by linarith [min_le_left s (s + τ)], by linarith [le_max_left s (s + τ)]⟩
+    ⟨by linarith [min_le_right s (s + τ)], by linarith [le_max_right s (s + τ)]⟩
+  simpa [mem_timeDependentFlowDomain] using h
+
+/-- **The isotopy is the flow of its Eulerian field.** For a family whose curves `u ↦ φ_u x` are
+differentiable and whose Eulerian field is jointly `C¹`, the time-dependent flow of that field from
+time `s` to time `t` is `φ_t ∘ φ_s⁻¹`. -/
+theorem timeDependentFlowOf_eulerianField [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, eulerianField I φ p.1 p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M) :
+    timeDependentFlowOf (eulerianField I φ) s t x = φ t ((φ s).symm x) := by
+  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (s := s) (t := t)
+    (γ := fun u ↦ φ u ((φ s).symm x)) (a := min s t - 1) (b := max s t + 1)
+    (fun u _ ↦ hasMFDerivAt_eulerianField (hφ _ u))
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  simpa using h
+
+end Flow
+
+/-- **A time-dependent flow has Eulerian field `X`.** If the suspension of a jointly `C¹`
+time-dependent vector field `X` on a Hausdorff boundaryless manifold is complete, then any family
+of bijections `φ` whose maps are the time maps `φ_u = φ_{s,u}` of the time-dependent flow from a
+fixed time `s` has Eulerian velocity field `X`. This is the converse of
+`TauCeti.timeDependentFlowOf_eulerianField`. -/
+theorem eulerianField_eq_of_coe_eq_timeDependentFlowOf [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M] {X : ℝ → (x : M) → TangentSpace I x}
+    (hcomplete : IsCompleteVectorField (timeDependentSuspensionField X))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {s : ℝ} (hφ : ∀ u, ⇑(φ u) = timeDependentFlowOf X s u) :
+    eulerianField I φ = X := by
+  funext t y
+  obtain ⟨x, rfl⟩ : ∃ x, φ t x = y := ⟨(φ t).symm y, (φ t).apply_symm_apply y⟩
+  -- The trajectory of `x` is a curve of the flow from time `s`, with velocity `X_t` at time `t`.
+  have hd := hasMFDerivAt_timeDependentFlowOf hX (s := s) (t := t) (x := x)
+    (mem_timeDependentFlowDomain.2 (hcomplete.mem_flowDomain _ _))
+  have htraj : (fun u ↦ φ u x) = fun u ↦ timeDependentFlowOf X s u x := funext fun u ↦ by rw [hφ]
+  rw [eulerianField_apply_apply, htraj, curveVelocity_apply, hd.mfderiv]
+  -- The derivative `1 ↦ 1 • X t (φ t x)` of the flow curve, evaluated at `1`.
+  exact (one_smul ℝ _).trans (by rw [hφ])
 
 end TauCeti

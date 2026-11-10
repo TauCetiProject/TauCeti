@@ -16,7 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 import TauCeti.MeasureTheory.Measure.Decomposition.CommonDensity
 
 /-!
@@ -420,7 +420,7 @@ theorem integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity
   obtain ⟨ψ, hψK, hψ⟩ :=
     hφ.exists_testFunction_dist_le_and_dist_fderiv_le hc.isCompact subset_rfl hδ hδΩ hη
   have hψ1 : ContDiff ℝ 1 (ψ : E → E) := ψ.contDiff.of_le (by simp)
-  have hL := dist_integral_trace_fderiv_mul_le hK huK hφ hψ1 hφK hψK fun x => by
+  have hL := dist_integral_trace_fderiv_mul_le huK hφ hψ1 hφK hψK fun x => by
     rw [dist_comm]
     exact (hψ x).2
   have hR := dist_integral_inner_polarDensity_le hu hfin hψ1.continuous hφ.continuous hK hδΩ

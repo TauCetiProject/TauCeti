@@ -59,7 +59,7 @@ theorem integrableTopForm_mpullback_subtypeVal_iff (U : Opens M) {φ : RoughForm
     (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ U) :
     IntegrableTopForm (mpullback I I ((↑) : U → M) φ) ↔ IntegrableTopForm φ :=
   U.isOpenEmbedding'.integrableTopForm_mpullback_iff
-    (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero)
+    (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero) rfl
     (by rwa [Subtype.range_coe])
 
 end TopologicalSpace.Opens
@@ -89,7 +89,7 @@ theorem integrableTopForm_extendByZero_iff {U W : Opens M} (h : U ≤ W) {ω : R
   exact (he.integrableTopForm_mpullback_iff
     -- The derivative of the inclusion is the identity of the model space.
     (fun x ↦ ⟨.refl ℝ _,
-      ContinuousLinearMap.ext fun v ↦ (Manifold.mfderiv_inclusion_apply h x v).symm⟩)
+      ContinuousLinearMap.ext fun v ↦ (Manifold.mfderiv_inclusion_apply h x v).symm⟩) rfl
     ((RoughForm.tsupport_extendByZero_subset h hω).trans (image_subset_range _ _))).symm
 
 /-- **Extension by zero preserves integrals.** On a Hausdorff manifold, extending a compactly

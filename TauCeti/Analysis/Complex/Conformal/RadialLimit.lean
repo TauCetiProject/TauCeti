@@ -169,7 +169,7 @@ theorem ae_exists_tendsto_circleMap_of_injOn_of_volume_image_ne_top
     (hvol : volume (f '' ball c R) ≠ ⊤) :
     ∀ᵐ θ, ∃ L, Tendsto (fun r => f (circleMap c r θ)) (𝓝[<] R) (𝓝 L) :=
   ae_exists_tendsto_circleMap_of_lintegral_enorm_deriv_sq_ne_top hf hR
-    (lintegral_enorm_deriv_sq_ne_top isOpen_ball hf measurableSet_ball.nullMeasurableSet
-      subset_rfl hinj hvol)
+    (lintegral_enorm_deriv_sq_ne_top (fun _ hz => hf.differentiableAt (isOpen_ball.mem_nhds hz))
+      measurableSet_ball.nullMeasurableSet hinj hvol)
 
 end TauCeti
