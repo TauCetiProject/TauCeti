@@ -85,27 +85,7 @@ private theorem iteratedFDeriv_two_newtonianKernel_eq_smul {x : EuclideanSpace �
 Hessian. -/
 private theorem iteratedFDeriv_two_newtonianKernel_two (x : EuclideanSpace ℝ (Fin 2)) :
     iteratedFDeriv ℝ 2 (newtonianKernel 2) x = 0 := by
-  have h : newtonianKernel 2 = 0 := funext fun y ↦ by simp [newtonianKernel_def]
-  simp [h]
-
-/-- Along a ray, the derivative of the Newtonian kernel in the direction of the ray is the
-derivative of `t ↦ c t ^ (2 - n)`. -/
-private theorem fderiv_newtonianKernel_smul_apply {e : EuclideanSpace ℝ (Fin n)} (he : ‖e‖ = 1)
-    {t : ℝ} (ht : 0 < t) :
-    fderiv ℝ (newtonianKernel n) (t • e) e = ((n : ℝ) * ((n : ℝ) - 2) *
-      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        ((2 - (n : ℝ)) * t ^ (2 - n - 1 : ℝ)) := by
-  have hne : t • e ≠ 0 := by
-    rw [← norm_pos_iff, norm_smul, he, Real.norm_eq_abs, abs_of_pos ht, mul_one]
-    exact ht
-  have hd := ((contDiffAt_newtonianKernel n hne).differentiableAt (by norm_num)).hasFDerivAt
-  have hcurve : HasDerivAt (fun s : ℝ ↦ s • e) e t := by
-    simpa using (hasDerivAt_id t).smul_const e
-  have h2 := (Real.hasDerivAt_rpow_const (p := 2 - (n : ℝ)) (Or.inl ht.ne')).const_mul
-    ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
-  refine (hd.comp_hasDerivAt t hcurve).unique (h2.congr_of_eventuallyEq ?_)
-  filter_upwards [lt_mem_nhds ht] with s hs
-  simp [newtonianKernel_def, norm_smul, he, abs_of_pos hs]
+  simp
 
 /-- Away from dimension two, the gradient of the Newtonian kernel is not differentiable at the
 pole. -/
@@ -115,50 +95,40 @@ private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) 
   have : NeZero n := ⟨hn0⟩
   set e : EuclideanSpace ℝ (Fin n) := EuclideanSpace.single 0 1
   have he : ‖e‖ = 1 := by simp [e]
-  set c : ℝ := ((n : ℝ) * ((n : ℝ) - 2) *
-    volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
-  have hc : c ≠ 0 := by
-    have := (volume_real_unitBall_pos n).ne'
-    have h2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
-    have h0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
-    simp only [c]
+  set c : ℝ := ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
+  have hc : 0 < c := by
+    have := volume_real_unitBall_pos n
+    have : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn0)
     positivity
-  have hn2 : (2 : ℝ) - n ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.symm)
-  have hodd : fderiv ℝ (newtonianKernel n) 0 = 0 := by
-    by_cases hK : DifferentiableAt ℝ (newtonianKernel n) 0
-    · have hK' : DifferentiableAt ℝ (newtonianKernel n)
-          ((fun x : EuclideanSpace ℝ (Fin n) => -id x) 0) := by simpa using hK
-      have h := hK'.hasFDerivAt.comp (0 : EuclideanSpace ℝ (Fin n))
-        (hasFDerivAt_id (0 : EuclideanSpace ℝ (Fin n))).neg
-      have hfun : newtonianKernel n ∘ Neg.neg = newtonianKernel n :=
-        funext fun x ↦ by simp [newtonianKernel_def]
-      rw [hfun] at h
-      have h' := h.fderiv
-      simp only [id_eq, neg_zero] at h'
-      ext v
-      have := congrArg (fun L => L v) h'
-      simp at this
-      rw [zero_apply]
-      linarith
-    · exact fderiv_zero_of_not_differentiableAt hK
   have hg : ContinuousAt (fun s : ℝ ↦ fderiv ℝ (newtonianKernel n) (s • e) e) 0 :=
     (ContinuousLinearMap.apply ℝ ℝ e).continuous.continuousAt.comp
       (hd.continuousAt.comp_of_eq (continuousAt_id.smul_const e) (zero_smul ℝ e))
   have hlim := hg.tendsto.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
-  simp only [zero_smul, hodd, zero_apply] at hlim
-  have hδ : 0 < |c * (2 - (n : ℝ))| := abs_pos.mpr (mul_ne_zero hc hn2)
-  obtain ⟨t, ht, htlt⟩ := ((hlim.eventually (Metric.ball_mem_nhds _ hδ)).and
+  simp only [zero_smul, fderiv_newtonianKernel_zero, zero_apply] at hlim
+  obtain ⟨t, ht, htlt⟩ := ((hlim.eventually (Metric.ball_mem_nhds _ hc)).and
     (Ioo_mem_nhdsGT one_pos)).exists
-  have hge : 1 ≤ t ^ (2 - (n : ℝ) - 1) :=
+  have hne : t • e ≠ 0 := by
+    rw [← norm_pos_iff, norm_smul, he, Real.norm_eq_abs, abs_of_pos htlt.1, mul_one]
+    exact htlt.1
+  have hval : fderiv ℝ (newtonianKernel n) (t • e) e = -(c * t ^ (1 - (n : ℝ))) := by
+    rw [fderiv_newtonianKernel_apply n hn hne, norm_smul, real_inner_smul_left,
+      real_inner_self_eq_norm_sq, he, Real.norm_eq_abs, abs_of_pos htlt.1,
+      sub_eq_add_neg, Real.rpow_add htlt.1, Real.rpow_one]
+    have hc' : c = (n : ℝ)⁻¹ * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+      mul_inv _ _
+    rw [hc']
+    ring_nf
+  have hge : 1 ≤ t ^ (1 - (n : ℝ)) :=
     Real.one_le_rpow_of_pos_of_le_one_of_nonpos htlt.1 htlt.2.le (by
       have : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn0
       linarith)
-  rw [Real.dist_eq, sub_zero, fderiv_newtonianKernel_smul_apply he htlt.1,
-    ← mul_assoc, abs_mul, abs_of_pos (Real.rpow_pos_of_pos htlt.1 _)] at ht
+  rw [Real.dist_eq, sub_zero, hval, abs_neg,
+    abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos htlt.1 _))] at ht
   nlinarith
 
-/-- Outside dimension two, the Hessian of the totalized Newtonian kernel vanishes at the pole,
-where the gradient of the kernel is not differentiable. -/
+/-- Outside dimension two, the Hessian of the totalized Newtonian kernel vanishes at the pole: for
+`1 ≤ n` because the gradient of the kernel is not differentiable there, and for `n = 0` because
+`ℝ⁰` is a point. -/
 private theorem iteratedFDeriv_two_newtonianKernel_zero (hn : n ≠ 2) :
     iteratedFDeriv ℝ 2 (newtonianKernel n) 0 = 0 := by
   ext m
@@ -172,7 +142,7 @@ private theorem iteratedFDeriv_two_newtonianKernel_zero (hn : n ≠ 2) :
 `D²Gₙ(x)(v, w) = ωₙ⁻¹ ‖x‖⁻ⁿ⁻² ⟪x, v⟫ ⟪x, w⟫ - (n ωₙ)⁻¹ ‖x‖⁻ⁿ ⟪v, w⟫`. At the pole both sides
 vanish by the junk-value conventions. -/
 theorem iteratedFDeriv_two_newtonianKernel_apply (hn : n ≠ 2)
-    {x : EuclideanSpace ℝ (Fin n)} (v w : EuclideanSpace ℝ (Fin n)) :
+    (x v w : EuclideanSpace ℝ (Fin n)) :
     iteratedFDeriv ℝ 2 (newtonianKernel n) x ![v, w] =
       (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * ‖x‖ ^ (-((n : ℝ) + 2)) *
           ⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ -
@@ -198,7 +168,7 @@ theorem iteratedFDeriv_two_newtonianKernel_apply (hn : n ≠ 2)
 theorem iteratedFDeriv_two_newtonianKernel_neg (x : EuclideanSpace ℝ (Fin n)) :
     iteratedFDeriv ℝ 2 (newtonianKernel n) (-x) = iteratedFDeriv ℝ 2 (newtonianKernel n) x := by
   rcases eq_or_ne n 2 with rfl | hn
-  · simp [iteratedFDeriv_two_newtonianKernel_two]
+  · simp
   ext m
   have hm : m = ![m 0, m 1] := by
     ext i : 1
@@ -210,7 +180,7 @@ theorem iteratedFDeriv_two_newtonianKernel_neg (x : EuclideanSpace ℝ (Fin n)) 
 /-- **The size estimate for the Hessian of the Newtonian kernel**:
 `‖D²Gₙ(x)‖ ≤ (n + 1) (n ωₙ)⁻¹ ‖x‖⁻ⁿ`. At the pole both sides vanish by the junk-value
 conventions. -/
-theorem norm_iteratedFDeriv_two_newtonianKernel_le {x : EuclideanSpace ℝ (Fin n)} :
+theorem norm_iteratedFDeriv_two_newtonianKernel_le (x : EuclideanSpace ℝ (Fin n)) :
     ‖iteratedFDeriv ℝ 2 (newtonianKernel n) x‖ ≤
       ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         ‖x‖ ^ (-(n : ℝ)) := by

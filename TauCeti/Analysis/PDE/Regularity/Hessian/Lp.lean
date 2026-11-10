@@ -120,8 +120,7 @@ private theorem stronglyMeasurable_hessianKernel (v w : EuclideanSpace ℝ (Fin 
 
 /-- **The size estimate for the kernel of the Hessian multiplier**:
 `‖k(x, y)‖ ≤ C ‖x - y‖⁻ⁿ`. -/
-private theorem norm_hessianKernel_le (v w : EuclideanSpace ℝ (Fin n))
-    {x y : EuclideanSpace ℝ (Fin n)} :
+private theorem norm_hessianKernel_le (v w x y : EuclideanSpace ℝ (Fin n)) :
     ‖hessianKernel (F := F) v w x y‖ ≤
       ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         (‖v‖ * ‖w‖) * dist x y ^ (-(n : ℝ)) := by
@@ -131,7 +130,7 @@ private theorem norm_hessianKernel_le (v w : EuclideanSpace ℝ (Fin n))
     simpa [Fin.prod_univ_two] using
       (iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm ![v, w]
   refine ((mul_le_of_le_one_right (abs_nonneg _) norm_id_le).trans hM).trans ?_
-  exact (mul_le_mul_of_nonneg_right norm_iteratedFDeriv_two_newtonianKernel_le
+  exact (mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le _)
     (by positivity)).trans_eq (by ring)
 
 /-- **The smoothness estimate for the kernel of the Hessian multiplier**:
@@ -344,7 +343,7 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
   have hsize : ∀ x y : EuclideanSpace ℝ (Fin n), x ≠ y → ‖hessianKernel (F := F) v w x y‖ ≤
       C₀ * dist x y ^ (-(Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ)) := fun x y _ => by
     rw [hfin, Real.coe_toNNReal _ (by positivity)]
-    exact norm_hessianKernel_le v w
+    exact norm_hessianKernel_le v w x y
   have hk : ∀ x y y' : EuclideanSpace ℝ (Fin n), 2 * dist y y' < dist x y' →
       ‖hessianKernel (F := F) v w x y - hessianKernel v w x y'‖ ≤
         C * (dist y y' ^ (1 : ℝ) *

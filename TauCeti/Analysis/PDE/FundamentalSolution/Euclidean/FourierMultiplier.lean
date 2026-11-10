@@ -299,7 +299,7 @@ private theorem exists_continuousOn_norm_le_cthickening {s : Set (EuclideanSpace
       (continuous_const.sub continuous_id).continuousAt).eval_const _ |>.continuousWithinAt
   refine ((iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm _).trans ?_
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  refine mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le.trans
+  refine mul_le_mul_of_nonneg_right ((norm_iteratedFDeriv_two_newtonianKernel_le (x - y)).trans
     (mul_le_mul_of_nonneg_left ?_ (by positivity))) (by positivity)
   exact Real.rpow_le_rpow_of_nonpos hη (hdist y hy) (neg_nonpos.2 (Nat.cast_nonneg n))
 

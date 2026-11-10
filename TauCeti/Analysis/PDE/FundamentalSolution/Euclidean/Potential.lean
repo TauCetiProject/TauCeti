@@ -32,8 +32,8 @@ For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` 
 * `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ`;
 * `u` is harmonic off the support of `f`, where its second derivatives are obtained by
   integrating `f` against the Hessian of `Gₙ` (for this, too, any `n`);
-* `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`, but holds for any `f` with bounded
-  support), and so tends to zero at infinity;
+* `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`; for a non-integrable `f` with
+  bounded support both sides are junk values `0`), and so tends to zero at infinity;
 * `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
 
 The Laplacian falls on `f` under the convolution (`HasCompactSupport.laplacian_convolution_right`),
@@ -111,9 +111,12 @@ theorem harmonicOnNhd_newtonianKernel_convolution (hn : 3 ≤ n)
 /-- If `f` vanishes off `closedBall 0 R` and is not integrable, then the Newtonian potential
 `Gₙ ⋆ f` vanishes at every point `x` with `R < ‖x‖`: there the kernel `y ↦ Gₙ(x - y)` is bounded
 and bounded away from zero on the support of `f`, so the integrand is not integrable either. -/
-private theorem newtonianKernel_convolution_eq_zero_of_not_integrable (hn : n ≠ 2)
+private theorem newtonianKernel_convolution_eq_zero_of_not_integrable
     (hf : ¬ Integrable f) {R : ℝ} (hR : Function.support f ⊆ closedBall 0 R)
     {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖) : (newtonianKernel n ⋆ f) x = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · rw [newtonianKernel_two, zero_convolution]
+    rfl
   rw [convolution_lsmul_swap]
   refine integral_undef fun hg => hf ?_
   rcases eq_or_ne n 0 with rfl | hn0
@@ -121,18 +124,9 @@ private theorem newtonianKernel_convolution_eq_zero_of_not_integrable (hn : n �
     have : f = 0 := funext fun y => by_contra fun hy =>
       (norm_nonneg y).not_gt ((mem_closedBall_zero_iff.1 (hR hy)).trans_lt hR0)
     simp [this]
-  have hC : ((n : ℝ) * ((n : ℝ) - 2) *
-      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ ≠ 0 := by
-    have := (volume_real_unitBall_pos n).ne'
-    have h2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
-    have h0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
-    positivity
   have hne : ∀ y ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) R, newtonianKernel n (x - y) ≠ 0 :=
-    fun y hy => by
-      have hy' := mem_closedBall_zero_iff.1 hy
-      have hpos : 0 < ‖x - y‖ := by linarith [norm_sub_norm_le x y]
-      rw [newtonianKernel_def]
-      exact mul_ne_zero hC (Real.rpow_pos_of_pos hpos _).ne'
+    fun y hy => newtonianKernel_ne_zero n hn (sub_ne_zero.2 fun h =>
+      (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h]))
   have hcont : ContinuousOn (fun y => (newtonianKernel n (x - y))⁻¹) (closedBall 0 R) :=
     fun y hy => (((contDiffAt_newtonianKernel n (sub_ne_zero.2 fun h =>
       (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h])))).continuousAt.comp
@@ -180,7 +174,7 @@ theorem norm_newtonianKernel_convolution_le (hn : 3 ≤ n) {R : ℝ}
       (volume_real_unitBall_pos n).le)
   by_cases hf : Integrable f
   swap
-  · rw [newtonianKernel_convolution_eq_zero_of_not_integrable (by omega) hf hR hx, norm_zero]
+  · rw [newtonianKernel_convolution_eq_zero_of_not_integrable hf hR hx, norm_zero]
     exact mul_nonneg (mul_nonneg hC (Real.rpow_nonneg (by linarith) _))
       (integral_nonneg fun _ => norm_nonneg _)
   rw [convolution_lsmul_swap, ← integral_const_mul]
@@ -258,7 +252,8 @@ private theorem hasFDerivAt_newtonianKernel_convolution_of_support (hn : n ≠ 2
 
 where `ωₙ` is the volume of the unit ball. Off the support of `f` the derivative falls on the
 kernel, whose gradient has size `(n ωₙ)⁻¹ ‖x - y‖ ^ (1 - n)`. In dimension two the kernel vanishes
-and so does the potential, and for non-integrable `f` the potential vanishes off the support. -/
+and so does the potential, and for non-integrable `f` the potential vanishes outside
+`closedBall 0 R`. -/
 theorem norm_fderiv_newtonianKernel_convolution_le {R : ℝ}
     (hR : Function.support f ⊆ closedBall 0 R) {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖) :
     ‖fderiv ℝ (newtonianKernel n ⋆ f) x‖ ≤
@@ -270,14 +265,13 @@ theorem norm_fderiv_newtonianKernel_convolution_le {R : ℝ}
       (volume_real_unitBall_pos n).le)) (Real.rpow_nonneg (by linarith) _))
       (integral_nonneg fun _ => norm_nonneg _)
   rcases eq_or_ne n 2 with rfl | hn
-  · have h0 : newtonianKernel 2 = 0 := funext fun y ↦ by simp [newtonianKernel_def]
-    rw [h0, zero_convolution]
+  · rw [newtonianKernel_two, zero_convolution]
     simpa using hnn
   by_cases hf : Integrable f
   swap
   · have h0 : newtonianKernel n ⋆ f =ᶠ[𝓝 x] 0 := by
       filter_upwards [isOpen_lt continuous_const continuous_norm |>.mem_nhds hx] with z hz
-      exact newtonianKernel_convolution_eq_zero_of_not_integrable hn hf hR hz
+      exact newtonianKernel_convolution_eq_zero_of_not_integrable hf hR hz
     rw [h0.fderiv_eq]
     simpa using hnn
   have hfd := hasFDerivAt_newtonianKernel_convolution_of_support hn hf hR hx

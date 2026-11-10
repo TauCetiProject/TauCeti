@@ -79,6 +79,12 @@ theorem newtonianKernel_zero (n : ℕ) :
       exact sub_ne_zero.mpr (by exact_mod_cast hn.symm)
     simp [newtonianKernel, Real.zero_rpow hexp]
 
+/-- In dimension two the normalizing constant of the Newtonian kernel is `0⁻¹ = 0`, so the totalized
+kernel `TauCeti.newtonianKernel 2` is the zero function. -/
+@[simp]
+theorem newtonianKernel_two : newtonianKernel 2 = 0 :=
+  funext fun y ↦ by simp [newtonianKernel_def]
+
 /-- The Newtonian kernel is radial, hence invariant under orthogonal transformations. -/
 @[simp]
 theorem newtonianKernel_map_linearIsometryEquiv (n : ℕ)
@@ -86,6 +92,24 @@ theorem newtonianKernel_map_linearIsometryEquiv (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) :
     newtonianKernel n (e x) = newtonianKernel n x := by
   simp [newtonianKernel]
+
+/-- The gradient of the Newtonian kernel at its pole is zero: the kernel is even, so its derivative
+at `0` is odd. -/
+theorem fderiv_newtonianKernel_zero (n : ℕ) : fderiv ℝ (newtonianKernel n) 0 = 0 := by
+  by_cases hK : DifferentiableAt ℝ (newtonianKernel n) 0
+  · have hfun : newtonianKernel n ∘ Neg.neg = newtonianKernel n :=
+      funext fun x ↦ newtonianKernel_map_linearIsometryEquiv n (LinearIsometryEquiv.neg ℝ) x
+    have h := (show HasFDerivAt (newtonianKernel n)
+        (fderiv ℝ (newtonianKernel n) 0) (-(0 : EuclideanSpace ℝ (Fin n))) by
+      simpa using hK.hasFDerivAt).comp (0 : EuclideanSpace ℝ (Fin n))
+      (hasFDerivAt_id (0 : EuclideanSpace ℝ (Fin n))).neg
+    rw [hfun] at h
+    ext v
+    have h1 := congrArg (fun L => L v) h.fderiv
+    simp only [ContinuousLinearMap.comp_apply, neg_apply,
+      ContinuousLinearMap.id_apply, map_neg] at h1
+    simpa using self_eq_neg.1 h1
+  · exact fderiv_zero_of_not_differentiableAt hK
 
 /-- The Newtonian kernel is symmetric under exchanging a point and its pole. -/
 theorem newtonianKernel_sub_comm (n : ℕ) (x a : EuclideanSpace ℝ (Fin n)) :
@@ -106,6 +130,16 @@ theorem volume_real_unitBall_pos (n : ℕ) :
   exact ENNReal.toReal_pos
     (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
     measure_ball_ne_top
+
+/-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
+theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    newtonianKernel n x ≠ 0 := by
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by rintro rfl; exact hx (Subsingleton.elim _ _))
+  have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  have hvol := (volume_real_unitBall_pos n).ne'
+  have hx' : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  rw [newtonianKernel_def]
+  positivity
 
 /-- Away from the pole, the normalized Newtonian kernel is strictly positive. -/
 theorem newtonianKernel_pos (n : ℕ) (hn : 3 ≤ n)
