@@ -175,6 +175,42 @@ theorem left_mem_triangle (A B C : ℍ) : A ∈ triangle A B C :=
     (mem_range_geodesicLine_geodesicBetween_left A B), mem_closedSide_self B C A,
     range_geodesicLine_subset_closedSide _ _ _ (mem_range_geodesicLine_geodesicBetween_right C A)⟩
 
+/-- The closed side of a triangle with two vertices at distinct parameters `s ≠ t` of a geodesic
+line `g`, and the third at any parameter `u`, is the closure of the left half-plane of `g` when
+`s < t` and the closure of the right half-plane otherwise. -/
+theorem closedSide_geodesicLine (g : PSL(2, ℝ)) (s t u : ℝ) (hst : s ≠ t) :
+    closedSide (geodesicLine g s) (geodesicLine g t) (geodesicLine g u) =
+      if s < t then closure (leftHalfPlane g) else closure (rightHalfPlane g) := by
+  have hu : geodesicLine g u ∈ Set.range (geodesicLine g) := ⟨u, rfl⟩
+  rcases lt_or_gt_of_ne hst with h | h
+  · have hnot := Set.disjoint_right.1 (disjoint_rightHalfPlane_range_geodesicLine g) hu
+    rw [closedSide_def, rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
+      leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
+    simp only [hnot, h, ↓reduceIte]
+  · have hne : geodesicLine g t ≠ geodesicLine g s := (geodesicLine_injective g).ne h.ne
+    have hnot := Set.disjoint_right.1 (disjoint_leftHalfPlane_range_geodesicLine g) hu
+    rw [closedSide_def, rightHalfPlane_geodesicBetween_swap hne,
+      leftHalfPlane_geodesicBetween_swap hne,
+      leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
+      rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
+    simp only [hnot, h.not_gt, ↓reduceIte]
+
+/-- The triangle on three distinct points of a geodesic line `g` is the intersection of the
+closures of the two half-planes of `g`, whatever their order: cyclically the three sides cannot all
+run the same way. -/
+theorem triangle_geodesicLine (g : PSL(2, ℝ)) (a b c : ℝ) (hab : a ≠ b) (hbc : b ≠ c)
+    (hca : c ≠ a) :
+    triangle (geodesicLine g a) (geodesicLine g b) (geodesicLine g c) =
+      closure (leftHalfPlane g) ∩ closure (rightHalfPlane g) := by
+  rw [triangle_def, closedSide_geodesicLine g a b c hab, closedSide_geodesicLine g b c a hbc,
+    closedSide_geodesicLine g c a b hca]
+  rcases lt_or_gt_of_ne hab with h1 | h1 <;> rcases lt_or_gt_of_ne hbc with h2 | h2 <;>
+    rcases lt_or_gt_of_ne hca with h3 | h3 <;>
+    simp only [h1, h2, h3, h1.not_gt, h2.not_gt, h3.not_gt, ite_true, ite_false] <;>
+    first
+      | (exfalso; linarith)
+      | (ext x; simp only [Set.mem_inter_iff]; tauto)
+
 /-- The triangle does not depend on the order of its first two vertices. -/
 theorem triangle_swap_left {A B C : ℍ} : triangle B A C = triangle A B C := by
   rcases eq_or_ne A B with rfl | hAB
@@ -208,38 +244,11 @@ theorem triangle_swap_left {A B C : ℍ} : triangle B A C = triangle A B C := by
   generalize dist A B = d at hB
   generalize geodesicBetween A B = g at hA hB hc
   subst hA hB hc
-  have hside (s t u : ℝ) (hst : s ≠ t) :
-      closedSide (geodesicLine g s) (geodesicLine g t) (geodesicLine g u) =
-        if s < t then closure (leftHalfPlane g) else closure (rightHalfPlane g) := by
-    have hu : geodesicLine g u ∈ Set.range (geodesicLine g) := ⟨u, rfl⟩
-    rcases lt_or_gt_of_ne hst with h | h
-    · have hnot := Set.disjoint_right.1 (disjoint_rightHalfPlane_range_geodesicLine g) hu
-      rw [closedSide_def, rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
-        leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
-      simp only [hnot, h, ↓reduceIte]
-    · have hne : geodesicLine g t ≠ geodesicLine g s := (geodesicLine_injective g).ne h.ne
-      have hnot := Set.disjoint_right.1 (disjoint_leftHalfPlane_range_geodesicLine g) hu
-      rw [closedSide_def, rightHalfPlane_geodesicBetween_swap hne,
-        leftHalfPlane_geodesicBetween_swap hne,
-        leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
-        rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
-      simp only [hnot, h.not_gt, ↓reduceIte]
-  -- the three sides run along the line, and cyclically they cannot all run the same way, so
-  -- every ordering of three distinct points of a line gives the same triangle
-  have htri (a b c : ℝ) (hab : a ≠ b) (hbc : b ≠ c) (hca : c ≠ a) :
-      triangle (geodesicLine g a) (geodesicLine g b) (geodesicLine g c) =
-        closure (leftHalfPlane g) ∩ closure (rightHalfPlane g) := by
-    rw [triangle_def, hside a b c hab, hside b c a hbc, hside c a b hca]
-    rcases lt_or_gt_of_ne hab with h1 | h1 <;> rcases lt_or_gt_of_ne hbc with h2 | h2 <;>
-      rcases lt_or_gt_of_ne hca with h3 | h3 <;>
-      simp only [h1, h2, h3, h1.not_gt, h2.not_gt, h3.not_gt, ite_true, ite_false] <;>
-      first
-        | (exfalso; linarith)
-        | (ext x; simp only [Set.mem_inter_iff]; tauto)
   have hd : (0 : ℝ) ≠ d := fun h ↦ hAB (h ▸ rfl)
   have hc0 : c ≠ 0 := fun h ↦ hCA (h ▸ rfl)
   have hcd : c ≠ d := fun h ↦ hCB (h ▸ rfl)
-  rw [htri d 0 c hd.symm hc0.symm hcd, htri 0 d c hd hcd.symm hc0]
+  rw [triangle_geodesicLine g d 0 c hd.symm hc0.symm hcd,
+    triangle_geodesicLine g 0 d c hd hcd.symm hc0]
 
 /-- The triangle does not depend on the order of its last two vertices. -/
 theorem triangle_swap_right {A B C : ℍ} : triangle A C B = triangle A B C := by
