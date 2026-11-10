@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
+public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
+import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -41,6 +42,20 @@ almost `π`. Accordingly the rotation angle has the one-sided limits
 while `Θ(h, 0) = 0`. These one-sided limits are the input to the classical computation of the
 Hamiltonian monodromy of the pendulum around the focus–focus value `(1, 0)` of `F`.
 
+Away from `j = 0`, the rotation angle is continuous. At a value `(h, j)` with `j ≠ 0` lying strictly
+above the curve of relative equilibria, the radicand factors as
+`2 (h - z) (1 - z²) - j² = 2 (z - z₋) (z₊ - z) (z₃ - z)` with turning points `-1 < z₋ < z₊ < 1` and
+`z₃ = h - z₋ - z₊ > 1` (`TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_eq`). The substitution
+`z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` absorbs both inverse square root singularities:
+
+`Θ(h, j) = 2 ∫_{-π/2}^{π/2} j dθ / ((1 - z²) √(2 (z₃ - z)))`
+
+(`TauCeti.sphericalPendulumRotationAngle_eq_integral_sin`), an integral of a function continuous
+in `θ` and in `(h, j)`, since the turning points depend continuously on `(h, j)`. Hence `Θ` is
+continuous on these values (`TauCeti.continuousOn_sphericalPendulumRotationAngle`): it varies
+continuously along paths of such values, while across `j = 0` it jumps by the differences of the
+one-sided limits above.
+
 ## Implementation notes
 
 The proof splits `(-1, 1)` at heights close to the zeros of `f(z) = 2 (h - z) (1 - z²)`. Near the
@@ -61,6 +76,10 @@ integrand is `O(j)` uniformly.
 * `TauCeti.sphericalPendulumRotationAngle_neg_right`: `Θ(h, -j) = -Θ(h, j)`.
 * `TauCeti.tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one` and its three companions: the
   one-sided limits of `Θ(h, j)` as `j → 0`.
+* `TauCeti.sphericalPendulumRotationAngle_eq_integral_sin`: `Θ(h, j)` as an integral of a
+  continuous function over `[-π/2, π/2]`.
+* `TauCeti.continuousOn_sphericalPendulumRotationAngle`: `Θ` is continuous on the values with
+  `j ≠ 0` above the curve of relative equilibria.
 
 ## References
 
@@ -353,5 +372,126 @@ theorem tendsto_sphericalPendulumRotationAngle_nhdsLT_of_one_lt {h : ℝ} (h₁ 
   have := ((tendsto_sphericalPendulumRotationAngle_nhdsGT_of_one_lt h₁).comp
     (by simpa using (tendsto_neg_nhdsLT (a := (0 : ℝ))))).neg
   simpa [Function.comp_def, sphericalPendulumRotationAngle_neg_right] using this
+
+/-! ### Continuity of the rotation angle away from `j = 0` -/
+
+section Continuity
+
+variable {h j z₀ : ℝ}
+
+/-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
+private theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
+    (a + b) / 2 + (b - a) / 2 * sin θ ∈ Icc a b :=
+  ⟨by nlinarith [neg_one_le_sin θ], by nlinarith [sin_le_one θ]⟩
+
+/-- **The rotation angle as a regular integral.** For `j ≠ 0` and `(h, j)` strictly above the
+curve of relative equilibria, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between
+the turning points `z₋ < z₊` turns the rotation angle into the integral
+`Θ(h, j) = 2 ∫_{-π/2}^{π/2} j dθ / ((1 - z²) √(2 (z₃ - z)))`, where `z₃ = h - z₋ - z₊` is the
+third root of the radicand. Its integrand is continuous, since `-1 < z₋ ≤ z ≤ z₊ < 1 < z₃`. -/
+theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    sphericalPendulumRotationAngle h j =
+      2 * ∫ θ in (-(π / 2))..(π / 2),
+        j / ((1 - ((sphericalPendulumLowerTurningPoint h j +
+              sphericalPendulumUpperTurningPoint h j) / 2 +
+            (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+              sin θ) ^ 2) *
+          √(2 * (h - sphericalPendulumLowerTurningPoint h j -
+            sphericalPendulumUpperTurningPoint h j -
+            ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+              (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+                2 * sin θ)))) := by
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  have himage := image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc hj hz₀ hV
+  rw [image_apply_two_preimage_sphericalPendulumEnergyMomentum] at himage
+  dsimp only at himage
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  set u : ℝ → ℝ := fun θ ↦ (a + b) / 2 + (b - a) / 2 * sin θ with hu
+  have hr : 0 < (b - a) / 2 := by linarith
+  -- The substitution maps `[-π/2, π/2]` injectively onto `[z₋, z₊]`.
+  have hu_image : u '' Icc (-(π / 2)) (π / 2) = Icc a b := by
+    have : u = (fun s ↦ (b - a) / 2 * s + (a + b) / 2) ∘ sin := by
+      funext θ
+      simp only [hu, Function.comp]
+      ring
+    rw [this, image_comp, bijOn_sin.image_eq, image_affine_Icc' hr]
+    congr 1 <;> ring
+  have hu_inj : InjOn u (Icc (-(π / 2)) (π / 2)) := fun x hx y hy hxy ↦
+    injOn_sin hx hy (by simpa [hu, hr.ne'] using hxy)
+  have hu_deriv : ∀ θ ∈ Icc (-(π / 2)) (π / 2),
+      HasDerivWithinAt u ((b - a) / 2 * cos θ) (Icc (-(π / 2)) (π / 2)) θ := fun θ _ ↦
+    (((hasDerivAt_sin θ).const_mul _).const_add _).hasDerivWithinAt
+  rw [sphericalPendulumRotationAngle_eq_setIntegral, himage, ← hu_image,
+    integral_image_eq_integral_abs_deriv_smul measurableSet_Icc hu_deriv hu_inj,
+    integral_Icc_eq_integral_Ioo, intervalIntegral.integral_of_le (by linarith [pi_pos]),
+    integral_Ioc_eq_integral_Ioo]
+  congr 1
+  refine setIntegral_congr_fun measurableSet_Ioo fun θ hθ ↦ ?_
+  -- On `(-π/2, π/2)`, the Jacobian `(z₊ - z₋) / 2 · cos θ` cancels the vanishing factor
+  -- `√((z - z₋) (z₊ - z))` of the square root of the radicand.
+  have hx : u θ ∈ Icc a b := mem_Icc_add_mul_sin hab.le θ
+  have hrc : 0 < (b - a) / 2 * cos θ := mul_pos hr (cos_pos_of_mem_Ioo hθ)
+  have h1x : 0 < 1 - u θ ^ 2 := by nlinarith [hx.1, hx.2]
+  have hcx : 0 < √(2 * (h - a - b - u θ)) := Real.sqrt_pos.2 (by linarith [hx.2])
+  have hrad : 2 * (h - u θ) * (1 - u θ ^ 2) - j ^ 2 =
+      ((b - a) / 2 * cos θ) ^ 2 * (2 * (h - a - b - u θ)) := by
+    rw [hfac]
+    simp only [hu]
+    linear_combination
+      (-2 * ((b - a) / 2) ^ 2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))) *
+        sin_sq_add_cos_sq θ
+  have hux : u θ = (a + b) / 2 + (b - a) / 2 * sin θ := rfl
+  rw [← hux, hrad, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hrc.le, abs_of_pos hrc, smul_eq_mul]
+  generalize u θ = x at h1x hcx ⊢
+  generalize (b - a) / 2 * cos θ = k at hrc ⊢
+  field_simp
+
+/-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
+values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with
+`V_j(z) < h` for some height `z ∈ (-1, 1)`. -/
+theorem continuousOn_sphericalPendulumRotationAngle :
+    ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumRotationAngle c.1 c.2)
+      {c | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1} := by
+  set R := {c : ℝ × ℝ | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1}
+  set a : R → ℝ := fun c ↦ sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2
+  set b : R → ℝ := fun c ↦ sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2
+  have ha : Continuous a :=
+    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumLowerTurningPoint
+  have hb : Continuous b :=
+    continuousOn_iff_continuous_domRestrict.1 continuousOn_sphericalPendulumUpperTurningPoint
+  obtain ⟨G, hG_def⟩ : ∃ G : R → ℝ → ℝ, G = fun (c : R) θ ↦ (c : ℝ × ℝ).2 /
+      ((1 - ((a c + b c) / 2 + (b c - a c) / 2 * sin θ) ^ 2) *
+        √(2 * ((c : ℝ × ℝ).1 - a c - b c - ((a c + b c) / 2 + (b c - a c) / 2 * sin θ)))) :=
+    ⟨_, rfl⟩
+  -- The integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly continuous,
+  -- since its denominator is positive.
+  have hG : Continuous (Function.uncurry G) := by
+    simp only [hG_def, Function.uncurry_def]
+    refine Continuous.div (by fun_prop) (by fun_prop) fun p ↦ ?_
+    obtain ⟨hj, z, hz, hV⟩ := p.1.2
+    have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
+    have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
+    have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
+    have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+      hj hz hV
+    have hx := mem_Icc_add_mul_sin hab.le p.2
+    refine mul_ne_zero (by nlinarith [hx.1, hx.2]) (Real.sqrt_pos.2 ?_).ne'
+    linarith [hx.2]
+  rw [continuousOn_iff_continuous_domRestrict]
+  refine ((continuous_const (y := (2 : ℝ))).mul
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
+      (-(π / 2)) (π / 2))).congr fun c ↦ ?_
+  obtain ⟨hj, z, hz, hV⟩ := c.2
+  simp only [hG_def, domRestrict_apply]
+  exact (sphericalPendulumRotationAngle_eq_integral_sin hj hz hV).symm
+
+end Continuity
 
 end TauCeti
