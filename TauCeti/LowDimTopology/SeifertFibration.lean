@@ -140,7 +140,8 @@ theorem fiberSetoid_mul_left {g : ℤ} (hg : g ≠ 0) (p q : ℤ) :
   · rintro ⟨t, h₁, h₂⟩
     exact ⟨t ^ g, by rwa [← zpow_mul], by rwa [← zpow_mul]⟩
   · rintro ⟨s, h₁, h₂⟩
-    obtain ⟨t, rfl⟩ := Circle.exists_zpow_eq s hg
+    have : NeZero g := ⟨hg⟩
+    obtain ⟨t, rfl⟩ := (Circle.isQuotientCoveringMap_zpow g).surjective s
     exact ⟨t, by rwa [zpow_mul], by rwa [zpow_mul]⟩
 
 /-- For `q ≠ 0`, the fibres of `V(p, q)` are those of a model `V(p', q')` with `p'` coprime to `q'`
@@ -176,8 +177,9 @@ private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 
     constructor
     · rintro ⟨w, rfl⟩
       -- The core is a single fibre: `t ↦ t ^ q` is onto, as `q ≠ 0`.
-      obtain ⟨t, ht⟩ := Circle.exists_zpow_eq (w * a.2⁻¹) hq
-      exact ⟨t, rfl, by rw [ht, inv_mul_cancel_right]⟩
+      have : NeZero q := ⟨hq⟩
+      obtain ⟨t, ht⟩ := (Circle.isQuotientCoveringMap_zpow q).surjective (w * a.2⁻¹)
+      exact ⟨t, rfl, by simp only at ht; rw [ht, inv_mul_cancel_right]⟩
     · rintro ⟨-, h₁, -⟩
       exact ⟨b.2, Prod.ext (Subtype.ext h₁) rfl⟩
   · obtain ⟨u, v, huv⟩ := hpq
