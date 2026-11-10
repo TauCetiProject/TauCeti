@@ -179,11 +179,12 @@ theorem mk_ι_pow_eq_zero :
   rw [← map_pow (Ideal.Quotient.mk (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}))]
   exact Ideal.Quotient.mk_singleton_self _
 
-/-- The class of `x` in the coordinate ring of `αₚ` is nonzero over a nontrivial base: the
-dual-number test algebra `R[ε]` receives `x ↦ ε`, sending the relation `xᵖ` to `εᵖ = 0` (as
-`p ≥ 2`) but not `x` itself. So `xᵖ` does not divide `x` in `R[x]`. -/
-theorem mk_ι_ne_zero [Nontrivial R] :
+/-- The class of `x` in the coordinate ring of `αₚ` is nonzero (the base is nontrivial, being of
+prime characteristic): the dual-number test algebra `R[ε]` receives `x ↦ ε`, sending the relation
+`xᵖ` to `εᵖ = 0` (as `p ≥ 2`) but not `x` itself. So `xᵖ` does not divide `x` in `R[x]`. -/
+theorem mk_ι_ne_zero :
     Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (ι R R 1 : SymmetricAlgebra R R) ≠ 0 := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (Fact.out (p := p.Prime)).ne_one
   rw [Ne, Ideal.Quotient.eq_zero_iff_mem, hopfIdeal_toIdeal, Ideal.mem_span_singleton']
   rintro ⟨c, hc⟩
   set ev : SymmetricAlgebra R R →ₐ[R] DualNumber R :=
@@ -198,10 +199,10 @@ theorem mk_ι_ne_zero [Nontrivial R] :
   rw [DualNumber.snd_eps, TrivSqZeroExt.snd_zero] at hsnd
   exact one_ne_zero hsnd
 
-/-- **The coordinate ring of `αₚ` is not reduced.** Over a nontrivial base of characteristic `p`,
+/-- **The coordinate ring of `αₚ` is not reduced.** Over a base of characteristic `p`,
 the class of `x` is a nonzero nilpotent (`x̄ᵖ = 0`), so `R[x] / (xᵖ)` is non-reduced. This is the
 additive companion of the non-reduced `μ_p` example. -/
-theorem coordinateRing_not_isReduced [Nontrivial R] :
+theorem coordinateRing_not_isReduced :
     ¬ IsReduced (CoordinateRing (R := R) p) := by
   intro hred
   have := hred
