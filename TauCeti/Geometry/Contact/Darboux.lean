@@ -35,9 +35,9 @@ sends `ker α` to the standard contact structure and preserves the coorientation
 
 The analytic input is the local contact form of Moser's argument, due to Gray
 (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq`):
-if `α₀` and `α₁` agree to first order at `x₀` and `α₀` is contact there, a `C^r`
-diffeomorphism `ψ` fixing `x₀` pulls `α₁` back to a positive multiple of `α₀` near `x₀`. Along
-the straight-line family `α_t = (1 - t) α₀ + t α₁` one solves
+if `α₀` and `α₁` have the same value and exterior derivative at `x₀` and `α₀` is contact there,
+a `C^r` diffeomorphism `ψ` fixing `x₀` pulls `α₁` back to a positive multiple of `α₀` near `x₀`.
+Along the straight-line family `α_t = (1 - t) α₀ + t α₁` one solves
 
 `α_t(Y_t) = 0`, `ι_{Y_t} dα_t + (α₁ - α₀) = -σ_t α_t`
 
@@ -60,8 +60,8 @@ For the Darboux theorem, the pointwise contact condition is the linear one
 covector (`Module.Dual.IsContact.exists_linearEquiv_eq_stdContact`) gives linear coordinates
 `L : V ≃ ℝⁿ × ℝⁿ × ℝ` in which `α(x₀) = dz` and `dα(x₀) = Σᵢ dqᵢ ∧ dpᵢ`. These are the values at
 the origin of the standard form `TauCeti.innerProductContactForm` and of its exterior derivative,
-so the pullback of the standard form along `y ↦ L (y - x₀)` agrees with `α` to first order at
-`x₀`, and the Gray–Moser lemma deforms `α` into it.
+so the pullback of the standard form along `y ↦ L (y - x₀)` has the same value and exterior
+derivative as `α` at `x₀`, and the Gray–Moser lemma deforms `α` into it.
 
 As in `TauCeti.Geometry.Symplectic.Darboux.Basic`, forms on `V` are Mathlib's continuous
 alternating maps with the exterior derivative `extDeriv`, and the pullback of `α` along `ψ` at `x`
@@ -177,10 +177,10 @@ private theorem compContinuousLinearMap_fderiv_eq_exp_integral_smul
     zero_le_one hσ.neg hP
   simpa [P, ω] using hint
 
-/-- **First-order agreement of a pullback.** Let `g` be `C²` at `x₀` with derivative `L` there. If
-a form `σ`, differentiable at `g x₀`, and its exterior derivative there evaluate on vectors
-`L v` as `α(x₀)` and `dα(x₀)` evaluate on `v`, then the pullback `α₁` of `σ` along `g` agrees with
-`α` to first order at `x₀`. -/
+/-- **Value and exterior derivative of a pullback.** Let `g` be `C²` at `x₀` with derivative `L`
+there. If a form `σ`, differentiable at `g x₀`, and its exterior derivative there evaluate on
+vectors `L v` as `α(x₀)` and `dα(x₀)` evaluate on `v`, then the pullback `α₁` of `σ` along `g`
+has the same value and exterior derivative as `α` at `x₀`. -/
 private theorem eq_and_extDeriv_eq_of_eq_pullback {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {σ : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {g : V → E}
     {L : V →L[ℝ] E} {x₀ : V} (hσ : DifferentiableAt ℝ σ (g x₀)) (hg : ContDiffAt ℝ 2 g x₀)
@@ -206,9 +206,10 @@ private theorem eq_and_extDeriv_eq_of_eq_pullback {E : Type*} [NormedAddCommGrou
 variable [FiniteDimensional ℝ V]
 
 /-- **Local contact Moser data.** Let `α₀`, `α₁` be `C^(r+1)` one-forms on an open set `W` which
-agree to first order at `x₀ ∈ W`, with `α₀` contact at `x₀`, and let `α_t = (1 - t) α₀ + t α₁`.
-On an open set `T ⊇ [0, 1]` of times and an open neighbourhood `U ⊆ W` of `x₀` there are a `C^r`
-time-dependent field `Y` and a `C^r` function `σ` with `α_t(Y_t) = 0` and
+have the same value and exterior derivative at `x₀ ∈ W`, with `α₀` contact at `x₀`, and let
+`α_t = (1 - t) α₀ + t α₁`. On an open set `T ⊇ [0, 1]` of times and an open neighbourhood
+`U ⊆ W` of `x₀` there are a `C^r` time-dependent field `Y` and a `C^r` function `σ` with
+`α_t(Y_t) = 0` and
 `ι_{Y_t} dα_t + (α₁ - α₀) = -σ_t α_t`. The field `Y` vanishes where `α₀` and `α₁` agree. -/
 private theorem exists_contDiffOn_contactMoserData
     {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞}
@@ -344,8 +345,8 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
 
 /-- **The model contact form in normal-form coordinates.** For a one-form `α` which is a contact
 form at `x₀`, there are linear coordinates `L : V ≃ ℝⁿ × ℝⁿ × ℝ` such that the pullback `α₁` of the
-standard contact form along `y ↦ L (y - x₀)` is smooth and agrees with `α` to first order at
-`x₀`. -/
+standard contact form along `y ↦ L (y - x₀)` is smooth and has the same value and exterior
+derivative as `α` at `x₀`. -/
 private theorem exists_continuousLinearEquiv_pullback_innerProductContactForm
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x₀ : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
     ∃ (n : ℕ) (L : V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
@@ -409,8 +410,8 @@ theorem exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul
         mpullback 𝓘(ℝ, V) 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) Φ
           (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 y = f y • α y := by
   -- Linear coordinates `L` put `(α(x₀), dα(x₀))` in normal form; the standard form pulled back
-  -- along `y ↦ L (y - x₀)` then agrees with `α` to first order at `x₀`, and the contact
-  -- Gray–Moser lemma deforms `α` into it.
+  -- along `y ↦ L (y - x₀)` then has the same value and exterior derivative as `α` at `x₀`, and
+  -- the contact Gray–Moser lemma deforms `α` into it.
   obtain ⟨n, L, α₁, hα₁def, hα₁, heq, hdeq⟩ :=
     exists_continuousLinearEquiv_pullback_innerProductContactForm hc
   set E := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
