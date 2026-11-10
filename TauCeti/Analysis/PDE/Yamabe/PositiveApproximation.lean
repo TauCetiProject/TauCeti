@@ -43,9 +43,16 @@ noncomputable section
 
 namespace TauCeti.Yamabe
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+private theorem contMDiff_regularized {n : ℕ∞ω} {u : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) n u) {ε : ℝ} (hε : 0 < ε) :
+    ContMDiff I 𝓘(ℝ) n (fun x ↦ Real.sqrt (u x ^ 2 + ε)) := fun x ↦
+  (Real.contDiffAt_sqrt (by positivity)).comp_contMDiffAt ((hu.pow 2).add contMDiff_const x)
+
+variable [FiniteDimensional ℝ E] [T2Space M] [CompactSpace M]
   [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -65,8 +72,7 @@ private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
   let S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   have hS : Continuous S :=
     (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  have hv : ContMDiff I 𝓘(ℝ) 1 (fun y ↦ Real.sqrt (u y ^ 2 + ε)) := fun x ↦
-    (Real.contDiffAt_sqrt (by positivity)).comp_contMDiffAt ((hu.pow 2).add contMDiff_const x)
+  have hv := contMDiff_regularized hu hε
   have hgrad (x : M) : ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 ≤
       ‖mgradient I u x‖ ^ 2 := by
     have hx : 0 < u x ^ 2 + ε := by positivity
@@ -137,7 +143,10 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {u : M �
       (continuous_const.add (continuous_id.mul continuous_const)).continuousAt.div
         (hN.continuousAt.rpow_const (Or.inl hpos.ne'))
         (Real.rpow_pos_of_pos hpos _).ne'
-    simpa [A, hN0, yamabeQuotient_def] using ht.tendsto
+    have h0 : (A + 0 * ∫ x, S x ∂μ) / (N 0) ^
+        (2 / criticalExponent (finrank ℝ E)) = yamabeQuotient I u := by
+      rw [zero_mul, add_zero, hN0, yamabeQuotient_def]
+    exact h0 ▸ ht.tendsto
   have hev : ∀ᶠ ε : ℝ in 𝓝[>] 0, (A + ε * ∫ x, S x ∂μ) /
       (N ε) ^ (2 / criticalExponent (finrank ℝ E)) < c :=
     (hlim.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
@@ -146,8 +155,7 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {u : M �
     Filter.Eventually.and self_mem_nhdsWithin hev
   obtain ⟨ε, hε, hbound⟩ := hev'.exists
   refine ⟨fun x ↦ Real.sqrt (u x ^ 2 + ε), ?_, ?_, ?_⟩
-  · exact fun x ↦ (Real.contDiffAt_sqrt (by positivity)).comp_contMDiffAt
-      ((hu.pow 2).add contMDiff_const x)
+  · exact contMDiff_regularized hu hε
   · intro x
     exact Real.sqrt_pos.2 (by positivity)
   · apply lt_of_le_of_lt _ hbound
