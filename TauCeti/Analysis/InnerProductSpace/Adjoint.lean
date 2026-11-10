@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # Adjoints of linear maps
@@ -22,7 +23,11 @@ An operator on a Hilbert space is invertible exactly when its adjoint is
 by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
 (`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`); in particular a real
 number at which a self-adjoint operator is bounded below is not in its spectrum
-(`IsSelfAdjoint.notMem_spectrum_of_forall_mul_norm_le`). If an invertible
+(`IsSelfAdjoint.notMem_spectrum_of_forall_mul_norm_le`). Consequently a self-adjoint operator with
+closed range, such as a self-adjoint Fredholm operator, has a gap in its spectrum around `0`: it is
+bounded below on the orthogonal complement of its kernel, so some interval `(-c, c)` meets its real
+spectrum at most in `0`
+(`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range`). If an invertible
 operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
 (`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
@@ -152,6 +157,85 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
 end Inverse
 
 end ContinuousLinearMap
+
+/-! ### The spectral gap at `0` -/
+
+section SpectralGap
+
+open Set
+
+variable [CompleteSpace E] {T : E →L[𝕜] E}
+
+namespace IsSelfAdjoint
+
+/-- A self-adjoint operator bounded below by `c` on the orthogonal complement of its kernel is
+bounded below at every real `r` with `|r| ≤ c`, with constant `min (c - |r|) |r|`: write a vector as
+the sum of its components in the kernel and in its orthogonal complement. -/
+private theorem min_mul_norm_le_norm_sub (hT : IsSelfAdjoint T) {c : ℝ}
+    (hc : ∀ x ∈ T.kerᗮ, c * ‖x‖ ≤ ‖T x‖) {r : ℝ} (hrc : |r| ≤ c) (x : E) :
+    min (c - |r|) |r| * ‖x‖ ≤ ‖T x - (r : 𝕜) • x‖ := by
+  set K := T.ker
+  set x₀ := K.starProjection x
+  set x₁ := Kᗮ.starProjection x
+  have hx₁ : x₁ ∈ Kᗮ := Kᗮ.starProjection_apply_mem x
+  have hTx₀ : T x₀ = 0 := LinearMap.mem_ker.1 (K.starProjection_apply_mem x)
+  set u := T x₁ - (r : 𝕜) • x₁
+  set w := -((r : 𝕜) • x₀)
+  have hdecomp : T x - (r : 𝕜) • x = u + w := by
+    rw [← K.starProjection_add_starProjection_orthogonal x, map_add, hTx₀, smul_add]
+    simp only [u, w]
+    abel
+  -- The range of a self-adjoint operator is orthogonal to its kernel.
+  have hTx₁ : T x₁ ∈ Kᗮ := by
+    simp only [K, ← ContinuousLinearMap.IsStarNormal.orthogonal_range hT.isStarNormal]
+    exact Submodule.le_orthogonal_orthogonal _ (LinearMap.mem_range_self _ x₁)
+  have hu : u ∈ Kᗮ := Kᗮ.sub_mem hTx₁ (Kᗮ.smul_mem _ hx₁)
+  have hw : w ∈ K := K.neg_mem (K.smul_mem _ (K.starProjection_apply_mem x))
+  -- Each component is bounded below.
+  set m := min (c - |r|) |r|
+  have hm : 0 ≤ m := le_min (sub_nonneg.2 hrc) (abs_nonneg r)
+  have hu' : m * ‖x₁‖ ≤ ‖u‖ := by
+    have h₁ := hc x₁ hx₁
+    have h₂ : ‖T x₁‖ ≤ ‖u‖ + |r| * ‖x₁‖ := by
+      calc ‖T x₁‖ = ‖u + (r : 𝕜) • x₁‖ := by rw [sub_add_cancel]
+        _ ≤ ‖u‖ + ‖(r : 𝕜) • x₁‖ := norm_add_le _ _
+        _ = ‖u‖ + |r| * ‖x₁‖ := by rw [norm_smul, RCLike.norm_ofReal]
+    nlinarith [min_le_left (c - |r|) |r|, norm_nonneg x₁]
+  have hw' : m * ‖x₀‖ ≤ ‖w‖ := by
+    rw [norm_neg, norm_smul, RCLike.norm_ofReal]
+    exact mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg _)
+  -- Conclude by Pythagoras for the two components of `T x - r x` and of `x`.
+  have hpyth : ‖T x - (r : 𝕜) • x‖ ^ 2 = ‖u‖ ^ 2 + ‖w‖ ^ 2 := by
+    simp only [sq, hdecomp]
+    exact norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero u w
+      (Submodule.inner_left_of_mem_orthogonal hw hu)
+  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
+  rw [mul_pow, K.norm_sq_eq_add_norm_sq_starProjection x, hpyth]
+  nlinarith [pow_le_pow_left₀ (by positivity) hu' 2, pow_le_pow_left₀ (by positivity) hw' 2]
+
+/-- **The spectral gap at `0`.** Some interval `(-c, c)` meets the real part of the spectrum of a
+self-adjoint operator with closed range, such as a self-adjoint Fredholm operator, at most in `0`.
+Over `ℂ`, the set `algebraMap ℝ ℂ ⁻¹' spectrum ℂ T` is `spectrum ℝ T`
+(`spectrum.preimage_algebraMap`). -/
+theorem exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range (hT : IsSelfAdjoint T)
+    (hR : IsClosed (T.range : Set E)) :
+    ∃ c > 0, algebraMap ℝ 𝕜 ⁻¹' spectrum 𝕜 T ∩ Ioo (-c) c ⊆ {0} := by
+  -- The operator is bounded below on the orthogonal complement of its kernel.
+  obtain ⟨C, hC, hb⟩ := T.exists_norm_le_mul_norm_of_mem hR T.ker.isTopCompl_orthogonal
+  set c := C⁻¹
+  have hc : 0 < c := inv_pos.2 hC
+  have hbound : ∀ x ∈ T.kerᗮ, c * ‖x‖ ≤ ‖T x‖ := fun x hx ↦
+    (inv_mul_le_iff₀ hC).2 (hb x hx)
+  refine ⟨c, hc, fun r ⟨hr, hrc⟩ ↦ ?_⟩
+  rw [mem_singleton_iff]
+  by_contra hr0
+  have hrc' : |r| < c := abs_lt.2 hrc
+  exact hT.notMem_spectrum_of_forall_mul_norm_le (lt_min (sub_pos.2 hrc') (abs_pos.2 hr0))
+    (min_mul_norm_le_norm_sub hT hbound hrc'.le) (by rwa [← RCLike.algebraMap_eq_ofReal])
+
+end IsSelfAdjoint
+
+end SpectralGap
 
 namespace ContinuousLinearEquiv
 
