@@ -462,6 +462,7 @@ def christoffelMap [Fintype ι] (hcov : IsCovariantDerivativeOn E cov e.baseSet)
     ⟨x, christoffelForm b hcov x⟩).2
 
 /-- Outside the base set of the trivialization, the model-space Christoffel map vanishes. -/
+@[simp]
 theorem christoffelMap_of_notMem [Fintype ι] (hcov : IsCovariantDerivativeOn E cov e.baseSet)
     (hx : x ∉ e.baseSet) : christoffelMap b hcov x = 0 := by
   ext v w
