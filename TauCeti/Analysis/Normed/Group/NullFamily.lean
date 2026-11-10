@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
+public import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Norm estimates for null families in ultrametric groups
@@ -37,23 +38,6 @@ variable {ι E : Type*}
 section SeminormedAddGroup
 
 variable [SeminormedAddGroup E]
-
-/-- A function to a linearly ordered topological space that tends to `b` along `cofinite` and
-is at least `b` somewhere attains its supremum. -/
-theorem Filter.Tendsto.exists_forall_le_of_le {α β : Type*} [LinearOrder β] [TopologicalSpace β]
-    [ClosedIciTopology β] {v : α → β} {b : β} (hv : Tendsto v cofinite (𝓝 b)) {a : α}
-    (ha : b ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
-  by_cases h : ∀ s, v s ≤ v a
-  · exact ⟨a, h⟩
-  obtain ⟨s₁, hs₁⟩ := not_forall.mp h
-  have hfin : {s | v s₁ ≤ v s}.Finite := by
-    simpa [eventually_cofinite] using
-      hv.eventually (eventually_lt_nhds (ha.trans_lt (not_le.mp hs₁)))
-  obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
-  refine ⟨t, fun s ↦ ?_⟩
-  by_cases hs : v s₁ ≤ v s
-  · exact htmax s (by simpa using hs)
-  · exact (not_le.mp hs).le.trans (by simpa using ht)
 
 /-- A family on a nonempty index type tending to zero along the cofinite filter has a term whose
 norm dominates the norms of all its terms. -/

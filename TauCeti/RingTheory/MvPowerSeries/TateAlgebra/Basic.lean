@@ -18,7 +18,8 @@ import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
 import TauCeti.Analysis.Normed.Group.NullFamily
-import TauCeti.Data.Finsupp.MonomialOrder.Refinement
+import TauCeti.Data.Finsupp.MonomialOrder.Basic
+import TauCeti.Topology.Order.OrderClosed
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -535,9 +536,10 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
   have hpos {x : MvPowerSeries σ R} {k k' : σ →₀ ℕ} (hk : m.toSyn k' < m.toSyn k)
       (hmax : ∀ t, m.toSyn k < m.toSyn t → ‖coeff t x‖ * t.prod (c · ^ ·) < gaussNorm norm c x) :
       0 < gaussNorm norm c x := by
-    obtain ⟨s, -⟩ := Finsupp.ne_iff.mp (show k ≠ 0 from fun h0 ↦ by
+    have hk0 : k ≠ 0 := fun h0 ↦ by
       simp only [h0, map_zero] at hk
-      exact absurd hk (not_lt_of_ge (m.zero_le _)))
+      exact absurd hk (not_lt_of_ge (m.zero_le _))
+    obtain ⟨s, -⟩ := Finsupp.ne_iff.mp hk0
     exact (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
       (hmax (k + Finsupp.single s 1)
         (m.toSyn_lt_toSyn_add k (Finsupp.single_ne_zero.mpr one_ne_zero)))
