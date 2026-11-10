@@ -21,8 +21,8 @@ the disc `‖w‖ ≤ d` which stays in `M_{c+ε}` and keeps the small boundary 
 pairs `K : χ₁ ≃ χ₀ ∘ g` on the whole disc, keeping the boundary sphere in the lower sublevel
 `M_{c-ε}` (`TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc`), provided the band
 `f⁻¹[c - ε, c - εd²]` is compact and free of critical points. This is the homotopy of pairs that
-the change-of-chart comparison `TauCeti.morseChartChange` and the reattachment map
-`TauCeti.morseCellReattachment` take as input.
+the change-of-chart comparison, the reattachment map `TauCeti.morseCellReattachment`, takes as
+input.
 
 The construction follows Milnor. Let `R` deform `M_{c-εd²}` onto `M_{c-ε}` across the band
 (`TauCeti.exists_sublevelDeformation`). Write a point of the annulus `d ≤ ‖w‖ ≤ 1` of the disc
