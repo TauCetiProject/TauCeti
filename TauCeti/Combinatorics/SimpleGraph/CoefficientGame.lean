@@ -18,9 +18,11 @@ coordinate; a vertex is precarious when its reflection strictly decreases that c
 
 These conditions are expressed by the nonnegativity and positivity of coordinates of the graph
 Cartan matrix `2I - A`. In particular, stuck vectors without precarious vertices are precisely
-null vectors. For nonnegative vectors with nonnegative Cartan image, a zero propagates along
-edges and hence throughout a preconnected graph. Consequently nonzero nonnegative null vectors
-are strictly positive, allowing the positive-additive-function theory to be applied.
+null vectors. The companion module `TauCeti.Combinatorics.SimpleGraph.AdditiveFunction` proves
+zero propagation and positivity for nonzero nonnegative vectors with nonnegative Cartan image
+on a preconnected graph; see `SimpleGraph.Preconnected.pos_of_graphCartanMatrix_mulVec_nonneg`.
+In particular, nonzero nonnegative null vectors are strictly positive, allowing the
+positive-additive-function theory to be applied.
 
 All constructions commute with actual graph isomorphisms. Integer vectors give the coefficient
 game. The Cartan criteria require only a partial order compatible with addition; the
