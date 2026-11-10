@@ -303,12 +303,32 @@ theorem glueAlphabetIsometry_ofEq {t s : DynkinType} (h : t = s) (hv : t.Valid) 
   -- Both sides are `t.glueAlphabetIsometry hv ht x`, the validity proofs being equal.
   rfl
 
-/-- **The glue alphabet of a valid simply-laced type is nondegenerate**, being isometric to the
-discriminant form of a nondegenerate lattice. -/
-theorem isNondegenerate_glueAlphabet (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced) :
-    (t.glueAlphabet ht).IsNondegenerate :=
-  (t.glueAlphabetIsometry hv ht).isNondegenerate_iff.mpr
-    (isNondegenerate_discriminantQuadraticModule _ _)
+/-- **The glue alphabet of a simply-laced type is nondegenerate**: for `Aₙ` and `Dₙ` this is the
+nondegeneracy of the standard models, which hold for every rank, and for `E₆`, `E₇`, `E₈` the
+alphabet is isometric to the discriminant form of a nondegenerate lattice. -/
+theorem isNondegenerate_glueAlphabet (t : DynkinType) (ht : t.IsSimplyLaced) :
+    (t.glueAlphabet ht).IsNondegenerate := by
+  cases t with
+  | A n => exact isNondegenerate_typeAStandardQuadraticModule n
+  | D n =>
+    by_cases hn : Even n
+    · rw [glueAlphabet_D_of_even n ht hn]
+      exact isNondegenerate_checkerboardStandardQuadraticModule n hn
+    · rw [glueAlphabet_D_of_odd n ht (Nat.not_even_iff_odd.mp hn)]
+      exact isNondegenerate_checkerboardCyclicQuadraticModule n (Nat.not_even_iff_odd.mp hn)
+  | E6 =>
+    exact (E6.glueAlphabetIsometry valid_E6 ht).isNondegenerate_iff.mpr
+      (isNondegenerate_discriminantQuadraticModule _ _)
+  | E7 =>
+    exact (E7.glueAlphabetIsometry valid_E7 ht).isNondegenerate_iff.mpr
+      (isNondegenerate_discriminantQuadraticModule _ _)
+  | E8 =>
+    exact (E8.glueAlphabetIsometry valid_E8 ht).isNondegenerate_iff.mpr
+      (isNondegenerate_discriminantQuadraticModule _ _)
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
 
 /-- **The glue alphabet has order `|det t.cartanMatrix|`**, the discriminant of the root
 lattice. -/

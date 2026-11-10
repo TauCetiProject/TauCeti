@@ -244,13 +244,129 @@ theorem glueMinimum_nonneg (t : DynkinType) (ht : t.IsSimplyLaced) (a : t.glueAl
 
 /-- **Half the shortest norm of a label is its quadratic value**: `q(a) = μ_t(a) / 2 mod ℤ`.  In
 particular a label is quadratically isotropic exactly when its shortest norm is an even
-integer. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (hv : t.Valid)
-    (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
+integer. This is a computation in the standard models, so it needs no validity hypothesis. -/
+theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (ht : t.IsSimplyLaced)
+    (a : t.glueAlphabet ht) :
     (t.glueAlphabet ht).quadratic a = ((t.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  obtain ⟨x, hx, hxa⟩ := (t.isLeast_glueMinimum hv ht a).1
-  rw [← (t.glueAlphabetIsometry hv ht).map_app a, ← hx, discriminantQuadraticModule_quadratic,
-    discriminantQuadraticMap_mk, hxa]
+  cases t with
+  | A n =>
+    revert a
+    change ∀ a : ZMod (n + 1), (typeAStandardQuadraticModule n).quadratic a =
+      (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ))
+    intro a
+    have ha : ((a.val : ℤ) : ZMod (n + 1)) = a := by exact_mod_cast ZMod.natCast_zmod_val a
+    conv_lhs => rw [← ha]
+    rw [typeAStandardQuadraticModule_quadratic_intCast, glueMinimum_A, ← sub_eq_zero,
+      ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
+    obtain ⟨c, hc⟩ := Int.even_mul_pred_self (a.val : ℤ)
+    refine ⟨c, ?_⟩
+    have hn : (n : ℚ) + 1 ≠ 0 := by positivity
+    have hc' : (a.val : ℚ) * ((a.val : ℚ) - 1) = c + c := by
+      exact_mod_cast hc
+    rw [zsmul_eq_mul]
+    push_cast
+    field_simp
+    linear_combination (-(n : ℚ) - 1) * hc'
+  | D n =>
+    by_cases hn : Even n
+    · obtain ⟨b, hb⟩ : ∃ b : ZMod 2 × ZMod 2,
+        FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn) a = b := ⟨_, rfl⟩
+      rw [glueMinimum_D_of_even n ht hn a b hb,
+        ← (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)).map_app a, hb]
+      obtain ⟨x, y⟩ := b
+      have h2 : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
+      rcases h2 x with rfl | rfl <;> rcases h2 y with rfl | rfl
+      · have h0 : (checkerboardStandardQuadraticModule n hn).quadratic
+            ((0 : ZMod 2), (0 : ZMod 2)) = 0 := QuadraticMap.map_zero _
+        rw [h0]
+        simp
+      · simp [Prod.ext_iff, checkerboardStandardQuadraticModule_quadratic_zero_one]
+        congr 1
+        ring
+      · simp
+      · simp [Prod.ext_iff, checkerboardStandardQuadraticModule_quadratic_one_one]
+        congr 1
+        ring
+    · have hodd := Nat.not_even_iff_odd.mp hn
+      obtain ⟨b, hb⟩ : ∃ b : ZMod 4,
+        FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hodd) a = b := ⟨_, rfl⟩
+      rw [glueMinimum_D_of_odd n ht hodd a b hb,
+        ← (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hodd)).map_app a, hb]
+      have h4 : ∀ z : ZMod 4, z = 0 ∨ z = 1 ∨ z = 2 ∨ z = 3 := by decide
+      rcases h4 b with rfl | rfl | rfl | rfl
+      · have h0 : (checkerboardCyclicQuadraticModule n).quadratic (0 : ZMod 4) = 0 :=
+          QuadraticMap.map_zero _
+        rw [h0]
+        simp
+      · rw [checkerboardCyclicQuadraticModule_quadratic_one]
+        have : (1 : ZMod 4) ≠ 0 := by decide
+        have h2 : (1 : ZMod 4) ≠ 2 := by decide
+        simp only [this, h2, ↓reduceIte]
+        congr 1
+        ring
+      · rw [checkerboardCyclicQuadraticModule_quadratic_two n hodd]
+        have : (2 : ZMod 4) ≠ 0 := by decide
+        simp [this]
+      · have h3 : (checkerboardCyclicQuadraticModule n).quadratic (3 : ZMod 4) =
+            (((n : ℚ) / 8 : ℚ) : AddCircle (1 : ℚ)) := by
+          have hneg : ∀ x : ZMod 4, (checkerboardCyclicQuadraticModule n).quadratic (-x) =
+              (checkerboardCyclicQuadraticModule n).quadratic x := fun x ↦ QuadraticMap.map_neg _ x
+          rw [show (3 : ZMod 4) = -1 by decide, hneg]
+          exact checkerboardCyclicQuadraticModule_quadratic_one n
+        rw [h3]
+        have : (3 : ZMod 4) ≠ 0 := by decide
+        have h2 : (3 : ZMod 4) ≠ 2 := by decide
+        simp only [this, h2, ↓reduceIte]
+        congr 1
+        ring
+  | E6 =>
+    revert a
+    change ∀ a : ZMod 3, typeE₆StandardQuadraticModule.quadratic a =
+      ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ))
+    intro a
+    rw [glueMinimum_E6]
+    have h3 : ∀ z : ZMod 3, z = 0 ∨ z = 1 ∨ z = 2 := by decide
+    rcases h3 a with rfl | rfl | rfl
+    · have h0 : typeE₆StandardQuadraticModule.quadratic (0 : ZMod 3) = 0 :=
+        QuadraticMap.map_zero _
+      rw [h0]
+      simp
+    · rw [typeE₆StandardQuadraticModule_quadratic_one]
+      have : (1 : ZMod 3) ≠ 0 := by decide
+      simp only [this, ↓reduceIte]
+      congr 1
+      norm_num
+    · have hneg : ∀ x : ZMod 3, typeE₆StandardQuadraticModule.quadratic (-x) =
+          typeE₆StandardQuadraticModule.quadratic x := fun x ↦ QuadraticMap.map_neg _ x
+      rw [show (2 : ZMod 3) = -1 by decide, hneg, typeE₆StandardQuadraticModule_quadratic_one]
+      have : (-1 : ZMod 3) ≠ 0 := by decide
+      simp only [this, ↓reduceIte]
+      congr 1
+      norm_num
+  | E7 =>
+    revert a
+    change ∀ a : ZMod 2, typeE₇StandardQuadraticModule.quadratic a =
+      ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ))
+    intro a
+    rw [glueMinimum_E7]
+    have h2 : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
+    rcases h2 a with rfl | rfl
+    · have h0 : typeE₇StandardQuadraticModule.quadratic (0 : ZMod 2) = 0 :=
+        QuadraticMap.map_zero _
+      rw [h0]
+      simp
+    · rw [typeE₇StandardQuadraticModule_quadratic_one]
+      have : (1 : ZMod 2) ≠ 0 := by decide
+      simp only [this, ↓reduceIte]
+      congr 1
+      norm_num
+  | E8 =>
+    rw [Subsingleton.elim a 0, glueMinimum_E8, QuadraticMap.map_zero]
+    simp
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
 
 /-- The zero label has shortest norm `0`. -/
 @[simp]
@@ -383,7 +499,6 @@ theorem isLeast_sum_glueMinimum (w : ∀ i, (t i).glueAlphabet (ht i)) :
   rw [hw]
   exact isLeast_form_self_pi _ fun i ↦ (t i).isLeast_glueMinimum (hv i) (ht i) (w i)
 
-include hv in
 /-- **Half the shortest norm of a glue word is its quadratic value**:
 `q(w) = μ(w) / 2 mod ℤ`.  In particular a glue word is quadratically isotropic exactly when the
 sum of the shortest norms of its labels is an even integer. -/
@@ -391,9 +506,12 @@ theorem quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).quadratic w =
       (((∑ i, (t i).glueMinimum (ht i) (w i)) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  obtain ⟨x, hx, hxw⟩ := (isLeast_sum_glueMinimum t hv ht w).1
-  rw [← (glueWordIsometry t ht hv).map_app w, ← hx, discriminantQuadraticModule_quadratic,
-    discriminantQuadraticMap_mk, hxw]
+  have hsum (f : ι → ℚ) :
+      ((∑ i, f i : ℚ) : AddCircle (1 : ℚ)) = ∑ i, ((f i : ℚ) : AddCircle (1 : ℚ)) :=
+    map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))) f Finset.univ
+  rw [FiniteQuadraticModule.pi_quadratic, Finset.sum_div, hsum]
+  exact Finset.sum_congr rfl fun i _ ↦
+    quadratic_glueAlphabet_eq_glueMinimum_div_two (t i) (ht i) (w i)
 
 include hv in
 /-- **Only the zero glue word has shortest norm zero.** -/
