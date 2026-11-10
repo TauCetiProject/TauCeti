@@ -228,12 +228,7 @@ theorem eval₂_mpullback_periodicTorus_suspensionForm
       (suspensionForm φ σ hσ)).eval₂ p v w =
         v.1 * w.2 - w.1 * v.2 := by
   rw [mpullback_periodicTorus_suspensionForm]
-  -- Read the circle tangent spaces in their real model coordinates.
-  erw [SmoothForm.eval₂_wedge_one_one]
-  simp only [SmoothForm.mpullback_fst_apply, SmoothForm.mpullback_snd_apply,
-    AddCircle.timeForm_apply]
-  erw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
-  rfl
+  exact AddCircle.eval₂_wedge_timeForm 1 d p v w
 
 /-- The signed area integral of the actual pulled-back form over one fundamental parameter
 rectangle is the period `d`. The tangent vectors are the positive real time directions on
