@@ -50,8 +50,8 @@ for set and probability integrals.
 * `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
   integrands sum, almost everywhere, to at most a third integrable function.
 * `norm_integral_sub_le_integral_of_norm_sub_le` bounds `‖∫ F - ∫ G‖` by `∫ b` when `F - G` is
-  integrable and pointwise bounded by an integrable `b`, with no integrability assumption on `F`
-  and `G` themselves.
+  integrable and almost everywhere bounded by an integrable `b`, with no integrability assumption
+  on `F` and `G` themselves.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
@@ -744,21 +744,22 @@ theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSp
   rw [← ae_eq_bot]
   exact Filter.eventually_false_iff_eq_bot.1 ((h1.and hg).mono fun x hx => hx.2.ne' hx.1)
 
-/-- If `F - G` is integrable and bounded by an integrable `b`, then `‖∫ F - ∫ G‖ ≤ ∫ b`, whether
-or not `F` and `G` are integrable: if one of them is not, neither is the other, and both integrals
-are `0` by convention. -/
-theorem norm_integral_sub_le_integral_of_norm_sub_le {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {F G b : α → ℝ} (hFG : Integrable (fun x => F x - G x) ν)
-    (hb : Integrable b ν) (h : ∀ x, ‖F x - G x‖ ≤ b x) :
+/-- If `F - G` is integrable and almost everywhere bounded in norm by an integrable `b`, then
+`‖∫ F - ∫ G‖ ≤ ∫ b`, whether or not `F` and `G` are integrable: if one of them is not, neither is
+the other, and both integrals are `0` by convention. -/
+theorem norm_integral_sub_le_integral_of_norm_sub_le {α V : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {ν : Measure α} {F G : α → V} {b : α → ℝ}
+    (hFG : Integrable (fun x => F x - G x) ν) (hb : Integrable b ν)
+    (h : ∀ᵐ x ∂ν, ‖F x - G x‖ ≤ b x) :
     ‖∫ x, F x ∂ν - ∫ x, G x ∂ν‖ ≤ ∫ x, b x ∂ν := by
   by_cases hF : Integrable F ν
   · have hG : Integrable G ν := (hF.sub hFG).congr (ae_of_all _ fun x => by simp)
     rw [← integral_sub hF hG]
-    exact norm_integral_le_of_norm_le hb (ae_of_all _ h)
+    exact norm_integral_le_of_norm_le hb h
   · have hG : ¬ Integrable G ν := fun hG =>
       hF ((hG.add hFG).congr (ae_of_all _ fun x => by simp))
     rw [integral_undef hF, integral_undef hG, sub_zero, norm_zero]
-    exact integral_nonneg fun x => (norm_nonneg _).trans (h x)
+    exact integral_nonneg_of_ae (h.mono fun x hx => (norm_nonneg _).trans hx)
 
 end MeasureTheory
 
