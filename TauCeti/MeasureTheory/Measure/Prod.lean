@@ -23,6 +23,8 @@ rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
 For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
+Projecting a measurable restriction of a product weights the first factor by the masses of
+its vertical sections (`map_fst_restrict_prod_eq_withDensity`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -48,6 +50,21 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Projecting the part of a product measure in a measurable set gives the first measure
+weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/
+theorem map_fst_restrict_prod_eq_withDensity {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure α) (ν : Measure β) [SFinite ν]
+    {A : Set (α × β)} (hA : MeasurableSet A) :
+    ((μ.prod ν).restrict A).map Prod.fst =
+      μ.withDensity (fun x ↦ ν (Prod.mk x ⁻¹' A)) := by
+  ext s hs
+  rw [map_apply measurable_fst hs, restrict_apply (measurable_fst hs),
+    prod_apply ((measurable_fst hs).inter hA), withDensity_apply _ hs,
+    ← lintegral_indicator hs]
+  apply lintegral_congr
+  intro x
+  by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
 
 /-- Weighting a joint measure by a function of its first coordinate weights its first marginal
 by the same function. No finiteness assumption is needed. -/
@@ -130,18 +147,28 @@ theorem map_neg_map_sub_prod_self {γ G : Type*} [MeasurableSpace γ] [Measurabl
 /-- Reflecting the second coordinate according to the sign of the first preserves the product of
 a measure with a reflection-invariant measure, because every fibre transformation preserves the
 second measure. -/
-theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite ν]
     (hν : ν.map (fun x : ℝ ↦ -x) = ν) :
     MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2))
       (μ.prod ν) (μ.prod ν) := by
-  refine (MeasurePreserving.id μ).skew_product
-    (g := fun y x : ℝ ↦ if y < 0 then -x else x) ?_ ?_
-  · exact Measurable.ite (measurableSet_lt measurable_fst measurable_const)
-      measurable_snd.neg measurable_snd
-  · refine ae_of_all _ fun y ↦ ?_
-    by_cases hy : y < 0
-    · simpa only [hy, ↓reduceIte] using hν
-    · simpa only [hy, ↓reduceIte] using (Measure.map_id' (μ := ν))
+  have hmeas : Measurable fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2) :=
+    measurable_fst.prodMk (Measurable.ite (measurableSet_lt measurable_fst measurable_const)
+      measurable_snd.neg measurable_snd)
+  refine ⟨hmeas, ?_⟩
+  ext s hs
+  rw [map_apply hmeas hs, prod_apply (hmeas hs), prod_apply hs]
+  refine lintegral_congr fun x ↦ ?_
+  by_cases hx : x < 0
+  · have hset : Prod.mk x ⁻¹' (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2)) ⁻¹' s =
+        (fun y : ℝ ↦ -y) ⁻¹' (Prod.mk x ⁻¹' s) := by
+      ext y
+      simp [hx]
+    rw [hset, ← Measure.map_apply measurable_neg (measurable_prodMk_left hs), hν]
+  · have hset : Prod.mk x ⁻¹' (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2)) ⁻¹' s =
+        Prod.mk x ⁻¹' s := by
+      ext y
+      simp [hx]
+    rw [hset]
 
 /-- The quotient of independent coordinates, the numerator having a reflection-invariant law, has
 the same law as the quotient by the absolute value of the denominator. -/
