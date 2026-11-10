@@ -16,7 +16,7 @@ A countable basis for the target uniformity allows this sequential criterion to 
 
 public section
 
-namespace TauCeti
+namespace UniformSpace
 
 open Filter
 open scoped Topology
@@ -46,4 +46,4 @@ theorem completeSpace_of_continuous_cauchySeq
   exact ⟨x, (@Continuous.tendsto X X u₀.toTopologicalSpace
     u₁.toTopologicalSpace id hcontinuous x).comp hx⟩
 
-end TauCeti
+end UniformSpace

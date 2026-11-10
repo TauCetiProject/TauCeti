@@ -26,7 +26,7 @@ Public formalization references:
 
 public section
 
-namespace TauCeti
+namespace PseudoEMetricSpace
 
 open Filter Set
 open scoped ENNReal NNReal Topology
@@ -46,7 +46,7 @@ theorem completeSpace_of_continuous_local_edist_bound
       d₁.edist x p ≤ r → d₁.edist y p ≤ r →
       d₀.edist x y ≤ C * d₁.edist x y) :
     @CompleteSpace X d₁.toUniformSpace := by
-  apply completeSpace_of_continuous_cauchySeq d₀.toUniformSpace d₁.toUniformSpace
+  apply UniformSpace.completeSpace_of_continuous_cauchySeq d₀.toUniformSpace d₁.toUniformSpace
     hcomplete hcontinuous
   intro u hu
   let : PseudoEMetricSpace X := d₁
@@ -86,4 +86,4 @@ theorem completeSpace_of_continuous_local_edist_bound_at_basepoint
   · simpa only [ENNReal.coe_add, ENNReal.coe_one, ENNReal.coe_toNNReal (hfinite q)] using
       (d₁.edist_triangle y q p).trans (add_le_add hy le_rfl)
 
-end TauCeti
+end PseudoEMetricSpace
