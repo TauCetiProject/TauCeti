@@ -165,7 +165,14 @@ theorem toContinuousMap_eq_iff (hs : 1 / 2 < s) (a : CircleSobolev s E) (F : C(A
     rw [fourierCoeff_toContinuousMap, h]
   exact ContinuousMap.ext (congrFun ((map_continuous _).ae_eq_iff_eq _ F.continuous |>.1 hae))
 
+end ContinuousRepresentative
+
+section FiniteDimensional
+
 variable [FiniteDimensional ℂ E]
+
+/-- A finite-dimensional complex space is complete, as needed for continuous representatives. -/
+local instance instCompleteSpaceOfContinuousMap : CompleteSpace E := FiniteDimensional.complete ℂ E
 
 /-- For `s > 1/2`, the loop given by the continuous representative of `a ∈ H^s(E)` is `a` itself,
 regarded as an element of `H⁰(E)`. -/
@@ -213,7 +220,7 @@ theorem hasDerivAt_toContinuousMap_of_derivative_eq (a : CircleSobolev 1 E)
     refine (toContinuousMap_eq_iff T _ a _).2 fun n ↦ ?_
     rw [ContinuousMap.coe_add, fourierCoeff.add (integrable_continuousMap T Gc)
       (integrable_continuousMap T (ContinuousMap.const _ c)), Pi.add_apply, ContinuousMap.coe_const,
-      show Function.const (AddCircle T) c = fun _ ↦ c from rfl, fourierCoeff_const]
+      ← Function.const_def, fourierCoeff_const]
     rcases eq_or_ne n 0 with rfl | hn
     · simp [c]
     · simp [hn, hGcoeff n hn]
@@ -227,7 +234,6 @@ theorem exists_toContinuousMap_eq_and_derivative_eq (F g : C(AddCircle T, E))
     (hF : ∀ x : ℝ, HasDerivAt (fun y : ℝ ↦ F y) (g x) x) :
     ∃ a : CircleSobolev 1 E, toContinuousMap T (by norm_num) a = F ∧
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a = ofContinuousMap T g := by
-  have := FiniteDimensional.complete ℂ E
   obtain ⟨c, hc, hdc⟩ := exists_inclusion_eq_and_derivative_eq T (ofContinuousMap T F)
     (ofContinuousMap T g) fun n ↦ by
       rw [coeff_ofContinuousMap, coeff_ofContinuousMap, fourierCoeff_of_hasDerivAt hF g.continuous]
@@ -238,7 +244,7 @@ theorem exists_toContinuousMap_eq_and_derivative_eq (F g : C(AddCircle T, E))
   · rw [← coeff_ofContinuousMap, ← hc, coeff_inclusion]
   · rw [← hdc, coeff_derivative, coeff_derivative]
 
-end ContinuousRepresentative
+end FiniteDimensional
 
 end CircleSobolev
 

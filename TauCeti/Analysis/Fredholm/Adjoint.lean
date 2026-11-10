@@ -298,20 +298,18 @@ theorem _root_.ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero {T :
     (hker : LinearMap.ker (T : E →ₗ[𝕜] F) = ⊥ ∨ LinearMap.ker (T† : F →ₗ[𝕜] E) = ⊥) :
     T.IsInvertible := by
   have := hT.finite_coker
-  -- In either case the cokernel `F ⧸ range T` has dimension zero.
+  refine ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT, ?_⟩
+  rcases hker with hker | hker
+  · exact T.bijective_of_injective_of_index_eq_zero (LinearMap.ker_eq_bot.mp hker) h0
+  -- A trivial adjoint kernel means that the cokernel `F ⧸ range T` has dimension zero.
   have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 := by
-    rcases hker with hker | hker
-    · have hindex := ContinuousLinearMap.index_eq_finrank_sub T
-      rw [hker, finrank_bot] at hindex
-      omega
-    · rw [LinearEquiv.finrank_eq
-        (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
-        finrank_bot]
+    rw [LinearEquiv.finrank_eq
+      (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
+      finrank_bot]
   have hrange : LinearMap.range (T : E →ₗ[𝕜] F) = ⊤ :=
     Submodule.Quotient.subsingleton_iff.mp (finrank_zero_iff.mp hcoker)
-  exact ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT,
-    T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
-      h0⟩
+  exact T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
+    h0
 
 end HilbertCodomain
 

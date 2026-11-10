@@ -51,9 +51,6 @@ comparing weak and classical derivatives
 
 ## Main statements
 
-* `TauCeti.CircleSobolev.bijective_derivative_add_inclusion`: `ζ ↦ ζ' + ζ` is a bijection
-  `H^(s + 1) → H^s`; `TauCeti.CircleSobolev.derivativeAddInclusionEquiv` is the resulting
-  continuous linear equivalence.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.isFredholm_loopOperator`, `TauCeti.CircleSobolev.index_loopOperator`:
   `L_S` is a Fredholm operator of index zero.
@@ -83,69 +80,10 @@ namespace TauCeti
 namespace CircleSobolev
 
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-variable (T : ℝ)
+variable (T : ℝ) [hT : Fact (0 < T)] [FiniteDimensional ℂ E]
 
-/-- The Fourier multiplier `1 + 2πin/T` of `ζ ↦ ζ' + ζ` does not vanish: its real part is `1`. -/
-private theorem one_add_derivFactor_ne_zero (n : ℤ) : (1 + 2 * π * I * n / T : ℂ) ≠ 0 := by
-  intro h
-  have := congrArg Complex.re h
-  simp [Complex.div_re] at this
-
-/-- The Fourier multiplier `1 + 2πin/T` has modulus at least `1`. -/
-private theorem one_le_norm_one_add_derivFactor (n : ℤ) : 1 ≤ ‖(1 + 2 * π * I * n / T : ℂ)‖ := by
-  refine le_trans (le_of_eq ?_) (Complex.abs_re_le_norm _)
-  simp [Complex.div_re]
-
-variable [hT : Fact (0 < T)]
-
-/-- **`ζ ↦ ζ' + ζ` is a bijection `H^(s + 1) → H^s`.** It multiplies the `n`-th Fourier
-coefficient by `1 + 2πin/T`, which never vanishes. -/
-theorem bijective_derivative_add_inclusion (h : s + 1 = t) :
-    Function.Bijective
-      (derivative T h.le + inclusion (by linarith) :
-        CircleSobolev t E →L[ℂ] CircleSobolev s E) := by
-  subst h
-  refine ⟨fun a b hab ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun b ↦ ?_⟩
-  · have hn := congrArg (fun c : CircleSobolev s E ↦ c.coeff n) hab
-    simp only [add_apply, coeff_add, Pi.add_apply, coeff_derivative, coeff_inclusion] at hn
-    refine smul_right_injective E (one_add_derivFactor_ne_zero T n) ?_
-    simp only [add_smul, one_smul]
-    rw [add_comm (a.coeff n), hn, add_comm]
-  · -- Divide the coefficients of `b` by `1 + 2πin/T`, then recover one order of regularity.
-    set c : ℤ → ℂ := fun n ↦ (1 + 2 * π * I * n / T : ℂ)⁻¹
-    have hc (n : ℤ) : ‖c n‖ ≤ 1 := by
-      rw [norm_inv]
-      exact inv_le_one_of_one_le₀ (one_le_norm_one_add_derivFactor T n)
-    let a : CircleSobolev s E := ⟨fun n ↦ c n • b.coeff n, memℓp_of_forall_le (C := 1) fun n ↦ by
-      rw [norm_smul, one_mul]
-      exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (norm_nonneg _) (hc n))
-        (weight_nonneg s n)⟩
-    obtain ⟨d, hda, hdb⟩ := exists_inclusion_eq_and_derivative_eq T a (b - a) fun n ↦ by
-      have hne := one_add_derivFactor_ne_zero T n
-      simp only [coeff_sub, Pi.sub_apply, a, c, smul_smul]
-      have key : (1 : ℂ) - (1 + 2 * π * I * n / T)⁻¹ =
-          2 * π * I * n / T * (1 + 2 * π * I * n / T)⁻¹ := by
-        field_simp
-        ring
-      rw [← key, sub_smul, one_smul]
-    refine ⟨d, ?_⟩
-    rw [add_apply, hdb, hda, sub_add_cancel]
-
-variable [CompleteSpace E]
-
-/-- `ζ ↦ ζ' + ζ`, as a continuous linear equivalence `H^(s + 1) ≃ H^s`. -/
-def derivativeAddInclusionEquiv (h : s + 1 = t) : CircleSobolev t E ≃L[ℂ] CircleSobolev s E :=
-  ContinuousLinearEquiv.ofBijective (derivative T h.le + inclusion (by linarith))
-    (LinearMap.ker_eq_bot.2 (bijective_derivative_add_inclusion T h).injective)
-    (LinearMap.range_eq_top.2 (bijective_derivative_add_inclusion T h).surjective)
-
-@[simp]
-theorem coe_derivativeAddInclusionEquiv (h : s + 1 = t) :
-    (derivativeAddInclusionEquiv (E := E) T h : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
-      derivative T h.le + inclusion (by linarith) :=
-  ContinuousLinearEquiv.coe_ofBijective _ _ _
-
-variable [FiniteDimensional ℂ E]
+/-- A finite-dimensional complex space is complete, as needed for continuous representatives. -/
+local instance instCompleteSpaceLinearODE : CompleteSpace E := FiniteDimensional.complete ℂ E
 
 /-- For `s > 1/2`, multiplication by a continuous loop `S` of real-linear maps, as a bounded
 real-linear map `H^s(E) → H⁰(E)`: the continuous representative of `a` is multiplied pointwise by
@@ -276,13 +214,9 @@ theorem isInvertible_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
         ((h _ ((loopOperator_eq_zero_iff T S a).1 ha)).trans (map_zero _).symm)
     have hfred := isFredholm_loopOperator T S
     have := hfred.finite_coker
-    have hidx := (loopOperator T S).index_of_injective hinj
-    rw [index_loopOperator] at hidx
-    have h0 : Module.finrank ℝ (CircleSobolev 0 E ⧸ (loopOperator T S).range) = 0 := by omega
-    have hrange : (loopOperator T S).range = ⊤ :=
-      Submodule.Quotient.subsingleton_iff.mp (Module.finrank_zero_iff.mp h0)
     exact ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.2
-      ⟨hfred, hinj, LinearMap.range_eq_top.1 hrange⟩
+      ⟨hfred, (loopOperator T S).bijective_of_injective_of_index_eq_zero hinj
+        (index_loopOperator T S)⟩
 
 end CircleSobolev
 

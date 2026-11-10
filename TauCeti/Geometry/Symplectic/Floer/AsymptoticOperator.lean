@@ -778,7 +778,6 @@ and its weighted shift `A - δ` is `J_t ∘ (ζ ↦ ζ' - (S_t - δ J_t) ζ)`
 when the corresponding loop operators are. -/
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  [CompleteSpace E]
 
 /-- **Weighted loop operators at a nondegenerate orbit are invertible.** Let `x` be a
 nondegenerate one-periodic orbit of a one-periodic, jointly `C²` time-dependent Hamiltonian `H` on
