@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Manifold.RegularValue
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
