@@ -31,18 +31,22 @@ on the identity diagrams `idOn S`. Consequently:
   (`TauCeti.StrandsAlgebra.pow_eq_zero_of_horizontalPart_eq_zero`), because a product of
   diagrams that are not identity diagrams has length at least the number of factors.
 
-An idempotent `e` with `I(S) e = e = e I(S)` therefore agrees with `c I(S)` modulo a nilpotent
-element, `c` being its coefficient on `I(S)`; the two commute, so they are equal. Hence the
-idempotents of the corner ring `I(S) A(n) I(S)` are the `c I(S)` with `c` an idempotent of the
-coefficient ring (`TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem`), and when the
+A diagram from `S` to `S` has length zero, so it is `idOn S`: over any commutative semiring the
+corner `I(S) A(n) I(S)` is spanned by `I(S)`, with `I(S) x I(S) = x_{I(S)} I(S)`
+(`TauCeti.StrandsAlgebra.idem_mul_mul_idem`). Hence the idempotents of the corner ring are the
+`c I(S)` with `c` an idempotent of the coefficient ring
+(`TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem`), and when the
 coefficient ring has no idempotents besides `0` and `1`, as over `𝔽₂`, each `I(S)` is a primitive
 idempotent of `A(n)` (`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_idem`).
 
 For the matched subalgebra of a matching `M`, the idempotent `I(s)` is the sum of the `I(S)` over
 the sets `S` containing exactly one point over each element of `s`. An element of the matched
 subalgebra has the same coefficient on all of these `I(S)`, because any two such sets are related
-by moving horizontal strands between matched points one at a time. The same argument then shows
-that the idempotents of the matched subalgebra lying in the corner of `I(s)` are the `c I(s)`
+by moving horizontal strands between matched points one at a time. The corner of `I(s)` contains
+diagrams that climb, so here the nilpotence of the kernel of the horizontal part is needed: an
+idempotent `e` in that corner agrees with `c I(s)` modulo a nilpotent element, and the two
+commute, so they are equal. Hence the idempotents of the matched subalgebra lying in the corner of
+`I(s)` are the `c I(s)`
 (`TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem`); for coefficients
 without nontrivial idempotents they are `0` and `I(s)`
 (`TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`). This is the corner
@@ -60,6 +64,8 @@ orthogonal `I(S)`.
 * `TauCeti.StrandsAlgebra.horizontalPart_eq_sum`: the horizontal part is `∑ₛ x_{I(S)} I(S)`.
 * `TauCeti.StrandsAlgebra.pow_eq_zero_of_horizontalPart_eq_zero`: elements with zero horizontal
   part are nilpotent.
+* `TauCeti.StrandsAlgebra.idem_mul_mul_idem`: the corner of `I(S)` in `A(n)` is spanned by
+  `I(S)`.
 * `TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem` and
   `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_idem`: the idempotents of the corner of `I(S)` in
   `A(n)`, and primitivity of `I(S)`.
@@ -189,6 +195,49 @@ theorem idem_mul_horizontalPart (s : Finset α) (x : StrandsAlgebra R α) :
   simp only [horizontalPart_eq_sum, mul_sum, mul_smul_comm, idem_mul_idem, smul_ite, smul_zero,
     sum_ite_eq, mem_univ, ↓reduceIte]
 
+/-- **The corner `I(S) A(n) I(S)` is spanned by `I(S)`**: a diagram from `S` to `S` has length
+zero, so it is the identity diagram, and `I(S) x I(S)` is `x_{I(S)} I(S)`. -/
+theorem idem_mul_mul_idem (s : Finset α) (x : StrandsAlgebra R α) :
+    idem s * x * idem s = (basis R α).repr x (idOn s) • idem s := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => rw [mul_add, add_mul, hx, hy, map_add, Finsupp.add_apply, add_smul]
+  | smul_of r φ =>
+    rw [mul_smul_comm, smul_mul_assoc, idem_mul_of, map_smul, Finsupp.smul_apply, ← basis_apply,
+      Module.Basis.repr_self_apply, basis_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, ite_smul,
+      zero_smul]
+    by_cases hφ : s = φ.source ∧ φ.target = s
+    · obtain ⟨rfl, ht⟩ := hφ
+      have hid : φ = idOn φ.source :=
+        length_eq_zero_iff.1 (by simp [length_def, boundary_apply, ht])
+      rw [ite_eq_left rfl, of_mul_idem, ite_eq_left ht, ite_eq_left hid, idem_def, ← hid]
+    · have hne : φ ≠ idOn s := fun h ↦ hφ ⟨by rw [h, source_idOn], by rw [h, target_idOn]⟩
+      rw [ite_eq_right hne]
+      split_ifs with hs
+      · rw [of_mul_idem, ite_eq_right fun ht ↦ hφ ⟨hs, ht⟩, smul_zero]
+      · rw [zero_mul, smul_zero]
+
+/-- Every element `x` of the corner `I(S) A(n) I(S)`, that is with `I(S) x = x = x I(S)`, is the
+multiple `x_{I(S)} I(S)` of `I(S)` by its coefficient on `I(S)`. -/
+theorem eq_smul_idem_of_idem_mul_eq_of_mul_idem_eq {x : StrandsAlgebra R α} {s : Finset α}
+    (hl : idem s * x = x) (hr : x * idem s = x) : x = (basis R α).repr x (idOn s) • idem s := by
+  rw [← idem_mul_mul_idem, hl, hr]
+
+/-- **The idempotents of the corner ring `I(S) A(n) I(S)`** are the multiples `c I(S)` by
+idempotents `c` of the coefficient ring; `c` is the coefficient of the idempotent on `I(S)`. -/
+theorem eq_smul_idem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : Finset α}
+    (he : IsIdempotentElem e) (hl : idem s * e = e) (hr : e * idem s = e) :
+    IsIdempotentElem ((basis R α).repr e (idOn s)) ∧
+      e = (basis R α).repr e (idOn s) • idem s := by
+  have hes := eq_smul_idem_of_idem_mul_eq_of_mul_idem_eq hl hr
+  set c := (basis R α).repr e (idOn s)
+  refine ⟨?_, hes⟩
+  have h := congrArg (fun y ↦ (basis R α).repr y (idOn s)) he.eq
+  rw [hes, smul_mul_smul_comm, (isIdempotentElem_idem s).eq] at h
+  simp only [map_smul, Finsupp.smul_apply, idem_def, ← basis_apply, Module.Basis.repr_self,
+    Finsupp.single_eq_same, smul_eq_mul, mul_one] at h
+  exact h
+
 /-- The horizontal part fixes the idempotents `I(s)` of the matched subalgebra. -/
 @[simp]
 theorem horizontalPart_matchedIdem {β : Type*} [DecidableEq β] (M : α → β) (s : Finset β) :
@@ -302,20 +351,6 @@ private theorem smul_eq_zero_or_eq_of_isIdempotentElem (hR : IsPrimitiveIdempote
   rcases isPrimitiveIdempotent_one_iff.1 hR c hc with h | h
   · exact Or.inl (by rw [h, zero_smul])
   · exact Or.inr (by rw [h, one_smul])
-
-/-- **The idempotents of the corner ring `I(S) A(n) I(S)`** are the multiples `c I(S)` by
-idempotents `c` of the coefficient ring; `c` is the coefficient of the idempotent on `I(S)`. -/
-theorem eq_smul_idem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : Finset α}
-    (he : IsIdempotentElem e) (hl : idem s * e = e) (hr : e * idem s = e) :
-    IsIdempotentElem ((basis R α).repr e (idOn s)) ∧
-      e = (basis R α).repr e (idOn s) • idem s := by
-  set c := (basis R α).repr e (idOn s)
-  have hhe : horizontalPart R α e = c • idem s := by
-    conv_lhs => rw [← hl, map_mul, horizontalPart_idem]
-    exact idem_mul_horizontalPart s e
-  refine eq_smul_of_horizontalPart_eq_smul (φ := idOn s) he (isIdempotentElem_idem s)
-    (horizontalPart_idem s) ?_ hl hr hhe
-  rw [idem_def, ← basis_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
 
 /-- **The idempotents `I(S)` of the strands algebra are primitive** when the coefficient ring has
 no idempotents besides `0` and `1`, for instance over a field such as `𝔽₂`. -/
