@@ -44,11 +44,14 @@ Since `c` has compact spatial support, `ĉ(θ, ξ)` decays faster than every po
 `‖ĉ(θ, ξ)‖ ≤ C_N (1 + ‖θ‖) ^ (-N) ⟨ξ⟩ ^ m`
 (`TauCeti.Symbol.HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le`). Peetre's
 inequality `⟨ξ + 2πθ⟩ ^ m ≤ 2 ^ (|m| / 2) ⟨ξ⟩ ^ m ⟨2πθ⟩ ^ |m|` then bounds the integrand of `b`
-by `C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))`, which is integrable in `θ`. To differentiate under the
-integral sign the integrand is written as the position integral
-`∫ exp(-2πi ⟪y, θ⟫) c(x + y, ξ + 2πθ) dy`, in which `(x, ξ)` only enters through the argument of
-`c`. So every derivative of `b` is the left symbol of the corresponding derivative of `c`, and the
-estimates of all mixed derivatives follow from the bound above by induction.
+by `C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))`, which is integrable in `θ`. The derivative `2πi θⱼ` of the
+phase in `x_j` is the Fourier multiplier of `∂_{x_j} c`
+(`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`), and `ĉ` is differentiated
+in `ξ` under the position integral
+(`TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`). So every derivative of
+the integrand, and after differentiating under the integral sign every derivative of `b`, is the
+left symbol of the corresponding derivative of `c`, and the estimates of all mixed derivatives
+follow from the bound above by induction.
 
 ## Implementation notes
 
@@ -226,124 +229,13 @@ private theorem HasCompactSpatialSupport.exists_norm_rightCoeff_le
         rw [integral_const_mul]
         ring
 
-/-- The integrand as an integral over positions:
-`exp(2πi ⟪θ, x⟫) ĉ(θ, ξ + 2πθ) = ∫ exp(-2πi ⟪y, θ⟫) c(x + y, ξ + 2πθ) dy`. In this form the point
-`(x, ξ)` only enters through the argument of `c`. -/
-private theorem rightIntegrand_eq_integral (c : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
-    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) :
-    rightIntegrand c p θ = ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • c (p + (y, (2 * π) • θ)) := by
-  set g : CoordinateSpace n → V →L[ℂ] W := fun z ↦
-    (𝐞 (-⟪z - p.1, θ⟫) : ℂ) • c (z, p.2 + (2 * π) • θ)
-  have hshift : (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • c (p + (y, (2 * π) • θ))) = ∫ y, g (p.1 + y) := by
-    congr 1 with y
-    simp only [g, add_sub_cancel_left, Prod.add_def]
-  rw [hshift, integral_add_left_eq_self g p.1, rightIntegrand, Real.fourier_eq, ← integral_smul]
-  congr 1 with z
-  have hphase : -(⟪z, θ⟫ - ⟪p.1, θ⟫) = ⟪p.1, θ⟫ + -⟪z, θ⟫ := by ring
-  simp only [g, Circle.smul_def, smul_smul, inner_sub_left]
-  congr 1
-  rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul, real_inner_comm p.1 θ, hphase]
-
 end Right
 
-/-! ### Differentiation under the integral sign -/
+/-! ### Measurability of the derivatives -/
 
-section Shift
+section Measurability
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- A function vanishing at all positions outside a closed set `K` has vanishing derivative at
-every point whose position lies outside `K`. -/
-private theorem fderiv_eq_zero_of_fst_notMem {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {f : CoordinateSpace n × CoordinateSpace n → G} {K : Set (CoordinateSpace n)}
-    (hK : IsClosed K) (hfK : ∀ z ∉ K, ∀ ξ, f (z, ξ) = 0) {q : CoordinateSpace n × CoordinateSpace n}
-    (hq : q.1 ∉ K) : fderiv ℝ f q = 0 := by
-  have h : f =ᶠ[nhds q] fun _ ↦ 0 := by
-    filter_upwards [(hK.isOpen_compl.preimage continuous_fst).mem_nhds hq] with r hr
-    exact hfK r.1 hr r.2
-  rw [h.fderiv_eq, fderiv_const_apply]
-
-/-- The positions `y` at which `f(p + (y, ·))` can be nonzero, for `p` near `p₀`. -/
-private theorem mem_image_sub_of_add_mem {K : Set (CoordinateSpace n)} {x₀ x y : CoordinateSpace n}
-    (hx : dist x x₀ ≤ 1) (hy : x + y ∈ K) :
-    y ∈ (fun q : CoordinateSpace n × CoordinateSpace n ↦ q.1 - q.2) ''
-      (K ×ˢ Metric.closedBall x₀ 1) :=
-  ⟨(x + y, x), ⟨hy, hx⟩, add_sub_cancel_left x y⟩
-
-/-- The shifted position integrand `y ↦ exp(-2πi ⟪y, θ⟫) f(p + (y, 2πθ))` of a continuous function
-vanishing for positions outside a compact set is integrable. -/
-private theorem integrable_shift {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    {f : CoordinateSpace n × CoordinateSpace n → G} (hf : Continuous f)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hfK : ∀ z ∉ K, ∀ ξ, f (z, ξ) = 0)
-    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) :
-    Integrable fun y ↦ (𝐞 (-⟪y, θ⟫) : ℂ) • f (p + (y, (2 * π) • θ)) := by
-  have hS : IsCompact ((fun q : CoordinateSpace n × CoordinateSpace n ↦ q.1 - q.2) ''
-      (K ×ˢ Metric.closedBall p.1 1)) := (hK.prod (isCompact_closedBall _ _)).image (by fun_prop)
-  refine Continuous.integrable_of_hasCompactSupport (by fun_prop) (HasCompactSupport.intro hS ?_)
-  intro y hy
-  have hK' : p.1 + y ∉ K := fun h ↦ hy (mem_image_sub_of_add_mem (by simp) h)
-  have hf0 : f (p + (y, (2 * π) • θ)) = 0 := hfK _ hK' _
-  simp [hf0]
-
-/-- **Differentiation under the position integral.** For a `C¹` function `f` vanishing for
-positions outside a compact set, `p ↦ ∫ exp(-2πi ⟪y, θ⟫) f(p + (y, 2πθ)) dy` has the derivative
-`∫ exp(-2πi ⟪y, θ⟫) Df(p + (y, 2πθ)) dy`. -/
-private theorem hasFDerivAt_integral_shift {f : CoordinateSpace n × CoordinateSpace n → F}
-    (hf : ContDiff ℝ 1 f) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hfK : ∀ z ∉ K, ∀ ξ, f (z, ξ) = 0) (θ : CoordinateSpace n)
-    (p₀ : CoordinateSpace n × CoordinateSpace n) :
-    HasFDerivAt (fun p ↦ ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • f (p + (y, (2 * π) • θ)))
-      (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ f (p₀ + (y, (2 * π) • θ))) p₀ := by
-  set S := (fun q : CoordinateSpace n × CoordinateSpace n ↦ q.1 - q.2) ''
-    (K ×ˢ Metric.closedBall p₀.1 1)
-  have hS : IsCompact S := (hK.prod (isCompact_closedBall _ _)).image (by fun_prop)
-  have hT : IsCompact (K ×ˢ Metric.closedBall (p₀.2 + (2 * π) • θ) 1) :=
-    hK.prod (isCompact_closedBall _ _)
-  obtain ⟨M, hM⟩ := hT.exists_bound_of_continuousOn (hf.continuous_fderiv one_ne_zero).continuousOn
-  have hbound : ∀ y, ∀ p ∈ Metric.ball p₀ 1,
-      ‖(𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ f (p + (y, (2 * π) • θ))‖ ≤
-        S.indicator (fun _ ↦ max M 0) y := by
-    intro y p hp
-    rw [norm_smul, Circle.norm_coe, one_mul]
-    have hp' : max (dist p.1 p₀.1) (dist p.2 p₀.2) < 1 := by
-      rw [← Prod.dist_eq]
-      exact hp
-    have h₁ : dist p.1 p₀.1 ≤ 1 := (le_max_left _ _).trans hp'.le
-    have h₂ : dist (p.2 + (2 * π) • θ) (p₀.2 + (2 * π) • θ) ≤ 1 := by
-      rw [dist_add_right]
-      exact (le_max_right _ _).trans hp'.le
-    by_cases hy : p.1 + y ∈ K
-    · rw [Set.indicator_of_mem (mem_image_sub_of_add_mem h₁ hy)]
-      have hmem : p + (y, (2 * π) • θ) ∈ K ×ˢ Metric.closedBall (p₀.2 + (2 * π) • θ) 1 :=
-        ⟨by simpa using hy, by simpa using h₂⟩
-      exact (hM _ hmem).trans (le_max_left _ _)
-    · have hnot : (p + (y, (2 * π) • θ)).1 ∉ K := by simpa using hy
-      rw [fderiv_eq_zero_of_fst_notMem hK.isClosed hfK hnot, norm_zero]
-      exact Set.indicator_nonneg (fun _ _ ↦ le_max_right _ _) y
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
-    (.of_forall fun p ↦ (integrable_shift hf.continuous hK hfK p θ).aestronglyMeasurable)
-    (integrable_shift hf.continuous hK hfK p₀ θ)
-    ((by fun_prop : Continuous fun y : CoordinateSpace n ↦ (𝐞 (-⟪y, θ⟫) : ℂ)).smul
-      ((hf.continuous_fderiv one_ne_zero).comp
-        (by fun_prop : Continuous fun y : CoordinateSpace n ↦ p₀ + (y, (2 * π) • θ)))
-      ).aestronglyMeasurable
-    (.of_forall hbound) ?_ (.of_forall fun y p _ ↦ ?_)
-  · exact (integrable_indicator_iff hS.measurableSet).2 (integrableOn_const hS.measure_lt_top.ne)
-  · have h := (hf.differentiable one_ne_zero (p + (y, (2 * π) • θ))).hasFDerivAt.comp p
-      ((hasFDerivAt_id p).add_const (y, (2 * π) • θ))
-    rw [ContinuousLinearMap.comp_id] at h
-    exact h.const_smul _
-
-/-- Evaluating the integrated derivative in a direction `v` commutes with the position
-integral. -/
-private theorem integral_shift_fderiv_apply {f : CoordinateSpace n × CoordinateSpace n → F}
-    (hf : ContDiff ℝ 1 f) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hfK : ∀ z ∉ K, ∀ ξ, f (z, ξ) = 0) (θ : CoordinateSpace n)
-    (p v : CoordinateSpace n × CoordinateSpace n) :
-    (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ f (p + (y, (2 * π) • θ))) v =
-      ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ f (p + (y, (2 * π) • θ)) v :=
-  ContinuousLinearMap.integral_apply (integrable_shift (hf.continuous_fderiv one_ne_zero) hK
-    (fun _ hz _ ↦ fderiv_eq_zero_of_fst_notMem hK.isClosed hfK hz) p θ) v
 
 /-- A continuous family of linear maps is a.e. strongly measurable.
 
@@ -355,7 +247,7 @@ private theorem aestronglyMeasurable_of_continuous_clm {H : Type*} [NormedAddCom
     AEStronglyMeasurable φ :=
   hφ.aestronglyMeasurable
 
-end Shift
+end Measurability
 
 /-! ### Smoothness of the left symbol -/
 
@@ -364,17 +256,59 @@ section Smooth
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {c : Symbol n V W m}
 
-/-- The shifted position integrand of a symbol with compact spatial support is integrable. -/
-private theorem HasCompactSpatialSupport.integrable_shift (hc : c.HasCompactSpatialSupport)
-    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) :
-    Integrable fun y ↦ (𝐞 (-⟪y, θ⟫) : ℂ) • c.coefficient (p + (y, (2 * π) • θ)) := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-  exact Symbol.integrable_shift c.contDiff_coefficient.continuous hK hKc p θ
-
-/-- The derivative in the point `p` of the integrand, as an integral over positions. -/
+/-- The derivative in the point `p` of the integrand. -/
 private def rightDeriv (c : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n)
     (θ : CoordinateSpace n) : CoordinateSpace n × CoordinateSpace n →L[ℝ] V →L[ℂ] W :=
-  ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ c.coefficient (p + (y, (2 * π) • θ))
+  fderiv ℝ (fun p ↦ rightIntegrand c.coefficient p θ) p
+
+/-- The integrand is differentiable in the point `(x, ξ)`: the phase `exp(2πi ⟪θ, x⟫)` is smooth,
+and the Fourier slice `ĉ(θ, ξ + 2πθ)` is differentiable in `ξ`. -/
+private theorem HasCompactSpatialSupport.differentiableAt_rightIntegrand
+    (hc : c.HasCompactSpatialSupport) (θ : CoordinateSpace n)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    DifferentiableAt ℝ (fun p ↦ rightIntegrand c.coefficient p θ) p := by
+  have he₀ := (Real.hasDerivAt_fourierChar ⟪θ, p.1⟫).hasFDerivAt.comp p
+    (((innerSL ℝ θ).hasFDerivAt).comp p hasFDerivAt_fst)
+  have he : HasFDerivAt (fun p : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪θ, p.1⟫ : ℂ)) _ p :=
+    he₀
+  have hF : DifferentiableAt ℝ (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      𝓕 (fun z ↦ c.coefficient (z, p.2 + (2 * π) • θ)) θ) p :=
+    (hc.hasFDerivAt_fourier_slice θ _).differentiableAt.comp p
+      (differentiableAt_snd.add_const _)
+  exact he.differentiableAt.smul hF
+
+/-- A position derivative of the integrand is the integrand of the position derivative: the
+derivative `2πi θⱼ` of the phase is the Fourier multiplier of `∂_{x_j}`
+(`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`). -/
+private theorem HasCompactSpatialSupport.coordinateDeriv_fst_rightIntegrand
+    (hc : c.HasCompactSpatialSupport) (j : Fin n) (x ξ θ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun x ↦ rightIntegrand c.coefficient (x, ξ) θ) x =
+      rightIntegrand (Symbol.spatialDeriv j c).coefficient (x, ξ) θ := by
+  set F := 𝓕 (fun z ↦ c.coefficient (z, ξ + (2 * π) • θ)) θ
+  have he := (Real.hasDerivAt_fourierChar ⟪θ, x⟫).hasFDerivAt.comp x
+    ((innerSL ℝ θ).hasFDerivAt (x := x))
+  have h : HasFDerivAt (fun x ↦ (𝐞 ⟪θ, x⟫ : ℂ) • F) _ x := he.smul_const F
+  simp only [rightIntegrand]
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv, hc.fourier_spatialDeriv_slice]
+  simp only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+    innerSL_apply_apply, ContinuousLinearMap.toSpanSingleton_apply, smul_smul, Complex.real_smul]
+  congr 1
+  ring
+
+/-- A frequency derivative of the integrand is the integrand of the frequency derivative
+(`TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`). -/
+private theorem HasCompactSpatialSupport.coordinateDeriv_snd_rightIntegrand
+    (hc : c.HasCompactSpatialSupport) (j : Fin n) (x ξ θ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun ξ ↦ rightIntegrand c.coefficient (x, ξ) θ) ξ =
+      rightIntegrand (Symbol.frequencyDeriv j c).coefficient (x, ξ) θ := by
+  have hF := hc.hasFDerivAt_fourier_slice θ (ξ + (2 * π) • θ)
+  have h : HasFDerivAt
+      (fun ξ ↦ (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun z ↦ c.coefficient (z, ξ + (2 * π) • θ)) θ) _ ξ :=
+    (hF.comp ξ ((hasFDerivAt_id ξ).add_const ((2 * π) • θ))).const_smul (𝐞 ⟪θ, x⟫ : ℂ)
+  simp only [rightIntegrand]
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv, ← hc.coordinateDeriv_fourier_slice,
+    coordinateDeriv_cons, coordinateDeriv_nil, hF.fderiv]
+  simp
 
 /-- The derivative of the integrand in the direction `v`, through the integrands of the first-order
 derivatives of the symbol. -/
@@ -383,28 +317,8 @@ private theorem HasCompactSpatialSupport.rightDeriv_apply (hc : c.HasCompactSpat
     (v : CoordinateSpace n × CoordinateSpace n) :
     rightDeriv c p θ v = ∑ j, v.1 j • rightIntegrand (Symbol.spatialDeriv j c).coefficient p θ +
       ∑ j, v.2 j • rightIntegrand (Symbol.frequencyDeriv j c).coefficient p θ := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-  have hx (j : Fin n) := (hc.spatialDeriv j).integrable_shift p θ
-  have hξ (j : Fin n) := (hc.frequencyDeriv j).integrable_shift p θ
-  rw [rightDeriv, integral_shift_fderiv_apply (c.contDiff_coefficient.of_le (by simp)) hK hKc]
-  have hx' (j : Fin n) : Integrable fun y ↦ v.1 j •
-      (𝐞 (-⟪y, θ⟫) : ℂ) • (Symbol.spatialDeriv j c).coefficient (p + (y, (2 * π) • θ)) :=
-    (hx j).smul (v.1 j)
-  have hξ' (j : Fin n) : Integrable fun y ↦ v.2 j •
-      (𝐞 (-⟪y, θ⟫) : ℂ) • (Symbol.frequencyDeriv j c).coefficient (p + (y, (2 * π) • θ)) :=
-    (hξ j).smul (v.2 j)
-  simp_rw [rightIntegrand_eq_integral, ← integral_smul]
-  rw [← integral_finsetSum _ fun j _ ↦ hx' j, ← integral_finsetSum _ fun j _ ↦ hξ' j,
-    ← integral_add (integrable_finsetSum _ fun j _ ↦ hx' j)
-      (integrable_finsetSum _ fun j _ ↦ hξ' j)]
-  congr 1
-  funext y
-  rw [fderiv_coefficient_apply, smul_add, Finset.smul_sum, Finset.smul_sum]
-  exact congrArg₂ (· + ·)
-    (Finset.sum_congr rfl fun j _ ↦ smul_comm (𝐞 (-⟪y, θ⟫) : ℂ) (v.1 j : ℝ)
-      ((Symbol.spatialDeriv j c).coefficient (p + (y, (2 * π) • θ))))
-    (Finset.sum_congr rfl fun j _ ↦ smul_comm (𝐞 (-⟪y, θ⟫) : ℂ) (v.2 j : ℝ)
-      ((Symbol.frequencyDeriv j c).coefficient (p + (y, (2 * π) • θ))))
+  rw [rightDeriv, fderiv_apply_eq_sum_coordinateDeriv (hc.differentiableAt_rightIntegrand θ p)]
+  simp only [hc.coordinateDeriv_fst_rightIntegrand, hc.coordinateDeriv_snd_rightIntegrand]
 
 /-- Near a point `p₀`, the integrand is bounded by a multiple of `(1 + ‖θ‖) ^ (-(n + 1))`. -/
 private theorem HasCompactSpatialSupport.exists_norm_rightIntegrand_le_of_mem_ball
@@ -433,28 +347,13 @@ private theorem HasCompactSpatialSupport.exists_norm_rightDeriv_le
   choose Bx hBx0 hBx using fun j ↦ (hc.spatialDeriv j).exists_norm_rightIntegrand_le_of_mem_ball p₀
   choose Bξ hBξ0 hBξ using fun j ↦
     (hc.frequencyDeriv j).exists_norm_rightIntegrand_le_of_mem_ball p₀
-  have hB : 0 ≤ ∑ j, Bx j + ∑ j, Bξ j :=
-    add_nonneg (Finset.sum_nonneg fun j _ ↦ hBx0 j) (Finset.sum_nonneg fun j _ ↦ hBξ0 j)
-  refine ⟨∑ j, Bx j + ∑ j, Bξ j, hB, fun p hp θ ↦ ?_⟩
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  have hv₁ (j : Fin n) : ‖v.1 j‖ ≤ ‖v‖ := (PiLp.norm_apply_le v.1 j).trans (norm_fst_le v)
-  have hv₂ (j : Fin n) : ‖v.2 j‖ ≤ ‖v‖ := (PiLp.norm_apply_le v.2 j).trans (norm_snd_le v)
-  rw [hc.rightDeriv_apply]
-  set w := (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
-  calc ‖∑ j, v.1 j • rightIntegrand (Symbol.spatialDeriv j c).coefficient p θ +
-        ∑ j, v.2 j • rightIntegrand (Symbol.frequencyDeriv j c).coefficient p θ‖
-      ≤ ∑ j, ‖v.1 j • rightIntegrand (Symbol.spatialDeriv j c).coefficient p θ‖ +
-          ∑ j, ‖v.2 j • rightIntegrand (Symbol.frequencyDeriv j c).coefficient p θ‖ :=
-        (norm_add_le _ _).trans (add_le_add (norm_sum_le _ _) (norm_sum_le _ _))
-    _ ≤ ∑ j, ‖v‖ * (Bx j * w) + ∑ j, ‖v‖ * (Bξ j * w) := by
-        gcongr with j _ j _
-        · rw [norm_smul]
-          exact mul_le_mul (hv₁ j) (hBx j p hp θ) (norm_nonneg _) (norm_nonneg _)
-        · rw [norm_smul]
-          exact mul_le_mul (hv₂ j) (hBξ j p hp θ) (norm_nonneg _) (norm_nonneg _)
-    _ = (∑ j, Bx j + ∑ j, Bξ j) * w * ‖v‖ := by
-        rw [← Finset.mul_sum, ← Finset.mul_sum, ← Finset.sum_mul, ← Finset.sum_mul]
-        ring
+  refine ⟨∑ j, Bx j + ∑ j, Bξ j, add_nonneg (Finset.sum_nonneg fun j _ ↦ hBx0 j)
+    (Finset.sum_nonneg fun j _ ↦ hBξ0 j), fun p hp θ ↦ ?_⟩
+  refine ((rightDeriv c p θ).opNorm_le_of_apply_eq_sum _ _ (hc.rightDeriv_apply p θ)).trans ?_
+  rw [add_mul, Finset.sum_mul, Finset.sum_mul]
+  gcongr with j _ j _
+  · exact hBx j p hp θ
+  · exact hBξ j p hp θ
 
 /-- The derivative of the integrand is continuous in `θ`. -/
 private theorem HasCompactSpatialSupport.continuous_rightDeriv (hc : c.HasCompactSpatialSupport)
@@ -471,19 +370,13 @@ private theorem HasCompactSpatialSupport.continuous_rightDeriv (hc : c.HasCompac
 private theorem HasCompactSpatialSupport.hasFDerivAt_rightCoeff (hc : c.HasCompactSpatialSupport)
     (p₀ : CoordinateSpace n × CoordinateSpace n) :
     HasFDerivAt (rightCoeff c.coefficient) (∫ θ, rightDeriv c p₀ θ) p₀ := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
   obtain ⟨B, -, hB⟩ := hc.exists_norm_rightDeriv_le p₀
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
+  exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
     (.of_forall fun p ↦ (hc.integrable_rightIntegrand p).aestronglyMeasurable)
     (hc.integrable_rightIntegrand p₀) (aestronglyMeasurable_of_continuous_clm
       (hc.continuous_rightDeriv p₀))
     (.of_forall fun θ p hp ↦ hB p hp θ) (integrable_one_add_norm_rpow_neg_add_one.const_mul B)
-    (.of_forall fun θ p _ ↦ ?_)
-  have h : (fun p ↦ rightIntegrand c.coefficient p θ) =
-      fun p ↦ ∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • c.coefficient (p + (y, (2 * π) • θ)) :=
-    funext fun p ↦ rightIntegrand_eq_integral _ p θ
-  rw [h]
-  exact hasFDerivAt_integral_shift (c.contDiff_coefficient.of_le (by simp)) hK hKc θ p
+    (.of_forall fun θ p _ ↦ (hc.differentiableAt_rightIntegrand θ p).hasFDerivAt)
 
 /-- The derivative of the left symbol in the direction `v`, through the left symbols of the
 first-order derivatives of `c`. -/
