@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Calculus.Hadamard
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
 # The Morse lemma
@@ -227,6 +228,38 @@ theorem map_add_eq_add_hessianAverage (hf : ContDiff ℝ 2 f) (x v : E) :
   rw [smul_smul]
   congr 1
   ring
+
+omit [CompleteSpace F] in
+/-- The averaged Hessian along the segment from `x` to `x + v` only depends on the function near
+that segment. -/
+theorem hessianAverage_congr_of_eventuallyEq {f₁ f₂ : E → F} {x v : E}
+    (h : ∀ t ∈ Set.Icc (0 : ℝ) 1, f₁ =ᶠ[𝓝 (x + t • v)] f₂) :
+    hessianAverage f₁ x v = hessianAverage f₂ x v := by
+  simp only [hessianAverage_eq_integral_Icc]
+  refine setIntegral_congr_fun measurableSet_Icc fun t ht ↦ ?_
+  rw [(h t ht).fderiv.fderiv_eq]
+
+omit [CompleteSpace F] in
+/-- **The averaged Hessian under a linear change of variables.** For a continuous linear
+equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v` is that of `f` at
+`e x` in the direction `e v`, precomposed with `e` in both slots. No differentiability of `f` is
+needed. -/
+theorem hessianAverage_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : E → F) (e : G ≃L[ℝ] E) (x v w w' : G) :
+    hessianAverage (f ∘ e) x v w w' = hessianAverage f (e x) (e v) (e w) (e w') := by
+  -- Precomposition with `e` in both slots, as a linear equivalence of bilinear maps, commutes
+  -- with the integral defining the averaged Hessian.
+  let Ψ : (E →L[ℝ] E →L[ℝ] F) ≃L[ℝ] (G →L[ℝ] G →L[ℝ] F) :=
+    e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ F))
+  have hΨ (B : E →L[ℝ] E →L[ℝ] F) (w w' : G) : Ψ B w w' = B (e w) (e w') := by simp [Ψ]
+  have h : hessianAverage (f ∘ e) x v = Ψ (hessianAverage f (e x) (e v)) := by
+    simp only [hessianAverage_eq_integral_Icc]
+    rw [← ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (E := E →L[ℝ] E →L[ℝ] F)
+      (F := G →L[ℝ] G →L[ℝ] F) Ψ]
+    refine setIntegral_congr_fun measurableSet_Icc fun t _ ↦ ?_
+    ext w w'
+    simp [hΨ, ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply]
+  rw [h, hΨ]
 
 end HessianAverage
 
