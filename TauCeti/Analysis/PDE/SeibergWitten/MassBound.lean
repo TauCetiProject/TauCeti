@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Compactness
 public import TauCeti.Analysis.Distribution.Mass.FormCurrent
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 
