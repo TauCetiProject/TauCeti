@@ -87,7 +87,7 @@ theorem blockTriangular_of_mem_positive_torus_closure {g : D.points A}
 actual torus spells the identity Weyl element. In particular a representative of a nonidentity
 Weyl element cannot lie in the identity Bruhat cell. This does not identify the projection
 kernel. -/
-theorem weylWordProd_eq_one_of_mem_positive_torus_closure [Nontrivial A]
+theorem geckWeylWordProd_eq_one_of_mem_positive_torus_closure [Nontrivial A]
     (l : List (Fin t.rank))
     (hl : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
       Subgroup.closure
