@@ -176,6 +176,8 @@ theorem mfderiv_flowOf_trajectory_zero_apply [IsManifold I 1 M] {v : (x : M) →
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) (a : ℝ) :
     mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) 0 a = a • v x := by
   rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv x)]
+  -- The tangent spaces at `flowOf v 0 x` and at `x` are both the model space `E`, so `v` may be
+  -- treated as a non-dependent function here.
   exact congrArg (a • v ·) (flowOf_zero hv x)
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time

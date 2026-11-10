@@ -100,6 +100,8 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
       (X - 1) * (normalReturnDerivative v g T₀ p h).charpoly := by
   set K := LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)
   let Mo : Module.End ℝ (TangentSpace I p) := (mfderiv I I (flowOf v T₀) p).toLinearMap
+  -- The tangent spaces at `flowOf v T₀ p` and at `p` are both the model space `E`, so
+  -- `congrArg v hp` is a well-typed equation of vectors in `E`.
   have hfix : Mo (v p) = v p := (mfderiv_flowOf_apply_self hv hP).trans (congrArg v hp)
   have hv0 : v p ≠ 0 := fun h ↦ hgv (by rw [h, map_zero])
   set L := ℝ ∙ v p
@@ -119,6 +121,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
   have hconj : e.conj (L.mapQ L Mo hL) = normalReturnDerivative v g T₀ p h := by
     ext w
     have hform := mfderiv_flowTransition_apply hv hP (by rwa [hp]) (by rwa [hp]) w
+    -- As in `hfix`, both tangent spaces are the model space `E`, so this rewrite is well typed.
     rw [congrArg v hp] at hform
     simp only [e, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
       Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
