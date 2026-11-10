@@ -67,7 +67,8 @@ theorem exists_inner_sub_lt_mul_norm_sub
     simp only [c]
     rw [sub_pos, div_lt_one (by positivity)]
     nlinarith
-  -- `c² (1 + K²) ≥ K²`: the cone of slope `K` lies inside the cone of aperture `arccos c`.
+  -- `c² (1 + K²) ≥ K²`: the cone of aperture `arccos c` about the downward axis lies inside the
+  -- downward cone of slope `K`.
   have hcK : (K : ℝ) ^ 2 ≤ c ^ 2 * (1 + (K : ℝ) ^ 2) := by
     simp only [c]
     field_simp
@@ -76,7 +77,8 @@ theorem exists_inner_sub_lt_mul_norm_sub
   refine ⟨v, hv, c, by simp only [c]; linarith, min h r, lt_min hc.height_pos hc.radius_pos,
     fun x hx hxξ ↦ ?_⟩
   set z := e x
-  have hnz : ‖z‖ = ‖x - ξ‖ := by rw [show z = ℓ (x - ξ) from (hℓ x).symm, ℓ.norm_map]
+  have hz : ℓ (x - ξ) = z := hℓ x
+  have hnz : ‖z‖ = ‖x - ξ‖ := by rw [← hz, ℓ.norm_map]
   have hz2 := WithLp.prod_norm_sq_eq_of_L2 z
   rw [Real.norm_eq_abs, sq_abs] at hz2
   have hzlt : ‖z‖ < min h r := by rwa [hnz, ← dist_eq_norm]
@@ -94,7 +96,7 @@ theorem exists_inner_sub_lt_mul_norm_sub
     rw [Real.dist_eq, hγ0, sub_zero, dist_zero_right] at this
     linarith [neg_abs_le (γ z.snd)]
   have hinner : ⟪v, x - ξ⟫_ℝ = -z.fst := by
-    rw [← ℓ.inner_map_map, show ℓ (x - ξ) = z from hℓ x, LinearIsometryEquiv.apply_symm_apply,
+    rw [← ℓ.inner_map_map, hz, LinearIsometryEquiv.apply_symm_apply,
       WithLp.prod_inner_apply]
     simp
   rw [hinner, ← hnz]

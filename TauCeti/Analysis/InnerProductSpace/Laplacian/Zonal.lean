@@ -66,8 +66,8 @@ private theorem inner_div_norm_eq_inner_mul_norm_rpow (e : E) :
 
 omit [InnerProductSpace ℝ E] in
 private theorem norm_rpow_neg_one_sub_two (x : E) : ‖x‖ ^ ((-1 : ℝ) - 2) = (‖x‖ ^ 3)⁻¹ := by
-  rw [show (-1 : ℝ) - 2 = -((3 : ℕ) : ℝ) by norm_num, Real.rpow_neg (norm_nonneg _),
-    Real.rpow_natCast]
+  rw [← Real.rpow_natCast, ← Real.rpow_neg (norm_nonneg _)]
+  norm_num
 
 /-- Away from the origin, the gradient of `x ↦ ⟪e, x⟫ / ‖x‖` is
 `‖x‖⁻¹ e - (⟪e, x⟫ / ‖x‖ ^ 3) x`. -/
