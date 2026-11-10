@@ -1050,6 +1050,16 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
+/-- A coefficient vanishing at every frequency of norm at least `R` has all its mixed derivatives
+zero at frequencies of norm greater than `R`. -/
+theorem mixedDeriv_eq_zero_of_lt_norm
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} {R : ℝ}
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) {ξ : CoordinateSpace n} (hξ : R < ‖ξ‖)
+    (α β : List (Fin n)) (x : CoordinateSpace n) : mixedDeriv α β f x ξ = 0 :=
+  mixedDeriv_eq_zero_of_forall_eventually (fun y =>
+    Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+      fun η hη => hR y η (le_of_lt hη)) α β x
+
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
 of two cut-off expansions, is a symbol of every order `m`. -/
 def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
@@ -1072,14 +1082,7 @@ def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V 
         (le_max_left M 0))
       rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
       exact h
-    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
-        funext y
-        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-            fun η hη => hR y η (le_of_lt hη)
-        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-        rfl
-      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
+    · rw [mixedDeriv_eq_zero_of_lt_norm hR hξ, norm_zero]
       exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 @[simp]
@@ -1095,6 +1098,35 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
+
+/-- A uniform symbol vanishing at every frequency of norm at least `R` is a uniform symbol of every
+order `m'`: on the ball of radius `R` the weights of the two orders are comparable. -/
+theorem IsUniform.ofBoundedFrequencySupport {a : Symbol n V W m} (ha : a.IsUniform) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R hR :
+      Symbol n V W m').IsUniform := by
+  refine isUniform_iff.2 fun α β => ?_
+  obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
+  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
+  rw [coefficient_ofBoundedFrequencySupport]
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have hw : 1 ≤ 1 + ‖ξ‖ ^ 2 := by nlinarith [sq_nonneg ‖ξ‖]
+    -- `⟨ξ⟩ ^ (m - |β|) = ⟨ξ⟩ ^ (m - m') ⟨ξ⟩ ^ (m' - |β|)` and `⟨ξ⟩ ^ (m - m') ≤ ⟨R⟩ ^ |m - m'|`
+    have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) =
+        (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+      rw [← Real.rpow_add (by positivity)]
+      ring_nf
+    have hR' : (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) ≤ (1 + R ^ 2) ^ (|m - m'| / 2) :=
+      (Real.rpow_le_rpow_of_exponent_le hw (by linarith [le_abs_self (m - m')])).trans
+        (Real.rpow_le_rpow (by positivity)
+          (by gcongr) (by positivity))
+    calc ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC x ξ
+      _ ≤ C * ((1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) := by
+        rw [hsplit]
+        gcongr
+      _ = C * (1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by ring
+  · rw [mixedDeriv_eq_zero_of_lt_norm hR hξ, norm_zero]
+    exact mul_nonneg (by positivity) (rpow_weight_pos ξ _).le
 
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
