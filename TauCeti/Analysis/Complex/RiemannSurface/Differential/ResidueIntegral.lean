@@ -1,0 +1,133 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue
+public import TauCeti.Analysis.Contour.Residue.Cutoff
+
+/-!
+# The residue of a meromorphic `1`-form as an integral in a chart
+
+Let `ω` be a `1`-form on a Riemann surface `X`, meromorphic at `x`, and let `e` be a chart of the
+maximal atlas at `x` whose target contains the closed disc of radius `R > 0` about `e x`, such that
+`ω` is holomorphic at every other point over that disc. Writing `ω = f(z) dz` in the chart, the
+residue of `ω` at `x` is computed by integrals of `f` in the chart:
+
+* `∮_{|z - e x| = R} f dz = 2πi · Res_x ω`
+  (`TauCeti.RiemannSurface.OneForm.circleIntegral_coeff_eq_residue`);
+* for a real `C¹` cutoff `χ` equal to `1` near `e x` and vanishing on the boundary circle,
+  `∫_{|z - e x| ≤ R} d((1 - χ) f dz) = 2πi · Res_x ω`
+  (`TauCeti.RiemannSurface.OneForm.integral_extDeriv_one_sub_smul_coeff_eq_residue`) and
+  `∫_{|z - e x| ≤ R} f · (i ∂ₓχ - ∂_yχ) = -2πi · Res_x ω`
+  (`TauCeti.RiemannSurface.OneForm.integral_mul_fderiv_cutoff_coeff_eq_residue`).
+
+The left-hand sides are computed in an arbitrary chart of the maximal atlas, the right-hand sides
+do not depend on it (`TauCeti.RiemannSurface.OneForm.residue_eq_of_mem_maximalAtlas`). On a compact
+Riemann surface a `1`-form meromorphic everywhere has nonzero residue at only finitely many points
+(`TauCeti.RiemannSurface.OneForm.finite_support_residue`), so the sum of its residues is a finite
+sum.
+
+These are the local ingredients of the residue theorem on a compact Riemann surface proved by
+Stokes' theorem (Forster, Theorem 10.21): with cutoffs `χᵢ` in coordinate discs about the poles,
+`(1 - Σ χᵢ) ω` is a smooth compactly supported `1`-form, the integral of its exterior derivative
+over `X` vanishes, and the contribution of the `i`-th disc is `2πi` times the residue at the `i`-th
+pole.
+
+## References
+
+* Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
+  §9 and Theorem 10.21.
+-/
+
+public section
+
+noncomputable section
+
+open Complex Filter Function IsManifold Metric Set
+open scoped Manifold Real Topology
+
+namespace TauCeti.RiemannSurface.OneForm
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  {ω : OneForm X} {x : X}
+
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
+finitely many points: a nonzero residue forces a pole. -/
+theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
+    (support ω.residue).Finite := by
+  refine (finite_support_untop₀_order hω).subset fun y hy ↦ ?_
+  have hneg : ω.order y < 0 := lt_of_not_ge fun h ↦ hy (residue_eq_zero_of_order_nonneg h)
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 (hneg.trans (WithTop.coe_lt_top 0)).ne
+  rw [← hn] at hneg
+  simp only [mem_support, ← hn, WithTop.untop₀_coe]
+  exact_mod_cast hneg.ne
+
+variable {e : OpenPartialHomeomorph X ℂ} {R : ℝ}
+
+/-- In a chart of the maximal atlas whose target contains the closed disc of radius `R` about
+`e x`, the hypotheses on `ω` translate into the hypotheses of the planar residue computations on
+its coefficient. -/
+private theorem coeff_hypotheses (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source)
+    (hsub : closedBall (e x) R ⊆ e.target) (hω : ω.MeromorphicAt x)
+    (hhol : ∀ y ∈ e.source, e y ∈ closedBall (e x) R → y ≠ x → ω.HolomorphicAt y) :
+    _root_.MeromorphicAt (ω.coeff e) (e x) ∧
+      ∀ z ∈ closedBall (e x) R, z ≠ e x → AnalyticAt ℂ (ω.coeff e) z := by
+  refine ⟨(meromorphicAt_iff_of_mem_maximalAtlas he hx).1 hω, fun z hz hzx ↦ ?_⟩
+  have hzt := hsub hz
+  have hy := e.map_target hzt
+  have hey : e (e.symm z) = z := e.right_inv hzt
+  have hne : e.symm z ≠ x := fun h ↦ hzx (by rw [← hey, h])
+  have h := (holomorphicAt_iff_of_mem_maximalAtlas he hy).1
+    (hhol _ hy (by rwa [hey]) hne)
+  rwa [hey] at h
+
+/-- **The residue as a circle integral in a chart.** If `ω` is meromorphic at `x` and holomorphic
+at every other point over the closed disc of radius `R > 0` about `e x`, contained in the target of
+a chart `e` of the maximal atlas, then the circle integral of the coefficient of `ω` in `e` is
+`2πi · Res_x ω`. -/
+theorem circleIntegral_coeff_eq_residue (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source)
+    (hR : 0 < R) (hsub : closedBall (e x) R ⊆ e.target) (hω : ω.MeromorphicAt x)
+    (hhol : ∀ y ∈ e.source, e y ∈ closedBall (e x) R → y ≠ x → ω.HolomorphicAt y) :
+    circleIntegral (ω.coeff e) (e x) R = 2 * π * I * ω.residue x := by
+  obtain ⟨hf, hfa⟩ := coeff_hypotheses he hx hsub hω hhol
+  rw [residue_eq_of_mem_maximalAtlas he hx]
+  exact Contour.circleIntegral_eq_residue_of_analyticAt hR hf hfa
+
+variable {χ : ℂ → ℝ}
+
+/-- **The residue as the integral of the exterior derivative of a cutoff `1`-form in a chart.**
+Under the hypotheses of `TauCeti.RiemannSurface.OneForm.circleIntegral_coeff_eq_residue`, for a
+real `C¹` function `χ` equal to `1` near `e x` and vanishing on the boundary circle, the integral of
+`d((1 - χ) f dz)` over the disc, where `f` is the coefficient of `ω` in `e`, is `2πi · Res_x ω`. -/
+theorem integral_extDeriv_one_sub_smul_coeff_eq_residue (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X)
+    (hx : x ∈ e.source) (hR : 0 < R) (hsub : closedBall (e x) R ⊆ e.target)
+    (hω : ω.MeromorphicAt x)
+    (hhol : ∀ y ∈ e.source, e y ∈ closedBall (e x) R → y ≠ x → ω.HolomorphicAt y)
+    (hχ : ContDiff ℝ 1 χ) (hχc : χ =ᶠ[𝓝 (e x)] 1) (hχR : ∀ z ∈ sphere (e x) R, χ z = 0) :
+    (∫ z in closedBall (e x) R,
+      extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * ω.coeff e y) • Contour.dzForm) z ![1, I]) =
+        2 * π * I * ω.residue x := by
+  obtain ⟨hf, hfa⟩ := coeff_hypotheses he hx hsub hω hhol
+  rw [residue_eq_of_mem_maximalAtlas he hx]
+  exact Contour.integral_extDeriv_one_sub_smul_dzForm_closedBall hR hf hfa hχ hχc hχR
+
+/-- **The residue as a cutoff integral in a chart.** Under the hypotheses of
+`TauCeti.RiemannSurface.OneForm.integral_extDeriv_one_sub_smul_coeff_eq_residue`,
+`∫_{|z - e x| ≤ R} f · (i ∂ₓχ - ∂_yχ) = -2πi · Res_x ω`, where `f` is the coefficient of `ω` in
+`e`. -/
+theorem integral_mul_fderiv_cutoff_coeff_eq_residue (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X)
+    (hx : x ∈ e.source) (hR : 0 < R) (hsub : closedBall (e x) R ⊆ e.target)
+    (hω : ω.MeromorphicAt x)
+    (hhol : ∀ y ∈ e.source, e y ∈ closedBall (e x) R → y ≠ x → ω.HolomorphicAt y)
+    (hχ : ContDiff ℝ 1 χ) (hχc : χ =ᶠ[𝓝 (e x)] 1) (hχR : ∀ z ∈ sphere (e x) R, χ z = 0) :
+    (∫ z in closedBall (e x) R, ω.coeff e z * (I * fderiv ℝ χ z 1 - fderiv ℝ χ z I)) =
+      -(2 * π * I * ω.residue x) := by
+  obtain ⟨hf, hfa⟩ := coeff_hypotheses he hx hsub hω hhol
+  rw [residue_eq_of_mem_maximalAtlas he hx]
+  exact Contour.integral_mul_fderiv_cutoff_closedBall hR hf hfa hχ hχc hχR
+
+end TauCeti.RiemannSurface.OneForm
