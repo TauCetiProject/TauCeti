@@ -20,7 +20,9 @@ For the metric `g_M + f² g_N`, the Ricci tensor has horizontal block
 Here `Δ = div grad`, and all quantities on the right use the original factor metrics.
 These contractions turn the horizontal, mixed and vertical curvature formulas into
 criteria for Ricci curvature of warped metrics. The formulas allow zero-dimensional
-factors and require only that the warping function be nonzero at the point evaluated.
+factors. The horizontal and vertical block formulas hold unconditionally, also at points where
+the warping function vanishes; the mixed block formulas and the full formula require the warping
+function to be nonzero at the point evaluated.
 
 ## References
 
