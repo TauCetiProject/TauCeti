@@ -76,6 +76,7 @@ order, including order zero.
 * `TauCeti.hessianAverage`: the averaged Hessian along a segment, normalised so that
   `TauCeti.hessianAverage_zero` identifies its value at `0` with the Hessian.
 * `TauCeti.map_add_eq_add_hessianAverage`: the second-order Taylor formula it satisfies.
+* `ContinuousLinearMap.bilinAdjoint`: the adjoint of an operator for a continuous bilinear form.
 * `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
   bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
   that value by a `C^n` family of operators equal to the identity at the basepoint.
@@ -263,6 +264,53 @@ theorem hessianAverage_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGrou
 
 end HessianAverage
 
+section BilinAdjoint
+
+variable {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {H : G →L[𝕜] G →L[𝕜] 𝕜}
+
+/-- The **adjoint of an operator `X` for a continuous bilinear form `H`**. When `H` is invertible
+it is characterized by `H (H.bilinAdjoint X w) w' = H (X w') w`
+(`ContinuousLinearMap.bilinAdjoint_apply_apply`), and when `H` is moreover symmetric it fixes the
+identity and reverses products. -/
+@[expose] def _root_.ContinuousLinearMap.bilinAdjoint (H : G →L[𝕜] G →L[𝕜] 𝕜) (X : G →L[𝕜] G) :
+    G →L[𝕜] G :=
+  H.inverse ∘L (H ∘L X).flip
+
+/-- The characterizing identity of the adjoint for an invertible bilinear form. -/
+theorem _root_.ContinuousLinearMap.bilinAdjoint_apply_apply (hH : H.IsInvertible)
+    (X : G →L[𝕜] G) (w w' : G) : H (H.bilinAdjoint X w) w' = H (X w') w := by
+  simp [ContinuousLinearMap.bilinAdjoint, hH.self_apply_inverse]
+
+/-- The adjoint for an invertible symmetric bilinear form fixes the identity. -/
+theorem _root_.ContinuousLinearMap.bilinAdjoint_one (hH : H.IsInvertible)
+    (hsymm : ∀ w w', H w w' = H w' w) : H.bilinAdjoint 1 = 1 :=
+  ContinuousLinearMap.ext fun w ↦ hH.injective <| ContinuousLinearMap.ext fun w' ↦ by
+    rw [H.bilinAdjoint_apply_apply hH, hsymm, one_apply_eq_self,
+      one_apply_eq_self]
+
+/-- The adjoint for an invertible symmetric bilinear form reverses products. -/
+theorem _root_.ContinuousLinearMap.bilinAdjoint_mul (hH : H.IsInvertible)
+    (hsymm : ∀ w w', H w w' = H w' w) (X Y : G →L[𝕜] G) :
+    H.bilinAdjoint (X * Y) = H.bilinAdjoint Y * H.bilinAdjoint X :=
+  ContinuousLinearMap.ext fun w ↦ hH.injective <| ContinuousLinearMap.ext fun w' ↦ by
+    calc H (H.bilinAdjoint (X * Y) w) w' = H (X (Y w')) w := by
+          rw [H.bilinAdjoint_apply_apply hH, mul_apply_eq_comp]
+      _ = H (H.bilinAdjoint X w) (Y w') := (H.bilinAdjoint_apply_apply hH X w (Y w')).symm
+      _ = H (Y w') (H.bilinAdjoint X w) := hsymm _ _
+      _ = H (H.bilinAdjoint Y (H.bilinAdjoint X w)) w' :=
+          (H.bilinAdjoint_apply_apply hH Y _ w').symm
+      _ = H ((H.bilinAdjoint Y * H.bilinAdjoint X) w) w' := by
+          rw [mul_apply_eq_comp]
+
+/-- The adjoint for a fixed bilinear form depends continuously on the operator. -/
+theorem _root_.ContinuousLinearMap.continuous_bilinAdjoint (H : G →L[𝕜] G →L[𝕜] 𝕜) :
+    Continuous H.bilinAdjoint :=
+  continuous_const.clm_comp ((ContinuousLinearMap.flipₗᵢ 𝕜 G G 𝕜).continuous.comp
+    (continuous_const.clm_comp continuous_id))
+
+end BilinAdjoint
+
 section Congruence
 
 open Set
@@ -282,18 +330,13 @@ theorem exists_congruence_of_symmetric_family
     ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
       ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
   -- the adjoint of an operator for the pairing given by `B₀`
-  set adj : (E →L[ℝ] E) →L[ℝ] (E →L[ℝ] E) :=
-    (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).comp
-      (((ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) (E →L[ℝ] ℝ)).flip
-          (G' := E →L[ℝ] E →L[ℝ] ℝ) (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
-        ((ContinuousLinearMap.compL ℝ E E ℝ).flip)) with hadjdef
-  have adj_spec (T : E →L[ℝ] E) (w w' : E) : B₀ (adj T w) w' = B₀ w (T w') := by simp [hadjdef]
+  have hB₀inv : (B₀ : E →L[ℝ] E →L[ℝ] ℝ).IsInvertible := ⟨B₀, rfl⟩
+  have hB₀symm (w w' : E) : B₀ w w' = B₀ w' w := by simpa [← hB₀] using hsymm a w w'
+  set adj := (B₀ : E →L[ℝ] E →L[ℝ] ℝ).bilinAdjoint
+  have adj_spec (T : E →L[ℝ] E) (w w' : E) : B₀ (adj T w) w' = B₀ (T w') w :=
+    ContinuousLinearMap.bilinAdjoint_apply_apply hB₀inv T w w'
   have hdet (T₁ T₂ : E →L[ℝ] E) (h : ∀ w w', B₀ (T₁ w) w' = B₀ (T₂ w) w') : T₁ = T₂ :=
     ContinuousLinearMap.ext fun w ↦ B₀.injective (ContinuousLinearMap.ext (h w))
-  have adj_one : adj 1 = 1 := hdet _ _ fun w w' ↦ by simp [adj_spec]
-  have adj_mul (S T : E →L[ℝ] E) : adj (S * T) = adj T * adj S := hdet _ _ fun w w' ↦ by
-    rw [adj_spec, mul_apply_eq_comp, mul_apply_eq_comp, adj_spec, adj_spec]
-  have hB₀symm (w w' : E) : B₀ w w' = B₀ w' w := by simpa [← hB₀] using hsymm a w w'
   -- the comparison operator `B₀⁻¹ ∘ B v`
   set C : F → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
   have hCapply (v : F) (w w' : E) : B₀ (C v w) w' = B v w w' := by simp [hCdef]
@@ -302,18 +345,21 @@ theorem exists_congruence_of_symmetric_family
     exact (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
       (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).contDiff.comp hB
   have hCadj (v : F) : adj (C v) = C v :=
-    hdet _ _ fun w w' ↦ by rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
+    hdet _ _ fun w w' ↦ by rw [adj_spec, hCapply, hCapply, hsymm]
   have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) := hCa ▸ hCsmooth.continuous.continuousAt
   have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w)
       (sqrtNearOne (E →L[ℝ] E) (C v) w') = B v w w' := by
     filter_upwards [hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E)),
-      hten.eventually (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)]
+      hten.eventually (eventually_sqrtNearOne_fixed
+        (ContinuousLinearMap.continuous_bilinAdjoint _).continuousAt
+        (ContinuousLinearMap.bilinAdjoint_one hB₀inv hB₀symm)
+        (ContinuousLinearMap.bilinAdjoint_mul hB₀inv hB₀symm))]
       with v h1 h2 w w'
     set R := sqrtNearOne (E →L[ℝ] E) (C v)
     -- `R` is self-adjoint for `B₀` since `C v` is, `R * R = C v`, and `B₀ (C v ·) = B v`.
-    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [h2 (hCadj v)]
-      _ = B₀ w ((R * R) w') := by rw [adj_spec, mul_apply_eq_comp]
-      _ = B v w w' := by rw [h1, hB₀symm, hCapply, hsymm]
+    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [show adj R = R from h2 (hCadj v)]
+      _ = B₀ ((R * R) w') w := by rw [adj_spec, mul_apply_eq_comp]
+      _ = B v w w' := by rw [h1, hCapply, hsymm]
   obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
   refine ⟨fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v),
     W ∩ C ⁻¹' {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a},

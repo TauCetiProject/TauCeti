@@ -39,6 +39,8 @@ near `1` in a bare Banach algebra, with smooth dependence on the element.
   value really is a square root.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
+* `TauCeti.eventually_sqrtNearOne_map`: a family of maps preserving squares commutes with the
+  square root near the identity, as long as its values at the square roots tend to `1`.
 * `TauCeti.eventually_sqrtNearOne_fixed`: a continuous map fixing `1` and reversing products
   fixes the square root of every fixed element sufficiently close to `1`.
 
@@ -135,6 +137,20 @@ theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
 theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
   contDiffAt_sqrtNearOne.continuousAt
 
+/-- **Square roots near the identity commute with a family of maps preserving squares.** Along a
+filter on which `C i` tends to `1`, if each `φ i` preserves squares and `φ i` of the square root of
+`C i` tends to `1`, then eventually the square root of `φ i (C i)` is `φ i` of the square root of
+`C i`. The maps may go to another Banach algebra. -/
+theorem eventually_sqrtNearOne_map {B ι : Type*} [NormedRing B] [NormedAlgebra ℝ B]
+    [CompleteSpace B] {l : Filter ι} {C : ι → A} {φ : ι → A → B}
+    (hC : Tendsto C l (𝓝 1)) (hφ : Tendsto (fun i ↦ φ i (sqrtNearOne A (C i))) l (𝓝 1))
+    (hmul : ∀ᶠ i in l, ∀ x, φ i (x * x) = φ i x * φ i x) :
+    ∀ᶠ i in l, sqrtNearOne B (φ i (C i)) = φ i (sqrtNearOne A (C i)) := by
+  filter_upwards [hC.eventually eventually_mul_self_sqrtNearOne,
+    hφ.eventually eventually_sqrtNearOne_mul_self, hmul] with i hs hu hm
+  rw [← hm, hs] at hu
+  exact hu
+
 /-- A map continuous at `1`, fixing `1`, and reversing products fixes the square root near
 the identity of every fixed element sufficiently close to `1`. -/
 theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
@@ -144,9 +160,9 @@ theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
     simpa only [sqrtNearOne_one] using (continuousAt_sqrtNearOne (A := A)).tendsto
   have hadj : Tendsto (fun a ↦ adj (sqrtNearOne A a)) (𝓝 1) (𝓝 1) := by
     simpa only [Function.comp_def, h1] using hc.tendsto.comp hroot
-  filter_upwards [eventually_mul_self_sqrtNearOne,
-    hadj.eventually eventually_sqrtNearOne_mul_self] with a hs hu ha
-  rw [← hmul, hs, ha] at hu
-  exact hu.symm
+  filter_upwards [eventually_sqrtNearOne_map (φ := fun _ ↦ adj) tendsto_id hadj
+    (Eventually.of_forall fun _ x ↦ hmul x x)] with a h ha
+  rw [id, ha] at h
+  exact h.symm
 
 end TauCeti

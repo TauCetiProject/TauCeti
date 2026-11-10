@@ -23,7 +23,7 @@ in `TauCeti.Analysis.Calculus.Morse.NormalForm`. Write `H b` for the vertical He
 `R (b, v) = TauCeti.parametricMorseOperator f (b, v)` is the square root near the identity of
 `(H b)⁻¹ ∘ B (b, v)`, and the **canonical parametric Morse map**
 `TauCeti.parametricMorseMap f` is `(b, v) ↦ (b, R (b, v) v)`. Near a point of the zero section with
-invertible vertical Hessian, `R` is self-adjoint for `H b` and satisfies
+invertible vertical Hessian, `R` satisfies
 `H b (R w) (R w') = B (b, v) w w'`, so Taylor's formula turns `f (b, v)` into
 `f (b, 0) + ½ H b (R v, R v)` along a critical zero section. The map is `C^n` there for a
 `C^{n+2}` family and has derivative the identity on the zero section; the inverse function theorem
@@ -34,7 +34,7 @@ The Hessian convention is the second derivative itself, so the quadratic formula
 Since it involves no choices, the construction is natural. It depends only on the germ of `f`
 along the zero section (`Filter.EventuallyEq.parametricMorseMap`). If `f'` is the same family in
 other coordinates, `f' (σ b, T b v) = f (b, v)` near the zero section for a change of parameter `σ`
-and a family `T` of linear isomorphisms of the fibres, continuous together with its inverses, then
+and a family `T` of linear isomorphisms of the fibres, continuous at the base point, then
 the canonical maps correspond: `Φ' (σ b, T b v) = (σ b, T b (Φ (b, v)).2)`
 (`TauCeti.eventually_parametricMorseMap_transition`). These are the compatibilities with bundle
 transitions under which the local coordinate changes over the trivializations of a vector bundle,
@@ -79,32 +79,6 @@ variable {P E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### The canonical coordinate change -/
 
-/-- The adjoint of an operator `X` for a bilinear form `H`, characterized by
-`H (X† w) w' = H (X w') w` when `H` is invertible. -/
-private def bilinAdjoint (H : E →L[ℝ] E →L[ℝ] ℝ) (X : E →L[ℝ] E) : E →L[ℝ] E :=
-  H.inverse ∘L (H ∘L X).flip
-
-private theorem bilinAdjoint_apply_apply {H : E →L[ℝ] E →L[ℝ] ℝ} (hH : H.IsInvertible)
-    (X : E →L[ℝ] E) (w w' : E) : H (bilinAdjoint H X w) w' = H (X w') w := by
-  simp [bilinAdjoint, hH.self_apply_inverse]
-
-private theorem bilinAdjoint_one {H : E →L[ℝ] E →L[ℝ] ℝ} (hH : H.IsInvertible)
-    (hsymm : ∀ w w', H w w' = H w' w) : bilinAdjoint H 1 = 1 :=
-  ContinuousLinearMap.ext fun w ↦ hH.injective <| ContinuousLinearMap.ext fun w' ↦ by
-    rw [bilinAdjoint_apply_apply hH, hsymm, one_apply_eq_self, one_apply_eq_self]
-
-private theorem bilinAdjoint_mul {H : E →L[ℝ] E →L[ℝ] ℝ} (hH : H.IsInvertible)
-    (hsymm : ∀ w w', H w w' = H w' w) (X Y : E →L[ℝ] E) :
-    bilinAdjoint H (X * Y) = bilinAdjoint H Y * bilinAdjoint H X :=
-  ContinuousLinearMap.ext fun w ↦ hH.injective <| ContinuousLinearMap.ext fun w' ↦ by
-    calc H (bilinAdjoint H (X * Y) w) w' = H (X (Y w')) w := by
-          rw [bilinAdjoint_apply_apply hH, mul_apply_eq_comp]
-      _ = H (bilinAdjoint H X w) (Y w') := (bilinAdjoint_apply_apply hH X w (Y w')).symm
-      _ = H (Y w') (bilinAdjoint H X w) := hsymm _ _
-      _ = H (bilinAdjoint H Y (bilinAdjoint H X w)) w' :=
-          (bilinAdjoint_apply_apply hH Y _ w').symm
-      _ = H ((bilinAdjoint H Y * bilinAdjoint H X) w) w' := by rw [mul_apply_eq_comp]
-
 /-- The comparison operator `H⁻¹ ∘ B` whose square root is the canonical parametric Morse
 operator. -/
 private def morseComparison (f : P × E → ℝ) (z : P × E) : E →L[ℝ] E :=
@@ -122,8 +96,7 @@ variable [CompleteSpace E]
 `H` for the vertical Hessian of `f` at `(b, 0)` and `B` for the averaged vertical Hessian
 `TauCeti.hessianAverage (fun v ↦ f (b, v)) 0 v`, so that `B = H` when `v = 0`. The operator is the
 square root near the identity (`TauCeti.sqrtNearOne`) of the comparison operator `H⁻¹ ∘ B`.
-Near a point of a critical zero section with invertible vertical Hessian it is self-adjoint for
-`H` and conjugates `B` to `H`
+Near a point of the zero section with invertible vertical Hessian it conjugates `B` to `H`
 (`TauCeti.eventually_fderiv_fderiv_apply_parametricMorseOperator`). -/
 def parametricMorseOperator (f : P × E → ℝ) (z : P × E) : E →L[ℝ] E :=
   sqrtNearOne (E →L[ℝ] E)
@@ -205,6 +178,17 @@ private theorem tendsto_morseComparison (hf : ContDiff ℝ 2 f)
   simpa only [morseComparison_zero hH] using
     (contDiffAt_morseComparison (n := 0) (z := (a, 0)) (by simpa using hf) hH).continuousAt.tendsto
 
+/-- Near a point of the zero section with invertible vertical Hessian, the canonical parametric
+Morse operator squares to the comparison operator. -/
+private theorem eventually_parametricMorseOperator_mul_self (hf : ContDiff ℝ 2 f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)),
+      parametricMorseOperator f z * parametricMorseOperator f z = morseComparison f z := by
+  filter_upwards [(tendsto_morseComparison hf hH).eventually eventually_mul_self_sqrtNearOne]
+    with z hz
+  rw [parametricMorseOperator_eq]
+  exact hz
+
 /-- **Regularity of the canonical parametric Morse operator.** For a jointly `C^{n+2}` family,
 the canonical parametric Morse operator is `C^n` near every point of the zero section with
 invertible vertical Hessian. -/
@@ -254,39 +238,44 @@ theorem eventually_fderiv_fderiv_apply_parametricMorseOperator (hf : ContDiff �
   let Hz : P × E → E →L[ℝ] E →L[ℝ] ℝ := fun z ↦ fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0
   have hHsymm (z : P × E) (w w' : E) : Hz z w w' = Hz z w' w := by
     simpa only [Hz, hessianAverage_zero] using hessianAverage_symm (hslice z.1) 0 0 w w'
-  -- The adjoint of `R` for `Hz` tends to the identity, so it is the square root of its own
-  -- square `C` near the identity, that is, `R` itself.
+  -- The adjoint of `R` for `Hz` tends to the identity, so it is the square root of the adjoint
+  -- of `C`, which is `C` itself: `R` is self-adjoint for `Hz`.
   have hHc : ContinuousAt Hz (a, 0) :=
     ((contDiff_fderiv_fderiv_slice (n := 0) (by simpa using hf)).comp contDiff_fst).continuous
       |>.continuousAt
-  have hadj : Tendsto (fun z ↦ bilinAdjoint (Hz z) (parametricMorseOperator f z)) (𝓝 (a, 0))
-      (𝓝 1) := by
-    have hc : ContinuousAt (fun z ↦ bilinAdjoint (Hz z) (parametricMorseOperator f z)) (a, 0) :=
-      (ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := Hz) (x := (a, 0))
+  have hadj : Tendsto (fun z ↦ (Hz z).bilinAdjoint (sqrtNearOne (E →L[ℝ] E) (morseComparison f z)))
+      (𝓝 (a, 0)) (𝓝 1) := by
+    have hc : ContinuousAt (fun z ↦ (Hz z).bilinAdjoint (parametricMorseOperator f z)) (a, 0) := by
+      simp only [ContinuousLinearMap.bilinAdjoint]
+      exact (ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := Hz) (x := (a, 0))
           (hH.contDiffAt_map_inverse (n := 0)).continuousAt hHc).clm_comp
         ((ContinuousLinearMap.flipₗᵢ ℝ E E ℝ).continuous.continuousAt.comp
           (hHc.clm_comp (continuousAt_parametricMorseOperator hf hH)))
-    have h1 : bilinAdjoint (Hz (a, 0)) (parametricMorseOperator f (a, 0)) = 1 := by
-      rw [parametricMorseOperator_zero hH, bilinAdjoint_one hH (hHsymm (a, 0))]
-    simpa only [h1] using hc.tendsto
+    have h1 : (Hz (a, 0)).bilinAdjoint (parametricMorseOperator f (a, 0)) = 1 := by
+      rw [parametricMorseOperator_zero hH, ContinuousLinearMap.bilinAdjoint_one hH (hHsymm (a, 0))]
+    have h := hc.tendsto
+    rw [h1] at h
+    simpa only [parametricMorseOperator_eq] using h
   filter_upwards [eventually_isInvertible_fderiv_fderiv_slice hf hH,
-    (tendsto_morseComparison hf hH).eventually eventually_mul_self_sqrtNearOne,
-    hadj.eventually eventually_sqrtNearOne_mul_self] with z hz hRR hRadj w w'
+    eventually_parametricMorseOperator_mul_self hf hH,
+    eventually_sqrtNearOne_map (tendsto_morseComparison hf hH) hadj
+      ((eventually_isInvertible_fderiv_fderiv_slice hf hH).mono fun z hz x ↦
+        ContinuousLinearMap.bilinAdjoint_mul hz (hHsymm z) x x)] with z hz hR hRadj w w'
   set R := parametricMorseOperator f z
-  have hR : R * R = morseComparison f z := hRR
   have hC (w w' : E) : Hz z (morseComparison f z w) w' = hessianAverage (fun v ↦ f (z.1, v)) 0 z.2
       w w' := by
     simp [morseComparison, Hz, hz.self_apply_inverse]
   -- `C` is self-adjoint for `Hz`, because `Bz` is symmetric.
-  have hCadj : bilinAdjoint (Hz z) (morseComparison f z) = morseComparison f z :=
+  have hCadj : (Hz z).bilinAdjoint (morseComparison f z) = morseComparison f z :=
     ContinuousLinearMap.ext fun w ↦ hz.injective <| ContinuousLinearMap.ext fun w' ↦ by
-      rw [bilinAdjoint_apply_apply hz, hC, hC, hessianAverage_symm (hslice z.1)]
-  have hRsa : bilinAdjoint (Hz z) R = R := by
-    rw [← bilinAdjoint_mul hz (hHsymm z), hR, hCadj] at hRadj
+      rw [ContinuousLinearMap.bilinAdjoint_apply_apply hz, hC, hC,
+        hessianAverage_symm (hslice z.1)]
+  have hRsa : (Hz z).bilinAdjoint R = R := by
+    rw [hCadj, ← parametricMorseOperator_eq] at hRadj
     exact hRadj.symm
-  calc Hz z (R w) (R w') = Hz z (bilinAdjoint (Hz z) R w) (R w') := by rw [hRsa]
+  calc Hz z (R w) (R w') = Hz z ((Hz z).bilinAdjoint R w) (R w') := by rw [hRsa]
     _ = Hz z (morseComparison f z w') w := by
-      rw [bilinAdjoint_apply_apply hz, ← mul_apply_eq_comp, hR]
+      rw [ContinuousLinearMap.bilinAdjoint_apply_apply hz, ← mul_apply_eq_comp, hR]
     _ = hessianAverage (fun v ↦ f (z.1, v)) 0 z.2 w w' := by
       rw [hC, hessianAverage_symm (hslice z.1)]
 
@@ -394,21 +383,25 @@ theorem _root_.Filter.EventuallyEq.parametricMorseMap {f₁ f₂ : P × E → �
 family `f` have invertible vertical Hessian at `(a, 0)`, and let `f'` be the same family in other
 coordinates near the zero section: `f' (σ b, T b v) = f (b, v)` for `(b, v)` near `(a, 0)`, where
 `σ` is any change of parameter and `T` is a family of linear isomorphisms of the fibres,
-continuous at `a` together with its inverses. Then near `(a, 0)` the canonical operators of `f'`
+continuous at `a`. Then near `(a, 0)` the canonical operators of `f'`
 and `f` are conjugate by `T`. -/
 theorem eventually_parametricMorseOperator_transition (hf : ContDiff ℝ 2 f)
     (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
-    (hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a)
     (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z)
     (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseOperator f' (σ z.1, T z.1 z.2) =
       (T z.1).conjContinuousAlgEquiv (parametricMorseOperator f z) := by
-  -- The conjugate of the operator of `f` tends to the identity, and its square is the
-  -- comparison operator of `f'`, whose square root near the identity it therefore is.
+  -- The conjugate of the operator of `f` tends to the identity, so it is the square root of the
+  -- conjugate of the comparison operator of `f`, which is the comparison operator of `f'`.
   have hconj : Tendsto (fun z : P × E ↦ (T z.1).conjContinuousAlgEquiv
-      (parametricMorseOperator f z)) (𝓝 (a, 0)) (𝓝 1) := by
+      (sqrtNearOne (E →L[ℝ] E) (morseComparison f z))) (𝓝 (a, 0)) (𝓝 1) := by
     have hT₁ : ContinuousAt (fun z : P × E ↦ (T z.1 : E →L[ℝ] E')) (a, 0) :=
       hT.comp_of_eq continuousAt_fst rfl
+    -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
+    have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
+      simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+        ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
+          (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
     have hT₂ : ContinuousAt (fun z : P × E ↦ ((T z.1).symm : E' →L[ℝ] E)) (a, 0) :=
       hTsymm.comp_of_eq continuousAt_fst rfl
     have hc : ContinuousAt (fun z : P × E ↦ (T z.1 : E →L[ℝ] E') ∘L
@@ -418,14 +411,16 @@ theorem eventually_parametricMorseOperator_transition (hf : ContDiff ℝ 2 f)
         ((T a).symm : E' →L[ℝ] E) = 1 := by
       ext u
       simp [parametricMorseOperator_zero hH]
-    simpa only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, h1] using hc.tendsto
-  filter_upwards [eventually_morseComparison_transition hcomp,
-    (tendsto_morseComparison hf hH).eventually eventually_mul_self_sqrtNearOne,
-    hconj.eventually eventually_sqrtNearOne_mul_self] with z hz hRR hconjR
-  have hRR' : parametricMorseOperator f z * parametricMorseOperator f z = morseComparison f z :=
-    hRR
-  rw [← map_mul, hRR'] at hconjR
-  rw [parametricMorseOperator_eq f', hz, hconjR]
+    have h := hc.tendsto
+    rw [h1] at h
+    simpa only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply,
+      parametricMorseOperator_eq] using h
+  have hmap := eventually_sqrtNearOne_map (A := E →L[ℝ] E) (B := E' →L[ℝ] E')
+    (φ := fun z : P × E ↦ ((T z.1).conjContinuousAlgEquiv : (E →L[ℝ] E) → E' →L[ℝ] E'))
+    (tendsto_morseComparison hf hH) hconj
+    (Eventually.of_forall fun z x ↦ map_mul (T z.1).conjContinuousAlgEquiv x x)
+  filter_upwards [eventually_morseComparison_transition hcomp, hmap] with z hz hconjR
+  rw [parametricMorseOperator_eq f', hz, hconjR, parametricMorseOperator_eq]
 
 /-- **The canonical parametric Morse map under a change of trivialization.** In the setting of
 `TauCeti.eventually_parametricMorseOperator_transition`, near `(a, 0)` the canonical parametric
@@ -433,12 +428,11 @@ Morse maps of `f'` and `f` correspond under the change of coordinates
 `τ (b, v) = (σ b, T b v)`: `Φ' (τ z) = τ (Φ z)`. -/
 theorem eventually_parametricMorseMap_transition (hf : ContDiff ℝ 2 f)
     (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
-    (hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a)
     (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z)
     (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseMap f' (σ z.1, T z.1 z.2) =
       (σ z.1, T z.1 (parametricMorseMap f z).2) := by
-  filter_upwards [eventually_parametricMorseOperator_transition hf hT hTsymm hcomp hH] with z hz
+  filter_upwards [eventually_parametricMorseOperator_transition hf hT hcomp hH] with z hz
   simp [parametricMorseMap, hz]
 
 end Transition
@@ -449,8 +443,10 @@ end Transition
 near `a` and invertible vertical Hessian at `(a, 0)` has a jointly `C^n` fiber coordinate change
 on a product neighborhood. It fixes the zero section, preserves the parameter, and has identity
 derivative at `(a, 0)`. The reference quadratic form is the vertical Hessian at each `(b, 0)`.
-The base space need not be complete for this forward coordinate construction. The coordinate
-change is the canonical parametric Morse map `TauCeti.parametricMorseMap f`. -/
+The base space need not be complete for this forward coordinate construction. The canonical
+parametric Morse map `TauCeti.parametricMorseMap f` is such a coordinate change; see
+`TauCeti.eventually_contDiffAt_parametricMorseMap`, `TauCeti.hasFDerivAt_parametricMorseMap` and
+`TauCeti.eventually_eq_add_fderiv_fderiv_parametricMorseMap`. -/
 theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
     (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) (hn : n ≠ 0) :
