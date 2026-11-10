@@ -469,7 +469,7 @@ theorem IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_eq_mul (hQ : Q ≠ 0) (h
   refine Units.ext ?_
   have hinv : (↑((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)⁻¹ : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) :=
     Units.inv_eq_of_mul_eq_one_left (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
-  rw [Nat.IsExactDivisor.coe_unitsInvPart, hinv, MonoidHom.coe_toHomUnits,
+  rw [Nat.IsExactDivisor.val_unitsInvPart, hinv, MonoidHom.coe_toHomUnits,
     MonoidHom.coe_toHomUnits, Gamma0Map_apply, Gamma0Map_apply]
   exact h.intCast_apply_one_one_of_mul_eq_mul hQ hQN hγ hmul
 

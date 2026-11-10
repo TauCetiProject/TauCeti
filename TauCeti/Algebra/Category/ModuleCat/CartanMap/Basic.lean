@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Exact
+public import TauCeti.Algebra.Module.Projective.Complement
+public import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
 # The Cartan map of a ring
@@ -151,12 +153,18 @@ theorem finiteProjectiveModules_le_finiteModules :
     finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
   (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
 
-instance : (finiteProjectiveModules R).IsClosedUnderIsomorphisms where
-  of_iso {M N} e h := by
-    have : Module.Finite R M := (finiteProjectiveModules_iff.mp h).1
-    have : Module.Projective R M := (finiteProjectiveModules_iff.mp h).2
+/-- A direct summand of a finitely generated projective module is finitely generated and
+projective. In particular the finitely generated projective modules are closed under
+isomorphisms. -/
+instance : (finiteProjectiveModules R).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    have : Module.Finite R N := (finiteProjectiveModules_iff.mp hN).1
+    have : Module.Projective R N := (finiteProjectiveModules_iff.mp hN).2
+    have hs : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
+      rw [← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id]
     exact finiteProjectiveModules_iff.mpr
-      ⟨Module.Finite.equiv e.toLinearEquiv, Module.Projective.of_equiv e.toLinearEquiv⟩
+      ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, congr($hs x)⟩,
+        Module.Projective.of_split h.i.hom h.r.hom hs⟩
 
 instance : (finiteProjectiveModules R).ContainsZero where
   exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
@@ -381,6 +389,42 @@ noncomputable def finiteProjectiveModulesExactK0Equiv :
 theorem finiteProjectiveModulesExactK0Equiv_of (X : (finiteProjectiveModules R).FullSubcategory) :
     finiteProjectiveModulesExactK0Equiv R (ExactK0.of.{u} X) = ExactK0.of.{u} X :=
   ExactK0.ofLEEquiv_of.{u} _ X
+
+variable {R} in
+/-- The class of a finitely generated projective module is the sum of the classes of two
+complementary submodules: `0 → T → X → T' → 0` is a conflation. -/
+theorem exactK0_of_eq_add_of_isCompl (X : (finiteProjectiveModules R).FullSubcategory)
+    {T T' : Submodule R X.obj} (hcompl : IsCompl T T') :
+    (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) =
+      (ExactK0.of ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr
+          ⟨Module.Finite.of_isCompl hcompl, Module.Projective.of_isCompl hcompl⟩⟩ :
+          ExactK0.{u} (finiteProjectiveModulesExactStructure R)) +
+        (ExactK0.of ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr
+          ⟨Module.Finite.of_isCompl hcompl.symm, Module.Projective.of_isCompl hcompl.symm⟩⟩ :
+          ExactK0.{u} (finiteProjectiveModulesExactStructure R)) := by
+  have hex : Function.Exact T.subtype (T'.projectionOnto T hcompl.symm) :=
+    LinearMap.exact_iff.mpr
+      (by rw [Submodule.ker_projectionOnto hcompl.symm, Submodule.range_subtype])
+  set XT : (finiteProjectiveModules R).FullSubcategory :=
+    ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr
+      ⟨Module.Finite.of_isCompl hcompl, Module.Projective.of_isCompl hcompl⟩⟩
+  set XT' : (finiteProjectiveModules R).FullSubcategory :=
+    ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr
+      ⟨Module.Finite.of_isCompl hcompl.symm, Module.Projective.of_isCompl hcompl.symm⟩⟩
+  set f : XT ⟶ X := ObjectProperty.homMk (ModuleCat.ofHom T.subtype)
+  set g : X ⟶ XT' :=
+    ObjectProperty.homMk (ModuleCat.ofHom (T'.projectionOnto T hcompl.symm))
+  have hzeroc : f ≫ g = 0 := by
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
+    exact Submodule.projectionOnto_apply_right hcompl.symm x
+  have hconf : (finiteProjectiveModulesExactStructure R).Conflation
+      (ShortComplex.mk f g hzeroc) := by
+    rw [finiteProjectiveModulesExactStructure_conflation_iff]
+    apply ModuleCat.shortComplex_shortExact
+    · exact hex
+    · exact T.injective_subtype
+    · exact Submodule.projectionOnto_surjective hcompl.symm
+  exact ExactK0.of_conflation.{u, u, u + 1} hconf
 
 /-! ### The Cartan map -/
 

@@ -36,9 +36,12 @@ which holds for a probability measure `F` with `F {0} < 1`
 `F.real {0} ≠ 1`. Uniqueness iterates the equation: the difference `d` of two solutions satisfies
 `d = d ∗ F^{∗n}` for every `n`, and `F^{∗n} [0, t] → 0` because these masses sum to `U [0, t]`.
 
-The file ends with the tail identity `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`, which follows from
+The final part gives the tail identity `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`, which follows from
 `U = δ₀ + F ∗ U` by associativity. It normalizes the law of the excess of a renewal process, and
 it is the identity from which the constant in Blackwell's renewal theorem is computed.
+The identity is also given in `ℝ≥0∞` form and rewritten, by Tonelli, as
+`∫ U({s | s ≤ t ∧ t < s + u}) F(du) = 1`, the backward-window form used to identify
+renewal-limit coefficients. For `u ≤ t`, the window is `(t - u, t]`; for `t < u`, it is `[0, t]`.
 
 ## Main definitions
 
@@ -65,6 +68,9 @@ it is the identity from which the constant in Blackwell's renewal theorem is com
   solutions.
 * `TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`: the tail identity
   `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`.
+* `MeasureTheory.Measure.lintegral_tail_renewalMeasure`: its extended nonnegative form.
+* `MeasureTheory.Measure.lintegral_renewalMeasure_backwardWindow`: the equivalent
+  identity obtained by integrating backward-window masses against the interarrival law.
 
 ## References
 
@@ -465,3 +471,54 @@ theorem renewalConv_measureReal_Ioi_renewalMeasure [IsProbabilityMeasure μ] (h�
   ring
 
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
+
+/-- The extended nonnegative version of the renewal tail identity. Its value is one
+even at time zero and when the interarrival law has an atom at zero. -/
+theorem lintegral_tail_renewalMeasure (hF : F {0} < 1) (t : ℝ≥0) :
+    ∫⁻ s in Iic t, F (Ioi (t - s)) ∂F.renewalMeasure = 1 := by
+  have hm : Measurable (fun s : ℝ≥0 ↦ F (Ioi (t - s))) := by
+    exact (Antitone.measurable (fun a b hab ↦ measure_mono (Ioi_subset_Ioi hab))).comp
+      (measurable_const.sub measurable_id)
+  have hfin : (∫⁻ s in Iic t, F (Ioi (t - s)) ∂F.renewalMeasure) ≠ ∞ := by
+    apply ne_of_lt
+    calc
+      _ ≤ ∫⁻ _ in Iic t, (1 : ℝ≥0∞) ∂F.renewalMeasure :=
+        lintegral_mono fun _ ↦ prob_le_one
+      _ < ∞ := by simpa using F.renewalMeasure_Iic_lt_top hF t
+  apply (ENNReal.toReal_eq_toReal_iff' hfin ENNReal.one_ne_top).mp
+  rw [← integral_toReal hm.aemeasurable (ae_of_all _ fun _ ↦ measure_lt_top F _),
+    ENNReal.toReal_one]
+  simpa only [TauCeti.Probability.renewalConv_def, measureReal_def] using
+    TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure hF t
+
+/-- Integrating the renewal mass in a backward window against the gap law gives one.
+The set formulation also covers windows extending to the left of time zero. -/
+theorem lintegral_renewalMeasure_backwardWindow (hF : F {0} < 1) (t : ℝ≥0) :
+    ∫⁻ u, F.renewalMeasure {s | s ≤ t ∧ t < s + u} ∂F = 1 := by
+  let S : Set (ℝ≥0 × ℝ≥0) := {p | p.1 ≤ t ∧ t < p.1 + p.2}
+  have hmeas : Measurable (S.indicator (fun _ ↦ (1 : ℝ≥0∞))) := by
+    dsimp [S]
+    measurability
+  have hswap := lintegral_lintegral_swap (μ := F.renewalMeasure) (ν := F)
+    (f := fun s u ↦ S.indicator (fun _ ↦ (1 : ℝ≥0∞)) (s, u)) hmeas.aemeasurable
+  have hsection (u : ℝ≥0) :
+      ∫⁻ s, S.indicator (fun _ ↦ (1 : ℝ≥0∞)) (s, u) ∂F.renewalMeasure =
+      F.renewalMeasure {s | s ≤ t ∧ t < s + u} := by
+    simpa [S, indicator_apply] using
+      lintegral_indicator_one (μ := F.renewalMeasure)
+        (by measurability : MeasurableSet {s : ℝ≥0 | s ≤ t ∧ t < s + u})
+  rw [← F.lintegral_tail_renewalMeasure hF t]
+  simp_rw [← hsection]
+  rw [← hswap, ← lintegral_indicator measurableSet_Iic]
+  apply lintegral_congr
+  intro s
+  by_cases hs : s ≤ t
+  · simp [S, indicator_apply, hs, ← tsub_lt_iff_left hs,
+      ← lintegral_indicator_one measurableSet_Ioi]
+  · simp [S, hs]
+
+end MeasureTheory.Measure

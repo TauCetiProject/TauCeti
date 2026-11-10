@@ -99,6 +99,38 @@ theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ((memLp_coe_uniformSphereMeasure 2).const_inner v), hmean u, hmean v,
     mul_zero, sub_zero] at h
 
+/-- The mean of a bilinear form on the diagonal of the unit sphere is its orthonormal trace
+divided by the dimension. Symmetry of the form is not required. -/
+theorem integral_bilinear_self_uniformSphereMeasure {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    ∫ x : sphere (0 : E) 1, B (x : E) (x : E) ∂uniformSphereMeasure E =
+      (∑ i, B (b i) (b i)) / (finrank ℝ E : ℝ) := by
+  classical
+  have hexp (x : E) : B x x =
+      ∑ i, ∑ j, B (b i) (b j) * (⟪b i, x⟫ * ⟪b j, x⟫) := by
+    conv_lhs => rw [← b.sum_repr' x]
+    simp only [map_sum, map_smul, sum_apply, smul_apply, smul_eq_mul]
+    rw [Finset.sum_comm]
+    congr 1
+    ext i
+    rw [Finset.mul_sum]
+    congr 1
+    ext j
+    ring
+  have hint (i j : ι) : Integrable (fun x : sphere (0 : E) 1 ↦
+      B (b i) (b j) * (⟪b i, (x : E)⟫ * ⟪b j, (x : E)⟫)) (uniformSphereMeasure E) :=
+    (((memLp_coe_uniformSphereMeasure 2).const_inner (b i)).integrable_mul
+      ((memLp_coe_uniformSphereMeasure 2).const_inner (b j))).const_mul _
+  calc
+    _ = ∫ x : sphere (0 : E) 1, ∑ i, ∑ j,
+        B (b i) (b j) * (⟪b i, (x : E)⟫ * ⟪b j, (x : E)⟫) ∂uniformSphereMeasure E :=
+      integral_congr_ae (ae_of_all _ fun x ↦ hexp x)
+    _ = _ := by
+      rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j]
+      simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, integral_const_mul,
+        integral_inner_mul_inner_uniformSphereMeasure, orthonormal_iff_ite.mp b.orthonormal]
+      simp [mul_ite, div_eq_mul_inv, Finset.sum_mul]
+
 /-- The variance of a linear observable of a uniform unit vector is its squared norm divided
 by the dimension. -/
 @[simp]

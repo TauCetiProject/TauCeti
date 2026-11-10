@@ -77,6 +77,13 @@ lemma support_single_subset [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
   by_contra h
   exact hj ((isInitialSingleObjApply i A j h).isZero)
 
+/-- A nonzero object concentrated in one degree has support exactly that singleton. -/
+@[simp]
+lemma support_single [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
+    (i : I) (A : C) (hA : ¬ IsZero A) : ((single i).obj A).support = {i} := by
+  refine Set.Subset.antisymm (support_single_subset i A) (Set.singleton_subset_iff.mpr ?_)
+  exact fun h ↦ hA ((singleObjApplyIso i A).isZero_iff.mp h)
+
 /-- An object concentrated in one degree is finitely supported. -/
 lemma hasFiniteSupport_single [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
     (i : I) (A : C) : ((single i).obj A).HasFiniteSupport :=

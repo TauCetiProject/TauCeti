@@ -89,35 +89,33 @@ theorem reductum_succ (p : R[X]) (k : ℕ) :
 
 /-- The degree of a reductum is strictly below its cutoff. -/
 theorem degree_reductum_lt (p : R[X]) (k : ℕ) :
-    (p.reductum k).degree < k := by
-  exact PowerSeries.degree_trunc_lt (p : PowerSeries R) k
+    (p.reductum k).degree < k :=
+  PowerSeries.degree_trunc_lt (p : PowerSeries R) k
 
 /-- The natural degree of a reductum at a positive cutoff is strictly below that cutoff. -/
 theorem natDegree_reductum_lt (p : R[X]) (k : ℕ) :
-    (p.reductum (k + 1)).natDegree < k + 1 := by
-  exact PowerSeries.natDegree_trunc_lt (p : PowerSeries R) k
+    (p.reductum (k + 1)).natDegree < k + 1 :=
+  PowerSeries.natDegree_trunc_lt (p : PowerSeries R) k
 
 /-- A cutoff strictly above the degree does not change a polynomial. -/
 theorem reductum_eq_self {p : R[X]} {k : ℕ} (h : p.natDegree < k) :
     p.reductum k = p := by
   ext i
-  rw [coeff_reductum, ite_eq_left_iff]
-  intro hi
-  exact (coeff_eq_zero_of_natDegree_lt (by omega)).symm
+  simp only [coeff_reductum]
+  grind [coeff_eq_zero_of_natDegree_lt]
 
 /-- Cutting off immediately above the degree returns the original polynomial, including for zero. -/
 @[simp]
 theorem reductum_natDegree_add_one (p : R[X]) :
-    p.reductum (p.natDegree + 1) = p := by
-  exact p.reductum_eq_self (Nat.lt_succ_self _)
+    p.reductum (p.natDegree + 1) = p :=
+  p.reductum_eq_self (Nat.lt_succ_self _)
 
 /-- Nested reducta use the minimum of their cutoffs. -/
 @[simp]
 theorem reductum_reductum (p : R[X]) (k l : ℕ) :
     (p.reductum l).reductum k = p.reductum (min k l) := by
   ext i
-  simp only [coeff_reductum, lt_min_iff]
-  by_cases hk : i < k <;> by_cases hl : i < l <;> simp [hk, hl]
+  simp [ite_and]
 
 /-- Taking a smaller reductum after a larger one is the same as taking the smaller reductum
 directly. -/
@@ -136,30 +134,21 @@ theorem reductum_map (f : R →+* S) (p : R[X]) (k : ℕ) :
 theorem derivative_reductum (p : R[X]) (k : ℕ) :
     (p.reductum (k + 1)).derivative = p.derivative.reductum k := by
   ext i
-  simp only [coeff_derivative, coeff_reductum]
-  by_cases hi : i < k <;> simp [hi]
+  simp [coeff_derivative, ite_mul]
 
 /-- The reductum at the degree is Mathlib's operation deleting the leading term. -/
 theorem reductum_natDegree (p : R[X]) :
     p.reductum p.natDegree = p.eraseLead := by
   ext i
-  rw [coeff_reductum, eraseLead_coeff]
-  by_cases hi : i < p.natDegree
-  · simp [hi, hi.ne]
-  · by_cases hieq : i = p.natDegree
-    · simp [hieq]
-    · have hlt : p.natDegree < i := lt_of_le_of_ne (Nat.le_of_not_gt hi) (Ne.symm hieq)
-      simp [hi, hieq, coeff_eq_zero_of_natDegree_lt hlt]
+  simp only [coeff_reductum, eraseLead_coeff]
+  grind [coeff_eq_zero_of_natDegree_lt]
 
 /-- Below the degree of `p`, taking a reductum is unaffected by first deleting the leading term. -/
 theorem reductum_eraseLead (p : R[X]) {k : ℕ} (h : k ≤ p.natDegree) :
     p.eraseLead.reductum k = p.reductum k := by
   ext i
   simp only [coeff_reductum, eraseLead_coeff]
-  by_cases hi : i < k
-  · have hine : i ≠ p.natDegree := (hi.trans_le h).ne
-    simp [hi, hine]
-  · simp [hi]
+  grind
 
 /-- A cutoff above the degree of `p.eraseLead` but not above the degree of `p` deletes exactly
 the leading term. -/
@@ -173,84 +162,59 @@ noncomputable def reducta (p : R[X]) : Finset R[X] := by
   classical
   exact (Finset.range (p.natDegree + 2)).image p.reductum
 
-/-- Membership in `reducta` is membership at one of its bounded cutoffs. -/
+/-- The members of `reducta` are exactly the reducta at arbitrary cutoffs: the cutoffs past the
+degree add nothing new. -/
 theorem mem_reducta {p q : R[X]} :
-    q ∈ p.reducta ↔ ∃ k < p.natDegree + 2, p.reductum k = q := by
+    q ∈ p.reducta ↔ ∃ k, p.reductum k = q := by
   classical
-  simp [reducta]
-
-/-- Zero belongs to the reducta of every polynomial. -/
-@[simp]
-theorem zero_mem_reducta (p : R[X]) : 0 ∈ p.reducta := by
-  rw [mem_reducta]
-  exact ⟨0, by omega, p.reductum_zero⟩
-
-/-- Every polynomial belongs to its own reducta. -/
-@[simp]
-theorem self_mem_reducta (p : R[X]) : p ∈ p.reducta := by
-  rw [mem_reducta]
-  exact ⟨p.natDegree + 1, by omega, p.reductum_natDegree_add_one⟩
+  simp only [reducta, Finset.mem_image, Finset.mem_range]
+  refine ⟨fun ⟨k, _, hk⟩ ↦ ⟨k, hk⟩, fun ⟨k, hk⟩ ↦
+    ⟨min k (p.natDegree + 1), by omega, ?_⟩⟩
+  rw [← reductum_reductum, reductum_natDegree_add_one, hk]
 
 /-- The reductum at every cutoff belongs to the reducta, including cutoffs past the degree. -/
 @[simp]
-theorem reductum_mem_reducta (p : R[X]) (k : ℕ) : p.reductum k ∈ p.reducta := by
-  by_cases hk : k < p.natDegree + 2
-  · exact mem_reducta.2 ⟨k, hk, rfl⟩
-  · rw [p.reductum_eq_self (by omega)]
-    exact p.self_mem_reducta
+theorem reductum_mem_reducta (p : R[X]) (k : ℕ) : p.reductum k ∈ p.reducta :=
+  mem_reducta.2 ⟨k, rfl⟩
+
+/-- Zero belongs to the reducta of every polynomial. -/
+@[simp]
+theorem zero_mem_reducta (p : R[X]) : 0 ∈ p.reducta :=
+  mem_reducta.2 ⟨0, p.reductum_zero⟩
+
+/-- Every polynomial belongs to its own reducta. -/
+@[simp]
+theorem self_mem_reducta (p : R[X]) : p ∈ p.reducta :=
+  mem_reducta.2 ⟨_, p.reductum_natDegree_add_one⟩
 
 /-- Deleting the leading term produces a member of the reducta. -/
 theorem eraseLead_mem_reducta (p : R[X]) :
-    p.eraseLead ∈ p.reducta := by
-  rw [mem_reducta]
-  exact ⟨p.natDegree, by omega, p.reductum_natDegree⟩
+    p.eraseLead ∈ p.reducta :=
+  mem_reducta.2 ⟨_, p.reductum_natDegree⟩
 
 /-- The only reductum of the zero polynomial is zero. -/
 @[simp]
 theorem reducta_zero : (0 : R[X]).reducta = {0} := by
   ext q
-  rw [mem_reducta, Finset.mem_singleton]
-  constructor
-  · rintro ⟨k, _, hq⟩
-    simpa using hq.symm
-  · intro hq
-    exact ⟨0, by omega, by simp [hq]⟩
+  simp [mem_reducta, eq_comm]
 
-open scoped Classical in
 /-- The reducta consist of `p` together with the reducta after deleting its leading term. -/
-theorem reducta_eq_insert_eraseLead_reducta (p : R[X]) :
+theorem reducta_eq_insert_eraseLead_reducta [DecidableEq R[X]] (p : R[X]) :
     p.reducta = insert p p.eraseLead.reducta := by
-  classical
   ext q
+  simp only [Finset.mem_insert, mem_reducta]
   constructor
-  · intro hq
-    rw [mem_reducta] at hq
-    obtain ⟨k, hk, rfl⟩ := hq
-    rw [Finset.mem_insert]
-    by_cases hkp : k ≤ p.natDegree
-    · right
-      by_cases hke : k < p.eraseLead.natDegree + 2
-      · rw [mem_reducta]
-        exact ⟨k, hke, p.reductum_eraseLead hkp⟩
-      · rw [reductum_eq_eraseLead_of_lt_of_le (by omega) hkp]
-        exact p.eraseLead.self_mem_reducta
-    · left
-      have hk' : k = p.natDegree + 1 := by omega
-      simp [hk']
-  · intro hq
-    rw [Finset.mem_insert] at hq
-    rcases hq with hqp | hq
-    · subst q
-      exact p.self_mem_reducta
-    · rw [mem_reducta] at hq
-      obtain ⟨k, _, rfl⟩ := hq
-      by_cases hkp : k ≤ p.natDegree
-      · rw [mem_reducta]
-        exact ⟨k, by omega, (p.reductum_eraseLead hkp).symm⟩
-      · have hdeg : p.eraseLead.natDegree < k :=
-          p.eraseLead_natDegree_le_aux.trans_lt (Nat.lt_of_not_ge hkp)
-        rw [p.eraseLead.reductum_eq_self hdeg]
-        exact p.eraseLead_mem_reducta
+  · rintro ⟨k, rfl⟩
+    by_cases hk : k ≤ p.natDegree
+    · exact .inr ⟨k, p.reductum_eraseLead hk⟩
+    · exact .inl (p.reductum_eq_self (by omega))
+  · rintro (rfl | ⟨k, rfl⟩)
+    · exact ⟨_, reductum_natDegree_add_one _⟩
+    · by_cases hk : k ≤ p.natDegree
+      · exact ⟨k, (p.reductum_eraseLead hk).symm⟩
+      · refine ⟨p.natDegree, ?_⟩
+        rw [p.eraseLead.reductum_eq_self (p.eraseLead_natDegree_le_aux.trans_lt (by omega)),
+          reductum_natDegree]
 
 /-- The finite orbit obtained by repeatedly deleting leading terms, including the zero polynomial
 at the end. -/
@@ -272,33 +236,17 @@ theorem eraseLeadOrbit_zero :
   classical
   simp [eraseLeadOrbit]
 
-open scoped Classical in
 /-- The `eraseLead` orbit of a polynomial is the polynomial together with the orbit of the
 polynomial with its leading term deleted. -/
-theorem eraseLeadOrbit_eq_insert (p : R[X]) :
+theorem eraseLeadOrbit_eq_insert [DecidableEq R[X]] (p : R[X]) :
     p.eraseLeadOrbit = insert p p.eraseLead.eraseLeadOrbit := by
-  classical
   by_cases hp : p = 0
   · subst hp
     simp
   ext q
-  simp only [eraseLeadOrbit, Finset.mem_image, Finset.mem_range, Finset.mem_insert]
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    cases k with
-    | zero => simp
-    | succ k =>
-        right
-        refine ⟨k, ?_, ?_⟩
-        · have hcard := card_support_eraseLead_add_one hp
-          omega
-        · exact Function.iterate_succ_apply eraseLead k p
-  · rintro (rfl | ⟨k, hk, rfl⟩)
-    · exact ⟨0, by simp, by simp⟩
-    · refine ⟨k + 1, ?_, ?_⟩
-      · have hcard := card_support_eraseLead_add_one hp
-        omega
-      · exact (Function.iterate_succ_apply eraseLead k p).symm
+  simp only [mem_eraseLeadOrbit, Finset.mem_insert, ← Nat.lt_add_one_iff,
+    ← card_support_eraseLead_add_one hp, Nat.exists_lt_succ_left, Function.iterate_succ_apply,
+    Function.iterate_zero_apply, eq_comm (a := q)]
 
 /-- The finite set of reducta at bounded cutoffs is exactly the finite orbit under deletion of
 leading terms. -/
@@ -328,26 +276,12 @@ theorem iterate_eraseLead_mem_eraseLeadOrbit (p : R[X]) (k : ℕ) :
       rw [Function.iterate_succ_apply, reducta_eq_insert_eraseLead_reducta]
       exact Finset.mem_insert_of_mem (ih _)
 
-open scoped Classical in
 /-- Coefficient maps carry all reducta exactly to the reducta of the mapped polynomial, with no
 injectivity or degree-preservation hypothesis. -/
-theorem reducta_map (f : R →+* S) (p : R[X]) :
+theorem reducta_map [DecidableEq S[X]] (f : R →+* S) (p : R[X]) :
     (p.map f).reducta = p.reducta.image (Polynomial.map f) := by
-  classical
-  have hdeg : (p.map f).natDegree ≤ p.natDegree := natDegree_map_le
   ext q
-  rw [Finset.mem_image]
-  constructor
-  · rw [mem_reducta]
-    rintro ⟨k, hk, rfl⟩
-    exact ⟨p.reductum k, mem_reducta.2 ⟨k, by omega, rfl⟩, (p.reductum_map f k).symm⟩
-  · rintro ⟨_, hq, rfl⟩
-    obtain ⟨k, -, rfl⟩ := mem_reducta.1 hq
-    rw [← reductum_map]
-    by_cases hk : k < (p.map f).natDegree + 2
-    · exact mem_reducta.2 ⟨k, hk, rfl⟩
-    · rw [reductum_eq_self (by omega)]
-      exact (p.map f).self_mem_reducta
+  simp [mem_reducta]
 
 /-- Cutting off immediately above the degree after specialization maps back to the specialized
 polynomial.  This gives an explicit member of `p.reducta` witnessing
@@ -368,10 +302,7 @@ theorem natDegree_reductum_natDegree_map_add_one (f : R →+* S) (p : R[X]) :
 /-- Every coefficient specialization is the image of a member of the original polynomial's finite
 set of reducta. -/
 theorem exists_mem_reducta_map_eq (f : R →+* S) (p : R[X]) :
-    ∃ q ∈ p.reducta, q.map f = p.map f := by
-  classical
-  have h := (p.map f).self_mem_reducta
-  rw [reducta_map, Finset.mem_image] at h
-  exact h
+    ∃ q ∈ p.reducta, q.map f = p.map f :=
+  ⟨_, p.reductum_mem_reducta _, map_reductum_natDegree_map_add_one f p⟩
 
 end Polynomial

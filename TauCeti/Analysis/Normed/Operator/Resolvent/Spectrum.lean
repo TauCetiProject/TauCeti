@@ -19,16 +19,14 @@ is developed in that topological module.
 
 public section
 
-namespace TauCeti
-
-open _root_.LinearPMap
+namespace LinearPMap
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The spectrum of a partial linear map is closed when the continuous endomorphism algebra
 has summable geometric series. -/
-theorem _root_.LinearPMap.isClosed_spectrum [HasSummableGeomSeries (E →L[𝕜] E)] (A : E →ₗ.[𝕜] E) :
+theorem isClosed_spectrum [HasSummableGeomSeries (E →L[𝕜] E)] (A : E →ₗ.[𝕜] E) :
     IsClosed A.spectrum := by
   have h : A.spectrum = A.resolventSetᶜ := by
     ext z
@@ -36,4 +34,4 @@ theorem _root_.LinearPMap.isClosed_spectrum [HasSummableGeomSeries (E →L[𝕜]
   rw [h]
   exact A.isOpen_resolventSet.isClosed_compl
 
-end TauCeti
+end LinearPMap

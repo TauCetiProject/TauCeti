@@ -36,9 +36,10 @@ The element is taken in the domain of the pushed-forward component, so that the 
 goals about components of pushed-forward morphisms; an element of `M.obj (op (F.obj X.unop))` may
 be passed as well, since the two modules are definitionally equal.
 
-This is not a simp lemma: simp rewrites the base ring `(F.op ⋙ R).obj X` of the component to
-`R.obj (op (F.obj X.unop))` inside the implicit arguments of the coercion, so the left-hand side
-has no simp normal form. -/
+The `simp↓` attribute rewrites the component before simp normalizes its base ring
+`(F.op ⋙ R).obj X` inside the implicit arguments of the coercion; ordinary `simp` would
+normalize that ring first and prevent this lemma from matching. -/
+@[simp↓]
 theorem pushforward₀_map_app_apply {M N : PresheafOfModules.{v} R} (α : M ⟶ N) (X : Cᵒᵖ)
     (m : ((pushforward₀ F R).obj M).obj X) :
     ((pushforward₀ F R).map α).app X m = α.app (op (F.obj X.unop)) m :=

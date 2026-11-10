@@ -409,6 +409,12 @@ theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
   Valuation.exists_isUniformizer_of_surjective P.valuation P.valuation_surjective
 
+/-- A uniformizer of a place is irreducible in its valuation ring. -/
+theorem irreducible_of_isUniformizer {t : P.integers}
+    (ht : P.valuation.IsUniformizer (t : F)) : Irreducible t := by
+  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
+  exact ht.is_generator
+
 theorem isUnit_iff_valuation_eq_one {x : P.integers} : IsUnit x ↔ P.valuation (x : F) = 1 :=
   Valuation.Integers.isUnit_iff_valuation_eq_one (Valuation.valuationSubring.integers P.valuation)
 

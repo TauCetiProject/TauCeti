@@ -129,13 +129,14 @@ theorem isPretransitive_map_range_galActionHom_iff (hsep : f.Separable) (hdeg : 
     isPretransitive_range_toPermHom_iff]
   exact isPretransitive_iff_irreducible f.SplittingField hsep hdeg
 
-/-- Construct a Galois label from one numbering of the roots that exhibits it. -/
-theorem HasGaloisLabel.mk (hsep : f.Separable) (hdeg : f.natDegree = n)
-    (e : f.rootSet f.SplittingField ≃ Fin n)
+/-- Construct a Galois label from one numbering of the roots that exhibits it. The degree of the
+separable polynomial `f` is the number of its roots, so it is `n`. -/
+theorem HasGaloisLabel.mk (hsep : f.Separable) (e : f.rootSet f.SplittingField ≃ Fin n)
     (he : TransitiveGroupLabel j
       ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)) :
     HasGaloisLabel f j :=
-  ⟨hsep, hdeg, e, he⟩
+  ⟨hsep, by rw [← card_rootSet_eq_natDegree hsep (SplittingField.splits f), Fintype.card_congr e,
+    Fintype.card_fin], e, he⟩
 
 /-- A polynomial with a label is separable. -/
 theorem HasGaloisLabel.separable (h : HasGaloisLabel f j) : f.Separable :=

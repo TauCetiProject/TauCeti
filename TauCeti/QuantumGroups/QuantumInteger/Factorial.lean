@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.QuantumInteger.Binomial
-public import TauCeti.QuantumGroups.QuantumInteger.Laurent
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 import Mathlib.Tactic
@@ -45,7 +45,8 @@ specializes to `n!` at `v = 1`.
   theorem, `(x + y)^(n) = ∑_k q^(k(n-k)) x^(k) y^(n-k)` when `y x = q² x y` and `[n]_q! ≠ 0`.
 * `TauCeti.laurentEval_laurentQuantumFactorial` and
   `TauCeti.laurentEval_one_laurentQuantumFactorial`: `[n]_v!` specializes to `[n]_q!` at `v = q`
-  when `q - q⁻¹ ≠ 0`, and to `n!` at `v = 1`.
+  when `q - q⁻¹ ≠ 0`, and to `n!` at `v = 1`; in particular `[n]_v! ≠ 0`
+  (`TauCeti.laurentQuantumFactorial_ne_zero`).
 
 ## References
 
@@ -265,5 +266,9 @@ theorem laurentEval_laurentQuantumFactorial {K : Type*} [Field K] {u : Kˣ}
 theorem laurentEval_one_laurentQuantumFactorial {A : Type*} [CommRing A] (n : ℕ) :
     laurentEval (1 : Aˣ) (laurentQuantumFactorial n) = n.factorial := by
   simp [laurentQuantumFactorial_def, ← prod_range_add_one_eq_factorial]
+
+/-- The Laurent quantum factorial `[n]_v!` is nonzero, since its value at `v = 1` is `n!`. -/
+theorem laurentQuantumFactorial_ne_zero (n : ℕ) : laurentQuantumFactorial n ≠ 0 := fun h => by
+  simpa [n.factorial_ne_zero] using congrArg (laurentEval (1 : ℤˣ)) h
 
 end TauCeti

@@ -32,13 +32,13 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts
 /-- A functor preserving zero morphisms and binary biproducts reflects indecomposability at `X`
 if every retract of `X` whose image is zero is itself zero. -/
 theorem indecomposable_of_indecomposable_obj_of_reflects_isZero_retract (F : C ⥤ D)
-    [PreservesZeroMorphisms F]
-    [PreservesBinaryBiproducts F] {X : C} (hX : Indecomposable (F.obj X))
+    [PreservesZeroMorphisms F] [PreservesBinaryBiproducts F] {X : C}
+    (hX : Indecomposable (F.obj X))
     (hF : ∀ {Y : C}, Retract Y X → IsZero (F.obj Y) → IsZero Y) :
-    Indecomposable X := by
-  refine ⟨fun h0 ↦ hX.1 (F.map_isZero h0), fun Y Z e ↦ ?_⟩
-  rcases hX.2 (F.obj Y) (F.obj Z) (F.mapIso e ≪≫ F.mapBiprod Y Z) with hY | hZ
-  · exact Or.inl (hF ((BinaryBiproduct.bicone Y Z).retract_left.trans e.symm.retract) hY)
-  · exact Or.inr (hF ((BinaryBiproduct.bicone Y Z).retract_right.trans e.symm.retract) hZ)
+    Indecomposable X :=
+  ⟨fun h0 ↦ hX.1 (F.map_isZero h0), fun Y Z e ↦
+    (hX.2 _ _ (F.mapIso e ≪≫ F.mapBiprod Y Z)).imp
+      (hF ((BinaryBiproduct.bicone Y Z).retract_left.trans e.symm.retract))
+      (hF ((BinaryBiproduct.bicone Y Z).retract_right.trans e.symm.retract))⟩
 
 end CategoryTheory.Functor

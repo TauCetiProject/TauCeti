@@ -97,30 +97,6 @@ private def reparam (H : E × ℝ → E') (p : E × ℝ) : E' :=
 private def graph (H : E × ℝ → E') (p : E × ℝ) : E' × ℝ :=
   (reparam H p, p.2)
 
-/-- The open cylinder `Ω × ℝ`. -/
-private def cyl (Ω : Opens E) : Opens (E × ℝ) :=
-  ⟨(Ω : Set E) ×ˢ univ, Ω.isOpen.prod isOpen_univ⟩
-
-omit [NormedSpace ℝ E] in
-private theorem mem_cyl {p : E × ℝ} : p ∈ cyl Ω ↔ p.1 ∈ Ω := by
-  simp [cyl, ← SetLike.mem_coe]
-
-omit [NormedSpace ℝ E'] in
-private theorem prod_top_subset_cyl : (Ω' : Set E') ×ˢ ((⊤ : Opens ℝ) : Set ℝ) ⊆ cyl Ω' :=
-  fun _ hp ↦ mem_cyl.2 hp.1
-
-/-- A test function of time equal to one near `[0, 1]`. -/
-private def timeCutoff : 𝓓((⊤ : Opens ℝ), ℝ) :=
-  (exists_eventually_eq_one (Ω := ⊤) (n := ⊤) isCompact_Icc
-    (subset_univ (Icc (0 : ℝ) 1))).choose
-
-private theorem timeCutoff_eventually_eq_one : ∀ᶠ t in 𝓝ˢ (Icc (0 : ℝ) 1), timeCutoff t = 1 :=
-  (exists_eventually_eq_one (Ω := ⊤) (n := ⊤) isCompact_Icc
-    (subset_univ (Icc (0 : ℝ) 1))).choose_spec.1
-
-private theorem timeCutoff_eq_one {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : timeCutoff t = 1 :=
-  timeCutoff_eventually_eq_one.self_of_nhdsSet t ht
-
 omit [NormedSpace ℝ E] in
 private theorem mem_prod_smoothTransition {x : E} (hx : x ∈ Ω) (t : ℝ) :
     (x, Real.smoothTransition t) ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1 :=
@@ -146,8 +122,8 @@ private theorem fderiv_reparam {p : E × ℝ} (hp : p.1 ∈ Ω) :
   exact (((hH _ (mem_prod_smoothTransition hp p.2)).differentiableAt (by simp)).hasFDerivAt.comp p
     (hasFDerivAt_fst.prodMk (hσ.comp_hasFDerivAt p hasFDerivAt_snd))).fderiv
 
-private theorem contDiffOn_graph : ContDiffOn ℝ (⊤ : ℕ∞) (graph H) (cyl Ω) := fun _ hp ↦
-  ((contDiffAt_reparam hH (mem_cyl.1 hp)).prodMk contDiffAt_snd).contDiffWithinAt
+private theorem contDiffOn_graph : ContDiffOn ℝ (⊤ : ℕ∞) (graph H) Ω.cylinder := fun _ hp ↦
+  ((contDiffAt_reparam hH (Opens.mem_cylinder.1 hp)).prodMk contDiffAt_snd).contDiffWithinAt
 
 private theorem fderiv_graph {p : E × ℝ} (hp : p.1 ∈ Ω) :
     fderiv ℝ (graph H) p = (fderiv ℝ (reparam H) p).prod (ContinuousLinearMap.snd ℝ E ℝ) :=
@@ -157,12 +133,12 @@ private theorem fderiv_graph {p : E × ℝ} (hp : p.1 ∈ Ω) :
 include hHp in
 /-- The graph map is proper from `Ω × ℝ` to `Ω' × ℝ`. -/
 private theorem isCompact_inter_preimage_graph (C : Set (E' × ℝ)) (hC : IsCompact C)
-    (hCΩ' : C ⊆ cyl Ω') : IsCompact ((cyl Ω : Set (E × ℝ)) ∩ graph H ⁻¹' C) := by
+    (hCΩ' : C ⊆ Ω'.cylinder) : IsCompact ((Ω.cylinder : Set (E × ℝ)) ∩ graph H ⁻¹' C) := by
   -- The part of the cylinder over the times in `C` that `H (·, σ ·)` maps into the projection of
   -- `C` is compact, and contains the preimage.
   set S := ((Ω : Set E) ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' (Prod.fst '' C)
   have hS : IsCompact S := hHp _ (hC.image continuous_fst) fun y ⟨q, hq, hqy⟩ ↦
-    hqy ▸ mem_cyl.1 (hCΩ' hq)
+    hqy ▸ Opens.mem_cylinder.1 (hCΩ' hq)
   set A := (fun p : E × ℝ ↦ (p.1, Real.smoothTransition p.2)) ⁻¹' S ∩ univ ×ˢ (Prod.snd '' C)
   have hA : IsCompact A :=
     ((hS.image continuous_fst).prod (hC.image continuous_snd)).of_isClosed_subset
@@ -170,10 +146,10 @@ private theorem isCompact_inter_preimage_graph (C : Set (E' × ℝ)) (hC : IsCom
         (Real.smoothTransition.continuous.comp continuous_snd))).inter
           (isClosed_univ.prod (hC.image continuous_snd).isClosed))
       fun p hp ↦ ⟨⟨_, hp.1, rfl⟩, hp.2.2⟩
-  have hAcyl : A ⊆ cyl Ω := fun p hp ↦ mem_cyl.2 hp.1.1.1
-  have heq : (cyl Ω : Set (E × ℝ)) ∩ graph H ⁻¹' C = A ∩ graph H ⁻¹' C := by
+  have hAcyl : A ⊆ Ω.cylinder := fun p hp ↦ Opens.mem_cylinder.2 hp.1.1.1
+  have heq : (Ω.cylinder : Set (E × ℝ)) ∩ graph H ⁻¹' C = A ∩ graph H ⁻¹' C := by
     refine Subset.antisymm (fun p hp ↦ ⟨⟨?_, ?_⟩, hp.2⟩) fun p hp ↦ ⟨hAcyl hp.1, hp.2⟩
-    · exact ⟨mem_prod_smoothTransition (mem_cyl.1 hp.1) p.2, _, hp.2, rfl⟩
+    · exact ⟨mem_prod_smoothTransition (Opens.mem_cylinder.1 hp.1) p.2, _, hp.2, rfl⟩
     · exact ⟨trivial, _, hp.2, rfl⟩
   rw [heq]
   exact hA.of_isClosed_subset (((contDiffOn_graph hH).continuousOn.mono
@@ -182,16 +158,16 @@ private theorem isCompact_inter_preimage_graph (C : Set (E' × ℝ)) (hC : IsCom
 /-- The pullback of `ω` along the reparametrized homotopy, cut off in time by `timeCutoff`: the
 pullback along the graph map of the tensor product of `ω` with the cutoff. -/
 private def cutoffPullback :
-    𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F) →L[ℝ] 𝓓(cyl Ω, (E × ℝ) [⋀^Fin m]→L[ℝ] F) :=
+    𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F) →L[ℝ] 𝓓(Ω.cylinder, (E × ℝ) [⋀^Fin m]→L[ℝ] F) :=
   pullbackCLM (graph H) (contDiffOn_graph hH) (isCompact_inter_preimage_graph hH hHp) ∘L
-    prodSMulCLM timeCutoff prod_top_subset_cyl ∘L
+    prodSMulCLM timeCutoff Opens.prod_top_subset_cylinder ∘L
     postcompCLM (compContinuousLinearMapCLM (ContinuousLinearMap.fst ℝ E' ℝ))
 
 omit hH in
 private theorem cutoffPullback_apply_of_notMem (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) {p : E × ℝ}
     (hp : p.1 ∉ Ω) {hH} : cutoffPullback (H := H) hH hHp ω p = 0 :=
   image_eq_zero_of_notMem_tsupport fun h ↦
-    hp (mem_cyl.1 ((cutoffPullback hH hHp ω).tsupport_subset h))
+    hp (Opens.mem_cylinder.1 ((cutoffPullback hH hHp ω).tsupport_subset h))
 
 include hHp in
 private theorem cutoffPullback_apply (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) {p : E × ℝ}
@@ -199,7 +175,7 @@ private theorem cutoffPullback_apply (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F))
     cutoffPullback hH hHp ω p =
       timeCutoff p.2 • (ω (reparam H p)).compContinuousLinearMap (fderiv ℝ (reparam H) p) := by
   rw [cutoffPullback, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    pullbackCLM_apply_of_mem _ (mem_cyl.2 hp), prodSMulCLM_apply, postcompCLM_apply,
+    pullbackCLM_apply_of_mem _ (Opens.mem_cylinder.2 hp), prodSMulCLM_apply, postcompCLM_apply,
     fderiv_graph hH hp]
   ext v
   simp [graph, Function.comp_def]
@@ -211,10 +187,10 @@ private theorem cutoffPullback_eventuallyEq (ω : 𝓓(Ω', E' [⋀^Fin m]→L[�
     (hx : x ∈ Ω) (ht : t ∈ Icc (0 : ℝ) 1) :
     ⇑(cutoffPullback hH hHp ω) =ᶠ[𝓝 (x, t)]
       fun p ↦ (ω (reparam H p)).compContinuousLinearMap (fderiv ℝ (reparam H) p) := by
-  filter_upwards [(cyl Ω).isOpen.mem_nhds (mem_cyl.2 hx),
+  filter_upwards [Ω.cylinder.isOpen.mem_nhds (Opens.mem_cylinder.2 hx),
     (continuous_snd.tendsto (x, t)).eventually
       (timeCutoff_eventually_eq_one.filter_mono (nhds_le_nhdsSet ht))] with p hp hψ
-  rw [cutoffPullback_apply hH hHp ω (mem_cyl.1 hp), hψ, one_smul]
+  rw [cutoffPullback_apply hH hHp ω (Opens.mem_cylinder.1 hp), hψ, one_smul]
 
 end Construction
 
@@ -229,14 +205,14 @@ def homotopyPullbackCLM (hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContD
     (hHp : ∀ K : Set E', IsCompact K → K ⊆ Ω' →
       IsCompact (((Ω : Set E) ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' K)) :
     𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
-  cylinderHomotopyCLM (fun _ hp _ ↦ mem_cyl.1 hp) ∘L cutoffPullback hH hHp
+  cylinderHomotopyCLM (fun _ hp _ ↦ Opens.mem_cylinder.1 hp) ∘L cutoffPullback hH hHp
 
 variable {hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p}
   {hHp : ∀ K : Set E', IsCompact K → K ⊆ Ω' →
     IsCompact (((Ω : Set E) ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' K)}
 
 /-- The homotopy operator is the cylinder homotopy operator of the cut-off pullback. -/
-private theorem homotopyPullbackCLM_eq (hW : ∀ p ∈ cyl Ω, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
+private theorem homotopyPullbackCLM_eq (hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
     (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) :
     homotopyPullbackCLM hH hHp ω = cylinderHomotopyCLM hW (cutoffPullback hH hHp ω) :=
   rfl
@@ -341,7 +317,7 @@ omit [CompleteSpace F] in
 /-- At the end times, the slices of the cut-off pullback are the pullbacks along the slices of
 `H`. -/
 private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨ t = 1)
-    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ cyl Ω →
+    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ Ω.cylinder →
       IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)}
     {ht' : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, t)) Ω}
     {htp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ (fun x ↦ H (x, t)) ⁻¹' K)}
@@ -354,7 +330,7 @@ private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨
     rcases ht with rfl | rfl
     exacts [Real.smoothTransition.zero, Real.smoothTransition.one]
   ext x : 1
-  rw [pullbackCLM_prodMk_left_apply (fun _ hp _ ↦ mem_cyl.1 hp) htI]
+  rw [pullbackCLM_prodMk_left_apply (fun _ hp _ ↦ Opens.mem_cylinder.1 hp) htI]
   by_cases hx : x ∈ Ω
   · have hxt : ((x, t) : E × ℝ).1 ∈ Ω := hx
     have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
@@ -371,7 +347,7 @@ private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨
 /-- Along `Ω × [0, 1]`, where the cutoff is one, the cut-off pullback commutes with `d`; so the
 cylinder homotopy operator does not see the difference. -/
 private theorem cylinderHomotopyCLM_cutoffPullback_extDerivCLM
-    (hW : ∀ p ∈ cyl Ω, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω) (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) :
+    (hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω) (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) :
     cylinderHomotopyCLM hW (cutoffPullback hH hHp (extDerivCLM ω)) =
       cylinderHomotopyCLM hW (extDerivCLM (cutoffPullback hH hHp ω)) := by
   ext x : 1
@@ -385,7 +361,7 @@ private theorem cylinderHomotopyCLM_cutoffPullback_extDerivCLM
     exact (extDeriv_pullback (ω.contDiff.differentiable (by simp) _)
       (contDiffAt_reparam hH hxt) (by simp)).symm
   · rw [cutoffPullback_apply_of_notMem hHp _ hx, image_eq_zero_of_notMem_tsupport fun h ↦
-      hx (mem_cyl.1 ((extDerivCLM (cutoffPullback hH hHp ω)).tsupport_subset h))]
+      hx (Opens.mem_cylinder.1 ((extDerivCLM (cutoffPullback hH hHp ω)).tsupport_subset h))]
 
 /-- **The homotopy formula on test forms**: `K ∘ d = H₁^* - H₀^* - d ∘ K` on test `(k + 1)`-forms,
 where `K` is the homotopy operator and `Hₜ^*` is the pullback along the slice `Hₜ = H (·, t)`. -/
@@ -398,7 +374,7 @@ theorem homotopyPullbackCLM_comp_extDerivCLM :
           (isCompact_inter_preimage_comp_prodMk_left hHp ⟨le_rfl, zero_le_one⟩) -
         extDerivCLM ∘L homotopyPullbackCLM hH hHp := by
   ext ω : 1
-  have hW : ∀ p ∈ cyl Ω, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ mem_cyl.1 hp
+  have hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ Opens.mem_cylinder.1 hp
   have hd := cylinderHomotopyCLM_cutoffPullback_extDerivCLM (hH := hH) (hHp := hHp) hW ω
   have h := congr($(cylinderHomotopyCLM_comp_extDerivCLM (hW := hW) (k := k))
     (cutoffPullback hH hHp ω))
@@ -415,7 +391,7 @@ theorem homotopyPullbackCLM_comp_extDerivCLM_finZero :
         pullbackCLM (fun x ↦ H (x, 0)) (contDiffOn_comp_prodMk_left hH ⟨le_rfl, zero_le_one⟩)
           (isCompact_inter_preimage_comp_prodMk_left hHp ⟨le_rfl, zero_le_one⟩) := by
   ext ω : 1
-  have hW : ∀ p ∈ cyl Ω, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ mem_cyl.1 hp
+  have hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ Opens.mem_cylinder.1 hp
   have hd := cylinderHomotopyCLM_cutoffPullback_extDerivCLM (hH := hH) (hHp := hHp) hW ω
   have h := congr($(cylinderHomotopyCLM_comp_extDerivCLM_finZero (hW := hW))
     (cutoffPullback hH hHp ω))

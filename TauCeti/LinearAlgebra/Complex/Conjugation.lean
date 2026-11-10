@@ -29,11 +29,11 @@ the two constructions produces the other: a conjugation on `V` presents `V` as a
 and a complexification carries a conjugation.  That is what makes conjugations the tool for
 realizing an object over `ℝ`.
 
-The two constructions are not set up here as mutually inverse, and nothing here transports
-`TauCeti.tmulConj` along an isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`: a presentation of `V` as a
-complexification carries a noncanonical choice of real carrier and isomorphism, which a conjugation
-does not.  The equivariant form of that transport is
-`Representation.IsRealForm.exists_isRealStructure`, downstream in
+The canonical `TauCeti.realPointsEquiv` intertwines `TauCeti.tmulConj` with the original
+conjugation `K`. For a chosen presentation `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`,
+`LinearEquiv.conjugationOfComplexification` transports the existing tensor conjugation through
+that equivalence. Its exact fixed locus is the image of the real inclusion. The equivariant
+application is `Representation.IsRealForm.exists_isRealStructure`, downstream in
 `TauCeti.RepresentationTheory.RealForm`.
 
 Everything is stated for an arbitrary `V`; no finite-dimensionality is used anywhere.
@@ -50,6 +50,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   complexification, bundled as `TauCeti.complexificationLinearEquivProd`;
   `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
   `TauCeti.complexification_ext` says the two coordinates determine the vector.
+* `LinearEquiv.conjugationOfComplexification`: the tensor conjugation transported through a
+  complexification equivalence `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`.
 
 ## Main statements
 
@@ -72,8 +74,17 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   for any real structure compatible with the complex one.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
   conjugation of a complexification and its real points.
+* `TauCeti.realPointsEquiv_tmulConj`: the canonical real-descent equivalence intertwines
+  tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearEquiv.conjugationOfComplexification_apply_tmul`: the transported conjugation sends
+  `e (c ⊗ₜ w)` to `e (star c ⊗ₜ w)`.
+* `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
+  `LinearEquiv.conjugationOfComplexification_unique` and
+  `LinearEquiv.conjugationOfComplexification_natural`: the transported conjugation fixes exactly
+  the image of the real inclusion, is the only conjugate-linear map doing so, and commutes with
+  complex-linear maps carrying one real inclusion to another.
 
 ## Implementation notes
 
@@ -513,6 +524,15 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
 
 end Complexification
 
+/-- Real descent intertwines tensor conjugation with the original conjugation. -/
+@[simp]
+theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
+    (x : ℂ ⊗[ℝ] realPoints K) :
+    realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z w => simp [mem_realPoints.mp w.property]
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
+
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
 `LinearMap.baseChange` leaves the conjugated factor alone. -/
 theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W']
@@ -535,3 +555,89 @@ theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddC
   obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V]
+
+open TauCeti
+
+/-- Transport the existing tensor conjugation through a complexification equivalence.
+The result uses the native semilinear-map carrier. -/
+noncomputable def conjugationOfComplexification {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) : V →ₛₗ[starRingEnd ℂ] V :=
+  e.toLinearMap ∘ₛₗ (tmulConj W ∘ₛₗ e.symm.toLinearMap)
+
+/-- The defining transport formula for tensor conjugation. -/
+theorem conjugationOfComplexification_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (v : V) :
+    conjugationOfComplexification e v = e (tmulConj W (e.symm v)) := by
+  simp only [conjugationOfComplexification, LinearMap.coe_comp, Function.comp_apply,
+    LinearEquiv.coe_coe]
+
+/-- The transported conjugation conjugates the scalar of the image of a pure tensor. -/
+@[simp]
+theorem conjugationOfComplexification_apply_tmul {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (c : ℂ) (w : W) :
+    conjugationOfComplexification e (e (c ⊗ₜ[ℝ] w)) = e (star c ⊗ₜ[ℝ] w) := by
+  rw [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmul, starRingEnd_apply]
+
+/-- Applying the transported tensor conjugation twice gives back the input. -/
+@[simp]
+theorem conjugationOfComplexification_conjugationOfComplexification {W : Type*} [AddCommGroup W]
+    [Module ℝ W] (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (v : V) :
+    conjugationOfComplexification e (conjugationOfComplexification e v) = v := by
+  simp only [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmulConj,
+    e.apply_symm_apply]
+
+/-- Transported tensor conjugation is involutive. -/
+theorem conjugationOfComplexification_involutive {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) : Function.Involutive (conjugationOfComplexification e) :=
+  conjugationOfComplexification_conjugationOfComplexification e
+
+/-- The exact fixed locus is the image of the real inclusion `w ↦ e (1 ⊗ w)`. -/
+@[simp]
+theorem conjugationOfComplexification_eq_self_iff {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (v : V) :
+    conjugationOfComplexification e v = v ↔ ∃ w : W, e (1 ⊗ₜ[ℝ] w) = v := by
+  constructor
+  · intro hv
+    have hfix : tmulConj W (e.symm v) = e.symm v := by
+      apply e.injective
+      simpa only [conjugationOfComplexification_apply, e.apply_symm_apply] using hv
+    obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff W (e.symm v)).mp hfix
+    exact ⟨w, by rw [← hw, e.apply_symm_apply]⟩
+  · rintro ⟨w, rfl⟩
+    simp only [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmul,
+      map_one]
+
+/-- A conjugate-linear map fixing the real inclusion is uniquely the transported conjugation.
+No involutivity assumption on the competing map is necessary. -/
+theorem conjugationOfComplexification_unique {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (K : V →ₛₗ[starRingEnd ℂ] V)
+    (hfix : ∀ w : W, K (e (1 ⊗ₜ[ℝ] w)) = e (1 ⊗ₜ[ℝ] w)) :
+    K = conjugationOfComplexification e := by
+  apply LinearMap.ext_on (span_realPoints_eq_top (conjugationOfComplexification_involutive e))
+  intro v hv
+  obtain ⟨w, rfl⟩ := (conjugationOfComplexification_eq_self_iff e v).mp (mem_realPoints.mp hv)
+  simp only [hfix, conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmul,
+    map_one]
+
+/-- Transported conjugation is natural under complex-linear maps carrying the real inclusions
+to each other. The map between the real carriers need not be invertible. -/
+theorem conjugationOfComplexification_natural
+    {W W' V' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
+    [AddCommGroup V'] [Module ℂ V'] (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V)
+    (e' : (ℂ ⊗[ℝ] W') ≃ₗ[ℂ] V') (A : V →ₗ[ℂ] V') (b : W →ₗ[ℝ] W')
+    (hreal : ∀ w, A (e (1 ⊗ₜ[ℝ] w)) = e' (1 ⊗ₜ[ℝ] b w)) (v : V) :
+    conjugationOfComplexification e' (A v) = A (conjugationOfComplexification e v) := by
+  have h : conjugationOfComplexification e' ∘ₛₗ A = A ∘ₛₗ conjugationOfComplexification e := by
+    apply LinearMap.ext_on (span_realPoints_eq_top (conjugationOfComplexification_involutive e))
+    intro u hu
+    obtain ⟨w, rfl⟩ := (conjugationOfComplexification_eq_self_iff e u).mp (mem_realPoints.mp hu)
+    simp only [LinearMap.coe_comp, Function.comp_apply, hreal,
+      conjugationOfComplexification_apply, e.symm_apply_apply, e'.symm_apply_apply,
+      tmulConj_tmul, map_one]
+  exact congrArg (fun f ↦ f v) h
+
+end LinearEquiv

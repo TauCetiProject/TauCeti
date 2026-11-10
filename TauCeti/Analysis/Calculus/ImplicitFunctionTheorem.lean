@@ -354,13 +354,16 @@ theorem contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem {n 
     (hy : y ∈ (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).target)
     (hmem : (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm y ∈
       hf.implicitCoordSource hf' hker)
-    {A : E →L[K] F}
-    (hA : HasFDerivAt f A ((hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm y))
     (hcont : ContDiffAt K n f
       ((hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm y)) :
-    ContDiffAt K n (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm y :=
-  hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_isInvertible hf' hker hy hA
-    (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hmem hA) hcont
+    ContDiffAt K n (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm y := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffAt_zero.2 ⟨_, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf'
+      hker).open_target.mem_nhds hy, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf'
+      hker).continuousOn_symm⟩
+  have hA := (hcont.differentiableAt hn).hasFDerivAt
+  exact hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_isInvertible hf' hker
+    hy hA (hf.isInvertible_prod_of_mem_implicitCoordSource hf' hker hmem hA) hcont
 
 /- Mathlib names the complemented-kernel implicit function twice, once as
 `HasStrictFDerivAt.implicitFunctionOfComplemented` and once as the inverse of
@@ -400,11 +403,11 @@ theorem eventually_implicitFunctionOfComplemented_eq (hf : HasStrictFDerivAt f f
   rw [hright, hfst] at hkey
   exact hkey
 
-/-- **A regular zero set is flattened by an ambient chart.** If `f` is `C^n` (`n ≠ 0`) on an open
+/-- **A regular zero set is flattened by an ambient chart.** If `f` is `C^n` on an open
 set `U` around `a`, with surjective strict derivative `f'` at `a` whose kernel is complemented,
 then a `C^n` chart of `E` with `C^n` inverse, defined around `a` with source inside `U`, flattens
 the zero set of `f` onto `ker f'`. -/
-theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) (hf : HasStrictFDerivAt f f' a)
+theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hf : HasStrictFDerivAt f f' a)
     (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) {U : Set E} (hU : IsOpen U)
     (haU : a ∈ U) (hC : ∀ z ∈ U, ContDiffAt K n f z) :
     ∃ e : OpenPartialHomeomorph E E, a ∈ e.source ∧ e.source ⊆ U ∧
@@ -433,7 +436,7 @@ theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) (hf : Ha
     have hCw := hC _ hwW.1
     rw [he_symm]
     exact (hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hwt
-      hwW.2 ((hCw.differentiableAt hn).hasFDerivAt) hCw).comp w J.contDiff.contDiffAt
+      hwW.2 hCw).comp w J.contDiff.contDiffAt
   · simp only [e, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
       ContinuousLinearEquiv.coe_toHomeomorph, SetLike.mem_coe, LinearMap.mem_ker,
       ContinuousLinearMap.coe_coe, hJ, OpenPartialHomeomorph.coe_restrOpen, Φ,
@@ -481,8 +484,7 @@ private theorem apply_symm_eq_of_forall_mem_ball {f' : E →L[𝕜] F}
     intro w hw
     obtain ⟨hpt, hfp, hgp, hkp, hsp⟩ := hball _ (hmem w hw)
     have hsymm : ContDiffAt 𝕜 1 Φ.symm (y, w) :=
-      hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hpt hsp
-        (hfp.differentiableAt one_ne_zero).hasFDerivAt hfp
+      hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hpt hsp hfp
     have hs : DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w :=
       (hsymm.differentiableAt one_ne_zero).comp w
         (differentiableAt_const _ |>.prodMk differentiableAt_id)

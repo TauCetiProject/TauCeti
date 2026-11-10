@@ -74,7 +74,7 @@ theorem gaussianReal_map_sq :
     isProbabilityMeasure_chiSquaredMeasure zero_le_one
   apply Measure.eq_of_cdf
   ext x
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic,
+  rw [Measure.cdf_map _ _ (by fun_prop),
     cdf_chiSquaredMeasure_eq zero_lt_one]
   by_cases hx : x < 0
   · have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = ∅ := by

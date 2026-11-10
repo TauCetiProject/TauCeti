@@ -76,7 +76,7 @@ theorem isProperMap_restrict_pair (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f
         ty.2) := by
   obtain ⟨c, hex⟩ := hX.exists_forall_exists_flow_eq hf hab
   exact Flow.isProperMap_restrict_pair hf.continuous.continuousOn
-    (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy) hex
+    (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy) hex
 
 /-- **Unparametrized trajectories are a level slice.** For distinct points `a` and `b`, the space of
 unparametrized trajectories from `a` to `b` is homeomorphic to its level slice at any value `c`
@@ -88,7 +88,7 @@ theorem exists_orbitQuotient_homeomorph_levelSlice (hf : MDifferentiable 𝓘(�
         ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}),
       ∀ y, e.symm y = Quotient.mk _ ⟨y.1, y.2.1⟩ :=
   ⟨_, Flow.orbitQuotientHomeomorphLevelSlice_symm_apply hf.continuous.continuousOn
-    (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy)
+    (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy)
     fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
       hc.2).exists⟩
 

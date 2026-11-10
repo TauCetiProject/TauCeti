@@ -35,6 +35,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `TauCeti.hasDerivAt_parameterCurve_uncurry`, `TauCeti.hasDerivAt_timeSlice_uncurry`: the same
+  for a curried function `u`, as directional derivatives of `uncurry u`.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
 * `TauCeti.hasFDerivAt_apply_snd_fst`: the derivative of `(x, (t, e)) ↦ F t x`, in terms of the
   parameter velocity and the derivative of the slice `F t`.
@@ -165,6 +167,23 @@ theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
+
+/-- For a function `u` of a scalar parameter and a spatial variable, the derivative of the
+parameter curve `s ↦ u s x` is the derivative of `uncurry u` in the direction `(1, 0)`. This is
+`hasDerivAt_parameterCurve` for `uncurry u`, with the parameter velocity unfolded. -/
+theorem hasDerivAt_parameterCurve_uncurry {u : 𝕜 → E → F'} {t : 𝕜} {x : E}
+    (hu : DifferentiableAt 𝕜 (Function.uncurry u) (t, x)) :
+    HasDerivAt (fun s ↦ u s x) (fderiv 𝕜 (Function.uncurry u) (t, x) (1, 0)) t := by
+  simpa only [Function.uncurry_apply_pair, timeFDeriv_apply] using hasDerivAt_parameterCurve hu
+
+/-- For a function `u` of a parameter and a scalar spatial variable, the derivative of the
+fixed-parameter slice `u t` is the derivative of `uncurry u` in the direction `(0, 1)`. This is
+`hasFDerivAt_timeSlice` for `uncurry u`, with the spatial Jacobian applied to `1`. -/
+theorem hasDerivAt_timeSlice_uncurry {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {u : P → 𝕜 → F'} {t : P} {x : 𝕜} (hu : DifferentiableAt 𝕜 (Function.uncurry u) (t, x)) :
+    HasDerivAt (u t) (fderiv 𝕜 (Function.uncurry u) (t, x) (0, 1)) x := by
+  simpa only [Function.uncurry_apply_pair, spatialFDeriv_apply] using
+    (hasFDerivAt_timeSlice hu).hasDerivAt
 
 /-- **The chain rule along a curve.** If `F` is differentiable at `(t, γ t)` and `γ` has velocity
 `v` at `t`, then `s ↦ F (s, γ s)` has derivative the parameter velocity of `F` plus its spatial
@@ -384,6 +403,20 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with s hs
     exact (fderiv_timeSlice hs).symm)
   simpa only [flip_apply, hTime.fderiv] using hSpatial
+
+/-- If `W` is the parameter velocity of a jointly smooth family `G` at time `t` near `x`, then the
+parameter derivative of the spatial Jacobian of `G` at `x` is the derivative of `W` at `x`. -/
+theorem ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt {G : 𝕜 × E → F'}
+    {W : E → F'} {t : 𝕜} {x : E} (hG : ContDiffAt 𝕜 (minSmoothness 𝕜 2) G (t, x))
+    (hvel : ∀ᶠ z in 𝓝 x, HasDerivAt (fun u ↦ G (u, z)) (W z) t) :
+    HasDerivAt (fun u ↦ fderiv 𝕜 (fun z ↦ G (u, z)) x) (fderiv 𝕜 W x) t := by
+  have h := TauCeti.hasDerivAt_fderivWithin_slice (F := G) (s := Set.univ) (t := t) (x := x)
+    (by rwa [Set.univ_prod_univ, contDiffWithinAt_univ]) uniqueDiffOn_univ (by simp)
+    (Set.mem_univ x)
+  simp only [fderivWithin_univ] at h
+  have hW : (fun y ↦ _root_.deriv (fun r ↦ G (r, y)) t) =ᶠ[𝓝 x] W :=
+    hvel.mono fun z hz ↦ hz.deriv
+  rwa [hW.fderiv_eq] at h
 
 /-- For a sufficiently smooth parametric map, the parameter derivative of its spatial Jacobian,
 applied to `w`, is the spatial derivative of its parameter-velocity field applied to `w`. -/

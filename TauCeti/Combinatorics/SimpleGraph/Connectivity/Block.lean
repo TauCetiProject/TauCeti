@@ -329,6 +329,20 @@ theorem IsCutVertex.exists_isBlock_ne [Finite V] (h : G.IsCutVertex v) :
   · exact (hr v hv).2 rfl
   · exact hqb hv
 
+/-- A block containing a non-isolated vertex contains a neighbour of that vertex. -/
+theorem IsBlock.exists_adj_of_not_isIsolated_mem (hB : G.IsBlock B)
+    (hv : ¬G.IsIsolated v) (hvB : v ∈ B) : ∃ u ∈ B, G.Adj v u := by
+  classical
+  -- Since `v` is not isolated, `B` is not the singleton block `{v}`.
+  obtain ⟨d, hdB, hdv⟩ : ∃ d ∈ B, d ≠ v := by
+    by_contra! h
+    have hiso : G.IsIsolated v := (G.isBlock_singleton_iff_isIsolated v).1
+      (Set.eq_singleton_iff_unique_mem.2 ⟨hvB, h⟩ ▸ hB)
+    exact hv hiso
+  obtain ⟨p⟩ := hB.connected.preconnected ⟨v, hvB⟩ ⟨d, hdB⟩
+  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
+  exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
+
 /-- **Cut vertices and blocks.** In a finite graph, a vertex is a cut vertex exactly when it lies
 in two distinct blocks. -/
 theorem isCutVertex_iff_exists_isBlock_ne [Finite V] :

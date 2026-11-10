@@ -158,10 +158,12 @@ namespace Finset
 
 /-- For every point `p` in the affine span of a nonempty finite set `s`, some point strictly beyond
 the centroid of `s` on the ray from `p` still lies in the convex hull of `s`. -/
-theorem exists_lineMap_centroid_mem_convexHull (s : Finset E) (hs : s.Nonempty) {p : E}
+theorem exists_lineMap_centroid_mem_convexHull (s : Finset E) {p : E}
     (hp : p ∈ affineSpan 𝕜 (s : Set E)) :
     ∃ ε : 𝕜, 0 < ε ∧ AffineMap.lineMap p (s.centroid 𝕜 id) (1 + ε) ∈ convexHull 𝕜 (s : Set E) := by
   classical
+  have hs : s.Nonempty := by
+    simpa using (affineSpan_nonempty (k := 𝕜) (s := (s : Set E))).1 ⟨p, hp⟩
   have hrange : (s : Set E) = Set.range ((↑) : s → E) := by simp
   rw [hrange] at hp
   obtain ⟨w, hw, hpw⟩ := eq_affineCombination_of_mem_affineSpan_of_fintype hp
@@ -240,7 +242,7 @@ theorem eq_zero_of_injOn_convexHull (f : E →ᵃ[𝕜] F) {s : Set E}
     rw [sub_eq_neg_add]
     exact AffineSubspace.vadd_mem_of_mem_direction
       (by rw [direction_affineSpan]; exact neg_mem hv) hc
-  obtain ⟨ε, hε, hmem⟩ := t.exists_lineMap_centroid_mem_convexHull ht hcv
+  obtain ⟨ε, hε, hmem⟩ := t.exists_lineMap_centroid_mem_convexHull hcv
   -- the point `c + ε • v` beyond the centroid lies in the hull and has the image of `c`
   have hpt : lineMap (c - v) c (1 + ε) = ε • v + c := by
     rw [lineMap_apply_module']
@@ -290,14 +292,23 @@ theorem AffineIndependent.map_of_injOn_convexHull {F : Type*} [AddCommGroup F] [
 namespace Affine.Simplex
 
 /-- The closed interior of a simplex whose vertices are the images of points `x i` of a vector space
-under an injective affine map `f` is the image under `f` of the convex hull of the `x i`. -/
+under an affine map `f` is the image under `f` of the convex hull of the `x i`. -/
 theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Module 𝕜 V]
-    [AddTorsor V P] {n : ℕ} (s : Simplex 𝕜 P n) {f : E →ᵃ[𝕜] P} (hf : Function.Injective f)
+    [AddTorsor V P] {n : ℕ} (s : Simplex 𝕜 P n) {f : E →ᵃ[𝕜] P}
     {x : Fin (n + 1) → E} (hx : s.points = f ∘ x) :
     s.closedInterior = f '' convexHull 𝕜 (Set.range x) := by
   have hind : AffineIndependent 𝕜 x := AffineIndependent.of_comp f (hx ▸ s.independent)
-  have hmap : s = (⟨x, hind⟩ : Simplex 𝕜 E n).map f hf := Simplex.ext fun j => congrFun hx j
-  rw [hmap, closedInterior_map, ← convexHull_eq_closedInterior]
+  have hhull : convexHull 𝕜 (Set.range x) = (⟨x, hind⟩ : Simplex 𝕜 E n).closedInterior :=
+    convexHull_eq_closedInterior ⟨x, hind⟩
+  rw [hhull]
+  ext p
+  constructor
+  · rintro ⟨w, hw1, hw, rfl⟩
+    refine ⟨Finset.univ.affineCombination 𝕜 x w, ⟨w, hw1, hw, rfl⟩, ?_⟩
+    rw [Finset.map_affineCombination _ _ _ hw1, hx]
+  · rintro ⟨q, ⟨w, hw1, hw, rfl⟩, rfl⟩
+    refine ⟨w, hw1, hw, ?_⟩
+    rw [hx, Finset.map_affineCombination _ _ _ hw1]
 
 /-- The closed interior of a simplex in an affine space contains the segment between any two of its
 points. -/
@@ -307,7 +318,7 @@ theorem lineMap_mem_closedInterior {V P : Type*} [AddCommGroup V] [Module 𝕜 V
     AffineMap.lineMap x y t ∈ s.closedInterior := by
   -- Read the simplex in the vector space `V`, through the translation by its first vertex.
   set e := AffineEquiv.vaddConst 𝕜 (s.points 0)
-  rw [s.closedInterior_eq_image_convexHull (f := e.toAffineMap) e.injective
+  rw [s.closedInterior_eq_image_convexHull (f := e.toAffineMap)
     (x := fun k => s.points k -ᵥ s.points 0) (funext fun k => (vsub_vadd _ _).symm)] at hx hy ⊢
   obtain ⟨u, hu, rfl⟩ := hx
   obtain ⟨v, hv, rfl⟩ := hy
@@ -351,13 +362,13 @@ end Affine.Simplex
 
 namespace Affine.Triangle
 
-/-- A triangle whose vertices are the images of `x`, `y`, `z` under an injective affine map `f`
+/-- A triangle whose vertices are the images of `x`, `y`, `z` under an affine map `f`
 from a vector space has closed interior the image under `f` of the convex hull of `x`, `y`, `z`. -/
 theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Module 𝕜 V]
-    [AddTorsor V P] (t : Triangle 𝕜 P) {f : E →ᵃ[𝕜] P} (hf : Function.Injective f) {x y z : E}
+    [AddTorsor V P] (t : Triangle 𝕜 P) {f : E →ᵃ[𝕜] P} {x y z : E}
     (ht : t.points = ![f x, f y, f z]) :
     t.closedInterior = f '' convexHull 𝕜 {x, y, z} := by
-  rw [Simplex.closedInterior_eq_image_convexHull t hf (x := ![x, y, z]) (by
+  rw [Simplex.closedInterior_eq_image_convexHull t (x := ![x, y, z]) (by
       rw [ht]
       ext j
       fin_cases j <;> rfl),

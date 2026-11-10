@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 
 On a sphere of nonzero radius in a torsion-free seminormed additive group, a point and its
 antipode are distinct. Their complements therefore cover the sphere. This cover is useful for
-decomposing spheres into punctured spheres.
+decomposing spheres into punctured spheres. Two points of a sphere centred at zero that are not
+antipodal have nonzero sum (`TauCeti.coe_add_coe_ne_zero`).
 
 An open subset of a closed ball contained in the corresponding open ball embeds openly into the
 ambient space.
@@ -45,6 +46,11 @@ lemma compl_singleton_union_compl_singleton_neg {E : Type*} [SeminormedAddCommGr
     apply ne_zero_of_mem_sphere hr p
     apply self_eq_neg.mp
     simpa only [coe_neg_sphere] using congrArg Subtype.val h
+
+/-- Two points of a sphere centred at zero that are not antipodal have nonzero sum. -/
+theorem coe_add_coe_ne_zero {E : Type*} [SeminormedAddCommGroup E] {r : ℝ}
+    {b y : sphere (0 : E) r} (h : y ≠ -b) : (b : E) + (y : E) ≠ 0 := fun h0 ↦
+  h (Subtype.ext (by rw [coe_neg_sphere]; exact eq_neg_of_add_eq_zero_right h0))
 
 /-- An open subset of a closed ball centered at zero whose points have norm strictly less than
 the radius embeds openly into the ambient space. -/

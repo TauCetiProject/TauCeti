@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.CodedConnectives
 public import TauCeti.ModelTheory.Infinitary.Equiv
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
+public import TauCeti.ModelTheory.Infinitary.ConstantSupport
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -35,6 +36,8 @@ is a model of the image of a theory exactly when it is a model of the theory.
 
 * `FirstOrder.Language.Theoryω.realize_conjunction_iff`: a structure satisfies the conjunction of
   a countable theory exactly when it is a model of the theory.
+* `FirstOrder.Language.Theoryω.model_constantsOn_update_iff`: reinterpreting a constant absent
+  from a theory preserves modelhood.
 * `FirstOrder.Language.Theoryω.Model.mono`, `FirstOrder.Language.Theoryω.model_empty`,
   `FirstOrder.Language.Theoryω.model_union_iff`, `FirstOrder.Language.Theoryω.model_insert_iff`:
   the basic laws of modelhood.
@@ -66,7 +69,7 @@ is a model of the image of a theory exactly when it is a model of the theory.
 
 public section
 
-universe u v u' v' w w'
+universe u v u' v' w w' uγ
 
 namespace FirstOrder
 
@@ -191,6 +194,20 @@ theorem realize_conjunction_iff (hT : T.Countable) :
   rw [SentenceInf.realize_def, FormulaInf.realize_def, conjunction_def,
     BoundedFormulaInf.realize_iInfAlong, model_iff]
   simp only [Subtype.forall, SentenceInf.realize_def, FormulaInf.realize_def]
+
+/-- Reinterpreting a constant absent from every sentence of a theory preserves modelhood. -/
+theorem model_constantsOn_update_iff {γ : Type uγ} [DecidableEq γ]
+    {M : Type w} [L.Structure M] (e : γ → M) {c : γ} (m : M)
+    {T : L[[γ]].Theoryω} (hc : ∀ φ ∈ T, c ∉ φ.constantSupport) :
+    @Model _ T M (@withConstantsStructure L M _ γ
+      (constantsOn.structure (Function.update e c m))) ↔
+      @Model _ T M (@withConstantsStructure L M _ γ (constantsOn.structure e)) := by
+  simp only [model_iff, SentenceInf.realize_def, FormulaInf.realize_def]
+  apply forall₂_congr
+  intro φ hφ
+  exact φ.realize_congr_of_eqOn_constantSupport
+    (fun d hd => Function.update_of_ne (by rintro rfl; exact hc φ hφ hd : d ≠ c) m e)
+    Empty.elim default
 
 end Theoryω
 
