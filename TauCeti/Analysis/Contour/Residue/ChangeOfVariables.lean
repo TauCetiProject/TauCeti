@@ -108,9 +108,11 @@ theorem residue_deriv_div_sub_pow_of_analyticOrderAt_eq {φ : ℂ → ℂ} {p : 
     simp
   · -- `φ − φ p` has isolated zeros, and off them `φ' / (φ − φ p) ^ (k + 2)` is the derivative of
     -- `−(k + 1)⁻¹ · ((φ − φ p) ^ (k + 1))⁻¹`.
+    have hnc : ¬ EventuallyConst φ (𝓝 p) := by
+      rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top, hm]
+      exact ENat.natCast_ne_top m
     have hne : ∀ᶠ z in 𝓝[≠] p, φ z - φ p ≠ 0 :=
-      hsub.eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h ↦
-        ENat.natCast_ne_top m (hm.symm.trans (analyticOrderAt_eq_top.2 h))
+      (Tendsto.eventually (hφ.map_nhdsNE hnc) self_mem_nhdsWithin).mono fun _ hz ↦ sub_ne_zero.2 hz
     set G : ℂ → ℂ := fun z ↦ -((k : ℂ) + 1)⁻¹ * ((φ z - φ p) ^ (k + 1))⁻¹
     have hG : MeromorphicAt G p :=
       analyticAt_const.meromorphicAt.mul (hsub.meromorphicAt.pow _).inv
@@ -164,13 +166,10 @@ theorem residue_comp_mul_deriv_eq_analyticOrderNatAt_mul {f φ : ℂ → ℂ} {p
   have hm : analyticOrderAt (fun z ↦ φ z - φ p) p = m := hm'
   have hmnat : analyticOrderNatAt (fun z ↦ φ z - φ p) p = m := by
     rw [analyticOrderNatAt, hm, ENat.toNat_natCast]
-  have hne : ∀ᶠ z in 𝓝[≠] p, φ z ≠ φ p :=
-    ((hφ.sub analyticAt_const).eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h ↦
-      ENat.natCast_ne_top m (hm.symm.trans (analyticOrderAt_eq_top.2 h))).mono
-      fun z hz ↦ sub_ne_zero.1 hz
-  have hφt : Tendsto φ (𝓝[≠] p) (𝓝[≠] φ p) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (hφ.continuousAt.tendsto.mono_left nhdsWithin_le_nhds) hne
+  have hnc : ¬ EventuallyConst φ (𝓝 p) := by
+    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top, hm]
+    exact ENat.natCast_ne_top m
+  have hφt : Tendsto φ (𝓝[≠] p) (𝓝[≠] φ p) := hφ.map_nhdsNE hnc
   obtain ⟨a, h, hh, hfh⟩ := exists_laurent_data_of_meromorphicAt hf
   generalize meromorphicPolarOrderAt f (φ p) = N at a hfh
   have hterm : ∀ k : Fin N,
@@ -193,16 +192,13 @@ theorem residue_comp_mul_deriv_eq_analyticOrderNatAt_mul {f φ : ℂ → ℂ} {p
   have hfeq : f =ᶠ[𝓝[≠] φ p] h + ∑ k : Fin N, fun w ↦ a k / (w - φ p) ^ (k.val + 1) := by
     filter_upwards [hfh] with w hw
     simpa [Finset.sum_apply] using hw
-  rw [residue_congr_nhdsNE hpull, residue_congr_nhdsNE hfeq,
-    residue_add hhφ.meromorphicAt (MeromorphicAt.sum fun k _ ↦ hterm k),
+  rw [residue_congr_nhdsNE hpull, residue_congr_nhdsNE hfeq]
+  simp [residue_add hhφ.meromorphicAt (MeromorphicAt.sum fun k _ ↦ hterm k),
     residue_add hh.meromorphicAt (MeromorphicAt.sum fun k _ ↦ hmono k),
     residue_eq_zero_of_analyticAt hhφ, residue_eq_zero_of_analyticAt hh,
-    residue_sum _ fun k _ ↦ hterm k, residue_sum _ fun k _ ↦ hmono k, hmnat, zero_add, zero_add,
-    Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [residue_const_mul, residue_deriv_div_sub_pow_of_analyticOrderAt_eq hφ hm,
-    residue_const_div_sub_pow]
-  split_ifs <;> ring
+    residue_sum _ fun k _ ↦ hterm k, residue_sum _ fun k _ ↦ hmono k, hmnat, Finset.mul_sum,
+    residue_const_mul, residue_deriv_div_sub_pow_of_analyticOrderAt_eq hφ hm,
+    residue_const_div_sub_pow, mul_comm]
 
 /-- **Change of variables for residues.** If `φ` is analytic at `p` with `φ'(p) ≠ 0`, then for
 every `f : ℂ → ℂ` the residue of `(f ∘ φ) · φ'` at `p` is the residue of `f` at `φ p`. Equivalently,

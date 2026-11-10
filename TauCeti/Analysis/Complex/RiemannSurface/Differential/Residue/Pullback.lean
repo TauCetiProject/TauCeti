@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
 
 /-!
 # Residues of pulled-back `1`-forms
