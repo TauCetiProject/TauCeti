@@ -107,8 +107,7 @@ theorem exists_contMDiffMap_comp_eventuallyEq
   -- Pull the chart expression back along `F`, which agrees with the chart on its source.
   filter_upwards [hfg.comp_tendsto hFt, hF, hsource] with y hgy hFy hy
   simp only [Function.comp_apply] at hgy
-  -- Unfold the bundled coercion of the smooth function `⟨g, _⟩` on the model space.
-  change f y = g (F y)
+  simp only [Function.comp_apply, ContMDiffMap.coeFn_mk]
   rw [hFy] at hgy ⊢
   rwa [(extChartAt I x).left_inv hy] at hgy
 
