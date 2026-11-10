@@ -28,7 +28,9 @@ even without Hausdorffness. On a sigma-compact Hausdorff manifold these compact 
 can instead be chosen to give a locally finite cover of the whole manifold.
 
 The extended chart of a product manifold has the product of the targets of the factor charts as
-its target (`TauCeti.extChartAt_prod_target`).
+its target (`TauCeti.extChartAt_prod_target`). On a product `M × E'` with a normed space `E'`, the
+extended chart is the chart of `M` on the first factor and the identity on `E'`
+(`TauCeti.extChartAt_prod_modelSpace_apply`, `TauCeti.extChartAt_prod_modelSpace_symm_apply`).
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions; for a boundaryless model, their domains are open. A compact
@@ -47,6 +49,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 
 ## Main results
 
+* `TauCeti.extChartAt_prod_modelSpace_apply` and `TauCeti.extChartAt_prod_modelSpace_symm_apply`:
+  the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
@@ -97,6 +101,22 @@ theorem extChartAt_prod_target {E' : Type*} [NormedAddCommGroup E'] [NormedSpace
     (extChartAt (I.prod I') x).target =
       (extChartAt I x.1).target ×ˢ (extChartAt I' x.2).target := by
   rw [extChartAt_prod, PartialEquiv.prod_target]
+
+/-- On a product `M × E'` with a normed space `E'`, the extended chart at `x` is the extended
+chart of `M` at `x.1` on the first factor and the identity on `E'`. This is not a `simp` lemma:
+`simp` unfolds `extChartAt` on the left-hand side before this lemma could fire. -/
+theorem extChartAt_prod_modelSpace_apply {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (x y : M × E') : extChartAt (I.prod 𝓘(𝕜, E')) x y = (extChartAt I x.1 y.1, y.2) := by
+  simp only [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, id_eq]
+
+/-- On a product `M × E'` with a normed space `E'`, the inverse of the extended chart at `x` is the
+inverse of the extended chart of `M` at `x.1` on the first factor and the identity on `E'`. -/
+theorem extChartAt_prod_modelSpace_symm_apply {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] (x : M × E') (u : E × E') :
+    (extChartAt (I.prod 𝓘(𝕜, E')) x).symm u = ((extChartAt I x.1).symm u.1, u.2) := by
+  simp only [extChartAt_prod, PartialEquiv.prod_coe_symm, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_symm, PartialEquiv.refl_coe, id_eq]
 
 /-- Near the center of an extended chart, composing a chart representative with the chart
 recovers the original function. No continuity of the function is needed. -/
