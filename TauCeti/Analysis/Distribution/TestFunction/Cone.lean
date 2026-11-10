@@ -400,7 +400,7 @@ theorem cone_add [ContinuousAdd G] (T S : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →
     (hSΩ : dsupport S ⊆ Ω) : cone p (T + S) = cone p T + cone p S := by
   obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := ⊤) (hT.union hS) (union_subset hTΩ hSΩ)
   have hTS : dsupport (T + S) ⊆ dsupport T ∪ dsupport S := by
-    simpa using dsupport_add_subset T S
+    simpa using dsupport_add_subset ⇑T ⇑S
   rw [cone_eq (hχ.filter_mono (nhdsSet_mono hTS)),
     cone_eq (hχ.filter_mono (nhdsSet_mono subset_union_left)),
     cone_eq (hχ.filter_mono (nhdsSet_mono subset_union_right)), ContinuousLinearMap.add_comp]
@@ -414,7 +414,8 @@ theorem cone_sub [IsTopologicalAddGroup G] (T S : 𝓓(Ω, E [⋀^Fin k]→L[ℝ
   have hTS : dsupport (T - S) ⊆ dsupport T ∪ dsupport S := by
     have hN : dsupport (-S) ⊆ dsupport S :=
       dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]
-    simpa [sub_eq_add_neg] using (dsupport_add_subset T (-S)).trans (union_subset_union_right _ hN)
+    simpa [sub_eq_add_neg] using
+      (dsupport_add_subset ⇑T ⇑(-S)).trans (union_subset_union_right _ hN)
   rw [cone_eq (hχ.filter_mono (nhdsSet_mono hTS)),
     cone_eq (hχ.filter_mono (nhdsSet_mono subset_union_left)),
     cone_eq (hχ.filter_mono (nhdsSet_mono subset_union_right)), ContinuousLinearMap.sub_comp]

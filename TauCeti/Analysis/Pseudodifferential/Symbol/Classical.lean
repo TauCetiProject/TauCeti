@@ -44,6 +44,10 @@ and proves:
 * `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
   all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
   smoothing symbol classical;
+* `TauCeti.ClassicalSymbol.termsLinearMap`: the homogeneous terms as a linear map, whose kernel
+  consists of the smoothing classical symbols (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`);
+  `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`: two classical symbols differ by a
+  smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
@@ -715,6 +719,34 @@ theorem principal_comp : (b.comp a).principal = b.principal.comp a.principal := 
   funext z
   simp
 
+@[simp]
+theorem comp_neg (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    b.comp (-a) = -b.comp a :=
+  ext (Symbol.comp_neg _ _)
+
+@[simp]
+theorem neg_comp (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (-b).comp a = -b.comp a :=
+  ext (Symbol.neg_comp _ _)
+
+theorem comp_sub (b : ClassicalSymbol n W U m') (a₁ a₂ : ClassicalSymbol n V W m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ :=
+  ext (Symbol.comp_sub _ _ _)
+
+theorem sub_comp (b₁ b₂ : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a :=
+  ext (Symbol.sub_comp _ _ _)
+
+/-- The product of two cut-off homogeneous terms is the cut-off composition of the terms, for the
+product cutoff. -/
+theorem ofHomogeneous_comp_ofHomogeneous (χ χ' : FrequencyCutoff (CoordinateSpace n))
+    (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W U m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (ofHomogeneous χ b).comp (ofHomogeneous χ' a) = ofHomogeneous (χ * χ') (b.comp a) := by
+  ext : 2
+  funext p
+  simp [smul_smul, mul_comm]
+
 end Comp
 
 /-! ### Derivatives -/
@@ -809,6 +841,38 @@ theorem principal_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
   HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
 
 end Deriv
+
+/-! ### The homogeneous terms as a linear map -/
+
+section Terms
+
+variable (n V W m) in
+/-- The homogeneous terms `(a_{m-j})ⱼ` of a classical symbol of order `m`, as a linear map to the
+sequences of homogeneous symbols of degrees `m - j`. -/
+def termsLinearMap : ClassicalSymbol n V W m →ₗ[ℂ]
+    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) where
+  toFun a := a.term
+  map_add' a b := funext fun j => term_add a b j
+  map_smul' c a := funext fun j => term_smul a c j
+
+@[simp]
+theorem termsLinearMap_apply (a : ClassicalSymbol n V W m) : termsLinearMap n V W m a = a.term :=
+  (rfl)
+
+/-- The classical symbols with vanishing homogeneous terms are exactly the smoothing ones. -/
+theorem mem_ker_termsLinearMap {a : ClassicalSymbol n V W m} :
+    a ∈ LinearMap.ker (termsLinearMap n V W m) ↔ a.toSymbol.IsSmoothing := by
+  simp only [LinearMap.mem_ker, termsLinearMap_apply, isSmoothing_toSymbol_iff, funext_iff,
+    Pi.zero_apply]
+
+/-- **Uniqueness modulo smoothing.** Two classical symbols of order `m` differ by a smoothing
+symbol exactly when they have the same homogeneous terms. -/
+theorem isSmoothing_toSymbol_sub_iff {a b : ClassicalSymbol n V W m} :
+    (a.toSymbol - b.toSymbol).IsSmoothing ↔ a.term = b.term := by
+  rw [← toSymbol_sub, isSmoothing_toSymbol_iff, funext_iff]
+  simp [sub_eq_zero]
+
+end Terms
 
 end ClassicalSymbol
 

@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.TensorMk
+public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.Kronecker
+public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
+public import TauCeti.Algebra.Homology.Split
 
 /-!
 # Slant products of cochains with chains
@@ -44,6 +49,20 @@ The slant product of singular cohomology, `Hⁿ(X × Y) × Hₚ(X) ⟶ H^q(Y)`, 
 the shuffle map; it produces, for instance, the classes `c₁(U) / γ ∈ H¹(Y)` of a line bundle `U`
 on `X × Y` and loops `γ` in `X`.
 
+For `D` the identity of `K ⊗ L`, the slant product computes cup products of cochains on the two
+factors: `(a ⌣ b) / x` is `b` with its coefficients changed along `n ↦ μ (⟨a, x⟩ ⊗ n)`
+(`TauCeti.ChainComplex.slant_cup`), and it vanishes when the degrees of `a` and `x` differ
+(`TauCeti.ChainComplex.slant_cup_of_ne`). Conversely, when the terms and the homology of `K` are
+projective, a class of `Hⁿ(Hom(K ⊗ L, P))` is determined by its slant products by the homology
+classes of `K` (`TauCeti.ChainComplex.eq_zero_of_forall_slant_eq_zero`). Indeed `K` is then
+homotopy equivalent to a complex `K'` of projectives with zero differentials
+(`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`). A cocycle `c` of `Hom(K' ⊗ L, P)` is a
+family of maps `K'_p ⟶ Hom(L_q, P)` into the cocycles of `L`; when its slant classes vanish these
+maps land in the coboundaries, and lift, `K'_p` being projective, to maps into `Hom(L_{q-1}, P)`
+which assemble into a cochain with coboundary `c`. With no hypothesis on `L`, these two facts are
+the algebraic content of the Künneth theorem for the cohomology of a product one of whose factors
+has finitely generated projective homology.
+
 ## Main definitions and results
 
 * `TauCeti.ChainComplex.slantCochain`: the slant product of a chain and a cochain.
@@ -56,11 +75,18 @@ on `X × Y` and loops `γ` in `X`.
 * `TauCeti.ChainComplex.slant_naturality`: naturality.
 * `TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`: the slant product by a cycle of degree
   zero along which `D` restricts to a chain map.
+* `TauCeti.ChainComplex.slantCochain_cupCochain`, `TauCeti.ChainComplex.slant_cup` and
+  `TauCeti.ChainComplex.slant_cup_of_ne`: slant products of cup products along the identity of
+  `K ⊗ L`.
+* `TauCeti.ChainComplex.eq_zero_of_forall_slant_eq_zero`: slant products by homology classes of a
+  complex with projective terms and homology detect the cohomology of `Hom(K ⊗ L, P)`.
 
 ## References
 
 * E. H. Spanier, *Algebraic Topology*, McGraw–Hill, 1966, Chapter 6 (the slant product).
 * A. Dold, *Lectures on Algebraic Topology*, Springer, 1972, Chapter VII (products).
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Theorem 3.15 and Section 3.B, the Künneth formulas.
 -/
 
 public section
@@ -482,5 +508,228 @@ lemma slant_naturality {K' L' T' : ChainComplex (ModuleCat.{u} k) ℕ} [K'.HasTe
   rw [iCycles_slantCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_slantCycles, hfi]
   exact slantCochain_naturality D D' f g e hD p q n h _ _
+
+section CupProduct
+
+variable {M N : ModuleCat.{u} k} (μ : M ⊗ N ⟶ P)
+
+/-- **The slant product of a cup product of cochains**, along the identity of `K ⊗ L`: slanting
+`φ ⌣ ψ` by `z ∈ K_p` gives `ψ` followed by the coefficient map `n ↦ μ (φ z ⊗ n)`. -/
+lemma slantCochain_cupCochain (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : K.X p ⟶ M)
+    (ψ : L.X q ⟶ N) :
+    slantCochain k (𝟙 (HomologicalComplex.tensorObj K L)) p q n h z
+        (cupCochain k (𝟙 (HomologicalComplex.tensorObj K L)) μ p q n h φ ψ) =
+      ψ ≫ ModuleCat.tensorMk (φ z) ≫ μ := by
+  ext v
+  have hv := ConcreteCategory.congr_hom (ιTensorObj_tensorCochain μ φ ψ n h) (z ⊗ₜ v)
+  simp only [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at hv
+  simp only [slantCochain_apply, cupCochain_apply, HomologicalComplex.id_f,
+    ConcreteCategory.comp_apply, ConcreteCategory.id_apply, ModuleCat.tensorMk_apply, hv]
+
+/-- The slant product of a cup product of cochains of degrees `p` and `q` by a chain of degree
+`p' ≠ p` vanishes. -/
+lemma slantCochain_cupCochain_of_ne {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n)
+    (hp : p' ≠ p) (z : K.X p') (φ : K.X p ⟶ M) (ψ : L.X q ⟶ N) :
+    slantCochain k (𝟙 (HomologicalComplex.tensorObj K L)) p' q' n h' z
+        (cupCochain k (𝟙 (HomologicalComplex.tensorObj K L)) μ p q n h φ ψ) = 0 := by
+  ext v
+  simp only [slantCochain_apply, cupCochain_apply, HomologicalComplex.id_f, Category.id_comp]
+  exact ConcreteCategory.congr_hom (ιTensorObj_tensorCochain_of_ne_left μ φ ψ h' hp) (z ⊗ₜ v)
+
+/-- **The slant product of a cup product of classes**, along the identity of `K ⊗ L`:
+`(a ⌣ b) / x` is the class `b` with its coefficients changed along `n ↦ μ (⟨a, x⟩ ⊗ n)`. For
+coefficients in the ring itself and `μ` the multiplication, this is `⟨a, x⟩ • b`. -/
+@[simp]
+theorem slant_cup (p q n : ℕ) (h : p + q = n) (x : K.homology p)
+    (a : (K.linearYonedaObj k M).homology p) (b : (L.linearYonedaObj k N).homology q) :
+    slant k (𝟙 (HomologicalComplex.tensorObj K L)) p q n h x
+        (cup k (𝟙 (HomologicalComplex.tensorObj K L)) μ p q n h a b) =
+      homologyMap (L.linearYonedaObjMap k (ModuleCat.tensorMk (kronecker k K M p a x) ≫ μ)) q
+        b := by
+  obtain ⟨z, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p x
+  obtain ⟨α, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p a
+  obtain ⟨β, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q b
+  rw [cup_homologyπ, slant_homologyπ, L.homologyMap_linearYonedaObjMap_homologyπ_apply k,
+    kronecker_homologyπ_homologyπ]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [iCycles_slantCycles, iCycles_cupCycles, L.iCycles_cyclesMap_linearYonedaObjMap_apply k]
+  exact slantCochain_cupCochain μ p q n h _ _ _
+
+/-- The slant product of a cup product of classes of degrees `p` and `q` by a homology class of
+degree `p' ≠ p` vanishes. -/
+@[simp]
+theorem slant_cup_of_ne {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p' ≠ p)
+    (x : K.homology p') (a : (K.linearYonedaObj k M).homology p)
+    (b : (L.linearYonedaObj k N).homology q) :
+    slant k (𝟙 (HomologicalComplex.tensorObj K L)) p' q' n h' x
+        (cup k (𝟙 (HomologicalComplex.tensorObj K L)) μ p q n h a b) = 0 := by
+  obtain ⟨z, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p' x
+  obtain ⟨α, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p a
+  obtain ⟨β, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q b
+  have hz : slantCycles k (𝟙 (HomologicalComplex.tensorObj K L)) p' q' n h' z
+      (cupCycles k (𝟙 (HomologicalComplex.tensorObj K L)) μ p q n h α β) = 0 := by
+    apply HomologicalComplex.moduleCat_iCycles_injective
+    rw [iCycles_slantCycles, iCycles_cupCycles, map_zero]
+    exact slantCochain_cupCochain_of_ne μ h h' hp _ _ _
+  rw [cup_homologyπ, slant_homologyπ, hz, map_zero]
+
+end CupProduct
+
+section Detection
+
+/-- If `K` has zero differentials and `K_p` is projective, and the slant products of a cocycle `c`
+of `Hom(K ⊗ L, P)` by the elements of `K_p` are coboundaries in degree `s + 1`, then they are the
+coboundaries of cochains `E z` of degree `s` depending linearly on `z ∈ K_p`. -/
+private lemma exists_d_comp_eq_slantCochain (hK : ∀ i j, K.d i j = 0) {p s n : ℕ}
+    [Projective (K.X p)] (h : p + (s + 1) = n)
+    (c : (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).cycles n)
+    (hc : ∀ z : K.cycles p, (L.linearYonedaObj k P).homologyπ (s + 1)
+      (slantCycles k (𝟙 _) p (s + 1) n h z c) = 0) :
+    ∃ E : K.X p →ₗ[k] (L.linearYonedaObj k P).X s, ∀ z, L.d (s + 1) s ≫ E z =
+      slantCochain k (𝟙 _) p (s + 1) n h z
+        ((ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).iCycles n c) := by
+  have := K.isIso_iCycles p _ rfl (hK _ _)
+  let G : K.X p →ₗ[k] (L.linearYonedaObj k P).cycles (s + 1) :=
+    (slantCycles k (𝟙 _) p (s + 1) n h).flip c ∘ₗ (inv (K.iCycles p)).hom
+  have hG (z : K.X p) :
+      G z ∈ LinearMap.range ((L.linearYonedaObj k P).toCycles s (s + 1)).hom :=
+    ((L.linearYonedaObj k P).moduleCat_homologyπ_eq_zero_iff (by simp) _).1 (hc _)
+  -- lift `G` through the surjection of the cochains of degree `s` onto the coboundaries
+  obtain ⟨E, hE⟩ := Module.projective_lifting_property
+    ((L.linearYonedaObj k P).toCycles s (s + 1)).hom.rangeRestrict
+    (G.codRestrict _ hG) (LinearMap.surjective_rangeRestrict _)
+  refine ⟨E, fun z ↦ ?_⟩
+  have hEz := congrArg Subtype.val (LinearMap.congr_fun hE z)
+  simp only [LinearMap.comp_apply, LinearMap.rangeRestrict, LinearMap.codRestrict_apply] at hEz
+  have hz : K.iCycles p (inv (K.iCycles p) z) = z := by
+    rw [← ModuleCat.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
+  rw [← linearYonedaObj_iCycles_toCycles_apply, hEz]
+  simp [G, hz]
+
+/-- If `K` has zero differentials, a cocycle `c` of `Hom(K ⊗ L, P)` of degree `m + 1` is a
+coboundary as soon as it vanishes on `K_{m+1} ⊗ L_0` and its slant products by the elements
+`z ∈ K_p` are the coboundaries `δ (E z)` of cochains `E z` depending linearly on `z`: on the
+summand `K_i ⊗ L_j` of degree `m` the cochain is `(-1)^i E`. -/
+private lemma exists_toCycles_eq (hK : ∀ i j, K.d i j = 0) {m : ℕ}
+    (c : (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).cycles (m + 1))
+    (hzero : ∀ (z : K.X (m + 1)) (v : L.X 0),
+      ConcreteCategory.hom (X := (HomologicalComplex.tensorObj K L).X (m + 1)) (Y := P)
+        ((ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).iCycles (m + 1) c)
+        (ιTensorObj K L (m + 1) 0 (m + 1) (add_zero _) (z ⊗ₜ v)) = 0)
+    (E : ∀ p s, p + (s + 1) = m + 1 → K.X p →ₗ[k] (L.linearYonedaObj k P).X s)
+    (hE : ∀ p s (h : p + (s + 1) = m + 1) z, L.d (s + 1) s ≫ E p s h z =
+      slantCochain k (𝟙 _) p (s + 1) (m + 1) h z
+        ((ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).iCycles (m + 1)
+          c)) :
+    ∃ ψ, (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).toCycles
+        m (m + 1) ψ = c := by
+  let ψ : (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).X m :=
+    mapBifunctorDesc fun i j (hij : i + j = m) ↦ ((-1 : ℤ) ^ i) • ModuleCat.ofHom
+      (TensorProduct.lift (ModuleCat.homLinearEquiv.toLinearMap ∘ₗ E i j (by omega)))
+  refine ⟨ψ, ?_⟩
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [linearYonedaObj_iCycles_toCycles_apply]
+  refine mapBifunctor.hom_ext fun p q (h : p + q = m + 1) ↦ ?_
+  rw [mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add]
+  -- the part of the differential coming from `K` vanishes
+  have hD₁ : ιTensorObj K L p q (m + 1) h ≫
+      mapBifunctor.D₁ K L (curriedTensor _) (ComplexShape.down ℕ) (m + 1) m = 0 := by
+    obtain _ | r := p
+    · obtain rfl : q = m + 1 := by omega
+      exact ChainComplex.ιTensorObj_D₁_zero K L m
+    · rw [ChainComplex.ιTensorObj_D₁_succ K L r q m h, hK, MonoidalPreadditive.zero_whiskerRight,
+        zero_comp]
+  rw [reassoc_of% hD₁, zero_comp, zero_add]
+  obtain _ | s := q
+  · obtain rfl : p = m + 1 := by omega
+    rw [reassoc_of% ChainComplex.ιTensorObj_D₂_zero K L m, zero_comp]
+    exact ModuleCat.MonoidalCategory.tensor_ext fun z v ↦ (hzero z v).symm
+  · rw [ChainComplex.ιTensorObj_D₂_succ_assoc K L p s m h, Preadditive.zsmul_comp,
+      Category.assoc, ιTensorObj, ι_mapBifunctorDesc]
+    refine ModuleCat.MonoidalCategory.tensor_ext fun z v ↦ ?_
+    have hEz := congrArg (fun f ↦ ConcreteCategory.hom (X := L.X (s + 1)) (Y := P) f v)
+      (hE p s h z)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zsmul,
+      LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply,
+      ModuleCat.hom_ofHom, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    exact hEz.trans (slantCochain_apply _ _ _ _ _ _ _ _)
+
+/-- Slant products by the elements of `K` detect the cohomology of `Hom(K ⊗ L, P)` when `K` is a
+complex of projectives with zero differentials. -/
+private theorem eq_zero_of_forall_slant_eq_zero_of_d_eq_zero (hK : ∀ i j, K.d i j = 0)
+    [∀ p, Projective (K.X p)] {n : ℕ}
+    (φ : (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).homology n)
+    (hφ : ∀ p q (h : p + q = n) (x : K.homology p),
+      slant k (𝟙 (HomologicalComplex.tensorObj K L)) p q n h x φ = 0) : φ = 0 := by
+  obtain ⟨c, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n φ
+  have hcob (p q : ℕ) (h : p + q = n) (z : K.cycles p) :
+      (L.linearYonedaObj k P).homologyπ q (slantCycles k (𝟙 _) p q n h z c) = 0 := by
+    rw [← slant_homologyπ]
+    exact hφ p q h _
+  -- in degree zero of `L` the slant products of `c` vanish
+  have hzero (z : K.X n) (v : L.X 0) :
+      ConcreteCategory.hom (X := (HomologicalComplex.tensorObj K L).X n) (Y := P)
+        ((ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).iCycles n c)
+        (ιTensorObj K L n 0 n (add_zero n) (z ⊗ₜ v)) = 0 := by
+    have := K.isIso_iCycles n _ rfl (hK _ _)
+    have hv := congrArg (fun a ↦ ConcreteCategory.hom (X := L.X 0) (Y := P)
+      ((L.linearYonedaObj k P).iCycles 0 a) v)
+      ((L.linearYonedaObj k P).moduleCat_eq_zero_of_homologyπ_eq_zero (by simp) _
+        (hcob n 0 (add_zero n) (inv (K.iCycles n) z)))
+    have hz : K.iCycles n (inv (K.iCycles n) z) = z := by
+      rw [← ModuleCat.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
+    simp only [iCycles_slantCycles, hz, map_zero] at hv
+    exact (slantCochain_apply _ _ _ _ _ _ _ _).symm.trans hv
+  cases n with
+  | zero =>
+    have hc : c = 0 := by
+      apply HomologicalComplex.moduleCat_iCycles_injective
+      rw [map_zero]
+      refine mapBifunctor.hom_ext fun p q (h : p + q = 0) ↦ ?_
+      obtain ⟨rfl, rfl⟩ : p = 0 ∧ q = 0 := by omega
+      exact ModuleCat.MonoidalCategory.tensor_ext fun z v ↦ hzero z v
+    rw [hc, map_zero]
+  | succ m =>
+    -- in positive degrees of `L` the slant products of `c` are coboundaries, linearly in `z`
+    choose E hE using fun p s h ↦ exists_d_comp_eq_slantCochain hK h c (hcob p (s + 1) h)
+    obtain ⟨ψ, rfl⟩ := exists_toCycles_eq hK c hzero E hE
+    rw [linearYonedaObj_homologyπ_toCycles_apply]
+
+/-- **Slant products detect the cohomology of a tensor product**: if the terms and the homology
+objects of `K` are projective, a class `φ` of `Hⁿ(Hom(K ⊗ L, P))` whose slant products
+`φ / x ∈ H^q(Hom(L, P))` by all homology classes `x ∈ Hₚ(K)`, `p + q = n`, vanish is zero. There
+is no hypothesis on `L`. -/
+theorem eq_zero_of_forall_slant_eq_zero [∀ p, Projective (K.X p)]
+    [∀ p, Projective (K.homology p)] {n : ℕ}
+    (φ : (ChainComplex.linearYonedaObj (HomologicalComplex.tensorObj K L) k P).homology n)
+    (hφ : ∀ p q (h : p + q = n) (x : K.homology p),
+      slant k (𝟙 (HomologicalComplex.tensorObj K L)) p q n h x φ = 0) : φ = 0 := by
+  have := K.isSplitMono_iCycles_of_projective_homology
+  -- `K` is homotopy equivalent to a complex `K'` of projectives with zero differentials
+  obtain ⟨K', hK', ⟨e⟩⟩ := K.exists_homotopyEquiv_d_eq_zero
+  have (p : ℕ) : Projective (K'.X p) :=
+    Projective.of_iso (e.toHomologyIso p ≪≫
+      (K'.XIsoHomologyOfDEqZero p (hK' _ _) (hK' _ _)).symm) inferInstance
+  -- pulling back along `e.inv ⊗ 𝟙` is injective on cohomology and preserves vanishing slants
+  let H := (HomotopyEquiv.mapBifunctor (curriedTensor _) (ComplexShape.down ℕ) e
+    (HomotopyEquiv.refl L)).linearYonedaFunctorMap k P
+  have hH :
+      H.inv = (linearYonedaFunctor k P).map (HomologicalComplex.tensorHom e.inv (𝟙 L)).op := by
+    simp only [H, HomotopyEquiv.linearYonedaFunctorMap_inv, HomotopyEquiv.mapBifunctor_inv,
+      HomotopyEquiv.refl_inv]
+  have : IsIso (homologyMap H.inv n) := (H.toHomologyIso n).isIso_inv
+  rw [hH] at this
+  refine (ModuleCat.mono_iff_injective (homologyMap
+      ((linearYonedaFunctor k P).map (HomologicalComplex.tensorHom e.inv (𝟙 L)).op) n)).1
+    inferInstance
+    ((eq_zero_of_forall_slant_eq_zero_of_d_eq_zero hK' _ fun p q h x ↦ ?_).trans
+      (map_zero _).symm)
+  refine (slant_naturality (𝟙 (HomologicalComplex.tensorObj K L))
+    (𝟙 (HomologicalComplex.tensorObj K' L)) e.inv (𝟙 L) (HomologicalComplex.tensorHom e.inv (𝟙 L))
+    (by simp) p q n h x φ).trans ?_
+  rw [hφ, map_zero]
+
+end Detection
 
 end TauCeti.ChainComplex
