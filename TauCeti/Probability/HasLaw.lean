@@ -100,6 +100,21 @@ theorem _root_.ProbabilityTheory.HasLaw.identDistrib_nnreal
   simpa only [Function.comp_def, Real.toNNReal_coe] using
     (hX.identDistrib hY).comp measurable_real_toNNReal
 
+/-- **Identically distributed random variables that are almost surely constant are almost surely
+constant simultaneously.** If a sequence of identically distributed random variables takes the
+value `c` with probability one at index `0`, then almost surely all of them equal `c`. -/
+theorem _root_.ProbabilityTheory.ae_forall_eq_of_identDistrib
+    {Ω Z : Type*} [MeasurableSpace Ω] [MeasurableSpace Z] [MeasurableSingletonClass Z]
+    {P : Measure Ω} [IsProbabilityMeasure P] {T : ℕ → Ω → Z}
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) {c : Z} (h : P {ω | T 0 ω = c} = 1) :
+    ∀ᵐ ω ∂P, ∀ n, T n ω = c := by
+  rw [ae_all_iff]
+  intro n
+  have hn : P {ω | T n ω = c} = 1 := by
+    simpa [Set.preimage, h] using (hid n).measure_mem_eq (measurableSet_singleton c)
+  exact (prob_compl_eq_zero_iff₀ ((hid n).aemeasurable_fst.nullMeasurable
+    (measurableSet_singleton c))).2 hn
+
 /-- Completing the source measure does not change a random variable's law. -/
 theorem _root_.ProbabilityTheory.HasLaw.completion (hT : HasLaw T ν μ) :
     HasLaw (fun x : NullMeasurableSpace X μ => T x) ν μ.completion := by

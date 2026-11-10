@@ -55,7 +55,7 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
   have htail : Antitone (fun u : ℝ≥0 ↦ (P.map (T 0)).real (Ioi (u + x))) :=
     fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr))
-  simp_rw [measureReal_lt_renewalExcess hT hindep hid hzero]
+  simp_rw [measureReal_lt_renewalExcess hindep hid]
   rw [Measure.equilibriumExcessLaw_real_Ioi_eq_integral_tail_add]
   exact (P.map (T 0)).tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim
     htail (fun _ ↦ measureReal_nonneg)
