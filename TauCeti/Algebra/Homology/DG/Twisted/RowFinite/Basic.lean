@@ -37,14 +37,18 @@ is a cycle.
 ## Main definitions and results
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
-* `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
-  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
+* `RowFiniteTwistingCocycle.wellFounded_mem_support_of_lt`: a cocycle whose rows strictly lower
+  a natural-number stage of the generators is semi-free, its row relation `y ∈ (m.m x).support`
+  being well-founded; `RowFiniteTwistingCocycle.wellFounded_mem_support` is the case of a
+  one-sided cocycle with generator indices bounded below.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
 * `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
   commutes with the differentials.
+* `rowFiniteTwistedDifferential_congr`: the differential of a vector depends only on the rows of
+  the generators in its support.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
@@ -208,21 +212,28 @@ theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) 
     ring
 
 omit [GradedAlgebra 𝒜] in
+/-- A cocycle whose rows strictly lower a natural-number stage of the generators, as when each
+generator is attached along a cycle of generators of earlier stages, is **semi-free**: the relation
+`y ∈ (m.m x).support`, saying that `y` occurs in the row of `x`, is well-founded. -/
+theorem wellFounded_mem_support_of_lt (m : RowFiniteTwistingCocycle 𝒜 d P ind) (st : P → ℕ)
+    (hst : ∀ x y, y ∈ (m.m x).support → st y < st x) :
+    WellFounded fun y x ↦ y ∈ (m.m x).support :=
+  Subrelation.wf (r := InvImage (· < ·) st) (fun {y x} hy ↦ hst x y hy)
+    (InvImage.wf _ wellFounded_lt)
+
+omit [GradedAlgebra 𝒜] in
 /-- A one-sided cocycle, with `m x y = 0` whenever `ind x ≤ ind y`, whose generator indices are
 bounded below, is **semi-free**: the relation `y ∈ (m.m x).support`, saying that `y` occurs in the
 row of `x`, is well-founded, since it strictly lowers the index. -/
 theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
     (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x) :
     WellFounded fun y x ↦ y ∈ (m.m x).support :=
-  Subrelation.wf (r := InvImage (· < ·) fun x ↦ (ind x - p₀).toNat)
-    (fun {y x} hy ↦ by
-      have hlt : ind y < ind x := by
-        by_contra h
-        exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
-      have := hp₀ y
-      dsimp only [InvImage]
-      omega)
-    (InvImage.wf _ wellFounded_lt)
+  m.wellFounded_mem_support_of_lt (fun x ↦ (ind x - p₀).toNat) fun x y hy ↦ by
+    have hlt : ind y < ind x := by
+      by_contra h
+      exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
+    have := hp₀ y
+    omega
 
 end RowFiniteTwistingCocycle
 
@@ -350,6 +361,13 @@ theorem rowFiniteTwistedDifferential_apply (m : P → P →₀ A) (f : P →₀ 
       Finsupp.mapRange.linearMap d f +
         f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • m x) := by
   simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_apply]
+
+/-- The differential on a vector depends only on the rows of the generators in its support. -/
+theorem rowFiniteTwistedDifferential_congr {m m' : P → P →₀ A} {f : P →₀ A}
+    (hm : ∀ x ∈ f.support, m x = m' x) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' f := by
+  simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_congr hm]
 
 /-- With zero rows, the differential is the coefficient differential alone. -/
 @[simp]
