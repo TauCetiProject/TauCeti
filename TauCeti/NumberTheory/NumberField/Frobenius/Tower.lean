@@ -210,6 +210,7 @@ theorem restrictScalars_arithFrobAt_eq_pow_inertiaDeg [IsGalois M L] (Q : Ideal 
   restrictScalars_eq_pow_inertiaDeg (IsArithFrobAt.arithFrobAt (𝓞 K) (L ≃ₐ[K] L) Q)
     (IsArithFrobAt.arithFrobAt (𝓞 M) (L ≃ₐ[M] L) Q)
 
+omit [NumberField K] in
 /-- **The tower formula, in the form the Artin symbol consumes.** For number fields `K ⊆ M ⊆ L`
 with `L / K` and `L / M` Galois, a prime `Q` of `𝓞 L` with `𝔓 = Q ∩ 𝓞 M` and `𝔭 = Q ∩ 𝓞 K`, and
 `𝔭` unramified in `L`, every arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q` has `σ ^ f(𝔓/𝔭)` as the
@@ -229,8 +230,7 @@ theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M]
   subst hQM
   subst hQK
   have _ : Algebra.IsUnramifiedAt (𝓞 K) Q := hur Q
-  have : IsGalois M L := IsGalois.tower_top_of_isGalois K M L
-  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt M Q hσ.ne_bot
+  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt_tower (M := M) hσ
   exact ⟨τ, hτ, restrictScalars_eq_pow_inertiaDeg hσ hτ⟩
 
 omit [NumberField K] [NumberField M] in
