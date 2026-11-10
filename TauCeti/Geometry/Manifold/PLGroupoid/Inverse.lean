@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ModelWithCorners.Polyhedron
 public import TauCeti.Geometry.Manifold.PLGroupoid.Map
+import TauCeti.Geometry.Manifold.ExtChartAt.Inverse
 import TauCeti.Topology.PL.LocalInverse
 
 /-!
@@ -43,35 +45,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {M M' : Type*} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace M']
   [ChartedSpace H' M']
 
-/-- The range of a boundaryless model with corners, the whole model vector space, is a convex
-polyhedron. -/
-theorem _root_.ModelWithCorners.isConvexPolyhedron_range (I : ModelWithCorners ℝ E H)
-    [I.Boundaryless] : IsConvexPolyhedron (range I) :=
-  I.range_eq_univ ▸ isConvexPolyhedron_univ
-
-/-- Near a point `w` of the range of `I` whose preimage lies in the source of `e`, reading `e` in
-the model vector spaces and then reading `e.symm` back is the identity. -/
-private theorem eventually_modelReading_symm_modelReading (e : OpenPartialHomeomorph H H')
-    {w : E} (hw : I.symm w ∈ e.source) :
-    ∀ᶠ z in 𝓝[range I] w, (I ∘ e.symm ∘ I'.symm) ((I' ∘ e ∘ I.symm) z) = z := by
-  filter_upwards [inter_mem_nhdsWithin (range I)
-    ((e.open_source.preimage I.continuous_symm).mem_nhds hw)] with z ⟨⟨v, hv⟩, hzs⟩
-  subst hv
-  simp only [mem_preimage, I.left_inv] at hzs
-  simp [e.left_inv hzs]
-
-/-- Near the chart image of `x`, reading `φ` in the preferred charts at `x` and `φ x` and then
-reading `φ.symm` back is the identity. -/
-private theorem eventually_chartReading_symm_chartReading (φ : M ≃ₜ M') (x : M) :
-    ∀ᶠ z in 𝓝[range I] (I (chartAt H x x)),
-      (I ∘ chartAt H x ∘ φ.symm ∘ (chartAt H' (φ x)).symm ∘ I'.symm)
-        ((I' ∘ chartAt H' (φ x) ∘ φ ∘ (chartAt H x).symm ∘ I.symm) z) = z := by
-  have := eventually_modelReading_symm_modelReading (I := I) (I' := I')
-    (((chartAt H x).symm.trans φ.toOpenPartialHomeomorph).trans (chartAt H' (φ x)))
-    (w := I (chartAt H x x)) (by simp [mem_chart_source])
-  simpa [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.coe_trans_symm,
-    Function.comp_assoc] using this
-
 /-- **A PL homeomorphism has a PL inverse, pointwise.** If a homeomorphism `φ` is PL at `x`,
 then its inverse is PL at `φ x`, provided the model spaces are finite dimensional and the range
 of the model of the source is a convex polyhedron. -/
@@ -91,10 +64,14 @@ theorem IsPLMapAt.symm [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
         I'.continuous_symm.continuousAt)))
     · simpa [c, d, mem_chart_source] using c.continuousAt (mem_chart_source H x)
     · simp [d]
+  have hfwd := φ.eventually_writtenInExtChartAt_left_inverse (I := I) (I' := I') x
+  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
+    Homeomorph.symm_apply_apply, Function.comp_assoc] at hfwd
+  have hback := φ.symm.eventually_writtenInExtChartAt_left_inverse (I := I') (I' := I) (φ x)
+  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
+    Homeomorph.symm_apply_apply, Homeomorph.symm_symm, Function.comp_assoc] at hback
   refine (hga ▸ h.2).of_local_left_inverse hI hg.continuousWithinAt (mem_range_self _) ?_
-    (hga ▸ eventually_chartReading_symm_chartReading φ x)
-  have hback := eventually_chartReading_symm_chartReading (I := I') (I' := I) φ.symm (φ x)
-  simp only [Homeomorph.symm_apply_apply, Homeomorph.symm_symm] at hback
+    (hga ▸ hfwd)
   filter_upwards [hback] with y hy
   exact ⟨mem_range_self _, hy⟩
 
@@ -125,8 +102,8 @@ theorem mem_PLGroupoid_iff_isPLOn [FiniteDimensional ℝ E] (hI : IsConvexPolyhe
     (I.continuous.continuousAt.comp ((e.continuousAt_symm hwt).comp
       I.continuous_symm.continuousAt)).continuousWithinAt
   refine (hf.of_local_left_inverse hI hg hw.2 ?_ ?_).mono inter_subset_right
-  · filter_upwards [eventually_modelReading_symm_modelReading (I' := I) e.symm hwt] with y hy
+  · filter_upwards [e.symm.eventually_left_inverse_modelWithCorners (I' := I) hwt] with y hy
     exact ⟨mem_range_self _, by simpa using hy⟩
-  · exact eventually_modelReading_symm_modelReading (I' := I) e (by simpa using e.map_target hwt)
+  · exact e.eventually_left_inverse_modelWithCorners (I' := I) (by simpa using e.map_target hwt)
 
 end TauCeti
