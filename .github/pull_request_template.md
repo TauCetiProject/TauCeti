@@ -32,19 +32,19 @@ Quality pass:
 
 <!--
 Beyond the checks, improve anything you can in what the PR adds or changes. Work a check suggests
-on code already on `main`, such as generalising an existing declaration, is a separate PR. Run Q3
-and Q9 as a hostile reviewer would, in a fresh context that has not seen your reasons (for an
-agent, a subagent): assume each hypothesis removable and each strong word in a docstring false
-until shown otherwise.
+on code already on `main`, such as generalising an existing declaration, is a separate PR. In Q3
+and Q9, assume each hypothesis removable and each strong word in a docstring false until shown
+otherwise.
 
-Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape (`exact?`,
-`apply?`, grepping the conclusion's constants). If it exists, use it. A renamed Mathlib lemma or a
+Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape: grep the
+Mathlib source for the conclusion's constants and for the name a Mathlib author would give it. If
+it exists, use it. A renamed Mathlib lemma or a
 one-line wrapper is a duplicate; an `instance` built from a Mathlib theorem is not.
 
 Q2. Search `TauCeti/` for the same object or lemma by its defining formula, not only its name, and
-for blocks copied from sibling files. Do the same for every `private` declaration the PR adds: run
-`exact?` on its statement with the file's imports, and grep `TauCeti/` for its conclusion's
-constants; a private helper that restates an existing lemma is a duplicate, so delete it and call
+for blocks copied from sibling files. Do the same for every `private` declaration the PR adds:
+grep Mathlib and `TauCeti/` for its conclusion's constants; a private helper that restates an
+existing lemma is a duplicate, so delete it and call
 the lemma. Reuse what exists; if it first needs generalising, do that
 in its own PR and build on it once merged. Then search the open PRs
 (`gh pr list --repo TauCetiProject/TauCeti --search "<term> in:title,body"`, then `gh pr diff` on
@@ -53,8 +53,10 @@ if yours is better, say so on both PRs, each linking the other. The note says wh
 on main and in the open PRs.
 
 Q3. Take each theorem the PR adds or changes, and each of its hypotheses and instance arguments,
-including those from `variable` lines (`#check @foo` shows them all). Delete each and rebuild,
-but a failed rebuild only says the current proof uses it. Each ends in one of four states:
+including those from `variable` lines (`#check @foo` shows them all). Do not delete
+each and rebuild to find out: CI's `unusedArguments` linter already reports an argument the proof
+never uses, and a failed rebuild only says the current proof uses it, so decide each from the
+statement. Each ends in one of four states:
 dropped (the statement holds without it: change the proof if needed, even to a new argument),
 derived (it follows from the others: derive it in the proof), needed to state (the statement
 does not elaborate without it), or kept (the statement is false without it: give the
