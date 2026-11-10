@@ -246,16 +246,16 @@ theorem aemeasurable_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace �
     simp [hx]
   by_cases hμ : μ = 0
   · rw [hμ, Measure.map_zero] at h
-    exact hpos 1 (Or.inr rfl) (by rw [← h]; rfl)
+    exact hpos 1 (Or.inr rfl) (by simp [← h])
   · rw [Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ] at h
-    by_cases hx : Classical.ofNonempty = (1 : ℝ)
-    · refine hpos (-1) (Or.inl rfl) ?_
-      rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _), Set.indicator_apply]
-      simp [hx]
-      norm_num
-    · refine hpos 1 (Or.inr rfl) ?_
-      rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _), Set.indicator_apply]
-      simp [hx]
+    -- the Dirac mass at the chosen point `x₀` misses one of the atoms `±1`
+    obtain ⟨a, ha, hax⟩ : ∃ a : ℝ, (a = -1 ∨ a = 1) ∧ a ≠ Classical.ofNonempty := by
+      by_cases hx : Classical.ofNonempty = (1 : ℝ)
+      · exact ⟨-1, Or.inl rfl, by rw [hx]; norm_num⟩
+      · exact ⟨1, Or.inr rfl, Ne.symm hx⟩
+    refine hpos a ha ?_
+    rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _)]
+    simp [hax.symm]
 
 /-- A random variable with the Rademacher law equals `±1` almost surely. -/
 theorem ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace Ω]
