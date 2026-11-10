@@ -15,6 +15,10 @@ public import Mathlib.Algebra.Order.Ring.Nat
 above `1` agree on a finite set if their products of powers over that set agree. It is used to
 compare the numbers of maps between finite semisimple modules in
 `TauCeti/RingTheory/Semisimple/Multiplicity.lean`.
+
+`Finset.prod_nonneg_of_nonempty` and `Finset.prod_le_prod₀_of_nonempty` are the nonnegativity and
+monotonicity of finite products over a nonempty index set, which need no `ZeroLEOneClass`: the
+empty product `1` is the only place where `0 ≤ 1` would be used.
 -/
 
 public section
@@ -32,3 +36,30 @@ theorem eq_of_prod_pow_eq_of_le {ι : Type*} {s : Finset ι} {C f g : ι → ℕ
     ⟨i, hi, Nat.pow_lt_pow_right (hC i hi) ((hfg i hi).lt_of_ne hne)⟩).ne h
 
 end Nat
+
+namespace Finset
+
+variable {ι R : Type*} [CommMonoidWithZero R] [Preorder R] [PosMulMono R] {s : Finset ι}
+  {f g : ι → R}
+
+/-- A product of nonnegative terms over a nonempty finset is nonnegative, without
+`ZeroLEOneClass`. -/
+theorem prod_nonneg_of_nonempty (hs : s.Nonempty) (h0 : ∀ i ∈ s, 0 ≤ f i) :
+    0 ≤ ∏ i ∈ s, f i :=
+  prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb) hs h0
+
+/-- **Monotonicity of products over a nonempty finset.** If `0 ≤ f i ≤ g i` on a nonempty finset
+`s`, then `∏ i ∈ s, f i ≤ ∏ i ∈ s, g i`, without `ZeroLEOneClass`. -/
+theorem prod_le_prod₀_of_nonempty (hs : s.Nonempty) (h0 : ∀ i ∈ s, 0 ≤ f i)
+    (h1 : ∀ i ∈ s, f i ≤ g i) : ∏ i ∈ s, f i ≤ ∏ i ∈ s, g i := by
+  have := PosMulMono.toMulPosMono (α := R)
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a => simpa using h1 a (by simp)
+  | cons a s ha hs ih =>
+    rw [prod_cons, prod_cons]
+    exact mul_le_mul (h1 a (by simp)) (ih (fun i hi ↦ h0 i (by simp [hi]))
+      fun i hi ↦ h1 i (by simp [hi]))
+      (prod_nonneg_of_nonempty hs fun i hi ↦ h0 i (by simp [hi]))
+      ((h0 a (by simp)).trans (h1 a (by simp)))
+
+end Finset

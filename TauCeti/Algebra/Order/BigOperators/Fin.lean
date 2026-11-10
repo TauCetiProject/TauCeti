@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 
 /-!
 # Order estimates for sums and products of finite sequences
@@ -64,17 +64,6 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
   have hempty (hDk : D * k = 0) : ∏ i, c i = 1 := by
     have : IsEmpty (Fin (D * k)) := ⟨fun i ↦ by simpa [hDk] using i.2⟩
     rw [Finset.univ_eq_empty, Finset.prod_empty]
-  -- Monotonicity of products over nonempty finsets, which needs no `ZeroLEOneClass`.
-  have key {ι : Type} {u v : ι → R} {t : Finset ι} (ht : t.Nonempty) (h0 : ∀ i ∈ t, 0 ≤ u i)
-      (h1 : ∀ i ∈ t, u i ≤ v i) : ∏ i ∈ t, u i ≤ ∏ i ∈ t, v i := by
-    induction ht using Finset.Nonempty.cons_induction with
-    | singleton a => simpa using h1 a (by simp)
-    | cons a s ha hs ih =>
-      rw [Finset.prod_cons, Finset.prod_cons]
-      exact mul_le_mul (h1 a (by simp)) (ih (fun i hi ↦ h0 i (by simp [hi]))
-        fun i hi ↦ h1 i (by simp [hi]))
-        (Finset.prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb) hs
-          fun i hi ↦ h0 i (by simp [hi])) ((h0 a (by simp)).trans (h1 a (by simp)))
   obtain rfl | hD := D.eq_zero_or_pos
   · rw [pow_zero, hempty (Nat.zero_mul k)]
   obtain rfl | hk := k.eq_zero_or_pos
@@ -83,12 +72,12 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]
   have hD' : (Finset.univ : Finset (Fin D)).Nonempty := ⟨⟨0, hD⟩, Finset.mem_univ _⟩
   rw [← e.prod_comp, Fintype.prod_prod_type, ← Finset.prod_pow]
-  refine key ⟨⟨0, hk⟩, Finset.mem_univ _⟩ (fun j _ ↦ ?_) fun j _ ↦ ?_
+  refine Finset.prod_le_prod₀_of_nonempty ⟨⟨0, hk⟩, Finset.mem_univ _⟩ (fun j _ ↦ ?_)
+    fun j _ ↦ ?_
   · rw [← Fin.prod_const]
-    exact Finset.prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb) hD'
-      fun _ _ ↦ hc0 _
+    exact Finset.prod_nonneg_of_nonempty hD' fun _ _ ↦ hc0 _
   rw [← Fin.prod_const]
-  refine key hD' (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
+  refine Finset.prod_le_prod₀_of_nonempty hD' (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
   rw [Fin.le_iff_val_le_val, he]
   exact (hs j).trans (Nat.le_add_left _ _)
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+public import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 public import Mathlib.Data.Finset.Max
 
 /-!
@@ -81,8 +81,7 @@ theorem prod_le_prod_of_card_filter_lt_le (hf₀ : ∀ i, 0 ≤ f i) (hf : Antit
     · rw [card_eq_zero.1 hcards, card_eq_zero.1 hcard, prod_empty, mul_one, mul_one]
       exact hf hba
     · exact mul_le_mul (hf hba) hle
-        (prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb)
-          (card_pos.1 (hcards ▸ hn0)) fun i _ ↦ hf₀ i) (hf₀ b)
+        (prod_nonneg_of_nonempty (card_pos.1 (hcards ▸ hn0)) fun i _ ↦ hf₀ i) (hf₀ b)
 
 /-- For a nonnegative antitone sequence `f`, the product of `f` over a finite set `s` of indices
 is at most its product over the initial segment `range #s` of the same size. -/
@@ -113,7 +112,6 @@ theorem prod_le_prod_range_mul_of_not_subset (hf₀ : ∀ i, 0 ≤ f i) (hf : An
       range_zero, prod_empty, one_mul, one_mul]
     exact hf hm
   · exact mul_le_mul herase (hf hm) (hf₀ m)
-      (prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb)
-        (nonempty_range_iff.2 hn.ne') fun i _ ↦ hf₀ i)
+      (prod_nonneg_of_nonempty (nonempty_range_iff.2 hn.ne') fun i _ ↦ hf₀ i)
 
 end Finset
