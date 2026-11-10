@@ -60,6 +60,37 @@ theorem dualPow_add (m n : ℤ) (L : WindingWord α) :
     dualPow (n - 1) L = (dualPow n L).leftDual := by
   rw [sub_eq_add_neg, add_comm n (-1), dualPow_add, dualPow_neg_one]
 
+@[simp] theorem length_dualPow (n : ℤ) (L : WindingWord α) :
+    (dualPow n L).length = L.length := by
+  induction n using Int.induction_on <;> simp_all
+
+@[simp] theorem dualPow_rightDual (n : ℤ) (L : WindingWord α) :
+    dualPow n L.rightDual = (dualPow n L).rightDual := by
+  rw [← dualPow_one L, ← dualPow_add, add_comm n 1, dualPow_add, dualPow_one]
+
+@[simp] theorem dualPow_leftDual (n : ℤ) (L : WindingWord α) :
+    dualPow n L.leftDual = (dualPow n L).leftDual := by
+  rw [← dualPow_neg_one L, ← dualPow_add, add_comm n (-1), dualPow_add, dualPow_neg_one]
+
+@[simp] theorem dualPow_shift (n k : ℤ) (L : WindingWord α) :
+    dualPow n (shift k L) = shift k (dualPow n L) := by
+  induction n using Int.induction_on <;> simp_all
+
+/-- An even number of duals preserves port order and shifts every integer level. -/
+@[simp] theorem dualPow_two_mul (k : ℤ) (L : WindingWord α) :
+    dualPow (2 * k) L = shift (2 * k) L := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    have h : 2 * ((k : ℤ) + 1) = (2 * k + 1) + 1 := by omega
+    rw [h, dualPow_add_one, dualPow_add_one, ih, rightDual_rightDual, shift_shift]
+    congr 1
+  | pred k ih =>
+    have h : 2 * (-(k : ℤ) - 1) = (2 * -k - 1) - 1 := by omega
+    rw [h, dualPow_sub_one, dualPow_sub_one, ih, leftDual_leftDual, shift_shift]
+    congr 1
+    omega
+
 @[simp] theorem dualPow_nil (n : ℤ) : dualPow n ([] : WindingWord α) = [] := by
   induction n using Int.induction_on <;> simp_all
 
