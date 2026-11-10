@@ -151,14 +151,8 @@ theorem det_one_sub_mul_pow_comm {m n R : Type*} [Fintype m] [Fintype n] [Decida
     [DecidableEq n] [CommRing R] (A : Matrix m n R) (B : Matrix n m R) {k : ℕ} (hk : k ≠ 0) :
     det (1 - (A * B) ^ k) = det (1 - (B * A) ^ k) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
-  have h : (A * B) ^ (k + 1) = A * ((B * A) ^ k * B) := by
-    clear hk
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ, ih]
-      simp only [pow_succ, Matrix.mul_assoc]
-  rw [h, det_one_sub_mul_comm, Matrix.mul_assoc, ← pow_succ]
+  rw [pow_succ, ← Matrix.mul_assoc, Matrix.mul_pow_mul, Matrix.mul_assoc, det_one_sub_mul_comm,
+    Matrix.mul_assoc, ← pow_succ]
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 
