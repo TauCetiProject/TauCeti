@@ -81,11 +81,17 @@ theorem ContractableLaw.conditionallyIIDWith_invariantConditionalProbabilityMeas
     (measurable_invariants_invariantConditionalProbabilityMeasure hS) hB
 
 /-- **A contractable process is conditionally i.i.d.**, via the Koopman route. -/
-theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α] [Nonempty α]
+theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     ConditionallyIID μ X := by
   have hXae : ∀ i, AEMeasurable (X i) μ := fun i => (hX_meas i).aemeasurable
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · -- On an empty sample space the measure is zero and every identity is between zero measures.
+    refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
+      (.intro hXae Subsingleton.measurable fun m k _ => ?_)
+    simp [Measure.eq_zero_of_isEmpty μ]
+  have : Nonempty α := ⟨X 0 ω⟩
   -- Supplied for instance resolution below, not referenced by name.
   have : IsFiniteMeasure (pathLaw μ X) := by
     rw [pathLaw_def]
@@ -93,9 +99,9 @@ theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α] [Non
   exact ConditionallyIID.of_directing (ConditionallyIIDWith.of_pathLaw hX_meas
     ((hX.contractableLaw_pathLaw hXae).conditionallyIIDWith_invariantConditionalProbabilityMeasure))
 
-/-- **de Finetti's theorem via Koopman operators.** An exchangeable process on a nonempty standard
-Borel state space is conditionally i.i.d. -/
-theorem deFinetti_viaKoopman [StandardBorelSpace α] [Nonempty α]
+/-- **de Finetti's theorem via Koopman operators.** An exchangeable process on a standard Borel
+state space is conditionally i.i.d. -/
+theorem deFinetti_viaKoopman [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX_meas : ∀ n, Measurable (X n)) (hX : Exchangeable μ X) :
     ConditionallyIID μ X :=
