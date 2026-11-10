@@ -385,6 +385,10 @@ theorem principal_ofHomogeneous : (ofHomogeneous χ a).principal = a :=
 theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 0 :=
   (rfl)
 
+@[simp]
+theorem ofHomogeneous_zero : ofHomogeneous χ (0 : HomogeneousSymbol _ _ V W m) = 0 :=
+  ext (map_zero (cutoffSymbol χ))
+
 end Examples
 
 section PrincipalKernel
@@ -474,6 +478,13 @@ theorem term_inclusion_add (j : ℕ) :
   simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
   rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
 
+/-- Including a classical symbol into a strictly larger order kills its principal symbol. -/
+@[simp]
+theorem principal_inclusion_succ (k : ℕ) (hk : m' = m - (k + 1 : ℕ)) :
+    (inclusion (k + 1) hk b).principal = 0 := by
+  ext1
+  simp
+
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
@@ -510,6 +521,12 @@ theorem term_tail (j : ℕ) :
     (a.tail χ).term j = (a.term (j + 1)).castDegree (by push_cast; ring) :=
   (rfl)
 
+/-- A classical symbol is its cut-off principal term plus its tail, included back into order
+`m`. -/
+theorem inclusion_tail_add_ofHomogeneous :
+    inclusion 1 (by simp) (a.tail χ) + ofHomogeneous χ a.principal = a :=
+  ext <| Symbol.ext <| funext fun p => by simp
+
 end Tail
 
 /-! ### The principal symbol sequence
@@ -537,16 +554,11 @@ theorem principalLinearMap_apply (a : ClassicalSymbol n V W m) :
 zero exactly when it is a classical symbol of order `m - 1`. -/
 theorem principal_eq_zero_iff_exists_inclusion (a : ClassicalSymbol n V W m) :
     a.principal = 0 ↔ ∃ b : ClassicalSymbol n V W (m - 1), inclusion 1 (by simp) b = a := by
-  refine ⟨fun h => ⟨a.tail default, ext ?_⟩, ?_⟩
-  · -- With a vanishing leading term, the remainder after it is `a` itself.
-    have h0 : (a.term 0).coefficient = 0 := by
-      simpa using congrArg HomogeneousSymbol.coefficient h
-    ext1
-    funext p
-    simp [h0]
+  refine ⟨fun h => ⟨a.tail default, ?_⟩, ?_⟩
+  · -- With a vanishing leading term, `a` is the inclusion of its tail.
+    simpa [h] using inclusion_tail_add_ofHomogeneous default a
   · rintro ⟨b, rfl⟩
-    ext1
-    simp
+    exact principal_inclusion_succ b 0 (by simp)
 
 variable (n V W m) in
 /-- **The kernel of the principal symbol** is the image of the classical symbols of order
