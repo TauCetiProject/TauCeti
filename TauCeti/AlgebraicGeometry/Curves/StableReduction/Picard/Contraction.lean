@@ -257,12 +257,7 @@ theorem finrank_torsion_le_contract (ℓ : ℕ) :
   rcases eq_or_ne ℓ 1 with rfl | hℓ
   · -- Over the trivial ring `ZMod 1`, every module has `finrank = 1`.
     rw [Module.finrank_subsingleton, Module.finrank_subsingleton]
-  have : Nontrivial (ZMod ℓ) := by
-    rcases ℓ with _ | _ | ℓ
-    · exact inferInstanceAs (Nontrivial ℤ)
-    · exact absurd rfl hℓ
-    · have : Fact (1 < ℓ + 2) := ⟨by omega⟩
-      infer_instance
+  have : Nontrivial (ZMod ℓ) := ZMod.nontrivial_iff.mpr hℓ
   have : Module.Finite ℤ ((T.contract he).torsion ℓ) :=
     inferInstanceAs (Module.Finite ℤ ((T.contract he).torsion ℓ).toIntSubmodule)
   have : Module.Finite (ZMod ℓ) ((T.contract he).torsion ℓ) :=
