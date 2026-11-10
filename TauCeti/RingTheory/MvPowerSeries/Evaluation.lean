@@ -313,7 +313,7 @@ variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [Comple
     [T2Space S] [IsTopologicalRing S] [IsLinearTopology S S]
 variable {φ : R →+* S} {a : σ → S} {I : Ideal S}
 
-omit [IsLinearTopology S S] in
+omit [IsTopologicalRing S] [IsLinearTopology S S] in
 /-- **Evaluation onto an adically complete ring.** Let `S` carry the `I`-adic topology, for which
 it is complete and Hausdorff. If finitely many arguments generate `I` and every class of `S ⧸ I`
 is the image of a coefficient, then every element of `S` is the value of a power series. -/
@@ -321,6 +321,7 @@ theorem eval₂_surjective [Finite σ] (hφ : Continuous φ) (hI : IsAdic I)
     (hspan : Ideal.span (Set.range a) = I)
     (hres : Function.Surjective ((Ideal.Quotient.mk I).comp φ)) :
     Function.Surjective (eval₂ φ a : MvPowerSeries σ R → S) := by
+  have : IsTopologicalRing S := hI ▸ I.nonarchimedean.toIsTopologicalRing
   have := hI.isLinearTopology
   have ha : HasEval a := hasEval_of_mem hI fun i ↦ hspan ▸ Ideal.subset_span ⟨i, rfl⟩
   -- The ideal of the variables, for which the power series ring is complete, maps onto `I`.
