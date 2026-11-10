@@ -33,17 +33,32 @@ module restricts on each `F i` to `Mᵢ` (`TauCeti.ModulesGlueData.restrictGlued
 reconstructs a compatible family from one section of `Mᵢ`, gluing on each `F j` along the cover by
 the images of the `F k` mapping to both `F i` and `F j`.
 
+Morphisms into the glued module are compatible families of morphisms into the pushforwards
+`(ιⱼ)_* Mⱼ` (`TauCeti.ModulesGlueData.lift`). Under the same bijectivity hypothesis it suffices to
+give them for the indices `j` of a downward closed set `J'` whose images cover `colimit F`
+(`TauCeti.ModulesGlueData.liftOfCover`): the morphism into `(ιⱼ)_* Mⱼ` for any other `j` is glued
+on `F j` from the given ones along the cover by the images of the `F k`, `k ∈ J'`, mapping to `F j`.
+This is needed when the morphisms are only defined on small enough charts, as for maps out of a
+pullback to the charts of a relative `Proj` lying over a single chart of the base.
+
 ## Main definitions
 
 * `TauCeti.ModulesGlueData F`: sheaves of modules on the `F j` with compatible transition maps.
 * `TauCeti.ModulesGlueData.glued`: the glued module on `colimit F`.
 * `TauCeti.ModulesGlueData.restrictGluedIso`: the restriction of the glued module to `F i` is
   `Mᵢ`.
+* `TauCeti.ModulesGlueData.liftOfCover`: the morphism into the glued module induced by a
+  compatible family of morphisms indexed by a downward closed covering set of indices.
 
 ## Main results
 
 * `TauCeti.ModulesGlueData.bijective_π_app`: over an open inside the image of `F i`, the
   projection from the sections of the glued module to the sections of `Mᵢ` is bijective.
+* `TauCeti.ModulesGlueData.eq_of_transition_app_eq_of_le_cover`: sections of `(ιⱼ)_* Mⱼ` are
+  determined by their images under the transition morphisms along a downward closed set of indices
+  whose images cover the image of `F j`.
+* `TauCeti.ModulesGlueData.liftOfCover_π`: the projections of `liftOfCover` on `J'` are the given
+  morphisms.
 
 ## References
 
@@ -360,6 +375,208 @@ theorem restrictGluedIso_hom (i : J) : (D.restrictGluedIso hD i).hom = D.restric
   (rfl)
 
 end Bijective
+
+/-- Over any open, sections of `(ιⱼ)_* Mⱼ` agree if their images under the transition morphisms
+along all `k ⟶ j` with `k ∈ J'` agree, for a set `J'` of indices closed under passing to smaller
+indices whose images cover the image of `F j`. -/
+theorem eq_of_transition_app_eq_of_le_cover
+    (hD : ∀ {i j : J} (f : i ⟶ j) (V : (F.obj j).Opens), V ≤ (F.map f).opensRange →
+      Function.Bijective ((D.map f).app V))
+    (J' : Set J) (hJ' : ∀ {i j : J}, (i ⟶ j) → j ∈ J' → i ∈ J') {j : J}
+    (hcov : ∀ x ∈ (colimit.ι F j).opensRange, ∃ k ∈ J', x ∈ (colimit.ι F k).opensRange)
+    {U : (colimit F).Opens}
+    {x y : Γ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j), U)}
+    (h : ∀ k ∈ J', ∀ a : k ⟶ j, (D.transition a).app U x = (D.transition a).app U y) :
+    x = y := by
+  refine TopCat.Sheaf.eq_of_locally_eq'
+    (⟨(D.obj j).presheaf, (D.obj j).isSheaf⟩ : TopCat.Sheaf Ab _)
+    (fun k : J' ↦ colimit.ι F j ⁻¹ᵁ (U ⊓ (colimit.ι F k.1).opensRange)) (colimit.ι F j ⁻¹ᵁ U)
+    (fun _ ↦ homOfLE (Scheme.Hom.preimage_mono _ inf_le_left)) (fun p hp ↦ ?_) x y fun k ↦ ?_
+  · obtain ⟨k, hk, hpk⟩ := hcov _ ⟨p, rfl⟩
+    exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨k, hk⟩, hp, hpk⟩
+  · -- sections of `(ιⱼ)_* Mⱼ` over `U ⊓ ιₖ(F k)` are sections of `Mⱼ` over its preimage
+    exact D.eq_of_transition_app_eq hD (U := U ⊓ (colimit.ι F k.1).opensRange) inf_le_right
+      fun l a b ↦ (D.transition_app_map_apply a inf_le_left x).trans
+        ((congrArg _ (h l (hJ' b k.2) a)).trans (D.transition_app_map_apply a inf_le_left y).symm)
+
+section Cover
+
+variable (hD : ∀ {i j : J} (f : i ⟶ j) (V : (F.obj j).Opens), V ≤ (F.map f).opensRange →
+  Function.Bijective ((D.map f).app V))
+  (J' : Set J) (hJ' : ∀ {i j : J}, (i ⟶ j) → j ∈ J' → i ∈ J')
+  (hcov : ∀ x : (colimit F : Scheme.{u}), ∃ j ∈ J', x ∈ (colimit.ι F j).opensRange)
+include hD hJ' hcov
+
+/-- Over any open, sections of `(ιⱼ)_* Mⱼ` agree if their images under the transition morphisms
+along all `k ⟶ j` with `k ∈ J'` agree, for a downward closed set `J'` of indices whose images cover
+`colimit F`. -/
+theorem eq_of_transition_app_eq_of_cover {j : J} {U : (colimit F).Opens}
+    {x y : Γ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j), U)}
+    (h : ∀ k ∈ J', ∀ a : k ⟶ j, (D.transition a).app U x = (D.transition a).app U y) :
+    x = y :=
+  D.eq_of_transition_app_eq_of_le_cover hD J' hJ' (fun x _ ↦ hcov x) h
+
+/-- A family of sections of the pushforwards `(ιₖ)_* Mₖ` over `U`, for `k` in a downward closed
+set `J'` of indices whose images cover `colimit F`, compatible with the transition morphisms,
+extends to a section of `(ιⱼ)_* Mⱼ` for every `j`. -/
+theorem exists_transition_app_eq_of_cover {j : J} {U : (colimit F).Opens}
+    (t : ∀ k ∈ J', Γ((Scheme.Modules.pushforward (colimit.ι F k)).obj (D.obj k), U))
+    (ht : ∀ {k l : J} (f : l ⟶ k) (hk : k ∈ J'), (D.transition f).app U (t k hk) = t l (hJ' f hk)) :
+    ∃ x : Γ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j), U),
+      ∀ k (hk : k ∈ J') (a : k ⟶ j), (D.transition a).app U x = t k hk := by
+  let V (k : J') : (colimit F).Opens := U ⊓ (colimit.ι F k.1).opensRange
+  let res {l : J} {W W' : (colimit F).Opens} (h : W' ≤ W) :=
+    ((Scheme.Modules.pushforward (colimit.ι F l)).obj (D.obj l)).presheaf.map (homOfLE h).op
+  have hV : U ≤ ⨆ k, V k := fun p hp ↦ by
+    obtain ⟨k, hk, hpk⟩ := hcov p
+    exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨k, hk⟩, hp, hpk⟩
+  -- over `V k`, the section is the extension of `t k` given by `exists_transition_app_eq`
+  choose σ hσ₀ using fun k : J' ↦
+    D.exists_transition_app_eq hD (i := k.1) (j := j) (U := V k) inf_le_right
+      (res inf_le_left (t k.1 k.2))
+  have hσ (k : J') (l : J) (hl : l ∈ J') (a : l ⟶ j) :
+      (D.transition a).app (V k) (σ k) = res inf_le_left (t l hl) := by
+    refine D.eq_of_transition_app_eq hD (i := k.1) inf_le_right fun p c d ↦ ?_
+    rw [transition_comp_apply, hσ₀ k p (c ≫ a) d, D.transition_app_map_apply,
+      D.transition_app_map_apply, ht d k.2, ht c hl]
+  -- the local sections agree on overlaps
+  have hcompat (k k' : J') :
+      res (inf_le_left : V k ⊓ V k' ≤ V k) (σ k) = res (inf_le_right : V k ⊓ V k' ≤ V k') (σ k') :=
+    D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun l hl a ↦ by
+      simp only [res, D.transition_app_map_apply, hσ _ l hl a, ← Functor.map_comp_apply]
+      rfl
+  obtain ⟨x, hx, -⟩ := TopCat.Sheaf.existsUnique_gluing'
+    (⟨((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j)).presheaf,
+      ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j)).isSheaf⟩ : TopCat.Sheaf Ab _)
+    V U (fun _ ↦ homOfLE inf_le_left) hV σ hcompat
+  refine ⟨x, fun l hl a ↦ TopCat.Sheaf.eq_of_locally_eq'
+    (⟨((Scheme.Modules.pushforward (colimit.ι F l)).obj (D.obj l)).presheaf,
+      ((Scheme.Modules.pushforward (colimit.ι F l)).obj (D.obj l)).isSheaf⟩ : TopCat.Sheaf Ab _)
+    V U (fun _ ↦ homOfLE inf_le_left) hV _ _ fun k ↦ ?_⟩
+  exact (D.transition_app_map_apply a inf_le_left x).symm.trans
+    ((congrArg ((D.transition a).app (V k)) (hx k)).trans (hσ k l hl a))
+
+section Lift
+
+variable {M : (colimit F).Modules}
+  (g : ∀ j ∈ J', M ⟶ (Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j))
+  (hg : ∀ {i j : J} (f : i ⟶ j) (hj : j ∈ J'), g j hj ≫ D.transition f = g i (hJ' f hj))
+include hg
+
+/-- The sections of `M` over `U` extend compatibly from the `(ιₖ)_* Mₖ`, `k ∈ J'`, to
+`(ιⱼ)_* Mⱼ`. -/
+private theorem exists_transition_app_eq_hom (j : J) (U : (colimit F).Opens) (s : Γ(M, U)) :
+    ∃ x : Γ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j), U),
+      ∀ k (hk : k ∈ J') (a : k ⟶ j), (D.transition a).app U x = (g k hk).app U s :=
+  D.exists_transition_app_eq_of_cover hD J' hJ' hcov _ fun f hk ↦ by
+    rw [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app, hg f hk]
+
+/-- The sections of the extension `M ⟶ (ιⱼ)_* Mⱼ` of a covering compatible family. -/
+private def extendApp (j : J) (U : (colimit F).Opens) (s : Γ(M, U)) :
+    Γ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j), U) :=
+  (D.exists_transition_app_eq_hom hD J' hJ' hcov g hg j U s).choose
+
+/-- The sections `extendApp` are characterized by their images under the transition morphisms. -/
+private theorem transition_app_extendApp (j : J) (U : (colimit F).Opens) (s : Γ(M, U)) {k : J}
+    (hk : k ∈ J') (a : k ⟶ j) :
+    (D.transition a).app U (D.extendApp hD J' hJ' hcov g hg j U s) = (g k hk).app U s :=
+  (D.exists_transition_app_eq_hom hD J' hJ' hcov g hg j U s).choose_spec k hk a
+
+/-- The sections `extendApp` are additive: zero. -/
+private theorem extendApp_zero (j : J) (U : (colimit F).Opens) :
+    D.extendApp hD J' hJ' hcov g hg j U 0 = 0 :=
+  D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+    rw [D.transition_app_extendApp hD J' hJ' hcov g hg j _ _ hk, map_zero, map_zero]
+
+/-- The sections `extendApp` are additive. -/
+private theorem extendApp_add (j : J) (U : (colimit F).Opens) (s t : Γ(M, U)) :
+    D.extendApp hD J' hJ' hcov g hg j U (s + t) =
+      D.extendApp hD J' hJ' hcov g hg j U s + D.extendApp hD J' hJ' hcov g hg j U t :=
+  D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+    have e := D.transition_app_extendApp hD J' hJ' hcov g hg j U
+    rw [e _ hk, map_add, map_add, e _ hk,
+      D.transition_app_extendApp hD J' hJ' hcov g hg j _ _ hk]
+
+/-- The sections `extendApp` are linear over the structure sheaf. -/
+private theorem extendApp_smul (j : J) (U : (colimit F).Opens) (r : Γ(colimit F, U))
+    (s : Γ(M, U)) :
+    D.extendApp hD J' hJ' hcov g hg j U (r • s) = r • D.extendApp hD J' hJ' hcov g hg j U s :=
+  D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+    have e := D.transition_app_extendApp hD J' hJ' hcov g hg j U
+    rw [e _ hk, Scheme.Modules.Hom.app_smul, Scheme.Modules.Hom.app_smul,
+      D.transition_app_extendApp hD J' hJ' hcov g hg j _ _ hk]
+
+/-- The sections `extendApp` commute with restriction. -/
+private theorem extendApp_map (j : J) {U V : (colimit F).Opens} (i : V ⟶ U) (s : Γ(M, U)) :
+    D.extendApp hD J' hJ' hcov g hg j V (M.presheaf.map i.op s) =
+      ((Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j)).presheaf.map i.op
+        (D.extendApp hD J' hJ' hcov g hg j U s) :=
+  D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+    have h₁ := NatTrans.naturality_apply (D.transition a).mapPresheaf i.op
+      (D.extendApp hD J' hJ' hcov g hg j U s)
+    have h₂ := NatTrans.naturality_apply (g k hk).mapPresheaf i.op s
+    simp only [Scheme.Modules.mapPresheaf_app, unop_op] at h₁ h₂
+    rw [D.transition_app_extendApp hD J' hJ' hcov g hg j _ _ hk, h₂, h₁,
+      D.transition_app_extendApp hD J' hJ' hcov g hg j _ _ hk]
+
+/-- The morphism `M ⟶ (ιⱼ)_* Mⱼ`, for any index `j`, extending a compatible family of morphisms
+`M ⟶ (ιₖ)_* Mₖ` indexed by a downward closed set `J'` of indices whose images cover
+`colimit F`. -/
+def extendOfCover (j : J) : M ⟶ (Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j) where
+  val := PresheafOfModules.homMk
+    { app U := AddCommGrpCat.ofHom
+        { toFun := D.extendApp hD J' hJ' hcov g hg j U.unop
+          map_zero' := D.extendApp_zero hD J' hJ' hcov g hg j U.unop
+          map_add' := D.extendApp_add hD J' hJ' hcov g hg j U.unop }
+      naturality {U V} i := by
+        ext s
+        exact D.extendApp_map hD J' hJ' hcov g hg j i.unop s }
+    fun U r s ↦ D.extendApp_smul hD J' hJ' hcov g hg j U.unop r s
+
+/-- The extension `extendOfCover` is characterized by its images under the transition morphisms
+along the `k ⟶ j` with `k ∈ J'`. -/
+theorem extendOfCover_transition (j : J) {k : J} (hk : k ∈ J') (a : k ⟶ j) :
+    D.extendOfCover hD J' hJ' hcov g hg j ≫ D.transition a = g k hk :=
+  Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun s ↦
+    D.transition_app_extendApp hD J' hJ' hcov g hg j U s hk a
+
+/-- On an index of `J'`, the extension `extendOfCover` is the given morphism. -/
+theorem extendOfCover_of_mem {j : J} (hj : j ∈ J') :
+    D.extendOfCover hD J' hJ' hcov g hg j = g j hj :=
+  Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun s ↦
+    D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+      rw [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app,
+        extendOfCover_transition, ← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app,
+        hg a hj]
+
+/-- The extensions `extendOfCover` are compatible with the transition morphisms. -/
+theorem extendOfCover_comp_transition {i j : J} (f : i ⟶ j) :
+    D.extendOfCover hD J' hJ' hcov g hg j ≫ D.transition f =
+      D.extendOfCover hD J' hJ' hcov g hg i :=
+  Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun s ↦
+    D.eq_of_transition_app_eq_of_cover hD J' hJ' hcov fun k hk a ↦ by
+      rw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply, transition_comp_apply,
+        ← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app,
+        D.extendOfCover_transition hD J' hJ' hcov g hg j hk, ← ConcreteCategory.comp_apply,
+        ← Scheme.Modules.Hom.comp_app, D.extendOfCover_transition hD J' hJ' hcov g hg i hk]
+
+/-- **Morphisms into the glued module from a covering family of indices.** For a downward closed
+set `J'` of indices whose images cover `colimit F`, a family of morphisms `M ⟶ (ιₖ)_* Mₖ`,
+`k ∈ J'`, compatible with the transition morphisms induces a morphism into the glued module. -/
+def liftOfCover : M ⟶ D.glued :=
+  D.lift (D.extendOfCover hD J' hJ' hcov g hg) (D.extendOfCover_comp_transition hD J' hJ' hcov g hg)
+
+/-- The morphism into the glued module induced by a covering compatible family is the given
+morphism after each projection of `J'`. -/
+@[reassoc (attr := simp)]
+theorem liftOfCover_π {j : J} (hj : j ∈ J') :
+    D.liftOfCover hD J' hJ' hcov g hg ≫ D.π j = g j hj :=
+  (D.lift_π _ (D.extendOfCover_comp_transition hD J' hJ' hcov g hg) j).trans
+    (D.extendOfCover_of_mem hD J' hJ' hcov g hg hj)
+
+end Lift
+
+end Cover
 
 end
 
