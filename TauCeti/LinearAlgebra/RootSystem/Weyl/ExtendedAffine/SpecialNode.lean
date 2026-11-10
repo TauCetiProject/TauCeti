@@ -54,12 +54,12 @@ Finally, a symmetry `σ` of the affine Cartan matrix carries the affine node to 
 
 * `RootPairing.apply_mem_closedFundamentalAlcove_iff`: `Ω` preserves the closed fundamental
   alcove.
-* `RootPairing.eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove`: the only point of the
-  coroot lattice in the closed fundamental alcove is `0`.
-* `RootPairing.fundamentalAlcoveStabilizer_apply_zero_injective` and
-  `RootPairing.exists_mem_fundamentalAlcoveStabilizer_apply_zero_eq`: an element of `Ω` is
-  determined by its translation part, and every coweight in the closed fundamental alcove is the
-  translation part of an element of `Ω`.
+* `RootPairing.exists_mem_fundamentalAlcoveStabilizer_apply_zero_eq`: every coweight in the
+  closed fundamental alcove is the translation part of an element of `Ω`.
+* `RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes` and
+  `RootPairing.Base.exists_mem_coweightLattice_affineSimpleRoot_eq`: at a special node `k` the
+  closed fundamental alcove has a vertex in the coweight lattice, the origin for `k = 0` and the
+  fundamental coweight `ϖⱼ` for `k = j`.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes`: `σ_ω(0)` is a
   special node.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_apply_none_injective` and
@@ -99,43 +99,12 @@ theorem apply_mem_closedFundamentalAlcove_iff (ω : P.fundamentalAlcoveStabilize
     (fundamentalAlcoveStabilizerToPerm b ω)).symm.trans ?_
   simp
 
-/-- **The only point of the coroot lattice in the closed fundamental alcove is `0`.** -/
-theorem eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove {v : N}
-    (hv : v ∈ P.corootSpan ℤ) (hv' : v ∈ closedFundamentalAlcove P b) : v = 0 := by
-  -- Every root takes a value in `[-1, 1]` on the closed alcove, and a minuscule element of the
-  -- coroot lattice vanishes.
-  refine P.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two hv fun j ↦ ?_
-  obtain ⟨hsimple, hθ⟩ := (mem_closedFundamentalAlcove P b).mp hv'
-  let := P.indexNeg
-  have h₁ := (root'_le_root'_highestRoot hsimple j).trans hθ
-  have h₂ := (root'_le_root'_highestRoot hsimple (-j)).trans hθ
-  simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h₂
-  rw [abs_lt]
-  constructor <;> linarith
-
 /-! ### The translation part of an element of `Ω` -/
-
-omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
-/-- The translation part `ω 0` of an element of `Ω` lies in the coweight lattice. -/
-theorem apply_zero_mem_coweightLattice (ω : P.fundamentalAlcoveStabilizer b) :
-    ω.1 0 ∈ P.coweightLattice :=
-  (P.mem_extendedAffineWeylGroup_iff.1
-    (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.2)).2
 
 /-- The translation part `ω 0` of an element of `Ω` lies in the closed fundamental alcove. -/
 theorem apply_zero_mem_closedFundamentalAlcove (ω : P.fundamentalAlcoveStabilizer b) :
     ω.1 0 ∈ closedFundamentalAlcove P b :=
   (apply_mem_closedFundamentalAlcove_iff b ω).2 zero_mem_closedFundamentalAlcove
-
-/-- **An element of `Ω` is determined by its translation part** `ω 0`. -/
-theorem fundamentalAlcoveStabilizer_apply_zero_injective :
-    Function.Injective fun ω : P.fundamentalAlcoveStabilizer b ↦ ω.1 0 := by
-  -- Even the class of `ω 0` modulo the coroot lattice determines `ω`.
-  intro ω₁ ω₂ h
-  refine fundamentalAlcoveStabilizerToQuotient_injective b ?_
-  simp only [fundamentalAlcoveStabilizerToQuotient_apply]
-  congr 2
-  exact Subtype.ext h
 
 /-- **Every coweight in the closed fundamental alcove is the translation part of an element of
 `Ω`.** -/
@@ -183,10 +152,29 @@ theorem fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes
   exact b.mem_specialNodes.mpr (by exact_mod_cast h)
 
 omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
-/-- At a special node `k` the closed fundamental alcove has a vertex in the coweight lattice: a
-point at which `aₖ = 1` and every other affine simple root vanishes. For `k = 0` it is the origin,
-and for a simple root `αⱼ` it is the fundamental coweight `ϖⱼ`, at which `θ = mⱼ = 1`. -/
-private lemma exists_mem_coweightLattice_affineSimpleRoot_eq [P.IsRootSystem]
+/-- **At a special node `j`, the fundamental coweight `ϖⱼ` is the vertex of the closed fundamental
+alcove opposite the wall `αⱼ = 0`**: the affine simple root `aₖ` takes the value `1` at `ϖⱼ` for
+`k = j` and vanishes for every other `k`, since `θ(ϖⱼ) = mⱼ = 1`. -/
+theorem Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes [P.IsRootSystem]
+    [DecidableEq ι] {j : b.support} (hj : some j ∈ b.specialNodes) (k : Option b.support) :
+    b.affineSimpleRoot k (b.fundamentalCoweightBasis j) = if k = some j then 1 else 0 := by
+  rcases k with _ | i
+  · -- The null-root relation at `ϖⱼ` reads `(1 - θ(ϖⱼ)) + mⱼ = 1`, and `mⱼ = 1`.
+    have h := b.sum_affineMarks_mul_affineSimpleRoot (b.fundamentalCoweightBasis j)
+    rw [Fintype.sum_option] at h
+    simp only [Base.affineSimpleRoot_some, root'_fundamentalCoweightBasis, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, Base.affineMarks_none,
+      Int.cast_one, one_mul, b.mem_specialNodes.mp hj] at h
+    simp only [reduceCtorEq, ite_false]
+    linarith
+  · simp
+
+omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
+/-- **At a special node `k` the closed fundamental alcove has a vertex in the coweight lattice**:
+a point at which `aₖ = 1` and every other affine simple root vanishes. For `k = 0` it is the
+origin, and for a simple root `αⱼ` it is the fundamental coweight `ϖⱼ`
+(`RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes`). -/
+theorem Base.exists_mem_coweightLattice_affineSimpleRoot_eq [P.IsRootSystem]
     {k : Option b.support} (hk : k ∈ b.specialNodes) :
     ∃ x ∈ P.coweightLattice,
       b.affineSimpleRoot k x = 1 ∧ ∀ l ≠ k, b.affineSimpleRoot l x = 0 := by
@@ -196,22 +184,9 @@ private lemma exists_mem_coweightLattice_affineSimpleRoot_eq [P.IsRootSystem]
     rintro (_ | i) hi
     · exact absurd rfl hi
     · simp
-  · have hsimple (i : b.support) :
-        b.affineSimpleRoot (some i) (b.fundamentalCoweightBasis j) = if i = j then 1 else 0 := by
-      simp
-    -- The null-root relation at `ϖⱼ` reads `(1 - θ(ϖⱼ)) + mⱼ = 1`, and `mⱼ = 1`.
-    have hnone : b.affineSimpleRoot none (b.fundamentalCoweightBasis j) = 0 := by
-      have h := b.sum_affineMarks_mul_affineSimpleRoot (b.fundamentalCoweightBasis j)
-      rw [Fintype.sum_option] at h
-      simp only [hsimple, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
-        ite_true, Base.affineMarks_none, Int.cast_one, one_mul, b.mem_specialNodes.mp hk] at h
-      linarith
-    refine ⟨b.fundamentalCoweightBasis j, b.mem_coweightLattice_iff.mpr fun i ↦
-      ⟨if i = j then 1 else 0, by simp [apply_ite]⟩, by simp [hsimple], ?_⟩
-    rintro (_ | i) hi
-    · exact hnone
-    · rw [hsimple]
-      simpa using fun h : i = j ↦ hi (congrArg some h)
+  · refine ⟨b.fundamentalCoweightBasis j, b.fundamentalCoweightBasis_mem_coweightLattice j,
+      by simp [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hk], fun l hl ↦ ?_⟩
+    simp [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hk, hl]
 
 /-- **`Ω` acts freely on the special nodes**: for a root system, an element `ω` of `Ω` is
 determined by the node `σ_ω(0)`. -/
@@ -229,13 +204,8 @@ theorem fundamentalAlcoveStabilizerToPerm_apply_none_injective [P.IsRootSystem] 
         affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply]
     · rw [affineSimpleRoot_apply_zero_eq_zero b ω₁ hl,
         affineSimpleRoot_apply_zero_eq_zero b ω₂ (h ▸ hl)]
-  have hsimple (i : ι) (hi : i ∈ b.support) : P.root' i (ω₁.1 0 - ω₂.1 0) = 0 := by
-    have := heq (some ⟨i, hi⟩)
-    rw [Base.affineSimpleRoot_some, Base.affineSimpleRoot_some] at this
-    rw [map_sub, this, sub_self]
-  -- The simple roots determine a point of the coweight space.
-  simpa [sub_eq_zero] using (P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr
-    (P.flip.coroot'_eq_zero_of_forall_mem_support b.flip hsimple))
+  -- The simple roots are the coordinates in the fundamental coweights.
+  exact b.fundamentalCoweightBasis.ext_elem fun i ↦ by simpa using heq (some i)
 
 /-- **`Ω` acts transitively on the special nodes**: for a root system over an archimedean field,
 every special node is `σ_ω(0)` for some `ω ∈ Ω`. -/
@@ -243,7 +213,7 @@ theorem exists_fundamentalAlcoveStabilizerToPerm_apply_none_eq [P.IsRootSystem] 
     {k : Option b.support} (hk : k ∈ b.specialNodes) :
     ∃ ω : P.fundamentalAlcoveStabilizer b, fundamentalAlcoveStabilizerToPerm b ω none = k := by
   -- Take `ω` carrying the origin to the vertex `x` of the closed alcove at the node `k`.
-  obtain ⟨x, hx, hxk, hx0⟩ := exists_mem_coweightLattice_affineSimpleRoot_eq b hk
+  obtain ⟨x, hx, hxk, hx0⟩ := b.exists_mem_coweightLattice_affineSimpleRoot_eq hk
   have hx' : x ∈ closedFundamentalAlcove P b :=
     (mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mpr fun l ↦ by
       by_cases hl : l = k
@@ -274,6 +244,15 @@ lemma coe_fundamentalAlcoveStabilizerEquivSpecialNodes_apply [P.IsRootSystem] [A
     (fundamentalAlcoveStabilizerEquivSpecialNodes b ω : Option b.support) =
       fundamentalAlcoveStabilizerToPerm b ω none :=
   (rfl)
+
+/-- The inverse of `RootPairing.fundamentalAlcoveStabilizerEquivSpecialNodes` carries a special
+node `k` to the element `ω` of `Ω` with `σ_ω(0) = k`. -/
+@[simp]
+lemma fundamentalAlcoveStabilizerToPerm_fundamentalAlcoveStabilizerEquivSpecialNodes_symm_apply
+    [P.IsRootSystem] [Archimedean R] (k : b.specialNodes) :
+    fundamentalAlcoveStabilizerToPerm b ((fundamentalAlcoveStabilizerEquivSpecialNodes b).symm k)
+      none = k :=
+  congrArg Subtype.val ((fundamentalAlcoveStabilizerEquivSpecialNodes b).apply_symm_apply k)
 
 /-! ### The symmetries of the affine Cartan matrix -/
 
