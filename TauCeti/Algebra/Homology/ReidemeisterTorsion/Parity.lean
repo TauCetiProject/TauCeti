@@ -31,8 +31,8 @@ bases `(b₁, s₀)` of `C₁` and `(b₀, s₁)` of `C₀`. The torsion of `C` 
 (`HomologicalComplex.parityTorsion`), and `0` when `C` is not acyclic. As for `ℤ`-graded
 complexes, the bracket of an odd degree enters with exponent `1` and that of an even degree with
 exponent `-1`. The value does not depend on the bases of the boundaries nor on the lifts
-(`HomologicalComplex.parityTorsion_eq`): changing `b₀` or `b₁` multiplies both brackets by the
-same determinant.
+(`HomologicalComplex.parityTorsion_eq_mul_inv`): changing `b₀` or `b₁` multiplies both brackets
+by the same determinant.
 
 With this normalization the complex `F → F` given by multiplication by `a ≠ 0` from the odd to
 the even space has torsion `a⁻¹`, and the same map from the even to the odd space has torsion `a`
@@ -44,8 +44,8 @@ a complex with nonzero homology, such as `F` placed in even degree, has torsion 
 ## Main declarations
 
 * `HomologicalComplex.parityTorsion`: the torsion of a based parity complex.
-* `HomologicalComplex.parityTorsion_eq`: for an acyclic complex, the torsion is the ratio of the
-  brackets for any bases of the boundaries and any lifts.
+* `HomologicalComplex.parityTorsion_eq_mul_inv`: for an acyclic complex, the torsion is the ratio
+  of the brackets for any bases of the boundaries and any lifts.
 * `HomologicalComplex.parityTorsion_eq_zero_iff`: the torsion vanishes exactly when the complex is
   not acyclic.
 * `HomologicalComplex.parityTorsion_eq_mul_det`: replacing the bases `c i` by `c' i` multiplies
@@ -88,7 +88,8 @@ private def parityTorsionOfAcyclic (h : C.Acyclic) : F :=
 /-- The torsion of a parity complex of vector spaces with ordered bases `c 0` of its even space and
 `c 1` of its odd space: when `C` is acyclic, the ratio `[b₁ s₀ / c₁] · [b₀ s₁ / c₀]⁻¹` of the
 brackets of its odd and even degrees, for a choice of bases `bᵢ` of the boundaries and lifts `sᵢ`
-of `bᵢ`, and `0` otherwise. The ratio does not depend on these choices (`parityTorsion_eq`). -/
+of `bᵢ`, and `0` otherwise. The ratio does not depend on these choices
+(`parityTorsion_eq_mul_inv`). -/
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then parityTorsionOfAcyclic C c h else 0
@@ -108,18 +109,12 @@ theorem parityTorsion_ne_zero (h : C.Acyclic) : C.parityTorsion c ≠ 0 := by
 theorem parityTorsion_eq_zero_iff : C.parityTorsion c = 0 ↔ ¬C.Acyclic :=
   ⟨fun h₀ h ↦ C.parityTorsion_ne_zero c h h₀, C.parityTorsion_of_not_acyclic c⟩
 
-/-- In `ZMod 2`, `0 + 1 = 1`; the brackets of a parity complex are indexed by `j + 1`. -/
-private theorem zero_add_one : (0 + 1 : ZMod 2) = 1 := by decide
-
-/-- In `ZMod 2`, `1 + 1 = 0`. -/
-private theorem one_add_one : (1 + 1 : ZMod 2) = 0 := by decide
-
 variable {C c}
 
 /-- For an acyclic parity complex, the torsion is the ratio `[b₁ s₀ / c₁] · [b₀ s₁ / c₀]⁻¹` of the
 brackets for any bases `bⱼ` of the boundaries and any lifts `sⱼ` of `bⱼ`; the bases `bⱼ` may be
 indexed by any `Fin (r j)`. -/
-theorem parityTorsion_eq (h : C.Acyclic) {r : ZMod 2 → ℕ}
+theorem parityTorsion_eq_mul_inv (h : C.Acyclic) {r : ZMod 2 → ℕ}
     (b : ∀ j, Basis (Fin (r j)) F (LinearMap.range (C.d (j + 1) j).hom))
     (s : ∀ j, Fin (r j) → C.X (j + 1)) (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
     C.parityTorsion c =
@@ -144,7 +139,7 @@ theorem parityTorsion_eq (h : C.Acyclic) {r : ZMod 2 → ℕ}
     (Basis.isUnit_det (chosenBoundaryBasis C c 0) ((b 0).reindex (finCongr (hr 0)))).ne_zero
   have hD₁ :=
     (Basis.isUnit_det (chosenBoundaryBasis C c 1) ((b 1).reindex (finCongr (hr 1)))).ne_zero
-  rw [hD zero_add_one, hD one_add_one]
+  rw [hD (zero_add 1), hD (CharTwo.add_self_eq_zero 1)]
   field_simp [torsionBracket_ne_zero]
 
 variable (c) in
@@ -157,9 +152,9 @@ theorem parityTorsion_eq_mul_det (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
   by_cases h : C.Acyclic
   swap
   · simp [parityTorsion_of_not_acyclic _ _ h]
-  rw [parityTorsion_eq (c := c') h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
+  rw [parityTorsion_eq_mul_inv (c := c') h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
-    parityTorsion_eq (c := c) h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
+    parityTorsion_eq_mul_inv (c := c) h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
     torsionBracket_eq_det_mul c (c' := c'), torsionBracket_eq_det_mul c (c' := c')]
   -- The bracket in degree `j + 1` changes by `[cⱼ₊₁ / c'ⱼ₊₁]`, read in the degrees `0 + 1 = 1`
@@ -170,7 +165,7 @@ theorem parityTorsion_eq_mul_det (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
     eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
   have hD₀ := (Basis.isUnit_det (c' 0) (c 0)).ne_zero
   have hD₁ := (Basis.isUnit_det (c' 1) (c 1)).ne_zero
-  rw [hD zero_add_one, hD one_add_one, hinv, hinv]
+  rw [hD (zero_add 1), hD (CharTwo.add_self_eq_zero 1), hinv, hinv]
   field_simp [torsionBracket_ne_zero]
 
 variable (c) in
@@ -197,8 +192,18 @@ theorem parityTorsion_unitsSMul (w : ∀ i, Fin (n i) → Fˣ) :
 
 /-! ### Elementary complexes -/
 
+/-- The bracket of a parity complex for the chosen bases of the boundaries and the chosen lifts
+depends only on the index `j`, not on how it is written. -/
+private theorem torsionBracket_chosen_congr (h : C.Acyclic) {j j' : ZMod 2} (hj : j = j') :
+    torsionBracket c (h (j + 1)) (chosenBoundaryBasis C c (j + 1)) (chosenBoundaryBasis C c j)
+        (chosenBoundaryLift C c j) (chosenBoundaryLift_spec C c j) =
+      torsionBracket c (h (j' + 1)) (chosenBoundaryBasis C c (j' + 1))
+        (chosenBoundaryBasis C c j') (chosenBoundaryLift C c j')
+        (chosenBoundaryLift_spec C c j') := by
+  subst hj; rfl
+
 /-- The determinant of the chosen basis of the boundaries `Bⱼ` depends only on the index `j`, not
-on how it is written: the brackets of a parity complex read the even degree as `1 + 1`. -/
+on how it is written. -/
 private theorem det_chosenBoundaryBasis_congr {j j' : ZMod 2} (hj : j = j')
     (hj₁ : n j = finrank F (LinearMap.range (C.d (j + 1) j).hom))
     (hj₂ : n j' = finrank F (LinearMap.range (C.d (j' + 1) j').hom)) :
@@ -213,41 +218,84 @@ private theorem det_d_congr {i j j' : ZMod 2} (hj : j = j') (h₁ : n i = n j) (
       (c i).det fun k ↦ (C.d j' i).hom (c j' (Fin.cast h₂ k)) := by
   subst hj; rfl
 
-/-- A parity complex whose even-to-odd differential vanishes is acyclic exactly when its
-odd-to-even differential is bijective. -/
-theorem acyclic_iff_bijective_d_one_zero (hd : C.d 0 1 = 0) :
-    C.Acyclic ↔ Function.Bijective (C.d 1 0).hom := by
-  have e₀ := C.exactAt_iff' 1 0 1 ((ChainComplex.prev _ 0).trans zero_add_one)
+/-- A parity complex is acyclic exactly when the image of each differential is the kernel of the
+other one. -/
+private theorem acyclic_iff_range_eq_ker : C.Acyclic ↔
+    LinearMap.range (C.d 1 0).hom = LinearMap.ker (C.d 0 1).hom ∧
+      LinearMap.range (C.d 0 1).hom = LinearMap.ker (C.d 1 0).hom := by
+  have e₀ := C.exactAt_iff' 1 0 1 ((ChainComplex.prev _ 0).trans (zero_add 1))
     ((ChainComplex.next _ 0).trans (by decide))
-  have e₁ := C.exactAt_iff' 0 1 0 ((ChainComplex.prev _ 1).trans one_add_one)
+  have e₁ := C.exactAt_iff' 0 1 0 ((ChainComplex.prev _ 1).trans (CharTwo.add_self_eq_zero 1))
     ((ChainComplex.next _ 1).trans (sub_self 1))
   simp only [ShortComplex.moduleCat_exact_iff_range_eq_ker, shortComplexFunctor'_obj_f,
-    shortComplexFunctor'_obj_g, hd, ModuleCat.hom_zero, LinearMap.range_zero,
-    LinearMap.ker_zero] at e₀ e₁
-  rw [Function.Bijective, ← LinearMap.ker_eq_bot, ← LinearMap.range_eq_top, eq_comm, ← e₀, ← e₁]
-  constructor
-  · exact fun h ↦ ⟨h 1, h 0⟩
-  · rintro ⟨h₁, h₀⟩ i
-    fin_cases i
-    exacts [h₀, h₁]
-
-/-- A parity complex whose odd-to-even differential vanishes is acyclic exactly when its
-even-to-odd differential is bijective. -/
-theorem acyclic_iff_bijective_d_zero_one (hd : C.d 1 0 = 0) :
-    C.Acyclic ↔ Function.Bijective (C.d 0 1).hom := by
-  have e₀ := C.exactAt_iff' 1 0 1 ((ChainComplex.prev _ 0).trans zero_add_one)
-    ((ChainComplex.next _ 0).trans (by decide))
-  have e₁ := C.exactAt_iff' 0 1 0 ((ChainComplex.prev _ 1).trans one_add_one)
-    ((ChainComplex.next _ 1).trans (sub_self 1))
-  simp only [ShortComplex.moduleCat_exact_iff_range_eq_ker, shortComplexFunctor'_obj_f,
-    shortComplexFunctor'_obj_g, hd, ModuleCat.hom_zero, LinearMap.range_zero,
-    LinearMap.ker_zero] at e₀ e₁
-  rw [Function.Bijective, ← LinearMap.ker_eq_bot, ← LinearMap.range_eq_top, eq_comm, ← e₀, ← e₁]
+    shortComplexFunctor'_obj_g] at e₀ e₁
+  rw [← e₀, ← e₁]
   constructor
   · exact fun h ↦ ⟨h 0, h 1⟩
   · rintro ⟨h₀, h₁⟩ i
     fin_cases i
     exacts [h₀, h₁]
+
+/-- A parity complex whose even-to-odd differential vanishes is acyclic exactly when its
+odd-to-even differential is bijective. -/
+theorem acyclic_iff_bijective_d_one_zero (hd : C.d 0 1 = 0) :
+    C.Acyclic ↔ Function.Bijective (C.d 1 0).hom := by
+  simp [acyclic_iff_range_eq_ker, hd, Function.Bijective, ← LinearMap.ker_eq_bot,
+    ← LinearMap.range_eq_top, eq_comm (a := ⊥), and_comm]
+
+/-- A parity complex whose odd-to-even differential vanishes is acyclic exactly when its
+even-to-odd differential is bijective. -/
+theorem acyclic_iff_bijective_d_zero_one (hd : C.d 1 0 = 0) :
+    C.Acyclic ↔ Function.Bijective (C.d 0 1).hom := by
+  simp [acyclic_iff_range_eq_ker, hd, Function.Bijective, ← LinearMap.ker_eq_bot,
+    ← LinearMap.range_eq_top, eq_comm (a := ⊥)]
+
+/-- In an acyclic parity complex where `C.d (j + 1 + 1) (j + 1)` vanishes and `C.d (j + 1) j` is
+bijective, the bracket in degree `j + 1 + 1 = j` is the bracket in degree `j + 1` times the
+determinant of `C.d (j + 1) j` in the bases `c (j + 1)` and `c j`. -/
+private theorem torsionBracket_chosen_eq_det_mul {j : ZMod 2} (h : C.Acyclic)
+    (hd : C.d (j + 1 + 1) (j + 1) = 0) (hbij : Function.Bijective (C.d (j + 1) j).hom) :
+    torsionBracket c (h (j + 1 + 1)) (chosenBoundaryBasis C c (j + 1 + 1))
+        (chosenBoundaryBasis C c (j + 1)) (chosenBoundaryLift C c (j + 1))
+        (chosenBoundaryLift_spec C c (j + 1)) =
+      ((c j).det fun k ↦ (C.d (j + 1) j).hom
+          (c (j + 1) (Fin.cast (card_eq_card_of_bijective_d (c (j + 1)) (c j) hbij).symm k))) *
+        torsionBracket c (h (j + 1)) (chosenBoundaryBasis C c (j + 1))
+          (chosenBoundaryBasis C c j) (chosenBoundaryLift C c j)
+          (chosenBoundaryLift_spec C c j) := by
+  have hj : j + 1 + 1 = j := by rw [add_assoc, CharTwo.add_self_eq_zero, add_zero]
+  -- The boundaries `Bⱼ₊₁` vanish, so the bracket in degree `j + 1` is the determinant of the lifts
+  -- `sⱼ` of a basis `bⱼ` of `Bⱼ = Cⱼ`, and the bracket in degree `j + 1 + 1` is the determinant of
+  -- `bⱼ`, read in degree `j + 1 + 1`.
+  have hq₀ := eq_add_of_exactAt c (h (j + 1)) (chosenBoundaryBasis C c (j + 1))
+    (chosenBoundaryBasis C c j)
+  have hp₀ := eq_add_of_exactAt c (h (j + 1 + 1)) (chosenBoundaryBasis C c (j + 1 + 1))
+    (chosenBoundaryBasis C c (j + 1))
+  have hr : finrank F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) = 0 := by
+    rw [hd, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
+  have hq : n (j + 1) = finrank F (LinearMap.range (C.d (j + 1) j).hom) := by omega
+  have hp : n (j + 1 + 1) = finrank F (LinearMap.range (C.d (j + 1 + 1 + 1) (j + 1 + 1)).hom) := by
+    omega
+  rw [torsionBracket_eq_det_right c (h (j + 1)) _ _ _ _ hq,
+    torsionBracket_eq_det_left c (h (j + 1 + 1)) _ _ _ _ hp]
+  have hn : n j = n (j + 1) := (card_eq_card_of_bijective_d (c (j + 1)) (c j) hbij).symm
+  rw [det_chosenBoundaryBasis_congr hj hp (hn.trans hq)]
+  -- The basis `bⱼ` of `Cⱼ` is the image of the lifts `sⱼ` under the differential `Cⱼ₊₁ → Cⱼ`.
+  have hb : (fun k ↦ (chosenBoundaryBasis C c j (Fin.cast (hn.trans hq) k) : C.X j)) =
+      (C.d (j + 1) j).hom ∘ (chosenBoundaryLift C c j ∘ Fin.cast (hn.trans hq)) := by
+    ext k
+    simp
+  rw [hb, Basis.det_comp_eq_mul ((c (j + 1)).reindex (finCongr hn.symm)) (c j),
+    Basis.det_reindex]
+  have hs : (chosenBoundaryLift C c j ∘ Fin.cast (hn.trans hq)) ∘ finCongr hn.symm =
+      chosenBoundaryLift C c j ∘ Fin.cast hq := by
+    ext k
+    simp
+  have hc : (C.d (j + 1) j).hom ∘ (c (j + 1)).reindex (finCongr hn.symm) =
+      fun k ↦ (C.d (j + 1) j).hom (c (j + 1) (Fin.cast hn k)) := by
+    ext k
+    simp
+  rw [hs, hc]
 
 /-- The torsion of an acyclic parity complex whose even-to-odd differential vanishes: its
 odd-to-even differential `C₁ → C₀` is then an isomorphism, and the torsion is the inverse of the
@@ -255,49 +303,15 @@ determinant of that differential in the bases `c 1` and `c 0`. For instance mult
 `a ≠ 0` on `F`, from the odd to the even space, has torsion `a⁻¹`. -/
 theorem parityTorsion_eq_inv_det (hd : C.d 0 1 = 0) (hbij : Function.Bijective (C.d 1 0).hom) :
     C.parityTorsion c = ((c 0).det fun k ↦
-      (C.d 1 0).hom (c 1 (Fin.cast (card_eq_card_of_bijective_d C c hbij).symm k)))⁻¹ := by
+      (C.d 1 0).hom (c 1 (Fin.cast (card_eq_card_of_bijective_d (c 1) (c 0) hbij).symm k)))⁻¹ := by
   have h := (acyclic_iff_bijective_d_one_zero hd).2 hbij
-  have hb₁ : Function.Bijective (C.d (0 + 1) 0).hom := by rwa [zero_add_one]
-  have hd₁ : C.d (0 + 1 + 1) (0 + 1) = 0 := by rwa [zero_add_one, one_add_one]
-  have hd₂ : C.d (1 + 1) 1 = 0 := by rwa [one_add_one]
-  -- The odd boundaries vanish, so the odd bracket is the determinant of the lifts `s₀` of a basis
-  -- `b₀` of `B₀ = C₀`, and the even bracket is the determinant of `b₀`, read in degree `1 + 1`.
-  have hq₀ := eq_add_of_exactAt c (h (0 + 1)) (chosenBoundaryBasis C c (0 + 1))
-    (chosenBoundaryBasis C c 0)
-  have hp₀ := eq_add_of_exactAt c (h (1 + 1)) (chosenBoundaryBasis C c (1 + 1))
-    (chosenBoundaryBasis C c 1)
-  have hr₁ : finrank F (LinearMap.range (C.d (0 + 1 + 1) (0 + 1)).hom) = 0 := by
-    rw [hd₁, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
-  have hr₂ : finrank F (LinearMap.range (C.d (1 + 1) 1).hom) = 0 := by
-    rw [hd₂, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
-  have hq : n (0 + 1) = finrank F (LinearMap.range (C.d (0 + 1) 0).hom) := by omega
-  have hp : n (1 + 1) = finrank F (LinearMap.range (C.d (1 + 1 + 1) (1 + 1)).hom) := by omega
-  have hX := torsionBracket_ne_zero c (h (0 + 1)) (chosenBoundaryBasis C c (0 + 1))
-    (chosenBoundaryBasis C c 0) (chosenBoundaryLift C c 0) (chosenBoundaryLift_spec C c 0)
-  rw [torsionBracket_eq_det_right c (h (0 + 1)) _ _ _ _ hq] at hX
-  rw [parityTorsion_eq h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
+  have hb : Function.Bijective (C.d (0 + 1) 0).hom := by rwa [zero_add]
+  have hd' : C.d (0 + 1 + 1) (0 + 1) = 0 := by rwa [zero_add, CharTwo.add_self_eq_zero]
+  rw [parityTorsion_eq_mul_inv h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
-    torsionBracket_eq_det_right c (h (0 + 1)) _ _ _ _ hq,
-    torsionBracket_eq_det_left c (h (1 + 1)) _ _ _ _ hp]
-  have hn : n 0 = n (0 + 1) := (card_eq_card_of_bijective_d C c hb₁).symm
-  rw [det_chosenBoundaryBasis_congr one_add_one hp (hn.trans hq)]
-  -- The basis `b₀` of `C₀` is the image of the lifts `s₀` under the differential `C₁ → C₀`.
-  have hb : (fun k ↦ (chosenBoundaryBasis C c 0 (Fin.cast (hn.trans hq) k) : C.X 0)) =
-      (C.d (0 + 1) 0).hom ∘ (chosenBoundaryLift C c 0 ∘ Fin.cast (hn.trans hq)) := by
-    ext k
-    simp
-  rw [hb, Basis.det_comp_eq_mul ((c (0 + 1)).reindex (finCongr hn.symm)) (c 0),
-    Basis.det_reindex]
-  have hs : (chosenBoundaryLift C c 0 ∘ Fin.cast (hn.trans hq)) ∘ finCongr hn.symm =
-      chosenBoundaryLift C c 0 ∘ Fin.cast hq := by
-    ext k
-    simp
-  have hc : (C.d (0 + 1) 0).hom ∘ (c (0 + 1)).reindex (finCongr hn.symm) =
-      fun k ↦ (C.d (0 + 1) 0).hom (c (0 + 1) (Fin.cast hn k)) := by
-    ext k
-    simp
-  rw [hs, hc, det_d_congr zero_add_one hn, mul_inv_rev, mul_inv_cancel_left₀ hX]
-
+    ← torsionBracket_chosen_congr h (zero_add 1), torsionBracket_chosen_eq_det_mul h hd' hb,
+    det_d_congr (zero_add 1), mul_inv_rev,
+    mul_inv_cancel_left₀ (torsionBracket_ne_zero c _ _ _ _ _)]
 
 /-- The torsion of an acyclic parity complex whose odd-to-even differential vanishes: its
 even-to-odd differential `C₀ → C₁` is then an isomorphism, and the torsion is the determinant of
@@ -305,48 +319,15 @@ that differential in the bases `c 0` and `c 1`. For instance multiplication by `
 the even to the odd space, has torsion `a`. -/
 theorem parityTorsion_eq_det (hd : C.d 1 0 = 0) (hbij : Function.Bijective (C.d 0 1).hom) :
     C.parityTorsion c = (c 1).det fun k ↦
-      (C.d 0 1).hom (c 0 (Fin.cast (card_eq_card_of_bijective_d C c hbij).symm k)) := by
+      (C.d 0 1).hom (c 0 (Fin.cast (card_eq_card_of_bijective_d (c 0) (c 1) hbij).symm k)) := by
   have h := (acyclic_iff_bijective_d_zero_one hd).2 hbij
-  have hb₁ : Function.Bijective (C.d (1 + 1) 1).hom := by rwa [one_add_one]
-  have hd₁ : C.d (0 + 1) 0 = 0 := by rwa [zero_add_one]
-  have hd₂ : C.d (1 + 1 + 1) (1 + 1) = 0 := by rwa [one_add_one, zero_add_one]
-  -- The even boundaries vanish, so the odd bracket is the determinant of a basis `b₁` of
-  -- `B₁ = C₁`, read in degree `0 + 1`, and the even bracket is the determinant of its lifts `s₁`.
-  have hp₀ := eq_add_of_exactAt c (h (0 + 1)) (chosenBoundaryBasis C c (0 + 1))
-    (chosenBoundaryBasis C c 0)
-  have hq₀ := eq_add_of_exactAt c (h (1 + 1)) (chosenBoundaryBasis C c (1 + 1))
-    (chosenBoundaryBasis C c 1)
-  have hr₁ : finrank F (LinearMap.range (C.d (0 + 1) 0).hom) = 0 := by
-    rw [hd₁, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
-  have hr₂ : finrank F (LinearMap.range (C.d (1 + 1 + 1) (1 + 1)).hom) = 0 := by
-    rw [hd₂, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
-  have hp : n (0 + 1) = finrank F (LinearMap.range (C.d (0 + 1 + 1) (0 + 1)).hom) := by omega
-  have hq : n (1 + 1) = finrank F (LinearMap.range (C.d (1 + 1) 1).hom) := by omega
-  have hY := torsionBracket_ne_zero c (h (1 + 1)) (chosenBoundaryBasis C c (1 + 1))
-    (chosenBoundaryBasis C c 1) (chosenBoundaryLift C c 1) (chosenBoundaryLift_spec C c 1)
-  rw [torsionBracket_eq_det_right c (h (1 + 1)) _ _ _ _ hq] at hY
-  rw [parityTorsion_eq h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
+  have hb : Function.Bijective (C.d (1 + 1) 1).hom := by rwa [CharTwo.add_self_eq_zero]
+  have hd' : C.d (1 + 1 + 1) (1 + 1) = 0 := by rwa [CharTwo.add_self_eq_zero, zero_add]
+  rw [parityTorsion_eq_mul_inv h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
-    torsionBracket_eq_det_left c (h (0 + 1)) _ _ _ _ hp,
-    torsionBracket_eq_det_right c (h (1 + 1)) _ _ _ _ hq]
-  have hn : n 1 = n (1 + 1) := (card_eq_card_of_bijective_d C c hb₁).symm
-  rw [det_chosenBoundaryBasis_congr zero_add_one hp (hn.trans hq)]
-  -- The basis `b₁` of `C₁` is the image of the lifts `s₁` under the differential `C₀ → C₁`.
-  have hb : (fun k ↦ (chosenBoundaryBasis C c 1 (Fin.cast (hn.trans hq) k) : C.X 1)) =
-      (C.d (1 + 1) 1).hom ∘ (chosenBoundaryLift C c 1 ∘ Fin.cast (hn.trans hq)) := by
-    ext k
-    simp
-  rw [hb, Basis.det_comp_eq_mul ((c (1 + 1)).reindex (finCongr hn.symm)) (c 1),
-    Basis.det_reindex]
-  have hs : (chosenBoundaryLift C c 1 ∘ Fin.cast (hn.trans hq)) ∘ finCongr hn.symm =
-      chosenBoundaryLift C c 1 ∘ Fin.cast hq := by
-    ext k
-    simp
-  have hc : (C.d (1 + 1) 1).hom ∘ (c (1 + 1)).reindex (finCongr hn.symm) =
-      fun k ↦ (C.d (1 + 1) 1).hom (c (1 + 1) (Fin.cast hn k)) := by
-    ext k
-    simp
-  rw [hs, hc, det_d_congr one_add_one hn, mul_inv_cancel_right₀ hY]
+    ← torsionBracket_chosen_congr h (CharTwo.add_self_eq_zero (1 : ZMod 2)),
+    torsionBracket_chosen_eq_det_mul h hd' hb, det_d_congr (CharTwo.add_self_eq_zero 1),
+    mul_inv_cancel_right₀ (torsionBracket_ne_zero c _ _ _ _ _)]
 
 variable (c) in
 /-- The zero parity complex, with empty bases, is acyclic and has torsion `1`. -/
@@ -358,7 +339,7 @@ theorem parityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) : C.parityTorsion
     have : IsEmpty (Fin (n i)) := by rw [hn i]; infer_instance
     have : Subsingleton (C.X i) := ⟨fun x y ↦ (c i).ext_elem fun k ↦ isEmptyElim k⟩
     exact (C.sc i).exact_of_isZero_X₂ (ModuleCat.isZero_of_subsingleton (C.X i))
-  rw [parityTorsion_eq h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
+  rw [parityTorsion_eq_mul_inv h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
     torsionBracket_eq_one c _ _ _ _ _ (hn _), torsionBracket_eq_one c _ _ _ _ _ (hn _), inv_one,
     mul_one]

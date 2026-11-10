@@ -503,11 +503,8 @@ theorem card_eq_card_of_concentrated : n (j + 1) = n (j + 1 + 1) := by
       (by simp) (by simp) (h (j + 1))) y).1
         (Subtype.ext (eq_zero_of_eq_zero (c := c) (hn j (by omega) (by omega)) _))
     exact ⟨x, hx⟩
-  have h₁ := finrank_eq_card_basis (c (j + 1))
-  have h₂ := finrank_eq_card_basis ((c (j + 1 + 1)).map
-    (LinearEquiv.ofBijective _ ⟨injective_d_of_concentrated (c := c) h hn, hsurj⟩))
-  simp only [Fintype.card_fin] at h₁ h₂
-  omega
+  exact (card_eq_card_of_bijective_d (c (j + 1 + 1)) (c (j + 1))
+    ⟨injective_d_of_concentrated (c := c) h hn, hsurj⟩).symm
 
 include hn h in
 /-- The torsion of an acyclic complex concentrated in two consecutive degrees `j + 1` and `j + 2`

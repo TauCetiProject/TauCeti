@@ -23,7 +23,7 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 
 In a homological complex of vector spaces, a homology group has dimension at most that of the
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`).
-Two terms of a based complex joined by a bijective differential have bases of the same size
+Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
 Let `C` be a homological complex of vector spaces over a field `F`. If `C.X j` is
@@ -96,13 +96,13 @@ theorem finrank_range_d_eq_zero (C : ChainComplex (ModuleCat F) ℤ) {n : ℤ �
   have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
   rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
 
-/-- A bijective differential between two terms of a based complex forces their bases to have the
-same size. -/
-theorem card_eq_card_of_bijective_d (C : HomologicalComplex (ModuleCat F) s) {n : ι → ℕ}
-    (c : ∀ i, Basis (Fin (n i)) F (C.X i)) {i j : ι} (h : Function.Bijective (C.d i j).hom) :
-    n i = n j := by
-  simpa using (finrank_eq_card_basis ((c i).map (LinearEquiv.ofBijective _ h))).symm.trans
-    (finrank_eq_card_basis (c j))
+/-- Bases `e` of `Cᵢ` and `e'` of `Cⱼ`, two terms of a complex joined by a bijective
+differential, have the same size. -/
+theorem card_eq_card_of_bijective_d {C : HomologicalComplex (ModuleCat F) s} {i j : ι} {p q : ℕ}
+    (e : Basis (Fin p) F (C.X i)) (e' : Basis (Fin q) F (C.X j))
+    (h : Function.Bijective (C.d i j).hom) : p = q := by
+  simpa using (finrank_eq_card_basis (e.map (LinearEquiv.ofBijective _ h))).symm.trans
+    (finrank_eq_card_basis e')
 
 /-- The signs `(-1) ^ (dim Bⱼ · f j)`, where `Bⱼ` is the space of boundaries of a bounded based
 complex `C` in degree `j`, have finite multiplicative support. -/
