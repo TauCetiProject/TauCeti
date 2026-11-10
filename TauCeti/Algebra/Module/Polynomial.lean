@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.Support
-public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
