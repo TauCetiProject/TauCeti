@@ -17,8 +17,9 @@ positivity of
 `Hess f(v, v) + Hess f(Jv, Jv)`
 
 away from zero bounds the Morse index by the complex dimension. The space need not be
-finite-dimensional: in the infinite-dimensional case `Module.finrank` and the complex dimension
-are `0`, and the bounds are stated with these zero values. This file states the result using
+finite-dimensional, but the infinite-dimensional case is trivial: there `Module.finrank`, the
+complex dimension and the Morse index all take the default value `0`, so both bounds read `0 ≤ 0`.
+This file states the result using
 Tau Ceti's actual Hessian quadratic form and Morse index. The hypothesis is the pointwise
 quadratic-form identity supplied by strict Levi positivity at a critical point.
 

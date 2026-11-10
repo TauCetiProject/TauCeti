@@ -17,9 +17,10 @@ every submodule on which `Q` is nonpositive is totally real for `J`. No almost-c
 finite-dimensionality, division, linear order, or inner product is required. Over such a field
 in finite dimension, `J` is then automatically injective on such a subspace, so the subspace has
 at most half the ambient dimension. With a linear order, the negative index of inertia of `Q`
-has the same bound, also without finite-dimensionality, where `Module.finrank` is `0`. The
-inertia bound applies the subspace bound to the maximal negative-definite subspace provided by
-Mathlib's `QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
+has the same bound, also without finite-dimensionality, where it holds trivially because
+`Module.finrank` and the negative index are both `0`. The inertia bound applies the subspace
+bound to the maximal negative-definite subspace provided by Mathlib's
+`QuadraticForm.exists_finrank_eq_sigNeg_and_negDef`.
 
 The complex-dimension consequences for almost complex structures are in
 `TauCeti.Geometry.Symplectic.QuadraticForm`.
