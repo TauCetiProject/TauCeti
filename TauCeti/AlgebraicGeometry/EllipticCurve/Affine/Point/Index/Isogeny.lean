@@ -73,8 +73,9 @@ Near the point at infinity `φ` divides the valuation of `x` by `v c ^ 2`
 (`TauCeti.Isogeny.exists_valuation_xCoord_pointMap_mul_sq`), and a level is cut out by the
 valuation of `x` (`WeierstrassCurve.mem_map_filtration_formalPointHomAdicCompletion_iff`), so
 `φ(E₁,k) ⊆ E₂,j`; the dual, whose constant `c'` satisfies `c c' = n`, carries `E₂,j` back into
-`E₁,(k+e) = n E₁,k`, where `n O_u = 𝔪_u ^ e`, and the deep levels have no `n`-torsion. This splits
-the local factor into the differential constant, through `[E₂,k : E₂,j] = |c|_u⁻¹` when `c` is
+`E₁,(k+e) = n E₁,k`, where `n O_u = 𝔪_u ^ e`, and the deep levels have no `n`-torsion. When the
+level indices are finite, this splits the local factor into the differential constant,
+through `[E₂,k : E₂,j] = |c|_u⁻¹` when `c` is
 integral, and the indices `[E(F_u) : E_k(F_u)]` of the levels, which involve the nonsingular
 reduction and the Tamagawa number (Silverman VII.6).
 
@@ -98,7 +99,8 @@ reduction and the Tamagawa number (Silverman VII.6).
   `k`.
 * `TauCeti.Isogeny.eventually_map_filtration_inf_ker_pointMapHom_eq_bot`: `φ` is injective on
   `E₁,k` for all large `k`.
-* `TauCeti.Isogeny.eventually_index_range_pointMapHom_mul_index_map_filtration`: the local
+* `TauCeti.Isogeny.eventually_index_range_pointMapHom_mul_index_map_filtration`: the
+  cross-multiplied index identity displayed above; when the level indices are finite, the local
   cokernel/kernel ratio of `φ` is `[E₂ : E₂,j] / [E₁ : E₁,k]`.
 
 ## References
@@ -447,10 +449,12 @@ all large `k`,
 
 `[E₂(F_u) : φ E₁(F_u)] · [E₁(F_u) : E_k(F_u)] = [E₂(F_u) : E_j(F_u)] · #E₁(F_u)[φ]`,
 
-where `v c · exp j = exp k`, that is `j = k + ord(c)`. So the local factor
-`[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ]` of `φ` at `u`, including at a place dividing `deg φ`, is
-`[E₂(F_u) : E_j(F_u)] / [E₁(F_u) : E_k(F_u)]`. No finiteness is asserted: indices are read as
-`0` when infinite. For minimal models the indices of the levels are finite when the residue field
+where `v c · exp j = exp k`, that is `j = k + ord(c)`. This cross-multiplied identity holds
+without finiteness assumptions: indices are read as `0` when infinite. When the level indices
+are finite, it gives the local factor
+`[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ] = [E₂(F_u) : E_j(F_u)] / [E₁(F_u) : E_k(F_u)]`,
+including at a place dividing `deg φ`.
+For minimal models the indices of the levels are finite when the residue field
 is, since then the kernel of reduction has finite index
 (`WeierstrassCurve.finiteIndex_kerReduction`). -/
 theorem eventually_index_range_pointMapHom_mul_index_map_filtration {c : F_u}
