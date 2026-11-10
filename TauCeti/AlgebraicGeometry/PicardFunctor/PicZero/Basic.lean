@@ -41,7 +41,9 @@ curve, so for such `f` the fibre degree is additive at every point
 products and inverses (`mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
 `inv_mem_relativePicardDegreeZeroSubfunctor_obj`). It is then a presheaf of commutative groups
 `relativePicardDegreeZeroFunctor`, with inclusion `relativePicardDegreeZeroFunctorι` into the
-relative Picard presheaf. For a scheme over a field which is not a
+relative Picard presheaf. By additivity, a section of `Pic(X_T) / Pic(T)` killed by a nonzero
+integer `n` has degree zero on every geometric fibre, so the `n`-torsion of `Pic⁰_{X/S}(T)` is
+that of `Pic(X_T) / Pic(T)`. For a scheme over a field which is not a
 proper curve, `LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler
 characteristic `Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but
 they are only the degree and `Pic⁰` for families of curves. Local constancy of the degree in flat
@@ -71,6 +73,10 @@ families and representability are not treated here.
   sections built by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.mk`, and morphisms
   into it lifted by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.lift` and compared
   by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.hom_ext`.
+* `TauCeti.AlgebraicGeometry.mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one`: for such
+  a family, a section of `Pic(X_T) / Pic(T)` killed by a nonzero integer lies in `Pic⁰_{X/S}(T)`;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroTorsionMulEquiv`: hence, for every nonzero
+  integer `n`, the `n`-torsion of `Pic⁰_{X/S}(T)` is the `n`-torsion of `Pic(X_T) / Pic(T)`.
 
 ## References
 
@@ -244,6 +250,17 @@ lemma relativePicardFiberDegree_inv_of_smooth [IsProper f] [SmoothOfRelativeDime
   rw [eq_neg_iff_add_eq_zero, add_comm, ← relativePicardFiberDegree_mul_of_smooth, mul_inv_cancel,
     relativePicardFiberDegree_one]
 
+/-- For a smooth proper geometrically connected family of curves, the fibre degree of an integer
+power of a section of `Pic(X_T) / Pic(T)` is the corresponding multiple of its fibre degree. -/
+theorem relativePicardFiberDegree_zpow_of_smooth [IsProper f] [SmoothOfRelativeDimension 1 f]
+    [GeometricallyConnected f] {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
+    (ξ : Spec (.of Ω) ⟶ T.unop.left) (c : (relativePicardPresheaf f).obj T) (n : ℤ) :
+    relativePicardFiberDegree f ξ (c ^ n) = n * relativePicardFiberDegree f ξ c := by
+  let φ : (relativePicardPresheaf f).obj T →* Multiplicative ℤ :=
+    MonoidHom.mk' (fun c ↦ .ofAdd (relativePicardFiberDegree f ξ c)) fun c d ↦ by
+      rw [relativePicardFiberDegree_mul_of_smooth, ofAdd_add]
+  simpa [φ] using congrArg Multiplicative.toAdd (map_zpow φ c n)
+
 /-- **On a fibre which is a curve, degree zero is membership in `Pic⁰` of the fibre.** If the
 fibre `X_ξ = Spec Ω ×_S X` over `ξ : Spec Ω ⟶ T` is a proper integral curve over `Ω` whose
 codimension-one local rings are discrete valuation rings and whose `H¹(X_ξ, 𝒪)` is
@@ -337,6 +354,18 @@ lemma inv_mem_relativePicardDegreeZeroSubfunctor_obj [IsProper f]
     {c : (relativePicardPresheaf f).obj T} (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
     c⁻¹ ∈ (relativePicardDegreeZeroSubfunctor f).obj T := fun Ω _ _ ξ ↦ by
   rw [relativePicardFiberDegree_inv_of_smooth, hc Ω ξ, neg_zero]
+
+/-- **Torsion classes have degree zero.** For a smooth proper geometrically connected family of
+curves, a section of `Pic(X_T) / Pic(T)` killed by a nonzero integer has degree zero on every
+geometric fibre, so it lies in `Pic⁰_{X/S}(T)`. -/
+theorem mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one [IsProper f]
+    [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f] {T : (Over S)ᵒᵖ}
+    {c : (relativePicardPresheaf f).obj T} {n : ℤ} (hn : n ≠ 0) (hc : c ^ n = 1) :
+    c ∈ (relativePicardDegreeZeroSubfunctor f).obj T :=
+  (mem_relativePicardDegreeZeroSubfunctor_obj_iff f).mpr fun _ _ _ ξ ↦ by
+    have h := relativePicardFiberDegree_zpow_of_smooth f ξ c n
+    rw [hc, relativePicardFiberDegree_one] at h
+    exact (mul_eq_zero.mp h.symm).resolve_left hn
 
 section Smooth
 
@@ -556,6 +585,56 @@ lemma relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app {T : (Over S)ᵒᵖ}
         ((relativePicardDegreeZeroSubfunctorIsoFunctor f).hom.app T) c =
       relativePicardDegreeZeroFunctor.mk f c.1 c.2 := by
   rfl
+
+/-- **The `n`-torsion of `Pic⁰_{X/S}(T)` is the `n`-torsion of `Pic(X_T) / Pic(T)`** for a smooth
+proper geometrically connected family of curves and a nonzero integer `n`. The equivalence is
+the inclusion `relativePicardDegreeZeroFunctorι`. -/
+def relativePicardDegreeZeroTorsionMulEquiv (T : (Over S)ᵒᵖ) {n : ℤ} (hn : n ≠ 0) :
+    (zpowGroupHom n : (relativePicardDegreeZeroFunctor f).obj T →* _).ker ≃*
+      (zpowGroupHom n : (relativePicardPresheaf f).obj T →* _).ker :=
+  let φ : (zpowGroupHom n : (relativePicardDegreeZeroFunctor f).obj T →* _).ker →*
+      (zpowGroupHom n : (relativePicardPresheaf f).obj T →* _).ker :=
+    (((relativePicardDegreeZeroFunctorι f).app T).hom.comp (Subgroup.subtype _)).codRestrict _
+      fun c ↦ by
+        have hc : (c : (relativePicardDegreeZeroFunctor f).obj T) ^ n = 1 :=
+          MonoidHom.mem_ker.mp c.2
+        rw [MonoidHom.mem_ker, zpowGroupHom_apply, MonoidHom.comp_apply, Subgroup.coe_subtype,
+          ← map_zpow, hc, map_one]
+  MulEquiv.ofBijective φ ⟨fun c d h ↦ Subtype.ext
+    (relativePicardDegreeZeroFunctorι_app_injective f T
+      (congrArg (fun x : (zpowGroupHom n : (relativePicardPresheaf f).obj T →* _).ker ↦
+        (x : (relativePicardPresheaf f).obj T)) h)), fun d ↦ by
+      have hd : (d : (relativePicardPresheaf f).obj T) ^ n = 1 := MonoidHom.mem_ker.mp d.2
+      -- `d` is a section of `Pic⁰_{X/S}(T)` because it is torsion.
+      let c := relativePicardDegreeZeroFunctor.mk f d
+        (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn hd)
+      have hιc : (relativePicardDegreeZeroFunctorι f).app T c = d :=
+        relativePicardDegreeZeroFunctorι_app_mk f _ _
+      have hc : c ^ n = 1 := relativePicardDegreeZeroFunctorι_app_injective f T (by
+        rw [map_zpow, hιc, hd, map_one])
+      exact ⟨⟨c, MonoidHom.mem_ker.mpr hc⟩, Subtype.ext hιc⟩⟩
+
+/-- The torsion comparison `relativePicardDegreeZeroTorsionMulEquiv` is the inclusion of
+`Pic⁰_{X/S}(T)` into `Pic(X_T) / Pic(T)`. -/
+@[simp]
+lemma coe_relativePicardDegreeZeroTorsionMulEquiv_apply (T : (Over S)ᵒᵖ) {n : ℤ} (hn : n ≠ 0)
+    (c : (zpowGroupHom n : (relativePicardDegreeZeroFunctor f).obj T →* _).ker) :
+    (relativePicardDegreeZeroTorsionMulEquiv f T hn c : (relativePicardPresheaf f).obj T) =
+      (relativePicardDegreeZeroFunctorι f).app T c :=
+  (rfl)
+
+/-- The inverse torsion comparison keeps the underlying section of `Pic(X_T) / Pic(T)`. -/
+@[simp]
+lemma coe_relativePicardDegreeZeroTorsionMulEquiv_symm_apply (T : (Over S)ᵒᵖ) {n : ℤ}
+    (hn : n ≠ 0) (d : (zpowGroupHom n : (relativePicardPresheaf f).obj T →* _).ker) :
+    ((relativePicardDegreeZeroTorsionMulEquiv f T hn).symm d :
+        (relativePicardDegreeZeroFunctor f).obj T) =
+      relativePicardDegreeZeroFunctor.mk f d
+        (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn
+          (MonoidHom.mem_ker.mp d.2)) := by
+  apply relativePicardDegreeZeroFunctorι_app_injective f T
+  rw [relativePicardDegreeZeroFunctorι_app_mk,
+    ← coe_relativePicardDegreeZeroTorsionMulEquiv_apply f T hn, MulEquiv.apply_symm_apply]
 
 end Smooth
 
