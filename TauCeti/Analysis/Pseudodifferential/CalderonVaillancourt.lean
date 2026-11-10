@@ -689,7 +689,7 @@ extends from Schwartz functions to a bounded operator `H⁰(ℝⁿ; V) → H⁰(
 
 The norms of `V` and `W` need not come from inner products: isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and
 `e₂ : W ≃L[ℂ] ℂ^l` reduce the statement
-(`TauCeti.Symbol.exists_quantizeSobolev_of_map_arrowCongr`) to
+(`TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`) to
 `TauCeti.Symbol.exists_quantizeUniformOrderZeroLp` for the conjugated symbol `e₂ a e₁⁻¹`. -/
 theorem exists_quantizeUniformOrderZero (a : Symbol n V W 0) (ha : a.IsUniform) :
     ∃ T : H^{0}(CoordinateSpace n, V) →L[ℂ] H^{0}(CoordinateSpace n, W),
@@ -706,11 +706,11 @@ theorem exists_quantizeUniformOrderZero (a : Symbol n V W 0) (ha : a.IsUniform) 
   set b := a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)
   obtain ⟨T₀, hT₀⟩ := b.exists_quantizeUniformOrderZeroLp (ha.map _)
   -- On `H⁰ = L²` the operator is `T₀`.
-  refine a.exists_quantizeSobolev_of_map_arrowCongr e₁ e₂
-    ⟨((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W' 0 2).symm.toContinuousLinearEquiv :
+  refine ⟨_, toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply a e₁ e₂
+    (T := ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W' 0 2).symm.toContinuousLinearEquiv :
       Lp W' 2 (volume : Measure (CoordinateSpace n)) →L[ℂ] H^{0}(CoordinateSpace n, W')) ∘L
     T₀ ∘L ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V' 0 2).toContinuousLinearEquiv :
-      H^{0}(CoordinateSpace n, V') →L[ℂ] Lp V' 2 (volume : Measure (CoordinateSpace n))),
+      H^{0}(CoordinateSpace n, V') →L[ℂ] Lp V' 2 (volume : Measure (CoordinateSpace n))))
     fun u φ ↦ ?_⟩
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
