@@ -236,7 +236,7 @@ theorem eq_localHomologyMap_fundamentalClassOn {S : Set M} (hS : IsCompact S) {T
       (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom ?_
   have hxT : ι x ∈ T := h.symm.subset hx
   rw [← ConcreteCategory.comp_apply,
-    ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hx hxT,
+    ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hxT,
     ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id,
     ModuleCat.id_apply, hγ x hxT]
 

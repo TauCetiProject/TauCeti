@@ -122,15 +122,15 @@ lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j
   rw [Iso.inv_comp_eq, Category.comp_id, localHomologyIsoOfIsOpenEmbedding_hom]
 
 /-- **Naturality of the local isomorphisms of an open embedding.** For `j ⁻¹' T ⊆ S` and a point
-`x ∈ S` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by
-restriction to `j x` is restriction to `x` followed by `localHomologyIsoOfIsOpenEmbedding`. -/
+`x` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by restriction
+to `j x` is restriction to `x` followed by `localHomologyIsoOfIsOpenEmbedding`. -/
 @[reassoc]
 lemma localHomologyMap_comp_localHomologyRestriction_singleton [T1Space N] {j : M → N}
-    (hj : IsOpenEmbedding j) {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) {x : M} (hxS : x ∈ S)
-    (hxT : j x ∈ T) (k : ℕ) :
+    (hj : IsOpenEmbedding j) {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) {x : M} (hxT : j x ∈ T)
+    (k : ℕ) :
     localHomologyMap R ⟨j, hj.continuous⟩ h k ≫
         localHomologyRestriction R (singleton_subset_iff.2 hxT) k =
-      localHomologyRestriction R (singleton_subset_iff.2 hxS) k ≫
+      localHomologyRestriction R (singleton_subset_iff.2 (h (mem_preimage.2 hxT))) k ≫
         (localHomologyIsoOfIsOpenEmbedding R hj x k).hom := by
   rw [localHomologyMap_comp_localHomologyRestriction, localHomologyIsoOfIsOpenEmbedding_hom,
     localHomologyRestriction_comp_localHomologyMap]

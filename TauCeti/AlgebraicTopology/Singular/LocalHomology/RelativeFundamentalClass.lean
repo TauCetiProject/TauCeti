@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
-public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Deformation
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Triple
 
@@ -33,10 +33,11 @@ interior. It is written in the local homology `Hₙ(X, X ∖ ι(M); ℤ)` of `X`
 The proof follows Hatcher. For `0 < t`, let `Cₜ = c(N × [0, t))` be the collar of depth less than
 `t` and `Kₜ = X ∖ Cₜ`. Then `Kₜ` is a compact subset of `ι(M)`, and the restriction
 `Hₙ(X, ∂X) ⟶ Hₙ(X, X ∖ Kₜ) = Hₙ(X, Cₜ)` is an isomorphism, by the long exact sequence of the
-triple `(X, Cₜ, ∂X)`: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`, so
-`H_*(Cₜ, ∂X)` vanishes. By excision, `Hₙ(X, X ∖ Kₜ) ≅ Hₙ(M, M ∖ ι⁻¹(Kₜ))`, which carries the
-fundamental class of `M` along the compact set `ι⁻¹(Kₜ)`. Every interior point lies in `Kₜ` for
-`t` small enough, and these classes are compatible as `t` decreases.
+triple `(X, Cₜ, ∂X)`: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`
+(`TauCeti.IsCollar.collarDeformation`), so `H_*(Cₜ, ∂X)` vanishes. By excision,
+`Hₙ(X, X ∖ Kₜ) ≅ Hₙ(M, M ∖ ι⁻¹(Kₜ))`, which carries the fundamental class of `M` along the compact
+set `ι⁻¹(Kₜ)`. Every interior point lies in `Kₜ` for `t` small enough, and these classes are
+compatible as `t` decreases.
 
 The relative cycles representing this class are the fundamental chains of `X` relative to its
 boundary. Through the cubical–singular comparison,
@@ -85,144 +86,24 @@ variable {X M : Type} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι 
 
 section Collar
 
-/-! ### The collar of depth less than `t` -/
-
-variable {c : N × Ico (0 : ℝ) 1 → X}
-
-/-- The part `c(N × [0, t))` of the collar `c` of depth less than `t`. -/
-private def collarPart (c : N × Ico (0 : ℝ) 1 → X) (t : ℝ) : Set X :=
-  c '' {p | (p.2 : ℝ) < t}
-
-variable (hc : IsCollar f c)
-include hc
-
-private lemma isOpen_collarPart (t : ℝ) : IsOpen (collarPart c t) :=
-  hc.isOpenEmbedding.isOpenMap _ (isOpen_lt (by fun_prop) continuous_const)
-
-private lemma range_subset_collarPart {t : ℝ} (ht : 0 < t) : range f ⊆ collarPart c t := by
-  rintro _ ⟨y, rfl⟩
-  exact ⟨(y, ⟨0, by norm_num⟩), ht, hc.apply_zero y⟩
-
-omit [TopologicalSpace X] [TopologicalSpace N] hc in
-private lemma collarPart_mono {s t : ℝ} (h : s ≤ t) : collarPart c s ⊆ collarPart c t :=
-  image_mono fun _ hp ↦ lt_of_lt_of_le hp h
-
-variable (hιf : range ι = (range f)ᶜ)
-include hιf
+variable {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
+include hc hιf
 
 private lemma compl_collarPart_subset_range {t : ℝ} (ht : 0 < t) :
     (collarPart c t)ᶜ ⊆ range ι := by
   rw [hιf]
-  exact compl_subset_compl.2 (range_subset_collarPart hc ht)
-
-/-- Every interior point lies outside the collar of some depth `t ≤ 1 / 2`. -/
-private lemma exists_notMem_collarPart (x : X) (hx : x ∈ range ι) :
-    ∃ t, 0 < t ∧ t ≤ 1 / 2 ∧ x ∉ collarPart c t := by
-  by_cases hxc : x ∈ range c
-  · obtain ⟨q, rfl⟩ := hxc
-    -- The depth of `x = c q` is positive, since the zero slice of the collar is the boundary.
-    have hq : 0 < (q.2 : ℝ) := by
-      refine lt_of_le_of_ne q.2.2.1 fun h ↦ ?_
-      have h₀ : q = (q.1, ⟨0, by norm_num⟩) := Prod.ext rfl (Subtype.ext h.symm)
-      rw [hιf, h₀, hc.apply_zero] at hx
-      exact hx (mem_range_self _)
-    refine ⟨min (q.2 : ℝ) (1 / 2), lt_min hq (by norm_num), min_le_right _ _, ?_⟩
-    rintro ⟨p, hp, hpq⟩
-    rw [hc.isOpenEmbedding.injective hpq] at hp
-    exact (min_le_left (q.2 : ℝ) (1 / 2)).not_gt hp
-  · exact ⟨1 / 2, by norm_num, le_rfl, fun ⟨p, _, hp⟩ ↦ hxc ⟨p, hp⟩⟩
-
-/-! ### The collar deforms onto the boundary -/
-
-/-- The collar coordinates of a point of the collar of depth less than `t`. -/
-private def collarCoord {t : ℝ} :
-    C(((collarPart c t)ᶜᶜ : Set X), N × Ico (0 : ℝ) 1) :=
-  ⟨fun x ↦ hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm
-      ⟨x, image_subset_range _ _ (of_not_not x.2 : (x : X) ∈ collarPart c t)⟩,
-    hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm.continuous.comp
-      (continuous_subtype_val.subtype_mk _)⟩
+  exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
 
 omit hιf in
-private lemma apply_collarCoord {t : ℝ} (x : ((collarPart c t)ᶜᶜ : Set X)) :
-    c (collarCoord hc x) = x :=
-  congrArg Subtype.val (hc.isOpenEmbedding.isEmbedding.toHomeomorph.apply_symm_apply
-    ⟨x, image_subset_range _ _ (of_not_not x.2 : (x : X) ∈ collarPart c t)⟩)
-
-omit hιf in
-private lemma collarCoord_apply {t : ℝ} (x : ((collarPart c t)ᶜᶜ : Set X))
-    (p : N × Ico (0 : ℝ) 1) (hp : c p = x) : collarCoord hc x = p :=
-  hc.isOpenEmbedding.injective ((apply_collarCoord hc x).trans hp.symm)
-
-omit hιf in
-private lemma collarCoord_lt {t : ℝ} (x : ((collarPart c t)ᶜᶜ : Set X)) :
-    ((collarCoord hc x).2 : ℝ) < t := by
-  obtain ⟨p, hp, hpx⟩ := (of_not_not x.2 : (x : X) ∈ collarPart c t)
-  rw [collarCoord_apply hc x p hpx]
-  exact hp
-
-/-- The point at the same base and at depth `τ` times the depth of `x`. -/
-private def collarScale {t : ℝ} (τ : unitInterval) (x : ((collarPart c t)ᶜᶜ : Set X)) : X :=
-  c ((collarCoord hc x).1, ⟨τ * (collarCoord hc x).2, mul_nonneg τ.2.1 (collarCoord hc x).2.2.1,
-    (mul_le_of_le_one_left (collarCoord hc x).2.2.1 τ.2.2).trans_lt (collarCoord hc x).2.2.2⟩)
-
-omit hιf in
-private lemma collarScale_mem {t : ℝ} (τ : unitInterval) (x : ((collarPart c t)ᶜᶜ : Set X)) :
-    collarScale hc τ x ∈ (collarPart c t)ᶜᶜ := by
-  rw [compl_compl]
-  exact ⟨_, (mul_le_of_le_one_left (collarCoord hc x).2.2.1 τ.2.2).trans_lt
-    (collarCoord_lt hc x), rfl⟩
-
-omit hιf in
-private lemma continuous_collarScale {t : ℝ} :
-    Continuous fun q : unitInterval × ((collarPart c t)ᶜᶜ : Set X) ↦ collarScale hc q.1 q.2 := by
-  have h : Continuous fun q : unitInterval × ((collarPart c t)ᶜᶜ : Set X) ↦ collarCoord hc q.2 :=
-    (map_continuous _).comp continuous_snd
-  exact hc.isOpenEmbedding.continuous.comp (h.fst.prodMk (((continuous_subtype_val.comp
-    continuous_fst).mul (continuous_subtype_val.comp h.snd)).subtype_mk _))
-
-omit hιf in
-private lemma collarScale_zero {t : ℝ} (x : ((collarPart c t)ᶜᶜ : Set X)) :
-    collarScale hc 0 x = f (collarCoord hc x).1 := by
-  rw [collarScale, ← hc.apply_zero]
-  exact congrArg c (Prod.ext rfl (Subtype.ext (zero_mul _)))
-
-omit hιf in
-private lemma collarScale_one {t : ℝ} (x : ((collarPart c t)ᶜᶜ : Set X)) :
-    collarScale hc 1 x = x := by
-  refine Eq.trans ?_ (apply_collarCoord hc x)
-  rw [collarScale]
-  exact congrArg c (Prod.ext rfl (Subtype.ext (one_mul _)))
-
-omit hιf in
-/-- The deformation fixes the boundary, whose points have depth `0`. -/
-private lemma collarScale_of_mem_range {t : ℝ} (τ : unitInterval)
-    (x : ((collarPart c t)ᶜᶜ : Set X)) (hx : (x : X) ∈ range f) :
-    collarScale hc τ x = f (collarCoord hc x).1 := by
-  obtain ⟨y, hy⟩ := hx
-  have h₀ : ((collarCoord hc x).2 : ℝ) = 0 := by
-    rw [collarCoord_apply hc x _ ((hc.apply_zero y).trans hy)]
-  rw [collarScale, ← hc.apply_zero]
-  exact congrArg c (Prod.ext rfl (Subtype.ext ((congrArg ((τ : ℝ) * ·) h₀).trans (mul_zero _))))
-
-/-- The relative homology of the collar `Cₜ` of positive depth modulo the boundary vanishes: the
-collar coordinates deform `Cₜ` onto `∂X = f(N)` relative to `∂X`. -/
-private lemma isZero_singularHomology_collarPart {t : ℝ}
-    (hsub : (range ι)ᶜ ⊆ (collarPart c t)ᶜᶜ) (k : ℕ) :
-    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hsub).singularHomology
+/-- The relative homology of a pair `(B, A)` with `A = ∂X = f(N)` and `B` the collar `Cₜ` of
+positive depth vanishes: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`. -/
+private lemma isZero_singularHomology_of_eq_collarPart {A B : Set X} (hAB : A ⊆ B)
+    (hA : A = range f) {t : ℝ} (ht : 0 < t) (hB : B = collarPart c t) (k : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hAB).singularHomology
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) k) := by
-  have hf (y : N) : f y ∈ (range ι)ᶜ := by
-    rw [hιf, compl_compl]
-    exact mem_range_self y
-  let r : C(((collarPart c t)ᶜᶜ : Set X), ((range ι)ᶜ : Set X)) :=
-    ⟨fun x ↦ ⟨f (collarCoord hc x).1, hf _⟩,
-      (hc.continuous.comp (map_continuous (collarCoord hc)).fst).subtype_mk _⟩
-  refine TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel hsub r
-    { toFun := fun q ↦ ⟨collarScale hc q.1 q.2, collarScale_mem hc q.1 q.2⟩
-      continuous_toFun := (continuous_collarScale (t := t) hc).subtype_mk _
-      map_zero_left := fun x ↦ Subtype.ext (collarScale_zero hc x)
-      map_one_left := fun x ↦ Subtype.ext (collarScale_one hc x)
-      prop' := fun τ x hx ↦ Subtype.ext (collarScale_of_mem_range hc τ x
-        (by rw [← compl_compl (range f), ← hιf]; exact hx)) } _ k
+  subst hA hB
+  exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel _ _
+    (hc.collarDeformation ht) _ k
 
 /-- **Restriction to the complement of a collar is an isomorphism.** For `0 < t`, the restriction
 `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` from the local homology along `ι(M)` to the local homology along
@@ -232,8 +113,9 @@ private lemma isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 
       (compl_collarPart_subset_range hc hιf ht) k) := by
   have hsub : (range ι)ᶜ ⊆ (collarPart c t)ᶜᶜ := by
     rw [compl_compl, hιf, compl_compl]
-    exact range_subset_collarPart hc ht
-  have hz (m : ℕ) := isZero_singularHomology_collarPart hc hιf hsub m
+    exact hc.range_subset_collarPart ht
+  have hz (m : ℕ) := isZero_singularHomology_of_eq_collarPart hc hsub
+    (by rw [hιf, compl_compl]) ht (compl_compl _) m
   have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
     (TopTriple.ofSubset (X := TopCat.of X) hsub) (ModuleCat.of ℤ (ULift.{0} ℤ)) k (hz k)
     fun m _ ↦ hz m
@@ -253,16 +135,8 @@ include hι hc hιf
 
 private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
     IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
-  hι.isInducing.isCompact_preimage' (isOpen_collarPart hc t).isClosed_compl.isCompact
+  hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
     (compl_collarPart_subset_range hc hιf ht)
-
-/-- **Excision onto the interior.** For `0 < t`, the open embedding `ι` induces an isomorphism
-`Hₖ(M, M ∖ ι⁻¹(Kₜ)) ≅ Hₖ(X, X ∖ Kₜ)`. -/
-private lemma isIso_localHomologyMap_compl_collarPart {t : ℝ} (ht : 0 < t) (k : ℕ) :
-    IsIso (localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-      ⟨ι, hι.continuous⟩ (subset_refl (ι ⁻¹' (collarPart c t)ᶜ)) k) :=
-  isIso_localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) _ hι rfl
-    (isOpen_collarPart hc t).isClosed_compl (compl_collarPart_subset_range hc hιf ht) k
 
 end CollarInterior
 
@@ -302,7 +176,7 @@ private lemma localHomologyRestriction_singleton_of_eq_collarFundamentalClass {t
       (isCompact_preimage_compl_collarPart hι hc hιf ht) (x := x) hx,
     ← ConcreteCategory.comp_apply,
     ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι
-      (subset_refl (ι ⁻¹' (collarPart c t)ᶜ)) (mem_preimage.2 hx) hx,
+      (subset_refl (ι ⁻¹' (collarPart c t)ᶜ)) hx,
     ConcreteCategory.comp_apply, ← hγ, ← ConcreteCategory.comp_apply,
     localHomologyRestriction_comp]
 
@@ -354,14 +228,17 @@ private theorem existsUnique_fundamentalClassRel (hf : IsCollared f) :
   have := isIso_localHomologyRestriction_compl_collarPart hc hιf h₂ n
   refine ⟨inv r (o.collarFundamentalClass hn hι hιf hc h₂), fun x ↦ ?_, fun γ hγ ↦ ?_⟩
   · -- The point `ι x` lies in `Kₜ` for some `t ≤ 1 / 2`.
-    obtain ⟨t, ht, ht₂, hxt⟩ := exists_notMem_collarPart hc hιf (ι x) (mem_range_self x)
-    refine o.localHomologyRestriction_singleton_of_eq_collarFundamentalClass hn hι hιf hc ht
-      (o.localHomologyRestriction_eq_collarFundamentalClass_of_le hn hι hιf hc ht ht₂ ?_) hxt
+    obtain ⟨t, ht, hxt⟩ := hc.exists_notMem_collarPart (x := ι x)
+      (by rw [← mem_compl_iff, ← hιf]; exact mem_range_self x)
+    have ht' : 0 < min t (1 / 2) := lt_min ht h₂
+    refine o.localHomologyRestriction_singleton_of_eq_collarFundamentalClass hn hι hιf hc ht'
+      (o.localHomologyRestriction_eq_collarFundamentalClass_of_le hn hι hιf hc ht'
+        (min_le_right _ _) ?_) fun h ↦ hxt (collarPart_mono (min_le_left _ _) h)
     rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
   · -- The image of `γ` in `Hₙ(X, X ∖ K₁/₂)` restricts to the local orientations along `K₁/₂`.
     have hγ' : r γ = o.collarFundamentalClass hn hι hιf hc h₂ := by
       refine o.eq_localHomologyMap_fundamentalClassOn hn hι _ rfl
-        (isOpen_collarPart hc _).isClosed_compl (compl_collarPart_subset_range hc hιf h₂)
+        (hc.isOpen_collarPart _).isClosed_compl (compl_collarPart_subset_range hc hιf h₂)
         fun x hx ↦ ?_
       rw [← ConcreteCategory.comp_apply, localHomologyRestriction_comp]
       exact hγ x
