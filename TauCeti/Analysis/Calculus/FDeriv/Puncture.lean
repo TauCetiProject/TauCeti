@@ -44,10 +44,10 @@ variable [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
 
 open Classical in
 /-- A continuous map on a punctured ball has a continuous extension at the centre if its
-sphere images shrink and the derivative along one unit radius is integrable. Compactness of
-spheres is used to ensure boundedness of their images. -/
+sphere images shrink and the derivative along one ray, in any nonzero direction, is integrable.
+Compactness of spheres is used to ensure boundedness of their images. -/
 theorem exists_continuousOn_update_of_integrableOn_radial_deriv [ProperSpace E]
-    {u : E → V} {a v : E} {R : ℝ} (hv : ‖v‖ = 1) (hR : 0 < R)
+    {u : E → V} {a v : E} {R : ℝ} (hv : v ≠ 0) (hR : 0 < R)
     (hu : ContinuousOn u (ball a R \ {a}))
     (hr : DifferentiableOn ℝ (fun t : ℝ ↦ u (a + t • v)) (Ioo 0 R))
     (hint : IntegrableOn (deriv (fun t : ℝ ↦ u (a + t • v))) (Ioo 0 R))
@@ -65,8 +65,7 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv [ProperSpace E]
       simp only [dist_self] at this
       exact ht.1.ne this
     exact ((isCompact_sphere a t).image_of_continuousOn (hu.mono hsub)).isBounded
-  have hlim := tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere
-    (norm_ne_zero_iff.mp (by simp [hv])) hq hb hd
+  have hlim := tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere hv hq hb hd
   refine ⟨q, hlim, continuousOn_update_iff.mpr ⟨hu, fun _ ↦ ?_⟩⟩
   exact hlim.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))
 
@@ -96,7 +95,7 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv_of_tendsto
   have hdiam := tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto hdiff hd
   simpa only [Complex.real_smul, mul_one] using
     exists_continuousOn_update_of_integrableOn_radial_deriv
-      (v := (1 : ℂ)) (by simp) hR hu.continuousOn
+      (v := (1 : ℂ)) one_ne_zero hR hu.continuousOn
       (by simpa only [Complex.real_smul, mul_one] using hr)
       (by simpa only [Complex.real_smul, mul_one] using hint) hdiam
 
