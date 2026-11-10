@@ -460,7 +460,7 @@ theorem exists_term_eq
     tendsto_atBot_add_const_left atTop m <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
   obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (a j)
   refine ⟨⟨Symbol.inclusion (by simp) b, a, χ, fun N => ?_⟩, rfl⟩
-  obtain ⟨r, hr⟩ := hb N
+  obtain ⟨r, hr⟩ := Symbol.isAsymptoticSum_iff.1 hb N
   exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
 
 /-- Every sequence of homogeneous terms of degrees `m - j` is the expansion of a classical symbol of
