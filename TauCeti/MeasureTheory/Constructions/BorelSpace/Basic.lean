@@ -61,8 +61,6 @@ theorem isFiniteMeasureOnCompacts_map_of_isProperMap {X Y : Type*}
     · by_cases hμ : μ = 0
       · simp [hμ]
       · rw [Measure.map_of_not_aemeasurable_of_ne_zero hfm hμ]
-        have : Nonempty Y := nonempty_of_not_aemeasurable hfm
-        have : IsFiniteMeasure (dirac (Classical.ofNonempty : Y)) := isFiniteMeasure_dirac
-        exact measure_lt_top _ _
+        exact @measure_lt_top _ _ _ isFiniteMeasure_dirac _
 
 end MeasureTheory.Measure
