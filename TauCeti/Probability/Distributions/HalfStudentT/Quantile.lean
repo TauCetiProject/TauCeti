@@ -118,7 +118,7 @@ theorem tendsto_quantile_halfStudentTMeasure_nhdsGT_zero (hν : 0 < ν) (hs : 0 
     simpa using (hfun.tendsto 0).mono_left nhdsWithin_le_nhds
   have hq := (hcont.continuousAt (isOpen_Ioo.mem_nhds hhalf)).tendsto.comp hlim
   have hscaled := hq.const_mul s
-  rw [quantile_studentTMeasure_half hν, mul_zero] at hscaled
+  rw [quantile_studentTMeasure_half, mul_zero] at hscaled
   apply (EReal.tendsto_coe.2 hscaled).congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
   exact congrArg (fun x : ℝ ↦ (x : EReal)) (quantile_halfStudentTMeasure hν hs hu).symm
