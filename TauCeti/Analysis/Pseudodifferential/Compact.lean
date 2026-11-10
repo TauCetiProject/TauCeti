@@ -143,10 +143,8 @@ theorem exists_isCompactOperator_quantizeSobolev (a : Symbol n V W m)
       BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] _),
     ((isCompactOperator_inclusion_comp_quantizeSobolev (ha.map Φ) h).comp_clm _).clm_comp _,
     toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply e₁ e₂ fun u φ ↦ ?_⟩
-  have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp [Φ]
   rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc]
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, coefficient_map_arrowCongr]
 
 /-- **Operators of negative order are compact.** For a symbol `a` of negative order `m < 0` with
 compact spatial support between finite-dimensional complex normed spaces, the quantization

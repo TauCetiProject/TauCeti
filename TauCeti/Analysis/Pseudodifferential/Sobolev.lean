@@ -706,9 +706,7 @@ theorem exists_quantizeSobolev (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
   refine ⟨BesselPotentialSpace.postcomp _ _ 2 (e₂.symm : _ →L[ℂ] W) ∘L
     (a.map Φ).quantizeSobolev (ha.map Φ) s ∘L BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] _),
     toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply e₁ e₂ fun u φ ↦ ?_⟩
-  have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp [Φ]
-  rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc]
+  rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, coefficient_map_arrowCongr]
 
 end FiniteDimensional
 
