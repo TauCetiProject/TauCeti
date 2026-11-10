@@ -389,6 +389,9 @@ private theorem mfderiv_coe_mfderiv_stiefelTwoReflection (w : stiefel E 2)
     simp [frameFlip_apply]
   rw [← mfderiv_comp_apply w (hι _) hK, hcomp,
     mfderiv_comp_apply w frameFlip.mdifferentiableAt (hι w), ContinuousLinearMap.mfderiv_eq]
+  -- Both sides now read `frameFlip (mfderiv ... w t)`; they differ only in whether the tangent
+  -- space of the model `𝓘(ℝ, Fin 2 → E)` is written as `TangentSpace` or as `Fin 2 → E`, which
+  -- agree by definition.
   rfl
 
 /-- The frame reflection pulls the top form of the normal orientation back to `(-1)ⁿ⁺¹` times
@@ -431,6 +434,9 @@ private theorem mpullback_stiefelTwoReflection_stiefelTopForm
     (stiefelNormalCons (w : Fin 2 → E) τ)
   rw [det_frameFlip, ContinuousLinearMap.coe_coe] at hdet
   rw [coe_stiefelTwoReflection]
+  -- The `set` above could not abstract `τ` inside `fun i ↦ frameFlip (mfderiv ... w (t i))`, the
+  -- form produced by `mfderiv_coe_mfderiv_stiefelTwoReflection`; that family is `frameFlip ∘ τ`
+  -- once `Function.comp` and the local definition `τ` are unfolded.
   change B.det (stiefelNormalCons ![(w : Fin 2 → E) 0, -(w : Fin 2 → E) 1] (frameFlip ∘ τ)) = _
   simp only [stiefelNormalCons, Matrix.cons_val_zero, Matrix.cons_val_one]
   conv_lhs => rw [h₁, h₂, h₃, hneg, hfam]

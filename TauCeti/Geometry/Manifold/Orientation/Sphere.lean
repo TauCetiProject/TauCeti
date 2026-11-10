@@ -52,7 +52,8 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 * `Complex.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent vector `w` of the unit
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
   `Re z Im w - Im z Re w > 0`.
-* `Complex.isOrientationReversingAt_conjSphere`: complex conjugation reverses the orientation of
+* `TauCeti.circleTangentBasis`: a positively oriented tangent basis of the unit circle of `ℂ`.
+* `TauCeti.isOrientationReversingAt_conjSphere`: complex conjugation reverses the orientation of
   the unit circle.
 * `Orientation.sphereOrientation_neg`: reversing `o` reverses the outward-normal orientation.
 * `TauCeti.orientable_sphere`: the unit sphere is orientable.
@@ -294,32 +295,40 @@ theorem _root_.Complex.orientation_eq_orientationAt_sphereOrientation_iff
   generalize mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0) = w
   simp [Complex.mul_im]
 
+/-- A positively oriented tangent basis of the unit circle of `ℂ` at `z`
+(`TauCeti.orientation_circleTangentBasis`). -/
+def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
+  (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) z)
+    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq z).trans
+      (Fintype.card_fin 1))).adjustToOrientation
+      (Complex.orientation.sphereOrientation.orientationAt z)
+
+/-- The tangent basis `TauCeti.circleTangentBasis z` of the unit circle is positively oriented. -/
+theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
+    (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
+  Basis.orientation_adjustToOrientation _ _
+
 /-- Complex conjugation, restricted to the unit circle, reverses its orientation. Its derivative,
 read in `ℂ`, is conjugation, which sends a counterclockwise tangent vector at `z` to a clockwise one
 at `conj z`. -/
-theorem _root_.Complex.isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
+theorem isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
     Manifold.Orientation.IsOrientationReversingAt Complex.orientation.sphereOrientation
-      Complex.orientation.sphereOrientation Complex.conjSphere z := by
-  set κ := Complex.conjSphere
+      Complex.orientation.sphereOrientation conjSphere z := by
+  set κ := conjSphere
   have hι (w : sphere (0 : ℂ) 1) := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1)
     w).mdifferentiableAt one_ne_zero
-  have hκ : ContMDiff (𝓡 1) (𝓡 1) 1 κ := Complex.contMDiff_conjSphere
+  have hκ : ContMDiff (𝓡 1) (𝓡 1) 1 κ := contMDiff_conjSphere
   -- Read in `ℂ`, the derivative of `κ` is conjugation.
   have hd (v : TangentSpace (𝓡 1) z) : mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (κ z)
       (mfderiv (𝓡 1) (𝓡 1) κ z v) =
       (starRingEnd ℂ) (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z v) := by
     rw [← mvfderiv_comp_apply z (hι _) ((hκ z).mdifferentiableAt one_ne_zero),
       show ((↑) ∘ κ : sphere (0 : ℂ) 1 → ℂ) = (Complex.conjCLE : ℂ →L[ℝ] ℂ) ∘ (↑) from
-        funext Complex.coe_conjSphere]
+        funext coe_conjSphere]
     exact (Complex.conjCLE : ℂ →L[ℝ] ℂ).mvfderiv_comp_apply (hι z) v
   -- A positively oriented tangent basis at `z` and its image at `conj z`.
-  let c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
-    (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) z)
-      ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq z).trans
-        (Fintype.card_fin 1))).adjustToOrientation
-      (Complex.orientation.sphereOrientation.orientationAt z)
-  have hc : c.orientation = Complex.orientation.sphereOrientation.orientationAt z :=
-    Basis.orientation_adjustToOrientation _ _
+  set c := circleTangentBasis z
+  have hc := orientation_circleTangentBasis z
   have hpos := (Complex.orientation_eq_orientationAt_sphereOrientation_iff c).1 hc
   have hne : mfderiv (𝓡 1) (𝓡 1) κ z (c 0) ≠ 0 := fun h0 ↦ by
     have := hd (c 0)
@@ -337,9 +346,8 @@ theorem _root_.Complex.isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ)
     ← Orientation.ne_iff_eq_neg _ _
       (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm,
     Ne, Complex.orientation_eq_orientationAt_sphereOrientation_iff, ← hb', hd, not_lt]
-  simp only [κ, Complex.coe_conjSphere, Complex.conj_re, Complex.conj_im]
+  simp only [κ, coe_conjSphere, Complex.conj_re, Complex.conj_im]
   linarith
-
 
 end Circle
 

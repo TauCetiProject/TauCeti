@@ -192,9 +192,15 @@ theorem exists_stiefelRotationFamily_eq {a w : sphere (0 : E) 1} (hwa : w ≠ a)
 
 /-- The involution `((u, v), z) ↦ ((u, -v), conj z)` of `T¹Sⁿ⁺¹ × S¹`, under which the Stiefel
 rotation family is invariant (`TauCeti.stiefelRotationFamily_stiefelRotationInvolution`). -/
-@[expose] def stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+def stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     stiefel E 2 × sphere (0 : ℂ) 1 :=
-  (stiefelTwoReflection x.1, Complex.conjSphere x.2)
+  (stiefelTwoReflection x.1, conjSphere x.2)
+
+/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` is the product of the frame reflection and
+complex conjugation on the unit circle. -/
+theorem stiefelRotationInvolution_eq_prodMap :
+    stiefelRotationInvolution (E := E) = Prod.map stiefelTwoReflection conjSphere :=
+  (rfl)
 
 @[simp]
 theorem fst_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
@@ -202,9 +208,9 @@ theorem fst_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
   (rfl)
 
 @[simp]
-theorem coe_snd_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    ((stiefelRotationInvolution x).2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ) :=
-  Complex.coe_conjSphere x.2
+theorem snd_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    (stiefelRotationInvolution x).2 = conjSphere x.2 :=
+  (rfl)
 
 /-- The map `((u, v), z) ↦ ((u, -v), conj z)` is an involution. -/
 @[simp]
@@ -241,6 +247,6 @@ theorem contMDiff_stiefelRotationInvolution [FiniteDimensional ℝ E] {r : ℕ�
       (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1)) r
       (stiefelRotationInvolution (E := E)) :=
   (contMDiff_stiefelTwoReflection.comp contMDiff_fst).prodMk
-    (Complex.contMDiff_conjSphere.comp contMDiff_snd)
+    (contMDiff_conjSphere.comp contMDiff_snd)
 
 end TauCeti

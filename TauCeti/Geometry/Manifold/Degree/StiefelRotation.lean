@@ -47,7 +47,9 @@ vanishing of its footnote 16.
 
 * `TauCeti.mvfderiv_coe_fst_stiefelRotationFamily_apply`,
   `TauCeti.mvfderiv_coe_snd_stiefelRotationFamily_apply`: the derivative, read in `E`.
-* `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`: it is invertible where `Im z ≠ 0`.
+* `TauCeti.injective_mfderiv_stiefelRotationFamily`,
+  `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`: it is injective, hence invertible, where
+  `Im z ≠ 0`.
 * `TauCeti.isRegularValue_stiefelRotationFamily`: points `(u, q)` with `q ≠ ±u` are regular values.
 * `TauCeti.orientationSign_stiefelRotationInvolution`: the involution has orientation sign `(-1)ⁿ`.
 * `TauCeti.degreeAtRegularValue_stiefelRotationFamily`: the degree is `±(1 + (-1)ⁿ)` there.
@@ -152,92 +154,89 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
   abel
 
 /-- At a point `((u, v), z)` with `Im z ≠ 0`, the derivative of the Stiefel rotation family is
+injective. -/
+theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : ℂ) 1}
+    (hx : (x.2 : ℂ).im ≠ 0) :
+    Function.Injective
+      (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1))) stiefelRotationFamily x) := by
+  have hτ : MDifferentiableAt ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1)))
+      (stiefelRotationFamily (E := E)) x :=
+    (contMDiff_stiefelRotationFamily x).mdifferentiableAt (by simp)
+  -- If a tangent vector `(t, c)` is sent to zero, the first component gives `a = 0`, where
+  -- `(a, b)` is `t` read in `Fin 2 → E`. Then `b` is orthogonal to `u` and `v`, as `t` is
+  -- tangent to the Stiefel manifold, and pairing the second component with `u` and `v` kills
+  -- `c`, so that `Im z • b = 0`.
+  rw [injective_iff_map_eq_zero]
+  intro p hp
+  obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
+  set t := (Manifold.tangentSpaceProdEquiv x p).1
+  set γ := mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2 (Manifold.tangentSpaceProdEquiv x p).2
+  set T := mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 t
+  -- Both components of the image, read in `E`, vanish.
+  have hcomp (g : sphere (0 : E) 1 × sphere (0 : E) 1 → E)
+      (hg : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E) g
+        (stiefelRotationFamily x)) :
+      mvfderiv ((𝓢).prod (𝓡 1)) (g ∘ stiefelRotationFamily) x p = 0 := by
+    rw [mvfderiv_comp_apply x hg hτ]
+    exact (congrArg _ hp).trans (map_zero _)
+  have hι₁ : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E)
+      (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.1 : E)) (stiefelRotationFamily x) :=
+    ((contMDiff_coe_sphere.comp contMDiff_fst) _).mdifferentiableAt one_ne_zero
+  have hι₂ : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E)
+      (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) (stiefelRotationFamily x) :=
+    ((contMDiff_coe_sphere.comp contMDiff_snd) _).mdifferentiableAt one_ne_zero
+  have h₁ := hcomp _ hι₁
+  have h₂ := hcomp _ hι₂
+  rw [show (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.1 : E)) ∘ stiefelRotationFamily =
+    fun y ↦ ((stiefelRotationFamily y).1 : E) from rfl,
+    mvfderiv_coe_fst_stiefelRotationFamily_apply] at h₁
+  rw [show (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) ∘ stiefelRotationFamily =
+    fun y ↦ ((stiefelRotationFamily y).2 : E) from rfl,
+    mvfderiv_coe_snd_stiefelRotationFamily_apply] at h₂
+  -- Restate both components with the abbreviations `T` and `γ` introduced above.
+  change T 0 = 0 at h₁
+  change γ.re • x.1.1 0 + γ.im • x.1.1 1 + ((x.2 : ℂ).re • T 0 + (x.2 : ℂ).im • T 1) = 0 at h₂
+  -- `T` is tangent to the Stiefel manifold.
+  have hT : gramSym2Deriv E 2 x.1.1 T = 0 := by
+    have h : T ∈ LinearMap.range
+        (mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) x.1).toLinearMap :=
+      ⟨t, rfl⟩
+    rwa [range_mfderiv_coe_stiefel] at h
+  have h01 := congrFun hT s(0, 1)
+  have h11 := congrFun hT s(1, 1)
+  simp only [gramSym2Deriv_apply_mk, h₁, inner_zero_left, add_zero, Pi.zero_apply] at h01 h11
+  have h11' : ⟪x.1.1 1, T 1⟫ = 0 := by
+    rw [real_inner_comm (T 1) (x.1.1 1)] at h11 ⊢
+    linarith
+  rw [h₁, smul_zero, zero_add] at h₂
+  have hu' : ⟪x.1.1 0, x.1.1 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
+  have hv' : ⟪x.1.1 1, x.1.1 1⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
+  have hre := congrArg (fun e ↦ ⟪x.1.1 0, e⟫) h₂
+  have him := congrArg (fun e ↦ ⟪x.1.1 1, e⟫) h₂
+  simp only [inner_add_right, inner_smul_right, hu', huv, h01, real_inner_comm (x.1.1 0),
+    hv', h11', inner_zero_right] at hre him
+  have hγre : γ.re = 0 := by linarith
+  have hγim : γ.im = 0 := by linarith
+  rw [hγre, hγim, zero_smul, zero_smul, zero_add, zero_add, smul_eq_zero] at h₂
+  have hT1 : T 1 = 0 := h₂.resolve_left hx
+  have hT0 : T = 0 := funext fun i ↦ by fin_cases i <;> simp [h₁, hT1]
+  have ht : t = 0 := injective_mfderiv_coe_stiefel x.1 (hT0.trans (map_zero _).symm)
+  have hc : (Manifold.tangentSpaceProdEquiv x p).2 = 0 :=
+    injective_mvfderiv_subtypeVal_sphere x.2 ((Complex.ext hγre hγim).trans (map_zero _).symm)
+  apply (Manifold.tangentSpaceProdEquiv x).injective
+  rw [map_zero]
+  exact Prod.ext ht hc
+
+/-- At a point `((u, v), z)` with `Im z ≠ 0`, the derivative of the Stiefel rotation family is
 invertible. -/
 theorem isInvertible_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : ℂ) 1}
     (hx : (x.2 : ℂ).im ≠ 0) :
     (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1))) stiefelRotationFamily
       x).IsInvertible := by
-  have hτ : MDifferentiableAt ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1)))
-      (stiefelRotationFamily (E := E)) x :=
-    (contMDiff_stiefelRotationFamily x).mdifferentiableAt (by simp)
-  have hdim : finrank ℝ (TangentSpace ((𝓢).prod (𝓡 1)) x) =
-      finrank ℝ (TangentSpace ((𝓡 (n + 1)).prod (𝓡 (n + 1))) (stiefelRotationFamily x)) := by
-    -- The tangent spaces are, by definition, the model vector spaces.
-    change finrank ℝ ((Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) ×
-        EuclideanSpace ℝ (Fin 1)) =
-      finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)) × EuclideanSpace ℝ (Fin (n + 1)))
-    rw [finrank_prod, finrank_prod, finrank_stiefelTwoModel (n := n), finrank_euclideanSpace_fin,
-      finrank_euclideanSpace_fin]
-    ring
-  have hinj : Function.Injective
-      (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1))) stiefelRotationFamily x) := by
-    -- If a tangent vector `(t, c)` is sent to zero, the first component gives `a = 0`, where
-    -- `(a, b)` is `t` read in `Fin 2 → E`. Then `b` is orthogonal to `u` and `v`, as `t` is
-    -- tangent to the Stiefel manifold, and pairing the second component with `u` and `v` kills
-    -- `c`, so that `Im z • b = 0`.
-    rw [injective_iff_map_eq_zero]
-    intro p hp
-    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
-    set t := (Manifold.tangentSpaceProdEquiv x p).1
-    set γ := mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2 (Manifold.tangentSpaceProdEquiv x p).2
-    set T := mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 t
-    -- Both components of the image, read in `E`, vanish.
-    have hcomp (g : sphere (0 : E) 1 × sphere (0 : E) 1 → E)
-        (hg : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E) g
-          (stiefelRotationFamily x)) :
-        mvfderiv ((𝓢).prod (𝓡 1)) (g ∘ stiefelRotationFamily) x p = 0 := by
-      rw [mvfderiv_comp_apply x hg hτ]
-      exact (congrArg _ hp).trans (map_zero _)
-    have hι₁ : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E)
-        (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.1 : E)) (stiefelRotationFamily x) :=
-      ((contMDiff_coe_sphere.comp contMDiff_fst) _).mdifferentiableAt one_ne_zero
-    have hι₂ : MDifferentiableAt ((𝓡 (n + 1)).prod (𝓡 (n + 1))) 𝓘(ℝ, E)
-        (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) (stiefelRotationFamily x) :=
-      ((contMDiff_coe_sphere.comp contMDiff_snd) _).mdifferentiableAt one_ne_zero
-    have h₁ := hcomp _ hι₁
-    have h₂ := hcomp _ hι₂
-    rw [show (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.1 : E)) ∘ stiefelRotationFamily =
-      fun y ↦ ((stiefelRotationFamily y).1 : E) from rfl,
-      mvfderiv_coe_fst_stiefelRotationFamily_apply] at h₁
-    rw [show (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) ∘ stiefelRotationFamily =
-      fun y ↦ ((stiefelRotationFamily y).2 : E) from rfl,
-      mvfderiv_coe_snd_stiefelRotationFamily_apply] at h₂
-    -- Restate both components with the abbreviations `T` and `γ` introduced above.
-    change T 0 = 0 at h₁
-    change γ.re • x.1.1 0 + γ.im • x.1.1 1 + ((x.2 : ℂ).re • T 0 + (x.2 : ℂ).im • T 1) = 0 at h₂
-    -- `T` is tangent to the Stiefel manifold.
-    have hT : gramSym2Deriv E 2 x.1.1 T = 0 := by
-      have h : T ∈ LinearMap.range
-          (mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) x.1).toLinearMap :=
-        ⟨t, rfl⟩
-      rwa [range_mfderiv_coe_stiefel] at h
-    have h01 := congrFun hT s(0, 1)
-    have h11 := congrFun hT s(1, 1)
-    simp only [gramSym2Deriv_apply_mk, h₁, inner_zero_left, add_zero, Pi.zero_apply] at h01 h11
-    have h11' : ⟪x.1.1 1, T 1⟫ = 0 := by
-      rw [real_inner_comm (T 1) (x.1.1 1)] at h11 ⊢
-      linarith
-    rw [h₁, smul_zero, zero_add] at h₂
-    have hu' : ⟪x.1.1 0, x.1.1 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
-    have hv' : ⟪x.1.1 1, x.1.1 1⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
-    have hre := congrArg (fun e ↦ ⟪x.1.1 0, e⟫) h₂
-    have him := congrArg (fun e ↦ ⟪x.1.1 1, e⟫) h₂
-    simp only [inner_add_right, inner_smul_right, hu', huv, h01, real_inner_comm (x.1.1 0),
-      hv', h11', inner_zero_right] at hre him
-    have hγre : γ.re = 0 := by linarith
-    have hγim : γ.im = 0 := by linarith
-    rw [hγre, hγim, zero_smul, zero_smul, zero_add, zero_add, smul_eq_zero] at h₂
-    have hT1 : T 1 = 0 := h₂.resolve_left hx
-    have hT0 : T = 0 := funext fun i ↦ by fin_cases i <;> simp [h₁, hT1]
-    have ht : t = 0 := injective_mfderiv_coe_stiefel x.1 (hT0.trans (map_zero _).symm)
-    have hc : (Manifold.tangentSpaceProdEquiv x p).2 = 0 :=
-      injective_mvfderiv_subtypeVal_sphere x.2 ((Complex.ext hγre hγim).trans (map_zero _).symm)
-    apply (Manifold.tangentSpaceProdEquiv x).injective
-    rw [map_zero]
-    exact Prod.ext ht hc
-  exact ⟨(LinearEquiv.ofBijective _
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
-      ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
+  refine isInvertible_mfderiv_of_injective ?_ (injective_mfderiv_stiefelRotationFamily hx)
+  rw [finrank_prod, finrank_prod, finrank_stiefelTwoModel (n := n), finrank_euclideanSpace_fin,
+    finrank_euclideanSpace_fin]
+  ring
 
 /-- Every point `(u, q)` of `Sⁿ⁺¹ × Sⁿ⁺¹` with `q ≠ ±u` is a regular value of the Stiefel
 rotation family. -/
@@ -260,7 +259,8 @@ theorem orientationSign_stiefelRotationInvolution
     orientationSign (O.stiefelTwoOrientation.prod Complex.orientation.sphereOrientation)
       (O.stiefelTwoOrientation.prod Complex.orientation.sphereOrientation)
       stiefelRotationInvolution x = (-1) ^ n := by
-  have hconj := Complex.isOrientationReversingAt_conjSphere x.2
+  rw [stiefelRotationInvolution_eq_prodMap]
+  have hconj := isOrientationReversingAt_conjSphere x.2
   rw [← isOrientationPreservingAt_neg_right] at hconj
   rcases Nat.even_or_odd n with hn | hn
   · have hK := isOrientationReversingAt_stiefelTwoReflection hn O x.1
@@ -296,7 +296,7 @@ theorem degreeAtRegularValue_stiefelRotationFamily
   subst hxy
   have hne : x ≠ stiefelRotationInvolution x := fun h ↦ by
     have h' := congrArg (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.2 : ℂ).im) h
-    simp only [coe_snd_stiefelRotationInvolution, Complex.conj_im] at h'
+    simp only [snd_stiefelRotationInvolution, coe_conjSphere, Complex.conj_im] at h'
     linarith
   -- The orientation signs at the two preimages differ by the sign `(-1)ⁿ` of the involution.
   have hτ : MDifferentiableAt ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1)))
