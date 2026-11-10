@@ -66,18 +66,15 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
     rw [Finset.univ_eq_empty, Finset.prod_empty]
   obtain rfl | hD := D.eq_zero_or_pos
   · rw [pow_zero, hempty (Nat.zero_mul k)]
-  obtain rfl | hk := k.eq_zero_or_pos
-  · rw [hempty (Nat.mul_zero D), Finset.univ_eq_empty, Finset.prod_empty, one_pow]
   let e : Fin k × Fin D ≃ Fin (D * k) := finProdFinEquiv.trans (finCongr (Nat.mul_comm k D))
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]
   have hD' : (Finset.univ : Finset (Fin D)).Nonempty := ⟨⟨0, hD⟩, Finset.mem_univ _⟩
   rw [← e.prod_comp, Fintype.prod_prod_type, ← Finset.prod_pow]
-  refine Finset.prod_le_prod₀_of_nonempty ⟨⟨0, hk⟩, Finset.mem_univ _⟩ (fun j _ ↦ ?_)
-    fun j _ ↦ ?_
+  refine Finset.prod_le_prod_of_nonneg_of_le (fun j _ ↦ ?_) fun j _ ↦ ?_
   · rw [← Fin.prod_const]
     exact Finset.prod_nonneg_of_nonempty hD' fun _ _ ↦ hc0 _
   rw [← Fin.prod_const]
-  refine Finset.prod_le_prod₀_of_nonempty hD' (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
+  refine Finset.prod_le_prod_of_nonneg_of_le (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
   rw [Fin.le_iff_val_le_val, he]
   exact (hs j).trans (Nat.le_add_left _ _)
 

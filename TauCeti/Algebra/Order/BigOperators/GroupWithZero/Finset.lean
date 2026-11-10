@@ -16,9 +16,10 @@ above `1` agree on a finite set if their products of powers over that set agree.
 compare the numbers of maps between finite semisimple modules in
 `TauCeti/RingTheory/Semisimple/Multiplicity.lean`.
 
-`Finset.prod_nonneg_of_nonempty` and `Finset.prod_le_prod₀_of_nonempty` are the nonnegativity and
-monotonicity of finite products over a nonempty index set, which need no `ZeroLEOneClass`: the
-empty product `1` is the only place where `0 ≤ 1` would be used.
+`Finset.prod_nonneg_of_nonempty` and `Finset.prod_le_prod_of_nonneg_of_le` are the nonnegativity
+and monotonicity of finite products, which need no `ZeroLEOneClass`. Nonnegativity needs a nonempty
+index set, since the empty product `1` is the only place where `0 ≤ 1` would be used; monotonicity
+holds for every index set, the empty case being `1 ≤ 1`.
 -/
 
 public section
@@ -48,11 +49,13 @@ theorem prod_nonneg_of_nonempty (hs : s.Nonempty) (h0 : ∀ i ∈ s, 0 ≤ f i) 
     0 ≤ ∏ i ∈ s, f i :=
   prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb) hs h0
 
-/-- **Monotonicity of products over a nonempty finset.** If `0 ≤ f i ≤ g i` on a nonempty finset
-`s`, then `∏ i ∈ s, f i ≤ ∏ i ∈ s, g i`, without `ZeroLEOneClass`. -/
-theorem prod_le_prod₀_of_nonempty (hs : s.Nonempty) (h0 : ∀ i ∈ s, 0 ≤ f i)
+/-- **Monotonicity of finite products.** If `0 ≤ f i ≤ g i` on a finset `s`, then
+`∏ i ∈ s, f i ≤ ∏ i ∈ s, g i`, without `ZeroLEOneClass`: the empty product is `1 ≤ 1`. -/
+theorem prod_le_prod_of_nonneg_of_le (h0 : ∀ i ∈ s, 0 ≤ f i)
     (h1 : ∀ i ∈ s, f i ≤ g i) : ∏ i ∈ s, f i ≤ ∏ i ∈ s, g i := by
   have := PosMulMono.toMulPosMono (α := R)
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
   induction hs using Finset.Nonempty.cons_induction with
   | singleton a => simpa using h1 a (by simp)
   | cons a s ha hs ih =>
