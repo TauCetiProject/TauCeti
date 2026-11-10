@@ -25,8 +25,7 @@ on two levels `c₁` and `c₂` separating the intermediate critical values, as 
 * every unbroken pair has a neighbourhood homeomorphic to an open subset of `ℝ`
   (`IsMorseSmale.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs`), and
 * every broken pair has a neighbourhood homeomorphic to a half-open interval `[0, δ)`, sending
-  `0` to it (`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`, together
-  with the finiteness of the broken pairs, which isolates each of them from the others).
+  `0` to it (`IsMorseSmale.exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs`).
 
 So the broken pairs are the endpoints of a compact one-dimensional manifold with boundary, and
 there is an even number of them (`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico`).
@@ -50,7 +49,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 public section
 
-open Set Topology
+open Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -65,54 +64,6 @@ namespace IsAdaptedPseudoGradient
 namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-
-include h hf in
-/-- **A broken trajectory is an endpoint of the compactified space.** Under the hypotheses of
-`closure_morseTrajectoryPairs`, every broken trajectory pair `w` has a neighbourhood in the
-closure of the unbroken pairs homeomorphic to a half-open interval `[0, δ)`, with `w`
-corresponding to `0`. -/
-theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
-    (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
-    (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁)
-    {w : M × M} (hw : w ∈ closure (hX.morseTrajectoryPairs p r c₁ c₂))
-    (hwB : w ∈ hX.morseBrokenTrajectoryPairs p r c₁ c₂) :
-    ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)),
-      ∃ (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
-        (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)) = ⟨w, hw⟩ := by
-  set S := hX.morseTrajectoryPairs p r c₁ c₂ with hSdef
-  set B := hX.morseBrokenTrajectoryPairs p r c₁ c₂
-  obtain ⟨a₁, a₂⟩ := w
-  obtain ⟨q, hq, hpq, hqr, ha₁, hc₁, ha₂, hc₂⟩ := hX.mem_morseBrokenTrajectoryPairs.1 hwB
-  simp only at ha₁ hc₁ ha₂ hc₂
-  obtain ⟨N, δ, hδ, e, he₀, hN, hNw⟩ :=
-    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hp hq hr hpq hqr ha₁ ha₂
-  -- The unbroken trajectories in the gluing theorem are those recorded on the levels `c₁, c₂`.
-  have hS : {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-      f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} = S := by
-    ext w
-    rw [hSdef, mem_morseTrajectoryPairs, mem_ofPred_eq, hc₁, hc₂]
-  rw [hS] at hN hNw
-  -- Near `(a₁, a₂)`, the compactified space adds no broken pair other than `(a₁, a₂)`.
-  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) := by
-    have hfar : (B \ {(a₁, a₂)})ᶜ ∈ 𝓝 (a₁, a₂) :=
-      ((h.finite_morseBrokenTrajectoryPairs hf hp hr c₁ c₂).sdiff.isClosed.isOpen_compl).mem_nhds
-        (by simp)
-    refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
-      ⟨_, hfar, fun x ⟨hxB, hxK⟩ ↦ ?_⟩)
-    rcases h.closure_morseTrajectoryPairs_subset hf hp hr hind hr₂ h₂₁ h₁p hgap hxK with hx | hx
-    · exact Or.inr hx
-    · exact Or.inl (not_not.1 fun hne ↦ hxB ⟨hx, hne⟩)
-  -- The half-open arc, viewed in the compactified space.
-  let g : Ico (0 : ℝ) δ → closure S := codRestrict (Subtype.val ∘ e) (closure S) fun s ↦
-    insert_subset hw subset_closure (hN (e s).2)
-  have hg : IsEmbedding g := (IsEmbedding.subtypeVal.comp e.isEmbedding).codRestrict _ _
-  have hrange : (↑) '' range g = N := by
-    rw [← range_comp]
-    exact (range_comp Subtype.val e).trans (by rw [e.range_coe, image_univ, Subtype.range_coe])
-  refine ⟨range g, mem_nhds_subtype_iff_nhdsWithin.2 (hrange ▸ hloc hNw), δ, hδ, hg.toHomeomorph,
-    Subtype.ext he₀⟩
 
 include h hf in
 /-- **Broken trajectories come in pairs.** Let `p` and `r` be critical points with
