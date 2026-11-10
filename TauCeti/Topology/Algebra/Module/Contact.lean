@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.Contact
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Compactness.Compact
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -25,10 +25,9 @@ set of interpolation parameters. The subset need not be compact or closed. This 
 the neighborhood-shrinking step for contact deformations.
 
 On a normed space, the symplectization form of a continuous covector and a continuous bilinear
-form is itself a continuous bilinear map (`ContinuousLinearMap.symplectizationForm`). It depends
-smoothly on the pair (`ContDiffOn.symplectizationForm`) and is injective at a contact pair
-(`ContinuousLinearMap.injective_symplectizationForm`), so local contact deformations can solve
-their linear equations with it.
+form is itself a continuous bilinear map (`ContinuousLinearMap.symplectizationForm`). It is
+injective at a contact pair (`ContinuousLinearMap.symplectizationForm_injective`), so local contact
+deformations can solve their linear equations with it.
 
 ## References
 
@@ -107,8 +106,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 /-- The symplectization form `((s, v), (t, w)) ↦ s a(w) - a(v) t + b v w` on `𝕜 × E` of a
 continuous covector `a` and a continuous bilinear form `b`, as a continuous bilinear map. Its
 bilinear form is `Module.Dual.symplectizationForm`
-(`ContinuousLinearMap.toBilinForm_symplectizationForm`), and as a continuous bilinear map it
-depends smoothly on `(a, b)` (`ContDiffOn.symplectizationForm`). -/
+(`ContinuousLinearMap.toBilinForm_symplectizationForm`). -/
 noncomputable def _root_.ContinuousLinearMap.symplectizationForm (a : E →L[𝕜] 𝕜)
     (b : E →L[𝕜] E →L[𝕜] 𝕜) : (𝕜 × E) →L[𝕜] (𝕜 × E) →L[𝕜] 𝕜 :=
   (ContinuousLinearMap.fst 𝕜 𝕜 E).smulRight (a.comp (ContinuousLinearMap.snd 𝕜 𝕜 E)) -
@@ -135,23 +133,12 @@ theorem _root_.ContinuousLinearMap.toBilinForm_symplectizationForm (a : E →L[�
 
 /-- At a covector `a` which is contact for `b`, the continuous symplectization form is injective,
 so it is invertible in finite dimension. -/
-theorem _root_.ContinuousLinearMap.injective_symplectizationForm {a : E →L[𝕜] 𝕜}
+theorem _root_.ContinuousLinearMap.symplectizationForm_injective {a : E →L[𝕜] 𝕜}
     {b : E →L[𝕜] E →L[𝕜] 𝕜} (h : Module.Dual.IsContact (a : Module.Dual 𝕜 E) b.toBilinForm) :
     Function.Injective (a.symplectizationForm b) := by
   rw [← ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective,
     ContinuousLinearMap.toBilinForm_symplectizationForm]
   exact Module.Dual.separatingLeft_symplectizationForm_iff.2 ⟨h.ne_zero, h.nondegenerate_restrict.1⟩
-
-/-- The continuous symplectization form of `C^n` families of covectors and bilinear forms is
-`C^n`. -/
-theorem _root_.ContDiffOn.symplectizationForm {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace 𝕜 P] {n : WithTop ℕ∞} {s : Set P} {a : P → E →L[𝕜] 𝕜}
-    {b : P → E →L[𝕜] E →L[𝕜] 𝕜} (ha : ContDiffOn 𝕜 n a s) (hb : ContDiffOn 𝕜 n b s) :
-    ContDiffOn 𝕜 n (fun p ↦ (a p).symplectizationForm (b p)) s := by
-  have ha' : ContDiffOn 𝕜 n (fun p ↦ (a p).comp (ContinuousLinearMap.snd 𝕜 𝕜 E)) s :=
-    ha.clm_comp contDiffOn_const
-  exact ((contDiffOn_const.smulRight ha').sub (ha'.smulRight contDiffOn_const)).add
-    (contDiffOn_const.clm_comp (hb.clm_comp contDiffOn_const))
 
 end Continuous
 
