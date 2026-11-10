@@ -200,7 +200,7 @@ private theorem monotoneOn_toReal_edist {y : ℝ → X} {s : Set ℝ} (hs : s �
   · rfl
   refine ENNReal.toReal_mono (edist_ne_top_of_mem_moreauYosidaResolvent (hy t ht))
     (edist_le_edist_of_mem_moreauYosidaResolvent
-    (Real.toNNReal_pos.2 (hs hr)) ?_ (hy r hr) (hy t ht)
+    ?_ (hy r hr) (hy t ht)
     (apply_ne_bot_of_moreauYosida_ne_bot (hy r hr) (hfin r hr).2) (hfin r hr).1)
   exact Real.toNNReal_lt_toNNReal_iff'.2 ⟨hrt, hs ht⟩
 
@@ -481,12 +481,8 @@ theorem moreauYosida_add_lintegral_descendingSlope_le (hσ : 0 < σ)
   refine setLIntegral_mono' measurableSet_Ioc fun r hr ↦ ?_
   -- At a resolvent step, `|∂φ|(y r) ≤ d(x, y r) / r`.
   have hr₀ : 0 < r.toNNReal := Real.toNNReal_pos.2 hr.1
-  have hr₁ : moreauYosida φ r.toNNReal x ≠ ⊤ := ne_top_of_le_ne_top hx (moreauYosida_le_self φ _ x)
-  have hr₂ : moreauYosida φ r.toNNReal x ≠ ⊥ :=
-    ne_bot_of_le_ne_bot hσ' (antitone_moreauYosida φ x (Real.toNNReal_mono hr.2))
   have hd := edist_ne_top_of_mem_moreauYosidaResolvent (hy r hr)
   have hslope := descendingSlope_le_of_mem_moreauYosidaResolvent hr₀ (hy r hr)
-    (apply_ne_bot_of_moreauYosida_ne_bot (hy r hr) hr₂) hr₁
   have hfin : (edist x (y r) / r.toNNReal) ^ 2 / 2 ≠ ∞ :=
     ENNReal.div_ne_top (ENNReal.pow_ne_top (ENNReal.div_ne_top hd (by simpa using hr₀.ne')))
       two_ne_zero

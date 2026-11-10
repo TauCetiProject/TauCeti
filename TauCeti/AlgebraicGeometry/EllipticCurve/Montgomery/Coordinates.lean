@@ -254,25 +254,27 @@ theorem cross_coordinates_zsmul_eq_zero_iff (hB : B ≠ 0) {Q : (model A B).toAf
 
 /-- If `[q] Q = 0` and `q = m + n` or `q = m - n`, then the coordinate pairs of `[m] Q` and
 `[n] Q` have vanishing cross difference. -/
-theorem cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero (hB : B ≠ 0)
+theorem cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero
     {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {m n : ℤ}
     (h : q = m + n ∨ q = m - n) :
     (coordinates A B (m • Q)).cross (coordinates A B (n • Q)) = 0 := by
-  rw [cross_coordinates_zsmul_eq_zero_iff hB]
   rcases h with rfl | rfl
-  exacts [.inr hq, .inl hq]
+  · rw [add_zsmul] at hq
+    rw [eq_neg_of_add_eq_zero_left hq, coordinates_neg, Pair.cross_self]
+  · rw [sub_zsmul, add_neg_eq_zero] at hq
+    rw [hq, Pair.cross_self]
 
 /-- **The stage-2 cross-difference criterion.** Let `w > 0` and `[q] Q = 0`. Then there is an
 integer `i` such that `j = |q - i w|` satisfies `2 j ≤ w`, so that `q = i w + j` or
 `q = i w - j`, and the coordinate pairs of `[i w] Q` and `[j] Q` have vanishing cross
 difference. -/
-theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero (hB : B ≠ 0)
+theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero
     {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {w : ℤ} (hw : 0 < w) :
     ∃ i : ℤ, 2 * |q - i * w| ≤ w ∧
       (coordinates A B ((i * w) • Q)).cross (coordinates A B (|q - i * w| • Q)) = 0 := by
   obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw.ne'
   rw [abs_of_pos hw] at hi
-  refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq ?_⟩
+  refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hq ?_⟩
   rcases abs_choice (q - i * w) with h | h <;> rw [h]
   exacts [.inl (by ring), .inr (by ring)]
 

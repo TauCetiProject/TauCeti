@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.InnerProductSpace.Frame
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 public import TauCeti.Topology.VectorBundle.Subbundle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.IdempotentRange
 import TauCeti.Analysis.Normed.Operator.QuotientRange
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
@@ -72,6 +74,12 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
 * `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`: **smooth local frame
   criterion**: a family of subspaces with `C^n` local frames of a fixed finite size near every
   point is a `C^n` subbundle of `E`.
+* `TauCeti.exists_isSubbundleFrameOn_map_synthesisMap`: a `C^n` family of orthogonal projections
+  of a coefficient space, synthesized against `C^n` linearly independent sections, gives `C^n`
+  local frames of the image subspaces.
+* `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of
+  operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
+  frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -343,8 +351,7 @@ theorem contMDiffVectorBundle [Fintype ι] [ContMDiffVectorBundle n F E IB]
     fun y hy ↦ (ContinuousLinearMap.restrictScalarsIsometry 𝕜' (ι → 𝕜') (ι → 𝕜') 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffWithinAt (h y hy)
   simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
-    hr.congr fun y hy ↦ (Bundle.Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _
-      (by simpa only [IsSubbundleFrameOn.trivialization_baseSet] using hy)).symm
+    hr.congr fun y _ ↦ (Bundle.Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _).symm
 
 /-- The canonical inclusion `(x, v) ↦ (x, ↑v)` of a subbundle given by `C^n` local frames into
 the total space of `E` is `C^n` over the ground field. -/
@@ -424,6 +431,122 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
 end HasLocalContMDiffSubbundleFrames
 
 end ContMDiffFrames
+
+section OrthogonalProjections
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
+  [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- **Local frames from smooth orthogonal projections.** Let `ε` be a `C^n` family of sections of
+`E`, linearly independent at every point of an open set `U₀`, and let `W y` be subspaces of the
+coefficient space `ℝ^d` whose orthogonal projections are `C^n` on `U₀`. Near a point `x₀ ∈ U₀`
+where `W x₀` has dimension `r`, the images of the `W y` under the synthesis maps
+`c ↦ ∑ i, c i • ε i y` have a `C^n` local frame of size `r`: project a basis of `W x₀` onto the
+nearby `W y` and synthesize. -/
+theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → Π x, E x}
+    {U₀ : Set B} (hU₀ : IsOpen U₀) (hε : ∀ i, CMDiff[U₀] n (T% (ε i)))
+    (hli : ∀ y ∈ U₀, LinearIndependent ℝ (ε · y))
+    {W : B → Submodule ℝ (EuclideanSpace ℝ (Fin d))}
+    (hP : ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d)) n
+      (fun y ↦ (W y).starProjection) U₀) {x₀ : B} (hx₀ : x₀ ∈ U₀)
+    (hr : finrank ℝ (W x₀) = r) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
+      IsSubbundleFrameOn F (fun y ↦ (W y).map (synthesisMap ℝ (ε · y))) X U ∧
+      ∀ i, CMDiff[U] n (T% (X i)) := by
+  let β := Module.finBasisOfFinrankEq ℝ (W x₀) hr
+  set Y : B → Fin r → EuclideanSpace ℝ (Fin d) := fun y k ↦ (W y).starProjection (β k)
+  have hYc : ContinuousOn Y U₀ :=
+    continuousOn_pi.mpr fun k ↦ hP.continuousOn.clm_apply continuousOn_const
+  have hY₀ : LinearIndependent ℝ (Y x₀) := by
+    have hY : Y x₀ = fun k ↦ ((β k : W x₀) : EuclideanSpace ℝ (Fin d)) :=
+      funext fun k ↦ Submodule.starProjection_eq_self_iff.mpr (β k).2
+    rw [hY]
+    exact β.linearIndependent.map' (W x₀).subtype (Submodule.ker_subtype _)
+  -- The rank of a continuous family of projections is locally constant.
+  set S := Subtype.val '' {y : U₀ | finrank ℝ (W y).starProjection.range = r}
+  have hS : IsOpen S :=
+    hU₀.isOpenMap_subtype_val _ ((isLocallyConstant_finrank_range
+      (p := fun y : U₀ ↦ (W y).starProjection) hP.continuousOn.domRestrict
+      fun y ↦ (W y).isIdempotentElem_starProjection).isOpen_fiber _)
+  -- Synthesizing `C^n` coordinates against the `C^n` sections `ε i` gives `C^n` sections.
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ synthesisMap ℝ (ε · y) (Y y k))) := by
+    intro y hy
+    have hy' := hU₀.mem_nhds hy
+    have hci (i : Fin d) : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ Y y k i) y :=
+      ((EuclideanSpace.proj i).contMDiff.comp_contMDiffOn
+        (hP.clm_apply contMDiffOn_const)).contMDiffAt hy'
+    have hsec := ContMDiffAt.sum_section (s := Finset.univ) fun i _ ↦
+      (hci i).smul_section ((hε i).contMDiffAt hy')
+    refine (hsec.congr_of_eventuallyEq (Eventually.of_forall fun z ↦ ?_)).contMDiffWithinAt
+    simp
+  obtain ⟨U, hUS, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq (hS.inter hU₀)
+    (hYc.mono inter_subset_right) (fun y _ k ↦ (W y).starProjection_apply_mem _)
+    (fun y hy ↦ by
+      obtain ⟨⟨z, hzU⟩, hz, rfl⟩ := hy.1
+      rwa [Set.mem_ofPred_eq, Submodule.range_starProjection] at hz)
+    ⟨⟨⟨x₀, hx₀⟩, by rwa [Set.mem_ofPred_eq, Submodule.range_starProjection], rfl⟩, hx₀⟩ hY₀
+  refine ⟨U, fun y hy ↦ (hUS hy).2, hU, hx₀U, fun k y ↦ synthesisMap ℝ (ε · y) (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono fun y hy ↦ (hUS hy).2, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono fun y hy ↦ (hUS hy).2⟩
+  · exact (hYU y hy).1.map' (synthesisMap ℝ (ε · y))
+      (LinearMap.ker_eq_bot.mpr ((linearIndependent_iff_injective_synthesisMap _).mp
+        (hli y (hUS hy).2)))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, comp_def]
+
+end OrthogonalProjections
+
+section Operators
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+
+/-- **Local frames from a smooth family of operators of constant rank.** Let `e` be a
+trivialization of `E` in its atlas and let `A y` be operators on the model fibre `F`, depending
+`C^n` on `y` in an open subset `U₀` of the base set of `e`, all of rank `r`. Read through `e`, their
+ranges are subspaces of the fibres `E y`; near every point of `U₀` these have a `C^n` local frame
+of size `r`. -/
+theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : ℕ}
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀)
+    (hU₀e : U₀ ⊆ e.baseSet)
+    {A : B → F →L[𝕜] F} (hA : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n A U₀)
+    (hr : ∀ y ∈ U₀, finrank 𝕜 (A y).range = r) {x₀ : B} (hx₀ : x₀ ∈ U₀) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
+      IsSubbundleFrameOn F (fun y ↦ (A y).range.map (e.symmₗ 𝕜 y)) X U ∧
+      ∀ i, CMDiff[U] n (T% (X i)) := by
+  let β := Module.finBasisOfFinrankEq 𝕜 (A x₀).range (hr x₀ hx₀)
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (β k).2
+  set Y : B → Fin r → F := fun y k ↦ A y (u k)
+  have hYc : ContinuousOn Y U₀ :=
+    continuousOn_pi.mpr fun k ↦ hA.continuousOn.clm_apply continuousOn_const
+  have hY₀ : LinearIndependent 𝕜 (Y x₀) := by
+    have hY : Y x₀ = fun k ↦ ((β k : (A x₀).range) : F) := funext hu
+    rw [hY]
+    exact β.linearIndependent.map' (A x₀).range.subtype (Submodule.ker_subtype _)
+  obtain ⟨U, hUU₀, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq hU₀ hYc
+    (fun y _ k ↦ LinearMap.mem_range_self _ _) hr hx₀ hY₀
+  -- Read through `e`, a `C^n` family of vectors of `F` is a `C^n` family of sections.
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ e.symm y (Y y k))) :=
+    e.contMDiffOn_section_symm hU₀ hU₀e (hA.clm_apply contMDiffOn_const)
+  refine ⟨U, hUU₀, hU, hx₀U, fun k y ↦ e.symm y (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono hUU₀, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono hUU₀⟩
+  · simpa [Function.comp_def, e.symmₗ_apply (hU₀e (hUU₀ hy))] using
+      (hYU y hy).1.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr (e.symmₗ_injective 𝕜
+        (hU₀e (hUU₀ hy))))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e (hUU₀ hy)),
+      comp_def]
+
+end Operators
 
 section SubbundleInclusion
 

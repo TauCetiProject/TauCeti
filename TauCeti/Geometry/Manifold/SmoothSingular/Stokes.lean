@@ -37,6 +37,8 @@ integrals over the faces of `σ`.
 ## Main results
 
 * `TauCeti.SmoothSimplex.integral_mextDeriv`: Stokes' theorem for a smooth singular simplex.
+* `TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`: its case `p = 0`, the fundamental theorem
+  of calculus `∫_σ df = f(σ(1)) - f(σ(0))`, which pins down the face signs.
 * `TauCeti.d_comp_integrationCochain`: Stokes' theorem for smooth singular chains, as an identity
   of cochains.
 * `TauCeti.d_comp_integrationCochain_eq_zero`: the integration cochain of a closed form is a
@@ -130,6 +132,22 @@ theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
   rw [mpullbackWithin_comp_simplexMapAmbient _ hy ((σ.contMDiffOn_extension _
     (mapsTo_simplexMapAmbient _ hy)).mdifferentiableWithinAt (by simp))]
   exact (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
+
+/-- **The fundamental theorem of calculus for a smooth `1`-simplex.** The integral of the
+differential of a `C¹` function over a smooth `1`-simplex `σ` is the difference of its values at
+the endpoints `σ(1)` and `σ(0)`. This fixes the sign convention of
+`TauCeti.SmoothSimplex.integral_mextDeriv`: the face `∂₀σ` is the endpoint and `∂₁σ` the initial
+point. -/
+theorem integral_mextDeriv_ofFunction [CompleteSpace F] (σ : SmoothSimplex I M 1) {f : M → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 1 f) :
+    σ.integral (mextDeriv (RoughForm.ofFunction I f)) =
+      f (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, by simp⟩) -
+        f (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) := by
+  rw [integral_mextDeriv σ (isSmoothForm_ofFunction_iff.mpr hf), Fin.sum_univ_two,
+    integral_ofFunction, integral_ofFunction, toContinuousMap_δ_apply, toContinuousMap_δ_apply]
+  simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_one, pow_one, neg_smul, ← sub_eq_add_neg]
+  congr 3 <;> ext j <;> fin_cases j <;>
+    simp [← simplexMapAmbient_succAbove_coe, simplexMapAmbient_apply, Finset.filter_singleton]
 
 end SmoothSimplex
 

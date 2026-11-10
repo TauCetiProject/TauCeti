@@ -78,6 +78,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal`: for a reflexive form, a
   restriction is nondegenerate exactly when the submodule meets its orthogonal complement in zero,
   in any dimension.
+* `LinearMap.BilinForm.IsRefl.nondegenerate_restrict_of_isCompl_ker`: a reflexive form is
+  nondegenerate on every complement of its kernel.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
@@ -344,6 +346,18 @@ theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm 
     (B.restrict W).Nondegenerate ↔ Disjoint W (B.orthogonal W) :=
   ⟨disjoint_orthogonal_of_restrict_nondegenerate,
     B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
+
+/-- For a reflexive form, and in particular for an alternating one, the restriction to a
+complement of the kernel is nondegenerate. This extends
+`LinearMap.IsSymm.nondegenerate_restrict_of_isCompl_ker` from symmetric to reflexive forms. -/
+theorem IsRefl.nondegenerate_restrict_of_isCompl_ker {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {W : Submodule R M} (hW : IsCompl W (LinearMap.ker B)) :
+    (B.restrict W).Nondegenerate := by
+  -- Since `W ⊔ ker B = ⊤`, the orthogonal complement of `W` is that of `⊤`, namely `ker B`.
+  have h : B.orthogonal W = LinearMap.ker B := by
+    rw [orthogonal, ← Submodule.orthogonalBilin_sup_ker B W, hW.sup_eq_top, ← orthogonal,
+      B.orthogonal_top_eq_ker hB]
+  exact B.nondegenerate_restrict_of_disjoint_orthogonal hB (h ▸ hW.disjoint)
 
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/

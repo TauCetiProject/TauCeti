@@ -437,3 +437,18 @@ theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContD
   simpa [dist_eq_norm, Prod.dist_eq, Real.dist_eq] using this
 
 end ContDiff
+
+namespace IsPreconnected
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {f : ℝ → G} {s : Set ℝ}
+
+/-- A function on a preconnected subset of `ℝ` whose derivative within the set vanishes at every
+point of the set takes the same value at any two points of the set. -/
+theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
+    (hf : ∀ t ∈ s, HasDerivWithinAt f 0 s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    f a = f b := by
+  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+    hf (C := 0) (fun _ _ ↦ by simp) ha hb
+  simpa [sub_eq_zero, eq_comm] using h
+
+end IsPreconnected

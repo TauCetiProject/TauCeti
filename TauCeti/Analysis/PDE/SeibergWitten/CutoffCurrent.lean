@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
 /-!
@@ -30,7 +31,10 @@ Write `s = |α|²`. Away from the zeros of `α` the pair has the gauge-invariant
 
 `τ = Im (conj α ∇_a α) / s = Im (α⁻¹ dα) + b`,
 
-whose first summand is the differential of a local branch of `arg α`. In Taubes's passage from
+whose first summand is the differential of a local branch of `arg α`. The modulus is governed by
+the real part instead: `ds = 2 Re (conj α ∇_a α)`, so `|ds| ≤ 2 |α| |∇_a α|`
+(`fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv`,
+`norm_fderiv_norm_sq_le_mul_norm_covariantDeriv`). In Taubes's passage from
 Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the component of the rescaled
 spinor along the canonical unit spinor, its zero set concentrates along the limiting curve, and
 the curvature `i F_a = -db` is compared with the current of that curve through the **cutoff
@@ -161,6 +165,33 @@ theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) 
     Continuous (covariantDeriv b α) := by
   unfold covariantDeriv
   fun_prop
+
+/-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
+connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
+counterpart of `covariantPhaseForm_apply_eq_div`, which reads the phase form off the imaginary
+part. -/
+theorem fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (hα : DifferentiableAt ℝ α x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x v = 2 * (conj (α x) * covariantDeriv b α x v).re := by
+  rw [hα.hasFDerivAt.norm_sq.fderiv, covariantDeriv_apply]
+  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+    nsmul_eq_mul, Nat.cast_ofNat, mul_add, add_re, mul_re, mul_im, conj_re, conj_im, I_re, I_im,
+    ofReal_re, ofReal_im]
+  ring
+
+/-- The derivative of `|α|²` is bounded by `2 |α| |∇_a α|`, for every connection form. -/
+theorem norm_fderiv_norm_sq_le_mul_norm_covariantDeriv (hα : DifferentiableAt ℝ α x) :
+    ‖fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x‖ ≤ 2 * ‖α x‖ * ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (b := b) hα, Real.norm_eq_abs, abs_mul,
+    abs_two, mul_assoc, mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ zero_le_two
+  calc |(conj (α x) * covariantDeriv b α x v).re|
+      ≤ ‖conj (α x) * covariantDeriv b α x v‖ := abs_re_le_norm _
+    _ = ‖α x‖ * ‖covariantDeriv b α x v‖ := by rw [norm_mul, RCLike.norm_conj]
+    _ ≤ ‖α x‖ * (‖covariantDeriv b α x‖ * ‖v‖) := by
+      gcongr
+      exact ContinuousLinearMap.le_opNorm _ _
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
@@ -552,6 +583,50 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
+
+/-- `∂_a α = ∇_a α - ∂bar_a α` is the complex-linear part `TauCeti.complexLinearPart` of
+`∇_a α`, for the structure `J` on `E` and multiplication by `I` on `ℂ`. -/
+theorem coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) =
+      complexLinearPart J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+        (covariantDeriv b α x : E →ₗ[ℝ] ℂ) := by
+  ext v
+  simp only [ContinuousLinearMap.coe_coe, _root_.sub_apply, covariantDBar_apply,
+    complexLinearPart_apply, DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul, ofReal_inv,
+    ofReal_ofNat]
+  ring
+
+/-- The `J`-linear part `∂_a α = ∇_a α - ∂bar_a α` of the covariant derivative is `J`-linear:
+`∂_a α (J v) = i ∂_a α v`. -/
+theorem covariantDeriv_sub_covariantDBar_isComplexLinear (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+      ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) := by
+  rw [coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart]
+  exact complexLinearPart_isComplexLinear J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
+
+/-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
+`∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
+theorem norm_covariantDeriv_sub_covariantDBar_le (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
+    ‖covariantDeriv b α x - covariantDBar J b α x‖ ≤ ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have hv : (covariantDeriv b α x - covariantDBar J b α x) v =
+      (covariantDeriv b α x v - I * covariantDeriv b α x (J v)) / 2 := by
+    simp only [_root_.sub_apply, covariantDBar_apply]
+    ring
+  rw [hv, norm_div, Complex.norm_ofNat]
+  calc ‖covariantDeriv b α x v - I * covariantDeriv b α x (J v)‖ / 2
+      ≤ (‖covariantDeriv b α x v‖ + ‖covariantDeriv b α x (J v)‖) / 2 := by
+        gcongr
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [norm_mul, norm_I, one_mul]
+    _ ≤ (‖covariantDeriv b α x‖ * ‖v‖ + ‖covariantDeriv b α x‖ * ‖v‖) / 2 := by
+        gcongr
+        · exact (covariantDeriv b α x).le_opNorm v
+        · exact ((covariantDeriv b α x).le_opNorm (J v)).trans_eq (by rw [hJ])
+    _ = ‖covariantDeriv b α x‖ * ‖v‖ := by ring
 
 /-- `∂bar_a α` of a `C¹` section for a continuous connection form is continuous. -/
 theorem continuous_covariantDBar {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiff ℝ 1 α)
