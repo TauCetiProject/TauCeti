@@ -534,9 +534,12 @@ theorem gradedPowIterSpan_succ (S : Set X) {j : ℕ} (hj : 1 ≤ j) :
   rw [gradedPowIterSpan, gradedPowIterSpan, map_span, Set.image_image]
   simp only [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedPowIter_succ]
 
-/-- **The dimension of the span of the `p`-power classes over `S`** is the cardinality of `S`,
-because the `π^j x'_i` are linearly independent
-(`TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`). -/
+/-- **The dimension of the span of the `p`-power classes over `S`**: the `finrank` of the span
+equals `Nat.card S`, because the `π^j x'_i` are linearly independent
+(`TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`). For finite `S` this says that
+the dimension is the cardinality of `S`; for infinite `S` both sides are `0` (the `finrank` of an
+infinite-dimensional space and `Nat.card` of an infinite type are both `0`), so the statement then
+carries no information. -/
 theorem finrank_gradedPowIterSpan (S : Set X) (j : ℕ) :
     Module.finrank (ZMod p) (gradedPowIterSpan p X S j) = Nat.card S := by
   rw [gradedPowIterSpan, Set.image_eq_range]
