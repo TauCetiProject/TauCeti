@@ -151,16 +151,10 @@ theorem finrank_orbitTangent_fundamental_smul (g : G) (x : M) :
 theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
     (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) = ⊤ ↔
       (InfinitesimalAction.fundamental I G I' M).orbitTangent x = ⊤ := by
-  -- Spanning is carried forward along `y ↦ k • y`, whose differential is surjective.
-  have key (k : G) (y : M) (h : (InfinitesimalAction.fundamental I G I' M).orbitTangent y = ⊤) :
-      (InfinitesimalAction.fundamental I G I' M).orbitTangent (k • y) = ⊤ := by
-    have hinv : (mfderiv I' I' (fun z : M ↦ k • z) y).IsInvertible :=
-      (Diffeomorph.smul I I' 1 k).isInvertible_mfderiv one_ne_zero
-    rw [orbitTangent_fundamental_smul, h, Submodule.map_top, LinearMap.range_eq_top]
-    exact hinv.surjective
-  refine ⟨fun h ↦ ?_, key g x⟩
-  have h' := key g⁻¹ (g • x) h
-  rwa [inv_smul_smul] at h'
+  obtain ⟨e, he⟩ : (mfderiv I' I' (fun y : M ↦ g • y) x).IsInvertible :=
+    (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
+  rw [orbitTangent_fundamental_smul, ← he]
+  exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
 
 /-! ### The differential of the orbit map -/
 
