@@ -71,11 +71,11 @@ domain-splitting argument live.
 ## A local defining function takes its boundary value on the frontier
 
 If, on an open set `U`, a set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in
-a linear order, then `f x = a` at every frontier point `x ∈ U` of `D` at which `f` is continuous
-(`TauCeti.eq_of_mem_frontier_of_mem_iff_le`). Where `a < f x`, continuity puts a whole
-neighbourhood of `x` in `D`, so `x` is interior to `D`; where `f x < a`, it puts a whole
-neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f` needs any
-further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
+a linear order with closed order topology, then `f x = a` at every frontier point `x ∈ U` of `D`
+at which `f` is continuous (`TauCeti.eq_of_mem_frontier_of_mem_iff_le`). Where `a < f x`,
+continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; where `f x < a`, it
+puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
+needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
 
 ## Consumers
 
@@ -262,8 +262,9 @@ variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace 
   [OrderClosedTopology α] {D U : Set X} {f : X → α} {a : α} {x : X}
 
 /-- **A local defining function takes its boundary value on the frontier.** If, on an open set
-`U`, the set `D` is the superlevel set `{a ≤ f}`, then `f x = a` at every point `x ∈ U` of
-`frontier D` at which `f` is continuous. -/
+`U`, the set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in a linear order
+with closed order topology, then `f x = a` at every point `x ∈ U` of `frontier D` at which `f` is
+continuous. -/
 theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y ∈ D ↔ a ≤ f y)
     (hxU : x ∈ U) (hf : ContinuousAt f x) (hx : x ∈ frontier D) : f x = a := by
   refine le_antisymm (not_lt.1 fun h ↦ hx.2 (mem_interior_iff_mem_nhds.2 ?_)) (not_lt.1 fun h ↦ ?_)

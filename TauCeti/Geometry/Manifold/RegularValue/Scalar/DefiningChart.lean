@@ -19,7 +19,7 @@ Consequently, if a set `D` agrees on `U` with the superlevel set `{ρ ≥ 0}` an
 reads in `e` as the closed half-space `{z | 0 ≤ ℓ z}`.
 
 No regularity of `ρ` outside `U` is needed. The chart is the scalar submersion chart
-`TauCeti.scalarSubmersionChartAt` of the restriction of `ρ` to `U`, which is smooth on all of `U`
+`TauCeti.scalarSubmersionChartAt` of the restriction of `ρ` to `U`, which is `C^n` on all of `U`
 and therefore lies in the maximal atlas of `U`, carried to `M` by the inclusion of `U`.
 
 ## Main results
