@@ -35,17 +35,19 @@ open TauCeti
 
 namespace IsPrimitiveRoot
 
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [NumberField K]
+variable {p : ℕ} {K : Type*} [Field K] [NumberField K]
   [IsCyclotomicExtension {p} ℚ K] {ζ : K} (hζ : IsPrimitiveRoot ζ p)
 
 /-- The Stickelberger product of a primary cyclotomic integer is primary. -/
-theorem isEisensteinPrimary_stickelbergerProduct {α : 𝓞 K}
+theorem isEisensteinPrimary_stickelbergerProduct [NeZero p] {α : 𝓞 K}
     (hα : TauCeti.IsEisensteinPrimary hζ.toInteger α) :
     TauCeti.IsEisensteinPrimary hζ.toInteger (TauCeti.stickelbergerProduct p α) := by
   classical
   rw [TauCeti.stickelbergerProduct_def]
   exact TauCeti.IsEisensteinPrimary.prod fun σ _ ↦
     ((hζ.isEisensteinPrimary_smul_iff σ⁻¹).mpr hα).pow _
+
+variable [Fact p.Prime]
 
 /-- The Gauss sum power of an ideal prime to `p` is primary when `p` is odd. -/
 theorem isEisensteinPrimary_stickelbergerPhi (hp2 : p ≠ 2) {A : Ideal (𝓞 K)}
