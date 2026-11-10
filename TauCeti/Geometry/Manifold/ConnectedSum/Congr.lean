@@ -205,11 +205,12 @@ private def congrLeftInr (he₁ : Injective e₁) (y : puncture e₂) : Connecte
       apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.2 (h0 ▸ invFun_eq h).symm⟩)
   else inr e₁' e₂ y
 
-private theorem congrLeftInr_apply (he₁ : Injective e₁) (he₂ : Injective e₂) {w : E} (hw : w ≠ 0)
+private theorem congrLeftInr_apply (he₁ : Injective e₁) (he₂ : Injective e₂) {w : E}
     (hy : e₂ w ∈ puncture e₂) :
     congrLeftInr φ hφ he₁ ⟨e₂ w, hy⟩ =
       inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds
-        ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩) := by
+        ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁
+          (ne_zero_of_apply_mem_puncture hy)⟩) := by
   simp only [congrLeftInr, mem_range_self, ↓reduceDIte, leftInverse_invFun he₂ w]
 
 private theorem congrLeftInr_of_notMem (he₁ : Injective e₁) {y : puncture e₂}
@@ -220,8 +221,8 @@ private theorem congrLeftInr_of_notMem (he₁ : Injective e₁) {y : puncture e�
 private def congrLeftMap (he₁ : Injective e₁) (he₂ : Injective e₂) :
     ConnectedSum e₁ e₂ → ConnectedSum e₁' e₂ :=
   lift (inl e₁' e₂ ∘ punctureMap φ φ.injective hφ.eq_of_nhds) (congrLeftInr φ hφ he₁)
-    fun v hv hx hy ↦ by
-      rw [congrLeftInr_apply φ hφ he₁ he₂ (by simpa [inversion_eq_center one_ne_zero] using hv)]
+    fun v _ hx hy ↦ by
+      rw [congrLeftInr_apply φ hφ he₁ he₂]
       simp only [comp_apply]
       exact congrArg _ (Subtype.ext (by simp [inversion_inversion (0 : E) one_ne_zero]))
 
@@ -252,7 +253,7 @@ private theorem exists_congrLeftInr_eq (he₁ : Injective e₁) (he₂ : Injecti
     have hx : e₁' (inversion 0 1 w) ∈ puncture e₁' := by
       rw [← hεφ hdist]
       exact apply_mem_puncture φ.injective hφ.eq_of_nhds (apply_inversion_mem_puncture he₁ hw0)
-    rw [congrLeftInr_apply φ hφ he₁ he₂ hw0]
+    rw [congrLeftInr_apply φ hφ he₁ he₂]
     exact (congrArg (inl e₁' e₂) (Subtype.ext ((coe_punctureMap _ _ _).trans (hεφ hdist)))).trans
       (inl_inversion_eq_inr hx hy)
   · exact congrLeftInr_of_notMem φ hφ he₁ h
@@ -267,8 +268,8 @@ private theorem exists_eq_inl_or_exists_eq_inr (he₁ : Injective e₁) (r : ℝ
   · exact .inl ⟨x, (mk_inl e₁ e₂ x).symm⟩
   by_cases hyr : y ∈ e₂ '' Metric.closedBall 0 r
   · obtain ⟨w, -, rfl⟩ := hyr
-    have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 hy rfl
-    exact .inl ⟨⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩,
+    exact .inl ⟨⟨e₁ (inversion 0 1 w),
+      apply_inversion_mem_puncture he₁ (ne_zero_of_apply_mem_puncture hy)⟩,
       (inl_inversion_eq_inr _ hy).trans (mk_inr e₁ e₂ _).symm⟩
   · exact .inr ⟨⟨y, hy⟩, hyr, (mk_inr e₁ e₂ _).symm⟩
 
@@ -283,8 +284,8 @@ private theorem congrLeftMap_symm_congrLeftMap (hφ' : φ.symm ∘ e₁' =ᶠ[�
   by_cases h : y ∈ range e₂
   · -- `e₂ w` went to `φ (e₁ (inversion 0 1 w))`, which comes back to `e₁ (inversion 0 1 w)`.
     obtain ⟨w, rfl⟩ := h
-    have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 hy rfl
-    rw [congrLeftInr_apply φ hφ he₁ he₂ hw, congrLeftMap_inl]
+    have hw : w ≠ 0 := ne_zero_of_apply_mem_puncture hy
+    rw [congrLeftInr_apply φ hφ he₁ he₂, congrLeftMap_inl]
     exact (congrArg (inl e₁ e₂) (Subtype.ext (by simp) :
       _ = ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩)).trans
       (inl_inversion_eq_inr _ hy)
@@ -348,10 +349,9 @@ theorem congrLeftHomeomorph_inl (x : puncture e₁) :
 theorem congrLeftHomeomorph_inr_apply {w : E} (hy : e₂ w ∈ puncture e₂) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inr e₁ e₂ ⟨e₂ w, hy⟩) =
       inl e₁' e₂ ⟨φ (e₁ (inversion 0 1 w)), apply_mem_puncture φ.injective hφ.eq_of_nhds
-        (apply_inversion_mem_puncture h₁.injective fun h ↦ mem_puncture.1 hy (congrArg e₂ h))⟩ :=
+        (apply_inversion_mem_puncture h₁.injective (ne_zero_of_apply_mem_puncture hy))⟩ :=
   ((congrLeftMap_inr φ hφ h₁.injective h₂.injective _).trans
-    (congrLeftInr_apply φ hφ h₁.injective h₂.injective
-      (fun h ↦ mem_puncture.1 hy (congrArg e₂ h)) hy)).trans
+    (congrLeftInr_apply φ hφ h₁.injective h₂.injective hy)).trans
     (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
 @[simp]
