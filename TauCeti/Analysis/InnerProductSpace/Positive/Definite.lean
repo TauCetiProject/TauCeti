@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
