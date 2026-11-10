@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.FGModuleCat.Generator
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Adjunction.Additive
@@ -56,7 +57,7 @@ to a generator. -/
 theorem isGenerator_functor_obj_regular :
     Module.IsGenerator B (e.functor.obj (FGModuleCat.of A A)) := by
   -- A proper trace ideal `T` would make `B ⟶ B ⧸ T` a nonzero morphism killed by every map out of
-  -- the image of the regular module, and such a morphism is zero after applying `e.inverse`.
+  -- the image of the regular module, which is a separator because the regular module is one.
   rw [Module.isGenerator_iff_iSup_range_eq_top]
   set P := e.functor.obj (FGModuleCat.of A A)
   set T : Submodule B B := ⨆ φ : P →ₗ[B] B, LinearMap.range φ
@@ -65,14 +66,8 @@ theorem isGenerator_functor_obj_regular :
     ext x
     refine (Submodule.Quotient.mk_eq_zero T).mpr ?_
     exact Submodule.mem_iSup_of_mem ψ.hom.hom ⟨x, rfl⟩
-  have h : e.inverse.map π = 0 :=
-    (Preadditive.isSeparator_iff _).mp (FGModuleCat.isSeparator A) _ fun φ ↦ by
-      have hc : e.functor.map (e.inverse.map π) ≫ e.counit.app _ = e.counit.app _ ≫ π :=
-        e.counit.naturality π
-      apply e.functor.map_injective
-      rw [← cancel_mono (e.counit.app _), e.functor.map_comp, Category.assoc, hc, ← Category.assoc]
-      exact (hπ _).trans (by simp)
-  have hπ₀ : π = 0 := e.inverse.map_injective (by simpa using h)
+  have hπ₀ : π = 0 :=
+    (Preadditive.isSeparator_iff _).mp ((FGModuleCat.isSeparator A).of_equivalence e) π hπ
   have hmk : T.mkQ = 0 := by simpa [π] using congr(($hπ₀).hom.hom)
   rw [← Submodule.ker_mkQ T, hmk, LinearMap.ker_zero]
 
