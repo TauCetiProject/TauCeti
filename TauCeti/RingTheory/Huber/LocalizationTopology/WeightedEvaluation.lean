@@ -443,14 +443,13 @@ private theorem weightedRationalEvalHom_comp_completionMap :
   rw [Completion.map_coe uniformContinuous_subtype_val, AddMonoidHom.completion_coe]
   simp
 
-variable [(nhds (0 : A)).IsCountablyGenerated]
-
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is surjective.** -/
 theorem weightedRationalEvalHom_surjective :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     Function.Surjective (weightedRationalEvalHom P T s S hden hW) := by
+  have _ : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -470,6 +469,7 @@ theorem isOpenMap_weightedRationalEvalHom :
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     IsOpenMap (weightedRationalEvalHom P T s S hden hW) := by
+  have _ : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -493,7 +493,6 @@ theorem isOpenMap_weightedRationalEvalHom :
   rintro _ ⟨w, hw, rfl⟩
   exact ⟨_, hw, congrFun (weightedRationalEvalHom_comp_completionMap P T s S hden hW) w⟩
 
-omit [(nhds (0 : A)).IsCountablyGenerated] in
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is an open quotient map**: it presents the
 rational localisation of a Huber ring as a topological quotient of a weighted restricted
 power-series ring in one variable. The neighbourhood filter of zero in `A` is countably generated
@@ -506,7 +505,6 @@ theorem isOpenQuotientMap_weightedRationalEvalHom :
   letI := locUniformSpace P T s S hden
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
-  haveI : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   ⟨weightedRationalEvalHom_surjective P T s S hden hW,
     continuous_weightedRationalEvalHom P T s S hden hW,
     isOpenMap_weightedRationalEvalHom P T s S hden hW⟩
