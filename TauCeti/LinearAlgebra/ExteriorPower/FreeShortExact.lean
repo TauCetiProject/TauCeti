@@ -26,8 +26,6 @@ Adapted from the family 033 formalization in `openai/math`, extraction revision
 `4eaee87548250b2682affda7d05d947c05554bae`, and its cLEAN refactoring supplied by an
 original formalization author. The source declaration is
 `OAI.ReverseLogKodaira.CanonicalAdjunction.exact_canonical_adjunction`.
-The construction uses Tau Ceti's `Module.Basis.ofExactLift`, its determinant formula, and
-`Module.Basis.exteriorPowerTopEquiv`.
 This file has been modified from that formalization.
 
 ## References
@@ -106,7 +104,7 @@ def shortExactEquivOfBasis
   (exact_canonical_adjunction f q hf he hq b c).choose
 
 /-- The determinant comparison sends a wedge tensored with the wedge of quotient images
-to the wedge of the submodule images followed by the chosen lifts. -/
+to the wedge of the submodule images followed by the arbitrary supplied lifts. -/
 @[simp]
 theorem shortExactEquivOfBasis_tmul_ιMulti
     {R M N P : Type*} [CommRing R]
