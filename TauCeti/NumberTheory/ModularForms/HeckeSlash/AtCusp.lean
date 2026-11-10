@@ -193,7 +193,7 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
     rw [coe_heckeTNat]
     exact heckeSlashSum_coe_eq_sum_of_rightCosets k (diagCosetGamma1 N p) _
       (doubleCoset_out_diagCosetGamma1_eq_iUnion_rightCosets_of_prime hp hσ10 hσ11)
-      (op_primeRep_smul_injective (G := Gamma1 N) hp.one_lt hσ11) f
+      (op_primeRep_smul_injective (G := Gamma1 N) hp.one_lt) f
   -- each representative of the double coset is `diag(1, p)` times an element of `Γ₁(N)`
   have hρ : ∀ i, ∃ ρ ∈ Gamma1 N, D * mapGL ℚ ρ = primeRep (gamma0Twist N p hpN) p i := by
     rintro (_ | b)
@@ -208,7 +208,7 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
   -- the translated representatives lie in distinct right cosets of `SL₂(ℤ)`
   have hj : Function.Bijective j := by
     refine Finite.injective_iff_bijective.mp fun i i' hii' ↦
-      op_primeRep_smul_injective (G := ⊤) hp.one_lt hσ11 ?_
+      op_primeRep_smul_injective (G := ⊤) (σ := gamma0Twist N p hpN) hp.one_lt ?_
     refine (rightCoset_eq_iff _).mpr ⟨ξ i' * (ξ i)⁻¹, Subgroup.mem_top _, ?_⟩
     rw [eq_mul_inv_iff_mul_eq.mpr (hrep i), eq_mul_inv_iff_mul_eq.mpr (hrep i'), hii',
       map_mul, map_inv]

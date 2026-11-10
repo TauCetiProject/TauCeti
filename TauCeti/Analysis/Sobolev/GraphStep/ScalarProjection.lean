@@ -17,6 +17,10 @@ function. `TauCeti.WeakDerivStep.toW1pL` bundles this operation as a bounded lin
 Its value is the projected field, and its gradient pairs with a direction as the functional
 applied to the original weak derivative.
 
+For finite-dimensional `F`, applying a scalar embedding `W^{1,p}(Ω) → L^{p⋆}(Ω)` to every
+coordinate in a basis embeds the selected field into `L^{p⋆}(Ω; F)`
+(`TauCeti.WeakDerivStep.exists_lpEmbeddingL_of_ae_eq`).
+
 The preceding space and its field-selection map remain arbitrary. This permits coordinatewise
 use of scalar Sobolev estimates without introducing a separate vector-valued Sobolev carrier.
 The construction uses `WeakDerivStep` and `W1p.mk`, whose weak derivatives are distributional.
@@ -165,6 +169,39 @@ theorem norm_toW1pL_le (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F 
     ‖toW1pL base ℓ‖ ≤ ‖ℓ‖ * (‖base‖ + 1) := by
   unfold toW1pL
   exact LinearMap.mkContinuous_norm_le _ (by positivity) _
+
+/-- **Coordinatewise lifting of a scalar embedding.** If a bounded linear map
+`S : W^{1,p}(Ω) → L^{p⋆}(Ω)` represents the values and `F` is finite-dimensional, then the field
+selected by `base` lies in `L^{p⋆}(Ω; F)`, continuously in the graph norm. In a basis of `F`, each
+coordinate of the field is a scalar Sobolev function (`TauCeti.WeakDerivStep.toW1pL`), to which
+`S` applies. -/
+theorem exists_lpEmbeddingL_of_ae_eq [FiniteDimensional ℝ F] {pstar : ENNReal}
+    [Fact (1 ≤ pstar)] (S : W1p mu Omega p →L[ℝ] Lp ℝ pstar (mu.restrict Omega))
+    (hS : ∀ u, S u =ᵐ[mu.restrict Omega] W1p.value u)
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    ∃ V : WeakDerivStep mu Omega p base →L[ℝ] Lp F pstar (mu.restrict Omega),
+      ∀ u, V u =ᵐ[mu.restrict Omega] base (prev base u) := by
+  classical
+  let b := Module.finBasis ℝ F
+  let ℓ := fun i ↦ (b.coord i).toContinuousLinearMap
+  refine ⟨∑ i, ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL pstar
+    (mu.restrict Omega)).comp (S.comp (toW1pL base (ℓ i))), fun u ↦ ?_⟩
+  have hcoord : ∀ i, ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL pstar
+      (mu.restrict Omega)) (S (toW1pL base (ℓ i) u)) =ᵐ[mu.restrict Omega]
+        fun x ↦ (b.coord i) (base (prev base u) x) • b i := fun i ↦ by
+    filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ (b i)).coeFn_compLpL
+      (S (toW1pL base (ℓ i) u)), hS (toW1pL base (ℓ i) u),
+      (ℓ i).coeFn_compLpL (base (prev base u))] with x h1 h2 h3
+    rw [h1, ContinuousLinearMap.toSpanSingleton_apply, h2, value_toW1pL, h3]
+    rfl
+  filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ (fun i ↦
+      ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL pstar (mu.restrict Omega))
+        (S (toW1pL base (ℓ i) u))),
+    ae_all_iff.mpr hcoord] with x hsum hcoords
+  rw [sum_apply]
+  simp only [ContinuousLinearMap.comp_apply]
+  rw [hsum]
+  simpa only [hcoords, Module.Basis.coord_apply] using b.sum_repr (base (prev base u) x)
 
 end WeakDerivStep
 
