@@ -1,0 +1,367 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.BigPowers
+public import TauCeti.GroupTheory.FreeGroup.BigPowers
+public import TauCeti.GroupTheory.FreeGroup.CSA
+public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+import Mathlib.GroupTheory.CoprodI
+
+/-!
+# Free `G`-groups are discriminated by `G`
+
+Let `G` be a nonabelian CSA group with the big powers property, for instance a nonabelian free
+group or, more generally, a nonabelian fully residually free group. Then the free `G`-group
+`G[X] = G ∗ F(X)` is discriminated by `G` over `G`: any finitely many nonidentity elements of
+`G[X]` survive under one homomorphism `G[X] →* G` fixing `G`. This complements the
+discrimination of extensions of centralizers of `G` by their retractions onto `G`.
+
+The discriminating homomorphisms send each variable `x` to a conjugate `c x * u ^ k * (c x)⁻¹`
+of a large power of one fixed element `u ≠ 1`. The group `G` must be nonabelian: a homomorphism
+to a commutative group kills the commutator of a variable with a coefficient, which is nontrivial
+in `G[X]` whenever the coefficient is.
+
+## Main results
+
+* `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy`: for a nonabelian CSA group `G` with the big
+  powers property, `G[X]` is discriminated by `G` over `G`.
+* `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_isFreeGroup`: for a nonabelian free group `F`,
+  `F[X]` is discriminated by `F` over `F`.
+
+## Implementation notes
+
+An element of `G[X]` is the product of a reduced word in the free product of `G` with one
+infinite cyclic factor for each variable (Mathlib's `Monoid.CoprodI.Word`). Under
+`x ↦ c x * u ^ k * (c x)⁻¹` the word becomes an alternating product
+`g * u ^ (k * e₁) * s₁ * ⋯ * u ^ (k * eₙ) * sₙ` whose separators are
+`sᵢ = (c xᵢ)⁻¹ * hᵢ * c xᵢ₊₁`, where `hᵢ` is the coefficient letter between the `i`-th and the
+`(i + 1)`-th variable letters, or `1` if they are adjacent. The conjugators `c x` are chosen among
+the powers of an element `v` outside the centralizer `C_G(u)` so that no separator lies in
+`C_G(u)`; this is possible because each condition excludes a single left coset of `C_G(u)`, while
+distinct powers of `v` lie in distinct cosets. The big powers property for alternating products
+(`Group.IsBP.exists_forall_mul_prod_ne_one`) then keeps the product nontrivial for all large `k`.
+
+## References
+
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §2.5.
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §2.
+-/
+
+public section
+
+open Group Subgroup Monoid
+
+namespace TauCeti.GroupAlgGeom
+
+namespace GX
+
+universe u v
+
+variable {G : Type u} {X : Type v} [Group G]
+
+/-! ### `G[X]` as a free product of `G` and one infinite cyclic group per variable -/
+
+/-- The factors of `G[X]` as an indexed free product: `G` at `none`, and an infinite cyclic group
+at `some x` for each variable `x`. -/
+private abbrev Factor (G : Type u) (X : Type v) : Option X → Type u
+  | none => G
+  | some _ => ULift.{u} (Multiplicative ℤ)
+
+private instance instGroupFactor : ∀ o, Group (Factor G X o)
+  | none => inferInstanceAs (Group G)
+  | some _ => inferInstanceAs (Group (ULift (Multiplicative ℤ)))
+
+/-- A letter of a reduced word in the free product of the factors. -/
+private abbrev Letter (G : Type u) (X : Type v) : Type (max u v) := Σ o, Factor G X o
+
+/-- The homomorphism from the indexed free product onto `G[X]`. -/
+private def ofCoprodI : CoprodI (Factor G X) →* GX G X :=
+  CoprodI.lift fun
+    | none => Coprod.inl
+    | some x => Coprod.inr.comp
+        ((zpowersHom (FreeGroup X) (FreeGroup.of x)).comp MulEquiv.ulift.toMonoidHom)
+
+/-- The inverse of `ofCoprodI`. -/
+private def toCoprodI : GX G X →* CoprodI (Factor G X) :=
+  Coprod.lift (CoprodI.of (M := Factor G X) (i := none) : G →* CoprodI (Factor G X))
+    (FreeGroup.lift fun x => CoprodI.of (i := some x) (ULift.up (Multiplicative.ofAdd 1)))
+
+private theorem ofCoprodI_of_none (g : Factor G X none) :
+    ofCoprodI (CoprodI.of g) = Coprod.inl (g : G) :=
+  CoprodI.lift_of _ _
+
+private theorem ofCoprodI_of_some (x : X) (m : ULift.{u} (Multiplicative ℤ)) :
+    ofCoprodI (CoprodI.of (M := Factor G X) (i := some x) m) =
+      Coprod.inr (FreeGroup.of x ^ m.down.toAdd) :=
+  CoprodI.lift_of _ _
+
+private theorem ofCoprodI_toCoprodI (w : GX G X) : ofCoprodI (toCoprodI w) = w := by
+  have : (ofCoprodI (G := G) (X := X)).comp toCoprodI = .id _ := by
+    ext x
+    · exact ofCoprodI_of_none x
+    · simpa [toCoprodI] using ofCoprodI_of_some (G := G) x (.up (.ofAdd 1))
+  exact DFunLike.congr_fun this w
+
+/-- The product of the letters of a list. -/
+private def wordProd (L : List (Letter G X)) : CoprodI (Factor G X) :=
+  (L.map fun l => CoprodI.of l.2).prod
+
+/-! ### Evaluating a word at conjugates of powers of `u` -/
+
+/-- The product of the coefficient letters at the start of a list, up to its first variable
+letter. -/
+private def lead : List (Letter G X) → G
+  | [] => 1
+  | ⟨none, g⟩ :: L => g * lead L
+  | ⟨some _, _⟩ :: _ => 1
+
+variable (c : X → G)
+
+/-- The conjugator `c x` of the first variable letter `x` of a list, or `1` if there is none. -/
+private def nextConj : List (Letter G X) → G
+  | [] => 1
+  | ⟨none, _⟩ :: L => nextConj L
+  | ⟨some x, _⟩ :: _ => c x
+
+/-- The exponents of the variable letters of a list, each paired with the separator
+`(c x)⁻¹ * h * c x'` that follows it after evaluation at `x ↦ c x * u ^ k * (c x)⁻¹`. -/
+private def pairs : List (Letter G X) → List (ℤ × G)
+  | [] => []
+  | ⟨none, _⟩ :: L => pairs L
+  | ⟨some x, m⟩ :: L => ((ULift.down m).toAdd, (c x)⁻¹ * lead L * nextConj c L) :: pairs L
+
+variable (u : G)
+
+/-- Evaluation of a word at the conjugates `c x * u ^ k * (c x)⁻¹` is an alternating product of
+powers of `u ^ k` and separators. -/
+private theorem eval_ofCoprodI_wordProd (k : ℕ) (L : List (Letter G X)) :
+    eval (.id G) (fun x => c x * u ^ k * (c x)⁻¹) (ofCoprodI (wordProd L)) =
+      lead L * nextConj c L *
+        ((pairs c L).map fun p => u ^ ((k : ℤ) * p.1) * p.2).prod := by
+  induction L with
+  | nil => simp [wordProd, lead, nextConj, pairs]
+  | cons l L ih =>
+    obtain ⟨_ | x, m⟩ := l
+    · simp only [wordProd, List.map_cons, List.prod_cons, map_mul] at ih ⊢
+      rw [ih, ofCoprodI_of_none, eval_inl]
+      simp [lead, nextConj, pairs, mul_assoc]
+    · simp only [wordProd, List.map_cons, List.prod_cons, map_mul] at ih ⊢
+      rw [ih, ofCoprodI_of_some, eval_inr, map_zpow, FreeGroup.lift_apply_of, conj_zpow]
+      simp only [lead, nextConj, pairs, List.map_cons, List.prod_cons, ← zpow_natCast, ← zpow_mul]
+      group
+
+/-- A list without variable letters evaluates to its coefficient product. -/
+private theorem ofCoprodI_wordProd_of_pairs_eq_nil {L : List (Letter G X)}
+    (hL : pairs c L = []) : ofCoprodI (wordProd L) = Coprod.inl (lead L) := by
+  induction L with
+  | nil => simp [wordProd, lead]
+  | cons l L ih =>
+    obtain ⟨_ | x, m⟩ := l
+    · simp only [wordProd, List.map_cons, List.prod_cons, map_mul] at ih ⊢
+      rw [ofCoprodI_of_none, ih hL]
+      simp [lead]
+    · simp [pairs] at hL
+
+private theorem exists_of_mem_pairs {L : List (Letter G X)} {p : ℤ × G} (hp : p ∈ pairs c L) :
+    ∃ x m, (⟨some x, m⟩ : Letter G X) ∈ L ∧ p.1 = (ULift.down m).toAdd := by
+  induction L with
+  | nil => simp [pairs] at hp
+  | cons l L ih =>
+    obtain ⟨_ | x, m⟩ := l
+    · obtain ⟨x, m, hm, h⟩ := ih hp
+      exact ⟨x, m, List.mem_cons_of_mem _ hm, h⟩
+    · rcases List.mem_cons.1 hp with rfl | hp
+      · exact ⟨x, m, List.mem_cons_self, rfl⟩
+      · obtain ⟨x, m, hm, h⟩ := ih hp
+        exact ⟨x, m, List.mem_cons_of_mem _ hm, h⟩
+
+/-- In a reduced word whose conjugators separate distinct variable letters and conjugate the
+coefficient letters out of `C_G(u)`, no separator except possibly the last lies in `C_G(u)`. -/
+private theorem isChain_pairs {L : List (Letter G X)} (hL : L.IsChain fun l l' => l.1 ≠ l'.1)
+    (h1 : ∀ l ∈ L, l.2 ≠ 1)
+    (hc : ∀ (x x' : X) (m : Factor G X (some x)) (m' : Factor G X (some x')) (h : G),
+      (⟨some x, m⟩ : Letter G X) ∈ L → (⟨some x', m'⟩ : Letter G X) ∈ L →
+        (h = 1 ∧ x ≠ x' ∨ (⟨none, h⟩ : Letter G X) ∈ L) →
+          (c x)⁻¹ * h * c x' ∉ centralizer {u}) :
+    (pairs c L).IsChain fun p _ => p.2 ∉ centralizer {u} := by
+  induction L with
+  | nil => exact .nil
+  | cons l L ih =>
+    have ih' := ih hL.tail (fun l hl => h1 l (List.mem_cons_of_mem _ hl))
+      fun x x' m m' h hm hm' hh => hc x x' m m' h (List.mem_cons_of_mem _ hm)
+        (List.mem_cons_of_mem _ hm') (hh.imp_right (List.mem_cons_of_mem _))
+    obtain ⟨_ | x, m⟩ := l
+    · exact ih'
+    refine List.isChain_cons.2 ⟨fun q hq => ?_, ih'⟩
+    -- The next variable letter follows either directly or after one coefficient letter.
+    obtain _ | ⟨⟨_ | x', m'⟩, L'⟩ := L
+    · simp [pairs] at hq
+    · obtain _ | ⟨⟨_ | x'', m''⟩, L''⟩ := L'
+      · simp [pairs] at hq
+      · exact absurd rfl (List.isChain_cons_cons.1 hL.tail).1
+      · simpa [lead, nextConj] using hc x x'' m m'' m' List.mem_cons_self
+          (by simp) (Or.inr (by simp))
+    · simpa [lead, nextConj] using hc x x' m m' 1 List.mem_cons_self (by simp)
+        (Or.inl ⟨rfl, fun h => (List.isChain_cons_cons.1 hL).1 (by rw [h])⟩)
+
+/-! ### Choosing the conjugators -/
+
+/-- Distinct powers of an element outside `C_G(u)` lie in distinct left cosets of `C_G(u)`. -/
+private theorem eq_of_inv_pow_mul_pow_mem (hG : IsCSA G) [IsMulTorsionFree G] {u v : G}
+    (hv : v ∉ centralizer {u}) {n n' : ℕ} (h : (v ^ n)⁻¹ * v ^ n' ∈ centralizer {u}) :
+    n = n' := by
+  by_contra hne
+  have hd : ((n' : ℤ) - n) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast Ne.symm hne)
+  rw [← zpow_natCast, ← zpow_natCast, ← zpow_neg, ← zpow_add, neg_add_eq_sub] at h
+  have hv1 : v ≠ 1 := by rintro rfl; exact hv (one_mem _)
+  refine hv (mem_centralizer_singleton_iff.2 ?_)
+  have hvd : v ^ ((n' : ℤ) - n) ≠ 1 := (IsMulTorsionFree.zpow_eq_one_iff_right hv1).not.2 hd
+  exact ((isCommTransitive_iff G).1 hG.isCommTransitive u (v ^ ((n' : ℤ) - n)) v hvd
+    (mem_centralizer_singleton_iff.1 h).symm (Commute.zpow_self v _)).eq.symm
+
+/-- If `y` and `y'` both conjugate `h ≠ 1` into the centralizer `C_G(u)`, they lie in one left
+coset of `C_G(u)`. -/
+private theorem inv_mul_mem_of_conj_mem (hG : IsCSA G) {u h y y' : G} (hh : h ≠ 1)
+    (hy : y⁻¹ * h * y ∈ centralizer {u}) (hy' : y'⁻¹ * h * y' ∈ centralizer {u}) :
+    y⁻¹ * y' ∈ centralizer {u} := by
+  have hconj : ∀ z : G, z⁻¹ * h * z ≠ 1 := fun z h1 => hh (by
+    rw [← conj_eq_one_iff (a := z⁻¹), inv_inv]
+    exact h1)
+  -- Conjugation by `y⁻¹ * y'` carries `y'⁻¹ * h * y'` to `y⁻¹ * h * y`.
+  exact hG.mem_centralizer_of_commute_conj hy (hconj y) hy' (hconj y') (g := y⁻¹ * y')
+    (by convert Commute.refl (y⁻¹ * h * y) using 1; group)
+
+/-- One can choose conjugators `c x`, for the variables `x` in a finite set `s`, such that
+`(c x)⁻¹ * h * c x'` lies outside `C_G(u)` whenever `h = 1` and `x ≠ x'`, and whenever `h` is a
+nonidentity element of the finite set `T`. -/
+private theorem exists_conj_notMem (hG : IsCSA G) [IsMulTorsionFree G] {u v : G}
+    (hv : v ∉ centralizer {u}) (s : Finset X) (T : Set G) (hT : T.Finite) :
+    ∃ c : X → G, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
+      (c x)⁻¹ * h * c x' ∉ centralizer {u} := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨1, by simp⟩
+  | @insert a s ha ih =>
+    obtain ⟨c, hc⟩ := ih
+    -- Each condition on the new conjugator `v ^ n` excludes at most one `n`.
+    have hsub : ∀ P : ℕ → Prop,
+        (∀ n n', P n → P n' → (v ^ n)⁻¹ * v ^ n' ∈ centralizer {u}) → {n | P n}.Finite :=
+      fun P hP => Set.Subsingleton.finite fun n hn n' hn' =>
+        eq_of_inv_pow_mul_pow_mem hG hv (hP n n' hn hn')
+    have hT1 : (insert 1 T).Finite := hT.insert 1
+    have hfin : ((⋃ x' ∈ (s : Set X), ⋃ h ∈ insert 1 T,
+          {n | (v ^ n)⁻¹ * h * c x' ∈ centralizer {u}}) ∪
+        (⋃ x' ∈ (s : Set X), ⋃ h ∈ insert 1 T,
+          {n | (c x')⁻¹ * h * v ^ n ∈ centralizer {u}}) ∪
+        ⋃ h ∈ T \ {1}, {n | (v ^ n)⁻¹ * h * v ^ n ∈ centralizer {u}}).Finite := by
+      refine .union (.union ?_ ?_) ?_
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert mul_mem hn (inv_mem hn') using 1
+        group
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert mul_mem (inv_mem hn) hn' using 1
+        group
+      · exact hT.sdiff.biUnion fun h hh =>
+          hsub _ fun n n' hn hn' => inv_mul_mem_of_conj_mem hG hh.2 hn hn'
+    obtain ⟨n, hn⟩ := hfin.exists_notMem
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_insert_iff, Finset.mem_coe,
+      Set.mem_sdiff, Set.mem_singleton_iff, not_or, not_exists] at hn
+    obtain ⟨⟨hn₁, hn₂⟩, hn₃⟩ := hn
+    refine ⟨Function.update c a (v ^ n), fun x hx x' hx' h hh => ?_⟩
+    have hT' : h = 1 ∨ h ∈ T := hh.imp And.left And.left
+    rw [Finset.mem_insert] at hx hx'
+    have hxa : ∀ y ∈ s, y ≠ a := fun y hy hya => ha (hya ▸ hy)
+    rcases hx with rfl | hx <;> rcases hx' with rfl | hx'
+    · obtain ⟨hh, h1⟩ := hh.resolve_left fun h => h.2 rfl
+      simpa using hn₃ h ⟨hh, h1⟩
+    · simpa [hxa x' hx'] using hn₁ x' hx' h hT'
+    · simpa [hxa x hx] using hn₂ x hx h hT'
+    · simpa [hxa x hx, hxa x' hx'] using hc x hx x' hx' h hh
+
+/-! ### Discrimination -/
+
+open scoped Classical in
+/-- The reduced word of an element of `G[X]` in the free product of the factors. -/
+private noncomputable def word (w : GX G X) : CoprodI.Word (Factor G X) :=
+  CoprodI.Word.equiv (toCoprodI w)
+
+private theorem ofCoprodI_wordProd_word (w : GX G X) :
+    ofCoprodI (wordProd (word w).toList) = w := by
+  classical
+  -- `wordProd` of the letters of a reduced word is `Word.prod`, the inverse of `Word.equiv`.
+  have : wordProd (word w).toList = CoprodI.Word.equiv.symm (word w) := rfl
+  rw [this, word, Equiv.symm_apply_apply, ofCoprodI_toCoprodI]
+
+/-- A nonidentity element of `G[X]` survives under `x ↦ c x * u ^ k * (c x)⁻¹` for all large `k`,
+provided the conjugators satisfy the separation conditions on the letters of its reduced word. -/
+private theorem exists_forall_eval_ne_one (hBP : IsBP G) (hG : IsCSA G) (hu : u ≠ 1)
+    {w : GX G X} (hw : w ≠ 1)
+    (hc : ∀ (x x' : X) (m : Factor G X (some x)) (m' : Factor G X (some x')) (h : G),
+      (⟨some x, m⟩ : Letter G X) ∈ (word w).toList →
+        (⟨some x', m'⟩ : Letter G X) ∈ (word w).toList →
+          (h = 1 ∧ x ≠ x' ∨ (⟨none, h⟩ : Letter G X) ∈ (word w).toList) →
+            (c x)⁻¹ * h * c x' ∉ centralizer {u}) :
+    ∃ N : ℕ, ∀ k, N ≤ k → eval (.id G) (fun x => c x * u ^ k * (c x)⁻¹) w ≠ 1 := by
+  have hW := ofCoprodI_wordProd_word w
+  by_cases hl : pairs c (word w).toList = []
+  · -- Without variable letters, `w` is a nonidentity coefficient.
+    obtain ⟨g, rfl⟩ : ∃ g, w = Coprod.inl g :=
+      ⟨_, hW.symm.trans (ofCoprodI_wordProd_of_pairs_eq_nil c hl)⟩
+    refine ⟨0, fun k _ => ?_⟩
+    rw [eval_inl, MonoidHom.id_apply]
+    exact fun h => hw (by rw [h, map_one])
+  · obtain ⟨N, hN⟩ := Group.IsBP.exists_forall_mul_prod_ne_one hBP hG hu
+      (lead (word w).toList * nextConj c (word w).toList) hl
+      (fun p hp h0 => by
+        obtain ⟨x, m, hm, hp⟩ := exists_of_mem_pairs c hp
+        refine (word w).ne_one _ hm (ULift.ext ?_)
+        rw [← ofAdd_toAdd m.down, ← hp, h0]
+        rfl)
+      ((isChain_pairs c u (word w).chain_ne (word w).ne_one hc).imp fun p _ hp h => absurd h hp)
+    exact ⟨N, fun k hk => by rw [← hW, eval_ofCoprodI_wordProd]; exact hN k hk⟩
+
+/-- **Free `G`-groups are discriminated by `G`.** Let `G` be a nonabelian CSA group with the big
+powers property. Then `G[X]` is discriminated by `G` over `G`: any finitely many nonidentity
+elements of `G[X]` survive under one homomorphism `G[X] →* G` fixing `G`. -/
+theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hab : ¬IsMulCommutative G) :
+    IsDiscriminatedBy (Coprod.inl : G →* GX G X) (.id G) := by
+  classical
+  have := hBP.isMulTorsionFree
+  obtain ⟨u, v, huv⟩ : ∃ u v : G, ¬Commute u v := by
+    simpa [isMulCommutative_iff, commute_iff_eq] using hab
+  have hu : u ≠ 1 := by rintro rfl; exact huv (Commute.one_left v)
+  have hv : v ∉ centralizer {u} := fun h => huv (mem_centralizer_singleton_iff.1 h).symm
+  refine (isDiscriminatedBy_def _ _).2 fun S hS => ?_
+  -- Choose conjugators for the variables and coefficient letters of the reduced words of `S`.
+  obtain ⟨c, hc⟩ := exists_conj_notMem hG hv
+    (S.biUnion fun w => ((word w).toList.filterMap Sigma.fst).toFinset)
+    (⋃ w ∈ (S : Set (GX G X)), {g | (⟨none, g⟩ : Letter G X) ∈ (word w).toList})
+    (S.finite_toSet.biUnion fun w _ => (word w).toList.finite_toSet.preimage
+      (sigma_mk_injective (i := none)).injOn)
+  choose! N hN using fun w (hw : w ∈ S) => exists_forall_eval_ne_one c u hBP hG hu (hS w hw)
+    fun x x' m m' h hm hm' hh => hc x
+      (Finset.mem_biUnion.2 ⟨w, hw, List.mem_toFinset.2 (List.mem_filterMap.2 ⟨_, hm, rfl⟩)⟩) x'
+      (Finset.mem_biUnion.2 ⟨w, hw, List.mem_toFinset.2 (List.mem_filterMap.2 ⟨_, hm', rfl⟩)⟩) h
+      (hh.imp_right fun hh => ⟨Set.mem_biUnion hw hh,
+        (word w).ne_one _ hh⟩)
+  exact ⟨evalGHom (.id G) fun x => c x * u ^ (S.sup N) * (c x)⁻¹,
+    fun w hw => by rw [coe_evalGHom]; exact hN w hw _ (Finset.le_sup hw)⟩
+
+/-- **Free `F`-groups over a nonabelian free group are discriminated by it.** For a nonabelian
+free group `F`, the free `F`-group `F[X]` is discriminated by `F` over `F`. -/
+theorem isDiscriminatedBy_of_isFreeGroup {F : Type u} [Group F] [IsFreeGroup F]
+    (hF : ¬IsMulCommutative F) :
+    IsDiscriminatedBy (Coprod.inl : F →* GX F X) (.id F) :=
+  isDiscriminatedBy IsFreeGroup.isBP IsFreeGroup.isCSA hF
+
+end GX
+
+end TauCeti.GroupAlgGeom
