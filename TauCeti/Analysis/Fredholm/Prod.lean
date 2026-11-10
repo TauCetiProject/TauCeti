@@ -22,8 +22,8 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 
 * `ContinuousLinearMap.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
-* `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, over a complete field and between
-  Hausdorff topological vector spaces, a product is Fredholm only if both factors are.
+* `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
+  factors are.
 -/
 
 public section
@@ -69,37 +69,35 @@ lemma IsFredholm.prodMap
       simp only [P, coe_codRestrict_apply, comp_apply, coe_prodMap', Prod.map_apply,
         Submodule.subtypeL_apply, hPT ⟨x, hx⟩, hPS ⟨y, hy⟩]
 
-section Factors
-
-open scoped LinearMap.FiniteRangeSetoid
-
-variable [CompleteSpace K] [ContinuousSMul K E₁] [ContinuousSMul K E₂]
-variable [IsTopologicalAddGroup F₁] [ContinuousSMul K F₁]
-variable [IsTopologicalAddGroup F₂] [ContinuousSMul K F₂]
-variable [T2Space E₁] [T2Space E₂] [T2Space F₁] [T2Space F₂]
-
-/-- If a Cartesian product of operators is Fredholm, so is its first factor: compressing a
-quasi-inverse of the product to the first factors gives a quasi-inverse of `T`. -/
+/-- If a Cartesian product of operators is Fredholm, so is its first factor: each of the five
+Fredholm conditions on `T.prodMap S` restricts to the first factor. -/
 lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T := by
-  obtain ⟨Q, hQ⟩ := h.exists_isQuasiInverse
-  let P : E₁ × E₂ →ₗ[K] F₁ × F₂ := (T.prodMap S : E₁ × E₂ →L[K] F₁ × F₂)
-  refine .of_isQuasiInverse (v := (fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂))) ⟨?_, ?_⟩
-  · change _ ≈ _
-    calc ((fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂)) : F₁ →ₗ[K] E₁) ∘ₗ (T : E₁ →ₗ[K] F₁)
-        _ = LinearMap.fst K E₁ E₂ ∘ₗ ((Q : F₁ × F₂ →ₗ[K] E₁ × E₂) ∘ₗ P) ∘ₗ
-            LinearMap.inl K E₁ E₂ := by
-          ext x; simp [P]
-        _ ≈ LinearMap.fst K E₁ E₂ ∘ₗ LinearMap.id ∘ₗ LinearMap.inl K E₁ E₂ := by
-          grw [hQ.1.equiv]
-        _ = LinearMap.id := by ext x; simp
-  · change _ ≈ _
-    calc (T : E₁ →ₗ[K] F₁) ∘ₗ ((fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂)) : F₁ →ₗ[K] E₁)
-        _ = LinearMap.fst K F₁ F₂ ∘ₗ (P ∘ₗ (Q : F₁ × F₂ →ₗ[K] E₁ × E₂)) ∘ₗ
-            LinearMap.inl K F₁ F₂ := by
-          ext x; simp [P]
-        _ ≈ LinearMap.fst K F₁ F₂ ∘ₗ LinearMap.id ∘ₗ LinearMap.inl K F₁ F₂ := by
-          grw [hQ.2.equiv]
-        _ = LinearMap.id := by ext x; simp
+  have hker := h.finite_ker
+  have hcoker := h.finite_coker
+  have hrange := h.isClosed_range
+  rw [coe_prodMap, LinearMap.ker_prodMap] at hker
+  rw [coe_prodMap, LinearMap.range_prodMap] at hcoker hrange
+  have := (Submodule.prodEquiv T.ker S.ker).finiteDimensional
+  have := (Submodule.quotientProdEquiv T.range S.range).finiteDimensional
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · -- `LinearMap.isStrictMap_prodMap_iff` is stated for the underlying linear maps.
+    exact (LinearMap.isStrictMap_prodMap_iff (fₗ := (T : E₁ →ₗ[K] F₁))
+      (gₗ := (S : E₂ →ₗ[K] F₂))).mp h.isStrictMap |>.1
+  · -- The range of `T` is the slice of the closed set `range T ×ˢ range S` through `0`.
+    simpa using hrange.preimage (continuous_id.prodMk continuous_const : Continuous
+      fun y : F₁ ↦ (y, (0 : F₂)))
+  · exact Module.Finite.of_surjective (LinearMap.fst K T.ker S.ker) LinearMap.fst_surjective
+  · exact Module.Finite.of_surjective (LinearMap.fst K (F₁ ⧸ T.range) (F₂ ⧸ S.range))
+      LinearMap.fst_surjective
+  · obtain ⟨P, hP⟩ := h.closedComplemented_ker
+    have hmem (x : E₁) : (P (x, 0) : E₁ × E₂).1 ∈ T.ker :=
+      congr($(LinearMap.mem_ker.mp (P (x, 0)).2).1)
+    refine ⟨((fst K E₁ E₂).comp ((Submodule.subtypeL _).comp (P.comp (inl K E₁ E₂)))).codRestrict
+      _ hmem, fun x ↦ Subtype.ext ?_⟩
+    have hx : ((x : E₁), (0 : E₂)) ∈ (T.prodMap S : E₁ × E₂ →ₗ[K] F₁ × F₂).ker := by
+      simp
+    -- The compressed projection sends `x` to the first component of `P (x, 0) = (x, 0)`.
+    exact congr(($(hP ⟨_, hx⟩) : E₁ × E₂).1)
 
 /-- If a Cartesian product of operators is Fredholm, so is its second factor. -/
 lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S := by
@@ -113,7 +111,5 @@ lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S 
 /-- A Cartesian product of operators is Fredholm if and only if both factors are. -/
 lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
-
-end Factors
 
 end ContinuousLinearMap

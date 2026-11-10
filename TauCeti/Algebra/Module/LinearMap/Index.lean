@@ -12,11 +12,13 @@ public import TauCeti.LinearAlgebra.Quotient.Prod
 /-!
 # Index of linear maps
 
-This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing
-with a linear equivalence, its additivity under products with finite free kernels and cokernels,
-and its behaviour under restriction of scalars along a tower of division rings `K → L`: the index
-gets multiplied by `finrank K L`. For instance, the realification of a complex-linear map has
-twice its complex index.
+This file extends Mathlib's algebraic `LinearMap.index` API with the linear equivalences
+`LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp` between the kernels and cokernels
+of conjugate linear maps, the invariance of the index under composing with a linear equivalence,
+its additivity under products with finite free kernels and cokernels, and its behaviour under
+restriction of scalars along a tower of division rings `K → L`: the index gets multiplied by
+`finrank K L`. For instance, the realification of a complex-linear map has twice its complex
+index.
 
 These lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
 continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -30,6 +32,40 @@ variable {R M N P : Type*} [Ring R]
 variable [AddCommGroup M] [Module R M]
 variable [AddCommGroup N] [Module R N]
 variable [AddCommGroup P] [Module R P]
+
+section Conjugate
+
+variable {M' N' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+variable {f : M →ₗ[R] N} {g : M' →ₗ[R] N'}
+
+/-- Linear maps conjugate under linear equivalences, `e' ∘ f = g ∘ e`, have linearly equivalent
+kernels, through `e`. -/
+def kerEquivOfComp (e : M ≃ₗ[R] M') (e' : N ≃ₗ[R] N')
+    (h : (e' : N →ₗ[R] N') ∘ₗ f = g ∘ₗ (e : M →ₗ[R] M')) : f.ker ≃ₗ[R] g.ker :=
+  (e.submoduleMap f.ker).trans <| LinearEquiv.ofEq _ _ <| by
+    rw [← LinearEquiv.ker_comp e' f, h, ker_comp,
+      Submodule.map_comap_eq_of_surjective e.surjective]
+
+@[simp]
+lemma coe_kerEquivOfComp_apply (e : M ≃ₗ[R] M') (e' : N ≃ₗ[R] N')
+    (h : (e' : N →ₗ[R] N') ∘ₗ f = g ∘ₗ (e : M →ₗ[R] M')) (x : f.ker) :
+    (kerEquivOfComp e e' h x : M') = e x := by
+  rfl
+
+/-- Linear maps conjugate under linear equivalences, `e' ∘ f = g ∘ e`, have linearly equivalent
+cokernels, through `e'`. -/
+def cokerEquivOfComp (e : M ≃ₗ[R] M') (e' : N ≃ₗ[R] N')
+    (h : (e' : N →ₗ[R] N') ∘ₗ f = g ∘ₗ (e : M →ₗ[R] M')) : (N ⧸ f.range) ≃ₗ[R] N' ⧸ g.range :=
+  Submodule.Quotient.equiv _ _ e' <| by
+    rw [← range_comp, h, range_comp_of_range_eq_top _ (range_eq_top.2 e.surjective)]
+
+@[simp]
+lemma cokerEquivOfComp_mk (e : M ≃ₗ[R] M') (e' : N ≃ₗ[R] N')
+    (h : (e' : N →ₗ[R] N') ∘ₗ f = g ∘ₗ (e : M →ₗ[R] M')) (y : N) :
+    cokerEquivOfComp e e' h (Submodule.Quotient.mk y) = Submodule.Quotient.mk (e' y) := by
+  rfl
+
+end Conjugate
 
 /-- Postcomposition with a linear equivalence leaves the index unchanged. -/
 @[simp]
