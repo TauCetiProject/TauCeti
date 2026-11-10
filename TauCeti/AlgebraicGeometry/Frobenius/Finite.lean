@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.Algebra.CharP.Frobenius.Finite
 public import TauCeti.AlgebraicGeometry.Frobenius.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
 /-!
 # Finiteness of the absolute Frobenius
@@ -53,11 +54,7 @@ theorem isFinite_frobenius {R : Type u} [CommRing R] [ExpChar R p] [PerfectRing 
         TauCeti.powRingHom Γ(X, U) p (natCast_app_eq_zero hX U) := by
       ext s
       simp
-    -- `Γ(X, U)` is of finite type over `R`, through `R ≅ Γ(Spec R, ⊤)` followed by `f`
-    have hf := HasRingHomProperty.appLE @LocallyOfFiniteType f inferInstance
-      ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top
     rw [hF]
-    exact TauCeti.powRingHom_finite _ _ <| hf.comp <|
-      .of_surjective _ (ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm.surjective
+    exact TauCeti.powRingHom_finite _ _ (f.finiteType_ΓSpecIso_inv_comp_appLE hU)
 
 end AlgebraicGeometry.Scheme

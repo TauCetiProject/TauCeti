@@ -89,6 +89,11 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
+/-- The plumbing factors of the two input ends differ by a sign, as their end scales do. -/
+theorem plumbingFactor_one (L : ℝ) : one.plumbingFactor L = -zero.plumbingFactor L := by
+  simp only [plumbingFactor_def, endScale_one, endScale_zero]
+  ring
+
 /-- The plumbing factor is the end scale times the positive real number `e^{-2πL} / 2`. -/
 theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
     q.plumbingFactor L = q.endScale * ((Real.exp (-(2 * π * L)) / 2 : ℝ) : ℂ) := by
@@ -202,6 +207,24 @@ theorem sub_endCenter_div_plumbingFactor_ne_zero (q : Puncture) (L : ℝ) {w : �
     (hw : w ≠ q.endCenter) : (w - q.endCenter) / q.plumbingFactor L ≠ 0 :=
   div_ne_zero (sub_ne_zero.2 hw) (q.plumbingFactor_ne_zero L)
 
+/-- The point `(w - c_q) / ψ'` undoing the plumbing map is the puncture `1` exactly when `w` is the
+image `ψ(1)` of that puncture. -/
+theorem sub_endCenter_div_plumbingFactor_eq_one_iff (q : Puncture) (L : ℝ) {w : ℂ} :
+    (w - q.endCenter) / q.plumbingFactor L = 1 ↔ w = q.plumbingMap L 1 := by
+  constructor
+  · intro h
+    rw [← h, plumbingMap_sub_endCenter_div]
+  · rintro rfl
+    exact plumbingMap_sub_endCenter_div_plumbingFactor q L 1
+
+/-- Away from the punctures `0`, `1` and `ψ(1)` of the four-punctured sphere, the point
+`(w - c_q) / ψ'` undoing the plumbing map lies in the thrice-punctured sphere. -/
+theorem sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one (q : Puncture) (L : ℝ) {w : ℂ}
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    (w - q.endCenter) / q.plumbingFactor L ≠ 0 ∧ (w - q.endCenter) / q.plumbingFactor L ≠ 1 :=
+  ⟨q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter hw.1 q),
+    fun h => hw.2 ((q.sub_endCenter_div_plumbingFactor_eq_one_iff L).mp h)⟩
+
 /-- Undoing the plumbing map lowers the longitudinal coordinate by `L`: the end coordinate at `∞`
 of `(w - c_q) / ψ'` is that of `w` on the end `q`, minus `L`. -/
 theorem re_endCoord_inf_sub_endCenter_div (q : Puncture) (L : ℝ) {w : ℂ}
@@ -303,6 +326,26 @@ theorem plumbingMap_image_inter {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
       q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (by rw [endSign_eq_one hq]; linarith),
       by linarith⟩
 
+/-- The point of the inserted pair of pants that the plumbing map sends to `w`. It lies in the
+thrice-punctured sphere because `w` avoids the center of the end `q` and the image of `1`. -/
+def plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) : ThricePuncturedSphere :=
+  ⟨((w : ℂ) - q.endCenter) / q.plumbingFactor L,
+    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.2 q),
+    fun h => hw ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))⟩
+
+/-- The point undoing the plumbing map is `(w - c_q) / ψ'`. -/
+@[simp]
+theorem coe_plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) :
+    (q.plumbingPreimage L w hw : ℂ) = ((w : ℂ) - q.endCenter) / q.plumbingFactor L :=
+  (rfl)
+
+/-- The plumbing map sends `plumbingPreimage` back to the given point. -/
+theorem plumbingMap_plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) :
+    q.plumbingMap L (q.plumbingPreimage L w hw) = w :=
+  q.plumbingMap_sub_endCenter_div L w
 
 section RealCoordinates
 
@@ -420,7 +463,6 @@ theorem plumbingMap_cylindricalEndLift_inf (hq : q ≠ inf) (t : ℝ) :
   congr 1
   push_cast
   ring
-
 
 end RealCoordinates
 

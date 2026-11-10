@@ -431,10 +431,6 @@ private theorem setIntegral_hamiltonianCurvature_inserted (ω : SymplecticForm V
       (fun w hw ↦ differentiableAt_plumbedPerturbation_domain hq hHa hHb hHas hHbs hab hL
         (hP hw) _ 1)
       (fun w hw ↦ differentiableAt_plumbedPerturbation_domain hq hHa hHb hHas hHbs hab hL
-        (hP hw) _ Complex.I)
-      (fun w hw ↦ differentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL
-        (hP hw) _ 1)
-      (fun w hw ↦ differentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL
         (hP hw) _ Complex.I)]
   refine setIntegral_congr_fun hTm fun w hw ↦ ?_
   have hw' := mem_truncation.1 hw
