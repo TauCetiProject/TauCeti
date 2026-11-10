@@ -192,25 +192,6 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
 
 /-! ### The receiving and inserted pieces of a map -/
 
-/-- In the real coordinates of the plumbed four-punctured sphere, the components of the plumbed
-perturbation of `C¹` Hamiltonians are `C¹` jointly in the domain and target points. -/
-private theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
-    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have h := contMDiffAt_plumbedPerturbation (I := 𝓘(ℝ, V)) (n := 1) hq hHa hHb
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hz x
-  rw [contMDiffAt_prod_modelWithCornersSelf_iff, contMDiffAt_iff_contDiffAt] at h
-  exact (h.comp (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
-
 /-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
 the target. -/
 private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
@@ -223,7 +204,7 @@ private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
   rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x
+  exact (contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
     v).contDiffWithinAt
 
 /-- The receiving piece `(1 - β(s_q - L/2 - 1)) u` of a map `u` that is `C²` on the plumbed
@@ -398,8 +379,8 @@ private theorem setIntegral_hamiltonianCurvature_receiving (ω : SymplecticForm 
     rwa [endSign_eq_one hq, one_mul] at h
   have hu : endCutoff q (L / 2 + 1) z • u z = u z := (receivingPiece_eventuallyEq u hz).eq_of_nhds
   rw [hu, ← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth]
-  exact congrFun (SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le
-    ω.constSmooth hq hab hL (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre) (u z)
+  exact congrFun (SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt
+    ω.constSmooth hq hab (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) (by linarith)) (u z)
 
 /-- Over the image under the plumbing map of the inserted truncation `S_{L/2}`, the integrated
 curvature of the plumbed perturbation along `u` is the integrated curvature over `S` of the
@@ -462,7 +443,7 @@ private theorem setIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 4 < L) {f :
   have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)
   have hA := hT.image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
-  exact setIntegral_plumbedTruncation_of_integrableOn hq
+  exact setIntegral_truncation_union_image_of_integrableOn hq
     ((hf.mono fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL hz).integrableOn_compact hT)
     ((hf.mono (realChart_plumbingMap_image_subset hq hL)).integrableOn_compact hA)
 
@@ -604,7 +585,7 @@ theorem hamiltonianAction_le_sum_add_sum_add_of_plumbedPerturbation (ω : Symple
         (∑ r ∈ (Finset.univ.erase q).erase inf, ω.hamiltonianAction (Hb r) (fun t ↦ u
           (Complex.equivRealProdCLM (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I))))) +
         (∑ r, Ba r + ∑ r, Bb r) := by
-  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_plumbedTruncation q L _)
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_truncation_union_image q L _)
     fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have h := (abs_le.1 (abs_integral_floerEnergyDensity_plumbedPerturbation_sub_sum_le ω hq hHa hHb
     hHas hHbs hab hL hBa hBb hu)).2
@@ -659,8 +640,8 @@ private theorem floerEnergyDensity_and_hamiltonianCurvature_receiving (hq : q �
   have hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := by
     have h := hz'.2.2 q
     rwa [endSign_eq_one hq, one_mul] at h
-  refine ⟨?_, congrFun (hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hL
-    (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre) (u z)⟩
+  refine ⟨?_, congrFun (hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab
+    (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) (by linarith)) (u z)⟩
   simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
     perturbedMFDeriv_apply_stdComplexLineImag,
     plumbedPerturbation_of_mem_truncation (Ha := Ha) hq hab hL hz]
@@ -886,12 +867,12 @@ private theorem IsNondegenerate.setIntegral_plumbedTruncation_eq_add
   simp only [← SmoothBundleForm.eval₂_apply] at harea
   obtain ⟨hEins, hAins⟩ := setIntegral_floerEnergyDensity_inserted (ω := ω) hq hHa hHb hHas hHbs
     hab hL hu
-  rw [setIntegral_plumbedTruncation_of_integrableOn hq
+  rw [setIntegral_truncation_union_image_of_integrableOn hq
       (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hTc hTP hRT)
       (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hAc hAP hRA),
-    setIntegral_plumbedTruncation_of_integrableOn hq
+    setIntegral_truncation_union_image_of_integrableOn hq
       ((harea.mono hTP).integrableOn_compact hTc) ((harea.mono hAP).integrableOn_compact hAc),
-    setIntegral_plumbedTruncation_of_integrableOn hq hRT hRA,
+    setIntegral_truncation_union_image_of_integrableOn hq hRT hRA,
     setIntegral_congr_fun hT fun z hz ↦ (hrec hz).1,
     setIntegral_congr_fun hT fun z hz ↦ (hrec hz).2, hEins, hAins, hins.1]
   exact ⟨rfl, rfl, rfl⟩
@@ -1044,7 +1025,7 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_plumbedPerturbation
         ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
           (Complex.equivRealProdCLM
             (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)))) := by
-  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_plumbedTruncation q L _)
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_truncation_union_image q L _)
     fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le hq hHa hHb
     hHas hHbs hab hL hBa hBb hu)).2
