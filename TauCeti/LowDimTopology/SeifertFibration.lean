@@ -149,15 +149,11 @@ theorem fiberSetoid_mul_left {g : ℤ} (hg : g ≠ 0) (p q : ℤ) :
 theorem exists_isCoprime_fiberSetoid_eq {p q : ℤ} (hq : q ≠ 0) :
     ∃ p' q' : ℤ, (0 < q → 0 < q') ∧ q' ≠ 0 ∧ IsCoprime p' q' ∧
       fiberSetoid p q = fiberSetoid p' q' := by
-  have hg : 0 < Int.gcd p q := Int.gcd_pos_of_ne_zero_right p hq
-  have hg' : (Int.gcd p q : ℤ) ≠ 0 := by omega
-  have hdq : q = Int.gcd p q * (q / Int.gcd p q) :=
-    (Int.mul_ediv_cancel' (Int.gcd_dvd_right p q)).symm
-  refine ⟨p / Int.gcd p q, q / Int.gcd p q, fun h ↦ ?_, fun h ↦ hq (by rw [hdq, h, mul_zero]),
-    Int.isCoprime_iff_gcd_eq_one.2 (Int.gcd_div_gcd_div_gcd hg), ?_⟩
-  · exact (mul_pos_iff_of_pos_left (by omega)).1 (hdq ▸ h)
-  · rw [← fiberSetoid_mul_left hg' (p / Int.gcd p q), Int.mul_ediv_cancel' (Int.gcd_dvd_left p q),
-      ← hdq]
+  obtain ⟨g, p', q', hg, hpq, rfl, rfl⟩ := Int.exists_gcd_one' (Int.gcd_pos_of_ne_zero_right p hq)
+  have hg' : (g : ℤ) ≠ 0 := by exact_mod_cast hg.ne'
+  refine ⟨p', q', fun h ↦ (mul_pos_iff_of_pos_right (by exact_mod_cast hg)).1 h,
+    left_ne_zero_of_mul hq, Int.isCoprime_iff_gcd_eq_one.2 hpq, ?_⟩
+  rw [mul_comm p', mul_comm q', fiberSetoid_mul_left hg']
 
 /-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0` and `p` coprime to `q`, is
 homeomorphic to a circle. -/
