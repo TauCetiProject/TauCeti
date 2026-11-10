@@ -49,7 +49,8 @@ theorem IsLatticeSpan.tendsto_renewalMeasure_real_mul (ha : F.IsLatticeSpan a)
   have hF : F {0} < 1 := by
     apply tsub_pos_iff_lt.mp
     rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
-    exact pos_iff_ne_zero.mpr (measure_compl_singleton_zero_ne_zero hmax)
+    exact pos_iff_ne_zero.mpr
+      (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hmax)
   let ν := F[|{0}ᶜ].map (fun x ↦ ⌊x / a⌋₊)
   have := isProbabilityMeasure_cond_compl_singleton hF.ne
   have hν : ν {0} = 0 := by
@@ -99,7 +100,8 @@ theorem IsLatticeSpan.tendsto_renewalFunction_succ_mul_sub (ha : F.IsLatticeSpan
   have hF : F {0} < 1 := by
     apply tsub_pos_iff_lt.mp
     rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
-    exact pos_iff_ne_zero.mpr (measure_compl_singleton_zero_ne_zero hmax)
+    exact pos_iff_ne_zero.mpr
+      (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hmax)
   let := F.isLocallyFiniteMeasure_renewalMeasure hF
   simpa only [ha.toReal_renewalFunction_succ_mul_sub, Function.comp_def] using
     (ha.tendsto_renewalMeasure_real_mul hmax).comp (tendsto_add_atTop_nat 1)
