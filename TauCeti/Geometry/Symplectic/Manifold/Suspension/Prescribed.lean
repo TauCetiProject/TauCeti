@@ -119,18 +119,29 @@ private theorem cutoffFamily_of_mem {l : Λ} {p : (ℝ × ℝ) × M}
     (h : (l, suspensionCover φ p) ∈ U) :
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p =
       (hK₀c l p).cayleyInterp (V := E) (hK₁c l p h) (hρ (l, suspensionCover φ p)) :=
-  hσn.cutoffInterp_of_mem (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
-    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
-    (n := (l, p)) h
+  hσn.cutoffInterp_of_mem _ _ _ _ (n := (l, p)) h
 
 private theorem cutoffFamily_of_notMem {l : Λ} {p : (ℝ × ℝ) × M}
     (h : (l, suspensionCover φ p) ∉ U) :
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
-  hσn.cutoffInterp_of_notMem (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
-    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
-    (n := (l, p)) h
+  hσn.cutoffInterp_of_notMem _ _ _ _ (n := (l, p)) h
+
+/-- The cutoff family is compatible everywhere. -/
+private theorem compatible_cutoffFamily (l : Λ) (p : (ℝ × ℝ) × M) :
+    (hσn.symplecticFormAt p.2).Compatible (cutoffFamily hσn hK₀c hK₁c ρ hρ l p) :=
+  hσn.compatible_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2) _ _ _ _ (l, p)
+
+/-- Where the cutoff is one, the cutoff family is the prescribed family. -/
+private theorem cutoffFamily_of_eq_one [TopologicalSpace Λ] (hsupp : tsupport ρ ⊆ U) {l : Λ}
+    {p : (ℝ × ℝ) × M} (h : ρ (l, suspensionCover φ p) = 1) :
+    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₁ l p :=
+  hσn.cutoffInterp_of_eq_one _ _ _ _ (n := (l, p)) (hsupp (subset_tsupport ρ (by simp [h]))) h
+
+/-- Where the cutoff vanishes, the cutoff family is the background family. -/
+private theorem cutoffFamily_of_eq_zero {l : Λ} {p : (ℝ × ℝ) × M}
+    (h : ρ (l, suspensionCover φ p) = 0) :
+    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
+  hσn.cutoffInterp_of_eq_zero _ _ _ _ (n := (l, p)) h
 
 /-- Over the preimage of `U`, the cutoff family acts by the Cayley path expression in the
 operators of `K₀` and `K₁`. -/
@@ -139,11 +150,9 @@ private theorem cutoffFamily_apply_of_mem {l : Λ} {p : (ℝ × ℝ) × M}
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p v =
       cayleyPathFormula (ρ (l, suspensionCover φ p))
         (LinearMap.toContinuousLinearMap (K₀ l p).toLinearMap)
-        (LinearMap.toContinuousLinearMap (K₁ l p).toLinearMap) v :=
-  congr($(hσn.toContinuousLinearMap_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-    (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
-    (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
-    (n := (l, p)) h) v)
+        (LinearMap.toContinuousLinearMap (K₁ l p).toLinearMap) v := by
+  unfold cutoffFamily
+  exact DFunLike.congr_fun (hσn.toContinuousLinearMap_cutoffInterp _ _ _ _ (n := (l, p)) h) v
 
 /-- The cutoff family is periodic in `s`. -/
 private theorem cutoffFamily_add_fst
@@ -223,16 +232,9 @@ private theorem contMDiff_cutoffFamily (hU : IsOpen U)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         r.2.2 (cutoffFamily hσn hK₀c hK₁c ρ hρ r.1 r.2).toLinearMap.toContinuousLinearMap) := by
   have hcov := contMDiff_prodMap_suspensionCover (Λ := Λ) (IΛ := IΛ) (φ := φ)
-  -- The pulled back cutoff has topological support in the preimage of `U`.
-  have hsupp' : tsupport (fun r : Λ × ((ℝ × ℝ) × M) ↦ ρ (r.1, suspensionCover φ r.2)) ⊆
-      {r | (r.1, suspensionCover φ r.2) ∈ U} :=
-    (closure_minimal (t := (fun r : Λ × ((ℝ × ℝ) × M) ↦ (r.1, suspensionCover φ r.2)) ⁻¹'
-      tsupport ρ) (fun _ hr ↦ subset_tsupport ρ hr)
-      ((isClosed_tsupport ρ).preimage hcov.continuous)).trans fun _ hr ↦ hsupp hr
-  exact hσn.contMDiff_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-    (fun r ↦ hK₀c r.1 r.2) (fun r hr ↦ hK₁c r.1 r.2 hr) _ (fun _ ↦ hρ _)
-    (contMDiff_snd.comp contMDiff_snd) (hU.preimage hcov.continuous) hK₀ hK₁ (hsρ.comp hcov)
-    hsupp'
+  exact hσn.contMDiff_cutoffInterp _ _ _ _ (contMDiff_snd.comp contMDiff_snd)
+    (hU.preimage hcov.continuous) hK₀ hK₁ (hsρ.comp hcov)
+    ((tsupport_comp_subset_preimage ρ hcov.continuous).trans fun _ hr ↦ hsupp hr)
 
 end Cutoff
 
@@ -291,16 +293,9 @@ theorem exists_verticalFamily_eq_of_cutoff (ρ : Λ × (UnitAddCircle × SmoothM
     contMDiff_cutoffFamily hσn hK₀c hK₁c ρ hρ hU hK₀ hK₁ hsρ hsupp,
     cutoffFamily_add_fst hσn hK₀c hK₁c ρ hρ hs₀ hs₁,
     mfderiv_symm_cutoffFamily hσn hK₀c hK₁c ρ hρ ht₀ ht₁,
-    fun l p ↦ hσn.compatible_cutoffInterp (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-      (fun r ↦ hK₀c r.1 r.2) (fun r hr ↦ hK₁c r.1 r.2 hr) _ (fun _ ↦ hρ _) (l, p),
-    fun l p h ↦ hσn.cutoffInterp_of_eq_one (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-      (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
-      (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
-      (n := (l, p)) (hsupp (subset_tsupport ρ (by simp [Function.mem_support, h]))) h,
-    fun l p h ↦ hσn.cutoffInterp_of_eq_zero (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2)
-      (W := {r | (r.1, suspensionCover φ r.2) ∈ U}) (fun r ↦ hK₀c r.1 r.2)
-      (fun r hr ↦ hK₁c r.1 r.2 hr) (fun r ↦ ρ (r.1, suspensionCover φ r.2)) (fun _ ↦ hρ _)
-      (n := (l, p)) h⟩
+    compatible_cutoffFamily hσn hK₀c hK₁c ρ hρ,
+    fun _ _ ↦ cutoffFamily_of_eq_one hσn hK₀c hK₁c ρ hρ hsupp,
+    fun _ _ ↦ cutoffFamily_of_eq_zero hσn hK₀c hK₁c ρ hρ⟩
 
 include hK₀ hs₀ ht₀ hK₀c hU hK₁ hs₁ ht₁ hK₁c in
 /-- **Relative seam-compatible families on closed regions.** With the hypotheses of
