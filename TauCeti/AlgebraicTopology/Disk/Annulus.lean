@@ -25,8 +25,9 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
 * `TauCeti.TopCat.diskCylinderPath`: the straight-line homotopy in the cylinder `I × D^k` from
-  `w ↦ (1 - s, w / max d ‖w‖)`, with `s` the radial parameter of `w`, to `w ↦ (0, w)`. For
-  `0 < d < 1` it fixes the boundary sphere, at the bottom `0` of the cylinder.
+  `w ↦ (1 - s, diskRadialPush k hd (1, w))`, with `s` the radial parameter of `w`, to
+  `w ↦ (0, w)`. For `0 < d` the disk coordinate at time `0` is `w / max d ‖w‖`, and for
+  `0 < d < 1` the homotopy fixes the boundary sphere, at the bottom `0` of the cylinder.
 -/
 
 public section
@@ -255,8 +256,9 @@ theorem diskRadialPush_one_smul_diskBoundary (hd : 0 < d) (θ : TopCat.diskBound
   exact (TopCat.coe_diskBoundaryInclusion_apply_down k θ).symm
 
 /-- The straight-line homotopy in the cylinder `I × D^k`, for `0 ≤ d`, from the map
-`w ↦ (1 - s, w / max d ‖w‖)` at time `0`, where `s` is the radial parameter of `w`, to the map
-`w ↦ (0, w)` at time `1`. Its disk coordinate is the radial push with radius `d`, run backwards. -/
+`w ↦ (1 - s, diskRadialPush k hd (1, w))` at time `0`, where `s` is the radial parameter of `w`,
+to the map `w ↦ (0, w)` at time `1`. Its disk coordinate is the radial push with radius `d`, run
+backwards. For `0 < d` the disk coordinate at time `0` is `w / max d ‖w‖`. -/
 def diskCylinderPath (k : ℕ) (hd : 0 ≤ d) : C(TopCat.disk.{u} k × I, I × TopCat.disk.{u} k) where
   toFun p := (⟨(1 - (p.2 : ℝ)) * σ (annulusParam d p.1),
       mul_mem (symm p.2).2 (σ (annulusParam d p.1)).2⟩,
@@ -269,7 +271,8 @@ def diskCylinderPath (k : ℕ) (hd : 0 ≤ d) : C(TopCat.disk.{u} k × I, I × T
       ((diskRadialPush k hd).continuous.comp
         ((continuous_symm.comp continuous_snd).prodMk continuous_fst))
 
-/-- At time `0` the cylinder path is `w ↦ (1 - s, w / max d ‖w‖)`. -/
+/-- At time `0` the cylinder path is `w ↦ (1 - s, diskRadialPush k hd (1, w))`, which is
+`w ↦ (1 - s, w / max d ‖w‖)` when `0 < d`. -/
 @[simp]
 theorem diskCylinderPath_zero (hd : 0 ≤ d) (w : TopCat.disk.{u} k) :
     diskCylinderPath k hd (w, 0) = (σ (annulusParam d w), diskRadialPush k hd (1, w)) := by
