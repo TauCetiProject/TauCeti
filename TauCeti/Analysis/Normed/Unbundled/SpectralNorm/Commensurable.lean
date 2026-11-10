@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
 
 /-!
@@ -21,8 +21,6 @@ algebraic closure of `ℚ_[p]` are the rational powers of `p`.
 
 ## Main results
 
-* `NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero`: `‖x‖ ^ d = ‖a₀‖` for `x` with
-  minimal polynomial of degree `d` and constant coefficient `a₀`.
 * `TauCeti.NormedRing.PseudoUniformizer.isCommensurable_of_isAlgebraic`: commensurability passes
   from `K` to every multiplicative pseudo-uniformiser of `L`.
 
@@ -35,17 +33,6 @@ public section
 
 variable {K L : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [NormedField L] [NormedAlgebra K L] [Algebra.IsAlgebraic K L]
-
-variable (K) in
-/-- In an algebraic normed field extension `L` of a complete ultrametric field `K`, the norm of an
-element `x` raised to the degree of its minimal polynomial is the norm of the constant coefficient
-of that polynomial. -/
-theorem NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero (x : L) :
-    ‖x‖ ^ (minpoly K x).natDegree = ‖(minpoly K x).coeff 0‖ := by
-  have hd : ((minpoly K x).natDegree : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral x)).ne'
-  rw [NormedAlgebra.norm_eq_spectralNorm K, spectralNorm.spectralNorm_eq_norm_coeff_zero_rpow,
-    ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hd, Real.rpow_one]
 
 namespace TauCeti.NormedRing.PseudoUniformizer
 

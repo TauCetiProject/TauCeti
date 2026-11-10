@@ -131,6 +131,7 @@ theorem addValuation_p : addValuation p (p : ℂ_[p]) = 1 := by
 
 /-- **Compatibility with `ℚ_[p]`**: on `ℚ_[p]` the valuation is the `p`-adic valuation
 `Padic.addValuation`, with its integer values viewed as rationals. -/
+@[simp]
 theorem addValuation_algebraMap (x : ℚ_[p]) :
     addValuation p (algebraMap ℚ_[p] ℂ_[p] x) = (Padic.addValuation x).map ((↑) : ℤ → ℚ) := by
   rcases eq_or_ne x 0 with rfl | hx
