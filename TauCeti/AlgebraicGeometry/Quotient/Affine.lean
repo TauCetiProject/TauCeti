@@ -222,8 +222,9 @@ section Group
 variable (A : Type u) (G : Type v) [CommRing A] [Group G] [MulSemiringAction G A]
 
 /-- Every contravariant spectrum map of a group element is an isomorphism. -/
-instance (g : G) : IsIso (specComap A G g) :=
-  isIso_SpecMap_iff.mpr (MulSemiringAction.toRingEquiv G A g).bijective
+instance (g : G) : IsIso (specComap A G g) := by
+  rw [specComap_def]
+  exact isIso_SpecMap_iff.mpr (MulSemiringAction.toRingEquiv G A g).bijective
 
 /-- The contravariant spectrum map of `g` is the standard spectrum action by `g⁻¹`. -/
 @[simp]
