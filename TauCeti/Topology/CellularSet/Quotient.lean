@@ -76,14 +76,14 @@ theorem IsCellularSet.exists_collapse_comp_eq {X : Set M} (hX : IsCellularSet E 
       (∀ x ∉ U, c x = x) ∧ ∀ g : M → N, Continuous g → (∀ x ∈ X, ∀ y ∈ X, g x = g y) →
         ∃ k : M → N, Continuous k ∧ k ∘ c = g := by
   obtain ⟨c, hcc, hcs, hcf, hcU⟩ := hX.exists_collapse hU hXU
-  have hq : IsQuotientMap c := .of_surjective_continuous hcs hcc
+  have hq : IsQuotientMap (ContinuousMap.mk c hcc) := .of_surjective_continuous hcs hcc
   refine ⟨c, hcc, hcs, hcf, hcU, fun g hg hgX ↦ ?_⟩
-  -- `k` reads `g` at any preimage under `c`; the choice does not matter since `g` is constant on
-  -- `X`, and `k` is continuous because `c` is a quotient map.
-  have hkc : g ∘ surjInv hcs ∘ c = g := funext fun x ↦ by
-    rcases (hcf _ x).1 (surjInv_eq hcs (c x)) with h | ⟨hx', hx⟩
-    exacts [congrArg g h, hgX _ hx' x hx]
-  exact ⟨g ∘ surjInv hcs, hq.continuous_iff.2 (by rwa [comp_assoc, hkc]), hkc⟩
+  -- `g` is constant on the fibres of `c`, so it descends along the quotient map `c`.
+  have hf : FactorsThrough g c := fun x y hxy ↦ by
+    rcases (hcf x y).1 hxy with rfl | ⟨hx, hy⟩
+    exacts [rfl, hgX x hx y hy]
+  exact ⟨hq.lift ⟨g, hg⟩ hf, (hq.lift ⟨g, hg⟩ hf).continuous,
+    congrArg DFunLike.coe (hq.lift_comp ⟨g, hg⟩ hf)⟩
 
 /-- **Collapsing finitely many cellular sets.** Let `M` be a compact metric space which is a
 topological manifold modelled on a finite-dimensional real normed space `E`, and `X i`, `i ∈ s`,
