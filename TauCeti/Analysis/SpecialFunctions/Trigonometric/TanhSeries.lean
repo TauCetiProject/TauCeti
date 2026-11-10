@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
 /-!
 # The partial-fraction expansion of the hyperbolic tangent
@@ -24,13 +25,12 @@ poles at `± (n + 1)`. Halving the argument keeps exactly the poles at even inte
 
 `π cot (π z) - (π / 2) cot (π z / 2) = ∑_{n ≥ 0} (1 / (z - (2 n + 1)) + 1 / (z + (2 n + 1)))`
 
-for every non-integer `z`. Evaluating at `z = i y` turns cotangents into hyperbolic cotangents, and
-`coth (2 u) - coth u / 2 = tanh u / 2` gives the expansion of the hyperbolic tangent
-(`TauCeti.hasSum_pi_div_two_mul_tanh`).
+for every non-integer `z`. Evaluating at `z = i y` turns cotangents into hyperbolic cotangents
+(`Complex.cot_mul_I`), and `coth (2 u) - coth u / 2 = tanh u / 2` gives the expansion of the
+hyperbolic tangent (`TauCeti.hasSum_pi_div_two_mul_tanh`).
 
 ## Main results
 
-* `Complex.cot_mul_I`: the cotangent at an imaginary argument;
 * `TauCeti.hasSum_cotTerm_two_mul`: the odd-pole part of the cotangent expansion;
 * `TauCeti.hasSum_pi_div_two_mul_tanh`: the partial-fraction expansion of `tanh (π y / 2)`.
 -/
@@ -39,12 +39,6 @@ public section
 
 open Complex
 open scoped Real
-
-/-- The cotangent at an imaginary argument is a hyperbolic cotangent:
-`cot (z i) = -(cosh z / sinh z) i` for every complex `z` (both sides vanish at `z = 0`). -/
-theorem Complex.cot_mul_I (z : ℂ) : cot (z * I) = -(cosh z / sinh z) * I := by
-  rw [cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, ← div_div, div_I]
-  ring
 
 namespace TauCeti
 
@@ -107,12 +101,12 @@ theorem hasSum_pi_div_two_mul_tanh (y : ℝ) :
   convert h using 1
   -- At `z = i y` the cotangents become hyperbolic cotangents, `cot (i x) = -i coth x`, and
   -- `coth (2 u) - coth u / 2 = tanh u / 2` for `u = π y / 2`.
-  have hs : sinh (π * y / 2 : ℂ) ≠ 0 := by
-    exact_mod_cast Real.sinh_ne_zero.mpr (show π * y / 2 ≠ 0 by positivity)
+  have hu : π * y / 2 ≠ 0 := by positivity
+  have hs : sinh (π * y / 2 : ℂ) ≠ 0 := by exact_mod_cast Real.sinh_ne_zero.mpr hu
   have hc : cosh (π * y / 2 : ℂ) ≠ 0 := by exact_mod_cast (Real.cosh_pos (π * y / 2)).ne'
-  rw [show (π : ℂ) * (y * I) = 2 * (π * y / 2) * I by ring,
-    show (π : ℂ) * (y * I / 2) = π * y / 2 * I by ring, cot_mul_I, cot_mul_I, cosh_two_mul,
-    sinh_two_mul]
+  have e₁ : (π : ℂ) * (y * I) = 2 * (π * y / 2) * I := by ring
+  have e₂ : (π : ℂ) * (y * I / 2) = π * y / 2 * I := by ring
+  rw [e₁, e₂, cot_mul_I, cot_mul_I, cosh_two_mul, sinh_two_mul]
   push_cast [Real.tanh_eq_sinh_div_cosh]
   field_simp
   rw [I_sq]
