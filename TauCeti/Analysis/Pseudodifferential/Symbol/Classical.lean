@@ -48,9 +48,10 @@ The homogeneous terms enter the expansion through their cut-off terms
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
   classical symbol of order `m - 1`;
-* the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: the kernel of the principal symbol
-  `TauCeti.ClassicalSymbol.principalLinearMap` is the image of the classical symbols of order
-  `m - 1` (`TauCeti.ClassicalSymbol.ker_principalLinearMap`), and
+* the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: the principal symbol is surjective
+  (`TauCeti.ClassicalSymbol.principal_surjective`), its kernel is the image of the classical
+  symbols of order `m - 1` (`TauCeti.ClassicalSymbol.principal_eq_zero_iff_exists_inclusion`,
+  `TauCeti.ClassicalSymbol.ker_principalLinearMap`), and
   `TauCeti.ClassicalSymbol.principalEquiv` identifies the quotient by them with the homogeneous
   symbols of degree `m`;
 * `TauCeti.ClassicalSymbol.comp`: the pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of
@@ -523,8 +524,7 @@ end Tail
 /-! ### The principal symbol sequence
 
 The principal symbol fits into the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: it is
-surjective onto the homogeneous symbols of degree `m`
-(`TauCeti.ClassicalSymbol.principal_surjective`), and its kernel is the image of the classical
+surjective onto the homogeneous symbols of degree `m`, and its kernel is the image of the classical
 symbols of order `m - 1`. -/
 
 section PrincipalSequence
@@ -542,6 +542,15 @@ def principalLinearMap :
 theorem principalLinearMap_apply (a : ClassicalSymbol n V W m) :
     principalLinearMap n V W m a = a.principal :=
   (rfl)
+/-- **The kernel of the principal symbol.** A classical symbol of order `m` has principal symbol
+zero exactly when it is a classical symbol of order `m - 1`. -/
+theorem principal_eq_zero_iff_exists_inclusion (a : ClassicalSymbol n V W m) :
+    a.principal = 0 ↔ ∃ b : ClassicalSymbol n V W (m - 1), inclusion 1 (by simp) b = a := by
+  refine ⟨fun h => ⟨a.tail default, ?_⟩, ?_⟩
+  · -- With a vanishing leading term, `a` is the inclusion of its tail.
+    simpa [h] using inclusion_tail_add_ofHomogeneous default a
+  · rintro ⟨b, rfl⟩
+    exact principal_inclusion_succ b 0 (by simp)
 
 variable (n V W m) in
 /-- **The kernel of the principal symbol** is the image of the classical symbols of order
@@ -550,12 +559,8 @@ theorem ker_principalLinearMap :
     LinearMap.ker (principalLinearMap n V W m) =
       LinearMap.range (inclusion (n := n) (V := V) (W := W) (m' := m - 1) 1 (by simp)) := by
   ext a
-  simp only [LinearMap.mem_ker, principalLinearMap_apply, LinearMap.mem_range]
-  refine ⟨fun h => ⟨a.tail default, ?_⟩, ?_⟩
-  · -- With a vanishing leading term, `a` is the inclusion of its tail.
-    simpa [h] using inclusion_tail_add_ofHomogeneous default a
-  · rintro ⟨b, rfl⟩
-    exact principal_inclusion_succ b 0 (by simp)
+  simp only [LinearMap.mem_ker, principalLinearMap_apply, principal_eq_zero_iff_exists_inclusion,
+    LinearMap.mem_range]
 
 variable (n V W m) in
 /-- The principal symbol identifies the quotient of the classical symbols of order `m` by the
@@ -641,12 +646,10 @@ private theorem exists_remainder_comp (χ : FrequencyCutoff (CoordinateSpace n))
     -- `m' + m - (N + 1)`.
     obtain ⟨R, hR⟩ := ih (b.tail χ)
     have ht : (b.tail χ).term = fun i => (b.term (i + 1)).castDegree (by push_cast; ring) := rfl
-    have hsum : ContDiff ℝ ∞
-        (∑ k ∈ Finset.range (N + 1), (cutoffSymbol χ (compTerms b.term a.term k)).coefficient) := by
-      simpa only [Finset.sum_fn] using
-        ContDiff.sum fun k _ => (cutoffSymbol χ (compTerms b.term a.term k)).contDiff_coefficient
     obtain ⟨r, hr⟩ := Symbol.exists_coefficient_eq_of_forall_le_norm
-      ((b.toSymbol.comp a.toSymbol).contDiff_coefficient.sub hsum)
+      ((b.toSymbol.comp a.toSymbol).contDiff_coefficient.sub
+        (Symbol.contDiff_sum_coefficient (Finset.range (N + 1))
+          fun k => cutoffSymbol χ (compTerms b.term a.term k)))
       (Symbol.inclusion (le_of_eq (by push_cast; ring))
           ((cutoffSymbol χ b.principal).comp (a.remainder χ (N + 1))) +
         Symbol.inclusion (le_of_eq (by push_cast; ring)) R : Symbol n V U (m' + m - (N + 1 : ℕ)))

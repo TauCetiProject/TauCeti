@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.ODE.Basic
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
@@ -38,6 +40,8 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
 * `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
   the pair of gradients, and is Lipschitz when both gradients are.
+* `IsIntegralCurve.separatedSum`: pairs of negative gradient trajectories of the summands are
+  negative gradient trajectories of the separated sum.
 * `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
   its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
   Morse index.
@@ -189,6 +193,23 @@ theorem lipschitzWith_gradient_separatedSum {K K' : ℝ≥0} (hfd : Differentiab
     rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]]
   refine Real.sqrt_le_sqrt ?_
   nlinarith [pow_le_pow_left₀ dist_nonneg h₁ 2, pow_le_pow_left₀ dist_nonneg h₂ 2]
+
+/-- **Negative gradient trajectories of a separated sum.** If `γ₁` and `γ₂` are negative gradient
+trajectories of `f` and `g`, then the pair `s ↦ (γ₁ s, γ₂ s)` is a negative gradient trajectory of
+`separatedSum f g`. -/
+theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ → F}
+    (h₁ : IsIntegralCurve γ₁ fun _ x ↦ -∇ f x) (h₂ : IsIntegralCurve γ₂ fun _ y ↦ -∇ g y)
+    (hf : ∀ s, DifferentiableAt ℝ f (γ₁ s)) (hg : ∀ s, DifferentiableAt ℝ g (γ₂ s)) :
+    IsIntegralCurve (fun s ↦ WithLp.toLp 2 (γ₁ s, γ₂ s)) fun _ z ↦ -∇ (separatedSum f g) z := by
+  intro s
+  have h := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp_hasDerivAt s
+    ((h₁ s).prodMk (h₂ s))
+  simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
+    WithLp.prodContinuousLinearEquiv_symm_apply] at h
+  refine h.congr_deriv ?_
+  dsimp only
+  rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
+    WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
 
 end Gradient
 

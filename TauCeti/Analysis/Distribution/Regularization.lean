@@ -130,6 +130,16 @@ theorem translatePairing_zero (ρ : 𝓓(V, ℝ)) :
   ext x
   simp [translatePairing]
 
+/-- The regularization by the zero test function vanishes. -/
+@[simp]
+theorem translatePairing_zero_kernel (T : 𝓓'(Ω, F)) :
+    T.translatePairing (0 : 𝓓(V, ℝ)) = 0 := by
+  funext x
+  by_cases hx : MapsTo (· + x) (tsupport (0 : 𝓓(V, ℝ))) Ω
+  · rw [translatePairing_eq T (φ := 0) fun y => by simp]
+    simp
+  · exact translatePairing_eq_zero_of_not_mapsTo T hx
+
 /-- Regularization is additive in the distribution. -/
 @[simp]
 theorem translatePairing_add (T S : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
@@ -177,14 +187,17 @@ private theorem translatePairing_add_sub_sub_eq (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
     translatePairing_eq _ (translateOfMapsTo_apply ρ hx), lineDerivOp_apply_apply]
   simp [sub_eq_add_neg]
 
-variable [FiniteDimensional ℝ E]
-
 /-- The regularization is differentiable at every admissible translation, with derivative given
 by the regularizations of the distributional derivatives of `T`. -/
 private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (T.translatePairing ρ) L x ∧
       ∀ v, L v = (∂_{v} T).translatePairing ρ x := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · -- If `ρ = 0` every translate is zero, so the regularization and its derivatives vanish.
+    obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    exact ⟨0, by rw [translatePairing_zero_kernel]; exact hasFDerivAt_const (0 : F) x,
+      fun v => by simp⟩
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v => (∂_{v} T).translatePairing ρ x
       map_add' := fun v w => by simp [lineDerivOp_left_add]
@@ -252,6 +265,10 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
 set of translations for which `ρ (· - x)` is supported in `Ω`. -/
 theorem contDiffOn_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
     ContDiffOn ℝ ∞ (T.translatePairing ρ) {x | MapsTo (· + x) (tsupport ρ) Ω} := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    rw [translatePairing_zero_kernel]
+    exact contDiffOn_const
   have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
   rw [contDiffOn_infty]
   intro n
@@ -278,6 +295,8 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
+
+variable [FiniteDimensional ℝ E]
 
 section Convolution
 
