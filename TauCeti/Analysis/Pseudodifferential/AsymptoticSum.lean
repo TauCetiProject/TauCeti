@@ -39,12 +39,18 @@ order `m' ≥ m` with constants `C t^{m - m'}`
 (`TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`), which tend to zero as `t → ∞` when
 `m' > m`.
 
+The asymptotic sum is unique up to a smoothing symbol: a symbol `b'` of order `m₀` is another
+asymptotic sum of the `aⱼ` exactly when `b' - b` is smoothing
+(`TauCeti.Symbol.forall_exists_remainder_iff_isSmoothing_sub`).
+
 ## Main declarations
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
+* `TauCeti.Symbol.forall_exists_remainder_iff_isSmoothing_sub`: asymptotic sums are unique modulo
+  smoothing symbols.
 
 ## References
 
@@ -371,6 +377,31 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
         ContDiff.sum fun j _ => (a j).contDiff_coefficient),
       fun K hK α β => hrem N hK α β⟩, rfl⟩⟩
   simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using hrem 0 hK α β
+
+/-- **Uniqueness of asymptotic sums.** Let `b` be an asymptotic sum of symbols `aⱼ` of orders `mⱼ`
+tending to `-∞`: for every `N` the remainder `b - ∑_{j < N} aⱼ` is a symbol of order `m_N`. Then a
+symbol `b'` of order `m₀` is an asymptotic sum of the `aⱼ` exactly when `b' - b` is smoothing. -/
+theorem forall_exists_remainder_iff_isSmoothing_sub {m : ℕ → ℝ} (hm' : Tendsto m atTop atBot)
+    {a : ∀ j, Symbol n V W (m j)} {b : Symbol n V W (m 0)}
+    (hb : ∀ N, ∃ r : Symbol n V W (m N),
+      b.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient)
+    (b' : Symbol n V W (m 0)) :
+    (∀ N, ∃ r : Symbol n V W (m N),
+      b'.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient) ↔
+      (b' - b).IsSmoothing := by
+  refine ⟨fun hb' => isSmoothing_iff.2 fun m'' => ?_, fun h N => ?_⟩
+  · -- `b' - b` is the difference of the remainders after `N` terms, of order `m_N ≤ m''`.
+    obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
+    obtain ⟨r, hr⟩ := hb N
+    obtain ⟨r', hr'⟩ := hb' N
+    refine ⟨inclusion hN (r' - r), ?_⟩
+    rw [coefficient_inclusion, coefficient_sub, ← hr, ← hr', coefficient_sub]
+    abel
+  · obtain ⟨s, hs⟩ := isSmoothing_iff.1 h (m N)
+    obtain ⟨r, hr⟩ := hb N
+    refine ⟨r + s, ?_⟩
+    rw [coefficient_add, ← hr, hs, coefficient_sub]
+    abel
 
 end Symbol
 

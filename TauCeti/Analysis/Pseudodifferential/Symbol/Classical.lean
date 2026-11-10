@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 
 /-!
 # Classical symbols
@@ -58,7 +59,14 @@ The homogeneous terms enter the expansion through their cut-off terms
   classical symbols of orders `m'` and `m` is classical of order `m' + m`, with the terms
   `cₖ = ∑_{i + j = k} bᵢ ∘ aⱼ` (`TauCeti.ClassicalSymbol.compTerms`), so the principal symbol is
   multiplicative (`TauCeti.ClassicalSymbol.principal_comp`). This is not the composition of the
-  operators, whose lower order terms also involve derivatives of the symbols.
+  operators, whose lower order terms also involve derivatives of the symbols;
+* `TauCeti.ClassicalSymbol.term_surjective`: every sequence of homogeneous terms is the expansion
+  of a classical symbol, obtained by summing their cut-off terms `χ(ξ) a_{m-j}(x, ξ)` with
+  `TauCeti.Symbol.exists_asymptoticSum` (Borel summation). Together with
+  `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff` applied to the difference `a - b`, this
+  identifies the classical symbols of order `m` modulo smoothing symbols with the sequences of
+  homogeneous terms. This is how formal classical expansions, such as the inverse-symbol
+  recursion of a parametrix, become symbols.
 
 ## References
 
@@ -705,6 +713,31 @@ theorem principal_comp : (b.comp a).principal = b.principal.comp a.principal := 
   simp
 
 end Comp
+
+/-! ### Borel summation -/
+
+section Summation
+
+/-- **Borel summation of classical expansions.** Every sequence of homogeneous terms `a_{m-j}` of
+degrees `m - j` is the sequence of homogeneous terms of a classical symbol of order `m`, namely of
+an asymptotic sum of their cut-off terms `χ(ξ) a_{m-j}(x, ξ)`. This classical symbol is unique up
+to a smoothing symbol (`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff` applied to the
+difference of two such symbols). -/
+theorem term_surjective :
+    Function.Surjective (term : ClassicalSymbol n V W m →
+      (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) := by
+  intro h
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
+  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
+    tendsto_atBot_add_const_left _ m (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (h j)
+  refine ⟨⟨Symbol.inclusion (by simp) b, h, χ, fun N => ?_⟩, rfl⟩
+  obtain ⟨r, hr⟩ := hb N
+  refine ⟨r, fun p => ?_⟩
+  simp [← hr, Finset.sum_apply]
+
+end Summation
 
 end ClassicalSymbol
 
