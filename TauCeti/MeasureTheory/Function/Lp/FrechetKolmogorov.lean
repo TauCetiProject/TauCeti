@@ -298,7 +298,7 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.
   have hequi : UniformEquicontinuous fun i : S => ballAverage mu r ⇑(i : Lp F p mu) :=
-    uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu)) hr
+    uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu))
       fun c hc => by
         obtain ⟨δ, hδ, hδS⟩ := htrans c hc
         exact ⟨δ, hδ, fun i => hδS _ i.2⟩
