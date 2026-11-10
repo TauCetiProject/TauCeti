@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
+public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 
 /-!
 # Uniform Euler logarithmic derivatives of Dirichlet `L`-functions
@@ -20,19 +21,25 @@ bounded in norm by `Λ(n) / n` at the non-prime `n`, uniformly in `N`, `χ` and 
 `k ≥ 2`. This constant is chosen before the level, the character and the point. Neither
 primitivity nor nontriviality of `χ` is needed.
 
-For a real-valued character and real `σ > 1`, the logarithmic derivative is real and the prime
-series is the cast of the corresponding real series, which satisfies the same bound.
+At real `σ > 1` the real parts satisfy the same bound, for every character. For a real-valued
+character the logarithmic derivative is moreover real, and the prime series is the cast of the
+corresponding real series.
+
+The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_div`, is in
+`TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt`.
 
 ## Main results
 
-* `ArithmeticFunction.vonMangoldt.summable_nonprime_div`: summability of the constant's series.
+* `DirichletCharacter.logDeriv_LFunction_eq_neg_LSeries`: `L′/L(s, χ) = -∑ χ(n) Λ(n) / n ^ s`.
 * `DirichletCharacter.summable_prime_mul_log_div_cpow`: the prime series converges.
 * `DirichletCharacter.logDeriv_LFunction_add_tsum_prime_eq`: `L′/L` plus the prime series is minus
   the higher-prime-power part of the twisted von Mangoldt series.
 * `DirichletCharacter.norm_logDeriv_LFunction_add_tsum_prime_le` and
   `DirichletCharacter.exists_norm_logDeriv_LFunction_add_tsum_prime_le`: the uniform bound.
-* `DirichletCharacter.abs_re_logDeriv_LFunction_add_tsum_prime_le`: the real form for real-valued
-  characters at real arguments.
+* `DirichletCharacter.abs_re_logDeriv_LFunction_add_tsum_prime_le`: the real-part form at real
+  arguments.
+* `DirichletCharacter.im_logDeriv_LFunction_ofReal`: `L′/L(σ, χ)` is real for a real-valued
+  character.
 -/
 
 public section
@@ -40,18 +47,6 @@ public section
 open ArithmeticFunction LSeries
 
 open scoped LSeries.notation
-
-namespace ArithmeticFunction.vonMangoldt
-
-/-- The von Mangoldt weights `Λ n / n` at the non-prime `n`, which are supported on the prime
-powers `p ^ k` with `k ≥ 2`, are summable. -/
-theorem summable_nonprime_div :
-    Summable fun n : ℕ ↦ (if n.Prime then 0 else vonMangoldt n) / n := by
-  have h (n : ℕ) : residueClass (1 : ZMod 1) n = vonMangoldt n :=
-    Set.indicator_of_mem (Subsingleton.elim (n : ZMod 1) 1) _
-  simpa only [h] using summable_residueClass_non_primes_div (1 : ZMod 1)
-
-end ArithmeticFunction.vonMangoldt
 
 namespace DirichletCharacter
 
@@ -103,20 +98,25 @@ theorem prime_mul_log_div_cpow_eq_zero_of_dvd {p : ℕ} (hp : p.Prime) (hpN : p 
   rw [MulChar.map_nonunit _ fun hu ↦ (ZMod.isUnit_prime_iff_not_dvd hp).mp hu hpN, zero_mul,
     zero_div]
 
+/-- For `1 < re s`, the logarithmic derivative of `L(s, χ)` is minus the twisted von Mangoldt
+series `∑ χ(n) Λ(n) / n ^ s`. -/
+theorem logDeriv_LFunction_eq_neg_LSeries [NeZero N] (hs : 1 < s.re) :
+    logDeriv (LFunction χ) s = -LSeries (↗χ * ↗Λ) s := by
+  rw [logDeriv_apply, deriv_LFunction_eq_deriv_LSeries χ hs, LFunction_eq_LSeries χ hs,
+    LSeries_twist_vonMangoldt_eq χ hs, neg_div, neg_neg]
+
 /-- For `1 < re s`, the logarithmic derivative of `L(s, χ)` plus the prime series is minus the
 part of the twisted von Mangoldt series at the higher prime powers. -/
 theorem logDeriv_LFunction_add_tsum_prime_eq [NeZero N] (hs : 1 < s.re) :
     logDeriv (LFunction χ) s + ∑' p : Nat.Primes, χ p * Real.log p / (p : ℂ) ^ s =
       -∑' n, if n.Prime then 0 else term (↗χ * ↗Λ) s n := by
-  have hL : logDeriv (LFunction χ) s = -LSeries (↗χ * ↗Λ) s := by
-    rw [logDeriv_apply, deriv_LFunction_eq_deriv_LSeries χ hs, LFunction_eq_LSeries χ hs,
-      LSeries_twist_vonMangoldt_eq χ hs, neg_div, neg_neg]
   have hsplit : LSeries (↗χ * ↗Λ) s = (∑' n, if n.Prime then term (↗χ * ↗Λ) s n else 0) +
       ∑' n, if n.Prime then 0 else term (↗χ * ↗Λ) s n := by
     rw [LSeries, ← (χ.summable_term_twist_vonMangoldt_prime hs).tsum_add
       (χ.summable_term_twist_vonMangoldt_nonprime hs.le)]
     exact tsum_congr fun n ↦ by split_ifs <;> simp
-  rw [hL, (χ.hasSum_prime_mul_log_div_cpow hs).tsum_eq, hsplit]
+  rw [χ.logDeriv_LFunction_eq_neg_LSeries hs, (χ.hasSum_prime_mul_log_div_cpow hs).tsum_eq,
+    hsplit]
   ring
 
 /-- **Uniform Euler logarithmic derivative.** For `1 < re s`,
@@ -136,6 +136,34 @@ theorem exists_norm_logDeriv_LFunction_add_tsum_prime_le :
       ‖logDeriv (LFunction χ) s + ∑' p : Nat.Primes, χ p * Real.log p / (p : ℂ) ^ s‖ ≤ C :=
   ⟨_, fun _ _ χ _ hs ↦ χ.norm_logDeriv_LFunction_add_tsum_prime_le hs⟩
 
+/-! ### Real parts at real arguments -/
+
+/-- At real `σ`, the real part of a term of the prime series is `re χ(p) log p / p ^ σ`. -/
+theorem re_prime_mul_log_div_cpow_ofReal (p : ℕ) (σ : ℝ) :
+    (χ p * Real.log p / (p : ℂ) ^ (σ : ℂ)).re = (χ p).re * Real.log p / (p : ℝ) ^ σ := by
+  rw [← Complex.ofReal_natCast p, ← Complex.ofReal_cpow p.cast_nonneg, Complex.div_ofReal_re,
+    Complex.re_mul_ofReal]
+
+/-- For real `σ > 1`, the real prime series converges. -/
+theorem summable_prime_re_mul_log_div_rpow {σ : ℝ} (hσ : 1 < σ) :
+    Summable fun p : Nat.Primes ↦ (χ p).re * Real.log p / (p : ℝ) ^ σ := by
+  simpa only [re_prime_mul_log_div_cpow_ofReal] using
+    (Complex.hasSum_re (χ.summable_prime_mul_log_div_cpow (s := σ) (by simpa)).hasSum).summable
+
+/-- **Uniform Euler logarithmic derivative, real form.** For real `σ > 1`,
+`|re L′/L(σ, χ) + ∑ₚ re χ(p) log p / p ^ σ|` is at most the absolute constant
+`∑ₙ (if n is prime then 0 else Λ(n)) / n`. -/
+theorem abs_re_logDeriv_LFunction_add_tsum_prime_le [NeZero N] {σ : ℝ} (hσ : 1 < σ) :
+    |(logDeriv (LFunction χ) σ).re + ∑' p : Nat.Primes, (χ p).re * Real.log p / (p : ℝ) ^ σ| ≤
+      ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
+  have hs : 1 < (σ : ℂ).re := by simpa
+  have hre : ∑' p : Nat.Primes, (χ p).re * Real.log p / (p : ℝ) ^ σ =
+      (∑' p : Nat.Primes, χ p * Real.log p / (p : ℂ) ^ (σ : ℂ)).re := by
+    rw [Complex.re_tsum (χ.summable_prime_mul_log_div_cpow hs)]
+    exact tsum_congr fun p ↦ (χ.re_prime_mul_log_div_cpow_ofReal p σ).symm
+  rw [hre, ← Complex.add_re]
+  exact (Complex.abs_re_le_norm _).trans (χ.norm_logDeriv_LFunction_add_tsum_prime_le hs)
+
 /-! ### Real-valued characters at real arguments -/
 
 section Real
@@ -152,13 +180,6 @@ theorem ofReal_re_mul_log_div_rpow (p : ℕ) (σ : ℝ) :
   congr 2
   exact Complex.ext rfl (hχ p).symm
 
-/-- For a real-valued character and real `σ > 1`, the real prime series converges. -/
-theorem summable_prime_re_mul_log_div_rpow {σ : ℝ} (hσ : 1 < σ) :
-    Summable fun p : Nat.Primes ↦ (χ p).re * Real.log p / (p : ℝ) ^ σ := by
-  rw [← Complex.summable_ofReal]
-  simpa only [ofReal_re_mul_log_div_rpow hχ] using
-    χ.summable_prime_mul_log_div_cpow (s := σ) (by simpa)
-
 /-- For a real-valued character, the complex prime series at real `σ` is the cast of the real
 prime series. -/
 theorem ofReal_tsum_prime_re_mul_log_div_rpow (σ : ℝ) :
@@ -172,26 +193,14 @@ real. -/
 theorem im_logDeriv_LFunction_ofReal [NeZero N] {σ : ℝ} (hσ : 1 < σ) :
     (logDeriv (LFunction χ) σ).im = 0 := by
   have hs : 1 < (σ : ℂ).re := by simpa
-  rw [logDeriv_apply, deriv_LFunction_eq_deriv_LSeries χ hs, LFunction_eq_LSeries χ hs,
-    ← neg_neg (deriv _ _ / _), ← neg_div, ← LSeries_twist_vonMangoldt_eq χ hs, Complex.neg_im,
-    LSeries, Complex.im_tsum (LSeriesSummable_twist_vonMangoldt χ hs), neg_eq_zero]
+  rw [χ.logDeriv_LFunction_eq_neg_LSeries hs, Complex.neg_im, LSeries,
+    Complex.im_tsum (LSeriesSummable_twist_vonMangoldt χ hs), neg_eq_zero]
   refine (tsum_congr fun n ↦ ?_).trans tsum_zero
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   rw [term_of_ne_zero hn, Pi.mul_apply, ← Complex.ofReal_natCast,
     ← Complex.ofReal_cpow n.cast_nonneg, Complex.div_ofReal_im]
   simp [hχ]
-
-/-- **Uniform Euler logarithmic derivative, real form.** For a real-valued character and real
-`σ > 1`, `|L′/L(σ, χ) + ∑ₚ χ(p) log p / p ^ σ|` is at most the absolute constant
-`∑ₙ (if n is prime then 0 else Λ(n)) / n`. -/
-theorem abs_re_logDeriv_LFunction_add_tsum_prime_le [NeZero N] {σ : ℝ} (hσ : 1 < σ) :
-    |(logDeriv (LFunction χ) σ).re + ∑' p : Nat.Primes, (χ p).re * Real.log p / (p : ℝ) ^ σ| ≤
-      ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
-  have h := χ.norm_logDeriv_LFunction_add_tsum_prime_le (s := σ) (by simpa)
-  rw [← ofReal_tsum_prime_re_mul_log_div_rpow hχ] at h
-  refine (Complex.abs_re_le_norm _).trans_eq' ?_ |>.trans h
-  simp
 
 end Real
 
