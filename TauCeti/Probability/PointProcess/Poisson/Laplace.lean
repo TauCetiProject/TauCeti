@@ -93,8 +93,7 @@ private theorem poisson_laplace_monotone [IsProbabilityMeasure P]
   · intro n
     fun_prop
   · filter_upwards [] with x m n hmn
-    exact tsub_le_tsub_left (ENNReal.coe_le_coe.mpr
-      (ENNReal.antitone_expNeg (hmono hmn x))) 1
+    exact ENNReal.monotone_one_sub_expNeg (hmono hmn x)
   · filter_upwards [] with x
     exact (ENNReal.continuous_sub_left (by simp)).continuousAt.tendsto.comp
       ((ENNReal.continuous_coe.comp ENNReal.continuous_expNeg).continuousAt.tendsto.comp
@@ -122,17 +121,14 @@ private theorem poisson_laplace_infinite_level
     have hbound := mul_meas_ge_le_lintegral (μ := N ω) hf c
     simp only [hω, ENNReal.mul_top hc] at hbound
     simp [top_unique hbound]
-  have hpos : (ENNReal.expNeg c : ℝ≥0∞) < 1 := by
-    rw [ENNReal.coe_expNeg, EReal.exp_lt_one_iff]
-    exact EReal.neg_lt_zero.mpr (EReal.coe_ennreal_pos_iff_ne_zero.mpr hc)
+  have hpos := ENNReal.expNeg_lt_one hc
   have hbound : (1 - (ENNReal.expNeg c : ℝ≥0∞)) * Λ {x | c ≤ f x} ≤
       ∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞) ∂Λ := by
     rw [← lintegral_indicator_const hA]
     apply lintegral_mono
     intro x
     by_cases hx : c ≤ f x
-    · simpa [hx] using tsub_le_tsub_left
-        (ENNReal.coe_le_coe.mpr (ENNReal.antitone_expNeg hx)) 1
+    · simpa [hx] using ENNReal.monotone_one_sub_expNeg hx
     · simp [hx]
   rw [hΛ, ENNReal.mul_top (ne_of_gt (tsub_pos_iff_lt.mpr hpos))] at hbound
   simp [hcount, top_unique hbound]

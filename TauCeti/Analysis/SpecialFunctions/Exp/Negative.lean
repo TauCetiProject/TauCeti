@@ -59,6 +59,16 @@ theorem antitone_expNeg : Antitone expNeg := by
 theorem expNeg_le_one (x : ℝ≥0∞) : expNeg x ≤ 1 := by
   simpa using antitone_expNeg (a := 0) (b := x) bot_le
 
+/-- A nonzero argument has negative exponential strictly less than one, including at infinity. -/
+theorem expNeg_lt_one {x : ℝ≥0∞} (hx : x ≠ 0) : (expNeg x : ℝ≥0∞) < 1 := by
+  rw [coe_expNeg, EReal.exp_lt_one_iff]
+  exact EReal.neg_lt_zero.mpr (EReal.coe_ennreal_pos_iff_ne_zero.mpr hx)
+
+/-- The complement of the negative exponential is monotone, including at infinity. -/
+theorem monotone_one_sub_expNeg : Monotone fun x => 1 - (expNeg x : ℝ≥0∞) := by
+  intro x y h
+  exact tsub_le_tsub_left (ENNReal.coe_le_coe.mpr (antitone_expNeg h)) 1
+
 /-- Addition becomes multiplication, even when an argument is infinite. -/
 @[simp] theorem expNeg_add (x y : ℝ≥0∞) : expNeg (x + y) = expNeg x * expNeg y := by
   simp only [expNeg, EReal.coe_ennreal_add,
