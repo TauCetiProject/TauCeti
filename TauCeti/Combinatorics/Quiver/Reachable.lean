@@ -33,6 +33,9 @@ connected components of its underlying graph.
   arrows exactly when they are reachable in the underlying graph.
 * `TauCeti.Quiver.weaklyConnectedComponentEquiv`: the weakly connected components of a quiver are
   the connected components of its underlying graph.
+* `TauCeti.Quiver.ComponentVertex`: the vertices in a fixed weakly connected component of an
+  explicit arrow family.
+* `TauCeti.Quiver.ComponentHom`: the restriction of an explicit arrow family to such a component.
 -/
 
 public section
@@ -117,5 +120,73 @@ theorem weaklyConnectedComponentEquiv_symm_mk (a : V) :
     (weaklyConnectedComponentEquiv V).symm ((underlyingGraph V).connectedComponentMk a) =
       WeaklyConnectedComponent.mk a :=
   (rfl)
+
+end TauCeti.Quiver
+
+namespace TauCeti.Quiver
+
+open _root_.Quiver
+
+section Explicit
+
+variable {V : Type u} {Q : V → V → Type v}
+
+/-- The vertices in a fixed weakly connected component of an explicit arrow family. -/
+abbrev ComponentVertex (Q : V → V → Type v)
+    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :=
+  {x : V // @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ x = C}
+
+/-- The restriction of an explicit arrow family to a fixed weakly connected component. -/
+abbrev ComponentHom (Q : V → V → Type v)
+    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :
+    ComponentVertex Q C → ComponentVertex Q C → Type v :=
+  fun x y ↦ Q x.1 y.1
+
+/-- A component of a finite vertex type has finitely many vertices. -/
+noncomputable instance instFintypeComponentVertex [Fintype V]
+    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :
+    Fintype (ComponentVertex Q C) :=
+  Fintype.ofFinite _
+
+/-- The endpoints of an arrow lie in the same weakly connected component. -/
+theorem weaklyConnectedComponent_mk_eq_of_hom {x y : V} (e : Q x y) :
+    @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ x =
+      @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y :=
+  (@_root_.Quiver.WeaklyConnectedComponent.eq V ⟨Q⟩ x y).2
+    ⟨@Hom.toPath (Symmetrify V) (@symmetrifyQuiver V ⟨Q⟩) x y (.inl e)⟩
+
+/-- The arrows entering a vertex from within its component are exactly all arrows entering that
+vertex. -/
+abbrev componentIncomingEquiv (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+    (x : ComponentVertex Q C) :
+    (Σ y : ComponentVertex Q C, Q y.1 x.1) ≃ (Σ y : V, Q y x.1) :=
+  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q y x.1)
+    (fun y ↦ @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y = C)
+    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).trans x.2
+
+/-- The incoming-arrow equivalence retains the vertex and arrow. -/
+@[simp]
+theorem componentIncomingEquiv_apply (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q y.1 x.1) :
+    componentIncomingEquiv C x a = ⟨a.1.1, a.2⟩ :=
+  (rfl)
+
+/-- The arrows leaving a vertex for vertices within its component are exactly all arrows leaving
+that vertex. -/
+abbrev componentOutgoingEquiv (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+    (x : ComponentVertex Q C) :
+    (Σ y : ComponentVertex Q C, Q x.1 y.1) ≃ (Σ y : V, Q x.1 y) :=
+  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q x.1 y)
+    (fun y ↦ @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y = C)
+    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).symm.trans x.2
+
+/-- The outgoing-arrow equivalence retains the vertex and arrow. -/
+@[simp]
+theorem componentOutgoingEquiv_apply (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q x.1 y.1) :
+    componentOutgoingEquiv C x a = ⟨a.1.1, a.2⟩ :=
+  (rfl)
+
+end Explicit
 
 end TauCeti.Quiver

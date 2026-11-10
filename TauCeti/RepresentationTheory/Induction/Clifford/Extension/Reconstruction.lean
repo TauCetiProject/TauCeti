@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Module
-public import TauCeti.RepresentationTheory.FDRep.BalancedEvaluation
+public import TauCeti.RepresentationTheory.FDRep.Balanced.Evaluation
 public import TauCeti.GroupTheory.GroupExtension.Lift
 public import TauCeti.Algebra.Module.Opposite
 

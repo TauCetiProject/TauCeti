@@ -107,9 +107,8 @@ lemma spectralSequencePageXMap_comp_pageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) 
     spectralSequencePageXMap_eq coreE₂Cohomological φ r hr pq _ _ _ _ e₀ e₁ e₂ e₃ (n - 1) n
       (n + 1) hn (sub_add_cancel n 1) rfl]
   simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  rw [map_EMap_assoc, Y.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom r hr pq n hn hY₀ hY₃
-      h₀₁ h₂₃, X.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom_assoc r hr pq n hn hX₀ hX₃
-      h₀₁ h₂₃]
+  rw [map_EMap_assoc, Y.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom r hr pq n hn hY₀ hY₃,
+    X.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom_assoc r hr pq n hn hX₀ hX₃]
   exact (map_EMap ..).symm
 
 /-- **The comparison theorem.** Let `φ : X ⟶ Y` be a morphism of spectral objects indexed by

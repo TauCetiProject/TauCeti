@@ -9,7 +9,7 @@ public import TauCeti.Probability.Renewal.UnusedTail
 public import TauCeti.Probability.Renewal.Excess.Memoryless
 import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.Probability.Renewal.History
-import TauCeti.Probability.Renewal.Restart
+import TauCeti.Probability.Renewal.Restart.Basic
 
 /-!
 # Independence of the future of exponential renewals

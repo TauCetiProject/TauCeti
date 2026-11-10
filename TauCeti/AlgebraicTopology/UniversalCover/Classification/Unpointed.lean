@@ -53,7 +53,7 @@ The latter is built on Junyan Xu's monodromy API in
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 open _root_.FundamentalGroup
 
@@ -72,7 +72,7 @@ target fibre, and a path from there to `f₀` is what accounts for the conjugati
 Neither cover is assumed connected. Path-connectedness of `F` is one way to supply `hj`,
 and is how `IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj` below
 discharges it. -/
-theorem _root_.IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq
+theorem exists_range_eq_map_conj_of_homeomorph_comp_eq
     (hq : _root_.IsCoveringMap q)
     (hpe : p e₀ = x) (hqf : q f₀ = x) (h : E ≃ₜ F) (hcomp : q ∘ h = p)
     (hj : Joined (h e₀) f₀) :
@@ -111,7 +111,7 @@ theorem _root_.IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq
 
 /-- If two pointed connected covers recover conjugate subgroups, then forgetting the chosen
 fibre points makes the covers isomorphic over the base. -/
-theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj
+theorem exists_homeomorph_comp_eq_of_range_eq_map_conj
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q)
@@ -141,7 +141,7 @@ when the subgroups recovered from chosen lifts of `x` are conjugate in `π₁(X,
 
 The chosen lifts occur only in the subgroup invariant; the homeomorphism is not required to
 map one chosen lift to the other. -/
-theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
+theorem exists_homeomorph_comp_eq_iff_exists_range_eq_map_conj
     [PathConnectedSpace E] [LocallyPathConnectedSpace E]
     [PathConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
@@ -158,4 +158,4 @@ theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_iff_exists_range_eq_map_c
 
 end
 
-end TauCeti
+end IsCoveringMap

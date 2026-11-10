@@ -56,7 +56,8 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
-  dilation invariance.
+  dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
+  modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
@@ -541,6 +542,24 @@ theorem bmoSeminorm_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [Measu
     (by simpa using map_add_right_eq_self μ b) one_ne_zero ENNReal.one_ne_top
     (fun c r => ⟨c + b, r, by simp [preimage_add_right_ball]⟩)
     (fun c' r' => ⟨c' - b, r', by simp [preimage_add_right_ball]⟩) f
+
+/-- The VMO modulus is invariant under translation for a right-invariant measure. -/
+@[simp]
+theorem vmoModulus_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G]
+    [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] (f : G → F) (b : G) (r : ℝ) :
+    vmoModulus (fun x => f (x + b)) μ r = vmoModulus f μ r := by
+  have hosc (c : G) (s : ℝ) :
+      ⨍⁻ y in ball c s, ‖f (y + b) - ⨍ z in ball c s, f (z + b) ∂μ‖ₑ ∂μ =
+        ⨍⁻ y in ball (c + b) s, ‖f y - ⨍ z in ball (c + b) s, f z ∂μ‖ₑ ∂μ := by
+    simpa [preimage_add_right_ball] using
+      setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul (μ := μ) (ν := μ)
+        (e := MeasurableEquiv.addRight b) (a := 1) (by simpa using map_add_right_eq_self μ b)
+        one_ne_zero ENNReal.one_ne_top f (ball (c + b) s)
+  refine le_antisymm (vmoModulus_le fun c s hs => ?_) (vmoModulus_le fun c s hs => ?_)
+  · rw [hosc]
+    exact setLAverage_enorm_sub_setAverage_le_vmoModulus f μ _ hs
+  · have h := setLAverage_enorm_sub_setAverage_le_vmoModulus (fun x => f (x + b)) μ (c - b) hs
+    rwa [hosc, sub_add_cancel] at h
 
 /-- The BMO seminorm is invariant under dilation `x ↦ t • x`, `t ≠ 0`, for an additive Haar
 measure on a finite-dimensional real normed space. -/

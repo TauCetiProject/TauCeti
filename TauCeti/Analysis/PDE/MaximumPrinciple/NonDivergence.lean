@@ -76,6 +76,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
+  symmetric part of the coefficient matrix.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -279,6 +281,24 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- Since the Hessian of a `C²` function is symmetric, the principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf` only sees
+the symmetric part `(A + Aᵀ) / 2` of the coefficient matrix. -/
+theorem sum_coefficientSymmetricPart_mul_fderiv_fderiv {A : Matrix ι ι ℝ}
+    {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) :
+    ∑ i, ∑ j, coefficientSymmetricPart A i j * fderiv ℝ (fderiv ℝ f) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) := by
+  have hsymm := hf.isSymmSndFDerivAt (by simp)
+  have hswap : ∑ i, ∑ j, A j i * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by rw [hsymm]
+  simp only [coefficientSymmetricPart_apply, add_div, add_mul, Finset.sum_add_distrib,
+    div_mul_eq_mul_div, ← Finset.sum_div]
+  rw [hswap, add_halves]
 
 variable [Nonempty ι]
 

@@ -38,9 +38,7 @@ private theorem center_noetherian_and_finite (p : ℕ) [Fact p.Prime] [CharP K p
   let S := Algebra.adjoin K (Set.range c)
   have hNoetherian : IsNoetherianRing S := h.1
   have hFinite : Module.Finite S U := h.2
-  exact ⟨@Subalgebra.isNoetherianRing_center_of_finite K U _ _ _ S
-      hNoetherian hFinite,
-    @Subalgebra.finite_over_center_of_finite K U _ _ _ S hFinite⟩
+  exact ⟨Subalgebra.isNoetherianRing_center_of_finite S, Subalgebra.finite_over_center_of_finite S⟩
 
 /-- In positive characteristic, the center of `U(L)` is Noetherian. -/
 theorem isNoetherianRing_center (p : ℕ) [Fact p.Prime] [CharP K p]

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Over
 public import TauCeti.RingTheory.Huber.AdicHom.Basic
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
+import TauCeti.RingTheory.AdicCompletion.Surjective
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
@@ -223,23 +224,8 @@ theorem isStrictlyTopologicallyFiniteType_of_isAdic (hI : IsAdic I) (hfg : I.FG)
     have : IsHausdorff (JR.map ψ) B := by
       rw [hmap]
       exact hc.toIsHausdorff
-    refine surjective_of_mk_map_comp_surjective (I := JR) ψ ?_
-    rw [hmap]
-    -- the reduction of `ψ` is an `A`-algebra map whose range contains the generators
-    let ψA : R →ₐ[A] B := { ψ with commutes' := RingHom.congr_fun hψA }
-    let q := (Ideal.Quotient.mkₐ A J).comp ψA
-    have hle : Algebra.adjoin A (Set.range fun i ↦ f (MvPolynomial.X i)) ≤ q.range :=
-      Algebra.adjoin_le <| by
-        rintro _ ⟨i, rfl⟩
-        exact ⟨_, (congrArg (Ideal.Quotient.mk J) (hψX i)).trans (hb i)⟩
-    intro y
-    obtain ⟨p, rfl⟩ := hf y
-    have hp : f p ∈ Algebra.adjoin A (Set.range fun i ↦ f (MvPolynomial.X i)) := by
-      rw [Algebra.adjoin_range_eq_range_aeval]
-      exact ⟨p, (RingHom.congr_fun (congrArg AlgHom.toRingHom (MvPolynomial.aeval_unique f))
-        p).symm⟩
-    obtain ⟨x, hx⟩ := hle hp
-    exact ⟨x, by simpa [q, ψA] using hx⟩
+    exact surjective_of_isPrecomplete_of_lifts_generators hψA hmap hf
+      (fun i ↦ (congrArg (Ideal.Quotient.mk J) (hψX i)).trans (hb i))
   -- `ψ` is open: it carries the powers of `I·A⟨X⟩` onto the open powers of `I·B`
   have hopen : IsOpenMap ψ := by
     refine (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero (f := ψ)).mpr ?_

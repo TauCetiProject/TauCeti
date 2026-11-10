@@ -19,6 +19,10 @@ subblock.
 It also records that extending a family along an arbitrary map of index types, with a fixed
 default outside the range, is measurable in the family (`TauCeti.MeasureTheory.measurable_extend`).
 
+It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
+point `w` of a dependent product is the finset update of `w` by `z`
+(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`).
+
 These are general measurable product constructions, independent of any measure or stochastic
 process.
 
@@ -84,6 +88,18 @@ theorem measurable_extend {ι κ : Type*} (f : ι → κ) (e : κ → α) :
   refine Measurable.of_eval fun k ↦ ?_
   simp only [Function.extend]
   split_ifs <;> fun_prop
+
+/-- Recombining a block `z` on a finset `s` with the coordinates of `w` outside `s` is the update
+of `w` on `s` by `z`. -/
+theorem _root_.Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset
+    {ι : Type*} [DecidableEq ι] {π : ι → Type*} [∀ i, MeasurableSpace (π i)]
+    (s : Finset ι) (w : ∀ i, π i) (z : ∀ i : s, π i) :
+    (MeasurableEquiv.piEquivPiSubtypeProd π fun i => i ∈ s).symm
+      (z, (MeasurableEquiv.piEquivPiSubtypeProd π (fun i => i ∈ s) w).2) =
+      Function.updateFinset w s z := by
+  ext i
+  simp only [MeasurableEquiv.piEquivPiSubtypeProd_symm_apply,
+    MeasurableEquiv.piEquivPiSubtypeProd_apply, Function.updateFinset_def]
 
 end MeasureTheory
 

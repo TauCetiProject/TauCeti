@@ -58,6 +58,10 @@ compact-support left and right inverse identities are available in this module.
   the Cauchy–Pompeiu formula.
 * `HasCompactSupport.hasFDerivAt_integral_sub_inv_smul`: the Cauchy transform of a compactly
   supported `C¹` map is differentiable, with derivative the transform of the derivative.
+* `HasCompactSupport.fderiv_cauchyTransform` and `HasCompactSupport.fderiv_cauchyTransform_apply`:
+  the same commutation `D (T f) = T (D f)` for the normalized transform, also in directional form.
+* `TauCeti.cauchyTransform_add` and `TauCeti.cauchyTransform_smul`: the normalized transform is
+  additive on continuous compactly supported data and commutes with scalar multiplication.
 * `HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul`:
   `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
 * `HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`:
@@ -113,6 +117,36 @@ theorem cauchyTransform_eq_integral_closedBall {f : ℂ → F} {c : ℂ} {r : �
   intro z hz
   rw [notMem_support.mp (fun h ↦ hz (hf h)), smul_zero]
 
+/-- **Decay of the Cauchy transform.** If `f` is integrable and supported in the disc of radius
+`r` about the origin, then `‖w‖ ‖T f w‖ ≤ 2 π⁻¹ ‖f‖_{L¹}` for `‖w‖ ≥ 2 r`. -/
+theorem norm_mul_norm_cauchyTransform_le {f : ℂ → F} {r : ℝ}
+    (hf : support f ⊆ closedBall 0 r) (hfi : Integrable f) {w : ℂ} (hw : 2 * r ≤ ‖w‖) :
+    ‖w‖ * ‖cauchyTransform f w‖ ≤ 2 * π⁻¹ * ∫ z, ‖f z‖ := by
+  have hπ : 0 < π := Real.pi_pos
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp only [norm_zero, zero_mul]
+    have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
+    positivity
+  have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw0
+  have hpt : ∀ z, ‖(w - z)⁻¹ • f z‖ ≤ 2 * ‖w‖⁻¹ * ‖f z‖ := fun z ↦ by
+    by_cases hz : f z = 0
+    · simp [hz]
+    have hzr : ‖z‖ ≤ r := by simpa using hf hz
+    have hwz : ‖w‖ / 2 ≤ ‖w - z‖ := by
+      have := norm_sub_norm_le w z
+      linarith
+    rw [norm_smul, norm_inv]
+    gcongr
+    calc ‖w - z‖⁻¹ ≤ (‖w‖ / 2)⁻¹ := inv_anti₀ (by positivity) hwz
+      _ = 2 * ‖w‖⁻¹ := by field_simp
+  have hint := norm_integral_le_of_norm_le (hfi.norm.const_mul (2 * ‖w‖⁻¹)) (.of_forall hpt)
+  rw [integral_const_mul] at hint
+  simp only [cauchyTransform_apply, norm_smul, norm_inv, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos hπ]
+  calc ‖w‖ * (π⁻¹ * ‖∫ z, (w - z)⁻¹ • f z‖)
+      ≤ ‖w‖ * (π⁻¹ * (2 * ‖w‖⁻¹ * ∫ z, ‖f z‖)) := by gcongr
+    _ = 2 * π⁻¹ * ∫ z, ‖f z‖ := by field_simp
+
 /-- Almost-everywhere changes in the source leave the actual Cauchy integral unchanged. -/
 theorem cauchyTransform_congr_ae {f g : ℂ → F} (hfg : f =ᵐ[volume] g) :
     cauchyTransform f = cauchyTransform g := by
@@ -125,6 +159,25 @@ theorem cauchyTransform_congr_ae {f g : ℂ → F} (hfg : f =ᵐ[volume] g) :
 theorem cauchyTransform_zero : cauchyTransform (0 : ℂ → F) = 0 := by
   ext w
   simp only [cauchyTransform_apply, Pi.zero_apply, smul_zero, integral_zero]
+
+/-- The Cauchy transform is additive on continuous compactly supported data. -/
+theorem cauchyTransform_add {f g : ℂ → F} (hf : Continuous f) (hfc : HasCompactSupport f)
+    (hg : Continuous g) (hgc : HasCompactSupport g) :
+    cauchyTransform (f + g) = cauchyTransform f + cauchyTransform g := by
+  funext w
+  simp only [cauchyTransform_apply, Pi.add_apply, smul_add]
+  rw [integral_add ((locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport hf hfc)
+    ((locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport hg hgc), smul_add]
+
+/-- The Cauchy transform commutes with scalar multiplications that commute with the complex and
+real actions, in particular with real and complex scalars. -/
+theorem cauchyTransform_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℂ 𝕜 F] [SMulCommClass ℝ 𝕜 F] (a : 𝕜) (f : ℂ → F) :
+    cauchyTransform (a • f) = a • cauchyTransform f := by
+  funext w
+  simp only [cauchyTransform_apply, Pi.smul_apply]
+  simp_rw [smul_comm (w - _)⁻¹ a]
+  rw [integral_smul, smul_comm]
 
 section Polar
 
@@ -348,6 +401,25 @@ theorem _root_.HasCompactSupport.hasFDerivAt_cauchyTransform {f : ℂ → F}
       ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w :=
   (hc.hasFDerivAt_integral_sub_inv_smul hf w).const_smul _
 
+omit [CompleteSpace F] in
+/-- The Cauchy transform of compactly supported data is as smooth as the data. -/
+theorem _root_.HasCompactSupport.contDiff_cauchyTransform {n : ℕ∞} {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ n f) : ContDiff ℝ n (cauchyTransform f) := by
+  rw [cauchyTransform_eq_convolution]
+  exact (hc.contDiff_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
+    Complex.locallyIntegrable_inv hf).const_smul _
+
+omit [CompleteSpace F] in
+/-- The Wirtinger derivative `∂ (T f)` of the Cauchy transform of compactly supported `C¹` data is
+continuous. -/
+theorem _root_.HasCompactSupport.continuous_wirtingerDeriv_cauchyTransform {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) :
+    Continuous fun w ↦ wirtingerDeriv (cauchyTransform f) w 1 := by
+  have hd : Continuous (fderiv ℝ (cauchyTransform f)) :=
+    (hc.contDiff_cauchyTransform hf).continuous_fderiv one_ne_zero
+  simp only [wirtingerDeriv_apply]
+  fun_prop
+
 /-- On compactly supported `C¹` data the normalized Cauchy transform is a right inverse of
 `bar∂ = (∂ₛ + i ∂ₜ) / 2`. -/
 theorem _root_.HasCompactSupport.conjWirtingerDeriv_cauchyTransform {f : ℂ → F}
@@ -380,5 +452,27 @@ theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ →
     using 1
   congr 1
   field_simp
+
+omit [CompleteSpace F] in
+/-- On compactly supported `C¹` data the real derivative of the Cauchy transform is the Cauchy
+transform of the real derivative. -/
+theorem _root_.HasCompactSupport.fderiv_cauchyTransform {f : ℂ → F} (hc : HasCompactSupport f)
+    (hf : ContDiff ℝ 1 f) :
+    fderiv ℝ (cauchyTransform f) = cauchyTransform (fderiv ℝ f) :=
+  funext fun w ↦ by
+    rw [(hc.hasFDerivAt_cauchyTransform hf w).fderiv, cauchyTransform_apply]
+
+omit [CompleteSpace F] in
+/-- The directional derivative of the Cauchy transform of compactly supported `C¹` data in the
+direction `v` is the Cauchy transform of the directional derivative of the data. -/
+theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w v : ℂ) :
+    fderiv ℝ (cauchyTransform f) w v = cauchyTransform (fun z ↦ fderiv ℝ f z v) w := by
+  have hi : Integrable fun z ↦ (w - z)⁻¹ • fderiv ℝ f z :=
+    (locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
+      (hf.continuous_fderiv one_ne_zero) (hc.fderiv ℝ)
+  rw [hc.fderiv_cauchyTransform hf, cauchyTransform_apply, cauchyTransform_apply,
+    smul_apply, ContinuousLinearMap.integral_apply hi]
+  simp only [smul_apply]
 
 end TauCeti

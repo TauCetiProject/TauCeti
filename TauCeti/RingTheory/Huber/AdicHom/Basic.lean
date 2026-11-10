@@ -97,15 +97,15 @@ theorem isOpen_map (hf : IsAdicHom f) {I : Ideal A} (hI : IsOpen (I : Set A)) :
 theorem isBounded_image (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
     IsBounded (f '' S) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
-  exact hS.image_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
-    (heq ▸ Q.isOpen_extendedIdealOfDefinition)
+  exact hS.image_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuous.continuousAt
+    ((heq ▸ Q.isOpen_extendedIdealOfDefinition).mem_nhds (zero_mem _))
 
 /-- Adic homomorphisms carry power-bounded elements to power-bounded elements. -/
 theorem isPowerBounded_map (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
     IsPowerBounded (f a) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
-  exact ha.map_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
-    (heq ▸ Q.isOpen_extendedIdealOfDefinition)
+  exact ha.map_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuous.continuousAt
+    ((heq ▸ Q.isOpen_extendedIdealOfDefinition).mem_nhds (zero_mem _))
 
 end IsAdicHom
 
@@ -125,8 +125,8 @@ private theorem exists_pairOfDefinition_of_continuous [IsHuberRing B] (P : PairO
   obtain ⟨Q₀⟩ := IsHuberRing.nonempty_pairOfDefinition (A := B)
   have hb : IsBounded (P.ringOfDefinition.map f : Set B) := by
     rw [Subring.coe_map]
-    exact P.isBounded_ringOfDefinition.image_of_isOpen_map_extendedIdealOfDefinition
-      P Q₀ hf.continuousAt hI
+    exact P.isBounded_ringOfDefinition.image_of_map_extendedIdealOfDefinition_mem_nhds
+      P Q₀ hf.continuousAt (hI.mem_nhds (zero_mem _))
   let Q := Q₀.enlargeSup (P.ringOfDefinition.map f) hb
   have h : ∀ a ∈ P.ringOfDefinition, f a ∈ Q.ringOfDefinition := by
     intro a ha
