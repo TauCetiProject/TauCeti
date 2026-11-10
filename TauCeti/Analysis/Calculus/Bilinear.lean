@@ -40,6 +40,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   point where `u` is `C^(n+1)`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContDiffOn.clm_bilinearComp`: the pullback `B x (L₁ x ·) (L₂ x ·)` of a smooth family of
+  bilinear maps along smooth families of linear maps is smooth.
 * `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
   of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
   the directions of the images under `u` and pulled back along `u`.
@@ -134,6 +136,21 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   rw [h]
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
+
+/-- The pullback `(v, w) ↦ B x (L₁ x v) (L₂ x w)` of a `C^n` family of continuous bilinear maps
+along two `C^n` families of continuous linear maps is `C^n`. -/
+theorem _root_.ContDiffOn.clm_bilinearComp {P E₁ E₂ F₁ F₂ : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [NormedAddCommGroup E₂]
+    [NormedSpace 𝕜 E₂] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+    [NormedSpace 𝕜 F₂] {s : Set P} {B : P → F₁ →L[𝕜] F₂ →L[𝕜] G} {L₁ : P → E₁ →L[𝕜] F₁}
+    {L₂ : P → E₂ →L[𝕜] F₂} (hB : ContDiffOn 𝕜 n B s) (hL₁ : ContDiffOn 𝕜 n L₁ s)
+    (hL₂ : ContDiffOn 𝕜 n L₂ s) :
+    ContDiffOn 𝕜 n (fun x ↦ (B x).bilinearComp (L₁ x) (L₂ x)) s := by
+  refine (((ContinuousLinearMap.compL 𝕜 E₂ F₂ G).flip.contDiff.comp_contDiffOn hL₂).clm_comp
+    (hB.clm_comp hL₁)).congr fun x _ ↦ ?_
+  -- Both sides pull `B x` back along `L₁ x` in the first slot and `L₂ x` in the second.
+  ext u v
+  rfl
 
 noncomputable section PullbackBilin
 

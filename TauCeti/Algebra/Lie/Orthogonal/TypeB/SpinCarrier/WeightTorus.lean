@@ -76,7 +76,7 @@ torus remains a closed split torus in every specialized carrier. -/
 theorem weightTorusToBaseChangeCoordinateMap_surjective (A : Type v) [CommRing A] :
     Function.Surjective (weightTorusToBaseChangeCoordinateMap n A).hom := by
   rw [← baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap n A]
-  exact (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+  exact (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
       (G := SplitTorus.characterGroup (Fin (n + 1)))).surjective.comp
     ((CommHopfAlgCat.baseChangeMap_surjective (K := A) (weightTorusIntegralCoordinateMap n)
       (weightTorusIntegralCoordinateMap_surjective n)).comp
@@ -189,7 +189,7 @@ theorem map_baseChangeHopfIdeal_weightTorusIntegralDefiningIdeal :
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (baseChangeCoordinateIso n R).symm
     (_root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
         (G := SplitTorus.characterGroup (Fin (n + 1)))))
     (weightTorusIntegralCoordinateMap_surjective n)
     (weightTorusToBaseChangeCoordinateMap_surjective n R) ?_

@@ -100,7 +100,7 @@ private theorem torusPoints_conj_simpleWeylElement (s : Fin t.rank → Aˣ) :
         (torusCharacter s (D.coordinateRoot (t.simpleIndex ht i))) := by
   simp only [weylElement_def, inv_one, Units.val_one]
   rw [← MulAut.conj_apply, map_mul, map_mul]
-  simp only [MulAut.conj_apply, D.torusPoints_conj_rootSubgroup,
+  simp only [MulAut.conj_apply, D.torusPoints_conj_rootSubgroupPoints,
     D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, mul_one, mul_neg]
 
 private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
@@ -110,8 +110,8 @@ private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
   apply Subtype.ext
   have h := D.coe_simpleCorootPoints_eq_root_word i A s
   simpa only [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix,
-    weylElement_def, Subgroup.coe_mul, coe_rootSubgroup_simpleIndex,
-    coe_rootSubgroup_reflectionPerm_simpleIndex, Subgroup.coe_inv,
+    weylElement_def, Subgroup.coe_mul, coe_rootSubgroupPoints_simpleIndex,
+    coe_rootSubgroupPoints_reflectionPerm_simpleIndex, Subgroup.coe_inv,
     inv_one, Units.val_one] using (eq_mul_inv_iff_mul_eq.mp h).symm
 
 /-- Conjugation by a pinned simple Weyl representative acts by the simple reflection on

@@ -110,6 +110,22 @@ theorem timeDependentSuspensionField_snd (X : ℝ → (x : M) → TangentSpace I
     (timeDependentSuspensionField X p).2 = X p.1 p.2 :=
   (rfl)
 
+/-- For a jointly `C^n` time-dependent vector field `X` and a real number `c`, the field `(c, X)`
+on `ℝ × M` is a `C^n` vector field. For `c = 1` it is the suspension of `X`, for `c = 0` it is the
+vertical field of `X`, and for `X = 0` and `c = 1` it is the unit field `∂_t` of the time
+coordinate. -/
+theorem contMDiff_const_prod_field [IsManifold I 1 M] {n : ℕ∞ω}
+    {X : ℝ → (x : M) → TangentSpace I x} (c : ℝ)
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
+      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
+  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
+      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
+    ((hclock.comp contMDiff_fst).prodMk hX)
+
 /-- The suspension of a jointly `C^n` time-dependent vector field is a `C^n` vector field on
 `ℝ × M`. -/
 theorem contMDiff_timeDependentSuspensionField [IsManifold I 1 M] {n : ℕ∞ω}
@@ -118,12 +134,8 @@ theorem contMDiff_timeDependentSuspensionField [IsManifold I 1 M] {n : ℕ∞ω}
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
     ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
       (fun p : ℝ × M ↦ (⟨p, timeDependentSuspensionField X p⟩ :
-        TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-    ((hclock.comp contMDiff_fst).prodMk hX)
+        TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
+  contMDiff_const_prod_field 1 hX
 
 /-! ### The maximal time-dependent flow -/
 
@@ -412,18 +424,18 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
     exact ⟨⟨by linarith [hτab.1], by linarith [hτab.2]⟩, timeDependentFlowOf_mem_insert hX hXK hD⟩
   have hC (a b : ℝ) : IsCompact (Icc (s + a) (s + b) ×ˢ insert x K) :=
     isCompact_Icc.prod (hK.insert x)
-  refine maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 ?_ ?_
+  refine maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow ?_ ?_
   · intro hbdd
     have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB h0 hlub
+    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
-      (eventually_notMem_nhdsLT_maximalIntegralCurve hW h0 hlub (hC a (sSup _)))).exists
+      (eventually_notMem_nhdsLT_maximalIntegralCurve hW hlub (hC a (sSup _)))).exists
     exact hτC (hmem (hsub ⟨by linarith [hτ.1], hτ.2⟩) ⟨by linarith [hτ.1], hτ.2.le⟩)
   · intro hbdd
     have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB h0 hglb
+    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
-      (eventually_notMem_nhdsGT_maximalIntegralCurve hW h0 hglb (hC (sInf _) b))).exists
+      (eventually_notMem_nhdsGT_maximalIntegralCurve hW hglb (hC (sInf _) b))).exists
     exact hτC (hmem (hsub ⟨hτ.1, by linarith [hτ.2]⟩) ⟨hτ.1.le, by linarith [hτ.2]⟩)
 
 /-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then

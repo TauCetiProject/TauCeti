@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.Data.ZMod.QuotientGroup
+public import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
 import Mathlib.GroupTheory.Perm.Fin
 
@@ -56,9 +56,6 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 * `Equiv.Perm.fullCycleType_eq_sum_subtypePerm`: the full cycle type is additive over the fibres
   of any function that `σ` preserves; `Equiv.Perm.fullCycleType_eq_add_subtypePerm` is the form
   for a `σ`-stable predicate and its complement.
-* `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
-  points; `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle` is the case of a single cycle
-  through every point.
 * `Equiv.Perm.fullCycleType_eq_map_univ`: the full cycle type is the multiset of the cycle
   lengths, read through any finite type labelling the cycles.
 * `Equiv.Perm.fullCycleType_of_forall_sameCycle`: a permutation with a single cycle through every
@@ -621,17 +618,6 @@ section
 
 variable (σ : Equiv.Perm α)
 
-/-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
-other. -/
-theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
-    σ.SameCycle x y ↔ y ∈ orbit (Subgroup.zpowers σ) x := by
-  constructor
-  · rintro ⟨i, hi⟩
-    exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
-  · rintro ⟨g, hg⟩
-    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
-    exact ⟨i, by rw [hi]; exact hg⟩
-
 /-- The orbit relation of `⟨σ⟩` is the same-cycle relation of `σ`. -/
 theorem orbitRel_zpowers_apply {x y : α} :
     orbitRel (Subgroup.zpowers σ) α x y ↔ σ.SameCycle x y := by
@@ -648,23 +634,6 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     exact zpow_apply_eq_self_of_apply_eq_self hx i
   · rintro rfl
     exact SameCycle.refl σ y
-
-/-- The cycle of `σ` through `x` has `Function.minimalPeriod σ x` points; a fixed point is a
-cycle of length one. -/
-theorem ncard_setOf_sameCycle [Finite α] (x : α) :
-    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
-  classical
-  have := Fintype.ofFinite α
-  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
-    Nat.card_eq_fintype_card]
-  exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
-
-/-- If a single cycle of `σ` passes through every point, then every point has minimal period the
-cardinality of the carrier. -/
-theorem minimalPeriod_eq_natCard_of_forall_sameCycle [Finite α] {x : α}
-    (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
-  rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
-    fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
 
 end
 

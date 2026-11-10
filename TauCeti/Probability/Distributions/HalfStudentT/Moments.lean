@@ -156,7 +156,7 @@ theorem integrable_exp_mul_id_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s
     have ht₀ : 0 < t := lt_of_not_ge ht
     have hmom : ¬ Integrable (fun x : ℝ ↦ x ^ ν) (halfStudentTMeasure ν s) := by
       simp [integrable_rpow_halfStudentTMeasure_iff hν hs]
-    exact not_integrable_exp_mul_of_not_integrable_rpow ν measurable_id.aemeasurable
+    exact not_integrable_exp_mul_of_not_integrable_rpow ν
       ((ae_pos_halfStudentTMeasure ν s).mono fun _ hx ↦ hx.le) hν.le hmom ht₀ hint
   · intro ht
     exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable

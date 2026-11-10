@@ -75,7 +75,7 @@ namespace TauCeti.WassersteinSpace
 variable {X : Type*} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [Fact (1 ≤ p)]
 
-variable {m : Measure X} [SigmaFinite m] {a : ℝ} {x₀ : X}
+variable {m : Measure X} {a : ℝ} {x₀ : X}
 
 /-- **Change of reference on `P_p(X)`.** If `m ≠ 0` and `exp (-a d(x, x₀)^p)` is integrable
 against `m`, then for every law `μ` with finite `p`-moment,

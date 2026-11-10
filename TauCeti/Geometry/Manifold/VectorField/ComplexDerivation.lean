@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
+public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
 # Complex derivations of complex-valued smooth functions
@@ -42,10 +43,14 @@ element `1 ⊗ X + i ⊗ Y` acts by `δ (u + i v) = X u - Y v + i (Y u + X v)`.
   real-valued functions.
 * `Derivation.complexifyEquiv_lie`: the complexification equivalence intertwines the
   base-changed Lie bracket of real derivations with the commutator of complex derivations.
+* `Derivation.re_lie`, `Derivation.im_lie`: the real and imaginary parts of the commutator of
+  complex derivations, `⁅X₁ + i Y₁, X₂ + i Y₂⁆ = ⁅X₁, X₂⁆ - ⁅Y₁, Y₂⁆ + i (⁅X₁, Y₂⁆ + ⁅Y₁, X₂⁆)`.
 * `TauCeti.complexDerivationEquivComplexifiedVectorField_eq_iff`: a complex derivation `δ`
   corresponds to `1 ⊗ X + i ⊗ Y` exactly when `δ u = X u + i Y u` for every real smooth `u`.
 * `TauCeti.exists_complexDerivationEquivComplexifiedVectorField`: the complexified derivation
   dictionary.
+* `TauCeti.complexDerivationEquivComplexifiedVectorField_lie_eq_iff`: the commutator of complex
+  derivations corresponds to the complex-bilinear extension of the Lie bracket of vector fields.
 
 ## References
 
@@ -274,6 +279,46 @@ theorem complexifyEquiv_lie (t₁ t₂ : ℂ ⊗[ℝ] Derivation ℝ C^n⟮I, M;
       rw [LieAlgebra.ExtendScalars.bracket_tmul, complexifyEquiv_tmul, complexifyEquiv_tmul,
         complexifyEquiv_tmul, complexify_lie, smul_lie, lie_smul, smul_smul]
 
+/-- Complexifying `g • D` multiplies the complexification of `D` by the real function `g`. -/
+theorem complexify_smul (g : C^n⟮I, M; ℝ⟯) (D : Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯) :
+    complexify (g • D) = ContMDiffMap.ofReal g • complexify D := by
+  ext f x
+  apply Complex.ext <;> simp
+
+/-- Multiplying a complex derivation by a real function `g` multiplies its real part by `g`. -/
+@[simp]
+theorem re_ofReal_smul (g : C^n⟮I, M; ℝ⟯)
+    (δ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ContMDiffMap.ofReal g • δ).re = g • δ.re := by
+  ext u x
+  simp [ContMDiffMap.mul_re]
+
+/-- Multiplying a complex derivation by a real function `g` multiplies its imaginary part
+by `g`. -/
+@[simp]
+theorem im_ofReal_smul (g : C^n⟮I, M; ℝ⟯)
+    (δ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ContMDiffMap.ofReal g • δ).im = g • δ.im := by
+  ext u x
+  simp [ContMDiffMap.mul_im]
+
+/-- The real part of a commutator of complex derivations is `⁅X₁, X₂⁆ - ⁅Y₁, Y₂⁆`, where
+`Xᵢ = δᵢ.re` and `Yᵢ = δᵢ.im`. -/
+theorem re_lie (δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⁅δ₁, δ₂⁆.re = ⁅δ₁.re, δ₂.re⁆ - ⁅δ₁.im, δ₂.im⁆ := by
+  conv_lhs => rw [← complexify_re_add_I_smul_complexify_im δ₁,
+    ← complexify_re_add_I_smul_complexify_im δ₂]
+  simp [← complexify_lie, sub_eq_add_neg]
+
+/-- The imaginary part of a commutator of complex derivations is `⁅X₁, Y₂⁆ + ⁅Y₁, X₂⁆`, where
+`Xᵢ = δᵢ.re` and `Yᵢ = δᵢ.im`. -/
+theorem im_lie (δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⁅δ₁, δ₂⁆.im = ⁅δ₁.re, δ₂.im⁆ + ⁅δ₁.im, δ₂.re⁆ := by
+  conv_lhs => rw [← complexify_re_add_I_smul_complexify_im δ₁,
+    ← complexify_re_add_I_smul_complexify_im δ₂]
+  simp [← complexify_lie]
+  abel
+
 end Complexify
 
 end Derivation
@@ -306,6 +351,22 @@ theorem complexDerivationEquivComplexifiedVectorField_apply
       1 ⊗ₜ derivationEquivSmoothVectorField δ.re +
         Complex.I ⊗ₜ derivationEquivSmoothVectorField δ.im := by
   simp [complexDerivationEquivComplexifiedVectorField]
+
+/-- The real part of the complexified vector field of `δ` is the vector field of `δ.re`. -/
+theorem _root_.Derivation.realPart_complexDerivationEquivComplexifiedVectorField
+    (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    realPart Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯
+        (complexDerivationEquivComplexifiedVectorField δ) =
+      derivationEquivSmoothVectorField δ.re := by
+  simp
+
+/-- The imaginary part of the complexified vector field of `δ` is the vector field of `δ.im`. -/
+theorem _root_.Derivation.imaginaryPart_complexDerivationEquivComplexifiedVectorField
+    (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    imaginaryPart Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯
+        (complexDerivationEquivComplexifiedVectorField δ) =
+      derivationEquivSmoothVectorField δ.im := by
+  simp
 
 /-- The inverse equivalence sends `z ⊗ X` to `z` times the complexified derivative along `X`. -/
 @[simp]
@@ -351,6 +412,26 @@ theorem exists_complexDerivationEquivComplexifiedVectorField :
           (mvfderiv I u x (X x) : ℂ) + (mvfderiv I u x (Y x) : ℂ) * Complex.I :=
   ⟨complexDerivationEquivComplexifiedVectorField, fun _ _ _ ↦
     complexDerivationEquivComplexifiedVectorField_eq_iff⟩
+
+/-- **Commutators are complexified Lie brackets.** If `δ₁` and `δ₂` correspond to
+`1 ⊗ X₁ + i ⊗ Y₁` and `1 ⊗ X₂ + i ⊗ Y₂`, then `⁅δ₁, δ₂⁆` corresponds to `1 ⊗ Z + i ⊗ W` exactly
+when `Z = [X₁, X₂] - [Y₁, Y₂]` and `W = [X₁, Y₂] + [Y₁, X₂]`, the complex-bilinear extension of
+the Lie bracket of vector fields. -/
+theorem complexDerivationEquivComplexifiedVectorField_lie_eq_iff
+    {δ₁ δ₂ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {X₁ Y₁ X₂ Y₂ Z W : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯}
+    (h₁ : complexDerivationEquivComplexifiedVectorField δ₁ = 1 ⊗ₜ X₁ + Complex.I ⊗ₜ Y₁)
+    (h₂ : complexDerivationEquivComplexifiedVectorField δ₂ = 1 ⊗ₜ X₂ + Complex.I ⊗ₜ Y₂) :
+    complexDerivationEquivComplexifiedVectorField ⁅δ₁, δ₂⁆ = 1 ⊗ₜ Z + Complex.I ⊗ₜ W ↔
+      ∀ x, Z x = VectorField.mlieBracket I X₁ X₂ x - VectorField.mlieBracket I Y₁ Y₂ x ∧
+        W x = VectorField.mlieBracket I X₁ Y₂ x + VectorField.mlieBracket I Y₁ X₂ x := by
+  rw [complexDerivationEquivComplexifiedVectorField_apply, one_tmul_add_I_tmul_inj] at h₁ h₂ ⊢
+  obtain ⟨rfl, rfl⟩ := h₁
+  obtain ⟨rfl, rfl⟩ := h₂
+  simp only [Derivation.re_lie, Derivation.im_lie, map_sub, map_add, ContMDiffSection.ext_iff,
+    ContMDiffSection.coe_sub, ContMDiffSection.coe_add, Pi.sub_apply, Pi.add_apply,
+    Derivation.coe_derivationEquivSmoothVectorField, Derivation.vectorField_lie, ← forall_and,
+    eq_comm]
 
 end ComplexifiedVectorField
 

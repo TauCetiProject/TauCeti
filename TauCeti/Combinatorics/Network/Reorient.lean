@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Network.Flow
 public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Quiver.Reorient
 
@@ -28,6 +29,7 @@ it as a loop.
 * `TauCeti.Network.reorient`: a network with selected arrows reversed.
 * `TauCeti.ExcessFlow.reorientEquiv` and `TauCeti.ExcessIntervalFlow.reorientEquiv`: reorientation
   of assignments with prescribed excess, or with excess in prescribed vertex intervals.
+* `TauCeti.BoundedFlow.reorientEquiv`: reorientation of bounded terminal assignments.
 
 ## Main results
 
@@ -313,6 +315,73 @@ theorem ExcessIntervalFlow.reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄,
   (rfl)
 
 end Excess
+
+section BoundedFlow
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [Preorder K] [AddLeftMono K]
+
+namespace BoundedFlow
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies bounded terminal
+assignments for `lo` and `hi` with bounded terminal assignments for the reoriented bounds. The
+terminals, conservation equations, and terminal value are unchanged. -/
+def reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) (s t : V) :
+    BoundedFlow lo hi s t ≃
+      BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t where
+  toFun f :=
+    { toFun := reorientAssignment σ f.toFun
+      mem_Icc := (reorientAssignment_mem_Icc_iff σ lo hi f.toFun).2 f.mem_Icc
+      conserve := fun v hvs hvt ↦ by
+        rw [excessAt_reorientAssignment]
+        exact f.conserve v hvs hvt }
+  invFun f :=
+    { toFun := unreorientAssignment σ f.toFun
+      mem_Icc := by
+        rw [← reorientAssignment_mem_Icc_iff σ lo hi]
+        simpa using f.mem_Icc
+      conserve := fun v hvs hvt ↦ by
+        rw [← excessAt_reorientAssignment σ (unreorientAssignment σ f.toFun),
+          reorientAssignment_unreorientAssignment]
+        exact f.conserve v hvs hvt }
+  left_inv f := by
+    apply BoundedFlow.ext
+    exact unreorientAssignment_reorientAssignment σ f.toFun
+  right_inv f := by
+    apply BoundedFlow.ext
+    exact reorientAssignment_unreorientAssignment σ f.toFun
+
+@[simp]
+theorem reorientEquiv_apply_toFun (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t) :
+    (reorientEquiv σ lo hi s t f).toFun = reorientAssignment σ f.toFun :=
+  (rfl)
+
+@[simp]
+theorem reorientEquiv_symm_apply_toFun (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V}
+    (f : BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t) :
+    ((reorientEquiv σ lo hi s t).symm f).toFun = unreorientAssignment σ f.toFun :=
+  (rfl)
+
+/-- Reorienting selected arrows preserves the value of a bounded terminal assignment. -/
+@[simp]
+theorem reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V} (f : BoundedFlow lo hi s t) :
+    (reorientEquiv σ lo hi s t f).val = f.val := by
+  rw [val_def, reorientEquiv_apply_toFun, excessAt_reorientAssignment, ← val_def]
+
+/-- Recovering a bounded terminal assignment from reoriented arrows preserves its value. -/
+@[simp]
+theorem reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {s t : V}
+    (f : BoundedFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) s t) :
+    ((reorientEquiv σ lo hi s t).symm f).val = f.val := by
+  rw [← reorientEquiv_apply_val σ ((reorientEquiv σ lo hi s t).symm f),
+    Equiv.apply_symm_apply]
+
+end BoundedFlow
+
+end BoundedFlow
 
 end AddCommGroup
 

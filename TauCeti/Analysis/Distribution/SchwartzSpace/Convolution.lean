@@ -39,6 +39,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
+* `SchwartzMap.integrable_fourierInv_sub_smul`: for `u ∈ L²`, the convolution integral
+  `∫ 𝓕⁻ σ (x - y) • u y` converges absolutely at every `x`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
   pairing of the inverse Fourier transforms.
 * `SchwartzMap.fourier_pairing`, `SchwartzMap.fourier_pairing_apply`: the Fourier transform of a
@@ -92,6 +94,15 @@ theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F)) {p
   refine (eLpNorm_convolution_le _ (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable
     φ.continuous.aestronglyMeasurable hp).trans ?_
   grw [opENorm_lsmul_le, one_mul]
+
+/-- The convolution integral of an `L²` function against the inverse Fourier transform of a
+Schwartz function converges absolutely at every point. -/
+theorem integrable_fourierInv_sub_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (σ : 𝓢(E, ℂ)) (u : Lp G 2 (volume : Measure E)) (x : E) :
+    Integrable (fun y ↦ 𝓕⁻ σ (x - y) • u y) := by
+  have hK : MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume :=
+    ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
+  exact memLp_one_iff_integrable.1 (hK.smul (Lp.memLp u))
 
 section Bilinear
 

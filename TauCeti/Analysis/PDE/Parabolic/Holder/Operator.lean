@@ -279,6 +279,20 @@ theorem euclideanParabolicOperatorL_apply
         c p * u p) := by
   simp [euclideanParabolicOperatorL]
 
+open Laplacian in
+/-- With the identity coefficient matrix and no lower-order terms, the Euclidean operator is the
+heat operator `∂ₜu - Δu`, with the Laplacian taken on the time slice through `p`. -/
+theorem euclideanParabolicOperatorL_one_apply
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0 u p =
+      timeDerivL u p - Δ (fun y ↦ u (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).space := by
+  rw [euclideanParabolicOperatorL_apply,
+    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
+  simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
+  simp [Matrix.one_apply]
+
 /-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
 time derivative as its ordinary derivative. -/
 private theorem hasDerivAt_shift (u : ParabolicC2HolderSpace α E F ht) (x : E) {t : ℝ}
