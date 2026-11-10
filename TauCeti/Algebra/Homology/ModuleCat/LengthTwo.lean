@@ -102,7 +102,8 @@ noncomputable def augmentation : complex f g hcomp ⟶
 @[simp]
 theorem augmentation_f_zero :
     (complexXIso f g hcomp 0).inv ≫ (augmentation f g hcomp).f 0 =
-    ModuleCat.ofHom (LinearMap.range g).mkQ := (rfl)
+    ModuleCat.ofHom (LinearMap.range g).mkQ :=
+  (Category.id_comp _).trans (ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _)
 
 variable (hexact : LinearMap.range f = LinearMap.ker g) (hinj : Function.Injective f)
 
@@ -136,10 +137,12 @@ noncomputable def projectiveResolution :
     intro n
     cases n with
     | zero =>
-      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-      exact ⟨(ShortComplex.moduleCat_exact_iff_range_eq_ker _).2
-          (Submodule.ker_mkQ (LinearMap.range g)).symm,
-        (ModuleCat.epi_iff_surjective _).2 (Submodule.mkQ_surjective _)⟩
+      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl,
+        ShortComplex.moduleCat_exact_iff_range_eq_ker, ModuleCat.epi_iff_surjective]
+      -- `(complex f g hcomp).d 1 0` and `(augmentation f g hcomp).f 0` unfold definitionally,
+      -- through `ChainComplex.of` and `ChainComplex.toSingle₀Equiv`, to `ModuleCat.ofHom g` and
+      -- `ModuleCat.ofHom (LinearMap.range g).mkQ`, as `complex_d` and `augmentation_f_zero` record.
+      exact ⟨(Submodule.ker_mkQ (LinearMap.range g)).symm, Submodule.mkQ_surjective _⟩
     | succ n =>
       rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
         HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
