@@ -28,7 +28,7 @@ to noncommutative ambient algebras, using the same span calculation.
 * `TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top`: `2x - 1` generates the whole algebra when
   `x` does and `2` is a unit.
 * `TauCeti.rank_adjoin_eq_rank_adjoin_range`: adjoining a set to `F` or to the image of `F` in a
-  larger field gives the same rank.
+  larger nontrivial commutative ring gives the same rank.
 * `NonUnitalSubalgebra.adjoin_eq_span_one_sup`: adjoining the identity adds the scalar line
   to the underlying submodule.
 -/
@@ -83,8 +83,8 @@ end NonUnitalSubalgebra
 
 namespace TauCeti
 
-variable {k F F' : Type*} [CommSemiring k] [Field F] [Field F'] [Algebra k F] [Algebra k F']
-  [Algebra F F'] [IsScalarTower k F F']
+variable {k F F' : Type*} [CommSemiring k] [Field F] [CommSemiring F'] [Nontrivial F'] [Algebra k F]
+  [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 
 /-- Adjoining a set `s` to `F` has the same rank over `F` as adjoining it to the image of `F` in
 `F'` has over that image, because the two subalgebras are equal as subsemirings. -/
