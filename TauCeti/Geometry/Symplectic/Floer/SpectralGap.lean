@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Integral.Rectangle
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The spectral gap at a nondegenerate orbit and the stationary cylinder estimate
@@ -272,7 +272,7 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
       have hwi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (w z) (w z))
           (Icc (-(n : ℝ)) n ×ˢ Icc 0 1) :=
         (hgc hwc).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-      refine (setIntegral_rect_le_mul_of_forall_setIntegral_le measurableSet_Icc
+      refine (setIntegral_prod_le_mul_of_forall_setIntegral_le measurableSet_Icc
         ((hgc hξ.continuous).continuousOn.integrableOn_compact
           (isCompact_Icc.prod isCompact_Icc)) hwi fun s _ ↦ hslice s).trans
         (mul_le_mul_of_nonneg_left (setIntegral_mono_on hwi ?_

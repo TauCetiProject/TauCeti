@@ -33,8 +33,6 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
-* `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: a comparison of all slice integrals
-  `∫ f(x, ·) ≤ C ∫ g(x, ·)` integrates to the same comparison over a product `s ×ˢ t`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
@@ -120,24 +118,6 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
     rw [closure_prod_eq, closure_Ioo h₁.ne, closure_Ioo h₂.ne]
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
-
-/-- **Comparison of rectangle integrals through their slices.** For `f` and `g` integrable on a
-product `s ×ˢ t` with `s` measurable, if every slice integral `∫_t f(x, ·)` with `x ∈ s` is at
-most `C` times the corresponding slice integral of `g`, then the same comparison holds for the
-integrals over `s ×ˢ t`. -/
-theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → ℝ} {C : ℝ}
-    {s t : Set ℝ} (hs : MeasurableSet s) (hf : IntegrableOn f (s ×ˢ t))
-    (hg : IntegrableOn g (s ×ˢ t))
-    (hle : ∀ x ∈ s, ∫ y in t, f (x, y) ≤ C * ∫ y in t, g (x, y)) :
-    ∫ z in s ×ˢ t, f z ≤ C * ∫ z in s ×ˢ t, g z := by
-  rw [Measure.volume_eq_prod] at hf hg ⊢
-  rw [setIntegral_prod f hf, setIntegral_prod g hg, ← integral_const_mul]
-  -- Integrability on the product gives integrability of the slice integrals (Fubini).
-  have hslice {h : ℝ × ℝ → ℝ} (hh : IntegrableOn h (s ×ˢ t) (volume.prod volume)) :
-      IntegrableOn (fun x ↦ ∫ y in t, h (x, y)) s := by
-    rw [IntegrableOn, ← Measure.prod_restrict] at hh
-    exact hh.integral_prod_left
-  exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul C) hs hle
 
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
