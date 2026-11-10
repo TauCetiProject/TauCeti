@@ -25,6 +25,7 @@ No assertion that this bijection is an embedding is made.
 The carrier uses `WithTopology` to retain the original ambient manifold and its distribution
 without changing their instances. The parametrizing manifolds are boundaryless and share a
 common model, which may itself have boundary.
+The ambient manifold is also assumed boundaryless.
 Smooth overlap compatibility follows from the integral immersions, rather than being an
 additional hypothesis on the family.
 The parametrizations are `C^m`, with `1 ≤ m`, and the ambient manifold is `C^r` with
