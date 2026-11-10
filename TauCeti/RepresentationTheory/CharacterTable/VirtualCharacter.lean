@@ -338,6 +338,7 @@ theorem irreducibleCharacter_mem_virtualCharacters (i : Fin (Nat.card (ConjClass
   rw [virtualCharacters_eq_closure_irreducibleCharacters]
   exact AddSubgroup.subset_closure (irreducibleCharacter_mem k i)
 
+omit [Finite G] in
 /-- The enumerated irreducible characters exhaust the irreducible characters. -/
 theorem range_irreducibleCharacter :
     Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
@@ -394,6 +395,7 @@ theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ
     ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t.toIntLinearMap ht
     (V := V.toIntSubmodule) (hspan ▸ AddSubgroup.toIntSubmodule.monotone hV) (hspan ▸ hf) hfA
 
+omit [Finite G] in
 /-- Reading an integer combination of irreducible characters back inside
 `TauCeti.ClassFunction`. -/
 private theorem eq_sum_smul_ofCharacter {f : ClassFunction k G}

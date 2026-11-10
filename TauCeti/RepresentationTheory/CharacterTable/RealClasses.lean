@@ -171,7 +171,7 @@ open ClassFunction
 variable (k : Type u) (G : Type v) [Field k] [CharZero k] [Group G] [Finite G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
-omit [CharZero k] in
+omit [CharZero k] [Finite G] in
 /-- A row of the character table is inversion-invariant exactly when the irreducible character it
 records is: the two say the same thing, one indexed by conjugacy classes and one by group
 elements. -/
@@ -182,7 +182,7 @@ theorem forall_characterTable_inv_iff (i : Fin (Nat.card (ConjClasses G))) :
   obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
   simpa using h g
 
-omit [CharZero k] in
+omit [CharZero k] [Finite G] in
 /-- Summing the squares of an irreducible character over the group is the same as summing the
 squares of the corresponding character-table row over the conjugacy classes, each weighted by the
 size of its class. -/
