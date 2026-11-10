@@ -131,7 +131,7 @@ instance instUnits : CoefficientSemifield Fˣ where
 
 /-- The auxiliary addition of units of a semifield is the addition of the semifield. -/
 @[simp, norm_cast]
-theorem _root_.Units.val_add (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
+theorem val_units_add (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
   (rfl)
 
 end Units
