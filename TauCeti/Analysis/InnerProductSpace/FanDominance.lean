@@ -263,20 +263,20 @@ theorem map_comp_starProjection_sub_starProjection_comp_le
       _ = 2 * N H := by ring
   exact le_of_mul_le_mul_left hscaled (by norm_num : (0 : ℝ) < 2)
 
-omit [FiniteDimensional 𝕜 E] in
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
 /-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
 seminorm. -/
 theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
-    (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
+    [U.HasOrthogonalProjection] (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
   have h := N.map_comp_starProjection_sub_starProjection_comp_le (⊥ : Submodule 𝕜 E) U
     (A : E →ₗ[𝕜] F)
   simpa [Submodule.starProjection_bot, map_neg_eq_map] using h
 
-omit [FiniteDimensional 𝕜 F] in
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
 /-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
 seminorm. -/
 theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
-    (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
+    [U.HasOrthogonalProjection] (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
   have h := N.map_comp_starProjection_sub_starProjection_comp_le U (⊥ : Submodule 𝕜 F)
     (A : E →ₗ[𝕜] F)
   simpa [Submodule.starProjection_bot] using h

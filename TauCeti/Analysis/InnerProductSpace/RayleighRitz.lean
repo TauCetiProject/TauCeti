@@ -149,6 +149,7 @@ theorem sq_frobenius_sylvester_eq_sq_frobenius_sylvester_compression_add [Finite
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
+omit [FiniteDimensional 𝕜 E] in
 /-- **Minimality of the Ritz residual.** For an isometric trial map `X`, the compression
 `X† A X` is the best model operator: the Ritz residual is smallest among all residuals
 `A X - X M` in every unitarily invariant seminorm. -/
