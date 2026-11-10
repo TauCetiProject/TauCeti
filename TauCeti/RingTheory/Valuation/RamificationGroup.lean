@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 
 /-!
@@ -27,6 +28,8 @@ maximal ideal.
   and its complement in `L`.
 * `ValuationSubring.mem_decompositionSubgroup_iff`: an automorphism of `L` lies in the
   decomposition group exactly when it preserves `A` and its complement.
+* `ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff`: decomposition-group membership
+  is unchanged by restricting scalars to a smaller intermediate field.
 * `ValuationSubring.decompositionSubgroup.ext`: two elements of the decomposition group that agree
   on `A` are equal.
 * `ValuationSubring.instFaithfulSMulDecompositionSubgroup`: the decomposition group acts
@@ -74,6 +77,14 @@ theorem mem_decompositionSubgroup_iff (A : ValuationSubring L) (σ : L ≃ₐ[K]
   rw [← inv_mem_iff, MulAction.mem_stabilizer_iff]
   ext x
   rw [mem_inv_pointwise_smul_iff, AlgEquiv.smul_def, h]
+
+/-- **Decomposition-group membership is unchanged by restricting scalars**: an automorphism of `L`
+over an intermediate field `E` lies in the decomposition group of `A` over `E` exactly when it lies
+in the decomposition group of `A` over `K`, read as an automorphism over `K`. -/
+theorem restrictScalars_mem_decompositionSubgroup_iff (A : ValuationSubring L)
+    (E : IntermediateField K L) (τ : L ≃ₐ[E] L) :
+    τ.restrictScalars K ∈ A.decompositionSubgroup K ↔ τ ∈ A.decompositionSubgroup E :=
+  Iff.rfl
 
 /-- Two automorphisms in the decomposition group of a valuation subring that agree on the
 valuation subring are equal, because its ambient field is its field of fractions. -/
