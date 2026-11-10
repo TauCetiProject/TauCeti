@@ -19,8 +19,9 @@ only that `M` contains a primitive `m`-th root of unity — although when `M / K
 subgroup is `Gal(M/K(μ_m))`, which is the reading the crossing argument uses.
 
 Without a primitive root, the same subgroup is the kernel of the action of `Aut(M/K)` on the
-group `μ_m(M)`. For `m ≠ 0` this group is cyclic, so the index divides the order `φ(#μ_m(M))` of
-the automorphism group of `μ_m(M)`. For a prime `p` this index is prime to `p`: adjoining the
+group `μ_m(M)`. The index divides `φ(#μ_m(M))` for every `m`: if `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group; otherwise `#μ_m(M) = 0` and `φ 0 = 0`. For
+a prime `p` this index is prime to `p`: adjoining the
 `p`-th roots of unity is a step of degree prime to `p`, the reduction step in the Kummer-theoretic
 proofs of class field theory.
 
@@ -112,8 +113,9 @@ theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
         h
       simpa [AlgEquiv.smul_units_def] using congrArg Units.val this
 
-/-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`**, the order of the automorphism group of
-the cyclic group `μ_m(M)`, through whose action it is the kernel. -/
+/-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`.** When `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group, through whose action `Aut(M/K(μ_m))` is
+the kernel; otherwise `#μ_m(M) = 0` and `φ 0 = 0`, so the statement holds trivially. -/
 theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) :
     (adjoin K {b : M | b ^ m = 1}).fixingSubgroup.index ∣
       (Nat.card (rootsOfUnity m M)).totient := by
