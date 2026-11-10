@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -250,23 +251,28 @@ section Modulus
 /-- **A modulus of continuity for loops with small defect.** If `X` is bounded by `B` along the
 loop at `s` on `[t₁, t₂]`, then
 `‖u(s, t₂) - u(s, t₁)‖ ≤ B (t₂ - t₁) + √(t₂ - t₁) √(∫_{t₁}^{t₂} ‖∂_t u - X(t, u)‖²)`. -/
-theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect [CompleteSpace V]
+theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect
     (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s)
     {B t₁ t₂ : ℝ} (ht : t₁ ≤ t₂) (hB : ∀ t ∈ Icc t₁ t₂, ‖X t (u (s, t))‖ ≤ B) :
     ‖u (s, t₂) - u (s, t₁)‖ ≤
       B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) := by
   have hd := continuous_sliceDefect_slice hu hX hs
-  rw [sub_eq_integral_add_integral_sliceDefect hu hX hs]
-  calc ‖(∫ t in t₁..t₂, X t (u (s, t))) + ∫ t in t₁..t₂, sliceDefect X u (s, t)‖
-      ≤ ‖∫ t in t₁..t₂, X t (u (s, t))‖ + ‖∫ t in t₁..t₂, sliceDefect X u (s, t)‖ :=
-        norm_add_le _ _
-    _ ≤ B * (t₂ - t₁) + ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ := by
-        gcongr
-        · rw [← abs_of_nonneg (sub_nonneg.2 ht)]
-          refine intervalIntegral.norm_integral_le_of_norm_le_const fun t htI ↦ hB t ?_
-          rw [uIoc_of_le ht] at htI
-          exact Ioc_subset_Icc_self htI
-        · exact intervalIntegral.norm_integral_le_integral_norm ht
+  have hder : ∀ t, HasDerivAt (fun t ↦ u (s, t)) (X t (u (s, t)) + sliceDefect X u (s, t)) t :=
+    hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs
+  have hBi : IntervalIntegrable (fun t ↦ B + ‖sliceDefect X u (s, t)‖) volume t₁ t₂ :=
+    (continuous_const.add hd.norm).intervalIntegrable _ _
+  calc ‖u (s, t₂) - u (s, t₁)‖
+      ≤ ∫ t in t₁..t₂, (B + ‖sliceDefect X u (s, t)‖) :=
+        norm_sub_le_integral_of_norm_deriv_le_of_le (f := fun t ↦ u (s, t)) ht
+          (continuous_slice_of_continuousOn hu.continuousOn hs).continuousOn
+          (fun t _ ↦ (hder t).differentiableAt.differentiableWithinAt)
+          (Eventually.of_forall fun t htm ↦ by
+            rw [(hder t).deriv]
+            exact (norm_add_le _ _).trans (add_le_add (hB t (Ioo_subset_Icc_self htm)) le_rfl))
+          hBi
+    _ = B * (t₂ - t₁) + ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ := by
+        rw [intervalIntegral.integral_add intervalIntegrable_const (hd.norm.intervalIntegrable _ _),
+          intervalIntegral.integral_const, smul_eq_mul, mul_comm]
     _ ≤ B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
         add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht
           ((hd.norm.pow 2).intervalIntegrable _ _))
