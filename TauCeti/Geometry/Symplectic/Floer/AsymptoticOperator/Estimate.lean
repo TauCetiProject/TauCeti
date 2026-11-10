@@ -47,6 +47,14 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   (`Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`). For an actual
   nondegenerate one-periodic orbit of a Hamiltonian, the hypothesis on the return map holds
   (`SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`).
+* **Stability of the cylinder estimate.** If `ξ` satisfies the cylinder estimate with constant
+  `C₀`, then there are `ε > 0` and `C`, depending only on `C₀`, `J` and `S`, such that the
+  estimate also holds with `C` and any continuous `f` in place of `D ξ` with
+  `‖f - D ξ‖ ≤ ε (‖∂t ξ‖ + ‖ξ‖)` pointwise on the rectangle
+  (`Floer.exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le`). Since
+  `∂t ξ = (∂t ξ - S ξ) + S ξ`, the error is bounded by the left-hand side with a small factor, and
+  it is absorbed there. This is how the estimate passes to operators that converge to `D`, such
+  as the linearized operator along a cylindrical end.
 
 In contrast, `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero` shows that `D` is injective on
 decaying maps with no nondegeneracy assumption, but without an estimate; at a degenerate orbit
@@ -197,6 +205,180 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   simp only [w] at hsplit hfub hW'
   rw [hsplit, hid]
   linarith [mul_le_mul_of_nonneg_left hW' hC]
+
+omit [FiniteDimensional ℝ V] in
+/-- The pointwise step of the stability estimate. If `g = ω(·, J ·)` satisfies
+`α ‖v‖² ≤ g(v, v) ≤ β ‖v‖²`, `‖T‖ ≤ σ`, and `f` differs from `d = p + J (q - T y)` by at most
+`ε (‖q‖ + ‖y‖)` with `4 β ε² (1 + σ)² ≤ α κ`, then
+`g(d, d) ≤ (2 β / α) g(f, f) + κ (g(p, p) + g(q - T y, q - T y) + g(y, y))`. -/
+private theorem associatedBilinForm_le_of_norm_sub_le {J : AlmostComplexStructure V}
+    {T : V →L[ℝ] V} {α β σ ε κ : ℝ} (hα : 0 < α) (hβ : 0 ≤ β) (hκ : 0 ≤ κ)
+    (hε : 0 ≤ ε) (hg : ∀ v, α * ‖v‖ ^ 2 ≤ ω.associatedBilinForm J v v ∧
+      ω.associatedBilinForm J v v ≤ β * ‖v‖ ^ 2)
+    (hT : ‖T‖ ≤ σ) (hεκ : 4 * β * ε ^ 2 * (1 + σ) ^ 2 ≤ α * κ) {f p q y : V}
+    (hf : ‖f - (p + J (q - T y))‖ ≤ ε * (‖q‖ + ‖y‖)) :
+    ω.associatedBilinForm J (p + J (q - T y)) (p + J (q - T y)) ≤
+      2 * β / α * ω.associatedBilinForm J f f +
+        κ * ((ω.associatedBilinForm J p p + ω.associatedBilinForm J (q - T y) (q - T y)) +
+          ω.associatedBilinForm J y y) := by
+  set d := p + J (q - T y)
+  set w := q - T y
+  have hσ : 0 ≤ σ := (norm_nonneg _).trans hT
+  -- `‖q‖ ≤ ‖w‖ + σ ‖y‖`, hence `‖f - d‖ ≤ ε (1 + σ) (‖w‖ + ‖y‖)`.
+  have hq : ‖q‖ ≤ ‖w‖ + σ * ‖y‖ := by
+    calc ‖q‖ = ‖w + T y‖ := by rw [sub_add_cancel]
+      _ ≤ ‖w‖ + ‖T y‖ := norm_add_le _ _
+      _ ≤ ‖w‖ + σ * ‖y‖ := by gcongr; exact (T.le_opNorm y).trans (by gcongr)
+  have he : ‖f - d‖ ≤ ε * (1 + σ) * (‖w‖ + ‖y‖) := by
+    refine hf.trans ?_
+    have : ‖q‖ + ‖y‖ ≤ (1 + σ) * (‖w‖ + ‖y‖) := by
+      nlinarith [norm_nonneg w, norm_nonneg y]
+    calc ε * (‖q‖ + ‖y‖) ≤ ε * ((1 + σ) * (‖w‖ + ‖y‖)) := by gcongr
+      _ = _ := by ring
+  -- `‖d‖² ≤ 2 ‖f‖² + 4 ε² (1 + σ)² (‖w‖² + ‖y‖²)`.
+  have hd : ‖d‖ ≤ ‖f‖ + ‖f - d‖ := by
+    simpa using norm_sub_le f (f - d)
+  have hd2 : ‖d‖ ^ 2 ≤ 2 * ‖f‖ ^ 2 + 4 * ε ^ 2 * (1 + σ) ^ 2 * (‖w‖ ^ 2 + ‖y‖ ^ 2) := by
+    have h1 : ‖d‖ ^ 2 ≤ 2 * ‖f‖ ^ 2 + 2 * ‖f - d‖ ^ 2 := by
+      nlinarith [pow_le_pow_left₀ (norm_nonneg d) hd 2, sq_nonneg (‖f‖ - ‖f - d‖)]
+    have h2 : ‖f - d‖ ^ 2 ≤ (ε * (1 + σ)) ^ 2 * (‖w‖ + ‖y‖) ^ 2 := by
+      rw [← mul_pow]
+      exact pow_le_pow_left₀ (norm_nonneg _) he 2
+    have h3 : (‖w‖ + ‖y‖) ^ 2 ≤ 2 * (‖w‖ ^ 2 + ‖y‖ ^ 2) := by
+      nlinarith [sq_nonneg (‖w‖ - ‖y‖)]
+    have h4 : 0 ≤ (ε * (1 + σ)) ^ 2 := sq_nonneg _
+    nlinarith [mul_le_mul_of_nonneg_left h3 h4]
+  have hpJ := (mul_nonneg hα.le (sq_nonneg ‖p‖)).trans (hg p).1
+  have hf' := (hg f).1
+  have hw' := (hg w).1
+  have hy' := (hg y).1
+  have hd' := (hg d).2
+  have hfq : 2 * β * ‖f‖ ^ 2 ≤ 2 * β / α * ω.associatedBilinForm J f f := by
+    calc 2 * β * ‖f‖ ^ 2 = 2 * β / α * (α * ‖f‖ ^ 2) := by field_simp
+      _ ≤ _ := by gcongr
+  have hwy : 4 * β * ε ^ 2 * (1 + σ) ^ 2 * (‖w‖ ^ 2 + ‖y‖ ^ 2) ≤
+      κ * (ω.associatedBilinForm J w w + ω.associatedBilinForm J y y) := by
+    calc _ ≤ α * κ * (‖w‖ ^ 2 + ‖y‖ ^ 2) := by gcongr
+      _ = κ * (α * ‖w‖ ^ 2 + α * ‖y‖ ^ 2) := by ring
+      _ ≤ _ := by gcongr
+  calc ω.associatedBilinForm J d d ≤ β * ‖d‖ ^ 2 := hd'
+    _ ≤ β * (2 * ‖f‖ ^ 2 + 4 * ε ^ 2 * (1 + σ) ^ 2 * (‖w‖ ^ 2 + ‖y‖ ^ 2)) := by gcongr
+    _ = 2 * β * ‖f‖ ^ 2 + 4 * β * ε ^ 2 * (1 + σ) ^ 2 * (‖w‖ ^ 2 + ‖y‖ ^ 2) := by ring
+    _ ≤ 2 * β / α * ω.associatedBilinForm J f f +
+        κ * (ω.associatedBilinForm J w w + ω.associatedBilinForm J y y) := add_le_add hfq hwy
+    _ ≤ _ := by gcongr; linarith [mul_nonneg hκ hpJ]
+
+/-- **Stability of the cylinder estimate.** Let each `J_t` be `ω`-tame and depend continuously
+on `t`, let `S` be continuous, and let `C₀ ≥ 0`. There are `ε > 0` and `C ≥ 0` with the following
+property. Let `ξ` be a `C¹` map satisfying, over `[a, b] × [0, 1]`, the cylinder estimate
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C₀ ∫ g(D ξ, D ξ)`
+
+for `g_t = ω(·, J_t ·)` and the stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)`.
+Then every `f` continuous on the rectangle with `‖f - D ξ‖ ≤ ε (‖∂t ξ‖ + ‖ξ‖)` there satisfies
+the same estimate with `C` in place of `C₀` and `f` in place of `D ξ`. The constants do not depend
+on `a`, `b`, `ξ` or `f`. -/
+theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
+    (hJ : ∀ t, ω.Tames (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
+    {C₀ : ℝ} (hC₀ : 0 ≤ C₀) :
+    ∃ ε > 0, ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → ∀ ⦃a b : ℝ⦄,
+      ∫ z in Icc a b ×ˢ Icc 0 1,
+          ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+              (fderiv ℝ ξ z stdComplexLineReal) +
+            ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+              (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+            ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+        C₀ * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+          (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) →
+      ∀ ⦃f : ℝ × ℝ → V⦄, ContinuousOn f (Icc a b ×ˢ Icc 0 1) →
+        (∀ z ∈ Icc a b ×ˢ Icc 0 1, ‖f z - stationaryCylinderOperator J S ξ z‖ ≤
+          ε * (‖fderiv ℝ ξ z stdComplexLineImag‖ + ‖ξ z‖)) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+              ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (f z) (f z) := by
+  have he : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    continuous_clm_apply.2 fun v ↦ by
+      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
+  obtain ⟨α, hα, β, hβ, hαβ⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    isCompact_Icc he.continuousOn fun t (_ : t ∈ Icc (0 : ℝ) 1) ↦ hJ t
+  obtain ⟨σ, hσ⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    hSc.continuousOn
+  -- The error is absorbed once `C₀ κ ≤ 1 / 2`, which the choice of `ε` arranges.
+  set m := 1 + |σ|
+  set κ := 1 / (2 * (C₀ + 1))
+  set ε := min 1 (α / (8 * (β + 1) * m ^ 2 * (C₀ + 1)))
+  have hm : 0 < m := by positivity
+  have hε : 0 < ε := lt_min one_pos (by positivity)
+  have hεκ : 4 * β * ε ^ 2 * m ^ 2 ≤ α * κ := by
+    have h₁ : β * ε ^ 2 ≤ (β + 1) * ε := by
+      have hε₁ : ε ≤ 1 := min_le_left _ _
+      nlinarith [mul_le_mul_of_nonneg_left hε₁ (mul_nonneg hβ hε.le)]
+    calc 4 * β * ε ^ 2 * m ^ 2 = 4 * m ^ 2 * (β * ε ^ 2) := by ring
+      _ ≤ 4 * m ^ 2 * ((β + 1) * ε) := by gcongr
+      _ ≤ 4 * m ^ 2 * ((β + 1) * (α / (8 * (β + 1) * m ^ 2 * (C₀ + 1)))) := by
+        gcongr; exact min_le_right _ _
+      _ = α * κ := by simp only [κ]; field_simp; ring
+  refine ⟨ε, hε, 4 * C₀ * β / α, by positivity, fun ξ hξ a b hst f hf hfD ↦ ?_⟩
+  set R := Icc a b ×ˢ Icc (0 : ℝ) 1
+  have hR : IsCompact R := isCompact_Icc.prod isCompact_Icc
+  have hRm : MeasurableSet R := measurableSet_Icc.prod measurableSet_Icc
+  -- The integrands: `e` of the left-hand side, `gD` of `g(D ξ)` and `gF` of `g(f)`.
+  set e : ℝ × ℝ → ℝ := fun z ↦
+    (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+        (fderiv ℝ ξ z stdComplexLineReal) +
+      ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+        (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+      ω.associatedBilinForm (J z.2) (ξ z) (ξ z)
+  set gF : ℝ × ℝ → ℝ := fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z)
+  -- Integrability of the three integrands on the compact rectangle.
+  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
+  have hDc : Continuous (stationaryCylinderOperator J S ξ) := by
+    have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
+      (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
+    rw [funext (stationaryCylinderOperator_def J S ξ)]
+    exact (hdξ.clm_apply continuous_const).add (hJc.comp (continuous_snd.prodMk hw))
+  have hDi := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hDc).continuousOn
+    |>.integrableOn_compact (μ := volume) hR
+  have hFi : IntegrableOn gF R :=
+    (ω.continuousOn_apply_comp hf
+      (hJc.comp_continuousOn (continuous_snd.continuousOn.prodMk hf))).integrableOn_compact hR
+  have hEi : IntegrableOn e R :=
+    ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hξ).add
+      (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)).continuousOn
+      |>.integrableOn_compact hR
+  -- Pointwise, `g(D ξ) ≤ (2 β / α) g(f) + κ e`.
+  have hpt : ∫ z in R, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z)
+      (stationaryCylinderOperator J S ξ z) ≤ ∫ z in R, (2 * β / α * gF z + κ * e z) :=
+    setIntegral_mono_on hDi ((hFi.const_mul (2 * β / α)).add (hEi.const_mul κ)) hRm
+      fun z hz ↦ by
+        have hz₂ : z.2 ∈ Icc (0 : ℝ) 1 := hz.2
+        have hS : ‖S z.2‖ ≤ |σ| := (hσ z.2 hz₂).trans (le_abs_self σ)
+        have h := hfD z hz
+        rw [stationaryCylinderOperator_def] at h ⊢
+        exact associatedBilinForm_le_of_norm_sub_le hα hβ (by positivity) hε.le
+          (hαβ z.2 hz₂) hS hεκ h
+  rw [integral_add (hFi.const_mul _) (hEi.const_mul _), integral_const_mul,
+    integral_const_mul] at hpt
+  -- Absorb: `E ≤ C₀ ((2 β / α) ∫ g(f) + κ E)` with `C₀ κ ≤ 1 / 2` and `E ≥ 0`.
+  set E := ∫ z in R, e z
+  have hg0 (z : ℝ × ℝ) (hz : z ∈ R) (v : V) : 0 ≤ ω.associatedBilinForm (J z.2) v v :=
+    (mul_nonneg hα.le (sq_nonneg ‖v‖)).trans (hαβ z.2 hz.2 v).1
+  have hE0 : 0 ≤ E := setIntegral_nonneg hRm fun z hz ↦
+    add_nonneg (add_nonneg (hg0 z hz _) (hg0 z hz _)) (hg0 z hz _)
+  have hκ : C₀ * κ ≤ 1 / 2 := by
+    simp only [κ]
+    rw [mul_one_div, div_le_div_iff₀ (by positivity) (by norm_num)]
+    linarith
+  have hfin := hst.trans (mul_le_mul_of_nonneg_left hpt hC₀)
+  have hcross : C₀ * (κ * E) ≤ E / 2 := by
+    rw [← mul_assoc]; nlinarith
+  calc E ≤ 2 * (C₀ * (2 * β / α * ∫ z in R, gF z)) := by
+        nlinarith
+    _ = _ := by ring
 
 end Floer
 
