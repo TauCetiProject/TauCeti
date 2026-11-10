@@ -54,7 +54,7 @@ theorem map_renewalExcess_renewalUnusedTail_restrict_prefix_count_of_expMeasure
   have := hindep.isProbabilityMeasure
   have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
   have := isProbabilityMeasure_expMeasure hr
-  have hid := identDistrib_of_hasLaw_expMeasure hlaw
+  have hid (n : ℕ) := (hlaw n).identDistrib_nnreal (hlaw 0)
   have hzero := measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0)
   let H := {ω | (fun i : Fin n ↦ T i ω) ∈ B ∧ renewalCountNat T t ω = n}
   have hE := (measurable_renewalExcess hT t).coe_nnreal_real
