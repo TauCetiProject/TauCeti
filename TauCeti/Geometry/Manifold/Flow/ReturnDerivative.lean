@@ -117,7 +117,7 @@ return branch need not be the first return to the section.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
 * `TauCeti.normalReturnDerivative_zero`, `TauCeti.normalReturnDerivative_natCast_mul`: the normal
   return derivative of the time-`0` transition and of an iterate.
-* `TauCeti.charpoly_pow_normalReturnDerivative_eq`: the characteristic polynomial of every power of
+* `TauCeti.charpoly_normalReturnDerivative_pow_eq`: the characteristic polynomial of every power of
   the normal return derivative is independent of the section and the base point.
 
 ## References
@@ -619,7 +619,7 @@ theorem charpoly_normalReturnDerivative_eq
 derivatives at time `T₀` of transverse sections through `p` and through `q` have the same
 characteristic polynomial. By `TauCeti.normalReturnDerivative_natCast_mul`, these are the normal
 derivatives of the `k`-fold iterates of the return branches. -/
-theorem charpoly_pow_normalReturnDerivative_eq (k : ℕ)
+theorem charpoly_normalReturnDerivative_pow_eq (k : ℕ)
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
     {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤

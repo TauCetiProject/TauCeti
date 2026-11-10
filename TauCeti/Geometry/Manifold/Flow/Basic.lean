@@ -251,16 +251,9 @@ theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
   have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) :=
     ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
       ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  have hopen : {s : ℝ | (s, x) ∈ flowDomain v} ∈ 𝓝 (0 : ℝ) :=
-    ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds h0
-  have htime := ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt.mfderiv
   have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
-  have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) := by
-    rw [htime]
-    -- Unfold the application of `smulRight`, whose domain is the tangent space of `ℝ` at `0`.
-    change @Eq E ((1 : ℝ →L[ℝ] ℝ) a • v (flowOf v 0 x)) (a • v x)
-    rw [flowOf_zero hv x]
-    rfl
+  have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) :=
+    mfderiv_flowOf_trajectory_zero_apply hv x a
   have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
     rw [hspace, mfderiv_id]
     rfl
