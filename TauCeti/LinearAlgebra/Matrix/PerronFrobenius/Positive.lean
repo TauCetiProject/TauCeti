@@ -231,8 +231,10 @@ private theorem isCompact_setOf_smul_le_mulVec (A : Matrix n n ℝ) (M : ℝ) :
 entries are all strictly positive has an eigenvector whose entries are all strictly positive, for a
 strictly positive eigenvalue.
 
-This eigenvalue is the spectral radius (`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), and the
-eigenvector is unique up to a scalar (`Matrix.exists_eq_smul_of_mulVec_eq_smul`). -/
+When `n` is nonempty, this eigenvalue is the spectral radius
+(`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), and the eigenvector is unique up to a scalar
+(`Matrix.exists_eq_smul_of_mulVec_eq_smul`).  For empty `n` the statement holds trivially, with
+the zero vector. -/
 theorem exists_mulVec_eq_smul_of_pos (hA : ∀ i j, 0 < A i j) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : n → ℝ, (∀ i, 0 < v i) ∧ A *ᵥ v = r • v := by
   classical
