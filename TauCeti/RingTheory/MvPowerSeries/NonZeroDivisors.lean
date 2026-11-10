@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
 # Non-zero-divisors of multivariate power series
@@ -21,6 +23,8 @@ series, such as Tate algebras, then inherit `IsDomain` from Mathlib's subring in
 
 * `MvPowerSeries.X_sub_X_mem_nonZeroDivisors`: for `i ≠ j`, the difference `X i - X j` is a
   non-zero-divisor of `MvPowerSeries σ R` over an arbitrary commutative ring.
+* `MvPowerSeries.isDomain_of_isFractionRing`: a commutative ring whose power series ring embeds
+  in a field (through `IsFractionRing`) is a domain.
 
 ## Implementation notes
 
@@ -44,6 +48,15 @@ instance [Ring R] [IsDomain R] : IsDomain (MvPowerSeries σ R) :=
   NoZeroDivisors.to_isDomain _
 
 variable [CommRing R]
+
+variable (σ) in
+/-- A commutative ring `R` is a domain as soon as its power series ring embeds in a field: `R`
+embeds in the field through `MvPowerSeries σ R`. -/
+theorem isDomain_of_isFractionRing (K : Type*) [Field K] [Algebra (MvPowerSeries σ R) K]
+    [IsFractionRing (MvPowerSeries σ R) K] : IsDomain R :=
+  have h : Function.Injective ((algebraMap (MvPowerSeries σ R) K).comp C) :=
+    (IsFractionRing.injective (MvPowerSeries σ R) K).comp C_injective
+  Function.Injective.isDomain _ h
 
 /-- **The difference of two distinct variables is a non-zero-divisor**, over an arbitrary
 commutative ring: `f * (X i - X j) = 0` forces `f = 0`, with no hypothesis on `R`.
