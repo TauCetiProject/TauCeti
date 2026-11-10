@@ -7,8 +7,10 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Subspace
+import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Factorization.GcdSplit
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Bounds
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Gamma1
 import TauCeti.NumberTheory.ModularForms.Cusps.Weight.One
@@ -172,10 +174,6 @@ sum over the sets of prime factors of `s`. -/
 private def separator (v s : ℕ) (H : ℕ → ℂ) : ℂ :=
   ∑ D ∈ s.primeFactors.powerset, (∏ p ∈ D, -ψ p) * H (v * (s / ∏ p ∈ D, p))
 
-private theorem prod_dvd_of_subset_primeFactors {s : ℕ} {D : Finset ℕ}
-    (hD : D ⊆ s.primeFactors) : ∏ p ∈ D, p ∣ s :=
-  (Finset.prod_dvd_prod_of_subset _ _ id hD).trans (Nat.prod_primeFactors_dvd s)
-
 /-- The separating functional is linear. -/
 private theorem separator_sum {s : ℕ} {T : Finset ℕ} (l : ℕ → ℂ) (H : ℕ → ℕ → ℂ) :
     separator ψ v s (fun c ↦ ∑ t ∈ T, l t * H t c) =
@@ -193,7 +191,7 @@ private theorem separator_profile_self [NeZero v] {t : ℕ} (ht : t ≠ 0) :
   have hterm (D : Finset ℕ) (hD : D ∈ t.primeFactors.powerset) :
       (∏ p ∈ D, -ψ p) * profile ψ φ t (v * (t / ∏ p ∈ D, p)) =
         ψ (-1) * ((∏ p ∈ D, -(ψ p * φ⁻¹ p / p)) * ∏ p ∈ t.primeFactors \ D, 1) := by
-    rw [profile_mul_div ψ φ ht (prod_dvd_of_subset_primeFactors (Finset.mem_powerset.mp hD))]
+    rw [profile_mul_div ψ φ ht (Nat.prod_dvd_of_subset_primeFactors (Finset.mem_powerset.mp hD))]
     simp only [Finset.prod_const_one, mul_one, Nat.cast_prod, map_prod]
     rw [← Finset.prod_div_distrib, mul_left_comm, ← Finset.prod_mul_distrib]
     exact congrArg _ (Finset.prod_congr rfl fun p _ ↦ by ring)
@@ -221,7 +219,7 @@ private theorem separator_profile_of_not_dvd [NeZero v] {s t : ℕ} (hs : s ≠ 
   -- `s = p (∏ D) w`, where `p` divides `w` at least as often as it divides `t`
   obtain ⟨w, hw⟩ : p * ∏ q ∈ D, q ∣ s := by
     simpa [Finset.prod_insert hpD] using
-      prod_dvd_of_subset_primeFactors (s := s) (Finset.insert_subset hps hDs)
+      Nat.prod_dvd_of_subset_primeFactors (n := s) (Finset.insert_subset hps hDs)
   have hD0 : ∏ q ∈ D, q ≠ 0 := Finset.prod_ne_zero_iff.mpr fun q hq ↦
     (Nat.prime_of_mem_primeFactors (hDs hq)).ne_zero
   have hw' : s / ∏ q ∈ D, q = w * p := by
@@ -251,22 +249,6 @@ private theorem separator_profile_of_not_dvd [NeZero v] {s t : ℕ} (hs : s ≠ 
   rw [hw', hw'', ← mul_assoc, profile_mul ψ φ hgcd]
   ring
 
-private theorem neg_one_mul_prod_one_sub_ne_zero (t : ℕ) :
-    ψ (-1) * ∏ p ∈ t.primeFactors, (1 - ψ p * φ⁻¹ p / p) ≠ 0 := by
-  refine mul_ne_zero (fun h ↦ ?_) (Finset.prod_ne_zero_iff.mpr fun p hp h ↦ ?_)
-  · have := map_mul ψ (-1) (-1)
-    rw [neg_one_mul, neg_neg, map_one, h, zero_mul] at this
-    exact one_ne_zero this
-  · -- `‖ψ(p) φ⁻¹(p) / p‖ ≤ 1 / p < 1`
-    have hp1 : (1 : ℝ) < p := by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt
-    have hlt : ‖ψ p * φ⁻¹ p / (p : ℂ)‖ < 1 := by
-      rw [norm_div, norm_mul, Complex.norm_natCast, div_lt_one (by linarith)]
-      calc ‖ψ p‖ * ‖φ⁻¹ p‖ ≤ 1 * 1 :=
-            mul_le_mul (ψ.norm_le_one _) (φ⁻¹.norm_le_one _) (norm_nonneg _) zero_le_one
-        _ < p := by linarith
-    rw [← sub_eq_zero.mp h, norm_one] at hlt
-    exact lt_irrefl _ hlt
-
 /-- **The profiles of distinct raising parameters are linearly independent.** -/
 private theorem eq_zero_of_forall_sum_profile_eq_zero [NeZero v] {T : Finset ℕ} (hT : 0 ∉ T)
     {l : ℕ → ℂ} (h : ∀ c, ∑ t ∈ T, l t * profile ψ φ t c = 0) : ∀ t ∈ T, l t = 0 := by
@@ -283,8 +265,10 @@ private theorem eq_zero_of_forall_sum_profile_eq_zero [NeZero v] {T : Finset ℕ
     at hsum
   · unfold separator at hsum
     simp only [mul_zero, Finset.sum_const_zero] at hsum
-    exact ht₀.2 ((mul_eq_zero.mp hsum.symm).resolve_right
-      (neg_one_mul_prod_one_sub_ne_zero ψ φ t₀))
+    refine ht₀.2 ((mul_eq_zero.mp hsum.symm).resolve_right (mul_ne_zero (fun h ↦ ?_)
+      (Finset.prod_ne_zero_iff.mpr fun p hp ↦ DirichletCharacter.one_sub_mul_div_natCast_ne_zero
+        ψ φ⁻¹ (Nat.prime_of_mem_primeFactors hp).one_lt)))
+    simpa [h] using ψ.norm_neg_one
   · intro t htT htt₀
     rcases eq_or_ne (l t) 0 with hl | hl
     · rw [hl, zero_mul]
