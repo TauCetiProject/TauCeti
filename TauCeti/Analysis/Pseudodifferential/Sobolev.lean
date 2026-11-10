@@ -283,14 +283,9 @@ theorem HasCompactSpatialSupport.fourier_iteratedSpatialDeriv_slice
   induction k generalizing a with
   | zero => simp
   | succ k ih =>
-    have h : (fun y ↦ (Symbol.iteratedSpatialDeriv r a).coefficient (y, ξ)) = fun y ↦
-        (Symbol.iteratedSpatialDeriv (fun i ↦ r i.castSucc)
-          (Symbol.spatialDeriv (r (Fin.last k)) a)).coefficient (y, ξ) := by
-      funext y
-      simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv, List.ofFn_succ',
-        List.concat_eq_append]
-    rw [h, ih (ha.spatialDeriv _), ha.fourier_spatialDeriv_slice, smul_smul,
-      Fin.prod_univ_castSucc]
+    rw [← Fin.snoc_init_self r, Symbol.iteratedSpatialDeriv_snoc, ih (ha.spatialDeriv _),
+      ha.fourier_spatialDeriv_slice, smul_smul, Fin.prod_univ_castSucc]
+    simp only [Fin.snoc_castSucc, Fin.snoc_last]
 
 /-- **Differentiation in the frequency.** The Fourier transform `â(η, ξ)` of the position slice
 of a symbol with compact spatial support is differentiable in `ξ`, with the Fourier transform of

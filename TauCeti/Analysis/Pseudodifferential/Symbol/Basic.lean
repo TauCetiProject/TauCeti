@@ -532,6 +532,7 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
 
 /-- Frequency derivatives commute with the inclusions of symbol classes. -/
+@[simp]
 theorem frequencyDeriv_inclusion {m' : ℝ} (h : m ≤ m') (j : Fin n) (a : Symbol n V W m) :
     frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
   ext1
@@ -539,6 +540,7 @@ theorem frequencyDeriv_inclusion {m' : ℝ} (h : m ≤ m') (j : Fin n) (a : Symb
   simp only [coefficient_frequencyDeriv, coefficient_inclusion]
 
 /-- Spatial derivatives commute with the inclusions of symbol classes. -/
+@[simp]
 theorem spatialDeriv_inclusion {m' : ℝ} (h : m ≤ m') (j : Fin n) (a : Symbol n V W m) :
     spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
   ext1
@@ -659,6 +661,41 @@ theorem coefficient_iteratedSpatialDeriv {k : ℕ} (r : Fin k → Fin n) (a : Sy
     (iteratedSpatialDeriv r a).coefficient (x, ξ) =
       mixedDeriv (List.ofFn r) [] a.coefficient x ξ :=
   (rfl)
+
+/-- The iterated frequency derivative along the empty word is the symbol itself. -/
+@[simp]
+theorem iteratedFrequencyDeriv_zero (r : Fin 0 → Fin n) (a : Symbol n V W m) :
+    iteratedFrequencyDeriv r a = inclusion (by simp) a := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [mixedDeriv_def]
+
+/-- The iterated spatial derivative along the empty word is the symbol itself. -/
+@[simp]
+theorem iteratedSpatialDeriv_zero (r : Fin 0 → Fin n) (a : Symbol n V W m) :
+    iteratedSpatialDeriv r a = a := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [mixedDeriv_def]
+
+/-- An iterated frequency derivative along a word with one more letter `j` at the end is the
+iterated frequency derivative of `∂_{ξ_j} a`. The two symbols have the orders `m - (k + 1)` and
+`m - 1 - k`, so the statement is on coefficients. -/
+theorem coefficient_iteratedFrequencyDeriv_snoc {k : ℕ} (r : Fin k → Fin n) (j : Fin n)
+    (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (iteratedFrequencyDeriv (Fin.snoc r j) a).coefficient (x, ξ) =
+      (iteratedFrequencyDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
+  simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_frequencyDeriv, List.ofFn_succ',
+    Fin.snoc_castSucc, Fin.snoc_last, List.concat_eq_append]
+
+/-- An iterated spatial derivative along a word with one more letter `j` at the end is the
+iterated spatial derivative of `∂_{x_j} a`. -/
+theorem iteratedSpatialDeriv_snoc {k : ℕ} (r : Fin k → Fin n) (j : Fin n) (a : Symbol n V W m) :
+    iteratedSpatialDeriv (Fin.snoc r j) a = iteratedSpatialDeriv r (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv, List.ofFn_succ',
+    Fin.snoc_castSucc, Fin.snoc_last, List.concat_eq_append]
 
 /-- Iterated frequency derivatives preserve compact spatial support. -/
 theorem HasCompactSpatialSupport.iteratedFrequencyDeriv {a : Symbol n V W m}

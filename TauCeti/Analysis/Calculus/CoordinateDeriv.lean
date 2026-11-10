@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -53,6 +53,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.coordinateDeriv_eq_iteratedFDerivAlong`: its comparison with
+  `TauCeti.iteratedFDerivAlong` along standard basis vectors.
 * `TauCeti.coordinateDeriv_perm`: for a smooth enough function it does not depend on the order of
   the letters of the word.
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
@@ -132,28 +134,22 @@ theorem _root_.ContDiff.coordinateDeriv {f : CoordinateSpace n → A} (hf : Cont
     (α : List (Fin n)) : ContDiff ℝ ∞ (coordinateDeriv α f) :=
   hf.coordinateDeriv_of_le α (by simp)
 
+/-- The coordinate derivative along a word is the iterated directional derivative along the
+corresponding standard basis vectors. -/
+theorem coordinateDeriv_eq_iteratedFDerivAlong (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    coordinateDeriv α f = iteratedFDerivAlong ℝ (α.map fun j => EuclideanSpace.single j 1) f := by
+  induction α with
+  | nil => rw [List.map_nil, iteratedFDerivAlong_nil, coordinateDeriv_nil]
+  | cons j α ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, List.map_cons, iteratedFDerivAlong_cons_apply]
+
 /-- **Symmetry of iterated coordinate derivatives.** For a `C^k` function, the coordinate
 derivative along a word of length `k` does not depend on the order of the letters. -/
 theorem coordinateDeriv_perm {α β : List (Fin n)} (h : α.Perm β) {f : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) : coordinateDeriv α f = coordinateDeriv β f := by
-  induction h with
-  | nil => rfl
-  | cons j _ ih =>
-    funext x
-    rw [coordinateDeriv_cons, coordinateDeriv_cons, ih (hf.of_le (by simp))]
-  | swap i j l =>
-    funext x
-    have hg : ContDiff ℝ 2 (coordinateDeriv l f) :=
-      hf.coordinateDeriv_of_le l (by simp only [List.length_cons]; norm_cast; omega)
-    have hd : Differentiable ℝ (fderiv ℝ (coordinateDeriv l f)) :=
-      (hg.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero
-    have hfun (k : Fin n) : coordinateDeriv (k :: l) f =
-        fun y => fderiv ℝ (coordinateDeriv l f) y (EuclideanSpace.single k 1) :=
-      funext (coordinateDeriv_cons k l f)
-    rw [coordinateDeriv_cons, coordinateDeriv_cons, hfun, hfun,
-      fderiv_clm_apply_const_apply (hd x), fderiv_clm_apply_const_apply (hd x),
-      (hg.contDiffAt.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])).eq]
-  | trans h₁ _ ih₁ ih₂ => rw [ih₁ hf, ih₂ (h₁.length_eq ▸ hf)]
+  simpa only [coordinateDeriv_eq_iteratedFDerivAlong] using
+    (h.map _).iteratedFDerivAlong_eq hf (by simp)
 
 /-- A coordinate derivative of a `C^k` function along a word of length `k` is its `k`-th Fréchet
 derivative, evaluated on the standard basis vectors named by the word, in the same order. -/
