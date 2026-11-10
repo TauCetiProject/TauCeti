@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Module.Complemented
 /-!
 # Manifold structures on Morse stable and unstable sets
 
-For a globally `C^(n+1)` function (`1 ≤ n`) on a finite-dimensional real inner product space
+For a globally `C^(n+1)` function on a finite-dimensional real inner product space
 with globally Lipschitz gradient, the stable and unstable sets of a nondegenerate critical point
 carry `C^n` manifold structures. Their topology is the subspace topology, and their inclusions
 into the ambient space are `C^n`. The model spaces are the positive and negative Hessian spectral
@@ -48,7 +48,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 manifold structure modelled on the stable Hessian subspace, with its subspace topology and a
 `C^n` inclusion into the ambient space. The dimension of the model plus the Morse index equals
 the ambient dimension. -/
-theorem exists_stableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : ℕ} (hn : 1 ≤ n)
+theorem exists_stableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) :
     ∃ C : ChartedSpace h.contDiffAt.stableLinearSubspace
         (Flow.stableSet (negativeGradientFlow f hf) x), letI := C
@@ -61,13 +61,13 @@ theorem exists_stableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : 
       h.isCompl_unstableLinearSubspace_stableLinearSubspace.symm
       h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional
       h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional)
-    (fun y ↦ (h.exists_stableSet_chart hn hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
+    (fun y ↦ (h.exists_stableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
       ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 
 /-- The global unstable set of a Morse critical point of a globally `C^(n+1)` function has a
 `C^n` manifold structure modelled on the unstable Hessian subspace, with its subspace topology
 and a `C^n` inclusion into the ambient space. The model dimension is the Morse index. -/
-theorem exists_unstableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : ℕ} (hn : 1 ≤ n)
+theorem exists_unstableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) :
     ∃ C : ChartedSpace h.contDiffAt.unstableLinearSubspace
         (Flow.unstableSet (negativeGradientFlow f hf) x), letI := C
@@ -80,7 +80,7 @@ theorem exists_unstableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n 
       h.isCompl_unstableLinearSubspace_stableLinearSubspace
       h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional
       h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional)
-    (fun y ↦ (h.exists_unstableSet_chart hn hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
+    (fun y ↦ (h.exists_unstableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
       ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 
 end IsNondegenerateCriticalPoint

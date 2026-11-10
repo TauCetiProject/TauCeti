@@ -47,6 +47,39 @@ theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
 
+/-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
+height. -/
+theorem nonneg_of_step_of_le_add_pi {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ ≤ x) (h₂ : x ≤ θ + Real.pi) : 0 ≤ D := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x ∈ [θ - 2π, θ - π]` does not lower the
+height. -/
+theorem nonneg_of_step_of_le_sub_pi {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ - 2 * Real.pi ≤ x)
+    (h₂ : x ≤ θ - Real.pi) : 0 ≤ D := by
+  obtain ⟨d, hd, rfl⟩ := h
+  rw [← Real.sin_add_two_pi]
+  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x` lies in `[θ - π, θ]` does not raise the
+height. -/
+theorem nonpos_of_step_of_sub_pi_le {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ - Real.pi ≤ x) (h₂ : x ≤ θ) : D ≤ 0 := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonpos_of_nonneg_of_nonpos hd
+    (Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x ∈ [θ + π, θ + 2π]` does not raise the
+height. -/
+theorem nonpos_of_step_of_add_pi_le {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ + Real.pi ≤ x)
+    (h₂ : x ≤ θ + 2 * Real.pi) : D ≤ 0 := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonpos_of_nonneg_of_nonpos hd
+    (sin_nonpos_of_pi_le_of_le_two_pi (by linarith) (by linarith))
+
 /-- The quantity `1 - a sin² θ` is positive when `a < 1`. -/
 theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * sin θ ^ 2 := by
   nlinarith [sin_sq_le_one θ, mul_nonneg (sub_nonneg.2 ha.le) (sq_nonneg (sin θ))]

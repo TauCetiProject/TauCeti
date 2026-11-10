@@ -19,9 +19,10 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 # Planar Cauchy kernel estimates
 
 The complex reciprocal and its norm are locally integrable. Their integrals over a disk admit a
-uniform bound in terms of the radius when the pole lies in that disk. Compact truncation of the
-kernel also gives local `L¹` continuity as the pole varies. The Cauchy integral of complex
-data splits into the integrals of their real and imaginary parts.
+uniform bound in terms of the radius when the pole lies in that disk, and the integral of the
+reciprocal over any set is bounded by `2π` plus the measure of the set, uniformly in the pole.
+Compact truncation of the kernel also gives local `L¹` continuity as the pole varies. The Cauchy
+integral of complex data splits into the integrals of their real and imaginary parts.
 -/
 
 public section
@@ -101,6 +102,37 @@ theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
     (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
   convert integral_norm_sub_inv_closedBall_le_add (dist_nonneg.trans (mem_closedBall.mp hw)) hw
     using 1; ring
+
+/-- The integral of `‖(w - z)⁻¹‖` over a set `s` is at most `2π + |s|`, uniformly in the pole `z`;
+in particular the reciprocal kernel is integrable over every set of finite measure. -/
+theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
+    ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ ≤ ENNReal.ofReal (2 * Real.pi) + volume s := by
+  have hpt (w : ℂ) :
+      ‖(w - z)⁻¹‖ₑ ≤ (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w + 1 := by
+    by_cases hw : w ∈ closedBall z 1
+    · rw [indicator_of_mem hw]
+      exact le_self_add
+    · rw [indicator_of_notMem hw, zero_add, ← ofReal_norm, norm_inv]
+      rw [mem_closedBall, dist_eq_norm, not_le] at hw
+      exact ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀ hw.le)
+  have hball : ∫⁻ w in closedBall z 1, ‖(w - z)⁻¹‖ₑ = ENNReal.ofReal (2 * Real.pi) := by
+    have hi : IntegrableOn (fun w ↦ (w - z)⁻¹) (closedBall z 1) :=
+      ((Complex.locallyIntegrable_sub_inv z).integrableOn_isCompact
+        (isCompact_closedBall z 1)).neg.congr_fun
+          (fun w _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) measurableSet_closedBall
+    rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+    simp_rw [norm_inv]
+    rw [integral_norm_sub_inv_closedBall zero_le_one, mul_one]
+  calc ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ
+      ≤ ∫⁻ w in s, ((closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w + 1) :=
+        lintegral_mono hpt
+    _ = (∫⁻ w in s, (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w) + volume s := by
+        rw [lintegral_add_right _ measurable_const, setLIntegral_const, one_mul]
+    _ ≤ (∫⁻ w, (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w) + volume s := by
+        gcongr ?_ + _
+        exact setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal (2 * Real.pi) + volume s := by
+        rw [lintegral_indicator measurableSet_closedBall, hball]
 
 /-- The `L¹` norm of the truncated reciprocal kernel is `2πR`. -/
 theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :

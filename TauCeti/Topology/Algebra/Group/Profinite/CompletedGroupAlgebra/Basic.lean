@@ -439,7 +439,7 @@ theorem dense_span_range_of :
   obtain ⟨V, hV⟩ : ∃ V : OpenNormalSubgroup Γ, ∀ U ∈ I, V ≤ U := by
     clear hst
     induction I using Finset.induction_on with
-    | empty => exact ⟨openNormalSubgroupTop Γ, by simp⟩
+    | empty => exact ⟨⊤, by simp⟩
     | insert U I _ ih =>
       obtain ⟨V, hV⟩ := ih
       exact ⟨V ⊓ U, by

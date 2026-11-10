@@ -278,22 +278,30 @@ variable {R} in
 /-- A minimal realization has finite-dimensional ambient space. -/
 theorem IsMinimal.finiteDimensional (hR : R.IsMinimal) : FiniteDimensional K H := hR.1
 
+/-- A minimal realization has dimension twice the number of nodes minus the matrix rank. -/
+theorem IsMinimal.finrank_eq {R : CartanRealization A H} (hR : R.IsMinimal) :
+    finrank K H = 2 * Fintype.card I - A.rank :=
+  hR.2
+
 variable [FiniteDimensional K H]
 
-omit [Fintype I] in
+omit [Fintype I] [FiniteDimensional K H] in
 /-- Root evaluation is onto: the full realization retains the directions that a singular
-Cartan matrix cannot detect on the coroot span. -/
-theorem rootEvaluation_surjective : Function.Surjective R.rootEvaluation := by
+Cartan matrix cannot detect on the coroot span. The ambient space may be infinite-dimensional. -/
+theorem rootEvaluation_surjective [Finite I] : Function.Surjective R.rootEvaluation := by
   classical
-  let := Fintype.ofFinite (Basis.ofVectorSpaceIndex K H)
-  let b := Basis.ofVectorSpace K H
-  let M : Matrix I (Basis.ofVectorSpaceIndex K H) K := fun i j => R.root i (b j)
-  have hM : LinearIndependent K M.row := R.linearIndependent_root_coordinates b
-  intro c
-  obtain ⟨x, hx⟩ := hM.mulVec_surjective c
-  refine ⟨b.equivFun.symm x, ?_⟩
-  rw [R.rootEvaluation_eq_mulVec_coordinates b, b.equivFun.apply_symm_apply]
-  exact hx
+  let := Fintype.ofFinite I
+  -- A functional killing the image would give a vanishing combination of the roots.
+  refine LinearMap.dualMap_injective_iff.mp <| (injective_iff_map_eq_zero _).mpr fun φ hφ => ?_
+  have hsum : ∑ i, φ (Pi.single i 1) • R.root i = 0 := by
+    ext h
+    have hφh := LinearMap.congr_fun hφ h
+    rw [LinearMap.dualMap_apply, ← Finset.univ_sum_single (R.rootEvaluation h)] at hφh
+    have hs (i : I) : Pi.single i (R.root i h) = R.root i h • Pi.single i (1 : K) := by
+      rw [← Pi.single_smul', smul_eq_mul, mul_one]
+    simpa [hs, mul_comm] using hφh
+  ext i
+  exact Fintype.linearIndependent_iff.mp R.root_linearIndependent _ hsum i
 
 omit [FiniteDimensional K H] in
 /-- The dimension of the coroot span equals the number of simple coroots. -/

@@ -265,7 +265,7 @@ theorem nakagamiMeasure_eq_chiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
   have hsq : (chiMeasure (2 * m) (√(Ω / (2 * m)))).map (fun x ↦ x ^ 2) =
       gammaMeasure m (m / Ω) := by
     rw [chiMeasure_map_sq hs, chiSquaredMeasure_eq_gammaMeasure hk,
-      gammaMeasure_map_const_mul (half_pos hk) one_half_pos (by positivity)]
+      gammaMeasure_map_const_mul (by positivity)]
     congr 1
     · ring
     · rw [sq_sqrt (by positivity)]
