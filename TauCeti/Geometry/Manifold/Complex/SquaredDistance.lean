@@ -182,8 +182,7 @@ theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
   have : IsManifold 𝓘(ℂ, E) 2 M := .of_le (n := ∞) (by norm_cast)
   have hiR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
   have hinjR (x : M) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
-    ((hi x).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ
-      (injective_mvfderiv_iff.1 (hinj x))
+    injective_mfderiv_restrictScalars ℝ (injective_mvfderiv_iff.1 (hinj x))
   filter_upwards [ae_isMorse_norm_sq_sub_comp μ hiR hinjR] with a ha
   exact ⟨ha, fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by norm_cast))
     (hinj x) (mem_criticalPoints.1 hx)⟩

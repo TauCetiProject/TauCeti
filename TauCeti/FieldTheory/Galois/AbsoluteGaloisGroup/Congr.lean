@@ -293,13 +293,20 @@ theorem separableClosureCongrAutEquiv_restrictNormalHom [Normal K E]
   simp [AlgEquiv.restrictNormalHom_apply]
 
 /-- Fixing subgroups are transported by the same absolute-Galois-group equivalence. -/
-theorem fixingSubgroup_separableClosureCongr [Normal K E] :
+theorem fixingSubgroup_separableClosureCongr :
     (E.separableClosureCongr e).fixingSubgroup =
       E.fixingSubgroup.comap e.absoluteGaloisGroupCongr.toMonoidHom := by
-  rw [← restrictNormalHom_ker, ← E.restrictNormalHom_ker]
   ext g
-  simp only [Subgroup.mem_comap, MonoidHom.mem_ker]
-  rw [← separableClosureCongrAutEquiv_restrictNormalHom]
-  exact (E.separableClosureCongrAutEquiv e).map_eq_one_iff
+  rw [mem_fixingSubgroup_iff, Subgroup.mem_comap, mem_fixingSubgroup_iff]
+  refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
+  · -- `toMonoidHom` of a continuous equivalence has the same underlying function
+    change e.absoluteGaloisGroupCongr g x = x
+    rw [RingEquiv.absoluteGaloisGroupCongr_apply, h _ (by simpa using hx),
+      RingEquiv.apply_symm_apply]
+  · apply e.separableClosureCongr.injective
+    have := h (e.separableClosureCongr y) hy
+    -- as above, unfold the `toMonoidHom` coercion
+    change e.absoluteGaloisGroupCongr g (e.separableClosureCongr y) = _ at this
+    rwa [RingEquiv.absoluteGaloisGroupCongr_apply, RingEquiv.symm_apply_apply] at this
 
 end IntermediateField

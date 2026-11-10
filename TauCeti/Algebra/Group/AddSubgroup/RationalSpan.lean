@@ -20,11 +20,11 @@ from rational spans back to integer lattices.
 
 public section
 
-namespace TauCeti
+namespace AddSubgroup
 
 /-- An element `x` of a `ℚ`-module lies in the rational span of an additive subgroup `Q` exactly
 when `n • x ∈ Q` for some positive integer `n`. -/
-theorem _root_.AddSubgroup.mem_rat_span_iff_exists_nsmul_mem {V : Type*} [AddCommGroup V]
+theorem mem_rat_span_iff_exists_nsmul_mem {V : Type*} [AddCommGroup V]
     [Module ℚ V] (Q : AddSubgroup V) {x : V} :
     x ∈ Submodule.span ℚ (Q : Set V) ↔ ∃ n : ℕ, 0 < n ∧ n • x ∈ Q := by
   refine ⟨fun hx => ?_, fun ⟨n, hn, hnx⟩ => ?_⟩
@@ -37,4 +37,4 @@ theorem _root_.AddSubgroup.mem_rat_span_iff_exists_nsmul_mem {V : Type*} [AddCom
   · have := Submodule.smul_mem _ (n⁻¹ : ℚ) (Submodule.subset_span (R := ℚ) hnx)
     rwa [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, inv_mul_cancel₀ (by positivity), one_smul] at this
 
-end TauCeti
+end AddSubgroup

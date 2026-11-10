@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.LinearAlgebra.Basis.SumCoords
+public import TauCeti.LinearAlgebra.Charpoly.Quotient
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Subrepresentation
@@ -36,6 +37,7 @@ basis. For empty `X`, both subrepresentations are zero and are still complementa
 Over a field, the character of the augmentation subrepresentation is the character of the induced
 free-module action minus the trivial character, provided `X` is finite and nonempty. The identity
 holds even when the characteristic divides `|X|`, so the invariant line is not a complement.
+Likewise its characteristic polynomial times `X - 1` is the characteristic polynomial on `k[X]`.
 These constructions underlie the standard representation of the symmetric group.
 
 ## Main definitions and results
@@ -56,6 +58,8 @@ These constructions underlie the standard representation of the symmetric group.
 * `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
 * `TauCeti.character_augmentationSubrepresentation`: the character is the free-module character
   minus `1`.
+* `TauCeti.charpoly_augmentationSubrepresentation_mul_X_sub_one`: the characteristic polynomial
+  times `X - 1` is the free-module characteristic polynomial.
 
 ## Implementation notes
 
@@ -728,6 +732,37 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
     LinearMap.trace_restrict_eq_of_forall_mem _ _ hmem
   simp only [Representation.character]
   rw [← hrestrict, key, map_sub, htraceσ]
+
+/-- **The characteristic polynomial of the augmentation subrepresentation** times `X - 1` is the
+characteristic polynomial of `g` on `k[X]`. The factor `X - 1` is the characteristic polynomial of
+the trivial one-dimensional quotient of `k[X]` by the augmentation subrepresentation, so, as for
+the character, no hypothesis on `|X|` in `k` is needed. -/
+theorem charpoly_augmentationSubrepresentation_mul_X_sub_one [Finite X] [Nonempty X] (g : G) :
+    ((augmentationSubrepresentation k G X).toRepresentation g).charpoly * (Polynomial.X - 1) =
+      (Representation.ofMulAction k G X g).charpoly := by
+  have := Fintype.ofFinite X
+  have : Module.Finite k (MonoidAlgebra k X) := Module.Finite.of_basis (MonoidAlgebra.basis X k)
+  set W := (augmentationSubrepresentation k G X).toSubmodule
+  have hW : W ≤ W.comap (Representation.ofMulAction k G X g) := fun _ hv ↦
+    (augmentationSubrepresentation k G X).apply_mem_toSubmodule g hv
+  -- The action is trivial on the quotient by the augmentation subrepresentation, since it
+  -- preserves the sum of the coefficients.
+  have hQ : W.mapQ W _ hW = 1 := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ ?_)
+    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
+      one_apply_eq_self, Submodule.Quotient.eq, W, toSubmodule_augmentationSubrepresentation,
+      LinearMap.mem_ker, map_sub, sumCoords_basis_ofMulAction, sub_self]
+  have hfin : Module.finrank k (MonoidAlgebra k X ⧸ W) = 1 := by
+    have h := W.finrank_quotient_add_finrank
+    rw [finrank_augmentationSubrepresentation,
+      Module.finrank_eq_card_basis (MonoidAlgebra.basis X k)] at h
+    have := Fintype.card_pos (α := X)
+    omega
+  have hres : (Representation.ofMulAction k G X g).restrict hW =
+      (augmentationSubrepresentation k G X).toRepresentation g :=
+    (Subrepresentation.toRepresentation_apply _ g).symm
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ hW, hQ, hres,
+    LinearMap.charpoly_one, hfin, pow_one]
 
 end Field
 
