@@ -44,7 +44,7 @@ generating tuple are what Labute's prescription property of a continuous charact
 * `TauCeti.IsCrossedHom.map_pow`: `F (x ^ k) = (1 + χ x + ⋯ + χ x ^ (k - 1)) * F x`.
 * `TauCeti.IsCrossedHom.map_list_prod_of_forall_eq_one`: on a product of elements on which `χ` is
   trivial, `F` is additive.
-* `TauCeti.IsCrossedHom.map_commutatorElement`: for a character into a commutative ring,
+* `TauCeti.IsCrossedHom.map_commutatorElement`: for a unit-valued twist into a commutative ring,
   `F ⁅x, y⁆ = (χ x - 1) * F y - (χ y - 1) * F x`.
 * `TauCeti.IsCrossedHom.map_mul_mul`: for a multiplicative twist, the value on a product of
   three elements.
@@ -202,18 +202,46 @@ section CommRing
 open scoped commutatorElement
 
 variable {H : Type*} [Group H] {R : Type*} [CommRing R]
-  {F' : Type*} [FunLike F' H Rˣ] [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R}
+  {F' : Type*} [FunLike F' H Rˣ] {χ : F'} {F : H → R}
 
 /-- The value of a crossed homomorphism on the commutator `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`; the
-character kills the commutator because `Rˣ` is commutative. -/
+twist kills the commutator on the values of `F`, because `Rˣ` is commutative. -/
 theorem IsCrossedHom.map_commutatorElement (hF : IsCrossedHom χ F) (x y : H) :
     F ⁅x, y⁆ = ((χ x : R) - 1) * F y - ((χ y : R) - 1) * F x := by
+  have hone : F 1 = 0 := by
+    have h := hF 1 1
+    rw [one_mul] at h
+    have h2 : (χ 1 : R) * F 1 = 0 := by linear_combination -h
+    simpa using congrArg (fun r ↦ (((χ 1)⁻¹ : Rˣ) : R) * r) h2
+  have hone' (z : H) : (χ 1 : R) * F z = F z := by
+    have h := hF 1 z
+    rw [one_mul, hone] at h
+    linear_combination -h
+  -- the twist is multiplicative on the values of `F`
+  have hd (a b z : H) : (χ (a * b) : R) * F z = χ a * χ b * F z := by
+    have h1 := hF (a * b) z
+    have h2 := hF a (b * z)
+    have h3 := hF b z
+    rw [mul_assoc] at h1
+    have h4 := hF a b
+    linear_combination h2 - h1 - h4 + (χ a : R) * h3
+  have hcomm (z : H) : (χ ⁅x, y⁆ : R) * F z = F z := by
+    have e1 := hd (x * y * x⁻¹) y⁻¹ z
+    have e2 := hd (x * y) x⁻¹ z
+    have e3 := hd x y z
+    have e4 := hd x x⁻¹ z
+    have e5 := hd y y⁻¹ z
+    rw [mul_inv_cancel, hone'] at e4 e5
+    rw [commutatorElement_def]
+    linear_combination e1 + (χ y⁻¹ : R) * e2 + (χ y⁻¹ : R) * (χ x⁻¹ : R) * e3 -
+      (χ y : R) * (χ y⁻¹ : R) * e4 - e5
   have h : ⁅x, y⁆ * (y * x) = x * y := by
     simp [commutatorElement_def, mul_assoc]
-  have h1 := hF.map_mul ⁅x, y⁆ (y * x)
-  rw [h, hF.map_mul x y, hF.map_mul y x, _root_.map_commutatorElement,
-    commutatorElement_eq_one_iff_mul_comm.2 (mul_comm (χ x) (χ y)), Units.val_one, one_mul] at h1
-  linear_combination -h1
+  have h1 := hF ⁅x, y⁆ (y * x)
+  have hc := hcomm (y * x)
+  rw [h, hF x y] at h1
+  rw [hF y x] at hc h1
+  linear_combination -h1 - hc
 
 end CommRing
 
