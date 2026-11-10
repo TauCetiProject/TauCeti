@@ -75,16 +75,18 @@ theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : I
     {v : ι → A} : v ∈ range e.vecMulLinear ↔ v ᵥ* e = v :=
   he.vecMulLinear.mem_range_iff
 
-/-- Each row of an idempotent matrix lies in its range. -/
-theorem IsIdempotentElem.row_mem_range_vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentElem e)
-    (i : ι) : e i ∈ range e.vecMulLinear := by
-  rw [he.mem_range_vecMulLinear_iff, ← Matrix.mul_apply_eq_vecMul, he.eq]
+/-- Each row of a matrix lies in the range of right multiplication by it: it is the image of the
+corresponding standard basis vector. -/
+theorem Matrix.row_mem_range_vecMulLinear (e : Matrix ι ι A) (i : ι) :
+    e i ∈ range e.vecMulLinear := by
+  classical
+  exact ⟨Pi.single i 1, Matrix.single_one_vecMul i e⟩
 
 /-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
 the rows `eᵢ` of `e`. -/
 theorem IsIdempotentElem.eq_sum_smul_row {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (v : range e.vecMulLinear) :
-    v = ∑ i, (v : ι → A) i • (⟨e i, he.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
+    v = ∑ i, (v : ι → A) i • (⟨e i, e.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
   ext1
   rw [Submodule.coe_sum]
   simp only [Submodule.coe_smul, ← vecMul_eq_sum]
@@ -95,9 +97,9 @@ omit [Fintype ι] in
 by the matrix of its values on the rows of `f`. -/
 theorem IsIdempotentElem.linearMap_apply_eq_vecMul {f : Matrix κ κ A} (hf : IsIdempotentElem f)
     (g : range f.vecMulLinear →ₗ[A] (ι → A)) {w : κ → A} (hw : w ∈ range f.vecMulLinear) :
-    g ⟨w, hw⟩ = w ᵥ* .of fun j ↦ g ⟨f j, hf.row_mem_range_vecMulLinear j⟩ := by
+    g ⟨w, hw⟩ = w ᵥ* .of fun j ↦ g ⟨f j, f.row_mem_range_vecMulLinear j⟩ := by
   have hsum : (⟨w, hw⟩ : range f.vecMulLinear) =
-      ∑ j, w j • ⟨f j, hf.row_mem_range_vecMulLinear j⟩ := by
+      ∑ j, w j • ⟨f j, f.row_mem_range_vecMulLinear j⟩ := by
     ext1
     rw [Submodule.coe_sum]
     simp only [Submodule.coe_smul, ← vecMul_eq_sum]
@@ -111,18 +113,17 @@ namespace Matrix
 
 /-- The matrix whose rows are the images of the rows of an idempotent matrix `e` under an
 isomorphism of ranges. -/
-private def rowImage {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+private def rowImage {e : Matrix ι ι A} {f : Matrix κ κ A}
     (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) : Matrix ι κ A :=
-  .of fun i ↦ ψ ⟨e i, he.row_mem_range_vecMulLinear i⟩
+  .of fun i ↦ ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩
 
 private theorem rowImage_mul_rowImage_symm {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) :
-    rowImage he ψ * rowImage hf ψ.symm = e := by
+    (hf : IsIdempotentElem f) (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) :
+    rowImage ψ * rowImage ψ.symm = e := by
   ext i j
   rw [mul_apply_eq_vecMul]
   have h := hf.linearMap_apply_eq_vecMul ((range e.vecMulLinear).subtype ∘ₗ ψ.symm.toLinearMap)
-    (ψ ⟨e i, he.row_mem_range_vecMulLinear i⟩).2
+    (ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩).2
   simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe, Subtype.coe_eta,
     LinearEquiv.symm_apply_apply] at h
   exact congrFun h.symm j
@@ -136,8 +137,8 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
       ∃ (x : Matrix ι κ A) (y : Matrix κ ι A), x * y = e ∧ y * x = f := by
   constructor
   · rintro ⟨ψ⟩
-    refine ⟨rowImage he ψ, rowImage hf ψ.symm, rowImage_mul_rowImage_symm he hf ψ, ?_⟩
-    simpa using rowImage_mul_rowImage_symm hf he ψ.symm
+    refine ⟨rowImage ψ, rowImage ψ.symm, rowImage_mul_rowImage_symm hf ψ, ?_⟩
+    simpa using rowImage_mul_rowImage_symm he ψ.symm
   · rintro ⟨x, y, hxy, hyx⟩
     -- Right multiplication by `x` and by `y` restrict to mutually inverse maps of the ranges.
     have hx : ∀ v ∈ range e.vecMulLinear, v ᵥ* x ∈ range f.vecMulLinear := fun v hv ↦ by
