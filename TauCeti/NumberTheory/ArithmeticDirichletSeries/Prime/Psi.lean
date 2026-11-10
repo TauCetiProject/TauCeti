@@ -51,7 +51,7 @@ system does not get that hypothesis for free; what it has to supply is the domin
   from the estimate `ψ(x) - ϑ(x) = O(√x log² x)` of `HigherPrimePowers.lean`.
 * `TauCeti.primeTheta_asymptotic_of_primePsi` and
   `TauCeti.primePsi_asymptotic_of_primeTheta` transfer a linear asymptotic across that difference,
-  with `TauCeti.primeTheta_isEquivalent_of_primePsi` the equivalence form for a nonzero density.
+  with `TauCeti.primeTheta_isEquivalent_of_primePsi` the equivalence form.
 * `TauCeti.primePsi_eq_sum_range` presents `ψ(x)` as the inclusive partial sum
   `∑_{n ≤ ⌊x⌋₊} a n` of the coefficient system, whose coefficients are nonnegative
   (`TauCeti.primeVonMangoldtCoeff_nonneg`) and supported on the prime powers
@@ -311,10 +311,11 @@ theorem primeTheta_asymptotic_of_primePsi
     (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
 
 /-- **Transfer of a linear asymptotic from `ϑ` to `ψ`**, the converse direction. -/
-theorem primePsi_asymptotic_of_primeTheta (h : HasNegligibleHigherPrimePowers K S)
+theorem primePsi_asymptotic_of_primeTheta
     (hϑ : (fun x ↦ primeTheta K S x - δ * x) =o[atTop] fun x : ℝ ↦ x) :
     (fun x ↦ primePsi K S x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
-  (hϑ.add h).congr' (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
+  (hϑ.add (standardPrimePowerRemoval K S)).congr'
+    (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
 
 /-- The asymptotic-equivalence form of `TauCeti.primeTheta_asymptotic_of_primePsi`.  At `δ = 0`
 an equivalence forces `ψ`, hence `ϑ ≤ ψ`, to vanish eventually. -/
@@ -391,7 +392,8 @@ theorem primeVonMangoldtWeight_of_pow_of_mem {𝔭 : HeightOneSpectrum (𝓞 K)}
     IdealArithmeticFunction.vonMangoldt_apply_of_eq_prime_pow
       (Ideal.prime_of_isPrime 𝔭.ne_bot 𝔭.isPrime) hk hA, Complex.ofReal_re]
 
-/-- The von Mangoldt weight of `S` vanishes at a positive power of a prime outside `S`. -/
+/-- The von Mangoldt weight of `S` vanishes at every power of a prime outside `S`, including the
+zeroth power. -/
 theorem primeVonMangoldtWeight_of_pow_of_notMem {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) {k : ℕ}
     {A : (Ideal (𝓞 K))⁰} (hA : 𝔭.asIdeal ^ k = (A : Ideal (𝓞 K))) :
     primeVonMangoldtWeight K S A = 0 := by
