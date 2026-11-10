@@ -17,7 +17,7 @@ import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+import TauCeti.NumberTheory.LocalField.Henselian
 
 /-!
 # Eisenstein generators of the counted extensions
@@ -38,8 +38,9 @@ Through it, `natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein` computes
 exponent of such a subextension from the Eisenstein formula for the different exponent.
 A special case of the generator theorem is `adjoin_mem_totallyRamifiedOfDegree_of_pow_eq`: for a
 uniformizer `ϖ` and `0 < n`, a root of `X ^ n - ϖ` generates a member of `σ_K(n)`. In degree two,
-a root of an Eisenstein polynomial `X ^ 2 + b X + c` generates a member of `σ_K(2)` whose
-discriminant exponent is `min (2 v_K(b)) (2 v_K(2) + 1)`
+a root of an Eisenstein polynomial `X ^ 2 + b X + c` generates a member of `σ_K(2)`, and a root
+of `X ^ 2 + b X + c` with uniformizer `c` generates an extension whose discriminant exponent is
+`min (2 v_K(b)) (2 v_K(2) + 1)`
 (`natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero`). For a uniformizer `ϖ`,
 `K(√ϖ)` therefore has discriminant exponent `2 v_K(2) + 1`
 (`natCast_discriminantExponent_adjoin_of_sq_eq_of_irreducible`), and in residue characteristic
@@ -213,37 +214,12 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero {b c : 
     (natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl)
     (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
 
-/-- If `b` is a unit and `c` lies in the maximal ideal, a root in the separable closure of
-`X ^ 2 + b X + c` already lies in `K`: the reduction `X (X + b)` has the simple root `0`, which
-Hensel's lemma lifts to a root in `𝒪[K]`. -/
-theorem adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit {b c : 𝒪[K]} (hb : IsUnit b)
-    (hc : c ∈ 𝓂[K]) {x : SeparableClosure K}
-    (hx : x ^ 2 + algebraMap K (SeparableClosure K) b * x +
-      algebraMap K (SeparableClosure K) c = 0) :
-    K⟮x⟯ = ⊥ := by
-  have hd : IsUnit (b ^ 2 + 4 * -c) := by
-    rw [← IsLocalRing.notMem_maximalIdeal]
-    intro h
-    have h4 : 4 * -c ∈ 𝓂[K] := Ideal.mul_mem_left _ _ (neg_mem hc)
-    exact IsLocalRing.notMem_maximalIdeal.mpr (hb.pow 2) (by simpa using sub_mem h h4)
-  obtain ⟨s, hs, -, -⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
-    (a := b) (b := -c) (t := 0) hd (by simpa using hc)
-  have hs' : algebraMap K (SeparableClosure K) s ^ 2 +
-      algebraMap K (SeparableClosure K) b * algebraMap K (SeparableClosure K) s +
-        algebraMap K (SeparableClosure K) c = 0 := by
-    have := congrArg (fun y : 𝒪[K] ↦ algebraMap K (SeparableClosure K) (y : K)) hs
-    simpa using this
-  have hfac : (x - algebraMap K (SeparableClosure K) s) *
-      (x + algebraMap K (SeparableClosure K) s + algebraMap K (SeparableClosure K) b) = 0 := by
-    linear_combination hx - hs'
-  rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact ⟨s, (sub_eq_zero.mp h).symm⟩
-  · exact ⟨-(s : K) - b, by simp only [map_sub, map_neg]; linear_combination -h⟩
-
-/-- **The discriminant exponent of a root of an Eisenstein quadratic.** If `c` is a uniformizer of
-`K`, a root `x` in the separable closure of `X ^ 2 + b X + c` generates an extension of
-discriminant exponent `min (2 v_K(b)) (2 v_K(2) + 1)`. -/
+/-- **The discriminant exponent of a root of a quadratic with uniformizer constant term.** If `c` is
+a uniformizer of `K`, a root `x` in the separable closure of `X ^ 2 + b X + c` generates an
+extension of discriminant exponent `min (2 v_K(b)) (2 v_K(2) + 1)`. For `b ∈ 𝓂[K]` the polynomial is
+Eisenstein and the formula is the Eisenstein different formula; for a unit `b` it is not Eisenstein,
+`x ∈ K` by Hensel's lemma (`adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit`), and both sides
+are `0`. -/
 theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b c : 𝒪[K]}
     (hc : Irreducible c) {x : SeparableClosure K}
     (hx : x ^ 2 + algebraMap K (SeparableClosure K) b * x +
