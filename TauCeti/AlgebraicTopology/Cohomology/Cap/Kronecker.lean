@@ -40,7 +40,8 @@ extension `(M ◁ β) ≫ ν` of a class `β ∈ H^q(X; S, N)` along a pairing `
 (`ChainComplex.linearYonedaObjWhiskerLeft`).  Then again `⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`, with
 the cup product along `u` and `ν` (`TopCat.singularCap_comp_singularKronecker_of_homologyMap_eq`).
 When `μ` is invertible, every `β` has such an extension, through the isomorphism
-`M ⊗ C(X; S) ≅ C(X; L)` (`TopCat.singularCap_comp_singularKronecker_inv`); for modules over `k`
+`M ⊗ C(X; S) ≅ C(X; L)` (`TopCat.singularCap_comp_singularKronecker_inv`, an instance of
+`TauCeti.ChainComplex.cap_comp_kronecker_of_isIso`); for modules over `k`
 this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient form of the identity.  For
 a pair `(X, A)` the same identities hold for the relative cap product of a relative class
 `α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
@@ -125,17 +126,8 @@ theorem singularCap_comp_singularKronecker_inv (X : TopCat.{w}) (k : Type*)
             (inv ((toSSet.obj X).chainComplexPairing μ)).op) q
           (homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β)) =
       X.singularKronecker k n (X.singularCup k u ν p q n h α β) := by
-  refine X.singularCap_comp_singularKronecker_of_homologyMap_eq k u μ ν p q n h α _ β ?_
-  have e : (TauCeti.ChainComplex.linearYonedaFunctor k N').map
-        (inv ((toSSet.obj X).chainComplexPairing μ)).op ≫
-      (TauCeti.ChainComplex.linearYonedaFunctor k N').map
-        ((toSSet.obj X).chainComplexPairing μ).op = 𝟙 _ := by
-    rw [← CategoryTheory.Functor.map_comp, ← op_comp, IsIso.hom_inv_id, op_id,
-      CategoryTheory.Functor.map_id]
-  rw [← ConcreteCategory.comp_apply]
-  refine (ConcreteCategory.congr_hom (homologyMap_comp _ _ q) _).symm.trans ?_
-  exact ConcreteCategory.congr_hom
-    ((congrArg (homologyMap · q) e).trans (homologyMap_id _ q)) _
+  rw [singularCap_def, singularKronecker_def, singularKronecker_def, TauCeti.singularCup_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
 
 end TopCat
 
@@ -185,16 +177,7 @@ theorem singularCap_comp_singularKronecker_inv (P : TopPair.{w}) (k : Type*)
           (homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β)) =
       P.singularKronecker k n
         (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
-  refine P.singularCap_comp_singularKronecker_of_homologyMap_eq k u μ ν p q n h α _ β ?_
-  have e : (TauCeti.ChainComplex.linearYonedaFunctor k N').map
-        (inv ((TopCat.toSSet.obj P.fst).chainComplexPairing μ)).op ≫
-      (TauCeti.ChainComplex.linearYonedaFunctor k N').map
-        ((TopCat.toSSet.obj P.fst).chainComplexPairing μ).op = 𝟙 _ := by
-    rw [← CategoryTheory.Functor.map_comp, ← op_comp, IsIso.hom_inv_id, op_id,
-      CategoryTheory.Functor.map_id]
-  rw [← ConcreteCategory.comp_apply]
-  refine (ConcreteCategory.congr_hom (homologyMap_comp _ _ q) _).symm.trans ?_
-  exact ConcreteCategory.congr_hom
-    ((congrArg (homologyMap · q) e).trans (homologyMap_id _ q)) _
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
 
 end TopPair
