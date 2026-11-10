@@ -134,13 +134,26 @@ theorem memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
   refine ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ sq_nonneg x)).2 ?_⟩
   exact (lintegral_sq_le_of_conv_eq hα hβ hr hμ).trans_lt ENNReal.ofReal_lt_top
 
+/-- A probability measure can be convolved with the compensated compound-Poisson law to give a
+stable law only for admissible skewness, since the stable measure is zero otherwise. -/
+theorem abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityMeasure ℝ}
+    (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
+    |β| ≤ 1 := by
+  by_contra hβ
+  have := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
+  have h : IsProbabilityMeasure ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r) :=
+    inferInstance
+  rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))] at h
+  simpa using h.measure_univ
+
 /-- The second moment of a limiting small-jump factor is controlled by the small-jump Lévy
 second moment `V`. The additional squared term accounts for sine compensation's nonzero mean. -/
 theorem integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
+    (hα : α ∈ Ioo 0 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
     ∫ x, x ^ 2 ∂(μ : Measure ℝ) ≤ V + (r / 6 * V) ^ 2 := by
+  have hβ := abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq hμ
   have h := lintegral_sq_le_of_conv_eq hα hβ hr hμ
   dsimp only at h ⊢
   have hint : Integrable (fun x : ℝ ↦ x ^ 2) (μ : Measure ℝ) := by
@@ -152,34 +165,50 @@ theorem integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq
 
 /-- The second moments of the limiting small-jump factors tend to zero with their cutoffs. -/
 theorem tendsto_integral_sq_smallJumpFactor_zero
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {ι : Type*} {L : Filter ι}
-    {r : ι → ℝ} (hr : ∀ i, 0 < r i) (hlim : Tendsto r L (𝓝[>] 0))
+    (hα : α ∈ Ioo 0 2) {ι : Type*} {L : Filter ι}
+    {r : ι → ℝ} (hlim : Tendsto r L (𝓝[>] 0))
     {μ : ι → ProbabilityMeasure ℝ}
     (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
       stableMeasure α β 1 0) :
     Tendsto (fun i ↦ ∫ x, x ^ 2 ∂(μ i : Measure ℝ)) L (𝓝 0) := by
-  have hV := ((tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
+  have hV := ((tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
     (nhdsWithin_mono 0 Ioi_subset_Ici_self)).comp hlim
   have hr0 := (tendsto_nhdsWithin_iff.mp hlim).1
+  have hr : ∀ᶠ i in L, 0 < r i := (tendsto_nhdsWithin_iff.mp hlim).2
   have hbound := hV.add (((hr0.div_const 6).mul hV).pow 2)
   simp only [zero_div, zero_mul, zero_pow (by decide : 2 ≠ 0), add_zero] at hbound
-  exact squeeze_zero (fun i ↦ integral_nonneg fun x ↦ sq_nonneg x)
-    (fun i ↦ integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq hα hβ (hr i) (hμ i))
+  exact squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun x ↦ sq_nonneg x)
+    (hr.mono fun i hi ↦ integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq hα hi (hμ i))
     hbound
 
 /-- Limiting small-jump factors concentrate weakly at zero as their cutoffs shrink. -/
 theorem tendsto_smallJumpFactor_dirac
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) {ι : Type*} {L : Filter ι}
-    [L.IsCountablyGenerated] {r : ι → ℝ} (hr : ∀ i, 0 < r i)
+    [L.IsCountablyGenerated] {r : ι → ℝ}
     (hlim : Tendsto r L (𝓝[>] 0)) {μ : ι → ProbabilityMeasure ℝ}
     (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
       stableMeasure α β 1 0) :
     Tendsto μ L (𝓝 (⟨Measure.dirac 0, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
+  classical
+  have hr : ∀ᶠ i in L, 0 < r i := (tendsto_nhdsWithin_iff.mp hlim).2
+  -- Only the indices with positive cutoff matter, so replace the others by `dirac 0`.
+  let μ' : ι → ProbabilityMeasure ℝ := fun i ↦
+    if 0 < r i then μ i else ⟨Measure.dirac 0, inferInstance⟩
+  refine Tendsto.congr' (f₁ := μ') (hr.mono fun i hi ↦ by simp [μ', hi]) ?_
   apply ProbabilityMeasure.tendsto_dirac_of_integral_dist_sq_tendsto_zero
   · intro i
-    simpa only [Real.dist_eq, sub_zero, ← Real.norm_eq_abs, id_eq] using
-      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hβ (hr i) (hμ i)).norm
-  · simpa only [Real.dist_eq, sub_zero, sq_abs] using
-      tendsto_integral_sq_smallJumpFactor_zero hα hβ hr hlim hμ
+    by_cases hi : 0 < r i
+    · have e : μ' i = μ i := by simp [μ', hi]
+      rw [e]
+      simpa only [Real.dist_eq, sub_zero, ← Real.norm_eq_abs, id_eq] using
+        (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hβ hi (hμ i)).norm
+    · have e : μ' i = ⟨Measure.dirac 0, inferInstance⟩ :=
+        ite_eq_right_iff.2 fun h ↦ (hi h).elim
+      rw [e]
+      change MemLp _ 2 (Measure.dirac (0 : ℝ))
+      exact MemLp.of_bound (by fun_prop) 0 (by simp [ae_dirac_eq])
+  · refine ((tendsto_integral_sq_smallJumpFactor_zero hα hlim hμ).congr' ?_)
+    filter_upwards [hr] with i hi
+    simp [μ', hi, sq_abs]
 
 end TauCeti.Probability
