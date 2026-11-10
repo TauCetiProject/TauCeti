@@ -41,8 +41,8 @@ recorded pole order. -/
 theorem HasMeromorphicContinuation.divisor_completed_of_polarOrder_ne_zero (hs : s ∈ U)
     (hp : d.polarOrder s ≠ 0) :
     MeromorphicOn.divisor d.completed U s = -(d.polarOrder s : ℤ) := by
-  rw [h.meromorphic.meromorphicOn.divisor_apply hs, h.meromorphicOrderAt_eq s hp]
-  rfl
+  rw [h.meromorphic.meromorphicOn.divisor_apply hs, h.meromorphicOrderAt_eq s hp,
+    ← WithTop.LinearOrderedAddCommGroup.coe_neg, WithTop.untop₀_coe]
 
 /-- Away from the recorded poles, the divisor of the completed function is nonnegative. -/
 theorem HasMeromorphicContinuation.divisor_completed_nonneg (hp : d.polarOrder s = 0) :
