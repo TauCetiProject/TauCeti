@@ -104,8 +104,8 @@ open Classical in
 /-- **Weighted theta sums at `i∞`.** For weights `w v` of norm at most `1`, the weighted theta
 sum `∑_{v ∈ L} w v exp (π i ‖γ + v‖² τ)` tends at `i∞` to the sum of the weights of the vectors
 `v ∈ L` with `γ + v = 0`, by dominated convergence: the term of such a `v` is constantly `w v`,
-and every other term tends to `0`. The Gaussian sum at some height `y > 0` has to converge, as it
-does for a discrete `L`, by `summable_exp_neg_mul_norm_add_sq`. -/
+and every other term tends to `0`. The Gaussian sum `∑_{v ∈ L} exp (-π y ‖γ + v‖²)` has to
+converge for some `y`, as it does for a discrete `L`, by `summable_exp_neg_mul_norm_add_sq`. -/
 theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ v, ‖w v‖ ≤ 1)
     {y : ℝ} (hs : Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
     Tendsto (fun τ : ℍ => ∑' v : L, w v * cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ))
@@ -128,7 +128,7 @@ theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ 
 omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 open Classical in
 /-- The theta series of `γ + L` tends at `i∞` to the number of vectors `v ∈ L` with `γ + v = 0`,
-provided the Gaussian sum at some height `y > 0` converges. -/
+provided the Gaussian sum `∑_{v ∈ L} exp (-π y ‖γ + v‖²)` converges for some `y`. -/
 private theorem tendsto_thetaCoset_atImInfty_tsum_ite (γ : E) {y : ℝ}
     (hs : Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
     Tendsto (thetaCoset L γ) atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then 1 else 0)) :=

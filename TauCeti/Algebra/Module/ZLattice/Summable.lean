@@ -61,17 +61,13 @@ theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ} 
     simp only [Set.mem_ofPred_eq, not_lt] at hv ⊢
     have := pow_le_pow_left₀ (norm_nonneg _) hv 2
     exact Real.exp_le_exp.mpr (by nlinarith)
-  have hS : {v : L | ‖(v : E)‖ < 1 ∧ v ≠ 0}.Finite :=
-    (hfin (‖γ‖ + 1)).subset fun v hv => by
-      have := norm_add_le γ (v : E)
-      simp only [Set.mem_ofPred_eq] at hv ⊢
-      linarith [hv.1]
-  refine discreteTopology_of_isOpen_singleton_zero ?_
-  have hopen : IsOpen ({v : L | ‖(v : E)‖ < 1} \ {v : L | ‖(v : E)‖ < 1 ∧ v ≠ 0}) :=
-    (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).sdiff hS.isClosed
-  convert hopen using 1
-  ext v
-  by_cases hv : v = 0 <;> simp [hv]
+  have hnhds : {v : L | ‖(v : E)‖ < 1} ∈ 𝓝 (0 : L) :=
+    (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).mem_nhds (by simp)
+  refine discreteTopology_of_isOpen_singleton_zero (isOpen_singleton_of_finite_mem_nhds 0 hnhds
+    ((hfin (‖γ‖ + 1)).subset fun v hv => ?_))
+  have := norm_add_le γ (v : E)
+  simp only [Set.mem_ofPred_eq] at hv ⊢
+  linarith
 
 end Discrete
 
