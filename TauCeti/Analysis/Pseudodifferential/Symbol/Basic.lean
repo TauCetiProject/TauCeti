@@ -29,6 +29,8 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξⱼ}` lowers the order
+  by two;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -603,6 +605,26 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy => hKa y hy ξ
   rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
     Pi.zero_apply]
+
+/-- The Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξⱼ} a` of a symbol in the frequency, a symbol of order `m - 2`.
+Multiplying a pseudodifferential kernel by `-‖x - y‖²` replaces the symbol by its frequency
+Laplacian. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  ∑ j, inclusion (by linarith) ∘ₗ frequencyDeriv j ∘ₗ frequencyDeriv j
+
+theorem frequencyLaplacian_apply (a : Symbol n V W m) :
+    frequencyLaplacian a =
+      ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv j a)) := by
+  simp [frequencyLaplacian]
+
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j, j] (fun η => a.coefficient (x, η)) ξ := by
+  simp only [frequencyLaplacian_apply, coefficient_sum, Finset.sum_apply, coefficient_inclusion,
+    coefficient_frequencyDeriv]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
 
 end Deriv
 
