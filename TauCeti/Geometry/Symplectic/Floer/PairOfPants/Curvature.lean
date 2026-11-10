@@ -649,12 +649,9 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     rw [h]
     simp only [smul_eq_mul, abs_of_nonneg (det_fderiv_endChart_nonneg q w)]
   -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
-  have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
-    hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
-    (fun w hw => hud (hsU hw)) (fun _ _ => mdifferentiableAt_const)
-    (fun _ _ => mdifferentiableAt_const)
-  simp only [perturbationPullback_zero, floerEnergyDensity_zero] at harea
-  rw [harea, ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
+  rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ => hφ w)
+      (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw)),
+    ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
       (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw))
       (fun w hw => htgt (hsU hw) 1) (fun w hw => htgt (hsU hw) _),
     ω.integral_hamiltonianCurvature_image hmeas hinj

@@ -97,12 +97,16 @@ form they recover the vector-space definitions.
   `SymplecticForm.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`.
 * `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
   `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
+  `SmoothTwoForm.eval₂_mfderiv_comp_stdComplexLine`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
-  derivative, and the energy density and curvature as two-forms on the domain.
+  derivative, and the energy density, the area density and the curvature as two-forms on the
+  domain.
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
+  `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
-  integrated curvature and the curvature allowance under changes of domain coordinates.
+  symplectic area, the integrated curvature and the curvature allowance under changes of domain
+  coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
   translate the curvature and preserve the curvature allowance along a map.
@@ -489,6 +493,20 @@ theorem floerEnergyDensity_perturbationPullback (ω : SmoothTwoForm I M)
   simp only [ContinuousLinearMap.comp_apply, hP, stdComplexLineReal_eq, stdComplexLineImag_eq]
   exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
 
+/-- **The area density is a two-form.** The symplectic area density `ω(∂_s (u ∘ φ), ∂_t (u ∘ φ))`
+at `w` is the Jacobian determinant of `φ` times the area density `ω(∂_s u, ∂_t u)` at `φ w`. -/
+theorem eval₂_mfderiv_comp_stdComplexLine (ω : SmoothTwoForm I M)
+    (hφ : DifferentiableAt ℝ φ w) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w)) :
+    SmoothBundleForm.eval₂ ω ((u ∘ φ) w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineImag) =
+      (fderiv ℝ φ w).det * SmoothBundleForm.eval₂ ω (u (φ w))
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) stdComplexLineImag) := by
+  -- The area density is the energy density of the zero perturbation.
+  simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using
+    ω.floerEnergyDensity_perturbationPullback (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hφ hu
+      mdifferentiableAt_const mdifferentiableAt_const
+
 /-- **The curvature is a two-form.** For a `C²` change of coordinates `φ`, the curvature of the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvature of `K` at `φ w`. -/
 theorem hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
@@ -532,6 +550,24 @@ theorem integral_floerEnergyDensity_image (ω : SmoothTwoForm I M) (hs : Measura
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
     rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
       ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
+
+/-- **Invariance of the symplectic area under changes of coordinates.** For a change of
+coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the
+symplectic area `∫ ω(∂_s u, ∂_t u)` of `u` over `φ '' s` is the symplectic area of `u ∘ φ`
+over `s`. -/
+theorem integral_eval₂_mfderiv_stdComplexLine_image (ω : SmoothTwoForm I M)
+    (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
+    (hu : ∀ w ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w)) :
+    ∫ z in φ '' s, SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
+      ∫ w in s, SmoothBundleForm.eval₂ ω ((u ∘ φ) w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineImag) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
+    rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
+      ω.eval₂_mfderiv_comp_stdComplexLine (hφ w hw) (hu w hw)]
 
 /-- **Invariance of the integrated curvature under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the integral

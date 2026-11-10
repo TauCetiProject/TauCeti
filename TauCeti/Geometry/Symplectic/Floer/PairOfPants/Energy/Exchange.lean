@@ -592,25 +592,6 @@ private theorem floerEnergyDensity_comp_exchangeMap (ω : SmoothTwoForm I M)
     (mdifferentiableAt_exchangePerturbation_target hH hHs c hS _ _)
     (mdifferentiableAt_exchangePerturbation_target hH hHs c hS _ _)
 
-/-- Pulling back along `Φ_c` multiplies the symplectic area density by the Jacobian, at points
-of `S`. -/
-private theorem area_comp_exchangeMap (ω : SmoothTwoForm I M) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
-    (SmoothBundleForm.eval₂ ω ((u ∘ exchangeMap c) w)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) w stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) w stdComplexLineImag) : ℝ) =
-      (fderiv ℝ (exchangeMap c) w).det *
-        SmoothBundleForm.eval₂ ω (u (exchangeMap c w))
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (exchangeMap c w) stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (exchangeMap c w) stdComplexLineImag) := by
-  -- The area density is the energy density of the zero perturbation.
-  have h := ω.floerEnergyDensity_perturbationPullback (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
-    ((contDiff_exchangeMap c).differentiable two_ne_zero w)
-    (mdifferentiableAt_exchangeMap hc₀ hc₁ hu hw)
-    mdifferentiableAt_const mdifferentiableAt_const
-  simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using h
-
 /-- Integrability over the image of a measurable set under `Φ_c` transfers to the density
 pulled back along `Φ_c`. -/
 private theorem integrableOn_of_integrableOn_image_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
@@ -669,14 +650,10 @@ private theorem integral_area_image_exchangeMap (ω : SmoothTwoForm I M) (hc₀ 
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) z stdComplexLineReal)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) z stdComplexLineImag) : ℝ) := by
   have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
-  -- The area density is the energy density of the zero perturbation.
-  have h := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hs
-    (injective_exchangeMap hc).injOn
+  exact ω.integral_eval₂_mfderiv_stdComplexLine_image hs (injective_exchangeMap hc).injOn
     (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
     (fun w hw ↦ mdifferentiableAt_exchangeMap hc₀ hc₁ hu (hsS hw))
-    (fun _ _ ↦ mdifferentiableAt_const) (fun _ _ ↦ mdifferentiableAt_const)
-  simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using h
 
 /-- The integrated curvature of `K_c` along `u` over the image under `Φ_c` of a measurable part
 `s` of `S` is that of the pair-of-pants datum along `u ∘ Φ_c` over `s`. -/
@@ -842,7 +819,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation
   have hEv := integrableOn_of_integrableOn_image_exchangeMap hc₀ hc₁ hs hE
     fun w hw ↦ floerEnergyDensity_comp_exchangeMap ω hH hHs hc₀ hc₁ hu hw
   have hAv := integrableOn_of_integrableOn_image_exchangeMap hc₀ hc₁ hs hA
-    fun w hw ↦ area_comp_exchangeMap ω hc₀ hc₁ hu hw
+    fun w hw ↦ ω.eval₂_mfderiv_comp_stdComplexLine
+      ((contDiff_exchangeMap c).differentiable two_ne_zero w)
+      (mdifferentiableAt_exchangeMap hc₀ hc₁ hu hw)
   -- The end loops of `u ∘ Φ_c` are eventually those of `u` on the recentred ends.
   have hxv (q : Puncture) (t : ℝ) : Tendsto (fun R : ℝ ↦ (u ∘ exchangeMap c)
       (Complex.equivRealProdCLM (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))
