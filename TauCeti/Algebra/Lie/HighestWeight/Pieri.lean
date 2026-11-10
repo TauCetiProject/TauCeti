@@ -158,9 +158,8 @@ theorem minuscule_pieri {lam mu : Dual K H} (hlam : IsDominantIntegral b lam)
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hmu.isDominantIntegral
   have h := tensorMultiplicity_eq_formalCharacter_coeff_sub_of_isMinuscule b hlam hmu hnu
   rw [formalCharacter_coeff_irreducibleQuotient_eq_ite_of_isMinuscule hmu (nu - lam),
-    ← genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector_of_lieSpan_eq_top
+    ← genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector
       (isHighestWeightVector_irreducibleQuotientGenerator b mu)
-      (lieSpan_irreducibleQuotientGenerator_eq_top b mu)
       (fun _ ↦ hmu.exists_weylGroup_smul_eq) (nu - lam)] at h
   split_ifs at h ⊢ <;> exact_mod_cast h
 
