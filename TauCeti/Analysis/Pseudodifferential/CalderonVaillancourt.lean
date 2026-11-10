@@ -93,7 +93,7 @@ private theorem latticeWeight_nonneg {n : ℕ} (d : Fin n → ℤ) : 0 ≤ latti
   prod_nonneg fun _ _ ↦ by positivity
 
 private theorem summable_latticeWeight {n : ℕ} : Summable (latticeWeight (n := n)) := by
-  refine summable_prod_pi_of_nonneg (ι := Fin n) (f := fun m : ℤ ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹) ?_
+  refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun m : ℤ ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹) ?_
     fun m ↦ by positivity
   rw [summable_int_iff_summable_nat_and_neg]
   have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
@@ -104,8 +104,7 @@ private theorem summable_latticeWeight {n : ℕ} : Summable (latticeWeight (n :=
     fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
   exact ⟨h.congr e, h.congr e'⟩
 
-/-- Two lattice indices `j, j'` whose coordinates differ by at most one have weight at least
-`16⁻ⁿ`. -/
+/-- A displacement `d` with `|dᵢ| ≤ 1` for every `i` has `latticeWeight d ^ 2 ≥ 16⁻ⁿ`. -/
 private theorem one_le_latticeWeight_sq {n : ℕ} {d : Fin n → ℤ} (hd : ∀ i, |d i| ≤ 1) :
     1 ≤ 16 ^ n * latticeWeight d ^ 2 := by
   have h : ∀ i, (16 : ℝ)⁻¹ ≤ (((1 + |(d i : ℝ)|) ^ 2)⁻¹) ^ 2 := fun i ↦ by
@@ -154,6 +153,7 @@ private theorem inv_one_add_norm_pow_le {n : ℕ} {x y : EuclideanSpace ℝ (Fin
         gcongr
     _ ≤ (1 + 2 * √n) ^ (4 * n) * (∏ i, (1 + |(d i : ℝ)|) ^ 4)⁻¹ := by
         gcongr
+
 /-! ### The unit cells -/
 
 /-- The volume of the closed ball of radius `√n` in `ℝⁿ`, which contains the support of
@@ -297,106 +297,48 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
   rw [le_mul_inv_iff₀ hpos, mul_comm]
   exact h
 
-/-! ### The real-bilinear compositions with an adjoint -/
-
-section Bilinear
-
-variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-- The real-bilinear map `(S, T) ↦ S† ∘ T`. -/
-private def adjointCompL : (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] V) :=
-  (bilinearRestrictScalars ℝ (compL ℂ V W V)).comp adjointRealCLM
-
-private theorem adjointCompL_apply (S T : V →L[ℂ] W) : adjointCompL S T = adjoint S ∘L T := by
-  simp [adjointCompL]
-
-private theorem norm_adjointCompL_apply_le (S T : V →L[ℂ] W) :
-    ‖adjointCompL S T‖ ≤ 1 * ‖S‖ * ‖T‖ := by
-  rw [adjointCompL_apply, one_mul, ← LinearIsometryEquiv.norm_map adjoint S]
-  exact opNorm_comp_le _ _
-
-/-- The real-bilinear map `(T, S) ↦ S ∘ T†`. -/
-private def compAdjointL : (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] W) :=
-  (bilinearRestrictScalars ℝ (compL ℂ W V W)).flip.comp adjointRealCLM
-
-private theorem compAdjointL_apply (T S : V →L[ℂ] W) : compAdjointL T S = S ∘L adjoint T := by
-  simp [compAdjointL]
-
-private theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) :
-    ‖compAdjointL T S‖ ≤ 1 * ‖T‖ * ‖S‖ := by
-  rw [compAdjointL_apply, one_mul, mul_comm, ← LinearIsometryEquiv.norm_map adjoint T]
-  exact opNorm_comp_le _ _
-
-end Bilinear
+/-- **Almost orthogonality of a cut-off product.** The Fourier transform of
+`z ↦ χ(z - j) χ(z - j') • B (f z) (g z)` at a point `w` with `‖w‖ = ‖x - y‖`, scaled by
+`χ(x - k) χ(y - k')`, is at most `pieceConst n Cχ C` times the squared weight of
+`(j - j', k - k')`. It vanishes unless the cells of `j` and `j'` are neighbours. -/
+private theorem norm_cutoff_smul_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup U] [NormedSpace ℂ U] (B : F →L[ℝ] G →L[ℝ] U) (hB : ‖B‖ ≤ 1)
+    {f : EuclideanSpace ℝ (Fin n) → F} {g : EuclideanSpace ℝ (Fin n) → G}
+    (hf : ContDiff ℝ (4 * n) f) (hg : ContDiff ℝ (4 * n) g) {Cχ C : ℝ}
+    (hχ : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p (latticeBump n) x‖ ≤ Cχ)
+    (hfC : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C)
+    (hgC : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p g x‖ ≤ C) (j j' k k' : Fin n → ℤ)
+    {x y w : EuclideanSpace ℝ (Fin n)} (hw : ‖w‖ = ‖x - y‖) :
+    ‖((latticeBump n (x - latticePoint k) * latticeBump n (y - latticePoint k') : ℝ) : ℂ) •
+      𝓕 (fun z ↦ (latticeBump n (z - latticePoint j) * latticeBump n (z - latticePoint j')) •
+        B (f z) (g z)) w‖ ≤
+      pieceConst n Cχ C * (latticeWeight (j - j') * latticeWeight (k - k')) ^ 2 := by
+  rw [norm_smul, Complex.norm_real]
+  have hRHS := mul_nonneg (pieceConst_nonneg n Cχ C)
+    (sq_nonneg (latticeWeight (j - j') * latticeWeight (k - k')))
+  by_cases hc : latticeBump n (x - latticePoint k) * latticeBump n (y - latticePoint k') = 0
+  · simpa [hc] using hRHS
+  by_cases hj : ∀ i, |(j - j') i| ≤ 1
+  · have hF := norm_fourier_cutoff_bilinear_le B hB hf hg hχ hfC hgC j j' w
+    rw [hw] at hF
+    refine (mul_le_of_le_one_left (norm_nonneg _) (norm_latticeBump_mul_le _ _)).trans ?_
+    have := le_mul_latticeWeight_sq (by
+      have := mul_self_nonneg Cχ; have := mul_self_nonneg C; positivity) hj
+      (mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul hc))
+      (mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul hc)) hF
+    rwa [pieceConst]
+  · obtain ⟨i, hi⟩ := not_forall.1 hj
+    have hzero : (fun z ↦ (latticeBump n (z - latticePoint j) *
+        latticeBump n (z - latticePoint j')) • B (f z) (g z)) = 0 := funext fun z ↦ by
+      rw [latticeBump_mul_eq_zero_of_one_lt_abs (by simpa using not_le.1 hi) z, zero_smul,
+        Pi.zero_apply]
+    simpa [hzero, Real.fourier_eq, Circle.smul_def] using hRHS
 
 namespace Symbol
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-! ### Derivative bounds for uniform symbols of order zero -/
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- A uniform symbol of order `0` has bounded derivatives of every order in the position and in
-the frequency separately. -/
-private theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W 0} (ha : a.IsUniform)
-    (N : ℕ) : ∃ C, ∀ p ≤ N, ∀ x ξ,
-      ‖iteratedFDeriv ℝ p (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C ∧
-        ‖iteratedFDeriv ℝ p (fun η ↦ a.coefficient (x, η)) ξ‖ ≤ C := by
-  choose B hB0 hB using isUniform_iff.1 ha
-  set S : ℕ → ℝ := fun p ↦ ∑ r : Fin p → Fin n, (B (List.ofFn r) [] + B [] (List.ofFn r))
-  have hS0 : ∀ p, 0 ≤ S p := fun p ↦ sum_nonneg fun r _ ↦ add_nonneg (hB0 _ _) (hB0 _ _)
-  refine ⟨∑ p ∈ range (N + 1), S p, fun p hp x ξ ↦ ?_⟩
-  have hle : S p ≤ ∑ p ∈ range (N + 1), S p :=
-    single_le_sum (fun q _ ↦ hS0 q) (mem_range.2 (Nat.lt_succ_of_le hp))
-  constructor
-  · have hc : ContDiff ℝ ∞ fun y ↦ a.coefficient (y, ξ) :=
-      a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)
-    refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hc p) x).trans
-      (le_trans (sum_le_sum fun r _ ↦ ?_) hle)
-    have h := hB (List.ofFn r) [] x ξ
-    simp only [mixedDeriv_def, coordinateDeriv_nil, List.length_nil, CharP.cast_eq_zero,
-      sub_self, zero_div, rpow_zero, mul_one] at h
-    exact h.trans (le_add_of_nonneg_right (hB0 _ _))
-  · have hc : ContDiff ℝ ∞ fun η ↦ a.coefficient (x, η) :=
-      a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)
-    refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hc p) ξ).trans
-      (le_trans (sum_le_sum fun r _ ↦ ?_) hle)
-    have h := hB [] (List.ofFn r) x ξ
-    simp only [mixedDeriv_def, coordinateDeriv_nil] at h
-    refine (h.trans ?_).trans (le_add_of_nonneg_left (hB0 _ _))
-    refine mul_le_of_le_one_right (hB0 _ _) (rpow_le_one_of_one_le_of_nonpos ?_ ?_)
-    · nlinarith [sq_nonneg ‖ξ‖]
-    · rw [List.length_ofFn]; linarith [(Nat.cast_nonneg p : (0 : ℝ) ≤ p)]
-
-/-- Rescaling the variable by `2π` multiplies the bounds for the derivatives of order at most
-`N` by at most `(2π) ^ N`. -/
-private theorem norm_iteratedFDeriv_comp_two_pi_smul_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {N : ℕ} {f : CoordinateSpace n → F} (hf : ContDiff ℝ ∞ f) {C : ℝ}
-    (hC : ∀ p ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ p f ξ‖ ≤ C) {p : ℕ} (hp : p ≤ N)
-    (ζ : CoordinateSpace n) :
-    ‖iteratedFDeriv ℝ p (fun ζ ↦ f ((2 * π) • ζ)) ζ‖ ≤ (2 * π) ^ N * C := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 (Nat.zero_le _) 0)
-  set L : CoordinateSpace n →L[ℝ] CoordinateSpace n := (2 * π) • ContinuousLinearMap.id ℝ _
-    with hLdef
-  have hL : ‖L‖ ≤ 2 * π :=
-    calc ‖L‖ ≤ ‖2 * π‖ * ‖ContinuousLinearMap.id ℝ (CoordinateSpace n)‖ := by
-          rw [hLdef]; exact norm_smul_le (2 * π) (ContinuousLinearMap.id ℝ (CoordinateSpace n))
-      _ ≤ 2 * π * 1 := by
-          rw [Real.norm_of_nonneg two_pi_pos.le]
-          exact mul_le_mul_of_nonneg_left norm_id_le two_pi_pos.le
-      _ = 2 * π := mul_one _
-  have hfun : (fun ζ ↦ f ((2 * π) • ζ)) = f ∘ L := by
-    ext ζ; simp [L]
-  rw [hfun, L.iteratedFDeriv_comp_right hf ζ (by exact_mod_cast le_top)]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  rw [prod_const, card_univ, Fintype.card_fin, mul_comm]
-  have h2π : 1 ≤ 2 * π := by linarith [two_le_pi]
-  calc ‖L‖ ^ p * ‖iteratedFDeriv ℝ p f (L ζ)‖ ≤ (2 * π) ^ p * C := by
-        gcongr
-        exact hC p hp _
-    _ ≤ (2 * π) ^ N * C := mul_le_mul_of_nonneg_right (pow_le_pow_right₀ h2π hp) hC0
 
 /-! ### The phase-space pieces -/
 
@@ -506,33 +448,13 @@ private theorem norm_integral_adjoint_pieceKernel_comp_le (a : Symbol n V W 0) {
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) (ζ' ζ : CoordinateSpace n) :
     ‖∫ x, adjoint (pieceKernel a ν x ζ') ∘L pieceKernel a μ x ζ‖ ≤
       pieceConst n Cχ C * pairWeight (ν - μ) ^ 2 := by
-  rw [integral_adjoint_pieceKernel_comp, norm_smul, Complex.norm_real]
-  have hRHS := mul_nonneg (pieceConst_nonneg n Cχ C) (sq_nonneg (pairWeight (ν - μ)))
-  by_cases hc : latticeBump n (ζ' - latticePoint ν.2) * latticeBump n (ζ - latticePoint μ.2) = 0
-  · simpa [hc] using hRHS
-  by_cases hj : ∀ i, |(ν.1 - μ.1) i| ≤ 1
-  · have hf : ∀ ξ : CoordinateSpace n, ContDiff ℝ (4 * n) fun y ↦ a.coefficient (y, ξ) :=
-      fun ξ ↦ contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)) _
-    have hF := norm_fourier_cutoff_bilinear_le (adjointCompL (V := V) (W := W))
-      (opNorm_le_bound₂ _ zero_le_one norm_adjointCompL_apply_le) (hf ((2 * π) • ζ'))
-      (hf ((2 * π) • ζ)) hχ (fun p hp x ↦ hC p hp x ((2 * π) • ζ'))
-      (fun p hp x ↦ hC p hp x ((2 * π) • ζ)) ν.1 μ.1 (ζ' - ζ)
-    refine (mul_le_of_le_one_left (norm_nonneg _) (norm_latticeBump_mul_le _ _)).trans ?_
-    have := le_mul_latticeWeight_sq (by
-      have := mul_self_nonneg Cχ; have := mul_self_nonneg C; positivity) hj
-      (mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul hc))
-      (mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul hc)) hF
-    rwa [pieceConst, pairWeight, Prod.fst_sub, Prod.snd_sub]
-  · have hzero : (fun x ↦ (latticeBump n (x - latticePoint ν.1) *
-        latticeBump n (x - latticePoint μ.1)) •
-          adjointCompL (a.coefficient (x, (2 * π) • ζ')) (a.coefficient (x, (2 * π) • ζ))) =
-        0 := by
-      funext x
-      have : latticeBump n (x - latticePoint ν.1) * latticeBump n (x - latticePoint μ.1) = 0 :=
-        by_contra fun h ↦ hj fun i ↦ by
-          simpa using abs_sub_le_one_of_latticeBump_mul_ne_zero h i
-      simp [this]
-    simpa [hzero, Real.fourier_eq, Circle.smul_def] using hRHS
+  have hf : ∀ ξ : CoordinateSpace n, ContDiff ℝ (4 * n) fun y ↦ a.coefficient (y, ξ) :=
+    fun ξ ↦ contDiff_infty.1 (a.contDiff_coefficient_slice ξ) _
+  rw [integral_adjoint_pieceKernel_comp, pairWeight, Prod.fst_sub, Prod.snd_sub]
+  exact norm_cutoff_smul_fourier_cutoff_bilinear_le (adjointCompL (V := V) (W := W))
+    (opNorm_le_bound₂ _ zero_le_one fun S T ↦ by
+      rw [one_mul]; exact norm_adjointCompL_apply_le S T)
+    (hf _) (hf _) hχ (fun p hp x ↦ hC p hp x _) (fun p hp x ↦ hC p hp x _) ν.1 μ.1 ν.2 μ.2 rfl
 
 /-- The kernel of `T_ν T_μ†` decays in the position displacement and vanishes unless the
 frequency cells of `ν` and `μ` are neighbours. -/
@@ -542,39 +464,23 @@ private theorem norm_integral_pieceKernel_comp_adjoint_le (a : Symbol n V W 0) {
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) (x y : CoordinateSpace n) :
     ‖∫ ζ, pieceKernel a ν x ζ ∘L adjoint (pieceKernel a μ y ζ)‖ ≤
       pieceConst n Cχ ((2 * π) ^ (4 * n) * C) * pairWeight (ν - μ) ^ 2 := by
-  rw [integral_pieceKernel_comp_adjoint, norm_smul, Complex.norm_real]
-  have hRHS := mul_nonneg (pieceConst_nonneg n Cχ ((2 * π) ^ (4 * n) * C))
-    (sq_nonneg (pairWeight (ν - μ)))
-  by_cases hc : latticeBump n (x - latticePoint ν.1) * latticeBump n (y - latticePoint μ.1) = 0
-  · simpa [hc] using hRHS
-  by_cases hk : ∀ i, |(ν.2 - μ.2) i| ≤ 1
-  · have hc' : ∀ z : CoordinateSpace n, ContDiff ℝ ∞ fun η ↦ a.coefficient (z, η) :=
-      fun z ↦ a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)
-    have hf : ∀ z : CoordinateSpace n,
-        ContDiff ℝ (4 * n) fun ζ : CoordinateSpace n ↦ a.coefficient (z, (2 * π) • ζ) :=
-      fun z ↦ contDiff_infty.1 ((hc' z).comp (contDiff_const_smul _)) _
-    have hF := norm_fourier_cutoff_bilinear_le (compAdjointL (V := V) (W := W))
-      (opNorm_le_bound₂ _ zero_le_one norm_compAdjointL_apply_le) (hf y) (hf x) hχ
-      (fun p hp ζ ↦ norm_iteratedFDeriv_comp_two_pi_smul_le (hc' y) (hC · · y) hp ζ)
-      (fun p hp ζ ↦ norm_iteratedFDeriv_comp_two_pi_smul_le (hc' x) (hC · · x) hp ζ)
-      ν.2 μ.2 (y - x)
-    rw [norm_sub_rev] at hF
-    refine (mul_le_of_le_one_left (norm_nonneg _) (norm_latticeBump_mul_le _ _)).trans ?_
-    have := le_mul_latticeWeight_sq (by
-      have := mul_self_nonneg Cχ; have := mul_self_nonneg ((2 * π) ^ (4 * n) * C); positivity) hk
-      (mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul hc))
-      (mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul hc)) hF
-    rwa [pieceConst, pairWeight, Prod.fst_sub, Prod.snd_sub, mul_comm (latticeWeight _)]
-  · have hzero : (fun ζ ↦ (latticeBump n (ζ - latticePoint ν.2) *
-        latticeBump n (ζ - latticePoint μ.2)) •
-          compAdjointL (a.coefficient (y, (2 * π) • ζ)) (a.coefficient (x, (2 * π) • ζ))) =
-        0 := by
-      funext ζ
-      have : latticeBump n (ζ - latticePoint ν.2) * latticeBump n (ζ - latticePoint μ.2) = 0 :=
-        by_contra fun h ↦ hk fun i ↦ by
-          simpa using abs_sub_le_one_of_latticeBump_mul_ne_zero h i
-      simp [this]
-    simpa [hzero, Real.fourier_eq, Circle.smul_def] using hRHS
+  have hf : ∀ z : CoordinateSpace n, ContDiff ℝ (4 * n) fun η ↦ a.coefficient (z, η) :=
+    fun z ↦ contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)) _
+  have h2π : 1 ≤ ‖2 * π‖ := by
+    rw [Real.norm_of_nonneg two_pi_pos.le]; linarith [two_le_pi]
+  -- Rescaling the frequency by `2π` multiplies the derivative bounds by at most `(2π) ^ 4n`.
+  have hfC : ∀ z, ∀ p ≤ 4 * n, ∀ ζ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ p (fun ζ ↦ a.coefficient (z, (2 * π) • ζ)) ζ‖ ≤
+        (2 * π) ^ (4 * n) * C := fun z p hp ζ ↦ by
+    simpa only [Real.norm_of_nonneg two_pi_pos.le] using
+      (hf z).norm_iteratedFDeriv_comp_const_smul_le (hC · · z) h2π hp ζ
+  rw [integral_pieceKernel_comp_adjoint, pairWeight, Prod.fst_sub, Prod.snd_sub,
+    mul_comm (latticeWeight _)]
+  exact norm_cutoff_smul_fourier_cutoff_bilinear_le (compAdjointL (V := V) (W := W))
+    (opNorm_le_bound₂ _ zero_le_one fun T S ↦ by
+      rw [one_mul]; exact norm_compAdjointL_apply_le T S)
+    ((hf y).comp (contDiff_const_smul _)) ((hf x).comp (contDiff_const_smul _)) hχ (hfC y)
+    (hfC x) ν.2 μ.2 ν.1 μ.1 (norm_sub_rev y x)
 
 /-! ### The pieces as operators on `L²` -/
 
@@ -591,27 +497,46 @@ private def pieceOp (a : Symbol n V W 0) {C : ℝ≥0} (hC : ∀ p, ‖a.coeffic
     (ae_lintegral_enorm_le_of_cell (fun _ _ h ↦ pieceKernel_ne_zero h)
       (norm_pieceKernel_le hC ν)).2
 
+/-- **Schur's test on a pair of cells.** An operator on `L²` equal to the integral operator of a
+kernel `K x y = χ(x - k) χ(y - k') • F x y` with `‖K‖ ≤ r` has norm at most
+`r * cellVolume n`. -/
+private theorem norm_le_of_eq_integralOperatorLp {Y Z : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℂ Y] [NormedAddCommGroup Z] [NormedSpace ℂ Z]
+    {K F : CoordinateSpace n → CoordinateSpace n → Y →L[ℂ] Z} {k k' : Fin n → ℤ}
+    {hK : AEStronglyMeasurable (Function.uncurry K) (volume.prod volume)}
+    (hKF : ∀ x y, K x y =
+      ((latticeBump n (x - latticePoint k) * latticeBump n (y - latticePoint k') : ℝ) : ℂ) •
+        F x y)
+    {r : ℝ} (hr : 0 ≤ r) (hKr : ∀ x y, ‖K x y‖ ≤ r)
+    {T : Lp Y 2 (volume : Measure (CoordinateSpace n)) →L[ℂ]
+      Lp Z 2 (volume : Measure (CoordinateSpace n))}
+    (hT : ∀ {A B : ℝ≥0} (hA : ∀ᵐ x ∂volume, ∫⁻ y, ‖K x y‖ₑ ≤ A)
+      (hB : ∀ᵐ y ∂volume, ∫⁻ x, ‖K x y‖ₑ ≤ B), T = integralOperatorLp K 2 hK hA hB) :
+    ‖T‖ ≤ r * cellVolume n := by
+  have hsupp : ∀ x y, K x y ≠ 0 →
+      x ∈ closedBall (latticePoint k) √n ∧ y ∈ closedBall (latticePoint k') √n := by
+    intro x y h
+    rw [hKF] at h
+    have h' := Complex.ofReal_ne_zero.1 (left_ne_zero_of_smul h)
+    exact ⟨mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul h'),
+      mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul h')⟩
+  obtain ⟨hA, hB⟩ := ae_lintegral_enorm_le_of_cell hsupp fun x y ↦
+    (hKr x y).trans (Real.le_coe_toNNReal _)
+  rw [hT hA hB]
+  refine norm_integralOperatorLp_le_max.trans ?_
+  rw [max_self, NNReal.coe_mul, Real.coe_toNNReal _ hr]
+
 private theorem norm_adjoint_pieceOp_comp_pieceOp_le (a : Symbol n V W 0) {C : ℝ≥0}
     (hC : ∀ p, ‖a.coefficient p‖ ≤ C) {Cχ C' : ℝ}
     (hχ : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p (latticeBump n) x‖ ≤ Cχ)
     (hC' : ∀ p ≤ 4 * n, ∀ x ξ, ‖iteratedFDeriv ℝ p (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C')
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) :
     ‖adjoint (pieceOp a hC ν) ∘L pieceOp a hC μ‖ ≤
-      pieceConst n Cχ C' * pairWeight (ν - μ) ^ 2 * cellVolume n := by
-  have hr := mul_nonneg (pieceConst_nonneg n Cχ C') (sq_nonneg (pairWeight (ν - μ)))
-  have hsupp : ∀ ζ' ζ, ∫ x, adjoint (pieceKernel a ν x ζ') ∘L pieceKernel a μ x ζ ≠ 0 →
-      ζ' ∈ closedBall (latticePoint ν.2) √n ∧ ζ ∈ closedBall (latticePoint μ.2) √n := by
-    intro ζ' ζ h
-    rw [integral_adjoint_pieceKernel_comp] at h
-    have h' := Complex.ofReal_ne_zero.1 (left_ne_zero_of_smul h)
-    exact ⟨mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul h'),
-      mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul h')⟩
-  obtain ⟨hA, hB⟩ := ae_lintegral_enorm_le_of_cell hsupp fun ζ' ζ ↦
-    (norm_integral_adjoint_pieceKernel_comp_le a hχ hC' ν μ ζ' ζ).trans
-      (Real.le_coe_toNNReal _)
-  rw [pieceOp, pieceOp, adjoint_comp_integralOperatorLp (hA := hA) (hB := hB)]
-  refine norm_integralOperatorLp_le_max.trans ?_
-  rw [max_self, NNReal.coe_mul, Real.coe_toNNReal _ hr]
+      pieceConst n Cχ C' * pairWeight (ν - μ) ^ 2 * cellVolume n :=
+  norm_le_of_eq_integralOperatorLp (integral_adjoint_pieceKernel_comp a ν μ)
+    (mul_nonneg (pieceConst_nonneg n Cχ C') (sq_nonneg _))
+    (norm_integral_adjoint_pieceKernel_comp_le a hχ hC' ν μ) fun hA hB ↦ by
+      rw [pieceOp, pieceOp, adjoint_comp_integralOperatorLp (hA := hA) (hB := hB)]
 
 private theorem norm_pieceOp_comp_adjoint_pieceOp_le (a : Symbol n V W 0) {C : ℝ≥0}
     (hC : ∀ p, ‖a.coefficient p‖ ≤ C) {Cχ C' : ℝ}
@@ -619,22 +544,11 @@ private theorem norm_pieceOp_comp_adjoint_pieceOp_le (a : Symbol n V W 0) {C : �
     (hC' : ∀ p ≤ 4 * n, ∀ x ξ, ‖iteratedFDeriv ℝ p (fun η ↦ a.coefficient (x, η)) ξ‖ ≤ C')
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) :
     ‖pieceOp a hC ν ∘L adjoint (pieceOp a hC μ)‖ ≤
-      pieceConst n Cχ ((2 * π) ^ (4 * n) * C') * pairWeight (ν - μ) ^ 2 * cellVolume n := by
-  have hr := mul_nonneg (pieceConst_nonneg n Cχ ((2 * π) ^ (4 * n) * C'))
-    (sq_nonneg (pairWeight (ν - μ)))
-  have hsupp : ∀ x y, ∫ ζ, pieceKernel a ν x ζ ∘L adjoint (pieceKernel a μ y ζ) ≠ 0 →
-      x ∈ closedBall (latticePoint ν.1) √n ∧ y ∈ closedBall (latticePoint μ.1) √n := by
-    intro x y h
-    rw [integral_pieceKernel_comp_adjoint] at h
-    have h' := Complex.ofReal_ne_zero.1 (left_ne_zero_of_smul h)
-    exact ⟨mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_mul h'),
-      mem_closedBall_of_latticeBump_sub_ne_zero (right_ne_zero_of_mul h')⟩
-  obtain ⟨hA, hB⟩ := ae_lintegral_enorm_le_of_cell hsupp fun x y ↦
-    (norm_integral_pieceKernel_comp_adjoint_le a hχ hC' ν μ x y).trans
-      (Real.le_coe_toNNReal _)
-  rw [pieceOp, pieceOp, integralOperatorLp_comp_adjoint (hA := hA) (hB := hB)]
-  refine norm_integralOperatorLp_le_max.trans ?_
-  rw [max_self, NNReal.coe_mul, Real.coe_toNNReal _ hr]
+      pieceConst n Cχ ((2 * π) ^ (4 * n) * C') * pairWeight (ν - μ) ^ 2 * cellVolume n :=
+  norm_le_of_eq_integralOperatorLp (integral_pieceKernel_comp_adjoint a ν μ)
+    (mul_nonneg (pieceConst_nonneg n Cχ _) (sq_nonneg _))
+    (norm_integral_pieceKernel_comp_adjoint_le a hχ hC' ν μ) fun hA hB ↦ by
+      rw [pieceOp, pieceOp, integralOperatorLp_comp_adjoint (hA := hA) (hB := hB)]
 
 /-- A sum over a finite set of translates of the summable weight is at most its total sum. -/
 private theorem sum_pairWeight_sub_le (ν : (Fin n → ℤ) × (Fin n → ℤ))
@@ -651,8 +565,9 @@ private theorem exists_hasSum_pieceOp (a : Symbol n V W 0) (ha : a.IsUniform) :
       (S : Lp V 2 (volume : Measure (CoordinateSpace n)) →L[ℂ]
         Lp W 2 (volume : Measure (CoordinateSpace n))),
       ∀ f, HasSum (fun ν ↦ pieceOp a hC ν f) (S f) := by
-  obtain ⟨Cχ, hχ⟩ := exists_norm_iteratedFDeriv_latticeBump_le (n := n) (4 * n)
-  obtain ⟨Ca, hCa⟩ := ha.exists_norm_iteratedFDeriv_le (4 * n)
+  obtain ⟨Cχ, -, hχ⟩ := hasCompactSupport_latticeBump.exists_bound_iteratedFDeriv
+    (contDiff_latticeBump (n := n)) (4 * n)
+  obtain ⟨Ca, hCa⟩ := ha.exists_norm_iteratedFDeriv_le le_rfl (4 * n)
   have hCa0 : 0 ≤ Ca := (norm_nonneg _).trans (hCa 0 (Nat.zero_le _) 0 0).1
   have h0 : ∀ p, ‖a.coefficient p‖ ≤ (⟨Ca, hCa0⟩ : ℝ≥0) := fun p ↦ by
     simpa using (hCa 0 (Nat.zero_le _) p.1 p.2).1
@@ -673,28 +588,22 @@ private theorem exists_hasSum_pieceOp (a : Symbol n V W 0) (ha : a.IsUniform) :
       _ = √(K * v) * w := by
           rw [show K * w ^ 2 * v = K * v * w ^ 2 by ring, Real.sqrt_mul (mul_nonneg hK hv),
             Real.sqrt_sq hw]
+  -- Square roots of bounds by `pairWeight (ν - μ) ^ 2` sum to at most `D * ∑' d, pairWeight d`.
+  have hsum {P : (Fin n → ℤ) × (Fin n → ℤ) → ℝ} {ν : (Fin n → ℤ) × (Fin n → ℤ)}
+      (hP : ∀ μ, P μ ≤ pieceConst n Cχ C' * pairWeight (ν - μ) ^ 2 * cellVolume n)
+      (s : Finset ((Fin n → ℤ) × (Fin n → ℤ))) : ∑ μ ∈ s, √(P μ) ≤ D * ∑' d, pairWeight d :=
+    calc ∑ μ ∈ s, √(P μ) ≤ ∑ μ ∈ s, D * pairWeight (ν - μ) :=
+          sum_le_sum fun μ _ ↦ sqrt_le_of_le_mul_sq (pieceConst_nonneg _ _ _)
+            (pairWeight_nonneg _) (NNReal.coe_nonneg _) (hP μ)
+      _ ≤ D * ∑' d, pairWeight d := by
+          rw [← mul_sum]
+          exact mul_le_mul_of_nonneg_left (sum_pairWeight_sub_le ν s) hD
   have h₁ : ∀ ν (s : Finset ((Fin n → ℤ) × (Fin n → ℤ))),
       ∑ μ ∈ s, √‖adjoint (pieceOp a h0 ν) ∘L pieceOp a h0 μ‖ ≤ D * ∑' d, pairWeight d :=
-    fun ν s ↦ by
-      calc ∑ μ ∈ s, √‖adjoint (pieceOp a h0 ν) ∘L pieceOp a h0 μ‖
-          ≤ ∑ μ ∈ s, D * pairWeight (ν - μ) := by
-            refine sum_le_sum fun μ _ ↦ ?_
-            exact sqrt_le_of_le_mul_sq (pieceConst_nonneg _ _ _) (pairWeight_nonneg _)
-              (NNReal.coe_nonneg _) (norm_adjoint_pieceOp_comp_pieceOp_le a h0 hχ hx ν μ)
-        _ ≤ D * ∑' d, pairWeight d := by
-            rw [← mul_sum]
-            exact mul_le_mul_of_nonneg_left (sum_pairWeight_sub_le ν s) hD
+    fun ν ↦ hsum (norm_adjoint_pieceOp_comp_pieceOp_le a h0 hχ hx ν)
   have h₂ : ∀ ν (s : Finset ((Fin n → ℤ) × (Fin n → ℤ))),
       ∑ μ ∈ s, √‖pieceOp a h0 ν ∘L adjoint (pieceOp a h0 μ)‖ ≤ D * ∑' d, pairWeight d :=
-    fun ν s ↦ by
-      calc ∑ μ ∈ s, √‖pieceOp a h0 ν ∘L adjoint (pieceOp a h0 μ)‖
-          ≤ ∑ μ ∈ s, D * pairWeight (ν - μ) := by
-            refine sum_le_sum fun μ _ ↦ ?_
-            exact sqrt_le_of_le_mul_sq (pieceConst_nonneg _ _ _) (pairWeight_nonneg _)
-              (NNReal.coe_nonneg _) (norm_pieceOp_comp_adjoint_pieceOp_le a h0 hχ hξ ν μ)
-        _ ≤ D * ∑' d, pairWeight d := by
-            rw [← mul_sum]
-            exact mul_le_mul_of_nonneg_left (sum_pairWeight_sub_le ν s) hD
+    fun ν ↦ hsum (norm_pieceOp_comp_adjoint_pieceOp_le a h0 hχ hξ ν)
   obtain ⟨S, -, hS⟩ := exists_hasSum_apply_of_almost_orthogonal (pieceOp a h0)
     (mul_nonneg hD (tsum_nonneg pairWeight_nonneg)) h₁ h₂
   exact ⟨⟨Ca, hCa0⟩, h0, S, hS⟩

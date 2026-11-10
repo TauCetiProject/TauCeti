@@ -246,6 +246,39 @@ theorem contDiff_coefficient_slice (a : Symbol n V W m) (ξ : CoordinateSpace n)
     ContDiff ℝ ∞ fun x ↦ a.coefficient (x, ξ) :=
   a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)
 
+/-- A symbol of nonpositive order whose estimates hold uniformly in the position has bounded
+derivatives of every order in the position and in the frequency separately, with a bound
+uniform in both variables. -/
+theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsUniform)
+    (hm : m ≤ 0) (N : ℕ) : ∃ C, ∀ p ≤ N, ∀ x ξ,
+      ‖iteratedFDeriv ℝ p (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C ∧
+        ‖iteratedFDeriv ℝ p (fun η ↦ a.coefficient (x, η)) ξ‖ ≤ C := by
+  choose B hB0 hB using isUniform_iff.1 ha
+  have hB' : ∀ α β x ξ, ‖mixedDeriv α β a.coefficient x ξ‖ ≤ B α β := fun α β x ξ ↦ by
+    have hβ : (0 : ℝ) ≤ β.length := Nat.cast_nonneg _
+    refine (hB α β x ξ).trans (mul_le_of_le_one_right (hB0 α β)
+      (Real.rpow_le_one_of_one_le_of_nonpos ?_ (by linarith)))
+    nlinarith [sq_nonneg ‖ξ‖]
+  set S : ℕ → ℝ := fun p ↦ ∑ r : Fin p → Fin n, (B (List.ofFn r) [] + B [] (List.ofFn r))
+  have hS0 : ∀ p, 0 ≤ S p :=
+    fun p ↦ Finset.sum_nonneg fun r _ ↦ add_nonneg (hB0 _ _) (hB0 _ _)
+  refine ⟨∑ p ∈ Finset.range (N + 1), S p, fun p hp x ξ ↦ ?_⟩
+  have hle : S p ≤ ∑ p ∈ Finset.range (N + 1), S p :=
+    Finset.single_le_sum (fun q _ ↦ hS0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hp))
+  constructor
+  · refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+      (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) p) x).trans
+      (le_trans (Finset.sum_le_sum fun r _ ↦ ?_) hle)
+    have h := hB' (List.ofFn r) [] x ξ
+    simp only [mixedDeriv_def, coordinateDeriv_nil] at h
+    exact h.trans (le_add_of_nonneg_right (hB0 _ _))
+  · refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1
+      (a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)) p) ξ).trans
+      (le_trans (Finset.sum_le_sum fun r _ ↦ ?_) hle)
+    have h := hB' [] (List.ofFn r) x ξ
+    simp only [mixedDeriv_def, coordinateDeriv_nil] at h
+    exact h.trans (le_add_of_nonneg_left (hB0 _ _))
+
 /-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
 support. -/
 theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}

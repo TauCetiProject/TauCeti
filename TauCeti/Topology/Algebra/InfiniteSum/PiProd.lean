@@ -11,12 +11,12 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Real
 # Summability of products over a finite power
 
 If `f : β → ℝ` is nonnegative and summable, then so is `k ↦ ∏ i, f (k i)` on `ι → β` for a
-finite type `ι`, with sum at most `(∑' b, f b) ^ card ι`. For instance a weight
-`∏ᵢ (1 + |kᵢ|)⁻²` on the lattice `ℤⁿ` is summable because `(1 + |m|)⁻²` is summable on `ℤ`.
+finite type `ι`. For instance a weight `∏ᵢ (1 + |kᵢ|)⁻²` on the lattice `ℤⁿ` is summable because
+`(1 + |m|)⁻²` is summable on `ℤ`.
 
 ## Main results
 
-* `summable_prod_pi_of_nonneg`: the summability of `k ↦ ∏ i, f (k i)`.
+* `Summable.prod_pi_of_nonneg`: the summability of `k ↦ ∏ i, f (k i)`.
 -/
 
 public section
@@ -25,7 +25,7 @@ open Finset
 
 /-- If `f : β → ℝ` is nonnegative and summable, then so is `k ↦ ∏ i, f (k i)` on `ι → β` for a
 finite type `ι`. -/
-theorem summable_prod_pi_of_nonneg {ι β : Type*} [Fintype ι] {f : β → ℝ} (hf : Summable f)
+theorem Summable.prod_pi_of_nonneg {ι β : Type*} [Fintype ι] {f : β → ℝ} (hf : Summable f)
     (h0 : 0 ≤ f) : Summable fun k : ι → β ↦ ∏ i, f (k i) := by
   classical
   refine summable_of_sum_le (c := (∑' b, f b) ^ Fintype.card ι)

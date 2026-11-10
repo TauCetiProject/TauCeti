@@ -34,8 +34,8 @@ The construction is a product of one-dimensional bumps
 * `TauCeti.hasSum_latticeBump_sub`: `∑_{j ∈ ℤⁿ} χ(x - j) = 1`.
 * `TauCeti.abs_lt_one_of_latticeBump_ne_zero`: `χ(x) ≠ 0` implies `|xᵢ| < 1` for every `i`.
 * `TauCeti.tsupport_latticeBump_subset`: `χ` is supported in the closed ball of radius `√n`.
-* `TauCeti.exists_norm_iteratedFDeriv_latticeBump_le`: the derivatives of `χ` of order at most
-  `N` are bounded.
+* `TauCeti.abs_sub_le_one_of_latticeBump_mul_ne_zero`: two integer translates of `χ` overlap only
+  if their centres differ by at most one in every coordinate.
 -/
 
 public section
@@ -194,16 +194,6 @@ theorem norm_latticeBump_mul_le (x y : EuclideanSpace ℝ (Fin n)) :
           zero_le_one
     _ = 1 := one_mul 1
 
-/-- The derivatives of order at most `N` of the bump are bounded by a single constant; the same
-constant bounds the derivatives of every translate. -/
-theorem exists_norm_iteratedFDeriv_latticeBump_le (N : ℕ) :
-    ∃ C, ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p (latticeBump n) x‖ ≤ C := by
-  choose B hB using fun p : ℕ ↦ (hasCompactSupport_latticeBump.iteratedFDeriv p
-    ).exists_bound_of_continuous ((contDiff_latticeBump (k := p)).continuous_iteratedFDeriv le_rfl)
-  exact ⟨∑ p ∈ range (N + 1), max (B p) 0, fun p hp x ↦ (hB p x).trans ((le_max_left _ _).trans
-    (single_le_sum (f := fun q ↦ max (B q) 0) (fun q _ ↦ le_max_right _ _)
-      (mem_range.2 (Nat.lt_succ_of_le hp))))⟩
-
 /-- Two integer translates of the bump overlap only if their centres differ by at most one in
 every coordinate. -/
 theorem abs_sub_le_one_of_latticeBump_mul_ne_zero {x : EuclideanSpace ℝ (Fin n)}
@@ -218,6 +208,13 @@ theorem abs_sub_le_one_of_latticeBump_mul_ne_zero {x : EuclideanSpace ℝ (Fin n
     constructor <;> linarith
   have : |j i - j' i| < 2 := by exact_mod_cast this
   omega
+
+/-- Two integer translates of the bump whose centres differ by more than one in some coordinate
+have product zero. -/
+theorem latticeBump_mul_eq_zero_of_one_lt_abs {j j' : Fin n → ℤ} {i : Fin n}
+    (h : 1 < |j i - j' i|) (x : EuclideanSpace ℝ (Fin n)) :
+    latticeBump n (x - latticePoint j) * latticeBump n (x - latticePoint j') = 0 :=
+  by_contra fun h' ↦ (abs_sub_le_one_of_latticeBump_mul_ne_zero h' i).not_gt h
 
 /-- **The integer translates of `latticeBump n` form a partition of unity:**
 `∑_{j ∈ ℤⁿ} χ(x - j) = 1`. -/
