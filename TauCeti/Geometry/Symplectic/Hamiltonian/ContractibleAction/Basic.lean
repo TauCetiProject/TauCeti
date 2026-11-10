@@ -189,6 +189,18 @@ theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [To
 
 end IsLoopCylinder
 
+/-- A `C²` map `w`, `1`-periodic in its second coordinate, sweeps out a cylinder from its loop
+`w (s, ·)` to its loop `w (s₀, ·)`: its restriction to `[s, s₀] × ℝ`, reparametrized affinely
+over `[0, 1] × ℝ`. -/
+theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
+    (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) (s s₀ : ℝ) :
+    IsLoopCylinder I (w ∘ Prod.map (fun σ ↦ s + (s₀ - s) * σ) id) (fun t ↦ w (s, t))
+      (fun t ↦ w (s₀, t)) where
+  contMDiff := hwc.comp (contMDiff_prodMap_affine s s₀)
+  apply_add_one z := hper (s + (s₀ - s) * z.1, z.2)
+  apply_zero t := by simp
+  apply_one t := by simp
+
 /-! ### Weakly exact forms and the cap area -/
 
 /-- A two-form is **weakly exact** when its integral over every sphere, a cylinder between two
@@ -272,8 +284,7 @@ cap of it. -/
 @[simp]
 theorem IsWeaklyExact.capArea_const (hφ : IsSmoothForm I 0 φ) (hw : IsWeaklyExact φ) (x : M) :
     capArea φ (fun _ ↦ x) = 0 := by
-  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap]
-  exact rectangleIntegral_comp_fst φ (fun _ ↦ x) _ _
+  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap, rectangleIntegral_const]
 
 end Continuous
 
