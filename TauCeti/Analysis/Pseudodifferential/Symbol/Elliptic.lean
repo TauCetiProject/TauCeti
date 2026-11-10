@@ -166,21 +166,6 @@ private theorem estimatesUpTo_succ {f : CoordinateSpace n × CoordinateSpace n �
       rw [← mixedDeriv_coordinateDeriv_snd, ← Symbol.order_sub_one_sub_length]
       exact hC x hx ξ hξ⟩
 
-/-- The dilated cutoffs `χ(ξ / t)`, `t ≥ 1`, satisfy the estimates of order `0` at all positions
-and frequencies. -/
-private theorem estimatesUpTo_cutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
-    (ht : 1 ≤ t) : EstimatesUpTo K ρ 0 N fun p => χ (t⁻¹ • p.2) := by
-  refine estimatesUpTo_of_forall fun α β => ?_
-  rcases eq_or_ne α [] with rfl | hα
-  · obtain ⟨C, -, hC⟩ := χ.exists_norm_iteratedFDeriv_comp_inv_smul_le β.length
-    refine ⟨C, fun x _ ξ => ?_⟩
-    rw [mixedDeriv_nil_comp_snd fun η => χ (t⁻¹ • η), zero_sub]
-    exact (norm_coordinateDeriv_le β (f := fun η => χ (t⁻¹ • η))
-      (((χ.contDiff (n := ⊤)).comp (contDiff_const_smul t⁻¹)).of_le (by exact_mod_cast le_top))
-      ξ).trans (hC t ht ξ)
-  · exact ⟨0, fun x _ ξ => by
-      rw [mixedDeriv_comp_snd (fun η => χ (t⁻¹ • η)) hα, norm_zero, zero_mul]⟩
-
 end Estimates
 
 /-! ### The derivatives of an inverse -/
@@ -367,21 +352,20 @@ private theorem exists_bound_cutoff_smul_inverse (χ : FrequencyCutoff (Coordina
   set G : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] V :=
     fun p => χ (s⁻¹ • p.2) • (a.coefficient p).inverse with hG
   have hGs : ContDiff ℝ ∞ G := contDiff_cutoff_smul_inverse χ a.contDiff_coefficient hinv hs hRs
-  have hχs : ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (t⁻¹ • p.2) :=
-    (χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)
+  have hχ : ContDiff ℝ ∞ fun η : CoordinateSpace n => χ (t⁻¹ • η) :=
+    (χ.contDiff (n := ⊤)).comp (contDiff_const_smul t⁻¹)
   -- Where the dilated cutoff `χ(ξ / t)` is nonzero, `G` is the inverse of `a`.
   have heq : (fun p : CoordinateSpace n × CoordinateSpace n =>
-      χ (t⁻¹ • p.2) • (a.coefficient p).inverse) =
-      fun p => ContinuousLinearMap.lsmul ℝ ℝ (χ (t⁻¹ • p.2)) (G p) := by
+      χ (t⁻¹ • p.2) • (a.coefficient p).inverse) = fun p => χ (t⁻¹ • p.2) • G p := by
     funext p
-    rw [ContinuousLinearMap.lsmul_apply]
     rcases le_or_gt ‖p.2‖ t with hp | hp
     · rw [χ.apply_inv_smul_eq_zero (by linarith) hp, zero_smul, zero_smul]
     · simp only [G, χ.apply_inv_smul_eq_one hs (by linarith : 2 * s ≤ ‖p.2‖), one_smul]
-  have hprod := EstimatesUpTo.bilinear (ContinuousLinearMap.lsmul ℝ ℝ) hχs hGs (zero_add _)
-    (estimatesUpTo_cutoff (K := K) (ρ := 2 * s) (N := α.length + β.length) χ ht)
-    (estimatesUpTo_cutoff_smul_inverse χ hA hinv hbound hs hRs _)
-  obtain ⟨C, hC⟩ := hprod α β le_rfl
+  choose B hB0 hB using fun i : ℕ => χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
+  choose D hD using fun w : List (Fin n) =>
+    estimatesUpTo_cutoff_smul_inverse χ hA hinv hbound hs hRs (α.length + w.length) α w le_rfl
+  set C := ∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
+    ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)
   refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
   rcases lt_or_ge ‖ξ‖ t with hξ | hξ
   · -- Below radius `t` the cut-off inverse vanishes near `(x, ξ)`.
@@ -392,9 +376,20 @@ private theorem exists_bound_cutoff_smul_inverse (χ : FrequencyCutoff (Coordina
       rw [χ.apply_inv_smul_eq_zero (by linarith) hq.le, zero_smul, Pi.zero_apply]
     rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
     positivity
-  · rw [heq]
-    exact (hC x hx ξ (by linarith)).trans
-      (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+  -- `‖D^i χ(· / t) ξ‖ ≤ B i ⟨ξ⟩ ^ (-i)` is `‖D^i χ(· / t) ξ‖ ⟨ξ⟩ ^ i ≤ B i`
+  have hB' (i : ℕ) : ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ *
+      (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i := by
+    calc ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)
+        ≤ B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by
+          gcongr
+          exact hB i t ht ξ
+      _ = B i := by
+          rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
+            Real.rpow_zero, mul_one]
+  rw [heq]
+  exact (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight hχ hGs hB'
+    (fun w => hD w x hx ξ (by linarith)) β).trans
+    (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
 
 end Inverse
 
