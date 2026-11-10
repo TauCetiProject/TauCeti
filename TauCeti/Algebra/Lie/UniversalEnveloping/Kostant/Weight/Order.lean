@@ -108,9 +108,9 @@ theorem orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg [Fintype η]
     (hα : degree α < 0) {r s : η} {n : ℕ} (hn : 0 < n)
     (hrs : wt r = wt s + n • α) :
     orderedWeightIndexEquiv degree wt s < orderedWeightIndexEquiv degree wt r := by
-  apply orderedWeightIndexEquiv_lt_of_degree_lt degree wt
-  rw [hrs, map_add, map_nsmul]
-  exact add_lt_of_neg_right _ (nsmul_neg hα hn.ne')
+  exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul degree wt (α := -α)
+    (by rw [map_neg]; exact neg_pos.mpr hα) hn
+    (by rw [hrs, smul_neg, add_neg_cancel_right])
 
 /-! ## The ordered basis and its weights -/
 
