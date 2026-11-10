@@ -227,7 +227,7 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
     (b : Module.Basis (Fin k) ℝ E) (C : E ≃L[ℝ] E') (l : Manifold.OrientationLift I M (Fin k))
     (l' : Manifold.OrientationLift J N (Fin k))
     (hl : l'.modelOrientation = Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
-    {f : M → N} {s : Set M} (hinj : InjOn f s) (hf : ∀ x ∈ s, MDifferentiableAt I J f x)
+    {f : M → N} {s : Set M} (hinj : InjOn f s)
     (ho : ∀ x ∈ s, Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hs : IsChartMeasurable I s)
@@ -237,6 +237,8 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
         (mpullback I J f φ).signedInChartAt b β (fun x ↦ l.signAt β x) z ∂μ =
       ∫ w in (extChartAt J α) '' (f '' s),
         φ.signedInChartAt (b.map C.toLinearEquiv) α (fun y ↦ l'.signAt α y) w ∂(μ.map C) := by
+  have hf (x : M) (hx : x ∈ s) :=
+    mdifferentiableAt_of_isInvertible_mfderiv (ho x hx).isInvertible_mfderiv
   obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data C hinj hf hs hsub
   have hC : MeasurableEmbedding C := C.toHomeomorph.measurableEmbedding
   rw [hC.setIntegral_map, ← himage,
@@ -316,7 +318,6 @@ a chart of `N`, whose preimage piece `e.source ∩ e ⁻¹' t` is chart measurab
 `M`, the signed chart integral of `ψ` over the preimage piece equals that of `φ` over `t`. -/
 private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpace E]
     [BorelSpace E] [MeasurableSpace E'] [BorelSpace E'] (hfe : EqOn f e e.source)
-    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x)
     (b : Module.Basis (Fin k) ℝ E) (C : E ≃L[ℝ] E') (l : Manifold.OrientationLift I M (Fin k))
     (l' : Manifold.OrientationLift J N (Fin k))
     (hl : l'.modelOrientation = Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
@@ -338,7 +339,7 @@ private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpa
       inter_eq_right.mpr ht]
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl
     ((e.injOn.mono hse).congr fun x hx ↦ (hfe (hse hx)).symm)
-    (fun x hx ↦ hf x (hse hx)) (fun x hx ↦ ho x (hse hx)) hs hsub b.addHaar
+    (fun x hx ↦ ho x (hse hx)) hs hsub b.addHaar
   rw [himage, Module.Basis.map_addHaar] at h
   rw [← h]
   exact setIntegral_congr_fun (hs.image_extChartAt _ hβ)
@@ -417,7 +418,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have hβ : disjointed u i ⊆ (extChartAt I (e.symm (α i))).source :=
     (disjointed_subset u i).trans (hus i)
   rw [hdisj] at hs hβ ⊢
-  exact integral_signedInChartAt_source_inter_preimage_eq e hfe hf b C l l' hl ho hψφ
+  exact integral_signedInChartAt_source_inter_preimage_eq e hfe b C l l' hl ho hψφ
     ((disjointed_subset w i).trans fun y hy ↦ hy.1.1) hs hβ ((disjointed_subset w i).trans (hw i))
 
 /-- Change of variables for top forms along an open partial homeomorphism agreeing on its source
@@ -556,7 +557,7 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
       (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
   have h := φ.integral_signedInChartAt_mpullback_eq b C l l' hl hf.injective.injOn
-    (fun x _ ↦ hmd x) (fun x _ ↦ ho x) hs
+    (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),
       hw i (disjointed_subset w i hx)⟩) b.addHaar
   rwa [image_preimage_eq_of_subset ((disjointed_subset w i).trans
