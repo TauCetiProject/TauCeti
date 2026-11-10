@@ -460,7 +460,6 @@ theorem filter_recut_eq (hcut : IsCut T v cut) (i : ℕ) :
       exact absurd ⟨hcell, hv.ge, hv.le.trans (Nat.le_succ v)⟩ h
   · rintro ⟨hlow, hhigh⟩
     have hj : j < μ.rowLen i := lt_of_lt_of_le hhigh hcl
-    have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     have h : T.InBlock v i j :=
       (T.inBlock_iff v).mpr ⟨hlow, lt_of_lt_of_le hhigh (hcut.cut_le i)⟩
     exact ⟨hj, by rw [recut_apply_of_inBlock hcut h, ite_eq_left hhigh]⟩
@@ -487,7 +486,6 @@ theorem filter_recut_eq_succ (hcut : IsCut T v cut) (i : ℕ) :
       exact absurd ⟨hcell, by omega, by omega⟩ h
   · rintro ⟨hlow, hhigh⟩
     have hj : j < μ.rowLen i := lt_of_lt_of_le hhigh hbl
-    have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     have h : T.InBlock v i j :=
       (T.inBlock_iff v).mpr ⟨le_trans (hcut.le_cut i) hlow, hhigh⟩
     exact ⟨hj, by rw [recut_apply_of_inBlock hcut h, ite_eq_right (Nat.not_lt.mpr hlow)]⟩
