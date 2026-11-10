@@ -256,7 +256,7 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
         ∫ y in ball x (2 * R), ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu := by
       apply setIntegral_mono_set hintegrable
       · exact ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _
-      · exact hsub.eventuallyLE
+      · exact hsub.eventuallySubset
     _ = (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) :=
       by rw [integral_norm_sub_rpow_ball (by linarith) htwoR, add_sub_cancel, Real.rpow_one,
         div_one]

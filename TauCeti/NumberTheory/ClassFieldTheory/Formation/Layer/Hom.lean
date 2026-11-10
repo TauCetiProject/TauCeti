@@ -299,7 +299,7 @@ theorem cohomologyMap_artinCharacterCup (a : F.level L.ground)
   rw [TauCeti.groupCohomology.mapCocycles₂_apply]
   simp only [TauCeti.groupCohomology.characterCarryCocycles₂_apply,
     ContCohomology.characterCarry_comp, map_zsmul, MonoidHom.coe_ofClass,
-    abelianizationCongr_of, MulEquiv.apply_symm_apply]
+    Group.abelianizationCongr_of, MulEquiv.apply_symm_apply]
   congr 2
   rw [TateCohomology.mapInvariants_apply_coe]
   -- `ofRes` acts on vectors as the coefficient homomorphism.

@@ -118,6 +118,7 @@ theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading
     MultilinearMap.map_smul_univ, smul_smul, evalNat_def, suspExp_def, negOnePowCast_add,
     negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i)) n]
+  simp only [RingHom.id_apply]
 
 /-- On homogeneous inputs, a map is its module-first unsuspension multiplied by the suspension
 Koszul sign. -/

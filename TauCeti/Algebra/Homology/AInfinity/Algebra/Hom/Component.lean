@@ -122,7 +122,7 @@ theorem taylor_eq_suspend_component (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 <
   rw [htwist, (PiTensorProduct.tprod R).map_smul_univ, map_smul, map_smul,
     MultilinearMap.suspExp_def, negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R _), smul_smul]
-  simp only [← Finset.prod_mul_distrib, ← negOnePowCast_add, ← two_mul,
+  simp only [RingHom.id_apply, ← Finset.prod_mul_distrib, ← negOnePowCast_add, ← two_mul,
     negOnePowCast_two_mul, Finset.prod_const_one, one_smul]
 
 /-! ### Degree and extensionality -/
