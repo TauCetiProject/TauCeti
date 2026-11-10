@@ -22,6 +22,8 @@ of measures.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on a fixed increasing exhaustion by π-system sets, without
   finite total mass.
+* `TauCeti.MeasureTheory.measurable_sum_measure` — a countable sum of measurable
+  measure-valued maps is measurable.
 * `TauCeti.MeasureTheory.measurable_sum_smul_dirac` — a countable mixture of Dirac measures at
   fixed atoms is measurable when each weight is measurable.
 * `TauCeti.MeasureTheory.measurable_sum_dirac` — the counting measure of a countable tuple is
@@ -50,6 +52,15 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+/-- A countable sum of measurable measure-valued maps is measurable. -/
+theorem measurable_sum_measure {β ι α : Type*} [MeasurableSpace β] [MeasurableSpace α]
+    [Countable ι] {μ : β → ι → Measure α}
+    (h : ∀ i, Measurable fun b => μ b i) :
+    Measurable fun b => Measure.sum (μ b) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp (h i)
+
 /-- A countable mixture of Dirac measures at fixed atoms `g i` is measurable in the weights.
 
 Evaluating on a measurable set turns the measure into the sum
@@ -58,20 +69,15 @@ indexed by a countable type of their own, so the ambient space `α` may be uncou
 theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [MeasurableSpace α]
     [Countable ι] {f : β → ι → ℝ≥0∞} {g : ι → α}
     (hf : ∀ i, Measurable fun b => f b i) :
-    Measurable fun b => Measure.sum fun i => f b i • Measure.dirac (g i) := by
-  refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
-  exact Measurable.tsum fun i => (hf i).mul_const _
+    Measurable fun b => Measure.sum fun i => f b i • Measure.dirac (g i) :=
+  measurable_sum_measure fun i => (hf i).smul_measure (Measure.dirac (g i))
 
 /-- The counting measure of a countable tuple is measurable in the tuple. Repeated entries
 contribute separate Dirac occurrences. -/
 @[fun_prop]
 theorem measurable_sum_dirac {ι α : Type*} [Countable ι] [MeasurableSpace α] :
-    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) := by
-  refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs]
-  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp
-    (Measure.measurable_dirac.comp (measurable_pi_apply i))
+    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) :=
+  measurable_sum_measure fun i => Measure.measurable_dirac.comp (measurable_pi_apply i)
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
 structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/
