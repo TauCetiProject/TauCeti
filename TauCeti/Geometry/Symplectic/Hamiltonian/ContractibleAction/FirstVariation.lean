@@ -60,7 +60,8 @@ orbits.
 
 The converse follows the chart-variation argument of the variational characterization of
 geodesics, `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`, and reuses its chart variations
-`TauCeti.Manifold.chartVariation`, with amplitude `sin s` so that the displaced loops stay in a
+`TauCeti.Manifold.chartVariation`, with amplitude `sin s` (`TauCeti.Manifold.sinChartVariation`)
+so that the displaced loops stay in a
 chart for every `s`.
 
 ## References
@@ -132,14 +133,6 @@ variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M}
 
 namespace SmoothTwoForm.IsNondegenerate
 
-/-- The integrand of the first variation formula, `σ(a - X_f, b) = -σ(b, a) - df(b)`. -/
-private theorem apply_sub_hamiltonianVectorField (h : σ.IsNondegenerate) (f : M → ℝ) (x : M)
-    (a b : TangentSpace I x) :
-    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
-  rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
-    sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField,
-    SmoothBundleForm.eval₂_swap]
-
 /-- **The first variation of the action functional.** Let `σ` be a nondegenerate weakly exact
 two-form, `H` a jointly `C¹` time-dependent Hamiltonian and `w` a `C²` variation through loops,
 `1`-periodic in `t`, whose loop `w (s₀, ·)` has a cap. Then the action of the loops `w (s, ·)` has
@@ -167,19 +160,6 @@ theorem hasDerivAt_contractibleLoopAction (h : σ.IsNondegenerate) (hw : IsWeakl
       (continuous_const.prodMk continuous_id)).neg.intervalIntegrable _ _)
     ((Manifold.continuous_mvfderiv_apply_mfderiv hH (hwc.of_le one_le_two) s₀).intervalIntegrable
       _ _)
-
-/-- For a jointly `C¹` Hamiltonian and a `C¹` map of the plane, the integrand of the first
-variation formula is continuous in `t`. -/
-private theorem continuous_apply_sub_hamiltonianVectorField (h : σ.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w)
-    (s₀ : ℝ) :
-    Continuous fun t ↦ σ.1 (w (s₀, t))
-      ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
-        mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)] :=
-  ((((σ.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hwc (1, 0) (0, 1)).comp
-    (continuous_const.prodMk continuous_id)).neg.sub
-    (Manifold.continuous_mvfderiv_apply_mfderiv hH hwc s₀)).congr fun t ↦
-    (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
 
 omit [FiniteDimensional ℝ E] in
 /-- Along a variation of the loop `γ`, the first-variation integrand at `s = 0` is written with
@@ -218,7 +198,7 @@ private theorem continuous_apply_curveVelocity_sub {γ : ℝ → M} (h : σ.IsNo
     (h0 : ∀ t, w (0, t) = γ t) :
     Continuous fun t ↦ σ.1 (γ t) ![Manifold.curveVelocity I γ t -
       σ.hamiltonianVectorField (H t) (γ t), mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] :=
-  (continuous_apply_sub_hamiltonianVectorField h hH hwc 0).congr fun t ↦
+  (h.continuous_apply_sub_hamiltonianVectorField hH hwc 0).congr fun t ↦
     apply_eq_of_apply_zero h0 ((hwc (0, t)).mdifferentiableAt one_ne_zero)
 
 end SmoothTwoForm.IsNondegenerate
@@ -282,89 +262,18 @@ end PeriodicBump
 
 /-! ### Chart variations of a loop -/
 
-section ChartVariation
-
-variable {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
-
-variable (I) in
-/-- The chart variation `TauCeti.Manifold.chartVariation` of the loop `γ` with amplitude `sin s`:
-`(s, t) ↦ ψ⁻¹ (ψ (γ t) + (sin s * φ t) • e)` at the times of `J`, and `γ` outside `J`. As the
-amplitude stays in `[-1, 1]`, the displaced points stay near `γ` for every `s`. -/
-private def loopChartVariation (γ : ℝ → M) (x₀ : M) (J : Set ℝ) (φ : ℝ → ℝ) (e : E)
-    (z : ℝ × ℝ) : M :=
-  Manifold.chartVariation I γ x₀ J φ e (Real.sin z.1) z.2
-
-/-- The loop of the chart variation at `s = 0` is `γ`. -/
-private theorem loopChartVariation_zero (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (t : ℝ) :
-    loopChartVariation I γ x₀ J φ e (0, t) = γ t :=
-  Manifold.chartVariation_of_mul_eq_zero hJ (by rw [Real.sin_zero, zero_mul])
-
 /-- The chart variation of a `1`-periodic loop, with a `1`-periodic set of times and profile, is
 `1`-periodic in `t`. -/
-private theorem loopChartVariation_add_one (hγ : ∀ t, γ (t + 1) = γ t)
-    (hJ : ∀ t, t + 1 ∈ J ↔ t ∈ J) (hφ : ∀ t, φ (t + 1) = φ t) (z : ℝ × ℝ) :
-    loopChartVariation I γ x₀ J φ e (z.1, z.2 + 1) = loopChartVariation I γ x₀ J φ e z := by
+private theorem sinChartVariation_add_one {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
+    (hγ : ∀ t, γ (t + 1) = γ t) (hJ : ∀ t, t + 1 ∈ J ↔ t ∈ J) (hφ : ∀ t, φ (t + 1) = φ t)
+    (z : ℝ × ℝ) :
+    Manifold.sinChartVariation I γ x₀ J φ e (z.1, z.2 + 1) =
+      Manifold.sinChartVariation I γ x₀ J φ e z := by
   by_cases h : z.2 ∈ J
-  · simp only [loopChartVariation, Manifold.chartVariation_of_mem h,
+  · simp only [Manifold.sinChartVariation_apply, Manifold.chartVariation_of_mem h,
       Manifold.chartVariation_of_mem ((hJ _).mpr h), hγ, hφ]
-  · simp only [loopChartVariation, Manifold.chartVariation_of_notMem h,
+  · simp only [Manifold.sinChartVariation_apply, Manifold.chartVariation_of_notMem h,
       Manifold.chartVariation_of_notMem (mt (hJ _).mp h), hγ]
-
-/-- Outside `J`, the variation field of the chart variation vanishes. -/
-private theorem mfderiv_loopChartVariation_of_notMem {t : ℝ}
-    (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (loopChartVariation I γ x₀ J φ e) (0, t))
-    (htJ : t ∉ J) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (loopChartVariation I γ x₀ J φ e) (0, t) (1, 0) = 0 := by
-  have hfun : (fun s ↦ loopChartVariation I γ x₀ J φ e (s, t)) = fun _ ↦ γ t :=
-    funext fun s ↦ Manifold.chartVariation_of_notMem htJ _
-  rw [← Manifold.curveVelocity_eq_mfderiv_fst (f := fun a b ↦ loopChartVariation I γ x₀ J φ e
-      (a, b)) hw, hfun, Manifold.curveVelocity_const]
-  rfl
-
-variable [I.Boundaryless]
-
-/-- On a `C²` manifold without boundary, the chart variation of a `C²` loop, for a `C²` profile
-supported in the open set `J` along which the displaced points stay in the chart target, is
-`C²`. -/
-private theorem contMDiff_loopChartVariation [IsManifold I 2 M] (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
-    (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
-      extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
-    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (loopChartVariation I γ x₀ J φ e) := by
-  rintro ⟨s, t⟩
-  exact (Manifold.contMDiffAt_chartVariation (n := 2) hJo hJ hφ hφJ (hγ t)
-    fun htJ ↦ hT t htJ _ (Real.abs_sin_le_one s)).comp (s, t)
-    ((Real.contDiff_sin.prodMap contDiff_id).contMDiff (s, t))
-
-/-- The variation field of the chart variation: at a time `t` of `J` it is `φ t` times the tangent
-vector at `γ t` with coordinates `e` in the tangent-bundle trivialization at `x₀`. -/
-private theorem mfderiv_loopChartVariation_of_mem [IsManifold I 2 M] (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
-    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ)
-    (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (loopChartVariation I γ x₀ J φ e)) {t : ℝ} (htJ : t ∈ J) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (loopChartVariation I γ x₀ J φ e) (0, t) (1, 0) =
-      φ t • (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e := by
-  -- the transverse curve of the chart variation at `t` is differentiable at `s = 0`
-  have hd : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s ↦ Manifold.chartVariation I γ x₀ J φ e s t) 0 :=
-    ((Manifold.contMDiffAt_chartVariation (n := 2) (e := e) (s := 0) hJo hJ hφ hφJ (hγ t)
-      fun htJ ↦ by simpa using (extChartAt I x₀).map_source (hJ t htJ)).comp 0
-      ((contDiff_id.prodMk contDiff_const).contMDiff 0)).mdifferentiableAt two_ne_zero
-  -- reparametrizing by `s ↦ sin s`, whose derivative at `0` is `1`, with the base point `sin 0`
-  -- normalized to `0`
-  have hvel : ∀ y, Real.sin 0 = y →
-      MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s ↦ Manifold.chartVariation I γ x₀ J φ e s t) y →
-      Manifold.curveVelocity I (fun s ↦ loopChartVariation I γ x₀ J φ e (s, t)) 0 =
-        Manifold.curveVelocity I (fun s ↦ Manifold.chartVariation I γ x₀ J φ e s t) y := by
-    rintro y rfl hy
-    have h := Manifold.curveVelocity_comp (c := 1) (by simpa using Real.hasDerivAt_sin 0) hy
-    rw [one_smul] at h
-    exact h
-  rw [← Manifold.curveVelocity_eq_mfderiv_fst (f := fun a b ↦ loopChartVariation I γ x₀ J φ e
-      (a, b)) ((hw (0, t)).mdifferentiableAt two_ne_zero), hvel 0 Real.sin_zero hd,
-    ← Manifold.variationField_apply, Manifold.variationField_chartVariation hJ htJ]
-
-end ChartVariation
 
 /-! ### Critical loops of the action -/
 
@@ -432,11 +341,11 @@ private theorem IsContractibleLoopActionCritical.integral_mul_apply_eq_zero [I.B
       Continuous fun t ↦ φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t -
         σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
           (γ t) e] := by
-  set w := loopChartVariation I γ x₀ J φ e
+  set w := Manifold.sinChartVariation I γ x₀ J φ e
   have hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w :=
-    contMDiff_loopChartVariation hJo hJ hT hφ hφJ hc.contMDiff
-  have hw0 : ∀ t, w (0, t) = γ t := loopChartVariation_zero hJ
-  have hwper := loopChartVariation_add_one (I := I) (x₀ := x₀) (e := e) hc.apply_add_one hJper
+    Manifold.contMDiff_sinChartVariation hJo hJ hT hφ hφJ hc.contMDiff
+  have hw0 : ∀ t, w (0, t) = γ t := Manifold.sinChartVariation_zero hJ
+  have hwper := sinChartVariation_add_one (I := I) (x₀ := x₀) (e := e) hc.apply_add_one hJper
     hφper
   -- the first-variation integrand along `w` is `φ g`
   have hpt : ∀ t, σ.1 (γ t) ![Manifold.curveVelocity I γ t -
@@ -445,11 +354,11 @@ private theorem IsContractibleLoopActionCritical.integral_mul_apply_eq_zero [I.B
         (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
     intro t
     by_cases htJ : t ∈ J
-    · rw [mfderiv_loopChartVariation_of_mem hJo hJ hφ hφJ hc.contMDiff hwc htJ,
+    · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ hφ hφJ hc.contMDiff hwc htJ,
         ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
         SmoothBundleForm.eval₂_apply, smul_eq_mul]
     · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
-      rw [mfderiv_loopChartVariation_of_notMem ((hwc (0, t)).mdifferentiableAt two_ne_zero)
+      rw [Manifold.mfderiv_sinChartVariation_of_notMem ((hwc (0, t)).mdifferentiableAt two_ne_zero)
         htJ, hφt, zero_mul]
       exact (σ.1 (γ t)).map_coord_zero 1 rfl
   have hd := h.hasDerivAt_contractibleLoopAction_of_apply_zero hw hH hwc hwper hw0

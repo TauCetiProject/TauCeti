@@ -14,8 +14,10 @@ public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -45,7 +47,10 @@ germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
-(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The orbits of
+(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The pairing
+`σ(a - X_f, b) = -σ(b, a) - df(b)` is the integrand of the first variation of the action
+functionals of Hamiltonian dynamics
+(`TauCeti.SmoothTwoForm.IsNondegenerate.apply_sub_hamiltonianVectorField`). The orbits of
 `G + f ∘ F`, where `G` is supported in `{F < s}` and `f` is constant on `(-∞, s]`, either stay in
 `{F < s}` as orbits of `G` or lie in a level of `F` as orbits of `f'(c) X_F`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
@@ -292,6 +297,28 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
   rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
+
+/-- The integrand of the first variation of an action functional:
+`σ(a - X_f, b) = -σ(b, a) - df(b)`. -/
+theorem apply_sub_hamiltonianVectorField (f : M → ℝ) (x : M) (a b : TangentSpace I x) :
+    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
+  rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
+    sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField,
+    SmoothBundleForm.eval₂_swap]
+
+/-- For a jointly `C¹` time-dependent Hamiltonian `H` and a `C¹` map `w` of the plane, the
+integrand `t ↦ σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action functional,
+taken at `(s₀, t)`, is continuous. -/
+theorem continuous_apply_sub_hamiltonianVectorField {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) {w : ℝ × ℝ → M}
+    (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (s₀ : ℝ) :
+    Continuous fun t ↦ σ.1 (w (s₀, t))
+      ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)] :=
+  ((((σ.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hw (1, 0) (0, 1)).comp
+    (continuous_const.prodMk continuous_id)).neg.sub
+    (Manifold.continuous_mvfderiv_apply_mfderiv hH hw s₀)).congr fun t ↦
+    (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
 
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :
