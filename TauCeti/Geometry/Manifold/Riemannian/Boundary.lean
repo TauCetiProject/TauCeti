@@ -81,8 +81,7 @@ private lemma contMDiff_subtypeVal_boundary :
   let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
       ((𝓡∂ (n + 1)).boundary M) :=
     boundaryOne n k M
-  exact (TauCeti.isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M
-    (by simp)).contMDiff
+  exact (TauCeti.isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M).contMDiff
 
 private lemma injective_mfderiv_subtypeVal_boundary :
     let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=

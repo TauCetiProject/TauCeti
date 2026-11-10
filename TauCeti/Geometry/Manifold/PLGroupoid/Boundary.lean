@@ -57,39 +57,14 @@ private theorem isPLOn_boundaryChart_symm_trans
         chartAt (EuclideanSpace ℝ (Fin n)) q)
       ((chartAt (EuclideanSpace ℝ (Fin n)) p).symm ≫ₕ
         chartAt (EuclideanSpace ℝ (Fin n)) q).source := by
-  set τ := (chartAt (EuclideanSpace ℝ (Fin n)) p).symm ≫ₕ chartAt (EuclideanSpace ℝ (Fin n)) q
-  set e₁ := chartAt (EuclideanHalfSpace (n + 1)) (p : M)
-  set e₂ := chartAt (EuclideanHalfSpace (n + 1)) (q : M)
-  have hG : IsPLOn ((𝓡∂ (n + 1)) ∘ (e₁.symm ≫ₕ e₂) ∘ (𝓡∂ (n + 1)).symm)
-      ((𝓡∂ (n + 1)).symm ⁻¹' (e₁.symm ≫ₕ e₂).source ∩ range (𝓡∂ (n + 1))) :=
-    ((mem_PLGroupoid_iff _).1 (HasGroupoid.compatible (chart_mem_atlas _ (p : M))
-      (chart_mem_atlas _ (q : M)))).1
-  -- A point of the source of the boundary transition is parametrized into the ambient source.
-  have hz₁ : ∀ z ∈ τ.source, EuclideanHalfSpace.boundaryParam n z ∈ e₁.target := by
-    intro z hz
-    have h := hz.1
-    rwa [OpenPartialHomeomorph.symm_symm, boundaryChartedSpace_chartAt_target M p] at h
-  have hsub : ∀ z ∈ τ.source,
-      EuclideanHalfSpace.boundaryParam n z ∈ (e₁.symm ≫ₕ e₂).source := by
-    intro z hz
-    have h₂ := hz.2
-    rw [OpenPartialHomeomorph.symm_symm, mem_preimage, boundaryChartedSpace_chartAt_source M q,
-      mem_preimage, boundaryChartedSpace_chartAt_symm_apply M p (hz₁ z hz)] at h₂
-    exact ⟨hz₁ z hz, h₂⟩
-  refine IsPLOn.congr
-    ((isPLOn_continuousAffineMap
+  have hG := ((mem_PLGroupoid_iff _).1 (HasGroupoid.compatible (G := PLGroupoid (𝓡∂ (n + 1)))
+    (chart_mem_atlas _ (p : M)) (chart_mem_atlas _ (q : M)))).1
+  exact ((isPLOn_continuousAffineMap
       (euclideanHalfSpaceBoundaryProj n).toContinuousAffineMap univ).comp
-      (hG.comp (isPLOn_continuousAffineMap
-        (euclideanHalfSpaceBoundaryParam n).toContinuousAffineMap _) fun z hz ↦ ?_)
-      (fun _ _ ↦ mem_univ _))
-    fun z hz ↦ ?_
-  · exact ⟨by simpa using hsub z hz, EuclideanHalfSpace.boundaryParam_mem_range z⟩
-  · simp only [τ, Function.comp_apply, OpenPartialHomeomorph.coe_trans,
-      boundaryChartedSpace_chartAt_apply, ContinuousLinearMap.coe_toContinuousAffineMap,
-      EuclideanHalfSpace.modelWithCornersEuclideanHalfSpace_symm_boundaryParam,
-      EuclideanHalfSpace.boundaryProj_coe]
-    rw [boundaryChartedSpace_chartAt_symm_apply M p (hz₁ z hz),
-      modelWithCornersEuclideanHalfSpace_toFun]
+    (hG.comp (isPLOn_continuousAffineMap
+      (euclideanHalfSpaceBoundaryParam n).toContinuousAffineMap _)
+      (mapsTo_boundaryParam_boundaryChartedSpace_chartAt_symm_trans M p q))
+    (fun _ _ ↦ mem_univ _)).congr (eqOn_boundaryChartedSpace_chartAt_symm_trans M p q)
 
 variable (M) in
 /-- **The boundary of a PL manifold with boundary is a PL manifold** of dimension one less: the

@@ -39,7 +39,7 @@ theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
       ContMDiffWithinAt I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) s x := by
   let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
     IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
-  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) M hk
+  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M
   refine ⟨fun hf ↦ hi.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hf, fun hf ↦ ?_⟩
   obtain ⟨V, hV, hxV, r, hr, hrf⟩ :=
     (hi.isImmersion.isImmersionAt (f x)).exists_contMDiffOn_retraction hi.isEmbedding

@@ -552,6 +552,7 @@ theorem exists_homeomorph_prod_Ico_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (U : Set M) (ε : ℝ), IsOpen U ∧ x ∈ U ∧ 0 < ε ∧
       Nonempty (↥U ≃ₜ ↥(U ∩ (𝓡∂ (n + 1)).boundary M) × ↥(Set.Ico (0 : ℝ) ε)) := by
+  -- Take `k = 0`: every charted space is a `C^0` manifold, so no smoothness of `M` is assumed.
   obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) hx
   exact ⟨φ.source, ε, φ.open_source, hxφ, h.height_pos,
     ⟨h.homeomorphProd.trans

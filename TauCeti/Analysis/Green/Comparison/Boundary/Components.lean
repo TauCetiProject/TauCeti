@@ -157,8 +157,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
   obtain ⟨l, rfl⟩ := o.exists_lift
   let φ := mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)
   let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := 1) M
-    (by simp : (∞ : WithTop ℕ∞) ≠ 0)).contMDiff
+  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := ∞) M).contMDiff
   have hg : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℂ) 1 g :=
     (hf.of_le (by norm_num)).comp (hinc.of_le (by simp))
   have he : boundaryRestriction φ = mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) g

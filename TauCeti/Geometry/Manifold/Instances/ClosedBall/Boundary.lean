@@ -57,8 +57,7 @@ def sphereDiffeomorphBoundaryClosedBall :
   contMDiff_invFun := by
     apply ContMDiff.codRestrict_sphere
     exact contMDiff_subtypeVal_closedBall.comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := n) (closedBall (0 : E) 1)
-        (by simp : (ω : ℕ∞ω) ≠ 0)).contMDiff
+      (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := ω) (closedBall (0 : E) 1)).contMDiff
 
 /-- The identification of the sphere with the intrinsic boundary preserves its ambient point. -/
 @[simp]
