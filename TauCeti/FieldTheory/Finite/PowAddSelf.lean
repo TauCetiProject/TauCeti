@@ -56,7 +56,7 @@ variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 
 /-- A field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, is finite,
 since `Nat.card` of an infinite type is `0`. -/
-theorem finite_of_natCard_eq_pow_sq (hK : Nat.card K = (p ^ n) ^ 2) : Finite K :=
+private theorem finite_of_natCard_eq_pow_sq (hK : Nat.card K = (p ^ n) ^ 2) : Finite K :=
   Nat.finite_of_card_ne_zero
     (by rw [hK]; exact pow_ne_zero 2 (pow_ne_zero n (expChar_pos K p).ne'))
 
