@@ -148,7 +148,7 @@ theorem halfSpacePoissonKernel_pos {v : {w : E // ‖w‖ = 1}} {x y : E}
     (hx : 0 < ⟪(v : E), x⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpacePoissonKernel n v x y := by
   rw [halfSpacePoissonKernel_def]
-  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
+  have hn : 0 < n := pos_of_ne_euclideanSpace hxy
   have hnreal : (0 : ℝ) < n := by exact_mod_cast hn
   exact mul_pos (mul_pos (by norm_num) hx)
     (mul_pos (inv_pos.mpr (mul_pos hnreal (volume_real_unitBall_pos n)))
