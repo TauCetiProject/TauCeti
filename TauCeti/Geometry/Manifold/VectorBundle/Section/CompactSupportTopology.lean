@@ -43,16 +43,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
 
-/-- Inclusion of a fixed-compact support stage into compactly supported native sections. -/
-def compactSupportInclusion (K : Compacts M) :
-    supportedIn I F n V K →ₗ[ℝ] compactlySupported I F n V :=
-  (supportedIn I F n V K).inclusion (supportedIn_le_compactlySupported K.isCompact)
-
-@[simp]
-theorem compactSupportInclusion_apply (K : Compacts M)
-    (s : supportedIn I F n V K) :
-    (compactSupportInclusion K s : Cₛ^n⟮I; F, V⟯) = s := (rfl)
-
 variable [ContMDiffVectorBundle n F V I] [IsManifold I n M]
   {ι : Type*} (e : ι → Trivialization F (π F V))
   [∀ i, MemTrivializationAtlas (e i)]
@@ -115,7 +105,10 @@ theorem continuous_val_compactlySupportedTopology :
   let := continuousSMul_frameTopology (I := I) (n := n) e U hU
   let := locallyConvexSpace_frameTopology (I := I) (n := n) e U hU
   exact (continuous_compactlySupportedTopology_iff e U hU
-    (compactlySupported I F n V).subtype).2 fun _ => continuous_subtype_val
+    (compactlySupported I F n V).subtype).2 fun K => by
+      simpa only [Function.comp_def, Submodule.subtype_apply, compactSupportInclusion_apply]
+        using (continuous_subtype_val :
+          Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯))
 
 /-- Each fixed-compact stage retains exactly its compact derivative topology inside the
 test space; the final locally convex construction does not collapse a stage. -/
@@ -126,7 +119,10 @@ theorem isEmbedding_compactSupportInclusion (K : Compacts M) :
   let := frameTopology (I := I) (n := n) e U hU
   let := compactlySupportedTopology (I := I) (n := n) e U hU
   exact Topology.IsEmbedding.of_comp (continuous_compactSupportInclusion e U hU K)
-    (continuous_val_compactlySupportedTopology e U hU) Topology.IsEmbedding.subtypeVal
+    (continuous_val_compactlySupportedTopology e U hU) (by
+      simpa only [Function.comp_def, compactSupportInclusion_apply]
+        using (Topology.IsEmbedding.subtypeVal :
+          Topology.IsEmbedding (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))
 
 /-- For tests in one fixed-compact stage, convergence in the test topology is equivalent to
 convergence in the compact derivative stage topology. -/
@@ -159,7 +155,11 @@ theorem compactlySupportedTopology_eq_induced [CompactSpace M] :
     ⟨r, continuous_subtype_val.subtype_mk _⟩
   exact TauCeti.FinalLocallyConvexTopology.eq_of_rightInverse
     (compactSupportInclusion (I := I) (F := F) (V := V) (n := n))
-    (fun _ => continuous_subtype_val.subtype_mk _) K R (fun _ => rfl)
+    (fun K => continuous_induced_rng.2 (by
+      simpa only [Function.comp_def, compactSupportInclusion_apply]
+        using (continuous_subtype_val :
+          Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))) K R
+    (fun s => Subtype.ext (compactSupportInclusion_apply K (R s)))
 
 section Cover
 
