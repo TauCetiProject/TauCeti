@@ -152,16 +152,15 @@ theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} 
     {C : ℝ≥0∞} (h : ∀ φ : α → ℝ≥0∞, Measurable φ → (∀ x, φ x ≤ G x) →
       ∫⁻ x, φ x ^ q ∂μ ≠ ∞ → ∫⁻ x, φ x ^ q ∂μ ≤ C) :
     ∫⁻ x, G x ^ q ∂μ ≤ C := by
-  -- The integral of `G ^ q` is a supremum of integrals of simple functions `s ≤ G ^ q`, and
-  -- `s ^ (1 / q)` is a measurable minorant of `G`.
-  rw [lintegral_def]
-  refine iSup₂_le fun s hs => ?_
-  rw [← SimpleFunc.lintegral_eq_lintegral]
-  have hsG (x : α) : s x ^ q⁻¹ ≤ G x :=
-    (ENNReal.rpow_le_rpow (hs x) (inv_nonneg.2 hq.le)).trans_eq (ENNReal.rpow_rpow_inv hq.ne' _)
-  calc ∫⁻ x, s x ∂μ = ∫⁻ x, (s x ^ q⁻¹) ^ q ∂μ := by
+  -- `G ^ q` has a measurable minorant `g` with the same integral, and `g ^ (1 / q)` is a
+  -- measurable minorant of `G`.
+  obtain ⟨g, hgm, hgG, hint⟩ := exists_measurable_le_lintegral_eq μ (fun x ↦ G x ^ q)
+  have hgG' (x : α) : g x ^ q⁻¹ ≤ G x :=
+    (ENNReal.rpow_le_rpow (hgG x) (inv_nonneg.2 hq.le)).trans_eq (ENNReal.rpow_rpow_inv hq.ne' _)
+  rw [hint]
+  calc ∫⁻ x, g x ∂μ = ∫⁻ x, (g x ^ q⁻¹) ^ q ∂μ := by
         simp_rw [ENNReal.rpow_inv_rpow hq.ne']
-    _ ≤ C := lintegral_rpow_le_of_forall_le_of_measurable (s.measurable.pow_const _) hq
-        (fun φ hφ hφg => h φ hφ fun x => (hφg x).trans (hsG x))
+    _ ≤ C := lintegral_rpow_le_of_forall_le_of_measurable (hgm.pow_const _) hq
+        (fun φ hφ hφg => h φ hφ fun x => (hφg x).trans (hgG' x))
 
 end TauCeti
