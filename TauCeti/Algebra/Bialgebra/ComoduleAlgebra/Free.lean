@@ -82,18 +82,6 @@ restriction of `x` to `H`, and it relates `u` to `x ∘ t = u g`. -/
 
 variable {T : Type u} [CommRing T]
 
--- `(a ⊗ h) ⊗ h' ↦ x (a ⊗ h) τ(h')`, on `a ⊗ v` for `v : H ⊗[R] H`
-omit [ComoduleAlgebra R H A] in
-private theorem liftRingHom_assoc_symm_tmul (x : A ⊗[R] H →+* T) (τ : H →+* T)
-    (hτ : x.comp (algebraMap R (A ⊗[R] H)) = τ.comp (algebraMap R H))
-    (hτ' : (x.comp (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom).comp (algebraMap R H) =
-      τ.comp (algebraMap R H)) (a : A) (v : H ⊗[R] H) :
-    liftRingHom x τ hτ ((TensorProduct.assoc R A H H).symm (a ⊗ₜ v)) =
-      x (a ⊗ₜ 1) * liftRingHom (x.comp (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom) τ hτ' v := by
-  induction v using TensorProduct.inductionOn with
-  | add v v' hv hv' => simp [mul_add, tmul_add, hv, hv']
-  | tmul h₁ h₂ => simp [← mul_assoc, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
-
 -- `(coact a) ⊗ h ↦ x (coact a) τ(h)`
 private theorem liftRingHom_rTensor_coact (x : A ⊗[R] H →+* T) (τ : H →+* T)
     (hτ : x.comp (algebraMap R (A ⊗[R] H)) = τ.comp (algebraMap R H))
