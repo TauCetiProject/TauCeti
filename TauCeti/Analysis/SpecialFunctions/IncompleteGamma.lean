@@ -120,16 +120,37 @@ outside the valid range `0 < s` of the shape parameter. -/
 def regularizedGamma (s x : ℝ) : ℝ :=
   if 0 < s then lowerIncompleteGamma s x / Real.Gamma s else 0
 
-/-- In the valid range, `γ(s, x)` is the truncated Euler integral. -/
-theorem lowerIncompleteGamma_eq_integral (hs : 0 < s) (hx : 0 ≤ x) :
-    lowerIncompleteGamma s x = ∫ t in (0 : ℝ)..x, t ^ (s - 1) * Real.exp (-t) := by
-  rw [lowerIncompleteGamma, ite_eq_left hs, max_eq_left hx]
-
 /-- Outside the valid range of the shape parameter, `γ(s, x)` is `0`. -/
 @[simp]
 theorem lowerIncompleteGamma_eq_zero_of_nonpos_left (hs : s ≤ 0) (x : ℝ) :
     lowerIncompleteGamma s x = 0 :=
   ite_eq_right (not_lt.2 hs)
+
+/-- For `s ≤ 0` and `0 < x`, Euler's integrand `t ^ (s - 1) * exp (-t)` is not integrable at the
+origin. -/
+theorem not_intervalIntegrable_rpow_mul_exp_neg (hs : s ≤ 0) (hx : 0 < x) :
+    ¬ IntervalIntegrable (fun t : ℝ => t ^ (s - 1) * Real.exp (-t)) volume 0 x := by
+  intro h
+  have h' := h.mul_continuousOn (g := Real.exp) Real.continuous_exp.continuousOn
+  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1)) (Ioo 0 x) := by
+    refine ((intervalIntegrable_iff_integrableOn_Ioc_of_le hx.le).1
+      (h'.congr ?_)).mono_set Ioo_subset_Ioc_self
+    intro t _
+    simp [mul_assoc, ← Real.exp_add]
+  rw [intervalIntegral.integrableOn_Ioo_rpow_iff hx] at hint
+  linarith
+
+/-- For `0 ≤ x`, `γ(s, x)` is the truncated Euler integral. For `s ≤ 0` both sides are `0`, the
+integral being the junk value of a non-integrable function. -/
+theorem lowerIncompleteGamma_eq_integral (hx : 0 ≤ x) :
+    lowerIncompleteGamma s x = ∫ t in (0 : ℝ)..x, t ^ (s - 1) * Real.exp (-t) := by
+  by_cases hs : 0 < s
+  · rw [lowerIncompleteGamma, ite_eq_left hs, max_eq_left hx]
+  · rw [lowerIncompleteGamma_eq_zero_of_nonpos_left (not_lt.1 hs)]
+    rcases hx.eq_or_lt with rfl | hx
+    · simp
+    · exact (intervalIntegral.integral_undef
+        (not_intervalIntegrable_rpow_mul_exp_neg (not_lt.1 hs) hx)).symm
 
 /-- Below the support, `γ(s, x)` is `0`. -/
 @[simp]
@@ -178,7 +199,7 @@ theorem lowerIncompleteGamma_nonneg (s x : ℝ) : 0 ≤ lowerIncompleteGamma s x
   · rw [lowerIncompleteGamma_eq_zero_of_nonpos_left hs]
   rcases le_or_gt x 0 with hx | hx
   · rw [lowerIncompleteGamma_eq_zero_of_nonpos_right _ hx]
-  · rw [lowerIncompleteGamma_eq_integral hs hx.le]
+  · rw [lowerIncompleteGamma_eq_integral hx.le]
     exact intervalIntegral.integral_nonneg hx.le fun t ht =>
       mul_nonneg (Real.rpow_nonneg ht.1 _) (Real.exp_pos _).le
 
@@ -201,7 +222,7 @@ theorem lowerIncompleteGamma_monotone (s : ℝ) : Monotone (lowerIncompleteGamma
   rcases le_or_gt u 0 with hu | hu
   · rw [lowerIncompleteGamma_eq_zero_of_nonpos_right _ hu]
     exact lowerIncompleteGamma_nonneg _ _
-  · rw [lowerIncompleteGamma_eq_integral hs hu.le, lowerIncompleteGamma_eq_integral hs hv.le]
+  · rw [lowerIncompleteGamma_eq_integral hu.le, lowerIncompleteGamma_eq_integral hv.le]
     refine intervalIntegral.integral_mono_interval le_rfl hu.le huv ?_
       (intervalIntegrable_rpow_mul_exp_neg (by linarith : (-1 : ℝ) < s - 1) 0 v)
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
@@ -261,7 +282,7 @@ theorem hasDerivAt_lowerIncompleteGamma (hs : 0 < s) (hx : 0 < x) :
         (Real.continuous_exp.comp continuous_neg).continuousAt)
   refine hderiv.congr_of_eventuallyEq ?_
   filter_upwards [eventually_gt_nhds hx] with y hy
-  rw [lowerIncompleteGamma_eq_integral hs hy.le]
+  rw [lowerIncompleteGamma_eq_integral hy.le]
 
 /-- The derivative of `γ(s, ·)` at a positive point is the integrand. -/
 theorem deriv_lowerIncompleteGamma (hs : 0 < s) (hx : 0 < x) :
@@ -289,9 +310,9 @@ theorem deriv_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
 The complex partial gamma function carries the integration by parts behind
 `TauCeti.lowerIncompleteGamma_add_one`, so this identification is what lets that recurrence be
 imported rather than reproved. -/
-theorem ofReal_lowerIncompleteGamma_eq_partialGamma (hs : 0 < s) (hx : 0 ≤ x) :
+theorem ofReal_lowerIncompleteGamma_eq_partialGamma (hx : 0 ≤ x) :
     ((lowerIncompleteGamma s x : ℝ) : ℂ) = Complex.partialGamma (s : ℂ) x := by
-  rw [lowerIncompleteGamma_eq_integral hs hx, Complex.partialGamma,
+  rw [lowerIncompleteGamma_eq_integral hx, Complex.partialGamma,
     ← intervalIntegral.integral_ofReal]
   refine intervalIntegral.integral_congr fun t ht => ?_
   have ht0 : (0 : ℝ) ≤ t := (Set.uIcc_of_le hx ▸ ht : t ∈ Icc (0 : ℝ) x).1
@@ -313,8 +334,8 @@ theorem lowerIncompleteGamma_add_one (hs : 0 < s) (hx : 0 ≤ x) :
   -- difference and the power `(x : ℂ) ^ (s : ℂ)` on the right-hand side.
   have hshift : (s : ℂ) + 1 = ((s + 1 : ℝ) : ℂ) := by rw [Complex.ofReal_add, Complex.ofReal_one]
   rw [hshift,
-    ← ofReal_lowerIncompleteGamma_eq_partialGamma hs1 hx,
-    ← ofReal_lowerIncompleteGamma_eq_partialGamma hs hx, ← Complex.ofReal_cpow hx s,
+    ← ofReal_lowerIncompleteGamma_eq_partialGamma hx,
+    ← ofReal_lowerIncompleteGamma_eq_partialGamma hx, ← Complex.ofReal_cpow hx s,
     ← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_sub, Complex.ofReal_inj] at key
   rw [key]
   ring
@@ -372,7 +393,7 @@ theorem regularizedGamma_le_one (s x : ℝ) : regularizedGamma s x ≤ 1 := by
 @[simp]
 theorem lowerIncompleteGamma_one (hx : 0 ≤ x) :
     lowerIncompleteGamma 1 x = 1 - Real.exp (-x) := by
-  rw [lowerIncompleteGamma_eq_integral one_pos hx]
+  rw [lowerIncompleteGamma_eq_integral hx]
   simp only [sub_self, Real.rpow_zero, one_mul]
   rw [intervalIntegral.integral_comp_neg fun t => Real.exp t, integral_exp]
   simp
