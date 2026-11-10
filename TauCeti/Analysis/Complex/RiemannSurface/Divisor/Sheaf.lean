@@ -181,7 +181,7 @@ theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x
   exact
   { meromorphicAt := meromorphicAt_of_eventually_mdifferentiableAt hev
     neg_le_meromorphicOrderAt := by
-      simpa [hD] using meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt hev
+      simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
     apply_eq_zero := fun h ↦ absurd hD h.ne' }
 

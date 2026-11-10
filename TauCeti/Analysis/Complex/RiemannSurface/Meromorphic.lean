@@ -51,9 +51,10 @@ and products add the two divisor bounds.
   where the function tends to zero.
 * `TauCeti.RiemannSurface.MeromorphicAt.eventually_contMDiffAt`: a meromorphic function is
   holomorphic on a punctured neighbourhood of its centre.
-* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
-  `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
-  function is meromorphic, of nonnegative order.
+* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function is
+  meromorphic.
+* `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_continuousAt`: a function continuous at `x`
+  has nonnegative order there.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
@@ -190,12 +191,12 @@ theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
   (analyticAt_comp_chartAt_symm hf).meromorphicAt
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
-/-- A function holomorphic near `x` has nonnegative order at `x`. -/
-theorem meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : 0 ≤ meromorphicOrderAt f x := by
+/-- A function continuous at `x` has nonnegative order at `x`. -/
+theorem meromorphicOrderAt_nonneg_of_continuousAt (hf : ContinuousAt f x) :
+    0 ≤ meromorphicOrderAt f x := by
   by_cases hm : MeromorphicAt f x
   · refine (_root_.tendsto_nhds_iff_meromorphicOrderAt_nonneg hm).1 ⟨f x, ?_⟩
-    exact (hf.self_of_nhds.continuousAt.tendsto.comp
+    exact (hf.tendsto.comp
       ((chartAt ℂ x).tendsto_symm (mem_chart_source ℂ x))).mono_left nhdsWithin_le_nhds
   · rw [meromorphicOrderAt_of_not_meromorphicAt hm]
 
