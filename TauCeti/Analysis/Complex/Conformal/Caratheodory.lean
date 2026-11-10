@@ -184,11 +184,6 @@ theorem subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))]
     (hζ : dist ζ c = r) :
     (clusterSetOn f (ball c r) ζ).Subsingleton := by
-  -- a degenerate disc is empty
-  rcases (dist_nonneg.trans_eq hζ).eq_or_lt with rfl | hr
-  · intro v hv _ _
-    simp [mem_clusterSetOn_iff, MapClusterPt, ClusterPt] at hv
-    exact absurd rfl hv.ne
   -- Cauchy criterion: two points of a crosscut neighbourhood have images within its diameter of
   -- each other.
   refine subsingleton_clusterSetOn_of_forall_exists fun ε hε => ?_
