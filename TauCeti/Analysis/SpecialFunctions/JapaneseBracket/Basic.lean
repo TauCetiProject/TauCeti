@@ -48,6 +48,9 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_smul_sq_rpow`,
+  `TauCeti.integrable_of_norm_le_one_add_norm_sq_rpow`: the dilated weight `⟨c x⟩ ^ s` is
+  integrable for `s < -d`, and so is every function bounded by a multiple of `⟨x⟩ ^ s`.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -95,6 +98,23 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   beta_reduce
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
+
+/-- The dilated Japanese bracket weight `x ↦ ⟨c x⟩ ^ s = (1 + ‖c • x‖ ^ 2) ^ (s / 2)` with `c ≠ 0`
+is integrable on a finite-dimensional real normed space of dimension `d` when `s < -d`, for every
+additive Haar measure. -/
+theorem integrable_one_add_norm_smul_sq_rpow (μ : Measure V) [μ.IsAddHaarMeasure] {c s : ℝ}
+    (hc : c ≠ 0) (hs : s < -finrank ℝ V) :
+    Integrable (fun x : V ↦ (1 + ‖c • x‖ ^ 2) ^ (s / 2)) μ := by
+  simpa only [neg_neg] using
+    (integrable_rpow_neg_one_add_norm_sq (μ := μ) (r := -s) (by linarith)).comp_smul hc
+
+/-- A function bounded by `C ⟨x⟩ ^ s = C (1 + ‖x‖ ^ 2) ^ (s / 2)` with `s < -d` is integrable on a
+finite-dimensional real normed space of dimension `d`, for every additive Haar measure. -/
+theorem integrable_of_norm_le_one_add_norm_sq_rpow {F : Type*} [NormedAddCommGroup F]
+    {μ : Measure V} [μ.IsAddHaarMeasure] {f : V → F} (hf : AEStronglyMeasurable f μ) {C s : ℝ}
+    (hs : s < -finrank ℝ V) (hC : ∀ x, ‖f x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (s / 2)) : Integrable f μ :=
+  ((integrable_rpow_neg_one_add_norm_sq (μ := μ) (r := -s) (by linarith)).const_mul C).mono' hf
+    (.of_forall fun x ↦ by simpa only [neg_neg] using hC x)
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

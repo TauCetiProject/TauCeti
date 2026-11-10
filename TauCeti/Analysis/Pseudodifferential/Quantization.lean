@@ -78,6 +78,11 @@ frequency derivative of its Fourier transform.
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
   with `∂_h (Op(a) u) = Op(a) (∂_h u) + Op(∂ₓ a · h) u`.
+* `TauCeti.hasFDerivAt_fourierChar_inner_smul` and `TauCeti.norm_fourierCharSMulFDeriv_le`: the
+  derivative `TauCeti.fourierCharSMulFDeriv` of a map `g` multiplied by a Fourier phase
+  `𝐞 ⟪ζ, L p⟫`, and its bound `(A + ‖L‖ B) ⟨2πζ⟩ ^ (m + 1)` when `‖∂g‖ ≤ A ⟨2πζ⟩ ^ m` and
+  `‖g‖ ≤ B ⟨2πζ⟩ ^ m`. These differentiate both the quantization integrand and the kernel
+  integrand (`TauCeti.quantizationKernel`) under the integral sign.
 * `TauCeti.Symbol.coordinateDeriv_quantizeSchwartzValue` and
   `TauCeti.Symbol.contDiff_quantizeSchwartzValue`: for a symbol `a ∈ S^m`, the same rule
   `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` for coordinate derivatives, and smoothness
@@ -353,27 +358,110 @@ section Deriv
 
 open ContinuousLinearMap
 
+section Phase
+
+/-! The derivative of a map multiplied by a Fourier phase `𝐞 ⟪ζ, L p⟫`, shared by the
+quantization integrand and the kernel integrand (`TauCeti.quantizationKernel`). -/
+
+variable {X F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
+
+/-- The derivative at `p` of `p ↦ 𝐞 ⟪ζ, L p⟫ • g p`, for a continuous linear phase `L` and a map
+`g` with value `v` and derivative `D` at `p`: the derivative `D` of `g` plus the derivative
+`2πi ⟪ζ, L ·⟫ v` of the phase, both multiplied by the phase. -/
+def fourierCharSMulFDeriv (L : X →L[ℝ] E) (ζ : E) (p : X) (v : F) (D : X →L[ℝ] F) :
+    X →L[ℝ] F :=
+  (𝐞 ⟪ζ, L p⟫ : ℂ) • D +
+    (toSpanSingleton ℝ (2 * π * Complex.I * 𝐞 ⟪ζ, L p⟫) ∘L innerSL ℝ ζ ∘L L).smulRight v
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+theorem fourierCharSMulFDeriv_apply (L : X →L[ℝ] E) (ζ : E) (p : X) (v : F) (D : X →L[ℝ] F)
+    (q : X) :
+    fourierCharSMulFDeriv L ζ p v D q =
+      𝐞 ⟪ζ, L p⟫ • (D q + (2 * π * Complex.I * ⟪ζ, L q⟫ : ℂ) • v) := by
+  simp only [fourierCharSMulFDeriv, add_apply, smul_apply, comp_apply, smulRight_apply,
+    toSpanSingleton_apply, innerSL_apply_apply, Circle.smul_def, smul_add, smul_smul,
+    Complex.real_smul]
+  congr 2
+  ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- **Derivative of a map multiplied by a Fourier phase.** -/
+theorem hasFDerivAt_fourierChar_inner_smul (L : X →L[ℝ] E) (ζ : E) {g : X → F}
+    {D : X →L[ℝ] F} {p : X} (hg : HasFDerivAt g D p) :
+    HasFDerivAt (fun p ↦ 𝐞 ⟪ζ, L p⟫ • g p) (fourierCharSMulFDeriv L ζ p (g p) D) p := by
+  have hc := (Real.hasDerivAt_fourierChar ⟪ζ, L p⟫).hasFDerivAt.comp p
+    ((innerSL ℝ ζ ∘L L).hasFDerivAt (x := p))
+  simp only [Circle.smul_def]
+  exact hc.smul hg
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- If `‖D‖ ≤ A ⟨2πζ⟩ ^ m` and `‖v‖ ≤ B ⟨2πζ⟩ ^ m`, the derivative of `p ↦ 𝐞 ⟪ζ, L p⟫ • g p` is
+bounded by `(A + ‖L‖ B) ⟨2πζ⟩ ^ (m + 1)`: the derivative of the phase costs one power of the
+frequency. -/
+theorem norm_fourierCharSMulFDeriv_le {L : X →L[ℝ] E} {ζ : E} {p : X} {v : F}
+    {D : X →L[ℝ] F} {A B m : ℝ} (hD : ‖D‖ ≤ A * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2))
+    (hv : ‖v‖ ≤ B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2)) :
+    ‖fourierCharSMulFDeriv L ζ p v D‖ ≤
+      (A + ‖L‖ * B) * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
+  set w := 1 + ‖(2 * π) • ζ‖ ^ 2
+  have hw : 0 < w ^ (m / 2) := by positivity
+  have hA : 0 ≤ A := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hD) hw
+  have hB : 0 ≤ B := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hv) hw
+  have hw₁ : w ^ (m / 2) * ‖(2 * π) • ζ‖ ≤ w ^ ((m + 1) / 2) :=
+    one_add_norm_sq_rpow_mul_norm_le _ m
+  have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
+    Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
+  have hζ : 2 * π * ‖ζ‖ = ‖(2 * π) • ζ‖ := by
+    rw [norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+  refine opNorm_le_bound _ (by positivity) fun q ↦ ?_
+  rw [fourierCharSMulFDeriv_apply, Circle.norm_smul]
+  refine (norm_add_le _ _).trans ?_
+  have h₂ : ‖(2 * π * Complex.I * ⟪ζ, L q⟫ : ℂ) • v‖ ≤
+      ‖L‖ * B * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖q‖ := by
+    rw [norm_smul, norm_mul, norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real,
+      Real.norm_of_nonneg pi_pos.le, Complex.norm_I, mul_one, Complex.norm_real,
+      Real.norm_eq_abs, ← hζ]
+    calc 2 * π * |⟪ζ, L q⟫| * ‖v‖ ≤ 2 * π * (‖ζ‖ * (‖L‖ * ‖q‖)) * (B * w ^ (m / 2)) := by
+          gcongr
+          exact (abs_real_inner_le_norm _ _).trans (by gcongr; exact le_opNorm _ _)
+      _ = ‖L‖ * B * (w ^ (m / 2) * (2 * π * ‖ζ‖)) * ‖q‖ := by ring
+  calc _ ≤ A * w ^ (m / 2) * ‖q‖ + ‖L‖ * B * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖q‖ :=
+        add_le_add ((le_opNorm _ _).trans (by gcongr)) h₂
+    _ ≤ A * w ^ ((m + 1) / 2) * ‖q‖ + ‖L‖ * B * w ^ ((m + 1) / 2) * ‖q‖ := by gcongr
+    _ = (A + ‖L‖ * B) * w ^ ((m + 1) / 2) * ‖q‖ := by ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The derivative of `p ↦ 𝐞 ⟪ζ, L p⟫ • g p` depends continuously on the frequency `ζ` when the
+value and the directional derivatives of `g` do. -/
+theorem continuous_fourierCharSMulFDeriv [FiniteDimensional ℝ X] (L : X →L[ℝ] E) (p : X)
+    {v : E → F} {D : E → X →L[ℝ] F} (hv : Continuous v) (hD : ∀ q, Continuous fun ζ ↦ D ζ q) :
+    Continuous fun ζ ↦ fourierCharSMulFDeriv L ζ p (v ζ) (D ζ) := by
+  have he : Continuous fun ζ : E ↦ (𝐞 ⟪ζ, L p⟫ : ℂ) :=
+    continuous_subtype_val.comp
+      (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))
+  refine continuous_clm_apply.2 fun q ↦ ?_
+  have hDq := hD q
+  simp only [fourierCharSMulFDeriv_apply, Circle.smul_def]
+  fun_prop
+
+end Phase
+
 variable {a : E × E → V →L[ℂ] W} {m : ℝ}
 
 /-- The derivative in the position `x` of the quantization integrand
 `x ↦ 𝐞 ⟪ζ, x⟫ • a (x, 2πζ) (f ζ)`. -/
 private def integrandFDeriv (a : E × E → V →L[ℂ] W) (f : 𝓢(E, V)) (x ζ : E) : E →L[ℝ] W :=
-  (𝐞 ⟪ζ, x⟫ : ℂ) • ((apply ℂ W (f ζ)).restrictScalars ℝ ∘L
-      fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x) +
-    (toSpanSingleton ℝ (2 * π * Complex.I * 𝐞 ⟪ζ, x⟫) ∘L innerSL ℝ ζ).smulRight
-      (a (x, (2 * π) • ζ) (f ζ))
+  fourierCharSMulFDeriv (.id ℝ E) ζ x (a (x, (2 * π) • ζ) (f ζ))
+    ((apply ℂ W (f ζ)).restrictScalars ℝ ∘L fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private lemma integrandFDeriv_apply (f : 𝓢(E, V)) (x ζ h : E) :
     integrandFDeriv a f x ζ h =
       𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (((2 * π * Complex.I) * ⟪ζ, h⟫) • f ζ) +
         𝐞 ⟪ζ, x⟫ • fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h (f ζ) := by
-  simp only [integrandFDeriv, add_apply, smul_apply, comp_apply, coe_restrictScalars',
-    apply_apply, smulRight_apply, toSpanSingleton_apply, innerSL_apply_apply, map_smul,
-    Circle.smul_def, smul_smul, Complex.real_smul]
-  rw [add_comm]
-  congr 2
-  ring
+  rw [integrandFDeriv, fourierCharSMulFDeriv_apply, smul_add, add_comm]
+  simp only [coe_id', id_eq, comp_apply, coe_restrictScalars', apply_apply, map_smul]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private lemma hasFDerivAt_integrand (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (ζ x : E) :
@@ -381,10 +469,8 @@ private lemma hasFDerivAt_integrand (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (ζ
   have hg : HasFDerivAt (fun y ↦ a (y, (2 * π) • ζ))
       (fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x) x :=
     ((ha.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero x).hasFDerivAt
-  have hc := (Real.hasDerivAt_fourierChar ⟪ζ, x⟫).hasFDerivAt.comp x
-    ((innerSL ℝ ζ).hasFDerivAt (x := x))
-  simp only [Circle.smul_def]
-  exact hc.smul (((ContinuousLinearMap.apply ℂ W (f ζ)).restrictScalars ℝ).hasFDerivAt.comp x hg)
+  exact hasFDerivAt_fourierChar_inner_smul (.id ℝ E) ζ
+    (((apply ℂ W (f ζ)).restrictScalars ℝ).hasFDerivAt.comp x hg)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The derivative of the integrand is dominated by `⟨2πζ⟩ ^ (m + 1) ‖f ζ‖`: the derivative of
@@ -394,45 +480,22 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
     (hC' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a (y, ξ)) x‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (f : 𝓢(E, V)) (ζ : E) :
     ‖integrandFDeriv a f x ζ‖ ≤
-      (C + C') * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) * ‖f ζ‖) := by
-  have hC0 : 0 ≤ C := nonneg_of_norm_le hC
-  have hC'0 : 0 ≤ C' := by
-    have := (norm_nonneg (fderiv ℝ (fun y ↦ a (y, 0)) x)).trans (hC' 0)
-    simpa using this
-  set w := (1 + ‖(2 * π) • ζ‖ ^ 2) with hw
-  have hζ : 2 * π * ‖ζ‖ = ‖(2 * π) • ζ‖ := by
-    rw [norm_smul, Real.norm_of_nonneg two_pi_pos.le]
-  refine opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  rw [integrandFDeriv_apply]
-  refine (norm_add_le _ _).trans ?_
-  rw [Circle.norm_smul, Circle.norm_smul]
-  have h₁ : ‖a (x, (2 * π) • ζ) (((2 * π * Complex.I) * ⟪ζ, h⟫) • f ζ)‖ ≤
-      C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ := by
-    refine ((a _).le_opNorm _).trans ?_
-    rw [norm_smul, norm_mul, norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real,
-      Real.norm_of_nonneg pi_pos.le, Complex.norm_I, mul_one, ← hζ]
-    have hi : ‖(⟪ζ, h⟫ : ℂ)‖ ≤ ‖ζ‖ * ‖h‖ := by
-      rw [Complex.norm_real, Real.norm_eq_abs]
-      exact abs_real_inner_le_norm ζ h
-    calc ‖a (x, (2 * π) • ζ)‖ * (2 * π * ‖(⟪ζ, h⟫ : ℂ)‖ * ‖f ζ‖)
-        ≤ C * w ^ (m / 2) * (2 * π * (‖ζ‖ * ‖h‖) * ‖f ζ‖) := by gcongr; exact hC _
-      _ = C * (w ^ (m / 2) * (2 * π * ‖ζ‖)) * ‖f ζ‖ * ‖h‖ := by ring
-  have h₂ : ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h (f ζ)‖ ≤
-      C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by
-    refine ((fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h).le_opNorm _).trans ?_
-    calc ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h‖ * ‖f ζ‖
-        ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ := by gcongr; exact le_opNorm _ _
-      _ ≤ C' * w ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
-      _ = C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by ring
-  have hw₁ := one_add_norm_sq_rpow_mul_norm_le ((2 * π) • ζ) m
-  have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
-    Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
-  rw [← hw] at hw₁
-  calc _ ≤ C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ + C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ :=
-        add_le_add h₁ h₂
-    _ ≤ C * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ + C' * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ := by
-        gcongr
-    _ = (C + C') * (w ^ ((m + 1) / 2) * ‖f ζ‖) * ‖h‖ := by ring
+      (C' + ‖ContinuousLinearMap.id ℝ E‖ * C) *
+        ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) * ‖f ζ‖) := by
+  have hD : ‖(apply ℂ W (f ζ)).restrictScalars ℝ ∘L fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ ≤
+      C' * ‖f ζ‖ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
+    have hC'0 : 0 ≤ C' := by
+      simpa using (norm_nonneg (fderiv ℝ (fun y ↦ a (y, 0)) x)).trans (hC' 0)
+    refine opNorm_le_bound _ (by positivity) fun h ↦ ?_
+    simp only [comp_apply, coe_restrictScalars', apply_apply]
+    calc ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h (f ζ)‖
+        ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ :=
+          (le_opNorm _ _).trans (by gcongr; exact le_opNorm _ _)
+      _ ≤ C' * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
+      _ = C' * ‖f ζ‖ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖h‖ := by ring
+  have hv : ‖a (x, (2 * π) • ζ) (f ζ)‖ ≤ C * ‖f ζ‖ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) :=
+    (le_opNorm _ _).trans ((mul_le_mul_of_nonneg_right (hC _) (norm_nonneg _)).trans_eq (by ring))
+  exact (norm_fourierCharSMulFDeriv_le hD hv).trans_eq (by ring)
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (x : E) :
@@ -441,14 +504,11 @@ private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)
     (ContDiff.fderiv (f := fun (ζ : E) (y : E) ↦ a (y, (2 * π) • ζ))
       (ha.comp (contDiff_snd.prodMk (contDiff_fst.const_smul _))) contDiff_const
       (n := 0) (by simp)).continuous
-  have he : Continuous fun ζ : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) :=
-    continuous_subtype_val.comp
-      (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))
   have ha' : Continuous fun ζ : E ↦ a (x, (2 * π) • ζ) :=
     ha.continuous.comp (continuous_const.prodMk (continuous_const_smul _))
-  refine continuous_clm_apply.2 fun h ↦ ?_
-  simp only [integrandFDeriv_apply, Circle.smul_def]
-  fun_prop
+  exact continuous_fourierCharSMulFDeriv _ x (ha'.clm_apply f.continuous) fun h ↦ by
+    simp only [comp_apply, coe_restrictScalars', apply_apply]
+    exact (hD.clm_apply continuous_const).clm_apply f.continuous
 
 /-- The derivative of the position integral of the quantization integrand. -/
 private lemma hasFDerivAt_integral_integrand (ha : ContDiff ℝ 1 a)

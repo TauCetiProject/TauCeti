@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -175,10 +176,7 @@ theorem continuous_quantizationKernel (ha : Continuous a) {m : ℝ} (hm : m < -f
     (hC : ∀ K : Set E, IsCompact K →
       ∃ C, ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
     Continuous (Function.uncurry (quantizationKernel a)) := by
-  have hweight : Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2)) := by
-    have h := (integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure E))
-      (r := -m) (by linarith)).comp_smul two_pi_pos.ne'
-    simpa only [neg_neg] using h
+  have hweight := integrable_one_add_norm_smul_sq_rpow (volume : Measure E) two_pi_pos.ne' hm
   have hcont : Continuous fun q : (E × E) × E ↦
       𝐞 ⟪q.2, q.1.1 - q.1.2⟫ • a (q.1.1, (2 * π) • q.2) :=
     (Real.continuous_fourierChar.comp (continuous_snd.inner
@@ -328,12 +326,9 @@ variable {n : ℕ} {m : ℝ}
 theorem integrable_coefficient (a : Symbol n V W m) (hm : m < -n) (x : CoordinateSpace n) :
     Integrable (fun ξ ↦ a.coefficient (x, ξ)) := by
   obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
-  have hweight := integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure (CoordinateSpace n)))
-    (r := -m) (by simp only [finrank_euclideanSpace_fin]; linarith)
-  refine (hweight.const_mul C).mono'
+  exact integrable_of_norm_le_one_add_norm_sq_rpow
     (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
-      ).aestronglyMeasurable (ae_of_all _ fun ξ ↦ ?_)
-  simpa only [neg_neg] using hC x rfl ξ
+      ).aestronglyMeasurable (by simpa using hm) (hC x rfl)
 
 /-- The kernel of a symbol of order `m < -n` is continuous. -/
 theorem continuous_quantizationKernel (a : Symbol n V W m) (hm : m < -n) :

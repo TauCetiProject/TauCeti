@@ -28,6 +28,8 @@ space, and develop the first operations of the symbol calculus:
 
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξⱼ}` lowers the
+  order by two;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
@@ -427,6 +429,20 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
     (frequencyDeriv j a).coefficient (x, ξ) =
       coordinateDeriv [j] (fun η => a.coefficient (x, η)) ξ := (rfl)
 
+/-- The frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξⱼ} a` of a symbol of order `m`, a symbol of order
+`m - 2`. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  inclusion (by linarith : m - 1 - 1 ≤ m - 2) ∘ₗ ∑ j, frequencyDeriv j ∘ₗ frequencyDeriv j
+
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j, j] (fun η ↦ a.coefficient (x, η)) ξ := by
+  simp only [frequencyLaplacian, LinearMap.coe_comp, Function.comp_apply, coefficient_inclusion,
+    LinearMap.sum_apply, coefficient_sum, Finset.sum_apply, coefficient_frequencyDeriv]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
+
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
@@ -482,6 +498,19 @@ theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : Coord
     fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) =
       (spatialDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- The position derivative of a symbol in the direction `h` is the coefficient of
+`∑ⱼ hⱼ ∂_{xⱼ} a`. -/
+theorem coefficient_sum_smul_spatialDeriv (a : Symbol n V W m) (h : CoordinateSpace n)
+    (r : CoordinateSpace n × CoordinateSpace n) :
+    (∑ j, (h j : ℂ) • spatialDeriv j a).coefficient r =
+      fderiv ℝ (fun y ↦ a.coefficient (y, r.2)) r.1 h := by
+  obtain ⟨x, ξ⟩ := r
+  simp only [coefficient_sum, Finset.sum_apply, coefficient_smul, Pi.smul_apply,
+    ← fderiv_coefficient_single]
+  simp only [Complex.coe_smul]
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
+  simp
 
 /-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
 the position. -/
