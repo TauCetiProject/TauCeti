@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The symbol classes `S^m_{1,0}`
@@ -569,6 +571,54 @@ theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
   refine Finset.sum_le_sum fun w _ => ?_
   have h := hA (List.ofFn w) x hx ξ
   rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
+
+/-- **Increments of a symbol in the frequency.** For a symbol `a` of order `m`,
+`‖a(x, ξ + v) - a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - 1) ⟨v⟩ ^ (|m - 1| + 1)` uniformly for positions in a
+compact set: by the mean value theorem and Peetre's inequality, the frequency derivative of `a`,
+of order `m - 1`, is at most `C ⟨ξ⟩ ^ (m - 1) ⟨v⟩ ^ |m - 1|` on the segment from `ξ` to
+`ξ + v`. -/
+theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ v, ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) * (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) := by
+  obtain ⟨G, hG0, hG⟩ := a.exists_norm_iteratedFDeriv_coordinateDeriv_le hK [] 1
+  refine ⟨G * 2 ^ (|m - 1| / 2), by positivity, fun x hx ξ v ↦ ?_⟩
+  set B := G * 2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+    (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) with hB
+  have hf : ContDiff ℝ ∞ fun ζ ↦ a.coefficient (x, ζ) :=
+    a.contDiff_coefficient.comp (contDiff_prodMk_right x)
+  have hbound : ∀ ζ ∈ segment ℝ ξ (ξ + v),
+      ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) ζ‖ ≤ B := by
+    intro ζ hζ
+    rw [segment_eq_image', add_sub_cancel_left] at hζ
+    obtain ⟨t, ht, rfl⟩ := hζ
+    have h := hG x hx (ξ + t • v)
+    simp only [coordinateDeriv_nil, norm_iteratedFDeriv_one, Nat.cast_one] at h
+    have htv : ‖t • v‖ ≤ ‖v‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg v) ht.2
+    calc ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) (ξ + t • v)‖
+        ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖t • v‖ ^ 2) ^ (|m - 1| / 2)) :=
+          h.trans (by gcongr; exact one_add_norm_add_sq_rpow_le_mul _ _ _)
+      _ ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2)) := by gcongr
+      _ = B := by ring
+  have hmv := (convex_segment ξ (ξ + v)).norm_image_sub_le_of_norm_fderiv_le
+    (fun ζ _ ↦ (hf.differentiable (by simp)).differentiableAt) hbound
+    (left_mem_segment ℝ ξ (ξ + v)) (right_mem_segment ℝ ξ (ξ + v))
+  rw [add_sub_cancel_left] at hmv
+  have hv : ‖v‖ ≤ (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
+    rw [← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le (by linarith)
+  have hB0 : 0 ≤ B := by positivity
+  have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
+      (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  calc ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤ B * ‖v‖ := hmv
+    _ ≤ B * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by gcongr
+    _ = _ := by rw [hsplit, hB]; ring
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
