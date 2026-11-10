@@ -124,13 +124,19 @@ theorem tendsto_cauchyTransform_cobounded (hf : Integrable f)
     (by simpa using (tendsto_inv₀_cobounded (α := ℂ)).pow 2)
   simpa using hrem.add htail
 
+omit [NormedSpace ℂ F] in
+/-- A point outside the closed disc containing the support of `f` lies outside its closed
+support. -/
+theorem notMem_tsupport_of_support_subset_closedBall (hsupp : support f ⊆ closedBall c r)
+    (hw : (r : ℝ) < ‖w - c‖) : w ∉ tsupport f := fun h ↦
+  (mem_closedBall_iff_norm.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
+
 /-- A pointwise bound for the derivative off the disc:
 `‖(T f)' w‖ ≤ π⁻¹ ‖f‖₁ / (‖w - c‖ - r)²`. -/
 theorem norm_deriv_cauchyTransform_le (hf : Integrable f) (hsupp : support f ⊆ closedBall c r)
     (hw : (r : ℝ) < ‖w - c‖) :
     ‖deriv (cauchyTransform f) w‖ ≤ π⁻¹ * (((‖w - c‖ - r) ^ 2)⁻¹ * ∫ z, ‖f z‖) := by
-  have hw' : w ∉ tsupport f := fun h ↦
-    (mem_closedBall_iff_norm.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
+  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp hw
   rw [(hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw').deriv, norm_neg, norm_smul, norm_inv,
     norm_real, Real.norm_of_nonneg Real.pi_pos.le]
   gcongr
@@ -144,8 +150,7 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le (hf : Integrable f)
     ‖deriv (cauchyTransform f) w + ((w - c) ^ 2)⁻¹ • ((Real.pi : ℂ)⁻¹ • ∫ z, f z)‖ ≤
       π⁻¹ * (r / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹) *
         ∫ z, ‖f z‖) := by
-  have hw' : w ∉ tsupport f := fun h ↦
-    (mem_closedBall_iff_norm.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
+  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp hw
   have hint : Integrable fun z ↦ ((w - z) ^ 2)⁻¹ • f z :=
     hf.smul_of_support_subset hsupp (by fun_prop) fun z hz ↦ by
       rw [norm_inv, norm_pow, ← inv_pow, ← norm_inv]
@@ -313,9 +318,8 @@ theorem memLp_wirtingerDeriv_cauchyTransform_compl_ball [CompleteSpace F] (hf : 
   refine (memLp_congr_ae ?_).mpr (memLp_deriv_cauchyTransform_compl_ball hf hsupp hR hp)
   filter_upwards [ae_restrict_mem measurableSet_ball.compl] with w hw
   have hRw : R ≤ ‖w - c‖ := by simpa [mem_ball, dist_eq_norm] using hw
-  exact wirtingerDeriv_cauchyTransform_apply_one_of_notMem_tsupport hf fun h ↦
-    (mem_closedBall_iff_norm.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt
-      (hR.trans_le hRw)
+  exact wirtingerDeriv_cauchyTransform_apply_one_of_notMem_tsupport hf
+    (notMem_tsupport_of_support_subset_closedBall hsupp (hR.trans_le hRw))
 
 end Lp
 
