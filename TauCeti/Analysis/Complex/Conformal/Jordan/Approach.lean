@@ -130,7 +130,7 @@ theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
     (hU : IsJordanDomain U) (ha : a ∈ frontier U) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∃ C ⊆ U ∩ ball a ε, IsPreconnected C ∧ U ∩ ball a δ ⊆ C := by
   obtain ⟨S, hSJ, hScompact, hSpre, haS, hball⟩ :=
-    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball ha hε
+    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hε
   have hcancel : frontier U \ (frontier U \ S) = S := sdiff_sdiff_cancel_left hSJ
   refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε (W := frontier U \ S)
     (fun z hz => ⟨hz.1, hball hz⟩) ⟨ha, haS⟩ ?_ ?_

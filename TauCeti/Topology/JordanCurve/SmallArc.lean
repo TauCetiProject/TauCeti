@@ -143,10 +143,13 @@ open scoped Real
 /-- **Two distinct points cut the circle into a short arc and a long one.** The complement of
 `{z, w}` is the union of two preconnected sets, the first of which stays of diameter at most
 `π / 2 * dist z w` even after the two cut points are put back: it is `P ∪ {z, w}`, the *closed*
-short arc, that is bounded. -/
-theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} (hzw : z ≠ w) :
+short arc, that is bounded. For `z = w` the short arc is empty. -/
+theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} :
     ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
       P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) ≤ π / 2 * dist z w := by
+  rcases eq_or_ne z w with rfl | hzw
+  · exact ⟨∅, {z}ᶜ, isPreconnected_empty,
+      (Circle.isPathConnected_compl_singleton z).isConnected.isPreconnected, by simp, by simp⟩
   -- The two pieces are Mathlib's open arcs, which cover the complement of `{z, w}`.
   have hunion := Circle.path_image_Ioo_union hzw
   have hpre : ∀ x y : Circle, IsPreconnected (Circle.path x y '' Ioo 0 1) := fun x y =>
@@ -213,9 +216,9 @@ private theorem exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam
     ∃ δ > 0, ∀ ⦃z w : Circle⦄, z ≠ w → dist z w < δ →
       ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
         P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) < η := by
-  refine ⟨2 / π * η, by positivity, fun z w hzw hd => ?_⟩
+  refine ⟨2 / π * η, by positivity, fun z w _ hd => ?_⟩
   obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ :=
-    exists_isPreconnected_union_eq_compl_pair_circle_diam_le hzw
+    exists_isPreconnected_union_eq_compl_pair_circle_diam_le (z := z) (w := w)
   exact ⟨P, Q, hPc, hQc, hunion, hPd.trans_lt (pi_div_two_mul_lt hη hd)⟩
 
 /-- **Two nearby points of the circle are joined by a short injective path**: the `δ`-`η` form of
@@ -438,10 +441,13 @@ theorem IsJordanCurve.exists_pos_forall_exists_path_injective_diam_le (h : IsJor
 missing that point whose complement lies in a given ball around it.**  The
 compact arc `S` is the image of a closed circle arc under the Jordan
 parametrization, chosen small enough that its complement `C \ S` — the open
-window through `a` — stays inside `ball a r`. -/
+window through `a` — stays inside `ball a r`. For a point `a` off the curve, `S = C` works. -/
 theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
-    (hJ : IsJordanCurve C) {a : X} (ha : a ∈ C) {r : ℝ} (hr : 0 < r) :
+    (hJ : IsJordanCurve C) {a : X} {r : ℝ} (hr : 0 < r) :
     ∃ S ⊆ C, IsCompact S ∧ IsPreconnected S ∧ a ∉ S ∧ C \ S ⊆ ball a r := by
+  by_cases ha : a ∈ C
+  swap
+  · exact ⟨C, subset_rfl, hJ.isCompact, hJ.isConnected.isPreconnected, ha, by simp⟩
   obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
   set g : Circle → X := jordanParam e
   have hginj : Function.Injective g := jordanParam_injective e

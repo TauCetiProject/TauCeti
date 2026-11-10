@@ -83,8 +83,9 @@ The statements are for a subset of an arbitrary topological space, as in
 `TauCeti/Topology/JordanCurve/Separation.lean`; the subcontinuum is asked to be *compact* rather
 than closed, which is what transports along the parametrization without a separation axiom. Only the
 two nowhere-density statements `TauCeti.IsJordanCurve.exists_notMem_closure_sdiff` and
-`TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` need the ambient space to be Hausdorff,
-because they speak of a closure taken in that space. The corollary
+`TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` speak of a closure taken in the ambient
+space; since the parametrization is inducing, that closure is read on the circle, so they need no
+separation axiom either. The corollary
 `TauCeti.IsJordanCurve.interior_eq_empty` is for a real normed space of dimension at least two,
 where a ball contains a sphere, which is a subcontinuum with more than one point.
 
@@ -213,18 +214,19 @@ nowhere dense there. Stated in the contrapositive this is what identifies a nowh
 subcontinuum as a subsingleton — a single point once it is nonempty, which is how the classification
 is used — and it is the form the Carathéodory boundary correspondence spends:
 a boundary cluster set of a conformal map is a continuum on the image boundary, and this is what
-degenerates it. Both statements are about a closure taken in the ambient space, so that space is
-asked to be Hausdorff here. -/
+degenerates it. Both statements are about a closure taken in the ambient space, which is read on the
+circle along the inducing parametrization. -/
 
 /-- **A subcontinuum of a Jordan curve with more than one point is not nowhere dense in it**: one of
 its points is not adherent to the rest of the curve.
 
 The witness is the midpoint of the arc of angles carrying the subcontinuum. The complement of the
-subcontinuum in the curve is the open arc of `TauCeti.compl_circleExp_image_Icc`, whose closure is
-contained in the compact — hence closed — image of the corresponding closed arc, and the midpoint
-misses that image because `Circle.exp` is injective on a period. The subcontinuum is not asked to be
-proper: for the whole curve the complement is empty and any of its points will do. -/
-theorem IsJordanCurve.exists_notMem_closure_sdiff [T2Space X] (h : IsJordanCurve C) (hSC : S ⊆ C)
+subcontinuum in the curve is the open arc of `TauCeti.compl_circleExp_image_Icc`, whose closure
+(read on the circle, the parametrization being inducing) is contained in the compact — hence
+closed — corresponding closed arc, and the midpoint misses that arc because `Circle.exp` is
+injective on a period. The subcontinuum is not asked to be proper: for the whole curve the
+complement is empty and any of its points will do. -/
+theorem IsJordanCurve.exists_notMem_closure_sdiff (h : IsJordanCurve C) (hSC : S ⊆ C)
     (hS : IsCompact S) (hpre : IsPreconnected S) (hnsub : ¬ S.Subsingleton) :
     ∃ p ∈ S, p ∉ closure (C \ S) := by
   obtain ⟨x, hx, y, hy, hxy⟩ := not_subsingleton_iff.mp hnsub
@@ -237,22 +239,24 @@ theorem IsJordanCurve.exists_notMem_closure_sdiff [T2Space X] (h : IsJordanCurve
     · rw [hSeq, Icc_self, image_singleton, image_singleton] at hx hy
       exact absurd (hx.trans hy.symm) hxy
     · exact hab'
-  have hLclosed : IsClosed (jordanParam e '' (Circle.exp '' Icc b (a + 2 * π))) :=
-    ((isCompact_Icc.image Circle.exp.continuous).image (continuous_jordanParam e)).isClosed
-  have hsub : C \ S ⊆ jordanParam e '' (Circle.exp '' Icc b (a + 2 * π)) := by
-    rw [sdiff_eq_jordanParam_image e hSeq]
-    exact image_mono (image_mono Ioo_subset_Icc_self)
+  have hLclosed : IsClosed (Circle.exp '' Icc b (a + 2 * π)) :=
+    (isCompact_Icc.image Circle.exp.continuous).isClosed
+  have hsub : Circle.exp '' Ioo b (a + 2 * π) ⊆ Circle.exp '' Icc b (a + 2 * π) :=
+    image_mono Ioo_subset_Icc_self
   have hmmem : (a + b) / 2 ∈ Icc a b := ⟨by linarith, by linarith⟩
   have hpS : jordanParam e (Circle.exp ((a + b) / 2)) ∈ S := by
     rw [hSeq]
     exact mem_image_of_mem _ (mem_image_of_mem _ hmmem)
   refine ⟨_, hpS, fun hcon => ?_⟩
-  obtain ⟨u, ⟨s, hs, hsu⟩, hu⟩ := closure_minimal hsub hLclosed hcon
+  -- the closure in the ambient space of the image of the open arc is read on the circle, since the
+  -- parametrization is inducing
+  rw [sdiff_eq_jordanParam_image e hSeq, ← mem_preimage,
+    ← (isInducing_jordanParam e).closure_eq_preimage_closure_image] at hcon
+  obtain ⟨s, hs, hsu⟩ := closure_minimal hsub hLclosed hcon
   have hsm : s = (a + b) / 2 := by
     refine Circle.exp_injOn_Ioc (a := a) (b := a + 2 * π) (by linarith)
       ⟨by linarith [hs.1], hs.2⟩ ⟨by linarith, by linarith⟩ ?_
-    rw [hsu]
-    exact jordanParam_injective e hu
+    exact hsu
   linarith [hs.1, hsm ▸ hs.1]
 
 /-- **A nowhere dense subcontinuum of a Jordan curve is a subsingleton**, so a single point when it
@@ -260,7 +264,7 @@ is nonempty. If every point of a compact preconnected subset of a Jordan curve i
 complement of that subset in the curve, then the subset has at most one point.
 
 This is the contrapositive of `TauCeti.IsJordanCurve.exists_notMem_closure_sdiff`. -/
-theorem IsJordanCurve.subsingleton_of_subset_closure_sdiff [T2Space X] (h : IsJordanCurve C)
+theorem IsJordanCurve.subsingleton_of_subset_closure_sdiff (h : IsJordanCurve C)
     (hSC : S ⊆ C) (hS : IsCompact S) (hpre : IsPreconnected S) (hdense : S ⊆ closure (C \ S)) :
     S.Subsingleton := by
   by_contra hnsub
