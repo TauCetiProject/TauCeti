@@ -139,13 +139,17 @@ theorem mfderiv_vectorBundleEulerField_of_linear {E' H' B' F' : Type*} [NormedAd
     rw [Function.comp_apply, hfφ, hfφ z, map_smul]
   rw [mfderiv_vectorBundleEulerField hf, hline, vectorBundleEulerField]
 
+omit [VectorBundle 𝕜 F V] in
 /-- The Euler vector field vanishes along the zero section. -/
 @[simp]
 theorem vectorBundleEulerField_zero (b : B) :
     vectorBundleEulerField I (⟨b, 0⟩ : TotalSpace F V) = 0 := by
-  rw [vectorBundleEulerField_eq_trivializationAt]
-  exact Prod.ext rfl (((trivializationAt F V b).linear 𝕜
-    (FiberBundle.mem_baseSet_trivializationAt F V b)).map_zero)
+  -- The line `t ↦ t • 0` is the constant curve at the zero of the fibre.
+  have hline : (fun t : 𝕜 ↦ (⟨(⟨b, 0⟩ : TotalSpace F V).proj, t • (⟨b, 0⟩ : TotalSpace F V).2⟩ :
+      TotalSpace F V)) = fun _ ↦ ⟨b, 0⟩ :=
+    funext fun t ↦ by simp
+  rw [vectorBundleEulerField, hline, mfderiv_const]
+  rfl
 
 /-- The Euler vector field is **vertical**: the derivative of the bundle projection kills it. -/
 @[simp]
@@ -224,12 +228,17 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
 
 /-- **The Euler vector field is complete**: through every vector `z` of a real vector bundle, the
 fibre dilation `t ↦ e^t • z` is an integral curve defined for all time. -/
-theorem isCompleteVectorField_vectorBundleEulerField [T2Space (TotalSpace F V)]
-    [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
-    [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] :
-    IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) :=
-  (isCompleteVectorField_iff_exists_isMIntegralCurve contMDiff_vectorBundleEulerField).2 fun z ↦
-    ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
+theorem isCompleteVectorField_vectorBundleEulerField :
+    IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) := by
+  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
+  intro z
+  refine Set.eq_univ_of_forall fun t ↦ ?_
+  -- The dilation curve is an integral curve on an interval around `0` containing `t`.
+  have hγ := (isMIntegralCurve_vectorBundleEulerField (I := I) z).isMIntegralCurveOn
+    (Set.Ioo (-(|t| + 1)) (|t| + 1))
+  exact hγ.subset_maximalIntegralCurveInterval
+    ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩ (by simp)
+    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
 
 end Real
 
