@@ -92,7 +92,7 @@ theorem subst_toPowerSeries_eq_add_iff_existsUnique_subst_exponentTwoLog
   have hl : l.toPowerSeries = F.exponentTwoLog hF := rfl
   let f : FormalGroupHom F (𝔾ₐ (R := R)) :=
     ⟨F.exponentTwoLog hF, F.constantCoeff_exponentTwoLog hF,
-      (FormalGroupHom.hom_additive_iff (F.constantCoeff_exponentTwoLog hF)).2
+      FormalGroupHom.hom_additive_iff.2
         (F.subst_toPowerSeries_exponentTwoLog hF)⟩
   have hf : f.toPowerSeries = l.toPowerSeries := rfl
   have hli : PowerSeries.subst l⁻¹.toPowerSeries f.toPowerSeries = PowerSeries.X := by
@@ -115,12 +115,12 @@ theorem subst_toPowerSeries_eq_add_iff_existsUnique_subst_exponentTwoLog
   · intro hg
     -- Composing any logarithm with the inverse normalized coordinate gives the additive factor.
     let q : FormalGroupHom F (𝔾ₐ (R := R)) :=
-      ⟨g, h₀, (FormalGroupHom.hom_additive_iff h₀).2 hg⟩
+      ⟨g, h₀, FormalGroupHom.hom_additive_iff.2 hg⟩
     let a := q.comp e
     have ha : a.toPowerSeries.subst (X 0 + X 1 : MvPowerSeries (Fin 2) R) =
         a.toPowerSeries.subst (X 0) + a.toPowerSeries.subst (X 1) := by
       simpa only [𝔾ₐ_toPowerSeries] using
-        (FormalGroupHom.hom_additive_iff a.zero_constantCoeff).1 a.hom
+        FormalGroupHom.hom_additive_iff.1 a.hom
     have hga : g = PowerSeries.subst (F.exponentTwoLog hF) a.toPowerSeries := by
       rw [FormalGroupHom.comp_toPowerSeries,
         PowerSeries.subst_comp_subst_apply e.hasSubst f.hasSubst, hie,
@@ -161,6 +161,6 @@ theorem exponentTwoLog_inv_smul_𝔾ₐ (h2 : (2 : R) = 0) (h₁ : PowerSeries.c
   have hφ := (smulIso φ⁻¹ (𝔾ₐ (R := R))).invHom.hom
   rw [smulIso_invHom_toPowerSeries, inv_inv] at hφ
   exact ((φ⁻¹ • 𝔾ₐ).eq_exponentTwoLog _ φ.constantCoeff_toPowerSeries h₁ hp
-    ((FormalGroupHom.hom_additive_iff φ.constantCoeff_toPowerSeries).mp hφ)).symm
+    (FormalGroupHom.hom_additive_iff.mp hφ)).symm
 
 end FormalGroup
