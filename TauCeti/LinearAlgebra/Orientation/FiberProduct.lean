@@ -301,15 +301,19 @@ theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
   apply (MulAction.injective ((-1 : Kˣ) ^ (t * s))).comp
     (reindex K (X × Y × Z) (finCongr (add_right_comm r t s))).injective
   simp only [Function.comp_apply]
-  rw [← E, shortExact_fiberProduct,
+  -- The first tower is `([X][Y])[Z]` up to sign: unfold `oR₁` and then `oQ₁`.
+  rw [shortExact_fiberProduct,
     shortExact_reindex_finCongr_left (ha := by rw [finrank_prod, hQ₁, hz]),
     shortExact_units_smul_left, shortExact_prodMap_id (Submodule.injective_subtype _)
       (exact_subtype_ker_map _) h₁ oQ₁ oz ot hQ₁ hz ht, shortExact_fiberProduct,
-    prod_reindex_finCongr_left (hm := by rw [finrank_prod, hx, hy]), prod_units_smul_left,
-    shortExact_fiberProduct, shortExact_reindex_finCongr_left (ha := by rw [finrank_prod, hx, hQ₂]),
+    prod_reindex_finCongr_left (hm := by rw [finrank_prod, hx, hy]), prod_units_smul_left] at E
+  -- The second tower is `[X]([Y][Z])` up to sign: unfold `oR₂` and then `oQ₂`.
+  rw [shortExact_fiberProduct,
+    shortExact_reindex_finCongr_left (ha := by rw [finrank_prod, hx, hQ₂]),
     shortExact_units_smul_left, shortExact_id_prodMap (Submodule.injective_subtype _)
       (exact_subtype_ker_map _) h₂ ox oQ₂ os hx hQ₂ hs, shortExact_fiberProduct,
-    prod_reindex_finCongr_right (hn := by rw [finrank_prod, hy, hz]), prod_units_smul_right]
+    prod_reindex_finCongr_right (hn := by rw [finrank_prod, hy, hz]), prod_units_smul_right, ← E]
+  -- Normalize the reindexings and collect the signs.
   simp only [map_reindex, map_units_smul, reindex_units_smul, smul_smul, ← pow_add,
     reindex_finCongr_reindex_finCongr, map_prodAssoc_prod]
   -- The two signs agree since `(q₂ + s) t = (y + z) t`.

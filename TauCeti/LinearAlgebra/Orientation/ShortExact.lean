@@ -531,9 +531,11 @@ theorem shortExact_prodMap_id (o : Orientation K U (Fin a)) (oz : Orientation K 
   simp only [Orientation.map_refl, Equiv.refl_apply] at hnat
   rw [map_prodComm_prod, shortExact_units_smul_right,
     shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, hz, hc])] at hnat
-  rw [hnat, reindex_units_smul, reindex_units_smul, smul_smul, ← pow_add,
-    show z * c + c * z = 2 * (z * c) by ring, pow_mul, neg_one_sq, one_pow, one_smul,
-    reindex_finCongr_reindex_finCongr, reindex_finCongr_reindex_finCongr]
+  rw [hnat]
+  -- Exchanging `Z` and `W` twice contributes no sign.
+  have hsign : (-1 : Kˣ) ^ (z * c) * (-1) ^ (c * z) = 1 := by
+    rw [← pow_add, ← mul_comm z c, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  simp only [reindex_units_smul, smul_smul, hsign, one_smul, reindex_finCongr_reindex_finCongr]
 
 /-- **A further factor before the subspace.** For a short exact sequence `0 → U → V → W → 0` and a
 space `Z`, orient `Z × V` through `0 → Z × U → Z × V → W → 0` from `[Z][U]` and `[W]`. This is the
@@ -624,6 +626,8 @@ theorem map_shortExact_shortExact (hf₁' : Function.Injective f₁')
       (-1 : Kˣ) ^ (a * b) • reindex K V₂ (finCongr (add_right_comm r a b))
         (shortExact hf₂ hfg₂ hg₂ (shortExact hf₂' hfg₂' hg₂' (map (Fin r) e o) pA
           (e.finrank_eq.symm.trans hr) ha) pB hra hb) := by
+  -- Collapse both towers to single short exact sequences, and transport the first one along `eV`,
+  -- which carries its quotient `B × A` to the quotient `A × B` of the second.
   rw [shortExact_shortExact hf₁' hfg₁' hg₁' hf₁ hfg₁ hg₁ hh₁,
     shortExact_shortExact hf₂' hfg₂' hg₂' hf₂ hfg₂ hg₂ hh₂, map_reindex,
     map_shortExact (f := f₁ ∘ₗ f₁') (g := h₁.prod g₁) (LinearMap.injective_comp hf₁ hf₁')
@@ -634,8 +638,9 @@ theorem map_shortExact_shortExact (hf₁' : Function.Injective f₁')
       (hfg₂.surjective_prod hg₂' hg₂ hh₂) e eV (LinearEquiv.prodComm K B A) (LinearMap.ext hι)
       (LinearMap.ext fun v ↦ Prod.ext (hA v) (hB v)),
     map_prodComm_prod, shortExact_units_smul_right,
-    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, ha, hb]), reindex_units_smul,
-    reindex_finCongr_reindex_finCongr, reindex_finCongr_reindex_finCongr, mul_comm b a]
+    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, ha, hb]), mul_comm b a]
+  -- Normalize the reindexings.
+  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
 
 end Exchange
 
