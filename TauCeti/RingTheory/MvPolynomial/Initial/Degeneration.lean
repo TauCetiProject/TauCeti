@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Stability
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.MvPolynomial.Initial.Ideal
