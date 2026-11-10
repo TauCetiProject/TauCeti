@@ -320,6 +320,18 @@ def constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
       _ = D.core.coordChange i' j' x (T (A.core.coordChange i i' x v)) := by
         rw [← ContinuousLinearMap.comp_apply T, hT i i' x hi hi', ContinuousLinearMap.comp_apply]
 
+/-- In charts `i` and `j`, a constant intertwining map is the target transition after `T`. -/
+@[simp] theorem operator_constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T)
+    (i j : B) :
+    (constHom hbase T hT).operator i j =
+      ⟨fun x ↦ (D.core.coordChange i j x).comp T,
+        (continuousOn_iff_continuous_domRestrict.1 ((D.core.continuousOn_coordChange i j).mono
+          fun _ (hx : _ ∈ A.core.baseSet i ∩ D.core.baseSet j) ↦
+            ⟨hbase i hx.1, hx.2⟩)).clm_comp_const T⟩ := (rfl)
+
 /-- A bundle map with constant coordinate matrix `T` is `T` on every fibre. -/
 @[simp] theorem fiberMap_constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
@@ -371,6 +383,19 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
     (constIso hbase e he).inv.fiberMap x = e.symm := by
   simp only [constIso, fiberMap_constHom]
+
+/-- In fixed charts the inverse constant isomorphism is a source transition after `e.symm`. -/
+@[simp] theorem operator_constIso_inv (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    (i j : B) :
+    (constIso hbase e he).inv.operator i j =
+      ⟨fun x ↦ (A.core.coordChange i j x).comp e.symm.toContinuousLinearMap,
+        (continuousOn_iff_continuous_domRestrict.1 ((A.core.continuousOn_coordChange i j).mono
+          fun _ (hx : _ ∈ D.core.baseSet i ∩ A.core.baseSet j) ↦
+            ⟨(hbase i).symm ▸ hx.1, hx.2⟩)).clm_comp_const e.symm.toContinuousLinearMap⟩ := (rfl)
 
 section Isomorphisms
 
