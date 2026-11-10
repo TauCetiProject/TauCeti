@@ -875,6 +875,14 @@ noncomputable def stripEnergyMeasure : Measure ℝ :=
   ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
     ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst
 
+/-- The strip energy measure is the pushforward to the `s`-axis of the measure with density the
+positive part of the energy density on the strip. -/
+theorem stripEnergyMeasure_def :
+    ω.stripEnergyMeasure Ks Kt u =
+      ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
+        ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst :=
+  (rfl)
+
 /-- The strip energy measure of a measurable set `A` is the energy over `A × [0, 1]`. -/
 theorem stripEnergyMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
     ω.stripEnergyMeasure Ks Kt u A =

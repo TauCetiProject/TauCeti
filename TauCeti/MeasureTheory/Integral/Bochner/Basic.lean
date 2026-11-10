@@ -14,6 +14,7 @@ import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -102,6 +103,13 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose
 * `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
   convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
   almost everywhere outside `s`.
+* `TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`: uniform convergence on a set of finite
+  measure is `L¹` convergence on that set.
+* `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
+  compact support in an open set `Ω` pass to limits of maps continuous on `Ω` that converge
+  uniformly on the support of the weight.
+* `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
+  is perturbed uniformly on a set of finite measure.
 
 ## Tail lower bounds
 
@@ -543,6 +551,59 @@ theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Typ
         lintegral_indicator_le _ _
     _ = ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+
+/-- **Uniform convergence on a set of finite measure gives `L¹` convergence on it.** If `f i → g`
+uniformly on a set `s` with `μ s ≠ ∞`, then `∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ → 0`. Neither the set
+nor the functions need be measurable. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup E] {μ : Measure α} {s : Set α} {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (h : TendstoUniformlyOn f g l s) (hμs : μ s ≠ ∞) :
+    Tendsto (fun i => ∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ) l (𝓝 0) := by
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hμs hε.ne'
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 h η (by exact_mod_cast hη)] with i hi
+  calc ∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ ≤ ∫⁻ _ in s, (η : ℝ≥0∞) ∂μ := by
+        refine setLIntegral_mono measurable_const fun x hx => ?_
+        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+        exact ENNReal.ofReal_le_ofReal (by simpa [dist_eq_norm'] using (hi x hx).le)
+    _ = η * μ s := setLIntegral_const _ _
+    _ ≤ ε := hηε.le
+
+/-- **Integrals against a compactly supported weight pass to uniform limits.** Let `a` be a
+continuous weight with compact support in an open set `Ω`. If maps `f i`, continuous on `Ω`,
+converge to a map `g`, continuous on `Ω`, uniformly on the support of `a`, then
+`∫ x, a x • f i x ∂μ → ∫ x, a x • g x ∂μ`. -/
+theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [SecondCountableTopologyEither X F] {μ : Measure X} [IsLocallyFiniteMeasure μ] {l : Filter ι}
+    {Ω : Set X} (hΩ : IsOpen Ω)
+    {f : ι → X → F} {g : X → F} (hf : ∀ i, ContinuousOn (f i) Ω) (hg : ContinuousOn g Ω)
+    {a : X → ℝ} (ha : Continuous a) (hac : HasCompactSupport a) (haΩ : tsupport a ⊆ Ω)
+    (hlim : TendstoUniformlyOn f g l (tsupport a)) :
+    Tendsto (fun i ↦ ∫ x, a x • f i x ∂μ) l (𝓝 (∫ x, a x • g x ∂μ)) := by
+  have hint : ∀ {h : X → F}, ContinuousOn h Ω → Integrable (fun x ↦ a x • h x) μ := fun hh ↦
+    (hh.locallyIntegrableOn hΩ.measurableSet).integrable_smul_left_of_hasCompactSupport ha hac
+      haΩ
+  obtain ⟨B, hB⟩ := ha.bounded_above_of_compact_support hac
+  exact tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (Eventually.of_forall hB)
+    (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
+    (Eventually.of_forall fun i ↦ hint (hf i)) (hint hg).aestronglyMeasurable
+    (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
+
+/-- **Perturbing the weight of an integral.** Replacing the weight `a` by `b`, with
+`|b - a| ≤ η` and both vanishing off a set `K` of finite measure, changes the integral against a
+function bounded by `B` on `K` by at most `η B μ(K)`. -/
+theorem norm_integral_smul_sub_integral_smul_le {X F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X} {K : Set X} (hK : μ K < ∞)
+    {a b : X → ℝ} {h : X → F} {η B : ℝ} (ha : Integrable (fun x ↦ a x • h x) μ)
+    (hb : Integrable (fun x ↦ b x • h x) μ) (haK : ∀ x ∉ K, a x = 0) (hbK : ∀ x ∉ K, b x = 0)
+    (hab : ∀ x, |b x - a x| ≤ η) (hB : ∀ x ∈ K, ‖h x‖ ≤ B) :
+    ‖∫ x, a x • h x ∂μ - ∫ x, b x • h x ∂μ‖ ≤ η * B * μ.real K := by
+  rw [← integral_sub ha hb, ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+    simp [haK x hx, hbK x hx]]
+  refine norm_setIntegral_le_of_norm_le_const hK fun x hx ↦ ?_
+  rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
+  exact mul_le_mul (hab x) (hB x hx) (norm_nonneg _) ((abs_nonneg _).trans (hab x))
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone

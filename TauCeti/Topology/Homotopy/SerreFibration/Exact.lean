@@ -9,7 +9,7 @@ public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.ContinuousMap.GlueHalves
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
 
 /-!
@@ -55,7 +55,9 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
 
 * At `π_n(F, e)`: a boundary lift is a null-homotopy in `E` of its end loop; conversely a
   null-homotopy in `E` of a loop in the fibre is a boundary lift of its projection
-  (`TauCeti.TopCat.mem_range_fibrationBoundary_iff`).
+  (`TauCeti.TopCat.mem_range_fibrationBoundary_iff`). At `π_0(F, e)` this says that a point of
+  the fibre is joined to `e` in `E` exactly when its class is a boundary
+  (`TauCeti.TopCat.joined_iff_mem_range_fibrationBoundary`).
 * At `π_n(E, e)`: a null-homotopy in `B` of the projection of a loop in `E` lifts, relative to the
   boundary, to a homotopy in `E` from that loop to a loop in the fibre
   (`TauCeti.TopCat.mem_range_homotopyGroupMap_fiberι_iff`).
@@ -414,6 +416,19 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
     rw [fibrationBoundary_mk hp hG]
     congr 1
     exact GenLoop.ext _ _ fun t => Subtype.ext (hG1 t)
+
+/-- **Exactness at `π_0(F, e)`, in terms of points.** A point `y` of the fibre is joined to `e`
+in `E` exactly when the class of the zero-dimensional generalized loop at `y` is a boundary. -/
+theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.fiber b) :
+    Joined e.1 y.1 ↔ (⟦(genLoopHomeoOfIsEmpty (Fin 0) e).symm y⟧ :
+      HomotopyGroup (Fin 0) (p.fiber b) e) ∈ range (fibrationBoundary hp e) := by
+  -- Classes of zero-dimensional generalized loops are path components.
+  refine Iff.trans ?_ (mem_range_fibrationBoundary_iff hp).symm
+  rw [HomotopyGroup.map_mk]
+  refine Iff.trans ?_ HomotopyGroup.mk_eq_mk_iff_joined.symm
+  rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, TopCat.Hom.fiberι_apply,
+    GenLoop.const_apply]
+  exact ⟨Joined.symm, Joined.symm⟩
 
 /-- **Exactness at `π_n(E, e)`.** A class of the total space comes from the fibre exactly when it
 becomes trivial in `π_n(B, b)`. -/

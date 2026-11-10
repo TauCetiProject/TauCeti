@@ -17,7 +17,7 @@ The formal partial derivatives of a multivariate polynomial give its Fréchet de
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
 `TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
-matrix is, and over a complete field the evaluation map of the family is analytic.
+matrix is, and the evaluation map of the family is analytic.
 
 For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
 arbitrary direction and to a standard coordinate direction.
@@ -117,9 +117,10 @@ theorem surjective_fderiv_eval_family_iff (p : ι → MvPolynomial σ 𝕜) (x :
   simp only [ContinuousLinearMap.coe_coe, Matrix.coe_mulVecLin] at h
   rw [h]
 
-/-- Over a complete field, the evaluation map of a polynomial family is analytic. -/
-theorem analyticOnNhd_eval_family [CompleteSpace 𝕜] [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
+/-- The evaluation map of a polynomial family is analytic. -/
+theorem analyticOnNhd_eval_family [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
     AnalyticOnNhd 𝕜 (fun x : σ → 𝕜 ↦ fun i ↦ eval x (p i)) Set.univ :=
-  AnalyticOnNhd.pi fun i ↦ AnalyticOnNhd.eval_mvPolynomial (p i)
+  AnalyticOnNhd.pi fun i ↦
+    AnalyticOnNhd.eval_continuousLinearMap (ContinuousLinearMap.id 𝕜 (σ → 𝕜)) (p i)
 
 end TauCeti
