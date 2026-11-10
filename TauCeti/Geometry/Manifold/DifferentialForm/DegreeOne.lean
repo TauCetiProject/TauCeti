@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -41,6 +42,8 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `TauCeti.isLocalFrameOn_degreeOneEquiv_univ_iff`: real one-forms are a global frame of the
+  cotangent bundle exactly when their values are a basis of every cotangent space.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
   `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
@@ -302,5 +305,22 @@ theorem degreeOneEquiv_symm_apply_apply
 end SmoothForm
 
 end OnceDifferentiable
+
+section Coframe
+
+variable [IsManifold I ∞ M] {ι : Type*}
+
+/-- Real one-forms form a global frame of the cotangent bundle exactly when their values form a
+basis of every cotangent space: smoothness of the frame is automatic. -/
+theorem isLocalFrameOn_degreeOneEquiv_univ_iff {α : ι → SmoothForm I M ℝ 1} :
+    IsLocalFrameOn I (E →L[ℝ] ℝ) ∞ (fun i ↦ ⇑(SmoothForm.degreeOneEquiv (α i))) Set.univ ↔
+      ∀ x : M, LinearIndependent ℝ (fun i ↦ SmoothForm.degreeOneEquiv (α i) x) ∧
+        ⊤ ≤ Submodule.span ℝ (Set.range fun i ↦ SmoothForm.degreeOneEquiv (α i) x) :=
+  ⟨fun h x ↦ ⟨h.linearIndependent (Set.mem_univ x), h.generating (Set.mem_univ x)⟩, fun h ↦
+    { linearIndependent := fun {x} _ ↦ (h x).1
+      generating := fun {x} _ ↦ (h x).2
+      contMDiffOn := fun i ↦ (SmoothForm.degreeOneEquiv (α i)).contMDiff.contMDiffOn }⟩
+
+end Coframe
 
 end TauCeti

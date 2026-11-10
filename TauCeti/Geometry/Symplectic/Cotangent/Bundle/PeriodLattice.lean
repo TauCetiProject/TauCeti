@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import TauCeti.Analysis.Normed.Group.Int
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
-public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
@@ -41,8 +40,9 @@ does not descend: translation by `∑ᵢ kᵢ αᵢ` changes it by `π^* (∑ᵢ
 zero section descends to a Lagrangian section.
 
 This is the canonical model `T*B / Λ` of a Lagrangian torus fibration whose period lattice
-`Λ ⊂ T*B` is spanned by global closed one-forms. The coordinate time forms of a torus give an
-example (`TauCeti.CotangentBundle.isLocalFrameOn_torusTimeForm`).
+`Λ ⊂ T*B` is spanned by global closed one-forms. The frame hypothesis reduces to a pointwise basis
+condition (`TauCeti.isLocalFrameOn_degreeOneEquiv_univ_iff`), and the coordinate time forms of a
+torus give an example (`TauCeti.isLocalFrameOn_torusTimeForm`).
 
 Freeness and proper discontinuity come from a continuous equivariant coordinate map: read in the
 trivialization of `T*B` defined by the frame (`IsLocalFrameOn.trivialization`), a covector has
@@ -61,8 +61,6 @@ coordinates in `ℝⁿ`, and translating by `k` adds `k` to them.
 
 ## Main results
 
-* `TauCeti.CotangentBundle.isLocalFrameOn_degreeOneEquiv_univ_iff`: one-forms are a global frame
-  of `T*B` exactly when their values are a basis of every cotangent space.
 * `TauCeti.CotangentBundle.LatticeQuotient.Cover.instIsCancelSMul`,
   `TauCeti.CotangentBundle.LatticeQuotient.Cover.instProperlyDiscontinuousSMul`: the translation
   action is free and properly discontinuous.
@@ -78,8 +76,6 @@ coordinates in `ℝⁿ`, and translating by `k` adds `k` to them.
   back to `ω` and is symplectic.
 * `TauCeti.CotangentBundle.LatticeQuotient.isLagrangianMap_mk_comp_section_iff`: the section
   defined by a one-form is Lagrangian exactly when the form is closed.
-* `TauCeti.CotangentBundle.isLocalFrameOn_torusTimeForm`: the coordinate time forms of a torus are
-  a global frame of its cotangent bundle.
 
 ## References
 
@@ -103,19 +99,6 @@ namespace CotangentBundle
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {B : Type*} [TopologicalSpace B] [ChartedSpace H B]
   [IsManifold I ∞ B] {ι : Type*}
-
-/-! ### Global coframes -/
-
-/-- One-forms form a global frame of the cotangent bundle exactly when their values form a basis
-of every cotangent space: smoothness of the frame is automatic. -/
-theorem isLocalFrameOn_degreeOneEquiv_univ_iff {α : ι → SmoothForm I B ℝ 1} :
-    IsLocalFrameOn I (E →L[ℝ] ℝ) ∞ (fun i ↦ ⇑(SmoothForm.degreeOneEquiv (α i))) univ ↔
-      ∀ x : B, LinearIndependent ℝ (fun i ↦ SmoothForm.degreeOneEquiv (α i) x) ∧
-        ⊤ ≤ Submodule.span ℝ (range fun i ↦ SmoothForm.degreeOneEquiv (α i) x) :=
-  ⟨fun h x ↦ ⟨h.linearIndependent (mem_univ x), h.generating (mem_univ x)⟩, fun h ↦
-    { linearIndependent := fun {x} _ ↦ (h x).1
-      generating := fun {x} _ ↦ (h x).2
-      contMDiffOn := fun i ↦ (SmoothForm.degreeOneEquiv (α i)).contMDiff.contMDiffOn }⟩
 
 /-! ### Lattice one-forms -/
 
@@ -539,53 +522,6 @@ theorem isLagrangianMap_mk_comp_section_iff (β : SmoothForm I B ℝ 1) :
   · rw [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 end LatticeQuotient
-
-/-! ### Example: the cotangent bundle of a torus -/
-
-section Torus
-
-variable {ι : Type*} [Fintype ι] (p : ι → ℝ) [∀ i, Fact (0 < p i)]
-
-/-- The coordinate time forms `dt_i` of the torus `∀ i, AddCircle (p i)` form a global frame of its
-cotangent bundle: at every point they are the coordinate functionals of `ι → ℝ`. Since they are
-closed, `T*Tⁿ / Λ` for the lattice they span carries the symplectic form
-`TauCeti.CotangentBundle.LatticeQuotient.symplecticForm`; for `ι = Unit` this is the torus
-`T*S¹ / Λ` fibred over the circle. -/
-theorem isLocalFrameOn_torusTimeForm :
-    IsLocalFrameOn (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ((ι → ℝ) →L[ℝ] ℝ) ∞
-      (fun i ↦ ⇑(SmoothForm.degreeOneEquiv (torusTimeForm p i))) univ := by
-  classical
-  -- At every point the frame is the family of coordinate functionals of `ι → ℝ`.
-  have hproj : ∀ (x : ∀ i, AddCircle (p i)) (i : ι),
-      SmoothForm.degreeOneEquiv (torusTimeForm p i) x = ContinuousLinearMap.proj i :=
-    fun x i ↦ ContinuousLinearMap.ext fun v ↦ by
-      rw [SmoothForm.degreeOneEquiv_apply_apply, torusTimeForm_apply]
-      rfl
-  -- The coordinate functionals of `ι → ℝ` are linearly independent and span its dual.
-  have hli : LinearIndependent ℝ fun i ↦ (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ) :=
-    Fintype.linearIndependent_iff.2 fun c hc j ↦ by
-      simpa [Pi.single_apply] using congrArg (fun f : (ι → ℝ) →L[ℝ] ℝ ↦ f (Pi.single j 1)) hc
-  have hspan : ⊤ ≤ Submodule.span ℝ
-      (range fun i ↦ (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ)) := by
-    rintro f -
-    -- A functional is the combination of the coordinate functionals with its values on the
-    -- standard basis vectors.
-    have hf : f = ∑ i, f (Pi.single i 1) • ContinuousLinearMap.proj i := by
-      refine ContinuousLinearMap.ext fun v ↦ ?_
-      have hv : v = ∑ i, v i • Pi.single i (1 : ℝ) := by
-        ext j
-        simp [Pi.single_apply]
-      conv_lhs => rw [hv]
-      simp [map_sum, mul_comm]
-    rw [hf]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  refine isLocalFrameOn_degreeOneEquiv_univ_iff.2 fun x ↦ ⟨?_, ?_⟩
-  · simp only [hproj]
-    exact hli
-  · simp only [hproj]
-    exact hspan
-
-end Torus
 
 end CotangentBundle
 
