@@ -199,7 +199,7 @@ theorem topologicalClosure_zpowers_two_eq_iff {f f' : ℕ} (hf : 2 ≤ f) (hf' :
       refine Subgroup.topologicalClosure_minimal _ (Subgroup.zpowers_le.mpr ?_)
         (Subgroup.isClosed_topologicalClosure _)
       rw [mem_topologicalClosure_zpowers_two_iff hf hv hv']
-      have := inv_mul_mem_unitsPrincipal_two_succ (by omega) hv hv' hu hu'
+      have := inv_mul_mem_unitsPrincipal_two_succ hv hv' hu hu'
       rw [inv_neg, neg_mul_neg] at this
       exact Or.inr this
     exact le_antisymm (key hu hu' hv hv') (key hv hv' hu hu')

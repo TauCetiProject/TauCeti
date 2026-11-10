@@ -110,6 +110,7 @@ theorem constantCoeff_triangularFamily {α : σ → ℕ} (hα : ∀ i, α i ≠ 
     (x : Option σ) : (triangularFamily α u x).constantCoeff = 0 := by
   cases x <;> simp [triangularFamily, hα]
 
+omit [IsUltrametricDist R] in
 /-- For `‖u‖ ≤ 1` the triangular polynomials have all coefficients of norm at most `1`. -/
 theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ → ℕ)
     (x : Option σ) (t : Option σ →₀ ℕ) : ‖(triangularFamily α u x).coeff t‖ ≤ 1 := by
@@ -124,8 +125,10 @@ theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ →
           u * (MvPolynomial.X none ^ α i : MvPolynomial (Option σ) R).coeff t := by
       simp [triangularFamily, MvPolynomial.coeff_C_mul]
     rw [h, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_) <;>
-      split_ifs <;> simp [hu]
+    -- The monomials `X (some i)` and `X none ^ α i` have disjoint supports.
+    split_ifs with h1 h2 h2 <;> simp [hu]
+    have := congrArg (fun f : Option σ →₀ ℕ ↦ f (some i)) (h1.trans h2.symm)
+    simp at this
 
 omit [IsUltrametricDist R] [NormOneClass R] in
 /-- The triangular families for `u` and `v = -u` are inverse to each other under substitution. -/

@@ -20,7 +20,7 @@ gauge of a symmetric convex set.
 The interior of a sum of two convex sets with nonempty interiors is the sum of their
 interiors. In particular, this describes the interior of the sum of two interval supports.
 
-A closed segment `segment 𝕜 x y` is compact, being the convex hull of the finite set `{x, y}`.
+A closed segment `segment 𝕜 x y` is compact, being the continuous image of `Icc 0 1`.
 More generally, the convex join of two compact sets is compact (`IsCompact.convexJoin`). So every
 compact set `K` lies in a compact set star-convex about any given point `y`, the union of the
 segments from `y` to `y` and to the points of `K` (`TopologicalSpace.Compacts.starHull`).
@@ -74,13 +74,13 @@ theorem Convex.zero_mem_interior_of_symmetric {𝕜 E : Type*} [Field 𝕜] [Lin
 
 namespace TauCeti
 
-/-- A closed segment is compact: it is the convex hull of its two endpoints. -/
-theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderClosedTopology 𝕜] [CompactIccSpace 𝕜]
-    [IsTopologicalRing 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-    [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] (x y : E) :
-    IsCompact (segment 𝕜 x y) :=
-  convexHull_pair (𝕜 := 𝕜) x y ▸ (toFinite {x, y}).isCompact_convexHull 𝕜
+/-- A closed segment is compact: it is the continuous image of `Icc 0 1`. -/
+theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddRightMono 𝕜]
+    [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul 𝕜 E] (x y : E) :
+    IsCompact (segment 𝕜 x y) := by
+  rw [segment_eq_image']
+  exact isCompact_Icc.image (by fun_prop)
 
 end TauCeti
 

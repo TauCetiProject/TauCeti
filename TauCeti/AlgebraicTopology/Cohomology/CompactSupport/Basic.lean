@@ -132,16 +132,17 @@ lemma singularCohomologyMap_comp_compactSupportCohomologyι (n : ℕ) {K L : Com
       compactSupportCohomologyι n K :=
   colimit.w (X.compactSupportCohomologyDiagram R k M n) (homOfLE h)
 
-/-- Restricting along `K ⊆ L` and then along `L ⊆ L'` is restricting along `K ⊆ L'`. -/
-lemma singularCohomologyMap_compl_compacts_comp_apply {K L L' : Compacts X} (h₁ : K ≤ L)
-    (h₂ : L ≤ L') (n : ℕ) (z : (TopPair.ofSubset (K : Set X)ᶜ).singularCohomology R k M n) :
-    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₂)) n
-        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
-          (mapsTo_id_compl_compacts h₁)) n z) =
-      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
-        (mapsTo_id_compl_compacts (h₁.trans h₂))) n z := by
-  rw [← TopPair.singularCohomologyMap_comp_apply,
-    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _)]
+/-- Restricting from `X ∖ K` to `X ∖ L` and then to `X ∖ N` is the restriction from `X ∖ K` to
+`X ∖ N`. -/
+@[reassoc]
+lemma singularCohomologyMap_ofSubsetMap_id_trans {K L N : Compacts X} (h₁ : K ≤ L) (h₂ : L ≤ N)
+    (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+        (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₁)) n ≫
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₂)) n =
+    TopPair.singularCohomologyMap
+      (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts (h₁.trans h₂))) n :=
+  ((X.compactSupportCohomologyDiagram R k M n).map_comp (homOfLE h₁) (homOfLE h₂)).symm
 
 /-- Two maps out of cohomology with compact supports agree if they agree on each `Hⁿ(X, X ∖ K)`. -/
 @[ext]

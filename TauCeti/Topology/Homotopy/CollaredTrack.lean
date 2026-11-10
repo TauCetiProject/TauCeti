@@ -133,9 +133,8 @@ theorem snd_apply_lt_iff (hF : IsCollaredTrack f g F) (x : M) {t c : ℝ} (hc : 
   · simp [hF.apply_of_nonpos x ht]
   rcases le_or_gt 1 t with ht' | ht'
   · simp [hF.apply_of_one_le x ht']
-  have hmem : (F (x, t)).2 ∈ Ioo 0 1 := hF.snd_apply_mem_Ioo x t ⟨ht, ht'⟩
-  simp only [mem_Ioo, not_and_or, not_lt] at hc hmem
-  constructor <;> intro <;> rcases hc with hc | hc <;> linarith
+  have := hF.snd_apply_mem_Ioo x t ⟨ht, ht'⟩
+  grind
 
 /-- A collared track preserves the comparison of time with any level `c ∉ (0, 1)` from below. -/
 theorem lt_snd_apply_iff (hF : IsCollaredTrack f g F) (x : M) {t c : ℝ} (hc : c ∉ Ioo 0 1) :
@@ -144,23 +143,20 @@ theorem lt_snd_apply_iff (hF : IsCollaredTrack f g F) (x : M) {t c : ℝ} (hc : 
   · simp [hF.apply_of_nonpos x ht]
   rcases le_or_gt 1 t with ht' | ht'
   · simp [hF.apply_of_one_le x ht']
-  have hmem : (F (x, t)).2 ∈ Ioo 0 1 := hF.snd_apply_mem_Ioo x t ⟨ht, ht'⟩
-  simp only [mem_Ioo, not_and_or, not_lt] at hc hmem
-  constructor <;> intro <;> rcases hc with hc | hc <;> linarith
+  have := hF.snd_apply_mem_Ioo x t ⟨ht, ht'⟩
+  grind
 
 /-- A collared track maps `M × (0, 1)` into `N × (0, 1)` and nothing else there. -/
 theorem snd_apply_mem_Ioo_iff (hF : IsCollaredTrack f g F) (x : M) {t : ℝ} :
     (F (x, t)).2 ∈ Ioo 0 1 ↔ t ∈ Ioo 0 1 := by
-  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-  simp only [mem_Ioo, hF.lt_snd_apply_iff x h0, hF.snd_apply_lt_iff x h1]
+  simp only [mem_Ioo, hF.lt_snd_apply_iff x left_notMem_Ioo,
+    hF.snd_apply_lt_iff x right_notMem_Ioo]
 
 /-- A collared track meets the closed slab `N × [0, 1]` exactly over `M × [0, 1]`. -/
 theorem snd_apply_mem_Icc_iff (hF : IsCollaredTrack f g F) (x : M) {t : ℝ} :
     (F (x, t)).2 ∈ Icc 0 1 ↔ t ∈ Icc 0 1 := by
-  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-  simp only [mem_Icc, ← not_lt, hF.snd_apply_lt_iff x h0, hF.lt_snd_apply_iff x h1]
+  simp only [mem_Icc, ← not_lt, hF.snd_apply_lt_iff x left_notMem_Ioo,
+    hF.lt_snd_apply_iff x right_notMem_Ioo]
 
 /-- Pushing a collared track from `f` to `g` forward along a map `e` of the target gives a
 collared track from `e ∘ f` to `e ∘ g`. -/
@@ -194,17 +190,12 @@ theorem comp_of_isCompact [TopologicalSpace N] (hF : IsCollaredTrack f g F)
     (hCslab : ∀ q ∈ C, q.2 ∈ Ioo 0 1) (hψC : ∀ q ∉ C, ψ q = q) :
     IsCollaredTrack f g (ψ ∘ F) := by
   -- The heights of points of `C` lie in `[δ, 1 - δ]` for some `δ > 0`.
-  obtain ⟨δ, hδ, hδC⟩ : ∃ δ > 0, ∀ q ∈ C, δ ≤ q.2 ∧ q.2 ≤ 1 - δ := by
-    rcases C.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨1, one_pos, by simp⟩
-    obtain ⟨q₀, hq₀, hmin⟩ := hC.exists_isMinOn hne
-      (continuous_snd.min (continuous_const.sub continuous_snd)).continuousOn
-    have h₀ := hCslab q₀ hq₀
-    refine ⟨min q₀.2 (1 - q₀.2), lt_min h₀.1 (by linarith [h₀.2]), fun q hq => ?_⟩
-    have hq' : min q₀.2 (1 - q₀.2) ≤ min q.2 (1 - q.2) := isMinOn_iff.1 hmin q hq
-    exact ⟨hq'.trans (min_le_left _ _), by linarith [hq'.trans (min_le_right _ _)]⟩
+  obtain ⟨δ, hδ, hδC⟩ := hC.exists_forall_le' (f := fun q : N × ℝ => min q.2 (1 - q.2))
+    (continuous_snd.min (continuous_const.sub continuous_snd)).continuousOn
+    fun q hq => lt_min (hCslab q hq).1 (sub_pos.2 (hCslab q hq).2)
   have hfix : ∀ q : N × ℝ, q.2 < δ ∨ 1 - δ < q.2 → ψ q = q := fun q hq => hψC q fun hqC => by
-    rcases hq with hq | hq <;> linarith [hδC q hqC]
+    have := le_min_iff.1 (hδC q hqC)
+    rcases hq with hq | hq <;> linarith
   refine ⟨?_, ?_, fun x t ht => ?_⟩
   · obtain ⟨ε, hε, hF'⟩ := hF.exists_pos_apply_eq_left
     refine ⟨min ε (δ / 2), lt_min hε (half_pos hδ), fun x t ht => ?_⟩
@@ -214,15 +205,11 @@ theorem comp_of_isCompact [TopologicalSpace N] (hF : IsCollaredTrack f g F)
     refine ⟨min ε (δ / 2), lt_min hε (half_pos hδ), fun x t ht => ?_⟩
     rw [Function.comp_apply, hF' x t ((sub_le_sub_left (min_le_left _ _) 1).trans ht)]
     exact hfix _ (Or.inr (by linarith [min_le_right ε (δ / 2)]))
-  -- A point of `C` is moved into `C`: otherwise `ψ` would fix its image, contradicting injectivity.
+  -- If `ψ` moves `F (x, t)` out of `C`, it fixes the image, so by injectivity it fixes `F (x, t)`.
   rw [Function.comp_apply]
-  by_cases hq : F (x, t) ∈ C
-  · by_cases hψq : ψ (F (x, t)) ∈ C
-    · exact hCslab _ hψq
-    · have h : ψ (F (x, t)) = F (x, t) := hψ (hψC _ hψq)
-      rw [h] at hψq
-      exact absurd hq hψq
-  · rw [hψC _ hq]
+  by_cases hψq : ψ (F (x, t)) ∈ C
+  · exact hCslab _ hψq
+  · rw [hψ (hψC _ hψq)]
     exact hF.snd_apply_mem_Ioo x t ht
 
 end IsCollaredTrack
@@ -288,13 +275,9 @@ theorem IsCollaredTrack.reverseTime {f g : M → N} {F : M × ℝ → N × ℝ}
     rw [reverseTime_apply, hF x (1 - t) (by linarith)]
     simp
   snd_apply_mem_Ioo x t ht := by
+    have := hF.snd_apply_mem_Ioo x (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
     rw [reverseTime_apply]
-    have hrev : 1 - t ∈ Ioo 0 1 := by
-      simp only [mem_Ioo] at ht ⊢
-      constructor <;> linarith
-    have hmem := (hF.snd_apply_mem_Ioo_iff x).2 hrev
-    simp only [mem_Ioo] at hmem ⊢
-    constructor <;> linarith
+    exact ⟨by linarith [this.2], by linarith [this.1]⟩
 
 /-! ### Stacking tracks -/
 
@@ -327,8 +310,7 @@ theorem stack_eqOn_lower (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h 
   · rw [stack_apply_of_le F G x ht']
   · rw [stack_apply_of_lt F G x ht', hF.apply_of_one_le x (by linarith),
       hG.apply_of_nonpos x (by linarith)]
-    refine Prod.ext rfl ?_
-    simp only
+    congr 1
     ring
 
 /-- After time `1 / 3` the stack of two collared tracks is the second track at triple speed. -/
@@ -339,8 +321,7 @@ theorem stack_eqOn_upper (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h 
   rcases le_or_gt t (1 / 2) with ht' | ht'
   · rw [stack_apply_of_le F G x ht', hF.apply_of_one_le x (by linarith),
       hG.apply_of_nonpos x (by linarith)]
-    refine Prod.ext rfl ?_
-    simp only
+    congr 1
     ring
   · rw [stack_apply_of_lt F G x ht']
 
@@ -348,37 +329,25 @@ theorem stack_eqOn_upper (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h 
 theorem snd_stack_lt_iff (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G) (p : M × ℝ) :
     (stack F G p).2 < 2 / 3 ↔ p.2 < 2 / 3 := by
   obtain ⟨x, t⟩ := p
-  have h2 : (2 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.2]
-  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
   rcases le_or_gt t (1 / 2) with ht | ht
   · rw [stack_apply_of_le F G x ht]
-    have key := hF.snd_apply_lt_iff x (t := 3 * t) h2
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
+    have := hF.snd_apply_lt_iff x (t := 3 * t) (c := 2) fun h => by linarith [h.2]
+    grind
   · rw [stack_apply_of_lt F G x ht]
-    have key := hG.snd_apply_lt_iff x (t := 3 * t - 2) h0
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
+    have := hG.snd_apply_lt_iff x (t := 3 * t - 2) left_notMem_Ioo
+    grind
 
 /-- The stacked track preserves the comparison of time with the level `1 / 3`. -/
 theorem lt_snd_stack_iff (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G) (p : M × ℝ) :
     1 / 3 < (stack F G p).2 ↔ 1 / 3 < p.2 := by
   obtain ⟨x, t⟩ := p
-  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-  have hm1 : (-1 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.1]
   rcases le_or_gt t (1 / 2) with ht | ht
   · rw [stack_apply_of_le F G x ht]
-    have key := hF.lt_snd_apply_iff x (t := 3 * t) h1
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
+    have := hF.lt_snd_apply_iff x (t := 3 * t) right_notMem_Ioo
+    grind
   · rw [stack_apply_of_lt F G x ht]
-    have key := hG.lt_snd_apply_iff x (t := 3 * t - 2) hm1
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro _; linarith [key.2 (by linarith)]
+    have := hG.lt_snd_apply_iff x (t := 3 * t - 2) (c := -1) fun h => by linarith [h.1]
+    grind
 
 /-- The stack of a collared track from `f` to `g` and one from `g` to `h` is a collared track from
 `f` to `h`. -/
@@ -390,8 +359,7 @@ theorem stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G) :
     have hδε : min (ε / 3) (1 / 4) ≤ ε / 3 := min_le_left _ _
     have hδ : min (ε / 3) (1 / 4) ≤ 1 / 4 := min_le_right _ _
     rw [stack_apply_of_le F G x (by linarith), hF x (3 * t) (by linarith)]
-    refine Prod.ext rfl ?_
-    simp only
+    congr 1
     ring
   exists_pos_apply_eq_right := by
     obtain ⟨ε, hε, hG⟩ := hG.exists_pos_apply_eq_right
@@ -399,48 +367,41 @@ theorem stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G) :
     have hδε : min (ε / 3) (1 / 4) ≤ ε / 3 := min_le_left _ _
     have hδ : min (ε / 3) (1 / 4) ≤ 1 / 4 := min_le_right _ _
     rw [stack_apply_of_lt F G x (by linarith), hG x (3 * t - 2) (by linarith)]
-    refine Prod.ext rfl ?_
-    simp only
+    congr 1
     ring
   snd_apply_mem_Ioo x t ht := by
-    have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-    have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
     have h3 : (3 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.2]
     have hm2 : (-2 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.1]
     simp only [mem_Ioo] at ht ⊢
     rcases le_or_gt t (1 / 2) with ht' | ht'
     · rw [stack_apply_of_le F G x ht']
-      have hlo := hF.lt_snd_apply_iff x (t := 3 * t) h0
+      have hlo := hF.lt_snd_apply_iff x (t := 3 * t) left_notMem_Ioo
       have hhi := hF.snd_apply_lt_iff x (t := 3 * t) h3
       constructor <;> linarith [hlo.2 (by linarith), hhi.2 (by linarith)]
     · rw [stack_apply_of_lt F G x ht']
       have hlo := hG.lt_snd_apply_iff x (t := 3 * t - 2) hm2
-      have hhi := hG.snd_apply_lt_iff x (t := 3 * t - 2) h1
+      have hhi := hG.snd_apply_lt_iff x (t := 3 * t - 2) right_notMem_Ioo
       constructor <;> linarith [hlo.2 (by linarith), hhi.2 (by linarith)]
 
 variable [TopologicalSpace M] [TopologicalSpace N]
 
-/-- The stack of two collared tracks which are topological embeddings is a topological embedding:
-the two open slabs `{t < 2/3}` and `{1/3 < t}` cover `N × ℝ`, over each the stacked track is one
-of the two rescaled tracks, and both of those are embeddings. -/
+/-- The stack of two collared tracks which are topological embeddings is a topological
+embedding. -/
 theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G)
     (hF' : IsEmbedding F) (hG' : IsEmbedding G) : IsEmbedding (TauCeti.stack F G) := by
-  have hlow : IsOpen {p : M × ℝ | p.2 < 2 / 3} := isOpen_lt continuous_snd continuous_const
-  have hup : IsOpen {p : M × ℝ | 1 / 3 < p.2} := isOpen_lt continuous_const continuous_snd
   have hF3 : IsEmbedding (conjTime F 3 0) := by
     rw [conjTime_eq_comp F 0 (by norm_num)]
     exact (Homeomorph.isEmbedding _).comp (hF'.comp (Homeomorph.isEmbedding _))
   have hG3 : IsEmbedding (conjTime G 3 (-2)) := by
     rw [conjTime_eq_comp G (-2) (by norm_num)]
     exact (Homeomorph.isEmbedding _).comp (hG'.comp (Homeomorph.isEmbedding _))
+  -- Unfolded, `stack F G` is the `if` on `p.2 ≤ 1 / 2` between the two rescaled tracks. At the
+  -- seam `t = 1 / 2` they agree, both being the stacked track there.
   have hcont : Continuous (TauCeti.stack F G) := by
-    refine continuous_iff_continuousAt.2 fun p => ?_
-    rcases lt_or_ge p.2 (2 / 3) with hp | hp
-    · exact hF3.continuous.continuousAt.congr
-        (eventuallyEq_of_mem (hlow.mem_nhds hp) (hF.stack_eqOn_lower hG).symm)
-    · exact hG3.continuous.continuousAt.congr
-        (eventuallyEq_of_mem (hup.mem_nhds (lt_of_lt_of_le (by norm_num) hp))
-          (hF.stack_eqOn_upper hG).symm)
+    unfold TauCeti.stack
+    exact hF3.continuous.if_le hG3.continuous continuous_snd continuous_const fun p hp =>
+      (hF.stack_eqOn_lower hG (by norm_num [hp])).symm.trans
+        (hF.stack_eqOn_upper hG (by norm_num [hp]))
   -- The two open slabs `{s < 2 / 3}` and `{1 / 3 < s}` cover `N × ℝ`; over each the stacked
   -- track is one of the two rescaled tracks, restricted to the matching slab of `M × ℝ`.
   let U : Bool → TopologicalSpace.Opens (N × ℝ) := fun b => bif b
@@ -504,16 +465,10 @@ theorem exists_pos_range_inter_snd_le [CompactSpace M] (hF : IsCollaredTrack f g
   obtain ⟨ε₀, hε₀, hF₀⟩ := hF.exists_pos_apply_eq_left
   obtain ⟨ε₁, hε₁, hF₁⟩ := hF.exists_pos_apply_eq_right
   -- On the compact slab `M × [ε₀, 1 - ε₁]` the track has positive height, bounded below by `δ`.
-  obtain ⟨δ, hδ, hδF⟩ : ∃ δ > 0, ∀ x t, t ∈ Icc ε₀ (1 - ε₁) → δ ≤ (F (x, t)).2 := by
-    have hK : IsCompact ((univ : Set M) ×ˢ Icc ε₀ (1 - ε₁)) := isCompact_univ.prod isCompact_Icc
-    rcases ((univ : Set M) ×ˢ Icc ε₀ (1 - ε₁)).eq_empty_or_nonempty with he | hne
-    · refine ⟨1, one_pos, fun x t ht => ?_⟩
-      have hmem : (x, t) ∈ (univ : Set M) ×ˢ Icc ε₀ (1 - ε₁) := ⟨mem_univ x, ht⟩
-      simp [he] at hmem
-    · obtain ⟨⟨x₀, t₀⟩, hp, hmin⟩ := hK.exists_isMinOn hne (continuous_snd.comp hc).continuousOn
-      refine ⟨(F (x₀, t₀)).2, ?_, fun x t ht => isMinOn_iff.1 hmin (x, t) ⟨mem_univ x, ht⟩⟩
-      exact ((hF.snd_apply_mem_Ioo_iff x₀).2
-        ⟨hε₀.trans_le hp.2.1, hp.2.2.trans_lt (by linarith)⟩).1
+  obtain ⟨δ, hδ, hδF⟩ := (isCompact_univ.prod isCompact_Icc).exists_forall_le'
+    (s := univ ×ˢ Icc ε₀ (1 - ε₁)) (f := fun p => (F p).2) (continuous_snd.comp hc).continuousOn
+    fun p hp => (hF.snd_apply_mem_Ioo p.1 p.2
+      ⟨hε₀.trans_le hp.2.1, hp.2.2.trans_lt (by linarith)⟩).1
   refine ⟨min ε₀ (δ / 2), lt_min hε₀ (half_pos hδ), ?_⟩
   ext ⟨y, s⟩
   simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Iic]
@@ -523,7 +478,7 @@ theorem exists_pos_range_inter_snd_le [CompactSpace M] (hF : IsCollaredTrack f g
     have ht : t ≤ ε₀ := by
       by_contra! ht
       rcases le_or_gt t (1 - ε₁) with ht' | ht'
-      · have hδs := hδF x t ⟨ht.le, ht'⟩
+      · have hδs := hδF (x, t) ⟨mem_univ x, ht.le, ht'⟩
         rw [hxt] at hδs
         linarith [min_le_right ε₀ (δ / 2)]
       · rw [hF₁ x t ht'.le, Prod.mk.injEq] at hxt

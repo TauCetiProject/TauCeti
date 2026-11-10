@@ -156,6 +156,31 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
     ← Category.assoc, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
     TopPair.singularHomologyMap_id, Category.id_comp]
 
+/-- The local homology isomorphism of the identity chart of `E` is the identity. -/
+@[simp]
+lemma singularHomologyComplSingletonIsoOfChart_refl {p : E}
+    (hp : p ∈ (OpenPartialHomeomorph.refl E).source) (k : ℕ) :
+    singularHomologyComplSingletonIsoOfChart R (OpenPartialHomeomorph.refl E) hp k =
+      Iso.refl _ := by
+  ext : 1
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R (X := TopCat.of E)
+    (OpenPartialHomeomorph.refl E).open_source isClosed_singleton (Set.singleton_subset_iff.2 hp) k
+  rw [← cancel_epi (TopPair.singularHomologyMap
+    (TopPair.excisionMap (X := TopCat.of E) (OpenPartialHomeomorph.refl E).source {p}ᶜ) R k),
+    singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+    ← TopPair.singularHomologyMap_comp]
+  -- The identity chart sends `p` to `p` only after unfolding, so the composite is type-correct
+  -- only up to that unfolding.
+  erw [Iso.refl_hom, Category.comp_id]
+  congr 1
+  -- The homeomorphism of the identity chart is the identity on the ambient space.
+  apply TopPair.hom_ext_of_fst
+  ext z
+  rw [TopPair.Hom.fst_comp]
+  erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  rfl
+
 end Chart
 
 variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]

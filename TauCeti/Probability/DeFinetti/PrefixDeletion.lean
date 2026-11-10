@@ -202,7 +202,7 @@ private lemma condExp_indicator_eq_of_contractable [IsFiniteMeasure μ]
   have hW : Measurable W := measurable_processShift fun n => hX_meas (m + 1 + n)
   have hW' : Measurable W' :=
     measurable_processCons (hX_meas r) fun n => (measurable_pi_apply n).comp hW
-  exact condExp_indicator_eq_of_law_eq_of_comap_le U W W' hU hW hW'
+  exact condExp_indicator_eq_of_law_eq_of_comap_le U W W' hU hW'
     (pair_law_eq_of_contractable hContr hX_meas r m hrm)
     (comap_le_comap_processCons (fun ω => X r ω) W) hA
 

@@ -90,8 +90,8 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
       ((ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
         (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
           (mapsTo_id_compl_compacts (singleton_le_starHull y L))) n)).1) z ?_
-    rw [← singularCohomologyMap_compl_compacts_comp_apply hL
-      (Compacts.le_starHull (E := E) ℝ y L), hzL, map_zero]
+    rw [← singularCohomologyMap_ofSubsetMap_id_trans hL (Compacts.le_starHull (E := E) ℝ y L),
+      ConcreteCategory.comp_apply, hzL, map_zero]
   · obtain ⟨L, -, w, rfl⟩ := exists_compactSupportCohomologyι_eq x {y}
     have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
       (M := M) y L n
