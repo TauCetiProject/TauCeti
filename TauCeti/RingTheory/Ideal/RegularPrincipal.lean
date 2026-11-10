@@ -89,12 +89,10 @@ lemma comap_mem_spanSubmonoid_nonZeroDivisors_of_bijective {J : Ideal S}
     (hJ : J ∈ Ideal.spanSubmonoid (nonZeroDivisors S))
     {f : R →+* S} (hf : Function.Bijective f) :
     J.comap f ∈ Ideal.spanSubmonoid (nonZeroDivisors R) := by
-  refine mem_spanSubmonoid_nonZeroDivisors_of_comap_of_bijective
-    (f := ((RingEquiv.ofBijective f hf).symm : S →+* R))
-    (RingEquiv.bijective _) ?_
-  have hcomp : f.comp ((RingEquiv.ofBijective f hf).symm : S →+* R) = RingHom.id S :=
-    RingHom.ext fun x ↦ (RingEquiv.ofBijective f hf).apply_symm_apply x
-  rwa [Ideal.comap_comap, hcomp, Ideal.comap_id]
+  have hmap : J.map ((RingEquiv.ofBijective f hf).symm : S →+* R) = J.comap f :=
+    Ideal.map_symm (RingEquiv.ofBijective f hf)
+  rw [← hmap]
+  exact map_mem_spanSubmonoid_nonZeroDivisors_of_bijective hJ (RingEquiv.bijective _)
 
 
 end Ideal
