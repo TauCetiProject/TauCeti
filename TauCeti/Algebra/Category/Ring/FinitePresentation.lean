@@ -65,7 +65,8 @@ theorem exists_isPushout_of_finitePresentation
     intro r hr
     obtain ⟨hji⟩ := hi (Finset.mem_image_of_mem j (Finset.mem_univ (⟨r, hr⟩ : P.coeffs)))
     refine ⟨diagram.map hji (x ⟨r, hr⟩), ?_⟩
-    exact (congrArg (fun g ↦ g.hom (x ⟨r, hr⟩)) (cocone.w hji)).trans (hx ⟨r, hr⟩)
+    simpa only [CommRingCat.hom_comp, RingHom.comp_apply, RingHom.algebraMap_toAlgebra]
+      using (congrArg (fun g ↦ g.hom (x ⟨r, hr⟩)) (cocone.w hji)).trans (hx ⟨r, hr⟩)
   let B := P.ModelOfHasCoeffs (diagram.obj i)
   let e := P.tensorModelOfHasCoeffsEquiv (diagram.obj i)
   refine ⟨i, CommRingCat.of B, CommRingCat.ofHom (algebraMap (diagram.obj i) B),
@@ -76,7 +77,7 @@ theorem exists_isPushout_of_finitePresentation
     (by simp [RingHom.algebraMap_toAlgebra]) (by simp) ?_
     (CommRingCat.ofHom_comp _ _).symm
   ext r
-  exact e.commutes r
+  simpa [RingHom.algebraMap_toAlgebra] using e.commutes r
 
 end TauCeti.CommRingCat
 
