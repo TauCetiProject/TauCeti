@@ -18,10 +18,10 @@ of the measure-to-function direction of Bochner representation on locally compac
 
 public section
 
-open MeasureTheory ComplexConjugate
+open MeasureTheory ComplexConjugate TauCeti
 open scoped ComplexOrder
 
-namespace TauCeti
+namespace MeasureTheory.FiniteMeasure
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 
@@ -29,7 +29,7 @@ variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
 /-- The transform of a finite positive measure on the dual is positive definite. -/
-theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasureTransform
+theorem isPositiveDefiniteSub_pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) :
     IsPositiveDefiniteSub μ.pontryaginMeasureTransform := by
   refine isPositiveDefiniteSub_iff_forall_sum_nonneg.mpr ?_
@@ -58,10 +58,10 @@ theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasu
     (PontryaginDual.isPositiveDefiniteSub χ).2) n c v
 
 /-- The absolute value of a measure transform is bounded by the measure's total mass. -/
-theorem _root_.MeasureTheory.FiniteMeasure.norm_pontryaginMeasureTransform_le
+theorem norm_pontryaginMeasureTransform_le
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
     ‖μ.pontryaginMeasureTransform g‖ ≤ μ.toMeasure.real Set.univ := by
   simpa using
     μ.isPositiveDefiniteSub_pontryaginMeasureTransform.norm_apply_le_map_zero_re g
 
-end TauCeti
+end MeasureTheory.FiniteMeasure

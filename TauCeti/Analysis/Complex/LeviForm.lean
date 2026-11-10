@@ -435,8 +435,8 @@ theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
 Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
 applies to the real part of a holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
-theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
-    (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
+theorem morseIndex_eq_finrank_of_leviForm_eq_zero (h : leviForm f x = 0)
+    (hnd : (hessianQuadraticForm f x).Nondegenerate) :
     morseIndex f x = Module.finrank ℂ V := by
   have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
   rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
