@@ -541,25 +541,10 @@ theorem _root_.LinearMap.cokerSndProdMap_surjective :
 
 /-- `0 → coker f → coker (f.prodMap g) → coker g → 0` is exact in the middle. -/
 theorem _root_.LinearMap.exact_cokerInlProdMap_cokerSndProdMap :
-    Function.Exact (cokerInlProdMap f g) (cokerSndProdMap f g) := by
-  intro z
-  induction z using Submodule.Quotient.induction_on with
-  | H z =>
-    obtain ⟨x, y⟩ := z
-    rw [cokerSndProdMap_mk, Submodule.Quotient.mk_eq_zero]
-    constructor
-    · rintro ⟨m', hm'⟩
-      refine ⟨Submodule.Quotient.mk x, ?_⟩
-      rw [cokerInlProdMap_mk, Submodule.Quotient.eq]
-      exact ⟨(0, -m'), by simp [hm']⟩
-    · rintro ⟨x', hx'⟩
-      induction x' using Submodule.Quotient.induction_on with
-      | H x' =>
-        rw [cokerInlProdMap_mk, Submodule.Quotient.eq] at hx'
-        obtain ⟨⟨m, m'⟩, hm⟩ := hx'
-        have hm' : g m' = -y := by simpa using congrArg Prod.snd hm
-        exact ⟨-m', by simp [hm']⟩
-
+    Function.Exact (cokerInlProdMap f g) (cokerSndProdMap f g) :=
+  (Function.Exact.inl_snd.exact_mapQ_iff _ _).2 <| by
+    rw [range_prodMap, Submodule.prod_map_snd]
+    exact inf_le_right
 
 end KerCokerProdMap
 

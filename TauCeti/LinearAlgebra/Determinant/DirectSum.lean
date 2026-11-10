@@ -241,6 +241,15 @@ private theorem detLineCongr_symm_detLineShortExactEquiv_coker_tmul
     coe_detLineShortExactEquiv_coker_tmul, TauCeti.ExteriorAlgebra.map_ιMulti_append, hy, hx,
     Submodule.coe_smul, coe_detLineShortExactEquiv_coker_tmul]
 
+variable (K) in
+/-- A functional on the determinant line of a finite-dimensional space taking the value `1` at
+the exterior product of `Module.finBasis`. -/
+private theorem exists_dual_detLine_ιMulti_finBasis_eq_one (V : Type*) [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] :
+    ∃ ψ : Dual K (TauCeti.detLine K V), ψ (exteriorPower.ιMulti K _ (Module.finBasis K V)) = 1 :=
+  Module.Projective.exists_dual_eq_one K
+    ((exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K V).linearIndependent)
+
 /-- The exchange law of `LinearMap.detLineProdMapEquiv` at the joined exterior product of
 families `u` and `w` in the kernels, computed through `LinearMap.detLineProdMapEquiv_tmul` with
 functionals normalized on exterior products of bases of the cokernels. -/
@@ -259,18 +268,12 @@ private theorem detLineProdMapEquiv_detLineCongr_prodComm_tmul
             (exact_kerInlProdMap_kerSndProdMap f g) (kerSndProdMap_surjective f g)
             (exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ w) ⊗ₜ φ)) := by
   -- Functionals taking the value `1` on exterior products of bases of the cokernels.
-  obtain ⟨ψ, hψ⟩ := Module.Projective.exists_dual_eq_one K
-    (show (exteriorPower.ιMulti K _ (Module.finBasis K (N ⧸ range f)) :
-        TauCeti.detLine K (N ⧸ range f)) ≠ 0 from
-      (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K _).linearIndependent)
-  obtain ⟨χ, hχ⟩ := Module.Projective.exists_dual_eq_one K
-    (show (exteriorPower.ιMulti K _ (Module.finBasis K (N' ⧸ range g)) :
-        TauCeti.detLine K (N' ⧸ range g)) ≠ 0 from
-      (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K _).linearIndependent)
+  obtain ⟨ψ, hψ⟩ := exists_dual_detLine_ιMulti_finBasis_eq_one K (N ⧸ range f)
+  obtain ⟨χ, hχ⟩ := exists_dual_detLine_ιMulti_finBasis_eq_one K (N' ⧸ range g)
   have he : ∀ z : ker (f.prodMap g), ((LinearEquiv.prodComm K M M').ofSubmodules _ _
       (f.prodMap g |>.map_ker_eq_ker_of_comp_eq (LinearEquiv.prodComm K M M').surjective
         (LinearEquiv.prodComm K N N').injective (prodMap_comp_prodComm f g)) z : M' × M) =
-      (z : M × M').swap := fun _ ↦ rfl
+      (z : M × M').swap := fun _ ↦ by simp
   have hQ : ∀ z : N × N', Submodule.Quotient.equiv (range (f.prodMap g)) (range (g.prodMap f))
       (LinearEquiv.prodComm K N N') (f.prodMap g |>.map_range_eq_range_of_comp_eq
         (LinearEquiv.prodComm K M M').surjective (prodMap_comp_prodComm f g))
@@ -287,18 +290,12 @@ private theorem detLineProdMapEquiv_detLineCongr_prodComm_tmul
     LinearEquiv.coe_coe, detLineCongr_symm_detLineShortExactEquiv_coker_tmul f g _ hQ,
     map_smul, smul_eq_mul, TensorProduct.comm_tmul, smul_smul]
   congr 1
-  -- The signs agree because `2 * (dim (coker f) * dim (ker g))` is even.
-  have h : (finrank K (ker f) + finrank K (N ⧸ range f)) *
-      (finrank K (ker g) + finrank K (N' ⧸ range g)) +
-      finrank K (N ⧸ range f) * finrank K (ker g) =
-      finrank K (ker g) * finrank K (ker f) + finrank K (N' ⧸ range g) * finrank K (ker f) +
-        finrank K (N ⧸ range f) * finrank K (N' ⧸ range g) +
-        2 * (finrank K (N ⧸ range f) * finrank K (ker g)) := by
-    ring
   generalize φ _ = t
-  conv_rhs => rw [← mul_assoc, ← pow_add, h, pow_add _ _ (2 * _), pow_mul, neg_one_sq, one_pow,
-    mul_one]
-  ring
+  generalize finrank K (ker f) = a, finrank K (ker g) = b, finrank K (N ⧸ range f) = c,
+    finrank K (N' ⧸ range g) = d
+  -- The signs agree because `(a + c) * (b + d) + c * b = b * a + d * a + c * d + 2 * (c * b)`.
+  have hc : ((-1 : K) ^ (c * b)) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
+  linear_combination (-(-1 : K) ^ (b * a) * (-1) ^ (d * a) * (-1) ^ (c * d) * t) * hc
 
 /-- **Exchanging the summands of a direct sum.** The exchange of factors
 `LinearEquiv.prodComm` carries `f ⊕ g` to `g ⊕ f`, and transporting determinant lines along it
@@ -315,14 +312,8 @@ theorem detLineProdMapEquiv_detLineCongr_prodComm (z : (f.prodMap g).detLine) :
           (finrank K (ker g) + finrank K (N' ⧸ range g))) •
         TensorProduct.comm K _ _ (detLineProdMapEquiv f g z) := by
   -- Functionals taking the value `1` on exterior products of bases of the kernels.
-  obtain ⟨ψu, hψu⟩ := Module.Projective.exists_dual_eq_one K
-    (show (exteriorPower.ιMulti K _ (Module.finBasis K (ker f)) :
-        TauCeti.detLine K (ker f)) ≠ 0 from
-      (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K _).linearIndependent)
-  obtain ⟨ψw, hψw⟩ := Module.Projective.exists_dual_eq_one K
-    (show (exteriorPower.ιMulti K _ (Module.finBasis K (ker g)) :
-        TauCeti.detLine K (ker g)) ≠ 0 from
-      (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K _).linearIndependent)
+  obtain ⟨ψu, hψu⟩ := exists_dual_detLine_ιMulti_finBasis_eq_one K (ker f)
+  obtain ⟨ψw, hψw⟩ := exists_dual_detLine_ιMulti_finBasis_eq_one K (ker g)
   -- The functional `ξ` takes the value `1` at the joined exterior product `β₀` of the bases, so
   -- every element of the line `det (ker (f ⊕ g))` is a multiple of `β₀`.
   have hξ : (dualDistribEquiv K _ _ (ψu ⊗ₜ ψw) ∘ₗ
