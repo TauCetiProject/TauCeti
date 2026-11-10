@@ -59,10 +59,11 @@ theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
 
 end Mate
 
-omit [MonoidalPreadditive C] in
+omit [Preadditive C] [MonoidalPreadditive C] in
 /-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
-the zigzag identity would make the identity of `X` zero. -/
-theorem coevaluation_ne_zero {X Y : C} [ExactPairing X Y] (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
+the zigzag identity would make the identity of `X` zero. Only zero morphisms are needed. -/
+theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
   intro h
   have hz := ExactPairing.evaluation_coevaluation X Y
   have := (tensorRightAdjunction X Y).isLeftAdjoint
