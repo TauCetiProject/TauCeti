@@ -177,10 +177,15 @@ private theorem trace_evenHalfSpinAction_ι_bilin_comm (u v : V) :
   exact mul_left_cancel₀ (by exact_mod_cast hQe) h
 
 /-- **The trace of `c(u) c(v)` on an eigenspace of `Γ`** is `-⟪u, v⟫` times its dimension. -/
-theorem trace_evenHalfSpinAction_ι_bilin
-    [FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)] (u v : V) :
+theorem trace_evenHalfSpinAction_ι_bilin (u v : V) :
     LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v)) =
       -⟪u, v⟫ * finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
+  -- If the eigenspace is infinite-dimensional, both sides are zero by convention.
+  by_cases hfin : FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)
+  swap
+  · have hb : ¬∃ s : Finset (eigenspace (ρ (chirality Q o)) ε), Nonempty (Basis s ℂ _) :=
+      fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b)
+    simp [LinearMap.trace, hb, Module.finrank_of_not_finite hfin]
   -- By symmetry, twice the trace is the trace of `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
   have h := congrArg (fun x ↦ LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε x))
     (even_ι_bilin_add_swap_eq_neg_two_inner hQ u v)
@@ -360,14 +365,61 @@ theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
 
 end ChiralEquiv
 
+omit hQ in
+/-- For the zero quadratic form the chirality element squares to zero. -/
+private theorem chirality_mul_self_of_forall_eq_zero (hQ₀ : ∀ v, Q v = 0) :
+    chirality Q o * chirality Q o = 0 := by
+  have hpolar (a b : V) : algebraMap ℝ (CliffordAlgebra Q) (QuadraticMap.polar Q a b) = 0 := by
+    simp [QuadraticMap.polar, hQ₀]
+  have hanti (a b : V) : ι Q a * ι Q b = -(ι Q b * ι Q a) :=
+    eq_neg_of_add_eq_zero_left (by rw [ι_mul_ι_add_swap, hpolar])
+  have hsq (a : V) : ι Q a * ι Q a = 0 := by rw [ι_sq_scalar, hQ₀, map_zero]
+  have hmove (a c : V) (y : CliffordAlgebra Q) :
+      ι Q c * (ι Q a * y) = -(ι Q a * (ι Q c * y)) := by
+    rw [← mul_assoc, hanti c a, neg_mul, mul_assoc]
+  let b := o.finOrthonormalBasis (by norm_num) Fact.out
+  have hb : b.toBasis.orientation = o := o.finOrthonormalBasis_orientation _ _
+  have hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis := fun i j _ ↦ by
+    simp [QuadraticMap.associated_apply, hQ₀, Function.onFun]
+  have h : volumeElement Q o = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) := by
+    rw [volumeElement_eq o b hb hQb]
+    simp [List.finRange_succ]
+  have key : ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) * ι Q (b 0) = 0 := by
+    calc _ = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * (ι Q (b 3) * ι Q (b 0)))) := by
+          simp only [mul_assoc]
+      _ = -(ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * (ι Q (b 0) * ι Q (b 3))))) := by
+          rw [hanti (b 3) (b 0), mul_neg, mul_neg, mul_neg]
+      _ = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 0) * (ι Q (b 2) * ι Q (b 3)))) := by
+          rw [hmove (b 0) (b 2), mul_neg, mul_neg, neg_neg]
+      _ = -(ι Q (b 0) * (ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))))) := by
+          rw [hmove (b 0) (b 1), mul_neg]
+      _ = 0 := by rw [← mul_assoc, hsq, zero_mul, neg_zero]
+  rw [chirality_eq_neg_volumeElement, neg_mul_neg, h]
+  calc _ = (ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) * ι Q (b 0)) *
+        (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) := by simp only [mul_assoc]
+    _ = 0 := by rw [key, zero_mul]
+
 variable (ρ) in
+omit hQ in
 /-- The two eigenspaces of `Γ` have the same dimension: `dim W⁻ = dim W⁺`. -/
 theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  exact (halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).finrank_eq.symm
+  by_cases hQ₀ : ∀ v, Q v = 0
+  · -- `Γ` squares to zero, so it has no nonzero eigenvalue and both eigenspaces vanish
+    -- unless `ε = 0`.
+    have hbot (δ : ℂ) (hδ : δ ≠ 0) : eigenspace (ρ (chirality Q o)) δ = ⊥ := by
+      refine Submodule.eq_bot_iff _ |>.2 fun ψ hψ ↦ ?_
+      have h := Module.End.mem_eigenspace_iff.1 hψ
+      have h0 : ρ (chirality Q o * chirality Q o) ψ = 0 := by
+        rw [chirality_mul_self_of_forall_eq_zero o hQ₀, map_zero, LinearMap.zero_apply]
+      rw [map_mul, mul_apply_eq_comp, h, map_smul, h, smul_smul] at h0
+      exact (smul_eq_zero.1 h0).resolve_left (mul_ne_zero hδ hδ)
+    by_cases hε : ε = 0
+    · rw [hε, neg_zero]
+    · rw [hbot ε hε, hbot (-ε) (neg_ne_zero.2 hε)]
+  · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
+    exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
 
 variable [FiniteDimensional ℂ W]
 
@@ -384,7 +436,7 @@ def cliffordMulEquiv {ε : ℂ} {ψ : W} (hψ : ψ ∈ eigenspace (ρ (chirality
       map_smul' r v := by ext; simp }
     (fun v w h ↦ map_ι_apply_left_injective ρ (fun v hv ↦ by simpa [hQ] using hv) hψ₀
       (congrArg Subtype.val h))
-    (by rw [finrank_real_of_complex, finrank_eigenspace_chirality_neg o hQ ρ, h₂,
+    (by rw [finrank_real_of_complex, finrank_eigenspace_chirality_neg o ρ, h₂,
       (Fact.out : finrank ℝ V = 4)])
 
 /-- `cliffordMulEquiv` is Clifford multiplication: it sends `v` to `c(v) ψ`. -/

@@ -87,7 +87,7 @@ section Linear
 variable {U : W ≃ₗ[ℂ] W'}
   (hU : ∀ v, U.toLinearMap ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U.toLinearMap)
 
-include ho hU in
+include hQ' ho hU in
 /-- **Naturality of the Clifford map**: for an equivalence `U` intertwining Clifford
 multiplication along an orientation-preserving isometry `f`, `C'(i ⋀²f α) = U⁺ C(iα) U⁺⁻¹` on the
 positive half-spinors. -/
@@ -95,7 +95,7 @@ theorem cliffordRestriction_map (x : ⋀[ℝ]^2 V) :
     cliffordRestriction o' ρ' (exteriorPower.map 2 f.toLinearMap x) =
       ContinuousLinearEquiv.conjContinuousAlgEquiv
         (positiveHalfSpinorsEquiv o ρ o' ρ' U
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU)).toContinuousLinearEquiv
+          (comp_chirality_eq_chirality_comp hQ ho hU)).toContinuousLinearEquiv
         (cliffordRestriction o ρ x) := by
   -- `f` is an isometry of the quadratic forms `Q v = -‖v‖²` and `Q' v = -‖v‖²`.
   let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
@@ -111,7 +111,7 @@ theorem cliffordRestriction_map (x : ⋀[ℝ]^2 V) :
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at hψ
   simp [hψ]
 
-include ho hU in
+include hQ' ho hU in
 /-- **Naturality of the adjoint `τ = C*` of the Clifford map**: for an equivalence `U`
 intertwining Clifford multiplication along an orientation-preserving isometry `f`,
 `τ'(U⁺ T U⁺⁻¹) = ⋀²f τ(T)` for every endomorphism `T` of the positive half-spinors. -/
@@ -121,10 +121,10 @@ theorem cliffordRestrictionAdjoint_conjContinuousAlgEquiv (hkl : 2 + 2 = finrank
     (cliffordRestrictionAdjoint o' ρ' hkl'
         (ContinuousLinearEquiv.conjContinuousAlgEquiv
           (positiveHalfSpinorsEquiv o ρ o' ρ' U
-            (comp_chirality_eq_chirality_comp hQ hQ' ho hU)).toContinuousLinearEquiv T) :
+            (comp_chirality_eq_chirality_comp hQ ho hU)).toContinuousLinearEquiv T) :
         ⋀[ℝ]^2 V') =
       exteriorPower.map 2 f.toLinearMap (cliffordRestrictionAdjoint o ρ hkl T) := by
-  set e := positiveHalfSpinorsEquiv o ρ o' ρ' U (comp_chirality_eq_chirality_comp hQ hQ' ho hU)
+  set e := positiveHalfSpinorsEquiv o ρ o' ρ' U (comp_chirality_eq_chirality_comp hQ ho hU)
   have hinj : Function.Injective (exteriorPower.map 2 f.toLinearMap) :=
     exteriorPower.map_injective_field f.injective
   -- `⋀²f` commutes with the Hodge stars, so it maps the self-dual forms of `V` onto those of `V'`.
@@ -174,10 +174,10 @@ include ho hU in
 `Q₀(U⁺ ψ) = U⁺ Q₀(ψ) U⁺⁻¹`. -/
 private theorem quadraticEnd_positiveHalfSpinorsEquiv (ψ : positiveHalfSpinors o ρ) :
     quadraticEnd (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-        (comp_chirality_eq_chirality_comp hQ hQ' ho hU) ψ) =
+        (comp_chirality_eq_chirality_comp hQ ho hU) ψ) =
       ContinuousLinearEquiv.conjContinuousAlgEquiv
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU)).toContinuousLinearEquiv
+          (comp_chirality_eq_chirality_comp hQ ho hU)).toContinuousLinearEquiv
         (quadraticEnd ψ) := by
   ext φ'
   simp [Submodule.coe_inner, LinearIsometryEquiv.inner_map_eq_flip]
@@ -189,12 +189,12 @@ include ho hU in
 private theorem quadraticEndPolar_positiveHalfSpinorsEquiv (ψ φ : positiveHalfSpinors o ρ) :
     quadraticEndPolar
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU) ψ)
+          (comp_chirality_eq_chirality_comp hQ ho hU) ψ)
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU) φ) =
+          (comp_chirality_eq_chirality_comp hQ ho hU) φ) =
       ContinuousLinearEquiv.conjContinuousAlgEquiv
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU)).toContinuousLinearEquiv
+          (comp_chirality_eq_chirality_comp hQ ho hU)).toContinuousLinearEquiv
         (quadraticEndPolar ψ φ) := by
   ext χ'
   simp only [quadraticEndPolar_apply_apply, Submodule.coe_inner,
@@ -209,20 +209,20 @@ private theorem quadraticEndPolar_positiveHalfSpinorsEquiv (ψ φ : positiveHalf
   conv_rhs =>
     rw [← Complex.coe_smul, map_smul, LinearIsometryEquiv.apply_symm_apply, Complex.coe_smul]
 
-include ho hU in
+include hQ' ho hU in
 /-- **`Spinᶜ` equivariance of the quadratic two-form**: for a unitary equivalence `U` intertwining
 Clifford multiplication along an orientation-preserving isometry `f`, `q'(U⁺ ψ) = ⋀²f q(ψ)`. -/
 theorem quadraticTwoForm_positiveHalfSpinorsEquiv (hkl : 2 + 2 = finrank ℝ V)
     (hkl' : 2 + 2 = finrank ℝ V') (ψ : positiveHalfSpinors o ρ) :
     (quadraticTwoForm o' ρ' hkl' (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-        (comp_chirality_eq_chirality_comp hQ hQ' ho hU) ψ) : ⋀[ℝ]^2 V') =
+        (comp_chirality_eq_chirality_comp hQ ho hU) ψ) : ⋀[ℝ]^2 V') =
       exteriorPower.map 2 f.toLinearMap (quadraticTwoForm o ρ hkl ψ) := by
   rw [quadraticTwoForm_def, quadraticTwoForm_def,
-    quadraticEnd_positiveHalfSpinorsEquiv hQ hQ' ho hU, Submodule.coe_smul,
+    quadraticEnd_positiveHalfSpinorsEquiv hQ ho hU, Submodule.coe_smul,
     cliffordRestrictionAdjoint_conjContinuousAlgEquiv hQ hQ' ho hU hkl hkl', Submodule.coe_smul,
     map_smul]
 
-include ho hU in
+include hQ' ho hU in
 /-- **Equivariance of the polarization of `q`**, which is its real derivative: for a unitary
 equivalence `U` intertwining Clifford multiplication along an orientation-preserving isometry `f`,
 `q'(U⁺ ψ, U⁺ φ) = ⋀²f q(ψ, φ)`. -/
@@ -230,12 +230,12 @@ theorem quadraticTwoFormPolar_positiveHalfSpinorsEquiv (hkl : 2 + 2 = finrank �
     (hkl' : 2 + 2 = finrank ℝ V') (ψ φ : positiveHalfSpinors o ρ) :
     (quadraticTwoFormPolar o' ρ' hkl'
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU) ψ)
+          (comp_chirality_eq_chirality_comp hQ ho hU) ψ)
         (positiveHalfSpinorsEquiv o ρ o' ρ' U.toLinearEquiv
-          (comp_chirality_eq_chirality_comp hQ hQ' ho hU) φ) : ⋀[ℝ]^2 V') =
+          (comp_chirality_eq_chirality_comp hQ ho hU) φ) : ⋀[ℝ]^2 V') =
       exteriorPower.map 2 f.toLinearMap (quadraticTwoFormPolar o ρ hkl ψ φ) := by
   rw [quadraticTwoFormPolar_apply, quadraticTwoFormPolar_apply,
-    quadraticEndPolar_positiveHalfSpinorsEquiv hQ hQ' ho hU, Submodule.coe_smul,
+    quadraticEndPolar_positiveHalfSpinorsEquiv hQ ho hU, Submodule.coe_smul,
     cliffordRestrictionAdjoint_conjContinuousAlgEquiv hQ hQ' ho hU hkl hkl', Submodule.coe_smul,
     map_smul]
 

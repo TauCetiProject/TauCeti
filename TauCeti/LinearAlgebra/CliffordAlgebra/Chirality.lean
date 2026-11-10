@@ -572,6 +572,7 @@ theorem bivectorExterior_smul_bivectorExterior_smul_self_of_hodgeStar_eq_neg
     real_inner_self_eq_norm_sq, sub_smul, smul_assoc, hψ, algebraMap_smul]
   module
 
+omit [Module ℝ S] [IsScalarTower ℝ (CliffordAlgebra Q) S] in
 /-- **Self-dual two-forms act faithfully on every nonzero positive spinor**: if `Γ ψ = ψ`,
 `ψ ≠ 0` and `⋆α = α`, then `c₂(α) ψ = 0` only for `α = 0`. -/
 theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
@@ -579,10 +580,14 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_self (hkl : 2 + 2 = fi
     (hψ₀ : ψ ≠ 0) :
     bivectorExterior Q x • ψ = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, zero_smul]⟩
+  let : Module ℝ S := Module.compHom S (algebraMap ℝ (CliffordAlgebra Q))
+  have : IsScalarTower ℝ (CliffordAlgebra Q) S :=
+    ⟨fun r a s ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
   have hsq := bivectorExterior_smul_bivectorExterior_smul_self_of_hodgeStar_eq_self o hQ hkl hx hψ
   rw [h, smul_zero, eq_comm, smul_eq_zero] at hsq
   simpa [hψ₀] using hsq
 
+omit [Module ℝ S] [IsScalarTower ℝ (CliffordAlgebra Q) S] in
 /-- **Anti-self-dual two-forms act faithfully on every nonzero negative spinor**: if
 `Γ ψ = -ψ`, `ψ ≠ 0` and `⋆α = -α`, then `c₂(α) ψ = 0` only for `α = 0`. -/
 theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
@@ -590,6 +595,9 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg (hkl : 2 + 2 = fin
     (hψ₀ : ψ ≠ 0) :
     bivectorExterior Q x • ψ = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, zero_smul]⟩
+  let : Module ℝ S := Module.compHom S (algebraMap ℝ (CliffordAlgebra Q))
+  have : IsScalarTower ℝ (CliffordAlgebra Q) S :=
+    ⟨fun r a s ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
   have hsq := bivectorExterior_smul_bivectorExterior_smul_self_of_hodgeStar_eq_neg o hQ hkl hx hψ
   rw [h, smul_zero, eq_comm, smul_eq_zero] at hsq
   simpa [hψ₀] using hsq
@@ -651,9 +659,28 @@ variable {o ρ o' ρ'} in
 /-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
 linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. -/
 theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (hQ' : ∀ v, Q' v = -‖v‖ ^ 2) {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
+    {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
     {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
     U ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U := by
+  by_cases hU₀ : U = 0
+  · simp [hU₀]
+  obtain ⟨w, hw⟩ : ∃ w, U w ≠ 0 := by simpa [LinearMap.ext_iff] using hU₀
+  -- A nonzero intertwiner forces the quadratic forms to agree along `f`.
+  have hQ' : ∀ v, Q' v = -‖v‖ ^ 2 := fun u ↦ by
+    obtain ⟨v, rfl⟩ := f.surjective u
+    have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
+    have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
+      rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+        Module.algebraMap_end_apply]
+    have h₂ : ρ' (ι Q' (f v)) (ρ' (ι Q' (f v)) (U w)) = Q' (f v) • U w := by
+      rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+        Module.algebraMap_end_apply]
+    have h₃ := LinearMap.congr_fun (hU v) w
+    simp only [LinearMap.comp_apply] at h h₃
+    rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
+    have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
+    rw [smul_eq_zero, sub_eq_zero] at h'
+    rw [← (h'.resolve_right hw), hQ, f.norm_map]
   let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
     (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
   have he (v : V) : e.toIsometry v = f v := congrFun (f.coe_toQuadraticIsometryEquiv _ _) v
