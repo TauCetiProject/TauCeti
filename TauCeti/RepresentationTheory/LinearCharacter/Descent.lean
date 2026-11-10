@@ -44,8 +44,7 @@ theorem _root_.MonoidHom.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot (χ : 
     ∃! ψ : G →* Kˣ, (Units.map (algebraMap K L : K →* L)).comp ψ = χ := by
   have hf := FaithfulSMul.algebraMap_injective K L
   have hζL := (hζ.isUnit_unit (NeZero.ne n)).map_of_injective (Units.map_injective hf)
-  apply χ.existsUnique_comp_eq_of_injective _ (Units.map_injective hf)
-  intro g
+  refine (χ.existsUnique_comp_eq_iff_of_injective _ (Units.map_injective hf)).mpr fun g => ?_
   have hpow : χ g ^ n = 1 := by
     rw [← map_pow, Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hG g, map_one]
   obtain ⟨i, -, hi⟩ := hζL.eq_pow_of_mem_rootsOfUnity ((mem_rootsOfUnity n (χ g)).mpr hpow)

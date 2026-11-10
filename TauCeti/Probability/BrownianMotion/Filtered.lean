@@ -58,6 +58,20 @@ structure IsFilteredPreBrownianReal (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 
   /-- The increment `W t - W s` is independent of `ℱ s`. -/
   indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
+/-- Fixed-time almost-sure equality preserves the filtered pre-Brownian property, provided
+the replacement is adapted to the same filtration. Adaptedness is not inferred from a.e. equality
+on a raw filtration. -/
+theorem IsFilteredPreBrownianReal.congr {ℱ : Filtration ℝ≥0 mΩ} {B W : ℝ≥0 → Ω → ℝ}
+    {P : Measure Ω} (hB : IsFilteredPreBrownianReal ℱ B P) (hW : Adapted ℱ W)
+    (h : ∀ t, B t =ᵐ[P] W t) : IsFilteredPreBrownianReal ℱ W P where
+  toIsPreBrownianReal := hB.toIsPreBrownianReal.congr h
+  adapted := hW
+  indep_sub s t hst := by
+    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) (B t - B s) id P := by
+      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hB.indep_sub hst
+    have hj := hi.congr ((h t).sub (h s)) (Filter.EventuallyEq.refl ..)
+    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hj
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.IsPreBrownianReal

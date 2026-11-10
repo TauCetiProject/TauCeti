@@ -105,6 +105,10 @@ theorem rootEvaluation_corootMap (c : I → K) :
 /-- The span of the simple coroots, as an embedded coordinate space. -/
 def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
 
+omit [Fintype I] in
+/-- The coroot span is the span of the simple coroots. -/
+theorem corootSpan_def : R.corootSpan = Submodule.span K (Set.range R.coroot) := (rfl)
+
 /-- The coroot embedding has image the coroot span. -/
 theorem range_corootMap : LinearMap.range R.corootMap = R.corootSpan :=
   Fintype.range_linearCombination K R.coroot
@@ -270,22 +274,34 @@ section FiniteDimensional
 def IsMinimal (_R : CartanRealization A H) : Prop :=
   FiniteDimensional K H ∧ finrank K H = 2 * Fintype.card I - A.rank
 
+variable {R} in
+/-- A minimal realization has finite-dimensional ambient space. -/
+theorem IsMinimal.finiteDimensional (hR : R.IsMinimal) : FiniteDimensional K H := hR.1
+
+/-- A minimal realization has dimension twice the number of nodes minus the matrix rank. -/
+theorem IsMinimal.finrank_eq {R : CartanRealization A H} (hR : R.IsMinimal) :
+    finrank K H = 2 * Fintype.card I - A.rank :=
+  hR.2
+
 variable [FiniteDimensional K H]
 
-omit [Fintype I] in
+omit [Fintype I] [FiniteDimensional K H] in
 /-- Root evaluation is onto: the full realization retains the directions that a singular
-Cartan matrix cannot detect on the coroot span. -/
-theorem rootEvaluation_surjective : Function.Surjective R.rootEvaluation := by
+Cartan matrix cannot detect on the coroot span. The ambient space may be infinite-dimensional. -/
+theorem rootEvaluation_surjective [Finite I] : Function.Surjective R.rootEvaluation := by
   classical
-  let := Fintype.ofFinite (Basis.ofVectorSpaceIndex K H)
-  let b := Basis.ofVectorSpace K H
-  let M : Matrix I (Basis.ofVectorSpaceIndex K H) K := fun i j => R.root i (b j)
-  have hM : LinearIndependent K M.row := R.linearIndependent_root_coordinates b
-  intro c
-  obtain ⟨x, hx⟩ := hM.mulVec_surjective c
-  refine ⟨b.equivFun.symm x, ?_⟩
-  rw [R.rootEvaluation_eq_mulVec_coordinates b, b.equivFun.apply_symm_apply]
-  exact hx
+  let := Fintype.ofFinite I
+  -- A functional killing the image would give a vanishing combination of the roots.
+  refine LinearMap.dualMap_injective_iff.mp <| (injective_iff_map_eq_zero _).mpr fun φ hφ => ?_
+  have hsum : ∑ i, φ (Pi.single i 1) • R.root i = 0 := by
+    ext h
+    have hφh := LinearMap.congr_fun hφ h
+    rw [LinearMap.dualMap_apply, ← Finset.univ_sum_single (R.rootEvaluation h)] at hφh
+    have hs (i : I) : Pi.single i (R.root i h) = R.root i h • Pi.single i (1 : K) := by
+      rw [← Pi.single_smul', smul_eq_mul, mul_one]
+    simpa [hs, mul_comm] using hφh
+  ext i
+  exact Fintype.linearIndependent_iff.mp R.root_linearIndependent _ hsum i
 
 omit [FiniteDimensional K H] in
 /-- The dimension of the coroot span equals the number of simple coroots. -/
@@ -357,6 +373,28 @@ theorem isMinimal_iff_cartanCenter_le_corootSpan :
     exact inf_eq_left.mp heq
   · intro h
     rw [inf_eq_left.mpr h] at hi
+    omega
+
+omit [FiniteDimensional K H] in
+/-- A realization of a nonsingular matrix is minimal exactly when the simple coroots span
+its ambient space. Either condition implies finite dimensionality. -/
+theorem isMinimal_iff_corootSpan_eq_top [DecidableEq I] (hA : IsUnit A) :
+    R.IsMinimal ↔ R.corootSpan = ⊤ := by
+  classical
+  have hrank := Matrix.rank_of_isUnit A hA
+  constructor
+  · intro hR
+    let := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    rw [hrank] at h
+    apply Submodule.eq_top_of_finrank_eq
+    rw [R.finrank_corootSpan]
+    omega
+  · intro h
+    let := Module.Finite.of_basis (Basis.mk R.coroot_linearIndependent (le_of_eq h.symm))
+    rw [R.isMinimal_iff, hrank]
+    have hd := R.finrank_corootSpan
+    rw [h, finrank_top] at hd
     omega
 
 end FiniteDimensional
@@ -437,6 +475,44 @@ theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal
   · rintro ⟨hfin, hdim⟩
     let := hfin
     exact ⟨e.finiteDimensional, by rw [← e.finrank_eq]; exact hdim⟩
+
+omit [Fintype I] in
+/-- If the coroots span both realizations, there is a unique linear equivalence preserving
+all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
+theorem existsUnique_linearEquiv_of_corootSpan_eq_top (S : CartanRealization A H')
+    (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
+  let c := Basis.mk S.coroot_linearIndependent (le_of_eq hS.symm)
+  have hb (i : I) : b i = R.coroot i := Basis.mk_apply _ _ i
+  have hc (i : I) : c i = S.coroot i := Basis.mk_apply _ _ i
+  let e := b.equiv c (Equiv.refl I)
+  have he (i : I) : e (R.coroot i) = S.coroot i := by
+    simpa only [hb, hc, Equiv.refl_apply] using b.equiv_apply i c (Equiv.refl I)
+  refine ⟨e, (R.map e).ext (fun i => he i) (fun i => ?_), ?_⟩
+  · have hf : (S.root i).comp e.toLinearMap = R.root i := by
+      apply b.ext
+      intro j
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hb, he, root_coroot]
+    ext h
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      map_root_apply] using (LinearMap.congr_fun hf (e.symm h)).symm
+  · intro f hf
+    apply LinearEquiv.toLinearMap_injective
+    apply b.ext
+    intro i
+    have hfc : f (R.coroot i) = S.coroot i :=
+      congrArg (fun T : CartanRealization A H' => T.coroot i) hf
+    simpa only [LinearEquiv.coe_coe, hb] using hfc.trans (he i).symm
+
+/-- Minimal realizations of a nonsingular matrix have a unique root- and coroot-preserving
+isomorphism. Singular matrices need not have uniqueness. -/
+theorem existsUnique_linearEquiv_of_isMinimal [DecidableEq I]
+    (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  exact R.existsUnique_linearEquiv_of_corootSpan_eq_top S
+    ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
+    ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
 
 end Transport
 

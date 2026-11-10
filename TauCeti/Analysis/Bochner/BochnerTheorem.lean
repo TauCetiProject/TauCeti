@@ -220,9 +220,11 @@ theorem exists_isFiniteMeasure_integral_fourierAtom_eq
     rw [integral_smul_measure, ENNReal.toReal_ofReal hpos.le, hμ_rep v, hG_def,
       Complex.real_smul, ← mul_assoc, mul_inv_cancel₀ hcne, one_mul]
 
-/-- **Converse half of Bochner's theorem.** The Fourier-convention transform of a finite Borel
-measure is continuous and positive definite. -/
-theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq {F : V → ℂ}
+/-- **Converse half of Bochner's theorem.** The Fourier-convention transform of a finite measure
+is continuous and positive definite. -/
+theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq
+    {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
+    [OpensMeasurableSpace V] {F : V → ℂ}
     (μ : Measure V) [IsFiniteMeasure μ] (hrep : ∀ v, F v = ∫ q, fourierAtom v q ∂μ) :
     Continuous F ∧ IsPositiveDefiniteSub F := by
   refine ⟨?_, IsPositiveDefiniteSub.of_posSemidef ?_⟩

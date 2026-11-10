@@ -198,10 +198,8 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
   rcases eq_or_ne F 0 with rfl | hF₀
   · exact ⟨1, one_pos, fun x y h ↦ absurd (map_zero _) h⟩
   -- Over `ℂ`, `F` splits into pairwise non-proportional linear factors.
-  have hG₀ : F.map (Int.castRingHom ℂ) ≠ 0 := fun h ↦
-    hF₀ (MvPolynomial.map_injective _ (RingHom.injective_int _) (by rw [h, map_zero]))
   obtain ⟨a, ha, T, hTd, hT, hTL, hFT⟩ :=
-    (hF.map _).exists_linear_factors hG₀ IsAlgClosed.card_roots_eq_natDegree hsq
+    (hF.map _).exists_linear_factors IsAlgClosed.card_roots_eq_natDegree hsq
   have heval : ∀ x y : ℂ, MvPolynomial.eval ![x, y] (F.map (Int.castRingHom ℂ)) =
       a * ∏ ℓ ∈ T, (ℓ.1 * x + ℓ.2 * y) := fun x y ↦ by
     rw [hFT]

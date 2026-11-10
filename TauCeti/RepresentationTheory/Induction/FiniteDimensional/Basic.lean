@@ -280,24 +280,6 @@ theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
       Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
   exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)
 
-/-- Induction from a finite-index subgroup is injective on intertwining spaces. -/
-theorem _root_.Rep.indMap_injective [S.FiniteIndex] {V W : Rep.{max w u} k S} :
-    Function.Injective (Rep.indMap S.subtype : (V ⟶ W) → _) := by
-  intro f g h
-  apply Rep.hom_ext
-  ext x
-  let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk'' (1 : G)
-  have hx := congrArg (fun m : Rep.ind S.subtype V ⟶ Rep.ind S.subtype W ↦
-    indSubtypeEquivPi W (m.hom ((indSubtypeEquivPi V).symm (fun _ ↦ x))) q) h
-  simpa only [_root_.Rep.indSubtypeEquivPi_indMap f, _root_.Rep.indSubtypeEquivPi_indMap g,
-    LinearEquiv.apply_symm_apply, Representation.IntertwiningMap.toLinearMap_apply] using hx
-
-/-- Induction from a finite-index subgroup is a faithful functor, the functorial form of
-`Rep.indMap_injective`. -/
-instance _root_.Rep.indFunctor_faithful [S.FiniteIndex] :
-    (Rep.indFunctor k S.subtype : Rep.{max w u} k S ⥤ Rep k G).Faithful where
-  map_injective h := _root_.Rep.indMap_injective h
-
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
 instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
     Finite (Rep.ind S.subtype A) :=
@@ -332,21 +314,28 @@ noncomputable instance finiteDimensional_ind [S.FiniteIndex] (A : Rep.{max w u} 
   exact (indSubtypeEquivPi A).symm.finiteDimensional
 
 /-- The dimension of induction from a finite-index subgroup is the index times the original
-dimension.
+dimension. Both sides are `0` when `A` is infinite-dimensional.
 
 Not a `simp` lemma: `A` lives in the universe `max w u`, and when `simp` unifies the left-hand side
 with a goal it cannot recover `w` from that universe, so in a universe-polymorphic context the lemma
 fires only with its universes given, as `simp [finrank_ind.{u, v, w}]`. The left-hand side is still
 stated through `dsimp% only`, so that `simp [finrank_ind]` fires when the universes are concrete. -/
-theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k A] :
+theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) :
     (dsimp% only (Module.finrank k (Rep.ind S.subtype A))) = S.index * Module.finrank k A := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   let := S.fintypeQuotientOfFiniteIndex
   let : Fintype (Quotient (QuotientGroup.rightRel S)) :=
     QuotientGroup.fintypeQuotientRightRel
   -- Transfer the computation to the explicit finite product supplied by the coset model.
-  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A), Module.finrank_pi_fintype]
-  simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card]
+  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A)]
+  by_cases hA : FiniteDimensional k A
+  · rw [Module.finrank_pi_fintype]
+    simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card]
+  · -- An infinite-dimensional factor makes the product infinite-dimensional, so both sides are `0`.
+    let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk _ 1
+    have hpi : ¬FiniteDimensional k (Quotient (QuotientGroup.rightRel S) → A) := fun _ ↦
+      hA (.of_surjective (LinearMap.proj (R := k) (φ := fun _ ↦ A) q) (LinearMap.proj_surjective q))
+    rw [Module.finrank_of_not_finite hpi, Module.finrank_of_not_finite hA, mul_zero]
 
 end Dimension
 
@@ -567,8 +556,7 @@ theorem indFDRepMap_injective {k : Type u} {G : Type v} [Field k] [Group G] {S :
     Function.Injective (indFDRepMap : (A ⟶ B) → _) := by
   intro f g h
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  -- The forgotten carrier lies in `u`, so `w := 0` specializes `max w u` to `u`.
-  apply _root_.Rep.indMap_injective.{u, v, 0} (S := S)
+  apply _root_.Rep.indMap_injective (S := S)
   apply Rep.hom_ext
   refine Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_)
   have hx := congrArg (fun m : indFDRep A ⟶ indFDRep B ↦ indFDRepForgetEquiv B

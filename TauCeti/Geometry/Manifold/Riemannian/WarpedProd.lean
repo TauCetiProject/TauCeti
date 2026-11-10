@@ -323,6 +323,19 @@ theorem IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv_symm_apply {f : M �
       (tangentSpaceProdEquiv p).symm (v.ofLp.1, (f p.1)⁻¹ • v.ofLp.2) :=
   (rfl)
 
+
+/-- Where the warping function vanishes, a warped product has no vertical vectors, because the
+installed metric is positive definite. -/
+theorem IsWarpedProduct.eq_zero_of_warping_eq_zero {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) {p : M × N} (hf₀ : f p.1 = 0) (a : TangentSpace J p.2) :
+    a = 0 := by
+  let e := tangentSpaceProdEquiv (I := I) (J := J) p
+  have h0 : e.symm (0, a) = 0 := by
+    rw [← inner_self_eq_zero (𝕜 := ℝ), h.inner_eq]
+    simp only [e, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, hf₀,
+      zero_pow two_ne_zero, zero_mul, add_zero]
+  simpa using congrArg (fun x => (e x).2) h0
+
 end TangentIsometry
 
 /-- A metric on `M × N` equal to the warped product metric

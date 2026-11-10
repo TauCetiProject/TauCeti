@@ -131,8 +131,10 @@ theorem exists_faithful_nilrepresentation_of_isNilpotent [LieRing.IsNilpotent L]
 field embeds in `𝔤𝔩_n = Matrix (Fin n) (Fin n) K` for some `n`. Over `ℝ` this is the embedding
 consumed by the integration of a real Lie algebra to a Lie group. -/
 theorem exists_injective_lieHom_matrix :
-    ∃ (n : ℕ) (f : L →ₗ⁅K⁆ Matrix (Fin n) (Fin n) K), Function.Injective f :=
-  (faithfulRepresentation_iff_exists_injective_lieHom_matrix K L).1 (adoIwasawa K L)
+    ∃ (n : ℕ) (f : L →ₗ⁅K⁆ Matrix (Fin n) (Fin n) K), Function.Injective f := by
+  obtain ⟨V, _, _, _, ρ, hρ⟩ := adoIwasawa K L
+  exact (faithfulRepresentation_iff_exists_injective_lieHom_matrix K L).1
+    ⟨V, inferInstance, inferInstance, inferInstance, inferInstance, ρ, hρ⟩
 
 /-- **Every finite-dimensional Lie algebra over a field is a matrix Lie algebra**: it is
 isomorphic to a Lie subalgebra of `Matrix (Fin n) (Fin n) K` for some `n`, namely to the range of

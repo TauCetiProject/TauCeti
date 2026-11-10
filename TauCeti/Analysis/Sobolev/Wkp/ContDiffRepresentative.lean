@@ -74,7 +74,7 @@ theorem exists_continuousOn_ae_eq (hk : finrank ℝ E < 2 * k)
     (u : Wkp (volume : Measure E) Omega 2 k) :
     ∃ g : E → ℝ, ContinuousOn g Omega ∧ (value k u : E → ℝ) =ᵐ[volume.restrict Omega] g := by
   simp_rw [← contDiffOn_zero (𝕜 := ℝ)]
-  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen fun x hx => ?_
+  refine exists_contDiffOn_ae_eq_of_locally fun x hx => ?_
   obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
   -- A bump equal to one on `ball x (R / 2)` and supported in `closedBall x R ⊆ Ω`.
   let ζ : ContDiffBump x := ⟨R / 2, R, half_pos hR, half_lt_self hR⟩

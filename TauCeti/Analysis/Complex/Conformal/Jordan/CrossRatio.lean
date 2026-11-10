@@ -51,7 +51,7 @@ facts say that the prevertices of a polygon are determined up to a real Möbius 
 public section
 
 open Bornology Complex Filter Function Metric Set Topology
-open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
+open UpperHalfPlane (upperHalfPlaneSet)
 
 namespace TauCeti
 
@@ -72,29 +72,23 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
           ∈ ball (0 : ℂ) 1 ∧
         f z = G ((u : ℂ) *
           (((z - I) / (z + I) - c) / (1 - (starRingEnd ℂ) (c : ℂ) * ((z - I) / (z + I))))) := by
-  -- the inverse `K` of the Cayley transform `C`, from the disc onto the upper half-plane
   set C : ℂ → ℂ := fun z => (z - I) / (z + I)
   have hCH : BijOn C upperHalfPlaneSet (ball 0 1) := bijOn_sub_I_div_add_I_upperHalfPlaneSet
-  set K := invFunOn C upperHalfPlaneSet
-  have hKmaps : MapsTo K (ball 0 1) upperHalfPlaneSet := hCH.surjOn.mapsTo_invFunOn
-  have hCK : ∀ w ∈ ball (0 : ℂ) 1, C (K w) = w := hCH.surjOn.rightInvOn_invFunOn
-  have hKC : ∀ z ∈ upperHalfPlaneSet, K (C z) = z := hCH.injOn.leftInvOn_invFunOn
-  have hKi : InjOn K (ball 0 1) := fun w hw w' hw' h => by rw [← hCK w hw, ← hCK w' hw', h]
-  have hKd : DifferentiableOn ℂ K (ball 0 1) := by
-    have hCd : DifferentiableOn ℂ C upperHalfPlaneSet :=
-      differentiableOn_sub_I_div_add_I.mono fun z (hz : 0 < z.im) =>
-        add_I_ne_zero_of_im_nonneg hz.le
-    have h := hCd.invFunOn isOpen_upperHalfPlaneSet hCH.injOn
-    rwa [hCH.image_eq] at h
-  have hKimg : K '' ball 0 1 = upperHalfPlaneSet := by
-    rw [← hCH.image_eq]
-    exact hCH.injOn.invFunOn_image subset_rfl
+  -- the inverse `K` of the Cayley transform `C`, from the disc onto the upper half-plane
+  set K : ℂ → ℂ := fun w => I * (1 + w) / (1 - w)
+  have hKb : BijOn K (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball
+  have hKC : ∀ z ∈ upperHalfPlaneSet, K (C z) = z := fun z hz =>
+    I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_im_nonneg (le_of_lt hz))
+  have hKd : DifferentiableOn ℂ K (ball 0 1) := fun w hw =>
+    (hasDerivAt_I_mul_one_add_div_one_sub
+      (by rintro rfl; simp at hw)).differentiableAt.differentiableWithinAt
   -- both maps transported to the disc
   have htrans {h : ℂ → ℂ} (hd : DifferentiableOn ℂ h upperHalfPlaneSet)
       (hb : BijOn h upperHalfPlaneSet U) :
       DifferentiableOn ℂ (h ∘ K) (ball 0 1) ∧ InjOn (h ∘ K) (ball 0 1) ∧
         (h ∘ K) '' ball 0 1 = U :=
-    ⟨hd.comp hKd hKmaps, hb.injOn.comp hKi hKmaps, by rw [image_comp, hKimg, hb.image_eq]⟩
+    ⟨hd.comp hKd hKb.mapsTo, hb.injOn.comp hKb.injOn hKb.mapsTo,
+      by rw [image_comp, hKb.image_eq, hb.image_eq]⟩
   obtain ⟨hFd, hFi, hFim⟩ := htrans hf hfU
   obtain ⟨hF'd, hF'i, hF'im⟩ := htrans hg hgU
   have hUo : IsOpen U := hFim ▸ isOpen_image_of_differentiableOn_of_injOn isOpen_ball hFd hFi

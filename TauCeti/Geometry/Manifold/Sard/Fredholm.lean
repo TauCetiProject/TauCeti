@@ -93,9 +93,8 @@ theorem isMeagre_image_of_not_isRegularPoint_of_index_le_two [LindelofSpace s]
   -- Read `f` in the charts at `x` and `f x`. Its Fréchet derivative at the chart image of `x` is
   -- the manifold derivative, so the local Sard--Smale theorem applies there.
   let g : E → E' := extChartAt J (f x) ∘ f ∘ (extChartAt I x).symm
-  have hfd : fderiv ℝ g (extChartAt I x x) = mfderiv I J f x := by
-    rw [((hf x hx).mdifferentiableAt hn0).mfderiv_abuse, I.range_eq_univ, fderivWithin_univ,
-      writtenInExtChartAt]
+  have hfd : fderiv ℝ g (extChartAt I x x) = mfderiv I J f x :=
+    (((hf x hx).mdifferentiableAt hn0).mfderiv_eq_fderiv_extChartAt_conj rfl).symm
   have hg : ContDiffAt ℝ n g (extChartAt I x x) := by
     simpa only [I.range_eq_univ, contDiffWithinAt_univ] using (contMDiffAt_iff.1 (hf x hx)).2
   obtain ⟨V, hV, -, -, hVnd⟩ :=

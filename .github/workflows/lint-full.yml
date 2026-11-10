@@ -27,7 +27,11 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Keep unbounded/long-running research and maintenance off the hosted
+    # capacity shared by small automation and roadmap merge builds.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     outputs:
       outcome: ${{ steps.lint.outputs.outcome }}
       sha: ${{ steps.lint.outputs.sha }}

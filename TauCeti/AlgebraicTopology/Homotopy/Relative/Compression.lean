@@ -49,6 +49,8 @@ criterion also gives exactness of the homotopy sequence of a pair at `π_{n+1}(X
 * `TauCeti.RelHomotopyGroup.mk_eq_default_iff`: **the compression criterion**.
 * `TauCeti.RelHomotopyGroup.subsingleton_iff`: `π_{n+1}(X, A, a₀)` is trivial exactly when every
   relative cube compresses into `A`.
+* `TauCeti.RelHomotopyGroup.subsingleton_of_homotopyRel`: `π_{n+1}(X, A, a₀)` is trivial when
+  `X` deforms into `A` relative to `A`.
 
 ## References
 
@@ -215,6 +217,22 @@ theorem subsingleton_iff :
   obtain ⟨p, rfl⟩ := mk_surjective a
   obtain ⟨q, rfl⟩ := mk_surjective b
   rw [mk_eq_default_iff.2 (h p), mk_eq_default_iff.2 (h q)]
+
+/-- **A deformation into the subspace kills the relative homotopy sets.** If the identity of `X` is
+homotopic, relative to `A`, to a map `g` with values in `A`, then `π_{n+1}(X, A, a₀)` is trivial:
+composing a relative cube with the homotopy compresses it into `A`. -/
+theorem subsingleton_of_homotopyRel {g : C(X.pair.fst, X.pair.fst)}
+    (H : (ContinuousMap.id X.pair.fst).HomotopyRel g (range X.pair.map))
+    (hg : ∀ x, g x ∈ range X.pair.map) : Subsingleton (RelHomotopyGroup N X) := by
+  refine subsingleton_iff.2 fun p ↦ ⟨g.comp p, ⟨?_⟩, fun y ↦ hg (p y)⟩
+  exact
+    { toFun y := H (y.1, p y.2)
+      continuous_toFun := H.continuous.comp (continuous_fst.prodMk
+        ((p : C(I × (I^N), X.pair.fst)).continuous.comp continuous_snd))
+      map_zero_left y := by simp
+      map_one_left y := by simp
+      prop' t y hy := by
+        simpa using H.eq_fst t (RelGenLoop.mapsTo_prodBoundary p.2 hy) }
 
 end RelHomotopyGroup
 

@@ -80,7 +80,7 @@ theorem exists_gaussian_decomposition_of_isUnit_toBlocks₁₁
   have hP : (P : Matrix (Fin m) (Fin m) R) = A := by simp [P]
   have hleft : Ainv * A = 1 := by rw [← hP, Ainv_def]; exact_mod_cast P.inv_mul
   have hright : A * Ainv = 1 := by rw [← hP, Ainv_def]; exact_mod_cast P.mul_inv
-  obtain ⟨hS, hT, hD⟩ := SymplecticGroup.symm_and_toBlocks₂₂_of_mem_symplecticGroup hM hleft hright
+  obtain ⟨hS, hT, hD⟩ := SymplecticGroup.symm_and_toBlocks₂₂_of_mem_symplecticGroup hM hright
   set S := C * Ainv with S_def
   set T := Ainv * B with T_def
   replace hS : S.IsSymm := hS

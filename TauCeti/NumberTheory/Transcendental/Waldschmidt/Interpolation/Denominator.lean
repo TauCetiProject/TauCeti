@@ -105,8 +105,8 @@ theorem mul_waldschmidtOperatorEntry_mem {α b : Fin (n + 1) → K} {t : ℤ} {s
   · exact mul_mem (hP k hk) (pow_mul_eval_mem (coeff_iterate_pderiv_mem hF 0 k)
       ((totalDegree_iterate_pderiv_le 0 k F).trans ((Nat.sub_le _ _).trans hFT)) hd
       (mul_waldschmidtPoint_mem A hd hb s))
-  · rw [iterate_pderiv_eq_zero_of_totalDegree_lt (hFT.trans_lt hk), map_zero, mul_zero,
-      mul_zero]
+  · rw [iterate_pderiv_eq_zero_of_degreeOf_lt
+      ((degreeOf_le_totalDegree F 0).trans_lt (hFT.trans_lt hk)), map_zero, mul_zero, mul_zero]
     exact zero_mem A
 
 /-- **Denominators of the derivative entries.** For the iterated derivatives `∂^σ/∂z₀^σ`, the

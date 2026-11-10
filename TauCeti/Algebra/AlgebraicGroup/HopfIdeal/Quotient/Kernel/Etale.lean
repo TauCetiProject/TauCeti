@@ -95,6 +95,20 @@ theorem algebraEtale_quotient_kernelHopfIdeal_iff [Algebra.FiniteType k K] (f : 
   rw [← LieSubmodule.finrank_toSubmodule, Submodule.finrank_eq_zero,
     LieSubmodule.toSubmodule_eq_bot, LieHom.ker_eq_bot]
 
+
+/-- A homomorphism with étale kernel and finite-type source has an injective differential on
+cotangent duals. -/
+theorem dualCotangentMap_injective_of_etaleKernel [Algebra.FiniteType k K] {f : H ⟶ K}
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
+    Function.Injective (Derivation.dualCotangentMap f.hom) := by
+  have hinj := (algebraEtale_quotient_kernelHopfIdeal_iff f).mp hker
+  intro x y hxy
+  apply (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).injective
+  apply hinj
+  rw [derivationCompLieHom_apply, derivationCompLieHom_apply]
+  simpa only [Derivation.cotangentLinearEquiv_dualCotangentMap] using
+    congrArg (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)) hxy
+
 end TauCeti.CommHopfAlgCat
 
 namespace CommHopfAlgCat

@@ -29,14 +29,12 @@ lemma homeomorphI_apply_eq_mk (w : StdSimplex ℝ (Fin 2)) :
 -- Not a simp lemma: `Fin.succAbove_zero` rewrites the face map first.
 lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (0 : Fin 2)) w) = 1 := by
-  rw [Subsingleton.elim w (single 0), map_single]
-  exact homeomorphI_single_one
+  simp [Subsingleton.elim w (single 0)]
 
 /-- The `1`-st face of the standard `1`-simplex is its first vertex, of parameter `0`. -/
 @[simp]
 lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (1 : Fin 2)) w) = 0 := by
-  rw [Subsingleton.elim w (single 0), map_single]
-  exact homeomorphI_single_zero
+  simp [Subsingleton.elim w (single 0)]
 
 end Convexity.StdSimplex

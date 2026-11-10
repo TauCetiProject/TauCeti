@@ -100,10 +100,9 @@ class IsFactorSet {k G : Type*} [CommSemiring k] [Monoid G] (α : G → G → k�
   /-- The multiplicative `2`-cocycle identity, the associativity constraint of the twisted
   product. -/
   cocycle (g h j : G) : α (g * h) j * α g h = α h j * α g (h * j)
-  /-- Normalization on the left, half of the unitality of the twisted product. -/
+  /-- Normalization on the left, half of the unitality of the twisted product. The other half,
+  `α g 1 = 1`, follows from the cocycle identity (`TauCeti.IsFactorSet.one_right`). -/
   one_left (g : G) : α 1 g = 1
-  /-- Normalization on the right, half of the unitality of the twisted product. -/
-  one_right (g : G) : α g 1 = 1
 
 namespace IsFactorSet
 
@@ -111,11 +110,16 @@ section Monoid
 
 variable {k G : Type*} [CommSemiring k] [Monoid G]
 
+/-- Normalization on the right, the other half of the unitality of the twisted product: the
+cocycle identity at `(g, 1, 1)` reads `α g 1 * α g 1 = α 1 1 * α g 1`, and `α 1 1 = 1`. -/
+theorem one_right {α : G → G → kˣ} [self : IsFactorSet α] (g : G) : α g 1 = 1 := by
+  have h := cocycle (α := α) g 1 1
+  rwa [mul_one, mul_one, one_left (α := α), one_mul, mul_eq_right] at h
+
 /-- The trivial factor set, whose twisted monoid algebra is the ordinary monoid algebra. -/
 instance : IsFactorSet (1 : G → G → kˣ) where
   cocycle _ _ _ := by simp
   one_left _ := rfl
-  one_right _ := rfl
 
 /-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
 product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
@@ -124,7 +128,6 @@ instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFac
     simp only [Pi.mul_apply]
     rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
   one_left g := by simp [one_left (α := α), one_left (α := β)]
-  one_right g := by simp [one_right (α := α), one_right (α := β)]
 
 /-- The pointwise inverse of a factor set is a factor set. -/
 instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
@@ -132,7 +135,6 @@ instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
     simp only [Pi.inv_apply]
     rw [← mul_inv, cocycle (α := α), mul_inv]
   one_left g := by simp [one_left (α := α)]
-  one_right g := by simp [one_right (α := α)]
 
 end Monoid
 
@@ -158,7 +160,6 @@ theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
     IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
   cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
   one_left g := by simpa only [map_one] using one_left (α := β) (f g)
-  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
 
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
 factor set is itself a normalized factor set. -/
@@ -173,9 +174,6 @@ theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective 
   one_left a := by
     obtain ⟨g, rfl⟩ := hf a
     simpa only [map_one] using h.one_left g
-  one_right a := by
-    obtain ⟨g, rfl⟩ := hf a
-    simpa only [map_one] using h.one_right g
 
 end Comp
 
