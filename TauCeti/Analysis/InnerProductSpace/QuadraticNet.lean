@@ -14,8 +14,6 @@ public import Mathlib.Topology.MetricSpace.Cover
 A bound for the quadratic form of a symmetric operator on an `η`-net of the unit sphere controls
 its operator norm, with loss `(1 - 2η)⁻¹`.
 
-This file formalizes the net argument in the TauCeti RandomMatrices roadmap, §2.4.
-
 ## References
 
 * R. Vershynin, *High-Dimensional Probability*, 2018, Lemma 4.4.1 and Exercise 4.4.3.
@@ -70,12 +68,13 @@ theorem norm_le_of_forall_norm_eq_one_abs_re_inner_map_self_le {𝕜 E : Type*} 
     simpa only [rayleighQuotient_apply_zero, abs_zero] using hC
   · have hxmem : T.rayleighQuotient x ∈
         T.rayleighQuotient '' ({0}ᶜ : Set E) := ⟨x, hx, rfl⟩
-    rw [T.image_rayleigh_eq_image_rayleigh_sphere (show 0 < (1 : ℝ) by norm_num)] at hxmem
+    rw [T.image_rayleigh_eq_image_rayleigh_sphere (by norm_num : (0 : ℝ) < 1)] at hxmem
     obtain ⟨y, hy, hxy⟩ := hxmem
     have hy_norm : ‖y‖ = 1 := mem_sphere_zero_iff_norm.mp hy
-    rw [← hxy, show T.rayleighQuotient y =
-        RCLike.re (Inner.inner 𝕜 (T y) y) by
-          simp [rayleighQuotient, reApplyInnerSelf_apply, hy_norm]]
+    have hquotient : T.rayleighQuotient y =
+        RCLike.re (Inner.inner 𝕜 (T y) y) := by
+      simp [rayleighQuotient, reApplyInnerSelf_apply, hy_norm]
+    rw [← hxy, hquotient]
     exact h y hy_norm
 
 /-- A bound on the real part of a symmetric operator's quadratic form on an `η`-cover of the
