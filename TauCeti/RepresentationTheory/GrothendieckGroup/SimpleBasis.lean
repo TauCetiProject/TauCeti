@@ -103,6 +103,7 @@ theorem jordanHolderCoordinate_congr
   exact congrArg Int.ofNat (jordanHolderMultiplicity_congr e)
 
 /-- The Jordan--Hölder coordinate of a module that is not simple is zero. -/
+@[simp]
 theorem jordanHolderCoordinate_eq_zero_of_not_isSimpleModule (hS : ¬ IsSimpleModule R S) :
     jordanHolderCoordinate R S = 0 := by
   refine ExactK0.hom_ext fun M ↦ ?_
