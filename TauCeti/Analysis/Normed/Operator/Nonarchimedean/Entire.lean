@@ -11,16 +11,18 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 /-!
 # Entire functions of row-compact operators
 
-An entire power series with zero constant coefficient takes row-compact operators to
-row-compact operators. More generally, its value differs from its constant scalar operator by
-a row-compact operator. On an infinite model space the constant coefficient must vanish:
+A power series with zero constant coefficient takes row-compact operators to row-compact
+operators, over an ultrametric Tate ring (`ContinuousLinearMap.IsRowCompact.evalAt`; if the series
+of terms is not summable, the evaluation is `0`). For an entire series over a complete ring, the
+value differs from its constant scalar operator by a row-compact operator without any condition
+on the constant coefficient. On an infinite model space the constant coefficient must vanish:
 `B(u)` is row compact if and only if `B(0) = 0`. In particular, the constant function one
 cannot be used in compact spectral mapping on an infinite model space.
 
-The evaluation is the existing `PowerSeries.evalAt` in the complete endomorphism algebra,
-with the ring-scalar operator norm. No new operator functional calculus is introduced.
-The limit criterion `ContinuousLinearMap.IsRowCompact.of_tendsto_opNorm_sum_pow` also applies
-to power series known to converge at the operator without being entire.
+The evaluation is the existing `PowerSeries.evalAt` in the endomorphism algebra, with the
+ring-scalar operator norm; the entire statements use its complete form. No new operator
+functional calculus is introduced. The limit criterion
+`ContinuousLinearMap.IsRowCompact.of_tendsto_opNorm_sum_pow` is the underlying route.
 
 ## References
 

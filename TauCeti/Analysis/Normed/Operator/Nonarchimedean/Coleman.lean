@@ -75,7 +75,7 @@ namespace ContinuousLinearMap
 
 open scoped TauCeti.RingOpNorm
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R] {u : C₀(I, R) →L[R] C₀(I, R)}
 
 open scoped PowerSeries.WithPiTopology in
@@ -114,7 +114,6 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_aeval (hu : u.IsRowCompact) {B 
     colemanDSeries_coe_of_natDegree_le hB0 (Matrix.natDegree_charpolyRev_le _),
     Matrix.colemanDBounded_charpolyRev _ le_rfl]
 
-omit [NormOneClass R] in
 /-- **Spectral mapping for Fredholm determinants under entire functions.** If `u` is a row-compact
 endomorphism of a model space and `B` is an entire series with `B(0) = 0`, the Fredholm determinant
 of `B(u)` is Coleman's entire transform of that of `u`: `det (1 - T B(u)) = D(B, det (1 - T u))`. -/
