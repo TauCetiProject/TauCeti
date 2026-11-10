@@ -19,6 +19,8 @@ of measures.
 
 ## Main results
 
+* `MeasureTheory.Measure.measurable_sum` — countable superposition is measurable for the
+  evaluation sigma-algebra on measures.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on a fixed increasing exhaustion by π-system sets, without
   finite total mass.
