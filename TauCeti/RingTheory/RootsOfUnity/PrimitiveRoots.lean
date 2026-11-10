@@ -15,7 +15,7 @@ import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 /-!
 # Maps determined by their value on a primitive root
 
-In a domain the `n`-th roots of unity are exactly the powers of a primitive one, so a ring
+In a domain the `n`-th roots of unity are exactly the powers of a primitive one, so a monoid
 endomorphism is pinned down on all of them by its value on a single primitive `n`-th root: if it
 raises that root to the `j`-th power, it raises every `n`-th root of unity to the `j`-th power.
 
@@ -35,14 +35,16 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 
 ## Main results
 
-* `IsPrimitiveRoot.map_eq_pow`: a ring endomorphism sending a primitive `n`-th root of
+* `IsPrimitiveRoot.map_eq_pow`: a monoid endomorphism sending a primitive `n`-th root of
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
-* `IsPrimitiveRoot.coe_autToPow_eq_natCast`: an automorphism raising the primitive root to the
-  `k`-th power has cyclotomic character `k`.
+* `IsPrimitiveRoot.coe_autToPow_eq_natCast_iff`: an automorphism has cyclotomic character `k`
+  exactly when it raises the primitive root to the `k`-th power.
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
   character is read off from the action on a primitive `d`-th root of unity.
+* `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
+  automorphism of an extension field to a normal intermediate field containing the root.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -69,11 +71,12 @@ universe u
 
 variable {R : Type u} [CommRing R] [IsDomain R]
 
-/-- A ring homomorphism that raises one primitive `n`-th root of unity to the `j`-th power raises
-every `n`-th root of unity to the `j`-th power, since the `n`-th roots of unity are exactly the
-powers of a primitive one. -/
-theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ : IsPrimitiveRoot ζ n)
-    (σ : R →+* R) (hσ : σ ζ = ζ ^ j) {μ : R} (hμ : μ ^ n = 1) : σ μ = μ ^ j := by
+/-- A monoid endomorphism that raises one primitive `n`-th root of unity to the `j`-th power
+raises every `n`-th root of unity to the `j`-th power, since the `n`-th roots of unity are exactly
+the powers of a primitive one. -/
+theorem _root_.IsPrimitiveRoot.map_eq_pow {F : Type*} [FunLike F R R] [MonoidHomClass F R R]
+    {n j : ℕ} [NeZero n] {ζ : R} (hζ : IsPrimitiveRoot ζ n) (σ : F) (hσ : σ ζ = ζ ^ j) {μ : R}
+    (hμ : μ ^ n = 1) : σ μ = μ ^ j := by
   obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
   rw [map_pow, hσ, ← pow_mul, ← pow_mul, Nat.mul_comm]
 
@@ -115,7 +118,15 @@ theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a 
   rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
     hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
 
-end TauCeti
+/-- **The cyclotomic character from the action on `ζ`.** An automorphism has cyclotomic character
+`k` modulo `m` exactly when it raises the primitive `m`-th root of unity `ζ` to the `k`-th
+power. -/
+theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast_iff {K M : Type*} [CommRing K]
+    [CommRing M] [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M}
+    (hζ : IsPrimitiveRoot ζ m) {x : M ≃ₐ[K] M} {k : ℕ} :
+    (hζ.autToPow K x : ZMod m) = k ↔ x ζ = ζ ^ k := by
+  rw [← hζ.autToPow_spec K x, (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq,
+    ← hζ.eq_orderOf, ← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val]
 
 /-- **The cyclotomic character detects fixing `ζ`.** `autToPow` sends `x` to `1` exactly when `x`
 fixes the chosen primitive root, since `autToPow` is defined by the power `x` sends it to. -/
@@ -123,31 +134,7 @@ fixes the chosen primitive root, since `autToPow` is defined by the power `x` se
 theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [CommRing M]
     [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
     (x : M ≃ₐ[K] M) : hζ.autToPow K x = 1 ↔ x ζ = ζ := by
-  rcases eq_or_lt_of_le (Nat.one_le_iff_ne_zero.mpr (NeZero.ne m)) with hm | hm
-  · -- `m = 1` forces `ζ = 1`, and `(ZMod 1)ˣ` is trivial, so both sides always hold
-    have hζ1 : ζ = 1 := by simpa [← hm] using hζ.pow_eq_one
-    have : Subsingleton (ZMod m)ˣ := by rw [← hm]; infer_instance
-    exact ⟨fun _ ↦ by simp [hζ1], fun _ ↦ Subsingleton.elim _ _⟩
-  · have : Fact (1 < m) := ⟨hm⟩
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · have hspec := hζ.autToPow_spec (R := K) x
-      rw [h, Units.val_one, ZMod.val_one, pow_one] at hspec
-      exact hspec.symm
-    · have hspec := hζ.autToPow_spec (R := K) x
-      rw [h] at hspec
-      have hval : (hζ.autToPow K x : ZMod m).val = 1 :=
-        hζ.pow_inj (ZMod.val_lt _) hm (by rw [hspec, pow_one])
-      exact Units.ext (ZMod.val_injective m (by rw [hval, Units.val_one, ZMod.val_one]))
-
-/-- **The cyclotomic character from the action on `ζ`.** An automorphism raising the primitive
-`m`-th root of unity `ζ` to the `k`-th power has cyclotomic character `k` modulo `m`. -/
-theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast {K M : Type*} [CommRing K] [CommRing M]
-    [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
-    {x : M ≃ₐ[K] M} {k : ℕ} (hx : x ζ = ζ ^ k) : (hζ.autToPow K x : ZMod m) = k := by
-  rw [← ZMod.natCast_zmod_val (hζ.autToPow K x : ZMod m), ZMod.natCast_eq_natCast_iff]
-  have hmod := (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq.mp
-    ((hζ.autToPow_spec K x).trans hx)
-  simpa only [hζ.eq_orderOf] using hmod
+  rw [← Units.val_eq_one, ← Nat.cast_one, hζ.coe_autToPow_eq_natCast_iff, pow_one]
 
 /-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism raising the
 primitive `d`-th root of unity `ζ ^ (m / d)` to the `c`-th power has cyclotomic character
@@ -162,9 +149,24 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing 
     (Nat.div_dvd_of_dvd hd)
   rw [Nat.div_div_self hd (NeZero.ne m)] at ht
   -- Both `c` and the exponent of `x` on `ζ` are the exponent of `x` on `ζ ^ (m / d)`.
-  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast (K := K) hx,
-    ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
+  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast_iff.2 hx,
+    (ht.coe_autToPow_eq_natCast_iff (k := (hζ.autToPow K x : ZMod m).val)).2]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
+
+/-- **The cyclotomic character of a restriction.** Let `E` be a normal intermediate field of a field
+extension `L / K` containing a primitive `m`-th root of unity `ζ'`, and `d ∣ m`. If an automorphism
+`κ` of `L` over `K` raises the `d`-th roots of unity to the `c`-th power, then the cyclotomic
+character of its restriction to `E` is congruent to `c` modulo `d`. -/
+theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K L : Type*} [Field K] [Field L]
+    [Algebra K L] {m : ℕ} [NeZero m] {E : IntermediateField K L} [Normal K E] {ζ' : E}
+    (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m) (κ : L ≃ₐ[K] L)
+    (hκ : ∀ t : L, t ^ d = 1 → κ t = t ^ c) :
+    ((hζ'.autToPow K (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
+  hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
+    (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
+      rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
+      exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
+        (IsPrimitiveRoot.coe_submonoidClass_iff.2 hζ').pow_eq_one])
 
 /-- **Roots of unity only see the abelianization.** Two automorphisms with the same image in the
 abelianization agree on every root of unity: on the roots of unity of order `d` they act through
@@ -174,8 +176,10 @@ theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [Co
     (h : Abelianization.of σ = Abelianization.of τ) {n : ℕ} (hn : n ≠ 0) {μ : M}
     (hμ : μ ^ n = 1) : σ μ = τ μ := by
   have : NeZero (orderOf μ) :=
-    ⟨(orderOf_pos_iff.2 (isOfFinOrder_iff_pow_eq_one.2 ⟨n, Nat.pos_of_ne_zero hn, hμ⟩)).ne'⟩
+    ⟨(isOfFinOrder_iff_pow_eq_one.2 ⟨n, Nat.pos_of_ne_zero hn, hμ⟩).orderOf_pos.ne'⟩
   have hμ' := IsPrimitiveRoot.orderOf μ
   have h' := congrArg (Abelianization.lift (hμ'.autToPow K)) h
   rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
+
+end TauCeti

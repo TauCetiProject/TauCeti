@@ -219,7 +219,8 @@ prime: a nonzero integer `r` multiplies `M` into `N`, and `r` is a `p`-adic unit
 prime. -/
 theorem eventually_padicLocalization_le {M : Submodule ℤ V} (hM : M.FG) :
     ∀ᶠ p : Nat.Primes in cofinite, M.padicLocalization p ≤ N.padicLocalization p := by
-  obtain ⟨r, hr0, hr⟩ := IsLattice.exists_ne_zero_forall_smul_mem ℚ N hM
+  obtain ⟨r, hr0, hr⟩ :=
+    IsLattice.exists_ne_zero_forall_smul_mem ℚ N (IsLattice.span_eq_top (A := ℚ) (M := N)) hM
   filter_upwards [Padic.eventually_norm_rat_eq_one (Int.cast_ne_zero.mpr hr0 : (r : ℚ) ≠ 0)]
     with p hp
   have hu : IsUnit (r : ℤ_[p]) := by

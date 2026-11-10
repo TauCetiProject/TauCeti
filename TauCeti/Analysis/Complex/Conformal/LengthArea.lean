@@ -82,9 +82,10 @@ to degenerate to a point.
 * `TauCeti.liminf_circleImageLength_nhdsGT_eq_zero` — the same statement as a lower limit at the
   centre, which is the exact sense in which the method makes arcs short.
 
-Holomorphy is used in exactly two places: through `Conformal/Area.lean`, to replace the Dirichlet
-integral by the area of the image, and in the chord bound, where the fundamental theorem of calculus
-along the arc is applied. The estimates themselves hold for the measurable function `deriv f`
+Complex differentiability is used in exactly two places: through `Conformal/Area.lean`, where
+differentiability at each point of `s` replaces the Dirichlet integral by the area of the image, and
+in the chord bound, where holomorphy on a neighbourhood of the arc lets the fundamental theorem of
+calculus be applied along it. The estimates themselves hold for the measurable function `deriv f`
 whatever it is, which is why they are proved for a general weight one file down.
 
 ## References
@@ -205,16 +206,15 @@ theorem lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq (f : ℂ 
   rw [← lintegral_indicator_enorm_deriv_sq f hs]
   exact lintegral_circleLIntegral_sq_div_le_lintegral_sq (measurable_indicator_enorm_deriv f hs) ζ
 
-/-- **The length–area inequality, area form.** On a measurable subset `s` of the domain of
-holomorphy on which `f` is injective the Dirichlet integral is the area of `f '' s`, so the total
-weighted length `∫⁻ ρ, ℓ ρ ^ 2 / ρ` is at most `2 π` times that area. -/
-theorem lintegral_circleImageLength_sq_div_le_volume_image (hUo : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) (hs : MeasurableSet s) (hsU : s ⊆ U) (hinj : Set.InjOn f s)
+/-- **The length–area inequality, area form.** On a measurable set `s` at every point of which
+`f` is complex differentiable, and on which `f` is injective, the Dirichlet integral is the area
+of `f '' s`, so the total weighted length `∫⁻ ρ, ℓ ρ ^ 2 / ρ` is at most `2 π` times that area. -/
+theorem lintegral_circleImageLength_sq_div_le_volume_image
+    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : MeasurableSet s) (hinj : Set.InjOn f s)
     (ζ : ℂ) :
     ∫⁻ ρ in Ioi (0 : ℝ), circleImageLength f s ζ ρ ^ 2 / ENNReal.ofReal ρ ≤
       ENNReal.ofReal (2 * π) * volume (f '' s) := by
-  rw [volume_image_eq_lintegral_enorm_deriv_sq
-    (fun _ hz => hf.differentiableAt (hUo.mem_nhds (hsU hz))) hs.nullMeasurableSet hinj]
+  rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs.nullMeasurableSet hinj]
   exact lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq f hs ζ
 
 /-- **Wolff's lemma.** If `2 π` times the Dirichlet integral of `f` over `s` is smaller than
@@ -233,17 +233,16 @@ theorem exists_circleImageLength_sq_lt (f : ℂ → ℂ) (hs : MeasurableSet s) 
   refine exists_circleLIntegral_sq_lt (measurable_indicator_enorm_deriv f hs) ζ hr hrR ?_
   rwa [lintegral_indicator_enorm_deriv_sq f hs]
 
-/-- **Wolff's lemma, area form.** On a measurable subset `s` of the domain of holomorphy on which
-`f` is injective the Dirichlet integral is the area of `f '' s`, so a radius with `ℓ ρ ^ 2 < c`
-exists as soon as `2 π * area (f '' s) < c * log (R / r)`. -/
-theorem exists_circleImageLength_sq_lt_of_volume_image (hUo : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) (hs : MeasurableSet s) (hsU : s ⊆ U) (hinj : Set.InjOn f s)
+/-- **Wolff's lemma, area form.** On a measurable set `s` at every point of which `f` is complex
+differentiable, and on which `f` is injective, the Dirichlet integral is the area of `f '' s`, so a
+radius with `ℓ ρ ^ 2 < c` exists as soon as `2 π * area (f '' s) < c * log (R / r)`. -/
+theorem exists_circleImageLength_sq_lt_of_volume_image
+    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : MeasurableSet s) (hinj : Set.InjOn f s)
     (ζ : ℂ) {r R : ℝ} (hr : 0 < r) (hrR : r < R) {c : ℝ≥0∞}
     (hc : ENNReal.ofReal (2 * π) * volume (f '' s) < c * ENNReal.ofReal (Real.log (R / r))) :
     ∃ ρ ∈ Ioo r R, circleImageLength f s ζ ρ ^ 2 < c := by
   refine exists_circleImageLength_sq_lt f hs ζ hr hrR ?_
-  rwa [volume_image_eq_lintegral_enorm_deriv_sq
-    (fun _ hz => hf.differentiableAt (hUo.mem_nhds (hsU hz))) hs.nullMeasurableSet hinj] at hc
+  rwa [volume_image_eq_lintegral_enorm_deriv_sq hf hs.nullMeasurableSet hinj] at hc
 
 /-! ### Short circles at arbitrarily small radii -/
 

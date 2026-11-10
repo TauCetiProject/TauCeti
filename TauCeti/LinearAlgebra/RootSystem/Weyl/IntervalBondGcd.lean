@@ -219,7 +219,7 @@ private theorem descentTransport (hlam : lam ∈ dominantChamber P b) {x : P.wey
     obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain
       hcovy.isMinimalCosetRep_left hcovx.isMinimalCosetRep_left
       (CoxeterSystem.BruhatLE.simple_mul_simple_mul_of_isLeftDescent
-        (CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C) hy hci)
+        (CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C) hy)
     have hEh' : E.head.1 = (weylCoxeterSystem P b).simple i * C.head.1 := by rw [hEh]
     rw [hB _ (by omega) i hci C E rfl hy hEh' (by rw [hEl]),
       bondGcd_eq_gcd_of_ne_simple_mul hlam hCI hi hcov hc D E hD hEh' (by rw [hEl, hDl])]
@@ -247,7 +247,7 @@ private theorem chainIndep (hlam : lam ∈ dominantChamber P b) {x : P.weylGroup
   · -- Both chains transport to a chain from `sᵢ x` down to `sᵢ y`.
     obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain
       (C.last.2.simple_mul_of_isLeftDescent _ hy) (hx.simple_mul_of_isLeftDescent _ hi)
-      (hyx.simple_mul_simple_mul_of_isLeftDescent hy hi)
+      (hyx.simple_mul_simple_mul_of_isLeftDescent hy)
     rw [hB i hi C E hC hy (by rw [hEh]) (by rw [hEl]),
       hB i hi C' E hC' (by rwa [← hl]) (by rw [hEh])
         (by rw [hEl]; exact congrArg ((weylCoxeterSystem P b).simple i * ·) hl)]
