@@ -296,6 +296,10 @@ private theorem exists_multiplier_relation {x : E × E} (hx : x ∈ sphericalPen
   simp only [smul_eq_mul] at h
   linear_combination h
 
+/-- The squared norm of a vector of `ℝ³` in coordinates. -/
+private theorem norm_sq_eq_coords (p : E) : ‖p‖ ^ 2 = p 0 ^ 2 + p 1 ^ 2 + p 2 ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
+
 /-- The linear criterion: at a point of `T*S²`, the differential of `(H, J)` maps the kernel of the
 differential of the constraint onto `ℝ²` exactly away from the critical points. -/
 private theorem forall_exists_fderiv_iff {x : E × E} (hx : x ∈ sphericalPendulumPhaseSpace) :
@@ -303,11 +307,7 @@ private theorem forall_exists_fderiv_iff {x : E × E} (hx : x ∈ sphericalPendu
         fderiv ℝ sphericalPendulumEnergyMomentum x w = c) ↔
       ¬(x.2 2 = 0 ∧ x.1 2 * ‖x.2‖ ^ 2 = x.1 2 ^ 2 - 1) := by
   obtain ⟨hq, hqp⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
-  have hp : ‖x.2‖ ^ 2 = x.2 0 ^ 2 + x.2 1 ^ 2 + x.2 2 ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct,
-      Matrix.vec3_dotProduct, star_trivial]
-    ring
-  rw [hp]
+  rw [norm_sq_eq_coords]
   constructor
   · -- At a critical point, the explicit multipliers confine the image of `ker dg` to a line.
     rintro hsurj ⟨hp₂, hcrit⟩
@@ -381,16 +381,12 @@ private theorem crit_value {q p : E} {c : ℝ × ℝ} (hx : (q, p) ∈ spherical
       IsMinOn (sphericalPendulumEffectivePotential c.2) (Ioo (-1) 1) z ∧
         sphericalPendulumEffectivePotential c.2 z = c.1) := by
   obtain ⟨hq', hqp⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
-  have hp : ‖p‖ ^ 2 = p 0 ^ 2 + p 1 ^ 2 + p 2 ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct,
-      Matrix.vec3_dotProduct, star_trivial]
-    ring
   rw [sphericalPendulumEnergyMomentum_apply] at hF
   subst hF
   simp only at hqp
-  rw [hp, hp₂] at hcrit
+  rw [norm_sq_eq_coords, hp₂] at hcrit
   rw [hp₂, mul_zero, add_zero] at hqp
-  rw [hp, hp₂]
+  rw [norm_sq_eq_coords, hp₂]
   by_cases hρ : q 0 ^ 2 + q 1 ^ 2 = 0
   · have h₀ : q 0 = 0 := by nlinarith
     have h₁ : q 1 = 0 := by nlinarith
