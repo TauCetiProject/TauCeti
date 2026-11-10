@@ -100,9 +100,8 @@ arbitrary centre `ζ`, any two points of `ball c r ∩ sphere ζ ρ` have images
 
 The two points are `circleMap ζ ρ (α + t₁)` and `circleMap ζ ρ (α + t₂)` for angles
 `t₁, t₂ ∈ [-π, π]` off the direction `α = arg (c - ζ)` of the centre of the disc; the arc of angles
-between them has width at most `2 * π` and stays in the disc by
-`TauCeti.circleMap_mem_ball_of_mem_Icc`, so `TauCeti.ofReal_dist_le_circleImageLength` applies to
-it with `s = U = ball c r`.
+between them stays in the disc by `TauCeti.circleMap_mem_ball_of_mem_Icc`, so
+`TauCeti.ofReal_dist_le_circleImageLength` applies to it with `s = U = ball c r`.
 
 The centre `ζ` of the cutting circle is unrestricted: `ball c r ∩ sphere ζ ρ` is an arc of angles
 wherever `ζ` lies, so the bound is not confined to the circular crosscuts at a boundary point
