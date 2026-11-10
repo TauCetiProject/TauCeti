@@ -118,9 +118,7 @@ private theorem truncation_eventuallyEq_zero (T : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1) :
     truncation T =ᶠ[𝓝 z] 0 := by
   have hz' : z ∉ Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation (T + 1) :=
-    fun h ↦ by
-      obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-      exact hz.elim h₀ h₁
+    ThricePuncturedSphere.notMem_truncation_of_eq_zero_or_eq_one hz _
   filter_upwards [(isCompact_preimage_truncation (T + 1)).isClosed.isOpen_compl.mem_nhds hz']
     with z' hz' using truncation_eq_zero_of_notMem hz'
 

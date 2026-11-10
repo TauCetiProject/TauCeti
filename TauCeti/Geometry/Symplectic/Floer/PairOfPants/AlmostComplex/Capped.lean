@@ -209,12 +209,8 @@ theorem cappedAlmostComplex_eq_base_of_notMem_truncation (h₀ : ω.Compatible J
 theorem eventually_cappedAlmostComplex_eq_base_of_eq_zero_or_eq_one (h₀ : ω.Compatible J₀)
     (r : ℝ) {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedAlmostComplex h₀ J hJ r L w x = J₀ := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r hw x
 
 /-- **The structure is `J₀` near the pole `∞`.** -/
@@ -304,19 +300,12 @@ private theorem eventually_weight_eq_zero (q : Puncture) (L₀ : ℝ) :
     ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀),
       smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
         smoothTransition (p.2 + 3 - q.endSign * (q.endCoord p.1).re) = 0 := by
-  have hc : q.endCenter ∉ truncation (|L₀| + 4) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases q.endCenter_eq_zero_or_eq_one with h | h
-    exacts [h₀ h, h₁ h]
-  have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.2 < |L₀| + 1 :=
-    continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith [le_abs_self L₀]))
-  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.1 ∉ truncation (|L₀| + 4) :=
-    continuous_fst.continuousAt.eventually
-      ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds hc)
-  filter_upwards [hL, hw] with p hpL hpw
-  exact weight_eq_zero_of_notMem_truncation fun h =>
-    hpw (truncation_mono (by linarith) h)
+  have hT : Tendsto (fun p : ℂ × ℝ => (p.1, p.2 + 3)) (𝓝 (q.endCenter, L₀))
+      (𝓝 (q.endCenter, L₀ + 3)) :=
+    (continuous_fst.prodMk (continuous_snd.add continuous_const)).tendsto _
+  filter_upwards [hT.eventually (eventually_notMem_truncation q.endCenter_eq_zero_or_eq_one _)]
+    with p hp
+  exact weight_eq_zero_of_notMem_truncation hp
 
 /-- The term of the end `q` in the Cayley coordinate of the capped structure is smooth jointly in
 the neck length `L`, the point `w ∈ ℂ` and the parameter `x`, also at the center of the end, where

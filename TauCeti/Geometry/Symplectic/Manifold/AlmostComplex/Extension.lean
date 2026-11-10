@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -22,7 +22,7 @@ not by averaging almost complex structures. The convexity of the compatible Cayl
 preserves compatibility. A cutoff whose topological support lies in the open set makes the
 result smooth even where the prescribed field is not defined smoothly.
 The coordinate smoothness argument uses the pointwise tangent-bundle Cayley formula lemma in
-`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath`, requiring regularity only
+`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path`, requiring regularity only
 on the open region where the local field is used.
 
 ## Main results
