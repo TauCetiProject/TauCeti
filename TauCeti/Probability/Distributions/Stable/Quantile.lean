@@ -98,17 +98,6 @@ theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_abs_lt_one (hα : α ∈ Io
 
 /-! ### Full positive skewness below shape one -/
 
-/-- Below shape one, the cdf of a positive-scale stable law with skewness `1` is strictly
-increasing on its support half-line. -/
-theorem strictMonoOn_cdf_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s)
-    (m : ℝ) : StrictMonoOn (cdf (stableMeasure α 1 s m))
-      (Ici (stableS1Location α 1 s m)) := by
-  let := isProbabilityMeasure_stableMeasure
-    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
-    (by norm_num : |(1 : ℝ)| ≤ 1) s m
-  apply Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
-  rw [support_stableMeasure_one_of_lt_one hα hs]
-
 /-- Below shape one at full positive skewness, the stable quantile is the unique cdf root in
 the open interior of its support. -/
 theorem quantile_stableMeasure_one_eq_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s)
@@ -192,26 +181,10 @@ theorem tendsto_quantile_stableMeasure_one_nhdsLT_one_of_lt_one
     (by norm_num : |(1 : ℝ)| ≤ 1) s m
   apply Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one μ
   intro x
-  let y := max d x + 1
-  apply Measure.cdf_lt_one_of_mem_support_of_lt μ (y := y)
-  · rw [show μ.support = Ici d by
-      simpa [μ, d] using support_stableMeasure_one_of_lt_one hα hs m]
-    exact mem_Ici.2 (by dsimp [y]; linarith [le_max_left d x])
-  · dsimp [y]
-    linarith [le_max_right d x]
+  exact Measure.cdf_lt_one_of_strictMonoOn_Ici μ
+    (by simpa [μ, d] using strictMonoOn_cdf_stableMeasure_one_of_lt_one hα hs m) x
 
 /-! ### Full negative skewness below shape one -/
-
-/-- Below shape one, the cdf of a positive-scale stable law with skewness `-1` is strictly
-increasing on its support half-line. -/
-theorem strictMonoOn_cdf_stableMeasure_neg_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s)
-    (m : ℝ) : StrictMonoOn (cdf (stableMeasure α (-1) s m))
-      (Iic (stableS1Location α (-1) s m)) := by
-  let := isProbabilityMeasure_stableMeasure
-    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
-    (by norm_num : |(-1 : ℝ)| ≤ 1) s m
-  apply Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Iic
-  rw [support_stableMeasure_neg_one_of_lt_one hα hs]
 
 /-- Below shape one at full negative skewness, the stable quantile is the unique cdf root in
 the open interior of its support. -/
@@ -276,8 +249,8 @@ theorem tendsto_quantile_stableMeasure_neg_one_nhdsGT_zero_of_lt_one
   intro x
   let y := min d x - 1
   apply Measure.cdf_pos_of_mem_support_of_lt μ (y := y)
-  · rw [show μ.support = Iic d by
-      simpa [μ, d] using support_stableMeasure_neg_one_of_lt_one hα hs m]
+  · change y ∈ (stableMeasure α (-1) s m).support
+    rw [support_stableMeasure_neg_one_of_lt_one hα hs]
     exact mem_Iic.2 (by dsimp [y]; linarith [min_le_left d x])
   · dsimp [y]
     linarith [min_le_right d x]
