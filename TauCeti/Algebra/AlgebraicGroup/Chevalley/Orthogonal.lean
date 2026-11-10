@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Commutator
+public import TauCeti.LinearAlgebra.RootSystem.Base
 import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -57,10 +58,12 @@ theorem closure_rootPair_le_centralizer (α β : Fin t.numRoots)
         (Set.range (D.rootSubgroupPoints β A) ∪
           Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A)) :
             Set (D.points A)) := by
-  let P := t.simplyConnectedRootDatum ht
-  have hnegsub : -P.root α + P.root β = -(P.root α - P.root β) := by abel
-  have hnegadd : -P.root α + -P.root β = -(P.root α + P.root β) := by abel
-  simp only [P] at hnegsub hnegadd
+  have hnegsub : -(t.simplyConnectedRootDatum ht).root α +
+      (t.simplyConnectedRootDatum ht).root β =
+      -((t.simplyConnectedRootDatum ht).root α - (t.simplyConnectedRootDatum ht).root β) := by abel
+  have hnegadd : -(t.simplyConnectedRootDatum ht).root α +
+      -(t.simplyConnectedRootDatum ht).root β =
+      -((t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) := by abel
   rw [Subgroup.centralizer_closure, Subgroup.closure_le]
   rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩)
   all_goals
@@ -69,49 +72,26 @@ theorem closure_rootPair_le_centralizer (α β : Fin t.numRoots)
   all_goals
     apply Commute.symm
     rw [← ofAdd_toAdd u, ← ofAdd_toAdd w]
+  · -- The pair (α, β) uses the sum hypotheses.
+    exact D.commute_rootSubgroup hadd hadd₀ A _ _
+  · -- The pair (α, -β) uses the difference hypotheses.
     apply D.commute_rootSubgroup
-    · first
-      | simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
-          hnegsub, hnegadd, RootPairing.neg_mem_range_root_iff] using hadd
-      | simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
-          hnegsub, RootPairing.neg_mem_range_root_iff, ← sub_eq_add_neg] using hsub
-    · first
-      | simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
-          hnegsub, hnegadd, neg_ne_zero] using hadd₀
-      | simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
-          hnegsub, neg_ne_zero, ← sub_eq_add_neg] using hsub₀
-
-private theorem simpleRootPair_conditions (i j : Fin t.rank) (hij : t.cartanMatrix i j = 0) :
-    let P := t.simplyConnectedRootDatum ht
-    let α := t.simpleIndex ht i
-    let β := t.simpleIndex ht j
-    (P.root α + P.root β ∉ Set.range P.root) ∧ (P.root α + P.root β ≠ 0) ∧
-      (P.root α - P.root β ∉ Set.range P.root) ∧ (P.root α - P.root β ≠ 0) := by
-  dsimp only
-  let b := t.simplyConnectedBase ht
-  let e := t.simpleSupportEquivSimplyConnectedBase ht
-  have hne : i ≠ j := by rintro rfl; simp at hij
-  have hindices : t.simpleIndex ht i ≠ t.simpleIndex ht j := by
-    intro h
-    exact hne (Fin.ext (by simpa using congrArg Fin.val h))
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · have hli := b.linearIndependent_pair_of_ne (e.injective.ne hne)
-    have htop := b.chainTopCoeff_eq_of_ne (e.injective.ne hne)
-    have hji := (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp hij
-    have hzero : (t.simplyConnectedRootDatum ht).chainTopCoeff (e i) (e j) = 0 := by
-      apply Int.natCast_inj.mp
-      simpa only [e, coe_simpleSupportEquivSimplyConnectedBase, pairingIn_simpleIndex, hji,
-        neg_zero, Nat.cast_zero] using htop
-    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase, add_comm] using
-      (RootPairing.chainTopCoeff_eq_zero_iff.mp hzero).resolve_left (not_not.mpr hli)
-  · intro h
-    apply b.root_ne_neg_of_ne (e i).property (e j).property
-      (by simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using hindices)
-    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
-      add_eq_zero_iff_eq_neg.mp h
-  · simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
-      b.sub_notMem_range_root (e i).property (e j).property
-  · exact sub_ne_zero.mpr ((t.simplyConnectedRootDatum ht).root.injective.ne hindices)
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        ← sub_eq_add_neg] using hsub
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        ← sub_eq_add_neg] using hsub₀
+  · -- The pair (-α, β) has sum -(α - β).
+    apply D.commute_rootSubgroup
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        hnegsub, RootPairing.neg_mem_range_root_iff] using hsub
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        hnegsub, neg_ne_zero] using hsub₀
+  · -- The pair (-α, -β) has sum -(α + β).
+    apply D.commute_rootSubgroup
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        hnegadd, RootPairing.neg_mem_range_root_iff] using hadd
+    · simpa only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+        hnegadd, neg_ne_zero] using hadd₀
 
 /-- Opposite simple-root pairs at orthogonal nodes generate mutually centralizing subgroups.
 This concerns the entire rank-one subgroups, not only their Weyl representatives. -/
@@ -124,8 +104,25 @@ theorem closure_simpleRootPair_le_centralizer (i j : Fin t.rank)
         (Set.range (D.rootSubgroupPoints (t.simpleIndex ht j) A) ∪
           Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
             (t.simpleIndex ht j) (t.simpleIndex ht j)) A)) : Set (D.points A)) := by
-  obtain ⟨hadd, hadd₀, hsub, hsub₀⟩ := simpleRootPair_conditions (ht := ht) i j hij
-  exact D.closure_rootPair_le_centralizer A _ _ hadd hadd₀ hsub hsub₀
+  let b := t.simplyConnectedBase ht
+  let e := t.simpleSupportEquivSimplyConnectedBase ht
+  have hne : i ≠ j := by rintro rfl; simp at hij
+  have hindices : t.simpleIndex ht i ≠ t.simpleIndex ht j := by
+    intro h
+    exact hne (Fin.ext (by simpa using congrArg Fin.val h))
+  apply D.closure_rootPair_le_centralizer
+  · have hpair : (t.simplyConnectedRootDatum ht).pairingIn ℤ (e i) (e j) = 0 := by
+      simpa only [e, coe_simpleSupportEquivSimplyConnectedBase, pairingIn_simpleIndex] using hij
+    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+      b.root_add_root_notMem_range_of_pairingIn_eq_zero (e.injective.ne hne) hpair
+  · intro h
+    apply b.root_ne_neg_of_ne (e i).property (e j).property
+      (by simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using hindices)
+    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+      add_eq_zero_iff_eq_neg.mp h
+  · simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+      b.sub_notMem_range_root (e i).property (e j).property
+  · exact sub_ne_zero.mpr ((t.simplyConnectedRootDatum ht).root.injective.ne hindices)
 
 /-- Weyl elements commute when the sum and difference of their roots are neither roots
 nor zero, with arbitrary independent unit parameters. -/
@@ -139,18 +136,10 @@ theorem commute_weylElement (α β : Fin t.numRoots)
     (hsub₀ : (t.simplyConnectedRootDatum ht).root α -
       (t.simplyConnectedRootDatum ht).root β ≠ 0)
     (s r : Aˣ) : Commute (D.weylElement α A s) (D.weylElement β A r) := by
-  have hmem (γ : Fin t.numRoots) (v : Aˣ) :
-      D.weylElement γ A v ∈ Subgroup.closure
-        (Set.range (D.rootSubgroupPoints γ A) ∪
-          Set.range (D.rootSubgroupPoints
-            ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) A)) := by
-    rw [D.weylElement_def]
-    exact Subgroup.mul_mem _
-      (Subgroup.mul_mem _ (Subgroup.subset_closure (Or.inl ⟨_, rfl⟩))
-        (Subgroup.subset_closure (Or.inr ⟨_, rfl⟩)))
-      (Subgroup.subset_closure (Or.inl ⟨_, rfl⟩))
   exact (Subgroup.mem_centralizer_iff.mp
-    (D.closure_rootPair_le_centralizer A α β hadd hadd₀ hsub hsub₀ (hmem α s)) _ (hmem β r)).symm
+    (D.closure_rootPair_le_centralizer A α β hadd hadd₀ hsub hsub₀
+      (D.weylElement_mem_closure_rootPair α A s)) _
+    (D.weylElement_mem_closure_rootPair β A r)).symm
 
 /-- Weyl elements at orthogonal simple roots commute, with arbitrary independent unit
 parameters. At parameters one this is the length-two braid relation. -/
@@ -158,7 +147,9 @@ theorem commute_weylElement_simpleIndex (i j : Fin t.rank) (hij : t.cartanMatrix
     (s r : Aˣ) :
     Commute (D.weylElement (t.simpleIndex ht i) A s)
       (D.weylElement (t.simpleIndex ht j) A r) := by
-  obtain ⟨hadd, hadd₀, hsub, hsub₀⟩ := simpleRootPair_conditions (ht := ht) i j hij
-  exact D.commute_weylElement A _ _ hadd hadd₀ hsub hsub₀ s r
+  exact (Subgroup.mem_centralizer_iff.mp
+    (D.closure_simpleRootPair_le_centralizer A i j hij
+      (D.weylElement_mem_closure_rootPair _ A s)) _
+    (D.weylElement_mem_closure_rootPair _ A r)).symm
 
 end TauCeti.DynkinType.ChevalleyDatum
