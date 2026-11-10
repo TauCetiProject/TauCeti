@@ -176,13 +176,10 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
   exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
     ENNReal.ofReal (∫ x in s, divergenceCLM φ x ∂μ)) (Φ n) (hΦ n) le_rfl
 
-/-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
-finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
-
-The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
-perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
-dimension at least two). -/
-theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
+/-- The half-space cut for a measure that is finite on compact sets; the general case
+`TauCeti.perimeter_inter_halfSpace_le` follows by restricting to `s`. -/
+private theorem perimeter_inter_halfSpace_le_of_isFiniteMeasureOnCompacts [OpensMeasurableSpace E]
+    [IsFiniteMeasureOnCompacts μ]
     (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
   by_cases hf : f = 0
@@ -233,14 +230,23 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
-/-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
-respect to `μ`, because the indicator of `t` vanishes off `s`. -/
-theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
-    perimeter (μ.restrict s) Ω t = perimeter μ Ω t := by
-  rw [perimeter_def, perimeter_def, totalVariationOn_def, totalVariationOn_def]
-  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
-  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-    simp [indicator_of_notMem (fun hxt => hx (h hxt))]
+/-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
+finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
+
+The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
+perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
+dimension at least two). -/
+theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E]
+    (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
+    perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
+  -- Pass to the finite measure `μ.restrict s`, which sees the same perimeters of subsets of `s`.
+  have : IsFiniteMeasure (μ.restrict s) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
+  have hsν : NullMeasurableSet s (μ.restrict s) :=
+    hs.mono_ac Measure.restrict_le_self.absolutelyContinuous
+  rw [← perimeter_restrict_of_subset (inter_subset_left (t := {x | f x ≤ c})),
+    ← perimeter_restrict_of_subset (subset_refl s)]
+  exact perimeter_inter_halfSpace_le_of_isFiniteMeasureOnCompacts f c hsν (measure_ne_top _ _)
 
 /-- **Cutting by finitely many half-spaces does not increase the perimeter.** For a
 null-measurable set `s` of finite measure and finitely many closed half-spaces `{g k ≤ c k}`,
@@ -250,13 +256,6 @@ theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
     (c : κ → ℝ) (S : Finset κ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ ⋂ k ∈ S, {x | g k x ≤ c k}) ≤ perimeter μ ⊤ s := by
   classical
-  -- Pass to the finite measure `μ.restrict s`, which sees the same perimeters of subsets of `s`.
-  have : IsFiniteMeasure (μ.restrict s) :=
-    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
-  have hsν : NullMeasurableSet s (μ.restrict s) :=
-    hs.mono_ac Measure.restrict_le_self.absolutelyContinuous
-  rw [← perimeter_restrict_of_subset (inter_subset_left (t := ⋂ k ∈ S, {x | g k x ≤ c k})),
-    ← perimeter_restrict_of_subset (subset_refl s)]
   induction S using Finset.induction_on with
   | empty => simp
   | insert k S _ ih =>
@@ -267,9 +266,10 @@ theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
       simp only [mem_inter_iff]
       tauto
     rw [h]
-    refine (perimeter_inter_halfSpace_le _ _ ?_ (measure_ne_top _ _)).trans ih
-    exact hsν.inter (S.measurableSet_biInter fun j _ =>
-      measurableSet_le (g j).continuous.measurable measurable_const).nullMeasurableSet
+    refine (perimeter_inter_halfSpace_le _ _ ?_ ?_).trans ih
+    · exact hs.inter (S.measurableSet_biInter fun j _ =>
+        measurableSet_le (g j).continuous.measurable measurable_const).nullMeasurableSet
+    · exact measure_ne_top_of_subset inter_subset_left hμs
 
 /-- **Bounded truncation in perimeter.** A null-measurable set `s` of finite measure is the limit
 of an increasing sequence of bounded null-measurable subsets `t n ⊆ s`, converging to `s` in
