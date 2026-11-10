@@ -30,8 +30,6 @@ Sign symmetry determines the mean. Flipping the sign of axis `i` negates every o
 in row `i`, so these entries have mean zero, while the diagonal entries are almost surely one.
 Every entry is bounded by one in absolute value, so the LKJ matrix is integrable, and for `η > 0`
 its mean is the identity matrix.
-Flipping the sign of an axis that indexes one of two distinct strictly lower entries but not the
-other negates only the first, so the two entries are uncorrelated.
 
 ## Main results
 
@@ -42,8 +40,6 @@ other negates only the first, so the two entries are uncorrelated.
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_diagonal_lkjMeasure`: sign invariance.
 * `TauCeti.Probability.integrable_id_lkjMeasure` and `TauCeti.Probability.integral_id_lkjMeasure`:
   the LKJ matrix is integrable with mean the identity.
-* `TauCeti.Probability.covariance_coe_apply_lkjMeasure`: distinct strictly lower entries have
-  zero covariance.
 
 Independent symmetric partial correlations give a Gram law invariant under conjugation by
 any diagonal sign matrix. Off-diagonal integrals and covariances of distinct strictly lower
@@ -230,42 +226,6 @@ private theorem exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p} (hne : 
     all_goals intro h'
     all_goals first | exact hp (Prod.ext h h') | omega
   · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
-
-/-- **Uncorrelated LKJ entries.** Distinct strictly lower entries of an LKJ matrix have zero
-covariance. Zero covariance does not assert independence of the entries. -/
-theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    cov[fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2,
-      fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2; lkjMeasure p η] = 0 := by
-  obtain ⟨v, hv, hvk, hvl⟩ := exists_index_ne_ne_of_ne hne
-  have hij := ij.2
-  set s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
-  have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = v <;> simp [s, hk]
-  have h := (hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure
-    (p := p) (η := η) hs).covariance_fun_comp
-    (selfAdjoint.measurable_coe_apply ij.1.1 ij.1.2).aemeasurable
-    (selfAdjoint.measurable_coe_apply kl.1.1 kl.1.2).aemeasurable
-  simp only [coe_symmetricCongruenceLinearMap_diagonal_apply] at h
-  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
-    rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
-  have hneg : (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      s ij.1.1 * (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 * s ij.1.2) =
-      -fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
-    funext R
-    calc
-      _ = (s ij.1.1 * s ij.1.2) *
-          (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by ring
-      _ = _ := by simp only [hsign, neg_one_mul, Pi.neg_apply]
-  have hfix : (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      s kl.1.1 * (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 * s kl.1.2) =
-      fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 := by
-    funext R
-    simp [s, Ne.symm hvk, Ne.symm hvl]
-  rw [hneg, hfix, covariance_neg_left] at h
-  linarith
 
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/
 
