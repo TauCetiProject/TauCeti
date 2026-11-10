@@ -166,7 +166,7 @@ private theorem bandCount_eq_zero_of_forall {a b : ℝ} {i : ℕ}
     eq_empty_iff_forall_notMem.2 fun x hx ↦ h x hx.1.1 hx.1.2 hx.2
   rw [bandCount, this, ncard_empty]
 
-omit [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- There is no critical point of index larger than the dimension of `M`. -/
 private theorem bandCount_eq_zero {a b : ℝ} {i : ℕ} (hi : finrank ℝ E < i) :
     bandCount I f a b i = 0 :=
@@ -259,7 +259,7 @@ private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ 
       (fun i _ ↦ hfinite i) hempty
     simpa only [hrank, hcount] using h
 
-omit [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [Module.Finite k V] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [Module.Finite k V] in
 /-- **The Morse inequalities along a triple of sublevels.** If they hold for
 `({f ≤ m}, {f ≤ a})` and for `({f ≤ b}, {f ≤ m})`, and only finitely many critical points have
 values in `(a, b]`, they hold for `({f ≤ b}, {f ≤ a})`. -/
@@ -602,7 +602,7 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
 
-omit [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
 `f` with values in `[a, b)` and complementary index `dim M - i`. -/
 private theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :

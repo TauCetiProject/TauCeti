@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Data.Set.Lattice
+import TauCeti.Topology.Homeomorph.CompactQuotient
 import TauCeti.Topology.Homeomorph.Shrink
 import TauCeti.Topology.MetricSpace.NestedCollapse
 
@@ -65,8 +66,9 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 * `TauCeti.IsCellularSet.exists_collapse`: a cellular subset of a manifold is collapsed to one point
   by a continuous surjection, supported in any of its neighbourhoods, whose other fibres are
   singletons.
-* `TauCeti.IsCellularSet.exists_homeomorph_image`: a compact set is homeomorphic to its image
-  under a map which collapses exactly a cellular set inside an open part of it.
+* `TauCeti.IsCellularSet.exists_homeomorph_image`: a map into a Hausdorff space, continuous on a
+  compact set `K`, which collapses a cellular set inside `K` and is otherwise injective on `K`
+  identifies `K` homeomorphically with its image.
 * `TauCeti.IsCellularSet.nonempty_homeomorph`: collapsing a cellular set in a compact manifold to a
   point gives a space homeomorphic to the manifold.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
@@ -271,61 +273,58 @@ theorem IsCellularSet.exists_collapse [ChartedSpace E M] {X : Set M} (hX : IsCel
   rw [hθr, zero_add] at h
   exact image_mono ball_subset_closedBall h
 
-/-- **Collapsing a cellular set does not change a compact set.** Let `M` be a metric space which is
-a topological manifold modelled on a finite-dimensional real normed space `E`, let `K ⊆ M` be
-compact, and let `X ⊆ U ⊆ K` with `X` cellular and `U` open. If `f : M → Y` is continuous on `K`,
-with values in a Hausdorff space, and the fibres of `f` on `K` are the set `X` and singletons, then
-`K` is homeomorphic to its image `f '' K`, by a homeomorphism which agrees with `f` outside `U`.
-
-For instance, if `K` is the closure of an open set `U` and `f` carries the frontier of `U` onto the
-boundary sphere of a closed ball `f '' K`, then `K` is a closed cell with frontier the boundary
-sphere; this is how Brown's proof of the generalized Schoenflies theorem recognizes cells. -/
-theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X K U : Set M}
-    (hX : IsCellularSet E X) (hK : IsCompact K) (hU : IsOpen U) (hXU : X ⊆ U) (hUK : U ⊆ K)
-    {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : M → Y} (hf : ContinuousOn f K)
-    (hfX : ∀ x ∈ K, ∀ y ∈ K, f x = f y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
-    ∃ h : K ≃ₜ f '' K, ∀ x : K, (x : M) ∉ U → (h x : Y) = f x := by
-  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  -- A collapse `g` of `X` fixing every point outside `U` maps `U`, hence `K`, onto itself.
-  obtain ⟨g, hgc, hgs, hgf, hgU⟩ := hX.exists_collapse hU hXU
-  have hgUU : MapsTo g U U := fun x hx ↦ by
-    by_contra hgx
-    rcases (hgf (g x) x).1 (hgU _ hgx) with h | ⟨h, -⟩
-    · exact hgx (by rwa [h])
-    · exact hgx (hXU h)
-  have hgK : MapsTo g K K := fun x hx ↦ by
-    by_cases hxU : x ∈ U
-    · exact hUK (hgUU hxU)
-    · rwa [hgU x hxU]
-  set G : C(K, K) := ⟨hgK.restrict g K K, hgc.restrict hgK⟩
-  have hGs : Surjective G := by
-    rintro ⟨y, hy⟩
-    obtain ⟨x, rfl⟩ := hgs y
-    have hx : x ∈ K := by
-      by_contra hx
-      exact hx (hgU x (fun h ↦ hx (hUK h)) ▸ hy)
-    exact ⟨⟨x, hx⟩, rfl⟩
-  have hGq : IsQuotientMap G := G.continuous.isClosedMap.isQuotientMap G.continuous hGs
-  -- `G` and the restriction `F` of `f` have the same fibres, so `F` descends along `G`.
-  set F : C(K, f '' K) := ⟨(mapsTo_image f K).restrict f K (f '' K),
-    hf.mapsToRestrict (mapsTo_image f K)⟩
-  have hGF (x y : K) : G x = G y ↔ F x = F y := by
-    simp only [G, F, ContinuousMap.coe_mk, Subtype.ext_iff, MapsTo.val_restrict_apply]
-    rw [hgf, hfX x x.2 y y.2]
-  have hFG : FactorsThrough F G := fun x y h ↦ (hGF x y).1 h
-  set L := hGq.lift F hFG
-  have hLG (x : K) : L (G x) = F x := DFunLike.congr_fun (hGq.lift_comp F hFG) x
-  have hL : Bijective L := by
-    refine ⟨fun y₁ y₂ h ↦ ?_, fun ⟨_, x, hx, rfl⟩ ↦ ⟨G ⟨x, hx⟩, hLG ⟨x, hx⟩⟩⟩
-    obtain ⟨x₁, rfl⟩ := hGs y₁
-    obtain ⟨x₂, rfl⟩ := hGs y₂
-    rwa [hGF, ← hLG, ← hLG]
-  refine ⟨(isHomeomorph_iff_continuous_bijective.2 ⟨L.continuous, hL⟩).homeomorph L,
-    fun x hx ↦ ?_⟩
-  have hGx : G x = x := Subtype.ext (hgU x hx)
-  have hLx : L x = F x := by rw [← hLG, hGx]
-  simp only [IsHomeomorph.homeomorph_apply, hLx, F, ContinuousMap.coe_mk,
-    MapsTo.val_restrict_apply]
+/-- **A map collapsing only a cellular set is a homeomorphism up to that collapse.** Let `M` be a
+metric space which is a topological manifold modelled on a finite-dimensional real normed space
+`E`, let `K ⊆ M` be compact, and let `X` be a cellular set lying in an open set `U ⊆ K`. If a map
+`φ` from `M` to a Hausdorff space is continuous on `K`, collapses `X` to a point and is injective on
+`K` otherwise, then `K` is homeomorphic to its image `φ '' K`, by a homeomorphism which agrees with
+`φ` outside `U` and sends exactly the points of `U` into `φ '' U`. -/
+theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
+    (hX : IsCellularSet E X) {Y : Type*} [TopologicalSpace Y] [T2Space Y] {φ : M → Y}
+    {K U : Set M} (hφ : ContinuousOn φ K) (hK : IsCompact K) (hU : IsOpen U) (hXU : X ⊆ U)
+    (hUK : U ⊆ K) (hφK : ∀ x ∈ K, ∀ y ∈ K, φ x = φ y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
+    ∃ h : K ≃ₜ φ '' K, (∀ x : K, (x : M) ∉ U → (h x : Y) = φ x) ∧
+      ∀ x : K, (h x : Y) ∈ φ '' U ↔ (x : M) ∈ U := by
+  -- The homeomorphism is `φ` composed with the inverse of the collapse `c` of `X` supported in
+  -- `U`, which has the same fibres as `φ` on `K`.
+  obtain ⟨c, hcc, hcs, hcf, hcU⟩ := hX.exists_collapse hU hXU
+  -- The collapse `c` maps `U` onto itself, hence `K` onto itself.
+  have hcUU (x : M) (hx : x ∈ U) : c x ∈ U := by
+    by_contra h
+    rcases (hcf (c x) x).1 (hcU _ h) with h' | h'
+    · exact h (by rwa [h'])
+    · exact h (hXU h'.1)
+  have hcU' (x : M) (hx : c x ∈ U) : x ∈ U := by
+    by_contra h
+    exact h (hcU x h ▸ hx)
+  have hcK : MapsTo c K K := fun x hx ↦ by
+    by_cases h : x ∈ U
+    · exact hUK (hcUU x h)
+    · rwa [hcU x h]
+  have hcKs : Surjective (hcK.restrict c K K) := hcK.restrict_surjective_iff.2 fun y hy ↦ by
+    obtain ⟨x, rfl⟩ := hcs y
+    by_cases h : x ∈ U
+    · exact ⟨x, hUK h, rfl⟩
+    · exact ⟨x, by rwa [hcU x h] at hy, rfl⟩
+  -- On `K`, the map `φ` has the same fibres as `c`, so `φ '' K` is identified with `K` by a
+  -- homeomorphism `e` sending `φ x` to `c x`.
+  obtain ⟨e, he⟩ := exists_homeomorph_image_of_forall_eq_iff hφ hK (hcK.restrict c K K)
+    (hcc.restrict hcK) hcKs fun a b ↦ by
+      rw [Subtype.ext_iff]
+      exact (hcf a b).trans (hφK a a.2 b b.2).symm
+  have hψ (a : K) : (e.symm (hcK.restrict c K K a) : Y) = φ a := by
+    rw [← he, e.symm_apply_apply]
+  -- Outside `U` the collapse is the identity, so `e.symm` agrees with `φ` there.
+  have hoff (x : K) (hx : (x : M) ∉ U) : (e.symm x : Y) = φ x := by
+    rw [← hψ, show hcK.restrict c K K x = x from Subtype.ext (hcU x hx)]
+  have hin (x : K) : (e.symm x : Y) ∈ φ '' U ↔ (x : M) ∈ U := by
+    obtain ⟨a, rfl⟩ := hcKs x
+    rw [hψ]
+    refine ⟨fun ⟨u, hu, hua⟩ ↦ hcUU a ?_, fun hx ↦ mem_image_of_mem φ (hcU' a hx)⟩
+    rcases (hφK u (hUK hu) a a.2).1 hua with h | h
+    · exact h ▸ hu
+    · exact hXU h.2
+  exact ⟨e.symm, hoff, hin⟩
 
 /-- **Collapsing a cellular set in a compact manifold.** Let `M` be a compact metric space which is
 a topological manifold modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a
@@ -336,8 +335,8 @@ theorem IsCellularSet.nonempty_homeomorph [ChartedSpace E M] [CompactSpace M] {X
     (hX : IsCellularSet E X) {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : M → Y}
     (hf : Continuous f) (hfs : Surjective f) (hfX : ∀ x y, f x = f y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
     Nonempty (M ≃ₜ Y) := by
-  obtain ⟨h, -⟩ := hX.exists_homeomorph_image isCompact_univ isOpen_univ (subset_univ X)
-    subset_rfl hf.continuousOn fun x _ y _ ↦ hfX x y
+  obtain ⟨h, -, -⟩ := hX.exists_homeomorph_image hf.continuousOn isCompact_univ isOpen_univ
+    (subset_univ X) subset_rfl fun x _ y _ ↦ hfX x y
   exact ⟨((Homeomorph.Set.univ M).symm.trans h).trans
     ((Homeomorph.setCongr (image_univ_of_surjective hfs)).trans (Homeomorph.Set.univ Y))⟩
 
