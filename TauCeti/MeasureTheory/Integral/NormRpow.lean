@@ -40,8 +40,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
-* `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a positive power of the distance to a point
-  is not integrable over the whole space.
+* `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a nonnegative power of the distance to a
+  point is not integrable over the whole space.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
@@ -384,15 +384,15 @@ open Metric Set
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- A positive power of the distance to a point is not integrable for an additive Haar measure on a
-nontrivial space, because the whole space has infinite Haar measure. -/
+/-- A nonnegative power of the distance to a point is not integrable for an additive Haar measure
+on a nontrivial space, because the whole space has infinite Haar measure. -/
 theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
-    {p : ℝ} (hp : 0 < p) (b : E) : ¬ Integrable (fun x ↦ ‖x - b‖ ^ p) μ := fun hint ↦ by
+    {p : ℝ} (hp : 0 ≤ p) (b : E) : ¬ Integrable (fun x ↦ ‖x - b‖ ^ p) μ := fun hint ↦ by
   have hfin := hint.measure_norm_ge_lt_top one_pos
   have hsub : (ball b 1)ᶜ ⊆ {x | 1 ≤ ‖‖x - b‖ ^ p‖} := fun x hx ↦ by
     simp only [mem_compl_iff, mem_ball, dist_eq_norm, not_lt] at hx
     simpa [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) p)] using
-      Real.one_le_rpow hx hp.le
+      Real.one_le_rpow hx hp
   have hlt : μ univ < ⊤ := by
     calc μ univ ≤ μ (ball b 1) + μ (ball b 1)ᶜ := by
           simpa using measure_union_le (μ := μ) (ball b 1) (ball b 1)ᶜ
