@@ -84,6 +84,17 @@ theorem IsPoissonRandomMeasure.hasLaw (h : IsPoissonRandomMeasure P N Λ)
   exact ((isPoissonRandomMeasure_iff.mp h).2.1 1 (fun _ => A) (fun _ => ⟨hA, hfin⟩)
     (fun i j hij => False.elim (hij (Subsingleton.elim i j)))).2 0
 
+/-- A count on a measurable set of finite intensity is almost surely finite. -/
+theorem IsPoissonRandomMeasure.ae_ne_top (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, N ω A ≠ ∞ := by
+  apply ((h.hasLaw hA hfin).ae_iff (p := fun x => x ≠ ∞)
+    (measurableSet_setOfPred.1 (measurableSet_singleton ∞).compl)).2
+  apply (ae_map_iff (μ := poissonMeasure (Λ A).toNNReal)
+    (f := (Nat.cast : ℕ → ℝ≥0∞)) Measurable.of_discrete.aemeasurable
+    (p := fun x => x ≠ ∞) (measurableSet_singleton ∞).compl).2
+  exact ae_of_all _ fun k => ENNReal.natCast_ne_top k
+
 /-- A count on a measurable set of infinite intensity is almost surely infinite. -/
 theorem IsPoissonRandomMeasure.ae_eq_top (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hΛ : Λ A = ∞) :
