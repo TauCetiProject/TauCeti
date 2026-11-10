@@ -59,8 +59,7 @@ vanishes near it.
 * `CovariantDerivative.IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner`:
   the Cotton tensor vanishes when `P` is a constant multiple of the metric.
 * `IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub`, in the
-  `CovariantDerivative` namespace: the Cotton tensor vanishes in constant curvature, in dimension
-  at least `3`.
+  `CovariantDerivative` namespace: the Cotton tensor vanishes in constant curvature.
 
 ## References
 
@@ -205,21 +204,26 @@ theorem IsMetricCompatible.derivSchoutenTensor_eq
     schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv, Pi.mul_apply]
   ring
 
+omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
 /-- The covariant derivative of the Schouten tensor vanishes at a point near which the curvature
 vanishes, since the Schouten tensor then vanishes near that point. -/
 theorem derivSchoutenTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
     (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.derivSchoutenTensor x = 0 := by
-  have hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0 :=
-    h.mono fun y hy ↦ cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y hy
-  ext u v w
-  have hpair : (fun y ↦ cov.schoutenTensor y (FiberBundle.extend E u y)
-      (FiberBundle.extend E v y)) =ᶠ[𝓝 x] fun _ ↦ 0 :=
-    hP.mono fun y hy ↦ by simp [hy]
-  have hd := cov.derivSchoutenTensor_apply (FiberBundle.mdifferentiableAt_extend I E u)
-    (FiberBundle.mdifferentiableAt_extend I E v) w
-  rw [hpair.mvfderiv_eq, mvfderiv_const, hP.self_of_nhds] at hd
-  simpa using hd
+  by_cases hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap (σ y) (τ y)) x
+  · have hP : ∀ᶠ y in 𝓝 x, cov.schoutenTensor y = 0 :=
+      h.mono fun y hy ↦ cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y hy
+    ext u v w
+    have hpair : (fun y ↦ cov.schoutenTensor y (FiberBundle.extend E u y)
+        (FiberBundle.extend E v y)) =ᶠ[𝓝 x] fun _ ↦ 0 :=
+      hP.mono fun y hy ↦ by simp [hy]
+    have hd := cov.derivBilinearTensor_apply_eq_extend hb u v w
+    simp only [LinearMap.toContinuousBilinearMap_apply] at hd
+    rw [derivSchoutenTensor_def, hd, hpair.mvfderiv_eq, mvfderiv_const, hP.self_of_nhds]
+    simp
+  · rw [derivSchoutenTensor_def, cov.derivBilinearTensor_eq_zero_of_not hb]
 
+omit [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] in
 /-- The Cotton tensor vanishes at a point near which the curvature vanishes. -/
 theorem cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero {x : M}
     (h : ∀ᶠ y in 𝓝 x, curvature y = 0) : cov.cottonTensor x = 0 := by
@@ -277,15 +281,26 @@ theorem IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner
     (cov := cov) hcov c h x]
 
 /-- A metric-compatible connection of constant curvature `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, with
-`κ` the same at every point, has vanishing Cotton tensor in dimension at least `3`. -/
+`κ` the same at every point, has vanishing Cotton tensor. In dimension at most `2` the Schouten
+tensor is `0` by the convention `0⁻¹ = 0`, so only dimension at least `3` has content. -/
 theorem IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub
     (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun y : M ↦ TangentSpace I y) cov) (k : ℝ) (hn : 3 ≤ Module.finrank ℝ E)
+      (V := fun y : M ↦ TangentSpace I y) cov) (k : ℝ)
     (h : ∀ y w u v, curvature y w u v = k • (inner ℝ u v • w - inner ℝ w v • u)) (x : M) :
-    cov.cottonTensor x = 0 :=
-  IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner (cov := cov) hcov
-    (k / 2) (fun y ↦ cov.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub y k
-      (by rwa [TauCeti.finrank_tangentSpace]) (h y)) x
+    cov.cottonTensor x = 0 := by
+  by_cases hn : 3 ≤ Module.finrank ℝ E
+  · exact IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner
+      (cov := cov) hcov (k / 2) (fun y ↦ cov.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub
+        y k (by rwa [TauCeti.finrank_tangentSpace]) (h y)) x
+  · refine IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner
+      (cov := cov) hcov 0 (fun y ↦ ?_) x
+    rw [zero_smul]
+    rcases (show Module.finrank ℝ E ≤ 2 by omega).lt_or_eq with h1 | h2
+    · exact cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero y
+        (cov.curvatureTensor_eq_zero_of_finrank_le_one y
+          (by rw [TauCeti.finrank_tangentSpace]; omega))
+    · ext u v
+      simp [h2, TauCeti.finrank_tangentSpace]
 
 end MetricCompatible
 
