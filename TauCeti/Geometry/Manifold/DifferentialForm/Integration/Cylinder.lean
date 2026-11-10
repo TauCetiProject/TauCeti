@@ -389,8 +389,9 @@ private theorem glue_periodic (hu : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 
   · exact hu _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
   · exact hv _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
 
-/-- The reparametrizations used in the gluing are smooth. -/
-private theorem contDiff_smoothTransition_affine {n : ℕ∞} (c d : ℝ) :
+/-- The affine reparametrizations `s ↦ smoothTransition (c * s + d)` of the smooth transition
+function, used in the gluing, are smooth. -/
+theorem contDiff_smoothTransition_affine {n : ℕ∞} (c d : ℝ) :
     ContDiff ℝ n fun s : ℝ ↦ smoothTransition (c * s + d) :=
   smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).add contDiff_const)
 

@@ -58,6 +58,8 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.boundary_fin_one_iff`, `Cube.boundary_fin_two_iff`: the boundaries of the interval
+  `I^(Fin 1)` and the square `I^(Fin 2)`, coordinate by coordinate.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -139,6 +141,14 @@ theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
     y ∈ Cube.boundary (Fin 1) ↔ y 0 = 0 ∨ y 0 = 1 := by
   rw [Cube.boundary_fin_succ_iff]
   simp
+
+open scoped Topology unitInterval in
+/-- A point of the square `I^(Fin 2)` lies on its boundary exactly when one of its two coordinates
+is `0` or `1`. -/
+theorem Cube.boundary_fin_two_iff {y : I^(Fin 2)} :
+    y ∈ Cube.boundary (Fin 2) ↔ y 0 = 0 ∨ y 0 = 1 ∨ y 1 = 0 ∨ y 1 = 1 := by
+  rw [Cube.boundary_fin_succ_iff, Cube.boundary_fin_one_iff]
+  simp [Fin.tail, or_assoc]
 
 namespace TauCeti
 
