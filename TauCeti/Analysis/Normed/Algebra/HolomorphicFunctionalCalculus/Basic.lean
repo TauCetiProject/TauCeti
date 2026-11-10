@@ -83,21 +83,24 @@ private theorem calculusValue_congr (a : A) {U V : Opens ℂ}
     calculusValue_eq_integral a U hU f Γ
       (Cycle.isIn_iff.mpr fun z hz => ⟨hVU (Cycle.isIn_iff.mp hΓ hz).1,
         (Cycle.isIn_iff.mp hΓ hz).2⟩)
-      (Cycle.isNullHomologous_iff.mpr fun z hz =>
-        Cycle.isNullHomologous_iff.mp hn z (fun hv => hz (hVU hv))) hw]
+      (hn.mono hVU) hw]
   congr 1
   apply Cycle.integral_congr
   intro z hz
   have hzV := (Cycle.isIn_iff.mp hΓ hz).1
   simp only [extend_apply f ⟨z, hVU hzV⟩, extend_apply g ⟨z, hzV⟩, hfg ⟨z, hzV⟩]
 
+omit [CompleteSpace A] in
+private theorem isIn_resolventSet {a : A} {U : Set ℂ} {Γ : Cycle}
+    (hΓ : Γ.IsIn (U \ spectrum ℂ a)) : Γ.IsIn (resolventSet ℂ a) :=
+  Cycle.isIn_iff.mpr fun _ hz => spectrum.notMem_iff.mp (Cycle.isIn_iff.mp hΓ hz).2
+
 private theorem continuousOn_calculusIntegrand {a : A} {U : Opens ℂ}
     (f : holomorphicFunctions U) {Γ : Cycle} (hΓ : Γ.IsIn (U \ spectrum ℂ a)) :
     ContinuousOn (fun z => extend f z • resolvent a z) (Cycle.trace Γ) :=
   ((differentiableOn_extend f).continuousOn.mono
     (fun _ hz => (Cycle.isIn_iff.mp hΓ hz).1)).smul
-    ((spectrum.differentiableOn_resolvent a).continuousOn.mono
-      (fun _ hz => spectrum.notMem_iff.mp (Cycle.isIn_iff.mp hΓ hz).2))
+    (Cycle.continuousOn_resolvent (isIn_resolventSet hΓ))
 
 private theorem calculusValue_add (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f g : holomorphicFunctions U) :
@@ -142,7 +145,7 @@ private theorem calculusValue_polynomial (a : A) (U : Opens ℂ) (ha : spectrum 
     Cycle.integral_congr (g := fun z => p.eval z • resolvent a z) (fun z hz => by
       rw [extend_apply _ ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, of_apply]),
     Cycle.integral_eval_smul_resolvent
-      (Cycle.isIn_iff.mpr fun z hz => spectrum.notMem_iff.mp (Cycle.isIn_iff.mp hΓ hz).2) hw,
+      (isIn_resolventSet hΓ) hw,
     smul_smul, inv_mul_cancel₀ two_pi_I_ne_zero, one_smul]
 
 /-- The holomorphic calculus on an open neighbourhood of the spectrum. Its value is the
@@ -165,6 +168,21 @@ def holomorphicCalculusOn (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U) :
       simp
     · simp
 
+/-- The calculus on an open neighbourhood agrees with polynomial evaluation. -/
+@[simp]
+theorem holomorphicCalculusOn_polynomial (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
+    (p : Polynomial ℂ) :
+    holomorphicCalculusOn a U ha
+      (of U (fun z => p.eval z) p.differentiable.differentiableOn) = Polynomial.aeval a p :=
+  calculusValue_polynomial a U ha p
+
+/-- The coordinate function on an open neighbourhood is sent to the specified element. -/
+@[simp]
+theorem holomorphicCalculusOn_id (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U) :
+    holomorphicCalculusOn a U ha (of U id differentiableOn_id) = a := by
+  have hid : (fun z : ℂ => Polynomial.eval z Polynomial.X) = id := by ext z; simp
+  simpa only [hid, Polynomial.aeval_X] using holomorphicCalculusOn_polynomial a U ha Polynomial.X
+
 /-- Contour formula for the calculus on an open domain, for any admissible cycle. -/
 theorem holomorphicCalculusOn_eq_integral (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f : holomorphicFunctions U) (Γ : Cycle) (hΓ : Γ.IsIn (U \ spectrum ℂ a))
@@ -180,7 +198,7 @@ theorem norm_holomorphicCalculusOn_le (a : A) (U : Opens ℂ) (ha : spectrum ℂ
     (f : holomorphicFunctions U) (Γ : Cycle) (hΓ : Γ.IsIn (U \ spectrum ℂ a))
     (hn : Γ.IsNullHomologous U) (hw : ∀ z ∈ spectrum ℂ a, Cycle.windingNumber z Γ = 1)
     {M R : ℝ} (hM : ∀ z ∈ Cycle.trace Γ, ‖extend f z‖ ≤ M)
-    (hR : ∀ z ∈ Cycle.trace Γ, ‖resolvent a z‖ ≤ R) (hR₀ : 0 ≤ R) :
+    (hR : ∀ z ∈ Cycle.trace Γ, ‖resolvent a z‖ ≤ R) :
     ‖holomorphicCalculusOn a U ha f‖ ≤ ‖(2 * π * I)⁻¹‖ *
       ((∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
         ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * (M * R)) := by
@@ -190,7 +208,7 @@ theorem norm_holomorphicCalculusOn_le (a : A) (U : Opens ℂ) (ha : spectrum ℂ
   intro z hz
   rw [norm_smul]
   exact (mul_le_mul_of_nonneg_left (hR z hz) (norm_nonneg _)).trans
-    (mul_le_mul_of_nonneg_right (hM z hz) hR₀)
+    (mul_le_mul_of_nonneg_right (hM z hz) ((norm_nonneg _).trans (hR z hz)))
 
 /-- On every open neighbourhood of the spectrum the holomorphic calculus is continuous
 for uniform convergence on compact subsets. -/
@@ -206,13 +224,13 @@ theorem continuous_holomorphicCalculusOn (a : A) (U : Opens ℂ)
     (ContinuousMap.compRightAlgHom ℂ ℂ j).comp (holomorphicFunctions U).val
   have hρ : Continuous ρ :=
     (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtype_val
-  have hres : ContinuousOn (resolvent a) (Cycle.trace Γ) :=
-    (spectrum.differentiableOn_resolvent a).continuousOn.mono
-      (fun _ hz => spectrum.notMem_iff.mp (Cycle.isIn_iff.mp hΓ hz).2)
+  have hρ_apply (f : holomorphicFunctions U) (z : Cycle.trace Γ) :
+      ρ f z = f.val ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩ := rfl
+  have hres := Cycle.continuousOn_resolvent (isIn_resolventSet hΓ)
   obtain ⟨R, hR⟩ := (Cycle.isCompact_trace Γ).exists_bound_of_continuousOn hres
   let C := ‖(2 * π * I)⁻¹‖ *
     (∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
-      ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * max R 0
+      ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * R
   let : IsTopologicalAddGroup (holomorphicFunctions U) :=
     IsInducing.subtypeVal.isTopologicalAddGroup
       (holomorphicFunctions U).val.toLinearMap.toAddMonoidHom
@@ -221,10 +239,9 @@ theorem continuous_holomorphicCalculusOn (a : A) (U : Opens ℂ)
   · intro f
     have hM : ∀ z ∈ Cycle.trace Γ, ‖extend f z‖ ≤ ‖ρ f‖ := by
       intro z hz
-      rw [extend_apply f ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩]
+      rw [extend_apply f ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, ← hρ_apply f ⟨z, hz⟩]
       exact (ρ f).norm_coe_le_norm ⟨z, hz⟩
-    convert norm_holomorphicCalculusOn_le a U ha f Γ hΓ hn hw hM
-      (fun z hz => (hR z hz).trans (le_max_left _ _)) (le_max_right R 0) using 1 <;>
+    convert norm_holomorphicCalculusOn_le a U ha f Γ hΓ hn hw hM hR using 1 <;>
       dsimp [C]
     ring
   · simpa only [Function.comp_apply, map_zero, norm_zero, mul_zero] using
@@ -274,7 +291,7 @@ theorem holomorphicCalculus_polynomial (a : A) (p : Polynomial ℂ) :
         ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) = Polynomial.aeval a p := by
   rw [← toGerm_of (U := ⊤) (subset_univ _) _ p.differentiable.differentiableOn,
     holomorphicCalculus_toGerm]
-  exact calculusValue_polynomial a ⊤ (subset_univ _) p
+  exact holomorphicCalculusOn_polynomial a ⊤ (subset_univ _) p
 
 /-- The coordinate germ is sent to the specified algebra element. -/
 @[simp]
