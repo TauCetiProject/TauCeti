@@ -81,6 +81,48 @@ private theorem isClosed_im_nonneg : IsClosed {z : ℂ | 0 ≤ z.im} :=
 private theorem measurableSet_im_nonneg : MeasurableSet {z : ℂ | 0 ≤ z.im} :=
   isClosed_im_nonneg.measurableSet
 
+section LocallyIntegrable
+
+variable [NormedSpace ℝ F] [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F]
+
+/-- The reflection of a function locally integrable up to the boundary is locally integrable on
+the doubled domain. -/
+theorem locallyIntegrableOn_starSchwarzReflection
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {f : ℂ → F}
+    (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
+    LocallyIntegrableOn (starSchwarzReflection f) Ω := by
+  refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK ↦ ?_
+  have hKm : MeasurableSet K := hK.isClosed.measurableSet
+  have hHc : MeasurableSet {z : ℂ | z.im < 0} :=
+    measurableSet_lt Complex.measurable_im measurable_const
+  have hup : IntegrableOn (starSchwarzReflection f) (K ∩ {z | 0 ≤ z.im}) := by
+    refine (hf.integrableOn_compact_subset (inter_subset_inter_left _ hKΩ)
+      (hK.inter_right isClosed_im_nonneg)).congr_fun
+      (fun z hz ↦ (starSchwarzReflection_of_im_nonneg hz.2).symm)
+      (hKm.inter measurableSet_im_nonneg)
+  have hdown : IntegrableOn (starSchwarzReflection f) (K ∩ {z | z.im < 0}) := by
+    let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
+    have hK' : IsCompact K' :=
+      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
+    have hK'Ω : K' ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz ↦
+      ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
+    have hi : IntegrableOn (fun z ↦ f (conj z)) ((conjLIE : ℂ → ℂ) ⁻¹' K') := by
+      have := (conjLIE.measurePreserving.integrableOn_comp_preimage
+        conjLIE.toHomeomorph.measurableEmbedding (f := f) (s := K')).2
+        (hf.integrableOn_compact_subset hK'Ω hK')
+      simpa [Function.comp_def] using this
+    have hi' : IntegrableOn (fun z ↦ star (f (conj z))) (K ∩ {z | z.im < 0}) :=
+      ((starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap.integrable_comp
+        (hi.mono_set fun z hz ↦ ⟨by simpa using hz.1, by simpa using hz.2.le⟩))
+    exact hi'.congr_fun (fun z hz ↦ (starSchwarzReflection_of_im_neg hz.2).symm)
+      (hKm.inter hHc)
+  refine (hup.union hdown).mono_set fun z hz ↦ ?_
+  by_cases h : 0 ≤ z.im
+  · exact Or.inl ⟨hz, h⟩
+  · exact Or.inr ⟨hz, not_le.1 h⟩
+
+end LocallyIntegrable
+
 variable [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F] {ξ η : ℂ → F}
 
 /-! ### The weak formulation up to a real boundary -/
@@ -113,11 +155,16 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_iff :
 
 /-! ### Test functions -/
 
+/-- Conjugation, as a continuous real-linear equivalence, maps a conjugation-invariant open set
+into itself. -/
+private theorem mapsTo_conjLIE (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) :
+    MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω := fun z hz ↦ by
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
+  exact hΩ hz
+
 /-- A real test function on a conjugation-invariant open set, composed with conjugation. -/
 private def conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) : 𝓓(Ω, ℝ) :=
-  conjLIE.toContinuousLinearEquiv.transportTestFunction
-    (show MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω from fun z hz ↦ by
-      simpa using hΩ hz) φ
+  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ) φ
 
 private theorem conjTest_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
     conjTest hΩ φ z = φ (conj z) := by
@@ -237,42 +284,6 @@ private theorem halfPairing_eq_zero (h : HasWeakConjWirtingerDerivRealBoundaryOn
   simp
 
 variable [ContinuousStar F]
-
-/-- The reflection of a function locally integrable up to the boundary is locally integrable on
-the doubled domain. -/
-theorem locallyIntegrableOn_starSchwarzReflection
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {f : ℂ → F}
-    (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
-    LocallyIntegrableOn (starSchwarzReflection f) Ω := by
-  refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK ↦ ?_
-  have hKm : MeasurableSet K := hK.isClosed.measurableSet
-  have hHc : MeasurableSet {z : ℂ | z.im < 0} :=
-    measurableSet_lt Complex.measurable_im measurable_const
-  have hup : IntegrableOn (starSchwarzReflection f) (K ∩ {z | 0 ≤ z.im}) := by
-    refine (hf.integrableOn_compact_subset (inter_subset_inter_left _ hKΩ)
-      (hK.inter_right isClosed_im_nonneg)).congr_fun
-      (fun z hz ↦ (starSchwarzReflection_of_im_nonneg hz.2).symm)
-      (hKm.inter measurableSet_im_nonneg)
-  have hdown : IntegrableOn (starSchwarzReflection f) (K ∩ {z | z.im < 0}) := by
-    let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
-    have hK' : IsCompact K' :=
-      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
-    have hK'Ω : K' ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz ↦
-      ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
-    have hi : IntegrableOn (fun z ↦ f (conj z)) ((conjLIE : ℂ → ℂ) ⁻¹' K') := by
-      have := (conjLIE.measurePreserving.integrableOn_comp_preimage
-        conjLIE.toHomeomorph.measurableEmbedding (f := f) (s := K')).2
-        (hf.integrableOn_compact_subset hK'Ω hK')
-      simpa [Function.comp_def] using this
-    have hi' : IntegrableOn (fun z ↦ star (f (conj z))) (K ∩ {z | z.im < 0}) :=
-      ((starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap.integrable_comp
-        (hi.mono_set fun z hz ↦ ⟨by simpa using hz.1, by simpa using hz.2.le⟩))
-    exact hi'.congr_fun (fun z hz ↦ (starSchwarzReflection_of_im_neg hz.2).symm)
-      (hKm.inter hHc)
-  refine (hup.union hdown).mono_set fun z hz ↦ ?_
-  by_cases h : 0 ≤ z.im
-  · exact Or.inl ⟨hz, h⟩
-  · exact Or.inr ⟨hz, not_le.1 h⟩
 
 /-! ### Splitting integrals on the doubled domain -/
 
