@@ -378,6 +378,7 @@ theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹�
   · simp
   · simp [coeff_log, hn, div_eq_mul_inv]
 
+omit [CharZero K] in
 /-- A series whose coefficient norms are bounded by the norms of inverse natural numbers
 lies on the open unit disc. -/
 theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
