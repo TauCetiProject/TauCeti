@@ -472,24 +472,18 @@ theorem curvatureOperator_congr
     curvatureOperator cov X Y σ x = curvatureOperator cov X' Y σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov Z Y σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hZ' hY hσ hZZ' Filter.EventuallyEq.rfl (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_first hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_first hf hZ hσ) x)
         hX hX' hXX'
     _ = curvatureOperator cov X' Y' σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov X' Z σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hZ' hσ Filter.EventuallyEq.rfl hZZ' (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_second hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_second hf hZ hσ) x)
         hY hY' hYY'
     _ = curvatureOperator cov X' Y' σ' x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V)
         (fun τ ↦ curvatureOperator cov X' Y' τ x) x
-        (fun _ hτ' hττ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hY' hτ' Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl hττ')
         (fun hτ hτ' ↦ congrFun (curvatureOperator_add_section hX' hY' hτ hτ') x)
         (fun hf hτ ↦ congrFun (curvatureOperator_smul_section hf hX' hY' hτ) x)
         hσ hσ' hσσ'

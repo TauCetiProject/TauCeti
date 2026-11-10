@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
@@ -47,13 +47,20 @@ Two constructions are developed.
   (`TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential`). Summing the
   relations over all lengths, the composite terms assemble into `∂^β ∘ ∂^β`, while the
   differential term `m_{n+1}(…, d β, …)` cancels the product term `m_{n+1}(…, β * β, …)` coming from
-  length `n + 1`.
+  length `n + 1`. For an arbitrary `β` the two combine into the curvature `d β + β * β`, and
+  `∂^β ∘ ∂^β` is the sum of the operations with the curvature inserted once
+  (`TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential_eq_sum`).
 * **Matrices.** The row vectors `X → M`, for a finite type `X`, form an `A∞` module over the
   matrix algebra `Matrix X X A` with the entrywise differential
   (`TauCeti.UngradedAInfinityRightModule.matrix`): `m_{n+1}(φ, F₁, …, Fₙ)` has `z`-component the
   sum, over the paths `x₀ → x₁ → ⋯ → xₙ = z` in `X`, of `m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`
   (`TauCeti.UngradedAInfinityRightModule.matrixAct`). The composite terms concatenate paths and the
-  product terms insert a vertex into a path.
+  product terms insert a vertex into a path. For block upper-triangular matrices on `X ⊕ Y`, paths
+  never return from `Y` to `X`; this restricts the operations to `X` and to `Y`
+  (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_inl`,
+  `TauCeti.UngradedAInfinityRightModule.matrixAct_sumElim_zero_apply_inr`), and a path from `X` to
+  `Y` crosses the off-diagonal block exactly once
+  (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`).
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
 product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -71,14 +78,18 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
 
 ## Main results
 
+* `TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential_eq_sum`: the
+  square of the twisted differential inserts the curvature once.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential`: the twisted
-  differential squares to zero.
+  differential of a Maurer–Cartan element squares to zero.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_apply`: the components of the matrix operations
   are sums over paths.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero` and
   `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_lt`: the matrix operations vanish
   when those of `M` do, and along matrices whose nonzero entries strictly increase a bounded
   height.
+* `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
+  upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
 
 ## References
 
@@ -194,15 +205,19 @@ theorem twistedDifferential_eq_sum {β : A} {K : ℕ}
   rw [Function.mem_support] at hn
   simpa using not_le.mp (mt (h n) hn)
 
-/-- The `A∞` relations of length at most `N` along a constant tuple `β` with `d β = β * β`, over a
-ring of characteristic two, summed: the differential terms of length `n` cancel the product terms
-of length `n + 1`, and the composite terms add up to the differential terms of length `N`. -/
-private theorem sum_sum_act_act_const [CharP R 2] {β : A} (hβ : d β = β * β) (N : ℕ) (m : M) :
+/-- The `A∞` relations of length at most `N` along a constant tuple `β`, over a ring of
+characteristic two, summed: the differential terms of length `n` and the product terms of length
+`n + 1` combine into insertions of the curvature `d β + β * β`, and the composite terms add up to
+these insertions together with the differential terms of length `N`. -/
+private theorem sum_sum_act_act_const [CharP R 2] (β : A) (N : ℕ) (m : M) :
     ∑ n ∈ range (N + 1), ∑ k ∈ range (n + 1),
         Mm.act (n - k) (fun _ => β) (Mm.act k (fun _ => β) m) =
-      ∑ l : Fin N, Mm.act N (Function.update (fun _ => β) l (β * β)) m := by
-  set T : ℕ → M := fun n =>
-    ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (β * β)) m with hT
+      ∑ n ∈ range N, ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (d β + β * β)) m +
+        ∑ l : Fin N, Mm.act N (Function.update (fun _ => β) l (d β)) m := by
+  set D : ℕ → M := fun n => ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (d β)) m
+    with hD
+  set P : ℕ → M := fun n => ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (β * β)) m
+    with hP
   have h := Finset.sum_eq_zero (s := range (N + 1)) fun n _ => Mm.stasheff n (fun _ => β) m
   rw [sum_add_distrib, sum_add_distrib, sum_range_succ' (fun n =>
     ungradedStasheffMul Mm.act n (fun _ => β) m), sum_range_succ (fun n =>
@@ -211,37 +226,51 @@ private theorem sum_sum_act_act_const [CharP R 2] {β : A} (hβ : d β = β * β
       ∑ k ∈ range (n + 1), Mm.act (n - k) (fun _ => β) (Mm.act k (fun _ => β) m) :=
     Fin.sum_univ_eq_sum_range (fun k => Mm.act (n - k) (fun _ => β) (Mm.act k (fun _ => β) m))
       (n + 1)
-  have hdiff (n : ℕ) : ungradedStasheffDiff Mm.act d n (fun _ => β) m = T n := by
-    simp only [ungradedStasheffDiff, hβ, hT]
-  have hmul (n : ℕ) : ungradedStasheffMul Mm.act (n + 1) (fun _ => β) m = T n := by
-    simp only [ungradedStasheffMul_succ, Fin.contractNth_castSucc_const, hT]
+  have hdiff (n : ℕ) : ungradedStasheffDiff Mm.act d n (fun _ => β) m = D n := by
+    simp only [ungradedStasheffDiff, hD]
+  have hmul (n : ℕ) : ungradedStasheffMul Mm.act (n + 1) (fun _ => β) m = P n := by
+    simp only [ungradedStasheffMul_succ, Fin.contractNth_castSucc_const, hP]
+  have hDP : ∑ n ∈ range N, ∑ l : Fin n,
+      Mm.act n (Function.update (fun _ => β) l (d β + β * β)) m =
+        ∑ n ∈ range N, D n + ∑ n ∈ range N, P n := by
+    rw [← sum_add_distrib]
+    refine sum_congr rfl fun n _ => ?_
+    simp only [hD, hP, ← sum_add_distrib, MultilinearMap.map_update_add, LinearMap.add_apply]
   simp only [hcomp, hdiff, hmul, ungradedStasheffMul_zero, add_zero] at h
+  rw [hDP]
   refine (add_eq_zero_iff_eq_of_charTwo R).mp ?_
-  calc _ = ∑ n ∈ range (N + 1), ∑ k ∈ range (n + 1),
-          Mm.act (n - k) (fun _ => β) (Mm.act k (fun _ => β) m) + T N +
-        (∑ n ∈ range N, T n + ∑ n ∈ range N, T n) := by
-        rw [add_self_eq_zero_of_charTwo R, add_zero]
-    _ = 0 := by rw [← h]; abel
+  rw [← h]
+  abel
 
-/-- **The twisted differential squares to zero.** Let `β` be a Maurer–Cartan element,
-`d β + β * β = 0`, over a ring of characteristic two, and suppose that `m_{n+1}` vanishes for
-`n ≥ K` on every tuple of elements of a set `U` containing `β` and `β * β`. Then
-`∂^β ∘ ∂^β = 0`. For `U` the whole algebra this is the case of a module whose operations vanish
-from some arity on. -/
-theorem twistedDifferential_twistedDifferential [CharP R 2] {β : A} (hβ : d β + β * β = 0)
-    {U : Set A} (hβU : β ∈ U) (hββU : β * β ∈ U) {K : ℕ}
+/-- **The square of the twisted differential is the insertion of the curvature.** Over a ring of
+characteristic two, suppose that `m_{n+1}` vanishes for `n ≥ K` on every tuple of elements of a set
+`U` containing `β`, `d β` and the curvature `d β + β * β`. Then `∂^β ∘ ∂^β` is the sum, over
+`n < K` and the `n` slots, of `m_{n+1}(·, β, …, β, d β + β * β, β, …, β)`, the curvature inserted
+once. In particular `∂^β` squares to zero when `β` is a Maurer–Cartan element
+(`TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential`). -/
+theorem twistedDifferential_twistedDifferential_eq_sum [CharP R 2] {β : A} {U : Set A}
+    (hβU : β ∈ U) (hdβU : d β ∈ U) (hcU : d β + β * β ∈ U) {K : ℕ}
     (hU : ∀ n, K ≤ n → ∀ u : Fin n → A, (∀ l, u l ∈ U) → Mm.act n u = 0) (m : M) :
-    Mm.twistedDifferential β (Mm.twistedDifferential β m) = 0 := by
+    Mm.twistedDifferential β (Mm.twistedDifferential β m) =
+      ∑ n ∈ range K, ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (d β + β * β)) m := by
+  have hupd {n : ℕ} (l : Fin n) {c : A} (hc : c ∈ U) (t : Fin n) :
+      Function.update (fun _ => β) l c t ∈ U := by
+    by_cases ht : t = l
+    · subst ht; simpa using hc
+    · simpa [Function.update_of_ne ht] using hβU
   have hc : ∀ n, K ≤ n → (Mm.act n fun _ => β) = 0 := fun n hn => hU n hn _ fun _ => hβU
   set f : ℕ → ℕ → M := fun i j => Mm.act j (fun _ => β) (Mm.act i (fun _ => β) m) with hf
-  -- The relations of length at most `2 K` leave only terms of length `2 K`, which vanish.
-  have hrel : ∑ n ∈ range (2 * K + 1), ∑ k ∈ range (n + 1), f k (n - k) = 0 := by
-    rw [Mm.sum_sum_act_act_const ((add_eq_zero_iff_eq_of_charTwo R).mp hβ)]
-    refine sum_eq_zero fun l _ => ?_
-    rw [hU _ (by omega) _ fun t => ?_, LinearMap.zero_apply]
-    by_cases ht : t = l
-    · subst ht; simpa using hββU
-    · simpa [Function.update_of_ne ht] using hβU
+  -- The relations of length at most `2 K` leave the curvature insertions of length less than
+  -- `K`, and the differential terms of length `2 K`, which vanish.
+  have hrel : ∑ n ∈ range (2 * K + 1), ∑ k ∈ range (n + 1), f k (n - k) =
+      ∑ n ∈ range K, ∑ l : Fin n, Mm.act n (Function.update (fun _ => β) l (d β + β * β)) m := by
+    have hlast : ∑ l : Fin (2 * K),
+        Mm.act (2 * K) (Function.update (fun _ => β) l (d β)) m = 0 :=
+      sum_eq_zero fun l _ => by rw [hU _ (by omega) _ (hupd l hdβU), LinearMap.zero_apply]
+    rw [Mm.sum_sum_act_act_const, hlast, add_zero]
+    refine (sum_subset (range_subset_range.mpr (by omega)) fun n _ hn => ?_).symm
+    exact sum_eq_zero fun l _ => by
+      rw [hU n (by simpa using hn) _ (hupd l hcU), LinearMap.zero_apply]
   have hfi (i j : ℕ) (hi : K ≤ i) : f i j = 0 := by simp [hf, hc i hi]
   have hfj (i j : ℕ) (hj : K ≤ j) : f i j = 0 := by simp [hf, hc j hj]
   rw [Mm.twistedDifferential_eq_sum hc]
@@ -254,7 +283,29 @@ theorem twistedDifferential_twistedDifferential [CharP R 2] {β : A} (hβ : d β
         refine sum_congr rfl fun i hi => ?_
         exact sum_subset (range_subset_range.mpr (by simp at hi; omega)) fun j _ hj =>
           hfj i j (by simpa using hj)
-    _ = 0 := by rw [← sum_range_diag_flip, hrel]
+    _ = _ := by rw [← sum_range_diag_flip, hrel]
+
+/-- **The twisted differential squares to zero.** Let `β` be a Maurer–Cartan element,
+`d β + β * β = 0`, over a ring of characteristic two, and suppose that `m_{n+1}` vanishes for
+`n ≥ K` on every tuple of elements of a set `U` containing `β` and `β * β`. Then
+`∂^β ∘ ∂^β = 0`. For `U` the whole algebra this is the case of a module whose operations vanish
+from some arity on. -/
+theorem twistedDifferential_twistedDifferential [CharP R 2] {β : A} (hβ : d β + β * β = 0)
+    {U : Set A} (hβU : β ∈ U) (hββU : β * β ∈ U) {K : ℕ}
+    (hU : ∀ n, K ≤ n → ∀ u : Fin n → A, (∀ l, u l ∈ U) → Mm.act n u = 0) (m : M) :
+    Mm.twistedDifferential β (Mm.twistedDifferential β m) = 0 := by
+  -- A tuple with a zero entry is killed by multilinearity, so `0` may join `U`.
+  have hU' : ∀ n, K ≤ n → ∀ u : Fin n → A, (∀ l, u l ∈ insert 0 U) → Mm.act n u = 0 := by
+    intro n hn u hu
+    by_cases h0 : ∃ l, u l = 0
+    · obtain ⟨l, hl⟩ := h0
+      exact (Mm.act n).map_coord_zero l hl
+    · push Not at h0
+      exact hU n hn u fun l => (hu l).resolve_left (h0 l)
+  have hdβ : d β = β * β := (add_eq_zero_iff_eq_of_charTwo R).mp hβ
+  rw [Mm.twistedDifferential_twistedDifferential_eq_sum (Set.mem_insert_of_mem _ hβU)
+    (hdβ ▸ Set.mem_insert_of_mem _ hββU) (hβ ▸ Set.mem_insert _ _) hU' m, hβ]
+  simp
 
 /-! ### The module of row vectors over the matrix algebra -/
 
@@ -436,6 +487,139 @@ theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
 
 end Matrix
+
+/-! ### Block upper-triangular matrices -/
+
+section Block
+
+variable {X Y : Type*} [Fintype X] [DecidableEq X] [Fintype Y] [DecidableEq Y]
+
+/-- **Restricting the matrix module to the first summand.** If no matrix `Fᵢ` on `X ⊕ Y` has a
+nonzero entry from `Y` to `X`, then no path ending in `X` passes through `Y`, so the
+`X`-components of `m_{n+1}(φ, F₁, …, Fₙ)` are those of the operation of the matrix module of `X`
+on the `X`-components of `φ` and the `X × X` blocks of the `Fᵢ`. -/
+theorem matrixAct_apply_inl {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
+    (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (φ : X ⊕ Y → M) (z : X) :
+    Mm.matrixAct (X ⊕ Y) n F φ (Sum.inl z) =
+      Mm.matrixAct X n (fun l => (F l).toBlocks₁₁) (φ ∘ Sum.inl) z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun x => Sum.inl ∘ x)
+    (fun x y h => funext fun k => Sum.inl_injective (congrFun h k)) _ _ (fun x hx => ?_)
+    fun x => by simp [Matrix.toBlocks₁₁]).symm
+  split_ifs with hz
+  · -- A path ending in `X` and meeting `Y` steps from `Y` to `X` somewhere.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hleft (k : Fin (n + 1)) : (x k).isLeft := by
+        induction k using Fin.reverseInduction with
+        | last => rw [hz]; rfl
+        | cast k ih =>
+          rcases hxk : x k.castSucc with a | b
+          · rfl
+          · rcases hxs : x k.succ with a' | b'
+            · exact absurd (by rw [hxk, hxs]; exact hF k b a') (hne k)
+            · rw [hxs] at ih; simp at ih
+      exact hx ⟨fun k => (x k).getLeft (hleft k), funext fun k => by simp⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
+/-- **Restricting the matrix module to the second summand.** If no matrix `Fᵢ` on `X ⊕ Y` has a
+nonzero entry from `Y` to `X`, then a path starting in `Y` stays in `Y`, so on row vectors
+supported on `Y` the `Y`-components of `m_{n+1}(·, F₁, …, Fₙ)` are those of the operation of the
+matrix module of `Y` along the `Y × Y` blocks of the `Fᵢ`. -/
+theorem matrixAct_sumElim_zero_apply_inr {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
+    (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (ψ : Y → M) (z : Y) :
+    Mm.matrixAct (X ⊕ Y) n F (Sum.elim 0 ψ) (Sum.inr z) =
+      Mm.matrixAct Y n (fun l => (F l).toBlocks₂₂) ψ z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun x => Sum.inr ∘ x)
+    (fun x y h => funext fun k => Sum.inr_injective (congrFun h k)) _ _ (fun x hx => ?_)
+    fun x => by simp [Matrix.toBlocks₂₂]).symm
+  split_ifs with hz
+  · rcases hx0 : x 0 with a | b
+    · simp
+    -- A path starting in `Y` and meeting `X` steps from `Y` to `X` somewhere.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hright (k : Fin (n + 1)) : (x k).isRight := by
+        induction k using Fin.induction with
+        | zero => rw [hx0]; rfl
+        | succ k ih =>
+          rcases hxs : x k.succ with a' | b'
+          · rcases hxk : x k.castSucc with a | b''
+            · rw [hxk] at ih; simp at ih
+            · exact absurd (by rw [hxk, hxs]; exact hF k b'' a') (hne k)
+          · rfl
+      exact hx ⟨fun k => (x k).getRight (hright k), funext fun k => by simp⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
+/-- **Inserting an off-diagonal block.** Let `δ` and `δ'` be matrices on `X` and `Y`, and `F`
+and `G` matrices from `X` to `Y`. On row vectors supported on `X`, the `Y`-components of
+`m_{n+1}(·, C_G, …, C_G)` for the block upper-triangular matrix `C_G = fromBlocks δ G 0 δ'` are
+the sum, over the slots `l`, of `m_{n+1}(·, C_F, …, C_F, fromBlocks 0 G 0 0, C_F, …, C_F)` with
+`fromBlocks 0 G 0 0` in slot `l`: a path from `X` to `Y` steps from `X` to `Y` exactly once,
+through an entry of `G`, while its other steps see only `δ` and `δ'`. -/
+theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) (δ' : Matrix Y Y A)
+    (F G : Matrix X Y A) (φ : X → M) (z : Y) :
+    ∑ l : Fin n, Mm.matrixAct (X ⊕ Y) n
+        (Function.update (fun _ => Matrix.fromBlocks δ F 0 δ') l (Matrix.fromBlocks 0 G 0 0))
+        (Sum.elim φ 0) (Sum.inr z) =
+      Mm.matrixAct (X ⊕ Y) n (fun _ => Matrix.fromBlocks δ G 0 δ') (Sum.elim φ 0) (Sum.inr z) := by
+  set C : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks δ F 0 δ'
+  set E : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks 0 G 0 0
+  -- Updating one matrix of a tuple updates one entry along every path.
+  have hupd (x : Fin (n + 1) → X ⊕ Y) (l : Fin n) :
+      (fun t => Function.update (fun _ => C) l E t (x t.castSucc) (x t.succ)) =
+        Function.update (fun t => C (x t.castSucc) (x t.succ)) l (E (x l.castSucc) (x l.succ)) :=
+    funext (Function.apply_update (fun t (P : Matrix (X ⊕ Y) (X ⊕ Y) A) =>
+      P (x t.castSucc) (x t.succ)) (fun _ => C) l E)
+  simp only [matrixAct_apply, hupd]
+  rw [sum_comm]
+  refine sum_congr rfl fun x _ => ?_
+  split_ifs with hz
+  swap
+  · simp
+  rcases hx0 : x 0 with a | b
+  swap
+  · simp
+  by_cases hback : ∃ l : Fin n, (x l.castSucc).isRight ∧ (x l.succ).isLeft
+  · -- A step from `Y` back to `X` sees a zero entry of every matrix involved.
+    obtain ⟨l, h₁, h₂⟩ := hback
+    obtain ⟨b, hb⟩ := Sum.isRight_iff.mp h₁
+    obtain ⟨a', ha'⟩ := Sum.isLeft_iff.mp h₂
+    rw [(Mm.act n).map_coord_zero l (by simp [hb, ha']), LinearMap.zero_apply]
+    refine sum_eq_zero fun l' _ => ?_
+    rw [(Mm.act n).map_coord_zero l ?_, LinearMap.zero_apply]
+    rcases eq_or_ne l l' with rfl | hne
+    · simp [E, hb, ha']
+    · simp [Function.update_of_ne hne, C, hb, ha']
+  push Not at hback
+  obtain ⟨l₀, ⟨h₁, h₂⟩, huniq⟩ := Fin.existsUnique_isLeft_castSucc_and_isRight_succ x
+    (by simp [hx0]) (by simp [hz]) fun l h => by
+      by_contra h'
+      exact hback l h (by simpa using h')
+  -- Away from the crossing `l₀` the entries of `C_F`, `C_G` and `E` are the diagonal blocks.
+  have hoff (l : Fin n) (hl : l ≠ l₀) :
+      E (x l.castSucc) (x l.succ) = 0 ∧
+        C (x l.castSucc) (x l.succ) = Matrix.fromBlocks δ G 0 δ' (x l.castSucc) (x l.succ) := by
+    rcases hxl : x l.castSucc with a | b <;> rcases hxs : x l.succ with a' | b'
+    · simp [E, C]
+    · exact absurd (huniq l ⟨by simp [hxl], by simp [hxs]⟩) hl
+    · simp [E, C]
+    · simp [E, C]
+  rw [sum_eq_single l₀ (fun l _ hl => by
+      rw [(Mm.act n).map_coord_zero l (by rw [Function.update_self]; exact (hoff l hl).1),
+        LinearMap.zero_apply]) (by simp)]
+  congr 2
+  funext t
+  rcases eq_or_ne t l₀ with rfl | ht
+  · obtain ⟨a, ha⟩ := Sum.isLeft_iff.mp h₁
+    obtain ⟨b, hb⟩ := Sum.isRight_iff.mp h₂
+    simp [E, ha, hb]
+  · rw [Function.update_of_ne ht, (hoff t ht).2]
+
+end Block
 
 end UngradedAInfinityRightModule
 
