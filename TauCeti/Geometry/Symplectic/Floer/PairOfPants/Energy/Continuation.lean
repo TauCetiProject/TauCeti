@@ -258,7 +258,7 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
   have hcomp := ω.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn
     isOpen_thricePuncturedSphereReal (hu.of_le one_le_two) (hC hKc 1) (hC hKc Complex.I)
     (hC hKp 1) (hC hKp Complex.I)
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R))
+    (isCompact_preimage_truncation R)
     (preimage_truncation_subset_thricePuncturedSphereReal R)
     (eqOn_pairOfPantsContinuationPerturbation hR hRL 1)
     (eqOn_pairOfPantsContinuationPerturbation hR hRL Complex.I) (u := u)

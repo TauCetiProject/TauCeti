@@ -10,10 +10,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.Iwasawa.PseudoIsomorphism
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
-import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
-import TauCeti.RingTheory.Localization.Module
+import TauCeti.RingTheory.IntegralClosure.Reflexive
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 
 /-!
@@ -60,16 +57,8 @@ variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
 pseudo-isomorphism. -/
 theorem isPseudoIsomorphism_dual_eval [IsDomain A] [IsNoetherianRing A] [IsIntegrallyClosed A]
     [Module.Finite A M] [IsTorsionFree A M] : IsPseudoIsomorphism (Dual.eval A M) := by
-  have := finitePresentation_of_finite A M
-  have := finitePresentation_of_finite A (Dual A M)
-  refine .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦ ?_
-  -- `A_𝔭` is a principal ideal domain, so the finite torsion-free module `M_𝔭` is free and hence
-  -- reflexive.
-  have := IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one h𝔭
-    (Localization.AtPrime 𝔭.asIdeal)
-  exact (LocalizedModule.bijective_map_dual_eval_iff 𝔭.asIdeal.primeCompl
-    (Localization.AtPrime 𝔭.asIdeal) (LocalizedModule.mkLinearMap _ M)).mpr
-    (bijective_dual_eval (Localization.AtPrime 𝔭.asIdeal) (LocalizedModule 𝔭.asIdeal.primeCompl M))
+  exact .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦
+    𝔭.asIdeal.bijective_localizedModule_map_dual_eval_of_height_le_one h𝔭
 
 /-- Over a regular local ring of dimension at most two, a finitely generated torsion-free module
 `M` admits a pseudo-isomorphism `M → Aⁿ` for some `n`: its reflexive hull is free. -/
