@@ -95,7 +95,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-! ### Sobolev estimates on a measurable support -/
+/-! ### Sobolev estimates on a set of finite measure -/
 
 /-- For `q ≥ 2`, the Hölder exponent `1 - 2/q` is nonnegative (it is `1` at `q = ∞`). -/
 theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
