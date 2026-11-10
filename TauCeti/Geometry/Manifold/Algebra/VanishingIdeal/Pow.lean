@@ -65,6 +65,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
 
+omit [T2Space M] in
 /-- A function in `I_x ^ (m + 1)` has a chart expression whose derivatives of order at most `m`
 vanish at the image of `x`. -/
 theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow {x : M}
