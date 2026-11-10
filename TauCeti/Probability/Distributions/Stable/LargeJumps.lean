@@ -76,7 +76,7 @@ theorem integrable_abs_rpow_compoundPoissonMeasure_stableLevyMeasure_iff
         (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})) ↔ q < α := by
   let _ := isProbabilityMeasure_cond_stableLevyMeasure hα hβ hε
   have hrate : ((stableLevyMeasure α β) {x : ℝ | ε < |x|}).toNNReal ≠ 0 := by
-    exact (ENNReal.toNNReal_pos (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
+    exact (ENNReal.toNNReal_pos (stableLevyMeasure_abs_gt_pos hα hβ).ne'
       (stableLevyMeasure_abs_gt_ne_top hε)).ne'
   have hmem := memLp_id_compoundPoissonMeasure_iff
     (μ := cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})
