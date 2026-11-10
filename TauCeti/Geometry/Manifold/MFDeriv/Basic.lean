@@ -25,6 +25,8 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
+* `TauCeti.mfderiv_comp_add_right_apply`: its special case for translations,
+  `d(u(· + c))_w = du_(w + c)`.
 -/
 
 public section
@@ -107,5 +109,26 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
     exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **The derivative of a translate.** For a map `u` from a normed space, the derivative of
+`w ↦ u (w + c)` at `w` is the derivative of `u` at `w + c`. No differentiability is needed. -/
+theorem mfderiv_comp_add_right_apply (u : F → M) (c w v : F) :
+    mfderiv 𝓘(𝕜, F) I (fun w ↦ u (w + c)) w v = mfderiv 𝓘(𝕜, F) I u (w + c) v := by
+  have hφ : HasMFDerivAt 𝓘(𝕜, F) 𝓘(𝕜, F) (· + c) w (ContinuousLinearMap.id 𝕜 F) :=
+    ((hasFDerivAt_id w).add_const c).hasMFDerivAt
+  by_cases hu : MDifferentiableAt 𝓘(𝕜, F) I u (w + c)
+  · have h := (hu.hasMFDerivAt.comp w hφ).mfderiv
+    rw [Function.comp_def] at h
+    rw [h]
+    rfl
+  -- Otherwise neither map is differentiable: `u` is the translate composed with `y ↦ y - c`.
+  have hu' : ¬MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (w + c)) w := fun h ↦ by
+    have hψ : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y ↦ y - c) (w + c) :=
+      (differentiableAt_id.sub_const c).mdifferentiableAt
+    have h' : MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (w + c)) ((w + c) - c) := by simpa using h
+    exact hu (by simpa [Function.comp_def] using h'.comp (w + c) hψ)
+  rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
+  rfl
 
 end TauCeti
