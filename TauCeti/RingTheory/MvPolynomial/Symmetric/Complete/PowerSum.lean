@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
-import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -45,7 +44,7 @@ open PowerSeries Finset
 polynomials**: `t H'(t) = H(t) P(t)`, where `H(t) = ∑ₙ hₙ tⁿ` and `P(t) = ∑_{n ≥ 1} pₙ tⁿ` is the
 generating function of the power sums. -/
 theorem X_mul_derivative_mk_hsymm (σ : Type*) [Fintype σ] [DecidableEq σ] (R : Type*)
-    [CommRing R] :
+    [CommSemiring R] :
     X * d⁄dX (mk fun n => MvPolynomial.hsymm σ R n) =
       (mk fun n => MvPolynomial.hsymm σ R n) *
         mk fun n => if n = 0 then 0 else MvPolynomial.psum σ R n := by
@@ -56,9 +55,10 @@ theorem X_mul_derivative_mk_hsymm (σ : Type*) [Fintype σ] [DecidableEq σ] (R 
     induction s using Finset.induction_on with
     | empty => simp
     | insert j s hj ih =>
-      rw [prod_insert hj, sum_insert hj, Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-      linear_combination g j * ih +
-        (∏ i ∈ s, g i) * powerSeries_X_mul_derivative_mk_pow (MvPolynomial.X j : MvPolynomial σ R)
+      rw [prod_insert hj, sum_insert hj, Derivation.leibniz, smul_eq_mul, smul_eq_mul, mul_add,
+        mul_left_comm X (g j), ih, mul_left_comm X (∏ i ∈ s, g i),
+        powerSeries_X_mul_derivative_mk_pow]
+      ring
   have hP : ∑ i, C (MvPolynomial.X i) * X * g i =
       mk fun n => if n = 0 then 0 else MvPolynomial.psum σ R n := by
     ext n
@@ -70,7 +70,7 @@ theorem X_mul_derivative_mk_hsymm (σ : Type*) [Fintype σ] [DecidableEq σ] (R 
 
 /-- **Newton's identities for the complete homogeneous symmetric polynomials**:
 `k hₖ = ∑_{i + j = k, i < k} hᵢ pⱼ`, that is `k hₖ = ∑_{j = 1}^{k} h_{k - j} pⱼ`. -/
-theorem mul_hsymm_eq_sum (σ : Type*) [Fintype σ] [DecidableEq σ] (R : Type*) [CommRing R]
+theorem mul_hsymm_eq_sum (σ : Type*) [Fintype σ] [DecidableEq σ] (R : Type*) [CommSemiring R]
     (k : ℕ) :
     k * MvPolynomial.hsymm σ R k =
       ∑ a ∈ antidiagonal k with a.1 < k,
