@@ -51,7 +51,7 @@ exception is essential: coefficients `1` and `5` agree at order two but not at o
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_dyadicCyclic_iff_modEq_eight`: the
   coefficient criterion modulo eight at higher orders, for an odd source coefficient.
 * `TauCeti.FiniteQuadraticModule.existsUnique_dyadicCyclic_one_isometry`: unique coefficient
-  representatives `1, 3` for nondegenerate cyclic modules of order two.
+  representatives `1, 3` for nondegenerate modules of order two, which are automatically cyclic.
 * `TauCeti.FiniteQuadraticModule.existsUnique_dyadicCyclic_isometry_of_two_le`: unique
   coefficient representatives `1, 3, 5, 7` for nondegenerate cyclic modules of higher order.
 
@@ -240,11 +240,13 @@ private theorem existsUnique_dyadicCyclic_isometry_of_modEq (A : FiniteQuadratic
   apply Fin.ext
   omega
 
-/-- Every nondegenerate cyclic quadratic module of order two has exactly one of the
+/-- Every nondegenerate quadratic module of order two, necessarily cyclic, has exactly one of the
 coefficient representatives `1, 3`. The unique index selects the coefficient `2i + 1`. -/
-theorem existsUnique_dyadicCyclic_one_isometry (A : FiniteQuadraticModule) [IsAddCyclic A]
+theorem existsUnique_dyadicCyclic_one_isometry (A : FiniteQuadraticModule)
     (hcard : Nat.card A = 2) (hA : A.IsNondegenerate) :
     ∃! i : Fin 2, Nonempty (Isometry (dyadicCyclic 1 (2 * (i : ℤ) + 1)) A) := by
+  have _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have _ : IsAddCyclic A := isAddCyclic_of_prime_card hcard
   obtain ⟨θ, hθ, ⟨e⟩⟩ := exists_dyadicCyclic_isometry A (k := 1) (by simpa using hcard) hA
   obtain ⟨t, ht⟩ := hθ
   have hres : θ % 4 = 1 ∨ θ % 4 = 3 := by omega

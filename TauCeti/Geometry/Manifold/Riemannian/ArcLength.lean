@@ -11,7 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 
 /-!
 # Arc-length reparametrization of regular Riemannian curves
@@ -28,14 +29,25 @@ the chain rule then gives `‖(γ ∘ ψ)'‖ = 1`. Besides unit speed, the theo
 identities, endpoint values, monotonicity, and invariance of `Manifold.pathELength`, making the
 results usable without unfolding their construction.
 
+The first part of the file computes lengths from speeds: the length of a `C¹` curve is the integral
+of its speed, a curve of constant speed `C` on `(a, b)` has length `C * (b - a)`, and the length
+`L` and energy `E` over `[a, b]` satisfy the Cauchy–Schwarz bound `L ^ 2 ≤ 2 * (b - a) * E`, so
+that energy less than `(b - a) / 2` forces length less than `b - a`.
+
 ## Main results
 
 * `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
   a parameter set with unique derivatives.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
-* `ContMDiffOn.pathELength_le_ofReal_sqrt_energy`: the length `L` and the energy `E` of a `C¹`
-  curve over `[a, b]` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
+* `TauCeti.Manifold.pathELength_eq_of_norm_curveVelocity_eq`: a curve of constant speed `C` on
+  `(a, b)` has length `C * (b - a)`.
+* `TauCeti.Manifold.pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable`: the length `L` and
+  the energy `E` of a curve with square-integrable speed over `[a, b]` satisfy
+  `L ^ 2 ≤ 2 * (b - a) * E`; `ContMDiffOn.pathELength_le_ofReal_sqrt_energy` is the `C¹` case.
+* `TauCeti.Manifold.pathELength_lt_of_energy_lt_of_intervalIntegrable` and
+  `ContMDiffOn.pathELength_lt_of_energy_lt`: energy less than `(b - a) / 2` forces length less
+  than `b - a`.
 * `TauCeti.Manifold.exists_unit_speed_reparametrization`: a regular curve, `C¹` on an open set
   containing `[a, b]`, has a `C¹`, unit-speed reparametrization on the interval from zero to its
   length.
@@ -103,52 +115,110 @@ theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWith
   -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
   rfl
 
+/-- The squared Riemannian speed of a `C¹` curve is interval integrable between any two
+parameters of a parameter set with unique derivatives containing the interval between them. -/
+theorem _root_.ContMDiffOn.intervalIntegrable_norm_curveVelocity_sq {γ : ℝ → M} {s : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s) {a b : ℝ}
+    (hsub : uIcc a b ⊆ s) :
+    IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) volume a b := by
+  refine (((hγ.continuousOn_norm_curveVelocityWithin hs).mono hsub).pow 2).intervalIntegrable
+    |>.congr_uIoo fun t ht ↦ ?_
+  have hmem : s ∈ 𝓝 t :=
+    mem_interior_iff_mem_nhds.mp (interior_mono hsub (by rwa [uIcc, interior_Icc]))
+  rw [Pi.pow_apply, curveVelocityWithin_of_mem_nhds hmem]
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- A curve whose Riemannian speed is `C` on the open interval `(a, b)` has length `C * (b - a)`
+from `a` to `b`. No regularity of the curve is assumed, and its velocities at `a` and `b` play no
+role. -/
+theorem pathELength_eq_of_norm_curveVelocity_eq {γ : ℝ → M} {a b C : ℝ}
+    (h : ∀ t ∈ Ioo a b, ‖curveVelocity I γ t‖ = C) :
+    Manifold.pathELength I γ a b = ENNReal.ofReal C * ENNReal.ofReal (b - a) := by
+  have key : ∀ t ∈ Ioo a b, ‖mfderiv 𝓘(ℝ, ℝ) I γ t 1‖ₑ = ENNReal.ofReal C := fun t ht ↦ by
+    rw [← h t ht, ofReal_norm, curveVelocity_apply]
+    rfl
+  rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo, setLIntegral_congr_fun measurableSet_Ioo key,
+    setLIntegral_const, Real.volume_Ioo]
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- A curve with unit Riemannian speed on the open interval `(a, b)` has length `b - a` from `a`
+to `b`. -/
+theorem pathELength_eq_of_norm_curveVelocity_eq_one {γ : ℝ → M} {a b : ℝ}
+    (h : ∀ t ∈ Ioo a b, ‖curveVelocity I γ t‖ = 1) :
+    Manifold.pathELength I γ a b = ENNReal.ofReal (b - a) := by
+  simpa only [ENNReal.ofReal_one, one_mul] using pathELength_eq_of_norm_curveVelocity_eq h
+
+/-! ### Length and energy -/
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- **Length is controlled by energy.** If the squared Riemannian speed of a curve is integrable
+on `[a, b]`, its length `L` and its energy `E` over `[a, b]` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
+This is the Cauchy–Schwarz inequality for the speed `‖γ'‖` on `[a, b]`. No regularity of the
+curve is assumed, so this applies to curves with finitely many corners. -/
+theorem pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable {γ : ℝ → M} {a b : ℝ}
+    (hab : a ≤ b) (hγ : IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) volume a b) :
+    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
+  set v : ℝ → ℝ := fun t ↦ ‖curveVelocity I γ t‖
+  -- the speed is the square root of the integrable squared speed, hence itself in `L²`
+  have hvm : AEStronglyMeasurable v (volume.restrict (Ioc a b)) := by
+    simpa only [Function.comp_def, v, Real.sqrt_sq (norm_nonneg _)] using
+      Real.continuous_sqrt.comp_aestronglyMeasurable hγ.1.aestronglyMeasurable
+  have hv : IntegrableOn v (Ioc a b) :=
+    ((memLp_two_iff_integrable_sq hvm).2 hγ.1).integrable one_le_two
+  have hlen : Manifold.pathELength I γ a b = ENNReal.ofReal (∫ t in a..b, v t) := by
+    rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+      ofReal_integral_eq_lintegral_ofReal (hv.mono_set Ioo_subset_Ioc_self)
+        (Eventually.of_forall fun _ ↦ norm_nonneg _),
+      Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
+    refine setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
+    rw [ofReal_norm, curveVelocity_apply]
+    rfl
+  rw [hlen]
+  refine ENNReal.ofReal_le_ofReal ?_
+  calc ∫ t in a..b, v t
+      ≤ √(b - a) * √(∫ t in a..b, v t ^ 2) :=
+        TauCeti.integral_le_sqrt_mul_sqrt_integral_sq hab (fun _ _ ↦ norm_nonneg _) hγ
+    _ = √(2 * (b - a) * energy I γ a b) := by
+        rw [← Real.sqrt_mul (sub_nonneg.2 hab), energy_def]
+        congr 1
+        ring
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- If the squared Riemannian speed of a curve is integrable on `[a, b]`, where `a < b`, and its
+energy over `[a, b]` is less than `(b - a) / 2`, the energy of a unit-speed curve, then its length
+over `[a, b]` is less than `b - a`. -/
+theorem pathELength_lt_of_energy_lt_of_intervalIntegrable {γ : ℝ → M} {a b : ℝ} (hab : a < b)
+    (hγ : IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) volume a b)
+    (hE : energy I γ a b < (b - a) / 2) :
+    Manifold.pathELength I γ a b < ENNReal.ofReal (b - a) := by
+  have hL : 0 < b - a := sub_pos.mpr hab
+  have hE₀ := energy_nonneg (I := I) γ hab.le
+  have hsq : 2 * (b - a) * energy I γ a b < (b - a) ^ 2 := by
+    have hm := mul_lt_mul_of_pos_left hE (by positivity : 0 < 2 * (b - a))
+    nlinarith
+  have hroot := Real.sqrt_lt_sqrt (by positivity : 0 ≤ 2 * (b - a) * energy I γ a b) hsq
+  rw [Real.sqrt_sq hL.le] at hroot
+  exact (pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable hab.le hγ).trans_lt
+    ((ENNReal.ofReal_lt_ofReal_iff hL).mpr hroot)
+
 /-- **Length is controlled by energy.** The Riemannian length `L` of a `C¹` curve over a compact
 interval `[a, b]` inside its parameter set and its energy `E` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
 This is the Cauchy–Schwarz inequality for the speed `‖γ'‖` on `[a, b]`. -/
 theorem _root_.ContMDiffOn.pathELength_le_ofReal_sqrt_energy {γ : ℝ → M} {s : Set ℝ}
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
     {a b : ℝ} (hab : a ≤ b) (hsub : Icc a b ⊆ s) :
-    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
-  set v : ℝ → ℝ := fun t ↦ ‖curveVelocityWithin I γ s t‖
-  have hcont : ContinuousOn v (Icc a b) :=
-    (hγ.continuousOn_norm_curveVelocityWithin hs).mono hsub
-  have hlen : Manifold.pathELength I γ a b = ∫⁻ t in Icc a b, ENNReal.ofReal (v t) := by
-    rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hs hab hsub,
-      intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc,
-      ofReal_integral_eq_lintegral_ofReal (hcont.integrableOn_compact isCompact_Icc)
-        (Eventually.of_forall fun _ ↦ norm_nonneg _)]
-  have hE : 0 ≤ energy I γ a b := energy_nonneg γ hab
-  have hsq :
-      ∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (2 * energy I γ a b) := by
-    have hpow : ∀ t, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (v t ^ 2) := fun t ↦ by
-      rw [ENNReal.rpow_two, ENNReal.ofReal_pow (norm_nonneg _)]
-    have hint : IntegrableOn (fun t ↦ v t ^ 2) (Icc a b) :=
-      (hcont.pow 2).integrableOn_compact isCompact_Icc
-    simp_rw [hpow]
-    rw [← ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ sq_nonneg _),
-      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-      energy_eq_integral_curveVelocityWithin (s := s) γ (by rwa [uIcc_of_le hab]),
-      mul_div_cancel₀ _ two_ne_zero]
-  -- Hölder's inequality with exponents `2` and `2` against the constant function `1`
-  calc Manifold.pathELength I γ a b
-      = ∫⁻ t in Icc a b, (fun t ↦ ENNReal.ofReal (v t)) t * (fun _ ↦ (1 : ℝ≥0∞)) t := by
-        simp [hlen]
-    _ ≤ (∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
-          (∫⁻ _ in Icc a b, (1 : ℝ≥0∞) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
-        ENNReal.lintegral_mul_le_Lp_mul_Lq _ Real.HolderConjugate.two_two
-          (hcont.aemeasurable measurableSet_Icc).ennreal_ofReal aemeasurable_const
-    -- the integral of the constant `1` over `[a, b]` is `b - a`
-    _ = ENNReal.ofReal (2 * energy I γ a b) ^ (1 / (2 : ℝ)) *
-          ENNReal.ofReal (b - a) ^ (1 / (2 : ℝ)) := by
-        simp only [hsq, ENNReal.one_rpow, setLIntegral_const, one_mul, Real.volume_Icc]
-    -- the `ENNReal` square roots are coercions of real square roots
-    _ = ENNReal.ofReal (√(2 * energy I γ a b) * √(b - a)) := by
-        rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
-          ENNReal.ofReal_rpow_of_nonneg (sub_nonneg.2 hab) (by norm_num),
-          ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, ENNReal.ofReal_mul (by positivity)]
-    _ = ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
-        rw [← Real.sqrt_mul (by positivity), mul_right_comm]
+    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) :=
+  pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable hab
+    (hγ.intervalIntegrable_norm_curveVelocity_sq hs (by rwa [uIcc_of_le hab]))
+
+/-- If the energy of a `C¹` curve over a compact interval `[a, b]` inside its parameter set, where
+`a < b`, is less than `(b - a) / 2`, then its length over `[a, b]` is less than `b - a`. -/
+theorem _root_.ContMDiffOn.pathELength_lt_of_energy_lt {γ : ℝ → M} {s : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
+    {a b : ℝ} (hab : a < b) (hsub : Icc a b ⊆ s) (hE : energy I γ a b < (b - a) / 2) :
+    Manifold.pathELength I γ a b < ENNReal.ofReal (b - a) :=
+  pathELength_lt_of_energy_lt_of_intervalIntegrable hab
+    (hγ.intervalIntegrable_norm_curveVelocity_sq hs (by rwa [uIcc_of_le hab.le])) hE
 
 /-! ### Unit-speed reparametrization -/
 

@@ -57,6 +57,9 @@ Each characteristic coefficient is continuous over a commutative topological rin
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
 
+The matrices with nonnegative diagonal form a closed set
+(`Matrix.isClosed_setOfPred_nonneg_diag`).
+
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
@@ -225,5 +228,15 @@ theorem continuous_oneKroneckerStarAlgHom :
     Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
   ((continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.matrix_reindex _ _).congr fun B ↦
     (one_kronecker B).symm.trans (oneKroneckerStarAlgHom_apply B).symm
+
+end Matrix
+
+namespace Matrix
+
+/-- The matrices with nonnegative diagonal form a closed set. -/
+theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
+    [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
+  simp only [Set.ofPred_forall]
+  exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix
