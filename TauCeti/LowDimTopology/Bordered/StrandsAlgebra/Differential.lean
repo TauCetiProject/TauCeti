@@ -182,7 +182,7 @@ private theorem mem_chains_swap {p q : α × α}
   have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄).1 hq
   have hp' : p ∈ (φ.resolve q).inversions :=
     (mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
-  have he := resolve_resolve_comm hp hq' h₁ h₂ h₃ h₄
+  have he := resolve_resolve_comm (φ := φ) (p := p) (q := q) h₁ h₂ h₃ h₄
   exact ⟨mem_chains_iff.2 ⟨hq', hp', he ▸ hc⟩, he.symm⟩
 
 /-- **The three-cycle pairing of chains.** For strands starting at distinct `s`, `u`, `w`, if

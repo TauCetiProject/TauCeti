@@ -231,22 +231,31 @@ theorem resolve_trans_eq_trans_resolve (ha : a ∈ φ p.1) (hb : b ∈ φ p.2)
 end Trans
 
 /-- **Resolutions of disjoint pairs of strands commute.** -/
-theorem resolve_resolve_comm (hp : p ∈ φ.inversions) (hq : q ∈ φ.inversions)
+theorem resolve_resolve_comm
     (h₁ : q.1 ≠ p.1) (h₂ : q.1 ≠ p.2) (h₃ : q.2 ≠ p.1) (h₄ : q.2 ≠ p.2) :
     (φ.resolve p).resolve q = (φ.resolve q).resolve p := by
-  have hp' : p ∈ (φ.resolve q).inversions :=
-    (mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
-  have hq' : q ∈ (φ.resolve p).inversions := (mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄).2 hq
-  refine toPEquiv_injective ?_
-  rw [toPEquiv_resolve hq', toPEquiv_resolve hp', toPEquiv_resolve hp, toPEquiv_resolve hq,
-    ← PEquiv.trans_assoc, ← PEquiv.trans_assoc, ← Equiv.toPEquiv_trans, ← Equiv.toPEquiv_trans]
-  congr 2
-  -- Conjugating `swap q.1 q.2` by `swap p.1 p.2`, which fixes `q.1` and `q.2`, gives it back.
-  have hc := Equiv.swap_apply_apply (Equiv.swap p.1 p.2) q.1 q.2
-  rw [Equiv.swap_apply_of_ne_of_ne h₁ h₂, Equiv.swap_apply_of_ne_of_ne h₃ h₄,
-    eq_mul_inv_iff_mul_eq] at hc
-  ext x
-  simpa [Equiv.Perm.mul_apply] using (congrArg (· x) hc).symm
+  have hpq : p ∈ (φ.resolve q).inversions ↔ p ∈ φ.inversions :=
+    mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm
+  have hqp : q ∈ (φ.resolve p).inversions ↔ q ∈ φ.inversions :=
+    mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄
+  by_cases hp : p ∈ φ.inversions
+  · by_cases hq : q ∈ φ.inversions
+    · -- both are crossings
+      have hp' := hpq.2 hp
+      have hq' := hqp.2 hq
+      refine toPEquiv_injective ?_
+      rw [toPEquiv_resolve hq', toPEquiv_resolve hp', toPEquiv_resolve hp, toPEquiv_resolve hq,
+        ← PEquiv.trans_assoc, ← PEquiv.trans_assoc, ← Equiv.toPEquiv_trans,
+        ← Equiv.toPEquiv_trans]
+      congr 2
+      -- Conjugating `swap q.1 q.2` by `swap p.1 p.2`, which fixes `q.1` and `q.2`, gives it back.
+      have hc := Equiv.swap_apply_apply (Equiv.swap p.1 p.2) q.1 q.2
+      rw [Equiv.swap_apply_of_ne_of_ne h₁ h₂, Equiv.swap_apply_of_ne_of_ne h₃ h₄,
+        eq_mul_inv_iff_mul_eq] at hc
+      ext x
+      simpa [Equiv.Perm.mul_apply] using (congrArg (· x) hc).symm
+    · rw [resolve_of_notMem (hqp.not.2 hq), resolve_of_notMem hq]
+  · rw [resolve_of_notMem hp, resolve_of_notMem (hpq.not.2 hp)]
 
 /-- **The three-cycle relation for resolutions.** For three strands starting at distinct points `s`,
 `u` and `w`, resolving the pair `{s, u}` and then `{s, w}` gives the same diagram as resolving
