@@ -168,8 +168,7 @@ theorem ker_mapHom_cellAttachmentIncl
   set G := Subgroup.closure (G := HomotopyGroup (Fin (n + 2)) X x) (range fun i ↦ ⟦p i⟧)
   have hh (a : HomotopyGroup (Fin (n + 2)) X x) :
       h (Additive.ofMul a) = (HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 := by
-    rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply]
-    rfl
+    rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply, toMul_ofMul]
   -- The Hurewicz class of `g` dies in `Y`.
   have h₁ : (F.map (cellAttachmentIncl φ)).hom (h (Additive.ofMul g)) = 0 := by
     have hmap := HomotopyGroup.hurewicz_map (ModuleCat.of ℤ ℤ) (n + 1)
