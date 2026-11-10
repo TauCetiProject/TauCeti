@@ -77,16 +77,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- **Matching two circles in a sphere to first order.** In the unit sphere `Sⁿ` of a real inner
 product space, `n ≥ 2`, a `C^k` embedding `K` of the circle, `k ≠ 0`, is smoothly ambient isotopic
-to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`,
-differentiable with injective derivative at `z₀`: `K' z₀ = L z₀`, and `K'` and `L` have the same
+to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`
+with injective derivative at `z₀` (so `L` is differentiable at `z₀`, the derivative of a
+non-differentiable map being the junk value `0`): `K' z₀ = L z₀`, and `K'` and `L` have the same
 derivative at `z₀`. -/
 theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     (K : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1))
-    {L : Circle → sphere (0 : E) 1} {z₀ : Circle} (hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀)
+    {L : Circle → sphere (0 : E) 1} {z₀ : Circle}
     (hL : Injective (mfderiv (𝓡 1) (𝓡 n) L z₀)) :
     ∃ K' : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1),
       K.SmoothAmbientIsotopic K' ∧ K' z₀ = L z₀ ∧
         mfderiv (𝓡 1) (𝓡 n) K' z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀ := by
+  -- an injective derivative forces differentiability: off it `mfderiv` is the zero map
+  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀ := by
+    by_contra h
+    rw [mfderiv_zero_of_not_mdifferentiableAt h] at hL
+    obtain ⟨a, ha⟩ : ∃ a : TangentSpace (𝓡 1) z₀, a ≠ 0 :=
+      exists_ne (0 : EuclideanSpace ℝ (Fin 1))
+    exact ha (hL (by simp))
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z₀
   -- The points `x`, `y` and velocities `v`, `w` of `K` and `L` over `exp (t i)`, read in `E`.
   set γ : ℝ → E := fun s => (K (Circle.exp s) : E)
