@@ -16,6 +16,7 @@ Operator fields that are eventually bounded along a countably generated filter a
 almost everywhere preserve convergence of integrated pairings with velocities converging in
 `L¹`. Separating the changes of field and velocity avoids a pointwise bound on the
 approximating velocities, and no bound or measurability is assumed of the limit field.
+For a fixed bounded multiplier, convergence holds along an arbitrary filter.
 -/
 
 public section
@@ -76,21 +77,28 @@ theorem tendsto_integral_clm_apply_of_integral_norm_sub
     (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).integrable_of_bilin_of_bdd_left C hm hb hu
   simpa using (integral_add (hint hv) (hint (hi.sub hv))).symm
 
+omit [l.IsCountablyGenerated] in
 /-- Multiplying `L¹`-convergent functions on the right by a fixed bounded measurable function
-preserves convergence of their actual integrals. -/
+preserves convergence of their actual integrals, along any filter. -/
 theorem tendsto_integral_mul_of_integral_norm_sub {A : Type*} [NonUnitalNormedRing A]
-    [NormedSpace ℝ A] [IsScalarTower ℝ A A] [SMulCommClass ℝ A A]
-    {wn : ι → α → A} {w R : α → A} {C : ℝ}
+    [NormedSpace ℝ A] {wn : ι → α → A} {w R : α → A} {C : ℝ}
     (hwn : ∀ᶠ n in l, Integrable (wn n) μ) (hw : Integrable w μ)
     (hR : AEStronglyMeasurable R μ) (hbound : ∀ᵐ x ∂μ, ‖R x‖ ≤ C)
     (hconv : Tendsto (fun n ↦ ∫ x, ‖wn n x - w x‖ ∂μ) l (𝓝 0)) :
     Tendsto (fun n ↦ ∫ x, wn n x * R x ∂μ) l (𝓝 (∫ x, w x * R x ∂μ)) := by
-  have hb : ∀ᵐ x ∂μ, ‖(ContinuousLinearMap.mul ℝ A).flip (R x)‖ ≤ C := by
+  have hle (u : α → A) : ∀ᵐ x ∂μ, ‖u x * R x‖ ≤ ‖u x‖ * C := by
     filter_upwards [hbound] with x hx
-    refine le_trans (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun a ↦ ?_) hx
-    simpa [mul_comm] using norm_mul_le a (R x)
-  simpa using tendsto_integral_clm_apply_of_integral_norm_sub
-    (.of_forall fun _ ↦ (ContinuousLinearMap.mul ℝ A).flip.continuous.comp_aestronglyMeasurable hR)
-    (.of_forall fun _ ↦ hb) (.of_forall fun _ ↦ tendsto_const_nhds) hwn hw hconv
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left hx (norm_nonneg _))
+  have hint {u : α → A} (hu : Integrable u μ) : Integrable (fun x ↦ u x * R x) μ :=
+    (hu.norm.mul_const C).mono' (hu.1.mul hR) (hle u)
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ (by simpa using hconv.mul_const C)
+  filter_upwards [hwn] with n hn
+  calc
+    ‖∫ x, wn n x * R x ∂μ - ∫ x, w x * R x ∂μ‖ = ‖∫ x, (wn n x - w x) * R x ∂μ‖ := by
+      simp only [sub_mul, integral_sub (hint hn) (hint hw)]
+    _ ≤ ∫ x, ‖wn n x - w x‖ * C ∂μ :=
+      norm_integral_le_of_norm_le ((hn.sub hw).norm.mul_const C) (hle fun x ↦ wn n x - w x)
+    _ = (∫ x, ‖wn n x - w x‖ ∂μ) * C := integral_mul_const _ _
 
 end MeasureTheory
