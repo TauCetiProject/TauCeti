@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Angle
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Analysis.Calculus.FDeriv.Matrix
 
 /-!
 # Uniqueness of action variables up to integral affine changes
@@ -197,15 +198,6 @@ theorem exists_eq_mulVec_add_of_forall_exists_fderiv_eq (hDo : IsOpen D) (hD : I
   rw [← hN, ← hDo.is_const_of_fderiv_eq_zero hD hgd hg hc hc₀]
   abel
 
-/-- If `A' = M A + b` near `c`, then `DA'(c) = M DA(c)`. -/
-private theorem hasFDerivAt_of_eventually_eq_mulVec_add {M : Matrix ι ι ℝ} {b c : ι → ℝ}
-    (hA : DifferentiableAt ℝ A c) (h : ∀ᶠ c' in 𝓝 c, A' c' = M *ᵥ A c' + b) :
-    HasFDerivAt A' ((Matrix.toLin' M).toContinuousLinearMap.comp (fderiv ℝ A c)) c := by
-  refine (((Matrix.toLin' M).toContinuousLinearMap.hasFDerivAt.comp c
-    hA.hasFDerivAt).add_const b).congr_of_eventuallyEq ?_
-  filter_upwards [h] with c' hc'
-  simp [hc']
-
 /-! ### Action variables of a family of lattices -/
 
 variable {Λ : (ι → ℝ) → Set (ι → ℝ)}
@@ -237,7 +229,7 @@ theorem exists_eq_mulVec_add_of_forall_mem_iff (hDo : IsOpen D) (hD : IsPreconne
     fun c hc ↦ (hpt hc).elim fun M hM ↦ ⟨M, hM⟩
   -- The constant matrix `M` is the invertible matrix relating the derivatives at `c₀`.
   obtain ⟨M₀, hM₀⟩ := hpt hc₀
-  have hd := hasFDerivAt_of_eventually_eq_mulVec_add (hdA hc₀)
+  have hd := (hdA hc₀).hasFDerivAt.of_eventuallyEq_mulVec_add
     (eventually_of_mem (hDo.mem_nhds hc₀) hMb)
   have hsurj : Surjective (fderiv ℝ A c₀) :=
     LinearMap.injective_iff_surjective (f := (fderiv ℝ A c₀ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1
@@ -262,7 +254,7 @@ theorem forall_mem_iff_of_eq_mulVec_add (hDo : IsOpen D) (hA : DifferentiableOn 
   intro c hc v
   have hdA := (hA c hc).differentiableAt (hDo.mem_nhds hc)
   -- Near `c`, `A' = M A + b`, so `dA'ᵢ = ∑ₖ Mᵢₖ dAₖ`.
-  have hA'c := hasFDerivAt_of_eventually_eq_mulVec_add hdA (eventually_of_mem (hDo.mem_nhds hc) hA')
+  have hA'c := hdA.hasFDerivAt.of_eventuallyEq_mulVec_add (eventually_of_mem (hDo.mem_nhds hc) hA')
   -- Hence `∑ᵢ nᵢ dA'ᵢ = ∑ₖ (n M)ₖ dAₖ`.
   have hsum (n : ι → ℤ) (w : ι → ℝ) :
       ∑ i, (n i : ℝ) * fderiv ℝ (fun c ↦ A' c i) c w =
@@ -426,9 +418,9 @@ theorem exists_eq_mulVec_add_and_angleMap_eq (hDo : IsOpen D) (hD : IsPreconnect
   refine ⟨P, b, fun c hcD ↦ ⟨hPb c hcD, ?_⟩⟩
   -- Differentiating `A'ᵢ = ∑ₖ Pᵢₖ Aₖ + bᵢ` and comparing with `dA'ᵢ` gives the periods.
   have hper (i : ι) : p' i c = ∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) • p k c := by
-    have hd := (hasFDerivAt_pi.2 (hA' c hcD)).unique (hasFDerivAt_of_eventually_eq_mulVec_add
-      (hasFDerivAt_pi.2 (hA c hcD)).differentiableAt (eventually_of_mem (hDo.mem_nhds hcD) hPb))
-    rw [(hasFDerivAt_pi.2 (hA c hcD)).fderiv] at hd
+    have hd := (hasFDerivAt_pi.2 (hA' c hcD)).unique
+      ((hasFDerivAt_pi.2 (hA c hcD)).of_eventuallyEq_mulVec_add
+        (eventually_of_mem (hDo.mem_nhds hcD) hPb))
     funext j
     have h : (2 * π)⁻¹ * p' i c j = (2 * π)⁻¹ * ∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) * p k c j := by
       simpa [Pi.single_apply, mulVec, dotProduct, Finset.mul_sum, mul_left_comm] using

@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# A product rule for matrix-field fluxes
+# Derivatives of matrix-vector products
 
 For a matrix field `A`, a vector field `v`, and specified coordinate directions `e i`,
 the sum of the directional derivatives of the components of `A *ᵥ v` is the trace contraction
@@ -19,6 +20,9 @@ of `A` with the directional Jacobian of `v`, plus the column-divergence term of 
 
 The field and the directions may be defined on any normed vector space over a nontrivially
 normed field. Neither completeness nor independence of the directions is required.
+
+For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
+at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`).
 -/
 
 public section
@@ -66,3 +70,18 @@ theorem sum_fderiv_mulVec_eq_trace_of_sum_fderiv_eq_zero
   simp only [hdiv, mul_zero, Finset.sum_const_zero, add_zero]
 
 end Matrix
+
+open Matrix Topology in
+/-- If `g = M *ᵥ f + b` near `x` for a constant matrix `M` and a constant vector `b`, and `f` has
+derivative `f'` at `x`, then `g` has derivative `M f'` at `x`. -/
+theorem HasFDerivAt.of_eventuallyEq_mulVec_add {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι]
+    [Finite κ] [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E]
+    {f : E → ι → 𝕜} {g : E → κ → 𝕜} {f' : E →L[𝕜] ι → 𝕜} {M : Matrix κ ι 𝕜} {b : κ → 𝕜}
+    {x : E} (hf : HasFDerivAt f f' x) (h : ∀ᶠ y in 𝓝 x, g y = M *ᵥ f y + b) :
+    HasFDerivAt g ((Matrix.toLin' M).toContinuousLinearMap.comp f') x := by
+  have := Fintype.ofFinite κ
+  refine (((Matrix.toLin' M).toContinuousLinearMap.hasFDerivAt.comp x hf).add_const
+    b).congr_of_eventuallyEq ?_
+  filter_upwards [h] with y hy
+  simp [hy]
