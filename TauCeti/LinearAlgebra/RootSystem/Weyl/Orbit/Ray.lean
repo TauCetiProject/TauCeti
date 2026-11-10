@@ -63,7 +63,13 @@ theorem mapsTo_add_orbit_weylGroup {χ : V} (hχ : ∀ w : P.weylGroup, w • χ
   rintro _ ⟨w, rfl⟩
   exact ⟨w, by simp only [smul_add, hχ]⟩
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+end Field
+
+section CommRing
+
+variable {ι R V N : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+  [AddCommGroup N] [Module R N] (P : RootPairing ι R V N)
+
 /-- A Weyl orbit is stable under reflection in any root along its coroot. -/
 theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
     Set.MapsTo (Module.preReflection (P.root i) (P.coroot' i))
@@ -72,7 +78,7 @@ theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
   simpa [P.reflection_apply, Module.preReflection_apply] using
     MulAction.mapsTo_smul_orbit (weylGroup.ofIdx P i) lam hv
 
-end Field
+end CommRing
 
 section Realization
 
