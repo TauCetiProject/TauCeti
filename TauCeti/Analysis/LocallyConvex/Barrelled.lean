@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.Barrelled
-public import Mathlib.Analysis.LocallyConvex.Bounded
 
 /-!
 # Separately continuous bilinear maps on barrelled spaces
