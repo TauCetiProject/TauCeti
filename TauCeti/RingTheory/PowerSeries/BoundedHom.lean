@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Substitution
-public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
+public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.Analysis.Normed.Ring.Basic
 import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -15,9 +15,6 @@ import Mathlib.Analysis.SpecificLimits.Basic
 
 A uniformly norm-bounded ring homomorphism from a power-series ring that sends the variable
 inside the open unit ball is determined by its values on constants and the variable.
-Consequently evaluation of integral series commutes with formal substitution at a series
-with zero constant term. This permits evaluating integral compositional inverses in complete
-non-archimedean rings, without imposing a linear topology on the target ring.
 -/
 
 public section
@@ -58,31 +55,3 @@ theorem ext_powerSeries_of_bounded {R K : Type*} [Semiring R] [NormedRing K]
   exact sub_eq_zero.mp (norm_eq_zero.mp (tendsto_nhds_unique tendsto_const_nhds hz))
 
 end RingHom
-
-namespace TauCeti
-
-variable {K : Type*} [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K]
-
-/-- Evaluation of integral series commutes with substitution at a series with zero constant
-term. Both evaluation parameters lie in the open unit ball. -/
-theorem evalIntSeries_subst (q : K) (hq : ‖q‖ < 1) (f g : ℤ⟦X⟧)
-    (hg : constantCoeff g = 0) :
-    evalIntSeries q hq (f.subst g) =
-      evalIntSeries (evalIntSeries q hq g)
-        ((norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq) f := by
-  have hs : HasSubst g := .of_constantCoeff_zero hg
-  have h := RingHom.ext_powerSeries_of_bounded
-    ((evalIntSeries q hq).comp (substAlgHom hs).toRingHom)
-    (evalIntSeries (evalIntSeries q hq g)
-      ((norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq))
-    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one q hq _⟩
-    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one _ _ _⟩
-    (fun r ↦ by simp)
-    (by simp [substAlgHom_X])
-    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      substAlgHom_X] using
-      (norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq)
-  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    coe_substAlgHom] using RingHom.congr_fun h f
-
-end TauCeti

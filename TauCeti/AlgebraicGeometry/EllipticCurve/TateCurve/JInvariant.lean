@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Specialization
-public import TauCeti.RingTheory.PowerSeries.BoundedHom
+public import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
@@ -100,16 +100,21 @@ variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- The Tate parameter with prescribed invariant `j` of norm greater than one. -/
 noncomputable def tateParameterOfJ (j : K) (hj : 1 < ‖j‖) : Kˣ :=
-  Units.mk0 (evalIntSeries j⁻¹ (by simpa using inv_lt_one_of_one_lt₀ hj) tateParameterSeries)
+  Units.mk0 (evalIntSeries j⁻¹ (norm_inv_lt_one_of_one_lt_norm hj) tateParameterSeries)
     (by
       apply norm_pos_iff.mp
       rw [norm_evalIntSeries_tateParameterSeries]
       exact norm_pos_iff.mpr (inv_ne_zero (norm_pos_iff.mp (zero_lt_one.trans hj))))
 
+/-- The recovered parameter is the inverse reciprocal j-series evaluated at `j⁻¹`. -/
+theorem coe_tateParameterOfJ (j : K) (hj : 1 < ‖j‖) :
+    (tateParameterOfJ j hj : K) =
+      evalIntSeries j⁻¹ (norm_inv_lt_one_of_one_lt_norm hj) tateParameterSeries := (rfl)
+
 /-- The recovered parameter has norm `‖j‖⁻¹`. -/
 @[simp] theorem norm_tateParameterOfJ (j : K) (hj : 1 < ‖j‖) :
     ‖(tateParameterOfJ j hj : K)‖ = ‖j‖⁻¹ := by
-  simp [tateParameterOfJ]
+  rw [coe_tateParameterOfJ, norm_evalIntSeries_tateParameterSeries, norm_inv]
 
 /-- The recovered parameter lies in the open unit ball. -/
 theorem norm_tateParameterOfJ_lt_one (j : K) (hj : 1 < ‖j‖) :
@@ -120,11 +125,12 @@ theorem norm_tateParameterOfJ_lt_one (j : K) (hj : 1 < ‖j‖) :
 /-- The recovered Tate curve has the prescribed j-invariant. -/
 @[simp] theorem j_tateCurveAt_tateParameterOfJ (j : K) (hj : 1 < ‖j‖) :
     (tateCurveAt (tateParameterOfJ j hj) (norm_tateParameterOfJ_lt_one j hj)).j = j := by
-  have h := congrArg (evalIntSeries j⁻¹ (by simpa using inv_lt_one_of_one_lt₀ hj))
+  have h := congrArg (evalIntSeries j⁻¹ (norm_inv_lt_one_of_one_lt_norm hj))
     tateReciprocalJ_subst_tateParameterSeries
   rw [evalIntSeries_subst _ _ _ _ constantCoeff_tateParameterSeries, evalIntSeries_X] at h
   have he : evalIntSeries (tateParameterOfJ j hj : K)
-      (norm_tateParameterOfJ_lt_one j hj) tateReciprocalJ = j⁻¹ := h
+      (norm_tateParameterOfJ_lt_one j hj) tateReciprocalJ = j⁻¹ := by
+    simpa only [coe_tateParameterOfJ] using h
   rw [evalIntSeries_tateReciprocalJ] at he
   exact inv_injective he
 
@@ -137,7 +143,8 @@ theorem norm_tateParameterOfJ_lt_one (j : K) (hj : 1 < ‖j‖) :
   apply Units.ext
   have h := congrArg (evalIntSeries (q : K) hq) tateParameterSeries_subst_tateReciprocalJ
   rw [evalIntSeries_subst _ _ _ _ constantCoeff_tateReciprocalJ, evalIntSeries_X] at h
-  simpa only [evalIntSeries_tateReciprocalJ, tateParameterOfJ, Units.val_mk0] using h
+  rw [coe_tateParameterOfJ]
+  simpa only [evalIntSeries_tateReciprocalJ] using h
 
 /-- The analytic Tate j-invariant is injective on nonzero parameters of norm below one. -/
 @[simp] theorem j_tateCurveAt_inj {q r : Kˣ} (hq : ‖(q : K)‖ < 1) (hr : ‖(r : K)‖ < 1) :
