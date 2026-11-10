@@ -99,13 +99,32 @@ theorem hasFDerivAt_cotangentLegendreProjection
 /-- An invertible negative `Q,Q` Hessian makes the mixed-variable projection derivative
 invertible. -/
 theorem isInvertible_fderiv_cotangentLegendreProjection
-    (hS : DifferentiableAt ℝ (fderiv ℝ S) x)
     (hM : (cotangentLegendreHessian S x).IsInvertible) :
     (fderiv ℝ (cotangentLegendreProjection S) x).IsInvertible := by
   obtain ⟨e, he⟩ := hM
   let A := -(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)
   refine ⟨(ContinuousLinearEquiv.refl ℝ V).skewProd e (A ∘L inl ℝ V W), ?_⟩
-  rw [(hasFDerivAt_cotangentLegendreProjection hS).fderiv]
+  have hD : HasFDerivAt (cotangentLegendreProjection S)
+      ((fst ℝ V W).prod (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x))) x := by
+    by_cases hS : DifferentiableAt ℝ (fderiv ℝ S) x
+    · exact hasFDerivAt_cotangentLegendreProjection hS
+    · have h0 (w : W) : e w = 0 := by
+        ext c
+        simpa [cotangentLegendreHessian, fderiv_zero_of_not_differentiableAt hS] using
+          DFunLike.congr_fun (DFunLike.congr_fun he w) c
+      have hW : Subsingleton W := ⟨fun a b => e.injective ((h0 a).trans (h0 b).symm)⟩
+      have hP : Subsingleton (StrongDual ℝ W) :=
+        ⟨fun f g => ContinuousLinearMap.ext fun w => by rw [Subsingleton.elim w 0]; simp⟩
+      have h2 : HasFDerivAt (fun y => (cotangentGeneratingTarget S y).2)
+          (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)) x := by
+        have hf : (fun y => (cotangentGeneratingTarget S y).2) = fun _ => (0 : StrongDual ℝ W) :=
+          funext fun _ => Subsingleton.elim _ _
+        have hL : -(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x) = 0 :=
+          ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
+        rw [hf, hL]
+        exact hasFDerivAt_const _ _
+      exact hasFDerivAt_fst.prodMk h2
+  rw [hD.fderiv]
   apply ContinuousLinearMap.ext
   intro u
   apply Prod.ext
@@ -172,19 +191,16 @@ section Chart
 
 variable [CompleteSpace V] [CompleteSpace W] {x₀ : V × W}
 
-private def legendreDerivEquiv (hS : ContDiffAt ℝ 2 S x₀)
-    (hM : (cotangentLegendreHessian S x₀).IsInvertible) :
+private def legendreDerivEquiv (hM : (cotangentLegendreHessian S x₀).IsInvertible) :
     (V × W) ≃L[ℝ] V × StrongDual ℝ W :=
-  (isInvertible_fderiv_cotangentLegendreProjection
-    ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero) hM).choose
+  (isInvertible_fderiv_cotangentLegendreProjection hM).choose
 
 omit [CompleteSpace V] [CompleteSpace W] in
 private theorem hasStrictFDerivAt_legendreDerivEquiv (hS : ContDiffAt ℝ 2 S x₀)
     (hM : (cotangentLegendreHessian S x₀).IsInvertible) :
     HasStrictFDerivAt (cotangentLegendreProjection S)
-      (legendreDerivEquiv hS hM : _ →L[ℝ] _) x₀ := by
-  have he := (isInvertible_fderiv_cotangentLegendreProjection
-    ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero) hM).choose_spec
+      (legendreDerivEquiv hM : _ →L[ℝ] _) x₀ := by
+  have he := (isInvertible_fderiv_cotangentLegendreProjection hM).choose_spec
   rw [legendreDerivEquiv, he]
   exact (contDiffAt_cotangentLegendreProjection (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
@@ -214,10 +230,14 @@ theorem image_mem_cotangentLegendreChart_target :
 /-- The inverse mixed-coordinate chart is as smooth as the first derivatives of `S`
 at the distinguished point. -/
 theorem contDiffAt_cotangentLegendreChart_symm {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
-    ContDiffAt ℝ n (cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀) :=
-  (contDiffAt_cotangentLegendreProjection hSn).to_localInverse
-    (hasStrictFDerivAt_legendreDerivEquiv hS hM).hasFDerivAt hn
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
+    ContDiffAt ℝ n (cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffAt_zero.2 ⟨_, (cotangentLegendreChart hS hM).open_target.mem_nhds
+      (image_mem_cotangentLegendreChart_target hS hM),
+      (cotangentLegendreChart hS hM).continuousOn_symm⟩
+  · exact (contDiffAt_cotangentLegendreProjection hSn).to_localInverse
+      (hasStrictFDerivAt_legendreDerivEquiv hS hM).hasFDerivAt hn
 
 /-- Every local inverse agrees with this inverse branch as a germ. -/
 theorem eventuallyEq_cotangentLegendreChart_symm {g : V × StrongDual ℝ W → V × W}
@@ -247,11 +267,11 @@ theorem cotangentPartialLegendre_cotangentLegendreProjection {x : V × W}
   rw [cotangentPartialLegendre_def, hb, cotangentLegendreProjection_snd]
 
 /-- The partial Legendre transform is `C^n` at the distinguished mixed-coordinate point
-when `S` is `C^(n+1)` there and `n ≠ 0`. -/
+when `S` is `C^(n+1)` there. -/
 theorem contDiffAt_cotangentPartialLegendre {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentPartialLegendre hS hM) (cotangentLegendreProjection S x₀) := by
-  have hb := contDiffAt_cotangentLegendreChart_symm hS hM hSn hn
+  have hb := contDiffAt_cotangentLegendreChart_symm hS hM hSn
   have hx : (cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀) = x₀ :=
     (hasStrictFDerivAt_legendreDerivEquiv hS hM).localInverse_apply_image
   exact ((hx ▸ hSn.of_le (by simp)).comp _ hb).add (contDiffAt_snd.clm_apply hb.snd)
@@ -265,7 +285,7 @@ theorem eventually_fderiv_cotangentPartialLegendre :
         (cotangentGeneratingSource S ((cotangentLegendreChart hS hM).symm y)).2 u.1 +
           u.2 ((cotangentLegendreChart hS hM).symm y).2 := by
   let b := (cotangentLegendreChart hS hM).symm
-  have hb := contDiffAt_cotangentLegendreChart_symm hS hM hS one_ne_zero
+  have hb := contDiffAt_cotangentLegendreChart_symm (n := 1) hS hM hS
   have hi : ∀ᶠ y in 𝓝 (cotangentLegendreProjection S x₀),
       cotangentLegendreProjection S (b y) = y :=
     (hasStrictFDerivAt_legendreDerivEquiv hS hM).eventually_right_inverse
@@ -311,7 +331,7 @@ theorem eventually_cotangentSecondKindRelated_cotangentPartialLegendre :
       cotangentLegendreProjection S ((cotangentLegendreChart hS hM).symm y) = y :=
     (hasStrictFDerivAt_legendreDerivEquiv hS hM).eventually_right_inverse
   filter_upwards [eventually_fderiv_cotangentPartialLegendre hS hM,
-    (contDiffAt_cotangentPartialLegendre hS hM hS one_ne_zero).eventually (by simp), hi]
+    (contDiffAt_cotangentPartialLegendre (n := 1) hS hM hS).eventually (by simp), hi]
     with y hd hc hy
   have hbase : ((cotangentGeneratingSource S ((cotangentLegendreChart hS hM).symm y)).1,
       (cotangentGeneratingTarget S ((cotangentLegendreChart hS hM).symm y)).2) = y := by
