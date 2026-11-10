@@ -59,10 +59,12 @@ dropped (the statement holds without it: change the proof if needed, even to a n
 derived (it follows from the others: derive it in the proof), needed to state (the statement
 does not elaborate without it), or kept (the statement is false without it: give the
 counterexample). Nothing else keeps one: not that the proof uses it, not that a related lemma or
-the docstring has it (fix the docstring), not that removing it needs a new proof. Look especially
-for:
+the docstring has it (fix the docstring), not that removing it needs a new proof. If you can
+neither drop one nor find its counterexample (an open conjecture, say), the Q3 line begins
+`declined` and says so. Look especially for:
 - instances only the proof uses, or implied by another hypothesis (`[FiniteDimensional K V]` by
-  `0 < finrank K V`, `[IsDomain R]` by `IsFractionRing R K`, `[Nontrivial R]` by `x ≠ y`);
+  `0 < finrank K V`, `[IsDomain R]` by `IsFractionRing R K` for a field `K`, `[Nontrivial R]` by
+  `x ≠ y`);
 - hypotheses implied by the others (`0 ≤ r` from a limit of nonnegative values);
 - degenerate cases (empty, subsingleton, `0`, `⊥`), where both sides are often trivial: as in
   Mathlib, a statement that holds there through a junk value such as `x / 0 = 0` needs no
@@ -110,7 +112,8 @@ promise must be in the conclusion, not moved into the hypotheses: find where the
 delivers each strong word (*exactly*, *iff*, *unique*, *strictly*, *for every*, *the*), with the
 quantifiers in the docstring's order (one `x` for every `n` is `∃ x, ∀ n`). A docstring that
 describes the hypotheses must also state the conclusion. Fix whichever of the two is wrong. Check
-the statement says what the source says and is not vacuous: the hypotheses can hold together, and
-the conclusion is not true for an unintended reason, such as a junk value on the inputs it is meant
-for (in a degenerate case, junk is fine: Q3). A simple, correct lemma is fine.
+the statement says what the source says and is not vacuous: the hypotheses can hold together
+(unless showing they cannot is the point, as in a lemma concluding `False`), and the conclusion is
+not true for an unintended reason, such as a junk value on the inputs it is meant for (in a
+degenerate case, junk is fine: Q3). A simple, correct lemma is fine.
 -->
