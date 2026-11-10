@@ -22,7 +22,9 @@ variations of loops near a given time while keeping them loops.
 
 * `TauCeti.periodicBump`: the periodic bump.
 * `TauCeti.contDiff_periodicBump`, `TauCeti.periodicBump_add_one`: it is smooth and `1`-periodic.
-* `TauCeti.eventually_periodicBump_eq_one`: it is `1` near its centre.
+* `TauCeti.periodicBump_eq_one`, `TauCeti.eventually_periodicBump_eq_one`: it is `1` where
+  `cos (2π(t - t₀)) ≥ (1 + c)/2`, hence near its centre.
+* `TauCeti.periodicBump_eq_zero`: it vanishes where `cos (2π(t - t₀)) ≤ c`.
 * `TauCeti.tsupport_periodicBump_subset`: its closed support lies where `cos (2π(t - t₀)) ≥ c`.
 -/
 
@@ -66,15 +68,20 @@ theorem periodicBump_eq_zero {t₀ c t : ℝ} (hc : c < 1) (h : cos (2 * π * (t
   smoothTransition.zero_of_nonpos
     (div_nonpos_of_nonpos_of_nonneg (by linarith) (by linarith))
 
+/-- The periodic bump is `1` where `cos (2π(t - t₀)) ≥ (1 + c)/2`. -/
+theorem periodicBump_eq_one {t₀ c t : ℝ} (hc : c < 1)
+    (h : (1 + c) / 2 ≤ cos (2 * π * (t - t₀))) : periodicBump t₀ c t = 1 := by
+  refine smoothTransition.one_of_one_le ?_
+  rw [le_div_iff₀ (by linarith)]
+  linarith
+
 /-- The periodic bump is `1` near its centre. -/
 theorem eventually_periodicBump_eq_one {t₀ c : ℝ} (hc : c < 1) :
     ∀ᶠ t in 𝓝 t₀, periodicBump t₀ c t = 1 := by
   have hcont : Continuous fun t ↦ cos (2 * π * (t - t₀)) := by fun_prop
   have hlt : (1 + c) / 2 < cos (2 * π * (t₀ - t₀)) := by rw [sub_self, mul_zero, cos_zero]; linarith
   filter_upwards [hcont.continuousAt.eventually (lt_mem_nhds hlt)] with t ht
-  refine smoothTransition.one_of_one_le ?_
-  rw [le_div_iff₀ (by linarith)]
-  linarith
+  exact periodicBump_eq_one hc ht.le
 
 /-- The support of the periodic bump lies where `cos (2π(t - t₀)) > c`. -/
 theorem lt_cos_of_periodicBump_ne_zero {t₀ c t : ℝ} (hc : c < 1)
