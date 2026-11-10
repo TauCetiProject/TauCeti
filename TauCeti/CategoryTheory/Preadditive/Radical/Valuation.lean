@@ -38,6 +38,9 @@ scalar towers. Consequently:
 * **positivity**: in that case both entries of the valuation are positive exactly when an
   irreducible morphism `X ⟶ Y` exists, so a nonzero `Irr(X, Y)` is valued by a pair of positive
   integers;
+* **valuation one**: an entry of the valuation is one exactly when one irreducible morphism
+  generates `Irr(X, Y)` over the corresponding residue ring, which is how valuations of explicit
+  arrows are computed;
 * **the tower law over a field**: `dim_k Irr(X, Y) = dim_k F_Y · a = dim_k F_X · b`. The two residue
   division rings need not have the same `k`-dimension, which is how asymmetric valuations arise;
 * **algebraically closed fields**: when `k` is algebraically closed and the endomorphism algebras
@@ -56,6 +59,11 @@ scalar towers. Consequently:
 * `TauCeti.irreducibleMorphismValuation_fst_pos_iff` and
   `TauCeti.irreducibleMorphismValuation_snd_pos_iff`: the entries of the valuation are positive
   exactly when an irreducible morphism exists.
+* `TauCeti.irreducibleMorphismValuation_fst_eq_one_iff` and
+  `TauCeti.irreducibleMorphismValuation_snd_eq_one_iff`: an entry of the valuation is one exactly
+  when the class of one irreducible morphism generates over the corresponding residue ring;
+  `TauCeti.irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem` gives the valuation
+  `(1, 1)` when it already generates over the base ring.
 * `TauCeti.finrank_residue_mul_irreducibleMorphismValuation_fst` and
   `TauCeti.finrank_residueOp_mul_irreducibleMorphismValuation_snd`: **the tower law**
   `dim_k F_Y · a = dim_k Irr(X, Y) = dim_k F_X · b` over a field.
@@ -148,6 +156,79 @@ theorem irreducibleMorphismValuation_snd_pos_iff
     0 < (irreducibleMorphismValuation k X Y).2 ↔ ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by
   rw [irreducibleMorphismValuation_snd, finrank_pos_iff_of_free,
     nontrivial_irreducibleMorphismSpace_iff]
+
+/-- **The first entry of the valuation is one exactly when one irreducible morphism generates
+over the target**: there is an irreducible `f : X ⟶ Y` such that every radical morphism
+`X ⟶ Y` is, modulo the square of the radical, `f` followed by an endomorphism of `Y`. -/
+theorem irreducibleMorphismValuation_fst_eq_one_iff :
+    (irreducibleMorphismValuation k X Y).1 = 1 ↔ ∃ f : X ⟶ Y, IsIrreducibleMorphism f ∧
+      ∀ u ∈ jacobsonRadical X Y, ∃ g : Y ⟶ Y, u - f ≫ g ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismValuation_fst, finrank_eq_one_iff']
+  constructor
+  · rintro ⟨v, hv, hgen⟩
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective v
+    refine ⟨f, irreducibleMorphismMk_ne_zero_iff.mp hv, fun u hu => ?_⟩
+    obtain ⟨c, hc⟩ := hgen (irreducibleMorphismMk k X Y ⟨u, mem_jacobsonRadicalSubmodule.mpr hu⟩)
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective c
+    rw [irreducibleMorphismSpace_residue_smul_eq,
+      irreducibleMorphismPostcomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
+      coe_jacobsonRadicalPostcomp] at hc
+    exact ⟨g.asHom, by simpa using neg_mem hc⟩
+  · rintro ⟨f, hf, hgen⟩
+    refine ⟨irreducibleMorphismMk k X Y
+      ⟨f, mem_jacobsonRadicalSubmodule.mpr hf.mem_jacobsonRadical⟩,
+      irreducibleMorphismMk_ne_zero_iff.mpr hf, fun w => ?_⟩
+    obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
+    obtain ⟨g, hg⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
+    refine ⟨Ideal.Quotient.mk _ (End.of g), ?_⟩
+    rw [irreducibleMorphismSpace_residue_smul_eq,
+      irreducibleMorphismPostcomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
+      coe_jacobsonRadicalPostcomp]
+    simpa using neg_mem hg
+
+/-- **The second entry of the valuation is one exactly when one irreducible morphism generates
+over the source**: there is an irreducible `f : X ⟶ Y` such that every radical morphism
+`X ⟶ Y` is, modulo the square of the radical, an endomorphism of `X` followed by `f`. -/
+theorem irreducibleMorphismValuation_snd_eq_one_iff :
+    (irreducibleMorphismValuation k X Y).2 = 1 ↔ ∃ f : X ⟶ Y, IsIrreducibleMorphism f ∧
+      ∀ u ∈ jacobsonRadical X Y, ∃ a : X ⟶ X, u - a ≫ f ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismValuation_snd, finrank_eq_one_iff']
+  constructor
+  · rintro ⟨v, hv, hgen⟩
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective v
+    refine ⟨f, irreducibleMorphismMk_ne_zero_iff.mp hv, fun u hu => ?_⟩
+    obtain ⟨c, hc⟩ := hgen (irreducibleMorphismMk k X Y ⟨u, mem_jacobsonRadicalSubmodule.mpr hu⟩)
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective c
+    rw [irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
+      coe_jacobsonRadicalPrecomp] at hc
+    exact ⟨a.unop.asHom, by simpa using neg_mem hc⟩
+  · rintro ⟨f, hf, hgen⟩
+    refine ⟨irreducibleMorphismMk k X Y
+      ⟨f, mem_jacobsonRadicalSubmodule.mpr hf.mem_jacobsonRadical⟩,
+      irreducibleMorphismMk_ne_zero_iff.mpr hf, fun w => ?_⟩
+    obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
+    obtain ⟨a, ha⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
+    refine ⟨Ideal.Quotient.mk _ (MulOpposite.op (End.of a)), ?_⟩
+    rw [irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
+      coe_jacobsonRadicalPrecomp]
+    simpa using neg_mem ha
+
+/-- **The valuation is `(1, 1)` when one irreducible morphism spans over the base**: if every
+radical morphism `X ⟶ Y` is, modulo the square of the radical, a scalar multiple of one
+irreducible `f : X ⟶ Y`, then both entries of the valuation are one. -/
+theorem irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem {f : X ⟶ Y}
+    (hf : IsIrreducibleMorphism f)
+    (h : ∀ u ∈ jacobsonRadical X Y, ∃ c : k, u - c • f ∈ jacobsonRadicalSq X Y) :
+    irreducibleMorphismValuation k X Y = (1, 1) :=
+  Prod.ext
+    ((irreducibleMorphismValuation_fst_eq_one_iff k X Y).2 ⟨f, hf, fun u hu =>
+      let ⟨c, hc⟩ := h u hu
+      ⟨c • 𝟙 Y, by rwa [Linear.comp_smul, Category.comp_id]⟩⟩)
+    ((irreducibleMorphismValuation_snd_eq_one_iff k X Y).2 ⟨f, hf, fun u hu =>
+      let ⟨c, hc⟩ := h u hu
+      ⟨c • 𝟙 X, by rwa [Linear.smul_comp, Category.id_comp]⟩⟩)
 
 end Valuation
 
