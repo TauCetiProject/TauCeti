@@ -78,11 +78,11 @@ variable {R A : Type*} [Star R] [Mul A] [StarMul A] [SMul R A] [StarModule R A]
   [IsScalarTower R A A]
 
 /-- **Scalars commute with left multiplication in a star module.** If `A` has a multiplicative
-star (`StarMul A`) and is a star module over `R` with `IsScalarTower R A A`, the identity
-`x * (c • y) = c • (x * y)` follows by applying `star` to the identity
-`(star c • star y) * star x = star c • (star y * star x)`. In particular `SMulCommClass R A A` is
-automatic. -/
+star (`StarMul A`) and is a star module over `R` with `IsScalarTower R A A`, then
+`x * (c • y) = c • (x * y)`. In particular `SMulCommClass R A A` is automatic. -/
 theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x * y) := by
+  -- apply `star`, which turns the goal into the identity `(star c • star y) * star x =
+  -- star c • (star y * star x)`, an instance of `IsScalarTower R A A`
   apply star_injective
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
 
