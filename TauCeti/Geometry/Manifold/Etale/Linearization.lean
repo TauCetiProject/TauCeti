@@ -79,8 +79,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, z)).hom⟩ :
           Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
   classical
-  have := finite_hom_of_proper_source_target hp hs.isLocalHomeomorph x x
-  have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
+  have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
   let ι : Fintype (Aut x) := Fintype.ofFinite (Aut x)
   obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, hcentre⟩ :=
     exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht hu hc x

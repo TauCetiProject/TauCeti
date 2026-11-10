@@ -54,6 +54,8 @@ smoothness of the action is asserted.
 
 ## Main results
 
+* `TauCeti.Vortex.exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup`: for `u ∈ G_s`, the complex
+  function `u - 1` lies in `H^s(ℂ; ℂ)`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
@@ -128,6 +130,20 @@ theorem mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) (u : ℂ → Circle) :
       (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
       (fun z ↦ (u z : ℂ).im) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
+
+open MeasureTheory in
+open scoped SchwartzMap in
+/-- **Elements of `G_s` are `1 + h` with `h ∈ H^s(ℂ; ℂ)`.** For `u ∈ G_s`, the complex function
+`u - 1` agrees almost everywhere with an `L²` function in Mathlib's Bessel-potential space
+`H^s(ℂ; ℂ)`. -/
+theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) :
+    ∃ h : Lp ℂ 2 (volume : Measure ℂ), h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) ∧
+      MemSobolev s 2 (h : 𝓢'(ℂ, ℂ)) := by
+  obtain ⟨-, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  obtain ⟨h, hae, hh⟩ := exists_memSobolev_ae_eq_of_mem_realSobolevFunctions h₁ h₂
+  refine ⟨h, hae.trans (Eventually.of_forall fun z ↦ ?_), hh⟩
+  apply Complex.ext <;> simp
 
 /-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
 theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :
@@ -351,7 +367,7 @@ theorem gaugeTransform_referenceField_sub_mem_sobolevFields {k : ℕ} (hk : 1 < 
   -- The coordinates of the reference section are smooth with bounded derivatives.
   have hbound (i : Fin 4) : ∃ M, 0 ≤ M ∧
       ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j (fun z ↦ referenceField f m z i) z‖ ≤ M := by
-    choose C hC using fun j ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m j i
+    choose C hC using fun j ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j
     refine ⟨∑ j ∈ Finset.range (k + 1), |C j|, by positivity, fun j hj z ↦ (hC j z).trans ?_⟩
     exact (le_abs_self _).trans (Finset.single_le_sum (f := fun j ↦ |C j|)
       (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hj)))

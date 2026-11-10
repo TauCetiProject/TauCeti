@@ -263,13 +263,6 @@ lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u
       letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
       haveI : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
         inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
-      -- A proper scheme over a field is of finite type and quasi-compact, so it is Noetherian.
-      haveI : IsNoetherian (pullback (ξ ≫ T.unop.hom) f) :=
-        { toIsLocallyNoetherian :=
-            LocallyOfFiniteType.isLocallyNoetherian (pullback.fst (ξ ≫ T.unop.hom) f)
-          toCompactSpace :=
-            (quasiCompact_iff_compactSpace (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω))).mp
-              inferInstance }
       haveI : Fact (∀ y : ↥(pullback (ξ ≫ T.unop.hom) f), Order.coheight y ≤ 1) := ⟨hX⟩
       haveI := hH
       Additive.ofMul (LineBundleClass.pullback

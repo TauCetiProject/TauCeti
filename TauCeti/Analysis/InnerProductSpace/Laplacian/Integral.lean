@@ -19,6 +19,9 @@ zero. More generally, an integrable `C²` scalar function whose Laplacian is bou
 integrable function has an integrable Laplacian. Dilated cutoffs turn the one-sided
 bound into a global mass bound. These statements allow integrated Bochner estimates without
 assuming derivative decay at infinity.
+
+Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a `C²` function `u` and a compactly
+supported `C¹` function `v`, with no condition on `u` at infinity.
 -/
 
 public section
@@ -26,7 +29,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Filter Metric
-open scoped ContDiff Laplacian
+open scoped ContDiff Laplacian Gradient InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -49,6 +52,42 @@ theorem integral_laplacian_eq_zero_of_hasCompactSupport (hf : ContDiff ℝ 2 f)
   intro i _
   exact integral_fderiv_apply_eq_zero_of_hasCompactSupport
     (hd.clm_apply contDiff_const) (hc.fderiv_apply (𝕜 := ℝ) (b i)) (b i)
+
+/-- **Green's first identity against a compactly supported function.** For a `C²` function `u`
+and a compactly supported `C¹` function `v`, `∫ ⟪∇u, ∇v⟫ = -∫ v Δu`. No integrability or decay
+of `u` is needed. -/
+theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
+    (hu : ContDiff ℝ 2 u) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
+    ∫ x, ⟪∇ u x, ∇ v x⟫_ℝ ∂μ = -∫ x, v x * Δ u x ∂μ := by
+  let b := stdOrthonormalBasis ℝ E
+  have hu1 : ContDiff ℝ 1 (fderiv ℝ u) := hu.fderiv_right (by norm_num)
+  have hdu (i) : ContDiff ℝ 1 fun y ↦ fderiv ℝ u y (b i) := hu1.clm_apply contDiff_const
+  have hinner (x) : ⟪∇ u x, ∇ v x⟫_ℝ = ∑ i, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) := by
+    rw [← b.sum_inner_mul_inner (∇ u x) (∇ v x)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [inner_gradient_left, real_inner_comm (∇ v x), inner_gradient_left]
+  have hΔ (x) : Δ u x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) :=
+    laplacian_eq_sum_fderiv_fderiv_apply b ((hu1.differentiable one_ne_zero) x)
+  have hint (i) : Integrable (fun x ↦ v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
+    (hv.continuous.mul (((hdu i).continuous_fderiv one_ne_zero).clm_apply
+      continuous_const)).integrable_of_hasCompactSupport hvc.mul_right
+  have hint' (i) : Integrable (fun x ↦ fderiv ℝ u x (b i) * fderiv ℝ v x (b i)) μ :=
+    (((hdu i).continuous.mul ((hv.continuous_fderiv one_ne_zero).clm_apply
+      continuous_const)).integrable_of_hasCompactSupport
+        (hvc.fderiv_apply (𝕜 := ℝ) (b i)).mul_left)
+  -- Integrate by parts in each direction of the orthonormal basis.
+  have hdir (i) : ∫ x, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) ∂μ =
+      -∫ x, v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) ∂μ := by
+    simp_rw [mul_comm (v _)]
+    exact integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
+      (by simpa only [mul_comm (v _)] using hint i) (hint' i)
+      (((hdu i).continuous.mul hv.continuous).integrable_of_hasCompactSupport hvc.mul_left)
+      (fun x _ ↦ (hdu i).differentiable one_ne_zero x)
+      (fun x _ ↦ hv.differentiable one_ne_zero x)
+  simp_rw [hinner, hΔ, Finset.mul_sum]
+  rw [integral_finsetSum _ fun i _ ↦ hint' i, integral_finsetSum _ fun i _ ↦ hint i,
+    ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun i _ ↦ hdir i
 
 /-- On a ball, the Laplacian of a `C²` function plus an integrable function is integrable. -/
 private theorem integrableOn_laplacian_add_ball {f g : E → ℝ} (hf : ContDiff ℝ 2 f)

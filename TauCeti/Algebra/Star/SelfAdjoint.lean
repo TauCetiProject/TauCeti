@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Star.SelfAdjoint
 
 /-!
-# Nilpotent self-adjoint elements and anticommutation
+# Nilpotent self-adjoint elements, anticommutation and star transposition
 
 In a star monoid with zero whose star is proper (`IsProperStar`: `star x * x = 0` forces
 `x = 0`), such as a matrix ring over a star-ordered ring like `ℝ` or `ℂ`, a self-adjoint element
@@ -18,13 +18,21 @@ what rules out nonzero nilpotent ideals in an algebra of matrices closed under c
 transposition.
 
 In a star ring, taking adjoints shows that an element anticommuting with a self-adjoint `γ` has an
-adjoint anticommuting with `γ`, as needed for gradings.
+adjoint anticommuting with `γ`, as needed for gradings. Similarly, taking stars transposes
+one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x` for self-adjoint
+`x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
+element `2 p - 1` is again self-adjoint.
 
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
 * `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
   `γ * star x = -(star x * γ)`.
+* `IsSelfAdjoint.mul_eq_right_of_mul_eq_left`: for self-adjoint `x` and `q`, `x * q = x` implies
+  `q * x = x`.
+* `IsSelfAdjoint.star_mul_eq_zero_of_mul_eq_zero`: for self-adjoint `q`, `q * u = 0` implies
+  `star u * q = 0`.
+* `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 -/
 
 public section
@@ -57,3 +65,19 @@ theorem IsSelfAdjoint.mul_star_eq_neg_star_mul {R : Type*} [NonUnitalNonAssocRin
   have h' := congrArg star h
   rw [star_mul, star_neg, star_mul, hγ.star_eq] at h'
   rw [h', neg_neg]
+
+/-- For self-adjoint `x` and `q`, taking stars turns `x * q = x` into `q * x = x`. -/
+theorem IsSelfAdjoint.mul_eq_right_of_mul_eq_left {R : Type*} [Mul R] [StarMul R] {x q : R}
+    (hx : IsSelfAdjoint x) (hq : IsSelfAdjoint q) (h : x * q = x) : q * x = x := by
+  simpa only [star_mul, hq.star_eq, hx.star_eq] using congrArg star h
+
+/-- For self-adjoint `q`, taking stars turns `q * u = 0` into `star u * q = 0`. -/
+theorem IsSelfAdjoint.star_mul_eq_zero_of_mul_eq_zero {R : Type*} [NonUnitalNonAssocSemiring R]
+    [StarRing R] {q u : R} (hq : IsSelfAdjoint q) (h : q * u = 0) : star u * q = 0 := by
+  simpa only [star_mul, hq.star_eq, star_zero] using congrArg star h
+
+/-- For a self-adjoint `p`, `2 p - 1` is self-adjoint. -/
+theorem IsSelfAdjoint.two_mul_sub_one {R : Type*} [Ring R] [StarRing R] {p : R}
+    (hp : IsSelfAdjoint p) : IsSelfAdjoint (2 * p - 1) := by
+  rw [two_mul]
+  exact (hp.add hp).sub (.one _)
