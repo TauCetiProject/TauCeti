@@ -41,7 +41,7 @@ variable {α : Type*} [MeasurableSpace α]
 /-- An almost-surely finite meeting in a Markovian coupling makes the marginal laws
 asymptotically equal in total variation. Finite initial measures suffice. -/
 theorem tendsto_tvDist_pow_comp_of_ae_meeting [MeasurableEq α]
-    (κ : Kernel α α) [IsMarkovKernel κ]
+    (κ : Kernel α α)
     {η : Kernel (α × α) (α × α)} [IsMarkovKernel η]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ p.2))
     {ρ : Measure (α × α)} [IsFiniteMeasure ρ] {ν ν' : Measure α}
@@ -49,6 +49,10 @@ theorem tendsto_tvDist_pow_comp_of_ae_meeting [MeasurableEq α]
     (hmeet : ∀ᵐ ω ∂markovChainLaw ρ η, ∃ k, (ω k).1 = (ω k).2) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ n : Kernel α α) ∘ₘ ν')) atTop (𝓝 0) := by
+  -- the coupling hypothesis forces `κ x` to be a probability measure for every `x`
+  have : IsMarkovKernel κ := ⟨fun x => by
+    have h := (hη (x, x)).fst_eq
+    exact ⟨by simpa using congrArg (fun m : Measure α => m Set.univ) h.symm⟩⟩
   let P := markovChainLaw ρ η
   let A (n : ℕ) := {ω : ℕ → α × α | ∀ k ≤ n, (ω k).1 ≠ (ω k).2}
   have hA (n : ℕ) : MeasurableSet (A n) := by
@@ -107,11 +111,34 @@ theorem tendsto_tvDist_pow_comp_pow_add_comp_of_parallelComp_isRecurrent [Measur
     (κ : Kernel α α) [IsMarkovKernel κ]
     [IsIrreducible Measure.count (κ ∥ₖ κ)]
     {z : α × α} (hz : (κ ∥ₖ κ).IsRecurrent z)
-    (ν : Measure α) [IsProbabilityMeasure ν] (i : ℕ) :
+    (ν : Measure α) (i : ℕ) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ (n + i) : Kernel α α) ∘ₘ ν))
       atTop (𝓝 0) := by
-  simpa only [Kernel.pow_add, Measure.comp_assoc] using
-    κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hz ν ((κ ^ i : Kernel α α) ∘ₘ ν)
+  have hmass (m : ℕ) : ((κ ^ m : Kernel α α) ∘ₘ ν) Set.univ = ν Set.univ := by
+    rw [Measure.bind_apply .univ (Kernel.aemeasurable _)]
+    simp
+  by_cases hfin : IsFiniteMeasure ν
+  swap
+  · -- an infinite measure stays infinite under a Markov kernel, and `tvDist` then vanishes
+    have hn (m : ℕ) : ¬ IsFiniteMeasure ((κ ^ m : Kernel α α) ∘ₘ ν) := fun h =>
+      hfin ⟨by rw [← hmass m]; exact measure_lt_top _ _⟩
+    simp [tvDist, etvDist_of_not_isFiniteMeasure_left (hn _)]
+  rcases eq_or_ne (ν Set.univ) 0 with h0 | h0
+  · have hν : ν = 0 := Measure.measure_univ_eq_zero.mp h0
+    simp [hν]
+  let ν' := (κ ^ i : Kernel α α) ∘ₘ ν
+  have hρ : IsCoupling ((ν Set.univ)⁻¹ • ν.prod ν') ν ν' :=
+    isCoupling_inv_smul_prod (by rw [hmass])
+  have : IsFiniteMeasure ((ν Set.univ)⁻¹ • ν.prod ν') :=
+    ⟨by
+      rw [smul_apply]
+      exact ENNReal.mul_lt_top (ENNReal.inv_lt_top.2 (pos_iff_ne_zero.2 h0)) (measure_lt_top _ _)⟩
+  have hη : ∀ p : α × α, IsCoupling ((κ ∥ₖ κ) p) (κ p.1) (κ p.2) := fun p => by
+    rw [parallelComp_apply]
+    exact isCoupling_prod _ _
+  simpa only [Kernel.pow_add, Measure.comp_assoc, ν'] using
+    κ.tendsto_tvDist_pow_comp_of_ae_meeting hη hρ
+      ((κ ∥ₖ κ).ae_meeting_of_isRecurrent hz _)
 
 end ProbabilityTheory.Kernel
