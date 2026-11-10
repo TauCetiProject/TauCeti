@@ -56,8 +56,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
   derivatives.
-* `TauCeti.iteratedFDeriv_succ_const_eq_sum_coordinateDeriv`: on the diagonal, the Fréchet
-  derivative of order `k + 1` is a combination of the `k`-th ones of the first partial derivatives.
+* `TauCeti.iteratedFDeriv_succ_apply_eq_sum_coordinateDeriv`: the Fréchet derivative of order
+  `k + 1` is a combination of the `k`-th ones of the first partial derivatives.
 * `TauCeti.coordinateDeriv_pair_comm`: two partial derivatives of a `C²` function commute.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
@@ -862,21 +862,22 @@ theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n �
   conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
   simp
 
-/-- The `(k + 1)`-st Fréchet derivative of a `C^(k+1)` function on the diagonal `(v, …, v)` is a
-combination of the `k`-th Fréchet derivatives of its first partial derivatives:
-`D^(k+1) f x (v, …, v) = ∑ⱼ vⱼ D^k (∂ⱼ f) x (v, …, v)`. -/
-theorem iteratedFDeriv_succ_const_eq_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ (k + 1) f) (x v : CoordinateSpace n) :
-    iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ v) =
-      ∑ j, v j • iteratedFDeriv ℝ k (coordinateDeriv [j] f) x (fun _ ↦ v) := by
+/-- The `(k + 1)`-st Fréchet derivative of a `C^(k+1)` function is a combination of the `k`-th
+Fréchet derivatives of its first partial derivatives, expanding the last vector in the standard
+basis: `D^(k+1) f x (m₀, …, mₖ) = ∑ⱼ (mₖ)ⱼ D^k (∂ⱼ f) x (m₀, …, mₖ₋₁)`. -/
+theorem iteratedFDeriv_succ_apply_eq_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (x : CoordinateSpace n) (m : Fin (k + 1) → CoordinateSpace n) :
+    iteratedFDeriv ℝ (k + 1) f x m =
+      ∑ j, m (Fin.last k) j • iteratedFDeriv ℝ k (coordinateDeriv [j] f) x (Fin.init m) := by
   rw [iteratedFDeriv_succ_apply_right, ContinuousLinearMap.apply_eq_sum_single]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hj : coordinateDeriv [j] f =
       ContinuousLinearMap.apply ℝ A (EuclideanSpace.single j 1) ∘ fderiv ℝ f :=
     funext fun y ↦ coordinateDeriv_cons j [] f y
   rw [hj, ContinuousLinearMap.iteratedFDeriv_comp_left _
-    (hf.fderiv_right le_rfl).contDiffAt le_rfl]
-  rfl
+    (hf.fderiv_right le_rfl).contDiffAt le_rfl,
+    ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+    ContinuousLinearMap.apply_apply]
 
 /-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
 theorem CoordinateSpace.norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :

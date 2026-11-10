@@ -141,7 +141,7 @@ theorem spatialDeriv_sharpTerm (j : Fin n) (a : Symbol n W U m') (b : Symbol n V
     simp [sharpTerm, spatialDeriv_comp]
   | succ k ih =>
     simp only [sharpTerm_succ, map_smul, map_sum, spatialDeriv_inclusion, ih, map_add,
-      Finset.sum_add_distrib, smul_add, spatialDeriv_frequencyDeriv]
+      Finset.sum_add_distrib, smul_add, spatialDeriv_frequencyDeriv_comm]
     congr 3
     funext i
     rw [spatialDeriv_comm]
@@ -164,7 +164,7 @@ theorem coefficient_frequencyDeriv_sharpTerm (j : Fin n) (a : Symbol n W U m')
     · funext i
       rw [frequencyDeriv_comm]
     · funext i
-      rw [spatialDeriv_frequencyDeriv]
+      rw [spatialDeriv_frequencyDeriv_comm]
 
 end Term
 
@@ -206,11 +206,6 @@ private theorem exists_integrable_and_norm_integral_le (hb : b.HasCompactSpatial
   rw [integral_const_mul]
   ring
 
-private theorem continuous_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
-    (ξ : CoordinateSpace n) : Continuous fun η ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
-  simpa only [Function.comp_def, id] using
-    hb.continuous_fourier_slice.comp (continuous_id.prodMk continuous_const)
-
 variable (a b) in
 /-- The integrand `exp(2πi ⟪η, x⟫) (D^k A(ξ) (2πη, …, 2πη) / k!) ∘ b̂(η, ξ)` of the term of degree
 `k`, where `A = a(x, ·)`: the Taylor term of degree `k` of `ζ ↦ a(x, ξ + ζ)` at `ζ = 2πη`, in
@@ -244,7 +239,7 @@ private theorem continuous_taylorIntegrand (hb : b.HasCompactSpatialSupport) (k 
       iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ (fun _ ↦ (2 * π) • η) :=
     (iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ).cont.comp
       (continuous_pi fun _ ↦ continuous_id.const_smul ((2 : ℝ) * π))
-  exact he.smul ((hM.const_smul ((k ! : ℝ)⁻¹)).clm_comp (continuous_fourier_slice_apply hb ξ))
+  exact he.smul ((hM.const_smul ((k ! : ℝ)⁻¹)).clm_comp (hb.continuous_fourier_slice_apply ξ))
 
 private theorem integrable_taylorIntegrand (hb : b.HasCompactSpatialSupport) (k : ℕ)
     (x ξ : CoordinateSpace n) : Integrable (taylorIntegrand a b k x ξ) := by
@@ -263,8 +258,8 @@ private theorem taylorIntegrand_succ (hb : b.HasCompactSpatialSupport) (k : ℕ)
   have hfd (j : Fin n) : (fun ζ ↦ (frequencyDeriv j a).coefficient (x, ζ)) =
       coordinateDeriv [j] (fun ζ ↦ a.coefficient (x, ζ)) :=
     funext fun ζ ↦ coefficient_frequencyDeriv j a x ζ
-  simp only [taylorIntegrand, iteratedFDeriv_succ_const_eq_sum_coordinateDeriv hA, hfd,
-    hb.fourier_spatialDeriv_slice]
+  simp only [taylorIntegrand, iteratedFDeriv_succ_apply_eq_sum_coordinateDeriv hA, Fin.init_def,
+    hfd, hb.fourier_spatialDeriv_slice]
   ext v
   simp only [smul_apply, ContinuousLinearMap.comp_apply, sum_apply, map_smul, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
@@ -276,9 +271,7 @@ private theorem taylorIntegrand_succ (hb : b.HasCompactSpatialSupport) (k : ℕ)
     conj_trivial, one_mul]
   push_cast
   field_simp
-  ring_nf
-  rw [Complex.I_sq]
-  ring
+  linear_combination (η j : ℂ) * Complex.I_sq
 
 private theorem integral_taylorIntegrand [CompleteSpace W] [CompleteSpace U]
     (hb : b.HasCompactSpatialSupport) (k : ℕ) (x ξ : CoordinateSpace n) :
@@ -339,7 +332,7 @@ private theorem continuous_remainderIntegrand (hb : b.HasCompactSpatialSupport) 
   have hS : Continuous fun η : CoordinateSpace n ↦ ∑ k ∈ Finset.range N, (k ! : ℝ)⁻¹ •
       iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ (fun _ ↦ (2 * π) • η) :=
     continuous_finsetSum _ fun k _ ↦ (hM k).const_smul ((k ! : ℝ)⁻¹)
-  exact he.smul ((hA.sub hS).clm_comp (continuous_fourier_slice_apply hb ξ))
+  exact he.smul ((hA.sub hS).clm_comp (hb.continuous_fourier_slice_apply ξ))
 
 /-- On the segment from `ξ` to `ξ + 2πη`, the derivatives of order `N` of `ζ ↦ a(x, ζ)` are at
 most `C ⟨ξ⟩ ^ (m' - N) ⟨η⟩ ^ |m' - N|`, uniformly for positions in a compact set: the symbol

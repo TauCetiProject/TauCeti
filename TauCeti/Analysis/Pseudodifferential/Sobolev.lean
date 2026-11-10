@@ -58,8 +58,9 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
 * Further facts about the Fourier transform `â(η, ξ)` of the position slices: linearity in `a`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_add`,
   `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), joint continuity
-  (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
-  with the Fourier transform of `∂_ξ a` as derivative
+  (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice_apply`), differentiability
+  in `ξ` with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
@@ -256,6 +257,13 @@ theorem HasCompactSpatialSupport.continuous_fourier_slice (ha : a.HasCompactSpat
   simpa only [Real.fourier_eq, Circle.smul_def] using
     continuous_integral_fourierChar_smul a.contDiff_coefficient.continuous hK hKa
 
+/-- For a fixed frequency `ξ`, the Fourier transform `â(η, ξ)` of the position slice of a symbol
+with compact spatial support is continuous in `η`. -/
+theorem HasCompactSpatialSupport.continuous_fourier_slice_apply (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : Continuous fun η ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  simpa only [Function.comp_def, id] using
+    ha.continuous_fourier_slice.comp (continuous_id.prodMk continuous_const)
+
 /-- The Fourier transform in the position of the spatial derivative `∂_{x_j} a` is
 `2πi ηⱼ â(η, ξ)`. -/
 theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice (ha : a.HasCompactSpatialSupport)
@@ -301,10 +309,8 @@ theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice
     (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
     Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
   have he : Continuous fun η : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ) := by fun_prop
-  have hF : Continuous fun η ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
-    simpa only [Function.comp_def, id] using
-      ha.continuous_fourier_slice.comp (continuous_id.prodMk continuous_const)
-  refine (𝓕 (ha.sliceSchwartz ξ)).integrable.norm.mono' (he.smul hF).aestronglyMeasurable
+  refine (𝓕 (ha.sliceSchwartz ξ)).integrable.norm.mono'
+    (he.smul (ha.continuous_fourier_slice_apply ξ)).aestronglyMeasurable
     (.of_forall fun η ↦ ?_)
   rw [norm_smul, Circle.norm_coe, one_mul, ha.fourier_sliceSchwartz]
 

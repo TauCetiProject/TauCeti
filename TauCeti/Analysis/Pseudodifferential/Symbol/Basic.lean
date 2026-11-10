@@ -29,7 +29,7 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
-  frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_frequencyDeriv`,
+  frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`,
   `TauCeti.Symbol.spatialDeriv_comm`, `TauCeti.Symbol.frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
@@ -530,7 +530,7 @@ theorem spatialDeriv_inclusion (h : m ≤ m') (j : Fin n) (a : Symbol n V W m) :
   (rfl)
 
 /-- Spatial and frequency derivatives of a symbol commute. -/
-theorem spatialDeriv_frequencyDeriv (i j : Fin n) (a : Symbol n V W m) :
+theorem spatialDeriv_frequencyDeriv_comm (i j : Fin n) (a : Symbol n V W m) :
     spatialDeriv i (frequencyDeriv j a) = frequencyDeriv j (spatialDeriv i a) := by
   ext1
   funext ⟨x, ξ⟩
