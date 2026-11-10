@@ -258,12 +258,38 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
   exacts [mayerVietorisCochainFromBiprod_eq R k M t l n, rfl]
 
 include sq in
+omit [Mono t] in
 /-- The map `H⁰(X₄) ⟶ H⁰(X₂) ⊞ H⁰(X₃)` at the start of the cochain Mayer–Vietoris sequence is a
 monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero : Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
-  have := (shortExact_mayerVietorisCochainShortComplex R k M sq).mono_f
-  have : Mono (HomologicalComplex.homologyMap
-      (mayerVietorisCochainShortComplex R k M sq.toCommSq).f 0) :=
+  have hepi : Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) :=
+    (sq.map ((chainComplexFunctor C).obj R)).epi_shortComplex_g
+  have hmono : Mono ((linearYonedaFunctor k M).map
+      (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op) := by
+    refine HomologicalComplex.mono_of_mono_f _ fun i ↦ ?_
+    have : Epi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f i) :=
+      inferInstance
+    rw [ModuleCat.mono_iff_injective]
+    intro a a' h
+    exact (cancel_epi _).1 h
+  have hf : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) := by
+    have he := (linearYonedaFunctor k M).mapIso_biprod_opIso_trans_mapBiprod_inv
+      (X₂.chainComplex R) (X₃.chainComplex R)
+    have : biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b) ≫
+        ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
+          (linearYonedaFunctor k M).mapBiprod _ _).inv =
+        (linearYonedaFunctor k M).map
+          (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op := by
+      rw [he]
+      simp only [linearYonedaFunctor_obj, cochainComplexMap, biprod.desc_eq, op_add, op_comp,
+        Functor.map_add, Functor.map_comp]
+      exact biprod.lift_desc
+    rw [← this] at hmono
+    exact @mono_of_mono _ _ _ _ _ _ ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
+      (linearYonedaFunctor k M).mapBiprod _ _).inv hmono
+  have : Mono (HomologicalComplex.homologyMap (biprod.lift
+      (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega

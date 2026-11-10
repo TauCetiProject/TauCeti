@@ -252,10 +252,16 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
   exacts [mayerVietorisCochainFromBiprod_eq R k M n, rfl]
 
 include sqL sqR in
+omit [Mono t.left] in
 /-- The map `H⁰(P₄) ⟶ H⁰(P₂) ⊞ H⁰(P₃)` at the start of the relative cochain Mayer–Vietoris
 sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
     Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
+  have w : t.left ≫ P₂.hom = P₁.hom ≫ t.right := t.w
+  have : Mono (t.left ≫ P₂.hom) := by
+    rw [w]
+    infer_instance
+  have : Mono t.left := mono_of_mono t.left P₂.hom
   have := (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).mono_f
   have : Mono (HomologicalComplex.homologyMap
       (mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).f 0) :=
