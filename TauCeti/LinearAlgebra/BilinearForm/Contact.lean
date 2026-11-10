@@ -429,6 +429,15 @@ theorem reebVector_smul_bilinForm {c : K} (hc : c ≠ 0) :
   unfold reebVector
   rw [hp]
 
+/-- The zero covector has no Reeb vector, since it takes no vector to `1`, so its Reeb vector is
+the junk value `0`. -/
+@[simp]
+theorem reebVector_zero : (0 : Module.Dual K V).reebVector B = 0 := by
+  classical
+  rw [reebVector, dite_eq_right_iff]
+  rintro ⟨r, hr, -⟩
+  simp at hr
+
 /-- Two vectors on which a contact covector takes the value `1`, both `B`-orthogonal to its
 kernel, are equal. -/
 private theorem IsContact.eq_of_apply_eq_one (h : a.IsContact B) {r r' : V} (hr : a r = 1)
@@ -537,12 +546,7 @@ theorem IsContact.reebVector_smul_eq_inv_smul_add_iff (h : a.IsContact B) {c : K
       a y = 0 ∧ ∀ w, a w = 0 → B y w = l w / c ^ 2 := by
   by_cases hc : c = 0
   · subst hc
-    have h0 : ((0 : K) • a).reebVector B' = 0 := by
-      classical
-      rw [zero_smul, reebVector, dite_eq_right_iff]
-      rintro ⟨r, hr, -⟩
-      simp at hr
-    rw [h0, inv_zero, zero_smul, zero_add, eq_comm]
+    rw [zero_smul, reebVector_zero, inv_zero, zero_smul, zero_add, eq_comm]
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero]
     refine ⟨fun hy ↦ ?_, fun ⟨hy, hB0⟩ ↦ ?_⟩
     · subst hy
