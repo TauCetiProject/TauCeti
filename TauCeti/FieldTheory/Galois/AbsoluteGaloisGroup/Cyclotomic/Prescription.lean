@@ -67,13 +67,32 @@ open ContCohomology
 
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 
+/-- If `p = 0` in `K`, there are no nontrivial `pʲ`-th roots of unity: `(u - 1) ^ pʲ = u ^ pʲ - 1`
+in characteristic `p`. -/
+private theorem subsingleton_kummerCoeff_pow_of_natCast_eq_zero (hp : (p : K) = 0)
+    (j : ℕ) : Subsingleton (KummerCoeff K (p ^ j)) := by
+  have : CharP K p := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).2 hp
+  have : CharP (SeparableClosure K) p := charP_of_injective_algebraMap (algebraMap K _).injective p
+  refine ⟨fun x y ↦ ?_⟩
+  have key : ∀ x : KummerCoeff K (p ^ j), x = 0 := fun x ↦ by
+    have h1 : ((x.toMul.1 : SeparableClosure K) - 1) ^ p ^ j = 0 := by
+      rw [sub_pow_char_pow, one_pow, ← Units.val_pow_eq_pow_val,
+        (mem_rootsOfUnity _ _).1 x.toMul.2, Units.val_one, sub_self]
+    exact Additive.toMul.injective (Subtype.ext (Units.ext (sub_eq_zero.1 (pow_eq_zero_iff
+      (pow_ne_zero _ (Fact.out : p.Prime).ne_zero) |>.1 h1))))
+  rw [key x, key y]
+
 /-- **The Galois action on `μ_{pʲ}` is the cyclotomic character modulo `pʲ`**: an element `τ` of
 `Gal(Kˢ/K)` raises every `pʲ`-th root of unity of `Kˢ` to the power `χ(τ) mod pʲ`, where `χ` is
 read on `τ` through the comparison with `Field.absoluteGaloisGroup K`. -/
-theorem smul_kummerCoeff_eq_nsmul_localCyclotomicCharacter [NeZero (p : K)] {j : ℕ}
+theorem smul_kummerCoeff_eq_nsmul_localCyclotomicCharacter {j : ℕ}
     (τ : AbsoluteGaloisGroup K) (x : KummerCoeff K (p ^ j)) :
     τ • x = (PadicInt.toZModPow j (localCyclotomicCharacter p K
       ((absoluteGaloisGroupRestrictEquiv K).symm τ) : ℤ_[p])).val • x := by
+  by_cases hp : (p : K) = 0
+  · have := subsingleton_kummerCoeff_pow_of_natCast_eq_zero hp j
+    exact Subsingleton.elim _ _
+  have : NeZero (p : K) := ⟨hp⟩
   set σ := (absoluteGaloisGroupRestrictEquiv K).symm τ
   set u : (SeparableClosure K)ˣ := x.toMul.1
   -- the defining equation of the cyclotomic character, in the algebraic closure
@@ -111,7 +130,7 @@ theorem coe_toMul_zModTwistEquivKummerCoeff {j : ℕ} {ζ : (SeparableClosure K)
 module, multiplication by `χ(σ) mod pʲ`, corresponds to the action of the restriction of `σ` to
 `Kˢ` on the roots of unity. -/
 @[simp]
-theorem zModTwistEquivKummerCoeff_smul [NeZero (p : K)] {j : ℕ} {ζ : (SeparableClosure K)ˣ}
+theorem zModTwistEquivKummerCoeff_smul {j : ℕ} {ζ : (SeparableClosure K)ˣ}
     (hζ : IsPrimitiveRoot ζ (p ^ j)) (τ : AbsoluteGaloisGroup K)
     (x : ZModTwist (continuousLocalCyclotomicCharacter p K) j) :
     zModTwistEquivKummerCoeff p K hζ ((absoluteGaloisGroupRestrictEquiv K).symm τ • x) =
