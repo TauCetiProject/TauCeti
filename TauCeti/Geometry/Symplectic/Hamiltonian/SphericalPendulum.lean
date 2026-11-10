@@ -8,6 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.Order.IntermediateValue
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
 /-!
 # The spherical pendulum: energy, angular momentum and their joint values
@@ -44,6 +47,10 @@ compact.
 
 ## Main results
 
+* `TauCeti.contDiff_sphericalPendulumEnergyMomentum` and
+  `TauCeti.fderiv_sphericalPendulumEnergyMomentum_apply`: the energy–momentum map `F = (H, J)` is
+  smooth on `ℝ³ × ℝ³`, with differential `dH (a, b) = ⟪p, b⟫ + a₃`,
+  `dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`.
 * `TauCeti.sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace`: `p₃² = 2 (H - q₃) (1 - q₃²) - J²`.
 * `TauCeti.fst_sphericalPendulumEnergyMomentum_eq`: `H = V_J(q₃) + p₃² / (2 (1 - q₃²))` away
   from the poles.
@@ -139,6 +146,44 @@ theorem continuous_sphericalPendulumEnergyMomentum :
     Continuous sphericalPendulumEnergyMomentum :=
   continuous_sphericalPendulumHamiltonian.prodMk <|
     continuous_iff_continuousAt.2 fun x ↦ (hasFDerivAt_angularMomentum _ _ x).continuousAt
+
+/-- The energy–momentum map, with the energy and the angular momentum unfolded. -/
+private theorem sphericalPendulumEnergyMomentum_eq_fun :
+    sphericalPendulumEnergyMomentum = fun y ↦ (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+      ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+        ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ) := by
+  funext ⟨q, p⟩
+  rw [Prod.ext_iff, fst_sphericalPendulumEnergyMomentum, snd_sphericalPendulumEnergyMomentum,
+    sphericalPendulumHamiltonian_apply, angularMomentum_apply]
+  exact ⟨by ring, rfl⟩
+
+/-- The energy–momentum map of the spherical pendulum is smooth on `ℝ³ × ℝ³`. -/
+theorem contDiff_sphericalPendulumEnergyMomentum {n : WithTop ℕ∞} :
+    ContDiff ℝ n sphericalPendulumEnergyMomentum := by
+  rw [sphericalPendulumEnergyMomentum_eq_fun]
+  exact ((((contDiff_norm_sq ℝ).comp contDiff_snd).mul contDiff_const).add
+    ((contDiff_piLp_apply 2).comp contDiff_fst)).prodMk
+    (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
+      ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)))
+
+/-- The differential of the energy–momentum map: `dH (a, b) = ⟪p, b⟫ + a₃` and
+`dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`. -/
+theorem fderiv_sphericalPendulumEnergyMomentum_apply
+    (x v : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
+    fderiv ℝ sphericalPendulumEnergyMomentum x v =
+      (⟪x.2, v.2⟫_ℝ + v.1 2, v.1 0 * x.2 1 - v.1 1 * x.2 0 + x.1 0 * v.2 1 - x.1 1 * v.2 0) := by
+  -- The angular momentum component is `TauCeti.hasFDerivAt_angularMomentum`.
+  have h : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦
+      (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+        ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+          ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ)) _ x :=
+    ((((hasStrictFDerivAt_norm_sq x.2).hasFDerivAt.comp x hasFDerivAt_snd).mul_const _).add
+      ((PiLp.hasFDerivAt_apply 2 x.1 2).comp x hasFDerivAt_fst)).prodMk
+      ((hasFDerivAt_angularMomentum _ _ x).congr_of_eventuallyEq
+        (.of_forall fun y ↦ (angularMomentum_apply _ _ y.1 y.2).symm))
+  rw [sphericalPendulumEnergyMomentum_eq_fun, h.fderiv]
+  simp [EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right]
+  ring
 
 /-- The effective potential `V_j(z) = j² / (2 (1 - z²)) + z` of the spherical pendulum at vertical
 angular momentum `j`, as a function of the height `z ∈ (-1, 1)`. On the phase space the energy is
