@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.LatticeDefect
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
@@ -307,8 +308,7 @@ private noncomputable def deepUnitLogHom {n : ℕ}
     have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
     rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
       coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
-    exact (AlgEquiv.map_log_of_mem_unitFiltration_one σ p
-      (unitFiltration_antitone hn1 u.toMul.2)).symm
+    exact (AlgEquiv.map_log σ (u.toMul : Lˣ)).symm
 
 /-- **The deep units have the defect of the integers**: for `(p - 1) n > e`, the logarithm
 identifies `U(L,n)` Galois-equivariantly with `𝓂[L]^n`, which has finite index in `𝒪[L]`, so

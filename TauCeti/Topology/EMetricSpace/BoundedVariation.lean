@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Order.Interval.Set.ProjIcc
 public import Mathlib.Topology.CompactOpen
@@ -14,9 +15,10 @@ public import Mathlib.Topology.CompactOpen
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
-composition with an antitone map on an interval, shows that the variation is unchanged by
-postcomposition with a map that preserves the distances between the values of the function,
-and proves bounded variation of constant extensions from closed intervals.
+composition with an antitone map on an interval, proves stability of bounded variation under
+addition and subtraction, shows that the variation is unchanged by postcomposition with a map
+that preserves the distances between the values of the function, and proves bounded variation of
+constant extensions from closed intervals.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
 allowing measurable path-space applications.
 
@@ -113,3 +115,76 @@ theorem BoundedVariationOn.IccExtend {α E : Type*} [LinearOrder α]
     (fun x : α ↦ (projIcc a b hab x : α))
     (fun _ _ _ _ h ↦ (monotone_projIcc hab h : _ ≤ _))
     (fun x _ ↦ (projIcc a b hab x).property))
+
+section Congruence
+
+variable {α E : Type*} [LinearOrder α] [TopologicalSpace E] [WeakPseudoEMetricSpace E]
+  {f g : α → E} {s : Set α}
+
+/-- Bounded variation is preserved when functions agree on the domain. -/
+theorem BoundedVariationOn.congr (hf : BoundedVariationOn f s) (h : EqOn f g s) :
+    BoundedVariationOn g s := by
+  unfold BoundedVariationOn at *
+  rwa [← eVariationOn.congr h]
+
+/-- Local bounded variation is preserved when functions agree on the domain. -/
+theorem LocallyBoundedVariationOn.congr (hf : LocallyBoundedVariationOn f s)
+    (h : EqOn f g s) : LocallyBoundedVariationOn g s :=
+  fun a b ha hb ↦ (hf a b ha hb).congr (h.mono inter_subset_left)
+
+end Congruence
+
+section AdditionSubtraction
+
+variable {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
+  {f g : α → E} {s : Set α}
+
+/-- The variation of a sum is at most the sum of the variations. -/
+theorem eVariationOn.add_le :
+    eVariationOn (f + g) s ≤ eVariationOn f s + eVariationOn g s := by
+  apply iSup_le
+  rintro ⟨n, u, hu, hus⟩
+  calc
+    _ ≤ ∑ i ∈ Finset.range n,
+        (edist (f (u (i + 1))) (f (u i)) + edist (g (u (i + 1))) (g (u i))) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      exact edist_add_add_le (f (u (i + 1))) (g (u (i + 1))) (f (u i)) (g (u i))
+    _ ≤ _ := by
+      rw [Finset.sum_add_distrib]
+      exact add_le_add (eVariationOn.sum_le hu hus) (eVariationOn.sum_le hu hus)
+
+/-- Negation does not change the variation of a function. -/
+@[simp] theorem eVariationOn.neg : eVariationOn (-f) s = eVariationOn f s := by
+  exact eVariationOn.comp_eq_of_edist_eq (g := fun x : E ↦ -x)
+    (fun _ _ _ _ ↦ edist_neg_neg _ _)
+
+/-- The variation of a difference is at most the sum of the variations. -/
+theorem eVariationOn.sub_le :
+    eVariationOn (f - g) s ≤ eVariationOn f s + eVariationOn g s := by
+  simpa only [sub_eq_add_neg, eVariationOn.neg] using
+    (eVariationOn.add_le (f := f) (g := -g) (s := s))
+
+/-- The sum of two bounded-variation functions has bounded variation. -/
+theorem BoundedVariationOn.add (hf : BoundedVariationOn f s) (hg : BoundedVariationOn g s) :
+    BoundedVariationOn (f + g) s :=
+  ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hf, hg⟩) eVariationOn.add_le
+
+/-- Local bounded variation is stable under addition. -/
+theorem LocallyBoundedVariationOn.add
+    (hf : LocallyBoundedVariationOn f s) (hg : LocallyBoundedVariationOn g s) :
+    LocallyBoundedVariationOn (f + g) s :=
+  fun a b ha hb ↦ (hf a b ha hb).add (hg a b ha hb)
+
+/-- The difference of two bounded-variation functions has bounded variation. -/
+theorem BoundedVariationOn.sub (hf : BoundedVariationOn f s) (hg : BoundedVariationOn g s) :
+    BoundedVariationOn (f - g) s :=
+  ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hf, hg⟩) eVariationOn.sub_le
+
+/-- Local bounded variation is stable under subtraction. -/
+theorem LocallyBoundedVariationOn.sub
+    (hf : LocallyBoundedVariationOn f s) (hg : LocallyBoundedVariationOn g s) :
+    LocallyBoundedVariationOn (f - g) s :=
+  fun a b ha hb ↦ (hf a b ha hb).sub (hg a b ha hb)
+
+end AdditionSubtraction

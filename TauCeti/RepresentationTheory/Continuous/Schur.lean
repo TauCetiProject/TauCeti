@@ -93,13 +93,15 @@ theorem exists_eq_smul_one_of_isIrreducible
   simpa [Algebra.algebraMap_eq_smul_one, ContIntertwiningMap.toContinuousLinearMap_apply,
     ContIntertwiningMap.smul_apply, ContIntertwiningMap.one_apply] using congr($hc.symm v)
 
+omit [FiniteDimensional 𝕜 V] in
 /-- **The Schur scalar is the normalized trace.** Taking traces pins down the scalar of
 `exists_eq_smul_one_of_isIrreducible`: the underlying continuous linear map of a continuous
 self-intertwiner `f` of an irreducible finite-dimensional representation over an algebraically
 closed field is `(finrank 𝕜 V)⁻¹ * trace f` times the identity.
 
 The dimension must be invertible in `𝕜`: when the characteristic of `𝕜` divides `finrank 𝕜 V`,
-the scalar `(finrank 𝕜 V)⁻¹ * trace f` is zero and the statement fails. -/
+the scalar `(finrank 𝕜 V)⁻¹ * trace f` is zero and the statement fails. The same hypothesis forces
+the carrier to be finite-dimensional, so that is not assumed. -/
 theorem eq_finrank_inv_mul_trace_smul_id_of_isIrreducible
     (hdim : (Module.finrank 𝕜 V : 𝕜) ≠ 0)
     (hirr : Representation.IsIrreducible π.toRepresentation) (f : ContIntertwiningMap π π) :
@@ -107,6 +109,8 @@ theorem eq_finrank_inv_mul_trace_smul_id_of_isIrreducible
       = ((Module.finrank 𝕜 V : 𝕜)⁻¹ *
           LinearMap.trace 𝕜 V (f.toContinuousLinearMap : V →ₗ[𝕜] V)) •
         ContinuousLinearMap.id 𝕜 V := by
+  have : FiniteDimensional 𝕜 V :=
+    Module.finite_of_finrank_pos (Nat.pos_of_ne_zero fun h ↦ hdim (by simp [h]))
   obtain ⟨c, rfl⟩ := π.exists_eq_smul_one_of_isIrreducible hirr f
   ext v
   simp [mul_comm c, inv_mul_cancel_left₀ hdim]
