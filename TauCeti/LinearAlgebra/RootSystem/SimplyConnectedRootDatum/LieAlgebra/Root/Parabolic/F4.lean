@@ -5,12 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Positive
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
-import TauCeti.LinearAlgebra.RootSystem.Positive
-import TauCeti.GroupTheory.Commutator
-import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic.Basic
 
 /-!
 # Rank-one normalization of punctured positive F₄ subgroups
@@ -24,10 +19,10 @@ The lattice may be any lattice stable under the simple-generator Kostant form wi
 simple root operators. The value ring is arbitrary, including characteristic two and
 nonreduced rings. No positive-simple-root generation or coordinate uniqueness is asserted.
 
-We use the one- and two-factor integral Chevalley commutator formulas of `Root.Commutator.Basic`
-and the signed Weyl conjugation of `Root.Positive`. Only the simple-root pair configurations
-are checked in the existing F₄ root table; positivity is always that of the pinned rational base.
-The finite configuration check adapts the F₄ collection formalization in
+We use the type-independent short-string normalization of `Root.Parabolic.Basic` and the
+signed Weyl conjugation and factorization of `Root.Positive`. Only the simple-root pair
+configurations are checked in the existing F₄ root table; positivity is always that of the
+pinned rational base. The finite configuration check adapts the F₄ collection formalization in
 [Tau Ceti PR #35745](https://github.com/TauCetiProject/TauCeti/pull/35745).
 
 ## References
@@ -41,7 +36,6 @@ public section
 namespace TauCeti.DynkinType
 
 open TensorProduct TauCeti.UniversalEnvelopingAlgebra
-open scoped commutatorElement
 
 -- The two double-string alternatives retain their orientation: interchanging the inputs
 -- inverts the commutator. No root-parameter coefficient is inverted.
@@ -65,9 +59,13 @@ private theorem f4_simple_pair_cases (ht : F4.Valid) (i : Fin F4.rank) (β : Fin
         3 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
         ∃ γ, r γ = r β + r α ∧ ∃ δ, r δ = 2 • r β + r α ∧
         3 • r β + r α ∉ Set.range r ∧ r β + 2 • r α ∉ Set.range r) := by
+    -- Decide equality pointwise and range membership by finite search, rather than the
+    -- noncomputable set-membership instances, so the root-table check reduces in the kernel.
     let eqDec : DecidableEq (Fin 4 → ℤ) := Fintype.decidablePiFintype
     let rangeDec : DecidablePred (fun x : Fin 4 → ℤ => x ∈ Set.range f4Root) :=
       Fintype.decidableMemRangeFintype _
+    -- Freeze this decision instance first: direct decide +kernel here leaves free variables
+    -- in the generated auxiliary proof when it captures the local decision instances.
     refine @of_decide_eq_true _ (inferInstance) ?_
     decide +kernel
   dsimp only
@@ -87,82 +85,18 @@ variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (F4.lieAlgebra ht) →ₐ[�
 -- Match the tensor-product scalar structure to the integral algebra of the value ring.
 attribute [local instance high] Algebra.toModule
 
-private theorem range_simple_le_normalizer_punctured_F4
+private theorem range_simple_le_normalizer_posRoots_diff_singleton_F4
     (i : Fin F4.rank) (A : CommAlgCat ℤ) :
     (chevalleyRootSubgroup ρ M hM hnil (F4.simpleIndex ht i) A).range ≤
       Subgroup.normalizer
         (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i},
-          (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  classical
-  let S := posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i}
-  let X := fun γ => (chevalleyRootSubgroup ρ M hM hnil γ A).range
-  let U := ⨆ γ ∈ S, X γ
-  have hsimple : F4.simpleIndex ht i ∈
-      posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) :=
-    (mem_posRoots _ _ _).mpr (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
-  -- A sum of two positive roots is positive and cannot be the omitted simple root.
-  have hadd {α β γ : Fin F4.numRoots}
-      (hα : α ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht))
-      (hβ : β ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht))
-      (hγ : (F4.simplyConnectedRootDatum ht).root γ =
-        (F4.simplyConnectedRootDatum ht).root α + (F4.simplyConnectedRootDatum ht).root β) :
-      γ ∈ S := by
-    have hrat := (F4.root_rationalRootSystem_eq_add_zsmul_iff ht β α γ 1).mpr
-      (by simpa only [one_smul] using hγ)
-    simp only [Int.cast_one, one_smul] at hrat
-    refine ⟨(mem_posRoots _ _ _).mpr
-      (((mem_posRoots _ _ _).mp hα).add ((mem_posRoots _ _ _).mp hβ) hrat), ?_⟩
-    intro heq
-    exact root_ne_add_of_mem_support (simpleIndex_mem_support i)
-      ((mem_posRoots _ _ _).mp hα) ((mem_posRoots _ _ _).mp hβ) (heq ▸ hrat)
-  have hmem {γ : Fin F4.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
-      chevalleyRootSubgroup ρ M hM hnil γ A u ∈ U :=
-    le_iSup₂ (f := fun γ _ => X γ) γ hγ ⟨u, rfl⟩
-  -- It suffices to place each generator commutator in the punctured subgroup.
-  rw [← iSup_subtype'']
-  apply Subgroup.le_normalizer_iSup_of_commutator_le
-  intro β
-  apply Subgroup.commutator_le.mpr
-  rintro _ ⟨u, rfl⟩ _ ⟨v, rfl⟩
-  simp only [iSup_subtype]
-  have hzero : (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) +
-      (F4.simplyConnectedRootDatum ht).root β ≠ 0 := by
-    intro hz
-    have hd := congrArg (F4.weightDegree ht) hz
-    have hi := F4.weightDegree_root_pos ht hsimple
-    have hb := F4.weightDegree_root_pos ht β.property.1
-    simp only [map_add, map_zero] at hd
-    linarith
-  -- Each nontrivial commutator has one or two positive sum-root factors.
-  have hcases := f4_simple_pair_cases ht i β.val
-  dsimp only at hcases
-  rcases hcases with (hsum | ⟨γ, hγ, hi, hj⟩) |
-    (⟨γ, hγ, δ, hδ, hi, hj⟩ | ⟨γ, hγ, δ, hδ, hi, hj⟩)
-  · have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum hzero A u.toAdd v.toAdd
-    simp only [ofAdd_toAdd] at hc
-    rw [commutatorElement_eq_one_iff_commute.mpr hc]
-    exact U.one_mem
-  · rw [← ofAdd_toAdd u, ← ofAdd_toAdd v,
-      commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγ hi hj]
-    exact hmem (hadd hsimple β.property.1 hγ) _
-  · have hδ' : (F4.simplyConnectedRootDatum ht).root δ =
-        (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) +
-          (F4.simplyConnectedRootDatum ht).root γ := by rw [hδ, hγ]; module
-    rw [← ofAdd_toAdd u, ← ofAdd_toAdd v,
-      commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add ρ M hM hnil hγ hδ hi hj]
-    exact U.mul_mem (hmem (hadd hsimple β.property.1 hγ) _)
-      (hmem (hadd hsimple (hadd hsimple β.property.1 hγ).1 hδ') _)
-  · have hδ' : (F4.simplyConnectedRootDatum ht).root δ =
-        (F4.simplyConnectedRootDatum ht).root β + (F4.simplyConnectedRootDatum ht).root γ := by
-        rw [hδ, hγ]; module
-    rw [← commutatorElement_inv, ← ofAdd_toAdd u, ← ofAdd_toAdd v,
-      commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add ρ M hM hnil hγ hδ hi hj]
-    exact U.inv_mem (U.mul_mem (hmem (hadd β.property.1 hsimple hγ) _)
-      (hmem (hadd β.property.1 (hadd β.property.1 hsimple hγ).1 hδ') _))
+          (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) :=
+  range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases ρ M hM hnil i A
+    (f4_simple_pair_cases ht i)
 
 /-- In type F₄, the opposite simple-root pair normalizes the subgroup generated by all other
 positive roots, over every commutative value ring. -/
-theorem closure_simpleRootPair_F4_le_normalizer_punctured
+theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_F4
     (i : Fin F4.rank) (A : CommAlgCat ℤ) :
     Subgroup.closure
       (Set.range (chevalleyRootSubgroup ρ M hM hnil (F4.simpleIndex ht i) A) ∪
@@ -171,41 +105,21 @@ theorem closure_simpleRootPair_F4_le_normalizer_punctured
             (F4.simpleIndex ht i)) A)) ≤
       Subgroup.normalizer
         (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i},
-          (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  let N : Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) := Subgroup.normalizer
-    (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i},
-      (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _)
-  have hx := range_simple_le_normalizer_punctured_F4 ρ M hM hnil i A
-  have hn := kostantWeylGL_mem_normalizer_posRoots_diff_singleton ρ M hM hnil i A
-  refine (Subgroup.closure_le _).mpr (Set.union_subset hx ?_)
-  rw [← MonoidHom.coe_range, ← map_range_chevalleyRootSubgroup_conj_kostantWeylGL
-    ρ M hM hnil i (F4.simpleIndex ht i) A]
-  rintro g ⟨x, hx', rfl⟩
-  exact N.mul_mem (N.mul_mem hn (hx hx')) (N.inv_mem hn)
+          (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) :=
+  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A
+    (range_simple_le_normalizer_posRoots_diff_singleton_F4 ρ M hM hnil i A)
 
 /-- Every positive F₄ element is a punctured-positive element followed by an element of the
 chosen simple root group. No uniqueness of the factors is asserted. -/
-theorem mem_iSup_posRoots_F4_iff_exists_punctured_mul
+theorem mem_iSup_posRoots_F4_iff_exists_mem_posRoots_diff_singleton_mul
     (i : Fin F4.rank) (A : CommAlgCat ℤ)
     (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
     g ∈ (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht),
       (chevalleyRootSubgroup ρ M hM hnil γ A).range) ↔
       ∃ q ∈ (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range),
-        ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (F4.simpleIndex ht i) A u := by
-  have hsplit : posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) =
-      (posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i}) ∪
-        {F4.simpleIndex ht i} :=
-    (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr
-      ((mem_posRoots _ _ _).mpr (RootPairing.Base.isPos_of_mem_support
-        (simpleIndex_mem_support i))))).symm
-  conv_lhs => rw [hsplit, iSup_union, iSup_singleton]
-  rw [Subgroup.mem_sup_of_right_le_normalizer_left
-    (range_simple_le_normalizer_punctured_F4 ρ M hM hnil i A)]
-  constructor
-  · rintro ⟨q, hq, x, ⟨u, rfl⟩, heq⟩
-    exact ⟨q, hq, u, heq.symm⟩
-  · rintro ⟨q, hq, u, heq⟩
-    exact ⟨q, hq, _, ⟨u, rfl⟩, heq.symm⟩
+        ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (F4.simpleIndex ht i) A u :=
+  mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul ρ M hM hnil i A
+    (range_simple_le_normalizer_posRoots_diff_singleton_F4 ρ M hM hnil i A) g
 
 end TauCeti.DynkinType
