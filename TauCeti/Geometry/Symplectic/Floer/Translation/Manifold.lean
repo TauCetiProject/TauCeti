@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Stationary
-public import TauCeti.Geometry.Symplectic.Floer.Translation.Slice
+public import TauCeti.MeasureTheory.Measure.ArctanCenter
 public import TauCeti.MeasureTheory.Measure.FiniteMeasure.WithDensity
 
 /-!
@@ -18,7 +18,7 @@ symplectic manifold. Floer cylinders `u : ℝ × [0, 1] → M`, solutions of
 to the translations `(s, t) ↦ (s + c, t)`, which act freely away from the stationary cylinders
 (`SmoothTwoForm.IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_periodic`).
 This file constructs a slice for this action, and shows that it depends continuously on the
-cylinder. It is the manifold-target counterpart of
+cylinder. Its constant-form case on a symplectic vector space is
 `TauCeti.Geometry.Symplectic.Floer.Translation.Slice`.
 
 The *strip energy measure* `TauCeti.SmoothTwoForm.stripEnergyMeasure ω Ks Kt u` is the measure on
@@ -34,9 +34,7 @@ translation orbit of a nonstationary finite-energy Floer cylinder contains exact
 center zero
 (`IsNondegenerate.existsUnique_arctanCenter_stripEnergyMeasure_comp_add_right_eq_zero_of_floer`),
 and recentering is constant on orbits
-(`TauCeti.SmoothTwoForm.comp_add_arctanCenter_stripEnergyMeasure_comp_add_right`). For a constant
-form on a vector space the strip energy measure is that of the vector-space theory
-(`TauCeti.SymplecticForm.stripEnergyMeasure_constSmooth`).
+(`TauCeti.SmoothTwoForm.comp_add_arctanCenter_stripEnergyMeasure_comp_add_right`).
 
 **Continuity.** Let cylinders `u i` converge to `u₀` in the sense that their energy densities
 converge almost everywhere on the strip, as they do under `C¹` convergence on compact sets, and
@@ -48,8 +46,7 @@ densities converge in `L¹`, so the strip energy measures converge weakly
 is continuous for weak convergence (`MeasureTheory.FiniteMeasure.tendsto_arctanCenter`). This is
 the continuity of the slice on the part of the space of cylinders where convergence loses no
 energy; along a sequence which breaks, part of the energy escapes along the ends and the
-hypothesis fails. The vector-space case is
-`TauCeti.SymplecticForm.tendsto_arctanCenter_stripEnergyMeasure`.
+hypothesis fails.
 
 The statements concern classical solutions; no Sobolev completion of the space of cylinders is
 considered.
@@ -310,49 +307,3 @@ theorem tendsto_arctanCenter_stripEnergyMeasure
 end Continuity
 
 end TauCeti.SmoothTwoForm
-
-namespace TauCeti.SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- For a constant form on a vector space, the strip energy measure of the manifold theory is the
-strip energy measure of the vector-space theory. -/
-@[simp]
-theorem stripEnergyMeasure_constSmooth (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u : ℝ × ℝ → V) :
-    ω.constSmooth.stripEnergyMeasure Ks Kt u = ω.stripEnergyMeasure Ks Kt u := by
-  ext A hA
-  rw [SmoothTwoForm.stripEnergyMeasure_apply _ _ _ _ hA, stripEnergyMeasure_apply _ _ _ _ hA]
-  simp only [floerEnergyDensity_constSmooth]
-
-/-- **Continuity of the energy center, for a vector-space target.** If the energy densities of maps
-`u i` of the strip `ℝ × [0, 1]` into a symplectic vector space are integrable, nonnegative almost
-everywhere and converge almost everywhere on the strip to the integrable energy density of `u₀`,
-and the energies of `u i` converge to the nonzero energy of `u₀`, then the arctan centers of the
-strip energy measures of `u i` converge to that of `u₀`. This is the constant-form case of
-`TauCeti.SmoothTwoForm.tendsto_arctanCenter_stripEnergyMeasure`. -/
-theorem tendsto_arctanCenter_stripEnergyMeasure {ω : SymplecticForm V} {Ks Kt : ℝ × ℝ → V → ℝ}
-    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {u : ι → ℝ × ℝ → V} {u₀ : ℝ × ℝ → V}
-    (hint : ∀ i, IntegrableOn (ω.floerEnergyDensity Ks Kt (u i)) ((univ : Set ℝ) ×ˢ Icc 0 1))
-    (hint₀ : IntegrableOn (ω.floerEnergyDensity Ks Kt u₀) ((univ : Set ℝ) ×ˢ Icc 0 1))
-    (hnonneg : ∀ i, 0 ≤ᵐ[volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1)]
-      ω.floerEnergyDensity Ks Kt (u i))
-    (hlim : ∀ᵐ z ∂volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1),
-      Tendsto (fun i ↦ ω.floerEnergyDensity Ks Kt (u i) z) l
-        (𝓝 (ω.floerEnergyDensity Ks Kt u₀ z)))
-    (henergy : Tendsto
-      (fun i ↦ ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt (u i) z) l
-      (𝓝 (∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u₀ z)))
-    (hE : ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u₀ z ≠ 0) :
-    Tendsto (fun i ↦ (ω.stripEnergyMeasure Ks Kt (u i)).arctanCenter) l
-      (𝓝 (ω.stripEnergyMeasure Ks Kt u₀).arctanCenter) := by
-  have he (v : ℝ × ℝ → V) :
-      ω.constSmooth.floerEnergyDensity Ks Kt v = ω.floerEnergyDensity Ks Kt v :=
-    funext (floerEnergyDensity_constSmooth ω Ks Kt v)
-  simp_rw [← stripEnergyMeasure_constSmooth]
-  exact SmoothTwoForm.tendsto_arctanCenter_stripEnergyMeasure (by simpa only [he] using hint)
-    (by simpa only [he] using hint₀) (by simpa only [he] using hnonneg)
-    (by simpa only [he] using hlim) (by simpa only [he] using henergy)
-    (by simpa only [he] using hE)
-
-end TauCeti.SymplecticForm
