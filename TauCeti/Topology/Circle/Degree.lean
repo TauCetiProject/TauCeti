@@ -48,6 +48,8 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.sub_eq_degree_mul`: every continuous lift `θ` of a loop satisfies
   `θ 1 - θ 0 = degree γ * (2 * π)`.
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
+* `Circle.degree_eq_of_homotopy_div_norm`: the loops of directions of the two ends of a
+  homotopy of closed curves in `ℂ` avoiding `0` have the same degree.
 * `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
 * `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
   of the degrees, and reversing a loop negates its degree.
@@ -296,6 +298,23 @@ theorem degree_congr {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (h : �
     degree γ₀ = degree γ₁ :=
   degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
     (fun _ => rfl) h (fun _ => by simp)
+
+/-- **Homotopy invariance of the degree of directions.** Let `F` be a homotopy of closed curves in
+`ℂ` avoiding `0` (`F (s, 0) = F (s, 1)` for every `s`; the basepoint may move). Then the loops of
+directions `F (0, t) / ‖F (0, t)‖` and `F (1, t) / ‖F (1, t)‖` of its two ends have the same
+degree. -/
+theorem degree_eq_of_homotopy_div_norm {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y)
+    (F : C(I × I, ℂ)) (hne : ∀ st, F st ≠ 0) (h₀ : ∀ t, (γ₀ t : ℂ) = F (0, t) / ‖F (0, t)‖)
+    (h₁ : ∀ t, (γ₁ t : ℂ) = F (1, t) / ‖F (1, t)‖) (hF : ∀ s, F (s, 0) = F (s, 1)) :
+    degree γ₀ = degree γ₁ := by
+  have hnorm (st : I × I) : (‖F st‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 (hne st)
+  have hmem (st : I × I) : F st / ‖F st‖ ∈ Submonoid.unitSphere ℂ :=
+    mem_sphere_zero_iff_norm.2 (by simp [hne st])
+  let G : C(I × I, Circle) := ⟨fun st => ⟨_, hmem st⟩,
+    (F.continuous.div (by fun_prop) hnorm).subtype_mk hmem⟩
+  have hG (st : I × I) : (G st : ℂ) = F st / ‖F st‖ := rfl
+  exact degree_eq_of_homotopy γ₀ γ₁ G (fun t => Circle.ext (by rw [hG, h₀]))
+    (fun t => Circle.ext (by rw [hG, h₁])) (fun s => Circle.ext (by rw [hG, hG, hF]))
 
 /-- Homotopic loops, relative to their basepoint, have the same degree. -/
 theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :
