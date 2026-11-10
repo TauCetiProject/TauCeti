@@ -7,20 +7,17 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Open
-public import TauCeti.Topology.ContinuousMap.UniformGroup
 
 /-!
-# Completeness of vector-valued weak Whitney map spaces
+# Closed image of vector-valued manifold chart jets
 
 On a boundaryless manifold with locally compact model, the chart jet realizes the native
 space of finite-order or smooth vector-valued maps as a closed subspace of the product of
 compact-open derivative spaces. The zeroth coefficients of a limiting jet agree on overlaps;
 the local Taylor-series limit theorem then recovers a smooth map with precisely that jet.
-For a complete target, this proves completeness for the additive uniformity of the existing
-weak Whitney topology. No compactness or countability of the manifold is required.
-
-This provides the coefficient-space completeness needed to reconstruct smooth bundle sections
-from compatible local limits. Analytic regularity is excluded.
+No target completeness, compactness or countability of the manifold is required.
+Analytic regularity is excluded. Completeness of the weak Whitney map space is proved in
+`ContMDiffMap.Chart.Complete`.
 
 ## References
 
@@ -143,24 +140,6 @@ theorem isClosedEmbedding_chartJet :
   refine ⟨⟨isInducing_chartJet, chartJet_injective⟩,
     TauCeti.isClosed_range_of_tendsto fun g l _ hg ↦ ?_⟩
   exact exists_chartJet_eq_of_tendsto (f := fun f ↦ f) hg
-
-/-- Completeness for the additive uniformity of the native weak Whitney topology, for any
-finite or smooth regularity and complete vector target. -/
-theorem completeSpace_manifoldWeakWhitney [CompleteSpace F] :
-    let _ := IsTopologicalAddGroup.rightUniformSpace C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯
-    CompleteSpace C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯ := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯
-  let _ : IsUniformAddGroup C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯ := isUniformAddGroup_of_addCommGroup
-  let _ (x : M) : LocallyCompactSpace (extChartAt I x).target :=
-    (isOpen_extChartAt_target x).locallyCompactSpace
-  have (x : M) (m : ℕ) :
-      CompleteSpace C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F) := by
-    infer_instance
-  have hj := AddMonoidHom.isUniformInducing_of_isInducing
-    (f := (chartJet (I := I) (M := M) (F := F) (n := (r : ℕ∞ω))).toAddMonoidHom)
-    (isInducing_chartJet (I := I) (M := M) (F := F) (n := (r : ℕ∞ω)))
-  exact (completeSpace_iff_isComplete_range hj).2
-    (isClosedEmbedding_chartJet (I := I) (M := M) (F := F) (r := r)).isClosed_range.isComplete
 
 end Limits
 

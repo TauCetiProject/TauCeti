@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
-public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Manifold
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Complete
 
 /-!
 # Completeness of the compact derivative topology on bundle sections
@@ -62,10 +62,8 @@ theorem completeSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
   let _ := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
   let _ (i : ι) := IsTopologicalAddGroup.rightUniformSpace C^n⟮I, U i; 𝓘(𝕜, F), F⟯
   let _ (i : ι) : IsUniformAddGroup C^n⟮I, U i; 𝓘(𝕜, F), F⟯ := isUniformAddGroup_of_addCommGroup
-  have (i : ι) : CompleteSpace C^n⟮I, U i; 𝓘(𝕜, F), F⟯ := by
-    obtain ⟨r, rfl⟩ := WithTop.ne_top_iff_exists.1
-      (ne_top_of_le_ne_top (by simp : (∞ : ℕ∞ω) ≠ ⊤) hn.out)
-    exact ContMDiffMap.completeSpace_manifoldWeakWhitney
+  have (i : ι) : CompleteSpace C^n⟮I, U i; 𝓘(𝕜, F), F⟯ :=
+    ContMDiffMap.completeSpace_manifoldWeakWhitney
   have hj := AddMonoidHom.isUniformInducing_of_isInducing
     (f := (TauCeti.Manifold.sectionFrameCoordinates (I := I) (n := n) e U hU).toAddMonoidHom)
     (isInducing_sectionFrameCoordinates (I := I) (n := n) e U hU)
