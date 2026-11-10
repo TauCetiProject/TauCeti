@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.PeriodicBump
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
@@ -44,9 +44,9 @@ the area swept out by the variation, and this file collects what follows from th
 The converse follows the chart-variation argument of the variational characterization of
 geodesics, `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`, and reuses its chart variations
 `TauCeti.Manifold.chartVariation`, with amplitude `sin s` so that the displaced loops stay in a
-chart for every `s`, and a smooth `1`-periodic bump profile so that the variations are again
-loops. These results are the common part of the variational characterizations of the critical
-points of the contractible action
+chart for every `s`, and the smooth `1`-periodic bump profile `TauCeti.periodicBump` so that the
+variations are again loops. These results are the common part of the variational
+characterizations of the critical points of the contractible action
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical_iff`) and of the action
 relative to a reference loop
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isReferenceActionCritical_iff`).
@@ -88,14 +88,6 @@ variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M}
   {w : ℝ × ℝ → M}
 
 namespace SmoothTwoForm.IsNondegenerate
-
-/-- The integrand of the first variation formula, `σ(a - X_f, b) = -σ(b, a) - df(b)`. -/
-private theorem apply_sub_hamiltonianVectorField (h : σ.IsNondegenerate) (f : M → ℝ) (x : M)
-    (a b : TangentSpace I x) :
-    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
-  rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
-    sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField,
-    SmoothBundleForm.eval₂_swap]
 
 /-- **The first variation of an action functional.** Let `σ` be a nondegenerate two-form, `H` a
 jointly `C¹` time-dependent Hamiltonian and `w` a `C¹` map of the plane. If a function `A`, the
@@ -184,61 +176,6 @@ private theorem SmoothTwoForm.IsNondegenerate.continuous_apply_curveVelocity_sub
     apply_eq_of_apply_zero h0 ((hwc (0, t)).mdifferentiableAt one_ne_zero)
 
 end FirstVariation
-
-/-! ### Periodic bump functions -/
-
-section PeriodicBump
-
-open Real
-
-/-- A smooth `1`-periodic bump function centred at `t₀ + ℤ`: it is `1` where
-`cos (2π(t - t₀)) ≥ (1 + c)/2` and `0` where `cos (2π(t - t₀)) ≤ c`. -/
-private def periodicBump (t₀ c t : ℝ) : ℝ :=
-  smoothTransition (2 * (cos (2 * π * (t - t₀)) - c) / (1 - c))
-
-private theorem contDiff_periodicBump {n : ℕ∞} (t₀ c : ℝ) : ContDiff ℝ n (periodicBump t₀ c) :=
-  smoothTransition.contDiff.comp
-    (((contDiff_const.mul ((contDiff_cos.comp ((contDiff_const.mul
-      (contDiff_id.sub contDiff_const)))).sub contDiff_const))).div_const _)
-
-private theorem periodicBump_add_one (t₀ c t : ℝ) :
-    periodicBump t₀ c (t + 1) = periodicBump t₀ c t := by
-  rw [periodicBump, periodicBump, show 2 * π * (t + 1 - t₀) = 2 * π * (t - t₀) + 2 * π by ring,
-    cos_add_two_pi]
-
-private theorem periodicBump_nonneg (t₀ c t : ℝ) : 0 ≤ periodicBump t₀ c t :=
-  smoothTransition.nonneg _
-
-private theorem periodicBump_le_one (t₀ c t : ℝ) : periodicBump t₀ c t ≤ 1 :=
-  smoothTransition.le_one _
-
-private theorem periodicBump_eq_zero {t₀ c t : ℝ} (hc : c < 1) (h : cos (2 * π * (t - t₀)) ≤ c) :
-    periodicBump t₀ c t = 0 :=
-  smoothTransition.zero_of_nonpos
-    (div_nonpos_of_nonpos_of_nonneg (by linarith) (by linarith))
-
-/-- The periodic bump is `1` near its centre. -/
-private theorem eventually_periodicBump_eq_one {t₀ c : ℝ} (hc : c < 1) :
-    ∀ᶠ t in 𝓝 t₀, periodicBump t₀ c t = 1 := by
-  have hcont : Continuous fun t ↦ cos (2 * π * (t - t₀)) := by fun_prop
-  have hlt : (1 + c) / 2 < cos (2 * π * (t₀ - t₀)) := by rw [sub_self, mul_zero, cos_zero]; linarith
-  filter_upwards [hcont.continuousAt.eventually (lt_mem_nhds hlt)] with t ht
-  refine smoothTransition.one_of_one_le ?_
-  rw [le_div_iff₀ (by linarith)]
-  linarith
-
-/-- The support of the periodic bump lies where `cos (2π(t - t₀)) > c`. -/
-private theorem lt_cos_of_periodicBump_ne_zero {t₀ c t : ℝ} (hc : c < 1)
-    (h : periodicBump t₀ c t ≠ 0) : c < cos (2 * π * (t - t₀)) :=
-  not_le.mp fun hle ↦ h (periodicBump_eq_zero hc hle)
-
-/-- The closed support of the periodic bump lies where `cos (2π(t - t₀)) ≥ c`. -/
-private theorem tsupport_periodicBump_subset {t₀ c : ℝ} (hc : c < 1) :
-    tsupport (periodicBump t₀ c) ⊆ {t | c ≤ cos (2 * π * (t - t₀))} :=
-  closure_minimal (fun _ ht ↦ (lt_cos_of_periodicBump_ne_zero hc ht).le)
-    (isClosed_le continuous_const (by fun_prop))
-
-end PeriodicBump
 
 /-! ### Chart variations of a loop -/
 
