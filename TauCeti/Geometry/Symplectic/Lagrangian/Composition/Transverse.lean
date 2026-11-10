@@ -101,27 +101,6 @@ variable (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f) (hg : ContMDiff K₂ (I₂
 
 include hf hg htrans
 
-/-- On the transverse fibre product, a tangent pair `(u, w)` at `p` is the image of a tangent
-vector of the fibre product exactly when `(df u).2 = (dg w).1`; the two components of that tangent
-vector are then `u` and `w`. -/
-private theorem exists_mfderiv_eq_of_transverseFiberProduct
-    (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1}) (u : TangentSpace K₁ p.1.1)
-    (w : TangentSpace K₂ p.1.2)
-    (h : (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1) :
-    letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-    ∃ ξ, mfderiv KF K₁ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) p ξ = u ∧
-      mfderiv KF K₂ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.2) p ξ = w := by
-  let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-  have hval := ((isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
-    htrans).contMDiff p).mdifferentiableAt (by simp)
-  obtain ⟨ξ, hξ⟩ := (mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp) hf.snd hg.fst
-    htrans p (u, w)).2 (by
-      rw [(hf.mdifferentiable (by simp) p.1.1).mfderiv_snd_apply,
-        (hg.mdifferentiable (by simp) p.1.2).mfderiv_fst_apply]
-      exact h)
-  exact ⟨ξ, by rw [hval.mfderiv_fst_apply]; exact congrArg Prod.fst hξ,
-    by rw [hval.mfderiv_snd_apply]; exact congrArg Prod.snd hξ⟩
-
 /-- The composite `(x, y) ↦ ((f x).1, (g y).2)` is smooth on the transverse fibre product
 `L₁ ×_{M₂} L₂`. -/
 theorem contMDiff_relComp_transverseFiberProduct :
@@ -146,55 +125,28 @@ theorem injective_mfderiv_relComp_transverseFiberProduct_iff
         (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
           u = 0 ∧ w = 0 := by
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-  have hi := isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst htrans
-  have hval := (hi.contMDiff p).mdifferentiableAt (by simp)
-  have hfa : MDifferentiableAt KF (I₁.prod I₂)
-      (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ f q.1.1) p :=
-    (hf.mdifferentiable (by simp) p.1.1).comp p hval.fst
-  have hgb : MDifferentiableAt KF (I₂.prod I₃)
-      (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ g q.1.2) p :=
-    (hg.mdifferentiable (by simp) p.1.2).comp p hval.snd
+  have hval := ((isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
+    htrans).contMDiff p).mdifferentiableAt (by simp)
+  have hf' := hf.mdifferentiable (by simp) p.1.1
+  have hg' := hg.mdifferentiable (by simp) p.1.2
   -- The differential of the composite reads off the outer components of `df` and `dg`.
-  have hd (ξ) : mfderiv KF (I₁.prod I₃)
-      (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f q.1.1).1, (g q.1.2).2)) p ξ =
-      ((mfderiv K₁ (I₁.prod I₂) f p.1.1
-          (mfderiv KF K₁ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) p ξ)).1,
-        (mfderiv K₂ (I₂.prod I₃) g p.1.2
-          (mfderiv KF K₂ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.2) p ξ)).2) := by
-    have hh := hfa.fst.prodMk hgb.snd
-    refine Prod.ext ?_ ?_
-    · rw [← mfderiv_comp_apply p (hf.mdifferentiable (by simp) p.1.1) hval.fst]
-      exact (hh.mfderiv_fst_apply ξ).symm.trans (hfa.mfderiv_fst_apply ξ)
-    · rw [← mfderiv_comp_apply p (hg.mdifferentiable (by simp) p.1.2) hval.snd]
-      exact (hh.mfderiv_snd_apply ξ).symm.trans (hgb.mfderiv_snd_apply ξ)
-  -- The differential of the inclusion is injective, so a tangent vector of the fibre product is
-  -- zero exactly when both of its components are.
-  have hξ (ξ) (h₁ : mfderiv KF K₁
-      (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) p ξ = 0)
-      (h₂ : mfderiv KF K₂ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.2) p ξ = 0) :
-      ξ = 0 := by
-    refine (injective_iff_map_eq_zero _).1
-      ((hi.isImmersion.isImmersionAt p).mfderiv_injective (by simp)) ξ ?_
-    rw [hval.mfderiv_fst_apply] at h₁
-    rw [hval.mfderiv_snd_apply] at h₂
-    exact Prod.ext h₁ h₂
+  have hd := hf'.mfderiv_relComp_apply
+    (a := fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) (b := fun q ↦ q.1.2) hg'
+    hval.fst hval.snd
   rw [injective_iff_map_eq_zero]
   constructor
   · intro hinj u w hfg hu hw
-    obtain ⟨ξ, rfl, rfl⟩ := exists_mfderiv_eq_of_transverseFiberProduct hf hg htrans p u w hfg
+    obtain ⟨ξ, rfl, rfl⟩ := exists_mfderiv_eq_of_transverseFiberProduct (by simp) hf.snd hg.fst
+      htrans p u w (by rwa [hf'.mfderiv_snd_apply, hg'.mfderiv_fst_apply])
     rw [hinj ξ (by rw [hd, hu, hw]; rfl), map_zero, map_zero]
     exact ⟨rfl, rfl⟩
   · intro hexc ξ hξ0
     rw [hd] at hξ0
-    have hmatch : (mfderiv K₁ (I₁.prod I₂) f p.1.1
-        (mfderiv KF K₁ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) p ξ)).2 =
-        (mfderiv K₂ (I₂.prod I₃) g p.1.2
-          (mfderiv KF K₂ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.2) p ξ)).1 := by
-      rw [← mfderiv_comp_apply p (hf.mdifferentiable (by simp) p.1.1) hval.fst,
-        ← mfderiv_comp_apply p (hg.mdifferentiable (by simp) p.1.2) hval.snd]
-      exact hfa.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hgb (fun q ↦ q.2) ξ
-    obtain ⟨h₁, h₂⟩ := hexc _ _ hmatch (congrArg Prod.fst hξ0) (congrArg Prod.snd hξ0)
-    exact hξ ξ h₁ h₂
+    obtain ⟨h₁, h₂⟩ := hexc _ _
+      (hf'.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp (a := fun q ↦ q.1.1)
+        (b := fun q ↦ q.1.2) hg' hval.fst hval.snd (fun q ↦ q.2) ξ)
+      (congrArg Prod.fst hξ0) (congrArg Prod.snd hξ0)
+    exact eq_zero_of_mfderiv_transverseFiberProduct (by simp) hf.snd hg.fst htrans p ξ h₁ h₂
 
 /-- **The excess of a transverse composition of immersions.** If `f` and `g` have injective
 differentials at `x` and `y`, the composite `(x, y) ↦ ((f x).1, (g y).2)` on the transverse fibre
@@ -242,7 +194,9 @@ theorem IsLagrangianMap.relComp_transverseFiberProduct
     htrans).contMDiff.mdifferentiable (by simp)
   exact hfL.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL (hf.mdifferentiable (by simp))
     (hg.mdifferentiable (by simp)) hval.fst hval.snd (fun p ↦ p.2) fun p u w h ↦
-      exists_mfderiv_eq_of_transverseFiberProduct hf hg htrans p u w h
+      exists_mfderiv_eq_of_transverseFiberProduct (by simp) hf.snd hg.fst htrans p u w (by
+        rwa [(hf.mdifferentiable (by simp) p.1.1).mfderiv_snd_apply,
+          (hg.mdifferentiable (by simp) p.1.2).mfderiv_fst_apply])
 
 /-- **Embedded transverse composition of Lagrangian correspondences.** Let `f : L₁ → M₁ × M₂` and
 `g : L₂ → M₂ × M₃` be smooth Lagrangian maps for the twisted products, such that `x ↦ (f x).2`
