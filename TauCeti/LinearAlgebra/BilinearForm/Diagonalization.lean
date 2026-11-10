@@ -151,19 +151,22 @@ theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoi
 form of its self-pairings. -/
 theorem iIsOrtho.equivalent_weightedSumSquares
     {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
-    [Invertible (2 : R)] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
+    {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
     (hb : B.iIsOrtho b) :
     B.toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares R (fun i ↦ B (b i) (b i))) := by
-  have horth : (QuadraticMap.associated B.toQuadraticMap).IsOrthoᵢ b := by
-    refine LinearMap.isOrthoᵢ_def.mpr fun i j hij ↦ ?_
-    rw [QuadraticMap.associated_toQuadraticMap, iIsOrtho_def.mp hb i j hij,
-      iIsOrtho_def.mp hb j i hij.symm]
-    simp
-  have heq := QuadraticMap.basisRepr_eq_of_iIsOrtho B.toQuadraticMap b horth
-  simp only [BilinMap.toQuadraticMap_apply] at heq
-  rw [← heq]
-  exact ⟨QuadraticMap.isometryEquivBasisRepr B.toQuadraticMap b⟩
+  refine ⟨{ b.equivFun with map_app' := fun x ↦ ?_ }⟩
+  have hx : B x x = ∑ i, b.repr x i * (b.repr x i * B (b i) (b i)) := by
+    calc B x x = B (∑ i, b.repr x i • b i) x := by rw [b.sum_repr]
+      _ = _ := by
+        rw [map_sum, LinearMap.sum_apply]
+        exact Finset.sum_congr rfl fun i _ ↦ by
+          rw [map_smul, LinearMap.smul_apply, hb.apply_basis_left, smul_eq_mul]
+  simp only [QuadraticMap.weightedSumSquares_apply, BilinMap.toQuadraticMap_apply, hx]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    change B (b i) (b i) • (b.repr x i * b.repr x i) = _
+    rw [smul_eq_mul]
+    ring
 
 open LinearMap (BilinForm)
 open Module
