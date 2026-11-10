@@ -84,6 +84,28 @@ theorem IsPoissonRandomMeasure.hasLaw (h : IsPoissonRandomMeasure P N Λ)
   exact ((isPoissonRandomMeasure_iff.mp h).2.1 1 (fun _ => A) (fun _ => ⟨hA, hfin⟩)
     (fun i j hij => False.elim (hij (Subsingleton.elim i j)))).2 0
 
+/-- A Poisson count on a measurable set of finite intensity is almost surely a natural
+number, including when the intensity of the set is zero. -/
+theorem IsPoissonRandomMeasure.ae_exists_eq_natCast (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, ∃ n : ℕ, N ω A = n := by
+  have hm : MeasurableSet (Set.range (Nat.cast : ℕ → ℝ≥0∞)) :=
+    (Set.countable_range _).measurableSet
+  have hlaw := h.hasLaw hA hfin
+  have hmem : ∀ᵐ ω ∂P, N ω A ∈ Set.range (Nat.cast : ℕ → ℝ≥0∞) := by
+    apply (ae_map_iff hlaw.aemeasurable hm).1
+    rw [hlaw.map_eq]
+    exact ae_map_mem_range hm Measurable.of_discrete.aemeasurable
+  simpa only [Set.mem_range, eq_comm] using hmem
+
+/-- A count on a measurable set of finite intensity is almost surely finite. -/
+theorem IsPoissonRandomMeasure.ae_lt_top (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, N ω A < ∞ := by
+  filter_upwards [h.ae_exists_eq_natCast hA hfin] with ω hω
+  obtain ⟨k, hk⟩ := hω
+  simp [hk]
+
 /-- A count on a measurable set of infinite intensity is almost surely infinite. -/
 theorem IsPoissonRandomMeasure.ae_eq_top (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hΛ : Λ A = ∞) :
