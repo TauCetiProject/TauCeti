@@ -259,19 +259,19 @@ section Zero
 
 variable [HasZeroMorphisms C]
 
-omit [PivotalCategory C] in
-/-- Whiskering on the left preserves zero morphisms in a rigid category, since `tensorLeft` is a
-left adjoint. -/
+omit [RigidCategory C] [PivotalCategory C] in
+/-- Whiskering on the left by an object with a left dual preserves zero morphisms, since
+`tensorLeft` is then a left adjoint. -/
 @[simp]
-theorem whiskerLeft_zero_of_rigid (W : C) {X Y : C} :
+theorem whiskerLeft_zero_of_hasLeftDual (W : C) [HasLeftDual W] {X Y : C} :
     W ◁ (0 : X ⟶ Y) = 0 := by
   simpa using (tensorLeft W).map_zero X Y
 
-omit [PivotalCategory C] in
-/-- Whiskering on the right preserves zero morphisms in a rigid category, since `tensorRight` is a
-left adjoint. -/
+omit [RigidCategory C] [PivotalCategory C] in
+/-- Whiskering on the right by an object with a right dual preserves zero morphisms, since
+`tensorRight` is then a left adjoint. -/
 @[simp]
-theorem zero_whiskerRight_of_rigid (W : C) {X Y : C} :
+theorem zero_whiskerRight_of_hasRightDual (W : C) [HasRightDual W] {X Y : C} :
     (0 : X ⟶ Y) ▷ W = 0 := by
   simpa using (tensorRight W).map_zero X Y
 
