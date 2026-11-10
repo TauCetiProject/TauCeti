@@ -318,6 +318,7 @@ theorem toAdd_exponentSum_eq_single_iff [DecidableEq X] (y : freeProP p X) (x₀
     eq_comm]
   exact Multiplicative.toAdd.eq_symm_apply.symm
 
+omit [Finite X] in
 /-- **A continuous homomorphism from a free pro-`p` group of finite rank to a commutative pro-`p`
 group is computed by the exponent sums**: `ψ y = ∏ x, ψ (x_x) ^ (u x)` for `u = exponentSum y`,
 the powers being the `p`-adic powers of the target. -/
@@ -344,6 +345,7 @@ theorem apply_eq_prod_padicPow_exponentSum [Fintype X] {A : Type*} [CommGroup A]
   rw [MonoidHom.coe_ofClass] at hmap
   rw [hmap, TopologicalAbelianization.lift_mk]
 
+omit [Finite X] in
 /-- **The exponent vector under a continuous homomorphism of free pro-`p` groups** is the linear
 image of the exponent vector: `exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`.
 The vectors `exponentSum (φ x_x)` are the columns of the matrix of the abelianization of `φ`. -/
