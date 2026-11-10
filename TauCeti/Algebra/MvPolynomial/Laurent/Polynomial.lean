@@ -234,6 +234,6 @@ is algebraically independent over the coefficient ring. -/
 theorem aeval_injective_iff_algebraicIndependent {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] (x : K → Aˣ) :
     Function.Injective (aeval (R := R) x) ↔ AlgebraicIndependent R fun i ↦ (x i : A) :=
-  aeval_injective_iff x
+  (aeval_injective_iff x).trans algebraicIndependent_iff_injective_aeval.symm
 
 end TauCeti.LaurentRing

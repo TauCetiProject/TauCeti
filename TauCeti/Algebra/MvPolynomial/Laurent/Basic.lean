@@ -154,7 +154,7 @@ theorem single_eq_smul_prod (m : K →₀ ℤ) (r : R) :
     congr 1
     refine (MulEquiv.symm_apply_eq _).2 (funext fun i ↦ Units.ext ?_)
     simp [X_def]
-  rw [h, MonoidHom.coe_toHomUnits, of_apply, toAdd_ofAdd, smul_single, smul_eq_mul, mul_one]
+  simp [h, smul_single]
 
 section Semiring
 
@@ -162,6 +162,7 @@ variable {A : Type*} [Semiring A] [Algebra R A]
 
 /-- Algebra maps out of a Laurent ring agree as soon as they agree on the variables. The target
 is an arbitrary `R`-algebra, not necessarily commutative. -/
+@[ext high + 1]
 theorem algHom_ext ⦃f g : LaurentRing R K →ₐ[R] A⦄ (h : ∀ i, f (X i) = g (X i)) : f = g := by
   refine AddMonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
   induction m using Finsupp.induction_linear with
@@ -321,27 +322,29 @@ theorem mapRingHom_rename {S : Type*} [CommSemiring S] (φ : R →+* S) (f : K �
 variable (R) in
 /-- Reindex the variables of a Laurent ring along an equivalence of index types. -/
 noncomputable def renameEquiv (e : K ≃ K') : LaurentRing R K ≃ₐ[R] LaurentRing R K' :=
-  AlgEquiv.ofAlgHom (rename e) (rename e.symm)
-    (by rw [rename_comp_rename, Equiv.self_comp_symm, rename_id])
-    (by rw [rename_comp_rename, Equiv.symm_comp_self, rename_id])
+  AddMonoidAlgebra.domCongr R R (Finsupp.domCongr e : (K →₀ ℤ) ≃+ (K' →₀ ℤ))
 
 @[simp]
 theorem renameEquiv_apply (e : K ≃ K') (p : LaurentRing R K) :
-    renameEquiv R e p = rename e p :=
-  (rfl)
+    renameEquiv R e p = rename e p := by
+  induction p using induction_linear with
+  | zero => simp
+  | add p q hp hq => simp [hp, hq]
+  | single m r =>
+    simp [renameEquiv, AddMonoidAlgebra.domCongr_single, Finsupp.equivMapDomain_eq_mapDomain]
 
 @[simp]
-theorem renameEquiv_refl : renameEquiv R (Equiv.refl K) = AlgEquiv.refl :=
-  AlgEquiv.ext fun p ↦ by simp
+theorem renameEquiv_refl : renameEquiv R (Equiv.refl K) = AlgEquiv.refl := by
+  simp [renameEquiv]
 
 @[simp]
-theorem renameEquiv_symm (e : K ≃ K') : (renameEquiv R e).symm = renameEquiv R e.symm :=
-  (rfl)
+theorem renameEquiv_symm (e : K ≃ K') : (renameEquiv R e).symm = renameEquiv R e.symm := by
+  simp [renameEquiv]
 
 @[simp]
 theorem renameEquiv_trans (e : K ≃ K') (e' : K' ≃ K'') :
-    (renameEquiv R e).trans (renameEquiv R e') = renameEquiv R (e.trans e') :=
-  AlgEquiv.ext fun p ↦ by simp
+    (renameEquiv R e).trans (renameEquiv R e') = renameEquiv R (e.trans e') := by
+  simp [renameEquiv]
 
 end Rename
 
