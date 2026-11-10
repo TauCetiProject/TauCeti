@@ -27,6 +27,16 @@ eliminates its characteristic directions. Orthogonal complementation exchanges
 intersection and sum, so no transversality or dimension-of-intersection assumption
 is needed in this linear calculation.
 
+Transversality does control the excess directions. For canonical relations `L` from `V` to `W`
+and `K` from `W` to `U`, the vectors `w` with `(0, w) ∈ L` form the symplectic orthogonal of the
+projection of `L` to `W`, and similarly for `(w, 0) ∈ K`
+(`TauCeti.SymplecticForm.IsLagrangian.comap_inr_eq_orthogonal_map_snd`,
+`TauCeti.SymplecticForm.IsLagrangian.comap_inl_eq_orthogonal_map_fst`). Hence the two projections
+span `W` exactly when no nonzero `w` has both `(0, w) ∈ L` and `(w, 0) ∈ K`, that is, when the
+matching pairs map injectively to `V × U`
+(`TauCeti.SymplecticForm.IsLagrangian.disjoint_comap_inr_comap_inl_iff`). This is the tangent
+statement that a transverse composite of Lagrangian immersions is again an immersion.
+
 ## References
 
 * A. Weinstein, *Symplectic categories*, Portugaliae Mathematica 67 (2010), 261–278.
@@ -122,5 +132,50 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
     exact add_right_cancel (h₁.trans h₂.symm)
   apply Submodule.mem_relComp.mpr
   exact ⟨a.1.2, hav ▸ ha.1, hau ▸ haw ▸ ha.2⟩
+
+/-! ### Excess directions of a composition -/
+
+/-- The vectors `w` with `(0, w)` in a canonical relation `L` from `V` to `W` are the
+`ω₂`-orthogonal of the projection of `L` to `W`. -/
+theorem IsLagrangian.comap_inr_eq_orthogonal_map_snd (hL : (ω₁.twistedProd ω₂).IsLagrangian L) :
+    L.comap (LinearMap.inr ℝ V W) = ω₂.orthogonal (L.map (LinearMap.snd ℝ V W)) := by
+  ext w
+  simp only [Submodule.mem_comap, LinearMap.inr_apply, mem_orthogonal_iff, Submodule.mem_map,
+    LinearMap.snd_apply, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun hw x hx ↦ ?_, fun hw ↦
+    isCoisotropic_iff.mp hL.isCoisotropic _ (mem_orthogonal_iff.mpr fun x hx ↦ ?_)⟩
+  · simpa using hL.symplecticForm_apply_eq_zero hx hw
+  · simp [hw x hx]
+
+/-- The vectors `w` with `(w, 0)` in a canonical relation `K` from `W` to `U` are the
+`ω₂`-orthogonal of the projection of `K` to `W`. -/
+theorem IsLagrangian.comap_inl_eq_orthogonal_map_fst (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    K.comap (LinearMap.inl ℝ W U) = ω₂.orthogonal (K.map (LinearMap.fst ℝ W U)) := by
+  ext w
+  simp only [Submodule.mem_comap, LinearMap.inl_apply, mem_orthogonal_iff, Submodule.mem_map,
+    LinearMap.fst_apply, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun hw x hx ↦ ?_, fun hw ↦
+    isCoisotropic_iff.mp hK.isCoisotropic _ (mem_orthogonal_iff.mpr fun x hx ↦ ?_)⟩
+  · simpa using hK.symplecticForm_apply_eq_zero hx hw
+  · simp [hw x hx]
+
+/-- **Transverse composition has no excess.** For canonical relations `L` from `V` to `W` and `K`
+from `W` to `U`, the projections of `L` and `K` to `W` span `W` exactly when no nonzero `w`
+satisfies both `(0, w) ∈ L` and `(w, 0) ∈ K`. Such a `w` is the middle coordinate of a nonzero
+matching pair `((0, w), (w, 0))` with zero outer coordinates, so the second condition says that
+the matching pairs of `L` and `K` map injectively to `V × U`. -/
+theorem IsLagrangian.disjoint_comap_inr_comap_inl_iff [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L) (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    Disjoint (L.comap (LinearMap.inr ℝ V W)) (K.comap (LinearMap.inl ℝ W U)) ↔
+      L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ := by
+  set S := L.map (LinearMap.snd ℝ V W)
+  set T := K.map (LinearMap.fst ℝ W U)
+  -- In finite dimension the complement of a sum is the intersection of the complements.
+  have h : ω₂.orthogonal S ⊓ ω₂.orthogonal T = ω₂.orthogonal (S ⊔ T) := by
+    rw [← ω₂.orthogonal_orthogonal (ω₂.orthogonal S ⊓ ω₂.orthogonal T), ω₂.orthogonal_inf,
+      ω₂.orthogonal_orthogonal, ω₂.orthogonal_orthogonal]
+  rw [hL.comap_inr_eq_orthogonal_map_snd, hK.comap_inl_eq_orthogonal_map_fst, disjoint_iff, h]
+  refine ⟨fun h₀ ↦ ?_, fun h₁ ↦ by rw [h₁, orthogonal_top]⟩
+  rw [← ω₂.orthogonal_orthogonal (S ⊔ T), h₀, orthogonal_bot]
 
 end TauCeti.SymplecticForm

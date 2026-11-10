@@ -31,7 +31,9 @@ of `h` at `c` is the composite of the linear canonical relations `df(T L₁)` an
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp`: the composite map is
 Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and is not an immersion. The
 embedded case, where `h` is a Lagrangian correspondence `M₁ ⇝ M₃`, is in
-`TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition`.
+`TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition`. The case where `C` is the
+transverse fibre product itself, with its manifold structure, is in
+`TauCeti.Geometry.Symplectic.Lagrangian.Embedding.TransverseComposition`.
 
 The composite of the graphs of maps `φ : M₁ → M₂` and `ψ : M₂ → M₃` is the graph of `ψ ∘ φ`,
 presented by `C = M₁`, `a = id` and `b = φ`
