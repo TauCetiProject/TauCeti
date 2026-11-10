@@ -615,8 +615,9 @@ private theorem variableChange_levelThreeNormalForm_spec {C : VariableChange R} 
   linear_combination 3 * hu₃ + (x₂ - x₁) * hu₁ + 3 * C.u * (1 - μ) * hx₂
 
 /-- **Uniqueness of level-three normal form.** A change of variables carrying `W` to a level-three
-normal form, `P` to `(0, 0)` (that is, with `r = x₁` and `t = y₁`) and `Q` to
-`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` is `toLevelThreeNormalForm h`. -/
+normal form, `P` to `(0, 0)` (that is, with `r = x₁` and `t = y₁`) and `Q` to a point whose
+`x`-coordinate is `-(μ² + μ + 1)` (that is, with `x₂ = u² * -(μ² + μ + 1) + r`) is
+`toLevelThreeNormalForm h`; the `y`-coordinate of `Q` is not needed. -/
 theorem eq_toLevelThreeNormalForm {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ : R}
     (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r) :
     C = toLevelThreeNormalForm h := by
