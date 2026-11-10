@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import TauCeti.Algebra.Module.ZLattice.Rank
+import TauCeti.LinearAlgebra.Basis.SumExtend
 
 /-!
 # Quotients by discrete subgroups are cylinders `Tʳ × ℝⁿ⁻ʳ`
@@ -84,6 +85,7 @@ theorem cylinderCoordinates_apply_snd (x : E) (k : κ) :
 
 /-- The vectors with integral `ι`-coordinates and vanishing `κ`-coordinates are exactly the
 integer combinations of the vectors `B (inl i)`. -/
+@[simp]
 theorem ker_cylinderCoordinates :
     (B.cylinderCoordinates : E →+ UnitAddTorus ι × (κ → ℝ)).ker =
       (span ℤ (Set.range (B ∘ Sum.inl))).toAddSubgroup := by
@@ -224,12 +226,7 @@ theorem exists_basis_span_range_comp_inl_eq :
   refine ⟨B₀.reindex (Equiv.sumCongr (Equiv.refl _) e), ?_⟩
   have hB : (B₀.reindex (Equiv.sumCongr (Equiv.refl _) e)) ∘ Sum.inl = v := by
     ext i
-    simp only [B₀, Basis.sumExtend, Function.comp_apply, Basis.reindex_apply, Equiv.sumCongr_symm,
-      Equiv.sumCongr_apply, Equiv.refl_symm, Sum.map_inl, Basis.coe_extend, Equiv.refl_apply]
-    -- `Basis.sumExtend` decides membership in the range of `v` classically.
-    exact congrArg Subtype.val
-      (@Equiv.Set.sumDiffSubset_apply_inl _ _ _
-        (hv.linearIndepOn_id.subset_extend (Set.subset_univ _)) (Classical.decPred _) _)
+    simp [B₀]
   rw [hB, hspan, AddSubgroup.toIntSubmodule_toAddSubgroup]
 
 /-- **The quotient by a discrete subgroup is a cylinder.** If `L` is a discrete subgroup of rank `r`
