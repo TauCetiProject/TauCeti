@@ -252,9 +252,8 @@ theorem _root_.Filter.EventuallyEq.parametricMorseCoord {f₁ f₂ : P × E → 
       (fun u ↦ f₁ (b, u)) =ᶠ[𝓝 y] fun u ↦ f₂ (b, u) :=
     Filter.eventuallyEq_of_mem (Metric.isOpen_ball.mem_nhds hy) fun u hu ↦
       hUV (Set.mk_mem_prod hb (hrV hu))
-  have hseg (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (0 : E) + t • v ∈ Metric.ball (0 : E) r := by
-    rw [zero_add, mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg ht.1]
-    exact (mul_le_of_le_one_left (norm_nonneg v) ht.2).trans_lt (mem_ball_zero_iff.mp hv)
+  have hseg (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (0 : E) + t • v ∈ Metric.ball (0 : E) r :=
+    (convex_ball (0 : E) r).add_smul_mem (Metric.mem_ball_self hr) (by rwa [zero_add]) ht
   rw [parametricMorseCoord_def, parametricMorseCoord_def,
     hessianAverage_congr_of_eventuallyEq fun t ht ↦ hg _ (hseg t ht),
     (hg 0 (Metric.mem_ball_self hr)).fderiv.fderiv_eq]
