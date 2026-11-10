@@ -29,6 +29,34 @@ variable {E F K : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ F] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
   [FiniteDimensional ℝ K]
 
+/-- In chart coordinates, `e ∘ C` is lower triangular with identity on the fiber block, so its
+determinant is that of `L ∘ L†`, where `L` is the first coordinate of `e`. -/
+private lemma det_comp_coprod_adjoint_fst (e : E ≃L[ℝ] WithLp 2 (F × K)) :
+    (e.toLinearMap ∘ₗ (((WithLp.fstₗ 2 ℝ F K) ∘ₗ e.toLinearMap).adjoint.coprod
+      (e.symm.toLinearMap ∘ₗ (WithLp.linearEquiv 2 ℝ (F × K)).symm.toLinearMap ∘ₗ
+        LinearMap.inr ℝ F K) ∘ₗ (WithLp.linearEquiv 2 ℝ (F × K)).toLinearMap)).det =
+      (((WithLp.fstₗ 2 ℝ F K) ∘ₗ e.toLinearMap) ∘ₗ
+        ((WithLp.fstₗ 2 ℝ F K) ∘ₗ e.toLinearMap).adjoint).det := by
+  classical
+  let P := WithLp.linearEquiv 2 ℝ (F × K)
+  let L := (WithLp.fstₗ 2 ℝ F K) ∘ₗ e.toLinearMap
+  let B := e.symm.toLinearMap ∘ₗ P.symm.toLinearMap ∘ₗ LinearMap.inr ℝ F K
+  let C := L.adjoint.coprod B ∘ₗ P.toLinearMap
+  let bF := stdOrthonormalBasis ℝ F
+  let bK := stdOrthonormalBasis ℝ K
+  let D := (P.toLinearMap ∘ₗ e.toLinearMap ∘ₗ L.adjoint)
+  let T := (P.toLinearMap ∘ₗ e.toLinearMap ∘ₗ C) ∘ₗ P.symm.toLinearMap
+  have hmatrix : T.toMatrix (bF.toBasis.prod bK.toBasis) (bF.toBasis.prod bK.toBasis) =
+      Matrix.fromBlocks ((L ∘ₗ L.adjoint).toMatrix bF.toBasis bF.toBasis) 0
+        ((LinearMap.snd ℝ F K ∘ₗ D).toMatrix bF.toBasis bK.toBasis) 1 := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [LinearMap.toMatrix_apply, T, D, L, B, C, P, Matrix.one_apply]
+  have hT : e.toLinearMap ∘ₗ C = P.symm.conj T := by ext; simp [T, P]
+  rw [hT, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
+    ← LinearMap.det_toMatrix (bF.toBasis.prod bK.toBasis), hmatrix,
+    Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one, LinearMap.det_toMatrix]
+
 /-- The Jacobian identity for coarea coordinates: the coarea Jacobian of the first coordinate,
 multiplied by the volume Jacobian of the inverse chart, is the area Jacobian along the fibers. -/
 theorem normDet_adjoint_fst_mul_normDet_symm
@@ -48,22 +76,7 @@ theorem normDet_adjoint_fst_mul_normDet_symm
     simpa using congrArg (fun z => ⟪x, z⟫) this
   have hC : C.normDet = L.adjoint.normDet * B.normDet :=
     LinearMap.normDet_coprod_of_orthogonal L.adjoint B horth
-  -- In chart coordinates, `e ∘ C` is lower triangular, with identity on the fiber block.
-  let bF := stdOrthonormalBasis ℝ F
-  let bK := stdOrthonormalBasis ℝ K
-  let D := (P.toLinearMap ∘ₗ e.toLinearMap ∘ₗ L.adjoint)
-  let T := (P.toLinearMap ∘ₗ e.toLinearMap ∘ₗ C) ∘ₗ P.symm.toLinearMap
-  have hmatrix : T.toMatrix (bF.toBasis.prod bK.toBasis) (bF.toBasis.prod bK.toBasis) =
-      Matrix.fromBlocks ((L ∘ₗ L.adjoint).toMatrix bF.toBasis bF.toBasis) 0
-        ((LinearMap.snd ℝ F K ∘ₗ D).toMatrix bF.toBasis bK.toBasis) 1 := by
-    ext i j
-    cases i <;> cases j <;>
-      simp [LinearMap.toMatrix_apply, T, D, L, B, C, P, Matrix.one_apply]
-  have hdet : (e.toLinearMap ∘ₗ C).det = (L ∘ₗ L.adjoint).det := by
-    have hT : e.toLinearMap ∘ₗ C = P.symm.conj T := by ext; simp [T, P]
-    rw [hT, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
-      ← LinearMap.det_toMatrix (bF.toBasis.prod bK.toBasis), hmatrix,
-      Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one, LinearMap.det_toMatrix]
+  have hdet : (e.toLinearMap ∘ₗ C).det = (L ∘ₗ L.adjoint).det := det_comp_coprod_adjoint_fst e
   have heC : (e.toLinearMap ∘ₗ C).normDet = L.adjoint.normDet ^ 2 := by
     have hL := L.adjoint.normDet_sq
     simp only [RCLike.ofReal_real_eq_id, id_eq, LinearMap.adjoint_adjoint] at hL

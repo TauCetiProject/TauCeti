@@ -23,8 +23,8 @@ module enters the signed-degree API.
 
 ## Main results
 
-* `TauCeti.Graded.isInternal_extendByZero`: the extension of an internal direct sum of submodules
-  is still an internal direct sum.
+* `TauCeti.Graded.isInternal_extendByZero_iff`: the extension of a family of submodules is an
+  internal direct sum exactly when the family is.
 * `TauCeti.Graded.mul_mem_extendByZero`: if multiplication adds degrees in the `ℕ`-indexed
   family, it adds signed degrees in its extension.
 -/
@@ -44,6 +44,7 @@ is `𝒜 d` in nonnegative degrees and `⊥` in negative degrees. -/
 def extendByZero (𝒜 : ℕ → α) (d : ℤ) : α :=
   if 0 ≤ d then 𝒜 d.toNat else ⊥
 
+/-- The extension by zero agrees with the original family in nonnegative degrees. -/
 @[simp]
 theorem extendByZero_natCast (𝒜 : ℕ → α) (n : ℕ) : extendByZero 𝒜 n = 𝒜 n := by
   simp [extendByZero]
@@ -52,12 +53,14 @@ theorem extendByZero_natCast (𝒜 : ℕ → α) (n : ℕ) : extendByZero 𝒜 n
 theorem extendByZero_of_neg (𝒜 : ℕ → α) {d : ℤ} (hd : d < 0) : extendByZero 𝒜 d = ⊥ := by
   simp [extendByZero, not_le_of_gt hd]
 
-/-- **The extension by zero of an internal direct sum is an internal direct sum**: its pieces in
-nonnegative degrees are those of `𝒜`, and those in negative degrees vanish. -/
-theorem isInternal_extendByZero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    {𝒜 : ℕ → Submodule R M} (h : DirectSum.IsInternal 𝒜) :
-    DirectSum.IsInternal (extendByZero 𝒜) := by
-  -- Reindexing `⨁ n, 𝒜 n` along `ℕ → ℤ` reaches every element, as the negative pieces vanish.
+/-- **The extension by zero of a family is an internal direct sum exactly when the family is**:
+its pieces in nonnegative degrees are those of `𝒜`, and those in negative degrees vanish. -/
+@[simp]
+theorem isInternal_extendByZero_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {𝒜 : ℕ → Submodule R M} :
+    DirectSum.IsInternal (extendByZero 𝒜) ↔ DirectSum.IsInternal 𝒜 := by
+  -- Reindexing `⨁ n, 𝒜 n` along `ℕ → ℤ` is bijective, as the negative pieces vanish, and it
+  -- commutes with the maps to `M`.
   let φ : (⨁ n, 𝒜 n) →+ ⨁ d : ℤ, ↥(extendByZero 𝒜 d) := DirectSum.toAddMonoid fun n ↦
     (DirectSum.of (fun d : ℤ ↦ ↥(extendByZero 𝒜 d)) n).comp
       (Submodule.inclusion (extendByZero_natCast 𝒜 n).ge).toAddMonoidHom
@@ -66,6 +69,15 @@ theorem isInternal_extendByZero {R M : Type*} [Semiring R] [AddCommMonoid M] [Mo
     induction x using DirectSum.induction_on with
     | zero => simp
     | of n x => simp [φ]
+    | add x y hx hy => simp [hx, hy]
+  have hφ_apply (x : ⨁ n, 𝒜 n) (n : ℕ) : (φ x n : M) = x n := by
+    induction x using DirectSum.induction_on with
+    | zero => simp
+    | of m x =>
+      obtain rfl | hmn := eq_or_ne m n
+      · simp [φ]
+      · simp [φ, DirectSum.of_eq_of_ne _ _ _ hmn.symm,
+          DirectSum.of_eq_of_ne _ _ _ (Nat.cast_injective.ne hmn.symm)]
     | add x y hx hy => simp [hx, hy]
   have hsurj : Function.Surjective φ := by
     intro x
@@ -76,19 +88,17 @@ theorem isInternal_extendByZero {R M : Type*} [Semiring R] [AddCommMonoid M] [Mo
       · obtain rfl : m = 0 := Subtype.ext <| by
           simpa [extendByZero_of_neg 𝒜 hd] using m.2
         exact ⟨0, by simp⟩
-      · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
-        exact ⟨DirectSum.of (fun n ↦ 𝒜 n) n ⟨m, (extendByZero_natCast 𝒜 n).le m.2⟩,
+      · lift d to ℕ using hd
+        exact ⟨DirectSum.of (fun n ↦ 𝒜 n) d ⟨m, (extendByZero_natCast 𝒜 d).le m.2⟩,
           DirectSum.toAddMonoid_of _ _ _⟩
     | add x y hx hy =>
       obtain ⟨x, rfl⟩ := hx
       obtain ⟨y, rfl⟩ := hy
       exact ⟨x + y, map_add φ x y⟩
-  refine ⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨x, rfl⟩ := hsurj x
-    obtain ⟨y, rfl⟩ := hsurj y
-    rw [h.injective ((hφ x).symm.trans (hxy.trans (hφ y)))]
-  · obtain ⟨y, rfl⟩ := h.surjective x
-    exact ⟨φ y, hφ y⟩
+  have hbij : Function.Bijective φ := ⟨fun x y hxy ↦ DirectSum.ext fun n ↦ Subtype.ext <| by
+    rw [← hφ_apply, hxy, hφ_apply], hsurj⟩
+  rw [DirectSum.IsInternal, DirectSum.IsInternal, ← Function.Bijective.of_comp_iff _ hbij]
+  exact iff_of_eq (congrArg _ (funext hφ))
 
 /-- **Multiplication adds signed degrees in the extension by zero** of an `ℕ`-indexed family in
 which it adds degrees. -/
@@ -103,8 +113,8 @@ theorem mul_mem_extendByZero {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiri
   rcases lt_or_ge n 0 with hn | hn
   · rw [extendByZero_of_neg 𝒜 hn, Submodule.mem_bot] at hy
     simp [hy]
-  obtain ⟨a, rfl⟩ := Int.eq_ofNat_of_zero_le hm
-  obtain ⟨b, rfl⟩ := Int.eq_ofNat_of_zero_le hn
+  lift m to ℕ using hm
+  lift n to ℕ using hn
   rw [extendByZero_natCast] at hx hy
   rw [← Nat.cast_add, extendByZero_natCast]
   exact h𝒜 hx hy
@@ -114,10 +124,9 @@ theorem mul_mem_extendByZero {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiri
 noncomputable def gradedAlgebraExtendByZero {R A : Type*} [CommSemiring R] [Semiring A]
     [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] :
     GradedAlgebra (extendByZero 𝒜) :=
-  { (isInternal_extendByZero (DirectSum.Decomposition.isInternal 𝒜)).chooseDecomposition with
+  { (isInternal_extendByZero_iff.2 (DirectSum.Decomposition.isInternal 𝒜)).chooseDecomposition with
     one_mem := (extendByZero_natCast 𝒜 0).ge SetLike.GradedOne.one_mem
-    mul_mem := fun _ _ _ _ hx hy =>
-      mul_mem_extendByZero (fun hx' hy' => SetLike.GradedMul.mul_mem hx' hy') hx hy }
+    mul_mem := fun _ _ _ _ ↦ mul_mem_extendByZero fun hx hy ↦ SetLike.GradedMul.mul_mem hx hy }
 
 end Graded
 

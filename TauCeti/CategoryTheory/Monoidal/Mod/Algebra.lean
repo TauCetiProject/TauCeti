@@ -11,12 +11,13 @@ public import TauCeti.CategoryTheory.Monoidal.Mon
 /-!
 # Commutative monoids under a commutative monoid as monoids of modules
 
-Let `A` be a commutative monoid object of a symmetric monoidal category `C`, and `f : A ⟶ B` a
+Let `A` be a commutative monoid object of a braided monoidal category `C`, and `f : A ⟶ B` a
 morphism of monoids into a commutative monoid `B`. Restricting the regular `B`-module along `f`
 makes `B` an `A`-module (`Mod.comapRegular f`), acting by `f ▷ B ≫ μ`. Its multiplication
 `μ : B ⊗ B ⟶ B` identifies the two actions of `A` on `B ⊗ B`, so it descends to the balanced
-tensor product `B ⊗_A B`. With unit `f : A ⟶ B` this makes `B` a commutative monoid object of
-`Mod C A` (`Mod.monObjComapRegular`, `Mod.isCommMonObjComapRegular`).
+tensor product `B ⊗_A B`. With unit `f : A ⟶ B` this makes `B` a monoid object of `Mod C A`
+(`Mod.monObjComapRegular`), which is commutative when `C` is symmetric
+(`Mod.isCommMonObjComapRegular`).
 
 On representatives the multiplication is that of `B` (`Mod.tensorπ_comapRegular_mul_hom`), and
 the unit is `f` (`Mod.comapRegular_one_hom`). For symmetric spectra, `A` is the sphere and this
@@ -67,7 +68,9 @@ lemma comapRegular_smul : γ[A, (comapRegular f).X] = f ▷ B ≫ μ :=
 
 end comapRegular
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
+section Braided
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
   [HasCoequalizers C]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
@@ -133,6 +136,17 @@ lemma tensorπ_comapRegular_mul_hom :
 lemma comapRegular_one_hom : (η : 𝟙_ (Mod C A) ⟶ comapRegular f).hom = f :=
   (rfl)
 
+end Braided
+
+section Symmetric
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
+  [HasCoequalizers C]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
+  {A : C} [MonObj A] [IsCommMonObj A] {B : C} [MonObj B] [IsCommMonObj B]
+  (f : A ⟶ B) [IsMonHom f]
+
 /-- A commutative monoid `B` under a commutative monoid `A` is a commutative monoid object of
 `A`-modules. -/
 instance isCommMonObjComapRegular : IsCommMonObj (comapRegular f) where
@@ -140,6 +154,8 @@ instance isCommMonObjComapRegular : IsCommMonObj (comapRegular f) where
     ext
     simp only [comp_hom', tensorπ_braiding_hom_hom_assoc, tensorπ_comapRegular_mul_hom]
     exact IsCommMonObj.mul_comm B
+
+end Symmetric
 
 end Mod
 

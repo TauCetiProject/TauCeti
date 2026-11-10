@@ -539,16 +539,9 @@ theorem eulerCharBelow_sheaf_add_ofPoint (hclosed : IsClosed ({(y : X)} : Set X)
         (hD := by interval_cases i <;> assumption))
       (LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply])
   refine h.trans ?_
-  rw [Scheme.Modules.eulerCharBelow_two k S.X₃]
-  have h₀ : Module.finrank k (Scheme.Modules.Cohomology S.X₃ 0) =
-      (X ↘ Spec (.of k)).residueDegree y := by
-    dsimp only [S]
-    rw [residueShortComplex_X₃]
-    rw [Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
-    exact Scheme.finrank_cohomology_zero_skyscraperResidueField k (y : X)
-  rw [h₀, Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_zero]
   dsimp only [S]
-  rw [residueShortComplex_X₁]
+  rw [residueShortComplex_X₁, residueShortComplex_X₃,
+    Scheme.eulerCharBelow_skyscraperResidueField]
 
 end Cohomology
 

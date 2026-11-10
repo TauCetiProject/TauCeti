@@ -40,29 +40,22 @@ automorphism of `G`. -/
 def _root_.MulAut.mapQuotient : MulAut G →* MulAut (G ⧸ N) where
   toFun φ := QuotientGroup.congr N N φ
     (φ.toMonoidHom_eq_coe ▸ Subgroup.characteristic_iff_map_eq.mp inferInstance φ)
-  map_one' := by
-    ext x
-    induction x using QuotientGroup.induction_on with
-    | H x => simp [QuotientGroup.congr_mk]
+  map_one' := by simp [MulAut.one_def]
   map_mul' φ ψ := by
     ext x
     induction x using QuotientGroup.induction_on with
-    | H x => simp [QuotientGroup.congr_mk]
+    | H x => simp
 
 /-- The automorphism induced on `G ⧸ N` sends the class of `x` to the class of `φ x`. -/
 @[simp]
 theorem _root_.MulAut.mapQuotient_mk (φ : MulAut G) (x : G) :
-    MulAut.mapQuotient N φ (x : G ⧸ N) = (φ x : G ⧸ N) :=
-  QuotientGroup.congr_mk _ _ _
-    (φ.toMonoidHom_eq_coe ▸ Subgroup.characteristic_iff_map_eq.mp inferInstance φ) x
+    MulAut.mapQuotient N φ (x : G ⧸ N) = (φ x : G ⧸ N) := by
+  simp [MulAut.mapQuotient]
 
 /-- An automorphism of `G` induces the identity on `G ⧸ N` exactly when it fixes every class
 modulo `N`. -/
 theorem _root_.MulAut.mem_ker_mapQuotient_iff {φ : MulAut G} :
     φ ∈ (MulAut.mapQuotient N).ker ↔ ∀ x : G, (φ x : G ⧸ N) = x := by
-  refine ⟨fun h x ↦ ?_, fun h ↦ MulEquiv.ext fun q ↦ ?_⟩
-  · simpa using congrArg (fun α : MulAut (G ⧸ N) ↦ α (x : G ⧸ N)) (MonoidHom.mem_ker.mp h)
-  · induction q using QuotientGroup.induction_on with
-    | H x => simpa using h x
+  simp [MulEquiv.ext_iff, QuotientGroup.forall_mk]
 
 end TauCeti

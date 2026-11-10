@@ -81,9 +81,6 @@ collapses as soon as one of the two vertices is unlabeled
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Chapter 6.
 -/
 
--- Provenance: the names and signatures of the declarations below follow
--- `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
-
 public section
 
 namespace TauCeti.DenseGraphLimits
@@ -117,15 +114,38 @@ abbrev Unlabeled (G : LabeledGraph k) : Type := {a : Fin G.n // ∀ i, G.label i
 are a subtype. -/
 instance (G : LabeledGraph k) : Fintype G.Unlabeled := Subtype.fintype _
 
+/-- The vertices of a `k`-labeled graph are its `k` labels together with its unlabeled
+vertices. -/
+noncomputable def labelSumUnlabeledEquiv (G : LabeledGraph k) : Fin k ⊕ G.Unlabeled ≃ Fin G.n :=
+  ((Equiv.ofInjective G.label G.label_injective).sumCongr
+    (Equiv.subtypeEquivRight fun _ => by simp)).trans
+      (Equiv.sumCompl (· ∈ Set.range G.label))
+
+@[simp]
+theorem labelSumUnlabeledEquiv_inl (G : LabeledGraph k) (i : Fin k) :
+    G.labelSumUnlabeledEquiv (Sum.inl i) = G.label i := (rfl)
+
+@[simp]
+theorem labelSumUnlabeledEquiv_inr (G : LabeledGraph k) (a : G.Unlabeled) :
+    G.labelSumUnlabeledEquiv (Sum.inr a) = a := (rfl)
+
+/-- A label has coordinate `Sum.inl` of its index. -/
+@[simp]
+theorem labelSumUnlabeledEquiv_symm_label (G : LabeledGraph k) (i : Fin k) :
+    G.labelSumUnlabeledEquiv.symm (G.label i) = Sum.inl i :=
+  G.labelSumUnlabeledEquiv.symm_apply_eq.2 (labelSumUnlabeledEquiv_inl G i).symm
+
+/-- An unlabeled vertex has coordinate `Sum.inr` of itself. -/
+@[simp]
+theorem labelSumUnlabeledEquiv_symm_coe (G : LabeledGraph k) (a : G.Unlabeled) :
+    G.labelSumUnlabeledEquiv.symm a = Sum.inr a :=
+  G.labelSumUnlabeledEquiv.symm_apply_eq.2 (labelSumUnlabeledEquiv_inr G a).symm
+
 /-- The number of unlabeled vertices. -/
 theorem card_unlabeled (G : LabeledGraph k) : Fintype.card G.Unlabeled = G.n - k := by
-  classical
-  have hrange : Fintype.card {a : Fin G.n // a ∈ Set.range G.label} = k :=
-    (Fintype.card_congr (Equiv.ofInjective _ G.label_injective).symm).trans (Fintype.card_fin k)
-  have hcompl : Fintype.card {a : Fin G.n // a ∉ Set.range G.label} = G.n - k := by
-    rw [Fintype.card_subtype_compl, hrange, Fintype.card_fin]
-  rw [← hcompl]
-  exact Fintype.card_congr (Equiv.subtypeEquivRight fun a => by simp [eq_comm])
+  have h := Fintype.card_congr G.labelSumUnlabeledEquiv
+  rw [Fintype.card_sum, Fintype.card_fin, Fintype.card_fin] at h
+  omega
 
 /-- The vertex carrier of a gluing: the `k` shared labels together with the unlabeled vertices of
 each side.  Writing it in this symmetric shape makes `glueCommIso` a swap of summands. -/
@@ -140,109 +160,64 @@ private noncomputable def glueIndex (G₁ G₂ : LabeledGraph k) :
 /-- Where a vertex of the left factor lands in the gluing carrier: at its label if it has one, and
 in the private left summand otherwise. -/
 private noncomputable def glueLeft (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) : G₁.glueCarrier G₂ :=
-  if h : ∃ i, G₁.label i = a then Sum.inl h.choose
-  else Sum.inr (Sum.inl ⟨a, fun i hi => h ⟨i, hi⟩⟩)
+  Sum.map id Sum.inl (G₁.labelSumUnlabeledEquiv.symm a)
 
 /-- Where a vertex of the right factor lands in the gluing carrier. -/
 private noncomputable def glueRight (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) : G₁.glueCarrier G₂ :=
-  if h : ∃ i, G₂.label i = b then Sum.inl h.choose
-  else Sum.inr (Sum.inr ⟨b, fun i hi => h ⟨i, hi⟩⟩)
+  Sum.map id Sum.inr (G₂.labelSumUnlabeledEquiv.symm b)
 
 /-- A labeled left vertex lands on its shared label. -/
 @[simp]
 private theorem glueLeft_label (G₁ G₂ : LabeledGraph k) (i : Fin k) :
     G₁.glueLeft G₂ (G₁.label i) = Sum.inl i := by
-  have h : ∃ j, G₁.label j = G₁.label i := ⟨i, rfl⟩
-  rw [glueLeft, dite_eq_left h]
-  exact congrArg Sum.inl (G₁.label_injective h.choose_spec)
+  simp [glueLeft]
 
 /-- A labeled right vertex lands on its shared label. -/
 @[simp]
 private theorem glueRight_label (G₁ G₂ : LabeledGraph k) (i : Fin k) :
     G₁.glueRight G₂ (G₂.label i) = Sum.inl i := by
-  have h : ∃ j, G₂.label j = G₂.label i := ⟨i, rfl⟩
-  rw [glueRight, dite_eq_left h]
-  exact congrArg Sum.inl (G₂.label_injective h.choose_spec)
+  simp [glueRight]
 
 /-- An unlabeled left vertex lands in the private left summand. -/
-private theorem glueLeft_of_unlabeled (G₁ G₂ : LabeledGraph k) {a : Fin G₁.n}
-    (ha : ∀ i, G₁.label i ≠ a) : G₁.glueLeft G₂ a = Sum.inr (Sum.inl ⟨a, ha⟩) := by
-  rw [glueLeft, dite_eq_right (fun h => ha h.choose h.choose_spec)]
+private theorem glueLeft_coe (G₁ G₂ : LabeledGraph k) (a : G₁.Unlabeled) :
+    G₁.glueLeft G₂ a = Sum.inr (Sum.inl a) := by
+  simp [glueLeft]
 
 /-- An unlabeled right vertex lands in the private right summand. -/
-private theorem glueRight_of_unlabeled (G₁ G₂ : LabeledGraph k) {b : Fin G₂.n}
-    (hb : ∀ i, G₂.label i ≠ b) : G₁.glueRight G₂ b = Sum.inr (Sum.inr ⟨b, hb⟩) := by
-  rw [glueRight, dite_eq_right (fun h => hb h.choose h.choose_spec)]
+private theorem glueRight_coe (G₁ G₂ : LabeledGraph k) (b : G₂.Unlabeled) :
+    G₁.glueRight G₂ b = Sum.inr (Sum.inr b) := by
+  simp [glueRight]
 
 /-- The left factor embeds in the gluing carrier. -/
 private theorem glueLeft_injective (G₁ G₂ : LabeledGraph k) :
-    Function.Injective (G₁.glueLeft G₂) := by
-  intro a b hab
-  by_cases ha : ∃ i, G₁.label i = a <;> by_cases hb : ∃ i, G₁.label i = b
-  · obtain ⟨i, rfl⟩ := ha
-    obtain ⟨j, rfl⟩ := hb
-    rw [glueLeft_label, glueLeft_label] at hab
-    exact congrArg G₁.label (Sum.inl_injective hab)
-  · obtain ⟨i, rfl⟩ := ha
-    rw [glueLeft_label, glueLeft_of_unlabeled _ _ (fun i hi => hb ⟨i, hi⟩)] at hab
-    exact absurd hab (by simp)
-  · obtain ⟨j, rfl⟩ := hb
-    rw [glueLeft_label, glueLeft_of_unlabeled _ _ (fun i hi => ha ⟨i, hi⟩)] at hab
-    exact absurd hab (by simp)
-  · rw [glueLeft_of_unlabeled _ _ (fun i hi => ha ⟨i, hi⟩),
-      glueLeft_of_unlabeled _ _ (fun i hi => hb ⟨i, hi⟩)] at hab
-    simpa using hab
+    Function.Injective (G₁.glueLeft G₂) :=
+  (Sum.map_injective.2 ⟨Function.injective_id, Sum.inl_injective⟩).comp
+    G₁.labelSumUnlabeledEquiv.symm.injective
 
 /-- The right factor embeds in the gluing carrier. -/
 private theorem glueRight_injective (G₁ G₂ : LabeledGraph k) :
-    Function.Injective (G₁.glueRight G₂) := by
-  intro a b hab
-  by_cases ha : ∃ i, G₂.label i = a <;> by_cases hb : ∃ i, G₂.label i = b
-  · obtain ⟨i, rfl⟩ := ha
-    obtain ⟨j, rfl⟩ := hb
-    rw [glueRight_label, glueRight_label] at hab
-    exact congrArg G₂.label (Sum.inl_injective hab)
-  · obtain ⟨i, rfl⟩ := ha
-    rw [glueRight_label, glueRight_of_unlabeled _ _ (fun i hi => hb ⟨i, hi⟩)] at hab
-    exact absurd hab (by simp)
-  · obtain ⟨j, rfl⟩ := hb
-    rw [glueRight_label, glueRight_of_unlabeled _ _ (fun i hi => ha ⟨i, hi⟩)] at hab
-    exact absurd hab (by simp)
-  · rw [glueRight_of_unlabeled _ _ (fun i hi => ha ⟨i, hi⟩),
-      glueRight_of_unlabeled _ _ (fun i hi => hb ⟨i, hi⟩)] at hab
-    simpa using hab
+    Function.Injective (G₁.glueRight G₂) :=
+  (Sum.map_injective.2 ⟨Function.injective_id, Sum.inr_injective⟩).comp
+    G₂.labelSumUnlabeledEquiv.symm.injective
 
 /-- In the gluing carrier the two sides meet exactly at corresponding labels. -/
 private theorem glueLeft_eq_glueRight_iff (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n)
     (b : Fin G₂.n) :
     G₁.glueLeft G₂ a = G₁.glueRight G₂ b ↔ ∃ i, a = G₁.label i ∧ b = G₂.label i := by
-  constructor
-  · intro hab
-    by_cases ha : ∃ i, G₁.label i = a
-    · obtain ⟨i, rfl⟩ := ha
-      by_cases hb : ∃ j, G₂.label j = b
-      · obtain ⟨j, rfl⟩ := hb
-        rw [glueLeft_label, glueRight_label] at hab
-        exact ⟨j, by rw [Sum.inl_injective hab], rfl⟩
-      · rw [glueLeft_label, glueRight_of_unlabeled _ _ (fun j hj => hb ⟨j, hj⟩)] at hab
-        exact absurd hab (by simp)
-    · rw [glueLeft_of_unlabeled _ _ (fun i hi => ha ⟨i, hi⟩)] at hab
-      by_cases hb : ∃ j, G₂.label j = b
-      · obtain ⟨j, rfl⟩ := hb
-        rw [glueRight_label] at hab
-        exact absurd hab (by simp)
-      · rw [glueRight_of_unlabeled _ _ (fun j hj => hb ⟨j, hj⟩)] at hab
-        exact absurd hab (by simp)
-  · rintro ⟨i, rfl, rfl⟩
-    rw [glueLeft_label, glueRight_label]
+  obtain ⟨s | a, rfl⟩ := G₁.labelSumUnlabeledEquiv.surjective a <;>
+    obtain ⟨t | b, rfl⟩ := G₂.labelSumUnlabeledEquiv.surjective b
+  · simp [glueLeft, glueRight, G₁.label_injective.eq_iff, G₂.label_injective.eq_iff, eq_comm]
+  · simpa [glueLeft, glueRight, G₁.label_injective.eq_iff] using (b.2 s).symm
+  · simpa [glueLeft, glueRight, G₂.label_injective.eq_iff] using (a.2 t).symm
+  · simpa [glueLeft, glueRight] using fun i (ha : (a : Fin G₁.n) = G₁.label i) _ => a.2 i ha.symm
 
 /-- Every vertex of the gluing carrier comes from one of the two sides. -/
 private theorem glueLeft_surjective_or (G₁ G₂ : LabeledGraph k) (v : G₁.glueCarrier G₂) :
     (∃ a, v = G₁.glueLeft G₂ a) ∨ ∃ b, v = G₁.glueRight G₂ b := by
   match v with
   | Sum.inl i => exact Or.inl ⟨G₁.label i, (glueLeft_label G₁ G₂ i).symm⟩
-  | Sum.inr (Sum.inl ⟨a, ha⟩) => exact Or.inl ⟨a, (glueLeft_of_unlabeled G₁ G₂ ha).symm⟩
-  | Sum.inr (Sum.inr ⟨b, hb⟩) => exact Or.inr ⟨b, (glueRight_of_unlabeled G₁ G₂ hb).symm⟩
+  | Sum.inr (Sum.inl a) => exact Or.inl ⟨a, (glueLeft_coe G₁ G₂ a).symm⟩
+  | Sum.inr (Sum.inr b) => exact Or.inr ⟨b, (glueRight_coe G₁ G₂ b).symm⟩
 
 /-- **Gluing.** Glue two `k`-labeled graphs by identifying corresponding labeled vertices and
 taking the union of the two edge sets.  The identified vertices keep their labels — and stay
@@ -405,8 +380,7 @@ def forgetLabels (G : LabeledGraph k) : Σ m, SimpleGraph (Fin m) := ⟨G.n, G.g
 count and its graph.  Both projections are read off from this law, and it is the form a dependent
 occurrence `f G.forgetLabels.1 G.forgetLabels.2` is rewritten by, since the two projections can
 only be replaced simultaneously: the type of the second mentions the first. -/
-theorem forgetLabels_def (G : LabeledGraph k) : G.forgetLabels = ⟨G.n, G.graph⟩ := by
-  simp only [forgetLabels]
+theorem forgetLabels_def (G : LabeledGraph k) : G.forgetLabels = ⟨G.n, G.graph⟩ := (rfl)
 
 /-- Unlabeling keeps the vertex count. -/
 @[simp]
@@ -422,24 +396,14 @@ private def glueSwap (G₁ G₂ : LabeledGraph k) : G₁.glueCarrier G₂ ≃ G�
 /-- Under the swap, the left factor of one order becomes the right factor of the other. -/
 private theorem glueSwap_glueLeft (G₁ G₂ : LabeledGraph k) (a : Fin G₁.n) :
     G₁.glueSwap G₂ (G₁.glueLeft G₂ a) = G₂.glueRight G₁ a := by
-  by_cases ha : ∃ i, G₁.label i = a
-  · obtain ⟨i, rfl⟩ := ha
-    rw [glueLeft_label, glueRight_label]
-    rfl
-  · rw [glueLeft_of_unlabeled _ _ fun i hi => ha ⟨i, hi⟩,
-      glueRight_of_unlabeled _ _ fun i hi => ha ⟨i, hi⟩]
-    rfl
+  rw [glueLeft, glueRight]
+  rcases G₁.labelSumUnlabeledEquiv.symm a with i | a <;> rfl
 
 /-- Under the swap, the right factor of one order becomes the left factor of the other. -/
 private theorem glueSwap_glueRight (G₁ G₂ : LabeledGraph k) (b : Fin G₂.n) :
     G₁.glueSwap G₂ (G₁.glueRight G₂ b) = G₂.glueLeft G₁ b := by
-  by_cases hb : ∃ i, G₂.label i = b
-  · obtain ⟨i, rfl⟩ := hb
-    rw [glueRight_label, glueLeft_label]
-    rfl
-  · rw [glueRight_of_unlabeled _ _ fun i hi => hb ⟨i, hi⟩,
-      glueLeft_of_unlabeled _ _ fun i hi => hb ⟨i, hi⟩]
-    rfl
+  rw [glueLeft, glueRight]
+  rcases G₂.labelSumUnlabeledEquiv.symm b with i | b <;> rfl
 
 /-- The vertex bijection between the two orders of a gluing. -/
 private noncomputable def glueCommEquiv (G₁ G₂ : LabeledGraph k) :
@@ -509,25 +473,10 @@ theorem glueCommIso_label (G₁ G₂ : LabeledGraph k) (i : Fin k) :
 
 /-! ### Coordinates
 
-The vertices of a `k`-labeled graph split into its labels and its unlabeled vertices, and the
-vertices of a gluing split into the shared labels and the unlabeled vertices of the two sides.
-These splittings are the coordinates in which a vertex assignment of a gluing is a labeled part
-together with one private part for each side. -/
-
-/-- The vertices of a `k`-labeled graph are its `k` labels together with its unlabeled
-vertices. -/
-noncomputable def labelSumUnlabeledEquiv (G : LabeledGraph k) : Fin k ⊕ G.Unlabeled ≃ Fin G.n :=
-  ((Equiv.ofInjective G.label G.label_injective).sumCongr
-    (Equiv.subtypeEquivRight (fun a => by simp only [Set.mem_range]; push Not; rfl))).trans
-      (Equiv.sumCompl (· ∈ Set.range G.label))
-
-@[simp]
-theorem labelSumUnlabeledEquiv_inl (G : LabeledGraph k) (i : Fin k) :
-    G.labelSumUnlabeledEquiv (Sum.inl i) = G.label i := (rfl)
-
-@[simp]
-theorem labelSumUnlabeledEquiv_inr (G : LabeledGraph k) (a : G.Unlabeled) :
-    G.labelSumUnlabeledEquiv (Sum.inr a) = a := (rfl)
+Just as the vertices of a `k`-labeled graph split into its labels and its unlabeled vertices
+(`labelSumUnlabeledEquiv`), the vertices of a gluing split into the shared labels and the
+unlabeled vertices of the two sides.  These splittings are the coordinates in which a vertex
+assignment of a gluing is a labeled part together with one private part for each side. -/
 
 /-- The vertices of a gluing are the shared labels together with the unlabeled vertices of each
 side. -/
@@ -542,13 +491,13 @@ theorem glueEquiv_inl (G₁ G₂ : LabeledGraph k) (i : Fin k) :
 @[simp]
 theorem glueEquiv_inr_inl (G₁ G₂ : LabeledGraph k) (a : G₁.Unlabeled) :
     G₁.glueEquiv G₂ (Sum.inr (Sum.inl a)) = G₁.glueInl G₂ a := by
-  rw [glueInl_apply, glueLeft_of_unlabeled G₁ G₂ a.2]
+  rw [glueInl_apply, glueLeft_coe]
   rfl
 
 @[simp]
 theorem glueEquiv_inr_inr (G₁ G₂ : LabeledGraph k) (b : G₂.Unlabeled) :
     G₁.glueEquiv G₂ (Sum.inr (Sum.inr b)) = G₁.glueInr G₂ b := by
-  rw [glueInr_apply, glueRight_of_unlabeled G₁ G₂ b.2]
+  rw [glueInr_apply, glueRight_coe]
   rfl
 
 /-- In coordinates, the left vertex map of a gluing sends the labels to the shared labels and the

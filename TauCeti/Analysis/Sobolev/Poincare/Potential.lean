@@ -13,9 +13,11 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import TauCeti.Analysis.Calculus.SegmentIncrement
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Dilation
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Potential estimates for `C¹` functions
@@ -272,8 +274,7 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
   set ω := μ.real (ball (0 : E) 1)
   set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
   have hn0 : n ≠ 0 := finrank_pos.ne'
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x
   set ρ := max ρ₀ 0
   have hρ : 0 ≤ ρ := le_max_right _ _
@@ -311,20 +312,7 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
     congr 2
     field_simp
   -- Let `D → ∞`.
-  have hlim : Tendsto (fun D : ℝ => D ^ n / (n * ω * (D ^ n - ρ ^ n))) atTop
-      (𝓝 ((n * ω)⁻¹)) := by
-    have h₁ : Tendsto (fun D : ℝ => (ρ / D) ^ n) atTop (𝓝 0) := by
-      have h := ((tendsto_const_nhds (x := ρ)).div_atTop tendsto_id).pow n
-      rwa [zero_pow hn0] at h
-    have h₂ := (tendsto_const_nhds (x := (n * ω)⁻¹)).mul
-      ((tendsto_const_nhds (x := (1 : ℝ)).sub h₁).inv₀ (by norm_num))
-    rw [sub_zero, inv_one, mul_one] at h₂
-    refine h₂.congr' ?_
-    filter_upwards [eventually_gt_atTop ρ] with D hD
-    have hD0 : 0 < D := hρ.trans_lt hD
-    have hDρ : D ^ n - ρ ^ n ≠ 0 := (sub_pos.2 (pow_lt_pow_left₀ hD hρ hn0)).ne'
-    rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
-    field_simp
+  have hlim := Real.tendsto_pow_div_mul_sub_pow_atTop (ω := ω) hn0 ρ
   exact ge_of_tendsto (ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal hlim)
     (Or.inl (ENNReal.ofReal_pos.2 (by positivity)).ne'))
     ((eventually_gt_atTop ρ).mono hbound)

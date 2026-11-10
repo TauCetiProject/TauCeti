@@ -61,7 +61,7 @@ theorem representation_tensor_mem_map₂ (e : I → L) (h : J → L)
   let P := Submodule.map₂ ((TensorProduct.mk ℚ V W).restrictScalars₁₂ ℤ ℤ) M N
   have hpure (v : V) (hv : v ∈ M) (w : W) (hw : w ∈ N)
       (t : kostantForm e h ⊗[ℤ] kostantForm e h) :
-      BialgebraModule.tensorPairAction ℚ U V W (kostantTensorMap e h t)
+      BialgebraModule.tensorPairAction ℚ V W (kostantTensorMap e h t)
         (v ⊗ₜ[ℚ] w) ∈ P := by
     induction t using TensorProduct.inductionOn with
     | tmul a b =>

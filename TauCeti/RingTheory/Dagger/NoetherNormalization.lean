@@ -37,9 +37,10 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   with maximal radical are finite-dimensional over `K`.
 * `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_pow`: in particular, the quotients of
   `K⟨X⟩†` by the powers of a maximal ideal are finite-dimensional over `K`.
-* `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal` and
-  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical`: the same finiteness for
-  dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
+* `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal`,
+  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical` and
+  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical`: the same finiteness
+  for dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
 
 ## References
 
@@ -212,6 +213,17 @@ theorem finite_quotient_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal]
   obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
   exact washnitzerAlgebra.finite_quotient_of_isMaximal_radical
     (AlgHom.Finite.of_surjective π hπ) q
+
+variable (K) in
+/-- The quotients of a `K`-dagger algebra by all powers of an ideal with maximal radical are
+finite-dimensional over `K`, including the zero quotient for exponent zero. -/
+theorem finite_quotient_pow_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal] (n : ℕ) :
+    Module.Finite K (A ⧸ q ^ n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · have : Subsingleton (A ⧸ q ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
+    infer_instance
+  · have : (q ^ n).radical.IsMaximal := by rwa [Ideal.radical_pow q hn.ne']
+    exact finite_quotient_of_isMaximal_radical K _
 
 end IsDaggerAlgebra
 

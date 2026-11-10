@@ -217,7 +217,9 @@ theorem exists_sublevelDeformation (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a �
         ((sublevelInclusion f a b hab).comp r)
         (ContinuousMap.id _) {x | f x ≤ a}) := by
   obtain ⟨φ, -, -, -, hφ⟩ := exists_flow_apply_eq_sub hf hcompact hreg
-  exact exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ
+  obtain ⟨r, -, hr, hH⟩ :=
+    exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ
+  exact ⟨r, hr, hH⟩
 
 /-- **The sublevels on either side of a band without critical points are homotopy equivalent.**
 Under the hypotheses of `TauCeti.exists_sublevelDeformation`, the inclusion of `{f ≤ a}` into
@@ -228,14 +230,9 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
     ∃ e : ContinuousMap.HomotopyEquiv {x | f x ≤ a} {x | f x ≤ b},
       ∀ x : {x | f x ≤ a}, (e x : M) = x := by
   obtain ⟨r, hr, ⟨F⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
-  refine ⟨
-    { toFun := sublevelInclusion f a b hab
-      invFun := r
-      left_inv := ?_
-      right_inv := ⟨F.toHomotopy⟩ }, coe_sublevelInclusion_apply f hab⟩
-  have : r.comp (sublevelInclusion f a b hab) =
-      ContinuousMap.id _ := ContinuousMap.ext hr
-  exact this ▸ .refl _
+  rw [sublevelInclusion_eq_inclusion] at hr F
+  exact ⟨.ofRetraction _ r hr F.toHomotopy,
+    ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _⟩
 
 /-- **Retractions across a band without critical points are unique up to homotopy.** Under the
 hypotheses of `TauCeti.exists_sublevelDeformation`, any two retractions of `{f ≤ b}` onto

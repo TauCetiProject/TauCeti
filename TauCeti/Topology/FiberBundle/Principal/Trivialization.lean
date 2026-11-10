@@ -364,10 +364,8 @@ theorem transition_mul_transition (ρ : GlobalTrivialization G P) :
     υ.transition ρ * τ.transition υ = τ.transition ρ := by
   ext b
   simp only [ContinuousMap.mul_apply, transition_eq_coordChange]
-  exact (υ.toTrivialization.coordChange_eq_mul ρ.toTrivialization
-    (υ.mem_baseSet b) (ρ.mem_baseSet b) _).symm.trans
-    (τ.toTrivialization.coordChange_coordChange υ.toTrivialization ρ.toTrivialization
-      (τ.mem_baseSet b) (υ.mem_baseSet b) 1)
+  exact τ.toTrivialization.coordChange_one_mul_coordChange_one υ.toTrivialization
+    ρ.toTrivialization (τ.mem_baseSet b) (υ.mem_baseSet b) (ρ.mem_baseSet b)
 
 omit [IsTopologicalGroup G] in
 /-- The transition from a trivialization to itself is the identity gauge. -/

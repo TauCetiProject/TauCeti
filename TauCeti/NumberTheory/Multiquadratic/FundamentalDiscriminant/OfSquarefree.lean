@@ -135,6 +135,7 @@ theorem fundamentalDiscriminant_primeDiscriminantRadicand {D : ℤ} (hD : IsPrim
   · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev]
     rcases hev with rfl | rfl | rfl <;> norm_num [fundamentalDiscriminant_def]
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
-      fundamentalDiscriminant_of_mod_four_eq_one (oddPrimeDiscriminant_mod_four_eq_one hodd)]
+      fundamentalDiscriminant_of_mod_four_eq_one
+        (oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd)]
 
 end TauCeti.Multiquadratic

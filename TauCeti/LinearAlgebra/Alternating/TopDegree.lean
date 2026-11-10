@@ -35,7 +35,7 @@ open Module
 
 namespace AlternatingMap
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V] {n : ℕ}
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {n : ℕ}
 
 /-- **A top-degree form is determined by an interior product on a hyperplane.** On a space of
 dimension `n + 1`, let `f v = 1`. A top-degree alternating form `ω` vanishes exactly when the
@@ -44,6 +44,7 @@ theorem curryLeft_compLinearMap_subtype_eq_zero_iff (hn : finrank K V = n + 1)
     (ω : V [⋀^Fin (n + 1)]→ₗ[K] K) {f : Dual K V} {v : V} (hv : f v = 1) :
     (ω.curryLeft v).compLinearMap (LinearMap.ker f).subtype = 0 ↔ ω = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h, zero_compLinearMap]⟩
+  have := Module.finite_of_finrank_eq_succ hn
   have hf : f ≠ 0 := fun hf ↦ by simp [hf] at hv
   have hker : finrank K (LinearMap.ker f) = n := by
     have := Dual.finrank_ker_add_one_of_ne_zero hf

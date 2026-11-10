@@ -248,9 +248,10 @@ lemma isIso_mayerVietorisToBiprod_of_isZero (n : ℕ)
   have := (mayerVietoris_exact₂ R hU hV hUV n).epi_f (h₀.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
-include hU hV hUV in
+include hUV in
 /-- The map `H₀(U) ⊞ H₀(V) ⟶ H₀(X)` at the end of the Mayer–Vietoris sequence is an
-epimorphism. -/
+epimorphism, for any cover of `X` by two subspaces: every singular point of `X` lies in `U` or
+in `V`. -/
 lemma epi_mayerVietorisFromBiprod_zero :
     Epi (SSet.mayerVietorisFromBiprod R (toSSet.map (ofHom (ContinuousMap.subtypeVal U)))
       (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) 0) := by
@@ -260,12 +261,29 @@ lemma epi_mayerVietorisFromBiprod_zero :
         ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) 0 ≫
       SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
     have : Epi (SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R 0) := by
-      -- `smallSingularHomologyIso` identifies this inclusion map with an isomorphism.
+      -- the inclusion is bijective on singular points, so it is onto in degree `0` of the chains
       change Epi (HomologicalComplex.homologyMap
         (SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R) 0)
-      rw [← TauCeti.smallSingularHomologyIso_hom R ![U, V]
-        (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV)]
-      infer_instance
+      have : Epi ((SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R).f 0) :=
+        ⟨fun g h hgh ↦ SSet.chainComplex_hom_ext fun x ↦ by
+          have hx : x ∈ (X.smallSingularSubcomplex ![U, V]).obj
+              (Opposite.op (SimplexCategory.mk 0)) := by
+            rw [mem_smallSingularSubcomplex_iff]
+            open Convexity in
+            obtain ⟨t⟩ : Nonempty (StdSimplex ℝ (Fin 1)) := inferInstance
+            have : X.toSSetObjEquiv (Opposite.op (SimplexCategory.mk 0)) x t ∈ U ∪ V :=
+              hUV ▸ Set.mem_univ _
+            rcases this with h | h
+            · exact ⟨0, by rintro _ ⟨s, rfl⟩; simpa [Subsingleton.elim s t] using h⟩
+            · exact ⟨1, by rintro _ ⟨s, rfl⟩; simpa [Subsingleton.elim s t] using h⟩
+          have key : (X.smallSingularSubcomplex ![U, V] : SSet).ιChainComplex (R := R)
+                ⟨x, hx⟩ ≫
+              (SSet.chainComplexMap (X.smallSingularSubcomplex ![U, V]).ι R).f 0 =
+              (toSSet.obj X).ιChainComplex x :=
+            SSet.ι_chainComplexMap_f (f := (X.smallSingularSubcomplex ![U, V]).ι) (R := R)
+              (x := ⟨x, hx⟩)
+          rw [← key, Category.assoc, Category.assoc, hgh]⟩
+      exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
     have := SSet.epi_mayerVietorisFromBiprod_zero R
       (isPushout_toSSet_inter_smallSingularSubcomplex U V)
     exact epi_comp _ _

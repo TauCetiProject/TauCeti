@@ -228,8 +228,11 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
   apply Algebra.FormallySmooth.of_comp_surjective
   intro B _ _ I hI f
   let g := pointsMulEquiv R n (A := B ⧸ I) (toConv f)
+  have : IsLocalHom (Ideal.Quotient.mk I) :=
+    ⟨fun _ ↦ (IsNilpotent.isUnit_quotient_mk_iff ⟨2, hI⟩).mp⟩
   obtain ⟨N, hNupper, hN⟩ :=
-    Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq_of_isNilpotent I ⟨2, hI⟩ g.1
+    Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq (Ideal.Quotient.mk I)
+      Ideal.Quotient.mk_surjective g.1
       (UpperTriangularGroup.mem_comap_toGL_iff.mp g.2)
   let lift : WithConv (coordinateHopfAlgebra R n →ₐ[R] B) :=
     (pointsMulEquiv R n (A := B)).symm ⟨N, UpperTriangularGroup.mem_comap_toGL_iff.mpr hNupper⟩

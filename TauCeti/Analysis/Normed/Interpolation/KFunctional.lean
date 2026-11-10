@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Convex.Continuous
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 
 /-!
@@ -21,11 +21,14 @@ We prove the basic properties of `K` from Bergh–Löfström, §3.1:
 * `K(1, ·)` is the sum norm (`kFunctional_one`);
 * for fixed `t ≥ 0`, `K(t, ·)` is a seminorm (`kFunctional_add_le`, `kFunctional_smul`),
   and for `t > 0` a norm equivalent to the sum norm, with
-  `min 1 t * ‖u‖ ≤ K(t, u) ≤ max 1 t * ‖u‖`;
-* for fixed `u`, `t ↦ K(t, u)` is nonnegative, monotone and concave on `[0, ∞)`, and
-  `K(t, u) ≤ max 1 (t / s) * K(s, u)` for `s > 0`;
+  `min 1 t * ‖u‖ ≤ K(t, u) ≤ max 1 t * ‖u‖`; it is `max 1 t`-Lipschitz
+  (`lipschitzWith_kFunctional`);
+* for fixed `u`, `t ↦ K(t, u)` is nonnegative, monotone and concave on `[0, ∞)`, hence continuous
+  on `(0, ∞)` (`continuousOn_kFunctional`), and `K(t, u) ≤ max 1 (t / s) * K(s, u)` for `s > 0`;
 * elements of `X₀`, `X₁` and the intersection satisfy `K(t, x₀) ≤ ‖x₀‖`, `K(t, x₁) ≤ t ‖x₁‖`
   and `K(t, x) ≤ min 1 t * ‖x‖`;
+* a linear map of sum spaces restricting to maps `X₀ → Y₀`, `X₁ → Y₁` bounded by `M₀ > 0`
+  and `M₁` satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`);
 * for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`).
 
 ## References
@@ -218,6 +221,52 @@ theorem kFunctional_smul (ht : 0 ≤ t) (c : 𝕜) (u : C.SumSpace) :
           exact kFunctional_smul_le ht _ _
       _ = C.kFunctional t (c • u) := by
           rw [norm_inv, ← mul_assoc, mul_inv_cancel₀ (norm_ne_zero_iff.2 hc), one_mul]
+
+/-- For `t ≥ 0`, `K(t, ·)` is Lipschitz for the sum norm, with constant `max 1 t`. -/
+theorem lipschitzWith_kFunctional (ht : 0 ≤ t) :
+    LipschitzWith (max 1 t).toNNReal (C.kFunctional t) :=
+  LipschitzWith.of_le_add_mul' _ fun u v =>
+    calc C.kFunctional t u = C.kFunctional t (v + (u - v)) := by rw [add_sub_cancel]
+      _ ≤ C.kFunctional t v + C.kFunctional t (u - v) := kFunctional_add_le ht _ _
+      _ ≤ C.kFunctional t v + max 1 t * dist u v := by
+        rw [dist_eq_norm]
+        gcongr
+        exact kFunctional_le_max_one_mul_norm ht _
+
+theorem continuous_kFunctional (ht : 0 ≤ t) : Continuous (C.kFunctional t) :=
+  (lipschitzWith_kFunctional ht).continuous
+
+/-- For fixed `u`, `t ↦ K(t, u)` is continuous on `(0, ∞)`, the interior of the half-line on
+which it is concave. -/
+theorem continuousOn_kFunctional (u : C.SumSpace) :
+    ContinuousOn (C.kFunctional · u) (Set.Ioi 0) := by
+  simpa using (concaveOn_kFunctional u).continuousOn_interior
+
+section Map
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W]
+  {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+
+/-- A linear map `T` between the sum spaces of two couples that restricts to maps
+`T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀ > 0`,
+satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)`. -/
+theorem kFunctional_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
+    (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀)
+    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (ht : 0 ≤ t)
+    (u : C.SumSpace) : D.kFunctional t (T u) ≤ M₀ * C.kFunctional (t * M₁ / M₀) u := by
+  conv_rhs => rw [kFunctional, Real.mul_iInf_of_nonneg hM₀.le]
+  have := nonempty_decomposition u
+  refine le_ciInf fun ⟨⟨x₀, x₁⟩, h⟩ => (kFunctional_le ht (x₀ := T₀ x₀) (x₁ := T₁ x₁) ?_).trans ?_
+  · rw [← h, map_add, hT₀, hT₁]
+  · calc ‖T₀ x₀‖ + t * ‖T₁ x₁‖ ≤ M₀ * ‖x₀‖ + t * (M₁ * ‖x₁‖) := by
+          gcongr
+          · exact h₀ x₀
+          · exact h₁ x₁
+      _ = M₀ * (‖x₀‖ + t * M₁ / M₀ * ‖x₁‖) := by field_simp
+
+end Map
 
 section Refl
 

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.AnalyticSubmanifold.Basic
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Analysis.Analytic.Submanifold.Image
 import TauCeti.Analysis.Analytic.Submanifold.Product
+import TauCeti.Data.Set.Image
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Topology.Algebra.Module.Equiv.Fin
@@ -149,30 +150,16 @@ theorem isMAnalyticSubmanifold_image (Φ : OpenPartialHomeomorph M N)
   let C_I := (chartAt H x).extendTrans I e.toHomeomorph
   let C_J := (chartAt H' (Φ x)).extendTrans J e'.toHomeomorph
   let Ψ := C_I.symm.trans (Φ.trans C_J)
-  have hΨ_cd : ContDiffOn 𝕜 ω Ψ Ψ.source := by
-    rw [← contMDiffOn_iff_contDiffOn]
-    have hstep0 : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) I ω C_I.symm Ψ.source :=
-      ((chartAt H x).contMDiffOn_extendTrans_symm (chart_mem_maximalAtlas x)
-        e.symm.contDiff).mono fun _ hv ↦ hv.1
-    have hstep1 : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) J ω (Φ ∘ C_I.symm) Ψ.source :=
-      hΦ.comp hstep0 fun _ hv ↦ hv.2.1
-    exact (((chartAt H' (Φ x)).contMDiffOn_extendTrans (chart_mem_maximalAtlas (Φ x))
-      e'.contDiff).comp hstep1 fun _ hv ↦ hv.2.2).congr fun _ _ ↦ rfl
-  have hΨ_symm_cd : ContDiffOn 𝕜 ω Ψ.symm Ψ.target := by
-    rw [← contMDiffOn_iff_contDiffOn]
-    have hstep0 : ContMDiffOn 𝓘(𝕜, Fin m → 𝕜) J ω C_J.symm Ψ.target :=
-      ((chartAt H' (Φ x)).contMDiffOn_extendTrans_symm (chart_mem_maximalAtlas (Φ x))
-        e'.symm.contDiff).mono fun _ hv ↦ hv.1.1
-    have hstep1 : ContMDiffOn 𝓘(𝕜, Fin m → 𝕜) I ω (Φ.symm ∘ C_J.symm) Ψ.target :=
-      hΦs.comp hstep0 fun _ hv ↦ hv.1.2
-    exact (((chartAt H x).contMDiffOn_extendTrans (chart_mem_maximalAtlas x)
-      e.contDiff).comp hstep1 fun _ hv ↦ hv.2).congr fun v _ ↦ by simp [Ψ, C_I]
   have hΨ : AnalyticOnNhd 𝕜 Ψ Ψ.source :=
-    Ψ.open_source.analyticOn_iff_analyticOnNhd.1
-      ((contDiffOn_omega_iff_analyticOn Ψ.open_source.uniqueDiffOn).1 hΨ_cd)
-  have hΨ_symm : AnalyticOnNhd 𝕜 Ψ.symm Ψ.target :=
-    Ψ.open_target.analyticOn_iff_analyticOnNhd.1
-      ((contDiffOn_omega_iff_analyticOn Ψ.open_target.uniqueDiffOn).1 hΨ_symm_cd)
+    Φ.analyticOnNhd_extendTrans_symm_trans_map hΦ e.symm.contDiff e'.contDiff
+      (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas (Φ x))
+  have hΨ_symm : AnalyticOnNhd 𝕜 Ψ.symm Ψ.target := by
+    have hΨs : Ψ.symm = C_J.symm.trans (Φ.symm.trans C_I) := by
+      simp only [Ψ, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+        OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
+    rw [← Ψ.symm_source, hΨs]
+    exact Φ.symm.analyticOnNhd_extendTrans_symm_trans_map hΦs e'.symm.contDiff e.contDiff
+      (chart_mem_maximalAtlas (Φ x)) (chart_mem_maximalAtlas x)
   have hxCI : x ∈ C_I.source := by simp [C_I]
   have hxΨ : C_I x ∈ Ψ.source :=
     ⟨C_I.map_source hxCI, by simpa [C_I.left_inv hxCI] using hxΦ,
@@ -304,26 +291,18 @@ private theorem IsMAnalyticSubmanifold.exists_linearSliceCharts {e : E ≃L[𝕜
     simp [c, C, A, splitAt_snd_eq_zero_iff]
   have hcover (x : s) : (x : M) ∈ (c x).source := ⟨by simp, hφx x⟩
   have hcs (x : s) : ContMDiffOn I 𝓘(𝕜, (Fin d → 𝕜) × (Fin (n - d) → 𝕜)) ω (c x) (c x).source := by
-    have hφ_cd : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) ω (φ x) (φ x).source := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact (contDiffOn_omega_iff_analyticOn (φ x).open_source.uniqueDiffOn).2
-        ((φ x).open_source.analyticOn_iff_analyticOnNhd.2 (hφ x).analyticOnNhd)
     have hsub : (c x).source ⊆ ((chartAt H (x : M)).extendTrans I e.toHomeomorph).source :=
       fun _ hz ↦ hz.1
     have hstep : ContMDiffOn I 𝓘(𝕜, Fin n → 𝕜) ω
         (φ x ∘ (chartAt H (x : M)).extendTrans I e.toHomeomorph) (c x).source :=
-      hφ_cd.comp (((chartAt H (x : M)).contMDiffOn_extendTrans
+      (hφ x).contMDiffOn.comp (((chartAt H (x : M)).contMDiffOn_extendTrans
         (chart_mem_maximalAtlas (x : M)) e.contDiff).mono hsub) fun _ hz ↦ hz.2
     exact (A.contDiff.contMDiff.comp_contMDiffOn hstep).congr fun _ _ ↦ rfl
   have hci (x : s) :
       ContMDiffOn 𝓘(𝕜, (Fin d → 𝕜) × (Fin (n - d) → 𝕜)) I ω (c x).symm (c x).target := by
-    have hφ_symm : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) ω (φ x).symm (φ x).target := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact (contDiffOn_omega_iff_analyticOn (φ x).open_target.uniqueDiffOn).2
-        ((φ x).open_target.analyticOn_iff_analyticOnNhd.2 (hφ x).analyticOnNhd_symm)
     have hstep : ContMDiffOn 𝓘(𝕜, (Fin d → 𝕜) × (Fin (n - d) → 𝕜)) 𝓘(𝕜, Fin n → 𝕜) ω
         ((φ x).symm ∘ A.symm) (c x).target :=
-      hφ_symm.comp A.symm.contDiff.contMDiff.contMDiffOn (s := (c x).target)
+      (hφ x).contMDiffOn_symm.comp A.symm.contDiff.contMDiff.contMDiffOn (s := (c x).target)
         fun v hv ↦ by simpa [c] using hv.1
     exact (((chartAt H (x : M)).contMDiffOn_extendTrans_symm
       (chart_mem_maximalAtlas (x : M)) e.symm.contDiff).comp hstep
@@ -398,11 +377,12 @@ theorem IsMAnalyticSubmanifold.image_of_isSmoothEmbedding
   have hΨ_apply (y : N) : Ψ y = e' (ψ.extend J y) := by simp [Ψ]
   let U := Ψ.target ∩ Ψ.symm ⁻¹' W
   have hU : IsOpen U := Ψ.continuousOn_symm.isOpen_inter_preimage Ψ.open_target hW
-  have hfxΨ : f x ∈ Ψ.source := by simpa [Ψ] using hfxψ
-  have hfxU : e' (ψ.extend J (f x)) ∈ U := by
-    have hfxW : f x ∈ W := by rwa [← mem_preimage, hfW]
-    rw [← hΨ_apply]
-    exact ⟨Ψ.map_source hfxΨ, by simpa [Ψ.left_inv hfxΨ] using hfxW⟩
+  have hUiff : ∀ z, f z ∈ ψ.source → (e' (ψ.extend J (f z)) ∈ U ↔ z ∈ φ.source) := by
+    intro z hfzψ
+    have hfzΨ : f z ∈ Ψ.source := by simpa [Ψ] using hfzψ
+    rw [← hfW, mem_preimage, ← hΨ_apply]
+    exact ⟨fun hw ↦ by simpa [Ψ.left_inv hfzΨ] using hw.2,
+      fun hzW ↦ ⟨Ψ.map_source hfzΨ, by simpa [Ψ.left_inv hfzΨ] using hzW⟩⟩
   let ι : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜) :=
     e'.toContinuousLinearMap.comp
       (h.equiv.toContinuousLinearMap.comp
@@ -428,28 +408,9 @@ theorem IsMAnalyticSubmanifold.image_of_isSmoothEmbedding
     rw [(φ.extend I).left_inv hze] at hwr
     simp only [ι, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.symm_apply_apply, hwr]
-  refine ⟨ψ, h.codChart_mem_maximalAtlas, hfxψ, U, hU, hfxU, ?_⟩
-  have heq : ι '' ((e ∘ φ.extend I) '' (s ∩ φ.source)) =
-      U ∩ (e' ∘ ψ.extend J) '' ((f '' s) ∩ ψ.source) := by
-    ext w
-    constructor
-    · rintro ⟨_, ⟨z, ⟨hzs, hzφ⟩, rfl⟩, rfl⟩
-      have hfzψ : f z ∈ ψ.source := h.source_subset_preimage_source hzφ
-      have hfzΨ : f z ∈ Ψ.source := by simpa [Ψ] using hfzψ
-      have hfzW : f z ∈ W := by rwa [← mem_preimage, hfW]
-      have hw_eq : ι ((e ∘ φ.extend I) z) = (e' ∘ ψ.extend J) (f z) := (hform z hzφ).symm
-      rw [hw_eq]
-      refine ⟨?_, f z, ⟨⟨z, hzs, rfl⟩, hfzψ⟩, rfl⟩
-      simp only [Function.comp_apply, ← hΨ_apply]
-      exact ⟨Ψ.map_source hfzΨ, by simpa [Ψ.left_inv hfzΨ] using hfzW⟩
-    · rintro ⟨hwU, _, ⟨⟨z, hzs, rfl⟩, hfzψ⟩, rfl⟩
-      have hfzΨ : f z ∈ Ψ.source := by simpa [Ψ] using hfzψ
-      have hwW : Ψ.symm (Ψ (f z)) ∈ W := by
-        simpa [hΨ_apply] using hwU.2
-      rw [Ψ.left_inv hfzΨ] at hwW
-      have hzφ : z ∈ φ.source := by rwa [← hfW]
-      exact ⟨(e ∘ φ.extend I) z, ⟨z, ⟨hzs, hzφ⟩, rfl⟩, (hform z hzφ).symm⟩
-  rwa [heq] at himg_S₀
+  refine ⟨ψ, h.codChart_mem_maximalAtlas, hfxψ, U, hU, (hUiff x hfxψ).2 hxφ, ?_⟩
+  rwa [image_image_inter_eq_inter_image (g := e ∘ φ.extend I) (g' := e' ∘ ψ.extend J) hform
+    (fun z hz ↦ h.source_subset_preimage_source hz) hUiff] at himg_S₀
 
 /-- Over a complete field `𝕜`, the range of a `C^ω` smooth embedding of a nonempty boundaryless
 `C^ω` manifold with `d`-dimensional model into a boundaryless `C^ω` manifold is a `d`-dimensional

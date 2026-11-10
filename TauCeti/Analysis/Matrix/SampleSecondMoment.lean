@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Convex.FiniteMean
 
 /-!
@@ -33,6 +34,8 @@ entry by entry.
   columns are the samples; `Matrix.sampleCovariance_eq_sampleSecondMoment` identifies it with the
   empirical second-moment matrix of the columns, and `Matrix.isHermitian_sampleCovariance` and
   `Matrix.posSemidef_sampleCovariance` give Hermitian and positive semidefinite.
+* `Matrix.re_trace_sampleCovariance`: its real trace is the column-normalized sum of squared
+  entry norms.
 
 ## References
 
@@ -97,6 +100,17 @@ theorem sampleCovariance_def (X : Matrix p n 𝕜) :
 theorem sampleCovariance_apply (X : Matrix p n 𝕜) (i j : p) :
     sampleCovariance X i j = (1 / (Fintype.card n : ℝ)) • ∑ k, X i k * star (X j k) := by
   simp [sampleCovariance_def, Matrix.mul_apply]
+
+/-- The real trace of a sample covariance matrix is the column-normalized sum of squared entry
+norms. This holds for empty index types, with the usual zero conventions. -/
+theorem re_trace_sampleCovariance [Fintype p] (X : Matrix p n 𝕜) :
+    RCLike.re (sampleCovariance X).trace =
+      (1 / (Fintype.card n : ℝ)) * ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
+  rw [sampleCovariance_def, Matrix.trace_smul, RCLike.real_smul_eq_coe_mul,
+    RCLike.re_ofReal_mul]
+  congr 1
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, RCLike.mul_conj]
 
 /-- The sample covariance matrix of `X` is the empirical second-moment matrix of its columns. -/
 theorem sampleCovariance_eq_sampleSecondMoment (X : Matrix p n 𝕜) :

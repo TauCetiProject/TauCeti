@@ -16,12 +16,19 @@ their support.
 At a point `z ∈ U`, Mathlib's `MeromorphicOn.divisor f U` evaluates to
 `(meromorphicOrderAt f z).untop₀`, while zero counts of analytic functions are stated in terms of
 `analyticOrderNatAt f z`. This file records the bridge between the two vocabularies at a point
-where `f` is analytic.
+where `f` is analytic. It also records finite divisor support on subsets of compact sets
+and on bounded regions whose closures lie in the meromorphic domain.
 
 ## Main results
 
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
+* `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
+  meromorphic orders.
+* `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
+  subset of a compact set in the meromorphic domain.
+* `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
+  whose closure lies in the meromorphic domain.
 -/
 
 public section
@@ -55,3 +62,24 @@ theorem MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq
   rw [hf.divisor_apply hz, hg.divisor_apply hz] at heq
   have hcoe := congrArg (fun n : ℤ ↦ (n : WithTop ℤ)) heq
   simpa only [WithTop.coe_untop₀_of_ne_top hfz, WithTop.coe_untop₀_of_ne_top hgz] using hcoe
+
+open Set
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {f : 𝕜 → E} {U R K : Set 𝕜}
+
+/-- A meromorphic divisor has finite support on any subset of a compact set in its domain. -/
+theorem MeromorphicOn.divisor_finite_inter_support_of_isCompact
+    (hf : MeromorphicOn f U) (hK : IsCompact K) (hKU : K ⊆ U) (hRK : R ⊆ K) :
+    (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite := by
+  apply ((MeromorphicOn.divisor f K).finiteSupport hK).subset
+  intro z hz
+  simpa only [Function.mem_support, hf.divisor_apply (hKU (hRK hz.1)),
+    (hf.mono_set hKU).divisor_apply (hRK hz.1)] using hz.2
+
+/-- A bounded region has finite divisor support when its closure is in the meromorphic domain. -/
+theorem MeromorphicOn.divisor_finite_inter_support [ProperSpace 𝕜]
+    (hf : MeromorphicOn f U) (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
+    (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
+  hf.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure

@@ -140,6 +140,18 @@ theorem isHomogeneous_vertexTensorMul :
   exact (isHomogeneous_envelope_action_one k Q wt).map_mem
     ((mem_vertexTensorGrading_piece_iff k Q wt).1 hz)
 
+/-- Multiplication of the vertex term is onto in each degree: every element of arrow weight `n` of
+the path algebra is the product of an element of the weight-`n` piece of the vertex term. -/
+theorem exists_vertexTensorMul_eq_of_mem {n : ℤ} {a : A} (ha : a ∈ gradeBy k wt n) :
+    ∃ z : (vertexTensorGrading k Q wt).piece n,
+      vertexTensorMul k Q z = Bimodule.of (AlgHom.id k A) a := by
+  obtain ⟨y, hy⟩ := vertexTensorMul_surjective (k := k) (Q := Q) (Bimodule.of (AlgHom.id k A) a)
+  refine ⟨DirectSum.decompose (vertexTensorGrading k Q wt).piece y n, ?_⟩
+  rw [(isHomogeneous_vertexTensorMul k Q wt).map_decompose, hy, add_zero,
+    DirectSum.decompose_of_mem_same]
+  exact ((InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)).apply_mem_map_piece_iff
+    (Bimodule.of (AlgHom.id k A)) _ _).mpr ha
+
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 /-- The internal arrow-weight grading on `⨁_{b : i ⟶ j} kQ eⱼ ⊗_k eᵢ kQ`, with the generator

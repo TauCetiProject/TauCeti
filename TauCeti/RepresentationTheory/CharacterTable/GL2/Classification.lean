@@ -56,8 +56,8 @@ sum is `q² - 1`. That is the number of conjugacy classes of `GL₂(F)`
 exactly `½ q (q - 1)` members.
 
 The cuspidal bound uses that at most `q - 1` characters of `Eˣ` are fixed by `θ ↦ θ^q`
-(`IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_le`, as `Eˣ` is cyclic), and that the character
-group of `Eˣ` has order `q² - 1` (`CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity`).
+(`IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_eq_gcd`, as `Eˣ` is cyclic), and that the
+character group of `Eˣ` has order `q² - 1` (`CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity`).
 
 The membership of the four families in `TauCeti.irreducibleCharacters` is recorded beside their
 irreducibility: `TauCeti.character_GL2Linear_mem_irreducibleCharacters`,
@@ -319,7 +319,8 @@ private theorem le_two_mul_ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar
   have hfix : (Finset.univ.filter fun θ : Eˣ →* ℂˣ =>
       θ.comp (powMonoidHom (Fintype.card F)) = θ).card ≤ Fintype.card F - 1 := by
     rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-    exact IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_le Eˣ ℂ Fintype.one_lt_card
+    rw [IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_eq_gcd Eˣ ℂ Fintype.card_ne_zero]
+    exact Nat.gcd_le_right _ (Nat.sub_pos_of_lt Fintype.one_lt_card)
   omega
 
 /-- The arithmetic of the count, for `q ≥ 2`: the linear, Steinberg-twist and principal-series

@@ -209,8 +209,10 @@ theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : 
 /-- If `R` is a regular local ring and `x ∈ 𝔪` is nonzero with `R ⧸ (x)` regular, then the
 maximal ideal of `R ⧸ (x)` needs exactly one generator fewer than `𝔪`. -/
 theorem spanFinrank_maximalIdeal_quotient_span_singleton_add_one {x : R}
-    (hxm : x ∈ maximalIdeal R) (hx0 : x ≠ 0) [IsRegularLocalRing (R ⧸ span {x})] :
+    (hx0 : x ≠ 0) [IsRegularLocalRing (R ⧸ span {x})] :
     (maximalIdeal (R ⧸ span {x})).spanFinrank + 1 = (maximalIdeal R).spanFinrank := by
+  have hxm : x ∈ maximalIdeal R :=
+    le_maximalIdeal (Ideal.Quotient.nontrivial_iff.mp inferInstance) (mem_span_singleton_self x)
   have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
     (mem_nonZeroDivisors_of_ne_zero hx0) hxm
   rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R)] at hdim
@@ -236,9 +238,13 @@ theorem span_singleton_isPrime_of_notMem_sq {f : R} (hfm : f ∈ maximalIdeal R)
 /-- In a regular local ring, a regular parameter `x ∈ 𝔪 \ 𝔪²` remains a nonzerodivisor modulo
 any `g ∉ (x)`, since `(x)` is prime. -/
 theorem apply_mem_nonZeroDivisors_of_ker_eq_span {A : Type*} [CommRing A] {x g : R}
-    (hxm : x ∈ maximalIdeal R) (hx2 : x ∉ maximalIdeal R ^ 2) (hg : g ∉ Ideal.span {x})
+    (hx2 : x ∉ maximalIdeal R ^ 2) (hg : g ∉ Ideal.span {x})
     (π : R →+* A) (hπ : Function.Surjective π) (hker : RingHom.ker π = Ideal.span {g}) :
     π x ∈ nonZeroDivisors A := by
+  have hxm : x ∈ maximalIdeal R := by
+    by_contra h
+    rw [IsLocalRing.notMem_maximalIdeal] at h
+    exact hg (by rw [Ideal.span_singleton_eq_top.2 h]; exact Submodule.mem_top)
   have hprime := span_singleton_isPrime_of_notMem_sq hxm hx2
   have hx0 : x ≠ 0 := fun h ↦ hx2 (h ▸ zero_mem _)
   -- If `r x ∈ (g)`, write `r x = t g`; then `t ∈ (x)` and cancelling `x` gives `r ∈ (g)`.

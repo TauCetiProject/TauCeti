@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Action
-public import TauCeti.Algebra.Homology.DG.Bimodule.Defs
+public import TauCeti.Algebra.Homology.DG.Bimodule.Category
 
 /-!
 # Cubical chains on a space with commuting left and right monoid actions
@@ -42,7 +42,8 @@ system.
 * `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
   action of `0`-chains.
 * `TauCeti.cubicalChainModule_isDGLeftModule`: the chains form a DG left module.
-* `TauCeti.cubicalChainModule_isDGBimodule`: with commuting actions, they form a DG bimodule.
+* `TauCeti.cubicalChainModule_isDGBimodule`: with commuting actions, they form a DG bimodule,
+  bundled as `TauCeti.cubicalChainBimoduleDG`.
 
 ## References
 
@@ -455,6 +456,12 @@ theorem cubicalChainModule_isDGBimodule :
       (cubicalChainModuleGrading Y H R) (cubicalChainModuleDifferential Y H R) where
   toIsDGLeftModule := cubicalChainModule_isDGLeftModule G Y H R
   leibniz_right := (cubicalChainModule_isDGRightModule Y H R).leibniz
+
+/-- The cubical chains of a space with commuting left and right actions of `G` and `H`, as an
+object of the category of DG `(C_*(G), C_*(H))`-bimodules. -/
+abbrev cubicalChainBimoduleDG :
+    DGBimoduleCat (cubicalChain_isDGAlgebra G R) (cubicalChain_isDGAlgebra H R) :=
+  DGBimoduleCat.of (cubicalChainModule_isDGBimodule G Y H R)
 
 end Bimodule
 

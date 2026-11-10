@@ -26,12 +26,6 @@ when `p.natDegree ≤ n`. -/
 theorem _root_.Polynomial.coeff_X_pow_mul_of_natDegree_le {R : Type*} [Semiring R]
     {p : R[X]} {n : ℕ} (hp : p.natDegree ≤ n) (l d : ℕ) :
     (X ^ l * p).coeff d = if l ≤ d ∧ d ≤ l + n then p.coeff (d - l) else 0 := by
-  rw [coeff_X_pow_mul']
-  by_cases h : l ≤ d
-  · by_cases h' : d ≤ l + n
-    · simp [h, h']
-    · have hz : p.coeff (d - l) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-      simp [h, h', hz]
-  · simp [h]
+  grind [coeff_X_pow_mul', coeff_eq_zero_of_natDegree_lt]
 
 end TauCeti

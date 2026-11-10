@@ -9,15 +9,31 @@ public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import TauCeti.Analysis.Calculus.Morse.ScalarComposition
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Manifold.Morse.Hessian
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Scalar reparametrization of manifold Morse functions
+
+For a scalar change of values `φ : ℝ → ℝ`, the differential of `φ ∘ f` is `φ'(f x)` times the
+differential of `f` (`TauCeti.mvfderiv_scalar_comp`), so the critical points of `φ ∘ f` are those
+of `f` together with the points where `f` takes a critical point of `φ`. At a critical point of
+`f` the critical Hessian of `φ ∘ f` is `φ'(f x)` times that of `f`. In particular, when
+`φ'(f x) = 0` it vanishes, so a scalar change with a critical point can turn a nondegenerate
+critical point into a degenerate one.
 
 A smooth scalar change of values with nonvanishing derivative preserves Morse functions.
 At a nondegenerate critical point a decreasing change complements the Morse index.
 In particular, for a nonnegative Morse exhaustion ρ, the reciprocal function `(1 + ρ)⁻¹`
 is Morse and its indices are complementary to those of ρ. This local statement does not
 assert properness of the reciprocal function or extension to a compactification.
+
+## Main results
+
+* `TauCeti.criticalPoints_scalar_comp`: the critical points of `φ ∘ f`.
+* `TauCeti.criticalHessian_scalar_comp`: the critical Hessian of `φ ∘ f` at a critical point
+  of `f`.
+* `TauCeti.IsMorse.scalar_comp`: a scalar change with nonzero derivative preserves Morse functions.
 
 ## References
 
@@ -63,16 +79,39 @@ theorem manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
 
 end IsManifoldNondegenerateCriticalPoint
 
-/-- On a boundaryless manifold, a scalar change with nonzero derivative preserves critical
-points. -/
-theorem mem_criticalPoints_scalar_comp_iff [I.Boundaryless]
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hφ' : deriv φ (f x) ≠ 0) :
+/-- A point is critical for `φ ∘ f` exactly when `φ` is critical at `f x` or `x` is critical
+for `f`. -/
+theorem mem_criticalPoints_scalar_comp_iff_or (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hφ : DifferentiableAt ℝ φ (f x)) :
+    x ∈ criticalPoints I (φ ∘ f) ↔ deriv φ (f x) = 0 ∨ x ∈ criticalPoints I f := by
+  rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_scalar_comp hf hφ, smul_eq_zero]
+
+/-- A scalar change with nonzero derivative preserves critical points. -/
+theorem mem_criticalPoints_scalar_comp_iff (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hφ' : deriv φ (f x) ≠ 0) :
     x ∈ criticalPoints I (φ ∘ f) ↔ x ∈ criticalPoints I f := by
-  rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
-    mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero, Function.comp_assoc]
-  apply fderiv_scalar_comp_eq_zero_iff
-  · exact mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mp hf
-  · simpa using hφ'
+  rw [mem_criticalPoints_scalar_comp_iff_or hf (differentiableAt_of_deriv_ne_zero hφ'),
+    or_iff_right hφ']
+
+/-- The critical points of `φ ∘ f` are the critical points of `f` together with the points where
+`f` takes a critical point of `φ`, that is, a value at which `φ'` vanishes. -/
+theorem criticalPoints_scalar_comp (hf : MDifferentiable I 𝓘(ℝ) f) (hφ : Differentiable ℝ φ) :
+    criticalPoints I (φ ∘ f) = f ⁻¹' {t | deriv φ t = 0} ∪ criticalPoints I f :=
+  Set.ext fun x ↦ mem_criticalPoints_scalar_comp_iff_or (hf x) (hφ (f x))
+
+/-- At a critical point of `f`, a scalar change of values scales the critical Hessian by
+`φ'(f x)`. -/
+theorem criticalHessian_scalar_comp [I.Boundaryless] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hφ : ContDiffAt ℝ 2 φ (f x)) (hx : x ∈ criticalPoints I f) :
+    criticalHessian I (φ ∘ f) x = deriv φ (f x) • criticalHessian I f x := by
+  have hφcoord : ContDiffAt ℝ 2 φ ((f ∘ (extChartAt I x).symm) (extChartAt I x x)) := by
+    simpa using hφ
+  rw [criticalHessian_def, criticalHessian_def, Function.comp_assoc,
+    fderiv_fderiv_scalar_comp_of_fderiv_eq_zero hφcoord hf.contDiffAt_comp_extChartAt_symm
+      (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.1 hx), comp_apply,
+    extChartAt_to_inv]
+  -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
+  rfl
 
 /-- A scalar change smooth near the values of a Morse function, with nonzero derivative there,
 preserves the property of being Morse on a set. -/

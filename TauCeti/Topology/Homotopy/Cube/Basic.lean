@@ -260,6 +260,11 @@ theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
     cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
   (rfl)
 
+/-- The straight-line contraction of the cube fixes its corner `0` at all times. -/
+@[simp]
+theorem cubeContraction_apply_zero (N : Type*) (t : I) : cubeContraction N (t, 0) = 0 :=
+  funext fun _ => by rw [cubeContraction_apply]; exact Set.Icc.convexComb_eq _ _
+
 /-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
 instance (N : Type*) : ContractibleSpace (N → I) :=
   (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩

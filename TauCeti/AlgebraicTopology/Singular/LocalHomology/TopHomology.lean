@@ -25,10 +25,11 @@ transport-invariant families of local homology classes, the global sections of t
 system. This is Hatcher's description of `Hₙ(M; R)` by sections of the covering space `M_R`.
 
 If `M` is moreover connected, a transport-invariant family is determined by its value at one point
-`x`. So the restriction `Hₙ(M) ⟶ Hₙ(M, M ∖ {x})` is injective, and its image consists of the local
-classes fixed by the transport along every loop at `x`
-(`TauCeti.mem_range_localHomologySystemCone_π_app_iff`). In particular, for a compact simply
-connected manifold the restriction is an isomorphism
+`x`. So the restriction `Hₙ(M) ⟶ Hₙ(M, M ∖ {x})` is injective
+(`TauCeti.localHomologySystemCone_π_app_injective`). Its image consists of the local classes fixed
+by the transport along every loop at `x`
+(`TauCeti.mem_range_localHomologySystemCone_π_app_iff`), with no connectedness needed. In
+particular, for a compact simply connected manifold the restriction is an isomorphism
 (`TauCeti.isIso_localHomologySystemCone_π_app`), so that `Hₙ(M; N) ≅ N` for `n > 0`
 (`TauCeti.singularHomologyIsoOfSimplyConnectedSpace`).
 
@@ -41,9 +42,9 @@ No orientability hypothesis is involved: orientability enters only through the a
   the local homology system.
 * `TauCeti.isLimitLocalHomologySystemCone`: for compact `M`, the cone is a limit in degree `n`.
 * `TauCeti.localHomologySystemCone_π_app_injective` and
-  `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact connected `M`, restriction
-  to a point is injective in degree `n`, with image the classes invariant under transport along
-  loops.
+  `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact `M`, restriction to a point
+  has image the classes invariant under transport along loops in degree `n`, and it is injective
+  if `M` is connected.
 * `TauCeti.isIso_localHomologySystemCone_π_app` and
   `TauCeti.singularHomologyIsoOfSimplyConnectedSpace`: for compact simply connected `M`,
   `Hₙ(M) ≅ Hₙ(M, M ∖ {x}) ≅ N`.
@@ -118,34 +119,46 @@ theorem localHomologySystemCone_π_app_injective [CompactSpace M] [ConnectedSpac
   let f : x ⟶ y := Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
   rw [← Cone.w _ f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h]
 
-/-- **The image of the top homology of a compact connected manifold in local homology.** A local
+/-- **The image of the top homology of a compact manifold in local homology.** A local
 class at `x` is the restriction of a class of `Hₙ(M, M ∖ M; N)` exactly when it is fixed by the
-transport of local homology along every loop at `x`. -/
-theorem mem_range_localHomologySystemCone_π_app_iff [CompactSpace M] [ConnectedSpace M] {n : ℕ}
+transport of local homology along every loop at `x`. Connectedness is not needed: off the path
+component of `x` the family of local classes is extended by zero. -/
+theorem mem_range_localHomologySystemCone_π_app_iff [CompactSpace M] {n : ℕ}
     (hn : finrank ℝ E = n) (x : FundamentalGroupoid M)
     (z : (localHomology N {x.as} n : ModuleCat.{w} Λ)) :
     z ∈ range ((localHomologySystemCone N M E n).π.app x) ↔
       ∀ g : x ⟶ x, localHomologyTransport N M E n g z = z := by
-  have := ChartedSpace.locallyPathConnectedSpace E M
-  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
   constructor
   · rintro ⟨γ, rfl⟩ g
     exact ConcreteCategory.congr_hom ((localHomologySystemCone N M E n).w g) γ
   · intro hz
-    -- Spread `z` over `M` by transport along chosen paths out of `x`.
-    let p (y : FundamentalGroupoid M) : x ⟶ y :=
-      Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
-    have hp {y y' : FundamentalGroupoid M} (f : y ⟶ y') :
-        localHomologyTransport N M E n f (localHomologyTransport N M E n (p y) z) =
-          localHomologyTransport N M E n (p y') z := by
-      -- `p y ≫ f` is the loop `p y ≫ f ≫ inv (p y')` at `x`, followed by `p y'`.
-      have hf : p y ≫ f = (p y ≫ f ≫ inv (p y')) ≫ p y' := by simp
+    classical
+    -- Spread `z` over the path component of `x` by transport along chosen paths out of `x`,
+    -- and by zero elsewhere.
+    let p {y : FundamentalGroupoid M} (h : Joined x.as y.as) : x ⟶ y :=
+      Path.Homotopic.Quotient.mk h.somePath
+    have hp {y y' : FundamentalGroupoid M} (h : Joined x.as y.as) (h' : Joined x.as y'.as)
+        (f : y ⟶ y') :
+        localHomologyTransport N M E n f (localHomologyTransport N M E n (p h) z) =
+          localHomologyTransport N M E n (p h') z := by
+      -- `p h ≫ f` is the loop `p h ≫ f ≫ inv (p h')` at `x`, followed by `p h'`.
+      have hf : p h ≫ f = (p h ≫ f ≫ inv (p h')) ≫ p h' := by simp
       rw [← ConcreteCategory.comp_apply, ← localHomologyTransport_comp, hf,
         localHomologyTransport_comp, ConcreteCategory.comp_apply, hz]
     obtain ⟨γ, hγ, -⟩ := existsUnique_localHomologyRestriction_eq_of_invariant N hn
-      isCompact_univ (fun y ↦ localHomologyTransport N M E n (p (FundamentalGroupoid.mk y)) z)
-      fun f ↦ hp f
-    exact ⟨γ, (hγ x.as (mem_univ _)).trans (hz (p x))⟩
+      isCompact_univ
+      (fun y ↦ if h : Joined x.as y then
+        localHomologyTransport N M E n (p (y := FundamentalGroupoid.mk y) h) z else 0)
+      fun {y y'} f ↦ by
+        have hyy' : Joined y.as y'.as := Quotient.inductionOn f fun q ↦ ⟨q⟩
+        by_cases h : Joined x.as y.as
+        · have h' := h.trans hyy'
+          simp only [h, h', dite_true]
+          exact hp h h' f
+        · have h' : ¬ Joined x.as y'.as := fun h' ↦ h (h'.trans hyy'.symm)
+          simp only [h, h', dite_false, map_zero]
+    refine ⟨γ, (hγ x.as (mem_univ _)).trans ?_⟩
+    simpa only [Joined.refl x.as, dite_true] using hz (p (Joined.refl x.as))
 
 /-- **The top homology of a compact simply connected manifold is local homology at a point.**
 For a compact simply connected Hausdorff space modelled on a real normed space of finite dimension

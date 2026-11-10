@@ -130,10 +130,7 @@ theorem IsMaximalTorus.exists_map_conj_eq {S T : Subgroup G} (hS : IsMaximalToru
     (hT : IsMaximalTorus T) : ∃ g : G, S.map (MulAut.conj g).toMonoidHom = T := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   obtain ⟨g, hg⟩ := hT.exists_map_conj_le I hS.isTorus
-  have hmax := hS.map_mulEquiv (MulAut.conj g) (IsTopologicalGroup.continuous_conj g)
-    ((by fun_prop : Continuous fun x ↦ g⁻¹ * x * g).congr fun x ↦
-      (MulAut.conj_symm_apply g x).symm)
-  exact ⟨g, hmax.eq_of_le hT.isTorus hg⟩
+  exact ⟨g, (hS.map_conj g).eq_of_le hT.isTorus hg⟩
 
 end Conjugacy
 
