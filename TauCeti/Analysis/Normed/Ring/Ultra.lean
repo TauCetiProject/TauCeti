@@ -330,15 +330,6 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametri
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
-/-- A nonempty finite product is bounded by the product of the norms, in any seminormed ring. -/
-private theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
-    {s : Finset ι} (hs : s.Nonempty) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton a => simp
-  | cons a s ha hs ih =>
-    rw [Finset.prod_cons, Finset.prod_cons]
-    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
-
 /-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
 their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
 so the statement includes the empty product and `M = 0`. -/
@@ -354,7 +345,7 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
     have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm_of_nonempty hs f
+      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs f
         _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
           fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
         _ = M ^ s.card := Finset.prod_const _
