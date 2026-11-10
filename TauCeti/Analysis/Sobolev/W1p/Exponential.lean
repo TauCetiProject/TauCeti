@@ -246,18 +246,8 @@ private theorem W1p.lintegral_exp_value_ofTestFunctionₗ_sub_one_sq_le (hE : fi
       ENNReal.ofReal (4 * ‖W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ)‖ ^ 2) := by
   set U := W1p.ofTestFunctionₗ μ ⊤ 2 ψ
   have hv : (W1p.value U : E → ℝ) =ᵐ[μ] ψ := W1p.value_ofTestFunctionₗ_top_ae ψ
-  have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (ψ : E → ℝ) :=
-    W1p.gradient_ofTestFunctionₗ_top_ae ψ
-  have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (ψ x) ^ 2 ∂μ := by
-    rw [← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-    exact integral_congr_ae (hv.mono fun x hx ↦ by simp only [hx])
-  have hgrad : ‖W1p.gradient U‖ ^ 2 = ∫ x, ‖fderiv ℝ ψ x‖ ^ 2 ∂μ := by
-    rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-    exact integral_congr_ae (hg.mono fun x hx ↦ by simp only [hx, norm_gradient_eq_norm_fderiv])
-  rw [hgrad] at hψ
-  rw [hvalue]
+  rw [W1p.norm_gradient_ofTestFunctionₗ_top_sq] at hψ
+  rw [W1p.norm_value_ofTestFunctionₗ_top_sq]
   refine (lintegral_congr_ae (hv.mono fun x hx ↦ ?_)).trans_le
     (lintegral_exp_sub_one_sq_le μ hE (ψ.contDiff.of_le (by exact_mod_cast le_top))
       ψ.hasCompactSupport hψ)

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
+public import TauCeti.Analysis.PDE.Vortex.Variational
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
@@ -80,16 +81,17 @@ open scoped SchwartzMap RealInnerProductSpace Gradient Laplacian Distributions Z
   ContDiff
 
 /-- The right-hand side `(exp (2w) h - 1) / 8 + g` of the reduced vortex equation for the zero
-divisor of `P`, where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. -/
+divisor of `P`, where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. It is written as
+`h (exp (2w) - 1) / 8 + k`, with `h = TauCeti.Vortex.backgroundWeight` and
+`k = (h - 1) / 8 + g = TauCeti.Vortex.backgroundSource` its value at `w = 0`. -/
 def reducedSource (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) : ℝ :=
-  (Real.exp (2 * w z) * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)) - 1) / 8 +
-    2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2
+  backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 + backgroundSource (P.eval ·) z
 
 /-- The defining formula of `TauCeti.Vortex.reducedSource`. -/
 theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
     reducedSource P w z =
-      (Real.exp (2 * w z) * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)) - 1) / 8 +
-        2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := (rfl)
+      backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 +
+        backgroundSource (P.eval ·) z := (rfl)
 
 variable {P : Polynomial ℂ}
 
@@ -98,11 +100,12 @@ degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
 theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (reducedSource P (W1p.value u)) 2 volume := by
   have hE : finrank ℝ ℂ = 2 := Complex.finrank_real_complex
-  set h : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)
-  have hh0 (z : ℂ) : 0 ≤ h z := by positivity
-  have hh1 (z : ℂ) : h z ≤ 1 := div_le_one_of_le₀ (by linarith) (by positivity)
-  have hhc : Continuous h :=
-    Continuous.div (by fun_prop) (by fun_prop) fun z ↦ by positivity
+  set h : ℂ → ℝ := backgroundWeight (P.eval ·)
+  have hh0 (z : ℂ) : 0 ≤ h z := backgroundWeight_nonneg _ z
+  have hh1 (z : ℂ) : h z ≤ 1 := by
+    rw [show h z = _ from backgroundWeight_def _ z]
+    exact div_le_one_of_le₀ (by linarith) (by positivity)
+  have hhc : Continuous h := continuous_backgroundWeight P.continuous
   -- `exp (2w) - 1 ∈ L²`, from the value of `2 • u`.
   have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
     have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
@@ -118,7 +121,8 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
   have hpos : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2 := by positivity
-  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, h]
+  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, backgroundSource_def,
+    backgroundWeight_def, Polynomial.deriv, h]
   field_simp
   ring
 
@@ -148,7 +152,7 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
       ∫ z, Δ (φ : ℂ → ℝ) z * f z = ∫ z, φ z * reducedSource P f z := by
     let φ' : 𝓓((⊤ : TopologicalSpace.Opens ℂ), ℝ) :=
       ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
-    have hcoe : (φ' : ℂ → ℝ) = φ := rfl
+    have hcoe : (φ' : ℂ → ℝ) = φ := TestFunction.coe_mk
     have hibp := (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ'
     simp only [TopologicalSpace.Opens.coe_top, smul_eq_mul, hcoe] at hibp
     have h := hu φ (φ.smooth ⊤) hφ

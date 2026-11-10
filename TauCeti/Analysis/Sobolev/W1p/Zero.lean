@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -131,6 +132,24 @@ theorem W1p.gradient_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ))
   have h := gradientTestFunctionLp_apply_ae (mu := mu) (Omega := ⊤) p phi
   simp only [Opens.coe_top, Measure.restrict_univ] at h
   exact h
+
+/-- On the whole space, the squared `L²` norm of the value of an embedded test function is
+`∫ φ²`. -/
+theorem W1p.norm_value_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.value (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, phi x ^ 2 ∂mu := by
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx])
+
+/-- On the whole space, the squared `L²` norm of the gradient of an embedded test function is
+`∫ ‖Dφ‖²`. -/
+theorem W1p.norm_gradient_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, ‖fderiv ℝ phi x‖ ^ 2 ∂mu := by
+  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx, norm_gradient_eq_norm_fderiv])
 
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured
