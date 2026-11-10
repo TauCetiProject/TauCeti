@@ -9,7 +9,6 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.NumberTheory.FrobeniusNumber
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
-public import TauCeti.Probability.Kernel.Reachability
 
 /-!
 # The period of a state of a Markov chain
