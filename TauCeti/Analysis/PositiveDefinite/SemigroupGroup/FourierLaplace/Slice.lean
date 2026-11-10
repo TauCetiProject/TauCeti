@@ -151,11 +151,20 @@ theorem spatialSlice_apply_eq_ofReal_integral (μ : Measure (ℝ≥0 × V)) [IsF
   simp_rw [ENNReal.ofNNReal_toNNReal]
 
 /-- The real-valued mass of a measurable set under a spatial slice. -/
-theorem spatialSlice_real_apply (μ : Measure (ℝ≥0 × V)) [IsFiniteMeasure μ] (t : ℝ≥0)
+theorem spatialSlice_real_apply (μ : Measure (ℝ≥0 × V)) (t : ℝ≥0)
     {B : Set V} (hB : MeasurableSet B) :
     (spatialSlice μ t).real B = ∫ y in Prod.snd ⁻¹' B, Real.exp (-(t : ℝ) * (y.1 : ℝ)) ∂μ := by
-  rw [measureReal_def, spatialSlice_apply_eq_ofReal_integral μ t hB,
-    ENNReal.toReal_ofReal (integral_nonneg fun _ => (Real.exp_pos _).le)]
+  rw [measureReal_def, spatialSlice_apply μ t hB]
+  simp_rw [ENNReal.ofNNReal_toNNReal]
+  by_cases hint : Integrable (fun y : ℝ≥0 × V => Real.exp (-(t : ℝ) * (y.1 : ℝ)))
+      (μ.restrict (Prod.snd ⁻¹' B))
+  · rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun y => (Real.exp_pos _).le),
+      ENNReal.toReal_ofReal (integral_nonneg fun _ => (Real.exp_pos _).le)]
+  · rw [integral_undef hint]
+    have htop : ∫⁻ y in Prod.snd ⁻¹' B, ENNReal.ofReal (Real.exp (-(t : ℝ) * (y.1 : ℝ))) ∂μ = ⊤ :=
+      not_not.1 fun h => hint ((lintegral_ofReal_ne_top_iff_integrable (by fun_prop)
+        (.of_forall fun y => (Real.exp_pos _).le)).1 h)
+    rw [htop, ENNReal.toReal_top]
 
 /-- At time `0` the Laplace weight is trivial, so the spatial slice is the spatial marginal. -/
 @[simp]
@@ -165,6 +174,12 @@ theorem spatialSlice_zero (μ : Measure (ℝ≥0 × V)) : spatialSlice μ 0 = μ
     funext y
     simp
   rw [spatialSlice, hone, withDensity_one]
+
+/-- A measure on `ℝ≥0 × V` is finite as soon as its spatial slice at time `0`, which is its
+spatial marginal, is. -/
+theorem isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero (μ : Measure (ℝ≥0 × V))
+    [IsFiniteMeasure (spatialSlice μ 0)] : IsFiniteMeasure μ :=
+  ⟨by rw [← Measure.snd_univ, ← spatialSlice_zero]; exact measure_lt_top _ _⟩
 
 /-- Every spatial slice of the zero measure is the zero measure. -/
 @[simp]
@@ -230,7 +245,12 @@ Berg--Christensen--Ressel representation to the prescribed-slices problem: the r
 measure is the unique finite measure whose spatial slices are the Bochner measures of the time
 slices. -/
 theorem Measure.ext_of_forall_spatialSlice_eq {μ ν : Measure (ℝ≥0 × V)} [IsFiniteMeasure μ]
-    [IsFiniteMeasure ν] (hslice : ∀ t : ℝ≥0, spatialSlice μ t = spatialSlice ν t) : μ = ν := by
+    (hslice : ∀ t : ℝ≥0, spatialSlice μ t = spatialSlice ν t) : μ = ν := by
+  -- The slice at time `0` is the spatial marginal, so `ν` is finite too.
+  have : IsFiniteMeasure (spatialSlice ν 0) := by
+    rw [← hslice 0]
+    infer_instance
+  have := isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero ν
   -- Step 1: Laplace determinacy on `ℝ≥0` identifies every measurable rectangle.
   have hrect : ∀ B : Set V, MeasurableSet B → ∀ A : Set ℝ≥0, MeasurableSet A →
       μ (A ×ˢ B) = ν (A ×ˢ B) := by
@@ -318,41 +338,49 @@ theorem RepresentsLaplaceFourier.spatialSlice_eq (h : RepresentsLaplaceFourier �
   eq_bochnerMeasure _ fun a => by
     rw [integral_fourierAtom_spatialSlice, ← h.eq_laplaceFourierTransform (t, a)]
 
-/-- **The converse.** A finite measure whose spatial slices are the Bochner measures of the
-continuous positive-definite time slices of `F` represents `F`. Positive definiteness and
+/-- **The converse.** A measure whose spatial slices are the Bochner measures of the
+continuous positive-definite time slices of `F` represents `F`; it is finite, since its spatial
+marginal is the Bochner measure at time `0`. Positive definiteness and
 continuity enter through Bochner's theorem, which is what makes those Bochner measures represent
 the slices. -/
-theorem representsLaplaceFourier_of_forall_spatialSlice_eq (hμ : IsFiniteMeasure μ)
+theorem representsLaplaceFourier_of_forall_spatialSlice_eq
     (hFpd : ∀ t : ℝ≥0, IsPositiveDefiniteSub fun a => F (t, a))
     (hFcont : ∀ t : ℝ≥0, Continuous fun a => F (t, a))
     (h : ∀ t : ℝ≥0, spatialSlice μ t = bochnerMeasure fun a => F (t, a)) :
     RepresentsLaplaceFourier μ F := by
-  refine representsLaplaceFourier_iff.mpr ⟨hμ, fun x => ?_⟩
+  have : IsFiniteMeasure (spatialSlice μ 0) := by
+    rw [h 0]
+    infer_instance
+  refine representsLaplaceFourier_iff.mpr ⟨isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero μ,
+    fun x => ?_⟩
   rw [← Prod.mk.eta (p := x), ← integral_fourierAtom_spatialSlice, h x.1,
     integral_fourierAtom_bochnerMeasure (hFcont x.1) (hFpd x.1) x.2]
 
-/-- **The slice criterion for the Berg--Christensen--Ressel representation.** A finite measure
+/-- **The slice criterion for the Berg--Christensen--Ressel representation.** A measure
 on `ℝ≥0 × V` represents `F` by its Laplace--Fourier transform if and only if each of its spatial
 slices is the Bochner measure of the corresponding continuous positive-definite time slice of
 `F`. The existence half of the representation theorem is exactly the problem of producing a
-finite measure with these prescribed slices. -/
-theorem representsLaplaceFourier_iff_forall_spatialSlice_eq (hμ : IsFiniteMeasure μ)
+measure with these prescribed slices. -/
+theorem representsLaplaceFourier_iff_forall_spatialSlice_eq
     (hFpd : ∀ t : ℝ≥0, IsPositiveDefiniteSub fun a => F (t, a))
     (hFcont : ∀ t : ℝ≥0, Continuous fun a => F (t, a)) :
     RepresentsLaplaceFourier μ F ↔
       ∀ t : ℝ≥0, spatialSlice μ t = bochnerMeasure fun a => F (t, a) :=
   ⟨fun h => h.spatialSlice_eq,
-    representsLaplaceFourier_of_forall_spatialSlice_eq hμ hFpd hFcont⟩
+    representsLaplaceFourier_of_forall_spatialSlice_eq hFpd hFcont⟩
 
-omit [FiniteDimensional ℝ V] in
+omit [FiniteDimensional ℝ V] [BorelSpace V] in
 /-- The total mass of the spatial slice at `t` is the value of `F` on the time axis. -/
 theorem RepresentsLaplaceFourier.spatialSlice_real_univ (h : RepresentsLaplaceFourier μ F)
     (t : ℝ≥0) : (spatialSlice μ t).real univ = (F (t, 0)).re := by
-  have := h.isFiniteMeasure
   have hrep := h.eq_laplaceFourierTransform (t, 0)
-  rw [← integral_fourierAtom_spatialSlice μ t 0] at hrep
-  simp only [fourierAtom_zero_left, integral_const, Complex.real_smul, mul_one] at hrep
-  rw [hrep, Complex.ofReal_re]
+  rw [spatialSlice_real_apply μ t MeasurableSet.univ, preimage_univ, Measure.restrict_univ,
+    hrep, laplaceFourierTransform_apply]
+  have hatom (y : ℝ≥0 × V) : laplaceAtom (t, (0 : V)).1 y.1 * fourierAtom (t, (0 : V)).2 y.2 =
+      ((Real.exp (-(t : ℝ) * (y.1 : ℝ)) : ℝ) : ℂ) := by
+    rw [fourierAtom_zero_left, mul_one, laplaceAtom_comm, laplaceAtom_def]
+  simp_rw [hatom]
+  rw [integral_complex_ofReal, Complex.ofReal_re]
 
 /-- **The Bochner measures of the time slices have Laplace-transform masses.** Reading
 `TauCeti.representsLaplace_timeMarginal` through the identification of the spatial slices with
