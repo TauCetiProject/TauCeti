@@ -24,6 +24,10 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
   recovered from its coordinates.
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
+* `TauCeti.TopCat.diskCylinderPath`: the straight-line homotopy in the cylinder `I × D^k` from
+  `w ↦ (1 - s, w / max d ‖w‖)`, with `s` the radial parameter of `w`, to `w ↦ (0, w)`. It fixes
+  the boundary sphere, and reads a map glued by `TauCeti.TopCat.discGlue` from a homotopy of
+  maps of the disk back as the end of that homotopy.
 -/
 
 public section
@@ -231,5 +235,55 @@ theorem discGlue_mem_of_norm_eq_one (hd : 0 < d)
     rw [discGlue_apply_of_le_norm hd A B hAB p (not_le.1 h).le,
       annulusParam_of_norm_eq_one hd₁ hw]
     exact hB _ _
+
+
+/-- The end of the radial push with radius `d` sends the point `d • θ` of the ball of radius `d`
+to the point `θ` of the boundary sphere. -/
+theorem diskRadialPush_one_smul_diskBoundary (hd : 0 < d) (θ : TopCat.diskBoundary.{u} k)
+    (hθ : d • (θ.down : EuclideanSpace ℝ (Fin k)) ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
+    diskRadialPush k hd.le (1, ULift.up ⟨d • θ.down.1, hθ⟩) = TopCat.diskBoundaryInclusion k θ := by
+  have hθd : ‖d • (θ.down : EuclideanSpace ℝ (Fin k))‖ ≤ d :=
+    mem_closedBall_zero_iff.1 (smul_diskBoundary_mem_closedBall hd.le θ)
+  refine ULift.ext (Subtype.ext ?_)
+  rw [coe_diskRadialPush_one_of_norm_le (x := ULift.up ⟨d • θ.down.1, hθ⟩) hd.le hθd,
+    smul_smul, inv_mul_cancel₀ hd.ne', one_smul]
+  exact (TopCat.coe_diskBoundaryInclusion_apply_down k θ).symm
+
+/-- The straight-line homotopy in the cylinder `I × D^k`, for `0 ≤ d`, from the map
+`w ↦ (1 - s, w / max d ‖w‖)` at time `0`, where `s` is the radial parameter of `w`, to the map
+`w ↦ (0, w)` at time `1`. Its disk coordinate is the radial push with radius `d`, run backwards. -/
+def diskCylinderPath (k : ℕ) (hd : 0 ≤ d) : C(TopCat.disk.{u} k × I, I × TopCat.disk.{u} k) where
+  toFun p := (⟨(1 - (p.2 : ℝ)) * σ (annulusParam d p.1),
+      mul_mem (symm p.2).2 (σ (annulusParam d p.1)).2⟩,
+    diskRadialPush k hd (σ p.2, p.1))
+  continuous_toFun := by
+    have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
+      continuous_subtype_val.comp continuous_snd
+    exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
+      (continuous_symm.comp (continuous_annulusParam.comp continuous_fst))))).subtype_mk _)
+      ((diskRadialPush k hd).continuous.comp
+        ((continuous_symm.comp continuous_snd).prodMk continuous_fst))
+
+/-- At time `0` the cylinder path is `w ↦ (1 - s, w / max d ‖w‖)`. -/
+@[simp]
+theorem diskCylinderPath_zero (hd : 0 ≤ d) (w : TopCat.disk.{u} k) :
+    diskCylinderPath k hd (w, 0) = (σ (annulusParam d w), diskRadialPush k hd (1, w)) := by
+  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath]
+
+/-- At time `1` the cylinder path is `w ↦ (0, w)`. -/
+@[simp]
+theorem diskCylinderPath_one (hd : 0 ≤ d) (w : TopCat.disk.{u} k) :
+    diskCylinderPath k hd (w, 1) = (0, w) := by
+  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath]
+
+/-- For `0 < d < 1`, the cylinder path fixes the boundary sphere, at the bottom `0` of the
+cylinder. -/
+theorem diskCylinderPath_diskBoundaryInclusion (hd : 0 < d) (hd₁ : d < 1)
+    (s : TopCat.diskBoundary.{u} k) (t : I) :
+    diskCylinderPath k hd.le (TopCat.diskBoundaryInclusion k s, t) =
+      (0, TopCat.diskBoundaryInclusion k s) := by
+  refine Prod.ext (Subtype.ext ?_) ?_
+  · simp [diskCylinderPath, annulusParam_of_norm_eq_one hd₁ (norm_diskBoundaryInclusion s)]
+  · exact diskRadialPush_diskBoundaryInclusion hd hd₁.le _ s
 
 end TauCeti.TopCat

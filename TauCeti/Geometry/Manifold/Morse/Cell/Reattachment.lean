@@ -110,17 +110,6 @@ private theorem coe_diskRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.dow
   rw [diskRadial, TopCat.coe_diskRadialPush_one_of_norm_le _ hw]
   norm_num
 
-/-- The point `2 • (1/2) • θ = θ` of the boundary sphere, for `θ` on the boundary sphere. -/
-private theorem diskRadial_half_smul (θ : TopCat.diskBoundary.{u} k)
-    (hθ : (1 / 2 : ℝ) • θ.down.1 ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
-    diskRadial (ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) = TopCat.diskBoundaryInclusion k θ := by
-  have hθ' : ‖(1 / 2 : ℝ) • θ.down.1‖ ≤ 1 / 2 :=
-    mem_closedBall_zero_iff.1 (TopCat.smul_diskBoundary_mem_closedBall (by norm_num) θ)
-  refine ULift.ext (Subtype.ext ?_)
-  rw [coe_diskRadial_of_norm_le (w := ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) hθ', smul_smul,
-    show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul]
-  exact (TopCat.coe_diskBoundaryInclusion_apply_down _ _).symm
-
 /-- The time part `x ↦ 2 - 2‖x‖`, clamped to `[0, 1]`, of the map from the disc to the cylinder:
 the reversed radial parameter of the annulus `1/2 ≤ ‖x‖`. It is `1` on the disc of radius `1/2`
 and `0` on the boundary sphere. -/
@@ -144,36 +133,6 @@ private theorem diskTime_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
     diskTime (TopCat.diskBoundaryInclusion k s) = 0 := by
   rw [diskTime, TopCat.annulusParam_of_norm_eq_one (by norm_num)
     (TopCat.norm_diskBoundaryInclusion s), symm_one]
-
-/-- The straight-line homotopy in the cylinder `I × D^k` from `x ↦ (diskTime x, diskRadial x)` at
-time `0` to `x ↦ (0, x)` at time `1`. Its disc coordinate is the radial push
-`TauCeti.TopCat.diskRadialPush` with radius `1/2`, run backwards. -/
-private def diskCylinderPath (p : TopCat.disk.{u} k × I) : I × TopCat.disk.{u} k :=
-  (⟨(1 - (p.2 : ℝ)) * diskTime p.1, mul_mem (symm p.2).2 (diskTime p.1).2⟩,
-    TopCat.diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (σ p.2, p.1))
-
-private theorem continuous_diskCylinderPath : Continuous (diskCylinderPath.{u} (k := k)) := by
-  have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
-  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
-    (continuous_diskTime.comp continuous_fst))).subtype_mk _))
-    ((TopCat.diskRadialPush k _).continuous.comp
-      ((continuous_symm.comp continuous_snd).prodMk continuous_fst))
-
-private theorem diskCylinderPath_zero (w : TopCat.disk.{u} k) :
-    diskCylinderPath (w, 0) = (diskTime w, diskRadial w) := by
-  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath, diskRadial]
-
-private theorem diskCylinderPath_one (w : TopCat.disk.{u} k) :
-    diskCylinderPath (w, 1) = (0, w) := by
-  refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [diskCylinderPath]
-
-private theorem diskCylinderPath_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) (t : I) :
-    diskCylinderPath (TopCat.diskBoundaryInclusion k s, t) =
-      (0, TopCat.diskBoundaryInclusion k s) := by
-  refine Prod.ext (Subtype.ext ?_) ?_
-  · simp [diskCylinderPath, diskTime_diskBoundaryInclusion]
-  · exact TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num) _ s
 
 end Cylinder
 
@@ -216,7 +175,9 @@ private def morseCellReattachmentFun (i : ι) :
             ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.comp
               (continuous_snd.comp continuous_snd))))).subtype_mk _)⟩
     fun _ θ ↦ by
-      simp only [ContinuousMap.coe_mk, symm_zero, diskRadial_half_smul]
+      simp only [ContinuousMap.coe_mk, symm_zero]
+      rw [show diskRadial _ = TopCat.diskBoundaryInclusion (k i) θ from
+        TopCat.diskRadialPush_one_smul_diskBoundary (by norm_num) θ _]
       obtain ⟨s, hs⟩ := hh i ⟨θ, rfl⟩
       -- At the seam `K i (1, ·) = χ₀ i ∘ h i`, and `h i` lands on the boundary sphere.
       have hseam : (⟨K i (1, TopCat.diskBoundaryInclusion (k i) θ), hK i _ θ⟩ :
@@ -361,10 +322,12 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
   -- `x ↦ (diskTime x, diskRadial x)` to `x ↦ (0, x)`, which fixes the boundary sphere.
   let G := morseCellAttachmentProdDesc φ₁ k hk hball₁ hf₁ hε
     ((sublevelInclusion f (c - ε) (c + ε) hab).comp ContinuousMap.snd)
-    (fun i ↦ ⟨fun p ↦ K i (diskCylinderPath (p.2, p.1)),
-      (K i).continuous.comp (continuous_diskCylinderPath.comp continuous_swap)⟩)
+    (fun i ↦ ⟨fun p ↦ K i (TopCat.diskCylinderPath (k i) (by norm_num : (0 : ℝ) ≤ 1 / 2)
+        (p.2, p.1)),
+      (K i).continuous.comp ((TopCat.diskCylinderPath _ _).continuous.comp continuous_swap)⟩)
     fun i t s ↦ Subtype.ext <| by
-      rw [ContinuousMap.coe_mk, diskCylinderPath_diskBoundaryInclusion,
+      rw [ContinuousMap.coe_mk,
+        TopCat.diskCylinderPath_diskBoundaryInclusion (by norm_num) (by norm_num),
         ContinuousMap.Homotopy.apply_zero, ContinuousMap.comp_apply, ContinuousMap.snd_apply,
         coe_sublevelInclusion_apply]
       exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
@@ -374,7 +337,8 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
     (congrArg Subtype.val (morseCellAttachmentProdDesc_morseCellAttachmentIncl ..)).trans
       (coe_sublevelInclusion_apply f hab x)
   have hG₁ (t : I) (i : ι) (w : TopCat.disk.{u} (k i)) :
-      G (t, morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) = K i (diskCylinderPath (w, t)) :=
+      G (t, morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
+        K i (TopCat.diskCylinderPath (k i) (by norm_num : (0 : ℝ) ≤ 1 / 2) (w, t)) :=
     morseCellAttachmentProdDesc_morseCellAttachmentCell ..
   have hcover :=
     range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell φ₁ k hk hball₁ hf₁ hε
@@ -392,15 +356,17 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
         coe_morseCellComparison_morseCellAttachmentIncl]
     obtain ⟨i, w, rfl⟩ := mem_iUnion.1 ha
     refine Subtype.ext ?_
-    rw [hG₁, diskCylinderPath_zero,
+    rw [hG₁, TopCat.diskCylinderPath_zero,
       coe_morseCellComparison_morseCellReattachment_morseCellAttachmentCell]
+    -- `diskTime` and `diskRadial` are defined as the two components of the path at time `0`.
+    rfl
   -- At time `1` the cylinder path is `x ↦ (0, x)`, along which `K i` is `χ₁ i`.
   · obtain ⟨x, rfl⟩ | ha := hcover.symm ▸ mem_univ a
     · refine Subtype.ext ?_
       rw [hG₀, coe_morseCellComparison_morseCellAttachmentIncl]
     obtain ⟨i, w, rfl⟩ := mem_iUnion.1 ha
     refine Subtype.ext ?_
-    rw [hG₁, diskCylinderPath_one, coe_morseCellComparison_morseCellAttachmentCell,
+    rw [hG₁, TopCat.diskCylinderPath_one, coe_morseCellComparison_morseCellAttachmentCell,
       ContinuousMap.Homotopy.apply_zero]
     exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₁ i) (hf₁ i) (hk i) hε _
   -- On the lower sublevel the homotopy is constant.
