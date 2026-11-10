@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
+public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 
 /-!
 # Reindexing infinite sums between the integers and natural numbers
@@ -25,8 +26,6 @@ consecutive terms.
   their sum.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
-* `HasProd.prod_fiberwise_of_fintype`: a family on `β × γ` for a finite type `γ` has the same
-  product as the products of its finite fibers, with no hypothesis on the topology of the target.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
   `qM + r`, `r < M`.
 * `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
@@ -87,23 +86,6 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
   simpa [NeZero.ne M] using h
 
 end TauCeti
-
-/-- **Summing over the finite fibers of a product**: if a family `f` on `β × γ`, for a finite type
-`γ`, has product `a`, then so does the family of products `b ↦ ∏_c f (b, c)` over the fibers. No
-continuity of the multiplication and no separation axiom is needed, since the fibers are finite. -/
-@[to_additive /-- **Summing over the finite fibers of a product**: if a family `f` on `β × γ`, for
-a finite type `γ`, has sum `a`, then so does the family of sums `b ↦ ∑_c f (b, c)` over the fibers.
-No continuity of the addition and no separation axiom is needed, since the fibers are finite. -/]
-theorem HasProd.prod_fiberwise_of_fintype {β γ E : Type*} [CommMonoid E] [TopologicalSpace E]
-    [Fintype γ] {f : β × γ → E} {a : E} (hf : HasProd f a) :
-    HasProd (fun b ↦ ∏ c, f (b, c)) a := by
-  classical
-  have h : Filter.Tendsto (fun T : Finset β ↦ T ×ˢ (Finset.univ : Finset γ)) Filter.atTop
-      Filter.atTop := by
-    refine Filter.tendsto_atTop_atTop.2 fun S ↦ ⟨S.image Prod.fst, fun T hT x hx ↦ ?_⟩
-    exact Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
-  rw [HasProd, SummationFilter.unconditional_filter] at hf ⊢
-  exact (hf.comp h).congr fun T ↦ by simp [Finset.prod_product]
 
 /-- **A sum over the integers grouped into blocks of `M` consecutive terms**: if `f` has sum `s`,
 then so does the family of block sums `q ↦ ∑_{r < M} f (q * M + r)`. -/
