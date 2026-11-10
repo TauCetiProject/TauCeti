@@ -15,8 +15,6 @@ public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
 
 For finite-mean interarrival laws, Blackwell interval limits imply convergence of the
 excess tail, distribution function, and law to the equilibrium excess-life distribution.
-The proof uses the shifted interarrival tail as the forcing in the key renewal theorem:
-the difference of two distribution functions need not be decreasing.
 
 The interval limit is an explicit input. No nonlattice Blackwell theorem is asserted here,
 and the result must not be applied to a lattice law merely because its mean is finite.
