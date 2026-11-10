@@ -64,7 +64,7 @@ private theorem discreteTopology_of_span_eq_top_of_finrank_eq
   infer_instance
 
 /-- A discrete integer submodule whose real span is finite-dimensional is finitely generated. -/
-private theorem finite_of_discreteTopology_of_finiteDimensional_span
+theorem finite_of_discreteTopology_of_finiteDimensional_span
     (L : Submodule ℤ E) [DiscreteTopology L] [FiniteDimensional ℝ (Submodule.span ℝ (L : Set E))] :
     Module.Finite ℤ L := by
   let F := Submodule.span ℝ (L : Set E)
@@ -131,15 +131,10 @@ theorem setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology {s : Set E}
       exact h
     exact hM (TauCeti.finite_of_discreteTopology_of_finiteDimensional_span (span ℤ s))
   rw [Set.finrank, Set.finrank, Module.finrank_of_not_finite hinf]
-  obtain ⟨b, hbs, hb, hli⟩ := exists_linearIndependent ℝ s
   have hle : Cardinal.aleph0 ≤ Module.rank ℤ (span ℤ s) := by
-    calc Cardinal.aleph0 ≤ Module.rank ℝ (span ℝ s) := by
-          rw [← not_lt, Module.rank_lt_aleph0_iff]
-          exact fun h ↦ hinf h
-      _ = Cardinal.mk b := by rw [← hb, rank_span_set hli]
-      _ = Module.rank ℤ (span ℤ b) :=
-          (rank_span_set (hli.restrict_scalars fun a b h ↦ by simpa using h)).symm
-      _ ≤ Module.rank ℤ (span ℤ s) := Submodule.rank_mono (span_mono hbs)
+    refine le_trans ?_ (Submodule.rank_span_le_rank_span (R := ℤ) (K := ℝ) s)
+    rw [← not_lt, Module.rank_lt_aleph0_iff]
+    exact fun h ↦ hinf h
   rw [Module.finrank, Cardinal.toNat_apply_of_aleph0_le hle]
 
 /-- The real rank of a discrete integer submodule is its integer rank. -/

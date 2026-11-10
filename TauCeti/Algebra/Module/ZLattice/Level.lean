@@ -326,9 +326,10 @@ theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprim
     a.Coprime (Nat.card (DiscriminantGroup L)) :=
   (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- An even lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
+  have := h.discreteTopology
   refine ⟨fun h1 ↦ h.isIntegral.isUnimodular_iff.mpr ?_, fun hu ↦ Nat.dvd_one.mp ?_⟩
   · -- At level one the dual lattice is even, hence integral, so it lies in its own dual `L`.
     have hdual : IsEven (dual L) := isEven_iff.mpr fun x hx ↦ by

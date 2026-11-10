@@ -521,31 +521,6 @@ theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
   push_cast
   ring
 
-/-- A lattice with finite quotient `L^∨ / cL` in a finite-dimensional space spans: a nonzero vector
-`w` orthogonal to `L` would give infinitely many classes `n w`, `n : ℤ`. -/
-theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional ℝ E] (c : ℕ)
-    [Finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] : span ℝ (L : Set E) = ⊤ := by
-  by_contra h
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (mt Submodule.orthogonal_eq_bot_iff.mp h)
-  have hwL (y : E) (hy : y ∈ L) : inner ℝ y w = 0 :=
-    Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hy) hw
-  have hmem (n : ℤ) : (n : ℝ) • w ∈ dual L := mem_dual.mpr fun y hy ↦
-    ⟨0, by rw [real_inner_smul_left, real_inner_comm, hwL y hy]; simp⟩
-  have : Infinite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) := Infinite.of_injective
-    (fun n : ℤ ↦ Submodule.Quotient.mk ⟨(n : ℝ) • w, hmem n⟩) fun n m hnm ↦ by
-    rw [Submodule.Quotient.eq, submoduleOf, Submodule.mem_comap, subtype_apply,
-      mem_smul_pointwise_iff_exists] at hnm
-    obtain ⟨l, hl, hlw⟩ := hnm
-    have := congrArg (fun x ↦ inner ℝ x w) hlw
-    simp only [real_inner_smul_left, AddSubgroupClass.coe_sub, inner_sub_left, hwL l hl,
-      real_inner_self_eq_norm_sq] at this
-    rw [mul_zero, ← sub_mul] at this
-    rcases mul_eq_zero.mp this.symm with h0 | h0
-    · exact_mod_cast sub_eq_zero.mp h0
-    · exact absurd (pow_eq_zero_iff two_ne_zero |>.mp h0) (norm_ne_zero_iff.mpr hw0)
-  exact not_finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))
-
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The descent to the Fricke partner `M = √N • L^∨`, with `M` kept abstract. The summand
@@ -600,7 +575,7 @@ private theorem dualGaussSum_level_mul_aux (b : ℤ) (c : ℕ)
   rw [dualGaussSum_def, gaussSum_def, Fintype.sum_congr _ _ hterm,
     AddMonoidHom.sum_comp_of_surjective f.toAddMonoidHom hf, hker, nsmul_eq_mul]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **Descent to the Fricke partner.** Let `L` be an even lattice of level `N`. For a
 coefficient `N b` divisible by the level, the Gauss sum over `L^∨ / cL` is `|L^∨ / L|` times the
 Gauss sum of the Fricke partner `√N • L^∨`:
@@ -614,6 +589,7 @@ theorem dualGaussSum_level_mul (b : ℤ) (c : ℕ)
     dualGaussSum L hL (level L * b) c =
       Nat.card (DiscriminantGroup L) *
         gaussSum (√(level L : ℝ) • dual L) (isEven_sqrt_level_smul_dual L) b c := by
+  have := hL.discreteTopology
   have : IsZLattice ℝ L := ⟨span_eq_top_of_finite_quotient_smul_submoduleOf_dual c⟩
   exact dualGaussSum_level_mul_aux hL b c rfl _
 
@@ -724,7 +700,7 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
       (hdetG ▸ hu.pow_left.mul_left hdet), hdetG,
     TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime hu]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **The dual Gauss sum at an odd modulus.** Let `L` be an even lattice of even rank `2k`
 and level `N`, `a` an odd modulus, and `t` a multiple of `N` prime to `a`. With the Jacobi symbol
 `(· / a)` and the signed discriminant `D_L = (-1)^k det L`, where `det L = |L^∨ / L|`,
@@ -736,6 +712,7 @@ theorem IsEven.dualGaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) 
     (hN : (level L : ℤ) ∣ t) (ht : IsCoprime t a) :
     dualGaussSum L hL t a = Nat.card (DiscriminantGroup L) *
       jacobiSym ((-1) ^ k * Nat.card (DiscriminantGroup L)) a * (a : ℂ) ^ k := by
+  have := hL.discreteTopology
   have : IsZLattice ℝ L := ⟨span_eq_top_of_finite_quotient_smul_submoduleOf_dual a⟩
   have : NeZero a := ⟨ha.pos.ne'⟩
   obtain ⟨s, rfl⟩ := hN

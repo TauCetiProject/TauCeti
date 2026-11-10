@@ -51,9 +51,11 @@ namespace ZLattice
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L]
 
+omit [DiscreteTopology L] in
 /-- **An even lattice of level dividing `2` has rank divisible by `4`.** -/
 theorem IsEven.four_dvd_finrank_of_level_dvd_two (hL : IsEven L) (h2 : level L ∣ 2) :
     4 ∣ finrank ℝ E := by
+  have := hL.discreteTopology
   by_cases hfd : FiniteDimensional ℝ E
   · have : IsZLattice ℝ L := ⟨by
       by_contra h
@@ -65,6 +67,7 @@ theorem IsEven.four_dvd_finrank_of_level_dvd_two (hL : IsEven L) (h2 : level L �
   · rw [finrank_of_not_finite hfd]
     exact dvd_zero _
 
+omit [DiscreteTopology L] in
 /-- **The weight of an even lattice of level dividing `2` is even**: if the rank is `2k`, then
 `k` is even. -/
 theorem IsEven.even_of_level_dvd_two (hL : IsEven L) (h2 : level L ∣ 2) {k : ℕ}

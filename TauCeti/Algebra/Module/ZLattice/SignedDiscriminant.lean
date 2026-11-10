@@ -214,11 +214,12 @@ theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L
       (-1) ^ (finrank ℝ E / 2) * (LinearMap.BilinForm.toMatrix b h.integralForm).det := by
   rw [signedDiscr_def, h.det_toMatrix_integralForm b]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **An even unimodular lattice has signed discriminant `1`**, since its rank is divisible
 by `4` (`ZLattice.IsEven.four_dvd_finrank_of_level_dvd_two`). -/
 theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodular L) :
     signedDiscr L = 1 := by
+  have := h.discreteTopology
   obtain ⟨m, hm⟩ := h.four_dvd_finrank_of_level_dvd_two
     (by rw [h.level_eq_one_iff.mpr hU]; exact one_dvd 2)
   rw [hU.signedDiscr_eq_neg_one_pow, show finrank ℝ E / 2 = 2 * m by omega, pow_mul, neg_one_sq,
@@ -255,8 +256,9 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
     Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
 omit [IsZLattice ℝ L] in
-/-- **Fricke partner product identity.** For an integral lattice `L` of rank `n` and level `N`,
-the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
+/-- **Fricke partner product identity.** For an integral lattice `L` in a space of dimension `n`
+and level `N`, the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply
+to `Nⁿ`. -/
 theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
     signedDiscr L * signedDiscr (√(level L : ℝ) • dual L) = (level L : ℤ) ^ finrank ℝ E := by
   have hsign : ((-1 : ℤ) ^ (finrank ℝ E / 2)) * (-1) ^ (finrank ℝ E / 2) = 1 := by

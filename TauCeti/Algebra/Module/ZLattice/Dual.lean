@@ -314,4 +314,37 @@ theorem dual_dual : dual (dual L) = L := by
 
 end FiniteDimensional
 
+section Span
+
+open scoped Pointwise
+
+variable {L : Submodule ℤ E}
+
+/-- A lattice with finite quotient `L^∨ / cL` in a finite-dimensional space spans: a nonzero vector
+`w` orthogonal to `L` would give infinitely many classes `n w`, `n : ℤ`. -/
+theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional ℝ E] (c : ℕ)
+    [Finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] : span ℝ (L : Set E) = ⊤ := by
+  by_contra h
+  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (mt Submodule.orthogonal_eq_bot_iff.mp h)
+  have hwL (y : E) (hy : y ∈ L) : inner ℝ y w = 0 :=
+    Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hy) hw
+  have hmem (n : ℤ) : (n : ℝ) • w ∈ dual L := mem_dual.mpr fun y hy ↦
+    ⟨0, by rw [real_inner_smul_left, real_inner_comm, hwL y hy]; simp⟩
+  have : Infinite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) := Infinite.of_injective
+    (fun n : ℤ ↦ Submodule.Quotient.mk ⟨(n : ℝ) • w, hmem n⟩) fun n m hnm ↦ by
+    rw [Submodule.Quotient.eq, submoduleOf, Submodule.mem_comap, subtype_apply,
+      mem_smul_pointwise_iff_exists] at hnm
+    obtain ⟨l, hl, hlw⟩ := hnm
+    have := congrArg (fun x ↦ inner ℝ x w) hlw
+    simp only [real_inner_smul_left, AddSubgroupClass.coe_sub, inner_sub_left, hwL l hl,
+      real_inner_self_eq_norm_sq] at this
+    rw [mul_zero, ← sub_mul] at this
+    rcases mul_eq_zero.mp this.symm with h0 | h0
+    · exact_mod_cast sub_eq_zero.mp h0
+    · exact absurd (pow_eq_zero_iff two_ne_zero |>.mp h0) (norm_ne_zero_iff.mpr hw0)
+  exact not_finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))
+
+end Span
+
 end ZLattice
