@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Neuromanifold.Basic
 # Reparametrization and restriction of models
 
 Precomposing a realization map with a parameter map can only reduce its realized image.
-It preserves the image precisely when the parameter map meets every realization fibre;
+It preserves the image precisely when the parameter map meets every realized fibre;
 surjectivity of the parameter map is sufficient but not necessary. Restriction to a set of
 parameters is the subtype instance of this construction, including the empty set.
 `realizedFunctions_domRestrict` reduces empty and singleton restrictions to the ordinary
@@ -80,22 +80,5 @@ theorem realizedFunctions_comp_eq_iff (f : W → X → Y) (r : W' → W) :
 @[simp] theorem realizedFunctions_domRestrict (f : W → X → Y) (s : Set W) :
     realizedFunctions (s.domRestrict f) = f '' s := by
   simpa only [realizedFunctions_def] using Set.range_domRestrict f s
-
-/-- Restriction retains a function precisely when its fibre meets the allowed parameters. -/
-theorem mem_realizedFunctions_domRestrict_iff (f : W → X → Y) (s : Set W) (g : X → Y) :
-    g ∈ realizedFunctions (s.domRestrict f) ↔ (s ∩ fiber f g).Nonempty := by
-  simp [Set.inter_nonempty_iff_exists_left]
-
-/-- The restricted fibre is the original fibre pulled back to the parameter subtype. -/
-@[simp] theorem fiber_domRestrict (f : W → X → Y) (s : Set W) (g : X → Y) :
-    fiber (s.domRestrict f) g = (Subtype.val : s → W) ⁻¹' fiber f g := by
-  rw [Set.domRestrict_eq, fiber_comp]
-
-/-- A restriction preserves all realized functions exactly when it meets every realized fibre. -/
-theorem realizedFunctions_domRestrict_eq_iff (f : W → X → Y) (s : Set W) :
-    realizedFunctions (s.domRestrict f) = realizedFunctions f ↔
-      ∀ w, (s ∩ fiber f (f w)).Nonempty := by
-  rw [Set.domRestrict_eq, realizedFunctions_comp_eq_iff]
-  simp only [Subtype.preimage_coe_nonempty]
 
 end TauCeti.Neuromanifold
