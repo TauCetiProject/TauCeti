@@ -387,12 +387,12 @@ open scoped Interval
 
 variable {g : ℝ → ℝ} {ga gb : ℝ}
 
-/-- If `g` is positive on `(a, b)` and has a nonzero right derivative at `a`, then `g` dominates a
-positive multiple of `(x - a) (b - x)` on some interval `(a, u)`: at a zero `a` this is the simple
-zero, and otherwise `g a > 0` by continuity. -/
+/-- If `g` is positive on `(a, b)` and has a right derivative at `a` that is nonzero when `g a = 0`,
+then `g` dominates a positive multiple of `(x - a) (b - x)` on some interval `(a, u)`: at a zero `a`
+this is the simple zero, and otherwise `g a > 0` by continuity. -/
 private theorem exists_pos_forall_mul_le_of_left (hab : a < b)
     (hpos : ∀ x ∈ Ioo a b, 0 < g x) (hga : HasDerivWithinAt g ga (Ici a) a)
-    (hga0 : ga ≠ 0) : ∃ c > 0, ∃ u > a, ∀ x ∈ Ioo a u, c * ((x - a) * (b - x)) ≤ g x := by
+    (hga0 : g a = 0 → ga ≠ 0) : ∃ c > 0, ∃ u > a, ∀ x ∈ Ioo a u, c * ((x - a) * (b - x)) ≤ g x := by
   have hcont : Tendsto g (𝓝[>] a) (𝓝 (g a)) := hga.continuousWithinAt.mono Ioi_subset_Ici_self
   have hg0 : 0 ≤ g a := ge_of_tendsto hcont (by
     filter_upwards [Ioo_mem_nhdsGT hab] with x hx using (hpos x hx).le)
@@ -416,7 +416,7 @@ private theorem exists_pos_forall_mul_le_of_left (hab : a < b)
   have hslope : ∀ x ∈ Ioo a b, slope g a x = g x / (x - a) := fun x _ ↦ by
     rw [slope_def_field, ha, sub_zero]
   have hga' : 0 < ga := by
-    refine lt_of_le_of_ne (ge_of_tendsto ht ?_) hga0.symm
+    refine lt_of_le_of_ne (ge_of_tendsto ht ?_) (hga0 ha).symm
     filter_upwards [Ioo_mem_nhdsGT hab] with x hx
     rw [hslope x hx]
     exact (div_pos (hpos x hx) (sub_pos.2 hx.1)).le
@@ -429,12 +429,12 @@ private theorem exists_pos_forall_mul_le_of_left (hab : a < b)
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
   nlinarith [mul_pos (mul_pos hga' hxa) hxa]
 
-/-- If `g` is positive on `(a, b)` and has a nonzero left derivative at `b`, then `g` dominates a
-positive multiple of `(x - a) (b - x)` on some interval `(u, b)`: at a zero `b` this is the simple
-zero, and otherwise `g b > 0` by continuity. -/
+/-- If `g` is positive on `(a, b)` and has a left derivative at `b` that is nonzero when `g b = 0`,
+then `g` dominates a positive multiple of `(x - a) (b - x)` on some interval `(u, b)`: at a zero `b`
+this is the simple zero, and otherwise `g b > 0` by continuity. -/
 private theorem exists_pos_forall_mul_le_of_right (hab : a < b)
     (hpos : ∀ x ∈ Ioo a b, 0 < g x) (hgb : HasDerivWithinAt g gb (Iic b) b)
-    (hgb0 : gb ≠ 0) : ∃ c > 0, ∃ u < b, ∀ x ∈ Ioo u b, c * ((x - a) * (b - x)) ≤ g x := by
+    (hgb0 : g b = 0 → gb ≠ 0) : ∃ c > 0, ∃ u < b, ∀ x ∈ Ioo u b, c * ((x - a) * (b - x)) ≤ g x := by
   have hcont : Tendsto g (𝓝[<] b) (𝓝 (g b)) := hgb.continuousWithinAt.mono Iio_subset_Iic_self
   have hg0 : 0 ≤ g b := ge_of_tendsto hcont (by
     filter_upwards [Ioo_mem_nhdsLT hab] with x hx using (hpos x hx).le)
@@ -458,7 +458,7 @@ private theorem exists_pos_forall_mul_le_of_right (hab : a < b)
   have hslope : ∀ x ∈ Ioo a b, slope g b x = -(g x / (b - x)) := fun x _ ↦ by
     rw [slope_def_field, hb, sub_zero, ← neg_sub b x, div_neg]
   have hgb' : gb < 0 := by
-    refine lt_of_le_of_ne (le_of_tendsto ht ?_) hgb0
+    refine lt_of_le_of_ne (le_of_tendsto ht ?_) (hgb0 hb)
     filter_upwards [Ioo_mem_nhdsLT hab] with x hx
     rw [hslope x hx, neg_nonpos]
     exact (div_pos (hpos x hx) (sub_pos.2 hx.2)).le
@@ -472,14 +472,14 @@ private theorem exists_pos_forall_mul_le_of_right (hab : a < b)
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
   nlinarith [mul_pos (mul_pos (neg_pos.2 hgb') hbx) hbx]
 
-/-- **A function with nonzero one-sided derivatives at both ends of an interval dominates the
-quadratic with the same zeros.** If `g` is continuous on `[a, b]`, positive on `(a, b)`, and has
-nonzero one-sided derivatives at `a` and `b`, then `c (x - a) (b - x) ≤ g x` on `[a, b]` for some
-`c > 0`. At a zero of `g` this is a simple zero. -/
+/-- **A function with simple zeros at the ends where it vanishes dominates the quadratic vanishing
+at the interval endpoints.** If `g` is continuous on `[a, b]`, positive on `(a, b)`, and has
+one-sided derivatives at `a` and `b` that are nonzero wherever `g` vanishes there, then
+`c (x - a) (b - x) ≤ g x` on `[a, b]` for some `c > 0`. At a zero of `g` this is a simple zero. -/
 theorem exists_pos_forall_mul_mul_sub_mul_sub_le (hab : a < b) (hg : ContinuousOn g (Icc a b))
     (hpos : ∀ x ∈ Ioo a b, 0 < g x)
-    (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : ga ≠ 0)
-    (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : gb ≠ 0) :
+    (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : g a = 0 → ga ≠ 0)
+    (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : g b = 0 → gb ≠ 0) :
     ∃ c > 0, ∀ x ∈ Icc a b, c * ((x - a) * (b - x)) ≤ g x := by
   obtain ⟨c₁, hc₁, u₁, hu₁, h₁⟩ := exists_pos_forall_mul_le_of_left hab hpos hga hga0
   obtain ⟨c₂, hc₂, u₂, hu₂, h₂⟩ := exists_pos_forall_mul_le_of_right hab hpos hgb hgb0
@@ -517,12 +517,13 @@ theorem exists_pos_forall_mul_mul_sub_mul_sub_le (hab : a < b) (hg : ContinuousO
       (h₃ x ⟨hx₁, hx₂⟩)
 
 /-- **Quadratures across simple zeros converge.** If `g` is continuous on `[a, b]`, positive on
-`(a, b)`, and has nonzero one-sided derivatives at `a` and `b`, then `x ↦ 1 / √(g x)` is interval
-integrable on `[a, b]`, although it is unbounded at an end where `g` vanishes. -/
+`(a, b)`, and has one-sided derivatives at `a` and `b` that are nonzero wherever `g` vanishes there,
+then `x ↦ 1 / √(g x)` is interval integrable on `[a, b]`, although it is unbounded at an end where
+`g` vanishes. -/
 theorem intervalIntegrable_one_div_sqrt_of_hasDerivWithinAt (hab : a < b)
     (hg : ContinuousOn g (Icc a b)) (hpos : ∀ x ∈ Ioo a b, 0 < g x)
-    (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : ga ≠ 0)
-    (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : gb ≠ 0) :
+    (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : g a = 0 → ga ≠ 0)
+    (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : g b = 0 → gb ≠ 0) :
     IntervalIntegrable (fun x => 1 / √(g x)) volume a b := by
   obtain ⟨c, hc, hle⟩ :=
     exists_pos_forall_mul_mul_sub_mul_sub_le hab hg hpos hga hga0 hgb hgb0
