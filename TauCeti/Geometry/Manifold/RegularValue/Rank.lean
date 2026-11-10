@@ -150,12 +150,34 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
 
 /-- **Composition on the left with an immersion preserves the rank.** If `g` has injective
 derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`. -/
-theorem mfderivRank_comp_of_injective {g : N → P} (hg : MDifferentiableAt J K g (f x))
+theorem mfderivRank_comp_of_injective {g : N → P}
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
-  rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp]
-  simpa using LinearMap.finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
-    surjective_id
+  by_cases hg : MDifferentiableAt J K g (f x)
+  · rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf,
+      ContinuousLinearMap.toLinearMap_comp]
+    simpa using LinearMap.finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
+      surjective_id
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hg] at hinj
+    have hsub : Subsingleton E' :=
+      ⟨fun a b ↦ hinj (show (0 : TangentSpace J (f x) →L[𝕜] TangentSpace K (g (f x))) a =
+        (0 : TangentSpace J (f x) →L[𝕜] TangentSpace K (g (f x))) b from rfl)⟩
+    have : Subsingleton (TangentSpace J (f x)) := hsub
+    have hloc : f =ᶠ[𝓝 x] fun _ ↦ f x := by
+      have hs : {f x} ∈ 𝓝 (f x) := by
+        filter_upwards [extChartAt_source_mem_nhds (I := J) (f x)] with y hy
+        exact (extChartAt J (f x)).injOn hy (mem_extChartAt_source (f x))
+          (Subsingleton.elim _ _)
+      exact hf.continuousAt hs
+    have hrhs : mfderivRank I J f x = 0 := by
+      have : Subsingleton (LinearMap.range (mfderiv I J f x).toLinearMap) :=
+        ⟨fun a b ↦ Subtype.ext (Subsingleton.elim _ _)⟩
+      exact finrank_zero_of_subsingleton
+    have hderiv : mfderiv I K (g ∘ f) x = 0 := by
+      rw [(hloc.fun_comp g).mfderiv_eq]
+      exact mfderiv_const
+    rw [hrhs, mfderivRank_def, hderiv, ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero,
+      finrank_bot]
 
 /-- **Composition on the right with a submersion preserves the rank.** If `h` has surjective
 derivative at `p`, then `f ∘ h` has the same rank at `p` as `f` at `h p`. -/

@@ -62,7 +62,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
   {F : M → V} {g : M → W} {x : M} {n : ℕ∞ω}
 
-omit [IsManifold I 1 M] in
+omit [CompleteSpace E] [IsManifold I 1 M] in
 /-- **A map is open at a regular point.** On a boundaryless manifold, a map into a
 finite-dimensional space which is `C^n`, `n ≠ 0`, at a regular point `x` sends the neighbourhoods
 of `x` onto the neighbourhoods of its value. -/
@@ -71,8 +71,30 @@ theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
   have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
-  have hmap := (hFc.hasStrictFDerivAt_fderiv hn).map_nhds_eq_of_surj
+  -- Strict differentiability and a continuous right inverse of the surjective derivative open
+  -- the map without completeness of `E`: the right inverse lands in a finite-dimensional space.
+  have hstrict := hFc.hasStrictFDerivAt_fderiv hn
+  obtain ⟨s, hs⟩ := (fderiv 𝕜 (F ∘ e.symm) (e x) : E →ₗ[𝕜] V).exists_rightInverse_of_surjective
     (LinearMap.range_eq_top.2 hreg.surjective_fderiv_comp_extChartAt_symm)
+  let s' : V →L[𝕜] E := LinearMap.toContinuousLinearMap s
+  have hss : (fderiv 𝕜 (F ∘ e.symm) (e x)).comp s' = ContinuousLinearMap.id 𝕜 V :=
+    ContinuousLinearMap.coe_injective hs
+  have hshift : HasStrictFDerivAt (fun v : V ↦ e x + s' v) s' 0 :=
+    s'.hasStrictFDerivAt.const_add (e x)
+  have hψ : HasStrictFDerivAt (fun v : V ↦ (F ∘ e.symm) (e x + s' v))
+      ((ContinuousLinearEquiv.refl 𝕜 V : V ≃L[𝕜] V) : V →L[𝕜] V) 0 := by
+    have := (show HasStrictFDerivAt (F ∘ e.symm) (fderiv 𝕜 (F ∘ e.symm) (e x)) (e x + s' 0) by
+      rw [map_zero, add_zero]; exact hstrict).comp (0 : V) hshift
+    simpa [hss] using this
+  have hψ' := hψ.map_nhds_eq_of_equiv
+  simp only [map_zero, add_zero] at hψ'
+  have hmap : map (F ∘ e.symm) (𝓝 (e x)) = 𝓝 ((F ∘ e.symm) (e x)) := by
+    have hc : Tendsto (fun v : V ↦ e x + s' v) (𝓝 0) (𝓝 (e x)) := by
+      simpa using hshift.continuousAt.tendsto
+    refine le_antisymm hstrict.continuousAt.tendsto ?_
+    rw [← hψ', show (fun v : V ↦ (F ∘ e.symm) (e x + s' v)) =
+      (F ∘ e.symm) ∘ (fun v : V ↦ e x + s' v) from rfl, ← map_map]
+    exact map_mono hc
   have hFe : F =ᶠ[𝓝 x] (F ∘ e.symm) ∘ e := by
     filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
     rw [comp_apply, comp_apply, e.left_inv hy]
