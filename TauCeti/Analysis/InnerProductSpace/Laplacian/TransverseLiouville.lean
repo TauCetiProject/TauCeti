@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
-import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
+import TauCeti.Analysis.InnerProductSpace.Projection.Compact
 
 /-!
 # Liouville theorems for functions decaying in transverse directions
@@ -27,12 +28,13 @@ apply; boundedness is assumed instead. The sign condition `0 ≤ f · Δ f` hold
 `f = u₁ - u₂` of two solutions of a semilinear equation `Δ u = F(x, u)` with `F` nondecreasing in
 `u`. The typical instance is the logarithm `w = log |α₁|² - log |α₂|²` of the ratio of two
 vortex-type sections with the same zeros over `ℂ × ℂ`, which satisfies `Δ w = c |α₂|² (e^w - 1)`
-with `c ≥ 0`; the theorem identifies two such solutions that are bounded relative to each other and
-both tend to the vacuum `|α| = 1` in the normal direction, uniformly along the base.
+with `c ≥ 0`. When `w` is `C²` and bounded and both sections tend to the vacuum `|α| = 1` in the
+normal direction, uniformly along the base, the theorem gives `w = 0`, so the two sections have the
+same modulus `|α₁| = |α₂|`; identifying the sections and connections themselves up to gauge needs a
+separate argument.
 
 ## Main results
 
-* `TauCeti.laplacian_norm_starProjection_sq`: `Δ ‖P y‖² = 2 dim K`.
 * `TauCeti.nonpos_of_eventually_comap_norm_starProjection_le_of_laplacian_nonneg`: a function
   bounded above, `C²` and subharmonic where it is positive, whose positive part tends to zero
   transversally, is nonpositive.
@@ -44,12 +46,12 @@ both tend to the vacuum `|α| = 1` in the normal direction, uniformly along the 
 The Liouville theorem is proved by a maximum principle with a harmonic barrier. With `n = dim K`
 and `d = dim Kᗮ`, the quadratic polynomial `n ‖b‖² - d ‖P x‖²` is harmonic, because the Laplacian
 of the squared norm of an orthogonal projection is twice the rank of the projection
-(`TauCeti.laplacian_norm_starProjection_sq`). On the compact box where the base coordinate is at
-most `L` from a point `x₀` and the transverse coordinate is at most `R`, a positive multiple of this
-polynomial, shifted by a constant, dominates `f` on the whole boundary: on the transverse faces
-because `f` is small there, and on the base faces because it is at least `sup f` there. The weak
-maximum principle gives the bound at `x₀`, which is `O(1 / L²)` above the transverse bound, and
-`L → ∞` concludes.
+(`Submodule.laplacian_norm_starProjection_sq`). On the compact box where the base coordinate is at
+most `L` from a point `x₀` and the transverse coordinate is at most `R`
+(`Submodule.isCompact_starProjection_box`), a positive multiple of this polynomial, shifted by a
+constant, dominates `f` on the whole boundary: on the transverse faces because `f` is small there,
+and on the base faces because it is at least `sup f` there. The weak maximum principle gives the
+bound at `x₀`, which is `O(1 / L²)` above the transverse bound, and `L → ∞` concludes.
 
 ## References
 
@@ -68,35 +70,8 @@ open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The Laplacian of the squared norm of an orthogonal projection is twice the rank of the
-projection: `Δ ‖P_K y‖² = 2 dim K`. For `K = ⊤` this is `TauCeti.laplacian_norm_sq`. -/
-@[simp]
-theorem laplacian_norm_starProjection_sq (K : Submodule ℝ E) (x : E) :
-    Δ (fun y ↦ ‖K.starProjection y‖ ^ 2) x = 2 * (Module.finrank ℝ K : ℝ) := by
-  set P := K.starProjection
-  set b := stdOrthonormalBasis ℝ E
-  -- `P` is linear, so its own Laplacian vanishes and its derivative is `P`.
-  have hΔP : Δ (P : E → E) x = 0 := by
-    have hd : fderiv ℝ (P : E → E) = fun _ ↦ P := funext fun _ ↦ P.fderiv
-    rw [laplacian_eq_traceL, hd]
-    simp
-  -- `‖P v‖² = ⟪v, P v⟫`, since `v - P v` is orthogonal to `P v ∈ K`.
-  have hsq (v : E) : ‖P v‖ ^ 2 = ⟪v, P v⟫ := by
-    have h0 := K.starProjection_inner_eq_zero v (P v) (K.starProjection_apply_mem v)
-    rw [inner_sub_left, sub_eq_zero] at h0
-    rw [h0]
-    exact (real_inner_self_eq_norm_sq _).symm
-  -- The trace of the projection is its rank.
-  have hproj : LinearMap.IsProj K (P : E →ₗ[ℝ] E) :=
-    ⟨fun v ↦ K.starProjection_apply_mem v, fun v hv ↦ K.starProjection_eq_self_iff.2 hv⟩
-  rw [P.contDiff.contDiffAt.laplacian_norm_sq b, hΔP, inner_zero_right, mul_zero, add_zero,
-    P.fderiv]
-  have htr := LinearMap.trace_eq_sum_inner (P : E →ₗ[ℝ] E) b
-  simp only [ContinuousLinearMap.coe_coe] at htr
-  simp_rw [hsq, ← htr, hproj.trace]
-
 /-- The barrier `a + b (dim K ‖P_{Kᗮ} (z - x₀)‖² - dim Kᗮ ‖P_K (z - x₀)‖² + e)` is harmonic: by
-`TauCeti.laplacian_norm_starProjection_sq` the two squared norms have Laplacians `2 dim Kᗮ` and
+`Submodule.laplacian_norm_starProjection_sq` the two squared norms have Laplacians `2 dim Kᗮ` and
 `2 dim K`, which cancel. -/
 private theorem laplacian_barrier (K : Submodule ℝ E) (x₀ : E) (a b e : ℝ) (y : E) :
     Δ (fun z ↦ a + b * (Module.finrank ℝ K * ‖Kᗮ.starProjection (z - x₀)‖ ^ 2 -
@@ -105,7 +80,7 @@ private theorem laplacian_barrier (K : Submodule ℝ E) (x₀ : E) (a b e : ℝ)
       Δ (fun z ↦ ‖S.starProjection (z - x₀)‖ ^ 2) y = 2 * (Module.finrank ℝ S : ℝ) := by
     simp_rw [sub_eq_add_neg]
     rw [laplacian_comp_add_right (fun z ↦ ‖S.starProjection z‖ ^ 2) (-x₀)]
-    exact laplacian_norm_starProjection_sq S _
+    exact S.laplacian_norm_starProjection_sq _
   have hsq (S : Submodule ℝ E) : ContDiff ℝ 2 fun z ↦ ‖S.starProjection (z - x₀)‖ ^ 2 :=
     (contDiff_norm_sq ℝ).comp (S.starProjection.contDiff.comp (contDiff_id.sub contDiff_const))
   set A : E → ℝ := fun z ↦ ‖Kᗮ.starProjection (z - x₀)‖ ^ 2
@@ -126,24 +101,6 @@ private theorem laplacian_barrier (K : Submodule ℝ E) (x₀ : E) (a b e : ℝ)
     laplacian_smul _ (hsq K).contDiffAt, laplacian_const, Pi.zero_apply, hshift Kᗮ, hshift K,
     smul_eq_mul, smul_eq_mul]
   ring
-
-/-- The box `‖P_{Kᗮ} (y - x₀)‖ ≤ L`, `‖P_K y‖ ≤ R` is compact. -/
-private theorem isCompact_box (K : Submodule ℝ E) (x₀ : E) (L R : ℝ) :
-    IsCompact ({y | ‖Kᗮ.starProjection (y - x₀)‖ ≤ L} ∩ {y | ‖K.starProjection y‖ ≤ R}) := by
-  refine Metric.isCompact_of_isClosed_isBounded ((isClosed_le (by fun_prop) continuous_const).inter
-    (isClosed_le (by fun_prop) continuous_const)) ?_
-  refine (Metric.isBounded_closedBall (x := x₀)
-    (r := L + (R + ‖K.starProjection x₀‖))).subset fun y hy ↦ ?_
-  rw [Metric.mem_closedBall, dist_eq_norm]
-  have hP : ‖K.starProjection (y - x₀)‖ ≤ R + ‖K.starProjection x₀‖ := by
-    rw [map_sub]
-    exact (norm_sub_le _ _).trans (add_le_add_left hy.2 _)
-  calc ‖y - x₀‖ = ‖K.starProjection (y - x₀) + Kᗮ.starProjection (y - x₀)‖ :=
-        congrArg _ (K.starProjection_add_starProjection_orthogonal (y - x₀)).symm
-    _ ≤ ‖K.starProjection (y - x₀)‖ + ‖Kᗮ.starProjection (y - x₀)‖ := norm_add_le _ _
-    _ ≤ L + (R + ‖K.starProjection x₀‖) := by
-      have hy1 : ‖Kᗮ.starProjection (y - x₀)‖ ≤ L := hy.1
-      linarith
 
 /-- The barrier step of the transverse Liouville theorem. If `f ≤ M` everywhere, `f ≤ ε` where
 `‖P y‖ ≥ R`, and `‖P x₀‖ ≤ R`, then `f x₀ ≤ ε + M (dim Kᗮ) (2 R)² / ((dim K) L²)` for every `L > 0`:
@@ -192,14 +149,14 @@ private theorem le_add_div_of_barrier {K : Submodule ℝ E} (hn : 0 < Module.fin
   -- there `f > ψ ≥ ε > 0`.
   have hfpos {y : E} (hy : y ∈ interior S) (hpos : 0 < (f - ψ) y) : 0 < f y := by
     linarith [hψS (interior_subset hy), hnn y, Pi.sub_apply f ψ y]
-  have hmax := le_of_laplacian_nonneg_of_lt_le_frontier (isCompact_box K x₀ L R) (f := f - ψ)
-    (m := 0) (hcont.sub hψ.continuous).continuousOn
+  have hmax := le_of_laplacian_nonneg_of_lt_le_frontier (K.isCompact_starProjection_box x₀ L R)
+    (f := f - ψ) (m := 0) (hcont.sub hψ.continuous).continuousOn
     (fun y hy hpos ↦ (hcd y (hfpos hy hpos)).sub hψ.contDiffAt)
     (fun y hy hpos ↦ by
       rw [(hcd y (hfpos hy hpos)).laplacian_sub hψ.contDiffAt, laplacian_barrier, sub_zero]
       exact hlap y (hfpos hy hpos))
     (fun y hy ↦ by
-      have hlow := hψS ((isCompact_box K x₀ L R).isClosed.frontier_subset hy)
+      have hlow := hψS ((K.isCompact_starProjection_box x₀ L R).isClosed.frontier_subset hy)
       rw [Pi.sub_apply, sub_nonpos]
       rcases frontier_inter_subset _ _ hy with ⟨hfr, -⟩ | ⟨-, hfr⟩
       · -- On a base face `‖Q (y - x₀)‖ = L`, the barrier is at least `M + ε`.
