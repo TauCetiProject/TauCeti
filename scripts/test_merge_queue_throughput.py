@@ -2,6 +2,9 @@
 """Keep native publication, mandatory verdicts and retry work on their intended paths."""
 from pathlib import Path
 import unittest
+import os
+import subprocess
+import tempfile
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,15 +34,49 @@ class Throughput(unittest.TestCase):
         confirm = next(s for s in steps if s.get('id') == 'confirm')
         self.assertIn('--expected "$RUNNER_TEMP/lake-publication-plan/outputs.jsonl"', confirm['run'])
 
-    def test_optional_status_retry_does_not_change_the_build_verdict(self):
+    def test_required_status_delivery_retries_and_failure_is_visible_for_batches(self):
         jobs = workflow('pr-build.yml')['jobs']
         report = next(s for s in jobs['sandboxed-build']['steps'] if s.get('id') == 'report')['run']
-        self.assertIn('status_wait=0', report)
-        self.assertIn('CI_STATUS_MAX_WAIT="$status_wait"', report)
-        self.assertIn('[ "$state" = "success" ]', report)
-        self.assertIn('"${{ env.IS_BATCH }}" != "true"', report)
+        self.assertIn('CI_STATUS_MAX_WAIT=600', report)
+        self.assertNotIn('status_wait=0', report)
         self.assertIn("outputs.build-state == 'success'", jobs['publish-merge-group-cache']['if'])
         self.assertIn('finalize-merge-group-build', jobs)
+        # Execute the actual delivery tail: a failed required status must make
+        # batch reporting red so retained intents are recovered without a build.
+        tail = report[report.index('          CI_STATUS_MAX_WAIT=600'.strip()):]
+        tail = tail.replace('${{ env.IS_BATCH }}', 'true')
+        with tempfile.TemporaryDirectory() as directory:
+            command = Path(directory) / 'python3'
+            command.write_text('#!/bin/sh\nexit "${STATUS_RC}"\n')
+            command.chmod(0o755)
+            for rc in (0, 1):
+                env = dict(os.environ, PATH=directory + os.pathsep + os.environ['PATH'],
+                           STATUS_RC=str(rc), RUNNER_TEMP=directory)
+                result = subprocess.run(['bash', '-eu', '-c', 'post_fail=0; state=success\n' + tail],
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, rc, result.stdout + result.stderr)
+
+    def test_retained_statuses_recover_even_if_the_build_workflow_succeeded(self):
+        retry = workflow('retry-ci-status.yml')['jobs']['publish']
+        self.assertIn("workflow_run.conclusion == 'failure'", retry['if'])
+        self.assertIn("workflow_run.conclusion == 'success'", retry['if'])
+        self.assertIn("startsWith(github.event.workflow_run.display_title, 'bors branch=')", retry['if'])
+        discover = next(s for s in retry['steps'] if s.get('id') == 'intents')
+        self.assertIn('ci-status-intents-sandbox-', discover['run'])
+        self.assertIn("present=", discover['run'])
+
+    def test_manual_reporting_recovery_keeps_original_run_identity_and_skips_build_sweep(self):
+        retry = workflow('retry-ci-status.yml')
+        jobs = retry['jobs']
+        publish = jobs['publish']
+        self.assertIn("inputs.source_run_id != ''", publish['if'])
+        self.assertIn('inputs.source_run_id', publish['env']['CI_STATUS_SOURCE_RUN_ID'])
+        self.assertIn('inputs.source_run_id && inputs.source_attempt', publish['concurrency']['group'])
+        self.assertIn("inputs.source_run_id == ''", jobs['recover-builds']['if'])
+        discover = next(s for s in publish['steps'] if s.get('id') == 'intents')['run']
+        for guard in ("run.get('path') != '.github/workflows/pr-build.yml'", "run.get('event') not in allowed",
+                      "run.get('status') != 'completed'", "get('full_name') != repo"):
+            self.assertIn(guard, discover)
 
     def test_old_secondary_cache_protocol_is_removed(self):
         producer = (ROOT / '.github/workflows/pr-build.yml').read_text()
