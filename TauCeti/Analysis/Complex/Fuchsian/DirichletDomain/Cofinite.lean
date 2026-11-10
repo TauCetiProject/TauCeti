@@ -58,7 +58,7 @@ A point of the Dirichlet domain lies in one of three parts.
   The translate of a horodisc by an element of `Γ` is a horodisc of the transported cusp datum.
 
 No hypothesis that `Γ` is non-elementary is needed, and the centre `p` is arbitrary except where
-the side pairing and the characterization of cofiniteness are concerned.
+the side pairing is concerned, which requires `p` to have trivial stabilizer.
 
 ## Main results
 
