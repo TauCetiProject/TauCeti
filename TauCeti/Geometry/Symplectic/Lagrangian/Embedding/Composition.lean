@@ -18,6 +18,11 @@ Let `f : L₁ → M₁ × M₂` and `g : L₂ → M₂ × M₃` be Lagrangian ma
 `M₁ ⇝ M₃`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isLagrangianEmbedding_relComp`).
 
+When the middle components of `f` and `g` are transverse, the fibre product `L₁ ×_{M₂} L₂` is a
+manifold and the composite on it is already an immersion, so for Lagrangian correspondences `f`
+and `g` it is a Lagrangian correspondence `M₁ ⇝ M₃` as soon as it is a topological embedding
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.relComp_transverseFiberProduct`).
+
 ## References
 
 * A. Weinstein, *Symplectic categories*, Portugaliae Mathematica 67 (2010), 261–278.
@@ -28,6 +33,7 @@ public section
 
 noncomputable section
 
+open Module
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
@@ -70,5 +76,44 @@ theorem IsLagrangianMap.isLagrangianEmbedding_relComp
     (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KC (fun c ↦ ((f (a c)).1, (g (b c)).2)) :=
   (isLagrangianEmbedding_iff_of_isSmoothEmbedding hemb).mpr
     (hfL.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL hf hg ha hb hab hfib)
+
+section Transverse
+
+variable [FiniteDimensional ℝ EL₁] [FiniteDimensional ℝ EL₂] [IsManifold K₁ ∞ L₁]
+  [IsManifold K₂ ∞ L₂] [K₁.Boundaryless] [K₂.Boundaryless] [I₁.Boundaryless] [I₂.Boundaryless]
+  [I₃.Boundaryless]
+  (htrans : ∀ p : L₁ × L₂, (f p.1).2 = (g p.2).1 →
+    (mfderiv K₁ I₂ (fun x ↦ (f x).2) p.1).range ⊔
+      (((tangentSpaceCast I₂ (g p.2).1 (f p.1).2).toContinuousLinearMap).comp
+        (mfderiv K₂ I₂ (fun y ↦ (g y).1) p.2)).range = ⊤)
+
+include htrans in
+/-- **Transverse composition of Lagrangian correspondences, embedded case.** Let
+`f : L₁ → M₁ × M₂` and `g : L₂ → M₂ × M₃` be Lagrangian correspondences whose middle components
+`pr₂ ∘ f` and `pr₁ ∘ g` are transverse. If the composite `(x, y) ↦ ((f x).1, (g y).2)` on the
+transverse fibre product `L₁ ×_{M₂} L₂` is a topological embedding, it is a Lagrangian
+correspondence `M₁ ⇝ M₃`. Transversality already makes the composite an immersion
+(`IsIsotropicMap.isImmersion_relComp_transverseFiberProduct`), so only injectivity and the
+topology of the image remain to be assumed. -/
+theorem IsLagrangianEmbedding.relComp_transverseFiberProduct
+    (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianEmbedding K₁ f)
+    (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianEmbedding K₂ g)
+    (hemb : Topology.IsEmbedding
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2))) :
+    letI := transverseFiberProductChartedSpace (by simp) hfL.isImmersion.contMDiff.snd
+      hgL.isImmersion.contMDiff.fst htrans
+    (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding
+      𝓘(ℝ, Fin (finrank ℝ EL₁ + finrank ℝ EL₂ - finrank ℝ E₂) → ℝ)
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+  have hf := hfL.isImmersion.contMDiff
+  have hg := hgL.isImmersion.contMDiff
+  let _ := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
+  exact ⟨hfL.isLagrangianMap.isIsotropicMap.isImmersion_relComp_transverseFiberProduct
+      (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hf hg htrans hgL.isLagrangianMap.isIsotropicMap
+      (hfL.isImmersion.mfderiv_injective (by simp)) (hgL.isImmersion.mfderiv_injective (by simp)),
+    hemb, hfL.isLagrangianMap.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂)
+      (hσ₃ := hσ₃) hf hg htrans hgL.isLagrangianMap⟩
+
+end Transverse
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

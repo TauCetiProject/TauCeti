@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
 A map `f : L → M × N` is Lagrangian for the twisted product `pr₁*σ - pr₂*τ` exactly when, at
 each point, its tangent image read in `T M × T N` through the canonical identification
 `Manifold.tangentSpaceProdEquiv` is Lagrangian for the linear twisted product of the tangent
-fibre forms (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_twistedProd_iff_forall`).
+fibre forms (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_twistedProd_iff_forall`),
+and likewise for isotropic maps
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_twistedProd_iff_forall`).
 This is the form in which linear results about canonical relations, such as Lagrangian graphs
 and compositions, apply to Lagrangian correspondences.
 -/
@@ -33,6 +35,19 @@ variable {E H M F G N EL HL L : Type*}
   [NormedAddCommGroup EL] [NormedSpace ℝ EL] [TopologicalSpace HL]
   {K : ModelWithCorners ℝ EL HL} [TopologicalSpace L] [ChartedSpace HL L]
   {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N} {f : L → M × N}
+
+/-- A map into a twisted product is isotropic exactly when its tangent images, read in the
+product of the tangent spaces of the factors, are isotropic linear relations. -/
+theorem isIsotropicMap_twistedProd_iff_forall (hσ : σ.IsNondegenerate)
+    (hτ : τ.IsNondegenerate) :
+    (hσ.twistedProd hτ).IsIsotropicMap K f ↔
+      ∀ x, ((hσ.symplecticFormAt (f x).1).twistedProd (hτ.symplecticFormAt (f x).2)).IsIsotropic
+        (LinearMap.range ((Manifold.tangentSpaceProdEquiv (f x)).toLinearEquiv.toLinearMap ∘ₗ
+          (mfderiv K (I.prod J) f x).toLinearMap)) := by
+  rw [isIsotropicMap_iff_forall]
+  refine forall_congr' fun x ↦ ?_
+  rw [LinearMap.range_comp, ← symplecticFormAt_twistedProd hσ hτ,
+    SymplecticForm.isIsotropic_map_transport_iff]
 
 /-- A map into a twisted product is Lagrangian exactly when its tangent images, read in the
 product of the tangent spaces of the factors, are linear canonical relations. -/

@@ -27,6 +27,14 @@ eliminates its characteristic directions. Orthogonal complementation exchanges
 intersection and sum, so no transversality or dimension-of-intersection assumption
 is needed in this linear calculation.
 
+The *excess* of a composition consists of the middle vectors `w` with `(0, w) ∈ L` and
+`(w, 0) ∈ K`; the matching pairs `((0, w), (w, 0))` they give are exactly the kernel of the
+projection from the matching pairs to the composite. For
+isotropic relations whose middle projections span `W` the excess is zero, and for canonical
+relations through a finite-dimensional `W` this transversality is equivalent to zero excess, since
+the excess is the symplectic complement of the sum of the middle projections
+(`TauCeti.SymplecticForm.IsLagrangian.map_snd_sup_map_fst_eq_top_iff`).
+
 ## References
 
 * A. Weinstein, *Symplectic categories*, Portugaliae Mathematica 67 (2010), 261–278.
@@ -122,5 +130,48 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
     exact add_right_cancel (h₁.trans h₂.symm)
   apply Submodule.mem_relComp.mpr
   exact ⟨a.1.2, hav ▸ ha.1, hau ▸ haw ▸ ha.2⟩
+
+/-- **Transverse composition has no excess.** If isotropic relations `L` and `K` are transverse,
+in the sense that the middle projections of `L` and `K` together span `W`, then no nonzero
+middle vector `w` has both `(0, w) ∈ L` and `(w, 0) ∈ K`. -/
+theorem IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top
+    (hL : (ω₁.twistedProd ω₂).IsIsotropic L) (hK : (ω₂.twistedProd ω₃).IsIsotropic K)
+    (htr : L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤) {w : W}
+    (hwL : ((0 : V), w) ∈ L) (hwK : (w, (0 : U)) ∈ K) : w = 0 := by
+  rw [isIsotropic_iff] at hL hK
+  suffices hw : w ∈ ω₂.orthogonal (L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)) by
+    simpa [htr] using hw
+  rw [mem_orthogonal_iff]
+  intro y hy
+  obtain ⟨_, ⟨l, hl, rfl⟩, _, ⟨k, hk, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hy
+  have h₁ := hL l hl _ hwL
+  have h₂ := hK k hk _ hwK
+  simp only [twistedProd_apply, map_zero] at h₁ h₂
+  simp only [LinearMap.snd_apply, LinearMap.fst_apply, map_add, LinearMap.add_apply]
+  linarith
+
+/-- **Transversality of Lagrangian relations is the absence of excess.** For canonical relations
+`L` and `K` through a finite-dimensional middle space `W`, the middle projections of `L` and `K`
+together span `W` exactly when the only middle vector `w` with `(0, w) ∈ L` and `(w, 0) ∈ K` is
+zero. -/
+theorem IsLagrangian.map_snd_sup_map_fst_eq_top_iff [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ ↔
+      ∀ w : W, ((0 : V), w) ∈ L → (w, (0 : U)) ∈ K → w = 0 := by
+  refine ⟨fun htr w hwL hwK ↦ hL.isIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top
+    hK.isIsotropic htr hwL hwK, fun h ↦ ?_⟩
+  set S := L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)
+  suffices hS : ω₂.orthogonal S = ⊥ by
+    rw [← ω₂.orthogonal_orthogonal S, hS, orthogonal_bot]
+  refine (Submodule.eq_bot_iff _).mpr fun w hw ↦ h w ?_ ?_
+  · refine (isCoisotropic_iff.mp hL.isCoisotropic) _ ((mem_orthogonal_iff).mpr fun l hl ↦ ?_)
+    have := (mem_orthogonal_iff.mp hw) l.2
+      (Submodule.mem_sup_left (Submodule.mem_map_of_mem hl))
+    simp [twistedProd_apply, this]
+  · refine (isCoisotropic_iff.mp hK.isCoisotropic) _ ((mem_orthogonal_iff).mpr fun k hk ↦ ?_)
+    have := (mem_orthogonal_iff.mp hw) k.1
+      (Submodule.mem_sup_right (Submodule.mem_map_of_mem hk))
+    simp [twistedProd_apply, this]
 
 end TauCeti.SymplecticForm
