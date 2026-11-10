@@ -368,30 +368,55 @@ theorem dilation_mul (v : ℤ_[p]ˣ) :
     rw [← Units.val_mul] at h
     exact h.symm
 
+/-- The diagonal automorphism of `ℤ_p^X` multiplying the coordinate at `x₀` by `u`, as a continuous
+homomorphism of the multiplicative group. -/
+private noncomputable def scaleCoord [DecidableEq X] :
+    Multiplicative (X → ℤ_[p]) →ₜ* Multiplicative (X → ℤ_[p]) where
+  toFun a := ofAdd fun k ↦ if k = x₀ then u * a.toAdd k else a.toAdd k
+  map_one' := by
+    apply Multiplicative.toAdd.injective
+    funext k
+    simp
+  map_mul' a b := by
+    apply Multiplicative.toAdd.injective
+    funext k
+    by_cases hk : k = x₀ <;> simp [hk, mul_add]
+  continuous_toFun := continuous_ofAdd.comp <| continuous_pi fun k ↦ by
+    by_cases hk : k = x₀
+    · simp only [hk, ↓reduceIte]
+      exact continuous_const.mul ((continuous_apply x₀).comp continuous_toAdd)
+    · simp only [hk, ↓reduceIte]
+      exact (continuous_apply k).comp continuous_toAdd
+
 /-- **The exponent vector under a dilation.** The dilation `x₀ ↦ x₀ ^ u` multiplies the coordinate
 at `x₀` of the exponent vector by `u` and leaves the other coordinates unchanged. -/
 @[simp]
-theorem toAdd_exponentSum_dilation [Finite X] [DecidableEq X] (y : freeProP p X) :
+theorem toAdd_exponentSum_dilation [DecidableEq X] (y : freeProP p X) :
     (exponentSum p X (dilation x₀ u y)).toAdd =
       Function.update (exponentSum p X y).toAdd x₀ (u * (exponentSum p X y).toAdd x₀) := by
-  cases nonempty_fintype X
-  have hc : ∀ x, (exponentSum p X ((dilation x₀ u : freeProP p X →ₜ* freeProP p X) (of x))).toAdd =
-      Pi.single x (if x = x₀ then (u : ℤ_[p]) else 1) := by
-    intro x
-    rw [ContinuousMonoidHom.coe_coe]
+  have h : (exponentSum p X).comp (dilation x₀ u : freeProP p X →ₜ* freeProP p X) =
+      (scaleCoord x₀ u).comp (exponentSum p X) := hom_ext fun x ↦ by
+    change exponentSum p X (dilation x₀ u (of x)) = scaleCoord x₀ u (exponentSum p X (of x))
+    rw [exponentSum_of]
     by_cases hx : x = x₀
     · subst hx
-      rw [dilation_of_self, exponentSum_padicPow_of, toAdd_ofAdd, ite_eq_left rfl]
-    · rw [dilation_of_of_ne x₀ u hx, exponentSum_of, toAdd_ofAdd, ite_eq_right hx]
-  rw [← ContinuousMonoidHom.coe_coe (dilation x₀ u),
-    toAdd_exponentSum_apply_eq_sum_smul p X (dilation x₀ u : freeProP p X →ₜ* freeProP p X)]
+      rw [dilation_of_self, exponentSum_padicPow_of]
+      apply Multiplicative.toAdd.injective
+      funext k
+      by_cases hk : k = x <;> simp [scaleCoord, Pi.single_apply, hk]
+    · rw [dilation_of_of_ne x₀ u hx, exponentSum_of]
+      apply Multiplicative.toAdd.injective
+      funext k
+      by_cases hk : k = x₀ <;> by_cases hk' : k = x <;>
+        simp [scaleCoord, Pi.single_apply, hk, hk', hx, Ne.symm hx]
+  have := DFunLike.congr_fun h y
+  change exponentSum p X (dilation x₀ u y) = scaleCoord x₀ u (exponentSum p X y) at this
+  rw [this]
   funext k
-  simp only [hc, Finset.sum_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_zero,
-    Finset.sum_ite_eq, Finset.mem_univ, ite_true]
   by_cases hk : k = x₀
   · subst hk
-    rw [Function.update_self, ite_eq_left rfl, mul_comm]
-  · rw [Function.update_of_ne hk, ite_eq_right hk, mul_one]
+    simp [scaleCoord]
+  · simp [scaleCoord, hk]
 
 end Dilation
 
