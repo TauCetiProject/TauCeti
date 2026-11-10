@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RingTheory.Trace.Regular
-import TauCeti.RingTheory.Jacobson.FiniteOverArtinian
+import Mathlib.RingTheory.Artinian.Ring
 
 /-!
 # The regular trace form and semisimplicity
@@ -70,7 +70,8 @@ variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
 in the Jacobson radical of a finite-dimensional algebra, then `tr(L_{yx}) = 0` for every `y`. -/
 theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobson A) (y : A) :
     regularTraceForm K A y x = 0 := by
-  obtain ⟨m, hm⟩ := isNilpotent_jacobson (K := K) (A := A)
+  have := IsArtinianRing.of_finite K A
+  obtain ⟨m, hm⟩ := IsArtinianRing.isNilpotent_jacobson A
   have hyx : IsNilpotent (y * x) := by
     refine ⟨m, ?_⟩
     have hpow := Ideal.pow_mem_pow ((Ring.jacobson A).smul_mem y hx) m
@@ -82,7 +83,8 @@ theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobs
 holds over every field. -/
 theorem isSemisimpleRing_of_nondegenerate_regularTraceForm
     (h : (regularTraceForm K A).Nondegenerate) : IsSemisimpleRing A := by
-  rw [isSemisimpleRing_iff_jacobson_eq_bot (K := K)]
+  have := IsArtinianRing.of_finite K A
+  rw [IsArtinianRing.isSemisimpleRing_iff_jacobson]
   exact eq_bot_iff.mpr fun x hx =>
     (Submodule.mem_bot _).mpr (h.2 x (regularTraceForm_eq_zero_of_mem_jacobson hx))
 

@@ -6,21 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.McLaughlin.Basic
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.Nat.Bits
 
 /-!
-# The first two basic orbits of the McLaughlin permutation model
+# The first four basic orbits of the McLaughlin permutation model
 
-The ATLAS degree-275 model is transitive, and the orbit of point `1` under the
-stabilizer of `0` has length `112`. Thus its order is `30800` times the order of
-the pointwise stabilizer of `{0, 1}`. The explicit second orbit supplies both
-membership witnesses and an obstruction to membership in the point stabilizer.
+The ATLAS degree-275 model is transitive, the orbit of point `1` under the
+stabilizer of `0` has length `112`, the orbit of `2` under the pointwise
+stabilizer of `{0, 1}` has length `81`, and the orbit of `3` under the pointwise
+stabilizer of `{0, 1, 2}` has length `36`. Thus its order is `89812800` times the
+order of the pointwise stabilizer of `{0, 1, 2, 3}`. The explicit orbits supply
+both membership witnesses and obstructions to membership in the stabilizers.
 
 Private words in the two file generators witness reachability. A binary relation,
 encoded by bit rows, bounds the second orbit: both generators preserve the relation,
-and its row at `0` is precisely the displayed set. Every finite equation is checked
+and its row at `0` is precisely the displayed second orbit. The third orbit consists
+of the points in that row, other than `1`, absent from the row at `1`. The fourth
+orbit consists of the points in the row at `2` absent from both rows at `0` and `1`.
+Every finite equation is checked
 in the kernel; the word and relation data carry no unproved group-theoretic assumptions.
 
 ## References
@@ -392,6 +398,11 @@ private theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     intro x y
     simpa using (hg (g⁻¹ x) (g⁻¹ y)).symm
 
+private theorem related_fixed {g : Equiv.Perm (Fin 275)} {s : Fin 275}
+    (hg : g ∈ McL) (hs : g s = s) (x : Fin 275) :
+    related s (g x) = related s x := by
+  simpa only [hs] using related_apply hg s x
+
 private def stabilizerWords : Fin 275 → ℕ := fun i ↦
   (#[
     #[1, 1, 11449781, 1, 227179, 15851, 351191, 88797, 1, 1, 2026357, 3634927, 1, 1, 1, 1,
@@ -459,28 +470,245 @@ theorem orbit_stabilizer_zero_one :
   rw [orbit_stabilizer_zero_one, Set.ncard_coe_finset]
   decide +kernel
 
+private def pointSequence (i : ℕ) : Fin 275 := Fin.ofNat 275 i
+
+@[simp] private theorem pointSequence_zero : pointSequence 0 = 0 := rfl
+
+@[simp] private theorem pointSequence_one : pointSequence 1 = 1 := rfl
+
+@[simp] private theorem pointSequence_two : pointSequence 2 = 2 := rfl
+
+@[simp] private theorem pointSequence_three : pointSequence 3 = 3 := rfl
+
+private theorem stabilizerChain_insert (n : ℕ) {S : Set (Fin 275)}
+    (h : McL.stabilizerChain pointSequence n =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) S) :
+    McL.stabilizerChain pointSequence (n + 1) =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) (insert (pointSequence n) S) := by
+  rw [Subgroup.stabilizerChain_succ, h]
+  ext g
+  simp only [Subgroup.mem_inf, mem_fixingSubgroup_iff, mem_stabilizer_iff,
+    Set.mem_insert_iff, forall_eq_or_imp]
+  tauto
+
+private theorem stabilizerChain_one :
+    McL.stabilizerChain pointSequence 1 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0} : Set (Fin 275)) := by
+  simpa only [pointSequence_zero, ← Set.singleton_def] using
+    stabilizerChain_insert 0 (S := ∅) (by simp)
+
+private theorem stabilizerChain_two :
+    McL.stabilizerChain pointSequence 2 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)) := by
+  simpa only [pointSequence_one, Set.pair_comm] using
+    stabilizerChain_insert 1 stabilizerChain_one
+
+private theorem stabilizerChain_three :
+    McL.stabilizerChain pointSequence 3 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)) := by
+  have h := stabilizerChain_insert 2 stabilizerChain_two
+  rw [pointSequence_two, Set.insert_comm (2 : Fin 275) 0, Set.pair_comm (2 : Fin 275) 1] at h
+  exact h
+
 /-- The first two basic orbits contribute the factor `275 * 112 = 30800` to the order. -/
 theorem card_eq_30800_mul_card_fixingSubgroup :
     Nat.card McL = 30800 * Nat.card
       ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275))) := by
-  have h0 := Subgroup.relIndex_mul_card
-    (stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) McL
-  have h1 := Subgroup.relIndex_mul_card
-    (stabilizer (Equiv.Perm (Fin 275)) (1 : Fin 275))
-    (McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275))
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer, ncard_orbit_zero] at h0
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer,
-    ncard_orbit_stabilizer_zero_one] at h1
-  have hfix : stabilizer (Equiv.Perm (Fin 275)) (1 : Fin 275) ⊓
-      (McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) =
-      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)) := by
+  have h1 : McL.stabilizerChain pointSequence 1 =
+      McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275) := by
+    rw [stabilizerChain_one]
     ext g
-    simp only [Subgroup.mem_inf, mem_stabilizer_iff, mem_fixingSubgroup_iff,
-      Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
-    tauto
-  rw [hfix] at h1
-  rw [inf_comm] at h0
-  rw [← h0, ← h1, ← mul_assoc]
-  rfl
+    simp [mem_fixingSubgroup_iff, mem_stabilizer_iff]
+  have h := McL.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2
+  simp only [Finset.prod_range_succ, Finset.range_zero, Finset.prod_empty, one_mul] at h
+  rw [Subgroup.stabilizerChain_zero, h1, stabilizerChain_two, pointSequence_zero, pointSequence_one,
+    ncard_orbit_zero, ncard_orbit_stabilizer_zero_one] at h
+  exact h.symm
+
+/-! ### The third basic orbit -/
+
+/- These words were found by breadth-first search on ordered triples, starting at
+(0, 1, 2). Only their evaluations below are used, not correctness of the search. -/
+private def twoPointWords : Fin 275 → ℕ := fun i ↦
+  (#[
+    #[1, 1, 1, 1, 1, 1467342525, 3177017207, 1458941274, 1, 1, 900560733, 2008504253, 1, 1, 1, 1,
+      11639025130, 124632490, 1, 1, 1, 1, 1, 23443717613, 14728224490],
+    #[1, 1, 1, 1, 1, 1, 48054, 1, 1454881466, 1, 1, 1, 1, 795536826, 1, 1, 398155243, 1, 1, 1,
+      1974971117, 1, 1, 1, 7471805869],
+    #[1, 4015368890, 1, 1, 762800987, 795696495, 1, 1, 1, 1, 1, 1, 66281503419, 1, 4124407738,
+      6297595610, 1, 1, 1, 1, 1, 1, 31871924139, 1, 1],
+    #[1, 33649711990, 1, 1, 1, 1, 1, 1, 3957190318, 1, 12605643629, 1029107067, 1, 1, 733862587,
+      1440070357, 1, 1, 250981085, 14742809531, 1, 1, 1, 1, 1],
+    #[24517655390, 1, 1, 518879925, 1, 1, 1, 1029626798, 4206751191, 1, 1, 1, 1, 1, 1, 6356170453,
+      1, 1, 7170927957, 1, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 1, 1, 447405738, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1974844142, 1, 1, 1, 383639019,
+      1, 6353180587],
+    #[1, 367974133, 1, 1, 1970777819, 1, 1, 1, 3075915127, 1, 1, 257355643, 1, 1, 1, 1, 769111917,
+      1, 1, 1, 1, 1, 1, 4045533, 1],
+    #[1, 733863261, 3585464021, 1, 1, 1, 1975234263, 1540795246, 921549533, 1, 1, 1975364443,
+      767421166, 1, 1, 1, 1, 1, 1, 1, 24819627, 3052320174, 7909850462, 1, 1809231341],
+    #[1, 24551028442, 1, 2060828014, 1, 1, 263646685, 1, 1, 1, 1, 66016727, 1, 1, 1, 1995102062, 1,
+      29439678199, 1566293430, 519421402, 7347328445, 1, 1, 1, 1],
+    #[1, 12278652278, 1, 2880140629, 1, 1, 1, 1, 502180525, 1, 1, 1, 1, 1, 1, 1, 46621711789, 1,
+      131841467, 1, 1, 1, 1, 14943081839, 131422891],
+    #[1, 3077417717, 1, 1, 1, 1, 1, 1, 1, 1, 1, 14063, 1, 3186455983, 1, 16504420266, 33654005493,
+      1, 1, 1, 1, 1, 1, 1455078075, 62745531]] : Array (Array ℕ))
+    |>.getD (i.val / 25) #[]
+    |>.getD (i.val % 25) 0
+
+private theorem twoPointWords_apply : ∀ x : Fin 275,
+    related 0 x = true → related 1 x = false → x ≠ 1 →
+      wordValue (twoPointWords x) 0 = 0 ∧ wordValue (twoPointWords x) 1 = 1 ∧
+        wordValue (twoPointWords x) 2 = x := by
+  decide +kernel
+
+private theorem mem_orbit_fixing_zero_one_iff (x : Fin 275) :
+    x ∈ orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)))
+      (2 : Fin 275) ↔ related 0 x = true ∧ related 1 x = false ∧ x ≠ 1 := by
+  constructor
+  · rintro ⟨g, rfl⟩
+    have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
+    have hg1 : (g : Equiv.Perm (Fin 275)) 1 = 1 := hgfix 1 (by simp)
+    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 2).trans
+      (by decide +kernel : related 0 2 = true)
+    have h1 := (related_fixed g.property.1 hg1 2).trans
+      (by decide +kernel : related 1 2 = false)
+    refine ⟨h0, h1, ?_⟩
+    -- Subgroup scalar multiplication is evaluation of the underlying permutation.
+    simpa only [subgroup_smul_def, Equiv.Perm.smul_def, hg1] using
+      (g : Equiv.Perm (Fin 275)).injective.ne (by decide : (2 : Fin 275) ≠ 1)
+  · rintro ⟨h0, h1, hx⟩
+    obtain ⟨hg0, hg1, hg2⟩ := twoPointWords_apply x h0 h1 hx
+    have hfix : wordValue (twoPointWords x) ∈
+        fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)) := by
+      simpa [mem_fixingSubgroup_iff] using And.intro hg0 hg1
+    exact ⟨⟨wordValue (twoPointWords x), wordValue_mem _, hfix⟩, hg2⟩
+
+/-- The exact orbit of `2` under the pointwise stabilizer of `{0, 1}` in the ATLAS model. -/
+theorem orbit_fixing_zero_one_two :
+    orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)))
+      (2 : Fin 275) =
+    (({2, 5, 6, 7, 10, 11, 16, 17, 23, 24, 31, 33, 38, 41, 45, 49, 51, 54, 55, 62, 64, 65, 72,
+      76, 83, 85, 86, 89, 90, 93, 94, 100, 103, 107, 108, 115, 118, 131, 143, 147, 149, 151,
+      154, 158, 161, 166, 173, 176, 177, 181, 182, 183, 186, 187, 195, 196, 197, 199, 201, 203,
+      206, 211, 215, 217, 218, 219, 220, 226, 228, 233, 241, 243, 248, 249, 251, 261, 263, 265,
+      266, 273, 274} : Finset (Fin 275)) : Set (Fin 275)) := by
+  ext x
+  rw [mem_orbit_fixing_zero_one_iff]
+  revert x
+  decide +kernel
+
+/-- The third basic orbit has length 81. -/
+@[simp] theorem ncard_orbit_fixing_zero_one_two :
+    (orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)))
+      (2 : Fin 275)).ncard = 81 := by
+  rw [orbit_fixing_zero_one_two, Set.ncard_coe_finset]
+  decide +kernel
+
+/-- The first three basic orbits contribute the factor `275 * 112 * 81 = 2494800` to the order. -/
+theorem card_eq_2494800_mul_card_fixingSubgroup :
+    Nat.card McL = 2494800 * Nat.card
+      ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275))) := by
+  have h2 := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 2
+  rw [stabilizerChain_two, stabilizerChain_three, pointSequence_two,
+    ncard_orbit_fixing_zero_one_two] at h2
+  rw [card_eq_30800_mul_card_fixingSubgroup, ← h2, ← mul_assoc]
+  norm_num
+
+/-! ### The fourth basic orbit -/
+
+/- At each point of the fourth orbit, the word fixes the ordered triple (0, 1, 2)
+and sends 3 to its table index. Unused entries encode the identity.
+The witnesses were found from collisions in a breadth-first search on ordered triples:
+if two words have the same triple image, their quotient fixes that triple.
+Only the following kernel-checked evaluations, not the search, enter the proof. -/
+private def threePointWords : Fin 275 → ℕ := fun i ↦
+  (#[
+    #[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 24978099395959, 31597620669, 1, 1, 1, 8228468387307, 1613748891499, 1, 1, 1, 1,
+      1, 1, 1, 265661701814, 1, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 122517959703518, 1, 1, 1, 1, 1, 6303761816495, 1, 1,
+      4052156865271, 1, 8475813736123, 1, 1, 1],
+    #[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 235114575215, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 98209322735, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #[1, 402244824300510, 117972594138, 1, 746979814366, 1, 1, 33613092384272119, 1, 1, 1, 1,
+      2866461615, 32043358135, 464170331, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 1, 3156112538543, 1, 1, 1, 1, 200637528822, 1, 1, 1, 1, 33753520989, 1, 1, 1,
+      1, 1, 1, 1, 1, 1],
+    #[49847100469102, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 128239524699, 1, 1,
+      8159056817846, 1, 1, 1, 1, 1],
+    #[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 385608437186014, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 762240494,
+      1, 4215172624251],
+    #[1, 1, 1, 1, 25131425390326, 1, 1, 1, 1, 52080083400430, 1, 1, 1, 1, 115626191802, 1, 1,
+      119635671982, 1, 1, 1, 1, 1, 1, 1],
+    #[100862360406, 1, 472715835956719, 1, 1, 4049595759575, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 2057012213111, 1, 1, 1, 1]] : Array (Array ℕ))
+    |>.getD (i.val / 25) #[]
+    |>.getD (i.val % 25) 0
+
+private theorem threePointWords_apply : ∀ x : Fin 275,
+    related 0 x = false → related 1 x = false → related 2 x = true →
+      wordValue (threePointWords x) 0 = 0 ∧ wordValue (threePointWords x) 1 = 1 ∧
+        wordValue (threePointWords x) 2 = 2 ∧ wordValue (threePointWords x) 3 = x := by
+  decide +kernel
+
+private theorem mem_orbit_fixing_zero_one_two_iff (x : Fin 275) :
+    x ∈ orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)))
+      (3 : Fin 275) ↔ related 0 x = false ∧ related 1 x = false ∧ related 2 x = true := by
+  constructor
+  · rintro ⟨g, rfl⟩
+    have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
+    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 3).trans
+      (by decide +kernel : related 0 3 = false)
+    have h1 := (related_fixed g.property.1 (hgfix 1 (by simp)) 3).trans
+      (by decide +kernel : related 1 3 = false)
+    have h2 := (related_fixed g.property.1 (hgfix 2 (by simp)) 3).trans
+      (by decide +kernel : related 2 3 = true)
+    -- Subgroup scalar multiplication is evaluation of the underlying permutation.
+    simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using And.intro h0 (And.intro h1 h2)
+  · rintro ⟨h0, h1, h2⟩
+    obtain ⟨hg0, hg1, hg2, hg3⟩ := threePointWords_apply x h0 h1 h2
+    have hfix : wordValue (threePointWords x) ∈
+        fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)) := by
+      simpa [mem_fixingSubgroup_iff] using And.intro hg0 (And.intro hg1 hg2)
+    refine ⟨⟨wordValue (threePointWords x), wordValue_mem _, hfix⟩, ?_⟩
+    simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using hg3
+
+/-- The exact orbit of `3` under the pointwise stabilizer of `{0, 1, 2}` in the ATLAS model. -/
+theorem orbit_fixing_zero_one_two_three :
+    orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)))
+      (3 : Fin 275) =
+    (({3, 29, 30, 34, 35, 43, 60, 66, 69, 71, 87, 104, 126, 127, 129, 132, 137, 138, 139, 155,
+      160, 165, 175, 191, 194, 210, 222, 224, 229, 234, 239, 242, 250, 252, 255, 270} :
+        Finset (Fin 275)) : Set (Fin 275)) := by
+  ext x
+  rw [mem_orbit_fixing_zero_one_two_iff]
+  revert x
+  decide +kernel
+
+/-- The fourth basic orbit has length 36. -/
+@[simp] theorem ncard_orbit_fixing_zero_one_two_three :
+    (orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)))
+      (3 : Fin 275)).ncard = 36 := by
+  rw [orbit_fixing_zero_one_two_three, Set.ncard_coe_finset]
+  decide +kernel
+
+private theorem stabilizerChain_four :
+    McL.stabilizerChain pointSequence 4 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3} : Set (Fin 275)) := by
+  have h := stabilizerChain_insert 3 stabilizerChain_three
+  rw [pointSequence_three, Set.insert_comm (3 : Fin 275) 0,
+    Set.insert_comm (3 : Fin 275) 1, Set.pair_comm (3 : Fin 275) 2] at h
+  exact h
+
+/-- The first four basic orbits contribute `275 * 112 * 81 * 36 = 89812800` to the order. -/
+theorem card_eq_89812800_mul_card_fixingSubgroup :
+    Nat.card McL = 89812800 * Nat.card
+      ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3} : Set (Fin 275))) := by
+  have h3 := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 3
+  rw [stabilizerChain_three, stabilizerChain_four, pointSequence_three,
+    ncard_orbit_fixing_zero_one_two_three] at h3
+  rw [card_eq_2494800_mul_card_fixingSubgroup, ← h3, ← mul_assoc]
+  norm_num
 
 end TauCeti.Sporadic.McL

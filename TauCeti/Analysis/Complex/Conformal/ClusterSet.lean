@@ -466,7 +466,7 @@ theorem exists_continuousOn_closure_eqOn_of_forall_subset_closure_sdiff (hUo : I
     (hnwd : ∀ w ∈ frontier U,
       clusterSetOn f U w ⊆ closure (frontier (f '' U) \ clusterSetOn f U w)) :
     ∃ F : ℂ → ℂ, ContinuousOn F (closure U) ∧ EqOn F f U :=
-  exists_continuousOn_closure_eqOn_of_isBounded hUo hfd.continuousOn hfb fun w hw =>
+  exists_continuousOn_closure_eqOn_of_isBounded hfd.continuousOn hfb fun w hw =>
     subsingleton_clusterSetOn_of_subset_closure_sdiff hUo hUc hfd hfi hfb hJ hw (hnwd w hw)
 
 end TauCeti

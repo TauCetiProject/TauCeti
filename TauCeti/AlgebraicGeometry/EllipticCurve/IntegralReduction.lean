@@ -59,7 +59,7 @@ theorem map_integralModel_baseChange_eq_map (E : WeierstrassCurve ℤ)
 
 section PrimeReduction
 
-variable (E : WeierstrassCurve ℤ) (v : HeightOneSpectrum ℤ) (p : ℕ) [Fact p.Prime]
+variable (E : WeierstrassCurve ℤ) (v : HeightOneSpectrum ℤ) (p : ℕ)
   (hv : v.asIdeal = Ideal.span {(p : ℤ)})
 
 local notation "O" => Valuation.valuationSubring (HeightOneSpectrum.valuation ℚ v)
@@ -91,6 +91,7 @@ theorem card_nsmul_reductionHom_baseChange_eq_zero [DecidableEq k] [(integralMod
     Nat.card (E.map (Int.castRingHom (ZMod p))).toAffine.Point •
       Affine.Point.reductionHom (v.valuation ℚ) P = 0 := by
   classical
+  have : NeZero p := ⟨fun h ↦ v.ne_bot (by rw [hv, h]; simp)⟩
   have : Finite (ℤ ⧸ v.asIdeal) := Finite.of_equiv (ZMod p)
     ((Int.quotientSpanNatEquivZMod p).symm.trans (Ideal.quotEquivOfEq hv).symm).toEquiv
   rw [← card_point_reduction_baseChange E v p hv]

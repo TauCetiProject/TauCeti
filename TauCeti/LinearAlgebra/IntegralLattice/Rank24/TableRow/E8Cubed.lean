@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Roots
 
+import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Covolume
+
 /-!
 # The table row `E₈³` and its 720-root shell
 
@@ -23,46 +25,47 @@ unique row whose uniform table lattice `r.lattice` coincides with the orthogonal
 of its component root lattices
 (`TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff_eq_e8Cubed`).
 
-Constructed through the uniform gluing API rather than as an ad hoc constant, the named lattice
-`TauCeti.e8CubedLattice` has the literal carrier consisting of families of three rational
-8-vectors whose twenty-four Bourbaki simple-root coordinates are all integers
-(`TauCeti.mem_e8CubedLattice_carrier_iff`).  Two explicit coordinate-power isometries connect this
-table lattice to standard models on `Fin 3 → Fin 8 → ℚ`:
+Constructed through the uniform gluing API as `TauCeti.niemeierE8Cubed =
+TauCeti.RootfulNiemeierType.e8Cubed.lattice`, the lattice has the literal carrier consisting of
+families of three rational 8-vectors whose twenty-four Bourbaki simple-root coordinates are all
+integers (`TauCeti.mem_niemeierE8Cubed_carrier_iff`).  Two explicit coordinate-power isometries
+connect this table lattice to standard models on `Fin 3 → Fin 8 → ℚ`:
 
-* `TauCeti.e8CubedSimpleRootIsometry` identifies `TauCeti.e8CubedLattice` with the coordinate power
+* `TauCeti.e8CubedSimpleRootIsometry` identifies `TauCeti.niemeierE8Cubed` with the coordinate power
   `TauCeti.IntegralLattice.typeE₈RootLattice.coordinatePower (Fin 3)`, keeping every simple-root
   coordinate;
-* `TauCeti.e8CubedD8PlusIsometry` identifies `TauCeti.e8CubedLattice` with Conway--Sloane's
+* `TauCeti.e8CubedD8PlusIsometry` identifies `TauCeti.niemeierE8Cubed` with Conway--Sloane's
   Euclidean block model `(checkerboardPlusLattice 8 _).coordinatePower (Fin 3)`, carrying each
   block's simple roots to the Bourbaki--Conway--Sloane vectors `e8GlueRoot` of
   `D₈⁺ = D₈ ∪ (s + D₈)` and intertwining the lattice form with the standard 24-dimensional dot
   product (`TauCeti.sum_mul_e8CubedD8PlusIsometry`).
 
-Unlike rows with nontrivial glue vectors, `TauCeti.e8CubedLattice` is spanned over `ℤ` by its own
-norm-`2` shell (`TauCeti.span_vectorsOfNorm_two_e8CubedLattice_eq_top`).  Combining the orthogonal
-norm-shell decomposition of `TauCeti.IntegralLattice.piVectorsOfNormTwoEquiv` with the 240-root
-Bourbaki enumeration `TauCeti.IntegralLattice.typeE₈RootEquiv` yields the explicit 720-root shell
-equivalence `TauCeti.e8CubedRootEquiv`, from which the minimum `2`, the norm-`2` representation
-number `720`, and the kissing number `720` follow.
+Unimodularity and the norm-`2` representation number `720` specialize directly from the uniform
+table theorems `TauCeti.RootfulNiemeierType.isUnimodular_lattice` and
+`TauCeti.RootfulNiemeierType.representationNumber_lattice_two`.  Unlike rows with nontrivial glue
+vectors, `TauCeti.niemeierE8Cubed` is spanned over `ℤ` by its own norm-`2` shell
+(`TauCeti.span_vectorsOfNorm_two_niemeierE8Cubed_eq_top`).  Combining the orthogonal norm-shell
+decomposition of `TauCeti.IntegralLattice.piVectorsOfNormTwoEquiv` with the 240-root Bourbaki
+enumeration `TauCeti.IntegralLattice.typeE₈RootEquiv` yields the explicit 720-root shell
+equivalence `TauCeti.e8CubedRootEquiv`, together with minimum `2` and kissing number `720`.
 
 ## Main declarations
 
-* `TauCeti.e8CubedLattice`: stable name for `RootfulNiemeierType.e8Cubed.lattice`, reducible so the
-  uniform row theorems (`isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`) apply directly,
-  with `TauCeti.e8CubedLattice_eq_rootLattice`.
-* `TauCeti.mem_e8CubedLattice_carrier_iff`: literal integer-coordinate characterization of the
-  table carrier.
+* `TauCeti.niemeierE8Cubed_eq_rootLattice` and `TauCeti.mem_niemeierE8Cubed_carrier_iff`:
+  identification with the component root lattice and literal integer-coordinate carrier.
 * `TauCeti.e8CubedSimpleRootIsometry`: explicit isometry onto
   `typeE₈RootLattice.coordinatePower (Fin 3)`.
 * `TauCeti.e8CubedD8PlusIsometry`: explicit isometry onto Conway--Sloane's Euclidean block power
-  `(checkerboardPlusLattice 8 _).coordinatePower (Fin 3)`.
-* `TauCeti.isUnimodular_e8CubedLattice`, `TauCeti.discriminant_e8CubedLattice`,
-  `TauCeti.determinant_e8CubedLattice`: unimodularity, discriminant `1`, and determinant `1`.
-* `TauCeti.span_vectorsOfNorm_two_e8CubedLattice_eq_top`: the norm-`2` roots span the whole lattice.
+  `(checkerboardPlusLattice 8 _).coordinatePower (Fin 3)`, with
+  `TauCeti.sum_mul_e8CubedD8PlusIsometry`.
+* `TauCeti.discriminant_niemeierE8Cubed`, `TauCeti.determinant_niemeierE8Cubed`: discriminant `1`
+  and determinant `1`.
+* `TauCeti.span_vectorsOfNorm_two_niemeierE8Cubed_eq_top`: the norm-`2` roots span the whole
+  lattice.
 * `TauCeti.e8CubedRootVector`, `TauCeti.e8CubedRootEquiv`: explicit 720-vector enumeration of the
-  norm-`2` shell `e8CubedLattice.vectorsOfNorm 2`.
-* `TauCeti.minimum_e8CubedLattice`, `TauCeti.representationNumber_e8CubedLattice_two`,
-  `TauCeti.kissingNumber_e8CubedLattice`: minimum `2` and kissing number `720`.
+  norm-`2` shell `niemeierE8Cubed.vectorsOfNorm 2`.
+* `TauCeti.minimum_niemeierE8Cubed`, `TauCeti.kissingNumber_niemeierE8Cubed`: minimum `2` and
+  kissing number `720`.
 
 ## References
 
@@ -95,31 +98,21 @@ theorem componentType_e8Cubed (i : Fin e8Cubed.components.length) :
 
 end RootfulNiemeierType
 
-/-! ### The named lattice `e8CubedLattice` and its literal carrier -/
+/-! ### Literal carrier of `niemeierE8Cubed` -/
 
-/-- **The `E₈³` Niemeier lattice**, constructed through the uniform gluing API from the `E₈³` row
-of the rootful rank-24 table.
-
-Because `e8CubedLattice` is reducible to `RootfulNiemeierType.e8Cubed.lattice`, the uniform row
-theorems (`isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`, `isNondegenerate_lattice`) apply
-directly. -/
-noncomputable abbrev e8CubedLattice :
-    IntegralLattice (∀ i, Fin (RootfulNiemeierType.e8Cubed.componentType i).rank → ℚ) :=
-  RootfulNiemeierType.e8Cubed.lattice
-
-/-- Because the glue subgroup of `E₈³` is trivial, `e8CubedLattice` is literally the orthogonal
+/-- Because the glue subgroup of `E₈³` is trivial, `niemeierE8Cubed` is literally the orthogonal
 sum of the three component `E₈` root lattices. -/
-theorem e8CubedLattice_eq_rootLattice :
-    e8CubedLattice = RootfulNiemeierType.e8Cubed.rootLattice :=
+theorem niemeierE8Cubed_eq_rootLattice :
+    niemeierE8Cubed = RootfulNiemeierType.e8Cubed.rootLattice :=
   (RootfulNiemeierType.lattice_eq_rootLattice_iff_eq_e8Cubed .e8Cubed).mpr rfl
 
-/-- **Literal carrier of `e8CubedLattice`**: a family of three rational vectors lies in the table
+/-- **Literal carrier of `niemeierE8Cubed`**: a family of three rational vectors lies in the table
 lattice `E₈³` if and only if all twenty-four of its Bourbaki simple-root coordinates are
 integers. -/
-theorem mem_e8CubedLattice_carrier_iff
+theorem mem_niemeierE8Cubed_carrier_iff
     (x : ∀ i, Fin (RootfulNiemeierType.e8Cubed.componentType i).rank → ℚ) :
-    x ∈ e8CubedLattice.carrier ↔ ∀ i j, ∃ z : ℤ, (z : ℚ) = x i j := by
-  rw [e8CubedLattice_eq_rootLattice, IntegralLattice.mem_pi_carrier_iff]
+    x ∈ niemeierE8Cubed.carrier ↔ ∀ i j, ∃ z : ℤ, (z : ℚ) = x i j := by
+  rw [niemeierE8Cubed_eq_rootLattice, IntegralLattice.mem_pi_carrier_iff]
   exact forall_congr' fun i ↦ DynkinType.mem_rootLattice_carrier_iff _ _ (x i)
 
 /-! ### Simple-root coordinate-power model -/
@@ -127,9 +120,9 @@ theorem mem_e8CubedLattice_carrier_iff
 /-- **The table lattice `E₈³` is the coordinate power `E₈³` in Bourbaki simple-root coordinates**:
 an explicit isometry onto `typeE₈RootLattice.coordinatePower (Fin 3)` keeping every coordinate. -/
 noncomputable def e8CubedSimpleRootIsometry :
-    IntegralLattice.Isometry e8CubedLattice
+    IntegralLattice.Isometry niemeierE8Cubed
       (IntegralLattice.typeE₈RootLattice.coordinatePower (Fin 3)) :=
-  (IntegralLattice.Isometry.ofEq e8CubedLattice_eq_rootLattice).trans <|
+  (IntegralLattice.Isometry.ofEq niemeierE8Cubed_eq_rootLattice).trans <|
     (IntegralLattice.Isometry.piCongrLeft
         (fun i ↦ (RootfulNiemeierType.e8Cubed.componentType i).rootLattice
           (RootfulNiemeierType.e8Cubed.isSimplyLaced_componentType i))
@@ -186,7 +179,7 @@ theorem e8CubedSimpleRootIsometry_symm_apply
 `(D₈⁺)³ = (checkerboardPlusLattice 8 _).coordinatePower (Fin 3)`, acting on each 8-coordinate
 block by `TauCeti.IntegralLattice.typeE₈IsometryD8Plus`. -/
 noncomputable def e8CubedD8PlusIsometry :
-    IntegralLattice.Isometry e8CubedLattice
+    IntegralLattice.Isometry niemeierE8Cubed
       ((IntegralLattice.checkerboardPlusLattice 8 (by decide)).coordinatePower (Fin 3)) :=
   e8CubedSimpleRootIsometry.trans
     (IntegralLattice.Isometry.pi fun _ : Fin 3 ↦ IntegralLattice.typeE₈IsometryD8Plus)
@@ -214,63 +207,55 @@ theorem e8CubedD8PlusIsometry_e8CubedSimpleRootIsometry_symm_single_typeE₈Simp
   · simp [IntegralLattice.e8GlueMap_typeE₈SimpleRoot]
   · simp [Pi.single_eq_of_ne hmk]
 
-/-- **The Conway--Sloane Euclidean dot product computes the bilinear form of `e8CubedLattice`**:
-the sum of coordinate products across all three 8-blocks equals `e8CubedLattice.form x y`. -/
+/-- **The Conway--Sloane Euclidean dot product computes the bilinear form of `niemeierE8Cubed`**:
+the sum of coordinate products across all three 8-blocks equals `niemeierE8Cubed.form x y`. -/
 theorem sum_mul_e8CubedD8PlusIsometry
     (x y : ∀ i, Fin (RootfulNiemeierType.e8Cubed.componentType i).rank → ℚ) :
     (∑ k : Fin 3, ∑ j : Fin 8,
         e8CubedD8PlusIsometry x k j * e8CubedD8PlusIsometry y k j) =
-      e8CubedLattice.form x y := by
+      niemeierE8Cubed.form x y := by
   rw [← e8CubedD8PlusIsometry.map_app x y, IntegralLattice.pi_form,
     IntegralLattice.piForm_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [IntegralLattice.checkerboardPlusLattice_form,
     IntegralLattice.checkerboardLattice_form_apply]
 
-/-! ### Unimodularity, root generation, and the 720-root shell -/
+/-! ### Discriminant, root generation, and the 720-root shell -/
 
-/-- **The `E₈³` Niemeier lattice is unimodular.** -/
-theorem isUnimodular_e8CubedLattice : e8CubedLattice.IsUnimodular :=
-  RootfulNiemeierType.isUnimodular_lattice_of_ne .e8Cubed
-    (by decide) (by decide) (by decide) (by decide)
-
-/-- The discriminant of `e8CubedLattice` is `1`. -/
+/-- The discriminant of `niemeierE8Cubed` is `1`. -/
 @[simp]
-theorem discriminant_e8CubedLattice : e8CubedLattice.discriminant = 1 :=
-  e8CubedLattice.isUnimodular_iff_discriminant_eq_one.mp isUnimodular_e8CubedLattice
+theorem discriminant_niemeierE8Cubed : niemeierE8Cubed.discriminant = 1 :=
+  niemeierE8Cubed.isUnimodular_iff_discriminant_eq_one.mp
+    (RootfulNiemeierType.isUnimodular_lattice .e8Cubed)
 
-/-- The signed determinant of `e8CubedLattice` is `1`. -/
+/-- The signed determinant of `niemeierE8Cubed` is `1`. -/
 @[simp]
-theorem determinant_e8CubedLattice : e8CubedLattice.determinant = 1 := by
-  have hsig : e8CubedLattice.sigNeg = 0 :=
-    e8CubedLattice.isPosSemidef_iff_sigNeg_eq_zero.mp
-      (RootfulNiemeierType.isPosDef_lattice .e8Cubed).isPosSemidef
-  rw [e8CubedLattice.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hsig,
-    discriminant_e8CubedLattice]
-  norm_num
+theorem determinant_niemeierE8Cubed : niemeierE8Cubed.determinant = 1 :=
+  (RootfulNiemeierType.isPosDef_lattice .e8Cubed).determinant_eq_one_of_isUnimodular
+    (RootfulNiemeierType.isUnimodular_lattice .e8Cubed)
 
-/-- In the ambient space, the norm-`2` vectors of `e8CubedLattice` span its entire carrier. -/
-theorem span_vectorsOfNorm_two_e8CubedLattice :
+/-- In the ambient space, the norm-`2` vectors of `niemeierE8Cubed` span its entire carrier. -/
+theorem span_vectorsOfNorm_two_niemeierE8Cubed :
     Submodule.span ℤ
-        ((fun x : e8CubedLattice ↦
+        ((fun x : niemeierE8Cubed ↦
           (x : ∀ i, Fin (RootfulNiemeierType.e8Cubed.componentType i).rank → ℚ)) ''
-          e8CubedLattice.vectorsOfNorm 2) =
-      e8CubedLattice.carrier :=
-  (RootfulNiemeierType.span_vectorsOfNorm_two_lattice_of_ne .e8Cubed
-      (by decide) (by decide) (by decide) (by decide)).trans
-    (congrArg IntegralLattice.carrier e8CubedLattice_eq_rootLattice.symm)
+          niemeierE8Cubed.vectorsOfNorm 2) =
+      niemeierE8Cubed.carrier :=
+  (RootfulNiemeierType.span_vectorsOfNorm_two_lattice .e8Cubed).trans
+    (congrArg IntegralLattice.carrier niemeierE8Cubed_eq_rootLattice.symm)
 
-/-- **Unlike rows with nontrivial glue, `e8CubedLattice` is generated over `ℤ` by its norm-`2`
+/-- **Unlike rows with nontrivial glue, `niemeierE8Cubed` is generated over `ℤ` by its norm-`2`
 roots.** -/
-theorem span_vectorsOfNorm_two_e8CubedLattice_eq_top :
-    Submodule.span ℤ (e8CubedLattice.vectorsOfNorm 2) = ⊤ := by
-  apply Submodule.map_injective_of_injective e8CubedLattice.carrier.injective_subtype
+@[simp]
+theorem span_vectorsOfNorm_two_niemeierE8Cubed_eq_top :
+    Submodule.span ℤ (niemeierE8Cubed.vectorsOfNorm 2) = ⊤ := by
+  apply Submodule.map_injective_of_injective niemeierE8Cubed.carrier.injective_subtype
   rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype]
-  exact span_vectorsOfNorm_two_e8CubedLattice
+  exact span_vectorsOfNorm_two_niemeierE8Cubed
 
-/-- The `(k, r)`-th root of `e8CubedLattice`, obtained by placing the `r`-th Bourbaki root of
+/-- The `(k, r)`-th root of `niemeierE8Cubed`, obtained by placing the `r`-th Bourbaki root of
 `typeE₈RootLattice` in component `k : Fin 3`. -/
-noncomputable def e8CubedRootVector (k : Fin 3) (r : Fin 240) : e8CubedLattice :=
+noncomputable def e8CubedRootVector (k : Fin 3) (r : Fin 240) : niemeierE8Cubed :=
   e8CubedSimpleRootIsometry.carrierEquiv.symm
     ⟨Pi.single k (IntegralLattice.typeE₈RootVector r : Fin 8 → ℚ),
       IntegralLattice.single_mem_pi_carrier _ k (IntegralLattice.typeE₈RootVector r).2⟩
@@ -315,7 +300,7 @@ theorem e8CubedD8PlusIsometry_e8CubedRootVector (k : Fin 3) (r : Fin 240) :
 /-- Every enumerated root `e8CubedRootVector k r` has norm `2`. -/
 @[simp]
 theorem norm_e8CubedRootVector (k : Fin 3) (r : Fin 240) :
-    e8CubedLattice.norm (e8CubedRootVector k r) = 2 := by
+    niemeierE8Cubed.norm (e8CubedRootVector k r) = 2 := by
   rw [IntegralLattice.norm_apply, ← e8CubedSimpleRootIsometry.map_app,
     ← IntegralLattice.norm_apply, e8CubedSimpleRootIsometry_e8CubedRootVector,
     IntegralLattice.norm_pi_single, IntegralLattice.norm_typeE₈RootVector]
@@ -323,27 +308,27 @@ theorem norm_e8CubedRootVector (k : Fin 3) (r : Fin 240) :
 /-- Every enumerated root `e8CubedRootVector k r` has integral norm `2`. -/
 @[simp]
 theorem integralNorm_e8CubedRootVector (k : Fin 3) (r : Fin 240) :
-    e8CubedLattice.integralNorm (e8CubedRootVector k r) = 2 := by
-  exact_mod_cast (e8CubedLattice.integralNorm_cast _).trans (norm_e8CubedRootVector k r)
+    niemeierE8Cubed.integralNorm (e8CubedRootVector k r) = 2 := by
+  exact_mod_cast (niemeierE8Cubed.integralNorm_cast _).trans (norm_e8CubedRootVector k r)
 
-/-- **Explicit 720-element enumeration of the norm-`2` shell of `e8CubedLattice`**, decomposing the
+/-- **Explicit 720-element enumeration of the norm-`2` shell of `niemeierE8Cubed`**, decomposing the
 shell across the three `E₈` summands via `piVectorsOfNormTwoEquiv` and indexing each summand shell
 by `typeE₈RootEquiv`. -/
 noncomputable def e8CubedRootEquiv :
-    Fin 3 × Fin 240 ≃ e8CubedLattice.vectorsOfNorm 2 :=
+    Fin 3 × Fin 240 ≃ niemeierE8Cubed.vectorsOfNorm 2 :=
   ((Equiv.prodCongr (Equiv.refl (Fin 3)) IntegralLattice.typeE₈RootEquiv).trans
       (Equiv.sigmaEquivProd (Fin 3) (IntegralLattice.typeE₈RootLattice.vectorsOfNorm 2)).symm).trans
     ((IntegralLattice.piVectorsOfNormTwoEquiv
         (fun _ : Fin 3 ↦ IntegralLattice.typeE₈RootLattice)
-        (fun _ ↦ IntegralLattice.isEven_typeE₈RootLattice)
-        (fun _ ↦ IntegralLattice.isPosDef_typeE₈RootLattice)).trans
+        (fun _ ↦ IntegralLattice.isPosDef_typeE₈RootLattice)
+        (fun _ ↦ IntegralLattice.isEven_typeE₈RootLattice)).trans
       (e8CubedSimpleRootIsometry.symm.carrierEquiv.toEquiv.subtypeEquiv fun y ↦
         (e8CubedSimpleRootIsometry.symm.carrierEquiv_mem_vectorsOfNorm_iff y 2).symm))
 
 /-- `e8CubedRootEquiv` sends `(k, r)` to `e8CubedRootVector k r`. -/
 @[simp]
 theorem coe_e8CubedRootEquiv_apply (p : Fin 3 × Fin 240) :
-    (e8CubedRootEquiv p : e8CubedLattice) = e8CubedRootVector p.1 p.2 := by
+    (e8CubedRootEquiv p : niemeierE8Cubed) = e8CubedRootVector p.1 p.2 := by
   apply Subtype.ext
   rw [e8CubedRootEquiv, e8CubedRootVector]
   simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.coe_refl, Prod.map_fst, Prod.map_snd,
@@ -352,16 +337,16 @@ theorem coe_e8CubedRootEquiv_apply (p : Fin 3 × Fin 240) :
     IntegralLattice.Isometry.coe_carrierEquiv_symm_apply,
     IntegralLattice.coe_piVectorsOfNormTwoEquiv_apply, IntegralLattice.typeE₈RootEquiv_apply]
 
-/-- Distinct `(k, r)` pairs give distinct root vectors in `e8CubedLattice`. -/
+/-- Distinct `(k, r)` pairs give distinct root vectors in `niemeierE8Cubed`. -/
 theorem e8CubedRootVector_injective :
     Function.Injective (Function.uncurry e8CubedRootVector) := fun p q h ↦
   e8CubedRootEquiv.injective <| Subtype.ext <|
     (coe_e8CubedRootEquiv_apply p).trans (h.trans (coe_e8CubedRootEquiv_apply q).symm)
 
-/-- A vector of `e8CubedLattice` has norm `2` if and only if it is one of the 720 enumerated
+/-- A vector of `niemeierE8Cubed` has norm `2` if and only if it is one of the 720 enumerated
 roots `e8CubedRootVector k r`. -/
-theorem norm_e8CubedLattice_eq_two_iff (x : e8CubedLattice) :
-    e8CubedLattice.norm x = 2 ↔ ∃ k r, e8CubedRootVector k r = x := by
+theorem norm_niemeierE8Cubed_eq_two_iff (x : niemeierE8Cubed) :
+    niemeierE8Cubed.norm x = 2 ↔ ∃ k r, e8CubedRootVector k r = x := by
   rw [← IntegralLattice.mem_vectorsOfNorm]
   constructor
   · intro hx
@@ -371,29 +356,17 @@ theorem norm_e8CubedLattice_eq_two_iff (x : e8CubedLattice) :
     rw [← coe_e8CubedRootEquiv_apply (k, r)]
     exact (e8CubedRootEquiv (k, r)).2
 
-/-- **The minimum of `e8CubedLattice` is `2`.** -/
+/-- **The minimum of `niemeierE8Cubed` is `2`.** -/
 @[simp]
-theorem minimum_e8CubedLattice : e8CubedLattice.minimum = 2 :=
+theorem minimum_niemeierE8Cubed : niemeierE8Cubed.minimum = 2 :=
   (RootfulNiemeierType.isPosDef_lattice .e8Cubed).minimum_eq_two
     (RootfulNiemeierType.isEven_lattice .e8Cubed) (integralNorm_e8CubedRootVector 0 0)
 
-/-- **`e8CubedLattice` has `720` vectors of norm `2`**, agreeing with the table root count
-`3 × 240 = 720`. -/
+/-- **The kissing number of `niemeierE8Cubed` is `720`.** -/
 @[simp]
-theorem representationNumber_e8CubedLattice_two :
-    e8CubedLattice.representationNumber 2 = 720 := by
-  rw [e8CubedSimpleRootIsometry.representationNumber_eq 2,
-    IntegralLattice.representationNumber_pi_two
-      (fun _ : Fin 3 ↦ IntegralLattice.typeE₈RootLattice)
-      (fun _ ↦ IntegralLattice.isEven_typeE₈RootLattice)
-      (fun _ ↦ IntegralLattice.isPosDef_typeE₈RootLattice)]
-  simp [IntegralLattice.representationNumber_typeE₈RootLattice_two]
-
-/-- **The kissing number of `e8CubedLattice` is `720`.** -/
-@[simp]
-theorem kissingNumber_e8CubedLattice : e8CubedLattice.kissingNumber = 720 := by
-  rw [IntegralLattice.kissingNumber_eq_representationNumber (by simp [minimum_e8CubedLattice]),
-    minimum_e8CubedLattice]
-  exact representationNumber_e8CubedLattice_two
+theorem kissingNumber_niemeierE8Cubed : niemeierE8Cubed.kissingNumber = 720 := by
+  rw [IntegralLattice.kissingNumber_eq_representationNumber (by simp [minimum_niemeierE8Cubed]),
+    minimum_niemeierE8Cubed, Nat.cast_ofNat]
+  exact RootfulNiemeierType.representationNumber_lattice_two .e8Cubed
 
 end TauCeti

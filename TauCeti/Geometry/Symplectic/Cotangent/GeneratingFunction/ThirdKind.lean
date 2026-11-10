@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
 
 /-!

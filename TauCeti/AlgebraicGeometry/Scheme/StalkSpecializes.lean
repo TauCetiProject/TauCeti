@@ -48,6 +48,9 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `AlgebraicGeometry.Scheme.Hom.stalkSpecializes_residue_residueFieldCongr_residueFieldMap`: for
+  a morphism `g`, the stalk map and the residue field map are compatible with the specializations
+  `x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`.
 * `TauCeti.AlgebraicGeometry.Scheme.algebraMap_stalkSpecializes` and
   `TauCeti.AlgebraicGeometry.Scheme.stalkSpecializes_injective`: on an irreducible scheme the
   specialization map is compatible with the maps to the function field, and on an integral scheme
@@ -284,3 +287,17 @@ end Scheme
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- The residue field map of `g` and the stalk maps are compatible with the specializations
+`x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`. -/
+theorem stalkSpecializes_residue_residueFieldCongr_residueFieldMap {X X' : Scheme.{u}}
+    (g : X' ⟶ X) {x : X} {x' ξ' : X'} (hx : x = g x') (h : x ⤳ g ξ') (h' : x' ⤳ ξ') :
+    X.presheaf.stalkSpecializes h ≫ X.residue x ≫ (X.residueFieldCongr hx).hom ≫
+        g.residueFieldMap x' =
+      g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue x' := by
+  subst hx
+  simp [Scheme.residue_residueFieldMap, ← Scheme.Hom.stalkSpecializes_stalkMap_assoc]
+
+end AlgebraicGeometry.Scheme.Hom

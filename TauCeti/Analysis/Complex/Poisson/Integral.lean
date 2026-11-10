@@ -55,7 +55,7 @@ theorem planarPoissonIntegral_add {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ} 
     (hw : w ∉ sphere c |R|) :
     planarPoissonIntegral (g₁ + g₂) c R w =
       planarPoissonIntegral g₁ c R w + planarPoissonIntegral g₂ c R w := by
-  have hK := continuousOn_poissonKernel_sphere hw
+  have hK := continuousOn_poissonKernel (c := c) hw
   rw [planarPoissonIntegral_def, planarPoissonIntegral_def, planarPoissonIntegral_def]
   convert circleAverage_add (hg₁.continuousOn_smul hK) (hg₂.continuousOn_smul hK) using 1
   congr 1
@@ -142,7 +142,7 @@ theorem planarPoissonIntegral_sub_const {g : ℂ → ℝ} {c : ℂ} {R : ℝ} {w
     (hg : CircleIntegrable g c R) (hw : w ∈ ball c |R|) (a : ℝ) :
     planarPoissonIntegral g c R w - a =
       circleAverage (fun y ↦ poissonKernel c w y * (g y - a)) c R := by
-  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
+  have hK := continuousOn_poissonKernel (c := c) (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hgK : CircleIntegrable (poissonKernel c w • g) c R := hg.continuousOn_smul hK
   have haK : CircleIntegrable (poissonKernel c w • fun _ : ℂ ↦ a) c R :=
     continuousOn_const.circleIntegrable'.continuousOn_smul hK
@@ -158,12 +158,12 @@ theorem planarPoissonIntegral_mono {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ}
     (hw : w ∈ ball c |R|)
     (hle : ∀ z ∈ sphere c |R|, g₁ z ≤ g₂ z) :
     planarPoissonIntegral g₁ c R w ≤ planarPoissonIntegral g₂ c R w := by
-  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
+  have hK := continuousOn_poissonKernel (c := c) (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hpoint : ∀ z ∈ sphere c |R|,
       (poissonKernel c w • g₁) z ≤ (poissonKernel c w • g₂) z := by
     intro z hz
     exact mul_le_mul_of_nonneg_left (hle z hz)
-      (poissonKernel_nonneg_on_sphere hw hz)
+      (poissonKernel_nonneg ((mem_ball_iff_norm.1 hw).le.trans (mem_sphere_iff_norm.1 hz).ge))
   rw [planarPoissonIntegral_def, planarPoissonIntegral_def]
   exact circleAverage_mono (hg₁.continuousOn_smul hK) (hg₂.continuousOn_smul hK) hpoint
 
@@ -174,7 +174,7 @@ theorem planarPoissonIntegral_nonneg {g : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : 
   have hpoint : ∀ z ∈ sphere c |R|, (0 : ℝ) ≤ (poissonKernel c w • g) z := by
     intro z hz
     exact mul_nonneg
-      (poissonKernel_nonneg_on_sphere hw hz)
+      (poissonKernel_nonneg ((mem_ball_iff_norm.1 hw).le.trans (mem_sphere_iff_norm.1 hz).ge))
       (hnonneg z hz)
   simpa [planarPoissonIntegral_def] using circleAverage_nonneg_of_nonneg hpoint
 
@@ -188,7 +188,8 @@ private theorem abs_poissonKernel_mul_sub_le {g : ℂ → ℝ} {c w y z : ℂ} {
     (hnear : dist y z < delta → |g y - g z| < eps) :
     |poissonKernel c w y * (g y - g z)| ≤
       eps * poissonKernel c w y + (R ^ 2 - ‖w - c‖ ^ 2) / (delta / 2) ^ 2 * C := by
-  have hK : 0 ≤ poissonKernel c w y := poissonKernel_nonneg_on_sphere hw hy
+  have hK : 0 ≤ poissonKernel c w y :=
+    poissonKernel_nonneg ((mem_ball_iff_norm.1 hw).le.trans (mem_sphere_iff_norm.1 hy).ge)
   have hB : 0 ≤ (R ^ 2 - ‖w - c‖ ^ 2) / (delta / 2) ^ 2 := by
     have hwc : ‖w - c‖ < |R| := mem_ball_iff_norm.mp hw
     exact div_nonneg (by nlinarith [norm_nonneg (w - c), sq_abs R]) (sq_nonneg _)
@@ -231,7 +232,7 @@ theorem tendsto_planarPoissonIntegral {g : ℂ → ℝ} {c z : ℂ} {R : ℝ}
   have hnear : ∀ᶠ w in nhdsWithin z (ball c |R|), dist w z ≤ delta / 2 :=
     eventually_nhdsWithin_of_eventually_nhds (closedBall_mem_nhds z (half_pos hdelta))
   filter_upwards [self_mem_nhdsWithin, hsmall, hnear] with w hw hwsmall hwnear
-  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
+  have hK := continuousOn_poissonKernel (c := c) (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hdiff_i : CircleIntegrable (fun y ↦ poissonKernel c w y * (g y - g z)) c R :=
     (hK.mul (hg.sub continuousOn_const)).circleIntegrable'
   -- Positivity and mass one turn the pointwise majorant into the required integral estimate.

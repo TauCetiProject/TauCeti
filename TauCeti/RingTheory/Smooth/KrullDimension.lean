@@ -110,7 +110,8 @@ theorem ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension {P : Ideal 
     rw [ringKrullDim_quotient, ← hM, Order.height_eq_krullDim_Iic]
     exact Order.krullDim_le_of_strictMono
       (fun q ↦ ⟨q.1, (PrimeSpectrum.mem_zeroLocus _ _).mpr
-        (le_of_mem_minimalPrimes_of_isDomain_localization hP hPm q.2)⟩)
+        (le_of_mem_minimalPrimes_of_isDomain_localization (Localization.AtPrime m) hP hPm
+          q.2)⟩)
       fun _ _ h ↦ h
 
 /-- The spectrum of a standard smooth algebra of relative dimension `n` over a field is

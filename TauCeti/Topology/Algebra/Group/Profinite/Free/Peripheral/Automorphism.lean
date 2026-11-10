@@ -92,7 +92,7 @@ theorem exists_peripheralAut_conj_cusp (hF : IsProP p F) (e : F ≃ₜ* freeProP
         (q * d * (φ q)⁻¹)⁻¹ * hF.padicPow (q * cusp (basis e) * q⁻¹) u * (q * d * (φ q)⁻¹) := by
   obtain ⟨φ, c, d, hc0, hc, hd⟩ := exists_peripheralAut hF e u
   exact ⟨φ, c, d, hc0, hc,
-    map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u) (hF.conj_padicPow · · u) hd⟩
+    fun q ↦ map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u) (hF.conj_padicPow q _ u) hd⟩
 
 /-- For every unit `u ∈ ℤ_pˣ`, the basis of a free pro-`p` group admits a continuous
 automorphism that is peripheral of exponent `u`. -/

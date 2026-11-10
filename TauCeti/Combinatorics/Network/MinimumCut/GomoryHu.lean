@@ -297,6 +297,58 @@ private theorem IsPartialCutTree.mem_iff_of_mem_edgeSide [Preorder K] {f : Finse
 variable [DecidableEq V] [AddCommMonoid K] [LinearOrder K] [IsOrderedCancelAddMonoid K]
   {f : Finset V → K}
 
+/-- A partial cut tree has a minimum cut between a representative `r` and a new leaf `x` attached
+to `r` that crosses no cut of an edge between representatives. -/
+private theorem IsPartialCutTree.exists_isMinimum_not_crosses (hf : IsSymmSubmodular f)
+    {R : Finset V} {T : SimpleGraph V} (hP : IsPartialCutTree f R T) {r x : V} (hxR : x ∉ R)
+    (hxr : T.Adj x r) :
+    ∃ X, IsMinimum f {r} {x} X ∧
+      ∀ ⦃u v : V⦄, u ∈ R → v ∈ R → T.Adj u v → ¬X.Crosses (T.edgeSide u v) := by
+  obtain ⟨X, hX, hXcross⟩ := exists_isMinimum_forall_not_crosses hf
+    (𝒞 := {S | ∃ u v, u ∈ R ∧ v ∈ R ∧ T.Adj u v ∧ T.edgeSide u v = S})
+    (by
+      rintro _ ⟨a, b, -, -, hab, rfl⟩ _ ⟨c, d, -, -, hcd, rfl⟩ -
+      exact hP.isTree.not_crosses_edgeSide hab hcd)
+    (fun _ ⟨a, b, ha, hb, hab, h⟩ ↦ ⟨a, b, h ▸ hP.isMinimum ha hb hab⟩) hxr.ne.symm
+    (by
+      rintro _ ⟨u, v, hu, hv, -, rfl⟩
+      refine hxr.symm.mem_edgeSide_iff <|
+        Sym2.ne_of_mem_notMem (Sym2.mem_mk_right r x) ?_
+      simpa only [Sym2.mem_iff, not_or] using
+        ⟨fun h ↦ hxR (h ▸ hu), fun h ↦ hxR (h ▸ hv)⟩)
+  exact ⟨X, hX, fun u v hu hv huv ↦ hXcross _ ⟨u, v, hu, hv, huv, rfl⟩⟩
+
+omit [IsOrderedCancelAddMonoid K] in
+/-- A branch at `r` that leaves a minimum cut keeps leaving one after the cut `X` between `r` and
+the new leaf `x` moves it to the hub `hub Xᶜ r x y`. -/
+private theorem IsPartialCutTree.isMinimum_edgeSide_hub (hf : IsSymmSubmodular f)
+    {R : Finset V} {T : SimpleGraph V} (hP : IsPartialCutTree f R T) {r x y : V} {X : Finset V}
+    (hrR : r ∈ R) (hxR : x ∉ R) (hxr : T.Adj x r) (hX : IsMinimum f {r} {x} X)
+    (hy : T.Adj r y) (hyR : y ∈ R) :
+    IsMinimum f {y} {hub Xᶜ r x y} (T.edgeSide y r) := by
+  have hbr := isAcyclic_iff_forall_adj_isBridge.mp hP.isTree.isAcyclic
+  have hSy := hP.isMinimum hyR hrR hy.symm
+  by_cases hyX : y ∈ Xᶜ
+  · rw [hub_of_mem hyX]
+    exact hSy.reattach hf.symm hX (by simpa using hyX)
+      ((hbr hy.symm).notMem_edgeSide_of_adj hxr.symm fun h ↦ hxR (h ▸ hyR))
+  · rw [hub_of_notMem hyX]
+    exact hSy
+
+omit [AddCommMonoid K] [LinearOrder K] [IsOrderedCancelAddMonoid K] in
+/-- After rewiring, a leaf `v` outside `insert x R` is still attached to a single representative. -/
+private theorem IsPartialCutTree.exists_mem_insert_rewire_adj_iff [Preorder K] {f : Finset V → K}
+    {R : Finset V} {T : SimpleGraph V} (hP : IsPartialCutTree f R T) {r x v : V} {X : Finset V}
+    (hrR : r ∈ R) (hv : v ∉ insert x R) :
+    ∃ c ∈ insert x R, ∀ y, (rewire T X r x).Adj v y ↔ y = c := by
+  obtain ⟨hvx, hvR⟩ := not_or.mp (mt mem_insert.mpr hv)
+  obtain ⟨c, hcR, hc⟩ := hP.exists_adj_iff v hvR
+  obtain ⟨c', hc', hc'adj⟩ :=
+    exists_rewire_adj_iff_of_leaf (X := X) (fun h : v = r ↦ hvR (h ▸ hrR)) hvx hc
+  refine ⟨c', ?_, hc'adj⟩
+  rcases hc' with rfl | rfl | rfl
+  exacts [mem_insert_of_mem hcR, mem_insert_of_mem hrR, mem_insert_self _ R]
+
 /-- One step of the construction: a partial cut tree absorbs any vertex outside its
 representatives. -/
 private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
@@ -308,18 +360,7 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
   have hxr : T.Adj x r := (hx r).mpr rfl
   have hrx : r ≠ x := hxr.ne.symm
   -- Choose a minimum `r`–`x` cut `X` crossing none of the cuts of edges between representatives.
-  obtain ⟨X, hX, hXcross⟩ := exists_isMinimum_forall_not_crosses hf
-    (𝒞 := {S | ∃ u v, u ∈ R ∧ v ∈ R ∧ T.Adj u v ∧ T.edgeSide u v = S})
-    (by
-      rintro _ ⟨a, b, -, -, hab, rfl⟩ _ ⟨c, d, -, -, hcd, rfl⟩ -
-      exact hT.not_crosses_edgeSide hab hcd)
-    (fun _ ⟨a, b, ha, hb, hab, h⟩ ↦ ⟨a, b, h ▸ hP.isMinimum ha hb hab⟩) hrx
-    (by
-      rintro _ ⟨u, v, hu, hv, -, rfl⟩
-      refine hxr.symm.mem_edgeSide_iff <|
-        Sym2.ne_of_mem_notMem (Sym2.mem_mk_right r x) ?_
-      simpa only [Sym2.mem_iff, not_or] using
-        ⟨fun h ↦ hxR (h ▸ hu), fun h ↦ hxR (h ▸ hv)⟩)
+  obtain ⟨X, hX, hXcross⟩ := hP.exists_isMinimum_not_crosses hf hxR hxr
   obtain ⟨hrX, hxX⟩ := isAdmissible_singleton.mp hX.admissible
   have hrX' : r ∉ Xᶜ := by simpa using hrX
   have hxX' : x ∈ Xᶜ := mem_compl.mpr hxX
@@ -327,7 +368,7 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
   have hbranch ⦃y : V⦄ (hy : T.Adj r y) (z : V) (hz : z ∈ T.edgeSide y r) :
       z ∈ Xᶜ ↔ y ∈ Xᶜ :=
     hP.mem_iff_of_mem_edgeSide hrR hxR hx hxX' hrX'
-      (fun u v hu hv huv ↦ crosses_compl_left.not.mpr (hXcross _ ⟨u, v, hu, hv, huv, rfl⟩)) hy hz
+      (fun u v hu hv huv ↦ crosses_compl_left.not.mpr (hXcross hu hv huv)) hy hz
   let T' := rewire T Xᶜ r x
   have hside₁ {a b : V} (hab : T.Adj a b) (ha : a ≠ r) (hb : b ≠ r) :
       T'.edgeSide a b = T.edgeSide a b :=
@@ -341,28 +382,12 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
     ((isAcyclic_iff_forall_adj_isBridge.mp hT'.isAcyclic h).compl_edgeSide
       hT'.connected.preconnected).symm
   refine ⟨T', hT', fun v hv ↦ ?_, fun u v hu hv huv ↦ ?_⟩
-  · obtain ⟨hvx, hvR⟩ := not_or.mp (mt mem_insert.mpr hv)
-    obtain ⟨c, hcR, hc⟩ := hP.exists_adj_iff v hvR
-    obtain ⟨c', hc', hc'adj⟩ :=
-      exists_rewire_adj_iff_of_leaf (X := Xᶜ) (fun h : v = r ↦ hvR (h ▸ hrR)) hvx hc
-    refine ⟨c', ?_, hc'adj⟩
-    rcases hc' with rfl | rfl | rfl
-    exacts [mem_insert_of_mem hcR, mem_insert_of_mem hrR, mem_insert_self _ R]
+  · exact hP.exists_mem_insert_rewire_adj_iff hrR hv
   · -- Every edge between representatives leaves a minimum cut.
     have hcompl_min {a b : V} (h : T'.Adj a b) (hm : IsMinimum f {a} {b} (T'.edgeSide a b)) :
         IsMinimum f {b} {a} (T'.edgeSide b a) := by
       rw [hcompl h]
       exact hm.compl hf.symm
-    -- A branch at `r` moved to `x` still leaves a minimum cut.
-    have hmin₃ {y : V} (hy : T.Adj r y) (hyR : y ∈ R) :
-        IsMinimum f {y} {hub Xᶜ r x y} (T.edgeSide y r) := by
-      have hSy := hP.isMinimum hyR hrR hy.symm
-      by_cases hyX : y ∈ Xᶜ
-      · rw [hub_of_mem hyX]
-        exact hSy.reattach hf.symm hX (by simpa using hyX)
-          ((hbr hy.symm).notMem_edgeSide_of_adj hxr.symm fun h ↦ hxR (h ▸ hyR))
-      · rw [hub_of_notMem hyX]
-        exact hSy
     rcases rewire_adj_cases huv with ⟨huv', hur, hvr⟩ | h | ⟨y, hy, hyx, h⟩
     · have hux : u ≠ x := fun h ↦ hvr ((hx v).mp (h ▸ huv'))
       have hvx : v ≠ x := fun h ↦ hur ((hx u).mp (h ▸ huv'.symm))
@@ -377,7 +402,7 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
     · have hm (hyR : y ∈ insert x R) :
           IsMinimum f {y} {hub Xᶜ r x y} (T'.edgeSide y (hub Xᶜ r x y)) := by
         rw [hside₃ hy hyx]
-        exact hmin₃ hy ((mem_insert.mp hyR).resolve_left hyx)
+        exact hP.isMinimum_edgeSide_hub hf hrR hxR hxr hX hy ((mem_insert.mp hyR).resolve_left hyx)
       rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · exact hm hu
       · exact hcompl_min (rewire_adj_hub hy hyx) (hm hv)

@@ -47,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 section Tangent
 
-variable [CompleteSpace E] [LieGroup I 3 G] [IsManifold I 1 G]
+variable [CompleteSpace E] [LieGroup I 3 G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 

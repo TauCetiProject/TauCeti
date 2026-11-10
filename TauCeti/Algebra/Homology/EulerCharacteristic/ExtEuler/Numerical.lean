@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Map
+public import TauCeti.LinearAlgebra.BilinearMap.IntLinear
 public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Functoriality
 
 /-!
@@ -85,14 +86,14 @@ variable (hP : (ExactStructure.abelian C).IsExtensionClosed P)
 noncomputable def extEulerBilinear :
     ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP) →ₗ[ℤ]
       ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ) →ₗ[ℤ] ℤ :=
-  biadditiveToIntBilinear (extEulerPairing hP hQ h)
+  (extEulerPairing hP hQ h).toIntLinearMap₂
 
 @[simp]
 theorem extEulerBilinear_apply
     (x : ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP))
     (y : ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ)) :
     extEulerBilinear hP hQ h x y = extEulerPairing hP hQ h x y :=
-  biadditiveToIntBilinear_apply (extEulerPairing hP hQ h) x y
+  (extEulerPairing hP hQ h).toIntLinearMap₂_apply x y
 
 /-- The left numerical quotient of the first exact Grothendieck group for the Ext-Euler pairing. -/
 abbrev ExtEulerLeftNumericalQuotient :=

@@ -42,6 +42,7 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetractionToClosedBall`: for `0 ≤ r`, the radial retraction as a map into the
   closed ball of radius `r`.
 * `TauCeti.norm_radialRetraction`: for `0 ≤ r`, its norm is `min ‖x‖ r`.
+* `TauCeti.norm_sub_radialRetraction`: for `0 ≤ r`, it moves `x` by `max (‖x‖ - r) 0`.
 * `TauCeti.max_norm_smul_radialRetraction`: scaling the retraction of `x` by `max ‖x‖ r` gives
   `r • x`, so `x` is recovered from its retraction and its norm.
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
@@ -200,6 +201,19 @@ theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x�
   · simp [hx, hr]
   rw [radialRetraction, norm_smul, Real.norm_of_nonneg (by positivity),
     min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
+
+/-- For nonnegative radius, the radial retraction moves `x` by `max (‖x‖ - r) 0`. -/
+theorem norm_sub_radialRetraction (hr : 0 ≤ r) (x : E) :
+    ‖x - radialRetraction r x‖ = max (‖x‖ - r) 0 := by
+  by_cases hx : ‖x‖ = 0
+  · simp [hx, hr]
+  rcases le_total ‖x‖ r with h | h
+  · rw [radialRetraction_of_norm_pos_of_norm_le ((norm_nonneg x).lt_of_ne' hx) h, sub_self,
+      norm_zero, max_eq_right (sub_nonpos.2 h)]
+  · have hsub : x - (r / ‖x‖) • x = (1 - r / ‖x‖) • x := by rw [sub_smul, one_smul]
+    rw [radialRetraction_of_le_norm h, max_eq_left (sub_nonneg.2 h), hsub, norm_smul,
+      Real.norm_of_nonneg (sub_nonneg.2 ((div_le_one ((norm_nonneg x).lt_of_ne' hx)).2 h)),
+      sub_mul, one_mul, div_mul_cancel₀ _ hx]
 
 /-- For nonnegative radius, the centred radial retraction is at distance `min (dist x x₀) r`
 from its centre. -/

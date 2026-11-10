@@ -13,8 +13,9 @@ import Mathlib.Topology.Order.OrderClosed
 # Boundaries of regular scalar superlevel sets
 
 A continuous real-valued function whose derivative does not vanish on a level has that level
-as the frontier of its strict superlevel set. This identifies the boundary of domains selected
-by regular values without requiring a choice of normal vector field.
+as the frontier of its strict superlevel set, whose closure is then the non-strict superlevel
+set. This identifies the boundary of domains selected by regular values without requiring a
+choice of normal vector field.
 -/
 
 public section
@@ -39,3 +40,12 @@ theorem Continuous.frontier_setOf_lt_eq_of_fderiv_ne_zero (hu : Continuous u)
     rw [mem_closure_iff_frequently, not_frequently] at h
     have hmax : IsLocalMax u x := h.mono fun y hy ↦ by simpa [hx] using not_lt.1 hy
     exact hreg x hx hmax.fderiv_eq_zero
+
+/-- The closure of a strict superlevel set is the non-strict superlevel set if the derivative is
+nonzero everywhere on the level. -/
+theorem Continuous.closure_setOf_lt_eq_of_fderiv_ne_zero (hu : Continuous u)
+    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) :
+    closure {x | t < u x} = {x | t ≤ u x} := by
+  rw [closure_eq_self_union_frontier, hu.frontier_setOf_lt_eq_of_fderiv_ne_zero hreg]
+  ext x
+  simp [le_iff_lt_or_eq, eq_comm]

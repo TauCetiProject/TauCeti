@@ -39,8 +39,8 @@ original element multiplied by the image of the common denominator. -/
 lemma algebraMap_integerMultiple (M : Submonoid A) [IsLocalization M S] (T : Finset S)
     (x : T) : algebraMap A S (IsLocalization.integerMultiple M T id x) =
       (x : S) * algebraMap A S (IsLocalization.commonDenomOfFinset M T : A) := by
-  rw [IsLocalization.map_integerMultiple, Submonoid.smul_def, Algebra.smul_def]
-  exact mul_comm _ _
+  simp [IsLocalization.commonDenomOfFinset, IsLocalization.map_integerMultiple, Submonoid.smul_def,
+    Algebra.smul_def, mul_comm]
 
 /-- The image of the finite family obtained by clearing denominators is the original family
 multiplied by the image of its common denominator. -/
@@ -49,9 +49,8 @@ lemma finsetIntegerMultiple_image_algebraMap (M : Submonoid A) [IsLocalization M
     (IsLocalization.finsetIntegerMultiple M T).image (algebraMap A S) =
       T.image fun x ↦ x * algebraMap A S (IsLocalization.commonDenomOfFinset M T : A) := by
   apply Finset.coe_injective
-  rw [Finset.coe_image, Finset.coe_image, IsLocalization.finsetIntegerMultiple_image,
-    ← Set.image_smul]
-  exact Set.image_congr' fun x ↦ by rw [Submonoid.smul_def, Algebra.smul_def, mul_comm]
+  simp [IsLocalization.finsetIntegerMultiple_image, ← Set.image_smul, Submonoid.smul_def,
+    Algebra.smul_def, mul_comm]
 
 open scoped Pointwise in
 /-- Clearing the denominators of a finite family does not change the ideal it generates after

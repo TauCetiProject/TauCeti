@@ -116,6 +116,45 @@ private theorem matrixBilinearForm_ite_smul_le {A : Matrix ι ι ℝ}
 
 variable [DecidableEq ι]
 
+omit [DecidableEq ι] in
+/-- The test function `T = (-φ F'(u))⁺` of the supersolution inequality is a nonnegative element of
+`H¹₀(Ω)`, and its weak gradient is `-φ F''(u) ∇u - F'(u) ∇φ` where `-φ F'(u) > 0` and `0`
+elsewhere. -/
+private theorem exists_nonneg_mem_w1p0Submodule_gradient_posPart_neg_smul_deriv
+    (u : W1p mu Omega 2) {F : ℝ → ℝ} (hF : ContDiff ℝ 2 F) {M' : ℝ≥0}
+    (hM' : ∀ t, ‖deriv (deriv F) t‖₊ ≤ M') (φ : 𝓓(Omega, ℝ)) :
+    ∃ T : W1p mu Omega 2, T ∈ w1p0Submodule mu Omega 2 ∧
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value T x) ∧
+      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T x =
+        if 0 < -(φ x * deriv F (W1p.value u x)) then
+          -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
+            deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x else 0 := by
+  have hp : (2 : ℝ≥0∞) ≠ (∞ : ℝ≥0∞) := ENNReal.ofNat_ne_top
+  -- `T₀ = -φ F'(u)`, with weak gradient `-φ F''(u) ∇u - F'(u) ∇φ`.
+  have hdF : ContDiff ℝ 1 (deriv F) := (contDiff_succ_iff_deriv.1 hF).2.2
+  set T₀ := -W1p.testFunctionSMulComp hp φ hdF hM' u
+  have hvalT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.value T₀ x = -(φ x * deriv F (W1p.value u x)) := by
+    filter_upwards [Lp.coeFn_neg (W1p.value (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+      W1p.value_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
+    rw [← W1p.valueL_apply, map_neg, W1p.valueL_apply, h₁, Pi.neg_apply, h₂]
+  have hgradT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T₀ x =
+      -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
+        deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
+    filter_upwards [Lp.coeFn_neg (W1p.gradient (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+      W1p.gradient_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
+    rw [← W1p.gradientL_apply, map_neg, W1p.gradientL_apply, h₁, Pi.neg_apply, h₂,
+      neg_smul]
+    abel
+  refine ⟨W1p.posPart hp T₀, W1p.posPart_mem_w1p0Submodule hp
+      ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem
+        (W1p.testFunctionSMulComp_mem_w1p0Submodule hp φ hdF hM' u)), ?_, ?_⟩
+  · filter_upwards [(W1p.value_posPart hp T₀) ▸ Lp.coeFn_posPart (W1p.value T₀)] with x hx
+    rw [hx]
+    exact le_max_right _ _
+  · filter_upwards [W1p.gradient_posPart_ae hp T₀, hvalT₀, hgradT₀] with x hgT hT₀ hgT₀
+    rw [hgT, indicator_apply]
+    simp only [mem_ofPred_eq, hT₀, hgT₀]
+
 /-- The test-function case of `TauCeti.PDE.UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos`:
 `a(F(u), φ⁺) ≤ 0` for every `φ ∈ C_c^∞(Ω)`. The supersolution inequality is tested against
 `T = (-φ F'(u))⁺`, and the energy densities of `a(F(u), φ⁺)` and `-a(u, T)` are compared
@@ -136,34 +175,8 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
   have hp : (2 : ℝ≥0∞) ≠ (∞ : ℝ≥0∞) := ENNReal.ofNat_ne_top
   set w := W1p.contDiffComp hp (hF.of_le one_le_two) hM hF0 u
   set P := W1p.posPart hp (W1p.ofTestFunctionₗ mu Omega 2 φ)
-  -- `T₀ = -φ F'(u)`, with weak gradient `-φ F''(u) ∇u - F'(u) ∇φ`.
-  have hdF : ContDiff ℝ 1 (deriv F) := (contDiff_succ_iff_deriv.1 hF).2.2
-  set T₀ := -W1p.testFunctionSMulComp hp φ hdF hM' u
-  have hvalT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.value T₀ x = -(φ x * deriv F (W1p.value u x)) := by
-    filter_upwards [Lp.coeFn_neg (W1p.value (W1p.testFunctionSMulComp hp φ hdF hM' u)),
-      W1p.value_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
-    rw [← W1p.valueL_apply, map_neg, W1p.valueL_apply, h₁, Pi.neg_apply, h₂]
-  have hgradT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T₀ x =
-      -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
-        deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
-    filter_upwards [Lp.coeFn_neg (W1p.gradient (W1p.testFunctionSMulComp hp φ hdF hM' u)),
-      W1p.gradient_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
-    rw [← W1p.gradientL_apply, map_neg, W1p.gradientL_apply, h₁, Pi.neg_apply, h₂,
-      neg_smul]
-    abel
-  set T := W1p.posPart hp T₀
-  -- `T` is a nonnegative element of `H¹₀(Ω)`, as the positive part of `-φ F'(u)`.
-  have hvalT : ∀ᵐ x ∂mu.restrict Omega, W1p.value T x = max (W1p.value T₀ x) 0 := by
-    rw [W1p.value_posPart]
-    exact Lp.coeFn_posPart _
-  have hTmem : T ∈ w1p0Submodule mu Omega 2 :=
-    W1p.posPart_mem_w1p0Submodule hp
-      ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem
-        (W1p.testFunctionSMulComp_mem_w1p0Submodule hp φ hdF hM' u))
-  have hTnonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value T x := by
-    filter_upwards [hvalT] with x hx
-    rw [hx]
-    exact le_max_right _ _
+  obtain ⟨T, hTmem, hTnonneg, hgradT⟩ :=
+    exists_nonneg_mem_w1p0Submodule_gradient_posPart_neg_smul_deriv u hF hM' φ
   have hsup := hu ⟨T, hTmem⟩ hTnonneg
   simp only at hsup
   -- Compare the energy densities pointwise.
@@ -177,19 +190,14 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
     (by simp only [Pi.neg_apply, integral_neg]; linarith)
   filter_upwards [hmem, hum, W1p.gradient_contDiffComp_ae hp (hF.of_le one_le_two) hM hF0 u,
     W1p.gradient_posPart_ae hp (W1p.ofTestFunctionₗ mu Omega 2 φ),
-    W1p.gradient_posPart_ae hp T₀, hvalT₀, hgradT₀, testFunctionLp_apply_ae (mu := mu) 2 φ,
-    gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx hux hgw hgP hgT hT₀ hgT₀ hφx hgφx
+    hgradT, testFunctionLp_apply_ae (mu := mu) 2 φ,
+    gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx hux hgw hgP hT hφx hgφx
   have key := matrixBilinearForm_ite_smul_le (A := a x)
     (fun ξ => by rw [matrixBilinearForm_self]; exact h.quadraticForm_nonneg hx ξ)
     (z := φ x) (hF' _ hux) (hF'' _ hux) (W1p.gradient u x) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x)
   have hP : W1p.gradient P x = if 0 < φ x then ∇ (φ : EuclideanSpace ℝ ι → ℝ) x else 0 := by
     rw [hgP, indicator_apply]
     simp only [mem_ofPred_eq, W1p.value_ofTestFunctionₗ, hφx, W1p.gradient_ofTestFunctionₗ, hgφx]
-  have hT : W1p.gradient T x = if 0 < -(φ x * deriv F (W1p.value u x)) then
-      -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
-        deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x else 0 := by
-    rw [hgT, indicator_apply]
-    simp only [mem_ofPred_eq, hT₀, hgT₀]
   simp only [energyIntegrand_apply, jetField_apply, Pi.zero_apply, Pi.neg_apply,
     driftForm_apply, massForm_apply, inner_zero_left, zero_mul, add_zero]
   rw [hgw, hP, hT]
@@ -320,6 +328,62 @@ private theorem tendsto_invApprox {c : ℕ → ℝ} (hc : Tendsto c atTop (𝓝 
     tendsto_const_nhds.div (tendsto_const_nhds.add (hc.pow 2)) (by positivity)
   rwa [show t / (t ^ 2 + 0 ^ 2) = t⁻¹ by rw [zero_pow two_ne_zero, add_zero]; field_simp] at hlim
 
+/-- A step of `UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow`. If `u ≥ m > 0` is a weak
+supersolution and every subsolution `w` satisfies the bound `hsub`, then for `0 < c` with `2c ≤ m`,
+almost everywhere on `ball x₀ (R / 2)` we have
+`u / (u² + c²) ≤ K * (∫_{ball x₀ R} u⁻ᵖ)^{1/p}`. The method is that `u / (u² + c²)` is a
+subsolution, so `hsub` applies, and it is dominated by `u⁻¹` pointwise. -/
+private theorem UniformlyEllipticOn.ae_invApprox_value_le_mul_setIntegral_rpow
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+    {m : ℝ} (hm : 0 < m) (hum : ∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x)
+    {x₀ : EuclideanSpace ℝ ι} {R K p : ℝ}
+    (hball : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hhalf : ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hK : 0 ≤ K) (hp : 0 < p)
+    (hsub : ∀ w : W1p mu Omega 2,
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 w (v : W1p mu Omega 2) ≤ 0) →
+      ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
+        W1p.value w x ≤ K *
+          (∫ x in ball x₀ R, max (W1p.value w x) 0 ^ p ∂mu) ^ p⁻¹)
+    (humB : ∀ᵐ x ∂mu.restrict (ball x₀ R), m ≤ W1p.value u x)
+    (hint : Integrable (fun x => (W1p.value u x)⁻¹ ^ p) (mu.restrict (ball x₀ R)))
+    {c : ℝ} (hc : 0 < c) (hcm : 2 * c ≤ m) :
+    ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
+      invApprox c (W1p.value u x) ≤
+        K * (∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu) ^ p⁻¹ := by
+  have hF := contDiff_invApprox hc
+  have hF0 : invApprox c 0 = 0 := by simp [invApprox]
+  -- The bounds on `F'` and `F''` in the form required by `TauCeti.W1p.contDiffComp`.
+  have hM : ∀ t, ‖deriv (invApprox c) t‖₊ ≤ ((c ^ 2)⁻¹).toNNReal := fun t => by
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    exact abs_deriv_invApprox_le hc t
+  have hM' : ∀ t, ‖deriv (deriv (invApprox c)) t‖₊ ≤ (3 / c ^ 3).toNNReal := fun t => by
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    exact abs_deriv_deriv_invApprox_le hc t
+  have hval := W1p.value_contDiffComp_ae ENNReal.ofNat_ne_top (hF.of_le one_le_two) hM hF0 u
+  have hw := hsub _ fun v hv => h.energyFormH1_contDiffComp_nonpos ha hu hF hM hM' hF0 hum
+    (fun t ht => deriv_invApprox_nonpos hc (hcm.trans ht))
+    (fun t ht => deriv_deriv_invApprox_nonneg hc (hcm.trans ht)) v hv
+  have hle : ∫ x in ball x₀ R, max (W1p.value (W1p.contDiffComp ENNReal.ofNat_ne_top
+        (hF.of_le one_le_two) hM hF0 u) x) 0 ^ p ∂mu ≤
+      ∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu := by
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) hint ?_
+    filter_upwards [humB, ae_restrict_of_ae_restrict_of_subset hball hval] with x hx hvx
+    have hux := invApprox_mem_Icc (c := c) (hm.trans_le hx)
+    rw [hvx, max_eq_left hux.1]
+    exact Real.rpow_le_rpow hux.1 hux.2 hp.le
+  filter_upwards [hw, ae_restrict_of_ae_restrict_of_subset hhalf hval] with x hx hvx
+  rw [← hvx]
+  refine hx.trans ?_
+  exact mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow (integral_nonneg fun x => Real.rpow_nonneg (le_max_right _ _) p)
+      hle (inv_nonneg.2 hp.le)) hK
+
 /-- Transfer a local `Lᵖ` upper bound for weak subsolutions to a lower bound for positive
 weak supersolutions. If every subsolution `w` satisfies
 `w ≤ K (∫ ((w)⁺)ᵖ)^{1/p}` on the half ball, then
@@ -369,35 +433,9 @@ theorem UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow
     nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
   have hbound : ∀ k, ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
       invApprox (c k) (W1p.value u x) ≤
-        K * (∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu) ^ p⁻¹ := by
-    intro k
-    have hF := contDiff_invApprox (hc k)
-    have hF0 : invApprox (c k) 0 = 0 := by simp [invApprox]
-    -- The bounds on `F'` and `F''` in the form required by `TauCeti.W1p.contDiffComp`.
-    have hM : ∀ t, ‖deriv (invApprox (c k)) t‖₊ ≤ ((c k ^ 2)⁻¹).toNNReal := fun t => by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
-      exact abs_deriv_invApprox_le (hc k) t
-    have hM' : ∀ t, ‖deriv (deriv (invApprox (c k))) t‖₊ ≤ (3 / c k ^ 3).toNNReal := fun t => by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
-      exact abs_deriv_deriv_invApprox_le (hc k) t
-    have hval := W1p.value_contDiffComp_ae ENNReal.ofNat_ne_top (hF.of_le one_le_two) hM hF0 u
-    have hw := hsub _ fun v hv => h.energyFormH1_contDiffComp_nonpos ha hu hF hM hM' hF0 hum
-      (fun t ht => deriv_invApprox_nonpos (hc k) ((hcm k).trans ht))
-      (fun t ht => deriv_deriv_invApprox_nonneg (hc k) ((hcm k).trans ht)) v hv
-    have hle : ∫ x in ball x₀ R, max (W1p.value (W1p.contDiffComp ENNReal.ofNat_ne_top
-          (hF.of_le one_le_two) hM hF0 u) x) 0 ^ p ∂mu ≤
-        ∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu := by
-      refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) hint ?_
-      filter_upwards [humB, ae_restrict_of_ae_restrict_of_subset hball hval] with x hx hvx
-      have hux := invApprox_mem_Icc (c := c k) (hm.trans_le hx)
-      rw [hvx, max_eq_left hux.1]
-      exact Real.rpow_le_rpow hux.1 hux.2 hp.le
-    filter_upwards [hw, ae_restrict_of_ae_restrict_of_subset hhalf hval] with x hx hvx
-    rw [← hvx]
-    refine hx.trans ?_
-    exact mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow (integral_nonneg fun x => Real.rpow_nonneg (le_max_right _ _) p)
-        hle (inv_nonneg.2 hp.le)) hK
+        K * (∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu) ^ p⁻¹ := fun k =>
+    h.ae_invApprox_value_le_mul_setIntegral_rpow ha hu hm hum hball hhalf hK hp hsub humB hint
+      (hc k) (hcm k)
   filter_upwards [ae_all_iff.2 hbound, ae_restrict_of_ae_restrict_of_subset hhalf hum]
     with x hx hux
   have hlim : Tendsto c atTop (𝓝 0) :=

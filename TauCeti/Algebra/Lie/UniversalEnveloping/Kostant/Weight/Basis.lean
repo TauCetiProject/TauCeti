@@ -62,10 +62,15 @@ choice is confined to one weight space at a time.
   maps the span of the integral joint weight spaces into that of its target.
 * `TauCeti.UniversalEnvelopingAlgebra.eq_zero_of_isCartanWeightVector_of_sum_eq_zero`: vectors of
   pairwise distinct integral weights are independent.
+* `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.eq_zero_of_forall_ne`: in a space spanned
+  by weight vectors, a weight vector of any other weight is zero.
+* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_of_isCartanWeightVector`: on a space spanned by
+  finitely many weight vectors, a root vector with a nonzero root acts nilpotently.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
-  numbered weight basis are exactly those whose weight sublattice is nonzero.
+  numbered weight-sublattice indices are exactly those whose weight sublattice is nonzero; under
+  the admissibility hypotheses these are the weights of the numbered weight basis of `M`.
 
 ## References
 
@@ -156,26 +161,73 @@ theorem span_weightSublattice_eq_jointWeightSpace (N : Submodule ℤ V)
 
 /-! ## Independence of weight vectors -/
 
+/-- **The joint weight spaces of distinct integral weights are independent.** This is generic
+independence of joint eigenspaces, restricted along the injective cast of integral weights. -/
+theorem iSupIndep_jointWeightSpace : iSupIndep (jointWeightSpace h ρ) := by
+  have hind' : iSupIndep fun μ : κ → ℚ =>
+      ⨅ j : κ, Module.End.eigenspace
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
+    iSupIndep_iInf_eigenspace fun j =>
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
+  suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
+  simpa only [jointWeightSpace, Function.comp_def] using
+    hind'.comp fun μ ν hμν => by
+      ext j
+      exact_mod_cast congr_fun hμν j
+
 /-- **Weight vectors of pairwise distinct weights are independent.** If a finite family of joint
 eigenvectors of the designated Cartan operators, indexed by pairwise distinct integral weights, sums
 to zero, then every member of the family is zero. -/
 theorem eq_zero_of_isCartanWeightVector_of_sum_eq_zero {s : Finset (κ → ℤ)} {w : (κ → ℤ) → V}
     (hw : ∀ l ∈ s, IsCartanWeightVector h ρ l (w l)) (hsum : ∑ l ∈ s, w l = 0)
-    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 := by
-  -- Restrict generic joint-eigenspace independence along the injective cast of integral weights.
-  have hind : iSupIndep (jointWeightSpace h ρ) := by
-    have hind' : iSupIndep fun μ : κ → ℚ =>
-        ⨅ j : κ, Module.End.eigenspace
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
-      iSupIndep_iInf_eigenspace fun j =>
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
-    suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
-    simpa only [jointWeightSpace, Function.comp_def] using
-      hind'.comp fun μ ν hμν => by
-        ext j
-        exact_mod_cast congr_fun hμν j
-  exact (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 hind s w
+    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 :=
+  (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 (iSupIndep_jointWeightSpace h ρ) s w
     (fun l hl => (mem_jointWeightSpace_iff h ρ).2 (hw l hl)) hsum l₀ hl₀
+
+variable {h ρ} in
+/-- **A weight vector of a weight missing from a spanning family of weight vectors is zero.** If
+`V` is spanned by weight vectors `b k` of weights `wt k`, then `V` is the sum of the joint weight
+spaces of the weights `wt k`, which meets the joint weight space of any other weight only in zero.
+-/
+theorem IsCartanWeightVector.eq_zero_of_forall_ne {η : Type*} {b : η → V} {wt : η → κ → ℤ}
+    (hb : ∀ k, IsCartanWeightVector h ρ (wt k) (b k))
+    (hspan : Submodule.span ℚ (Set.range b) = ⊤) {μ : κ → ℤ} {v : V}
+    (hv : IsCartanWeightVector h ρ μ v) (hμ : ∀ k, wt k ≠ μ) : v = 0 := by
+  have hle : Submodule.span ℚ (Set.range b) ≤
+      ⨆ (ν : κ → ℤ) (_ : ν ≠ μ), jointWeightSpace h ρ ν := by
+    rw [Submodule.span_le]
+    rintro _ ⟨k, rfl⟩
+    exact Submodule.mem_iSup_of_mem (wt k) <| Submodule.mem_iSup_of_mem (hμ k) <|
+      (mem_jointWeightSpace_iff h ρ).2 (hb k)
+  rw [hspan] at hle
+  exact (Submodule.disjoint_def.1 (iSupIndep_jointWeightSpace h ρ μ)) v
+    ((mem_jointWeightSpace_iff h ρ).2 hv) (hle Submodule.mem_top)
+
+/-! ## Nilpotence of root vectors -/
+
+/-- **A root vector acts nilpotently on a space spanned by finitely many weight vectors.** Let `x`
+be an eigenvector of the designated Cartan vectors under the adjoint action, with a nonzero integral
+root `α`. Then `ρ(x)ⁿ` raises the weight of a weight vector by `n α`. Only finitely many weights
+occur among a finite spanning family of weight vectors, so a large enough power of `ρ(x)` carries
+every vector of the family to a weight vector of an absent weight, which is zero. -/
+theorem isNilpotent_of_isCartanWeightVector {η : Type*} [Finite η] {b : η → V}
+    {wt : η → κ → ℤ} (hb : ∀ k, IsCartanWeightVector h ρ (wt k) (b k))
+    (hspan : Submodule.span ℚ (Set.range b) = ⊤) {x : L} {α : κ → ℤ}
+    (hα : ∀ j, ⁅h j, x⁆ = (α j : ℚ) • x) (hα0 : α ≠ 0) :
+    IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) := by
+  -- The exponents `n` for which some `wt k + n • α` is again a weight of the family.
+  have hfin : {n : ℕ | ∃ k, wt k + n • α ∈ Set.range wt}.Finite := by
+    have hinj (k : η) : Function.Injective fun n : ℕ => wt k + n • α := fun m n hmn =>
+      IsAddTorsionFree.nsmul_left_injective hα0 (add_left_cancel hmn)
+    rw [Set.ofPred_exists]
+    exact Set.finite_iUnion fun k => (Set.finite_range wt).preimage (hinj k).injOn
+  obtain ⟨N, hN⟩ := hfin.bddAbove
+  refine ⟨N + 1, LinearMap.ext_on_range hspan fun k => ?_⟩
+  rw [LinearMap.zero_apply]
+  refine (IsCartanWeightVector.pow_rootVector (fun _ : Unit => x) (i := ()) hα (hb k)
+    (N + 1)).eq_zero_of_forall_ne hb hspan fun k' hk' => ?_
+  have : N + 1 ≤ N := hN ⟨k, k', hk'⟩
+  omega
 
 /-- **The weight sublattices of a subgroup are independent.** -/
 theorem iSupIndep_weightSublattice : iSupIndep (weightSublattice h ρ M) := by
@@ -275,12 +327,28 @@ theorem isCartanWeightVector_kostantWeightBasis
       ((kostantWeightBasis e h ρ M hM hV a : M) : V) :=
   (mem_weightSublattice_iff h ρ M).1 (kostantWeightBasis_mem e h ρ M hM hV a)
 
-include e hM hV in
-/-- The index of the weight basis is finite, since the lattice is finitely generated. -/
+/-- A weight sublattice that has a basis index is nonzero. -/
+theorem weightSublattice_ne_bot_of_chooseBasisIndex {μ : κ → ℤ}
+    (j : Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) :
+    weightSublattice h ρ M μ ≠ ⊥ :=
+  Submodule.nontrivial_iff_ne_bot.mp
+    (nontrivial_of_ne _ _ ((Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).ne_zero j))
+
+/-- The index of the weight basis is finite, since the lattice is finitely generated: its weight
+sublattices are independent, so only finitely many of them are nonzero, and each is a finitely
+generated free `ℤ`-module. Neither Kostant-stability nor lying in the span of the integral weight
+spaces is needed, so the numbering of the index below needs neither either. -/
 theorem finite_kostantWeightBasis_index :
     Finite (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) := by
-  classical
-  exact Module.Finite.finite_basis (kostantWeightBasis e h ρ M hM hV)
+  have : IsNoetherian ℤ M := isNoetherian_of_isNoetherianRing_of_finite ℤ M
+  have hfin : {μ : κ → ℤ | weightSublattice h ρ M μ ≠ ⊥}.Finite :=
+    Submodule.finite_ne_bot_of_iSupIndep (iSupIndep_weightSublattice h ρ M)
+  have := hfin.to_subtype
+  have (μ : κ → ℤ) : Finite (Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) :=
+    Module.Finite.finite_basis (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ))
+  exact Finite.of_surjective
+    (Sigma.map (Subtype.val : {μ : κ → ℤ | weightSublattice h ρ M μ ≠ ⊥} → κ → ℤ) fun _ j => j)
+    fun a => ⟨⟨⟨a.1, weightSublattice_ne_bot_of_chooseBasisIndex h ρ M a.2⟩, a.2⟩, rfl⟩
 
 include e hM hV in
 /-- The weight basis has one vector for each unit of rank: its index has cardinality the rank of the
@@ -292,13 +360,12 @@ theorem nat_card_kostantWeightBasis_index_eq_finrank :
   classical
   exact (Module.finrank_eq_nat_card_basis (kostantWeightBasis e h ρ M hM hV)).symm
 
-include e hM hV in
 /-- The numbering of the weight-basis index by `Fin n` along which the weight basis is reindexed;
 it exists because the index is finite. -/
 noncomputable def kostantWeightBasisIndexEquivFin :
     (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) ≃
       Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))) :=
-  have := finite_kostantWeightBasis_index e h ρ M hM hV
+  have := finite_kostantWeightBasis_index h ρ M
   Finite.equivFin _
 
 include e hM hV in
@@ -308,7 +375,7 @@ noncomputable def kostantWeightBasisFin :
     Module.Basis
       (Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))))
       ℤ M :=
-  (kostantWeightBasis e h ρ M hM hV).reindex (kostantWeightBasisIndexEquivFin e h ρ M hM hV)
+  (kostantWeightBasis e h ρ M hM hV).reindex (kostantWeightBasisIndexEquivFin h ρ M)
 
 /-- The `Fin`-indexed weight basis is the weight basis read through the numbering of its index. -/
 @[simp]
@@ -316,38 +383,39 @@ theorem kostantWeightBasisFin_apply
     (x : Fin (Nat.card
       (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)))) :
     kostantWeightBasisFin e h ρ M hM hV x =
-      kostantWeightBasis e h ρ M hM hV
-        ((kostantWeightBasisIndexEquivFin e h ρ M hM hV).symm x) :=
+      kostantWeightBasis e h ρ M hM hV ((kostantWeightBasisIndexEquivFin h ρ M).symm x) :=
   Module.Basis.reindex_apply _ _ _
 
-include e hM hV in
-/-- The weight of the `x`-th vector of the `Fin`-indexed weight basis. -/
+/-- The weight of the `x`-th vector of the `Fin`-indexed weight basis: the first component of the
+index numbered `x`. It is a function of the numbering alone, so it is defined for any finitely
+generated subgroup, whether or not that subgroup has a weight basis. -/
 noncomputable def kostantWeightFin :
     Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))) →
       κ → ℤ :=
-  fun x => ((kostantWeightBasisIndexEquivFin e h ρ M hM hV).symm x).1
+  fun x => ((kostantWeightBasisIndexEquivFin h ρ M).symm x).1
 
 /-- **The `Fin`-indexed weight basis consists of weight vectors** of the recorded weights. -/
 theorem isCartanWeightVector_kostantWeightBasisFin
     (x : Fin (Nat.card
       (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)))) :
-    IsCartanWeightVector h ρ (kostantWeightFin e h ρ M hM hV x)
+    IsCartanWeightVector h ρ (kostantWeightFin h ρ M x)
       ((kostantWeightBasisFin e h ρ M hM hV x : M) : V) := by
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
 
-/-- **The weights recorded by the `Fin`-indexed weight basis are exactly the weights of the
-lattice**: an integral weight is carried by some vector of the basis if and only if its weight
-sublattice is nonzero. -/
+/-- **The weights recorded by the numbered weight-sublattice indices** are exactly those whose
+weight sublattice is nonzero: an integral weight lies in the range of `kostantWeightFin` if and
+only if `weightSublattice h ρ M μ ≠ ⊥`. Under the admissibility hypotheses of
+`kostantWeightBasisFin`, these are the weights of the vectors of that basis of `M`. -/
 theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
-    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+    μ ∈ Set.range (kostantWeightFin h ρ M) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
   refine ⟨?_, fun hμ => ?_⟩
   · rintro ⟨x, rfl⟩
-    rw [Submodule.ne_bot_iff]
-    exact ⟨_, kostantWeightBasis_mem e h ρ M hM hV _, (kostantWeightBasis e h ρ M hM hV).ne_zero _⟩
+    exact weightSublattice_ne_bot_of_chooseBasisIndex h ρ M
+      ((kostantWeightBasisIndexEquivFin h ρ M).symm x).2
   · have := Submodule.nontrivial_iff_ne_bot.mpr hμ
     obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
-    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+    exact ⟨kostantWeightBasisIndexEquivFin h ρ M ⟨μ, j⟩, by
       simp only [kostantWeightFin, Equiv.symm_apply_apply]⟩
 
 end WeightBasis

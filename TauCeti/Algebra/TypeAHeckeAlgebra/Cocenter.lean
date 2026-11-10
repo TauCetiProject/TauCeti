@@ -51,6 +51,13 @@ determine an arbitrary trace. In particular a tracial, block-multiplicative func
 cycle values `(q * z) ^ (m - 1)` of a Markov trace is that Markov trace
 (`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.eq_of_map_cycleWord`).
 
+The same comparison holds for families of functionals on the finite Hecke algebras
+`TypeAHeckeAlgebra R q n`, with block multiplicativity taken along the block maps
+`(x, y) ↦ castAdd x * natAdd y`
+(`TauCeti.TypeAHeckeAlgebra.trace_eq_of_cycleWord_values`). Such a family need not be compatible
+with the tower maps, as for the weighted traces of tensor representations whose weights are not
+normalized.
+
 The proof has two steps. First, along the decomposition `Hₙ₊₁ = Hₙ + Hₙ Tₙ₋₁ Hₙ`, every element of
 `Hₙ` is congruent modulo commutators to a combination of cycle-block words of compositions of `n`,
 with blocks in arbitrary order. Second, reordering the blocks does not change the class of a
@@ -86,6 +93,10 @@ strands past the next `b` strands.
   block-multiplicative functional with the cycle values of a Markov trace is that Markov trace.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleBlock`: a Markov trace with
   parameter `z` takes the value `∏ᵢ (q * z) ^ (λᵢ - 1)` on `ζ_λ`.
+* `TauCeti.TypeAHeckeAlgebra.trace_eq_of_cycleWord_values`: on the finite Hecke algebras, two
+  families of trace functionals which are multiplicative along the block maps
+  `TauCeti.TypeAHeckeAlgebra.castAdd` and `TauCeti.TypeAHeckeAlgebra.natAdd` and agree on all
+  cycle words are equal, without any compatibility with the tower maps.
 
 ## References
 
@@ -701,5 +712,70 @@ theorem eq_of_map_cycleWord {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
 end IsMarkovTrace
 
 end InfiniteTypeAHeckeAlgebra
+
+namespace TypeAHeckeAlgebra
+
+open InfiniteTypeAHeckeAlgebra (stage cycleBlockWord)
+
+variable {R : Type*} [CommRing R] {q : Rˣ}
+
+/-- Two block-multiplicative families of functionals on the finite Hecke algebras which agree on
+every cycle word agree on every element whose image in the infinite algebra is a cycle-block
+word. -/
+private theorem apply_eq_of_toInfinite_eq_cycleBlockWord
+    {φ φ' : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R}
+    (hφm : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
+    (hφm' : ∀ a b x y, φ' (a + b) (castAdd R q a b x * natAdd R q a b y) = φ' a x * φ' b y)
+    (h : ∀ m, φ m (cycleWord q m) = φ' m (cycleWord q m)) (l : List ℕ) :
+    ∀ {n} (_ : l.sum = n) (x : TypeAHeckeAlgebra R q n),
+      toInfinite R q n x = cycleBlockWord q l → φ n x = φ' n x := by
+  induction l with
+  | nil =>
+    rintro n hn x hx
+    rw [List.sum_nil] at hn
+    subst hn
+    obtain rfl : x = cycleWord q 0 := toInfinite_injective R q 0 (by
+      rw [hx, InfiniteTypeAHeckeAlgebra.cycleBlockWord_nil, cycleWord_zero, map_one])
+    exact h 0
+  | cons m l ih =>
+    rintro n hn x hx
+    rw [List.sum_cons] at hn
+    subst hn
+    -- The second block is the preimage of the cycle-block word of `l` in its stage.
+    set y := (stageEquiv R q l.sum).symm
+      ⟨cycleBlockWord q l, InfiniteTypeAHeckeAlgebra.cycleBlockWord_mem_stage l⟩
+    have hy : toInfinite R q l.sum y = cycleBlockWord q l := toInfinite_stageEquiv_symm_apply _
+    obtain rfl : x = castAdd R q m l.sum (cycleWord q m) * natAdd R q m l.sum y :=
+      toInfinite_injective R q _ (by
+        rw [hx, InfiniteTypeAHeckeAlgebra.cycleBlockWord_cons, map_mul, toInfinite_castAdd,
+          toInfinite_natAdd, toInfinite_cycleWord, hy])
+    rw [hφm, hφm', h, ih rfl y hy]
+
+/-- **Cycle words determine block-multiplicative traces on the finite Hecke algebras.** Two
+families of trace functionals on the Hecke algebras on `n` strands, both multiplicative along the
+block maps `(x, y) ↦ castAdd x * natAdd y`, agree on every Hecke algebra as soon as they agree on
+every cycle word `ζₘ`. No compatibility with the tower maps is needed. -/
+theorem trace_eq_of_cycleWord_values {φ φ' : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R}
+    (hφ : ∀ n x y, φ n (x * y) = φ n (y * x)) (hφ' : ∀ n x y, φ' n (x * y) = φ' n (y * x))
+    (hφm : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
+    (hφm' : ∀ a b x y, φ' (a + b) (castAdd R q a b x * natAdd R q a b y) = φ' a x * φ' b y)
+    (h : ∀ m, φ m (cycleWord q m) = φ' m (cycleWord q m)) (n : ℕ) : φ n = φ' n := by
+  -- Transport both families to the stage, where the cocenter comparison applies.
+  let ψ (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R) : stage R q n →ₗ[R] R :=
+    φ n ∘ₗ (stageEquiv R q n).symm.toLinearMap
+  have hψ (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R) (hφ : ∀ n x y, φ n (x * y) = φ n (y * x))
+      (x y : stage R q n) : ψ φ (x * y) = ψ φ (y * x) := by
+    simp only [ψ, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, hφ]
+  have key : ψ φ = ψ φ' := InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values
+    (hψ φ hφ) (hψ φ' hφ') fun μ ↦
+      apply_eq_of_toInfinite_eq_cycleBlockWord hφm hφm' h (μ.parts.sort (· ≥ ·))
+        (by rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]) _
+        (by
+          rw [AlgEquiv.toLinearMap_apply, toInfinite_stageEquiv_symm_apply]
+          exact InfiniteTypeAHeckeAlgebra.cycleBlock_def μ)
+  ext x
+  simpa [ψ] using LinearMap.congr_fun key (stageEquiv R q n x)
+
+end TypeAHeckeAlgebra
 
 end TauCeti

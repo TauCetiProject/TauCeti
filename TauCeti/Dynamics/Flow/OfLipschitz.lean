@@ -78,7 +78,7 @@ and the initial condition. -/
 theorem contDiff_flowOfLipschitz (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (Function.uncurry (flowOfLipschitz v hv)) := by
-  convert (ODE.contDiff_globalSolution n v hv hvs).comp
+  convert (ODE.contDiff_globalSolution (n := n) v hv (by exact_mod_cast hvs)).comp
     (contDiff_snd.prodMk contDiff_fst) using 1
   funext p
   rw [Function.comp_apply, Function.uncurry_apply_pair, flowOfLipschitz_apply]
@@ -88,7 +88,7 @@ the initial condition. -/
 theorem contDiff_flowOfLipschitz_apply (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
     ContDiff ℝ (n + 1) (flowOfLipschitz v hv t) := by
-  convert ODE.contDiff_globalSolution_apply n v hv hvs t using 1
+  convert ODE.contDiff_globalSolution_apply (n := n) v hv (by exact_mod_cast hvs) t using 1
   funext x
   rw [flowOfLipschitz_apply]
 

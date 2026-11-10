@@ -41,6 +41,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
+namespace TauCeti
+
 /-- Continuity, the rescaled ODE, and the initial value for the second coordinate of a product
 flow. This packages the chain-rule calculation used to compare a canonical coordinate path with a
 Picard path. -/
@@ -120,12 +122,122 @@ private theorem continuousMap_terminal_eq_of_ode_unique
     (show (1 : ℝ) ∈ Set.Icc 0 1 from ⟨zero_le_one, le_rfl⟩)] at hone
   exact hone
 
-/-- The tangent-space exponential of a finite-dimensional smooth Lie group is smooth at zero. -/
-theorem contMDiffAt_mulInvariantExp_modelSpace_zero
-    [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] :
-    ContMDiffAt 𝓘(ℝ, E) I ∞
-      (fun v : E => mulInvariantExp (I := I) (G := G)
-        (v : GroupLieAlgebra I G)) 0 := by
+/-- A point of the interior of the chart target that is the coordinate expression of an invariant
+integral curve is the coordinate of the exponential of the corresponding multiple. -/
+private theorem eq_extChartAt_mulInvariantExp_smul
+    [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+    {x : E} {v : E} {s : ℝ} (hx : x ∈ interior (extChartAt I (1 : G)).target)
+    (hcurve : (extChartAt I (1 : G)).symm x =
+      mulInvariantIntegralCurve (I := I) (G := G) (v : GroupLieAlgebra I G) 1 s) :
+    x = extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) (s • (v : GroupLieAlgebra I G))) := by
+  calc
+    x = extChartAt I (1 : G) ((extChartAt I (1 : G)).symm x) :=
+      ((extChartAt I (1 : G)).right_inv (interior_subset hx)).symm
+    _ = extChartAt I (1 : G)
+        (mulInvariantIntegralCurve (I := I) (G := G) (v : GroupLieAlgebra I G) 1 s) := by
+      rw [hcurve]
+    _ = _ := congrArg (extChartAt I (1 : G))
+      (mulInvariantExp_smul (I := I) (G := G) (v : GroupLieAlgebra I G) s).symm
+
+/-- The chart coordinates of `exp (t c p)`, for `t ∈ [0, 1]`, lie in any given neighbourhood of
+the coordinate of `1` once `p` is small. -/
+private theorem eventually_extChartAt_mulInvariantExp_smul_mem
+    [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+    {S : Set E} (hS : S ∈ 𝓝 (extChartAt I (1 : G) (1 : G))) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ p : E in 𝓝 (0 : E), ∀ t ∈ Set.Icc (0 : ℝ) 1,
+      extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) ((c * t) • (p : GroupLieAlgebra I G))) ∈ S := by
+  have hexpCoord : ContinuousAt
+      (fun v : E => extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 :=
+    (continuousAt_extChartAt (I := I) (1 : G)).comp_of_eq
+      (continuousAt_mulInvariantExp_modelSpace_zero (I := I) (G := G))
+      (mulInvariantExp_zero (I := I) (G := G))
+  have hcoordS : (fun v : E => extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) ⁻¹' S ∈ 𝓝 (0 : E) :=
+    hexpCoord.preimage_mem_nhds (by
+      -- expose the value at zero, so that `mulInvariantExp_zero` can rewrite it
+      change S ∈ 𝓝 (extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) (0 : GroupLieAlgebra I G)))
+      rwa [mulInvariantExp_zero])
+  obtain ⟨η, hη, hηS⟩ := Metric.mem_nhds_iff.mp hcoordS
+  have hradius : 0 < η / (c + 1) := div_pos hη (by linarith)
+  filter_upwards [Metric.ball_mem_nhds (0 : E) hradius] with p hp t ht
+  apply hηS
+  rw [Metric.mem_ball, dist_zero_right] at hp ⊢
+  rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hc.le ht.1)]
+  calc
+    c * t * ‖p‖ ≤ c * ‖p‖ :=
+      mul_le_mul_of_nonneg_right (mul_le_of_le_one_right hc.le ht.2) (norm_nonneg p)
+    _ < c * (η / (c + 1)) := mul_lt_mul_of_pos_left hp hc
+    _ = (c / (c + 1)) * η := by ring
+    _ < 1 * η := mul_lt_mul_of_pos_right ((div_lt_one (by linarith)).2 (by linarith)) hη
+    _ = η := one_mul η
+
+/-- The second coordinate of the local coordinate representation of the invariant integral curve,
+rescaled by `c`, and a Picard path with the same field and initial value in a common Lipschitz set
+have the same terminal value. -/
+private theorem terminal_eq_extChartAt_mulInvariantExp_smul
+    [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+    {α : (E × E) × ℝ → E × E} {δ c : ℝ} {p : E} {S : Set E} {K : NNReal}
+    (hc : 0 < c) (hcδ : c < δ)
+    (hlocal : ∀ s ∈ Set.Ioo (-δ) δ,
+      ContinuousAt α ((p, extChartAt I (1 : G) (1 : G)), s) ∧
+        HasDerivAt (fun r => α ((p, extChartAt I (1 : G) (1 : G)), r))
+          ((0 : E), mulInvariantCoordinateVectorField (I := I) (G := G)
+            (α ((p, extChartAt I (1 : G) (1 : G)), s))) s ∧
+        α ((p, extChartAt I (1 : G) (1 : G)), 0) = (p, extChartAt I (1 : G) (1 : G)) ∧
+        (α ((p, extChartAt I (1 : G) (1 : G)), s)).1 = p ∧
+        (α ((p, extChartAt I (1 : G) (1 : G)), s)).2 ∈ interior (extChartAt I (1 : G)).target)
+    (hcurve : Set.EqOn
+      (fun t => (extChartAt I (1 : G)).symm (α ((p, extChartAt I (1 : G) (1 : G)), t)).2)
+      (mulInvariantIntegralCurve (I := I) (G := G) (p : GroupLieAlgebra I G) 1)
+      (Set.Ioo (-δ) δ))
+    (γ : C(Set.Icc (0 : ℝ) 1, E))
+    (hfixed : LipschitzOnWith K
+      (fun y => c • mulInvariantCoordinateVectorField (I := I) (G := G) (p, y)) S)
+    (hγzero : γ ⟨0, le_rfl, zero_le_one⟩ = extChartAt I (1 : G) (1 : G))
+    (hγderiv : ∀ t ∈ Set.Ico (0 : ℝ) 1,
+      HasDerivWithinAt (fun s => γ (Set.projIcc 0 1 zero_le_one s))
+        (c • mulInvariantCoordinateVectorField (I := I) (G := G)
+          (p, γ (Set.projIcc 0 1 zero_le_one t))) (Set.Ici t) t)
+    (hγS : ∀ t : Set.Icc (0 : ℝ) 1, γ t ∈ S)
+    (hcanonical : ∀ t ∈ Set.Icc (0 : ℝ) 1,
+      extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) ((c * t) • (p : GroupLieAlgebra I G))) ∈ S) :
+    γ ⟨1, zero_le_one, le_rfl⟩ = extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) (c • (p : GroupLieAlgebra I G))) := by
+  let a : ℝ → E := fun t => (α ((p, extChartAt I (1 : G) (1 : G)), c * t)).2
+  have htime (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : c * t ∈ Set.Ioo (-δ) δ :=
+    ⟨by nlinarith [mul_nonneg hc.le ht.1],
+      (mul_le_of_le_one_right hc.le ht.2).trans_lt hcδ⟩
+  have haCoord (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      a t = extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) ((c * t) • (p : GroupLieAlgebra I G))) :=
+    eq_extChartAt_mulInvariantExp_smul (hlocal _ (htime t ht)).2.2.2.2
+      (hcurve (htime t ht))
+  have hpath := rescaledSecondCoordinate_data
+    (α := α) (V := mulInvariantCoordinateVectorField (I := I) (G := G))
+    p (extChartAt I (1 : G) (1 : G)) c fun t ht => by
+      obtain ⟨h1, h2, h3, h4, -⟩ := hlocal _ (htime t ht)
+      exact ⟨h1, h2, h3, h4⟩
+  have hterminal := continuousMap_terminal_eq_of_ode_unique
+    (F := fun q : E × E => c • mulInvariantCoordinateVectorField (I := I) (G := G) q)
+    (p := p) (center := extChartAt I (1 : G) (1 : G)) (S := S) (K := K) γ a
+    hfixed hγzero hγderiv hγS hpath.1 (fun t ht => hpath.2.1 t ht)
+    (fun t ht => by
+      rw [haCoord t ⟨ht.1, ht.2.le⟩]
+      exact hcanonical t ⟨ht.1, ht.2.le⟩) hpath.2.2
+  exact hterminal.trans (by simpa only [mul_one] using haCoord 1 ⟨zero_le_one, le_rfl⟩)
+
+/-- In the identity chart, the tangent-space exponential of a finite-dimensional smooth Lie group
+is `C^n` at zero. -/
+private theorem contDiffAt_extChartAt_mulInvariantExp_zero
+    [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] (n : ℕ) :
+    ContDiffAt ℝ n
+      (fun v : E => extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 := by
   let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   let _ : ContMDiffMul I (∞ + 1) G := by
     simpa using (inferInstance : ContMDiffMul I ∞ G)
@@ -135,196 +247,56 @@ theorem contMDiffAt_mulInvariantExp_modelSpace_zero
   let c : ℝ := δ / 2
   have hc : 0 < c := by dsimp only [c]; linarith
   have hcδ : c < δ := by dsimp only [c]; linarith
-  have hc0 : c ≠ 0 := ne_of_gt hc
-  have _ : (0 : E) ∈ U := mem_of_mem_nhds hU
+  -- Construct a smooth Picard germ for the time-rescaled coordinate field.
+  let F : E × E → E := fun p => c • mulInvariantCoordinateVectorField (I := I) (G := G) p
+  have hF : ContDiffAt ℝ (n + 1) F ((0 : E), center) :=
+    contDiffAt_const.smul
+      ((contDiffAt_mulInvariantCoordinateVectorField (I := I) (G := G) (v := 0) (n := ∞)
+        BoundarylessManifold.isInteriorPoint).of_le (by exact_mod_cast le_top))
+  obtain ⟨γ, hγsmooth, hγzero, hγode⟩ := ODE.exists_contDiffAt_picard_solution n F (0 : E) center
+    hF (Filter.Eventually.of_forall fun y => by
+      simp only [F, mulInvariantCoordinateVectorField_zero, smul_zero])
+  -- Compare it with the canonical invariant path by ODE uniqueness in a Lipschitz neighbourhood.
+  obtain ⟨K, S, P, hS, hP, hfixed, hγS⟩ := TauCeti.ODE.exists_lipschitzOnWith_eventually_path_mem
+    (hF.of_le (by exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))) hγsmooth.continuousAt hγzero
+  have hEq : ∀ᶠ p in 𝓝 (0 : E),
+      γ p ⟨1, zero_le_one, le_rfl⟩ = extChartAt I (1 : G)
+        (mulInvariantExp (I := I) (G := G) (c • (p : GroupLieAlgebra I G))) := by
+    filter_upwards [hγode, hγS, eventually_extChartAt_mulInvariantExp_smul_mem
+      (I := I) (G := G) hS hc, hP, hU] with p hpODE hpγS hpCan hpP hpU
+    exact terminal_eq_extChartAt_mulInvariantExp_smul hc hcδ (hαlocal p hpU) (hαeq p hpU) (γ p)
+      (hfixed p hpP) (by simpa [center] using hpODE.1 ⟨0, le_rfl, zero_le_one⟩) hpODE.2.2 hpγS hpCan
+  -- Evaluate the Picard germ at the terminal time and undo the time rescaling.
+  have heval : ContDiffAt ℝ (n + 1) (fun p => γ p ⟨1, zero_le_one, le_rfl⟩) 0 := by
+    simpa only [Function.comp_def, ContinuousMap.evalCLM_apply] using
+      hγsmooth.continuousLinearMap_comp (ContinuousMap.evalCLM ℝ ⟨1, zero_le_one, le_rfl⟩)
+  -- Undo the time rescaling by the linear equivalence `p ↦ c • p`.
+  let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc.ne')
+  have hcomp : ContDiffAt ℝ (n + 1) (fun p : E => extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) ((e p : E) : GroupLieAlgebra I G))) 0 :=
+    heval.congr_of_eventuallyEq (hEq.mono fun p hp => by simpa [e] using hp.symm)
+  have hcomp' := (e.contDiffAt_comp_iff (x := (0 : E)) (f := fun v : E => extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)))).1
+    (by rw [map_zero]; exact hcomp)
+  exact hcomp'.of_le (by exact_mod_cast Nat.le_succ n)
+
+end TauCeti
+
+/-- The tangent-space exponential of a finite-dimensional smooth Lie group is smooth at zero. -/
+theorem contMDiffAt_mulInvariantExp_modelSpace_zero
+    [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] :
+    ContMDiffAt 𝓘(ℝ, E) I ∞
+      (fun v : E => mulInvariantExp (I := I) (G := G)
+        (v : GroupLieAlgebra I G)) 0 := by
+  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   rw [contMDiffAt_infty]
   intro n
-  have hcoord : ContDiffAt ℝ n
-      (fun v : E => extChartAt I (1 : G)
-        (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 := by
-    -- Phase 1: construct a smooth Picard germ for the time-rescaled coordinate field.
-    let F : E × E → E := fun p => c •
-      mulInvariantCoordinateVectorField (I := I) (G := G) p
-    have hF : ContDiffAt ℝ (n + 1) F ((0 : E), center) := by
-      exact contDiffAt_const.smul
-        ((contDiffAt_mulInvariantCoordinateVectorField (I := I) (G := G) (v := 0) (n := ∞)
-          BoundarylessManifold.isInteriorPoint).of_le
-          (by exact_mod_cast le_top))
-    have hFzero : ∀ᶠ y in 𝓝 center, F (0, y) = 0 := by
-      filter_upwards [] with y
-      simp only [F, mulInvariantCoordinateVectorField_zero, smul_zero]
-    obtain ⟨γ, hγsmooth, hγzero, hγode⟩ :=
-      ODE.exists_contDiffAt_picard_solution n F (0 : E) center hF hFzero
-    -- Phase 2: choose one Lipschitz neighborhood containing both the Picard paths and the
-    -- canonical exponential paths for all sufficiently small parameters.
-    have hFone : ContDiffAt ℝ 1 F ((0 : E), center) :=
-      hF.of_le (by exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))
-    obtain ⟨K, W, hW, hFlip⟩ := hFone.exists_lipschitzOnWith
-    rw [nhds_prod_eq] at hW
-    obtain ⟨P, hP, S, hS, hPS⟩ := Filter.mem_prod_iff.mp hW
-    have hfixed (p : E) (hp : p ∈ P) : LipschitzOnWith K (fun y => F (p, y)) S := by
-      intro y hy z hz
-      have h := hFlip (x := (p, y)) (y := (p, z))
-        (hPS ⟨hp, hy⟩) (hPS ⟨hp, hz⟩)
-      simpa only [Prod.edist_eq, edist_self, zero_max] using h
-    obtain ⟨U, hUS, hUopen, hUcenter⟩ := mem_nhds_iff.mp hS
-    have hγS : ∀ᶠ p in 𝓝 (0 : E), ∀ t : Set.Icc (0 : ℝ) 1, γ p t ∈ S := by
-      filter_upwards [hγsmooth.continuousAt.eventually
-        (ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun t _ ↦ by
-          simpa [hγzero] using hUcenter)] with p hp t
-      exact hUS (hp (Set.mem_univ t))
-    have hexpCoord : ContinuousAt
-        (fun v : E => extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 := by
-      have hexp : ContinuousAt
-          (fun v : E => mulInvariantExp (I := I) (G := G)
-            (v : GroupLieAlgebra I G)) 0 :=
-        continuousAt_mulInvariantExp_modelSpace_zero (I := I) (G := G)
-      have hzero : mulInvariantExp (I := I) (G := G)
-          (0 : GroupLieAlgebra I G) = 1 := mulInvariantExp_zero
-      exact (continuousAt_extChartAt (I := I) (1 : G)).comp_of_eq hexp hzero
-    have hcoordS : (fun v : E => extChartAt I (1 : G)
-        (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) ⁻¹' S ∈ 𝓝 (0 : E) :=
-      by
-        have hzero : mulInvariantExp (I := I) (G := G)
-            (0 : GroupLieAlgebra I G) = 1 := mulInvariantExp_zero
-        apply hexpCoord.preimage_mem_nhds
-        -- Expose the value of the preimage map at zero so that `hS` has the required center.
-        change S ∈ 𝓝 (extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G) (0 : GroupLieAlgebra I G)))
-        rw [hzero]
-        exact hS
-    obtain ⟨η, hη, hηS⟩ := Metric.mem_nhds_iff.mp hcoordS
-    have hradius : 0 < η / (c + 1) := div_pos hη (by linarith)
-    have hcanonicalS : ∀ᶠ p : E in 𝓝 (0 : E), ∀ t ∈ Set.Icc (0 : ℝ) 1,
-        extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G)
-            ((c * t) • (p : GroupLieAlgebra I G))) ∈ S := by
-      filter_upwards [Metric.ball_mem_nhds (0 : E) hradius] with p hp
-      intro t ht
-      apply hηS
-      rw [Metric.mem_ball, dist_zero_right] at hp ⊢
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hc.le ht.1)]
-      have hct : c * t ≤ c := mul_le_of_le_one_right hc.le ht.2
-      have hmul : c * ‖p‖ < c * (η / (c + 1)) :=
-        mul_lt_mul_of_pos_left hp hc
-      calc
-        c * t * ‖p‖ ≤ c * ‖p‖ := mul_le_mul_of_nonneg_right hct (norm_nonneg p)
-        _ < c * (η / (c + 1)) := hmul
-        _ < η := by
-          have hcfrac : c / (c + 1) < 1 := (div_lt_one (by linarith)).2 (by linarith)
-          calc
-            c * (η / (c + 1)) = (c / (c + 1)) * η := by ring
-            _ < 1 * η := mul_lt_mul_of_pos_right hcfrac hη
-            _ = η := one_mul η
-    -- Phase 3: compare the smooth Picard path with the canonical invariant path by ODE
-    -- uniqueness inside their common Lipschitz neighborhood.
-    have hEq : ∀ᶠ p in 𝓝 (0 : E),
-        γ p ⟨1, zero_le_one, le_rfl⟩ =
-          extChartAt I (1 : G)
-            (mulInvariantExp (I := I) (G := G)
-              (c • (p : GroupLieAlgebra I G))) := by
-      filter_upwards [hγode, hγS, hcanonicalS, hP, hU] with p hpODE hpγS hpCanonicalS hpP hpU
-      let a : ℝ → E := fun t =>
-        (α (((p, center), c * t))).2
-      have htime (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-          c * t ∈ Set.Ioo (-δ) δ := by
-        constructor
-        · nlinarith [mul_nonneg hc.le ht.1]
-        · exact (mul_le_of_le_one_right hc.le ht.2).trans_lt hcδ
-      have haCoord (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-          a t = extChartAt I (1 : G)
-            (mulInvariantExp (I := I) (G := G)
-              ((c * t) • (p : GroupLieAlgebra I G))) := by
-        have hlocal := hαlocal p hpU (c * t) (htime t ht)
-        have htarget := hlocal.2.2.2.2
-        have htarget' : a t ∈ (extChartAt I (1 : G)).target := by
-          exact interior_subset (by simpa only [a, center] using htarget)
-        calc
-          a t = extChartAt I (1 : G) ((extChartAt I (1 : G)).symm (a t)) :=
-            ((extChartAt I (1 : G)).right_inv htarget').symm
-          _ = extChartAt I (1 : G)
-              (mulInvariantIntegralCurve (I := I) (G := G)
-                (p : GroupLieAlgebra I G) 1 (c * t)) := by
-            congr 1
-            exact hαeq p hpU (htime t ht)
-          _ = extChartAt I (1 : G)
-              (mulInvariantExp (I := I) (G := G)
-                ((c * t) • (p : GroupLieAlgebra I G))) := by
-            exact congrArg (extChartAt I (1 : G))
-              (mulInvariantExp_smul (I := I) (G := G)
-                (p : GroupLieAlgebra I G) (c * t)).symm
-      have hpath := rescaledSecondCoordinate_data
-        (α := α) (V := mulInvariantCoordinateVectorField (I := I) (G := G)) p center c (by
-          intro t ht
-          have hlocal := hαlocal p hpU (c * t) (htime t ht)
-          refine ⟨?_, ?_, ?_, ?_⟩
-          · simpa only [center] using hlocal.1
-          · simpa only [center] using hlocal.2.1
-          · simpa only [center] using hlocal.2.2.1
-          · simpa only [center] using hlocal.2.2.2.1)
-      have haCont : ContinuousOn a (Set.Icc (0 : ℝ) 1) := by
-        simpa only [a] using hpath.1
-      have haDeriv : ∀ t ∈ Set.Ico (0 : ℝ) 1,
-          HasDerivWithinAt a (F (p, a t)) (Set.Ici t) t := by
-        intro t ht
-        simpa only [a, F] using hpath.2.1 t ht
-      have haS : ∀ t ∈ Set.Ico (0 : ℝ) 1, a t ∈ S := by
-        intro t ht
-        rw [haCoord t ⟨ht.1, ht.2.le⟩]
-        exact hpCanonicalS t ⟨ht.1, ht.2.le⟩
-      have haZero : a 0 = center := by simpa only [a] using hpath.2.2
-      have hγzero : γ p ⟨0, le_rfl, zero_le_one⟩ = center := by
-        simpa using hpODE.1 ⟨0, le_rfl, zero_le_one⟩
-      have hterminal := continuousMap_terminal_eq_of_ode_unique
-        (F := F) (p := p) (center := center) (S := S) (K := K) (γ p) a
-        (hfixed p hpP) hγzero hpODE.2.2 hpγS haCont haDeriv haS haZero
-      exact hterminal.trans (by
-        simpa only [mul_one] using haCoord 1 ⟨zero_le_one, le_rfl⟩)
-    -- Phase 4: evaluate the smooth Picard germ at the terminal time, transfer smoothness through
-    -- the comparison, and undo the time rescaling.
-    have heval : ContDiffAt ℝ (n + 1)
-        (fun p => γ p ⟨1, zero_le_one, le_rfl⟩) 0 :=
-      by
-        simpa only [Function.comp_def, ContinuousMap.evalCLM_apply] using
-          hγsmooth.continuousLinearMap_comp
-            (ContinuousMap.evalCLM ℝ ⟨1, zero_le_one, le_rfl⟩)
-    have hscaled : ContDiffAt ℝ (n + 1)
-        (fun p : E => extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G)
-            (c • (p : GroupLieAlgebra I G)))) 0 :=
-      by
-        apply heval.congr_of_eventuallyEq
-        filter_upwards [hEq] with p hp
-        exact hp.symm
-    have hrescale : ContDiffAt ℝ (n + 1) (fun p : E => c⁻¹ • p) 0 := by fun_prop
-    have hscaled' : ContDiffAt ℝ (n + 1)
-        (fun p : E => extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G)
-            (c • (p : GroupLieAlgebra I G)))) (c⁻¹ • (0 : E)) := by
-      simpa only [smul_zero] using hscaled
-    have hcomp := hscaled'.comp 0 hrescale
-    apply (hcomp.congr_of_eventuallyEq (Filter.Eventually.of_forall fun p => ?_)).of_le
-      (by exact_mod_cast Nat.le_succ n)
-    have harg : c • ((c⁻¹ • p : E) : GroupLieAlgebra I G) =
-        (p : GroupLieAlgebra I G) := by
-      rw [smul_smul, mul_inv_cancel₀ hc0, one_smul]
-    -- State the rescaled composite in the model-space presentation used by `harg`.
-    change extChartAt I (1 : G)
-      (mulInvariantExp (I := I) (G := G) (p : GroupLieAlgebra I G)) =
-        extChartAt I (1 : G)
-          (mulInvariantExp (I := I) (G := G)
-            (c • ((c⁻¹ • p : E) : GroupLieAlgebra I G)))
-    rw [harg]
-  -- Phase 5: convert smoothness of the identity-chart expression back to manifold smoothness.
-  have hzero : mulInvariantExp (I := I) (G := G)
-      (0 : GroupLieAlgebra I G) = 1 := mulInvariantExp_zero
   rw [contMDiffAt_iff_target_of_mem_source (y := (1 : G)) (by
     convert mem_chart_source H (1 : G) using 1
-    exact hzero)]
+    exact mulInvariantExp_zero)]
   refine ⟨continuousAt_mulInvariantExp_modelSpace_zero (I := I) (G := G), ?_⟩
-  have hcoordM := hcoord.contMDiffAt
-  simpa only [Function.comp_def] using hcoordM
+  simpa only [Function.comp_def] using
+    (TauCeti.contDiffAt_extChartAt_mulInvariantExp_zero (I := I) (G := G) n).contMDiffAt
 
 /-- The tangent-space exponential of a finite-dimensional smooth Lie group is smooth. -/
 theorem contMDiff_mulInvariantExp

@@ -26,15 +26,12 @@ variable {X P A : Type*} [TopologicalSpace X] [TopologicalSpace P]
 theorem exists_isOpen_forall_mem_eq {f : X × P → A} (hf : IsLocallyConstant f)
     {K : Set X} (hK : IsCompact K) (p₀ : P) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x ∈ K, f (x, p) = f (x, p₀) := by
-  have hfixed : IsLocallyConstant fun q : X × P ↦ f (q.1, p₀) :=
-    hf.comp_continuous (continuous_fst.prodMk continuous_const)
   have hopen : IsOpen {q : X × P | f q = f (q.1, p₀)} :=
-    (hf.prodMk hfixed) {a : A × A | a.1 = a.2}
+    (hf.prodMk (hf.comp_continuous (continuous_fst.prodMk continuous_const)))
+      {a : A × A | a.1 = a.2}
   -- Mathlib's tube lemma applies to this open agreement locus containing `K × {p₀}`.
   obtain ⟨u, v, -, hvopen, hKu, hv, huv⟩ :=
-    generalized_tube_lemma hK (isCompact_singleton (x := p₀)) hopen (by
-      rintro ⟨x, p⟩ ⟨_, rfl⟩
-      rfl)
+    generalized_tube_lemma hK isCompact_singleton hopen fun q hq ↦ congrArg f (Prod.ext rfl hq.2)
   exact ⟨v, hvopen, hv rfl, fun p hp x hx ↦ huv (Set.mk_mem_prod (hKu hx) hp)⟩
 
 end IsLocallyConstant

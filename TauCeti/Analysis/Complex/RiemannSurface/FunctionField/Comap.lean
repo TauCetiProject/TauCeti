@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -22,7 +24,10 @@ respects the field operations, since these are characterized by their values awa
 and so it is a homomorphism of `ℂ`-algebras
 `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ φ : M(Y) →ₐ[ℂ] M(X)`, injective because `M(Y)`
 is a field. Pullback is functorial: it sends the identity to the identity and a composite to the
-composite in the opposite order.
+composite in the opposite order. Pulling back along a biholomorphism is therefore an isomorphism of
+function fields (`TauCeti.RiemannSurface.MeromorphicFunction.comapAlgEquiv`), with inverse the
+pullback along the inverse biholomorphism; for automorphisms of `X` this is how a group acting on
+`X` by biholomorphisms acts on `M(X)`.
 
 For a nonconstant holomorphic `β : X → OnePoint ℂ` on a connected Riemann surface `X`, this is the
 embedding `M(OnePoint ℂ) ↪ M(X)` of the function field of the Riemann sphere into that of `X`.
@@ -40,12 +45,16 @@ relation between the valuations of `M(X)` and of `M(Y)` at points lying over one
   function along a nonconstant holomorphic map of connected Riemann surfaces.
 * `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ`: the pullback as a homomorphism of
   `ℂ`-algebras.
+* `TauCeti.RiemannSurface.MeromorphicFunction.comapAlgEquiv`: the pullback along a biholomorphism,
+  as an isomorphism of `ℂ`-algebras.
 
 ## Main results
 
 * `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ_injective`: the pullback is injective.
 * `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ_id` and
-  `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ_comp`: functoriality.
+  `TauCeti.RiemannSurface.MeromorphicFunction.comapₐ_comp`: functoriality, and
+  `TauCeti.RiemannSurface.MeromorphicFunction.comapAlgEquiv_refl` and
+  `TauCeti.RiemannSurface.MeromorphicFunction.comapAlgEquiv_trans` for biholomorphisms.
 * `TauCeti.RiemannSurface.MeromorphicFunction.meromorphicOrderAt_finitePart_comap`: the order of a
   pullback.
 
@@ -229,5 +238,66 @@ theorem comapₐ_comp [ConnectedSpace Z] {ψ : Y → Z} (hψ : MDifferentiable �
   AlgHom.ext fun f ↦ (comap_comap φ hφ hne hψ hψne hψφne f).symm
 
 end ComapAlgHom
+
+/-! ### The pullback along a biholomorphism -/
+
+section ComapAlgEquiv
+
+variable [ConnectedSpace X] [ConnectedSpace Y] [ConnectedSpace Z]
+
+/-- The pullback of meromorphic functions along a biholomorphism `e : X ≃ Y` of connected Riemann
+surfaces, as an isomorphism of `ℂ`-algebras `M(Y) ≃ₐ[ℂ] M(X)`, `f ↦ f ∘ e`. Its inverse is the
+pullback along the inverse biholomorphism (`comapAlgEquiv_symm`). -/
+def comapAlgEquiv (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞)) :
+    MeromorphicFunction Y ≃ₐ[ℂ] MeromorphicFunction X :=
+  -- a connected Riemann surface has two distinct points, which a biholomorphism separates
+  AlgEquiv.ofAlgHom (comapₐ e (e.mdifferentiable (by simp))
+      ((ChartedSpace.nontrivial (H := ℂ) (X := X)).exists_pair_ne.imp fun _ ⟨x₂, h⟩ ↦
+        ⟨x₂, e.injective.ne h⟩))
+    (comapₐ e.symm (e.symm.mdifferentiable (by simp))
+      ((ChartedSpace.nontrivial (H := ℂ) (X := Y)).exists_pair_ne.imp fun _ ⟨y₂, h⟩ ↦
+        ⟨y₂, e.symm.injective.ne h⟩))
+    (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp) (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp)
+
+variable (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞))
+
+/-- The pullback along a biholomorphism, as a homomorphism of `ℂ`-algebras, is the pullback
+`comapₐ`. -/
+theorem toAlgHom_comapAlgEquiv (hne : ∃ x₁ x₂ : X, e x₁ ≠ e x₂) :
+    (comapAlgEquiv e : MeromorphicFunction Y →ₐ[ℂ] MeromorphicFunction X) =
+      comapₐ e (e.mdifferentiable (by simp)) hne :=
+  (rfl)
+
+/-- The pullback of `f` along a biholomorphism `e` takes the value of `f` at the image point. -/
+@[simp]
+theorem comapAlgEquiv_apply (f : MeromorphicFunction Y) (x : X) :
+    comapAlgEquiv e f x = f (e x) :=
+  (rfl)
+
+/-- The finite part of the pullback of `f` along a biholomorphism `e` is the finite part of `f`
+composed with `e`. -/
+@[simp]
+theorem finitePart_comapAlgEquiv (f : MeromorphicFunction Y) :
+    (comapAlgEquiv e f).finitePart = f.finitePart ∘ e :=
+  funext fun _ ↦ by simp only [finitePart_def, comapAlgEquiv_apply, comp_apply]
+
+/-- The inverse of the pullback along `e` is the pullback along `e.symm`. -/
+@[simp]
+theorem comapAlgEquiv_symm : (comapAlgEquiv e).symm = comapAlgEquiv e.symm :=
+  (rfl)
+
+/-- Pulling back along the identity does nothing. -/
+@[simp]
+theorem comapAlgEquiv_refl :
+    comapAlgEquiv (Diffeomorph.refl 𝓘(ℂ) X _) = AlgEquiv.refl :=
+  AlgEquiv.ext fun _ ↦ ext fun _ ↦ (rfl)
+
+/-- **Functoriality of the pullback along biholomorphisms.** Pulling back along `e.trans e'` is
+pulling back along `e'` and then along `e`. -/
+theorem comapAlgEquiv_trans (e' : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) Y Z (⊤ : ℕ∞)) :
+    comapAlgEquiv (e.trans e') = (comapAlgEquiv e').trans (comapAlgEquiv e) :=
+  AlgEquiv.ext fun _ ↦ ext fun _ ↦ (rfl)
+
+end ComapAlgEquiv
 
 end TauCeti.RiemannSurface.MeromorphicFunction

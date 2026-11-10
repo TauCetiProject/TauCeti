@@ -65,6 +65,9 @@ subgroups, since an idele can be split placewise into two factors.
 * `TauCeti.GlobalNumberFields.ofAdicCompletion_mem_ideleCongruenceSubgroup_iff`: an idele
   concentrated at a finite place `v` lies in the congruence subgroup exactly when its component
   lies in `U(K_v, 𝔪.exponent v)`.
+* `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem`: removing its
+  component at one place from a congruence idele leaves a congruence idele for any modulus that
+  imposes no further conditions away from that place.
 * `TauCeti.GlobalNumberFields.isOpen_ideleCongruenceSubgroup`: the congruence subgroup is open.
 * `TauCeti.GlobalNumberFields.unitEmbedding_mem_ideleCongruenceSubgroup_iff`: the principal
   ideles lying in the congruence subgroup are the images of the units of `𝓞 K` congruent to one
@@ -320,7 +323,71 @@ theorem ofAdicCompletion_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K}
       · simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv']
     · simp
 
+/-- **Removing the component at one place from a congruence idele.** Let `v` be a finite place
+and let the modulus `𝔪` impose, away from `v`, no condition that `𝔫` does not. Dividing an idele
+of the congruence subgroup of `𝔫` by the idele concentrated at `v` with the same `v`-component
+gives an idele of the congruence subgroup of `𝔪`. -/
+theorem ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem {𝔪 𝔫 : Modulus K}
+    {v : HeightOneSpectrum (𝓞 K)} (hexp : ∀ v' ≠ v, 𝔪.exponent v' ≤ 𝔫.exponent v')
+    (hinf : 𝔪.infinitePart ⊆ 𝔫.infinitePart) {x : IdeleGroup (𝓞 K) K}
+    (hx : x ∈ ideleCongruenceSubgroup 𝔫) :
+    (IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x ∈
+      ideleCongruenceSubgroup 𝔪 := by
+  -- The coordinates of the quotient are `1` at `v` and those of `x` at every other place.
+  have hfin (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ≠ v) :
+      v'.ideleFiniteCoord ((IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x) =
+        v'.ideleFiniteCoord x := by
+    rw [map_mul, map_inv, ideleFiniteCoord_ofAdicCompletion_of_ne v' hv', inv_one, one_mul]
+  have hv : v.ideleFiniteCoord
+      ((IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x))⁻¹ * x) = 1 := by
+    rw [map_mul, map_inv, ideleFiniteCoord_ofAdicCompletion_self, inv_mul_cancel]
+  refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v' _ ↦ ?_, fun v' _ ↦ ?_, fun w hw ↦ ?_⟩
+  · rcases eq_or_ne v' v with rfl | hne
+    · rw [hv, Units.val_one, map_one]
+    · rw [hfin v' hne]
+      exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v'
+  · rcases eq_or_ne v' v with rfl | hne
+    · rw [hv, Units.val_one, sub_self, map_zero]
+      exact zero_le
+    · rw [hfin v' hne]
+      exact ((mem_unitFiltration_adicCompletion_iff v').1 (TauCeti.unitFiltration_antitone
+        (hexp v' hne) (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v'))).2
+  · rw [map_mul, map_inv, InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, inv_one, one_mul]
+    exact ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx (hinf hw)
+
 /-! ### Openness -/
+
+/-- Away from the modulus the congruence conditions are membership in the open subring of
+everywhere-integral adeles, at the finitely many finite divisors of `𝔪` a closed valuation ball,
+and at the finitely many selected real places a strict inequality: together they cut out an open
+subset of the adele ring. -/
+private theorem isOpen_setOf_congruenceConditions (𝔪 : Modulus K) :
+    IsOpen ({a | a.2 ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K} ∩
+      ({a | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
+          WithZero.exp (-(𝔪.exponent v : ℤ))} ∩
+        {a | ∀ w ∈ 𝔪.infinitePart,
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)}) : Set 𝔸[K]) := by
+  classical
+  refine IsOpen.inter ?_ (IsOpen.inter ?_ ?_)
+  · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
+  · have h : {a : 𝔸[K] | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
+          WithZero.exp (-(𝔪.exponent v : ℤ))} =
+        ⋂ v ∈ 𝔪.support, (fun a : 𝔸[K] ↦ (a.2 v : v.adicCompletion K) - 1) ⁻¹'
+          {z : v.adicCompletion K | Valued.v z ≤ WithZero.exp (-(𝔪.exponent v : ℤ))} := by
+      ext a; simp
+    rw [h]
+    exact isOpen_biInter_finset fun v _ ↦
+      (v.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
+        (((RestrictedProduct.continuous_eval v).comp continuous_snd).sub continuous_const)
+  · have h : {a : 𝔸[K] | ∀ w ∈ 𝔪.infinitePart,
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} =
+        ⋂ w ∈ 𝔪.infinitePart, {a : 𝔸[K] |
+          0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} := by
+      ext a; simp
+    rw [h]
+    exact isOpen_biInter_finset fun w _ ↦ isOpen_lt continuous_const
+      ((InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal w.2).continuous.comp
+        ((continuous_apply w.1).comp continuous_fst))
 
 /-- **The idele congruence subgroup is open.**  Away from the modulus the condition is membership
 in the open subring of everywhere-integral adeles, at the finitely many finite divisors of `𝔪` it
@@ -338,27 +405,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
           WithZero.exp (-(𝔪.exponent v : ℤ))} ∩
         {a | ∀ w ∈ 𝔪.infinitePart,
           0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)})
-  have hAopen : IsOpen A := by
-    refine IsOpen.inter ?_ (IsOpen.inter ?_ ?_)
-    · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
-    · have h : {a : 𝔸[K] | ∀ v ∈ 𝔪.support, Valued.v ((a.2 v : v.adicCompletion K) - 1) ≤
-            WithZero.exp (-(𝔪.exponent v : ℤ))} =
-          ⋂ v ∈ 𝔪.support, (fun a : 𝔸[K] ↦ (a.2 v : v.adicCompletion K) - 1) ⁻¹'
-            {z : v.adicCompletion K | Valued.v z ≤ WithZero.exp (-(𝔪.exponent v : ℤ))} := by
-        ext a; simp
-      rw [h]
-      exact isOpen_biInter_finset fun v _ ↦
-        (v.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
-          (((RestrictedProduct.continuous_eval v).comp continuous_snd).sub continuous_const)
-    · have h : {a : 𝔸[K] | ∀ w ∈ 𝔪.infinitePart,
-            0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} =
-          ⋂ w ∈ 𝔪.infinitePart, {a : 𝔸[K] |
-            0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2 (a.1 w.1)} := by
-        ext a; simp
-      rw [h]
-      exact isOpen_biInter_finset fun w _ ↦ isOpen_lt continuous_const
-        ((InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal w.2).continuous.comp
-          ((continuous_apply w.1).comp continuous_fst))
+  have hAopen : IsOpen A := isOpen_setOf_congruenceConditions 𝔪
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
     refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
@@ -476,6 +523,29 @@ theorem ideleCongrOneSubgroup_inf_ideleCongruenceSubgroup_one (𝔪 : Modulus K)
 
 /-! ### The greatest common divisor of two moduli -/
 
+/-- A finite coordinate of an idele in the congruence subgroup of `gcd 𝔪 𝔫` is congruent to one
+modulo every prime power dividing both finite parts. -/
+private theorem valued_ideleFiniteCoord_sub_one_le_of_gcd {𝔪 𝔫 : Modulus K}
+    {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongruenceSubgroup (𝔪.gcd 𝔫))
+    {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (h𝔪 : v.asIdeal ^ n ∣ 𝔪.finitePart)
+    (h𝔫 : v.asIdeal ^ n ∣ 𝔫.finitePart) :
+    Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤ WithZero.exp (-(n : ℤ)) := by
+  rw [coe_ideleFiniteCoord]
+  refine ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx ?_
+  rw [Modulus.gcd_finitePart, Ideal.dvd_iff_le]
+  exact sup_le (Ideal.le_of_dvd h𝔪) (Ideal.le_of_dvd h𝔫)
+
+/-- An idele in the congruence subgroup of `gcd 𝔪 𝔫` is positive at every real place common to
+`𝔪` and `𝔫`. -/
+private theorem extensionEmbeddingOfIsReal_pos_of_mem_inter {𝔪 𝔫 : Modulus K}
+    {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongruenceSubgroup (𝔪.gcd 𝔫))
+    {w : {w : InfinitePlace K // w.IsReal}} (h𝔪 : w ∈ 𝔪.infinitePart)
+    (h𝔫 : w ∈ 𝔫.infinitePart) :
+    0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
+      (w.1.ideleInfiniteCoord x : w.1.Completion) :=
+  ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx
+    (by classical rw [Modulus.gcd_infinitePart]; exact Finset.mem_inter.mpr ⟨h𝔪, h𝔫⟩)
+
 /-- **The idele congruence subgroup of a greatest common divisor is generated by the two
 congruence subgroups.**  An idele satisfying the conditions of `𝔪.gcd 𝔫` is split into two
 ideles by distributing its components: the components at the finite places where `𝔪` has the
@@ -488,24 +558,9 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
   refine le_antisymm (fun x hx ↦ ?_)
     (sup_le (ideleCongruenceSubgroup_antitone (Modulus.gcd_dvd_left 𝔪 𝔫))
       (ideleCongruenceSubgroup_antitone (Modulus.gcd_dvd_right 𝔪 𝔫)))
-  -- What is known about `x`: it is a unit at every finite place, it is congruent to one at each
-  -- prime power dividing both finite parts, and it is positive at the common real places.
   have hunit (v : HeightOneSpectrum (𝓞 K)) :
       Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 :=
     ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v
-  have hlevel {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (h𝔪 : v.asIdeal ^ n ∣ 𝔪.finitePart)
-      (h𝔫 : v.asIdeal ^ n ∣ 𝔫.finitePart) :
-      Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤ WithZero.exp (-(n : ℤ)) := by
-    rw [coe_ideleFiniteCoord]
-    refine ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx ?_
-    rw [Modulus.gcd_finitePart, Ideal.dvd_iff_le]
-    exact sup_le (Ideal.le_of_dvd h𝔪) (Ideal.le_of_dvd h𝔫)
-  have hpos {w : {w : InfinitePlace K // w.IsReal}} (h𝔪 : w ∈ 𝔪.infinitePart)
-      (h𝔫 : w ∈ 𝔫.infinitePart) :
-      0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
-        (w.1.ideleInfiniteCoord x : w.1.Completion) :=
-    ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx
-      (by rw [Modulus.gcd_infinitePart]; exact Finset.mem_inter.mpr ⟨h𝔪, h𝔫⟩)
   -- The places whose components are moved to the factor in the congruence subgroup of `𝔫`.
   set S : Finset (HeightOneSpectrum (𝓞 K)) :=
     𝔪.support.filter fun v ↦ 𝔫.exponent v < 𝔪.exponent v
@@ -515,33 +570,9 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       w.1 ∈ T ↔ w ∈ 𝔪.infinitePart ∧ w ∉ 𝔫.infinitePart := by
     simp only [hT, Finset.mem_filter, Finset.mem_univ, true_and]
     exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨w.2, h⟩⟩
-  set y : IdeleGroup (𝓞 K) K :=
-    (∏ v ∈ S, IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x)) *
-      ∏ w ∈ T, IdeleGroup.ofCompletion (𝓞 K) K w (w.ideleInfiniteCoord x)
-  have hyf (v : HeightOneSpectrum (𝓞 K)) :
-      v.ideleFiniteCoord y = if v ∈ S then v.ideleFiniteCoord x else 1 := by
-    rw [map_mul, v.ideleFiniteCoord_prod_ofAdicCompletion, map_prod]
-    simp [HeightOneSpectrum.ideleFiniteCoord_ofCompletion]
-  have hyi (w : InfinitePlace K) :
-      w.ideleInfiniteCoord y = if w ∈ T then w.ideleInfiniteCoord x else 1 := by
-    rw [map_mul, map_prod, map_prod]
-    simp only [InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, Finset.prod_const_one, one_mul]
-    split_ifs with hw
-    · rw [Finset.prod_eq_single_of_mem w hw fun w' _ hw' ↦
-        InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w hw'.symm _,
-        InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
-    · exact Finset.prod_eq_one fun w' hw' ↦
-        InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w (ne_of_mem_of_not_mem hw' hw).symm _
-  have hzf (v : HeightOneSpectrum (𝓞 K)) :
-      v.ideleFiniteCoord (y⁻¹ * x) = if v ∈ S then 1 else v.ideleFiniteCoord x := by
-    rw [map_mul, map_inv, hyf]
-    split_ifs <;> simp
-  have hzi (w : InfinitePlace K) :
-      w.ideleInfiniteCoord (y⁻¹ * x) = if w ∈ T then 1 else w.ideleInfiniteCoord x := by
-    rw [map_mul, map_inv, hyi]
-    split_ifs <;> simp
-  refine Subgroup.mem_sup.mpr ⟨y⁻¹ * x, ?_, y, ?_, by rw [mul_comm, mul_inv_cancel_left]⟩
-  · -- The components of `y⁻¹ * x` satisfy the conditions of `𝔪`.
+  obtain ⟨y, z, hzy, hyf, hzf, hyi, hzi⟩ := NumberField.IdeleGroup.exists_mul_eq_coord_ite x S T
+  refine Subgroup.mem_sup.mpr ⟨z, ?_, y, ?_, hzy⟩
+  · -- The components of `z` satisfy the conditions of `𝔪`.
     refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · have hvS : v ∉ S := fun h ↦ hv ((𝔪.mem_support_iff v).mp (Finset.mem_filter.mp h).1)
       rw [hzf, ite_eq_right hvS]
@@ -551,12 +582,13 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · simp
       · have hle : 𝔪.exponent v ≤ 𝔫.exponent v :=
           not_lt.mp fun h ↦ hvS (Finset.mem_filter.mpr ⟨(𝔪.mem_support_iff v).mpr hv, h⟩)
-        exact hlevel (𝔪.pow_exponent_dvd_finitePart v)
+        exact valued_ideleFiniteCoord_sub_one_le_of_gcd hx (𝔪.pow_exponent_dvd_finitePart v)
           ((pow_dvd_pow _ hle).trans (𝔫.pow_exponent_dvd_finitePart v))
     · rw [hzi]
       split_ifs with hwT
       · simp
-      · exact hpos hw (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
+      · exact extensionEmbeddingOfIsReal_pos_of_mem_inter hx hw
+          (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
     refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
@@ -566,7 +598,8 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
     · rw [hyf]
       split_ifs with hvS
       · have hlt := (Finset.mem_filter.mp hvS).2
-        exact hlevel ((pow_dvd_pow _ hlt.le).trans (𝔪.pow_exponent_dvd_finitePart v))
+        exact valued_ideleFiniteCoord_sub_one_le_of_gcd hx
+          ((pow_dvd_pow _ hlt.le).trans (𝔪.pow_exponent_dvd_finitePart v))
           (𝔫.pow_exponent_dvd_finitePart v)
       · simp
     · rw [hyi, ite_eq_right fun h ↦ (hmemT.mp h).2 hw]

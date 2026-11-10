@@ -87,7 +87,9 @@ theorem isUnit_corner_iff {x : he.Corner} : IsUnit x ↔ IsUnit (1 - e + x.1) :=
       rw [← mul_assoc, ← mul_assoc, he.corner_val_mul, h₁, he.eq]
     have h₄ : e * w * e * x.1 = e := by
       rw [mul_assoc, he.mul_corner_val, mul_assoc, h₂, he.eq]
-    exact isUnit_iff_exists.mpr ⟨⟨e * w * e, w, rfl⟩, Subtype.ext h₃, Subtype.ext h₄⟩
+    exact isUnit_iff_exists.mpr ⟨he.compress w,
+      Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one]),
+      Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one])⟩
 
 /-- `1 - e + (1 + y)` is `1 + y` for an element `y` of the corner. -/
 private theorem one_sub_add_val_one_add (y : he.Corner) :
@@ -106,8 +108,8 @@ theorem mem_jacobson_corner_iff {x : he.Corner} :
     -- `1 + x * (e * a * e)` is a unit of the corner; read it in `A` and swap the factors.
     have hu : IsUnit (1 + x.1 * (e * a * e)) := by
       have := he.isUnit_corner_iff.mp
-        (TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right.mp hx ⟨e * a * e, a, rfl⟩)
-      rwa [he.one_sub_add_val_one_add] at this
+        (TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right.mp hx (he.compress a))
+      rwa [he.one_sub_add_val_one_add, Corner.val_mul, val_compress] at this
     have hxa : x.1 * (e * a * e) = x.1 * (a * e) := by
       rw [mul_assoc e a e, ← mul_assoc, he.corner_val_mul]
     rwa [hxa, TauCeti.isUnit_one_add_mul_comm, mul_assoc, he.mul_corner_val] at hu

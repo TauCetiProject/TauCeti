@@ -34,6 +34,7 @@ is weakly contractible.
   `SSet.modelCategoryQuillen.weakEquivalences_eq` identifying the class.
 * `SSet.modelCategoryQuillen.weakEquivalence_iff`: a morphism is a weak equivalence exactly when its
   realization is a weak homotopy equivalence.
+* `SSet.modelCategoryQuillen.weakEquivalence_of_isIso`: isomorphisms are weak equivalences.
 * `SSet.modelCategoryQuillen.weakEquivalence_of_stdSimplex`: morphisms between standard simplices
   are weak equivalences.
 
@@ -84,6 +85,10 @@ instance : (weakEquivalences SSet.{u}).IsMultiplicative := by
 instance : (weakEquivalences SSet.{u}).IsStableUnderRetracts := by
   rw [weakEquivalences_eq]
   infer_instance
+
+/-- Isomorphisms of simplicial sets are weak equivalences. -/
+instance weakEquivalence_of_isIso {X Y : SSet.{u}} (f : X ⟶ Y) [IsIso f] : WeakEquivalence f :=
+  (HomotopicalAlgebra.weakEquivalence_iff f).2 (MorphismProperty.of_isIso _ f)
 
 /-- Every morphism between standard simplices is a weak equivalence: the geometric realizations of
 `Δ[n]` and `Δ[m]` are contractible. In particular, `Δ[n] ⟶ Δ[0]` is a weak equivalence, so every

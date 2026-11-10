@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange.AlmostComplexType
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
 
 /-!
@@ -28,6 +28,13 @@ of type `(0,1)`, and the extension of the `(1,0)`-form `∂f` vanishes on the ve
 soon as `X` or `Y` has type `(1,0)`; symmetrically `∂∂f(X, Y)` vanishes as soon as `X` or `Y` has
 type `(0,1)`.
 
+On real tangent vectors `v` and `w` the same formulas read
+`∂bar ∂bar f(v, w) = -∂f(N_J(v, w)^(1,0)) / 4` and `∂∂f(v, w) = -∂bar f(N_J(v, w)^(0,1)) / 4`:
+the `(0,2)`-form `∂bar ∂bar f` takes the value `∂bar ∂bar f(v, w)` on the `(0,1)`-parts
+`v^(0,1)` and `w^(0,1)`, and `N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)`, and symmetrically for
+`∂∂f`. With the normalization `N' = N_J / 4` of the Nijenhuis tensor the formulas read
+`∂bar ∂bar f(X, Y) = -∂f(N'(X, Y))` and `∂∂f(X, Y) = -∂bar f(N'(X, Y))`.
+
 ## Main declarations
 
 * `TauCeti.SmoothAlmostComplexStructure.liftBaseChangeFinTwo_delBar_delBar_apply`,
@@ -36,6 +43,14 @@ type `(0,1)`.
 * `TauCeti.SmoothAlmostComplexStructure.liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_left`
   and its companions: the vanishing of `∂bar ∂bar f` and `∂∂f` off the vectors of type `(0,1)`,
   respectively `(1,0)`.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart`
+  and
+  `TauCeti.SmoothAlmostComplexStructure.del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart`:
+  the formulas on real tangent vectors through their `(0,1)`- and `(1,0)`-parts.
+* In the namespace `TauCeti.SmoothAlmostComplexStructure`,
+  `liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis` and
+  `liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis`: the formulas for the
+  normalization `N' = N_J / 4`.
 
 ## References
 
@@ -84,6 +99,57 @@ theorem liftBaseChangeFinTwo_del_del_apply (f : SmoothForm I M F 0) (x : M)
       -(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ
         (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) :=
   ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (J.del_del_apply f x) X Y
+
+/-- **`∂bar²` on real tangent vectors through their `(0,1)`-parts.** For a smooth function `f`
+and real tangent vectors `v` and `w`, `∂bar ∂bar f(v, w) = -∂f(N_J(v, w)^(1,0)) / 4`, with `∂f`
+extended complex-linearly. -/
+theorem delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart (f : SmoothForm I M F 0)
+    (x : M) (v w : TangentSpace I x) :
+    (J.delBar (J.delBar f)).1 x ![v, w] =
+      -(4 : ℂ)⁻¹ • ((J.del f).1 x).liftBaseChangeFinOne ℂ
+        ((J.almostComplexStructureAt x).holomorphicPart (J.nijenhuis x v w)) := by
+  rw [← ((SmoothForm.isOfType_zero_zero f J).delBar.delBar.apply x)
+      |>.liftBaseChangeFinTwo_antiholomorphicPart_antiholomorphicPart
+        (J.almostComplexStructureAt_apply x · |>.symm),
+    liftBaseChangeFinTwo_delBar_delBar_apply,
+    baseChange_nijenhuis_antiholomorphicPart_antiholomorphicPart]
+
+/-- **`∂²` on real tangent vectors through their `(1,0)`-parts.** For a smooth function `f` and
+real tangent vectors `v` and `w`, `∂∂f(v, w) = -∂bar f(N_J(v, w)^(0,1)) / 4`, with `∂bar f`
+extended complex-linearly. -/
+theorem del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart (f : SmoothForm I M F 0)
+    (x : M) (v w : TangentSpace I x) :
+    (J.del (J.del f)).1 x ![v, w] =
+      -(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ
+        ((J.almostComplexStructureAt x).antiholomorphicPart (J.nijenhuis x v w)) := by
+  rw [← ((SmoothForm.isOfType_zero_zero f J).del.del.apply x)
+      |>.liftBaseChangeFinTwo_holomorphicPart_holomorphicPart
+        (J.almostComplexStructureAt_apply x · |>.symm),
+    liftBaseChangeFinTwo_del_del_apply, baseChange_nijenhuis_holomorphicPart_holomorphicPart]
+
+/-- **`∂bar²` for the normalized Nijenhuis tensor.** With the convention `N' = N_J / 4`, for a
+smooth function `f` and complexified tangent vectors `X` and `Y`, in particular two vectors of
+type `(0,1)` or two real vectors `1 ⊗ v` and `1 ⊗ w`, `∂bar ∂bar f(X, Y) = -∂f(N'(X, Y))`. -/
+theorem liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis (f : SmoothForm I M F 0)
+    (x : M) (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
+    ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y =
+      -((J.del f).1 x).liftBaseChangeFinOne ℂ
+        (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
+  rw [← neg_one_smul ℂ]
+  refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
+  simp [delBar_delBar_apply, ContinuousAlternatingMap.vecCons_smul, ← Complex.coe_smul]
+
+/-- **`∂²` for the normalized Nijenhuis tensor.** With the convention `N' = N_J / 4`, for a
+smooth function `f` and complexified tangent vectors `X` and `Y`, in particular two vectors of
+type `(1,0)` or two real vectors `1 ⊗ v` and `1 ⊗ w`, `∂∂f(X, Y) = -∂bar f(N'(X, Y))`. -/
+theorem liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis (f : SmoothForm I M F 0)
+    (x : M) (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
+    ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y =
+      -((J.delBar f).1 x).liftBaseChangeFinOne ℂ
+        (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
+  rw [← neg_one_smul ℂ]
+  refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
+  simp [del_del_apply, ContinuousAlternatingMap.vecCons_smul, ← Complex.coe_smul]
 
 variable {x : M} {X Y : ℂ ⊗[ℝ] TangentSpace I x}
 

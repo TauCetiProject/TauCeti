@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Icc
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Coordinates and derivatives of a rectangle with corners
@@ -43,7 +44,7 @@ theorem subtypeVal_extChartAt_rectangle_symm
         ((extChartAt ((𝓡∂ 1).prod (𝓡∂ 1)) α).symm z).2.val) =
       (if (α.1 : ℝ) < b then z.1 0 + a else b - z.1 0,
         if (α.2 : ℝ) < d then z.2 0 + c else d - z.2 0) := by
-  rw [extChartAt_prod, PartialEquiv.prod_target] at hz
+  rw [TauCeti.extChartAt_prod_target] at hz
   rw [extChartAt_prod, PartialEquiv.prod_coe_symm]
   exact Prod.ext (subtypeVal_extChartAt_Icc_symm α.1 hz.1)
     (subtypeVal_extChartAt_Icc_symm α.2 hz.2)
@@ -60,7 +61,7 @@ theorem hasFDerivWithinAt_subtypeVal_extChartAt_rectangle_symm
           EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).prodMap
         ((if (α.2 : ℝ) < d then (1 : ℝ) else -1) • EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0))
       (range ((𝓡∂ 1).prod (𝓡∂ 1))) z := by
-  rw [extChartAt_prod, PartialEquiv.prod_target] at hz
+  rw [TauCeti.extChartAt_prod_target] at hz
   have h₁ := hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α.1 hz.1
   have h₂ := hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α.2 hz.2
   have hfst : Prod.fst '' (range (𝓡∂ 1) ×ˢ range (𝓡∂ 1)) ⊆ range (𝓡∂ 1) := by

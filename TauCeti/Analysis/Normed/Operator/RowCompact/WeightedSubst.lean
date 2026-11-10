@@ -17,13 +17,18 @@ Let `R` be a complete ultrametric normed commutative ring. Over finitely many va
 coefficient model (`TauCeti.MvPowerSeries.weightedSubstCLM`) factors through series restricted
 at `c`. Its row `e` is then bounded by `‖g‖_c ‖1‖ c⁻ᵉ`, so it is row compact
 (`TauCeti.MvPowerSeries.isRowCompact_weightedSubstCLM`), and in particular completely
-continuous. Without the larger radius this fails: the identity is a weighted substitution.
+continuous; transported back along the coefficient isometries, so is the weighted substitution
+between unit-radius restricted series
+(`TauCeti.MvPowerSeries.isCompletelyContinuous_restrictedWeightedSubstCLM`). Without the larger
+radius this fails: the identity is a weighted substitution.
 
 ## Main results
 
 * `TauCeti.MvPowerSeries.norm_matrixCoeff_weightedSubstCLM_le`,
   `TauCeti.MvPowerSeries.isRowCompact_weightedSubstCLM`: the row bound and row compactness
   from convergence on a larger polydisc.
+* `TauCeti.MvPowerSeries.isCompletelyContinuous_restrictedWeightedSubstCLM`: complete continuity
+  of the weighted substitution between unit-radius restricted series.
 
 ## References
 
@@ -94,6 +99,26 @@ theorem isRowCompact_weightedSubstCLM [DecidableEq (WithDiscreteTopology (Fin k 
     (weightedSubstCLM_restrictedRadiusHom_apply g h hh fun j ↦ (hc j).le)
     (fun x ↦ (norm_restrictedWeightedSubstCLM_apply_le g h hh _).trans_eq
       (by rw [LinearIsometryEquiv.norm_map]))
+
+/-- **Weighted substitutions converging on a larger polydisc are completely continuous.** Over
+finitely many variables `Y`, let `g` and the `hᵢ` be restricted at polyradii `c` with every
+`cⱼ > 1`, and `‖hᵢ‖_c ≤ 1`. Then `f ↦ g · f(h)`, for their unit-radius restrictions, is a
+completely continuous operator between unit-radius restricted series. -/
+theorem isCompletelyContinuous_restrictedWeightedSubstCLM [Finite τ] (hc : ∀ j, 1 < c j) :
+    (restrictedWeightedSubstCLM
+      (restrictedRadiusHom (fun _ ↦ zero_le_one) (fun j ↦ (hc j).le) g)
+      (fun i ↦ restrictedRadiusHom (fun _ ↦ zero_le_one) (fun j ↦ (hc j).le) (h i))
+      (fun i ↦ (norm_restrictedRadiusHom_le _ _ (h i)).trans (hh i))).IsCompletelyContinuous := by
+  classical
+  -- Transport row compactness of the coefficient model back along the coefficient isometries.
+  have hu := ((isRowCompact_weightedSubstCLM g h hh hc).isCompletelyContinuous.comp_clm_of_bound
+    restrictedCoeffLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+      fun x ↦ by simp).clm_comp_of_bound
+    restrictedCoeffLinearIsometryEquiv.symm.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+      fun x ↦ by simp
+  convert hu using 1
+  ext1 f
+  simp [weightedSubstCLM_apply]
 
 end RowCompact
 

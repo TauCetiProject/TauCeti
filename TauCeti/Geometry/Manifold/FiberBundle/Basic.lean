@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 
@@ -50,6 +51,10 @@ right action is constant on the fibres, because each fibre is a single orbit.
   fibre, modelled on `ModelProd HB HF`.
 * `TauCeti.ManifoldTotalSpace.fiberwiseMap`: the map of charted total spaces induced by a family
   `∀ b, E b → E' b`, with no continuity assumed. It represents bundle maps over a fixed base.
+* `TauCeti.ManifoldTotalSpace.instSMul` and `TauCeti.ManifoldTotalSpace.instMulAction`: the
+  fibrewise scalar and monoid actions on the charted total space induced by actions on the fibres.
+* `TauCeti.ManifoldTotalSpace.diffeomorphProd`: the canonical `C^n` diffeomorphism identifying
+  `ManifoldTotalSpace F (Bundle.Trivial B F)` with `B × F`.
 
 ## Main results
 
@@ -131,6 +136,19 @@ namespace ContMDiffFiberBundle
 protected theorem of_le {m : ℕ∞ω} (hmn : m ≤ n) [h : ContMDiffFiberBundle n F E IB IF] :
     ContMDiffFiberBundle m F E IB IF :=
   ⟨fun e e' _ _ ↦ (h.contMDiffOn_coordChange e e').of_le hmn⟩
+
+instance {a : ℕ∞ω} [ContMDiffFiberBundle ∞ F E IB IF] [h : ENat.LEInfty a] :
+    ContMDiffFiberBundle a F E IB IF :=
+  ContMDiffFiberBundle.of_le (n := ∞) h.out
+
+instance {a : ℕ∞ω} [ContMDiffFiberBundle ω F E IB IF] : ContMDiffFiberBundle a F E IB IF :=
+  ContMDiffFiberBundle.of_le (n := ω) le_top
+
+instance [ContMDiffFiberBundle 2 F E IB IF] : ContMDiffFiberBundle 1 F E IB IF :=
+  ContMDiffFiberBundle.of_le (n := 2) one_le_two
+
+instance [ContMDiffFiberBundle 3 F E IB IF] : ContMDiffFiberBundle 2 F E IB IF :=
+  ContMDiffFiberBundle.of_le (n := 3) (by norm_cast)
 
 variable [ContMDiffFiberBundle n F E IB IF]
 
@@ -230,12 +248,69 @@ theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTot
       ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
   simp [fiberwiseMap]
 
+/-- The fibrewise map of a family of composites is the composite of the fibrewise maps. -/
+theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'')]
+    (ψ : ∀ b, E' b → E'' b) (φ : ∀ b, E b → E' b) :
+    fiberwiseMap (F := F) (fun b ↦ ψ b ∘ φ b) = fiberwiseMap ψ ∘ fiberwiseMap φ := by
+  funext x
+  obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+  simp
+
 end FiberwiseMap
+
+section SMul
+
+omit [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
+
+/-- A family of scalar actions on the fibres of a bundle acts fibrewise on the charted total space,
+preserving base points. -/
+instance instSMul {α : Type*} [∀ b, SMul α (E b)] : SMul α (ManifoldTotalSpace F E) where
+  smul a := fiberwiseMap fun _ ↦ (a • ·)
+
+/-- Fibrewise scalar multiplication evaluated on a point transported from the original total
+space. -/
+@[simp]
+theorem smul_homeomorph {α : Type*} [∀ b, SMul α (E b)] (a : α) (p : TotalSpace F E) :
+    a • homeomorph F E p = homeomorph F E ⟨p.proj, a • p.2⟩ :=
+  fiberwiseMap_homeomorph _ p
+
+/-- Reading fibrewise scalar multiplication back in the original total space acts on the fibre
+coordinate. -/
+@[simp]
+theorem homeomorph_symm_smul {α : Type*} [∀ b, SMul α (E b)] (a : α)
+    (x : ManifoldTotalSpace F E) :
+    (homeomorph F E).symm (a • x) =
+      ⟨((homeomorph F E).symm x).proj, a • ((homeomorph F E).symm x).2⟩ :=
+  homeomorph_symm_fiberwiseMap _ x
+
+/-- A family of monoid actions on the fibres of a bundle induces a fibrewise monoid action on the
+charted total space. -/
+instance instMulAction {α : Type*} [Monoid α] [∀ b, MulAction α (E b)] :
+    MulAction α (ManifoldTotalSpace F E) where
+  one_smul x := by
+    obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+    simp
+  mul_smul a₁ a₂ x := by
+    obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+    simp [mul_smul]
+
+end SMul
 
 /-- The copy is charted by the trivializations of the atlas followed by the charts of the product
 manifold `B × F`. -/
 instance : ChartedSpace (ModelProd HB HF) (ManifoldTotalSpace F E) :=
   ChartedSpace.comp (ModelProd HB HF) (B × F) (TotalSpace F E)
+
+/-- The fibrewise map of a family of composites is `C^n` when both fibrewise maps are. -/
+theorem _root_.ContMDiff.fiberwiseMap_comp {E' E'' : B → Type*}
+    [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [TopologicalSpace (TotalSpace F E'')] [∀ b, TopologicalSpace (E'' b)] [FiberBundle F E'']
+    {ψ : ∀ b, E' b → E'' b} {φ : ∀ b, E b → E' b}
+    (hψ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) ψ))
+    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) φ)) :
+    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) fun b ↦ ψ b ∘ φ b) := by
+  rw [ManifoldTotalSpace.fiberwiseMap_comp]
+  exact hψ.comp hφ
 
 /-- The preferred chart at a point is the trivialization at its base point followed by the
 product of the charts of the base and of the fibre at its coordinates. -/
@@ -475,6 +550,16 @@ theorem contMDiffOn_trivialization (e : Trivialization F (π F E)) [MemTrivializ
     ).congr_of_eventuallyEq (eventually_of_mem hU fun y hy ↦ ?_)).contMDiffWithinAt
   exact Prod.ext (e.coe_fst' hy.2) (e₀.coordChange_apply_snd e hy.1).symm
 
+/-- The fibre coordinate, in a trivialization of the atlas of a `C^n` fibre bundle, of a map into
+the total space is `C^n` on a set where the map is `C^n` and lies over the base set. -/
+theorem contMDiffOn_trivialization_snd_comp (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {f : M → ManifoldTotalSpace F E} {s : Set M}
+    (hf : ContMDiffOn IM (IB.prod IF) n f s)
+    (hfe : ∀ x ∈ s, ((homeomorph F E).symm (f x)).proj ∈ e.baseSet) :
+    ContMDiffOn IM IF n (fun x ↦ (e ((homeomorph F E).symm (f x))).2) s :=
+  contMDiff_snd.comp_contMDiffOn
+    ((contMDiffOn_trivialization e).comp hf fun x hx ↦ e.mem_source.2 (hfe x hx))
+
 /-- The inverse of a trivialization of the atlas of a `C^n` fibre bundle is `C^n` on its target,
 as a map from the product manifold `B × F` to the total space. -/
 theorem contMDiffOn_trivialization_symm (e : Trivialization F (π F E))
@@ -548,3 +633,66 @@ end ManifoldTotalSpace
 end NormedFiber
 
 end TauCeti
+
+/-! ### Smooth product identification for trivial bundles -/
+
+namespace TauCeti.ManifoldTotalSpace
+
+section Trivial
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB]
+  {EF : Type*} [NormedAddCommGroup EF] [NormedSpace 𝕜 EF]
+  {HF : Type*} [TopologicalSpace HF]
+
+/-- The canonical `C^n` diffeomorphism identifying the charted total space of the trivial bundle
+`Bundle.Trivial B F` with the product manifold `B × F`. -/
+noncomputable def diffeomorphProd (n : ℕ∞ω) (B F : Type*) [TopologicalSpace B] [ChartedSpace HB B]
+    [TopologicalSpace F] [ChartedSpace HF F]
+    (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF) :
+    ManifoldTotalSpace F (Bundle.Trivial B F) ≃ₘ^n⟮IB.prod IF, IB.prod IF⟯ B × F where
+  toEquiv := (homeomorph F (Bundle.Trivial B F)).symm.toEquiv.trans
+    (Bundle.Trivial.homeomorphProd B F).toEquiv
+  contMDiff_toFun := by
+    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
+    rw [← contMDiffOn_univ]
+    have h := contMDiffOn_trivialization (n := n) (IB := IB) (IF := IF)
+      (Bundle.Trivial.trivialization B F)
+    simpa [Function.comp_def] using h
+  contMDiff_invFun := by
+    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
+    rw [← contMDiffOn_univ]
+    have h := contMDiffOn_trivialization_symm (n := n) (IB := IB) (IF := IF)
+      (Bundle.Trivial.trivialization B F)
+    exact h.congr fun p _ ↦ rfl
+
+@[simp]
+theorem diffeomorphProd_apply (n : ℕ∞ω) {B F : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+    [TopologicalSpace F] [ChartedSpace HF F]
+    (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF)
+    (x : ManifoldTotalSpace F (Bundle.Trivial B F)) :
+    diffeomorphProd n B F IB IF x =
+      (((homeomorph F (Bundle.Trivial B F)).symm x).proj,
+        ((homeomorph F (Bundle.Trivial B F)).symm x).2) :=
+  (rfl)
+
+/-- Evaluating `diffeomorphProd` at a point transported from `TotalSpace F (Bundle.Trivial B F)`
+returns its base and fibre coordinates. -/
+theorem diffeomorphProd_homeomorph (n : ℕ∞ω) {B F : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+    [TopologicalSpace F] [ChartedSpace HF F]
+    (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF)
+    (p : TotalSpace F (Bundle.Trivial B F)) :
+    diffeomorphProd n B F IB IF (homeomorph F (Bundle.Trivial B F) p) = (p.proj, p.2) := by
+  rw [diffeomorphProd_apply, Homeomorph.symm_apply_apply]
+
+@[simp]
+theorem diffeomorphProd_symm_apply (n : ℕ∞ω) {B F : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+    [TopologicalSpace F] [ChartedSpace HF F]
+    (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF) (p : B × F) :
+    (diffeomorphProd n B F IB IF).symm p = homeomorph F (Bundle.Trivial B F) ⟨p.1, p.2⟩ :=
+  (rfl)
+
+end Trivial
+
+end TauCeti.ManifoldTotalSpace

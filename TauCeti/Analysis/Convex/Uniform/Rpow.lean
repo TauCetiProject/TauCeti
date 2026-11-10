@@ -65,7 +65,7 @@ theorem exists_forall_norm_add_rpow_le (hq : 1 < q) (hη : 0 < η) :
   obtain ⟨δ₁, hδ₁, hUC⟩ :=
     exists_forall_closed_ball_dist_add_le_two_sub E (Real.rpow_pos_of_pos hη q⁻¹)
   obtain ⟨κ, hκ, hreal⟩ :=
-    Real.exists_rpow_le_of_le_add_of_le_two_sub_mul hq (lt_min hδ₁ one_pos) (min_le_right δ₁ 1)
+    Real.exists_rpow_le_of_le_add_of_le_two_sub_mul hq hδ₁
   -- The case `‖b‖ ≤ ‖a‖`: rescale `a` to the unit sphere and apply uniform convexity.
   have key (a b : E) (hba : ‖b‖ ≤ ‖a‖) (hab : η * (‖a‖ ^ q + ‖b‖ ^ q) ≤ ‖a - b‖ ^ q) :
       ‖a + b‖ ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (‖a‖ ^ q + ‖b‖ ^ q) := by
@@ -95,7 +95,7 @@ theorem exists_forall_norm_add_rpow_le (hq : 1 < q) (hη : 0 < η) :
         _ = ‖a - b‖ := Real.rpow_rpow_inv (norm_nonneg _) hq0.ne'
     have h := hUC hx hy hsep
     rw [← smul_add, hnorm _ _ hinv, inv_mul_le_iff₀ ha] at h
-    nlinarith [min_le_left δ₁ 1]
+    nlinarith
   refine ⟨κ, hκ, fun a b hab ↦ ?_⟩
   rcases le_total ‖b‖ ‖a‖ with h | h
   · exact key a b h hab

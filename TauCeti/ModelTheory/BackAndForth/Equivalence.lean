@@ -34,7 +34,7 @@ tuples across all members of the family.
 
 public section
 
-universe u v w w' w'' o x
+universe u v w w' w'' o o' x
 
 namespace TauCeti
 
@@ -203,6 +203,24 @@ theorem exists_bfEquiv_append {β : Ordinal.{o}} {m : ℕ} {a : Fin m → M} {b 
     rw [← snoc_init_self x, append_snoc, append_snoc]
     exact hz
 
+/-- Back-and-forth equivalence is invariant under lifting the ordinal depth across universes. -/
+@[simp]
+theorem lift (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
+    BFEquiv (L := L) (Ordinal.lift.{o'} α) n a b ↔ BFEquiv (L := L) α n a b := by
+  induction α using Ordinal.limitRecOn generalizing n with
+  | zero => simp
+  | add_one α ih =>
+    rw [Ordinal.lift_add_one, add_one, add_one]
+    simp only [ih]
+  | limit α hα ih =>
+    rw [limit (Ordinal.isSuccLimit_lift.mpr hα), limit hα]
+    constructor
+    · intro h β hβ
+      exact (ih β hβ _ _).mp (h (Ordinal.lift.{o'} β) (Ordinal.lift_lt.mpr hβ))
+    · intro h β hβ
+      obtain ⟨β', hβ', rfl⟩ := Ordinal.lt_lift_iff.mp hβ
+      exact (ih β' hβ' _ _).mpr (h β' hβ')
+
 end BFEquiv
 
 /-- An isomorphism carries every tuple to a tuple back-and-forth equivalent to it at every
@@ -246,6 +264,13 @@ theorem bfTupleSetoid_apply {x y : Σ i, Fin n → M i} :
 /-- The levels decrease as the depth grows. -/
 theorem bfTupleSetoid_anti (n : ℕ) : Antitone (bfTupleSetoid L M · n : Ordinal.{o} → _) :=
   fun _ _ hαβ _ _ h => BFEquiv.mono h hαβ
+
+/-- Lifting the ordinal depth across universes does not change `bfTupleSetoid`. -/
+@[simp]
+theorem bfTupleSetoid_lift (α : Ordinal.{o}) (n : ℕ) :
+    bfTupleSetoid L M (Ordinal.lift.{o'} α) n = bfTupleSetoid L M α n := by
+  ext ⟨i, a⟩ ⟨j, b⟩
+  exact BFEquiv.lift α a b
 
 end Family
 

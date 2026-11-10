@@ -24,6 +24,10 @@ This file contains basic facts about finite partial sums.
 
 * `TauCeti.prefixSum_succ`, `TauCeti.prefixSum_of_le`: the recurrence for prefix sums, and the
   prefix sum of full length is the total sum.
+* `TauCeti.sum_sub_prefixSum`: successive differences of a function of the prefix sums
+  telescope.
+* `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
+  prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
@@ -72,6 +76,29 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
+
+/-- Successive differences of a function of the prefix sums telescope. -/
+theorem sum_sub_prefixSum {G : Type*} [AddCommGroup G] (F : M → G) (k : ℕ) (x : Fin n → M) :
+    ∑ i : Fin n with i.val < k, (F (prefixSum (i.val + 1) x) - F (prefixSum i.val x)) =
+      F (prefixSum k x) - F 0 := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    by_cases hk : k < n
+    · have h := prefixSum_succ hk fun i : Fin n ↦
+        F (prefixSum (i.val + 1) x) - F (prefixSum i.val x)
+      rw [prefixSum_def, prefixSum_def] at h
+      rw [h, ih, prefixSum_succ hk x]
+      exact sub_add_sub_cancel' _ _ _
+    · rw [filter_congr (q := fun i : Fin n ↦ i.val < k) (fun i _ ↦ by omega), ih,
+        prefixSum_of_le (by omega), prefixSum_of_le (by omega)]
+
+/-- A tuple is determined by its prefix sums. -/
+theorem eq_of_forall_prefixSum_eq [IsLeftCancelAdd M] {x y : Fin n → M}
+    (h : ∀ k, prefixSum k x = prefixSum k y) : x = y := by
+  funext i
+  have := h (i.val + 1)
+  rwa [prefixSum_succ i.isLt, prefixSum_succ i.isLt, h, add_right_inj] at this
 
 /-- For `k ≤ n`, the prefix sum of length `k` is the sum over the first `k` indices of `Fin n`. -/
 theorem prefixSum_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
@@ -122,6 +149,13 @@ theorem prefixSum_smul {R : Type*} [DistribSMul R M] (k : ℕ) (c : R) (x : Fin 
 theorem prefixSum_mono [Preorder M] [IsOrderedAddMonoid M] (k : ℕ) {x y : Fin n → M}
     (h : x ≤ y) : prefixSum k x ≤ prefixSum k y :=
   sum_le_sum fun i _ ↦ h i
+
+/-- The prefix sums of a nonnegative tuple are monotone in the length. -/
+theorem monotone_prefixSum [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M} (hx : 0 ≤ x) :
+    Monotone fun k ↦ prefixSum k x :=
+  fun _ _ h ↦ sum_le_sum_of_subset_of_nonneg
+    (fun i hi ↦ by simp only [mem_filter, mem_univ, true_and] at hi ⊢; omega)
+    (fun i _ _ ↦ hx i)
 
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/

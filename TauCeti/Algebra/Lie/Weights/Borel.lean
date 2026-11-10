@@ -57,12 +57,16 @@ function.
   they are built from.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
+* `TauCeti.killingForm_eq_zero_of_mem_posRoots`: positive root spaces are Killing-orthogonal.
 * `TauCeti.exists_nat_root_apply_of_mem_posRoots` and
   `TauCeti.exists_nat_root_apply_eq_neg_of_mem_negRoots`: an element of `H` on which every simple
   root takes a natural value takes a natural value on every positive root, and the negative of a
   natural value on every negative root.
 * `TauCeti.sum_root_eq_sum_posRootsFinset` splits a sum over all roots into its positive-root
   terms and their negatives.
+* `TauCeti.inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots` regroups `(1 / 4)` times a sum
+  over all weights of `chi h • c chi`, for an odd function `c` of the weight, as `(1 / 2)` times
+  the sum over the positive roots.
 * `TauCeti.borelSubalgebra_eq_sup`: the Borel subalgebra is the join `H ⊔ n⁺`.
 * `TauCeti.le_borelSubalgebra` and `TauCeti.positiveNilradical_le_borelSubalgebra` are the two
   inclusions `H ≤ 𝔟` and `n⁺ ≤ 𝔟`.
@@ -232,6 +236,21 @@ theorem neg_mem_negRoots_of_mem_posRoots {i : H.root}
     (IsKilling.rootSystem H) b i).mpr hi
 
 variable {b} in
+/-- Positive root spaces are orthogonal for the Killing form, because the sum of two positive roots
+is nonzero. -/
+theorem killingForm_eq_zero_of_mem_posRoots {α β : H.root}
+    (hα : α ∈ posRoots (IsKilling.rootSystem H) b)
+    (hβ : β ∈ posRoots (IsKilling.rootSystem H) b) {x y : L}
+    (hx : x ∈ rootSpace H (α : H → K)) (hy : y ∈ rootSpace H (β : H → K)) :
+    killingForm K L x y = 0 := by
+  refine killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hy fun h ↦ ?_
+  have hβα : β = -α := Subtype.ext <| by
+    rw [IsKilling.val_neg_root]
+    exact Weight.ext fun z ↦ eq_neg_of_add_eq_zero_right (congrFun h z)
+  exact Set.disjoint_left.mp (disjoint_posRoots_negRoots _ b) hβ
+    (hβα ▸ neg_mem_negRoots_of_mem_posRoots b hα)
+
+variable {b} in
 /-- **A dominant element takes natural values on the positive roots**, not only on the simple ones,
 since a positive root is a natural combination of the simple roots. -/
 theorem exists_nat_root_apply_of_mem_posRoots {x : H}
@@ -292,6 +311,58 @@ theorem sum_root_eq_sum_posRootsFinset {A : Type*} [AddCommMonoid A] (f : H.root
     exact ⟨fun hi ↦ neg_mem_posRoots_of_mem_negRoots b hi,
       fun hi ↦ by simpa using neg_mem_negRoots_of_mem_posRoots b hi⟩
   rw [← hunion, Finset.sum_union hdisj, hswap, Finset.sum_add_distrib]
+
+/-- Regrouping a weighted sum over all weights, for an odd function `c` of the weight, as a sum
+over the positive roots: the weights outside the roots contribute zero, and the terms at a root and
+its negative agree. -/
+theorem inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots
+    {A : Type*} [AddCommGroup A] [Module K A] (c : Weight K H L → A)
+    (hcneg : ∀ chi : Weight K H L, c (-chi) = -c chi)
+    (h : H) :
+    (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
+      (2 : K)⁻¹ • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+        ((a : Weight K H L) h • c (a : Weight K H L)) := by
+  classical
+  rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
+  have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
+    refine Finset.sum_eq_zero fun chi hchi ↦ ?_
+    have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
+      (Finset.mem_sdiff.mp hchi).2)
+    rw [hz.eq]
+    simp
+  rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
+    sum_root_eq_sum_posRootsFinset b]
+  have hpair : ∀ a : H.root,
+      ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
+        c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ((a : Weight K H L) h • c a) := by
+    intro a
+    -- `val_neg_root` is the named interface exposing the definitional compatibility between
+    -- root-subtype negation and weight negation; evaluation compatibility follows from it.
+    have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
+      IsKilling.val_neg_root
+    have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
+      exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
+    rw [hneg_apply, hneg_coe, hcneg]
+    simp only [smul_neg]
+    module
+  have hsum :
+      ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L) +
+            ((-a : H.root) : Weight K H L) h •
+              c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L)) := by
+    rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
+  calc
+    _ = (4 : K)⁻¹ • ((2 : K) •
+        ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L))) :=
+      congrArg ((4 : K)⁻¹ • ·) hsum
+    _ = _ := by
+      rw [smul_smul]
+      congr 1
+      norm_num
 
 /-- The positive roots are a special closed set of roots: heights add, and a positive root never
 has a positive negative. -/

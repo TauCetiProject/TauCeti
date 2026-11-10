@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Graph
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
+public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
 /-!
-# Products of isotropic, coisotropic and Lagrangian maps
+# Products of isotropic, coisotropic and Lagrangian maps and of symplectic tangent images
 
 Let `σ₁` and `σ₂` be nondegenerate two-forms on `M₁` and `M₂`, and give `M₁ × M₂` the product form
 `pr₁*σ₁ + pr₂*σ₂` (`TauCeti.SmoothTwoForm.prod`). For maps `f₁ : N₁ → M₁` and `f₂ : N₂ → M₂`, the
@@ -18,18 +18,22 @@ tangent image of the product map `f₁ × f₂` at `(x₁, x₂)` is the product
 `f₁` at `x₁` and of `f₂` at `x₂`, and the tangent-space form of the product is the direct sum of
 those of the factors. The linear product formulas of
 `TauCeti.Geometry.Symplectic.Lagrangian.Constructions` then show that `f₁ × f₂` is isotropic,
-coisotropic or Lagrangian exactly when both factors are. This needs the factors to be
-differentiable, since the tangent image of a map is taken with `mfderiv`, and the sources to be
-nonempty for the converse: a product with an empty source has empty source and satisfies every
-predicate vacuously. In particular a product of Lagrangian immersions is a Lagrangian immersion.
+coisotropic or Lagrangian, or has symplectic tangent images, exactly when both factors do. This
+needs the factors to be differentiable, since the tangent image of a map is taken with `mfderiv`,
+and the sources to be nonempty for the converse: a product with an empty source has empty source
+and satisfies every predicate vacuously. In particular a product of Lagrangian immersions is a
+Lagrangian immersion.
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_prodMap_iff`,
   `isCoisotropicMap_prodMap_iff`, `isLagrangianMap_prodMap_iff`: a product of differentiable maps
   from nonempty manifolds is isotropic, coisotropic or Lagrangian exactly when both factors are.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasSymplecticTangentImages_prodMap_iff`: likewise for
+  symplectic tangent images.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsIsotropicMap.prodMap`, `IsCoisotropicMap.prodMap`,
-  `IsLagrangianMap.prodMap`: the forward directions, which need no nonempty sources.
+  `IsLagrangianMap.prodMap`, `HasSymplecticTangentImages.prodMap`: the forward directions, which
+  need no nonempty sources.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion.prodMap`: a product of Lagrangian
   immersions is a Lagrangian immersion.
 
@@ -101,7 +105,25 @@ private theorem isCoisotropic_range_mfderiv_prodMap_iff {p : N₁ × N₂}
   -- The points `(Prod.map f₁ f₂ p).1` and `f₁ p.1` agree definitionally.
   rfl
 
-/-! ### Products of isotropic, coisotropic and Lagrangian maps -/
+variable (hσ₁ hσ₂) in
+/-- The tangent image of a product of differentiable maps is symplectic for the product form
+exactly when the tangent images of both factors are symplectic. -/
+private theorem isSymplectic_range_mfderiv_prodMap_iff {p : N₁ × N₂}
+    (hf₁ : MDifferentiableAt J₁ I₁ f₁ p.1) (hf₂ : MDifferentiableAt J₂ I₂ f₂ p.2) :
+    ((hσ₁.prod hσ₂).symplecticFormAt (Prod.map f₁ f₂ p)).IsSymplectic
+        (LinearMap.range (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map f₁ f₂) p).toLinearMap) ↔
+      (hσ₁.symplecticFormAt (f₁ p.1)).IsSymplectic
+          (LinearMap.range (mfderiv J₁ I₁ f₁ p.1).toLinearMap) ∧
+        (hσ₂.symplecticFormAt (f₂ p.2)).IsSymplectic
+          (LinearMap.range (mfderiv J₂ I₂ f₂ p.2).toLinearMap) := by
+  rw [← SymplecticForm.isSymplectic_map_transport_iff
+      (e := (Manifold.tangentSpaceProdEquiv (Prod.map f₁ f₂ p)).toLinearEquiv),
+    symplecticFormAt_prod, Manifold.map_range_mfderiv_prodMap hf₁ hf₂,
+    SymplecticForm.isSymplectic_prod_iff]
+  -- The points `(Prod.map f₁ f₂ p).1` and `f₁ p.1` agree definitionally.
+  rfl
+
+/-! ### Products of isotropic, coisotropic and Lagrangian maps and of symplectic tangent images -/
 
 /-- A product of differentiable maps from nonempty manifolds is isotropic for the product form
 exactly when both factors are isotropic. -/
@@ -137,6 +159,18 @@ theorem isLagrangianMap_prodMap_iff [Nonempty N₁] [Nonempty N₂] (hf₁ : MDi
     isLagrangianMap_iff, isLagrangianMap_iff]
   tauto
 
+/-- A product of differentiable maps from nonempty manifolds has symplectic tangent images for the
+product form exactly when both factors have symplectic tangent images. -/
+theorem hasSymplecticTangentImages_prodMap_iff [Nonempty N₁] [Nonempty N₂]
+    (hf₁ : MDifferentiable J₁ I₁ f₁) (hf₂ : MDifferentiable J₂ I₂ f₂) :
+    (hσ₁.prod hσ₂).HasSymplecticTangentImages (J₁.prod J₂) (Prod.map f₁ f₂) ↔
+      hσ₁.HasSymplecticTangentImages J₁ f₁ ∧ hσ₂.HasSymplecticTangentImages J₂ f₂ := by
+  simp only [hasSymplecticTangentImages_iff_forall, Prod.forall]
+  rw [forall₂_congr fun x y ↦
+    isSymplectic_range_mfderiv_prodMap_iff hσ₁ hσ₂ (p := (x, y)) (hf₁ x) (hf₂ y)]
+  exact ⟨fun h ↦ ⟨fun x ↦ (h x (Classical.arbitrary N₂)).1,
+    fun y ↦ (h (Classical.arbitrary N₁) y).2⟩, fun h x y ↦ ⟨h.1 x, h.2 y⟩⟩
+
 /-- A product of differentiable isotropic maps is isotropic for the product form. -/
 theorem IsIsotropicMap.prodMap (h₁ : hσ₁.IsIsotropicMap J₁ f₁) (h₂ : hσ₂.IsIsotropicMap J₂ f₂)
     (hf₁ : MDifferentiable J₁ I₁ f₁) (hf₂ : MDifferentiable J₂ I₂ f₂) :
@@ -160,6 +194,17 @@ theorem IsLagrangianMap.prodMap (h₁ : hσ₁.IsLagrangianMap J₁ f₁) (h₂ 
     (hσ₁.prod hσ₂).IsLagrangianMap (J₁.prod J₂) (Prod.map f₁ f₂) :=
   isLagrangianMap_iff.2 ⟨h₁.isIsotropicMap.prodMap h₂.isIsotropicMap hf₁ hf₂,
     h₁.isCoisotropicMap.prodMap h₂.isCoisotropicMap hf₁ hf₂⟩
+
+/-- A product of differentiable maps with symplectic tangent images has symplectic tangent images
+for the product form. -/
+theorem HasSymplecticTangentImages.prodMap (h₁ : hσ₁.HasSymplecticTangentImages J₁ f₁)
+    (h₂ : hσ₂.HasSymplecticTangentImages J₂ f₂) (hf₁ : MDifferentiable J₁ I₁ f₁)
+    (hf₂ : MDifferentiable J₂ I₂ f₂) :
+    (hσ₁.prod hσ₂).HasSymplecticTangentImages (J₁.prod J₂) (Prod.map f₁ f₂) :=
+  hasSymplecticTangentImages_iff_forall.2 fun p ↦
+    (isSymplectic_range_mfderiv_prodMap_iff hσ₁ hσ₂ (hf₁ p.1) (hf₂ p.2)).2
+      ⟨hasSymplecticTangentImages_iff_forall.1 h₁ p.1,
+        hasSymplecticTangentImages_iff_forall.1 h₂ p.2⟩
 
 /-- A product of Lagrangian immersions is a Lagrangian immersion for the product form. -/
 theorem IsLagrangianImmersion.prodMap [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂]
