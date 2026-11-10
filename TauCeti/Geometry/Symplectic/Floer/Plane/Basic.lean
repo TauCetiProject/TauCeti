@@ -55,6 +55,10 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   it is `H(t) dt`, so it agrees there with the Floer datum of the end;
 * `TauCeti.Floer.PSSPlane.endComponent_one` and `TauCeti.Floer.PSSPlane.endComponent_I`: its
   components in end coordinates are `K_s = 0` and `K_t = β(ε s - 1) H(t)`.
+* `TauCeti.Floer.PSSPlane.perturbation_negative`: the perturbation of the negative plane given
+  by `H` is that of the positive plane given by the reversed Hamiltonian `-H(-t)`; correspondingly
+  the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
 one. Smoothness across the ray where it jumps reuses the corresponding statement for the end at
@@ -150,6 +154,15 @@ theorem periodic_cylindricalEndLift (p : PSSPlane) (s : ℝ) :
   simp only [cylindricalEndLift_def, h, Complex.exp_add]
   cases p <;> simp [Complex.exp_neg]
 
+/-- The two end lifts are related by the reflection `z ↦ -z` of the cylinder: the negative plane
+reads its end through the coordinates `(-s, -t)` of the positive plane. -/
+theorem cylindricalEndLift_negative (z : ℂ) :
+    negative.cylindricalEndLift z = positive.cylindricalEndLift (-z) := by
+  simp only [cylindricalEndLift_def, endSign_negative, endSign_positive]
+  congr 1
+  push_cast
+  ring
+
 /-- The end coordinate `ζ(w) = ε log w / (2π)`. It inverts the end lift on `ℂ ∖ {0}`
 (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate `s` and its imaginary
 part an angular coordinate `t`, determined by the point only modulo `1`. -/
@@ -212,6 +225,29 @@ theorem exists_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
     push_cast
     field_simp
     ring
+
+/-- The end lift is injective on every band `t₀ ≤ t < t₀ + 1` of angular width one: two points
+with the same image differ by an integer multiple of `i`. -/
+theorem injOn_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
+    InjOn p.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} := by
+  intro a ha b hb hab
+  replace ha : t₀ ≤ a.im ∧ a.im < t₀ + 1 := ha
+  replace hb : t₀ ≤ b.im ∧ b.im < t₀ + 1 := hb
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift a
+  obtain ⟨l, hl⟩ := p.exists_endCoord_cylindricalEndLift b
+  rw [hab, hl] at hk
+  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
+  have hre := congrArg Complex.re hk
+  have him := congrArg Complex.im hk
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
+  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
+    rw [abs_lt]
+    push_cast
+    constructor <;> linarith
+  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
+  subst hlt
+  exact Complex.ext (by linarith) (by linarith)
 
 /-- The longitudinal coordinate of the image of a cylinder point is its real part. -/
 @[simp]
@@ -327,6 +363,26 @@ theorem perturbation_def (p : PSSPlane) (H : ℝ → M → ℝ) (w : ℂ) (x : M
       (smoothTransition (p.endSign * (p.endCoord w).re - 1) * H (p.endCoord w).im x) •
         p.endAngularForm w :=
   (rfl)
+
+/-- **The negative plane is the positive plane for the reversed Hamiltonian.** The perturbation
+of the negative plane given by `H` is the perturbation of the positive plane given by the
+Hamiltonian `-H(-t)`: the two planes have the same signed longitudinal coordinate, while their
+angular coordinates, and their angular forms, differ by sign. -/
+theorem perturbation_negative (H : ℝ → M → ℝ) :
+    negative.perturbation H = positive.perturbation (fun t x ↦ -H (-t) x) := by
+  funext w x
+  have him : (negative.endCoord w).im = -(positive.endCoord w).im := by
+    simp only [im_endCoord, endSign_negative, endSign_positive]
+    ring
+  have hre : negative.endSign * (negative.endCoord w).re =
+      positive.endSign * (positive.endCoord w).re := by
+    rw [endSign_mul_re_endCoord, endSign_mul_re_endCoord]
+  have hform : negative.endAngularForm w = -positive.endAngularForm w := by
+    ext v
+    simp [endAngularForm_apply]
+  rw [perturbation_def, perturbation_def, hre, him, hform, smul_neg, ← neg_smul]
+  congr 1
+  ring
 
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 

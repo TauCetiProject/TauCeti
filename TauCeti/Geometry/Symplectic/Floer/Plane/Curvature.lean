@@ -105,6 +105,60 @@ open scoped Topology
 
 namespace TauCeti
 
+namespace Floer.PSSPlane
+
+/-! ### The end lift in real coordinates -/
+
+/-- The pullback of the perturbation along the end lift in real coordinates, evaluated on a
+tangent vector `v`, is its component `TauCeti.Floer.PSSPlane.endComponent` along `v` in the end
+coordinates. -/
+theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane)
+    (H : ℝ → X → ℝ) (v : ℝ × ℝ) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      p.endComponent H (Complex.equivRealProdCLM.symm v) := by
+  funext z x
+  have hz : Complex.equivRealProdCLM.symm z = ⟨z.1, z.2⟩ := Complex.ext (by simp) (by simp)
+  rw [perturbationPullback_realChart _
+    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
+
+/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
+component. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
+    (p : PSSPlane) (H : ℝ → X → ℝ) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal =
+      fun _ _ ↦ 0 := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
+    endComponent_one]
+
+/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
+`β(ε s - 1) H(t)`. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
+    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag =
+      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
+    endComponent_I hH]
+
+/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
+positive. -/
+theorem det_fderiv_realChart_pos (p : PSSPlane) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
+  -- The derivative is multiplication by the complex number `φ'`, whose real determinant is
+  -- `|φ'|²`.
+  rw [(TauCeti.Complex.hasFDerivAt_realChart (p.hasDerivAt_cylindricalEndLift _)).fderiv]
+  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
+    Complex.normSq_pos, p.cylindricalEndLift_ne_zero]
+
+end Floer.PSSPlane
+
 namespace SmoothTwoForm
 
 open Floer Floer.PSSPlane
@@ -156,44 +210,6 @@ theorem hamiltonianCurvature_pssPlaneEndComponent_eq_zero (ω : SmoothTwoForm I 
 end lift maps it bijectively onto `ℂ ∖ {0}`. -/
 private noncomputable def endStrip (p : PSSPlane) : Set (ℝ × ℝ) :=
   univ ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))
-
-/-- The pullback of the perturbation along the end lift in real coordinates, evaluated on a
-tangent vector `v`, is its component `TauCeti.Floer.PSSPlane.endComponent` along `v` in the end
-coordinates. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane)
-    (H : ℝ → X → ℝ) (v : ℝ × ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      p.endComponent H (Complex.equivRealProdCLM.symm v) := by
-  funext z x
-  have hz : Complex.equivRealProdCLM.symm z = ⟨z.1, z.2⟩ := Complex.ext (by simp) (by simp)
-  rw [perturbationPullback_realChart _
-    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
-component. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
-    (p : PSSPlane) (H : ℝ → X → ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal =
-      fun _ _ ↦ 0 := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
-    endComponent_one]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
-`β(ε s - 1) H(t)`. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
-    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag =
-      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
-    endComponent_I hH]
 
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
@@ -307,16 +323,6 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
           inv_one, ENNReal.ofReal_one, one_mul]
 
 /-! ### The energy identity on the discs of the plane -/
-
-/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
-positive. -/
-private theorem det_fderiv_realChart_pos (p : PSSPlane) (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  -- The derivative is multiplication by the complex number `φ'`, whose real determinant is
-  -- `|φ'|²`.
-  rw [(TauCeti.Complex.hasFDerivAt_realChart (p.hasDerivAt_cylindricalEndLift _)).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_pos, p.cylindricalEndLift_ne_zero]
 
 /-- The band `ε t ∈ (-1/2, 1/2]` and the closed interval `[-1/2, 1/2]` differ by a null set. -/
 private theorem preimage_endSign_mul_ae_eq (p : PSSPlane) :
@@ -856,13 +862,13 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
     (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ 1)
     (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ Complex.I)
-  rw [SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
-    SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
+  rw [PSSPlane.perturbationPullback_realChart_cylindricalEndLift,
+    PSSPlane.perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag,
     ← hamiltonianCurvature_constSmooth ω (p.endComponent H 1) (p.endComponent H Complex.I) w x,
     ω.constSmooth.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
-  exact (mul_eq_zero.1 key.symm).resolve_left (SmoothTwoForm.det_fderiv_realChart_pos p w).ne'
+  exact (mul_eq_zero.1 key.symm).resolve_left (PSSPlane.det_fderiv_realChart_pos p w).ne'
 
 end SymplecticForm
 

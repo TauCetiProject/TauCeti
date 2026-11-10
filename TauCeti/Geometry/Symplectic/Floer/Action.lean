@@ -77,6 +77,8 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
 
 * `SymplecticForm.hamiltonianAction_add_const`: adding a function `c` of time to the Hamiltonian
   adds `∫₀¹ c` to the action of every loop.
+* `SymplecticForm.hamiltonianAction_comp_neg`: traversing a loop backwards negates its action for
+  the time-reversed Hamiltonian `-H(-t)`.
 * `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
   the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
   the two boundary circles, is the change of action minus the integrated curvature.
@@ -142,6 +144,27 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
     ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
       ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
   rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
+/-- **The action of a loop traversed backwards.** Reversing a loop `x` of period one is the same,
+for the action, as reversing time in the Hamiltonian: `A_H(t ↦ x(-t)) = -A_{H'}(x)` for the
+Hamiltonian `H'(t, y) = -H(-t, y)`, whose Hamiltonian vector field at time `t` is `-X_{H_{-t}}`.
+This is how a negative cylindrical end, read in the reflected coordinates `(-s, -t)`, becomes a
+positive one. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1)
+    {x : ℝ → V} (hx : Periodic x 1) :
+    ω.hamiltonianAction H (fun t ↦ x (-t)) =
+      -ω.hamiltonianAction (fun t y ↦ -H (-t) y) x := by
+  have hper : Periodic (fun t ↦ H (-t) (x t)) 1 := fun t ↦ by
+    simp only [hx t, show -(t + 1) = -t - 1 by ring, hH.sub_eq]
+  have hshift := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at hshift
+  have hH' : (∫ t in (0 : ℝ)..1, H t (x (-t))) = ∫ t in (0 : ℝ)..1, H (-t) (x t) := by
+    rw [← hshift]
+    simpa only [neg_neg, neg_zero] using
+      intervalIntegral.integral_comp_neg (a := 0) (b := 1) fun t ↦ H (-t) (x t)
+  rw [hamiltonianAction_def, hamiltonianAction_def, ω.loopArea_comp_neg hx, hH',
+    intervalIntegral.integral_neg]
+  ring
 
 end Action
 
