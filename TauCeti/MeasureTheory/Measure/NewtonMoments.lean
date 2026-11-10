@@ -293,7 +293,7 @@ private theorem tendsto_integral_sub_sum_roots_of_tendsto_finiteMeasure {𝕜 : 
         by
         simp only [FiniteMeasure.toMeasure_mk]
         rw [hτ]
-        exact (MeasureTheory.integral_norm_eval_sq_sum_roots_eq_zero _).symm)
+        exact (Polynomial.integral_norm_eval_sq_sum_roots_eq_zero _).symm)
   have hρρ' : (ρ : Measure ℂ) = ρ' :=
     measure_eq_of_integral_pow_eq_of_integral_norm_eval_newtonPolynomial_sq_eq_zero hρB hρ'B
       (fun k _ => hρmom k) hρ'mom hρvar hρ'var

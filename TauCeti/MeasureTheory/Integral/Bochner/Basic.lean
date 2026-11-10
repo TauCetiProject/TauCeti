@@ -45,8 +45,8 @@ for set and probability integrals.
 * `measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero`: a measure against which the
   integrable function `|p|²` has integral zero is carried by the roots of the nonzero
   polynomial `p`.
-* `integral_norm_eval_sq_sum_roots_eq_zero`: the root counting measure of a polynomial `p` gives
-  integral zero to `|p|²`.
+* `Polynomial.integral_norm_eval_sq_sum_roots_eq_zero`: the root counting measure of a polynomial
+  `p` gives integral zero to `|p|²`.
 
 ## Positive parts
 
@@ -781,8 +781,8 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
 
 open Polynomial in
 /-- The root counting measure of a polynomial `p` gives integral zero to `|p|²`. -/
-theorem integral_norm_eval_sq_sum_roots_eq_zero {𝕜 : Type*} [NormedField 𝕜] [MeasurableSpace 𝕜]
-    [MeasurableSingletonClass 𝕜] (p : 𝕜[X]) :
+theorem _root_.Polynomial.integral_norm_eval_sq_sum_roots_eq_zero {𝕜 : Type*} [NormedField 𝕜]
+    [MeasurableSpace 𝕜] [MeasurableSingletonClass 𝕜] (p : 𝕜[X]) :
     ∫ w, ‖p.eval w‖ ^ 2 ∂(p.roots.map Measure.dirac).sum = 0 := by
   rw [Multiset.integral_sum_map_dirac]
   refine Multiset.sum_eq_zero fun x hx ↦ ?_
