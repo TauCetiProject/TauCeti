@@ -375,7 +375,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- A set meets each positive unit ray in at most one point. This imposes no condition at the
-origin, which must be excluded separately in the nullity lemma. -/
+origin. -/
 def IsRadialGraph (A : Set E) : Prop :=
   ∀ u ∈ sphere (0 : E) 1, ∀ r₁ r₂ : ℝ, 0 < r₁ → 0 < r₂ →
     r₁ • u ∈ A → r₂ • u ∈ A → r₁ = r₂
@@ -393,22 +393,15 @@ theorem IsRadialGraph.mono {A B : Set E} (hA : IsRadialGraph A) (h : B ⊆ A) :
   intro u hu r₁ r₂ h₁ h₂ hr₁ hr₂
   exact hA u hu r₁ r₂ h₁ h₂ (h hr₁) (h hr₂)
 
-/-- A measurable set avoiding the origin with almost-everywhere volume-null positive-ray slices
-is Haar-null. -/
+/-- In a nontrivial space, a measurable set with almost-everywhere volume-null positive-ray
+slices is Haar-null. -/
 theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
-    (μ : Measure E) [μ.IsAddHaarMeasure]
-    {A : Set E} (hAmeas : MeasurableSet A) (hA0 : (0 : E) ∉ A)
+    [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {A : Set E} (hAmeas : MeasurableSet A)
     (hslice : ∀ᵐ ω : sphere (0 : E) 1 ∂μ.toSphere,
       volume {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A} = 0) :
     μ A = 0 := by
   classical
-  by_cases hE : Subsingleton E
-  · have hA : A = ∅ := by
-      apply Set.eq_empty_iff_forall_notMem.mpr
-      intro x hx
-      exact hA0 (hE.elim x 0 ▸ hx)
-    simp only [hA, measure_empty]
-  have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
   rw [← lintegral_indicator_one hAmeas]
   rw [lintegral_eq_lintegral_toSphere_lintegral_Ioi (μ := μ)
     (f := A.indicator 1) (measurable_one.indicator hAmeas)]
@@ -420,12 +413,12 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
   have hnot : t • (ω : E) ∉ A := fun h ↦ ht ⟨htpos, h⟩
   simp only [indicator_of_notMem hnot, mul_zero, Pi.zero_apply]
 
-/-- A measurable radial graph avoiding the origin has zero additive Haar measure. -/
+/-- In a nontrivial space, a measurable radial graph has zero additive Haar measure. -/
 theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
-    (μ : Measure E) [μ.IsAddHaarMeasure]
-    {A : Set E} (hAmeas : MeasurableSet A) (hA0 : (0 : E) ∉ A) (hray : IsRadialGraph A) :
+    [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {A : Set E} (hAmeas : MeasurableSet A) (hray : IsRadialGraph A) :
     μ A = 0 := by
-  apply μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas hA0
+  apply μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas
   apply Eventually.of_forall
   intro ω
   have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
