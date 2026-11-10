@@ -42,6 +42,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate`: fiberwise nondegeneracy of a smooth two-form.
 * `TauCeti.SmoothTwoForm.IsSymplectic`: a closed, fiberwise nondegenerate smooth two-form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
+* `TauCeti.SmoothTwoForm.inChartAt_extChartAt_self_nondegenerate`: nondegeneracy at a point passes
+  to the coordinate expression in the preferred chart at that point.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
@@ -157,6 +159,20 @@ lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
 lemma IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : M) :
     (form.bilinFormAt x).Nondegenerate :=
   h x
+
+/-- A two-form nondegenerate at `x` has a nondegenerate coordinate expression in the preferred
+chart at `x`, at the chart point of `x`. -/
+theorem inChartAt_extChartAt_self_nondegenerate (form : SmoothTwoForm I M) {x : M}
+    (hnd : (form.bilinFormAt x).Nondegenerate) :
+    ∀ v, (∀ w, RoughForm.inChartAt form.1 x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
+  fun v hv ↦ hnd.1 v fun w ↦ by
+    have h := hv w
+    rw [RoughForm.inChartAt_extChartAt_self] at h
+    -- `TangentSpace I x` is the model space `E` by definition.
+    let v' : TangentSpace I x := v
+    let w' : TangentSpace I x := w
+    exact (SmoothForm.bilinFormAt_apply form x v' w').trans
+      ((SmoothBundleForm.eval₂_apply form x v' w').trans h)
 
 /-- The bilinear form underlying the tangent-space symplectic form is the value of the two-form. -/
 lemma IsNondegenerate.toBilinForm_symplecticFormAt (h : form.IsNondegenerate) (x : M) :

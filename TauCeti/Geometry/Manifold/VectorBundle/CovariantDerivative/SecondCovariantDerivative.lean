@@ -37,6 +37,11 @@ torsion, is `CovariantDerivative.secondCovariantDerivative_sub_swap`, in the cur
 * `CovariantDerivative.covariantDerivative_covariantDerivative_smul_section`: the Leibniz rule for
   the iterated covariant derivative of a function multiple of a section, for a `C^k` connection
   with `1 ≤ k`.
+* `CovariantDerivative.secondCovariantDerivative_smul_apply`: the Leibniz rule for the second
+  covariant derivative of a function multiple of a section.
+* `CovariantDerivative.secondCovariantDerivative_smul_smul_sub`: the double commutator of `∇²` with
+  multiplication by two functions `f`, `g` is `(df ⊗ dg + dg ⊗ df) σ`, independently of the
+  connections.
 
 ## References
 
@@ -285,5 +290,48 @@ theorem secondCovariantDerivative_zero (x : M) :
     cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
   simpa using secondCovariantDerivative_const_smul cov covT 0
     (contMDiff_zeroSection ℝ V : CMDiff ∞ (T% (0 : Π y : M, V y))) x
+
+/-- **Leibniz rule for the second covariant derivative.** For smooth `f` and `σ` and a smooth
+vector field `Y`,
+`∇²(f σ)(u, Y) = f ∇²σ(u, Y) + df(u) ∇_Y σ + df(Y) ∇_u σ + (u (Y f) - (∇ᵀ_u Y) f) σ`.
+The last coefficient is the second covariant derivative of `f` for `∇ᵀ`. -/
+theorem secondCovariantDerivative_smul_apply {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hσ : CMDiff ∞ (T% σ)) (x : M) {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y))
+    (u : TangentSpace I x) :
+    cov.secondCovariantDerivative covT (f • σ) x u (Y x) =
+      f x • cov.secondCovariantDerivative covT σ x u (Y x) + d% f x u • cov σ x (Y x) +
+        d% f x (Y x) • cov σ x u +
+          (d% (fun y ↦ d% f y (Y y)) x u - d% f x (covT Y x u)) • σ x := by
+  obtain ⟨X, -, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  have hf' : ContMDiff I 𝓘(ℝ) (∞ + 1) f := by simpa using hf
+  have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
+  rw [secondCovariantDerivative_apply cov covT (hf.smul_section hσ) x hY,
+    secondCovariantDerivative_apply cov covT hσ x hY,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (X := X) (by simp) cov hf' hY
+      hσ' x,
+    cov.covariantDerivative_smul_section_apply (hf.mdifferentiable (by simp) x)
+      (hσ.mdifferentiable (by simp) x)]
+  module
+
+/-- **The double commutator of the second covariant derivative with multiplication.** For smooth
+functions `f`, `g` and a smooth section `σ`,
+`∇²(f g σ) - f ∇²(g σ) - g ∇²(f σ) + f g ∇²σ = (df ⊗ dg + dg ⊗ df) σ`. -/
+theorem secondCovariantDerivative_smul_smul_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hσ : CMDiff ∞ (T% σ)) (x : M) (u v : TangentSpace I x) :
+    cov.secondCovariantDerivative covT (f • g • σ) x u v -
+        f x • cov.secondCovariantDerivative covT (g • σ) x u v -
+          g x • cov.secondCovariantDerivative covT (f • σ) x u v +
+            (f x * g x) • cov.secondCovariantDerivative covT σ x u v =
+      (d% f x u * d% g x v + d% g x u * d% f x v) • σ x := by
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  have hgd := hg.mdifferentiable (by simp) x
+  have hσd := hσ.mdifferentiable (by simp) x
+  rw [secondCovariantDerivative_smul_apply cov covT hf (hg.smul_section hσ) x hY,
+    secondCovariantDerivative_smul_apply cov covT hf hσ x hY,
+    secondCovariantDerivative_smul_apply cov covT hg hσ x hY,
+    cov.covariantDerivative_smul_section_apply hgd hσd,
+    cov.covariantDerivative_smul_section_apply hgd hσd]
+  simp only [Pi.smul_apply']
+  module
 
 end CovariantDerivative

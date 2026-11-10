@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
-import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Affine renormalization of the Monge–Ampère measure

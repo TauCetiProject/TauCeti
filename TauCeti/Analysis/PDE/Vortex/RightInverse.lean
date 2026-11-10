@@ -6,203 +6,155 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
-public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.Analysis.InnerProductSpace.Adjoint.RightInverse
-public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
-import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.Analysis.InnerProductSpace.WeakSolution
+public import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
-# The `L²` right inverse of the gauge-fixed vortex operator
+# The weak right inverse of the gauge-fixed operator at a plane vortex
 
-In the coordinates of `TauCeti.Vortex.equation`, the gauge-fixed operator `L_x = d₀* ⊕ d₁`
-(`TauCeti.Vortex.gaugeFixedOperator`) of a field `x` has the formal adjoint
-`L_x*` (`TauCeti.Vortex.gaugeFixedAdjoint`). A field `u ∈ L²` solves `L_x u = f` weakly when
+At a field `x`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`) is a
+first-order operator on fields `ℂ → ℝ⁴`, with formal adjoint `L_x*` (`gaugeFixedAdjoint`). A
+square-integrable field `y` is a *weak solution* of `L_x y = f`, for `f ∈ L²(ℂ; ℝ⁴)`, if
 
-`∫ ⟪u, L_x* η⟫ = ∫ ⟪f, η⟫`
+`∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫`
 
-for every compactly supported `C²` test field `η ∈ 𝓓²(ℂ)`. By integration by parts
-(`TauCeti.Vortex.integral_inner_gaugeFixedOperator`) every compactly supported `C¹` solution is a
-weak solution.
+for every compactly supported `C²` test field `η`. This extends the classical notion: by the
+integration-by-parts identity `integral_inner_gaugeFixedOperator`, when `x` is continuous a
+compactly supported `C¹` field `y` is a weak solution of `L_x y = f` for `f` its classical image
+under `L_x`. The *weak kernel* of `L_x` consists of the weak solutions of `L_x y = 0`.
 
-At an actual vortex with `|α| → 1`, the spectral gap `c ∫ |η|² ≤ ∫ |L_x* η|²`
-(`TauCeti.Vortex.exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`)
-says that `L_x*` is bounded below on test fields. Hence the weak `L²` realization of `L_x` is
-onto: `TauCeti.Vortex.gaugeFixedRightInverse μ x` is a bounded operator on `L²` with
-`L_x (R f) = f` weakly for every `f`
-(`TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_of_equation_eq_zero`). This is the
-cokernel vanishing of the vortex deformation operator, in its weak `L²` form. Under a gap
-constant `c` the operator has norm at most `c^(-1/2)`
-(`TauCeti.Vortex.norm_gaugeFixedRightInverse_le`), and `R f` is the unique weak solution of
-least norm (`TauCeti.Vortex.gaugeFixedRightInverse_apply_eq_iff`); formally, this is the
-minimal-norm right inverse `L_x* (L_x L_x*)⁻¹`. It is constructed by
-`LinearMap.adjointRightInverse` from the lower bound alone. No decay of the connection or of
-derivatives is assumed.
+This file shows that the weak cokernel of `L_x` vanishes at a plane vortex, with a bounded right
+inverse. If `L_x*` is bounded below on test fields, `c ∫ |η|² ≤ ∫ |L_x* η|²` with `c > 0`, there
+is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such that `Q f` is a weak
+solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
+(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Thus
+`Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
+`L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
+gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
+bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
 
-The regularity of `R f`, the `H¹ → L²` Fredholm property and the identification of the kernel
-of `L_x` are separate.
+These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
+property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
 
 ## Main results
 
-* `TauCeti.Vortex.gaugeFixedRightInverse`: the minimal-norm `L²` right inverse of `L_x`.
-* `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse`: it solves `L_x u = f` weakly,
-  whenever `L_x*` has a spectral gap.
-* `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_of_equation_eq_zero`: the same at an
-  actual vortex with unit-modulus end.
-* `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction`: the
-  spectral gap on test fields at such a vortex, the hypothesis of the norm bound and of the
-  least-norm characterization.
+* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`: a
+  lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
+* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
+  right inverse at a plane vortex with `|α| → 1`.
 
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
-* H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-  Universitext, Springer, 2011, Theorem 2.20.
+* C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
+  Comm. Math. Phys. 72 (1980), 277–292.
 -/
 
 public section
 
-noncomputable section
-
 namespace TauCeti.Vortex
 
-open MeasureTheory Filter TopologicalSpace
-open scoped Distributions RealInnerProductSpace Topology
+open MeasureTheory Filter
+open scoped RealInnerProductSpace Topology
 
-variable (μ : Measure ℂ) [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- A test field has square-integrable `L_x*` when the field `x` is continuous. -/
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
+/-- The compactly supported `C²` test fields. -/
+private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
+
+private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
     MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_num))).memLp_of_hasCompactSupport
+  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
     (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
 
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
-private def adjointToLp (hx : Continuous x) :
-    𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)) →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_gaugeFixedAdjoint μ hx η).toLp _
+private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
+  toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
-    refine MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ ?_)
-    have h₂ := (η.contDiff.differentiable (by norm_num)).differentiableAt (x := z)
-    have h₂' := (ν.contDiff.differentiable (by norm_num)).differentiableAt (x := z)
-    exact gaugeFixedAdjoint_add x h₂ h₂'
+    refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
+    rw [FunLike.coe_add, Pi.add_apply]
+    exact gaugeFixedAdjoint_add x (η.contDiff.differentiable (by norm_num) z)
+      (ν.contDiff.differentiable (by norm_num) z)
   map_smul' t η := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ gaugeFixedAdjoint_smul x η t z)
+    refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
+    rw [FunLike.coe_smul, Pi.smul_apply]
+    exact gaugeFixedAdjoint_smul x η t z
 
-variable {μ}
+/-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
+field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
+with `c > 0`. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` with `‖Q‖ ≤ c^(-1/2)` such
+that
 
-/-- A spectral gap for `L_x*` bounds test fields by their image, in `L²`. -/
-private theorem norm_ambientToLp_le (hx : Continuous x) {c : ℝ} (hc : 0 < c)
-    (hgap : ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
-    ‖TestFunction.ambientToLp 2 μ η‖ ≤ (√c)⁻¹ * ‖adjointToLp μ hx η‖ := by
-  have hsq : (√c * ‖TestFunction.ambientToLp 2 μ η‖) ^ 2 ≤ ‖adjointToLp μ hx η‖ ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hc.le, TestFunction.norm_ambientToLp_sq]
-    exact (hgap η).trans_eq (memLp_gaugeFixedAdjoint μ hx η).norm_toLp_sq.symm
-  have hle := (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp hsq
-  rw [inv_mul_eq_div, le_div_iff₀ (Real.sqrt_pos.mpr hc), mul_comm]
-  exact hle
-
-variable (μ x)
-
-/-- **The `L²` right inverse of the gauge-fixed vortex operator.** For a continuous field `x`
-whose formal adjoint `L_x*` has a spectral gap `c ∫ |η|² ≤ ∫ |L_x* η|²` on test fields, this is
-the bounded operator on `L²` sending `f` to the weak solution of `L_x u = f` of least norm
-(`TauCeti.Vortex.integral_inner_gaugeFixedRightInverse`,
-`TauCeti.Vortex.gaugeFixedRightInverse_apply_eq_iff`). Formally, it is the minimal-norm right
-inverse `L_x* (L_x L_x*)⁻¹`. For a discontinuous field it is `0`. -/
-def gaugeFixedRightInverse :
-    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ :=
-  open scoped Classical in
-  if hx : Continuous x then
-    (adjointToLp μ hx).adjointRightInverse (TestFunction.ambientToLp 2 μ).toLinearMap
-  else 0
-
-variable {μ x}
-
-private theorem gaugeFixedRightInverse_eq (hx : Continuous x) :
-    gaugeFixedRightInverse μ x =
-      (adjointToLp μ hx).adjointRightInverse (TestFunction.ambientToLp 2 μ).toLinearMap := by
-  simp [gaugeFixedRightInverse, hx]
-
-private theorem exists_norm_ambientToLp_le (hx : Continuous x)
-    (hgap : ∃ c > 0, ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
+* `Q f` is a weak solution of `L_x y = f`: `∫ ⟪Q f, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
+  supported `C²` field `η`;
+* `Q f` is orthogonal to the weak kernel: `∫ ⟪Q f, u⟫ = 0` for every `u ∈ L²` with
+  `∫ ⟪u, L_x* η⟫ = 0` for all such `η`. -/
+theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
+    (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) :
-    ∃ C, ∀ η, ‖TestFunction.ambientToLp 2 μ η‖ ≤ C * ‖adjointToLp μ hx η‖ :=
-  let ⟨_, hc, hgap⟩ := hgap
-  ⟨_, norm_ambientToLp_le hx hc hgap⟩
+    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      ‖Q‖ ≤ (√c)⁻¹ ∧
+      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
+      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+  set S := gaugeFixedAdjointToLp μ hx
+  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
+  have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
+      ⟪u, S η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
+    L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+  have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
+      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
+    TestFunction.inner_ambientToLp u η
+  -- The gap is the lower bound `√c ‖η‖ ≤ ‖L_x* η‖` in `L²`.
+  have hbound (η : TestField) : √c * ‖ι η‖ ≤ ‖S η‖ := by
+    refine le_of_sq_le_sq ?_ (norm_nonneg _)
+    have hSη : S η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) := rfl
+    rw [mul_pow, Real.sq_sqrt hc.le, ContinuousLinearMap.coe_coe, TestFunction.norm_ambientToLp_sq,
+      hSη, MemLp.norm_toLp_sq]
+    exact hgap η η.contDiff η.hasCompactSupport
+  obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
+    S ι (Real.sqrt_pos.2 hc) hbound
+  refine ⟨Q, hQn, fun f η hη hηc ↦ ?_, fun f u hu ↦ ?_⟩
+  · have h := hQ f ⟨η, hη, hηc, by simp⟩
+    rwa [hS, hι] at h
+  · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
+    have huK : u ∈ (LinearMap.range S)ᗮ := by
+      rw [Submodule.mem_orthogonal]
+      rintro _ ⟨η, rfl⟩
+      rw [real_inner_comm, hS]
+      exact hu η η.contDiff η.hasCompactSupport
+    rw [← L2.inner_def]
+    exact Submodule.inner_left_of_mem_orthogonal huK (hQK f)
 
-/-- **`L_x` is onto `L²` in the weak sense.** If `L_x*` has a spectral gap on test fields, then
-`u = gaugeFixedRightInverse μ x f` solves `L_x u = f` weakly:
-`∫ ⟪u, L_x* η⟫ = ∫ ⟪f, η⟫` for every test field `η`. -/
-theorem integral_inner_gaugeFixedRightInverse (hx : Continuous x)
-    (hgap : ∃ c > 0, ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
-    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪gaugeFixedRightInverse μ x f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ := by
-  rw [← L2.inner_toLp_right _ (memLp_gaugeFixedAdjoint μ hx η), ← TestFunction.inner_ambientToLp,
-    gaugeFixedRightInverse_eq hx]
-  exact LinearMap.inner_adjointRightInverse_apply (exists_norm_ambientToLp_le hx hgap) f η
-
-/-- **The norm bound.** A spectral gap `c ∫ |η|² ≤ ∫ |L_x* η|²` bounds the right inverse by
-`c^(-1/2)`. -/
-theorem norm_gaugeFixedRightInverse_le (hx : Continuous x) {c : ℝ} (hc : 0 < c)
-    (hgap : ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) :
-    ‖gaugeFixedRightInverse μ x‖ ≤ (√c)⁻¹ := by
-  rw [gaugeFixedRightInverse_eq hx]
-  exact LinearMap.norm_adjointRightInverse_le (by positivity) (norm_ambientToLp_le hx hc hgap)
-
-/-- **Characterization by least norm.** If `L_x*` has a spectral gap on test fields, then
-`gaugeFixedRightInverse μ x f` is the unique weak solution of `L_x u = f` of least `L²` norm. -/
-theorem gaugeFixedRightInverse_apply_eq_iff (hx : Continuous x)
-    (hgap : ∃ c > 0, ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
-    {f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
-    gaugeFixedRightInverse μ x f = u ↔
-      (∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-      ∀ v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-          ∫ z, ⟪v z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) → ‖u‖ ≤ ‖v‖ := by
-  simp only [← fun u η ↦ L2.inner_toLp_right (𝕜 := ℝ) u (memLp_gaugeFixedAdjoint μ hx η),
-    ← TestFunction.inner_ambientToLp]
-  rw [gaugeFixedRightInverse_eq hx]
-  exact LinearMap.adjointRightInverse_apply_eq_iff (exists_norm_ambientToLp_le hx hgap)
-
-/-- **The spectral gap on test fields.** At an actual vortex with unit-modulus end there is
-`c > 0` with `c ∫ |η|² ≤ ∫ |L_x* η|²` for every test field `η ∈ 𝓓²(ℂ)`: the form of
-`TauCeti.Vortex.exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` taken as
-hypothesis by `TauCeti.Vortex.norm_gaugeFixedRightInverse_le` and
-`TauCeti.Vortex.gaugeFixedRightInverse_apply_eq_iff`. -/
-theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction
-    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ c > 0, ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ :=
-  let ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
-  ⟨c, hc, fun η ↦ hgap η (by exact_mod_cast η.contDiff) η.hasCompactSupport⟩
-
-/-- **Cokernel vanishing at a vortex.** At a `C¹` vortex with `|α| → 1`, the operator
-`gaugeFixedRightInverse μ x` is a bounded right inverse of the weak `L²` realization of `L_x`:
-`u = gaugeFixedRightInverse μ x f` satisfies `∫ ⟪u, L_x* η⟫ = ∫ ⟪f, η⟫` for every test field
-`η`. -/
-theorem integral_inner_gaugeFixedRightInverse_of_equation_eq_zero (hx : ContDiff ℝ 1 x)
+/-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
+equation with `|α| → 1` at infinity. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such
+that `Q f` is a weak solution of `L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of
+`L_x`. In particular the weak cokernel of `L_x` vanishes. -/
+theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪gaugeFixedRightInverse μ x f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
-  integral_inner_gaugeFixedRightInverse hx.continuous
-    (exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction hx hsol
-      hlim) f η
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
+      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
+  obtain ⟨Q, -, hQ⟩ :=
+    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc hgap
+  exact ⟨Q, hQ⟩
 
 end TauCeti.Vortex
