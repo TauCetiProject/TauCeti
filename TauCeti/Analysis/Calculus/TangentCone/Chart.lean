@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
@@ -36,6 +37,9 @@ charts used to verify it.
 * `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`: hence the span of the tangent cone is that
   preimage, viewed as a subspace, and it has the dimension of the model subspace
   (`TauCeti.IsSliceChart.finrank_span_tangentConeAt`).
+* `TauCeti.ker_range_projectionOntoL_comp`: projecting the derivative of a chart onto a complement
+  of the model subspace gives a surjection whose kernel is that tangent space, so the normal
+  equation of a slice chart is a submersion cutting out the flattened set.
 -/
 
 public section
@@ -152,5 +156,18 @@ theorem finrank_span_tangentConeAt (h : IsSliceChart e (L : Set F) S)
     LinearEquiv.finrank_map_eq A.symm.toLinearEquiv L
 
 end IsSliceChart
+
+/-- Composing a continuous linear equivalence with the projection onto a topological complement
+`C` along `L` gives a surjection whose kernel is the preimage of `L`. With `A` the derivative of a
+chart flattening a set onto `L`, this kernel is the tangent space of the set
+(`TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`). -/
+theorem ker_range_projectionOntoL_comp {L C : Submodule 𝕜 E} (h : Submodule.IsTopCompl C L)
+    (A : E ≃L[𝕜] E) :
+    ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).ker = L.comap (A : E →ₗ[𝕜] E) ∧
+      ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).range = ⊤ := by
+  refine ⟨?_, LinearMap.range_eq_top.2 <|
+    (Submodule.projectionOntoL_surjective h).comp A.surjective⟩
+  ext v
+  simp
 
 end TauCeti

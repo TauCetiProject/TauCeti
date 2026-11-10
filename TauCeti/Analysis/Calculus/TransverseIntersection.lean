@@ -62,18 +62,6 @@ namespace TauCeti
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
-omit [CompleteSpace E] in
-/-- Composing a continuous linear equivalence with the projection onto a topological complement
-`C` along `L` gives a surjection whose kernel is the preimage of `L`. -/
-private theorem ker_range_projectionOntoL_comp {L C : Submodule 𝕜 E} (h : Submodule.IsTopCompl C L)
-    (A : E ≃L[𝕜] E) :
-    ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).ker = L.comap (A : E →ₗ[𝕜] E) ∧
-      ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).range = ⊤ := by
-  refine ⟨?_, LinearMap.range_eq_top.2 <|
-    (Submodule.projectionOntoL_surjective h).comp A.surjective⟩
-  ext v
-  simp
-
 -- One normal equation supplies both the slice chart and the intrinsic tangent-cone formula.
 private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn : n ≠ 0)
     {S₁ S₂ : Set E} {L₁ L₂ : Submodule 𝕜 E} {e₁ e₂ : OpenPartialHomeomorph E E} {y : E}
