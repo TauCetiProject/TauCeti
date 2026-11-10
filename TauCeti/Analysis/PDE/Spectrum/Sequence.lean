@@ -40,7 +40,7 @@ The eigenvalues are indexed by `ℕ` with `λₖ → ∞` because
   the eigenvalues is finite.
 
 Any infinite family with finite sublevel sets can be listed in nondecreasing order
-(`exists_equiv_monotone_comp_of_finite_setOf_le`), and reindexing the eigenbasis of
+(`Northcott.exists_equiv_monotone_comp`), and reindexing the eigenbasis of
 `TauCeti.PDE.exists_hilbertBasis_forall_isDirichletEigenvalue` along that enumeration gives the
 sequence. In dimension zero `L²(Ω)` is one-dimensional and the spectrum is a single eigenvalue,
 which is why positive dimension is assumed.
@@ -136,7 +136,8 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
     have := Fintype.ofFinite s
     exact L2.not_finiteDimensional_restrict_of_isOpen (𝕜 := ℝ) mu Omega.isOpen
       hOmega_nonempty (Module.Finite.of_basis B.toOrthonormalBasis.toBasis)
-  obtain ⟨e, he⟩ := exists_equiv_monotone_comp_of_finite_setOf_le kappa hfin
+  have hN : Northcott kappa := ⟨hfin⟩
+  obtain ⟨e, he⟩ := Northcott.exists_equiv_monotone_comp kappa
   -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
   let basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
     HilbertBasis.mk (B.orthonormal.comp e e.injective)
@@ -162,9 +163,9 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
     rw [hweq, heq, hvalue', real_inner_comm] at h
     rw [HilbertBasis.repr_apply_apply, W1p0.valueL_apply, lp.coeFn_zero, Pi.zero_apply]
     exact (mul_eq_mul_right_iff.1 h.symm).resolve_left hg
-  refine ⟨basis, kappa ∘ e, u ∘ e, he, tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
-    ?_, fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq (e k) v, hiff,
-    fun f ↦ ?_⟩
+  refine ⟨basis, kappa ∘ e, u ∘ e, he, Nat.cofinite_eq_atTop ▸
+    ((northcott_iff_tendsto kappa).1 hN).comp e.injective.tendsto_cofinite, ?_,
+    fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq (e k) v, hiff, fun f ↦ ?_⟩
   · obtain ⟨k, hk⟩ := (hiff _).1
       (isDirichletEigenvalue_first hcoeff hcoercive hOmega hsymm hOmega_nonempty)
     exact le_antisymm (hk ▸ he (Nat.zero_le k)) (firstDirichletEigenvalue_le hcoeff hcoercive

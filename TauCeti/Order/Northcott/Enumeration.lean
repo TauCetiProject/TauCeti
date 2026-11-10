@@ -6,19 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
-public import Mathlib.Order.Filter.Cofinite
+public import Mathlib.Order.Northcott
 public import Mathlib.Order.OrderIsoNat
 public import Mathlib.SetTheory.Cardinal.Order
 
 /-!
-# Enumerating a family in nondecreasing order
+# Enumerating a Northcott family in nondecreasing order
 
-Let `f : ι → α` be a family in a linear order whose sublevel sets `{i | f i ≤ a}` are all finite,
-on an infinite index type `ι`. Then `ι` can be enumerated by `ℕ` so that the values of `f` are
-listed in nondecreasing order, each value repeated as often as it is taken
-(`exists_equiv_monotone_comp_of_finite_setOf_le`), and along any such enumeration the values tend
-to infinity (`tendsto_comp_atTop_of_finite_setOf_le`). The finiteness hypothesis is the field of
-`Northcott f`, taken as an explicit hypothesis.
+Let `f : ι → α` be a Northcott family in a linear order, that is, its sublevel sets
+`{i | f i ≤ a}` are all finite, on an infinite index type `ι`. Then `ι` can be enumerated by `ℕ`
+so that the values of `f` are listed in nondecreasing order, each value repeated as often as it
+is taken (`Northcott.exists_equiv_monotone_comp`). Along any such enumeration the values tend to
+infinity, by `northcott_iff_tendsto` and `Function.Injective.tendsto_cofinite`.
 
 This is how the eigenvalues of an operator with discrete spectrum, such as the Dirichlet
 eigenvalues of an elliptic operator on a bounded domain, are written as a sequence
@@ -33,15 +32,15 @@ below it, which is finite.
 
 public section
 
-namespace TauCeti
+namespace Northcott
 
-open Filter Set
+open Set
 
-/-- **Nondecreasing enumeration.** If `f : ι → α` has finite sublevel sets on an infinite type
-`ι`, there is a bijection `e : ℕ ≃ ι` along which `f` is nondecreasing: `f (e 0) ≤ f (e 1) ≤ ⋯`.
+/-- **Nondecreasing enumeration.** If `f : ι → α` is Northcott on an infinite type `ι`, there is
+a bijection `e : ℕ ≃ ι` along which `f` is nondecreasing: `f (e 0) ≤ f (e 1) ≤ ⋯`.
 Every index occurs exactly once, so each value of `f` is listed as often as it is taken. -/
-theorem exists_equiv_monotone_comp_of_finite_setOf_le {ι α : Type*} [Infinite ι] [LinearOrder α]
-    (f : ι → α) (hf : ∀ a, {i | f i ≤ a}.Finite) : ∃ e : ℕ ≃ ι, Monotone (f ∘ e) := by
+theorem exists_equiv_monotone_comp {ι α : Type*} [Infinite ι] [LinearOrder α]
+    (f : ι → α) [Northcott f] : ∃ e : ℕ ≃ ι, Monotone (f ∘ e) := by
   classical
   -- Break the ties of `f` by an arbitrary well-ordering of `ι`.
   let key : ι → α ×ₗ Cardinal := fun i ↦ toLex (f i, embeddingToCardinal i)
@@ -50,7 +49,7 @@ theorem exists_equiv_monotone_comp_of_finite_setOf_le {ι α : Type*} [Infinite 
   have hkey_le {i j : ι} (h : key i ≤ key j) : f i ≤ f j := by
     simpa only [key, ofLex_toLex] using Prod.Lex.monotone_fst _ _ h
   have hfin (i : ι) : {j | key j < key i}.Finite :=
-    (hf (f i)).subset fun _ hj ↦ hkey_le (le_of_lt hj)
+    (finite_le (h := f) (f i)).subset fun _ hj ↦ hkey_le (le_of_lt hj)
   -- The rank of `i` is the number of indices below it.
   let r : ι → ℕ := fun i ↦ {j | key j < key i}.ncard
   have hr {i j : ι} (h : key i < key j) : r i < r j :=
@@ -71,13 +70,4 @@ theorem exists_equiv_monotone_comp_of_finite_setOf_le {ι α : Type*} [Infinite 
     exact (Nat.Subtype.orderIsoOfNat (range r)).monotone hmn)
   exact hkey_le hkmn
 
-/-- Along any injective enumeration `e : ℕ → ι`, a family with finite sublevel sets tends to
-infinity. -/
-theorem tendsto_comp_atTop_of_finite_setOf_le {ι α : Type*} [LinearOrder α] {f : ι → α}
-    (hf : ∀ a, {i | f i ≤ a}.Finite) {e : ℕ → ι} (he : Function.Injective e) :
-    Tendsto (f ∘ e) atTop atTop := by
-  rw [← Nat.cofinite_eq_atTop]
-  refine tendsto_atTop.2 fun a ↦ eventually_cofinite.2 ?_
-  exact ((hf a).preimage he.injOn).subset fun k hk ↦ le_of_lt (not_le.1 hk)
-
-end TauCeti
+end Northcott
