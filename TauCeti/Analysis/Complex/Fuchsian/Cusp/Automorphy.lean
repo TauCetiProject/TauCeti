@@ -658,8 +658,9 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs' : (s' : PSL(2, ℝ)) = D'.scal
   have hden : denom (Matrix.SpecialLinearGroup.mapGL ℝ s') ((h • τ : ℍ) : ℂ) =
       (t 1 1 : ℂ) * denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ /
         denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ := by
-    rw [eq_div_iff (denom_ne_zero _ _), ← Matrix.SpecialLinearGroup.denom_mapGL_mul,
-      show s' * h = t * s by rw [ht_def]; group, Matrix.SpecialLinearGroup.denom_mapGL_mul]
+    have hts : s' * h = t * s := by rw [ht_def]; group
+    rw [eq_div_iff (denom_ne_zero _ _), ← Matrix.SpecialLinearGroup.denom_mapGL_mul, hts,
+      Matrix.SpecialLinearGroup.denom_mapGL_mul]
     simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, ht]
   -- the width parameters differ by the constant `exp (π * I * t₀₁ * t₁₁ / w)`
   have hq : sqrtCoordinate D' (h • τ) =
