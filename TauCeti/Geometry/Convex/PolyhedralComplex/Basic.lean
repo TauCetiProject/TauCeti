@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Intrinsic
 public import TauCeti.Analysis.Convex.Exposed
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 
@@ -242,11 +241,19 @@ def univ : FinitePolyhedralComplex h where
     simpa using IsExposed.refl Set.univ
 
 @[simp]
+theorem cells_univ : (univ h).cells = {Set.univ} := by
+  simp [univ]
+
+theorem mem_cells_univ {P : Set V} : P ∈ (univ h).cells ↔ P = Set.univ := by
+  simp
+
+@[simp]
 theorem support_univ : (univ h).support = Set.univ := by
   simp [support, univ]
 
-/-- The cells of ambient codimension exactly `k`: those whose affine direction has dimension
-`finrank V - k`. -/
+/-- The cells of ambient codimension exactly `k`: those for which the dimension of the affine
+direction plus `k` equals `finrank V`. In particular, there are no such cells when `k` exceeds the
+ambient dimension. -/
 noncomputable def cellsOfCodimension (C : FinitePolyhedralComplex h) (k : ℕ) : Finset (Set V) :=
   open scoped Classical in
   C.cells.filter fun P => Module.finrank ℝ (affineSpan ℝ P).direction + k = Module.finrank ℝ V
