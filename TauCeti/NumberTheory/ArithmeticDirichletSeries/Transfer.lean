@@ -130,25 +130,9 @@ theorem primeCount_isLittleO_logIntegral (h : primeTheta K S =o[atTop] id) :
     primeCount_sub_mul_logIntegral_isLittleO (by simpa using h)
   simpa using h0.trans_isBigO Real.logIntegral_isEquivalent_div_log.isBigO_symm
 
-/-- If `ϑ(x)` vanishes at a cutoff, so does `π(x)`: a prime of `S` below the cutoff would contribute
-a positive logarithm to `ϑ(x)`. -/
-theorem primeCount_eq_zero_of_primeTheta_eq_zero {x : ℝ} (h : primeTheta K S x = 0) :
-    primeCount K S x = 0 := by
-  rw [primeTheta_apply, Finset.sum_eq_zero_iff_of_nonneg fun v _ ↦ Set.indicator_nonneg
-    (fun v _ ↦ log_absNorm_asIdeal_nonneg v) v] at h
-  rw [primeCount_apply]
-  refine Finset.sum_eq_zero fun v hv ↦ ?_
-  by_contra hne
-  have hvS : v ∈ S := by
-    by_contra hvS
-    exact hne (Set.indicator_of_notMem hvS _)
-  have hlog := h v hv
-  rw [Set.indicator_of_mem hvS] at hlog
-  exact (Real.log_pos (by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm v)).ne' hlog
-
 /-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`.**  This is the transfer the prime-number-theorem chain
-consumes: Layer 10 produces the asymptotic for `ϑ` from a Tauberian theorem, and this turns it into
-one for `π`.  For `δ = 0` both asymptotic equivalences say that the counts vanish eventually. -/
+consumes: it turns an asymptotic for `ϑ`, as produced by a Tauberian theorem, into one for `π`.
+For `δ = 0` both asymptotic equivalences say that the counts vanish eventually. -/
 theorem primeCount_asymptotic_of_primeTheta
     (h : primeTheta K S ~[atTop] fun x ↦ δ * x) :
     primeCount K S ~[atTop] fun x ↦ δ * Real.logIntegral x := by
