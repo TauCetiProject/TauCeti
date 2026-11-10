@@ -10,10 +10,10 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import Mathlib.Algebra.Category.Grp.Injective
-public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
-public import TauCeti.FieldTheory.IsAlgClosed.Units
+import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.FieldTheory.IsAlgClosed.Units
 
 /-!
 # Integral characters on the complex torus
@@ -179,7 +179,8 @@ theorem complexTorusMap_surjective {f : N →+ N'} (hf : Function.Surjective f) 
     (AddChar.toAddMonoidHomEquiv y)
   refine ⟨AddChar.toAddMonoidHomEquiv.symm h, DFunLike.ext _ _ fun m ↦ ?_⟩
   have := DFunLike.congr_fun hh m
-  simpa [complexTorusMap] using congrArg Additive.toMul this
+  rw [complexTorusMap_apply, characterEvaluation_apply]
+  simpa using congrArg Additive.toMul this
 
 /-- A torus point lies in the kernel of the torus map induced by the quotient by a sublattice `H`
 exactly when it is trivial on every integral character vanishing on `H`. -/
