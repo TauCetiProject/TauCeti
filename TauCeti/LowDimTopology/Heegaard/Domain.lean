@@ -291,6 +291,13 @@ theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
   simp
 
+/-- A domain connects a generator to itself exactly when its `α`- and `β`-parts are cycles, that
+is, when its boundary is a combination of whole curves. This does not depend on the generator. -/
+theorem isDomainBetween_self_iff_arcBoundary_eq_zero {x : H.Generator} {E : Region → ℤ} :
+    H.IsDomainBetween x x E ↔
+      H.alphaArcBoundary (H.alphaBoundary E) = 0 ∧ H.betaArcBoundary (H.betaBoundary E) = 0 := by
+  simp
+
 namespace IsDomainBetween
 
 variable {x y w : H.Generator} {D E : Region → ℤ}
