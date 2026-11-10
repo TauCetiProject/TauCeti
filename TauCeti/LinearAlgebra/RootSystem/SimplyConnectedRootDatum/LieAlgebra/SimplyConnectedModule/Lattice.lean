@@ -167,6 +167,7 @@ instance instIsLatticeScLattice : (t.scLattice ht).IsLattice ℚ :=
 /-- **The integral weight spaces of the Cartan generators span `V_sc(t)`**:
 each component does, and the inclusion of a summand preserves weight vectors
 (`TauCeti.UniversalEnvelopingAlgebra.lof_mem_iSup_jointWeightSpace`). -/
+@[simp]
 theorem mem_iSup_jointWeightSpace_scModule (x : t.scModule ht) :
     x ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ := by

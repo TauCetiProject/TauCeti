@@ -139,6 +139,7 @@ instance instIsLatticeFundamentalLattice (i : Fin t.rank) :
 fundamental lattice, which spans it. With finite generation and stability under the Kostant form of
 the lattice, this is what `TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasis` needs to give the
 fundamental lattice a basis of weight vectors. -/
+@[simp]
 theorem iSup_jointWeightSpace_eq_top (i : Fin t.rank) :
     (⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ) = ⊤ := by
