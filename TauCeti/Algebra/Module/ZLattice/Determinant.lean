@@ -329,7 +329,7 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
   ext i j
   simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply]
 
-omit [MeasurableSpace E] [BorelSpace E] [IsZLattice ℝ L] in
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` in a
 real inner product space of even dimension `2k`, the signed determinant `(-1)^k det L` is an
 integer congruent to `0` or `1` modulo `4`. Here `det L` appears as the order of the discriminant
@@ -346,6 +346,7 @@ theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsE
   swap
   · have := infinite_discriminantGroup_of_span_ne_top hfull
     simp [Nat.card_eq_zero_of_infinite]
+  have := h.isIntegral.discreteTopology
   have : IsZLattice ℝ L := ⟨hfull⟩
   -- The Gram matrix of a `ℤ`-basis of `L` is a symmetric integer matrix with even diagonal, whose
   -- determinant is the order of the discriminant group.
