@@ -235,4 +235,37 @@ theorem exists_isNormalDomain_ball_antilipschitzWith_riemannianExp (p : M) {c : 
 
 end EMetric
 
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+
+/-- On a sufficiently small normal ball the exponential map distorts distances by at most a
+prescribed factor `c > 1`, in both directions. Distances on the target are its intrinsic
+Riemannian distances. -/
+theorem exists_isNormalDomain_ball_dist_riemannianExp_le (p : M) {c : ℝ} (hc : 1 < c) :
+    ∃ r > 0, IsNormalDomain I M p (Metric.ball 0 r) ∧
+      ∀ v ∈ Metric.ball (0 : TangentSpace I p) r, ∀ w ∈ Metric.ball (0 : TangentSpace I p) r,
+        dist (riemannianExp I M p v) (riemannianExp I M p w) ≤ c * dist v w ∧
+        dist v w ≤ c * dist (riemannianExp I M p v) (riemannianExp I M p w) := by
+  have hc' : 1 < c.toNNReal := by simpa using hc
+  obtain ⟨r₁, hr₁, hn₁, hlip⟩ :=
+    exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (I := I) p hc'
+  obtain ⟨r₂, hr₂, -, hanti⟩ :=
+    exists_isNormalDomain_ball_antilipschitzWith_riemannianExp (I := I) p hc'
+  have hcc : (c.toNNReal : ℝ) = c := Real.coe_toNNReal c (zero_le_one.trans hc.le)
+  refine ⟨min r₁ r₂, lt_min hr₁ hr₂,
+    hn₁.ball (Metric.ball_subset_ball (min_le_left _ _)) (lt_min hr₁ hr₂), fun v hv w hw ↦ ?_⟩
+  have h₁ : Metric.ball (0 : TangentSpace I p) (min r₁ r₂) ⊆ Metric.ball 0 r₁ :=
+    Metric.ball_subset_ball (min_le_left r₁ r₂)
+  have h₂ : Metric.ball (0 : TangentSpace I p) (min r₁ r₂) ⊆ Metric.ball 0 r₂ :=
+    Metric.ball_subset_ball (min_le_right r₁ r₂)
+  constructor
+  · simpa [hcc] using hlip.dist_le_mul v (h₁ hv) w (h₁ hw)
+  · simpa [hcc, Subtype.dist_eq] using hanti.le_mul_dist ⟨v, h₂ hv⟩ ⟨w, h₂ hw⟩
+
+end Metric
+
 end TauCeti.Manifold

@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Radial
-import Mathlib.Analysis.Convex.StrictConvexBetween
 import Mathlib.Analysis.InnerProductSpace.Convex
+import TauCeti.Analysis.Convex.StrictConvexBetween
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 
@@ -28,12 +28,11 @@ first ball. By `Isometry.norm_riemannianLog_apply_riemannianExp` and
 `Isometry.riemannianLog_apply_riemannianExp_smul`, `A` preserves norms and `A (t • v) = t • A v`
 for `t ∈ [0, 1]`. On a small enough ball the exponential maps at `p` and at `f p` distort distances
 by at most a factor `c > 1` in both directions
-(`TauCeti.Manifold.exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp` and
-`TauCeti.Manifold.exists_isNormalDomain_ball_antilipschitzWith_riemannianExp`), and `f` preserves
+(`TauCeti.Manifold.exists_isNormalDomain_ball_dist_riemannianExp_le`), and `f` preserves
 distances, so there `A` distorts distances by at most `c²`. Homogeneity moves this estimate to the
 whole ball of radius `δ`, and letting `c` tend to `1` shows that `A` preserves distances there.
-Extended to all of `T_p M` by homogeneity, `A` becomes a distance-preserving map fixing `0` between
-inner product spaces, hence a linear isometry `L` (`Isometry.affineIsometryOfStrictConvexSpace`).
+A distance-preserving map on a ball that is homogeneous along rays agrees there with a linear
+isometry `L` (`TauCeti.exists_linearIsometry_eqOn_ball`).
 So `f = exp_{f p} ∘ L ∘ log_p` near `p`, which is smooth with differential `L` at `p`.
 
 ## Main results
@@ -77,29 +76,6 @@ variable
   {N : Type*} [MetricSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] [IsRiemannianManifold J N]
-
-/-- On a small enough normal ball the exponential map distorts distances by at most a prescribed
-factor `c > 1`, in both directions. -/
-private theorem exists_isNormalDomain_ball_dist_riemannianExp_le (p : M) {c : ℝ} (hc : 1 < c) :
-    ∃ r > 0, IsNormalDomain I M p (Metric.ball 0 r) ∧
-      ∀ v ∈ Metric.ball (0 : TangentSpace I p) r, ∀ w ∈ Metric.ball (0 : TangentSpace I p) r,
-        dist (riemannianExp I M p v) (riemannianExp I M p w) ≤ c * dist v w ∧
-        dist v w ≤ c * dist (riemannianExp I M p v) (riemannianExp I M p w) := by
-  have hc' : 1 < c.toNNReal := by simpa using hc
-  obtain ⟨r₁, hr₁, hn₁, hlip⟩ :=
-    exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (I := I) p hc'
-  obtain ⟨r₂, hr₂, -, hanti⟩ :=
-    exists_isNormalDomain_ball_antilipschitzWith_riemannianExp (I := I) p hc'
-  have hcc : (c.toNNReal : ℝ) = c := Real.coe_toNNReal c (zero_le_one.trans hc.le)
-  refine ⟨min r₁ r₂, lt_min hr₁ hr₂,
-    hn₁.ball (Metric.ball_subset_ball (min_le_left _ _)) (lt_min hr₁ hr₂), fun v hv w hw ↦ ?_⟩
-  have h₁ : Metric.ball (0 : TangentSpace I p) (min r₁ r₂) ⊆ Metric.ball 0 r₁ :=
-    Metric.ball_subset_ball (min_le_left r₁ r₂)
-  have h₂ : Metric.ball (0 : TangentSpace I p) (min r₁ r₂) ⊆ Metric.ball 0 r₂ :=
-    Metric.ball_subset_ball (min_le_right r₁ r₂)
-  constructor
-  · simpa [hcc] using hlip.dist_le_mul v (h₁ hv) w (h₁ hw)
-  · simpa [hcc, Subtype.dist_eq] using hanti.le_mul_dist ⟨v, h₂ hv⟩ ⟨w, h₂ hw⟩
 
 namespace Isometry
 
@@ -209,11 +185,11 @@ private theorem dist_radialMap (hf : Isometry f) (hp : IsNormalDomain I M p (Met
       Real.norm_of_nonneg ht₀.le, mul_left_comm c, mul_left_comm c] at h
     exact ⟨le_of_mul_le_mul_left h.1 ht₀, le_of_mul_le_mul_left h.2 ht₀⟩
   -- Let `c` tend to `1`.
-  have hlim {a b : ℝ} (h : ∀ c : ℝ, 1 < c → a ≤ c * b) : a ≤ b := by
-    have ht := (tendsto_id.mono_left (nhdsWithin_le_nhds (s := Ioi (1 : ℝ)) (a := 1))).mul_const b
-    rw [one_mul] at ht
-    exact ge_of_tendsto ht (eventually_nhdsWithin_of_forall h)
-  exact le_antisymm (hlim fun c hc ↦ (key c hc).1) (hlim fun c hc ↦ (key c hc).2)
+  exact le_antisymm
+    ((le_iff_forall_one_lt_le_mul₀ dist_nonneg).2 fun c hc ↦ by
+      simpa only [mul_comm] using (key c hc).1)
+    ((le_iff_forall_one_lt_le_mul₀ dist_nonneg).2 fun c hc ↦ by
+      simpa only [mul_comm] using (key c hc).2)
 
 /-- **A distance-preserving map is a linear isometry in normal coordinates.** If `f` preserves the
 Riemannian distances and `N` is complete, then for every `p` there are a linear isometry
@@ -230,58 +206,11 @@ theorem exists_linearIsometry_apply_riemannianExp (hf : Isometry f) (p : M) :
   have hδ : 0 < δ := lt_min hr₁ hr₂
   have hp := hn₁.ball (Metric.ball_subset_ball (min_le_left r₁ r₂)) hδ
   have hq := hn₂.ball (Metric.ball_subset_ball (min_le_right r₁ r₂)) hδ
-  let A := radialMap (I := I) (J := J) f p δ
-  have hAn {v : TangentSpace I p} (hv : v ∈ Metric.ball 0 δ) : ‖A v‖ = ‖v‖ :=
-    norm_radialMap hf hp hq hv
-  have hAs {v : TangentSpace I p} (hv : v ∈ Metric.ball 0 δ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-      A (t • v) = t • A v :=
-    radialMap_smul hf hp hq hv ht
-  have hAd {v w : TangentSpace I p} (hv : v ∈ Metric.ball 0 δ) (hw : w ∈ Metric.ball 0 δ) :
-      dist (A v) (A w) = dist v w :=
-    dist_radialMap hf hp hq hv hw
-  -- Extend `A` to all of `T_p M` by homogeneity: `B v = s⁻¹ • A (s • v)` with `s = δ / (‖v‖ + δ)`,
-  -- which is the same for every smaller positive scale.
-  let s : TangentSpace I p → ℝ := fun v ↦ δ / (‖v‖ + δ)
-  have hs₀ (v : TangentSpace I p) : 0 < s v := div_pos hδ (by positivity)
-  have hs₁ (v : TangentSpace I p) : s v ≤ 1 :=
-    (div_le_one (by positivity)).2 (le_add_of_nonneg_left (norm_nonneg v))
-  have hmem {v : TangentSpace I p} {u : ℝ} (hu₀ : 0 ≤ u) (hu : u ≤ s v) :
-      u • v ∈ Metric.ball 0 δ := by
-    rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg hu₀]
-    calc u * ‖v‖ ≤ s v * ‖v‖ := by gcongr
-      _ < δ := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-        nlinarith [norm_nonneg v]
-  let B : TangentSpace I p → TangentSpace J (f p) := fun v ↦ (s v)⁻¹ • A (s v • v)
-  have hB {v : TangentSpace I p} {u : ℝ} (hu₀ : 0 < u) (hu : u ≤ s v) :
-      B v = u⁻¹ • A (u • v) := by
-    have hus : u / s v ∈ Icc (0 : ℝ) 1 := ⟨by positivity, (div_le_one (hs₀ v)).2 hu⟩
-    have hA : A (u • v) = (u / s v) • A (s v • v) := by
-      rw [← hAs (hmem (hs₀ v).le le_rfl) hus, smul_smul, div_mul_cancel₀ _ (hs₀ v).ne']
-    simp only [B]
-    rw [hA, smul_smul]
-    congr 1
-    field_simp
-  have hBA {v : TangentSpace I p} (hv : v ∈ Metric.ball 0 δ) : B v = A v := by
-    simp only [B]
-    rw [hAs hv ⟨(hs₀ v).le, hs₁ v⟩, smul_smul, inv_mul_cancel₀ (hs₀ v).ne', one_smul]
-  have hB_isometry : Isometry B := by
-    refine Isometry.of_dist_eq fun v w ↦ ?_
-    have hu₀ : 0 < min (s v) (s w) := lt_min (hs₀ v) (hs₀ w)
-    rw [hB hu₀ (min_le_left _ _), hB hu₀ (min_le_right _ _), dist_smul₀,
-      hAd (hmem hu₀.le (min_le_left _ _)) (hmem hu₀.le (min_le_right _ _)),
-      dist_smul₀, ← mul_assoc, Real.norm_of_nonneg (inv_nonneg.2 hu₀.le),
-      Real.norm_of_nonneg hu₀.le, inv_mul_cancel₀ hu₀.ne', one_mul]
-  have hB0 : B 0 = 0 := by
-    rw [hBA (Metric.mem_ball_self hδ), ← norm_eq_zero, hAn (Metric.mem_ball_self hδ), norm_zero]
-  -- A distance-preserving map between inner product spaces fixing `0` is a linear isometry.
-  let T := Isometry.affineIsometryOfStrictConvexSpace (E := TangentSpace J (f p))
-    (F := TangentSpace I p) hB_isometry
-  let L := T.linearIsometry
-  have hL (v : TangentSpace I p) : L v = B v := by
-    simpa [T, hB0] using T.map_vsub v 0
+  obtain ⟨L, hL⟩ := exists_linearIsometry_eqOn_ball hδ
+    (fun v hv t ht ↦ radialMap_smul (J := J) hf hp hq hv ht)
+    (fun v hv w hw ↦ dist_radialMap hf hp hq hv hw)
   refine ⟨L, δ, hδ, hp, hq, fun v hv ↦ ?_⟩
-  rw [hL, hBA hv]
+  rw [hL hv]
   exact apply_riemannianExp_eq_radialMap hf hp hq hv
 
 /-- Near `p`, a distance-preserving map is `exp_{f p} ∘ L ∘ log_p` for a linear isometry `L`. -/
@@ -346,12 +275,14 @@ private theorem exists_linearIsometry_mfderiv_eq (hf : Isometry f) (p : M) :
     hd.trans <| (mfderiv_comp_apply_of_eq 0 hexp₁ Lc.mdifferentiableAt (map_zero Lc) v₀).trans h₂
 
 /-- **The differential of a distance-preserving map preserves inner products.** -/
+@[simp]
 theorem inner_mfderiv (hf : Isometry f) (x : M) (v w : TangentSpace I x) :
     inner ℝ (mfderiv I J f x v) (mfderiv I J f x w) = inner ℝ v w := by
   obtain ⟨L, hL⟩ := hf.exists_linearIsometry_mfderiv_eq (I := I) (J := J) x
   rw [hL, hL, L.inner_map_map]
 
 /-- **The differential of a distance-preserving map preserves norms.** -/
+@[simp]
 theorem norm_mfderiv (hf : Isometry f) (x : M) (v : TangentSpace I x) :
     ‖mfderiv I J f x v‖ = ‖v‖ := by
   obtain ⟨L, hL⟩ := hf.exists_linearIsometry_mfderiv_eq (I := I) (J := J) x
