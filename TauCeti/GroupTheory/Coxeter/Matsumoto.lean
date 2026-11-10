@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.BraidEquivalence
 public import TauCeti.GroupTheory.Coxeter.Dihedral
-public import TauCeti.GroupTheory.Coxeter.Geometric
+public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 
 /-!
 # Matsumoto's theorem

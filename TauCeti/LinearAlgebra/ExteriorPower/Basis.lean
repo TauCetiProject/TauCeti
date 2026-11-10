@@ -51,8 +51,6 @@ by Sophie Morel and Daniel Morrison, and the determinant of a family against a b
 
 public section
 
-open scoped BigOperators TensorProduct
-
 universe u w
 
 variable {R : Type u} {M : Type w}
@@ -123,18 +121,8 @@ theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis 
   -- Compare both sides coordinatewise in the basis of `⋀[R]^n M` induced by `b`: each coordinate
   -- is an `R`-valued alternating form, hence a multiple of `b.det`.
   refine (b.exteriorPower n).ext_elem fun s ↦ ?_
-  -- The `s`th coordinate of `ιMulti R n v` is an alternating form in `v`.
-  set φ : M [⋀^Fin n]→ₗ[R] R := (ιMultiDual R n b s).compAlternatingMap (ιMulti R n) with hφ
-  have hφ_apply (w : Fin n → M) :
-      φ w = (b.exteriorPower n).repr (ιMulti R n w) s := by
-    rw [hφ, basis_repr_apply, LinearMap.compAlternatingMap_apply]
-  have hdet : φ = φ ⇑b • b.det := φ.eq_smul_basis_det b
-  calc (b.exteriorPower n).repr (ιMulti R n v) s
-      = φ v := (hφ_apply v).symm
-    _ = φ ⇑b * b.det v := by rw [hdet]; simp [Module.Basis.det_self]
-    _ = b.det v * (b.exteriorPower n).repr (ιMulti R n ⇑b) s := by
-        rw [← hφ_apply ⇑b, mul_comm]
-    _ = (b.exteriorPower n).repr (b.det v • ιMulti R n ⇑b) s := by simp
+  have := congr($(((ιMultiDual R n b s).compAlternatingMap (ιMulti R n)).eq_smul_basis_det b) v)
+  simpa [basis_repr_apply, mul_comm, -ιMultiDual_apply_ιMulti] using this
 
 /-- For a basis indexed by `Fin n`, an endomorphism acts on the degree-`n` exterior power as
 multiplication by its determinant. -/
@@ -144,8 +132,8 @@ theorem _root_.Module.Basis.map_exteriorPower_top_eq_det_smul (b : Module.Basis 
   refine LinearMap.ext_on (ιMulti_span R n M) ?_
   rintro _ ⟨v, rfl⟩
   rw [map_apply_ιMulti, b.exteriorPower_ιMulti_eq_det_smul (f ∘ v),
-    b.exteriorPower_ιMulti_eq_det_smul v, Module.Basis.det_comp, mul_smul]
-  simp only [LinearMap.smul_apply, LinearMap.id_coe, id_eq]
+    b.exteriorPower_ιMulti_eq_det_smul v, Module.Basis.det_comp, mul_smul, LinearMap.smul_apply,
+    LinearMap.id_apply]
 
 /-- The basis-free form of `Module.Basis.map_exteriorPower_top_eq_det_smul`: an endomorphism of a
 free module acts on the exterior power in degree `Module.finrank R M` by its determinant.
@@ -160,8 +148,7 @@ theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
     exact Subsingleton.elim _ _
   · classical
     by_cases h : Module.Finite R M
-    · have := h
-      exact (Module.finBasis R M).map_exteriorPower_top_eq_det_smul f
+    · exact (Module.finBasis R M).map_exteriorPower_top_eq_det_smul f
     · rw [Module.finrank_of_not_finite h, LinearMap.det_eq_one_of_not_module_finite h f,
         one_smul]
       exact (LinearMap.cancel_left (zeroEquiv R M).injective).mp
@@ -212,9 +199,7 @@ theorem _root_.Module.Basis.trace_map_exteriorPower_top
   · have := Module.Free.of_basis b
     have := Module.Finite.of_basis b
     -- The top exterior power is one-dimensional, the diagonal case `Nat.choose n n = 1`.
-    rw [b.map_exteriorPower_top_eq_det_smul f, map_smul, LinearMap.trace_id, finrank_eq,
-      Module.finrank_eq_card_basis b, Fintype.card_fin, Nat.choose_self]
-    simp
+    simp [b.map_exteriorPower_top_eq_det_smul f, Module.finrank_eq_card_basis b]
 
 end Top
 
@@ -242,20 +227,19 @@ end Module.Basis
 
 namespace RingHom
 
-variable {R S I : Type*} [CommRing R] [CommRing S] [LinearOrder I] [Fintype I]
+variable {R S I J : Type*} [CommRing R] [CommRing S] [LinearOrder I] [Fintype I]
+  [LinearOrder J] [_root_.Finite J]
 
 /-- Exterior-power matrices commute with a change of coefficient ring. -/
-theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix I I R) :
-    φ.mapMatrix (LinearMap.toMatrix ((Pi.basisFun R I).exteriorPower n)
-      ((Pi.basisFun R I).exteriorPower n) (exteriorPower.map n A.toLin')) =
+theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix J I R) :
+    (LinearMap.toMatrix ((Pi.basisFun R I).exteriorPower n)
+      ((Pi.basisFun R J).exteriorPower n) (exteriorPower.map n A.toLin')).map φ =
     LinearMap.toMatrix ((Pi.basisFun S I).exteriorPower n)
-      ((Pi.basisFun S I).exteriorPower n) (exteriorPower.map n (φ.mapMatrix A).toLin') := by
-  classical
+      ((Pi.basisFun S J).exteriorPower n) (exteriorPower.map n (A.map φ).toLin') := by
   ext s t
-  rw [RingHom.mapMatrix_apply, Matrix.map_apply,
-    Module.Basis.toMatrix_exteriorPower_map, Module.Basis.toMatrix_exteriorPower_map]
-  simp only [LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
-  rw [RingHom.map_det]
-  rfl
+  simp only [Matrix.map_apply, Module.Basis.toMatrix_exteriorPower_map, RingHom.map_det]
+  congr 1
+  ext
+  simp [← Matrix.toLin_eq_toLin']
 
 end RingHom

@@ -92,8 +92,7 @@ instance uniqueFactorizationMonoid {σ : Type*} [Finite σ] :
   · -- Renaming the variables along `e : α ≃ β` is a ring isomorphism of Tate algebras.
     exact (IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1).toMulEquiv.uniqueFactorizationMonoid h
   · -- Without variables every series is a constant, so the Tate algebra is isomorphic to `K`.
-    exact (RingEquiv.ofBijective (algebraMap K (Tate PEmpty))
-      ⟨(algebraMap K _).injective, algebraMap_isRestrictedSubring_surjective⟩).toMulEquiv
+    exact (IsRestricted.isEmptyEquiv (R := K) (σ := PEmpty) _).symm.toMulEquiv
       |>.uniqueFactorizationMonoid inferInstance
 
 end TauCeti.MvPowerSeries

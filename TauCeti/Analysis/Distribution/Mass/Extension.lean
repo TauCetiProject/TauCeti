@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Measure
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
 # Evaluation of a current of locally finite mass on integrable forms
@@ -23,8 +24,9 @@ supported continuous forms, and products of test forms with bounded Borel functi
 
 In particular, for a measurable set `A ⊆ Ω` the **Borel restriction**
 `T ⌞ A : φ ↦ extendL1 T (1_A φ)` is again a continuous linear map on test functions with locally
-finite mass (`Distribution.massRestrict`). It is dominated by `‖T‖` restricted to `A`, so its mass
-is at most `‖T‖ A`: a Borel restriction of a finite-mass current has finite mass. It vanishes when
+finite mass (`Distribution.massRestrict`). For `T` of locally finite mass, its mass measure is
+exactly `‖T‖` restricted to `A`, and its total mass is `‖T‖ A`, even when this value is infinite.
+Thus a Borel restriction of a finite-mass current has finite mass. It vanishes exactly when
 `‖T‖ A = 0`, is additive on disjoint sets, and is `T` itself for `A = Ω`. Its boundary need not
 have locally finite mass.
 
@@ -37,6 +39,10 @@ have locally finite mass.
 * `Distribution.enorm_massRestrict_apply_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
 * `Distribution.mass_massRestrict_le`, `Distribution.massMeasure_massRestrict_le`: the mass
   bounds `M(T ⌞ A) ≤ ‖T‖ A` and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
+* `Distribution.massMeasure_massRestrict`, `Distribution.mass_massRestrict`: exact mass-measure
+  localization and total mass for `T` of locally finite mass.
+* `Distribution.massRestrict_eq_zero_iff`: a restriction of `T` of locally finite mass vanishes
+  exactly on sets of zero mass measure.
 
 ## References
 
@@ -157,28 +163,6 @@ theorem hasLocallyFiniteMass_massRestrict (hA : MeasurableSet A) :
   rw [funext (massRestrict_apply hA)]
   exact hasLocallyFiniteMass_comp_indicatorToLp hA
 
-/-- **Mass measure of a Borel restriction.** `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`. -/
-theorem massMeasure_massRestrict_le (hA : MeasurableSet A) :
-    massMeasure (massRestrict T hA) ≤ (massMeasure T).restrict A := by
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  exact massMeasure_le_of_enorm_apply_le _ (enorm_massRestrict_apply_le hA)
-
-/-- **Mass of a Borel restriction.** `M(T ⌞ A) ≤ ‖T‖ A`; in particular a Borel restriction to a
-set of finite `‖T‖`-measure has finite mass. -/
-theorem mass_massRestrict_le (hA : MeasurableSet A) :
-    mass (massRestrict T hA) ≤ massMeasure T A := by
-  rw [← massMeasure_univ (hasLocallyFiniteMass_massRestrict hA)]
-  simpa using Measure.le_iff'.1 (massMeasure_massRestrict_le hA) univ
-
-/-- A Borel restriction to a `‖T‖`-null set is zero. -/
-theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) :
-    massRestrict T hA = 0 := by
-  ext φ
-  have h := enorm_massRestrict_apply_le (T := T) hA φ
-  rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
-    enorm_eq_zero] at h
-  simpa using h
-
 /-- Borel restriction is additive on disjoint measurable sets. -/
 theorem massRestrict_union (hA : MeasurableSet A) (hB : MeasurableSet B) (hAB : Disjoint A B) :
     massRestrict T (hA.union hB) = massRestrict T hA + massRestrict T hB := by
@@ -191,5 +175,78 @@ theorem massRestrict_union (hA : MeasurableSet A) (hB : MeasurableSet B) (hAB : 
 theorem massRestrict_univ_apply (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     massRestrict T MeasurableSet.univ φ = T φ := by
   rw [massRestrict_apply, TestFunction.indicatorToLp_univ, extendL1_toLp hT]
+
+/-- A current is the sum of its restrictions to a measurable set and its complement. -/
+theorem massRestrict_add_massRestrict_compl_apply (hT : HasLocallyFiniteMass T)
+    (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
+    massRestrict T hA φ + massRestrict T hA.compl φ = T φ := by
+  have h := congrArg (fun S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ => S φ)
+    (massRestrict_union (T := T) hA hA.compl disjoint_compl_right)
+  simpa [massRestrict_univ_apply hT] using h.symm
+
+/-- **Mass measure of a Borel restriction.** `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`. -/
+theorem massMeasure_massRestrict_le (hA : MeasurableSet A) :
+    massMeasure (massRestrict T hA) ≤ (massMeasure T).restrict A := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  exact massMeasure_le_of_enorm_apply_le _ (enorm_massRestrict_apply_le hA)
+
+/-- Restricting a current of locally finite mass restricts its mass measure exactly.
+No finiteness of the total mass or regularity of the boundary is required. -/
+@[simp]
+theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableSet A) :
+    massMeasure (massRestrict T hA) = (massMeasure T).restrict A := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  let μ := massMeasure (massRestrict T hA)
+  let ν := massMeasure (massRestrict T hA.compl)
+  have hsplit : massMeasure T ≤ μ + ν := by
+    apply massMeasure_le_of_enorm_apply_le
+    intro φ
+    rw [lintegral_add_measure,
+      ← massRestrict_add_massRestrict_compl_apply hT hA φ]
+    exact (enorm_add_le _ _).trans (add_le_add
+      (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA) φ)
+      (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA.compl) φ))
+  have hzero : ν.restrict A = 0 := by
+    apply le_antisymm _ bot_le
+    calc ν.restrict A ≤ ((massMeasure T).restrict Aᶜ).restrict A :=
+          Measure.restrict_mono_measure (massMeasure_massRestrict_le hA.compl) A
+      _ = 0 := by rw [Measure.restrict_restrict hA]; simp
+  apply le_antisymm (massMeasure_massRestrict_le hA)
+  calc (massMeasure T).restrict A ≤ (μ + ν).restrict A :=
+        Measure.restrict_mono_measure hsplit A
+    _ = μ.restrict A := by rw [Measure.restrict_add, hzero, add_zero]
+    _ ≤ μ := Measure.restrict_le_self
+
+/-- **Mass of a Borel restriction.** `M(T ⌞ A) ≤ ‖T‖ A`; in particular a Borel restriction to a
+set of finite `‖T‖`-measure has finite mass. -/
+theorem mass_massRestrict_le (hA : MeasurableSet A) :
+    mass (massRestrict T hA) ≤ massMeasure T A := by
+  rw [← massMeasure_univ (hasLocallyFiniteMass_massRestrict hA)]
+  simpa using Measure.le_iff'.1 (massMeasure_massRestrict_le hA) univ
+
+/-- The total mass of a Borel restriction is the mass measure of its restricting set,
+including when that value is infinite. -/
+@[simp]
+theorem mass_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableSet A) :
+    mass (massRestrict T hA) = massMeasure T A := by
+  rw [← massMeasure_univ (hasLocallyFiniteMass_massRestrict hA),
+    massMeasure_massRestrict hT hA, Measure.restrict_apply_univ]
+
+/-- A Borel restriction to a `‖T‖`-null set is zero. -/
+theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) :
+    massRestrict T hA = 0 := by
+  ext φ
+  have h := enorm_massRestrict_apply_le (T := T) hA φ
+  rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
+    enorm_eq_zero] at h
+  simpa using h
+
+/-- A Borel restriction of a locally finite-mass current vanishes if and only if the
+restricting set has zero mass measure. -/
+@[simp]
+theorem massRestrict_eq_zero_iff (hT : HasLocallyFiniteMass T) (hA : MeasurableSet A) :
+    massRestrict T hA = 0 ↔ massMeasure T A = 0 := by
+  rw [← mass_massRestrict hT hA, mass_eq_zero_iff]
+  exact ⟨fun h => by simp [h], fun h => ContinuousLinearMap.ext fun φ => congrFun h φ⟩
 
 end Distribution

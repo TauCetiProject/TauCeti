@@ -62,8 +62,9 @@ criterion for a one-periodic orbit of any jointly `C¹` one-periodic vector fiel
 space, with `S_t = D(v_t)(x(t))` (`Floer.isNondegenerateFixedPt_timeDependentFlow_iff`).
 
 Operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugation by the weight
-turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`), and
-`A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
+turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`). This is
+the stationary cylinder operator of `S_t - δ J_t` (`Floer.stationaryCylinderOperator_sub_smul`),
+and `A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
 continuous one-periodic `S` and `J` the weights `δ` at which `A - δ` has a nonzero one-periodic
 kernel element form a closed set (`Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul`),
 because the return map of `S_t - δ J_t` depends continuously on `δ`. In particular, if `A` is
@@ -414,6 +415,18 @@ private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
+/-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
+shifts the stationary cylinder operator by `-δ`. -/
+theorem stationaryCylinderOperator_sub_smul (δ : ℝ) (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    stationaryCylinderOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ξ z =
+      stationaryCylinderOperator J S ξ z - δ • ξ z := by
+  have h : J z.2 (J z.2 (ξ z)) = -ξ z := AlmostComplexStructure.apply_apply _ _
+  simp only [stationaryCylinderOperator_def, sub_apply, smul_apply,
+    LinearMap.coe_toContinuousLinearMap', sub_sub_eq_add_sub, map_add, map_sub, map_smul] at h ⊢
+  rw [h]
+  module
+
 /-- **The weighted end operator.** Conjugating the stationary cylinder operator by the weight
 `e^{δ s}` shifts it by `-δ`: `D(e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`, where `D - δ` is the stationary
 cylinder operator of `S_t - δ J_t`. Hence `D` on maps of the form `e^{-δ s} ξ` is the operator
@@ -442,6 +455,24 @@ private theorem continuous_associatedBilinForm_apply_self
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {f : ℝ × ℝ → V} (hf : Continuous f) :
     Continuous fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z) :=
   ω.continuous_apply_comp hf (hJc.comp (continuous_snd.prodMk hf))
+
+/-- For continuously varying `J_t` and `S_t` and a `C¹` map `ξ`, the energy density
+`g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)` of the cylinder is continuous, where
+`g_t = ω(·, J_t ·)`. -/
+private theorem continuous_associatedBilinForm_add_apply_self
+    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S) (hξ : ContDiff ℝ 1 ξ) :
+    Continuous fun z : ℝ × ℝ ↦
+      ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+          (fderiv ℝ ξ z stdComplexLineReal) +
+        ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+          (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)) := by
+  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
+  have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
+    (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
+  have hs : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineReal :=
+    hdξ.clm_apply continuous_const
+  exact (continuous_associatedBilinForm_apply_self hJc hs).add
+    (continuous_associatedBilinForm_apply_self hJc hw)
 
 omit [FiniteDimensional ℝ V] in
 /-- The pointwise form of the energy identity: for `ω`-invariant `J` and infinitesimally
@@ -495,6 +526,25 @@ private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t :
     (hasDerivAt_fderiv_apply_snd
       ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (1, 0))
 
+/-- The `t`-derivative `∂t ω(ξ, ∂s ξ)` of a map of period one in `t` integrates to zero over
+`[a, b] × [0, 1]`. -/
+private theorem setIntegral_rect_apply_fderiv_fst_snd_eq_zero (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ}
+    (hφ : Continuous fun z : ℝ × ℝ ↦
+      ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
+        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+      (ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
+        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) = 0 := by
+  have hχp (s : ℝ) : ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) =
+      ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)) := by
+    have h1 := fderiv_add_one_snd hper s 0
+    rw [zero_add] at h1
+    have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
+    simp only [h1, hξ1]
+  exact setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ
+    (Φ := fun z ↦ ω (ξ z) (fderiv ℝ ξ z (1, 0))) (hasDerivAt_apply_fderiv_fst_snd hξ) hχp
+
 /-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
 invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
 `C²` map `ξ` of period one in `t` and `a ≤ b`, the `L²` norm of `D ξ` over `[a, b] × [0, 1]`
@@ -545,8 +595,7 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
   have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hc₁ : Continuous fun z : ℝ × ℝ ↦ ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
       ω.associatedBilinForm (J z.2) (w z) (w z) :=
-    (continuous_associatedBilinForm_apply_self hJc hξs).add
-      (continuous_associatedBilinForm_apply_self hJc hw)
+    continuous_associatedBilinForm_add_apply_self hJc hSc (hξ.of_le (by norm_num))
   have hc₂ : Continuous fun z ↦ φ₁ z + φ₂ z := hφ₁.add hφ₂
   have hψc (s : ℝ) : Continuous fun t ↦ ω (w (s, t)) (ξ (s, t)) :=
     (ω.continuous_apply_comp hw hξ.continuous).comp (Continuous.prodMk_right s)
@@ -556,14 +605,8 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
         ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦
     associatedBilinForm_add_apply_self (hJ z.2) (hS z.2) (ξ z) (ξt z) (ξs z) (M z)
   -- `χ` has period one in `t`, so `∂t χ` integrates to zero.
-  have hχp (s : ℝ) : ω (ξ (s, 1)) (ξs (s, 1)) = ω (ξ (s, 0)) (ξs (s, 0)) := by
-    have h1 := fderiv_add_one_snd hper s 0
-    rw [zero_add] at h1
-    have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
-    simp only [ξs, h1, hξ1]
   have h₂ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₂ z = 0 :=
-    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z ↦ ω (ξ z) (ξs z))
-      (hasDerivAt_apply_fderiv_fst_snd hξ) hχp
+    setIntegral_rect_apply_fderiv_fst_snd_eq_zero hξ hper hφ₂
   -- `∂s ψ` integrates to the difference of the boundary slice pairings.
   have h₁ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₁ z =
       (∫ t in (0 : ℝ)..1, ω (w (b, t)) (ξ (b, t))) -
@@ -629,7 +672,6 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     ξ = 0 := by
   have hξ1 : Differentiable ℝ ξ := hξ.differentiable (by norm_num)
-  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv (by norm_num)
   have hg0 (t : ℝ) (v : V) : 0 ≤ ω v (J t v) := by
     rcases eq_or_ne v 0 with rfl | hv
     · simp
@@ -642,13 +684,8 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
       ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
         (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
   have hf0 : 0 ≤ f := fun z ↦ add_nonneg (hg0 _ _) (hg0 _ _)
-  have hfc : Continuous f := by
-    have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
-      (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
-    have hs : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineReal :=
-      hdξ.clm_apply continuous_const
-    exact (continuous_associatedBilinForm_apply_self hJc hs).add
-      (continuous_associatedBilinForm_apply_self hJc hw)
+  have hfc : Continuous f :=
+    continuous_associatedBilinForm_add_apply_self hJc hSc (hξ.of_le (by norm_num))
   -- The energy identity with `D ξ = 0`.
   have hid {a b : ℝ} (hab : a ≤ b) : ∫ z in Icc a b ×ˢ Icc 0 1, f z = Φ a - Φ b := by
     have h := setIntegral_associatedBilinForm_stationaryCylinderOperator
@@ -686,15 +723,11 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
     obtain ⟨t₀, ht₀, h⟩ := hp.exists_mem_Ico₀ one_pos t
     simpa [h, stdComplexLineReal_eq] using hs0 s t₀ (Ico_subset_Icc_self ht₀)
   -- A map independent of `s` which decays as `s → ∞` vanishes.
-  funext ⟨s, t⟩
-  have hc := apply_eq_apply_zero_of_fderiv_fst_eq_zero hξ1 hs
-  have hlim' : Tendsto (fun r ↦ ξ (r, t)) atTop (𝓝 0) := by
-    have hF : Tendsto (fun r : ℝ ↦ (r, t)) atTop (comap Prod.fst (cocompact ℝ)) :=
-      tendsto_comap_iff.2 (tendsto_id.mono_left atTop_le_cocompact)
-    exact ((continuous_fst.tendsto (0 : V × V)).comp hdecay).comp hF
-  simp only [hc] at hlim'
-  rw [Pi.zero_apply, hc s t]
-  exact tendsto_nhds_unique tendsto_const_nhds hlim'
+  exact eq_zero_of_fderiv_fst_eq_zero_of_tendsto hξ1 hs
+    fun t ↦ ((continuous_fst.tendsto (0 : V × V)).comp hdecay).comp
+      (Filter.tendsto_comap_iff.2 (Filter.tendsto_id.mono_left atTop_le_cocompact) :
+        Filter.Tendsto (fun r : ℝ ↦ (r, t)) Filter.atTop
+          (Filter.comap Prod.fst (Filter.cocompact ℝ)))
 
 end Cylinder
 

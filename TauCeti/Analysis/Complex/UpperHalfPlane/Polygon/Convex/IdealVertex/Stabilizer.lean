@@ -53,15 +53,16 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
 /-- A contracting affine map at an ideal vertex destroys local finiteness: if `g` moves the ideal
-vertex `ξ` of `P` to `∞` and `g S g⁻¹` acts as `z ↦ μ * z + c` with `0 < μ < 1`, then the
-translates of `P` by the powers of `S` accumulate at `g⁻¹ • (x₀ + i)`, where `x₀` is the fixed point
-of `z ↦ μ * z + c` on `ℝ`. -/
+vertex `ξ` of `P` to `∞` and `g S g⁻¹` acts as `z ↦ μ * z + c` with `μ < 1` (necessarily `0 < μ`,
+as the map preserves `ℍ`), then the translates of `P` by the powers of `S` accumulate at
+`g⁻¹ • (x₀ + i)`, where `x₀` is the fixed point of `z ↦ μ * z + c` on `ℝ`. -/
 private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint ℝ}
     (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞) {Γ : Subgroup PSL(2, ℝ)}
-    {S : PSL(2, ℝ)} (hS : S ∈ Γ) {μ c : ℝ} (hμ₀ : 0 < μ) (hμ₁ : μ < 1)
+    {S : PSL(2, ℝ)} (hS : S ∈ Γ) {μ c : ℝ} (hμ₁ : μ < 1)
     (hSz : ∀ z : ℍ, (((g * S * g⁻¹) • z : ℍ) : ℂ) = μ * z + c) :
     ¬ LocallyFinite fun δ : Γ ↦ (δ : PSL(2, ℝ)) • P.carrier := by
   intro hlf
+  have hμ₀ : 0 < μ := pos_of_coe_smul_eq hSz
   -- the powers of `g S g⁻¹` contract towards the fixed point `x₀ = c / (1 - μ)`
   have hpow (k : ℕ) (z : ℍ) : (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) =
       ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
@@ -86,7 +87,7 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
         ⟨by simp [w, u], by simpa [w, u] using huv.le⟩)
   set z₀ : ℍ := ⟨x₀ + Complex.I, by simp⟩
   have hlim : Tendsto (fun k ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) := by
-    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₀ hμ₁ hSz u w
+    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₁ hSz u w
       (fun k ↦ by simp [w, ht]) z₀ (by simp [z₀, x₀])
   -- the powers `S ^ k` are pairwise distinct, as `g S^k g⁻¹` moves `i` to height `μ ^ k`
   have him (k : ℕ) : ((g * S ^ k * g⁻¹) • UpperHalfPlane.I).im = μ ^ k := by
@@ -124,7 +125,7 @@ theorem isParabolic_of_smul_eq_self_of_locallyFinite {j : Fin n} {ξ : OnePoint 
     rw [mul_smul, mul_smul, ← hg, inv_smul_smul, hfix]
   obtain ⟨μ, hμ, c, hγz⟩ := exists_coe_smul_eq_mul_add_of_smul_infty hfix'
   rcases lt_trichotomy μ 1 with hlt | rfl | hgt
-  · exact absurd hlf (not_locallyFinite_of_coe_conj_smul_eq hj hg hγ hμ hlt hγz)
+  · exact absurd hlf (not_locallyFinite_of_coe_conj_smul_eq hj hg hγ hlt hγz)
   · -- `μ = 1`: the conjugate is the translation by `c`, which is nonzero as `γ ≠ 1`
     have heq : g * γ * g⁻¹ = upperRightHom c :=
       FaithfulSMul.eq_of_smul_eq_smul fun z ↦ UpperHalfPlane.coe_injective (by
@@ -139,7 +140,7 @@ theorem isParabolic_of_smul_eq_self_of_locallyFinite {j : Fin n} {ξ : OnePoint 
     exact isParabolic_upperRightHom_iff.2 hc
   · -- `μ > 1`: the inverse `z ↦ μ⁻¹ * (z - c)` contracts
     refine absurd hlf (not_locallyFinite_of_coe_conj_smul_eq hj hg (Γ.inv_mem hγ) (c := -c / μ)
-      (inv_pos.2 hμ) (inv_lt_one_of_one_lt₀ hgt) fun z ↦ ?_)
+      (inv_lt_one_of_one_lt₀ hgt) fun z ↦ ?_)
     have h := hγz ((g * γ⁻¹ * g⁻¹) • z)
     rw [← mul_smul, show g * γ * g⁻¹ * (g * γ⁻¹ * g⁻¹) = 1 by group, one_smul] at h
     have hμC : (μ : ℂ) ≠ 0 := by exact_mod_cast hμ.ne'

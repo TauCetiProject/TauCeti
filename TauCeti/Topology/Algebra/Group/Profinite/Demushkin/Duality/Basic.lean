@@ -137,7 +137,7 @@ private theorem dualityMap_devissage (M : Type u) [AddCommGroup M] [TopologicalS
   hG.isProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective (ZMod p)
     (Module.Baer.zmod_self p) (Module.Baer.of_isSemisimpleRing (ZMod p) (H2 G (ZMod p)))
     (fun A _ _ _ _ _ _ hA htrivA _ ↦ hG.dualityMap_of_natCard_eq htriv A hA htrivA) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
+    (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : ∀ x : M, p • x = 0)
@@ -184,7 +184,7 @@ theorem dualityMap0_injective : Function.Injective (dualityMap0 G M (ZMod p)) :=
     (fun A _ _ _ _ _ _ hA htrivA _ ↦
       have hd := hG.dualityMap_of_natCard_eq htriv A hA htrivA
       ⟨hd.1, hd.2.1.1⟩) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
+    (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group is bijective** on every finite
 discrete `G`-module `M` killed by `p`: `H⁰(G, M) × H²(G, M') → H²(G, 𝔽_p)` is a perfect pairing. -/
@@ -205,11 +205,11 @@ private theorem nonempty_addEquiv_H2_zmod : Nonempty (H2 G (ZMod p) ≃+ ZMod p)
   ⟨addEquivOfPrimeCardEq (hG.natCard_H2_zmod htriv) (Nat.card_zmod p)⟩
 
 omit [TotallyDisconnectedSpace G] [Infinite G] hM in
-/-- **Homomorphisms into `H²(G, 𝔽_p)` of a Demushkin group are as many as their source**: for a
-finite abelian group `V` killed by `p`, `|Hom(V, H²(G, 𝔽_p))| = |V|`, since `H²(G, 𝔽_p)` is
+/-- **Homomorphisms into `H²(G, 𝔽_p)` of a Demushkin group are as many as their source**: for an
+abelian group `V` killed by `p`, `|Hom(V, H²(G, 𝔽_p))| = |V|`, since `H²(G, 𝔽_p)` is
 one-dimensional over `𝔽_p`. -/
-theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] [Finite V]
-    (hV : ∀ v : V, p • v = 0) : Nat.card (V →+ H2 G (ZMod p)) = Nat.card V :=
+theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] (hV : ∀ v : V, p • v = 0) :
+    Nat.card (V →+ H2 G (ZMod p)) = Nat.card V :=
   (hG.nonempty_addEquiv_H2_zmod htriv).elim fun e ↦ e.natCard_addMonoidHom_zmod hV
 
 /-- **Tate's duality map `α₂` of an infinite Demushkin group is bijective** on every finite

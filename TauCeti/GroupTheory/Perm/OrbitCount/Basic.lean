@@ -123,6 +123,16 @@ theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
       Quotient.sound (h x y)⟩
   exact Nat.card_unique
 
+/-- A permutation of a finite type has at most one orbit exactly when any two points lie in the
+same cycle. On a nonempty type this means exactly one orbit, and on the empty type there are
+none. -/
+theorem orbitCount_le_one_iff [Finite α] {σ : Equiv.Perm α} :
+    orbitCount σ ≤ 1 ↔ ∀ x y, σ.SameCycle x y := by
+  rw [orbitCount_def, Finite.card_le_one_iff_subsingleton]
+  refine ⟨fun _ x y ↦ Quotient.exact (Subsingleton.elim (Quotient.mk (SameCycle.setoid σ) x)
+    (Quotient.mk _ y)), fun h ↦ ⟨fun q r ↦ Quotient.inductionOn₂ q r fun x y ↦
+      Quotient.sound (h x y)⟩⟩
+
 /-- If a permutation `σ` with more than one orbit generates, together with a set `S` of
 permutations, a subgroup acting transitively, then some permutation in `S` moves some point to a
 different orbit of `σ`. -/

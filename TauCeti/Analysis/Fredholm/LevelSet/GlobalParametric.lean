@@ -14,7 +14,8 @@ Let `f : E × Λ → F` be a parametrized equation. A parameter `l` is regular a
 `c` when the fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution.
 This file proves that the regular parameters form a residual, and hence dense, subset of `Λ`
 provided the universal linearization is surjective and the fixed-parameter linearization is
-Fredholm at every solution.
+Fredholm at every solution, and `f` is smooth enough there: of class `C^k` for Smale's
+threshold `k > max (i, 0)`, where `i` is the index of the fixed-parameter linearization.
 
 The file also introduces regularity on a subset `U ⊆ E × Λ`, which asks for surjectivity only at
 the solutions lying in `U`. It reduces to regularity for `U = univ` and is monotone in `U`. The
@@ -123,9 +124,9 @@ universal Fredholm equation form a meagre set.
 
 The hypotheses are imposed only along the level set `f⁻¹(c)`. There the fixed-parameter
 linearization must be Fredholm, the total linearization must be surjective, and the smoothness
-order must meet the current Sard--Smale threshold `(dim ker)² + 1`. Second countability of the
-universal source makes the level set second countable and hence allows the local nowhere dense
-exceptional sets to be reduced to a countable family. -/
+order must meet Smale's threshold `n > max (index, 0)` for the index of the fixed-parameter
+linearization. Second countability of the universal source makes the level set second countable
+and hence allows the local nowhere dense exceptional sets to be reduced to a countable family. -/
 theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)]
     {f : E × Λ → F} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
@@ -134,8 +135,7 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     IsMeagre {l | ¬ IsRegularParameter f c l} := by
   let S := {z : E × Λ | f z = c}
@@ -173,8 +173,7 @@ theorem mem_residual_setOf_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     {l | IsRegularParameter f c l} ∈ residual Λ := by
   simpa only [IsMeagre, Set.compl_ofPred, Classical.not_not] using
@@ -192,8 +191,7 @@ theorem dense_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     Dense {l | IsRegularParameter f c l} := by
   exact dense_of_mem_residual

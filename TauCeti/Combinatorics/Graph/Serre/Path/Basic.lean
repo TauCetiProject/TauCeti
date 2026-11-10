@@ -187,6 +187,56 @@ theorem Path.IsReduced.of_comp_right {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Pa
   rw [← Path.isReduced_reverse, Quiver.Path.reverse_comp] at hp
   exact (Path.isReduced_reverse Γ q).mp (hp.of_comp_left Γ)
 
+/-- A path is reduced exactly when no dart of its dart list is followed by its reverse. -/
+theorem Path.isReduced_iff_isChain {a b : Γ.V} (p : Γ.Path a b) :
+    Path.IsReduced Γ p ↔ (Path.darts Γ p).IsChain fun e f => f ≠ Γ.rev e := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    cases p with
+    | nil => exact iff_of_true (Path.isReduced_toPath Γ e) (by simp)
+    | cons p f =>
+      rw [Path.isReduced_cons_cons, ih, Path.darts_cons Γ (p.cons f), List.isChain_append]
+      simp
+
+/-- A concatenation is reduced exactly when both pieces are and the first dart of the second
+piece does not reverse the last dart of the first. -/
+theorem Path.isReduced_comp_iff {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
+    Path.IsReduced Γ (p.comp q) ↔ Path.IsReduced Γ p ∧ Path.IsReduced Γ q ∧
+      ∀ e ∈ (Path.darts Γ p).getLast?, ∀ f ∈ (Path.darts Γ q).head?, f ≠ Γ.rev e := by
+  simp only [Path.isReduced_iff_isChain, Path.darts_comp, List.isChain_append]
+
+/-- The first dart of a path starts at the start of the path. -/
+theorem Path.src_eq_of_mem_head?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
+    (he : e ∈ (Path.darts Γ p).head?) : Γ.src e = a := by
+  induction p with
+  | nil => simp at he
+  | cons p f ih =>
+    cases p with
+    | nil =>
+      simp only [Path.darts_cons, Path.darts_nil, List.nil_append, List.head?_cons,
+        Option.mem_def, Option.some.injEq] at he
+      exact he ▸ f.2.1
+    | cons p g =>
+      refine ih ?_
+      rw [Path.darts_cons Γ (p.cons g), List.head?_append_of_ne_nil _ (by simp)] at he
+      exact he
+
+/-- The last dart of a path ends at the end of the path. -/
+theorem Path.tgt_eq_of_mem_getLast?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
+    (he : e ∈ (Path.darts Γ p).getLast?) : Γ.tgt e = b := by
+  cases p with
+  | nil => simp at he
+  | cons p f =>
+    simp only [Path.darts_cons, List.getLast?_append, List.getLast?_singleton, Option.some_or,
+      Option.mem_def, Option.some.injEq] at he
+    exact he ▸ f.2.2
+
+/-- A path without darts joins a vertex to itself. -/
+theorem Path.eq_of_darts_eq_nil {a b : Γ.V} (p : Γ.Path a b) (hp : Path.darts Γ p = []) :
+    a = b :=
+  p.eq_of_length_zero (by rw [← Path.length_darts, hp, List.length_nil])
+
 /-- Paths in a set of darts that preserves a vertex set `R` start in `R` exactly when they end
 in `R`. -/
 theorem Path.mem_iff_mem_of_forall_mem_darts {S : Set Γ.E} {R : Set Γ.V}

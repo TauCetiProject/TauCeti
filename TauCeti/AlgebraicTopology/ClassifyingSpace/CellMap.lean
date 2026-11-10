@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.StandardComplex
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.Map
 
 /-!
 # Maps of simplices in Milnor's countable join
@@ -18,7 +19,10 @@ the tuple indexing a standard-resolution generator.
 
 The characteristic-map formula identifies this cell map with the existing continuous map
 `MonoidHom.universalGSpaceMap`. These formulas supply the combinatorial input to naturality
-of the comparison between join chains and the standard resolution.
+of the comparison between join chains and the standard resolution. The relabelling map is
+also the realization of `MonoidHom.universalGSpaceSimplicialMap`, so its restriction
+`MonoidHom.universalGSpaceCellularMap` to the universal subsets used by cellular chains is
+cellular, as proved by `MonoidHom.isCellular_universalGSpaceCellularMap`.
 
 ## References
 
@@ -30,7 +34,7 @@ public section
 
 noncomputable section
 
-open TauCeti AbstractSimplicialComplex
+open CategoryTheory Set Topology TauCeti AbstractSimplicialComplex
 
 namespace MonoidHom
 
@@ -40,9 +44,10 @@ variable {G : Type u} {H : Type v} {K : Type w} [MulOne G] [MulOne H] [MulOne K]
 
 attribute [local instance] universalGSpaceVertexOrder
 
--- The vertex-order instance fixes decidable equality differently from indexedJoinMap.
--- Rebuild its simplicial-map structure with that instance for RealizationCell.map.
-private def universalGSpaceSimplicialMap (φ : G →* H) :
+/-- Relabelling vertices as a simplicial map for the increasing-index vertex orders.
+This uses the decidable equality of those orders, so it can be passed directly to the
+ordered-cell and cellular-chain comparison APIs. -/
+def universalGSpaceSimplicialMap (φ : G →* H) :
     PreAbstractSimplicialComplex.SimplicialMap
       (indexedJoin fun _ : ℕ => G).toPreAbstractSimplicialComplex
       (indexedJoin fun _ : ℕ => H).toPreAbstractSimplicialComplex where
@@ -57,7 +62,15 @@ private def universalGSpaceSimplicialMap (φ : G →* H) :
     exact congrArg (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H))
       (hσ.2 hv' hw' heq)
 
-private theorem universalGSpaceMap_strictMonoOn (φ : G →* H) {n : ℕ}
+/-- The simplicial map applies the homomorphism to the label and preserves the index. -/
+@[simp]
+theorem universalGSpaceSimplicialMap_apply (φ : G →* H) (v : Σ _ : ℕ, G) :
+    φ.universalGSpaceSimplicialMap v = ⟨v.1, φ v.2⟩ :=
+  (rfl)
+
+/-- Relabelling is strictly increasing on each simplex for the increasing-index orders,
+even if the homomorphism is not injective. -/
+theorem universalGSpaceSimplicialMap_strictMonoOn (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     StrictMonoOn (universalGSpaceSimplicialMap φ)
       (c.1.1 : Set (Σ _ : ℕ, G)) := by
@@ -70,7 +83,14 @@ def universalGSpaceCellMap (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     (indexedJoin fun _ : ℕ => H).RealizationCell n :=
   c.map (universalGSpaceSimplicialMap φ)
-    (universalGSpaceMap_strictMonoOn φ c).injOn
+    (universalGSpaceSimplicialMap_strictMonoOn φ c).injOn
+
+/-- The cell map is induced by the ordered simplicial map. -/
+theorem universalGSpaceCellMap_def (φ : G →* H) {n : ℕ}
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
+    φ.universalGSpaceCellMap c = c.map φ.universalGSpaceSimplicialMap
+      (φ.universalGSpaceSimplicialMap_strictMonoOn c).injOn :=
+  (rfl)
 
 /-- The underlying face is the image under relabelling vertices. -/
 @[simp]
@@ -89,7 +109,7 @@ theorem universalGSpaceCellMap_vertexEmbedding (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (j : Fin (n + 1)) :
     (φ.universalGSpaceCellMap c).vertexEmbedding j =
       ⟨(c.vertexEmbedding j).1, φ (c.vertexEmbedding j).2⟩ :=
-  congrFun (c.vertexEmbedding_map _ (universalGSpaceMap_strictMonoOn φ c)) j
+  congrFun (c.vertexEmbedding_map _ (universalGSpaceSimplicialMap_strictMonoOn φ c)) j
 
 /-- The tuple of labels of an image simplex is the image of its tuple of labels. -/
 @[simp]
@@ -167,18 +187,59 @@ theorem universalGSpaceCellMulActionHom_comp (ψ : H →* K) (φ : G →* H) (n 
 
 end Group
 
+/-- The ordered simplicial map realizes to the usual continuous map of Milnor joins. -/
+@[simp]
+theorem universalGSpaceSimplicialMap_realizationMap (φ : G →* H) :
+    (universalGSpaceSimplicialMap φ).realizationMap = φ.universalGSpaceMap := by
+  -- The ordered and original simplicial maps use different decidable-equality instances.
+  -- Their barycentric-coordinate formulas identify the realized maps.
+  exact ContinuousMap.ext fun y => Subtype.ext (by simp [universalGSpaceSimplicialMap])
+
 /-- The continuous total-space map carries each characteristic map to the characteristic map
 of the relabelled simplex, with the same disk coordinates. -/
 theorem universalGSpaceMap_characteristicMap (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (x : Fin n → ℝ) :
     φ.universalGSpaceMap (c.characteristicMap x) =
       (φ.universalGSpaceCellMap c).characteristicMap x := by
-  -- The ordered and original simplicial maps use different decidable-equality instances.
-  -- Identify their realization maps by coordinates before applying the ordered-cell formula.
-  have hmap : φ.universalGSpaceMap = (universalGSpaceSimplicialMap φ).realizationMap :=
-    ContinuousMap.ext fun y => Subtype.ext (by simp [universalGSpaceSimplicialMap])
-  rw [hmap]
+  rw [← universalGSpaceSimplicialMap_realizationMap]
   exact PreAbstractSimplicialComplex.SimplicialMap.realizationMap_characteristicMap _ c
-    (universalGSpaceMap_strictMonoOn φ c) x
+    (universalGSpaceSimplicialMap_strictMonoOn φ c) x
+
+section Cellular
+
+variable {G H : Type u} [MulOne G] [MulOne H]
+
+/-- The map of Milnor joins on the universal subsets used by cellular chains. -/
+def universalGSpaceCellularMap (φ : G →* H) :
+    TopCat.of (univ : Set (universalGSpace G)) ⟶
+      TopCat.of (univ : Set (universalGSpace H)) :=
+  TopCat.ofHom ⟨fun x ↦ ⟨φ.universalGSpaceMap x.1, mem_univ _⟩,
+    (φ.universalGSpaceMap.continuous.comp continuous_subtype_val).subtype_mk _⟩
+
+/-- The universal-subset map agrees with the continuous map on underlying points. -/
+@[simp]
+theorem universalGSpaceCellularMap_apply (φ : G →* H)
+    (x : (univ : Set (universalGSpace G))) :
+    (φ.universalGSpaceCellularMap x).1 = φ.universalGSpaceMap x.1 := (rfl)
+
+/-- Restricting the realized simplicial map to the universal subset gives the cellular map. -/
+theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
+    TopCat.ofHom ((φ.universalGSpaceSimplicialMap).realizationMap.restrictPreimage univ) =
+      φ.universalGSpaceCellularMap := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace H) ↦ f x.1)
+    φ.universalGSpaceSimplicialMap_realizationMap
+
+/-- The continuous map on Milnor joins preserves the simplicial CW filtrations.
+The map is restricted to the universal subsets used by cellular chains. -/
+theorem isCellular_universalGSpaceCellularMap (φ : G →* H) :
+    IsCellular (univ : Set (universalGSpace G)) (univ : Set (universalGSpace H))
+      φ.universalGSpaceCellularMap := by
+  convert (φ.universalGSpaceSimplicialMap).isCellular_realizationMap using 1
+  exact φ.universalGSpaceSimplicialMap_restrictPreimage.symm
+
+end Cellular
 
 end MonoidHom

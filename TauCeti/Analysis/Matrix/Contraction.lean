@@ -31,6 +31,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
   `(∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm.
 * `Matrix.aestronglyMeasurable_contraction`: the contraction of almost everywhere strongly
   measurable fields of matrices and endomorphisms is almost everywhere strongly measurable.
+* `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
+  endomorphism `T` is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in absolute value.
 -/
 
 public section
@@ -158,5 +160,22 @@ theorem aestronglyMeasurable_contraction {X : Type*} [MeasurableSpace X]
     fun j _ => ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable hb).mul ?_
   exact ((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i (1 : ℝ))).continuous.inner
     continuous_const).comp_aestronglyMeasurable hH
+
+/-- For an endomorphism `T` of `EuclideanSpace ℝ ι`, the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, such as
+the principal part `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` with `T` a Hessian operator, is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in
+absolute value. -/
+theorem abs_sum_sum_mul_apply_single_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
+    |∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i| ≤ (∑ i, ∑ j, |A i j|) * ‖T‖ := by
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+  rw [abs_mul]
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  calc |T (EuclideanSpace.single j 1) i| ≤ ‖T (EuclideanSpace.single j 1)‖ := by
+        simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le (T (EuclideanSpace.single j 1)) i
+    _ ≤ ‖T‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := T.le_opNorm _
+    _ = ‖T‖ := by simp
 
 end Matrix

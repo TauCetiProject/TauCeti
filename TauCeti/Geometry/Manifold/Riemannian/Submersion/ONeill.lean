@@ -21,7 +21,8 @@ not differential operators on freely chosen extensions of tangent vectors.
 
 The construction uses the induced endomorphism connection to differentiate the
 native horizontal orthogonal projection. The evaluation theorems identify it with
-O'Neill's formulas on differentiable vector fields. Both tensors are smooth
+O'Neill's formulas on differentiable vector fields. For a fixed first argument, both tensors are
+skew-adjoint, by metric compatibility of the Levi-Civita connection. Both tensors are smooth
 sections of the native iterated Hom bundle, so smooth vector fields give smooth
 evaluations.
 
@@ -38,7 +39,7 @@ orthogonal projections from `Submersion.Smoothness`.
 public section
 
 open Bundle Manifold
-open scoped ContDiff Manifold
+open scoped ContDiff InnerProductSpace Manifold
 
 noncomputable section
 
@@ -154,6 +155,59 @@ theorem oneillT_apply {Y : Π x : M, TangentSpace I x} {x : M}
   simpa only [oneillT, h.id_sub_horizontalLift_comp_mfderiv,
     ContinuousLinearMap.comp_apply, add_comm] using
     h.exchangeTensor_apply hY ((mfderiv I J f x).ker.starProjection v)
+
+private theorem inner_exchangeTensor_add_inner {Y Z : Π x : M, TangentSpace I x} {x : M}
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) (u : TangentSpace I x) :
+    ⟪exchangeTensor (I := I) (J := J) (f := f) x u (Y x), Z x⟫_ℝ +
+      ⟪Y x, exchangeTensor (I := I) (J := J) (f := f) x u (Z x)⟫_ℝ = 0 := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hV := (h.contMDiff_starProjection_ker (n := ∞) (by simp)).mdifferentiableAt
+    (by simp) (x := x)
+  have hH := (h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)).mdifferentiableAt
+    (by simp) (x := x)
+  have hzero (U W : Π y : M, TangentSpace I y) :
+      (fun y ↦ ⟪(mfderiv I J f y).ker.starProjection (U y),
+        (mfderiv I J f y).kerᗮ.starProjection (W y)⟫_ℝ) = fun _ ↦ 0 := by
+    funext y
+    exact Submodule.inner_right_of_mem_orthogonal
+      (Submodule.starProjection_apply_mem _ _) (Submodule.starProjection_apply_mem _ _)
+  have hmetric := CovariantDerivative.isMetricCompatible_leviCivitaConnection I (M := M)
+  have h₁ := hmetric.mvfderiv_inner_eq (FiberBundle.extend E u)
+    (hV.clm_bundle_apply hY) (hH.clm_bundle_apply hZ)
+  have h₂ := hmetric.mvfderiv_inner_eq (FiberBundle.extend E u)
+    (hH.clm_bundle_apply hY) (hV.clm_bundle_apply hZ)
+  have hzero₂ : (fun y ↦ ⟪(mfderiv I J f y).kerᗮ.starProjection (Y y),
+      (mfderiv I J f y).ker.starProjection (Z y)⟫_ℝ) = fun _ ↦ 0 :=
+    (funext fun _ ↦ real_inner_comm _ _).trans (hzero Z Y)
+  rw [hzero] at h₁
+  rw [hzero₂] at h₂
+  simp only [mvfderiv_const, zero_apply, FiberBundle.extend_apply_self]
+    at h₁ h₂
+  rw [h.exchangeTensor_apply hY, h.exchangeTensor_apply hZ]
+  simp only [inner_add_left, inner_add_right, Submodule.starProjection_orthogonal,
+    sub_apply, ContinuousLinearMap.id_apply, inner_sub_left,
+    inner_sub_right, Submodule.inner_starProjection_left_eq_right] at h₁ h₂ ⊢
+  linarith
+
+/-- For a fixed first argument, O'Neill's horizontal tensor is skew-adjoint. -/
+theorem inner_oneillA (x : M) (u v w : TangentSpace I x) :
+    ⟪h.oneillA x u v, w⟫_ℝ = -⟪v, h.oneillA x u w⟫_ℝ := by
+  have hskew := h.inner_exchangeTensor_add_inner
+    (FiberBundle.mdifferentiableAt_extend I E v) (FiberBundle.mdifferentiableAt_extend I E w)
+    ((mfderiv I J f x).kerᗮ.starProjection u)
+  apply eq_neg_iff_add_eq_zero.mpr
+  simpa only [FiberBundle.extend_apply_self, oneillA, h.horizontalLift_comp_mfderiv,
+    ContinuousLinearMap.comp_apply] using hskew
+
+/-- For a fixed first argument, O'Neill's vertical tensor is skew-adjoint. -/
+theorem inner_oneillT (x : M) (u v w : TangentSpace I x) :
+    ⟪h.oneillT x u v, w⟫_ℝ = -⟪v, h.oneillT x u w⟫_ℝ := by
+  have hskew := h.inner_exchangeTensor_add_inner
+    (FiberBundle.mdifferentiableAt_extend I E v) (FiberBundle.mdifferentiableAt_extend I E w)
+    ((mfderiv I J f x).ker.starProjection u)
+  apply eq_neg_iff_add_eq_zero.mpr
+  simpa only [FiberBundle.extend_apply_self, oneillT, h.id_sub_horizontalLift_comp_mfderiv,
+    ContinuousLinearMap.comp_apply] using hskew
 
 section Smoothness
 

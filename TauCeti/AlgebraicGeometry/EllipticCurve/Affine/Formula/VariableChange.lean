@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.Derivation
 
 /-!
 # The affine group-law formulae under a change of variables
@@ -33,8 +33,9 @@ predicates `Equation` and `Nonsingular` that cut the curve out.
 * `WeierstrassCurve.Affine.variableChange_slope`: the slope of the chord or tangent scales by `u`
   and translates by `s`.
 * `WeierstrassCurve.variableChange_translate_a₃`, `variableChange_translate_a₄` and
-  `variableChange_translate_a₆_of_equation`: the coefficients of the model translated to a point
-  `(x, y)`, namely the values there of the two partial derivatives and of the equation.
+  `variableChange_translate_a₆`: the coefficients of the model translated to a point `(x, y)`,
+  namely, up to sign, the values there of the two partial derivatives and of the Weierstrass
+  polynomial.
 
 ## Implementation notes
 
@@ -53,16 +54,13 @@ The point-group isomorphism these identities are for is
 split between the two files follows Mathlib's own: the formulae live in `Affine/Formula.lean` and
 the point type in `Affine/Point.lean`, and nothing here mentions `Point`.
 
-This is a prerequisite for `TauCetiRoadmap/EllipticCurves/README.md` §Layer 5's point isomorphism
-for the quadratic twist.
-
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Affine/Point.lean` at the roadmap's pin
-`bc2fe8ff7396`, FLT PR #1088, Apache 2.0). That file's own header reads
-`Authors: Michael Stoll, Claude`. Following this repository's convention for adapted material, the
-upstream authorship is credited here rather than in the copyright header. FLT states these
-identities over a field, as part of the file that builds the point map; stating the polynomial
-ones over a commutative ring, and separating them from the point map, is this repository's.
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Affine/Point.lean` at commit `bc2fe8ff7396`, FLT PR
+#1088, Apache 2.0). That file's own header reads `Authors: Michael Stoll, Claude`. Following this
+repository's convention for adapted material, the upstream authorship is credited here rather than
+in the copyright header. FLT states these identities over a field, as part of the file that builds
+the point map; stating the polynomial ones over a commutative ring, and separating them from the
+point map, is this repository's.
 -/
 
 public section
@@ -149,18 +147,11 @@ change of variables scales the Weierstrass polynomial by `u⁶`, and `u` is a un
         ((C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t)
       ↔ (C • W).toAffine.Equation x y := by
   rw [equation_iff', equation_iff']
-  refine Iff.trans ?_ (C.u.isUnit.pow 6).mul_right_eq_zero
-  constructor
-  · intro h
-    linear_combination h + (C.u : R) ^ 5 * x * y * u_mul_variableChange_a₁ W C
-      - (C.u : R) ^ 4 * x ^ 2 * u_pow_mul_variableChange_a₂ W C
-      + (C.u : R) ^ 3 * y * u_pow_mul_variableChange_a₃ W C
-      - (C.u : R) ^ 2 * x * u_pow_mul_variableChange_a₄ W C - u_pow_mul_variableChange_a₆ W C
-  · intro h
-    linear_combination h - (C.u : R) ^ 5 * x * y * u_mul_variableChange_a₁ W C
-      + (C.u : R) ^ 4 * x ^ 2 * u_pow_mul_variableChange_a₂ W C
-      - (C.u : R) ^ 3 * y * u_pow_mul_variableChange_a₃ W C
-      + (C.u : R) ^ 2 * x * u_pow_mul_variableChange_a₄ W C + u_pow_mul_variableChange_a₆ W C
+  refine (Eq.congr_left ?_).trans (C.u.isUnit.pow 6).mul_right_eq_zero
+  linear_combination -(C.u : R) ^ 5 * x * y * u_mul_variableChange_a₁ W C
+    + (C.u : R) ^ 4 * x ^ 2 * u_pow_mul_variableChange_a₂ W C
+    - (C.u : R) ^ 3 * y * u_pow_mul_variableChange_a₃ W C
+    + (C.u : R) ^ 2 * x * u_pow_mul_variableChange_a₄ W C + u_pow_mul_variableChange_a₆ W C
 
 /-- A pair `(x, y)` of elements of an `R`-algebra `A` satisfies the Weierstrass equation of the
 base change of `C • W` to `A` if and only if `(u²x + r, u³y + u²sx + t)` satisfies that of the
@@ -216,15 +207,11 @@ curve, whereas carrying a point to a point needs no such hypothesis. -/
     W.toAffine.Nonsingular ((C.u : R) ^ 2 * x + C.r)
         ((C.u : R) ^ 3 * y + (C.u : R) ^ 2 * C.s * x + C.t)
       ↔ (C • W).toAffine.Nonsingular x y := by
-  rw [Nonsingular, Nonsingular, variableChange_equation]
-  refine and_congr_right fun _ ↦ ?_
-  rw [variableChange_evalEval_polynomialX W C x y, variableChange_evalEval_polynomialY W C x y,
-    ← not_and_or, ← not_and_or]
-  refine not_congr ⟨fun ⟨h1, h2⟩ ↦ ?_, fun ⟨h1, h2⟩ ↦ ?_⟩
-  · have hB := (C.u.isUnit.pow 3).mul_right_eq_zero.mp h2
-    rw [hB, mul_zero, mul_zero, sub_zero] at h1
-    exact ⟨(C.u.isUnit.pow 4).mul_right_eq_zero.mp h1, hB⟩
-  · exact ⟨by rw [h1, h2]; ring, by rw [h2]; ring⟩
+  rw [Nonsingular, Nonsingular, variableChange_equation, variableChange_evalEval_polynomialX,
+    variableChange_evalEval_polynomialY, ← not_and_or, ← not_and_or,
+    (C.u.isUnit.pow 3).mul_right_eq_zero]
+  refine and_congr_right fun _ ↦ not_congr (and_congr_left fun hY ↦ ?_)
+  rw [hY, mul_zero, mul_zero, sub_zero, (C.u.isUnit.pow 4).mul_right_eq_zero]
 
 end CommRing
 
@@ -252,10 +239,10 @@ private lemma variableChange_slope_of_Y_ne [DecidableEq F] {x y : F}
           ((C.u : F) ^ 3 * y + (C.u : F) ^ 2 * C.s * x + C.t) := by
     rw [variableChange_negY]
     exact fun h ↦ hy (mul_left_cancel₀ (pow_ne_zero 3 hu) (by linear_combination h))
-  rw [W.toAffine.slope_of_Y_ne rfl hΦy, (C • W).toAffine.slope_of_Y_ne rfl hy,
-    ← mul_div_assoc, div_add' _ _ _ (sub_ne_zero.mpr hy),
-    div_eq_div_iff (sub_ne_zero.mpr hΦy) (sub_ne_zero.mpr hy)]
-  simp [negY, variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄]
+  have hY : (C • W).toAffine.polynomialY.evalEval x y ≠ 0 :=
+    (C • W).toAffine.evalEval_polynomialY_ne_zero_of_Y_ne hy
+  rw [slope_of_Y_ne_eq_evalEval rfl hΦy, slope_of_Y_ne_eq_evalEval rfl hy,
+    variableChange_evalEval_polynomialX, variableChange_evalEval_polynomialY]
   field
 
 /-- **The chord case of `variableChange_slope`**: through two points with distinct
@@ -298,7 +285,8 @@ end WeierstrassCurve.Affine
 /-! ### Translating a point to the origin
 
 The translation `x ↦ x + x₀`, `y ↦ y + y₀` carries a solution `(x₀, y₀)` to the origin. The
-translated model's `a₃` and `a₄` are the values at `(x₀, y₀)` of the two partial derivatives. -/
+translated model's `a₃`, `a₄` and `a₆` are, up to sign, the values at `(x₀, y₀)` of the two partial
+derivatives and of the Weierstrass polynomial. -/
 
 namespace WeierstrassCurve
 
@@ -324,10 +312,13 @@ theorem variableChange_translate_a₄ :
     Affine.evalEval_polynomialX]
   ring
 
-/-- **Translating a solution `(x, y)` to the origin gives `a₆ = 0`.** -/
-theorem variableChange_translate_a₆_of_equation {x y : R} (h : W.toAffine.Equation x y) :
-    (VariableChange.mk 1 x 0 y • W).a₆ = 0 :=
-  Affine.equation_zero.mp ((W.toAffine.equation_iff_variableChange x y).mp h)
+/-- **`a₆` of the model translated to `(x, y)`** is minus the value there of the Weierstrass
+polynomial, so it vanishes exactly when `(x, y)` satisfies the Weierstrass equation. -/
+theorem variableChange_translate_a₆ :
+    (VariableChange.mk 1 x 0 y • W).a₆ = -W.toAffine.polynomial.evalEval x y := by
+  simp only [variableChange_a₆, inv_one, Units.val_one, one_pow, one_mul,
+    Affine.evalEval_polynomial]
+  ring
 
 end Translate
 
