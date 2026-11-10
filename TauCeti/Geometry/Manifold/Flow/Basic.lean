@@ -37,7 +37,8 @@ compact set.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`: the derivative of flowing for a time that
   vanishes at the base point.
-* `TauCeti.mfderiv_flowOf_trajectory_apply`: the derivative of a trajectory is the field.
+* `TauCeti.mfderiv_flowOf_trajectory_apply`, `TauCeti.mfderiv_flowOf_trajectory_zero_apply`: the
+  derivative of a trajectory is the field.
 * `TauCeti.mfderiv_flowOf_apply_self`: the differential of the time-`t` map carries the field to
   itself.
 * `TauCeti.flowOf_add`: the domain-aware group law.
@@ -168,6 +169,14 @@ theorem mfderiv_flowOf_trajectory_apply [IsManifold I 1 M] {v : (x : M) → Tang
   rw [← curveVelocity_flowOf hv ht, Manifold.curveVelocity_apply]
   exact (congrArg (mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t) (mul_one a).symm).trans
     ((mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t).map_smul a (1 : ℝ))
+
+/-- **The derivative of a trajectory at time zero.** The derivative of `s ↦ flowOf v s x` at
+`s = 0` sends `a` to `a • v x`. -/
+theorem mfderiv_flowOf_trajectory_zero_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) (a : ℝ) :
+    mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) 0 a = a • v x := by
+  rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv x)]
+  exact congrArg (a • v ·) (flowOf_zero hv x)
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/
@@ -345,9 +354,8 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
     mfderiv I I (flowOf v t) x (v x) = v (flowOf v t x) := by
   have hopen := isOpen_flowDomain hv
   -- The velocity at time `0` of the trajectory through `y` is `v y`.
-  have hvel : ∀ y, mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s y) 0 (1 : ℝ) = v y := fun y ↦ by
-    rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv y), one_smul]
-    exact congrArg v (flowOf_zero hv y)
+  have hvel : ∀ y, mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s y) 0 (1 : ℝ) = v y := fun y ↦
+    (mfderiv_flowOf_trajectory_zero_apply hv y 1).trans (one_smul ℝ (v y))
   have hcurve : ContinuousAt (fun s ↦ flowOf v s x) 0 :=
     (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)).continuousAt
   -- Near `s = 0`, flowing for time `s` and then `t` is flowing for time `t` and then `s`.

@@ -17,25 +17,21 @@ transverse to `v`, with tangent space `ker dg_p`. The linearized return map
 `DP_p = TauCeti.returnDerivative v g T₀ p` maps `T_p M` into `ker dg_p` and kills `v p`, and its
 restriction to `ker dg_p` is the normal return derivative
 `N = TauCeti.normalReturnDerivative v g T₀ p h`, the linearization of the return map of the
-section. Its eigenvalues are the Floquet multipliers of the orbit other than the trivial multiplier
-`1` along the orbit. `TauCeti.Geometry.Manifold.Flow.ReturnDerivative` shows that the spectrum of
-`N` depends neither on the section nor on the base point; this file relates `N` to `DP_p`, to its
-iterates and to the monodromy of the orbit.
+section. Counted with algebraic multiplicity, the eigenvalues of `N` are the Floquet multipliers
+of the orbit with one copy of the trivial multiplier `1` removed; so `N` itself has eigenvalue `1`
+exactly when `1` is a multiple Floquet multiplier. `TauCeti.Geometry.Manifold.Flow.ReturnDerivative`
+shows that the spectrum of `N` and of its powers depends neither on the section nor on the base
+point; this file relates `N` to `DP_p` and to the monodromy of the orbit.
 
 The main results are:
 
 * `TauCeti.charpoly_returnDerivative_eq_X_mul`: since `T_p M = ker dg_p ⊕ ℝ v p` with `DP_p`
   mapping everything into the first summand, `charpoly DP_p = X * charpoly N`.
-* `TauCeti.normalReturnDerivative_zero`, `TauCeti.normalReturnDerivative_natCast_mul`: the normal
-  derivative of the time-`0` transition is the identity, and that of the return branch at time
-  `k * T₀` is `N ^ k`. So the `k`-th iterate of the return map has normal derivative `N ^ k`,
-  whose characteristic polynomial is again independent of the choices
-  (`TauCeti.charpoly_pow_normalReturnDerivative_eq`).
 * `TauCeti.charpoly_mfderiv_flowOf_eq_X_sub_one_mul`: the derivative `DΦ_{T₀}` of the time-`T₀`
   map of the flow at `p`, the monodromy of the first variational equation along the orbit, has
   characteristic polynomial `(X - 1) * charpoly N`; the factor `X - 1` comes from `DΦ_{T₀}` fixing
-  `v p` (`TauCeti.mfderiv_flowOf_apply_self`). Thus every eigenvalue `μ ≠ 1` of the monodromy is
-  an eigenvalue of `N` and conversely
+  `v p` (`TauCeti.mfderiv_flowOf_apply_self`). Thus `N` and the monodromy have the same
+  eigenvalues other than `1`
   (`TauCeti.hasEigenvalue_normalReturnDerivative_iff_hasEigenvalue_mfderiv_flowOf`).
 
 As in `TauCeti.Geometry.Manifold.Flow.ReturnDerivative`, `T₀` need not be the least period, and the
@@ -60,7 +56,7 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
-  {v : (x : M) → TangentSpace I x} {g g' : M → ℝ} {T T₀ : ℝ} {p q : M}
+  {v : (x : M) → TangentSpace I x} {g : M → ℝ} {T₀ : ℝ} {p : M}
 
 /-- **The linearized return map splits off the normal return derivative.** If the linearized
 return map of a section transverse to `v` takes values in the tangent space `ker dg_p` of the
@@ -86,61 +82,12 @@ theorem charpoly_returnDerivative_eq_X_mul (hgv : mvfderiv I g p (v p) ≠ 0)
   rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ K A hK, hQ, LinearMap.charpoly_zero,
     hrank, pow_one, mul_comm, normalReturnDerivative_def]
 
-/-- **The time-`0` transition is the identity on the section to first order.** For a section
-through `p` transverse to `v`, the normal derivative of the time-`0` transition is the identity. -/
-theorem normalReturnDerivative_zero (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0)
-    {h : LinearMap.range (returnDerivative v g 0 p) ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
-    normalReturnDerivative v g 0 p h = 1 := by
-  ext w
-  rw [coe_normalReturnDerivative_apply, returnDerivative_apply, one_apply_eq_self]
-  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
-
 section Return
 
 variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hP : (T₀, p) ∈ flowDomain v) (hp : flowOf v T₀ p = p) (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
   (hgv : mvfderiv I g p (v p) ≠ 0)
 include hv hP hp hg hgv
-
-/-- **The normal return derivative of an iterate.** The return branch at time `k * T₀` is the
-`k`-fold iterate of the return branch at time `T₀`, and its normal derivative is the `k`-th power
-of the normal return derivative. -/
-theorem normalReturnDerivative_natCast_mul (k : ℕ)
-    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
-    {hk : LinearMap.range (returnDerivative v g (k * T₀) p) ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
-    normalReturnDerivative v g (k * T₀) p hk = normalReturnDerivative v g T₀ p h ^ k := by
-  rcases eq_or_ne k 0 with rfl | hk0
-  · simp_rw [Nat.cast_zero, zero_mul, pow_zero]
-    exact normalReturnDerivative_zero hv hg hgv
-  ext w
-  rw [coe_normalReturnDerivative_apply, normalReturnDerivative_def (h := h),
-    Module.End.pow_restrict, LinearMap.coe_restrict_apply,
-    returnDerivative_natCast_mul hv hP hp hg hgv hk0]
-
-/-- **Iterates of the normal return derivative.** For every `k`, the `k`-th powers of the normal
-return derivatives at time `T₀` of a section through `p` and of a section through `q = flowOf v T p`
-have the same characteristic polynomial. -/
-theorem charpoly_pow_normalReturnDerivative_eq (hT : (T, p) ∈ flowDomain v)
-    (hq : flowOf v T p = q) (hg' : ContMDiffAt I 𝓘(ℝ) 1 g' q) (hg'v : mvfderiv I g' q (v q) ≠ 0)
-    (k : ℕ)
-    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
-    {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
-      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
-    (normalReturnDerivative v g T₀ p h ^ k).charpoly =
-      (normalReturnDerivative v g' T₀ q h' ^ k).charpoly := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
-  obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
-  obtain ⟨hkQ, hkq⟩ := flowOf_natCast_mul_of_flowOf_eq hv hQ hq' k
-  rw [← normalReturnDerivative_natCast_mul hv hP hp hg hgv k
-      (hk := range_returnDerivative_le_ker hv hkP hkp hg hgv),
-    ← normalReturnDerivative_natCast_mul hv hQ hq' hg' hg'v k
-      (hk := range_returnDerivative_le_ker hv hkQ hkq hg' hg'v)]
-  exact charpoly_normalReturnDerivative_eq hv hT hq hkP hkp hg hgv hg' hg'v
 
 /-- **The monodromy and the normal return derivative.** If `p` returns to itself at time `T₀`, the
 characteristic polynomial of the derivative `DΦ_{T₀}` at `p` of the time-`T₀` map of the flow is
@@ -191,10 +138,10 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
     LinearMap.charpoly_one, finrank_span_singleton hv0, pow_one, ← LinearEquiv.charpoly_conj e,
     hconj]
 
-/-- **The Floquet multipliers other than `1` are the eigenvalues of the normal return
-derivative.** If `p` returns to itself at time `T₀`, every `μ ≠ 1` is an eigenvalue of the normal
-return derivative exactly when it is an eigenvalue of the derivative `DΦ_{T₀}` at `p` of the
-time-`T₀` map of the flow. -/
+/-- **The normal return derivative and the monodromy have the same eigenvalues other than
+`1`.** If `p` returns to itself at time `T₀`, every `μ ≠ 1` is an eigenvalue of the normal return
+derivative exactly when it is an eigenvalue of the derivative `DΦ_{T₀}` at `p` of the time-`T₀` map
+of the flow. -/
 theorem hasEigenvalue_normalReturnDerivative_iff_hasEigenvalue_mfderiv_flowOf
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} {μ : ℝ} (hμ : μ ≠ 1) :
