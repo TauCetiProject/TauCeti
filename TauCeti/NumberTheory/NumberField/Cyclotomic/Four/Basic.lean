@@ -8,12 +8,12 @@ module
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.NumberTheory.SumTwoSquares
-import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 
 /-!
 # Basic facts about the Gaussian integers as a ring of integers
