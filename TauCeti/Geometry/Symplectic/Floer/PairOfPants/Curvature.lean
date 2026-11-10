@@ -653,11 +653,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
     (fun w hw => hud (hsU hw)) (fun _ _ => mdifferentiableAt_const)
     (fun _ _ => mdifferentiableAt_const)
-  have h₀ (v : ℝ × ℝ) : perturbationPullback (endChart q) (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ))
-      (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
-    funext w x
-    simp [perturbationPullback_apply]
-  simp only [h₀, floerEnergyDensity_zero] at harea
+  simp only [perturbationPullback_zero, floerEnergyDensity_zero] at harea
   rw [harea, ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
       (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw))
       (fun w hw => htgt (hsU hw) 1) (fun w hw => htgt (hsU hw) _),
