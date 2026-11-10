@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Renewal.StrongLaw
+public import TauCeti.Probability.HasLaw
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Gamma.Sum
@@ -63,26 +64,13 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
-private lemma identDistrib_of_hasLaw_expMeasure
-    (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (n : ℕ) :
-    IdentDistrib (T n) (T 0) P P := by
-  simpa only [Function.comp_def, Real.toNNReal_coe] using
-    ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
-
-private lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
-    {X : Ω → ℝ≥0} (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
-    P {ω | X ω = 0} < 1 := by
-  refine (measure_mono_null (fun ω hω ↦ ?_)
-    (ae_iff.1 (ae_pos_of_hasLaw_expMeasure hlaw))).trans_lt zero_lt_one
-  simp_all
-
 /-- **Nonexplosion with exponential increments.** For independent exponential increments,
 almost surely the arrival times tend to infinity. -/
 theorem ae_tendsto_arrival_atTop_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  exact ae_tendsto_arrival_atTop hindep (identDistrib_of_hasLaw_expMeasure hlaw)
+  exact ae_tendsto_arrival_atTop hindep (fun n ↦ (hlaw n).identDistrib_nnreal (hlaw 0))
     (measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0))
 
 /-- **Erlang arrival times.** For independent exponential increments of rate `r`, the `n`-th
@@ -190,7 +178,7 @@ theorem ae_tendsto_renewalCountNat_div_of_expMeasure [IsProbabilityMeasure P]
     rw [(hlaw 0).integral_eq, integral_id_expMeasure hr] at h
     simpa only [ENNReal.ofReal_coe_nnreal] using h.symm
   simpa only [ENNReal.toReal_inv, hmean, inv_inv] using
-    ae_tendsto_renewalCountNat_div hindep (identDistrib_of_hasLaw_expMeasure hlaw)
+    ae_tendsto_renewalCountNat_div hindep (fun n ↦ (hlaw n).identDistrib_nnreal (hlaw 0))
       (measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0))
 
 end TauCeti.Probability
