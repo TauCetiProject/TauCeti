@@ -91,6 +91,13 @@ instance mono_normalizedCubicalChainComplex_map (P : TopPair.{u}) :
   HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2
     (NormalizedCubicalChain.map_injective k P.map.hom P.isEmbedding_map.injective n)
 
+/-- In each degree, the inclusion of a subspace induces a split monomorphism of normalized cubical
+chains (`NormalizedCubicalChain.exists_comp_map_eq_id`). -/
+instance isSplitMono_normalizedCubicalChainComplex_map_f (P : TopPair.{u}) (n : ℕ) :
+    IsSplitMono (((normalizedCubicalChainComplex k).map P.map).f n) := by
+  obtain ⟨r, hr⟩ := NormalizedCubicalChain.exists_comp_map_eq_id k P.isEmbedding_map.injective n
+  exact IsSplitMono.mk' ⟨ModuleCat.ofHom r, ModuleCat.hom_ext hr⟩
+
 /-- The **relative normalized cubical chain complex** of a topological pair `(X, A)`: the
 cokernel of the map of normalized cubical chains induced by the inclusion `A → X`. -/
 abbrev cubicalChainComplex (P : TopPair.{u}) : ChainComplex (ModuleCat.{u} k) ℕ :=
