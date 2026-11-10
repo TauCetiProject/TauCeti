@@ -162,19 +162,18 @@ theorem isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
   · rw [map_inv, Units.val_inv_eq_inv_val]
   · exact heckeTCuspNat_mem_cuspFormCharSpace k χ hp g.2
 
-/-- **A good prime Hecke operator on `S_k(N, χ)` is Petersson-normal.** Its adjoint
-`χ(p)⁻¹ Tₚ` commutes with `Tₚ`, in the canonical Hecke-ring action on the fixed-nebentypus
-space. Together with
+/-- **A good Hecke generator on `S_k(N, χ)` is Petersson-normal.** For `p` coprime to `N`, its
+adjoint `χ(p)⁻¹ Tₚ` commutes with `Tₚ`, in the canonical Hecke-ring action on the
+fixed-nebentypus space; this needs no primality of `p`. Together with
 `isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`, this is the instance-free
 normality statement on `S_k(N, χ)`. -/
 theorem commute_peterssonAdjoint_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
-    (hp : p.Prime) (hpN : p.Coprime N) :
+    (hpN : p.Coprime N) :
     Commute
       (((χ (ZMod.unitOfCoprime p hpN) : ℂ)⁻¹) •
         heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p))
-      (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p)) := by
-  rw [heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
-  exact (Commute.refl _).smul_left _
+      (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p)) :=
+  (Commute.refl _).smul_left _
 
 end HeckeRing.GL2
 
