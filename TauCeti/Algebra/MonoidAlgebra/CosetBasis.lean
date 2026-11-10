@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.GroupTheory.Coset.Basic
+import Mathlib.Algebra.MonoidAlgebra.Basic
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Coset bases of group algebras
@@ -18,6 +23,9 @@ left-coset representatives of `p.range`, which represent its right cosets.
 ## Main definitions
 
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
+* `MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective`: restricting a finitely
+  generated projective `R[G]`-module to the group algebra of a subgroup of a finite group keeps it
+  finitely generated and projective, with the scalar towers needed for that.
 -/
 
 public section
@@ -89,3 +97,35 @@ theorem basisCosets_apply (p : M →* N) (hp : Function.Injective p) (q : N ⧸ 
   simp [basisCosets, Module.Basis.coe_ofRepr, cosetLinearEquiv, cosetAddEquiv_single]
 
 end TauCeti.MonoidAlgebra
+
+namespace MonoidAlgebra
+
+variable {R : Type*} [CommSemiring R] {G : Type*} [Group G] [Finite G]
+
+/-- Restricting a finitely generated projective `R[G]`-module `X` of a finite group `G` to the
+group algebra of a subgroup `C` gives a finitely generated projective `R[C]`-module, on which `R`
+and `R[G]` act compatibly. Here `R[C]` acts on `R[G]` and on `X` through
+`mapDomainRingHom R C.subtype`, as the hypotheses `hA` and `hX` state. -/
+theorem restrictSubgroup_isScalarTower_finite_projective (C : Subgroup G)
+    [inst : Module R[C] R[G]]
+    (hA : ∀ (r : R[C]) (s : R[G]), r • s = mapDomainRingHom R C.subtype r * s)
+    (X : Type*) [AddCommMonoid X] [Module R X] [Module R[G] X] [IsScalarTower R R[G] X]
+    [Module.Finite R[G] X] [Module.Projective R[G] X] [Module R[C] X]
+    (hX : ∀ (r : R[C]) (x : X), r • x = mapDomainRingHom R C.subtype r • x) :
+    IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧ IsScalarTower R R[C] X ∧
+      Module.Finite R[C] X ∧ Module.Projective R[C] X := by
+  let φ : R[C] →ₐ[R] R[G] := mapDomainAlgHom R R C.subtype
+  obtain rfl : inst = (mapDomainRingHom R C.subtype).toModule := Module.ext' _ _ hA
+  let _ : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
+  have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
+  let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
+  have : Module.Free R[C] R[G] := .of_basis b
+  have : Module.Finite R[C] R[G] := .of_basis b
+  have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by
+    rw [hX r (s • x)]
+    exact mul_smul (φ r) s x⟩
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[G] X⟩
+  rw [hX (a • r) x, hX r x]
+  exact (congrArg (· • x) (map_smul φ a r)).trans (smul_assoc a (φ r) x)
+
+end MonoidAlgebra

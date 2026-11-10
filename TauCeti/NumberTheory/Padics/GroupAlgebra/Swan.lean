@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Rational
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RepresentationTheory.Basic
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.Basic
@@ -47,12 +49,285 @@ integral equivalence because both modules are projective.
 * R. G. Swan, *Induced representations and projective modules*, Ann. of Math. 71 (1960).
 -/
 
-public section
-
 open scoped TensorProduct Pointwise MonoidAlgebra
 namespace TauCeti
 
 universe u v w
+
+attribute [local instance] padicReductionModule
+
+section Helpers
+
+/-- Projective `𝔽_p[G]`-representations that are the reductions of `ℤ_p[G]`-lattices with the same
+characters have equally many invariants: both counts are `p` to the rank of the invariants of the
+lattice, which is the average of the character. -/
+private theorem natCard_invariants_eq_of_trace_eq (p : ℕ) [Fact p.Prime] {G : Type u} [Group G]
+    [Finite G] {W₁ W₂ : Type*} [AddCommGroup W₁] [Module (ZMod p) W₁] [AddCommGroup W₂]
+    [Module (ZMod p) W₂] (η₁ : Representation (ZMod p) G W₁) (η₂ : Representation (ZMod p) G W₂)
+    [Module.Projective (MonoidAlgebra (ZMod p) G) η₁.asModule]
+    [Module.Projective (MonoidAlgebra (ZMod p) G) η₂.asModule]
+    (X₁ X₂ : Type*) [AddCommGroup X₁] [Module ℤ_[p] X₁] [Module (MonoidAlgebra ℤ_[p] G) X₁]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₁] [Module.Finite ℤ_[p] X₁]
+    [Module.Projective ℤ_[p] X₁] [AddCommGroup X₂] [Module ℤ_[p] X₂]
+    [Module (MonoidAlgebra ℤ_[p] G) X₂] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₂]
+    [Module.Finite ℤ_[p] X₂] [Module.Projective ℤ_[p] X₂]
+    (f₁ : (X₁ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₁)) →ₛₗ[MonoidAlgebra.mapRingHom G
+        (PadicInt.toZMod (p := p))] η₁.asModule) (hf₁ : Function.Bijective f₁)
+    (f₂ : (X₂ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₂)) →ₛₗ[MonoidAlgebra.mapRingHom G
+        (PadicInt.toZMod (p := p))] η₂.asModule) (hf₂ : Function.Bijective f₂)
+    (htr : ∀ g : G, LinearMap.trace ℤ_[p] X₁ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₁ g) =
+      LinearMap.trace ℤ_[p] X₂ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₂ g)) :
+    Nat.card η₁.invariants = Nat.card η₂.invariants := by
+  classical
+  rw [Representation.natCard_invariants_eq_pow_finrank_of_bijective p η₁ X₁ f₁ hf₁,
+    Representation.natCard_invariants_eq_pow_finrank_of_bijective p η₂ X₂ f₂ hf₂]
+  congr 1
+  rw [← Representation.finrank_invariants_baseChange_ratPadic p
+      (Representation.ofModule' (k := ℤ_[p]) (G := G) X₁),
+    ← Representation.finrank_invariants_baseChange_ratPadic p
+      (Representation.ofModule' (k := ℤ_[p]) (G := G) X₂)]
+  let _ := Fintype.ofFinite G
+  let _ : Invertible (Nat.card G : ℚ_[p]) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  apply Nat.cast_injective (R := ℚ_[p])
+  rw [← (Representation.baseChange ℚ_[p]
+      (Representation.ofModule' (k := ℤ_[p]) (G := G) X₁)).card_inv_mul_sum_char_eq_finrank,
+    ← (Representation.baseChange ℚ_[p]
+      (Representation.ofModule' (k := ℤ_[p]) (G := G) X₂)).card_inv_mul_sum_char_eq_finrank]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  simp only [Representation.character, Representation.baseChange_apply,
+    LinearMap.trace_baseChange]
+  exact congrArg _ (htr g)
+
+/-- **Swan's theorem for a subgroup of order prime to `p`, modulo `p`.** If the rationalizations of
+two finitely generated projective `ℤ_p[G]`-modules `M` and `N` are isomorphic, then on a subgroup
+`C` of order prime to `p` the reductions `M / pM` and `N / pN` are isomorphic as
+`𝔽_p`-representations: there is an `𝔽_p`-linear isomorphism that commutes with the action of
+every element of `C`. -/
+private theorem exists_linearEquiv_commute_reduction_of_not_dvd (p : ℕ) [Fact p.Prime]
+    {G : Type u} [Group G] [Finite G] (C : Subgroup G) (hC : ¬p ∣ Nat.card C)
+    (M : Type v) (N : Type w) [AddCommGroup M] [Module ℤ_[p] M]
+    [Module (MonoidAlgebra ℤ_[p] G) M] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) M]
+    [Module.Finite (MonoidAlgebra ℤ_[p] G) M] [Module.Projective (MonoidAlgebra ℤ_[p] G) M]
+    [AddCommGroup N] [Module ℤ_[p] N] [Module (MonoidAlgebra ℤ_[p] G) N]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N] [Module.Finite (MonoidAlgebra ℤ_[p] G) N]
+    [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
+    [Module (ZMod p) (M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M))]
+    [IsScalarTower (ZMod p) (MonoidAlgebra (ZMod p) G)
+      (M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M))]
+    [Module (ZMod p) (N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N))]
+    [IsScalarTower (ZMod p) (MonoidAlgebra (ZMod p) G)
+      (N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N))]
+    (h : Nonempty ((M ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[MonoidAlgebra ℤ_[p] G] (N ⊗[ℤ_[p]] ℚ_[p]))) :
+    ∃ e : (M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M)) ≃ₗ[ZMod p]
+      (N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N)),
+      ∀ c ∈ C, ∀ x, e (Representation.ofModule' (k := ZMod p) (G := G) _ c x) =
+        Representation.ofModule' (k := ZMod p) (G := G) _ c (e x) := by
+  classical
+  let A := MonoidAlgebra ℤ_[p] G
+  let kC := MonoidAlgebra (ZMod p) C
+  let φk : kC →ₐ[ZMod p] MonoidAlgebra (ZMod p) G :=
+    MonoidAlgebra.mapDomainAlgHom (ZMod p) (ZMod p) C.subtype
+  -- Restrict scalars of `M` and `N` to `ℤ_p[C]`.
+  let _ : Module (MonoidAlgebra ℤ_[p] C) A :=
+    (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
+  let _ : Module (MonoidAlgebra ℤ_[p] C) M :=
+    .compHom M (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  let _ : Module (MonoidAlgebra ℤ_[p] C) N :=
+    .compHom N (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  obtain ⟨_, _, _, _, _⟩ :=
+    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+      (fun _ _ ↦ rfl) M fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _, _⟩ :=
+    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+      (fun _ _ ↦ rfl) N fun _ _ ↦ rfl
+  -- Swan's theorem for `C` identifies `M` and `N` over `ℤ_p[C]`, hence their reductions.
+  obtain ⟨eMN⟩ := nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd p hC M N
+    (h.map fun e ↦ e.restrictScalars (MonoidAlgebra ℤ_[p] C))
+  let _ : Module kC (M ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A M)) :=
+    .compHom _ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
+  let _ : Module kC (N ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A N)) :=
+    .compHom _ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
+  have : IsScalarTower (ZMod p) kC (M ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A M)) :=
+    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φk a r)).trans (smul_assoc a (φk r) x)⟩
+  have : IsScalarTower (ZMod p) kC (N ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A N)) :=
+    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φk a r)).trans (smul_assoc a (φk r) x)⟩
+  let e : (M ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A M)) ≃ₗ[kC]
+      (N ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A N)) :=
+    (padicReductionRestrictLinearEquiv p C C.subtype M (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)).symm.trans
+      ((padicReductionCongr p C eMN).trans
+        (padicReductionRestrictLinearEquiv p C C.subtype N (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)))
+  exact ⟨e.restrictScalars (ZMod p), fun c hc x ↦
+    Representation.map_ofModule'_comp C.subtype (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) e.toLinearMap
+      ⟨c, hc⟩ x⟩
+
+section Lift
+
+variable (p : ℕ) [Fact p.Prime] {G : Type u} [Group G] [Finite G] {W₁ W₂ : Type*}
+  [AddCommGroup W₁] [Module (ZMod p) W₁] [AddCommGroup W₂] [Module (ZMod p) W₂]
+  (η₁ : Representation (ZMod p) G W₁) (η₂ : Representation (ZMod p) G W₂)
+  (X₁ X₂ : Type*) [AddCommGroup X₁] [Module ℤ_[p] X₁] [Module (MonoidAlgebra ℤ_[p] G) X₁]
+  [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₁] [Module.Finite (MonoidAlgebra ℤ_[p] G) X₁]
+  [Module.Projective (MonoidAlgebra ℤ_[p] G) X₁] [AddCommGroup X₂] [Module ℤ_[p] X₂]
+  [Module (MonoidAlgebra ℤ_[p] G) X₂] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₂]
+  [Module.Finite (MonoidAlgebra ℤ_[p] G) X₂] [Module.Projective (MonoidAlgebra ℤ_[p] G) X₂]
+  (f₁ : (X₁ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₁)) →ₛₗ[MonoidAlgebra.mapRingHom G
+      (PadicInt.toZMod (p := p))] η₁.asModule) (hf₁ : Function.Bijective f₁)
+  (f₂ : (X₂ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₂)) →ₛₗ[MonoidAlgebra.mapRingHom G
+      (PadicInt.toZMod (p := p))] η₂.asModule) (hf₂ : Function.Bijective f₂)
+
+include hf₁ hf₂
+
+/-- Let `X₁` and `X₂` be finitely generated projective `ℤ_p[G]`-modules whose reductions modulo `p`
+are identified with `𝔽_p`-representations `η₁` and `η₂`. If `η₁` and `η₂` become isomorphic on a
+subgroup `C`, then an element of `C` acts with the same trace on `X₁` and on `X₂`: the isomorphism
+lifts to `ℤ_p[C]`-modules, which conjugates the two actions. -/
+private theorem trace_ofModule'_eq_of_equiv_comp (C : Subgroup G) {g : G} (hg : g ∈ C)
+    (e : _root_.Representation.Equiv (η₁.comp C.subtype) (η₂.comp C.subtype)) :
+    LinearMap.trace ℤ_[p] X₁ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₁ g) =
+      LinearMap.trace ℤ_[p] X₂ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₂ g) := by
+  classical
+  let A := MonoidAlgebra ℤ_[p] G
+  let AC := MonoidAlgebra ℤ_[p] C
+  let kC := MonoidAlgebra (ZMod p) C
+  -- Restrict scalars of `X₁` and `X₂` to `ℤ_p[C]`.
+  let _ : Module AC A := (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
+  let _ : Module AC X₁ := .compHom X₁ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  let _ : Module AC X₂ := .compHom X₂ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  obtain ⟨_, _, _, _, _⟩ :=
+    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+      (fun _ _ ↦ rfl) X₁ fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _, _⟩ :=
+    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+      (fun _ _ ↦ rfl) X₂ fun _ _ ↦ rfl
+  -- Transport `e` through the lifts to an isomorphism of the reductions over `C`.
+  let Q₁ := X₁ ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A X₁)
+  let Q₂ := X₂ ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A X₂)
+  let _ : Module kC Q₁ := .compHom Q₁ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
+  let _ : Module kC Q₂ := .compHom Q₂ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
+  let e₁ := η₁.linearEquivAsModuleComp C.subtype (fun _ _ ↦ rfl)
+    (padicReductionLinearEquivOfBijective p G f₁ hf₁)
+  let e₂ := η₂.linearEquivAsModuleComp C.subtype (fun _ _ ↦ rfl)
+    (padicReductionLinearEquivOfBijective p G f₂ hf₂)
+  let eRedC := (padicReductionRestrictLinearEquiv p C C.subtype X₁ (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl)).trans (e₁.trans ((TauCeti.Representation.asModuleLinearEquivOfEquiv e).trans
+      (e₂.symm.trans (padicReductionRestrictLinearEquiv p C C.subtype X₂ (fun _ _ ↦ rfl)
+        (fun _ _ ↦ rfl)).symm)))
+  have := padicReduction_compatibleSMul_padicInt p C (padicReduction_smul p C X₁)
+    (padicReduction_smul p C X₂)
+  obtain ⟨eX⟩ := nonempty_linearEquiv_of_projective_of_reduction p C X₁ X₂
+    ⟨eRedC.restrictScalars AC⟩
+  -- The `ℤ_p[C]`-linear isomorphism `eX` conjugates the action of `g ∈ C`.
+  have hconj : (eX.restrictScalars ℤ_[p]).conj (Representation.ofModule' X₁ g) =
+      Representation.ofModule' X₂ g := LinearMap.ext fun x ↦ by
+    rw [LinearEquiv.conj_apply_apply]
+    simpa using Representation.map_ofModule'_comp C.subtype (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+      eX.toLinearMap ⟨g, hg⟩ (eX.symm x)
+  rw [← hconj, LinearMap.trace_conj']
+
+/-- **Equal characters from isomorphic restrictions to cyclic subgroups.** Let `X₁` and `X₂` be
+finitely generated projective `ℤ_p[G]`-modules whose reductions modulo `p` are identified with
+`𝔽_p`-representations `η₁` and `η₂`. Suppose `η₁` and `η₂` become isomorphic on the cyclic
+subgroup generated by every `p`-regular element. Then `X₁` and `X₂` have the same character: it
+vanishes at `p`-singular elements for projective modules, and at `p`-regular elements it is
+computed on the cyclic subgroup. -/
+private theorem trace_ofModule'_eq_of_forall_equiv_comp_zpowers
+    (hη : ∀ g : G, ¬p ∣ orderOf g → Nonempty (_root_.Representation.Equiv
+      (η₁.comp (Subgroup.zpowers g).subtype) (η₂.comp (Subgroup.zpowers g).subtype)))
+    (g : G) :
+    LinearMap.trace ℤ_[p] X₁ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₁ g) =
+      LinearMap.trace ℤ_[p] X₂ (Representation.ofModule' (k := ℤ_[p]) (G := G) X₂ g) := by
+  by_cases hg : p ∣ orderOf g
+  · have hp : ¬IsUnit (p : ℤ_[p]) := PadicInt.p_nonunit
+    rw [trace_ofModule'_eq_zero_of_dvd_orderOf X₁ hp hg,
+      trace_ofModule'_eq_zero_of_dvd_orderOf X₂ hp hg]
+  · obtain ⟨e⟩ := hη g hg
+    exact trace_ofModule'_eq_of_equiv_comp p η₁ η₂ X₁ X₂ f₁ hf₁ f₂ hf₂
+      (Subgroup.zpowers g) (Subgroup.mem_zpowers g) e
+
+end Lift
+
+/-- **Counting maps to a finite module.** The reductions modulo `p` of two finitely generated
+projective `ℤ_p[G]`-modules with isomorphic rationalizations have the same number of `𝔽_p[G]`-maps
+to every finite `𝔽_p[G]`-module `S`. Projective lifts turn these counts into invariant ranks of
+conjugation representations, which the characters of the lifts determine. -/
+private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Prime]
+    {G : Type u} [Group G] [Finite G] (M : Type v) (N : Type w) [AddCommGroup M]
+    [Module ℤ_[p] M] [Module (MonoidAlgebra ℤ_[p] G) M]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) M] [Module.Finite (MonoidAlgebra ℤ_[p] G) M]
+    [Module.Projective (MonoidAlgebra ℤ_[p] G) M] [AddCommGroup N] [Module ℤ_[p] N]
+    [Module (MonoidAlgebra ℤ_[p] G) N] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N]
+    [Module.Finite (MonoidAlgebra ℤ_[p] G) N] [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
+    (h : Nonempty ((M ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[MonoidAlgebra ℤ_[p] G] (N ⊗[ℤ_[p]] ℚ_[p])))
+    (S : Type u) [AddCommGroup S] [Module (MonoidAlgebra (ZMod p) G) S] [Finite S] :
+    Nat.card ((M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M)) →ₗ[MonoidAlgebra (ZMod p) G] S) =
+      Nat.card ((N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N)) →ₗ[MonoidAlgebra (ZMod p) G] S) := by
+  classical
+  let kG := MonoidAlgebra (ZMod p) G
+  let M₀ := M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M)
+  let N₀ := N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N)
+  let _ : Module.Finite kG M₀ := padicReduction_module_finite p G M
+  let _ : Module.Finite kG N₀ := padicReduction_module_finite p G N
+  let _ : Module.Projective kG M₀ := padicReduction_module_projective p G M
+  let _ : Module.Projective kG N₀ := padicReduction_module_projective p G N
+  let _ : Module (ZMod p) M₀ := Module.compHom M₀ (algebraMap (ZMod p) kG)
+  let _ : Module (ZMod p) N₀ := Module.compHom N₀ (algebraMap (ZMod p) kG)
+  let _ : Module (ZMod p) S := Module.compHom S (algebraMap (ZMod p) kG)
+  let _ : IsScalarTower (ZMod p) kG M₀ := IsScalarTower.of_compHom (ZMod p) kG M₀
+  let _ : IsScalarTower (ZMod p) kG N₀ := IsScalarTower.of_compHom (ZMod p) kG N₀
+  let _ : IsScalarTower (ZMod p) kG S := IsScalarTower.of_compHom (ZMod p) kG S
+  let _ : Module.Finite (ZMod p) M₀ := .trans kG M₀
+  let _ : Module.Finite (ZMod p) N₀ := .trans kG N₀
+  let _ : Module.Finite (ZMod p) S := inferInstance
+  let ρM := Representation.ofModule' (k := ZMod p) (G := G) M₀
+  let ρN := Representation.ofModule' (k := ZMod p) (G := G) N₀
+  let σ := Representation.ofModule' (k := ZMod p) (G := G) S
+  let eM := TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) M₀
+  let eN := TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) N₀
+  let _ : Module.Finite kG ρM.asModule := Module.Finite.equiv eM.symm
+  let _ : Module.Finite kG ρN.asModule := Module.Finite.equiv eN.symm
+  let _ : Module.Projective kG ρM.asModule := Module.Projective.of_equiv' eM.symm
+  let _ : Module.Projective kG ρN.asModule := Module.Projective.of_equiv' eN.symm
+  rw [Representation.natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) M₀ S,
+    Representation.natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) N₀ S]
+  -- Lift the conjugation representations to projective `ℤ_p[G]`-modules `XM` and `XN`.
+  obtain ⟨_, XM, hXMf, hXMp, fM, hfM⟩ :=
+    exists_projective_reduction_bijective_of_projective p G (Representation.linHom ρM σ).asModule
+  obtain ⟨_, XN, hXNf, hXNp, fN, hfN⟩ :=
+    exists_projective_reduction_bijective_of_projective p G (Representation.linHom ρN σ).asModule
+  let _ : Module.Finite (MonoidAlgebra ℤ_[p] G) XM := hXMf
+  let _ : Module.Projective (MonoidAlgebra ℤ_[p] G) XM := hXMp
+  let _ : Module.Finite (MonoidAlgebra ℤ_[p] G) XN := hXNf
+  let _ : Module.Projective (MonoidAlgebra ℤ_[p] G) XN := hXNp
+  let _ : Module.Finite ℤ_[p] XM := .trans (MonoidAlgebra ℤ_[p] G) XM
+  let _ : Module.Finite ℤ_[p] XN := .trans (MonoidAlgebra ℤ_[p] G) XN
+  let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XM
+  let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XN
+  refine natCard_invariants_eq_of_trace_eq p _ _ XM XN fM hfM fN hfN
+    (trace_ofModule'_eq_of_forall_equiv_comp_zpowers p _ _ XM XN fM hfM fN hfN fun g hg ↦ ?_)
+  obtain ⟨e, he⟩ := exists_linearEquiv_commute_reduction_of_not_dvd p (Subgroup.zpowers g)
+    (by simpa only [Nat.card_zpowers] using hg) M N h
+  exact ⟨Representation.Equiv.linHomComp (ρ := ρM) (ρ' := ρN) (f := (Subgroup.zpowers g).subtype)
+    (.mk e fun c ↦ LinearMap.ext fun x ↦ he c c.2 x) σ⟩
+
+end Helpers
+
+public section
 
 /-- **Swan's theorem for `ℤ_p[G]`** (NSW (5.6.10)(ii)). Two finitely generated projective
 `ℤ_p[G]`-modules with isomorphic rationalizations are isomorphic. -/
@@ -76,214 +351,22 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
   let I := Ideal.span {(p : A)}
   let M₀ := M ⧸ I • (⊤ : Submodule A M)
   let N₀ := N ⧸ I • (⊤ : Submodule A N)
-  let _ : Module kG M₀ := padicReductionModule p G M
-  let _ : Module kG N₀ := padicReductionModule p G N
   let _ : Module.Finite kG M₀ := padicReduction_module_finite p G M
   let _ : Module.Finite kG N₀ := padicReduction_module_finite p G N
   let _ : Module.Projective kG M₀ := padicReduction_module_projective p G M
   let _ : Module.Projective kG N₀ := padicReduction_module_projective p G N
   let _ : Finite (kG ⧸ Ring.jacobson kG) :=
-    Finite.of_surjective (Ideal.Quotient.mk (Ring.jacobson kG))
-      Ideal.Quotient.mk_surjective
-  have hred : Nonempty (M₀ ≃ₗ[kG] N₀) := by
+    Finite.of_surjective (Ideal.Quotient.mk (Ring.jacobson kG)) Ideal.Quotient.mk_surjective
+  -- Detect the reductions modulo `p` by counting maps to every simple `𝔽_p[G]`-module.
+  obtain ⟨ered⟩ : Nonempty (M₀ ≃ₗ[kG] N₀) := by
     apply nonempty_linearEquiv_of_projective_of_natCard_linearMap_eq M₀ N₀
     intro S _ _ _
     let _ : Finite S := IsSimpleModule.finite_of_finite_quotient_jacobson (R := kG) S
-    let _ : Module (ZMod p) M₀ := Module.compHom M₀ (algebraMap (ZMod p) kG)
-    let _ : Module (ZMod p) N₀ := Module.compHom N₀ (algebraMap (ZMod p) kG)
-    let _ : Module (ZMod p) S := Module.compHom S (algebraMap (ZMod p) kG)
-    let _ : IsScalarTower (ZMod p) kG M₀ := IsScalarTower.of_compHom (ZMod p) kG M₀
-    let _ : IsScalarTower (ZMod p) kG N₀ := IsScalarTower.of_compHom (ZMod p) kG N₀
-    let _ : IsScalarTower (ZMod p) kG S := IsScalarTower.of_compHom (ZMod p) kG S
-    let _ : Module.Finite (ZMod p) M₀ := .trans kG M₀
-    let _ : Module.Finite (ZMod p) N₀ := .trans kG N₀
-    let _ : Module.Finite (ZMod p) S := inferInstance
-    let ρM := Representation.ofModule' (k := ZMod p) (G := G) M₀
-    let ρN := Representation.ofModule' (k := ZMod p) (G := G) N₀
-    let σ := Representation.ofModule' (k := ZMod p) (G := G) S
-    let eM : ρM.asModule ≃ₗ[kG] M₀ :=
-      TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) M₀
-    let eN : ρN.asModule ≃ₗ[kG] N₀ :=
-      TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) N₀
-    let eS : σ.asModule ≃ₗ[kG] S :=
-      TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) S
-    let _ : Module.Finite kG ρM.asModule := Module.Finite.equiv eM.symm
-    let _ : Module.Finite kG ρN.asModule := Module.Finite.equiv eN.symm
-    let _ : Module.Projective kG ρM.asModule := Module.Projective.of_equiv' eM.symm
-    let _ : Module.Projective kG ρN.asModule := Module.Projective.of_equiv' eN.symm
-    -- The Hom spaces into `S` are the invariants of the Hom representations `YM` and `YN`.
-    let YM := Representation.linHom ρM σ
-    let YN := Representation.linHom ρN σ
-    rw [← Nat.card_congr (((Representation.invariantsEquivIntertwiningMap ρM σ).trans
-        (Representation.IntertwiningMap.equivLinearMapAsModule ρM σ)).toAddEquiv.trans
-          (eM.arrowCongrAddEquiv eS)).toEquiv,
-      ← Nat.card_congr (((Representation.invariantsEquivIntertwiningMap ρN σ).trans
-        (Representation.IntertwiningMap.equivLinearMapAsModule ρN σ)).toAddEquiv.trans
-          (eN.arrowCongrAddEquiv eS)).toEquiv]
-    -- Lift `YM` and `YN` to projective `ℤ_p[G]`-modules `XM` and `XN`, and count invariants.
-    obtain ⟨_, XM, hXMf, hXMp, fM, hfM⟩ :=
-      exists_projective_reduction_bijective_of_projective p G YM.asModule
-    obtain ⟨_, XN, hXNf, hXNp, fN, hfN⟩ :=
-      exists_projective_reduction_bijective_of_projective p G YN.asModule
-    let _ : Module.Finite A XM := hXMf
-    let _ : Module.Projective A XM := hXMp
-    let _ : Module.Finite A XN := hXNf
-    let _ : Module.Projective A XN := hXNp
-    let _ : Module.Finite ℤ_[p] XM := .trans A XM
-    let _ : Module.Finite ℤ_[p] XN := .trans A XN
-    let _ : Module.Projective ℤ_[p] XM := .trans A XM
-    let _ : Module.Projective ℤ_[p] XN := .trans A XN
-    let ξM := Representation.ofModule' (k := ℤ_[p]) (G := G) XM
-    let ξN := Representation.ofModule' (k := ℤ_[p]) (G := G) XN
-    rw [Representation.natCard_invariants_eq_pow_finrank_of_bijective p YM XM fM hfM,
-      Representation.natCard_invariants_eq_pow_finrank_of_bijective p YN XN fN hfN]
-    -- The invariant ranks are computed rationally by the average of the characters.
-    congr 1
-    rw [← Representation.finrank_invariants_baseChange_ratPadic p ξM,
-      ← Representation.finrank_invariants_baseChange_ratPadic p ξN]
-    let _ := Fintype.ofFinite G
-    let _ : Invertible (Nat.card G : ℚ_[p]) :=
-      invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-    apply Nat.cast_injective (R := ℚ_[p])
-    rw [← (Representation.baseChange ℚ_[p] ξM).card_inv_mul_sum_char_eq_finrank,
-      ← (Representation.baseChange ℚ_[p] ξN).card_inv_mul_sum_char_eq_finrank]
-    congr 1
-    apply Finset.sum_congr rfl
-    intro g _
-    simp only [Representation.character, Representation.baseChange_apply,
-      LinearMap.trace_baseChange]
-    congr 1
-    by_cases hg : p ∣ orderOf g
-    · rw [trace_ofModule'_eq_zero_of_dvd_orderOf XM (p := p)
-          (show ¬IsUnit (p : ℤ_[p]) by exact PadicInt.p_nonunit) hg,
-        trace_ofModule'_eq_zero_of_dvd_orderOf XN (p := p)
-          (show ¬IsUnit (p : ℤ_[p]) by exact PadicInt.p_nonunit) hg]
-    -- For `p`-regular `g`, restrict to `C = ⟨g⟩`, whose order is prime to `p`.
-    let C := Subgroup.zpowers g
-    let AC := MonoidAlgebra ℤ_[p] C
-    let kC := MonoidAlgebra (ZMod p) C
-    let φA : AC →ₐ[ℤ_[p]] A := MonoidAlgebra.mapDomainAlgHom ℤ_[p] ℤ_[p] C.subtype
-    let φk : kC →ₐ[ZMod p] kG := MonoidAlgebra.mapDomainAlgHom (ZMod p) (ZMod p) C.subtype
-    let _ : Module AC A := (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
-    have : IsScalarTower AC A A := ⟨fun r s t ↦ mul_assoc (φA r) s t⟩
-    let b := TauCeti.MonoidAlgebra.basisCosets ℤ_[p] C.subtype C.subtype_injective
-    have : Module.Free AC A := .of_basis b
-    have : Module.Finite AC A := .of_basis b
-    -- Restrict scalars of `M`, `N`, `XM` and `XN` to `ℤ_p[C]`.
-    let _ : Module AC M := .compHom M (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-    let _ : Module AC N := .compHom N (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-    let _ : Module AC XM := .compHom XM (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-    let _ : Module AC XN := .compHom XN (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-    have : IsScalarTower AC A M := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-    have : IsScalarTower AC A N := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-    have : IsScalarTower AC A XM := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-    have : IsScalarTower AC A XN := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-    have : IsScalarTower ℤ_[p] AC M :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-    have : IsScalarTower ℤ_[p] AC N :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-    have : IsScalarTower ℤ_[p] AC XM :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-    have : IsScalarTower ℤ_[p] AC XN :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-    have : Module.Finite AC M := .trans A M
-    have : Module.Finite AC N := .trans A N
-    have : Module.Finite AC XM := .trans A XM
-    have : Module.Finite AC XN := .trans A XN
-    have : Module.Projective AC M := .trans A M
-    have : Module.Projective AC N := .trans A N
-    have : Module.Projective AC XM := .trans A XM
-    have : Module.Projective AC XN := .trans A XN
-    -- Swan's theorem for `C` identifies `M` and `N` over `ℤ_p[C]`, hence `M₀` and `N₀`.
-    obtain ⟨eMN⟩ := nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd p
-      (by simpa only [C, Nat.card_zpowers] using hg) M N
-      (h.map fun e ↦ e.restrictScalars AC)
-    let _ : Module kC M₀ := .compHom M₀ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
-    let _ : Module kC N₀ := .compHom N₀ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
-    let _ : Module kC S := .compHom S (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
-    have : IsScalarTower (ZMod p) kC M₀ :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φk a r)).trans (smul_assoc a (φk r) x)⟩
-    have : IsScalarTower (ZMod p) kC N₀ :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φk a r)).trans (smul_assoc a (φk r) x)⟩
-    have : IsScalarTower (ZMod p) kC S :=
-      ⟨fun a r x ↦ (congrArg (· • x) (map_smul φk a r)).trans (smul_assoc a (φk r) x)⟩
-    let _ : Module kC (M ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC M)) :=
-      padicReductionModule p C M
-    let _ : Module kC (N ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC N)) :=
-      padicReductionModule p C N
-    let eMN₀ : M₀ ≃ₗ[kC] N₀ :=
-      (padicReductionRestrictLinearEquiv p C C.subtype M (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)).symm.trans
-        ((padicReductionCongr p C eMN).trans
-          (padicReductionRestrictLinearEquiv p C C.subtype N (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)))
-    have hφk (c : C) : φk (MonoidAlgebra.single c 1) = MonoidAlgebra.single (c : G) 1 := by
-      rw [MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
-      rfl
-    have heMN₀ (c : C) (x : M₀) : eMN₀ (ρM c x) = ρN c (eMN₀ x) := by
-      rw [TauCeti.Representation.ofModule'_apply, TauCeti.Representation.ofModule'_apply,
-        ← hφk]
-      -- `k[C]` acts on `M₀` and `N₀` through `φk`.
-      exact eMN₀.map_smul (MonoidAlgebra.single c 1) x
-    -- Precomposition with `eMN₀` identifies the restrictions of `YM` and `YN` to `C`.
-    let YMC : Representation (ZMod p) C (M₀ →ₗ[ZMod p] S) := YM.comp C.subtype
-    let YNC : Representation (ZMod p) C (N₀ →ₗ[ZMod p] S) := YN.comp C.subtype
-    let ePre : (M₀ →ₗ[ZMod p] S) ≃ₗ[ZMod p] (N₀ →ₗ[ZMod p] S) :=
-      LinearEquiv.congrLeft S (ZMod p) (eMN₀.restrictScalars (ZMod p))
-    let eY : YMC.Equiv YNC := .mk ePre (by
-      intro c
-      apply LinearMap.ext
-      intro f
-      apply LinearMap.ext
-      intro x
-      simp only [YMC, YNC, YM, YN, ePre, LinearMap.comp_apply, MonoidHom.coe_comp,
-        Function.comp_apply, LinearEquiv.congrLeft_apply, AddEquiv.toFun_eq_coe,
-        LinearEquiv.arrowCongrAddEquiv_apply, Representation.linHom_apply,
-        LinearEquiv.coe_coe, LinearEquiv.refl_apply, Subgroup.coe_subtype,
-        LinearEquiv.restrictScalars_symm_apply]
-      apply congrArg (σ c)
-      apply congrArg f
-      apply eMN₀.injective
-      rw [← Subgroup.coe_inv, heMN₀, eMN₀.apply_symm_apply, eMN₀.apply_symm_apply])
-    -- Transport `eY` through the lifts to an isomorphism of the reductions of `XM` and `XN`
-    -- over `C`, and lift that to `ℤ_p[C]`.
-    let QXM := XM ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A XM)
-    let QXN := XN ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A XN)
-    let _ : Module kG QXM := padicReductionModule p G XM
-    let _ : Module kG QXN := padicReductionModule p G XN
-    let _ : Module kC QXM := .compHom QXM (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
-    let _ : Module kC QXN := .compHom QXN (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
-    let _ : Module kC (XM ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC XM)) :=
-      padicReductionModule p C XM
-    let _ : Module kC (XN ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC XN)) :=
-      padicReductionModule p C XN
-    let eLiftM : QXM ≃ₗ[kC] YMC.asModule := YM.linearEquivAsModuleComp C.subtype
-      (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fM hfM)
-    let eLiftN : QXN ≃ₗ[kC] YNC.asModule := YN.linearEquivAsModuleComp C.subtype
-      (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fN hfN)
-    let eRedC := (padicReductionRestrictLinearEquiv p C C.subtype XM (fun _ _ ↦ rfl)
-      (fun _ _ ↦ rfl)).trans (eLiftM.trans
-        ((TauCeti.Representation.asModuleLinearEquivOfEquiv eY).trans (eLiftN.symm.trans
-          (padicReductionRestrictLinearEquiv p C C.subtype XN (fun _ _ ↦ rfl)
-            (fun _ _ ↦ rfl)).symm)))
-    have := padicReduction_compatibleSMul_padicInt p C (padicReduction_smul p C XM)
-      (padicReduction_smul p C XN)
-    obtain ⟨eX⟩ := nonempty_linearEquiv_of_projective_of_reduction p C XM XN
-      ⟨eRedC.restrictScalars AC⟩
-    -- The `ℤ_p[C]`-linear isomorphism `eX` conjugates the action of `g ∈ C`.
-    have hφA : φA (MonoidAlgebra.single ⟨g, Subgroup.mem_zpowers g⟩ 1) =
-        MonoidAlgebra.single g 1 := by
-      rw [MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
-      rfl
-    have hconj : (eX.restrictScalars ℤ_[p]).conj (Representation.ofModule' XM g) =
-        Representation.ofModule' XN g := LinearMap.ext fun x ↦ by
-      rw [LinearEquiv.conj_apply_apply, TauCeti.Representation.ofModule'_apply,
-        TauCeti.Representation.ofModule'_apply, ← hφA, LinearEquiv.restrictScalars_apply,
-        LinearEquiv.restrictScalars_symm_apply]
-      -- `ℤ_p[C]` acts on `XM` and `XN` through `φA`.
-      exact (eX.map_smul _ _).trans (congrArg _ (eX.apply_symm_apply x))
-    rw [← hconj, LinearMap.trace_conj']
-  obtain ⟨ered⟩ := hred
+    exact natCard_linearMap_reduction_eq_of_tensorRat p M N h S
   have := padicReduction_compatibleSMul_padicInt p G (padicReduction_smul p G M)
     (padicReduction_smul p G N)
   exact nonempty_linearEquiv_of_projective_of_reduction p G M N ⟨ered.restrictScalars A⟩
+
+end
 
 end TauCeti
