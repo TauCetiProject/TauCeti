@@ -13,6 +13,8 @@ public import Mathlib.Combinatorics.Graph.Subgraph
 This file constructs the union of two compatible `Graph`s. Its vertices and edges are the
 set-theoretic unions, and an edge is linked exactly when it is linked in either input graph.
 Compatibility is essential: a shared edge must not acquire two different pairs of endpoints.
+The incident-edge, loop, and nonloop incident-edge sets at a vertex are likewise unions of the
+corresponding sets in the two inputs, without any finiteness assumptions.
 
 The union is the least common supergraph of its inputs. Compatible unions commute, and unions of
 three pairwise compatible graphs associate. These facts let graph constructions grow a subgraph
@@ -112,6 +114,29 @@ theorem union_isNonloopAt_iff (h : G.Compatible H) :
   · rintro (⟨y, hy, hxy⟩ | ⟨y, hy, hxy⟩)
     · exact ⟨y, hy, h.union_isLink.mpr (Or.inl hxy)⟩
     · exact ⟨y, hy, h.union_isLink.mpr (Or.inr hxy)⟩
+
+/-- Incident edge identities in a compatible union are those incident in either input. -/
+@[simp]
+theorem incidenceSet_union (h : G.Compatible H) (x : α) :
+    h.union.incidenceSet x = G.incidenceSet x ∪ H.incidenceSet x := by
+  ext e
+  simp only [mem_incidenceSet, mem_union, h.union_inc_iff]
+
+/-- Loop identities in a compatible union are those that are loops in either input. -/
+@[simp]
+theorem loopSet_union (h : G.Compatible H) (x : α) :
+    h.union.loopSet x = G.loopSet x ∪ H.loopSet x := by
+  ext e
+  simp only [mem_loopSet, mem_union, h.union_isLoopAt_iff]
+
+/-- Compatibility ensures that a shared edge cannot be a loop in just one input. Consequently,
+nonloop incident edges also commute with union. -/
+theorem incidenceSet_sdiff_loopSet_union (h : G.Compatible H) (x : α) :
+    h.union.incidenceSet x \ h.union.loopSet x =
+      (G.incidenceSet x \ G.loopSet x) ∪ (H.incidenceSet x \ H.loopSet x) := by
+  ext e
+  simp only [mem_sdiff, mem_incidenceSet, mem_loopSet, mem_union,
+    ← Graph.isNonloopAt_iff_inc_not_isLoopAt, h.union_isNonloopAt_iff]
 
 /-- The left input is a subgraph of a compatible union. -/
 @[simp]

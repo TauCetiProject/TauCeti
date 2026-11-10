@@ -28,7 +28,7 @@ variable (r : ℕ) (A : Type*) [CommRing A]
 private theorem graph_sign_eq_height_sign (i j : Fin (r + 1)) (hij : i ≠ j) :
     (-1 : A) ^ (i.val + j.val + 1) = (-1 : A) ^ (Nat.dist i.val j.val - 1) :=
   (specialLinearRootSign_mul_swap_eq_neg_one_pow r A i j hij).symm.trans
-    (specialLinearRootSign_mul_swap r A i j hij)
+    (specialLinearRootSign_mul_swap r A i j)
 
 /-- Signed root vectors transform by reversed indices and the interval-height sign. -/
 @[simp]
