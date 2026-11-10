@@ -366,6 +366,13 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
 
+/-- **An algebraic function is regular at every place**: the set of places at which `x` is regular
+is all of them. -/
+theorem setOf_mem_integers_eq_univ {x : F} (hx : IsAlgebraic k x) :
+    {P : Place k F | x ∈ P.integers} = Set.univ :=
+  Set.eq_univ_of_forall fun P ↦
+    P.mem_integers_of_mem_algebraicClosure (mem_algebraicClosure_iff.mpr hx)
+
 /-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
 vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
 that vanishes at `P`. -/

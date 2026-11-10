@@ -18,12 +18,13 @@ import TauCeti.Topology.KrullDimension.Basic
 /-!
 # The two-chart model of a function field is a regular curve
 
-Let `F / k` be an algebraic function field and `x ∈ F` transcendental over `k`. The scheme
+Let `F / k` be an algebraic function field and `x ∈ F` nonzero. The scheme
 `TauCeti.AlgebraicGeometry.twoChartModel hF hx` is glued from `Spec 𝒪_x` and `Spec 𝒪_{x⁻¹}`, where
 `𝒪_x` and `𝒪_{x⁻¹}` are the rings of functions regular wherever `x`, respectively `x⁻¹`, is
-regular. These are the integral closures of `k[x]` and `k[x⁻¹]` in `F`: Dedekind domains that are
-finitely generated `k`-algebras (`TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
-`TauCeti.finiteType_holomorphyRing_setOf_mem`). Reading these properties chart by chart shows
+regular. These are Dedekind domains that are finitely generated `k`-algebras
+(`TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
+`TauCeti.finiteType_holomorphyRing_setOf_mem`, valid for every `x`; for `x` transcendental they are
+the integral closures of `k[x]` and `k[x⁻¹]` in `F`). Reading these properties chart by chart shows
 that the scheme is a curve over `k` in the sense used to compare it with the function field:
 
 * it is locally of finite type over `k` and Noetherian;
@@ -75,31 +76,6 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-/-- If `x` is algebraic over `k`, then it is regular at every place. -/
-private lemma setOf_mem_integers_eq_univ (hxa : IsAlgebraic k x) :
-    {P : Place k F | x ∈ P.integers} = Set.univ :=
-  Set.eq_univ_of_forall fun P ↦
-    P.mem_integers_of_mem_algebraicClosure (_root_.mem_algebraicClosure_iff.mpr hxa)
-
-/-- The functions regular wherever `x` is regular form a finitely generated `k`-algebra, whether
-or not `x` is transcendental: for algebraic `x` this is the finite constant field. -/
-private lemma finiteType_holomorphyRing (hF : IsFunctionField k F) (x : F) :
-    Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
-  by_cases hxa : IsAlgebraic k x
-  · rw [setOf_mem_integers_eq_univ hxa, holomorphyRing_univ hF]
-    have := hF.finiteDimensional_algebraicClosure
-    exact inferInstance
-  · exact finiteType_holomorphyRing_setOf_mem hF hxa
-
-/-- The functions regular wherever `x` is regular form a Dedekind domain, whether or not `x` is
-transcendental: for algebraic `x` this is the constant field. -/
-private lemma isDedekindDomain_holomorphyRing (hF : IsFunctionField k F) (x : F) :
-    IsDedekindDomain (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
-  by_cases hxa : IsAlgebraic k x
-  · rw [setOf_mem_integers_eq_univ hxa, holomorphyRing_univ hF]
-    exact inferInstanceAs (IsDedekindDomain (algebraicClosure k F))
-  · exact isDedekindDomain_holomorphyRing_setOf_mem hF hxa
-
 /-- **The two-chart model is locally of finite type over `k`**: both charts are spectra of
 finitely generated `k`-algebras. -/
 theorem locallyOfFiniteType :
@@ -111,10 +87,10 @@ theorem locallyOfFiniteType :
   cases b
   · rw [chartCover_f_false, ιFinite_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
-      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing hF x))
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF x))
   · rw [chartCover_f_true, ιInfinity_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
-      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing hF x⁻¹))
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF x⁻¹))
 
 /-- **The two-chart model is a Noetherian scheme**: it is of finite type over the field `k` and
 covered by two affine charts. -/
@@ -161,8 +137,8 @@ theorem coheight_le_one (hxt : Transcendental k x) (p : twoChartModel hF hx) :
 domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
 theorem isRegularLocalRing_stalk (p : twoChartModel hF hx) :
     IsRegularLocalRing ((twoChartModel hF hx).presheaf.stalk p) := by
-  have := isDedekindDomain_holomorphyRing hF x
-  have := isDedekindDomain_holomorphyRing hF x⁻¹
+  have := isDedekindDomain_holomorphyRing_setOf_mem hF x
+  have := isDedekindDomain_holomorphyRing_setOf_mem hF x⁻¹
   rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
     ⟨q, rfl⟩ | ⟨q, rfl⟩
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
