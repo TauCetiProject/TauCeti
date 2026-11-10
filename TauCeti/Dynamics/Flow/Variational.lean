@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
 -- Private: parametric integrals, the chain rule and the local-inverse derivative are used only
@@ -37,8 +38,6 @@ compute the first-order dependence of the flow on parameters of the vector field
   `Flow.fderivUnit`, `Flow.ringInverse_fderiv`: for a flow whose time maps are
   differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
   invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
-* `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
-  and conversely.
 * `Flow.fderiv_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
   along.
 * `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
@@ -154,21 +153,6 @@ end Smooth
 end TauCeti
 
 namespace Flow
-
-section Cancel
-
-variable {τ α : Type*} [TopologicalSpace τ] [AddGroup τ] [TopologicalSpace α]
-  (ϕ : Flow τ α)
-
-/-- The time-`(-t)` map undoes the time-`t` map. -/
-theorem map_neg_apply_map (t : τ) (x : α) : ϕ (-t) (ϕ t x) = x := by
-  rw [← ϕ.map_add, neg_add_cancel, ϕ.map_zero_apply]
-
-/-- The time-`t` map undoes the time-`(-t)` map. -/
-theorem map_apply_map_neg (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
-  rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
-
-end Cancel
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ϕ : Flow ℝ E} {s t : ℝ} {x : E}
 
