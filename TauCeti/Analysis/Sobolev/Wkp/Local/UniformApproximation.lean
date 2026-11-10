@@ -106,13 +106,11 @@ theorem exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain
     obtain ⟨η, hη, hvη⟩ := Metric.uniformContinuousOn_iff.1 hvC (ε / 2) (half_pos hε)
     filter_upwards [hphi.eventually (gt_mem_nhds hη)] with j hj x hx
     have hxC : x ∈ cthickening δ K := self_subset_cthickening K hx
-    have hd := (phi j).dist_normed_convolution_le (x₀ := x) (ε := ε / 2)
-      (hloc.aestronglyMeasurable.congr hf.symm) fun y hy => by
-        have hyC : y ∈ cthickening δ K := hball j x (hKU hx) (ball_subset_closedBall hy)
-        rw [indicator_of_mem (hδΩ hyC), indicator_of_mem (hδΩ hxC)]
-        exact (hvη y hyC x hxC ((mem_ball.1 hy).trans hj)).le
-    rw [indicator_of_mem (hKΩ hx)] at hd
-    rw [dist_comm]
+    have hd := Wkp.dist_smoothField_le (phi j) huv
+      (fun y hy => hδΩ (hball j x (hKU hx) (ball_subset_closedBall hy))) fun y hy =>
+        (hvη y (hball j x (hKU hx) (ball_subset_closedBall hy)) x hxC
+          ((mem_ball.1 hy).trans hj)).le
+    rw [hw, ← smoothField_def, dist_comm]
     exact hd.trans_lt (half_lt_self hε)
   · have h := Wkp.tendsto_mollified_iteratedGradient hp hUΩ hphi k u
     rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at h
