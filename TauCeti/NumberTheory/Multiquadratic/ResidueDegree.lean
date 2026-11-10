@@ -108,27 +108,6 @@ theorem isGalois_rat (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) : IsGalois ℚ K :=
   isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) (fun i => by rw [hr i]; simp) htop
 
-/-- **Square-class independent radicands are finitely many.** In a number field, a family of
-square roots `r i` of integers `d i` such that no nonempty subfamily product is a square is
-finite: every finite subfamily of size `n` spans a subfield of degree `2 ^ n`, which is bounded
-by `[K : ℚ]`. -/
-theorem finite_of_forall_not_isSquare_prod (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ))) : Finite ι := by
-  by_contra hinf
-  have := not_finite_iff_infinite.mp hinf
-  obtain ⟨S, hS⟩ := Infinite.exists_subset_card_eq ι (finrank ℚ K + 1)
-  have hr' (i : S) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
-  have hindep' (T : Finset S) (hT : T.Nonempty) : ¬ IsSquare (∏ i ∈ T, (d i : ℚ)) := by
-    simpa [Finset.prod_map] using hindep (T.map (Function.Embedding.subtype _)) (hT.map)
-  have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i : S => (d i : ℚ))
-    (root := fun i : S => r i) hr' hindep'
-  have hle : finrank ℚ (IntermediateField.adjoin ℚ (Set.range fun i : S => r i)) ≤ finrank ℚ K :=
-    Submodule.finrank_le
-      (IntermediateField.adjoin ℚ (Set.range fun i : S => r i)).toSubmodule
-  rw [hdeg, Nat.card_eq_fintype_card, Fintype.card_coe, hS] at hle
-  have := Nat.lt_two_pow_self (n := finrank ℚ K + 1)
-  omega
-
 /-- **Bounding a decomposition exponent by the number of radicands.** Under square-class
 independence, an identity `g * 2 ^ k = [K : ℚ]` forces `k ≤ Nat.card ι`. -/
 theorem le_card_of_mul_two_pow_eq_finrank [Finite ι]
@@ -306,7 +285,8 @@ theorem ncard_primesOver_eq_two_pow_sub_one
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (hnr : ∃ i, legendreSym p (d i) = -1) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) := by
-  have := finite_of_forall_not_isSquare_prod hr hindep
+  have := finite_of_forall_not_isSquare_prod (K := ℚ) (d := fun i => (d i : ℚ)) (root := r)
+    (fun i => by rw [hr i]; simp) hindep
   exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1)
     (by rw [pow_one]; exact ncard_primesOver_mul_two_eq_finrank hr htop hodd hcop hnr)
 
@@ -325,8 +305,7 @@ theorem two_mul_two_pow_le_ncard_primesOver
       (primesOver (span {(q : ℤ)}) (𝓞 (IntermediateField.adjoin ℚ (Set.range root)))).ncard := by
   classical
   have := Fact.mk hq
-  have := finite_of_forall_not_isSquare_prod (d := d) (r := root)
-    (fun i => by rw [hroot i]; simp) hindep
+  have := finite_of_forall_not_isSquare_prod (d := fun i => (d i : ℚ)) hroot hindep
   have hgen := gen_sq_algebraMap_int hroot
   have hfinrank : finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
     finrank_adjoin_range hroot hindep
