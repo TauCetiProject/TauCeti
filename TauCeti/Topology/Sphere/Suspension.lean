@@ -118,7 +118,7 @@ theorem suspensionToSphere_eq_north_iff (p : I × Circle) :
   · intro h
     have h0 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
     simp only [suspensionToSphere_apply_zero] at h0
-    refine cos_pi_mul_injective ?_
+    refine cos_pi_mul_strictAnti.injective ?_
     simpa [Sphere2.north] using h0
   · intro h
     refine Subtype.ext ?_
@@ -133,7 +133,7 @@ theorem suspensionToSphere_eq_south_iff (p : I × Circle) :
   · intro h
     have h0 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
     simp only [suspensionToSphere_apply_zero] at h0
-    refine cos_pi_mul_injective ?_
+    refine cos_pi_mul_strictAnti.injective ?_
     simpa [Sphere2.south] using h0
   · intro h
     refine Subtype.ext ?_
@@ -150,7 +150,7 @@ theorem eq_or_of_suspensionToSphere_eq {p p' : I × Circle}
   have h2 := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 2) h
   simp only [suspensionToSphere_apply_zero, suspensionToSphere_apply_one,
     suspensionToSphere_apply_two] at hc h1 h2
-  have ht : p.1 = p'.1 := cos_pi_mul_injective hc
+  have ht : p.1 = p'.1 := cos_pi_mul_strictAnti.injective hc
   by_cases h0 : p.1 = 0
   · exact Or.inr (Or.inl ⟨h0, ht ▸ h0⟩)
   by_cases h1' : p.1 = 1

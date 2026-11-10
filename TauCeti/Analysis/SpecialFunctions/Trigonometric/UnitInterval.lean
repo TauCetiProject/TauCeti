@@ -11,12 +11,12 @@ public import Mathlib.Topology.UnitInterval
 /-!
 # Trigonometric functions on the unit interval
 
-The cosine `t ↦ cos (π t)` is injective on the unit interval `I`, and the sine `t ↦ sin (π t)` is
-positive on its interior.
+The cosine `t ↦ cos (π t)` is strictly decreasing on the unit interval `I`, and the sine
+`t ↦ sin (π t)` is positive on its interior.
 
 ## Main declarations
 
-* `TauCeti.cos_pi_mul_injective`: `t ↦ cos (π t)` is injective on `I`.
+* `TauCeti.cos_pi_mul_strictAnti`: `t ↦ cos (π t)` is strictly decreasing on `I`.
 * `TauCeti.sin_pi_mul_pos`: `sin (π t) > 0` for `t ∈ I` different from `0` and `1`.
 -/
 
@@ -27,10 +27,10 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-- `t ↦ cos (π t)` is injective on the unit interval. -/
-theorem cos_pi_mul_injective : Function.Injective (fun t : I => cos (π * t)) := by
-  intro a b h
-  refine Subtype.ext (mul_left_cancel₀ pi_ne_zero (Real.injOn_cos ?_ ?_ h))
+/-- `t ↦ cos (π t)` is strictly decreasing on the unit interval. -/
+theorem cos_pi_mul_strictAnti : StrictAnti (fun t : I => cos (π * t)) := by
+  intro a b hab
+  refine strictAntiOn_cos ?_ ?_ (mul_lt_mul_of_pos_left (Subtype.coe_lt_coe.2 hab) pi_pos)
   · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
   · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩
 
