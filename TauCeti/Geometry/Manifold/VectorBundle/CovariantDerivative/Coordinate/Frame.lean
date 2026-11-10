@@ -123,9 +123,10 @@ theorem covariantDerivative_extend_eq_christoffelMap (b : Basis ι 𝕜 E) (v w 
     FiberBundle.mem_baseSet_trivializationAt' x
   have h := covariantDerivative_symm_apply_symm b (cov.isCovariantDerivativeOn
     (s := (trivializationAt E (TangentSpace I) x).baseSet)) hx w v
-  rw [← extend_eq_trivializationAt_symm, TangentBundle.trivializationAt_symm_apply_self] at h
-  exact (congrArg (cov (FiberBundle.extend E w) x)
-    (TangentBundle.trivializationAt_symm_apply_self (I := I) x (v : E)).symm).trans h
+  rw [← extend_eq_trivializationAt_symm] at h
+  -- `v : TangentSpace I x` only matches the lemma's `u : E` when given explicitly.
+  simpa only [TangentBundle.trivializationAt_symm_apply_self,
+    TangentBundle.trivializationAt_symm_apply_self (I := I) x v] using h
 
 end Christoffel
 
