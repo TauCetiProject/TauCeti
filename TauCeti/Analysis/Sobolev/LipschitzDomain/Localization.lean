@@ -133,7 +133,7 @@ theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0
     W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u ∈
       w1p0Submodule volume (normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩) p := by
   rw [W1p.lipschitzChartLocalizeL_apply]
-  apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp
+  apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule
   exact W1p.localizeL_restrictL_mem_w1p0Submodule
     (V := chartEpigraph e h.lipschitzWith.continuous)
     hp hψ hM hψM hgM
