@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Compactness of Floer solutions in a symplectic chart of a manifold
@@ -69,8 +70,7 @@ private theorem chart_hyps (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : �
       K z =ᶠ[𝓝 x] (fun y ↦ K z (φ.symm y)) ∘ φ ∧
       DifferentiableAt ℝ (fun y ↦ K z (φ.symm y)) (φ x) := by
   refine ⟨φ.mdifferentiableAt (by simp) hx, fun w ↦ ?_, ?_, ?_⟩
-  · obtain ⟨v, hv⟩ :=
-      ((φ.isLocalDiffeomorphAt I 𝓘(ℝ, V) _ hx).isInvertible_mfderiv (by simp)).surjective w
+  · obtain ⟨v, hv⟩ := (φ.isInvertible_mfderiv (by simp) hx).surjective w
     exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
   · filter_upwards [φ.open_source.mem_nhds hx] with y hy
     exact congrArg (K z) (φ.toPartialEquiv.left_inv hy).symm

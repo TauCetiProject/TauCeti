@@ -26,23 +26,22 @@ Floer equation of a symplectic vector space, with the same energy density. This 
 analysis of `TauCeti.Geometry.Symplectic.Floer`, carried out for a symplectic vector space target,
 applies to a manifold target.
 
-* The differential of `φ` is injective at `x`, since it pulls back the nondegenerate form `ω₀` to
-  the nondegenerate form `ω_x` (`TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`).
-* If `dφ_x` is also surjective, it carries the Hamiltonian vector field of `g ∘ φ` at `x` to the
-  Hamiltonian vector field of `g` for `ω₀` at `φ x`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`). This is a
-  pointwise form of the naturality of Hamiltonian vector fields
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), which asks for a
-  globally defined smooth map.
+The pointwise symplectic linear algebra of such a map is in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Manifold`: `dφ_x` is injective
+(`TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`), and if it is also surjective it
+carries the Hamiltonian vector field of `g ∘ φ` at `x` to the Hamiltonian vector field of `g` for
+`ω₀` at `φ x` (`TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_hamiltonianVectorField_comp`) and a
+structure `J` tamed by `ω_x` to a structure tamed by `ω₀`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`). This file applies
+them to the Floer equation.
+
 * For `u : ℝ × ℝ → M` with `u z = x`, the perturbed derivative `d(φ ∘ u) - X_{K'}` of the coordinate
   map is `dφ_x ∘ (du - X_K)` (`TauCeti.SmoothTwoForm.IsNondegenerate.perturbedFDeriv_comp`), and
   the Floer energy densities agree
   (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_comp`).
 * If `dφ_x ∘ J = J' ∘ dφ_x`, that is, `J'` is the structure `J` read in the chart, then `φ ∘ u`
   solves the coordinate Floer equation for `J'` at `z` exactly when `u` solves the Floer equation
-  for `J` (`TauCeti.SmoothTwoForm.IsNondegenerate.isComplexLinearMap_perturbedFDeriv_comp_iff`),
-  and `J'` is tamed by `ω₀` when `J` is tamed by `ω_x`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`).
+  for `J` (`TauCeti.SmoothTwoForm.IsNondegenerate.isComplexLinearMap_perturbedFDeriv_comp_iff`).
 
 All statements are pointwise and need differentiability only at the point; the chart is any map
 with the pullback property there, not necessarily a chart of the manifold structure.
@@ -62,55 +61,9 @@ namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
 variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (⊤ : ℕ∞) M] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {φ : M → V} {x : M}
-
-/-- **A symplectic chart is an immersion.** If `φ` pulls the symplectic form `ω₀` back to the
-nondegenerate form `ω` at `x`, its differential at `x` is injective. -/
-theorem injective_mvfderiv (hω : ω.IsNondegenerate)
-    (hform : ∀ v w : TangentSpace I x, ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w)) :
-    Injective (mvfderiv I φ x) := by
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  -- `v` pairs to zero with every tangent vector, so it vanishes by nondegeneracy of `ω_x`.
-  refine (hω.symplecticFormAt x).separatingLeft v fun w ↦ ?_
-  have h := (hω.symplecticFormAt_apply x v w).trans (hform v w)
-  rw [hv] at h
-  exact h.trans (LinearMap.map_zero₂ _ _)
-
-/-- **Taming in a symplectic chart.** Let `φ` have surjective differential at `x` and pull the
-symplectic form `ω₀` back to the nondegenerate form `ω` at `x`. If `J` is tamed by `ω_x` and `J'`
-is `J` read in the chart, `dφ ∘ J = J' ∘ dφ`, then `J'` is tamed by `ω₀`. -/
-theorem tames_of_isComplexLinearMap_mvfderiv (hω : ω.IsNondegenerate)
-    (hsurj : Surjective (mvfderiv I φ x))
-    (hform : ∀ v w : TangentSpace I x, ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    {J : AlmostComplexStructure (TangentSpace I x)} {J' : AlmostComplexStructure V}
-    (hJ : IsComplexLinearMap J J' (mvfderiv I φ x).toLinearMap)
-    (hJt : (hω.symplecticFormAt x).Tames J) : ω₀.Tames J' := by
-  intro w hw
-  obtain ⟨v, rfl⟩ := hsurj w
-  have hJv := LinearMap.congr_fun hJ v
-  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
-  rw [← hJv, ← hform, ← symplecticFormAt_apply]
-  exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
-
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V]
-
-/-- **Hamiltonian vector fields in a symplectic chart.** Let `φ` be differentiable at `x`, with
-surjective differential there, and pull the symplectic form `ω₀` back to the nondegenerate form
-`ω` at `x`. For a function `g` differentiable at `φ x`, the differential of `φ` carries the
-Hamiltonian vector field of `g ∘ φ` at `x` to the Hamiltonian vector field of `g` for `ω₀` at
-`φ x`. -/
-theorem mvfderiv_hamiltonianVectorField_comp (hω : ω.IsNondegenerate)
-    (hφ : MDifferentiableAt I 𝓘(ℝ, V) φ x) (hsurj : Surjective (mvfderiv I φ x))
-    (hform : ∀ v w : TangentSpace I x, ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    {g : V → ℝ} (hg : DifferentiableAt ℝ g (φ x)) :
-    mvfderiv I φ x (ω.hamiltonianVectorField (g ∘ φ) x) = ω₀.hamiltonianVectorField g (φ x) := by
-  refine (ω₀.eq_hamiltonianVectorField_iff g (φ x) _).2 fun w ↦ ?_
-  obtain ⟨v, rfl⟩ := hsurj w
-  -- Both sides are `d(g ∘ φ)_x v`: the left one because `φ` pulls `ω₀` back to `ω`.
-  rw [← hform, hω.eval₂_hamiltonianVectorField, mvfderiv_comp_apply_of_differentiableAt hg hφ]
-
-variable {Ks Kt : ℝ × ℝ → M → ℝ} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → M} {z : ℝ × ℝ}
+  [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [FiniteDimensional ℝ V] {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {φ : M → V}
+  {Ks Kt : ℝ × ℝ → M → ℝ} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → M} {z : ℝ × ℝ}
 
 /-- **The perturbed derivative in a symplectic chart.** Let `φ` be differentiable at `u z` with
 surjective differential there, pulling the symplectic form `ω₀` back to the nondegenerate form `ω`
