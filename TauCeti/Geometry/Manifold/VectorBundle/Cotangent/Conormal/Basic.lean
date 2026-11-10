@@ -220,41 +220,44 @@ theorem conormal_comp_of_surjective {g : P → Q} {i : Q → M}
 
 /-- **The conormal set does not depend on the parametrization.** Precomposing a differentiable
 map with a diffeomorphism of its source does not change its conormal set. -/
-theorem conormal_comp_diffeomorph [IsManifold J 2 Q] [IsManifold K 2 P] (φ : P ≃ₘ⟮K, J⟯ Q)
-    {i : Q → M} (hi : MDifferentiable J I i) : conormal K I (i ∘ φ) = conormal J I i := by
-  ext w
-  simp only [mem_conormal_iff_exists_cotangentRel]
-  constructor
-  · rintro ⟨p, hp⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (φ.mdifferentiable (by simp) p) (hi _)] at hp
-    obtain ⟨z, hz, hzw⟩ := hp
-    rw [cotangentRel_diffeomorph_iff, Diffeomorph.cotangent_zeroSection] at hz
-    subst hz
-    exact ⟨φ p, hzw⟩
-  · rintro ⟨q, hq⟩
-    refine ⟨φ.symm q, ?_⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (φ.mdifferentiable (by simp) _) (hi _)]
-    refine ⟨_, (cotangentRel_diffeomorph_iff _ _ φ _ _).mpr (Diffeomorph.cotangent_zeroSection φ _),
-      ?_⟩
-    rw [φ.apply_symm_apply]
-    exact hq
+theorem conormal_comp_diffeomorph (φ : P ≃ₘ⟮K, J⟯ Q) {i : Q → M}
+    (hi : MDifferentiable J I i) : conormal K I (i ∘ φ) = conormal J I i :=
+  conormal_comp_of_surjective (φ.mdifferentiable (by simp)) hi φ.surjective fun p v ↦
+    ⟨mfderiv J K φ.symm (φ p) v, φ.mfderiv_apply_mfderiv_symm_apply (by simp) p v⟩
 
 /-- **Cotangent lifts carry conormal sets to conormal sets.** For a diffeomorphism `h : M → M₂`,
-the cotangent lift of `h` maps the conormal set of a differentiable map `i` onto the conormal
+the cotangent lift of `h` maps the conormal set of a map `i` onto the conormal
 set of `h ∘ i`. -/
 theorem image_cotangent_conormal [IsManifold I 2 M] [IsManifold I₂ 2 M₂] (h : M ≃ₘ⟮I, I₂⟯ M₂)
-    {i : Q → M} (hi : MDifferentiable J I i) :
-    h.cotangent '' conormal J I i = conormal J I₂ (h ∘ i) := by
+    {i : Q → M} : h.cotangent '' conormal J I i = conormal J I₂ (h ∘ i) := by
+  -- The differential of `h ∘ i` is `dh ∘ di`, also where `i` is not differentiable.
+  have hcomp (q : Q) : mfderiv J I₂ (h ∘ i) q = (mfderiv I I₂ h (i q)).comp (mfderiv J I i q) := by
+    by_cases hi : MDifferentiableAt J I i q
+    · exact mfderiv_comp q (h.mdifferentiable (by simp) _) hi
+    · have hhi : ¬ MDifferentiableAt J I₂ (h ∘ i) q := fun hd ↦ hi (by
+        have := (h.symm.mdifferentiable (by simp) _).comp q hd
+        simpa [Function.comp_def] using this)
+      rw [mfderiv_zero_of_not_mdifferentiableAt hhi, mfderiv_zero_of_not_mdifferentiableAt hi]
+      ext
+      simp
   ext w
-  simp only [mem_conormal_iff_exists_cotangentRel, mem_image]
+  simp only [mem_conormal_iff, mem_image]
   constructor
-  · rintro ⟨z, ⟨q, hq⟩, rfl⟩
-    refine ⟨q, ?_⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (hi _) (h.mdifferentiable (by simp) _)]
-    exact ⟨z, hq, (cotangentRel_diffeomorph_iff _ _ h _ _).mpr rfl⟩
-  · rintro ⟨q, hq⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (hi _) (h.mdifferentiable (by simp) _)] at hq
-    obtain ⟨z, hz, hzw⟩ := hq
-    exact ⟨z, ⟨q, hz⟩, (cotangentRel_diffeomorph_iff _ _ h _ _).mp hzw⟩
+  · rintro ⟨⟨x, α⟩, ⟨q, hq, hz⟩, rfl⟩
+    obtain rfl : i q = x := hq
+    refine ⟨q, (h.proj_cotangent ⟨i q, α⟩).symm, ?_⟩
+    ext v
+    rw [hcomp q]
+    exact (h.cotangent_snd_apply_mfderiv ⟨i q, α⟩ _).trans (DFunLike.congr_fun hz v)
+  · rintro ⟨q, hq, hw⟩
+    obtain ⟨y, β⟩ := w
+    obtain rfl : h (i q) = y := hq
+    refine ⟨TotalSpace.mk' (E →L[𝕜] 𝕜) (i q) (β ∘L mfderiv I I₂ h (i q)),
+      ⟨q, rfl, ?_⟩, ?_⟩
+    · rw [hcomp q] at hw
+      exact hw
+    · refine CotangentBundle.ext (h.proj_cotangent _) fun v ↦ ?_
+      exact (h.cotangent_snd_apply _ v).trans
+        (congrArg β (h.mfderiv_apply_mfderiv_symm_apply (by simp) (i q) v))
 
 end TauCeti.CotangentBundle
