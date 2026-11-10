@@ -34,6 +34,10 @@ common compact support, are statements about this map.
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
+* `BesselPotentialSpace.inclusion_injective`, `BesselPotentialSpace.toLp_inclusion_injective`: it
+  is injective, and an element is determined by the `L²` function of its inclusion.
+* `BesselPotentialSpace.toLp_inclusion_zero`: for `s ≥ 0`, the inclusion into `H^0(E, F) = L²`
+  exhibits every element of `H^s(E, F)` as an `L²` function.
 -/
 
 public section
@@ -136,5 +140,24 @@ theorem inclusion_toBesselPotentialSpaceCLM (h : r ≤ s) (u : 𝓢(E, F)) :
     inclusion h (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
       SchwartzMap.toBesselPotentialSpaceCLM r 2 u :=
   ext (by simp)
+
+/-- The inclusion `H^s ⊆ H^r` is injective. -/
+theorem inclusion_injective (h : r ≤ s) :
+    Function.Injective (inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F)) := fun u v huv ↦
+  ext (by rw [← toDistr_inclusion h u, huv, toDistr_inclusion])
+
+/-- An element of `H^s(E, F)` is determined by the `L²` function of its inclusion into `H^r(E, F)`.
+For `r = 0` this is the `L²` function of the element itself (`toLp_inclusion_zero`). -/
+theorem toLp_inclusion_injective (h : r ≤ s) :
+    Function.Injective fun u : H^{s}(E, F) ↦ (inclusion h u).toLp :=
+  (injective_toLp E F r 2).comp (inclusion_injective h)
+
+/-- **Elements of `H^s`, `s ≥ 0`, are `L²` functions.** The `L²` function underlying the
+inclusion of `u ∈ H^s(E, F)` into `H^0(E, F)` has the tempered distribution `u`. -/
+@[simp]
+theorem toLp_inclusion_zero (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    ((inclusion h u).toLp : 𝓢'(E, F)) = u := by
+  rw [← (inclusion h u).bessel_toDistr_eq_toLp]
+  simp [besselPotential_zero]
 
 end BesselPotentialSpace
