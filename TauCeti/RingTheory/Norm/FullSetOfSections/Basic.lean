@@ -73,7 +73,7 @@ sections be checked locally on `Spec A` and transported along changes of base.
   fullness on a finite disjoint union is equivalent to fullness on each component
   (Katz–Mazur 1.8.4).
 
-In the remaining results, `B` is free of finite rank over `A`.
+In the next results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq_prod`: the norm of a function on `Spec B` is the product
   of its values at a full set of sections.
@@ -84,10 +84,17 @@ In the remaining results, `B` is free of finite rank over `A`.
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
 * `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
+
+The next two results assume only that `B` is free over `A`; the second also assumes that `A` is
+nontrivial.
+
 * `TauCeti.IsFullSetOfSections.finite_of_nonempty`: a free algebra with a nonempty full set of
-  sections is finite.
+  sections is finitely generated as a module.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
+
+In the remaining results, `B` is free of finite rank over `A`.
+
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
   of the constant scheme `⨆_{i ∈ ι} Spec A`, form a full set of sections.
 * `TauCeti.IsFullSetOfSections.tensorProduct`: full sets of sections `s₁` of `B₁` and `s₂` of
@@ -477,11 +484,11 @@ section NonFinite
 variable [Module.Free A B] [Nontrivial A]
 
 omit [Nontrivial A] in
-/-- A free algebra with a nonempty full set of sections is finite: over the zero ring every
-module is trivial, and over a nontrivial ring, for an algebra that is not finite the norm is `1`,
-which contradicts the vanishing of the norm of `0` at a section. -/
+/-- A free algebra with a nonempty full set of sections is finitely generated as a module. -/
 theorem IsFullSetOfSections.finite_of_nonempty [Nonempty ι] (h : IsFullSetOfSections s) :
     Module.Finite A B := by
+  -- Over the zero ring every module is trivial. Over a nontrivial ring, if `B` is not finite then
+  -- the norm is `1`, which contradicts the vanishing of the norm of `0` at a section.
   rcases subsingleton_or_nontrivial A with hA | hA
   · have := Module.subsingleton A B
     exact Module.Finite.of_finite
