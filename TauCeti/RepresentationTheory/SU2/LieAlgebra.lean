@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import Mathlib.Algebra.Lie.TraceForm
 import TauCeti.RepresentationTheory.Continuous.Subrepresentation
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # Pauli coordinates on the native Lie algebra of SU(2)
@@ -200,13 +201,8 @@ theorem coe_adjointRepresentation_apply (g : SU2) (X : 𝔰𝔲₂) :
 @[fun_prop]
 theorem continuous_adjointRepresentation : Continuous adjointRepresentation := by
   apply ContRepresentation.continuous_subrepresentation
-  have hu : Continuous unitsHom := by
-    apply Units.continuous_iff.mpr
-    constructor
-    · exact (continuous_subtype_val : Continuous fun g : SU2 ↦
-        (g : Matrix (Fin 2) (Fin 2) ℂ))
-    · exact continuous_star.comp
-        (continuous_subtype_val : Continuous fun g : SU2 ↦ (g : Matrix (Fin 2) (Fin 2) ℂ))
+  have hu : Continuous unitsHom := Unitary.continuous_toUnits.comp
+    (continuous_inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
   exact (contMDiff_continuousAdjointRepresentation
     (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
     (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).continuous.comp hu
