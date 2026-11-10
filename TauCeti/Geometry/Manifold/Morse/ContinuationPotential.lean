@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.ContinuationPotential
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -37,7 +36,8 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 * **Morse on the slab.** If `f₀` and `f₁` are Morse, `F` is a Morse function on `M × [0, 1]`.
   On a compact manifold every sufficiently large constant `C` works
   (`TauCeti.exists_forall_lt_isMorseOn_continuationPotential`), because the time derivative
-  `∂ₜ f` is bounded on the compact inner slab `M × [δ, 1 - δ]` and vanishes outside it.
+  `∂ₜ f` is bounded on the compact inner slab `M × [δ, 1 - δ]` and vanishes outside it. The
+  continuity of `∂ₜ f` is `ContMDiff.continuous_deriv_prodMk`.
 
 ## Main results
 
@@ -50,8 +50,6 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 * `TauCeti.manifoldMorseIndex_continuationPotential_zero` and
   `TauCeti.manifoldMorseIndex_continuationPotential_one`: the index shifts `+1` and `0`.
 * `TauCeti.isMorseOn_continuationPotential`: `F` is Morse on the slab.
-* `ContMDiff.continuous_deriv_prodMk`: the time derivative of a `C¹` function on `M × ℝ` is
-  continuous.
 * `TauCeti.exists_forall_lt_isMorseOn_continuationPotential`: on a compact manifold, `F` is Morse
   on the slab for every large constant.
 
@@ -82,15 +80,6 @@ theorem continuationPotential_comp_extChartAt_symm (z : M × ℝ) :
   funext u
   simp only [comp_apply, continuationPotential_apply, extChartAt_prod_modelSpace_symm_apply]
 
-/-- The time slice of the coordinate expression of `f` through the chart image of a point `x` of
-the chart source is the time slice of `f` through `x`. -/
-private theorem comp_extChartAt_symm_prodMk_left (z : M × ℝ) {x : M}
-    (hx : x ∈ (extChartAt I z.1).source) :
-    (fun s ↦ (f ∘ (extChartAt (I.prod 𝓘(ℝ)) z).symm) ((extChartAt I z.1 x, s))) =
-      fun s ↦ f (x, s) := by
-  funext s
-  simp only [comp_apply, extChartAt_prod_modelSpace_symm_apply, (extChartAt I z.1).left_inv hx]
-
 /-- The space slice of the coordinate expression of `f` at time `s` is the coordinate expression
 of the space slice of `f` at time `s`. -/
 private theorem comp_extChartAt_symm_prodMk_right (z : M × ℝ) (s : ℝ) :
@@ -98,27 +87,6 @@ private theorem comp_extChartAt_symm_prodMk_right (z : M × ℝ) (s : ℝ) :
       (fun x ↦ f (x, s)) ∘ (extChartAt I z.1).symm := by
   funext v
   simp only [comp_apply, extChartAt_prod_modelSpace_symm_apply]
-
-/-- **The time derivative in coordinates.** At the chart image of a point `(x, s)` of the chart
-source, the derivative of the coordinate expression of `f` in the time direction `(0, 1)` is the
-derivative of the time slice of `f` through `x`. -/
-private theorem fderiv_comp_extChartAt_symm_apply_zero_one {z : M × ℝ} {x : M} {s : ℝ}
-    (hx : x ∈ (extChartAt I z.1).source)
-    (hf : DifferentiableAt ℝ (f ∘ (extChartAt (I.prod 𝓘(ℝ)) z).symm) (extChartAt I z.1 x, s)) :
-    fderiv ℝ (f ∘ (extChartAt (I.prod 𝓘(ℝ)) z).symm) (extChartAt I z.1 x, s) (0, 1) =
-      deriv (fun s' ↦ f (x, s')) s := by
-  have h : HasDerivAt (fun s' : ℝ ↦ (extChartAt I z.1 x, s')) ((0 : E), (1 : ℝ)) s :=
-    HasDerivAt.prodMk (hasDerivAt_const _ _) (hasDerivAt_id _)
-  rw [← comp_extChartAt_symm_prodMk_left z hx]
-  exact ((hf.hasFDerivAt.comp_hasDerivAt s h).deriv).symm
-
-/-- A function on `M × ℝ` independent of the time near `(x, t₀)` has zero time derivative at
-`(x, t₀)`. -/
-private theorem deriv_eq_zero_of_eventually_eq {x : M} {t₀ : ℝ}
-    (hf : ∀ᶠ z in 𝓝 (x, t₀), f z = f (z.1, t₀)) : deriv (fun s ↦ f (x, s)) t₀ = 0 := by
-  have h : (fun s ↦ f (x, s)) =ᶠ[𝓝 t₀] fun _ ↦ f (x, t₀) :=
-    ((continuous_const.prodMk continuous_id).tendsto t₀).eventually hf
-  rw [h.deriv_eq, deriv_const]
 
 /-- A function on `M × ℝ` independent of the time near `(p, t₀)` has a coordinate expression
 independent of the time near the chart image of `(p, t₀)`. -/
@@ -265,8 +233,8 @@ theorem isMorseOn_continuationPotential (hC : C ≠ 0) (hf : ContMDiff (I.prod �
   -- At the two ends `f` is independent of the time, so its time derivative vanishes there.
   have hend : t ∉ Ioo 0 1 → deriv (fun s ↦ f (x, s)) t = 0 := fun hto ↦ by
     rcases eq_endpoints_or_mem_Ioo_of_mem_Icc ht with rfl | rfl | h
-    · exact deriv_eq_zero_of_eventually_eq (hf₀ x)
-    · exact deriv_eq_zero_of_eventually_eq (hf₁ x)
+    · exact deriv_prodMk_eq_zero_of_eventually_eq (hf₀ x)
+    · exact deriv_prodMk_eq_zero_of_eventually_eq (hf₁ x)
     · exact absurd h hto
   obtain ⟨rfl | rfl, hx⟩ := (mem_criticalPoints_continuationPotential_iff_of_mem_Icc
     (hf.mdifferentiableAt (by simp)) ht (hlt x t) hend).1 hcrit
@@ -276,29 +244,6 @@ theorem isMorseOn_continuationPotential (hC : C ≠ 0) (hf : ContMDiff (I.prod �
       (h₁.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx)
 
 /-! ### The choice of the constant on a compact manifold -/
-
-/-- **The time derivative of a `C¹` function on `M × ℝ` is continuous.** The map
-`(x, t) ↦ ∂ₜ f (x, t)` is continuous; near each point it is the derivative of the coordinate
-expression of `f` in the time direction, which is unchanged by the charts. -/
-theorem _root_.ContMDiff.continuous_deriv_prodMk (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) 1 f) :
-    Continuous fun z : M × ℝ ↦ deriv (fun s ↦ f (z.1, s)) z.2 := by
-  refine continuous_iff_continuousAt.2 fun z₀ ↦ ?_
-  set G := f ∘ (extChartAt (I.prod 𝓘(ℝ)) z₀).symm with hG
-  have hG₀ : ContDiffAt ℝ 1 G (extChartAt I z₀.1 z₀.1, z₀.2) := by
-    simpa [hG, extChartAt_prod_modelSpace_apply] using
-      contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.1 (hf z₀)
-  -- The chart image of `(x, t)`, which tends to that of `z₀`.
-  have hφ : ContinuousAt (fun z : M × ℝ ↦ (extChartAt I z₀.1 z.1, z.2)) z₀ :=
-    ((continuousAt_extChartAt z₀.1).comp continuousAt_fst).prodMk continuousAt_snd
-  have hsrc : ∀ᶠ z : M × ℝ in 𝓝 z₀, z.1 ∈ (extChartAt I z₀.1).source :=
-    continuousAt_fst.preimage_mem_nhds (extChartAt_source_mem_nhds z₀.1)
-  -- Near `z₀`, the time derivative is the derivative of `G` in the time direction.
-  have heq : (fun z : M × ℝ ↦ fderiv ℝ G (extChartAt I z₀.1 z.1, z.2) (0, 1)) =ᶠ[𝓝 z₀]
-      fun z ↦ deriv (fun s ↦ f (z.1, s)) z.2 := by
-    filter_upwards [hsrc, hφ.eventually (hG₀.eventually (by simp))] with z hz hzG
-    exact fderiv_comp_extChartAt_symm_apply_zero_one hz (hzG.differentiableAt one_ne_zero)
-  refine ContinuousAt.congr ?_ heq
-  exact ((hG₀.continuousAt_fderiv one_ne_zero).comp_of_eq hφ rfl).clm_apply continuousAt_const
 
 /-- **The choice of the constant on a compact manifold.** Let `f` be a smooth function on `M × ℝ`,
 for a compact manifold `M`, with `f (x, t) = f (x, 0)` for `t < δ` and `f (x, t) = f (x, 1)` for
@@ -323,9 +268,9 @@ theorem exists_forall_lt_isMorseOn_continuationPotential [CompactSpace M]
     ((hf.of_le (m := 1) (by simp)).continuous_deriv_prodMk.continuousOn)
     fun x _ t _ ht ↦ by
       rcases lt_or_ge t δ with htδ | htδ
-      · exact (deriv_eq_zero_of_eventually_eq (hgerm₀ x t htδ)).le
+      · exact (deriv_prodMk_eq_zero_of_eventually_eq (hgerm₀ x t htδ)).le
       · have h1 : 1 - δ < t := lt_of_not_ge fun h ↦ ht ⟨htδ, h⟩
-        exact (deriv_eq_zero_of_eventually_eq (hgerm₁ x t h1)).le
+        exact (deriv_prodMk_eq_zero_of_eventually_eq (hgerm₁ x t h1)).le
   refine ⟨K, fun C hKC ↦ isMorseOn_continuationPotential (hK.trans_lt hKC).ne' hf h₀ h₁
     (fun x ↦ by simpa using hgerm₀ x 0 hδ) (fun x ↦ by simpa using hgerm₁ x 1 (by linarith))
     fun x t ht ↦ ?_⟩
