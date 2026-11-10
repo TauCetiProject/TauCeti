@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -29,7 +30,7 @@ on the position variable of `a` or on the phase, and a derivative in `y` falls o
 
 `∂ K_a(x, y) · (h, h') = K_{∂ₓ a · h}(x, y) + K_{i ⟪ξ, h - h'⟫ a}(x, y)`.
 
-The factor `⟪ξ, v⟫` is a symbol of order one (`TauCeti.Symbol.frequencyInner`), so each
+The factor `⟪ξ, v⟫` is a symbol of order one (`TauCeti.Symbol.ofInner`), so each
 derivative costs one order of decay, and `K_a` is `C^k` whenever `m + k < -n`. In particular the
 kernel of a smoothing symbol is smooth.
 
@@ -45,7 +46,6 @@ as regular as wanted.
 * `TauCeti.Symbol.differentiable_quantizationKernel` and
   `TauCeti.Symbol.fderiv_quantizationKernel_apply`: for a symbol of order `m` with `m + 1 < -n`,
   the kernel is differentiable, with the derivative displayed above.
-* `TauCeti.Symbol.frequencyInner`: the symbol `⟪ξ, v⟫` of order one.
 * `TauCeti.Symbol.contDiff_quantizationKernel`: the kernel of a symbol of order `m` is `C^k`
   when `m + k < -n`.
 * `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
@@ -235,52 +235,6 @@ private lemma hasFDerivAt_integral_kernelIntegrand {m : ℝ}
 
 variable {m : ℝ}
 
-/-- The frequency monomial `⟪ξ, v⟫`, acting on `V` by scalar multiplication, as a symbol of order
-one. Up to the factor `i`, it is the symbol of the directional derivative `∂_v`. -/
-def frequencyInner (v : CoordinateSpace n) : Symbol n V V 1 where
-  coefficient p := (⟪p.2, v⟫ : ℂ) • ContinuousLinearMap.id ℂ V
-  contDiff_coefficient :=
-    (Complex.ofRealCLM.contDiff.comp (contDiff_snd.inner ℝ contDiff_const)).smul contDiff_const
-  exists_bound K _ α β := by
-    -- the coefficient is the continuous linear map `L` of the frequency
-    set L : CoordinateSpace n →L[ℝ] V →L[ℂ] V :=
-      (Complex.ofRealCLM.comp (innerSL ℝ v)).smulRight (ContinuousLinearMap.id ℂ V)
-    have hL (ξ : CoordinateSpace n) : L ξ = (⟪ξ, v⟫ : ℂ) • ContinuousLinearMap.id ℂ V := by
-      simp [L, real_inner_comm]
-    have hnorm (ξ : CoordinateSpace n) : ‖L ξ‖ ≤ ‖v‖ * ‖ξ‖ := by
-      rw [hL]
-      refine (opNorm_smul_le _ _).trans ?_
-      rw [Complex.norm_real, Real.norm_eq_abs]
-      calc |⟪ξ, v⟫| * ‖ContinuousLinearMap.id ℂ V‖ ≤ (‖ξ‖ * ‖v‖) * 1 :=
-            mul_le_mul (abs_real_inner_le_norm _ _) norm_id_le (norm_nonneg _) (by positivity)
-        _ = ‖v‖ * ‖ξ‖ := by ring
-    refine ⟨‖v‖, norm_nonneg _, fun x _ ξ ↦ ?_⟩
-    have hβ : mixedDeriv α β (fun p : CoordinateSpace n × CoordinateSpace n ↦
-        (⟪p.2, v⟫ : ℂ) • ContinuousLinearMap.id ℂ V) x ξ =
-          mixedDeriv α β (fun p ↦ L p.2) x ξ := by simp only [hL]
-    rw [hβ, mixedDeriv_def]
-    dsimp only
-    rcases α with _ | ⟨i, α⟩
-    · rw [coordinateDeriv_nil]
-      rcases β with _ | ⟨k, _ | ⟨k', β⟩⟩
-      · simp only [coordinateDeriv_nil, List.length_nil, Nat.cast_zero, sub_zero]
-        refine (hnorm ξ).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-        simpa [one_div] using one_add_norm_sq_rpow_mul_norm_le ξ 0
-      · simp only [L.coordinateDeriv_singleton, List.length_singleton, Nat.cast_one, sub_self,
-          zero_div, Real.rpow_zero, mul_one]
-        exact (hnorm _).trans (by simp)
-      · rw [L.coordinateDeriv_cons_cons, Pi.zero_apply, norm_zero]
-        exact mul_nonneg (norm_nonneg _) (rpow_weight_pos ξ _).le
-    · rw [coordinateDeriv_const _ (List.cons_ne_nil i α), Pi.zero_apply, norm_zero]
-      exact mul_nonneg (norm_nonneg _) (rpow_weight_pos ξ _).le
-
-@[simp]
-theorem coefficient_frequencyInner (v : CoordinateSpace n)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (frequencyInner v : Symbol n V V 1).coefficient p =
-      (⟪p.2, v⟫ : ℂ) • ContinuousLinearMap.id ℂ V :=
-  (rfl)
-
 /-! ### Differentiation of the kernel of a symbol -/
 
 private lemma uncurry_quantizationKernel_eq (a : Symbol n V W m) :
@@ -384,17 +338,17 @@ theorem contDiff_quantizationKernel (a : Symbol n V W m) {k : ℕ} (hk : m + k <
       contDiff_clm_apply_iff.2 fun q ↦ ?_⟩
     -- each directional derivative is the sum of the kernels of two symbols of order `m + 1`
     have h₁ := ih (∑ j, (q.1 j : ℂ) • spatialDeriv j a) (by linarith)
-    have h₂ := ih (Complex.I • (frequencyInner (V := W) (q.1 - q.2)).comp a) (by linarith)
+    have h₂ := ih (Complex.I • (ofInner (V := W) (q.1 - q.2)).comp a) (by linarith)
     have heq : (fun p ↦ fderiv ℝ (Function.uncurry (quantizationKernel a.coefficient)) p q) =
         Function.uncurry (quantizationKernel (∑ j, (q.1 j : ℂ) • spatialDeriv j a).coefficient) +
           Function.uncurry (quantizationKernel
-            (Complex.I • (frequencyInner (V := W) (q.1 - q.2)).comp a).coefficient) := by
+            (Complex.I • (ofInner (V := W) (q.1 - q.2)).comp a).coefficient) := by
       funext p
       rw [a.fderiv_quantizationKernel_apply hm p q, Pi.add_apply, Function.uncurry_def,
         Function.uncurry_def]
       congr 2 <;> funext r
       · rw [coefficient_sum_smul_spatialDeriv]
-      · simp only [coefficient_smul, Pi.smul_apply, coefficient_comp, coefficient_frequencyInner,
+      · simp only [coefficient_smul, Pi.smul_apply, coefficient_comp, coefficient_ofInner,
           ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_smul]
     rw [heq]
     exact h₁.add h₂
