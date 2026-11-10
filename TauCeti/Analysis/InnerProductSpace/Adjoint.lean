@@ -20,7 +20,9 @@ An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
 by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
-(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
+(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`); in particular a real
+number at which a self-adjoint operator is bounded below is not in its spectrum
+(`IsSelfAdjoint.notMem_spectrum_of_forall_mul_norm_le`). If an invertible
 operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
 (`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
@@ -109,6 +111,23 @@ theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M
   have hunit : IsUnit T := isUnit_iff_bijective.mpr
     ((bijective_iff_dense_range_and_antilipschitz T).mpr ⟨hdense, _, hanti⟩)
   exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
+
+/-- A real number at which a self-adjoint operator on a Hilbert space is bounded below is not in
+its spectrum: the shifted operator is self-adjoint, so its adjoint is injective as well. -/
+theorem _root_.IsSelfAdjoint.notMem_spectrum_of_forall_mul_norm_le {T : E →L[𝕜] E}
+    (hT : IsSelfAdjoint T) {r c : ℝ} (hc : 0 < c) (h : ∀ x, c * ‖x‖ ≤ ‖T x - (r : 𝕜) • x‖) :
+    (r : 𝕜) ∉ spectrum 𝕜 T := by
+  set S := algebraMap 𝕜 (E →L[𝕜] E) r - T
+  have hS : IsSelfAdjoint S := (IsSelfAdjoint.algebraMap _ (RCLike.conj_ofReal r)).sub hT
+  have hb : ∀ x, ‖x‖ ≤ c⁻¹ * ‖S x‖ := fun x ↦ by
+    rw [le_inv_mul_iff₀ hc]
+    simpa [S, norm_sub_rev] using h x
+  have hinj : Function.Injective (adjoint S) := by
+    rw [← star_eq_adjoint, hS.star_eq, injective_iff_map_eq_zero]
+    intro x hx
+    simpa [hx] using hb x
+  exact spectrum.notMem_iff.2 (isUnit_and_norm_ringInverse_le_of_forall_norm_le
+    (inv_nonneg.2 hc.le) hb hinj).1
 
 /-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
 @[simp]

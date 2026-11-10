@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
-public import TauCeti.Analysis.Fredholm.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
-public import TauCeti.Analysis.Normed.Operator.ApproximatePointSpectrum
-import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 
@@ -35,7 +33,8 @@ of a path of self-adjoint Fredholm operators is built:
   `Ω` avoids the spectrum, then the spectral projection for `Ω` is the orthogonal projection onto
   the kernel of `T`.
 * **Stability.** Under the frontier condition, the spectral projection for `Ω` depends
-  continuously on the self-adjoint operator, so the rank of its range is locally constant, and it
+  continuously on the self-adjoint operator (`IsSelfAdjoint.continuousWithinAt_cfc_indicator`,
+  proved for C⋆-algebras), so the rank of its range is locally constant, and it
   is constant along a continuous path of self-adjoint operators over a preconnected parameter space
   as long as the frontier of `Ω` avoids every spectrum along the path.
 
@@ -47,14 +46,10 @@ counts, along a partition, the changes of the ranks of the spectral projections 
 
 ## Main results
 
-* `IsSelfAdjoint.notMem_spectrum_of_forall_mul_norm_le`: a real number at which a self-adjoint
-  operator is bounded below is not in its spectrum.
 * `IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range`: the spectral gap at `0`
   of a self-adjoint operator with closed range, in particular of a self-adjoint Fredholm operator.
 * `IsSelfAdjoint.cfc_indicator_eq_starProjection_ker`: the spectral projection for a set meeting the
   spectrum only at `0` is the projection onto the kernel.
-* `IsSelfAdjoint.continuousWithinAt_cfc_indicator`: the spectral projection depends continuously on
-  the self-adjoint operator when the frontier of the set avoids the spectrum.
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
   `IsPreconnected.rank_range_cfc_indicator_eq`: the rank of the spectral projection is locally
   constant, and constant along paths.
@@ -77,41 +72,11 @@ open scoped InnerProductSpace
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- If a closed set avoids the spectrum of an element of a complete normed algebra, it avoids the
-spectra of all nearby elements: the spectrum is upper hemicontinuous. -/
-theorem spectrum.eventually_disjoint_of_isClosed {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
-    [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A] [ProperSpace 𝕜] {F : Set 𝕜}
-    (hF : IsClosed F) {a : A} (h : Disjoint F (spectrum 𝕜 a)) :
-    ∀ᶠ b in 𝓝 a, Disjoint F (spectrum 𝕜 b) := by
-  have hmem : Fᶜ ∈ 𝓝ˢ (spectrum 𝕜 a) := hF.isOpen_compl.mem_nhdsSet.2 h.subset_compl_left
-  filter_upwards [(upperHemicontinuous_spectrum 𝕜 A).upperHemicontinuousAt a _ hmem] with b hb
-  exact subset_compl_iff_disjoint_left.mp (subset_of_mem_nhdsSet hb)
-
 namespace IsSelfAdjoint
 
 variable {T : H →L[ℂ] H}
 
 /-! ### The spectral gap at `0` -/
-
-/-- A real number at which a self-adjoint operator is bounded below is not in its spectrum. The
-complex spectrum of a self-adjoint operator lies on the real line, so it has empty interior and
-consists of approximate eigenvalues. -/
-theorem notMem_spectrum_of_forall_mul_norm_le (hT : IsSelfAdjoint T) {r c : ℝ} (hc : 0 < c)
-    (h : ∀ x, c * ‖x‖ ≤ ‖T x - (r : ℂ) • x‖) : r ∉ spectrum ℝ T := by
-  intro hr
-  have hr' : (r : ℂ) ∈ spectrum ℂ T := spectrum.algebraMap_mem ℂ hr
-  have hint : interior (spectrum ℂ T) = ∅ := by
-    refine eq_empty_of_subset_empty ?_
-    calc interior (spectrum ℂ T) ⊆ interior (Complex.im ⁻¹' {0}) :=
-          interior_mono fun z hz ↦ by
-            rw [mem_preimage, mem_singleton_iff, IsSelfAdjoint.mem_spectrum_eq_re hT hz,
-              Complex.ofReal_im]
-      _ = ∅ := by rw [Complex.interior_preimage_im, interior_singleton, preimage_empty]
-  have hfr : (r : ℂ) ∈ frontier (spectrum ℂ T) := by
-    rw [frontier, (spectrum.isClosed T).closure_eq, hint, sdiff_empty]
-    exact hr'
-  exact (T.notMem_approximatePointSpectrum_iff _).2 ⟨c, hc, h⟩
-    (T.frontier_spectrum_subset_approximatePointSpectrum hfr)
 
 /-- A self-adjoint operator bounded below by `c` on the orthogonal complement of its kernel is
 bounded below at every real `r` with `|r| ≤ c`, with constant `min (c - |r|) |r|`: write a vector as
@@ -124,7 +89,7 @@ private theorem min_mul_norm_le_norm_sub (hT : IsSelfAdjoint T) {c : ℝ}
   set x₁ := x - x₀
   have hx₀ : x₀ ∈ K := K.starProjection_apply_mem x
   have hx₁ : x₁ ∈ Kᗮ := K.sub_starProjection_mem_orthogonal x
-  have hTx₀ : T x₀ = 0 := hx₀
+  have hTx₀ : T x₀ = 0 := LinearMap.mem_ker.1 hx₀
   set u := T x₁ - (r : ℂ) • x₁
   set w := -((r : ℂ) • x₀)
   have hdecomp : T x - (r : ℂ) • x = u + w := by
@@ -174,24 +139,17 @@ operator with closed range, such as a self-adjoint Fredholm operator, at most in
 theorem exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range (hT : IsSelfAdjoint T)
     (hR : IsClosed (T.range : Set H)) : ∃ c > 0, spectrum ℝ T ∩ Ioo (-c) c ⊆ {0} := by
   -- The operator is bounded below on the orthogonal complement of its kernel.
-  set e := T.orthogonalKerEquivRange hR
-  set c := (‖e.symm.toContinuousLinearMap‖ + 1)⁻¹
-  have hc : 0 < c := by positivity
-  have hbound : ∀ x ∈ T.kerᗮ, c * ‖x‖ ≤ ‖T x‖ := by
-    intro x hx
-    have h₁ : ‖(⟨x, hx⟩ : T.kerᗮ)‖ ≤ ‖e.symm.toContinuousLinearMap‖ * ‖e ⟨x, hx⟩‖ := by
-      simpa using e.symm.toContinuousLinearMap.le_opNorm (e ⟨x, hx⟩)
-    have h₂ : ‖e ⟨x, hx⟩‖ = ‖T x‖ := by
-      rw [← Submodule.norm_coe, ContinuousLinearMap.orthogonalKerEquivRange_apply]
-    rw [← Submodule.norm_coe, h₂] at h₁
-    rw [inv_mul_le_iff₀ (by positivity)]
-    nlinarith [norm_nonneg (T x)]
+  obtain ⟨C, hC, hb⟩ := T.exists_norm_le_mul_norm_of_mem hR T.ker.isTopCompl_orthogonal
+  set c := C⁻¹
+  have hc : 0 < c := inv_pos.2 hC
+  have hbound : ∀ x ∈ T.kerᗮ, c * ‖x‖ ≤ ‖T x‖ := fun x hx ↦
+    (inv_mul_le_iff₀ hC).2 (hb x hx)
   refine ⟨c, hc, fun r ⟨hr, hrc⟩ ↦ ?_⟩
   rw [mem_singleton_iff]
   by_contra hr0
   have hrc' : |r| < c := abs_lt.2 hrc
-  refine hT.notMem_spectrum_of_forall_mul_norm_le (lt_min (sub_pos.2 hrc') (abs_pos.2 hr0))
-    (min_mul_norm_le_norm_sub hT hbound hrc'.le) hr
+  exact hT.notMem_spectrum_of_forall_mul_norm_le (lt_min (sub_pos.2 hrc') (abs_pos.2 hr0))
+    (min_mul_norm_le_norm_sub hT hbound hrc'.le) (spectrum.algebraMap_mem ℂ hr)
 
 /-! ### The spectral projection onto the kernel -/
 
@@ -243,29 +201,12 @@ theorem cfc_indicator_eq_starProjection_ker (hT : IsSelfAdjoint T) {Ω : Set ℝ
     refine le_antisymm ?_ fun v hv ↦ ⟨v, ?_⟩
     · rintro _ ⟨v, rfl⟩
       exact congr($hTP v)
-    · have hTv : T v = 0 := hv
+    · have hTv : T v = 0 := LinearMap.mem_ker.1 hv
       have h : v - P v = 0 := by simpa [hTv] using congr($hsub v)
       exact (sub_eq_zero.1 h).symm
   exact hPeq.trans (Submodule.starProjection_inj.2 hrange)
 
 /-! ### Continuity and rank of spectral projections -/
-
-/-- The spectral projection for a set `Ω` depends continuously on the self-adjoint operator at an
-operator whose spectrum avoids the frontier of `Ω`. -/
-theorem continuousWithinAt_cfc_indicator (hT : IsSelfAdjoint T) {Ω : Set ℝ}
-    (hΩ : Disjoint (frontier Ω) (spectrum ℝ T)) :
-    ContinuousWithinAt (cfc (Ω.indicator (1 : ℝ → ℝ))) {S | IsSelfAdjoint S} T := by
-  set t := {S : H →L[ℂ] H | IsSelfAdjoint S ∧ spectrum ℝ S ⊆ (frontier Ω)ᶜ}
-  have hcont : ContinuousOn (cfc (Ω.indicator (1 : ℝ → ℝ))) t :=
-    ContinuousOn.cfc_of_mem_nhdsSet (a := id) _
-      (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 (iUnion₂_subset fun S hS ↦ hS.2))
-      continuousOn_id (fun S hS ↦ hS.1)
-      fun x hx ↦ (continuousOn_const.continuousAt_indicator hx).continuousWithinAt
-  refine (hcont.continuousWithinAt ⟨hT, hΩ.subset_compl_left⟩).mono_of_mem_nhdsWithin ?_
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hΩ)]
-    with S hS hS'
-  exact ⟨hS, hS'.subset_compl_left⟩
 
 /-- The rank of the spectral projection for a set `Ω` is locally constant on the self-adjoint
 operators whose spectrum avoids the frontier of `Ω`: nearby spectral projections are at distance
