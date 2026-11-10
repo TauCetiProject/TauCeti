@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Abs
 
 The Schottky double of a Riemann surface with boundary glues the surface to its conjugate along
 the boundary, using `z ↦ conj z` on boundary charts. A chart change `e` of the closed upper
-half-plane that sends real points to real points then induces the chart change
+half-plane that sends real points, and only those, to real points then induces the chart change
 `ClosedUpperHalfPlane.schwarzDouble e` of the plane: it is `e` on the closed upper half-plane and
 `z ↦ conj (e (conj z))` on the lower half-plane, that is, the Schwarz reflection
 `schwarzReflection (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)`.
