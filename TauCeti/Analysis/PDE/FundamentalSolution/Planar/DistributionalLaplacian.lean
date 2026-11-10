@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
@@ -318,14 +319,6 @@ theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
     innerSL_apply_apply, real_inner_smul_left, smul_eq_mul]
   field_simp
 
-/-- Expanding a real-linear functional on `ℂ` in the basis `1, I`. -/
-private lemma clm_apply_eq_re_mul_add_im_mul (L : ℂ →L[ℝ] ℝ) (z : ℂ) :
-    L z = z.re * L 1 + z.im * L Complex.I := by
-  have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by simp
-  -- Rewrite only the argument of `L`: the coefficients `z.re` and `z.im` also mention `z`.
-  conv_lhs => rw [hz]
-  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-
 /-- **The weak divergence-form identity for `log ‖z‖`.** For every test function `φ` on an open
 set `Ω`, `∫ log ‖z‖ Δφ = -∫ (f ∂ₛφ + g ∂ₜφ)` with `f = s / ‖z‖²` and `g = t / ‖z‖²`; that is,
 `Δ log ‖z‖ = ∂ₛf + ∂ₜg` weakly, with `(f, g)` the weak gradient of `log ‖z‖`. -/
@@ -339,7 +332,8 @@ theorem integral_log_norm_mul_laplacian (Ω : Opens ℂ) (φ : 𝓓(Ω, ℝ)) :
   rw [h]
   congr 2
   funext z
-  rw [inner_gradient_left, map_smul, clm_apply_eq_re_mul_add_im_mul, smul_eq_mul]
+  rw [inner_gradient_left, map_smul, ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I]
+  simp only [smul_eq_mul]
   ring
 
 end LogNorm
