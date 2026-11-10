@@ -643,11 +643,6 @@ private theorem lt_norm_of_mem_annulus_of_notMem_truncation {R ρ : ℝ} (hR : 0
     linarith
   · linarith
 
-/-- The truncation `S_R` lies in the thrice-punctured sphere `S`. -/
-private theorem preimage_truncation_subset (R : ℝ) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal := fun _ hz =>
-  mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-
 namespace IsNondegenerate
 
 /-- **The energy identity on discs of the negative plane, for a manifold target.** Let `K` be the
@@ -721,8 +716,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
     have h := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hHi hHsi
       hu.continuous.continuousOn
     rw [pairOfPantsPerturbation_single_inf] at h
-    refine (h.mono_set (preimage_truncation_subset R)).of_forall_sdiff_eq_zero
-      hD.isClosed.measurableSet fun z hz => ?_
+    refine (h.mono_set (preimage_truncation_subset_thricePuncturedSphereReal R))
+      |>.of_forall_sdiff_eq_zero hD.isClosed.measurableSet fun z hz => ?_
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK₀ 1 z hz) (hK₀ Complex.I z hz)]
     exact ω.hamiltonianCurvature_zero z (u z)
   have hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
@@ -860,7 +855,8 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
       z (u z)) (D ∪ T) := by
     have h := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hHi hHsi huS.continuousOn
     rw [pairOfPantsPerturbation_single_zero] at h
-    refine (h.mono_set (preimage_truncation_subset R)).of_forall_sdiff_eq_zero hm fun z hz => ?_
+    refine (h.mono_set (preimage_truncation_subset_thricePuncturedSphereReal R))
+      |>.of_forall_sdiff_eq_zero hm fun z hz => ?_
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK₀ 1 (hDT hz)) (hK₀ Complex.I (hDT hz))]
     exact ω.hamiltonianCurvature_zero z (u z)
   have hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
