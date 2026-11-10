@@ -31,8 +31,9 @@ the degree of the determinant loop of `B` on the outer circle, whatever loop it 
 degree on the inner circle. The two determinant loops are freely homotopic through the circles of
 radius `s ∈ [r, R]`, so the shifts agree, and reversing the inner circle makes them cancel.
 
-For `r = 0` the inner circle is a point and the statement is the independence of the trivialization
-on the disc (`TauCeti.TotallyRealLoop.maslovIndex_map_of_continuousOn_closedBall`).
+For `r = 0` the inner circle is a point, where `B` is constant, and the statement is the
+independence of the trivialization on the disc
+(`TauCeti.TotallyRealLoop.maslovIndex_map_of_continuousOn_closedBall`, derived from it).
 
 The definition of `μ(E, F)` as the first Chern number of the doubled bundle, of which the loop
 formula is a theorem, is not treated here.
@@ -84,8 +85,9 @@ theorem maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus
     have h0 : 0 ≤ (p.1 : ℝ) * (R - r) := mul_nonneg p.1.2.1 (sub_nonneg.2 hrR)
     have h1 : (p.1 : ℝ) * (R - r) ≤ R - r :=
       mul_le_of_le_one_left (sub_nonneg.2 hrR) p.1.2.2
-    rw [Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff, norm_mul, Circle.norm_coe,
-      mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+    simp only [Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff, norm_mul,
+      Circle.norm_coe, mul_one, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg hr h0)]
     constructor <;> linarith
   have hH : Continuous fun p => (H p : E →L[ℂ] E) :=
     hB.comp_continuous (by fun_prop) hmem
@@ -166,13 +168,13 @@ private theorem maslovIndex_map_zpowEquiv (Λ : TotallyRealLoop ℂ) (m : ℤ) {
       ((ρ : ℂ) * Circle.expLoop t) ^ m • LinearMap.id := by
     ext
     simp [zpowEquiv, hρ.ne']
-  rw [hlin, LinearMap.det_smul, LinearMap.det_id, finrank_self, pow_one, mul_one]
-  simp only [mul_zpow, norm_mul, norm_zpow, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hρ,
-    Circle.norm_coe, one_zpow, mul_one]
-  simp only [δ, Path.coe_mk_mk, Circle.coe_exp, Circle.expLoop_apply]
-  rw [← Complex.exp_int_mul]
-  push_cast
-  ring_nf
+  have hexp :
+      Complex.exp (2 * π * t * Complex.I) ^ m = Complex.exp (2 * π * m * t * Complex.I) := by
+    rw [← Complex.exp_int_mul]
+    congr 1
+    ring
+  rw [hlin]
+  simp [mul_zpow, abs_of_pos hρ, δ, Complex.norm_exp, hexp]
 
 /-- The individual circle indices are not invariants: multiplication by `z ^ m`, a change of
 trivialization over the annulus `r ≤ ‖z‖ ≤ R` with `0 < r`, moves `(ℂ, ℝ)` on the outer circle to a
