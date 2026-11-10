@@ -101,7 +101,8 @@ private noncomputable def quadraticQuaternionBasis (hα : α ^ 2 = algebraMap K 
 theorem nonempty_quaternionAlgebra_algEquiv_quadratic
     (hα : α ^ 2 = algebraMap K L a) (hαK : α ∉ Set.range (algebraMap K L)) (b : Kˣ) :
     Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] CrossedProduct (TwoCocycle.quadratic h b)) := by
-  let : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_sq_eq hα hαK)
+  let : Invertible (2 : K) := invertibleOfNonzero
+    (two_ne_zero_of_sq_eq (Algebra.IsSeparable.isSeparable K α) hα hαK)
   obtain ⟨σ, hσ, -⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).1 h
   let f := (quadraticQuaternionBasis h hα hαK b hσ).liftHom
   -- `ℍ[K, a, b]` is simple, so `f` is injective, and both sides have dimension four
