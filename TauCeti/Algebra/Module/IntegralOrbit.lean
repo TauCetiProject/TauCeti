@@ -15,11 +15,10 @@ and a set of vectors `X`, `Subring.orbitOfRep S ρ X` is the `ℤ`-span of all `
 with `a ∈ S` and `x ∈ X`. It contains `X` and is stable under the represented action of `S`.
 This construction lets an integral form act without installing a global `A`-module instance.
 
-If `X` spans `V` over `R`, its integral orbit also spans `V`. When `R` is a commutative ring
-and `S` spans `A` over `R`, the `R`-span of the integral orbit agrees with the span of all
-translates through `A`. The construction itself only needs a commutative scalar semiring `R`;
-the vectors form an additive commutative group so that integral spans are defined.
-No finite-generation property is asserted.
+If `X` spans `V` over `R`, its integral orbit also spans `V`. When `S` spans `A` over `R`, the
+`R`-span of the integral orbit agrees with the span of all translates through `A`. Everything
+only needs a commutative scalar semiring `R`; the vectors form an additive commutative group so
+that integral spans are defined. No finite-generation property is asserted.
 -/
 
 public section
@@ -27,8 +26,6 @@ public section
 universe u v
 
 namespace Subring
-
-section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
 variable {A : Type u} [Ring A] [Algebra R A]
@@ -58,58 +55,51 @@ theorem subset_orbitOfRep : X ⊆ (orbitOfRep S ρ X : Set V) := by
 /-- The elimination principle for a represented integral orbit. -/
 theorem orbitOfRep_le_iff (N : Submodule ℤ V) :
     orbitOfRep S ρ X ≤ N ↔ ∀ a ∈ S, ∀ x ∈ X, ρ a x ∈ N := by
-  rw [orbitOfRep, Submodule.span_le]
-  constructor
-  · intro hle a ha x hx
-    exact hle ⟨a, ha, x, hx, rfl⟩
-  · rintro hle - ⟨a, ha, x, hx, rfl⟩
-    exact hle a ha x hx
+  rw [orbitOfRep_def, Submodule.span_le]
+  exact ⟨fun h a ha x hx => h ⟨a, ha, x, hx, rfl⟩, fun h _ ⟨a, ha, x, hx, hv⟩ => hv ▸ h a ha x hx⟩
 
 /-- The represented integral orbit is stable under the subring. -/
 theorem apply_mem_orbitOfRep_of_mem {a : A} (ha : a ∈ S) {v : V}
     (hv : v ∈ orbitOfRep S ρ X) : ρ a v ∈ orbitOfRep S ρ X := by
-  induction hv using Submodule.span_induction with
-  | mem w hw =>
-      obtain ⟨b, hb, x, hx, rfl⟩ := hw
-      simpa only [map_mul, mul_apply_eq_comp] using
+  have hle := (orbitOfRep_le_iff S ρ X
+    ((orbitOfRep S ρ X).comap (ρ a).toAddMonoidHom.toIntLinearMap)).2 fun b hb x hx => by
+      simpa only [Submodule.mem_comap, AddMonoidHom.coe_toIntLinearMap,
+        LinearMap.toAddMonoidHom_coe, map_mul, mul_apply_eq_comp] using
         apply_mem_orbitOfRep S ρ X (S.mul_mem ha hb) hx
-  | zero => rw [map_zero]; exact zero_mem _
-  | add a b _ _ ha hb => rw [map_add]; exact add_mem ha hb
-  | smul c a _ ha => rw [map_zsmul]; exact Submodule.smul_mem _ c ha
+  simpa only [Submodule.mem_comap, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.toAddMonoidHom_coe] using hle hv
 
 /-- If the supplied vectors span over `R`, their represented integral orbit is full. -/
 theorem span_orbitOfRep_eq_top (hX : Submodule.span R X = ⊤) :
-    Submodule.span R (orbitOfRep S ρ X : Set V) = ⊤ := by
-  apply top_unique
-  rw [← hX]
-  exact Submodule.span_mono (subset_orbitOfRep S ρ X)
-
-end CommSemiring
-
-section CommRing
-
-variable {R : Type*} [CommRing R]
-variable {A : Type u} [Ring A] [Algebra R A]
-variable {V : Type v} [AddCommGroup V] [Module R V]
-variable (S : Subring A) (ρ : A →ₐ[R] Module.End R V) (X : Set V)
+    Submodule.span R (orbitOfRep S ρ X : Set V) = ⊤ :=
+  eq_top_mono (Submodule.span_mono (subset_orbitOfRep S ρ X)) hX
 
 /-- If `S` spans `A` over `R`, the `R`-span of the represented integral orbit is the span of
 all translates through the full algebra. -/
 theorem span_orbitOfRep_eq_span (hS : Submodule.span R (S : Set A) = ⊤) :
     Submodule.span R (orbitOfRep S ρ X : Set V) =
       Submodule.span R {v | ∃ a : A, ∃ x ∈ X, ρ a x = v} := by
-  rw [orbitOfRep_def, Submodule.span_span_of_tower]
   apply le_antisymm
-  · exact Submodule.span_mono fun _ ⟨a, _, x, hx, h⟩ => ⟨a, x, hx, h⟩
+  · refine Submodule.span_le.2 fun v hv => ?_
+    rw [SetLike.mem_coe, orbitOfRep_def, ← Submodule.mem_toAddSubgroup,
+      Submodule.span_int_eq_addSubgroupClosure] at hv
+    -- An `R`-span need not be closed under negation when `R` is only a semiring, so the
+    -- induction treats the negations of the generators as separate cases.
+    induction hv using AddSubgroup.closure_induction'' with
+    | mem _ h =>
+        obtain ⟨a, -, x, hx, rfl⟩ := h
+        exact Submodule.subset_span ⟨a, x, hx, rfl⟩
+    | neg_mem _ h =>
+        obtain ⟨a, -, x, hx, rfl⟩ := h
+        exact Submodule.subset_span ⟨-a, x, hx, by simp only [map_neg, LinearMap.neg_apply]⟩
+    | zero => exact zero_mem _
+    | add _ _ _ _ h₁ h₂ => exact add_mem h₁ h₂
   · rw [Submodule.span_le]
     rintro - ⟨a, x, hx, rfl⟩
     have ha : a ∈ Submodule.span R (S : Set A) := hS ▸ Submodule.mem_top
-    have himage := Submodule.apply_mem_span_image_of_mem_span
-      ((LinearMap.applyₗ (R := R) x).comp ρ.toLinearMap) ha
-    apply Submodule.span_mono _ himage
+    refine Submodule.span_mono ?_ (Submodule.apply_mem_span_image_of_mem_span
+      ((LinearMap.applyₗ (R := R) x).comp ρ.toLinearMap) ha)
     rintro - ⟨b, hb, rfl⟩
-    exact ⟨b, hb, x, hx, rfl⟩
-
-end CommRing
+    exact apply_mem_orbitOfRep S ρ X hb hx
 
 end Subring

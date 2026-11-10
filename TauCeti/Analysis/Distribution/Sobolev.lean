@@ -63,8 +63,6 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
-* `TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`: for `s > dim E / 2`, the Fourier
-  transform of `f ∈ H^s` is an `L¹` function `v` with `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v ∈ L²`.
 
 ## References
 
@@ -400,30 +398,5 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
   simp [h₁, h₂]
 
 end realFunctions
-
-section fourier
-
-open scoped FourierTransform
-
-/-- **The Fourier transform of an `H^s` function, `s > n / 2`.** For `s > dim E / 2` the Fourier
-transform of a Sobolev function `f ∈ H^s` is an `L¹` function `v` for which
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
-theorem MemSobolev.fourier_memL1_and_memLp {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) :
-    ∃ v : Lp ℂ 1 (volume : Measure E), 𝓕 f = (v : 𝓢'(E, ℂ)) ∧
-      MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-  obtain ⟨v, hv⟩ := hf.fourier_memL1 hs
-  obtain ⟨U, hU⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
-  refine ⟨v, hv, (Lp.memLp U).ae_eq ?_⟩
-  -- The `L²` function `U` represents the weight times `v`, by comparing their pairings.
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwc : Continuous fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := hwg.1.continuous
-  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq U ?_ fun φ => ?_
-  · refine locallyIntegrable_iff.2 fun K hK => ?_
-    exact (L1.integrable_coeFn v).integrableOn.continuousOn_mul hwc.continuousOn hK
-  · rw [← hU, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-    simp only [smul_eq_mul]
-
-end fourier
 
 end TemperedDistribution

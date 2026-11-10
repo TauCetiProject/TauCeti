@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Joint evaluation in the manifold weak Whitney topology
@@ -21,8 +20,9 @@ point: `ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt`. In order zero thi
 continuity of evaluation jointly in the map and the source point, which is what the natural
 action of the diffeomorphism group on its manifold needs. In higher order it is the input for
 continuity of composition. On a compact subset of a chart target the convergence is uniform
-(`ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt`): every chartwise `C^m`
-neighbourhood of a map on a compact coordinate set, for `m ≤ n`, is a weak Whitney neighbourhood.
+(`ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt`, which needs no local
+compactness): every chartwise `C^m` neighbourhood of a map on a compact coordinate set, for
+`m ≤ n`, is a weak Whitney neighbourhood.
 
 The compact-neighbourhood argument is the standard one for compact-open evaluation; see
 M. Hirsch, *Differential Topology*, Chapter 2, §1.
@@ -144,10 +144,11 @@ theorem eventually_mem_extChartAt_source {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y
   (eventually_mem_source_and_iteratedFDerivWithin_mem hw₀ hf₀ (m := 0) (by simp)
     univ_mem).mono fun _ h ↦ h.1
 
+omit [LocallyCompactSpace E] in
 /-- On a compact subset of a source chart target which `f₀` maps into a target chart, the
-coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`, provided the source
-model is locally compact. Derivatives are taken within the chart target, so boundary and corner
-points are included. -/
+coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`. Derivatives are taken
+within the chart target, so boundary and corner points are included. No local compactness of the
+source model is needed. -/
 theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M}
     {y : N} {C : Set E} (hC : IsCompact C) (hCx : C ⊆ (extChartAt I x).target)
     (hCy : ∀ w ∈ C, f₀ ((extChartAt I x).symm w) ∈ (extChartAt J y).source) {m : ℕ}
@@ -156,16 +157,51 @@ theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J
         (extChartAt J y ∘ f ∘ (extChartAt I x).symm) (extChartAt I x).target w)
       (fun w ↦ iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
         (extChartAt I x).target w) (𝓝 f₀) C := by
-  rw [← tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hC,
-    tendstoLocallyUniformlyOn_iff_forall_tendsto]
-  intro w₀ hw₀
-  -- Both the derivatives of nearby maps and those of `f₀` itself tend to the value at `w₀`.
-  have h := tendsto_iteratedFDerivWithin_extChartAt (hCx hw₀) (hCy w₀ hw₀) hm
-  have h₀ : Tendsto (fun p : C^n⟮I, M; J, N⟯ × E ↦ (f₀, p.2))
-      (𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀) (𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀) :=
-    tendsto_const_nhds.prodMk tendsto_snd
-  exact ((((h.comp h₀).prodMk_nhds h).mono_left
-    (prod_mono le_rfl (nhdsWithin_mono _ hCx))).mono_right (nhds_le_uniformity _))
+  set φ := extChartAt I x
+  set ψ := extChartAt J y
+  let D : C^n⟮I, M; J, N⟯ → E → E [×m]→L[𝕜] F := fun f w ↦
+    iteratedFDerivWithin 𝕜 m (ψ ∘ f ∘ φ.symm) φ.target w
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  -- The compact subset is covered by finitely many compact pieces on which the coordinate
+  -- derivative of `f₀` oscillates little. It is continuous along `C`, so it oscillates little near
+  -- each point of `C`.
+  have hcont (w : E) (hw : w ∈ C) : ContinuousWithinAt (D f₀) C w :=
+    ((f₀.contDiffWithinAt_extChartAt (hCx hw) (hCy w hw)).continuousWithinAt_iteratedFDerivWithin
+      (uniqueDiffOn_extChartAt_target x) hm (hCx hw)).mono hCx
+  choose! r hr0 hr using fun w (hw : w ∈ C) ↦
+    Metric.continuousWithinAt_iff.mp (hcont w hw) (ε / 4) (by positivity)
+  let U : E → Set E := fun w ↦ C ∩ Metric.closedBall w (r w / 2)
+  have hUnhds (w : E) (hw : w ∈ C) : U w ∈ 𝓝[C] w :=
+    inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds
+      (Metric.closedBall_mem_nhds w (half_pos (hr0 w hw))))
+  obtain ⟨t, htC, hcover⟩ := hC.elim_nhdsWithin_subcover U hUnhds
+  -- The piece `U c` is compact, so it gives an open chart derivative test around `f₀`.
+  let K (c : E) : Set φ.target := Subtype.val ⁻¹' U c
+  have hKcompact (c : E) (hc : c ∈ C) : IsCompact (K c) := by
+    refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
+    rw [Subtype.image_preimage_coe, inter_eq_right.2 (inter_subset_left.trans hCx)]
+    exact hC.inter_right Metric.isClosed_closedBall
+  have hT : ⋂ c ∈ t, chartJetSet (J := J) (n := n) x y m (K c) (Metric.ball (D f₀ c) (ε / 4)) ∈
+      𝓝 f₀ := by
+    refine (biInter_finset_mem t).2 fun c hc ↦ ?_
+    refine (isOpen_chartJetSet x y m hm (hKcompact c (htC c hc)) Metric.isOpen_ball).mem_nhds ?_
+    rw [mem_chartJetSet]
+    rintro ⟨z, hz⟩ ⟨hzC, hzc⟩
+    refine ⟨hCy z hzC, ?_⟩
+    rw [Metric.mem_ball]
+    exact hr c (htC c hc) hzC (lt_of_le_of_lt (Metric.mem_closedBall.1 hzc)
+      (half_lt_self (hr0 c (htC c hc))))
+  filter_upwards [hT] with g hg w hw
+  obtain ⟨c, hc, hwc⟩ := mem_iUnion₂.1 (hcover hw)
+  have h₁ := (mem_chartJetSet.1 (mem_iInter₂.1 hg c hc) ⟨w, hCx hw⟩ ⟨hw, hwc.2⟩).2
+  have h₂ := hr c (htC c hc) hw (lt_of_le_of_lt (Metric.mem_closedBall.1 hwc.2)
+    (half_lt_self (hr0 c (htC c hc))))
+  rw [Metric.mem_ball] at h₁
+  calc dist (D f₀ w) (D g w) ≤ dist (D f₀ w) (D f₀ c) + dist (D f₀ c) (D g w) :=
+        dist_triangle _ _ _
+    _ < ε / 4 + ε / 4 := add_lt_add h₂ (by rw [dist_comm]; exact h₁)
+    _ < ε := by linarith
 
 /-- Evaluation of a `C^n` map is continuous jointly in the map and the source point for the
 manifold weak Whitney topology, provided the source model is locally compact. -/

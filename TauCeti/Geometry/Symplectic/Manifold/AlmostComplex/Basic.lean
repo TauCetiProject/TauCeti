@@ -166,11 +166,11 @@ lemma ext (h : ∀ (x : M) (v : TangentSpace I x), J x v = K x v) : J = K := by
   ext x v
   exact h x v
 
-/-- Two smooth almost complex structures with the same value on every tangent fiber are equal. -/
+/-- Two smooth almost complex structures with the same pointwise almost complex structures are
+equal. -/
 lemma ext_almostComplexStructureAt
-    (h : ∀ x, J.almostComplexStructureAt x = K.almostComplexStructureAt x) : J = K := by
-  ext x v
-  rw [← almostComplexStructureAt_apply, h x, almostComplexStructureAt_apply]
+    (h : ∀ x, J.almostComplexStructureAt x = K.almostComplexStructureAt x) : J = K :=
+  ext fun x v => congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) (h x)
 
 section ContMDiffApply
 

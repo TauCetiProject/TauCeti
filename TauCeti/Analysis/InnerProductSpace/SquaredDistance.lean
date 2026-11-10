@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Complex.Pseudoconvex
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Squared distance along a differentiable map
@@ -32,6 +35,9 @@ The same calculus gives the first and second derivatives of the Gaussian
 `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance, the classical barrier of Hopf's
 boundary-point lemma for elliptic operators with variable coefficients.
 
+The file also computes the Hessian of the radial profile `(σ ‖y - c‖² + ε)^(-β)`, the barrier
+of the Krylov–Safonov measure estimate.
+
 ## Main results
 
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
@@ -40,6 +46,8 @@ boundary-point lemma for elliptic operators with variable coefficients.
 * `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq`,
   `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
   `x ↦ exp (-α ‖x - a‖ ^ 2)`.
+* `TauCeti.fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply`: the Hessian of
+  `(σ ‖y - c‖² + ε)^(-β)`.
 * `TauCeti.fderiv_fderiv_norm_sq_apply_complex`: the real second derivative of complex squared
   norm is twice the real part of the inner product.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_add_I_smul`: the complex Hessian identity.
@@ -168,6 +176,49 @@ theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ) (a x v w : E) :
   ring
 
 end Exp
+
+section Rpow
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {σ ε : ℝ} {c x : E}
+
+/-- The radial profile `(σ ‖y - c‖² + ε)^(-β)` is smooth when `σ ≥ 0` and `ε > 0`. -/
+theorem contDiffAt_rpow_mul_norm_sq_sub_add (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
+    {k : WithTop ℕ∞} : ContDiffAt ℝ k (fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x :=
+  ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add
+    contDiffAt_const).rpow_const_of_ne (by positivity)
+
+/-- **The Hessian of a power of a shifted squared distance.** For `σ ≥ 0` and `ε > 0`, with
+`s = σ ‖x - c‖² + ε`, the second derivative of `(σ ‖y - c‖² + ε)^(-β)` at `x` is
+`4 σ² β (β + 1) s^(-β-2) ⟪x - c, v⟫ ⟪x - c, w⟫ - 2 σ β s^(-β-1) ⟪v, w⟫`. -/
+theorem fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
+    (v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x v w =
+      4 * σ ^ 2 * β * (β + 1) * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) * ⟪x - c, v⟫ * ⟪x - c, w⟫ -
+        2 * σ * β * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 1) * ⟪v, w⟫ := by
+  have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
+  have hD : fderiv ℝ (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) = fderiv ℝ (σ • fun y : E ↦ ‖y - c‖ ^ 2) :=
+    funext fun _ ↦ fderiv_add_const ε
+  have hid : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
+    funext fun _ ↦ fderiv_fun_id
+  have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε)
+    (Real.contDiffAt_rpow_const_of_ne (p := -β) hs.ne')
+    ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add contDiffAt_const)
+    v w
+  simp only [Function.comp_def] at h
+  rw [h, hD, fderiv_fderiv_const_smul, fderiv_const_smul_field]
+  simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
+  rw [fderiv_fderiv_norm_sq_sub_comp_apply (i := fun y ↦ y) contDiffAt_id,
+    fderiv_norm_sq_sub_comp (i := fun y ↦ y) differentiableAt_id, iteratedDeriv_eq_iterate,
+    Real.iter_deriv_rpow_const, Real.deriv_rpow_const]
+  simp only [hid, descPochhammer_succ_right, descPochhammer_zero, Polynomial.eval_mul,
+    Polynomial.eval_X, Polynomial.eval_sub, Polynomial.eval_one, Nat.cast_one, Nat.cast_ofNat,
+    Nat.cast_zero, map_sub, ContinuousLinearMap.comp_id,
+    smul_apply, sub_apply, innerSL_apply_apply, nsmul_eq_mul, sub_zero, mul_neg, one_mul,
+    neg_mul, ContinuousLinearMap.id_apply, fderiv_fun_const, Pi.zero_apply, zero_apply,
+    inner_zero_right, add_zero, inner_sub_left]
+  ring_nf
+
+end Rpow
 
 section Complex
 
