@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Adjunction.FullyFaithfulLimits
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.Limits
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # Forgetting the module structure of a sheaf of modules is exact
@@ -36,6 +38,9 @@ sheaves of modules to short exact sequences of abelian sheaves.
   `CategoryTheory.Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat`: the same statement for
   sheaves with values in `ModuleCat R` over a fixed ring `R`, whose underlying abelian sheaf is
   obtained by applying `forget₂ (ModuleCat R) AddCommGrpCat` sectionwise.
+* `CategoryTheory.Sheaf.preservesHomology_sheafCompose_forget₂_moduleCat`: forgetting the module
+  structures sectionwise preserves homology, so it commutes with the homology of complexes of
+  sheaves of `R`-modules.
 
 ## Implementation notes
 
@@ -132,6 +137,12 @@ theorem shortExact_map_sheafCompose_forget₂_moduleCat
   { exact := hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
     mono_f := inferInstanceAs (Mono ((sheafCompose J _).map S.f))
     epi_g := inferInstanceAs (Epi ((sheafCompose J _).map S.g)) }
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves homology: it
+is additive and preserves kernels and epimorphisms. -/
+instance preservesHomology_sheafCompose_forget₂_moduleCat :
+    (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).PreservesHomology :=
+  Functor.preservesHomology_of_preservesEpis_and_kernels _
 
 end CategoryTheory.Sheaf
 
