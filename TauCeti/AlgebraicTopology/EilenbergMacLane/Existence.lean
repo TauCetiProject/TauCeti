@@ -111,8 +111,7 @@ private abbrev sphereClass : (H (n + 2)).obj (TopCat.diskBoundary.{0} (n + 3)) :
 variable [AddCommGroup A]
 
 /-- **The homology of the wedge surjects onto `A`.** There is a surjection `Hₙ₊₂(W; ℤ) → A` from
-the homology of the wedge of `(n + 2)`-spheres, sending the cell of `a` to `a` for some
-identification of `Hₙ₊₂(W; ℤ)` with the free abelian group on the cells. -/
+the homology of the wedge of `(n + 2)`-spheres. -/
 theorem exists_surjective_wedge :
     ∃ ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
       (wedge A n) →ₗ[ℤ] A, Function.Surjective ψ := by
