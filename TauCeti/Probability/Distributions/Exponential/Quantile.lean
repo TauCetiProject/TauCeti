@@ -42,7 +42,7 @@ variable {r u : ℝ}
 @[simp]
 theorem quantile_expMeasure (hr : 0 < r) (hu : u ∈ Ioo 0 1) :
     (expMeasure r).quantile u = -Real.log (1 - u) / r := by
-  rw [expMeasure, quantile_gammaMeasure one_pos hr hu, inverseRegularizedGamma_one hu]
+  rw [expMeasure, quantile_gammaMeasure one_pos hr, inverseRegularizedGamma_one hu]
 
 /-- Exponential quantiles tend to the lower support endpoint `0` as the probability level tends
 to zero from above. -/

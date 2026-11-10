@@ -165,8 +165,7 @@ theorem isCompleteVectorField_of_isCompact_of_eq_zero_off {v : (x : M) → Tange
     {K : Set M} (hK : IsCompact K) (hvK : ∀ x ∉ K, v x = 0) :
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) (hK.insert x)
+  exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv (hK.insert x)
     (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hvK)
 
 /-- Every `C¹` vector field on a compact boundaryless Banach manifold is complete. -/
@@ -176,7 +175,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) isCompact_univ fun _ _ ↦ mem_univ _
+    isCompact_univ fun _ _ ↦ mem_univ _
 
 /-- **A `C¹` vector field with a proper invariant map is complete.** If a proper map `G` is
 constant along every maximal integral curve of `v`, then each maximal integral curve stays in the
@@ -190,7 +189,6 @@ theorem isCompleteVectorField_of_isProperMap {Y : Type*} [TopologicalSpace Y]
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
     (hG.isCompact_preimage isCompact_singleton) (hGv x)
 
 end TauCeti
