@@ -87,6 +87,11 @@ operators, are separate.
   untwisted along the circle factor is described by the propagator and the return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_det_eq_zero`: such a kernel is nonzero
   exactly when `det (ε₂ - Ψ(d)) = 0`.
+* `TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply`: the propagator preserves
+  the symplectic form `⟪J₀ ·, ·⟫`.
+* `TauCeti.periodic_snd_of_twists` and `TauCeti.eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero`:
+  on a finite cover, twisted maps are periodic in `t`, and the operators twisted along the circle
+  factor have no kernel.
 * `TauCeti.eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero`
   and `TauCeti.dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero`: the kernel of
   the twisted operators on a finite cover, described by the propagator and the `n`-th power of the
@@ -422,6 +427,22 @@ theorem orbitTorusOperator_dysonSeriesLeft_apply_eq_zero (hJ₀sq : ∀ x, J₀ 
   rw [orbitTorusOperator_apply, hf.fderiv]
   simp [stdComplexLineReal, stdComplexLineImag, hJ₀sq]
 
+/-- **The propagator is symplectic.** If `J₀` is an orthogonal complex structure and every `S(t)` is
+symmetric, then `J₀ S(t)` is skew for the symplectic form `⟪J₀ ·, ·⟫`, so the propagator `Ψ(t)` of
+the loop equation `w' = J₀ S(t) w` preserves it: `⟪J₀ (Ψ(t) x), Ψ(t) y⟫ = ⟪J₀ x, y⟫`. -/
+theorem inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
+    (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫) (hScont : Continuous S) (t : ℝ) (x y : V) :
+    ⟪J₀ (dysonSeriesLeft (fun t => J₀ ∘L S t) t x), dysonSeriesLeft (fun t => J₀ ∘L S t) t y⟫ =
+      ⟪J₀ x, y⟫ := by
+  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
+  have h := apply_dysonSeriesLeft_apply_dysonSeriesLeft hM
+    ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).comp J₀) (fun r x y => ?_) t x y
+  · simpa using h
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, hJ₀sq, inner_neg_left,
+    hJ₀ x, hS r, inner_neg_right, neg_neg, neg_add_cancel]
+
+end Complete
 
 /-! ### Finite covers
 
@@ -431,6 +452,53 @@ finite index in `ℓℤ × dℤ`. Every such sublattice has a basis `(k ℓ, 0)`
 determined by its values `ε₁, ε₂ ∈ {±1}` on these two generators. Since `S` is `d`-periodic, the
 model operator lifts to every cover, and its twisted versions act on maps `u` with
 `u (s + k ℓ, t) = ε₁ u (s, t)` and `u (s + a ℓ, t + n d) = ε₂ u (s, t)`. -/
+
+/-- **Periodicity in `t` on a finite cover.** Let `k, n ∈ ℕ` and `a ∈ ℤ`. If `w` is twisted by a
+sign `ε₁` along `(k ℓ, 0)` and by a sign `ε₂` along `(a ℓ, n d)`, then `w` is periodic in `t` with
+period `2 k n d`, because `2 k (a ℓ, n d) - 2 a (k ℓ, 0) = (0, 2 k n d)`. -/
+theorem periodic_snd_of_twists {M : Type*} [AddCommGroup M] [Module ℝ M] {w : ℝ × ℝ → M}
+    (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1) {k n : ℕ} {a : ℤ}
+    (hs : ∀ s t, w (s + k * ℓ, t) = ε₁ • w (s, t))
+    (ht : ∀ s t, w (s + a * ℓ, t + n * d) = ε₂ • w (s, t)) (s : ℝ) :
+    Function.Periodic (fun t => w (s, t)) (2 * k * n * d) := fun t => by
+  -- A sign twist along a translation `p` gives periodicity along `2 p`.
+  have hper₂ {p : ℝ × ℝ} {ε : ℝ} (hε : ε ^ 2 = 1) (h : ∀ z, w (z + p) = ε • w z) :
+      Function.Periodic w (2 • p) := fun z => by
+    rw [two_smul, ← add_assoc, h, h, smul_smul, ← sq, hε, one_smul]
+  have h₁ := hper₂ (p := ((k : ℝ) * ℓ, 0)) hε₁ fun ⟨s, t⟩ => by
+    rw [Prod.mk_add_mk, add_zero]; exact hs s t
+  have h₂ := hper₂ (p := ((a : ℝ) * ℓ, (n : ℝ) * d)) hε₂ fun ⟨s, t⟩ => by
+    rw [Prod.mk_add_mk]; exact ht s t
+  have hv : (k : ℤ) • (2 • ((a : ℝ) * ℓ, (n : ℝ) * d)) - a • (2 • ((k : ℝ) * ℓ, (0 : ℝ))) =
+      ((0 : ℝ), 2 * k * n * d) := by
+    ext <;> simp <;> ring
+  have h := (h₂.zsmul (k : ℤ)).sub_period (h₁.zsmul a) (s, t)
+  rwa [hv, Prod.mk_add_mk, add_zero] at h
+
+/-- **Twisting along the circle factor kills the kernel on a finite cover.** Let `k, n ≥ 1` and
+`a ∈ ℤ`. A `C²` solution of `D u = 0` which is twisted by the sign `ε₁` along `(k ℓ, 0)` and by the
+sign `ε₂` along `(a ℓ, n d)` either vanishes or has `ε₁ = 1`. -/
+theorem eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero (hℓ : 0 < ℓ) (hd : 0 < d)
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
+    (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
+    {k n : ℕ} (hk : 0 < k) (hn : 0 < n) {a : ℤ}
+    (hs : ∀ s t, u (s + k * ℓ, t) = ε₁ • u (s, t))
+    (ht : ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t))
+    (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) :
+    ε₁ = 1 ∨ u = 0 := by
+  -- On the rectangular cover with periods `k ℓ` and `2 k n d`, the twist along `(k ℓ, 0)` forces
+  -- `ε₁ = 1` or `u = 0`.
+  rcases sq_eq_one_iff.1 hε₁ with h | h
+  · exact .inl h
+  · have hT : 0 < 2 * (k : ℝ) * n * d := by positivity
+    exact .inr <| eq_zero_of_orbitTorusOperator_eq_zero_of_antiperiodic
+      (mul_pos (Nat.cast_pos.2 hk) hℓ) hT hJ₀ hS hScont hu (one_pow 2)
+      (fun s t => by rw [hs, h, neg_one_smul])
+      (fun s t => by rw [one_smul]; exact periodic_snd_of_twists hε₁ hε₂ hs ht s t) hD
+
+section Complete
+
+variable [CompleteSpace V]
 
 /-- **Kernel elements on a finite cover.** Let `k, n ≥ 1` and `a ∈ ℤ`. A `C²` solution of
 `D u = 0` which is twisted by the sign `ε₁` along `(k ℓ, 0)` and by the sign `ε₂` along
@@ -447,33 +515,14 @@ theorem eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperat
     (ε₁ = 1 ∨ u = 0) ∧ ∀ z, u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0) := by
   have hkℓ : 0 < (k : ℝ) * ℓ := mul_pos (Nat.cast_pos.2 hk) hℓ
   have hT : 0 < 2 * (k : ℝ) * n * d := by positivity
-  -- A sign twist along a translation `p` gives periodicity along `2 p`, and twice the integer
-  -- combination `k (a ℓ, n d) - a (k ℓ, 0) = (0, k n d)` makes `u` periodic in `t`.
-  have hper₂ {p : ℝ × ℝ} {ε : ℝ} (hε : ε ^ 2 = 1) (h : ∀ z, u (z + p) = ε • u z) :
-      Function.Periodic u (2 • p) := fun z => by
-    rw [two_smul, ← add_assoc, h, h, smul_smul, ← sq, hε, one_smul]
-  have h₁ := hper₂ (p := ((k : ℝ) * ℓ, 0)) hε₁ fun ⟨s, t⟩ => by
-    rw [Prod.mk_add_mk, add_zero]; exact hs s t
-  have h₂ := hper₂ (p := ((a : ℝ) * ℓ, (n : ℝ) * d)) hε₂ fun ⟨s, t⟩ => by
-    rw [Prod.mk_add_mk]; exact ht s t
-  have hv : (k : ℤ) • (2 • ((a : ℝ) * ℓ, (n : ℝ) * d)) - a • (2 • ((k : ℝ) * ℓ, (0 : ℝ))) =
-      ((0 : ℝ), 2 * k * n * d) := by
-    ext <;> simp <;> ring
-  have ht' (s t : ℝ) : u (s, t + 2 * k * n * d) = (1 : ℝ) • u (s, t) := by
-    have h := (h₂.zsmul (k : ℤ)).sub_period (h₁.zsmul a) (s, t)
-    rwa [hv, Prod.mk_add_mk, add_zero, ← one_smul ℝ (u (s, t))] at h
-  -- On the rectangular cover with periods `k ℓ` and `2 k n d`, the twist along `(k ℓ, 0)` forces
-  -- `ε₁ = 1` or `u = 0`.
-  have hε₁' : ε₁ = 1 ∨ u = 0 := by
-    rcases sq_eq_one_iff.1 hε₁ with h | h
-    · exact .inl h
-    · exact .inr <| eq_zero_of_orbitTorusOperator_eq_zero_of_antiperiodic hkℓ hT hJ₀ hS hScont hu
-        (one_pow 2) (fun s t => by rw [hs, h, neg_one_smul]) ht' hD
+  have hε₁' := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont hu hε₁ hε₂ hk
+    hn hs ht hD
   -- In either case `u` is given by the propagator.
   refine ⟨hε₁', fun z => ?_⟩
   rcases hε₁' with h | h
   · exact apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hkℓ hT hJ₀ hJ₀sq hS
-      hScont hu (one_pow 2) (fun s t => by rw [hs, h, one_smul]) ht' hD z
+      hScont hu (one_pow 2) (fun s t => by rw [hs, h, one_smul])
+      (fun s t => by rw [one_smul]; exact periodic_snd_of_twists hε₁ hε₂ hs ht s t) hD z
   · simp [h]
 
 /-- **Return condition on a finite cover.** Let `k, n ≥ 1` and `a ∈ ℤ`. For a `C²` solution of
