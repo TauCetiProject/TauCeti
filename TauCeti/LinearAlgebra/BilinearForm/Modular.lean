@@ -340,9 +340,9 @@ theorem IsModular.restrict_sup (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R)
     rw [← hy, hsplit s s.2 t t.2 s' hs' t' ht', h1, h2, ← mul_add, ← map_add, ← hy']
 
 /-- **A modular submodule splits off.** If a non-zero-divisor `a` divides every value of a
-symmetric form `B` and the restriction of `B` to `S` is `a`-modular, then `S` is complementary to
+form `B` and the restriction of `B` to `S` is `a`-modular, then `S` is complementary to
 its orthogonal complement. -/
-theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R)
+theorem IsModular.isCompl_orthogonal (ha : a ∈ nonZeroDivisors R)
     (hdvd : ∀ x y, a ∣ B x y) {S : Submodule R M} (h : (B.restrict S).IsModular a) :
     IsCompl S (B.orthogonal S) := by
   have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
@@ -350,29 +350,31 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
   obtain ⟨C, hC, hCp⟩ := h
   have hCB : C = B'.restrict S := LinearMap.ext₂ fun x y ↦ hcan _ _ (by
     simpa using congrArg (fun D : BilinForm R S ↦ D x y) hC)
-  have hB' : (B'.restrict S).IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
   have horth : (a • B').orthogonal S = B'.orthogonal S := by
     ext m
     simp only [mem_orthogonal_iff, LinearMap.smul_apply, smul_eq_mul]
     exact forall₂_congr fun n _ ↦ by
       rw [mul_comm, mul_right_mem_nonZeroDivisors_eq_zero_iff ha]
   rw [horth]
-  exact B'.isCompl_orthogonal_of_restrict_bijective S hB' (hCB ▸ hCp.bijective_left)
+  have hflip : B'.flip.restrict S = C.flip := by
+    rw [hCB]
+    ext x y
+    simp [restrict_apply]
+  exact B'.isCompl_orthogonal_of_flip_restrict_bijective S (hflip ▸ hCp.bijective_right)
 
 /-- **A Gram matrix `a` times a matrix of unit determinant gives a modular form.** If the Gram
-matrix of `B` in a finite basis is `a` times a matrix of unit determinant, with `a` a
-non-zero-divisor, then `B` is `a`-modular. -/
+matrix of `B` in a finite basis is `a` times a matrix of unit determinant, then `B` is
+`a`-modular. -/
 theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Basis ι R M)
-    {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (b i) (b j) = a * G i j)
+    {G : Matrix ι ι R} (hG : ∀ i j, B (b i) (b j) = a * G i j)
     (hdet : IsUnit G.det) : B.IsModular a := by
-  obtain ⟨C, hC⟩ := exists_smul_eq_of_forall_dvd ha
-    (dvd_apply_of_forall_dvd_basis b fun i j ↦ ⟨G i j, hG i j⟩)
-  have hCG : LinearMap.toMatrix₂ b b C = G := Matrix.ext fun i j ↦
-    (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-      rw [LinearMap.toMatrix₂_apply, ← hG, ← hC]
-      simp)
-  exact ⟨C, hC, b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+  let C : BilinForm R M := (LinearMap.toMatrix₂ b b).symm G
+  have hCG : LinearMap.toMatrix₂ b b C = G := (LinearMap.toMatrix₂ b b).apply_symm_apply G
+  refine ⟨C, (LinearMap.toMatrix₂ b b).injective (Matrix.ext fun i j ↦ ?_),
+    b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+  rw [LinearMap.toMatrix₂_apply, LinearMap.toMatrix₂_apply, LinearMap.smul_apply,
+    LinearMap.smul_apply, smul_eq_mul, ← LinearMap.toMatrix₂_apply b b C, hCG, hG]
 
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the
@@ -380,7 +382,7 @@ restriction of `B` to the span of `v` is `a`-modular. -/
 theorem isModular_restrict_span_range {ι : Type*} [Fintype ι] [DecidableEq ι] {v : ι → M}
     {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
     (hdet : IsUnit G.det) : (B.restrict (Submodule.span R (Set.range v))).IsModular a :=
-  (Basis.span (linearIndependent_of_isUnit_det ha hG hdet)).isModular_of_isUnit_det ha
+  (Basis.span (linearIndependent_of_isUnit_det ha hG hdet)).isModular_of_isUnit_det
     (fun i j ↦ by simp [Basis.span_apply, hG]) hdet
 
 /-- A symmetric binary Gram block scaled by a non-zero-divisor is linearly independent and
@@ -421,7 +423,7 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
     refine ⟨_, fun h ↦ (linearIndependent_of_isUnit_det hd hG hdet).ne_zero 0
       ((Submodule.eq_bot_iff _).mp h _ (Submodule.subset_span (Set.mem_range_self 0))),
       Submodule.span_mono (Set.range_subset_iff.mpr hv), hmod,
-      hmod.isCompl_orthogonal hB hd hdvd⟩
+      hmod.isCompl_orthogonal hd hdvd⟩
   obtain ⟨s, hs⟩ := hdvd u u
   obtain ⟨t, ht⟩ := hdvd w w
   by_cases hsu : IsUnit s
@@ -434,7 +436,7 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
     hd rfl hs ht (fun h ↦ hsu (isUnit_of_mul_isUnit_left h))
   refine ⟨_, fun h ↦ hli.ne_zero 0
     ((Submodule.eq_bot_iff _).mp h _ (Submodule.subset_span (Set.mem_range_self 0))),
-    ?_, hmod, hmod.isCompl_orthogonal hB hd hdvd⟩
+    ?_, hmod, hmod.isCompl_orthogonal hd hdvd⟩
   exact Submodule.span_mono (Set.range_subset_iff.mpr fun i ↦ by fin_cases i <;> simp)
 
 /-- Over a discrete valuation ring with uniformizer `π`, a nonzero symmetric bilinear form on a
