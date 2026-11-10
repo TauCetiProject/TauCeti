@@ -45,6 +45,10 @@ the points of imaginary part less than one.
 * `TauCeti.borderedHolomorphicGroupoid_le_contDiffGroupoid`: members are smooth, so a charted
   space with this groupoid is a smooth manifold
   (`TauCeti.isManifold_of_hasGroupoid_borderedHolomorphicGroupoid`).
+* `TauCeti.ofSet_mem_borderedHolomorphicGroupoid` and
+  `TauCeti.closedUnderRestriction_borderedHolomorphicGroupoid`: the groupoid contains the
+  restrictions of the identity to open sets, so it is closed under restriction and open subsets
+  of a Riemann surface with boundary are again Riemann surfaces with boundary.
 * `TauCeti.ClosedUpperHalfPlane.toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid`: a
   homeomorphism given by entire functions in both directions is a member.
 
@@ -173,6 +177,26 @@ instance isManifold_of_hasGroupoid_borderedHolomorphicGroupoid (M : Type*) [Topo
   haveI := hasGroupoid_of_le ‹HasGroupoid M borderedHolomorphicGroupoid›
     borderedHolomorphicGroupoid_le_contDiffGroupoid
   IsManifold.mk' _ _ _
+
+/-- The restriction of the identity to an open set is a bordered holomorphic chart change. -/
+theorem ofSet_mem_borderedHolomorphicGroupoid {s : Set ClosedUpperHalfPlane} (hs : IsOpen s) :
+    OpenPartialHomeomorph.ofSet s hs ∈ borderedHolomorphicGroupoid := by
+  have hid : DifferentiableOn ℂ
+      (closedUpperHalfPlaneModel ∘ id ∘ closedUpperHalfPlaneModel.symm)
+      (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ {z | 0 < z.im}) :=
+    differentiableOn_id.congr fun z hz ↦ by
+      simpa using coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz.2)
+  exact mem_borderedHolomorphicGroupoid_iff.2 ⟨ofSet_mem_contDiffGroupoid hs, by simpa using hid,
+    by simpa using hid⟩
+
+/-- The bordered holomorphic groupoid is closed under restriction to open sets, so open subsets of
+a Riemann surface with boundary are again Riemann surfaces with boundary. -/
+instance closedUnderRestriction_borderedHolomorphicGroupoid :
+    ClosedUnderRestriction borderedHolomorphicGroupoid := by
+  refine (closedUnderRestriction_iff_id_le _).2 ?_
+  rw [StructureGroupoid.le_iff]
+  rintro e ⟨s, hs, hes⟩
+  exact borderedHolomorphicGroupoid.mem_of_eqOnSource (ofSet_mem_borderedHolomorphicGroupoid hs) hes
 
 namespace ClosedUpperHalfPlane
 

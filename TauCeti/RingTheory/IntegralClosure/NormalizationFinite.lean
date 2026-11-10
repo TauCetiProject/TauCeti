@@ -9,6 +9,7 @@ module
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.FractionalIdeal.Operations
 public import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.Length.Endomorphism
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -43,8 +44,9 @@ Applied to `M` the integral closure sitting inside `V = L`, this makes `C ⧸ aC
 * `TauCeti.integralClosure.isNoetherianRing`: the same for Mathlib's `integralClosure A L`.
 
 The general facts about `Module.length` that the bound rests on — additivity along a filtration,
-the reduction of a length bound to finitely generated submodules, and the rank-one computation
-`length (I ⧸ aI) = ord_A a` for an ideal `I` — are in `TauCeti/RingTheory/Length.lean`.
+the reduction of a length bound to finitely generated submodules — are in
+`TauCeti/RingTheory/Length.lean`, and the rank-one computation `length (I ⧸ aI) = ord_A a` for an
+ideal `I` is in `TauCeti/RingTheory/Length/Endomorphism.lean`.
 
 ## Proof outline
 
@@ -57,8 +59,8 @@ by Mathlib's `Module.Projective.exists_dual_eq_one`; `Module.Dual.ker_id_sub_smu
 Filtration additivity splits `length (M ⧸ aM)` into the part supported on `N = M ⊓ K ∙ x` and the
 part seen by the projection `e`. The first is bounded by
 `length_quotient_lsmul_le_ord_of_le_span_singleton`, which clears denominators to reach the
-rank-one case in `Length.lean`; the second is `length (e M ⧸ a e M)`, and `e M` lies one dimension
-lower.
+rank-one case `TauCeti.length_quotient_lsmul_ideal_eq_ord`; the second is `length (e M ⧸ a e M)`,
+and `e M` lies one dimension lower.
 
 ## Design
 
