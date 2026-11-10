@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
 # The spectral sequence of a filtered space
@@ -73,13 +74,6 @@ namespace TauCeti
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   {Y : TopCat.{w}}
 
-/-- The singular chains of the subspace of a pair form a subcomplex of those of the ambient
-space, also after reindexing as cochain complexes along `n ↦ -n`. -/
-private lemma mono_extendMap_singularChainComplexMap (P : TopPair.{w}) :
-    Mono (extendMap (SSet.chainComplexMap (TopCat.toSSet.map P.map) R)
-      ComplexShape.embeddingDownNat) :=
-  ((P.shortExact_singularChainComplexShortComplex R).extend _).mono_f
-
 variable (X : ℤ → Set Y)
 
 /-- The inclusion of the singular chains of `X q` into those of `Y`, with both chain complexes
@@ -98,8 +92,12 @@ lemma singularChainFiltrationι_def (q : ℤ) :
         ComplexShape.embeddingDownNat := by
   rw [singularChainFiltrationι]
 
-instance (q : ℤ) : Mono (singularChainFiltrationι R X q) :=
-  mono_extendMap_singularChainComplexMap R (TopPair.ofSubset (X q))
+/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
+instance (q : ℤ) : Mono (singularChainFiltrationι R X q) := by
+  have : Mono (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R) :=
+    ((TopPair.ofSubset (X q)).shortExact_singularChainComplexShortComplex R).mono_f
+  rw [singularChainFiltrationι_def]
+  exact HomologicalComplex.mono_extendMap _ _
 
 /-- The filtration of the singular chains of `Y` by the singular chains of the subsets `X q`,
 with the chain complexes reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`. -/
