@@ -11,14 +11,15 @@ public import TauCeti.Analysis.Holder.Normed
 
 import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Global Hölder functions in `Lᵖ`
 
 This file proves that a globally Hölder function with finite `Lᵖ` norm is bounded and bundles it
-as an element of the global Hölder Banach space. The pointwise estimate compares the function with
-its average on a ball: Hölder continuity controls the difference from the average, while
-Hölder's inequality controls the average itself.
+as an element of the global Hölder normed space (a Banach space when the target is complete). The
+pointwise estimate compares the function with its average on a ball: Hölder continuity controls the
+difference from the average, while Hölder's inequality controls the average itself.
 
 ## Main declarations
 
@@ -94,9 +95,8 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
   -- Pass to the completion of `F`, which changes neither the Hölder constant, nor the `Lᵖ` norm,
   -- nor the pointwise norms.
   let e : F → UniformSpace.Completion F := (↑)
-  have hge : HolderWith C α (e ∘ g) := fun y z ↦ by
-    simpa only [Function.comp_apply, e, UniformSpace.Completion.coe_isometry.edist_eq]
-      using hg y z
+  have hge : HolderWith C α (e ∘ g) :=
+    Isometry.comp_holderWith UniformSpace.Completion.coe_isometry hg
   have hgeLp : MemLp (e ∘ g) p mu :=
     hgLp.of_le ((UniformSpace.Completion.continuous_coe F).comp_aestronglyMeasurable
       hgLp.aestronglyMeasurable)
@@ -126,7 +126,7 @@ theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' 
     ENNReal.toReal_ofReal hr.le] at hx'
   simpa only [toReal_enorm] using hx'
 
-/-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder Banach space. -/
+/-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder normed space. -/
 def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hgLp : MemLp g p mu) : TauCeti.HolderSpace α E F := by
   let R : ℝ≥0∞ := C + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu
