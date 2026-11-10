@@ -80,14 +80,7 @@ theorem exists_blockLDU_weylWord_iff
           L * N * U) ↔ t.geckWeylWordProd ht l = 1 := by
   rw [← Matrix.exists_blockLDU_iff]
   rw [← D.isUnit_leading_weight_minors_weylWord_iff l A r]
-  constructor
-  · intro h a
-    obtain ⟨μ, rfl⟩ := r.surjective a
-    obtain ⟨j, hj⟩ := μ.property
-    have heq : (⟨D.weight j, Set.mem_range_self j⟩ : Set.range D.weight) = μ := Subtype.ext hj
-    rw [← heq]
-    exact h j
-  · intro h j
-    exact h _
+  symm
+  exact (r.surjective.comp Set.rangeFactorization_surjective).forall
 
 end TauCeti.DynkinType.ChevalleyDatum
