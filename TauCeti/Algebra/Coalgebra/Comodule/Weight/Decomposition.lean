@@ -29,6 +29,8 @@ weight `g`.
 
 ## Main declarations
 
+* `TauCeti.Comodule.coactComponent_groupLikeBasis_coord_of_mem_weightSpace`: the coordinate of the
+  coaction along a group-like basis vector projects each weight space onto the corresponding one.
 * `TauCeti.Comodule.iSup_groupLikeWeightSpace_eq_top`: a comodule over a group-like-spanned
   coalgebra is spanned by its group-like weight spaces.
 * `TauCeti.Comodule.iSupIndep_groupLikeWeightSpace_of_groupLikeSetSpan_eq_top`: over a
@@ -89,6 +91,19 @@ theorem coactComponent_groupLikeBasis_coord_mem_weightSpace
   rw [coactComponent_coactComponent, coord_comp_tensorComponent_comp_comul,
     coactComponent_apply, map_smul, LinearMap.smul_apply, ← coactComponent_apply]
 
+open scoped Classical in
+/-- The coordinate of a coaction along the group-like basis vector `g` projects a vector of the
+weight space of `h` to itself if `h = g` and to zero otherwise. -/
+theorem coactComponent_groupLikeBasis_coord_of_mem_weightSpace
+    (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤)
+    (g h : GroupLike k C) {m : M} (hm : m ∈ _root_.GroupLike.weightSpace (M := M) h) :
+    coactComponent (R := k) (C := C) (M := M) ((Subcoalgebra.groupLikeBasis hC).coord g) m =
+      if h = g then m else 0 := by
+  rw [coactComponent_apply, _root_.GroupLike.mem_weightSpace.mp hm,
+    _root_.LinearMap.tensorComponent_tmul, Module.Basis.coord_apply,
+    ← Subcoalgebra.groupLikeBasis_apply hC h, Module.Basis.repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
+
 /-- **A comodule over a coalgebra spanned by its group-like elements is spanned by its group-like
 weight spaces.** -/
 theorem iSup_groupLikeWeightSpace_eq_top
@@ -124,30 +139,20 @@ theorem iSup_groupLikeWeightSpace_eq_top
   exact coactComponent_groupLikeBasis_coord_mem_weightSpace hC g m
 
 /-- **Over a coalgebra spanned by its group-like elements, the group-like weight spaces of a
-comodule are supremum-independent**, without any torsion-freeness assumption: the coordinate
-functional of the group-like basis along `g` projects onto the weight space of `g` and kills all
-the other weight spaces. -/
+comodule are supremum-independent**, without assuming the comodule `M` is torsion-free. -/
 theorem iSupIndep_groupLikeWeightSpace_of_groupLikeSetSpan_eq_top
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤) :
     iSupIndep (_root_.GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
   classical
-  have hπ (g h : GroupLike k C) (m : M) (hm : m ∈ _root_.GroupLike.weightSpace (M := M) h) :
-      coactComponent (R := k) (C := C) (M := M) ((Subcoalgebra.groupLikeBasis hC).coord g) m =
-        if h = g then m else 0 := by
-    rw [coactComponent_apply, _root_.GroupLike.mem_weightSpace.mp hm,
-      _root_.LinearMap.tensorComponent_tmul, Module.Basis.coord_apply,
-      ← Subcoalgebra.groupLikeBasis_apply hC h, Module.Basis.repr_self, Finsupp.single_apply]
-    by_cases hhg : h = g
-    · simp [hhg]
-    · simp [hhg]
   intro g
   rw [disjoint_iff, eq_bot_iff]
   intro m ⟨hg, hrest⟩
   have hker : (⨆ (h : GroupLike k C) (_ : h ≠ g), _root_.GroupLike.weightSpace (M := M) h) ≤
       LinearMap.ker (coactComponent (R := k) (C := C) (M := M)
         ((Subcoalgebra.groupLikeBasis hC).coord g)) :=
-    iSup₂_le fun h hh n hn ↦ by simp [hπ g h n hn, hh]
-  have h1 := hπ g g m hg
+    iSup₂_le fun h hh n hn ↦ by
+      simp [coactComponent_groupLikeBasis_coord_of_mem_weightSpace hC g h hn, hh]
+  have h1 := coactComponent_groupLikeBasis_coord_of_mem_weightSpace hC g g hg
   rw [LinearMap.mem_ker.mp (hker hrest)] at h1
   simpa using h1.symm
 
