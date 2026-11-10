@@ -5,13 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
-public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.NormedSpace
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
 # Radial calculus on open subsets of the real line
@@ -38,18 +33,7 @@ theorem laplaceBeltrami_restrictOpen_real_eq_deriv_deriv
       ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
     laplaceBeltrami 𝓘(ℝ) (fun r : U ↦ f r) x = deriv (deriv f) x := by
   dsimp only
-  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
-  let gU := g.restrictOpenTangentSpace U
-  let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) := ⟨gU.toRiemannianMetric⟩
-  let : RiemannianBundle (fun r : ℝ ↦ TangentSpace 𝓘(ℝ) r) := ⟨g.toRiemannianMetric⟩
-  let := Bundle.instIsContMDiffRiemannianBundle gU
-  let := Bundle.instIsContMDiffRiemannianBundle g
-  have h := (g.isLocalRiemannianIsometry_restrictOpenTangentSpace U).laplaceBeltrami_comp
-    (u := f) (x := x) hf.contMDiffAt
-  simp only [Function.comp_def] at h
-  rw [h, laplaceBeltrami_eq_laplacian_of_eq
-    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _)
-    ((hf.gradient_right (m := 1) (by norm_num)).differentiableAt (by norm_num)),
+  rw [laplaceBeltrami_restrictOpen_eq_laplacian U hf,
     InnerProductSpace.laplacian_eq_iteratedDeriv_real]
   simp [iteratedDeriv_succ]
 
@@ -62,15 +46,7 @@ theorem norm_mgradient_restrictOpen_real_sq
       ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
     ‖mgradient 𝓘(ℝ) (fun r : U ↦ f r) x‖ ^ 2 = deriv f x ^ 2 := by
   dsimp only
-  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
-  let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
-    ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
-  let : RiemannianBundle (fun r : ℝ ↦ TangentSpace 𝓘(ℝ) r) := ⟨g.toRiemannianMetric⟩
-  have h := (g.isLocalRiemannianIsometry_restrictOpenTangentSpace U).norm_mgradient_comp
-    (φ := f) (x := x) hf.mdifferentiableAt
-  simp only [Function.comp_def] at h
-  rw [h, norm_mgradient_eq_norm_gradient_of_eq
-    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _),
+  rw [norm_mgradient_restrictOpen_eq_norm_gradient U hf,
     gradient_eq_deriv', Real.norm_eq_abs, sq_abs]
 
 end TauCeti.Manifold
