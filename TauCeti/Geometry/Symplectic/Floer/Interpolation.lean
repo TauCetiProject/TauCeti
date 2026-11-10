@@ -134,10 +134,12 @@ theorem hamiltonianCurvature_sum_mul (ω : SmoothTwoForm I M) {β : ι → ℝ �
     rw [poissonBracket_fun_sum_left (F := fun i y ↦ β i z * Ks i z y)
       fun i hi ↦ hmul (hKs' i hi) _]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [poissonBracket_const_mul_left, poissonBracket_fun_sum_right
+    rw [show (fun y ↦ β i z * Ks i z y) = β i z • Ks i z from rfl,
+      poissonBracket_const_smul_left, smul_eq_mul, poissonBracket_fun_sum_right
       (G := fun j y ↦ β j z * Kt j z y) fun j hj ↦ hmul (hKt' j hj) _, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [poissonBracket_const_mul_right]
+    rw [show (fun y ↦ β j z * Kt j z y) = β j z • Kt j z from rfl,
+      poissonBracket_const_smul_right, smul_eq_mul]
     ring
   have hbracket : ∑ i ∈ s, ∑ j ∈ s, β i z * β j z *
       ω.poissonBracket (Ks i z - Ks j z) (Kt i z - Kt j z) x =

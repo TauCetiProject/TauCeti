@@ -507,18 +507,6 @@ theorem poissonBracket_const_smul_right (c : ℝ) (x : M) :
   simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
     ← SmoothForm.bilinFormAt_apply, map_smul]
 
-/-- The Poisson bracket is homogeneous in its first argument: `{c f, g} = c {f, g}`. -/
-@[simp]
-theorem poissonBracket_const_mul_left (c : ℝ) (x : M) :
-    σ.poissonBracket (fun y ↦ c * f y) g x = c * σ.poissonBracket f g x := by
-  simpa only [Pi.smul_def, smul_eq_mul] using poissonBracket_const_smul_left (σ := σ) (g := g) c x
-
-/-- The Poisson bracket is homogeneous in its second argument: `{f, c g} = c {f, g}`. -/
-@[simp]
-theorem poissonBracket_const_mul_right (c : ℝ) (x : M) :
-    σ.poissonBracket f (fun y ↦ c * g y) x = c * σ.poissonBracket f g x := by
-  simpa only [Pi.smul_def, smul_eq_mul] using poissonBracket_const_smul_right (σ := σ) (f := f) c x
-
 /-- The Poisson bracket is subtractive in its first argument on differentiable functions. -/
 theorem poissonBracket_sub_left {k : M → ℝ} {x : M}
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
