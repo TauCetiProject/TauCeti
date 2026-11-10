@@ -148,12 +148,17 @@ def noncentralBetaMeasure (a b : ℝ) (l : ℝ≥0) : Measure ℝ :=
       (fun z ↦ z.1 / (z.1 + z.2))
   else 0
 
-/-- For valid shapes, the noncentral Beta law is the defining ratio pushforward. -/
-theorem noncentralBetaMeasure_eq_map (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) :
+/-- For a positive second shape, the noncentral Beta law is the defining ratio pushforward. For a
+negative first shape both sides are zero. -/
+theorem noncentralBetaMeasure_eq_map (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure a b l =
       ((noncentralChiSquaredMeasure (2 * a) l).prod (chiSquaredMeasure (2 * b))).map
         (fun z ↦ z.1 / (z.1 + z.2)) := by
-  rw [noncentralBetaMeasure, ite_eq_left ⟨ha, hb⟩]
+  by_cases ha : 0 ≤ a
+  · rw [noncentralBetaMeasure, ite_eq_left ⟨ha, hb⟩]
+  · rw [noncentralBetaMeasure, ite_eq_right (fun h => ha h.1),
+      noncentralChiSquaredMeasure_of_neg (by linarith [not_le.mp ha]), Measure.zero_prod,
+      Measure.map_zero]
 
 /-- For invalid shapes, the noncentral Beta measure is zero. -/
 @[simp]
@@ -166,7 +171,7 @@ theorem isProbabilityMeasure_noncentralBetaMeasure (ha : 0 ≤ a) (hb : 0 < b) (
     IsProbabilityMeasure (noncentralBetaMeasure a b l) := by
   let _ := isProbabilityMeasure_noncentralChiSquaredMeasure (mul_nonneg zero_le_two ha) l
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
-  rw [noncentralBetaMeasure_eq_map ha hb]
+  rw [noncentralBetaMeasure_eq_map hb]
   infer_instance
 
 /-- The noncentral Beta measure is a probability measure exactly when its shapes are valid. -/
@@ -195,7 +200,7 @@ theorem noncentralBetaMeasure_eq_sum (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure a b l = Measure.sum fun j : ℕ ↦
       poissonMeasure (l / 2) {j} • noncentralBetaComponent (a + j) b := by
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
-  rw [noncentralBetaMeasure_eq_map ha hb,
+  rw [noncentralBetaMeasure_eq_map hb,
     noncentralChiSquaredMeasure_eq_sum (mul_nonneg zero_le_two ha), Measure.prod_sum_left,
     Measure.map_sum (by fun_prop)]
   congr 1
@@ -391,16 +396,27 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : Ω → 
 /-- If `X` is noncentral chi-squared with degree `2 * a` and noncentrality `l`, and `Y` is an
 independent central chi-squared variable with degree `2 * b`, then `X / (X + Y)` has the
 noncentral Beta law. -/
-theorem hasLaw_noncentralBeta_of_noncentralChiSquared (ha : 0 ≤ a) (hb : 0 < b)
+theorem hasLaw_noncentralBeta_of_noncentralChiSquared (hb : 0 < b)
     (hXY : IndepFun X Y P) (hX : HasLaw X (noncentralChiSquaredMeasure (2 * a) l) P)
     (hY : HasLaw Y (chiSquaredMeasure (2 * b)) P) :
     HasLaw (fun ω ↦ X ω / (X ω + Y ω)) (noncentralBetaMeasure a b l) P := by
+  rcases lt_or_ge a 0 with ha | ha
+  · have hP : P = 0 := by
+      have h := hX.map_eq
+      rw [noncentralChiSquaredMeasure_of_neg (by linarith)] at h
+      refine Measure.measure_univ_eq_zero.mp ?_
+      have h1 := Measure.map_apply_of_aemeasurable hX.aemeasurable MeasurableSet.univ
+      rw [h, Set.preimage_univ] at h1
+      simpa using h1.symm
+    subst hP
+    rw [noncentralBetaMeasure_of_not (fun h => ha.not_ge h.1)]
+    exact ⟨aemeasurable_zero_measure, Measure.map_zero _⟩
   let _ := isProbabilityMeasure_noncentralChiSquaredMeasure (mul_nonneg zero_le_two ha) l
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hratio : HasLaw (fun z : ℝ × ℝ ↦ z.1 / (z.1 + z.2)) (noncentralBetaMeasure a b l)
       ((noncentralChiSquaredMeasure (2 * a) l).prod (chiSquaredMeasure (2 * b))) :=
-    ⟨by fun_prop, (noncentralBetaMeasure_eq_map ha hb l).symm⟩
+    ⟨by fun_prop, (noncentralBetaMeasure_eq_map hb l).symm⟩
   exact hratio.fun_comp (hXY.hasLaw_prod hX hY)
 
 /-- A variable with a noncentral Beta law of positive first shape has a probability density
