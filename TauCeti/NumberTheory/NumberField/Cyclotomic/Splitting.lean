@@ -27,7 +27,7 @@ the primes above `p`, and factors `p 𝓞 K`.
 
 Two classical criteria follow. Their statements depend on the residue of `n` modulo `4`, because an
 `n`-th cyclotomic field with `n ≡ 2 mod 4` is also an `n / 2`-th cyclotomic field, and the splitting
-of `p` is governed by the odd level `n / 2`. For `n ≢ 2 mod 4`:
+of `p` is governed by the odd level `n / 2`. For `n ≠ 0` and `n ≢ 2 mod 4`:
 
 * `p` splits completely in `K` iff `p ≡ 1 mod n`;
 * `p` is inert in `K` iff `p ∤ n` and `p` generates `(ZMod n)ˣ`.
@@ -45,9 +45,11 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   primes above `p` times that order is `φ(m)`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset_pow`: `p 𝓞 K` is the product of
   the primes above `p`, raised to the power `φ(p ^ k)`.
-* `TauCeti.NumberField.ncard_primesOver_eq_totient_iff`: for `n ≢ 2 mod 4`, the prime `p` splits
-  completely iff `p ≡ 1 mod n`; `ncard_primesOver_eq_totient_iff_of_mod_four_eq_two` is the
-  version for `n ≡ 2 mod 4`.
+* `TauCeti.NumberField.ncard_primesOver_eq_totient_iff`: for `n ≢ 2 mod 4`, the number of primes
+  above `p` is `φ(n)` iff `p ≡ 1 mod n`. For `n ≠ 0` this says that `p` splits completely, as then
+  `φ(n) = [K : ℚ]`; at `n = 0` it is only a numerical identity, both sides being false (`φ(0) = 0`
+  by convention). `ncard_primesOver_eq_totient_iff_of_mod_four_eq_two` is the version for
+  `n ≡ 2 mod 4`.
 * `TauCeti.NumberField.isPrime_span_natCast_iff_orderOf_eq_totient`: for `n ≢ 2 mod 4`, the
   prime `p` is inert iff `p ∤ n` and `p` has order `φ(n)` modulo `n`;
   `isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two` is the version for
@@ -156,9 +158,10 @@ private theorem isPrime_span_natCast_iff_of_eq_pow_mul (hn : n = p ^ k * m) (hm 
   rw [h] at hg
   exact (Nat.mul_eq_right (Nat.totient_pos.2 (NeZero.pos m)).ne').1 hg
 
-/-- **Complete splitting in a cyclotomic field.** If `n ≢ 2 mod 4`, a prime `p` splits completely
-in an `n`-th cyclotomic field over `ℚ` (there are `φ(n) = [K : ℚ]` primes above it) iff
-`p ≡ 1 mod n`. -/
+/-- **Complete splitting in a cyclotomic field.** If `n ≢ 2 mod 4`, the number of primes above `p`
+in an `n`-th cyclotomic field over `ℚ` is `φ(n)` iff `p ≡ 1 mod n`. For `n ≠ 0` this says that `p`
+splits completely (`φ(n) = [K : ℚ]`). For `n = 0` it is only a numerical identity: both sides are
+false, as `φ(0) = 0` by convention and `p ≢ 1`. -/
 theorem ncard_primesOver_eq_totient_iff (hn4 : n % 4 ≠ 2) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = n.totient ↔ (p : ZMod n) = 1 := by
   rcases eq_or_ne n 0 with rfl | hn0
