@@ -215,7 +215,7 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
       have h := (Real.tendsto_exp_neg_atTop_nhds_zero.comp
         ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)).const_mul A
       simpa [hb, Function.comp_def] using h
-    rw [show u - b = fun y ↦ u y - b y from funext fun y ↦ Pi.sub_apply u b y]
+    rw [Pi.sub_def]
     simpa only [sub_zero] using hlim.sub hexp
 
 

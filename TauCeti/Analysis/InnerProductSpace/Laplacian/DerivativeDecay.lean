@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Exponential decay of all derivatives of solutions of screened equations
@@ -73,29 +72,6 @@ open scoped ContDiff
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-/-- An eventual property along `cocompact E` holds outside some ball. -/
-private theorem exists_forall_le_norm_of_eventually_cocompact {P : E → Prop}
-    (h : ∀ᶠ x in cocompact E, P x) : ∃ R, ∀ x, R ≤ ‖x‖ → P x := by
-  obtain ⟨R, -, hR⟩ :=
-    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := E) ▸ h)
-  exact ⟨R, fun x hx ↦ hR hx⟩
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A point of the closed ball of radius `r ≤ 1` about `y` has norm at least `‖y‖ - 1`. -/
-private theorem sub_one_le_norm_of_mem_closedBall {y z : E} {r : ℝ} (hr : r ≤ 1)
-    (hz : z ∈ closedBall y r) : ‖y‖ - 1 ≤ ‖z‖ := by
-  have h := norm_sub_norm_le y z
-  rw [mem_closedBall, dist_eq_norm, ← norm_neg, neg_sub] at hz
-  linarith
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The exponential weight at a point within distance one of `y` is at most `exp c` times its
-value at `y`. -/
-private theorem exp_neg_mul_norm_le {c : ℝ} (hc : 0 ≤ c) {y z : E} (hz : ‖y‖ - 1 ≤ ‖z‖) :
-    Real.exp (-(c * ‖z‖)) ≤ Real.exp c * Real.exp (-(c * ‖y‖)) := by
-  rw [← Real.exp_add, Real.exp_le_exp]
-  nlinarith
-
 /-- **Translates of a forced screened solution.** Under the hypotheses of
 `TauCeti.isBigO_fderiv_of_laplacian_eq_smul_add`, made explicit outside the ball of radius
 `R ≥ 1`, the differences `g (x + h) - g x` with `‖h‖ ≤ 1` are bounded by `‖h‖` times a fixed
@@ -126,10 +102,21 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
   have hgap : 0 < a ^ 2 - c ^ 2 := by nlinarith
   refine ⟨M * Real.exp (c * R₁) + B / (a ^ 2 - c ^ 2), by positivity, fun x hx h hh ↦ ?_⟩
   set D : E → G := fun y ↦ g (y + h) - g y with hD
+  -- A point within distance `‖h‖ ≤ 1` of `y` has norm at least `‖y‖ - 1`, so the exponential
+  -- weight there is at most `exp c` times its value at `y`.
+  have hnear : ∀ y z : E, z ∈ closedBall y ‖h‖ → ‖y‖ - 1 ≤ ‖z‖ := fun y z hz ↦ by
+    have := norm_sub_norm_le y z
+    rw [mem_closedBall, dist_eq_norm, ← norm_neg, neg_sub] at hz
+    linarith
+  have hweight : ∀ y z : E, z ∈ closedBall y ‖h‖ →
+      Real.exp (-(c * ‖z‖)) ≤ Real.exp c * Real.exp (-(c * ‖y‖)) := fun y z hz ↦ by
+    have := hnear y z hz
+    rw [← Real.exp_add, Real.exp_le_exp]
+    nlinarith
   -- Points within distance `‖h‖` of a point outside the ball of radius `R₁` lie outside the
   -- ball of radius `R`.
   have hfar : ∀ y : E, R₁ ≤ ‖y‖ → ∀ z ∈ closedBall y ‖h‖, R ≤ ‖z‖ := fun y hy z hz ↦ by
-    have := sub_one_le_norm_of_mem_closedBall hh hz
+    have := hnear y z hz
     linarith
   have hyh : ∀ y : E, y + h ∈ closedBall y ‖h‖ := fun y ↦ by
     simp [mem_closedBall, dist_eq_norm]
@@ -142,8 +129,7 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
       ‖Δ D y - V y • D y‖ ≤ ‖h‖ * B * Real.exp (-(c * ‖y‖)) := fun y hy ↦ by
     have hy₀ : R ≤ ‖y‖ := by linarith
     have hΔD : Δ D y = Δ g (y + h) - Δ g y := by
-      rw [hD, show (fun y ↦ g (y + h) - g y) = (fun y ↦ g (y + h)) - g from rfl,
-        (hgsh y hy).laplacian_sub (hg y hy₀), laplacian_comp_add_right]
+      rw [hD, ← Pi.sub_def, (hgsh y hy).laplacian_sub (hg y hy₀), laplacian_comp_add_right]
     have hsplit : Δ D y - V y • D y = (V (y + h) - V y) • g (y + h) + (Φ (y + h) - Φ y) := by
       rw [hΔD, heq _ (hfar y hy _ (hyh y)), heq y hy₀, hD]
       module
@@ -154,12 +140,12 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
     have hΦmv : ‖Φ (y + h) - Φ y‖ ≤ (KΦ * (Real.exp c * Real.exp (-(c * ‖y‖)))) * ‖y + h - y‖ :=
       (convex_closedBall y ‖h‖).norm_image_sub_le_of_norm_fderiv_le
         (fun z hz ↦ hΦd z (hfar y hy z hz))
-        (fun z hz ↦ (hΦ z (hfar y hy z hz)).trans (mul_le_mul_of_nonneg_left
-          (exp_neg_mul_norm_le hc.le (sub_one_le_norm_of_mem_closedBall hh hz)) hKΦ))
+        (fun z hz ↦ (hΦ z (hfar y hy z hz)).trans
+          (mul_le_mul_of_nonneg_left (hweight y z hz) hKΦ))
         (mem_closedBall_self (norm_nonneg h)) (hyh y)
     have hgyh : ‖g (y + h)‖ ≤ Kg * (Real.exp c * Real.exp (-(c * ‖y‖))) :=
-      (hgd _ (hfar y hy _ (hyh y))).trans (mul_le_mul_of_nonneg_left
-        (exp_neg_mul_norm_le hc.le (sub_one_le_norm_of_mem_closedBall hh (hyh y))) hKg)
+      (hgd _ (hfar y hy _ (hyh y))).trans
+        (mul_le_mul_of_nonneg_left (hweight y _ (hyh y)) hKg)
     rw [add_sub_cancel_left] at hVmv hΦmv
     rw [hsplit]
     calc ‖(V (y + h) - V y) • g (y + h) + (Φ (y + h) - Φ y)‖
@@ -199,8 +185,11 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
     (fun y hy ↦ (hφle _).trans (hbdry y hy))
     (by simpa [Function.comp_def] using (φ.continuous.tendsto 0).comp hDlim) hx
   · simp only [hφx] at hcomp
+    have hexp : Real.exp (-(c * (‖x‖ - R₁))) = Real.exp (c * R₁) * Real.exp (-(c * ‖x‖)) := by
+      rw [← Real.exp_add]
+      ring_nf
     refine hcomp.trans (le_of_eq ?_)
-    rw [show -(c * (‖x‖ - R₁)) = c * R₁ + -(c * ‖x‖) by ring, Real.exp_add]
+    rw [hexp]
     ring
   · -- The equation for `φ ∘ D`.
     have hΔ : Δ (fun y ↦ φ (D y)) y = φ (Δ D y) :=
@@ -233,29 +222,31 @@ theorem isBigO_fderiv_of_laplacian_eq_smul_add {g Φ : E → G} {V : E → ℝ} 
   have hglim : Tendsto g (cocompact E) (𝓝 0) := hgd.trans_tendsto
     (Real.tendsto_exp_neg_atTop_nhds_zero.comp
       ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))
-  obtain ⟨R₀, hR₀⟩ := exists_forall_le_norm_of_eventually_cocompact
-    (hg.and (hVd.and (hVa.and (hL.and (hΦd.and (hKΦ.and (heq.and hKg)))))))
+  obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
+    (cobounded_eq_cocompact (α := E) ▸
+      (hg.and (hVd.and (hVa.and (hL.and (hΦd.and (hKΦ.and (heq.and hKg))))))))
   set R := max R₀ 1
-  have hRR₀ : ∀ y : E, R ≤ ‖y‖ → R₀ ≤ ‖y‖ := fun y hy ↦ (le_max_left _ _).trans hy
+  have hRR₀ : ∀ y : E, R ≤ ‖y‖ → y ∈ {x : E | R₀ ≤ ‖x‖} := fun y hy ↦
+    Set.mem_ofPred.mpr ((le_max_left _ _).trans hy)
   simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), abs_one, mul_one] at hR₀
   obtain ⟨K, hK₀, hK⟩ := exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add
     (L := max L 0) (Kg := max Kg 0) (KΦ := max KΦ 0) hc hca (le_max_right R₀ 1)
     (le_max_right _ _) (le_max_right _ _) (le_max_right _ _)
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).1) (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.1)
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.1)
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.2.1.trans (le_max_left _ _))
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.2.2.1)
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.2.2.2.1.trans
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).1) (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.1)
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.1)
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.1.trans (le_max_left _ _))
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.1)
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.1.trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le))
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.2.2.2.2.1)
-    (fun y hy ↦ (hR₀ y (hRR₀ y hy)).2.2.2.2.2.2.2.trans
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.2.1)
+    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.2.2.trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)) hglim
   refine IsBigO.of_bound K ?_
   filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (R + 1)] with x hx
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
   -- The difference bound makes `g` Lipschitz at `x` with constant `K exp (-c ‖x‖)`.
   have hdx : DifferentiableAt ℝ g x :=
-    (hR₀ x (hRR₀ x (by linarith))).1.differentiableAt (by norm_num)
+    (hR₀ (hRR₀ x (by linarith))).1.differentiableAt (by norm_num)
   refine hdx.hasFDerivAt.le_of_lip' (by positivity) ?_
   filter_upwards [ball_mem_nhds x one_pos] with y hy
   have hy' : ‖y - x‖ ≤ 1 := by rw [← dist_eq_norm]; exact (mem_ball.mp hy).le
@@ -265,43 +256,10 @@ theorem isBigO_fderiv_of_laplacian_eq_smul_add {g Φ : E → G} {V : E → ℝ} 
 
 /-! ### All derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)` -/
 
-/-- A function whose values are bounded in norm by a fixed multiple of those of an `O(ρ)` function
-is `O(ρ)`. Only norms are compared, so no instance relating the two value types is needed. -/
-private theorem isBigO_of_norm_le_mul {α F₁ F₂ : Type*} [Norm F₁] [Norm F₂] {l : Filter α}
-    {f₁ : α → F₁} {f₂ : α → F₂} {ρ : α → ℝ} {K : ℝ} (hK : 0 ≤ K) (h : ∀ y, ‖f₁ y‖ ≤ K * ‖f₂ y‖)
-    (h₂ : f₂ =O[l] ρ) : f₁ =O[l] ρ := by
-  obtain ⟨C, hC⟩ := isBigO_iff.1 h₂
-  refine isBigO_iff.2 ⟨K * C, hC.mono fun y hy ↦ ?_⟩
-  calc ‖f₁ y‖ ≤ K * ‖f₂ y‖ := h y
-    _ ≤ K * (C * ‖ρ y‖) := mul_le_mul_of_nonneg_left hy hK
-    _ = K * C * ‖ρ y‖ := by ring
-
-/-- A function whose values have the norms of those of an `O(ρ)` function is `O(ρ)`. -/
-private theorem isBigO_of_norm_eq {α F₁ F₂ : Type*} [Norm F₁] [Norm F₂] {l : Filter α}
-    {f₁ : α → F₁} {f₂ : α → F₂} {ρ : α → ℝ} (h : ∀ y, ‖f₁ y‖ = ‖f₂ y‖) (h₂ : f₂ =O[l] ρ) :
-    f₁ =O[l] ρ :=
-  isBigO_of_norm_le_mul zero_le_one (fun y ↦ by rw [one_mul, h y]) h₂
-
-omit [FiniteDimensional ℝ E] in
-/-- The bilinear estimate `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear` for
-`(c, f) ↦ c.smulRight f`. -/
-private theorem isBigO_iteratedFDeriv_smulRight {f : E → E →L[ℝ] ℝ} {g : E → G}
-    (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) {l : Filter E} {ρ₁ ρ₂ : E → ℝ} {n : ℕ}
-    (hfn : ∀ i ≤ n, iteratedFDeriv ℝ i f =O[l] ρ₁)
-    (hgn : ∀ i ≤ n, iteratedFDeriv ℝ i g =O[l] ρ₂) :
-    iteratedFDeriv ℝ n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
-  simpa using (ContinuousLinearMap.smulRightL ℝ E G).isBigO_iteratedFDeriv_of_bilinear hf hg
-    (mod_cast le_top) hfn hgn
-
 /-- The commutator `Dᵏ (exp ℓ) - exp ℓ • Dᵏ ℓ`. It involves only derivatives of `ℓ` of order
 below `k` (`isBigO_iteratedFDeriv_expCommutator`). -/
 private def expCommutator (ℓ : E → ℝ) (k : ℕ) (x : E) : E [×k]→L[ℝ] ℝ :=
   iteratedFDeriv ℝ k (fun y ↦ Real.exp (ℓ y)) x - Real.exp (ℓ x) • iteratedFDeriv ℝ k ℓ x
-
-omit [FiniteDimensional ℝ E] in
-private theorem fderiv_exp_comp {ℓ : E → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
-    fderiv ℝ (fun y ↦ Real.exp (ℓ y)) = fun y ↦ Real.exp (ℓ y) • fderiv ℝ ℓ y :=
-  funext fun y ↦ fderiv_exp (hℓ.differentiable (by simp) y)
 
 omit [FiniteDimensional ℝ E] in
 private theorem contDiff_expCommutator {ℓ : E → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (k : ℕ) :
@@ -313,7 +271,7 @@ omit [FiniteDimensional ℝ E] in
 private theorem expCommutator_one {ℓ : E → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) : expCommutator ℓ 1 = 0 := by
   funext x
   ext m
-  simp [expCommutator, iteratedFDeriv_one_apply, fderiv_exp_comp hℓ]
+  simp [expCommutator, iteratedFDeriv_one_apply, fderiv_exp (hℓ.differentiable (by simp) x)]
 
 omit [FiniteDimensional ℝ E] in
 /-- The recursion `Cₖ₊₁ = D Cₖ + D (exp ℓ) ⊗ Dᵏ ℓ`, up to the currying isometry. -/
@@ -338,12 +296,8 @@ private theorem expCommutator_succ {ℓ : E → ℝ} (hℓ : ContDiff ℝ ∞ �
       simp [expCommutator]
     rw [hsplit]
     exact (hdC.hasFDerivAt.add (hde.hasFDerivAt.smul hdℓ.hasFDerivAt)).fderiv
-  have hdef : expCommutator ℓ (k + 1) y = (continuousMultilinearCurryLeftEquiv ℝ
-      (fun _ : Fin (k + 1) ↦ E) ℝ).symm (fderiv ℝ (iteratedFDeriv ℝ k fun y ↦ Real.exp (ℓ y)) y) -
-        Real.exp (ℓ y) • (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E)
-          ℝ).symm (fderiv ℝ (iteratedFDeriv ℝ k ℓ) y) := rfl
-  rw [hdef, hDe, Function.comp_apply]
-  simp only [map_add, map_smul]
+  simp only [expCommutator, iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, hDe, map_add,
+    map_smul]
   abel
 
 omit [FiniteDimensional ℝ E] in
@@ -361,24 +315,21 @@ private theorem isBigO_iteratedFDeriv_expCommutator {ℓ : E → ℝ} {ρ : E �
     rw [expCommutator_one hℓ, iteratedFDeriv_zero]
     exact isBigO_zero _ _
   | succ k hk ih =>
-    have hT := isBigO_iteratedFDeriv_smulRight (he.fderiv_right (m := ∞) le_rfl)
-      (hℓ.iteratedFDeriv_right (m := ∞) (i := k) le_rfl) (n := j)
-      (fun i hi ↦ isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_fderiv)
+    -- The term `D (exp ℓ) ⊗ Dᵏ ℓ`.
+    have hT := (he.fderiv_right (m := ∞) le_rfl).isBigO_iteratedFDeriv_smulRight
+      (hℓ.iteratedFDeriv_right (m := ∞) (i := k) le_rfl) (n := j) (mod_cast le_top)
+      (fun i hi ↦ (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.le).trans
         (hen (i + 1) (by omega)))
-      (fun i hi ↦ isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_iteratedFDeriv ℓ i k y)
+      (fun i hi ↦ (isBigO_of_le _ fun y ↦ (norm_iteratedFDeriv_iteratedFDeriv ℓ i k y).le).trans
         (hℓn (i + k) (by omega)))
     simp only [one_mul] at hT
     have hF : iteratedFDeriv ℝ j (fderiv ℝ (expCommutator ℓ k)) =O[cocompact E] ρ :=
-      isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_fderiv) (ih (j := j + 1) (by omega))
+      (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.le).trans (ih (j := j + 1) (by omega))
     have hsum : iteratedFDeriv ℝ j (fun y ↦ fderiv ℝ (expCommutator ℓ k) y +
         (fderiv ℝ (fun y ↦ Real.exp (ℓ y)) y).smulRight (iteratedFDeriv ℝ k ℓ y))
           =O[cocompact E] ρ := by
-      refine isBigO_of_norm_eq (fun y ↦ ?_) (hF.add hT)
-      rw [show (fun y ↦ fderiv ℝ (expCommutator ℓ k) y +
-          (fderiv ℝ (fun y ↦ Real.exp (ℓ y)) y).smulRight (iteratedFDeriv ℝ k ℓ y)) =
-          fderiv ℝ (expCommutator ℓ k) + fun y ↦
-            (fderiv ℝ (fun y ↦ Real.exp (ℓ y)) y).smulRight (iteratedFDeriv ℝ k ℓ y) from rfl,
-        iteratedFDeriv_add_apply
+      refine (isBigO_of_le _ fun y ↦ (le_of_eq ?_)).trans (hF.add hT)
+      rw [fun_iteratedFDeriv_add_apply
         (((contDiff_expCommutator hℓ k).fderiv_right (m := ∞) le_rfl).contDiffAt.of_le
           (by simp))
         (((he.fderiv_right (m := ∞) le_rfl).smulRight
@@ -392,22 +343,7 @@ private theorem isBigO_iteratedFDeriv_expCommutator {ℓ : E → ℝ} {ρ : E �
       LinearIsometryEquiv.norm_iteratedFDeriv_comp_left (𝕜 := ℝ) (E := E)
         (F := E →L[ℝ] E [×k]→L[ℝ] ℝ) (G := E [×k + 1]→L[ℝ] ℝ) _ f y j
     rw [expCommutator_succ hℓ k]
-    exact isBigO_of_norm_eq (hiso _) hsum
-
-omit [FiniteDimensional ℝ E] in
-/-- A derivative of `exp ℓ` of positive order is `O(ρ)` once the derivatives of `ℓ` up to that
-order are, and those of `exp ℓ` of lower order are bounded. -/
-private theorem isBigO_iteratedFDeriv_exp_succ {ℓ : E → ℝ} {ρ : E → ℝ} (hℓ : ContDiff ℝ ∞ ℓ)
-    {n : ℕ} (hℓn : ∀ i ≤ n + 1, iteratedFDeriv ℝ i ℓ =O[cocompact E] ρ)
-    (hen : ∀ i ≤ n, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[cocompact E]
-      fun _ ↦ (1 : ℝ)) :
-    iteratedFDeriv ℝ (n + 1) (fun y ↦ Real.exp (ℓ y)) =O[cocompact E] ρ := by
-  have hB := (ContinuousLinearMap.lsmul ℝ ℝ).isBigO_iteratedFDeriv_of_bilinear
-    (Real.contDiff_exp.comp hℓ) (hℓ.fderiv_right (m := ∞) le_rfl) (n := n) (mod_cast le_top) hen
-    (fun i hi ↦ isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_fderiv) (hℓn (i + 1) (by omega)))
-  simp only [ContinuousLinearMap.lsmul_apply, one_mul, Function.comp_apply] at hB
-  rw [← fderiv_exp_comp hℓ] at hB
-  exact isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_fderiv.symm) hB
+    exact (isBigO_of_le _ fun y ↦ (hiso _ y).le).trans hsum
 
 /-- **The inductive step.** For a smooth solution of `Δ ℓ = κ (exp ℓ - 1)` near infinity with
 `exp ℓ → 1`, if the derivatives of `ℓ` of order at most `n ≥ 1` are `O(exp (-c ‖x‖))` and those of
@@ -426,11 +362,12 @@ private theorem isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one {ℓ : E 
   -- The equation for `Dⁿℓ` near infinity.
   have hDeq : ∀ᶠ x in cocompact E, Δ (iteratedFDeriv ℝ n ℓ) x =
       (κ * e x) • iteratedFDeriv ℝ n ℓ x + (κ • expCommutator ℓ n) x := by
-    obtain ⟨R, hR⟩ := exists_forall_le_norm_of_eventually_cocompact heq
+    obtain ⟨R, -, hR⟩ :=
+      hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := E) ▸ heq)
     filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop R] with x hx
     have hloc : Δ ℓ =ᶠ[𝓝 x] κ • e - fun _ ↦ κ := by
       filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
-      rw [hR y (le_of_lt hy)]
+      rw [hR (Set.mem_ofPred.mpr hy.le)]
       simp [e, mul_sub]
     rw [(hℓ.of_le (by simp)).laplacian_iteratedFDeriv,
       (hloc.iteratedFDeriv ℝ n).eq_of_nhds,
@@ -448,34 +385,17 @@ private theorem isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one {ℓ : E 
     (Eventually.of_forall fun x ↦
       ((contDiff_expCommutator hℓ n).differentiable (by simp) x).const_smul κ) ?_ hDeq
     (hℓn n le_rfl)
-  · exact isBigO_of_norm_eq (fun y ↦ by
-      rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply,
-        LinearIsometryEquiv.norm_map]) hd
+  · refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans hd
+    rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, LinearIsometryEquiv.norm_map]
   · -- The potential has a bounded derivative.
-    have h1 : fderiv ℝ e =O[cocompact E] fun _ ↦ (1 : ℝ) :=
-      isBigO_of_norm_eq (fun y ↦ (norm_iteratedFDeriv_one e).symm) (hen 1 hn)
-    refine isBigO_of_norm_le_mul (abs_nonneg κ) (fun y ↦ ?_) h1
-    rw [fderiv_const_mul (he.differentiable (by simp) y), norm_smul, Real.norm_eq_abs]
+    refine (isBigO_of_le' (c := |κ|) _ fun y ↦ le_of_eq ?_).trans (hen 1 hn)
+    rw [fderiv_const_mul (he.differentiable (by simp) y), norm_smul, Real.norm_eq_abs,
+      norm_iteratedFDeriv_one]
   · -- The forcing has an `O(exp (-c ‖x‖))` derivative.
-    have h1 : fderiv ℝ (expCommutator ℓ n) =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) :=
-      isBigO_of_norm_eq (fun y ↦ (norm_iteratedFDeriv_one (expCommutator ℓ n)).symm)
-        (isBigO_iteratedFDeriv_expCommutator hℓ hℓn hen hn (j := 1) (by omega))
-    refine isBigO_of_norm_le_mul (abs_nonneg κ) (fun y ↦ ?_) h1
+    refine (isBigO_of_le' (c := |κ|) _ fun y ↦ le_of_eq ?_).trans
+      (isBigO_iteratedFDeriv_expCommutator hℓ hℓn hen hn (j := 1) (by omega))
     rw [fderiv_const_smul ((contDiff_expCommutator hℓ n).differentiable (by simp) y), norm_smul,
-      Real.norm_eq_abs]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- If `ℓ` is `O(exp (-c ‖x‖))` with `c > 0`, then so is `exp ℓ - 1`. -/
-private theorem isBigO_exp_sub_one [ProperSpace E] {ℓ : E → ℝ} {c : ℝ} (hc : 0 < c)
-    (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) :
-    (fun x ↦ Real.exp (ℓ x) - 1) =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
-  have hℓlim : Tendsto ℓ (cocompact E) (𝓝 0) := hℓd.trans_tendsto
-    (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))
-  refine IsBigO.trans (IsBigO.of_bound 2 ?_) hℓd
-  filter_upwards [hℓlim.eventually (Metric.closedBall_mem_nhds 0 one_pos)] with x hx
-  rw [dist_zero_right, Real.norm_eq_abs] at hx
-  simpa only [Real.norm_eq_abs] using Real.abs_exp_sub_one_le hx
+      Real.norm_eq_abs, norm_iteratedFDeriv_one]
 
 /-- **All derivatives of a globally smooth solution.** The derivatives of `ℓ` are
 `O(exp (-c ‖x‖))` and those of `exp ℓ` are bounded, at every order. -/
@@ -495,7 +415,9 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
       simp only [hρ, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), abs_one, Real.exp_le_one_iff,
         Left.neg_nonpos_iff]
       positivity
-  have he1 : (fun x ↦ e x - 1) =O[cocompact E] ρ := isBigO_exp_sub_one hc hℓd
+  have he1 : (fun x ↦ e x - 1) =O[cocompact E] ρ :=
+    Real.isBigO_exp_comp_sub_one (hℓd.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))) hℓd
   have helim : Tendsto e (cocompact E) (𝓝 1) := by
     have h := (he1.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
       ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))).add_const 1
@@ -516,7 +438,7 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
           (κ • (fderiv ℝ e x - fderiv ℝ ℓ x)) x :=
         (((he.differentiable (by simp) x).hasFDerivAt.sub_const 1).sub
           (hℓ.differentiable (by simp) x).hasFDerivAt).const_mul κ
-      rw [h1.fderiv, fderiv_exp_comp hℓ]
+      rw [h1.fderiv, fderiv_exp (hℓ.differentiable (by simp) x)]
       module
     refine isBigO_fderiv_of_laplacian_eq_smul_add (V := fun _ ↦ κ)
       (Φ := fun x ↦ κ * (e x - 1 - ℓ x)) hc hca
@@ -533,12 +455,12 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
   induction n with
   | zero =>
     refine ⟨fun i hi ↦ ?_, fun i hi ↦ ?_⟩ <;> obtain rfl : i = 0 := by omega
-    · exact isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_zero) hℓd
-    · exact isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_zero) he0
+    · exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans hℓd
+    · exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans he0
   | succ n ih =>
     have hnext : iteratedFDeriv ℝ (n + 1) ℓ =O[cocompact E] ρ := by
       rcases Nat.eq_zero_or_pos n with rfl | hn
-      · exact isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_one ℓ) hd1
+      · exact (isBigO_of_le _ fun y ↦ (norm_iteratedFDeriv_one ℓ).le).trans hd1
       · exact isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one hc hca hκa hℓ heq helim hn
           ih.1 ih.2
     have hℓall : ∀ i ≤ n + 1, iteratedFDeriv ℝ i ℓ =O[cocompact E] ρ := fun i hi ↦ by
@@ -548,27 +470,7 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
     refine ⟨hℓall, fun i hi ↦ ?_⟩
     rcases Nat.lt_or_eq_of_le hi with h | rfl
     · exact ih.2 i (by omega)
-    · exact (isBigO_iteratedFDeriv_exp_succ hℓ hℓall ih.2).trans hρ1
-
-/-- A function smooth outside a compact set agrees, near every point outside a larger compact set,
-with a globally smooth function. -/
-private theorem exists_contDiff_eventually_eventuallyEq {ℓ : E → ℝ}
-    (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ ∞ ℓ x) :
-    ∃ ℓ' : E → ℝ, ContDiff ℝ ∞ ℓ' ∧ ∀ᶠ x in cocompact E, ℓ' =ᶠ[𝓝 x] ℓ := by
-  obtain ⟨R, hR⟩ := exists_forall_le_norm_of_eventually_cocompact hℓ
-  set r := max R 0 + 1 with hr
-  let b : ContDiffBump (0 : E) := ⟨r, r + 1, by positivity, by linarith⟩
-  refine ⟨fun x ↦ (1 - b x) * ℓ x, contDiff_iff_contDiffAt.2 fun x ↦ ?_, ?_⟩
-  · by_cases hx : ‖x‖ < r
-    · -- Near the ball of radius `r` the cutoff vanishes.
-      refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hx] with y hy
-      rw [b.one_of_mem_closedBall (by simpa using hy.le), sub_self, zero_mul]
-    · exact (contDiffAt_const.sub b.contDiff.contDiffAt).mul
-        (hR x (by linarith [le_max_left R 0, not_lt.mp hx]))
-  · filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (r + 1)] with x hx
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
-    rw [b.zero_of_le_dist (by simpa using hy.le), sub_zero, one_mul]
+    · exact (hℓ.isBigO_iteratedFDeriv_succ_exp hℓall ih.2).trans hρ1
 
 /-- **Exponential decay of all derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)`.** Let `ℓ` be
 smooth outside a compact set and solve `Δ ℓ = κ (exp ℓ - 1)` there. If `ℓ` is `O(exp (-c ‖x‖))`
@@ -612,13 +514,13 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
   have h : iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ' x) - 1) =O[cocompact E]
       fun x ↦ Real.exp (-(c * ‖x‖)) := by
     rcases n with _ | n
-    · exact isBigO_of_norm_eq (fun y ↦ norm_iteratedFDeriv_zero) (isBigO_exp_sub_one hc hℓd')
-    · refine isBigO_of_norm_eq (fun y ↦ ?_)
-        (isBigO_iteratedFDeriv_exp_succ hℓ'c (hP (n + 1)).1 (hP n).2)
-      rw [show (fun x ↦ Real.exp (ℓ' x) - 1) = (fun x ↦ Real.exp (ℓ' x)) - fun _ ↦ 1 from rfl,
-        iteratedFDeriv_sub_apply (f := fun x ↦ Real.exp (ℓ' x)) (g := fun _ ↦ (1 : ℝ))
-          ((show ContDiff ℝ ∞ (fun x ↦ Real.exp (ℓ' x)) from
-            Real.contDiff_exp.comp hℓ'c).contDiffAt.of_le (by simp)) contDiffAt_const,
+    · refine (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans
+        (Real.isBigO_exp_comp_sub_one (hℓd'.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+          ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))) hℓd')
+    · have he : ContDiff ℝ ∞ (fun x ↦ Real.exp (ℓ' x)) := Real.contDiff_exp.comp hℓ'c
+      refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans
+        (hℓ'c.isBigO_iteratedFDeriv_succ_exp (hP (n + 1)).1 (hP n).2)
+      rw [fun_iteratedFDeriv_sub_apply (he.contDiffAt.of_le (by simp)) contDiffAt_const,
         iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero]
   refine h.congr' (hagree.mono fun x hx ↦ ?_) EventuallyEq.rfl
   exact (((hx.fun_comp Real.exp).sub EventuallyEq.rfl).iteratedFDeriv ℝ n).eq_of_nhds

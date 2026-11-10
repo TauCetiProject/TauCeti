@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -52,6 +53,10 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
   order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of
   `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
+* `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
+* `ContDiff.isBigO_iteratedFDeriv_succ_exp`: along any filter, the derivative of order `n + 1` of
+  `exp ℓ` is `O(ρ)` when the derivatives of `ℓ` up to that order are `O(ρ)` and those of `exp ℓ`
+  of lower order are bounded.
 -/
 
 public section
@@ -208,6 +213,40 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear {D : Type*} [Norme
   refine IsBigO.trans (IsBigO.of_bound 1 (Filter.Eventually.of_forall fun y ↦ ?_)) hsum
   rw [one_mul, Real.norm_eq_abs]
   exact (B.norm_iteratedFDeriv_le_of_bilinear hf hg y hn).trans (le_abs_self _)
+
+open Asymptotics in
+/-- The case `(c, v) ↦ c.smulRight v` of `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`:
+along any filter, if the derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`,
+then the order-`n` derivative of `y ↦ (f y).smulRight (g y)` is `O(ρ₁ ρ₂)`. -/
+theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] {f : D → E →L[𝕜] 𝕜} {g : D → G} {N : WithTop ℕ∞} (hf : ContDiff 𝕜 N f)
+    (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) {l : Filter D} {ρ₁ ρ₂ : D → ℝ}
+    (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
+    (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
+    iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
+  simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
+    hfn hgn
+
+open Asymptotics in
+open scoped ContDiff in
+/-- **Asymptotic bounds on the derivatives of `exp ℓ`.** Along any filter, the derivative of order
+`n + 1` of `y ↦ exp (ℓ y)` is `O(ρ)` once the derivatives of `ℓ` of order at most `n + 1` are
+`O(ρ)` and those of `exp ℓ` of order at most `n` are bounded: it is the order-`n` derivative of
+`exp ℓ • Dℓ`, which `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear` bounds. -/
+theorem ContDiff.isBigO_iteratedFDeriv_succ_exp {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] {ℓ : D → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) {l : Filter D} {ρ : D → ℝ} {n : ℕ}
+    (hℓn : ∀ i ≤ n + 1, iteratedFDeriv ℝ i ℓ =O[l] ρ)
+    (hen : ∀ i ≤ n, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[l] fun _ ↦ (1 : ℝ)) :
+    iteratedFDeriv ℝ (n + 1) (fun y ↦ Real.exp (ℓ y)) =O[l] ρ := by
+  have hB := (ContinuousLinearMap.lsmul ℝ ℝ).isBigO_iteratedFDeriv_of_bilinear
+    (Real.contDiff_exp.comp hℓ) (hℓ.fderiv_right (m := ∞) le_rfl) (n := n) (mod_cast le_top) hen
+    (fun i hi ↦ (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.le).trans
+      (hℓn (i + 1) (by omega)))
+  simp only [ContinuousLinearMap.lsmul_apply, one_mul, Function.comp_apply] at hB
+  have hfe : (fun y ↦ Real.exp (ℓ y) • fderiv ℝ ℓ y) = fderiv ℝ (fun y ↦ Real.exp (ℓ y)) :=
+    funext fun y ↦ (fderiv_exp (hℓ.differentiable (by simp) y)).symm
+  rw [hfe] at hB
+  exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.ge).trans hB
 
 namespace TauCeti
 

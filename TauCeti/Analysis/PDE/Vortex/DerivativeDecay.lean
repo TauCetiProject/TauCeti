@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
-import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
@@ -469,7 +468,7 @@ theorem isBigO_iteratedFDeriv_normSq_sub_one
     filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
     refine Filter.EventuallyEq.eq_of_nhds (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ n)
     filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-    rw [Real.exp_log (by linarith [hR (show R ≤ ‖w‖ from hw.le)])]
+    rw [Real.exp_log (by linarith [hR (Set.mem_ofPred.mpr hw.le)])]
   · simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp, neg_le_neg_iff]
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
 
