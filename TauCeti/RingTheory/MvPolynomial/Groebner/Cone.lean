@@ -83,7 +83,6 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   have hd (p : MvPolynomial σ R) (hp : insert (m.degree p) p.support ⊆ F) :
       n.degree p = m.degree p :=
     m.degree_eq_of_forall_mem_lt n p hcomp (fun _ ha ↦ hp (Finset.mem_insert_of_mem ha))
-      (hp (Finset.mem_insert_self _ _))
   have hdb (b : B) : n.degree (b : MvPolynomial σ R) = m.degree (b : MvPolynomial σ R) :=
     hd _ ((Finset.subset_union_left.trans Finset.subset_union_left).trans (hbF b))
   have hdq (b : B) : n.degree (q b) = m.degree (q b) :=

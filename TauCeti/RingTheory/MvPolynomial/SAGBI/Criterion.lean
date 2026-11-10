@@ -72,7 +72,7 @@ variable {σ ι : Type*} {m : MonomialOrder σ}
 
 section CommSemiring
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {c : ι → MvPolynomial σ R}
+variable {R : Type*} [CommSemiring R] {c : ι → MvPolynomial σ R}
 
 /-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
 `P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then the part of `P`
