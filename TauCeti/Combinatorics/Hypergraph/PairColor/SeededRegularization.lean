@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.PairColor.EquitableRegularization
+public import TauCeti.Combinatorics.Hypergraph.PairColor.Regularization
+public import Mathlib.Order.Partition.Equipartition
 import Mathlib.Order.Iterate
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -25,11 +26,16 @@ The energy increment cuts cells along irregularity witnesses, then equitabilises
 old cell rather than across the host. The resulting partition remains an exact refinement.
 The moved-point bound for this cellwise rebalancing controls the loss of pair-color energy.
 
+## Main definitions
+
+* `TauCeti.equitablePairColorRegularityBound`: the bound on the number of parts, shared by the
+  seeded and unseeded equitable regularity lemmas.
+
 ## Main results
 
 * `PairColorSystem.exists_refining_equipartition_energy_add_lt`: an equitable energy increment
   preserving the old cells.
-* `PairColorSystem.exists_equipartition_refining_sum_irregularPairs_le`: equitable regularity
+* `PairColorSystem.exists_refining_equipartition_sum_irregularPairs_le`: equitable regularity
   refining a given equipartition.
 
 ## References
@@ -38,8 +44,10 @@ The moved-point bound for this cellwise rebalancing controls the loss of pair-co
 * V. Rödl and M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007).
 
-The induction follows the equitable pair-color energy argument in
+The induction adapts the original unseeded equitable pair-color energy argument from
 `TauCeti.Combinatorics.Hypergraph.PairColor.EquitableRegularization`, with cellwise rebalancing.
+That argument follows Y. Dillies and B. Mehta, *Formalising Szemerédi's Regularity Lemma in Lean*,
+ITP 2022, and Mathlib's `szemeredi_regularity`.
 -/
 
 public section
@@ -47,6 +55,32 @@ public section
 open Finset Finpartition
 
 namespace TauCeti
+
+/-- The bound on the number of parts in the equitable regularity lemma for pair-color systems,
+asking for at least `l` parts. Each round of the energy increment replaces a number `k` of parts
+by `⌈8 / ε⁵⌉ * (k * 4 ^ k ^ 2)`, and `⌊2 / ε⁵⌋ + 1` rounds suffice, starting from `max l 1`
+parts. -/
+noncomputable def equitablePairColorRegularityBound (ε : ℝ) (l : ℕ) : ℕ :=
+  (fun k ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2))^[⌊2 / ε ^ 5⌋₊ + 1] (max l 1)
+
+/-- Unfolding lemma for `TauCeti.equitablePairColorRegularityBound`. -/
+theorem equitablePairColorRegularityBound_def (ε : ℝ) (l : ℕ) :
+    equitablePairColorRegularityBound ε l =
+      (fun k ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2))^[⌊2 / ε ^ 5⌋₊ + 1] (max l 1) :=
+  (rfl)
+
+/-- One round of the equitable energy increment grows the number of parts monotonically. -/
+theorem monotone_ceil_mul_mul_four_pow_sq (ε : ℝ) :
+    Monotone fun k : ℕ ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2) := fun _ _ hab ↦
+  Nat.mul_le_mul_left _ (Nat.mul_le_mul hab (Nat.pow_le_pow_right (by norm_num)
+    (Nat.pow_le_pow_left hab 2)))
+
+/-- One round of the equitable energy increment does not decrease the number of parts. -/
+theorem le_ceil_mul_mul_four_pow_sq {ε : ℝ} (hε : 0 < ε) (k : ℕ) :
+    k ≤ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2) :=
+  calc k ≤ k * 4 ^ k ^ 2 := Nat.le_mul_of_pos_right _ (by positivity)
+    _ ≤ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2) :=
+      Nat.le_mul_of_pos_left _ (Nat.ceil_pos.2 (by positivity))
 
 namespace PairColorSystem
 
@@ -124,9 +158,8 @@ private theorem exists_refining_equipartition_iterate [Fintype κ]
       (∑ AB ∈ S.irregularPairs ε P, (#AB.1 * #AB.2 : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 2 ∨
         j * (ε ^ 5 / 2) ≤ S.energy P) := by
   let g : ℕ → ℕ := fun k ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2)
-  have hg : Monotone g := fun _ _ h ↦ by dsimp [g]; gcongr
-  have hid : id ≤ g := fun k ↦ (Nat.le_mul_of_pos_right k (by positivity)).trans
-    (Nat.le_mul_of_pos_left _ (Nat.ceil_pos.2 (by positivity)))
+  have hg : Monotone g := monotone_ceil_mul_mul_four_pow_sq ε
+  have hid : id ≤ g := le_ceil_mul_mul_four_pow_sq hε
   induction j with
   | zero => exact ⟨P₀, le_rfl, hP₀, le_rfl, Or.inr (by simpa using S.energy_nonneg P₀)⟩
   | succ j ih =>
@@ -160,7 +193,7 @@ private theorem exists_refining_equipartition_iterate [Fintype κ]
 /-- **Equitable pair-color regularity refining a seed.** Every equipartition `P₀` has an exact
 equitable refinement with at most `equitablePairColorRegularityBound ε #P₀.parts` cells whose
 irregular distinct-cell pairs cover at most `ε |V|²` ordered vertex pairs. -/
-theorem exists_equipartition_refining_sum_irregularPairs_le [Finite κ]
+theorem exists_refining_equipartition_sum_irregularPairs_le [Finite κ]
     (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition) {ε : ℝ} (hε : 0 < ε) :
     ∃ P : Finpartition (univ : Finset V), P ≤ P₀ ∧ P.IsEquipartition ∧
       #P.parts ≤ equitablePairColorRegularityBound ε #P₀.parts ∧
@@ -169,9 +202,7 @@ theorem exists_equipartition_refining_sum_irregularPairs_le [Finite κ]
   have hbound : (fun k ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2))^[⌊2 / ε ^ 5⌋₊ + 1] #P₀.parts ≤
       equitablePairColorRegularityBound ε #P₀.parts := by
     rw [equitablePairColorRegularityBound_def]
-    have hg : Monotone (fun k : ℕ ↦ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2)) :=
-      fun _ _ h ↦ by dsimp only; gcongr
-    exact hg.iterate _ (le_max_left _ _)
+    exact (monotone_ceil_mul_mul_four_pow_sq ε).iterate _ (le_max_left _ _)
   by_cases hsize : equitablePairColorRegularityBound ε #P₀.parts ≤ Fintype.card V
   · obtain ⟨P, hPP₀, hP, hcard, hgood⟩ := S.exists_refining_equipartition_iterate P₀ hP₀ hε
       (⌊2 / ε ^ 5⌋₊ + 1) (hbound.trans hsize)
