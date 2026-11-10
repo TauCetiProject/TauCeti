@@ -39,7 +39,9 @@ Smoothness of `ψ` is what makes `ψ φ` a member of Mathlib's `TestFunction` ty
 order is `∞`, and it is what cutoffs built from `ContDiffBump` supply. Only smoothness on `Ω` is
 used (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul`), since `ψ φ` only sees `ψ` on `tsupport φ`; a
 coefficient field of an elliptic operator, smooth in the domain but not beyond it, is a factor of
-this kind.
+this kind. For an additive Haar measure, a factor that is only `C¹` on `Ω` also suffices
+(`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`), as a consequence of the Lipschitz rule
+below.
 
 ## Lipschitz factors
 
@@ -79,6 +81,9 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
+* `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
+  `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
+  is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
 * `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
   an `Lᵖ` weak derivative in `Lᵖ`.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
@@ -352,13 +357,14 @@ derivative of `u` in the direction `v` on `Ω` and `ψ` is `C^n` on `Ω` for som
 is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
 
 This is `TauCeti.HasWeakLineDerivOn.contDiffOn_smul` at finite regularity, for an additive Haar
-measure. On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so
-`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul` applies there, and its almost-everywhere
-directional derivative is the classical one. -/
+measure. -/
 theorem HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞}
     (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
+  -- On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so the
+  -- Lipschitz rule applies there, and its almost-everywhere directional derivative is the
+  -- classical one.
   have hψ1 : ContDiffOn ℝ 1 ψ Ω := hψ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   have hll : LocallyLipschitzOn (Ω : Set E) ψ := fun x hx => by
     obtain ⟨K, t, ht, hK⟩ :=

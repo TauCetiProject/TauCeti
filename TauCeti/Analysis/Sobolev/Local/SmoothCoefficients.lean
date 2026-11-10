@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Sobolev.Leibniz
@@ -25,8 +26,9 @@ coefficients are the case `n = ∞`.
 
 The induction on `k` runs through the Leibniz rule `D(χ u) = χ Du + Dχ ⊗ u`, which needs `χ` only
 `C¹` (`TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`); the two summands are coefficients
-of class `C^{n-1}` applied to maps of order `k`. On a measurable set `K` on which `|χ| ≤ A` and
-`‖Dχ‖ ≤ B`, the derivative obeys `‖D(χ u)‖_{Lᵖ(K)} ≤ A ‖Du‖_{Lᵖ(K)} + B ‖u‖_{Lᵖ(K)}`.
+of class `C^{n-1}` applied to maps of order `k`. For any measure on which `|χ| ≤ A` and
+`‖Dχ‖ ≤ B` almost everywhere, in particular Lebesgue measure restricted to a measurable set `K`,
+the derivative obeys `‖D(χ u)‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}`.
 
 A factor whose support is a closed subset of the interior of `U` does more: the product extends by
 zero to a local Sobolev map on the whole plane. This is the cutoff step that reduces local
@@ -43,7 +45,7 @@ open neighbourhood `Ω` of `U` provides this without a global extension.
 * `TauCeti.MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul`: the Leibniz formula for the first weak
   derivative of `χ u`, for `χ` of class `C^n` with `k + 1 ≤ n`, with that derivative in the class
   of the preceding order.
-* `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: the local `Lᵖ` bound for that derivative in
+* `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: the `Lᵖ` bound for that derivative in
   terms of bounds on `χ` and `Dχ`.
 * `TauCeti.MemWkpLoc.contDiff_smul_of_tsupport_subset`: a cutoff supported inside `U` extends
   the product by zero to the whole plane.
@@ -70,7 +72,8 @@ variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddComm
   [NormedSpace ℝ G] {p : ENNReal} {U : Set ℂ} {Ω : Opens ℂ} {k : ℕ} {n : WithTop ℕ∞}
   {χ : ℂ → ℝ} {u : ℂ → F}
 
-/-- The derivative `χ Du + Dχ ⊗ u` of `χ u`, written as a sum of smooth scalar multiples. -/
+/-- The derivative `χ Du + Dχ ⊗ u` of `χ u`, written as a sum of scalar multiples by `χ` and the
+components of `Dχ`. -/
 private theorem leibniz_eq (χ : ℂ → ℝ) (u : ℂ → F) (D : ℂ → ℂ →L[ℝ] F) :
     (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) =
       (fun z => χ z • D z) +
@@ -148,37 +151,32 @@ theorem MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul {D : ℂ → ℂ →L[ℝ] F}
       ((hu.clm_comp _).contDiffOn_smul (hχ.fderiv_apply_of_isOpen Ω.isOpen hk Complex.I) le_rfl
         hU))
 
-/-- **Local bound for the Leibniz derivative.** Let `χ` be `C¹` on an open set `Ω` containing a
-measurable set `K`, with `|χ| ≤ A` and `‖Dχ‖ ≤ B` on `K`. Then the derivative `χ Du + Dχ ⊗ u` of
-`χ u` from `TauCeti.MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul` satisfies
-`‖D(χ u)‖_{Lᵖ(K)} ≤ A ‖Du‖_{Lᵖ(K)} + B ‖u‖_{Lᵖ(K)}` for `1 ≤ p`. -/
-theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {K : Set ℂ} (hK : MeasurableSet K)
-    (hKΩ : K ⊆ Ω) (hχ : ContDiffOn ℝ 1 χ Ω) {A B : NNReal} (hA : ∀ z ∈ K, ‖χ z‖ ≤ A)
-    (hB : ∀ z ∈ K, ‖fderiv ℝ χ z‖ ≤ B) {D : ℂ → ℂ →L[ℝ] F}
-    (hD : AEStronglyMeasurable D (volume.restrict K))
-    (hu : AEStronglyMeasurable u (volume.restrict K)) :
-    eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p (volume.restrict K) ≤
-      A * eLpNorm D p (volume.restrict K) + B * eLpNorm u p (volume.restrict K) := by
-  have hχK : ContinuousOn χ K := hχ.continuousOn.mono hKΩ
-  have hdχK : ContinuousOn (fderiv ℝ χ) K :=
-    (hχ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).mono hKΩ
-  have hm : AEStronglyMeasurable
-      (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) (volume.restrict K) :=
-    ((hχK.aestronglyMeasurable hK).smul hD).add
-      ((ContinuousLinearMap.smulRightL ℝ ℂ F).aestronglyMeasurable_comp₂
-        (hdχK.aestronglyMeasurable hK) hu)
-  calc eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p (volume.restrict K)
-      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p (volume.restrict K) +
-          eLpNorm ((B : ℝ) • fun z => ‖u z‖) p (volume.restrict K) := by
+/-- **Local bound for the Leibniz derivative.** Let `μ` be a measure on a finite-dimensional real
+normed space `E` and let `χ : E → ℝ` satisfy `|χ| ≤ A` and `‖Dχ‖ ≤ B` almost everywhere. Then the
+derivative `χ Du + Dχ ⊗ u` of `χ u` from `TauCeti.MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul`
+satisfies `‖D(χ u)‖_{Lᵖ(μ)} ≤ A ‖Du‖_{Lᵖ(μ)} + B ‖u‖_{Lᵖ(μ)}` for `1 ≤ p`. The local bound on a
+measurable set `K` is the case `μ = volume.restrict K`. -/
+theorem eLpNorm_smul_add_fderiv_smulRight_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : Measure E} (hp : 1 ≤ p) {χ : E → ℝ} (hχ : AEStronglyMeasurable χ μ) {A B : NNReal}
+    (hA : ∀ᵐ z ∂μ, ‖χ z‖ ≤ A) (hB : ∀ᵐ z ∂μ, ‖fderiv ℝ χ z‖ ≤ B) {u : E → F}
+    {D : E → E →L[ℝ] F} (hD : AEStronglyMeasurable D μ) (hu : AEStronglyMeasurable u μ) :
+    eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p μ ≤
+      A * eLpNorm D p μ + B * eLpNorm u p μ := by
+  have hm : AEStronglyMeasurable (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) μ :=
+    (hχ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
+      (measurable_fderiv ℝ χ).aestronglyMeasurable hu)
+  calc eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p μ
+      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by
         refine (eLpNorm_mono_ae_real hm ?_).trans (eLpNorm_add_le hp)
-        filter_upwards [ae_restrict_mem hK] with z hz
+        filter_upwards [hA, hB] with z hAz hBz
         simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
         refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
         · rw [norm_smul]
-          exact mul_le_mul_of_nonneg_right (hA z hz) (norm_nonneg _)
+          exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
         · rw [ContinuousLinearMap.norm_smulRight_apply]
-          exact mul_le_mul_of_nonneg_right (hB z hz) (norm_nonneg _)
-    _ = A * eLpNorm D p (volume.restrict K) + B * eLpNorm u p (volume.restrict K) := by
+          exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
+    _ = A * eLpNorm D p μ + B * eLpNorm u p μ := by
         rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm] <;>
           first | assumption | simp
 
