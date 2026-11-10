@@ -27,10 +27,11 @@ function one to the constant class `1`. This is the comparison between
 supremum and essential-supremum norms used, for instance, to compare means on bounded
 uniformly continuous functions on a locally compact group with means on Haar `L∞`.
 
-On a discrete space, if `μ` charges every point, the only null set is empty, so every
-essentially bounded function is bounded and `toLpTop` is onto: it identifies bounded functions
-with `L∞` as normed spaces and, for real values, as ordered spaces. For instance, `L∞` of a
-counting measure, or of a Haar measure on a discrete group, consists of all bounded functions.
+On a discrete space `toLpTop` is onto for every measure: truncate a representative off its
+almost-everywhere bound. If `μ` also charges every point, the only null set is empty, so
+`toLpTop` is isometric and identifies bounded functions with `L∞` as normed spaces and, for
+real values, as ordered spaces. For instance, `L∞` of a counting measure, or of a Haar measure
+on a discrete group, consists of all bounded functions.
 
 ## Main definitions
 
