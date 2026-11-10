@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Regular
 
 /-!
@@ -21,7 +22,7 @@ of `μ.comap (↑)`:
 
 * For any measurable map `f`, `(μ.comap f) (f ⁻¹' v) ≤ μ v` with no measurability assumption on `v`
   or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`).
-* For nested measurable sets `s ⊆ t`, pulling back from `α` to `t` and then along
+* For `s ⊆ t` with `t` measurable, pulling back from `α` to `t` and then along
   `Set.inclusion hst` to `s` recovers the direct pullback to `s`.
 * Local finiteness and finiteness on compact sets pass from `μ` to `μ.comap (Subtype.val)` for
   every subtype `Subtype p`, with no measurability or separation assumptions; in particular, if `s`
@@ -36,7 +37,7 @@ of `μ.comap (↑)`:
   embedding when `s` is measurable in `α`.
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
-  nested measurable subtypes `s ⊆ t`.
+  nested subtypes `s ⊆ t` with `t` measurable.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -72,13 +73,38 @@ theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) 
     ((comap_apply_le f μ hT.nullMeasurableSet).trans
       (measure_mono (image_preimage_subset f _))).trans_eq (measure_toMeasurable v)
 
-/-- Pulling `μ` back to a measurable subtype `t` and then along `Set.inclusion hst` to a measurable
-subset `s ⊆ t` agrees with pulling `μ` back directly to `s`. -/
-theorem comap_inclusion_comap_subtype_coe {s t : Set α} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hst : s ⊆ t) (μ : Measure α) :
-    (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
-  comap_comap (hs.measurableEmbedding_inclusion hst).measurableSet_image' Subtype.coe_injective
-    (MeasurableEmbedding.subtype_coe ht).measurableSet_image' μ
+/-- Pulling `μ` back to a measurable subtype `t` and then along `Set.inclusion hst` to a subset
+`s ⊆ t` agrees with pulling `μ` back directly to `s`. -/
+theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) (hst : s ⊆ t)
+    (μ : Measure α) :
+    (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) := by
+  have hemb := MeasurableEmbedding.subtype_coe ht
+  have himg : ∀ A : Set t, MeasurableSet A → NullMeasurableSet (((↑) : t → α) '' A) μ :=
+    fun A hA => (hemb.measurableSet_image' hA).nullMeasurableSet
+  have hqmp : QuasiMeasurePreserving ((↑) : t → α) (μ.comap ((↑) : t → α)) μ :=
+    ⟨measurable_subtype_coe, by
+      rw [hemb.map_comap]
+      exact restrict_le_self.absolutelyContinuous⟩
+  have hcomp : (((↑) : t → α) ∘ Set.inclusion hst) = ((↑) : s → α) := rfl
+  by_cases hR : ∀ A : Set s, MeasurableSet A → NullMeasurableSet (((↑) : s → α) '' A) μ
+  · have hL : ∀ A : Set s, MeasurableSet A →
+        NullMeasurableSet (Set.inclusion hst '' A) (μ.comap ((↑) : t → α)) := by
+      intro A hA
+      have : Set.inclusion hst '' A = ((↑) : t → α) ⁻¹' (((↑) : s → α) '' A) := by
+        ext x
+        simp only [mem_image, mem_preimage]
+        exact ⟨fun ⟨y, hy, h⟩ => ⟨y, hy, h ▸ rfl⟩,
+          fun ⟨y, hy, h⟩ => ⟨y, hy, Subtype.ext h⟩⟩
+      rw [this]
+      exact (hR A hA).preimage hqmp
+    ext A hA
+    rw [comap_apply₀ _ _ (Set.inclusion_injective hst) hL hA.nullMeasurableSet,
+      comap_apply₀ _ _ Subtype.coe_injective hR hA.nullMeasurableSet,
+      comap_apply₀ _ _ Subtype.coe_injective himg (hL A hA), image_image]
+  · rw [comap_undef (fun h => hR h.2)]
+    refine comap_undef fun h => hR fun A hA => ?_
+    have := NullMeasurableSet.image _ _ Subtype.coe_injective himg (h.2 A hA)
+    rwa [image_image] at this
 
 end Measurable
 
