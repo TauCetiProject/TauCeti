@@ -14,6 +14,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
@@ -50,8 +51,8 @@ isometric unital `⋆`-homomorphism from `E →L[𝕜] E` into the real operator
 (`ContinuousLinearMap.restrictScalarsStarAlgHom`): the adjoint for `re ⟪·, ·⟫` of the restriction
 of `T` is the restriction of `T†` (`ContinuousLinearMap.adjoint_restrictScalars`). Realification
 preserves the spectrum of an operator, on any Banach space, by the inverse mapping theorem
-(`ContinuousLinearMap.spectrum_restrictScalars`), and so it intertwines the two calculi
-(`ContinuousLinearMap.restrictScalars_cfc`).
+(`ContinuousLinearMap.spectrum_restrictScalars`, in `TauCeti.Analysis.Normed.Operator.Banach`), and
+so it intertwines the two calculi (`ContinuousLinearMap.restrictScalars_cfc`).
 
 ## Main declarations
 
@@ -69,8 +70,6 @@ preserves the spectrum of an operator, on any Banach space, by the inverse mappi
   functional calculus.
 * `ContinuousLinearMap.restrictScalarsStarAlgHom`: realification of the bounded operators on a
   Hilbert space over `RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ`.
-* `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
-  operator, on any Banach space.
 * `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
   calculus.
 * `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
@@ -161,27 +160,6 @@ instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
     · rw [← hgf x]
       exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
         (by simpa using hT)
-
-section Banach
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [CompleteSpace E] [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
-  [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
-
-/-- **Realification preserves the spectrum** of a bounded operator on a Banach space over a normed
-`ℝ`-algebra `𝕜`, for any real algebra structure on the operators compatible with the `𝕜`-action:
-by Banach's inverse mapping theorem an operator is invertible exactly when it is bijective, and the
-realification has the same underlying function. -/
-theorem spectrum_restrictScalars (T : E →L[𝕜] E) :
-    spectrum ℝ (T.restrictScalars ℝ) = spectrum ℝ T := by
-  have h (r : ℝ) : ⇑(algebraMap ℝ (E →L[ℝ] E) r - T.restrictScalars ℝ) =
-      ⇑(algebraMap ℝ (E →L[𝕜] E) r - T) := by
-    ext x
-    simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), Algebra.algebraMap_eq_smul_one]
-  ext r
-  simp only [spectrum.mem_iff, isUnit_iff_bijective, h]
-
-end Banach
 
 section RCLike
 
