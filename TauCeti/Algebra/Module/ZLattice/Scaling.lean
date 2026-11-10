@@ -188,28 +188,6 @@ theorem exists_forall_add_mem_eq_zero_of_isBounded [FiniteDimensional ℝ E] {s 
   rw [add_sub_cancel_left] at h
   linarith [hL ℓ hℓ hne]
 
-section Bot
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
-
-/-- The zero lattice of a nontrivial space has covolume `0`. Its fundamental domain is the whole
-space, of infinite measure, so this is the value `ENNReal.toReal ∞ = 0` by convention; the true
-covolume is infinite. -/
-theorem covolume_bot (μ : Measure E) [μ.IsAddHaarMeasure] :
-    covolume (⊥ : Submodule ℤ E) μ = 0 := by
-  have h : IsAddFundamentalDomain (⊥ : Submodule ℤ E) (Set.univ : Set E) μ :=
-    { nullMeasurableSet := .univ
-      ae_covers := .of_forall fun x ↦ ⟨0, Set.mem_univ _⟩
-      aedisjoint := fun g g' hgg' ↦ (hgg' (Subsingleton.elim g g')).elim }
-  -- Typeclass search does not find the invariance of `μ` under the action of the `ℤ`-submodule
-  -- `⊥`; it holds because that action is, by definition, the action of the additive subgroup
-  -- `(⊥ : Submodule ℤ E).toAddSubgroup`, where the instance is found.
-  have : VAddInvariantMeasure (⊥ : Submodule ℤ E) E μ :=
-    (inferInstance : VAddInvariantMeasure (⊥ : Submodule ℤ E).toAddSubgroup E μ)
-  rw [covolume, h.covolume_eq_volume, measure_univ_of_isAddLeftInvariant, ENNReal.toReal_top]
-
-end Bot
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
 
