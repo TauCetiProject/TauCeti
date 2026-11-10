@@ -30,6 +30,8 @@ rotation of the disc coordinate centred there, in
   transformation at a fixed point.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
+* `TauCeti.div_sub_inv_sub_div_sq_eq_div_sub_sub_div`: the partial-fraction identity for a pole
+  under the inversion `w ↦ p - w⁻¹`.
 * `TauCeti.siegel_identity`: Siegel's three-term identity for linear factors `x - θᵢ y`,
   divided by `(θ₁ - θ₀) (x - θ₂ y)`.
 * `TauCeti.ne_one_of_mul_sub_mul_eq`, `TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq`:
@@ -95,5 +97,22 @@ theorem div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq {F : Type*} [Field F] {θ�
     x / y = (θ₀ - t * θ₂) / (1 - t) := by
   rw [div_eq_div_iff hy (sub_ne_zero.2 (ne_one_of_mul_sub_mul_eq h hy ht).symm)]
   linear_combination -ht
+
+/-- The partial-fraction step in the inversion `w ↦ p - w⁻¹`: the pole `a` of a function at
+`p - z⁻¹`, rescaled by `z ^ 2`, splits into the poles at `-(a - p)⁻¹` and `0`. -/
+theorem div_sub_inv_sub_div_sq_eq_div_sub_sub_div {𝕜 : Type*} [Field 𝕜] (e : 𝕜) {a p : 𝕜}
+    (hap : a ≠ p) {z : 𝕜} (hz0 : z ≠ 0) (hden : p - z⁻¹ - a ≠ 0) :
+    e / (p - z⁻¹ - a) / z ^ 2 = e / (z - -(a - p)⁻¹) - e / z := by
+  have hgap : a - p ≠ 0 := sub_ne_zero.mpr hap
+  have hw : z - -(a - p)⁻¹ ≠ 0 := by
+    intro h
+    apply hden
+    have hz : z = -(a - p)⁻¹ := sub_eq_zero.mp h
+    rw [hz, inv_neg, inv_inv]
+    ring
+  rw [div_div, div_sub_div _ _ hw hz0,
+    div_eq_div_iff (mul_ne_zero hden (pow_ne_zero 2 hz0)) (mul_ne_zero hw hz0)]
+  field_simp
+  ring
 
 end TauCeti

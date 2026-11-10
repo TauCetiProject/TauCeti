@@ -59,7 +59,11 @@ finite-dimensional manifold, its image is the annihilator `𝔤_x^0` of the isot
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_differential`). So `dμ_x` is surjective exactly when
 `𝔤_x = 0`, that is, when the action is locally free at `x`, and the rank of `dμ_x` is the
 dimension of the orbit tangent space. These identities describe the tangent spaces of the
-levels of a moment map, the starting point of symplectic reduction.
+levels of a moment map, the starting point of symplectic reduction. Along a Hamiltonian vector
+field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
+tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
+(`TauCeti.SmoothTwoForm.IsMomentMap.mem_ker_differential_iff_of_isHamiltonianVectorField`).
 
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
@@ -332,6 +336,23 @@ theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
   simp only [LinearMap.mem_ker, LinearMap.BilinForm.mem_orthogonal_iff, LinearMap.ext_iff,
     InfinitesimalAction.mem_orbitTangent_iff, forall_exists_index, forall_apply_eq_imp_iff,
     SmoothForm.bilinFormAt_apply, h.differential_apply_eq_eval₂, LinearMap.zero_apply]
+
+/-- The differential of a moment map along a Hamiltonian vector field `X` of `f`:
+`⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`. -/
+theorem differential_apply_of_isHamiltonianVectorField (h : σ.IsMomentMap a μ) {f : M → ℝ}
+    {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) (x : M) (Z : 𝔤) :
+    h.differential x (X x) Z = -mvfderiv I f x (a Z x) := by
+  rw [h.differential_apply_eq_eval₂, SmoothBundleForm.eval₂_swap,
+    isHamiltonianVectorField_iff.1 hX x (a Z x)]
+
+/-- **Noether's theorem at a point.** A Hamiltonian vector field `X` of `f` is tangent to the
+level of a moment map at `x`, `X x ∈ ker dμ_x`, exactly when the derivative of `f` at `x` vanishes
+along every generated vector field `Z_M`. -/
+theorem mem_ker_differential_iff_of_isHamiltonianVectorField (h : σ.IsMomentMap a μ)
+    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) (x : M) :
+    X x ∈ LinearMap.ker (h.differential x) ↔ ∀ Z, mvfderiv I f x (a Z x) = 0 := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff,
+    h.differential_apply_of_isHamiltonianVectorField hX, LinearMap.zero_apply, neg_eq_zero]
 
 /-- At a point where the form is nondegenerate, the image of the differential of a moment map is
 the image of the transpose of the orbit map `Z ↦ Z_M(x)`. -/

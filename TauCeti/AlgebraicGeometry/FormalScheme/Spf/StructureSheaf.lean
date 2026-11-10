@@ -376,6 +376,24 @@ theorem structureSheaf.lift_toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K)
     structureSheaf.lift hI f hf ≫ toQuotientSheaf hI hK = f n ≫ quotientTransition _ hK hn := by
   rw [toQuotientSheaf_eq hI hK hn, structureSheaf.lift_quotientProjection_assoc]
 
+/-- Projection to the zero-ideal thickening is an isomorphism of sheaves whenever zero is an
+ideal of definition. This holds for the structure sheaf built from any ideal of definition. -/
+instance toQuotientSheaf_bot_isIso (hI : IsAdic I) (h0 : IsAdic (⊥ : Ideal A)) :
+    IsIso (toQuotientSheaf hI h0) := by
+  let g := structureSheaf.lift hI
+    (fun _ ↦ quotientTransition h0 _ bot_le)
+    (fun _ ↦ quotientTransition_comp _ _ _ _ _)
+  refine ⟨⟨g, ?_, ?_⟩⟩
+  · refine structureSheaf.hom_ext hI fun n ↦ ?_
+    have hg : g ≫ quotientProjection hI n = quotientTransition h0 _ bot_le :=
+      structureSheaf.lift_quotientProjection hI _ _ n
+    rw [Category.assoc, hg, toQuotientSheaf_comp_quotientTransition,
+      toQuotientSheaf_pow_succ, Category.id_comp]
+  · obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (J := (⊥ : Ideal A))
+      (by simpa using h0.isOpen_pow 1)
+    exact (structureSheaf.lift_toQuotientSheaf hI h0 _ _ hn).trans
+      ((quotientTransition_comp _ _ _ _ _).trans (quotientTransition_self _))
+
 /-- On global sections, the diagram of the thickenings is the diagram of the quotients
 `A ⧸ I ^ (n + 1)`. -/
 private noncomputable def quotientDiagramGlobalSectionsIso (hI : IsAdic I) :

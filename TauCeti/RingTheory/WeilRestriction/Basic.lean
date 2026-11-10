@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.Basic
 
 /-!

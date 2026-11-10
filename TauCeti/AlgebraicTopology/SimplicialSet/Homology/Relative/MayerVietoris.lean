@@ -298,7 +298,7 @@ lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) :
   have : Epi (HomologicalComplex.homologyMap
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) 0) :=
     HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
-  exact HomologicalComplex.epi_biprod_desc_homologyMap 0
+  exact (HomologicalComplex.epi_biprod_desc_homologyMap_iff 0).2 inferInstance
 
 /-- **Naturality of the relative Mayer–Vietoris connecting morphism** in maps of squares of
 pairs. -/

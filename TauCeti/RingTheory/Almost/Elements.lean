@@ -52,6 +52,8 @@ elements become `N ↦ Hom_V(m~, N)` and `M_!` becomes the inclusion of firm mod
   `(N^a)_! → N` are almost isomorphisms.
 * `TauCeti.Almost.Module.toAlmostCompShriekIso`: `(N^a)_! ≅ m~ ⊗[V] N`, naturally in `N`, under
   which the counit `(N^a)_! → N` is the action map (`TauCeti.Almost.Module.adjShriek_counit_app`).
+  This counit is an isomorphism exactly when `N` is firm
+  (`TauCeti.Almost.Module.isIso_adjShriek_counit_app_iff`).
 * `TauCeti.Almost.Module.toAlmostCompElementsIso`: `(N^a)_* ≅ Hom_V(m~, N)`, naturally in `N`.
 * `TauCeti.Almost.Module.adjTriple` and `TauCeti.Almost.Module.shriekToElements`: the adjoint triple
   `(−)_! ⊣ (−)^a ⊣ (−)_*` and its comparison `M_! → M_*`, an almost isomorphism
@@ -356,6 +358,13 @@ theorem adjShriek_counit_app (N : ModuleCat.{u} V) :
     ← Category.assoc, ← Functor.map_comp, h3]
   congr 1
   exact ModuleCat.hom_ext (S.firmInclusionAdj_counit_app_hom N)
+
+/-- The counit `(N^a)_! → N` is an isomorphism exactly when `N` is firm. -/
+theorem isIso_adjShriek_counit_app_iff (N : ModuleCat.{u} V) :
+    IsIso ((adjShriek S).counit.app N) ↔ S.IsFirm N := by
+  rw [adjShriek_counit_app, isIso_comp_left_iff, ConcreteCategory.isIso_iff_bijective,
+    S.isFirm_iff_bijective]
+  simp
 
 /-- For every `V`-module `N`, the counit `(N^a)_! → N` is an almost isomorphism (Gabber–Ramero,
 (2.2.9)). -/

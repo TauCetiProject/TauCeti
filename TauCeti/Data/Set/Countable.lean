@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Set.Countable
 
 /-!
-# Countably many predicates with countable truth sides
+# Countable ranges and predicates with countable truth sides
 
 Let `P i` be countably many predicates on a type `X`, each of which *splits* `X` with a countable
 side: either `{x | P i x}` or `{x | ¬ P i x}` is countable. Off the union of the countable sides,
@@ -21,6 +21,8 @@ values of countably many sentences.
 
 ## Main results
 
+* `Set.Countable.range_min`: the pointwise minimum of two countable-range functions has
+  countable range.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -41,6 +43,12 @@ values of countably many sentences.
 public section
 
 universe u v w
+
+/-- The pointwise minimum of two functions with countable ranges has countable range. -/
+theorem Set.Countable.range_min {α β : Type*} [Min β] {f g : α → β}
+    (hf : (Set.range f).Countable) (hg : (Set.range g).Countable) :
+    (Set.range fun x ↦ min (f x) (g x)).Countable :=
+  (hf.image2 hg min).mono (by rintro _ ⟨x, rfl⟩; exact ⟨f x, ⟨x, rfl⟩, g x, ⟨x, rfl⟩, rfl⟩)
 
 namespace TauCeti
 

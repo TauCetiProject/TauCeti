@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
+public import TauCeti.Combinatorics.Hypergraph.Polyad.Map
 public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Tactic.Linarith
 
@@ -39,11 +39,7 @@ variable {κ κ' V : Type*} [Fintype V] [DecidableEq V]
 its three pair colors. -/
 noncomputable def coarsen (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
     Polyad3 S :=
-  let A := Finpartition.refinementParent hV ⟨P.c₀, P.hc₀⟩
-  let B := Finpartition.refinementParent hV ⟨P.c₁, P.hc₁⟩
-  let C := Finpartition.refinementParent hV ⟨P.c₂, P.hc₂⟩
-  ofData A B C A.property B.property C.property
-    (f P.color₀₁) (f P.color₀₂) (f P.color₁₂)
+  P.map (Finpartition.refinementParent hV) f
 
 @[simp]
 theorem coarsen_c₀ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
@@ -80,13 +76,11 @@ theorem coarsen_injective (hV : T.vertexPart = S.vertexPart) {f : κ' → κ}
       (Finpartition.refinementParent hV.le ⟨A, hA⟩).val = A := fun A hA ↦
     congrArg Subtype.val
       ((Finpartition.refinementParent_eq_iff hV.le (A := ⟨A, hV ▸ hA⟩)).2 le_rfl)
-  intro P Q h
-  have h₀ := congrArg c₀ h
-  have h₁ := congrArg c₁ h
-  have h₂ := congrArg c₂ h
-  simp only [coarsen_c₀, coarsen_c₁, coarsen_c₂, hcell] at h₀ h₁ h₂
-  exact ext_data h₀ h₁ h₂ (hf (by simpa using congrArg color₀₁ h))
-    (hf (by simpa using congrArg color₀₂ h)) (hf (by simpa using congrArg color₁₂ h))
+  have hparent : Function.Injective (Finpartition.refinementParent hV.le) := by
+    intro A B h
+    apply Subtype.ext
+    simpa only [hcell] using congrArg Subtype.val h
+  simpa only [coarsen] using map_injective hparent hf
 
 /-- The coarse parent of the polyad of a triple is its polyad over the coarse skeleton as soon
 as the color map recovers the coarse colors of its three coordinate pairs. Other pairs are

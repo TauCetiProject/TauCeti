@@ -19,7 +19,9 @@ import TauCeti.Algebra.AlgebraicGroup.Derived.Connected
 import TauCeti.Algebra.AlgebraicGroup.Derived.PointClosure
 import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
+import TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
@@ -68,6 +70,8 @@ commutator subgroup, and hence yields an ambient weight vector.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable`: **the
   Lie--Kolchin theorem**, every finite-dimensional representation of a connected solvable group
   is upper triangularizable.
+* `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_first_span_of_isSolvable`:
+  an upper-triangular basis whose first vector spans a prescribed one-dimensional subcomodule.
 * `exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable`: the same theorem
   stated with the geometric connectedness and solvability object properties.
 
@@ -425,6 +429,31 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
         ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) :=
   exists_basis_coefficientMatrix_isUpperTriangular_of_weight_vectors
     fun _ _ _ _ _ _ ↦ hasNonzeroWeightVector_of_isSolvable
+
+/-- **Lie--Kolchin with a prescribed first line.** A one-dimensional subcomodule of a
+finite-dimensional representation of a reduced connected solvable affine group can be the
+first line of an upper-triangular basis. The remaining basis vectors lift an upper-triangular
+basis of the quotient by that line. -/
+theorem exists_basis_coefficientMatrix_isUpperTriangular_first_span_of_isSolvable
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))]
+    (L : Subcomodule k H M) (hL : Module.finrank k L = 1) :
+    ∃ (n : ℕ) (b : Module.Basis (Fin (1 + n)) k M),
+      (coefficientMatrix (C := H) b).IsUpperTriangular ∧ k ∙ b 0 = L.toSubmodule := by
+  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup k
+  let bL : Module.Basis (Fin 1) k L := Module.basisUnique (Fin 1) hL
+  obtain ⟨n, bQ, hQ, -⟩ :=
+    exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
+      (k := k) (H := H) (M := M ⧸ L.toSubmodule)
+  refine ⟨n, extensionBasis L bL bQ,
+    coefficientMatrix_extensionBasis_isUpperTriangular L bL bQ ?_ hQ, ?_⟩
+  · intro i j hji
+    simp only [Fin.fin_one_eq_zero, lt_self_iff_false] at hji
+  · have hzero : (0 : Fin (1 + n)) = Fin.castAdd n (0 : Fin 1) := rfl
+    rw [hzero, extensionBasis_castAdd]
+    apply (eq_span_singleton_of_mem_of_finrank_eq_one
+      ((Subcomodule.finrank_toSubmodule L).trans hL) (bL 0).property ?_).symm
+    exact fun h ↦ bL.ne_zero 0 (Subtype.ext h)
 
 /-- A nonzero vector in a representation of a reduced connected solvable affine group
 has a group-like matrix coefficient, hence one invertible on the whole group scheme. -/

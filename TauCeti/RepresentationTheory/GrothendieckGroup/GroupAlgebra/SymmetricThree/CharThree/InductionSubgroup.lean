@@ -112,7 +112,7 @@ theorem mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff (x : K₀) :
   constructor
   · intro hx
     have hp : Nat.Prime 3 := by decide
-    have h := ordProj_dvd_finrankK0_of_mem_indClassesK0 (k := k) hp
+    have h := ordProj_dvd_finrankK0_of_mem_indClassesK0 (k := k)
       (fun S hS ↦ hp.coprime_iff_not_dvd.mp hS.2) hx
     have hg : Nat.card G = 6 := by
       norm_num [Nat.card_eq_fintype_card, Fintype.card_perm, Nat.factorial]

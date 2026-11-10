@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
-public import Mathlib.MeasureTheory.Group.Convolution
+public import TauCeti.MeasureTheory.Group.Convolution.Tail
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -170,15 +169,16 @@ theorem tendsto_rpow_mul_conv_real_Ioi (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hν : Integrable (fun y : ℝ ↦ |y| ^ α) ν) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Ioi x)) atTop (𝓝 (C * ν.real univ)) := by
-  have hfst : Tendsto (fun x : ℝ ↦ x ^ α * (μ.prod ν).real {z : ℝ × ℝ | x < z.1})
-      atTop (𝓝 (C * ν.real univ)) := by
-    have heq (x : ℝ) : {z : ℝ × ℝ | x < z.1} = Ioi x ×ˢ univ := by ext; simp
-    simpa only [heq, measureReal_prod_prod, ← mul_assoc] using hμ.mul_const (ν.real univ)
-  have ht := TauCeti.tendsto_rpow_mul_measureReal_add_gt hα hfst (hν.comp_snd μ)
-  have hpre (x : ℝ) : (fun z : ℝ × ℝ ↦ z.1 + z.2) ⁻¹' Ioi x =
-      {z : ℝ × ℝ | x < z.1 + z.2} := by ext; simp
-  simpa only [conv, map_measureReal_apply (f := fun z : ℝ × ℝ ↦ z.1 + z.2)
-    (measurable_fst.add measurable_snd) measurableSet_Ioi, hpre] using ht
+  have hνtail : Tendsto (fun x : ℝ ↦ x ^ α * ν.real (Ioi x)) atTop (𝓝 0) := by
+    have habs := TauCeti.tendsto_rpow_mul_measureReal_abs_gt hα hν (c := 1) zero_lt_one
+    simp only [one_mul] at habs
+    refine squeeze_zero' ?_ ?_ habs
+    · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+      exact mul_nonneg (rpow_nonneg hx α) measureReal_nonneg
+    · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+      exact mul_le_mul_of_nonneg_left
+        (measureReal_mono (fun y hy ↦ hy.trans_le (le_abs_self y))) (rpow_nonneg hx α)
+  simpa only [mul_zero, add_zero] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hα hμ hνtail
 
 /-- Convolution with a finite measure having a finite absolute `α`th moment multiplies a
 left-tail constant by its total mass. Zero tail constants are included. -/

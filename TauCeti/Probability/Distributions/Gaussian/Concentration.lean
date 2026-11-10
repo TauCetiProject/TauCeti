@@ -233,7 +233,7 @@ theorem hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (hμ : μ[id] = 0)
   rw [hc, ← ENNReal.ofReal_le_ofReal_iff (exp_pos _).le]
   calc ENNReal.ofReal (mgf (fun x ↦ f x - m) μ t)
       ≤ ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ :=
-        TauCeti.ofReal_mgf_sub_integral_le_lintegral hf.continuous.measurable hfi
+        TauCeti.ofReal_mgf_sub_integral_le_lintegral hfi
           (hint t) (integrable_exp_mul_of_variance_fderiv_le hμ hf hv (-t))
     _ = ∫⁻ p, .ofReal (exp ((-t) * (f p.2 - f p.1))) ∂μ.prod μ :=
         lintegral_congr fun p ↦ by congr 2; ring

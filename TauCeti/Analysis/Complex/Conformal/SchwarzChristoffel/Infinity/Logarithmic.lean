@@ -9,11 +9,11 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Logarithmic growth of Schwarz--Christoffel primitives

@@ -266,8 +266,8 @@ variable {R ι κ : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrder
   [IsProperStar R] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R}
 
 /-- A null vector of the lower-right block of a positive-semidefinite matrix is also
-a null vector of its upper-right block. -/
-theorem toBlocks₁₂_mulVec_eq_zero [Finite ι] [Fintype κ] (hS : S.PosSemidef)
+a null vector of its upper-right block, when the upper index type is finite. -/
+private theorem toBlocks₁₂_mulVec_eq_zero_of_finite [Finite ι] [Fintype κ] (hS : S.PosSemidef)
     {x : κ → R} (hx : S.toBlocks₂₂ *ᵥ x = 0) : S.toBlocks₁₂ *ᵥ x = 0 := by
   let := Fintype.ofFinite ι
   -- Extend the null vector by zero in the other block. Its quadratic form vanishes.
@@ -278,19 +278,33 @@ theorem toBlocks₁₂_mulVec_eq_zero [Finite ι] [Fintype κ] (hS : S.PosSemide
   rw [← fromBlocks_toBlocks S, fromBlocks_mulVec] at hz
   simpa using congrArg (fun v => v ∘ Sum.inl) hz
 
+/-- A null vector of the lower-right block of a positive-semidefinite matrix is also
+a null vector of its upper-right block. -/
+theorem toBlocks₁₂_mulVec_eq_zero [Fintype κ] (hS : S.PosSemidef)
+    {x : κ → R} (hx : S.toBlocks₂₂ *ᵥ x = 0) : S.toBlocks₁₂ *ᵥ x = 0 := by
+  ext i
+  -- Restrict to the single row `i` of the upper block.
+  have h := (hS.submatrix (Sum.map (fun _ : Unit => i) id)).toBlocks₁₂_mulVec_eq_zero_of_finite
+    (x := x) hx
+  simpa [mulVec, dotProduct, toBlocks₁₂] using congrFun h ()
+
 /-- A zero lower-right block of a positive-semidefinite matrix forces the upper-right
 block to vanish. -/
-theorem toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero [Finite ι] [Finite κ]
+theorem toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero
     (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₁₂ = 0 := by
-  let := Fintype.ofFinite κ
-  apply Matrix.ext_iff_mulVec.mpr
-  intro x
-  rw [Matrix.zero_mulVec]
-  exact hS.toBlocks₁₂_mulVec_eq_zero (by rw [h22, Matrix.zero_mulVec])
+  ext i k
+  -- Restrict to the single row `i` and the single column `k`.
+  have h22' : (S.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)
+      (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₂₂ = 0 := by
+    ext a b
+    exact congrFun₂ h22 k k
+  have h := (hS.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₁₂_mulVec_eq_zero
+    (x := fun _ => 1) (by rw [h22', zero_mulVec])
+  simpa [mulVec, dotProduct, toBlocks₁₂] using congrFun h ()
 
 /-- A zero lower-right block of a positive-semidefinite matrix also forces the lower-left
 block to vanish, by Hermitian symmetry. -/
-theorem toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero [Finite ι] [Finite κ]
+theorem toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero
     (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₂₁ = 0 := by
   have hB : S.toBlocks₁₂ᴴ = S.toBlocks₂₁ := by
     ext i j
@@ -299,7 +313,7 @@ theorem toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero [Finite ι] [Finite κ]
 
 /-- A null vector of the upper-left block of a positive-semidefinite matrix is also
 a null vector of its lower-left block. -/
-theorem toBlocks₂₁_mulVec_eq_zero [Fintype ι] [Finite κ] (hS : S.PosSemidef)
+theorem toBlocks₂₁_mulVec_eq_zero [Fintype ι] (hS : S.PosSemidef)
     {x : ι → R} (hx : S.toBlocks₁₁ *ᵥ x = 0) : S.toBlocks₂₁ *ᵥ x = 0 := by
   have h := (hS.submatrix Sum.swap).toBlocks₁₂_mulVec_eq_zero (x := x)
   rw [← fromBlocks_toBlocks S, fromBlocks_submatrix_sum_swap_sum_swap,

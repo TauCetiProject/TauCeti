@@ -40,9 +40,10 @@ is finite, it equals that term exactly when the conditional laws agree almost ev
 entropic optimal transport this is the step that reduces an entropy minimization over laws of
 paths, or of triples, to one over their endpoint couplings.
 
-Relative entropy also tensorizes: for finite `μ₁, ν₁` and probability measures `μ₂, ν₂`,
-`klDiv (μ₁.prod μ₂) (ν₁.prod ν₂) = klDiv μ₁ ν₁ + μ₁ univ * klDiv μ₂ ν₂`. This needs no hypothesis
-on the measurable spaces.
+Relative entropy also tensorizes: for finite measures with `μ₂ univ = ν₂ univ`,
+`klDiv (μ₁.prod μ₂) (ν₁.prod ν₂) = μ₂ univ * klDiv μ₁ ν₁ + μ₁ univ * klDiv μ₂ ν₂`.
+For probability second factors the first coefficient is one. These identities need no
+hypothesis on the measurable spaces.
 
 ## Main statements
 
@@ -194,8 +195,8 @@ variable {μ' ν' : Measure β}
 /-- Taking the product with a common finite measure on the right scales relative entropy by the
 mass of that measure. -/
 @[simp]
-theorem klDiv_prod_left [IsFiniteMeasure μ] [IsFiniteMeasure ν] (ρ : Measure β)
-    [IsFiniteMeasure ρ] : klDiv (μ.prod ρ) (ν.prod ρ) = ρ univ * klDiv μ ν := by
+theorem _root_.MeasureTheory.Measure.klDiv_prod_left [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (ρ : Measure β) [IsFiniteMeasure ρ] : klDiv (μ.prod ρ) (ν.prod ρ) = ρ univ * klDiv μ ν := by
   rcases eq_zero_or_neZero ρ with rfl | hρ
   · simp
   -- Write `ρ` as a multiple of a probability measure, for which this is Mathlib's
@@ -211,27 +212,48 @@ theorem klDiv_prod_left [IsFiniteMeasure μ] [IsFiniteMeasure ν] (ρ : Measure 
 /-- Taking the product with a common finite measure on the left scales relative entropy by the
 mass of that measure. -/
 @[simp]
-theorem klDiv_prod_right (ρ : Measure α) [IsFiniteMeasure ρ] [IsFiniteMeasure μ']
-    [IsFiniteMeasure ν'] : klDiv (ρ.prod μ') (ρ.prod ν') = ρ univ * klDiv μ' ν' := by
-  rw [← klDiv_prod_left (μ := μ') (ν := ν') ρ]
+theorem _root_.MeasureTheory.Measure.klDiv_prod_right (ρ : Measure α) [IsFiniteMeasure ρ]
+    [IsFiniteMeasure μ'] [IsFiniteMeasure ν'] :
+    klDiv (ρ.prod μ') (ρ.prod ν') = ρ univ * klDiv μ' ν' := by
+  rw [← Measure.klDiv_prod_left (μ := μ') (ν := ν') ρ]
   -- Swapping the factors is a measurable involution, so data processing applies both ways.
   refine le_antisymm ?_ ?_
   · simpa [Measure.prod_swap] using klDiv_map_le (μ'.prod ρ) (ν'.prod ρ) measurable_swap
   · simpa [Measure.prod_swap] using klDiv_map_le (ρ.prod μ') (ρ.prod ν') measurable_swap
 
-/-- **Tensorization** of relative entropy: for finite `μ, ν` and probability measures `μ', ν'`,
-`klDiv (μ.prod μ') (ν.prod ν') = klDiv μ ν + μ univ * klDiv μ' ν'`. -/
-theorem klDiv_prod_prod_eq_add [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsProbabilityMeasure μ']
-    [IsProbabilityMeasure ν'] :
-    klDiv (μ.prod μ') (ν.prod ν') = klDiv μ ν + μ univ * klDiv μ' ν' := by
-  rw [← Measure.compProd_const, ← Measure.compProd_const, klDiv_compProd_eq_add,
-    Measure.compProd_const, Measure.compProd_const, klDiv_prod_right]
+/-- **Tensorization** of relative entropy for finite measures whose second factors have the
+same mass. The common mass scales the relative entropy of the first factors. -/
+theorem klDiv_prod_prod_eq_add [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsFiniteMeasure μ']
+    [IsFiniteMeasure ν'] (hmass : μ' univ = ν' univ) :
+    klDiv (μ.prod μ') (ν.prod ν') = μ' univ * klDiv μ ν + μ univ * klDiv μ' ν' := by
+  rcases eq_zero_or_neZero μ' with rfl | hμ'
+  · have hν' : ν' = 0 := by simpa using hmass.symm
+    simp [hν']
+  have : NeZero ν' := ⟨fun h ↦ (NeZero.ne μ') (by simpa [h] using hmass)⟩
+  -- Normalize both second factors by their common mass, then use the Markov chain rule.
+  let μ₀ := (μ' univ)⁻¹ • μ'
+  let ν₀ := (ν' univ)⁻¹ • ν'
+  have hμ : μ' = (μ' univ).toNNReal • μ₀ := by
+    simp [μ₀, ← smul_assoc, ENNReal.smul_def, ENNReal.coe_toNNReal,
+      ENNReal.mul_inv_cancel (NeZero.ne (μ' univ)) (measure_ne_top μ' univ)]
+  have hν : ν' = (μ' univ).toNNReal • ν₀ := by
+    rw [hmass]
+    simp [ν₀, ← smul_assoc, ENNReal.smul_def, ENNReal.coe_toNNReal,
+      ENNReal.mul_inv_cancel (NeZero.ne (ν' univ)) (measure_ne_top ν' univ)]
+  have hchain : klDiv (μ.prod μ₀) (ν.prod ν₀) =
+      klDiv μ ν + μ univ * klDiv μ₀ ν₀ := by
+    rw [← Measure.compProd_const, ← Measure.compProd_const, klDiv_compProd_eq_add,
+      Measure.compProd_const, Measure.compProd_const, Measure.klDiv_prod_right]
+  rw [hμ, hν, Measure.prod_smul_right, Measure.prod_smul_right (μ := ν),
+    klDiv_smul_same, hchain, klDiv_smul_same]
+  simp [mul_add, mul_left_comm]
 
-/-- **Tensorization** of relative entropy for probability measures:
+/-- **Tensorization** with probability first law and probability second factors; the first
+reference measure may be any finite measure:
 `klDiv (μ.prod μ') (ν.prod ν') = klDiv μ ν + klDiv μ' ν'`. -/
 theorem klDiv_prod_prod [IsProbabilityMeasure μ] [IsFiniteMeasure ν] [IsProbabilityMeasure μ']
     [IsProbabilityMeasure ν'] : klDiv (μ.prod μ') (ν.prod ν') = klDiv μ ν + klDiv μ' ν' := by
-  rw [klDiv_prod_prod_eq_add, measure_univ, one_mul]
+  rw [klDiv_prod_prod_eq_add (by simp), measure_univ, measure_univ, one_mul, one_mul]
 
 end Prod
 

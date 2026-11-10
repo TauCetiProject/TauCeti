@@ -65,7 +65,7 @@ theorem quantile_map_cast_yuleSimonMeasure_eq_iff (hρ : 0 < ρ) (hu : u ∈ Ioo
 theorem quantile_map_cast_yuleSimonMeasure_eq_one_iff (hρ : 0 < ρ) (hu : u ∈ Ioo 0 1) :
     ((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u = 1 ↔ u ≤ ρ / (ρ + 1) := by
   have hfirst : 1 - beta 1 (ρ + 1) = ρ / (ρ + 1) := by
-    rw [beta_comm, beta_one_right (by positivity)]
+    rw [beta_one_left (by positivity)]
     field_simp
     ring
   have hquant := quantile_map_cast_yuleSimonMeasure_eq_iff hρ hu 1

@@ -84,7 +84,7 @@ private lemma alexanderWhitneyKoszulBraidingShuffle_f_zero :
   ext x
   rw [alexanderWhitneyKoszulBraidingShuffle, comp_f, comp_f, comp_f,
     ιChainComplex_alexanderWhitney_f_assoc, Fin.sum_univ_one,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f]
   simp only [Fin.val_zero, Nat.sub_zero, TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id,
     Functor.map_id_apply, Category.assoc,
     TauCeti.NatChainComplex.ιTensorObj_koszulBraidingHom_f_assoc, mul_zero, pow_zero, one_smul,

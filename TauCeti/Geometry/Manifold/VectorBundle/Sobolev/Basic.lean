@@ -280,6 +280,13 @@ theorem exists_section (w : SobolevSection A μ p k) :
     ∃ s : ∀ x, V x, ∀ i, A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s :=
   w.2
 
+omit [IsManifold 𝓘(ℝ, E) 1 M] in
+/-- Two elements of `W^{k,p}(V)` are equal when their components have equal values. -/
+theorem ext {w w' : SobolevSection A μ p k}
+    (h : ∀ i j, Wkp.value k ((w : SobolevData A μ p k) i j) =
+      Wkp.value k ((w' : SobolevData A μ p k) i j)) : w = w' :=
+  Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ext k (h i j)
+
 /-- The continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`, forgetting the highest derivative of
 every component. -/
 def lowerOrderL : SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ p k :=

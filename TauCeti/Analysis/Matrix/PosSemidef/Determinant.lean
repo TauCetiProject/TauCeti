@@ -17,8 +17,13 @@ The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
 bounds a block determinant by the product of its diagonal-block determinants.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
-All statements include singular matrices and empty blocks, over either real or
-complex scalars.
+The monotonicity and block statements include singular matrices and empty blocks,
+over either real or complex scalars.
+
+For real positive-semidefinite `n × n` matrices, the inequality of arithmetic and
+geometric means for the eigenvalues gives `det A ≤ (tr A / n) ^ n`, and its mixed
+form `det A * det B ≤ (tr (A * B) / n) ^ n` is the pointwise step of the
+Aleksandrov–Bakelman–Pucci maximum principle.
 
 ## References
 
@@ -146,5 +151,49 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
         (A.det * (F - Cᴴ * A⁻¹ * C).det) := by ring
 
 end Blocks
+
+section ArithmeticMean
+
+variable [Fintype n] [DecidableEq n]
+
+/-- **The determinant–trace inequality.** The determinant of a real positive-semidefinite
+`n × n` matrix is at most the `n`-th power of the mean of its eigenvalues,
+`det A ≤ (tr A / n) ^ n`: the inequality of arithmetic and geometric means for the eigenvalues.
+For `n = 0` both sides are `1`. -/
+theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+    A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp
+  set μ := hA.isHermitian.eigenvalues
+  have hμ := hA.eigenvalues_nonneg
+  have hdet : A.det = ∏ i, μ i := by simpa using hA.isHermitian.det_eq_prod_eigenvalues
+  have htr : A.trace = ∑ i, μ i := by simpa using hA.isHermitian.trace_eq_sum_eigenvalues
+  have hcard : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hamgm := Real.geom_mean_le_arith_mean_weighted Finset.univ
+    (fun _ => (Fintype.card n : ℝ)⁻¹) μ (fun _ _ => by positivity)
+    (by simp [Finset.card_univ, hcard]) fun i _ => hμ i
+  rw [Real.finsetProd_rpow _ _ fun i _ => hμ i, ← Finset.mul_sum, ← div_eq_inv_mul] at hamgm
+  have hprod : 0 ≤ ∏ i, μ i := Finset.prod_nonneg fun i _ => hμ i
+  rw [hdet, htr, ← Real.rpow_inv_natCast_pow hprod (Fintype.card_ne_zero (α := n))]
+  exact pow_le_pow_left₀ (Real.rpow_nonneg hprod _) hamgm _
+
+/-- **The mixed determinant–trace inequality.** For real positive-semidefinite `n × n` matrices
+`A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
+theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    A.det * B.det ≤ ((A * B).trace / Fintype.card n) ^ Fintype.card n := by
+  set S := CFC.sqrt A
+  have hS : S.IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
+  have hN : (S * B * S).PosSemidef := by
+    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same S
+  have hdet : (S * B * S).det = A.det * B.det := by
+    rw [← CFC.sqrt_mul_sqrt_self A hA.nonneg]
+    simp only [det_mul, S]
+    ring
+  rw [← hdet, ← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
+  exact hN.det_le_trace_div_card_pow
+
+end ArithmeticMean
 
 end Matrix

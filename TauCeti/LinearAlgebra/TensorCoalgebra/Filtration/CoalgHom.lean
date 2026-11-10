@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -127,31 +128,7 @@ theorem coalgHom_letter_add_apply_of_mem_filtration {φ : ReducedTensorWords R M
     -- induction, and `(F - id) ⊗ (F - id)` since every cut of a word of length at most `2 e + 1`
     -- has a half of length at most `e`.
     generalize coalgHom R (letter R M + φ) = F at hF hX ih ⊢
-    have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := ReducedTensorWords R M)) =
-        TensorProduct.map (F - LinearMap.id - coderiv R φ) LinearMap.id +
-          TensorProduct.map (coderiv R φ) LinearMap.id := by
-      rw [← TensorProduct.map_add_left]
-      congr 1
-      abel
-    have hl : TensorProduct.map (LinearMap.id (M := ReducedTensorWords R M)) (F - LinearMap.id) =
-        TensorProduct.map LinearMap.id (F - LinearMap.id - coderiv R φ) +
-          TensorProduct.map LinearMap.id (coderiv R φ) := by
-      rw [← TensorProduct.map_add_right]
-      congr 1
-      abel
-    have h : TensorProduct.map F F (deconcatenation R M z) - deconcatenation R M z -
-          (LinearMap.rTensor _ (coderiv R φ) (deconcatenation R M z) +
-            LinearMap.lTensor _ (coderiv R φ) (deconcatenation R M z)) =
-        TensorProduct.map (F - LinearMap.id - coderiv R φ) LinearMap.id (deconcatenation R M z) +
-          TensorProduct.map LinearMap.id (F - LinearMap.id - coderiv R φ)
-            (deconcatenation R M z) +
-          TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R M z) := by
-      conv_lhs => rw [← add_sub_cancel LinearMap.id F]
-      rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
-        TensorProduct.map_id, hr, hl]
-      simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
-        LinearMap.lTensor_def]
-      abel
+    have h := TensorProduct.map_sub_sub_add_eq F (coderiv R φ) (deconcatenation R M z)
     rw [map_deconcatenation_eq_zero_of_mem_filtration R M ih
         (apply_eq_zero_of_mem_filtration_zero R M _) (by simpa using hz),
       map_deconcatenation_eq_zero_of_mem_filtration R M

@@ -36,9 +36,13 @@ variable {k : Type u} [Field k] {H : Type v} [Ring H] [Algebra k H]
 /-- **Finite-dimensional modules over a `k`-algebra form an essentially small category**, in
 the universe `max u v` of the field `k : Type u` and the algebra `H : Type v`. -/
 instance essentiallySmall : EssentiallySmall.{max u v} (FiniteHopfModuleCat k H) := by
+  -- View the inclusion as a functor to the native module category, to which `isFG` applies.
+  let F : FiniteHopfModuleCat k H ⥤ ModuleCat.{u} H := toHopfModuleCat k H
+  have : F.Full := inferInstanceAs (toHopfModuleCat k H).Full
+  have : F.Faithful := inferInstanceAs (toHopfModuleCat k H).Faithful
   have : EssentiallySmall.{v} (FiniteHopfModuleCat k H) :=
     essentiallySmall_of_fully_faithful
-      ((ModuleCat.isFG H).lift (incl k H) fun M =>
+      ((ModuleCat.isFG H).lift F fun M =>
         (ModuleCat.isFG_iff _).2 (Module.Finite.of_restrictScalars_finite k H M))
   exact (essentiallySmall_iff _).2 ⟨small_lift _, locallySmall_max⟩
 

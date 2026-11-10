@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.WithTopology
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Local primitives of closed `1`-forms and their covering space
@@ -114,6 +115,52 @@ theorem IsPrimitiveOn.const_smul (hg : IsPrimitiveOn φ g U) (c : ℝ) :
     IsPrimitiveOn (c • φ) (c • g) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.const_smul c, fun y hy ↦ ?_⟩
   rw [RoughForm.ofFunction_smul, mextDeriv_smul, Pi.smul_apply, Pi.smul_apply, hg.mextDeriv_eq y hy]
+
+section Chart
+
+variable [I.Boundaryless] [IsManifold I 1 M]
+  {α : RoughForm I M F 1} {f : M → F} {x : M}
+
+/-- Near a point of its domain, the chart expression of a locally exact one-form is the
+ordinary derivative of its local primitive, read as an alternating map of one vector. -/
+theorem IsPrimitiveOn.inChartAt_eventuallyEq_fderiv (hf : IsPrimitiveOn α f U) (hx : x ∈ U) :
+    α.inChartAt x =ᶠ[𝓝 (extChartAt I x x)] fun z ↦
+      ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1)
+        (fderiv ℝ (f ∘ (extChartAt I x).symm) z) := by
+  have hU : (extChartAt I x).symm ⁻¹' U ∈ 𝓝 (extChartAt I x x) := by
+    apply (continuousAt_extChartAt_symm (I := I) x).preimage_mem_nhds
+    exact hf.isOpen.mem_nhds (by simpa using hx)
+  filter_upwards [hU, extChartAt_target_mem_nhds (I := I) x] with z hzU hz
+  have hd := (hf.mdifferentiableOn _ hzU).mdifferentiableAt (hf.isOpen.mem_nhds hzU)
+  have hψ := mdifferentiableWithinAt_extChartAt_symm (I := I) hz
+  rw [I.range_eq_univ] at hψ
+  have hcomp := mvfderiv_comp z hd (hψ.mdifferentiableAt univ_mem)
+  rw [mvfderiv_eq_fderiv] at hcomp
+  ext v
+  rw [RoughForm.inChartAt_apply, ← hf.mextDeriv_eq _ hzU, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+  rw [I.range_eq_univ, mfderivWithin_univ]
+  -- The tangent identification of the model space is the identity.
+  exact congrArg (fun L ↦ L (v 0)) hcomp.symm
+
+/-- The derivative of a locally exact one-form in a preferred chart is the second derivative
+of its primitive, followed by the identification of linear maps with degree-one alternating
+maps. No critical-point assumption is needed for this coordinate formula. -/
+theorem IsPrimitiveOn.hasFDerivAt_inChartAt (hf : IsPrimitiveOn α f U) (hx : x ∈ U)
+    (hf₂ : ContMDiffAt I 𝓘(ℝ, F) 2 f x) :
+    HasFDerivAt (α.inChartAt x)
+      ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+          (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp
+        (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)))
+      (extChartAt I x x) := by
+  have hD := (hf₂.contDiffAt_comp_extChartAt_symm.fderiv_right
+    (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
+  exact ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+    (0 : Fin 1)).toContinuousLinearEquiv.hasFDerivAt.comp _ hD.hasFDerivAt).congr_of_eventuallyEq
+      (hf.inChartAt_eventuallyEq_fderiv hx)
+
+end Chart
 
 section Pullback
 

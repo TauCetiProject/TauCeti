@@ -39,6 +39,10 @@ first statement does not extend to `|c| < 1`.
 
 * `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
 * `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
+* `ZLattice.exists_forall_ne_zero_lt_norm`: scaling up the integer span of a basis gives full
+  lattices all of whose nonzero vectors are longer than a prescribed bound.
+* `ZLattice.exists_forall_add_mem_eq_zero_of_isBounded`: a bounded set meets none of its
+  translates by the nonzero vectors of such a lattice.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
@@ -143,6 +147,45 @@ theorem coe_basisSmul_apply (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) (i : �
   exact coe_equivMapOfInjective_apply _ _ _ _
 
 end Basis
+
+/-! ### Lattices with long nonzero vectors -/
+
+/-- A finite-dimensional real normed space has full lattices whose nonzero vectors are all longer
+than any prescribed `R`. -/
+theorem exists_forall_ne_zero_lt_norm [FiniteDimensional ℝ E] (R : ℝ) :
+    ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L),
+      ∀ ℓ ∈ L, ℓ ≠ 0 → R < ‖ℓ‖ := by
+  -- Scale up the integer span of a basis, whose nonzero vectors have norm at least some `δ`.
+  set L₀ := span ℤ (Set.range (Module.finBasis ℝ E))
+  obtain ⟨δ, hδ, hL₀⟩ := Metric.isOpen_singleton_iff.1 (isOpen_discrete ({0} : Set L₀))
+  set c : ℝ := (|R| + 1) / δ
+  have hc : 0 < c := by positivity
+  have : NeZero c := ⟨hc.ne'⟩
+  refine ⟨c • L₀, inferInstance, inferInstance, fun ℓ hℓ hne ↦ ?_⟩
+  obtain ⟨y, hy, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hℓ
+  have hδy : δ ≤ ‖y‖ := by
+    by_contra! h
+    have h0 := hL₀ ⟨y, hy⟩ (by simpa [dist_eq_norm] using h)
+    exact hne (by rw [show y = 0 from congrArg Subtype.val h0, smul_zero])
+  rw [norm_smul, Real.norm_of_nonneg hc.le]
+  calc R < |R| + 1 := by linarith [le_abs_self R]
+    _ = c * δ := (div_mul_cancel₀ _ hδ.ne').symm
+    _ ≤ c * ‖y‖ := by gcongr
+
+/-- A bounded subset `s` of a finite-dimensional real normed space meets none of its translates by
+the nonzero vectors of some full lattice `L`. -/
+theorem exists_forall_add_mem_eq_zero_of_isBounded [FiniteDimensional ℝ E] {s : Set E}
+    (hs : Bornology.IsBounded s) :
+    ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L),
+      ∀ x ∈ s, ∀ ℓ ∈ L, x + ℓ ∈ s → ℓ = 0 := by
+  obtain ⟨R, hR⟩ := hs.subset_closedBall 0
+  obtain ⟨L, hd, hz, hL⟩ := exists_forall_ne_zero_lt_norm (E := E) (2 * R)
+  refine ⟨L, hd, hz, fun x hx ℓ hℓ hxℓ ↦ by_contra fun hne ↦ ?_⟩
+  have hx' := mem_closedBall_zero_iff.1 (hR hx)
+  have hxℓ' := mem_closedBall_zero_iff.1 (hR hxℓ)
+  have h := norm_sub_le (x + ℓ) x
+  rw [add_sub_cancel_left] at h
+  linarith [hL ℓ hℓ hne]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]

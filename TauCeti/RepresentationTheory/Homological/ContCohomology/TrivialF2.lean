@@ -228,7 +228,7 @@ variable {G H : Type u} [Group G] [Monoid H]
 @[simp]
 theorem res_trivialF2_hom (φ : H →* G) :
     TopRep.res φ (trivialF2 G) = trivialF2 H :=
-  res_trivial ℤ G (ULift.{u} (ZMod 2)) φ
+  congrArg TopRep.of (ContRepresentation.restrict_trivial ℤ G (ULift.{u} (ZMod 2)) φ)
 
 end Transport
 
