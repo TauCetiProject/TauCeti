@@ -19,8 +19,8 @@ import TauCeti.LinearAlgebra.Submodule.Compl
 
 This file records consequences of a unit Gram determinant or a perfect pairing over a local ring.
 A nonunit diagonal
-entry forces a unit off-diagonal entry in the same row. A symmetric perfect pairing with nonunit
-diagonal values splits off a binary perfect summand whenever a dual vector takes the value one.
+entry forces a unit off-diagonal entry in the same row. A symmetric perfect pairing splits off a
+binary perfect summand whenever a vector with nonunit self-pairing is taken to one by a functional.
 For an even symmetric form when `2` is a
 nonunit, such an entry determines a perfect binary summand and an orthogonal decomposition.
 
@@ -32,7 +32,8 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
   a pair with unit mutual pairing and one self-pairing in `𝔪`, pairing into `𝔪` with the pair, has
   coordinates in `𝔪`.
 * `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one`
-  splits a binary perfect summand from a perfect pairing with nonunit diagonal values.
+  splits a binary perfect summand from a perfect pairing, given a vector with nonunit self-pairing
+  and a functional taking it to one.
 * `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal` splits a perfect binary
   summand from an even unimodular form.
 * `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal` splits off the span of a family with unit
@@ -290,12 +291,12 @@ theorem IsSymm.exists_mem_maximalIdeal_of_mem_span_pair (hB : B.IsSymm) {e f : M
     exact 𝔪.sub_mem hse (𝔪.mul_mem_right _ hα)
   exact ⟨α, hα, β, hβ, rfl⟩
 
-/-- A symmetric perfect pairing with nonunit diagonal values splits off a binary perfect
-pairing if some linear functional takes the value one. The summand is supplied with a basis
-and is complementary to its orthogonal complement. -/
+/-- A symmetric perfect pairing splits off a binary perfect pairing if some vector with nonunit
+self-pairing is taken to one by a linear functional. The summand is supplied with a basis and is
+complementary to its orthogonal complement. -/
 theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one
     [B.IsPerfPair] (hB : B.IsSymm)
-    (hdiag : ∀ x, ¬ IsUnit (B x x)) (x : M) (f : Module.Dual R M) (hfx : f x = 1) :
+    (x : M) (hx : ¬ IsUnit (B x x)) (f : Module.Dual R M) (hfx : f x = 1) :
     ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
       (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
   classical
@@ -303,7 +304,7 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one
   have hxw : B x w = 1 := by rw [hB.eq, hw, hfx]
   obtain ⟨hli, hmod⟩ := hB.linearIndependent_and_isModular_restrict_span_pair (one_mem _)
     hxw (one_mul (B x x)).symm (one_mul (B w w)).symm
-    (fun h ↦ hdiag x (isUnit_of_mul_isUnit_left h))
+    (fun h ↦ hx (isUnit_of_mul_isUnit_left h))
   have hp := isModular_one_iff.mp hmod
   exact ⟨_, ⟨Basis.span hli⟩, hp,
     B.isCompl_orthogonal_of_restrict_bijective _ (hB.restrict _)
@@ -320,8 +321,8 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
       finrank R S = 2 ∧ (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
   have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hdet
   obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
-    hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B
-      (fun x hx ↦ h2 (isUnit_of_dvd_unit (heven x) hx)) (b 0) (b.coord 0) (by simp)
+    hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B (b 0)
+      (fun hx ↦ h2 (isUnit_of_dvd_unit (heven _) hx)) (b.coord 0) (by simp)
   refine ⟨S, ?_, hS, hc⟩
   simpa using Module.finrank_eq_card_basis c
 
