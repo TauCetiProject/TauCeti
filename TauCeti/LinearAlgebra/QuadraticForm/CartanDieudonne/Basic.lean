@@ -10,7 +10,6 @@ import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Restrict
-import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
@@ -451,10 +450,12 @@ private theorem exists_reflectionWord_of_good {n : ℕ} (Q : QuadraticForm K V)
     refine ⟨d :: l, by simp only [List.length_cons]; omega, ?_⟩
     exact reflectionWord_cons_eq_of_eq Q d hlprod
 
-/-- The exceptional case of the induction step: when every anisotropic vector is moved by an
-isotropic displacement, `dim V` is even and `det g = 1`. Precomposing with any reflection `r`
-gives `r * g` of determinant `-1`, which is therefore in the good case (`good`) and is a word of
-odd length at most `dim V`, hence less than `dim V`. -/
+/-- The exceptional case of the induction step: if every anisotropic vector is moved by `g` by an
+isotropic displacement, and the good case (`good`) is known for `V`, then `g` is a product of at
+most `dim V` reflections in anisotropic vectors. -/
+-- In this case `dim V` is even and `det g = 1`. Precomposing with any reflection `r` gives
+-- `r * g` of determinant `-1`, which is therefore in the good case and is a word of odd length
+-- at most `dim V`, hence less than `dim V`.
 private theorem exists_reflectionWord_of_exceptional
     [FiniteDimensional K V] [Invertible (2 : K)]
     {n : ℕ} (hn : Module.finrank K V = n) (hpos : 0 < n)

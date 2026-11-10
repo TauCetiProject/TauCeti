@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
-import TauCeti.Algebra.Module.Submodule.Map
-import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Restricting an orthogonal map to an invariant submodule
