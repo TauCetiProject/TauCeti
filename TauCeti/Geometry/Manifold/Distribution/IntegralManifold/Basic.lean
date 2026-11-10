@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Submodule
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import Mathlib.Analysis.LocallyConvex.HahnBanach
@@ -269,28 +270,11 @@ theorem IsIntegralManifold.exists_plaque_transition
       x ∈ e.source ∧ e x = y ∧ ∀ z ∈ e.source, f z = g (e z) := by
   obtain ⟨c, hxc, hc0, _, hfc⟩ := hf.exists_plaque_chart hn hx isOpen_univ (mem_univ x)
   obtain ⟨d, hyd, hd0, _, hgd⟩ := hg.exists_plaque_chart hn hy isOpen_univ (mem_univ y)
-  have hsource : (c.trans d.symm).source = c.source ∩ c ⁻¹' d.target := by
-    simp [PartialDiffeomorph.trans_toPartialEquiv, PartialDiffeomorph.symm_toPartialEquiv]
-  have hcoe (z : N) : (c.trans d.symm) z = d.symm (c z) := by
-    simp [PartialDiffeomorph.trans_toPartialEquiv, PartialDiffeomorph.symm_toPartialEquiv]
-  refine ⟨c.trans d.symm, ?_, ?_, ?_⟩
-  · rw [hsource]
-    refine ⟨hxc, ?_⟩
-    rw [mem_preimage, hc0, ← hd0]
-    exact d.map_source hyd
-  · rw [hcoe]
-    rw [hc0, ← hd0]
-    exact d.left_inv hyd
-  · intro z hz
-    rw [hsource] at hz
-    rw [hcoe]
-    have hinv : d (d.symm (c z)) = c z := d.right_inv hz.2
-    calc
-      f z = f x + (c z : E) := hfc z hz.1
-      _ = g y + (c z : E) := congrArg (fun v : E ↦ v + (c z : E)) hfg
-      _ = g y + (d (d.symm (c z)) : E) :=
-        congrArg (fun w : W ↦ g y + (w : E)) hinv.symm
-      _ = g (d.symm (c z)) := (hgd _ (d.symm.map_source hz.2)).symm
+  obtain ⟨e, hxe, hex, hec, hed, he⟩ :=
+    c.exists_transition d hxc hyd (hc0.trans hd0.symm)
+  refine ⟨e, hxe, hex, ?_⟩
+  intro z hz
+  rw [hfc z (hec hz), hgd (e z) (hed hz), hfg, he z hz]
 
 end AffinePlaques
 

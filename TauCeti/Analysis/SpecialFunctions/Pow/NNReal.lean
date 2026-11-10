@@ -19,6 +19,14 @@ pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a fin
 exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
 isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 
+The product `x ^ y * x ^ z` is at most `x ^ (y + z)` for all real exponents `y` and `z`, with no
+hypothesis on `x`; this combines the powers of a function at two exponents when one of them may be
+negative.
+
+For `0 ≤ α ≤ 1`, `C = C₀ N / R ^ α / 2`, `M = D N` and `ρ = R / 2`, the number
+`max (2 C) (2 M / ρ ^ α)` is at most `max C₀ (4 D) * R ^ (-α) * N`; this bounds a maximum of
+rescaled constants in a power-law scaling argument.
+
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
 `t ^ p s ^ (1 - p)`, such as the distortion coefficient `τ_{K,N}^{(t)}(θ)` with `p = 1 / N`.
@@ -63,6 +71,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
@@ -118,6 +127,33 @@ theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1)
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
+
+/-- The product `x ^ y * x ^ z` is at most `x ^ (y + z)`, for every `x` and all real `y` and `z`;
+this is the `ℝ≥0∞` form of `Real.le_rpow_add`. Away from `0` and `∞` it is an equality. At `0` and
+at `∞` either the right side is `∞`, or one of the two factors on the left vanishes, or both
+exponents vanish. -/
+theorem le_rpow_add (x : ℝ≥0∞) (y z : ℝ) : x ^ y * x ^ z ≤ x ^ (y + z) := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · rcases lt_or_ge (y + z) 0 with hyz | hyz
+    · simp [zero_rpow_of_neg hyz]
+    rcases lt_or_ge 0 y with hy | hy
+    · simp [zero_rpow_of_pos hy]
+    rcases lt_or_ge 0 z with hz | hz
+    · simp [zero_rpow_of_pos hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
+  rcases eq_or_ne x ∞ with rfl | hxtop
+  · rcases lt_or_ge 0 (y + z) with hyz | hyz
+    · simp [top_rpow_of_pos hyz]
+    rcases lt_or_ge y 0 with hy | hy
+    · simp [top_rpow_of_neg hy]
+    rcases lt_or_ge z 0 with hz | hz
+    · simp [top_rpow_of_neg hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
+  exact (rpow_add _ _ hx0 hxtop).ge
 
 /-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
 for finite `F` and `G` and nonnegative exponents. -/
@@ -195,6 +231,7 @@ theorem ofReal_inv_sqrt_le_enorm_rpow (x : ℝ) : ENNReal.ofReal (√x)⁻¹ ≤
   rcases le_or_gt x 0 with hx | hx
   · simp [Real.sqrt_eq_zero'.mpr hx]
   rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.enorm_of_nonneg hx.le]
+  norm_num
 
 /-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`, as values in `ℝ≥0∞`. This is the
 decay at infinity of a kernel `1 / √d(x)` for a cubic `d` with leading coefficient `4`, with
@@ -209,7 +246,7 @@ theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h : y ^ 3 �
   have hy3 : 0 < y ^ 3 / 2 := by positivity
   calc (√d)⁻¹ ≤ (√(y ^ 3 / 2))⁻¹ :=
         inv_anti₀ (Real.sqrt_pos.mpr hy3) (Real.sqrt_le_sqrt (by linarith))
-    _ = √2 * (y ^ 3) ^ (-2⁻¹ : ℝ) := by
+    _ = √2 * (y ^ 3) ^ (-1 / 2 : ℝ) := by
         rw [Real.sqrt_div' _ zero_le_two, inv_div, div_eq_mul_inv, Real.inv_sqrt_eq_rpow]
     _ = √2 * y ^ (-(3 / 2 : ℝ)) := by
         rw [← Real.rpow_natCast_mul hy.le]; norm_num
@@ -339,5 +376,27 @@ theorem rpow_den_num_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
   rw [← rpow_mul_natCast, ← rpow_mul_natCast, rpow_le_rpow_iff_of_one_lt hb,
     NNRat.cast_def, div_le_div_iff₀ hr (by exact_mod_cast q.den_pos)]
   constructor <;> intro h <;> nlinarith
+
+/-- Bounding a maximum of rescaled constants: for `0 ≤ α ≤ 1`, `C = C₀ N / R ^ α / 2`, `M = D N`
+and `ρ = R / 2`, the number `max (2 C) (2 M / ρ ^ α)` is at most `max C₀ (4 D) * R ^ (-α) * N`. -/
+lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (α : ℝ) ≤ 1)
+    (hR : 0 < R) (hC₀ : 0 ≤ C₀) (hD : 0 ≤ D) (hN : 0 ≤ N) (hC : (C : ℝ) = C₀ * N / R ^ (α : ℝ) / 2)
+    (hM : (M : ℝ) = D * N) (hρ : (ρ : ℝ) = R / 2) :
+    max (2 * C) (2 * M / ρ ^ (α : ℝ)) ≤ (max C₀ (4 * D) * R ^ (-(α : ℝ)) * N).toNNReal := by
+  have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
+    simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
+  rw [Real.le_toNNReal_iff_coe_le (by positivity)]
+  push_cast
+  rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
+  refine max_le ?_ ?_
+  · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
+      _ ≤ _ := by gcongr; exact le_max_left _ _
+  · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
+        = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
+      _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
+      _ ≤ _ := by
+        rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
+        gcongr
+        exact le_max_right _ _
 
 end NNReal

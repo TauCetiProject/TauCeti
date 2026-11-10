@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -25,6 +26,8 @@ bounds.
 
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
+  into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
@@ -56,6 +59,9 @@ bounds.
   to any constant.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
+  sets with a common representative glue to a class on any set they cover, with norm at most the
+  sum of their norms.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -65,7 +71,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
@@ -94,6 +100,41 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
     _ = a * ‖g‖ + b * ‖h‖ := by
         rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
+
+/-- **Lower exponents on a finite measure space.** If a bounded linear map `S : X → L^{p⋆}(μ)`
+represents `v`, that is `S u = v u` almost everywhere, and `μ` is finite, then
+`‖v u‖_{L^q(μ)} ≤ C ‖u‖` for every `q ≤ p⋆`, by Hölder's inequality. -/
+theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [SeminormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {pstar q : ℝ≥0∞} [Fact (1 ≤ pstar)] (hm : m Set.univ ≠ ∞)
+    (hq : q ≤ pstar) (S : X →L[ℝ] Lp F pstar m) {v : X → alpha → F}
+    (hS : ∀ u, S u =ᵐ[m] v u) :
+    ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q m ≤ C * ‖u‖ₑ := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · refine ⟨0, fun u => ?_⟩
+    rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
+    exact zero_le
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
+    rw [sub_nonneg]
+    rcases eq_or_ne pstar ∞ with h | h
+    · simp only [h, ENNReal.toReal_top, div_zero]
+      positivity
+    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
+        (ENNReal.toReal_mono h hq)
+  have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg hexp hm
+  refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
+  calc eLpNorm (v u) q m
+      ≤ eLpNorm (v u) pstar m * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
+    _ = ‖S u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
+        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u)]
+    _ ≤ ‖S‖ₑ * ‖u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
+        gcongr
+        exact S.le_opENorm u
+    _ = ↑(‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal) * ‖u‖ₑ := by
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, enorm_eq_nnnorm]
+        ring
 
 end TauCeti
 
@@ -297,6 +338,24 @@ theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)
       filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
       rwa [hy])
     rwa [← measureReal_restrict_apply_univ]
+
+/-- **Gluing `Lᵖ` classes along a finite cover.** For `1 ≤ p`, let finitely many sets `u i` cover
+`s`. If each `f i ∈ Lᵖ(u i)` agrees almost everywhere on `u i` with one function `g`, then some
+class in `Lᵖ(s)` agrees almost everywhere on `s` with `g` and has norm at most `∑ᵢ ‖f i‖`. -/
+theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {u : ι → Set X} (hs : s ⊆ ⋃ i, u i) (f : ∀ i, Lp F p (μ.restrict (u i)))
+    (hf : ∀ i, f i =ᵐ[μ.restrict (u i)] g) :
+    ∃ G : Lp F p (μ.restrict s), G =ᵐ[μ.restrict s] g ∧ ‖G‖ ≤ ∑ i, ‖f i‖ := by
+  have hg : ∀ i, MemLp g p (μ.restrict (u i)) := fun i => (Lp.memLp (f i)).ae_eq (hf i)
+  have hgs := MemLp.restrict_of_subset_iUnion hs hg
+  refine ⟨hgs.toLp g, hgs.coeFn_toLp, ?_⟩
+  have hfi : ∀ i, ‖f i‖ = (eLpNorm g p (μ.restrict (u i))).toReal :=
+    fun i => by rw [Lp.norm_def, eLpNorm_congr_ae (hf i)]
+  rw [Lp.norm_toLp]
+  simp only [hfi]
+  rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
+  exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
+    (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
 

@@ -45,7 +45,9 @@ In the normalization `f(σ) ≤ (σ / 2) (1 + C σ) (1 + δ) f'(σ) + A σ ^ 4` 
 Consequently a bound on `f` at a fixed radius `σ₀ ≤ 1` gives the quadratic upper bound
 `f σ ≤ K' σ ^ 2` for `c h ≤ σ ≤ σ₀` (`TauCeti.le_mul_sq_of_le_mul_deriv_add`), and a lower bound
 `m h ^ 2 ≤ f (c h)` gives a quadratic lower bound `m' σ ^ 2 ≤ f σ + A σ ^ 4` for `c h ≤ σ ≤ 1`
-(`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in `h`. This is the integration step
+(`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in `h`. At radii `σ` small enough
+that `2 A σ ^ 2 ≤ m'`, the error term is absorbed and `(m' / 2) σ ^ 2 ≤ f σ`
+(`TauCeti.mul_sq_le_of_le_mul_deriv_add`). This is the integration step
 of Taubes's monotonicity estimate for the local defect energy `r ∫_{B_σ} |1 - |ψ|²|` of the
 Seiberg–Witten equations on a symplectic four-manifold perturbed by a large multiple `r` of the
 symplectic form, where `h = r^(-1/2)`.
@@ -154,12 +156,6 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     add_le_add (hf hx hy hxy) (mul_le_mul_of_nonneg_left
       (pow_le_pow_left₀ (hσpos x hx).le hxy n) hB)
   have hgs : 0 ≤ g s := add_nonneg hfs (mul_nonneg hB (pow_nonneg hs.le n))
-  have hk : IntervalIntegrable k volume s t := by
-    refine ContinuousOn.intervalIntegrable
-      (continuousOn_const.mul (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_))
-    rw [uIcc_of_le hst] at hσ
-    have := hσpos σ hσ
-    positivity
   -- The forcing term is absorbed into `g = f + B σ ^ n`: `k g ≤ g'` almost everywhere.
   have hkg : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ := by
     filter_upwards [h, (hf.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
@@ -187,7 +183,7 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs ht hC,
       Real.rpow_def_of_pos (by positivity), Real.rpow_def_of_pos (by positivity), ← Real.exp_sub]
     ring_nf
-  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hk hkg
+  have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hkg
   rw [hexp, mul_div_assoc', div_le_iff₀ (by positivity)] at key
   simp only [g] at key
   linarith
@@ -380,6 +376,24 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
         field_simp
     _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) * (1 + C) ^ 2 := by gcongr
     _ = (f σ + A * σ ^ 4) * (c ^ 2 * (1 + C) ^ 2 * Λ) * h ^ 2 := by ring
+
+/-- **Quadratic lower bound at small radii.** Under the hypotheses of
+`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`, write
+`m' = m / (c ^ 2 (1 + C) ^ 2 exp (2 K (1 + |log c|)))` for its constant. At a radius `σ` small
+enough that `2 A σ ^ 2 ≤ m'`, the error term `A σ ^ 4` is absorbed: `(m' / 2) σ ^ 2 ≤ f σ`.
+
+With `h = r^(-1/2)`, this is the lower bound `E(σ) ≥ c′ σ ^ 2` for the defect energy of a ball
+centred at a zero, at radii between `c r^(-1/2)` and a fixed small radius, uniformly in `r`. -/
+theorem mul_sq_le_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m : ℝ} (hC : 0 ≤ C)
+    (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδh : δ ≤ K * h)
+    (hσ : c * h ≤ σ) (hσ1 : σ ≤ 1) (hf : MonotoneOn f (Icc (c * h) σ)) (hm : 0 ≤ m)
+    (hfm : m * h ^ 2 ≤ f (c * h))
+    (hf' : ∀ᵐ τ, τ ∈ Ioo (c * h) σ →
+      f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4)
+    (hσA : 2 * A * σ ^ 2 ≤ m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|)))) :
+    m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|))) / 2 * σ ^ 2 ≤ f σ := by
+  have key := mul_sq_le_add_of_le_mul_deriv_add hC hδ hA hc hh hh1 hδh hσ hσ1 hf hm hfm hf'
+  nlinarith [mul_le_mul_of_nonneg_right hσA (sq_nonneg σ)]
 
 end TauCeti
 
