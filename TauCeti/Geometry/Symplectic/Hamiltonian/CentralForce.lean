@@ -45,13 +45,15 @@ the origin between `ℓ² / (m κ + ‖A‖)` and, when `‖A‖ < m κ`, `ℓ²
 inequality `‖A‖ < m κ` holds exactly when `H < 0`. On the collision set `ℓ = 0`,
 `A = -(m κ / ‖q‖) q`.
 
-The conservation laws for the angular momentum and its action on the Runge–Lenz vector hold at
-every point of phase space, and the one for its square wherever `U` is differentiable at `‖q‖`.
-The bracket with the angular momentum vanishes because the Hamiltonian is even along the rotation
-direction, so its derivative there is zero; at `q = 0` the rotation direction and the derivative
-of `ℓ²` themselves vanish. The other statements about Hamiltonian vector fields
-and Poisson brackets are pointwise on the punctured phase space `q ≠ 0`, the cotangent bundle of
-the punctured configuration space; the Poisson bracket at a point only depends on germs there.
+The conservation laws for the angular momentum, its square, and its action on the Runge–Lenz
+vector hold at every point of phase space. The bracket with the angular momentum vanishes because
+the Hamiltonian is even along the rotation direction, so its derivative there is zero; at a point
+`(q, p)` the differential of `ℓ²` is twice that of the angular momentum in the plane of `q` and
+`p`, so its bracket vanishes too; and at `q = 0` the Runge–Lenz vector vanishes along the whole
+line through `(q, p)` in the rotation direction. The other statements about Hamiltonian vector
+fields and Poisson brackets are pointwise on the punctured phase space `q ≠ 0`, the cotangent
+bundle of the punctured configuration space; the Poisson bracket at a point only depends on germs
+there.
 
 ## Main declarations
 
@@ -445,34 +447,35 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
 
 /-- **Conservation of the squared angular momentum.** The squared
 length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
-central-force Hamiltonian, in every dimension. -/
+central-force Hamiltonian, in every dimension and at every point of phase space. -/
 theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian {m : ℝ}
-    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) :
+    {U : ℝ → ℝ} {x : V × V} :
     (stdSymplecticForm (V := V)).poissonBracket
       (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
       (centralForceHamiltonian m U) x = 0 := by
-  by_cases hq : x.1 = 0
-  · rw [SymplecticForm.poissonBracket_eq_fderiv,
-      (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt.fderiv]
-    simp [hq]
-  rw [stdSymplecticForm_poissonBracket (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt
-    (hasFDerivAt_centralForceHamiltonian hU hq)]
-  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, real_inner_comm x.1 x.2]
-  field_simp
-  ring
+  -- At `x`, the differential of `ℓ²` is twice that of the angular momentum in the plane of `x.1`
+  -- and `x.2`, so the bracket is `-2` times a bracket of the angular momentum with the Hamiltonian.
+  have hX : (stdSymplecticForm (V := V)).hamiltonianVectorField
+      (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) x =
+        (2 : ℝ) •
+          (stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum x.1 x.2) x := by
+    rw [stdSymplecticForm_hamiltonianVectorField (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt,
+      stdSymplecticForm_hamiltonianVectorField_angularMomentum, real_inner_self_eq_norm_sq,
+      real_inner_self_eq_norm_sq, real_inner_comm x.2 x.1, Prod.smul_mk, Prod.mk.injEq]
+    constructor <;> module
+  rw [SymplecticForm.poissonBracket_eq_neg_fderiv, hX, map_smul,
+    ← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, smul_zero, neg_zero]
 
 /-- **Conservation of the squared angular momentum along the motion.** Let `γ` be an integral
 curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected set `s`
-of times, with `U` differentiable along it. Then the squared angular
-momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same value at all times `t₀, t ∈ s`. -/
+of times. Then the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same
+value at all times `t₀, t ∈ s`. -/
 theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
     (hs : IsPreconnected s)
     (hγ : ∀ t ∈ s, HasDerivAt γ
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
-    (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
-    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
       ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
   -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
@@ -481,8 +484,7 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
     have h := (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
     rwa [← (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.fderiv,
       ← SymplecticForm.poissonBracket_eq_fderiv,
-      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
-        (hU t ht).hasDerivAt] at h
+      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian] at h
   -- A function with zero derivative on a preconnected set of times is constant there.
   have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
     (f := (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) (f' := fun _ ↦ 0)

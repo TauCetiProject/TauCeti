@@ -470,7 +470,7 @@ theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : �
   have h := ((hasFDerivAt_radialProjection (hq t ht)).comp_hasDerivAt t (hγ t ht))
   rwa [← (hasFDerivAt_radialProjection (hq t ht)).fderiv,
     fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian (hU t ht).hasDerivAt
-      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hU ht₀ ht).symm)] at h
+      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht).symm)] at h
 
 /-! ### Circular orbits -/
 

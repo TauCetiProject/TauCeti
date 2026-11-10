@@ -57,14 +57,8 @@ theorem hamiltonianFlow_conserves (hX : LipschitzWith K (ω.hamiltonianVectorFie
   by_cases hz : ∃ s, ω.hamiltonianVectorField H (ω.hamiltonianFlow H hX s x) = 0
   · -- The orbit through `x` meets a rest point, hence it is constant.
     obtain ⟨s, hs⟩ := hz
-    have hrest := (forall_flowOfLipschitz_eq_self_iff hX _).2 hs
-    have h1 (r : ℝ) : ω.hamiltonianFlow H hX r x = x := by
-      have e := hrest (r - s)
-      have e0 := hrest (-s)
-      rw [← hamiltonianFlow_eq, ← Flow.map_add, sub_add_cancel] at e
-      rw [← hamiltonianFlow_eq, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at e0
-      rw [e, ← e0]
-    rw [h1 t]
+    rw [hamiltonianFlow_eq] at hs ⊢
+    rw [flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero hX hs t]
   · push Not at hz
     have hdiff (s : ℝ) : DifferentiableAt ℝ H (ω.hamiltonianFlow H hX s x) := by
       by_contra h
