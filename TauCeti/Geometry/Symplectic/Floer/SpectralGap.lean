@@ -255,8 +255,7 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
           ω.associatedBilinForm (J t) (w (s, t)) (w (s, t)) := by
       have hd : deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) stdComplexLineImag := by
         rw [stdComplexLineImag_eq]
-        exact ((hξ.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt t
-          (hasDerivAt_prodMk_right s t)).deriv
+        exact (hasDerivAt_slice_right (hξ.differentiable (by norm_num) _)).deriv
       rw [asymptoticOperator_def, hd]
       exact ω.associatedBilinForm_apply_apply_self_eq (J t) _
     have h := hgap _ hζ (by simpa using hper s 0)
@@ -269,11 +268,14 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
     (fun n ↦ (hgc hξ.continuous).continuousOn.integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)) (hEi.const_mul C) tendsto_const_nhds fun n ↦ by
       rw [Pi.zero_apply, add_zero, integral_const_mul]
-      refine (setIntegral_rect_le_mul_of_forall_setIntegral_le (hgc hξ.continuous).continuousOn
-        (hgc hwc).continuousOn fun s _ ↦ hslice s).trans
-        (mul_le_mul_of_nonneg_left (setIntegral_mono_on ?_ ?_
+      have hwi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (w z) (w z))
+          (Icc (-(n : ℝ)) n ×ˢ Icc 0 1) :=
+        (hgc hwc).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+      refine (setIntegral_rect_le_mul_of_forall_setIntegral_le measurableSet_Icc
+        ((hgc hξ.continuous).continuousOn.integrableOn_compact
+          (isCompact_Icc.prod isCompact_Icc)) hwi fun s _ ↦ hslice s).trans
+        (mul_le_mul_of_nonneg_left (setIntegral_mono_on hwi ?_
           (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_) hC)
-      · exact (hgc hwc).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
       · exact (continuous_associatedBilinForm_add_apply_self hJc hSc (hξ.of_le (by norm_num)))
           |>.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
       · exact le_add_of_nonneg_left (hg0 _ _)

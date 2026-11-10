@@ -404,7 +404,7 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
   obtain ⟨s, t⟩ := z
   have hξt : deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) stdComplexLineImag := by
     rw [stdComplexLineImag_eq]
-    exact (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
+    exact (hasDerivAt_slice_right hξ).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
 /-- A map of period one in the second coordinate has a derivative of period one in it. -/
