@@ -46,6 +46,32 @@ variable {β 𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   {L : SummationFilter β} (b : GeneralSchauderBasis β 𝕜 E L)
   (j : E →ₗᵢ[𝕜] F) (c : β → F)
 
+/-- The series of rank-one maps built from basis coordinates has norm bounded by the
+sum of the coordinate norms times the vector norms. -/
+theorem norm_tsum_coord_smulRight_le (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) :
+    ‖∑' i, (b.coord i).smulRight (v i)‖ ≤ ∑' i, ‖b.coord i‖ * ‖v i‖ :=
+  tsum_of_norm_bounded hs.hasSum fun i ↦
+    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
+
+/-- A summable weighted vector family gives a norm-convergent series of rank-one
+maps built from the basis coordinates. -/
+theorem summable_coord_smulRight [CompleteSpace F] (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) :
+    Summable (fun i ↦ (b.coord i).smulRight (v i)) :=
+  hs.of_norm_bounded fun i ↦
+    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
+
+/-- The sum of rank-one coordinate maps takes each basis vector to its prescribed vector. -/
+theorem tsum_coord_smulRight_apply_basis [CompleteSpace F] (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) (i : β) :
+    (∑' k, (b.coord k).smulRight (v k)) (b i) = v i := by
+  classical
+  rw [tsum_apply (b.summable_coord_smulRight v hs), tsum_eq_single i]
+  · simp [b.ortho]
+  · intro k hki
+    simp [b.ortho, hki.symm]
+
 /-- The inclusion plus the series of rank-one errors sending `b i` to `c i`.
 The evaluation laws require summability of the weighted errors. -/
 def ambientPerturbationMap : E →L[𝕜] F :=
@@ -55,12 +81,6 @@ section CompleteTarget
 
 variable [CompleteSpace F]
 
-private theorem summable_ambientPerturbationError
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) :
-    Summable (fun i ↦ (b.coord i).smulRight (c i - j (b i))) :=
-  hs.of_norm_bounded fun i ↦
-    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (c i - j (b i))).le
-
 /-- The perturbing map is the inclusion plus its absolutely convergent error series. -/
 theorem ambientPerturbationMap_apply
     (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) (x : E) :
@@ -68,7 +88,7 @@ theorem ambientPerturbationMap_apply
       j x + ∑' i, b.coord i x • (c i - j (b i)) := by
   simp only [ambientPerturbationMap, add_apply,
     LinearIsometry.coe_toContinuousLinearMap,
-    tsum_apply (b.summable_ambientPerturbationError j c hs),
+    tsum_apply (b.summable_coord_smulRight (fun i ↦ c i - j (b i)) hs),
     ContinuousLinearMap.smulRight_apply]
 
 /-- The perturbing map sends the original basis vectors to their prescribed perturbations. -/
@@ -76,11 +96,8 @@ theorem ambientPerturbationMap_apply
 theorem ambientPerturbationMap_apply_basis
     (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) (i : β) :
     b.ambientPerturbationMap j c (b i) = c i := by
-  classical
-  rw [ambientPerturbationMap_apply b j c hs, tsum_eq_single i]
-  · simp [b.ortho]
-  · intro k hki
-    simp [b.ortho, hki.symm]
+  simp only [ambientPerturbationMap, add_apply, LinearIsometry.coe_toContinuousLinearMap,
+    b.tsum_coord_smulRight_apply_basis (fun k ↦ c k - j (b k)) hs i, add_sub_cancel]
 
 end CompleteTarget
 
@@ -90,8 +107,7 @@ theorem norm_ambientPerturbationMap_sub_le
     ‖b.ambientPerturbationMap j c - j.toContinuousLinearMap‖ ≤
       ∑' i, ‖b.coord i‖ * ‖c i - j (b i)‖ := by
   simp only [ambientPerturbationMap, add_sub_cancel_left]
-  exact tsum_of_norm_bounded hs.hasSum fun i ↦
-    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (c i - j (b i))).le
+  exact b.norm_tsum_coord_smulRight_le (fun i ↦ c i - j (b i)) hs
 
 /-- The perturbing operator has norm at most one plus the weighted error. -/
 theorem norm_ambientPerturbationMap_le
