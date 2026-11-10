@@ -34,7 +34,8 @@ plumbing factor and `b_r` the scale of the end `r`
 (`TauCeti.Floer.plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation`). On the inserted
 half of the neck the inputs of the inserted pair of pants are pushed forward along
 `ψ(w) = c_q + f w` to input ends (`TauCeti.Floer.inputEndPerturbation_sub_div_comp`); elsewhere the
-receiving pair of pants with its input `q` switched off is already a sphere with one input end.
+receiving pair of pants with its input `q` switched off is already a sphere with one input end
+(`TauCeti.Floer.pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation`).
 
 The neck datum is supported in the annulus `exp (-2π(L - 1)) / 2 < ‖w - c_q‖ < exp (-2π) / 2`
 (`TauCeti.Floer.plumbedPerturbation_single_inf_single_eq_zero`), away from all the ends. So every
@@ -69,20 +70,6 @@ namespace TauCeti.Floer
 variable {M : Type*} {q r : Puncture} {L : ℝ}
 
 /-! ### Switching off the neck -/
-
-/-- The pair of pants with its input `q` switched off is a sphere with the single input end of the
-other input `r`, of center `c_r` and scale `2 b_r`. -/
-private theorem pairOfPantsPerturbation_update_eq (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf)
-    (Hb : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (update Hb q 0) w x =
-      inputEndPerturbation r.endCenter (2 * r.endScale) (Hb r) w x +
-        negativePlanePerturbation (Hb inf) w x := by
-  have h0 : ∀ (c a : ℂ), inputEndPerturbation c a (0 : ℝ → M → ℝ) w x = 0 := fun c a => by
-    ext v
-    simp [inputEndPerturbation_apply, positivePlanePerturbation_def]
-  rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
-    Fin.sum_univ_two]
-  cases q <;> cases r <;> simp_all
 
 /-- On the inserted half `Re z > L/2` of the end `q`, the input ends of the receiving pair of pants
 other than `q`, and its output datum, vanish. -/
@@ -124,8 +111,7 @@ private theorem inserted_eq_zero_of_re_endCoord_le (hq : q ≠ inf) (hL : 0 ≤ 
     ring_nf
   have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  have hψ : q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
-    rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+  have hψ := q.plumbingMap_one_sub_endCenter L
   rcases eq_or_ne w q.endCenter with rfl | hc
   · refine ⟨inputEndPerturbation_self _ _ _ x, inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x⟩
     rw [norm_neg, norm_sub_rev, hψ, hf]
@@ -165,16 +151,15 @@ theorem plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (hq : q �
     simp only [Prod.mk.injEq] at hHa
     rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
       Fin.sum_univ_two, hHa.1, hHa.2.1, hHa.2.2, h₁, h₂]
-    have hneg : negativePlanePerturbation (0 : ℝ → M → ℝ) ((w - q.endCenter) / q.plumbingFactor L)
-        x = 0 := by
-      ext v
-      simp [negativePlanePerturbation_def]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, hneg, add_zero,
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      negativePlanePerturbation_zero, add_zero,
       ContinuousLinearMap.add_comp, inputEndPerturbation_sub_div_comp,
       mul_zero, mul_one, mul_neg, plumbingMap_apply]
   · -- On the receiving part the inputs of the inserted pair of pants vanish.
     obtain ⟨h₁, h₂⟩ := inserted_eq_zero_of_re_endCoord_le hq hL (not_lt.1 h) (Ha zero) (Ha one) x
-    rw [pairOfPantsPerturbation_update_eq hq hrq hr, h₁, h₂, zero_add, zero_add]
+    rw [pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation hq hrq hr,
+      puncturedSpherePerturbation_def, Fin.sum_univ_one, h₁, h₂, zero_add, zero_add]
+    simp only [Matrix.cons_val_fin_one]
 
 /-! ### The neck datum -/
 
@@ -222,8 +207,7 @@ private theorem pairwise_norm_add_le (hq : q ≠ inf) (hrq : r ≠ q) (hr : r �
         (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) j‖ := by
   have hf := norm_plumbingFactor_of_ne_inf hq L
   have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have hψ : q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
-    rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+  have hψ := q.plumbingMap_one_sub_endCenter L
   have hqr := norm_endCenter_sub_endCenter hq hr hrq
   have hψr : 1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
     have h := norm_sub_norm_le (q.endCenter - r.endCenter) (q.endCenter - q.plumbingMap L 1)
@@ -280,8 +264,7 @@ private theorem neck_eq_zero_of_norm_sub_lt (hq : q ≠ inf) (hrq : r ≠ q) (hr
   have h1 : (1 : ℝ) ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
   have hε₀ : 0 < Real.exp (-(2 * π * L)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  have hψ : q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
-    rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+  have hψ := q.plumbingMap_one_sub_endCenter L
   fin_cases i <;>
     simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, norm_neg,
@@ -378,13 +361,14 @@ variable {E G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalS
   {I : ModelWithCorners ℝ E G'} [TopologicalSpace M] [ChartedSpace G' M]
 
 /-- **The family is smooth.** For period-one Hamiltonians `Ha`, `Hb` and `G` of class `C^n` on
-`ℝ × M`, the plumbed datum with neck Hamiltonian `λ G` is `C^n` jointly in `λ`, the neck length
-`L > 4`, the domain point and the target point, at every domain point other than the four
-punctures `0`, `1`, `∞` and `ψ_L(1)`. -/
+`ℝ × M` (only needed for the entries `Ha p`, `p ≠ ∞`, and `Hb p`, `p ≠ q`, that are not replaced by
+the neck Hamiltonian), the plumbed datum with neck Hamiltonian `λ G` is `C^n` jointly in `λ`,
+the neck length `L > 4`, the domain point and the target point, at every domain point other than
+the four punctures `0`, `1`, `∞` and `ψ_L(1)`. -/
 theorem contMDiffAt_plumbedPerturbation_update_smul {n : ℕ∞} (hq : q ≠ inf)
-    (hHa : ∀ p, Periodic (Ha p) 1) (hHb : ∀ p, Periodic (Hb p) 1) (hG : Periodic G 1)
-    (hHas : ∀ p, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Ha p)))
-    (hHbs : ∀ p, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb p)))
+    (hHa : ∀ p ≠ inf, Periodic (Ha p) 1) (hHb : ∀ p ≠ q, Periodic (Hb p) 1) (hG : Periodic G 1)
+    (hHas : ∀ p ≠ inf, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Ha p)))
+    (hHbs : ∀ p ≠ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb p)))
     (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry G)) (c : ℝ) (hL : 4 < L) {w : ℂ}
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I))) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
@@ -393,29 +377,23 @@ theorem contMDiffAt_plumbedPerturbation_update_smul {n : ℕ∞} (hq : q ≠ inf
           p.2.2.2)
       (c, (L, (w, x))) := by
   -- Both summands of `plumbedPerturbation_update_smul` are plumbed data of smooth families,
-  -- whose entries are entries of `Ha`, `Hb`, `G` or `0`.
-  have hupd : ∀ {P : (ℝ → M → ℝ) → Prop} (G' : ℝ → M → ℝ) {H : Puncture → ℝ → M → ℝ}
-      (p : Puncture), P G' → (∀ s, P (H s)) → ∀ s, P (update H p G' s) := fun G' H p h₀ hH s => by
-    rcases eq_or_ne s p with rfl | hs
-    · simpa using h₀
-    · simpa [update_of_ne hs] using hH s
-  have hsingle : ∀ {P : (ℝ → M → ℝ) → Prop} (p : Puncture), P 0 → P G →
-      ∀ s, P ((Pi.single p G : Puncture → ℝ → M → ℝ) s) := fun p h₀ hG s => by
-    rcases eq_or_ne s p with rfl | hs
-    · simpa using hG
-    · simpa [Pi.single_eq_of_ne hs] using h₀
+  -- whose entries are entries of `Ha`, `Hb`, `G` or `0`; `Pi.single p G` is `update 0 p G`.
   have hsm₀ : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (0 : ℝ → M → ℝ)) := contMDiff_const
   have hA := contMDiffAt_plumbedPerturbation_family hq
-    (hupd (P := fun f => Periodic f 1) 0 inf (fun _ => rfl) hHa)
-    (hupd (P := fun f => Periodic f 1) 0 q (fun _ => rfl) hHb)
-    (hupd (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) 0 inf hsm₀ hHas)
-    (hupd (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) 0 q hsm₀ hHbs)
+    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨fun _ => rfl, hHa⟩)
+    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨fun _ => rfl, hHb⟩)
+    ((forall_update_iff Ha fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨hsm₀, hHas⟩)
+    ((forall_update_iff Hb fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨hsm₀, hHbs⟩)
     (by simp) hL hw x
   have hN := contMDiffAt_plumbedPerturbation_family (Ha := Pi.single inf G) (Hb := Pi.single q G)
-    hq (hsingle (P := fun f => Periodic f 1) inf (fun _ => rfl) hG)
-    (hsingle (P := fun f => Periodic f 1) q (fun _ => rfl) hG)
-    (hsingle (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) inf hsm₀ hGs)
-    (hsingle (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) q hsm₀ hGs)
+    hq ((forall_update_iff _ fun _ f => Periodic f 1).2 ⟨hG, fun _ _ _ => rfl⟩)
+    ((forall_update_iff _ fun _ f => Periodic f 1).2 ⟨hG, fun _ _ _ => rfl⟩)
+    ((forall_update_iff _ fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨hGs, fun _ _ => hsm₀⟩)
+    ((forall_update_iff _ fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨hGs, fun _ _ => hsm₀⟩)
     (by simp) hL hw x
   simp_rw [plumbedPerturbation_update_smul, Pi.add_apply, Pi.smul_apply]
   -- Scalar multiplication is a smooth map on `ℝ × (ℂ →L[ℝ] ℝ)`.
@@ -437,18 +415,19 @@ variable {E G' M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 
 /-- **The integrated curvature of the family is bounded uniformly.** For period-one `C¹`
 Hamiltonians `Ha`, `Hb` and `G` on a manifold `M` with a two-form `ω`, with `|Ha p| ≤ Ba p`,
-`|Hb p| ≤ Bb p` and `|G| ≤ B`, the integral of `|R_K|` along any map, for the plumbed datum `K`
-with neck Hamiltonian `λ G`, is at most the sum of the bounds of `Ha` and `Hb` with `|λ| B` in
-place of the bounds at the neck, for all neck lengths `L > 4`. In particular it is bounded
-uniformly over `|λ| ≤ 1` and `L > 4`. -/
+`|Hb p| ≤ Bb p` and `|G| ≤ B` (only needed for the entries `Ha p`, `p ≠ ∞`, and `Hb p`, `p ≠ q`,
+that are not replaced by the neck Hamiltonian), the integral of `|R_K|` along any map, for the
+plumbed datum `K` with neck Hamiltonian `λ G`, is at most the sum of the bounds of `Ha` and `Hb`
+with `|λ| B` in place of the bounds at the neck, for all neck lengths `L > 4`. In particular it is
+bounded uniformly over `|λ| ≤ 1` and `L > 4`. -/
 theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
-    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHa : ∀ p, Periodic (Ha p) 1)
-    (hHb : ∀ p, Periodic (Hb p) 1) (hG : Periodic G 1)
-    (hHas : ∀ p, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha p)))
-    (hHbs : ∀ p, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb p)))
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHa : ∀ p ≠ inf, Periodic (Ha p) 1)
+    (hHb : ∀ p ≠ q, Periodic (Hb p) 1) (hG : Periodic G 1)
+    (hHas : ∀ p ≠ inf, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha p)))
+    (hHbs : ∀ p ≠ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb p)))
     (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry G)) (hL : 4 < L) (c : ℝ)
-    {Ba Bb : Puncture → ℝ} {B : ℝ} (hBa : ∀ p t x, |Ha p t x| ≤ Ba p)
-    (hBb : ∀ p t x, |Hb p t x| ≤ Bb p) (hB : ∀ t x, |G t x| ≤ B) (u : ℝ × ℝ → M) :
+    {Ba Bb : Puncture → ℝ} {B : ℝ} (hBa : ∀ p ≠ inf, ∀ t x, |Ha p t x| ≤ Ba p)
+    (hBb : ∀ p ≠ q, ∀ t x, |Hb p t x| ≤ Bb p) (hB : ∀ t x, |G t x| ≤ B) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ plumbedPerturbation (update Ha inf (c • G)) (update Hb q (c • G)) q L
           (Complex.equivRealProdCLM.symm z) x 1)
@@ -465,21 +444,17 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
   have hcB : ∀ t x, |(c • G) t x| ≤ |c| * B := fun t x => by
     rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, abs_mul]
     exact mul_le_mul_of_nonneg_left (hB t x) (abs_nonneg c)
-  have hupd : ∀ {P : (ℝ → M → ℝ) → Prop} {H : Puncture → ℝ → M → ℝ} (p : Puncture),
-      (∀ s, P (H s)) → P (c • G) → ∀ s, P (update H p (c • G) s) := fun p hH hcG s => by
-    rcases eq_or_ne s p with rfl | hs
-    · simpa using hcG
-    · simpa [update_of_ne hs] using hH s
-  refine ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
-    (hupd (P := fun f => Periodic f 1) inf hHa hcG) (hupd (P := fun f => Periodic f 1) q hHb hcG)
-    (hupd (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)) inf hHas hcGs)
-    (hupd (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)) q hHbs hcGs)
-    (by simp) hL (fun p t x => ?_) (fun p t x => ?_) u
-  · rcases eq_or_ne p inf with rfl | hp
-    · simpa using hcB t x
-    · simpa [update_of_ne hp] using hBa p t x
-  · rcases eq_or_ne p q with rfl | hp
-    · simpa using hcB t x
-    · simpa [update_of_ne hp] using hBb p t x
+  exact ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
+    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨hcG, hHa⟩)
+    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨hcG, hHb⟩)
+    ((forall_update_iff Ha fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
+      ⟨hcGs, hHas⟩)
+    ((forall_update_iff Hb fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
+      ⟨hcGs, hHbs⟩)
+    (by simp) hL
+    ((forall_update_iff Ha fun p f => ∀ t x, |f t x| ≤ update Ba inf (|c| * B) p).2
+      ⟨by simpa using hcB, fun p hp => by simpa [update_of_ne hp] using hBa p hp⟩)
+    ((forall_update_iff Hb fun p f => ∀ t x, |f t x| ≤ update Bb q (|c| * B) p).2
+      ⟨by simpa using hcB, fun p hp => by simpa [update_of_ne hp] using hBb p hp⟩) u
 
 end TauCeti.SmoothTwoForm

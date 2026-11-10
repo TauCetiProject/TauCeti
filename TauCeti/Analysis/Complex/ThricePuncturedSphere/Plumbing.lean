@@ -79,6 +79,12 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
     q.plumbingMap L w = q.endCenter + q.plumbingFactor L * w :=
   (rfl)
 
+/-- The second input of the inserted sphere sits at offset `f` from the center of the end it is
+plumbed into, where `f` is the plumbing factor. -/
+theorem plumbingMap_one_sub_endCenter (q : Puncture) (L : ℝ) :
+    q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
+  rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
