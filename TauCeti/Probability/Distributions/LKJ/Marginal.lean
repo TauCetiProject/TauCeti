@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Probability.Distributions.LKJ.EntryVariance
-public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation.Basic
+public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.Probability.Distributions.LKJ.PrincipalBlock
 public import TauCeti.Probability.Distributions.LKJ.Symmetry
 public import Mathlib.Probability.Moments.Covariance

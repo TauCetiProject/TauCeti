@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation.Basic
+public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Topology
 import TauCeti.Probability.Distributions.Beta.Symmetric
 

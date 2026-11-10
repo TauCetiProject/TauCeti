@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Submatrix
-public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation.Basic
+public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.Probability.Distributions.LKJ.Symmetry
 import TauCeti.MeasureTheory.Constructions.Pi
 import Mathlib.Logic.Equiv.Fintype
