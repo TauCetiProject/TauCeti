@@ -220,28 +220,9 @@ theorem representsCompleteBernstein_stieltjesBernsteinTransform
     RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
   ⟨hzero, hμ, fun _ _ => rfl⟩
 
-/-- If the transform kernel `x ↦ t / (t + x)` is integrable for some `t > 0`, then so is the
-Stieltjes weight `x ↦ (1 + x)⁻¹`. -/
-theorem integrable_stieltjesWeight_of_integrable_div {μ : Measure ℝ≥0} {t : ℝ} (ht : 0 < t)
-    (h : Integrable (fun x : ℝ≥0 => t / (t + x)) μ) : Integrable stieltjesWeight μ := by
-  refine (h.const_mul (max 1 t⁻¹)).mono' ?_ (ae_of_all _ fun x => ?_)
-  · exact measurable_stieltjesWeight.aestronglyMeasurable
-  · have hM1 : 1 ≤ max 1 t⁻¹ := le_max_left _ _
-    have hM2 : 1 ≤ max 1 t⁻¹ * t := by
-      calc (1 : ℝ) = t⁻¹ * t := (inv_mul_cancel₀ ht.ne').symm
-        _ ≤ max 1 t⁻¹ * t := by gcongr; exact le_max_right _ _
-    have hx : (0 : ℝ) ≤ x := x.2
-    rw [stieltjesWeight_apply, Real.norm_of_nonneg (by positivity), ← sub_nonneg]
-    have : max 1 t⁻¹ * (t / (t + x)) - (1 + (x : ℝ))⁻¹ =
-        (max 1 t⁻¹ * t * (1 + x) - (t + x)) / ((t + x) * (1 + x)) := by
-      field_simp
-    rw [this]
-    refine div_nonneg ?_ (by positivity)
-    nlinarith [mul_nonneg hx (sub_nonneg.2 hM2), mul_nonneg ht.le (sub_nonneg.2 hM1)]
-
 /-- The Stieltjes--Bernstein transform of normalized measure data is a complete Bernstein function.
-If the weight is not integrable, every transform integral is `0` by convention and the transform
-is the affine function `a + b t`, represented by the zero measure. -/
+If the weight is not integrable, every transform integral at `t > 0` is `0` by convention, so on
+`[0, ∞)` the transform is the affine function `a + b t`, represented by the zero measure. -/
 theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
     {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0) :
     IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) := by
