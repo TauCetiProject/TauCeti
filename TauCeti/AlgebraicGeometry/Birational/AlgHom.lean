@@ -36,7 +36,7 @@ are birational are isomorphic.
 
 * `AlgebraicGeometry.Scheme.functionFieldMap_homOfFunctionFieldAlgHom`: the pullback of rational
   functions along `homOfFunctionFieldAlgHom hX ψ` is `ψ`.
-* `AlgebraicGeometry.Scheme.eq_homOfFunctionFieldAlgHom_iff`: a dominant `k`-morphism is
+* `AlgebraicGeometry.Scheme.eq_homOfFunctionFieldAlgHom_iff`: a dominant morphism is
   `homOfFunctionFieldAlgHom hX ψ` exactly when its pullback of rational functions is `ψ`.
 * `AlgebraicGeometry.Scheme.functionFieldAlgHom_homOfFunctionFieldAlgHom` and
   `AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom_functionFieldAlgHom`: the construction is
@@ -101,7 +101,7 @@ theorem functionFieldMap_homOfFunctionFieldAlgHom :
   ((Hom.eq_functionFieldMap_iff _ _).mpr (fromSpecStalk_homOfFunctionFieldAlgHom hX ψ).symm).symm
 
 /-- **A dominant morphism into a proper scheme is determined by its pullback of rational
-functions**: a dominant `k`-morphism `f : X ⟶ Y` is `homOfFunctionFieldAlgHom hX ψ` exactly when
+functions**: a dominant morphism `f : X ⟶ Y` is `homOfFunctionFieldAlgHom hX ψ` exactly when
 its pullback of rational functions is `ψ`. -/
 theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [IsDominant f] :
     f = homOfFunctionFieldAlgHom hX ψ ↔ ∀ a, f.functionFieldMap a = ψ a := by
@@ -111,10 +111,8 @@ theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [IsDominant f] :
   have : Y.IsSeparated := by
     rw [Scheme.isSeparated_iff, ← Limits.terminal.comp_from (Y ↘ Spec (.of k))]
     infer_instance
-  refine AlgebraicGeometry.ext_of_isDominant (X.fromSpecStalk (genericPoint X)) ?_
-  rw [← Hom.SpecMap_functionFieldMap_fromSpecStalk, ← Hom.SpecMap_functionFieldMap_fromSpecStalk,
-    functionFieldMap_homOfFunctionFieldAlgHom]
-  congr 2
+  refine Hom.ext_of_functionFieldMap_eq (⊤_ Scheme) ?_
+  rw [functionFieldMap_homOfFunctionFieldAlgHom]
   ext a
   exact h a
 

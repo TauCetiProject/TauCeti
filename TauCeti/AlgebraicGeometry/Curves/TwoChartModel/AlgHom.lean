@@ -45,7 +45,7 @@ regular projective curves.
 * the instances `(homOfAlgHom …).IsOver (Spec k)` and `IsDominant (homOfAlgHom …)`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom`: the
   pullback of rational functions along `homOfAlgHom φ` is `φ`.
-* `TauCeti.AlgebraicGeometry.twoChartModel.eq_homOfAlgHom_iff`: a dominant `k`-morphism is
+* `TauCeti.AlgebraicGeometry.twoChartModel.eq_homOfAlgHom_iff`: a dominant morphism is
   `homOfAlgHom φ` exactly when its pullback of rational functions is `φ`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom_id` and
   `TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom_comp`: functoriality.
@@ -122,7 +122,7 @@ theorem functionFieldEquiv_functionFieldMap_homOfAlgHom (z : F) :
   simp [functionFieldAlgHom]
 
 /-- **A dominant morphism of two-chart models is determined by its pullback of rational
-functions**: a dominant `k`-morphism `f : X' ⟶ X` is `homOfAlgHom φ` exactly when, under the
+functions**: a dominant morphism `f : X' ⟶ X` is `homOfAlgHom φ` exactly when, under the
 identifications `k(X) ≃ F` and `k(X') ≃ F'`, its pullback of rational functions is `φ`. -/
 theorem eq_homOfAlgHom_iff (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx)
     [IsDominant f] :
