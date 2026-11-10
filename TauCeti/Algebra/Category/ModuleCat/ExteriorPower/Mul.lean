@@ -18,7 +18,8 @@ introduces the Koszul sign `(-1)^(i*j)`. These sectionwise maps induce multiplic
 exterior powers of sheaves of modules.
 
 The construction packages Mathlib's `exteriorPower.wedge`; the characteristic formula on
-wedges uses `exteriorPower.wedge_ιMulti`.
+wedges uses `exteriorPower.wedge_ιMulti`. The categorical API follows the pattern of
+`ModuleCat.symmetricPower.mul` in `TauCeti/Algebra/Category/ModuleCat/SymmetricPower/Mul.lean`.
 -/
 
 public section
@@ -57,6 +58,12 @@ lemma coe_mul_tmul (M : ModuleCat.{u} R) {i j : ℕ} (x : M.exteriorPower i)
     Subtype.val (mul M i j (x ⊗ₜ y)) = x.1 * y.1 :=
   (rfl)
 
+/-- A pure wedge has the same value in the exterior algebra. -/
+@[simp]
+lemma coe_mk {M : ModuleCat.{u} R} {n : ℕ} (x : Fin n → M) :
+    Subtype.val (mk x) = ExteriorAlgebra.ιMulti R n x :=
+  _root_.exteriorPower.ιMulti_apply_coe R n x
+
 /-- Multiplication concatenates the factors of two pure wedges, in that order. -/
 @[simp]
 lemma mul_mk (M : ModuleCat.{u} R) {i j : ℕ} (x : Fin i → M) (y : Fin j → M) :
@@ -91,9 +98,8 @@ lemma coe_iso₀_inv_apply (M : ModuleCat.{u} R) (r : R) :
 @[reassoc]
 lemma mul_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) (i j : ℕ) :
     (map f i ⊗ₘ map f j) ≫ mul N i j = mul M i j ≫ map f (i + j) := by
-  refine MonoidalCategory.tensor_ext fun x y ↦ Subtype.ext ?_
-  simp only [ConcreteCategory.comp_apply, MonoidalCategory.tensorHom_tmul, coe_mul_tmul]
-  simp only [coe_map_apply, coe_mul_tmul, map_mul]
+  exact MonoidalCategory.tensor_ext fun x y ↦
+    _root_.exteriorPower.wedge_map_apply f.hom x y
 
 /-- Exterior multiplication is associative, with the canonical identification of degrees. -/
 @[reassoc]
@@ -103,6 +109,8 @@ lemma mul_assoc (M : ModuleCat.{u} R) (i j k : ℕ) :
         eqToHom (congrArg M.exteriorPower (add_assoc i j k).symm) := by
   refine MonoidalCategory.tensor_ext₃' fun x y z ↦ Subtype.ext ?_
   simp only [ConcreteCategory.comp_apply]
+  -- Explicit rewrites keep the exterior-power carrier and its submodule instances aligned;
+  -- `simp` cannot match the whiskering formulas through these dependent coercions.
   rw [MonoidalCategory.whiskerRight_apply, coe_mul_tmul, coe_mul_tmul,
     MonoidalCategory.associator_hom_apply, MonoidalCategory.whiskerLeft_apply,
     coe_eqToHom_apply M (add_assoc i j k).symm, coe_mul_tmul, coe_mul_tmul, _root_.mul_assoc]
@@ -121,9 +129,7 @@ lemma mul_comm (M : ModuleCat.{u} R) (i j : ℕ) :
       (mk x ⊗ₜ mk y))
   rw [ConcreteCategory.comp_apply, MonoidalCategory.braiding_hom_apply,
     coe_mul_tmul, ConcreteCategory.comp_apply, coe_eqToHom_apply M (add_comm i j),
-    coe_mul_tmul]
-  change ExteriorAlgebra.ιMulti R j y * ExteriorAlgebra.ιMulti R i x =
-    (-1 : ℤ) ^ (i * j) • (ExteriorAlgebra.ιMulti R i x * ExteriorAlgebra.ιMulti R j y)
+    coe_mul_tmul, coe_mk, coe_mk]
   simpa only [Units.smul_def,
     Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one] using
     ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm (R := R) y x
@@ -135,6 +141,7 @@ lemma one_mul (M : ModuleCat.{u} R) (n : ℕ) :
       (λ_ (M.exteriorPower n)).hom ≫ eqToHom (congrArg M.exteriorPower (zero_add n).symm) := by
   refine MonoidalCategory.tensor_ext fun r x ↦ Subtype.ext ?_
   simp only [ConcreteCategory.comp_apply]
+  -- As in `mul_assoc`, rewrite explicitly through the dependent exterior-power coercions.
   rw [MonoidalCategory.whiskerRight_apply, coe_mul_tmul,
     MonoidalCategory.leftUnitor_hom_apply, coe_eqToHom_apply M (zero_add n).symm]
   rw [coe_iso₀_inv_apply]
@@ -147,6 +154,7 @@ lemma mul_one (M : ModuleCat.{u} R) (n : ℕ) :
       (ρ_ (M.exteriorPower n)).hom ≫ eqToHom (congrArg M.exteriorPower (add_zero n).symm) := by
   refine MonoidalCategory.tensor_ext fun x r ↦ Subtype.ext ?_
   simp only [ConcreteCategory.comp_apply]
+  -- As in `mul_assoc`, rewrite explicitly through the dependent exterior-power coercions.
   rw [MonoidalCategory.whiskerLeft_apply, coe_mul_tmul,
     MonoidalCategory.rightUnitor_hom_apply, coe_eqToHom_apply M (add_zero n).symm]
   rw [coe_iso₀_inv_apply]

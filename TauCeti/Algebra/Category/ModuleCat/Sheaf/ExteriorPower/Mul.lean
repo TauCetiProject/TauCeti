@@ -83,12 +83,9 @@ private theorem exteriorPowerZeroIso_inv_app_eq (M : SheafOfModules.{u} (ringCat
         (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
           ((PresheafOfModulesOfCommRing.exteriorPowerZeroIso R.obj).inv.app M.val) ≫
         (exteriorPowerIso 0 M).inv := by
-  rw [exteriorPowerZeroIso_inv_app, TauCeti.SheafOfModules.sheafification_ε]
+  rw [exteriorPowerZeroIso_inv_app]
   congr 1
-  -- Both unit isomorphisms are the counit at the structure sheaf; their sources differ
-  -- only by the definitional identification of the unit presheaf of modules.
-  exact (Iso.inv_eq_inv _ _).2 ((TauCeti.SheafOfModules.sheafificationIso_hom _ _).trans
-    (TauCeti.SheafOfModules.sheafificationUnitIso_hom R).symm)
+  exact TauCeti.SheafOfModules.sheafificationIso_unit_inv R
 
 /-- Exterior multiplication is associative, with the canonical identification of degrees. -/
 @[reassoc]
@@ -111,19 +108,10 @@ theorem exteriorPowerMul_comm (M : SheafOfModules.{u} (ringCatSheaf R)) (i j : �
   let F := PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)
   have := Limits.preservesBinaryBiproducts_of_preservesBinaryCoproducts F
   have := F.additive_of_preservesBinaryBiproducts
-  rw [exteriorPowerMul_def, exteriorPowerMul_def,
-    ← BraidedCategory.braiding_naturality_assoc]
-  -- Sectionwise powers use `R.obj ⋙ forget₂ _ _`, whereas sheafification uses
-  -- `(ringCatSheaf R).obj`; `erw` unfolds `sheafCompose` to match these coefficient functors.
-  erw [← Functor.LaxBraided.braided_assoc,
-    ← Functor.map_comp_assoc, PresheafOfModulesOfCommRing.exteriorPowerMul_comm]
-  rw [TauCeti.eqToHom_eq_iso_hom_map_eqToHom
-    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))
-    (fun n ↦ exteriorPowerIso n M) (add_comm i j)]
-  erw [Functor.map_zsmul, Functor.map_comp]
-  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
-  erw [Iso.inv_hom_id_assoc]
-  rfl
+  exact GradedObject.mul_comm_zsmul_of_laxBraided
+    (Y := fun n ↦ (exteriorPower R n).obj M) (e := fun n ↦ exteriorPowerIso n M)
+    _ _ (exteriorPowerMul_def M) (fun i j ↦ (-1 : ℤ) ^ (i * j))
+    (PresheafOfModulesOfCommRing.exteriorPowerMul_comm M.val) i j
 
 /-- The zeroth exterior power is a left unit for exterior multiplication. -/
 @[reassoc]
