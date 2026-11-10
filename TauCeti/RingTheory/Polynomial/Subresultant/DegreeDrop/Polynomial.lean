@@ -28,9 +28,7 @@ Chapter 4 (specialization of subresultants).
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {R : Type*}
 
@@ -38,7 +36,7 @@ variable [CommRing R]
 
 /-- Below both smaller bounds, an arbitrary right-bound drop scales the whole subresultant
 polynomial. The formula does not replace a terminal scalar minor by a polynomial. -/
-theorem _root_.Polynomial.subresultant_eq_C_coeff_pow_mul_of_right_degree_drop
+theorem subresultant_eq_C_coeff_pow_mul_of_right_degree_drop
     {p q : R[X]} {m n N j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hj : j < min m n) :
     subresultant p q m N j = C (p.coeff m ^ (N - n)) * subresultant p q m n j := by
@@ -52,7 +50,7 @@ theorem _root_.Polynomial.subresultant_eq_C_coeff_pow_mul_of_right_degree_drop
 
 /-- Below both smaller bounds, a left-bound drop scales the whole subresultant polynomial,
 including the column-block sign. -/
-theorem _root_.Polynomial.subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop
+theorem subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop
     {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hM : m ≤ M) (hj : j < min m n) :
     subresultant p q M n j = C ((-1) ^ ((M - m) * (n - j)) * q.coeff n ^ (M - m)) *
@@ -69,7 +67,7 @@ theorem _root_.Polynomial.subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degre
 /-- When only the right bound drops, the subresultant at its smaller terminal index survives
 as a scalar multiple of the right polynomial, rather than a terminal subresultant polynomial. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
+theorem subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hnm : n < m) (hnN : n < N) :
     subresultant p q m N n =
       C (p.coeff m ^ (N - n) * q.coeff n ^ (m - n - 1)) * q := by
@@ -87,7 +85,7 @@ theorem _root_.Polynomial.subresultant_right_bound_of_degree_drop {p q : R[X]} {
 /-- The smaller left terminal index likewise survives as a scalar multiple of the left input,
 with the sign from swapping the formal column blocks. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_left_bound_of_degree_drop {p q : R[X]} {m M n : ℕ}
+theorem subresultant_left_bound_of_degree_drop {p q : R[X]} {m M n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hmn : m < n) (hmM : m < M) :
     subresultant p q M n m =
       C ((-1) ^ ((M - m) * (n - m)) * q.coeff n ^ (M - m) *
@@ -100,7 +98,7 @@ theorem _root_.Polynomial.subresultant_left_bound_of_degree_drop {p q : R[X]} {m
 /-- Dropping both formal bounds forces every subresultant polynomial to vanish, not merely
 its principal coefficient. Outside the strict range the polynomial is zero by convention. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X]}
+theorem subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X]}
     {m n j : ℕ} (hm : p.natDegree < m) (hn : q.natDegree < n) :
     subresultant p q m n j = 0 := by
   by_cases hj : j < min m n
@@ -117,7 +115,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X
 
 /-- After specialization, a right-bound drop below the smaller bounds scales the mapped
 subresultant. The reduced input is obtained by truncating before mapping. -/
-theorem _root_.Polynomial.map_subresultant_of_right_degree_drop {S : Type*} [CommRing S]
+theorem map_subresultant_of_right_degree_drop {S : Type*} [CommRing S]
     (f : R →+* S) {p q : R[X]} {m n N j : ℕ}
     (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
     (hN : n ≤ N) (hj : j < min m n) :
@@ -131,7 +129,7 @@ theorem _root_.Polynomial.map_subresultant_of_right_degree_drop {S : Type*} [Com
 
 /-- The left-bound specialization formula retains the column-block sign and the right
 coefficient power, with truncation before mapping. -/
-theorem _root_.Polynomial.map_subresultant_of_left_degree_drop {S : Type*} [CommRing S]
+theorem map_subresultant_of_left_degree_drop {S : Type*} [CommRing S]
     (f : R →+* S) {p q : R[X]} {m M n j : ℕ}
     (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
     (hM : m ≤ M) (hj : j < min m n) :
@@ -144,4 +142,4 @@ theorem _root_.Polynomial.map_subresultant_of_left_degree_drop {S : Type*} [Comm
   rw [htrunc, ← subresultant_map_map,
     subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hj, coeff_map]
 
-end TauCeti
+end Polynomial
