@@ -110,11 +110,9 @@ private theorem mvfderiv_lagrangianEnergy_vertical (hL : ContMDiff I.tangent �
   have hc : HasDerivAt (fun r : ℝ ↦ a₀ + r • b) b 0 := by
     simpa using ((hasDerivAt_id (0 : ℝ)).smul_const b).const_add (a₀ : E)
   have hD' : HasDerivAt (fun r : ℝ ↦ D (a₀ + r • b)) (fderiv ℝ D a₀ b) 0 :=
-    (show HasFDerivAt D (fderiv ℝ D a₀) (a₀ + (0 : ℝ) • b) by
-      simpa using hD).comp_hasDerivAt (0 : ℝ) hc
+    hD.comp_hasDerivAt_of_eq 0 hc (by simp)
   have hf' : HasDerivAt (fun r : ℝ ↦ f (a₀ + r • b)) (D a₀ b) 0 :=
-    HasFDerivAt.comp_hasDerivAt (l := f) (0 : ℝ) (show HasFDerivAt f (D a₀) (a₀ + (0 : ℝ) • b) by
-      simpa using ((hf.differentiable (by simp)) a₀).hasFDerivAt) hc
+    ((hf.differentiable (by simp)) a₀).hasFDerivAt.comp_hasDerivAt_of_eq 0 hc (by simp)
   have hE : HasDerivAt (fun r : ℝ ↦ lagrangianEnergy L (TotalSpace.mk' E x (a + r • u)))
       (fderiv ℝ D a₀ b a₀) 0 := by
     have h := (hD'.clm_apply hc).sub hf'
