@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.Topology.Subpath
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.Topology.PathSpace.Prepend
 
@@ -207,12 +208,8 @@ space. -/
 theorem loopSpaceTransport_refl (x : X) :
     (Path.refl x).loopSpaceTransport = MonoidHom.id _ := by
   refine MonoidHom.ext fun g => ?_
-  -- the identity map induces the identity on `π₁`
-  have hid : FundamentalGroup.map (ContinuousMap.id (Ω X x)) (Path.refl x) g = g := by
-    ext
-    rw [FundamentalGroup.map_apply_asHom]
-    induction g.asHom using Quotient.inductionOn with
-    | h a => exact congrArg Path.Homotopic.Quotient.mk (Path.map_id a)
+  have hid : FundamentalGroup.map (ContinuousMap.id (Ω X x)) (Path.refl x) g = g :=
+    DFunLike.congr_fun (FundamentalGroup.map_id _) g
   -- freely homotopic maps agree on `π₁` up to base-point change along the trace
   have h : (FundamentalGroup.fundamentalGroupMulEquivOfPath
       (Path.refl x).conjLoopContraction).symm g =

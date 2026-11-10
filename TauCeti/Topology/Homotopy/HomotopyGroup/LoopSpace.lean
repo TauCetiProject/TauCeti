@@ -437,6 +437,11 @@ theorem _root_.GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z 
     GenLoop.fromDoubleLoop β z = β (z 0) (z 1) :=
   (rfl)
 
+/-- Mathlib's `genLoopEquivOfUnique` evaluates a one-cube at its only coordinate. -/
+private theorem genLoopEquivOfUnique_symm_apply {N : Type*} [Unique N] (p : Ω X x) (c : I^N) :
+    (genLoopEquivOfUnique N).symm p c = p (c default) :=
+  (rfl)
+
 /-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
 square. -/
 @[simp]
@@ -450,10 +455,13 @@ theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.re
   rw [fundamentalGroupLoopSpaceMulEquiv_apply, h, pathLoopSpaceMulEquiv_mk]
   congr 1
   ext z
-  simp [GenLoop.homeomorphOfUnique_symm_apply]
-  -- Mathlib's `genLoopEquivOfUnique` evaluates a one-cube at its only coordinate, and
-  -- `finSumFinEquiv` sends `inl 0` and `inr 0` to `0` and `1`, both by definition
-  rfl
+  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
+    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
+    genLoopEquivOfUnique_symm_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right]
+  rw [GenLoop.fromDoubleLoop_apply]
+  -- `finSumFinEquiv` sends `inl 0` and `inr 0` to `0` and `1`
+  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.reduceCastAdd,
+    Fin.natAdd_eq_addNat, Fin.addNat_one, Fin.succ_zero_eq_one]
 
 section Natural
 
