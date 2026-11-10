@@ -230,11 +230,13 @@ def baseChangeOpAlgEquiv : L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ :
   (Algebra.TensorProduct.congr (AlgEquiv.toOpposite L L)
       (AlgEquiv.refl (R := K) (A₁ := Aᵐᵒᵖ))).trans (Algebra.TensorProduct.opAlgEquiv K L L A)
 
+/-- The opposite comparison sends a pure tensor to the opposite of a pure tensor. -/
 @[simp]
 theorem baseChangeOpAlgEquiv_tmul (l : L) (a : Aᵐᵒᵖ) :
     baseChangeOpAlgEquiv K L A (l ⊗ₜ[K] a) = MulOpposite.op (l ⊗ₜ[K] a.unop) := by
   simp [baseChangeOpAlgEquiv]
 
+/-- The inverse opposite comparison sends the opposite of a pure tensor to a pure tensor. -/
 @[simp]
 theorem baseChangeOpAlgEquiv_symm_tmul (l : L) (a : A) :
     (baseChangeOpAlgEquiv K L A).symm (MulOpposite.op (l ⊗ₜ[K] a)) =
@@ -258,11 +260,13 @@ def baseChangeTowerAlgEquiv : M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A :=
     (by simp [Algebra.TensorProduct.one_def])
     (LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp)).symm
 
+/-- The tower comparison moves the intermediate scalar onto the top scalar factor. -/
 @[simp]
 theorem baseChangeTowerAlgEquiv_tmul (m : M) (l : L) (a : A) :
     baseChangeTowerAlgEquiv K L A M (m ⊗ₜ[L] (l ⊗ₜ[K] a)) = (l • m) ⊗ₜ[K] a :=
   _root_.TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul K L M m a l
 
+/-- The inverse tower comparison inserts the unit of the intermediate scalar algebra. -/
 @[simp]
 theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
     (baseChangeTowerAlgEquiv K L A M).symm (m ⊗ₜ[K] a) = m ⊗ₜ[L] (1 ⊗ₜ[K] a) :=
@@ -392,15 +396,7 @@ factor, `σ ↦ σ ⊗ id`. -/
 @[expose] noncomputable def toAlgAut : (L ≃ₐ[K] L) →* (L ⊗[K] A ≃ₐ[K] L ⊗[K] A) where
   toFun σ := Algebra.TensorProduct.congr σ .refl
   map_one' := Algebra.TensorProduct.congr_refl
-  map_mul' σ τ := by
-    -- Multiplication of algebra equivalences is composition in the opposite textual order;
-    -- expose that representation so `congr_trans` can state the required compatibility.
-    change Algebra.TensorProduct.congr (τ.trans σ) .refl =
-      (Algebra.TensorProduct.congr τ (.refl : A ≃ₐ[K] A)).trans
-        (Algebra.TensorProduct.congr σ .refl)
-    convert Algebra.TensorProduct.congr_trans τ σ (.refl : A ≃ₐ[K] A) .refl using 1
-    ext
-    rfl
+  map_mul' _ _ := AlgEquiv.coe_toAlgHom_injective (Algebra.TensorProduct.ext' fun _ _ ↦ rfl)
 
 /-- The algebra automorphism attached to a scalar automorphism, on a pure tensor. -/
 @[simp]
@@ -481,7 +477,8 @@ instance rightMulSemiringAction_smulCommClass : SMulCommClass G A (A ⊗[K] L) w
   smul_comm g a z := by
     simp only [rightMulSemiringAction_smul_def, map_smul]
 
-/-- For `L`-automorphisms acting on `L`, the right-factor action is `baseChangeAutHom`. -/
+/-- For the `K`-algebra automorphisms of `L` acting on `L`, the right-factor action is
+`baseChangeAutHom`. -/
 theorem rightMulSemiringAction_smul_eq_baseChangeAutHom (σ : L ≃ₐ[K] L) (z : A ⊗[K] L) :
     σ • z = TauCeti.Algebra.TensorProduct.baseChangeAutHom A L σ z := by
   induction z using TensorProduct.inductionOn with
