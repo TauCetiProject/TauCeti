@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Slope
-public import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!

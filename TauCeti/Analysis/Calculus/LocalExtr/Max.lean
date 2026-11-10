@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Comp
-public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Slope
 import Mathlib.Tactic.Linarith
