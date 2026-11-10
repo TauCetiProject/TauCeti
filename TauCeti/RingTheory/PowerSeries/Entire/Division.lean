@@ -238,21 +238,11 @@ theorem IsEntire.divByMonic (hf : f.IsEntire) (p : Polynomial R) : (f.divByMonic
         rw [div_pow]
         ring
 
-variable [CompleteSpace R]
-
-/-- **The coefficient formula for entire division.** For an entire series `f`, the sums defining
-the coefficients of `f.divByMonic p` converge. -/
-theorem hasSum_coeff_divByMonic (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
-    HasSum (fun k ↦ coeff (n + p.natDegree + k) f * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1))
-      (coeff n (f.divByMonic p)) := by
-  obtain ⟨K, s, -, hK⟩ := exists_norm_coeff_mul_coeff_le hf p 0
-  rw [coeff_divByMonic]
-  exact (Summable.of_norm_bounded (summable_geometric_two.mul_left (K * (s ^ n)⁻¹))
-    (hK n)).hasSum
-
 /-- In every degree at least `natDegree p`, the product `p * f.divByMonic p` has the same
-coefficient as `f`. -/
-private theorem IsEntire.coeff_coe_mul_divByMonic (hf : f.IsEntire) (hp : p.Monic) {m : ℕ}
+coefficient as `f`, when the sums defining the quotient converge. -/
+private theorem coeff_coe_mul_divByMonic_of_hasSum
+    (hsum : ∀ n, HasSum (fun k ↦ coeff (n + p.natDegree + k) f *
+      coeff k (invOfUnit (p.reverse : R⟦X⟧) 1)) (coeff n (f.divByMonic p))) (hp : p.Monic) {m : ℕ}
     (hm : p.natDegree ≤ m) : coeff m ((p : R⟦X⟧) * f.divByMonic p) = coeff m f := by
   set G := invOfUnit (p.reverse : R⟦X⟧) 1
   -- Shifting the inverse by `Xᵗ` shifts the defining sum.
@@ -263,7 +253,7 @@ private theorem IsEntire.coeff_coe_mul_divByMonic (hf : f.IsEntire) (hp : p.Moni
       sum_eq_zero fun i hi ↦ by
         rw [coeff_X_pow_mul', ite_eq_right (by simpa using hi), mul_zero]
     rw [hzero, sub_zero]
-    convert hasSum_coeff_divByMonic hf p (m - p.natDegree + t) using 2 with l
+    convert hsum (m - p.natDegree + t) using 2 with l
     rw [coeff_X_pow_mul', ite_eq_left (Nat.le_add_left t l), Nat.add_sub_cancel,
       show m - p.natDegree + t + p.natDegree + l = m + (l + t) by omega]
   have hrev : ((p.reverse : R⟦X⟧) * G) = 1 :=
@@ -288,15 +278,34 @@ private theorem IsEntire.coeff_coe_mul_divByMonic (hf : f.IsEntire) (hp : p.Moni
   rw [show p.natDegree.succ - 1 - t = p.natDegree - t by omega,
     show m - (p.natDegree - t) = m - p.natDegree + t by omega]
 
-/-- **Division of an entire series by a monic polynomial.** An entire series `f` is
-`r + p * q`, with `q = f.divByMonic p` entire and `r = f.modByMonic p` of degree less than `p`. -/
-theorem IsEntire.modByMonic_add_divByMonic (hf : f.IsEntire) (hp : p.Monic) :
+/-- The division identity `f = r + p * q`, when the sums defining the quotient converge. -/
+private theorem modByMonic_add_divByMonic_of_hasSum
+    (hsum : ∀ n, HasSum (fun k ↦ coeff (n + p.natDegree + k) f *
+      coeff k (invOfUnit (p.reverse : R⟦X⟧) 1)) (coeff n (f.divByMonic p))) (hp : p.Monic) :
     (f.modByMonic p : R⟦X⟧) + p * f.divByMonic p = f := by
   ext m
   rw [map_add, Polynomial.coeff_coe, coeff_modByMonic]
   split_ifs with hm
   · rw [map_sub, sub_add_cancel]
-  · rw [zero_add, hf.coeff_coe_mul_divByMonic hp (not_lt.mp hm)]
+  · rw [zero_add, coeff_coe_mul_divByMonic_of_hasSum hsum hp (not_lt.mp hm)]
+
+variable [CompleteSpace R]
+
+/-- **The coefficient formula for entire division.** For an entire series `f`, the sums defining
+the coefficients of `f.divByMonic p` converge. -/
+theorem hasSum_coeff_divByMonic (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
+    HasSum (fun k ↦ coeff (n + p.natDegree + k) f * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1))
+      (coeff n (f.divByMonic p)) := by
+  obtain ⟨K, s, -, hK⟩ := exists_norm_coeff_mul_coeff_le hf p 0
+  rw [coeff_divByMonic]
+  exact (Summable.of_norm_bounded (summable_geometric_two.mul_left (K * (s ^ n)⁻¹))
+    (hK n)).hasSum
+
+/-- **Division of an entire series by a monic polynomial.** An entire series `f` is
+`r + p * q`, with `q = f.divByMonic p` entire and `r = f.modByMonic p` of degree less than `p`. -/
+theorem IsEntire.modByMonic_add_divByMonic (hf : f.IsEntire) (hp : p.Monic) :
+    (f.modByMonic p : R⟦X⟧) + p * f.divByMonic p = f :=
+  modByMonic_add_divByMonic_of_hasSum (hasSum_coeff_divByMonic hf p) hp
 
 /-- On entire series, the quotient is additive. -/
 theorem IsEntire.add_divByMonic {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire)
@@ -387,6 +396,7 @@ theorem IsEntire.map_modByMonic (hf : f.IsEntire) (hp : p.Monic) (φ : R →+* S
 
 end Map
 
+omit [CompleteSpace R] in
 /-- On a polynomial, entire division is polynomial division: the quotient vanishes past the
 degree of the polynomial, so the division identity is one of polynomials. -/
 private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
@@ -401,31 +411,43 @@ private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Mon
     rw [coeff_divByMonic]
     refine (tsum_congr fun k ↦ ?_).trans tsum_zero
     rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
+  have hsum (n : ℕ) : HasSum (fun k ↦ coeff (n + p.natDegree + k) (g : R⟦X⟧) *
+      coeff k (invOfUnit (p.reverse : R⟦X⟧) 1)) (coeff n q) := by
+    have hz : ∀ k ∉ range (g.natDegree + 1), coeff (n + p.natDegree + k) (g : R⟦X⟧) *
+        coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) = 0 := fun k hk ↦ by
+      rw [Polynomial.coeff_coe,
+        Polynomial.coeff_eq_zero_of_natDegree_lt (by rw [mem_range] at hk; omega), zero_mul]
+    rw [coeff_divByMonic, tsum_eq_sum hz]
+    exact hasSum_sum_of_ne_finset_zero hz
   have hdiv : ((g : R⟦X⟧).modByMonic p : R⟦X⟧) + p * q = g :=
-    (isEntire_coe g).modByMonic_add_divByMonic hp
+    modByMonic_add_divByMonic_of_hasSum hsum hp
   rw [hq, ← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.coe_inj] at hdiv
   obtain ⟨h₁, h₂⟩ := Polynomial.div_modByMonic_unique _ _ hp
     ⟨hdiv, degree_modByMonic_lt _ hp.ne_zero⟩
   exact ⟨hq.trans (by rw [h₁]), h₂.symm⟩
 
+omit [CompleteSpace R] in
 /-- On a polynomial, the quotient of entire division is the quotient of polynomial division. -/
 @[simp]
 theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
     (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) :=
   (divByMonic_coe_and_modByMonic_coe g hp).1
 
+omit [CompleteSpace R] in
 /-- On a polynomial, the remainder of entire division is the remainder of polynomial division. -/
 @[simp]
 theorem modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
     (g : R⟦X⟧).modByMonic p = g %ₘ p :=
   (divByMonic_coe_and_modByMonic_coe g hp).2
 
+omit [CompleteSpace R] in
 /-- A polynomial of degree less than `p` has quotient `0` on division by `p`. -/
 theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
     (hg : g.degree < p.degree) : (g : R⟦X⟧).divByMonic p = 0 := by
   rw [divByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).1,
     Polynomial.coe_zero]
 
+omit [CompleteSpace R] in
 /-- A polynomial of degree less than `p` is its own remainder on division by `p`. -/
 theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
     (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
