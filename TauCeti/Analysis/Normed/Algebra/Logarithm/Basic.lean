@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 
+import TauCeti.Analysis.Normed.Field.NatCast
+
 /-!
 # Convergence of the logarithm series in a Banach algebra
 
@@ -65,24 +67,22 @@ section Normed
 
 variable (𝕂 A : Type*) [NontriviallyNormedField 𝕂]
 variable [NormedRing A] [NormedAlgebra 𝕂 A]
-variable [CharZero 𝕂] [ContinuousSMul ℚ≥0 𝕂]
 
 /-- The radius of `logSeries` is at least one. -/
 theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
-  let c : ℕ → 𝕂 := fun n ↦ (-1 : 𝕂) ^ (n + 1) / n
-  -- The ratio of consecutive coefficient norms is `‖n / (n + 1)‖`. For `n = 0` both sides are
-  -- zero, since `c 0 = (-1) / 0 = 0` by the division-by-zero convention.
-  have hratio (n : ℕ) : ‖c (n + 1)‖ / ‖c n‖ = ‖(n : 𝕂) / (n + 1)‖ := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [c]
-    · have hn𝕂 : (n : 𝕂) ≠ 0 := Nat.cast_ne_zero.mpr hn
-      simp only [c, norm_div, norm_pow, norm_neg, norm_one, one_pow, Nat.cast_add_one]
-      field_simp
-  have hc : Tendsto (fun n ↦ ‖c (n + 1)‖ / ‖c n‖) atTop (𝓝 ((1 : ℝ≥0) : ℝ)) := by
-    simpa only [hratio, norm_one, NNReal.coe_one] using
-      (tendsto_natCast_div_add_atTop (1 : 𝕂)).norm
-  simpa [logSeries_eq_ofScalars, c] using
-    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c hc
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  have hr1 : (r : ℝ) < 1 := by exact_mod_cast ENNReal.coe_lt_one_iff.1 hr
+  obtain ⟨B, hB⟩ := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕂 r.2 hr1).bddAbove_range
+  refine FormalMultilinearSeries.le_radius_of_bound _ (max B ‖logSeries 𝕂 A 0‖) fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · calc ‖logSeries 𝕂 A n‖ * (r : ℝ) ^ n ≤ ‖(n : 𝕂)⁻¹‖ * (r : ℝ) ^ n := by
+          gcongr
+          rw [logSeries_eq_ofScalars]
+          refine (FormalMultilinearSeries.ofScalars_norm_le A _ n hn).trans (le_of_eq ?_)
+          simp [norm_div, norm_inv]
+      _ ≤ B := hB ⟨n, rfl⟩
+      _ ≤ max B ‖logSeries 𝕂 A 0‖ := le_max_left _ _
 
 variable [CompleteSpace A]
 
@@ -91,6 +91,8 @@ theorem logSeries_summable_of_norm_lt_one {u : A} (hu : ‖u‖ < 1) :
     Summable fun n : ℕ ↦ ((-1 : 𝕂) ^ (n + 1) / n) • u ^ n := by
   simpa only [logSeries_apply_eq] using (logSeries 𝕂 A).summable
     (Metric.eball_subset_eball (one_le_logSeries_radius 𝕂 A) (by simpa [← ofReal_norm] using hu))
+
+variable [CharZero 𝕂]
 
 /-- `logSeries` represents `log` throughout the open unit ball about one. -/
 theorem log_hasFPowerSeriesOnBall :
