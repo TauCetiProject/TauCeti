@@ -34,9 +34,10 @@ has coefficients in `H^s`. Its product with `i` is the connection increment `u�
 action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
 part of `A_m^s`.
 
-The exponential chart `f ↦ exp (i f)` of `G_s` at the identity is constructed in
-`TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential`. No topology on `G_s` is constructed here,
-and the action on the section part of `A_m^s`, which needs multiplication of `H^s` by the bounded
+The file `TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential` shows that the exponential
+`f ↦ exp (i f)` maps continuous real `H^s` phases injectively into `G_s`, and that its image
+contains an `H^s` ball around the identity. No topology on `G_s` is constructed here, and the
+action on the section part of `A_m^s`, which needs multiplication of `H^s` by the bounded
 reference section, is not treated.
 
 ## Main definitions

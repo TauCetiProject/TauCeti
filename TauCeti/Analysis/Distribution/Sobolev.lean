@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -38,6 +39,11 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sub`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_smul`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sum`: the element of `H^{s,p}` defined
+  by a tempered distribution in `H^{s,p}` depends linearly on it.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -46,6 +52,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   submodule of the functions `E → ℝ`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_of_mem_realSobolevFunctions`: two real functions
   `f`, `g` in `realSobolevFunctions E s p` give a complex `H^{s,p}` function `f + i g`.
+* `TemperedDistribution.mem_realSobolevFunctions_of_ae_eq_ofReal`: a real function represented
+  by a complex `H^{s,p}` function lies in `realSobolevFunctions E s p`.
 * `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
   `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
   they are exactly the real `Lᵖ` functions.
@@ -122,6 +130,44 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
     (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
+
+/-- The element of `H^{s,p}` defined by a sum is the sum of the elements defined by the
+summands. -/
+@[simp]
+theorem MemSobolev.toBesselPotentialSpace_add {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g) :
+    (hf.add hg).toBesselPotentialSpace = hf.toBesselPotentialSpace + hg.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp)
+
+/-- The element of `H^{s,p}` defined by a difference is the difference of the elements defined
+by its terms. -/
+@[simp]
+theorem MemSobolev.toBesselPotentialSpace_sub {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g) :
+    (hf.sub hg).toBesselPotentialSpace = hf.toBesselPotentialSpace - hg.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp)
+
+/-- The element of `H^{s,p}` defined by a complex multiple of `f` is the same multiple of the
+element defined by `f`. -/
+@[simp]
+theorem MemSobolev.toBesselPotentialSpace_smul {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)] (c : ℂ)
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) :
+    (hf.smul c).toBesselPotentialSpace = c • hf.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp)
+
+/-- The element of `H^{s,p}` defined by a finite sum is the sum of the elements defined by the
+summands. -/
+theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal}
+    [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i, MemSobolev s p (g i)) :
+    (MemSobolev.sum fun i (_ : i ∈ t) ↦ hg i).toBesselPotentialSpace =
+      ∑ i ∈ t, (hg i).toBesselPotentialSpace :=
+  BesselPotentialSpace.ext <| by
+    rw [MemSobolev.toBesselPotentialSpace_toDistr]
+    induction t using Finset.cons_induction with
+    | empty => simp
+    | cons i t hi ih =>
+      rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
+        MemSobolev.toBesselPotentialSpace_toDistr]
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/
@@ -367,6 +413,22 @@ theorem exists_memSobolev_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {f g : E �
       Lp.toTemperedDistributionCLM_apply] at e
     rw [e]
     exact ha.add (hb.smul Complex.I)
+
+/-- A real function that agrees almost everywhere with a complex `Lᵖ` function in `H^{s,p}` lies in
+`realSobolevFunctions E s p`. This recovers real `H^{s,p}` functions from complex ones whose
+values are real. -/
+theorem mem_realSobolevFunctions_of_ae_eq_ofReal {s : ℝ} {g : E → ℝ}
+    {v : Lp ℂ p (volume : Measure E)} (hv : MemSobolev s p (v : 𝓢'(E, ℂ)))
+    (hvg : v =ᵐ[volume] fun x ↦ (g x : ℂ)) : g ∈ realSobolevFunctions E s p := by
+  have hg : MemLp g p volume := by
+    simpa [Function.comp_def] using Complex.reCLM.comp_memLp' ((Lp.memLp v).ae_eq hvg)
+  refine mem_realSobolevFunctions.2 ⟨hg.toLp g, hg.coeFn_toLp, ?_⟩
+  have heq : Complex.ofRealCLM.compLp (hg.toLp g) = v := by
+    refine Lp.ext ?_
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) (hg.toLp g),
+      hg.coeFn_toLp, hvg] with x h₁ h₂ h₃
+    rw [h₁, h₃, Complex.ofRealCLM_apply, h₂]
+  rwa [heq]
 
 /-- Every element of `realSobolevFunctions E s p` lies in `Lᵖ`, whatever the order `s`. -/
 theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
