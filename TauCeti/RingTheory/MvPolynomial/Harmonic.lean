@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.RingTheory.MvPolynomial.Finrank
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Harmonic polynomials and the Fischer decomposition
@@ -241,22 +242,11 @@ variable {K : Type*} [Field K] [Fintype σ]
 instance (d : ℕ) : FiniteDimensional K (harmonicSubmodule σ K d) :=
   Submodule.finiteDimensional_of_le (harmonicSubmodule_le_homogeneousSubmodule d)
 
-omit [Fintype σ] in
-/-- With no variables, the only homogeneous polynomials are the constants of degree `0`. -/
-private theorem homogeneousSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
-    homogeneousSubmodule σ K (n + 1) = ⊥ := by
-  refine eq_bot_iff.2 fun p hp ↦ ?_
-  rw [mem_homogeneousSubmodule] at hp
-  rw [Submodule.mem_bot]
-  ext d
-  by_contra h
-  simpa [Subsingleton.elim d 0] using hp h
-
 /-- With no variables, there are no harmonic polynomials of positive degree. -/
 private theorem harmonicSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
     harmonicSubmodule σ K (n + 1) = ⊥ :=
   le_bot_iff.1 ((harmonicSubmodule_le_homogeneousSubmodule _).trans
-    (homogeneousSubmodule_succ_eq_bot_of_isEmpty n).le)
+    (homogeneousSubmodule_succ_eq_bot_of_isEmpty (R := K) n).le)
 
 variable [CharZero K] [Nonempty σ]
 
@@ -350,8 +340,7 @@ theorem harmonicSubmodule_sup_map_mulLeft_normSq (e : ℕ) :
   rcases isEmpty_or_nonempty σ with hσ | hσ
   · have h0 : normSq σ K = 0 := by simp [normSq_def]
     have hz : LinearMap.mulLeft K (normSq σ K) = 0 := by ext; simp [h0]
-    simp [hz, homogeneousSubmodule_succ_eq_bot_of_isEmpty (σ := σ) (K := K) (e + 1),
-      harmonicSubmodule_succ_eq_bot_of_isEmpty (σ := σ) (K := K) (e + 1)]
+    simp [hz, harmonicSubmodule_succ_eq_bot_of_isEmpty (σ := σ) (K := K) (e + 1)]
   refine le_antisymm (sup_le (harmonicSubmodule_le_homogeneousSubmodule _) ?_) fun p hp ↦ ?_
   · rintro _ ⟨q, hq, rfl⟩
     simpa [add_comm] using (isHomogeneous_normSq σ K).mul hq
