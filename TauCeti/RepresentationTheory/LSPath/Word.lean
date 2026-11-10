@@ -179,7 +179,8 @@ variable {N : Type*} [AddCommGroup N] [Module 𝕜 N]
 duration-one paths with velocities in a fixed finite Weyl orbit (that is, having a distinguished
 presentation for the orbit). The bound is independent of the path and
 its number of segments. The roots need not span, and the shape need not be dominant. -/
-theorem exists_bound_path_word_length [Finite P.weylGroup] [Archimedean 𝕜] (lam : V) :
+theorem exists_bound_path_word_length [Archimedean 𝕜] (lam : V)
+    (hfinite : (MulAction.orbit P.weylGroup lam).Finite) :
     ∃ n : ℕ, ∀ (π ρ : PLPath 𝕜 V) (w : List b.support),
       HasDistinguished (MulAction.orbit P.weylGroup lam) π →
       (lowerWord (fun i : b.support ↦ P.coroot' i) (fun i : b.support ↦ P.root i) w π = some ρ →
@@ -189,12 +190,12 @@ theorem exists_bound_path_word_length [Finite P.weylGroup] [Archimedean 𝕜] (l
   obtain ⟨g, hg⟩ := b.exists_dual_eq_one_on_root
   have hS := fun i : b.support ↦ P.mapsTo_preReflection_orbit_weylGroup i lam
   -- The same bounds hold on the convex hull, hence at every endpoint under consideration.
-  obtain ⟨L, hL⟩ := (Set.finite_range fun w : P.weylGroup ↦ g (w • lam)).bddBelow
-  obtain ⟨U, hU⟩ := (Set.finite_range fun w : P.weylGroup ↦ g (w • lam)).bddAbove
+  obtain ⟨L, hL⟩ := (hfinite.image g).bddBelow
+  obtain ⟨U, hU⟩ := (hfinite.image g).bddAbove
   have hb {π : PLPath 𝕜 V} (hπ : HasDistinguished (MulAction.orbit P.weylGroup lam) π) :
       L ≤ g π.endpoint ∧ g π.endpoint ≤ U := by
-    exact hπ.apply_endpoint_mem_Icc g fun _ ⟨w, hw⟩ ↦
-      hw ▸ ⟨hL ⟨w, rfl⟩, hU ⟨w, rfl⟩⟩
+    exact hπ.apply_endpoint_mem_Icc g fun v hv ↦
+      ⟨hL ⟨v, hv, rfl⟩, hU ⟨v, hv, rfl⟩⟩
   obtain ⟨n, hn⟩ := exists_nat_ge (U - L)
   refine ⟨n, fun π ρ w hπ ↦ ?_⟩
   have hbound (hρ : HasDistinguished (MulAction.orbit P.weylGroup lam) ρ)
