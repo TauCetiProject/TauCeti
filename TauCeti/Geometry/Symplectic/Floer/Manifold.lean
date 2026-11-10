@@ -232,6 +232,23 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
 
+/-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
+theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    {u u' : ℝ × ℝ → M} {z : ℝ × ℝ} (h : u =ᶠ[nhds z] u') :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u' z := by
+  -- The derivatives agree as maps into the model space `E`, which is definitionally every
+  -- tangent space of `M`; this lets the density be read as a function of the point `u z` and the
+  -- derivative separately.
+  have hd : @Eq (ℝ × ℝ →L[ℝ] E) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u' z) :=
+    h.mfderiv_eq
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag]
+  exact congrArg₂ (fun (x : M) (d : ℝ × ℝ →L[ℝ] E) ↦ SmoothBundleForm.eval₂ ω x
+      (@id (TangentSpace I x) (d stdComplexLineReal) - ω.hamiltonianVectorField (Ks z) x)
+      (@id (TangentSpace I x) (d stdComplexLineImag) - ω.hamiltonianVectorField (Kt z) x))
+    h.eq_of_nhds hd
+
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
 

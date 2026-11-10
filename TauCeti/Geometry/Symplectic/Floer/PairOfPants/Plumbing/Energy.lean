@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Cutoff
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Local
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 
@@ -60,6 +61,26 @@ whose preimage under `ψ` lies on the end at `∞` of `S'`. So each piece first 
 cutoff which is `1` up to the circle at height `L/2 + 1` of that end and `0` beyond height
 `L/2 + 2`; this cut-off map is `C²` on the thrice-punctured sphere and agrees with `u` near the
 truncation.
+
+For a target that is a finite-dimensional manifold `M` with a nondegenerate two-form `ω`, such as
+a closed symplectic manifold, the loops have no action, and the identity is stated with the
+symplectic area and the Hamiltonian terms of the boundary loops, as for the pair of pants
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`).
+For a map `u` which is `C¹` on the four-punctured sphere,
+
+`∫ E(u) = ∫ u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, ℓ'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, ℓ_r(t)) dt -
+  ∫ R_K(u)`
+
+over the plumbed truncation
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`), with the
+uniform bound
+(`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`) and
+the resulting lower bound for Floer solutions
+(`SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_plumbedPerturbation`). Again the
+Hamiltonian terms of the middle circle of the neck cancel. A map into a manifold cannot be cut
+off; instead the pair-of-pants identity applies on each piece in the form for maps which are `C¹`
+near the truncation only, in `TauCeti.SmoothTwoForm`:
+(`IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_of_subset`).
 
 All four outer ends are truncated at the same height `L/2` as the neck. Truncations of the outer
 ends at heights independent of `L`, and the energy identity over the whole four-punctured sphere,
@@ -444,6 +465,37 @@ private theorem setIntegral_hamiltonianCurvature_inserted (ω : SymplecticForm V
   exact congrFun (SmoothTwoForm.hamiltonianCurvature_perturbationPullback_plumbedPerturbation
     ω.constSmooth hq hab hw'.1 hre) _
 
+omit [FiniteDimensional ℝ V] in
+/-- The inserted truncation `ψ(S_{L/2})`, in real coordinates, lies in the plumbed
+four-punctured sphere. -/
+private theorem realChart_plumbingMap_image_subset (hq : q ≠ inf) (hL : 4 < L) :
+    realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) ⊆
+      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  rintro _ ⟨w, hw, rfl⟩
+  rw [mem_ofPred_eq, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
+
+omit [FiniteDimensional ℝ V] in
+/-- The plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})` is the union of the receiving truncation
+`S_{L/2}` and its image `ψ(S_{L/2})`, which meet in a null set, so a function integrable over both
+pieces integrates over the plumbed truncation as the sum of its integrals over them. -/
+private theorem setIntegral_plumbedTruncation_of_integrableOn (hq : q ≠ inf)
+    {f : ℝ × ℝ → ℝ} (hT : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))
+    (hA : IntegrableOn f (realChart (q.plumbingMap L) ''
+      (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), f z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), f z) +
+        ∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
+          truncation (L / 2)), f z := by
+  have hA' := (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_truncation (L / 2))).image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
+  rw [preimage_union, preimage_image_plumbingMap]
+  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
+    hA'.isClosed.measurableSet.nullMeasurableSet hT hA
+
+omit [FiniteDimensional ℝ V] in
 /-- A function continuous on the plumbed four-punctured sphere integrates over the plumbed
 truncation `S_{L/2} ∪ ψ(S_{L/2})` as the sum of its integrals over the two pieces. -/
 private theorem setIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 4 < L) {f : ℝ × ℝ → ℝ}
@@ -458,18 +510,9 @@ private theorem setIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 4 < L) {f :
   have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)
   have hA := hT.image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
-  have hAP : realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
-      truncation (L / 2)) ⊆ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    rintro _ ⟨w, hw, rfl⟩
-    rw [mem_ofPred_eq, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
-    exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
-  rw [preimage_union, preimage_image_plumbingMap]
-  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
-    hA.isClosed.measurableSet.nullMeasurableSet
+  exact setIntegral_plumbedTruncation_of_integrableOn hq
     ((hf.mono fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL hz).integrableOn_compact hT)
-    ((hf.mono hAP).integrableOn_compact hA)
+    ((hf.mono (realChart_plumbingMap_image_subset hq hL)).integrableOn_compact hA)
 
 /-! ### The energy identity -/
 
@@ -635,3 +678,552 @@ theorem hamiltonianAction_le_sum_add_sum_add_of_plumbedPerturbation (ω : Symple
   linarith
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+variable {M : Type*} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
+
+/-- On the receiving truncation `S_{L/2}`, the plumbed perturbation is the perturbation of the
+receiving pair of pants. -/
+private theorem plumbedPerturbation_of_mem_truncation (hq : q ≠ inf) (hab : Hb q = Ha inf)
+    (hL : 4 < L) {z : ℝ × ℝ} (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
+    (x : M) (v : ℂ) :
+    plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v =
+      pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x v := by
+  have h := (mem_truncation.1 hz).2.2 q
+  rw [endSign_eq_one hq, one_mul] at h
+  rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x]
+
+/-- On the inserted truncation `S_{L/2}`, the pullback of the plumbed perturbation along the
+plumbing map is the perturbation of the inserted pair of pants. -/
+private theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ}
+    (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) (v : ℂ) :
+    perturbationPullback (realChart (q.plumbingMap L))
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (Complex.equivRealProdCLM v) w =
+      fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x v := by
+  have hw' := mem_truncation.1 hw
+  ext x
+  rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
+    ContinuousLinearEquiv.symm_apply_apply]
+  refine plumbedPerturbation_plumbingMap hq hab hw'.1 ?_ x v
+  have h := hw'.2.2 inf
+  rw [endSign_inf, neg_one_mul] at h
+  linarith
+
+end TauCeti.Floer
+
+namespace TauCeti.SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture}
+  {L : ℝ}
+
+/-! ### The energy identity for a manifold target -/
+
+/-- Over a compact set `D` on which the curvature along `u` is integrable, the Floer energy
+density is integrable, if `u` and `K` are `C¹` near `D`: it differs from the area density and the
+exterior derivative `d(K(u))`, both continuous near `D`, by the curvature. -/
+private theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_integrableOn
+    (hω : ω.IsNondegenerate) {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ × ℝ → M} {U D : Set (ℝ × ℝ)}
+    (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    (hD : IsCompact D) (hDU : D ⊆ U)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) D := by
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
+    stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  have hd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
+      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) D := by
+    have hK' : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
+    exact (((hK'.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply
+      continuousOn_const).mono hDU).integrableOn_compact hD
+  refine ((((harea.mono hDU).integrableOn_compact hD).add
+    ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub hR).congr_fun
+      (fun z hz ↦ ?_) hD.isClosed.measurableSet
+  have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem (hDU hz)
+  have hK {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :=
+    (hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds (hDU hz))).mdifferentiableAt
+    one_ne_zero) (hK hKs) (hK hKt)]
+  rfl
+
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
+/-- In real coordinates, the components of the plumbed perturbation of `C¹` Hamiltonians on a
+manifold are `C¹` jointly in the point of the plumbed four-punctured sphere and the target
+point. -/
+private theorem contMDiffOn_plumbedPerturbation (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
+      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hK := contMDiffAt_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact ((hK.comp (z, x) hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
+
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
+/-- Along the plumbed four-punctured sphere, the components of the plumbed perturbation are
+differentiable in the domain point and in the target point. -/
+private theorem differentiableAt_and_mdifferentiableAt_plumbedPerturbation (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ
+        (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) z ∧
+      MDifferentiableAt I 𝓘(ℝ)
+        (fun x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) x := by
+  have h := (contMDiffOn_plumbedPerturbation hq hHa hHb hHas hHbs hab hL v).contMDiffAt
+    (((isOpen_plumbedSphere q L).prod isOpen_univ).mem_nhds (⟨hz, mem_univ x⟩ :
+      (z, x) ∈ _ ×ˢ univ))
+  exact ⟨(contMDiffAt_iff_contDiffAt.1 (h.comp z (contMDiffAt_id.prodMk
+    contMDiffAt_const))).differentiableAt one_ne_zero,
+    (h.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- Over the receiving truncation `S_{L/2}`, the Floer energy density and the curvature of the
+plumbed perturbation along `u` are those of the perturbation of the receiving pair of pants. -/
+private theorem floerEnergyDensity_and_hamiltonianCurvature_receiving (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) (hL : 4 < L) (u : ℝ × ℝ → M) {z : ℝ × ℝ}
+    (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :
+    ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z =
+      ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z ∧
+    ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) =
+      ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) := by
+  have hz' := mem_truncation.1 hz
+  have hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := by
+    have h := hz'.2.2 q
+    rwa [endSign_eq_one hq, one_mul] at h
+  refine ⟨?_, congrFun (hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hL
+    (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre) (u z)⟩
+  simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag,
+    plumbedPerturbation_of_mem_truncation (Ha := Ha) hq hab hL hz]
+
+omit [FiniteDimensional ℝ E] in
+/-- Over the image `ψ(S_{L/2})` of the inserted truncation, the integrated curvature of the
+plumbed perturbation along `u` is the integrated curvature over `S_{L/2}` of the perturbation of
+the inserted pair of pants along `u ∘ ψ`, and the integrability of the two agrees. -/
+private theorem setIntegral_hamiltonianCurvature_inserted (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) (u : ℝ × ℝ → M) :
+    (∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)),
+        ω.hamiltonianCurvature
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) =
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        w ((u ∘ realChart (q.plumbingMap L)) w)) ∧
+    (IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z))
+        (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))) ↔
+      IntegrableOn (fun w ↦ ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        w ((u ∘ realChart (q.plumbingMap L)) w))
+        (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))) := by
+  have hT := measurableSet_preimage_truncation (L / 2)
+  have hinj := (realChart_injective (q.plumbingMap_injective L)).injOn
+    (s := Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
+  have hP {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
+    SymplecticForm.realChart_plumbingMap_image_subset hq hL ⟨w, hw, rfl⟩
+  have hK {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) (v : ℂ) :=
+    differentiableAt_and_mdifferentiableAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL (hP hw)
+      (u (realChart (q.plumbingMap L) w)) v
+  -- In the coordinates of the inserted pair of pants, the curvature times the Jacobian of `ψ` is
+  -- the curvature of the inserted perturbation.
+  have hpt {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :
+      (fderiv ℝ (realChart (q.plumbingMap L)) w).det * ω.hamiltonianCurvature
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          (realChart (q.plumbingMap L) w) (u (realChart (q.plumbingMap L) w)) =
+        ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+          w ((u ∘ realChart (q.plumbingMap L)) w) := by
+    have hw' := mem_truncation.1 hw
+    have hre : 2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re := by
+      have h := hw'.2.2 inf
+      rw [endSign_inf, neg_one_mul] at h
+      linarith
+    rw [← ω.hamiltonianCurvature_perturbationPullback
+      (contDiff_realChart_plumbingMap q L).contDiffAt (hK hw 1).1 (hK hw Complex.I).1
+      (hK hw 1).2 (hK hw Complex.I).2]
+    exact congrFun (ω.hamiltonianCurvature_perturbationPullback_plumbedPerturbation hq hab hw'.1
+      hre) _
+  refine ⟨?_, ?_⟩
+  · rw [ω.integral_hamiltonianCurvature_image hT hinj
+      (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
+      (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
+      (fun w hw ↦ (hK hw 1).1) (fun w hw ↦ (hK hw Complex.I).1)
+      (fun w hw ↦ (hK hw 1).2) (fun w hw ↦ (hK hw Complex.I).2)]
+    refine setIntegral_congr_fun hT fun w hw ↦ ?_
+    rw [← hpt hw, ω.hamiltonianCurvature_perturbationPullback
+      (contDiff_realChart_plumbingMap q L).contDiffAt (hK hw 1).1 (hK hw Complex.I).1
+      (hK hw 1).2 (hK hw Complex.I).2]
+  · have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+    rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hT
+      (fun w _ ↦ ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero
+        w).hasFDerivAt.hasFDerivWithinAt) hinj]
+    refine integrableOn_congr_fun (fun w hw ↦ ?_) hT
+    rw [smul_eq_mul, abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), hpt hw]
+
+omit [FiniteDimensional ℝ E] in
+/-- Over the image `ψ(S_{L/2})` of the inserted truncation, the Floer energy of `u` for the
+plumbed perturbation is the energy of `u ∘ ψ` over `S_{L/2}` for the perturbation of the inserted
+pair of pants, and the symplectic area of `u` is the area of `u ∘ ψ`. -/
+private theorem setIntegral_floerEnergyDensity_inserted (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    (∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)),
+        ω.floerEnergyDensity
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z =
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L)) w) ∧
+    (∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)),
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) =
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2),
+        (SmoothBundleForm.eval₂ ω ((u ∘ realChart (q.plumbingMap L)) w)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineImag) : ℝ) := by
+  have hT := measurableSet_preimage_truncation (L / 2)
+  have hinj := (realChart_injective (q.plumbingMap_injective L)).injOn
+    (s := Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
+  have hφ (w : ℝ × ℝ) : DifferentiableAt ℝ (realChart (q.plumbingMap L)) w :=
+    (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w
+  have hP {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
+    SymplecticForm.realChart_plumbingMap_image_subset hq hL ⟨w, hw, rfl⟩
+  have hud {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :
+      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w) :=
+    (hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds (hP hw))).mdifferentiableAt one_ne_zero
+  have hK {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) (v : ℂ) :=
+    (differentiableAt_and_mdifferentiableAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
+      (hP hw) (u (realChart (q.plumbingMap L) w)) v).2
+  refine ⟨?_, ?_⟩
+  · rw [ω.integral_floerEnergyDensity_image hT hinj (fun w _ ↦ hφ w)
+      (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w) (fun w hw ↦ hud hw)
+      (fun w hw ↦ hK hw 1) (fun w hw ↦ hK hw Complex.I)]
+    refine setIntegral_congr_fun hT fun w hw ↦ ?_
+    have hpR := perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha) (Hb := Hb)
+      hq hab hL hw (Complex.equivRealProdCLM.symm stdComplexLineReal)
+    have hpI := perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha) (Hb := Hb)
+      hq hab hL hw (Complex.equivRealProdCLM.symm stdComplexLineImag)
+    rw [ContinuousLinearEquiv.apply_symm_apply, equivRealProdCLM_symm_stdComplexLineReal] at hpR
+    rw [ContinuousLinearEquiv.apply_symm_apply, equivRealProdCLM_symm_stdComplexLineImag] at hpI
+    simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+      perturbedMFDeriv_apply_stdComplexLineImag, hpR, hpI]
+  · have h := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hT hinj
+      (fun w _ ↦ hφ w) (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
+      (fun w hw ↦ hud hw) (fun _ _ ↦ mdifferentiableAt_const) (fun _ _ ↦ mdifferentiableAt_const)
+    have h₀ (v : ℝ × ℝ) : perturbationPullback (realChart (q.plumbingMap L))
+        (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
+      funext w x
+      simp [perturbationPullback_apply]
+    simpa only [h₀, floerEnergyDensity_zero] using h
+
+/-- Over the plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})`, the Floer energy, the symplectic area and
+the integrated curvature of `u` for the plumbed perturbation are the sums of those of `u` over the
+receiving truncation `S_{L/2}`, for the perturbation of the receiving pair of pants, and of
+`u ∘ ψ` over the inserted truncation `S_{L/2}`, for the perturbation of the inserted one. -/
+private theorem IsNondegenerate.setIntegral_plumbedTruncation_eq_add
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) +
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L)) w) ∧
+    (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2),
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2),
+        (SmoothBundleForm.eval₂ ω ((u ∘ realChart (q.plumbingMap L)) w)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineImag) : ℝ)) ∧
+    (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)) +
+      ∫ w in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        w ((u ∘ realChart (q.plumbingMap L)) w)) := by
+  have hT := measurableSet_preimage_truncation (L / 2)
+  have hTc : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
+    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)
+  have hAc := hTc.image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
+  have hPo := isOpen_plumbedSphere q L
+  have hTP : Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2) ⊆
+      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
+    fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL hz
+  have hAP := SymplecticForm.realChart_plumbingMap_image_subset hq hL
+  have hKs := contMDiffOn_plumbedPerturbation hq hHa hHb hHas hHbs hab hL 1
+  have hKt := contMDiffOn_plumbedPerturbation hq hHa hHb hHas hHbs hab hL Complex.I
+  have hrec {z : ℝ × ℝ} (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
+    floerEnergyDensity_and_hamiltonianCurvature_receiving (ω := ω) (Ha := Ha) hq hab hL u hz
+  have hins := setIntegral_hamiltonianCurvature_inserted (ω := ω) hq hHa hHb hHas hHbs hab hL u
+  -- The curvature, the area density and the energy density are integrable over both pieces.
+  have hRT : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :=
+    (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation ω hHb hHbs
+      (by linarith) hPo hTP hu.continuousOn).congr_fun (fun z hz ↦ (hrec hz).2.symm) hT
+  have hRA := hins.2.2 (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation ω
+    hHa hHas (by linarith) (hPo.preimage (contDiff_realChart_plumbingMap q L (n := 0)).continuous)
+    (fun w hw ↦ hAP ⟨w, hw, rfl⟩)
+    ((hu.comp (contDiff_realChart_plumbingMap q L).contMDiff.contMDiffOn
+      (mapsTo_preimage _ _)).continuousOn))
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hPo hu
+    stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  obtain ⟨hEins, hAins⟩ := setIntegral_floerEnergyDensity_inserted (ω := ω) hq hHa hHb hHas hHbs
+    hab hL hu
+  rw [SymplecticForm.setIntegral_plumbedTruncation_of_integrableOn hq
+      (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hTc hTP hRT)
+      (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hAc hAP hRA),
+    SymplecticForm.setIntegral_plumbedTruncation_of_integrableOn hq
+      ((harea.mono hTP).integrableOn_compact hTc) ((harea.mono hAP).integrableOn_compact hAc),
+    SymplecticForm.setIntegral_plumbedTruncation_of_integrableOn hq hRT hRA,
+    setIntegral_congr_fun hT fun z hz ↦ (hrec hz).1,
+    setIntegral_congr_fun hT fun z hz ↦ (hrec hz).2, hEins, hAins, hins.1]
+  exact ⟨rfl, rfl, rfl⟩
+
+/-- **The energy identity on the plumbed four-punctured sphere, for a manifold target.** Plumb
+the output end of a pair of pants with period-one `C¹` Hamiltonians `Ha` into the input end
+`q ≠ ∞` of one with period-one `C¹` Hamiltonians `Hb`, with `Hb q = Ha ∞`, along a neck of length
+`L > 4`, for Hamiltonians on a finite-dimensional manifold with a nondegenerate two-form. Let `u`
+be `C¹` on the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates. Over the plumbed
+truncation `S_{L/2} ∪ ψ(S_{L/2})`, the Floer energy of `u` for the plumbed perturbation `K` is
+
+`∫ u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, ℓ'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, ℓ_r(t)) dt - ∫ R_K(u)`,
+
+the symplectic area, plus the Hamiltonian terms of the loops `ℓ'_r(t) = u(ψ(φ_r(L/2 + i t)))`
+along the input circles of the inserted pair of pants and of the loops
+`ℓ_r(t) = u(φ_r(±L/2 + i t))` along the remaining input and output circles of the receiving one,
+with the sign `-` on the output, minus the integrated curvature. The terms of the circle in the
+middle of the neck cancel: it is both the output circle of the inserted pair of pants and the
+input circle `q` of the receiving one, with the same Hamiltonian. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
+          (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
+        (∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
+          (Complex.equivRealProdCLM
+            (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))))) -
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+            (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.hamiltonianCurvature
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) := by
+  have hR : (1 : ℝ) ≤ L / 2 := by linarith
+  have hPo := isOpen_plumbedSphere q L
+  have hAP := SymplecticForm.realChart_plumbingMap_image_subset hq hL
+  obtain ⟨hE, hA, hRK⟩ := hω.setIntegral_plumbedTruncation_eq_add hq hHa hHb hHas hHbs hab hL hu
+  rw [hE, hA, hRK,
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_of_subset hHb hHbs hR hPo
+      (fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL hz) hu,
+    -- The map `u ∘ ψ` on the inserted pair of pants is `C¹` near its truncation `S_{L/2}`.
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_of_subset hHa hHas hR
+      (hPo.preimage (contDiff_realChart_plumbingMap q L (n := 0)).continuous)
+      (fun w hw ↦ hAP ⟨w, hw, rfl⟩)
+      (hu.comp (contDiff_realChart_plumbingMap q L).contMDiff.contMDiffOn (mapsTo_preimage _ _)),
+    smoothTransition.one_of_one_le (by linarith), one_mul, one_mul,
+    ← Finset.add_sum_erase _ _ (Finset.mem_univ q),
+    ← Finset.add_sum_erase _ _ (Finset.mem_univ inf)]
+  -- The inputs of the inserted pair of pants have sign `+`, and its output circle is the input
+  -- circle `q` of the receiving one, with the same Hamiltonian, so their terms cancel.
+  have hchart (w : ℂ) : (u ∘ realChart (q.plumbingMap L)) (Complex.equivRealProdCLM w) =
+      u (Complex.equivRealProdCLM (q.plumbingMap L w)) := by
+    rw [comp_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+  have hinputs : ∑ r ∈ Finset.univ.erase inf, r.endSign * ∫ t in (0 : ℝ)..1, Ha r t
+      ((u ∘ realChart (q.plumbingMap L)) (Complex.equivRealProdCLM
+        (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)))) =
+      ∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
+        (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I))))) :=
+    Finset.sum_congr rfl fun r hr ↦ by
+      simp only [hchart, endSign_eq_one (Finset.ne_of_mem_erase hr), one_mul]
+  rw [hinputs]
+  simp only [hchart, plumbingMap_cylindricalEndLift_inf hq, ← hab]
+  rw [endSign_inf, endSign_eq_one hq]
+  ring
+
+/-- **The energy bound on the plumbed four-punctured sphere, for a manifold target.** Under the
+hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`, if
+`|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, then the Floer energy over the plumbed truncation differs from
+the symplectic area plus the Hamiltonian terms of its four boundary loops by at most
+`∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`. -/
+theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
+    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    |(∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) -
+      ((∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
+          (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
+        ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
+          (Complex.equivRealProdCLM
+            (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)))))| ≤
+      ∑ r, Ba r + ∑ r, Bb r := by
+  rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hu,
+    sub_sub_cancel_left, abs_neg]
+  exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
+    hBa hBb u _
+
+/-- **The topological energy of a solution on the plumbed four-punctured sphere is bounded below,
+for a manifold target.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`, let `u`
+solve the Floer equation `(du - X_K)^{0,1} = 0` on the plumbed truncation for almost complex
+structures `J z` on the tangent spaces `T_{u(z)} M` tamed by the two-form. Since its energy is
+nonnegative, its symplectic area plus the Hamiltonian terms of its four boundary loops is at least
+`-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length `L > 4`. -/
+theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_plumbedPerturbation
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
+    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
+      (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+      (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
+      (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) :
+    -(∑ r, Ba r + ∑ r, Bb r) ≤
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
+          (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
+        ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
+          (Complex.equivRealProdCLM
+            (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)))) := by
+  have hψ : Continuous (q.plumbingMap L) := by
+    have h : q.plumbingMap L = fun w ↦ q.endCenter + q.plumbingFactor L * w :=
+      funext (plumbingMap_apply q L)
+    rw [h]
+    fun_prop
+  have hDm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹'
+      (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2))) :=
+    (((isCompact_truncation _).union ((isCompact_truncation _).image hψ)).isClosed.preimage
+      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  have hE := setIntegral_nonneg (μ := volume) hDm fun z hz ↦
+    floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le hq hHa hHb
+    hHas hHbs hab hL hBa hBb hu)).2
+  linarith
+
+end TauCeti.SmoothTwoForm
