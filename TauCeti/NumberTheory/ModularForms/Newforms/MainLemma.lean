@@ -62,8 +62,7 @@ variable {N p : ℕ} [NeZero N] {k : ℤ}
 /-- **The inductive step of the Main Lemma** (Miyake, Lemma 4.6.8). For `f ∈ S_k(Γ₁(N), χ)` with
 `χ` pulled back from `χ₀` modulo `N / p`, vanishing at every index coprime to `p L` for an
 `L` whose primes divide `N`, there is `f_p ∈ S_k(Γ₁(N), χ)` supported
-on the multiples of `p` with `f − f_p` vanishing at every index coprime to `L`: the level-raise
-`V_p` of the descent witness of level `N / p`. -/
+on the multiples of `p` with `f − f_p` vanishing at every index coprime to `L`. -/
 theorem exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero (hp : p.Prime)
     (hpN : p ∣ N) {L : ℕ} (hLN : L.primeFactors ⊆ N.primeFactors)
     {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
