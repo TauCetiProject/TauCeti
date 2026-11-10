@@ -68,13 +68,19 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
               mul_le_mul_of_nonneg_right (hd hi) (norm_nonneg (x i))
           · simp [hsupp x hx i hi])
 
-/-- The approximation numbers of a diagonal operator tend to zero when its decreasing
-coefficient magnitudes do. -/
+/-- The approximation numbers of a diagonal operator tend to zero when its coefficient
+magnitudes do. -/
 theorem tendsto_singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
-    (hd : Antitone fun i ↦ ‖d i‖) (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
+    (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
     Tendsto (fun n ↦ (diagonalCLM (p := p) d).singularValue n) atTop (𝓝 0) := by
-  simpa only [singularValue_diagonalCLM d hd, ← NNReal.tendsto_coe, NNReal.coe_zero,
-    coe_nnnorm] using h0
+  have h : Tendsto (fun n ↦ ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊)
+      atTop (𝓝 0) := by
+    refine NNReal.tendsto_coe.1 ?_
+    exact (tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_diagonalTruncation_range d h0)).congr
+      fun n ↦ by rw [norm_sub_rev, coe_nnnorm]
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ bot_le)
+    fun n ↦ (diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
+      (rank_diagonalTruncation_range_le d n)
 
 /-- For decreasing diagonal magnitudes, retaining the first `n` coordinates attains the
 approximation number at index `n`. -/
