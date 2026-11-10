@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -31,7 +32,9 @@ products with a scalar function (`TauCeti.norm_coordinateDeriv_smul_le`). It is 
 homogeneous in `f`. Smoothness is preserved, also jointly in an additional parameter
 (`ContDiff.coordinateDeriv_snd`, `ContDiff.coordinateDeriv_fst`). For a smooth function of two
 variables, iterated coordinate derivatives in the two variables commute
-(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the symmetry of second derivatives.
+(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), and so do two coordinate derivatives of a `C²`
+function of one variable (`TauCeti.coordinateDeriv_pair_comm`), by the symmetry of second
+derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
@@ -327,6 +330,17 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
   rw [coordinateDeriv_eq_iteratedFDeriv _ contDiff_const,
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
+derivative. -/
+theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
+    (j l : Fin n) (x : CoordinateSpace n) :
+    coordinateDeriv [j, l] f x = coordinateDeriv [l, j] f x := by
+  have h (r : Fin 2 → Fin n) : coordinateDeriv (List.ofFn r) f x =
+      fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single (r 0) 1) (EuclideanSpace.single (r 1) 1) := by
+    rw [coordinateDeriv_ofFn_eq_iteratedFDeriv r hf, iteratedFDeriv_two_apply]
+  simpa using (h ![j, l]).trans
+    ((hf.contDiffAt.isSymmSndFDerivAt (by simp) _ _).trans (h ![l, j]).symm)
 
 /-- Partial coordinate derivatives in the second variable, along a word of length `k`, of a `C^N`
 function of two variables are jointly `C^m` whenever `m + k ≤ N`. -/

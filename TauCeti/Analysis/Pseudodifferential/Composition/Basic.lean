@@ -26,7 +26,8 @@ position slice `y ↦ b(y, ξ)`. This file shows that `a # b` is a symbol of ord
 its quantization `Op(a # b) u` equals the Fourier integral defining `Op(a)`, evaluated on the
 function `Op(b) u`. The composition symbol is the starting point of the symbol calculus of
 composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic expansion
-`∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`.
+`∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`
+(`TauCeti.Analysis.Pseudodifferential.Composition.Expansion`).
 
 ## Main results
 
@@ -43,6 +44,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   `TauCeti.Symbol.sharp_inclusion`).
 * `TauCeti.Symbol.IsSmoothing.sharp_right`, `TauCeti.Symbol.IsSmoothing.sharp_left`: the
   smoothing symbols form an ideal for `#`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le`: the decay
+  `‖a(x, ξ + y) ∘ b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)` of the integrand for frequency shifts
+  `‖y‖ ≤ R ‖η‖`.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -106,20 +110,25 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
   simp only [compIntegrand, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.compL_apply]
 
-/-- The integrand of the composition symbol decays in `η` faster than every power, with the
-weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
-private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η, ‖compIntegrand a b (x, ξ) η‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+variable (a) in
+/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
+frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
+`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
+positions in a compact set. -/
+theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
+    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ)
+    {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
+      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient K hK
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
-  refine ⟨Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb, by positivity, fun x hx ξ η ↦ ?_⟩
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m' ξ ((2 * π) • η)
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul h2π |m'| (x := (2 * π) • η) (y := η)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
-  rw [abs_abs] at hscale
+  refine ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦ ?_⟩
+  have hshift : (1 + ‖y‖ ^ 2) ^ (|m'| / 2) ≤ R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
+    have hy' : ‖y‖ ≤ ‖R • η‖ := by rwa [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hR)]
+    refine (Real.rpow_le_rpow (by positivity)
+      (show 1 + ‖y‖ ^ 2 ≤ 1 + ‖R • η‖ ^ 2 by gcongr) (by positivity)).trans ?_
+    simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le hR |m'| η
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
     rw [← Real.rpow_add (by positivity)]
@@ -128,22 +137,32 @@ private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
-  calc ‖compIntegrand a b (x, ξ) η‖
-      ≤ ‖a.coefficient (x, ξ + (2 * π) • η)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ := by
-        rw [compIntegrand, norm_smul, Circle.norm_coe, one_mul]
-        exact ContinuousLinearMap.opNorm_comp_le _ _
+  calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
+      ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
     _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
-          ((2 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
+          (R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
         (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
         gcongr
-        · refine (hCa x hx _).trans ?_
-          gcongr
-          exact hpeetre.trans (by gcongr)
+        · exact (hCa x hx _).trans
+            (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
         · exact hCb η ξ
-    _ = Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb *
+    _ = Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb *
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
+
+/-- The integrand of the composition symbol decays in `η` faster than every power, with the
+weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
+private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η, ‖compIntegrand a b (x, ξ) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨C, hC0, hC⟩ :=
+    hb.exists_norm_comp_fourier_slice_le a hK r (R := 2 * π) (by linarith [Real.two_le_pi])
+  refine ⟨C, hC0, fun x hx ξ η ↦ ?_⟩
+  rw [compIntegrand, norm_smul, Circle.norm_coe, one_mul]
+  exact hC x hx ξ η _ (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
 
 private theorem continuous_compIntegrand (hb : b.HasCompactSpatialSupport) :
     Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
