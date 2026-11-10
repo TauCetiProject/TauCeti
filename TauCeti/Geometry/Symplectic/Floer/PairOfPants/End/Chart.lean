@@ -39,6 +39,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
+* `TauCeti.Floer.tendsto_setIntegral_truncation`: integrals over `S` are limits of integrals over
+  its truncations.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
 * `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
@@ -70,8 +72,9 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 public section
 
-open Set Real Function MeasureTheory Manifold TauCeti.ThricePuncturedSphere
+open Set Real Function MeasureTheory Filter Manifold TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
+open scoped Topology
 
 namespace TauCeti
 
@@ -128,6 +131,19 @@ theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Typ
     (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
   obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
   exact hf z hz.1 q hq
+
+/-- Integrals over `S` are the limits of the integrals over its truncations. -/
+theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
+    (hf : IntegrableOn f thricePuncturedSphereReal) :
+    Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
+      (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
+  have hS : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
+      thricePuncturedSphereReal := by
+    rw [← preimage_iUnion, iUnion_truncation]
+    rfl
+  rw [← hS] at hf ⊢
+  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
+    (fun _ _ h => preimage_mono (truncation_mono h)) hf
 
 /-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
 set. -/
