@@ -1072,12 +1072,12 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
   exact hfinal.trans_eq hCK.symm
 
 /-- **The John–Nirenberg inequality for functions of bounded mean oscillation.** There are
-constants `A > 0` and `C`, depending only on the dimension `n ≥ 1`, such that the following holds
+constants `A > 0` and `C`, depending only on the dimension `n`, such that the following holds
 for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
 integrable with `‖f‖_{BMO} ≤ M` and `σ M ≤ A`, then on every ball `B`,
 
 `∫_B exp (σ ‖f - f_B‖) ≤ C |B|`. -/
-theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le [Nonempty ι] :
+theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le :
     ∃ A : ℝ, 0 < A ∧ ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
       [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
       {f : EuclideanSpace ℝ ι → E} {M : ℝ≥0} {σ : ℝ},
@@ -1085,6 +1085,17 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
       ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
         ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖)) ∂μ ≤
           C * μ (ball x₀ r) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
+    by_cases h0 : μ (ball x₀ r) = 0
+    · simp [Measure.restrict_eq_zero.2 h0]
+    by_cases htop : μ (ball x₀ r) = ∞
+    · simp [htop]
+    have hfc : f = fun _ ↦ f x₀ := funext fun y ↦ congrArg f (Subsingleton.elim _ _)
+    rw [hfc, setAverage_const h0 htop]
+    simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
   have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
