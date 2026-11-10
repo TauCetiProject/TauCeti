@@ -179,7 +179,7 @@ not `(η, r)`-top-regular for `H` is at most
 `(k.choose 3 * H.exceptionalPolyadMass C η r + m ^ (k.choose 2) * k.choose 2 * ε) * |V| ^ k`.
 The first term is the mass of the maps realizing these routes; the second pays the lower-route
 counting error once for each route of every placement. -/
-theorem exceptional_route_prediction_mass_le {ε : ℝ} (hε : 0 ≤ ε)
+theorem exceptional_route_prediction_mass_le {ε : ℝ}
     (hreg : C.skeleton.IsPairColorRegular ε) (η : ℝ) (r : ℕ) :
     H.exceptionalPredictedMass3 C F η r ≤
       (F.k.choose 3 * H.exceptionalPolyadMass C η r +
@@ -187,7 +187,6 @@ theorem exceptional_route_prediction_mass_le {ε : ℝ} (hε : 0 ≤ ε)
   classical
   set B : PatternPlacement3 C F → ℝ := fun φ ↦ ∏ i, (#(φ.vertexCell i) : ℝ)
   have hB (φ) : 0 ≤ B φ := prod_nonneg fun _ _ ↦ Nat.cast_nonneg _
-  have hε' : 0 ≤ (F.k.choose 2 : ℝ) * ε := mul_nonneg (Nat.cast_nonneg _) hε
   -- Along each route of a transversal placement, the prediction is at most the number of maps
   -- realizing the lower route plus the lower-route counting error.
   have hroute {φ : PatternPlacement3 C F} (hφ : φ.Transversal) (ψ : PairColorPlacement3 φ) :
@@ -199,6 +198,41 @@ theorem exceptional_route_prediction_mass_le {ε : ℝ} (hε : 0 ≤ ε)
       (#{ψ : PairColorPlacement3 φ | ¬ψ.IsTopRegularRoute H η r} : ℝ) ≤
         C.pairColorCount ^ F.k.choose 2 := by
     exact_mod_cast (card_filter_le _ _).trans PairColorPlacement3.card_le_pairColorCount_pow
+  -- A negative `ε` is excluded by the regularity of any vertex cell with any pair color, so the
+  -- error term below has the right sign unless there is no pair, no color or no placement.
+  have hcases : 0 ≤ ε ∨ F.k.choose 2 = 0 ∨ C.pairColorCount = 0 ∨
+      IsEmpty (PatternPlacement3 C F) := by
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨hε0, hc2, hm, hne⟩ := hcon
+    obtain ⟨φ⟩ := hne
+    have hk : 0 < F.k := Nat.pos_of_ne_zero fun h ↦ hc2 (by simp [h])
+    have hA := φ.vertexCell_mem ⟨0, hk⟩
+    have := PairSkeleton3.isPairColorRegular_iff.1 hreg ⟨0, Nat.pos_of_ne_zero hm⟩ _ hA _ hA _
+      le_rfl _ le_rfl
+      (by nlinarith [(Nat.cast_nonneg #(φ.vertexCell ⟨0, hk⟩) : (0 : ℝ) ≤ _)])
+      (by nlinarith [(Nat.cast_nonneg #(φ.vertexCell ⟨0, hk⟩) : (0 : ℝ) ≤ _)])
+    simp at this
+    linarith
+  -- The error terms are nonnegative, and bounded by the corresponding terms for all routes.
+  have hnn (φ : PatternPlacement3 C F) :
+      0 ≤ (#{ψ : PairColorPlacement3 φ | ¬ψ.IsTopRegularRoute H η r} : ℝ) *
+          (F.k.choose 2 * ε * B φ) ∧
+        (#{ψ : PairColorPlacement3 φ | ¬ψ.IsTopRegularRoute H η r} : ℝ) *
+            (F.k.choose 2 * ε * B φ) ≤
+          (C.pairColorCount ^ F.k.choose 2 : ℝ) * (F.k.choose 2 * ε * B φ) := by
+    rcases hcases with hε | hc2 | hm | he
+    · have hX : 0 ≤ (F.k.choose 2 : ℝ) * ε * B φ :=
+        mul_nonneg (mul_nonneg (Nat.cast_nonneg _) hε) (hB φ)
+      exact ⟨mul_nonneg (Nat.cast_nonneg _) hX, mul_le_mul_of_nonneg_right (hcard φ) hX⟩
+    · simp [hc2]
+    · by_cases hc2 : F.k.choose 2 = 0
+      · simp [hc2]
+      · have h0 : (C.pairColorCount ^ F.k.choose 2 : ℝ) = 0 := by simp [hm, hc2]
+        have hc : (#{ψ : PairColorPlacement3 φ | ¬ψ.IsTopRegularRoute H η r} : ℝ) = 0 :=
+          le_antisymm (h0 ▸ hcard φ) (Nat.cast_nonneg _)
+        simp [h0, hc]
+    · exact he.elim φ
   have hlower := H.sum_lowerRouteCountAt_not_isTopRegularRoute_le C F η r
   have hsumB : ∑ φ, B φ = (Fintype.card V : ℝ) ^ F.k := by
     simp only [B]
@@ -223,10 +257,8 @@ theorem exceptional_route_prediction_mass_le {ε : ℝ} (hε : 0 ≤ ε)
         gcongr ?_ + ?_
         · exact sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun φ _ _ ↦
             sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
-        · refine (sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun φ _ _ ↦
-            mul_nonneg (Nat.cast_nonneg _) (mul_nonneg hε' (hB φ))).trans
-            (sum_le_sum fun φ _ ↦ ?_)
-          exact mul_le_mul_of_nonneg_right (hcard φ) (mul_nonneg hε' (hB φ))
+        · exact (sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun φ _ _ ↦ (hnn φ).1).trans
+            (sum_le_sum fun φ _ ↦ (hnn φ).2)
     _ ≤ F.k.choose 3 * H.exceptionalPolyadMass C η r * (Fintype.card V : ℝ) ^ F.k +
         C.pairColorCount ^ F.k.choose 2 * (F.k.choose 2 * ε * (Fintype.card V : ℝ) ^ F.k) := by
         rw [← mul_sum, ← mul_sum, hsumB]
