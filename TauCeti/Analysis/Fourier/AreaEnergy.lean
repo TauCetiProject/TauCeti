@@ -358,7 +358,7 @@ theorem four_pi_mul_abs_rectifiableSignedArea_le (hcont : ContinuousOn γ (Icc a
   · simp [rectifiableSignedArea_of_not_boundedVariationOn hγ]
   rcases lt_or_ge b a with hba | hab
   · simp [rectifiableSignedArea_of_lt hba]
-  have hu := hγ.hasUnitSpeedOn_naturalParameterization hcont
+  have hu := hcont.hasUnitSpeedOn_naturalParameterization
   have h := hu.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq ENNReal.toReal_nonneg
     (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
       hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
@@ -393,7 +393,7 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff
     rw [hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
       (left_mem_Icc.2 hab) ht]
   rw [rectifiableSignedArea_eq_signedArea_naturalParameterization]
-  have hu := hγ.hasUnitSpeedOn_naturalParameterization hcont
+  have hu := hcont.hasUnitSpeedOn_naturalParameterization
   have key := hu.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff ENNReal.toReal_nonneg
     (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
       hγ.naturalParameterization_toReal_eVariationOn hab, hγab])

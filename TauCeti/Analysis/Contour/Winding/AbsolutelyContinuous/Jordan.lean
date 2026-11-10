@@ -582,7 +582,7 @@ theorem jordanSign_naturalParameterization_eq_one_or_neg_one
   (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab.le).jordanSign_eq_one_or_neg_one
     (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
-    (BoundedVariationOn.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+    (naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
       hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
@@ -604,7 +604,7 @@ theorem windingNumber_naturalParameterization_eq_jordanSign
   exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab.le).windingNumber_eq_jordanSign_of_mem_filledHull_sdiff
     (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
-    (BoundedVariationOn.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+    (naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
       hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) hz'
 

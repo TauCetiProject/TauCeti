@@ -78,8 +78,10 @@ theorem naturalParameterization_toReal_eVariationOn (hγ : BoundedVariationOn γ
       (right_mem_Icc.2 hab)
 
 /-- If a curve has equal endpoint values `γ a = γ b` on `[a, b]`, then its natural
-parameterization takes equal values at `0` and at the length of the curve. -/
-theorem naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+parameterization takes equal values at `0` and at `(eVariationOn γ (Icc a b)).toReal`, the real
+number attached to the length of the curve. If the variation is infinite its `toReal` is `0`, and
+the equality is reflexivity. -/
+theorem _root_.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
     (hclosed : γ a = γ b) :
     naturalParameterization γ (Icc a b) a 0 =
       naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal := by
@@ -89,7 +91,9 @@ theorem naturalParameterization_zero_eq_naturalParameterization_toReal_eVariatio
         (left_mem_Icc.mpr hab)).trans
         (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
     · simp [Icc_eq_empty hab]
-  · simp [not_not.mp hγ]
+  · -- `BoundedVariationOn` unfolds to `eVariationOn ≠ ⊤`
+    have htop : eVariationOn γ (Icc a b) = ⊤ := by simpa [BoundedVariationOn] using hγ
+    simp [htop]
 
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
@@ -183,21 +187,27 @@ theorem image_naturalParameterization_Icc (hγ : BoundedVariationOn γ (Icc a b)
   rw [← hγ.image_variationOnFromTo_Icc hcont hab]
   exact hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)
 
-/-- The natural parameterization of a continuous rectifiable curve has unit speed on its length
-interval. -/
-theorem hasUnitSpeedOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+/-- The natural parameterization of a continuous curve has unit speed on the interval
+`[0, (eVariationOn γ (Icc a b)).toReal]`. If `b < a` or the variation is infinite, this interval is
+`{0}` and unit speed is trivial. -/
+theorem _root_.ContinuousOn.hasUnitSpeedOn_naturalParameterization
     (hcont : ContinuousOn γ (Icc a b)) :
     HasUnitSpeedOn (naturalParameterization γ (Icc a b) a)
       (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
-  rcases lt_or_ge b a with hba | hab
-  · have h0 : eVariationOn γ (Icc a b) = 0 := by simp [Icc_eq_empty hba.not_ge]
-    rw [h0, ENNReal.toReal_zero]
-    intro x hx y hy
-    rw [Icc_self, mem_singleton_iff] at hx hy
-    subst hx hy
-    simp
-  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
-  exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
+  by_cases h : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
+  · rw [← h.1.image_variationOnFromTo_Icc hcont h.2]
+    exact has_unit_speed_naturalParameterization γ h.1.locallyBoundedVariationOn
+      (left_mem_Icc.2 h.2)
+  · have h0 : (eVariationOn γ (Icc a b)).toReal = 0 := by
+      by_cases hab : a ≤ b
+      · -- `BoundedVariationOn` unfolds to `eVariationOn ≠ ⊤`
+        have htop : eVariationOn γ (Icc a b) = ⊤ := by
+          simpa [BoundedVariationOn] using fun hγ ↦ h ⟨hγ, hab⟩
+        simp [htop]
+      · simp [Icc_eq_empty hab]
+    rw [h0, Icc_self]
+    exact hasConstantSpeedOnWith_of_subsingleton (naturalParameterization γ (Icc a b) a)
+      subsingleton_singleton 1
 
 /-- The natural parameterization of a continuous rectifiable curve has, on its length interval,
 the same length as the curve. -/
@@ -205,7 +215,7 @@ theorem eVariationOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a
     (hcont : ContinuousOn γ (Icc a b)) :
     eVariationOn (naturalParameterization γ (Icc a b) a)
       (Icc 0 (eVariationOn γ (Icc a b)).toReal) = eVariationOn γ (Icc a b) := by
-  have h := hγ.hasUnitSpeedOn_naturalParameterization hcont
+  have h := hcont.hasUnitSpeedOn_naturalParameterization
     (left_mem_Icc.2 ENNReal.toReal_nonneg) (right_mem_Icc.2 ENNReal.toReal_nonneg)
   rwa [inter_self, NNReal.coe_one, one_mul, sub_zero, ENNReal.ofReal_toReal hγ] at h
 

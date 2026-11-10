@@ -103,7 +103,7 @@ theorem rectifiableSignedArea_eq_jordanSign_mul_volume_real (hab : a < b)
   exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab.le).signedArea_eq_jordanSign_mul_volume_real
     (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
-    (BoundedVariationOn.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+    (naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
       hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
