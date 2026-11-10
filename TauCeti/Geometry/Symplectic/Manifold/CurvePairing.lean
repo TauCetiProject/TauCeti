@@ -25,7 +25,7 @@ the Cauchy–Riemann equation `du (j e) = J (du e)` that value is `θ(du e, J (d
 
 * if `θ(v, J v) ≥ 0` for every tangent vector `v` along `u`, then `u^* θ` is a nonnegative top
   form and `∫_C u^* θ ≥ 0` (`TauCeti.integralTopForm_mpullback_nonneg`, from the pointwise
-  `TauCeti.SmoothTwoForm.apply_nonneg_of_eval₂_nonneg`);
+  `TauCeti.SmoothAlmostComplexStructure.apply_basis_nonneg_of_forall_nonneg`);
 * if `|θ(v, J v)| ≤ K σ(v, J v)` along `u`, then for compact `C`,
   `|∫_C u^* θ| ≤ K ∫_C u^* σ` (`TauCeti.abs_integralTopForm_mpullback_le`).
 
@@ -80,8 +80,9 @@ theorem integralTopForm_mpullback_nonneg (hu : ContMDiff I' I ∞ u)
     (hθ : ∀ c (v : TangentSpace I (u c)), 0 ≤ SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)) :
     0 ≤ integralTopForm o (SmoothForm.mpullback u hu θ).1 :=
   integralTopForm_nonneg o fun c b hb ↦
-    SmoothTwoForm.apply_nonneg_of_eval₂_nonneg (SmoothForm.mpullback u hu θ) (ho c) (fun e ↦ by
-      rw [SmoothForm.eval₂_mpullback, (hhol c).mfderiv_apply_commute]
+    j.apply_basis_nonneg_of_forall_nonneg (ho c) (fun e ↦ by
+      rw [← SmoothBundleForm.eval₂_apply, SmoothForm.eval₂_mpullback,
+        (hhol c).mfderiv_apply_commute]
       exact hθ c _) b hb
 
 /-- **Pairings with a pseudoholomorphic curve are bounded by area.** Let `u` be a smooth

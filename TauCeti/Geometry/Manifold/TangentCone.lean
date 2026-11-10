@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections
@@ -410,7 +410,7 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
   have hstrict := (hC _ hyU').hasStrictFDerivAt_fderiv hn
   rw [fderiv_sub_const] at hstrict
   refine ⟨?_, by simp [hyy, hgy], hU', hyU', hC, ?_⟩
-  · rw [← MDifferentiableAt.fderiv_comp_chartAt_symm hd]
+  · rw [← TauCeti.fderiv_comp_chartAt_symm]
     exact hstrict
   · ext z
     simp [sub_eq_zero]

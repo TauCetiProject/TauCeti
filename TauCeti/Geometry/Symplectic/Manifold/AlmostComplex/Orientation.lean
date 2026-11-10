@@ -6,25 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 
-import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
-
 /-!
-# Two-forms on surfaces with an almost complex structure
+# Top forms on the complex frames of an oriented almost complex surface
 
-On a surface oriented so that the frames `(e, j e)` of an almost complex structure `j` are
-positive, a two-form evaluated on a basis is its value on a frame `(e, j e)` times the
-determinant of the basis in that frame. So it is nonnegative on positively oriented bases as soon
-as it is nonnegative on the frames `(e, j e)`
-(`TauCeti.SmoothTwoForm.apply_nonneg_of_eval₂_nonneg`).
+Let `j` be an almost complex structure on a surface `C`, oriented at a point `c` so that every
+frame `(e, j e)` of the tangent plane is positive. Every nonzero `e` gives such a frame, so a
+top form `η` on the tangent plane is determined by its values `η (e, j e)`: on any basis `b`,
 
-## Main statements
+`η b = η (b₀, j b₀) · det_{(b₀, j b₀)} b`,  `b₀ = b 0`.
 
-* `TauCeti.SmoothTwoForm.apply_nonneg_of_eval₂_nonneg`: on a surface whose complex frames
-  `(e, j e)` are positively oriented, a two-form that is nonnegative on those frames is
-  nonnegative on every positively oriented basis.
+The determinant is positive when `b` is positively oriented. Hence a top form that is nonnegative
+on every frame `(e, j e)` is nonnegative on every positively oriented basis
+(`TauCeti.SmoothAlmostComplexStructure.apply_basis_nonneg_of_forall_nonneg`). This is the
+pointwise input to the positivity of energy integrals `∫_C u^* ω` of pseudoholomorphic curves,
+whose densities `(u^* ω)(e, j e)` are nonnegative when `ω` tames the target structure.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications 52, 2012, Section 2.2 (energy of holomorphic curves).
 -/
 
 public section
@@ -32,39 +34,42 @@ public section
 noncomputable section
 
 open Module
-open scoped Manifold ContDiff
+open scoped ContDiff
 
 namespace TauCeti
 
-namespace SmoothTwoForm
+namespace SmoothAlmostComplexStructure
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {j : SmoothAlmostComplexStructure I M} {o : Manifold.Orientation I M (Fin 2)}
+variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
+  [IsManifold I ∞ C] (j : SmoothAlmostComplexStructure I C) {o : Manifold.Orientation I C (Fin 2)}
 
-/-- A two-form on a surface that is nonnegative on the complex frames `(e, j e)` is nonnegative on
-every positively oriented basis, when the frames `(e, j e)` are positively oriented. -/
-theorem apply_nonneg_of_eval₂_nonneg (α : SmoothTwoForm I M) {c : M}
-    (ho : ∀ (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
+/-- **Top forms nonnegative on complex frames.** Let `j` be an almost complex structure on a
+surface `C`, oriented at `c` so that every frame `(e, j e)` is positive. A top form `η` on the
+tangent plane at `c` with `η (e, j e) ≥ 0` for every `e` is nonnegative on every positively
+oriented basis. Indeed `η b = η (b₀, j b₀) det_{(b₀, j b₀)} b` for `b₀ = b 0`, and the
+determinant is positive because both frames are positive. -/
+theorem apply_basis_nonneg_of_forall_nonneg {c : C}
+    (ho : ∀ b : Basis (Fin 2) ℝ (TangentSpace I c), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
-    (hα : ∀ e, 0 ≤ SmoothBundleForm.eval₂ α c e (j c e))
+    {η : TangentSpace I c [⋀^Fin 2]→L[ℝ] ℝ} (hη : ∀ e, 0 ≤ η ![e, j c e])
     (b : Basis (Fin 2) ℝ (TangentSpace I c)) (hb : b.orientation = o.orientationAt c) :
-    0 ≤ α.1 c b := by
-  -- The complex frame `b₀ = (b 0, j (b 0))`.
+    0 ≤ η b := by
+  -- The frame `b₀ = (b 0, j (b 0))`.
   set b₀ := basisOfLinearIndependentOfCardEqFinrank
     ((j.almostComplexStructureAt c).linearIndependent_pair (b.ne_zero 0))
     (by simpa using (o.finrank_tangentSpace_eq c).symm)
   have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  -- A top form on the plane is `det_{b₀}` times its value on the frame `b₀`.
-  rw [ContinuousAlternatingMap.apply_eq_det_mul (α.1 c) b₀ b]
-  refine mul_nonneg ((b₀.orientation_eq_iff_det_pos b).1 ?_).le ?_
+    rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
+  -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
+  have hη' : η b = η b₀ * b₀.det b := by
+    simpa using congrArg (fun f ↦ f b) (η.toAlternatingMap.eq_smul_basis_det b₀)
+  rw [hη']
+  refine mul_nonneg ?_ ((b₀.orientation_eq_iff_det_pos b).1 ?_).le
+  · rw [hb₀]
+    exact hη (b 0)
   · rw [hb, ho b₀ (by rw [hb₀]; simp)]
-  · rw [hb₀, ← SmoothBundleForm.eval₂_apply]
-    exact hα _
 
-end SmoothTwoForm
+end SmoothAlmostComplexStructure
 
 end TauCeti

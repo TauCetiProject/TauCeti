@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Projection
-public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
-
-import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
 /-!
 # Horizontal tangent planes and the vertical energy density of a symplectic suspension
@@ -502,8 +500,9 @@ theorem mpullback_mpullback_snd_fiberForm_apply_basis_nonneg [FiniteDimensional 
     (b : Basis (Fin 2) ℝ (TangentSpace I' c)) (hb : b.orientation = o.orientationAt c) :
     0 ≤ (SmoothForm.mpullback u hu
       (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b :=
-  SmoothTwoForm.apply_nonneg_of_eval₂_nonneg _ (ho c)
-    (eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame) b hb
+  j.apply_basis_nonneg_of_forall_nonneg (ho c) (fun e ↦ by
+    rw [← SmoothBundleForm.eval₂_apply]
+    exact eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame e) b hb
 
 end SmoothMappingTorus
 

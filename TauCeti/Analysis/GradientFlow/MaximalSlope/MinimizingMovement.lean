@@ -56,7 +56,6 @@ theorem lintegral_le_liminf_lintegral_descendingSlope_deGiorgiInterpolant
     (hφ : LowerSemicontinuous φ) (hL : ∀ x, (L : EReal) ≤ φ x)
     (hg : ∀ x, φ x ≠ ⊤ → g x ≤ relaxedSlope φ x)
     (hS : ∀ k, φ (U k 0) ≤ S) (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
-    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
       V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
     (hVU : ∀ k n, V k n (τ k) = U k (n + 1)) {T : ℝ}
@@ -66,11 +65,12 @@ theorem lintegral_le_liminf_lintegral_descendingSlope_deGiorgiInterpolant
     (∫⁻ t in Ioc 0 T, g (u t) ^ 2 / 2) ≤
       liminf (fun k ↦ ∫⁻ t in Ioc 0 T,
         descendingSlope φ (deGiorgiInterpolant (τ k) (V k) t) ^ 2 / 2) atTop := by
+  have hU k := mem_moreauYosidaResolvent_of_forall_mem_Ioc_of_eq (hτ k) (hV k) (hVU k)
   refine le_trans (lintegral_mono_ae ?_) (lintegral_liminf_le' fun k ↦
     ((hmeas k).pow_const 2).div_const 2)
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
   have hv := tendsto_deGiorgiInterpolant_of_forall_mem_moreauYosidaResolvent
-    hL hS hτ hτ0 hU hV hVU ht.1 (hu t ht)
+    hL hS hτ hτ0 hV hVU ht.1 (hu t ht)
   have hbound k : φ (deGiorgiInterpolant (τ k) (V k) t) ≤ S :=
     (apply_deGiorgiInterpolant_le_initial (hτ k) (hU k) (hV k) ht.1).trans (hS k)
   have hufin : φ (u t) ≠ ⊤ := by
@@ -95,7 +95,6 @@ theorem apply_add_dissipation_le_of_forall_mem_moreauYosidaResolvent
     (hg : ∀ x, φ x ≠ ⊤ → g x ≤ relaxedSlope φ x)
     {x₀ : X} (hx₀ : φ x₀ ≠ ⊤)
     (hU0 : ∀ k, U k 0 = x₀) (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
-    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
       V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
     (hVU : ∀ k n, V k n (τ k) = U k (n + 1))
@@ -103,6 +102,7 @@ theorem apply_add_dissipation_le_of_forall_mem_moreauYosidaResolvent
       (deGiorgiInterpolant (τ k) (V k) t)) (volume.restrict (Ioc 0 T)))
     (hu : ∀ t ∈ Icc 0 T, Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t))) (hT : 0 ≤ T) :
     φ (u T) + dissipation 2 2 g u 0 T ≤ φ x₀ := by
+  have hU k := mem_moreauYosidaResolvent_of_forall_mem_Ioc_of_eq (hτ k) (hV k) (hVU k)
   set N : ℕ → ℕ := fun k ↦ ⌈T / τ k⌉₊
   set P : ℕ → ℝ≥0∞ := fun k ↦ ∑ n ∈ Finset.range (N k),
     edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k)
@@ -117,7 +117,7 @@ theorem apply_add_dissipation_le_of_forall_mem_moreauYosidaResolvent
     curveAction_div_two_le_liminf_sum_edist_sq_div (.of_forall hτ) hτ0 hT
       (fun s hs t ht ↦ ((hu s hs).edist (hu t ht)).liminf_eq.ge)
   have hG : (∫⁻ t in Ioc 0 T, g (u t) ^ 2 / 2) ≤ liminf G atTop :=
-    lintegral_le_liminf_lintegral_descendingSlope_deGiorgiInterpolant hφ hL hg hS hτ hτ0 hU hV
+    lintegral_le_liminf_lintegral_descendingSlope_deGiorgiInterpolant hφ hL hg hS hτ hτ0 hV
       hVU hmeas (fun t ht ↦ hu t ⟨ht.1.le, ht.2⟩)
   -- The final discrete interval may overshoot `T`; its nonnegative integral can be discarded.
   have hdisc k : φ (U k (N k)) + (P k : EReal) + (G k : EReal) ≤ φ x₀ := by
@@ -162,7 +162,6 @@ theorem isCurveOfMaximalSlope_of_forall_mem_moreauYosidaResolvent
     (hg : ∀ x, φ x ≠ ⊤ → g x ≤ relaxedSlope φ x) (hstrong : IsStrongUpperGradient φ g)
     {x₀ : X} (hx₀ : φ x₀ ≠ ⊤) (hU0 : ∀ k, U k 0 = x₀)
     (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
-    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
       V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
     (hVU : ∀ k n, V k n (τ k) = U k (n + 1))
@@ -170,6 +169,7 @@ theorem isCurveOfMaximalSlope_of_forall_mem_moreauYosidaResolvent
       (deGiorgiInterpolant (τ k) (V k) t)) (volume.restrict (Ioc 0 T)))
     (hu : ∀ t ∈ Icc 0 T, Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t))) (hT : 0 ≤ T) :
     IsCurveOfMaximalSlope 2 2 φ g u (Icc 0 T) := by
+  have hU k := mem_moreauYosidaResolvent_of_forall_mem_Ioc_of_eq (hτ k) (hV k) (hVU k)
   have hbot x : φ x ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (hL x)
   have hcoer : moreauYosida φ 1 x₀ ≠ ⊥ := by
     refine ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (le_moreauYosida_iff.2 fun y _ ↦ ?_)
@@ -188,6 +188,6 @@ theorem isCurveOfMaximalSlope_of_forall_mem_moreauYosidaResolvent
     ⟨hu0 ▸ hx₀, hbot _, ?_⟩
   rw [hu0]
   exact apply_add_dissipation_le_of_forall_mem_moreauYosidaResolvent
-    hφ hL hg hx₀ hU0 hτ hτ0 hU hV hVU hmeas hu hT
+    hφ hL hg hx₀ hU0 hτ hτ0 hV hVU hmeas hu hT
 
 end TauCeti

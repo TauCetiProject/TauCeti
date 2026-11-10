@@ -94,18 +94,7 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
       ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
   classical
   set σ := ringOfIntegersQuadraticConj hmin hgen
-  have hnorm : (ε : 𝓞 K) * σ (ε : 𝓞 K) = 1 := by
-    rcases mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one hmin hgen ε with h | h
-    · exact h
-    · have hεK : (((ε : 𝓞 K) : K)) ≠ 0 :=
-        RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
-      have hnorm_pos := norm_pos_of_isTotallyPositive hεK hpos
-      have hnorm_neg : Algebra.norm ℚ (((ε : 𝓞 K) : K)) = -1 := by
-        apply (algebraMap ℚ K).injective
-        rw [algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen, h]
-        simp
-      rw [hnorm_neg] at hnorm_pos
-      norm_num at hnorm_pos
+  have hnorm := mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive hmin hgen hpos
   obtain ⟨z, hz0, hz⟩ :=
     exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen (x := (ε : 𝓞 K)) (y := 1)
       ε.ne_zero (by simpa using hnorm)
@@ -145,27 +134,11 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     refine mul_right_cancel₀ hm0' ?_
     rw [mul_assoc]
     exact h
-  -- `γ / σγ = ε⁻¹` is totally positive, so `γ` or `-γ` is.
-  have hσγK : quadraticConj hmin hgen (γ : K) = ((ε : 𝓞 K) : K) * (γ : K) := by
-    rw [← coe_ringOfIntegersQuadraticConj hmin hgen γ, hσγ]
-    push_cast
-    ring
-  have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
-  have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
-    rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
-    simpa using hpos.inv
-  have hcoe : ((∏ p ∈ S, Q p : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = Ideal.span {γ} := by
-    rw [Submonoid.coe_finsetProd]
-    exact hprodeq
   have hone : ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
     rw [← map_prod]
-    rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
-      hmin hgen hposratio with h | h
-    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
-    · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
-        (by push_cast; exact h) ?_
-      rw [Ideal.span_singleton_neg]
-      exact hcoe
+    refine NarrowClassGroup.mk0_eq_one_of_eq_span hmin hgen hpos hγ0 hσγ ?_
+    rw [Submonoid.coe_finsetProd]
+    exact hprodeq
   refine ⟨S, ?_, hS, hone⟩
   rcases S.eq_empty_or_nonempty with rfl | hSne
   · rw [Finset.prod_empty, Ideal.one_eq_top, eq_comm, Ideal.span_singleton_eq_top] at hprodeq
