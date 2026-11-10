@@ -21,10 +21,11 @@ coordinate monomials or graph homomorphism densities. The constant `1` ensures t
 have the same total mass.
 
 Without metrizability, a point-separating star subalgebra of bounded continuous functions still
-determines the integrals of all bounded continuous functions against *tight* finite measures on a
-Hausdorff space. On a locally compact Hausdorff space it therefore determines finite inner regular
-(Radon) measures. Some regularity is needed there: a non-regular Borel measure on a non-metrizable
-compact space can integrate every continuous function like a point mass. This is the form needed
+determines the integrals of all bounded continuous functions against *tight* finite measures. Such
+an algebra makes the space Hausdorff, so no separation hypothesis is needed. On a locally compact
+space it therefore determines finite inner regular (Radon) measures. Some regularity is needed
+there: a non-regular Borel measure on a non-metrizable compact space can integrate every continuous
+function like a point mass. This is the form needed
 on the Pontryagin dual of a locally compact abelian group that is not second countable.
 
 ## Main results
@@ -35,7 +36,7 @@ on the Pontryagin dual of a locally compact abelian group that is not second cou
 * `TauCeti.MeasureTheory.abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet` — the `6 √ε`
   comparison estimate behind the tight case.
 * `TauCeti.MeasureTheory.integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet` —
-  two tight finite measures on a Hausdorff space with the same integrals on a
+  two tight finite measures with the same integrals on a
   point-separating star subalgebra of `E →ᵇ 𝕜` give the same integral to every real bounded
   continuous function.
 * `TauCeti.MeasureTheory.ext_of_forall_mem_subalgebra_integral_eq_of_innerRegular` — on a locally
@@ -102,13 +103,23 @@ theorem ext_of_forall_mem_submonoid_integral_eq_of_polish [PolishSpace E] [Borel
     simp only [_root_.smul_apply, smul_eq_mul]
     rw [integral_const_mul, integral_const_mul, ha]
 
+/-- Continuous functions into a Hausdorff space that separate points make the source Hausdorff. -/
+private theorem t2Space_of_separatesPoints {X F : Type*} [TopologicalSpace X] [TopologicalSpace F]
+    [T2Space F] {B : Set C(X, F)}
+    (h : Set.SeparatesPoints ((fun b : C(X, F) => (b : X → F)) '' B)) : T2Space X := by
+  refine T2Space.of_injective_continuous (f := fun x (b : B) => b.1 x) (fun x y hxy => ?_)
+    (continuous_pi fun b => b.1.continuous)
+  by_contra hne
+  obtain ⟨_, ⟨b, hb, rfl⟩, hbxy⟩ := h hne
+  exact hbxy (congrFun hxy ⟨b, hb⟩)
+
 section Tight
 
-variable [T2Space E] [OpensMeasurableSpace E]
+variable [OpensMeasurableSpace E]
   {P P' : Measure E} [IsFiniteMeasure P] [IsFiniteMeasure P']
 
 private theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet_of_borel
-    [BorelSpace E]
+    [T2Space E] [BorelSpace E]
     (hP : IsTightMeasureSet {P}) (hP' : IsTightMeasureSet {P'}) (f : E →ᵇ ℝ)
     {A : Subalgebra ℝ (E →ᵇ ℝ)} (hA : (A.map (toContinuousMapₐ ℝ)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → ℝ) x ∂P = ∫ x, (g : E → ℝ) x ∂P') {ε : ℝ} (hε : 0 < ε) :
@@ -149,7 +160,7 @@ private theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet_of_
   rw [abs_le] at hPkey hP'key ⊢
   constructor <;> linarith
 
-/-- If two tight finite measures on a Hausdorff space integrate every member of a point-separating
+/-- If two tight finite measures integrate every member of a point-separating
 real subalgebra `A` of `E →ᵇ ℝ` equally, then their integrals of `mulExpNegMulSq ε ∘ f` differ by
 at most `6 √ε`. This is the tight form of Mathlib's `dist_integral_mulExpNegMulSq_comp_le`, which
 assumes a complete second-countable pseudo-metric space instead. -/
@@ -158,6 +169,7 @@ theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet
     {A : Subalgebra ℝ (E →ᵇ ℝ)} (hA : (A.map (toContinuousMapₐ ℝ)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → ℝ) x ∂P = ∫ x, (g : E → ℝ) x ∂P') {ε : ℝ} (hε : 0 < ε) :
     |∫ x, mulExpNegMulSq ε (f x) ∂P - ∫ x, mulExpNegMulSq ε (f x) ∂P'| ≤ 6 * √ε := by
+  have := t2Space_of_separatesPoints hA
   let m0 : MeasurableSpace E := ‹MeasurableSpace E›
   let hm : borel E ≤ m0 := OpensMeasurableSpace.borel_le
   let _ : MeasurableSpace E := borel E
@@ -186,7 +198,6 @@ theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet
   rwa [← integral_trim hm f.continuous.mulExpNegMulSq.stronglyMeasurable,
     ← integral_trim hm f.continuous.mulExpNegMulSq.stronglyMeasurable] at h
 
-omit [T2Space E] in
 private theorem tendsto_integral_mulExpNegMulSq_comp_of_opens (f : E →ᵇ ℝ) :
     Tendsto (fun ε => ∫ x, mulExpNegMulSq ε (f x) ∂P) (𝓝[>] 0) (𝓝 (∫ x, f x ∂P)) := by
   let m0 : MeasurableSpace E := ‹MeasurableSpace E›
@@ -203,7 +214,7 @@ private theorem tendsto_integral_mulExpNegMulSq_comp_of_opens (f : E →ᵇ ℝ)
   exact h
 
 /-- **A separating subalgebra determines the integrals of tight measures.** Two tight finite
-measures on a Hausdorff space that integrate every member of a point-separating star
+measures that integrate every member of a point-separating star
 subalgebra `A` of `E →ᵇ 𝕜` equally give the same integral to every real bounded continuous
 function. -/
 theorem integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet {𝕜 : Type*} [RCLike 𝕜]
@@ -264,6 +275,7 @@ theorem ext_of_forall_mem_subalgebra_integral_eq_of_innerRegular {𝕜 : Type*} 
     [BorelSpace E] [LocallyCompactSpace E] [P.InnerRegular] [P'.InnerRegular]
     {A : StarSubalgebra 𝕜 (E →ᵇ 𝕜)} (hA : (A.map (toContinuousMapStarₐ 𝕜)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → 𝕜) x ∂P = ∫ x, (g : E → 𝕜) x ∂P') : P = P' :=
+  have := t2Space_of_separatesPoints hA
   Measure.ext_of_integral_eq_on_compactlySupported fun f => by
     simpa using integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet
       isTightMeasureSet_singleton_of_innerRegular isTightMeasureSet_singleton_of_innerRegular hA
