@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.Analysis.Normed.Group.BallSphere
 
 /-!
 # Hörmander's condition from the tail of an integrable kernel
@@ -36,17 +37,8 @@ public section
 
 namespace MeasureTheory.IntegrableOn
 
-variable {G E : Type*} [SeminormedAddCommGroup G] {h : G} {r s : ℝ}
-
-/-- Translating by `h` maps `{‖x‖ > s}` into `{‖x‖ > r}` when `r + ‖h‖ ≤ s`. -/
-private theorem image_sub_right_subset (hrs : r + ‖h‖ ≤ s) :
-    (· - h) '' {x | s < ‖x‖} ⊆ {x | r < ‖x‖} := by
-  rintro _ ⟨x, hx, rfl⟩
-  have := norm_sub_norm_le x h
-  grind
-
-variable [MeasurableSpace G] [MeasurableAdd G] [NormedAddCommGroup E] {μ : Measure G}
-  [μ.IsAddRightInvariant] {f : G → E}
+variable {G E : Type*} [SeminormedAddCommGroup G] {h : G} {r s : ℝ} [MeasurableSpace G]
+  [MeasurableAdd G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant] {f : G → E}
 
 /-- If `r + ‖h‖ ≤ s`, translating by `h` maps `{‖x‖ > s}` into `{‖x‖ > r}`, so the integral of
 `‖f (x - h)‖` over the first set is at most that of `‖f x‖` over the second. -/
@@ -55,7 +47,7 @@ theorem setIntegral_norm_comp_sub_le (hf : IntegrableOn f {x | r < ‖x‖} μ) 
   rw [← (measurePreserving_sub_right μ h).setIntegral_image_emb
     (MeasurableEquiv.subRight h).measurableEmbedding (‖f ·‖)]
   exact setIntegral_mono_set hf.norm (.of_forall fun _ ↦ norm_nonneg _)
-    (.of_forall (image_sub_right_subset hrs))
+    (.of_forall (image_sub_const_setOf_lt_norm_subset hrs))
 
 /-- **Hörmander's condition from the tail of the kernel.** If `r + ‖h‖ ≤ s`, then on `{‖x‖ > s}`
 the difference `f (x - h) - f x` is controlled by twice the tail of `f` on `{‖x‖ > r}`. The
@@ -67,7 +59,8 @@ theorem setIntegral_norm_comp_sub_sub_le (hf : IntegrableOn f {x | r < ‖x‖} 
     lt_of_le_of_lt (by linarith [norm_nonneg h]) hx
   have hf₁ : IntegrableOn (fun x ↦ f (x - h)) {x | s < ‖x‖} μ :=
     ((measurePreserving_sub_right μ h).integrableOn_image
-      (MeasurableEquiv.subRight h).measurableEmbedding).1 (hf.mono_set (image_sub_right_subset hrs))
+      (MeasurableEquiv.subRight h).measurableEmbedding).1
+        (hf.mono_set (image_sub_const_setOf_lt_norm_subset hrs))
   have hf₂ : IntegrableOn f {x | s < ‖x‖} μ := hf.mono_set hsr
   calc ∫ x in {x | s < ‖x‖}, ‖f (x - h) - f x‖ ∂μ
       ≤ ∫ x in {x | s < ‖x‖}, (‖f (x - h)‖ + ‖f x‖) ∂μ :=
