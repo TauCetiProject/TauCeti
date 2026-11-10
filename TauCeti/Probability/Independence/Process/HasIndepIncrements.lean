@@ -53,8 +53,17 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
 
+/-- Measurable subtraction on an additive commutative group gives measurable addition, by
+`x + y = x - (0 - y)`. -/
+private theorem measurableAdd₂_of_measurableSub₂ {E : Type*} [MeasurableSpace E] [AddCommGroup E]
+    [MeasurableSub₂ E] : MeasurableAdd₂ E :=
+  ⟨by
+    have h : Measurable fun p : E × E ↦ p.1 - (0 - p.2) :=
+      measurable_fst.sub (measurable_const.sub measurable_snd)
+    simpa using h⟩
+
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
-  [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+  [MeasurableSpace E] [AddCommGroup E] [MeasurableSub₂ E]
   {P : Measure Ω} {X : T → Ω → E}
 
 /-- A finite vector of past values is independent of a later increment. -/
@@ -63,6 +72,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     (I : Finset T) {s t : T} (hI : ∀ i ∈ I, i ≤ s) (hst : s ≤ t) :
     IndepFun (fun ω (i : I) ↦ X i ω) (fun ω ↦ X t ω - X s ω) P := by
   classical
+  have : MeasurableAdd₂ E := measurableAdd₂_of_measurableSub₂
   -- Put the sorted past between the initial time and the two increment endpoints.
   let τ : ℕ → T := fun n ↦ if h : n = 0 then ⊥ else
     if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
@@ -128,6 +138,7 @@ private theorem HasIndepIncrements.indepFun_future_past_insert
     IndepFun (fun ω (i : ↥(insert a J)) ↦ X i.val ω - X s ω)
       (fun ω (u : Iic s) ↦ X u ω) P := by
   classical
+  have : MeasurableAdd₂ E := measurableAdd₂_of_measurableSub₂
   have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   let u : Ici s := J.max' hJ
   have huJ : u ∈ J := J.max'_mem hJ
@@ -202,7 +213,6 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
         simp [hi]
     exact hX.indepFun_future_past_insert hm h0 s J hJ a haJ ih
 
-omit [MeasurableAdd₂ E] in
 /-- Two processes starting at zero with equal increment laws have the same law at one time. -/
 private theorem identDistrib_singleton {Ω' : Type*} [MeasurableSpace Ω']
     {Q : Measure Ω'} {Y : T → Ω' → E} (a : T) (hmX : ∀ t, Measurable (X t))
@@ -241,6 +251,7 @@ theorem HasIndepIncrements.identDistrib_finset {Ω' : Type*} [MeasurableSpace Ω
       (fun ω ↦ Y t ω - Y s ω) P Q) (I : Finset T) :
     IdentDistrib (fun ω (i : I) ↦ X i ω) (fun ω (i : I) ↦ Y i ω) P Q := by
   classical
+  have : MeasurableAdd₂ E := measurableAdd₂_of_measurableSub₂
   have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have : IsProbabilityMeasure Q := hY.isProbabilityMeasure
   induction I using Finset.induction_on_max with
@@ -297,6 +308,7 @@ theorem HasIndepIncrements.identDistrib {Ω' : Type*} [MeasurableSpace Ω']
       (fun ω ↦ Y t ω - Y s ω) P Q) :
     IdentDistrib (fun ω t ↦ X t ω) (fun ω t ↦ Y t ω) P Q := by
   classical
+  have : MeasurableAdd₂ E := measurableAdd₂_of_measurableSub₂
   have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have : IsProbabilityMeasure Q := hY.isProbabilityMeasure
   refine ⟨(Measurable.of_eval hmX).aemeasurable, (Measurable.of_eval hmY).aemeasurable, ?_⟩
@@ -336,7 +348,7 @@ path law after shifting time by `t` and subtracting its current value, provided 
 laws are invariant under this fixed shift. -/
 theorem HasIndepIncrements.identDistrib_shift {T Ω E : Type*} [LinearOrder T]
     [AddCommMonoid T] [CanonicallyOrderedAdd T] [MeasurableSpace Ω] [MeasurableSpace E]
-    [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+    [AddCommGroup E] [MeasurableSub₂ E]
     {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P)
     (hm : ∀ s, Measurable (X s)) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0) (t : T)
     (hlaw : ∀ s u, s ≤ u → IdentDistrib (fun ω ↦ X (t + u) ω - X (t + s) ω)
