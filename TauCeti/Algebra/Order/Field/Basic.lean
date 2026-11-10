@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -49,6 +50,10 @@ from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a b
 It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
 solve the second estimate for `Y` and substitute it into the first.
 
+It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
+`[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
+elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
+
 ## Main results
 
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
@@ -68,6 +73,9 @@ solve the second estimate for `Y` and substitute it into the first.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
+* `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
+* `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
+  `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
 * `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
@@ -209,6 +217,26 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- The normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in `[0, 1]`. For a
+degenerate interval `a = b` it is `0`. -/
+theorem sub_div_sub_mem_Icc {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b c : α} (hc : c ∈ Set.Icc a b) : (c - a) / (b - a) ∈ Set.Icc 0 1 :=
+  ⟨div_nonneg (sub_nonneg.2 hc.1) (sub_nonneg.2 (hc.1.trans hc.2)),
+    div_le_one_of_le₀ (sub_le_sub_right hc.2 a) (sub_nonneg.2 (hc.1.trans hc.2))⟩
+
+/-- For a finite family of nonnegative elements, `1 + ∑ i ∈ s, (x i)⁻¹` is positive. -/
+theorem one_add_sum_inv_pos {α ι : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) : 0 < 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun i hi => inv_nonneg.2 (h i hi))
+
+/-- For a finite family of nonnegative elements, each reciprocal `(x j)⁻¹` with `j ∈ s` is at
+most `1 + ∑ i ∈ s, (x i)⁻¹`. -/
+theorem inv_le_one_add_sum_inv {α ι : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) {j : ι}
+    (hj : j ∈ s) : (x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  (Finset.single_le_sum (fun i hi => inv_nonneg.2 (h i hi)) hj).trans
+    (le_add_of_nonneg_left zero_le_one)
 
 /-- The error budget: for `0 ≤ ε` and `0 < K` dominating `a + b`, the two error terms
 `ε / (2 K) * a` and `b * (ε / (2 K))` sum to at most `ε / 2`. -/
