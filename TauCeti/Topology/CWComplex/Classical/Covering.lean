@@ -472,17 +472,38 @@ theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] (hfin : ∀ b, Finite
 
 /-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
 along `p` has `d` times as many `n`-cells as `C`. -/
-theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C]
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) {d : ℕ}
+theorem nat_card_cell_preimage_of_card_fiber {d : ℕ}
     (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = d * Nat.card (cell C n) := by
-  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  have := Fintype.ofFinite (cell C n)
   have hc (i : cell C n) : Nat.card ↥(p ⁻¹' {map n i 0}) = d :=
     hd _ (closedCell_subset_complex n i (map_zero_mem_closedCell n i))
-  rw [nat_card_cell_preimage C hp hfin, finsum_eq_sum_of_fintype]
-  simp [hc, mul_comm]
+  rw [Nat.card_congr (cellPreimageEquiv C hp n)]
+  by_cases hfib : ∀ i : cell C n, _root_.Finite ↥(p ⁻¹' {map n i 0})
+  · by_cases hcell : _root_.Finite (cell C n)
+    · have := Fintype.ofFinite (cell C n)
+      rw [Nat.card_sigma]
+      simp [hc, mul_comm]
+    · have := not_finite_iff_infinite.1 hcell
+      rw [Nat.card_eq_zero_of_infinite (α := cell C n), mul_zero]
+      rcases Nat.eq_zero_or_pos d with rfl | hpos
+      · have hempty (i : cell C n) : IsEmpty ↥(p ⁻¹' {map n i 0}) :=
+          (Nat.card_eq_zero.1 (hc i)).resolve_right (not_infinite_iff_finite.2 (hfib i))
+        have : IsEmpty (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
+          ⟨fun c ↦ (hempty c.1).false c.2⟩
+        exact Nat.card_of_isEmpty
+      · have hne (i : cell C n) : Nonempty ↥(p ⁻¹' {map n i 0}) :=
+          (Nat.card_pos_iff.1 (hc i ▸ hpos)).1
+        have : Infinite (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
+          Infinite.of_surjective Sigma.fst fun i ↦ ⟨⟨i, (hne i).some⟩, rfl⟩
+        exact Nat.card_eq_zero_of_infinite
+  · obtain ⟨i, hi⟩ := not_forall.1 hfib
+    have := not_finite_iff_infinite.1 hi
+    have hd0 : d = 0 := (hc i).symm.trans Nat.card_eq_zero_of_infinite
+    have : Infinite (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
+      Infinite.of_injective (Sigma.mk i) sigma_mk_injective
+    rw [hd0, zero_mul]
+    exact Nat.card_eq_zero_of_infinite
 
 end Structure
 
