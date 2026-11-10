@@ -269,7 +269,7 @@ theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
   rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
 
 /-- The interior of the half-disc `Ω ∩ {0 ≤ im}`, as an open set, is the upper half of `Ω`. -/
-theorem interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
+theorem _root_.TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
     Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
   Opens.ext ((interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
 

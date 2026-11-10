@@ -115,7 +115,7 @@ theorem MemWkpLoc.exists_wkp_upperHalf {u : ℂ → ℝ}
     exact ⟨hW.toLp u, by rw [Wkp.value_zero]; exact hW.coeFn_toLp⟩
   | succ n =>
     obtain ⟨hu, G, h0, hG, hGp⟩ := (memWkpLoc_succ_iff_exists_iteratedGradient_interior n).1 hu
-    rw [interior_inter_setOf_im_nonneg_eq_upperHalf] at h0 hG
+    rw [Opens.interior_inter_setOf_im_nonneg_eq_upperHalf] at h0 hG
     obtain ⟨v, hv, -⟩ :=
       MemWkpLoc.exists_wkp_upperHalf_iteratedGradient_ae_eq n hu h0 hG hGp hWc hWΩ
     exact ⟨v, hv⟩
@@ -154,8 +154,8 @@ theorem memWkpLoc_inter_setOf_im_nonneg_of_forall_wkp {u : ℂ → ℝ}
         exact (hGp' i hi).ae_eq (ae_eq_of_iteratedGradient_chain n (h0'.congr_ae hv) hG'
           (h0.mono hWΩ') (fun j hj => (hG j hj).mono hWΩ') i hi)
     refine (memWkpLoc_succ_iff_exists_iteratedGradient_interior n).2 ⟨hup, G, ?_, ?_, hGp⟩
-    · rwa [interior_inter_setOf_im_nonneg_eq_upperHalf]
-    · rwa [interior_inter_setOf_im_nonneg_eq_upperHalf]
+    · rwa [Opens.interior_inter_setOf_im_nonneg_eq_upperHalf]
+    · rwa [Opens.interior_inter_setOf_im_nonneg_eq_upperHalf]
 
 /-- **Comparison with `Wkp` on half-discs.** A real function lies in
 `MemWkpLoc p (Ω ∩ {0 ≤ im}) k` exactly when its restriction to the upper half `W ∩ {0 < im}` of
