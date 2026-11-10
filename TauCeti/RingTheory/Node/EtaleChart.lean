@@ -244,7 +244,9 @@ theorem _root_.Module.Basis.exists_etale_mul_eq_quadratic_of_point [Algebra.Smoo
     simp [t₁, hψ₁, hp, hq]
   · simp only [← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
   have : Algebra.Smooth A W₁ := .comp A W W₁
-  exact etale_aeval_localization_away_det bW₁ s₁ t₁ d rfl
+  convert etale_aeval_localization_away_det bW₁ ![s₁, t₁] d rfl using 3
+  ext i
+  fin_cases i <;> rfl
 
 /-- **A split nondegenerate binary quadratic form in étale coordinates is étale locally a product
 of étale coordinates.** Let `W` be a smooth `A`-algebra and `p, q ∈ W` elements whose
