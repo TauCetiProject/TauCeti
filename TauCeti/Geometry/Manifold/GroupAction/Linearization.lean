@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
-import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Geometry.Manifold.ContMDiff.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -122,25 +122,6 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
   [CompleteSpace E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [Group G] [Finite G] [MulAction G M]
   {n : WithTop ℕ∞} [IsManifold I n M]
-
-omit [I.Boundaryless] [IsManifold I n M] in
-/-- **Charts from an averaged map.** Let `χ` be a `C^n` partial homeomorphism from `M` to `E`
-with `C^n` inverse, and let `A` be `C^n` on an open set `V` of coordinates, with derivative the
-identity at `χ x ∈ V`, `1 ≤ n`. Then `A` is a partial homeomorphism `Θ` near `χ x` with source in
-`V`, and `χ.trans Θ` is `C^n` with `C^n` inverse. This turns a Bochner average into a chart. -/
-theorem exists_contMDiffOn_trans_of_hasFDerivAt {χ : OpenPartialHomeomorph M E}
-    (hχ : ContMDiffOn I 𝓘(𝕜, E) n χ χ.source) (hχs : ContMDiffOn 𝓘(𝕜, E) I n χ.symm χ.target)
-    {A : E → E} {V : Set E} (hA : ContDiffOn 𝕜 n A V) (hV : IsOpen V) {x : M} (hxV : χ x ∈ V)
-    (hn : 1 ≤ n) (hAx : HasFDerivAt A (ContinuousLinearMap.id 𝕜 E) (χ x)) :
-    ∃ Θ : OpenPartialHomeomorph E E, (Θ : E → E) = A ∧ χ x ∈ Θ.source ∧ Θ.source ⊆ V ∧
-      ContMDiffOn I 𝓘(𝕜, E) n (χ.trans Θ) (χ.trans Θ).source ∧
-      ContMDiffOn 𝓘(𝕜, E) I n (χ.trans Θ).symm (χ.trans Θ).target := by
-  obtain ⟨Θ, hΘ, hxΘ, hΘV, hΘsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph hA hV hxV hn
-      (e := ContinuousLinearEquiv.refl 𝕜 E) hAx.fderiv.symm
-  exact ⟨Θ, hΘ, hxΘ, hΘV,
-    ((hΘ ▸ hA.mono hΘV).contMDiffOn).comp (hχ.mono inter_subset_left) inter_subset_right,
-    hχs.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right⟩
 
 /-- **Smooth Bochner linearization.** A finite group acting by `C^n` maps, `1 ≤ n`, has an
 invariant chart at a common fixed point in which its action is linear. The chart and its

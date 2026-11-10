@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
+import TauCeti.Geometry.Manifold.ContMDiff.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.GroupAction.Linearization
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.RepresentationTheory.Compact.Averaging
