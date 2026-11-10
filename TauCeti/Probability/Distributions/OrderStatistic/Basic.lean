@@ -106,8 +106,7 @@ theorem measureReal_setOf_orderStatistic_le_iid [IsProbabilityMeasure μ]
       ∑ j ∈ Finset.Icc ((k : ℕ) + 1) n,
         (n.choose j : ℝ) * cdf μ t ^ j * (1 - cdf μ t) ^ (n - j) := by
   have hpi := hindep.hasLaw_pi hlaw
-  rw [← cdf_map_orderStatistic_pi, cdf_eq_real,
-    map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic]
+  rw [← cdf_map_orderStatistic_pi, Measure.cdf_map _ _ (measurable_orderStatistic k).aemeasurable]
   exact hpi.measureReal_eq (p := fun x => orderStatistic k x ≤ t)
     (measurable_orderStatistic k measurableSet_Iic)
 

@@ -73,6 +73,34 @@ private theorem hasSum_sum_mul_restrictedEval₂ (hφ : ∀ r, ‖φ r‖ ≤ �
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   ring
 
+omit [IsUltrametricDist S] [CompleteSpace S] in
+/-- A coefficient of a restricted series at an exponent other than a dominant one `t₀`, multiplied
+by the congruence factor `∏ i, if m ∣ (m - 1) * t₀ i + t i then m else 0` of the Fourier average,
+has norm strictly below `‖f‖`, provided that all dominant exponents are bounded by `m`. -/
+private theorem norm_coeff_mul_prod_lt (hφ : ∀ r, ‖φ r‖ = ‖r‖) {m : ℕ} (hm : ‖(m : S)‖ = 1)
+    (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))
+    (hfm : ∀ t, ‖coeff t (f : MvPowerSeries (Fin k) R)‖ = ‖f‖ → ∀ i, t i < m) (hf : f ≠ 0)
+    {t₀ t : Fin k →₀ ℕ}
+    (ht₀ : ‖coeff t₀ (f : MvPowerSeries (Fin k) R)‖ = ‖f‖) (ht : t ≠ t₀) :
+    ‖φ (coeff t (f : MvPowerSeries (Fin k) R)) *
+      ∏ i, if m ∣ (m - 1) * t₀ i + t i then (m : S) else 0‖ < ‖f‖ := by
+  rcases (norm_coeff_le_norm f t).lt_or_eq with hlt | heq
+  · -- Each factor of the product has norm at most one.
+    refine lt_of_le_of_lt ?_ hlt
+    rw [norm_mul, hφ, norm_prod]
+    refine mul_le_of_le_one_right (norm_nonneg _) <|
+      Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ ?_
+    split_ifs <;> simp [hm]
+  -- A second dominant exponent is not congruent to `t₀`, so its term vanishes.
+  obtain ⟨i, hi⟩ : ∃ i, t i ≠ t₀ i := by
+    by_contra! h
+    exact ht (Finsupp.ext h)
+  have hzero : (∏ i, if m ∣ (m - 1) * t₀ i + t i then (m : S) else 0) = 0 := by
+    refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
+    rw [ite_eq_right_iff]
+    exact fun h ↦ absurd (Nat.eq_of_dvd_sub_one_mul_add (hfm t₀ ht₀ i) (hfm t heq i) h) hi
+  simpa [hzero] using hf
+
 /-- **Maximum modulus at roots of unity.** Let `φ : R → S` be an isometric ring homomorphism into
 a complete ultrametric normed field containing a primitive `m`-th root of unity `ζ`, where
 `‖m‖ = 1` in `S` and `m` exceeds every exponent of every coefficient of `f` of norm `‖f‖`. Then
@@ -120,22 +148,7 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
     simp [g, hdvd, hφ, hm, ht₀]
   have hg (t : Fin k →₀ ℕ) (ht : t ≠ t₀) : ‖g t‖ < ‖g t₀‖ := by
     rw [hgt₀]
-    rcases (norm_coeff_le_norm f t).lt_or_eq with hlt | heq
-    · -- Each factor of the product has norm at most one.
-      refine lt_of_le_of_lt ?_ hlt
-      rw [norm_mul, hφ, norm_prod]
-      refine mul_le_of_le_one_right (norm_nonneg _) <|
-        Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ ?_
-      split_ifs <;> simp [hm]
-    -- A second dominant exponent is not congruent to `t₀`, so its term vanishes.
-    obtain ⟨i, hi⟩ : ∃ i, t i ≠ t₀ i := by
-      by_contra! h
-      exact ht (Finsupp.ext h)
-    have hzero : g t = 0 := by
-      refine mul_eq_zero_of_right _ (Finset.prod_eq_zero (Finset.mem_univ i) ?_)
-      rw [ite_eq_right_iff]
-      exact fun h ↦ absurd (Nat.eq_of_dvd_sub_one_mul_add (hfm t₀ ht₀ i) (hfm t heq i) h) hi
-    simpa [hzero] using hf
+    exact norm_coeff_mul_prod_lt φ hφ hm f hfm hf ht₀ ht
   have htotal : ‖∑ j, w j * ev j‖ = ‖f‖ := (hsum.norm_eq_of_forall_norm_lt t₀ hg).trans hgt₀
   -- Some term of the average has norm at least `‖f‖`.
   have : Nonempty (Fin k → Fin m) := ⟨fun _ ↦ ⟨0, Nat.pos_of_ne_zero hm0⟩⟩

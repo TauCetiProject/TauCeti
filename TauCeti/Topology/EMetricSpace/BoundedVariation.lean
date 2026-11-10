@@ -6,23 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import Mathlib.Order.Interval.Set.ProjIcc
+public import Mathlib.Topology.CompactOpen
 
 /-!
 # Limits of total variation bounds
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
-composition with an antitone map on an interval.
+composition with an antitone map on an interval, shows that the variation is unchanged by
+postcomposition with a map that preserves the distances between the values of the function,
+and proves bounded variation of constant extensions from closed intervals.
+Total variation on continuous maps is lower semicontinuous for the compact-open topology,
+allowing measurable path-space applications.
 
 ## Main results
 
+* `ContinuousMap.lowerSemicontinuous_eVariationOn`: lower semicontinuity on continuous path space.
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
 * `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
   `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
+* `eVariationOn.comp_eq_of_edist_eq`: postcomposition with a map preserving the distances between
+  the values of a function does not change its variation.
+* `BoundedVariationOn.IccExtend`: constant extension from a closed interval preserves bounded
+  variation.
 -/
 
 public section
+
+/-- Total variation is lower semicontinuous on continuous paths with the compact-open topology.
+The variation is allowed to be infinite. -/
+theorem ContinuousMap.lowerSemicontinuous_eVariationOn
+    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [PseudoEMetricSpace E] (s : Set α) :
+    LowerSemicontinuous (fun f : C(α, E) => eVariationOn f s) := by
+  intro f v hv
+  exact eVariationOn.lowerSemicontinuous_aux
+    (fun x _ => (continuous_eval_const x).continuousAt) hv
 
 open Filter Set
 open scoped ENNReal
@@ -63,6 +83,15 @@ namespace eVariationOn
 variable {α β E : Type*} [LinearOrder α] [LinearOrder β] [TopologicalSpace E]
   [WeakPseudoEMetricSpace E]
 
+/-- Postcomposing `f` with a map `g` that preserves the distances between the values of `f` on `s`
+does not change the variation of `f` on `s`. -/
+theorem comp_eq_of_edist_eq {F : Type*} [TopologicalSpace F] [WeakPseudoEMetricSpace F]
+    {f : α → E} {g : E → F} {s : Set α}
+    (h : ∀ x ∈ s, ∀ y ∈ s, edist (g (f x)) (g (f y)) = edist (f x) (f y)) :
+    eVariationOn (g ∘ f) s = eVariationOn f s := by
+  refine iSup_congr fun p ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+  exact h _ (p.2.2.2 _) _ (p.2.2.2 _)
+
 open OrderDual in
 /-- The variation of `f ∘ φ` on `t ∩ [x, y]` for an antitone `φ` is the variation of `f` on the
 corresponding reversed interval of `φ '' t`. -/
@@ -74,3 +103,13 @@ theorem comp_inter_Icc_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
     Equiv.image_eq_preimage_symm, toDual_symm_eq, ← preimage_inter, comp_ofDual] at this
 
 end eVariationOn
+
+/-- Constant extension of a path outside a closed interval preserves bounded variation. -/
+theorem BoundedVariationOn.IccExtend {α E : Type*} [LinearOrder α]
+    [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {a b : α}
+    (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b) :
+    BoundedVariationOn (IccExtend hab (f ∘ Subtype.val)) univ := by
+  exact ne_top_of_le_ne_top hf (eVariationOn.comp_le_of_monotoneOn f
+    (fun x : α ↦ (projIcc a b hab x : α))
+    (fun _ _ _ _ h ↦ (monotone_projIcc hab h : _ ≤ _))
+    (fun x _ ↦ (projIcc a b hab x).property))

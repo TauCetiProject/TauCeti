@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
+import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -80,31 +81,18 @@ theorem logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv
     rw [deriv_schwarzChristoffelPrimitive _ _ _ hφz]
     exact schwarzChristoffelIntegrand_ne_zero _ _ hφz
   -- The chain rule contributes the pole `-2 / z` from the inverse coordinate.
-  have hchain := logDeriv_deriv_comp hFan hφan hnF (by simp [hdφ, hz0])
+  have hchain := logDeriv_deriv_comp hFan hφan hnF
   have hlog : logDeriv (deriv φ) z = -(2 : ℂ) / z := by
     rw [hdφ]
     simpa using logDeriv_zpow z (-2)
   rw [hlog, hdφ, logDeriv_deriv_schwarzChristoffelPrimitive _ _ _ hφz] at hchain
   simp only [Fintype.sum_option, Option.elim'_none, Option.elim'_some] at hchain ⊢
-  have hfraction (i : ι) :
-      (e i : ℂ) / ((p : ℂ) - z⁻¹ - (a i : ℂ)) / z ^ 2 =
-        (e i : ℂ) / (z - (-(a i - p)⁻¹ : ℝ)) - (e i : ℂ) / z := by
-    have hgap : (a i : ℂ) - (p : ℂ) ≠ 0 := by exact_mod_cast sub_ne_zero.mpr (ha i)
-    have hden : (p : ℂ) - z⁻¹ - (a i : ℂ) ≠ 0 :=
-      sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨_, hφz⟩ _)
-    have hleft : -1 + (p : ℂ) * z - z * (a i : ℂ) ≠ 0 := by
-      convert mul_ne_zero hden hz0 using 1
-      field_simp
-      ring
-    have hright : 1 - (p : ℂ) * z + z * (a i : ℂ) ≠ 0 := by
-      intro h
-      apply hleft
-      linear_combination -h
+  have hfraction (i : ι) : (e i : ℂ) / ((p : ℂ) - z⁻¹ - a i) / z ^ 2 =
+      (e i : ℂ) / (z - (-(a i - p)⁻¹ : ℝ)) - (e i : ℂ) / z := by
+    have hap : (a i : ℂ) ≠ p := by exact_mod_cast ha i
     push_cast
-    field_simp
-    ring_nf at hleft hright ⊢
-    field_simp
-    ring
+    exact div_sub_inv_sub_div_sq_eq_div_sub_sub_div (e i : ℂ) hap hz0
+      (sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨_, hφz⟩ _))
   have hsum := Finset.sum_congr (s₁ := univ) (s₂ := univ) rfl (fun i _ => hfraction i)
   rw [← Finset.sum_div, Finset.sum_sub_distrib, ← Finset.sum_div] at hsum
   have hpterm : (t : ℂ) / ((p : ℂ) - z⁻¹ - p) / z ^ 2 = -(t : ℂ) / z := by
@@ -148,7 +136,7 @@ theorem schwarzChristoffelPrimitive_const_sub_inv
       (pow_ne_zero _ (ne_of_mem_of_not_mem hw (by simp)))
   have h := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn
     (Option.elim' 0 (fun i => -(a i - p)⁻¹)) (Option.elim' (-2 - (t + ∑ i, e i)) e) c
-    (fun w hw => (hd w hw).differentiableAt.differentiableWithinAt) hn
+    hn
     (fun _ hw => logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv a e p t ha b hw) hz
   simpa only [(hd c c.im_pos).deriv, div_div, f] using h
 

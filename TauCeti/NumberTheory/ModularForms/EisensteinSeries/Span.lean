@@ -120,7 +120,7 @@ private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 →
   rw [h1]
   simp only [hdvd]
   split_ifs with h
-  · rw [ZMod.natCast_val_div_eq_intCast_div hud h]
+  · rw [ZMod.natCast_val_div_eq_intCast_div hud _]
   · rfl
 
 /-- **The raised character Eisenstein series as a weighted series.** Restricted to `Γ(N)`, the

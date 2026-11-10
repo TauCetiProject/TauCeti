@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Sequence
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.RingTheory.Polynomial.Subresultant.Euclidean
 import TauCeti.Data.List.Range
+import TauCeti.Data.SignType.Basic
 
 /-! # Cauchy indices from signed subresultant coefficients
 
@@ -75,7 +76,7 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
   have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by simp [s, hn, hqm]
   have hsn0 : s n ≠ 0 := by simp [hsn, hq']
   rw [List.map_reverse_range_succ,
-    List.map_reverse_range_eq_replicate_append s (a := n + 1) (b := m) h fun j hj hjm => by
+    List.map_reverse_range_eq_replicate_append s 0 (a := n + 1) (b := m) h fun j hj hjm => by
       have hmin : min m n < j := by omega
       have hjn : j ≠ n := by omega
       simp [s, signedPsc_of_lt p q hmin, hjm.ne, hjn],
@@ -99,6 +100,17 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
       rw [← pow_add, ← two_mul, pow_mul]; simp
     linear_combination (sign p.leadingCoeff * sign q.leadingCoeff : ℤ) * h2
   · simp only [hke, mt hodd.1 hke, ↓reduceIte]
+
+/-- Across an even gap, the leading entry of the signed coefficients of `(p, q)` times the rescaling
+constant `c` of a Euclidean step has the sign of `q.leadingCoeff`. -/
+private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m) (hρ : ρ < n)
+    (hk : Even (n - (ρ + 1))) :
+    (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
+      SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
+  refine sign_mul_pow_mul_sign_mul_pow_of_ne_zero ?_ lc ?_
+  · exact pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)
+  · obtain ⟨i, hi⟩ := hk
+    exact ⟨m - n + i, by omega⟩
 
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
@@ -135,10 +147,10 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
   have htρ : t ρ = (-1) ^ (n - ρ).choose 2 * (-(p % q)).coeff ρ ^ (n - ρ) := by
     simp [t, hρ.le]
   rw [List.map_reverse_range_succ s n,
-    List.map_reverse_range_eq_replicate_append s (a := ρ + 1) (b := n) hρ fun j hj hjn =>
+    List.map_reverse_range_eq_replicate_append s 0 (a := ρ + 1) (b := n) hρ fun j hj hjn =>
       signedPsc_eq_zero_of_natDegree_mod_lt le_rfl (by omega) hjn (by omega), hst,
     List.map_reverse_range_succ t n,
-    List.map_reverse_range_eq_replicate_append t (a := ρ + 1) (b := n) hρ fun j hj hjn => by
+    List.map_reverse_range_eq_replicate_append t 0 (a := ρ + 1) (b := n) hρ fun j hj hjn => by
       have hmin : min n ρ < j := by omega
       have hjρ : j ≠ ρ := by omega
       simp [t, signedPsc_of_lt q _ hmin, hjn.ne, hjρ],
@@ -156,28 +168,8 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
     have htρ0 : t ρ ≠ 0 := by
       rw [htρ]
       exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (pow_ne_zero _ hlc)
-    rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append
-        (mul_ne_zero hc htρ0), ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
-      List.permanencesMinusVariations_cons_replicate_zero_append htρ0]
-    congr 1
-    split_ifs with hk
-    · -- Across an even gap, `s n * c` has the sign of `q.leadingCoeff ^ (odd)`.
-      have hodd : Odd ((m - n) + (m - ρ)) := by
-        obtain ⟨i, hi⟩ := hk
-        exact ⟨m - n + i, by omega⟩
-      have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
-        rw [← pow_mul, mul_comm, pow_mul]
-        simp
-      have hprod : (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) *
-          ((-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ)) =
-            q.leadingCoeff ^ ((m - n) + (m - ρ)) := by
-        linear_combination (q.leadingCoeff ^ (m - n) * q.leadingCoeff ^ (m - ρ)) * h1
-      have key : (sign (s n) : ℤ) * sign c = sign q.leadingCoeff := by
-        rw [← SignType.coe_mul, ← sign_mul, hsn, hcdef, hprod]
-        simp [sign_pow, SignType.pow_odd _ hodd]
-      simp only [sign_mul, SignType.coe_mul]
-      linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (sign (t ρ) : ℤ)) * key
-    · rfl
+    exact List.permanencesMinusVariations_cons_replicate_zero_append_map_mul_left hc htρ0 _ _
+      fun hk ↦ by rw [hsn, hcdef]; exact sign_mul_sign_signedPsc_scale h hρ hk
 
 end Ordered
 
@@ -199,10 +191,10 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedP
   · -- Only the leading entry `p.leadingCoeff` is nonzero.
     subst hq
     rw [cauchyIndex_zero_right, List.map_reverse_range_succ,
-      List.map_reverse_range_eq_replicate_append _ (Nat.zero_le _) fun j _ hj => ?_]
+      List.map_reverse_range_eq_replicate_append _ 0 (Nat.zero_le _) fun j _ hj => ?_]
     · simp
     · rcases eq_or_ne j 0 with rfl | hj0
-      · exact signedPsc_zero_right p (by simp) (by simpa using h)
+      · exact signedPsc_zero_right p (by simpa using h)
       · rw [signedPsc_of_lt _ _ (by simp only [natDegree_zero]; omega)]
         simp [hj.ne, hj0]
   have hp : p ≠ 0 := by rintro rfl; simp at h

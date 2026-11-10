@@ -62,10 +62,13 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
   projections from the Sobolev space, with `TauCeti.W1p.value_coe` and
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
+* `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
+  everywhere its value-gradient pair.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
-  (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`).
+  (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
+  (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
   `W^{1,p}(Ω)` with weak gradient `0`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
@@ -515,6 +518,14 @@ theorem W1p.norm_apply_sq_ae (u : W1p mu Omega p) :
   rw [hv, hg]
   exact WithLp.prod_norm_sq_eq_of_L2 _
 
+/-- The ambient jet of a Sobolev function is almost everywhere its value-gradient pair. -/
+theorem W1p.coe_ae_eq_toLp_value_gradient (u : W1p mu Omega p) :
+    (u : Sobolev1JetLp mu Omega p) =ᵐ[mu.restrict Omega]
+      fun x => WithLp.toLp 2 (W1p.value u x, W1p.gradient u x) := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+  rw [hv, hg]
+  simp only [WithLp.fst, WithLp.snd, Prod.mk.eta, WithLp.toLp_ofLp]
+
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
@@ -525,11 +536,6 @@ theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
   (memLp_two_iff_integrable_sq_norm (Lp.memLp (W1p.gradient u)).aestronglyMeasurable).1
     (Lp.memLp (W1p.gradient u))
-
-/-- The squared pointwise value of a real Sobolev function is integrable. -/
-theorem W1p.integrable_value_sq (u : W1p mu Omega 2) :
-    Integrable (fun x => (W1p.value u x) ^ 2) (mu.restrict Omega) :=
-  (Lp.memLp (W1p.value u)).integrable_sq
 
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
@@ -651,6 +657,50 @@ theorem W1p.coe_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
   filter_upwards [hu, hgrad, hvalApply, hgradApply] with x hv hg hv' hg' hxV
   exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
     ((hg' (hV hxV)).symm.trans (hg hxV)))
+
+/-- **The jet of a Sobolev function vanishes off the support of any representative of its value.**
+If the value of `u` agrees almost everywhere on `Ω` with `f`, then outside `tsupport f` the value
+vanishes on the open set `Ω ∖ tsupport f`, hence so does the whole jet
+(`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`). -/
+theorem W1p.coe_ae_eq_zero_of_not_mem_tsupport {u : W1p mu Omega p} {f : E → ℝ}
+    (hu : W1p.value u =ᵐ[mu.restrict (Omega : Set E)] f) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E),
+      x ∉ tsupport f → (u : Sobolev1JetLp mu Omega p) x = 0 := by
+  let V : Opens E := ⟨(tsupport f)ᶜ ∩ (Omega : Set E),
+    (isClosed_tsupport f).isOpen_compl.inter Omega.isOpen⟩
+  have hV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Set.inter_subset_right :
+        (V : Set E) ⊆ Omega) hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
+    rw [hx]
+    exact image_eq_zero_of_notMem_tsupport hxV.1
+  have hjet := W1p.coe_ae_eq_zero_of_value_ae_eq_zero
+    (Set.inter_subset_right : (V : Set E) ⊆ Omega) hV
+  rw [ae_restrict_iff' V.isOpen.measurableSet] at hjet
+  rw [ae_restrict_iff' Omega.isOpen.measurableSet]
+  filter_upwards [hjet] with x hx hxΩ hxt
+  exact hx ⟨hxt, hxΩ⟩
+
+/-- **The weak gradient of a Sobolev function vanishing off a closed set vanishes off it.**  If
+`u ∈ W^{1,p}(Ω)` vanishes almost everywhere outside a closed set `K`, then so does its weak
+gradient, because `u` vanishes on the open set `Ω \ K`. -/
+theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed {K : Set E}
+    {u : W1p mu Omega p} (hK : IsClosed K)
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.gradient u x = 0 := by
+  have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
+  have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
+    (ae_restrict_iff' hmeas).1 hu
+  set V : Opens E := ⟨(Omega : Set E) \ K, Omega.isOpen.sdiff hK⟩
+  have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
+  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
+    rw [ae_restrict_iff' hVmeas]
+    filter_upwards [humu] with x hx hxV
+    exact hx hxV.1 hxV.2
+  have hgradV := (ae_restrict_iff' hVmeas).1
+    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) Set.sdiff_subset hvalV)
+  rw [ae_restrict_iff' hmeas]
+  filter_upwards [hgradV] with x hx hxO hxK
+  exact hx ⟨hxO, hxK⟩
 
 /-- Two Sobolev functions are equal when their `Lᵖ` value components are equal.  Uniqueness of
 weak derivatives determines the gradient component. -/

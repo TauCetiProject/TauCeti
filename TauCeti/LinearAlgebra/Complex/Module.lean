@@ -20,9 +20,15 @@ This decomposition applies to any real module structure compatible with the comp
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
 A real-linear map vanishing at `I` is unchanged by conjugating its argument
-(`LinearMap.apply_conj_of_apply_I_eq_zero`), and a real-bilinear map vanishing at `(1, I)` and
+(`LinearMap.apply_conj_of_apply_I_eq_zero`). A real-linear map with `L I = A (L 1)`, for `A`
+squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
+(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), and a real-linear map intertwines multiplication by
+`I` with such an `A` exactly when `L 1 + A (L I) = 0` (`LinearMap.forall_apply_I_mul_eq_iff`).
+A a real-bilinear map vanishing at `(1, I)` and
 `(I, 1)` is unchanged by conjugating both arguments.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module
+(`Complex.toLinearMap_I_comp_toLinearMap_I`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`).
@@ -73,6 +79,30 @@ theorem apply_conj_of_apply_I_eq_zero {F : Type*} [AddCommGroup F] [Module ℝ F
   rw [L.apply_eq_re_smul_one_add_im_smul_I (conj z), L.apply_eq_re_smul_one_add_im_smul_I z, hL]
   simp
 
+/-- If a real-linear map out of the complex plane sends `I` to `A (L 1)`, where `A` squares to
+`-1`, then so does its precomposition with multiplication by any `b`: `L (b * I) = A (L b)`. -/
+theorem apply_mul_I_eq_of_apply_I_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hL : L I = A (L 1)) (hA : ∀ v, A (A v) = -v) (b : ℂ) :
+    L (b * I) = A (L b) := by
+  rw [L.apply_eq_re_smul_one_add_im_smul_I, L.apply_eq_re_smul_one_add_im_smul_I b, hL]
+  simp [hA]
+  module
+
+/-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
+endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then
+determined by the value at `1`. -/
+theorem forall_apply_I_mul_eq_iff {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hA : ∀ v, A (A v) = -v) :
+    (∀ w, L (I * w) = A (L w)) ↔ L 1 + A (L I) = 0 := by
+  refine ⟨fun h => ?_, fun h w => ?_⟩
+  · rw [← mul_one I, h 1, hA, add_neg_cancel]
+  · have hI : L I = A (L 1) := by
+      have h' := congrArg A h
+      rw [map_add, hA, map_zero] at h'
+      exact (add_neg_eq_zero.1 h').symm
+    rw [mul_comm]
+    exact L.apply_mul_I_eq_of_apply_I_eq hI hA w
+
 /-- A real-bilinear map on the complex plane with `B 1 I = B I 1 = 0` is unchanged by
 conjugating both arguments. -/
 theorem apply_conj_apply_conj_of_apply_one_I_eq_zero_of_apply_I_one_eq_zero {F : Type*}
@@ -94,6 +124,12 @@ theorem I_smul_neg_I_smul {X : Type*} [MulAction ℂ X] (x : X) : I • (-I • 
 
 theorem neg_I_smul_I_smul {X : Type*} [MulAction ℂ X] (x : X) : -I • (I • x) = x := by
   rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
+
+/-- Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module. -/
+theorem toLinearMap_I_comp_toLinearMap_I {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] :
+    DistribSMul.toLinearMap ℝ W I ∘ₗ DistribSMul.toLinearMap ℝ W I = -LinearMap.id :=
+  LinearMap.ext fun v ↦ by simp [smul_smul]
 
 /-- Decompose a complex scalar action into its real and imaginary parts. -/
 @[simp]
