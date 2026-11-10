@@ -69,10 +69,8 @@ theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic Gal(L/K) := by
   rcases eq_or_ne n 0 with rfl | hn
   · -- `L` is generated over `K` by `K` itself, so the Galois group is trivial
     have hsurj := isCyclotomicExtension_zero_iff.1 ‹IsCyclotomicExtension {0} K L›
-    have : Subsingleton Gal(L/K) :=
-      ⟨fun σ τ ↦ AlgEquiv.ext fun x ↦ by
-        obtain ⟨y, rfl⟩ := hsurj x
-        simp⟩
+    have : Subsingleton (Subalgebra K L) :=
+      subsingleton_of_bot_eq_top (Algebra.surjective_algebraMap_iff.1 hsurj).symm
     infer_instance
   · have : NeZero n := ⟨hn⟩
     exact isCyclic_of_injective _ ((zeta_spec n K L).autToPow_injective K)
