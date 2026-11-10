@@ -70,13 +70,21 @@ theorem _root_.IntermediateField.adjoin_rootSet_X_pow_two_sub_C
   · exact h ▸ neg_mem (IntermediateField.mem_adjoin_simple_self F δ)
 
 /-- **A radical extension with invertible exponent is separable**: if `y` generates `E` over `F`
-with `y ^ n = a` for a nonzero `a`, and `n` is invertible in `F`, then `E / F` is separable,
-since `y` is a root of the separable binomial `X ^ n - C a`. No root of unity is needed. -/
-theorem isSeparable_of_pow_eq_of_adjoin_eq_top {y : E} {n : ℕ} (hn : (n : F) ≠ 0) (ha : a ≠ 0)
+with `y ^ n = a`, and `n` is invertible in `F`, then `E / F` is separable, since `y` is a root of
+the separable binomial `X ^ n - C a` (for `a = 0`, `y = 0` is a root of `X`). No root of unity is
+needed. -/
+theorem isSeparable_of_pow_eq_of_adjoin_eq_top {y : E} {n : ℕ} (hn : (n : F) ≠ 0)
     (hy : y ^ n = algebraMap F E a) (hgen : F⟮y⟯ = ⊤) : Algebra.IsSeparable F E := by
-  have hroot : aeval y (X ^ n - C a) = 0 := by rw [map_sub, aeval_X_pow, aeval_C, hy, sub_self]
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable F E).mpr
-    ((separable_X_pow_sub_C a hn ha).of_dvd (minpoly.dvd F y hroot))
+  have hsep : (minpoly F y).Separable := by
+    by_cases ha : a = 0
+    · have hn0 : n ≠ 0 := fun h ↦ hn (by rw [h, Nat.cast_zero])
+      have hy0 : y = 0 := pow_eq_zero_iff hn0 |>.mp (by rw [hy, ha, map_zero])
+      rw [hy0, minpoly.zero]
+      exact separable_X
+    · have hroot : aeval y (X ^ n - C a) = 0 := by
+        rw [map_sub, aeval_X_pow, aeval_C, hy, sub_self]
+      exact (separable_X_pow_sub_C a hn ha).of_dvd (minpoly.dvd F y hroot)
+  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable F E).mpr hsep
   rw [hgen] at this
   exact AlgEquiv.Algebra.isSeparable IntermediateField.topEquiv
 
