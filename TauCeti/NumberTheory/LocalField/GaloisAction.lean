@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IsGaloisGroup.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -116,8 +117,8 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercing the action on the integer ring to `L` recovers the field automorphism. -/
-@[simp]
+/-- Coercing the action on the integer ring to `L` recovers the field automorphism. Not `@[simp]`:
+`simp` proves it from `TauCeti.coe_smul_integer` and `AlgEquiv.smul_def`. -/
 theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
   (rfl)

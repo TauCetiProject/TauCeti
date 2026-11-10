@@ -50,7 +50,7 @@ exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with 
 (`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing at `0` to the
 plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
 coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
-exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeHamiltonians`). It is
+exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it.
@@ -137,10 +137,10 @@ theorem cappedExchangePerturbation_zero (hL : 2 ≤ L) :
 /-- **The end of the family is the exchanged capping family at `1`.** At `c = 1` the capped datum
 is the pullback along the exchange `σ(w) = 1 - w` of the datum obtained by plumbing the negative
 plane with Hamiltonian `H 0` into the end at `1` of the pair of pants with exchanged Hamiltonians
-(`TauCeti.Floer.exchangeHamiltonians`). Since `dσ = -1`, this pullback is `w ↦ -K'(1 - w)`. -/
+(`TauCeti.Floer.exchangeEndData`). Since `dσ = -1`, this pullback is `w ↦ -K'(1 - w)`. -/
 theorem cappedExchangePerturbation_one (hH : Periodic (H inf) 1) (hL : 2 ≤ L) (w : ℂ) (x : M) :
     cappedExchangePerturbation H L 1 w x =
-      -plumbedPerturbation (Pi.single inf (H zero)) (exchangeHamiltonians H) one L (1 - w) x := by
+      -plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L (1 - w) x := by
   have hre : (one.endCoord (1 - w)).re = (zero.endCoord w).re := by rw [endCoord_one_one_sub]
   rcases le_or_gt (zero.endCoord w).re (L / 2) with hw | hw
   · rw [cappedExchangePerturbation_of_re_endCoord_le hw, exchangePerturbation_one hH,
@@ -159,9 +159,9 @@ theorem cappedExchangePerturbation_one (hH : Periodic (H inf) 1) (hL : 2 ≤ L) 
 /-- **The end of the family on the standard cylinder.** In the cylinder coordinates of the end
 lift `φ_1` of the end at `1`, the capped datum at `c = 1` is the capped cylinder datum
 `TauCeti.Floer.cappedCylinderComponent` of the exchanged Hamiltonians. -/
-theorem cappedCylinderComponent_exchangeHamiltonians (hH : Periodic (H inf) 1) (hL : 2 ≤ L)
+theorem cappedCylinderComponent_exchangeEndData (hH : Periodic (H inf) 1) (hL : 2 ≤ L)
     (v : ℂ) (z : ℝ × ℝ) (x : M) :
-    cappedCylinderComponent (exchangeHamiltonians H) L v z x =
+    cappedCylinderComponent (exchangeEndData H) L v z x =
       cappedExchangePerturbation H L 1 (one.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) x
         (deriv one.cylindricalEndLift (Complex.equivRealProdCLM.symm z) * v) := by
   have hd (w : ℂ) : deriv one.cylindricalEndLift w = -deriv zero.cylindricalEndLift w := by
@@ -169,7 +169,7 @@ theorem cappedCylinderComponent_exchangeHamiltonians (hH : Periodic (H inf) 1) (
       endCenter_one, endCenter_zero]
     ring
   rw [cappedExchangePerturbation_one hH hL, one_sub_cylindricalEndLift_one, hd,
-    cappedCylinderComponent_def, exchangeHamiltonians_one, neg_apply, neg_mul, map_neg, neg_neg]
+    cappedCylinderComponent_def, exchangeEndData_one, neg_apply, neg_mul, map_neg, neg_neg]
 
 /-- **The family on the remaining input end.** For `L ≥ 0` and `0 ≤ c ≤ 1`, on the part `s ≥ 2`
 of the input end at `1`, the pullback of the capped datum along the end lift `φ_1` sends a tangent

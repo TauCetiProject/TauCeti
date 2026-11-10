@@ -39,6 +39,7 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
 * `TauCeti.Comodule.coordinateBialgHom_surjective_iff_of_bases`: coordinate-morphism
   surjectivity is independent of the finite basis.
 * `TauCeti.Comodule.IsFaithful`: the basis-independent predicate for a faithful comodule.
+* `TauCeti.Comodule.IsFaithful.finite`: a faithful comodule is finite over the base ring.
 * `TauCeti.Comodule.coordinateBialgHom_surjective_iff_isFaithful`: faithfulness is surjectivity
   of the coordinate morphism for any basis.
 * `TauCeti.Comodule.isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top`: the
@@ -245,6 +246,11 @@ theorem isFaithful_def :
       ∃ (d : ℕ) (b : Basis (Fin d) k V),
         IsClosedImmersion (coordinateGroupSchemeHom (H := H) b).hom.hom.left :=
   Iff.rfl
+
+/-- A faithful comodule is finite over the base ring: faithfulness supplies a finite basis. -/
+theorem IsFaithful.finite (hV : IsFaithful (k := k) (H := H) (V := V)) : Module.Finite k V := by
+  obtain ⟨_, b, -⟩ := isFaithful_def.mp hV
+  exact Module.Finite.of_basis b
 
 /-- **Faithfulness is generation by matrix coefficients.** The affine group-scheme morphism
 associated to a finite free comodule is a closed immersion if and only if the coefficients of
