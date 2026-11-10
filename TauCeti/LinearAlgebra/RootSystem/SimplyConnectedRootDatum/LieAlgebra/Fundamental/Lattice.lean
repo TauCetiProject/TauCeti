@@ -37,8 +37,7 @@ which therefore gives `fundamentalLattice t ht i` a basis of weight vectors.
 * `TauCeti.DynkinType.representation_mem_fundamentalLattice`: its stability under the Kostant form.
 * `TauCeti.DynkinType.fundamentalLattice_eq_span_loweringWord`: its description by lowering words.
 * `TauCeti.DynkinType.instIsLatticeFundamentalLattice`: it is a full lattice in `L(ϖᵢ)`.
-* `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice`: it lies in the span of
-  the integral weight spaces.
+* `TauCeti.DynkinType.iSup_jointWeightSpace_eq_top`: the integral weight spaces span it.
 
 ## References
 
