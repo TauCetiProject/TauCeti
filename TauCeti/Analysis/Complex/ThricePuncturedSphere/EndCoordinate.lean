@@ -152,6 +152,14 @@ theorem norm_endCenter_sub_endCenter {q r : Puncture} (hq : q ≠ inf) (hr : r �
     (hrq : r ≠ q) : ‖q.endCenter - r.endCenter‖ = 1 := by
   cases q <;> cases r <;> simp_all
 
+/-- A point at distance `d` from the center of one finite end is at distance at least `1 - d` from
+the center of the other. -/
+theorem one_sub_norm_sub_endCenter_le {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf)
+    (hrq : r ≠ q) (w : ℂ) : 1 - ‖w - q.endCenter‖ ≤ ‖w - r.endCenter‖ := by
+  have h := norm_sub_norm_le (q.endCenter - r.endCenter) (q.endCenter - w)
+  rwa [sub_sub_sub_cancel_left, norm_endCenter_sub_endCenter hq hr hrq, norm_sub_rev q.endCenter w]
+    at h
+
 /-- The ends other than the one at `∞` are positive. -/
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all

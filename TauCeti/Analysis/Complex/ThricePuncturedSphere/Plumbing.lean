@@ -263,6 +263,13 @@ theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L
   have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
   linarith [Real.exp_pos (-(2 * π * L))]
 
+/-- The second input `ψ(1)` of the inserted sphere is at distance at least `1 - ‖f‖` from the
+center of the other finite end `r`, where `f` is the plumbing factor. -/
+theorem one_sub_norm_plumbingFactor_le {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf) (hrq : r ≠ q)
+    (L : ℝ) : 1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
+  have h := one_sub_norm_sub_endCenter_le hq hr hrq (q.plumbingMap L 1)
+  rwa [plumbingMap_one_sub_endCenter] at h
+
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/
 theorem endAngularForm_plumbingMap (q : Puncture) (L : ℝ) (w v : ℂ) :
