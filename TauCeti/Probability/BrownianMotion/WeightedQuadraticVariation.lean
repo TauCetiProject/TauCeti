@@ -50,14 +50,13 @@ private theorem indepFun_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
   (hB.indepFun_sub hst hY).comp measurable_id
     ((measurable_id.pow_const 2).sub measurable_const)
 
-/-- A past-measurable integrable height times the centered square of a future Brownian
-increment has mean zero. No boundedness or second moment of the height is required. -/
+/-- A past-measurable height times the centered square of a future Brownian
+increment has mean zero. No integrability assumption on the height is required. -/
 theorem integral_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y)
-    (hYi : Integrable Y P) :
+    {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
     (∫ ω, Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ∂P) = 0 := by
   rw [(indepFun_sq_sub_sub hB hst hY).integral_fun_mul_eq_mul_integral
-    hYi.aestronglyMeasurable
+    (hY.mono (ℱ.le s) le_rfl).aestronglyMeasurable
       hB.toIsPreBrownianReal.memLp_sq_sub_sub.aestronglyMeasurable,
     hB.toIsPreBrownianReal.integral_sq_sub_sub hst,
     mul_zero]
@@ -75,9 +74,10 @@ theorem memLp_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
       hYi.integrable_sq hD.integrable_sq
 
-/-- The second moment of a past-weighted centered squared increment factors exactly. -/
+/-- The second moment of a past-weighted centered squared increment factors exactly,
+with no integrability assumption on the height. -/
 theorem integral_sq_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
+    {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
     (∫ ω, (Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) ^ 2 ∂P) =
       2 * (∫ ω, Y ω ^ 2 ∂P) * ((t : ℝ) - s) ^ 2 := by
   simp_rw [mul_pow]
@@ -85,7 +85,8 @@ theorem integral_sq_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
       (fun ω ↦ ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2) P :=
     (indepFun_sq_sub_sub hB hst hY).comp (measurable_id.pow_const 2)
       (measurable_id.pow_const 2)
-  rw [hind.integral_fun_mul_eq_mul_integral hYi.integrable_sq.aestronglyMeasurable
+  rw [hind.integral_fun_mul_eq_mul_integral
+    ((hY.mono (ℱ.le s) le_rfl).pow_const 2).aestronglyMeasurable
     hB.toIsPreBrownianReal.memLp_sq_sub_sub.integrable_sq.aestronglyMeasurable,
     hB.toIsPreBrownianReal.integral_sq_sq_sub_sub hst]
   ring
@@ -110,9 +111,7 @@ theorem integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
       have h₁ := (hB.adapted (t (i + 1))).mono (ℱ.mono (ht hi hj.le hij)) le_rfl
       exact (((hH i hi).mono (ℱ.mono (ht hi.le hj.le hij.le)) le_rfl).mul
         (((h₁.sub h₀).pow_const 2).sub measurable_const)).mul (hH j hj)
-    have hint : Integrable (fun ω ↦ Z i ω * H j ω) P := by
-      simpa only [Pi.mul_def] using (hZi i hi).integrable_mul (hHi j hj)
-    have h := hB.integral_mul_sq_sub_sub (ht hj.le hj (Nat.le_succ j)) hmeas hint
+    have h := hB.integral_mul_sq_sub_sub (ht hj.le hj (Nat.le_succ j)) hmeas
     convert h using 1
     congr 1
     ext ω
@@ -123,7 +122,7 @@ theorem integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     rw [h, mul_sum]
     exact sum_congr rfl fun i hi ↦ by
       rw [hB.integral_sq_mul_sq_sub_sub (ht (mem_range.1 hi).le (mem_range.1 hi)
-        (Nat.le_succ i)) (hH i (mem_range.1 hi)) (hHi i (mem_range.1 hi))]
+        (Nat.le_succ i)) (hH i (mem_range.1 hi))]
       ring
   apply integral_sq_sum_of_pairwise_integral_mul_eq_zero (fun i hi ↦ hZi i (mem_range.1 hi))
   intro i hi j hj hij
