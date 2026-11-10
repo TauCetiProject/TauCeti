@@ -201,8 +201,7 @@ theorem IsSymplecticSubmanifoldEmbedding.comp_subtype_val [IsManifold J ∞ N]
     hσ.IsSymplecticSubmanifoldEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding
     (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    h.hasSymplecticTangentImages.comp_subtype_val U fun _ _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+    h.hasSymplecticTangentImages.comp_subtype_val U
 
 /-- A map into an open submanifold is a symplectic submanifold embedding for the restricted form
 exactly when its composition with the inclusion is a symplectic submanifold embedding. -/
@@ -213,13 +212,11 @@ theorem isSymplecticSubmanifoldEmbedding_subtype_val_comp_iff {U : Opens M} {g :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
     exact (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hg).2 <|
-      (hσ.hasSymplecticTangentImages_subtype_val_comp_iff
-        (hg.contMDiff.mdifferentiable (by simp))).1 h.hasSymplecticTangentImages
+      hσ.hasSymplecticTangentImages_subtype_val_comp_iff.1 h.hasSymplecticTangentImages
   · have hg := h.isSmoothEmbedding
     exact (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding
       (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
-      (hσ.hasSymplecticTangentImages_subtype_val_comp_iff
-        (hg.contMDiff.mdifferentiable (by simp))).2 h.hasSymplecticTangentImages
+      hσ.hasSymplecticTangentImages_subtype_val_comp_iff.2 h.hasSymplecticTangentImages
 
 end Opens
 
