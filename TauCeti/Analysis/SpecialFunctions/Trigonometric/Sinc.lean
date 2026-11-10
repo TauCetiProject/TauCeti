@@ -22,6 +22,7 @@ public section
 namespace Real
 
 /-- `x sinc x = sin x` for every real `x`, including `x = 0`. -/
+@[simp]
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
 
