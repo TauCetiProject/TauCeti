@@ -5,7 +5,8 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+public import TauCeti.Analysis.Calculus.Deriv.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Trace.Riccati
 public import Mathlib.Analysis.Calculus.Deriv.Abs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -21,6 +22,10 @@ inequality for a determinant density root under a symmetric matrix Riccati equat
 
 These statements concern actual matrix curves and their derivatives. A geometric application
 must separately identify the Jacobi matrix, its symmetry and its curvature trace bound.
+
+Formalization references:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions)
+and [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
@@ -84,13 +89,10 @@ theorem deriv2_abs_det_rpow_le_of_riccati {J V : ℝ → Matrix ι ι ℝ} {K : 
     (hRic : -(Fintype.card ι : ℝ) * κ ≤ K.trace) :
     deriv (deriv (fun s ↦ |(J s).det| ^ (1 / (Fintype.card ι : ℝ)))) t ≤
       κ * |(J t).det| ^ (1 / (Fintype.card ι : ℝ)) := by
-  let tr : Matrix ι ι ℝ →L[ℝ] ℝ := ⟨traceLinearMap ι ℝ ℝ, continuous_id.matrix_trace⟩
-  have hh : HasDerivAt (fun s ↦ (V s * (J s)⁻¹).trace)
-      (-((V t * (J t)⁻¹) * (V t * (J t)⁻¹)) - K).trace t :=
-    tr.hasFDerivAt.comp_hasDerivAt t hS'
+  have hh := hS'.matrix_trace
   rw [(hasDerivAt_deriv_abs_det_rpow hJ hne hh).deriv]
   have hm' : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr hm
-  have htrace := trace_riccati_inequality_of_matrix_equation hm hS rfl hRic
+  have htrace := trace_add_sq_trace_div_card_le_card_mul hS rfl hRic
   have hcoef : (1 / (Fintype.card ι : ℝ)) *
         (-((V t * (J t)⁻¹) * (V t * (J t)⁻¹)) - K).trace +
       (1 / (Fintype.card ι : ℝ) * (V t * (J t)⁻¹).trace) ^ 2 ≤ κ := by
