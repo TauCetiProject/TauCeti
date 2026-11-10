@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.TwoForm.Kernel
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Isotropic

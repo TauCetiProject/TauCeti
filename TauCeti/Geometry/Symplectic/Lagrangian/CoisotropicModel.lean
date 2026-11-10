@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # The linear coisotropic embedding model
@@ -46,9 +47,6 @@ does not depend on the projection `P` up to symplectomorphisms fixing the zero s
 * `LinearMap.BilinForm.IsAlt.orthogonal_range_inl_coisotropicModel`,
   `LinearMap.BilinForm.IsAlt.isCoisotropic_range_inl_coisotropicModel`: the zero section is
   coisotropic, with orthogonal `ker B × 0`.
-* `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of a pulled-back form.
-* `TauCeti.SymplecticForm.finrank_ker_add_finrank_of_isCoisotropic`: the kernel of the form
-  induced on a coisotropic subspace has the codimension of that subspace.
 * `LinearMap.BilinForm.IsAlt.exists_isSymplectomorphism_coisotropicModel`: uniqueness of
   coisotropic embeddings inducing `B`.
 
@@ -63,42 +61,6 @@ does not depend on the projection `P` up to symplectomorphisms fixing the zero s
 public section
 
 open Module
-
-namespace TauCeti.SymplecticForm
-
-variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
-  (ω : SymplecticForm V) {B : LinearMap.BilinForm ℝ W} {ι : W →ₗ[ℝ] V}
-
-/-- If `ι` pulls `ω` back to `B`, the kernel of `B` is the preimage under `ι` of the symplectic
-orthogonal of the image of `ι`. -/
-theorem ker_eq_comap_orthogonal_range (hω : ∀ w w', ω (ι w) (ι w') = B w w') :
-    LinearMap.ker B = (ω.orthogonal (LinearMap.range ι)).comap ι := by
-  ext w
-  simp only [LinearMap.mem_ker, Submodule.mem_comap, mem_orthogonal_iff', LinearMap.mem_range,
-    forall_exists_index, forall_apply_eq_imp_iff, hω]
-  exact LinearMap.ext_iff
-
-/-- If `ι` pulls `ω` back to `B` and has coisotropic image, `ι` carries the kernel of `B` onto the
-symplectic orthogonal of its image. -/
-theorem map_ker_eq_orthogonal_range (hω : ∀ w w', ω (ι w) (ι w') = B w w')
-    (hC : ω.IsCoisotropic (LinearMap.range ι)) :
-    (LinearMap.ker B).map ι = ω.orthogonal (LinearMap.range ι) := by
-  rw [ker_eq_comap_orthogonal_range ω hω, Submodule.map_comap_eq,
-    inf_eq_right.2 (isCoisotropic_iff_le.1 hC)]
-
-/-- **The kernel of the form induced on a coisotropic subspace has its codimension.** If an
-injective `ι` pulls `ω` back to `B` and has coisotropic image, then
-`dim ker B + dim W = dim V`. -/
-theorem finrank_ker_add_finrank_of_isCoisotropic [FiniteDimensional ℝ V]
-    (hι : Function.Injective ι) (hω : ∀ w w', ω (ι w) (ι w') = B w w')
-    (hC : ω.IsCoisotropic (LinearMap.range ι)) :
-    finrank ℝ (LinearMap.ker B) + finrank ℝ W = finrank ℝ V := by
-  have : FiniteDimensional ℝ W := .of_injective ι hι
-  rw [(Submodule.equivMapOfInjective ι hι _).finrank_eq, map_ker_eq_orthogonal_range ω hω hC,
-    ← LinearMap.finrank_range_of_inj hι, add_comm]
-  exact ω.finrank_add_finrank_orthogonal _
-
-end TauCeti.SymplecticForm
 
 namespace LinearMap.BilinForm.IsAlt
 
@@ -125,10 +87,6 @@ private theorem coisotropicModelBilinForm_isAlt (hB : B.IsAlt) (P : W →ₗ[ℝ
     (coisotropicModelBilinForm P).IsAlt := fun x ↦ by
   simp [coisotropicModelBilinForm_apply, hB.self_eq_zero]
 
-/-- A vector of `W` is `B`-orthogonal to every vector of the kernel of `B`, on either side. -/
-private theorem apply_coe_ker (hB : B.IsAlt) (w : W) (k : LinearMap.ker B) : B w k = 0 := by
-  rw [← hB.neg_eq, LinearMap.mem_ker.1 k.2, LinearMap.zero_apply, neg_zero]
-
 private theorem coisotropicModelBilinForm_nondegenerate (hB : B.IsAlt)
     {P : W →ₗ[ℝ] LinearMap.ker B} (hP : ∀ k : LinearMap.ker B, P k = k) :
     (coisotropicModelBilinForm P).Nondegenerate := by
@@ -140,7 +98,7 @@ private theorem coisotropicModelBilinForm_nondegenerate (hB : B.IsAlt)
     simpa using h (0, a')
   -- Pairing with `K × 0` forces `a = 0`, since `B w k = 0` and `P k = k` there.
   have ha : a = 0 := LinearMap.ext fun k ↦ by
-    simpa [hP, apply_coe_ker hB] using h ((k : W), 0)
+    simpa [hP, hB.isRefl.apply_eq_zero_of_mem_ker _ k.2] using h ((k : W), 0)
   -- Pairing with `W × 0` then puts `w` in `K`, where `P` is the identity.
   have hw : w ∈ LinearMap.ker B := LinearMap.mem_ker.2 <| LinearMap.ext fun w' ↦ by
     simpa [hPw, ha] using h (w', 0)
@@ -186,7 +144,7 @@ theorem orthogonal_range_inl_coisotropicModel :
     rw [LinearMap.zero_apply, ← hB.neg_eq, neg_eq_zero]
     simpa [ha] using h w'
   · rintro ⟨k, hk, rfl, rfl⟩ w'
-    simpa using apply_coe_ker hB w' ⟨k, hk⟩
+    simpa using hB.isRefl.apply_eq_zero_of_mem_ker w' hk
 
 /-- The zero section `W × 0` of the coisotropic model is coisotropic. -/
 theorem isCoisotropic_range_inl_coisotropicModel :
