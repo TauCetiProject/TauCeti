@@ -38,6 +38,8 @@ vector-space curvature (`TauCeti.SymplecticForm.hamiltonianCurvature_constSmooth
   (`TauCeti.SmoothTwoForm.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le`).
 * An integral over the strip of an end of a function of `s` alone is an integral over the
   half-line `±s > 1/2` (`TauCeti.Floer.setLIntegral_endStrip_fst`).
+* A datum which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`
+  (`TauCeti.Floer.contMDiffOn_uncurry_of_contMDiffAt`).
 
 ## References
 
@@ -86,6 +88,28 @@ theorem perturbationPullback_endChart_of_eq {K : ℂ → X → ℂ →L[ℝ] ℝ
   beta_reduce
   rw [hK _ (by simpa using hz)]
   simp
+
+/-- **Data that are `C¹` on `S × M` in real coordinates.** If a perturbation one-form `K` on `ℂ`
+with values in functions on a manifold `M` is `C¹` jointly in the domain and target points at every
+point of `S × M`, where `S = ℂ ∖ {0, 1}`, then its components `K_s(z) = K(z)(1)`,
+`K_t(z) = K(z)(i)`, and more generally `z ↦ K(z)(v)`, are `C¹` on `S × M` in the real coordinates
+`z = s + i t` of `ℂ`. -/
+theorem contMDiffOn_uncurry_of_contMDiffAt {E G M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M]
+    [ChartedSpace G M] {K : ℂ → M → ℂ →L[ℝ] ℝ}
+    (hK : ∀ (w : ThricePuncturedSphere) (x : M),
+      ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
+    contMDiffAt_const).contMDiffWithinAt
 
 end TauCeti.Floer
 

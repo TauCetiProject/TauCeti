@@ -928,6 +928,43 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
     integral_add (f := fun z ↦ ω.floerEnergyDensity Ks' Kt' u z +
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
 
+/-- **The energy density is integrable over compact sets, for a manifold target.** Let `u` and a
+perturbation datum `K = K_s ds + K_t dt` be `C¹` over an open set `U` of the domain, for a
+nondegenerate two-form on a finite-dimensional manifold, and let `T ⊆ U` be compact. If the
+curvature along `u` is integrable over `T`, so is the Floer energy density: by the pointwise
+energy identity it differs from the symplectic area density and the exterior derivative
+`d(K(u))`, both continuous on `U`, by the curvature. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {U T : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    (hT : IsCompact T) (hTU : T ⊆ U)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) T) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) T := by
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
+    stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  replace harea := (harea.mono hTU).integrableOn_compact (μ := volume) hT
+  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
+  have hd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
+      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) T := by
+    have hK' : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
+    exact (((hK'.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply
+      continuousOn_const).mono hTU).integrableOn_compact hT
+  refine ((harea.add ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub
+    hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
+  have hzU := hTU hz
+  have hKz {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :=
+    (hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds (hmem hzU))).mdifferentiableAt one_ne_zero
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
+    (hKz hKs) (hKz hKt)]
+  rfl
+
 end Integral
 
 end TauCeti.SmoothTwoForm
