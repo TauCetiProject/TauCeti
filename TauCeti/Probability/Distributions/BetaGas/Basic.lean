@@ -97,7 +97,8 @@ theorem betaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
     0 ≤ betaGasPartitionFunction n β V :=
   integral_nonneg (betaGasWeight_nonneg n β V)
 
-/-- The beta-gas density normalized by its partition function. -/
+/-- The beta-gas weight divided by its partition function. It integrates to one when the weight
+is integrable and the partition function is positive. -/
 def betaGasDensity (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) : ℝ :=
   betaGasWeight n β V x / betaGasPartitionFunction n β V
 
@@ -136,7 +137,8 @@ theorem integral_betaGasDensity_eq_one (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
   simp only [betaGasDensity, integral_div, ← betaGasPartitionFunction_def]
   exact div_self hpos.ne'
 
-/-- The beta-gas measure with the normalized density. -/
+/-- The beta-gas measure with the nonnegative density. It is a probability measure when the weight
+is integrable and the partition function is positive. -/
 def betaGasMeasure (n : ℕ) (β : ℝ) (V : ℝ → ℝ) : Measure (Fin n → ℝ) :=
   (Measure.pi fun _ : Fin n => (volume : Measure ℝ)).withDensity fun x =>
     ENNReal.ofReal (betaGasDensity n β V x)
