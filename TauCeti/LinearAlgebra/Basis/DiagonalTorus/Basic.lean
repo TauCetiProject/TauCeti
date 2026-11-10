@@ -80,9 +80,6 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4, §7.1, and §12.2.
-* R. Steinberg, *Endomorphisms of linear algebraic groups*, Mem. Amer. Math. Soc. **80** (1968),
-  §11 (root-subgroup equivariance).
-* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 -/
 
 public section
