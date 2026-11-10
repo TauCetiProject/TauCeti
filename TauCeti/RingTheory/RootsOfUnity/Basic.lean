@@ -165,6 +165,13 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
+/-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
+theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommRing K] [Fintype ι]
+    (n : ι → ℕ) : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
+  rw [Monoid.exponent_pi]
+  refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
+
 /-- The exponent of the product of the groups of `n i`-th roots of unity is nonzero in a domain
 `K` when each `n i` is. -/
 theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type*} [CommRing K] [IsDomain K] [Finite ι]
@@ -173,11 +180,7 @@ theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type*} [CommRing K] [IsDom
   have := Fintype.ofFinite ι
   have hprodcast : ((∏ i, n i : ℕ) : K) ≠ 0 := by
     simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
-  have hexp : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
-    rw [Monoid.exponent_pi]
-    refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
-    exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
-  obtain ⟨d, hd⟩ := hexp
+  obtain ⟨d, hd⟩ := exponent_pi_rootsOfUnity_dvd_prod (K := K) n
   intro h
   apply hprodcast
   simp [hd, h]

@@ -8,13 +8,11 @@ module
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.Algebra.Group.Subgroup.Basic
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 
 public import TauCeti.Algebra.GroupAction.Trivial
-public import TauCeti.FieldTheory.IsAlgClosed.Units
 import TauCeti.RingTheory.RootsOfUnity.Basic
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 
 /-!
@@ -31,7 +29,8 @@ We use a subgroup because Mathlib's `One` on equivariant endomorphisms is the
 identity map, rather than the constant character required by pointwise multiplication.
 
 Finally, `TauCeti.natCard_additive_equivariantCharacterSubgroup_rootsOfUnity` counts the
-equivariant characters of a product of groups of roots of unity under the trivial action.
+equivariant characters of a product of groups of roots of unity under the trivial action, over a
+field with enough roots of unity.
 -/
 
 public section
@@ -82,19 +81,23 @@ section RootsOfUnity
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable (k G : Type) [Field k] [IsAlgClosed k] [Group G]
+variable (k G : Type) [Field k] [Group G]
 
-/-- When each `n i` is nonzero in `k`, the group of equivariant `kˣ`-valued characters of
-`∏ i, μ_{n i}` has `∏ i, n i` elements. -/
+/-- When each `n i` is nonzero in `k` and `k` has enough `∏ i, n i`-th roots of unity, the group
+of equivariant `kˣ`-valued characters of `∏ i, μ_{n i}` has `∏ i, n i` elements. -/
 theorem natCard_additive_equivariantCharacterSubgroup_rootsOfUnity {ι : Type} [Fintype ι]
-    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0) :
+    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0) [HasEnoughRootsOfUnity k (∏ i, n i)] :
     Nat.card (Additive (equivariantCharacterSubgroup G (∀ i, rootsOfUnity (n i) k) kˣ)) =
       ∏ i, n i := by
   classical
   let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
-  let M := ∀ i, rootsOfUnity (n i) k
   have hne (i : ι) : NeZero (n i) := .of_neZero_natCast k
-  have : NeZero (Monoid.exponent M : k) := ⟨exponent_pi_rootsOfUnity_cast_ne_zero n hncast⟩
+  have : NeZero (∏ i, n i) := ⟨Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hne i).out⟩
+  have (i : ι) : HasEnoughRootsOfUnity k (n i) :=
+    .of_dvd k (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
+  let M := ∀ i, rootsOfUnity (n i) k
+  have : HasEnoughRootsOfUnity k (Monoid.exponent M) :=
+    .of_dvd k (exponent_pi_rootsOfUnity_dvd_prod n)
   let : MulDistribMulAction G M := trivialMulDistribMulAction G M
   have hcardM : Nat.card M = ∏ i, n i := by
     rw [Nat.card_pi]

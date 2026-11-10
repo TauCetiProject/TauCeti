@@ -67,6 +67,8 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
   have : NeZero (Monoid.exponent (∀ i, rootsOfUnity (n i) k) : k) :=
     ⟨exponent_pi_rootsOfUnity_cast_ne_zero n hncast⟩
   obtain ⟨α, hsurj⟩ := exists_factorSet_surjective_characterTransgression k G n x hx hgen
+  have : NeZero ((∏ i, n i : ℕ) : k) :=
+    ⟨by simpa using Finset.prod_ne_zero_iff.mpr fun i _ ↦ hncast i⟩
   have hcard := natCard_additive_equivariantCharacterSubgroup_rootsOfUnity k G n hncast
   have hbij : Function.Bijective (α.characterTransgression (A := kˣ)) :=
     (Nat.bijective_iff_surjective_and_card _).mpr ⟨hsurj, hcard.trans hcardH.symm⟩
