@@ -592,38 +592,20 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type
   have hΩ : (Omega : Set E) = e ⁻¹' Ω' := by ext x; simp [Ω', heg]
   have hg : MeasurePreserving g volume volume := by
     simpa [g] using e.symm.measurePreserving
-  have hgemb : MeasurableEmbedding g := g.toHomeomorph.measurableEmbedding
   set u' := W1p.compAffineIsometryEquivL g (U := Ω') rfl u
   have hf' : ∀ K, IsCompact K → K ⊆ (Ω' : Set (EuclideanSpace ℝ (Fin n))) →
-      MemLp (f ∘ g) r (volume.restrict K) := by
-    intro K hK hKΩ
-    have hgK : IsCompact (g '' K) := hK.image g.continuous
-    rw [← g.injective.preimage_image K]
-    exact (hf _ hgK (by rintro _ ⟨y, hy, rfl⟩; exact hKΩ hy)).comp_measurePreserving
-      (hg.restrict_preimage hgK.isClosed.measurableSet)
+      MemLp (f ∘ g) r (volume.restrict K) := fun _ hK hKΩ =>
+    g.toHomeomorph.memLp_comp_restrict_of_forall_isCompact hg hf hK hKΩ
   have hu' : ∀ φ' : 𝓓(Ω', ℝ), energyFormH1 (fun _ => (1 : Matrix (Fin n) (Fin n) ℝ)) 0 0 u'
       (W1p.ofTestFunctionₗ volume Ω' 2 φ') = ∫ y in Ω', (f ∘ g) y * φ' y := by
-    -- The weak equation on `Ω'`, tested against `φ'`, is the one on `Ω` tested against the
-    -- transported test function `φ' ∘ e`.
+    -- The weak equation on `Ω'` is the one on `Ω` read in the coordinates `g`.
     intro φ'
-    let φ : 𝓓(Omega, ℝ) :=
-      e.symm.toContinuousLinearEquiv.transportTestFunction (fun _ hy => hy) φ'
-    have hφ : ∀ y, φ (g y) = φ' y := fun y => by simp [φ, g]
     rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def]
-    calc ∫ y in Ω', ⟪W1p.gradient u' y, W1p.gradient (W1p.ofTestFunctionₗ volume Ω' 2 φ') y⟫_ℝ
-        = ∫ y in Ω', ⟪W1p.gradient u' y, ∇ (φ' : EuclideanSpace ℝ (Fin n) → ℝ) y⟫_ℝ := by
-          refine integral_congr_ae ?_
-          filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ']
-            with y hφy
-          rw [W1p.gradient_ofTestFunctionₗ, hφy]
-      _ = ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ :=
-          W1p.setIntegral_inner_gradient_compAffineIsometryEquivL e.symm rfl u φ'
-      _ = ∫ x in Omega, f x * φ x := hu φ
-      _ = ∫ y in Ω', (f ∘ g) y * φ' y := by
-          rw [← hg.setIntegral_preimage_emb hgemb (fun x => f x * φ x)]
-          -- `Ω'` is `g⁻¹(Ω)` by construction.
-          simp only [hφ, Function.comp_apply]
-          rfl
+    refine (integral_congr_ae ?_).trans
+      (W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul e.symm rfl u hu
+        φ')
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ'] with y hφy
+    rw [W1p.gradient_ofTestFunctionₗ, hφy]
   have hw := continuousOn_preciseRepresentative_of_forall_memLp (mu := volume)
     (a := fun _ => 1) (f := f ∘ g) (u := u') hr (by simpa [n] using hrn)
     (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const hf' hu'

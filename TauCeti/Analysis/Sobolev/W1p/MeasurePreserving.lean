@@ -50,6 +50,9 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
+* `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul`: a weak
+  solution of `-Δu = f` stays a weak solution, of `-Δ(u ∘ e) = f ∘ e`, after a linear isometric
+  change of coordinates `e`.
 -/
 
 public section
@@ -356,6 +359,21 @@ theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL (e : F ≃ₗᵢ
     _ = ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ :=
         e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding
           (fun x => ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ) _
+
+open scoped Distributions Gradient in
+/-- **Poisson's equation under a linear isometry.** For a linear isometry equivalence `e` and
+`U = e⁻¹(V)`, if `u` solves `-Δu = f` weakly on `V`, that is `∫_V ⟪∇u, ∇ψ⟫ = ∫_V f ψ` for every
+test function `ψ` on `V`, then `u ∘ e` solves `-Δ(u ∘ e) = f ∘ e` weakly on `U`. -/
+theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul
+    (e : F ≃ₗᵢ[ℝ] F') (hUV : (U : Set F) = e ⁻¹' V) (u : W1p volume V p) {f : F' → ℝ}
+    (hu : ∀ ψ : 𝓓(V, ℝ),
+      ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ = ∫ x in V, f x * ψ x)
+    (φ : 𝓓(U, ℝ)) :
+    ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
+      ∇ (φ : F → ℝ) y⟫_ℝ = ∫ y in U, f (e y) * φ y := by
+  rw [W1p.setIntegral_inner_gradient_compAffineIsometryEquivL, hu,
+    ← e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding]
+  simp [hUV]
 
 end AffineIsometry
 
