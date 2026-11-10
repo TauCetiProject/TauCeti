@@ -1158,7 +1158,7 @@ variable {n : ℕ} {G : Type uG} [Group G] [DistribMulAction G (ZMod n)]
 
 include htriv
 
-variable [NeZero n] [TopologicalSpace G] [ContinuousSMul G (ZMod n)]
+variable [TopologicalSpace G] [ContinuousSMul G (ZMod n)]
 
 section ContinuousMul
 
@@ -1172,13 +1172,13 @@ theorem dualityMap2_zmod (b : H2 G (ZMod n)) (φ : H0 G (InternalHom G (ZMod n) 
       InternalHom.zmodEquiv G (φ : InternalHom G (ZMod n) (ZMod n)) • b := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
-    rw [dualityMap2_mk, zmod_smul_mk]
+    rw [dualityMap2_mk, zmod_smul_mk_cast]
     refine congrArg (fun z : Z2 G (ZMod n) => (z : H2 G (ZMod n)))
       (Subtype.ext (funext fun q => ?_))
     dsimp only
     rw [InternalHom.smul_eq_self_of_smul_eq_self htriv htriv, AddMonoidHom.flip_apply,
       InternalHom.evalPairing_apply, InternalHom.toAddMonoidHom_apply_eq_smul]
-    simp [nsmul_eq_mul, mul_comm]
+    simp [zsmul_eq_mul, mul_comm]
 
 /-- **`α₂` at trivial `ZMod n` coefficients is bijective**, for every group `G` with continuous
 multiplication acting trivially on `ZMod n`: under evaluation at `1` it sends `b` to `c ↦ c • b`,
@@ -1196,20 +1196,28 @@ theorem dualityMap2_zmod_bijective : Function.Bijective (dualityMap2 G (ZMod n) 
     simpa [dualityMap2_zmod htriv] using this
   · intro f
     refine ⟨f ⟨_, hid⟩, AddMonoidHom.ext fun φ => ?_⟩
-    -- an invariant homomorphism `φ` is `φ 1` times the identity
-    have hφ : φ = (InternalHom.zmodEquiv G (φ : InternalHom G (ZMod n) (ZMod n))).val •
+    -- an invariant homomorphism `φ` is `φ 1` times the identity, the scalar read in `ℤ`
+    have hφ : φ = ((InternalHom.zmodEquiv G (φ : InternalHom G (ZMod n) (ZMod n))).cast : ℤ) •
         (⟨_, hid⟩ : H0 G (InternalHom G (ZMod n) (ZMod n))) := by
       ext x
       rw [InternalHom.toAddMonoidHom_apply_eq_smul]
-      simp [nsmul_eq_mul, mul_comm]
-    have hf : f φ = (InternalHom.zmodEquiv G (φ : InternalHom G (ZMod n) (ZMod n))).val •
+      simp [zsmul_eq_mul, mul_comm]
+    have hf : f φ = ((InternalHom.zmodEquiv G (φ : InternalHom G (ZMod n) (ZMod n))).cast : ℤ) •
         f ⟨_, hid⟩ := by
-      rw [← map_nsmul, ← hφ]
-    rw [dualityMap2_zmod htriv, hf, ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_zmod_val]
+      rw [← map_zsmul, ← hφ]
+    rw [dualityMap2_zmod htriv, hf, ← Int.cast_smul_eq_zsmul (ZMod n), ZMod.intCast_zmod_cast]
 
 end ContinuousMul
 
 variable [IsTopologicalGroup G]
+
+section Finite
+
+/-! The statements below involve the internal hom `InternalHom G (ZMod n) (ZMod n)` as a
+topological `G`-module, or the duality maps `α₀` and `α₁`, all of which need finite coefficients:
+`ZMod n` is finite exactly when `n ≠ 0`. -/
+
+variable [NeZero n]
 
 /-- For a trivial action on `ZMod n`, the first cohomology of `InternalHom G (ZMod n) (ZMod n)` is
 that of `ZMod n`, along evaluation at `1`. -/
@@ -1263,14 +1271,14 @@ theorem dualityMap0_zmod (m : H0 G (ZMod n)) (b : H2 G (InternalHom G (ZMod n) (
     dualityMap0 G (ZMod n) (ZMod n) m b = (m : ZMod n) • H2InternalHomZModEquiv htriv b := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
-    rw [dualityMap0_mk, H2InternalHomZModEquiv_mk, zmod_smul_mk]
+    rw [dualityMap0_mk, H2InternalHomZModEquiv_mk, zmod_smul_mk_cast]
     refine congrArg (fun z : Z2 G (ZMod n) => (z : H2 G (ZMod n)))
       (Subtype.ext (funext fun q => ?_))
     obtain ⟨g, h⟩ := q
     dsimp only
     rw [AddMonoidHom.flip_apply, InternalHom.evalPairing_apply,
       InternalHom.toAddMonoidHom_apply_eq_smul]
-    simp [nsmul_eq_mul]
+    simp [zsmul_eq_mul]
 
 /-- **`α₁` at trivial `ZMod n` coefficients is the cup product of multiplication**:
 `α₁ a b = a ⌣ b`, reading `b` in `H¹(G, ZMod n)` through evaluation at `1`. -/
@@ -1332,6 +1340,8 @@ theorem dualityMap0_zmod_bijective_of_addEquiv (e : H2 G (ZMod n) ≃+ ZMod n) :
         rw [map_nsmul, map_nsmul, hw, nsmul_one, ZMod.natCast_zmod_val]))⟩
     rw [dualityMap0_zmod htriv, ZMod.map_smul e, hk, map_nsmul, map_nsmul, map_nsmul, map_nsmul,
       hw, smul_eq_mul, nsmul_one, nsmul_eq_mul, mul_comm]
+
+end Finite
 
 /-- **`α₀` at trivial `𝔽_p` coefficients is bijective when `H²(G, 𝔽_p)` is one-dimensional**,
 being then isomorphic to `𝔽_p` (`dualityMap0_zmod_bijective_of_addEquiv`). -/

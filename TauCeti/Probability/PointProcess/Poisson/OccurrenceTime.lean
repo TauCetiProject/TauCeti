@@ -60,15 +60,15 @@ theorem IsPoissonRandomMeasure.measureReal_occurrenceTime_le
       h.hasLaw (A := Iic s) measurableSet_Iic (by
         simp only [smul_apply, smul_eq_mul, nnvolume_Iic]
         finiteness)
-  have hfinite : ∀ᵐ ω ∂P, N ω (Iic (t + 1)) ≠ ∞ :=
-    h.ae_ne_top measurableSet_Iic (by
+  have hfinite : ∀ᵐ ω ∂P, N ω (Iic (t + 1)) < ∞ :=
+    h.ae_lt_top measurableSet_Iic (by
       simp only [smul_apply, smul_eq_mul, nnvolume_Iic]
       finiteness)
   have hevent : {ω | (N ω).occurrenceTime n ≤ t} =ᵐ[P]
       {ω | (n + 1 : ℝ≥0∞) ≤ N ω (Iic t)} := by
     filter_upwards [hfinite] with ω hω
     exact propext ((N ω).occurrenceTime_le_iff_of_measure_Iic_ne_top n t
-      ⟨t + 1, lt_add_one t, hω⟩)
+      ⟨t + 1, lt_add_one t, hω.ne⟩)
   rw [measureReal_congr hevent,
     (hcount t).measureReal_eq (p := fun x : ℝ≥0∞ => (n + 1 : ℝ≥0∞) ≤ x)
       measurableSet_Ici,

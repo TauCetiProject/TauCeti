@@ -66,6 +66,7 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
+omit [I.Boundaryless] [T2Space M] in
 /-- Each covector in the normal coframe is smooth on the normal neighbourhood. -/
 theorem contMDiffOn_normalCoframe (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
@@ -76,6 +77,7 @@ theorem contMDiffOn_normalCoframe (h : IsNormalDomain I M p U)
   exact ContMDiffWithinAt.innerSL_bundle (I := I) (F := E)
     (V := fun x : M ↦ TangentSpace I x) (h.contMDiffOn_normalOrthonormalFrame b i q hq)
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The normal coframe and the normal tangent frame are dual on their common domain. -/
 theorem normalCoframe_normalOrthonormalFrame (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
@@ -85,6 +87,7 @@ theorem normalCoframe_normalOrthonormalFrame (h : IsNormalDomain I M p U)
   rw [normalCoframe_apply]
   exact (orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hq)) i j
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The metric-dual normal frame is a smooth local frame of the native cotangent bundle. -/
 theorem isLocalFrameOn_normalCoframe (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) :
@@ -131,6 +134,7 @@ theorem hom_trivial_normalCoframe_self (h : IsNormalDomain I M p U)
     (hd.mdifferentiableAt (by simp)), h.leviCivitaConnection_normalOrthonormalFrame_self]
   simp
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The coefficient of a one-form in the normal coframe is its evaluation on the corresponding
 normal tangent-frame vector. -/
 @[simp]
@@ -148,6 +152,7 @@ theorem repr_normalCoframe (h : IsNormalDomain I M p U)
     h.normalCoframe_normalOrthonormalFrame b hq, smul_eq_mul, mul_ite, mul_one, mul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true] using heval.symm
 
+omit [I.Boundaryless] [T2Space M] in
 /-- Expand a one-form in the normal coframe by evaluating it on the tangent frame. -/
 theorem sum_normalCoframe (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))

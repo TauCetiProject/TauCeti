@@ -55,6 +55,8 @@ consecutive entries nontrivial.
   discrimination by `FreeGroup (Fin 2)` with trivial coefficients.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.of_injective`: subgroups of fully residually free
   groups are fully residually free.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.of_isDiscriminatedBy`: a group discriminated by a fully
+  residually free group is fully residually free.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
@@ -187,6 +189,24 @@ theorem IsFullyResiduallyFree.of_injective (h : IsFullyResiduallyFree G) {f : H 
     (hf : Function.Injective f) : IsFullyResiduallyFree H :=
   isFullyResiduallyFree_iff_isDiscriminatedBy.2 <|
     (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).of_injective ⟨f, fun _ => by simp⟩ hf
+
+/-- A group separated by a residually free group, relative to any coefficient group, is residually
+free. -/
+theorem IsResiduallyFree.of_isSeparatedBy (h : IsResiduallyFree G) {C K : Type*} [Group C]
+    [Group K] {ιK : C →* K} {ιG : C →* G} (hK : IsSeparatedBy ιK ιG) : IsResiduallyFree K := by
+  have hK' := hK.comp (1 : Unit →* C)
+  rw [MonoidHom.comp_one, MonoidHom.comp_one] at hK'
+  exact isResiduallyFree_iff_isSeparatedBy.2 (hK'.trans (isResiduallyFree_iff_isSeparatedBy.1 h))
+
+/-- A group discriminated by a fully residually free group, relative to any coefficient group, is
+fully residually free. -/
+theorem IsFullyResiduallyFree.of_isDiscriminatedBy (h : IsFullyResiduallyFree G) {C K : Type*}
+    [Group C] [Group K] {ιK : C →* K} {ιG : C →* G} (hK : IsDiscriminatedBy ιK ιG) :
+    IsFullyResiduallyFree K := by
+  have hK' := hK.comp (1 : Unit →* C)
+  rw [MonoidHom.comp_one, MonoidHom.comp_one] at hK'
+  exact isFullyResiduallyFree_iff_isDiscriminatedBy.2
+    (hK'.trans (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h))
 
 /-- A free group is fully residually free. -/
 theorem isFullyResiduallyFree_of_isFreeGroup [IsFreeGroup G] : IsFullyResiduallyFree G :=

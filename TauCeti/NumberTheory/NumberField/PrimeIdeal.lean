@@ -145,9 +145,11 @@ end HeightOne
 `𝓞 K` above the rational prime `p` and `e(𝔭) = 1`, the fundamental identity `∑ e f = [K : ℚ]`
 gives `f(𝔭) = [K : ℚ]`, so `N(𝔭) = p ^ [K : ℚ]`. -/
 theorem absNorm_eq_pow_finrank_of_primesOver_eq_singleton {p : ℕ} (𝔭 : Ideal (𝓞 K))
-    [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
     (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) (he : 𝔭.ramificationIdx ℤ = 1) :
     absNorm 𝔭 = p ^ Module.finrank ℚ K := by
+  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ Set.mem_singleton 𝔭
+  have := h𝔭.1
+  have := h𝔭.2
   rw [← pow_inertiaDeg p 𝔭, ← _root_.NumberField.RingOfIntegers.rank K,
     RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
       (by simp [hT]) he]
@@ -180,8 +182,9 @@ theorem coprime_absNorm_of_absNorm_ne (hK : Module.finrank ℚ K = 2) {P₁ P₂
 
 /-- At most `[K : ℚ]` primes of `𝓞 K` lie over a given nonzero prime of `ℤ`, since each
 contributes a positive `ramificationIdx * inertiaDeg` to the fundamental identity. -/
-theorem card_primesOverFinset_le_finrank {p : Ideal ℤ} [p.IsMaximal] (hp0 : p ≠ ⊥) :
-    (IsDedekindDomain.primesOverFinset p (𝓞 K)).card ≤ Module.finrank ℚ K :=
+theorem card_primesOverFinset_le_finrank {p : Ideal ℤ} [p.IsMaximal] :
+    (IsDedekindDomain.primesOverFinset p (𝓞 K)).card ≤ Module.finrank ℚ K := by
+  have hp0 : p ≠ ⊥ := Ring.ne_bot_of_isMaximal_of_not_isField ‹p.IsMaximal› Int.not_isField
   calc
     (IsDedekindDomain.primesOverFinset p (𝓞 K)).card = ∑ _q : p.primesOver (𝓞 K), 1 := by
       rw [Finset.sum_const, smul_eq_mul, mul_one, Finset.card_univ,
@@ -372,7 +375,7 @@ theorem exists_finset_card_le_finrank_mk0_mem (p : ℕ) (hp : p.Prime) :
   · calc
       (primes.attach.image classOf).card ≤ primes.attach.card := Finset.card_image_le
       _ = primes.card := Finset.card_attach
-      _ ≤ Module.finrank ℚ K := TauCeti.NumberField.card_primesOverFinset_le_finrank (K := K) hpne
+      _ ≤ Module.finrank ℚ K := TauCeti.NumberField.card_primesOverFinset_le_finrank (K := K)
   · have hmem : I.1 ∈ primes := by
       rw [IsDedekindDomain.mem_primesOverFinset_iff hpne]
       exact ⟨hprime, hover⟩

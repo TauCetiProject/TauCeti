@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
 import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -24,6 +25,10 @@ The preimage formulas need only `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E
 scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres only require
 `‖c‖ ≠ 0`. Over a normed division ring these conditions are equivalent to `c ≠ 0`, via
 `norm_pos_iff` and `norm_ne_zero_iff` respectively.
+
+Sets that agree on `ball x (r * R)` have preimages under the blow-up map `y ↦ x + r • y`,
+`r > 0`, that agree on `ball 0 R` (`TauCeti.preimage_add_smul_inter_ball_eq`), and hence the same
+symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff_inter_eq`).
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
@@ -55,6 +60,9 @@ matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`
 
 Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
 centrally symmetric up to translation lies in a ball of half its diameter about its center.
+
+The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
+(`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
 -/
 
 public section
@@ -95,6 +103,34 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
   exact mul_right_inj' hc
 
 end Preimage
+
+section Locality
+
+open scoped symmDiff
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {x : E} {r R : ℝ}
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, that
+agree on `Metric.ball 0 R`. -/
+theorem preimage_add_smul_inter_ball_eq {a b : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) :
+    (fun y ↦ x + r • y) ⁻¹' a ∩ Metric.ball 0 R = (fun y ↦ x + r • y) ⁻¹' b ∩ Metric.ball 0 R := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.ball x (r * R) = Metric.ball 0 R := by
+    simpa [abs_of_pos hr, add_comm] using
+      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') R
+  rw [← hball, ← Set.preimage_inter, ← Set.preimage_inter, h]
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, with
+the same symmetric difference with `c` inside every `K ⊆ Metric.ball 0 R`. -/
+theorem preimage_add_smul_symmDiff_inter_eq {a b c K : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) (hK : K ⊆ Metric.ball 0 R) :
+    (((fun y ↦ x + r • y) ⁻¹' a) ∆ c) ∩ K = (((fun y ↦ x + r • y) ⁻¹' b) ∆ c) ∩ K := by
+  have hK' : (fun y ↦ x + r • y) ⁻¹' a ∩ K = (fun y ↦ x + r • y) ⁻¹' b ∩ K := by
+    rw [← Set.inter_eq_right.2 hK, ← Set.inter_assoc, preimage_add_smul_inter_ball_eq hr h,
+      Set.inter_assoc]
+  rw [Set.inter_symmDiff_distrib_right, Set.inter_symmDiff_distrib_right, hK']
+
+end Locality
 
 section ProdBall
 
@@ -298,5 +334,23 @@ theorem exists_homeomorph_closedBall_one_norm_eq {V : Type*} [NormedAddCommGroup
   simp [norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
 
 end Rescaling
+
+section Disjoint
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint. -/
+theorem pairwise_disjoint_ball_add_natCast_smul (x v : E) :
+    Pairwise (Function.onFun Disjoint fun j : ℕ => ball (x + (j : ℝ) • v) (‖v‖ / 2)) := by
+  intro i j hij
+  refine ball_disjoint_ball ?_
+  have h : (1 : ℝ) ≤ |(i : ℝ) - j| := by
+    simpa only [Nat.dist_eq] using Nat.pairwise_one_le_dist hij
+  have hdist : dist (x + (i : ℝ) • v) (x + (j : ℝ) • v) = |(i : ℝ) - j| * ‖v‖ := by
+    rw [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, Real.norm_eq_abs]
+  rw [hdist, add_halves]
+  nlinarith [norm_nonneg v]
+
+end Disjoint
 
 end TauCeti

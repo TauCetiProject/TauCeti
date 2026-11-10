@@ -96,6 +96,16 @@ theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation R E ι)
     subst o <;> simp [signBasis, h, Module.Ray.ne_neg_self b.orientation,
       (Module.Ray.ne_neg_self b.orientation).symm]
 
+/-- Reindexing an orientation and a basis along the same equivalence preserves their relative
+sign. -/
+@[simp]
+theorem signBasis_reindex {ι' : Type*} [Fintype ι'] [DecidableEq ι'] (o : Orientation R E ι)
+    (b : Module.Basis ι R E) (e : ι ≃ ι') :
+    signBasis (Orientation.reindex R E e o) (b.reindex e) = signBasis o b := by
+  unfold signBasis
+  rw [b.orientation_reindex e]
+  split_ifs <;> simp_all
+
 /-- The basis signs compensate the change-of-basis determinant to give a positive product. -/
 theorem signBasis_mul_det_mul_pos (o : Orientation R E ι)
     (b b' : Module.Basis ι R E) :
@@ -130,6 +140,16 @@ theorem _root_.AlternatingMap.signBasis_mul_apply_eq_abs_det_mul (f : E [⋀^ι]
     rcases Int.units_eq_one_or (signBasis b₀.orientation b) with h | h <;> simp [h]
   rw [habs, hf]
   ring
+
+/-- A top-degree alternating form positive on a basis `b₀` is positive on every basis with the
+orientation of `b₀`: the two values differ by the positive change-of-basis determinant. -/
+theorem _root_.AlternatingMap.apply_pos_of_orientation_eq (f : E [⋀^ι]→ₗ[R] R)
+    {b₀ b : Module.Basis ι R E} (hb : b.orientation = b₀.orientation) (h : 0 < f b₀) :
+    0 < f b := by
+  have key := f.signBasis_mul_apply_eq_abs_det_mul b₀ b
+  rw [← hb, signBasis_orientation, Units.val_one, Int.cast_one, one_mul] at key
+  rw [key]
+  exact mul_pos (abs_pos.2 (b₀.isUnit_det b).ne_zero) h
 
 end CommRing
 

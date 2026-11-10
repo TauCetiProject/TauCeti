@@ -150,9 +150,9 @@ theorem naiveHeight_inv (x : F) : naiveHeight x⁻¹ = naiveHeight x := by
   by_cases hx0 : x = 0
   · simp [hx0]
   by_cases hx : IsAlgebraic ℚ x
-  · have h₁ := primitiveMinpoly_inv_dvd_reverse hx hx0
+  · have h₁ := primitiveMinpoly_inv_dvd_reverse hx0
     have h₂ : primitiveMinpoly x ∣ (primitiveMinpoly x⁻¹).reverse := by
-      simpa only [inv_inv] using primitiveMinpoly_inv_dvd_reverse hx.inv (inv_ne_zero hx0)
+      simpa only [inv_inv] using primitiveMinpoly_inv_dvd_reverse (inv_ne_zero hx0)
     -- The two divisibilities force equal degrees, so the quotient is a constant unit.
     have hdeg : (primitiveMinpoly x).reverse.natDegree ≤ (primitiveMinpoly x⁻¹).natDegree :=
       (reverse_natDegree_le _).trans ((natDegree_le_of_dvd h₂
