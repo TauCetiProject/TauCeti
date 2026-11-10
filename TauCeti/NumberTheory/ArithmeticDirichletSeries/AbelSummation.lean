@@ -141,11 +141,6 @@ private theorem summatory_mul_eq_sub_sub_integral_mul_of_nonneg (w : ι → 𝕜
     ← summatory_eq_sum_Icc_normFiberSum N w ha, hI] at key
   exact key
 
-/-- A summatory function vanishes below the cutoff `0`, since `N` takes natural values. -/
-theorem summatory_eq_zero_of_neg {M : Type*} [AddCommMonoid M] {x : ℝ} (hx : x < 0) (w : ι → M) :
-    summatory N w x = 0 :=
-  summatory_eq_zero_of_lt N (b := 0) (fun _ ↦ Nat.cast_nonneg _) hx w
-
 /-- **Integrability against a summatory function.**  A summatory function, multiplied by a factor
 integrable on a compact interval, is integrable there.  Below the cutoff `0` the summatory function
 vanishes, since `N` takes natural values. -/
