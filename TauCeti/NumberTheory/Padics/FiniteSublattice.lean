@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.Data.ZMod.RingHoms
+public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Algebra.Module.Submodule.Map
+import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Pi
-import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # Integral and p-adic sublattices modulo a prime power
@@ -27,7 +28,9 @@ The exponent zero is included.
 
 ## References
 
-* J. A. Rhodes and T. R. Shemanske, *Rationality theorems for Hecke operators on GL_n*, §2.
+* J. A. Rhodes and T. R. Shemanske, *Bruhat–Tits buildings and Hecke operators*,
+  12 June 1998 author manuscript, §3.1 Proposition 3.2 and §3.2 Lemma 3.3.
+  The bounded lattice correspondence here supplies the intermediate-lattice comparison.
 -/
 
 public noncomputable section
@@ -35,6 +38,15 @@ public noncomputable section
 namespace TauCeti
 
 variable (ι : Type*) (p k : ℕ) [Fact p.Prime]
+
+/-- The coordinatewise inclusion of integral vectors into p-adic integral vectors. -/
+def intVectorToPadic : (ι → ℤ) →ₗ[ℤ] (ι → ℤ_[p]) :=
+  LinearMap.pi fun i ↦
+    (Int.castAddHom ℤ_[p]).toIntLinearMap.comp (LinearMap.proj i)
+
+@[simp]
+theorem intVectorToPadic_apply (x : ι → ℤ) (i : ι) :
+    intVectorToPadic ι p x i = (x i : ℤ_[p]) := (rfl)
 
 /-- Coordinatewise reduction of integral vectors modulo `pᵏ`. -/
 def intVectorReduction : (ι → ℤ) →ₛₗ[Int.castRingHom (ZMod (p ^ k))] (ι → ZMod (p ^ k)) where
@@ -72,8 +84,16 @@ theorem padicVectorReduction_surjective : Function.Surjective (padicVectorReduct
 /-- Reduction commutes with the inclusion of integral vectors into p-adic vectors. -/
 @[simp]
 theorem padicVectorReduction_intCast (x : ι → ℤ) :
-    padicVectorReduction ι p k (fun i ↦ (x i : ℤ_[p])) = intVectorReduction ι p k x := by
+    padicVectorReduction ι p k (intVectorToPadic ι p x) = intVectorReduction ι p k x := by
   ext; simp
+
+/-- Reduction and integral inclusion commute as `ℤ`-linear maps. -/
+@[simp]
+theorem padicVectorReduction_comp_intVectorToPadic :
+    (padicVectorReduction ι p k).toAddMonoidHom.toIntLinearMap.comp (intVectorToPadic ι p) =
+      (intVectorReduction ι p k).toAddMonoidHom.toIntLinearMap := by
+  ext x i
+  simp
 
 omit [Fact p.Prime] in
 /-- The kernel of integral reduction consists exactly of the multiples of `pᵏ`. -/
@@ -93,8 +113,7 @@ theorem mem_ker_intVectorReduction_iff (x : ι → ℤ) :
 theorem mem_ker_padicVectorReduction_iff (x : ι → ℤ_[p]) :
     x ∈ LinearMap.ker (padicVectorReduction ι p k) ↔ ∃ y : ι → ℤ_[p], x = (p : ℤ_[p]) ^ k • y := by
   have h (i : ι) : PadicInt.toZModPow k (x i) = 0 ↔ ∃ y, x i = (p : ℤ_[p]) ^ k * y := by
-    rw [← RingHom.mem_ker, PadicInt.ker_toZModPow, Ideal.mem_span_singleton]
-    rfl
+    rw [PadicInt.toZModPow_eq_zero_iff_dvd, dvd_def]
   rw [LinearMap.mem_ker, funext_iff]
   simp only [padicVectorReduction_apply, Pi.zero_apply, h]
   constructor
@@ -102,13 +121,7 @@ theorem mem_ker_padicVectorReduction_iff (x : ι → ℤ_[p]) :
     choose y hy using h
     exact ⟨y, funext hy⟩
   · rintro ⟨y, rfl⟩ i
-    exact ⟨y i, rfl⟩
-
-local instance : RingHomSurjective (Int.castRingHom (ZMod (p ^ k))) :=
-  ⟨ZMod.intCast_surjective⟩
-
-local instance : RingHomSurjective (PadicInt.toZModPow (p := p) k) :=
-  ⟨ZMod.ringHom_surjective _⟩
+    exact ⟨y i, by simp⟩
 
 /-- Sublattices of `ℤⁿ` containing `pᵏ ℤⁿ`, expressed as the interval above the reduction
 kernel, correspond to sublattices of `ℤ_pⁿ` containing `pᵏ ℤ_pⁿ`. Both correspondences use the
@@ -135,47 +148,40 @@ membership condition. In particular, taking integral points recovers the integra
 @[simp]
 theorem intCast_mem_pPowerSublatticeEquiv_iff
     (L : Set.Ici (LinearMap.ker (intVectorReduction ι p k))) (x : ι → ℤ) :
-    (fun i ↦ (x i : ℤ_[p])) ∈ (pPowerSublatticeEquiv ι p k L).1 ↔ x ∈ L.1 := by
-  rw [mem_pPowerSublatticeEquiv_iff, padicVectorReduction_intCast]
-  exact (congrArg (fun S : Submodule ℤ (ι → ℤ) ↦ x ∈ S)
-    (Submodule.comap_map_eq_self L.2)).to_iff
+    intVectorToPadic ι p x ∈ (pPowerSublatticeEquiv ι p k L).1 ↔ x ∈ L.1 := by
+  rw [mem_pPowerSublatticeEquiv_iff, padicVectorReduction_intCast,
+    ← Submodule.mem_comap, Submodule.comap_map_eq_self L.2]
 
 /-- Taking integral vectors is the inverse of the prime-power sublattice correspondence. -/
 @[simp]
 theorem mem_pPowerSublatticeEquiv_symm_iff
     (P : Set.Ici (LinearMap.ker (padicVectorReduction ι p k))) (x : ι → ℤ) :
-    x ∈ ((pPowerSublatticeEquiv ι p k).symm P).1 ↔ (fun i ↦ (x i : ℤ_[p])) ∈ P.1 := by
+    x ∈ ((pPowerSublatticeEquiv ι p k).symm P).1 ↔ intVectorToPadic ι p x ∈ P.1 := by
   rw [← intCast_mem_pPowerSublatticeEquiv_iff ι p k
     ((pPowerSublatticeEquiv ι p k).symm P), OrderIso.apply_symm_apply]
 
-/-- The corresponding lattices have canonically isomorphic additive quotients. This preserves
+/-- The corresponding lattices have canonically isomorphic `ℤ`-linear quotients. This preserves
 indices and, for finite coordinate sets, the elementary divisors of the finite abelian quotients.
 No finiteness assumption is needed to construct the isomorphism. -/
 def pPowerSublatticeQuotientEquiv
     (L : Set.Ici (LinearMap.ker (intVectorReduction ι p k))) :
-    ((ι → ℤ) ⧸ L.1) ≃+ ((ι → ℤ_[p]) ⧸ (pPowerSublatticeEquiv ι p k L).1) := by
-  let f : (ι → ℤ) →ₗ[ℤ] (ι → ℤ_[p]) := LinearMap.pi fun i ↦
-    (Int.castAddHom ℤ_[p]).toIntLinearMap.comp (LinearMap.proj i)
+    ((ι → ℤ) ⧸ L.1) ≃ₗ[ℤ]
+      ((ι → ℤ_[p]) ⧸ (pPowerSublatticeEquiv ι p k L).1.restrictScalars ℤ) := by
   let P := (pPowerSublatticeEquiv ι p k L).1
-  let g := L.1.mapQ (P.restrictScalars ℤ) f fun x hx ↦
-    (intCast_mem_pPowerSublatticeEquiv_iff ι p k L x).mpr hx
-  have hg (x : ι → ℤ) : g (L.1.mkQ x) =
-      (P.restrictScalars ℤ).mkQ (fun i ↦ (x i : ℤ_[p])) := rfl
-  refine AddEquiv.ofBijective g.toAddMonoidHom ⟨?_, ?_⟩
-  · refine (injective_iff_map_eq_zero g).mpr fun a ha ↦ ?_
-    obtain ⟨x, rfl⟩ := L.1.mkQ_surjective a
-    rw [hg, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at ha
-    rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact (intCast_mem_pPowerSublatticeEquiv_iff ι p k L x).mp ha
-  · intro a
+  let φ := (P.restrictScalars ℤ).mkQ ∘ₗ intVectorToPadic ι p
+  have hker : LinearMap.ker φ = L.1 := by
+    ext x
+    simp [φ, P, intCast_mem_pPowerSublatticeEquiv_iff]
+  have hφ : Function.Surjective φ := by
+    intro a
     obtain ⟨x, rfl⟩ := (P.restrictScalars ℤ).mkQ_surjective a
     obtain ⟨z, hz⟩ := intVectorReduction_surjective ι p k (padicVectorReduction ι p k x)
-    refine ⟨L.1.mkQ z, ?_⟩
-    refine (hg z).trans ?_
-    rw [Submodule.mkQ_apply, Submodule.mkQ_apply]
+    refine ⟨z, ?_⟩
+    rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply]
     apply (Submodule.Quotient.eq _).mpr
     apply (pPowerSublatticeEquiv ι p k L).2
     rw [LinearMap.mem_ker, map_sub, padicVectorReduction_intCast, hz, sub_self]
+  exact (Submodule.quotEquivOfEq _ _ hker.symm).trans (φ.quotKerEquivOfSurjective hφ)
 
 /-- The quotient comparison is induced by the usual inclusion of integral vectors into
 p-adic vectors. -/
@@ -183,20 +189,22 @@ p-adic vectors. -/
 theorem pPowerSublatticeQuotientEquiv_apply_mk
     (L : Set.Ici (LinearMap.ker (intVectorReduction ι p k))) (x : ι → ℤ) :
     pPowerSublatticeQuotientEquiv ι p k L (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (fun i ↦ (x i : ℤ_[p])) :=
-  (rfl)
+      Submodule.Quotient.mk (intVectorToPadic ι p x) := by
+  simp only [pPowerSublatticeQuotientEquiv, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk]
+  exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x
 
 /-- For finitely many coordinates, the correspondence is the usual extension of scalars:
 the corresponding p-adic lattice is the p-adic span of the integral lattice. -/
 theorem pPowerSublatticeEquiv_eq_span [Finite ι]
     (L : Set.Ici (LinearMap.ker (intVectorReduction ι p k))) :
     (pPowerSublatticeEquiv ι p k L).1 = Submodule.span ℤ_[p]
-      ((fun x : ι → ℤ ↦ fun i ↦ (x i : ℤ_[p])) '' (L.1 : Set (ι → ℤ))) := by
+      (intVectorToPadic ι p '' (L.1 : Set (ι → ℤ))) := by
   classical
   let := Fintype.ofFinite ι
   let S := Submodule.span ℤ_[p]
-    ((fun x : ι → ℤ ↦ fun i ↦ (x i : ℤ_[p])) '' (L.1 : Set (ι → ℤ)))
-  have hcast (x : ι → ℤ) (hx : x ∈ L.1) : (fun i ↦ (x i : ℤ_[p])) ∈ S :=
+    (intVectorToPadic ι p '' (L.1 : Set (ι → ℤ)))
+  have hcast (x : ι → ℤ) (hx : x ∈ L.1) : intVectorToPadic ι p x ∈ S :=
     Submodule.subset_span ⟨x, hx, rfl⟩
   have hker : LinearMap.ker (padicVectorReduction ι p k) ≤ S := by
     intro x hx
@@ -204,7 +212,7 @@ theorem pPowerSublatticeEquiv_eq_span [Finite ι]
     have hsingle (i : ι) : (p : ℤ) ^ k • Pi.single i 1 ∈ L.1 :=
       L.2 ((mem_ker_intVectorReduction_iff ι p k _).mpr ⟨Pi.single i 1, rfl⟩)
     have heq : (p : ℤ_[p]) ^ k • y = ∑ i, y i •
-        (fun j ↦ (((p : ℤ) ^ k • Pi.single i 1 : ι → ℤ) j : ℤ_[p])) := by
+        intVectorToPadic ι p ((p : ℤ) ^ k • Pi.single i 1) := by
       ext j
       simp [Pi.single_apply, mul_comm]
     rw [heq]
@@ -213,7 +221,7 @@ theorem pPowerSublatticeEquiv_eq_span [Finite ι]
     (Submodule.span_le.mpr (Set.image_subset_iff.mpr fun z hz ↦
       (intCast_mem_pPowerSublatticeEquiv_iff ι p k L z).mpr hz))
   obtain ⟨z, hz, hzx⟩ := (mem_pPowerSublatticeEquiv_iff ι p k L x).mp hx
-  have hdiff : x - (fun i ↦ (z i : ℤ_[p])) ∈
+  have hdiff : x - intVectorToPadic ι p z ∈
       LinearMap.ker (padicVectorReduction ι p k) := by
     rw [LinearMap.mem_ker, map_sub, padicVectorReduction_intCast, ← hzx, sub_self]
   simpa using S.add_mem (hker hdiff) (hcast z hz)
