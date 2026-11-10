@@ -1375,6 +1375,20 @@ theorem occupancyDifferential_apply_coe [CharP R 2] (i : Fin (Fintype.card β + 
     (occupancyDifferential R M i y).1 = matchedDifferential R M y.1 :=
   (rfl)
 
+/-- The differential of an occupancy summand squares to zero. -/
+@[simp]
+theorem occupancyDifferential_occupancyDifferential [CharP R 2] (i : Fin (Fintype.card β + 1))
+    (y : OccupancySummand R M i) :
+    occupancyDifferential R M i (occupancyDifferential R M i y) = 0 :=
+  Subtype.ext (Subtype.ext (differential_differential _))
+
+/-- **The Leibniz rule** for the differential of an occupancy summand. -/
+theorem occupancyDifferential_mul [CharP R 2] (i : Fin (Fintype.card β + 1))
+    (y z : OccupancySummand R M i) :
+    occupancyDifferential R M i (y * z) =
+      occupancyDifferential R M i y * z + y * occupancyDifferential R M i z :=
+  Subtype.ext (matchedDifferential_mul y.1 z.1)
+
 /-- Over a ring of characteristic two, the occupancy decomposition intertwines the differential of
 the matched subalgebra with the differentials of its occupancy summands. -/
 theorem occupancyRingEquiv_matchedDifferential [CharP R 2] (x : matchedSubalgebra R M)
