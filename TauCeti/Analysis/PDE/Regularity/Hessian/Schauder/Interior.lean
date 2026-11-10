@@ -413,10 +413,10 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     (holderWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hdu hd2u
       hHu hHdu (fun i j => (hL i j).mono hsR) (fun x hx => hM x (hsR hx)) hK).mono
       (le_of_eq (by ring)), hsupp, ?_⟩
-  exact (Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall volume
-    (EuclideanSpace.basisFun _ ℝ) hw hsupp
+  exact (Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall (p := 2) volume
+    (EuclideanSpace.basisFun _ ℝ) (hw.continuous_iteratedFDeriv le_rfl) hsupp
     (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq
-    (by simp only [Fintype.card_fin]; push_cast; ring)
+    (by simp only [Fintype.card_fin, ENNReal.toReal_ofNat]; push_cast; ring)
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
 depending only on dimension and `α`, with the following property. Let `0 < λ`, `Λ`, `L`, `M` and
