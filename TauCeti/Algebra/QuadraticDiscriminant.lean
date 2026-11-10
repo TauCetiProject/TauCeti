@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors, Wentao Li
 module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Data.Int.Order.Units
+import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.Positivity.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Int.Progression
+import TauCeti.Data.Int.Round
 
 /-!
 # Non-negativity of a binary quadratic form and its discriminant
@@ -76,7 +78,8 @@ assumed, and a single `y` replaces an infinite family of prime powers.
 The source proves its two locus results independently, the `d ∤ y` one by an infinite family of
 prime powers together with a balanced-remainder lemma. Neither is reproduced. The `d ∤ y`
 statement is not carried at all: it follows from the `d ∤ x ∧ d ∤ y` one in a line, its hypothesis
-being the stronger of the two. The balanced remainder it needed is Euclidean division.
+being the stronger of the two. The balanced remainder it needed is
+`Int.exists_two_mul_abs_sub_mul_le`.
 
 ## References
 
@@ -124,22 +127,6 @@ theorem pos_of_nonneg_of_discrim_lt_zero {R : Type*} [Ring R] [LinearOrder R]
     [IsOrderedRing R] {a b c : R} (ha : 0 ≤ a) (hd : discrim a b c < 0) : 0 < a :=
   ha.lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
 
-/-- Some member of the progression `x₀ + m * ℤ` puts `2 a x + z` within `a * m` of zero, for any
-constant `z`.
-
-This is the point-selection step of `discrim_le_zero_of_pos_of_nonneg_on_progression`, and the
-source of the factor `m` in that theorem's height hypothesis. There `z` is the form's `b * y`,
-which enters only as a constant. -/
-private theorem exists_abs_two_mul_add_le {a m x₀ z : ℤ} (ha : 0 < a) (hm : 0 < m) :
-    ∃ k : ℤ, |2 * a * (x₀ + m * k) + z| ≤ a * m := by
-  -- Shift `2 a x₀ + z` by the multiple of the gap `2 a m` that lands it in `[-a m, a m)`.
-  have hn : 0 < 2 * (a * m) := by positivity
-  refine ⟨-((2 * a * x₀ + z + a * m) / (2 * (a * m))), abs_le.mpr ?_⟩
-  have h₁ := Int.emod_add_mul_ediv (2 * a * x₀ + z + a * m) (2 * (a * m))
-  have h₂ := Int.emod_nonneg (2 * a * x₀ + z + a * m) hn.ne'
-  have h₃ := Int.emod_lt_of_pos (2 * a * x₀ + z + a * m) hn
-  constructor <;> linarith
-
 /-- **An arithmetic progression of large enough height pins the discriminant.** If a binary
 quadratic form over `ℤ` with positive leading coefficient `a` is non-negative at `(x, y)` for a
 fixed `y` and every `x` in the progression `x₀ + m * ℤ`, and `a * m < |y|`, then
@@ -156,17 +143,22 @@ private theorem discrim_le_zero_of_pos_of_nonneg_on_progression {a b c m x₀ y 
   -- exactly a factor `m` in the height.
   by_contra! hcon
   rw [discrim] at hcon
-  obtain ⟨k, hxa⟩ := exists_abs_two_mul_add_le (x₀ := x₀) (z := b * y) ha hm
-  set x : ℤ := x₀ + m * k
+  -- Shifting `x₀` by `m * k` moves `2 a x + b y` by `2 a m * k`, so the best `k` is the nearest
+  -- multiple of `2 a m`.
+  obtain ⟨n, hn⟩ := Int.exists_two_mul_abs_sub_mul_le (2 * a * x₀ + b * y)
+    (μ := 2 * a * m) (by positivity)
+  rw [abs_of_pos (by positivity : 0 < 2 * a * m)] at hn
+  set x : ℤ := x₀ + m * -n with hx
   have hsq : (2 * a * x + b * y) ^ 2 ≤ (a * m) ^ 2 := by
-    have habs := abs_le.mp hxa
-    nlinarith [habs.1, habs.2]
+    rw [sq_le_sq, abs_of_pos (by positivity : 0 < a * m),
+      show 2 * a * x + b * y = 2 * a * x₀ + b * y - n * (2 * a * m) by rw [hx]; ring]
+    linarith
   -- `a * m < |y|` makes the `(4ac − b²)y²` term outweigh it, so the form is negative at `(x, y)`.
   have ham0 : 0 < a * m := by positivity
   have hy2 : (a * m) ^ 2 < y ^ 2 := by nlinarith [sq_abs y, abs_nonneg y]
   have hkey : 4 * a * (a * x ^ 2 + b * x * y + c * y ^ 2)
       = (2 * a * x + b * y) ^ 2 + (4 * a * c - b ^ 2) * y ^ 2 := by ring
-  nlinarith [h k, hsq, hy2, hkey]
+  nlinarith [h (-n), hsq, hy2, hkey]
 
 /-- A form with negative leading coefficient is eventually negative along any progression, so the
 non-negativity hypothesis is unsatisfiable. -/
@@ -248,24 +240,6 @@ private theorem forall_int_nonneg_and_discrim_pos :
   · nlinarith
   · nlinarith [Int.add_one_le_iff.mpr hx]
 
-/-- Every member of the progression `1 + max |d| 2 * ℤ` avoids the multiples of a non-unit `d`.
-
-The modulus is `|d|` in the intended case, `2` being needed only for `d = 0`: there the multiples
-of `d` are `{0}` alone, and what has to be said is that `1 + 2 * k` is odd, hence nonzero. -/
-private theorem not_dvd_one_add_max_mul {d : ℤ} (hd : ¬ IsUnit d) (k : ℤ) :
-    ¬ d ∣ 1 + max |d| 2 * k := by
-  intro hdvd
-  rcases eq_or_ne d 0 with rfl | hd0
-  · simp at hdvd
-    omega
-  · have hd2 : 2 ≤ |d| := by
-      have := abs_pos.mpr hd0
-      have := Int.isUnit_iff_abs_eq.not.mp hd
-      omega
-    rw [max_eq_left hd2, add_comm] at hdvd
-    exact hd <| isUnit_of_dvd_one <|
-      (dvd_add_right (((dvd_abs d d).mpr dvd_rfl).mul_right k)).mp hdvd
-
 /-- **The locus where `d` divides neither coordinate pins the discriminant.** If a binary
 quadratic form over `ℤ` is non-negative at every `(x, y)` with `d ∤ x` and `d ∤ y`, for a non-unit
 `d`, then `discrim a b c ≤ 0`.
@@ -285,7 +259,7 @@ theorem Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd {a b c d : ℤ} (hd 
   -- `d`; the widened gap costs a factor `max |d| 2` in the height, which the choice of `y` absorbs.
   set m : ℤ := max |d| 2
   have hm : 2 ≤ m := le_max_right _ _
-  have hdm : ∀ k : ℤ, ¬ d ∣ 1 + m * k := not_dvd_one_add_max_mul hd
+  have hdm : ∀ k : ℤ, ¬ d ∣ 1 + m * k := Int.not_dvd_one_add_max_abs_mul hd
   -- One second coordinate serves every case: it avoids `d` and clears the widened height bound.
   have hheight : a * m < |1 + m * (|a| * m)| := by
     have ha : 0 ≤ |a| * m := mul_nonneg (abs_nonneg a) (by omega)
