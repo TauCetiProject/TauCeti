@@ -137,7 +137,7 @@ private theorem exists_coroot_eq_of_mem_normTwoShell {v : Fin t.rank → ℤ}
   have hnonneg (a : Fin t.rank → ℤ) (ha : a ∈ t.cartanMatrix.normTwoShell) (ha0 : 0 ≤ a) :
       ∃ k, P.coroot k = a := by
     refine hB.normTwoShell_nonneg_induction (motive := fun a ↦ ∃ k, P.coroot k = a)
-      t.cartanMatrix_apply_same hoff (fun i ↦ ⟨t.simpleIndex hv i, coroot_simpleIndex t hv i⟩)
+      t.cartanMatrix_apply_same (fun i ↦ ⟨t.simpleIndex hv i, coroot_simpleIndex t hv i⟩)
       (fun a i ha _ hai ⟨k, hk⟩ ↦ ⟨P.reflectionPerm (t.simpleIndex hv i) k, ?_⟩) ha ha0
     have hpair := (hB.isHermitian.isSymm.add_mem_normTwoShell_iff ha
       (single_mem_normTwoShell (t.cartanMatrix_apply_same i))).mp hai
