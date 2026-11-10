@@ -418,6 +418,11 @@ variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
+/-- The sign of a nonzero real number squares to `1`. -/
+private theorem coe_sign_mul_coe_sign_of_ne_zero {r : ℝ} (hr : r ≠ 0) :
+    (SignType.sign r : ℤ) * SignType.sign r = 1 := by
+  rcases hr.lt_or_gt with h | h <;> simp [sign_neg, sign_pos, h]
+
 /-- **Oriented charts and maps with invertible derivative.** Let `f : M → N` be continuous, `φ` a
 chart of `M` at `a` and `χ` a chart of `N` at `f a`, and suppose that `f` read in these charts,
 `χ ∘ f ∘ φ.symm`, has a derivative `f'` of nonzero determinant at `φ a`. On an open neighbourhood
@@ -442,8 +447,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   -- the model, which is `sign (det f')` times a translation.
   set Z := ModuleCat.of ℤ (ULift.{w} ℤ)
   set s : ℤ := (SignType.sign f'.det : ℤ)
-  have hs : s * s = 1 := by
-    rcases hdet.lt_or_gt with h | h <;> simp [s, sign_neg, sign_pos, h]
+  have hs : s * s = 1 := coe_sign_mul_coe_sign_of_ne_zero hdet
   -- The map `f` read in the charts, on the open set `V` of the model where it is defined.
   set V : Set E := φ.target ∩ φ.symm ⁻¹' (U ∩ f ⁻¹' χ.source)
   have hmemV {z : M} (hz : z ∈ φ.source) (hzU : z ∈ U) (hzχ : f z ∈ χ.source) : φ z ∈ V :=
@@ -564,8 +568,6 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
     {f' : E →L[ℝ] E} (hf : HasFDerivAt (χ ∘ φ.symm) f' (φ a)) (hdet : f'.det ≠ 0) :
     (χ.localOrientationOfOrientedChart haχ ω hE).val =
       (SignType.sign f'.det : ℤ) • (φ.localOrientationOfOrientedChart haφ ω hE).val := by
-  have hs : (SignType.sign f'.det : ℤ) * SignType.sign f'.det = 1 := by
-    rcases hdet.lt_or_gt with h | h <;> simp [sign_neg, sign_pos, h]
   -- The identity, restricted to the open set `univ`, is the inclusion of `univ`.
   have h := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE χ (.id M) haφ haχ
     isOpen_univ (mem_univ a) (fun _ _ hz ↦ hz) hf hdet
@@ -578,7 +580,7 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
       (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val :=
     h'.symm.trans ((ConcreteCategory.congr_hom
       (localHomologyMap_congr (ModuleCat.of ℤ (ULift.{w} ℤ)) hj _ (n + 1)) _).symm.trans h)
-  rw [e, smul_smul, hs, one_smul]
+  rw [e, smul_smul, coe_sign_mul_coe_sign_of_ne_zero hdet, one_smul]
 
 end ChartChange
 
