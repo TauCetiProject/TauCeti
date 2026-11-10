@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
-import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
-import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 /-!
 # The asymptotic orbit at the end of a finite-energy PSS plane

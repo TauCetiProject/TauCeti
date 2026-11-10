@@ -229,25 +229,8 @@ theorem exists_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
 /-- The end lift is injective on every band `t₀ ≤ t < t₀ + 1` of angular width one: two points
 with the same image differ by an integer multiple of `i`. -/
 theorem injOn_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
-    InjOn p.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} := by
-  intro a ha b hb hab
-  replace ha : t₀ ≤ a.im ∧ a.im < t₀ + 1 := ha
-  replace hb : t₀ ≤ b.im ∧ b.im < t₀ + 1 := hb
-  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift a
-  obtain ⟨l, hl⟩ := p.exists_endCoord_cylindricalEndLift b
-  rw [hab, hl] at hk
-  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
-  have hre := congrArg Complex.re hk
-  have him := congrArg Complex.im hk
-  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
-    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
-  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
-    rw [abs_lt]
-    push_cast
-    constructor <;> linarith
-  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
-  subst hlt
-  exact Complex.ext (by linarith) (by linarith)
+    InjOn p.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
+  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I p.exists_endCoord_cylindricalEndLift t₀
 
 /-- The longitudinal coordinate of the image of a cylinder point is its real part. -/
 @[simp]
