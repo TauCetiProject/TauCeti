@@ -236,7 +236,7 @@ theorem analyticOnNhd_coeff_map_eval₂Hom {σ E : Type*} [Finite σ] [NormedAdd
       (fun z ↦ (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (f z))).coeff i) S := by
   have := Fintype.ofFinite σ
   intro z hz
-  simp only [coeff_map_eval₂Hom]
+  simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
   simpa only [MvPolynomial.aeval_eq_eval] using
     AnalyticAt.aeval_mvPolynomial (fun j ↦ hf j z hz) ((p.coeff i).map Complex.ofRealHom)
 

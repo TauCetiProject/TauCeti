@@ -121,10 +121,12 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (fun j ↦ Φ b.1 j + b.2 ^ c j))
   have hL (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) :
       (F b).coeff p.natDegree = b.2 ^ Finsupp.weight c vLead * u 0 b := by
-    simpa [F, coeff_map_eval₂Hom, P, v] using (hforms b hb 0).2
+    simp only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+    simpa [P, v] using (hforms b hb 0).2
   have hC (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) :
       (F b).coeff 0 = b.2 ^ Finsupp.weight c vConst * u 1 b := by
-    simpa [F, coeff_map_eval₂Hom, P, v] using (hforms b hb 1).2
+    simp only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+    simpa [P, v] using (hforms b hb 1).2
   -- Nonzero leading coefficient preserves the formal degree off the hyperplane.
   have hnz (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) (k : Fin 3) :
       MvPolynomial.eval₂ Complex.ofRealHom
