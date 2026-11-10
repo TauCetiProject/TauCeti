@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 public import TauCeti.Geometry.Manifold.Flow.CovariantVariation
+public import TauCeti.Geometry.Manifold.Flow.Periodic
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
@@ -33,18 +34,20 @@ any choice of connection. For a differentiable map, `floerOperator_eq` identifie
 coordinate expression of the intrinsic perturbed derivative `du - X_K`.
 
 At the stationary cylinder `u(s, t) = φ_{s₀, t}(x)` over a trajectory of the time-dependent
-Hamiltonian flow `φ` of `G`, with `Ks = 0` and `Kt = G_t`, the linearization is the
-translation-invariant operator `ξ ↦ ∇_s ξ + J(∇_t ξ - ∇_ξ X_{G_t})`: the `∇J` term multiplies
-`u_t - X_{G_t}(u)`, which vanishes along a trajectory. The covariant variational equation
+Hamiltonian flow `φ` of `G`, with `Ks = 0` and `Kt = G_t`, the linearization is the operator
+`ξ ↦ ∇_s ξ + J(∇_t ξ - ∇_ξ X_{G_t})` on fields along `u` over `ℝ²`: the `∇J` term multiplies
+`u_t - X_{G_t}(u)`, which vanishes along a trajectory. This operator is invariant under
+translation in `s` when `J` is independent of `s`, and descends to the cylinder `ℝ × S¹` when `J`
+and `G` are `1`-periodic in `t`; neither is assumed here. The covariant variational equation
 `∇_t (dφ_{s₀, t} v) = ∇_{dφ_{s₀, t} v} X_{G_t}` of the flow
 (`TauCeti.alongCurve_mfderiv_timeDependentFlowOf`) therefore says that the `s`-independent field
 `ξ(s, t) = dφ_{s₀, t} v` lies in its kernel, for every `v ∈ T_x M`, every family `J` and every
 torsion-free connection (`floerLinearization_mfderiv_timeDependentFlowOf`). Over a `1`-periodic
 orbit of a `1`-periodic Hamiltonian, `ξ` is `1`-periodic in `t` when `v` is fixed by the
 derivative of the time-one map (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`), and
-it vanishes nowhere when `v ≠ 0`. So a degenerate orbit gives a nonzero translation-invariant
-kernel element of the linearization on the cylinder `ℝ × S¹`
-(`exists_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt`).
+it vanishes nowhere when `v ≠ 0`. So a degenerate orbit gives a nowhere-vanishing kernel field on
+`ℝ²` which is independent of `s` and `1`-periodic in `t`
+(`exists_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt`), for every family `J`.
 
 ## References
 
@@ -331,9 +334,9 @@ theorem exists_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt [I.Bound
       exists_prop] using hdeg
   refine ⟨fun w ↦ mfderiv I I
       (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (G t)) s₀ w.2) x v,
-    fun z hz ↦ hv0 (injective_mfderiv_timeDependentFlowOf hX (hall z.2)
+    fun z hz ↦ hv0 (injective_mfderiv_timeDependentFlowOf hX₁ (hall z.2)
       (hz.trans (map_zero _).symm)), fun _ _ ↦ rfl,
-    fun z ↦ mfderiv_timeDependentFlowOf_add_period_apply_of_eq hper one_ne_zero hX h hfix hv z.2,
+    fun z ↦ mfderiv_timeDependentFlowOf_add_period_apply_of_eq hX₁ hper one_ne_zero h hfix hv z.2,
     fun z ↦ floerLinearization_mfderiv_timeDependentFlowOf ω cov htor J hX v (hall z.2)⟩
 
 end StationaryCylinder
