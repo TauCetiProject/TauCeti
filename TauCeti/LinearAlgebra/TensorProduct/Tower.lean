@@ -92,7 +92,7 @@ theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemir
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/
-theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [CommSemiring A]
+theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Semiring A]
     [Algebra R A] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
     {f : N →ₗ[R] M} {g : M →ₗ[R] N} (h : f ∘ₗ g = .id) :
     Function.LeftInverse (f.baseChange A) (g.baseChange A) := fun z ↦ by

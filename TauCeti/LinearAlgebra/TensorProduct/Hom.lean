@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.RingTheory.Finiteness.Projective
+import TauCeti.LinearAlgebra.LinearMap.Comp
 import TauCeti.LinearAlgebra.TensorProduct.Tower
 import TauCeti.Logic.Function.Basic
 
@@ -28,18 +29,6 @@ it on pure tensors.
 public section
 
 open TensorProduct
-
-namespace LinearMap
-
-/-- Precomposition with a retraction `p` of a section `i` is a section of precomposition with
-`i`: `lcomp R N i ∘ₗ lcomp R N p = id`. -/
-theorem lcomp_comp_lcomp_eq_id {R M N F : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] [AddCommMonoid F] [Module R F] {i : M →ₗ[R] F}
-    {p : F →ₗ[R] M} (hpi : p ∘ₗ i = .id) : lcomp R N i ∘ₗ lcomp R N p = .id := by
-  ext x : 1
-  simp [lcomp_apply', comp_assoc, hpi]
-
-end LinearMap
 
 namespace IsBaseChange
 
