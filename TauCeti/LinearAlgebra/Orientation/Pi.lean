@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.GroupTheory.Perm.Inversion
 public import TauCeti.LinearAlgebra.Orientation.Basis
-import TauCeti.LinearAlgebra.Orientation.Basic
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.LinearAlgebra.Ray
 
@@ -27,8 +26,8 @@ Listing the factors in another order changes the product orientation by a sign. 
 along `LinearEquiv.piCongrLeft`, is `(-1) ^ N` times the product orientation of
 `E 0, …, E (k - 1)`, where `N` is the sum of `n (σ i) * n (σ j)` over the pairs `i < j` whose
 order `σ` reverses (`Orientation.map_piCongrLeft_pi`). The sign is that of the permutation
-`TauCeti.blockPerm σ n` of the listed basis vectors, which moves blocks of basis vectors past each
-other.
+`Equiv.Perm.blockPerm σ n` of the listed basis vectors, which moves blocks of basis vectors past
+each other.
 
 In particular, when every factor has even dimension the product orientation does not depend on
 the order of the factors (`Orientation.map_piCongrLeft_pi_of_even`). This is the permutation law
@@ -160,7 +159,7 @@ theorem map_piCongrLeft_pi (o : ∀ i, Orientation R (E i) (Fin (n i)))
   -- Transporting the ordered product basis of the `b (σ i)` gives the ordered product basis of the
   -- `b i`, with its basis vectors permuted by the block permutation.
   set π : Equiv.Perm (Fin (∑ i, n (σ i))) :=
-    ((finCongr h).symm.permCongr (TauCeti.blockPerm σ n)).symm
+    ((finCongr h).symm.permCongr (σ.blockPerm n)).symm
   have he : ((Pi.basis fun i ↦ b (σ i)).reindex finSigmaFinEquiv).map
       (LinearEquiv.piCongrLeft R E σ) =
       (((Pi.basis b).reindex finSigmaFinEquiv).reindex (finCongr h.symm)).reindex π := by
@@ -169,7 +168,7 @@ theorem map_piCongrLeft_pi (o : ∀ i, Orientation R (E i) (Fin (n i)))
     simp [π, Equiv.permCongr_apply]
   have hsign : Units.map (Int.castRingHom R).toMonoidHom (Equiv.Perm.sign π) =
       (-1 : Rˣ) ^ (∑ p ∈ univ.inversions σ, n (σ p.1) * n (σ p.2)) := by
-    simp [π, TauCeti.sign_blockPerm]
+    simp [π, Equiv.Perm.sign_blockPerm]
   -- The statement for the basis orientations.
   have key : Orientation.map (Fin (∑ i, n (σ i))) (LinearEquiv.piCongrLeft R E σ)
       ((Pi.basis fun i ↦ b (σ i)).reindex finSigmaFinEquiv).orientation =

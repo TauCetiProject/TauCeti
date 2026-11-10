@@ -30,10 +30,10 @@ permutations when rotating index blocks.
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 * `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
   entries lexicographically.
-* `TauCeti.blockPerm` and `TauCeti.sign_blockPerm`: the permutation of consecutive blocks of sizes
-  `d i` that lists them in the order of a permutation `σ`, and its sign
+* `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
+  sizes `d i` that lists them in the order of a permutation `σ`, and its sign
   `(-1) ^ ∑ d (σ i) * d (σ j)` over the pairs `i < j` inverted by `σ`; it is even when all the
-  sizes are even (`TauCeti.sign_blockPerm_of_even`).
+  sizes are even (`Equiv.Perm.sign_blockPerm_of_even`).
 * `TauCeti.sum_sign_smul_permCongr_mul`: reindexing a signed sum over permutations along an
   equivalence followed by right multiplication.
 * `TauCeti.sum_sign_smul_rotate_blocks`: reindexing a signed sum over permutations along a
@@ -304,10 +304,20 @@ theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {d : Fin k → ℕ}
     simp only [h.not_gt, h.ne', false_and, or_self, iff_false, not_lt]
     omega
 
+end BlockPerm
+
+end TauCeti
+
+namespace Equiv.Perm
+
+open _root_.Finset TauCeti
+
+variable {k : ℕ}
+
 /-- The permutation of `Fin (∑ i, d i)` comparing two listings of consecutive blocks of sizes
 `d i`. Block `i` of the listing in the order `σ 0, σ 1, …`, which has size `d (σ i)`, is sent to
 block `σ i` of the listing in the order `0, 1, …`, preserving the order within each block
-(`TauCeti.blockPerm_apply`). -/
+(`Equiv.Perm.blockPerm_apply`). -/
 def blockPerm (σ : Equiv.Perm (Fin k)) (d : Fin k → ℕ) : Equiv.Perm (Fin (∑ i, d i)) :=
   (finCongr (Equiv.sum_comp σ d).symm).trans
     (finSigmaFinEquiv.symm.trans ((Equiv.sigmaCongrLeft σ).trans finSigmaFinEquiv))
@@ -382,6 +392,4 @@ theorem sign_blockPerm_of_even (σ : Equiv.Perm (Fin k)) {d : Fin k → ℕ} (hd
   rw [sign_blockPerm]
   exact Even.neg_one_pow (even_sum _ fun p _ ↦ (hd _).mul_right _)
 
-end BlockPerm
-
-end TauCeti
+end Equiv.Perm
