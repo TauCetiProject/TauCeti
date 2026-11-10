@@ -150,6 +150,7 @@ section Finite
 variable [Field k] [Group G] [Finite G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   [Invertible (Nat.card G : k)]
 
+omit [Finite G] in
 /-- **The two invariant dimensions add to that of the tensor square**, as an identity in `k`:
 averaging `Representation.char_tensorSquare` gives `dim (V ⊗ V)ᴳ = dim (Sym²V)ᴳ + dim (Λ²V)ᴳ`
 in `k`.
@@ -162,6 +163,8 @@ theorem finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
     (finrank k (Representation.tprod ρ ρ).invariants : k) =
       (finrank k (ρ.symmetricPower 2).invariants : k) +
         (finrank k (ρ.exteriorPower 2).invariants : k) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   rw [← Representation.card_inv_mul_sum_char_eq_finrank,
     ← Representation.card_inv_mul_sum_char_eq_finrank,
@@ -169,11 +172,14 @@ theorem finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
   refine congrArg _ (Finset.sum_congr rfl fun g _ => ?_)
   rw [← Representation.char_tensorSquare ρ g, Representation.char_tensor, Pi.mul_apply, sq]
 
+omit [Invertible (Nat.card G : k)] in
 /-- **The two invariant dimensions add to that of the tensor square**, as natural numbers: over a
 field of characteristic zero, `dim (V ⊗ V)ᴳ = dim (Sym²V)ᴳ + dim (Λ²V)ᴳ`. -/
 theorem finrank_invariants_tprod_self [CharZero k] (ρ : Representation k G V) :
     finrank k (Representation.tprod ρ ρ).invariants =
       finrank k (ρ.symmetricPower 2).invariants + finrank k (ρ.exteriorPower 2).invariants := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.2 Nat.card_pos.ne')
   exact_mod_cast finrank_invariants_tprod_self_cast (k := k) ρ
 
 end Finite
