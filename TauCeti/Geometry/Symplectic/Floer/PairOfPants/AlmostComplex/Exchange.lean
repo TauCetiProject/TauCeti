@@ -104,16 +104,6 @@ variable [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
   {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
 
-omit [FiniteDimensional ℝ V] in
-/-- Families indexed by the ends that are `J q` at the inputs and the constant structure `J₀` at
-`∞` inherit any property shared by the `J q` and the constant family. -/
-private theorem forall_update_inf_base {P : (ℝ → M → AlmostComplexStructure V) → Prop}
-    (h₀ : P fun _ _ => J₀) (hJ : ∀ q, P (J q)) (q : Puncture) :
-    P (update J inf (fun _ _ => J₀) q) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀
-  · simpa [update_of_ne hq] using hJ q
-
 /-- **The input-exchange family of almost complex structures.** For `c ∈ ℝ`, relative to an
 `ω`-compatible base structure `J₀`, this is the pair-of-pants structure of the input structures
 of `J` (with output structure `J₀`) on the disc `‖w - c‖ ≤ 2 exp (2π)`, and the negative plane
@@ -161,8 +151,8 @@ theorem compatible_exchangeAlmostComplex (h₀ : ω.Compatible J₀)
   unfold exchangeAlmostComplex
   split_ifs
   · exact compatible_pairOfPantsAlmostComplex h₀
-      (forall_update_inf_base (P := fun f => ∀ t x, ω.Compatible (f t x)) (fun _ _ => h₀)
-        (fun q => hJc q)) w x
+      ((forall_update_iff J fun _ f => ∀ t x, ω.Compatible (f t x)).2
+        ⟨fun _ _ => h₀, fun q _ => hJc q⟩) w x
   · exact compatible_negativePlaneAlmostComplex h₀ (hJc inf) _ x
 
 /-- **The Cayley transform of the family.** For `-1 ≤ c ≤ 2`, relative to `J₀`, the Cayley
@@ -290,9 +280,10 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
   rcases lt_or_ge ‖(w : ℂ) - c‖ (2 * Real.exp (2 * π)) with hlt | hge
   · -- Near the disc the family is the pair-of-pants structure of the input structures.
     have hin := contMDiffAt_pairOfPantsAlmostComplex h₀ (hJ := tames_update_inf_base h₀.tames hJ)
-      (forall_update_inf_base (P := fun f => Periodic f 1) (fun _ => rfl) hJp)
-      (forall_update_inf_base (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
-        (fun p : ℝ × M => (f p.1 p.2).toLinearMap.toContinuousLinearMap)) contMDiff_const hJs)
+      ((forall_update_iff J fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hJp q⟩)
+      ((forall_update_iff J fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
+        (fun p : ℝ × M => (f p.1 p.2).toLinearMap.toContinuousLinearMap)).2
+        ⟨contMDiff_const, fun q _ => hJs q⟩)
       w x
     refine (hin.comp (c, ((w : ℂ), x)) contMDiffAt_snd).congr_of_eventuallyEq ?_
     filter_upwards [hdist.continuousAt.eventually (gt_mem_nhds hlt)] with p hp
