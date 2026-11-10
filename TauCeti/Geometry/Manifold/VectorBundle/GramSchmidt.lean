@@ -12,6 +12,8 @@ public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
 # Smooth Gram–Schmidt in Riemannian vector bundles
@@ -53,17 +55,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] IsWellOrder.toHasWellFounded
 
-/-- Fiberwise Gram–Schmidt preserves `C^n` regularity at a linearly independent family. -/
+section Along
+
+variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+  [TopologicalSpace HP] [TopologicalSpace P] [ChartedSpace HP P]
+  {IP : ModelWithCorners ℝ EP HP} {b : P → M} {v : ι → ∀ y, V (b y)} {x : P}
+
+/-- Fiberwise Gram–Schmidt preserves `C^n` regularity at a linearly independent family,
+including for sections along an arbitrary base map. -/
 theorem ContMDiffAt.gramSchmidt_bundle
-    (hv : ∀ i, CMDiffAt n (T% (v i)) x)
+    (hv : ∀ i, ContMDiffAt IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)) x)
     (hli : LinearIndependent ℝ (fun i ↦ v i x)) (j : ι) :
-    CMDiffAt n (T% (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j)) x := by
+    ContMDiffAt IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidt ℝ (fun i ↦ v i y) j)) x := by
   classical
   induction j using WellFoundedLT.induction with
   | ind j ih =>
     have hg (i : ι) (hi : i < j) := ih i hi
     have hc (i : ι) (hi : i < j) :
-        CMDiffAt n (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
+        ContMDiffAt IP 𝓘(ℝ) n (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
           inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i)
             (gramSchmidt ℝ (fun k ↦ v k y) i)) x :=
       ((hg i hi).inner_bundle (hv j)).div₀ ((hg i hi).inner_bundle (hg i hi))
@@ -77,13 +88,16 @@ theorem ContMDiffAt.gramSchmidt_bundle
       funext y
       simp only [Pi.sub_apply, Finset.sum_apply, real_inner_self_eq_norm_sq]
       exact eq_sub_of_add_eq (gramSchmidt_def'' ℝ (fun i ↦ v i y) j).symm
-    have hs := (hv j).sub_section (.sum_section fun i hi ↦
-      (hc i (Finset.mem_Iio.mp hi)).smul_section (hg i (Finset.mem_Iio.mp hi)))
+    have hb := (contMDiffAt_proj V).comp x (hv j)
+    have hs := (hv j).sub_sectionAlong (ContMDiffAt.sum_sectionAlong (Finset.Iio j) _ hb
+      fun i hi ↦ (hc i (Finset.mem_Iio.mp hi)).smul_totalSpace (hg i (Finset.mem_Iio.mp hi)))
     apply hs.congr_of_eventuallyEq
     apply Filter.Eventually.of_forall
     intro y
-    apply congrArg (TotalSpace.mk' F y)
-    simpa only [Pi.sub_apply, Finset.sum_apply] using congrFun hformula y
+    apply congrArg (TotalSpace.mk' F (b y))
+    simpa only [Pi.sub_apply, Finset.sum_apply, Pi.smul_apply'] using congrFun hformula y
+
+end Along
 
 /-- Fiberwise normalized Gram–Schmidt preserves `C^n` regularity at a linearly independent
 family. -/
