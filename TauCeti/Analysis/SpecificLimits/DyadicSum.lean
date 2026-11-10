@@ -11,13 +11,17 @@ import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Sums over dyadic scales
 
-For a base `b > 1`, an exponent `δ > 0` and any real `u`, the sum over all scales `b ^ j`, `j ∈ ℤ`,
-of `min (b ^ j u) ((b ^ j u) ^ (-δ))` is bounded independently of `u`: the terms with `b ^ j u ≤ 1`
-form a geometric series of ratio `b⁻¹` dominated by its largest term, and the terms with
-`b ^ j u > 1` a geometric series of ratio `b ^ (-δ)`. With `b = 2` this is how per-scale estimates
-of the shape "at most `2 ^ j ‖h‖` for small scales and at most `(2 ^ j ‖h‖) ^ (-δ)` for large ones"
-are summed into a bound uniform in `h`, as in the verification of Hörmander's condition for the
-kernel of a Fourier multiplier cut into Littlewood–Paley pieces.
+For a base `b > 1` and an exponent `δ > 0`, the sum of `min (b ^ j u) ((b ^ j u) ^ (-δ))` over
+any finite set of integers `j` is at most `(1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹`, for every real `u`.
+For `u > 0`, the terms with `b ^ j u ≤ 1` are at most `b ^ j u`, a geometric series of ratio
+`b⁻¹` whose largest term is at most `1`, and the terms with `b ^ j u > 1` are `(b ^ j u) ^ (-δ)`,
+a geometric series of ratio `b ^ (-δ)` whose largest term is below `1`. For `u ≤ 0` every term is
+nonpositive.
+
+With `b = 2` this is how per-scale estimates of the shape "at most `2 ^ j ‖h‖` for small scales and
+at most `(2 ^ j ‖h‖) ^ (-δ)` for large ones" are summed into a bound uniform in `h`, as in the
+verification of Hörmander's condition for the kernel of a Fourier multiplier cut into
+Littlewood–Paley pieces.
 
 ## Main declarations
 
