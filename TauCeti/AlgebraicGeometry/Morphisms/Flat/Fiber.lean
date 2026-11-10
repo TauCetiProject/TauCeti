@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import TauCeti.CategoryTheory.MorphismProperty.Limits
-import TauCeti.RingTheory.Flat.Fiber
+import TauCeti.RingTheory.Flat.Fiber.Basic
 
 /-!
 # The fibrewise criterion for flatness of finite morphisms

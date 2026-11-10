@@ -31,9 +31,10 @@ isomorphism on those sections restricts to an isomorphism
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_isIso_app`), and over them the
 unit of the restriction--pushforward adjunction is an isomorphism on sections
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`). Restriction along an
-isomorphism of schemes reflects isomorphisms, a submodule containing one that is everything over
-an open is everything over it, and restriction to the slice site over an open preserves
-epimorphisms.
+isomorphism of schemes reflects isomorphisms, a morphism that is an isomorphism over an open is
+one over every smaller open and, along an open immersion, exactly when it is one over the image,
+a submodule containing one that is everything over an open is everything over it, and restriction
+to the slice site over an open preserves epimorphisms.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -183,6 +184,29 @@ theorem isIso_of_isIso_restrictFunctor_map {X Y : Scheme.{u}} (j : Y ⟶ X) [IsI
       restrictFunctorId
   exact (NatIso.isIso_map_iff e φ).mp
     (inferInstanceAs (IsIso ((restrictFunctor (inv j)).map ((restrictFunctor j).map φ))))
+
+/-- A morphism that restricts to an isomorphism over an open `W` restricts to an isomorphism over
+every open `V ≤ W`. -/
+theorem isIso_restrictFunctor_map_of_le {X : Scheme.{u}} {M N : X.Modules} (φ : M ⟶ N)
+    {V W : X.Opens} (h : V ≤ W) [IsIso ((restrictFunctor W.ι).map φ)] :
+    IsIso ((restrictFunctor V.ι).map φ) := by
+  let k : V.toScheme ⟶ W.toScheme := X.homOfLE h
+  have : IsIso ((restrictFunctor W.ι ⋙ restrictFunctor k).map φ) :=
+    inferInstanceAs (IsIso ((restrictFunctor k).map ((restrictFunctor W.ι).map φ)))
+  have := (NatIso.isIso_map_iff (restrictFunctorComp k W.ι) φ).mpr this
+  exact (NatIso.isIso_map_iff (restrictFunctorCongr (X.homOfLE_ι h)) φ).mp this
+
+/-- A morphism restricts to an isomorphism along an open immersion `j` if and only if it
+restricts to an isomorphism over the image of `j`. -/
+theorem isIso_restrictFunctor_map_iff_opensRange {X U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] {M N : X.Modules} (φ : M ⟶ N) :
+    IsIso ((restrictFunctor j).map φ) ↔ IsIso ((restrictFunctor j.opensRange.ι).map φ) := by
+  -- `j` is the isomorphism onto its image followed by the inclusion of the image.
+  have e := (NatIso.isIso_map_iff (restrictFunctorCongr j.isoOpensRange_hom_ι) φ).symm.trans
+    (NatIso.isIso_map_iff (restrictFunctorComp j.isoOpensRange.hom j.opensRange.ι) φ)
+  rw [e, CategoryTheory.Functor.comp_map]
+  refine ⟨fun h ↦ isIso_of_isIso_restrictFunctor_map j.isoOpensRange.hom _, fun h ↦ ?_⟩
+  infer_instance
 
 /-- A submodule `i : N' ⟶ N` through which a morphism `i₁ : N₁ ⟶ N` factors restricts to an
 isomorphism over every open over which `i₁` does. -/

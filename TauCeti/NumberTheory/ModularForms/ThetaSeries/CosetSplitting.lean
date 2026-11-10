@@ -98,6 +98,33 @@ theorem summable_norm_gaussSumTwisted_mul_thetaTerm (a d : ℤ) (c : ℕ)
   gcongr
   exact norm_gaussSumTwisted_le hL a c m
 
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] [DiscreteTopology L]
+  [IsZLattice ℝ L] in
+/-- Termwise in the coset splitting of `θ_{γ+L}(A τ)`, the twisted Gauss sum at `a γ + m` collects
+the Gauss factors of the classes `y ∈ L / c L`, with `σ = τ + d / c`. -/
+private theorem term_eq_sum_gaussTerm (A : SL(2, ℤ)) {c : ℕ}
+    [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] (γ : dual L) (τ σ : ℍ)
+    (hσ : σ = ((A 1 1 : ℝ) / c) +ᵥ τ) (m : dual L) :
+    cexp (2 * π * I * (((A 0 0 * ‖(γ : E)‖ ^ 2 / 2 + ⟪(γ : E), (m : E)⟫) / c : ℝ) : ℂ)) *
+        gaussSumTwisted L hL (A 0 0) c (A 0 0 • γ + m) *
+        cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
+          cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) =
+      ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
+        cexp (2 * π * I * ((A 0 0 * ‖(γ : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
+          gaussTerm L hL (A 0 0) c (A 0 0 • γ) y *
+          (cexp (2 * π * I * ⟪(c : ℝ)⁻¹ • ((γ : E) + (Quotient.out y : L)), (m : E)⟫) *
+            cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ)) := by
+  rw [gaussSumTwisted_def, Finset.mul_sum, Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  generalize hv : Quotient.out y = v
+  rw [← Submodule.Quotient.mk_out y, hv, gaussTerm_mk, gaussTerm_mk, Submodule.coe_add,
+    inner_add_right, hσ, coe_vadd, inner_smul_left, inner_add_left, conj_trivial]
+  simp only [← Complex.exp_add]
+  congr 1
+  push_cast
+  field_simp
+  ring
+
 /-- **The coset splitting of a coset theta series.** Let `L` be an even full lattice of rank `2k`,
 `γ ∈ L^∨` and `A = !![a, b; c, d] ∈ SL(2, ℤ)` with `c > 0`. Then
 `θ_{γ+L}(A τ) = (covol L)⁻¹ ((c τ + d) / (i c))^k ∑_{m ∈ L^∨} e((a ‖γ‖² / 2 + ⟪γ, m⟫) / c)
@@ -154,26 +181,7 @@ theorem thetaCoset_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A 
     field_simp
     ring
   -- Termwise, the twisted Gauss sum at `a γ + m` collects the Gauss factors of the classes.
-  have hterm (m : dual L) :
-      cexp (2 * π * I * (((A 0 0 * ‖(γ : E)‖ ^ 2 / 2 + ⟪(γ : E), (m : E)⟫) / c : ℝ) : ℂ)) *
-          gaussSumTwisted L hL (A 0 0) c (A 0 0 • γ + m) *
-          cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
-            cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) =
-        ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
-          cexp (2 * π * I * ((A 0 0 * ‖(γ : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
-            gaussTerm L hL (A 0 0) c (A 0 0 • γ) y *
-            (cexp (2 * π * I * ⟪(c : ℝ)⁻¹ • ((γ : E) + (Quotient.out y : L)), (m : E)⟫) *
-              cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ)) := by
-    rw [gaussSumTwisted_def, Finset.mul_sum, Finset.sum_mul, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    generalize hv : Quotient.out y = v
-    rw [← Submodule.Quotient.mk_out y, hv, gaussTerm_mk, gaussTerm_mk, Submodule.coe_add,
-      inner_add_right, hσ, coe_vadd, inner_smul_left, inner_add_left, conj_trivial]
-    simp only [← Complex.exp_add]
-    congr 1
-    push_cast
-    field_simp
-    ring
+  have hterm := term_eq_sum_gaussTerm hL A γ τ σ hσ
   rw [hAτ, thetaCoset_vadd_eq_sum hL]
   simp_rw [hclass, thetaCoset_S_smul L hk, hterm,
     Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]

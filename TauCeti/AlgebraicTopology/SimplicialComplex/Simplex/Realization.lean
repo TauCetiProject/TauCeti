@@ -138,10 +138,69 @@ theorem range_standardSimplex_coordinates (σ : Finset α) :
     obtain ⟨x, hx⟩ := (standardSimplexCoordinatesHomeomorph σ).surjective ⟨u, hu⟩
     exact ⟨x, congrArg Subtype.val hx⟩
 
+/-- A map on a closed coordinate simplex is continuous if, in the finite coordinates of its
+vertex set, it is the restriction of a map continuous on Mathlib's standard simplex. -/
+theorem continuous_of_continuousOn_coordinates {X : Type*} [TopologicalSpace X]
+    {F : (σ → ℝ) → X} {g : StandardSimplex σ → X} (hFg : ∀ x, F (fun a => x.1 a) = g x)
+    (hF : ContinuousOn F (Set.range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)) :
+    Continuous g := by
+  have hcoord : Continuous fun x : StandardSimplex σ => fun a : σ => x.1 a :=
+    continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+  refine (hF.comp_continuous hcoord fun x => ?_).congr hFg
+  rw [← range_standardSimplex_coordinates]
+  exact mem_range_self x
+
 /-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
 @[simp]
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
     ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
+
+/-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
+theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
+  simpa using (standardSimplexHomeomorph σ y).total_of_fintype
+
+section LinearCombination
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- Sending barycentric coordinates to the corresponding linear combination of an affinely
+independent family is injective on the closed coordinate simplex. -/
+theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineIndependent ℝ p) :
+    Function.Injective
+      fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a := by
+  intro y y' hyy'
+  have h := hp.eq_of_sum_eq_sum (s := Finset.univ) (w₁ := fun a : σ => y.1 a)
+    (w₂ := fun a : σ => y'.1 a) (by simp only [sum_standardSimplex_eq_one])
+    (by simpa [Fintype.linearCombination_apply] using hyy')
+  refine (standardSimplexHomeomorph σ).injective (Convexity.StdSimplex.ext ?_)
+  ext a
+  exact h a (Finset.mem_univ a)
+
+/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
+corresponding linear combination of a family `p` is the convex hull of `p`. -/
+theorem range_linearCombination_standardSimplex (p : σ → E) :
+    Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a) =
+      convexHull ℝ (Set.range p) := by
+  classical
+  let : Convexity.ConvexSpace ℝ E := .ofModule
+  rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
+    ← Set.range_comp']
+  simp_rw [Fintype.linearCombination_apply,
+    ← Convexity.StdSimplex.affineMapMk_apply_eq_sum_of_fintype]
+  rw [Set.convexHull_eq_range_iConvexComb]
+  -- Reindex Mathlib's convex combinations between the family and its range.
+  let s : Set.range p → σ := fun x => x.2.choose
+  have hs (x : Set.range p) : p (s x) = x := x.2.choose_spec
+  apply Set.Subset.antisymm
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map (Set.rangeFactorization p), ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map,
+      Set.rangeFactorization]
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map s, ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map, hs]
+
+end LinearCombination
 
 end Finset
 
@@ -268,19 +327,20 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
       (topFace (ι := ι)) _)
 
 omit [Fintype ι] [Nonempty ι] in
-/-- The coordinate vectors of the realization of the full complex on a finite type are the weight
-vectors of the standard simplex. -/
-theorem range_realization_coe_top [Finite ι] :
+/-- The coordinate vectors of the realization of the full complex are the weight vectors of the
+standard simplex. -/
+theorem range_realization_coe_top :
     range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
       range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
-  have := Fintype.ofFinite ι
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · ext z
-    rw [mem_range_realization_coe_iff, Convexity.StdSimplex.range_toFun_comp_weights]
-    simp
-  · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
-    exact congrArg range (funext fun x => funext fun i =>
-      (realizationTopHomeomorphStdSimplex_apply x i).symm)
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨hnn, hsum, -⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    exact ⟨⟨x.1, fun i => hnn i, hsum⟩, rfl⟩
+  · rintro ⟨t, rfl⟩
+    refine ⟨⟨t.weights, TauCeti.mem_standardGeometricComplex_space_iff.mpr
+      ⟨fun i => t.nonneg i, t.total, ?_⟩⟩, rfl⟩
+    exact t.support_weights_nonempty
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/

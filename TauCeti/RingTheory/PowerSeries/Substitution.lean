@@ -148,9 +148,9 @@ theorem subst_zero {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 /-- Substitution preserves the constant series one. -/
 @[simp]
 theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
-    (1 : R⟦X⟧).subst a = 1 := by
-  rw [← coe_substAlgHom ha, map_one]
+    {τ : Type*} (a : MvPowerSeries τ S) : (1 : R⟦X⟧).subst a = 1 := by
+  simpa only [subst_def, MvPolynomial.coe_one, map_one] using
+    (MvPowerSeries.subst_coe (a := fun _ : Unit ↦ a) (1 : MvPolynomial Unit R))
 
 /-- Substituting `X ^ b` into `X ^ a` multiplies the exponents. -/
 theorem subst_X_pow_X_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -335,7 +335,7 @@ theorem subst_add_of_sq_eq_zero {a h : S⟦X⟧} (ha : HasSubst a) (hh : h ^ 2 =
         simp only [Derivation.map_algebraMap, map_zero, mul_zero, add_zero, AlgHom.commutes] }
   have hT (g : R⟦X⟧) : T g = g.subst a + h * (d⁄dX g).subst a := by
     simp [T, coe_substAlgHom]
-  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one ha, mul_one]
+  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one, mul_one]
   have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ ha.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm

@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -89,12 +90,6 @@ private theorem neg_one_lt_sub_two_div_two (hα : 0 < α) : -1 < ((α : ℝ) - 2
   have : (0 : ℝ) < α := hα
   linarith
 
-/-- For `α > 0`, `σ ↦ (σ - s)^((α - 2)/2)` is interval integrable on every interval. -/
-private theorem intervalIntegrable_sub_rpow (hα : 0 < α) (s a b : ℝ) :
-    IntervalIntegrable (fun σ => (σ - s) ^ (((α : ℝ) - 2) / 2)) volume a b := by
-  simpa using (intervalIntegral.intervalIntegrable_rpow' (neg_one_lt_sub_two_div_two hα)
-    (a := a - s) (b := b - s)).comp_sub_right s
-
 /-- Off the diagonal `σ = s`, the slice `σ ↦ u_s(σ - s, x)` has derivative `laplacianSlice`. -/
 private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
     (hg : AEStronglyMeasurable (f s)) (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hσ : σ ≠ s) (x : E) :
@@ -116,7 +111,8 @@ private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeas
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) (x : E) (a b : ℝ) :
     IntervalIntegrable (laplacianSlice f x s) volume a b := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
-  refine ((intervalIntegrable_sub_rpow hα s a b).const_mul (C * H)).mono_fun ?_
+  refine ((intervalIntegrable_sub_const_rpow (neg_one_lt_sub_two_div_two hα) s a b).const_mul
+    (C * H)).mono_fun ?_
     (ae_of_all _ fun σ => ?_)
   · refine (stronglyMeasurable_deriv
       (fun σ => heatCauchyPotential (f s) (σ - s) x)).aestronglyMeasurable.congr ?_
@@ -200,7 +196,7 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
     simp [laplacianSlice, not_lt.2 hσ.2]
   have hle : ∫ σ in s..t, ‖laplacianSlice f x s σ‖ ≤ ∫ σ in s..t, C * H * (σ - s) ^ p := by
     refine intervalIntegral.integral_mono_on hs.2.le (hint s t).norm
-      ((intervalIntegrable_sub_rpow hα s s t).const_mul _) fun σ hσ => ?_
+      ((intervalIntegrable_sub_const_rpow hp s s t).const_mul _) fun σ hσ => ?_
     simp only [laplacianSlice]
     split_ifs with h
     · exact hC (hfs s) hsM hsH (sub_pos.2 h) x
@@ -208,8 +204,7 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
       have := rpow_nonneg (sub_nonneg.2 hσ.1) p
       positivity
   have hval : ∫ σ in s..t, C * H * (σ - s) ^ p = C * H * ((t - s) ^ (p + 1) / (p + 1)) := by
-    rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_comp_sub_right
-      (fun σ => σ ^ p), sub_self, integral_rpow (Or.inl hp), zero_rpow hp1.ne', sub_zero]
+    rw [intervalIntegral.integral_const_mul, integral_sub_const_rpow hp]
   calc ∫ σ in Ioo 0 t, ‖laplacianSlice f x s σ‖
       = (∫ σ in 0..s, ‖laplacianSlice f x s σ‖) + ∫ σ in s..t, ‖laplacianSlice f x s σ‖ := by
         rw [intervalIntegral.integral_add_adjacent_intervals (hint 0 s).norm (hint s t).norm,

@@ -376,8 +376,10 @@ theorem newtonSlopes_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTo
     (f.map φ).newtonSlopes w = (f.newtonSlopes v).map (c * ·) := by
   have hpoly := f.newtonPolygon_map_eq_map_mul v φ hc hφ
   exact newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
-    (by rw [hpoly, finiteEdges_map_mul, Set.image_id])
-    fun n _ => by rw [hpoly, id, unitSlope_map_mul]
+    (by rw [hpoly, finiteEdges_map (f := (c * ·)), Set.image_id])
+    fun n _ => by
+      rw [hpoly, id]
+      simpa using unitSlope_map (h := f.newtonPolygon v) (AddMonoidHom.mulLeft c) n
 
 /-! ### Linear polynomials -/
 

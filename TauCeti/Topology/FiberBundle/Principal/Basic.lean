@@ -61,6 +61,8 @@ the fibre `G` of the trivial bundle cannot also be a torsor for the right action
 * `TauCeti.PrincipalBundle.division`: the division map of a principal bundle, with
   `TauCeti.PrincipalBundle.smul_division` and `TauCeti.PrincipalBundle.division_eq_iff`.
 * `Bundle.Trivialization.coordChange_eq_mul`: transition maps are left multiplications.
+* `Bundle.Trivialization.coordChange_one_mul_coordChange_one`: the transition functions form a
+  cocycle.
 * `Continuous.totalSpaceMk_smul` and `Continuous.division`: continuity of the action and of the
   division map.
 * `TauCeti.PrincipalBundle.trivializationOfSection`: the equivariant trivialization determined by a
@@ -108,6 +110,12 @@ theorem apply_smul (hb : b ∈ e.baseSet) (p : P b) (g : G) :
     e ⟨b, op g • p⟩ = (b, (e ⟨b, p⟩).2 * g) :=
   Prod.ext (e.coe_coe_fst hb) (e.snd_apply_smul hb p g)
 
+/-- The fibrewise inverse of an equivariant trivialization turns right multiplication on the fibre
+coordinate into the right action on a fibre over its base set. -/
+theorem symm_apply_mul [∀ x, Nonempty (P x)] (hb : b ∈ e.baseSet) (v g : G) :
+    e.symm b (v * g) = op g • e.symm b v := by
+  rw [← e.symm_apply_apply_mk hb (op g • e.symm b v), e.snd_apply_smul hb, e.apply_mk_symm hb]
+
 /-- The inverse of an equivariant trivialization sends `(b, g)` to `s • g`, where `s` is the point
 over `b` with fibre coordinate `1`. -/
 theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :
@@ -142,7 +150,23 @@ theorem coordChange_eq_mul (e' : Trivialization G (π G P)) [e'.IsEquivariant]
     rwa [e.proj_symm_apply' h]
   rw [coordChange, e.symm_apply_eq_smul h, e'.snd_apply_smul hs, TotalSpace.eta, coordChange]
 
+/-- **Transition functions of equivariant trivializations form a cocycle.** Over a point of the
+three base sets, the transition functions `b ↦ e.coordChange e' b 1` satisfy
+`c₂₃ * c₁₂ = c₁₃`. -/
+theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (π G P))
+    [e₂.IsEquivariant] [e₃.IsEquivariant] (h₁ : b ∈ e₁.baseSet) (h₂ : b ∈ e₂.baseSet)
+    (h₃ : b ∈ e₃.baseSet) :
+    e₂.coordChange e₃ b 1 * e₁.coordChange e₂ b 1 = e₁.coordChange e₃ b 1 := by
+  rw [← e₂.coordChange_eq_mul e₃ h₂ h₃, e₁.coordChange_coordChange e₂ e₃ h₁ h₂]
+
 end Bundle.Trivialization
+
+/-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
+action of `G` intertwines them too. -/
+theorem Equiv.symm_op_smul_of_equivariant {G X : Type*} [Group G] [MulAction Gᵐᵒᵖ X]
+    (e : G ≃ X) (he : ∀ v g : G, e (v * g) = op g • e v) (g : G) (x : X) :
+    e.symm (op g • x) = e.symm x * g := by
+  rw [Equiv.symm_apply_eq, he, Equiv.apply_symm_apply]
 
 namespace TauCeti
 

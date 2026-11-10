@@ -133,4 +133,48 @@ def isColimitCoker : IsColimit (CokernelCofork.ofπ (cokerπ f) (comp_cokerπ f)
       induction b using Submodule.Quotient.induction_on
       exact congr($hm _))
 
+section NatCastSMul
+
+variable {k G : Type*} [CommRing k] [TopologicalSpace k] [Monoid G] (A : TopRep k G) (ℓ : ℕ)
+
+/-- Multiplication by the natural number `ℓ` on a continuous representation acts on the carrier as
+`a ↦ ℓ • a`. -/
+@[simp]
+theorem natCast_smul_id_apply (a : A.V) : ((ℓ : k) • 𝟙 A : A ⟶ A).hom a = ℓ • a := by
+  rw [hom_smul, ContIntertwiningMap.smul_apply, Nat.cast_smul_eq_nsmul]
+  -- the underlying map of `𝟙 A` is the identity of the carrier
+  rfl
+
+/-- The `ℓ`-torsion of a finite representation is strictly smaller than the representation when `ℓ`
+does not kill it. -/
+theorem card_ker_natCast_smul_id_lt [Finite A.V] (x : A.V) (hx : ℓ • x ≠ 0) :
+    Nat.card (ker ((ℓ : k) • 𝟙 A)).V < Nat.card A.V := by
+  set f : A ⟶ A := (ℓ : k) • 𝟙 A
+  exact Finite.card_subtype_lt (p := (· ∈ f.hom.ker)) (x := x) fun hmem ↦ hx <| by
+    rw [LinearMap.mem_ker] at hmem
+    exact (natCast_smul_id_apply A ℓ x).symm.trans hmem
+
+/-- The quotient of a finite representation by its `ℓ`-torsion is strictly smaller than the
+representation when a nonzero vector is killed by `ℓ`. -/
+theorem card_coker_kerι_natCast_smul_id_lt [Finite A.V] (y : A.V) (hy0 : y ≠ 0) (hy : ℓ • y = 0) :
+    Nat.card (coker (kerι ((ℓ : k) • 𝟙 A))).V < Nat.card A.V := by
+  have : Fintype A.V := Fintype.ofFinite _
+  set f : A ⟶ A := (ℓ : k) • 𝟙 A
+  set ι := kerι f
+  have hπ : Function.Surjective (cokerπ ι).hom := cokerπ_surjective ι
+  have hιπ : Function.Exact ι.hom (cokerπ ι).hom := exact_cokerπ ι
+  have : Finite (coker ι).V := .of_surjective _ hπ
+  have : Fintype (coker ι).V := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  refine Fintype.card_lt_of_surjective_not_injective _ hπ fun hinj ↦ ?_
+  have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[k] A.V) := by
+    rw [LinearMap.mem_ker]
+    exact (natCast_smul_id_apply A ℓ y).trans hy
+  have hyι : (cokerπ ι).hom y = (cokerπ ι).hom 0 := by
+    rw [map_zero]
+    exact (hιπ y).2 ⟨⟨y, hyker⟩, kerι_apply f _⟩
+  exact hy0 (hinj hyι)
+
+end NatCastSMul
+
 end TopRep

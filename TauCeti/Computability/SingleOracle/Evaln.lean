@@ -457,6 +457,31 @@ theorem evaln_sound {O : ℕ →. ℕ} {k : ℕ} {c : Code} (h : evaln σ k c n 
   split_ifs at hy with hz
   exact hσ z hz y hy
 
+/-- The `rfind'` case of `exists_evaln_eq_some_of_mem_eval`: if every value of the body `cf` is the
+output of a successful run of `evaln` against `σ`, then so is every value of `rfind' cf`. -/
+private theorem exists_evaln_eq_some_of_mem_eval_rfind' {O : ℕ →. ℕ} {cf : Code} {y : ℕ}
+    (hf : ∀ {n y : ℕ}, y ∈ eval O cf n → ∃ k d, evaln σ k cf n = some d ∧ d.output = y)
+    (h : y ∈ eval O (rfind' cf) n) : ∃ k d, evaln σ k (rfind' cf) n = some d ∧ d.output = y := by
+  obtain ⟨a, m, rfl⟩ := exists_eq_pair n
+  -- induction on the distance `y - m` the search still has to cover
+  obtain ⟨j, rfl⟩ : ∃ j, y = j + m := ⟨y - m, by have := le_of_mem_eval_rfind' h; omega⟩
+  induction j generalizing m with
+  | zero =>
+    obtain ⟨x, hx, ⟨rfl, -⟩ | ⟨-, hy⟩⟩ := mem_eval_rfind'.1 h
+    · obtain ⟨k, dx, hdx, hx0⟩ := hf hx
+      exact ⟨max k (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
+        ⟨by omega, dx, evaln_mono (by omega) hdx, Or.inl ⟨hx0, rfl⟩⟩, by simp⟩
+    · have := le_of_mem_eval_rfind' hy
+      omega
+  | succ j ih =>
+    obtain ⟨x, hx, ⟨-, hy⟩ | ⟨hx0, hy⟩⟩ := mem_eval_rfind'.1 h
+    · omega
+    · obtain ⟨k₁, dx, hdx, rfl⟩ := hf hx
+      obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [← Nat.add_assoc, Nat.add_right_comm])
+      exact ⟨max (max k₁ k₂) (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
+        ⟨by omega, dx, evaln_mono (by omega) hdx,
+          Or.inr ⟨hx0, d', evaln_mono (by omega) hd', rfl⟩⟩, by simp [hd'y]; omega⟩
+
 /-- **Completeness.** If the answers `σ` give every value of the oracle `O`, every value of a
 program relative to `O` is the output of a successful run against `σ` at some fuel. The answers
 may go beyond `O` at addresses where `O` is undefined. -/
@@ -508,26 +533,7 @@ theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, y �
       obtain ⟨k₂, d₂, hd₂, rfl⟩ := hg hy
       exact ⟨max (max k₁ k₂) (Nat.pair a (m + 1)) + 1, _, evaln_succ_prec_succ_eq_some.2
         ⟨by omega, d₁, d₂, evaln_mono (by omega) hd₁, evaln_mono (by omega) hd₂, rfl⟩, rfl⟩
-  | rfind' cf hf =>
-    obtain ⟨a, m, rfl⟩ := exists_eq_pair n
-    -- induction on the distance `y - m` the search still has to cover
-    obtain ⟨j, rfl⟩ : ∃ j, y = j + m := ⟨y - m, by have := le_of_mem_eval_rfind' h; omega⟩
-    induction j generalizing m with
-    | zero =>
-      obtain ⟨x, hx, ⟨rfl, -⟩ | ⟨-, hy⟩⟩ := mem_eval_rfind'.1 h
-      · obtain ⟨k, dx, hdx, hx0⟩ := hf hx
-        exact ⟨max k (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
-          ⟨by omega, dx, evaln_mono (by omega) hdx, Or.inl ⟨hx0, rfl⟩⟩, by simp⟩
-      · have := le_of_mem_eval_rfind' hy
-        omega
-    | succ j ih =>
-      obtain ⟨x, hx, ⟨-, hy⟩ | ⟨hx0, hy⟩⟩ := mem_eval_rfind'.1 h
-      · omega
-      · obtain ⟨k₁, dx, hdx, rfl⟩ := hf hx
-        obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [← Nat.add_assoc, Nat.add_right_comm])
-        exact ⟨max (max k₁ k₂) (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
-          ⟨by omega, dx, evaln_mono (by omega) hdx,
-            Or.inr ⟨hx0, d', evaln_mono (by omega) hd', rfl⟩⟩, by simp [hd'y]; omega⟩
+  | rfind' cf hf => exact exists_evaln_eq_some_of_mem_eval_rfind' hf h
 
 /-- **Correspondence with evaluation.** If the answers `σ` are exactly the values of the oracle
 `O`, the values of a program relative to `O` are exactly the outputs of its successful runs

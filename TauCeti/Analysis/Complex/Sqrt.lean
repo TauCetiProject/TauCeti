@@ -31,6 +31,11 @@ theorem sqrt_re_nonneg (z : ℂ) : 0 ≤ (sqrt z).re := by
   rw [sqrt, cpow_inv_two_re]
   positivity
 
+/-- The principal square root has nonnegative imaginary part when the input does. -/
+theorem sqrt_im_nonneg {z : ℂ} (h : 0 ≤ z.im) : 0 ≤ (sqrt z).im := by
+  rw [sqrt, cpow_inv_two_im_eq_sqrt h]
+  exact Real.sqrt_nonneg _
+
 /-- The principal square root has positive real part exactly on the slit plane. -/
 @[simp]
 theorem sqrt_re_pos_iff (z : ℂ) : 0 < (sqrt z).re ↔ z ∈ slitPlane := by

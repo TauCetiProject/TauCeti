@@ -86,6 +86,6 @@ example (k : ℕ) :
 example (k : ℕ) :
     diffAdd (coordinates (0 : ZMod 7) 1 ((k + 1) • (0 : (model (0 : ZMod 7) 1).toAffine.Point)))
       (coordinates (0 : ZMod 7) 1 (k • 0)) (coordinates (0 : ZMod 7) 1 0) = 0 := by
-  ext <;> simp [diffAdd_x, diffAdd_z]
+  ext <;> simp
 
 end TauCeti.Montgomery

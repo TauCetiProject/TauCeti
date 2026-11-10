@@ -96,16 +96,16 @@ theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
   simpa [sub_eq_zero.mp h] using P.one_lt_norm_absNorm_cpow hs
 
 /-- The logarithmic derivative of a deleted Euler factor `1 - N(𝔭) ^ (-s)`. -/
-theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : 0 < s.re) :
+theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ} :
     logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
   have h0 := P.natCast_absNorm_ne_zero
   have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
   have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
   rw [logDeriv_apply, hderiv, Complex.cpow_neg]
-  field_simp
+  by_cases hsub : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 = 0
+  · simp [sub_eq_zero.mp hsub]
+  · field_simp
 
 end IsDedekindDomain.HeightOneSpectrum
 
@@ -211,6 +211,34 @@ theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (f : IdealArithmeticFunction K)
       f (P.primeIdealPow e) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
   rw [idealTerm_def, P.absNorm_primeIdealPow, Nat.cast_pow,
     ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg]
+  ring
+
+/-- Absolute convergence of the Dirichlet series of the local arithmetic factor at `P` at `s`
+makes the series over the prime powers of `P` summable. -/
+theorem summable_idealTerm_primeIdealPow (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeriesSummable (localArithmeticFactor f P) s) :
+    Summable fun e : ℕ ↦ idealTerm K f s (P.primeIdealPow e) := by
+  rw [LSeriesSummable] at hs
+  have hsum' := hs.comp_injective <|
+    Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
+  refine hsum'.congr fun e ↦ ?_
+  simp only [Function.comp_apply]
+  rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
+      (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
+    localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
+
+/-- Multiplying a weighted prime-power term by `log N(P)` gives the term of the logarithmic
+derivative series at `P ^ n`. -/
+theorem log_absNorm_mul_natCast_mul_pow_eq (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (n : ℕ) :
+    Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
+        ((n : ℂ) * f (P.primeIdealPow n) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ n) =
+      Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K f s (P.primeIdealPow n) := by
+  rw [idealTerm_primeIdealPow_eq_mul_cpow_neg]
+  rw [P.absNorm_primeIdealPow, ← Complex.natCast_log, ← Complex.natCast_log]
+  push_cast [Real.log_pow]
   ring
 
 /-- **The prime terms are a subseries of the ideal terms.** Each height-one prime contributes its

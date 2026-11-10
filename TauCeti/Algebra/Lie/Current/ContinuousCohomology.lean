@@ -330,6 +330,22 @@ theorem residueClassMap_injective [IsDomain R] [Module.IsTorsionFree R Z]
   exact (smul_eq_zero.mp
     (smul_eq_zero_of_neg_apply_lie_eq Φ (fun u ↦ eZ (f u)) z hval x y)).resolve_left hxy
 
+/-- A linear map on polynomial currents which vanishes on all modes `t^n ⊗ x` with `n ≥ N`
+extends to a continuous one-cochain on formal currents with trivial coefficients, by truncating
+below `N`. -/
+theorem exists_mem_continuousOneCochain_apply_ofLoop_eq {N : ℤ}
+    (g : LieAlgebra.loopAlgebra R ℤ L →ₗ[R] Z)
+    (hg : ∀ n, N ≤ n → ∀ x, g (AddMonoidAlgebra.single n 1 ⊗ₜ x) = 0) :
+    ∃ f ∈ continuousOneCochain R (currentAlgebra R L)
+        (TrivialLieModule R (currentAlgebra R L) Z),
+      ∀ p, TrivialLieModule.equiv R (currentAlgebra R L) Z (f (ofLoop R L p)) = g p := by
+  set e := TrivialLieModule.equiv R (currentAlgebra R L) Z
+  refine ⟨e.symm.toLinearMap ∘ₗ g ∘ₗ trunc R L N,
+    mem_continuousOneCochain_iff_orderSubmodule.mpr ⟨N, fun u hu ↦ by
+      simp [trunc_eq_zero_of_mem_orderSubmodule R L hu]⟩, fun p ↦ ?_⟩
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+    apply_trunc_ofLoop R L g hg]
+
 end Coefficients
 
 section Classification
@@ -389,15 +405,10 @@ theorem exists_eq_twoCochainOfBilinear_add_d₁₂ {c : twoCochain K (currentAlg
       show N₀ + (n - N₀) ≠ 0 by omega, ↓reduceIte, zero_sub, zero_eq_neg] at h
     exact eP.injective (by rw [h, map_zero])
   -- Truncating at `2 N₀` extends `g` to a continuous one-cochain `f` on formal currents.
-  set f : oneCochain K (currentAlgebra K L) (TrivialLieModule K (currentAlgebra K L) K) :=
-    eC.symm.toLinearMap ∘ₗ eP.toLinearMap ∘ₗ g ∘ₗ trunc K L (2 * N₀)
-  have hf : f ∈ continuousOneCochain K (currentAlgebra K L)
-      (TrivialLieModule K (currentAlgebra K L) K) :=
-    mem_continuousOneCochain_iff_orderSubmodule.mpr ⟨2 * N₀, fun u hu ↦ by
-      simp [f, trunc_eq_zero_of_mem_orderSubmodule K L hu]⟩
-  have hf_ofLoop (p : loopAlgebra K ℤ L) : eC (f (ofLoop K L p)) = eP (g p) := by
-    simp only [f, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
-      apply_trunc_ofLoop K L g hg_mode]
+  obtain ⟨f, hf, hf_ofLoop⟩ := exists_mem_continuousOneCochain_apply_ofLoop_eq (R := K) (L := L)
+    (Z := K) (eP.toLinearMap ∘ₗ g) (N := 2 * N₀) fun n hn x ↦ by
+      simp only [LinearMap.comp_apply, hg_mode n hn x, map_zero]
+  replace hf_ofLoop (p : loopAlgebra K ℤ L) : eC (f (ofLoop K L p)) = eP (g p) := hf_ofLoop p
   -- Both sides are continuous and agree on the dense polynomial currents.
   refine ⟨Ψ, hΨ, hΨs, f, hf, continuousTwoCochain_ext_on hcc
     (add_mem (twoCochainOfBilinear_mem_continuousTwoCochain K L Ψ hΨs)

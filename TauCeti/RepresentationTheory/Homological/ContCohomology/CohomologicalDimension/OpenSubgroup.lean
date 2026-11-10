@@ -75,7 +75,7 @@ theorem CohomologicalDimensionLE.of_isOpen_succ {n : ℕ} (h : CohomologicalDime
   -- `Hⁿ⁺²(G, K)` vanishes for the `p`-primary torsion kernel `K` of the trace, by `cd_p G ≤ n + 1`
   have : Subsingleton
       (continuousCohomology (n + 1 + 1) (ofDiscreteModule ℤ G (DiscreteCoind.traceKer G U M))) :=
-    cohomologicalDimensionLE_iff.1 hG _ (DiscreteCoind.isPPrimaryTorsion_traceKer G U M hM)
+    cohomologicalDimensionLE_iff.1 hG _ (DiscreteCoind.isAddPGroup_traceKer G U M hM)
       (n + 1 + 1) (by omega)
   exact ((DiscreteCoind.traceShortExact G U M hU).coeffMap_proj_surjective
     (n := n + 1)).subsingleton

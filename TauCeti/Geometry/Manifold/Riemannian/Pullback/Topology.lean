@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Pullback and change of charts in the chart Cᵏ topologies

@@ -24,7 +24,10 @@ The main use is a homeomorphism of `E` which squeezes a closed ball `closedBall 
 arbitrarily small closed ball `closedBall 0 δ` while fixing every point of norm at least `2 * r`
 (`TauCeti.exists_homeomorph_mapsTo_closedBall`). Read through an open embedding of `E` and extended
 by the identity, it shrinks a compact subset of a Euclidean open piece of a space by a homeomorphism
-supported in that piece; this is the basic move in the theory of cellular sets.
+supported in that piece; this is the basic move in the theory of cellular sets. A variant fixes a
+smaller closed ball `closedBall 0 t`, `t < δ`, pointwise
+(`TauCeti.exists_homeomorph_eqOn_closedBall_mapsTo_closedBall`), so that the squeeze is the identity
+near the centre.
 
 ## Main definitions
 
@@ -35,6 +38,8 @@ supported in that piece; this is the basic move in the theory of cellular sets.
 * `OrderIso.norm_radialHomeomorph`: it rescales norms by `φ`.
 * `TauCeti.exists_homeomorph_mapsTo_closedBall`: a homeomorphism of `E` fixing the points of norm
   at least `2 * r` and mapping `closedBall 0 r` into `closedBall 0 δ`, for any `δ > 0`.
+* `TauCeti.exists_homeomorph_eqOn_closedBall_mapsTo_closedBall`: a homeomorphism of `E` fixing
+  `closedBall 0 t` pointwise and mapping `closedBall 0 r` into `closedBall 0 δ`, for `0 ≤ t < δ`.
 -/
 
 public section
@@ -148,5 +153,43 @@ theorem exists_homeomorph_mapsTo_closedBall {r δ : ℝ} (hδ : 0 < δ) :
   calc φ ‖x‖ ≤ φ r := hmono.monotone (mem_closedBall_zero_iff.1 hx)
     _ ≤ max (δ / r * r) (2 * r - 2 * r) := min_le_right _ _
     _ = δ := by rw [div_mul_cancel₀ _ hr.ne', sub_self, max_eq_left hδ.le]
+
+/-- **Squeezing a closed ball around a fixed core.** For `0 ≤ t < δ` there is a homeomorphism of
+`E` which fixes every point of `closedBall 0 t` and maps `closedBall 0 r` into
+`closedBall 0 δ`. -/
+theorem exists_homeomorph_eqOn_closedBall_mapsTo_closedBall {t r δ : ℝ} (ht : 0 ≤ t)
+    (htδ : t < δ) :
+    ∃ ρ : E ≃ₜ E, EqOn ρ id (closedBall 0 t) ∧ MapsTo ρ (closedBall 0 r) (closedBall 0 δ) := by
+  rcases le_or_gt r δ with hrδ | hδr
+  · exact ⟨Homeomorph.refl E, fun _ _ ↦ rfl, fun x hx ↦ closedBall_subset_closedBall hrδ hx⟩
+  have hr : 0 < r := by linarith
+  -- A radial homeomorphism rescaling the norm by the identity up to `t`, and beyond `t` by the
+  -- affine map of slope `k = (δ - t) / r ∈ (0, 1]` through `(t, t)`.
+  set k := (δ - t) / r with hk_def
+  have hk : 0 < k := div_pos (by linarith) hr
+  have hk1 : k ≤ 1 := (div_le_one hr).2 (by linarith)
+  have hkr : k * r = δ - t := div_mul_cancel₀ _ hr.ne'
+  set φ : ℝ → ℝ := fun s ↦ min s (t + k * (s - t)) with hφ_def
+  have hmono : StrictMono φ := fun s s' hss' ↦
+    min_lt_min hss' (by nlinarith)
+  have hcont : Continuous φ := by fun_prop
+  have hφ_le {s : ℝ} (hs : s ≤ t) : φ s = s := min_eq_left (by nlinarith)
+  have hsurj : Function.Surjective φ := by
+    refine hcont.surjective ?_ ?_
+    · have : Tendsto (fun s ↦ t + k * (s - t)) atTop atTop :=
+        tendsto_atTop_add_const_left _ _
+          ((tendsto_atTop_add_const_right _ _ tendsto_id).const_mul_atTop hk)
+      exact this.congr' (eventually_ge_atTop t |>.mono fun s hs ↦
+        (min_eq_right (by nlinarith)).symm)
+    · exact tendsto_id.congr' (eventually_le_atBot t |>.mono fun s hs ↦ (hφ_le hs).symm)
+  set e : ℝ ≃o ℝ := hmono.orderIsoOfSurjective φ hsurj
+  have he (s : ℝ) : e s = φ s := rfl
+  have he0 : e 0 = 0 := by rw [he, hφ_le ht]
+  refine ⟨e.radialHomeomorph he0, fun x hx ↦ e.radialHomeomorph_eq_self he0 ?_, fun x hx ↦ ?_⟩
+  · rw [he, hφ_le (mem_closedBall_zero_iff.1 hx)]
+  · rw [mem_closedBall_zero_iff, e.norm_radialHomeomorph, he]
+    calc φ ‖x‖ ≤ φ r := hmono.monotone (mem_closedBall_zero_iff.1 hx)
+      _ ≤ t + k * (r - t) := min_le_right _ _
+      _ ≤ δ := by nlinarith
 
 end TauCeti

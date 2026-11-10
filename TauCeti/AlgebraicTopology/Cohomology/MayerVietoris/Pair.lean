@@ -262,7 +262,7 @@ lemma mono_mayerVietorisCochainToBiprod_zero :
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
-  exact HomologicalComplex.mono_biprod_lift_homologyMap 0
+  exact (HomologicalComplex.mono_biprod_lift_homologyMap_iff 0).2 inferInstance
 
 end SSetPair
 
@@ -286,7 +286,7 @@ lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
     fin_cases i
     exacts [hU, hV]
   have hcov : ⋃ i, ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i = Set.univ := by
-    rw [← Set.preimage_iUnion, TauCeti.iUnion_vecCons]
+    rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
     exact Set.eq_univ_of_forall fun x ↦ x.2
   -- Restricting cochains to the small simplices of `U ∪ V` is an isomorphism on cohomology.
   have hq : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)

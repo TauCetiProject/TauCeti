@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
@@ -50,6 +51,9 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   the projector map sends the standard affine open `{x_i ≠ 0}` onto the matrices of the locus with
   nonzero `i`-th diagonal entry, and the standard affine chart at `i` reads the coordinates of a
   line off its projector `A` as the ratios `A (i.succAbove k) i / A i i`.
+* `Projectivization.projector_apply_self_nonneg` and
+  `Projectivization.projector_apply_self_pos_iff`: the diagonal entries of a projector are
+  nonnegative, and the `i`-th one is positive exactly on the standard affine open `{x_i ≠ 0}`.
 
 ## References
 
@@ -234,6 +238,21 @@ theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
     projector p i i = 0 ↔ p ∉ affineOpen i := by
   induction p using ind with
   | h x hx => simp [rankOneProjector_apply, dotProduct_self_eq_zero.not.mpr hx]
+
+/-- Over an ordered field the diagonal entries `x_i² / ‖x‖²` of the projector of a line are
+nonnegative. -/
+theorem projector_apply_self_nonneg (p : ℙ K (ι → K)) (i : ι) : 0 ≤ projector p i i := by
+  induction p using ind with
+  | h x hx =>
+    rw [projector_mk, rankOneProjector_apply]
+    exact div_nonneg (mul_self_nonneg _) (dotProduct_self_nonneg x)
+
+/-- Over an ordered field the `i`-th diagonal entry `x_i² / ‖x‖²` of the projector of a line is
+positive exactly when the line lies in the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem projector_apply_self_pos_iff {p : ℙ K (ι → K)} {i : ι} :
+    0 < projector p i i ↔ p ∈ affineOpen i := by
+  rw [(projector_apply_self_nonneg p i).lt_iff_ne', Ne, projector_apply_self_eq_zero_iff, not_not]
 
 /-- Over an ordered field the projector map sends the standard affine open `{x_i ≠ 0}` onto the
 matrices of the projector locus with nonzero `i`-th diagonal entry. -/

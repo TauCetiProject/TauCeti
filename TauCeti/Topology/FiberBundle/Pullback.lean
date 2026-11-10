@@ -11,7 +11,7 @@ public import Mathlib.Topology.FiberBundle.Constructions
 /-!
 # Pullbacks of fibre bundles
 
-Three facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
+Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
 `f x`, needed to pull back bundles with extra structure on their fibres or on their atlas.
 
 * The fibres of `f *ᵖ E` carry the actions of a monoid on the fibres of `E`
@@ -24,6 +24,8 @@ Three facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is 
 * The canonical lift `Bundle.Pullback.lift f : TotalSpace F (f *ᵖ E) → TotalSpace F E` has range
   `(π F E) ⁻¹' Set.range f` and inherits injectivity, inducingness, and topological (or open /
   closed) embedding properties from `f` (`Bundle.Pullback.isEmbedding_lift`).
+* A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
+  the total space of `E` are (`Bundle.Pullback.continuous_iff`).
 -/
 
 public section
@@ -64,6 +66,14 @@ theorem Bundle.Pullback.lift_injective {f : B' → B} (hf : Function.Injective f
   exact TotalSpace.ext rfl (TotalSpace.ext_iff.mp h).2
 
 variable [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)]
+
+omit [TopologicalSpace B] in
+/-- A map into the total space of a pullback bundle `f *ᵖ E` is continuous exactly when its
+projection to the new base and its lift to the total space of `E` are continuous. -/
+theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' → B}
+    {g : Z → TotalSpace F (f *ᵖ E)} :
+    Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
+  (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
 
 /-- If `f` is a topological inducing map and the projection `π F E` is continuous, then
 `Pullback.lift f` is a topological inducing map. -/

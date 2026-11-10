@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.SpecialFunctions.Artanh
-public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The Haagerup–Zsidó kernel

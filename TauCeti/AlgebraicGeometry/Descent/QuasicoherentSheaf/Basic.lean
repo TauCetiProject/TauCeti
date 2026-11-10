@@ -217,6 +217,40 @@ lemma qcohPseudofunctor_mapComp_inv_toNatTrans_app_hom {T T' T'' : LocallyDiscre
       (Scheme.Modules.pullbackComp g.as.unop f.as.unop).hom.app E.obj :=
   NatTrans.congr_app (modulesPseudofunctor_mapComp_inv_toNatTrans f g) E.obj
 
+/-- The composition isomorphisms `qcohPseudofunctor.mapComp'` along a factorization `b ≫ a = c`,
+used by descent data, are those of pullback of modules, read through `c^* ≅ (b ≫ a)^*`. -/
+@[simp]
+lemma qcohPseudofunctor_mapComp'_hom_toNatTrans_app_hom {X Y Z : Scheme.{u}} (a : Y ⟶ Z)
+    (b : X ⟶ Y) (c : X ⟶ Z) (h : b ≫ a = c) (E : QuasicoherentSheaf Z) :
+    ((qcohPseudofunctor.mapComp' a.op.toLoc b.op.toLoc c.op.toLoc
+        (by rw [← h]; rfl)).hom.toNatTrans.app E).hom =
+      ((Scheme.Modules.pullbackCongr h).inv.app E.obj ≫
+        (Scheme.Modules.pullbackComp b a).inv.app E.obj : (Scheme.Modules.pullback c).obj E.obj ⟶
+          (Scheme.Modules.pullback b).obj ((Scheme.Modules.pullback a).obj E.obj)) := by
+  subst h
+  simp only [op_comp, Quiver.Hom.comp_toLoc, Cat.Hom.comp_toFunctor,
+    Pseudofunctor.mapComp'_eq_mapComp, qcohPseudofunctor_mapComp_hom_toNatTrans_app_hom,
+    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_inv]
+  -- The identity is formed in `SheafOfModules` rather than in `Scheme.Modules`, so `simp` does not
+  -- remove it.
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma qcohPseudofunctor_mapComp'_inv_toNatTrans_app_hom {X Y Z : Scheme.{u}} (a : Y ⟶ Z)
+    (b : X ⟶ Y) (c : X ⟶ Z) (h : b ≫ a = c) (E : QuasicoherentSheaf Z) :
+    ((qcohPseudofunctor.mapComp' a.op.toLoc b.op.toLoc c.op.toLoc
+        (by rw [← h]; rfl)).inv.toNatTrans.app E).hom =
+      ((Scheme.Modules.pullbackComp b a).hom.app E.obj ≫
+        (Scheme.Modules.pullbackCongr h).hom.app E.obj :
+          (Scheme.Modules.pullback b).obj ((Scheme.Modules.pullback a).obj E.obj) ⟶
+            (Scheme.Modules.pullback c).obj E.obj) := by
+  subst h
+  simp only [op_comp, Quiver.Hom.comp_toLoc, Cat.Hom.comp_toFunctor,
+    Pseudofunctor.mapComp'_eq_mapComp, qcohPseudofunctor_mapComp_inv_toNatTrans_app_hom,
+    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom]
+  -- As above, the identity is formed in `SheafOfModules`.
+  exact (Category.comp_id _).symm
+
 /-- On a nonempty scheme the quasi-coherent modules do not form a groupoid: the zero
 endomorphism of the structure sheaf is not an isomorphism, since `Γ(T, ⊤)` is a nonzero ring.
 So `qcohPseudofunctor` is not a pseudofunctor to groupoids, and its descent is not that of a

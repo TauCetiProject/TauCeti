@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Sign
+public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 
 /-!
 # The sign character of a symmetric group
@@ -22,15 +23,25 @@ it sends a transposition to `-1`, and over a commutative ring it squares to the 
 In characteristic two `-1 = 1`, so the character is trivial; every statement that needs it to be
 nontrivial has to say so by excluding that characteristic.
 
+Twisting the group algebra by the sign character gives the **sign automorphism**
+`TauCeti.signTwist` of `R[Perm α]`, `σ ↦ sgn(σ) σ`, an involution.
+
 ## Main definitions
 
 * `TauCeti.signLinearCharacter`: the sign of a permutation, as a linear character valued in `kˣ`.
+* `TauCeti.signTwist R α`: the sign automorphism `ε` of `R[Perm α]`, the twist of the group
+  algebra by the sign character.
 
 ## Main statements
 
 * `TauCeti.coe_signLinearCharacter_apply`: its value in `k` is the sign of the permutation, cast.
 * `TauCeti.signLinearCharacter_swap`: it sends a transposition to `-1`.
 * `TauCeti.signLinearCharacter_mul_self`: its square is the trivial character.
+* `TauCeti.signTwist_signTwist`: the sign automorphism is an involution.
+
+## References
+
+* W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 4, §4.1.
 -/
 
 public section
@@ -72,5 +83,45 @@ theorem signLinearCharacter_mul_self {k : Type u} [CommRing k] :
     signLinearCharacter k α * signLinearCharacter k α = 1 := by
   ext
   simp [← Int.cast_mul]
+
+/-! ## The sign automorphism -/
+
+section SignTwist
+
+variable (R : Type*) [CommRing R] (α : Type*) [DecidableEq α] [Fintype α]
+
+/-- The **sign automorphism** `ε` of the group algebra `R[Perm α]`, which multiplies each
+permutation `σ` by its sign: the twist of the group algebra by the sign character. -/
+noncomputable def signTwist :
+    MonoidAlgebra R (Equiv.Perm α) ≃ₐ[R] MonoidAlgebra R (Equiv.Perm α) :=
+  MonoidAlgebra.charTwist (signLinearCharacter R α)
+
+variable {R α}
+
+/-- The sign automorphism multiplies `single σ r` by the sign of `σ`. -/
+@[simp]
+theorem signTwist_single (σ : Equiv.Perm α) (r : R) :
+    signTwist R α (MonoidAlgebra.single σ r) =
+      MonoidAlgebra.single σ (((Equiv.Perm.sign σ : ℤ) : R) * r) := by
+  rw [signTwist, MonoidAlgebra.charTwist_single, coe_signLinearCharacter_apply]
+
+/-- The coefficients of `ε(x)` are those of `x` multiplied by the sign. -/
+@[simp]
+theorem coeff_signTwist (x : MonoidAlgebra R (Equiv.Perm α)) (σ : Equiv.Perm α) :
+    (signTwist R α x).coeff σ = ((Equiv.Perm.sign σ : ℤ) : R) * x.coeff σ := by
+  rw [signTwist, MonoidAlgebra.coeff_charTwist, coe_signLinearCharacter_apply]
+
+/-- The sign automorphism is an involution. -/
+@[simp]
+theorem signTwist_signTwist (x : MonoidAlgebra R (Equiv.Perm α)) :
+    signTwist R α (signTwist R α x) = x :=
+  MonoidAlgebra.charTwist_involutive signLinearCharacter_mul_self x
+
+/-- The sign automorphism is its own inverse. -/
+@[simp]
+theorem signTwist_symm : (signTwist R α).symm = signTwist R α :=
+  AlgEquiv.ext fun x ↦ (AlgEquiv.symm_apply_eq _).mpr (signTwist_signTwist x).symm
+
+end SignTwist
 
 end TauCeti

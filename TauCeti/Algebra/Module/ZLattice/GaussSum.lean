@@ -340,9 +340,26 @@ twisted Gauss sum `G_L(a, c; m)` vanishes unless `m ∈ L`. Indeed `c • L^∨ 
 the summation variable by `c w`, `w ∈ L^∨`, multiplies the sum by `e(⟪w, m⟫)`; as `L = (L^∨)^∨`,
 some `w ∈ L^∨` has `⟪w, m⟫ ∉ ℤ` when `m ∉ L`. -/
 theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
-    (a : ℤ) {c : ℕ} [NeZero c] [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (a : ℤ) {c : ℕ} [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
     (hc : level L ∣ c) {m : dual L} (hm : (m : E) ∉ L) :
     gaussSumTwisted L hL a c m = 0 := by
+  have : NeZero c := ⟨by
+    rintro rfl
+    have h0 : (((0 : ℕ) : ℝ) • L).submoduleOf L = ⊥ := by
+      ext x; simp [Submodule.submoduleOf]
+    have hfin : Finite L := Finite.of_equiv _ (Submodule.quotEquivOfEqBot _ h0).toEquiv
+    have hL0 : L = ⊥ := by
+      refine bot_unique fun x hx ↦ ?_
+      have : HasUniqueDiv E := .of_isTorsionFree ℝ E
+      have : IsAddTorsionFree L := inferInstanceAs (IsAddTorsionFree L.toAddSubgroup)
+      simpa using congrArg Subtype.val (isOfFinAddOrder_of_finite (⟨x, hx⟩ : L)).eq_zero'
+    have hspan : (Submodule.span ℝ (L : Set E)) = ⊤ := IsZLattice.span_top
+    rw [hL0] at hspan
+    have hm0 : (m : E) = 0 := by
+      have : (m : E) ∈ (⊤ : Submodule ℝ E) := trivial
+      rw [← hspan] at this
+      simpa using this
+    exact hm (hm0 ▸ L.zero_mem)⟩
   obtain ⟨w, hw, hwm⟩ : ∃ w ∈ dual L, ∀ k : ℤ, ⟪(m : E), w⟫ ≠ k := by
     by_contra! h
     exact hm ((dual_dual L).le (mem_dual.mpr h))
@@ -704,7 +721,7 @@ theorem IsEven.dualGaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) 
     have h : (D : ℝ) * D' = (level L : ℝ) ^ (2 * k) := by
       rw [← hL.isIntegral.det_eq_card_discriminantGroup,
         ← (isIntegral_sqrt_level_smul_dual (L := L)).det_eq_card_discriminantGroup,
-        hL.isIntegral.det_sqrt_level_smul_dual, hk]
+        det_sqrt_level_smul_dual, hk]
       field_simp [(det_pos L).ne']
     exact_mod_cast h
   have hNa : IsCoprime ((level L : ℤ) ^ k) a := ht.of_mul_left_left.pow_left

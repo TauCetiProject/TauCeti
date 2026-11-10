@@ -66,6 +66,8 @@ the ambiguous class number formula and its narrow form.
 * `NumberField.NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker`: the
   number of strongly ambiguous classes times the narrow defect is the number of `2`-torsion
   narrow classes.
+* `NumberField.NarrowClassGroup.mk0_eq_one_of_eq_span`: a nonzero ideal equal to a principal
+  ideal `(γ)` with `σγ = εγ` for a totally positive `ε` has trivial narrow class.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
   ideal is a product of narrow classes of primes above ramified rational primes.
 * `NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one`: every `2`-torsion narrow class is such a
@@ -278,6 +280,31 @@ theorem natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker
     exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe hkerH).toEquiv
   rw [hS, hH, ← MonoidHom.domRestrict_range, ← hker, ← Subgroup.index_ker, mul_comm,
     Subgroup.card_mul_index]
+
+/-- If an ambiguous principal ideal `(γ)` with `σγ = εγ` for a totally positive `ε` is the
+nonzero ideal `I`, then its narrow class is trivial: `γ / σγ` is totally positive, so `γ` or `-γ`
+is. -/
+theorem mk0_eq_one_of_eq_span
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {ε : 𝓞 K} (hpos : IsTotallyPositive (ε : K)) {γ : 𝓞 K} (hγ0 : γ ≠ 0)
+    (hσγ : ringOfIntegersQuadraticConj hmin hgen γ = ε * γ) {I : (Ideal (𝓞 K))⁰}
+    (hcoe : (I : Ideal (𝓞 K)) = Ideal.span {γ}) :
+    NarrowClassGroup.mk0 I = 1 := by
+  have hσγK : quadraticConj hmin hgen (γ : K) = (ε : K) * (γ : K) := by
+    rw [← coe_ringOfIntegersQuadraticConj hmin hgen γ, hσγ]
+    push_cast
+    ring
+  have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
+  have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
+    rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
+    simpa using hpos.inv
+  rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
+    hmin hgen hposratio with h | h
+  · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
+  · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
+      (by push_cast; exact h) ?_
+    rw [Ideal.span_singleton_neg]
+    exact hcoe
 
 variable {Q : ℕ → (Ideal (𝓞 K))⁰}
 

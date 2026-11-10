@@ -85,9 +85,17 @@ def renewalMeasure (μ : Measure α) : Measure α :=
 theorem renewalMeasure_def (μ : Measure α) :
     μ.renewalMeasure = Measure.sum μ.convolutionPower := (rfl)
 
-theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet s) :
+theorem renewalMeasure_apply (μ : Measure α) {s : Set α} :
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
-  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply _ hs]
+  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply_of_countable]
+
+/-- A measurable additive homomorphism transports the renewal measure to the renewal measure
+of the transported increment law. -/
+theorem map_renewalMeasure {β : Type*} [MeasurableSpace β] [AddMonoid β]
+    [MeasurableAdd₂ α] [MeasurableAdd₂ β] (μ : Measure α) [SFinite μ]
+    (f : α →+ β) (hf : Measurable f) :
+    μ.renewalMeasure.map f = (μ.map f).renewalMeasure := by
+  simp only [renewalMeasure_def, map_sum hf.aemeasurable, map_convolutionPower μ f hf]
 
 /-- Each convolution power is dominated by the renewal measure. -/
 theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
@@ -127,7 +135,7 @@ theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α)
     μ.renewalMeasure = dirac 0 + μ ∗ μ.renewalMeasure := by
   ext s hs
   rw [conv_renewalMeasure, _root_.add_apply, MeasureTheory.Measure.sum_apply _ hs,
-    renewalMeasure_apply _ hs,
+    renewalMeasure_apply _,
     tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
 
 end RenewalMeasure
@@ -243,10 +251,24 @@ theorem isLocallyFiniteMeasure_renewalMeasure (hμ : μ {0} < 1) :
     IsLocallyFiniteMeasure μ.renewalMeasure :=
   ⟨fun t ↦ ⟨Iic (t + 1), Iic_mem_nhds (lt_add_one t), renewalMeasure_Iic_lt_top μ hμ _⟩⟩
 
-/-- **Right continuity of the renewal function**, for a probability measure on `ℝ≥0` other than
-the point mass at zero. -/
-theorem continuousWithinAt_renewalFunction_Ici (hμ : μ {0} < 1) (t : ℝ≥0) :
+/-- **Right continuity of the renewal function** of a probability measure on `ℝ≥0`. For the point
+mass at zero the renewal function is constantly infinite. -/
+theorem continuousWithinAt_renewalFunction_Ici (t : ℝ≥0) :
     ContinuousWithinAt μ.renewalFunction (Ici t) t := by
+  by_cases hμ : μ {0} < 1
+  swap
+  · -- the point mass at zero has infinite renewal function, which is constant
+    have h1 : μ {0} = 1 := le_antisymm prob_le_one (not_lt.1 hμ)
+    have hae : ∀ᵐ x ∂μ, x ∈ ({0} : Set ℝ≥0) :=
+      (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 h1
+    have hdirac : μ = dirac 0 := by
+      calc μ = μ.restrict {0} := (restrict_eq_self_of_ae_mem hae).symm
+        _ = dirac 0 := by rw [restrict_singleton, h1, one_smul]
+    have hinf : μ.renewalFunction = fun _ ↦ ∞ := by
+      funext u
+      simp [renewalFunction_eq_tsum, hdirac]
+    rw [hinf]
+    exact continuousWithinAt_const
   have hf : μ.renewalFunction = (μ ∗ μ.renewalMeasure) ∘ Iic :=
     funext fun t ↦ renewalFunction_def μ t
   have hinter : ⋂ r > t, Iic r = Iic t := by

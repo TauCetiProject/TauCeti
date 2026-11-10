@@ -23,6 +23,8 @@ monomial map prescribed by the images of the standard basis characters.
 
 ## Main results
 
+* `TauCeti.SplitTorus.characterMapOfLinearMap_injective`: an injective lattice map induces an
+  injective map of character groups.
 * `TauCeti.SplitTorus.schemePointsMulEquiv_ofLinearMap`: the induced map on points is the Laurent
   monomial specified by the image of a basis character.
 * `TauCeti.SplitTorus.schemePointsMulEquiv_powEnd`: `powEnd n` raises every coordinate to `n`.
@@ -74,6 +76,14 @@ theorem characterMapOfLinearMap_comp (g : (tau → ℤ) →ₗ[ℤ] (upsilon →
     characterMapOfLinearMap_ofAdd, characterMapOfLinearMap_ofAdd,
     characterMapOfLinearMap_ofAdd, LinearEquiv.apply_symm_apply]
   rfl
+
+/-- An injective integral linear map induces an injective character-group map. -/
+theorem characterMapOfLinearMap_injective {f : (sigma → ℤ) →ₗ[ℤ] (tau → ℤ)}
+    (hf : Function.Injective f) : Function.Injective (characterMapOfLinearMap f) := by
+  intro x y hxy
+  rw [← ofAdd_toAdd x, ← ofAdd_toAdd y, characterMapOfLinearMap_ofAdd,
+    characterMapOfLinearMap_ofAdd] at hxy
+  simpa [hf.eq_iff] using hxy
 
 /-- The identity linear map induces the identity character-group map. -/
 @[simp]
@@ -127,6 +137,12 @@ noncomputable def ofLinearMap (R : Type u) [CommRing R]
     (f : (sigma → ℤ) →ₗ[ℤ] (tau → ℤ)) :
     groupScheme R tau ⟶ groupScheme R sigma :=
   DiagonalizableGroup.groupSchemeMap R (characterGroupMapOfLinearMap f)
+
+/-- The split-torus morphism of an integral character-lattice map is the diagonalizable-group
+morphism of the induced character-group morphism. -/
+theorem ofLinearMap_def (f : (sigma → ℤ) →ₗ[ℤ] (tau → ℤ)) :
+    ofLinearMap R f = DiagonalizableGroup.groupSchemeMap R (characterGroupMapOfLinearMap f) :=
+  (rfl)
 
 /-- Contravariance reverses composition of integral character-lattice maps. -/
 @[simp]

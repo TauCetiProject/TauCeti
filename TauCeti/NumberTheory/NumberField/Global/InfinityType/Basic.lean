@@ -226,9 +226,7 @@ theorem zsmul_complexAngularFrequency (n : ℤ) (t : ContinuousInfinityType K) :
 instance : AddCommGroup (ContinuousInfinityType K) :=
   Function.Injective.addCommGroup
     (fun t ↦ ((t.realExponent, t.realParity), (t.complexExponent, t.complexAngularFrequency)))
-    (fun t u h ↦ by
-      simp only [Prod.mk.injEq] at h
-      exact ContinuousInfinityType.ext h.1.1 h.1.2 h.2.1 h.2.2)
+    (fun _ _ h ↦ by simpa [ContinuousInfinityType.ext_iff, and_assoc] using h)
     rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- A continuous infinity type is equivalently its four families of local parameters, as
@@ -291,7 +289,6 @@ def embeddingCharacter [NumberField K] (n : AlgebraicInfinityType K) : Kˣ →* 
 @[simp]
 theorem embeddingCharacter_zero [NumberField K] :
     embeddingCharacter (0 : AlgebraicInfinityType K) = 1 := by
-  classical
   ext x
   simp [embeddingCharacter]
 
@@ -299,7 +296,6 @@ theorem embeddingCharacter_zero [NumberField K] :
 @[simp]
 theorem embeddingCharacter_add [NumberField K] (n m : AlgebraicInfinityType K) :
     embeddingCharacter (n + m) = embeddingCharacter n * embeddingCharacter m := by
-  classical
   ext x
   simp [embeddingCharacter, zpow_add, Finset.prod_mul_distrib]
 
@@ -307,7 +303,6 @@ theorem embeddingCharacter_add [NumberField K] (n m : AlgebraicInfinityType K) :
 @[simp]
 theorem embeddingCharacter_neg [NumberField K] (n : AlgebraicInfinityType K) :
     embeddingCharacter (-n) = (embeddingCharacter n)⁻¹ := by
-  classical
   ext x
   simp [embeddingCharacter, zpow_neg, Finset.prod_inv_distrib]
 
@@ -315,7 +310,6 @@ theorem embeddingCharacter_neg [NumberField K] (n : AlgebraicInfinityType K) :
 @[simp]
 theorem coe_embeddingCharacter_apply [NumberField K] (n : AlgebraicInfinityType K) (x : Kˣ) :
     (n.embeddingCharacter x : ℂ) = ∏ σ : K →+* ℂ, σ (x : K) ^ n σ := by
-  classical
   simp [embeddingCharacter]
 
 /-- The continuous infinity type associated to an algebraic infinity type.  At a real place the
@@ -330,16 +324,8 @@ def toContinuous : AlgebraicInfinityType K →+ ContinuousInfinityType K where
         n w.1.embedding + n (ComplexEmbedding.conjugate w.1.embedding)
       complexAngularFrequency := fun w ↦
         n w.1.embedding - n (ComplexEmbedding.conjugate w.1.embedding) }
-  map_zero' := by
-    apply ContinuousInfinityType.ext <;> funext w <;> simp
-  map_add' n m := by
-    ext w
-    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_realExponent]
-    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_realParity]
-    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_complexExponent]
-      ring
-    · simp only [Pi.add_apply, ContinuousInfinityType.add_complexAngularFrequency]
-      ring
+  map_zero' := by ext <;> simp
+  map_add' _ _ := by ext <;> simp <;> ring
 
 /-- The real modulus exponent of an algebraic infinity type is its exponent at the real
 embedding. -/
@@ -377,32 +363,22 @@ theorem toContinuous_complexAngularFrequency (n : AlgebraicInfinityType K)
 /-- Algebraic infinity types are determined by their associated continuous infinity types. -/
 theorem toContinuous_injective : Function.Injective (toContinuous (K := K)) := by
   intro n m h
+  -- `n` and `m` agree at the chosen embedding of every place and at its conjugate.
+  have key (w : InfinitePlace K) : n w.embedding = m w.embedding ∧
+      n (ComplexEmbedding.conjugate w.embedding) =
+        m (ComplexEmbedding.conjugate w.embedding) := by
+    rcases w.isReal_or_isComplex with hw | hw
+    · rw [ComplexEmbedding.isReal_iff.mp (InfinitePlace.isReal_iff.mp hw), and_self]
+      simpa using congr(($h).realExponent ⟨w, hw⟩)
+    · have hsum := congr(($h).complexExponent ⟨w, hw⟩)
+      have hdiff := congr(($h).complexAngularFrequency ⟨w, hw⟩)
+      simp only [toContinuous_complexExponent, toContinuous_complexAngularFrequency] at hsum hdiff
+      norm_cast at hsum
+      omega
   funext φ
-  by_cases hφ : ComplexEmbedding.IsReal φ
-  · let w : {w : InfinitePlace K // w.IsReal} :=
-      ⟨InfinitePlace.mk φ, InfinitePlace.isReal_mk_iff.mpr hφ⟩
-    have hw := congrArg (fun t : ContinuousInfinityType K ↦ t.realExponent w) h
-    simp only [toContinuous_realExponent] at hw
-    rw [InfinitePlace.embedding_mk_eq_of_isReal hφ] at hw
-    exact_mod_cast hw
-  · let w : {w : InfinitePlace K // w.IsComplex} :=
-      ⟨InfinitePlace.mk φ, InfinitePlace.isComplex_mk_iff.mpr hφ⟩
-    have hsum := congrArg (fun t : ContinuousInfinityType K ↦ t.complexExponent w) h
-    have hdiff := congrArg
-      (fun t : ContinuousInfinityType K ↦ t.complexAngularFrequency w) h
-    simp only [toContinuous_complexExponent] at hsum
-    simp only [toContinuous_complexAngularFrequency] at hdiff
-    have hsum' :
-        n w.1.embedding + n (ComplexEmbedding.conjugate w.1.embedding) =
-          m w.1.embedding + m (ComplexEmbedding.conjugate w.1.embedding) := by
-      exact_mod_cast hsum
-    have hemb : n w.1.embedding = m w.1.embedding := by omega
-    have hconj : n (ComplexEmbedding.conjugate w.1.embedding) =
-        m (ComplexEmbedding.conjugate w.1.embedding) := by omega
-    dsimp [w] at hemb hconj
-    rcases InfinitePlace.embedding_mk_eq φ with hφ | hφ
-    · simpa only [hφ] using hemb
-    · simpa only [hφ, star_star] using hconj
+  rcases InfinitePlace.embedding_mk_eq φ with hφ | hφ
+  · simpa [hφ] using (key (.mk φ)).1
+  · simpa [hφ] using (key (.mk φ)).2
 
 end AlgebraicInfinityType
 
@@ -418,44 +394,41 @@ def toContinuous : FiniteOrderInfinityType K →+ ContinuousInfinityType K where
       realParity := ε
       complexExponent := 0
       complexAngularFrequency := 0 }
-  map_zero' := by
-    apply ContinuousInfinityType.ext <;> funext w <;> simp
-  map_add' _ _ := by
-    apply ContinuousInfinityType.ext <;> funext w <;> simp
+  map_zero' := by ext <;> simp
+  map_add' _ _ := by ext <;> simp
 
 /-- The continuous real exponent of a finite-order infinity type is zero. -/
 @[simp]
 theorem toContinuous_realExponent (ε : FiniteOrderInfinityType K)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (toContinuous ε).realExponent w = 0 :=
-  by simp [toContinuous]
+  (rfl)
 
 /-- Passing a finite-order infinity type to continuous parameters preserves its real parity. -/
 @[simp]
 theorem toContinuous_realParity (ε : FiniteOrderInfinityType K)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (toContinuous ε).realParity w = ε w :=
-  by simp [toContinuous]
+  (rfl)
 
 /-- The continuous complex exponent of a finite-order infinity type is zero. -/
 @[simp]
 theorem toContinuous_complexExponent (ε : FiniteOrderInfinityType K)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     (toContinuous ε).complexExponent w = 0 :=
-  by simp [toContinuous]
+  (rfl)
 
 /-- The continuous complex angular frequency of a finite-order infinity type is zero. -/
 @[simp]
 theorem toContinuous_complexAngularFrequency (ε : FiniteOrderInfinityType K)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     (toContinuous ε).complexAngularFrequency w = 0 :=
-  by simp [toContinuous]
+  (rfl)
 
 /-- Finite-order infinity types are determined by their continuous parameters. -/
-theorem toContinuous_injective : Function.Injective (toContinuous (K := K)) := by
-  intro ε η h
-  funext w
-  simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.realParity w) h
+theorem toContinuous_injective : Function.Injective (toContinuous (K := K)) :=
+  Function.LeftInverse.injective (g := ContinuousInfinityType.realParity) fun ε ↦
+    funext (toContinuous_realParity ε)
 
 end FiniteOrderInfinityType
 

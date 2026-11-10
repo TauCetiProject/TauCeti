@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Convenient.GeneratedBy
+public import Mathlib.Topology.Convenient.Category
 
 /-!
 # Maps from generated spaces
@@ -32,6 +32,32 @@ instance instIsGeneratedByOfIsEmpty {ι : Type*} (X : ι → Type*)
 
 end TauCeti
 
+namespace Topology.WithGeneratedByTopology
+
+/-- The continuous counit from the generated refinement to the original space. -/
+def counit {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpace (G i)]
+    (X : Type*) [TopologicalSpace X] : C(WithGeneratedByTopology G X, X) :=
+  ⟨equiv, continuous_equiv⟩
+
+@[simp]
+theorem counit_apply {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpace (G i)]
+    {X : Type*} [TopologicalSpace X] (x : WithGeneratedByTopology G X) :
+    counit G X x = equiv x :=
+  (rfl)
+
+end Topology.WithGeneratedByTopology
+
+namespace GeneratedByTopCat
+
+/-- The underlying continuous map of the categorical counit is the generated-topology counit. -/
+@[simp]
+theorem adjCounit_app_hom {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpace (G i)]
+    (X : TopCat) :
+    ((adjCounit (X := G)).app X).hom = Topology.WithGeneratedByTopology.counit G X :=
+  (rfl)
+
+end GeneratedByTopCat
+
 namespace ContinuousMap
 
 open Topology
@@ -53,16 +79,14 @@ theorem toGeneratedBy_apply (f : C(X, Y)) (x : X) :
 /-- Composing the lifted map with the counit recovers the original map. -/
 @[simp]
 theorem equiv_comp_toGeneratedBy (f : C(X, Y)) :
-    (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-      C(WithGeneratedByTopology G Y, Y)).comp (f.toGeneratedBy G) = f := by
+    (WithGeneratedByTopology.counit G Y).comp (f.toGeneratedBy G) = f := by
   ext x
   exact WithGeneratedByTopology.equiv.apply_symm_apply (f x)
 
 /-- A map to the generated refinement is recovered by lifting its composite with the counit. -/
 @[simp]
 theorem toGeneratedBy_equiv_comp (f : C(X, WithGeneratedByTopology G Y)) :
-    ((⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-      C(WithGeneratedByTopology G Y, Y)).comp f).toGeneratedBy G = f := by
+    ((WithGeneratedByTopology.counit G Y).comp f).toGeneratedBy G = f := by
   ext x
   exact WithGeneratedByTopology.equiv.symm_apply_apply (f x)
 

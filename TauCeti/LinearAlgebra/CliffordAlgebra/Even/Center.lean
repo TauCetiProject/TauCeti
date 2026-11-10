@@ -452,8 +452,6 @@ theorem finrank_even_over_center (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
   let _ := hfield.toField
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let _ : Nontrivial V := Module.nontrivial_of_finrank_pos hpos
-  let _ : IsScalarTower K (Subalgebra.center K (even Q)) (even Q) :=
-    Subalgebra.isScalarTower_centerAlgebra
   let _ : Module.Finite (Subalgebra.center K (even Q)) (even Q) :=
     finite_even_over_center Q
   have hcenter := finrank_center_even Q hQ heven hpos

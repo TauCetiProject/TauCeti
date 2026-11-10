@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The multivariate Gamma function in Cholesky coordinates
@@ -164,8 +165,7 @@ theorem integral_lowerTriangle_det_rpow_mul_exp_neg_trace
           prod_lowerTriangle_ite (fun i ↦ Real.Gamma (a - ((i : ℕ) : ℝ) / 2)) fun _ ↦ √π,
           multivariateGamma_eq_prod]
         refine Finset.prod_congr rfl fun i _ ↦ ?_
-        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul pi_pos.le, mul_comm]
-        ring_nf
+        rw [Real.pow_sqrt_eq_rpow pi_pos.le, mul_comm]
 
 /-- For `((p : ℝ) - 1) / 2 < a` (a condition only in positive dimension), the Jacobian-weighted
 Wishart integrand `(det (L * Lᵀ)) ^ (a - (p + 1) / 2) * exp (-trace (L * Lᵀ)) *

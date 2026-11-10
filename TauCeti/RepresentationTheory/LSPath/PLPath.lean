@@ -64,6 +64,8 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   is the concatenation of the straight paths along `v` and along `w`.
 * `TauCeti.PLPath.straight_smul_mul_straight_smul`, `TauCeti.PLPath.ofSegments_smul_cons_smul_cons`:
   subdividing a straight path, or a segment of a segment list, along a ray.
+* `TauCeti.PLPath.ofSegments_append_cut_eq`: cutting a segment at a fraction `θ ∈ [0, 1]`, in the
+  middle of a segment list, does not change the presented path.
 * `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
   list at a fraction `d / e` with `0 ≤ d ≤ e`.
 
@@ -595,6 +597,17 @@ theorem ofSegments_smul_cons_smul_cons {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b
     (l : List V) : ofSegments 𝕜 (a • w :: b • w :: l) = ofSegments 𝕜 ((a + b) • w :: l) := by
   rw [ofSegments_cons, ofSegments_cons, ← mul_assoc, straight_smul_mul_straight_smul ha hb,
     ofSegments_cons]
+
+/-- Cutting a segment `v` of a path at the fraction `θ ∈ [0, 1]`, in the middle of the segments
+`a ++ m ++ v :: r`, does not change the path presented by the segments. -/
+theorem ofSegments_append_cut_eq {a m r : List V} {v : V} {θ : 𝕜} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
+    ofSegments 𝕜 (a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r)) =
+      ofSegments 𝕜 (a ++ m ++ v :: r) := by
+  have hr : a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r) =
+      (a ++ m) ++ (θ • v :: (1 - θ) • v :: r) := by
+    simp only [List.append_assoc, List.singleton_append]
+  rw [hr, ofSegments_append (a ++ m), ofSegments_append (a ++ m),
+    ofSegments_smul_cons_smul_cons hθ₀ (sub_nonneg.mpr hθ₁), add_sub_cancel, one_smul]
 
 /-- Subdividing a segment `w` at the fraction `d / e`, for `0 ≤ d ≤ e` and `0 < e`, into the
 segments `(d / e) • w` and `((e - d) / e) • w` does not change the presented path. -/

@@ -400,6 +400,23 @@ theorem span_gradedMkZero_image_range_of_eq_top :
     ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 1)
     (topologicalClosure_closure_range_of_eq_top p X)
 
+variable {p X} in
+omit [LinearOrder X] in
+/-- A bracket `[τ, y]` with a class `y ∈ gr_0(F)` of the free pro-`p` group lies in a subspace
+as soon as the brackets `[τ, ξ_j]` with the generator classes do, by bilinearity. -/
+theorem gradedBracket_mem_of_forall_gradedMkZero_of {m : ℕ} {τ : gradedPiece p (freeProP p X) m}
+    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (m + 0 + 1))}
+    (hW : ∀ j : X, gradedBracket p (freeProP p X) m 0 τ (gradedMkZero p (freeProP p X) (of j)) ∈ W)
+    (y : gradedPiece p (freeProP p X) 0) : gradedBracket p (freeProP p X) m 0 τ y ∈ W := by
+  have hle : span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) ≤
+      W.comap (gradedBracketLinear p (freeProP p X) m 0 τ) := by
+    rw [span_le]
+    rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, gradedBracketLinear_apply]
+    exact hW j
+  have h := hle (by rw [span_gradedMkZero_image_range_of_eq_top]; exact mem_top : y ∈ _)
+  rwa [Submodule.mem_comap, gradedBracketLinear_apply] at h
+
 omit [LinearOrder X] in
 /-- **The basis of `gr_0` of a free pro-`p` group of finite rank** formed by the classes
 `x'_i = ⟦x_i⟧` of the generators: the basis `TauCeti.freeProP.frattiniQuotientBasis` of the
@@ -417,6 +434,14 @@ theorem degreeZeroBasis_apply (i : X) :
   rw [degreeZeroBasis, Module.Basis.map_apply, AddEquiv.coe_toLinearEquiv, AddEquiv.symm_apply_eq]
   -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
   simp
+
+omit [LinearOrder X] in
+/-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
+@[simp]
+theorem degreeZeroBasis_repr_gradedMkZero [DecidableEq X] (a i : X) :
+    (degreeZeroBasis p X).repr (gradedMkZero p (freeProP p X) (of a)) i =
+      if a = i then 1 else 0 := by
+  rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
 
 omit [Finite X] in
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:
@@ -544,6 +569,20 @@ theorem mem_gradedPowIterSpan_iff {S : Set X} [Fintype S] {j : ℕ}
           v := by
   rw [gradedPowIterSpan, Set.image_eq_range]
   exact mem_span_range_iff_exists_fun _
+
+/-- **Membership in the span of the `p`-power classes, with coefficients on all generators.** A
+vector `y` of the span of the iterated `p`-powers `π^j ξ_i` over a set `S` of generators is the
+combination `Σ_i c_i π^j ξ_i` of the `π^j ξ_i` over all generators, with coefficients `c_i`
+that vanish outside `S`. -/
+theorem exists_fun_of_mem_gradedPowIterSpan [Fintype X] {S : Set X} {j : ℕ}
+    {y : gradedPiece p (freeProP p X) j} (hy : y ∈ gradedPowIterSpan p X S j) :
+    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ S) ∧
+      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = y := by
+  rw [gradedPowIterSpan_def] at hy
+  obtain ⟨f, hfS, hf⟩ := (Finsupp.mem_span_image_iff_linearCombination _).mp hy
+  refine ⟨f, fun i hi ↦ by_contra fun hiS ↦ hi ((Finsupp.mem_supported' _ _).mp hfS i hiS), ?_⟩
+  rw [← hf, Finsupp.linearCombination_apply_of_mem_supported (s := Finset.univ) (ZMod p)
+    (Finset.subset_univ _)]
 
 end PowIterSpan
 

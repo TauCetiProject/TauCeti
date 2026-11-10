@@ -577,7 +577,7 @@ private theorem exists_sameSide_of_initial_first
     (by rw [h1b, h1t]; exact hA)
     (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
-  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
 /-- A rectangle followed by a terminal-side hexagon meeting it away from the replaced line is the
 recut of a counted terminal--terminal pentagon pair, provided its recut has no piece underlying a
@@ -616,7 +616,7 @@ private theorem exists_sameSide_of_terminal_second
       (by rw [h1b, h1t]; exact hA)
       (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
-    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_terminal C _ (h1r.trans hr) ?_ ?_)).elim
     · rw [h1b, h1t]
       exact hlow
@@ -664,7 +664,7 @@ private theorem exists_sameSide_of_terminal_first
     (by rw [h1b, h1t]; exact hA)
     (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
-  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
 /-- A rectangle followed by an initial-side hexagon meeting it away from the replaced line is the
 recut of a counted initial--initial pentagon pair, provided its recut has no piece underlying a
@@ -703,7 +703,7 @@ private theorem exists_sameSide_of_initial_second
       (by rw [h1b, h1t]; exact hA)
       (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
-    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_initial C _ (h1l.trans hl) ?_ ?_)).elim
     · rw [h1b, h1t]
       exact hlow
@@ -723,6 +723,128 @@ private theorem eq_cutColumn_of_mem {u v : GridState n}
   have hmem := Finset.mem_inter.mpr ⟨(G.mk_mem_XSet _ _).mpr rfl, h⟩
   rw [((hH P).mp hP).2] at hmem
   exact (Prod.mk.inj (Finset.mem_singleton.mp hmem)).1
+
+open GridHexagonCompositeDecomposition in
+include hcol hturn hXcol hXnext hH hcut in
+/-- The case of `exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff` in which the composite is a
+hexagon followed by a rectangle. -/
+private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inl {x z : GridState n}
+    {F : GridHexagonRectangleDecomposition a C.turnRow s' x z}
+    (hF : (Sum.inl F : GridHexagonCompositeDecomposition a C.turnRow s' x z) ∈
+      (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
+    (hnot : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow s' x z,
+      F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) →
+      ¬(toRectangleDecomposition (.inl F)).IsRecut F'.toRectangleDecomposition)
+    (hmixed : (toRectangleDecomposition (.inl F)).HasMixedSideOverlap) :
+    (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+        D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inl F))) ∨
+      ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = toRectangleDecomposition (.inl F) := by
+  obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
+  obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
+  have hfalse : ∀ E, (toRectangleDecomposition (.inl F)).IsRecut E → ¬HasHexagonPiece C s' E :=
+    fun _ hE => G.not_hasHexagonPiece_of_isRecut C hH hcut hF hnot hE
+  -- Split by the kind of hexagon; in each case, the orientation of the common side decides
+  -- between the lemmas above.
+  rcases F with ⟨m, P | P, S⟩
+  · obtain ⟨hP, hS⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
+      (Finset.inl_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hone hside h1 h2 hfalse ⊢
+    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hone hside h1 h2 hfalse ⊢
+    have hX : ∀ c, (c, G.X c) ∈ P.toGridRectangle.coveredSquares ∪
+        S.toGridRectangle.coveredSquares → c = a := fun c hc =>
+      (Finset.mem_union.mp hc).elim (fun h => (G.eq_cutColumn_of_mem C hH (P := .inl P) hP
+          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inl])).trans
+          (GridCommutationHexagonBetween.cutColumn_inl P))
+        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
+    rcases hside with hcommon | hcommon
+    · exact Or.inl (G.exists_sameSide_of_terminal_first C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse (fun c ha _ hc => ha (hX c hc)) hcommon P.right_eq P.lower_mem P.upper_mem)
+    · exact Or.inr (G.exists_mixed_of_terminal_first C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse hcommon P.right_eq P.lower_mem P.upper_mem hX)
+  · obtain ⟨hP, hS⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
+      (Finset.inl_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hone hside h1 h2 hfalse ⊢
+    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hone hside h1 h2 hfalse ⊢
+    have hX : ∀ c, (c, G.X c) ∈ P.toGridRectangle.coveredSquares ∪
+        S.toGridRectangle.coveredSquares → c = b := fun c hc =>
+      (Finset.mem_union.mp hc).elim (fun h => (G.eq_cutColumn_of_mem C hH (P := .inr P) hP
+          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inr])).trans
+          (GridCommutationHexagonBetween.cutColumn_inr P))
+        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
+    rcases hside with hcommon | hcommon
+    · exact Or.inr (G.exists_mixed_of_initial_first C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
+    · exact Or.inl (G.exists_sameSide_of_initial_first C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
+
+open GridHexagonCompositeDecomposition in
+include hcol hturn hXcol hXnext hH hcut in
+/-- The case of `exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff` in which the composite is a
+rectangle followed by a hexagon. -/
+private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inr {x z : GridState n}
+    {F : GridRectangleHexagonDecomposition a C.turnRow s' x z}
+    (hF : (Sum.inr F : GridHexagonCompositeDecomposition a C.turnRow s' x z) ∈
+      (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
+    (hnot : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow s' x z,
+      F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) →
+      ¬(toRectangleDecomposition (.inr F)).IsRecut F'.toRectangleDecomposition)
+    (hmixed : (toRectangleDecomposition (.inr F)).HasMixedSideOverlap) :
+    (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+        D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inr F))) ∨
+      ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = toRectangleDecomposition (.inr F) := by
+  obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
+  obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
+  have hfalse : ∀ E, (toRectangleDecomposition (.inr F)).IsRecut E → ¬HasHexagonPiece C s' E :=
+    fun _ hE => G.not_hasHexagonPiece_of_isRecut C hH hcut hF hnot hE
+  -- Split by the kind of hexagon; in each case, the orientation of the common side decides
+  -- between the lemmas above.
+  rcases F with ⟨m, S, P | P⟩
+  · obtain ⟨hS, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
+      (Finset.inr_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hone hside h1 h2 hfalse ⊢
+    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hone hside h1 h2 hfalse ⊢
+    have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
+        P.toGridRectangle.coveredSquares → c = a := fun c hc =>
+      (Finset.mem_union.mp hc).elim
+        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
+        (fun h => (G.eq_cutColumn_of_mem C hH (P := .inl P) hP
+          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inl])).trans
+          (GridCommutationHexagonBetween.cutColumn_inl P))
+    rcases hside with hcommon | hcommon
+    · exact Or.inr (G.exists_mixed_of_terminal_second C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse hcommon P.right_eq P.lower_mem P.upper_mem hX)
+    · exact Or.inl (G.exists_sameSide_of_terminal_second C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse (fun c ha _ hc => ha (hX c hc)) hcommon P.right_eq P.lower_mem P.upper_mem)
+  · obtain ⟨hS, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
+      (Finset.inr_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hone hside h1 h2 hfalse ⊢
+    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hone hside h1 h2 hfalse ⊢
+    have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
+        P.toGridRectangle.coveredSquares → c = b := fun c hc =>
+      (Finset.mem_union.mp hc).elim
+        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
+        (fun h => (G.eq_cutColumn_of_mem C hH (P := .inr P) hP
+          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inr])).trans
+          (GridCommutationHexagonBetween.cutColumn_inr P))
+    rcases hside with hcommon | hcommon
+    · exact Or.inl (G.exists_sameSide_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
+    · exact Or.inr (G.exists_mixed_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
+        hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
 
 include hcol hturn hXcol hXnext hH hcut in
 /-- **Unpaired composites are pentagon partners.** Let the `X`-marking of column `a` lie in the
@@ -758,78 +880,10 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
           D.toRectangleDecomposition = F.toRectangleDecomposition by
     rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
     exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
-  obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
-  obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
-  have hfalse : ∀ E, F.toRectangleDecomposition.IsRecut E → ¬HasHexagonPiece C s' E :=
-    fun _ hE => G.not_hasHexagonPiece_of_isRecut C hH hcut hF hnot hE
-  -- Split by the order of the hexagon and the rectangle and by the kind of hexagon; in each of
-  -- the four cases, the orientation of the common side decides between the lemmas above.
-  rcases F with ⟨m, P | P, S⟩ | ⟨m, S, P | P⟩
-  · obtain ⟨hP, hS⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
-      (Finset.inl_mem_disjSum.mp hF)
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hone hside h1 h2 hfalse ⊢
-    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition,
-      GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hone hside h1 h2 hfalse ⊢
-    have hX : ∀ c, (c, G.X c) ∈ P.toGridRectangle.coveredSquares ∪
-        S.toGridRectangle.coveredSquares → c = a := fun c hc =>
-      (Finset.mem_union.mp hc).elim (fun h => (G.eq_cutColumn_of_mem C hH (P := .inl P) hP
-          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inl])).trans
-          (GridCommutationHexagonBetween.cutColumn_inl P))
-        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
-    rcases hside with hcommon | hcommon
-    · exact Or.inl (G.exists_sameSide_of_terminal_first C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse (fun c ha _ hc => ha (hX c hc)) hcommon P.right_eq P.lower_mem P.upper_mem)
-    · exact Or.inr (G.exists_mixed_of_terminal_first C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse hcommon P.right_eq P.lower_mem P.upper_mem hX)
-  · obtain ⟨hP, hS⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
-      (Finset.inl_mem_disjSum.mp hF)
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hone hside h1 h2 hfalse ⊢
-    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition,
-      GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hone hside h1 h2 hfalse ⊢
-    have hX : ∀ c, (c, G.X c) ∈ P.toGridRectangle.coveredSquares ∪
-        S.toGridRectangle.coveredSquares → c = b := fun c hc =>
-      (Finset.mem_union.mp hc).elim (fun h => (G.eq_cutColumn_of_mem C hH (P := .inr P) hP
-          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inr])).trans
-          (GridCommutationHexagonBetween.cutColumn_inr P))
-        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
-    rcases hside with hcommon | hcommon
-    · exact Or.inr (G.exists_mixed_of_initial_first C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
-    · exact Or.inl (G.exists_sameSide_of_initial_first C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
-  · obtain ⟨hS, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
-      (Finset.inr_mem_disjSum.mp hF)
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hone hside h1 h2 hfalse ⊢
-    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition,
-      GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hone hside h1 h2 hfalse ⊢
-    have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
-        P.toGridRectangle.coveredSquares → c = a := fun c hc =>
-      (Finset.mem_union.mp hc).elim
-        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
-        (fun h => (G.eq_cutColumn_of_mem C hH (P := .inl P) hP
-          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inl])).trans
-          (GridCommutationHexagonBetween.cutColumn_inl P))
-    rcases hside with hcommon | hcommon
-    · exact Or.inr (G.exists_mixed_of_terminal_second C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse hcommon P.right_eq P.lower_mem P.upper_mem hX)
-    · exact Or.inl (G.exists_sameSide_of_terminal_second C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse (fun c ha _ hc => ha (hX c hc)) hcommon P.right_eq P.lower_mem P.upper_mem)
-  · obtain ⟨hS, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
-      (Finset.inr_mem_disjSum.mp hF)
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hone hside h1 h2 hfalse ⊢
-    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition,
-      GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hone hside h1 h2 hfalse ⊢
-    have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
-        P.toGridRectangle.coveredSquares → c = b := fun c hc =>
-      (Finset.mem_union.mp hc).elim
-        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
-        (fun h => (G.eq_cutColumn_of_mem C hH (P := .inr P) hP
-          (by rwa [GridCommutationHexagonBetween.toGridRectangleBetween_inr])).trans
-          (GridCommutationHexagonBetween.cutColumn_inr P))
-    rcases hside with hcommon | hcommon
-    · exact Or.inl (G.exists_sameSide_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
-    · exact Or.inr (G.exists_mixed_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
-        hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
+  rcases F with F | F
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH hcut
+      hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH hcut
+      hF hnot hmixed
 
 end TauCeti.GridDiagram

@@ -113,7 +113,7 @@ theorem coe_openCoverGlueDiffeomorph (h : ⋃ i, (U i : Set X) = univ) :
     letI := (ofOpenSubsets U).chartedSpace H
     ⇑(openCoverGlueDiffeomorph (I := I) (n := n) U h) = fromOpenSubsetsGlue U :=
   letI := (ofOpenSubsets U).chartedSpace H
-  TauCeti.coe_diffeomorphOfBijective
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 /-- The diffeomorphism from the gluing of an open cover has Mathlib's homeomorphism
 `openCoverGlueHomeo` as its underlying homeomorphism. -/

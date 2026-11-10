@@ -551,4 +551,70 @@ theorem lowerUnipotent_mem_of_root_subgroups (H : Submonoid (GLSymplecticFin m R
     rw [lowerUnipotent_single_add_transpose hij.ne]
     exact hSum hij c
 
+/-- Left multiplication by `[1 X; 0 1]` changes the upper-left block of a symplectic matrix `g`
+from `A` to `A + X C`. -/
+theorem toBlocks₁₁_upperUnipotent_mul (g : GLSymplecticFin m R) (X : Matrix (Fin m) (Fin m) R)
+    (hX : X.IsSymm) :
+    (((mulEquivGLSymplectic m R (upperUnipotent X hX * g) : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).toBlocks₁₁ =
+    (((mulEquivGLSymplectic m R g : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).toBlocks₁₁ +
+    X * (((mulEquivGLSymplectic m R g : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).toBlocks₂₁ := by
+  let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R :=
+    ((mulEquivGLSymplectic m R g : GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R)
+  have hcoe : ((((mulEquivGLSymplectic m R) (upperUnipotent X hX * g) :
+      GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) :
+        Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) =
+      ((((mulEquivGLSymplectic m R) (upperUnipotent X hX) :
+        GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) :
+          Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) * M := by
+    have h := congrArg
+      (fun q : GLSymplectic (Fin m) R ↦
+        (((q : GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R)))
+      ((mulEquivGLSymplectic m R).map_mul (upperUnipotent X hX) g)
+    simpa only [Subgroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, M] using h
+  rw [hcoe]
+  simp only [coe_mulEquivGLSymplectic, coe_mulEquivGLSymplectic_upperUnipotent,
+    GLSymplectic.coe_ofSymplecticGroup]
+  rw [← M.fromBlocks_toBlocks, Matrix.fromBlocks_multiply]
+  simp only [Matrix.one_mul, Matrix.zero_mul, zero_add, Matrix.toBlocks_fromBlocks₁₁]
+  simp only [M, coe_mulEquivGLSymplectic]
+
 end TauCeti.GLSymplecticFin
+
+namespace Submonoid
+
+open TauCeti TauCeti.GLSymplecticFin
+
+variable {R : Type*} [CommRing R] {m : ℕ}
+
+/-- The upper symmetric unipotents lie in any submonoid containing all root subgroups. -/
+theorem upperUnipotent_mem_of_root_subgroups_hom (H : Submonoid (GLSymplecticFin m R))
+    (hroot : ∀ (root : RootSubgroupIndex m) (c : Multiplicative R), root.hom c ∈ H)
+    (B : Matrix (Fin m) (Fin m) R) (hB : B.IsSymm) : upperUnipotent B hB ∈ H :=
+  upperUnipotent_mem_of_root_subgroups H
+    (fun i c ↦ by
+      simpa only [RootSubgroupIndex.hom_positiveLong,
+        positiveLongRootTransvectionHom_apply, toAdd_ofAdd] using
+          hroot (.positiveLong i) (Multiplicative.ofAdd c))
+    (fun hij c ↦ by
+      simpa only [RootSubgroupIndex.hom_positiveSum, positiveSumShortRootHom_apply,
+        toAdd_ofAdd] using
+        hroot (.positiveSum _ _ hij) (Multiplicative.ofAdd c)) B hB
+
+/-- The lower symmetric unipotents lie in any submonoid containing all root subgroups. -/
+theorem lowerUnipotent_mem_of_root_subgroups_hom (H : Submonoid (GLSymplecticFin m R))
+    (hroot : ∀ (root : RootSubgroupIndex m) (c : Multiplicative R), root.hom c ∈ H)
+    (C : Matrix (Fin m) (Fin m) R) (hC : C.IsSymm) : lowerUnipotent C hC ∈ H :=
+  lowerUnipotent_mem_of_root_subgroups H
+    (fun i c ↦ by
+      simpa only [RootSubgroupIndex.hom_negativeLong,
+        negativeLongRootTransvectionHom_apply, toAdd_ofAdd] using
+          hroot (.negativeLong i) (Multiplicative.ofAdd c))
+    (fun hij c ↦ by
+      simpa only [RootSubgroupIndex.hom_negativeSum, negativeSumShortRootHom_apply,
+        toAdd_ofAdd] using
+        hroot (.negativeSum _ _ hij) (Multiplicative.ofAdd c)) C hC
+
+end Submonoid

@@ -41,10 +41,8 @@ jobs:
   publish:
     # A NEW ephemeral runner for this job, separate from the candidate sandbox.
     # Direct labels request no privileged container, cache volume, git mirror or tool cache.
-    # Priority zero precedes compiler jobs; run-ID assignment prevents cross-run pickup.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    # Staging uses reserved disposable control guests; other publishers retain their cloud route.
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}
@@ -115,8 +113,11 @@ jobs:
             echo "::error::the staging build used '$REPORTED' but the revision pins '$TOOLCHAIN'"
             exit 1
           fi
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
