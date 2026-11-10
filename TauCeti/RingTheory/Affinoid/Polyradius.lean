@@ -38,13 +38,6 @@ open _root_.MvPowerSeries
 variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [Finite σ] {r : σ → ℝ} [∀ i, Fact (0 < r i)]
 
-omit [Finite σ] in
-/-- Restricted series at a polyradius and at its absolute value coincide. -/
-theorem _root_.MvPowerSeries.IsRestricted.subring_abs {R : Type*} [NormedRing R]
-    [IsUltrametricDist R] (c : σ → ℝ) :
-    IsRestricted.subring (R := R) (|c ·|) = IsRestricted.subring c :=
-  Subring.ext fun f ↦ isRestricted_abs_iff c f
-
 omit [∀ i, Fact (0 < r i)] in
 /-- Restricted series at polyradii in the divisible hull of the value group form a strictly
 affinoid algebra. The positive exponent and scalar may depend on the variable. -/

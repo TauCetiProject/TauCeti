@@ -147,6 +147,12 @@ theorem _root_.Finsupp.prod_pow_le_prod_pow_mul {K : Type*} [Field K] [LinearOrd
         · rfl
         · rw [not_not.1 h, pow_zero]
 
+/-- Restricted series at a polyradius and at its absolute value coincide. -/
+@[simp]
+theorem IsRestricted.subring_abs [IsUltrametricDist R] (c : σ → ℝ) :
+    IsRestricted.subring (R := R) (|c ·|) = IsRestricted.subring c :=
+  Subring.ext fun f ↦ isRestricted_abs_iff c f
+
 variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 
 /-- At positive polyradii, the weight `∏ i, c i ^ t i` of an exponent is positive. -/
