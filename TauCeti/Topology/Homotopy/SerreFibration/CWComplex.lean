@@ -14,10 +14,12 @@ public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
 # Homotopy lifting over CW complexes for Serre fibrations
 
 A Serre fibration is defined by lifting homotopies of disks. This file shows that it then lifts
-homotopies of every CW complex, relative to any subcomplex: if `C` is a relative CW complex with
-base `D`, a homotopy `I × C → B` lifts along a Serre fibration `p : E → B` to a homotopy
-`I × C → E` extending any prescribed lift on `{0} × C ∪ I × D`
-(`TauCeti.TopCat.exists_lift_relCWComplex_of_mem_serreFibrations`). In particular a Serre
+homotopies of every CW complex, relative to its base or to any of its skeleta: if `C` is a
+relative CW complex with base `D`, a homotopy `I × C → B` lifts along a Serre fibration
+`p : E → B` to a homotopy `I × C → E` extending any prescribed lift on `{0} × C ∪ I × D`
+(`TauCeti.TopCat.exists_lift_relCWComplex_of_mem_serreFibrations`), and likewise with `I × D`
+replaced by `I × skeletonLT C k`
+(`TauCeti.TopCat.exists_lift_skeletonLT_of_mem_serreFibrations`). In particular a Serre
 fibration has the homotopy lifting property with respect to every CW complex
 (`TauCeti.TopCat.hasHomotopyLiftingProperty_of_mem_serreFibrations`).
 
