@@ -52,7 +52,7 @@ same order as the width-`m` expansion of the function it is built from
 (`qExpansion_one_galoisProd_order_eq`). The norm is the product of these Galois products over the
 orbits, so its order at `∞` is the sum of the orders of `f` at the cusp translation orbits.
 Nothing here divides by an order that could be `⊤`: each factor of a nonzero form is nonzero
-(`SlashInvariantForm.quotientFunc_ne_zero`), which is what the additivity of
+(`SlashInvariantForm.quotientFunc_eq_zero_iff`), which is what the additivity of
 `qExpansionOrderAtCusp` over products asks for.
 
 ## Main definitions
@@ -431,7 +431,7 @@ private lemma qExpansion_cuspTranslationOrbit_ne_zero {f : F} (hf : (⇑f : ℍ 
     (periodic_quotientFunc_out f c)
     (SlashInvariantForm.mdifferentiable_quotientFunc f _)
     (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)).mp
-    (SlashInvariantForm.quotientFunc_ne_zero hf _)
+    ((SlashInvariantForm.quotientFunc_eq_zero_iff _).not.2 hf)
 
 omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The period of the base coset is the integer cusp width of `𝒢`: both are characterised by
@@ -475,7 +475,7 @@ theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · -- the zero form: its norm and every coset factor are zero, with junk order `0`
     have hq (c : CuspTranslationOrbit 𝒢) : quotientFunc f c.out = 0 :=
-      SlashInvariantForm.quotientFunc_eq_zero f hf c.out
+      (SlashInvariantForm.quotientFunc_eq_zero_iff _).2 hf
     have h0 (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 := qExpansionOrderAtCusp_const h 0
     simp [orderAtCuspTranslationOrbit, hq, h0, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
   have hne : ∀ c : CuspTranslationOrbit 𝒢,

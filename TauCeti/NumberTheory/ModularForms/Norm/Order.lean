@@ -22,8 +22,8 @@ order of the norm is the sum of the orders of the factors.
 
 ## Main declarations
 
-* `TauCeti.SlashInvariantForm.quotientFunc_ne_zero`: a coset factor of the norm of a nonzero
-  form is nonzero.
+* `TauCeti.SlashInvariantForm.quotientFunc_eq_zero_iff`: a coset factor of the norm of a form is
+  zero exactly when the form is.
 * `TauCeti.ModularForm.orderOfVanishingAt_norm`: the vanishing order of the norm at a point
   is the sum, over the coset space, of the vanishing orders of the coset factors.
 * `TauCeti.ModularForm.orderOfVanishingAt_quotientFunc_le_orderOfVanishingAt_norm`: each coset
@@ -61,20 +61,6 @@ noncomputable section
 
 variable {𝒢 ℋ : Subgroup (GL (Fin 2) ℝ)} {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
 
-namespace SlashInvariantForm
-
-/-- A coset factor of the norm of a nonzero form is nonzero: the factor is a slash translate
-of the form, and the slash action of a group element kills only `0`. -/
-public lemma quotientFunc_ne_zero [SlashInvariantFormClass F 𝒢 k] {f : F}
-    (hf : (⇑f : ℍ → ℂ) ≠ 0) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
-    _root_.SlashInvariantForm.quotientFunc f q ≠ 0 := by
-  induction q using Quotient.inductionOn with
-  | h g =>
-    rw [_root_.SlashInvariantForm.quotientFunc_mk]
-    exact fun hzero ↦ hf ((SlashAction.slash_eq_zero_iff k g.val⁻¹ (⇑f : ℍ → ℂ)).1 hzero)
-
-end SlashInvariantForm
-
 namespace ModularForm
 
 variable [𝒢.IsFiniteRelIndex ℋ] [ℋ.HasDetPlusMinusOne] [ModularFormClass F 𝒢 k]
@@ -89,7 +75,7 @@ public lemma orderOfVanishingAt_norm (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (
   rw [finsum_eq_sum_of_fintype, _root_.ModularForm.coe_norm]
   exact orderOfVanishingAt_prod
     (fun q _ ↦ SlashInvariantForm.mdifferentiable_quotientFunc f q)
-    (fun q _ ↦ SlashInvariantForm.quotientFunc_ne_zero hf q) p
+    (fun q _ ↦ (SlashInvariantForm.quotientFunc_eq_zero_iff q).not.2 hf) p
 
 /-- Each coset factor of the norm of a form vanishes at a point to at most the order the norm
 itself does. -/
@@ -100,7 +86,7 @@ public lemma orderOfVanishingAt_quotientFunc_le_orderOfVanishingAt_norm (f : F)
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · -- Every coset factor of the zero form is zero, and so is its norm.
     have hq : _root_.SlashInvariantForm.quotientFunc f q = 0 :=
-      _root_.SlashInvariantForm.quotientFunc_eq_zero f hf q
+      (SlashInvariantForm.quotientFunc_eq_zero_iff q).2 hf
     simp [hq, (_root_.ModularForm.norm_eq_zero_iff ℋ f).mpr hf]
   · rw [orderOfVanishingAt_norm f hf p]
     exact single_le_finsum q (Set.toFinite _) fun r ↦
