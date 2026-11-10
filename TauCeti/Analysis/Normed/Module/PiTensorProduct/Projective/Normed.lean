@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.PiTensorProduct.UniversalProperty
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Comparison with normed projective tensor products
@@ -94,21 +95,8 @@ namespace CompletedProjectiveTensorProduct
 product with the completion of Mathlib's normed projective tensor product. -/
 noncomputable def normEquiv :
     CompletedProjectiveTensorProduct (fun i (_ : Unit) => normSeminorm 𝕜 (E i)) ≃L[𝕜]
-      Completion (⨂[𝕜] i, E i) := by
-  let e := ProjectiveTensorProduct.normEquiv (𝕜 := 𝕜) (E := E)
-  let f := e.toContinuousLinearMap.completion
-  let g := e.symm.toContinuousLinearMap.completion
-  refine
-    { f.toLinearMap with
-      invFun := g
-      left_inv := ?_
-      right_inv := ?_
-      continuous_toFun := f.continuous
-      continuous_invFun := g.continuous }
-  · exact congr_fun (Completion.ext (g.continuous.comp f.continuous) continuous_id
-      (fun x => by simp [f, g]))
-  · exact congr_fun (Completion.ext (f.continuous.comp g.continuous) continuous_id
-      (fun x => by simp [f, g]))
+      Completion (⨂[𝕜] i, E i) :=
+  ProjectiveTensorProduct.normEquiv.completion
 
 /-- The completed comparison extends the identity on underlying algebraic tensors. -/
 @[simp]
