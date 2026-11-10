@@ -73,8 +73,9 @@ normalizes `Γ₁(N)` too, and acts on the diamond labels through `Nat.IsExactDi
   `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right`: any two members for the same `Q`
   differ by an element of `Γ₀(N)`, on the left and on the right respectively.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left`,
-  `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right`: `W` normalizes `Γ₀(N)`, with
-  the new element of `Γ₀(N)` produced on the left and on the right respectively.
+  `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right`: the intertwining identities
+  `W γ = δ W` and `γ W = W δ` with `δ ∈ Γ₀(N)` (for `Q ≠ 0`, `W` normalizes `Γ₀(N)`), with the new
+  element of `Γ₀(N)` produced on the left and on the right respectively.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self`: `W ^ 2 = Q • γ` with `γ ∈ Γ₀(N)`.
 * `TauCeti.IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_self_eq`: the diamond label of that `γ`
   is the unit that is `-1` modulo `Q` and satisfies `Q * u = W₁₁ ^ 2` modulo `N`; under the
@@ -351,23 +352,10 @@ private lemma IsAtkinLehnerMatrix.eq_of_eq_zero (hQ : Q = 0) (hN : N = 0)
   ext i j
   fin_cases i <;> fin_cases j <;> simp [h00, h10, h11]
 
-/-- At level `N = 0`, an element of `Γ₀(N)` is upper triangular, so swapping its diagonal entries
-gives another element of `Γ₀(N)`. -/
-private lemma exists_mem_Gamma0_eq_diag_swap (hN : N = 0) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
-    ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
-      (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 1 1, 0; 0, γ 0 0] := by
-  have h10 : γ 1 0 = 0 := by
-    subst hN
-    simpa [mem_Gamma0_iff_dvd] using hγ
-  have hdet : γ 1 1 * γ 0 0 - 0 * 0 = 1 := by
-    have := Matrix.SpecialLinearGroup.det_coe γ
-    rw [Matrix.det_fin_two, h10] at this
-    linear_combination this
-  refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩, ?_, rfl⟩
-  exact mem_Gamma0_iff_dvd.mpr ⟨0, by simp⟩
-
-/-- **An Atkin–Lehner matrix normalizes `Γ₀(N)`**: `W γ = δ W` with `δ ∈ Γ₀(N)`. This is the fact
-that turns the weight-`k` slash by `W` into an operator on `M_k(Γ₀(N))`. -/
+/-- **An Atkin–Lehner matrix intertwines `Γ₀(N)` with itself**: `W γ = δ W` with `δ ∈ Γ₀(N)`.
+For `Q ≠ 0` (an invertible `W`) this says that `W` normalizes `Γ₀(N)`, which turns the weight-`k`
+slash by `W` into an operator on `M_k(Γ₀(N))`; for `Q = 0` the matrix `W` is singular and only the
+identity holds. -/
 theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
@@ -385,8 +373,8 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left (hQN : Q ∣ N)
     ring
   · exact h.exists_mem_Gamma0_eq_mul_left hQ hQN (h.mul_right hQN hγ)
 
-/-- **An Atkin–Lehner matrix normalizes `Γ₀(N)`, read the other way**: `γ W = W δ` with
-`δ ∈ Γ₀(N)`. -/
+/-- **An Atkin–Lehner matrix intertwines `Γ₀(N)` with itself, read the other way**:
+`γ W = W δ` with `δ ∈ Γ₀(N)`; for `Q ≠ 0` this is again normalization of `Γ₀(N)`. -/
 theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
@@ -422,7 +410,6 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
     linear_combination (a + d) ^ 2 * hdet
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨(a + d) * c, by rw [hG]; simp [hc]; ring⟩
   refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
-  change M * M = (Q : ℤ) • G
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, hG]

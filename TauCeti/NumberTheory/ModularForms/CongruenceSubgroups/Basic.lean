@@ -66,6 +66,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
+* `CongruenceSubgroup.exists_mem_Gamma0_eq_diag_swap`: at level `N = 0`, swapping the diagonal
+  entries of an element of `Γ₀(0)` gives another element of `Γ₀(0)`.
 * `CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0`: a matrix in `Γ₀(L)` has lower-left
   entry `M²c`, with `N ∣ Mc`, whenever `NM ∣ L` and `M² ∣ L`.
 * `CongruenceSubgroup.mem_Gamma1_iff`: `Γ₁(N)` is cut out inside `Γ₀(N)` by the
@@ -207,6 +209,21 @@ as a congruence in `ZMod N`; this is the same fact with the congruence already d
 It holds at every level, `N = 0` included, where both sides say `A 1 0 = 0`. -/
 theorem mem_Gamma0_iff_dvd {N : ℕ} {A : SL(2, ℤ)} : A ∈ Gamma0 N ↔ (N : ℤ) ∣ A 1 0 :=
   Gamma0_mem.trans (ZMod.intCast_zmod_eq_zero_iff_dvd _ N)
+
+/-- At level `N = 0`, an element of `Γ₀(N)` is upper triangular, so swapping its diagonal entries
+gives another element of `Γ₀(N)`. -/
+lemma exists_mem_Gamma0_eq_diag_swap (hN : N = 0) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
+      (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 1 1, 0; 0, γ 0 0] := by
+  have h10 : γ 1 0 = 0 := by
+    subst hN
+    simpa [mem_Gamma0_iff_dvd] using hγ
+  have hdet : γ 1 1 * γ 0 0 - 0 * 0 = 1 := by
+    have := Matrix.SpecialLinearGroup.det_coe γ
+    rw [Matrix.det_fin_two, h10] at this
+    linear_combination this
+  refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩, ?_, rfl⟩
+  exact mem_Gamma0_iff_dvd.mpr ⟨0, by simp⟩
 
 /-- A matrix of `Γ₀(L)`, for `N * M ∣ L` and `M * M ∣ L`, has lower-left entry `M * M * c` with
 `N ∣ M * c`.
