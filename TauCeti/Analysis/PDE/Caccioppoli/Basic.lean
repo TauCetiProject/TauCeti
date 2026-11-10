@@ -197,14 +197,12 @@ theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanS
     ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
   have hg0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ g x := hwg.mono fun x hx => (sq_nonneg _).trans hx
-  by_cases hF : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega)
-  swap
-  · rw [integral_undef hF]
-    exact integral_nonneg_of_ae (ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0)
   have hT : MeasurableSet (tsupport ψ) := (isClosed_tsupport ψ).measurableSet
   calc
     ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤ ∫ x in Omega, (tsupport ψ).indicator g x ∂mu :=
-      integral_mono_ae hF (hg.indicator hT) (by
+      integral_mono_of_nonneg
+        (Filter.Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (sq_nonneg _))
+        (hg.indicator hT) (by
         filter_upwards [hwg] with x hx
         by_cases hxS : x ∈ tsupport ψ
         · rw [indicator_of_mem hxS]
