@@ -28,6 +28,8 @@ the points which lie in `s` as soon as they lie in `t`.
 
 * `Function.extend_natCast_of_neg`: the extension of `a` along `ℕ → ℤ` with fallback `e` takes
   the value `e n` at every negative integer `n`.
+* `Function.extend_comp_of_injective_right`: extension along a composite `f₂₃ ∘ f₁₂` is the iterated
+  extension, provided only the outer map `f₂₃` is injective.
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
 -/
@@ -87,5 +89,27 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
   · have has : a ∉ s := fun has ↦ hat (h has)
     rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.2),
       extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.2)]
+
+/-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
+outer map `f₂₃` is injective. At `f₂₃ k` both sides choose a preimage of the same predicate
+(`f₂₃ (f₁₂ a) = f₂₃ k` is equivalent to `f₁₂ a = k`) and so agree, and away from the range of `f₂₃`
+both sides fall back on `e'`. -/
+theorem extend_comp_of_injective_right {α β γ δ : Type*} {f₁₂ : α → β} {f₂₃ : β → γ}
+    (h : Function.Injective f₂₃) (g : α → δ) (e' : γ → δ) :
+    extend (f₂₃ ∘ f₁₂) g e' = extend f₂₃ (extend f₁₂ g (e' ∘ f₂₃)) e' := by
+  classical
+  funext x
+  simp only [Function.comp_def]
+  by_cases hk : ∃ k, f₂₃ k = x
+  · obtain ⟨k, rfl⟩ := hk
+    rw [h.extend_apply]
+    by_cases hx : ∃ a, f₁₂ a = k
+    · have hpred : (fun a => f₂₃ (f₁₂ a) = f₂₃ k) = fun a => f₁₂ a = k :=
+        funext fun a => propext h.eq_iff
+      rw [extend_def, extend_def]
+      simp only [hx, dite_true, hpred]
+    · rw [extend_apply' _ _ _ hx,
+        extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
+  · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
 
 end Function

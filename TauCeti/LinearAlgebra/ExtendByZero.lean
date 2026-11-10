@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Linear extension of coordinate functions by zero
@@ -41,35 +42,12 @@ theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : 
     (he : Injective e) (i : ι) (a : M) : linearMap R M e (Pi.single i a) = Pi.single (e i) a :=
   he.extend_single i a
 
-omit [Semiring R] [AddCommMonoid M] [Module R M] in
-/-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
-outer map `f₂₃` is injective. At `f₂₃ k` both sides choose a preimage of the same predicate
-(`f₂₃ (f₁₂ a) = f₂₃ k` is equivalent to `f₁₂ a = k`) and so agree, and away from the range of `f₂₃`
-both sides fall back on `e'`. -/
-private theorem extend_comp_of_injective_right {α β γ δ : Type*} {f₁₂ : α → β} {f₂₃ : β → γ}
-    (h : Injective f₂₃) (g : α → δ) (e' : γ → δ) :
-    extend (f₂₃ ∘ f₁₂) g e' = extend f₂₃ (extend f₁₂ g (e' ∘ f₂₃)) e' := by
-  classical
-  funext x
-  simp only [Function.comp_def]
-  by_cases hk : ∃ k, f₂₃ k = x
-  · obtain ⟨k, rfl⟩ := hk
-    rw [h.extend_apply]
-    by_cases hx : ∃ a, f₁₂ a = k
-    · have hpred : (fun a => f₂₃ (f₁₂ a) = f₂₃ k) = fun a => f₁₂ a = k :=
-        funext fun a => propext h.eq_iff
-      rw [extend_def, extend_def]
-      simp only [hx, dite_true, hpred]
-    · rw [extend_apply' _ _ _ hx,
-        extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
-  · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
-
 /-- Extension by zero along `e' ∘ e` is the composite of the extensions, provided the outer map
 `e'` is injective; the inner map `e` may be arbitrary. -/
 theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he' : Injective e') :
     linearMap R M (e' ∘ e) = linearMap R M e' ∘ₗ linearMap R M e := by
   ext v : 1
-  exact extend_comp_of_injective_right he' v 0
+  exact Function.extend_comp_of_injective_right he' v 0
 
 /-- Extension by zero along the identity is the identity. -/
 @[simp]
