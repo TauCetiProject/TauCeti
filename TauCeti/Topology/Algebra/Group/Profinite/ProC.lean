@@ -243,9 +243,9 @@ theorem exists_openNormalSubgroup_memFinite_le {M : Subgroup G} (hM : IsOpen (M 
   let S : Type v := {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}
   let t : S → Set G := fun U ↦ (U.1 : Set G) \ (M : Set G)
   -- The family contains the whole group, so it is nonempty.
-  have _ : Subsingleton (G ⧸ (openNormalSubgroupTop G).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup G)
-  have htop : S := ⟨openNormalSubgroupTop G, FiniteGroupClass.memFinite_of_subsingleton⟩
+  have _ : Subsingleton (G ⧸ (⊤ : OpenNormalSubgroup G).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
+  have htop : S := ⟨⊤, FiniteGroupClass.memFinite_of_subsingleton⟩
   have hne : Nonempty S := ⟨htop⟩
   suffices h : ∃ U : S, t U = ∅ by
     obtain ⟨U, hU⟩ := h

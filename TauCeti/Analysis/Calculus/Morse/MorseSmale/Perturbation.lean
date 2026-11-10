@@ -60,6 +60,9 @@ for parameters in the closed unit ball.
 * `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
   `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
   and membership in stable and unstable sets, are those of `f`.
+* `TauCeti.stableSet_perturb_inter_preimage_Iic`, `TauCeti.unstableSet_perturb_inter_preimage_Ici`:
+  for a family supported where `f > c` (resp. `f < c`), the stable sets where `f ≤ c` (resp. the
+  unstable sets where `c ≤ f`) are those of `f`.
 
 ## References
 
@@ -317,6 +320,36 @@ theorem mem_unstableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : Euclidea
     exact hτ.2
   simp only [Flow.mem_unstableSet]
   exact tendsto_congr' heq
+
+/-- **Stable sets below a level are unchanged.** If the family is supported where `f > c`, then
+at points where `f ≤ c` the stable set of `q` for the perturbed flow is that for the flow of `f`:
+the forward orbits of these points stay below `c`. -/
+theorem stableSet_perturb_inter_preimage_Iic
+    (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ} (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c)
+    (q : E) :
+    Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q ∩ f ⁻¹' Iic c =
+      Flow.stableSet (negativeGradientFlow f hf) q ∩ f ⁻¹' Iic c := by
+  ext y
+  refine and_congr_left fun hy ↦ mem_stableSet_perturb_iff hf hf' fun τ hτ i hmem ↦ ?_
+  have hle : f (negativeGradientFlow f hf τ y) ≤ f y := by
+    simpa using negativeGradientFlow_orbit_antitone f hf y hτ
+  exact (hc i hmem).not_ge (hle.trans hy)
+
+/-- **Unstable sets above a level are unchanged.** If the family is supported where `f < c`, then
+at points where `c ≤ f` the unstable set of `p` for the perturbed flow is that for the flow of `f`:
+the backward orbits of these points stay above `c`. -/
+theorem unstableSet_perturb_inter_preimage_Ici
+    (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ} (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Iio c)
+    (p : E) :
+    Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ∩ f ⁻¹' Ici c =
+      Flow.unstableSet (negativeGradientFlow f hf) p ∩ f ⁻¹' Ici c := by
+  ext y
+  refine and_congr_left fun hy ↦ mem_unstableSet_perturb_iff hf hf' fun τ hτ i hmem ↦ ?_
+  have hle : f y ≤ f (negativeGradientFlow f hf τ y) := by
+    simpa using negativeGradientFlow_orbit_antitone f hf y hτ
+  exact (hc i hmem).not_ge (hy.trans hle)
 
 end AwayFromSupport
 
