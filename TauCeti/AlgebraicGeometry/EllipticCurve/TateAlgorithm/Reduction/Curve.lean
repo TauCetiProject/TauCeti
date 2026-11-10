@@ -16,7 +16,7 @@ Let `R` be a discrete valuation ring with fraction field `K` and perfect residue
 be an elliptic curve over `K`. Tate's algorithm, run on a minimal equation of `W` over `R`, stops
 with a symbol (`WeierstrassCurve.exists_isTateTerminal`), and this symbol does not depend on the
 minimal equation, on the changes of variables made along the way, or on the uniformiser
-(`WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul`). This file names it as an invariant of
+(`WeierstrassCurve.IsTateTerminal.eq_of_baseChange_smul`). This file names it as an invariant of
 the curve, `W.reductionSymbol R`, and with it the **algorithmic Ogg exponent**
 
 `f = v(Δ_min) − m + 1`,
@@ -123,7 +123,7 @@ theorem reductionSymbol_eq_of_isTateTerminal {W : WeierstrassCurve K} [W.IsEllip
     (h : W'.IsTateTerminal ϖ s) : W.reductionSymbol R = s := by
   obtain ⟨W₁, D₁, ϖ₁, -, hD₁, hϖ₁, h₁⟩ := W.exists_isTateTerminal_reductionSymbol R
   have : (W₁.baseChange K).IsElliptic := hD₁ ▸ inferInstance
-  exact (IsTateTerminal.eq_of_isMinimal_smul hϖ₁ hϖ (D * D₁⁻¹)
+  exact (IsTateTerminal.eq_of_baseChange_smul hϖ₁ hϖ (D * D₁⁻¹)
     (by rw [mul_smul, ← hD₁, inv_smul_smul, hD]) h₁ h).symm
 
 /-- **Characterisation of the reduction symbol**: `W.reductionSymbol R = s` exactly when Tate's
