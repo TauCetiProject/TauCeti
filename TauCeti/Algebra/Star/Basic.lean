@@ -27,8 +27,9 @@ centralizers.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
   `x = y`.
 * `TauCeti.faithfulSMul_of_isProperStar`: if `x * c = y * c` for all `c`, then `x = y`.
-* `TauCeti.mul_smul_comm_of_starModule`: in a star ring that is a star module with a scalar tower,
-  scalars commute with left multiplication, so no `SMulCommClass` assumption is needed there.
+* `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
+  tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
+  there.
 -/
 
 public section
@@ -73,13 +74,14 @@ end TauCeti
 
 namespace TauCeti
 
-variable {R A : Type*} [Star R] [NonUnitalNonAssocSemiring A] [StarRing A] [SMul R A]
-  [StarModule R A] [IsScalarTower R A A]
+variable {R A : Type*} [Star R] [Mul A] [StarMul A] [SMul R A] [StarModule R A]
+  [IsScalarTower R A A]
 
-/-- **Scalars commute with left multiplication in a star module.** In a star ring `A` that is a
-star module over `R` with `IsScalarTower R A A`, the identity `x * (c • y) = c • (x * y)` follows
-by applying `star` to the identity `(star c • star y) * star x = star c • (star y * star x)`. In
-particular `SMulCommClass R A A` is automatic. -/
+/-- **Scalars commute with left multiplication in a star module.** If `A` has a multiplicative
+star (`StarMul A`) and is a star module over `R` with `IsScalarTower R A A`, the identity
+`x * (c • y) = c • (x * y)` follows by applying `star` to the identity
+`(star c • star y) * star x = star c • (star y * star x)`. In particular `SMulCommClass R A A` is
+automatic. -/
 theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x * y) := by
   apply star_injective
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]

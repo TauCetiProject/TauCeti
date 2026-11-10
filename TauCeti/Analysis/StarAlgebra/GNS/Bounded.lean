@@ -127,8 +127,6 @@ theorem hilbertClassMap_eq_zero_iff (a : A) :
   rw [← norm_eq_zero (a := φ.hilbertClassMap a), φ.norm_hilbertClassMap, norm_eq_zero,
     φ.classMap_eq_zero_iff]
 
-variable [SMulCommClass ℂ A A]
-
 /-- The quadratic-form inequality `φ (star b * star a * a * b) ≤ (R : ℂ) ^ 2 * φ (star b * b)` is
 the squared GNS norm bound for `φ.leftMul a` at `φ.classMap b`. -/
 theorem apply_star_mul_self_le_iff_norm_leftMul_sq_le (a b : A) (R : ℝ) :

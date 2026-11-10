@@ -306,8 +306,6 @@ theorem inner_classMap (a b : A) :
 theorem norm_classMap_sq (a : A) : ‖φ.classMap a‖ ^ 2 = (φ (star a * a)).re := by
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_classMap, RCLike.re_to_complex]
 
-variable [SMulCommClass ℂ A A]
-
 /-- Left multiplication on the algebraic GNS space, without a continuity assertion. -/
 def leftMul (a : A) : Module.End ℂ φ.GNS where
   toFun := SeparationQuotient.lift
@@ -329,7 +327,7 @@ def leftMul (a : A) : Module.End ℂ φ.GNS where
     obtain ⟨b, rfl⟩ := φ.classMap_surjective x
     -- On representatives, the quotient lift computes to multiplication.
     change φ.classMap (a * (r • b)) = r • φ.classMap (a * b)
-    simp [mul_smul_comm]
+    simp [mul_smul_comm_of_starModule]
 
 /-- Left multiplication acts on classes by the original multiplication. -/
 @[simp]
