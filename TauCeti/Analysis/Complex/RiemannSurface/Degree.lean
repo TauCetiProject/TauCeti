@@ -161,6 +161,12 @@ def degree (f : X → Y) : ℕ := ⨆ y, fiberMultiplicitySum f y
 theorem degree_def (f : X → Y) : degree f = ⨆ y, fiberMultiplicitySum f y :=
   (rfl)
 
+/-- A map from an empty Riemann surface has degree zero. -/
+@[simp]
+theorem degree_eq_zero_of_isEmpty [IsEmpty X] (f : X → Y) : degree f = 0 :=
+  Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
+    simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
+
 /-! ### Finite holomorphic maps -/
 
 /-- A **finite holomorphic map** between Riemann surfaces: a holomorphic map which takes two
@@ -342,12 +348,6 @@ end Degree
 /-! ### Composition -/
 
 variable [TopologicalSpace Z] [ChartedSpace ℂ Z]
-
-omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
-/-- A map from an empty Riemann surface has degree zero. -/
-private theorem degree_eq_zero_of_isEmpty [IsEmpty X] (f : X → Y) : degree f = 0 :=
-  Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
-    simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
 
 /-- The fibre sum of a composite `g ∘ f` over `z` is the fibre sum of `g` over `z` times the degree
 of `f`: the fibre of `g ∘ f` over `z` is the disjoint union of the fibres of `f` over the points of
