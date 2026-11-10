@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 /-!
 # Spectral decompositions of self-adjoint operators
@@ -437,24 +438,6 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
 
 /-! ### The quadratic form on the spectral subspaces -/
 
-/-- In an eigenbasis of a finite-dimensional symmetric operator `T`, the quadratic form
-`re ⟪T v, v⟫` is the sum of the eigenvalues weighted by the squared coordinates of `v`. -/
-private theorem re_inner_apply_self_eq_sum (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
-    (v : E) :
-    RCLike.re ⟪T v, v⟫_𝕜 =
-      ∑ i, hT.eigenvalues hn i * ‖(hT.eigenvectorBasis hn).toBasis.repr v i‖ ^ 2 := by
-  rw [← (hT.eigenvectorBasis hn).repr.inner_map_map, PiLp.inner_apply, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [OrthonormalBasis.coe_toBasis_repr_apply, hT.eigenvectorBasis_apply_self_apply hn,
-    RCLike.inner_apply, (starRingEnd 𝕜).map_mul, RCLike.conj_ofReal, mul_left_comm,
-    RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
-
-/-- The squared norm of a vector is the sum of the squares of its coordinates in an eigenbasis. -/
-private theorem norm_sq_eq_sum (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (v : E) :
-    ‖v‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis hn).toBasis.repr v i‖ ^ 2 := by
-  rw [← (hT.eigenvectorBasis hn).repr.norm_map, EuclideanSpace.norm_sq_eq]
-  simp only [OrthonormalBasis.coe_toBasis_repr_apply]
-
 /-- **The quadratic form is coercive on the positive spectral subspace.** If `c` is at most every
 positive eigenvalue of a finite-dimensional symmetric operator `T`, then
 `c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` on the positive spectral subspace of `T`. -/
@@ -463,13 +446,8 @@ theorem mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace (hT : T.IsSymmet
     (hc : ∀ i, 0 < hT.eigenvalues hn i → c ≤ hT.eigenvalues hn i) {v : E}
     (hv : v ∈ hT.positiveSpectralSubspace hn) :
     c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
-  rw [hT.re_inner_apply_self_eq_sum hn, hT.norm_sq_eq_sum hn, Finset.mul_sum]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  by_cases hi : (hT.eigenvectorBasis hn).toBasis.repr v i = 0
-  · simp [hi]
-  exact mul_le_mul_of_nonneg_right
-    (hc i ((hT.mem_positiveSpectralSubspace_iff hn).1 hv i (Finsupp.mem_support_iff.2 hi)))
-    (sq_nonneg _)
+  rw [positiveSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  exact hT.le_re_inner_apply_self_of_mem_spanIndices hn hc hv
 
 /-- **The quadratic form is anticoercive on the negative spectral subspace.** If `c` is at most
 the absolute value of every negative eigenvalue of a finite-dimensional symmetric operator `T`,
@@ -479,13 +457,10 @@ theorem re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace (hT : T.IsSy
     (hc : ∀ i, hT.eigenvalues hn i < 0 → c ≤ -hT.eigenvalues hn i) {v : E}
     (hv : v ∈ hT.negativeSpectralSubspace hn) :
     RCLike.re ⟪T v, v⟫_𝕜 ≤ -(c * ‖v‖ ^ 2) := by
-  rw [hT.re_inner_apply_self_eq_sum hn, hT.norm_sq_eq_sum hn, Finset.mul_sum,
-    ← Finset.sum_neg_distrib]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  by_cases hi : (hT.eigenvectorBasis hn).toBasis.repr v i = 0
-  · simp [hi]
-  have := hc i ((hT.mem_negativeSpectralSubspace_iff hn).1 hv i (Finsupp.mem_support_iff.2 hi))
-  nlinarith [sq_nonneg ‖(hT.eigenvectorBasis hn).toBasis.repr v i‖]
+  rw [negativeSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  rw [← neg_mul]
+  exact hT.re_inner_apply_self_le_of_mem_spanIndices hn
+    (fun i hi ↦ le_neg_of_le_neg (hc i hi)) hv
 
 /-- A finite-dimensional symmetric operator has a positive lower bound `c` for the absolute
 values of its nonzero eigenvalues. Such a `c` is a coercivity constant for the quadratic form on
