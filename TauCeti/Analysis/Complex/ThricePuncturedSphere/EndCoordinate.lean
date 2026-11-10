@@ -92,6 +92,19 @@ theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSig
 theorem endSign_ne_zero (q : Puncture) : q.endSign ≠ 0 := by
   cases q <;> simp
 
+/-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
+`h_q = ∓B_q`. -/
+theorem endSign_mul_neg_endSign_mul_le {V : Type*} {H : Puncture → ℝ → V → ℝ} {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
+    q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
+  rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
+  exact neg_le_of_abs_le (by rw [abs_mul, abs_endSign, one_mul]; exact hB q t x)
+
+/-- For the constants `h_q = ∓B_q`, the signed sum `∑ q, ε_q h_q` is `-(B_0 + B_1 + B_∞)`. -/
+theorem sum_endSign_mul_neg_endSign_mul (B : Puncture → ℝ) :
+    ∑ q, q.endSign * -(q.endSign * B q) = -∑ q, B q := by
+  simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
+
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
 `exp (-2πz)`. It is `0` at the ends at `0` and `∞`, and `1` at the end at `1`. -/
 def endCenter : Puncture → ℂ
@@ -174,6 +187,43 @@ theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
     ‖q.cylindricalEndLift z - q.endCenter‖ = ‖q.endScale‖ * Real.exp (-(2 * π * z.re)) := by
   rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
   simp
+
+/-- The real part of the exponent of the end lifts. -/
+private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
+  rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
+    Complex.re_ofReal_mul]
+
+/-- On the part `s ≥ 0` of an input end `q`, the end lift stays within distance `1` of `0` or
+`1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
+theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 ≤ z.re) :
+    ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
+  have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
+    rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
+      Complex.norm_exp]
+    have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
+      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
+      nlinarith [Real.pi_pos]
+    linarith
+  have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
+    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+    · rw [zero_sub, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀]
+      exact hc₁
+    · rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+        Real.norm_of_nonneg (by linarith)]
+      linarith
+  calc ‖q.cylindricalEndLift z - c‖
+      = ‖(q.cylindricalEndLift z - q.endCenter) + (q.endCenter - c)‖ := by ring_nf
+    _ ≤ 1 + 1 := (norm_add_le _ _).trans (add_le_add hφ hc)
+    _ = 2 := by norm_num
+
+/-- On the part `s ≤ -R` of the output end, the end lift stays outside the open disc of radius
+`2 exp (2πR)` about `0`. -/
+theorem two_mul_exp_le_norm_cylindricalEndLift_inf {R : ℝ} {z : ℂ} (hz : z.re ≤ -R) :
+    2 * Real.exp (2 * π * R) ≤ ‖inf.cylindricalEndLift z‖ := by
+  rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp, re_neg_two_pi_mul]
+  have h : 2 * π * R ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
+  linarith [Real.exp_le_exp.2 h]
 
 /-- The logarithmic end coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)`. It inverts the end
 lift (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate and its
@@ -533,18 +583,23 @@ theorem truncation_eq (R : ℝ) :
     cases q
     exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
 
-/-- For `R ≥ 0`, the points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in
-the open disc `‖w‖ < 2 exp (2π)`: they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`. -/
-theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
+/-- The points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in the open disc
+`‖w‖ < 2 exp (2π)`: for `R ≥ 0` they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`, and for
+`R < 0` the disc is already smaller. -/
+theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} :
     Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ truncation R ⊆
       Metric.ball 0 (2 * Real.exp (2 * π)) := by
   rintro w ⟨hwD, hwT⟩
+  rw [mem_ball_zero_iff]
+  rcases lt_or_ge R 0 with hR | hR
+  · have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : 2 * π * R < 2 * π)
+    rw [Metric.mem_closedBall, dist_zero_right] at hwD
+    linarith
   have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   have h1 : 1 ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
   rw [truncation_eq] at hwT
   have hnorm := norm_sub_norm_le w 1
   rw [norm_one] at hnorm
-  rw [mem_ball_zero_iff]
   by_cases h₀ : Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖
   · have h₁ : ‖w - 1‖ < Real.exp (-(2 * π * R)) / 2 := by
       by_contra! h

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic
+import TauCeti.Data.Int.MulEqTwo
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Reindex
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.TwoDoubleEdges
 
@@ -88,7 +89,7 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_eq_one_or_eq_
     rintro rfl
     rw [h.apply_self] at huv
     norm_num at huv
-  rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne hne) huv with
+  rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne hne) huv with
     ⟨-, hvu⟩ | ⟨huv', -⟩
   · exact key hvu
   · exact key huv'

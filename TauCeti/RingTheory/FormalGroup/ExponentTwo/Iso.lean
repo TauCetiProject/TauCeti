@@ -98,7 +98,7 @@ theorem subst_exponentTwoLog_exponentTwoExp :
 noncomputable def exponentTwoLogHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
   toPowerSeries := F.exponentTwoLog hF
   zero_constantCoeff := F.constantCoeff_exponentTwoLog hF
-  hom := (TauCeti.FormalGroupHom.hom_additive_iff (F.constantCoeff_exponentTwoLog hF)).mpr
+  hom := TauCeti.FormalGroupHom.hom_additive_iff.mpr
     (F.subst_toPowerSeries_exponentTwoLog hF)
 
 @[simp]
@@ -152,7 +152,7 @@ theorem eq_exponentTwoLogIso_iff (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R)
     refine TauCeti.FormalGroupIso.ext (TauCeti.FormalGroupHom.ext ?_)
     simpa only [exponentTwoLogIso_toHom, exponentTwoLogHom_toPowerSeries] using
       F.eq_exponentTwoLog hF f.toHom.zero_constantCoeff hf.coeff_one hp
-        ((TauCeti.FormalGroupHom.hom_additive_iff f.toHom.zero_constantCoeff).mp f.toHom.hom)
+        (TauCeti.FormalGroupHom.hom_additive_iff.mp f.toHom.hom)
 
 /-- **The normalised logarithm commutes with base change**: applying a ring homomorphism
 `f : R →+* S` to the coefficients of the normalised logarithm of `F` gives the normalised logarithm

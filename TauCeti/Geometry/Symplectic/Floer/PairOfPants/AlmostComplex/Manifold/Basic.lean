@@ -165,13 +165,13 @@ theorem cayley_pairOfPantsAlmostComplex (w : ThricePuncturedSphere) (x : M) :
 theorem pairOfPantsAlmostComplex_cylindricalEndLift (w : ThricePuncturedSphere)
     {q : Puncture} {z : ℂ} (hw : (w : ℂ) = q.cylindricalEndLift z)
     (hz : 2 ≤ q.endSign * z.re) :
-    h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J q z.im :=
-  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    have hp : Function.Periodic
-        (fun t (_ : Unit) => (J q t).almostComplexStructureAt x) 1 := fun t => by
-      simp only [hJp q t]
-    rw [almostComplexStructureAt_pairOfPantsAlmostComplex, hw]
-    exact Floer.pairOfPantsAlmostComplex_cylindricalEndLift (h₀.compatibleAt x) hp hz ()
+    h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J q z.im := by
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  have hp : Function.Periodic
+      (fun t (_ : Unit) => (J q t).almostComplexStructureAt x) 1 := fun t => by
+    simp only [hJp q t]
+  rw [almostComplexStructureAt_pairOfPantsAlmostComplex, hw]
+  exact Floer.pairOfPantsAlmostComplex_cylindricalEndLift (h₀.compatibleAt x) hp hz ()
 
 /-- Where all the end cutoffs vanish, the extension is the base structure. -/
 theorem pairOfPantsAlmostComplex_eq_base_of_forall_le_one (w : ThricePuncturedSphere)
