@@ -105,9 +105,12 @@ theorem souriau_eq_cayley_of_coe_eq_mul {U : unitaryGroup n ℂ} {A M : Matrix n
     simpa only [Matrix.mul_assoc] using h
   have hNN : N * Nᵀ = (Y * X)⁻¹ :=
     (inv_eq_left_inv (by rw [Matrix.mul_assoc, mul_eq_one_comm.1 hunit])).symm
-  rw [coe_souriau, hU, transpose_mul, hXT, Matrix.mul_assoc, ← Matrix.mul_assoc N, hNN,
-    Matrix.mul_inv_rev, ← Matrix.mul_assoc, ← Matrix.mul_assoc, mul_nonsing_inv _ hX,
-    Matrix.one_mul, hAc.cayley_eq_inv_mul]
+  calc (souriau U : Matrix n n ℂ) = X * (N * Nᵀ) * X := by
+        rw [coe_souriau, hU, transpose_mul, hXT]
+        simp only [Matrix.mul_assoc]
+    _ = X * (X⁻¹ * Y⁻¹) * X := by rw [hNN, Matrix.mul_inv_rev]
+    _ = Y⁻¹ * X := by rw [mul_nonsing_inv_cancel_left _ _ hX]
+    _ = cayley (A.map (↑)) := hAc.cayley_eq_inv_mul.symm
 
 /-- The determinant of the Cayley transform of a real symmetric matrix, as a point of the
 circle. -/
