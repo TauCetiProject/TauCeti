@@ -33,7 +33,8 @@ behaviour of a section near the boundary of `A.image i`, so it does not give an 
 an open neighbourhood `O` of the compact closure of `A.image i`, for every chart `i`, then its
 components restrict to elements of `W^{k,p}(A.image i)` (`TauCeti.MemWkpLoc.exists_wkp`) and these
 form an element of `W^{k,p}(V)` with section `s`
-(`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`). That element is unique
+(`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`, through
+`TauCeti.FiniteBundleAtlas.chartValueL_ae_eq_coord_of_value_ae_eq`). That element is unique
 (`TauCeti.SobolevSection.eq_of_ae_eq_coord`). The chart expressions of a `Cᵏ` section satisfy this
 hypothesis for every exponent (`TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff`); the
 corresponding element of `W^{k,p}(V)` is `TauCeti.SobolevSection.ofContMDiffSection`.
@@ -44,8 +45,8 @@ classes under changes of variables and is not treated here.
 
 ## Main results
 
-* `TauCeti.SobolevSection.memWkpLoc_coord`, `TauCeti.SobolevSection.exists_section_memWkpLoc`: the
-  chart expressions of an element of `W^{k,p}(V)` are in the local classes `MemWkpLoc`.
+* `TauCeti.SobolevSection.memWkpLoc_coord`: the chart expressions of an element of `W^{k,p}(V)`
+  are in the local classes `MemWkpLoc`.
 * `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`: a section whose chart expressions are
   in `MemWkpLoc` on neighbourhoods of the closures of the chart images defines an element of
   `W^{k,p}(V)`.
@@ -111,14 +112,6 @@ theorem memWkpLoc_coord (w : SobolevSection A volume p k) {s : ∀ x, V x}
     (Wkp.value_restrictL_ae hW k _).trans (ae_restrict_of_ae_restrict_of_subset
       (SetLike.coe_subset_coe.2 hW) (value_ae_eq_repr_coord (hs i) j))⟩
 
-/-- **Localization.** Every element of `W^{k,p}(V)` consists of the components of a section whose
-chart expression in every chart `i` lies in the local Sobolev class `MemWkpLoc p (A.image i) k`. -/
-theorem exists_section_memWkpLoc (w : SobolevSection A volume p k) :
-    ∃ s : ∀ x, V x, (∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)]
-      A.coord i s) ∧ ∀ i, MemWkpLoc p (A.image i) k (A.coord i s) := by
-  obtain ⟨s, hs⟩ := w.exists_section
-  exact ⟨s, hs, memWkpLoc_coord w hs⟩
-
 /-- **Sobolev sections from local classes.** Let `s` be a section of `V` whose chart expression
 `A.coord i s` lies, for every chart `i`, in the local Sobolev class `MemWkpLoc p O k` on some open
 neighbourhood `O` of the closure of `A.image i`. Then `s` defines an element of `W^{k,p}(V)`: there
@@ -137,11 +130,8 @@ theorem exists_ae_eq_coord_of_memWkpLoc {s : ∀ x, V x}
       (A.isCompact_closure_image i) hcl
   choose v hv using hv
   have hcoord (i : Fin A.n) :
-      A.chartValueL volume p k i v =ᵐ[volume.restrict (A.image i)] A.coord i s := by
-    filter_upwards [A.chartValueL_apply_ae volume p k i v, ae_all_iff.2 (hv i)] with y hy hj
-    rw [hy]
-    simp_rw [hj]
-    exact (finBasis ℝ F).sum_repr _
+      A.chartValueL volume p k i v =ᵐ[volume.restrict (A.image i)] A.coord i s :=
+    chartValueL_ae_eq_coord_of_value_ae_eq (hv i)
   exact ⟨⟨v, (mem_sobolevSections_iff A volume p k).2 ⟨s, hcoord⟩⟩, hcoord⟩
 
 end SobolevSection

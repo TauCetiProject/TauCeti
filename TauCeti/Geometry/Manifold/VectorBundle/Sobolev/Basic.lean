@@ -139,6 +139,21 @@ theorem value_ae_eq_repr_coord {w : SobolevData A μ p k} {s : ∀ x, V x} {i : 
   rw [← hy', hy, (finBasis ℝ F).repr_sum_self]
 
 omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+variable {A μ p k} in
+/-- Conversely, if the values of the entries of a tuple of Sobolev functions in chart `i` are the
+components of `A.coord i s` in the basis `Module.finBasis ℝ F`, then the chart data in chart `i`
+agree with `A.coord i s`, almost everywhere on `A.image i`. -/
+theorem chartValueL_ae_eq_coord_of_value_ae_eq {w : SobolevData A μ p k} {s : ∀ x, V x}
+    {i : Fin A.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j) :
+    A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  filter_upwards [A.chartValueL_apply_ae μ p k i w, ae_all_iff.2 h] with y hy hj
+  rw [hy]
+  simp_rw [hj]
+  exact (finBasis ℝ F).sum_repr _
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
 /-- Forgetting the highest derivative of every component does not change the chart data. -/
 theorem chartValueL_lowerOrderL (i : Fin A.n) (w : SobolevData A μ p (k + 1)) :
     A.chartValueL μ p k i (fun i j ↦ Wkp.lowerOrderL k (w i j)) =
