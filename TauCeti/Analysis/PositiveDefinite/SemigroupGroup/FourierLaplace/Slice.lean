@@ -156,15 +156,8 @@ theorem spatialSlice_real_apply (μ : Measure (ℝ≥0 × V)) (t : ℝ≥0)
     (spatialSlice μ t).real B = ∫ y in Prod.snd ⁻¹' B, Real.exp (-(t : ℝ) * (y.1 : ℝ)) ∂μ := by
   rw [measureReal_def, spatialSlice_apply μ t hB]
   simp_rw [ENNReal.ofNNReal_toNNReal]
-  by_cases hint : Integrable (fun y : ℝ≥0 × V => Real.exp (-(t : ℝ) * (y.1 : ℝ)))
-      (μ.restrict (Prod.snd ⁻¹' B))
-  · rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun y => (Real.exp_pos _).le),
-      ENNReal.toReal_ofReal (integral_nonneg fun _ => (Real.exp_pos _).le)]
-  · rw [integral_undef hint]
-    have htop : ∫⁻ y in Prod.snd ⁻¹' B, ENNReal.ofReal (Real.exp (-(t : ℝ) * (y.1 : ℝ))) ∂μ = ⊤ :=
-      not_not.1 fun h => hint ((lintegral_ofReal_ne_top_iff_integrable (by fun_prop)
-        (.of_forall fun y => (Real.exp_pos _).le)).1 h)
-    rw [htop, ENNReal.toReal_top]
+  exact (integral_eq_lintegral_of_nonneg_ae (.of_forall fun y => (Real.exp_pos _).le)
+    (by fun_prop)).symm
 
 /-- At time `0` the Laplace weight is trivial, so the spatial slice is the spatial marginal. -/
 @[simp]
@@ -177,8 +170,8 @@ theorem spatialSlice_zero (μ : Measure (ℝ≥0 × V)) : spatialSlice μ 0 = μ
 
 /-- A measure on `ℝ≥0 × V` is finite as soon as its spatial slice at time `0`, which is its
 spatial marginal, is. -/
-theorem isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero (μ : Measure (ℝ≥0 × V))
-    [IsFiniteMeasure (spatialSlice μ 0)] : IsFiniteMeasure μ :=
+theorem _root_.MeasureTheory.Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero
+    (μ : Measure (ℝ≥0 × V)) [IsFiniteMeasure (spatialSlice μ 0)] : IsFiniteMeasure μ :=
   ⟨by rw [← Measure.snd_univ, ← spatialSlice_zero]; exact measure_lt_top _ _⟩
 
 /-- Every spatial slice of the zero measure is the zero measure. -/
@@ -250,7 +243,7 @@ theorem Measure.ext_of_forall_spatialSlice_eq {μ ν : Measure (ℝ≥0 × V)} [
   have : IsFiniteMeasure (spatialSlice ν 0) := by
     rw [← hslice 0]
     infer_instance
-  have := isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero ν
+  have := Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero ν
   -- Step 1: Laplace determinacy on `ℝ≥0` identifies every measurable rectangle.
   have hrect : ∀ B : Set V, MeasurableSet B → ∀ A : Set ℝ≥0, MeasurableSet A →
       μ (A ×ˢ B) = ν (A ×ˢ B) := by
@@ -351,8 +344,8 @@ theorem representsLaplaceFourier_of_forall_spatialSlice_eq
   have : IsFiniteMeasure (spatialSlice μ 0) := by
     rw [h 0]
     infer_instance
-  refine representsLaplaceFourier_iff.mpr ⟨isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero μ,
-    fun x => ?_⟩
+  refine representsLaplaceFourier_iff.mpr
+    ⟨Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero μ, fun x => ?_⟩
   rw [← Prod.mk.eta (p := x), ← integral_fourierAtom_spatialSlice, h x.1,
     integral_fourierAtom_bochnerMeasure (hFcont x.1) (hFpd x.1) x.2]
 
