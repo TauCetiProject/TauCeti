@@ -8,10 +8,12 @@ module
 public import Mathlib.Data.Set.Function
 
 /-!
-# Injectivity on a union
+# Injectivity on a union and invariant sets of injective maps
 
 * `Set.InjOn.union_of_disjoint_image`: a map injective on two sets with disjoint images is
   injective on their union.
+* `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
+  set `K` maps `K` into itself.
 -/
 
 public section
@@ -27,3 +29,15 @@ theorem InjOn.union_of_disjoint_image (hs : InjOn f s) (ht : InjOn f t)
     disjoint_left.1 h (mem_image_of_mem f hx) (hxy ▸ mem_image_of_mem f hy)⟩
 
 end Set
+
+open Set
+
+namespace Function.Injective
+
+/-- An injective map fixing every point outside `K` maps `K` into itself. -/
+theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Injective f) {K : Set α}
+    (h : ∀ p ∉ K, f p = p) : MapsTo f K K := by
+  have hs : SurjOn f Kᶜ Kᶜ := fun p hp ↦ ⟨p, hp, h p hp⟩
+  simpa using hs.mapsTo_compl hf
+
+end Function.Injective
