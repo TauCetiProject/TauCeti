@@ -387,7 +387,6 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   -- exactly that real part built in already (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
   obtain ⟨L, hHCPV, hRe0⟩ := exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab T
-    (fun _ ↦ hρ_pos.le)
     (fun t ht ↦ by linarith [(h_endpts t ht).1])
     (fun t ht ↦ by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne ↦ (h_pair t ht t' ht' hne).le)

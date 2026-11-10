@@ -290,7 +290,7 @@ theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossings {γ : ℝ → ℂ} {s : �
       have hW := hinside W List.mem_cons_self
       have hfirst : IsPiecewiseC1On (W.excise γ s) a b := by
         simpa only [CircularCapWindow.excise] using
-          hγ.exciseCrossing hW.1 hW.2.1 hW.2.2
+          hγ.exciseCrossing hW.2.1
             (hstart W List.mem_cons_self) (hend W List.mem_cons_self)
       refine ih hfirst hpw.2 (fun V hV => hinside V (List.mem_cons_of_mem W hV)) ?_ ?_
       · intro V hV

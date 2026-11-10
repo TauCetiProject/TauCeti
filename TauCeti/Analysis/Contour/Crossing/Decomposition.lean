@@ -382,14 +382,18 @@ also requires identifying the local contribution with the crossing angle. The wi
 winding number of the closed, point-avoiding excised curve. -/
 theorem exists_int_windingNumber_eq_add_windingNumber_sub_angle_div_two_pi
     {l u r θ θ' : ℝ} (hγ : IsPiecewiseC1On γ a b) (hal : a < l)
-    (hlu : l < u) (hub : u < b) (hr : r ≠ 0) (hclosed : γ a = γ b)
+    (hlu : l < u) (hub : u < b) (hclosed : γ a = γ b)
     (hθ : γ l = circleMap s r θ) (hθ' : γ u = circleMap s r θ')
     (havoid : ∀ t ∈ Icc a b, t ∉ Ioo l u → γ t ≠ s)
     (hpv : CauchyPVExistsAt γ l u (fun z => (z - s)⁻¹) s) :
     ∃ k : ℤ, windingNumber γ a b s
       = k + (windingNumber γ l u s - ((θ' - θ : ℝ) : ℂ) / (2 * (Real.pi : ℂ))) := by
+  -- The crossing point `γ l` lies on the curve, so the circle cannot be degenerate.
+  have hr : r ≠ 0 := by
+    rintro rfl
+    exact havoid l ⟨hal.le, by linarith⟩ (fun h => lt_irrefl _ h.1) (by simp [hθ, circleMap])
   have hab : a ≤ b := by linarith
-  have hE := hγ.exciseCrossing hal hlu hub hθ hθ'
+  have hE := hγ.exciseCrossing hlu hθ hθ'
   obtain ⟨k, hk⟩ := hE.exists_int_windingNumber (exciseCrossing_closed hal hub hclosed θ θ')
     (fun t ht => exciseCrossing_ne_center hr θ θ' havoid t ((uIcc_of_le hab) ▸ ht))
   exact ⟨k, by rw [windingNumber_eq_exciseCrossing_add hγ hal hlu hub hr havoid hpv, hk]⟩
