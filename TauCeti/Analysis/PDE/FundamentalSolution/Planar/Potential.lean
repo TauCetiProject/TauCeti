@@ -113,10 +113,11 @@ private theorem integrable_planarNewtonianKernel_sub_smul_iff {R : ℝ}
   have hne : ∀ w ∈ closedBall (0 : ℂ) R, planarNewtonianKernel (z - w) ≠ 0 := fun w hw => by
     rw [planarNewtonianKernel_def]
     exact mul_ne_zero (neg_ne_zero.2 (inv_ne_zero (by positivity))) (Real.log_pos (hz1 w hw)).ne'
+  have hzw : ∀ w ∈ closedBall (0 : ℂ) R, z - w ≠ 0 := fun w hw =>
+    norm_pos_iff.1 (by linarith [hz1 w hw])
   have hcont : ContinuousOn (fun w ↦ planarNewtonianKernel (z - w)) (closedBall 0 R) :=
-    fun w hw => (((contDiffAt_planarNewtonianKernel (n := 2)
-      (show z - w ≠ 0 from norm_pos_iff.1 (by linarith [hz1 w hw]))
-      ).continuousAt.comp (continuousAt_const.sub continuousAt_id))).continuousWithinAt
+    fun w hw => ((contDiffAt_planarNewtonianKernel (n := 2) (hzw w hw)).continuousAt.comp
+      (continuousAt_const.sub continuousAt_id)).continuousWithinAt
   have hsupp : Function.support (fun w ↦ planarNewtonianKernel (z - w) • f w) ⊆ closedBall 0 R :=
     (Function.support_smul_subset_right _ _).trans hR
   rw [← integrableOn_iff_integrable_of_support_subset hsupp,

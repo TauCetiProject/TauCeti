@@ -34,6 +34,9 @@ and scaling API used when the kernel is integrated against a source to form a Ne
 * `AnalyticAt.harmonicAt_planarNewtonianKernel`: harmonicity of `G ∘ f` for analytic `f` off the
   zeros of `f`.
 * `TauCeti.contDiffAt_planarNewtonianKernel`: smoothness away from the origin.
+* `TauCeti.hasFDerivAt_planarNewtonianKernel`, `TauCeti.fderiv_planarNewtonianKernel_sub_apply`:
+  the Fréchet derivative and the directional derivative of a kernel with pole `a` (the junk value
+  `0` at the pole, where the kernel is not differentiable).
 * `TauCeti.laplacian_planarNewtonianKernel`: the pointwise equation `Δ G = 0` (genuine off the pole;
   the value at the pole is a junk value).
 * `TauCeti.laplacian_planarNewtonianKernel_sub`: the same for a kernel with pole `a`.
@@ -140,19 +143,99 @@ theorem contDiffAt_planarNewtonianKernel {n : WithTop ℕ∞} {z : ℂ} (hz : z 
   simpa only [sub_zero] using
     (contDiffAt_planarNewtonianKernel_sub (n := n) (z := z) (a := 0) hz)
 
+/-- Away from the origin, the planar Newtonian kernel has derivative
+`-(2π)⁻¹ ‖z‖⁻² ⟪z, ·⟫`. -/
+theorem hasFDerivAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
+    HasFDerivAt planarNewtonianKernel
+      ((-(2 * Real.pi)⁻¹ * (‖z‖ ^ 2)⁻¹) • innerSL ℝ z) z := by
+  have hsq :
+      HasFDerivAt (fun w : ℂ ↦ ‖w‖ ^ 2) (2 • innerSL ℝ z) z := by
+    simpa only [id_eq, one_apply_eq_self, one_smul, ContinuousLinearMap.comp_id] using
+      (hasFDerivAt_id z).norm_sq
+  have hlog :
+      HasFDerivAt (fun w : ℂ ↦ Real.log (‖w‖ ^ 2))
+        ((‖z‖ ^ 2)⁻¹ • (2 • innerSL ℝ z)) z :=
+    hsq.log (pow_ne_zero 2 (norm_ne_zero_iff.mpr hz))
+  have heq :
+      planarNewtonianKernel =
+        fun w : ℂ ↦ (-(2 * Real.pi)⁻¹ / 2) * Real.log (‖w‖ ^ 2) := by
+    funext w
+    rw [planarNewtonianKernel_def, Real.log_pow]
+    ring
+  have hmap :
+      ((-(2 * Real.pi)⁻¹ / 2) • ((‖z‖ ^ 2)⁻¹ • (2 • innerSL ℝ z))) =
+        ((-(2 * Real.pi)⁻¹ * (‖z‖ ^ 2)⁻¹) • innerSL ℝ z) := by
+    ext v
+    simp only [smul_apply, innerSL_apply_apply]
+    ring
+  rw [heq, ← hmap]
+  exact hlog.const_mul (-(2 * Real.pi)⁻¹ / 2)
+
+/-- The planar Newtonian kernel is not differentiable at its pole: it is unbounded there, but
+takes the value `0` at the origin. -/
+theorem not_differentiableAt_planarNewtonianKernel_zero :
+    ¬DifferentiableAt ℝ planarNewtonianKernel 0 := by
+  intro h
+  have hc : Filter.Tendsto planarNewtonianKernel (𝓝[≠] (0 : ℂ)) (𝓝 0) := by
+    simpa using h.continuousAt.tendsto.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
+  have hlog : Filter.Tendsto (fun z : ℂ ↦ Real.log ‖z‖) (𝓝[≠] 0) Filter.atBot :=
+    Real.tendsto_log_nhdsGT_zero.comp tendsto_norm_nhdsNE_zero
+  have hatTop : Filter.Tendsto planarNewtonianKernel (𝓝[≠] (0 : ℂ)) Filter.atTop := by
+    rw [funext planarNewtonianKernel_def]
+    exact hlog.const_mul_atBot_of_neg (by simpa using Real.pi_pos)
+  exact not_tendsto_nhds_of_tendsto_atTop hatTop _ hc
+
+/-- The Fréchet derivative of the planar Newtonian kernel as a continuous linear functional.
+At the pole, where the kernel is not differentiable, both sides are `0`. -/
+theorem fderiv_planarNewtonianKernel (z : ℂ) :
+    fderiv ℝ planarNewtonianKernel z =
+      (-(2 * Real.pi)⁻¹ * (‖z‖ ^ 2)⁻¹) • innerSL ℝ z := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · rw [fderiv_zero_of_not_differentiableAt not_differentiableAt_planarNewtonianKernel_zero]
+    simp
+  · exact (hasFDerivAt_planarNewtonianKernel hz).fderiv
+
+/-- The evaluation of `fderiv` of the planar Newtonian kernel in the direction `v` is the radial
+inner product `⟪z, v⟫` scaled by `-(2π ‖z‖²)⁻¹`. Away from the pole this is the directional
+derivative; at the pole, where the kernel is not differentiable, `fderiv` takes the default
+value `0` and both sides are `0` (it is not an actual directional derivative). -/
+theorem fderiv_planarNewtonianKernel_apply (z v : ℂ) :
+    fderiv ℝ planarNewtonianKernel z v =
+      (-(2 * Real.pi)⁻¹ * (‖z‖ ^ 2)⁻¹) * ⟪z, v⟫_ℝ := by
+  rw [fderiv_planarNewtonianKernel]
+  simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
+
+/-- A planar Newtonian kernel with pole at `a` has the translated Fréchet derivative. -/
+theorem hasFDerivAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
+    HasFDerivAt (fun w : ℂ ↦ planarNewtonianKernel (w - a))
+      ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) • innerSL ℝ (z - a)) z := by
+  rw [hasFDerivAt_comp_sub]
+  exact hasFDerivAt_planarNewtonianKernel (sub_ne_zero.mpr hza)
+
+/-- The formula for `fderiv` of a planar Newtonian kernel with pole at `a`; at the pole it is the
+default value `0`, not an actual derivative. -/
+theorem fderiv_planarNewtonianKernel_sub (z a : ℂ) :
+    fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z =
+      (-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) • innerSL ℝ (z - a) := by
+  rw [fderiv_comp_sub]
+  exact fderiv_planarNewtonianKernel (z - a)
+
+/-- The evaluation of `fderiv` of a planar Newtonian kernel with pole at `a` in the direction `v`.
+Away from `a` this is the directional derivative; at the pole `fderiv` takes the default value
+`0` and both sides are `0` (it is not an actual directional derivative). -/
+theorem fderiv_planarNewtonianKernel_sub_apply (z a v : ℂ) :
+    fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z v =
+      (-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, v⟫_ℝ := by
+  rw [fderiv_planarNewtonianKernel_sub]
+  simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
+
 /-- Along the real axis through the pole `a`, the derivative of the translated planar Newtonian
 kernel in the direction `1` is `-(2 π t)⁻¹`. -/
 private theorem fderiv_planarNewtonianKernel_sub_apply_one {a : ℂ} {t : ℝ} (ht : 0 < t) :
     fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) (a + t) 1 = -(2 * Real.pi)⁻¹ * t⁻¹ := by
-  have hne : a + (t : ℂ) ≠ a := by simpa using ht.ne'
-  have hd := ((contDiffAt_planarNewtonianKernel_sub (n := 2) hne).differentiableAt
-    (by norm_num)).hasFDerivAt
-  have hcurve : HasDerivAt (fun s : ℝ ↦ a + (s : ℂ)) 1 t :=
-    (hasDerivAt_id t).ofReal_comp.const_add a
-  have h2 := (Real.hasDerivAt_log ht.ne').const_mul (-(2 * Real.pi)⁻¹)
-  refine (hd.comp_hasDerivAt t hcurve).unique (h2.congr_of_eventuallyEq ?_)
-  filter_upwards [lt_mem_nhds ht] with s hs
-  simp [planarNewtonianKernel_def, abs_of_pos hs]
+  rw [fderiv_planarNewtonianKernel_sub_apply]
+  simp [abs_of_pos ht]
+  field_simp
 
 /-- The gradient of the translated planar Newtonian kernel is not differentiable at the pole. -/
 private theorem not_differentiableAt_fderiv_planarNewtonianKernel_sub (a : ℂ) :
