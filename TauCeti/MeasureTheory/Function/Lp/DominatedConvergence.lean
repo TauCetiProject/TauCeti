@@ -135,7 +135,7 @@ theorem limsup_eLpNorm_restrict_le {α E : Type*} [MeasurableSpace α] {μ : Mea
   rw [Function.comp_def] at hmap
   rw [← hmap]
   refine ENNReal.rpow_le_rpow (limsup_setLIntegral_le
-    (hmeas.enorm.pow_const _) hs hst ?_) hpos
+    (hmeas.enorm.pow_const _).aemeasurable hs hst ?_) hpos
   exact (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hptop
     ((hgh le_rfl).symm.trans_lt hg.eLpNorm_lt_top)).ne
 
