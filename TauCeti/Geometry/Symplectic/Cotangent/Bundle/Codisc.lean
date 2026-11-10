@@ -106,9 +106,11 @@ theorem snd_ne_zero_of_mem_cosphereBundle {z : CotangentBundle I M}
   rw [mem_cosphereBundle, h, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl] at hz
   exact zero_ne_one hz
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
+variable [FiniteDimensional ℝ E]
 
 section Topology
+
+variable [IsManifold I 1 M]
 
 variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
@@ -150,7 +152,7 @@ instance [CompactSpace M] : CompactSpace (cosphereBundle I M) :=
 
 end Topology
 
-section Manifold
+section Smooth
 
 variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
@@ -161,7 +163,12 @@ theorem contMDiffAt_norm_snd_of_mem_cosphereBundle (z : CotangentBundle I M)
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   exact contMDiffAt_norm_snd (snd_ne_zero_of_mem_cosphereBundle hz)
 
-variable [I.Boundaryless]
+end Smooth
+
+section Manifold
+
+variable [IsManifold I 1 M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
 
 /-- The unit cosphere bundle of a smooth Riemannian manifold without boundary, with the atlas of
 the regular level `‖z.2‖ = 1` of the norm of covectors. -/
@@ -176,6 +183,13 @@ instance instIsManifoldCosphereBundle :
     IsManifold 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) ∞ (cosphereBundle I M) :=
   isManifold_regularLevel ENat.LEInfty.out contMDiffAt_norm_snd_of_mem_cosphereBundle
     (isRegularValue_norm_snd one_ne_zero) (by rw [Module.finrank_self])
+
+end Manifold
+
+section Embedding
+
+variable [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
 
 /-- **The unit cosphere bundle is a smoothly embedded hypersurface** of the cotangent bundle. -/
 theorem isSmoothEmbedding_coe_cosphereBundle :
@@ -193,7 +207,7 @@ theorem range_mfderiv_coe_cosphereBundle (z : cosphereBundle I M) :
       (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z).ker :=
   range_mfderiv_coe_regularLevel _ _ (by rw [Module.finrank_self]) z
 
-end Manifold
+end Embedding
 
 end CotangentBundle
 
