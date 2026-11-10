@@ -345,9 +345,7 @@ theorem monodromy_theorem_of_free_homotopy {h : I × I → ℂ} (hh : Continuous
     (hf t₀).exists_forall_eventuallyEq_of_dist_lt isCompact_univ isPreconnected_univ
   -- The representative of the row at `t₀` still matches `f t₀` at the points a moving edge reaches.
   have hedgeEq : ∀ y : I, ∀ᶠ t in 𝓝 t₀, F y =ᶠ[𝓝 (h (t, y))] f t₀ y := fun y ↦
-    eventually_eventuallyEq_of_continuousAt (hedge y).continuousAt
-      (((hf t₀).analyticAt y (mem_univ y)).congr (hF y (mem_univ y)).symm)
-      ((hf t₀).analyticAt y (mem_univ y)) (hF y (mem_univ y))
+    (hedge y).continuousAt.eventually (hF y (mem_univ y)).eventuallyEq_nhds
   -- Uniform closeness of nearby rows, from uniform continuity of `h` on the compact square.
   obtain ⟨δ, hδ, hδρ⟩ := Metric.uniformContinuous_iff.1
     (CompactSpace.uniformContinuous_of_continuous hh) ρ hρ

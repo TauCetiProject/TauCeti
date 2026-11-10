@@ -189,19 +189,6 @@ theorem eventually_eventuallyEq_iff_of_analyticAt {F G : ℂ → E} {z : ℂ}
   exact ⟨fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hw hz h,
     fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hz hw h⟩
 
-/-- Germ agreement at a point spreads to the points a moving base point reaches nearby: if `F` and
-`G` are analytic at `c t₀` and have the same germ there, then they have the same germ at `c t` for
-every `t` near `t₀`.
-
-This is the transport that lets a germ comparison made at the base point `c t₀` be re-used at the
-moving endpoint `c t` of a free homotopy, and it is why the two edges of such a homotopy may be
-compared against one fixed representative family. -/
-theorem eventually_eventuallyEq_of_continuousAt {Z : Type*} [TopologicalSpace Z] {c : Z → ℂ}
-    {t₀ : Z} {F G : ℂ → E} (hc : ContinuousAt c t₀) (hF : AnalyticAt ℂ F (c t₀))
-    (hG : AnalyticAt ℂ G (c t₀)) (h : F =ᶠ[𝓝 (c t₀)] G) :
-    ∀ᶠ t in 𝓝 t₀, F =ᶠ[𝓝 (c t)] G :=
-  hc.eventually ((eventually_eventuallyEq_iff_of_analyticAt hF hG).mono fun _ hiff ↦ hiff.mpr h)
-
 /-! ### Analytic continuation along a path -/
 
 /-- `IsAnalyticContinuationAlong f γ s` says that the family `f` is an **analytic continuation
