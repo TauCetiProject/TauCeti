@@ -213,8 +213,7 @@ theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ�
   rcases eq_or_ne α 0 with rfl | hα0
   · obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
     have hc : ContinuousOn (iteratedFDeriv ℝ 2 u) U :=
-      (hu.continuousOn_iteratedFDerivWithin (m := 2) (by norm_num) hU.uniqueDiffOn).congr
-        fun y hy => (iteratedFDerivWithin_of_isOpen 2 hU hy).symm
+      ContinuousOn.continuousOn_iteratedFDeriv hu hU (by norm_num)
     obtain ⟨B, hB⟩ := (isCompact_closedBall x r).exists_bound_of_continuousOn (hc.mono hrU)
     have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB x (mem_closedBall_self hr.le))
     refine ⟨closedBall x r, closedBall_mem_nhds x hr, (2 * B).toNNReal,
