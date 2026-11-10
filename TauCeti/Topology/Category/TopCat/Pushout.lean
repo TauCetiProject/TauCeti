@@ -28,7 +28,8 @@ of which meet only inside `A`, is the pushout of `A` and the coproduct of the `B
 `S k` where they meet `A`. This recognizes a space built by attaching finitely many closed pieces,
 such as cells or handles, without passing through a quotient. Without the covering hypothesis, a
 map out of such a pushout which restricts to closed embeddings on `A` and on finitely many pieces
-`B k` with pairwise disjoint ranges, meeting `A` only along the `S k`, is still a closed embedding.
+`B k`, any two of which meet only inside `A`, and meeting `A` only along the `S k`, is still a
+closed embedding.
 
 ## Main declarations
 
@@ -47,8 +48,8 @@ map out of such a pushout which restricts to closed embeddings on `A` and on fin
 * `TauCeti.TopCat.injective_of_isPushout_sigma`,
   `TauCeti.TopCat.isClosedEmbedding_of_isPushout_sigma`: a map out of the pushout of `L` and
   `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed embeddings) on `L` and on
-  the `D i`, with the images of the `D i` pairwise disjoint and meeting `L` only along the `A i`,
-  is injective (resp. a closed embedding).
+  the `D i`, with the images of any two `D i` meeting only inside the image of `L` and each
+  meeting it only along `A i`, is injective (resp. a closed embedding).
 -/
 
 public section
@@ -284,12 +285,12 @@ private theorem exists_eq_inl_or_exists_eq_inr
     exact Or.inr ⟨i, d, rfl⟩
 
 /-- Let `P` be the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i`, and let `φ : P ⟶ X` restrict to
-injective maps `g` on `L` and `χ i` on the `D i`, with the ranges of the `χ i` pairwise disjoint.
-If every point of `D i` carried by `χ i` into the range of `g` lies in the range of `j i`, then `φ`
-is injective. -/
+injective maps `g` on `L` and `χ i` on the `D i`, with the ranges of any two `χ i` meeting only
+inside the range of `g`. If every point of `D i` carried by `χ i` into the range of `g` lies in the
+range of `j i`, then `φ` is injective. -/
 theorem injective_of_isPushout_sigma (hg : Function.Injective g)
     (hχ : ∀ i, Function.Injective (χ i))
-    (hdisj : Pairwise (Function.onFun Disjoint fun i ↦ Set.range (χ i)))
+    (hχχ : Pairwise fun i i' ↦ Set.range (χ i) ∩ Set.range (χ i') ⊆ Set.range g)
     (hmeet : ∀ i d, χ i d ∈ Set.range g → d ∈ Set.range (j i))
     (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (hinl : inl ≫ φ = g)
     (hinr : ∀ i, Sigma.ι D i ≫ inr ≫ φ = χ i) : Function.Injective φ := by
@@ -313,17 +314,19 @@ theorem injective_of_isPushout_sigma (hg : Function.Injective g)
   · rw [hinl', hinr'] at hab
     exact (hglue x' i d hab.symm).symm
   · rw [hinr', hinr'] at hab
-    obtain rfl : i = i' := by_contra fun hii' ↦
-      Set.disjoint_left.1 (hdisj hii') ⟨d, rfl⟩ ⟨d', hab.symm⟩
-    rw [hχ i hab]
+    rcases eq_or_ne i i' with rfl | hii'
+    · rw [hχ i hab]
+    -- Points of two different cells with the same image lie over a common point of `L`.
+    obtain ⟨x, hx⟩ := hχχ hii' ⟨⟨d, rfl⟩, d', hab.symm⟩
+    exact (hglue x i d hx).symm.trans (hglue x i' d' (hx.trans hab))
 
 /-- Let `P` be the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i`, for finitely many `i`, and let
 `φ : P ⟶ X` restrict to closed embeddings `g` on `L` and `χ i` on the `D i`, with the ranges of
-the `χ i` pairwise disjoint. If every point of `D i` carried by `χ i` into the range of `g` lies in
-the range of `j i`, then `φ` is a closed embedding. -/
+any two `χ i` meeting only inside the range of `g`. If every point of `D i` carried by `χ i` into
+the range of `g` lies in the range of `j i`, then `φ` is a closed embedding. -/
 theorem isClosedEmbedding_of_isPushout_sigma [Finite ι] (hg : IsClosedEmbedding g)
     (hχ : ∀ i, IsClosedEmbedding (χ i))
-    (hdisj : Pairwise (Function.onFun Disjoint fun i ↦ Set.range (χ i)))
+    (hχχ : Pairwise fun i i' ↦ Set.range (χ i) ∩ Set.range (χ i') ⊆ Set.range g)
     (hmeet : ∀ i d, χ i d ∈ Set.range g → d ∈ Set.range (j i))
     (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (hinl : inl ≫ φ = g)
     (hinr : ∀ i, Sigma.ι D i ≫ inr ≫ φ = χ i) : IsClosedEmbedding φ := by
@@ -331,7 +334,7 @@ theorem isClosedEmbedding_of_isPushout_sigma [Finite ι] (hg : IsClosedEmbedding
   have hinr' (i : ι) (d : D i) : φ (inr (Sigma.ι D i d)) = χ i d := by
     rw [← hinr, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
   refine .of_continuous_injective_isClosedMap φ.hom.continuous
-    (injective_of_isPushout_sigma hg.injective (fun i ↦ (hχ i).injective) hdisj hmeet sq hinl
+    (injective_of_isPushout_sigma hg.injective (fun i ↦ (hχ i).injective) hχχ hmeet sq hinl
       hinr)
     fun C hC ↦ ?_
   -- A closed set of the pushout is carried onto the union of the images of its finitely many

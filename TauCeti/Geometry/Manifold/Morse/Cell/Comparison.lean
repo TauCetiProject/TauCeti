@@ -531,8 +531,10 @@ theorem morseCellComparison_injective (hφ : Pairwise (Disjoint on fun i ↦ (φ
   TopCat.injective_of_isPushout_sigma
     (fun x y h ↦ Subtype.ext (by simpa using congr(($h : M))))
     (χ := fun i ↦ (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i))
-    (fun i ↦ (φ i).injective_morseCharacteristicMap (hball i) (hf i) (hk i) hε)
-    (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le)
+    (fun i ↦ (φ i).morseCharacteristicMap_injective (hball i) (hf i) (hk i) hε)
+    (fun _ _ h ↦ (Set.disjoint_iff.1
+      (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le h)).trans
+        (empty_subset _))
     (mem_range_diskBoundaryInclusion_of_morseCharacteristicMap φ k hk hball hf hε)
     (isPushout_morseCellAttachment φ k hk hball hf hε.le)
     (morseCellAttachmentIncl_comp_morseCellComparison φ k hk hball hf hε.le)
@@ -547,7 +549,9 @@ theorem isClosedEmbedding_morseCellComparison [T2Space M] [Finite ι] (hfc : Con
   TopCat.isClosedEmbedding_of_isPushout_sigma
     (isClosedEmbedding_sublevelInclusion hfc (by linarith))
     (fun i ↦ (φ i).isClosedEmbedding_morseCharacteristicMap (hball i) (hf i) (hk i) hε)
-    (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le)
+    (fun _ _ h ↦ (Set.disjoint_iff.1
+      (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le h)).trans
+        (empty_subset _))
     (mem_range_diskBoundaryInclusion_of_morseCharacteristicMap φ k hk hball hf hε)
     (isPushout_morseCellAttachment φ k hk hball hf hε.le)
     (morseCellAttachmentIncl_comp_morseCellComparison φ k hk hball hf hε.le)

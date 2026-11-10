@@ -319,7 +319,7 @@ theorem morseAttachingMap_comp_sublevelInclusion (hk : k ≤ n) (hε : 0 ≤ ε)
     (TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down k w).symm
 
 /-- The characteristic map of the cell is injective. -/
-theorem injective_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
+theorem morseCharacteristicMap_injective (hk : k ≤ n) (hε : 0 < ε) :
     Injective (morseCharacteristicMap ψ hk hε.le hball hf) := fun v w hvw ↦
   ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.2 w.down.2 congr(($hvw : M))
 
@@ -328,7 +328,7 @@ theorem injective_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
 theorem isClosedEmbedding_morseCharacteristicMap [T2Space M] (hk : k ≤ n) (hε : 0 < ε) :
     IsClosedEmbedding (morseCharacteristicMap ψ hk hε.le hball hf) :=
   (morseCharacteristicMap ψ hk hε.le hball hf).hom.continuous.isClosedEmbedding
-    (injective_morseCharacteristicMap hball hf hk hε)
+    (morseCharacteristicMap_injective hball hf hk hε)
 
 /-- A point of the disc is sent by the characteristic map into the lower sublevel `M_{c-ε}`
 exactly when it lies on the boundary sphere: the characteristic map is a map of pairs
