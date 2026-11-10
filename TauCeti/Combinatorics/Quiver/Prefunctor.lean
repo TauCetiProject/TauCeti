@@ -43,7 +43,7 @@ bijectivity on vertices, and the transport of the zigzag relations in
 `TauCeti/RepresentationTheory/Quiver/Zigzag/Isomorphism.lean`, which is stated in terms of path
 lengths.
 `Prefunctor.cast_mapPath_mapPath` gives the inverse laws for path transport along isomorphisms of
-bounded networks in `TauCeti/Combinatorics/Network/Isomorphism.lean`.
+bounded networks in `TauCeti/Combinatorics/Network/Isomorphism/Basic.lean`.
 -/
 
 public section

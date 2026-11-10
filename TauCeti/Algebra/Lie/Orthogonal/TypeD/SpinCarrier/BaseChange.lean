@@ -505,7 +505,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
       (TauCeti.serreRootGenerator (CartanMatrix.D n))
       (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
-      (latticeBasis n) (basisWeight n) A (definingIdeal_def n hn) k B q
+      (latticeBasis n) (basisWeight n) A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h
@@ -629,7 +629,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap (weightTorusIntegralCoordinateMap n hn) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin n))))) =
       weightTorusToBaseChangeCoordinateMap n hn A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

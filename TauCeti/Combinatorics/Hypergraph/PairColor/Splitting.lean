@@ -306,6 +306,32 @@ private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
         mul_le_mul_of_nonneg_left (sum_degenerate_le A B) (by positivity)
     _ = _ := by ring
 
+/-- Normalized by the squared cell sizes, the box sum on two cells inside `U` of size at least
+`N` averages to at most `3 / N` over the labellings of the pairs inside `U`: there are at most
+`|A| |B| (|A| + |B|) + |B| ^ 2 ≤ 3 |A| ^ 2 |B| ^ 2 / N` degenerate rectangles. -/
+private theorem sum_splitBox_div_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) {N : ℕ}
+    (hN₀ : 0 < N) (hNA : N ≤ #A) (hNB : N ≤ #B) :
+    ∑ g : U.sym2 → ι, splitBox S c i (extendLabel U g) A B / (#A * #B) ^ 2 ≤
+      Fintype.card (U.sym2 → ι) * 3 / N := by
+  have hN₀' : (0 : ℝ) < N := by exact_mod_cast hN₀
+  have hA' : (N : ℝ) ≤ #A := by exact_mod_cast hNA
+  have hB' : (N : ℝ) ≤ #B := by exact_mod_cast hNB
+  have hA₁ : (1 : ℝ) ≤ #A := by exact_mod_cast hN₀.trans_le hNA
+  have hB₁ : (1 : ℝ) ≤ #B := by exact_mod_cast hN₀.trans_le hNB
+  have key : (#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2 : ℝ) * N ≤ 3 * (#A * #B) ^ 2 := by
+    nlinarith [mul_le_mul_of_nonneg_left hA' (by positivity : (0 : ℝ) ≤ #A * #B ^ 2),
+      mul_le_mul_of_nonneg_left hB' (by positivity : (0 : ℝ) ≤ #A ^ 2 * #B),
+      mul_le_mul_of_nonneg_left (hA'.trans (le_mul_of_one_le_left (by positivity) hA₁))
+        (by positivity : (0 : ℝ) ≤ #B ^ 2)]
+  rw [← sum_div, div_le_div_iff₀ (by positivity) hN₀']
+  calc (∑ g, splitBox S c i (extendLabel U g) A B) * N
+      ≤ Fintype.card (U.sym2 → ι) * ((#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2) * N) := by
+        rw [← mul_assoc]
+        gcongr
+        exact sum_splitBox_le S c i U hA hB
+    _ ≤ Fintype.card (U.sym2 → ι) * (3 * (#A * #B) ^ 2) := by gcongr
+    _ = _ := by ring
+
 end Averaging
 
 /-- Normalized by the squared cell sizes, the box sums of the cell pairs of `𝒜 ×ˢ 𝒜` and the
@@ -320,40 +346,17 @@ private theorem exists_forall_splitBox_le [Fintype κ] (𝒜 : Finset (Finset V)
   -- Only the labels of the pairs inside the union `U` of the cells matter.
   let U := 𝒜.sup id
   have hU {A : Finset V} (hA : A ∈ 𝒜) : A ⊆ U := le_sup (f := id) hA
-  have hN₀' : (0 : ℝ) < N := by exact_mod_cast hN₀
-  have hcell {A : Finset V} (hA : A ∈ 𝒜) : (1 : ℝ) ≤ #A := by exact_mod_cast hN₀.trans_le (hN A hA)
   let P := 𝒜 ×ˢ 𝒜 ×ˢ (univ : Finset (κ × ι))
   -- The sum, over all cell pairs and colors, of the normalized box sums.
   let W (g : U.sym2 → ι) : ℝ :=
     ∑ p ∈ P, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1 / (#p.1 * #p.2.1) ^ 2
-  -- Each normalized box sum averages to at most `3 / N`: there are at most
-  -- `|A| |B| (|A| + |B|) + |B| ^ 2 ≤ 3 |A| ^ 2 |B| ^ 2 / N` degenerate rectangles.
-  have hp {p} (hp : p ∈ P) : ∑ g, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1 /
-      (#p.1 * #p.2.1) ^ 2 ≤ Fintype.card (U.sym2 → ι) * 3 / N := by
-    simp only [P, mem_product] at hp
-    have hA : (N : ℝ) ≤ #p.1 := by exact_mod_cast hN _ hp.1
-    have hB : (N : ℝ) ≤ #p.2.1 := by exact_mod_cast hN _ hp.2.1
-    have hA₁ := hcell hp.1
-    have hB₁ := hcell hp.2.1
-    have key : (#p.1 * #p.2.1 ^ 2 + #p.1 ^ 2 * #p.2.1 + #p.2.1 ^ 2 : ℝ) * N ≤
-        3 * (#p.1 * #p.2.1) ^ 2 := by
-      nlinarith [mul_le_mul_of_nonneg_left hA (by positivity : (0 : ℝ) ≤ #p.1 * #p.2.1 ^ 2),
-        mul_le_mul_of_nonneg_left hB (by positivity : (0 : ℝ) ≤ #p.1 ^ 2 * #p.2.1),
-        mul_le_mul_of_nonneg_left (hA.trans (le_mul_of_one_le_left (by positivity) hA₁))
-          (by positivity : (0 : ℝ) ≤ #p.2.1 ^ 2)]
-    rw [← sum_div, div_le_div_iff₀ (by positivity) hN₀']
-    calc (∑ g, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1) * N
-        ≤ Fintype.card (U.sym2 → ι) *
-            ((#p.1 * #p.2.1 ^ 2 + #p.1 ^ 2 * #p.2.1 + #p.2.1 ^ 2) * N) := by
-          rw [← mul_assoc]
-          gcongr
-          exact sum_splitBox_le S _ _ U (hU hp.1) (hU hp.2.1)
-      _ ≤ Fintype.card (U.sym2 → ι) * (3 * (#p.1 * #p.2.1) ^ 2) := by gcongr
-      _ = _ := by ring
   have hW : ∑ g, W g ≤
       ∑ _g : U.sym2 → ι, (3 * #𝒜 ^ 2 * Fintype.card κ * Fintype.card ι / N : ℝ) := by
     rw [sum_comm]
-    refine (sum_le_sum fun p hp' ↦ hp hp').trans_eq ?_
+    refine (sum_le_sum fun p hp ↦ ?_ : _ ≤ ∑ _p ∈ P, (Fintype.card (U.sym2 → ι) : ℝ) * 3 / N)
+      |>.trans_eq ?_
+    · simp only [P, mem_product] at hp
+      exact sum_splitBox_div_le S _ _ U (hU hp.1) (hU hp.2.1) hN₀ (hN _ hp.1) (hN _ hp.2.1)
     simp only [P, sum_const, card_product, card_univ, Fintype.card_prod, nsmul_eq_mul,
       Nat.cast_mul]
     ring
@@ -362,9 +365,7 @@ private theorem exists_forall_splitBox_le [Fintype κ] (𝒜 : Finset (Finset V)
   have hle := (single_le_sum (s := P) (fun p _ ↦ div_nonneg (splitBox_nonneg ..) (sq_nonneg _))
     (by simp [P, hA, hB] : (A, B, c, i) ∈ P)).trans hf
   have hAB : (0 : ℝ) < (#A * #B) ^ 2 := by
-    have := hcell hA
-    have := hcell hB
-    positivity
+    exact_mod_cast pow_pos (Nat.mul_pos (hN₀.trans_le (hN A hA)) (hN₀.trans_le (hN B hB))) 2
   rwa [div_le_iff₀ hAB] at hle
 
 /-- **Quasirandom splitting.** Let `𝒜` be a finite family of vertex cells, each of size at

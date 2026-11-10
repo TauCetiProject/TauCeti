@@ -105,6 +105,25 @@ theorem ramificationGroupGradedConj_zero
       mul_comm (tameCharacter hπ σ) (tameCharacter hπ τ), mul_assoc, mul_inv_cancel,
       mul_one]
 
+/-- The residue coordinate of a conjugate of `τ` at the uniformizer `π`: if `τ` moves `g⁻¹ • π` by
+`y * (g⁻¹ • π) ^ (n + 2)`, then `g τ g⁻¹` moves `π` by `g • y * π ^ (n + 2)`. -/
+private theorem ramificationGroupGradedToResidueField_conjNormal (n : ℕ) (π : 𝒪[L])
+    (hπ : Irreducible π) (g : G) (τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) (y : 𝒪[L])
+    (hy : (τ : G) • (g⁻¹ • π) - g⁻¹ • π = y * (g⁻¹ • π) ^ (n + 2)) :
+    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
+        (Additive.ofMul (QuotientGroup.mk (MulAut.conjNormal g τ))) =
+      residue 𝒪[L] (g • y) := by
+  have hgπ' : g • g⁻¹ • π = π := by simp
+  have hconjMove :
+      ((MulAut.conjNormal g τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) : G) • π - π =
+        g • y * π ^ (n + 2) := by
+    calc
+      _ = g • ((τ : G) • (g⁻¹ • π) - g⁻¹ • π) := by
+        simp [MulAut.conjNormal_apply, mul_smul, smul_sub]
+      _ = g • (y * (g⁻¹ • π) ^ (n + 2)) := by rw [hy]
+      _ = g • y * π ^ (n + 2) := by rw [smul_mul', smul_pow', hgπ']
+  exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π hπ _ (g • y) hconjMove
+
 /-- **The conjugation action formula on positive ramification quotients.** In the residue
 coordinate determined by `π`, conjugation by `σ ∈ G_0` acts on `G_i/G_{i+1}` as
 multiplication by `theta_0(σ)^i`, where `theta_0` is the tame character. -/
@@ -132,20 +151,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
         ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
             (Additive.ofMul (QuotientGroup.mk τ)) = residue 𝒪[L] y := by
       exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π' hπ' τ y hy.symm
-    let τ' : ramificationGroup G 𝒪[L] ((n : ℤ) + 1) :=
-      MulAut.conjNormal g τ
-    have hgπ' : g • π' = π := by simp [π', g]
-    -- Conjugating transports the displacement coefficient `y` to `g • y`.
-    have hconjMove : (τ' : G) • π - π = g • y * π ^ (n + 2) := by
-      calc
-        (τ' : G) • π - π = g • ((τ : G) • π' - π') := by
-          simp [τ', π', g, MulAut.conjNormal_apply, mul_smul, smul_sub]
-        _ = g • (y * π' ^ (n + 2)) := by rw [hy]
-        _ = g • y * π ^ (n + 2) := by rw [smul_mul', smul_pow', hgπ']
-    have hconjCoord :
-        ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
-            (Additive.ofMul (QuotientGroup.mk τ')) = residue 𝒪[L] (g • y) := by
-      exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π hπ τ' (g • y) hconjMove
+    have hconjCoord := ramificationGroupGradedToResidueField_conjNormal n π hπ g τ y hy.symm
     have hresidue : residue 𝒪[L] (g • y) = residue 𝒪[L] y :=
       residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.2 y
     -- Changing back from `π'` to `π` contributes the inverse tame-character factor.
@@ -158,13 +164,8 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
     have hchange' := ramificationGroupGradedToResidueField_change
       (G := G) n π π' hπ hπ' (QuotientGroup.mk τ)
     rw [haResidue] at hchange'
-    have hconjCoord' :
-        ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
-            (Additive.ofMul (QuotientGroup.mk (MulAut.conjNormal g τ))) =
-          residue 𝒪[L] (g • y) := by
-      simpa only [τ'] using hconjCoord
     simp only [ramificationGroupGradedConj_mk]
-    rw [hconjCoord', hresidue, ← hτcoord]
+    rw [hconjCoord, hresidue, ← hτcoord]
     calc
       ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
           (Additive.ofMul (QuotientGroup.mk τ)) =

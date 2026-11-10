@@ -71,13 +71,14 @@ theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] 
     simp [Polynomial.coeff_X_pow]
   rw [hnc]; simp
 
-variable {F L : Type*} [Field F] [Field L] [Algebra F L] [FiniteDimensional F L]
+variable {F L : Type*} [Field F] [Field L] [Algebra F L]
 
 /-- For a quadratic extension `L / F` and an element `x ∉ F` whose square is `a ∈ F`, the
 trace-form discriminant of the square-root basis `{1, x}` equals `4 a`. -/
 theorem discr_one_elem_eq_of_sq_algebraMap {x : L} {a : F} (hfin : finrank F L = 2)
     (hx2 : x ^ 2 = algebraMap F L a) (hx : x ∉ (algebraMap F L).range) :
     Algebra.discr F ![1, x] = 4 * a := by
+  have : FiniteDimensional F L := Module.finite_of_finrank_eq_succ hfin
   have htr0 : Algebra.trace F L x = 0 :=
     trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
   have hone : (1 : L) = algebraMap F L 1 := (map_one _).symm

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.TruncLE
 public import TauCeti.AlgebraicTopology.DoldKan.Monoidal
-public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup
+public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Forget
 
 /-!

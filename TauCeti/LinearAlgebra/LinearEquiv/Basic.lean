@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.RingTheory.Ideal.Maps
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure.
+Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
+family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
 -/
 
@@ -38,6 +42,24 @@ theorem mem_of_preserves_map
     {x : V} (hx : x ∈ p) : f x ∈ p := by
   subst hmap
   simpa [← hcomm] using hstable (Submodule.mem_map_of_mem hx)
+
+/-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
+family `v` of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/
+theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] (L : M ≃ₗ[R] M₁ × M₂) {v : ι → M₂}
+    (hv : Submodule.span R (Set.range v) = ⊤) :
+    Submodule.span R (Set.range fun i ↦ L.symm (0, v i)) =
+      LinearMap.ker (LinearMap.fst R M₁ M₂ ∘ₗ L.toLinearMap) := by
+  -- The vectors are the values of `L.symm ∘ inr` on `v`, so they span its range.
+  have hspan : Submodule.span R (Set.range fun i ↦ L.symm (0, v i)) =
+      LinearMap.range (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) := by
+    rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
+      Submodule.span_range_eq_span_range_comp_of_span_eq_top hv]
+    rfl
+  -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
+  rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
+    Submodule.map_equiv_eq_comap_symm, L.symm_symm]
 
 end LinearEquiv
 

@@ -22,8 +22,8 @@ For a module over a topological semiring with a finite basis, the module topolog
 coordinate topology through that basis. This identifies the canonical topology used on quadratic
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
-module topology of a finite-dimensional space is Hausdorff and locally compact, and every subspace
-of a finite-dimensional space is closed; over σ-compact scalars it is σ-compact. No norm or
+module topology of a finite-dimensional space is Hausdorff and locally compact; every subspace of
+a module with the module topology is closed; over σ-compact scalars it is σ-compact. No norm or
 completeness hypothesis on the scalars is needed.
 
 Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
@@ -51,6 +51,22 @@ organizational `ModuleTopology` namespace.
 public section
 
 namespace IsModuleTopology
+
+/-- In a continuous scalar tower, the module topology over the smaller scalar semiring is
+also the module topology over the larger scalar semiring, provided the larger scalar action
+is continuous for the given topology. No finiteness assumption is needed. -/
+theorem of_restrictScalars {R S M : Type*} [Semiring R] [Semiring S]
+    [TopologicalSpace R] [TopologicalSpace S] [SMul R S] [ContinuousSMul R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+    [TopologicalSpace M] [IsModuleTopology R M] [ContinuousSMul S M] :
+    IsModuleTopology S M := by
+  have := IsModuleTopology.toContinuousAdd R M
+  refine ⟨le_antisymm ?_ (moduleTopology_le S M)⟩
+  rw [eq_moduleTopology R M]
+  let := moduleTopology S M
+  have := IsModuleTopology.toContinuousAdd S M
+  have : ContinuousSMul R M := IsScalarTower.continuousSMul S
+  exact moduleTopology_le R M
 
 /-- Restricting scalars along a finite algebra with its natural topology preserves the module
 topology, even for modules that are not finitely generated. -/
@@ -297,11 +313,12 @@ theorem sigmaCompactSpace_moduleTopology [SigmaCompactSpace K] :
   let b := Module.finBasis K V
   exact ModuleTopology.sigmaCompactSpace b
 
-/-- Every subspace of a finite-dimensional space over a Hausdorff division ring equipped with a
-topological semiring structure is closed for the module topology. -/
+omit [FiniteDimensional K V] in
+/-- Every subspace of a space over a Hausdorff division ring equipped with a topological semiring
+structure is closed for the module topology. -/
 theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSpace V]
     [IsModuleTopology K V] (W : Submodule K V) : IsClosed (W : Set V) := by
-  have : T2Space (V ⧸ W) := ModuleTopology.t2Space (Module.finBasis K (V ⧸ W))
+  have : T2Space (V ⧸ W) := ModuleTopology.t2Space (Module.Free.chooseBasis K (V ⧸ W))
   have : ContinuousAdd (V ⧸ W) := IsModuleTopology.toContinuousAdd K (V ⧸ W)
   have hW : (W : Set V) = W.mkQ ⁻¹' {0} := by
     ext x

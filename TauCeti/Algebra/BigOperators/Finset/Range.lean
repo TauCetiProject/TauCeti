@@ -122,10 +122,10 @@ theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ}
 
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
-at the middle index `k` and takes even values, is divisible by `4`: it is twice the sum over
-`i < k`. -/
+at the middle index `k` and takes even values on `0, …, 2 * k`, is divisible by `4`: it is twice
+the sum over `i < k`. -/
 theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h : ℕ → R)
-    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i, 2 ∣ h i) :
+    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i ≤ 2 * k, 2 ∣ h i) :
     4 ∣ ∑ i ∈ range (2 * k + 1), h i := by
   rw [show 2 * k + 1 = (k + 1) + k by ring, sum_range_add, sum_range_succ, hk, add_zero]
   have : ∑ x ∈ range k, h (k + 1 + x) = ∑ x ∈ range k, h x := by
@@ -136,7 +136,7 @@ theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h
     congr 1
     omega
   rw [this, ← two_mul, ← two_add_two_eq_four, ← two_mul]
-  exact mul_dvd_mul_left 2 (dvd_sum fun i _ ↦ h2 i)
+  exact mul_dvd_mul_left 2 (dvd_sum fun i hi ↦ h2 i (by rw [mem_range] at hi; omega))
 
 /-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
 of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/

@@ -43,7 +43,7 @@ theorem IsJordanSplitting.prod (h : B.IsJordanSplitting π N) (h' : C.IsJordanSp
     obtain ⟨hind', htop'⟩ :=
       (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top N').mp h'.isInternal
     refine (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
-      ⟨TauCeti.iSupIndep.prod hind hind', ?_⟩
+      ⟨hind.prod hind', ?_⟩
     rw [TauCeti.iSup_prod_submodule, htop, htop', Submodule.prod_top]
   apply_eq_zero i j hij x hx y hy := by
     rw [prod_apply, h.apply_eq_zero i j hij _ hx.1 _ hy.1, h'.apply_eq_zero i j hij _ hx.2 _ hy.2,

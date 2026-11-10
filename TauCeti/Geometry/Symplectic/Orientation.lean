@@ -326,23 +326,14 @@ theorem Tames.orientation_reindex (hJ : ω.Tames J) (hb : ∀ i, b (i, 1) = J (b
   -- In the basis `b`, the family `d` is triangular with diagonal entries `1` and `c i`.
   have hcoef (p : Fin n × Fin 2) : 0 < ![1, c p.1] p.2 := by
     obtain ⟨j, a⟩ := p
-    fin_cases a
-    · simp
-    · simpa using hc j
+    fin_cases a <;> simp [hc j]
   have htri (p : Fin n × Fin 2) :
       d p - ![1, c p.1] p.2 • b p ∈ Submodule.span ℝ (b '' {r | r.1 < p.1}) := by
     obtain ⟨j, a⟩ := p
     fin_cases a
     · simpa [d] using hxv j
     · simpa [d, hb] using hyv j
-  -- Listed lexicographically, `d` is triangular in the sense of
-  -- `Module.Basis.det_pos_of_sub_smul_mem_span`.
-  have hdet : 0 < b.det d := by
-    rw [show b.det d = (b.reindex toLex).det (d ∘ ofLex) by rw [Basis.det_reindex]; rfl]
-    refine (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hcoef (ofLex p)) fun p ↦ ?_
-    refine Submodule.span_mono ?_ (by simpa using htri (ofLex p))
-    rintro _ ⟨q, hq, rfl⟩
-    exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩
+  have hdet : 0 < b.det d := b.det_pos_of_sub_smul_mem_span_image_fst_lt hcoef htri
   have hbasis := b.is_basis_iff_det.2 hdet.ne'.isUnit
   set D := Basis.mk hbasis.1 hbasis.2.ge
   have hDd : ⇑D = d := Basis.coe_mk _ _

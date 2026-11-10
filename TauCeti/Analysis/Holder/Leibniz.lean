@@ -24,6 +24,29 @@ open scoped NNReal Topology
 
 namespace ContinuousLinearMap
 
+/-- The order-zero case of `holderWith_iteratedFDeriv_bilinear_aux`: a bilinear product whose
+second factor is supported inside `s` is Hölder with constant `‖L‖ * (M * K + N * H)`. -/
+private theorem holderWith_iteratedFDeriv_zero_bilinear {E A B G : Type u}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : A →L[ℝ] B →L[ℝ] G) {f : E → A} {g : E → B} {s : Set E} {M N H K α : ℝ≥0}
+    (hgs : tsupport g ⊆ s)
+    (hfb : ∀ x ∈ s, ‖iteratedFDeriv ℝ 0 f x‖ ≤ M) (hgb : ∀ x, ‖iteratedFDeriv ℝ 0 g x‖ ≤ N)
+    (hfH : HolderOnWith H α (iteratedFDeriv ℝ 0 f) s)
+    (hgH : HolderWith K α (iteratedFDeriv ℝ 0 g)) :
+    HolderWith (‖L‖₊ * (M * K + N * H)) α (iteratedFDeriv ℝ 0 (fun x => L (f x) (g x))) := by
+  apply holderOnWith_univ.mp
+  rw [TauCeti.holderOnWith_iteratedFDeriv_zero_iff]
+  apply holderOnWith_univ.mpr
+  simpa using L.holderWith_comp₂_of_eq_zero
+    (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp hfH)
+    (holderOnWith_univ.mp (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp
+      (hgH.holderOnWith univ)))
+    (by simpa only [norm_iteratedFDeriv_zero] using hfb)
+    (by simpa only [norm_iteratedFDeriv_zero] using fun x _ => hgb x)
+    (fun x hx => image_eq_zero_of_notMem_tsupport fun h => hx (hgs h))
+
 private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
@@ -40,16 +63,8 @@ private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
       (iteratedFDeriv ℝ k (fun x => L (f x) (g x))) := by
   induction k generalizing A B G with
   | zero =>
-    apply holderOnWith_univ.mp
-    rw [TauCeti.holderOnWith_iteratedFDeriv_zero_iff]
-    apply holderOnWith_univ.mpr
-    simpa using L.holderWith_comp₂_of_eq_zero
-      (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp (hfH 0 le_rfl))
-      (holderOnWith_univ.mp (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp
-        ((hgH 0 le_rfl).holderOnWith univ)))
-      (by simpa only [norm_iteratedFDeriv_zero] using hfb 0 le_rfl)
-      (by simpa only [norm_iteratedFDeriv_zero] using fun x _ => hgb 0 le_rfl x)
-      (fun x hx => image_eq_zero_of_notMem_tsupport fun h => hx (hgs h))
+    simpa using holderWith_iteratedFDeriv_zero_bilinear L hgs (hfb 0 le_rfl) (hgb 0 le_rfl)
+      (hfH 0 le_rfl) (hgH 0 le_rfl)
   | succ k ih =>
     have hf' : ContDiffOn ℝ k (fderiv ℝ f) s := hf.fderiv_of_isOpen hs (by simp)
     have hg' : ContDiff ℝ k (fderiv ℝ g) := hg.fderiv_right (by simp)

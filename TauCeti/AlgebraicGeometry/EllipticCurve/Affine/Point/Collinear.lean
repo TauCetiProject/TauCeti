@@ -20,18 +20,14 @@ chord-and-tangent description of the group law, stated for Mathlib's group of po
 addition is defined by explicit formulas instead. The multiplicity condition is what distinguishes
 a tangent line: when two of the points coincide, the line must be tangent to `W` there.
 
-When the three `x`-coordinates are pairwise distinct, the multiplicity condition is automatic,
-so three points on a common non-vertical line add to zero
-(`WeierstrassCurve.Affine.Point.some_add_some_add_some_eq_zero_of_X_ne`). This is the form in
-which the group law is checked for points given by explicit parametrisations, where a line through
-three points can be exhibited directly.
+The multiplicity condition is automatic when the three `x`-coordinates are pairwise distinct; that
+case is `WeierstrassCurve.Affine.Point.some_add_some_add_some_eq_zero`, proved directly in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Line`.
 
 ## Main results
 
 * `WeierstrassCurve.Affine.Point.some_add_some_add_some_eq_zero_iff`: three affine points add to
   zero exactly when they are the intersections of a non-vertical line with `W`.
-* `WeierstrassCurve.Affine.Point.some_add_some_add_some_eq_zero_of_X_ne`: three affine points with
-  pairwise distinct `x`-coordinates on a common non-vertical line add to zero.
 
 ## References
 
@@ -106,30 +102,6 @@ theorem some_add_some_add_some_eq_zero_iff (h₁ : W.Nonsingular x₁ y₁) (h�
       linear_combination hb
     · rw [negAddY, addX, hy₁]
       linear_combination ℓ * hb
-
-/-- **Three points on a line with distinct `x`-coordinates add to zero.** Three nonsingular
-affine points `(xᵢ, yᵢ)` of `W` with pairwise distinct `x`-coordinates, lying on a common line
-`y = ℓ x + ν`, add to zero. -/
-theorem some_add_some_add_some_eq_zero_of_X_ne (h₁ : W.Nonsingular x₁ y₁)
-    (h₂ : W.Nonsingular x₂ y₂) (h₃ : W.Nonsingular x₃ y₃) (hx₁₂ : x₁ ≠ x₂) (hx₁₃ : x₁ ≠ x₃)
-    (hx₂₃ : x₂ ≠ x₃) (hy₁ : y₁ = ℓ * x₁ + ν) (hy₂ : y₂ = ℓ * x₂ + ν) (hy₃ : y₃ = ℓ * x₃ + ν) :
-    some _ _ h₁ + some _ _ h₂ + some _ _ h₃ = 0 := by
-  refine (some_add_some_add_some_eq_zero_iff h₁ h₂ h₃).2 ⟨ℓ, ν, hy₁, hy₂, hy₃, ?_⟩
-  have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := fun h ↦ hx₁₂ h.1
-  have hℓ : W.slope x₁ x₂ y₁ y₂ = ℓ := by
-    rw [slope_of_X_ne hx₁₂, div_eq_iff (sub_ne_zero.2 hx₁₂), hy₁, hy₂]
-    ring
-  -- The cubic `W(X, ℓ X + ν)` vanishes at `x₃`, so `x₃` is its third root `addX x₁ x₂ ℓ`.
-  have hsum : x₃ = W.addX x₁ x₂ ℓ := by
-    have h := congrArg (eval x₃) (W.addPolynomial_slope h₁.1 h₂.1 hxy)
-    rw [hℓ, addPolynomial_eq_eval hy₁, polynomial] at h
-    simp only [eval_neg, eval_mul, eval_sub, eval_add, eval_pow, eval_C, eval_X] at h
-    have e₃ := (equation_iff x₃ y₃).1 h₃.1
-    rw [hy₃] at e₃
-    have h' : (x₃ - x₁) * (x₃ - x₂) * (x₃ - W.addX x₁ x₂ ℓ) = 0 := by
-      linear_combination h - e₃
-    simpa [sub_eq_zero, hx₁₃.symm, hx₂₃.symm] using h'
-  rw [← addPolynomial_eq_eval hy₁, ← hℓ, addPolynomial_slope h₁.1 h₂.1 hxy, hℓ, ← hsum]
 
 end Point
 

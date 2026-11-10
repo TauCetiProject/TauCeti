@@ -145,7 +145,6 @@ theorem FactorSet.isFactorSet_curry (α : FactorSet G kˣ)
     (htriv : ∀ (g : G) (a : kˣ), g • a = a) : IsFactorSet (Function.curry ⇑α) where
   cocycle g h j := by simpa [Function.curry, htriv] using α.isMulCocycle₂ g h j
   one_left g := α.map_one_fst g
-  one_right g := α.map_one_snd g
 
 /-- **A normalized factor set in the curried sense of `TauCeti.IsFactorSet`, bundled as a
 `TauCeti.FactorSet`** for a trivial action of `G` on `kˣ`. This is what makes the central extension

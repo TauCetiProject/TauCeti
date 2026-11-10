@@ -22,6 +22,8 @@ ground-ring bilinear map `φ : M × N → P` induces a morphism of DG bimodules
 This is the universal property of the ordinary balanced tensor product, in the category of DG
 bimodules; the induced morphism is unique, since morphisms out of a tensor product are
 determined by their values on pure tensors (`TauCeti.DGBimoduleCat.tensorObj_hom_ext`).
+The target carrier may live in an independent universe; the construction returns a
+`DGBimoduleHom`, which is a categorical morphism when the carrier universes agree.
 
 ## Main definitions
 
@@ -44,7 +46,7 @@ open CategoryTheory MulOpposite
 
 namespace TauCeti.DGBimoduleCat
 
-universe uR uA uB uC uM uN
+universe uR uA uB uC uM uN uP
 
 variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing R] [Ring A] [Ring B] [Ring C]
@@ -62,7 +64,7 @@ attribute [local instance 100] leftModule rightModule leftIsScalarTower rightIsS
 attribute [local instance] tensorGradedOuterLeft tensorGradedOuterRight
 
 variable {M : DGBimoduleCat.{uR, uA, uB, uM} hA hB} {N : DGBimoduleCat.{uR, uB, uC, uN} hB hC}
-  {P : DGBimoduleCat.{uR, uA, uC, max uM uN} hA hC}
+  {P : DGBimoduleCat.{uR, uA, uC, uP} hA hC}
 
 -- Transport the graded actions to the internal gradings used by balanced tensors.
 local instance tensorLiftGradedSMulModuleRight (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
@@ -87,7 +89,7 @@ def tensorLift (φ : M →ₗ[R] N →ₗ[R] P)
       φ m n ∈ P.grading (p + q))
     (hφd : ∀ {p : ℤ} {m : M}, m ∈ M.grading p → ∀ n : N,
       P.differential (φ m n) = φ (M.differential m) n + p.negOnePow • φ m (N.differential n)) :
-    tensorObj M N ⟶ P := by
+    DGBimoduleHom (tensorObj M N).isDGBimodule P.isDGBimodule := by
   let L := lift φ hφ
   let T : tensorObj M N →ₗ[Cᵐᵒᵖ] P :=
     { toFun := L
@@ -122,6 +124,8 @@ def tensorLift (φ : M →ₗ[R] N →ₗ[R] P)
     intro a z
     exact lift_smul_left A φ hφ hφA a z
 
+-- Passing the differential witness with @ prevents implicit-argument insertion from
+-- eta-expanding it, which would leave an extra differential obligation when rewriting.
 /-- The induced morphism on a pure tensor is the bilinear map. -/
 @[simp]
 theorem tensorLift_tmul (φ : M →ₗ[R] N →ₗ[R] P)
@@ -133,7 +137,7 @@ theorem tensorLift_tmul (φ : M →ₗ[R] N →ₗ[R] P)
     (hφd : ∀ {p : ℤ} {m : M}, m ∈ M.grading p → ∀ n : N,
       P.differential (φ m n) = φ (M.differential m) n + p.negOnePow • φ m (N.differential n))
     (m : M) (n : N) :
-    tensorLift φ hφ hφA hφC hφmem hφd (tmul R B m n) = φ m n :=
+    tensorLift φ hφ hφA hφC hφmem @hφd (tmul R B m n) = φ m n :=
   lift_tmul φ hφ m n
 
 end TauCeti.DGBimoduleCat

@@ -78,10 +78,11 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
       ∀ z ∈ U, Q.atRealPlace w z ≠ 0 ∧
         IsSquare (Q.atRealPlace w z / Q.atRealPlace w x) := by
   obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
-    ((Q.continuous_atRealPlace w).continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (by
+    ((Q.continuous_atRealPlace w).continuousAt.eventually_isSquare_div
+      ((by
         simpa only [Units.isSquare_iff_pos] using
-          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}) :
+        IsOpen {u : ℝˣ | IsSquare u}).mem_nhds .one)
       hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
@@ -99,11 +100,12 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberFie
     have : CharZero (v.adicCompletion K) :=
       charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
     exact two_ne_zero
+  have hsq : IsOpen {u : (v.adicCompletion K)ˣ | IsSquare u} := by
+    simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
+      using isOpen_range_powMonoidHom h2
   obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
-    ((Q.continuous_atFinitePlace v).continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (by
-        simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
-          using isOpen_range_powMonoidHom h2) hx)
+    ((Q.continuous_atFinitePlace v).continuousAt.eventually_isSquare_div
+      (hsq.mem_nhds .one) hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 end TauCeti

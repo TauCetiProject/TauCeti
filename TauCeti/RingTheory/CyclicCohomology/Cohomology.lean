@@ -417,8 +417,7 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-    iCycles_toCycles, iCycles_toCycles]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles]
   -- Both sides are the pullback of `φ`, as `cyclicCochainComplexXIso` is the identity.
   rfl
 

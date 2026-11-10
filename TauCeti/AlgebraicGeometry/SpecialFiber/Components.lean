@@ -50,6 +50,10 @@ notation on the structure morphism.
 
 * `TauCeti.range_specialFiberι`: the special fibre of a scheme over a local ring is the preimage
   of the closed point;
+* `TauCeti.ker_specialFiberι_le_vanishingIdeal_iff`: a closed subset lies in the special fibre
+  exactly when its reduced induced closed subscheme is a closed subscheme of the special fibre, as
+  for the closure of a point of the special fibre
+  (`AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_le_vanishingIdeal_closure_singleton`);
 * `AlgebraicGeometry.Scheme.Hom.maximalIdeal_ne_bot_of_base_ne_closedPoint`: a local ring over
   which some point of a scheme lies away from the closed point is not a field;
 * `AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint`: under the same hypothesis, a
@@ -109,6 +113,26 @@ theorem range_specialFiberι :
         congrArg (fun g : toBase.fiber (closedPoint R) ⟶ X ↦ Set.range g)
           (specialFiberIsoFiberClosedPoint_inv_specialFiberι (.of R) toBase)
     _ = toBase ⁻¹' {closedPoint R} := Scheme.Hom.range_fiberι toBase (closedPoint R)
+
+variable {R toBase} in
+/-- A closed subset of `X` lies in the special fibre exactly when its vanishing ideal, the ideal
+sheaf of its reduced induced closed subscheme, contains the ideal sheaf of the special fibre. -/
+theorem ker_specialFiberι_le_vanishingIdeal_iff {Z : TopologicalSpace.Closeds X} :
+    (specialFiberι R toBase).ker ≤ Scheme.IdealSheafData.vanishingIdeal Z ↔
+      (Z : Set X) ⊆ toBase ⁻¹' {closedPoint R} := by
+  rw [← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal, ← SetLike.coe_subset_coe,
+    Scheme.Hom.support_ker, range_specialFiberι, IsClosed.closure_eq]
+  exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
+
+variable {R} in
+/-- The closure of a point of the special fibre, with its reduced structure, is a closed subscheme
+of the special fibre. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+    {x : X} (hx : toBase x = closedPoint R) :
+    (specialFiberι R toBase).ker ≤
+      Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩ :=
+  ker_specialFiberι_le_vanishingIdeal_iff.mpr <| closure_minimal (Set.singleton_subset_iff.mpr hx)
+    ((isClosed_singleton_closedPoint R).preimage toBase.continuous)
 
 variable {R} in
 /-- If some point of a scheme over a local ring does not lie over the closed point, then the local

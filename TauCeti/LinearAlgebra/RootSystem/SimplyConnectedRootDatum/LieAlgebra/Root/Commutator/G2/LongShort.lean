@@ -24,6 +24,7 @@ characteristics two and three.
 The order is xβ xγ xδ xε xζ xα. In particular the coefficient at ζ is a straightening
 coefficient, not the coefficient in an element commutator with its β factor cancelled.
 These relations reorder arbitrary root elements, not just the two pinned simple roots.
+`g2_short_long_coefficients_isUnit` shows that all four integer coefficients are units.
 
 The operator transport follows
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul`,
@@ -43,92 +44,68 @@ namespace TauCeti.DynkinType
 
 open Set TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
-private theorem long_short_output_lengths (i j k : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3) :
-    (g2Root k = 2 • g2Root i + g2Root j → g2Length k = 1) ∧
-      (g2Root k = 3 • g2Root i + 2 • g2Root j → g2Length k = 3) := by
-  simp only [g2Root_apply, g2Length_apply] at hi hj ⊢
-  revert i j k
-  decide +kernel
-
--- The seven sums appearing in the vanishing brackets of the straightening identity.
-private def long_short_excludedSums (i j : Fin 12) : Set (Fin 2 → ℤ) :=
-  {4 • g2Root i + g2Root j, 4 • g2Root i + 2 • g2Root j,
-    g2Root i + 2 • g2Root j, 5 • g2Root i + 2 • g2Root j,
-    4 • g2Root i + 3 • g2Root j, 5 • g2Root i + 3 • g2Root j,
-    6 • g2Root i + 3 • g2Root j}
-
-private theorem long_short_exclusions (i j : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
-    (hadd : g2Root i + g2Root j ∈ range g2Root) :
-    ∀ v ∈ long_short_excludedSums i j, v ∉ range g2Root ∧ v ≠ 0 := by
-  simp only [long_short_excludedSums, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, mem_range, not_exists, g2Root_apply, g2Length_apply] at hi hj hadd ⊢
-  revert i j
-  decide +kernel
-
 variable {ht : G2.Valid}
-variable {α β γ δ ε ζ : Fin 12}
+-- Keep the native index type so simplification does not have to unfold G2.numRoots.
+variable {α β γ δ ε ζ : Fin G2.numRoots}
 
-private theorem g2_root_eq_add_of_coordinates {i j k : Fin 12}
+private theorem g2_root_eq_add_of_coordinates {i j k : Fin G2.numRoots}
     (h : g2Root k = g2Root i + g2Root j) :
     (G2.simplyConnectedRootDatum ht).root k =
       (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j := by
   rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]
   exact h
 
-private theorem long_short_coordinates
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
-    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
-    g2Root δ = 2 • g2Root α + g2Root β ∧
-      g2Root ε = 3 • g2Root α + g2Root β ∧
-      g2Root ζ = 3 • g2Root α + 2 • g2Root β := by
-  rw [hζ, hε, hδ, hγ]
-  exact ⟨by abel, by abel, by abel⟩
+private theorem g2_chainBotCoeff_eq (p q : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).chainBotCoeff p q =
+      g2SimplyConnectedRootDatum.chainBotCoeff p q := by
+  rw [simplyConnectedRootDatum_G2]
+  rfl
 
-private theorem long_short_divisibility
+/-- The four integer coefficients in the short–long `G₂` straightening formula are units
+(that is, each is `1` or `-1`). The divisions are taken in `ℤ`, before any base change. -/
+theorem g2_short_long_coefficients_isUnit
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
     (hε : g2Root ε = g2Root α + g2Root δ)
     (hζ : g2Root ζ = g2Root δ + g2Root γ) :
+    let c := G2.structureConstant ht α β
+    let d := c * (G2.structureConstant ht α γ / 2)
+    let a := d * (G2.structureConstant ht α δ / 3)
+    let b := d * c * (G2.structureConstant ht δ γ / 3)
+    IsUnit c ∧ IsUnit d ∧ IsUnit a ∧ IsUnit b := by
+  obtain ⟨hij, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ hα hβ
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hγ)
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hδ)
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hζ)
+  have values {p q r : Fin G2.numRoots} (h : g2Root r = g2Root p + g2Root q) :=
+    structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
+      (α := p) (β := q) ⟨r, g2_root_eq_add_of_coordinates h⟩
+  have hc := values hγ
+  have hd := values hδ
+  have ha := values hε
+  have hb := values hζ
+  simp only [g2_chainBotCoeff_eq, hij, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat]
+    at hc hd ha hb
+  rcases hc with hc | hc <;> rcases hd with hd | hd <;>
+    rcases ha with ha | ha <;> rcases hb with hb | hb <;> norm_num [hc, hd, ha, hb]
+
+private theorem long_short_divisibility
+    (hα : g2Length α = 1) (hβ : g2Length β = 3)
+    (hγ : g2Root γ = g2Root α + g2Root β)
+    (hδ : g2Root δ = g2Root α + g2Root γ)
+    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
     (2 : ℤ) ∣ G2.structureConstant ht α γ ∧
       (3 : ℤ) ∣ G2.structureConstant ht α δ ∧
       (3 : ℤ) ∣ G2.structureConstant ht δ γ := by
-  have hli := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root'
-    (i := α) (j := β) ⟨γ, by simpa only [g2SimplyConnectedRootDatum_root] using hγ⟩
-  have hbot := (g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long
-    α β hα hβ ⟨γ, by simpa only [g2SimplyConnectedRootDatum_root] using hγ⟩).1
-  have hbγ : g2SimplyConnectedRootDatum.chainBotCoeff α γ = 1 := by
-    simpa [hbot] using g2SimplyConnectedRootDatum.chainBotCoeff_of_add hli
-      (by simpa only [g2SimplyConnectedRootDatum_root] using hγ.trans (add_comm _ _))
-  have hbδ : g2SimplyConnectedRootDatum.chainBotCoeff α δ = 2 := by
-    have hli' := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root'
-      (i := α) (j := γ) ⟨δ, by simpa only [g2SimplyConnectedRootDatum_root] using hδ⟩
-    simpa [hbγ] using g2SimplyConnectedRootDatum.chainBotCoeff_of_add hli'
-      (by simpa only [g2SimplyConnectedRootDatum_root] using hδ.trans (add_comm _ _))
-  obtain ⟨hδcoord, _, hζcoord⟩ := long_short_coordinates hγ hδ hε hζ
-  have hγlen := g2Length_eq_one_of_long_add_short_eq_root β α γ hβ hα
-    (by simpa only [g2SimplyConnectedRootDatum_root] using hγ.trans (add_comm _ _))
-  have hbζ := g2_chainBotCoeff_eq_two_of_short_add_short_eq_long δ γ ζ
-    ((long_short_output_lengths α β δ hα hβ).1 hδcoord) hγlen
-    ((long_short_output_lengths α β ζ hα hβ).2 hζcoord)
-    (by simpa only [g2SimplyConnectedRootDatum_root] using hζ.trans (add_comm _ _))
-  have hc2 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := γ) ⟨δ, g2_root_eq_add_of_coordinates hδ⟩
-  have hc3 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := δ) ⟨ε, g2_root_eq_add_of_coordinates hε⟩
-  have hc3' := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := δ) (β := γ) ⟨ζ, g2_root_eq_add_of_coordinates hζ⟩
-  obtain ⟨hbγ', hbδ', hbζ'⟩ :
-      (G2.simplyConnectedRootDatum ht).chainBotCoeff α γ = 1 ∧
-        (G2.simplyConnectedRootDatum ht).chainBotCoeff α δ = 2 ∧
-        (G2.simplyConnectedRootDatum ht).chainBotCoeff δ γ = 2 := by
-    rw [simplyConnectedRootDatum_G2]
-    exact ⟨hbγ, hbδ, hbζ⟩
-  omega
+  obtain ⟨_, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root α β γ δ ζ hα hβ
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hγ)
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hδ)
+    (by simpa only [g2SimplyConnectedRootDatum_root] using hζ)
+  have dvd (p q : Fin G2.numRoots) :=
+    chainBotCoeff_add_one_dvd_structureConstant (t := G2) (ht := ht) (α := p) (β := q)
+  simpa only [g2_chainBotCoeff_eq, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] using
+    And.intro (dvd α γ) (And.intro (dvd α δ) (dvd δ γ))
 
 private theorem long_short_zero_brackets
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
@@ -140,36 +117,28 @@ private theorem long_short_zero_brackets
     (⁅e α, e ε⁆ = 0) ∧ (⁅e α, e ζ⁆ = 0) ∧ (⁅e β, e γ⁆ = 0) ∧
       (⁅e δ, e ε⁆ = 0) ∧ (⁅e γ, e ζ⁆ = 0) ∧ (⁅e δ, e ζ⁆ = 0) ∧
       (⁅e ε, e ζ⁆ = 0) := by
-  have hex := long_short_exclusions α β hα hβ ⟨γ, hγ⟩
-  have hz (i j : Fin 12) (h : g2Root i + g2Root j ∈ long_short_excludedSums α β) :
-      ⁅G2.chevalleySystem ht i, G2.chevalleySystem ht j⁆ = 0 :=
-    lie_chevalleySystem_eq_zero (t := G2) (ht := ht)
-      (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact (hex _ h).1)
-      (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact (hex _ h).2)
-  obtain ⟨hδcoord, hεcoord, hζcoord⟩ := long_short_coordinates hγ hδ hε hζ
-  have h1 : g2Root α + g2Root ε = 4 • g2Root α + g2Root β := by rw [hεcoord]; abel
-  have h2 : g2Root α + g2Root ζ = 4 • g2Root α + 2 • g2Root β := by rw [hζcoord]; abel
-  have h3 : g2Root β + g2Root γ = g2Root α + 2 • g2Root β := by rw [hγ]; abel
-  have h4 : g2Root δ + g2Root ε = 5 • g2Root α + 2 • g2Root β := by
-    rw [hδcoord, hεcoord]; abel
-  have h5 : g2Root γ + g2Root ζ = 4 • g2Root α + 3 • g2Root β := by rw [hγ, hζcoord]; abel
-  have h6 : g2Root δ + g2Root ζ = 5 • g2Root α + 3 • g2Root β := by
-    rw [hδcoord, hζcoord]; abel
-  have h7 : g2Root ε + g2Root ζ = 6 • g2Root α + 3 • g2Root β := by
-    rw [hεcoord, hζcoord]; abel
-  exact ⟨hz _ _ (by simp [long_short_excludedSums, h1]),
-    hz _ _ (by simp [long_short_excludedSums, h2]),
-    hz _ _ (by simp [long_short_excludedSums, h3]),
-    hz _ _ (by simp [long_short_excludedSums, h4]),
-    hz _ _ (by simp [long_short_excludedSums, h5]),
-    hz _ _ (by simp [long_short_excludedSums, h6]),
-    hz _ _ (by simp [long_short_excludedSums, h7])⟩
+  have hz (i j : Fin G2.numRoots) (a b : ℕ)
+      (hab : (a, b) ∈ ({(4, 1), (4, 2), (1, 2), (5, 2), (4, 3), (5, 3), (6, 3)} :
+        Finset (ℕ × ℕ)))
+      (heq : g2Root i + g2Root j = a • g2Root α + b • g2Root β) :
+      ⁅G2.chevalleySystem ht i, G2.chevalleySystem ht j⁆ = 0 := by
+    obtain ⟨hnot, hne⟩ :=
+      g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero α β hα hβ
+        ⟨γ, by simpa only [g2SimplyConnectedRootDatum_root] using hγ⟩ a b hab
+    simp only [g2SimplyConnectedRootDatum_root] at hnot hne
+    apply lie_chevalleySystem_eq_zero (t := G2) (ht := ht) <;>
+      rw [simplyConnectedRootDatum_G2]
+    · simpa only [g2SimplyConnectedRootDatum_root] using heq.symm ▸ hnot
+    · simpa only [g2SimplyConnectedRootDatum_root] using heq.symm ▸ hne
+  exact ⟨hz α ε 4 1 (by decide) (by rw [hε, hδ, hγ]; module),
+    hz α ζ 4 2 (by decide) (by rw [hζ, hδ, hγ]; module),
+    hz β γ 1 2 (by decide) (by rw [hγ]; module),
+    hz δ ε 5 2 (by decide) (by rw [hε, hδ, hγ]; module),
+    hz γ ζ 4 3 (by decide) (by rw [hζ, hδ, hγ]; module),
+    hz δ ζ 5 3 (by decide) (by rw [hζ, hδ, hγ]; module),
+    hz ε ζ 6 3 (by decide) (by rw [hε, hζ, hδ, hγ]; module)⟩
 
 noncomputable section
-
--- Keep the uniform root-index type here so the general root-subgroup simp API applies
--- without conversion between Fin G2.numRoots and Fin 12.
-variable {α β γ δ ε ζ : Fin G2.numRoots}
 
 private theorem long_short_scaled_brackets
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
@@ -187,7 +156,7 @@ private theorem long_short_scaled_brackets
       (c • ⁅e α, e γ⁆ = (2 * d) • e δ) ∧
       (d • ⁅e α, e δ⁆ = (3 * a) • e ε) ∧
       ((d * c) • ⁅e δ, e γ⁆ = (3 * b) • e ζ) := by
-  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hε hζ
+  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hζ
   dsimp only
   refine ⟨lie_chevalleySystem_eq_structureConstant_zsmul
     (g2_root_eq_add_of_coordinates hγ), ?_, ?_, ?_⟩
@@ -258,11 +227,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_long_short
     zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hscaled3'
   -- All-root divided-power stability also gives stability for the four scaled operators.
   have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (z : ℤ) (i : Fin G2.numRoots) (n : ℕ) :
-      ∀ w ∈ M, Associative.dividedPower n (z • E i) • w ∈ M := by
-    intro w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hstable i n w hw) _
+  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil
   have hn := isNilpotent_apply_ι_chevalleySystem ρ hnil
   -- Use the value API, then absorb the integer coefficients into the exponentials.
   apply Units.ext

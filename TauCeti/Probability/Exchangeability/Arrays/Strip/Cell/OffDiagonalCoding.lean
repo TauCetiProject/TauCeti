@@ -305,7 +305,7 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
       (measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1.swap)).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi) m' hm'
     (fun _ : V₂ => inferInstance) (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.1, x p.1.swap)) ρ).2
-  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm' hm
+  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'
   intro p
   obtain ⟨⟨i, j⟩, hp⟩ := p
   have hi : i ∉ S := hp.1
@@ -370,14 +370,8 @@ private theorem map_prod_contextCoding_eq
   -- Conditionally on its square context, the pair forgets the rest of the crossing strips and the
   -- diagonal, so the joint law of the context, the strips and the pair disintegrates through the
   -- context kernel.
-  have hjoint : ρ.map (fun x => ((offDiagonalPairSquareContext e i j x, H.domRestrict x),
-      (x (i, j), x (j, i)))) =
-      (ρ.map fun x => (offDiagonalPairSquareContext e i j x, H.domRestrict x)) ⊗ₘ
-        κ.prodMkRight (H → α) := by
-    refine (condDistrib_ae_eq_iff_measure_eq_compProd ((hctx.prodMk hZ).aemeasurable)
-      hX.aemeasurable _).1 ?_
-    exact (condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hX hZ hctx).1
-      (hρ.condIndepFun_offDiagonalPair_crossingStripsAndDiagonal he hij hi hj).symm
+  have hjoint := CondIndepFun.map_prod_eq_compProd_prodMkRight hX hZ hctx
+    (hρ.condIndepFun_offDiagonalPair_crossingStripsAndDiagonal he hij hi hj).symm
   -- One uniform variable realizes that kernel, uniformly in the context.
   rw [hjoint]
   exact (κ.prodMkRight (H → α)).map_prod_eq_compProd_of_map _ (fun w => g w.1)

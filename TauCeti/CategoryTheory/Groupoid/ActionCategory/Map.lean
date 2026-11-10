@@ -100,6 +100,15 @@ theorem back_map_obj (a : ActionCategory M X) : ((map φ f).obj a).back = f a.ba
 theorem map_map_hom {a b : ActionCategory M X} (g : a ⟶ b) :
     ((map φ f).map g).hom = φ g.hom := (rfl)
 
+/-- In label-source coordinates, the functor induced by an equivariant map applies the
+homomorphism to the label and the equivariant map to the source. -/
+@[simp]
+theorem mapTotal_totalEquiv_symm (m : M) (x : X) :
+    (map φ f).toPrefunctor.mapTotal ((totalEquiv M X).symm (m, x)) =
+      (totalEquiv N Y).symm (φ m, f x) := by
+  apply (totalEquiv N Y).injective
+  simp [totalEquiv_apply, objEquiv]
+
 variable (M X) in
 /-- The identity map induces the identity functor. -/
 theorem map_id : map (MonoidHom.id M) (MulActionHom.id M : X →[M] X) = 𝟭 _ :=
@@ -130,6 +139,12 @@ theorem full_map_iff : (map φ f).Full ↔
     refine ⟨fun {a b} g => ?_⟩
     obtain ⟨m, hm, hmx⟩ := h a.back b.back g.hom g.map_val
     exact ⟨Functor.Elements.homMk m hmx, Functor.Elements.hom_ext hm⟩
+
+/-- An injective equivariant map for the same monoid induces a full functor, keeping every
+arrow label. -/
+theorem full_map_of_injective [MulAction M Y] (f : X →[M] Y)
+    (hf : Function.Injective f) : (map (MonoidHom.id M) f).Full :=
+  (full_map_iff _ _).2 fun x _ m h ↦ ⟨m, rfl, hf ((map_smul f m x).trans h)⟩
 
 section SingleObj
 
@@ -194,7 +209,7 @@ instance faithful_restrict : (restrict U).Faithful :=
 
 /-- The restriction inclusion is full: every arrow between points of `U` lies in `M ⋉ U`. -/
 instance full_restrict : (restrict U).Full :=
-  (full_map_iff _ _).2 fun _ _ m h => ⟨m, rfl, Subtype.ext h⟩
+  full_map_of_injective _ Subtype.val_injective
 
 /-- A functor into `M ⋉ X` all of whose objects lie in the invariant subset `U` factors through
 `M ⋉ U`: this lifts it along the restriction inclusion. -/

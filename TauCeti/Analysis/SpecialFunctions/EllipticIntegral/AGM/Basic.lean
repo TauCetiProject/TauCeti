@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
 /-!
@@ -113,6 +113,30 @@ theorem agmIntegral_self (ha : 0 ≤ a) : agmIntegral a a = π / 2 / a := by
   rw [integral_const_mul, integral_Ioi_inv_one_add_sq, arctan_zero]
   ring
 
+/-- The change of variables `x = t + √(t² + ab)` turns the Landen integrand into half the
+integrand with arguments `√(ab)` and `(a + b) / 2`. -/
+private lemma landen_integrand_eq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    (t + √(t ^ 2 + a * b)) / √(t ^ 2 + a * b) *
+        (√(((t + √(t ^ 2 + a * b)) ^ 2 + a ^ 2) * ((t + √(t ^ 2 + a * b)) ^ 2 + b ^ 2)))⁻¹ =
+      (2 : ℝ)⁻¹ * (√((t ^ 2 + a * b) * (t ^ 2 + ((a + b) / 2) ^ 2)))⁻¹ := by
+  let f (t : ℝ) := t + √(t ^ 2 + a * b)
+  have pf : 0 < f t := add_sqrt_sq_add_pos (mul_pos ha hb) t
+  have rearr₁ (t) : (f t * (t - √(t ^ 2 + a * b))) ^ 2 = (a * b) ^ 2 := by
+    rw [← sq_sub_sq, sq_sqrt (by positivity)]
+    ring
+  have rearr₂ (t) : f t ^ 2 + (t - √(t ^ 2 + a * b)) ^ 2 = 4 * t ^ 2 + 2 * a * b := by
+    rw [add_sq, sub_sq, sq_sqrt (by positivity)]
+    ring
+  have rearr₃ (t) :
+      (f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2) = (2 * f t) ^ 2 * (t ^ 2 + ((a + b) / 2) ^ 2) := by
+    linear_combination (f t) ^ 2 * rearr₂ t - rearr₁ t
+  have hsqrt : √((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)) =
+      2 * f t * √(t ^ 2 + ((a + b) / 2) ^ 2) := by
+    rw [rearr₃, sqrt_mul (sq_nonneg _), sqrt_sq (by positivity [pf])]
+  simp only [f] at pf hsqrt
+  rw [hsqrt, sqrt_mul (by positivity : 0 ≤ t ^ 2 + a * b)]
+  field_simp [pf.ne']
+
 /-- **Landen's transformation** for `agmIntegral`. -/
 theorem agmIntegral_eq_agmIntegral_gm_am (ha : 0 ≤ a) (hb : 0 ≤ b) :
     agmIntegral a b = agmIntegral √(a * b) ((a + b) / 2) := by
@@ -123,59 +147,19 @@ theorem agmIntegral_eq_agmIntegral_gm_am (ha : 0 ≤ a) (hb : 0 ≤ b) :
   let f (t : ℝ) := t + √(t ^ 2 + a * b)
   let f' (t : ℝ) := f t / √(t ^ 2 + a * b)
   let g (x : ℝ) := (√((x ^ 2 + a ^ 2) * (x ^ 2 + b ^ 2)))⁻¹
-  have pf (t) : 0 < f t := by
-    rcases le_or_gt 0 t with ht | ht; · positivity
-    rw [← neg_lt_iff_pos_add']
-    nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
-    gcongr
-    positivity
-  have df (t) : HasDerivAt f (f' t) t := by
-    unfold f'
-    rw [← div_add_one (by positivity), add_comm]
-    apply (hasDerivAt_id' _).fun_add
-    rw [← mul_div_mul_left _ _ two_ne_zero]
-    refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
-    convert hasDerivAt_pow 2 t using 1
-    ring
-  have mf : StrictMono f := strictMono_of_hasDerivAt_pos df fun t ↦ by positivity [pf t]
-  have rf : f '' Set.univ = Set.Ioi 0 := by
-    ext x
-    rw [Set.image_univ, Set.mem_range, Set.mem_Ioi]
-    refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ (pf _), fun hx ↦ ?_⟩
-    use (x ^ 2 - a * b) / (2 * x)
-    unfold f
-    have hradicand : ((x ^ 2 - a * b) / (2 * x)) ^ 2 + a * b =
-        ((x ^ 2 + a * b) / (2 * x)) ^ 2 := by
-      field_simp
-      ring
-    have hsqrt : √(((x ^ 2 - a * b) / (2 * x)) ^ 2 + a * b) =
-        (x ^ 2 + a * b) / (2 * x) := by
-      rw [hradicand, sqrt_sq (by positivity)]
-    rw [hsqrt]
-    field_simp
-    ring
+  have df (t) : HasDerivAt f (f' t) t := hasDerivAt_add_sqrt_sq_add (mul_pos ha hb) t
+  have mf : StrictMono f := strictMono_of_hasDerivAt_pos df fun t ↦ by
+    positivity [add_sqrt_sq_add_pos (mul_pos ha hb) t]
+  have rf : f '' Set.univ = Set.Ioi 0 := image_add_sqrt_sq_add_eq_Ioi (mul_pos ha hb)
   -- Make the substitution, whose LHS is simply `agmIntegral a b`
   rw [agmIntegral_def a b]
   rw [← rf, integral_image_eq_integral_deriv_smul_of_monotoneOn MeasurableSet.univ
     (fun t _ ↦ hasDerivWithinAt_univ.mpr (df t)) (monotoneOn_univ.mpr mf.monotone) g]
   -- Simplify the post-substitution integral
-  have rearr₁ (t) : (f t * (t - √(t ^ 2 + a * b))) ^ 2 = (a * b) ^ 2 := by
-    rw [← sq_sub_sq, sq_sqrt (by positivity)]
-    ring
-  have rearr₂ (t) : f t ^ 2 + (t - √(t ^ 2 + a * b)) ^ 2 = 4 * t ^ 2 + 2 * a * b := by
-    rw [add_sq, sub_sq, sq_sqrt (by positivity)]
-    ring
-  have rearr₃ (t) :
-      (f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2) = (2 * f t) ^ 2 * (t ^ 2 + ((a + b) / 2) ^ 2) := by
-    linear_combination (f t) ^ 2 * rearr₂ t - rearr₁ t
-  have hsqrt (t : ℝ) : √((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)) =
-      2 * f t * √(t ^ 2 + ((a + b) / 2) ^ 2) := by
-    rw [rearr₃, sqrt_mul (sq_nonneg _), sqrt_sq (by positivity [pf t])]
   have htransform (t : ℝ) :
       f t / √(t ^ 2 + a * b) * (√((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)))⁻¹ =
-        (2 : ℝ)⁻¹ * (√((t ^ 2 + a * b) * (t ^ 2 + ((a + b) / 2) ^ 2)))⁻¹ := by
-    rw [hsqrt, sqrt_mul (by positivity : 0 ≤ t ^ 2 + a * b)]
-    field_simp [(pf t).ne']
+        (2 : ℝ)⁻¹ * (√((t ^ 2 + a * b) * (t ^ 2 + ((a + b) / 2) ^ 2)))⁻¹ :=
+    landen_integrand_eq ha hb t
   unfold f' g
   simp_rw [smul_eq_mul, htransform]
   rw [integral_const_mul, inv_mul_eq_div, div_eq_iff two_ne_zero, Measure.restrict_univ]

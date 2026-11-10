@@ -1,5 +1,7 @@
 name = "TauCeti"
 defaultTargets = ["TauCeti"]
+testDriver = "localTest"
+lintDriver = "localLint"
 # TauCeti is a pure Lean package: its cached module outputs (.olean/.ilean/Lean IR/generated C)
 # are reusable across platforms. This deliberately excludes native libraries and precompiled
 # modules; keep it in sync if either is ever added. The axiom audit rejects native_decide, one
@@ -52,3 +54,12 @@ root = "scripts.Axioms"
 [[lean_exe]]
 name = "module-system"
 root = "scripts.ModuleSystem"
+
+# Local content checks; these launch the shared Tools checkers, not infrastructure tests.
+[[lean_exe]]
+name = "localTest"
+root = "scripts.LocalTest"
+
+[[lean_exe]]
+name = "localLint"
+root = "scripts.LocalLintMain"

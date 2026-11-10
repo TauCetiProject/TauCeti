@@ -84,8 +84,8 @@ theorem two_le_cohomologicalDimensionAt_absoluteGaloisGroup (hℓ : IsUnit (ℓ 
   by_contra h
   have h1 : cohomologicalDimensionAt.{0} ℓ (AbsoluteGaloisGroup K) ≤ (1 : ℕ) :=
     Order.le_of_lt_add_one (lt_of_not_ge h)
-  have hM : IsPPrimaryTorsion ℓ (KummerCoeff K ℓ) :=
-    isPPrimaryTorsion_of_natCard_eq_pow (k := 1) (by rw [pow_one, natCard_kummerCoeff hℓ])
+  have hM : IsAddPGroup ℓ (KummerCoeff K ℓ) :=
+    IsAddPGroup.of_card (n := 1) (by rw [pow_one, natCard_kummerCoeff hℓ])
   have := (cohomologicalDimensionLE_iff.1 ((cohomologicalDimensionAt_le_iff ℓ _ 1).1 h1))
     (KummerCoeff K ℓ) hM 2 one_lt_two
   have := nontrivial_h2_kummerCoeff hℓ (Fact.out : ℓ.Prime).one_lt

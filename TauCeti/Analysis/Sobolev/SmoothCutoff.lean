@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 A smooth function whose classical derivatives through order `k` belong to `Lᵖ` can be
 approximated by smooth compactly supported functions, simultaneously in the `Lᵖ` seminorm
-of every derivative through order `k`, for `0 < p < ∞`. The domain is a finite-dimensional
+of every derivative through order `k`, for every finite `p`. The domain is a finite-dimensional
 real normed space, the codomain is a real normed space, and the measure is arbitrary.
 
 The approximations are `χ ((n + 1)⁻¹ • x) • f x`, with a fixed smooth compactly supported
@@ -61,7 +61,7 @@ Only the derivatives up to the requested order need to be integrable; the measur
 be translation invariant. -/
 theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]
-    {μ : Measure E} {p : ENNReal} (hp0 : p ≠ 0) (hp : p ≠ ⊤)
+    {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
     {χ : E → ℝ} {f : E → F} {k : ℕ} (hχ : ContDiff ℝ k χ)
     (hχ1 : χ =ᶠ[𝓝 0] 1) {B : ℕ → ℝ}
     (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
@@ -93,8 +93,7 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
       ((hχ.comp (contDiff_const_smul _)).sub contDiff_const) hf x le_rfl).trans ?_
     refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
     have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
-    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm
-      (hχ.of_le (by exact_mod_cast hi')) (hB i hi')
+    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm (hB i hi')
       (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) 1 x
     exact mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)
@@ -112,10 +111,10 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     simpa only [iteratedFDeriv_zero, Pi.zero_apply] using
       (heq.iteratedFDeriv ℝ k).eq_of_nhds
   -- Dominated convergence applies to the full derivative error, including order zero.
-  have ht := tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) hp0 hp
+  have ht := tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (g := 0) hp
     (Eventually.of_forall fun n ↦ (hsmooth n).continuous_iteratedFDeriv le_rfl
       |>.aestronglyMeasurable)
-    aestronglyMeasurable_zero hbmem
+    hbmem
     (Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
       simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
         ENNReal.ofReal_le_ofReal (hb n x))
@@ -149,7 +148,7 @@ compactly supported approximations converging in the `Lᵖ` seminorm of every su
 The same approximation sequence works for all orders through `k`. -/
 theorem exists_contDiff_hasCompactSupport_approximation
     [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    {μ : Measure E} {p : ENNReal} (hp0 : p ≠ 0) (hp : p ≠ ⊤)
+    {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
     {m : ℕ∞} {f : E → F} (hf : ContDiff ℝ m f) (k : ℕ) (hk : (k : ℕ∞) ≤ m)
     (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p μ) :
     ∃ g : ℕ → E → F,
@@ -183,7 +182,7 @@ theorem exists_contDiff_hasCompactSupport_approximation
       (fun j _ x ↦ hscaled n j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))
   · intro i hi
-    exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp0 hp
+    exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp
       (χ.contDiff.of_le (mod_cast le_top)) χ.eventuallyEq_one
       (fun j _ x ↦ hB j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))
@@ -212,7 +211,7 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv
         (hu.continuous_iteratedFDeriv le_rfl |>.aestronglyMeasurable)
         (.of_forall fun x => (norm_iteratedFDeriv_one u).symm)
   obtain ⟨g, hg, -, hlim⟩ := exists_contDiff_hasCompactSupport_approximation (μ := μ)
-    one_ne_zero ENNReal.one_ne_top (m := 1) hu 1 le_rfl hmem
+    ENNReal.one_ne_top (m := 1) hu 1 le_rfl hmem
   have hval : Tendsto (fun n => eLpNorm (g n - u) 1 μ) atTop (𝓝 0) :=
     (hlim 0 zero_le_one).congr fun n => eLpNorm_congr_norm_ae
       (((hg n).1.continuous_iteratedFDeriv (by simp)).sub
