@@ -290,7 +290,7 @@ theorem exists_algHom_candidateGenusFieldReal {M : Type*} [Field M] [NumberField
     (k := (adjoin ℚ {z} : IntermediateField ℚ M)) (K := M)
   -- Finite unramifiedness supplies an embedding into the full candidate. Its totally real image
   -- lies in the maximal real subfield, so the embedding factors through the real candidate.
-  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsq hz hfinite
+  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hz hfinite
   let e : M ≃+* φ.fieldRange := (AlgEquiv.ofInjective φ φ.injective).toRingEquiv
   let _ : IsTotallyReal φ.fieldRange := IsTotallyReal.ofRingEquiv e
   have hrange : φ.fieldRange.toSubfield ≤ maximalRealSubfield (candidateGenusField hd) :=

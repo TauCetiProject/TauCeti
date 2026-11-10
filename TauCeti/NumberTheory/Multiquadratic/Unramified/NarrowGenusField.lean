@@ -153,6 +153,6 @@ theorem isNarrowGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d)
   · rw [← candidateGenusFieldBase_def hd]
     exact fun q hq _ ↦ isUnramifiedIn_candidateGenusField hd hnsq q
   · intro M _ _ _ z hz hfinite
-    exact nonempty_algHom_candidateGenusField hd hnsq hz hfinite
+    exact nonempty_algHom_candidateGenusField hd hz hfinite
 
 end TauCeti.Multiquadratic
