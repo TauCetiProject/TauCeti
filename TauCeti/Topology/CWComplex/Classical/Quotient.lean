@@ -104,4 +104,49 @@ theorem continuous_prod_complex_iff {Z Y : Type*} [TopologicalSpace Z] [LocallyC
     continuous_sigma_iff]
   exact fun m ↦ (hcell m.1 m.2).comp continuous_swap
 
+/-- **Continuity criterion for maps out of `Z × U`, for `U` open in a CW complex.** Let `U ⊆ C`
+be open in `C` and `Z` locally compact. A map `g` on `Z × X` restricts to a continuous map on
+`Z × U` as soon as it is continuous on `Z × D` and on the product of `Z` with every closed cell,
+read through the characteristic maps, at the points lying over `U`. -/
+theorem continuous_prod_subtype_of_continuousOn_map {Z Y : Type*} [TopologicalSpace Z]
+    [LocallyCompactSpace Z] [TopologicalSpace Y] {U : Set X} (hUC : U ⊆ C)
+    (hU : IsOpen ((↑) ⁻¹' U : Set C)) {g : Z × X → Y}
+    (hcell : ∀ n (j : cell C n), ContinuousOn
+      (fun p : Z × closedBall (0 : Fin n → ℝ) 1 ↦ g (p.1, map n j p.2)) {p | map n j p.2 ∈ U})
+    (hbase : ContinuousOn (fun p : Z × D ↦ g (p.1, p.2)) {p | (p.2 : X) ∈ U}) :
+    Continuous fun p : Z × U ↦ g (p.1, p.2) := by
+  refine continuous_def.2 fun V hV ↦ ?_
+  -- The preimage of `V` is the trace of a subset of `Z × C`, which is open by the cellwise
+  -- criterion for the indicator function with values in the Sierpiński space.
+  let T : Set (Z × C) := {p | (p.2 : X) ∈ U ∧ g (p.1, p.2) ∈ V}
+  have hT : IsOpen T := by
+    rw [isOpen_iff_continuous_mem, continuous_prod_complex_iff]
+    refine ⟨fun n j ↦ ?_, ?_⟩
+    · have hS : IsOpen {p : Z × closedBall (0 : Fin n → ℝ) 1 | map n j p.2 ∈ U} :=
+        hU.preimage ((((continuousOn n j).domRestrict.comp continuous_snd).subtype_mk
+          fun p ↦ closedCell_subset_complex n j ⟨p.2, p.2.2, rfl⟩))
+      exact isOpen_iff_continuous_mem.1 ((hcell n j).isOpen_inter_preimage hS hV)
+    · have hS : IsOpen {p : Z × D | (p.2 : X) ∈ U} :=
+        hU.preimage (((continuous_subtype_val.comp continuous_snd).subtype_mk
+          fun p ↦ base_subset_complex p.2.2))
+      exact isOpen_iff_continuous_mem.1 (hbase.isOpen_inter_preimage hS hV)
+  convert hT.preimage (continuous_fst.prodMk ((continuous_subtype_val.comp
+    continuous_snd).subtype_mk fun p : Z × U ↦ hUC p.2.2)) using 1
+  ext p
+  exact ⟨fun h ↦ ⟨p.2.2, h⟩, fun h ↦ h.2⟩
+
+/-- **Continuity criterion on `Z × U`, for `U` open in a CW complex**, in the form of continuity
+on `univ ×ˢ U`; see `TauCeti.continuous_prod_subtype_of_continuousOn_map`. -/
+theorem continuousOn_prod_of_continuousOn_map {Z Y : Type*} [TopologicalSpace Z]
+    [LocallyCompactSpace Z] [TopologicalSpace Y] {U : Set X} (hUC : U ⊆ C)
+    (hU : IsOpen ((↑) ⁻¹' U : Set C)) {g : Z × X → Y}
+    (hcell : ∀ n (j : cell C n), ContinuousOn
+      (fun p : Z × closedBall (0 : Fin n → ℝ) 1 ↦ g (p.1, map n j p.2)) {p | map n j p.2 ∈ U})
+    (hbase : ContinuousOn (fun p : Z × D ↦ g (p.1, p.2)) {p | (p.2 : X) ∈ U}) :
+    ContinuousOn g (univ ×ˢ U) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact (continuous_prod_subtype_of_continuousOn_map hUC hU hcell hbase).comp
+    ((continuous_fst.comp continuous_subtype_val).prodMk
+      ((continuous_snd.comp continuous_subtype_val).subtype_mk fun p ↦ p.2.2))
+
 end TauCeti

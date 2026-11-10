@@ -34,6 +34,8 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.relCWComplexCellEquiv`: its `n`-cells are the `n`-cells of `C`
   not in `E`.
 * `Topology.RelCWComplex.Subcomplex.finite_relCWComplex`: it is finite when `C` is.
+* `Topology.RelCWComplex.Subcomplex.mem_I_iff_map_zero_mem`: a cell belongs to a subcomplex
+  exactly when the centre of the cell does.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
@@ -155,6 +157,13 @@ lemma finite_relCWComplex [Finite C] (E : Subcomplex C) :
     @Finite X _ C E E.relCWComplex :=
   @finite_of_finiteDimensional_finiteType X _ C E E.relCWComplex
     (finiteDimensional_relCWComplex E) (finiteType_relCWComplex E)
+
+/-- A cell belongs to a subcomplex exactly when the image of the centre of its disk does. -/
+lemma mem_I_iff_map_zero_mem (E : Subcomplex C) {n : ℕ} (j : cell C n) :
+    j ∈ E.I n ↔ map n j 0 ∈ (E : Set X) :=
+  ⟨fun h ↦ E.openCell_subset_of_mem h (map_zero_mem_openCell n j), fun h ↦ by_contra fun hj ↦
+    (E.disjoint_openCell_subcomplex_of_notMem hj).notMem_of_mem_left
+      (map_zero_mem_openCell n j) h⟩
 
 omit [T2Space X] in
 /-- One subcomplex lies in another exactly when its cells are among the cells of the other. -/
