@@ -276,9 +276,11 @@ theorem kepler_energy_eq_neg_div_sq_radialAction_add_abs (hm : 0 < m)
     sq_sqrt (div_nonneg hm.le (by linarith))]
   field_simp
 
-/-- **Kepler's third law.** Between two distinct turning points `0 < r₁ < r₂` of a Kepler orbit,
-the radial period is `2π √(m / κ) a^(3/2)` for the semi-major axis
-`a = (r₁ + r₂) / 2`. -/
+/-- **Kepler's third law.** For distinct turning points `0 < r₁ < r₂` of a Kepler orbit, the
+quadrature `radialPeriod` equals `2π √(m / κ) a^(3/2)` for `a = (r₁ + r₂) / 2`. For `ℓ ≠ 0` this is
+the time of a radial oscillation between `r₁` and `r₂`. For `ℓ = 0` the turning points force
+`E = κ = 0`, so there is no motion between them; both sides are then `0`, by the convention
+`x / 0 = 0` (the integrand `m / 0` and `√(m / 0)`). -/
 theorem kepler_radialPeriod (hm : 0 < m) (h₁ : 0 < r₁) (hlt : r₁ < r₂)
     (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2) (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     radialPeriod m (fun r => -κ / r) ℓ E r₁ r₂ =
@@ -307,9 +309,11 @@ theorem kepler_radialPeriod (hm : 0 < m) (h₁ : 0 < r₁) (hlt : r₁ < r₂)
     show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add ha, rpow_one, ← sqrt_eq_rpow, hm']
   ring
 
-/-- **The Kepler apsidal angle.** Between two distinct turning points `0 < r₁ < r₂` of a Kepler
-orbit, the polar angle swept from pericentre to apocentre is `π sign ℓ`: the orbit closes after one
-radial period, with no precession of its apsides. -/
+/-- **The Kepler apsidal angle.** For distinct turning points `0 < r₁ < r₂` of a Kepler orbit, the
+quadrature `apsidalAngle` equals `π sign ℓ`. For `ℓ ≠ 0` this is the polar angle swept from
+pericentre to apocentre: the orbit closes after one radial period, with no precession of its
+apsides. For `ℓ = 0` the turning points force `E = κ = 0` and no orbit exists between them; both
+sides are `0`, the left because the integrand `ℓ / (r² |p_r|)` has numerator `0`. -/
 theorem kepler_apsidalAngle (hm : 0 < m) (h₁ : 0 < r₁) (hlt : r₁ < r₂)
     (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2) (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     apsidalAngle m (fun r => -κ / r) ℓ E r₁ r₂ = π * SignType.sign ℓ := by
@@ -500,9 +504,11 @@ theorem isotropicOscillator_radialPeriod (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 <
     integral_one_div_sqrt_mul_sub_mul_sub (pow_lt_pow_left₀ hlt h₁.le two_ne_zero)]
   field_simp
 
-/-- **The apsidal angle of the isotropic oscillator.** Between two distinct turning points
-`0 < r₁ < r₂` in the potential `m ν² r² / 2`, the polar angle swept from pericentre to apocentre
-is `(π / 2) sign ℓ`: the orbit closes after two radial periods. -/
+/-- **The apsidal angle of the isotropic oscillator.** For distinct turning points `0 < r₁ < r₂` in
+the potential `m ν² r² / 2`, the quadrature `apsidalAngle` equals `(π / 2) sign ℓ`. For `ℓ ≠ 0` this
+is the polar angle swept from pericentre to apocentre: the orbit closes after two radial periods.
+For `ℓ = 0` the turning points force `m ν = 0`, so there is no actual motion between them; the
+quadrature is the integral of `0` and both sides are `0`. -/
 theorem isotropicOscillator_apsidalAngle (h₁ : 0 < r₁)
     (hlt : r₁ < r₂) (hr₁ : 2 * m * (E - m * ν ^ 2 * r₁ ^ 2 / 2) = ℓ ^ 2 / r₁ ^ 2)
     (hr₂ : 2 * m * (E - m * ν ^ 2 * r₂ ^ 2 / 2) = ℓ ^ 2 / r₂ ^ 2) :
