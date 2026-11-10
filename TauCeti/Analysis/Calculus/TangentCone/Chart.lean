@@ -39,7 +39,7 @@ charts used to verify it.
   preimage, viewed as a subspace, and it has the dimension of the model subspace
   (`TauCeti.IsSliceChart.finrank_span_tangentConeAt`).
 * `TauCeti.IsSliceChart.tangentConeAt_eq_empty`: at a point of the source outside the flattened
-  set, its tangent cone is empty, and a neighbourhood misses the set
+  set, its tangent cone is empty, because a neighbourhood misses the set
   (`TauCeti.IsSliceChart.exists_mem_nhds_disjoint`); near such a point a `C^n` chart with `C^n`
   inverse flattens any set missing a neighbourhood onto the zero subspace
   (`TauCeti.exists_isSliceChart_bot_of_disjoint`).
@@ -157,17 +157,6 @@ theorem finrank_span_tangentConeAt (h : IsSliceChart e (L : Set F) S)
   rw [h.span_tangentConeAt_eq_comap hL hy hyS hA]
   exact (Submodule.comap_equiv_eq_map_symm A.toLinearEquiv L) ▸
     LinearEquiv.finrank_map_eq A.symm.toLinearEquiv L
-
-omit [NormedSpace 𝕜 E] in
-/-- A point of the source of a chart that flattens `S` onto a closed subspace, but is not in `S`,
-has a neighbourhood missing `S`: the neighbourhood is where the chart misses the subspace. -/
-theorem exists_mem_nhds_disjoint (h : IsSliceChart e (L : Set F) S) (hL : IsClosed (L : Set F))
-    (hy : y ∈ e.source) (hyS : y ∉ S) : ∃ U ∈ 𝓝 y, Disjoint U S := by
-  have hU : IsOpen (e.source ∩ e ⁻¹' (L : Set F)ᶜ) :=
-    e.continuousOn.isOpen_inter_preimage e.open_source hL.isOpen_compl
-  have hyU : y ∈ e.source ∩ e ⁻¹' (L : Set F)ᶜ := ⟨hy, fun hyL => hyS ((h.mem_iff hy).2 hyL)⟩
-  exact ⟨_, hU.mem_nhds hyU,
-    Set.disjoint_left.2 fun z hz hzS => hz.2 ((h.mem_iff hz.1).1 hzS)⟩
 
 /-- The tangent cone of a flattened set vanishes at a point of the chart's source outside the
 set. -/
