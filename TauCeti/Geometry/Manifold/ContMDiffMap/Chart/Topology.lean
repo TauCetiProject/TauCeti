@@ -224,32 +224,6 @@ theorem continuous_manifoldWeakWhitney_iff_chartIteratedFDeriv
     intro x m hm K
     exact (ContinuousMap.continuous_restrict (K : Set _)).comp (h x m hm)
 
-/-- The chart jet induces exactly the existing manifold weak Whitney topology. -/
-theorem isInducing_chartJet :
-    IsInducing (chartJet (I := I) (M := M) (F := F) (n := n)) := by
-  refine ⟨le_antisymm ?_ ?_⟩
-  · apply continuous_iff_le_induced.mp
-    exact continuous_pi fun x ↦ continuous_pi fun m ↦
-      (continuous_chartIteratedFDeriv x m m.2).congr fun f ↦ (chartJet_apply f x m).symm
-  · rw [← continuous_id_iff_le]
-    let _ := TopologicalSpace.induced (chartJet (I := I) (M := M) (F := F) (n := n))
-      inferInstance
-    apply continuous_manifoldWeakWhitney_iff_chartIteratedFDeriv.mpr
-    intro x m hm
-    exact (((continuous_apply (⟨m, hm⟩ : {m : ℕ // m ≤ n})).comp
-      ((continuous_apply x).comp
-        (continuous_induced_dom (f := chartJet (I := I) (M := M) (F := F) (n := n))))).congr
-      fun f ↦ chartJet_apply f x ⟨m, hm⟩)
-
-/-- Chart derivatives determine a vector-valued map, already through their zeroth entries. -/
-theorem chartJet_injective :
-    Function.Injective (chartJet (I := I) (M := M) (F := F) (n := n)) := by
-  intro f g h
-  ext x
-  have hx := congrArg (fun j ↦ j x ⟨0, by simp⟩ ⟨extChartAt I x x,
-    mem_extChartAt_target x⟩ 0) h
-  exact (chartJet_zero_apply_self f x).symm.trans (hx.trans (chartJet_zero_apply_self g x))
-
 /-- The linear map recording every chart derivative restricted to every compact coordinate set,
 with each component valued in its native supremum-norm continuous-map space. -/
 noncomputable def compactChartJet :
