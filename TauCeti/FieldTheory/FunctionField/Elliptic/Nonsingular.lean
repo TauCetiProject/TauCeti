@@ -73,11 +73,11 @@ variable {P : Place k F} {W : WeierstrassCurve k} {x y : F}
   (h : P.IsWeierstrassCoordinates W x y)
 include h
 
-/-- **At a rational singular point the slope generates the function field**: if `(x₀, y₀)` is
-a singular point of `W` over `k`, then `F = k(z)` for `z = (y - y₀) / (x - x₀)`. -/
-theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
-    {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
-    k⟮(y - algebraMap k F y₀) / (x - algebraMap k F x₀)⟯ = ⊤ := by
+/-- At a rational singular point, `x` and `y` lie in `k(z)` for the slope
+`z = (y - y₀) / (x - x₀)`. -/
+private theorem mem_adjoin_div_of_isSingular {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
+    x ∈ k⟮(y - algebraMap k F y₀) / (x - algebraMap k F x₀)⟯ ∧
+      y ∈ k⟮(y - algebraMap k F y₀) / (x - algebraMap k F x₀)⟯ := by
   set X := x - algebraMap k F x₀ with hXdef
   set z := (y - algebraMap k F y₀) / X
   have hX0 : X ≠ 0 := sub_ne_zero.mpr fun hx ↦
@@ -108,27 +108,34 @@ theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degre
     have hy : y = z * X + algebraMap k F y₀ := eq_add_of_sub_eq hY
     rw [hy]
     exact K.add_mem (K.mul_mem hz hXK) (K.algebraMap_mem y₀)
+  exact ⟨hxK, hyK⟩
+
+/-- **At a rational singular point the slope generates the function field**: if `(x₀, y₀)` is
+a singular point of `W` over `k`, then `F = k(z)` for `z = (y - y₀) / (x - x₀)`. -/
+theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
+    {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
+    k⟮(y - algebraMap k F y₀) / (x - algebraMap k F x₀)⟯ = ⊤ := by
+  obtain ⟨hxK, hyK⟩ := h.mem_adjoin_div_of_isSingular hs
   rw [eq_top_iff, ← h.adjoin_eq_top hF hP, IntermediateField.adjoin_le_iff]
   exact Set.insert_subset_iff.mpr ⟨hxK, Set.singleton_subset_iff.mpr hyK⟩
 
 /-- At a rational singular point `(x₀, y₀)` of `W`, the slope `(y - y₀) / (x - x₀)` is
 transcendental over `k`: it generates `F`, which contains the transcendental `x`. -/
-theorem transcendental_div_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
+theorem transcendental_div_of_isSingular
     {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
     Transcendental k ((y - algebraMap k F y₀) / (x - algebraMap k F x₀)) := by
   set z := (y - algebraMap k F y₀) / (x - algebraMap k F x₀)
-  have htop : k⟮z⟯ = ⊤ := h.adjoin_div_eq_top_of_isSingular hF hP hs
   -- `x` lies in `k(z)`, so `z` is transcendental together with `x`.
   refine fun hz ↦ h.transcendental_x ?_
   have := IntermediateField.isAlgebraic_adjoin_simple hz.isIntegral
-  have hx : x ∈ k⟮z⟯ := htop ▸ IntermediateField.mem_top
+  have hx : x ∈ k⟮z⟯ := (h.mem_adjoin_div_of_isSingular hs).1
   exact (Algebra.IsAlgebraic.isAlgebraic (⟨x, hx⟩ : k⟮z⟯)).algHom k⟮z⟯.val
 
 /-- **A Weierstrass equation with a rational singular point defines a rational function
 field**: if `W` has a singular point over `k`, then `F` has genus zero. -/
 theorem genus_eq_zero_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
     {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) : genus k F = 0 :=
-  genus_eq_zero_of_adjoin_eq_top (h.transcendental_div_of_isSingular hF hP hs)
+  genus_eq_zero_of_adjoin_eq_top (h.transcendental_div_of_isSingular hs)
     (h.adjoin_div_eq_top_of_isSingular hF hP hs)
 
 /-- **The Weierstrass curve of a function field of nonzero genus is elliptic**, over a perfect

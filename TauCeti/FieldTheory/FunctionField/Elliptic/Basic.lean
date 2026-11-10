@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.PointSeparation
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 
 /-!
 # Elliptic function fields
@@ -142,13 +143,14 @@ variable {P₀ : Place k F}
 /-- **Every degree-zero divisor class of a genus-one function field is the class of a difference
 of places of degree one** (Stichtenoth, Proposition 6.1.6(b)). -/
 theorem exists_degree_eq_one_and_divisorClass_pointDifference_eq (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     {c : (Place.orderSystem hF).ClassGroup} (hc : Divisor.degreeClass hF c = 0) :
     ∃ P : Place k F, P.degree = 1 ∧
       (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P P₀) = c := by
   obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
   rw [Divisor.degreeClass_divisorClass] at hc
-  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hex hg
+  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF
+    (P₀.isIntegrallyClosedIn_of_degree_eq_one hP₀) hg
     (D := D + WeilDivisor.ofPoint P₀) (by rw [Divisor.degree_add, Divisor.degree_ofPoint, hc,
       hP₀, Nat.cast_one, zero_add])
   refine ⟨P, hP, ?_⟩
@@ -174,7 +176,7 @@ noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
     ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF hex (by omega) P.2
         (congrArg Subtype.val h)),
       fun c ↦ by
-        obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hex hg hP₀
+        obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hg hP₀
           (c := (c : (Place.orderSystem hF).ClassGroup)) c.2
         exact ⟨⟨P, hP⟩, Subtype.ext hc⟩⟩
 
