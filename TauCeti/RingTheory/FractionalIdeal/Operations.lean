@@ -144,12 +144,9 @@ theorem isUnit_of_restrictScalars_mul_eq_one {A : Type*} [CommSemiring A] [Algeb
     rwa [Submodule.mul_eq_span_mul_set, Submodule.span_span_of_tower,
       Submodule.coe_restrictScalars, Submodule.coe_restrictScalars, Submodule.span_eq,
       ← Submodule.span_mul_span, Submodule.span_eq] at h
-  -- Being finitely generated, that inverse is fractional.
-  let J : FractionalIdeal S P := ⟨Submodule.span R (t : Set P),
-    isFractional_of_fg (Submodule.fg_of_isUnit (.of_mul_eq_one_right _ hJ))⟩
-  have hJcoe : (J : Submodule R P) = Submodule.span R (t : Set P) := coe_mk _ _
-  refine .of_mul_eq_one J (coeToSubmodule_inj.mp ?_)
-  rw [coe_mul, hJcoe, coe_one, hJ]
+  -- Invertible `R`-submodules of `P` are fractional ideals (`unitsMulEquivSubmodule`).
+  obtain ⟨u, hu⟩ : IsUnit (I : Submodule R P) := .of_mul_eq_one _ hJ
+  exact ⟨unitsMulEquivSubmodule.symm u, coeToSubmodule_inj.mp hu⟩
 
 end Localization
 
