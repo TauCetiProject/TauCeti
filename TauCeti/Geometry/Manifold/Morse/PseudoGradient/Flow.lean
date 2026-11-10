@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
@@ -29,11 +30,16 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
+* `TauCeti.IsAdaptedPseudoGradient.injective_mfderiv_flow`: the derivative of each time-`t` map is
+  injective.
 * `TauCeti.IsAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed flow, so the unstable
   sets of `X` are the stable sets of `-X`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
-* `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
+* `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points;
+  so a critical point lies on its own stable and unstable sets
+  (`TauCeti.IsAdaptedPseudoGradient.self_mem_stableSet`,
+  `TauCeti.IsAdaptedPseudoGradient.self_mem_unstableSet`).
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
@@ -123,6 +129,15 @@ theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
   rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
 
+/-- The derivative of the time-`t` map of the flow is injective, since the time-`(-t)` map undoes
+it. -/
+theorem injective_mfderiv_flow (t : ℝ) (y : M) :
+    Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y) := by
+  have h := (hX.flowDiffeomorph t).mfderiv_symm_apply_mfderiv_apply (by simp) y
+  have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
+  rw [hcoe] at h
+  exact Function.LeftInverse.injective h
+
 /-- The derivative of `f` along an orbit of the flow is `df(X)`. -/
 theorem hasDerivAt_comp_flow {y : M} {t : ℝ}
     (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t y)) :
@@ -139,6 +154,16 @@ theorem flow_apply_of_mfderiv_eq_zero {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
     hX.flow t x = x :=
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField
     (isMIntegralCurve_const (hX.eq_zero_of_mfderiv_eq_zero hx)) t
+
+/-- A critical point lies on its own stable set. -/
+theorem self_mem_stableSet {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    x ∈ hX.flow.stableSet x :=
+  Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)
+
+/-- A critical point lies on its own unstable set. -/
+theorem self_mem_unstableSet {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    x ∈ hX.flow.unstableSet x :=
+  Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)
 
 /-- A point along whose orbit `f` is constant is a critical point of `f`. -/
 theorem mfderiv_eq_zero_of_forall_eq {z : M} (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z)

@@ -55,6 +55,8 @@ at `y`.
   chart.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
+* `TauCeti.mfderiv_apply_mem_mtangentConeAt`: the derivative of a map from a vector space into a
+  set takes values in the tangent cone of that set.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
@@ -162,6 +164,40 @@ theorem mtangentConeAt_eq_tangentConeAt_chartAt (s : Set M) (y : M) :
     simp
   rw [mtangentConeAt_def, hs]
   simp
+
+/-- **Derivatives of maps into a set are tangent to it.** If `g` maps a neighbourhood of `a` in a
+vector space `F` into `s` and is differentiable at `a`, then its derivative at `a` takes values in
+the tangent cone of `s` at `g a`. -/
+theorem mfderiv_apply_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : F → M} {a : F} (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g a)
+    (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : F) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a u ∈ mtangentConeAt 𝓘(𝕜, E) s (g a) := by
+  rw [mtangentConeAt_eq_tangentConeAt_chartAt]
+  -- Read in the preferred chart at `g a`, the derivative of `g` is an ordinary derivative.
+  have hd : HasFDerivAt (chartAt E (g a) ∘ g)
+      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a : F →L[𝕜] E) a := by
+    have h := hg.hasMFDerivAt.2
+    simp only [writtenInExtChartAt, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
+      hasFDerivWithinAt_univ, extChartAt, OpenPartialHomeomorph.extend, PartialEquiv.coe_trans,
+      modelWithCornersSelf_partialEquiv, OpenPartialHomeomorph.toFun_eq_coe,
+      Function.id_comp] at h
+    exact h
+  -- Along the line `t ↦ a + t • u`, the curve read in the chart has velocity `dg_a u` at `0`.
+  have hγ : HasDerivAt (fun t : 𝕜 ↦ chartAt E (g a) (g (a + t • u)))
+      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a u) 0 := by
+    have hl : HasDerivAt (fun t : 𝕜 ↦ a + t • u) u 0 := by
+      simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const u).const_add a
+    exact hd.comp_hasDerivAt_of_eq (0 : 𝕜) hl (by simp)
+  have hcurve : Tendsto (fun t : 𝕜 ↦ a + t • u) (𝓝 0) (𝓝 a) :=
+    (continuous_const.add (continuous_id.smul continuous_const)).tendsto' (0 : 𝕜) a (by simp)
+  have hsrc : ∀ᶠ w in 𝓝 a, g w ∈ (chartAt E (g a)).source :=
+    hg.continuousAt.preimage_mem_nhds ((chartAt E (g a)).open_source.mem_nhds
+      (mem_chart_source E (g a)))
+  have h := hγ.mem_tangentConeAt (S := (chartAt E (g a)).symm ⁻¹' s)
+    ((hcurve.eventually (hs.and hsrc)).mono fun t ht ↦ by
+      rw [mem_preimage, (chartAt E (g a)).left_inv ht.2]
+      exact ht.1)
+  rwa [zero_smul, add_zero] at h
 
 /-- The preferred chart at `y` sends a point `y` of `s` into the chart image of `s`. -/
 private theorem chartAt_self_mem_preimage (hys : y ∈ s) :
