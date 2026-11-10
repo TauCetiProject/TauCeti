@@ -145,7 +145,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
     (mem_roots hpmonic.ne_zero).mp ((mem_roots_map_minpoly_iff _ _).mpr ⟨embedding w, rfl⟩)
   have h := norm_coeff_le_of_roots_erase_le hpmonic (IsAlgClosed.splits p)
     hroot ((norm_embedding_eq w _).trans_le hwB)
-    (fun z hz => norm_le_one_of_mem_roots_erase hr hw v hw1 hz) hk (hpdeg ▸ hkn)
+    (fun z hz => norm_le_one_of_mem_roots_erase hr hw v hw1 hz) (by rw [hpdeg]; exact hkn)
   rw [hpdeg] at h
   rw [← Complex.norm_intCast, hcoeff]
   exact h
