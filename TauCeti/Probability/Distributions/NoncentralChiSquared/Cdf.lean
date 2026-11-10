@@ -128,9 +128,14 @@ theorem cdf_noncentralChiSquaredMeasure_lt_one (hk : 0 ≤ k) (h : k ≠ 0 ∨ l
     cdf (noncentralChiSquaredMeasure k l) x < 1 :=
   Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_noncentralChiSquaredMeasure hk h) x
 
-/-- A positive cutoff has positive cumulative probability, including for the Dirac law. -/
-theorem cdf_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (l : ℝ≥0) (hx : 0 < x) :
+/-- A positive cutoff has positive cumulative probability, including for the Dirac law and the zero
+law at negative degrees. -/
+theorem cdf_noncentralChiSquaredMeasure_pos (l : ℝ≥0) (hx : 0 < x) :
     0 < cdf (noncentralChiSquaredMeasure k l) x := by
+  by_cases hk : 0 ≤ k
+  swap
+  · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk), cdf_zero, ite_eq_left hx.le]
+    exact one_pos
   by_cases h : k = 0 ∧ l = 0
   · rcases h with ⟨rfl, rfl⟩
     simp [noncentralChiSquaredMeasure_zero_noncentrality, chiSquaredMeasure_zero,
@@ -145,14 +150,7 @@ theorem continuousOn_cdf_noncentralChiSquaredMeasure (l : ℝ≥0) :
   by_cases hk : 0 ≤ k
   swap
   · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk)]
-    intro x hx
-    rcases lt_or_gt_of_ne hx with hx0 | hx0
-    · refine ContinuousAt.continuousWithinAt (continuousAt_const (y := (0 : ℝ)).congr ?_)
-      exact Filter.eventually_of_mem (Iio_mem_nhds hx0) fun y hy ↦ by
-        rw [cdf_zero, ite_eq_right (not_le.2 hy)]
-    · refine ContinuousAt.continuousWithinAt (continuousAt_const (y := (1 : ℝ)).congr ?_)
-      exact Filter.eventually_of_mem (Ioi_mem_nhds hx0) fun y hy ↦ by
-        rw [cdf_zero, ite_eq_left hy.le]
+    exact continuousOn_cdf_zero
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
   intro x hx
   apply ContinuousAt.continuousWithinAt
