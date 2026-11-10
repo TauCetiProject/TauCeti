@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Geometry.Euclidean.Triangle
-import TauCeti.Analysis.Normed.Module.Ball.Touching
 import TauCeti.Topology.Connected.Basic
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
+import TauCeti.Topology.MetricSpace.TouchingBall
 
 /-!
 # Hopf's boundary-point lemma and the strong maximum principle in non-divergence form
@@ -425,12 +425,9 @@ theorem eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax
   refine eventually_eq_of_isLocalMax_of_forall_not_lt_ball
     ((hcd.eventually (by simp)).and (ha.and (htr.and (hb.and (hc.and (hcγ.and hsub))))))
     ((hcd.eventually (by simp)).mono fun z hz ↦ hz.continuousAt) hmax
-    fun y e R hR he hball hx₀max hx₀ hlt ↦ ?_
+    fun y x₀ R hR hx₀mem hball hx₀max hx₀ hlt ↦ ?_
   choose hcdB haB htrB hbB hcB hcγB hsubB using
     fun z (hz : z ∈ ball y R) ↦ hball (ball_subset_closedBall hz)
-  have hx₀mem : y + R • e ∈ sphere y R := by
-    rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
-      Real.norm_of_nonneg hR.le]
   exact not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀mem hlam haB htrB hbB
     hcB hcγB hcdB ((hball (sphere_subset_closedBall hx₀mem)).1.differentiableAt (by simp))
     hsubB hlt (hx₀ ▸ hnonneg) hx₀max

@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma
-import TauCeti.Analysis.Normed.Module.Ball.Touching
 import TauCeti.Topology.Connected.Basic
+import TauCeti.Topology.MetricSpace.TouchingBall
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-!
@@ -109,11 +109,17 @@ theorem eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax {x : E} {β �
   refine eventually_eq_of_isLocalMax_of_forall_not_lt_ball
     ((hcd.eventually (by simp)).and (hmax.and (hc.and (hcγ.and (hb.and hsub)))))
     ((hcd.eventually (by simp)).mono fun y hy => hy.continuousAt) hmax
-    fun y e R hR he hball hx₀max hx₀ hlt => ?_
+    fun y x₀ R hR hx₀sph hball hx₀max hx₀ hlt => ?_
   choose hcdB hleB hcB hcγB hbB hsubB using fun z (hz : z ∈ closedBall y R) => hball hz
-  have hx₀mem : y + R • e ∈ closedBall y R := by
-    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
-      Real.norm_of_nonneg hR.le]
+  -- Write `x₀ = y + R • e` for the unit outward normal `e`.
+  set e := R⁻¹ • (x₀ - y) with he_def
+  have hx₀e : y + R • e = x₀ := by
+    rw [he_def, smul_smul, mul_inv_cancel₀ hR.ne', one_smul, add_sub_cancel]
+  have he : ‖e‖ = 1 := by
+    rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, ← dist_eq_norm,
+      mem_sphere.mp hx₀sph, inv_mul_cancel₀ hR.ne']
+  have hx₀mem : y + R • e ∈ closedBall y R := hx₀e ▸ sphere_subset_closedBall hx₀sph
+  rw [← hx₀e] at hx₀max hx₀ hlt
   have hpos := fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere hR he
     (fun z hz => (hcdB z hz).continuousAt.continuousWithinAt)
     (fun z hz => hcdB z (ball_subset_closedBall hz))

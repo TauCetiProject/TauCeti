@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.LocalExtr
 import Mathlib.Topology.MetricSpace.HausdorffDistance
@@ -13,7 +12,7 @@ import Mathlib.Topology.MetricSpace.HausdorffDistance
 /-!
 # Balls touching a level set at a local maximum
 
-Near a local maximum `x` of a function `u : E → ℝ` that is continuous near `x` but not constant
+Near a local maximum `x` of a function `u : X → ℝ` that is continuous near `x` but not constant
 near `x`, some closed ball lies in any prescribed neighbourhood of `x`, has `u` strictly below
 `u x` in its interior, and touches the level set `{u = u x}` at a point `x₀` of its sphere that
 is again a local maximum. The ball is the largest one, about a point `x₂` near `x` with
@@ -38,16 +37,16 @@ namespace TauCeti
 
 open Filter Metric Set Topology
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
 
 /-- **Touching balls at a local maximum.** Let `u` be continuous near a local maximum `x`, and let
 `s` be a neighbourhood of `x`. Suppose that no closed ball `closedBall y R ⊆ s` with `0 < R` has
-`u < u x₀` on `ball y R` for a point `x₀ = y + R • e` of its sphere at which `u` has a local
-maximum with value `u x`. Then `u` is constant near `x`. -/
-theorem eventually_eq_of_isLocalMax_of_forall_not_lt_ball {u : E → ℝ} {x : E} {s : Set E}
+`u < u x₀` on `ball y R` for a point `x₀` of its sphere at which `u` has a local maximum with
+value `u x`. Then `u` is constant near `x`. -/
+theorem eventually_eq_of_isLocalMax_of_forall_not_lt_ball {u : X → ℝ} {x : X} {s : Set X}
     (hs : s ∈ 𝓝 x) (hcont : ∀ᶠ y in 𝓝 x, ContinuousAt u y) (hmax : IsLocalMax u x)
-    (H : ∀ (y e : E) (R : ℝ), 0 < R → ‖e‖ = 1 → closedBall y R ⊆ s →
-      IsLocalMax u (y + R • e) → u (y + R • e) = u x → ¬∀ z ∈ ball y R, u z < u (y + R • e)) :
+    (H : ∀ (y x₀ : X) (R : ℝ), 0 < R → x₀ ∈ sphere y R → closedBall y R ⊆ s →
+      IsLocalMax u x₀ → u x₀ = u x → ¬∀ z ∈ ball y R, u z < u x₀) :
     ∀ᶠ y in 𝓝 x, u y = u x := by
   -- Work on a ball `ball x (3 * r)` inside `s` on which `u` is continuous and bounded by `u x`.
   obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp (hcont.and (hmax.and hs))
@@ -86,14 +85,7 @@ theorem eventually_eq_of_isLocalMax_of_forall_not_lt_ball {u : E → ℝ} {x : E
     have := infDist_le_dist_of_mem (x := x₂) hyZ
     rw [dist_comm] at this
     linarith
-  -- Write `x₀ = x₂ + ρ • e` for the unit outward normal `e`.
   have hx₀x₂ : dist x₀ x₂ = ρ := by rw [dist_comm, ← hx₀dist]
-  set e := ρ⁻¹ • (x₀ - x₂) with he_def
-  have hx₀e : x₂ + ρ • e = x₀ := by
-    rw [he_def, smul_smul, mul_inv_cancel₀ hρ.ne', one_smul, add_sub_cancel]
-  have he : ‖e‖ = 1 := by
-    rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hρ.le, ← dist_eq_norm, hx₀x₂,
-      inv_mul_cancel₀ hρ.ne']
   -- `x₀` is again a local maximum, on the sphere of the ball touching `Z`.
   have hx₀x : dist x₀ x < 3 * r := by linarith [hnear hx₀x₂.le]
   have hx₀max : IsLocalMax u x₀ := by
@@ -102,7 +94,6 @@ theorem eventually_eq_of_isLocalMax_of_forall_not_lt_ball {u : E → ℝ} {x : E
     exact hx₀u ▸ (hball (by linarith [dist_triangle y x₀ x])).2.1
   have hsub : closedBall x₂ ρ ⊆ s := fun y hy ↦
     (hball (y := y) (by linarith [hnear (mem_closedBall.mp hy)])).2.2
-  rw [← hx₀e] at hx₀max hx₀u hlt
-  exact H x₂ e ρ hρ he hsub hx₀max hx₀u hlt
+  exact H x₂ x₀ ρ hρ (mem_sphere.mpr hx₀x₂) hsub hx₀max hx₀u hlt
 
 end TauCeti
