@@ -102,7 +102,7 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
   -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` to
   -- `W^{1,p}_0(Ω)`.
   have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
-    hp hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
+    hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
     (inter_tsupport_subset_chartEpigraph h hχs) (chartEpigraph_inter_tsupport_subset h hχs) hw'
   convert hmem using 1
   -- Both sides are `ψ u` on `Ω`.

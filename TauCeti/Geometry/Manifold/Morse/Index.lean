@@ -106,20 +106,24 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
   simp only [manifoldMorseIndex, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, id_eq]
 
-/-- The manifold Morse index is at most the dimension of a finite-dimensional model space. -/
-theorem manifoldMorseIndex_le_finrank [FiniteDimensional ℝ E] :
+/-- The manifold Morse index is at most the dimension of the model space. -/
+theorem manifoldMorseIndex_le_finrank :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
 
 /-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
 index is zero. No nondegeneracy assumption is needed. -/
-theorem manifoldMorseIndex_eq_zero_of_isLocalMin [FiniteDimensional ℝ E] [I.Boundaryless]
+theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hmin : IsLocalMin f x) :
     manifoldMorseIndex I f x = 0 := by
   have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
     have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
     exact hm.comp_continuous (continuousAt_extChartAt_symm x)
-  rw [manifoldMorseIndex_def, morseIndex_def]
+  rw [manifoldMorseIndex_def]
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
+  rw [morseIndex_def]
   exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
     rw [hessianQuadraticForm_apply]
     exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
@@ -151,7 +155,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
 
 /-- If the preferred-chart Hessian is nondegenerate, the manifold Morse indices of a function and
 its negation add to the dimension of the model space. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : (hessianQuadraticForm (f ∘ (extChartAt I x).symm)
       (extChartAt I x x)).Nondegenerate) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -165,7 +169,7 @@ namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
 the dimension of the manifold. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
