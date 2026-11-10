@@ -224,9 +224,8 @@ theorem derivation_slope_self [DecidableEq K] (x y : K) :
             D ((W⁄K).toAffine.polynomialY.evalEval x y)) := by
   by_cases hy : y = (W⁄K).toAffine.negY x y
   · have h0 : (W⁄K).toAffine.polynomialY.evalEval x y = 0 := by
-      rw [Affine.evalEval_polynomialY]
-      rw [Affine.negY] at hy
-      linear_combination hy
+      rw [← (W⁄K).toAffine.sub_negY, sub_eq_zero]
+      exact hy
     rw [slope_of_Y_eq rfl hy, map_zero, h0]
     simp
   · rw [slope_of_Y_ne_eq_evalEval rfl hy, D.leibniz_div]
