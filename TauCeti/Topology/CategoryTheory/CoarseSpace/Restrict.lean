@@ -91,7 +91,8 @@ space. Its image consists of the classes of objects satisfying `P`. -/
 theorem isClosedEmbedding_isomorphismClasses_map_ι (hP : IsClosed {x | P x}) :
     IsClosedEmbedding (X := Quotient (isIsomorphicSetoid P.FullSubcategory))
       (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map P.ι.toCatHom) :=
-  P.ι.isClosedEmbedding_isomorphismClasses_map (TauCeti.isClosedEmbedding_obj_fullSubcategory hP)
+  have h := TauCeti.isClosedEmbedding_obj_fullSubcategory hP
+  P.ι.isClosedEmbedding_isomorphismClasses_map h.continuous h.isClosedMap
     fun x _ e ↦ ⟨⟨_, P.prop_of_iso e x.property⟩, rfl⟩
 
 include hs in

@@ -19,8 +19,8 @@ object map is quotient induces a homeomorphism
 `CategoryTheory.Functor.isomorphismClassesHomeomorph`. This covers fully faithful functors and
 full functors out of groupoids. In particular this applies to fully faithful refinements with
 open surjective object map.
-A full functor reflecting isomorphisms whose object map is a closed embedding with range closed
-under isomorphisms induces a closed embedding
+A full functor reflecting isomorphisms whose object map is continuous and closed, with range
+closed under isomorphisms, induces a closed embedding
 (`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
 
 For groupoids these quotients are the coarse spaces. The construction keeps all arrows and
@@ -61,11 +61,11 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
 
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose object
-map is a closed embedding, with range closed under isomorphisms, induces a closed embedding on
-isomorphism classes. For groupoids this identifies the coarse space of a closed saturated full
-subgroupoid with a closed subspace of the coarse space. -/
+map is continuous and closed, with range closed under isomorphisms, induces a closed embedding on
+isomorphism classes. The object map need not be injective. For groupoids this identifies the
+coarse space of a closed saturated full subgroupoid with a closed subspace of the coarse space. -/
 theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
-    (hF : IsClosedEmbedding F.obj)
+    (hF : Continuous F.obj) (hF' : IsClosedMap F.obj)
     (hsat : ∀ ⦃x : C⦄ ⦃y : D⦄, (F.obj x ≅ y) → y ∈ Set.range F.obj) :
     IsClosedEmbedding (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
@@ -73,11 +73,11 @@ theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Refle
     ⇑(isomorphismClasses.map F.toCatHom)
   have hφ (x : C) : φ (Quotient.mk _ x) = Quotient.mk _ (F.obj x) := F.isomorphismClasses_map_mk x
   refine .of_continuous_injective_isClosedMap
-    (F.continuous_isomorphismClasses_map hF.continuous) F.isomorphismClasses_map_injective
+    (F.continuous_isomorphismClasses_map hF) F.isomorphismClasses_map_injective
     fun W hW ↦
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).isClosed_preimage.mp ?_
   -- The classes in the image of `W` are those of the closed set `F.obj '' (mk ⁻¹' W)`.
-  convert hF.isClosedMap _
+  convert hF' _
     (hW.preimage (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).continuous)
     using 1
   ext y
