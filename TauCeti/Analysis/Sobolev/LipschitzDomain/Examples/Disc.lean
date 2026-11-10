@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.InfiniteDimensional
