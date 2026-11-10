@@ -91,7 +91,7 @@ theorem HarmonicAt.gradient {x : E} (hf : HarmonicAt f x) : HarmonicAt (∇ f) x
     conv_lhs => rw [← b.sum_repr' (∇ f y)]
     simp only [real_inner_comm _ (b _), inner_gradient_left]
   rw [h]
-  exact HarmonicAt.sum _ fun i _ =>
+  exact HarmonicAt.sum fun i _ =>
     (hf.fderiv_apply (b i)).comp_CLM ((1 : ℝ →L[ℝ] ℝ).smulRight (b i))
 
 /-- **The gradient of a harmonic function is harmonic.** If `f` is harmonic on `s`, then so is

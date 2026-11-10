@@ -105,7 +105,7 @@ namespace Ideal
 prime ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.
 No Galois hypothesis is needed. -/
 theorem isUnramifiedAt_of_ncard_primesOver_eq_finrank {K L : Type*} [Field K] [NumberField K]
-    [Field L] [NumberField L] [Algebra K L] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+    [Field L] [NumberField L] [Algebra K L] (𝔭 : Ideal (𝓞 K))
     (hsplit : (primesOver 𝔭 (𝓞 L)).ncard = finrank K L) (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Q.LiesOver 𝔭] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
   -- The fundamental identity `∑ e f = [L : K]` leaves no room for `e > 1` once the primes above
@@ -130,7 +130,7 @@ theorem bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank {K : Ty
 `p` splits completely in `K` then the inertia degree at each prime `𝔭` above `p` is `1`, so the
 residue field at `𝔭` is `ℤ/p` and `N(𝔭) = p`. No Galois hypothesis is needed. -/
 theorem absNorm_eq_of_ncard_primesOver_eq_finrank {K : Type*} [Field K] [NumberField K]
-    {p : ℕ} [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    {p : ℕ} (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
     (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) :
     absNorm 𝔭 = p := by
   have hinertia : 𝔭.inertiaDeg ℤ = 1 :=

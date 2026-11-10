@@ -201,6 +201,15 @@ theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
   rw [hd] at htop
   exact WithTop.coe_ne_top htop
 
+/-- A square root `x` of a unit `a` with finite defect exponent does not lie in the base field,
+since `a` is not a square. -/
+theorem notMem_range_algebraMap_of_defectExponent_eq {L : Type*} [Field L] [Algebra K L]
+    {a : Kˣ} {x : L} (hx2 : x ^ 2 = algebraMap K L (a : K)) {d : ℤ}
+    (hd : defectExponent a = d) : x ∉ Set.range (algebraMap K L) := by
+  rintro ⟨c, rfl⟩
+  exact not_isSquare_of_defectExponent_eq hd (Units.isSquare_coe_iff.mp
+    ⟨c, (algebraMap K L).injective (by simpa [sq] using hx2.symm)⟩)
+
 /-- Every approximation order `v_K(a - ξ²)` is at most the defect exponent. -/
 theorem le_defectExponent (a : Kˣ) (ξ : K) (x : Kˣ) (hx : (x : K) = a - ξ ^ 2) :
     ((normalizedValuation K x).toAdd : WithTop ℤ) ≤ defectExponent a := by

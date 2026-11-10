@@ -41,6 +41,9 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
   which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
+  which `2 ≠ 0`, `Hₖ(RPᴺ; R)` is one-dimensional only in degree `0` and, for odd `N`, in degree
+  `N`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
   statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
@@ -284,6 +287,30 @@ theorem finrank_singularHomology_of_two_eq_zero {R : Type} [DivisionRing R] (h2 
   · have := ModuleCat.isZero_iff_subsingleton.1
       (isZero_singularHomology_of_lt (N := N) R (Nat.lt_of_not_le hkN))
     exact Module.finrank_zero_of_subsingleton
+
+/-- **Betti numbers of real projective space away from characteristic two.** If `2 ≠ 0` in the
+division ring `F`, for instance `F = ℚ`, then `H₀(RPᴺ; F)` is one-dimensional, so is `H_N(RPᴺ; F)`
+for odd `N`, and every other `Hₖ(RPᴺ; F)` vanishes. -/
+theorem finrank_singularHomology_of_two_ne_zero {F : Type} [DivisionRing F] (h2 : (2 : F) ≠ 0)
+    (k : ℕ) :
+    Module.finrank F (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
+      (ModuleCat.of F F)).obj (TopCat.of (RealProjectiveSpace N))) =
+      if k = 0 ∨ k = N ∧ Odd N then 1 else 0 := by
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp [(singularHomologyZeroLinearEquiv F).finrank_eq]
+  rcases k.even_or_odd with hk | hk
+  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_even F
+      (isRegular_iff_ne_zero.2 h2).right hk hk0)]
+    grind
+  rcases lt_trichotomy k N with hlt | rfl | hlt
+  · have : Subsingleton (F ⧸ F ∙ (2 : F)) := by
+      rw [IsSimpleModule.span_singleton_eq_top F h2]
+      infer_instance
+    rw [(singularHomologyLinearEquivOfOdd F hk hlt).finrank_eq, Module.finrank_zero_of_subsingleton]
+    grind
+  · simp [(singularHomologyTopLinearEquivOfOdd F hk).finrank_eq, hk]
+  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_lt F hlt)]
+    grind
 
 /-! ### The projectivization carrier -/
 

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.Basic
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
-# Martingale closure properties and division by a process
+# Martingale closure properties, division by a process, norms, and submartingale bounds
 
 Closure properties of martingales, including building blocks of the elementary stochastic
 integral:
@@ -24,6 +26,13 @@ integral:
 Together they show that a position chosen at `r`, times the change of a martingale over
 `(r, r']`, is a martingale whenever this product is integrable at every time.
 
+The following results need only a preordered time index. The norm of a Banach-valued
+martingale is a submartingale (`MeasureTheory.Martingale.norm`). For a real submartingale,
+multiplication by a nonnegative position known at an earlier date preserves the expectation
+inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
+In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
+integrability from later values for `p ≥ 1` (`MeasureTheory.Submartingale.memLp_of_le`).
+
 If `V / N` is a martingale under `Q` for a real process `N`, then `V` is recovered from its value
 at a later date `j` as `V i = N i * Q[V j / N j | ℱ i]` wherever `N i` does not vanish
 (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), so two such processes agreeing at `j` agree at
@@ -37,6 +46,7 @@ public section
 noncomputable section
 
 open Filter
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -84,6 +94,48 @@ theorem Martingale.indicator {Ω ι E : Type*} {m : MeasurableSpace Ω} {μ : Me
     Martingale (fun t ↦ s.indicator (X t)) ℱ μ := by
   refine ⟨fun t ↦ (hX.stronglyMeasurable t).indicator (hs t), fun i j hij ↦ ?_⟩
   exact (condExp_indicator (hX.integrable j) (hs i)).trans (hX.condExp_ae_eq hij).indicator
+
+section NormAndMultipliers
+
+variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
+
+/-- The norm of a Banach-valued martingale is a submartingale. -/
+theorem Martingale.norm (hX : Martingale X ℱ μ) :
+    Submartingale (fun t ω => ‖X t ω‖) ℱ μ := by
+  refine ⟨fun t => (hX.stronglyAdapted t).norm, fun s t hst => ?_,
+    fun t => (hX.integrable t).norm⟩
+  filter_upwards [hX.condExp_ae_eq hst, norm_condExp_le (m := ℱ s) (X t)] with ω he hle
+  simpa only [he] using hle
+
+/-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
+between `i` and `j`, provided its products with both values are integrable. -/
+theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
+    (hY : Submartingale Y ℱ μ) {i j : ι} (hij : i ≤ j) {a : Ω → ℝ}
+    (ha : StronglyMeasurable[ℱ i] a) (hpos : 0 ≤ᵐ[μ] a)
+    (hi : Integrable (a * Y i) μ) (hj : Integrable (a * Y j) μ) :
+    ∫ ω, a ω * Y i ω ∂μ ≤ ∫ ω, a ω * Y j ω ∂μ := by
+  have he := condExp_mul_of_stronglyMeasurable_left ha hj (hY.integrable j)
+  calc
+    _ ≤ ∫ ω, (a * μ[Y j | ℱ i]) ω ∂μ := by
+      apply integral_mono_ae hi (integrable_condExp.congr he)
+      filter_upwards [hpos, hY.ae_le_condExp hij] with ω hp hle
+      exact mul_le_mul_of_nonneg_left hle hp
+    _ = ∫ ω, μ[a * Y j | ℱ i] ω ∂μ := integral_congr_ae he.symm
+    _ = _ := integral_condExp (ℱ.le i)
+
+/-- A nonnegative submartingale value inherits Lᵖ integrability from a later value,
+for every `p ≥ 1`. Only the earlier value needs to be nonnegative. -/
+theorem Submartingale.memLp_of_le (hY : Submartingale Y ℱ μ) {i j : ι} (hij : i ≤ j)
+    (hpos : 0 ≤ᵐ[μ] Y i) {p : ℝ≥0∞} (hp : 1 ≤ p) (hj : MemLp (Y j) p μ) :
+    MemLp (Y i) p μ := by
+  apply (MemLp.condExp (m := ℱ i) hp hj).mono'
+    ((hY.stronglyAdapted i).mono (ℱ.le i)).aestronglyMeasurable
+  filter_upwards [hpos, hY.ae_le_condExp hij] with ω hposω hω
+  simpa only [Real.norm_eq_abs, abs_of_nonneg hposω] using hω
+
+end NormAndMultipliers
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]

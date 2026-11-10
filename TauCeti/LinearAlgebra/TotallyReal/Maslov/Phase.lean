@@ -66,6 +66,7 @@ namespace IsMaximalTotallyReal
 variable (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
 include hL
 
+omit [FiniteDimensional ℂ E] in
 /-- Two complex-linear automorphisms taking `L` to the same subspace have the same determinant
 phase `det A / conj (det A)`: they differ by an automorphism preserving `L`, whose determinant is
 real. -/

@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.Grassmannian.FiniteLocallyFree
 public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
 # The universal subgroup over the Hopf-ideal locus
@@ -345,8 +347,7 @@ private theorem ker_familyToPullback_le_of_forall
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
         Spec.map (CommRingCat.ofHom (x : H →+* C)) ∧ N.evalIdeal x = ⊥) :
     (familyToPullback R H k).ker ≤ p.left.ker := by
-  rw [← p.left.iInf_ker_openCover_map_comp T.left.affineCover]
-  refine le_iInf fun j ↦ ?_
+  refine p.left.le_ker_of_openCover _ T.left.affineCover fun j ↦ ?_
   suffices ∀ (C : CommRingCat.{u}) (g : Spec C ⟶ T.left),
       (familyToPullback R H k).ker ≤ (g ≫ p.left).ker from this _ _
   intro C g
@@ -367,17 +368,12 @@ private theorem ker_familyToPullback_le_of_forall
     rw [← Category.assoc, ← hgN, schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι]
   · exact (Category.assoc _ _ _).trans hx
 
-/-- A point of `Spec H ×_{Spec R} L` with values in a scheme quasi-compact over `L` is
-quasi-compact, as `Spec H ×_{Spec R} L ⟶ L` is affine. -/
-private theorem quasiCompact_left {T : Over (schemeHopfIdealLocus R H k).subscheme}
-    (p : T ⟶ (schemeHopfIdealLocusGrp R H k).X) [QuasiCompact T.hom] : QuasiCompact p.left := by
-  have hp : p.left ≫ pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-      ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) = T.hom := Over.w p
-  have : QuasiCompact (p.left ≫ pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-      ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)) := hp ▸ inferInstance
-  have hs : QuasiSeparated (pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-      ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)) := inferInstance
-  exact @QuasiCompact.of_comp _ _ _ p.left _ this hs
+variable (R H k) in
+/-- The structure map of `Spec H ×_{Spec R} L` over `L` is quasi-separated, as it is affine. -/
+private theorem quasiSeparated_hom_grp :
+    QuasiSeparated (schemeHopfIdealLocusGrp R H k).X.hom :=
+  inferInstanceAs (QuasiSeparated (pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
+      ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)))
 
 /-- The identity section of `Spec H ×_{Spec R} L` factors through the universal family. -/
 theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_one :
@@ -391,8 +387,9 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_one :
   have : QuasiCompact (𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme)).hom := by
     rw [Over.tensorUnit_hom]
     exact inferInstanceAs (QuasiCompact (𝟙 _))
-  have := quasiCompact_left (1 : 𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme) ⟶
-    (schemeHopfIdealLocusGrp R H k).X)
+  have := quasiSeparated_hom_grp R H k
+  have := quasiCompact_left_of_quasiCompact_hom
+    (1 : 𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme) ⟶ (schemeHopfIdealLocusGrp R H k).X)
   rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
   refine ker_familyToPullback_le_of_forall _ fun C _ N hN g hg ↦
     ⟨(Algebra.ofId R C).comp (Bialgebra.counitAlgHom R H), ?_, evalIdeal_counit_eq_bot N hN⟩
@@ -411,7 +408,8 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_inv :
   rw [← Hom.inv_def]
   have : QuasiCompact (Over.mk (schemeHopfIdealLocusFamilyHom R H k)).hom :=
     inferInstanceAs (QuasiCompact (schemeHopfIdealLocusFamilyHom R H k))
-  have := quasiCompact_left (schemeHopfIdealLocusFamilyToGrp R H k)⁻¹
+  have := quasiSeparated_hom_grp R H k
+  have := quasiCompact_left_of_quasiCompact_hom (schemeHopfIdealLocusFamilyToGrp R H k)⁻¹
   rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
   refine ker_familyToPullback_le_of_forall _ fun C _ N hN g hg ↦ ?_
   obtain ⟨y, hy, hyN⟩ := exists_family_point N hN g hg
@@ -433,8 +431,10 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_mul :
     rw [Over.tensorObj_hom]
     exact inferInstanceAs (QuasiCompact (pullback.fst (schemeHopfIdealLocusFamilyHom R H k)
       (schemeHopfIdealLocusFamilyHom R H k) ≫ schemeHopfIdealLocusFamilyHom R H k))
-  have := quasiCompact_left (fst _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k *
-    snd _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k)
+  have := quasiSeparated_hom_grp R H k
+  have := quasiCompact_left_of_quasiCompact_hom
+    (fst _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k *
+      snd _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k)
   rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
   refine ker_familyToPullback_le_of_forall _ fun C _ N hN g hg ↦ ?_
   obtain ⟨y₁, hy₁, hN₁⟩ := exists_family_point N hN (g ≫ pullback.fst _ _)

@@ -258,8 +258,11 @@ theorem range_demushkinCharacter_openSubgroup :
     (demushkinCharacter (hG.openSubgroup U)).toMonoidHom.range =
       U.toSubgroup.map (demushkinCharacter hG).toMonoidHom := by
   rw [hG.demushkinCharacter_openSubgroup U]
-  ext x
-  simp [MonoidHom.mem_range, Subgroup.mem_map]
+  -- Two definitional unfoldings across the `ContinuousMonoidHom` to `MonoidHom` wrapper:
+  -- `(χ.comp (subgroupSubtype U)).toMonoidHom` is
+  -- `χ.toMonoidHom.comp (subgroupSubtype U).toMonoidHom`, and
+  -- `(subgroupSubtype U).toMonoidHom` is `U.subtype`, which `Subgroup.range_subtype` consumes.
+  exact (MonoidHom.range_comp _ _).trans (congrArg _ (Subgroup.range_subtype _))
 
 end IsDemushkin
 

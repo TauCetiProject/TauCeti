@@ -35,6 +35,16 @@ open Finset
 
 namespace AbsoluteValue
 
+/-- The triangle inequality gives `v (n * x) ≤ n * v x` for a natural number `n`, without using
+`v 1 = 1` (so for an absolute value valued in any ordered semiring). -/
+theorem apply_natCast_mul_le {R S : Type*} [Semiring R] [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] (v : AbsoluteValue R S) (n : ℕ) (x : R) : v ((n : R) * x) ≤ n * v x := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, add_mul, one_mul, Nat.cast_succ, add_mul, one_mul]
+    exact (v.add_le _ _).trans (add_le_add_left ih _)
+
 variable {R S : Type*} [Semiring R] [Semiring S] [LinearOrder S] [IsOrderedRing S]
 
 /-- A sum of `card s` terms of size at most `T` has size at most `c ^ card s * T`, for an

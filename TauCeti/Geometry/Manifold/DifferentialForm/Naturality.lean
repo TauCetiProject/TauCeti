@@ -110,9 +110,8 @@ theorem mpullback_mextDeriv_at {f : M → M'} (hf : ContMDiffAt I I' 2 f x)
     simp only [g, z, e, e', writtenInExtChartAt, Function.comp_apply,
       extChartAt_to_inv]
   have hφcoord : DifferentiableWithinAt ℝ (φ.inChartAt (f x)) (range I') (e' (f x)) := by
-    have h := φ.contDiffWithinAt_inChartAt (s := univ) hφ.contMDiffWithinAt
-    simpa only [preimage_univ, univ_inter, e'] using
-      h.differentiableWithinAt (by norm_num)
+    have h := φ.contDiffWithinAt_range_inChartAt_of_contMDiffAt hφ
+    simpa only [e'] using h.differentiableWithinAt (by norm_num)
   have hg : ContDiffWithinAt ℝ 2 g (range I) z := by
     simpa only [g, z, e, writtenInExtChartAt] using (contMDiffAt_iff.mp hf).2
   have htarget : (f ∘ e.symm) ⁻¹' e'.source ∈ 𝓝[range I] z := by
@@ -201,8 +200,8 @@ theorem extDerivWithin_mpullbackWithin {f : E'' → M} {s : Set E''} {z : E''}
     filter_upwards [hpre] with a ha
     exact extChartAt_target_subset_range (f z) (e.map_source ha)
   have hφc : DifferentiableWithinAt ℝ (φ.inChartAt (f z)) (range I) ((e ∘ f) z) := by
-    simpa only [preimage_univ, univ_inter, Function.comp_apply, e] using
-      φ.differentiableWithinAt_inChartAt (s := univ) hφ.mdifferentiableWithinAt
+    simpa only [Function.comp_apply, e] using
+      φ.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt hφ
   rw [hloc.extDerivWithin_eq (hloc.self_of_nhdsWithin hz),
     extDerivWithin_pullback_of_preimage_mem_nhdsWithin hφc hg (by simp) hs hzc hz hrange,
     RoughForm.mpullbackWithin_eq_compContinuousLinearMap (mextDeriv φ) (f z) hfz

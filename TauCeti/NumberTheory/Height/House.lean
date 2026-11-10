@@ -347,7 +347,6 @@ at most `(2B)ᵈ`. -/
 theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {B : ℝ}
     (hB : 1 ≤ B) (hxB : house x ≤ B) :
     naiveHeight x ≤ (2 * B) ^ (minpoly ℚ x).natDegree := by
-  have halg : IsAlgebraic ℚ x := (hx.tower_top (A := ℚ)).isAlgebraic
   have hmon : (primitiveMinpoly x).Monic := by
     rw [primitiveMinpoly_eq_minpoly_int hx]
     exact minpoly.monic hx
@@ -356,7 +355,7 @@ theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {
   have hroots : ∀ z ∈ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).roots, ‖z‖ ≤ B := by
     intro z hz
     refine (norm_le_house_of_mem_rootSet ?_).trans hxB
-    rw [← rootSet_primitiveMinpoly halg, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
+    rw [← rootSet_primitiveMinpoly x, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
       aroots_def, algebraMap_int_eq]
     exact hz
   obtain ⟨i, hi⟩ := (primitiveMinpoly x).exists_eq_supNorm

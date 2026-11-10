@@ -66,7 +66,7 @@ theorem WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn [Fact (1
     have := frechetRadius_rpow_eq_frechetPower hp0 hp_top (hm ν)
     rw [h, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp_top), hF] at this
     exact WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top μ ν this.symm
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp_top (hm ν) hm, and_iff_right hR,
+  rw [isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp_top hm, and_iff_right hR,
     isMinOn_univ_iff]
   simp only [hF]
 

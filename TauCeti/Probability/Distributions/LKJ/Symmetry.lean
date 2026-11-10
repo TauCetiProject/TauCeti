@@ -312,9 +312,10 @@ theorem memLp_apply_map_partialCorrelationGram_pi_betaMeasure
   have (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
     isProbabilityMeasureBeta (ha ij) (ha ij)
   refine MemLp.of_bound (by fun_prop) 1 ?_
-  filter_upwards [ae_abs_le_one_pi_centered_betaMeasure ha] with z hz
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
+  have hz' : ∀ ij, |z ij| ≤ 1 := fun ij ↦ le_of_lt (hz ij)
   exact (posSemidef_partialCorrelationGram z).norm_le_one_of_apply_self_eq_one
-    (partialCorrelationGram_apply_self hz i) (partialCorrelationGram_apply_self hz j)
+    (partialCorrelationGram_apply_self hz' i) (partialCorrelationGram_apply_self hz' j)
 
 /-- The entrywise mean of the independent centered symmetric Beta Gram law is the identity.
 The shapes may vary independently across all strictly lower positions. -/
@@ -334,8 +335,8 @@ theorem integral_apply_map_partialCorrelationGram_pi_betaMeasure
     calc
       _ = ∫ _, (1 : ℝ) ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map
           (fun x ↦ -1 + 2 * x)) := integral_congr_ae <|
-        (ae_abs_le_one_pi_centered_betaMeasure ha).mono fun z hz ↦
-          partialCorrelationGram_apply_self hz i
+        (ae_abs_lt_one_pi_centered_betaMeasure ha).mono fun z hz ↦
+          partialCorrelationGram_apply_self (fun ij ↦ le_of_lt (hz ij)) i
       _ = 1 := by simp
   · rw [ite_eq_right hij]
     exact integral_apply_map_partialCorrelationGram_pi_of_ne _ hij

@@ -24,6 +24,8 @@ any subgroup of the joint area/Chern kernel, use the descended area and Chern ho
 `periodGroupComparison` specializes to the quotient by the entire joint kernel. In that case
 two monomials with the same nonzero coefficient become equal exactly when their areas and
 Chern numbers agree. No individual quantum invariant is assumed to descend without summation.
+If the target class group is trivial, the comparison sends a series to the sum of all of its
+coefficients (`coeff_zero_coefficientComparison_of_subsingleton`).
 
 The construction reuses `NovikovSeries.mapRingHom`; no augmentation at `q = 1` is involved.
 
@@ -83,6 +85,17 @@ theorem coeff_coefficientComparison (a : NovikovSeries R S ω) (γ : Γ) :
   · exact fun A hA => (Set.Finite.mem_toFinset _).2 hA
   · intro A hA
     exact ((Set.Finite.mem_toFinset _).1 hA).2
+
+/-- **Over a trivial target class group the comparison is the total count.** The comparison
+sends `∑_A N_A q^A` to `∑_A N_A`, a finite sum by
+`TauCeti.NovikovSeries.finite_support_of_bddAbove_image`, since every class has zero area:
+`ω A = Ω (q A) = 0`. -/
+theorem coeff_zero_coefficientComparison_of_subsingleton [Subsingleton Γ]
+    (a : NovikovSeries R S ω) :
+    (coefficientComparison q hω a).coeff 0 = ∑ᶠ A, a.coeff A := by
+  have h : (-q) ⁻¹' {0} = Set.univ := Set.eq_univ_of_forall fun A => Subsingleton.elim _ _
+  rw [coefficientComparison_apply, coeff_map, h, finsum_mem_univ]
+  simp only [AddMonoidHom.coe_ofClass, RingHom.id_apply]
 
 /-- No new support classes appear except images under negative class projection. -/
 theorem support_coefficientComparison_subset (a : NovikovSeries R S ω) :

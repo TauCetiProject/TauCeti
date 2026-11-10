@@ -206,17 +206,25 @@ theorem contMDiff_coe_comp_iff
   TauCeti.ContMDiff.subtypeVal_comp_iff (upperHalfSpaceOpens E)
     (f : M → upperHalfSpaceOpens E)
 
-/-- If a differentiable self-map `f` of the upper half-space is the restriction of a map `A` of
-`E × ℝ` with derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
+/-- If a self-map `f` of the upper half-space is the restriction of a map `A` of `E × ℝ` with
+derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
 theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfSpace E}
     {A : WithLp 2 (E × ℝ) → WithLp 2 (E × ℝ)} {L : WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ)}
     {x : UpperHalfSpace E}
-    (hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x)
     (hA : HasFDerivAt A L (x : WithLp 2 (E × ℝ))) (hcomp : coe ∘ f = A ∘ coe)
     (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
+  -- The map `f` is differentiable, since its composite with the inclusion is.
+  have hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x := by
+    have hcoe : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ))
+        (coe ∘ f) x := by
+      rw [hcomp]
+      exact hA.differentiableAt.mdifferentiableAt.comp x
+        ((contMDiff_coe (E := E)).mdifferentiableAt (by simp))
+    exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff (U := upperHalfSpaceOpens E) f
+      Set.univ x).1 hcoe
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
@@ -303,8 +311,7 @@ private theorem tangentSpaceCastModel_mfderiv_similarityMap (c : ℝ) (hc : 0 < 
         WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ))) (x : WithLp 2 (E × ℝ)) :=
     ((LinearIsometryEquiv.withLpProdCongr 2 A
       (.refl ℝ ℝ)).toContinuousLinearEquiv.hasFDerivAt.const_smul c).add_const _
-  exact tangentSpaceCastModel_mfderiv_apply
-    ((contMDiff_similarityMap (n := 1) c hc A b x).mdifferentiableAt one_ne_zero) hA (rfl) v
+  exact tangentSpaceCastModel_mfderiv_apply hA (rfl) v
 
 end NormedSpace
 

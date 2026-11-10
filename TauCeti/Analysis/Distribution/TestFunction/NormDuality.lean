@@ -145,7 +145,7 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
   have hΦψ (n : ℕ) : (Φ n : E → F) = ψ n := TestFunction.coe_mk
   have hΦ (n : ℕ) (x : E) : ‖Φ n x‖ ≤ 1 := by
     simpa [hΦψ] using norm_convolution_lsmul_le_of_forall_norm_le (φ n).support_normed_eq.subset
-      (φ n).nonneg_normed (φ n).integral_normed hσi.aestronglyMeasurable fun y _ => hσ y
+      (φ n).nonneg_normed (φ n).integral_normed fun y _ => hσ y
   -- By the Lebesgue differentiation theorem, they converge to `σ` almost everywhere.
   have hlim : ∀ᵐ x ∂μ, Tendsto (fun n => ψ n x) atTop (𝓝 (σ x)) := by
     refine ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (K := 2) ?_

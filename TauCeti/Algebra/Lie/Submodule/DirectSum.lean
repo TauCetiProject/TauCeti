@@ -291,8 +291,7 @@ theorem finrank_lieModuleHom_eq_sum_of_isInternal (N : ι → LieSubmodule K L M
     (hfin : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ N i)) :
     finrank K (S →ₗ⁅K,L⁆ M) = ∑ i, finrank K (S →ₗ⁅K,L⁆ N i) := by
   let _ : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ N i) := hfin
-  rw [← (LieModuleEquiv.congrRight (M := S)
-      (DirectSum.lieModuleEquivOfIsInternal N h)).finrank_eq,
+  rw [← ((DirectSum.lieModuleEquivOfIsInternal N h).congrRight (M := S)).finrank_eq,
     (lieModuleHomDirectSumEquiv K L S fun i ↦ (N i : Type w)).finrank_eq,
     Module.finrank_pi_fintype]
 

@@ -88,7 +88,7 @@ theorem _root_.Polynomial.card_roots_toFinset_eq_iff_psc_of_splits {p : K[X]} (h
   have hg : (EuclideanDomain.gcd p p.derivative).natDegree ≤ p.natDegree :=
     natDegree_le_of_dvd (EuclideanDomain.gcd_dvd_left p p.derivative) hp
   have hcount :=
-    natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp hsplit
+    natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hsplit
   omega
 
 section IsAlgClosed

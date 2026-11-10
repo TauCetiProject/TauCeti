@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 -- Private: the derivative of the squared norm and the square-zero property of the exterior
 -- derivative are used only inside proofs.
@@ -20,10 +23,16 @@ The logarithmic derivative of a complex function `u` on a manifold is the comple
 of a branch of `log u`, so it is closed (`TauCeti.mextDeriv_mlogDeriv`) and as regular as `du`
 (`TauCeti.isSmoothForm_mlogDeriv`). The logarithmic derivative turns products into sums
 (`TauCeti.mlogDeriv_mul`) and is the differential of the exponent on exponentials
-(`TauCeti.mlogDeriv_exp`). A function of modulus one, a `U(1)` gauge transformation, has an
-imaginary logarithmic derivative (`TauCeti.re_mlogDeriv_apply_eq_zero`). Conversely, on a
-connected manifold a differentiable function with imaginary logarithmic derivative has constant
-modulus (`TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`).
+(`TauCeti.mlogDeriv_exp`). A primitive `g` of `dlog u` differs locally from a branch of `log u` by
+an additive constant: `u exp (-g)` is locally constant
+(`TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`). A function of modulus one, a `U(1)` gauge
+transformation, has an imaginary logarithmic derivative (`TauCeti.re_mlogDeriv_apply_eq_zero`).
+Conversely, a differentiable function with imaginary logarithmic derivative has locally constant
+modulus (`TauCeti.isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero`), so constant modulus on a
+connected manifold (`TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`). On a connected manifold the
+nowhere-vanishing functions with vanishing logarithmic derivative are the constants
+(`TauCeti.mlogDeriv_eq_zero_iff_eq_const`), in particular among smooth circle-valued maps
+(`TauCeti.mlogDeriv_coe_eq_zero_iff`).
 
 The periods of `dlog u` and the construction of `u` from a closed form with periods in `2πiℤ` are
 in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
@@ -37,10 +46,21 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.isSmoothForm_mlogDeriv`: `dlog u` is a `C^n` form for a nowhere-vanishing `C^(n+1)`
   function `u`.
 * `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
+* `TauCeti.mlogDeriv_eq_zero_iff`: where `u` does not vanish, `dlog u` vanishes exactly when `du`
+  does; `TauCeti.mlogDeriv_const`: constants have vanishing logarithmic derivative.
+* `TauCeti.mlogDeriv_eq_zero_iff_eq_const`: on a connected manifold the kernel of `dlog` on
+  nowhere-vanishing functions is the constants.
+* `TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`: for a primitive `g` of `dlog u`, the
+  function `u exp (-g)` is locally constant.
 * `TauCeti.re_mlogDeriv_apply_eq_zero`: functions of modulus one have imaginary logarithmic
   derivatives.
-* `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
-  constant modulus.
+* `TauCeti.isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero`,
+  `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
+  locally constant modulus.
+* `ContMDiffMap.isSmoothForm_mlogDeriv_coe`, `ContMDiffMap.mextDeriv_mlogDeriv_coe`: `dlog` of a
+  smooth circle-valued map is a smooth closed form.
+* `ContMDiffMap.mlogDeriv_coe_mul`, `TauCeti.mlogDeriv_coe_eq_zero_iff`: `dlog` on smooth
+  circle-valued maps turns products into sums, and its kernel is the constants.
 
 ## References
 
@@ -54,7 +74,7 @@ public section
 noncomputable section
 
 open Set Filter Complex
-open scoped Manifold Topology ComplexConjugate
+open scoped Manifold Topology ComplexConjugate ContDiff
 
 namespace TauCeti
 
@@ -105,6 +125,36 @@ theorem mlogDeriv_exp {g : M → ℂ} {x : M} (hg : MDifferentiableAt I 𝓘(ℝ
     mlogDeriv I (fun y ↦ exp (g y)) x = mextDeriv (RoughForm.ofFunction I g) x :=
   mlogDeriv_eq_of_eventuallyEq_mul_exp one_ne_zero hg
     (Eventually.of_forall fun _ ↦ (one_mul _).symm)
+
+/-- The logarithmic derivative of a constant function vanishes. -/
+@[simp]
+theorem mlogDeriv_const (c : ℂ) : mlogDeriv I (fun _ : M ↦ c) = 0 := by
+  funext x
+  ext v
+  simp [mvfderiv_eq_zero_iff.mpr (mfderiv_const ..)]
+
+/-- Where `u` does not vanish, `dlog u` vanishes exactly when the differential of `u` does. -/
+theorem mlogDeriv_eq_zero_iff {u : M → ℂ} {x : M} (hx : u x ≠ 0) :
+    mlogDeriv I u x = 0 ↔ mfderiv I 𝓘(ℝ, ℂ) u x = 0 := by
+  rw [← mvfderiv_eq_zero_iff]
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun h ↦ ?_⟩
+  · have h' := congrArg (fun φ ↦ φ fun _ ↦ t) h
+    simp only [mlogDeriv_apply] at h'
+    simpa using (mul_eq_zero.mp h').resolve_left (inv_ne_zero hx)
+  · ext v
+    simp [h]
+
+/-- **The kernel of `dlog` is the constants.** On a preconnected manifold, a differentiable
+nowhere-vanishing complex function has vanishing logarithmic derivative exactly when it is
+constant. -/
+theorem mlogDeriv_eq_zero_iff_eq_const [IsManifold I 1 M] [PreconnectedSpace M] {u : M → ℂ}
+    (hu : MDifferentiable I 𝓘(ℝ, ℂ) u) (hu₀ : ∀ x, u x ≠ 0) :
+    mlogDeriv I u = 0 ↔ ∃ c, ∀ x, u x = c := by
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ by simp [funext hc]⟩
+  have hd (x : M) : mfderiv I 𝓘(ℝ, ℂ) u x = 0 := (mlogDeriv_eq_zero_iff (hu₀ x)).mp (congrFun h x)
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact ⟨0, isEmptyElim⟩
+  · exact ⟨u x₀, fun x ↦ MDifferentiable.apply_eq_of_mfderiv_eq_zero hu hd x x₀⟩
 
 /-- **The logarithmic derivative turns products into sums.** -/
 theorem mlogDeriv_mul {u v : M → ℂ} {x : M} (hu : MDifferentiableAt I 𝓘(ℝ, ℂ) u x)
@@ -174,6 +224,38 @@ theorem mextDeriv_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u
 
 end Regularity
 
+/-! ### Primitives of logarithmic derivatives -/
+
+/-- **Primitives of `dlog u` are branches of `log u` up to additive constants.** Near each
+point `x` of an open set `U` on which `g` is a primitive of `dlog u`, for a differentiable `u`
+vanishing nowhere on `U`, `u exp (-g)` is constant. -/
+theorem IsPrimitiveOn.eventually_mul_exp_neg_eq [IsManifold I 1 M] {u g : M → ℂ} {U : Set M}
+    (hg : IsPrimitiveOn (mlogDeriv I u) g U) (hu : MDifferentiableOn I 𝓘(ℝ, ℂ) u U)
+    (hu₀ : ∀ y ∈ U, u y ≠ 0) {x : M} (hx : x ∈ U) :
+    ∀ᶠ y in 𝓝 x, u y * exp (-g y) = u x * exp (-g x) := by
+  have hg' := hg.const_smul (-1)
+  set w : M → ℂ := u * fun y ↦ exp (((-1 : ℝ) • g) y) with hw_def
+  have hgy (y : M) (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, ℂ) ((-1 : ℝ) • g) y :=
+    (hg'.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
+  have huy (y : M) (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, ℂ) u y :=
+    (hu y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
+  have hey (y : M) (hy : y ∈ U) :
+      MDifferentiableAt I 𝓘(ℝ, ℂ) (fun z ↦ exp (((-1 : ℝ) • g) z)) y :=
+    ((Complex.hasDerivAt_exp _).differentiableAt.restrictScalars ℝ).comp_mdifferentiableAt
+      (hgy y hy)
+  -- `dlog w = dlog u - dg` vanishes on `U`, so `w` has zero differential there.
+  have hzero (y : M) (hy : y ∈ U) : mfderiv I 𝓘(ℝ, ℂ) w y = 0 := by
+    have hd : mlogDeriv I w y = 0 := by
+      rw [hw_def, mlogDeriv_mul (huy y hy) (hey y hy) (hu₀ y hy) (exp_ne_zero _),
+        mlogDeriv_exp (hgy y hy), hg'.mextDeriv_eq y hy]
+      ext v
+      simp
+    exact (mlogDeriv_eq_zero_iff (u := w) (mul_ne_zero (hu₀ y hy) (exp_ne_zero _))).mp hd
+  have hwd : MDifferentiableOn I 𝓘(ℝ, ℂ) w U := fun y hy ↦
+    ((huy y hy).mul (hey y hy)).mdifferentiableWithinAt
+  filter_upwards [hwd.eventuallyEq_const_of_mfderiv_eq_zero hg.isOpen hzero hx] with y hy
+  simpa [w, neg_one_smul] using hy
+
 /-! ### Logarithmic derivatives of circle-valued functions -/
 
 /-- **The logarithmic derivative of a circle-valued function is imaginary.** If `u` has modulus
@@ -205,12 +287,13 @@ theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} {x : M} (hu : MDifferentiable
   rw [hre.mvfderiv_eq, h0, Complex.reCLM_apply] at h
   simpa using h.symm
 
-/-- **A function with imaginary logarithmic derivative has constant modulus** on a connected
-manifold. The differential `2 Re (du * conj u)` of `‖u‖²` is `2 ‖u‖² Re (dlog u)`, which
-vanishes; this also holds at the zeros of `u`. -/
-theorem norm_eq_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] [PreconnectedSpace M]
-    {u : M → ℂ} (hu : MDifferentiable I 𝓘(ℝ, ℂ) u)
-    (hre : ∀ x v, (mlogDeriv I u x v).re = 0) (x y : M) : ‖u x‖ = ‖u y‖ := by
+/-- **A function with imaginary logarithmic derivative has locally constant modulus**, for a
+differentiable `u`, including near its zeros. -/
+theorem isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] {u : M → ℂ}
+    (hu : MDifferentiable I 𝓘(ℝ, ℂ) u) (hre : ∀ x v, (mlogDeriv I u x v).re = 0) :
+    IsLocallyConstant fun x ↦ ‖u x‖ := by
+  -- The differential `2 Re (du * conj u)` of `‖u‖²` is `2 ‖u‖² Re (dlog u)`, which vanishes;
+  -- this also holds at the zeros of `u`.
   have hsq := (contDiff_norm_sq ℝ (E := ℂ) (n := 1)).differentiable one_ne_zero
   have hd (x : M) : mfderiv I 𝓘(ℝ, ℝ) (fun y ↦ ‖u y‖ ^ 2) x = 0 := by
     rw [← mvfderiv_eq_zero_iff]
@@ -225,8 +308,61 @@ theorem norm_eq_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] [PreconnectedSp
     rw [Function.comp_def] at hc
     rw [hc, fderiv_norm_sq_apply, smul_apply, innerSL_apply_apply, Complex.inner, h,
       re_ofReal_mul, hre, mul_zero, smul_zero, zero_apply]
-  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
-    (MDifferentiable.apply_eq_of_mfderiv_eq_zero
-      (fun x ↦ (hsq (u x)).comp_mdifferentiableAt (hu x)) hd x y)
+  have hloc := MDifferentiable.isLocallyConstant_of_mfderiv_eq_zero
+    (fun x ↦ (hsq (u x)).comp_mdifferentiableAt (hu x)) hd
+  refine (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦ ?_
+  filter_upwards [(IsLocallyConstant.iff_eventually_eq _).mp hloc x] with y hy
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hy
+
+/-- **A function with imaginary logarithmic derivative has constant modulus** on a connected
+manifold. -/
+theorem norm_eq_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] [PreconnectedSpace M]
+    {u : M → ℂ} (hu : MDifferentiable I 𝓘(ℝ, ℂ) u)
+    (hre : ∀ x v, (mlogDeriv I u x v).re = 0) (x y : M) : ‖u x‖ = ‖u y‖ :=
+  (isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero hu hre).apply_eq_of_preconnectedSpace x y
+
+/-! ### Smooth circle-valued maps -/
+
+section Circle
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The complex values of a smooth circle-valued map form a smooth function. -/
+theorem _root_.ContMDiffMap.contMDiff_coe_circle (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    ContMDiff I 𝓘(ℝ, ℂ) ∞ fun x ↦ (u x : ℂ) :=
+  (contMDiff_coe_sphere.of_le le_top).comp u.contMDiff
+
+/-- `dlog` turns products of smooth circle-valued maps into sums. -/
+theorem _root_.ContMDiffMap.mlogDeriv_coe_mul (u v : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+    mlogDeriv I (fun x ↦ ((u * v) x : ℂ)) =
+      mlogDeriv I (fun x ↦ (u x : ℂ)) + mlogDeriv I (fun x ↦ (v x : ℂ)) := by
+  funext x
+  have hu := (u.contMDiff_coe_circle x).mdifferentiableAt (by simp)
+  have hv := (v.contMDiff_coe_circle x).mdifferentiableAt (by simp)
+  exact mlogDeriv_mul hu hv (Circle.coe_ne_zero _) (Circle.coe_ne_zero _)
+
+/-- `dlog u` is a smooth form for a smooth circle-valued map `u`. -/
+theorem _root_.ContMDiffMap.isSmoothForm_mlogDeriv_coe [IsManifold I 2 M]
+    (u : C^∞⟮I, M; 𝓡 1, Circle⟯) : IsSmoothForm I ∞ (mlogDeriv I fun x ↦ (u x : ℂ)) :=
+  isSmoothForm_mlogDeriv (u.contMDiff_coe_circle.of_le (by simp)) fun x ↦ Circle.coe_ne_zero (u x)
+
+/-- `dlog u` is closed for a smooth circle-valued map `u`. -/
+theorem _root_.ContMDiffMap.mextDeriv_mlogDeriv_coe [IsManifold I 2 M]
+    (u : C^∞⟮I, M; 𝓡 1, Circle⟯) : mextDeriv (mlogDeriv I fun x ↦ (u x : ℂ)) = 0 :=
+  mextDeriv_mlogDeriv (u.contMDiff_coe_circle.of_le (by simp)) fun x ↦ Circle.coe_ne_zero (u x)
+
+/-- **The kernel of `dlog` on circle-valued maps is the constants.** On a preconnected manifold, a
+smooth circle-valued map has vanishing logarithmic derivative exactly when it is constant. -/
+theorem mlogDeriv_coe_eq_zero_iff [IsManifold I 1 M] [PreconnectedSpace M]
+    {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
+    mlogDeriv I (fun x ↦ (u x : ℂ)) = 0 ↔ ∃ z : Circle, ∀ x, u x = z := by
+  rw [mlogDeriv_eq_zero_iff_eq_const (u.contMDiff_coe_circle.mdifferentiable (by simp))
+    fun x ↦ Circle.coe_ne_zero (u x)]
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun ⟨z, hz⟩ ↦ ⟨z, fun x ↦ by rw [hz]⟩⟩
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact ⟨1, isEmptyElim⟩
+  · exact ⟨u x₀, fun x ↦ Circle.ext ((hc x).trans (hc x₀).symm)⟩
+
+end Circle
 
 end TauCeti

@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Probability.Independence.Process.Basic
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Mul
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.MeasurableSpace.Sup
 
@@ -445,41 +446,6 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ] (X : Ω �
         (integral_mul_self_condExp_comap_eq_integral_sq_map hW'.aemeasurable
           hg₂_sm.aestronglyMeasurable hμ₂_eq).symm
 
-/-- Two real functions with equal integrals of their squares (`∫ g₁² = ∫ g₂²`) and matching cross
-integral (`∫ g₂ g₁ = ∫ g₁²`) are a.e. equal: the `L²` distance polarises to
-`∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The products `g₁²`, `g₂²`, `g₂ g₁` are assumed
-integrable. -/
-private lemma ae_eq_of_integral_mul_eq_of_integral_sq_eq {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {g₁ g₂ : Ω → ℝ} (hg₁sq : Integrable (fun ω ↦ g₁ ω * g₁ ω) μ)
-    (hg₂sq : Integrable (fun ω ↦ g₂ ω * g₂ ω) μ) (hg₂g₁ : Integrable (fun ω ↦ g₂ ω * g₁ ω) μ)
-    (h_cross : ∫ ω, g₂ ω * g₁ ω ∂μ = ∫ ω, g₁ ω * g₁ ω ∂μ)
-    (h_sq : ∫ ω, g₁ ω * g₁ ω ∂μ = ∫ ω, g₂ ω * g₂ ω ∂μ) :
-    g₁ =ᵐ[μ] g₂ := by
-  have h_L2_zero : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ = 0 := by
-    have h_expand : ∀ᵐ ω ∂μ,
-        (g₂ ω - g₁ ω) ^ 2 = g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
-      filter_upwards with ω
-      ring
-    have hc2_int : Integrable (fun ω ↦ 2 * (g₂ ω * g₁ ω)) μ := hg₂g₁.const_mul 2
-    have hsub_int : Integrable (fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω)) μ := hg₂sq.sub hc2_int
-    have h1 : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ =
-        ∫ ω, g₂ ω * g₂ ω ∂μ - 2 * ∫ ω, g₂ ω * g₁ ω ∂μ + ∫ ω, g₁ ω * g₁ ω ∂μ := by
-      rw [integral_congr_ae h_expand, integral_add hsub_int hg₁sq,
-        integral_sub hg₂sq hc2_int, integral_const_mul]
-    rw [h1, h_cross, h_sq]
-    ring
-  have h_sq_int : Integrable (fun ω ↦ (g₂ ω - g₁ ω) ^ 2) μ := by
-    have h_eq : (fun ω ↦ (g₂ ω - g₁ ω) ^ 2)
-        = fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
-      funext ω
-      ring
-    rw [h_eq]
-    exact (hg₂sq.sub (hg₂g₁.const_mul 2)).add hg₁sq
-  have h_diff_zero : ∀ᵐ ω ∂μ, (g₂ ω - g₁ ω) ^ 2 = 0 :=
-    (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω ↦ sq_nonneg _) h_sq_int).mp h_L2_zero
-  filter_upwards [h_diff_zero] with ω hω
-  exact (sub_eq_zero.mp (sq_eq_zero_iff.mp hω)).symm
-
 /-- The conditional expectation of a `0/1` indicator is bounded by `1` in norm almost everywhere,
 on any sub-σ-algebra: the indicator itself is, and conditioning does not increase the bound. -/
 private lemma ae_norm_condExp_indicator_le_one {Ω : Type*} {m0 : MeasurableSpace Ω}
@@ -492,13 +458,15 @@ private lemma ae_norm_condExp_indicator_le_one {Ω : Type*} {m0 : MeasurableSpac
 `σ(W) ≤ σ(W')` (so `W` is a contraction of `W'`), then conditioning the indicator of `X` on the
 finer `σ(W')` equals conditioning on the coarser `σ(W)`, almost everywhere. -/
 theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω → α) (W W' : Ω → γ)
-    (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
+    (hX : Measurable X) (hW' : Measurable W')
     (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ)
     (h_le : MeasurableSpace.comap W inferInstance ≤ MeasurableSpace.comap W' inferInstance)
     {A : Set α} (hA : MeasurableSet A) :
     μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) | MeasurableSpace.comap W' inferInstance]
       =ᵐ[μ]
     μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
+  have hW : Measurable W :=
+    measurable_iff_comap_le.mpr (h_le.trans (measurable_iff_comap_le.mp hW'))
   have h_sq_eq_raw := integral_sq_condExp_eq_of_pair_law X W W' hX hW hW' h_law hA
   set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) with hφ_def
   let mW : MeasurableSpace Ω := MeasurableSpace.comap W inferInstance
@@ -552,19 +520,14 @@ variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
 the others together, given the same conditioning sigma-algebra. This criterion applies when
 local independence is proved by removing one coordinate from a process. -/
 theorem iCondIndep_of_condIndep_compl
-    (hm : ∀ i, m i ≤ mΩ)
     (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.1)
       (mΩ := mΩ) hm' μ) :
     iCondIndep m' hm' m μ := by
   classical
-  refine (iCondIndep_iff m' hm' m hm μ).2 ?_
   intro s f hf
   induction s using Finset.induction_on with
   | empty =>
-      simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
-        Set.indicator_univ, Finset.prod_empty, condExp_const hm']
-      filter_upwards [] with _
-      rfl
+      exact Filter.Eventually.of_forall fun a => by simp
   | @insert a s ha ih =>
     have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]
         (⋂ j ∈ s, f j) := by
@@ -573,12 +536,9 @@ theorem iCondIndep_of_condIndep_compl
       exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.1)
         ⟨j, fun hja => ha (hja ▸ hj)⟩) (f j)
           (hf j (Finset.mem_insert_of_mem hj))
-    have hfactor := (condIndep_iff m' (m a) (⨆ j : {j : ι // j ≠ a}, m j.1)
-      hm' (hm a) (iSup_le fun j => hm j.1) μ).1 (h a)
-      (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest
-    simpa only [Finset.set_biInter_insert, Finset.prod_insert ha] using
-      hfactor.trans (Filter.EventuallyEq.rfl.mul (ih (fun j hj =>
-        hf j (Finset.mem_insert_of_mem hj))))
+    filter_upwards [h a (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest,
+      ih fun j hj => hf j (Finset.mem_insert_of_mem hj)] with x h1 h2
+    rw [Finset.set_biInter_insert, Finset.prod_insert ha, h1, h2]
 
 end Probability
 
@@ -649,7 +609,7 @@ theorem condIndepFun_domRestrict_of_reindexing {C R D : Set ι} (hRD : R ⊆ D) 
   rintro _ ⟨A, hA, rfl⟩
   rw [sup_eq_left.mpr hRD']
   have hcontr := condExp_indicator_eq_of_law_eq_of_comap_le C.domRestrict W D.domRestrict
-    (Set.measurable_restrict C) hW (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
+    (Set.measurable_restrict C) (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
   exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
     (Set.measurable_restrict D).comap_le hcontr).symm
 
@@ -683,7 +643,7 @@ open MeasureTheory
 
 variable {Ω β β' γ : Type*} {mΩ : MeasurableSpace Ω} [StandardBorelSpace Ω]
   {μ : Measure Ω} [IsFiniteMeasure μ] [MeasurableSpace β] [MeasurableSpace β'] [MeasurableSpace γ]
-  [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace β'] [Nonempty β']
+  [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace β']
   {X : Ω → β} {Z : Ω → β'} {W : Ω → γ}
 
 /-- If `X` and `Z` are conditionally independent given `W`, then the joint law of `((W, Z), X)`
@@ -692,8 +652,11 @@ coordinate `Z` ignored. -/
 theorem CondIndepFun.map_prod_eq_compProd_prodMkRight (hX : Measurable X) (hZ : Measurable Z)
     (hW : Measurable W) (h : Z ⟂ᵢ[W, hW; μ] X) :
     μ.map (fun ω => ((W ω, Z ω), X ω)) =
-      μ.map (fun ω => (W ω, Z ω)) ⊗ₘ (condDistrib X W μ).prodMkRight β' :=
-  (condDistrib_ae_eq_iff_measure_eq_compProd (hW.prodMk hZ).aemeasurable hX.aemeasurable _).1
-    ((condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hX hZ hW).1 h)
+      μ.map (fun ω => (W ω, Z ω)) ⊗ₘ (condDistrib X W μ).prodMkRight β' := by
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω₀⟩⟩
+  · simp [Measure.eq_zero_of_isEmpty μ]
+  · have : Nonempty β' := ⟨Z ω₀⟩
+    exact (condDistrib_ae_eq_iff_measure_eq_compProd (hW.prodMk hZ).aemeasurable
+      hX.aemeasurable _).1 ((condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hX hZ hW).1 h)
 
 end ProbabilityTheory
