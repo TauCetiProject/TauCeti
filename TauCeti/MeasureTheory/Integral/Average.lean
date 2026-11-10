@@ -256,7 +256,7 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
         refine setLAverage_mono_ae s (.of_forall fun x => ?_)
         calc ‖f x - ⨍ y in s, f y ∂μ‖ₑ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ₑ := by
               congr 1; abel
-          _ ≤ ‖f x - c‖ₑ + ‖(⨍ y in s, f y ∂μ) - c‖ₑ := enorm_sub_le
+          _ ≤ ‖f x - c‖ₑ + ‖(⨍ y in s, f y ∂μ) - c‖ₑ := eNorm_sub_le
           _ ≤ ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ := by
             rw [heq]
             gcongr
@@ -585,7 +585,7 @@ theorem setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
   · simp [setLAverage_eq, htop]
   refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
   dsimp only
-  rw [enorm_sub_rev, laverage_congr (ae_of_all _ fun y => enorm_sub_rev (f x) (f y))]
+  rw [eNorm_sub_rev, laverage_congr (ae_of_all _ fun y => eNorm_sub_rev (f x) (f y))]
   exact enorm_setAverage_sub_le_setLAverage hf h0 htop (f x)
 
 omit [CompleteSpace F] in
@@ -610,7 +610,7 @@ theorem setLAverage_setLAverage_enorm_sub_le :
         refine setLAverage_mono_ae s (ae_of_all _ fun y => ?_)
         dsimp only
         rw [← sub_sub_sub_cancel_right (f x) (f y) m]
-        exact enorm_sub_le
+        exact eNorm_sub_le
     _ = A + A := by simp_rw [add_comm _ A, hadd]
     _ = 2 * A := (two_mul A).symm
 
@@ -733,7 +733,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
       MeasureTheory.setIntegral_norm_add_sq_le
         (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _) hHf
   have step4 : ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
 

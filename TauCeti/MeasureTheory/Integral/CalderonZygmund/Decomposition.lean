@@ -355,7 +355,7 @@ theorem lintegral_enorm_calderonZygmundBad_le (f : (ι → ℝ) → E) (q : ℤ 
   rw [lintegral_indicator (measurableSet_dyadicCube q.1 q.2), two_mul]
   calc ∫⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ
       ≤ ∫⁻ x in dyadicCube q.1 q.2, (‖f x‖ₑ + ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ) :=
-        lintegral_mono fun x => enorm_sub_le
+        lintegral_mono fun x => eNorm_sub_le
     _ = (∫⁻ x in dyadicCube q.1 q.2, ‖f x‖ₑ) +
           ∫⁻ _ in dyadicCube q.1 q.2, ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ :=
         lintegral_add_right _ measurable_const

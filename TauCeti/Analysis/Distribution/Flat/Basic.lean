@@ -233,7 +233,7 @@ theorem tendsto_apply_of_normalFlatMass_sub_tendsto_zero {ι : Type*} {l : Filte
     (h : Tendsto (fun i => (Ts i - T).normalFlatMass) l (𝓝 0))
     (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
     Tendsto (fun i => Ts i ω) l (𝓝 (T ω)) := by
-  rw [tendsto_iff_enorm_sub_tendsto_zero]
+  rw [tendsto_iff_eNorm_sub_tendsto_zero]
   have hb : Tendsto (fun i => (Ts i - T).normalFlatMass *
       max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖ₑ
         ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖ₑ) l (𝓝 0) := by

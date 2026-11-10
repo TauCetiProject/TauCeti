@@ -269,7 +269,7 @@ theorem enorm_greenIntegral_le (g : ℝ → X) (t : ℝ) :
       _ = k s := by rw [ENNReal.ofReal_mul (by positivity), ofReal_norm]
   calc ‖greenIntegral A P g t‖ₑ
       ≤ ‖∫ s in Iic t, exp ((t - s) • A) (P (g s))‖ₑ +
-          ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖ₑ := enorm_sub_le
+          ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖ₑ := eNorm_sub_le
     _ ≤ (∫⁻ s in Iic t, k s) + ∫⁻ s in Ioi t, k s := add_le_add h₁ h₂
     _ = ∫⁻ s, k s := by rw [← compl_Iic, lintegral_add_compl _ measurableSet_Iic]
 

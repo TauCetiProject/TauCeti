@@ -206,10 +206,10 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
         (hΩ.mem_nhds (hmem t ht)))
       ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
         hmem).clm_apply continuousOn_const)
-    rw [add_sub_cancel, enorm_sub_rev] at h
+    rw [add_sub_cancel, eNorm_sub_rev] at h
     rw [← lintegral_mul_const' _ _ eNorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
-    simp only [g, indicator_of_mem (hmem t ht), enorm_sub_rev x y]
+    simp only [g, indicator_of_mem (hmem t ht), eNorm_sub_rev x y]
     exact ContinuousLinearMap.le_opENorm _ _
   calc
     ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ≤
@@ -241,9 +241,9 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
       (Measure.restrict_mono hS le_rfl)
   calc
     ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
-      rw [enorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
+      rw [eNorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
       refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans_eq ?_
-      exact congrArg (laverage _) (funext fun y => enorm_sub_rev _ _)
+      exact congrArg (laverage _) (funext fun y => eNorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
 

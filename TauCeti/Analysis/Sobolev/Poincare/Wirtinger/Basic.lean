@@ -118,7 +118,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
       (hcont.eNorm.aemeasurable hΩ.measurableSet) hp
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ hmarg))
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ fun y hy => by
-        simpa only [k, enorm_sub_rev y] using hmarg y hy))
+        simpa only [k, eNorm_sub_rev y] using hmarg y hy))
   -- Assemble the constant.
   have hcK : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) * d ^ (n + 1) / μ.real S) := by
@@ -179,7 +179,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
   -- The kernel bound `∫_{A'} ‖x - y‖ ^ (1 - n) dx ≤ n ω ^ (1 - 1/n) μ(A') ^ (1/n)`.
   set K : ℝ := n * μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹)
   have hkA (y : E) : ∫⁻ x in A', k x y ∂μ ≤ ENNReal.ofReal K * μ A' ^ (n : ℝ)⁻¹ := by
-    simpa only [k, enorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
+    simpa only [k, eNorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖fderiv ℝ u y‖ₑ * k x y)
       ((μ.restrict A').prod (μ.restrict Ω)) :=
     ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).eNorm.aemeasurable

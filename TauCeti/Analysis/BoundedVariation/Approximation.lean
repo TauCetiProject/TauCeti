@@ -162,7 +162,7 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
     simp only [eDist_eq_eNorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
       Pi.zero_apply] at htri
     refine htri.trans (add_le_add (hk n).le ?_)
-    simp only [enorm_sub_rev (u _)]
+    simp only [eNorm_sub_rev (u _)]
     exact le_rfl
   -- Lower semicontinuity and the upper estimate give equality in the limit.
   refine ⟨w, hw, hwlim, TauCeti.tendsto_totalVariationOn_of_le_add

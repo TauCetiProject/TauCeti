@@ -122,11 +122,10 @@ theorem _root_.MeasureTheory.UniformIntegrable.dist_of_memLp_dist {ι : Type*} {
     (hp' : p ≠ ∞) (hT : ∀ i, AEMeasurable (T i) μ) (hS' : AEMeasurable S' μ)
     (hSS' : MemLp (fun x ↦ dist (S x) (S' x)) p μ) :
     UniformIntegrable (fun i x ↦ dist (T i x) (S' x)) p μ := by
-  obtain ⟨hui, C, hC⟩ := h
-  refine ⟨hui.dist_of_memLp_dist hp hp' hT hS' hSS',
-    C + (eLpNorm (fun x ↦ dist (S x) (S' x)) p μ).toNNReal, fun i ↦ ?_⟩
-  rw [ENNReal.coe_add, ENNReal.coe_toNNReal hSS'.eLpNorm_ne_top]
-  exact (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp (hT i) hS').trans (add_le_add_left (hC i) _)
+  refine ⟨h.1.dist_of_memLp_dist hp hp' hT hS' hSS', lt_of_le_of_lt (iSup_le fun i ↦
+    (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp (hT i) hS').trans (add_le_add_left
+      (le_iSup (fun i ↦ eLpNorm (fun x ↦ dist (T i x) (S x)) p μ) i) _)) ?_⟩
+  exact ENNReal.add_lt_top.2 ⟨h.iSup_eLpNorm_lt, hSS'.eLpNorm_lt_top⟩
 
 end MemLp
 

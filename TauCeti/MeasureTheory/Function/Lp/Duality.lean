@@ -160,7 +160,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     calc ‖∫ x, φ x * g x ∂μ‖ₑ
         ≤ ‖∫ x, h x * g x ∂μ‖ₑ + ‖∫ x, (h x - φ x) * g x ∂μ‖ₑ := by
           rw [heq]
-          exact enorm_sub_le
+          exact eNorm_sub_le
       _ ≤ C * eLpNorm g q' μ + eLpNorm (h - ⇑φ) q μ * eLpNorm g q' μ := by
           gcongr
           · exact hC g hgmem

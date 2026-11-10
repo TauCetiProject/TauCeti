@@ -235,7 +235,7 @@ theorem mem_hochschildBimoduleCoboundaries_one_iff
     obtain ⟨x, rfl⟩ := (continuousMultilinearCurryFin0 𝕜 A E).symm.surjective S
     exact ⟨x, fun a ↦ hochschildBimoduleCoboundary_constOfIsEmpty L R x (fun _ ↦ a)⟩
   · rintro ⟨x, hx⟩
-    refine ⟨ContinuousMultilinearMap.constOfIsEmpty (RingHom.id 𝕜) (fun _ : Fin 0 ↦ A) x, ?_⟩
+    refine ⟨ContinuousMultilinearMap.constOfIsEmpty 𝕜 (fun _ : Fin 0 ↦ A) x, ?_⟩
     ext a
     rw [hochschildBimoduleCoboundary_constOfIsEmpty]
     have ha : (fun _ : Fin 1 ↦ a 0) = a :=
@@ -267,7 +267,7 @@ theorem subsingleton_one_iff :
   constructor
   · intro h D hD
     let T : hochschildBimoduleCocycles L R 1 :=
-      ⟨ContinuousMultilinearMap.ofSubsingleton (RingHom.id 𝕜) A E 0 D,
+      ⟨ContinuousMultilinearMap.ofSubsingleton 𝕜 A E 0 D,
         (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff L R D).2 hD⟩
     obtain ⟨x, hx⟩ := (mk_one_eq_zero_iff L R hL hR hLR T).1 (h.elim _ _)
     exact ⟨x, hx⟩

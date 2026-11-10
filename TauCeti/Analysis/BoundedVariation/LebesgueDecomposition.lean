@@ -207,7 +207,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
             hu hfin ν φ
         linarith
       rw [heq, Measure.setLIntegral_rnDeriv hηρ]
-      exact enorm_sub_le.trans (by
+      exact eNorm_sub_le.trans (by
         simpa only [η, _root_.add_apply, add_comm] using add_le_add
           (TestFunction.enorm_integral_inner_le_withDensity U.isOpen.measurableSet hφU hφ ω
             (polarDensity μ Ω u))

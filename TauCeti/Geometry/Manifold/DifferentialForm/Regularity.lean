@@ -202,7 +202,7 @@ theorem contMDiffOn_mextDerivWithin [IsManifold I 2 M] (φ : RoughForm I M F k) 
   have ht : ContDiffWithinAt ℝ n (extDerivWithin (φ.inChartAt x) t) t (extChartAt I x x) := by
     rw [contDiffWithinAt_congr_set hta]
     refine ha.congr_of_eventuallyEq_of_mem ?_ ⟨hxs, mem_extChartAt_target x⟩
-    filter_upwards [nhdsWithin_le_nhds hta.eventuallyEq_nhds] with z hz
+    filter_upwards [nhdsWithin_le_nhds (Filter.Eventually.eventually_nhds hta)] with z hz
     exact extDerivWithin_congr_set hz
   -- Read the section in the bundle chart at `x`; there it is the coordinate expression above.
   rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,

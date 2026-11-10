@@ -187,7 +187,7 @@ theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
       ((laverage_le_essSup _).trans (essSup_le_of_ae_le _ hae))
   refine (laverage_le_essSup _).trans (essSup_le_of_ae_le _ (hae.mono fun y hy => ?_))
   rw [two_mul]
-  exact enorm_sub_le.trans (add_le_add hy havg)
+  exact eNorm_sub_le.trans (add_le_add hy havg)
 
 /-! ### Functions of bounded mean oscillation -/
 

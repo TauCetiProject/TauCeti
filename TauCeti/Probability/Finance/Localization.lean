@@ -102,8 +102,8 @@ theorem uniformIntegrable_linearGrowth_geometricBrownianMotion {ι : Type*} [Cou
   have hUI : UniformIntegrable (fun _ : ι ↦ fun ω ↦ (G ω).toReal) 1 P :=
     uniformIntegrable_const le_rfl ENNReal.one_ne_top (memLp_one_iff_integrable.2 hGiR)
   refine ⟨hUI.1.ae_mono hV hle, ?_⟩
-  obtain ⟨C, hC⟩ := hUI.2
-  exact ⟨C, fun i ↦ (eLpNorm_mono_eNorm_ae (hV i) (hle i)).trans (hC i)⟩
+  exact lt_of_le_of_lt (iSup_le fun i ↦ (eLpNorm_mono_eNorm_ae (hV i) (hle i)).trans
+    (le_iSup (fun _ : ι ↦ eLpNorm (fun ω ↦ (G ω).toReal) 1 P) i)) hUI.iSup_eLpNorm_lt
 
 /-- A continuous terminal extension of a linear-growth price converges in L¹ along bounded
 random times tending almost surely to maturity. Continuity is required only at the terminal

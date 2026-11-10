@@ -126,7 +126,7 @@ private theorem measureLpMultiplicationOperator_continuous {m : α → ℝ≥0}
       calc
         ‖Real.exp (-((t : ℝ) * m a)) • f a - Real.exp (-((s : ℝ) * m a)) • f a‖ₑ
             ≤ ‖Real.exp (-((t : ℝ) * m a)) • f a‖ₑ +
-              ‖Real.exp (-((s : ℝ) * m a)) • f a‖ₑ := enorm_sub_le
+              ‖Real.exp (-((s : ℝ) * m a)) • f a‖ₑ := eNorm_sub_le
         _ ≤ ‖f a‖ₑ + ‖f a‖ₑ := add_le_add (hbound t) (hbound s)
         _ = (2 : ℝ≥0) * ‖f a‖ₑ := by simp [two_mul]
     · filter_upwards with a

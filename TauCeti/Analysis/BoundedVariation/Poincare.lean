@@ -174,7 +174,7 @@ theorem setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn
         filter_upwards [hv] with x hx
         refine lintegral_congr_ae ?_
         filter_upwards [hv] with y hy
-        rw [hx, hy, enorm_sub_rev]
+        rw [hx, hy, eNorm_sub_rev]
     _ ≤ _ := setLIntegral_setLIntegral_enorm_sub_le_of_measurable hconv (hu.congr hv)
         hm.stronglyMeasurable_mk.measurable
 
@@ -190,12 +190,12 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn
     hu.aestronglyMeasurable.mono_measure (Measure.restrict_mono hS le_rfl)
   calc ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, (∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ) * (μ S)⁻¹ ∂μ := lintegral_mono fun x => by
-        rw [enorm_sub_rev, ← div_eq_mul_inv]
+        rw [eNorm_sub_rev, ← div_eq_mul_inv]
         refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans ?_
         rw [setLAverage_eq]
         gcongr ?_ / _
         refine (lintegral_mono_set hS).trans_eq' (lintegral_congr fun y => ?_)
-        exact enorm_sub_rev _ _
+        exact eNorm_sub_rev _ _
     _ = (∫⁻ x in Ω, ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ∂μ) * (μ S)⁻¹ :=
         lintegral_mul_const' _ _ (ENNReal.inv_ne_top.2 hS₀)
     _ ≤ (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u * (μ S)⁻¹ := by
