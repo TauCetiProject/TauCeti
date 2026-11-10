@@ -126,7 +126,7 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
         ht.uniqueDiffOn (subset_closure (ht.interior_eq.symm ▸ hct)) hct (σ.mdifferentiable _)
       rw [(SmoothForm.isClosed_def σ).1 hσ.isClosed, mpullbackWithin_zero] at h
       exact h
-    simpa only [extDerivWithin, extDeriv, fderivWithin_of_isOpen ht hct] using h
+    rwa [← extDerivWithin_of_isOpen ht hct]
   obtain ⟨β, hβs, hβ0, hβ⟩ := htc.exists_contDiffOn_forall_extDeriv_eq ht (r := ⊤) le_top hρs hdρ
   -- `hᵢ(c) = -β_c(eᵢ)` for the standard basis vectors `eᵢ`.
   set h : (ι → ℝ) → ι → ℝ := fun c i ↦ -β c (fun _ ↦ Pi.single i 1) with hh
@@ -152,8 +152,17 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
           (fderiv ℝ β c))) c :=
       hasFDerivAt_pi'.2 fun i ↦ ((ContinuousAlternatingMap.apply ℝ (ι → ℝ) ℝ _).hasFDerivAt.comp
         c ((hβs.differentiableOn (by simp)).differentiableAt (ht.mem_nhds hct)).hasFDerivAt).neg
-    rw [hd.fderiv, ContinuousAlternatingMap.apply_const_eq_sum_single, dotProduct,
-      ← Finset.sum_neg_distrib]
+    -- Expand the one-form `dβ(w)` in the standard basis: `dβ(w)(w') = ∑ᵢ w'ᵢ dβ(w)(eᵢ)`.
+    have hA : fderiv ℝ β c w (fun _ ↦ w') =
+        ∑ i, w' i * fderiv ℝ β c w (fun _ ↦ Pi.single i 1) := by
+      have h := ((ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℝ) ℝ (0 : Fin 1)).symm
+        (fderiv ℝ β c w)).toLinearMap.pi_apply_eq_sum_univ w'
+      simp only [ContinuousLinearMap.coe_coe,
+        ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, smul_eq_mul] at h
+      rw [h]
+      congr! with i _ _ j
+      simp [Pi.single_apply, eq_comm]
+    rw [hd.fderiv, hA, dotProduct, ← Finset.sum_neg_distrib]
     simp [mul_comm]
   rw [h1, extDeriv_apply_pair, h3, h3]
   ring
