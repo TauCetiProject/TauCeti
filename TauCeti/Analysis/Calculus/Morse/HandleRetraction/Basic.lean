@@ -33,8 +33,11 @@ with `‖u‖² ≤ ε` move along `(u, t v)` and end on the cell, points with
 `ε ≤ ‖u‖² ≤ ‖v‖² + ε` end on the level `-‖u‖² + ‖v‖² = -ε`, and points of the lower sublevel stay
 fixed.
 
-At every time the deformation multiplies `v` by a scalar in `[0, 1]`
-(`TauCeti.exists_quadraticHandleDeformation_apply_eq_smul`). Hence it preserves every set whose
+At every time the deformation multiplies `v` by a scalar in `[0, 1]`, namely
+`(1 - t) min 1 (√(‖u‖² - ε) / ‖v‖) + t` (`TauCeti.quadraticHandleDeformation_apply_eq_smul`,
+`TauCeti.exists_quadraticHandleDeformation_apply_eq_smul`). This scalar depends only on `‖u‖`
+and `‖v‖`, which is what lets the deformation run fibrewise in a sum of normed vector bundles.
+Hence it preserves every set whose
 fibres `{v | (u, v) ∈ X}` are star-shaped about the origin, and
 `X ∩ quadraticSublevelUnionCell ε` is a strong deformation retract of each such `X`
 (`TauCeti.exists_inter_quadraticSublevelUnionCell_deformation`). Such sets include every sublevel
@@ -168,16 +171,29 @@ theorem quadraticHandleDeformation_apply (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
       (z.1, (1 - (t : ℝ)) • radialRetraction √(‖z.1‖ ^ 2 - ε) z.2 + (t : ℝ) • z.2) :=
   (rfl)
 
-/-- At every time, the deformation keeps `u` and multiplies `v` by a scalar in `[0, 1]`. -/
-theorem exists_quadraticHandleDeformation_apply_eq_smul (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
-    ∃ s ∈ Icc (0 : ℝ) 1, quadraticHandleDeformation ε (t, z) = (z.1, s • z.2) := by
+/-- At time `t` the deformation multiplies `v` by `(1 - t) min 1 (√(‖u‖² - ε) / ‖v‖) + t`. -/
+theorem quadraticHandleDeformation_apply_eq_smul (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
+    quadraticHandleDeformation ε (t, z) =
+      (z.1, ((1 - (t : ℝ)) * min 1 (√(‖z.1‖ ^ 2 - ε) / ‖z.2‖) + t) • z.2) := by
+  rw [quadraticHandleDeformation_apply, radialRetraction_def, smul_smul, ← add_smul]
+
+omit [NormedSpace ℝ Eₛ] in
+/-- The scalar `(1 - t) min 1 (√(‖u‖² - ε) / ‖v‖) + t` by which the deformation multiplies `v` lies
+in `[0, 1]`. -/
+theorem mem_Icc_quadraticHandleDeformation_scalar (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
+    (1 - (t : ℝ)) * min 1 (√(‖z.1‖ ^ 2 - ε) / ‖z.2‖) + t ∈ Icc (0 : ℝ) 1 := by
   set a := min 1 (√(‖z.1‖ ^ 2 - ε) / ‖z.2‖)
   have ha₀ : 0 ≤ a := le_min zero_le_one (by positivity)
   have ha₁ : a ≤ 1 := min_le_left _ _
   have ht₀ : (0 : ℝ) ≤ t := nonneg t
   have ht₁ : (t : ℝ) ≤ 1 := le_one t
-  refine ⟨(1 - t) * a + t, ⟨by nlinarith, by nlinarith⟩, ?_⟩
-  rw [quadraticHandleDeformation_apply, radialRetraction_def, smul_smul, ← add_smul]
+  exact ⟨by nlinarith, by nlinarith⟩
+
+/-- At every time, the deformation keeps `u` and multiplies `v` by a scalar in `[0, 1]`. -/
+theorem exists_quadraticHandleDeformation_apply_eq_smul (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
+    ∃ s ∈ Icc (0 : ℝ) 1, quadraticHandleDeformation ε (t, z) = (z.1, s • z.2) :=
+  ⟨_, mem_Icc_quadraticHandleDeformation_scalar ε t z,
+    quadraticHandleDeformation_apply_eq_smul ε t z⟩
 
 /-- The deformation never increases the norm of the positive component `v`. -/
 theorem norm_snd_quadraticHandleDeformation_apply_le (ε : ℝ) (t : I) (z : Eᵤ × Eₛ) :
