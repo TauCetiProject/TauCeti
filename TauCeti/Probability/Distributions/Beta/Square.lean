@@ -31,8 +31,10 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
 
-/-- On `(-1, 1)`, the symmetric Beta density of shape `a` at `(z + 1) / 2` is
-`2 * (1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)`. -/
+/-- On `(-1, 1)`, the function `betaPDFReal a a` at `(z + 1) / 2` is
+`2 * (1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)`, for every real `a`. For positive `a` this is the
+symmetric Beta probability density of shape `a`; for other `a` the expression can be negative,
+so it is not a density. -/
 theorem betaPDFReal_self_add_one_div_two (a : ℝ) {z : ℝ} (hz : z ∈ Ioo (-1) 1) :
     betaPDFReal a a ((z + 1) / 2) = 2 * ((1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a) := by
   have hx : 0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1 := by constructor <;> linarith [hz.1, hz.2]
