@@ -46,8 +46,9 @@ of `α` (`α.sublists'.revzip`), of `B (∂^s f x) (∂^t g x)`
 (`ContinuousLinearMap.coordinateDeriv_of_bilinear`,
 `ContinuousLinearMap.mixedDeriv_of_bilinear`). This is what gives the product estimates of the
 symbol calculus. Its first-order case for a pointwise composition of continuous linear maps is
-`TauCeti.coordinateDeriv_singleton_clm_comp`, which gives the derivative `∂_j φ = -φ (∂_j ψ) φ` of
-a family `φ` of inverses of `ψ` (`TauCeti.coordinateDeriv_eq_neg_comp_of_comp_eq_id`).
+`TauCeti.coordinateDeriv_singleton_clm_comp`. The derivative `∂_j φ = -φ (∂_j ψ) φ` of a family
+`φ` of inverses of `ψ` is `TauCeti.coordinateDeriv_eq_neg_comp_of_comp_eq_id`, the coordinate form
+of `TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`.
 
 ## Main declarations
 
