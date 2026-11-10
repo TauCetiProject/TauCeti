@@ -63,7 +63,9 @@ rotation of the end at `∞` under `σ`. The main results are:
   integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
   along any map, where `|H_q| ≤ B_q`; the bound does not depend on `c`. The symplectic vector
   space case (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`)
-  is the case of the constant form `TauCeti.SymplecticForm.constSmooth`.
+  is the case of the constant form `TauCeti.SymplecticForm.constSmooth`. Hence the integral of
+  the curvature over any set has absolute value at most `B₀ + B₁ + B_∞`
+  (`TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le`).
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
 vanishes on the disc of radius `2 exp (2π)` about `c`, so for `0 ≤ c ≤ 1` the two parts have
@@ -542,6 +544,24 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Smoot
         add_le_add hBin le_rfl
     _ = ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ]
+
+/-- The integral of the curvature of the member `c ∈ [0, 1]` of the input-exchange family along
+any map into a manifold, over any set, has absolute value at most `B₀ + B₁ + B_∞` when
+`|H_q| ≤ B_q`. -/
+theorem abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → M)
+    (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, B q := by
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
+  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
+    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
+  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u))
 
 end TauCeti.SmoothTwoForm
 
