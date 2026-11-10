@@ -65,7 +65,7 @@ public section
 
 noncomputable section
 
-open Filter ProbabilityTheory Real Set
+open Filter MeasureTheory ProbabilityTheory Real Set
 open scoped Topology
 
 namespace TauCeti.BlackScholes
@@ -131,19 +131,44 @@ theorem putValue_maturity_zero (s r σ K : ℝ) : putValue s r σ K 0 = (K - s)�
 
 /-- At every remaining maturity `τ ≥ 0`, including maturity itself, the risk-neutral price of the
 call payoff `(x - K)⁺` is the extended call price. -/
-theorem riskNeutralPrice_call_eq_callValue (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
+theorem riskNeutralPrice_call_eq_callValue (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
     riskNeutralPrice (fun x ↦ (x - K)⁺) s r σ τ = callValue s r σ K τ := by
   rcases hτ.eq_or_lt with rfl | hτ
   · rw [riskNeutralPrice_zero, callValue_maturity_zero]
+  rcases lt_or_ge 0 s with hs | hs
   · rw [riskNeutralPrice_call hs hσ hK hτ, callValue_of_pos hs hτ]
+  · -- For a nonpositive spot the terminal spot is nonpositive, so the call payoff vanishes.
+    have hS : ∀ z, terminalSpot s r σ τ z ≤ 0 := fun z ↦ by
+      rw [terminalSpot_def]
+      exact mul_nonpos_of_nonpos_of_nonneg hs (exp_pos _).le
+    have h0 : ∀ z, (terminalSpot s r σ τ z - K)⁺ = 0 := fun z ↦
+      posPart_eq_zero.2 (by linarith [hS z])
+    rw [riskNeutralPrice_def, callValue_of_nonpos (Or.inl hs)]
+    simp only [h0, integral_zero, mul_zero]
+    exact (posPart_eq_zero.2 (by nlinarith [mul_pos hK (exp_pos (-r * τ))])).symm
 
 /-- At every remaining maturity `τ ≥ 0`, including maturity itself, the risk-neutral price of the
 put payoff `(K - x)⁺` is the extended put price. -/
-theorem riskNeutralPrice_put_eq_putValue (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
+theorem riskNeutralPrice_put_eq_putValue (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 ≤ τ) :
     riskNeutralPrice (fun x ↦ (K - x)⁺) s r σ τ = putValue s r σ K τ := by
   rcases hτ.eq_or_lt with rfl | hτ
   · rw [riskNeutralPrice_zero, putValue_maturity_zero]
+  rcases lt_or_ge 0 s with hs | hs
   · rw [riskNeutralPrice_put hs hσ hK hτ, putValue_of_pos hs hτ]
+  · -- For a nonpositive spot the put is exercised at every terminal spot.
+    have hS : ∀ z, terminalSpot s r σ τ z ≤ 0 := fun z ↦ by
+      rw [terminalSpot_def]
+      exact mul_nonpos_of_nonpos_of_nonneg hs (exp_pos _).le
+    have hpay : ∀ z, (K - terminalSpot s r σ τ z)⁺ = K - terminalSpot s r σ τ z := fun z ↦
+      posPart_eq_self.2 (by linarith [hS z])
+    have hid := riskNeutralPrice_id s r σ hτ.le
+    simp only [riskNeutralPrice_def, id_eq] at hid
+    rw [riskNeutralPrice_def, putValue_of_nonpos (Or.inl hs),
+      posPart_eq_self.2 (by nlinarith [mul_pos hK (exp_pos (-r * τ))])]
+    simp only [hpay]
+    rw [integral_sub (integrable_const K) (integrable_terminalSpot s r σ τ), integral_const,
+      probReal_univ, one_smul]
+    linear_combination -hid
 
 /-- **Call boundary at zero spot.** For a nonnegative strike the extended call vanishes at zero
 spot. -/
@@ -176,10 +201,10 @@ theorem putValue_eq_callValue (s r σ K τ : ℝ) :
 /-! ### No-arbitrage bounds -/
 
 /-- The extended call is nonnegative. -/
-theorem callValue_nonneg (hσ : 0 < σ) (hK : 0 < K) (s r τ : ℝ) : 0 ≤ callValue s r σ K τ := by
+theorem callValue_nonneg (hσ : 0 < σ) (s r τ : ℝ) : 0 ≤ callValue s r σ K τ := by
   by_cases h : 0 < s ∧ 0 < τ
   · rw [callValue_of_pos h.1 h.2]
-    exact callPrice_nonneg h.1 hσ hK h.2
+    exact callPrice_nonneg h.1 hσ h.2
   · rw [callValue_of_nonpos (by contrapose! h; exact h)]
     exact posPart_nonneg _
 
@@ -187,7 +212,7 @@ theorem callValue_nonneg (hσ : 0 < σ) (hK : 0 < K) (s r τ : ℝ) : 0 ≤ call
 theorem putValue_nonneg (hσ : 0 < σ) (hK : 0 < K) (s r τ : ℝ) : 0 ≤ putValue s r σ K τ := by
   by_cases h : 0 < s ∧ 0 < τ
   · rw [putValue_of_pos h.1 h.2]
-    exact putPrice_nonneg h.1 hσ hK h.2
+    exact putPrice_nonneg hσ hK h.2
   · rw [putValue_of_nonpos (by contrapose! h; exact h)]
     exact posPart_nonneg _
 
@@ -233,13 +258,13 @@ theorem continuous_callValue (hσ : 0 < σ) (hK : 0 < K) :
   rcases le_or_gt s 0 with hs | hs
   · -- At nonpositive spot, squeeze between `0` and `s⁺`, which tends to `0`.
     have hval : callValue s r σ K τ = 0 := le_antisymm
-      (callValue_le_posPart hK.le |>.trans (posPart_eq_zero.2 hs).le) (callValue_nonneg hσ hK s r τ)
+      (callValue_le_posPart hK.le |>.trans (posPart_eq_zero.2 hs).le) (callValue_nonneg hσ s r τ)
     have hpos : Tendsto (fun p : ℝ × ℝ => p.1⁺) (𝓝 (s, τ)) (𝓝 0) := by
       have : Continuous fun p : ℝ × ℝ => p.1⁺ := by simp only [posPart_def]; fun_prop
       simpa [posPart_eq_zero.2 hs] using this.tendsto (s, τ)
     rw [ContinuousAt, hval]
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hpos
-      (fun p => callValue_nonneg hσ hK p.1 r p.2) fun p => callValue_le_posPart hK.le
+      (fun p => callValue_nonneg hσ p.1 r p.2) fun p => callValue_le_posPart hK.le
   rcases lt_trichotomy τ 0 with hτ | rfl | hτ
   · -- Before the domain in time, the extended call is locally the intrinsic value.
     refine ((continuous_callIntrinsic r K).continuousAt).congr ?_
@@ -260,7 +285,7 @@ theorem continuous_callValue (hσ : 0 < σ) (hK : 0 < K) :
       exact (callValue_of_pos hp.1 hp.2).symm
   · -- In the interior, the extended call is locally the closed form.
     refine (continuousAt_fst.callPrice continuousAt_snd
-      hs.ne' hK.ne' hσ.ne' hτ (r := r)).congr ?_
+      hs.ne' hτ (r := r) (σ := σ) (K := K)).congr ?_
     filter_upwards [(isOpen_Ioi.prod isOpen_Ioi).mem_nhds (mk_mem_prod hs hτ)] with p hp
     exact (callValue_of_pos hp.1 hp.2).symm
 
@@ -296,7 +321,7 @@ theorem callValue_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht
 /-- **The Black–Scholes equation for the extended put.** In calendar time `t < T` and at spot
 `s > 0`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
 `∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0`. -/
-theorem putValue_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht : t < T) :
+theorem putValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     deriv (fun u => putValue s r σ K (T - u)) t +
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putValue x r σ K (T - t)) s +
       r * (s * deriv (fun x => putValue x r σ K (T - t)) s - putValue s r σ K (T - t)) = 0 := by
@@ -310,6 +335,23 @@ theorem putValue_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht 
     filter_upwards [Iio_mem_nhds ht] with u hu
     exact putValue_of_pos hs (sub_pos.2 hu)
   rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, putValue_of_pos hs hτ]
-  exact putPrice_pde hs hK hσ ht
+  by_cases hσ : σ = 0
+  · -- Without volatility `d₋ = 0`, so the put is `(K e^{-rτ} - s) / 2`.
+    have hform : ∀ x u, putPrice x r σ K u = (K * exp (-r * u) - x) / 2 := fun x u ↦ by
+      simp [putPrice_def, dMinus_def, dPlus_def, hσ,
+        TauCeti.Probability.cdf_gaussianReal_self 0 one_ne_zero]
+      ring
+    have hu : deriv (fun u => (K * exp (-r * (T - u)) - s) / 2) t =
+        K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
+      ((((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).div_const
+        2).deriv
+    have hx : deriv (fun x => (K * exp (-r * (T - t)) - x) / 2) = fun _ => -1 / 2 := by
+      ext x
+      exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
+    simp only [hform]
+    rw [hu, hx]
+    simp
+    ring
+  · exact putPrice_pde hs hK hσ ht
 
 end TauCeti.BlackScholes

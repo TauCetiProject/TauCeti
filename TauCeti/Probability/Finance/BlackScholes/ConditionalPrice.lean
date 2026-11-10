@@ -132,7 +132,7 @@ to `ℱ`, and `u ≤ t`, the extended Black–Scholes call price at the spot `S_
 maturity `t - u` is the discounted conditional expected payoff `e^{-r (t - u)} E[(S_t - K)⁺ | ℱ_u]`.
 -/
 theorem callValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hs : 0 < s) (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) (hut : u ≤ t) :
+    (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) (hut : u ≤ t) :
     (fun ω ↦ callValue (geometricBrownianMotion s r σ W u ω) r σ K (t - u)) =ᵐ[P]
       fun ω ↦ exp (-r * (t - u)) *
         P[fun ω ↦ (geometricBrownianMotion s r σ W t ω - K)⁺ | ℱ u] ω := by
@@ -143,7 +143,7 @@ theorem callValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownian
     (by fun_prop : Continuous fun x : ℝ ↦ (x - K)⁺).measurable
   filter_upwards [hW.riskNeutralPrice_eq_condExp_geometricBrownianMotion s r σ hh hut hint]
     with ω hω
-  rw [← hω, riskNeutralPrice_call_eq_callValue (geometricBrownianMotion_pos hs r σ W u ω) hσ hK
+  rw [← hω, riskNeutralPrice_call_eq_callValue hσ hK
     (sub_nonneg.2 (NNReal.coe_le_coe.2 hut))]
 
 /-- **The put value process.** For a stock with drift `r` driven by a Brownian motion relative
@@ -151,7 +151,7 @@ to `ℱ`, and `u ≤ t`, the extended Black–Scholes put price at the spot `S_u
 maturity `t - u` is the discounted conditional expected payoff `e^{-r (t - u)} E[(K - S_t)⁺ | ℱ_u]`.
 -/
 theorem putValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hs : 0 < s) (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) (hut : u ≤ t) :
+    (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) (hut : u ≤ t) :
     (fun ω ↦ putValue (geometricBrownianMotion s r σ W u ω) r σ K (t - u)) =ᵐ[P]
       fun ω ↦ exp (-r * (t - u)) *
         P[fun ω ↦ (K - geometricBrownianMotion s r σ W t ω)⁺ | ℱ u] ω := by
@@ -162,7 +162,7 @@ theorem putValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianR
     (by fun_prop : Continuous fun x : ℝ ↦ (K - x)⁺).measurable
   filter_upwards [hW.riskNeutralPrice_eq_condExp_geometricBrownianMotion s r σ hh hut hint]
     with ω hω
-  rw [← hω, riskNeutralPrice_put_eq_putValue (geometricBrownianMotion_pos hs r σ W u ω) hσ hK
+  rw [← hω, riskNeutralPrice_put_eq_putValue hσ hK
     (sub_nonneg.2 (NNReal.coe_le_coe.2 hut))]
 
 /-! ### Conditional prices under the risk-neutral measure -/
@@ -191,7 +191,7 @@ and remaining maturity `T - u` is the discounted conditional expected payoff
 `e^{-r (T - u)} E_Q[(S_T - K)⁺ | ℱ_u]` under the risk-neutral measure
 `Q = P.tilted (-κ W_T ·)`, `κ = (μ - r) / σ`. -/
 theorem callValue_eq_condExp_tilted_geometricBrownianMotion
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hs : 0 < s) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
     (huT : u ≤ T) :
     (fun ω ↦ callValue (geometricBrownianMotion s μ σ W u ω) r σ K (T - u)) =ᵐ[
       P.tilted fun ω ↦ -((μ - r) / σ) * W T ω] fun ω ↦ exp (-r * (T - u)) *
@@ -200,7 +200,7 @@ theorem callValue_eq_condExp_tilted_geometricBrownianMotion
   simp_rw [geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' huT,
     geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' (le_refl T)]
   exact (hW.sub_mul_min_tilted_mul_eval _ T).callValue_eq_condExp_geometricBrownianMotion
-    hs r hσ hK huT
+    r hσ hK huT
 
 /-- **The put value process in the Black–Scholes market.** For a stock with drift `μ` and
 volatility `σ > 0` under `P`, and `u ≤ T`, the extended Black–Scholes put price at the spot `S_u`
@@ -208,7 +208,7 @@ and remaining maturity `T - u` is the discounted conditional expected payoff
 `e^{-r (T - u)} E_Q[(K - S_T)⁺ | ℱ_u]` under the risk-neutral measure
 `Q = P.tilted (-κ W_T ·)`, `κ = (μ - r) / σ`. -/
 theorem putValue_eq_condExp_tilted_geometricBrownianMotion
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hs : 0 < s) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
     (huT : u ≤ T) :
     (fun ω ↦ putValue (geometricBrownianMotion s μ σ W u ω) r σ K (T - u)) =ᵐ[
       P.tilted fun ω ↦ -((μ - r) / σ) * W T ω] fun ω ↦ exp (-r * (T - u)) *
@@ -217,6 +217,6 @@ theorem putValue_eq_condExp_tilted_geometricBrownianMotion
   simp_rw [geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' huT,
     geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' (le_refl T)]
   exact (hW.sub_mul_min_tilted_mul_eval _ T).putValue_eq_condExp_geometricBrownianMotion
-    hs r hσ hK huT
+    r hσ hK huT
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

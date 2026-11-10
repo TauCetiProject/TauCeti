@@ -138,32 +138,32 @@ theorem memLp_discounted_riskNeutralPrice (hW : IsFilteredPreBrownianReal ℱ W 
 /-! ### The call and the put -/
 
 /-- Before maturity, the stopped call value is the risk-neutral price of the call payoff. -/
-private theorem callValue_min_eq_riskNeutralPrice (hs : 0 < s) (r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
+private theorem callValue_min_eq_riskNeutralPrice (r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
     (u : ℝ≥0) (ω : Ω) :
     callValue (geometricBrownianMotion s r σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0)) =
       riskNeutralPrice (fun x ↦ (x - K)⁺) (geometricBrownianMotion s r σ W (min u T) ω) r σ
         (T - (min u T : ℝ≥0)) :=
-  (riskNeutralPrice_call_eq_callValue (geometricBrownianMotion_pos hs r σ W _ ω) hσ hK
+  (riskNeutralPrice_call_eq_callValue hσ hK
     (sub_nonneg.2 (NNReal.coe_le_coe.2 (min_le_right u T)))).symm
 
 /-- Before maturity, the stopped put value is the risk-neutral price of the put payoff. -/
-private theorem putValue_min_eq_riskNeutralPrice (hs : 0 < s) (r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
+private theorem putValue_min_eq_riskNeutralPrice (r : ℝ) (hσ : 0 < σ) (hK : 0 < K)
     (u : ℝ≥0) (ω : Ω) :
     putValue (geometricBrownianMotion s r σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0)) =
       riskNeutralPrice (fun x ↦ (K - x)⁺) (geometricBrownianMotion s r σ W (min u T) ω) r σ
         (T - (min u T : ℝ≥0)) :=
-  (riskNeutralPrice_put_eq_putValue (geometricBrownianMotion_pos hs r σ W _ ω) hσ hK
+  (riskNeutralPrice_put_eq_putValue hσ hK
     (sub_nonneg.2 (NNReal.coe_le_coe.2 (min_le_right u T)))).symm
 
 /-- **The discounted call value is a martingale.** For a stock with drift `r` and volatility
 `σ > 0` driven by a Brownian motion relative to `ℱ`, the discounted Black–Scholes call value
 `e^{-r u} C(S_u, T - u)`, stopped at the maturity `T`, is a martingale relative to `ℱ`. -/
-theorem martingale_discounted_callValue (hW : IsFilteredPreBrownianReal ℱ W P) (hs : 0 < s)
+theorem martingale_discounted_callValue (hW : IsFilteredPreBrownianReal ℱ W P)
     (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
     Martingale (fun u ω ↦ exp (-r * (min u T : ℝ≥0)) *
       callValue (geometricBrownianMotion s r σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0))) ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  simp_rw [callValue_min_eq_riskNeutralPrice hs r hσ hK]
+  simp_rw [callValue_min_eq_riskNeutralPrice r hσ hK]
   exact hW.martingale_discounted_riskNeutralPrice s r σ
     (by fun_prop : Continuous fun x : ℝ ↦ (x - K)⁺).measurable
     ((hW.integrable_geometricBrownianMotion s r σ T).sub (integrable_const K)).pos_part
@@ -171,12 +171,12 @@ theorem martingale_discounted_callValue (hW : IsFilteredPreBrownianReal ℱ W P)
 /-- **The discounted put value is a martingale.** For a stock with drift `r` and volatility
 `σ > 0` driven by a Brownian motion relative to `ℱ`, the discounted Black–Scholes put value
 `e^{-r u} P(S_u, T - u)`, stopped at the maturity `T`, is a martingale relative to `ℱ`. -/
-theorem martingale_discounted_putValue (hW : IsFilteredPreBrownianReal ℱ W P) (hs : 0 < s)
+theorem martingale_discounted_putValue (hW : IsFilteredPreBrownianReal ℱ W P)
     (r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
     Martingale (fun u ω ↦ exp (-r * (min u T : ℝ≥0)) *
       putValue (geometricBrownianMotion s r σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0))) ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  simp_rw [putValue_min_eq_riskNeutralPrice hs r hσ hK]
+  simp_rw [putValue_min_eq_riskNeutralPrice r hσ hK]
   exact hW.martingale_discounted_riskNeutralPrice s r σ
     (by fun_prop : Continuous fun x : ℝ ↦ (K - x)⁺).measurable
     ((integrable_const K).sub (hW.integrable_geometricBrownianMotion s r σ T)).pos_part
@@ -192,10 +192,10 @@ theorem memLp_discounted_callValue (hW : IsFilteredPreBrownianReal ℱ W P) (hs 
   -- `0 ≤ C(S, τ) ≤ S`, and `S` has finite moments of every finite order.
   refine ((hW.memLp_geometricBrownianMotion s r σ (min u T) hp).const_mul
     (exp (-r * (min u T : ℝ≥0)))).of_le
-    (((hW.martingale_discounted_callValue hs r hσ hK).stronglyMeasurable u).mono
+    (((hW.martingale_discounted_callValue r hσ hK).stronglyMeasurable u).mono
       (ℱ.le u)).aestronglyMeasurable (Eventually.of_forall fun ω ↦ ?_)
   have hS := geometricBrownianMotion_pos hs r σ W (min u T) ω
-  rw [Real.norm_of_nonneg (mul_nonneg (exp_pos _).le (callValue_nonneg hσ hK _ _ _)),
+  rw [Real.norm_of_nonneg (mul_nonneg (exp_pos _).le (callValue_nonneg hσ _ _ _)),
     Real.norm_of_nonneg (by positivity)]
   exact mul_le_mul_of_nonneg_left (callValue_le hS.le hK.le) (exp_pos _).le
 
@@ -210,7 +210,7 @@ theorem memLp_discounted_putValue (hW : IsFilteredPreBrownianReal ℱ W P) (hs :
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   -- `0 ≤ P(S, τ) ≤ K e^{-r τ}`, and the discount factors combine to `e^{-r T}`.
   refine MemLp.of_bound
-    (((hW.martingale_discounted_putValue hs r hσ hK).stronglyMeasurable u).mono
+    (((hW.martingale_discounted_putValue r hσ hK).stronglyMeasurable u).mono
       (ℱ.le u)).aestronglyMeasurable (K * exp (-r * T)) (Eventually.of_forall fun ω ↦ ?_)
   have hS := geometricBrownianMotion_pos hs r σ W (min u T) ω
   rw [Real.norm_of_nonneg (mul_nonneg (exp_pos _).le (putValue_nonneg hσ hK _ _ _))]
@@ -230,12 +230,12 @@ volatility `σ > 0` under `P`, driven by a Brownian motion relative to `ℱ`, an
 The discounted Black–Scholes call value `e^{-r u} C(S_u, T - u)`, stopped at `T`, is a martingale
 relative to `ℱ` under `Q`. -/
 theorem martingale_discounted_callValue_tilted (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hs : 0 < s) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
+    (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
     Martingale (fun u ω ↦ exp (-r * (min u T : ℝ≥0)) *
       callValue (geometricBrownianMotion s μ σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0))) ℱ
       (P.tilted fun ω ↦ -((μ - r) / σ) * W T ω) := by
   simp_rw [geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' (min_le_right _ T)]
-  exact (hW.sub_mul_min_tilted_mul_eval _ T).martingale_discounted_callValue hs r hσ hK
+  exact (hW.sub_mul_min_tilted_mul_eval _ T).martingale_discounted_callValue r hσ hK
 
 /-- **The discounted put value is a risk-neutral martingale.** Let the stock have drift `μ` and
 volatility `σ > 0` under `P`, driven by a Brownian motion relative to `ℱ`, and let
@@ -243,12 +243,12 @@ volatility `σ > 0` under `P`, driven by a Brownian motion relative to `ℱ`, an
 The discounted Black–Scholes put value `e^{-r u} P(S_u, T - u)`, stopped at `T`, is a martingale
 relative to `ℱ` under `Q`. -/
 theorem martingale_discounted_putValue_tilted (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hs : 0 < s) (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
+    (μ r : ℝ) (hσ : 0 < σ) (hK : 0 < K) :
     Martingale (fun u ω ↦ exp (-r * (min u T : ℝ≥0)) *
       putValue (geometricBrownianMotion s μ σ W (min u T) ω) r σ K (T - (min u T : ℝ≥0))) ℱ
       (P.tilted fun ω ↦ -((μ - r) / σ) * W T ω) := by
   simp_rw [geometricBrownianMotion_eq_riskNeutral s μ r hσ.ne' (min_le_right _ T)]
-  exact (hW.sub_mul_min_tilted_mul_eval _ T).martingale_discounted_putValue hs r hσ hK
+  exact (hW.sub_mul_min_tilted_mul_eval _ T).martingale_discounted_putValue r hσ hK
 
 /-- **The discounted call value has finite risk-neutral moments.** In the Black–Scholes market
 with stock drift `μ`, volatility `σ > 0` and risk-neutral measure `Q = P.tilted (-κ W_T ·)`,

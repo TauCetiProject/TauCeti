@@ -82,12 +82,13 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ by
       -- `|C - callValue| ≤ |C| + callValue ≤ A (1 + s) + s`, since `0 ≤ callValue ≤ s`.
       linarith [abs_sub (C s t) (callValue s r σ K (T - t)), hgrowth hs ht,
-        abs_of_nonneg (callValue_nonneg hσ hK s r (T - t)),
+        abs_of_nonneg (callValue_nonneg (K := K) hσ s r (T - t)),
         callValue_le (r := r) (σ := σ) (τ := T - t) hs.le hK.le])
-    hcd (fun s hs t ht ↦ contDiffAt_id.callValue contDiffAt_const hs hK.ne' hσ.ne' (sub_pos.2 ht.2))
+    hcd (fun s hs t ht ↦
+      contDiffAt_id.callValue contDiffAt_const hs (sub_pos.2 ht.2) (r := r) (σ := σ) (K := K))
     hdiff
-    (fun s hs t ht ↦ (contDiffAt_const.callValue (contDiffAt_const.sub contDiffAt_id) hs hK.ne'
-      hσ.ne' (sub_pos.2 ht.2) (n := 1)).differentiableAt one_ne_zero)
+    (fun s hs t ht ↦ (contDiffAt_const.callValue (contDiffAt_const.sub contDiffAt_id) hs
+      (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
     (fun s hs t ht ↦ (hpde hs ht).trans (callValue_pde hs hK hσ.ne' ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, callValue_maturity_zero])
 
@@ -120,11 +121,12 @@ theorem eq_putValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
         (putValue_le hs.le hK.le).trans (mul_le_mul_of_nonneg_left hexp hK.le)
       have hKs : 0 ≤ K * exp (|r| * T) * s := by positivity
       linarith [abs_sub (C s t) (putValue s r σ K (T - t)), hgrowth hs ht, abs_of_nonneg hP])
-    hcd (fun s hs t ht ↦ contDiffAt_id.putValue contDiffAt_const hs hK.ne' hσ.ne' (sub_pos.2 ht.2))
+    hcd (fun s hs t ht ↦
+      contDiffAt_id.putValue contDiffAt_const hs (sub_pos.2 ht.2) (r := r) (σ := σ) (K := K))
     hdiff
-    (fun s hs t ht ↦ (contDiffAt_const.putValue (contDiffAt_const.sub contDiffAt_id) hs hK.ne'
-      hσ.ne' (sub_pos.2 ht.2) (n := 1)).differentiableAt one_ne_zero)
-    (fun s hs t ht ↦ (hpde hs ht).trans (putValue_pde hs hK hσ.ne' ht.2).symm)
+    (fun s hs t ht ↦ (contDiffAt_const.putValue (contDiffAt_const.sub contDiffAt_id) hs
+      (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
+    (fun s hs t ht ↦ (hpde hs ht).trans (putValue_pde hs hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, putValue_maturity_zero])
 
 end TauCeti.BlackScholes

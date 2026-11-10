@@ -99,7 +99,7 @@ theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (tendsto_nhdsWithin_of_tendsto_nhds (f := fun x => x) tendsto_id) ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact callPrice_nonneg hx hσ hK hτ
+    exact callPrice_nonneg hx hσ hτ
   · filter_upwards [self_mem_nhdsWithin] with x hx
     exact callPrice_le (le_of_lt hx) hK.le
 
@@ -131,7 +131,7 @@ theorem tendsto_putPrice_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
       (K * exp (-r * τ))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h ?_ ?_
   · filter_upwards [eventually_gt_atTop 0] with x hx
-    exact putPrice_nonneg hx hσ hK hτ
+    exact putPrice_nonneg hσ hK hτ
   · filter_upwards [eventually_ge_atTop 0] with x hx
     exact putPrice_le_mul_cdf hx
 

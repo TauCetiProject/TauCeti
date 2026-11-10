@@ -368,16 +368,30 @@ theorem riskNeutralPrice_put (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 <
 /-! ### No-arbitrage bounds -/
 
 /-- The Black–Scholes call price is nonnegative. -/
-theorem callPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem callPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hτ : 0 < τ) :
     0 ≤ callPrice s r σ K τ := by
-  rw [← riskNeutralPrice_call hs hσ hK hτ]
-  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+  rcases lt_or_ge 0 K with hK | hK
+  · rw [← riskNeutralPrice_call hs hσ hK hτ]
+    exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+  · rw [callPrice_def]
+    have h₁ := mul_nonneg hs.le (cdf_nonneg (gaussianReal 0 1) (dPlus s r σ K τ))
+    have h₂ := mul_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg hK (exp_pos (-r * τ)).le)
+      (cdf_nonneg (gaussianReal 0 1) (dMinus s r σ K τ))
+    linarith
 
 /-- The Black–Scholes put price is nonnegative. -/
-theorem putPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem putPrice_nonneg (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
     0 ≤ putPrice s r σ K τ := by
-  rw [← riskNeutralPrice_put hs hσ hK hτ]
-  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+  rcases lt_or_ge 0 s with hs | hs
+  · rw [← riskNeutralPrice_put hs hσ hK hτ]
+    exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+  · rw [putPrice_def]
+    have h₁ := mul_nonneg (mul_nonneg hK.le (exp_pos (-r * τ)).le)
+      (cdf_nonneg (gaussianReal 0 1) (-dMinus s r σ K τ))
+    have h₂ := mul_nonpos_of_nonpos_of_nonneg hs
+      (cdf_nonneg (gaussianReal 0 1) (-dPlus s r σ K τ))
+    linarith
 
 /-- The Black–Scholes call price is at most the spot. -/
 theorem callPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : callPrice s r σ K τ ≤ s := by
@@ -414,21 +428,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 and denominator are nonsingular. -/
 @[fun_prop]
 theorem dPlus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContDiffAt ℝ n (fun y => dPlus (f y) r σ K (g y)) x := by
   simp only [dPlus_def]
-  exact (((hf.div_const K).log (div_ne_zero hs hK)).add
-    (contDiffAt_const.mul hg)).div
+  by_cases hσ : σ = 0
+  · simpa [hσ] using contDiffAt_const (c := (0 : ℝ))
+  · have hlog : ContDiffAt ℝ n (fun y => Real.log (f y / K)) x := by
+      by_cases hK : K = 0
+      · simpa [hK] using contDiffAt_const (c := (0 : ℝ))
+      · exact (hf.div_const K).log (div_ne_zero hs hK)
+    exact (hlog.add (contDiffAt_const.mul hg)).div
       (contDiffAt_const.mul (hg.sqrt hτ.ne'))
       (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
 
 /-- The lower Black–Scholes normal argument is smooth under composition on the same domain. -/
 @[fun_prop]
 theorem dMinus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContDiffAt ℝ n (fun y => dMinus (f y) r σ K (g y)) x := by
   simp only [dMinus_def]
-  exact (hf.dPlus hg hs hK hσ hτ).sub (contDiffAt_const.mul (hg.sqrt hτ.ne'))
+  exact (hf.dPlus hg hs hτ).sub (contDiffAt_const.mul (hg.sqrt hτ.ne'))
 
 variable {n : ℕ∞}
 
@@ -436,22 +455,22 @@ variable {n : ℕ∞}
 wherever the normal arguments are nonsingular. -/
 @[fun_prop]
 theorem callPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContDiffAt ℝ n (fun y => callPrice (f y) r σ K (g y)) x := by
   have hΦ := TauCeti.Probability.contDiff_cdf_gaussianReal (n := n) 0 one_ne_zero
   simp only [callPrice_def]
-  exact (hf.mul (hΦ.contDiffAt.comp _ (hf.dPlus hg hs hK hσ hτ))).sub
+  exact (hf.mul (hΦ.contDiffAt.comp _ (hf.dPlus hg hs hτ))).sub
     ((contDiffAt_const.mul ((contDiffAt_const.mul hg).exp)).mul
-      (hΦ.contDiffAt.comp _ (hf.dMinus hg hs hK hσ hτ)))
+      (hΦ.contDiffAt.comp _ (hf.dMinus hg hs hτ)))
 
 /-- The closed-form put price is smooth under composition in spot and remaining maturity
 wherever the normal arguments are nonsingular. -/
 @[fun_prop]
 theorem putPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContDiffAt ℝ n (fun y => putPrice (f y) r σ K (g y)) x := by
   simp only [putPrice_eq_callPrice]
-  exact ((hf.callPrice hg hs hK hσ hτ).sub hf).add
+  exact ((hf.callPrice hg hs hτ).sub hf).add
     (contDiffAt_const.mul ((contDiffAt_const.mul hg).exp))
 
 end ContDiffAt
@@ -465,35 +484,35 @@ variable {E : Type*} [TopologicalSpace E]
 and denominator are nonsingular. -/
 @[fun_prop]
 theorem dPlus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContinuousAt (fun y => dPlus (f y) r σ K (g y)) x :=
   ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).dPlus contDiffAt_snd
-    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+    hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 /-- The lower Black–Scholes normal argument is continuous under composition on the same domain. -/
 @[fun_prop]
 theorem dMinus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContinuousAt (fun y => dMinus (f y) r σ K (g y)) x :=
   ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).dMinus contDiffAt_snd
-    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+    hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 /-- The closed-form call price is continuous under composition in spot and remaining maturity
 wherever the normal arguments are nonsingular. -/
 @[fun_prop]
 theorem callPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContinuousAt (fun y => callPrice (f y) r σ K (g y)) x :=
   ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).callPrice contDiffAt_snd
-    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+    hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 /-- The closed-form put price is continuous under composition in spot and remaining maturity
 wherever the normal arguments are nonsingular. -/
 @[fun_prop]
 theorem putPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
-    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    (hs : f x ≠ 0) (hτ : 0 < g x) :
     ContinuousAt (fun y => putPrice (f y) r σ K (g y)) x :=
   ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).putPrice contDiffAt_snd
-    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+    hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 end ContinuousAt
