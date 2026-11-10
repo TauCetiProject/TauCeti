@@ -250,6 +250,7 @@ noncomputable def baseChangeExp (x : A) (M : S)
     t ^ n • (integralDividedPower x M n (hM n)).baseChange R
 
 /-- The finite exponential of an element that is not nilpotent is the junk value `0`. -/
+@[simp]
 theorem baseChangeExp_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) (M : S)
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : R) :
     baseChangeExp x M hM t = 0 := by
