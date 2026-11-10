@@ -94,10 +94,12 @@ on row vectors supported on `X` gives
 `T_G ∘ T_F + T_{F * G} = ∂'' ∘ H + H ∘ ∂`,
 
 where `H` sums the operations along the paths crossing once through `F` and once through `G`.
-Hence, if `F * G` is homotopic to the identity morphism of `N`, then on `M ⊠ N` the composite
-`T_G ∘ T_F` differs from the identity by `∂ ∘ L + L ∘ ∂` for a linear map `L` of row vectors; with
-the roles of `N` and `N'` exchanged, a homotopy equivalence of type `D` structures induces maps of
-box tensor products which are mutually inverse up to such homotopies.
+Hence, if `F * G` is homotopic to the identity morphism of `N` through a morphism and the
+idempotents are cycles, then on `M ⊠ N` the composite `T_G ∘ T_F` differs from the identity by
+`∂ ∘ L + L ∘ ∂` for a linear map `L` from `M ⊠ N` to itself: it is induced by morphisms, which
+preserve `M ⊠ N`. With the roles of `N` and `N'` exchanged, a homotopy equivalence of type `D`
+structures induces maps of box tensor products which are mutually inverse up to chain homotopies
+of `M ⊠ N` and `M ⊠ N'`.
 
 ## Main definitions
 
@@ -147,8 +149,8 @@ box tensor products which are mutually inverse up to such homotopies.
 * `TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero` and
   its `_of_lt` version: composites of homomorphisms induce composites up to homotopy.
 * `TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_eq_of_act_eq_zero` and its `_of_lt`
-  version: if `F * G` is homotopic to the identity morphism, `T_G ∘ T_F` is the identity of
-  `M ⊠ N` up to a homotopy.
+  version: if `F * G` is homotopic to the identity morphism, `T_G ∘ T_F` is chain homotopic to the
+  identity of `M ⊠ N`, through a linear map of `M ⊠ N`.
 
 ## References
 
@@ -1038,18 +1040,19 @@ private theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul [CharP R 2]
     (hB₁ : Bound N N' Mm U₁ K₁) (hB₂ : Bound (cone N N' F hF hF₀) N'' Mm U₂ K₂)
     (hB₃ : Bound N' N'' Mm U₃ K₃) (hB₄ : Bound N N'' Mm U₄ K₄) {G : Matrix X' X'' A}
     (hG₀ : morphismDifferential N' N'' G = 0) :
-    ∃ H : (X → M) →ₗ[R] X'' → M, ∀ φ,
-      typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
+    ∃ H : (X → M) →ₗ[R] X'' → M,
+      (∀ φ, H φ = typeABoxMap (cone N N' F hF hF₀) N'' Mm (Matrix.fromRows 0 G) (Sum.elim φ 0)) ∧
+      ∀ φ, typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
         N''.typeABoxDifferential Mm (H φ) + H (N.typeABoxDifferential Mm φ) := by
   set C := cone N N' F hF hF₀
   set T := typeABoxMap C N'' Mm (Matrix.fromRows 0 G)
-  -- The homotopy is `φ ↦ T (Sum.elim φ 0)`.
-  refine ⟨T ∘ₗ (LinearEquiv.sumArrowLequivProdArrow X X' R M).symm.toLinearMap ∘ₗ
-    LinearMap.inl R (X → M) (X' → M), fun φ => ?_⟩
   have hinl (ψ : X → M) : (LinearEquiv.sumArrowLequivProdArrow X X' R M).symm (ψ, 0) =
       Sum.elim ψ 0 := by
     funext a
     cases a <;> simp
+  -- The homotopy is `φ ↦ T (Sum.elim φ 0)`.
+  refine ⟨T ∘ₗ (LinearEquiv.sumArrowLequivProdArrow X X' R M).symm.toLinearMap ∘ₗ
+    LinearMap.inl R (X → M) (X' → M), fun φ => by simp [hinl], fun φ => ?_⟩
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.inl_apply, LinearEquiv.coe_coe,
     hinl]
   -- The box tensor differential of the cone on `Sum.elim φ 0` is `Sum.elim (∂ φ) (T_F φ)`.
@@ -1094,8 +1097,9 @@ theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero [CharP
     ∃ H : (X → M) →ₗ[R] X'' → M, ∀ φ,
       typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
         N''.typeABoxDifferential Mm (H φ) + H (N.typeABoxDifferential Mm φ) :=
-  exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ (bound_of_act_eq_zero hK)
-    (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) hG₀
+  (exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ (bound_of_act_eq_zero hK)
+    (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) hG₀).imp
+    fun _ => And.right
 
 /-- **Composition of induced maps with bounded type `D` structures, up to homotopy.** Over a ring
 of characteristic two, let heights on the generators of `N`, `N'` and `N''` strictly increase
@@ -1115,61 +1119,94 @@ theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt [CharP R 2]
         N''.typeABoxDifferential Mm (H φ) + H (N.typeABoxDifferential Mm φ) := by
   -- The coefficients of the cone increase the height of `X ⊕ X'` with `X'` shifted above `X`.
   have hB₁ := bound_of_lt Mm h hh h' hh'
-  exact exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ hB₁
+  exact (exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ hB₁
     (bound_of_lt (N := cone N N' F hF hF₀) Mm (sumHeight h h')
       (fun a b hab => hB₁.fromBlocks_mem F a b (by rwa [cone_coeff] at hab)) h'' hh'')
-    (bound_of_lt Mm h' hh' h'' hh'') (bound_of_lt Mm h hh h'' hh'') hG₀
+    (bound_of_lt Mm h' hh' h'' hh'') (bound_of_lt Mm h hh h'' hh'') hG₀).imp fun _ => And.right
 
-/-- **A homotopy inverse of type `D` structures induces an inverse up to homotopy on box tensor
-products with a bounded module.** Over a ring of characteristic two, let the operations `m_{k+1}`
-of `M` vanish for `k ≥ K`, and its higher operations vanish on the idempotents. Let `F` be a
-homomorphism from `N` to `N'` and `G` a matrix from `N'` to `N` with `∂G = 0` whose composite
-`F * G` is homotopic to the identity morphism of `N`, `∂H = F * G + I`. Then there is a linear
-map `L` of row vectors with `T_G (T_F φ) + φ = ∂ (L φ) + L (∂ φ)` for every `φ ∈ M ⊠ N`. -/
-theorem exists_typeABoxMap_typeABoxMap_add_eq_of_act_eq_zero [CharP R 2]
-    (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M)
-    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) (hM : Mm.HigherVanishingOn (Set.range ι))
-    {F : Matrix X X' A} (hF : F ∈ morphisms N N') (hF₀ : morphismDifferential N N' F = 0)
-    {G : Matrix X' X A} (hG₀ : morphismDifferential N' N G = 0) {H : Matrix X X A}
+/-- The core of `TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_eq_of_act_eq_zero` and
+`TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_eq_of_lt`. -/
+private theorem exists_typeABoxMap_typeABoxMap_add_eq [CharP R 2]
+    (hM : Mm.HigherVanishingOn (Set.range ι)) (hι : ∀ s, d (ι s) = 0)
+    {V₂ : Set (Matrix ((X ⊕ X') ⊕ X) ((X ⊕ X') ⊕ X) A)} {V₃ : Set (Matrix (X' ⊕ X) (X' ⊕ X) A)}
+    {V₄ : Set (Matrix (X ⊕ X) (X ⊕ X) A)} (hB₁ : Bound N N' Mm U₁ K₁)
+    (hB₂ : Bound (cone N N' F hF hF₀) N Mm V₂ K₂) (hB₃ : Bound N' N Mm V₃ K₃)
+    (hB₄ : Bound N N Mm V₄ K₄) {G : Matrix X' X A} (hG : G ∈ morphisms N' N)
+    (hG₀ : morphismDifferential N' N G = 0) {H : Matrix X X A} (hHm : H ∈ morphisms N N)
     (hH : morphismDifferential N N H = F * G + N.idMorphism) :
-    ∃ L : (X → M) →ₗ[R] X → M, ∀ φ ∈ N.typeABoxTensor Mm,
+    ∃ L : N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm, ∀ φ : N.typeABoxTensor Mm,
       typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ =
-        N.typeABoxDifferential Mm (L φ) + L (N.typeABoxDifferential Mm φ) := by
-  obtain ⟨L, hL⟩ :=
-    exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero N N' N Mm hK hF hF₀ hG₀
-  refine ⟨L + typeABoxMap N N Mm H, fun φ hφ => ?_⟩
-  have hH' := typeABoxMap_add_typeABoxMap_of_act_eq_zero N N Mm hK hH φ
-  rw [typeABoxMap_idMorphism_of_act_eq_zero N hK hM hφ] at hH'
-  rw [LinearMap.add_apply, LinearMap.add_apply, map_add, add_add_add_comm, ← hL, ← hH',
+        (N.typeABoxTensorDifferential hM hι (L φ) : X → M) +
+          L (N.typeABoxTensorDifferential hM hι φ) := by
+  obtain ⟨L, hLdef, hL⟩ :=
+    exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ hB₁ hB₂ hB₃ hB₄ hG₀
+  -- Both parts of the homotopy `L + T_H` are induced by morphisms, so they preserve `M ⊠ N`.
+  have hmem (φ : X → M) (hφ : φ ∈ N.typeABoxTensor Mm) :
+      (L + typeABoxMap N N Mm H) φ ∈ N.typeABoxTensor Mm := by
+    refine add_mem ?_ (typeABoxMap_mem_typeABoxTensor N N hM hι hHm hφ)
+    rw [hLdef]
+    refine typeABoxMap_mem_typeABoxTensor _ N hM hι (mem_morphisms_iff.mpr fun a z => ?_)
+      (mem_typeABoxTensor_iff.mpr fun a => ?_)
+    · rcases a with x | x
+      · simp
+      · simpa using mem_morphisms_iff.mp hG x z
+    · rcases a with x | x
+      · simpa using hφ x
+      · simp
+  refine ⟨(L + typeABoxMap N N Mm H).restrict hmem, fun φ => ?_⟩
+  have hH' := hB₄.typeABoxDifferential_typeABoxMap H φ
+  rw [hH, hB₄.typeABoxMap_add, LinearMap.add_apply, hB₄.typeABoxMap_idMorphism hM φ.2] at hH'
+  simp only [coe_typeABoxTensorDifferential_apply, LinearMap.coe_restrict_apply]
+  rw [LinearMap.add_apply, LinearMap.add_apply, map_add, add_add_add_comm, ← hL φ, hH',
     ← add_zero (typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ),
     ← add_self_eq_zero_of_charTwo R (typeABoxMap N N Mm (F * G) φ)]
   abel
 
+/-- **A homotopy inverse of type `D` structures induces an inverse up to homotopy on box tensor
+products with a bounded module.** Over a ring of characteristic two, let the operations `m_{k+1}`
+of `M` vanish for `k ≥ K`, its higher operations vanish on the idempotents, and the idempotents be
+cycles. Let `F` be a homomorphism from `N` to `N'` and `G` a homomorphism from `N'` to `N` whose
+composite `F * G` is homotopic to the identity morphism of `N`, `∂H = F * G + I` for a morphism
+`H`. Then there is a linear map `L` of `M ⊠ N` with `T_G (T_F φ) + φ = ∂ (L φ) + L (∂ φ)` for
+every `φ ∈ M ⊠ N`: `T_G ∘ T_F` is chain homotopic to the identity of `M ⊠ N`. -/
+theorem exists_typeABoxMap_typeABoxMap_add_eq_of_act_eq_zero [CharP R 2]
+    (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M)
+    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) (hM : Mm.HigherVanishingOn (Set.range ι))
+    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (hF₀ : morphismDifferential N N' F = 0) {G : Matrix X' X A} (hG : G ∈ morphisms N' N)
+    (hG₀ : morphismDifferential N' N G = 0) {H : Matrix X X A} (hHm : H ∈ morphisms N N)
+    (hH : morphismDifferential N N H = F * G + N.idMorphism) :
+    ∃ L : N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm, ∀ φ : N.typeABoxTensor Mm,
+      typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ =
+        (N.typeABoxTensorDifferential hM hι (L φ) : X → M) +
+          L (N.typeABoxTensorDifferential hM hι φ) :=
+  exists_typeABoxMap_typeABoxMap_add_eq hF hF₀ hM hι (bound_of_act_eq_zero hK)
+    (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) hG hG₀ hHm hH
+
 /-- **A homotopy inverse of bounded type `D` structures induces an inverse up to homotopy on box
 tensor products.** Over a ring of characteristic two, let heights on the generators of `N` and
-`N'` strictly increase along their nonzero coefficients, and let the higher operations of `M`
-vanish on the idempotents. If `F` is a homomorphism from `N` to `N'` and `G` a matrix back with
-`∂G = 0` and `∂H = F * G + I`, then there is a linear map `L` of row vectors with
-`T_G (T_F φ) + φ = ∂ (L φ) + L (∂ φ)` for every `φ ∈ M ⊠ N`. -/
+`N'` strictly increase along their nonzero coefficients, let the higher operations of `M` vanish
+on the idempotents, and the idempotents be cycles. If `F` is a homomorphism from `N` to `N'` and
+`G` a homomorphism back with `∂H = F * G + I` for a morphism `H`, then there is a linear map `L` of
+`M ⊠ N` with `T_G (T_F φ) + φ = ∂ (L φ) + L (∂ φ)` for every `φ ∈ M ⊠ N`. -/
 theorem exists_typeABoxMap_typeABoxMap_add_eq_of_lt [CharP R 2] (N : TypeDStructure d ι X)
     (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ)
     (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (h' : X' → ℕ)
     (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) (hM : Mm.HigherVanishingOn (Set.range ι))
-    {F : Matrix X X' A} (hF : F ∈ morphisms N N') (hF₀ : morphismDifferential N N' F = 0)
-    {G : Matrix X' X A} (hG₀ : morphismDifferential N' N G = 0) {H : Matrix X X A}
+    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (hF₀ : morphismDifferential N N' F = 0) {G : Matrix X' X A} (hG : G ∈ morphisms N' N)
+    (hG₀ : morphismDifferential N' N G = 0) {H : Matrix X X A} (hHm : H ∈ morphisms N N)
     (hH : morphismDifferential N N H = F * G + N.idMorphism) :
-    ∃ L : (X → M) →ₗ[R] X → M, ∀ φ ∈ N.typeABoxTensor Mm,
+    ∃ L : N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm, ∀ φ : N.typeABoxTensor Mm,
       typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ =
-        N.typeABoxDifferential Mm (L φ) + L (N.typeABoxDifferential Mm φ) := by
-  obtain ⟨L, hL⟩ := exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt N N' N Mm h hh h' hh'
-    h hh hF hF₀ hG₀
-  refine ⟨L + typeABoxMap N N Mm H, fun φ hφ => ?_⟩
-  have hH' := typeABoxMap_add_typeABoxMap_of_lt N N Mm h hh h hh hH φ
-  rw [typeABoxMap_idMorphism_of_lt N Mm h hh hM hφ] at hH'
-  rw [LinearMap.add_apply, LinearMap.add_apply, map_add, add_add_add_comm, ← hL, ← hH',
-    ← add_zero (typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ),
-    ← add_self_eq_zero_of_charTwo R (typeABoxMap N N Mm (F * G) φ)]
-  abel
+        (N.typeABoxTensorDifferential hM hι (L φ) : X → M) +
+          L (N.typeABoxTensorDifferential hM hι φ) := by
+  -- The coefficients of the cone increase the height of `X ⊕ X'` with `X'` shifted above `X`.
+  have hB₁ := bound_of_lt Mm h hh h' hh'
+  exact exists_typeABoxMap_typeABoxMap_add_eq hF hF₀ hM hι hB₁
+    (bound_of_lt (N := cone N N' F hF hF₀) Mm (sumHeight h h')
+      (fun a b hab => hB₁.fromBlocks_mem F a b (by rwa [cone_coeff] at hab)) h hh)
+    (bound_of_lt Mm h' hh' h hh) (bound_of_lt Mm h hh h hh) hG hG₀ hHm hH
 
 end Composition
 
