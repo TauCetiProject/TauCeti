@@ -85,14 +85,11 @@ theorem mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M} :
     mem_maximalIntegralCurveFlowDomain]
 
 /-- Time zero belongs to the maximal-flow domain of `x` as soon as some time does. -/
-theorem zero_mem_flowDomain_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
-    (ht : (t, x) ∈ flowDomain v) : ((0 : ℝ), x) ∈ flowDomain v := by
-  obtain ⟨γ, a, b, hγ, hγx, hγ0, -, -⟩ :=
-    exists_isMIntegralCurveOn_maximalIntegralCurve_eq (mem_flowDomain.mp ht)
-  exact mem_flowDomain.mpr (hγ.subset_maximalIntegralCurveInterval hγ0 hγx hγ0)
+theorem mem_flowDomain_zero_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : ((0 : ℝ), x) ∈ flowDomain v :=
+  mem_flowDomain.mpr (zero_mem_maximalIntegralCurveInterval_of_mem (mem_flowDomain.mp ht))
 
 /-- The maximal flow fixes every point at time zero. -/
-@[simp]
 theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
   rw [flowOf_apply, maximalIntegralCurve_zero]
 
@@ -323,7 +320,7 @@ theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpa
   rw [mem_flowDomain, flowOf_apply,
     mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
     add_neg_cancel, ← mem_flowDomain]
-  exact zero_mem_flowDomain_of_mem ht
+  exact mem_flowDomain_zero_of_mem ht
 
 omit [CompleteSpace E] in
 /-- Flowing for time `-t` undoes flowing for time `t`. -/
@@ -340,7 +337,7 @@ theorem flowOf_natCast_mul_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → Tang
     ((k : ℝ) * t, x) ∈ flowDomain v ∧ flowOf v ((k : ℝ) * t) x = x := by
   induction k with
   | zero =>
-    simpa only [Nat.cast_zero, zero_mul] using ⟨zero_mem_flowDomain_of_mem ht, flowOf_zero v x⟩
+    simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero_of_mem ht, flowOf_zero v x⟩
   | succ k ih =>
     obtain ⟨hk, hkx⟩ := ih
     obtain ⟨hmem, heq⟩ := flowOf_add hv hk (t := t) (by rwa [hkx])

@@ -582,15 +582,17 @@ theorem timeDependentFlowMFDerivEquiv_symm_apply (s t : ℝ) (x : M)
   -- A continuous linear equivalence and its underlying continuous linear map agree pointwise.
   rfl
 
-omit [IsManifold I n M] in
+omit hn hX [IsManifold I n M] in
 /-- **Derivative of a map moved by the time-dependent flow.** Let `τ : N → ℝ` and `v : N → M` have
-derivatives `τ'` and `v'` at `z`, and let `X` be jointly `C^n`, `1 ≤ n`, with complete suspension.
+derivatives `τ'` and `v'` at `z`, and let `X` be jointly `C¹` with complete suspension.
 The map `y ↦ φ_{s, τ y} (v y)`, with `φ_{s, t} = timeDependentFlowOf X s t`, has derivative
 `dφ_{s, τ z} ∘ v' + τ' ⊗ X_{τ z}` at `z`: the flow carries the derivative of `v`, and the varying
 time adds the velocity of the flow at the moved point. -/
 theorem hasMFDerivAt_timeDependentFlowOf_comp {F G N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [TopologicalSpace N]
     [ChartedSpace G N]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     {τ : N → ℝ} {v : N → M} {z : N} {τ' : TangentSpace J z →L[ℝ] ℝ}
     {v' : TangentSpace J z →L[ℝ] TangentSpace I (v z)}
     (hτ : HasMFDerivAt J 𝓘(ℝ, ℝ) τ z τ') (hv : HasMFDerivAt J I v z v') (s : ℝ) :
@@ -599,7 +601,7 @@ theorem hasMFDerivAt_timeDependentFlowOf_comp {F G N : Type*} [NormedAddCommGrou
         τ'.smulRight (X (τ z) (timeDependentFlowOf X s (τ z) (v z)))) := by
   set Φ : ℝ × M → M := fun p ↦ timeDependentFlowOf X s p.1 p.2
   have hΦ : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I Φ (τ z, v z) :=
-    (((contMDiff_timeDependentFlowOf hcomplete le_rfl (hX.of_le (by exact_mod_cast hn))).comp
+    (((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
       (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd)).mdifferentiable
         one_ne_zero) _
   refine (hΦ.hasMFDerivAt.comp z (hτ.prodMk hv)).congr_mfderiv (ContinuousLinearMap.ext fun a ↦ ?_)
@@ -608,8 +610,7 @@ theorem hasMFDerivAt_timeDependentFlowOf_comp {F G N : Type*} [NormedAddCommGrou
   have hpart := mfderiv_prod_eq_add_apply (v := ((τ' a, v' a) : ℝ × E)) hΦ
   have htime : mfderiv 𝓘(ℝ, ℝ) I (fun t ↦ Φ (t, v z)) (τ z) =
       (1 : ℝ →L[ℝ] ℝ).smulRight (X (τ z) (timeDependentFlowOf X s (τ z) (v z))) :=
-    (hasMFDerivAt_timeDependentFlowOf (hX.of_le (by exact_mod_cast hn))
-      (hcomplete.mem_flowDomain _ _)).mfderiv
+    (hasMFDerivAt_timeDependentFlowOf hX (hcomplete.mem_flowDomain _ _)).mfderiv
   dsimp only at hpart
   rw [htime] at hpart
   -- Tangent spaces of `ℝ` are `ℝ` only up to unfolding, so the sides are matched up to defeq:

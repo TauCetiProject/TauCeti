@@ -136,10 +136,7 @@ witnesses. -/
     (ht : t ∈ maximalIntegralCurveInterval v x) :
     s ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) ↔
       t + s ∈ maximalIntegralCurveInterval v x := by
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval v x := by
-    obtain ⟨γ, a, b, hγ, hγx, hγ0, -, -⟩ :=
-      exists_isMIntegralCurveOn_maximalIntegralCurve_eq ht
-    exact hγ.subset_maximalIntegralCurveInterval hγ0 hγx hγ0
+  have h0 := zero_mem_maximalIntegralCurveInterval_of_mem ht
   have hneg : -t ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) := by
     simpa only [zero_sub] using sub_mem_maximalIntegralCurveInterval hv ht h0
   have hback : maximalIntegralCurve v (maximalIntegralCurve v x t) (-t) = x := by

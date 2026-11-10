@@ -132,7 +132,6 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z))) :
     (∀ s t, mpullback I I (timeDependentFlowOf X s t) α = α) ↔
       ∀ t, mlieDerivForm (X t) α = 0 := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   have hid (s : ℝ) : mpullback I I (timeDependentFlowOf X s s) α = α := by
     have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
     rw [h, mpullback_id]

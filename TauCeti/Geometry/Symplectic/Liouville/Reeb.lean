@@ -296,7 +296,7 @@ theorem exists_periodic_hamiltonianVectorField_iff_reebVectorField [FiniteDimens
     obtain ⟨s₀, hs₀⟩ := hWι (h.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier hZ
       fun hi ↦ h0W (interior_subset hi))
     have hδ0 : flowOf Z (Real.log c) (ι s₀) = δ 0 := by
-      rw [hs₀, hδc, h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ]
+      rw [hs₀, hδc, h.flowOf_flowOf hZ, add_neg_cancel, flowOf_zero Z]
     -- The Reeb field of the compact boundary is complete; follow its orbit through `s₀`.
     have hR : ContMDiff J J.tangent 1 (T% (SmoothForm.mpullback ι hι α).reebVectorField) :=
       (h.isContactForm_mpullback hZ hι hιW hιs hdim).contMDiff_reebVectorField.of_le (by simp)
