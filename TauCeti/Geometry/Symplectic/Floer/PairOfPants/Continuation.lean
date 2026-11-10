@@ -509,6 +509,154 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation
     (lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs
       hGB hHB hD L u))
 
+/-- **The curvature on an end.** The curvature is a two-form, so on the end `q`, where `σ = ±s > 0`,
+its product with the Jacobian of the end chart is
+`±(β'(σ - 1) C_q(σ - L_q, t) + β(σ - 1) β'(σ - L_q) (H_q - G_q)(t))`. -/
+private theorem det_mul_hamiltonianCurvature_pairOfPantsContinuationPerturbation_endChart
+    (ω : SmoothTwoForm I M) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {q : Puncture} {ζ : ℝ × ℝ} (hζ : 0 < q.endSign * ζ.1) (x : M) :
+    (fderiv ℝ (endChart q) ζ).det * ω.hamiltonianCurvature
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (endChart q ζ) x =
+      q.endSign * (deriv smoothTransition (q.endSign * ζ.1 - 1) *
+          continuationHomotopy (G q) (H q) (q.endSign * ζ.1 - L q, ζ.2) x +
+        smoothTransition (q.endSign * ζ.1 - 1) * deriv smoothTransition (q.endSign * ζ.1 - L q) *
+          (H q ζ.2 x - G q ζ.2 x)) := by
+  have hS := mem_thricePuncturedSphereReal_iff.1 (endChart_mem_thricePuncturedSphereReal hζ)
+  have hJ := (contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L ⟨_, hS⟩
+    x).mdifferentiableAt one_ne_zero
+  -- The datum is differentiable separately in the domain point and in the target point.
+  have hdom (v : ℂ) : DifferentiableAt ℝ (fun z ↦
+      pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x v)
+      (endChart q ζ) :=
+    ((hJ.comp (f := fun w : ℂ ↦ (w, x)) (Complex.equivRealProdCLM.symm (endChart q ζ))
+      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
+        (differentiableAt_const v)).comp _ Complex.equivRealProdCLM.symm.differentiableAt
+  have htgt (v : ℂ) : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ pairOfPantsContinuationPerturbation G H L
+      (Complex.equivRealProdCLM.symm (endChart q ζ)) y v) x :=
+    (hJ.comp (f := fun y : M ↦ (Complex.equivRealProdCLM.symm (endChart q ζ), y)) x
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const
+  have k := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := ζ)
+    (Ks := fun z x ↦
+      pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦
+      pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (x := x) ((contDiff_endChart q 2).contDiffAt) (hdom 1) (hdom Complex.I) (htgt 1)
+    (htgt Complex.I)
+  rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs hζ] at k
+  exact k.symm
+
+/-- **The curvature is integrable, for a manifold target.** Along a map `u` which is continuous on
+`S = ℂ ∖ {0, 1}`, the curvature of the pair-of-pants perturbation with continuation necks, for
+period-one `C¹` inner and outer Hamiltonians on a manifold, is integrable over `S`, for all neck
+positions. It vanishes on the core and beyond the necks, and on each end, multiplied by the
+Jacobian of the end chart, it is a continuous function of the end coordinates. -/
+theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
+    (ω : SmoothTwoForm I M) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (L : Puncture → ℝ)
+    {u : ℝ × ℝ → M} (hu : ContinuousOn u thricePuncturedSphereReal) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)) thricePuncturedSphereReal := by
+  -- Beyond the height `c`, every neck and every collar has been passed.
+  set c : ℝ := 2 + ∑ q, |L q| with hc
+  have hLc (q : Puncture) : L q + 2 ≤ c := by
+    have := Finset.single_le_sum (f := fun q : Puncture ↦ |L q|) (fun q _ ↦ abs_nonneg _)
+      (Finset.mem_univ q)
+    linarith [le_abs_self (L q)]
+  have hc₂ : 2 ≤ c := le_add_of_nonneg_right (Finset.sum_nonneg fun q _ ↦ abs_nonneg (L q))
+  set P : Puncture → Set (ℝ × ℝ) := fun q ↦
+    {s | 1 / 2 < q.endSign * s ∧ q.endSign * s ≤ c} ×ˢ Ico (-1 / 2) (1 / 2) with hP
+  have hPm (q : Puncture) : MeasurableSet (P q) :=
+    (measurableSet_lt measurable_const (measurable_const.mul measurable_id)).inter
+      (measurableSet_le (measurable_const.mul measurable_id) measurable_const) |>.prod
+      measurableSet_Ico
+  have hPs (q : Puncture) : P q ⊆ endStrip q := fun w hw ↦ mem_endStrip_iff.2 ⟨hw.1.1, hw.2⟩
+  -- On the image of each piece `1/2 < ±s ≤ c` of an end, the curvature is integrable.
+  have hint (q : Puncture) : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) (endChart q '' P q) := by
+    have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+    rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (hPm q)
+      (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
+      ((injOn_endChart q).mono (hPs q))]
+    have hK : IsCompact
+        ({s | 1 / 2 ≤ q.endSign * s ∧ q.endSign * s ≤ c} ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :=
+      ((Homeomorph.mulLeft₀ q.endSign q.endSign_ne_zero).isCompact_preimage.2
+        (isCompact_Icc (a := 1 / 2) (b := c))).prod isCompact_Icc
+    have hpos {w : ℝ × ℝ}
+        (hw : w ∈ {s | 1 / 2 ≤ q.endSign * s ∧ q.endSign * s ≤ c} ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
+        0 < q.endSign * w.1 := by
+      linarith [hw.1.1]
+    refine IntegrableOn.mono_set
+      (t := {s | 1 / 2 ≤ q.endSign * s ∧ q.endSign * s ≤ c} ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) ?_
+      fun w ⟨⟨h₁, h₂⟩, h₃⟩ ↦ ⟨⟨h₁.le, h₂⟩, Ico_subset_Icc_self h₃⟩
+    refine ContinuousOn.integrableOn_compact hK ?_
+    -- In the coordinates of the end the integrand is
+    -- `±(β'(σ - 1) C_q(σ - L_q, t) + β(σ - 1) β'(σ - L_q) (H_q - G_q)(t))` along `u`.
+    have hu' : ContinuousOn (fun w ↦ u (endChart q w)) {w : ℝ × ℝ | 0 < q.endSign * w.1} :=
+      hu.comp (contDiff_endChart q 0).continuous.continuousOn
+        fun _ hw ↦ endChart_mem_thricePuncturedSphereReal hw
+    have hKu (K : ℝ → M → ℝ) (hK : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry K)) :
+        ContinuousOn (fun w : ℝ × ℝ ↦ K w.2 (u (endChart q w)))
+          {w : ℝ × ℝ | 0 < q.endSign * w.1} :=
+      hK.continuous.comp_continuousOn (continuousOn_snd.prodMk hu')
+    have hβ : Continuous smoothTransition := smoothTransition.continuous
+    have hβ' : Continuous (deriv smoothTransition) :=
+      (smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
+    have hF : ContinuousOn (fun w : ℝ × ℝ ↦
+        q.endSign * (deriv smoothTransition (q.endSign * w.1 - 1) *
+          continuationHomotopy (G q) (H q) (q.endSign * w.1 - L q, w.2) (u (endChart q w)) +
+        smoothTransition (q.endSign * w.1 - 1) * deriv smoothTransition (q.endSign * w.1 - L q) *
+          (H q w.2 (u (endChart q w)) - G q w.2 (u (endChart q w)))))
+        {w : ℝ × ℝ | 0 < q.endSign * w.1} := by
+      simp only [continuationHomotopy_def]
+      refine continuousOn_const.mul (ContinuousOn.add ?_ ?_)
+      · exact (hβ'.comp (by fun_prop)).continuousOn.mul ((hKu _ (hGs q)).add
+          ((hβ.comp (by fun_prop)).continuousOn.mul ((hKu _ (hHs q)).sub (hKu _ (hGs q)))))
+      · exact ((hβ.comp (by fun_prop)).continuousOn.mul (hβ'.comp (by fun_prop)).continuousOn).mul
+          ((hKu _ (hHs q)).sub (hKu _ (hGs q)))
+    refine (hF.mono fun w hw ↦ hpos hw).congr fun w hw ↦ ?_
+    rw [smul_eq_mul, abs_of_pos (det_fderiv_endChart_pos q w),
+      det_mul_hamiltonianCurvature_pairOfPantsContinuationPerturbation_endChart ω hG hH hGs hHs
+        (hpos hw)]
+  refine (integrableOn_finite_iUnion.2 fun q ↦ hint q).of_forall_sdiff_eq_zero
+    isOpen_thricePuncturedSphereReal.measurableSet fun z ⟨hzS, hzA⟩ ↦ ?_
+  by_cases hq : ∃ q : Puncture,
+      1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+  · -- On an end, outside its piece, `z` lies beyond the neck and the collar of that end, where
+    -- the profile derivatives `β'(σ - 1)` and `β'(σ - L_q)` vanish.
+    obtain ⟨q, hq⟩ := hq
+    obtain ⟨w, hw, rfl⟩ := mem_image_endChart hzS hq
+    have hwc : c < q.endSign * w.1 := by
+      by_contra! h
+      exact hzA (mem_iUnion.2
+        ⟨q, w, ⟨⟨(mem_endStrip_iff.1 hw).1, h⟩, (mem_endStrip_iff.1 hw).2⟩, rfl⟩)
+    have key := det_mul_hamiltonianCurvature_pairOfPantsContinuationPerturbation_endChart ω hG hH
+      hGs hHs (L := L) (endSign_mul_pos_of_mem_endStrip hw) (u (endChart q w))
+    rw [smoothTransition.deriv_of_one_lt (by linarith),
+      smoothTransition.deriv_of_one_lt (by linarith [hLc q]), zero_mul, mul_zero, zero_mul,
+      add_zero, mul_zero] at key
+    exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
+  · -- On the core, where every `±s ≤ 1/2`, the datum vanishes nearby.
+    simp only [not_exists, not_lt] at hq
+    exact ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
+      (K := pairOfPantsContinuationPerturbation G H L)
+      (fun w hw y ↦ pairOfPantsContinuationPerturbation_eq_zero_of_forall_le hw y) hzS
+      (fun q ↦ (hq q).trans_lt (by norm_num)) (u z)
+
 end SmoothTwoForm
 
 namespace SymplecticForm
