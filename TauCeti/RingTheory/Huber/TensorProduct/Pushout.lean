@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
 
 /-!
@@ -80,13 +81,21 @@ theorem desc_comp_right (a : Pair.Hom T V) (b : Pair.Hom U V) (hab : a.comp f = 
   (h.existsUnique_desc D V a b hab).choose_spec.1.2
 
 include h in
-/-- Morphisms from a completed pushout into a complete Hausdorff pair are determined by
+omit [CompleteSpace D] in
+/-- Morphisms from a completed pushout into a Hausdorff Huber pair are determined by
 their restrictions to the two factors. -/
 theorem hom_ext {a b : Pair.Hom W V} (hi : a.comp i = b.comp i)
     (hj : a.comp j = b.comp j) : a = b := by
-  have hab : (b.comp i).comp f = (b.comp j).comp g := by
+  have hab : ((V.completionHom.comp b).comp i).comp f =
+      ((V.completionHom.comp b).comp j).comp g := by
     simp only [Pair.Hom.comp_assoc, h.condition]
-  exact (h.existsUnique_desc D V (b.comp i) (b.comp j) hab).unique ⟨hi, hj⟩ ⟨rfl, rfl⟩
+  have key : V.completionHom.comp a = V.completionHom.comp b :=
+    (h.existsUnique_desc (UniformSpace.Completion D) V.completion _ _ hab).unique
+      ⟨by rw [Pair.Hom.comp_assoc, hi, Pair.Hom.comp_assoc],
+        by rw [Pair.Hom.comp_assoc, hj, Pair.Hom.comp_assoc]⟩ ⟨rfl, rfl⟩
+  ext x
+  exact UniformSpace.Completion.coe_injective D
+    (by simpa using congrArg (fun k : Pair.Hom W V.completion ↦ k.toRingHom x) key)
 
 end IsCompletedPushout
 
