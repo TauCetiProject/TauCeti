@@ -33,6 +33,9 @@ it therefore sends each element outside its kernel to a primitive `p`-th root of
 Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
 `n` distinct `n`-th roots of `a`, and these are all of them.
 
+If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
+when quantum binomial coefficients are evaluated at such a `q`.
+
 ## Main results
 
 * `IsPrimitiveRoot.map_eq_pow`: a monoid endomorphism sending a primitive `n`-th root of
@@ -53,6 +56,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   sends every element outside its kernel to a primitive `p`-th root of unity.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
+* `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
+  with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
 
 ## References
 
@@ -115,6 +120,23 @@ theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a 
   classical
   rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
     hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
+
+/-- If `q²` is a primitive `l`-th root of unity with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`: for
+even `l`, `q^l = (q²)^(l/2) = -1`, while for odd `l` the exponent `l(l+1)` is a multiple of
+`2l`. -/
+theorem _root_.IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow {q : R} {l : ℕ}
+    (hq : IsPrimitiveRoot (q ^ 2) l) (hl : 0 < l) : q ^ (l * (l + 1)) = (-1) ^ (l + 1) := by
+  rcases Nat.even_or_odd l with ⟨k, rfl⟩ | ⟨k, rfl⟩
+  · -- `(q²)^k` is a primitive square root of unity, so `q^l = (q²)^k = -1`.
+    have hk : 0 < k := by omega
+    have h2 : IsPrimitiveRoot ((q ^ 2) ^ k) 2 := by
+      have := hq.pow_of_dvd hk.ne' ⟨2, by ring⟩
+      rwa [← two_mul, Nat.mul_div_cancel _ hk] at this
+    have hql : q ^ (k + k) = -1 := by rw [← h2.eq_neg_one_of_two_right]; ring
+    rw [pow_mul, hql]
+  · -- For odd `l = 2k + 1`, `q^(l(l+1)) = ((q²)^l)^(k+1) = 1`, and `l + 1` is even.
+    rw [show (2 * k + 1) * (2 * k + 1 + 1) = 2 * (2 * k + 1) * (k + 1) by ring, pow_mul, pow_mul,
+      hq.pow_eq_one, one_pow, (show Even (2 * k + 1 + 1) from ⟨k + 1, by ring⟩).neg_one_pow]
 
 /-- **The cyclotomic character from the action on `ζ`.** An automorphism raising the primitive
 `m`-th root of unity `ζ` to the `k`-th power has cyclotomic character `k` modulo `m`. -/

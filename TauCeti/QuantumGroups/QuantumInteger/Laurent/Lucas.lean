@@ -8,6 +8,7 @@ module
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Binomial
 public import TauCeti.QuantumGroups.QuantumInteger.Lucas
 
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.Tactic
 
 /-!
@@ -30,7 +31,8 @@ For `m ≥ 0` this is the field-valued theorem `TauCeti.quantumBinomial_mul_add_
 natural upper argument; comparing the resulting binomial coefficient with
 `binom(m₁, r₁) = (-1)^r₁ binom(-m₁ + r₁ - 1, r₁)` uses two facts at the root of unity: the shift
 `[m - l choose r]_ζ = ζ^(lr) [m choose r]_ζ` for `r < l`, which holds because `[l]_ζ = 0` while
-`[r]_ζ! ≠ 0`, and the sign `ζ^(l(l+1)) = (-1)^(l+1)`.
+`[r]_ζ! ≠ 0`, and the sign `ζ^(l(l+1)) = (-1)^(l+1)` of
+`IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`.
 
 ## Main results
 
@@ -54,24 +56,6 @@ open Finset LaurentPolynomial
 namespace TauCeti
 
 variable {K : Type*} [Field K]
-
-/-- If `q²` is a primitive `l`-th root of unity with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`: for
-even `l`, `q^l = (q²)^(l/2) = -1`, while for odd `l` the exponent `l(l+1)` is a multiple of
-`2l`. -/
-private theorem zpow_mul_add_one_of_isPrimitiveRoot {q : K} {l : ℕ}
-    (hq : IsPrimitiveRoot (q ^ 2) l) (hl : 0 < l) : q ^ ((l : ℤ) * (l + 1)) = (-1) ^ (l + 1) := by
-  rw [show (l : ℤ) * (l + 1) = ((l * (l + 1) : ℕ) : ℤ) by push_cast; ring, zpow_natCast]
-  rcases Nat.even_or_odd l with ⟨k, rfl⟩ | ⟨k, rfl⟩
-  · -- `(q²)^k` is a primitive square root of unity, so `q^l = (q²)^k = -1`.
-    have hk : 0 < k := by omega
-    have h2 : IsPrimitiveRoot ((q ^ 2) ^ k) 2 := by
-      have := hq.pow_of_dvd hk.ne' ⟨2, by ring⟩
-      rwa [← two_mul, Nat.mul_div_cancel _ hk] at this
-    rw [show (k + k) * (k + k + 1) = 2 * k * (k + k + 1) by ring, pow_mul, pow_mul,
-      h2.eq_neg_one_of_two_right]
-  · rw [show (2 * k + 1) * (2 * k + 1 + 1) = 2 * (2 * k + 1) * (k + 1) by ring, pow_mul, pow_mul,
-      hq.pow_eq_one, one_pow, show 2 * k + 1 + 1 = 2 * (k + 1) by ring, pow_mul, neg_one_sq,
-      one_pow]
 
 /-- If `q²` is a primitive `l`-th root of unity and `r < l`, then
 `[m - l choose r]_q = q^(lr) [m choose r]_q` for every integer `m`: each factor of
@@ -114,21 +98,25 @@ private theorem neg_one_pow_mul_zpow_lucas {q : K} {l : ℕ} (hq : IsPrimitiveRo
       q ^ ((l : ℤ) * (r₁ * m₀ - -((a : ℤ) + 1) * r₀) + (-((a : ℤ) + 1) + 1) * r₁ * l ^ 2) *
         (-1) ^ r₁ := by
   have hq₀ : q ≠ 0 := fun h => by simpa [h, hl.ne'] using hq.pow_eq_one
+  have hll : q ^ ((l : ℤ) * (l + 1)) = (-1) ^ (l + 1) := by
+    exact_mod_cast hq.pow_mul_add_one_eq_neg_one_pow hl
   -- The signs: `q^(l(l+1)r₁) (-1)^r₁ = (-1)^(r₁ l + r₀) (-1)^r₀`, both being `(-1)^(r₁ l)`.
   have hsign : q ^ ((l : ℤ) * (l + 1) * r₁) * (-1) ^ r₁ = (-1) ^ (r₁ * l + r₀) * (-1) ^ r₀ := by
-    rw [zpow_mul, zpow_mul_add_one_of_isPrimitiveRoot hq hl, zpow_natCast, ← pow_mul, ← pow_add,
-      ← pow_add, show (l + 1) * r₁ + r₁ = r₁ * l + 2 * r₁ by ring,
-      show r₁ * l + r₀ + r₀ = r₁ * l + 2 * r₀ by ring, pow_add, pow_add, pow_mul (-1 : K) 2,
-      pow_mul (-1 : K) 2, neg_one_sq, one_pow, one_pow]
+    rw [zpow_mul, hll, zpow_natCast, ← pow_mul, ← pow_add, ← pow_add,
+      show (l + 1) * r₁ + r₁ = r₁ * l + 2 * r₁ by ring,
+      show r₁ * l + r₀ + r₀ = r₁ * l + 2 * r₀ by ring]
+    simp [pow_add, pow_mul]
   -- The exponents differ by a multiple of `2l`, using that `r₁ (r₁ + 1)` is even.
   obtain ⟨t, ht⟩ := Int.even_mul_succ_self (r₁ : ℤ)
   have hexp : q ^ ((l : ℤ) * (r₁ * m₀ - -((a : ℤ) + 1) * r₀) + (-((a : ℤ) + 1) + 1) * r₁ * l ^ 2) =
       q ^ ((l : ℤ) * (r₁ * n₀ - ((a + r₁ : ℕ) : ℤ) * r₀) + (((a + r₁ : ℕ) : ℤ) + 1) * r₁ * l ^ 2) *
         q ^ ((l : ℤ) * r₀) * q ^ ((l : ℤ) * (l + 1) * r₁) := by
-    have h2l : q ^ (2 * l : ℤ) = 1 := by rw [zpow_mul, zpow_ofNat, zpow_natCast, hq.pow_eq_one]
-    rw [← zpow_add₀ hq₀, ← zpow_add₀ hq₀, ← mul_one (q ^ (_ : ℤ)),
-      ← one_zpow (α := K) (-(r₁ * m₀ + a * r₀ - l * t - l * r₁ - a * r₁ * l)), ← h2l, ← zpow_mul,
-      ← zpow_add₀ hq₀]
+    -- Exponents of `q` only matter modulo `2l`.
+    have h2l : q ^ (2 * l : ℤ) = 1 := by exact_mod_cast (pow_mul q 2 l).trans hq.pow_eq_one
+    have hper (x e : ℤ) : q ^ (x + 2 * l * e) = q ^ x := by
+      rw [zpow_add₀ hq₀, zpow_mul, h2l, one_zpow, mul_one]
+    rw [← zpow_add₀ hq₀, ← zpow_add₀ hq₀,
+      ← hper _ (-(r₁ * m₀ + a * r₀ - l * t - l * r₁ - a * r₁ * l))]
     congr 1
     have hn₀z : (n₀ : ℤ) = l + r₀ - m₀ - 1 := by omega
     push_cast
@@ -167,9 +155,8 @@ theorem laurentEval_signedLaurentQuantumBinomial_mul_add_mul_add {ζ : Kˣ} {l :
   -- `binom(-(a + 1), r₁) = (-1)^r₁ binom(a + r₁, r₁)`.
   have hchoose : (Ring.choose (Int.negSucc a) r₁ : ℤ) = (-1) ^ r₁ * ((a + r₁).choose r₁ : ℤ) := by
     rw [Int.negSucc_eq, Ring.choose_neg, show (a : ℤ) + 1 + r₁ - 1 = ((a + r₁ : ℕ) : ℤ) by
-      push_cast; ring, Ring.choose_natCast, Units.smul_def, Int.coe_negOnePow_natCast,
-      zsmul_eq_mul]
-    norm_cast
+      push_cast; ring, Ring.choose_natCast]
+    simp [Units.smul_def, Int.coe_negOnePow_natCast]
   rw [hchoose, Int.negSucc_eq]
   rcases le_or_gt r₀ m₀ with hrm | hrm
   · -- If `r₀ ≤ m₀`, then `N + r = (a + r₁) l + n₀` with `n₀ = l - 1 - m₀ + r₀ < l`.
@@ -184,8 +171,9 @@ theorem laurentEval_signedLaurentQuantumBinomial_mul_add_mul_add {ζ : Kˣ} {l :
       map_pow, map_neg, map_one] at hrefl
     have hn₀' : quantumBinomial (ζ : K) n₀ r₀ =
         (-1) ^ r₀ * (ζ : K) ^ ((l : ℤ) * r₀) * quantumBinomial (ζ : K) m₀ r₀ := by
-      rw [show (l : ℤ) * r₀ = ((l * r₀ : ℕ) : ℤ) by push_cast; ring, zpow_natCast, mul_assoc,
-        hrefl, ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+      have hs : ((-1 : K) ^ r₀) ^ 2 = 1 := by rw [← pow_mul]; exact Even.neg_one_pow ⟨r₀, by ring⟩
+      rw [show (l : ℤ) * r₀ = ((l * r₀ : ℕ) : ℤ) by push_cast; ring, zpow_natCast]
+      linear_combination -(-1) ^ r₀ * hrefl - quantumBinomial (ζ : K) n₀ r₀ * hs
     rw [hn₀']
     simp only [Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_natCast]
     linear_combination (quantumBinomial (ζ : K) m₀ r₀ * ((a + r₁).choose r₁ : K)) *
