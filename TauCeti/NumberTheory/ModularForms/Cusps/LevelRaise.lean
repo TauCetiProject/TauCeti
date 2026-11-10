@@ -42,9 +42,19 @@ open TauCeti
 namespace Matrix.SpecialLinearGroup
 
 /-- A representative of the scaled cusp with primitive first column. -/
-lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} [NeZero t] :
+lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} :
     ∃ δ : SL(2, ℤ), (t : ℤ) * γ 0 0 = δ 0 0 * Int.gcd (γ 1 0) t ∧
       γ 1 0 = δ 1 0 * Int.gcd (γ 1 0) t := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · -- at `t = 0` the gcd is `|c|`, and the first column `(0, sign c)` of `δ` does the job
+    rcases lt_trichotomy (γ 1 0) 0 with hc | hc | hc
+    · obtain ⟨δ, h0, h1⟩ :=
+        (isCoprime_zero_left.mpr (isUnit_one.neg : IsUnit (-1 : ℤ))).exists_SL2_col 0
+      exact ⟨δ, by simp [h0], by simp only [h1, Nat.cast_zero, Int.gcd_zero_right]; omega⟩
+    · exact ⟨1, by simp [hc], by simp [hc]⟩
+    · obtain ⟨δ, h0, h1⟩ := (isCoprime_zero_left.mpr (isUnit_one : IsUnit (1 : ℤ))).exists_SL2_col 0
+      exact ⟨δ, by simp [h0], by simp only [h1, Nat.cast_zero, Int.gcd_zero_right]; omega⟩
+  have : NeZero t := ⟨ht⟩
   have hcop := Int.isCoprime_iff_gcd_eq_one.mp (γ.isCoprime_col 0)
   have hgcd : Int.gcd ((t : ℤ) * γ 0 0) (γ 1 0) = Int.gcd (γ 1 0) t := by
     rw [Int.gcd_mul_left_left_of_gcd_eq_one hcop, Int.gcd_comm]
