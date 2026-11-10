@@ -5,28 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.Riemannian
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
+import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
-import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
 
 /-!
 # Sphere bundles are locally trivial
 
-Let `E → B` be a real vector bundle with model fibre `F` whose fibres carry norms. A bundle chart
-`e` of `E` whose fibre maps preserve norms carries the unit sphere bundle `S(E)`
+Let `E → B` be a real vector bundle with model fibre `F` whose fibres carry norms, such that the
+fibre norm is a continuous function on the total space; for instance a continuous Riemannian
+vector bundle (`TauCeti.continuous_norm_bundle`). A linear bundle chart `e` of `E`, followed by
+normalization `x ↦ x / ‖x‖` of the fibre coordinate, carries the unit sphere bundle `S(E)`
 (`TauCeti.sphereBundle`) over its base set onto the product with the unit sphere `S(F)` of the
-model fibre. So it restricts to a chart of the projection `S(E) → B` with fibre `S(F)`
+model fibre, with inverse the inverse of `e` followed by normalization in the fibres of `E`. So it
+restricts to a chart of the projection `S(E) → B` (`TauCeti.sphereBundleProj`) with fibre `S(F)`
 (`Bundle.Trivialization.sphereBundle`).
 
-A continuous Riemannian vector bundle of finite rank has such norm-preserving charts around every
-point, obtained from any linear chart by Gram–Schmidt
-(`OrthonormalBasis.exists_orthonormal_trivialization`). So its sphere bundle is locally trivial
-with fibre the unit sphere of the model fibre
+So the sphere bundle is locally trivial with fibre the unit sphere of the model fibre
 (`TauCeti.exists_trivialization_sphereBundleProj`). Consequently:
 
 * the projection `S(E) → B` is a Serre fibration
@@ -44,11 +43,9 @@ that of its base and fibres.
 
 ## Main declarations
 
-* `Bundle.Trivialization.sphereBundle`: the chart of `S(E) → B` induced by a norm-preserving
-  chart of `E`.
-* `TauCeti.sphereBundleProj`: the projection `S(E) → B`.
-* `TauCeti.exists_trivialization_sphereBundleProj`: the sphere bundle of a continuous Riemannian
-  bundle of finite rank is locally trivial.
+* `Bundle.Trivialization.sphereBundle`: the chart of `S(E) → B` induced by a linear chart of `E`.
+* `TauCeti.exists_trivialization_sphereBundleProj`: the sphere bundle of a real vector bundle with
+  continuous fibre norm is locally trivial.
 * `TauCeti.TopCat.mem_serreFibrations_sphereBundleProj`,
   `TauCeti.isHurewiczFibration_sphereBundleProj`: it is a Serre fibration, and a Hurewicz
   fibration over a normal paracompact base.
@@ -75,23 +72,6 @@ open scoped Topology.Homotopy
 universe v w
 
 namespace TauCeti
-
-section Proj
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
-  [FiberBundle F E]
-
-/-- The projection `S(E) → B` of the unit sphere bundle of a bundle with normed fibres. -/
-def sphereBundleProj : C(sphereBundle F E, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
-
-@[simp]
-theorem sphereBundleProj_apply (v : sphereBundle F E) :
-    sphereBundleProj F E v = (v : TotalSpace F E).proj :=
-  (rfl)
-
-end Proj
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
@@ -127,171 +107,219 @@ namespace Bundle.Trivialization
 
 open TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F]
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
-  (e : Trivialization F (π F E)) (he : ∀ b ∈ e.baseSet, ∀ v : E b, ‖(e ⟨b, v⟩).2‖ = ‖v‖)
+  [∀ b, NormedSpace ℝ (E b)] (e : Trivialization F (π F E)) [e.IsLinear ℝ]
 
-include he in
-/-- A norm-preserving chart sends unit vectors over its base set to unit vectors. -/
-private theorem norm_apply_snd_of_mem_sphereBundle {v : TauCeti.sphereBundle F E}
-    (hv : (v : TotalSpace F E).proj ∈ e.baseSet) : ‖(e v).2‖ = 1 :=
-  (he _ hv (v : TotalSpace F E).2).trans (mem_sphereBundle.1 v.2)
+/-- A linear chart sends unit vectors over its base set to nonzero vectors. -/
+private theorem apply_snd_ne_zero_of_mem_sphereBundle {v : TauCeti.sphereBundle F E}
+    (hv : (v : TotalSpace F E).proj ∈ e.baseSet) : (e v).2 ≠ 0 :=
+  (e.linearEquivAt ℝ _ hv).map_ne_zero_iff.2
+    (norm_ne_zero_iff.1 (by rw [mem_sphereBundle.1 v.2]; exact one_ne_zero))
 
-include he in
-/-- The inverse of a norm-preserving chart sends unit vectors over its base set to unit
-vectors. -/
-private theorem norm_symm_snd {b : B} (hb : b ∈ e.baseSet) (w : sphere (0 : F) 1) :
-    ‖(e.toOpenPartialHomeomorph.symm (b, (w : F))).2‖ = 1 := by
-  set z := e.toOpenPartialHomeomorph.symm (b, (w : F))
-  have hz : z.proj = b := e.symm_coe_proj hb
-  have hez : e z = (b, (w : F)) := e.apply_symm_apply (e.mk_mem_target.2 hb)
-  rw [← he _ (hz ▸ hb) z.2, ← norm_eq_of_mem_sphere w]
-  exact congrArg (‖·.2‖) hez
+/-- The inverse of a linear chart sends unit vectors over its base set to nonzero vectors. -/
+private theorem symm_ne_zero {b : B} (hb : b ∈ e.baseSet) (w : sphere (0 : F) 1) :
+    e.symm b w ≠ 0 :=
+  (e.linearEquivAt ℝ b hb).symm.map_ne_zero_iff.2 (ne_zero_of_mem_unit_sphere w)
 
-variable [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+/-- A linear chart commutes with scalar multiplication in the fibres over its base set. -/
+private theorem apply_mk_smul {b : B} (hb : b ∈ e.baseSet) (c : ℝ) (y : E b) :
+    (e ⟨b, c • y⟩).2 = c • (e ⟨b, y⟩).2 :=
+  (e.linearEquivAt ℝ b hb).map_smul c y
+
+/-- The inverse of a linear chart commutes with scalar multiplication over its base set. -/
+private theorem symm_smul {b : B} (hb : b ∈ e.baseSet) (c : ℝ) (y : F) :
+    e.symm b (c • y) = c • e.symm b y :=
+  (e.linearEquivAt ℝ b hb).symm.map_smul c y
+
+omit [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)] [e.IsLinear ℝ] in
+/-- Over its base set, the norm of a vector read through the inverse of `e`. -/
+private theorem norm_symm_apply_snd {b : B} (hb : b ∈ e.baseSet) (y : F) :
+    ‖(e.toOpenPartialHomeomorph.symm (b, y)).2‖ = ‖e.symm b y‖ :=
+  congrArg (fun z : TotalSpace F E ↦ ‖z.2‖) (e.mk_symm hb y).symm
+
+variable [FiberBundle F E] [VectorBundle ℝ F E]
 
 open scoped Classical in
-/-- The fibre coordinate of the chart of the sphere bundle: `e` over its base set, and an arbitrary
-unit vector elsewhere. -/
+/-- The fibre coordinate of the chart of the sphere bundle: `e` followed by normalization over its
+base set, and an arbitrary unit vector elsewhere. -/
 private def sphereBundleCoord (v : TauCeti.sphereBundle F E) : sphere (0 : F) 1 :=
   if hv : (v : TotalSpace F E).proj ∈ e.baseSet then
-    ⟨(e v).2, mem_sphere_zero_iff_norm.2 (e.norm_apply_snd_of_mem_sphereBundle he hv)⟩
+    ⟨‖(e v).2‖⁻¹ • (e v).2, mem_sphere_zero_iff_norm.2
+      (norm_smul_inv_norm (e.apply_snd_ne_zero_of_mem_sphereBundle hv))⟩
   else Classical.choice (nonempty_sphere_of_sphereBundle v)
 
 private theorem coe_sphereBundleCoord {v : TauCeti.sphereBundle F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) :
-    (e.sphereBundleCoord he v : F) = (e v).2 := by
+    (e.sphereBundleCoord v : F) = ‖(e v).2‖⁻¹ • (e v).2 := by
   simp only [sphereBundleCoord, hv, ↓reduceDIte]
 
 open scoped Classical in
-/-- The inverse of the chart of the sphere bundle: the inverse of `e` over its base set, and an
-arbitrary unit vector elsewhere. -/
+/-- The inverse of the chart of the sphere bundle: the inverse of `e` followed by normalization
+over its base set, and an arbitrary unit vector elsewhere. -/
 private def sphereBundleInv (p : B × sphere (0 : F) 1) : TauCeti.sphereBundle F E :=
   if hp : p.1 ∈ e.baseSet then
-    ⟨e.toOpenPartialHomeomorph.symm (p.1, p.2), mem_sphereBundle.2 (e.norm_symm_snd he hp p.2)⟩
+    ⟨⟨p.1, ‖e.symm p.1 p.2‖⁻¹ • e.symm p.1 p.2⟩,
+      mem_sphereBundle.2 (norm_smul_inv_norm (e.symm_ne_zero hp p.2))⟩
   else Classical.choice (nonempty_sphereBundle p.1 p.2)
 
 private theorem coe_sphereBundleInv {p : B × sphere (0 : F) 1} (hp : p.1 ∈ e.baseSet) :
-    (e.sphereBundleInv he p : TotalSpace F E) = e.toOpenPartialHomeomorph.symm (p.1, p.2) := by
+    (e.sphereBundleInv p : TotalSpace F E) = ⟨p.1, ‖e.symm p.1 p.2‖⁻¹ • e.symm p.1 p.2⟩ := by
   simp only [sphereBundleInv, hp, ↓reduceDIte]
 
-/-- **The chart of the sphere bundle induced by a norm-preserving chart.** A bundle chart `e` of
-`E` whose fibre maps preserve norms restricts to a chart of the projection `S(E) → B` from the unit
-sphere bundle, with fibre the unit sphere of the model fibre and the same base set. -/
-def sphereBundle : Trivialization (sphere (0 : F) 1) (sphereBundleProj F E) where
-  toFun v := (sphereBundleProj F E v, e.sphereBundleCoord he v)
-  invFun := e.sphereBundleInv he
+/-- **The chart of the sphere bundle induced by a linear chart.** For a real vector bundle whose
+fibre norm is continuous on the total space, a linear bundle chart `e` of `E`, followed by
+normalization of the fibre coordinate, restricts to a chart of the projection `S(E) → B` from the
+unit sphere bundle, with fibre the unit sphere of the model fibre and the same base set. -/
+def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    Trivialization (sphere (0 : F) 1) (sphereBundleProj F E) where
+  toFun v := (sphereBundleProj F E v, e.sphereBundleCoord v)
+  invFun := e.sphereBundleInv
   source := sphereBundleProj F E ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
   map_source' _ hv := ⟨hv, mem_univ _⟩
   map_target' p hp := by
-    rw [mem_preimage, sphereBundleProj_apply, e.coe_sphereBundleInv he hp.1, e.symm_coe_proj hp.1]
+    rw [mem_preimage, sphereBundleProj_apply, e.coe_sphereBundleInv hp.1]
     exact hp.1
   left_inv' v hv := by
     have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := hv
+    have hpos : 0 < ‖(e v).2‖⁻¹ :=
+      inv_pos.2 (norm_pos_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle hv'))
     apply Subtype.ext
-    rw [e.coe_sphereBundleInv he hv', e.coe_sphereBundleCoord he hv', sphereBundleProj_apply,
-      ← e.coe_fst (e.mem_source.2 hv')]
-    exact e.symm_apply_apply (e.mem_source.2 hv')
+    rw [e.coe_sphereBundleInv hv', e.coe_sphereBundleCoord hv', sphereBundleProj_apply]
+    -- The inverse of `e` is linear on the fibre, so it undoes `e` up to a positive factor.
+    have hsymm : e.symm (v : TotalSpace F E).proj (‖(e v).2‖⁻¹ • (e v).2) =
+        ‖(e v).2‖⁻¹ • (v : TotalSpace F E).2 := by
+      rw [e.symm_smul hv', e.symm_proj_apply _ hv']
+    rw [hsymm]
+    exact congrArg (TotalSpace.mk (F := F) (v : TotalSpace F E).proj)
+      ((NormedSpace.normalize_smul_of_pos hpos _).trans
+        (NormedSpace.normalize_eq_self_of_norm_eq_one (mem_sphereBundle.1 v.2)))
   right_inv' p hp := by
     have hp' : p.1 ∈ e.baseSet := hp.1
-    have hsymm := e.coe_sphereBundleInv he hp'
-    have hz : (e.sphereBundleInv he p : TotalSpace F E).proj = p.1 := by
-      rw [hsymm, e.symm_coe_proj hp']
+    have hpos : 0 < ‖e.symm p.1 p.2‖⁻¹ := inv_pos.2 (norm_pos_iff.2 (e.symm_ne_zero hp' p.2))
+    have hsymm := e.coe_sphereBundleInv hp'
+    have hz : (e.sphereBundleInv p : TotalSpace F E).proj = p.1 := by rw [hsymm]
     refine Prod.ext hz (Subtype.ext ?_)
-    rw [e.coe_sphereBundleCoord he (by rwa [hz]), hsymm,
-      e.apply_symm_apply (e.mk_mem_target.2 hp')]
+    rw [e.coe_sphereBundleCoord (by rwa [hz]), hsymm]
+    -- The chart `e` is linear on the fibre, so it undoes its inverse up to a positive factor.
+    have happly : (e ⟨p.1, ‖e.symm p.1 p.2‖⁻¹ • e.symm p.1 p.2⟩).2 =
+        ‖e.symm p.1 p.2‖⁻¹ • (p.2 : F) := by
+      rw [e.apply_mk_smul hp', e.apply_mk_symm hp']
+    rw [happly]
+    exact (NormedSpace.normalize_smul_of_pos hpos _).trans
+      (NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere p.2))
   open_source := e.open_baseSet.preimage (sphereBundleProj F E).continuous
   open_target := e.open_baseSet.prod isOpen_univ
   continuousOn_toFun := by
-    -- Read the second coordinate in the model fibre, where the map is `e`.
+    -- Read the second coordinate in the model fibre, where the map is `e` followed by
+    -- normalization.
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
-    refine (e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦
-      e.mem_source.2 hv).congr fun v hv ↦ ?_
+    have he : ContinuousOn (fun v : TauCeti.sphereBundle F E ↦ e v)
+        (sphereBundleProj F E ⁻¹' e.baseSet) :=
+      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦ e.mem_source.2 hv
+    refine (he.fst.prodMk (((continuous_norm.comp_continuousOn he.snd).inv₀ fun v hv ↦
+      norm_ne_zero_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle hv)).smul he.snd)).congr
+      fun v hv ↦ ?_
     have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := hv
-    exact Prod.ext (e.coe_fst (e.mem_source.2 hv')).symm (e.coe_sphereBundleCoord he hv')
+    exact Prod.ext (e.coe_fst (e.mem_source.2 hv')).symm (e.coe_sphereBundleCoord hv')
   continuousOn_invFun := by
-    -- Read the value in the total space of `E`, where the map is the inverse of `e`.
+    -- Read the value in the total space of `E`, where the map is the inverse of `e` applied to a
+    -- rescaled unit vector; the rescaling factor is continuous because the fibre norm is.
     rw [IsInducing.subtypeVal.continuousOn_iff]
+    have hs : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
+        e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))) (e.baseSet ×ˢ univ) :=
+      e.toOpenPartialHomeomorph.continuousOn_symm.comp
+        (continuous_id.prodMap continuous_subtype_val).continuousOn
+        fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1
+    have hn : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
+        ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹) (e.baseSet ×ˢ univ) :=
+      (hnorm.comp_continuousOn hs).inv₀ fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ by
+        rw [Function.comp_apply, e.norm_symm_apply_snd hp.1]
+        exact norm_ne_zero_iff.2 (e.symm_ne_zero hp.1 p.2)
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
-      (continuous_id.prodMap continuous_subtype_val).continuousOn
-        fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1).congr
-      fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.coe_sphereBundleInv he hp.1
+      (continuous_fst.continuousOn.prodMk
+        (hn.smul (continuous_subtype_val.comp continuous_snd).continuousOn))
+      fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1).congr
+      fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
+    change (e.sphereBundleInv p : TotalSpace F E) = e.toOpenPartialHomeomorph.symm
+      (p.1, ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹ • (p.2 : F))
+    rw [e.coe_sphereBundleInv hp.1, e.norm_symm_apply_snd hp.1,
+      ← e.mk_symm hp.1, e.symm_smul hp.1]
   baseSet := e.baseSet
   open_baseSet := e.open_baseSet
   source_eq := rfl
   target_eq := rfl
   proj_toFun _ _ := rfl
 
+variable (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+
 @[simp]
-theorem sphereBundle_baseSet : (e.sphereBundle he).baseSet = e.baseSet :=
+theorem sphereBundle_baseSet : (e.sphereBundle hnorm).baseSet = e.baseSet :=
   (rfl)
 
-/-- Over its base set, the chart of the sphere bundle reads a unit vector in the chart `e`. -/
+/-- Over its base set, the chart of the sphere bundle reads a unit vector in the chart `e` and
+normalizes it. -/
 @[simp]
 theorem coe_sphereBundle_apply_snd {v : TauCeti.sphereBundle F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) :
-    ((e.sphereBundle he v).2 : F) = (e v).2 :=
-  e.coe_sphereBundleCoord he hv
+    ((e.sphereBundle hnorm v).2 : F) = ‖(e v).2‖⁻¹ • (e v).2 :=
+  e.coe_sphereBundleCoord hv
 
-/-- Over its base set, the inverse chart of the sphere bundle is the inverse of `e`. -/
+/-- Over its base set, the inverse chart of the sphere bundle is the inverse of `e` followed by
+normalization. -/
 @[simp]
 theorem coe_sphereBundle_symm_apply {b : B} (hb : b ∈ e.baseSet) (w : sphere (0 : F) 1) :
-    ((e.sphereBundle he).toOpenPartialHomeomorph.symm (b, w) : TotalSpace F E) =
-      e.toOpenPartialHomeomorph.symm (b, w) :=
-  e.coe_sphereBundleInv he (p := (b, w)) hb
+    ((e.sphereBundle hnorm).toOpenPartialHomeomorph.symm (b, w) : TotalSpace F E) =
+      ⟨b, ‖e.symm b w‖⁻¹ • e.symm b w⟩ :=
+  e.coe_sphereBundleInv (p := (b, w)) hb
 
 end Bundle.Trivialization
 
 namespace TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F]
-  [InnerProductSpace ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
-  [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)] [FiberBundle F E]
-  [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E]
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ F]
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (F E) in
-/-- **The sphere bundle of a Riemannian vector bundle is locally trivial.** For a continuous
-Riemannian vector bundle with finite-dimensional model fibre `F`, every point of the base lies in
-the base set of a chart of `S(E) → B` with fibre the unit sphere of `F`. No separation or
-paracompactness assumption on the base is needed. -/
-theorem exists_trivialization_sphereBundleProj (b : B) :
-    ∃ e : Trivialization (sphere (0 : F) 1) (sphereBundleProj F E), b ∈ e.baseSet := by
-  obtain ⟨e, -, hb, he⟩ := (stdOrthonormalBasis ℝ F).exists_orthonormal_trivialization (E := E) b
-  exact ⟨e.sphereBundle he, hb⟩
+/-- **The sphere bundle of a real vector bundle is locally trivial.** For a real vector bundle
+whose fibre norm is continuous on the total space, every point of the base lies in the base set of
+a chart of `S(E) → B` with fibre the unit sphere of the model fibre `F`. No finite-dimensionality,
+and no separation or paracompactness assumption on the base, is needed. -/
+theorem exists_trivialization_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    (b : B) : ∃ e : Trivialization (sphere (0 : F) 1) (sphereBundleProj F E), b ∈ e.baseSet :=
+  ⟨(trivializationAt F E b).sphereBundle hnorm, mem_baseSet_trivializationAt F E b⟩
 
 variable (F E) in
-/-- **The sphere bundle of a Riemannian vector bundle is a Serre fibration.** -/
-theorem TopCat.mem_serreFibrations_sphereBundleProj :
+/-- **The sphere bundle of a real vector bundle is a Serre fibration.** -/
+theorem TopCat.mem_serreFibrations_sphereBundleProj
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     TopCat.serreFibrations (_root_.TopCat.ofHom (sphereBundleProj F E) :
       _root_.TopCat.of (sphereBundle F E) ⟶ _root_.TopCat.of B) :=
-  TopCat.mem_serreFibrations_of_exists_trivialization (exists_trivialization_sphereBundleProj F E)
+  TopCat.mem_serreFibrations_of_exists_trivialization
+    (exists_trivialization_sphereBundleProj F E hnorm)
 
 variable (F E) in
-/-- **The sphere bundle of a Riemannian vector bundle over a normal paracompact base is a Hurewicz
+/-- **The sphere bundle of a real vector bundle over a normal paracompact base is a Hurewicz
 fibration.** This includes every paracompact Hausdorff base. -/
-theorem isHurewiczFibration_sphereBundleProj [NormalSpace B] [ParacompactSpace B] :
+theorem isHurewiczFibration_sphereBundleProj [NormalSpace B] [ParacompactSpace B]
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     IsHurewiczFibration.{v} (sphereBundleProj F E) :=
-  isHurewiczFibration_of_exists_trivialization (exists_trivialization_sphereBundleProj F E)
-
-end FiniteDimensional
+  isHurewiczFibration_of_exists_trivialization (exists_trivialization_sphereBundleProj F E hnorm)
 
 variable (E) in
-/-- **The `n`-sphere bundle of a Riemannian vector bundle is an `n`-connected map.** If the model
-fibre `F` has dimension `n + 1`, the projection `S(E) → B`, whose fibres are `n`-spheres, induces
-bijections on `πₖ` for `k < n`, path components included, and a surjection on `πₙ`. -/
-theorem isNConnected_sphereBundleProj {n : ℕ} (hF : finrank ℝ F = n + 1) :
-    (sphereBundleProj F E).IsNConnected n := by
-  have := Module.finite_of_finrank_eq_succ hF
+/-- **The `n`-sphere bundle of a real vector bundle is an `n`-connected map.** If the fibre norm is
+continuous on the total space and the model fibre `F` has dimension `n + 1`, the projection
+`S(E) → B`, whose fibres are `n`-spheres, induces bijections on `πₖ` for `k < n`, path components
+included, and a surjection on `πₙ`. -/
+theorem isNConnected_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) {n : ℕ}
+    (hF : finrank ℝ F = n + 1) : (sphereBundleProj F E).IsNConnected n := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   refine (TopCat.isNConnected_iff_of_mem_serreFibrations
-    (TopCat.mem_serreFibrations_sphereBundleProj F E) n).2 fun b ↦ ?_
+    (TopCat.mem_serreFibrations_sphereBundleProj F E hnorm) n).2 fun b ↦ ?_
   -- Every fibre is homeomorphic to the unit sphere of `F`, which is `(n - 1)`-connected.
-  obtain ⟨e, hb⟩ := exists_trivialization_sphereBundleProj F E b
+  obtain ⟨e, hb⟩ := exists_trivialization_sphereBundleProj F E hnorm b
   let h : sphereBundleProj F E ⁻¹' {b} ≃ₜ sphere (0 : F) 1 := e.preimageSingletonHomeomorph hb
   refine ⟨⟨h.symm ⟨_, (NormedSpace.sphere_nonempty.2 zero_le_one).some_mem⟩⟩,
     fun x k hk ↦ ?_⟩
@@ -299,11 +327,12 @@ theorem isNConnected_sphereBundleProj {n : ℕ} (hF : finrank ℝ F = n + 1) :
   exact (HomotopyGroup.homeomorphEquiv h x).subsingleton
 
 variable (E) in
-/-- **An `n`-sphere bundle with `n ≥ 2` is simply connected exactly when its base is.** If the
-model fibre `F` of a Riemannian vector bundle has dimension `n + 1` with `n ≥ 2`, its unit sphere
-bundle is simply connected exactly when the base is. -/
-theorem simplyConnectedSpace_sphereBundle_iff {n : ℕ} (hF : finrank ℝ F = n + 1) (hn : 2 ≤ n) :
+/-- **An `n`-sphere bundle with `n ≥ 2` is simply connected exactly when its base is.** If the fibre
+norm of a real vector bundle is continuous on the total space and its model fibre `F` has dimension
+`n + 1` with `n ≥ 2`, its unit sphere bundle is simply connected exactly when the base is. -/
+theorem simplyConnectedSpace_sphereBundle_iff (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    {n : ℕ} (hF : finrank ℝ F = n + 1) (hn : 2 ≤ n) :
     SimplyConnectedSpace (sphereBundle F E) ↔ SimplyConnectedSpace B :=
-  (isNConnected_sphereBundleProj E hF).simplyConnectedSpace_iff hn
+  (isNConnected_sphereBundleProj E hnorm hF).simplyConnectedSpace_iff hn
 
 end TauCeti
