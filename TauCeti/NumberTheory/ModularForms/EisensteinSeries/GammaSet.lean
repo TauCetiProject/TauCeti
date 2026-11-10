@@ -127,7 +127,7 @@ theorem nonempty_gammaSet_neg_iff (a : Fin 2 → ZMod N) :
 
 /-- A residue pair modulo `N = M p` that is not of the form `p e`, and whose reduction modulo `M`
 is that of a coprime pair, is the residue of a coprime pair. -/
-lemma nonempty_gammaSet_of_forall_ne_mul_prime {M p : ℕ} [NeZero M] [NeZero N]
+lemma nonempty_gammaSet_of_forall_ne_mul_prime {M p : ℕ} [NeZero N]
     (hp : p.Prime) (hNM : N = M * p) {c : Fin 2 → ZMod N}
     (hc : Nonempty (gammaSet M 1 (ZMod.castHom (⟨p, hNM⟩ : M ∣ N) (ZMod M) ∘ c)))
     (hι : ∀ e : Fin 2 → ZMod M, (fun i ↦ ((p * (e i).val : ℕ) : ZMod N)) ≠ c) :
