@@ -95,6 +95,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
   `ℝ≥0∞`-valued function.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
   power integral is carried by a σ-finite part of the measure.
+* `TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`: a power decay `t ^ (-q)` of the
+  superlevel sets bounds `∫⁻ u ^ p` for `p < q`.
 
 ## References
 
@@ -599,5 +601,69 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
             (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
+
+
+/-- **Weak-type decay of the superlevel sets bounds the integral of a smaller power.** If the
+superlevel sets of `u` decay like a power, `ν {u > t} ≤ C t ^ (-q) ν univ` for every `t > 1`, then
+for every exponent `0 < p < q`
+
+`∫⁻ u ^ p ∂ν ≤ (1 + C p / (q - p)) ν univ`.
+
+This is the inclusion of weak `L^q` in `L^p` for `p < q` over a finite measure, in the normalized
+form used to turn a weak-type estimate into an integral one. It is proved by the layer cake formula
+`TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: on `(0, 1]` the superlevel sets are
+bounded by `ν univ`, and on `(1, ∞)` by the hypothesis, whose power `t ^ (p - 1 - q)` is integrable
+at infinity because `p < q`. -/
+theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : β → ℝ≥0∞}
+    (hu : AEMeasurable u ν) {p q C : ℝ} (hp : 0 < p) (hpq : p < q) (hC : 0 ≤ C)
+    (h : ∀ t : ℝ, 1 < t → ν {y | ENNReal.ofReal t < u y} ≤
+      ENNReal.ofReal (C * t ^ (-q)) * ν univ) :
+    ∫⁻ y, u y ^ p ∂ν ≤ ENNReal.ofReal (1 + C * p / (q - p)) * ν univ := by
+  have hqp : 0 < q - p := sub_pos.2 hpq
+  -- Near the origin the superlevel sets are bounded by the total mass.
+  have h₁ : ∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ν univ * ENNReal.ofReal (1 / p) := by
+    calc ∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+        ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+          lintegral_mono fun t ↦ mul_le_mul_left (measure_mono (subset_univ _)) _
+      _ = ν univ * ENNReal.ofReal (1 / p) := by
+          rw [lintegral_const_mul _ (by fun_prop), ← setLIntegral_congr Ioo_ae_eq_Ioc,
+            lintegral_ofReal_rpow_Ioo (by linarith) zero_le_one]
+          simp
+  -- At infinity the hypothesis leaves the integrable power `t ^ (p - 1 - q)`.
+  have h₂ : ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p)) := by
+    calc ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+        ≤ ∫⁻ t in Ioi (1 : ℝ), ENNReal.ofReal C * ν univ * ENNReal.ofReal (t ^ (p - 1 - q)) := by
+          refine setLIntegral_mono' measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
+          have ht0 : 0 < t := one_pos.trans ht
+          calc ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+              ≤ ENNReal.ofReal (C * t ^ (-q)) * ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+                mul_le_mul_left (h t ht) _
+            _ = ENNReal.ofReal C * ν univ * ENNReal.ofReal (t ^ (p - 1 - q)) := by
+                rw [sub_eq_add_neg (p - 1) q, Real.rpow_add ht0,
+                  ENNReal.ofReal_mul (Real.rpow_nonneg ht0.le _),
+                  ENNReal.ofReal_mul hC]
+                ring
+      _ = ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p)) := by
+          rw [lintegral_const_mul _ (by fun_prop),
+            lintegral_ofReal_rpow_Ioi_of_lt (by linarith) one_pos]
+          rw [Real.one_rpow, show p - 1 - q + 1 = -(q - p) by ring, neg_div_neg_eq]
+  rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp, ← Ioc_union_Ioi_eq_Ioi zero_le_one,
+    lintegral_union measurableSet_Ioi Ioc_disjoint_Ioi_same]
+  calc ENNReal.ofReal p * ((∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} *
+          ENNReal.ofReal (t ^ (p - 1))) + ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} *
+          ENNReal.ofReal (t ^ (p - 1)))
+      ≤ ENNReal.ofReal p * (ν univ * ENNReal.ofReal (1 / p) +
+          ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p))) := by
+        gcongr
+    _ = ENNReal.ofReal (1 + C * p / (q - p)) * ν univ := by
+        rw [ENNReal.ofReal_add zero_le_one (by positivity), add_mul, mul_add]
+        congr 1
+        · rw [mul_comm (ν univ), ← mul_assoc, ← ENNReal.ofReal_mul hp.le, mul_one_div_cancel hp.ne',
+            ENNReal.ofReal_one]
+        · rw [show C * p / (q - p) = p * C * (1 / (q - p)) by ring,
+            ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hp.le]
+          ring
 
 end TauCeti

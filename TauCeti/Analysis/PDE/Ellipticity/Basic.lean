@@ -606,6 +606,12 @@ lemma mono_set (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : Ω' ⊆ Ω) :
     UniformlyEllipticOn Ω' a lam Lam :=
   ⟨h.pos, h.le, fun {_} hx => h.2.2 (hΩ hx)⟩
 
+/-- Precomposing the coefficients with a map sending `Ω'` into `Ω` preserves uniform ellipticity
+with the same constants; for instance, translating or rescaling the variable. -/
+lemma comp {Y : Type*} {Ω' : Set Y} {g : Y → X} (h : UniformlyEllipticOn Ω a lam Lam)
+    (hg : Set.MapsTo g Ω' Ω) : UniformlyEllipticOn Ω' (a ∘ g) lam Lam :=
+  ⟨h.pos, h.le, fun {_} hy => h.2.2 (hg hy)⟩
+
 /-- Weakening the lower constant and increasing the upper constant preserves uniform
 ellipticity. -/
 lemma mono_constants (h : UniformlyEllipticOn Ω a lam Lam) (hlam' : 0 < lam')
