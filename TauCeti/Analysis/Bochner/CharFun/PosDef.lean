@@ -78,14 +78,19 @@ theorem charFun_sum_mul_conj_eq_integral {ι : Type*} (s : Finset ι) (c : ι �
   rw [integral_finsetSum s fun j _ => hint i j]
   simp_rw [integral_const_mul, charFun_apply]
 
+omit [IsFiniteMeasure μ] in
 /-- The Hermitian form of `charFun μ` over a finite family `(cᵢ, tᵢ)` is a nonnegative real:
-`charFun μ` is a positive-definite function. -/
+`charFun μ` is a positive-definite function. For a measure that is not finite, `charFun μ`
+vanishes. -/
 theorem charFun_sum_mul_conj_nonneg {ι : Type*} (s : Finset ι) (c : ι → ℂ) (t : ι → E) :
     0 ≤ ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * charFun μ (t i - t j) := by
-  rw [charFun_sum_mul_conj_eq_integral, zero_le_real]
-  exact integral_nonneg fun _ => by positivity
+  by_cases hμ : IsFiniteMeasure μ
+  · rw [charFun_sum_mul_conj_eq_integral, zero_le_real]
+    exact integral_nonneg fun _ => by positivity
+  · simp [charFun_of_not_isFiniteMeasure hμ]
 
-/-- The subtraction kernel `(x, y) ↦ charFun μ (x - y)` of a finite measure is positive
+omit [IsFiniteMeasure μ] in
+/-- The subtraction kernel `(x, y) ↦ charFun μ (x - y)` of a measure is positive
 semidefinite: the matrix reformulation of the positive-definiteness of `charFun μ`. -/
 theorem posSemidef_charFun : Matrix.PosSemidef fun x y : E => charFun μ (x - y) := by
   refine ⟨.ext fun x y => ?_, fun x => ?_⟩

@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansi
 
 This file connects the quadratic-form positivity calculation for characteristic functions to
 Tau Ceti's generic positive-definite-function predicate. If the involution on an additive group is
-negation, then Mathlib's characteristic function `MeasureTheory.charFun μ` of a finite measure is
+negation, then Mathlib's characteristic function `MeasureTheory.charFun μ` of a measure is
 `TauCeti.IsPositiveDefinite`.
 
 Together with Mathlib's continuity theorem for characteristic functions, this shows that the
@@ -42,9 +42,9 @@ open scoped ComplexOrder
 section Seminormed
 
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
+  [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
 
-/-- The characteristic function of a finite measure is positive definite for any additive-group
+/-- The characteristic function of a measure is positive definite for any additive-group
 involution that is explicitly negation. This is the generic-predicate form of
 `charFun_sum_mul_conj_nonneg`, using
 `F (vᵢ + star vⱼ) = charFun μ (vᵢ - vⱼ)`. -/
@@ -55,7 +55,7 @@ theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E] (hstar : ∀
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp [hstar, sub_eq_add_neg]
 
-/-- The characteristic function of a finite measure is positive definite in the subtraction form:
+/-- The characteristic function of a measure is positive definite in the subtraction form:
 `∑ i, ∑ j, c i * conj (c j) * charFun μ (v i - v j)` is nonnegative. -/
 theorem isPositiveDefiniteSub_charFun : IsPositiveDefiniteSub (MeasureTheory.charFun μ) :=
   isPositiveDefiniteSub_iff_posSemidef.mpr posSemidef_charFun
@@ -66,15 +66,20 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
-  {μ : Measure E} [IsFiniteMeasure μ]
+  {μ : Measure E}
 
-/-- The characteristic function of a finite measure on a second-countable real inner product space
+/-- The characteristic function of a measure on a second-countable real inner product space
 is continuous and positive definite, provided the chosen involution is negation. This is the
-forward bridge toward Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. -/
+forward bridge toward Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. For a
+measure that is not finite, `charFun μ` vanishes. -/
 theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
-    Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) :=
-  ⟨MeasureTheory.continuous_charFun, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
+    Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) := by
+  refine ⟨?_, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
+  by_cases hμ : IsFiniteMeasure μ
+  · exact MeasureTheory.continuous_charFun
+  · rw [charFun_of_not_isFiniteMeasure hμ]
+    exact continuous_zero
 
 end Normed
 

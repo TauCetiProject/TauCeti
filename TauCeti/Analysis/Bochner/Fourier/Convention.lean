@@ -100,9 +100,9 @@ theorem fourier_eq_integral_fourierAtom_mul (F : U → ℂ) (ξ : U) :
 end FourierIntegral
 
 variable {W : Type*} [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
-  [MeasurableSpace W] [OpensMeasurableSpace W] {ν : Measure W} [IsFiniteMeasure ν]
+  [MeasurableSpace W] [OpensMeasurableSpace W] {ν : Measure W}
 
-/-- The Fourier-convention transform of a finite measure is positive definite for any additive
+/-- The Fourier-convention transform of a measure is positive definite for any additive
 group involution that is explicitly negation. This transports the positive-definiteness of
 `charFun μ` through the `-2π` additive rescaling. -/
 theorem fourierConventionCharFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid W]
@@ -114,7 +114,7 @@ theorem fourierConventionCharFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoi
   ext a
   exact integral_fourierAtom_eq_charFun_neg_two_pi_smul (μ := ν) a
 
-/-- The translation-invariant kernel attached to the Fourier-convention transform of a finite
+/-- The translation-invariant kernel attached to the Fourier-convention transform of a
 measure is positive definite. This is the kernel form of
 `fourierConventionCharFun_isPositiveDefinite_of_star_eq_neg`, avoiding any explicit choice of
 involution on the domain. -/
@@ -133,7 +133,7 @@ theorem posSemidef_fourierConventionCharFun_sub :
     simp [smul_sub]
   exact heq ▸ h
 
-/-- The rescaled characteristic function `v ↦ charFun ν ((-2π) • v)` of a finite measure has a
+/-- The rescaled characteristic function `v ↦ charFun ν ((-2π) • v)` of a measure has a
 positive-semidefinite subtraction kernel. This is `posSemidef_fourierConventionCharFun_sub`
 written through Mathlib's characteristic function. -/
 theorem posSemidef_charFun_neg_two_pi_smul_sub :
@@ -142,7 +142,7 @@ theorem posSemidef_charFun_neg_two_pi_smul_sub :
     posSemidef_fourierConventionCharFun_sub (ν := ν)
 
 /-- The Fourier-convention transform of a finite measure is continuous. -/
-theorem continuous_fourierConventionCharFun :
+theorem continuous_fourierConventionCharFun [IsFiniteMeasure ν] :
     Continuous fun a : W => ∫ q, fourierAtom a q ∂ν :=
   continuous_of_dominated (bound := fun _ ↦ 1)
     (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
