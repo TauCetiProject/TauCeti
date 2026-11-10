@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.Calculus.Morse.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Morse functions on smooth manifolds
@@ -257,11 +258,13 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ E
 /-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
 point. -/
 theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) ∞ M] (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
+    (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
   hf.isManifoldNondegenerateCriticalPoint
-    (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm.1 hx)
+    (by
+      have h := TauCeti.mvfderiv_eq_zero_iff.mpr hx
+      rwa [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm] at h)
 
 /-- A Morse function is Morse on every subset. -/
 theorem IsMorse.isMorseOn {I : ModelWithCorners ℝ E H}
