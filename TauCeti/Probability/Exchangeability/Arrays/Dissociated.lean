@@ -309,7 +309,7 @@ is one and the same random variable `Y`, then `Y` generates an almost surely tri
 
 In particular, the array `X (i, j) = U` built from global noise alone is separately exchangeable,
 but dissociating it would make `U` degenerate. -/
-theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsProbabilityMeasure μ]
+theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsFiniteMeasure μ]
     {Y : Ω → α} (h : JointlyDissociated μ fun _ => Y) {s : Set α}
     (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
   ProbabilityTheory.measure_eq_zero_or_one_of_indep_self
@@ -321,7 +321,7 @@ theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsProbabili
 /-- **Equal transposed entries of a separately dissociated array are trivial off the diagonal.**
 Separate dissociation asks `X (i, j)` and `X (j, i)` to be independent, so if those two entries
 are equal, they are self-independent. This applies in particular to symmetric arrays. -/
-theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsProbabilityMeasure μ]
+theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsFiniteMeasure μ]
     (h : SeparatelyDissociated μ X) {i j : ℕ} (hij : i ≠ j)
     (hsymm : X (j, i) = X (i, j))
     {s : Set α} (hs : MeasurableSet s) :
