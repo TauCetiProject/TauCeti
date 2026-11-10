@@ -52,6 +52,9 @@ of the trace with `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.frontierTrace_contDiffSMul_ae`: the trace of `ψ u` is `ψ` times the trace of `u`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero` and `TauCeti.W1p.ker_frontierTrace`:
   the kernel of the trace is `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero` and
+  `TauCeti.W1p.sub_mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq`: the same for
+  an open set of another inner product space that a rigid motion carries onto `Ω`.
 
 ## References
 
@@ -453,5 +456,43 @@ theorem W1p.ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   ext u
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
     W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero hp hΩ hb]
+
+/-! ### Domains carried onto a Lipschitz domain by a rigid motion -/
+
+section AffineIsometry
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {U : Opens F}
+
+/-- **Zero trace in rigid coordinates.** Let an affine isometry `g` carry the open set `U ⊆ F`
+onto a bounded Lipschitz domain `Ω`, so that `Ω = g.symm⁻¹(U)`. For `1 ≤ p < ∞`, a function
+`u ∈ W^{1,p}(U)` lies in `W^{1,p}_0(U)` exactly when the trace of `u ∘ g⁻¹` on `frontier Ω`
+vanishes. -/
+theorem W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' U)
+    (u : W1p volume U p) :
+    u ∈ w1p0Submodule volume U p ↔
+      W1p.frontierTrace hp hΩ hb (W1p.compAffineIsometryEquivL g.symm hΩU u) = 0 := by
+  rw [← W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero,
+    W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff hp]
+
+/-- **Equal boundary values in rigid coordinates.** Let an affine isometry `g` carry the open set
+`U ⊆ F` onto a bounded Lipschitz domain `Ω`. For `1 ≤ p < ∞` and `u, v ∈ W^{1,p}(U)`, the
+difference `u - v` lies in `W^{1,p}_0(U)` exactly when `u ∘ g⁻¹` and `v ∘ g⁻¹` have the same
+trace on `frontier Ω`. -/
+theorem W1p.sub_mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' U)
+    (u v : W1p volume U p) :
+    u - v ∈ w1p0Submodule volume U p ↔
+      W1p.frontierTrace hp hΩ hb (W1p.compAffineIsometryEquivL g.symm hΩU u) =
+        W1p.frontierTrace hp hΩ hb (W1p.compAffineIsometryEquivL g.symm hΩU v) := by
+  rw [W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero hp hΩ hb g hΩU,
+    map_sub, map_sub, sub_eq_zero]
+
+end AffineIsometry
 
 end TauCeti

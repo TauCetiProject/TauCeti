@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Covering.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # A map of covering spaces with locally connected target is a covering map
@@ -60,67 +61,12 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
     IsEvenlyCovered g f₀ (g ⁻¹' {f₀}) := by
   refine IsEvenlyCovered.to_isEvenlyCovered_preimage
     (I := {i : I // (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 = (tq f₀).2}) ?_
-  -- Points of a sheet of `p` over `V` land in `tq.source`, so their sheet index is defined.
-  have hmem : ∀ (i : I) {v : X}, v ∈ V →
-      g (tp.toOpenPartialHomeomorph.symm (v, i)) ∈ tq.source := by
-    intro i v hv
-    rw [tq.mem_source, hqg, tp.proj_symm_apply' (hVsub hv).1]
-    exact (hVsub hv).2
-  have hsnd : ContinuousOn (fun f : F => (tq f).2) tq.source :=
-    continuous_snd.comp_continuousOn tq.continuousOn_toFun
-  -- That index varies continuously along the sheet,
-  have hcont : ∀ i : I,
-      ContinuousOn (fun v => (tq (g (tp.toOpenPartialHomeomorph.symm (v, i)))).2) V := by
-    intro i
-    have h1 : ContinuousOn (fun v => g (tp.toOpenPartialHomeomorph.symm (v, i))) V :=
-      hg.comp_continuousOn (tp.continuousOn_symm_prodMk_left.mono fun v hv => (hVsub hv).1)
-    exact hsnd.comp h1 fun v hv => hmem i hv
-  -- hence is constant, `V` being preconnected and `J` discrete.
-  have hcv : ∀ (i : I) {v : X}, v ∈ V →
-      (tq (g (tp.toOpenPartialHomeomorph.symm (v, i)))).2 =
-        (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 :=
-    fun i _ hv => hVconn.constant (hcont i) hv hf₀V
   set j₀ : J := (tq f₀).2 with _₀
   set W : Set F := {f | q f ∈ V ∧ (tq f).2 = j₀}
-  have hf₀W : f₀ ∈ W := ⟨hf₀V, rfl⟩
-  have hWopen : IsOpen W := by
-    have hW : W = q ⁻¹' V ∩ (tq.source ∩ (fun f => (tq f).2) ⁻¹' {j₀}) := by
-      ext f
-      exact ⟨fun h => ⟨h.1, tq.mem_source.mpr (hVsub h.1).2, h.2⟩, fun h => ⟨h.1, h.2.2⟩⟩
-    rw [hW]
-    exact (hVopen.preimage hq).inter
-      (hsnd.isOpen_inter_preimage tq.open_source (isOpen_discrete {j₀}))
-  -- Membership in `g ⁻¹' W` is read off the sheet index of `p`.
-  have hgW : ∀ e : E, g e ∈ W ↔
-      p e ∈ V ∧ (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, (tp e).2)))).2 = j₀ := by
-    intro e
-    constructor
-    · rintro ⟨h1, h2⟩
-      rw [hqg] at h1
-      refine ⟨h1, ?_⟩
-      rw [← hcv (tp e).2 h1, tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1), h2]
-    · rintro ⟨h1, h2⟩
-      have h3 := hcv (tp e).2 h1
-      rw [tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1)] at h3
-      exact ⟨by rw [hqg]; exact h1, by rw [h3, h2]⟩
-  have hfwd : ∀ e : E, g e ∈ W →
-      (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, (tp e).2)))).2 = j₀ :=
-    fun e he => ((hgW e).mp he).2
-  -- The sheet of `p` through a point of `W` is carried onto that point.
-  have hbwd : ∀ (w : F) (i : I), w ∈ W →
-      (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 = j₀ →
-      g (tp.toOpenPartialHomeomorph.symm (q w, i)) = w := by
-    intro w i hw hi
-    have hwV : q w ∈ V := hw.1
-    have h1 : q (g (tp.toOpenPartialHomeomorph.symm (q w, i))) = q w := by
-      rw [hqg, tp.proj_symm_apply' (hVsub hwV).1]
-    refine tq.injOn (hmem i hwV) (tq.mem_source.mpr (hVsub hwV).2) (Prod.ext ?_ ?_)
-    · simp only [Trivialization.coe_coe]
-      rw [tq.coe_fst (hmem i hwV), tq.coe_fst (tq.mem_source.mpr (hVsub hwV).2), h1]
-    · simp only [Trivialization.coe_coe]
-      rw [hcv i hwV, hi, hw.2]
-  refine ⟨inferInstance, W, hf₀W, hWopen, hWopen.preimage hg,
-    { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, hfwd e.1 e.2⟩)
+  have hWopen : IsOpen W := tq.isOpen_sheet hVopen (fun v hv => (hVsub hv).2) j₀
+  have hgW := tp.map_mem_sheet_iff hg hqg tq hVconn hVsub hf₀V j₀
+  refine ⟨inferInstance, W, ⟨hf₀V, rfl⟩, hWopen, hWopen.preimage hg,
+    { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, (hgW e.1).mp e.2 |>.2⟩)
       invFun := fun wi => ⟨tp.toOpenPartialHomeomorph.symm (q wi.1.1, wi.2.1), by
         refine (hgW _).mpr ⟨?_, ?_⟩
         · rw [tp.proj_symm_apply' (hVsub wi.1.2.1).1]
@@ -136,7 +82,8 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
       right_inv := by
         rintro ⟨⟨w, hw⟩, ⟨i, hi⟩⟩
         dsimp only
-        refine Prod.ext (Subtype.ext (hbwd w i hw hi)) (Subtype.ext ?_)
+        refine Prod.ext (Subtype.ext
+          (tp.map_symm_eq_of_mem_sheet hg hqg tq hVconn hVsub hf₀V hw hi)) (Subtype.ext ?_)
         dsimp only
         rw [tp.apply_symm_apply' (hVsub hw.1).1]
       continuous_toFun := by
@@ -166,16 +113,11 @@ theorem _root_.IsCoveringMap.of_comp_eq [LocallyConnectedSpace F] (hp : IsCoveri
   rcases isEmpty_or_nonempty (p ⁻¹' {q f₀} : Set E) with hemp | hne
   · -- `p` misses `q f₀`, so `g` misses a whole evenly covered neighbourhood of `f₀`.
     obtain ⟨-, U, hxU, hU, -, Hp, -⟩ := hp (q f₀)
-    have hpU : p ⁻¹' U = ∅ := Set.isEmpty_coe_sort.mp (Function.isEmpty ⇑Hp)
     have hgU : g ⁻¹' (q ⁻¹' U) = ∅ := by
-      rw [← Set.preimage_comp, hgp]
-      exact hpU
-    have : IsEmpty (g ⁻¹' {f₀} : Set E) := by
-      refine Set.isEmpty_coe_sort.mpr (Set.eq_empty_of_subset_empty ?_)
-      rw [← hgU]
-      rintro e he
-      rw [Set.mem_preimage, Set.mem_singleton_iff] at he
-      simpa only [Set.mem_preimage, he] using hxU
+      rw [← preimage_comp, hgp]
+      exact isEmpty_coe_sort.mp (Function.isEmpty Hp)
+    have : IsEmpty (g ⁻¹' {f₀}) := isEmpty_coe_sort.mpr <|
+      subset_empty_iff.mp (hgU ▸ preimage_mono (singleton_subset_iff.mpr hxU))
     exact IsEvenlyCovered.of_preimage_eq_empty _ ((hU.preimage hq.continuous).mem_nhds hxU) hgU
   · have : Nonempty (q ⁻¹' {q f₀} : Set F) := ⟨⟨f₀, rfl⟩⟩
     have := (hp (q f₀)).discreteTopology_fiber

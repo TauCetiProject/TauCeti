@@ -15,9 +15,9 @@ nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded b
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
 the right half-plane, so this applies to quotients of nearly equal points. A relative
-displacement smaller than the distance to a pole also gives a slit-plane quotient. A product of
-two points in the right half-plane lies in the slit plane as well, and positive real scaling
-preserves it.
+displacement smaller than the distance to a pole also gives a slit-plane quotient; in particular
+`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. A product of two points in the right
+half-plane lies in the slit plane as well, and positive real scaling preserves it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -36,12 +36,13 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
+* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
+* `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
@@ -57,6 +58,14 @@ open scoped NNReal
 
 namespace TauCeti
 
+/-- Differences `z - s` with `z` in the closed lower half-plane lie in the slit plane when `s` lies
+strictly above the real axis. -/
+theorem sub_mem_slitPlane_of_im_le_zero {s z : ℂ} (him : 0 < s.im) (hz : z.im ≤ 0) :
+    z - s ∈ slitPlane :=
+  Or.inr (by
+    simp only [Complex.sub_im, ne_eq, sub_eq_zero]
+    exact fun h ↦ absurd (h ▸ hz) (not_le.mpr him))
+
 /-- The quotient under the proximity inequality lies in the slit plane. -/
 theorem div_sub_mem_slitPlane_of_dist_lt_dist
     {x y w : ℂ} (h : dist y x < dist x w) :
@@ -70,6 +79,11 @@ theorem div_sub_mem_slitPlane_of_dist_lt_dist
   rw [Metric.mem_ball, dist_eq_norm, hsub, norm_div, div_lt_one (norm_pos_iff.mpr hne)]
   simpa only [dist_eq_norm] using h
 
+/-- If `‖a‖ < ‖z‖`, then `1 + a / z` lies in the slit plane. -/
+theorem one_add_div_mem_slitPlane {a z : ℂ} (h : ‖a‖ < ‖z‖) : 1 + a / z ∈ slitPlane :=
+  mem_slitPlane_of_norm_lt_one <| by
+    rw [norm_div, div_lt_one ((norm_nonneg a).trans_lt h)]
+    exact h
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate

@@ -34,6 +34,8 @@ import TauCeti.Data.Set.PowersetCard
   of them.
 * `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
   first such element and the elements after a later point.
+* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, other
+  than its least element, contain every element of the set between two of them.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -466,6 +468,16 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
     _ = _ := by
         rw [sum_comm]
         exact sum_congr rfl fun c _ => (sum_filter _ _).symm
+
+/-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
+position of `s` between two of them. -/
+theorem convex_filter_erase_le {α : Type*} [LinearOrder α] {s : Finset α} {m : α}
+    (hmin : ∀ z ∈ s, m ≤ z) (y : α) :
+    ∀ a ∈ {z ∈ s.erase m | z ≤ y}, ∀ c ∈ {z ∈ s.erase m | z ≤ y}, ∀ b ∈ s,
+      a < b → b < c → b ∈ {z ∈ s.erase m | z ≤ y} := by
+  intro a ha c hc b hb hab hbc
+  simp only [mem_filter, mem_erase] at ha hc ⊢
+  exact ⟨⟨((hmin a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
 
 /-- **The alternating sum over the subsets of a finset** is `1` for the empty finset and `0`
 otherwise, in an arbitrary ring. Mathlib's `Finset.sum_powerset_neg_one_pow_card` is the case of
