@@ -59,6 +59,7 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
   [IsUltrametricDist R] [CompleteSpace R]
   {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h : ℕ}
 
+omit [NormOneClass R] in
 /-- The Fredholm factor on the complementary Riesz summand is a unit at the chosen scalar.
 This retains the unit assertion over coefficient rings with zero divisors. -/
 theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E)
