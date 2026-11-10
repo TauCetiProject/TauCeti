@@ -198,7 +198,11 @@ namespace ContinuousLinearMap
 open exteriorPower
 open scoped RealInnerProductSpace ComplexConjugate
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+section Gradient
+
+variable [CompleteSpace E]
 
 /-- The vector representing the real part of a complex-valued covector `P`:
 `⟪P.reGradient, v⟫ = Re (P v)`. -/
@@ -229,6 +233,10 @@ theorem norm_reGradient_le (P : E →L[ℝ] ℂ) : ‖P.reGradient‖ ≤ ‖P�
 theorem norm_imGradient_le (P : E →L[ℝ] ℂ) : ‖P.imGradient‖ ≤ ‖P‖ := by
   rw [imGradient, LinearIsometryEquiv.norm_map]
   exact (Complex.imCLM.opNorm_comp_le P).trans (by rw [Complex.imCLM_norm, one_mul])
+
+end Gradient
+
+variable [FiniteDimensional ℝ E]
 
 /-- The two-vector `p₁ ∧ p₂` of the gradients of the real and imaginary parts of a
 complex-valued covector `P = p₁ + i p₂`. It represents the two-form `Im (conj (P u) P w)`
