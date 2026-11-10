@@ -159,7 +159,7 @@ theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBil
     (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Iio 0))
     (hu0 : u ≠ 0) : B u u < 0 := by
   simpa [continuousLinearMapOfBilin_apply] using
-    hB.isSymmetric.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio hu hu0
+    hB.isSymmetric.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace subset_rfl hu hu0
 
 /-- A real bilinear form with a self-adjoint Riesz operator is positive definite on the positive
 spectral subspace of that operator. -/
@@ -168,6 +168,6 @@ theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBil
     (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Ioi 0))
     (hu0 : u ≠ 0) : 0 < B u u := by
   simpa [continuousLinearMapOfBilin_apply] using
-    hB.isSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace_Ioi hu hu0
+    hB.isSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace subset_rfl hu hu0
 
 end InnerProductSpace
