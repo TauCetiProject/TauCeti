@@ -105,21 +105,16 @@ theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R
   rw [opAlgEquiv_op_op, G.quadraticTwist_apply_of_mem ha,
     H.quadraticTwist_apply_of_mem hx]
   -- Without a scalar tower, the sign `((u : ℤˣ) : R)` still commutes with the `A`-action: for
-  -- `u = -1` both sides are additive inverses of `a • y`.
-  have hneg (z : M) : (-1 : R) • z + z = 0 := by
-    calc (-1 : R) • z + z = (-1 : R) • z + (1 : R) • z := by rw [one_smul]
-      _ = ((-1 : R) + 1) • z := (add_smul _ _ _).symm
-      _ = 0 := by rw [neg_add_cancel, zero_smul]
+  -- `u = -1` both sides are negatives of `a • y`.
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
   have hsign (u : ℤˣ) (y : M) : ((u : ℤ) : R) • (a • y) = a • (((u : ℤ) : R) • y) ∧
       (((u : ℤ) : R) • a) • y = ((u : ℤ) : R) • (a • y) := by
     rcases Int.units_eq_one_or u with rfl | rfl
     · simp
     · simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one]
-      have hz : IsAddUnit (a • y) := ⟨⟨a • y, (-1 : R) • (a • y), (add_comm _ _).trans (hneg _),
-        hneg _⟩, rfl⟩
-      refine ⟨hz.add_left_inj.1 ((hneg _).trans ?_), hz.add_left_inj.1 ?_⟩
-      · rw [← smul_add, hneg, smul_zero]
-      · rw [neg_one_smul R a, ← add_smul, neg_add_cancel, zero_smul, hneg]
+      refine ⟨?_, ?_⟩
+      · rw [neg_one_smul R (a • y), neg_one_smul R y, smul_neg]
+      · rw [neg_one_smul R a, neg_smul, neg_one_smul R (a • y)]
   rw [(hsign _ _).2, ← (hsign _ _).1, smul_smul]
   have hax : a • x ∈ H.piece (p + q) := SetLike.GradedSMul.smul_mem ha hx
   rw [map_smul, H.quadraticTwist_apply_of_mem hax]
