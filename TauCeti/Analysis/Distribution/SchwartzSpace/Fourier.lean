@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -75,6 +77,13 @@ changes a symbol only by a smoothing remainder.
   of `𝓕 f` is `f 0`, and `𝓕 (𝓕 f) = f (-·)`.
 * `SchwartzMap.integral_fourier_smul_apply_eq_zero`: if `χ = 1` near `0`, every moment of positive
   order of `𝓕 χ` vanishes, `∫ 𝓕 χ (v) M (v, …, v) dv = 0`.
+* `SchwartzMap.integral_fourier_smul_sum_iteratedFDeriv_eq`,
+  `SchwartzMap.norm_integral_fourier_smul_sub_smul_sub_le`: if `χ = 1` near `0`, averaging against
+  `𝓕 χ` reproduces Taylor polynomials, so averaging the translates `η ↦ h (ξ - c • η)` changes
+  `h ξ` only by a Taylor remainder of order `N + 1`.
+* `SchwartzMap.integral_fourierChar_mul_fourier`: Fourier inversion with the Fourier character.
+* `SchwartzMap.fourier_smulLeftCLM_sub_apply`: the Fourier transform of `y ↦ χ(x - y) u(y)` is a
+  twisted convolution of `𝓕 χ` with `𝓕 u`.
 
 ## References
 
@@ -371,7 +380,131 @@ theorem integral_fourier_smul_apply_eq_zero (χ : 𝓢(E, ℂ)) (hχ : (χ : E �
     _ = 0 := Finset.sum_eq_zero fun r _ ↦ by
         rw [integral_prod_inner_smul_fourier_eq_zero χ hχ hk, zero_smul]
 
+open scoped Nat in
+/-- **Averaging reproduces Taylor polynomials.** If a Schwartz function `χ` equals `1` near `0`,
+averaging a Taylor polynomial `η ↦ ∑_{k ≤ N} D^k h(ξ) (c • η, …, c • η) / k!` against `𝓕 χ` gives
+back its constant term `h ξ`: the moments of positive order of `𝓕 χ` vanish and its integral is
+`χ 0 = 1`. -/
+theorem integral_fourier_smul_sum_iteratedFDeriv_eq (χ : 𝓢(E, ℂ)) (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1)
+    (h : E → F) (ξ : E) (c : ℝ) (N : ℕ) :
+    ∫ η, 𝓕 χ η • ∑ k ∈ Finset.range (N + 1),
+        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ c • η) = h ξ := by
+  have hterm (k : ℕ) : Integrable fun η ↦
+      (k ! : ℝ)⁻¹ • (𝓕 χ η • iteratedFDeriv ℝ k h ξ (fun _ ↦ c • η)) :=
+    ((𝓕 χ).integrable_smul_continuousMultilinearMap_apply_smul _ _).smul _
+  simp_rw [Finset.smul_sum, smul_comm (𝓕 χ _) ((_ : ℕ) ! : ℝ)⁻¹]
+  rw [integral_finsetSum _ fun k _ ↦ hterm k, Finset.sum_range_succ']
+  -- The terms of positive order vanish, by the vanishing moments of `𝓕 χ`.
+  have hzero (k : ℕ) : ∫ η, (((k + 1) ! : ℕ) : ℝ)⁻¹ •
+      (𝓕 χ η • iteratedFDeriv ℝ (k + 1) h ξ (fun _ ↦ c • η)) = 0 := by
+    have hM := integral_fourier_smul_apply_eq_zero χ hχ k.succ_ne_zero
+      ((iteratedFDeriv ℝ (k + 1) h ξ).compContinuousLinearMap
+        fun _ ↦ c • ContinuousLinearMap.id ℝ E)
+    simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
+      FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.id_apply] at hM
+    rw [← fourier_coe] at hM
+    rw [integral_smul, hM, smul_zero]
+  simp only [hzero, Finset.sum_const_zero, zero_add, Nat.factorial_zero, Nat.cast_one, inv_one,
+    one_smul, iteratedFDeriv_zero_apply]
+  rw [integral_smul_const, fourier_coe, integral_fourier_eq_apply_zero, hχ.self_of_nhds,
+    Pi.one_apply, one_smul]
+
+open scoped Nat in
+/-- **Taylor remainder of an average of translates.** If a Schwartz function `χ` equals `1` near
+`0`, averaging the translates `η ↦ h (ξ - c • η)` of a function `h` of polynomial growth against
+`𝓕 χ` changes `h ξ` by at most the size of the `(N + 1)`-st derivative of `h`: if
+`‖D^{N+1} h ζ‖ ≤ C ⟨ζ⟩ ^ t`, then `‖∫ 𝓕 χ(η) h(ξ - c • η) dη - h(ξ)‖ ≤ C' ⟨ξ⟩ ^ t`, with `C'`
+independent of `ξ`. -/
+theorem norm_integral_fourier_smul_sub_smul_sub_le (χ : 𝓢(E, ℂ))
+    (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1) {h : E → F} {N : ℕ} (hh : ContDiff ℝ (N + 1) h) {C₀ s₀ : ℝ}
+    (h₀ : ∀ ζ, ‖h ζ‖ ≤ C₀ * (1 + ‖ζ‖ ^ 2) ^ (s₀ / 2)) {C t : ℝ}
+    (hN : ∀ ζ, ‖iteratedFDeriv ℝ (N + 1) h ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (t / 2)) (c : ℝ) (ξ : E) :
+    ‖(∫ η, 𝓕 χ η • h (ξ - c • η)) - h ξ‖ ≤
+      C * 2 ^ (|t| / 2) / N ! *
+        (∫ η, (1 + ‖c • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) * ‖𝓕 χ η‖) *
+          (1 + ‖ξ‖ ^ 2) ^ (t / 2) := by
+  set T : E → F := fun η ↦ ∑ k ∈ Finset.range (N + 1),
+    (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ (-c) • η)
+  have hTi : Integrable fun η ↦ 𝓕 χ η • T η := by
+    simp_rw [T, Finset.smul_sum, smul_comm (𝓕 χ _) ((_ : ℕ) ! : ℝ)⁻¹]
+    exact integrable_finsetSum _ fun k _ ↦
+      ((𝓕 χ).integrable_smul_continuousMultilinearMap_apply_smul _ _).smul _
+  have hhi := (𝓕 χ).integrable_smul_apply_sub_smul (μ := volume) hh.continuous h₀ c ξ
+  rw [← integral_fourier_smul_sum_iteratedFDeriv_eq χ hχ h ξ (-c) N, ← integral_sub hhi hTi]
+  simp_rw [← smul_sub]
+  refine (norm_integral_le_of_norm_le (((𝓕 χ).integrable_one_add_norm_smul_sq_rpow_mul_norm
+    c (|t| + (N + 1))).const_mul (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2)))
+    (.of_forall fun η ↦ ?_)).trans (le_of_eq ?_)
+  · have hT := TauCeti.norm_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow hh hN ξ ((-c) • η)
+    have he : ξ + (-c) • η = ξ - c • η := by rw [neg_smul, ← sub_eq_add_neg]
+    have hn : ‖(-c) • η‖ = ‖c • η‖ := by rw [neg_smul, norm_neg]
+    rw [he, hn] at hT
+    rw [norm_smul]
+    calc ‖𝓕 χ η‖ * ‖h (ξ - c • η) - T η‖
+        ≤ ‖𝓕 χ η‖ * (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2) *
+            (1 + ‖c • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2)) := by gcongr
+      _ = _ := by ring
+  · rw [integral_const_mul]
+    ring
+
 end Moment
+
+section Cutoff
+
+/-! ### Cutting off by a translate -/
+
+variable [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Fourier inversion** for a Schwartz function, written with the Fourier character:
+`∫ exp(2πi ⟪η, w⟫) 𝓕 χ(η) dη = χ w`. -/
+theorem integral_fourierChar_mul_fourier (χ : 𝓢(E, ℂ)) (w : E) :
+    ∫ η, (𝐞 ⟪η, w⟫ : ℂ) * 𝓕 χ η = χ w := by
+  have h : (𝓕⁻ (𝓕 χ : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) w = χ w := by
+    rw [FourierTransform.fourierInv_fourier_eq]
+  rw [← h, fourierInv_coe, Real.fourierInv_eq]
+  simp only [Circle.smul_def, smul_eq_mul]
+
+/-- **The Fourier transform of a cut-off function.** The Fourier transform of the product
+`y ↦ χ(x - y) u(y)` is a twisted convolution of the Fourier transforms:
+`∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. -/
+theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ : E) :
+    𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ =
+      ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
+  have hχx : (fun y : E ↦ χ (x - y)).HasTemperateGrowth := χ.hasTemperateGrowth.comp (by fun_prop)
+  set K : E × E → F := fun p ↦ (𝓕 χ p.2 * 𝐞 ⟪p.2, x⟫ * 𝐞 (-⟪p.1, ζ + p.2⟫)) • u p.1
+  have hK : Integrable K (volume.prod volume) := by
+    have hc : Continuous fun p : E × E ↦ 𝓕 χ p.2 * (𝐞 ⟪p.2, x⟫ : ℂ) * 𝐞 (-⟪p.1, ζ + p.2⟫) := by
+      have h₁ : Continuous ⇑(𝓕 χ : 𝓢(E, ℂ)) := (𝓕 χ).continuous
+      have h₂ : Continuous fun t : ℝ ↦ (𝐞 t : ℂ) :=
+        continuous_subtype_val.comp Real.continuous_fourierChar
+      fun_prop
+    refine (u.integrable.norm.mul_prod (𝓕 χ).integrable.norm).mono'
+      (hc.smul (u.continuous.comp continuous_fst)).aestronglyMeasurable (.of_forall fun p ↦ ?_)
+    simp only [K, norm_smul, norm_mul, Circle.norm_coe, mul_one]
+    exact (mul_comm _ _).le
+  -- The Fourier transform of the cut-off input, with `χ(x - y)` written by Fourier inversion.
+  have hL : 𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ = ∫ y, ∫ η, K (y, η) := by
+    rw [fourier_coe, Real.fourier_eq]
+    refine integral_congr_ae (.of_forall fun y ↦ ?_)
+    simp only [smulLeftCLM_apply_apply hχx, K, ← integral_fourierChar_mul_fourier χ (x - y),
+      Circle.smul_def, ← integral_smul_const, ← integral_smul]
+    refine integral_congr_ae (.of_forall fun η ↦ ?_)
+    simp only [smul_smul]
+    congr 1
+    have e : (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ = 𝐞 ⟪η, x⟫ * 𝐞 (-⟪y, ζ + η⟫) := by
+      rw [← Circle.coe_mul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul]
+      congr 2
+      simp only [inner_sub_right, inner_add_right, real_inner_comm y η]
+      ring
+    calc (𝐞 (-⟪y, ζ⟫) : ℂ) * ((𝐞 ⟪η, x - y⟫ : ℂ) * 𝓕 χ η)
+        = (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ * 𝓕 χ η := by ring
+      _ = _ := by rw [e]; ring
+  rw [hL, integral_integral_swap hK]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [K, mul_smul, integral_smul]
+  congr 2
+
+end Cutoff
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 

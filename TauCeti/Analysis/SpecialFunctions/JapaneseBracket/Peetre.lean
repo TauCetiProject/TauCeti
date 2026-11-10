@@ -45,6 +45,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
   `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sub_sq_rpow_le_of_norm_sub_le_one`: for `‖x - x₀‖ ≤ 1`,
+  `⟨x - y⟩ ^ s ≤ 2 ^ (|s| / 2) 2 ^ |s| ⟨x₀⟩ ^ s ⟨y⟩ ^ |s|`, uniformly near `x₀`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
@@ -173,6 +175,23 @@ theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x
     _ = 2 ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
         rw [← Real.rpow_add two_pos]
         ring_nf
+
+omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality near a point.** For `x` within distance one of `x₀`, translating `x` by
+`y` changes the weight by a factor uniform in `x`:
+`⟨x - y⟩ ^ s ≤ 2 ^ (|s| / 2) 2 ^ |s| ⟨x₀⟩ ^ s ⟨y⟩ ^ |s|` for every real `s`. -/
+theorem one_add_norm_sub_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] (s : ℝ)
+    {x x₀ : E} (h : ‖x - x₀‖ ≤ 1) (y : E) :
+    (1 + ‖x - y‖ ^ 2) ^ (s / 2) ≤
+      2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖x₀‖ ^ 2) ^ (s / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) := by
+  have h₁ := one_add_norm_sq_rpow_le_mul_sub s (x - y) x
+  rw [sub_sub_cancel_left, norm_neg] at h₁
+  have h₂ := one_add_norm_sq_rpow_le_of_norm_sub_le_one h s
+  calc (1 + ‖x - y‖ ^ 2) ^ (s / 2)
+      ≤ 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) := h₁
+    _ ≤ 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) * (2 ^ |s| * (1 + ‖x₀‖ ^ 2) ^ (s / 2)) := by
+        gcongr
+    _ = _ := by ring
 
 omit [SeminormedAddGroup E] in
 /-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if

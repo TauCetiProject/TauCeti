@@ -10,7 +10,6 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -43,8 +42,8 @@ composed, patched in charts, or applied to distributions.
   at most the support of `χ`, `supp Op(a_χ) u ⊆ supp u + supp χ`.
 * `TauCeti.Symbol.hasCompactSupport_quantizeSchwartzValue_kernelCutoff`: for compactly supported
   `χ`, `Op(a_χ)` maps compactly supported Schwartz functions to compactly supported functions.
-* `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, the removed part `a_χ - a`
-  is a smoothing symbol.
+* `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, the cutoff correction
+  `a_χ - a` is a smoothing symbol.
 * `TauCeti.Symbol.exists_isSmoothing_sub_and_tsupport_quantizeSchwartzValue_subset`: every symbol
   is, modulo smoothing symbols, one whose quantization moves supports by at most a given `ε > 0`.
 
@@ -100,63 +99,6 @@ private def HasLocalGrowth (f : CoordinateSpace n × CoordinateSpace n → G) : 
   ∀ k : ℕ, ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
     ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2)
 
-/-- Peetre's inequality for the frequency translate `ξ - 2πη`, for `ξ` within distance one of
-`ξ₀`. -/
-private lemma rpow_weight_sub_smul_le (s : ℝ) {ξ ξ₀ : CoordinateSpace n} (h : ‖ξ - ξ₀‖ ≤ 1)
-    (η : CoordinateSpace n) :
-    (1 + ‖ξ - (2 * π) • η‖ ^ 2) ^ (s / 2) ≤
-      2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) *
-        (1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) := by
-  have h₁ := one_add_norm_sq_rpow_le_mul_sub s (ξ - (2 * π) • η) ξ
-  rw [sub_sub_cancel_left, norm_neg] at h₁
-  have h₂ := one_add_norm_sq_rpow_le_of_norm_sub_le_one h s
-  calc (1 + ‖ξ - (2 * π) • η‖ ^ 2) ^ (s / 2)
-      ≤ 2 ^ (|s| / 2) * (1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := h₁
-    _ ≤ 2 ^ (|s| / 2) * (1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) *
-          (2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2)) := by gcongr
-    _ = _ := by ring
-
-/-- The integrable majorant of the frequency translates of a function of polynomial growth. -/
-private lemma norm_smul_shift_le (g : 𝓢(CoordinateSpace n, ℂ)) {F : CoordinateSpace n → G}
-    {C s : ℝ} (hF : ∀ ζ, ‖F ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2)) {ξ ξ₀ : CoordinateSpace n}
-    (h : ‖ξ - ξ₀‖ ≤ 1) (η : CoordinateSpace n) :
-    ‖g η • F (ξ - (2 * π) • η)‖ ≤
-      C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2)) *
-        ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖) := by
-  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hF 0)
-  rw [norm_smul, mul_comm]
-  calc ‖F (ξ - (2 * π) • η)‖ * ‖g η‖
-      ≤ C * (1 + ‖ξ - (2 * π) • η‖ ^ 2) ^ (s / 2) * ‖g η‖ := by gcongr; exact hF _
-    _ ≤ C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) *
-          (1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2)) * ‖g η‖ := by
-        gcongr; exact rpow_weight_sub_smul_le s h η
-    _ = _ := by ring
-
-/-- The frequency translates of a continuous function of polynomial growth are integrable against
-a Schwartz function. -/
-private lemma integrable_smul_shift (g : 𝓢(CoordinateSpace n, ℂ)) {F : CoordinateSpace n → G}
-    (hFc : Continuous F) {C s : ℝ} (hF : ∀ ζ, ‖F ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2))
-    (ξ : CoordinateSpace n) :
-    Integrable fun η ↦ g η • F (ξ - (2 * π) • η) :=
-  ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s|).const_mul _).mono'
-    (g.continuous.smul (hFc.comp (by fun_prop))).aestronglyMeasurable
-    (.of_forall (norm_smul_shift_le g hF (ξ₀ := ξ) (by simp)))
-
-/-- **The size of an average of frequency translates.** If `‖F ζ‖ ≤ C ⟨ζ⟩ ^ s`, then
-`‖∫ g(η) F(ξ - 2πη) dη‖ ≤ C' ⟨ξ⟩ ^ s` with `C'` independent of `ξ`. -/
-private lemma norm_integral_smul_shift_le (g : 𝓢(CoordinateSpace n, ℂ))
-    {F : CoordinateSpace n → G} {C s : ℝ} (hF : ∀ ζ, ‖F ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2))
-    (ξ : CoordinateSpace n) :
-    ‖∫ η, g η • F (ξ - (2 * π) • η)‖ ≤
-      C * 2 ^ (|s| / 2) * 2 ^ |s| *
-        (∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-  refine (norm_integral_le_of_norm_le
-    ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s|).const_mul
-    (C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))))
-    (.of_forall (norm_smul_shift_le g hF (ξ₀ := ξ) (by simp)))).trans (le_of_eq ?_)
-  rw [integral_const_mul]
-  ring
-
 /-- A point of the unit ball around `p₀` has its position in the closed unit ball around `p₀.1`
 and its frequency within distance one of `p₀.2`. -/
 private lemma mem_closedBall_and_norm_sub_le {p p₀ : CoordinateSpace n × CoordinateSpace n}
@@ -183,7 +125,7 @@ private lemma continuous_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
     (.of_forall fun η ↦ (continuous_const.smul (hf.comp (by fun_prop))).continuousAt)
   filter_upwards [Metric.ball_mem_nhds p₀ one_pos] with p hp
   obtain ⟨h₁, h₂⟩ := mem_closedBall_and_norm_sub_le hp
-  exact .of_forall (norm_smul_shift_le g (F := fun ζ ↦ f (p.1, ζ)) (hC p.1 h₁) h₂)
+  exact .of_forall (g.norm_smul_apply_sub_smul_le (f := fun ζ ↦ f (p.1, ζ)) (hC p.1 h₁) (2 * π) h₂)
 
 /-- The translated function `p ↦ f(p.1, p.2 - 2πη)` has the translated derivative. -/
 private lemma hasFDerivAt_comp_shift {f : CoordinateSpace n × CoordinateSpace n → G}
@@ -219,13 +161,13 @@ private lemma hasFDerivAt_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
       ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖))
     (Metric.ball_mem_nhds p₀ one_pos)
     (.of_forall fun p ↦ (g.continuous.smul (hf.continuous.comp (by fun_prop))).aestronglyMeasurable)
-    (integrable_smul_shift g (F := fun ζ ↦ f (p₀.1, ζ)) (hf.continuous.comp (by fun_prop))
-      (hC₀ p₀.1 (Metric.mem_closedBall_self zero_le_one)) p₀.2)
+    (g.integrable_smul_apply_sub_smul (f := fun ζ ↦ f (p₀.1, ζ)) (hf.continuous.comp (by fun_prop))
+      (hC₀ p₀.1 (Metric.mem_closedBall_self zero_le_one)) (2 * π) p₀.2)
     (g.continuous.smul (hfc.comp (by fun_prop))).aestronglyMeasurable ?_
     ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s|).const_mul _) ?_
   · refine .of_forall fun η p hp ↦ ?_
     obtain ⟨h₁, h₂⟩ := mem_closedBall_and_norm_sub_le hp
-    exact norm_smul_shift_le g (F := fun ζ ↦ fderiv ℝ f (p.1, ζ)) (hC p.1 h₁) h₂ η
+    exact g.norm_smul_apply_sub_smul_le (f := fun ζ ↦ fderiv ℝ f (p.1, ζ)) (hC p.1 h₁) (2 * π) h₂ η
   · exact .of_forall fun η p _ ↦ (hasFDerivAt_comp_shift hd η p).const_smul (g η)
 
 /-- The derivative of an average of frequency translates in a direction `y` is the average of
@@ -240,9 +182,10 @@ private lemma fderiv_shiftIntegral_apply (g : 𝓢(CoordinateSpace n, ℂ))
     fderiv ℝ (shiftIntegral g f) p y = shiftIntegral g (fun q ↦ fderiv ℝ f q y) p := by
   obtain ⟨C, s, hC⟩ := hb₁ _ (isCompact_singleton (x := p.1))
   rw [(hasFDerivAt_shiftIntegral g hf hb₀ hb₁ p).fderiv, ContinuousLinearMap.integral_apply
-    (integrable_smul_shift g (F := fun ζ ↦ fderiv ℝ f (p.1, ζ))
-      ((hf.continuous_fderiv one_ne_zero).comp (by fun_prop)) (hC p.1 (Set.mem_singleton _)) p.2)]
-  rfl
+    (g.integrable_smul_apply_sub_smul (f := fun ζ ↦ fderiv ℝ f (p.1, ζ))
+      ((hf.continuous_fderiv one_ne_zero).comp (by fun_prop)) (hC p.1 (Set.mem_singleton _))
+      (2 * π) p.2)]
+  simp only [shiftIntegral, smul_apply]
 
 /-- A function of locally uniform polynomial growth has bounds of this kind on its values. -/
 private lemma HasLocalGrowth.bound_zero {f : CoordinateSpace n × CoordinateSpace n → G}
@@ -316,132 +259,6 @@ private lemma iteratedFDerivAlong_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ
 
 end ShiftIntegral
 
-/-! ### Taylor expansion of an average of frequency translates -/
-
-section Taylor
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] {χ : 𝓢(CoordinateSpace n, ℂ)}
-
-/-- The terms `η ↦ g(η) M(cη, …, cη)` of an averaged Taylor polynomial are integrable. -/
-private lemma integrable_smul_apply_smul (g : 𝓢(CoordinateSpace n, ℂ)) {k : ℕ}
-    (M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ CoordinateSpace n) G) (c : ℝ) :
-    Integrable fun η ↦ g η • M (fun _ ↦ c • η) := by
-  refine ((g.integrable_pow_mul volume k).const_mul (‖M‖ * |c| ^ k)).mono'
-    (g.continuous.smul (M.coe_continuous.comp (by fun_prop))).aestronglyMeasurable
-    (.of_forall fun η ↦ ?_)
-  rw [norm_smul]
-  calc ‖g η‖ * ‖M fun _ ↦ c • η‖ ≤ ‖g η‖ * (‖M‖ * ∏ _i : Fin k, ‖c • η‖) := by
-        gcongr; exact M.le_opNorm _
-    _ = ‖M‖ * |c| ^ k * (‖η‖ ^ k * ‖g η‖) := by
-        simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, norm_smul,
-          Real.norm_eq_abs, mul_pow]
-        ring
-
-/-- **Averaging reproduces Taylor polynomials.** If `χ = 1` near `0`, averaging the Taylor
-polynomial `η ↦ ∑_{k ≤ N} D^k h(ξ) (-2πη, …, -2πη) / k!` against `𝓕 χ` gives back `h ξ`: the
-moments of positive order of `𝓕 χ` vanish and its integral is `χ 0 = 1`. -/
-private lemma integral_fourier_smul_taylor_eq [CompleteSpace G]
-    (hχ : (χ : CoordinateSpace n → ℂ) =ᶠ[𝓝 0] 1)
-    (h : CoordinateSpace n → G) (ξ : CoordinateSpace n) (N : ℕ) :
-    ∫ η, 𝓕 χ η • ∑ k ∈ Finset.range (N + 1),
-        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ -((2 * π) • η)) = h ξ := by
-  have hterm (k : ℕ) : Integrable fun η ↦
-      (k ! : ℝ)⁻¹ • (𝓕 χ η • iteratedFDeriv ℝ k h ξ (fun _ ↦ -(2 * π) • η)) :=
-    (integrable_smul_apply_smul (𝓕 χ) _ _).smul _
-  simp_rw [Finset.smul_sum, smul_comm (𝓕 χ _) ((_ : ℕ) ! : ℝ)⁻¹, ← neg_smul]
-  rw [integral_finsetSum _ fun k _ ↦ hterm k, Finset.sum_range_succ']
-  -- The terms of positive order vanish, by the vanishing moments of `𝓕 χ`.
-  have hzero (k : ℕ) : ∫ η, (((k + 1) ! : ℕ) : ℝ)⁻¹ •
-      (𝓕 χ η • iteratedFDeriv ℝ (k + 1) h ξ (fun _ ↦ -(2 * π) • η)) = 0 := by
-    rw [integral_smul]
-    have hM := SchwartzMap.integral_fourier_smul_apply_eq_zero χ hχ k.succ_ne_zero
-      ((iteratedFDeriv ℝ (k + 1) h ξ).compContinuousLinearMap
-        fun _ ↦ (-(2 * π)) • ContinuousLinearMap.id ℝ (CoordinateSpace n))
-    simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
-      FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.id_apply] at hM
-    rw [show (∫ η, 𝓕 χ η • iteratedFDeriv ℝ (k + 1) h ξ (fun _ ↦ -(2 * π) • η)) = 0 from hM,
-      smul_zero]
-  simp only [hzero, Finset.sum_const_zero, zero_add, Nat.factorial_zero, Nat.cast_one, inv_one,
-    one_smul, iteratedFDeriv_zero_apply]
-  rw [integral_smul_const]
-  have h₁ : ∫ η, 𝓕 χ η = 1 := by
-    rw [show (∫ η, 𝓕 χ η) = ∫ η, 𝓕 (χ : CoordinateSpace n → ℂ) η from rfl,
-      SchwartzMap.integral_fourier_eq_apply_zero, hχ.self_of_nhds, Pi.one_apply]
-  rw [h₁, one_smul]
-
-/-- The pointwise Taylor remainder bound behind `norm_integral_fourier_smul_shift_sub_le`. -/
-private lemma norm_shift_sub_taylor_le [CompleteSpace G] {h : CoordinateSpace n → G} {N : ℕ}
-    (hh : ContDiff ℝ (N + 1) h) {C t : ℝ}
-    (hN : ∀ ζ, ‖iteratedFDeriv ℝ (N + 1) h ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (t / 2))
-    (ξ η : CoordinateSpace n) :
-    ‖h (ξ - (2 * π) • η) - ∑ k ∈ Finset.range (N + 1),
-        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ -((2 * π) • η))‖ ≤
-      C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2) *
-        (1 + ‖(2 * π) • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) := by
-  have hC : 0 ≤ C := by
-    have := (norm_nonneg _).trans (hN 0)
-    exact nonneg_of_mul_nonneg_left this (by positivity)
-  set w := 1 + ‖(2 * π) • η‖ ^ 2
-  -- Peetre's inequality bounds the `(N + 1)`-st derivative along the segment.
-  have hB : ∀ s ∈ Set.Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (N + 1) h (ξ + s • -((2 * π) • η))‖ ≤
-      C * (2 ^ (|t| / 2) * w ^ (|t| / 2) * (1 + ‖ξ‖ ^ 2) ^ (t / 2)) := fun s hs ↦ by
-    refine (hN _).trans (mul_le_mul_of_nonneg_left ?_ hC)
-    refine (one_add_norm_sq_rpow_le_mul_sub t (ξ + s • -((2 * π) • η)) ξ).trans ?_
-    gcongr
-    rw [add_sub_cancel_left, norm_smul, norm_neg, Real.norm_of_nonneg hs.1]
-    have : s * ‖(2 * π) • η‖ ≤ ‖(2 * π) • η‖ := mul_le_of_le_one_left (norm_nonneg _) hs.2
-    have : 0 ≤ s * ‖(2 * π) • η‖ := mul_nonneg hs.1 (norm_nonneg _)
-    simp only [w]
-    nlinarith
-  have hT := norm_sub_sum_iteratedFDeriv_le hh ξ (-((2 * π) • η)) hB
-  rw [← sub_eq_add_neg, norm_neg] at hT
-  refine hT.trans (le_of_le_of_eq (b := C * (2 ^ (|t| / 2) * w ^ (|t| / 2) *
-    (1 + ‖ξ‖ ^ 2) ^ (t / 2)) * w ^ (((N + 1 : ℕ) : ℝ) / 2) / N !) ?_ ?_)
-  · gcongr
-    exact norm_pow_le_one_add_norm_sq_rpow _ _
-  · have hw : w ^ (|t| / 2) * w ^ (((N + 1 : ℕ) : ℝ) / 2) = w ^ ((|t| + (N + 1)) / 2) := by
-      rw [← Real.rpow_add (by positivity)]
-      push_cast
-      ring_nf
-    rw [← hw]
-    field_simp
-
-/-- **Taylor remainder of an average of frequency translates.** If `χ = 1` near `0`, averaging
-the frequency translates of a smooth function `h` of polynomial growth against `𝓕 χ` changes it
-by at most the size of its `(N + 1)`-st derivative: if `‖D^{N+1} h ζ‖ ≤ C ⟨ζ⟩ ^ t`, then
-`‖∫ 𝓕 χ(η) h(ξ - 2πη) dη - h(ξ)‖ ≤ C' ⟨ξ⟩ ^ t`, with `C'` independent of `ξ`. -/
-private lemma norm_integral_fourier_smul_shift_sub_le [CompleteSpace G]
-    (hχ : (χ : CoordinateSpace n → ℂ) =ᶠ[𝓝 0] 1) {h : CoordinateSpace n → G}
-    (hh : ContDiff ℝ ∞ h) {C₀ s₀ : ℝ} (h₀ : ∀ ζ, ‖h ζ‖ ≤ C₀ * (1 + ‖ζ‖ ^ 2) ^ (s₀ / 2))
-    {N : ℕ} {C t : ℝ} (hN : ∀ ζ, ‖iteratedFDeriv ℝ (N + 1) h ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (t / 2))
-    (ξ : CoordinateSpace n) :
-    ‖(∫ η, 𝓕 χ η • h (ξ - (2 * π) • η)) - h ξ‖ ≤
-      C * 2 ^ (|t| / 2) / N ! *
-        (∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) * ‖𝓕 χ η‖) *
-          (1 + ‖ξ‖ ^ 2) ^ (t / 2) := by
-  set T : CoordinateSpace n → G := fun η ↦ ∑ k ∈ Finset.range (N + 1),
-    (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ -((2 * π) • η))
-  have hTi : Integrable fun η ↦ 𝓕 χ η • T η := by
-    simp_rw [T, Finset.smul_sum, smul_comm (𝓕 χ _) ((_ : ℕ) ! : ℝ)⁻¹, ← neg_smul]
-    exact integrable_finsetSum _ fun k _ ↦ (integrable_smul_apply_smul (𝓕 χ) _ _).smul _
-  have hhi := integrable_smul_shift (𝓕 χ) hh.continuous h₀ ξ
-  rw [← integral_fourier_smul_taylor_eq hχ h ξ N, ← integral_sub hhi hTi]
-  simp_rw [← smul_sub]
-  refine (norm_integral_le_of_norm_le (((𝓕 χ).integrable_one_add_norm_smul_sq_rpow_mul_norm
-    (2 * π) (|t| + (N + 1))).const_mul (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2)))
-    (.of_forall fun η ↦ ?_)).trans (le_of_eq ?_)
-  · rw [norm_smul]
-    calc ‖𝓕 χ η‖ * ‖h (ξ - (2 * π) • η) - T η‖
-        ≤ ‖𝓕 χ η‖ * (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2) *
-            (1 + ‖(2 * π) • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2)) := by
-          gcongr
-          exact norm_shift_sub_taylor_le (hh.of_le (by simp)) hN ξ η
-      _ = _ := by ring
-  · rw [integral_const_mul]
-    ring
-
-end Taylor
-
 /-! ### The kernel cutoff of a symbol -/
 
 namespace Symbol
@@ -458,8 +275,8 @@ private lemma integrable_smul_coefficient_shift (g : 𝓢(CoordinateSpace n, ℂ
     (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
     Integrable fun η ↦ g η • a.coefficient (x, ξ - (2 * π) • η) := by
   obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
-  exact integrable_smul_shift g (F := fun ζ ↦ a.coefficient (x, ζ))
-    (a.continuous_coefficient_slice x) (hC x (Set.mem_singleton x)) ξ
+  exact g.integrable_smul_apply_sub_smul (f := fun ζ ↦ a.coefficient (x, ζ))
+    (a.continuous_coefficient_slice x) (hC x (Set.mem_singleton x)) (2 * π) ξ
 
 private lemma mixedDeriv_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ)) (a : Symbol n V W m)
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -479,7 +296,7 @@ translates of `a` against the Fourier transform of `χ`. Its quantization is
 the kernel of `Op(a)` multiplied by `χ(x - y)`. -/
 def kernelCutoff (χ : 𝓢(CoordinateSpace n, ℂ)) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
   toFun a :=
-    { coefficient := fun p ↦ ∫ η, 𝓕 χ η • a.coefficient (p.1, p.2 - (2 * π) • η)
+    { coefficient := shiftIntegral (𝓕 χ) a.coefficient
       contDiff_coefficient :=
         contDiff_shiftIntegral (𝓕 χ) a.contDiff_coefficient a.hasLocalGrowth_coefficient
       exists_bound := fun K hK α β ↦ by
@@ -487,16 +304,15 @@ def kernelCutoff (χ : 𝓢(CoordinateSpace n, ℂ)) : Symbol n V W m →ₗ[ℂ
         refine ⟨C * 2 ^ (|m - β.length| / 2) * 2 ^ |m - β.length| *
           ∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ (|m - β.length| / 2) * ‖𝓕 χ η‖,
           mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦ ?_⟩
-        rw [show (fun p : CoordinateSpace n × CoordinateSpace n ↦
-          ∫ η, 𝓕 χ η • a.coefficient (p.1, p.2 - (2 * π) • η)) =
-            shiftIntegral (𝓕 χ) a.coefficient from rfl, mixedDeriv_shiftIntegral]
-        exact norm_integral_smul_shift_le _ (hC x hx) ξ }
+        rw [mixedDeriv_shiftIntegral]
+        exact SchwartzMap.norm_integral_smul_apply_sub_smul_le _ (hC x hx) (2 * π) ξ }
   map_add' a b := Symbol.ext <| funext fun p ↦ by
-    simp only [coefficient_add, Pi.add_apply, smul_add]
+    simp only [coefficient_add, shiftIntegral, Pi.add_apply, smul_add]
     exact integral_add (integrable_smul_coefficient_shift _ a _ _)
       (integrable_smul_coefficient_shift _ b _ _)
   map_smul' c a := Symbol.ext <| funext fun p ↦ by
-    simp only [coefficient_smul, Pi.smul_apply, RingHom.id_apply, smul_comm (𝓕 χ _) c]
+    simp only [coefficient_smul, shiftIntegral, Pi.smul_apply, RingHom.id_apply,
+      smul_comm (𝓕 χ _) c]
     exact integral_smul c _
 
 variable {χ : 𝓢(CoordinateSpace n, ℂ)}
@@ -515,9 +331,9 @@ theorem mixedDeriv_kernelCutoff (a : Symbol n V W m) (α β : List (Fin n))
       ∫ η, 𝓕 χ η • mixedDeriv α β a.coefficient x (ξ - (2 * π) • η) :=
   mixedDeriv_shiftIntegral (𝓕 χ) a α β x ξ
 
-/-- **The removed part is smoothing.** If `χ = 1` near `0`, the kernel cutoff `a_χ` differs from
-`a` by a smoothing symbol: the removed part `(1 - χ(x - y)) K_a(x, y)` of the kernel vanishes near
-the diagonal. -/
+/-- **The cutoff correction is smoothing.** If `χ = 1` near `0`, the kernel cutoff `a_χ` differs
+from `a` by a smoothing symbol: the kernel `(χ(x - y) - 1) K_a(x, y)` of the cutoff correction
+`a_χ - a` vanishes near the diagonal. -/
 theorem isSmoothing_kernelCutoff_sub [CompleteSpace W] (hχ : (χ : CoordinateSpace n → ℂ) =ᶠ[𝓝 0] 1)
     (a : Symbol n V W m) : (kernelCutoff χ a - a).IsSmoothing := by
   refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β ↦ ?_
@@ -549,7 +365,8 @@ theorem isSmoothing_kernelCutoff_sub [CompleteSpace W] (hχ : (χ : CoordinateSp
       (b := -a.coefficient) a.contDiff_coefficient.neg, mixedDeriv_neg, mixedDeriv_kernelCutoff,
       ← sub_eq_add_neg]
   rw [hsub]
-  refine (norm_integral_fourier_smul_shift_sub_le hχ hh (hC₀ x hx) hD ξ).trans
+  refine (SchwartzMap.norm_integral_fourier_smul_sub_smul_sub_le χ hχ (hh.of_le (by simp))
+    (hC₀ x hx) hD (2 * π) ξ).trans
     (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ ?_)
       (mul_nonneg (div_nonneg (mul_nonneg (Finset.sum_nonneg fun r _ ↦ hA0 r) (by positivity))
         (by positivity)) (integral_nonneg fun _ ↦ by positivity)))
@@ -563,63 +380,7 @@ end Symbol
 
 section Quantization
 
-/-- The cut-off input `y ↦ χ(x - y) u(y)` of the kernel cutoff. -/
-private lemma hasTemperateGrowth_sub (χ : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    (fun y : CoordinateSpace n ↦ χ (x - y)).HasTemperateGrowth :=
-  χ.hasTemperateGrowth.comp (by fun_prop)
-
-/-- Fourier inversion for `χ`, written with the Fourier character. -/
-private lemma integral_fourierChar_smul_fourier (χ : 𝓢(CoordinateSpace n, ℂ))
-    (w : CoordinateSpace n) : ∫ η, (𝐞 ⟪η, w⟫ : ℂ) * 𝓕 χ η = χ w := by
-  have h : (𝓕⁻ (𝓕 χ : 𝓢(CoordinateSpace n, ℂ)) : 𝓢(CoordinateSpace n, ℂ)) w = χ w := by
-    rw [FourierTransform.fourierInv_fourier_eq]
-  rw [← h, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
-  rfl
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-
-/-- The Fourier transform of the cut-off input `y ↦ χ(x - y) u(y)` is a convolution of the
-Fourier transforms: `∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. -/
-private lemma fourier_smulLeftCLM_sub (χ : 𝓢(CoordinateSpace n, ℂ))
-    (u : 𝓢(CoordinateSpace n, V)) (x ζ : CoordinateSpace n) :
-    𝓕 (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) ζ =
-      ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
-  set K : CoordinateSpace n × CoordinateSpace n → V := fun p ↦
-    (𝓕 χ p.2 * 𝐞 ⟪p.2, x⟫ * 𝐞 (-⟪p.1, ζ + p.2⟫)) • u p.1
-  have hK : Integrable K (volume.prod volume) := by
-    have hc : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
-        𝓕 χ p.2 * (𝐞 ⟪p.2, x⟫ : ℂ) * 𝐞 (-⟪p.1, ζ + p.2⟫) := by
-      have h₁ : Continuous ⇑(𝓕 χ : 𝓢(CoordinateSpace n, ℂ)) := (𝓕 χ).continuous
-      have h₂ : Continuous fun t : ℝ ↦ (𝐞 t : ℂ) :=
-        continuous_subtype_val.comp Real.continuous_fourierChar
-      fun_prop
-    refine (u.integrable.norm.mul_prod (𝓕 χ).integrable.norm).mono'
-      (hc.smul (u.continuous.comp continuous_fst)).aestronglyMeasurable (.of_forall fun p ↦ ?_)
-    simp only [K, norm_smul, norm_mul, Circle.norm_coe, mul_one]
-    exact (mul_comm _ _).le
-  -- The Fourier transform of the cut-off input, with `χ(x - y)` written by Fourier inversion.
-  have hL : 𝓕 (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) ζ =
-      ∫ y, ∫ η, K (y, η) := by
-    rw [SchwartzMap.fourier_coe, Real.fourier_eq]
-    refine integral_congr_ae (.of_forall fun y ↦ ?_)
-    simp only [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_sub χ x), K,
-      ← integral_fourierChar_smul_fourier χ (x - y), Circle.smul_def, ← integral_smul_const,
-      ← integral_smul]
-    refine integral_congr_ae (.of_forall fun η ↦ ?_)
-    simp only [smul_smul]
-    congr 1
-    have e : (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ = 𝐞 ⟪η, x⟫ * 𝐞 (-⟪y, ζ + η⟫) := by
-      rw [← Circle.coe_mul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul]
-      congr 2
-      simp only [inner_sub_right, inner_add_right, real_inner_comm y η]
-      ring
-    calc (𝐞 (-⟪y, ζ⟫) : ℂ) * ((𝐞 ⟪η, x - y⟫ : ℂ) * 𝓕 χ η)
-        = (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ * 𝓕 χ η := by ring
-      _ = _ := by rw [e]; ring
-  rw [hL, integral_integral_swap hK]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [K, mul_smul, integral_smul]
-  congr 2
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {m : ℝ}
 
@@ -678,7 +439,7 @@ private lemma quantizeSchwartzValue_kernelCutoff_eq_integral (χ : 𝓢(Coordina
   simp only [smul_apply, smul_comm (𝓕 χ η)]
 
 /-- `Op(a)` on the cut-off input `y ↦ χ(x - y) u(y)` as an iterated integral over `(ζ, η)`, by the
-convolution formula `fourier_smulLeftCLM_sub`. -/
+convolution formula `SchwartzMap.fourier_smulLeftCLM_sub_apply`. -/
 private lemma quantizeSchwartzValue_smulLeftCLM_sub_eq_integral (χ : 𝓢(CoordinateSpace n, ℂ))
     (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x =
@@ -696,7 +457,8 @@ private lemma quantizeSchwartzValue_smulLeftCLM_sub_eq_integral (χ : 𝓢(Coord
     rw [norm_smul, norm_smul, Circle.norm_coe, one_mul]
     gcongr
     exact SchwartzMap.norm_le_seminorm ℂ (𝓕 u) _
-  rw [fourier_smulLeftCLM_sub, ← (a.coefficient _).integral_comp_comm hi, Circle.smul_def,
+  rw [SchwartzMap.fourier_smulLeftCLM_sub_apply, ← (a.coefficient _).integral_comp_comm hi,
+    Circle.smul_def,
     ← integral_smul]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
   simp only [map_smul, smul_smul]
@@ -746,9 +508,11 @@ theorem support_quantizeSchwartzValue_kernelCutoff_subset (χ : 𝓢(CoordinateS
   intro x hx
   by_contra hcon
   refine hx ?_
+  have hχx : (fun y : CoordinateSpace n ↦ χ (x - y)).HasTemperateGrowth :=
+    χ.hasTemperateGrowth.comp (by fun_prop)
   have hzero : SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u = 0 := by
     ext y
-    rw [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_sub χ x), zero_apply]
+    rw [SchwartzMap.smulLeftCLM_apply_apply hχx, zero_apply]
     by_cases hy : u y = 0
     · rw [hy, smul_zero]
     by_cases hχy : χ (x - y) = 0
