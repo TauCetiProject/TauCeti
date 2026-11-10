@@ -313,23 +313,6 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
     exact le_inf hV hK
 
 variable {n F} in
-/-- **In characteristic `n` there are no nontrivial `n`-th roots of unity**: the Kummer coefficient
-module `μₙ(Fˢ)` is trivial for a prime `n` with `CharP F n`. -/
-theorem subsingleton_kummerCoeff_of_charP [Fact n.Prime] [CharP F n] :
-    Subsingleton (KummerCoeff F n) := by
-  have : CharP (SeparableClosure F) n :=
-    charP_of_injective_algebraMap (algebraMap F (SeparableClosure F)).injective n
-  have : ExpChar (SeparableClosure F) n := ExpChar.prime Fact.out
-  refine ⟨fun x y ↦ ?_⟩
-  have h1 (z : KummerCoeff F n) : z = 0 := by
-    have hz : (z.toMul : (SeparableClosure F)ˣ) ∈
-        rootsOfUnity (n ^ 1 * 1) (SeparableClosure F) := by simp
-    rw [mem_rootsOfUnity_prime_pow_mul_iff (SeparableClosure F) n 1 1, rootsOfUnity_one,
-      Subgroup.mem_bot] at hz
-    exact Additive.toMul.injective (Subtype.ext hz)
-  rw [h1 x, h1 y]
-
-variable {n F} in
 /-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` and an open normal subgroup `V`
 of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts trivially on `μₗ`, still has
 index prime to `ℓ`, and has commutative quotient when `V` has. -/
@@ -350,7 +333,7 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
   · -- In characteristic `n` the group `μₙ` is trivial, so `V` itself acts trivially on it.
     have hn0 : (n : F) = 0 := by simpa [isUnit_iff_ne_zero] using hn
     have : CharP F n := (CharP.charP_iff_prime_eq_zero Fact.out).2 hn0
-    have := subsingleton_kummerCoeff_of_charP (n := n) (F := F)
+    have := subsingleton_kummerCoeff_of_charP (n := n) (K := F)
     have hsub : Subsingleton (muNRep n F).V :=
       (kummerCoeffEquivMuNRep n F).toEquiv.symm.subsingleton
     exact ⟨V, le_rfl, fun g _ x ↦ Subsingleton.elim _ _, hV, id⟩
