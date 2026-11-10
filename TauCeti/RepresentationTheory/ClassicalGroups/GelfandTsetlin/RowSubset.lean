@@ -154,7 +154,7 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     ∃ I : Finset (Fin n), Q = rowSubset I := by
   -- `k j` is the number of ones in row `j`, and row `j` is `(1, …, 1, 0, …, 0)`.
   obtain ⟨k, hk⟩ : ∃ k : ℕ → ℕ, ∀ j, k j = #{c ∈ range j | Q c j = 1} := ⟨_, fun _ => rfl⟩
-  have hrow : ∀ {c j}, c < j → j ≤ n → (Q c j = 1 ↔ c < k j) := fun hc _ => by
+  have hrow : ∀ {c j}, c < j → (Q c j = 1 ↔ c < k j) := fun hc => by
     rw [hk]
     exact eq_one_iff_lt_card hQ hc
   have hk_le : ∀ j, k j ≤ j := fun j => by
@@ -165,20 +165,20 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     have := hk_le j
     rcases Nat.eq_zero_or_pos (k j) with h0 | hpos
     · omega
-    have h1 : Q (k j - 1) j = 1 := (hrow (by omega) hj.le).2 (by omega)
+    have h1 : Q (k j - 1) j = 1 := (hrow (by omega)).2 (by omega)
     have h2 := Q.entry_le_entry_succ_row (i := k j - 1) (by omega) hj
     have h3 : Q (k j - 1) (j + 1) = 1 := by rcases hQ (k j - 1) (j + 1) with h | h <;> omega
-    have := (hrow (j := j + 1) (by omega) (by omega)).1 h3
+    have := (hrow (j := j + 1) (by omega)).1 h3
     omega
   have hk_succ : ∀ j, j < n → k (j + 1) ≤ k j + 1 := fun j hj => by
     have := hk_le (j + 1)
     by_cases hlt : k (j + 1) ≤ 1
     · omega
     have h1 : Q (k (j + 1) - 2 + 1) (j + 1) = 1 :=
-      (hrow (j := j + 1) (by omega) (by omega)).2 (by omega)
+      (hrow (j := j + 1) (by omega)).2 (by omega)
     have h2 := Q.entry_succ_succ_le_entry (i := k (j + 1) - 2) hj
     have h3 : Q (k (j + 1) - 2) j = 1 := by rcases hQ (k (j + 1) - 2) j with h | h <;> omega
-    have := (hrow (by omega) hj.le).1 h3
+    have := (hrow (by omega)).1 h3
     omega
   -- The rows of `I` are those at which the count increases, so `k j` of them lie below `j`.
   obtain ⟨I, hI⟩ : ∃ I : Finset (Fin n), ∀ r, r ∈ I ↔ k (r.val + 1) = k r.val + 1 :=
@@ -201,10 +201,10 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
   · rw [hcount j hj]
     by_cases hcj : c < j
     · split_ifs with h'
-      · exact (hrow hcj hj).2 h'.2
+      · exact (hrow hcj).2 h'.2
       · rcases hQ c j with h | h
         · exact h
-        · exact absurd ⟨hj, (hrow hcj hj).1 h⟩ h'
+        · exact absurd ⟨hj, (hrow hcj).1 h⟩ h'
     · rw [Q.entry_eq_zero (Or.inr (by omega)), ite_eq_right (by have := hk_le j; omega)]
   · rw [Q.entry_eq_zero (Or.inl (by omega)), ite_eq_right (by omega)]
 
