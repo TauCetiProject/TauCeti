@@ -42,6 +42,8 @@ map out of such a pushout which restricts to closed embeddings on `A` and on fin
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `TopCat.range_union_iUnion_range_of_isPushout_sigma`: every point of the pushout of `L` and
+  `⨆ᵢ D i` along `⨆ᵢ A i` comes from `L` or from one of the `D i`.
 * `TopCat.injective_of_isPushout_sigma`, `TopCat.isClosedEmbedding_of_isPushout_sigma`: a map out
   of the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed
   embeddings) on `L` and on the `D i`, with the images of the `D i` pairwise disjoint and meeting
@@ -262,12 +264,22 @@ variable {ι : Type u} {A D : ι → TopCat.{u}} {L X P : TopCat.{u}} {α : ∀ 
   {φ : P ⟶ X}
 
 /-- Every point of a pushout of `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`. -/
-private theorem exists_eq_inl_or_exists_eq_inr
-    (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (y : P) :
-    (∃ x, inl x = y) ∨ ∃ i d, inr (Sigma.ι D i d) = y := by
+theorem range_union_iUnion_range_of_isPushout_sigma
+    (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) :
+    Set.range inl ∪ ⋃ i, Set.range (Sigma.ι D i ≫ inr) = Set.univ := by
+  refine Set.eq_univ_of_forall fun y ↦ ?_
   obtain ⟨x, hx⟩ | ⟨z, rfl⟩ := Types.eq_or_eq_of_isPushout ((forget TopCat).map_isPushout sq) y
   · exact Or.inl ⟨x, hx⟩
   · obtain ⟨⟨i⟩, d, rfl⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z
+    exact Or.inr (Set.mem_iUnion.2 ⟨i, d, rfl⟩)
+
+/-- Pointwise form of `TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
+private theorem exists_eq_inl_or_exists_eq_inr
+    (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (y : P) :
+    (∃ x, inl x = y) ∨ ∃ i d, inr (Sigma.ι D i d) = y := by
+  rcases (range_union_iUnion_range_of_isPushout_sigma sq).symm ▸ Set.mem_univ y with h | h
+  · exact Or.inl h
+  · obtain ⟨i, d, rfl⟩ := Set.mem_iUnion.1 h
     exact Or.inr ⟨i, d, rfl⟩
 
 /-- Let `P` be the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i`, and let `φ : P ⟶ X` restrict to

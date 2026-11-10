@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.Analysis.Real.Sqrt
-import TauCeti.Topology.Category.TopCat.OpenEmbedding
 import TauCeti.Topology.Category.TopCat.Pushout
 
 /-!
@@ -205,19 +204,9 @@ theorem morseCellAttachment_hom_ext {Z : TopCat.{u}} (hε : 0 ≤ ε)
 theorem range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell (hε : 0 ≤ ε) :
     range (morseCellAttachmentIncl φ k hk hε hball hf) ∪
         ⋃ i, range (morseCellAttachmentCell φ k hk hε hball hf i) = univ := by
-  refine eq_univ_of_forall fun y ↦ ?_
-  by_cases hy : y ∈ range (morseCellAttachmentIncl φ k hk hε hball hf)
-  · exact Or.inl hy
-  rw [← mem_compl_iff,
-    ← TopCat.image_compl_range_of_isPushout (isPushout_morseCellAttachment φ k hk hball hf hε)]
-    at hy
-  obtain ⟨z, -, rfl⟩ := hy
-  obtain ⟨⟨i, w⟩, hz⟩ : ∃ s, (TopCat.sigmaIsoSigma _).inv s = z :=
-    ⟨(TopCat.sigmaIsoSigma _).hom z, by
-      rw [← ConcreteCategory.comp_apply, Iso.hom_inv_id, ConcreteCategory.id_apply]⟩
-  rw [TopCat.sigmaIsoSigma_inv_apply] at hz
-  refine Or.inr (mem_iUnion.2 ⟨i, w, ?_⟩)
-  rw [← hz, ← ConcreteCategory.comp_apply, Sigma.ι_comp_desc]
+  simpa only [Sigma.ι_comp_desc] using
+    TopCat.range_union_iUnion_range_of_isPushout_sigma
+      (isPushout_morseCellAttachment φ k hk hball hf hε)
 
 section ProdDesc
 
