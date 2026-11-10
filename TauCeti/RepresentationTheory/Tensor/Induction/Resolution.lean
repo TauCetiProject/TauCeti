@@ -692,21 +692,8 @@ theorem _root_.Subgroup.smoothTensorInduced_ρ_tprod_gradedResolutionProjection
   let z₀ := DirectSum.lof R ℕ (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 0 c
   have hz : z₀ ∈ A.obj.gradedResolutionPiece (0 : ℕ) :=
     TopRep.lof_mem_gradedResolutionPiece A.obj 0 c
-  have hproj : A.obj.gradedResolutionProjection z₀ = A.obj.gradedResolutionProjection z := by
-    have h (w : A.obj.gradedResolutionModule) : A.obj.gradedResolutionProjection w =
-        A.obj.gradedResolutionProjection (DirectSum.lof R ℕ
-          (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 0
-          (DirectSum.component R ℕ (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 0 w)) := by
-      induction w using DirectSum.induction_on with
-      | zero => simp
-      | of n x =>
-        rw [← DirectSum.lof_eq_of R]
-        rcases n with _ | n
-        · simp
-        · rw [TopRep.gradedResolutionProjection_lof_succ, DirectSum.component.of,
-            dite_eq_right n.succ_ne_zero, map_zero, map_zero]
-      | add x y hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
-    exact (h z).symm
+  have hproj : A.obj.gradedResolutionProjection z₀ = A.obj.gradedResolutionProjection z :=
+    TopRep.gradedResolutionProjection_lof_component_zero A.obj z
   have hinv₀ : ∀ u, A.obj.gradedResolutionTopRep.ρ u z₀ = z₀ := fun u ↦ by
     have h := congrArg (DirectSum.component R ℕ (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 0)
       (hinv u)
@@ -715,21 +702,7 @@ theorem _root_.Subgroup.smoothTensorInduced_ρ_tprod_gradedResolutionProjection
     rw [TopRep.gradedResolutionTopRep_ρ_lof, h]
   have hdz₀ : A.obj.gradedResolutionDifferential z₀ = 0 := by
     -- The differential has degree one: its degree-one component is `d` of the degree-zero one.
-    have h1 (w : A.obj.gradedResolutionModule) :
-        DirectSum.component R ℕ (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 1
-            (A.obj.gradedResolutionDifferential w) =
-          (TopRep.d A.obj 1).hom
-            (DirectSum.component R ℕ (fun n ↦ (TopRep.resolutionX A.obj (n + 1)).V) 0 w) := by
-      induction w using DirectSum.induction_on with
-      | zero => simp
-      | of n x =>
-        rw [← DirectSum.lof_eq_of R, TopRep.gradedResolutionDifferential_lof,
-          DirectSum.component.of, DirectSum.component.of]
-        rcases n with _ | n
-        · simp
-        · simp
-      | add x y hx hy => simp only [map_add, hx, hy]
-    have h := h1 z
+    have h := TopRep.component_gradedResolutionDifferential_succ A.obj 0 z
     rw [hdz, map_zero] at h
     rw [TopRep.gradedResolutionDifferential_lof, ← h]
     simp
