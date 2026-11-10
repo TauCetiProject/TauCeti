@@ -222,7 +222,7 @@ theorem normalFlatMass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
     rw [comp_monoCLM_comp_extDerivCLM h, sub_comp]
     abel
   refine (normalFlatMass_le_of_eq_add_comp_extDerivCLM _
-    (hR.comp_monoCLM h) (hS.comp_monoCLM h) heq).trans ?_
+    hR.comp_monoCLM hS.comp_monoCLM heq).trans ?_
   simp only [coe_comp, mass_comp_monoCLM h]
   exact add_le_add localMass_le_mass localMass_le_mass
 

@@ -8,14 +8,25 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Geometry.Lie.Subgroup.SpecialUnitary
 public import TauCeti.RepresentationTheory.SU2.Adjoint
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+public import Mathlib.Algebra.Lie.TraceForm
+import TauCeti.RepresentationTheory.Continuous.Subrepresentation
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
-# The Lie algebra of `SU(2)` in the basis `-iσₐ/2`
+# The Lie algebra of `SU(2)`: Pauli coordinates and the basis `-iσₐ/2`
 
-The Lie algebra `𝔰𝔲(2)` of `SU(2)` (`TauCeti.SU2.lieAlgebra`, the Lie algebra of the special
-unitary subgroup of the real Lie group `GL(2, ℂ)`) consists, in matrix coordinates
-(`TauCeti.SU2.toMatrix`), of the trace-free skew-Hermitian `2 × 2` matrices. This file fixes its
-standard normalization: the basis
+Multiplication by the imaginary unit identifies the real Pauli coordinates with the native
+Lie subalgebra `TauCeti.SU2.lieAlgebra` of the special unitary subgroup of the general linear
+group. This equivalence retains the actual left-invariant derivation carrier. It intertwines its
+bracket with minus twice the cross product and its group adjoint with the native double cover
+`SU2.toSO3`.
+
+The coordinate order is x, y, z.
+
+In matrix coordinates (`TauCeti.SU2.toMatrix`) the Lie algebra consists of the trace-free
+skew-Hermitian `2 × 2` matrices. Rescaling the Pauli coordinates fixes the standard normalization:
+the basis
 
 `-iσ₁/2, -iσ₂/2, -iσ₃/2`,
 
@@ -45,38 +56,60 @@ The two groups differ in their global normalization. The one-parameter subgroup 
 time `2π`; its image in `SO(3)`, the rotation about the third axis, has period `2π`
 (`TauCeti.toSO3_eq_one_iff_of_coe_eq_lieExp`).
 
+## Main definitions
+
+* `TauCeti.SU2.lieAlgebra`: the native Lie subalgebra of the special unitary subgroup.
+* `TauCeti.SU2.toMatrix`: its matrix coordinates.
+* `TauCeti.SU2.pauliLieAlgebraEquiv`: real coordinates on the native subgroup Lie algebra.
+* `TauCeti.SU2.adjointRepresentation`: the actual native adjoint restricted to that Lie algebra.
+* `TauCeti.suTwoEquiv`: the coordinates in the basis `-iσₐ/2`.
+* `TauCeti.suTwoLieEquivSoThree`: the isomorphism `𝔰𝔲(2) ≃ so(3)`.
+* `TauCeti.suTwoDualEquiv`: the identification of `ℝ³` with the dual of `𝔰𝔲(2)`.
+
+## Main results
+
+* `TauCeti.SU2.exists_toMatrix_eq_iff`: the matrices of `𝔰𝔲(2)` are the trace-free
+  skew-Hermitian matrices.
+* `TauCeti.SU2.unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv`: native matrix evaluation.
+* `TauCeti.SU2.coe_adjointRepresentation_apply`: the restricted action in the ambient algebra.
+* `TauCeti.SU2.continuous_adjointRepresentation`: continuity of the native adjoint.
+* `TauCeti.SU2.adjointRepresentation_pauliLieAlgebraEquiv`: the adjoint in Pauli coordinates.
+* `TauCeti.SU2.lie_pauliLieAlgebraEquiv`: the native Lie bracket in these coordinates.
+* `TauCeti.SU2.Ad_pauliLieAlgebraEquiv`: compatibility with the actual group adjoint.
+* `TauCeti.SU2.killingForm_pauliLieAlgebraEquiv`: the Killing form is minus eight times the
+  standard coordinate dot product.
+* `TauCeti.SU2.killingForm_self_neg`: the Killing form is strictly negative on nonzero vectors.
+* `TauCeti.lie_suTwoEquiv`: the bracket is the cross product in the basis `-iσₐ/2`.
+* `TauCeti.kksForm_suTwoDualEquiv_mk`: the KKS form is the triple product.
+* `TauCeti.lieExp_smul_suTwoEquiv_single_two_eq_one_iff`: the torus generator has period `4π`.
+
 ## References
 
+* `TauCeti.LinearAlgebra.Matrix.Pauli`, for the Pauli map and its commutator identity.
+* `TauCeti.Geometry.Lie.Subgroup.SpecialUnitary`, for the native subgroup Lie algebra.
 * J. E. Marsden and T. S. Ratiu, *Introduction to Mechanics and Symmetry*, second edition, Texts
   in Applied Mathematics 17, Springer, 1999, Chapters 9 and 14 (`SU(2)`, `SO(3)`, the hat map and
   their coadjoint orbits).
 -/
 
-public section
+public noncomputable section
 
-open Manifold Matrix Module Complex
+open Matrix TauCeti TauCeti.Lie Complex
 open scoped ContDiff Manifold Matrix.Norms.Operator
-
-noncomputable section
-
-namespace TauCeti
-
 attribute [local instance 100] LieRing.ofAssociativeRing
-
--- Select the matrix topology underlying the operator norm used for the general linear Lie group,
--- together with continuity of the conjugate transpose for it, and the rational algebra structure
--- under which the Lie exponential of `GL(2, ℂ)` is the Banach-algebra exponential.
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-  TauCeti.normedAlgebraRatOfReal
 
-namespace SU2
+namespace TauCeti.SU2
 
 /-- The Lie algebra `𝔰𝔲(2)` of `SU(2)`: the Lie algebra of the special unitary subgroup of the real
 Lie group `GL(2, ℂ)`. -/
 abbrev lieAlgebra :
     LieSubalgebra ℝ (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ)
       (Matrix (Fin 2) (Fin 2) ℂ)ˣ) :=
-  Lie.lieSubalgebraOfSubgroup (GLSpecialUnitary (Fin 2) ℂ : Subgroup (Matrix (Fin 2) (Fin 2) ℂ)ˣ)
+  lieSubalgebraOfSubgroup (GLSpecialUnitary (Fin 2) ℂ : Subgroup (Matrix (Fin 2) (Fin 2) ℂ)ˣ)
+
+local notation "𝔰𝔲₂" => lieAlgebra
+
 
 /-- The matrix coordinates of `𝔰𝔲(2)`, as an injective homomorphism of real Lie algebras into the
 `2 × 2` complex matrices with their commutator bracket. Its range is the trace-free
@@ -119,13 +152,204 @@ theorem conjTranspose_toMatrix (X : lieAlgebra) : (toMatrix X)ᴴ = -toMatrix X 
 theorem trace_toMatrix (X : lieAlgebra) : (toMatrix X).trace = 0 :=
   ((exists_toMatrix_eq_iff _).1 ⟨X, rfl⟩).2
 
-end SU2
+private def skewPauli : (Fin 3 → ℝ) →ₗ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
+  Complex.I • pauli
 
-/-- The matrix `-(i/2) • pauli x` is skew-Hermitian. -/
-private theorem conjTranspose_smul_pauli (x : Fin 3 → ℝ) :
-    ((-(I / 2)) • pauli x)ᴴ = -((-(I / 2)) • pauli x) := by
-  rw [conjTranspose_smul, (isHermitian_pauli x).eq]
-  simp [neg_div]
+private theorem skewPauli_apply (x : Fin 3 → ℝ) : skewPauli x = I • pauli x := rfl
+
+private theorem skewPauli_mem (x : Fin 3 → ℝ) :
+    (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).symm (skewPauli x) ∈ 𝔰𝔲₂ := by
+  rw [unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff]
+  constructor
+  · rw [skewPauli_apply, Matrix.conjTranspose_smul,
+      (isHermitian_pauli x).eq, Complex.star_def, Complex.conj_I, neg_smul]
+  · simp [skewPauli_apply]
+
+private def coords : (Fin 3 → ℝ) →ₗ[ℝ] 𝔰𝔲₂ :=
+  (((unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).symm.toLinearMap).comp
+    skewPauli).codRestrict (𝔰𝔲₂).toSubmodule skewPauli_mem
+
+private theorem coords_apply (x : Fin 3 → ℝ) :
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).1 = skewPauli x :=
+  (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).apply_symm_apply _
+
+private theorem coords_injective : Function.Injective coords := by
+  intro x y h
+  have h' := congrArg (fun X : 𝔰𝔲₂ ↦
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.1) h
+  simp only [coords_apply, skewPauli_apply] at h'
+  exact pauli_injective ((smul_right_injective _ Complex.I_ne_zero) h')
+
+private theorem coords_surjective : Function.Surjective coords := by
+  intro X
+  let A := unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.1
+  have hm : (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).symm A ∈ 𝔰𝔲₂ := by
+    simpa only [A, LieEquiv.symm_apply_apply] using X.2
+  obtain ⟨hA, ht⟩ :=
+    (unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff A).mp hm
+  have hH : (-I • A).IsHermitian := by
+    simp [Matrix.IsHermitian, Matrix.conjTranspose_smul, hA]
+  have hT : (-I • A).trace = 0 := by simp [ht]
+  obtain ⟨x, hx⟩ := exists_pauli_eq_iff.mpr ⟨hH, hT⟩
+  refine ⟨x, Subtype.ext ?_⟩
+  have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).1 = A := by
+    rw [coords_apply, skewPauli_apply, hx, smul_smul]
+    simp
+  exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
+
+/-- Pauli coordinates on the native real Lie algebra of the special unitary subgroup of GL₂. -/
+def pauliLieAlgebraEquiv : (Fin 3 → ℝ) ≃ₗ[ℝ] 𝔰𝔲₂ :=
+  LinearEquiv.ofBijective coords ⟨coords_injective, coords_surjective⟩
+
+private theorem skewPauli_lie (x y : Fin 3 → ℝ) :
+    ⁅skewPauli x, skewPauli y⁆ = skewPauli ((-2 : ℝ) • (x ⨯₃ y)) := by
+  simp only [skewPauli_apply, LieRing.of_associative_ring_bracket,
+    smul_mul_smul, ← smul_sub, pauli_mul_sub_mul_pauli, map_smul, smul_smul]
+  ext i j
+  simp [smul_eq_mul]
+  ring
+/-- In ambient matrix coordinates, a native Pauli Lie-algebra element is `i` times its Pauli
+matrix. -/
+-- Normalize the Pauli image before the generic units equivalence expands to evaluation.
+@[simp↓]
+theorem unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv (x : Fin 3 → ℝ) :
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).1 =
+      I • pauli x := coords_apply x
+
+/-- The native SU(2) Lie bracket corresponds to minus twice the coordinate cross product. -/
+@[simp]
+theorem lie_pauliLieAlgebraEquiv (x y : Fin 3 → ℝ) :
+    ⁅pauliLieAlgebraEquiv x, pauliLieAlgebraEquiv y⁆ =
+      pauliLieAlgebraEquiv ((-2 : ℝ) • (x ⨯₃ y)) := by
+  apply Subtype.ext
+  have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
+      (⁅pauliLieAlgebraEquiv x, pauliLieAlgebraEquiv y⁆ : 𝔰𝔲₂).1 =
+      unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
+        (pauliLieAlgebraEquiv ((-2 : ℝ) • (x ⨯₃ y))).1 := by
+    calc
+      _ = ⁅unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).1,
+          unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv y).1⁆ :=
+        (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).map_lie _ _
+      _ = _ := by
+        simpa only [unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv, skewPauli_apply] using
+          skewPauli_lie x y
+  exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
+
+/-- The actual group adjoint in the ambient general linear group is the Pauli rotation. -/
+@[simp]
+theorem Ad_pauliLieAlgebraEquiv (g : SU2) (x : Fin 3 → ℝ) :
+    Ad (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+      (Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g))
+      (pauliLieAlgebraEquiv x).1 =
+      (pauliLieAlgebraEquiv ((toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).1 := by
+  have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
+      (Ad (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+        (Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g))
+        (pauliLieAlgebraEquiv x).1) =
+      unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
+        (pauliLieAlgebraEquiv ((SU2.toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).1 := by
+    rw [unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv, unitsLieAlgebraLieEquiv_apply,
+      unitsLieAlgebraEquiv_Ad,
+      ← unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv]
+    simp only [SU2.coe_toSO3, pauli_pauliRotation_mulVec]
+    simp [Algebra.mul_smul_comm, Algebra.smul_mul_assoc]
+  exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
+
+
+private def unitsHom : SU2 →* (Matrix (Fin 2) (Fin 2) ℂ)ˣ :=
+  Unitary.toUnits.comp (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+
+private theorem unitsHom_apply (g : SU2) :
+    unitsHom g = Unitary.toUnits
+      (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g) := by
+  rfl
+
+private theorem unitsHom_mem (g : SU2) : unitsHom g ∈ GLSpecialUnitary (Fin 2) ℂ :=
+  GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mpr g.2
+
+private theorem stable (g : SU2) (X : LeftInvariantDerivation
+    𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) (hX : X ∈ 𝔰𝔲₂) :
+    ((continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+      (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).restrict unitsHom) g X ∈ 𝔰𝔲₂ := by
+  simpa only [ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply]
+    using Ad_mem_lieSubalgebraOfSubgroup (Subgroup.le_normalizer (unitsHom_mem g)) hX
+
+/-- The adjoint representation of SU(2) restricted to its native Lie subalgebra. -/
+def adjointRepresentation : ContRepresentation ℝ SU2 𝔰𝔲₂ :=
+  ((continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+    (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).restrict unitsHom).subrepresentation
+    (𝔰𝔲₂).toSubmodule stable
+
+/-- Coercing the restricted action recovers the native ambient group adjoint. -/
+@[simp]
+theorem coe_adjointRepresentation_apply (g : SU2) (X : 𝔰𝔲₂) :
+    (adjointRepresentation g X : LeftInvariantDerivation
+      𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
+      Ad (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+        (Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g))
+        X := by
+  rw [adjointRepresentation, ContRepresentation.coe_subrepresentation_apply,
+    ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply,
+    unitsHom_apply]
+
+/-- The native SU(2) adjoint representation is continuous in its group argument. -/
+@[fun_prop]
+theorem continuous_adjointRepresentation : Continuous adjointRepresentation := by
+  apply ContRepresentation.continuous_subrepresentation
+  have hu : Continuous unitsHom := Unitary.continuous_toUnits.comp
+    (continuous_inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+  exact (contMDiff_continuousAdjointRepresentation
+    (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
+    (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).continuous.comp hu
+
+/-- The Pauli coordinate equivalence intertwines the native adjoint and rotation actions. -/
+@[simp]
+theorem adjointRepresentation_pauliLieAlgebraEquiv (g : SU2) (x : Fin 3 → ℝ) :
+    adjointRepresentation g (SU2.pauliLieAlgebraEquiv x) =
+      SU2.pauliLieAlgebraEquiv ((SU2.toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x) := by
+  apply Subtype.ext
+  rw [coe_adjointRepresentation_apply]
+  exact SU2.Ad_pauliLieAlgebraEquiv g x
+
+private def basis : Module.Basis (Fin 3) ℝ 𝔰𝔲₂ :=
+  (Pi.basisFun ℝ (Fin 3)).map SU2.pauliLieAlgebraEquiv
+private theorem ad_matrix (x : Fin 3 → ℝ) :
+    LinearMap.toMatrix basis basis (LieAlgebra.ad ℝ 𝔰𝔲₂ (SU2.pauliLieAlgebraEquiv x)) =
+      !![0, 2*x 2, -2*x 1; -2*x 2, 0, 2*x 0; 2*x 1, -2*x 0, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [LinearMap.toMatrix_apply, basis, LieAlgebra.ad_apply,
+      SU2.lie_pauliLieAlgebraEquiv, cross_apply]
+/-- The Killing form on the native SU(2) Lie algebra is minus eight times the Pauli dot form. -/
+@[simp]
+theorem killingForm_pauliLieAlgebraEquiv (x y : Fin 3 → ℝ) :
+    killingForm ℝ 𝔰𝔲₂ (SU2.pauliLieAlgebraEquiv x) (SU2.pauliLieAlgebraEquiv y) =
+      -8 * (x ⬝ᵥ y) := by
+  rw [killingForm_apply_apply, LinearMap.trace_eq_matrix_trace ℝ basis,
+    LinearMap.toMatrix_comp basis basis basis, ad_matrix, ad_matrix]
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, dotProduct, Fin.sum_univ_three]
+  ring
+
+/-- The native real Lie algebra of SU(2) has negative-definite Killing form. -/
+theorem killingForm_self_neg (X : 𝔰𝔲₂) (hX : X ≠ 0) :
+    killingForm ℝ 𝔰𝔲₂ X X < 0 := by
+  obtain ⟨x, rfl⟩ := pauliLieAlgebraEquiv.surjective X
+  rw [killingForm_pauliLieAlgebraEquiv]
+  have hx : x ≠ 0 := (map_ne_zero_iff _ pauliLieAlgebraEquiv.injective).mp hX
+  exact mul_neg_of_neg_of_pos (by norm_num)
+    (by simpa only [star_trivial] using Matrix.dotProduct_star_self_pos_iff.mpr hx)
+
+end TauCeti.SU2
+
+section Normalization
+
+open Manifold Module
+
+-- The rational algebra structure under which the Lie exponential of `GL(2, ℂ)` is the
+-- Banach-algebra exponential.
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+namespace TauCeti
 
 /-- The matrices `-(i/2) • pauli x` satisfy the cross-product commutator relation. -/
 private theorem smul_pauli_mul_sub_mul_smul_pauli (x y : Fin 3 → ℝ) :
@@ -137,43 +361,27 @@ private theorem smul_pauli_mul_sub_mul_smul_pauli (x y : Fin 3 → ℝ) :
 
 /-! ### The basis `-iσₐ/2` -/
 
-/-- The matrix `-(i/2) • pauli x` is the matrix of an element of `𝔰𝔲(2)`. -/
-private theorem unitsLieAlgebraEquiv_symm_smul_pauli_mem (x : Fin 3 → ℝ) :
-    (unitsLieAlgebraEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).symm ((-(I / 2)) • pauli x) ∈
-      SU2.lieAlgebra := by
-  rw [← Lie.unitsLieAlgebraLieEquiv_symm_apply,
-    Lie.unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff]
-  exact ⟨conjTranspose_smul_pauli x, by rw [trace_smul, trace_pauli, smul_zero]⟩
-
 /-- The isomorphism `x ↦ -(i/2) (x₀ σ₁ + x₁ σ₂ + x₂ σ₃)` from `ℝ³` onto the Lie algebra of
-`SU(2)`. It sends the standard basis to `-iσₐ/2` (`TauCeti.toMatrix_suTwoEquiv`) and carries the
-cross product to the bracket (`TauCeti.lie_suTwoEquiv`). -/
-def suTwoEquiv : (Fin 3 → ℝ) ≃ₗ[ℝ] SU2.lieAlgebra where
-  toFun x := ⟨_, unitsLieAlgebraEquiv_symm_smul_pauli_mem x⟩
-  map_add' x y := Subtype.ext <| by simp only [map_add, smul_add, AddMemClass.coe_add]
-  map_smul' c x := Subtype.ext <| by
-    simp only [map_smul, smul_comm _ c, RingHom.id_apply, SetLike.val_smul]
-  invFun X := pauliCoord ((2 * I) • SU2.toMatrix X)
-  left_inv x := by
-    dsimp only
-    rw [SU2.toMatrix_apply, LinearEquiv.apply_symm_apply, smul_smul,
-      show 2 * I * -(I / 2) = 1 by linear_combination -I_sq, one_smul, pauliCoord_pauli]
-  right_inv X := by
-    refine SU2.toMatrix_injective ?_
-    rw [SU2.toMatrix_apply, SU2.toMatrix_apply, LinearEquiv.apply_symm_apply, ← SU2.toMatrix_apply,
-      pauli_pauliCoord, smul_smul, show -(I / 2) * (2 * I) = 1 by linear_combination -I_sq,
-      one_smul]
-    · rw [IsHermitian, conjTranspose_smul, SU2.conjTranspose_toMatrix, smul_neg, ← neg_smul]
-      simp
-    · rw [trace_smul, SU2.trace_toMatrix, smul_zero]
+`SU(2)`: the Pauli coordinates `TauCeti.SU2.pauliLieAlgebraEquiv` rescaled by `-1/2`. It sends the
+standard basis to `-iσₐ/2` (`TauCeti.toMatrix_suTwoEquiv`) and carries the cross product to the
+bracket (`TauCeti.lie_suTwoEquiv`). -/
+def suTwoEquiv : (Fin 3 → ℝ) ≃ₗ[ℝ] SU2.lieAlgebra :=
+  (LinearEquiv.smulOfNeZero ℝ (Fin 3 → ℝ) (-(1 / 2)) (by norm_num)).trans SU2.pauliLieAlgebraEquiv
+
+/-- The basis `-iσₐ/2` is the Pauli basis `iσₐ` rescaled by `-1/2`. -/
+theorem suTwoEquiv_apply (x : Fin 3 → ℝ) :
+    suTwoEquiv x = SU2.pauliLieAlgebraEquiv ((-(1 / 2) : ℝ) • x) := by
+  rw [suTwoEquiv, LinearEquiv.trans_apply, LinearEquiv.smulOfNeZero_apply]
 
 /-- The matrix coordinates of `suTwoEquiv x` are `-(i/2) • pauli x`; in particular `suTwoEquiv`
 sends the standard basis vector `eₐ` to `-iσₐ/2`. -/
 @[simp]
 theorem toMatrix_suTwoEquiv (x : Fin 3 → ℝ) :
     SU2.toMatrix (suTwoEquiv x) = (-(I / 2)) • pauli x := by
-  rw [SU2.toMatrix_apply]
-  exact LinearEquiv.apply_symm_apply _ _
+  rw [suTwoEquiv_apply, SU2.toMatrix_apply, ← Lie.unitsLieAlgebraLieEquiv_apply,
+    SU2.unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv, map_smul, smul_comm, ← smul_assoc]
+  congr 1
+  simp [Complex.real_smul, div_eq_inv_mul]
 
 /-- **The bracket of `𝔰𝔲(2)` is the cross product** in the basis `-iσₐ/2`. -/
 @[simp]
@@ -344,3 +552,5 @@ theorem toSO3_eq_one_iff_of_coe_eq_lieExp {g : SU2} {t : ℝ}
   exact ⟨fun ⟨n, hn⟩ ↦ ⟨-n, by push_cast; linarith⟩, fun ⟨n, hn⟩ ↦ ⟨-n, by push_cast; linarith⟩⟩
 
 end TauCeti
+
+end Normalization

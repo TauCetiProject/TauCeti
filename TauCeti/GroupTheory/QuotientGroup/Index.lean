@@ -23,7 +23,7 @@ the original group. It is the `Nat.card` shadow of the coset-space bijection
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 variable {G : Type*} [Group G]
 
@@ -31,8 +31,8 @@ variable {G : Type*} [Group G]
 quotienting subgroup: the two coset spaces are in bijection, by
 `QuotientGroup.quotientQuotientEquivQuotientSup`. -/
 @[to_additive (attr := simp), simp]
-theorem _root_.Subgroup.index_map_mk'_eq_index_sup (H N : Subgroup G) [N.Normal] :
+theorem index_map_mk'_eq_index_sup (H N : Subgroup G) [N.Normal] :
     (H.map (QuotientGroup.mk' N)).index = (H ⊔ N).index :=
   Nat.card_congr (QuotientGroup.quotientQuotientEquivQuotientSup H N)
 
-end TauCeti
+end Subgroup
