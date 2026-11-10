@@ -31,7 +31,7 @@ public section
 
 noncomputable section
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 namespace Unitary
 
@@ -62,6 +62,8 @@ end Unitary
 
 namespace TauCeti
 
+variable [CompleteSpace V]
+
 variable (V) in
 /-- The special orthogonal group of a real inner product space `V`: the orthogonal
 transformations of `V`, as elements of the unitary group of `V →L[ℝ] V`, of determinant `1`. -/
@@ -75,14 +77,18 @@ theorem mem_specialOrthogonalGroup_iff {g : unitary (V →L[ℝ] V)} :
     g ∈ specialOrthogonalGroup V ↔ (g : V →L[ℝ] V).det = 1 :=
   MonoidHom.mem_ker
 
-variable [FiniteDimensional ℝ V]
-
-/-- In finite dimension, an orthogonal transformation is special orthogonal exactly when its
-determinant is positive. -/
+/-- An orthogonal transformation is special orthogonal exactly when its determinant is positive.
+In infinite dimension every determinant is `1`, so both sides hold. -/
 theorem mem_specialOrthogonalGroup_iff_det_pos {g : unitary (V →L[ℝ] V)} :
     g ∈ specialOrthogonalGroup V ↔ 0 < (g : V →L[ℝ] V).det := by
   rw [mem_specialOrthogonalGroup_iff]
-  rcases Unitary.det_eq_one_or_eq_neg_one g with h | h <;> rw [h] <;> norm_num
+  by_cases hV : FiniteDimensional ℝ V
+  · rcases Unitary.det_eq_one_or_eq_neg_one g with h | h <;> rw [h] <;> norm_num
+  · have h : (g : V →L[ℝ] V).det = 1 :=
+      LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hV) _
+    simp [h]
+
+variable [FiniteDimensional ℝ V]
 
 /-- In finite dimension, an orthogonal transformation is not special orthogonal exactly when its
 determinant is negative. -/
