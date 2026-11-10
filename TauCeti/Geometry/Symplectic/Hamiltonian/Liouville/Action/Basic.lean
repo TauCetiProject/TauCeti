@@ -160,6 +160,7 @@ the connected component of `x` in its level `F⁻¹(F x)` be compact and consist
 there are functions `λ⁽ⁱ⁾` and a map `A : (ι → ℝ) → (ι → ℝ)`, a local diffeomorphism at `F x`,
 such that for every `c` near `F x`:
 
+* the functions `λ⁽ⁱ⁾` are smooth at `c`;
 * the vectors `λ⁽ⁱ⁾ c` are linearly independent and generate the period lattice of `s c`;
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
 * a vector `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`,
@@ -173,7 +174,7 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     (hsx : s (F x) = x) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t) (hFs : ∀ c ∈ t, F (s c) = c) :
     ∃ (p : ι → (ι → ℝ) → ι → ℝ) (A : (ι → ℝ) → ι → ℝ),
       IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ A (F x) ∧ ∀ᶠ c in 𝓝 (F x),
-        LinearIndependent ℝ (fun i ↦ p i c) ∧
+        (∀ i, ContDiffAt ℝ ∞ (p i) c) ∧ LinearIndependent ℝ (fun i ↦ p i c) ∧
         hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
           AddSubgroup.closure (range fun i ↦ p i c) ∧
         (∀ i, HasFDerivAt (fun c ↦ A c i)
@@ -198,7 +199,8 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
       HasFDerivAt (fun c i ↦ A i c) (ContinuousLinearMap.pi fun i ↦ α i c) c :=
     hasFDerivAt_pi.2 fun i ↦ hA i c hc
   refine ⟨p, fun c i ↦ A i c, ?_, eventually_of_mem (Metric.ball_mem_nhds _ hε)
-    fun c hc ↦ ⟨(hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, fun v ↦ ?_⟩⟩
+    fun c hc ↦ ⟨(hball hc).1.1, (hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc,
+      fun v ↦ ?_⟩⟩
   swap
   · -- The periods are the integral combinations of the `p i c`, and `dAᵢ = (2π)⁻¹ ⟨p i c, ·⟩`.
     have hd (i : ι) (w : ι → ℝ) :

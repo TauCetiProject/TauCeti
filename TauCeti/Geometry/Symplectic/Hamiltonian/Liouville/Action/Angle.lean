@@ -41,9 +41,9 @@ they differ by `2π ℤ^ι`, so `θ ↦ Ψ(θ, c)` descends to an injective map 
 `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`
 
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`), and for an isotropic section `s`
-it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. This pullback identity is not yet the Liouville–Arnold normal form
-`σ = ∑ᵢ dθᵢ ∧ dIᵢ`: that reading needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that
-`(θ, A)` are coordinates, and this is not proved here.
+it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. Reading this as the Liouville–Arnold normal form
+`σ = ∑ᵢ dθᵢ ∧ dIᵢ` needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that `(θ, A)` are
+coordinates; this is proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart`.
 
 ## Main definitions
 
