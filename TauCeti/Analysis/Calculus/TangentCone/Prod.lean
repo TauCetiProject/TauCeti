@@ -76,6 +76,8 @@ theorem Convex.posTangentConeAt_prod {E F : Type*} [NormedAddCommGroup E] [Norme
   -- Only the closures matter, and the base points lie in them as the cones are nonempty.
   have hx : x ∈ closure s := mem_closure_of_nonempty_tangentConeAt ⟨v, hv⟩
   have hy : y ∈ closure t := mem_closure_of_nonempty_tangentConeAt ⟨w, hw⟩
+  -- `posTangentConeAt` is the abbreviation `tangentConeAt NNReal`; unfold it so that
+  -- `tangentConeAt_closure` can rewrite.
   change (v, w) ∈ tangentConeAt NNReal (s ×ˢ t) (x, y)
   rw [← tangentConeAt_closure (s := s ×ˢ t), closure_prod_eq]
   rw [← tangentConeAt_closure] at hv hw
