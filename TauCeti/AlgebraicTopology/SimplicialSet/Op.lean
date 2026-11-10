@@ -29,6 +29,7 @@ constructions on simplicial sets, such as joins and slices, along the opposite.
 * `SSet.stdSimplex.opIso_inv_comp_opFunctor_map_yonedaEquiv_symm`: the map `Δ[n] ⟶ Xᵒᵖ` given by
   an `n`-simplex of `Xᵒᵖ` is the opposite of the map `Δ[n] ⟶ X` given by the same simplex of `X`.
 * `SSet.boundary.opIso`: boundary reversal, compatible with the boundary inclusions and vertices.
+* `SSet.boundary.exists_extension_iff_op`: boundary extension is invariant under reversal.
 * `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
 * `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
   and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
@@ -167,6 +168,21 @@ lemma opIso_inv_app_vertex (n : ℕ) (i : Fin (n + 2)) :
   apply Subtype.ext
   ext j
   simp [opIso, opObjEquiv', stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
+
+/-- A boundary map extends to a simplex if and only if its reversal does. -/
+lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} (σ₀ : (∂Δ[n] : SSet) ⟶ X) :
+    (∃ σ : Δ[n] ⟶ X, σ₀ = ∂Δ[n].ι ≫ σ) ↔
+      ∃ τ : Δ[n] ⟶ X.op, (opIso n).inv ≫ opFunctor.map σ₀ = ∂Δ[n].ι ≫ τ := by
+  constructor
+  · rintro ⟨σ, rfl⟩
+    exact ⟨(stdSimplex.opIso ⦋n⦌).inv ≫ opFunctor.map σ, by
+      simp [opFunctor.map_comp, ← Category.assoc]⟩
+  · rintro ⟨τ, hτ⟩
+    refine ⟨opFunctor.preimage ((stdSimplex.opIso ⦋n⦌).hom ≫ τ), ?_⟩
+    apply opFunctor.map_injective
+    rw [opFunctor.map_comp, Functor.map_preimage, ← Category.assoc,
+      ← opIso_hom_ι, Category.assoc, ← hτ]
+    simp
 
 end boundary
 

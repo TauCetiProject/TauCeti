@@ -41,13 +41,13 @@ theorem isInitialVertex_cochainComplex_of_isZero {K : CochainComplex C ℤ} (hK 
     (dgNerve R (CochainComplex C ℤ)).IsInitialVertex
       ((dgNerveEquiv R (CochainComplex C ℤ)).symm K) :=
   isInitialVertex_of_isZero fun _ ↦
-    CochainComplex.isZero_linearHomComplex_of_isZero_left R hK
+    isZero_linearHomComplex_of_isZero_left R hK
 
 /-- A zero cochain complex is a terminal vertex of the dg nerve of complexes. -/
 theorem isTerminalVertex_cochainComplex_of_isZero {K : CochainComplex C ℤ} (hK : IsZero K) :
     (dgNerve R (CochainComplex C ℤ)).IsTerminalVertex
       ((dgNerveEquiv R (CochainComplex C ℤ)).symm K) :=
   isTerminalVertex_of_isZero fun _ ↦
-    CochainComplex.isZero_linearHomComplex_of_isZero_right R hK
+    isZero_linearHomComplex_of_isZero_right R hK
 
 end TauCeti.dgNerve

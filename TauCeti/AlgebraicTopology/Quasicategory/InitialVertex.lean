@@ -77,11 +77,7 @@ lemma isInitialVertex_iff (x : X _⦋0⦌) :
       rw [yonedaEquiv_comp, ← NatTrans.naturality_apply, boundary.map_const_yonedaEquiv_ι]
       simp only [τ₀, NatTrans.comp_app, ConcreteCategory.comp_apply]
       simp [opFunctor_map, hσ₀])
-    refine ⟨opFunctor.preimage ((stdSimplex.opIso ⦋n + 1⦌).hom ≫ τ), ?_⟩
-    apply opFunctor.map_injective
-    rw [opFunctor.map_comp, Functor.map_preimage, ← Category.assoc,
-      ← boundary.opIso_hom_ι, Category.assoc, ← hτ]
-    simp [τ₀]
+    exact (boundary.exists_extension_iff_op σ₀).2 ⟨τ, hτ⟩
   · intro hx
     rw [isInitialVertex_iff_isTerminalVertex_op, isTerminalVertex_iff]
     intro n σ₀ hσ₀
@@ -94,11 +90,9 @@ lemma isInitialVertex_iff (x : X _⦋0⦌) :
     obtain ⟨τ, hτ⟩ := hx τ₀ (by
       simp only [τ₀, NatTrans.comp_app, ConcreteCategory.comp_apply]
       simp [opFunctor_map, hlast])
-    refine ⟨opFunctor.preimage ((stdSimplex.opIso ⦋n + 1⦌).hom ≫ τ ≫
-      opFunctorCompOpFunctorIso.inv.app X), ?_⟩
-    apply opFunctor.map_injective
-    rw [opFunctor.map_comp, Functor.map_preimage, ← Category.assoc,
-      ← boundary.opIso_hom_ι, Category.assoc, ← Category.assoc _ τ, ← hτ]
+    apply (boundary.exists_extension_iff_op σ₀).2
+    refine ⟨τ ≫ opFunctorCompOpFunctorIso.inv.app X, ?_⟩
+    rw [← Category.assoc, ← hτ]
     simp [τ₀]
 
 namespace IsInitialVertex

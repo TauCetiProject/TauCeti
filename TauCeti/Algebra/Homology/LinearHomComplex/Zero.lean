@@ -17,9 +17,9 @@ the mapping spaces in the dg nerve of complexes.
 
 public section
 
-open CategoryTheory Limits
+open CategoryTheory Limits CochainComplex
 
-namespace CochainComplex
+namespace TauCeti
 
 universe v u w
 
@@ -44,4 +44,4 @@ theorem isZero_linearHomComplex_of_isZero_right (hG : IsZero G) :
   intro p q hpq
   exact ((HomologicalComplex.eval C (.up ℤ) q).map_isZero hG).eq_of_tgt _ _
 
-end CochainComplex
+end TauCeti
