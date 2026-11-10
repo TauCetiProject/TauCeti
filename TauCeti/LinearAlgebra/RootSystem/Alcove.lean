@@ -72,6 +72,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
   the set of points at which every affine simple root is positive.
+* `RootPairing.mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg`: the closed
+  fundamental alcove is the set of points at which every affine simple root is nonnegative.
 * `RootPairing.Base.sum_affineMarks_mul_affineSimpleRoot`: the null-root relation `∑ₖ mₖ aₖ = 1`,
   where the marks `mₖ` are the coefficients of `θ` and `m₀ = 1`.
 * `RootPairing.Base.exists_affineSimpleRoot_eq_of_height_eq_one`: an affine root `α + n` of height
@@ -163,6 +165,11 @@ theorem convex_fundamentalAlcove : Convex R (fundamentalAlcove P b) := by
   rw [h]
   exact (convex_iInter₂ fun i _ ↦ convex_halfSpace_gt (P.root' i).isLinear 0).inter
     (convex_halfSpace_lt (P.root' _).isLinear 1)
+
+/-- The origin lies in the closed fundamental alcove: it is the vertex of the alcove opposite the
+wall `θ = 1`. -/
+theorem zero_mem_closedFundamentalAlcove : (0 : N) ∈ closedFundamentalAlcove P b :=
+  ⟨fun _ _ ↦ by simp, by simp⟩
 
 variable [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
@@ -327,6 +334,15 @@ theorem mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos [PartialOrder R]
     [IsOrderedAddMonoid R] {x : N} :
     x ∈ fundamentalAlcove P b ↔ ∀ k, 0 < b.affineSimpleRoot k x := by
   simp only [mem_fundamentalAlcove, Option.forall, Base.affineSimpleRoot_none, sub_pos,
+    Base.affineSimpleRoot_some, Subtype.forall]
+  tauto
+
+/-- **The closed fundamental alcove is the set of points at which every affine simple root is
+nonnegative.** -/
+theorem mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg [PartialOrder R]
+    [IsOrderedAddMonoid R] {x : N} :
+    x ∈ closedFundamentalAlcove P b ↔ ∀ k, 0 ≤ b.affineSimpleRoot k x := by
+  simp only [mem_closedFundamentalAlcove, Option.forall, Base.affineSimpleRoot_none, sub_nonneg,
     Base.affineSimpleRoot_some, Subtype.forall]
   tauto
 
