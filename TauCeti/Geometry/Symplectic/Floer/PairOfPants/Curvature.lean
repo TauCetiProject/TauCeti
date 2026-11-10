@@ -1002,9 +1002,7 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
         (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
-    fun z hz =>
-      mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl

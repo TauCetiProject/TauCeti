@@ -46,7 +46,7 @@ private theorem tendsto_rpow_mul_standardStableMeasure_real_Ioi
     Tendsto (fun x : ℝ ↦ x ^ α * (stableMeasure α β 1 0).real (Ioi x)) atTop
       (𝓝 (stableTailConstant α * (1 + β))) := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ zero_lt_one
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ zero_lt_one
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   have hαtwo : ENNReal.ofReal α ≤ 2 := by
     exact_mod_cast hα.2.le
   have hsmall := (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
@@ -81,7 +81,7 @@ theorem tendsto_rpow_mul_stableMeasure_real_Ioi
   rw [hconstant] at hlim
   apply hlim.congr
   intro x
-  rw [← stableMeasure_one_zero_map_affine (pos_iff_ne_zero.mpr hs),
+  rw [← stableMeasure_one_zero_map_affine (s := s) (m := m),
     map_measureReal_apply (by fun_prop) measurableSet_Ioi]
   congr 2
   ext y

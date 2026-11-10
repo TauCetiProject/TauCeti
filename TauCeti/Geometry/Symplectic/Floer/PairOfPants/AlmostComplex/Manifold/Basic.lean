@@ -261,16 +261,12 @@ theorem pairOfPantsAlmostComplex_cylindricalEndLift (w : ThricePuncturedSphere)
     {q : Puncture} {z : ℂ} (hw : (w : ℂ) = q.cylindricalEndLift z)
     (hz : 2 ≤ q.endSign * z.re) :
     h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J q z.im := by
-  ext x v
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
   have hp : Function.Periodic
       (fun t (_ : Unit) => (J q t).almostComplexStructureAt x) 1 := fun t => by
     simp only [hJp q t]
-  have heq : (h₀.pairOfPantsAlmostComplex J hJ hJp hJs w).almostComplexStructureAt x =
-      (J q z.im).almostComplexStructureAt x := by
-    rw [almostComplexStructureAt_pairOfPantsAlmostComplex, hw]
-    exact Floer.pairOfPantsAlmostComplex_cylindricalEndLift (h₀.compatibleAt x) hp hz ()
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) heq
+  rw [almostComplexStructureAt_pairOfPantsAlmostComplex, hw]
+  exact Floer.pairOfPantsAlmostComplex_cylindricalEndLift (h₀.compatibleAt x) hp hz ()
 
 /-- Where all the end cutoffs vanish, the extension is the base structure. -/
 theorem pairOfPantsAlmostComplex_eq_base_of_forall_le_one (w : ThricePuncturedSphere)
@@ -278,16 +274,12 @@ theorem pairOfPantsAlmostComplex_eq_base_of_forall_le_one (w : ThricePuncturedSp
     h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J₀ := by
   have hc (q : Puncture) : smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0 :=
     smoothTransition.zero_of_nonpos (sub_nonpos.mpr (hw q))
-  ext x v
-  have heq : (h₀.pairOfPantsAlmostComplex J hJ hJp hJs w).almostComplexStructureAt x =
-      J₀.almostComplexStructureAt x := by
-    apply (h₀.compatibleAt x).eq_of_cayley_eq
-      (h₀.isNondegenerate.tames_iff.mp (tames_pairOfPantsAlmostComplex h₀ J hJ hJp hJs w) x)
-      (h₀.compatibleAt x).tames
-    rw [cayley_pairOfPantsAlmostComplex, AlmostComplexStructure.cayley_self]
-    simp only [hc, zero_smul, Finset.sum_const_zero]
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) heq
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  apply (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (tames_pairOfPantsAlmostComplex h₀ J hJ hJp hJs w) x)
+    (h₀.compatibleAt x).tames
+  rw [cayley_pairOfPantsAlmostComplex, AlmostComplexStructure.cayley_self]
+  simp only [hc, zero_smul, Finset.sum_const_zero]
 
 /-- The domain-dependent structures are jointly `C^n` along any `C^n` family of domain and
 target points. The domain family must avoid the two deleted points. This formulation also

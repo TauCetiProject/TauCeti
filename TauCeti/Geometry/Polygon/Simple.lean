@@ -142,10 +142,14 @@ theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ po
       · exact .inl ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
       · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
 
+omit [ZeroLEOneClass R] in
 /-- A vertex of a simple polygon lies on no edge other than the two edges through it. -/
 theorem IsSimple.apply_notMem_edgeSet {poly : Polygon P n} (hs : poly.IsSimple R) {k j : Fin n}
     (hkj : k ≠ j) (hkj' : k ≠ finRotate n j) : poly k ∉ poly.edgeSet R j := by
   intro h
+  have : ZeroLEOneClass R := by
+    obtain ⟨s, ⟨hs₀, hs₁⟩, -⟩ := h
+    exact ⟨hs₀.trans hs₁⟩
   rcases hs.eq_vertex_of_mem_edgeSet hkj (apply_mem_edgeSet_self R poly k) h with ⟨rfl, he⟩ |
     ⟨h', -⟩
   · exact hs.hasNondegenerateEdges k he
@@ -775,7 +779,7 @@ end Polygon
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
+variable {R V P : Type*} [Ring R] [PartialOrder R]
   [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- **A triangle is a simple polygon.** -/
@@ -786,6 +790,9 @@ theorem toPolygon_isSimple (t : Affine.Triangle R P) : t.toPolygon.IsSimple R :=
   -- vertex, the middle one of three consecutive vertices.
   have hside (i : Fin 3) {x : P} (hi : x ∈ t.toPolygon.edgeSet R i)
       (hj : x ∈ t.toPolygon.edgeSet R (finRotate 3 i)) : x = t.toPolygon (finRotate 3 i) := by
+    have : ZeroLEOneClass R := by
+      obtain ⟨s, ⟨hs₀, hs₁⟩, -⟩ := hi
+      exact ⟨hs₀.trans hs₁⟩
     have hx : x ∈ affineSegment R (t.toPolygon i) (t.toPolygon (i + 1)) ∩
         affineSegment R (t.toPolygon (i + 1)) (t.toPolygon (i + 2)) := by
       refine ⟨by simpa [Polygon.edgeSet, finRotate_apply] using hi, ?_⟩
