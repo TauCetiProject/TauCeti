@@ -28,8 +28,8 @@ symbol of order `-m`. For a frequency cutoff `χ` and a radius `t ≥ 1` with `2
 
 `TauCeti.Symbol.cutoffInverse χ a ha ht hRt (x, ξ) = χ(ξ / t) a(x, ξ)⁻¹`
 
-is a symbol of order `-m`, which equals `a(x, ξ)⁻¹` for `‖ξ‖ ≥ 2 t`. Its products with `a` in
-either order are therefore the identity up to a smoothing symbol
+is a symbol of order `-m`, which equals `a(x, ξ)⁻¹` for `‖ξ‖ ≥ 2 t`. Its pointwise products with
+`a` in either order are therefore the identity up to a smoothing symbol
 (`TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub` and
 `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`). This is the first step in the construction of
 a parametrix of an elliptic pseudodifferential operator. For a uniform symbol that is uniformly
@@ -55,9 +55,9 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
 * `TauCeti.Symbol.cutoffInverse`: the cut-off inverse `χ(ξ / t) a(x, ξ)⁻¹`, a symbol of
   order `-m`.
 * `TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
-  `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: it is a two-sided inverse of `a` modulo
-  smoothing symbols, and `TauCeti.Symbol.isSmoothing_cutoffInverse_sub_cutoffInverse`: it does not
-  depend on the cutoff and the radius modulo smoothing symbols.
+  `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: it is a pointwise two-sided inverse of `a`
+  modulo smoothing symbols, and `TauCeti.Symbol.isSmoothing_cutoffInverse_sub_cutoffInverse`: it
+  does not depend on the cutoff and the radius modulo smoothing symbols.
 * `TauCeti.Symbol.IsEllipticAbove.comp`, `TauCeti.Symbol.IsUniformlyEllipticAbove.comp`: pointwise
   products of elliptic symbols are elliptic.
 
@@ -134,49 +134,14 @@ private theorem EstimatesUpTo.bilinear (B : F →L[ℝ] G →L[ℝ] H)
     if h : s.length + t.length ≤ N then C s t h else 0
   let D' : List (Fin n) → List (Fin n) → ℝ := fun s t =>
     if h : s.length + t.length ≤ N then D s t h else 0
-  have hlen : ∀ {l : List (Fin n)}, ∀ q ∈ l.sublists'.revzip,
-      q.1.length + q.2.length = l.length := fun q hq => by
-    rw [← List.length_append, (List.revzip_sublists' _ _ _ hq).length_eq]
   refine ⟨‖B‖ * (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
-    |C' s.1 t.1| * |D' s.2 t.2|).sum).sum, fun x hx ξ hξ => ?_⟩
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [B.mixedDeriv_of_bilinear (hfs.of_le (by exact_mod_cast le_top))
-    (hgs.of_le (by exact_mod_cast le_top))]
-  refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
-  rw [List.map_map]
-  calc (β.sublists'.revzip.map (norm ∘ fun t => (α.sublists'.revzip.map fun s =>
-        B (mixedDeriv s.1 t.1 f x ξ) (mixedDeriv s.2 t.2 g x ξ)).sum)).sum
-      ≤ (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
-          ‖B‖ * (|C' s.1 t.1| * |D' s.2 t.2|) * (1 + ‖ξ‖ ^ 2) ^ ((κ - β.length) / 2)).sum).sum := by
-        refine List.sum_le_sum fun t ht => ?_
-        refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
-        rw [List.map_map]
-        refine List.sum_le_sum fun s hs => ?_
-        have hs' := hlen s hs
-        have ht' := hlen t ht
-        have h1 : s.1.length + t.1.length ≤ N := by omega
-        have h2 : s.2.length + t.2.length ≤ N := by omega
-        have hf' : ‖mixedDeriv s.1 t.1 f x ξ‖ ≤
-            |C' s.1 t.1| * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2) := by
-          refine (hC s.1 t.1 h1 x hx ξ hξ).trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-          simp only [C', h1, ↓reduceDIte]
-          exact le_abs_self _
-        have hg' : ‖mixedDeriv s.2 t.2 g x ξ‖ ≤
-            |D' s.2 t.2| * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2) := by
-          refine (hD s.2 t.2 h2 x hx ξ hξ).trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-          simp only [D', h2, ↓reduceDIte]
-          exact le_abs_self _
-        have hweight : (1 + ‖ξ‖ ^ 2) ^ ((κ - β.length) / 2) =
-            (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2) := by
-          rw [← Real.rpow_add hw, ← ht', ← hκ]
-          push_cast
-          ring_nf
-        calc ‖B (mixedDeriv s.1 t.1 f x ξ) (mixedDeriv s.2 t.2 g x ξ)‖
-            ≤ ‖B‖ * ‖mixedDeriv s.1 t.1 f x ξ‖ * ‖mixedDeriv s.2 t.2 g x ξ‖ := B.le_opNorm₂ _ _
-          _ ≤ ‖B‖ * (|C' s.1 t.1| * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2)) *
-              (|D' s.2 t.2| * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2)) := by gcongr
-          _ = _ := by rw [hweight]; ring
-    _ = _ := by simp only [List.sum_map_mul_right, List.sum_map_mul_left]
+    C' s.1 t.1 * D' s.2 t.2).sum).sum, fun x hx ξ hξ => ?_⟩
+  rw [← hκ]
+  refine B.norm_mixedDeriv_le_of_bilinear hfs hgs α β (fun s t hst => ?_) fun s t hst => ?_
+  · have h : s.length + t.length ≤ N := hst.trans hαβ
+    simpa only [C', h, ↓reduceDIte] using hC s t h x hx ξ hξ
+  · have h : s.length + t.length ≤ N := hst.trans hαβ
+    simpa only [D', h, ↓reduceDIte] using hD s t h x hx ξ hξ
 
 /-- Estimates for the first-order derivatives give estimates of one more length: the mixed
 derivatives of `f` of length `N + 1` are mixed derivatives of length `N` of its first-order
@@ -589,8 +554,10 @@ theorem coefficient_comp_coefficient_cutoffInverse (x : CoordinateSpace n)
   rw [coefficient_cutoffInverse_of_two_mul_le_norm χ a ha ht hRt x hξ]
   exact (ha.isInvertible x (by linarith)).self_comp_inverse
 
-/-- **The inverse symbol is a left parametrix symbol**: `χ(ξ / t) a⁻¹ ∘ a` is the identity up to a
-smoothing symbol. -/
+/-- **The inverse symbol is a pointwise left inverse modulo smoothing symbols**: the pointwise
+product `χ(ξ / t) a⁻¹ ∘ a` is the identity up to a smoothing symbol. For symbols depending on the
+position this is not the symbol of the composed operators; the inverse symbol is only the leading
+term of a parametrix. -/
 theorem isSmoothing_cutoffInverse_comp_sub :
     ((cutoffInverse χ a ha ht hRt).comp a -
       inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing :=
@@ -599,8 +566,8 @@ theorem isSmoothing_cutoffInverse_comp_sub :
       coefficient_const]
     rw [coefficient_cutoffInverse_comp_coefficient χ a ha ht hRt x hξ, sub_self]
 
-/-- **The inverse symbol is a right parametrix symbol**: `a ∘ χ(ξ / t) a⁻¹` is the identity up to
-a smoothing symbol. -/
+/-- **The inverse symbol is a pointwise right inverse modulo smoothing symbols**: the pointwise
+product `a ∘ χ(ξ / t) a⁻¹` is the identity up to a smoothing symbol. -/
 theorem isSmoothing_comp_cutoffInverse_sub :
     (a.comp (cutoffInverse χ a ha ht hRt) -
       inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing :=
