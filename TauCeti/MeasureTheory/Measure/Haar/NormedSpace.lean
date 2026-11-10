@@ -112,6 +112,17 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
+/-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
+unit ball, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.sqrt_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {R : ℝ} (hR : 0 < R) :
+    √(mu.real (ball x R)) = R ^ ((finrank ℝ E : ℝ) / 2) * √(mu.real (ball 0 1)) := by
+  rw [addHaar_real_ball_of_pos _ _ hR, ← Real.rpow_natCast, Real.sqrt_mul (by positivity),
+    Real.sqrt_eq_rpow, ← Real.rpow_mul hR.le]
+  ring_nf
+
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
 factor is `|B(x₀, R)|^{1/p₀ - 1/p}`; for `R ≤ 0` the ball is empty, so the inequality holds

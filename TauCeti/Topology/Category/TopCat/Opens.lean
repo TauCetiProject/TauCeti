@@ -18,7 +18,8 @@ round trips as equalities of opens, the form met when an open of `Y` is compared
 of its preimage.
 
 For opens `V ≤ W` of `X`, an open `Q` of `W` pulled back to `V` along the inclusion and pushed
-forward to `X` lies in the image of `Q` in `X`.
+forward to `X` lies in the image of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
+and an open subset of a Hausdorff space is Hausdorff.
 
 ## Main results
 
@@ -27,6 +28,8 @@ forward to `X` lies in the image of `Q` in `X`.
   along `f.inv` of an open is that open, and the other way round.
 * `TopologicalSpace.Opens.functor_obj_map_homOfLE_obj_le`: for opens `V ≤ W`, the image in `X`
   of the preimage in `V` of an open of `W` lies in the image of that open.
+* `TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map`: the inclusion of `V` into `W` is an open
+  embedding.
 -/
 
 public section
@@ -58,6 +61,21 @@ theorem functor_obj_map_homOfLE_obj_le {V W : Opens X} (h : V ≤ W) (Q : Opens 
       W.isOpenEmbedding.functor.obj Q := by
   rintro _ ⟨x, hx, rfl⟩
   exact ⟨_, hx, rfl⟩
+
+/-- The inclusion of an open set `V` into a larger open set `W` is an open embedding. -/
+lemma isOpenEmbedding_toTopCat_map {V W : Opens X} (h : V ⟶ W) :
+    Topology.IsOpenEmbedding ((toTopCat X).map h) :=
+  Topology.IsOpenEmbedding.of_comp _ W.isOpenEmbedding V.isOpenEmbedding
+
+/-- The inclusion of `V` into `W` followed by the inclusion of `W` is the inclusion of `V`. -/
+@[reassoc (attr := simp)]
+lemma toTopCat_map_comp_inclusion' {V W : Opens X} (h : V ⟶ W) :
+    (toTopCat X).map h ≫ inclusion' W = inclusion' V :=
+  rfl
+
+/-- An open subset of a Hausdorff space is Hausdorff. -/
+instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).obj V) :=
+  inferInstanceAs (T2Space V)
 
 end TopologicalSpace.Opens
 

@@ -62,8 +62,8 @@ roots of `F(X, 1)` multiplied by `a`.
   `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
 * `Polynomial.sub_natDegree_le_one_of_not_sq_dvd_homogenize`,
   `Polynomial.nodup_roots_of_not_sq_dvd_homogenize`: if neither `X₁ ^ 2` nor any
-  `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n ≥ natDegree p`, then
-  `n ≤ natDegree p + 1` and the roots of `p` are simple.
+  `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n` (with `n ≥ natDegree p` for the
+  second), then `n ≤ natDegree p + 1` and the roots of `p` are simple.
 * `Squarefree.not_sq_dvd_homogenize_natDegree`: conversely, the homogenization of degree
   `natDegree p` of a squarefree polynomial `p` has no squared linear factor.
 * `Polynomial.eval_homogenize_integralNormalization`: `G(a x, y) = a ^ (d - 1) F(x, y)` for the
@@ -168,11 +168,12 @@ theorem sub_mul_dvd_eval_homogenize {p : R[X]} {a : R} (ha : p.IsRoot a) {n : �
   rw [hpq, homogenize_mul _ _ (natDegree_X_sub_C_le a) (by omega), map_mul]
   exact dvd_mul_of_dvd_left (by simp [homogenize_X one_ne_zero]) _
 
-/-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n ≥ natDegree p`, then
-`n ≤ natDegree p + 1`. -/
-theorem sub_natDegree_le_one_of_not_sq_dvd_homogenize {p : R[X]} {n : ℕ} (hn : p.natDegree ≤ n)
+/-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n`, then
+`n ≤ natDegree p + 1`, stated as `n - natDegree p ≤ 1`. -/
+theorem sub_natDegree_le_one_of_not_sq_dvd_homogenize {p : R[X]} {n : ℕ}
     (h : ¬MvPolynomial.X 1 ^ 2 ∣ p.homogenize n) : n - p.natDegree ≤ 1 := by
   by_contra! hk
+  have hn : p.natDegree ≤ n := by omega
   rw [homogenize_eq_X_pow_mul_homogenize_natDegree hn] at h
   exact h ((pow_dvd_pow _ hk).mul_right _)
 
@@ -385,7 +386,7 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
   have hg₀ : g ≠ 0 := fun hg ↦ hF₀ (by rw [← hG, hg, Polynomial.homogenize_zero])
   -- No squared linear factor: `X₁ ^ 2 ∤ F` gives `k ≤ 1`, and `(X₀ - α X₁) ^ 2 ∤ F` gives
   -- simple roots.
-  have hk := g.sub_natDegree_le_one_of_not_sq_dvd_homogenize hgd <| by
+  have hk := g.sub_natDegree_le_one_of_not_sq_dvd_homogenize (n := d) <| by
     simpa [hG] using hsq 0 1 (by simp)
   have hnodup := g.nodup_roots_of_not_sq_dvd_homogenize hgd fun α ↦ by
     have e : C 1 * X 0 + C (-α) * X 1 = (X 0 - C α * X 1 : MvPolynomial (Fin 2) R) := by

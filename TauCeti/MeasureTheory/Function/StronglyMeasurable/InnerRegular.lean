@@ -54,15 +54,14 @@ strongly measurable as soon as it is a.e. strongly measurable on the σ-finite s
 measurability of `u` to the σ-finite case. -/
 theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_of_restrict {α β γ : Type*}
     {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace β] [T2Space β] [Zero β]
-    [TopologicalSpace γ] [PseudoMetrizableSpace γ] [Zero γ] {f : α → β}
+    [TopologicalSpace γ] [Zero γ] {f : α → β}
     (hf : AEFinStronglyMeasurable f μ) {u : α → γ}
     (hu : AEStronglyMeasurable u (μ.restrict hf.sigmaFiniteSet)) (h0 : ∀ x, f x = 0 → u x = 0) :
     AEStronglyMeasurable u μ := by
-  rw [← Measure.restrict_univ (μ := μ), ← union_compl_self hf.sigmaFiniteSet,
-    aestronglyMeasurable_union_iff]
-  refine ⟨hu, (aestronglyMeasurable_const (b := (0 : γ))).congr ?_⟩
-  filter_upwards [hf.ae_eq_zero_compl] with x hx
-  exact (h0 x hx).symm
+  have hz : u =ᵐ[μ.restrict hf.sigmaFiniteSetᶜ] 0 :=
+    hf.ae_eq_zero_compl.mono fun x hx ↦ h0 x hx
+  exact ((aestronglyMeasurable_indicator_iff hf.measurableSet).2 hu).congr
+    (indicator_ae_eq_of_restrict_compl_ae_eq_zero hf.measurableSet hz)
 
 variable {α β : Type*} [TopologicalSpace α] [MeasurableSpace α] [R1Space α] [BorelSpace α]
   [TopologicalSpace β] [PseudoMetrizableSpace β] {μ : Measure α} [μ.InnerRegularCompactLTTop]

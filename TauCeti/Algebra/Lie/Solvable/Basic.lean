@@ -137,19 +137,23 @@ theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
 
 /-- A surjective Lie homomorphism with solvable kernel carries the solvable radical onto the
 solvable radical. -/
-theorem radical_map_eq [IsNoetherian R L] (h : Function.Surjective f)
+theorem radical_map_eq (h : Function.Surjective f)
     (hker : IsSolvable ↥f.ker) : (radical R L).map f = radical R L' := by
-  have hL' : IsNoetherian R L' :=
-    isNoetherian_of_surjective f.toLinearMap (LinearMap.range_eq_top.mpr h)
   have hmap : ∀ J : LieIdeal R L', (J.comap f).map f = J := fun J => by
     rw [map_comap_eq (f.isIdealMorphism_of_surjective h),
       f.idealRange_eq_top_of_surjective h, top_inf_eq]
-  refine le_antisymm ((LieIdeal.solvable_iff_le_radical R L' _).mp (isSolvable_map f _ h)) ?_
-  have hcomap : IsSolvable ↥((radical R L').comap f) :=
-    isSolvable_of_isSolvable_map f _ (le_solvable_ideal_solvable inf_le_right hker)
-      (by rw [hmap]; infer_instance)
-  calc radical R L' = ((radical R L').comap f).map f := (hmap _).symm
-    _ ≤ (radical R L).map f := map_mono ((LieIdeal.solvable_iff_le_radical R L _).mp hcomap)
+  refine le_antisymm ?_ ?_
+  · rw [LieIdeal.map_le_iff_le_comap]
+    refine sSup_le fun I hI ↦ ?_
+    have : IsSolvable ↥I := hI
+    exact (LieIdeal.map_le_iff_le_comap).mp (le_sSup (isSolvable_map f I h))
+  · refine sSup_le fun J hJ ↦ ?_
+    have hJ' : IsSolvable ↥J := hJ
+    have hcomap : IsSolvable ↥(J.comap f) :=
+      isSolvable_of_isSolvable_map f _ (le_solvable_ideal_solvable inf_le_right hker)
+        (by rw [hmap]; exact hJ')
+    calc J = (J.comap f).map f := (hmap J).symm
+      _ ≤ (radical R L).map f := map_mono (le_sSup hcomap)
 
 /-! ### Ideals inside an ideal -/
 

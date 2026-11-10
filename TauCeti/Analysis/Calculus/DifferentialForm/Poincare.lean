@@ -151,8 +151,9 @@ theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin 
 continuous linear map `A` along the rays from `y₀` is the same as pulling back the contraction of
 the form along the rays from `A y₀`. In particular, if `A` fixes the centre, the operator commutes
 with pullback along `A`. -/
-theorem poincareHomotopy_pullback_apply [CompleteSpace F] {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] (A : E →L[ℝ] E') {y₀ x : E} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F}
+theorem poincareHomotopy_pullback_apply {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [CompleteSpace (E [⋀^Fin n]→L[ℝ] F)] [CompleteSpace (E' [⋀^Fin n]→L[ℝ] F)]
+    (A : E →L[ℝ] E') {y₀ x : E} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F}
     (hω : ContinuousOn ω (segment ℝ (A y₀) (A x))) :
     poincareHomotopy y₀ (fun y ↦ (ω (A y)).compContinuousLinearMap A) x =
       (poincareHomotopy (A y₀) ω (A x)).compContinuousLinearMap A := by
@@ -210,11 +211,18 @@ variable {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
 fixing `x₀` and mapping a set `s`, star-convex with respect to `x₀`, into itself. If a form `ω`,
 continuous on `s`, satisfies `A^* ω = ω` on `s`, then so does its Poincaré homotopy operator
 centred at `x₀`. -/
-theorem compContinuousLinearMap_poincareHomotopy_eq [CompleteSpace F] (hs : StarConvex ℝ x₀ s)
+theorem compContinuousLinearMap_poincareHomotopy_eq (hs : StarConvex ℝ x₀ s)
     (hωc : ContinuousOn ω s) {A : E →L[ℝ] E} (hAx₀ : A x₀ = x₀) (hAs : MapsTo A s s)
     (hω : ∀ y ∈ s, (ω (A y)).compContinuousLinearMap A = ω y) {x : E} (hx : x ∈ s) :
     (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A = poincareHomotopy x₀ ω x := by
   have hseg : segment ℝ (A x₀) (A x) ⊆ s := by rw [hAx₀]; exact hs.segment_subset (hAs hx)
+  by_cases hG : CompleteSpace (E [⋀^Fin n]→L[ℝ] F)
+  swap
+  · -- without completeness every integral vanishes by convention
+    simp only [poincareHomotopy_apply, intervalIntegral.integral_of_le zero_le_one,
+      integral_of_not_completeSpace hG]
+    ext
+    simp
   calc (poincareHomotopy x₀ ω (A x)).compContinuousLinearMap A
       = (poincareHomotopy (A x₀) ω (A x)).compContinuousLinearMap A := by rw [hAx₀]
     _ = poincareHomotopy x₀ (fun y ↦ (ω (A y)).compContinuousLinearMap A) x :=

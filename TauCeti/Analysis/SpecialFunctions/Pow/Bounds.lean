@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on real powers
@@ -97,7 +98,6 @@ function that does not need a derivative.
   `C ^ (D / (n - D)) < B + 1`.
 * `Real.exists_pow_mul_rpow_lt_one`: `C ^ r r ^ ((1 - r) / 2) < 1` for `0 ≤ C` and all large `r`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
-* `Real.rpow_eq_sq_rpow_div_two`: `t ^ r = (t ^ 2) ^ (r / 2)` for `0 ≤ t`.
 * `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
   `t ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`
   for `1 ≤ t`.
@@ -273,18 +273,12 @@ theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
   rw [neg_div, rpow_neg (by positivity), ← one_div]
   exact one_div_le_one_div_of_le (by positivity) hpow
 
-/-- For `t ≥ 0`, `t ^ r = (t ^ 2) ^ (r / 2)`. -/
-theorem rpow_eq_sq_rpow_div_two {t : ℝ} (ht : 0 ≤ t) (r : ℝ) :
-    t ^ r = (t ^ 2) ^ (r / 2) := by
-  rw [← rpow_natCast_mul ht]
-  ring_nf
-
 /-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
 theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     t ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
   have hu : 0 < t ^ 2 := by positivity
   have hs : 0 < 1 + t ^ 2 := by positivity
-  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rw [← sq_rpow_div_two (a := t) (by linarith) r]
   rcases le_total 0 r with hr | hr
   · calc (t ^ 2) ^ (r / 2) ≤ (1 + t ^ 2) ^ (r / 2) :=
           rpow_le_rpow hu.le (by linarith) (by linarith)
@@ -302,7 +296,7 @@ theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) 
 theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * t ^ r := by
   have hu : 0 < t ^ 2 := by positivity
-  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rw [← sq_rpow_div_two (a := t) (by linarith) r]
   rcases le_total 0 r with hr | hr
   · -- For a nonnegative exponent use `1 + t² ≤ 2 t²`.
     calc (1 + t ^ 2) ^ (r / 2) ≤ (2 * t ^ 2) ^ (r / 2) :=

@@ -56,6 +56,10 @@ Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `�
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
 
+If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
+normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
+(`TauCeti.prodMap_mul_self_eq_neg_one`).
+
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
@@ -234,11 +238,15 @@ theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUni
     ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
     _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
-/-- An invertible operator bounded below by `M⁻¹` has an inverse of norm at most `M`. -/
-theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit A) {M : ℝ}
+/-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
+`Ring.inverse A = 0` and the bound is trivial. -/
+theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} {M : ℝ}
     (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
-  refine opNorm_le_bound _ hM fun y ↦ ?_
-  simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+  by_cases hA : IsUnit A
+  · refine opNorm_le_bound _ hM fun y ↦ ?_
+    simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+  · rw [Ring.inverse_non_unit _ hA, norm_zero]
+    exact hM
 
 /-- An operator bounded below by `c` is invertible if its distance from an invertible operator is
 less than `c / 2`; in particular `c > 0`. -/
@@ -263,7 +271,7 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
     nlinarith
   have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
     rw [← Ring.inverse_unit]
-    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    apply norm_ringInverse_le_of_forall_norm_le (by positivity)
     intro x
     rw [div_mul_eq_mul_div]
     apply (le_div_iff₀ hc).mpr
@@ -479,5 +487,17 @@ theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [Dec
   refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
   ext v m
   rfl
+
+namespace TauCeti
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- If `J² = -1`, then `J₂ = diag(J, J)` satisfies `J₂² = -1`. -/
+theorem prodMap_mul_self_eq_neg_one {A : V →L[𝕜] V} (hA : A * A = -1) :
+    A.prodMap A * A.prodMap A = -1 := by
+  have h (v : V) : A (A v) = -v := by simpa using congr($hA v)
+  refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;> simp [h]
+
+end TauCeti
 
 end
