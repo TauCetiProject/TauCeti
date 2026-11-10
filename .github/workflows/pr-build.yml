@@ -1730,7 +1730,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiTools
-          ref: 1c307c9feffe711dd9b0e5b0e08eafc04b31b96e
+          ref: e017783d06f9f671e69b65991a9bb18019dde699
           path: queue-finalization-tools
           sparse-checkout: tauceti_tools/assets/scripts/finalize_batch.py
           sparse-checkout-cone-mode: false
