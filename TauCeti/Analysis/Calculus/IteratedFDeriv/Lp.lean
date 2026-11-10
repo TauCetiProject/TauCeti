@@ -33,7 +33,7 @@ On a finite-dimensional inner product space with an additive Haar measure, the `
 Hessian of a `C²` function whose second derivative is supported in a closed ball, with all second
 partial derivatives along an orthonormal basis bounded by `B`, is at most the square root of the
 measure of the ball times `(card ι)² B`
-(`TauCeti.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
+(`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
 -/
 
 public section
@@ -142,13 +142,7 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
 
 end Thickening
 
-end MeasureTheory.Measure
-
-namespace TauCeti
-
 section InnerHessian
-
-open MeasureTheory Metric
 
 /-- The `L²` norm of the second derivative of a `C²` function `w` on a finite-dimensional real inner
 product space with an additive Haar measure `μ` is at most
@@ -179,4 +173,4 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
 
 end InnerHessian
 
-end TauCeti
+end MeasureTheory.Measure
