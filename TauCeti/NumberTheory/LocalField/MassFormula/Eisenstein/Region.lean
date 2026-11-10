@@ -61,7 +61,8 @@ product structure on the measure is used.
 * `TauCeti.measure_eisensteinSet`: for `0 < n`, the Eisenstein region has volume
   `q ^ (-n) (1 - q⁻¹)`.
 * `TauCeti.measure_eisensteinSet_pos`, `TauCeti.measure_eisensteinSet_lt_top`: the Eisenstein
-  region has positive finite volume for every additive Haar measure.
+  region has positive finite volume for every additive Haar measure (positivity needs only that
+  `μ` is positive on nonempty open sets).
 
 ## Implementation notes
 
@@ -243,10 +244,11 @@ theorem measure_eisensteinSet_lt_top {n : ℕ} [MeasurableSpace (Fin n → K)]
     (μ : Measure (Fin n → K)) [IsFiniteMeasureOnCompacts μ] : μ (eisensteinSet K n) < ∞ :=
   (measure_mono (eisensteinSet_subset_integerBox n)).trans_lt isCompact_integerBox.measure_lt_top
 
-/-- The Eisenstein region has positive volume for every additive Haar measure, not only for the
-one normalized on the integer box. -/
+/-- The Eisenstein region has positive volume for every measure that is positive on nonempty open
+sets, in particular for every additive Haar measure and not only for the one normalized on the
+integer box. -/
 theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
-    (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    (μ : Measure (Fin n → K)) [μ.IsOpenPosMeasure] :
     0 < μ (eisensteinSet K n) := by
   rcases n.eq_zero_or_pos with rfl | hn
   · -- For `n = 0` the region is the whole one-point space.
