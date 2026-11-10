@@ -203,20 +203,15 @@ theorem norm_entireExtension (z : ℂ) :
 imaginary parts form a bounded set. -/
 theorem isBounded_image_im_preimage {s : Set ℝ} (hs : Bornology.IsBounded s) :
     Bornology.IsBounded (α.entireExtension a '' (Complex.im ⁻¹' s)) := by
-  by_cases h : α.IsEntireAnalytic a
-  · have hcont : Continuous fun y : ℝ => α.entireExtension a (y * Complex.I) :=
-      (differentiable_entireExtension α a).continuous.comp
-        (Complex.continuous_ofReal.mul continuous_const)
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
-      (hs.isCompact_closure.image hcont).isBounded
-    refine isBounded_iff_forall_norm_le.mpr ⟨C, ?_⟩
-    rintro _ ⟨z, hz, rfl⟩
-    rw [norm_entireExtension]
-    exact hC _ ⟨z.im, subset_closure hz, rfl⟩
-  · rw [entireExtension_of_not_isEntireAnalytic h]
-    refine (Bornology.isBounded_singleton (x := (0 : A))).subset ?_
-    rintro _ ⟨z, -, rfl⟩
-    rfl
+  have hcont : Continuous fun y : ℝ => α.entireExtension a (y * Complex.I) :=
+    (differentiable_entireExtension α a).continuous.comp
+      (Complex.continuous_ofReal.mul continuous_const)
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
+    (hs.isCompact_closure.image hcont).isBounded
+  refine isBounded_iff_forall_norm_le.mpr ⟨C, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  rw [norm_entireExtension]
+  exact hC _ ⟨z.im, subset_closure hz, rfl⟩
 
 /-! ### Algebraic operations -/
 
