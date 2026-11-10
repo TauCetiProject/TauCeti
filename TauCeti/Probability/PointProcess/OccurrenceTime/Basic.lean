@@ -100,7 +100,7 @@ theorem occurrenceTime_le_iff (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
 
 /-- Local finiteness prevents an accumulation of occurrence times at a finite time.
 Finite configurations are included: their missing occurrences have time infinity. -/
-theorem tendsto_occurrenceTime (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+theorem tendsto_occurrenceTime_nhds_top (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
     Tendsto μ.occurrenceTime atTop (𝓝 ∞) := by
   apply ENNReal.tendsto_nhds_top
   intro k

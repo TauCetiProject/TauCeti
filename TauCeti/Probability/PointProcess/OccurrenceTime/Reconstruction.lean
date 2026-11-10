@@ -155,6 +155,16 @@ theorem occurrenceTime_ofOccurrenceTimes {t : ℕ → ℝ≥0∞} (hmono : Monot
     exact le_iInf fun x => le_iInf fun hx =>
       (natCast_succ_le_ofOccurrenceTimes_Iic_iff hmono n x).1 hx
 
+/-- For an ordered sequence, local finiteness is equivalent to escape to infinity. -/
+theorem isLocallyFiniteMeasure_ofOccurrenceTimes_iff {t : ℕ → ℝ≥0∞}
+    (hmono : Monotone t) :
+    IsLocallyFiniteMeasure (ofOccurrenceTimes t) ↔ Tendsto t atTop (𝓝 ∞) := by
+  constructor
+  · intro hloc
+    simpa only [occurrenceTime_ofOccurrenceTimes hmono] using
+      (ofOccurrenceTimes t).tendsto_occurrenceTime_nhds_top
+  · exact isLocallyFiniteMeasure_ofOccurrenceTimes
+
 end TauCeti.Probability
 
 open TauCeti.Probability

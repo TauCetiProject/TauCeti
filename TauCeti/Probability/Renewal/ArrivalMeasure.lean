@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime.Basic
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -57,6 +57,19 @@ def renewalArrivalMeasure (ω : Ω) : Measure ℝ≥0 :=
 theorem renewalArrivalMeasure_def (ω : Ω) :
     renewalArrivalMeasure T ω = Measure.sum fun n => Measure.dirac (arrival T (n + 1) ω) :=
   (rfl)
+
+/-- Renewal arrivals are the finite-time specialization of the occurrence-sequence measure. -/
+theorem renewalArrivalMeasure_eq_ofOccurrenceTimes (ω : Ω) :
+    renewalArrivalMeasure T ω =
+      ofOccurrenceTimes (fun n => (arrival T (n + 1) ω : ℝ≥0∞)) := by
+  simp [renewalArrivalMeasure_def, ofOccurrenceTimes_def]
+
+/-- Renewal arrival measures are integer-valued, including when arrivals accumulate. -/
+@[simp]
+theorem isIntegerValued_renewalArrivalMeasure (ω : Ω) :
+    (renewalArrivalMeasure T ω).IsIntegerValued := by
+  rw [renewalArrivalMeasure_eq_ofOccurrenceTimes]
+  exact isIntegerValued_ofOccurrenceTimes _
 
 /-- Evaluation counts occurrences, rather than distinct arrival locations. -/
 theorem renewalArrivalMeasure_apply (ω : Ω) (s : Set ℝ≥0) :
