@@ -296,14 +296,15 @@ private theorem exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom
       change g.toMul (τ ζ) = τ ζ ^ _
       rw [← absoluteGaloisGroupMap_commutes, hg, map_pow]
     congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hgv).trans (ZMod.natCast_zmod_val _)).symm
+    exact Units.ext ((hζv.coe_autToPow_eq_natCast_iff.2 hgv).trans (ZMod.natCast_zmod_val _)).symm
   · -- Arithmetic Frobenius raises `τ ζ` to the `q`-th power, so `χ_v (Frob) = 1 / n`.
     have hf := frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hn
       (show ζv ^ Nat.card 𝓀[v.adicCompletion K] ^ n = ζv from Subtype.ext hτζ)
     change ψ (.ofMul (hζv.autToPow _ _)) = _
     rw [← hψ]
     congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
+    exact Units.ext
+      ((hζv.coe_autToPow_eq_natCast_iff.2 hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
 
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the invariant `1 / n` at `v` and to `0` at every
 other place**: the carry class of a cyclotomic character and of an idele of `K` concentrated at
@@ -1081,7 +1082,7 @@ private theorem autToPow_absoluteGaloisGroupMap_of_isReal {w : InfinitePlace K} 
       rw [map_pow]
       exact (coe_absoluteGaloisGroupRestrictEquiv_apply w.Completion σ _).trans
         (h.trans (congrArg _ (by decide : ((-1 : (ZMod 4)ˣ) : ZMod 4).val = 3)))
-  refine Units.ext ((hζ.coe_autToPow_eq_natCast hg).trans ?_)
+  refine Units.ext ((hζ.coe_autToPow_eq_natCast_iff.2 hg).trans ?_)
   decide
 
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the nonzero class at a real place `w` and to `0`

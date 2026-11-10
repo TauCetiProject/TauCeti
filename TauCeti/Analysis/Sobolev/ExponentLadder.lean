@@ -21,6 +21,13 @@ The construction uses reciprocals: each step subtracts `a = (p - 2) / (2 p)`. Ch
 initial reciprocal at a half-integer multiple of `a` prevents landing on the critical exponent.
 This is the exponent arithmetic for the order-zero regularity argument, not a regularity theorem.
 
+For `p = 4`, the explicit ladder `q₀ = 3`, `q₁ = 12` satisfies every clause of
+`TauCeti.exists_finite_sobolev_exponent_ladder` with `N = 1`
+(`TauCeti.sobolevExponentLadder_four`). Stopping at the critical exponent `q = 4` instead gives
+product exponent `r = 2` (`TauCeti.productExponent_four_four`), and at `q = p / (p - 1)` the
+product exponent is `1` (`TauCeti.productExponent_conjugate`), so neither endpoint condition can
+be relaxed.
+
 ## References
 
 D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -158,5 +165,48 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
     rw [hae]
     have h := (one_div_lt_one_div_of_lt (by norm_num : (0 : ℝ) < 2) hp)
     linarith
+
+/-! ### Worked checks -/
+
+/-- The `p = 4` exponent ladder `q₀ = 3`, `q₁ = 12`: it satisfies every clause of
+`TauCeti.exists_finite_sobolev_exponent_ladder` with `N = 1`. The product exponents are
+`r₀ = 4 · 3 / (4 + 3) = 12/7` and `r₁ = 4 · 12 / (4 + 12) = 3`. -/
+theorem sobolevExponentLadder_four :
+    ∃ q : ℕ → ℝ, q 0 = 3 ∧ q 1 = 12 ∧
+      (4 : ℝ) / (4 - 1) < q 0 ∧ q 0 ≤ 4 ∧ StrictMonoOn q (Set.Iic 1) ∧
+      (∀ j ≤ 1, 0 < q j ∧ 1 < 4 * q j / (4 + q j)) ∧
+      (∀ j < 1, 4 * q j / (4 + q j) < 2 ∧
+        q (j + 1) = 2 * (4 * q j / (4 + q j)) / (2 - 4 * q j / (4 + q j)) ∧
+        1 / q (j + 1) = 1 / q j + 1 / 4 - 1 / 2) ∧
+      q (1 - 1) < 2 * 4 / (4 - 2) ∧ 2 * 4 / (4 - 2) < q 1 ∧ 2 < 4 * q 1 / (4 + q 1) ∧
+      4 * q 0 / (4 + q 0) = 12 / 7 ∧ 4 * q 1 / (4 + q 1) = 3 := by
+  let q : ℕ → ℝ := fun j => if j = 0 then 3 else 12
+  have hmono : StrictMonoOn q (Set.Iic 1) := by
+    intro i hi j hj hij
+    simp only [Set.mem_Iic] at hi hj
+    obtain rfl : i = 0 := by omega
+    obtain rfl : j = 1 := by omega
+    norm_num [q]
+  refine ⟨q, rfl, rfl, by norm_num [q], by norm_num [q], hmono, ?_, ?_, by norm_num [q],
+    by norm_num [q], by norm_num [q], by norm_num [q], by norm_num [q]⟩
+  · intro j hj
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hj with rfl | rfl <;> norm_num [q]
+  · intro j hj
+    obtain rfl : j = 0 := by omega
+    norm_num [q]
+
+/-- A ladder that stopped at the critical exponent `q = 2p/(p-2) = 4` for `p = 4` would have
+product exponent `r = 2`, and `W^{1,2}` does not embed in `L^∞`. -/
+theorem productExponent_four_four : (4 : ℝ) * 4 / (4 + 4) = 2 ∧ 2 * 4 / (4 - 2) = (4 : ℝ) := by
+  norm_num
+
+/-- At the endpoint `q = p/(p-1)` the product exponent `r = p q / (p + q)` equals `1`, where the
+Beurling transform is unbounded. -/
+theorem productExponent_conjugate {p : ℝ} (hp : 1 < p) :
+    p * (p / (p - 1)) / (p + p / (p - 1)) = 1 := by
+  have h1 : p - 1 ≠ 0 := by linarith
+  have h2 : p * (p - 1) + p ≠ 0 := by nlinarith
+  field_simp
+  ring
 
 end TauCeti

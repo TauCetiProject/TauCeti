@@ -7,13 +7,12 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 public import Mathlib.Analysis.Convex.Segment
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Log
 import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.Order.Compact
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # Proximity and straight-line homotopy invariance for absolutely continuous curves
@@ -62,42 +61,22 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
     rintro ⟨t, ht, heq⟩
     exact h₁ne t ht (sub_eq_zero.mpr heq)
   -- The comparison quotient and its principal logarithm are absolutely continuous.
-  let σ : ℝ → ℂ := fun t ↦ (γ₁ t - z) / (γ₀ t - z)
-  have hσslit : ∀ t ∈ uIcc a b, σ t ∈ slitPlane := by
-    intro t ht
-    exact TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist (hlt t ht)
+  have hσslit : ∀ t ∈ uIcc a b, (γ₁ t - z) / (γ₀ t - z) ∈ slitPlane := fun t ht ↦
+    TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist (hlt t ht)
   have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ z) a b :=
     (LipschitzWith.const z).lipschitzOnWith.absolutelyContinuousOnInterval
   have hα₀ := h₀.fun_sub hconst
   have hα₁ := h₁.fun_sub hconst
-  have hinv : AbsolutelyContinuousOnInterval (fun t ↦ (γ₀ t - z)⁻¹) a b := by
-    apply hα₀.comp_of_contDiffAt
-    rintro _ ⟨t, ht, rfl⟩
-    exact contDiffAt_inv ℝ (h₀ne t ht)
-  have hσ : AbsolutelyContinuousOnInterval σ a b := by
-    simpa only [σ, div_eq_mul_inv, smul_eq_mul] using hα₁.fun_smul hinv
-  have hlog : AbsolutelyContinuousOnInterval (Complex.log ∘ σ) a b := by
-    apply hσ.comp_of_contDiffAt
-    rintro _ ⟨t, ht, rfl⟩
-    exact (Complex.contDiffAt_log (hσslit t ht)).restrict_scalars ℝ
+  have hlog := (hα₁.fun_div hα₀ h₀ne).clog hσslit
   have hlogderiv : ∀ᵐ t, t ∈ uIoc a b →
-      HasDerivAt (Complex.log ∘ σ)
+      HasDerivAt (fun t ↦ Complex.log ((γ₁ t - z) / (γ₀ t - z)))
         ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
-    filter_upwards [h₀.boundedVariationOn.ae_differentiableAt_of_mem_uIcc,
-      h₁.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht₀ ht₁ ht
-    have ht' := uIoc_subset_uIcc ht
-    have hd : HasDerivAt σ
-        ((deriv γ₁ t * (γ₀ t - z) - (γ₁ t - z) * deriv γ₀ t) / (γ₀ t - z) ^ 2) t :=
-      ((ht₁ ht').hasDerivAt.sub_const z).div
-        ((ht₀ ht').hasDerivAt.sub_const z) (h₀ne t ht')
-    convert hd.clog_real (hσslit t ht') using 1
-    · rfl
-    dsimp [σ]
-    field_simp [h₀ne t ht', h₁ne t ht']
+    filter_upwards [hα₁.boundedVariationOn.ae_hasDerivAt_clog_div hα₀.boundedVariationOn
+      hσslit] with t ht ht'
+    simpa [div_eq_inv_mul] using ht ht'
   -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
-  have hσclosed : σ a = σ b := hends
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
-  simp only [Function.comp_apply, hσclosed, sub_self] at hint
+  simp only [hends, sub_self] at hint
   have hint₀ := h₀.intervalIntegrable_inv_sub_mul_deriv h₀off
   have hint₁ := h₁.intervalIntegrable_inv_sub_mul_deriv h₁off
   rw [intervalIntegral.integral_sub hint₁ hint₀] at hint
@@ -132,11 +111,14 @@ that domain once the approximation is sufficiently close. -/
 theorem _root_.AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl
     {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {γn : ℕ → ℝ → ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγn : ∀ n, AbsolutelyContinuousOnInterval (γn n) a b)
-    (hclosed : γ a = γ b) (hclosedn : ∀ n, γn n a = γn n b)
+    (hclosedn : ∀ n, γn n a = γn n b)
     (hconv : TendstoUniformlyOn γn γ atTop (uIcc a b))
     (hU : IsOpen U) (htrace : γ '' uIcc a b ⊆ U) :
     ∀ᶠ n in atTop, γn n '' uIcc a b ⊆ U ∧
       ∀ z ∉ U, windingNumber (γn n) a b z = windingNumber γ a b z := by
+  have hclosed : γ a = γ b :=
+    tendsto_nhds_unique (hconv.tendsto_at left_mem_uIcc)
+      (by simpa only [← hclosedn] using hconv.tendsto_at right_mem_uIcc)
   obtain ⟨ε, hε, hεU⟩ :=
     (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).exists_thickening_subset_open hU htrace
   filter_upwards [Metric.tendstoUniformlyOn_iff.mp hconv ε hε] with n hn
@@ -163,7 +145,6 @@ the total integer-weighted index without any individual index-vanishing assumpti
 theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
     (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
     (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
-    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
     (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
     (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)))
     (hU : IsOpen U) (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U) :
@@ -172,7 +153,7 @@ theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
         ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z := by
   have he := (Filter.eventually_all_finset s).mpr fun i hi ↦
     AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl (hγ i hi)
-      (fun n ↦ hγn n i hi) (hclosed i hi) (fun n ↦ hclosedn n i hi)
+      (fun n ↦ hγn n i hi) (fun n ↦ hclosedn n i hi)
       (hconv i hi) hU (htrace i hi)
   filter_upwards [he] with n hn
   refine ⟨fun i hi ↦ (hn i hi).1, fun z hz ↦ ?_⟩
