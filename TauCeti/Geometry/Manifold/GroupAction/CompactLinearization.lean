@@ -17,7 +17,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
 import TauCeti.Geometry.Manifold.ContMDiff.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.GroupAction.Linearization
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-import TauCeti.RepresentationTheory.Compact.Averaging
+import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.RepresentationTheory.Continuous.Average
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!

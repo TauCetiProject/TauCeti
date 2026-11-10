@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Compact.MatrixCoefficient
 public import TauCeti.RepresentationTheory.Continuous.LinHom
+import TauCeti.RepresentationTheory.Continuous.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
