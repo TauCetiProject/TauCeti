@@ -46,7 +46,7 @@ comparison we obtain:
   `Module.Basis.self_mem_of_repr_ne_zero_of_forall`, and the resulting prime-Hecke injectivity
   criterion `injective_of_heckeTCuspLevelOne_mem_ker`;
 * the Hecke eigenform equation `Tₙ(E_k) = σ_{k-1}(n) E_k` for the normalized Eisenstein series
-  `ModularForm.E hk` at even weight `k ≥ 4` (`heckeTLevelOne_E`), deduced from the multiplicativity
+  `ModularForm.E hk` at weight `k ≥ 3` (`heckeTLevelOne_E`), deduced from the multiplicativity
   and prime-power recurrence of `σ_{k-1}` via `forall_heckeTCompositeGamma0_eq_coeff_smul_iff`,
   together with the direct-sum decomposition `M_k(SL(2, ℤ)) = S_k(SL(2, ℤ)) ⊕ ℂ · E_k` and the
   resulting trace identity `Tr(Tₙ | M_k) = Tr(Tₙ | S_k) + σ_{k-1}(n)`.
@@ -424,10 +424,16 @@ private lemma heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul_of_coeff {k : 
     ring
 
 /-- **The normalized Eisenstein series `E_k` is a Hecke eigenform** with eigenvalue `σ_{k-1}(n)` at
-every `n ≥ 1` (Serre, *A Course in Arithmetic*, VII.5.3; Diamond–Shurman, Proposition 5.2.3). -/
-theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [NeZero n] :
+every `n ≥ 1` (Serre, *A Course in Arithmetic*, VII.5.3; Diamond–Shurman, Proposition 5.2.3). At odd
+weight `E_k = 0`, so both sides vanish. -/
+theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (n : ℕ) [NeZero n] :
     heckeTLevelOne k n (ModularForm.E hk) =
       (σ (k - 1) n : ℂ) • ModularForm.E hk := by
+  -- at odd weight `E_k` vanishes, so both sides are `0`
+  rcases Nat.even_or_odd k with hk2 | hk2
+  swap
+  · rw [ModularForm.levelOne_odd_weight_eq_zero hk2.natCast (ModularForm.E hk), map_zero,
+      smul_zero]
   set c := (qExpansion 1 (ModularForm.E hk)).coeff 1
   have hc0 : c ≠ 0 := qExpansion_coeff_one_E_ne_zero hk hk2
   have hc_eq : c = -(2 * (k : ℂ) / bernoulli k) := by
@@ -453,10 +459,17 @@ theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [NeZe
 
 /-! ### The cusp/Eisenstein decomposition and trace of `Tₙ` on `ModularForm 𝒮ℒ k` -/
 
-/-- **At even weight `k ≥ 4`, `M_k(SL(2, ℤ))` is the internal direct sum of `S_k(SL(2, ℤ))` and
-`ℂ · E_k`.** -/
-theorem isCompl_cuspFormSubmodule_span_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) :
+/-- **For `k ≥ 3`, `M_k(SL(2, ℤ))` is the internal direct sum of `S_k(SL(2, ℤ))` and `ℂ · E_k`.**
+At odd weight all three spaces vanish. -/
+theorem isCompl_cuspFormSubmodule_span_E {k : ℕ} (hk : 3 ≤ k) :
     IsCompl (ModularForm.cuspFormSubmodule 𝒮ℒ k) (ℂ ∙ ModularForm.E hk) := by
+  -- at odd weight there are no modular forms, so any two submodules are complements
+  rcases Nat.even_or_odd k with hk2 | hk2
+  swap
+  · have : Subsingleton (ModularForm 𝒮ℒ k) :=
+      ⟨fun f g ↦ (ModularForm.levelOne_odd_weight_eq_zero hk2.natCast f).trans
+        (ModularForm.levelOne_odd_weight_eq_zero hk2.natCast g).symm⟩
+    exact ⟨disjoint_of_subsingleton, codisjoint_of_subsingleton⟩
   refine ⟨Submodule.disjoint_def.mpr fun f hf hE ↦ ?_,
     codisjoint_iff.mpr (eq_top_iff.mpr fun f _ ↦ ?_)⟩
   · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hE
@@ -483,12 +496,12 @@ theorem trace_heckeTLevelOne {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [
       heckeTLevelOne k n f ∈ (ℂ ∙ ModularForm.E hk) := by
     intro f hf
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hf
-    rw [map_smul, heckeTLevelOne_E hk hk2 n]
+    rw [map_smul, heckeTLevelOne_E hk n]
     exact (ℂ ∙ ModularForm.E hk).smul_mem a
       ((ℂ ∙ ModularForm.E hk).smul_mem _ (Submodule.mem_span_singleton_self _))
   rw [LinearMap.trace_eq_trace_restrict_add_trace_restrict
-    (isCompl_cuspFormSubmodule_span_E hk hk2) (heckeTLevelOne k n) hA hB,
-    LinearMap.trace_restrict_span_singleton (E_ne_zero hk hk2) (heckeTLevelOne_E hk hk2 n) hB]
+    (isCompl_cuspFormSubmodule_span_E hk) (heckeTLevelOne k n) hA hB,
+    LinearMap.trace_restrict_span_singleton (E_ne_zero hk hk2) (heckeTLevelOne_E hk n) hB]
   congr 1
   let e := ModularForm.CuspForm.equivCuspFormSubmodule 𝒮ℒ (k : ℤ)
   have hconj : (heckeTLevelOne k n).restrict hA = e.conj (heckeTCuspLevelOne k n) := by
