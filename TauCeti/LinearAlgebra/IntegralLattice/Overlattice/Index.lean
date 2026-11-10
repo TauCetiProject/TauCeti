@@ -275,7 +275,8 @@ omit [M.1.IsLattice ℚ] in
 theorem IsIntegral.index_sq_dvd_discriminant (hM : IsIntegral M) :
     index M ^ 2 ∣ L.discriminant := by
   by_cases h : L.form.Nondegenerate
-  · let _ : L.IsNondegenerate := ⟨h⟩
+  · -- nondegeneracy makes `M.1` a full lattice, via `instIsLatticeIntermediateCarrier`
+    let _ : L.IsNondegenerate := ⟨h⟩
     exact Dvd.intro_left _ hM.discriminant_mul_index_sq
   · rw [(L.discriminant_eq_zero_iff).mpr h]
     exact dvd_zero _

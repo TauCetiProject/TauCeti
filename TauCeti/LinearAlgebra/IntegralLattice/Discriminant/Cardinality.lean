@@ -35,7 +35,7 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 * `TauCeti.IntegralLattice.natCard_discriminantGroup`: the discriminant-group cardinality is the
   lattice discriminant.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
-  constructed from a nonsingular integral symmetric matrix.
+  constructed from an integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
   pairing into `pℤ` with all of `L` lies in `p L`.
 * `TauCeti.IntegralLattice.exists_isCoprime_integralForm`: for a prime `p` prime to `det L`, a
@@ -149,14 +149,13 @@ theorem exists_isCoprime_integralForm (L : IntegralLattice V) {p : ℕ}
   exact hv ⟨_, hmem⟩ (Subtype.ext (by simp [← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]))
 
 open Classical in
-/-- The discriminant group of a lattice constructed from a nonsingular integral symmetric matrix
-has cardinality equal to the absolute value of that matrix's determinant. -/
+/-- The discriminant group of a lattice constructed from an integral symmetric matrix has
+cardinality equal to the absolute value of that matrix's determinant; for a singular matrix both
+sides are `0`, the discriminant group being infinite. -/
 @[simp]
 theorem natCard_discriminantGroup_ofGramMatrix {ι : Type v} [Fintype ι]
-    (b : Basis ι ℚ V) (G : Matrix ι ι ℤ) (hG : G.IsSymm) (hdet : G.det ≠ 0) :
+    (b : Basis ι ℚ V) (G : Matrix ι ι ℤ) (hG : G.IsSymm) :
     Nat.card (ofGramMatrix b G hG).DiscriminantGroup = G.det.natAbs := by
-  have : (ofGramMatrix b G hG).IsNondegenerate :=
-    isNondegenerate_ofGramMatrix b G hG hdet
   rw [natCard_discriminantGroup, discriminant_ofGramMatrix]
 
 /-! ## Discriminant groups killed by `n` -/
