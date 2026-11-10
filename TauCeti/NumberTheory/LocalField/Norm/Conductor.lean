@@ -76,21 +76,28 @@ private theorem map_normUnits_unitFiltration_inf_succ_before_break
       ((psiNat_strictMono K L).monotone v.le_succ)))
       (map_normUnits_unitFiltration_psiNat_le K L (v + 1))
 
-/-- Up to a prime-degree break, the norms of integer units that lie in `U(K,v)` are exactly
-norms from the Herbrand-shifted step `U(L, ψℕ(v))`. -/
-theorem map_normUnits_unitFiltration_zero_inf_of_le_break
-    (hℓ : (Module.finrank K L).Prime) {v t : ℕ} (hvt : v ≤ t)
+/-- The norms of integer units that lie in `U(K,v)` are exactly norms from the Herbrand-shifted
+step `U(L, ψℕ(v))`, at every depth `v` (up to a prime-degree break by induction, and above it by
+surjectivity of the norm). -/
+theorem map_normUnits_unitFiltration_zero_inf
+    (hℓ : (Module.finrank K L).Prime) {v t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     (unitFiltration L 0).map (Algebra.normUnits K) ⊓ unitFiltration K v =
       (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) := by
-  induction v with
-  | zero =>
-    rw [psiNat_zero]
-    exact inf_of_le_left (by
-      simpa only [psiNat_zero] using map_normUnits_unitFiltration_psiNat_le K L 0)
-  | succ v ih =>
-    rw [← inf_of_le_right (unitFiltration_antitone v.le_succ), ← inf_assoc,
-      ih (by omega), map_normUnits_unitFiltration_inf_succ_before_break hℓ (by omega) ht]
+  rcases le_or_gt v t with hvt | hvt
+  · induction v with
+    | zero =>
+      rw [psiNat_zero]
+      exact inf_of_le_left (by
+        simpa only [psiNat_zero] using map_normUnits_unitFiltration_psiNat_le K L 0)
+    | succ v ih =>
+      rw [← inf_of_le_right (unitFiltration_antitone v.le_succ), ← inf_assoc,
+        ih (by omega), map_normUnits_unitFiltration_inf_succ_before_break hℓ (by omega) ht]
+  · have h := map_normUnits_unitFiltration_after_break hℓ hvt ht
+    rw [h]
+    exact inf_eq_right.2 (by
+      rw [← h]
+      exact Subgroup.map_mono (unitFiltration_antitone (Nat.zero_le _)))
 
 /-- At every depth up to a prime-degree upper break, the full norm image of the
 Herbrand-shifted unit step has relative index equal to the extension degree. -/
@@ -149,7 +156,7 @@ private theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Pri
         (hyx ▸ unitFiltration_antitone (Nat.zero_le v) hx), hyx⟩
     have hstep : unitFiltration K v ≤
         (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) := by
-      rw [← map_normUnits_unitFiltration_zero_inf_of_le_break hℓ hvt ht]
+      rw [← map_normUnits_unitFiltration_zero_inf hℓ ht]
       exact le_inf hunit le_rfl
     have hone := Subgroup.relIndex_eq_one.2 hstep
     rw [relIndex_normUnits_unitFiltration_of_le_break hℓ hvt ht] at hone

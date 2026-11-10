@@ -105,15 +105,7 @@ theorem relIndex_normUnits_unitFiltration_sup_at_break (hℓ : (Module.finrank K
     (((unitFiltration L (psiNat K L t)).map (Algebra.normUnits K)) ⊔
       unitFiltration K (t + 1)).relIndex (unitFiltration K t) = Module.finrank K L := by
   rw [relIndex_normUnits_unitFiltration_sup_eq_index_range_normGradedMap]
-  rcases t with _ | t
-  · have htotal : IsTotallyRamified K L :=
-      (lowerRamificationGroup_zero_eq_top_iff K L).1
-        (by simpa using lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht)
-    have htame : IsTamelyRamified K L :=
-      (lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified K L).1
-        (by simpa using lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht)
-    exact (normGradedMap_tame_break_zero htotal htame).2
-  · exact (normGradedMap_at_break hℓ t.succ_pos ht).2
+  exact (normGradedMap_at_break hℓ ht).2
 
 /-- In prime degree, above an upper break at `t`, every unit of depth `v > t` is congruent,
 modulo `U(K,v+1)`, to a norm from depth `ψℕ(v)`. Equivalently, the relative norm index is `1`. -/
