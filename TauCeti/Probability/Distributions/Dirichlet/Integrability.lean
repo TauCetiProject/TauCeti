@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Dirichlet.MixedMoments
 import TauCeti.Probability.Distributions.Dirichlet.Aggregation
 import TauCeti.Probability.Distributions.Dirichlet.StickBreaking.Basic
 import TauCeti.Probability.Distributions.Beta.Basic
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Sharp integrability of Dirichlet mixed powers
@@ -39,6 +40,25 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
+private theorem prod_rpow_dirichletStickInsert_ae [Nonempty ι] {a q : Option ι → ℝ}
+    (ha : ∀ i, 0 < a i) :
+    ∀ᵐ z ∂((betaMeasure (a none) (∑ i, a (some i))).prod
+        (dirichletMeasure fun i ↦ a (some i))),
+      (∏ i, dirichletStickInsert z i ^ q i) =
+        (z.1 ^ q none * (1 - z.1) ^ (∑ i, q (some i))) *
+          ∏ i, z.2 i ^ q (some i) := by
+  have hA : 0 < ∑ i, a (some i) :=
+    Finset.sum_pos (fun i _ ↦ ha (some i)) Finset.univ_nonempty
+  let _ := isProbabilityMeasureBeta (ha none) hA
+  let _ := isProbabilityMeasure_dirichletMeasure (fun i ↦ ha (some i))
+  apply Measure.ae_prod_iff_ae_ae (measurableSet_eq_fun (by fun_prop) (by fun_prop)) |>.2
+  filter_upwards [ae_mem_Ioo_betaMeasure (a none) (∑ i, a (some i))] with v hv
+  filter_upwards [ae_pos_dirichletMeasure (a := fun i ↦ a (some i))] with y hy
+  simp only [Fintype.prod_option, dirichletStickInsert_none, dirichletStickInsert_some]
+  simp_rw [Real.mul_rpow (sub_pos.mpr hv.2).le (hy _).le]
+  rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos (sub_pos.mpr hv.2)]
+  ring
+
 private theorem shiftedShape_none_pos [Nonempty ι] {a q : Option ι → ℝ}
     (ha : ∀ i, 0 < a i)
     (h : Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a)) :
@@ -55,22 +75,22 @@ private theorem shiftedShape_none_pos [Nonempty ι] {a q : Option ι → ℝ}
     apply (integrable_map_measure hm.aestronglyMeasurable
       measurable_dirichletStickInsert.aemeasurable).1
     rwa [map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure ha]
-  obtain ⟨y, hy, hypos⟩ :=
-    (hpull.prod_left_ae.and (ae_pos_dirichletMeasure (a := fun i ↦ a (some i)))).exists
-  have heq : (fun v ↦ ∏ i, dirichletStickInsert (v, y) i ^ q i) =ᵐ[
-      betaMeasure (a none) (∑ i, a (some i))]
-      (fun v ↦ (v ^ q none * (1 - v) ^ (∑ i, q (some i))) *
-        ∏ i, y i ^ q (some i)) := by
-    filter_upwards [ae_mem_Ioo_betaMeasure (a none) (∑ i, a (some i))] with v hv
-    simp only [Fintype.prod_option, dirichletStickInsert_none, dirichletStickInsert_some]
-    simp_rw [Real.mul_rpow (sub_pos.mpr hv.2).le (hypos _).le]
-    rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos (sub_pos.mpr hv.2)]
-    ring
-  have hc : (∏ i, y i ^ q (some i)) ≠ 0 :=
-    (Finset.prod_pos (fun i _ ↦ Real.rpow_pos_of_pos (hypos i) _)).ne'
-  have hbeta := (integrable_mul_const_iff (isUnit_iff_ne_zero.mpr hc) _).1
-    (hy.congr heq)
-  exact ((integrable_rpow_mul_one_sub_rpow_betaMeasure_iff (ha none) hA).1 hbeta).1
+  let f : ℝ → ℝ := fun v ↦ v ^ q none * (1 - v) ^ (∑ i, q (some i))
+  let g : EuclideanSpace ℝ ι → ℝ := fun y ↦ ∏ i, y i ^ q (some i)
+  have hsep : Integrable (fun z ↦ f z.1 * g z.2)
+      ((betaMeasure (a none) (∑ i, a (some i))).prod
+        (dirichletMeasure fun i ↦ a (some i))) := by
+    apply hpull.congr
+    filter_upwards [prod_rpow_dirichletStickInsert_ae ha (q := q)] with z hz
+    simpa [f, g] using hz
+  have hpositive : ∀ᵐ y ∂(dirichletMeasure fun i ↦ a (some i)), 0 < g y := by
+    filter_upwards [ae_pos_dirichletMeasure (a := fun i ↦ a (some i))] with y hy
+    exact Finset.prod_pos fun i _ ↦ Real.rpow_pos_of_pos (hy i) _
+  have hf : Integrable f (betaMeasure (a none) (∑ i, a (some i))) :=
+    integrable_left_of_mul_prod_of_ae_ne_zero hsep
+      (hpositive.mono fun _ h ↦ h.ne')
+  exact ((integrable_rpow_mul_one_sub_rpow_betaMeasure_iff (ha none) hA).1
+    (by simpa [f] using hf)).1
 
 /-- On a Dirichlet law with positive shapes and at least two coordinates, a mixed real power
 is integrable exactly when every shifted shape is positive. In particular, equality at any
@@ -103,7 +123,8 @@ theorem integrable_prod_rpow_dirichletMeasure_iff {a q : ι → ℝ}
     rw [← e.prod_comp (fun j ↦ euclideanFiberSum e x j ^ q j)]
     apply Finset.prod_congr rfl
     intro k _
-    simp [euclideanFiberSum_apply, e.injective.eq_iff, Finset.sum_filter]
+    rw [euclideanFiberSum_equiv_apply]
+    simp
   have hi := shiftedShape_none_pos (fun k ↦ ha (e k))
     (hpull.congr (Filter.Eventually.of_forall hprod))
   have henone : e none = i := Equiv.optionSubtypeNe_none i

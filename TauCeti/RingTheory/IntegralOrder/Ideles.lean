@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.Topology.Algebra.RestrictedProduct.Basic
 public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Gluing
@@ -39,12 +40,28 @@ completions; this is the input for describing locally free lattices over an orde
 cosets.
 The local lattices `α_v Λ_v` are pointwise translates `α_v • Λ_v` of submodules.
 
+Left `Λ`-lattices are obtained by applying the construction to `Λᵒᵖ ⊆ Bᵐᵒᵖ`: a right
+`Λᵒᵖ`-lattice in `Bᵐᵒᵖ` is the same as a left `Λ`-lattice in `B`, with the same `A`-module
+structure. For a finite idele `α` of `Λᵒᵖ`, the left lattice `TauCeti.OrderIdeles.leftLattice`
+is `I(α)` read in `B`; left multiplication by `Λ` preserves it and principal ideles of `Bᵐᵒᵖ`
+act on it by right multiplication.
+
+When `F = K` is a number field and `A = 𝓞_K`, the full idele group `J(Λ)` adjoins the archimedean
+factors: it is the product of `∏_{v ∣ ∞} (K_v ⊗[K] B)ˣ` with `J_f(Λ)`, and its unit subgroup
+`U(Λ)` is all of `(K_v ⊗[K] B)ˣ` at every infinite place. The lattice of a full idele is that of
+its finite part, so `U(Λ)` is exactly the stabiliser of the lattices: `I(α) = I(β)` if and only if
+`α U(Λ) = β U(Λ)`.
+
 ## Main definitions
 
 * `TauCeti.OrderIdeles.FiniteIdeles F Λ`: the finite idele group `J_f(Λ)`.
 * `TauCeti.OrderIdeles.unitIdeles F Λ`: the subgroup `U_f(Λ)` of unit ideles.
 * `TauCeti.OrderIdeles.principal F Λ hΛ`: the diagonal map `Bˣ →* J_f(Λ)`.
 * `TauCeti.OrderIdeles.lattice F Λ α`: the lattice `I(α) = B ∩ ∏_v α_v Λ_v`.
+* `TauCeti.OrderIdeles.leftLattice F Λ α`: the left `Λ`-lattice of a finite idele `α` of `Λᵒᵖ`.
+* `TauCeti.OrderIdeles.Ideles K Λ`: the idele group `J(Λ)` over a number field `K`, with its unit
+  subgroup `TauCeti.OrderIdeles.Ideles.unitIdeles K Λ` and principal ideles
+  `TauCeti.OrderIdeles.Ideles.principal K Λ hΛ`.
 
 ## Main results
 
@@ -55,6 +72,15 @@ The local lattices `α_v Λ_v` are pointwise translates `α_v • Λ_v` of submo
 * `TauCeti.OrderIdeles.mul_mem_lattice`: `I(α)` is a right `Λ`-module.
 * `TauCeti.OrderIdeles.isLattice_lattice`: when `Λ` is an order and `A` is not a field, `I(α)` is
   an `A`-lattice in `B`.
+* `TauCeti.OrderIdeles.map_op_leftLattice`: the left lattice of `α`, carried to `Bᵐᵒᵖ`, is the
+  right `Λᵒᵖ`-lattice `I(α)`.
+* `TauCeti.OrderIdeles.mul_mem_leftLattice`, `TauCeti.OrderIdeles.isLattice_leftLattice`: it is a
+  left `Λ`-module, and a full `A`-lattice when `Λ` is an order.
+* `TauCeti.OrderIdeles.leftLattice_eq_leftLattice_iff`,
+  `TauCeti.OrderIdeles.leftLattice_principal_mul`: unit and principal change for left lattices.
+* `TauCeti.OrderIdeles.Ideles.lattice_eq_lattice_iff`: for full ideles, `I(α) = I(β)` if and only if
+  `α⁻¹ β ∈ U(Λ)`.
+* `TauCeti.OrderIdeles.Ideles.lattice_principal_mul`: `I(bα) = b I(α)` for full ideles.
 
 ## References
 
@@ -249,5 +275,150 @@ theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
   refine mem_lattice_iff.2 fun v ↦ ?_
   have := mul_mem (hav v) (mem_lattice_iff.1 hx v)
   simpa [smul_mul_assoc, tmul_smul] using this
+
+end TauCeti.OrderIdeles
+
+/-! ### Left lattices through the opposite algebra -/
+
+namespace TauCeti.OrderIdeles
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A]
+  (F : Type*) [Field F] [Algebra A F] [IsFractionRing A F]
+  {B : Type*} [Ring B] [Algebra A B] (Λ : Subalgebra A B)
+
+/-- The **left lattice of a finite idele of `Λᵒᵖ`**: the lattice `I(α) ⊆ Bᵐᵒᵖ` of a finite idele
+`α` of the opposite subalgebra `Λᵒᵖ ⊆ Bᵐᵒᵖ`, read in `B`. A right `Λᵒᵖ`-lattice in `Bᵐᵒᵖ` is a left
+`Λ`-lattice in `B`, so this is how ideles describe left `Λ`-lattices. -/
+noncomputable def leftLattice (α : FiniteIdeles F Λ.op) : Submodule A B :=
+  (lattice F Λ.op α).comap ((MulOpposite.opLinearEquiv A : B ≃ₗ[A] Bᵐᵒᵖ) : B →ₗ[A] Bᵐᵒᵖ)
+
+variable {F Λ}
+
+@[simp]
+theorem mem_leftLattice_iff {α : FiniteIdeles F Λ.op} {x : B} :
+    x ∈ leftLattice F Λ α ↔ MulOpposite.op x ∈ lattice F Λ.op α :=
+  Iff.rfl
+
+/-- **Opposite convention.** The left lattice of `α`, carried to `Bᵐᵒᵖ`, is the right
+`Λᵒᵖ`-lattice `I(α)`; in particular its completion at `v` is `α_v Λᵒᵖ_v` by
+`TauCeti.OrderIdeles.baseChange_lattice`. -/
+theorem map_op_leftLattice (α : FiniteIdeles F Λ.op) :
+    (leftLattice F Λ α).map ((MulOpposite.opLinearEquiv A : B ≃ₗ[A] Bᵐᵒᵖ) : B →ₗ[A] Bᵐᵒᵖ) =
+      lattice F Λ.op α :=
+  Submodule.map_comap_eq_of_surjective (MulOpposite.opLinearEquiv A).surjective _
+
+/-- **The left lattice is a left `Λ`-module.** -/
+theorem mul_mem_leftLattice {α : FiniteIdeles F Λ.op} {x y : B} (hy : y ∈ Λ)
+    (hx : x ∈ leftLattice F Λ α) : y * x ∈ leftLattice F Λ α :=
+  mul_mem_lattice (Λ := Λ.op) hx hy
+
+/-- **The identity idele of `Λᵒᵖ` gives `Λ`** when `A` is not a field. -/
+@[simp]
+theorem leftLattice_one (hA : ¬IsField A) : leftLattice F Λ 1 = Subalgebra.toSubmodule Λ := by
+  ext x
+  simp [lattice_one hA]
+
+/-- **The left lattice is a full lattice.** When `Λ` is an `A`-order in `B` and `A` is not a field,
+the left lattice of every finite idele of `Λᵒᵖ` is an `A`-lattice in `B`. -/
+theorem isLattice_leftLattice [Algebra F B] [IsScalarTower A F B] (hA : ¬IsField A)
+    (hΛ : IntegralOrder.IsOrder F Λ) (α : FiniteIdeles F Λ.op) :
+    (leftLattice F Λ α).IsLattice F := by
+  have := isLattice_lattice hA (IntegralOrder.isOrder_op_iff.2 hΛ) α
+  convert Submodule.isLattice_map (lattice F Λ.op α)
+    (MulOpposite.opLinearEquiv F : B ≃ₗ[F] Bᵐᵒᵖ).symm.toLinearMap
+    (MulOpposite.opLinearEquiv F).symm.surjective
+  ext x
+  simp [Submodule.mem_map, MulOpposite.op_surjective.exists]
+
+variable [Algebra F B] [IsScalarTower A F B]
+
+/-- **Unit change for left lattices.** The left lattices of `α` and `β` agree exactly when
+`α⁻¹ β` is a unit idele of `Λᵒᵖ`. -/
+theorem leftLattice_eq_leftLattice_iff (hΛ : span F (Λ.op : Set Bᵐᵒᵖ) = ⊤)
+    {α β : FiniteIdeles F Λ.op} :
+    leftLattice F Λ α = leftLattice F Λ β ↔ α⁻¹ * β ∈ unitIdeles F Λ.op := by
+  rw [← lattice_eq_lattice_iff hΛ]
+  exact (Submodule.comap_injective_of_surjective (MulOpposite.opLinearEquiv A).surjective).eq_iff
+
+/-- **Principal change for left lattices.** A unit `b` of `Bᵐᵒᵖ` carries the left lattice of `α`
+onto that of `bα` by right multiplication with `b` read in `B`. -/
+theorem leftLattice_principal_mul (hΛ : span F (Λ.op : Set Bᵐᵒᵖ) = ⊤) (b : (Bᵐᵒᵖ)ˣ)
+    (α : FiniteIdeles F Λ.op) :
+    leftLattice F Λ (principal F Λ.op hΛ b * α) =
+      (leftLattice F Λ α).map (LinearMap.mulRight A (b : Bᵐᵒᵖ).unop) := by
+  ext x
+  rw [mem_leftLattice_iff, lattice_principal_mul]
+  refine (Submodule.mem_pointwise_smul_iff_inv_smul_mem (N := lattice F Λ.op α) (g := b)).trans ?_
+  rw [Submodule.mem_map]
+  constructor
+  · intro hx
+    refine ⟨x * (↑b⁻¹ : Bᵐᵒᵖ).unop, hx, ?_⟩
+    simp [mul_assoc, ← MulOpposite.unop_mul]
+  · rintro ⟨y, hy, rfl⟩
+    simpa [Units.smul_def, mul_assoc] using hy
+
+end TauCeti.OrderIdeles
+
+/-! ### Ideles of an order in an algebra over a number field -/
+
+namespace TauCeti.OrderIdeles
+
+open NumberField
+
+variable (K : Type*) [Field K] [NumberField K] {B : Type*} [Ring B] [Algebra K B]
+  [Algebra (𝓞 K) B] (Λ : Subalgebra (𝓞 K) B)
+
+/-- The **idele group** `J(Λ)` of a `K`-algebra `B` relative to an `𝓞_K`-subalgebra `Λ`, for a
+number field `K`: the product of the units `(K_v ⊗[K] B)ˣ` over the infinite places `v` of `K`
+with the finite idele group `J_f(Λ)`. -/
+abbrev Ideles : Type _ :=
+  (Π v : InfinitePlace K, (v.Completion ⊗[K] B)ˣ) × FiniteIdeles K Λ
+
+namespace Ideles
+
+/-- The subgroup `U(Λ)` of **unit ideles** of `J(Λ)`: all of `(K_v ⊗[K] B)ˣ` at the infinite
+places, and the units of `Λ_v` at every finite place. -/
+noncomputable def unitIdeles : Subgroup (Ideles K Λ) :=
+  (⊤ : Subgroup _).prod (OrderIdeles.unitIdeles K Λ)
+
+variable {K Λ}
+
+@[simp]
+theorem mem_unitIdeles {α : Ideles K Λ} :
+    α ∈ unitIdeles K Λ ↔ α.2 ∈ OrderIdeles.unitIdeles K Λ := by
+  simp [unitIdeles, Subgroup.mem_prod]
+
+variable [IsScalarTower (𝓞 K) K B]
+
+variable (K Λ) in
+/-- The **principal ideles** of `J(Λ)`: a unit `b` of `B` has components `1 ⊗ₜ b` at the infinite
+places and the finite principal idele `TauCeti.OrderIdeles.principal K Λ hΛ b`. -/
+noncomputable def principal (hΛ : span K (Λ : Set B) = ⊤) : Bˣ →* Ideles K Λ :=
+  .prod (MonoidHom.pi fun v ↦ Units.map (Algebra.TensorProduct.includeRight :
+      B →ₐ[K] v.Completion ⊗[K] B).toMonoidHom) (OrderIdeles.principal K Λ hΛ)
+
+@[simp]
+theorem coe_principal_fst_apply (hΛ : span K (Λ : Set B) = ⊤) (b : Bˣ) (v : InfinitePlace K) :
+    (((principal K Λ hΛ b).1 v : (v.Completion ⊗[K] B)ˣ) : v.Completion ⊗[K] B) = 1 ⊗ₜ (b : B) :=
+  (rfl)
+
+@[simp]
+theorem principal_snd (hΛ : span K (Λ : Set B) = ⊤) (b : Bˣ) :
+    (principal K Λ hΛ b).2 = OrderIdeles.principal K Λ hΛ b :=
+  (rfl)
+
+/-- **Unit change for full ideles.** The lattice `I(α)` of a full idele is that of its finite part,
+and `I(α) = I(β)` exactly when `α U(Λ) = β U(Λ)`, that is, when `α⁻¹ β` is a unit idele. -/
+theorem lattice_eq_lattice_iff (hΛ : span K (Λ : Set B) = ⊤) {α β : Ideles K Λ} :
+    lattice K Λ α.2 = lattice K Λ β.2 ↔ α⁻¹ * β ∈ unitIdeles K Λ := by
+  simp [OrderIdeles.lattice_eq_lattice_iff hΛ]
+
+/-- **Principal change for full ideles.** Left multiplication by a unit `b` of `B` carries `I(α)`
+onto `I(bα)`. -/
+theorem lattice_principal_mul (hΛ : span K (Λ : Set B) = ⊤) (b : Bˣ) (α : Ideles K Λ) :
+    lattice K Λ (principal K Λ hΛ b * α).2 = b • lattice K Λ α.2 := by
+  simp [OrderIdeles.lattice_principal_mul]
+
+end Ideles
 
 end TauCeti.OrderIdeles

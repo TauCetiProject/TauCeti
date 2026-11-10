@@ -44,9 +44,8 @@ which determine the relator, are also preserved (`LinearEquiv.finrank_eq`,
 
 ## Main results
 
-* `TauCeti.localCyclotomicCharacter_mapOfAlgebra`, `TauCeti.localCyclotomicCharacter_map`: the
-  cyclotomic character of `G_L` is that of `G_K` read through the map of absolute Galois groups.
-* `TauCeti.cyclotomicCharacter_absoluteGaloisGroupMap`: the same along the map
+* `TauCeti.cyclotomicCharacter_absoluteGaloisGroupMap`: the cyclotomic character of `G_L` is that
+  of `G_K` read through the map
   `absoluteGaloisGroupMap τ` of absolute Galois groups defined by an embedding of separable
   closures.
 * `TauCeti.cyclotomicOrientation_maximalProPQuotient_map`: the cyclotomic orientation is natural
@@ -66,40 +65,9 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-! ### The cyclotomic character -/
-
-section Character
-
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
-  [Algebra (AlgebraicClosure K) (AlgebraicClosure L)]
-  [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)]
-
-/-- **The cyclotomic character along a field extension.** The cyclotomic character of
-`g ∈ G_L` is that of its image `Field.absoluteGaloisGroup.mapOfAlgebra K L g` in `G_K`. -/
-theorem localCyclotomicCharacter_mapOfAlgebra (g : Field.absoluteGaloisGroup L) :
-    localCyclotomicCharacter p K (Field.absoluteGaloisGroup.mapOfAlgebra K L g) =
-      localCyclotomicCharacter p L g := by
-  rw [localCyclotomicCharacter_apply, localCyclotomicCharacter_apply]
-  exact (cyclotomicCharacter_eq_of_injective p
-    (algebraMap (AlgebraicClosure K) (AlgebraicClosure L)).injective
-    (fun x ↦ (absoluteGaloisGroup_mapOfAlgebra_commutes K L g x).symm)
-    fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
-
-end Character
-
 section Map
 
 variable {K L : Type*} [Field K] [Field L]
-
-/-- **The cyclotomic character along a field embedding** `f : K →+* L`: the cyclotomic character
-of `g ∈ G_L` is that of its image `Field.absoluteGaloisGroup.map f g` in `G_K`. -/
-theorem localCyclotomicCharacter_map (f : K →+* L) (g : Field.absoluteGaloisGroup L) :
-    localCyclotomicCharacter p K (Field.absoluteGaloisGroup.map f g) =
-      localCyclotomicCharacter p L g :=
-  letI := f.toAlgebra
-  letI : Algebra (AlgebraicClosure K) (AlgebraicClosure L) :=
-    (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
-  localCyclotomicCharacter_mapOfAlgebra p K L g
 
 /-- **The cyclotomic character along a map of absolute Galois groups.** For a `K`-embedding
 `τ : Kˢ →ₐ[K] Lˢ` of separable closures, the cyclotomic character of `g ∈ Gal(Lˢ/L)` is that of
