@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ProjectiveLin
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.RemovableSingularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.LocalExactness
 
 /-!
 # Dolbeault cohomology of the projective line
@@ -125,7 +126,7 @@ private theorem exists_delBar_eq_of_hasCompactSupport
       (hβ.mpullback _ (isPseudoholomorphic_affineParam i)).apply t
   have hη' := hη.map_smul_conj w (1 : ℂ)
   rw [smul_eq_mul, mul_one] at hη'
-  refine (delBar_apply_apply_eq_conjWirtingerDeriv _ t w).trans ?_
+  refine (delBar_apply_eq_conjWirtingerDeriv _ t w).trans ?_
   rw [hfun, conjWirtingerDeriv_apply_eq_conj_smul_apply_one,
     hc.conjWirtingerDeriv_cauchyTransform (hcs.of_le (by simp))]
   exact hη'.symm
