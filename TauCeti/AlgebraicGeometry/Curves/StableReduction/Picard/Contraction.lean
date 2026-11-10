@@ -242,19 +242,31 @@ theorem two_smul_mem_range_picContract (y : (T.contract he).Pic) :
 
 /-! ### Consequences -/
 
-/-- The `ℓ`-torsion of `Pic(T)` has dimension at most that of `Pic(T')`, for every prime `ℓ`.
-This reduces bounds on the prime torsion of Picard groups of numerical types to minimal numerical
-types. -/
-theorem finrank_torsion_le_contract (ℓ : ℕ) [Fact ℓ.Prime] :
+/-- The `ℓ`-torsion of `Pic(T)` has dimension at most that of `Pic(T')`, for every `ℓ`, in
+particular for every prime `ℓ`. This reduces bounds on the prime torsion of Picard groups of
+numerical types to minimal numerical types. -/
+theorem finrank_torsion_le_contract (ℓ : ℕ) :
     Module.finrank (ZMod ℓ) (T.torsion ℓ) ≤
       Module.finrank (ZMod ℓ) ((T.contract he).torsion ℓ) := by
-  have : NeZero ℓ := ⟨(Fact.out : ℓ.Prime).ne_zero⟩
   let f : T.torsion ℓ →+ (T.contract he).torsion ℓ :=
     ((T.picContract he).toAddMonoidHom.comp (T.torsion ℓ).subtype).codRestrict _ fun x ↦ by
       rw [AddSubgroup.torsionBy.nsmul_iff]
       have hx : ℓ • (x : T.Pic) = 0 := AddSubgroup.torsionBy.nsmul_iff.mp x.property
       simpa only [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, LinearMap.toAddMonoidHom_coe,
         map_nsmul, map_zero] using congrArg (T.picContract he) hx
+  rcases eq_or_ne ℓ 1 with rfl | hℓ
+  · -- Over the trivial ring `ZMod 1`, every module has `finrank = 1`.
+    rw [Module.finrank_subsingleton, Module.finrank_subsingleton]
+  have : Nontrivial (ZMod ℓ) := by
+    rcases ℓ with _ | _ | ℓ
+    · exact inferInstanceAs (Nontrivial ℤ)
+    · exact absurd rfl hℓ
+    · have : Fact (1 < ℓ + 2) := ⟨by omega⟩
+      infer_instance
+  have : Module.Finite ℤ ((T.contract he).torsion ℓ) :=
+    inferInstanceAs (Module.Finite ℤ ((T.contract he).torsion ℓ).toIntSubmodule)
+  have : Module.Finite (ZMod ℓ) ((T.contract he).torsion ℓ) :=
+    Module.Finite.of_restrictScalars_finite ℤ _ _
   refine LinearMap.finrank_le_finrank_of_injective (f := f.toZModLinearMap ℓ) fun x y hxy ↦ ?_
   exact Subtype.ext (T.picContract_injective he (congrArg Subtype.val hxy))
 
