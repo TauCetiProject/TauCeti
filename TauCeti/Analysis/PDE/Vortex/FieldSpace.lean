@@ -305,6 +305,65 @@ theorem temperedField_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp
     with z h₁ h₂
   rw [h₁, smul_eq_mul, ofRealCLM_apply, h₂]
 
+/-- The integrand of `temperedField_apply` is integrable. -/
+private theorem integrable_mul_temperedField {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : MemLp y 2 volume) (i : Fin 4) (ψ : 𝓢(ℂ, ℂ)) :
+    Integrable (fun z ↦ ψ z * (y z i : ℂ)) volume :=
+  (ψ.memLp 2).integrable_mul (q := 2) (g := fun z ↦ (y z i : ℂ))
+    ((ofRealCLM ∘L (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ)).comp_memLp' hy)
+
+/-- The tempered field of `y` depends only on the almost-everywhere class of `y`. -/
+theorem temperedField_congr_ae {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
+    (hy' : MemLp y' 2 volume) (h : y =ᵐ[volume] y') : temperedField hy = temperedField hy' := by
+  ext i ψ
+  rw [temperedField_apply, temperedField_apply]
+  exact integral_congr_ae (by filter_upwards [h] with z hz; rw [hz])
+
+/-- The tempered field of the zero field is zero. -/
+@[simp]
+theorem temperedField_zero (h : MemLp (0 : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume) :
+    temperedField h = 0 := by
+  ext i ψ
+  simp [temperedField_apply]
+
+/-- The tempered field is additive in the square-integrable field. -/
+@[simp]
+theorem temperedField_add {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
+    (hy' : MemLp y' 2 volume) (h : MemLp (y + y') 2 volume) :
+    temperedField h = temperedField hy + temperedField hy' := by
+  ext i ψ
+  simp only [Pi.add_apply, add_apply, temperedField_apply, PiLp.add_apply,
+    ofReal_add, mul_add]
+  exact integral_add (integrable_mul_temperedField hy i ψ) (integrable_mul_temperedField hy' i ψ)
+
+/-- The tempered field commutes with negation. -/
+@[simp]
+theorem temperedField_neg {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
+    (h : MemLp (-y) 2 volume) : temperedField h = -temperedField hy := by
+  ext i ψ
+  simp only [Pi.neg_apply, neg_apply, temperedField_apply, PiLp.neg_apply,
+    ofReal_neg, mul_neg]
+  exact integral_neg _
+
+/-- The tempered field commutes with subtraction. -/
+@[simp]
+theorem temperedField_sub {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
+    (hy' : MemLp y' 2 volume) (h : MemLp (y - y') 2 volume) :
+    temperedField h = temperedField hy - temperedField hy' := by
+  ext i ψ
+  simp only [Pi.sub_apply, sub_apply, temperedField_apply, PiLp.sub_apply,
+    ofReal_sub, mul_sub]
+  exact integral_sub (integrable_mul_temperedField hy i ψ) (integrable_mul_temperedField hy' i ψ)
+
+/-- The tempered field is homogeneous for real scalars. -/
+@[simp]
+theorem temperedField_smul (c : ℝ) {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
+    (h : MemLp (c • y) 2 volume) : temperedField h = c • temperedField hy := by
+  ext i ψ
+  simp only [Pi.smul_apply, smul_apply, temperedField_apply, PiLp.smul_apply,
+    smul_eq_mul, ofReal_mul, mul_left_comm _ (c : ℂ), Complex.real_smul]
+  exact integral_const_mul _ _
+
 open scoped RealInnerProductSpace in
 /-- Pairing the tempered field of `y` with the components of a real Schwartz field `η` gives
 `∫ ⟪y, η⟫`. -/
