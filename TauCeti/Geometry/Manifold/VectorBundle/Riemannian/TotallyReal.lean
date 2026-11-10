@@ -27,8 +27,8 @@ part of a Hermitian metric, it agrees with `g` on `L`, and `i L x` is the `g'`-o
 complement of `L x` at every point. Such metrics therefore exist whenever bundle metrics do,
 for instance over a σ-compact Hausdorff base.
 
-The projection `P` and its smoothness are in
-`TauCeti.Geometry.Manifold.VectorBundle.RealForm`.
+The projection `P` is defined in `TauCeti.Topology.VectorBundle.RealForm`, and its smoothness is
+proved in `TauCeti.Geometry.Manifold.VectorBundle.RealForm`.
 
 Boundary value problems need the relative form. When `L` is only given near a
 closed set `S`, such as the boundary of a manifold with boundary, and is maximal totally real
