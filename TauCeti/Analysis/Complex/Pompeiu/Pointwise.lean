@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 For compactly supported `Lᵖ` data with `p > 2`, the Cauchy integral exists at every point,
 not just almost everywhere. On an output disc its norm is bounded by the input `Lᵖ` norm
-times the `Lᑫ` norm of the reciprocal kernel truncated at the sum of the input and output
+times the `L^q` norm of the reciprocal kernel truncated at the sum of the input and output
 radii, where `q` is conjugate to `p`. The latter norm is finite because `q < 2`.
 These bounds are useful for Cauchy integral equations with rough zeroth-order coefficients.
 The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.

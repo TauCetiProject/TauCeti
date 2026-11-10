@@ -21,7 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 The complex reciprocal and its norm are locally integrable. Their integrals over a disk admit a
 uniform bound in terms of the radius when the pole lies in that disk, and the integral of the
 reciprocal over any set is bounded by `2π` plus the measure of the set, uniformly in the pole.
-The truncated kernel is in `Lᑫ` for `q < 2`, and compact truncation also gives local `L¹`
+The truncated kernel is in `L^q` for `q < 2`, and compact truncation also gives local `L¹`
 continuity as the pole varies. The Cauchy
 integral of complex data splits into the integrals of their real and imaginary parts.
 -/
@@ -69,7 +69,7 @@ theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchy
   (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
     (Complex.locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
 
-/-- The truncated reciprocal kernel belongs to `Lᑫ` for every `q < 2`. No positivity
+/-- The truncated reciprocal kernel belongs to `L^q` for every `q < 2`. No positivity
 assumption on the cutoff radius is needed. -/
 theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
     MemLp (truncatedCauchyKernel R) q volume := by
