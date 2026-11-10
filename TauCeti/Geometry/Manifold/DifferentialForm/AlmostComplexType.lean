@@ -68,6 +68,8 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
+* `ContinuousAlternatingMap.isOfType_fderivWithin`: for a constant `J`, derivatives of families of
+  forms of type `(p,q)` have type `(p,q)`.
 * `TauCeti.SmoothForm.IsOfType.alternatingDerivation_fderivWithin_inChartAt`: the derivative of
   the type equation in a chart.
 * `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero`,
@@ -90,6 +92,38 @@ open scoped ContDiff Manifold Topology ComplexConjugate
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
+
+namespace ContinuousAlternatingMap
+
+/-- For a fixed endomorphism `J`, the derivative within `s` of a family of forms which have type
+`(p,q)` near `z` within `s` consists of forms of type `(p,q)`. -/
+theorem isOfType_fderivWithin {J : E →L[ℝ] E} {p q : ℕ} {Θ : E → E [⋀^Fin k]→L[ℝ] F}
+    {s : Set E} {z : E} (hs : UniqueDiffWithinAt ℝ s z) (hz : z ∈ s)
+    (hΘ : ∀ᶠ y in 𝓝[s] z, (Θ y).IsOfType J p q) (v : E) :
+    (fderivWithin ℝ Θ s z v).IsOfType J p q := by
+  have hk := (hΘ.self_of_nhdsWithin hz).add_eq
+  by_cases hd : DifferentiableWithinAt ℝ Θ s z
+  swap
+  · simp [fderivWithin_zero_of_not_differentiableWithinAt hd, hk]
+  -- The derivation of `J` is continuous linear on forms, so the derivative of the type
+  -- equation `D_J Θ = c • Θ` is the type equation of the derivative.
+  set c : ℂ := ((p : ℂ) - q) * Complex.I
+  let T := (fderivCompContinuousLinearMapCLM F (ContinuousLinearMap.id ℝ E) (ι := Fin k)).flip J
+  have hT (β : E [⋀^Fin k]→L[ℝ] F) : T β = J.alternatingDerivation β := by
+    simp only [T, ContinuousLinearMap.flip_apply, fderivCompContinuousLinearMapCLM_apply,
+      ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap]
+  have heq : (fun y ↦ T (Θ y)) =ᶠ[𝓝[s] z] fun y ↦ c • Θ y := by
+    filter_upwards [hΘ] with y hy
+    rw [hT]
+    exact hy.alternatingDerivation_eq
+  have hD := hs.eq ((T.hasFDerivAt.comp_hasFDerivWithinAt z
+    hd.hasFDerivWithinAt).congr_of_eventuallyEq heq.symm (heq.symm.eq_of_nhdsWithin hz))
+    (hd.hasFDerivWithinAt.const_smul c)
+  refine isOfType_iff.2 ⟨hk, ?_⟩
+  rw [← hT]
+  exact congrArg (fun A ↦ A v) hD
+
+end ContinuousAlternatingMap
 
 namespace TauCeti
 

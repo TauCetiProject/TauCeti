@@ -8,15 +8,24 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Data.Finset.Sort
 
 /-!
-# Local exactness for smooth forms of type `(0,1)`
+# Local exactness for smooth forms of type `(0,q)`
 
 On a complex vector space, the Dolbeault differential of a smooth function is its conjugate
-Wirtinger derivative. For a smooth `(0,1)`-form `η`, its differential on `v,w` is
-`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`. Thus closedness gives the symmetry of
+Wirtinger derivative. More generally, on a smooth `(0,q)`-form `η` it is the alternating sum
+`∂bar η(v₀, …, v_q) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_q without vᵢ))(vᵢ)` of the conjugate
+Wirtinger derivatives of its evaluations on constant vectors. The real derivative of `η` splits
+into its complex-linear and conjugate-linear parts; alternatizing them gives the components of
+`dη` of types `(1,q)` and `(0,q+1)`, and the latter is `∂bar η`. For `q = 1` this reads
+`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`, so closedness gives the symmetry of
 coordinate derivatives needed by the coordinate Dolbeault lemma.
+
+On `ι → ℂ` for a linearly ordered finite `ι`, the coefficients `SmoothForm.conjCoeff` of a form
+are its values on increasing families of coordinate vectors. Those of `∂bar η` are obtained from
+those of `η` by the coordinate operator `TauCeti.delBarCoeff` of the coordinate
+Dolbeault–Grothendieck lemma (`SmoothForm.IsOfType.conjCoeff_delBar`).
 
 An ambient smooth `(0,1)`-form whose Dolbeault differential vanishes on a finite product of
 planar domains has a smooth primitive near every compact subproduct. Both the input and the
@@ -24,6 +33,15 @@ primitive use
 `SmoothForm`; the coordinate solver supplies a function, which is extended smoothly before
 being bundled as a zero-form. Exactness is asserted near the compact product, with no claim
 of exactness on the whole original domain.
+
+## Main declarations
+
+* `TauCeti.SmoothForm.IsOfType.delBar_apply`: `∂bar` of a `(0,q)`-form on a complex vector space.
+* `TauCeti.SmoothForm.conjCoeff`: the coefficients of a form on `ι → ℂ`.
+* `TauCeti.SmoothForm.IsOfType.conjCoeff_delBar`: the coefficients of `∂bar` of a `(0,q)`-form
+  are those of the coordinate operator `TauCeti.delBarCoeff`.
+* `TauCeti.SmoothForm.IsOfType.exists_delBar_eventually_eq_of_pi`: local exactness of closed
+  `(0,1)`-forms on products of planar domains.
 
 ## References
 
@@ -57,62 +75,79 @@ theorem delBar_apply_eq_conjWirtingerDeriv (f : SmoothForm 𝓘(ℝ, E) E F 0) (
   rw [conjWirtingerDeriv_apply]
   convert h using 1; rfl
 
-variable {η : SmoothForm 𝓘(ℝ, E) E F 1}
+section TypeZeroQ
 
-/-- Read the type equation of a one-form in the model tangent fibre. -/
-private theorem IsOfType.modelSpace (hη : η.IsOfType (ofComplexManifold E E) 0 1) (z : E) :
-    (η.1 z : E [⋀^Fin 1]→L[ℝ] F).IsOfType (I • ContinuousLinearMap.id ℝ E) 0 1 := by
+variable {q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F q}
+
+/-- Read the type equation of a form in the model tangent fibre. -/
+private theorem IsOfType.modelSpace (hη : η.IsOfType (ofComplexManifold E E) 0 q) (z : E) :
+    (η.1 z : E [⋀^Fin q]→L[ℝ] F).IsOfType (I • ContinuousLinearMap.id ℝ E) 0 q := by
   have h := hη.apply z
   rw [toEndomorphism_ofComplexManifold] at h
   -- The manifold tangent and coefficient fibres here are the underlying model spaces.
   convert h using 1
 
+/-- **`∂bar` of a `(0,q)`-form on a complex vector space.** On a smooth form `η` of type `(0,q)`,
+`∂bar η (v₀, …, v_q) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_q without vᵢ))(vᵢ)`, where the conjugate
+Wirtinger derivatives are taken of the evaluations of `η` on constant tangent vectors. -/
+theorem IsOfType.delBar_apply (hη : η.IsOfType (ofComplexManifold E E) 0 q) (z : E)
+    (v : Fin (q + 1) → E) :
+    ((ofComplexManifold E E).delBar η).1 z v =
+      ∑ i : Fin (q + 1), (-1 : ℂ) ^ (i : ℕ) •
+        conjWirtingerDeriv (fun y ↦ η.1 y (i.removeNth v)) z (v i) := by
+  let Θ : E → E [⋀^Fin q]→L[ℝ] F := η.1
+  let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
+  let L : E →L[ℝ] E [⋀^Fin q]→L[ℝ] F := fderiv ℝ Θ z
+  -- Express tangent-fibre evaluations through the model-space field `Θ`.
+  change ((ofComplexManifold E E).delBar η).1 z v =
+    ∑ i : Fin (q + 1), (-1 : ℂ) ^ (i : ℕ) •
+      conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i)
+  have hdz : DifferentiableAt ℝ Θ z :=
+    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
+  have hJm (w : E) : Jm (Jm w) = -w := by simp [Jm, smul_smul]
+  -- The derivative of the family `Θ` of `(0,q)`-forms consists of `(0,q)`-forms.
+  have htype (w : E) : (L w).IsOfType Jm 0 q := by
+    simpa only [fderivWithin_univ] using ContinuousAlternatingMap.isOfType_fderivWithin (Θ := Θ)
+      (J := Jm) uniqueDiffWithinAt_univ (mem_univ z) (Eventually.of_forall hη.modelSpace) w
+  have hflat : (mextDerivₗ 𝓘(ℝ, E) q η).1 z = extDeriv Θ z := by
+    have h := mextDeriv_eq_extDeriv η.1 z
+    rw [← mextDerivₗ_apply] at h
+    -- Only the model tangent and trivial coefficient fibres differ in this comparison.
+    convert h using 1
+  -- `∂bar η` is the alternation of the conjugate-linear part of the derivative of `Θ`.
+  have hδ : ((ofComplexManifold E E).delBar η).1 z =
+      ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ • (L + I • L ∘L Jm)) := by
+    rw [hη.delBar_eq, coe_typeProjection]
+    refine (congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection 0 (q + 1)
+      ((mextDerivₗ 𝓘(ℝ, E) q η).1 z)) (toEndomorphism_ofComplexManifold (E := E) z)).trans ?_
+    rw [hflat]
+    exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right hJm htype
+  rw [hδ]
+  -- Evaluation now takes place entirely in `E`, rather than its opaque tangent-space synonym.
+  change (ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ • (L + I • L ∘L Jm)) :
+    E [⋀^Fin (q + 1)]→L[ℝ] F) v = _
+  rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [conjWirtingerDeriv_apply, fderiv_continuousAlternatingMap_apply_const_apply hdz,
+    fderiv_continuousAlternatingMap_apply_const_apply hdz]
+  simp only [Jm, smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply]
+  norm_cast
+
 /-- On a smooth `(0,1)`-form the Dolbeault differential is the alternating conjugate Wirtinger
 derivative of its evaluations on constant tangent vectors. -/
-theorem IsOfType.delBar_apply_pair (hη : η.IsOfType (ofComplexManifold E E) 0 1)
-    (z v w : E) :
+theorem IsOfType.delBar_apply_pair {η : SmoothForm 𝓘(ℝ, E) E F 1}
+    (hη : η.IsOfType (ofComplexManifold E E) 0 1) (z v w : E) :
     ((ofComplexManifold E E).delBar η).1 z ![v, w] =
       conjWirtingerDeriv (fun y ↦ η.1 y ![w]) z v -
         conjWirtingerDeriv (fun y ↦ η.1 y ![v]) z w := by
-  let Θ : E → E [⋀^Fin 1]→L[ℝ] F := η.1
-  let β : E [⋀^Fin 2]→L[ℝ] F := (mextDerivₗ 𝓘(ℝ, E) 1 η).1 z
-  -- Express tangent-fibre evaluations through the model-space field `Θ`.
-  change ((ofComplexManifold E E).delBar η).1 z ![v, w] =
-    conjWirtingerDeriv (fun y ↦ Θ y ![w]) z v -
-      conjWirtingerDeriv (fun y ↦ Θ y ![v]) z w
-  have hd : ContDiff ℝ ∞ Θ := isSmoothForm_modelSpace_iff.1 η.isSmoothForm
-  have heval (u : E) : DifferentiableAt ℝ (fun y ↦ Θ y ![u]) z :=
-    (ContinuousAlternatingMap.apply ℝ E F ![u]).differentiableAt.comp z
-      (hd.differentiable (by simp) z)
-  have hI (u : E) : (fun y ↦ Θ y ![I • u]) = fun y ↦ -I • Θ y ![u] := by
-    funext y
-    have ht : (Θ y).IsOfType (I • ContinuousLinearMap.id ℝ E) 0 1 := hη.modelSpace y
-    simpa only [conj_I] using ht.map_smul_conj I u
-  have hβ (a b : E) : β ![a, b] =
-      fderiv ℝ (fun y ↦ Θ y ![b]) z a - fderiv ℝ (fun y ↦ Θ y ![a]) z b := by
-    have hflat : β = extDeriv Θ z := by
-      have h := mextDeriv_eq_extDeriv η.1 z
-      rw [← mextDerivₗ_apply] at h
-      -- Only the model tangent and trivial coefficient fibres differ in this comparison.
-      convert h using 1; rfl
-    rw [hflat]
-    simpa only [Matrix.vec_single_eq_const] using
-      extDeriv_apply_pair_of_differentiableAt (hd.differentiable (by simp) z) a b
-  have hδ : ((ofComplexManifold E E).delBar η).1 z =
-      (I • ContinuousLinearMap.id ℝ E).typeProjection 0 2 β := by
-    rw [hη.delBar_eq, coe_typeProjection]
-    exact congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection 0 2 β)
-      (toEndomorphism_ofComplexManifold (E := E) z)
-  rw [hδ]
-  -- Evaluation now takes place entirely in `E`, rather than its opaque tangent-space synonym.
-  change ((I • ContinuousLinearMap.id ℝ E).typeProjection 0 2 β : E [⋀^Fin 2]→L[ℝ] F)
-    ![v, w] = conjWirtingerDeriv (fun y ↦ Θ y ![w]) z v -
-      conjWirtingerDeriv (fun y ↦ Θ y ![v]) z w
-  rw [ContinuousLinearMap.typeProjection_zero_two_apply (by simp [smul_smul])]
-  simp only [smul_apply, ContinuousLinearMap.id_apply, hβ, hI,
-    fderiv_fun_const_smul (heval _) _, conjWirtingerDeriv_apply]
-  simp only [smul_sub, smul_add, smul_smul, mul_neg, I_mul_I]
-  module
+  have h1 : Fin.removeNth 1 ![v, w] = ![v] := by ext i; fin_cases i; rfl
+  refine (hη.delBar_apply z ![v, w]).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg, h1]
+  -- The two sides differ only in the tangent-space synonym of the evaluated vectors.
+  rfl
+
+end TypeZeroQ
 
 section Coordinates
 
@@ -182,5 +217,75 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi
       rfl
 
 end Coordinates
+
+section Coefficients
+
+open Finset
+
+variable {ι : Type*} [LinearOrder ι] [Fintype ι] {k : ℕ}
+
+/-- The value of a `k`-form `φ` on `ι → ℂ` on the coordinate vectors `e_j`, `j ∈ J`, in
+increasing order; it vanishes unless `J` has `k` elements. When `φ` has type `(0,k)`, this is its
+coefficient of `d(conj z)_J`, the wedge product of the `d(conj z_j)`, `j ∈ J`, in increasing
+order: these are the coefficients consumed by the coordinate operator `TauCeti.delBarCoeff`. -/
+def conjCoeff (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) (J : Finset ι) (z : ι → ℂ) : F :=
+  if h : #J = k then φ.1 z fun a ↦ Pi.single (J.orderEmbOfFin h a) 1 else 0
+
+/-- A coefficient indexed by a set with `k` elements is a value of the form. -/
+theorem conjCoeff_of_card_eq (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) {J : Finset ι}
+    (h : #J = k) (z : ι → ℂ) :
+    φ.conjCoeff J z = φ.1 z fun a ↦ Pi.single (J.orderEmbOfFin h a) 1 := by
+  simp [conjCoeff, h]
+
+/-- The coefficients indexed by sets without `k` elements vanish. -/
+theorem conjCoeff_of_card_ne (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) {J : Finset ι}
+    (h : #J ≠ k) : φ.conjCoeff J = 0 :=
+  funext fun _ ↦ by simp [conjCoeff, h]
+
+/-- The coefficients of a smooth form are smooth. -/
+theorem contDiff_conjCoeff (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) (J : Finset ι) :
+    ContDiff ℝ ∞ (φ.conjCoeff J) := by
+  by_cases h : #J = k
+  · rw [show φ.conjCoeff J = _ from funext (φ.conjCoeff_of_card_eq h)]
+    exact (ContinuousAlternatingMap.apply ℝ (ι → ℂ) F _).contDiff.comp
+      (isSmoothForm_modelSpace_iff.1 φ.isSmoothForm)
+  · rw [φ.conjCoeff_of_card_ne h]
+    exact contDiff_const
+
+/-- **The coefficients of `∂bar` of a `(0,q)`-form.** The coefficients of `∂bar η` are given by
+the coordinate operator `TauCeti.delBarCoeff` applied to the coefficients of `η`. -/
+theorem IsOfType.conjCoeff_delBar {q : ℕ} {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q) :
+    ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).conjCoeff = delBarCoeff η.conjCoeff := by
+  ext I z
+  by_cases hI : #I = q + 1
+  · let e := I.orderEmbOfFin hI
+    rw [conjCoeff_of_card_eq _ hI, hη.delBar_apply, delBarCoeff_def]
+    conv_rhs => rw [← Finset.sum_coe_sort I, ← (I.orderIsoOfFin hI).toEquiv.sum_comp]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    have hcard : #(I.erase (e a)) = q := by
+      rw [card_erase_of_mem (I.orderEmbOfFin_mem hI a), hI, Nat.add_sub_cancel]
+    -- Removing the `a`-th coordinate vector leaves the increasing enumeration of `I \ {e a}`.
+    have herase : ⇑((I.erase (e a)).orderEmbOfFin hcard) = fun b ↦ e (a.succAbove b) :=
+      (Finset.orderEmbOfFin_unique hcard (fun b ↦ Finset.mem_erase.2
+        ⟨fun h ↦ a.succAbove_ne b (e.injective h), I.orderEmbOfFin_mem hI _⟩)
+        (e.strictMono.comp (Fin.strictMono_succAbove a))).symm
+    have hcoeff : η.conjCoeff (I.erase (e a)) =
+        fun y ↦ η.1 y (a.removeNth fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) := by
+      funext y
+      rw [conjCoeff_of_card_eq _ hcard, herase]
+      exact congrArg _ (funext fun b ↦
+        (Fin.removeNth_apply a (fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) b).symm)
+    rw [RelIso.coe_fn_toEquiv, coe_orderIsoOfFin_apply, card_filter_lt_orderEmbOfFin, hcoeff]
+  · rw [conjCoeff_of_card_ne _ hI, Pi.zero_apply, delBarCoeff_def]
+    refine (Finset.sum_eq_zero fun j hj ↦ ?_).symm
+    have hcard : #(I.erase j) ≠ q := by
+      rw [card_erase_of_mem hj]
+      have := Finset.card_pos.2 ⟨j, hj⟩
+      omega
+    rw [η.conjCoeff_of_card_ne hcard, conjWirtingerDeriv_apply]
+    simp
+
+end Coefficients
 
 end TauCeti.SmoothForm
