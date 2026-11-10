@@ -85,7 +85,7 @@ theorem sigma_eq_of_left_eq {a' : Fin n} {y' : GridState n} (P : GridPentagonBet
 leaves `x` in column `a` and returns to it exactly when `s` lies between the rows of `x` in the
 column `a` and the next one, and `t` between those in the next column and `a`. It is then the
 empty thin annulus in column `a` (`GridPentagonBetween.isEmpty_and_isEmpty_iff`). -/
-theorem exists_left_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = a) :
+theorem exists_left_eq_iff {a' : Fin n} (ha' : a' = a) :
     (∃ (y : GridState n) (P : GridPentagonBetween a s x y) (_ : GridPentagonBetween a' t y x),
         P.left = a) ↔
       s ∈ Grid.cIco (x a) (x (finRotate n a)) ∧ t ∈ Grid.cIco (x (finRotate n a)) (x a) := by
@@ -97,6 +97,9 @@ theorem exists_left_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = a
       by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
         hP, P.right_eq] using Q.turn_mem_cIco_bottom_top⟩
   · rintro ⟨hs, ht⟩
+    have ha : a' ≠ finRotate n a' := fun h => by
+      rw [← h, Grid.cIco_self] at hs
+      exact absurd hs (Finset.notMem_empty _)
     let m := x.swapColumns a' (finRotate n a')
     let r := GridRectangleBetween.ofSwapColumns m x a' (finRotate n a') ha
       (GridState.swapColumns_swapColumns _ _ _).symm
@@ -168,7 +171,7 @@ leaves `x` with terminal column two after `a` and returns to it exactly when `s`
 rows of `x` in the column after `a` and the next one, and `t` between those in the next column and
 the column after `a`. It is then the empty thin annulus in the column after `a`
 (`GridInitialPentagonBetween.isEmpty_and_isEmpty_iff`). -/
-theorem exists_right_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = a) :
+theorem exists_right_eq_iff {a' : Fin n} (ha' : a' = a) :
     (∃ (y : GridState n) (P : GridInitialPentagonBetween a s x y)
         (_ : GridInitialPentagonBetween a' t y x), P.right = finRotate n (finRotate n a)) ↔
       s ∈ Grid.cIco (x (finRotate n a)) (x (finRotate n (finRotate n a))) ∧
@@ -181,7 +184,9 @@ theorem exists_right_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = 
       by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
         hP, P.left_eq] using Q.turn_mem_cIco_bottom_top⟩
   · rintro ⟨hs, ht⟩
-    have hbc : finRotate n a' ≠ finRotate n (finRotate n a') := (finRotate n).injective.ne ha
+    have hbc : finRotate n a' ≠ finRotate n (finRotate n a') := fun h => by
+      rw [← h, Grid.cIco_self] at hs
+      exact absurd hs (Finset.notMem_empty _)
     let m := x.swapColumns (finRotate n a') (finRotate n (finRotate n a'))
     let r := GridRectangleBetween.ofSwapColumns m x (finRotate n a') (finRotate n (finRotate n a'))
       hbc (GridState.swapColumns_swapColumns _ _ _).symm
@@ -449,7 +454,7 @@ private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
     | inl P =>
       cases Q with
       | inl Q =>
-        have h := (GridPentagonBetween.exists_left_eq_iff C.column_ne_next
+        have h := (GridPentagonBetween.exists_left_eq_iff
           C.reverse_column).mp ⟨m, P, Q, hshape⟩
         cases i <;> simp_all only [Sum.isLeft_inl, Bool.true_eq_false, ite_true,
           C.reverse_turnRow, and_self]
@@ -458,7 +463,7 @@ private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
       cases Q with
       | inl Q => exact False.elim hshape
       | inr Q =>
-        have h := (GridInitialPentagonBetween.exists_right_eq_iff C.column_ne_next
+        have h := (GridInitialPentagonBetween.exists_right_eq_iff
           C.reverse_column).mp ⟨m, P, Q, hshape⟩
         cases i <;> simp_all only [Sum.isLeft_inr, Bool.false_eq_true, ite_false,
           C.reverse_turnRow, and_self]
@@ -468,13 +473,13 @@ private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
     | true =>
       rintro ⟨hs, ht⟩
       obtain ⟨m, P, Q, h⟩ := (GridPentagonBetween.exists_left_eq_iff (t := C.reverse.turnRow)
-        C.column_ne_next C.reverse_column).mpr ⟨hs, by rwa [C.reverse_turnRow]⟩
+        C.reverse_column).mpr ⟨hs, by rwa [C.reverse_turnRow]⟩
       exact ⟨⟨m, Sum.inl P, Sum.inl Q⟩,
         (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr h, rfl⟩
     | false =>
       rintro ⟨hs, ht⟩
       obtain ⟨m, P, Q, h⟩ := (GridInitialPentagonBetween.exists_right_eq_iff
-        (t := C.reverse.turnRow) C.column_ne_next C.reverse_column).mpr
+        (t := C.reverse.turnRow) C.reverse_column).mpr
         ⟨hs, by rwa [C.reverse_turnRow]⟩
       exact ⟨⟨m, Sum.inr P, Sum.inr Q⟩,
         (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr h, rfl⟩
