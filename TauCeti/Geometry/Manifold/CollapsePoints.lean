@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homogeneity
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 
 /-!
 # Sending finitely many points of a manifold to a base point up to based homotopy
@@ -111,121 +112,65 @@ private theorem norm_radialSquash_sub_le (c : E) (r : ℝ) {t : ℝ} (ht₀ : 0 
   rw [radialSquash, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hk₀]
   exact mul_le_of_le_one_left (norm_nonneg _) hk₁
 
-variable {M : Type*} [TopologicalSpace M]
+variable {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [FiniteDimensional ℝ E]
+  [BoundarylessManifold I M]
 
-/-- The squashing homotopy read in the chart `e` on `V = e.source ∩ e ⁻¹' ball c r`, extended by
-the identity. -/
-private def chartSquash (e : OpenPartialHomeomorph M E) (c : E) (r : ℝ) (p : unitInterval × M) :
-    M :=
-  open Classical in
-  if p.2 ∈ e.source ∩ e ⁻¹' ball c r then e.symm (radialSquash c r p.1 (e p.2)) else p.2
-
-/-- Away from the compact set `e.symm '' closedBall c (r / 2)`, the squashing homotopy in the chart
-is the identity. -/
-private theorem chartSquash_of_notMem {e : OpenPartialHomeomorph M E} {c : E} {r : ℝ}
-    (hr : 0 < r) {p : unitInterval × M} (hp : p.2 ∉ e.symm '' closedBall c (r / 2)) :
-    chartSquash e c r p = p.2 := by
-  rw [chartSquash]
-  split_ifs with hV
-  · have : r / 2 ≤ ‖e p.2 - c‖ := by
-      by_contra! h
-      exact hp ⟨e p.2, by rw [mem_closedBall, dist_eq_norm]; exact h.le, e.left_inv hV.1⟩
-    rw [radialSquash_of_le hr _ this, e.left_inv hV.1]
-  · rfl
-
-private theorem continuous_chartSquash [T2Space M] [FiniteDimensional ℝ E]
-    {e : OpenPartialHomeomorph M E} {c : E} {r : ℝ} (hr : 0 < r)
-    (hrt : closedBall c r ⊆ e.target) : Continuous (chartSquash e c r) := by
-  set V := e.source ∩ e ⁻¹' ball c r
-  set K := e.symm '' closedBall c (r / 2)
-  have hV : IsOpen V := e.isOpen_inter_preimage isOpen_ball
-  have hK : IsClosed K := ((isCompact_closedBall c (r / 2)).image_of_continuousOn
-    (e.continuousOn_symm.mono ((closedBall_subset_closedBall (by linarith)).trans hrt))).isClosed
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  by_cases hp : p.2 ∈ V
-  · -- On `V` the homotopy is the squashing homotopy read in the chart.
-    have hmem : radialSquash c r p.1 (e p.2) ∈ e.target := hrt <| by
-      rw [mem_closedBall, dist_eq_norm]
-      exact (norm_radialSquash_sub_le c r (unitInterval.nonneg _) (unitInterval.le_one _) _).trans
-        (by rw [← dist_eq_norm]; exact (mem_ball.1 hp.2).le)
-    have h : ContinuousAt (fun q : unitInterval × M ↦ radialSquash c r q.1 (e q.2)) p :=
-      (continuous_radialSquash c r).continuousAt.comp
-        (f := fun q : unitInterval × M ↦ ((q.1 : ℝ), e q.2))
-        ((continuous_subtype_val.comp continuous_fst).continuousAt.prodMk
-          ((e.continuousAt hp.1).comp continuousAt_snd))
-    exact ((e.continuousAt_symm hmem).comp (f := fun q : unitInterval × M ↦
-      radialSquash c r q.1 (e q.2)) h).congr (Filter.eventuallyEq_of_mem
-        ((hV.preimage continuous_snd).mem_nhds hp) fun q hq ↦ (ite_eq_left hq).symm)
-  · -- Outside `K`, which lies in `V`, the homotopy is the identity.
-    have hpK : p.2 ∉ K := fun ⟨v, hv, hpv⟩ ↦ hp <| by
-      have hvt := hrt (closedBall_subset_closedBall (by linarith) hv)
-      refine hpv ▸ ⟨e.map_target hvt, ?_⟩
-      rw [mem_preimage, e.right_inv hvt, mem_ball]
-      exact (mem_closedBall.1 hv).trans_lt (by linarith)
-    exact continuousAt_snd.congr (Filter.eventuallyEq_of_mem
-      ((hK.isOpen_compl.preimage continuous_snd).mem_nhds hpK)
-      fun q hq ↦ (chartSquash_of_notMem hr hq).symm)
-
-variable [T2Space M] [FiniteDimensional ℝ E]
-
-variable (E) in
-include E in
-/-- **Squashing a neighbourhood of a point.** On a Hausdorff manifold modelled on a
+include I in
+/-- **Squashing a neighbourhood of a point.** On a Hausdorff manifold without boundary modelled on a
 finite-dimensional real normed space, some self-map `f` is homotopic to the identity relative to
 `x₀` and sends a whole neighbourhood of `x₀` to `x₀`. -/
-theorem exists_homotopicRel_id_eventually_eq [ChartedSpace E M] (x₀ : M) :
+theorem exists_homotopicRel_id_eventually_eq (x₀ : M) :
     ∃ f : C(M, M), f.HomotopicRel (ContinuousMap.id M) {x₀} ∧ ∀ᶠ z in 𝓝 x₀, f z = x₀ := by
-  set e := chartAt E x₀
+  set e := extChartAt I x₀
   set c := e x₀
-  have hx₀ : x₀ ∈ e.source := mem_chart_source E x₀
-  obtain ⟨r₀, hr₀, hr₀t⟩ := Metric.mem_nhds_iff.1 (e.open_target.mem_nhds (e.map_source hx₀))
-  set r := r₀ / 2
-  have hr : 0 < r := half_pos hr₀
-  have hrt : closedBall c r ⊆ e.target := (closedBall_subset_ball (half_lt_self hr₀)).trans hr₀t
+  have hx₀ : x₀ ∈ e.source := mem_extChartAt_source x₀
+  obtain ⟨r, hr, hrt⟩ := Metric.mem_nhds_iff.1 (isOpen_interior.mem_nhds
+    (ModelWithCorners.isInteriorPoint_iff.1
+      (BoundarylessManifold.isInteriorPoint (I := I) (x := x₀))))
+  have hKt : closedBall c (r / 2) ⊆ interior e.target :=
+    (closedBall_subset_ball (half_lt_self hr)).trans hrt
   have hc : e.symm c = x₀ := e.left_inv hx₀
-  have hF := continuous_chartSquash hr hrt
-  refine ⟨⟨fun z ↦ chartSquash e c r (1, z), by fun_prop⟩, ⟨ContinuousMap.HomotopyRel.symm
-    { toFun := chartSquash e c r
+  -- The squashing homotopy, read in the chart at `x₀` and extended by the identity.
+  have hF : Continuous fun p : unitInterval × M ↦ chartExtend I (radialSquash c r p.1) x₀ p.2 :=
+    contMDiff_zero_iff.1 <| contMDiff_chartExtend (I' := 𝓡∂ 1)
+      (Φ := fun t : unitInterval ↦ radialSquash c r t)
+      (contMDiff_zero_iff.2 ((continuous_radialSquash c r).comp
+        (continuous_subtype_val.prodMap continuous_id)))
+      (isCompact_closedBall c (r / 2)) hKt
+      (fun t v hv ↦ by
+        rw [mem_closedBall, dist_eq_norm] at hv ⊢
+        exact (norm_radialSquash_sub_le c r t.2.1 t.2.2 v).trans hv)
+      (fun t v hv ↦ radialSquash_of_le hr t (by
+        rw [mem_closedBall, dist_eq_norm, not_le] at hv
+        exact hv.le))
+  refine ⟨⟨fun z ↦ chartExtend I (radialSquash c r 1) x₀ z,
+    hF.comp (Continuous.prodMk_right (1 : unitInterval))⟩, ⟨ContinuousMap.HomotopyRel.symm
+    { toFun p := chartExtend I (radialSquash c r p.1) x₀ p.2
       continuous_toFun := hF
       map_zero_left z := ?_
       map_one_left _ := rfl
       prop' t z hz := ?_ }⟩, ?_⟩
-  · simp only [chartSquash, Icc.coe_zero, radialSquash_zero]
-    split_ifs with hz
-    exacts [e.left_inv hz.1, rfl]
+  · have h0 : radialSquash c r 0 = id := funext (radialSquash_zero c r)
+    simp only [Icc.coe_zero, h0, chartExtend_id, id, ContinuousMap.id_apply]
   · rw [mem_singleton_iff.1 hz]
-    simp [chartSquash, c, radialSquash_self, hc]
-  · have hx₀' : x₀ ∈ e.source ∩ e ⁻¹' ball c (r / 4) := ⟨hx₀, mem_ball_self (by positivity)⟩
-    filter_upwards [(e.isOpen_inter_preimage isOpen_ball).mem_nhds hx₀'] with z hz
-    have hzV : z ∈ e.source ∩ e ⁻¹' ball c r :=
-      ⟨hz.1, ball_subset_ball (by linarith) hz.2⟩
-    simp only [ContinuousMap.coe_mk, chartSquash, ite_eq_left hzV, Icc.coe_one]
-    rw [radialSquash_one_of_le hr (by rw [← dist_eq_norm]; exact (mem_ball.1 hz.2).le), hc]
+    change chartExtend I (radialSquash c r t) x₀ x₀ = x₀
+    rw [chartExtend_of_mem hx₀, radialSquash_self, hc]
+  · filter_upwards [(isOpen_extChartAt_preimage' x₀ isOpen_ball).mem_nhds
+      (⟨hx₀, mem_ball_self (by positivity)⟩ : x₀ ∈ e.source ∩ e ⁻¹' ball c (r / 4))] with z hz
+    rw [ContinuousMap.coe_mk, chartExtend_of_mem hz.1,
+      radialSquash_one_of_le hr (by rw [← dist_eq_norm]; exact (mem_ball.1 hz.2).le), hc]
 
 end Squash
 
 section Collapse
 
-variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace M]
-  [ChartedSpace E M] {n : ℕ∞ω}
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+  [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I n M]
 
-/-- The final map of a diffeotopy fixing `x₀` at all times is homotopic to the identity relative
-to `x₀`. -/
-private theorem homotopicRel_id_final {D : Diffeotopy 𝓘(ℝ, E) 1 M} {x₀ : M}
-    (hD : ∀ t, D (t, x₀) = x₀) :
-    D.toAmbientIsotopy.final.HomotopicRel (ContinuousMap.id M) {x₀} :=
-  ⟨ContinuousMap.HomotopyRel.symm
-    { toContinuousMap := D.toAmbientIsotopy.toContinuousMap
-      map_zero_left := D.toAmbientIsotopy.map_zero_left
-      map_one_left z := (AmbientIsotopy.final_apply _ z).symm
-      prop' t z hz := by
-        rw [mem_singleton_iff.1 hz]
-        exact (D.toAmbientIsotopy_apply (t, x₀)).trans (hD t) }⟩
-
-variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold 𝓘(ℝ, E) n M]
-
-variable (E) in
-include E in
+variable (I) in
+include I in
 /-- On a preconnected manifold, every point `y` is sent to `x₀` by some self-map homotopic to the
 identity relative to `x₀`. -/
 private theorem exists_homotopicRel_id_apply_eq_basePoint [PreconnectedSpace M] (hn : 2 ≤ n)
@@ -234,32 +179,32 @@ private theorem exists_homotopicRel_id_apply_eq_basePoint [PreconnectedSpace M] 
   have hx₀A : x₀ ∈ A := ⟨ContinuousMap.id M, .refl _, rfl⟩
   -- Composing with a map that squashes a neighbourhood of `x₀` shows that `A` is open.
   have hAo : IsOpen A := isOpen_iff_mem_nhds.2 fun y ⟨θ, hθ, hθy⟩ ↦ by
-    obtain ⟨f, hf, hfx₀⟩ := exists_homotopicRel_id_eventually_eq E x₀
-    have hfθ : (f.comp θ).HomotopicRel (ContinuousMap.id M) {x₀} := by
-      simpa only [ContinuousMap.id_comp] using hθ.comp hf hθ.mapsTo_self
+    obtain ⟨f, hf, hfx₀⟩ := exists_homotopicRel_id_eventually_eq I x₀
+    have hfθ : (f.comp θ).HomotopicRel (ContinuousMap.id M) {x₀} := hf.comp_id hθ
     exact Filter.mem_of_superset (θ.continuous.continuousAt.preimage_mem_nhds
       (t := {z | f z = x₀}) (by rw [hθy]; exact hfx₀)) fun z hz ↦ ⟨f.comp θ, hfθ, hz⟩
   -- A point `y ≠ x₀` reaches every nearby point by a diffeotopy fixing `x₀`, so `A` is closed.
   have hAc : IsClosed A := isOpen_compl_iff.1 <| isOpen_iff_mem_nhds.2 fun y hy ↦ by
     have hyx₀ : y ∈ ({x₀}ᶜ : Set M) := fun h ↦ hy (mem_singleton_iff.1 h ▸ hx₀A)
     have hmn : ((1 : ℕ∞) : ℕ∞ω) + 1 ≤ n := le_of_eq_of_le (by norm_num) hn
-    filter_upwards [eventually_exists_diffeotopy_final_apply_eq (I := 𝓘(ℝ, E)) (m := 1) le_rfl hmn
+    filter_upwards [eventually_exists_diffeotopy_final_apply_eq (I := I) (m := 1) le_rfl hmn
       isClosed_singleton.isOpen_compl hyx₀] with z hz hzA
     obtain ⟨D, K, -, hKU, hDK, hDy⟩ := hz
     obtain ⟨θ, hθ, hθz⟩ := hzA
-    have hD : ∀ t, D (t, x₀) = x₀ := fun t ↦ hDK t fun h ↦ hKU h rfl
-    have hDf := homotopicRel_id_final hD
-    refine hy ⟨θ.comp D.toAmbientIsotopy.final, ?_, ?_⟩
-    · simpa only [ContinuousMap.id_comp] using hDf.comp hθ hDf.mapsTo_self
+    have hDf : D.toAmbientIsotopy.final.HomotopicRel (ContinuousMap.id M) {x₀} :=
+      D.toAmbientIsotopy.final_homotopicRel_id fun t _ h ↦ by
+        rw [mem_singleton_iff.1 h]
+        exact (D.toAmbientIsotopy_apply (t, x₀)).trans (hDK t fun h ↦ hKU h rfl)
+    refine hy ⟨θ.comp D.toAmbientIsotopy.final, hθ.comp_id hDf, ?_⟩
     · rw [ContinuousMap.comp_apply, Diffeotopy.toAmbientIsotopy_final_apply, hDy, hθz]
   exact eq_univ_iff_forall.1 (IsClopen.eq_univ ⟨hAc, hAo⟩ ⟨x₀, hx₀A⟩) y
 
-variable (E) in
-include E in
+variable (I) in
+include I in
 /-- **Sending finitely many points to a base point.** Let `M` be a preconnected Hausdorff `C^n`
-manifold, `n ≥ 2`, without boundary, modelled on a finite-dimensional real normed space `E`. For
-every finite set `S ⊆ M` and every `x₀ ∈ M`, some self-map `θ` of `M`, homotopic to the identity
-relative to `x₀`, sends every point of `S` to `x₀`. -/
+manifold, `n ≥ 2`, without boundary, modelled through `I` on a finite-dimensional real normed
+space `E`. For every finite set `S ⊆ M` and every `x₀ ∈ M`, some self-map `θ` of `M`, homotopic
+to the identity relative to `x₀`, sends every point of `S` to `x₀`. -/
 theorem _root_.Set.Finite.exists_homotopicRel_id_apply_eq [PreconnectedSpace M] (hn : 2 ≤ n)
     {S : Set M} (hS : S.Finite) (x₀ : M) :
     ∃ θ : C(M, M), θ.HomotopicRel (ContinuousMap.id M) {x₀} ∧ ∀ s ∈ S, θ s = x₀ := by
@@ -267,9 +212,9 @@ theorem _root_.Set.Finite.exists_homotopicRel_id_apply_eq [PreconnectedSpace M] 
   | empty => exact ⟨ContinuousMap.id M, .refl _, by simp⟩
   | @insert a S _ _ ih =>
     obtain ⟨θ, hθ, hθS⟩ := ih
-    obtain ⟨ψ, hψ, hψa⟩ := exists_homotopicRel_id_apply_eq_basePoint E hn x₀ (θ a)
+    obtain ⟨ψ, hψ, hψa⟩ := exists_homotopicRel_id_apply_eq_basePoint I hn x₀ (θ a)
     refine ⟨ψ.comp θ, ?_, ?_⟩
-    · simpa only [ContinuousMap.id_comp] using hθ.comp hψ hθ.mapsTo_self
+    · exact hψ.comp_id hθ
     · rintro s (rfl | hs)
       · exact hψa
       · rw [ContinuousMap.comp_apply, hθS s hs]

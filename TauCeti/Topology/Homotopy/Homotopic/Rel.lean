@@ -26,6 +26,8 @@ pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy clas
 * `ContinuousMap.HomotopyRel.precomp`, `ContinuousMap.HomotopicRel.precomp`: precomposing a
   homotopy relative to `S` with `e` gives a homotopy relative to `e ⁻¹' S`.
 * `ContinuousMap.HomotopicRel.comp`: relative homotopies compose.
+* `ContinuousMap.HomotopicRel.comp_id`: self-maps homotopic to the identity relative to `S` are
+  closed under composition.
 * `ContinuousMap.HomotopicRel.mapsTo_self`: a self-map homotopic to the identity relative to `S`
   maps `S` into itself.
 * `TauCeti.pointedHomotopySetoid`: pointed homotopy, as an equivalence relation on pointed maps.
@@ -84,12 +86,18 @@ theorem HomotopicRel.mapsTo_self {f : C(X, X)} (h : HomotopicRel f (ContinuousMa
     Set.MapsTo f S S :=
   (Set.mapsTo_id S).congr fun _ hx ↦ (h.fst_eq_snd hx).symm
 
-/-- Homotopies relative to `S` and to `T` compose to a homotopy relative to `S` when the first map
-carries `S` into `T`, the relative form of `ContinuousMap.Homotopic.comp`. -/
+/-- Homotopies relative to `T` and to `S` compose to a homotopy relative to `S` when the inner
+map carries `S` into `T`, the relative form of `ContinuousMap.Homotopic.comp`. -/
 theorem HomotopicRel.comp {Z : Type*} [TopologicalSpace Z] {g₀ g₁ : C(Y, Z)} {T : Set Y}
-    (hf : HomotopicRel f₀ f₁ S) (hg : HomotopicRel g₀ g₁ T) (hST : Set.MapsTo f₀ S T) :
+    (hg : HomotopicRel g₀ g₁ T) (hf : HomotopicRel f₀ f₁ S) (hST : Set.MapsTo f₀ S T) :
     HomotopicRel (g₀.comp f₀) (g₁.comp f₁) S :=
   ((hg.precomp f₀).mono hST.subset_preimage).trans (hf.comp_continuousMap g₁)
+
+/-- Self-maps homotopic to the identity relative to `S` are closed under composition. -/
+theorem HomotopicRel.comp_id {f g : C(X, X)} (hg : HomotopicRel g (ContinuousMap.id X) S)
+    (hf : HomotopicRel f (ContinuousMap.id X) S) :
+    HomotopicRel (g.comp f) (ContinuousMap.id X) S :=
+  hg.comp hf hf.mapsTo_self
 
 end ContinuousMap
 
