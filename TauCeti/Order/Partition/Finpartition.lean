@@ -406,14 +406,22 @@ theorem part_top {a : α} (ha : a ∈ s) : (⊤ : Finpartition s).part a = s :=
 theorem mem_part_comm {a b : α} : b ∈ P.part a ↔ a ∈ P.part b := by
   simp only [mem_part_iff_exists, and_comm]
 
-/-- If the parts through two points of `s` are different and cover `s`, they are complementary. -/
-theorem part_eq_sdiff_part {a b : α} (ha : a ∈ s) (hb : b ∈ s) (hab : P.part a ∪ P.part b = s)
+/-- If the parts through two points are different and cover `s`, they are complementary. -/
+theorem part_eq_sdiff_part {a b : α} (hab : P.part a ∪ P.part b = s)
     (hne : P.part a ≠ P.part b) : P.part a = s \ P.part b := by
-  ext w
-  refine ⟨fun hw => mem_sdiff.2 ⟨P.part_subset a hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
-  · rw [← (P.mem_part_iff_part_eq_part (P.part_subset a hw) ha).1 hw,
-      (P.mem_part_iff_part_eq_part (P.part_subset a hw) hb).1 hw₂]
-  · exact (mem_union.1 (hab.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
+  by_cases hb : b ∈ s
+  · by_cases ha : a ∈ s
+    · ext w
+      refine ⟨fun hw => mem_sdiff.2 ⟨P.part_subset a hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
+      · rw [← (P.mem_part_iff_part_eq_part (P.part_subset a hw) ha).1 hw,
+          (P.mem_part_iff_part_eq_part (P.part_subset a hw) hb).1 hw₂]
+      · exact (mem_union.1 (hab.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
+    · rw [P.part_eq_empty.2 ha, empty_union] at hab
+      rw [P.part_eq_empty.2 ha, hab]
+      simp
+  · rw [P.part_eq_empty.2 hb, union_empty] at hab
+    rw [P.part_eq_empty.2 hb, hab]
+    simp
 
 /-- A finite partition of a finset is determined by the part containing each point. -/
 theorem part_injective : Function.Injective (part : Finpartition s → α → Finset α) := by

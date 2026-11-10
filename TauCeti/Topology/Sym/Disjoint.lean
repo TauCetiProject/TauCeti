@@ -32,15 +32,13 @@ sets, and the Hausdorff separation producing the family that a given tuple needs
 
 ## Main declaration
 
-* `TauCeti.Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
+* `Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
   open embedding from their product into the symmetric power.
 -/
 
 public section
 
 open Topology
-
-namespace TauCeti
 
 namespace Sym
 
@@ -56,12 +54,10 @@ in a Hausdorff space is a separate step. -/
 theorem isOpenEmbedding_ofFn_map {X : Fin n → Type*} [∀ i, TopologicalSpace (X i)]
     (f : ∀ i, X i → α) (hf : ∀ i, IsOpenEmbedding (f i))
     (h : Pairwise (Function.onFun Disjoint fun i => Set.range (f i))) :
-    IsOpenEmbedding fun x : ∀ i, X i => Sym.ofFn fun i => f i (x i) := by
+    IsOpenEmbedding fun x : ∀ i, X i => ofFn fun i => f i (x i) := by
   refine .of_continuous_injective_isOpenMap ?_
-    (Sym.ofFn_map_injective f (fun i => (hf i).injective) h) ?_
+    (ofFn_map_injective f (fun i => (hf i).injective) h) ?_
   · exact continuous_ofFn.comp (Continuous.piMap fun i => (hf i).continuous)
   · exact isOpenMap_ofFn.comp (IsOpenEmbedding.piMap hf).isOpenMap
 
 end Sym
-
-end TauCeti

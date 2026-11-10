@@ -59,27 +59,22 @@ url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
-# Registered runners advertise each machine's slots and CI classes. The Namespace ceiling
+# Registered runners in the approved group define live fleet membership and CI classes.
+# Adding, replacing or draining hosts needs no project machine-ID list. The Namespace ceiling
 # counts queued/running builds; simultaneous picker decisions can exceed it briefly.
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 namespace_build_cap = 20
-pr_order = ["github", "chris", "tauchonki2", "yael", "brett", "namespace"]
-staging_order = ["chris", "yael", "brett", "namespace", "github"]
+pr_order = ["github", "fleet", "namespace"]
+staging_order = ["chungus2", "tauchonki2"]
 
-# Slot counts and CI classes come from the runners each host registers.
-[services.fleet.machines.chris]
-enrollment_name = "chris-server"
+# Staging is reserved for these hosts; other membership comes from the registered runners.
+[services.fleet.machines.chungus2]
+machine_id = "2ef87dd35cf74820a7a3b26e8820dcc5"
 
 [services.fleet.machines.tauchonki2]
 machine_id = "74773fc7f54d4877add11d80113fe340"
-
-[services.fleet.machines.yael]
-enrollment_name = "yael-server"
-
-[services.fleet.machines.brett]
-enrollment_name = "brett-server"
 
 [services.cache]
 mode = "hosted"

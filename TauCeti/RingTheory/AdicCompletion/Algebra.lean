@@ -75,13 +75,18 @@ theorem quotientMapPowAlgEquiv_mk (fg : I.FG) (n : ℕ) (x : AdicCompletion I R)
     quotientMapPowAlgEquiv fg n (Ideal.Quotient.mk _ x) = evalₐ I n x := by
   simp [quotientMapPowAlgEquiv]
 
-/-- For a finitely generated ideal `I`, an element of `R` maps into the extension of `I ^ n` to
-the adic completion if and only if it lies in `I ^ n`. -/
+/-- An element of `R` maps into the extension of `I ^ n` to the adic completion if and only if it
+lies in `I ^ n`. -/
 @[simp]
-theorem algebraMap_mem_map_pow_iff (fg : I.FG) (n : ℕ) {x : R} :
+theorem algebraMap_mem_map_pow_iff (n : ℕ) {x : R} :
     algebraMap R (AdicCompletion I R) x ∈ (I ^ n).map (algebraMap R (AdicCompletion I R)) ↔
       x ∈ I ^ n := by
-  simp [← ker_evalₐ_eq_map_pow fg, algebraMap_apply, Ideal.Quotient.eq_zero_iff_mem]
+  refine ⟨fun h ↦ ?_, Ideal.mem_map_of_mem _⟩
+  have hker : (I ^ n).map (algebraMap R (AdicCompletion I R)) ≤ RingHom.ker (evalₐ I n) := by
+    rw [Ideal.map_le_iff_le_comap]
+    intro y hy
+    simp [algebraMap_apply, Ideal.Quotient.eq_zero_iff_mem, hy]
+  simpa [algebraMap_apply, Ideal.Quotient.eq_zero_iff_mem] using hker h
 
 /-- For a finitely generated ideal `I`, every element of the adic completion is congruent modulo
 the extension of `I ^ n` to the image of an element of `R`. -/
@@ -100,7 +105,7 @@ theorem quotientMap_algebraMap_bijective (fg : I.FG) (n : ℕ)
       (algebraMap R (AdicCompletion I R))} :
     Function.Bijective (Ideal.quotientMap _ (algebraMap R (AdicCompletion I R)) H) := by
   refine ⟨Ideal.quotientMap_injective' fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · rwa [Ideal.mem_comap, ← Ideal.map_pow, algebraMap_mem_map_pow_iff fg] at hx
+  · rwa [Ideal.mem_comap, ← Ideal.map_pow, algebraMap_mem_map_pow_iff] at hx
   · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
     rw [Ideal.map_pow] at hy
