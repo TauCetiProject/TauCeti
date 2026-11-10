@@ -36,12 +36,9 @@ The convergence of the charts under `C^ℓ` convergence of the structure is not 
 
 ## Main declarations
 
-* `TauCeti.ContMDiffAlmostComplexStructure.chartPushforward`: an almost complex structure read in
-  the coordinates of a chart with values in a normed space.
 * `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart`: the adapted chart.
 * `TauCeti.adaptedNormalExtension_writtenInExtChartAt_inl`: in the flat model `V ⊆ V × V` with
-  the standard structure the adapted extension is the identity, so the construction loses no
-  regularity there.
+  the standard structure the adapted extension is the identity.
 
 ## References
 
@@ -55,32 +52,6 @@ open Set Filter Manifold
 open scoped Topology Manifold ContDiff
 
 namespace TauCeti
-
-namespace ContMDiffAlmostComplexStructure
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {ℓ : ℕ∞}
-
-/-- The structure `J` pushed forward along a chart `ψ` of `M` with values in a normed space `G`:
-at `p`, the endomorphism `dψ ∘ J ∘ dψ⁻¹` of `G`, taken at `ψ⁻¹ p` and written with the manifold
-derivatives of `ψ` and of its inverse. On the target of `ψ` this is `J` in the coordinates
-of `ψ`. -/
-def chartPushforward {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (J : ContMDiffAlmostComplexStructure I ℓ M) (ψ : OpenPartialHomeomorph M G) (p : G) :
-    G →L[ℝ] G :=
-  (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p)).comp
-    ((J.toEndomorphism (ψ.symm p)).comp (mfderiv 𝓘(ℝ, G) I ψ.symm p))
-
-/-- Evaluate a pushed-forward structure. -/
-theorem chartPushforward_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (J : ContMDiffAlmostComplexStructure I ℓ M) (ψ : OpenPartialHomeomorph M G) (p w : G) :
-    J.chartPushforward ψ p w =
-      mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (J (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w)) := by
-  unfold chartPushforward
-  rfl
-
-end ContMDiffAlmostComplexStructure
 
 variable {E H M F H' N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
@@ -206,47 +177,12 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart [IsManifold I' k N]
     (hesc.contDiffAt (e.open_target.mem_nhds hz)).differentiableAt hℓ0
   have htgt : ψ.target ⊆ e.source := fun p hp ↦ (hψtgt.1 hp).1.1
   have hsrc : ψ.source ⊆ χ.source := fun x hx ↦ (hψsrc.1 hx).1.1
-  -- Facts about the zero section of `e` over a point of `U`.
-  have hq {q : F} (hq : (q, 0) ∈ e.source) :
-      q ∈ U ∧ ContDiffAt ℝ 1 γ q ∧ ContinuousAt Jχ (γ q) ∧
-        (∀ v, Jχ (γ q) (Jχ (γ q) v) = -v) ∧ DifferentiableAt ℝ e.symm (γ q) := by
-    have hqU : q ∈ U := (heU hq).1
-    refine ⟨hqU, (hγ.contDiffAt (hU.mem_nhds hqU)).of_le le_add_self,
-      hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hqU)), J.inChart_inChart y (hγΩ hqU),
-      hesd ?_⟩
-    rw [← hγe]
-    exact e.map_source hq
-  -- The derivative of `ψ` is that of `e.symm` after the chart derivative.
-  have hDψ {x : M} (hx : x ∈ ψ.source) (v : TangentSpace I x) :
-      mfderiv I 𝓘(ℝ, F × F) ψ x v =
-        fderiv ℝ e.symm (χ x) (mfderiv I 𝓘(ℝ, E) χ x v) := by
-    have hxt : χ x ∈ e.target := (hψsrc.1 hx).1.2
-    have heq : ⇑ψ ∘ χ.symm =ᶠ[𝓝 (χ x)] e.symm := by
-      filter_upwards [hΩ.mem_nhds (χ.map_source (hsrc hx))] with z hz
-      simp only [Function.comp_apply, hψcoe, χ.right_inv hz]
-    rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt (hsrc hx)
-      ((hesd hxt).congr_of_eventuallyEq heq), heq.fderiv_eq]
-    rfl
-  -- The derivative of `ψ.symm` is the chart derivative after that of `e`.
-  have hDψs {p : F × F} (hp : p ∈ ψ.target) (w : F × F) :
-      mfderiv 𝓘(ℝ, F × F) I ψ.symm p w =
-        mfderivWithin 𝓘(ℝ, E) I χ.symm (range I) (e p) (fderiv ℝ e p w) := by
-    have hpt := hψtgt.1 hp
-    have hfun : ⇑ψ.symm = χ.symm ∘ e := funext hψsymm
-    have hχs : MDifferentiableAt 𝓘(ℝ, E) I χ.symm (e p) := by
-      have := mdifferentiableWithinAt_extChartAt_symm (I := I) (x := y) hpt.1.2
-      rwa [I.range_eq_univ, mdifferentiableWithinAt_univ] at this
-    rw [hfun, mfderiv_comp p hχs (hed hpt.1.1).mdifferentiableAt,
-      I.range_eq_univ,
-      mfderivWithin_univ, mfderiv_eq_fderiv]
-    rfl
   -- The base point.
   have hx₀ψ : ι x₀ ∈ ψ.source := by
     refine hψsrc.2 ⟨⟨mem_extChartAt_source y, ?_⟩, ?_⟩
     · rw [← hγx₀, ← hγe]
       exact e.map_source he₀
-    · change x₀ ∈ ι ⁻¹' O
-      rw [hOS]
+    · rw [← mem_preimage, hOS]
       exact ⟨⟨mem_extChartAt_source x₀, mem_extChartAt_source y⟩, he₀⟩
   -- Regularity of the chart and of its inverse.
   have hcont : ContMDiffOn I 𝓘(ℝ, F × F) ℓ ψ ψ.source := by
@@ -276,84 +212,59 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart [IsManifold I' k N]
         rw [← hOS]
         exact (hψsrc.1 hx).2
       rw [hψcoe, ← φ.left_inv hzS.1.1, ← hγapp, ← hγe, e.left_inv hzS.2]
-  -- Intertwining along `ι (N)`.
-  have hint : ∀ x ∈ ψ.source ∩ range ι,
-      (mfderiv I 𝓘(ℝ, F × F) ψ x).comp (J.toEndomorphism x) =
-        ((-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F)).comp
-          (mfderiv I 𝓘(ℝ, F × F) ψ x) := by
-    rintro x ⟨hx, hxι⟩
-    have h0 : (ψ x).2 = 0 := (hImage hx).2 hxι
-    have hpq : ψ x = ((ψ x).1, 0) := Prod.ext rfl h0
-    have hqe : ((ψ x).1, (0 : F)) ∈ e.source := hpq ▸ htgt (ψ.map_source hx)
-    have hxt : χ x ∈ e.target := (hψsrc.1 hx).1.2
-    have hχx : χ x = γ (ψ x).1 := by rw [← hγe, ← hpq, hψcoe, e.right_inv hxt]
-    obtain ⟨-, hγ1, hJc, hsq', hs⟩ := hq hqe
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I)
-      (x := y) (hsrc hx)) v)
-    have hJ' : mfderiv I 𝓘(ℝ, E) χ x (J x v) = Jχ (χ x) (mfderiv I 𝓘(ℝ, E) χ x v) := by
-      have hc := J.inChart_apply_eq_mfderiv y (χ.map_source (hsrc hx)) (mfderiv I 𝓘(ℝ, E) χ x v)
-      rw [χ.left_inv (hsrc hx)] at hc
-      rw [hJχ, hc]
-      exact congrArg _ (congrArg _ hinv.symm)
-    have hP (w : E) : fderiv ℝ e.symm (χ x) (Jχ (χ x) w) =
-        (-(fderiv ℝ e.symm (χ x) w).2, (fderiv ℝ e.symm (χ x) w).1) := by
-      rw [hχx]
-      exact e.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension he hqe hγ1 hJc hsq' hs w
-    have key : mfderiv I 𝓘(ℝ, F × F) ψ x (J x v) =
-        ((-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F))
-          (mfderiv I 𝓘(ℝ, F × F) ψ x v) := by
-      rw [hDψ hx, hDψ hx, hJ']
-      refine (hP _).trans ?_
-      simp
-    exact key
   -- The pushed-forward structure is the model pullback by `e`.
-  have hK : ∀ p ∈ ψ.target, J.chartPushforward ψ p = e.pullbackEnd Jχ p := by
-    intro p hp
-    have hpt := hψtgt.1 hp
-    have hxs : ψ.symm p ∈ ψ.source := ψ.map_target hp
-    have hχx : χ (ψ.symm p) = e p := by rw [hψsymm, χ.right_inv hpt.1.2]
-    refine ContinuousLinearMap.ext fun w ↦ ?_
-    rw [ContMDiffAlmostComplexStructure.chartPushforward_apply, hDψ hxs, hDψs hp, hχx,
-      OpenPartialHomeomorph.pullbackEnd_apply, hJχ, J.inChart_apply_eq_mfderiv y hpt.1.2,
-      ← hψsymm]
-    rfl
+  have hK : ∀ p ∈ ψ.target, J.chartPushforward ψ p = e.pullbackEnd Jχ p := fun p hp ↦
+    J.chartPushforward_eq_pullbackEnd_inChart y ψ e (hψtgt.1 hp).1.2
+      (Eventually.of_forall hψcoe) (Eventually.of_forall hψsymm) (hed (htgt hp))
+      (hesd (e.map_source (htgt hp)))
+  -- On the zero section it is the standard structure.
+  have hstd : ∀ p ∈ ψ.target, p.2 = 0 →
+      J.chartPushforward ψ p =
+        (-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F) := by
+    intro p hp h0
+    have hpq : p = (p.1, 0) := Prod.ext rfl h0
+    have hqe : (p.1, (0 : F)) ∈ e.source := hpq ▸ htgt hp
+    have hqU : p.1 ∈ U := (heU hqe).1
+    rw [hK p hp, hpq]
+    refine e.pullbackEnd_of_coe_eq_adaptedNormalExtension he hqe
+      ((hγ.contDiffAt (hU.mem_nhds hqU)).of_le le_add_self)
+      (hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hqU))) (J.inChart_inChart y (hγΩ hqU))
+      (hesd ?_)
+    rw [← hγe]
+    exact e.map_source hqe
   have hn : (((ℓ - 1 : ℕ∞) : ℕ∞ω) + 1) ≤ ℓ := by
     exact_mod_cast (tsub_add_cancel_of_le hℓ).le
-  refine ⟨ψ, e, he, htgt, fun p _ ↦ hψsymm p, hx₀ψ, hsrc, hcont, hcont_symm, hImage, hint,
+  refine ⟨ψ, e, he, htgt, fun p _ ↦ hψsymm p, hx₀ψ, hsrc, hcont, hcont_symm, hImage, ?_,
     ((e.contDiffOn_pullbackEnd hec hesc ((hJ.mono heΩ).of_le (le_self_add.trans hn)) hn).mono
-      htgt).congr hK,
-    fun p hp h0 ↦ ?_⟩
-  have hpq : p = (p.1, 0) := Prod.ext rfl h0
-  have hqe : (p.1, (0 : F)) ∈ e.source := hpq ▸ htgt hp
-  obtain ⟨-, hγ1, hJc, hsq', hs⟩ := hq hqe
-  rw [hK p hp, hpq]
-  exact e.pullbackEnd_of_coe_eq_adaptedNormalExtension he hqe hγ1 hJc hsq' hs
+      htgt).congr hK, hstd⟩
+  -- Intertwining along `ι (N)`: `dψ` turns `J` into `ψ_* J`, which is standard there.
+  rintro x ⟨hx, hxι⟩
+  have hpx := ψ.map_source hx
+  rw [J.mfderiv_comp_toEndomorphism ψ hx
+      ((hcont.contMDiffAt (ψ.open_source.mem_nhds hx)).mdifferentiableAt hℓ0)
+      ((hcont_symm.contMDiffAt (ψ.open_target.mem_nhds hpx)).mdifferentiableAt hℓ0),
+    hstd _ hpx ((hImage hx).2 hxι)]
 
-/-- **No loss of regularity in the flat case.** For the inclusion `V → V × V`, `v ↦ (v, 0)`, and
-the constant standard structure `(v, w) ↦ (-w, v)`, the adapted extension built from the
-extended charts is the identity. -/
+/-- **Flat model.** For the inclusion `V → V × V`, `v ↦ (v, 0)`, and the standard structure
+`(v, w) ↦ (-w, v)` on `V × V`, the adapted extension built from the extended charts is the
+identity. -/
 theorem adaptedNormalExtension_writtenInExtChartAt_inl {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (n : ℕ∞) (x₀ : V)
-    (hsq : ∀ v, ((-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V))
-      (((-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V)) v) = -v) :
+    [NormedSpace ℝ V] (x₀ : V) :
     adaptedNormalExtension
         (writtenInExtChartAt 𝓘(ℝ, V) 𝓘(ℝ, V × V) x₀ (ContinuousLinearMap.inl ℝ V V))
-        ((ContMDiffAlmostComplexStructure.const n
-          ((-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V)) hsq).inChart
-            (ContinuousLinearMap.inl ℝ V V x₀)) = id := by
+        ((SmoothAlmostComplexStructure.product V).inChart (ContinuousLinearMap.inl ℝ V V x₀)) =
+      id := by
   have hγ : writtenInExtChartAt 𝓘(ℝ, V) 𝓘(ℝ, V × V) x₀ (ContinuousLinearMap.inl ℝ V V) =
       ContinuousLinearMap.inl ℝ V V := by
     funext v
     simp [writtenInExtChartAt]
-  have hJ : (ContMDiffAlmostComplexStructure.const n
-      ((-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V)) hsq).inChart
-        (ContinuousLinearMap.inl ℝ V V x₀) =
+  have hJ : (SmoothAlmostComplexStructure.product V).inChart (ContinuousLinearMap.inl ℝ V V x₀) =
       fun _ ↦ (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V) := by
     funext z
-    rw [ContMDiffAlmostComplexStructure.inChart_def]
+    rw [SmoothAlmostComplexStructure.inChart_def]
     exact (inCoordinates_tangent_bundle_core_model_space (I := 𝓘(ℝ, V × V))
-      (I' := 𝓘(ℝ, V × V)) _ _ _ _ _).trans (by simp)
+      (I' := 𝓘(ℝ, V × V)) _ _ _ _ _).trans
+        (ContinuousLinearMap.ext fun v ↦ (SmoothAlmostComplexStructure.product_apply z v).trans rfl)
   rw [hγ, hJ, adaptedNormalExtension_inl]
 
 end TauCeti
