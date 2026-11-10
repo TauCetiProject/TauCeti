@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Equiv
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 public import TauCeti.Analysis.SpringSystem.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
@@ -40,8 +40,9 @@ above have the `(r, s)`-signs `(+, +)`, `(+, -)`, `(-, +)` and `(-, -)` respecti
 the four real characters of `C₂ × C₂` occurs exactly once: the displacement representation is the
 regular representation (`TauCeti.TwoParticleSpring.leftRegularEquiv`). The character idempotent
 `¼ ∑_g χ(g) g` of each character `χ` acts as the orthogonal projection onto the corresponding
-eigenvector line (`TauCeti.TwoParticleSpring.isotypicProjector`), the four projectors sum to the
-identity, and `H` is `-2` times the projector of the trivial character.
+eigenvector line (`TauCeti.TwoParticleSpring.isotypicProjector`); the four projectors are
+idempotent, annihilate each other pairwise and sum to the identity, and `H` is `-2` times the
+projector of the trivial character.
 
 **The transverse zero mode, made exact.** Along the transverse displacement `u₁ = (0, ε)`,
 `u₂ = (0, -ε)` the relative vector is `(1, -2ε)`, of length
@@ -89,6 +90,9 @@ not solutions of the spring equation.
 * `TauCeti.TwoParticleSpring.isotypicProjector_one_apply` and its three companions: the
   projectors are the orthogonal projections onto the eigenvector lines, and
   `TauCeti.TwoParticleSpring.isotypicProjector_add_add_add_eq_one`: they sum to the identity.
+* `TauCeti.TwoParticleSpring.isotypicProjector_mul_self`,
+  `TauCeti.TwoParticleSpring.isotypicProjector_mul_isotypicProjector_of_ne`: the projectors are
+  idempotent and those of distinct characters annihilate each other.
 * `TauCeti.TwoParticleSpring.toLin'_forceMatrix`: `H = -2 P`, with `P` the projector of the
   trivial character.
 * `TauCeti.TwoParticleSpring.springPotential_transverse`,
@@ -560,8 +564,8 @@ theorem forceMatrix_mulVec_symmetryRep (g : Multiplicative (ZMod 2) × Multiplic
     (u : Fin 4 → ℝ) :
     forceMatrix *ᵥ symmetryRep g u = symmetryRep g (forceMatrix *ᵥ u) := by
   obtain ⟨a, b⟩ := g
-  rcases eq_one_or_eq_ofAdd_one a with rfl | rfl <;>
-    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl <;>
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;>
         simp [forceMatrix, mulVec, dotProduct, Fin.sum_univ_four, Prod.mk_one_one]
@@ -573,8 +577,8 @@ trivial character of `C₂ × C₂`. -/
 theorem symmetryRep_stretch (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![1, 0, -1, 0] = ![1, 0, -1, 0] := by
   obtain ⟨a, b⟩ := g
-  rcases eq_one_or_eq_ofAdd_one a with rfl | rfl <;>
-    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl <;>
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;> simp [Prod.mk_one_one]
 
@@ -583,8 +587,8 @@ bisector reflection: `C₂ × C₂` acts on it by the sign of the first factor. 
 theorem symmetryRep_translation_y (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![0, 1, 0, 1] = cyclicTwoSign ℝ g.1 • ![0, 1, 0, 1] := by
   obtain ⟨a, b⟩ := g
-  rcases eq_one_or_eq_ofAdd_one a with rfl | rfl <;>
-    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl <;>
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;> simp [Prod.mk_one_one]
 
@@ -593,8 +597,8 @@ bisector reflection: `C₂ × C₂` acts on it by the sign of the second factor.
 theorem symmetryRep_translation_x (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![1, 0, 1, 0] = cyclicTwoSign ℝ g.2 • ![1, 0, 1, 0] := by
   obtain ⟨a, b⟩ := g
-  rcases eq_one_or_eq_ofAdd_one a with rfl | rfl <;>
-    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl <;>
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;> simp [Prod.mk_one_one]
 
@@ -604,42 +608,43 @@ theorem symmetryRep_transverse (g : Multiplicative (ZMod 2) × Multiplicative (Z
     symmetryRep g ![0, 1, 0, -1] =
       (cyclicTwoSign ℝ g.1 * cyclicTwoSign ℝ g.2) • ![0, 1, 0, -1] := by
   obtain ⟨a, b⟩ := g
-  rcases eq_one_or_eq_ofAdd_one a with rfl | rfl <;>
-    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl <;>
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;> simp [Prod.mk_one_one]
 
 /-! ### The regular representation -/
 
-private theorem surjective_linearCombination_symmetryRep :
-    Function.Surjective
-      (Finsupp.linearCombination ℝ fun g ↦ symmetryRep g ![1, 1, 0, 0]) := by
-  intro u
-  refine ⟨.single 1 ((u 0 + u 1) / 2) + .single (.ofAdd 1, 1) ((u 0 - u 1) / 2) +
-    .single (1, .ofAdd 1) ((u 3 - u 2) / 2) + .single (.ofAdd 1, .ofAdd 1) (-(u 2 + u 3) / 2),
-    ?_⟩
-  ext i
-  fin_cases i <;> simp <;> ring
+private theorem bijective_leftRegularMapEquiv_symm :
+    Function.Bijective
+      ((Representation.leftRegularMapEquiv symmetryRep).symm ![1, 1, 0, 0]) := by
+  have hsurj : Function.Surjective
+      ((Representation.leftRegularMapEquiv symmetryRep).symm ![1, 1, 0, 0]) := fun u ↦ by
+    refine ⟨.single 1 ((u 0 + u 1) / 2) + .single (.ofAdd 1, 1) ((u 0 - u 1) / 2) +
+      .single (1, .ofAdd 1) ((u 3 - u 2) / 2) + .single (.ofAdd 1, .ofAdd 1) (-(u 2 + u 3) / 2),
+      ?_⟩
+    ext i
+    fin_cases i <;> simp [Finsupp.sum_add_index', add_smul] <;> ring
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    ((MonoidAlgebra.coeffLinearEquiv ℝ).finrank_eq.trans (by simp))).2 hsurj, hsurj⟩
 
 /-- **The displacements carry the regular representation of `C₂ × C₂`**: the four images
 `(1, 1, 0, 0)`, `(1, -1, 0, 0)`, `(0, 0, -1, 1)`, `(0, 0, -1, -1)` of the displacement
-`(1, 1, 0, 0)` form a basis, so `δ_g ↦ g • (1, 1, 0, 0)` is an isomorphism from the left regular
-representation. -/
+`(1, 1, 0, 0)` form a basis, so the intertwining map `δ_g ↦ g • (1, 1, 0, 0)` from the left
+regular representation is an isomorphism. -/
 noncomputable def leftRegularEquiv :
     (Representation.leftRegular ℝ (Multiplicative (ZMod 2) × Multiplicative (ZMod 2))).Equiv
       symmetryRep :=
-  .mk ((MonoidAlgebra.coeffLinearEquiv ℝ).trans <| LinearMap.linearEquivOfInjective
-      (Finsupp.linearCombination ℝ fun g ↦ symmetryRep g ![1, 1, 0, 0])
-      ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).2
-        surjective_linearCombination_symmetryRep)
-      (by simp))
-    fun g ↦ MonoidAlgebra.lhom_ext' fun h ↦ LinearMap.ext_ring <| by simp [mul_apply_eq_comp]
+  Representation.IntertwiningMap.ofBijective
+    ((Representation.leftRegularMapEquiv symmetryRep).symm ![1, 1, 0, 0])
+    bijective_leftRegularMapEquiv_symm
 
 /-- The isomorphism from the regular representation sends `c δ_g` to `c (g • (1, 1, 0, 0))`. -/
 @[simp]
 theorem leftRegularEquiv_single (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) (c : ℝ) :
     leftRegularEquiv (.single g c) = c • symmetryRep g ![1, 1, 0, 0] := by
-  simp [leftRegularEquiv]
+  rw [leftRegularEquiv, Representation.IntertwiningMap.coe_ofBijective]
+  simp
 
 /-! ### The isotypic projectors -/
 
@@ -661,6 +666,63 @@ theorem isotypicProjector_apply (χ : Multiplicative (ZMod 2) × Multiplicative 
     symmetryRep_ofAdd_one_one_apply, symmetryRep_one_ofAdd_one_apply,
     symmetryRep_ofAdd_one_ofAdd_one_apply]
   abel_nf
+
+private theorem mul_self_eq_one (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
+    g * g = 1 := by
+  revert g
+  decide
+
+/-- A symmetry applied after the isotypic projector of `χ` acts by the scalar `χ g`: the image of
+the projector is contained in the `χ`-isotypic component. -/
+theorem symmetryRep_mul_isotypicProjector
+    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ)
+    (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
+    symmetryRep g * isotypicProjector χ = χ g • isotypicProjector χ := by
+  simp only [isotypicProjector, mul_smul_comm, Finset.mul_sum, ← map_mul]
+  rw [smul_comm (χ g), Finset.smul_sum (r := χ g)]
+  congr 1
+  exact Fintype.sum_equiv (Equiv.mulLeft g) _ _ fun h ↦ by
+    rw [Equiv.coe_mulLeft, smul_smul, ← map_mul, ← mul_assoc, mul_self_eq_one, one_mul]
+
+private theorem isotypicProjector_mul_eq_smul
+    (χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    isotypicProjector ψ * isotypicProjector χ =
+      ((4 : ℝ)⁻¹ * ∑ g, ψ g * χ g) • isotypicProjector χ := by
+  nth_rw 1 [isotypicProjector]
+  simp only [smul_mul_assoc, Finset.sum_mul, symmetryRep_mul_isotypicProjector, smul_smul,
+    ← Finset.sum_smul]
+
+private theorem sum_mul_self (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    ∑ g, χ g * χ g = 4 := by
+  simp only [← map_mul, mul_self_eq_one, map_one, Finset.sum_const, Finset.card_univ,
+    Fintype.card_prod, Fintype.card_multiplicative, ZMod.card, nsmul_eq_mul]
+  norm_num
+
+private theorem sum_mul_eq_zero {χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ}
+    (h : χ ≠ ψ) : ∑ g, ψ g * χ g = 0 :=
+  sum_hom_units_eq_zero (ψ * χ) fun h₁ ↦ h <| MonoidHom.ext fun g ↦ by
+    have h₁g : ψ g * χ g = 1 := DFunLike.congr_fun h₁ g
+    have hχ : χ g * χ g = 1 := by rw [← map_mul, mul_self_eq_one, map_one]
+    linear_combination ψ g * hχ - χ g * h₁g
+
+/-- **The isotypic projectors are idempotent.** -/
+@[simp]
+theorem isotypicProjector_mul_self (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    isotypicProjector χ * isotypicProjector χ = isotypicProjector χ := by
+  rw [isotypicProjector_mul_eq_smul, sum_mul_self, inv_mul_cancel₀ (four_ne_zero' ℝ), one_smul]
+
+/-- The isotypic projectors are idempotent elements of `Module.End ℝ (Fin 4 → ℝ)`. -/
+theorem isIdempotentElem_isotypicProjector
+    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    IsIdempotentElem (isotypicProjector χ) :=
+  isotypicProjector_mul_self χ
+
+/-- **The isotypic projectors of distinct characters annihilate each other.** -/
+@[simp]
+theorem isotypicProjector_mul_isotypicProjector_of_ne
+    {χ ψ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ} (h : χ ≠ ψ) :
+    isotypicProjector χ * isotypicProjector ψ = 0 := by
+  rw [isotypicProjector_mul_eq_smul, sum_mul_eq_zero h.symm, mul_zero, zero_smul]
 
 /-- The projector of the trivial character is the orthogonal projection
 `u ↦ (v ⬝ᵥ u / v ⬝ᵥ v) v` onto the stretching mode `v = (1, 0, -1, 0)`, with `v ⬝ᵥ v = 2`. -/
