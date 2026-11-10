@@ -9,6 +9,7 @@ public import TauCeti.Algebra.CentralSimple.Degree
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.Algebra.Subalgebra.Center
 import Mathlib.RingTheory.SimpleRing.Congr
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
@@ -119,11 +120,7 @@ theorem isCentral_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finrank 
     Algebra.IsCentral K (even Q) := by
   obtain ⟨n, P, hP, hn, ⟨e⟩⟩ := exists_nonempty_algEquiv_even_of_odd_finrank hQ hV
   have hC := isCentral_of_even_finrank hP (by simpa using hn)
-  -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe, while `even Q` lives in
-  -- that of `V`; its two-line proof is repeated for the universe-heterogeneous `e`.
-  refine ⟨fun x hx => ?_⟩
-  obtain ⟨k, hk⟩ := hC.1 ((MulEquivClass.apply_mem_center_iff e).mpr hx)
-  exact ⟨k, by simpa [Algebra.ofId] using congr(e.symm $hk)⟩
+  exact Algebra.IsCentral.of_algEquiv' K e.symm
 
 /-- **The degree of the even Clifford algebra in odd dimension.** For a quadratic form on a
 space of dimension `2m + 1`, the even Clifford algebra has dimension `2 ^ (2m)`, hence degree
