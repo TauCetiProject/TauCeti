@@ -27,12 +27,12 @@ every weight, including weight one.
 
 For an arbitrary power series, algebraic coefficients do not bound the denominators; for cusp
 forms the bound comes from a spanning set with algebraic-integer coefficients. The engine is
-`CuspForm.exists_integral_multiple_qExpansion_coeff_of_mem_span`: on any finite-index subgroup,
-a form with algebraic coefficients in the `ℂ`-span of forms with algebraic-integer coefficients is
-an algebraic combination of finitely many of them, so clearing the denominators of these finitely
-many scalars clears those of all its coefficients. The first coefficients up to the Sturm bound
-determine a cusp form, and a vector of algebraic numbers in the `ℂ`-span of algebraic vectors is
-in their span over the algebraic numbers
+`ModularForm.exists_integral_multiple_qExpansion_coeff_of_mem_span`: on any finite-index subgroup,
+a modular form with algebraic coefficients in the `ℂ`-span of forms with algebraic-integer
+coefficients is an algebraic combination of finitely many of them, so clearing the denominators
+of these finitely many scalars clears those of all its coefficients. The first coefficients up to
+the Sturm bound determine a modular form, and a vector of algebraic numbers in the `ℂ`-span of
+algebraic vectors is in their span over the algebraic numbers
 (`TauCeti.mem_span_of_mem_span_of_forall_apply_mem_range`).
 
 In weight `k ≥ 2` the forms `g(dτ)`, with `g` a newform of level `M` and `d M ∣ N`, span
@@ -46,7 +46,7 @@ with integral coefficients once its finitely many basis forms are cleared of den
 
 ## Main results
 
-* `CuspForm.exists_integral_multiple_qExpansion_coeff_of_mem_span`: a form with algebraic
+* `ModularForm.exists_integral_multiple_qExpansion_coeff_of_mem_span`: a modular form with algebraic
   coefficients in the span of forms with algebraic-integer coefficients has bounded denominators.
 * `CuspForm.exists_integral_multiple_qExpansion_coeff`: a cusp form on `Γ₁(N)` of any weight
   with algebraic coefficients has bounded denominators.
@@ -64,7 +64,7 @@ public section
 open Matrix.SpecialLinearGroup CongruenceSubgroup UpperHalfPlane TauCeti
 open scoped MatrixGroups
 
-namespace CuspForm
+namespace ModularForm
 
 section Span
 
@@ -72,11 +72,11 @@ variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.HasDetOne] [𝒢.IsFiniteRelIn
   [DiscreteTopology 𝒢.strictPeriods] {k : ℤ}
 
 /-- **Bounded denominators from an integral spanning set.** On a subgroup of finite index in
-`SL₂(ℤ)`, let `f` be a cusp form in the `ℂ`-span of forms whose `q`-expansion coefficients are
+`SL₂(ℤ)`, let `f` be a modular form in the `ℂ`-span of forms whose `q`-expansion coefficients are
 algebraic integers. If the coefficients of `f` are algebraic numbers, then one positive integer
 `D` makes all the coefficients `D aₙ(f)` algebraic integers. -/
-theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢 k)
-    {S : Set (CuspForm 𝒢 k)}
+theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : ModularForm 𝒢 k)
+    {S : Set (ModularForm 𝒢 k)}
     (hS : ∀ g ∈ S, ∀ n, IsIntegral ℤ ((qExpansion 𝒢.strictWidthInfty g).coeff n))
     (hfS : f ∈ Submodule.span ℂ S)
     (hf : ∀ n, IsAlgebraic ℚ ((qExpansion 𝒢.strictWidthInfty f).coeff n)) :
@@ -85,29 +85,26 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢
   let A := algebraicClosure ℚ ℂ
   have : Algebra.IsAlgebraic ℤ ℚ := IsLocalization.isAlgebraic ℚ (nonZeroDivisors ℤ)
   -- the `q`-expansion coefficients, and those up to the Sturm bound, as linear maps
-  let Q (n : ℕ) : CuspForm 𝒢 k →ₗ[ℂ] ℂ := qExpansionCoeffₗ
-    TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods k n
-  have hQ (n : ℕ) (F : CuspForm 𝒢 k) : Q n F = (qExpansion h F).coeff n :=
-    qExpansionCoeffₗ_apply _ _ n F
-  let T : CuspForm 𝒢 k →ₗ[ℂ] Fin (ModularForm.sturmLength 𝒢 k) → ℂ :=
-    ModularForm.sturmCoeffsₗ k ∘ₗ toModularFormₗ
-  have hT (F : CuspForm 𝒢 k) (i : Fin (ModularForm.sturmLength 𝒢 k)) :
-      T F i = (qExpansion h F).coeff i := by
-    rw [LinearMap.comp_apply, ModularForm.sturmCoeffsₗ_apply]
-    exact congrArg (fun g ↦ (qExpansion h g).coeff i) (funext (toModularFormₗ_apply F))
-  have hT_inj {F G : CuspForm 𝒢 k} (hFG : T F = T G) : F = G :=
-    toModularFormₗ_injective (ModularForm.sturmCoeffsₗ_injective hFG)
+  let Q (n : ℕ) : ModularForm 𝒢 k →ₗ[ℂ] ℂ := (PowerSeries.coeff n).comp
+    (TauCeti.ModularForm.qExpansionLinearMap
+      TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex
+      𝒢.strictWidthInfty_mem_strictPeriods k)
+  have hQ (n : ℕ) (F : ModularForm 𝒢 k) : Q n F = (qExpansion h F).coeff n := by
+    simp [Q, h]
+  let T : ModularForm 𝒢 k →ₗ[ℂ] Fin (ModularForm.sturmLength 𝒢 k) → ℂ :=
+    sturmCoeffsₗ k
   -- the truncated expansion of `f` is an algebraic combination of those of the spanning forms
   have hA {x : ℂ} (hx : IsAlgebraic ℚ x) : x ∈ (algebraMap A ℂ).range :=
     ⟨⟨x, mem_algebraicClosure_iff.mpr hx⟩, rfl⟩
   have hTf : T f ∈ Submodule.span A (T '' S) := by
-    refine mem_span_of_mem_span_of_forall_apply_mem_range ?_ (fun i ↦ hT f i ▸ hA (hf i))
+    refine mem_span_of_mem_span_of_forall_apply_mem_range ?_
+      (fun i ↦ sturmCoeffsₗ_apply f i ▸ hA (hf i))
       (Submodule.apply_mem_span_image_of_mem_span T hfS)
     rintro _ ⟨g, hg, rfl⟩ i
-    exact hT g i ▸ hA (hS g hg i).tower_top.isAlgebraic
+    exact sturmCoeffsₗ_apply g i ▸ hA (hS g hg i).tower_top.isAlgebraic
   -- along the combination, denominators are cleared by the product of finitely many
   -- denominators of algebraic numbers
-  have key : ∀ v ∈ Submodule.span A (T '' S), ∃ F : CuspForm 𝒢 k, T F = v ∧
+  have key : ∀ v ∈ Submodule.span A (T '' S), ∃ F : ModularForm 𝒢 k, T F = v ∧
       ∃ D : ℕ, D ≠ 0 ∧ ∀ n, IsIntegral ℤ (D • (qExpansion h F).coeff n) := by
     intro v hv
     induction hv using Submodule.span_induction with
@@ -138,9 +135,13 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢
       rw [← hQ, map_smul, hQ, smul_eq_mul, ← smul_mul_smul_comm]
       exact (Algebra.isIntegral_natDenominator_smul _).mul (hF n)
   obtain ⟨F, hF, D, hD, hint⟩ := key _ hTf
-  exact ⟨D, hD, hT_inj hF ▸ hint⟩
+  exact ⟨D, hD, sturmCoeffsₗ_injective hF ▸ hint⟩
 
 end Span
+
+end ModularForm
+
+namespace CuspForm
 
 section Gamma1
 
@@ -153,11 +154,14 @@ private theorem exists_integral_multiple_qExpansion_coeff_of_two_le (hk : 2 ≤ 
     (hf : ∀ n, IsAlgebraic ℚ ((qExpansion 1 f).coeff n)) :
     ∃ D : ℕ, D ≠ 0 ∧ ∀ n, IsIntegral ℤ (D • (qExpansion 1 f).coeff n) := by
   have hw : ((Gamma1 N).map (mapGL ℝ)).strictWidthInfty = 1 := strictWidthInfty_Gamma1 N
+  have hcoe (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) : ⇑(toModularFormₗ g) = g :=
+    funext (toModularFormₗ_apply g)
   rw [← hw] at hf ⊢
-  refine exists_integral_multiple_qExpansion_coeff_of_mem_span f ?_
-    ((HeckeRing.GL2.Newform.span_levelRaise_eq_top N k).symm ▸ Submodule.mem_top) hf
-  rintro _ ⟨M, d, _, _, h, g, rfl⟩ n
-  rw [hw, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
+  refine ModularForm.exists_integral_multiple_qExpansion_coeff_of_mem_span (toModularFormₗ f) ?_
+    (Submodule.apply_mem_span_image_of_mem_span toModularFormₗ
+      ((HeckeRing.GL2.Newform.span_levelRaise_eq_top N k).symm ▸ Submodule.mem_top)) hf
+  rintro _ ⟨_, ⟨M, d, _, _, h, g, rfl⟩, rfl⟩ n
+  rw [hcoe, hw, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
     (one_mem_strictPeriods_Gamma1_map N)]
   split_ifs
   · exact g.isIntegral_qExpansion_coeff hk _
@@ -227,8 +231,8 @@ theorem exists_nsmul_qExpansion_coeff_eq_intCast (f : CuspForm ((Gamma1 N).map (
     simpa [hr] using hint n
   obtain ⟨z, hz⟩ := IsIntegrallyClosed.isIntegral_iff.mp hDr
   refine ⟨z, ?_⟩
-  rw [hr, ← Rat.cast_intCast, ← eq_intCast (algebraMap ℤ ℚ), hz, nsmul_eq_mul, nsmul_eq_mul,
-    Rat.cast_mul, Rat.cast_natCast]
+  rw [hr]
+  simpa [nsmul_eq_mul] using congrArg (fun x : ℚ ↦ (x : ℂ)) hz.symm
 
 end Gamma1
 

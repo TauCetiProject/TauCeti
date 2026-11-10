@@ -96,6 +96,19 @@ on `𝒢`: one more than the Sturm bound `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ] / 12
 def sturmLength : ℕ :=
   (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1
 
+omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
+variable (𝒢 k) in
+/-- The Sturm truncation length is one more than the Sturm bound. -/
+theorem sturmLength_def :
+    sturmLength 𝒢 k = (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1 := by
+  rfl
+
+omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
+/-- The indices below the Sturm truncation length are exactly those up to the Sturm bound. -/
+theorem lt_sturmLength_iff {i : ℕ} :
+    i < sturmLength 𝒢 k ↔ i ≤ (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 := by
+  rw [sturmLength_def, Nat.lt_succ_iff]
+
 /-- **Modular forms agreeing below `sturmLength` are equal**: `ModularForm.eq_of_sturm_bound`
 with the bound phrased through `ModularForm.sturmLength`. -/
 theorem eq_of_coeff_eq_of_lt_sturmLength [DiscreteTopology 𝒢.strictPeriods]
