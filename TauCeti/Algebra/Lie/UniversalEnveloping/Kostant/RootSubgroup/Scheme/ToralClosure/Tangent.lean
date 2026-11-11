@@ -94,9 +94,7 @@ theorem kostantRootGeneratorIntMatrix_eq_zero_of_weight_ne (i : I) {α : κ → 
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) {r s : η}
     (hrs : wt r - wt s ≠ α) :
     kostantRootGeneratorIntMatrix e h ρ M hM i b r s = 0 := by
-  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply]
-  refine Eq.trans (congrArg (fun m : M => b.repr m r)
-    (Subtype.ext (coe_kostantRootOperator_apply e h ρ M hM i (b s))).symm) ?_
+  rw [kostantRootGeneratorIntMatrix_apply]
   exact repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
     (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt s))
     fun hr ↦ hrs (sub_eq_iff_eq_add'.mpr hr)
