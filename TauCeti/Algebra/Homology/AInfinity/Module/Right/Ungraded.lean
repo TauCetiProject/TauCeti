@@ -134,9 +134,20 @@ theorem ungradedStasheffComp_def (n : ℕ) (a : Fin n → A) (m : M) :
         (act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) :=
   (rfl)
 
+end Stasheff
+
+/-! The differential and product terms make sense for a family of multilinear maps with values in
+`M →ₗ[R] N`; for `N = M` they are those of the `A∞` relations of a module, and for a second module
+`N` those of the relations of a morphism (`TauCeti.UngradedAInfinityRightModuleHom`). -/
+
+section StasheffTerms
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+  (act : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] N))
+
 /-- The **differential terms** of the `A∞` relation of length `n`:
 `∑_l m_{n+1}(m, a₁, …, d aₗ, …, aₙ)`. -/
-noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : M :=
+noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : N :=
   ∑ l : Fin n, act n (Function.update a l (d (a l))) m
 
 theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
@@ -145,7 +156,7 @@ theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A)
 
 /-- The **product terms** of the `A∞` relation of length `n`:
 `∑_l m_n(m, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over the `n - 1` adjacent pairs. -/
-noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → M → M
+noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → M → N
   | 0, _, _ => 0
   | n + 1, a, m => ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m
 
@@ -158,7 +169,7 @@ theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
       ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m :=
   (rfl)
 
-end Stasheff
+end StasheffTerms
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation
 `act n` is `m_{n+1} : M ⊗ A^{⊗ n} → M`, multilinear in the algebra inputs and linear in the module
