@@ -70,43 +70,32 @@ variable {n : ℕ}
 
 /-! ### A unitary matrix with prescribed first column -/
 
-/-- The coordinates of the unit representative `w / ‖w‖` of an affine point. -/
-private theorem affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) (i : Fin (n + 1)) :
-    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) i =
-      (‖affineVector k z‖⁻¹ : ℝ) * affineVector k z i := by
-  rw [coe_affineUnitVector_apply]
-  simp [Complex.real_smul]
-
-/-- The coordinate `k` of the unit representative of an affine point of the chart `X_k ≠ 0` is
-the positive real number `1 / ‖w‖`. -/
-private theorem affineUnitVector_apply_self (k : Fin (n + 1)) (z : Fin n → ℂ) :
-    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) k = (‖affineVector k z‖⁻¹ : ℝ) := by
-  rw [affineUnitVector_apply, affineVector_apply_self, mul_one]
+/-- The axis `e_k + y` of the second reflection, for the unit representative
+`y = affineUnitVector k z`. -/
+private def reflectionAxis (k : Fin (n + 1)) (z : Fin n → ℂ) : Fin (n + 1) → ℂ :=
+  Pi.single k 1 + (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp
 
 /-- The unitary matrix with first column the unit representative `y = affineUnitVector k z`: the
 permutation matrix exchanging `e₀` and `e_k`, followed by the reflection in `e_k` and the
 reflection in `e_k + y`. -/
 private def sectionMatrix (k : Fin (n + 1)) (z : Fin n → ℂ) :
     Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ :=
-  let u : Fin (n + 1) → ℂ :=
-    Pi.single k 1 + (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp
-  (1 - (1 + ‖affineVector k z‖⁻¹)⁻¹ • vecMulVec u (star u)) *
+  (1 - (1 + ‖affineVector k z‖⁻¹)⁻¹ •
+      vecMulVec (reflectionAxis k z) (star (reflectionAxis k z))) *
     (1 - (2 : ℝ) • vecMulVec (Pi.single k (1 : ℂ)) (star (Pi.single k 1))) *
     (Equiv.swap 0 k).permMatrix ℂ
 
 /-- The Hermitian square of `e_k + y`, for the unit representative `y`, is `2 + 2 y_k`. -/
-private theorem star_dotProduct_self_single_add_affineUnitVector (k : Fin (n + 1))
-    (z : Fin n → ℂ) :
-    let u : Fin (n + 1) → ℂ :=
-      Pi.single k 1 + (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp
-    star u ⬝ᵥ u = algebraMap ℝ ℂ (2 + 2 * ‖affineVector k z‖⁻¹) := by
+private theorem star_reflectionAxis_dotProduct_self (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    star (reflectionAxis k z) ⬝ᵥ reflectionAxis k z =
+      algebraMap ℝ ℂ (2 + 2 * ‖affineVector k z‖⁻¹) := by
   -- The unit representative `y` has Hermitian square `⟪y, y⟫ = ‖y‖² = 1`.
   have hy : star (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp ⬝ᵥ
       (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp = 1 := by
     rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K,
       mem_sphere_zero_iff_norm.1 (affineUnitVector k z).2]
     simp
-  simp only [star_add, add_dotProduct, dotProduct_add, hy, Pi.star_single, star_one,
+  simp only [reflectionAxis, star_add, add_dotProduct, dotProduct_add, hy, Pi.star_single, star_one,
     single_dotProduct, dotProduct_single, Pi.add_apply, Pi.star_apply, Pi.single_eq_same,
     affineUnitVector_apply_self, Complex.star_def, Complex.conj_ofReal, one_mul, mul_one,
     Complex.coe_algebraMap]
@@ -121,8 +110,9 @@ private theorem sectionMatrix_mem_unitaryGroup (k : Fin (n + 1)) (z : Fin n → 
     field_simp
   have he : star (Pi.single k (1 : ℂ)) ⬝ᵥ Pi.single k 1 = algebraMap ℝ ℂ 1 := by
     simp [Pi.star_single]
+  rw [sectionMatrix]
   exact mul_mem (mul_mem
-    (one_sub_smul_vecMulVec_mem_unitary (star_dotProduct_self_single_add_affineUnitVector k z) hc)
+    (one_sub_smul_vecMulVec_mem_unitary (star_reflectionAxis_dotProduct_self k z) hc)
     (one_sub_smul_vecMulVec_mem_unitary he (by norm_num)))
     (permMatrix_mem_unitaryGroup _)
 
@@ -149,15 +139,19 @@ private theorem sectionMatrix_mulVec_single_zero (k : Fin (n + 1)) (z : Fin n �
     module
   -- The reflection in `e_k + y` sends `e_k` to `-y`, since the Hermitian product of `e_k + y`
   -- with `e_k` is `1 + r`.
-  have hU : (1 - (1 + r)⁻¹ • vecMulVec (Pi.single k 1 + y) (star (Pi.single k 1 + y))) *ᵥ
+  have hU : (1 - (1 + r)⁻¹ • vecMulVec (reflectionAxis k z) (star (reflectionAxis k z))) *ᵥ
       Pi.single k 1 = -y := by
-    rw [sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, dotProduct_single,
-      op_smul_eq_smul, mul_one]
+    -- The only computation: `(1 + r)⁻¹ (1 + r) = 1`.
+    have hc : (1 + r)⁻¹ • (1 + (r : ℂ)) = 1 := by
+      have : (1 + (r : ℂ)) ≠ 0 := by exact_mod_cast (by linarith : (0 : ℝ) < 1 + r).ne'
+      rw [Complex.real_smul]
+      push_cast
+      field_simp
+    rw [show reflectionAxis k z = Pi.single k 1 + y from rfl, sub_mulVec, one_mulVec, smul_mulVec,
+      vecMulVec_mulVec, dotProduct_single, op_smul_eq_smul, mul_one]
     simp only [Pi.star_apply, Pi.add_apply, Pi.single_eq_same, hyk, star_add, star_one,
       Complex.star_def, Complex.conj_ofReal]
-    rw [show ((1 : ℂ) + (r : ℂ)) = ((1 + r : ℝ) : ℂ) by push_cast; ring, ← Complex.coe_smul,
-      smul_smul, ← Complex.ofReal_mul,
-      inv_mul_cancel₀ (ne_of_gt (by linarith : (0 : ℝ) < 1 + r)), Complex.ofReal_one, one_smul]
+    rw [← smul_assoc, hc, one_smul]
     abel
   rw [sectionMatrix, ← mulVec_mulVec, ← mulVec_mulVec, hP, hE, mulVec_neg, hU, neg_neg]
 
@@ -172,11 +166,11 @@ private theorem continuous_sectionUnitary (k : Fin (n + 1)) :
   have hc : Continuous fun z ↦ (1 + ‖affineVector (n := n) k z‖⁻¹)⁻¹ :=
     (continuous_const.add hn).inv₀ fun z ↦
       (add_pos_of_pos_of_nonneg one_pos (inv_nonneg.2 (norm_nonneg _))).ne'
-  have hu : Continuous fun z ↦ (Pi.single k 1 +
-      (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp : Fin (n + 1) → ℂ) :=
+  have hu : Continuous (reflectionAxis (n := n) k) :=
     continuous_const.add ((PiLp.continuous_ofLp 2 _).comp
       (continuous_subtype_val.comp (affineUnitVector k).continuous))
   refine Continuous.subtype_mk ?_ _
+  unfold sectionMatrix
   exact ((continuous_const.sub (hc.smul (hu.matrix_vecMulVec hu.star))).matrix_mul
     continuous_const).matrix_mul continuous_const
 
@@ -239,6 +233,7 @@ theorem unitaryTrivialization_baseSet (k : Fin (n + 1)) :
 
 /-- Over `X_k ≠ 0`, the fibre coordinate of `A` is `s(A • [e₀])⁻¹ A` for the local section
 `s`. -/
+@[simp]
 theorem unitaryTrivialization_fiberCoordinate {k : Fin (n + 1)}
     {A : unitaryGroup (Fin (n + 1)) ℂ} (hA : A • basePoint n ∈ affineOpen k) :
     ((unitaryTrivialization n k A).2 : unitaryGroup (Fin (n + 1)) ℂ) =

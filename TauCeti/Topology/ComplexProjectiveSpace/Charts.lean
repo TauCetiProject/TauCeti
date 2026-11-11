@@ -140,6 +140,20 @@ theorem coe_affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
       ‖affineVector k z‖⁻¹ • affineVector k z := by
   rw [affineUnitVector, coe_normalizeToSphere_apply, NormedSpace.normalize]
 
+/-- The coordinates of the unit representative `w / ‖w‖` of an affine point. -/
+theorem affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) (i : Fin (n + 1)) :
+    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) i =
+      (‖affineVector k z‖⁻¹ : ℝ) * affineVector k z i := by
+  rw [coe_affineUnitVector_apply]
+  simp [Complex.real_smul]
+
+/-- The coordinate `k` of the unit representative of an affine point of the chart `X_k ≠ 0` is
+the positive real number `1 / ‖w‖`. -/
+@[simp]
+theorem affineUnitVector_apply_self (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) k = (‖affineVector k z‖⁻¹ : ℝ) := by
+  rw [affineUnitVector_apply, affineVector_apply_self, mul_one]
+
 /-- The projective point whose `k`th coordinate is one and whose remaining coordinates are `z`.
 The representative is normalized only to meet the unit-sphere carrier. -/
 def affineParam (k : Fin (n + 1)) (z : Fin n → ℂ) : ComplexProjectiveSpace n :=
