@@ -92,12 +92,14 @@ theorem suspensionCover_deck (j k : ℤ) (p : (ℝ × ℝ) × M) :
   (suspensionCover_eq_suspensionCover_iff φ).2 ⟨j, k, rfl⟩
 
 /-- The covering map is invariant under the deck transformation `((s, t), x) ↦ ((s + 1, t), x)`. -/
+@[simp]
 theorem suspensionCover_add_one_zero (p : (ℝ × ℝ) × M) :
     suspensionCover φ (p.1 + (1, 0), p.2) = suspensionCover φ p := by
   simpa using suspensionCover_deck φ 1 0 p
 
 /-- The covering map is invariant under the deck transformation
 `((s, t), x) ↦ ((s, t + 1), φ⁻¹ x)` of the seam identity. -/
+@[simp]
 theorem suspensionCover_add_zero_one_symm (p : (ℝ × ℝ) × M) :
     suspensionCover φ (p.1 + (0, 1), φ.symm p.2) = suspensionCover φ p := by
   obtain ⟨⟨s, t⟩, x⟩ := p

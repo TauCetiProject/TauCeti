@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.SeamFamily
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Extension
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -35,18 +36,22 @@ these properties everywhere, equal to `L_l` over `A` and to `K_l` outside `U`
 equals `K_l` at every point where `L_l` already does; with the seam-family background, this keeps
 the fixed time-end collar `|t| ≤ 1/3` wherever the prescription already has it.
 
-The construction cuts `L` off against `K` in the Cayley chart of `K`, with weight `ρ(q p)` for a
-smooth cutoff `ρ : X_φ → [0, 1]` equal to one on `A` and with topological support in `U`. The
-weight is a function on `X_φ` pulled back along `q`, so it takes the same value at a point and at
-its deck translates. In operator coordinates the interpolated structure is the rational
-expression `TauCeti.cayleyPathFormula (ρ (q p)) (K_l p) (L_l p)`. Conjugation by the differential
-of `φ⁻¹` is an algebra isomorphism, so it commutes with this expression
-(`TauCeti.map_cayleyPathFormula`), and the seam identity of both endpoints gives that of the
-interpolation. Compatibility comes from the convexity of the compatible Cayley ball
-(`TauCeti.SymplecticForm.Compatible.compatible_cayleyInterp`), and joint smoothness from the
-smoothness of the Cayley path expression in the tangent endomorphism bundle
-(`ContMDiffAt.cayleyPathFormula_hom_bundle`). The smooth Urysohn function on `X_φ` exists because
-`X_φ` is Hausdorff, and σ-compact when `M` is.
+The construction adapts the single-manifold relative extension of
+`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Extension`
+(`TauCeti.SmoothTwoForm.Compatible.exists_compatible_eq_of_cutoff` and
+`TauCeti.SmoothTwoForm.Compatible.exists_compatible_eqOn`) to parametrized, deck-compatible
+families on the cover. It cuts `L` off against `K` in the Cayley chart of `K`
+(`TauCeti.cayleyCutoff`, read along `(l, p) ↦ p.2` on `Λ × ((ℝ × ℝ) × M)`), with weight
+`ρ(q p)` for a smooth cutoff `ρ : X_φ → [0, 1]` equal to one on `A` and with topological support
+in `U`. The weight is a function on `X_φ` pulled back along `q`, so it takes the same value at a
+point and at its deck translates. In operator coordinates the interpolated structure is the
+rational expression `TauCeti.cayleyPathFormula (ρ (q p)) (K_l p) (L_l p)`. Conjugation by the
+differential of `φ⁻¹` is an algebra isomorphism
+(`Diffeomorph.conjContinuousAlgEquiv_mfderivToContinuousLinearEquiv`), so it commutes with this
+expression (`TauCeti.map_cayleyPathFormula`), and the seam identity of both endpoints gives that
+of the interpolation. Compatibility and joint smoothness come from `TauCeti.compatible_cayleyCutoff`
+and `TauCeti.contMDiff_cayleyCutoff`. The smooth Urysohn function on `X_φ` exists because `X_φ` is
+Hausdorff, and σ-compact when `M` is.
 
 The descended block structures `J_l` on `X_φ` are jointly smooth in `(l, y)`, compatible with `Ω`,
 send `∂_s` to the suspension vector field `T`, act through `L_l` over `A` and agree with the
@@ -94,60 +99,23 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### The cut-off family -/
 
-open Classical in
 /-- The family that, at a point `p` over `U`, interpolates from `K l p` towards `L l p` with the
-weight `ρ (q p)` in the Cayley chart of `K l p`, and equals `K l p` at the points not over `U`. -/
+weight `ρ (q p)` in the Cayley chart of `K l p`, and equals `K l p` at the points not over `U`:
+the cut-off `TauCeti.cayleyCutoff` of the families read on `Λ × ((ℝ × ℝ) × M)`. -/
 private def spatialCutoff (l : Λ) (p : (ℝ × ℝ) × M) :
     AlmostComplexStructure (TangentSpace I p.2) :=
-  if hp : suspensionCover φ p ∈ U then
-    (hK l p).cayleyInterp (V := E) (hL l p hp) (hρ (suspensionCover φ p))
-  else K l p
-
-private theorem spatialCutoff_of_mem {l : Λ} {p : (ℝ × ℝ) × M} (hp : suspensionCover φ p ∈ U) :
-    spatialCutoff hσn hK L hL ρ hρ l p =
-      (hK l p).cayleyInterp (V := E) (hL l p hp) (hρ (suspensionCover φ p)) :=
-  dite_eq_left hp
+  cayleyCutoff (f := fun r : Λ × ((ℝ × ℝ) × M) ↦ r.2.2) (fun r ↦ hK r.1 r.2) (fun r ↦ L r.1 r.2)
+    (U := univ ×ˢ (suspensionCover φ ⁻¹' U)) (fun r hr ↦ hL r.1 r.2 hr.2)
+    (fun r ↦ ρ (suspensionCover φ r.2)) (fun r ↦ hρ (suspensionCover φ r.2)) (l, p)
 
 private theorem spatialCutoff_of_notMem {l : Λ} {p : (ℝ × ℝ) × M}
     (hp : suspensionCover φ p ∉ U) : spatialCutoff hσn hK L hL ρ hρ l p = K l p :=
-  dite_eq_right hp
+  cayleyCutoff_of_notMem _ _ _ _ _ fun h ↦ hp h.2
 
 private theorem compatible_spatialCutoff (l : Λ) (p : (ℝ × ℝ) × M) :
-    (hσn.symplecticFormAt p.2).Compatible (spatialCutoff hσn hK L hL ρ hρ l p) := by
-  by_cases hp : suspensionCover φ p ∈ U
-  · rw [spatialCutoff_of_mem hσn hK L hL ρ hρ hp]
-    exact (hK l p).compatible_cayleyInterp (V := E) (hL l p hp) _
-  · rw [spatialCutoff_of_notMem hσn hK L hL ρ hρ hp]
-    exact hK l p
-
-private theorem spatialCutoff_eq_background {l : Λ} {p : (ℝ × ℝ) × M}
-    (hp : ρ (suspensionCover φ p) = 0) : spatialCutoff hσn hK L hL ρ hρ l p = K l p := by
-  by_cases hpU : suspensionCover φ p ∈ U
-  · rw [spatialCutoff_of_mem hσn hK L hL ρ hρ hpU]
-    simp only [hp]
-    exact (hK l p).cayleyInterp_zero (V := E) (hL l p hpU)
-  · exact spatialCutoff_of_notMem hσn hK L hL ρ hρ hpU
-
-private theorem spatialCutoff_eq_local {l : Λ} {p : (ℝ × ℝ) × M} (hpU : suspensionCover φ p ∈ U)
-    (hp : ρ (suspensionCover φ p) = 1) : spatialCutoff hσn hK L hL ρ hρ l p = L l p := by
-  rw [spatialCutoff_of_mem hσn hK L hL ρ hρ hpU]
-  simp only [hp]
-  exact (hK l p).cayleyInterp_one (V := E) (hL l p hpU)
-
-/-- Where the prescribed structure equals the background one, the cut-off family does too: the
-Cayley coordinate of a structure relative to itself is zero. -/
-private theorem spatialCutoff_eq_of_eq {l : Λ} {p : (ℝ × ℝ) × M} (h : L l p = K l p) :
-    spatialCutoff hσn hK L hL ρ hρ l p = K l p := by
-  by_cases hp : suspensionCover φ p ∈ U
-  · rw [spatialCutoff_of_mem hσn hK L hL ρ hρ hp]
-    refine (hK l p).eq_of_cayley_eq
-      ((hK l p).compatible_cayleyInterp (V := E) (hL l p hp) _).tames (hK l p).tames
-      (((hK l p).cayley_cayleyInterp (V := E) (hL l p hp) _).trans ?_)
-    rw [h]
-    exact (congrArg (ρ (suspensionCover φ p) • ·)
-      (AlmostComplexStructure.cayley_self (V := E) _)).trans
-      ((smul_zero _).trans (AlmostComplexStructure.cayley_self _).symm)
-  · exact spatialCutoff_of_notMem hσn hK L hL ρ hρ hp
+    (hσn.symplecticFormAt p.2).Compatible (spatialCutoff hσn hK L hL ρ hρ l p) :=
+  compatible_cayleyCutoff (fun r ↦ hK r.1 r.2) (fun r ↦ L r.1 r.2)
+    (fun r (hr : r ∈ univ ×ˢ (suspensionCover φ ⁻¹' U)) ↦ hL r.1 r.2 hr.2) _ _ (l, p)
 
 /-- Over `U`, the cut-off family is the Cayley path expression in `K l p` and `L l p` with weight
 `ρ (q p)`. -/
@@ -155,10 +123,8 @@ private theorem spatialCutoff_formula {l : Λ} {p : (ℝ × ℝ) × M} (hp : sus
     LinearMap.toContinuousLinearMap (spatialCutoff hσn hK L hL ρ hρ l p).toLinearMap =
       cayleyPathFormula (ρ (suspensionCover φ p))
         (LinearMap.toContinuousLinearMap (K l p).toLinearMap)
-        (LinearMap.toContinuousLinearMap (L l p).toLinearMap) := by
-  rw [spatialCutoff_of_mem hσn hK L hL ρ hρ hp]
-  exact (hK l p).toContinuousLinearMap_cayleyInterp (V := E) (hL l p hp) _
-    (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
+        (LinearMap.toContinuousLinearMap (L l p).toLinearMap) :=
+  toContinuousLinearMap_cayleyCutoff _ _ _ _ _ (p := (l, p)) ⟨mem_univ l, hp⟩
 
 /-- The cut-off family is periodic in `s` when the background and the prescribed families are. -/
 private theorem spatialCutoff_add_fst (hKs : ∀ l p, K l (p.1 + (1, 0), p.2) = K l p)
@@ -173,27 +139,6 @@ private theorem spatialCutoff_add_fst (hKs : ∀ l p, K l (p.1 + (1, 0), p.2) = 
     exact AlmostComplexStructure.toLinearMap_injective (LinearMap.toContinuousLinearMap.injective h)
   · rw [spatialCutoff_of_notMem hσn hK L hL ρ hρ (hq ▸ hp),
       spatialCutoff_of_notMem hσn hK L hL ρ hρ hp, hKs]
-
-omit [IsManifold I ∞ M] in
-/-- If `dφ⁻¹ ∘ J = J' ∘ dφ⁻¹` at `x`, then `J'` is the conjugate of `J` by the differential of
-`φ⁻¹` at `x`. -/
-private theorem conjContinuousAlgEquiv_eq_of_mfderiv_symm {x : M}
-    {J : AlmostComplexStructure (TangentSpace I x)}
-    {J' : AlmostComplexStructure (TangentSpace I (φ.symm x))}
-    (h : ∀ v, mfderiv I I φ.symm x (J v) = J' (mfderiv I I φ.symm x v)) :
-    (φ.symm.mfderivToContinuousLinearEquiv (by simp) x).conjContinuousAlgEquiv
-        (LinearMap.toContinuousLinearMap J.toLinearMap) =
-      LinearMap.toContinuousLinearMap J'.toLinearMap := by
-  ext w
-  set g := φ.symm.mfderivToContinuousLinearEquiv (by simp) x
-  have hg : ∀ v, g v = mfderiv I I φ.symm x v := fun v ↦
-    congrArg (· v) (φ.symm.mfderivToContinuousLinearEquiv_coe (x := x) (by simp))
-  have h' := h (g.symm w)
-  rw [← hg, ← hg, ContinuousLinearEquiv.apply_symm_apply] at h'
-  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-    LinearMap.coe_toContinuousLinearMap', LinearMap.coe_toContinuousLinearMap']
-  -- An almost complex structure acts on vectors through its underlying linear map.
-  exact h'
 
 /-- The cut-off family satisfies the seam identity when the background and the prescribed
 families do. -/
@@ -221,8 +166,8 @@ private theorem mfderiv_symm_spatialCutoff
           (spatialCutoff hσn hK L hL ρ hρ l (p.1 + (0, 1), φ.symm p.2)).toLinearMap := by
       rw [spatialCutoff_formula hσn hK L hL ρ hρ hp,
         spatialCutoff_formula hσn hK L hL ρ hρ (hq ▸ hp), hq, map_cayleyPathFormula,
-        conjContinuousAlgEquiv_eq_of_mfderiv_symm (hKt l p),
-        conjContinuousAlgEquiv_eq_of_mfderiv_symm (hLt l p hp)]
+        φ.symm.conjContinuousAlgEquiv_mfderivToContinuousLinearEquiv _ (hKt l p),
+        φ.symm.conjContinuousAlgEquiv_mfderivToContinuousLinearEquiv _ (hLt l p hp)]
     have h := congrArg (· (g v)) hconj
     simp only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
       ContinuousLinearEquiv.symm_apply_apply, LinearMap.coe_toContinuousLinearMap'] at h
@@ -236,54 +181,6 @@ private theorem mfderiv_symm_spatialCutoff
 variable [T2Space M] [LocallyCompactSpace M]
   {EΛ HΛ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
   {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
-
-/-- The cut-off family is jointly smooth in the parameter and the point when the background family
-is, the prescribed family is jointly smooth over `q⁻¹ U`, and the cutoff is smooth with
-topological support in `U`. -/
-private theorem contMDiff_spatialCutoff
-    (hKs : ContMDiff (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        r.2.2 (K r.1 r.2).toLinearMap.toContinuousLinearMap))
-    (hU : IsOpen U)
-    (hLs : ContMDiffOn (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        r.2.2 (L r.1 r.2).toLinearMap.toContinuousLinearMap) (univ ×ˢ (suspensionCover φ ⁻¹' U)))
-    (hsρ : ContMDiff (𝓘(ℝ).prod (𝓘(ℝ).prod I)) 𝓘(ℝ) ∞ ρ) (hsupp : tsupport ρ ⊆ U) :
-    ContMDiff (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        r.2.2 (spatialCutoff hσn hK L hL ρ hρ r.1 r.2).toLinearMap.toContinuousLinearMap) := by
-  have hq := (isLocalDiffeomorph_suspensionCover φ).contMDiff
-  rintro ⟨l₀, p₀⟩
-  by_cases hp₀ : suspensionCover φ p₀ ∈ U
-  · have hUr : univ ×ˢ (suspensionCover φ ⁻¹' U) ∈ 𝓝 (l₀, p₀) :=
-      prod_mem_nhds Filter.univ_mem (hq.continuous.continuousAt.preimage_mem_nhds
-        (hU.mem_nhds hp₀))
-    have hs := ContMDiffAt.cayleyPathFormula_hom_bundle (contMDiffAt_snd.comp _ contMDiffAt_snd)
-      ((hsρ.comp (hq.comp contMDiff_snd)) (l₀, p₀)) (hKs (l₀, p₀))
-      ((hLs (l₀, p₀) ⟨mem_univ _, hp₀⟩).contMDiffAt hUr)
-      (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E) (hK l₀ p₀).tames
-        (hL l₀ p₀ hp₀).tames (LinearMap.coe_toContinuousLinearMap _)
-        (LinearMap.coe_toContinuousLinearMap _))
-      (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E) (hK l₀ p₀)
-        (hL l₀ p₀ hp₀).tames
-        (by simpa only [Function.comp_apply, abs_of_nonneg (hρ _).1] using
-          (hρ (suspensionCover φ p₀)).2)
-        (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _))
-    refine hs.congr_of_eventuallyEq ?_
-    filter_upwards [hUr] with r hr
-    exact congrArg (fun B : E →L[ℝ] E ↦ TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) r.2.2 B)
-      (spatialCutoff_formula hσn hK L hL ρ hρ hr.2)
-  · -- Near a point not over `U` the cutoff vanishes, so the family is the background family.
-    have hz : ∀ᶠ r : Λ × ((ℝ × ℝ) × M) in 𝓝 (l₀, p₀), ρ (suspensionCover φ r.2) = 0 :=
-      (hq.continuous.comp continuous_snd).continuousAt.eventually
-        (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hp₀ (hsupp h))
-    refine (hKs (l₀, p₀)).congr_of_eventuallyEq ?_
-    filter_upwards [hz] with r hr
-    rw [spatialCutoff_eq_background hσn hK L hL ρ hρ hr]
 
 /-! ### Relative parametrized vertical families -/
 
@@ -328,15 +225,19 @@ theorem exists_verticalFamily_family_eq_of_spatialCutoff
       (∀ l p, ρ (suspensionCover φ p) = 1 → K' l p = L l p) ∧
       (∀ l p, ρ (suspensionCover φ p) = 0 → K' l p = K l p) ∧
       (∀ l p, L l p = K l p → K' l p = K l p) := by
+  have hq := (isLocalDiffeomorph_suspensionCover φ).contMDiff
   refine ⟨spatialCutoff hσn hK L hL ρ hρ,
-    contMDiff_spatialCutoff hσn hK L hL ρ hρ hKs hU hLs hsρ hsupp,
+    contMDiff_cayleyCutoff _ _ _ _ _ (contMDiff_snd.comp contMDiff_snd) hKs
+      (isOpen_univ.prod (hU.preimage hq.continuous)) hLs (hsρ.comp (hq.comp contMDiff_snd))
+      fun r hr ↦ ⟨mem_univ _,
+        hsupp (tsupport_comp_subset_preimage ρ (hq.continuous.comp continuous_snd) hr)⟩,
     spatialCutoff_add_fst hσn hK L hL ρ hρ hKp hLp,
     mfderiv_symm_spatialCutoff hσn hK L hL ρ hρ hKt hLt,
     compatible_spatialCutoff hσn hK L hL ρ hρ, fun l p hp ↦ ?_,
-    fun l p hp ↦ spatialCutoff_eq_background hσn hK L hL ρ hρ hp,
-    fun l p h ↦ spatialCutoff_eq_of_eq hσn hK L hL ρ hρ h⟩
+    fun l p hp ↦ cayleyCutoff_of_eq_zero _ _ _ _ _ (p := (l, p)) hp,
+    fun l p h ↦ cayleyCutoff_of_eq _ _ _ _ _ (p := (l, p)) h⟩
   have hpU : suspensionCover φ p ∈ U := hsupp (subset_tsupport ρ (by simp [mem_support, hp]))
-  exact spatialCutoff_eq_local hσn hK L hL ρ hρ hpU hp
+  exact cayleyCutoff_of_eq_one _ _ _ _ _ (p := (l, p)) ⟨mem_univ l, hpU⟩ hp
 
 omit hρ
 
@@ -508,14 +409,7 @@ theorem exists_compatible_suspensionForm_family_eq_of_mem
     rw [suspensionCover_apply, SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
       SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
     ext w
-    obtain ⟨a, b, v, rfl⟩ : ∃ (a b : ℝ) (v : TangentSpace I x),
-        w = (Manifold.tangentSpaceProdEquiv _).symm
-          (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) := by
-      obtain ⟨b, v, hw⟩ := exists_mfderiv_uncurry_mk_eq φ t x
-        (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) _ w).2
-      exact ⟨(Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) _ w).1, b, v,
-        by rw [hw, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply]⟩
+    obtain ⟨a, b, v, rfl⟩ := exists_eq_symm_tangentSpaceProdEquiv (s : UnitAddCircle) t x w
     exact key a b v
   · have hK : L l ((s, t), x) = seamFamily hσ (hK₀ l) ((s, t), x) := by
       rw [hLK, seamFamily_eq_of_mem_Icc hσ (hK₀ l) ht]

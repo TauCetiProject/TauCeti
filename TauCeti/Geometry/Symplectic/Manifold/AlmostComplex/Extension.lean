@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -25,8 +25,13 @@ The coordinate smoothness argument uses the pointwise tangent-bundle Cayley form
 `TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath`, requiring regularity only
 on the open region where the local field is used.
 
+The cut-off itself is stated for families along an arbitrary map `f : P → M`, so that it also
+serves parametrized families and families on covering spaces.
+
 ## Main results
 
+* `TauCeti.cayleyCutoff`: the cut-off of a family `L` against a background family `K` along a
+  map `f : P → M`, with `TauCeti.contMDiff_cayleyCutoff` for its smoothness.
 * `TauCeti.SmoothTwoForm.Compatible.exists_compatible_eq_of_cutoff`: extend using a specified
   smooth cutoff with topological support in the prescribed open set.
 * `TauCeti.SmoothTwoForm.Compatible.exists_compatible_eqOn`: extend from an arbitrary closed
@@ -44,6 +49,131 @@ open Bundle Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+/-! ### Cutting off a family against a background in the Cayley chart -/
+
+section CayleyCutoff
+
+variable {E H M P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {f : P → M}
+  {K : ∀ p, AlmostComplexStructure (TangentSpace I (f p))}
+  (hK : ∀ p, (hσ.symplecticFormAt (f p)).Compatible (K p)) {U : Set P}
+  (L : ∀ p, AlmostComplexStructure (TangentSpace I (f p)))
+  (hL : ∀ p ∈ U, (hσ.symplecticFormAt (f p)).Compatible (L p))
+  (ρ : P → ℝ) (hρ : ∀ p, ρ p ∈ Icc 0 1)
+
+open Classical in
+/-- Given families `K` and `L` of structures on the tangent spaces `T_(f p) M` along a map
+`f : P → M`, with `K p` compatible everywhere and `L p` compatible on `U`, the family that at
+`p ∈ U` moves from `K p` towards `L p` with weight `ρ p` in the Cayley chart of `K p`, and equals
+`K p` off `U`. -/
+def cayleyCutoff (p : P) : AlmostComplexStructure (TangentSpace I (f p)) :=
+  if hp : p ∈ U then (hK p).cayleyInterp (V := E) (hL p hp) (hρ p) else K p
+
+/-- On `U`, the cut-off family is the Cayley interpolation from `K p` towards `L p`. -/
+theorem cayleyCutoff_of_mem {p : P} (hp : p ∈ U) :
+    cayleyCutoff hK L hL ρ hρ p = (hK p).cayleyInterp (V := E) (hL p hp) (hρ p) :=
+  dite_eq_left hp
+
+/-- Off `U`, the cut-off family is the background family. -/
+theorem cayleyCutoff_of_notMem {p : P} (hp : p ∉ U) : cayleyCutoff hK L hL ρ hρ p = K p :=
+  dite_eq_right hp
+
+/-- The cut-off family is compatible: the compatible Cayley ball is convex. -/
+theorem compatible_cayleyCutoff (p : P) :
+    (hσ.symplecticFormAt (f p)).Compatible (cayleyCutoff hK L hL ρ hρ p) := by
+  by_cases hp : p ∈ U
+  · rw [cayleyCutoff_of_mem hK L hL ρ hρ hp]
+    exact (hK p).compatible_cayleyInterp (V := E) (hL p hp) (hρ p)
+  · rw [cayleyCutoff_of_notMem hK L hL ρ hρ hp]
+    exact hK p
+
+/-- Where the weight vanishes, the cut-off family is the background family. -/
+theorem cayleyCutoff_of_eq_zero {p : P} (hp : ρ p = 0) : cayleyCutoff hK L hL ρ hρ p = K p := by
+  by_cases hpU : p ∈ U
+  · rw [cayleyCutoff_of_mem hK L hL ρ hρ hpU]
+    simp only [hp]
+    exact (hK p).cayleyInterp_zero (V := E) (hL p hpU)
+  · exact cayleyCutoff_of_notMem hK L hL ρ hρ hpU
+
+/-- Where the weight is one on `U`, the cut-off family is the prescribed family. -/
+theorem cayleyCutoff_of_eq_one {p : P} (hpU : p ∈ U) (hp : ρ p = 1) :
+    cayleyCutoff hK L hL ρ hρ p = L p := by
+  rw [cayleyCutoff_of_mem hK L hL ρ hρ hpU]
+  simp only [hp]
+  exact (hK p).cayleyInterp_one (V := E) (hL p hpU)
+
+/-- Where the prescribed structure equals the background one, the cut-off family does too: the
+Cayley coordinate of a structure relative to itself is zero. -/
+theorem cayleyCutoff_of_eq {p : P} (h : L p = K p) : cayleyCutoff hK L hL ρ hρ p = K p := by
+  by_cases hp : p ∈ U
+  · rw [cayleyCutoff_of_mem hK L hL ρ hρ hp]
+    refine (hK p).eq_of_cayley_eq
+      ((hK p).compatible_cayleyInterp (V := E) (hL p hp) _).tames (hK p).tames
+      (((hK p).cayley_cayleyInterp (V := E) (hL p hp) _).trans ?_)
+    rw [h]
+    exact (congrArg (ρ p • ·) (AlmostComplexStructure.cayley_self (V := E) _)).trans
+      ((smul_zero _).trans (AlmostComplexStructure.cayley_self _).symm)
+  · exact cayleyCutoff_of_notMem hK L hL ρ hρ hp
+
+/-- On `U`, the cut-off family is the Cayley path expression in `K p` and `L p` with weight
+`ρ p`. -/
+theorem toContinuousLinearMap_cayleyCutoff {p : P} (hp : p ∈ U) :
+    LinearMap.toContinuousLinearMap (cayleyCutoff hK L hL ρ hρ p).toLinearMap =
+      cayleyPathFormula (ρ p) (LinearMap.toContinuousLinearMap (K p).toLinearMap)
+        (LinearMap.toContinuousLinearMap (L p).toLinearMap) := by
+  rw [cayleyCutoff_of_mem hK L hL ρ hρ hp]
+  exact (hK p).toContinuousLinearMap_cayleyInterp (V := E) (hL p hp) (hρ p)
+    (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
+
+/-- The cut-off family is smooth along a smooth map `f` when the background family is, the
+prescribed family is smooth on the open set `U`, and the weight is smooth with topological
+support in `U`. -/
+theorem contMDiff_cayleyCutoff {EP HP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P]
+    [ChartedSpace HP P] (hf : ContMDiff IP I ∞ f)
+    (hKs : ContMDiff IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (f p) (LinearMap.toContinuousLinearMap (K p).toLinearMap)))
+    (hU : IsOpen U)
+    (hLs : ContMDiffOn IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (f p) (LinearMap.toContinuousLinearMap (L p).toLinearMap)) U)
+    (hsρ : ContMDiff IP 𝓘(ℝ) ∞ ρ) (hsupp : tsupport ρ ⊆ U) :
+    ContMDiff IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (f p) (LinearMap.toContinuousLinearMap (cayleyCutoff hK L hL ρ hρ p).toLinearMap)) := by
+  intro p₀
+  by_cases hp₀ : p₀ ∈ U
+  · have hs := ContMDiffAt.cayleyPathFormula_hom_bundle (hf p₀) (hsρ p₀) (hKs p₀)
+      ((hLs p₀ hp₀).contMDiffAt (hU.mem_nhds hp₀))
+      (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E) (hK p₀).tames
+        (hL p₀ hp₀).tames (LinearMap.coe_toContinuousLinearMap _)
+        (LinearMap.coe_toContinuousLinearMap _))
+      (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E) (hK p₀)
+        (hL p₀ hp₀).tames (by simpa only [abs_of_nonneg (hρ p₀).1] using (hρ p₀).2)
+        (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _))
+    refine hs.congr_of_eventuallyEq ?_
+    filter_upwards [hU.mem_nhds hp₀] with p hp
+    exact congrArg (fun B : E →L[ℝ] E ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f p) B)
+      (toContinuousLinearMap_cayleyCutoff hK L hL ρ hρ hp)
+  · -- Near a point outside `U` the weight vanishes, so the family is the background family.
+    have hz : ∀ᶠ p in 𝓝 p₀, ρ p = 0 :=
+      notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hp₀ (hsupp h)
+    refine (hKs p₀).congr_of_eventuallyEq ?_
+    filter_upwards [hz] with p hp
+    rw [cayleyCutoff_of_eq_zero hK L hL ρ hρ hp]
+
+end CayleyCutoff
+
+/-! ### Extension from a closed region -/
+
 namespace SmoothTwoForm.Compatible
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -53,102 +183,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (h₀ : σ.Compatible J₀) {U : Set M} (K : M → AlmostComplexStructure E)
   (hK : ∀ x ∈ U, (h₀.isNondegenerate.symplecticFormAt x).Compatible (K x))
   (ρ : M → ℝ) (hρ : ∀ x, ρ x ∈ Icc 0 1)
-
-open Classical in
-private def cutoffField (x : M) : AlmostComplexStructure E :=
-  if hx : x ∈ U then
-    (h₀.compatibleAt x).cayleyInterp (V := E) (hK x hx) (hρ x)
-  else J₀.almostComplexStructureAt x
-
-private theorem cutoffField_of_mem {x : M} (hx : x ∈ U) :
-    cutoffField h₀ K hK ρ hρ x =
-      (h₀.compatibleAt x).cayleyInterp (V := E) (hK x hx) (hρ x) :=
-  dite_eq_left hx
-
-private theorem cutoffField_of_notMem {x : M} (hx : x ∉ U) :
-    cutoffField h₀ K hK ρ hρ x = J₀.almostComplexStructureAt x :=
-  dite_eq_right hx
-
-private theorem compatible_cutoffField (x : M) :
-    (h₀.isNondegenerate.symplecticFormAt x).Compatible
-      (cutoffField (E := E) h₀ K hK ρ hρ x) := by
-  by_cases hx : x ∈ U
-  · rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
-    exact (h₀.compatibleAt x).compatible_cayleyInterp (V := E) (hK x hx) (hρ x)
-  · rw [cutoffField_of_notMem h₀ K hK ρ hρ hx]
-    exact h₀.compatibleAt x
-
-private theorem cutoffField_eq_background {x : M} (hx : ρ x = 0) :
-    cutoffField h₀ K hK ρ hρ x = J₀.almostComplexStructureAt x := by
-  by_cases hxU : x ∈ U
-  · rw [cutoffField_of_mem h₀ K hK ρ hρ hxU]
-    simpa only [hx] using
-      (h₀.compatibleAt x).cayleyInterp_zero (V := E) (hK x hxU)
-  · exact cutoffField_of_notMem h₀ K hK ρ hρ hxU
-
-private theorem cutoffField_eq_local {x : M} (hxU : x ∈ U) (hx : ρ x = 1) :
-    cutoffField h₀ K hK ρ hρ x = K x := by
-  rw [cutoffField_of_mem h₀ K hK ρ hρ hxU]
-  simpa only [hx] using
-    (h₀.compatibleAt x).cayleyInterp_one (V := E) (hK x hxU)
-
-private theorem cutoffField_formula {x : M} (hx : x ∈ U) :
-    LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap =
-      cayleyPathFormula (ρ x) (J₀.toEndomorphism x)
-        (LinearMap.toContinuousLinearMap (K x).toLinearMap) := by
-  rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
-  exact (h₀.compatibleAt x).toContinuousLinearMap_cayleyInterp (V := E) (hK x hx) (hρ x)
-    (J₀.almostComplexStructureAt_toLinearMap x).symm
-    (LinearMap.coe_toContinuousLinearMap _)
-
-private theorem contMDiffAt_cutoffField_of_mem (hU : IsOpen U)
-    (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (LinearMap.toContinuousLinearMap (K x).toLinearMap)) U)
-    (hsρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (x₀ : M) (hx : x₀ ∈ U) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap)) x₀ := by
-  have hs' := ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_id (hsρ x₀)
-    (J₀.toEndomorphism.contMDiff x₀) ((hs x₀ hx).contMDiffAt (hU.mem_nhds hx))
-    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      (h₀.compatibleAt x₀).tames (hK x₀ hx).tames
-      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
-      (LinearMap.coe_toContinuousLinearMap _))
-    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      (h₀.compatibleAt x₀) (hK x₀ hx).tames
-      (by simpa only [abs_of_nonneg (hρ x₀).1] using (hρ x₀).2)
-      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
-      (LinearMap.coe_toContinuousLinearMap _))
-  refine hs'.congr_of_eventuallyEq ?_
-  filter_upwards [hU.mem_nhds hx] with x hxU
-  exact congrArg (fun L : E →L[ℝ] E ↦ TotalSpace.mk'
-    (E →L[ℝ] E) (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x L)
-    (cutoffField_formula h₀ K hK ρ hρ hxU)
-
-private theorem contMDiffAt_cutoffField (hU : IsOpen U)
-    (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (LinearMap.toContinuousLinearMap (K x).toLinearMap)) U)
-    (hsρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hsupp : tsupport ρ ⊆ U) (x₀ : M) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap)) x₀ := by
-  by_cases hx : x₀ ∈ U
-  · exact contMDiffAt_cutoffField_of_mem h₀ K hK ρ hρ hU hs hsρ x₀ hx
-  · have hz : ∀ᶠ x in 𝓝 x₀, ρ x = 0 :=
-      notMem_tsupport_iff_eventuallyEq.mp (fun h ↦ hx (hsupp h))
-    refine (J₀.toEndomorphism.contMDiff x₀).congr_of_eventuallyEq ?_
-    filter_upwards [hz] with x hx
-    rw [cutoffField_eq_background h₀ K hK ρ hρ hx,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
-    -- Converting a continuous linear map to a linear map and back is definitionally the
-    -- original map; here it is read on `TangentSpace I x = E`.
-    congr 1
 
 include h₀ hK hρ in
 /-- A smooth cutoff supported inside the region where a local field is smooth and compatible
@@ -163,25 +197,37 @@ theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       (∀ x, ρ x = 1 → J.almostComplexStructureAt x = K x) ∧
       (∀ x, ρ x = 0 → J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) := by
+  -- The background family is `J₀`, read along the identity map of `M`.
+  have hJ₀ : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (id x) (LinearMap.toContinuousLinearMap (J₀.almostComplexStructureAt x).toLinearMap)) :=
+    J₀.toEndomorphism.contMDiff.congr fun x ↦ by
+      rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+      -- Converting a continuous linear map to a linear map and back is definitionally the
+      -- original map; here it is read on `TangentSpace I x = E`.
+      rfl
+  let J₁ := cayleyCutoff (f := id) h₀.compatibleAt K hK ρ hρ
   let J : SmoothAlmostComplexStructure I M :=
-    { toEndomorphism := ⟨fun x ↦ LinearMap.toContinuousLinearMap
-        (cutoffField h₀ K hK ρ hρ x).toLinearMap,
-        contMDiffAt_cutoffField h₀ K hK ρ hρ hU hs hsρ hsupp⟩
+    { toEndomorphism := ⟨fun x ↦ LinearMap.toContinuousLinearMap (J₁ x).toLinearMap,
+        contMDiff_cayleyCutoff h₀.compatibleAt K hK ρ hρ contMDiff_id hJ₀ hU hs hsρ hsupp⟩
       square_neg := fun x ↦ by
         ext v
-        exact (cutoffField h₀ K hK ρ hρ x).apply_apply v }
-  have hJ (x : M) : J.almostComplexStructureAt x = cutoffField (E := E) h₀ K hK ρ hρ x := by
+        exact (J₁ x).apply_apply v }
+  have hJ (x : M) : J.almostComplexStructureAt x = J₁ x := by
     apply AlmostComplexStructure.toLinearMap_injective
     rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
     exact LinearMap.coe_toContinuousLinearMap _
   refine ⟨J, h₀.isNondegenerate.compatible_iff.mpr (fun x ↦ ?_), ?_, ?_⟩
   · rw [hJ]
-    exact compatible_cutoffField h₀ K hK ρ hρ x
+    exact compatible_cayleyCutoff h₀.compatibleAt K hK ρ hρ x
   · intro x hx
     have hxU : x ∈ U := hsupp (subset_tsupport ρ (by simp [Function.mem_support, hx]))
-    rw [hJ, cutoffField_eq_local h₀ K hK ρ hρ hxU hx]
+    rw [hJ]
+    exact cayleyCutoff_of_eq_one h₀.compatibleAt K hK ρ hρ hxU hx
   · intro x hx
-    rw [hJ, cutoffField_eq_background h₀ K hK ρ hρ hx]
+    rw [hJ]
+    exact cayleyCutoff_of_eq_zero h₀.compatibleAt K hK ρ hρ hx
 
 include h₀ hK in
 /-- Extend a compatible field prescribed smoothly near a closed set, retaining a chosen
