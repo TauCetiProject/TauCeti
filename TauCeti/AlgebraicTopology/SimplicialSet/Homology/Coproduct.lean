@@ -66,9 +66,13 @@ namespace SSet
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   {X Y : SSet.{w}} (f : X ⟶ Y) (R : C)
 
+/-- In each degree, the chain map induced by a monomorphism of simplicial sets is a
+monomorphism: it is the coproduct map induced by an injective map of simplices. -/
+instance mono_chainComplexMap_f [Mono f] (n : ℕ) : Mono ((chainComplexMap f R).f n) :=
+  inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
+
 /-- The chain map induced by a monomorphism of simplicial sets is a monomorphism. -/
 instance mono_chainComplexMap [Mono f] : Mono (chainComplexMap f R) :=
-  HomologicalComplex.mono_of_mono_f _ fun _ ↦
-    inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
+  HomologicalComplex.mono_of_mono_f _ inferInstance
 
 end SSet

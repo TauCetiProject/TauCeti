@@ -70,7 +70,6 @@ def smallSingularChainHomotopyEquiv :
       ((TopCat.toSSet.obj X).chainComplex R) :=
   chainRangeHomotopyEquiv (i := (X.smallSingularSubcomplex U).ι)
     (h := singularSubdivisionHomotopy R X)
-    (fun n ↦ ⟨subcomplexSubdivisionX R _ n, by simp⟩)
     (fun n ↦ ⟨subcomplexPrismX R _ n, by simp⟩)
     fun _ σ ↦ by
       obtain ⟨n₀, hn₀⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
@@ -181,9 +180,6 @@ def subcomplexSmallChainHomotopyEquiv :
     HomotopyEquiv (((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) :
       SSet).chainComplex R) ((S : SSet).chainComplex R) :=
   chainRangeHomotopyEquiv (i := homOfLE inf_le_left) (h := subcomplexSubdivisionHomotopy R S)
-    (fun n ↦ ⟨(subcomplexSubdivisionChainMap R _).f n, by
-      rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
-        ← subcomplexSubdivisionChainMap_naturality R _ S (𝟙 X) (homOfLE inf_le_left) (by simp)]⟩)
     (fun n ↦ ⟨subcomplexPrismX R _ n, by
       rw [subcomplexSubdivisionHomotopy_hom]
       exact (subcomplexPrismX_naturality R _ S (𝟙 X) (homOfLE inf_le_left) (by simp) n).symm⟩)

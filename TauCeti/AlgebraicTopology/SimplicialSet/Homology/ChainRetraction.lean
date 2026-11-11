@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
-public import Mathlib.CategoryTheory.Limits.MonoCoprod
-public import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
@@ -18,8 +15,8 @@ import Mathlib.Algebra.BigOperators.Intervals
 
 Let `i : L ⟶ K` be a monomorphism of simplicial sets and let `s` be a chain endomorphism of the
 simplicial chains of `K`, with coefficients in `R`, together with a chain homotopy `h` from the
-identity to `s`. Suppose that `s` and the homotopy operators `h` carry the chains of `L` into the
-chains of `L`, and that every simplex of `K` becomes a chain of `L` after finitely many
+identity to `s`. Suppose that the homotopy operators `h` carry the chains of `L` into the chains
+of `L` (then so does `s`), and that every simplex of `K` becomes a chain of `L` after finitely many
 applications of `s`. Then the inclusion of the chains of `L` into the chains of `K` is a chain
 homotopy equivalence, and even a deformation retract in the chain-level sense: it has a strict
 retraction which is a homotopy inverse.
@@ -39,8 +36,9 @@ homotopy operator on the summand of `σ`, produces an operator `D` whose associa
 ## Main definitions and results
 
 * `TauCeti.chainRange R i n`: the `n`-chains of `K` that factor through the chains of `L`.
-* `TauCeti.chainRangeDepth`: a number of applications of `s` carrying a simplex and all of its
-  iterated faces into the chains of `L`, monotone under passing to a face.
+* `TauCeti.chainRangeDepth`: a number of applications of `s`, monotone under passing to a face,
+  which carries a simplex and all of its iterated faces into the chains of `L` when `s` preserves
+  the chains of `L` and eventually carries every simplex into them.
 * `TauCeti.chainRangeApprox i h`: the chain endomorphism `ρ`, chain homotopic to the identity
   (`TauCeti.chainRangeApproxHomotopy`), and equal to the identity on the chains of `L`
   (`TauCeti.chainComplexMap_comp_chainRangeApprox`).
@@ -111,7 +109,7 @@ lemma comp_pow_mem_chainRange_of_le
 variable (i s)
 
 /-- The least number of applications of `s` carrying the summand of a simplex of `K` into the
-chains of `L`. -/
+chains of `L`, if one exists, and `0` otherwise. -/
 def chainRangeOrder {n : ℕ} (σ : K _⦋n⦌) : ℕ :=
   sInf {m | K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n}
 
@@ -143,10 +141,12 @@ lemma chainRangeOrder_app_eq_zero {n : ℕ} (σ : L _⦋n⦌) :
 
 variable (i s)
 
-/-- The depth of a simplex of `K`: a number of applications of `s` after which the simplex and
-all of its iterated faces are chains of `L`. Unlike `TauCeti.chainRangeOrder`, it is monotone
-under passing to a face, which is what makes `TauCeti.chainRangeApproxHom` below land in the
-chains of `L`. -/
+/-- The depth of a simplex of `K`: the maximum of `TauCeti.chainRangeOrder` over the simplex and
+all of its iterated faces. When `s` preserves the chains of `L` and eventually carries every
+simplex into them, the simplex and all of its iterated faces are chains of `L` after this many
+applications of `s` (see `TauCeti.ιChainComplex_comp_pow_mem_chainRange`). Unlike
+`TauCeti.chainRangeOrder`, it is monotone under passing to a face, which is what makes
+`TauCeti.chainRangeApproxHom` below land in the chains of `L`. -/
 def chainRangeDepth (n : ℕ) (σ : K _⦋n⦌) : ℕ :=
   match n, σ with
   | 0, σ => chainRangeOrder i s σ
@@ -252,13 +252,44 @@ lemma chainComplexMap_comp_chainRangeApprox :
 
 variable {i h}
 variable
-  (hs : ∀ n, ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n)
   (hh : ∀ n, ∃ g, g ≫ (SSet.chainComplexMap i R).f (n + 1) =
     (SSet.chainComplexMap i R).f n ≫ h.hom n (n + 1))
+
+include hh in
+/-- If the operators of a homotopy from the identity to `s` restrict to the chains of `L`, then so
+does `s`, since `s = 1 - ∂h - h∂` and the inclusion commutes with the differentials. -/
+private lemma exists_comp_chainComplexMap_f_eq_of_homotopy (n : ℕ) :
+    ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n := by
+  have hsf : s.f n = 𝟙 _ - (dNext n h.hom + prevD n h.hom) := by
+    rw [← HomologicalComplex.id_f, h.comm n]
+    abel
+  obtain ⟨g, hg⟩ := hh n
+  have hprev : (g ≫ (L.chainComplex R).d (n + 1) n) ≫ (SSet.chainComplexMap i R).f n =
+      (SSet.chainComplexMap i R).f n ≫ prevD n h.hom := by
+    rw [Homotopy.prevD_chainComplex, Category.assoc, ← HomologicalComplex.Hom.comm,
+      ← Category.assoc, hg, Category.assoc]
+  cases n with
+  | zero =>
+    refine ⟨𝟙 _ - g ≫ (L.chainComplex R).d (0 + 1) 0, ?_⟩
+    rw [hsf, Preadditive.sub_comp, Preadditive.comp_sub, Preadditive.comp_add,
+      Homotopy.dNext_zero_chainComplex, comp_zero, ← hprev, Category.id_comp, Category.comp_id]
+    exact congrArg (_ - ·) (zero_add _).symm
+  | succ k =>
+    obtain ⟨g', hg'⟩ := hh k
+    have hnext : ((L.chainComplex R).d (k + 1) k ≫ g') ≫ (SSet.chainComplexMap i R).f (k + 1) =
+        (SSet.chainComplexMap i R).f (k + 1) ≫ dNext (k + 1) h.hom := by
+      rw [Homotopy.dNext_succ_chainComplex, Category.assoc, hg', ← Category.assoc,
+        ← HomologicalComplex.Hom.comm, Category.assoc]
+    refine ⟨𝟙 _ - ((L.chainComplex R).d (k + 1) k ≫ g' +
+      g ≫ (L.chainComplex R).d (k + 1 + 1) (k + 1)), ?_⟩
+    rw [hsf, Preadditive.sub_comp, Preadditive.add_comp, Preadditive.comp_sub,
+      Preadditive.comp_add, hnext, hprev, Category.id_comp, Category.comp_id]
+
+variable
   (hfin : ∀ n (σ : K _⦋n⦌), ∃ m, K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈
     chainRange R i n)
 
-include hs hh hfin
+include hh hfin
 
 /-- Enlarging the number of iterations in the iterated homotopy operator changes it by a chain of
 `L`, provided the simplex is already a chain of `L` after the smaller number of applications of
@@ -273,7 +304,8 @@ lemma ιChainComplex_comp_idPow_hom_sub_mem_chainRange {n : ℕ} (σ : K _⦋n�
   rw [hsum, Preadditive.comp_sum]
   refine AddSubgroup.sum_mem _ fun k hk ↦ ?_
   rw [← Category.assoc]
-  exact comp_mem_chainRange (ιChainComplex_comp_pow_mem_chainRange hs hfin σ
+  exact comp_mem_chainRange (ιChainComplex_comp_pow_mem_chainRange
+    (exists_comp_chainComplexMap_f_eq_of_homotopy hh) hfin σ
     (hm'.trans (Finset.mem_Ico.1 hk).1)) (hh n)
 
 /-- **The approximation lands in the chains of `L`.** -/
@@ -300,7 +332,7 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
       rw [Preadditive.zsmul_comp, Preadditive.zsmul_comp, ← smul_sub, ← Preadditive.comp_sub,
         Preadditive.comp_sub, ιChainComplex_chainRangeApproxHom, ← Preadditive.comp_sub]
       exact AddSubgroup.zsmul_mem _
-        (ιChainComplex_comp_idPow_hom_sub_mem_chainRange hs hh hfin _
+        (ιChainComplex_comp_idPow_hom_sub_mem_chainRange hh hfin _
           (chainRangeOrder_le_chainRangeDepth k _) (chainRangeDepth_δ_le k σ j)) _
   have hf : K.ιChainComplex σ ≫ (chainRangeApprox i h).f n =
       K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n +
@@ -313,7 +345,8 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
       abel
     rw [hsplit, Preadditive.comp_add, Preadditive.comp_add, hprev, add_zero]
   rw [hf]
-  exact AddSubgroup.add_mem _ (ιChainComplex_comp_pow_mem_chainRange hs hfin σ
+  exact AddSubgroup.add_mem _ (ιChainComplex_comp_pow_mem_chainRange
+    (exists_comp_chainComplexMap_f_eq_of_homotopy hh) hfin σ
     (chainRangeOrder_le_chainRangeDepth n σ)) hdnext
 
 /-! ### The retraction onto the chains of `L` -/
@@ -321,37 +354,33 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
 private theorem exists_comp_eq_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _⦋n⦌) :
     ∃ g : R ⟶ (L.chainComplex R).X n,
       g ≫ (SSet.chainComplexMap i R).f n = K.ιChainComplex σ ≫ (chainRangeApprox i h).f n :=
-  (mem_chainRange_iff _).1 (mem_chainRange_ιChainComplex_comp_chainRangeApprox hs hh hfin σ)
+  (mem_chainRange_iff _).1 (mem_chainRange_ιChainComplex_comp_chainRangeApprox hh hfin σ)
 
 /-- The degreewise factorisation of the approximation through the chains of `L`, obtained by
 choosing a factorisation on each summand. -/
 private def chainRangeRetractionX (n : ℕ) : (K.chainComplex R).X n ⟶ (L.chainComplex R).X n :=
   Cofan.IsColimit.desc (K.isColimitChainComplexXCofan R n) fun σ ↦
-    (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hs hh hfin σ).choose
+    (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hh hfin σ).choose
 
 private lemma ιChainComplex_chainRangeRetractionX {n : ℕ} (σ : K _⦋n⦌) :
-    K.ιChainComplex σ ≫ chainRangeRetractionX hs hh hfin n =
-      (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hs hh hfin σ).choose :=
+    K.ιChainComplex σ ≫ chainRangeRetractionX hh hfin n =
+      (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hh hfin σ).choose :=
   Cofan.IsColimit.fac _ _ σ
 
 @[reassoc (attr := simp)]
 private lemma chainRangeRetractionX_comp (n : ℕ) :
-    chainRangeRetractionX hs hh hfin n ≫ (SSet.chainComplexMap i R).f n =
+    chainRangeRetractionX hh hfin n ≫ (SSet.chainComplexMap i R).f n =
       (chainRangeApprox i h).f n := by
   ext σ
   rw [← Category.assoc, ιChainComplex_chainRangeRetractionX]
-  exact (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hs hh hfin σ).choose_spec
+  exact (exists_comp_eq_ιChainComplex_comp_chainRangeApprox hh hfin σ).choose_spec
 
 variable [Mono i]
-
--- The chain inclusion is the coproduct map induced by an injective map of simplices.
-local instance (n : ℕ) : Mono ((SSet.chainComplexMap i R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map (i.app (Opposite.op ⦋n⦌))))
 
 /-- **The retraction of the chains of `K` onto the chains of `L`.** It is the approximation
 `TauCeti.chainRangeApprox`, factored through the chains of `L`. -/
 def chainRangeRetraction : K.chainComplex R ⟶ L.chainComplex R where
-  f := chainRangeRetractionX hs hh hfin
+  f := chainRangeRetractionX hh hfin
   comm' a b _ := by
     apply (cancel_mono ((SSet.chainComplexMap i R).f b)).1
     rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
@@ -360,36 +389,35 @@ def chainRangeRetraction : K.chainComplex R ⟶ L.chainComplex R where
 
 @[reassoc (attr := simp)]
 lemma chainRangeRetraction_comp_chainComplexMap :
-    chainRangeRetraction hs hh hfin ≫ SSet.chainComplexMap i R = chainRangeApprox i h := by
+    chainRangeRetraction hh hfin ≫ SSet.chainComplexMap i R = chainRangeApprox i h := by
   ext n : 1
-  exact chainRangeRetractionX_comp hs hh hfin n
+  exact chainRangeRetractionX_comp hh hfin n
 
 @[reassoc (attr := simp)]
 lemma chainComplexMap_comp_chainRangeRetraction :
-    SSet.chainComplexMap i R ≫ chainRangeRetraction hs hh hfin = 𝟙 _ := by
-  have : Mono (SSet.chainComplexMap i R) := HomologicalComplex.mono_of_mono_f _ inferInstance
+    SSet.chainComplexMap i R ≫ chainRangeRetraction hh hfin = 𝟙 _ := by
   apply (cancel_mono (SSet.chainComplexMap i R)).1
   rw [Category.assoc, chainRangeRetraction_comp_chainComplexMap,
     chainComplexMap_comp_chainRangeApprox, Category.id_comp]
 
 /-- **The chains of `L` are a deformation retract of the chains of `K`.** If a chain endomorphism
-`s` of the chains of `K` is chain homotopic to the identity through a homotopy `h`, both `s` and
-the operators of `h` restrict to the chains of `L`, and every simplex of `K` is carried into the
+`s` of the chains of `K` is chain homotopic to the identity through a homotopy `h`, the operators
+of `h` restrict to the chains of `L`, and every simplex of `K` is carried into the
 chains of `L` by some power of `s`, then the inclusion of the chains of `L` is a chain homotopy
 equivalence. Its homotopy inverse `TauCeti.chainRangeRetraction` is a strict retraction. -/
 def chainRangeHomotopyEquiv : HomotopyEquiv (L.chainComplex R) (K.chainComplex R) where
   hom := SSet.chainComplexMap i R
-  inv := chainRangeRetraction hs hh hfin
-  homotopyHomInvId := Homotopy.ofEq (chainComplexMap_comp_chainRangeRetraction hs hh hfin)
-  homotopyInvHomId := (Homotopy.ofEq (chainRangeRetraction_comp_chainComplexMap hs hh hfin)).trans
+  inv := chainRangeRetraction hh hfin
+  homotopyHomInvId := Homotopy.ofEq (chainComplexMap_comp_chainRangeRetraction hh hfin)
+  homotopyInvHomId := (Homotopy.ofEq (chainRangeRetraction_comp_chainComplexMap hh hfin)).trans
     (chainRangeApproxHomotopy i h).symm
 
 @[simp]
 lemma chainRangeHomotopyEquiv_hom :
-    (chainRangeHomotopyEquiv hs hh hfin).hom = SSet.chainComplexMap i R := (rfl)
+    (chainRangeHomotopyEquiv hh hfin).hom = SSet.chainComplexMap i R := (rfl)
 
 @[simp]
 lemma chainRangeHomotopyEquiv_inv :
-    (chainRangeHomotopyEquiv hs hh hfin).inv = chainRangeRetraction hs hh hfin := (rfl)
+    (chainRangeHomotopyEquiv hh hfin).inv = chainRangeRetraction hh hfin := (rfl)
 
 end TauCeti
