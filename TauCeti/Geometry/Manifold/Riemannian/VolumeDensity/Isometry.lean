@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 
@@ -35,8 +36,6 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   chart source, carries its chart volume to the chart volume of its image.
 * `TauCeti.riemannianVolume_image_of_inner_mfderiv`: such a map, injective on any measurable set,
   carries its Riemannian volume to the Riemannian volume of its image.
-* `TauCeti.mdifferentiableAt_of_inner_mfderiv`: a map whose tangent map preserves the inner
-  products is differentiable.
 * `Homeomorph.measurePreserving_riemannianVolume`: a homeomorphism whose tangent maps preserve
   the inner products preserves the Riemannian volume.
 -/
@@ -108,17 +107,6 @@ theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv {Φ : M → N} {α x 
     ring
   rw [chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
     chartVolumeDensity_def]
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [IsManifold I' 1 N] in
-/-- A map whose tangent map at `x` preserves the Riemannian inner products is differentiable at
-`x`: the tangent map is injective, since it preserves norms. -/
-theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
-    (hinner : ∀ v : TangentSpace I x, ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x v⟫_ℝ = ⟪v, v⟫_ℝ) :
-    MDifferentiableAt I I' Φ x := by
-  refine mdifferentiableAt_of_mfderiv_injective ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_)
-  have h := hinner v
-  rw [hv, inner_zero_left] at h
-  exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
 
 section Measure
 
