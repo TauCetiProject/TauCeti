@@ -12,8 +12,10 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -33,7 +35,8 @@ Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, t
 
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
-(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`).
+(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`), and the product uniformity gives the
+uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_forall_abs_sub_le`).
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
@@ -53,7 +56,11 @@ Each characteristic coefficient is continuous over a commutative topological rin
 `Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
-In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
+In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
+both partial traces of a continuously varying matrix on a product index.
+
+The matrices with nonnegative diagonal form a closed set
+(`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 ## References
 
@@ -113,6 +120,28 @@ theorem exists_ball_subset_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace 
   exact ⟨r, hr, fun y hy => (hrx y hy).1, fun y hy => (hrx y hy).2⟩
 
 end ContinuousAt
+
+namespace UniformContinuous
+
+open Filter Metric
+open scoped Uniformity
+
+/-- If a real matrix-valued map `a` on a pseudo-metric space is uniformly continuous, then for every
+`ε > 0` there is `r > 0` such that every entry of `a` varies by at most `ε` between any two points
+at distance less than `r`. -/
+theorem exists_pos_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace X] [Finite m] [Finite n]
+    {a : X → Matrix m n ℝ} (ha : UniformContinuous a) {ε : ℝ} (hε : 0 < ε) :
+    ∃ r : ℝ, 0 < r ∧ ∀ x y, dist x y < r → ∀ i j, |a x i j - a y i j| ≤ ε := by
+  have hev : ∀ᶠ z : X × X in 𝓤 X, ∀ i j, |a z.1 i j - a z.2 i j| ≤ ε := by
+    refine eventually_all.2 fun i => eventually_all.2 fun j => ?_
+    have hij : UniformContinuous fun x => a x i j := (Matrix.uniformContinuous _ _ _).1 ha i j
+    filter_upwards [hij (dist_mem_uniformity hε)] with z hz
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, Real.dist_eq] at hz
+    exact hz.le
+  obtain ⟨r, hr, hrz⟩ := uniformity_basis_dist.mem_iff.1 hev
+  exact ⟨r, hr, fun x y hxy => @hrz (x, y) hxy⟩
+
+end UniformContinuous
 
 section Inverse
 
@@ -185,21 +214,56 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
   simp only [Matrix.kroneckerMap_apply]
   exact (hA.matrix_elem i.1 j.1).mul (hB.matrix_elem i.2 j.2)
 
+section PartialTrace
+
+variable {X R m n : Type*} [TopologicalSpace X] [TopologicalSpace R] [AddCommMonoid R]
+  [ContinuousAdd R] {A : X → Matrix (m × n) (m × n) R}
+
+/-- The partial trace over the second factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceRight [Fintype n] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceRight :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceRight_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (i, k) (j, k)
+
+/-- The partial trace over the first factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceLeft [Fintype m] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceLeft :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceLeft_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (k, i) (k, j)
+
+end PartialTrace
+
 namespace Matrix
 
-variable {R m n : Type*} [CommSemiring R] [StarRing R] [Fintype m] [DecidableEq m] [Fintype n]
-  [DecidableEq n] [TopologicalSpace R] [ContinuousMul R]
+variable {R α m n : Type*} [CommSemiring R] [Semiring α] [StarRing α] [Algebra R α]
+  [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [TopologicalSpace α]
 
 @[continuity, fun_prop]
 theorem continuous_kroneckerOneStarAlgHom :
-    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
-  (continuous_id.matrix_kronecker continuous_const).congr fun A ↦
-    (kroneckerOneStarAlgHom_apply A).symm
+    Continuous (kroneckerOneStarAlgHom R (α := α) (m := m) n) :=
+  (continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.congr fun A ↦
+    (kronecker_one A).symm.trans (kroneckerOneStarAlgHom_apply A).symm
 
 @[continuity, fun_prop]
 theorem continuous_oneKroneckerStarAlgHom :
-    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
-  (continuous_const.matrix_kronecker continuous_id).congr fun B ↦
-    (oneKroneckerStarAlgHom_apply B).symm
+    Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
+  ((continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.matrix_reindex _ _).congr fun B ↦
+    (one_kronecker B).symm.trans (oneKroneckerStarAlgHom_apply B).symm
+
+end Matrix
+
+namespace Matrix
+
+/-- The matrices with nonnegative diagonal form a closed set. -/
+theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
+    [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
+  simp only [Set.ofPred_forall]
+  exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix

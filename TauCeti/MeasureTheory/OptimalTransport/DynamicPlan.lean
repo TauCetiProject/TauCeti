@@ -304,7 +304,7 @@ theorem ae_exists_mem_geodesicPaths_endpointLaw (η : Measure C(I, X)) [SFinite 
   have hS : AnalyticSet S := isClosed_geodesicPaths.analyticSet.image_of_continuous (by fun_prop)
   have hSc : η.endpointLaw Sᶜ = 0 := by
     rw [endpointLaw_def, Measure.map_apply₀ ContinuousMap.measurable_endpoints.aemeasurable
-      (TauCeti.MeasureTheory.AnalyticSet.nullMeasurableSet hS _).compl]
+      (hS.nullMeasurableSet _).compl]
     refine measure_mono_null ?_ (ae_iff.1 hη)
     exact fun γ hγ hγg ↦ hγ ⟨γ, hγg, rfl⟩
   refine measure_mono_null (fun z hz ↦ ?_) hSc

@@ -538,6 +538,62 @@ variable {Λ E T Λ' E' T' : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGr
     (fun x ↦ Prod.ext (hi x.1) (hi' x.2)) (fun x ↦ Prod.ext (hp x.1) (hp' x.2))
     (fun x ↦ Prod.ext (hpi x.1) (hpi' x.2))).ShortExact)
 
+/-- Naturality of the connecting homomorphism of the product sequence along the first
+projection. -/
+private theorem map_fst_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (hnq : n + 1 = q)
+    (x : groupCohomology ((AT.prodCongr AT').cyclicRep (AT.iterate_prodCongr_eq_id hT hT')) n)
+    (hi₂ : ∀ x, (i.prodMap i') ((AΛ.prodCongr AΛ') x) =
+      (AE.prodCongr AE') ((i.prodMap i') x))
+    (hp₂ : ∀ x, (p.prodMap p') ((AE.prodCongr AE') x) =
+      (AT.prodCongr AT') ((p.prodMap p') x))
+    (hpi₂ : ∀ x, (p.prodMap p') ((i.prodMap i') x) = 0) :
+    map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').fst q (δ hS₂ n q hnq x) =
+      δ hS n q hnq (map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hT hT').fst n x) := by
+  let F : ((i.prodMap i').cyclicRepShortComplex (p.prodMap p')
+    (AΛ.iterate_prodCongr_eq_id hΛ hΛ') (AE.iterate_prodCongr_eq_id hE hE')
+    (AT.iterate_prodCongr_eq_id hT hT') hi₂ hp₂ hpi₂) ⟶
+      (i.cyclicRepShortComplex p hΛ hE hT hi hp hpi) :=
+    { τ₁ := (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').fst
+      τ₂ := (AddEquiv.cyclicRepBinaryBicone hE hE').fst
+      τ₃ := (AddEquiv.cyclicRepBinaryBicone hT hT').fst
+      comm₁₂ := by
+        dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
+        erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
+        rfl
+      comm₂₃ := by
+        dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
+        erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
+        rfl }
+  exact congr($(_root_.groupCohomology.δ_naturality hS₂ hS F n q hnq) x)
+
+/-- Naturality of the connecting homomorphism of the product sequence along the second
+projection. -/
+private theorem map_snd_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (hnq : n + 1 = q)
+    (x : groupCohomology ((AT.prodCongr AT').cyclicRep (AT.iterate_prodCongr_eq_id hT hT')) n)
+    (hi₂ : ∀ x, (i.prodMap i') ((AΛ.prodCongr AΛ') x) =
+      (AE.prodCongr AE') ((i.prodMap i') x))
+    (hp₂ : ∀ x, (p.prodMap p') ((AE.prodCongr AE') x) =
+      (AT.prodCongr AT') ((p.prodMap p') x))
+    (hpi₂ : ∀ x, (p.prodMap p') ((i.prodMap i') x) = 0) :
+    map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').snd q (δ hS₂ n q hnq x) =
+      δ hS' n q hnq (map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hT hT').snd n x) := by
+  let F : ((i.prodMap i').cyclicRepShortComplex (p.prodMap p')
+    (AΛ.iterate_prodCongr_eq_id hΛ hΛ') (AE.iterate_prodCongr_eq_id hE hE')
+    (AT.iterate_prodCongr_eq_id hT hT') hi₂ hp₂ hpi₂) ⟶
+      (i'.cyclicRepShortComplex p' hΛ' hE' hT' hi' hp' hpi') :=
+    { τ₁ := (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').snd
+      τ₂ := (AddEquiv.cyclicRepBinaryBicone hE hE').snd
+      τ₃ := (AddEquiv.cyclicRepBinaryBicone hT hT').snd
+      comm₁₂ := by
+        dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
+        erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
+        rfl
+      comm₂₃ := by
+        dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
+        erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
+        rfl }
+  exact congr($(_root_.groupCohomology.δ_naturality hS₂ hS' F n q hnq) x)
+
 /-- **The connecting homomorphism of a product.** For equivariant exact sequences
 `0 → Λ → E → T → 0` and `0 → Λ' → E' → T' → 0`, the connecting homomorphism
 `Hⁿ(C_m, T × T') ⟶ H^q(C_m, Λ × Λ')` of the product sequence (short exact by
@@ -557,44 +613,10 @@ theorem groupCohomologyProdEquiv_δ_cyclicRepShortComplex_prodMap (n q : ℕ) (h
   have hpi₂ : ∀ x, (p.prodMap p') ((i.prodMap i') x) = 0 :=
     fun x ↦ Prod.ext (hpi x.1) (hpi' x.2)
   -- Each component is the naturality of the connecting homomorphism along a projection.
-  have h₁ : map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').fst q (δ hS₂ n q hnq x) =
-      δ hS n q hnq (map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hT hT').fst n x) :=
-    by
-      let F : ((i.prodMap i').cyclicRepShortComplex (p.prodMap p')
-        (AΛ.iterate_prodCongr_eq_id hΛ hΛ') (AE.iterate_prodCongr_eq_id hE hE')
-        (AT.iterate_prodCongr_eq_id hT hT') hi₂ hp₂ hpi₂) ⟶
-          (i.cyclicRepShortComplex p hΛ hE hT hi hp hpi) :=
-        { τ₁ := (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').fst
-          τ₂ := (AddEquiv.cyclicRepBinaryBicone hE hE').fst
-          τ₃ := (AddEquiv.cyclicRepBinaryBicone hT hT').fst
-          comm₁₂ := by
-            dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
-            erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-            rfl
-          comm₂₃ := by
-            dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
-            erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-            rfl }
-      exact congr($(_root_.groupCohomology.δ_naturality hS₂ hS F n q hnq) x)
-  have h₂ : map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').snd q (δ hS₂ n q hnq x) =
-      δ hS' n q hnq (map (MonoidHom.id _) (AddEquiv.cyclicRepBinaryBicone hT hT').snd n x) :=
-    by
-      let F : ((i.prodMap i').cyclicRepShortComplex (p.prodMap p')
-        (AΛ.iterate_prodCongr_eq_id hΛ hΛ') (AE.iterate_prodCongr_eq_id hE hE')
-        (AT.iterate_prodCongr_eq_id hT hT') hi₂ hp₂ hpi₂) ⟶
-          (i'.cyclicRepShortComplex p' hΛ' hE' hT' hi' hp' hpi') :=
-        { τ₁ := (AddEquiv.cyclicRepBinaryBicone hΛ hΛ').snd
-          τ₂ := (AddEquiv.cyclicRepBinaryBicone hE hE').snd
-          τ₃ := (AddEquiv.cyclicRepBinaryBicone hT hT').snd
-          comm₁₂ := by
-            dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
-            erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-            rfl
-          comm₂₃ := by
-            dsimp only [AddEquiv.cyclicRepBinaryBicone, AddMonoidHom.cyclicRepShortComplex]
-            erw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-            rfl }
-      exact congr($(_root_.groupCohomology.δ_naturality hS₂ hS' F n q hnq) x)
+  have h₁ := map_fst_δ_cyclicRepShortComplex_prodMap (hΛ' := hΛ') (hE' := hE') (hT' := hT')
+    (hi' := hi') (hp' := hp') (hpi' := hpi') hS hS₂ n q hnq x hi₂ hp₂ hpi₂
+  have h₂ := map_snd_δ_cyclicRepShortComplex_prodMap (hΛ := hΛ) (hE := hE) (hT := hT)
+    (hi := hi) (hp := hp) (hpi := hpi) hS' hS₂ n q hnq x hi₂ hp₂ hpi₂
   exact Prod.ext
     ((Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_fst _ q _).trans <| h₁.trans <|
       congrArg (δ hS n q hnq) (Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv_apply_fst

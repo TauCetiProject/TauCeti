@@ -33,9 +33,10 @@ segment of `P`, every active constraint is attained at both ends, so the segment
 a vector annihilated by the active functionals. In finite dimension this says that the active
 functionals span the dual space.
 
-For each `j`, the points of `P` where the constraint `j` is active form an extreme subset of `P`
-(`TauCeti.isExtreme_polyhedron_inter_setOf_eq`), its `j`-th face. The extreme points of a face
-are therefore vertices of `P` at which `j` is active.
+For each set `s` of constraints, the points of `P` where every constraint in `s` is active form
+an extreme subset of `P` (`TauCeti.isExtreme_polyhedron_inter_setOf_subset_activeSet`), the face
+cut out by `s`. The extreme points of a face are therefore vertices of `P` at which every
+constraint in `s` is active.
 
 ## Main definitions
 
@@ -45,8 +46,9 @@ are therefore vertices of `P` at which `j` is active.
 ## Main results
 
 * `TauCeti.convex_polyhedron`: a polyhedron is convex.
-* `TauCeti.isExtreme_polyhedron_inter_setOf_eq`: the face where one constraint is active is an
-  extreme subset.
+* `TauCeti.activeSet_comp`: relabelling the constraints pulls back the active constraints.
+* `TauCeti.isExtreme_polyhedron_inter_setOf_subset_activeSet`: the face where a set of
+  constraints is active is an extreme subset.
 * `TauCeti.mem_extremePoints_polyhedron_iff`: the vertices are the points of the polyhedron at
   which the active functionals have no common nonzero zero.
 
@@ -70,6 +72,12 @@ def activeSet (f : ι → Module.Dual 𝕜 E) (c : ι → 𝕜) (x : E) : Set ι
 @[simp]
 theorem mem_activeSet {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x : E} {j : ι} :
     j ∈ activeSet f c x ↔ f j x = c j := Iff.rfl
+
+/-- Listing the constraints along `e` pulls the active constraints back along `e`. -/
+@[simp]
+theorem activeSet_comp {ι' : Type*} {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} (e : ι' → ι)
+    (x : E) : activeSet (f ∘ e) (c ∘ e) x = e ⁻¹' activeSet f c x :=
+  (rfl)
 
 variable [LinearOrder 𝕜]
 
@@ -109,12 +117,12 @@ theorem mem_activeSet_of_mem_openSegment {x₁ x₂ : E} (hx₁ : x₁ ∈ polyh
   exact ⟨sub_eq_zero.1 ((mul_eq_zero.1 e₁).resolve_left ha.ne'),
     sub_eq_zero.1 ((mul_eq_zero.1 e₂).resolve_left hb.ne')⟩
 
-/-- The points of a polyhedron at which the constraint `j` is active form an extreme subset of
-the polyhedron: its `j`-th face. -/
-theorem isExtreme_polyhedron_inter_setOf_eq (j : ι) :
-    IsExtreme 𝕜 (polyhedron f c) (polyhedron f c ∩ {x | f j x = c j}) := by
+/-- The points of a polyhedron at which every constraint in `s` is active form an extreme subset
+of the polyhedron: the face cut out by `s`. -/
+theorem isExtreme_polyhedron_inter_setOf_subset_activeSet (s : Set ι) :
+    IsExtreme 𝕜 (polyhedron f c) (polyhedron f c ∩ {x | s ⊆ activeSet f c x}) := by
   refine ⟨inter_subset_left, fun x₁ hx₁ x₂ hx₂ x hx hseg ↦ ?_⟩
-  exact ⟨hx₁, (mem_activeSet_of_mem_openSegment hx₁ hx₂ hseg hx.2).1⟩
+  exact ⟨hx₁, fun j hj ↦ (mem_activeSet_of_mem_openSegment hx₁ hx₂ hseg (hx.2 hj)).1⟩
 
 /-- **Vertices of a polyhedron.** A point `x` of a polyhedron cut out by finitely many
 half-spaces is an extreme point exactly when the only vector annihilated by all the functionals

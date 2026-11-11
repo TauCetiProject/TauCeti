@@ -189,7 +189,6 @@ theorem noncentralChiPDFReal_eq_besselI (hk : 0 ≤ k) (hδ : 0 < δ) (hs : 0 < 
     noncentralChiPDFReal k δ s x =
       x / s ^ 2 * exp (-((x / s) ^ 2 + δ ^ 2) / 2) * (x / (s * δ)) ^ (k / 2 - 1) *
         besselI (k / 2 - 1) (δ * x / s) := by
-  have hδ' : (0 : ℝ) < δ := hδ
   have hsqrt : √(((δ ^ 2 : ℝ≥0) : ℝ) * (x / s) ^ 2) = δ * x / s := by
     rw [NNReal.coe_pow, ← mul_pow, sqrt_sq (by positivity), mul_div_assoc]
   have hpow : ((x / s) ^ 2 / ((δ ^ 2 : ℝ≥0) : ℝ)) ^ (k / 4 - 1 / 2) =
@@ -298,7 +297,7 @@ private theorem map_withDensity_noncentralChiSquaredPDF (hs : 0 < s) :
         noncentralChiSquaredPDF_eq_ofReal, ENNReal.ofReal_mul (by positivity)]
     · simp [ht, noncentralChiPDF_of_nonpos (not_lt.mp ht)]
   have hchange := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
-    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi (by fun_prop)
+    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi
     (fun t _ ↦ (hderiv t).hasDerivWithinAt) hinj
   rw [himage] at hchange
   rw [hsource, ← hchange, Measure.map_map (by fun_prop) (by fun_prop), htarget]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
+public import TauCeti.QuantumGroups.QuantumInteger.Factorial
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 public import TauCeti.QuantumGroups.UqSl2.Weights
@@ -429,7 +430,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 variable (q) in
 /-- The normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)` through a vector `v`. -/
 private def string (v : V) (j : ℕ) : V :=
-  (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v
+  (quantumFactorial q j)⁻¹ • f q ^ j • v
 
 section String
 
@@ -445,7 +446,7 @@ include hq in
 private theorem f_smul_string (j : ℕ) :
     f q • string q v j = quantumInteger q (j + 1) • string q v (j + 1) := by
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
-  rw [string, string, smul_smul, Finset.prod_range_succ, mul_inv, mul_left_comm,
+  rw [string, string, smul_smul, quantumFactorial_succ, mul_inv, mul_left_comm,
     mul_inv_cancel₀ hj, mul_one, smul_comm, pow_succ', mul_smul]
 
 omit [Fact (q ≠ 0)] in
@@ -472,20 +473,18 @@ private theorem e_smul_string (j : ℕ) :
   have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
   have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
-  have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
+  have h := congrArg (· • v) (e_mul_f_pow (q := q) (j + 1))
   simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
     Nat.add_sub_cancel, smul_sub, smul_comm (f q ^ j) (_ : ℂ)] at h
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
   rw [string, string, smul_comm, h]
   generalize f q ^ j • v = w
   match_scalars
-  have hP : ∏ i ∈ Finset.range j, quantumInteger q (i + 1) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun i _ => quantumInteger_ne_zero hq (by omega)
-  rw [Finset.prod_range_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
+  have hP := quantumFactorial_ne_zero hq j
+  rw [quantumFactorial_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
     zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
-  generalize ∏ i ∈ Finset.range j, quantumInteger q (i + 1) = P at hP ⊢
+  generalize quantumFactorial q j = P at hP ⊢
   generalize quantumInteger q (j + 1) = Q at hj ⊢
-  have hq1 := hq.sub_inv_ne_zero
   rw [inv_pow]
   rcases Int.units_eq_one_or ε with rfl | rfl
   · push_cast
@@ -561,7 +560,7 @@ variable (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V 
 /-- The map induced by `v` sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
 theorem lift_vec (j : ℕ) :
     lift hq hv he hf (vec q m ε j) =
-      (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v :=
+      (quantumFactorial q j)⁻¹ • f q ^ j • v :=
   constr_vec hf j
 
 /-- The map induced by `v` sends the highest vector `v₀` to `v`. -/

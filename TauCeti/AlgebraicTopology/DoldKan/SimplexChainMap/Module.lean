@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup
+public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup.Basic
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 /-!

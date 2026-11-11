@@ -232,7 +232,7 @@ private theorem cycleApp_first_root_mul (f : cycleRep k x r ⟶ cycleRep k x r)
 private theorem cycleApp_eq_mulRight (f : cycleRep k x r ⟶ cycleRep k x r) (a : CycleVertex x) :
     cycleApp f a = LinearMap.mulRight k (cycleApp f ⟨0⟩ 1) := by
   rw [cycleApp_eq_first hx f a]
-  exact AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (r + 1)) (cycleApp_first_root_mul hx f)
+  exact AdjoinRoot.eq_mulRight_of_root_mul (cycleApp_first_root_mul hx f)
 
 omit hx in
 /-- `cycleRep k x r` is finite-dimensional: its vertex spaces are `k[X]/(Xʳ⁺¹)`. -/
@@ -254,11 +254,7 @@ private theorem indecomposable_cycleRep : Indecomposable (cycleRep k x r) := by
   have hext : ∀ f g : cycleRep k x r ⟶ cycleRep k x r, cycleApp f ⟨0⟩ 1 = cycleApp g ⟨0⟩ 1 →
       f = g := fun f g h ↦ cycleRep_hom_ext fun a ↦ by
     rw [cycleApp_eq_mulRight hx f a, cycleApp_eq_mulRight hx g a, h]
-  have hnz : ¬ Limits.IsZero (cycleRep k x r) := fun h ↦ by
-    have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (r + 1))) :=
-      ModuleCat.subsingleton_of_isZero (h.obj ((⟨0⟩ : CycleVertex x) : Paths (CycleVertex x)))
-    exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (r + 1)))
-  refine indecomposable_of_injective_of_isLocalRing hnz (fun f ↦ cycleApp f ⟨0⟩ 1) hext ?_ ?_
+  refine indecomposable_of_injective_of_isLocalRing (fun f ↦ cycleApp f ⟨0⟩ 1) hext ?_ ?_
     fun f ↦ ?_
   · rw [cycleApp_zero, LinearMap.zero_apply]
   · rw [cycleApp_id, LinearMap.id_apply]

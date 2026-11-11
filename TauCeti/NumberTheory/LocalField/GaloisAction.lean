@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IsGaloisGroup.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -116,8 +117,8 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercing the action on the integer ring to `L` recovers the field automorphism. -/
-@[simp]
+/-- Coercing the action on the integer ring to `L` recovers the field automorphism. Not `@[simp]`:
+`simp` proves it from `TauCeti.coe_smul_integer` and `AlgEquiv.smul_def`. -/
 theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
   (rfl)
@@ -232,9 +233,9 @@ statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
 @[simp]
 theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
     normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
-  apply le_antisymm <;>
-    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
-    simp [σ.valuation_eq]
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_normalizedValuation_eq_iff_valuation_eq]
+  simp [σ.valuation_eq]
 
 end AlgEquiv
 

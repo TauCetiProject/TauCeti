@@ -55,8 +55,8 @@ theorem coe_commutatorElement_commutatorElement_raisingMatrix {i j : B}
     (by simpa only [pow_two] using T.raisingMatrix_pow_two i)
     (by simpa only [pow_two] using T.raisingMatrix_pow_two j)
     (by simpa only [pow_two] using T.loweringMatrix_pow_two j)
-    hAC hABC (T.isSerreSystem.lie_E_lie_E_E_eq_zero_of_eq_neg_one hij)
-    (T.isSerreSystem.lie_E_lie_E_E_eq_zero_of_eq_neg_one hji) t s r x y z hx hy hz
+    hAC hABC (T.isSerreSystem.lie_E_lie_E_E_of_eq_neg_one hij)
+    (T.isSerreSystem.lie_E_lie_E_E_of_eq_neg_one hji) t s r x y z hx hy hz
 
 /-- The sign-reversed adjacent-root nested commutator identity for lowering unipotents
 of a minuscule weight table, over every commutative ring. -/
@@ -80,7 +80,7 @@ theorem coe_commutatorElement_commutatorElement_loweringMatrix {i j : B}
     (by simpa only [pow_two] using T.loweringMatrix_pow_two i)
     (by simpa only [pow_two] using T.loweringMatrix_pow_two j)
     (by simpa only [pow_two] using T.raisingMatrix_pow_two j)
-    hAC hABC (T.isSerreSystem.lie_F_lie_F_F_eq_zero_of_eq_neg_one hij)
-    (T.isSerreSystem.lie_F_lie_F_F_eq_zero_of_eq_neg_one hji) t s r x y z hx hy hz
+    hAC hABC (T.isSerreSystem.lie_F_lie_F_F_of_eq_neg_one hij)
+    (T.isSerreSystem.lie_F_lie_F_F_of_eq_neg_one hji) t s r x y z hx hy hz
 
 end TauCeti.MinusculeWeightTable

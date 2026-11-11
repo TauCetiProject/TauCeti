@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
-public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -183,8 +183,8 @@ theorem aeval_alternatingDerivation_apply (g : ℂ[X]) (φ : SmoothForm I M F k)
     { toFun φ := φ.1 x
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
-  exact (LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval (σ := ev)
-    (f := A.alternatingDerivation) (g := (A x).alternatingDerivation) (LinearMap.ext
+  exact (LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq (f := ev)
+    (g := A.alternatingDerivation) (g₂ := (A x).alternatingDerivation) (LinearMap.ext
     fun φ ↦ rfl) g) φ).symm
 
 end ContMDiffSection
@@ -413,6 +413,13 @@ theorem IsOfType.sum_typeProjection_eq {G : Type*} [AddCommMonoid G]
   · intro hpq
     exact absurd (by simpa using h.add_eq) hpq
 
+/-- Transporting a form across an equality of total degrees preserves its type. -/
+theorem IsOfType.cast {l : ℕ} {φ : SmoothForm I M F k} {p q : ℕ}
+    (hφ : φ.IsOfType J p q) (h : k = l) :
+    (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ).IsOfType J p q := by
+  subst l
+  exact hφ
+
 end SmoothForm
 
 namespace SmoothAlmostComplexStructure
@@ -508,17 +515,18 @@ theorem IsOfType.mapCoeff_of_map_smul_conj {L : F →L[ℝ] G}
 
 end SmoothForm
 
+/-- A complex-linear coefficient map preserves the submodule of forms of type `(p,q)`. -/
+theorem SmoothAlmostComplexStructure.mapCoeff_mem_typeForms
+    (J : SmoothAlmostComplexStructure I M) {L : F →L[ℝ] G}
+    (hL : ∀ (c : ℂ) v, L (c • v) = c • L v) {p q : ℕ}
+    {φ : SmoothForm I M F (p + q)} (hφ : φ ∈ J.typeForms p q) :
+    SmoothForm.mapCoeff L φ ∈ J.typeForms p q :=
+  (J.mem_typeForms p q _).2 (((J.mem_typeForms p q _).1 hφ).mapCoeff hL)
+
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
   {J : SmoothAlmostComplexStructure I M} {J' : SmoothAlmostComplexStructure I' M'} {u : M → M'}
   {p q : ℕ}
-
-omit [IsManifold I ∞ M] [IsManifold I' ∞ M'] in
-/-- At every point, the pullback of a rough form composes its value with the derivative. -/
-private theorem mpullback_eq_compContinuousLinearMap (φ : RoughForm I' M' F k) (x : M) :
-    mpullback I I' u φ x = (φ (u x)).compContinuousLinearMap (mfderiv I I' u x) := by
-  ext v
-  simp [Function.comp_def]
 
 /-- Pullback of smooth forms along a smooth pseudoholomorphic map commutes with the type
 projections. -/
@@ -527,7 +535,9 @@ theorem SmoothAlmostComplexStructure.mpullback_typeProjection (hu : ContMDiff I 
     SmoothForm.mpullback u hu (J'.typeProjection p q φ) =
       J.typeProjection p q (SmoothForm.mpullback u hu φ) :=
   Subtype.ext <| funext fun x ↦ by
-    simp only [SmoothForm.coe_mpullback, coe_typeProjection, mpullback_eq_compContinuousLinearMap]
+    simp only [SmoothForm.coe_mpullback, coe_typeProjection,
+      mpullback_apply_eq_compContinuousLinearMapCLM,
+      ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
     exact (ContinuousLinearMap.typeProjection_compContinuousLinearMap
       (fun w ↦ ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm) _).symm
 
@@ -536,7 +546,8 @@ theorem SmoothForm.IsOfType.mpullback {φ : SmoothForm I' M' F k} (hu : ContMDif
     (hJ : IsPseudoholomorphic J J' u) (h : φ.IsOfType J' p q) :
     (SmoothForm.mpullback u hu φ).IsOfType J p q :=
   SmoothForm.isOfType_iff_forall.2 ⟨h.1, fun x ↦ by
-    rw [SmoothForm.coe_mpullback, mpullback_eq_compContinuousLinearMap]
+    rw [SmoothForm.coe_mpullback, mpullback_apply_eq_compContinuousLinearMapCLM,
+      ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
     exact (h.apply (u x)).compContinuousLinearMap fun w ↦
       ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm⟩
 

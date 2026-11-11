@@ -77,7 +77,7 @@ theorem isIrreducible_baseChange_of_representation_surjective
         intro m hm
         exact N.add_mem (hf m hm) (hg m hm)
   have htrivial : N.toSubmodule = ⊥ ∨ N.toSubmodule = ⊤ :=
-    eq_bot_or_eq_top_of_adjoin_eq_top (s := Set.univ) (by simp)
+    eq_bot_or_eq_top_of_adjoin_eq_top (R := A) (s := Set.univ) (by simp)
       (fun f _ => (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem f).mpr (hEnd f))
   rcases htrivial with hbot | htop
   · exact (hN ((LieSubmodule.toSubmodule_inj _ _).mp hbot)).elim

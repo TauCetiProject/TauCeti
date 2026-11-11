@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.RationalPoint.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ZeroLocus
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 
 /-!
 # The ideal sheaf of a rational point
@@ -118,7 +118,7 @@ private lemma isIso_kerToNegPoint : IsIso (kerToNegPoint s hx) := by
     exact (Scheme.toRationalFunctions_app_injective U).comp (s.ker.sheafι_app_injective U)
   · intro U a ha
     have hzero := SchemeWeilDivisor.sections_mono
-      (neg_nonpos.mpr (WeilDivisor.zero_le_ofPoint x)) U ha
+      (neg_nonpos.mpr (WeilDivisor.ofPoint_nonneg x)) U ha
     obtain ⟨b, rfl⟩ := (SchemeWeilDivisor.mem_sections_zero_iff (fun y _ ↦ hX y) a).mp hzero
     have hb := (toRationalFunctions_app_mem_sections_neg_point_iff s hx U b).mp ha
     refine ⟨s.ker.sectionMk b hb, ?_⟩

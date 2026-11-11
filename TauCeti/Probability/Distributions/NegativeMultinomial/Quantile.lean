@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Claude, Codex
 -/
 module
 
@@ -15,21 +15,23 @@ Each coordinate and the total count of a negative-multinomial vector have negati
 laws. Their real-cast lower quantiles are therefore identified with the corresponding scalar
 negative-binomial quantiles, whose API supplies the cumulative-mass crossing characterization.
 
-This file gives the coordinate and total quantile identifications, including the shape-zero
-Dirac boundary, and their one-sided endpoint limits. A coordinate has unbounded upper support
-exactly when the shape and its category weight are positive. The total has unbounded upper
-support exactly when the shape is positive and the success weight is below one.
+This file gives the coordinate and total quantile identifications and explicit incomplete-Beta
+crossings, including the shape-zero Dirac boundary, and their one-sided endpoint limits. A
+coordinate has unbounded upper support exactly when the shape and its category weight are
+positive. The total has unbounded upper support exactly when the shape is positive and the
+success weight is below one.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley, 1997.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley, 1997,
+  Chapter 36.
 -/
 
 public section
 
 noncomputable section
 
-open Filter MeasureTheory Set Topology
+open Filter MeasureTheory ProbabilityTheory Set Topology
 open scoped NNReal
 
 namespace TauCeti.Probability
@@ -60,6 +62,18 @@ theorem quantile_map_cast_eval_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0
         (Nat.cast : ℕ → ℝ)).quantile u := by
   rw [map_cast_eval_negativeMultinomialMeasure, map_eval_negativeMultinomialMeasure hr hp₀ hp i]
 
+/-- For positive shape, a natural number is the lower quantile of a negative-multinomial
+coordinate exactly when it is the least index whose incomplete-Beta cumulative mass reaches the
+level. -/
+theorem quantile_map_cast_eval_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ}
+    (hr : 0 < r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
+    (hp : p₀ + ∑ i, (p i : ℝ) = 1) (i : ι) (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
+      IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) (p₀ / (p₀ + p i))} k := by
+  rw [quantile_map_cast_eval_negativeMultinomialMeasure hr.le hp₀ hp i,
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr (by positivity)
+      (div_le_one_of_le₀ (le_add_of_nonneg_right (p i).coe_nonneg) (by positivity)) hu]
+
 /-- The real-cast quantile of the total negative-multinomial count is the quantile of its
 negative-binomial marginal. This includes empty category types and shape zero. -/
 theorem quantile_map_cast_sum_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0 ≤ r)
@@ -68,6 +82,20 @@ theorem quantile_map_cast_sum_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0 
       (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u =
       ((negativeBinomialMeasure r p₀).map (Nat.cast : ℕ → ℝ)).quantile u := by
   rw [map_cast_sum_negativeMultinomialMeasure, map_sum_negativeMultinomialMeasure hr hp₀ hp]
+
+/-- For positive shape, a natural number is the lower quantile of the total negative-multinomial
+count exactly when it is the least index whose incomplete-Beta cumulative mass reaches the level.
+-/
+theorem quantile_map_cast_sum_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ}
+    (hr : 0 < r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
+    (hp : p₀ + ∑ i, (p i : ℝ) = 1) (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u =
+        k ↔
+      IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p₀} k := by
+  have hp₀_le_one : p₀ ≤ 1 :=
+    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
+  rw [quantile_map_cast_sum_negativeMultinomialMeasure hr.le hp₀ hp,
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hp₀_le_one hu]
 
 /-- Every valid real-cast coordinate has lower support endpoint zero. -/
 theorem tendsto_quantile_map_cast_eval_negativeMultinomialMeasure_nhdsGT_zero
@@ -105,8 +133,7 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsGT_zero
     p₀ ≤ p₀ + ∑ i, (p i : ℝ) :=
       le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ (p _).coe_nonneg)
     _ = 1 := hp
-  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr hp₀
-    hp₀_le
+  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr hp₀ hp₀_le
 
 /-- The upper support endpoint of a valid real-cast total is positive infinity exactly away
 from the shape-zero and success-weight-one Dirac boundaries. -/
@@ -121,7 +148,6 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsLT_one
     p₀ ≤ p₀ + ∑ i, (p i : ℝ) :=
       le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ (p _).coe_nonneg)
     _ = 1 := hp
-  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr hp₀
-    hp₀_le
+  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr hp₀ hp₀_le
 
 end TauCeti.Probability

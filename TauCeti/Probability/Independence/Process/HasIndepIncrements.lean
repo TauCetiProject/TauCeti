@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.IdentDistrib
+public import TauCeti.MeasureTheory.Group.Arithmetic
 import Mathlib.Probability.Independence.Process.Basic
 import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 import Mathlib.Data.Finset.Sort
+import TauCeti.Data.Finset.Sort
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -52,8 +54,10 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
 
+attribute [local instance] TauCeti.measurableAdd₂_of_measurableSub₂
+
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
-  [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+  [MeasurableSpace E] [AddCommGroup E] [MeasurableSub₂ E]
   {P : Measure Ω} {X : T → Ω → E}
 
 /-- A finite vector of past values is independent of a later increment. -/
@@ -66,23 +70,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
   let τ : ℕ → T := fun n ↦ if h : n = 0 then ⊥ else
     if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
       if n = I.card + 1 then s else t
-  have hτ : Monotone τ := by
-    apply monotone_nat_of_le_succ
-    intro n
-    by_cases hn : n = 0
-    · simp [τ, hn]
-    by_cases hnI : n ≤ I.card
-    · by_cases hnI' : n + 1 ≤ I.card
-      · simp [τ, hn, hnI, hnI']
-      · have hncard : n = I.card := by omega
-        have hcard : I.card ≠ 0 := by omega
-        simpa [τ, hncard, hcard] using
-          hI _ (I.orderEmbOfFin_mem rfl ⟨n - 1, by omega⟩)
-    · by_cases hncard : n = I.card + 1
-      · simp [τ, hncard, hst]
-      · have hnlt : ¬n < I.card := by omega
-        have hne : n ≠ I.card := by omega
-        simp [τ, hn, hnI, hncard, hnlt, hne]
+  have hτ : Monotone τ := Finset.monotone_bot_orderEmbOfFin_snoc I hI hst
   let D : ℕ → Ω → E := fun n ω ↦ X (τ (n + 1)) ω - X (τ n) ω
   have hD := hX.nat hτ
   -- Separate the adjacent increments generating the past from the last increment.
@@ -217,6 +205,32 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
         simp [hi]
     exact hX.indepFun_future_past_insert hm h0 s J hJ a haJ ih
 
+/-- Two processes starting at zero with equal increment laws have the same law at one time. -/
+private theorem identDistrib_singleton {Ω' : Type*} [MeasurableSpace Ω']
+    {Q : Measure Ω'} {Y : T → Ω' → E} (a : T) (hmX : ∀ t, Measurable (X t))
+    (hmY : ∀ t, Measurable (Y t)) (h0X : ∀ᵐ ω ∂P, X ⊥ ω = 0) (h0Y : ∀ᵐ ω ∂Q, Y ⊥ ω = 0)
+    (hlaw : ∀ s t, s ≤ t → IdentDistrib (fun ω ↦ X t ω - X s ω)
+      (fun ω ↦ Y t ω - Y s ω) P Q) :
+    IdentDistrib (fun ω (i : ↥(insert a (∅ : Finset T))) ↦ X i ω)
+      (fun ω (i : ↥(insert a (∅ : Finset T))) ↦ Y i ω) P Q := by
+  have hx : (fun ω ↦ X a ω - X ⊥ ω) =ᵐ[P] X a := by
+    filter_upwards [h0X] with ω hω using by simp [hω]
+  have hy : (fun ω ↦ Y a ω - Y ⊥ ω) =ᵐ[Q] Y a := by
+    filter_upwards [h0Y] with ω hω using by simp [hω]
+  have hsingle : IdentDistrib (X a) (Y a) P Q :=
+    (IdentDistrib.of_ae_eq ((hmX a).sub (hmX ⊥)).aemeasurable hx).symm.trans
+      ((hlaw ⊥ a bot_le).trans
+        (IdentDistrib.of_ae_eq ((hmY a).sub (hmY ⊥)).aemeasurable hy))
+  have hrec (z : T → E) : (fun (i : ↥(insert a (∅ : Finset T))) ↦ z i) =
+      fun _ ↦ z a := by
+    funext i
+    have hi : i.val = a := by simpa using i.property
+    exact congrArg z hi
+  convert hsingle.comp (Measurable.of_eval fun (_ : ↥(insert a (∅ : Finset T))) ↦
+    measurable_id) using 1
+  · exact funext fun ω ↦ hrec (X · ω)
+  · exact funext fun ω ↦ hrec (Y · ω)
+
 /-- Corresponding finite vectors of two processes starting at zero have the same law if
 both processes have independent increments and corresponding increment laws agree.
 The sample spaces may differ. -/
@@ -245,23 +259,7 @@ theorem HasIndepIncrements.identDistrib_finset {Ω' : Type*} [MeasurableSpace Ω
     simp [hx, hy]
   | insert a I haI ih =>
     obtain rfl | hI := I.eq_empty_or_nonempty
-    · have hx : (fun ω ↦ X a ω - X ⊥ ω) =ᵐ[P] X a := by
-        filter_upwards [h0X] with ω hω using by simp [hω]
-      have hy : (fun ω ↦ Y a ω - Y ⊥ ω) =ᵐ[Q] Y a := by
-        filter_upwards [h0Y] with ω hω using by simp [hω]
-      have hsingle : IdentDistrib (X a) (Y a) P Q :=
-        (IdentDistrib.of_ae_eq ((hmX a).sub (hmX ⊥)).aemeasurable hx).symm.trans
-          ((hlaw ⊥ a bot_le).trans
-            (IdentDistrib.of_ae_eq ((hmY a).sub (hmY ⊥)).aemeasurable hy))
-      have hrec (z : T → E) : (fun (i : ↥(insert a (∅ : Finset T))) ↦ z i) =
-          fun _ ↦ z a := by
-        funext i
-        have hi : i.val = a := by simpa using i.property
-        exact congrArg z hi
-      convert hsingle.comp (Measurable.of_eval fun (_ : ↥(insert a (∅ : Finset T))) ↦
-        measurable_id) using 1
-      · exact funext fun ω ↦ hrec (X · ω)
-      · exact funext fun ω ↦ hrec (Y · ω)
+    · exact identDistrib_singleton a hmX hmY h0X h0Y hlaw
     let u := I.max' hI
     have huI : u ∈ I := I.max'_mem hI
     have hua : u ≤ a := (haI u huI).le
@@ -340,7 +338,7 @@ path law after shifting time by `t` and subtracting its current value, provided 
 laws are invariant under this fixed shift. -/
 theorem HasIndepIncrements.identDistrib_shift {T Ω E : Type*} [LinearOrder T]
     [AddCommMonoid T] [CanonicallyOrderedAdd T] [MeasurableSpace Ω] [MeasurableSpace E]
-    [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+    [AddCommGroup E] [MeasurableSub₂ E]
     {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P)
     (hm : ∀ s, Measurable (X s)) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0) (t : T)
     (hlaw : ∀ s u, s ≤ u → IdentDistrib (fun ω ↦ X (t + u) ω - X (t + s) ω)

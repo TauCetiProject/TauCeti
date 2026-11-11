@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Category.QuiverTotal
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
@@ -47,7 +48,8 @@ topological action groupoid to a saturated open set of objects.
   invariant subset.
 * `CategoryTheory.ActionCategory.restrictLift`: a functor whose objects lie in the invariant subset
   factors through that inclusion.
-
+* `CategoryTheory.ActionCategory.exists_functor_of_sections`: a functor out of the action category
+  on a subset of the objects of a category, given by sections of arrows labelled by the monoid.
 * `CategoryTheory.ActionCategory.singleObjFunctor`: the functor `SingleObj K ⥤ M ⋉ X` at a point
   fixed by the image of a monoid homomorphism `K →* M`.
 * `CategoryTheory.ActionCategory.inclusion`: the inclusion of the action category of a subgroup
@@ -98,6 +100,15 @@ theorem back_map_obj (a : ActionCategory M X) : ((map φ f).obj a).back = f a.ba
 theorem map_map_hom {a b : ActionCategory M X} (g : a ⟶ b) :
     ((map φ f).map g).hom = φ g.hom := (rfl)
 
+/-- In label-source coordinates, the functor induced by an equivariant map applies the
+homomorphism to the label and the equivariant map to the source. -/
+@[simp]
+theorem mapTotal_totalEquiv_symm (m : M) (x : X) :
+    (map φ f).toPrefunctor.mapTotal ((totalEquiv M X).symm (m, x)) =
+      (totalEquiv N Y).symm (φ m, f x) := by
+  apply (totalEquiv N Y).injective
+  simp [totalEquiv_apply, objEquiv]
+
 variable (M X) in
 /-- The identity map induces the identity functor. -/
 theorem map_id : map (MonoidHom.id M) (MulActionHom.id M : X →[M] X) = 𝟭 _ :=
@@ -128,6 +139,12 @@ theorem full_map_iff : (map φ f).Full ↔
     refine ⟨fun {a b} g => ?_⟩
     obtain ⟨m, hm, hmx⟩ := h a.back b.back g.hom g.map_val
     exact ⟨Functor.Elements.homMk m hmx, Functor.Elements.hom_ext hm⟩
+
+/-- An injective equivariant map for the same monoid induces a full functor, keeping every
+arrow label. -/
+theorem full_map_of_injective [MulAction M Y] (f : X →[M] Y)
+    (hf : Function.Injective f) : (map (MonoidHom.id M) f).Full :=
+  (full_map_iff _ _).2 fun x _ m h ↦ ⟨m, rfl, hf ((map_smul f m x).trans h)⟩
 
 section SingleObj
 
@@ -192,7 +209,7 @@ instance faithful_restrict : (restrict U).Faithful :=
 
 /-- The restriction inclusion is full: every arrow between points of `U` lies in `M ⋉ U`. -/
 instance full_restrict : (restrict U).Full :=
-  (full_map_iff _ _).2 fun _ _ m h => ⟨m, rfl, Subtype.ext h⟩
+  full_map_of_injective _ Subtype.val_injective
 
 /-- A functor into `M ⋉ X` all of whose objects lie in the invariant subset `U` factors through
 `M ⋉ U`: this lifts it along the restriction inclusion. -/
@@ -303,5 +320,41 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
       congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)⟩
 
 end Inclusion
+
+section OfSections
+
+variable {M : Type*} [Monoid M] {C : Type*} [Category C]
+
+/-- A functor out of the action category of a monoid acting on a subset `U` of the objects of `C`,
+given by a section `σ g y` of arrows with source `y` for each label `g` and point `y`: it is the
+identity on objects and sends the arrow labelled `g` at `a` to the arrow `σ g a`. The sections
+must have the unit and composition behaviour of the action: `σ 1 y` is the identity at `y`, and
+`σ (g * h) y` is `σ h y` followed by `σ g` at the target of `σ h y`. -/
+theorem exists_functor_of_sections {U : Set C} [MulAction M U] {σ : M → C → Quiver.Total C}
+    (hsmul : ∀ (g : M) (y : U), ((g • y : U) : C) = (σ g y).right)
+    (hσl : ∀ g : M, ∀ y ∈ U, (σ g y).left = y)
+    (hUσ : ∀ y ∈ U, ∀ h : M, (σ h y).right ∈ U)
+    (hone : ∀ y ∈ U, σ 1 y = ⟨y, y, 𝟙 y⟩)
+    (hmul : ∀ y (hy : y ∈ U) (g h : M), σ (g * h) y =
+      (σ h y).comp (σ g (σ h y).right) (hσl g _ (hUσ y hy h)).symm) :
+    ∃ F : ActionCategory M U ⥤ C, (∀ a, F.obj a = (a.back : C)) ∧
+      ∀ {a b : ActionCategory M U} (f : a ⟶ b),
+        (⟨_, _, F.map f⟩ : Quiver.Total C) = σ f.hom a.back := by
+  let F : ActionCategory M U ⥤ C :=
+    { obj a := a.back
+      map {a b} f := Quiver.homOfEq (σ f.hom a.back).hom (hσl _ _ a.back.2)
+        ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))
+      map_id a := eq_of_heq (Quiver.Total.mk.inj ((Quiver.Total.mk_homOfEq _ _ _).trans (by
+        rw [ActionCategory.id_hom]
+        exact hone _ a.back.2))).2.2
+      map_comp {a b c} f g := eq_of_heq (Quiver.Total.mk.inj
+        ((Quiver.Total.mk_homOfEq _ _ _).trans <| Eq.trans (by
+          rw [ActionCategory.comp_hom, hmul _ a.back.2]
+          exact Quiver.Total.comp_congr rfl
+            (congrArg (σ g.hom) ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))) _ _)
+          (Quiver.Total.mk_homOfEq_comp_homOfEq _ _ _ _ _ _).symm)).2.2 }
+  exact ⟨F, fun _ ↦ rfl, fun _ ↦ Quiver.Total.mk_homOfEq _ _ _⟩
+
+end OfSections
 
 end CategoryTheory.ActionCategory

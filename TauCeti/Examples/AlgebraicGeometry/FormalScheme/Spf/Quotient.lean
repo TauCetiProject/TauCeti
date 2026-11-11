@@ -65,6 +65,11 @@ theorem quotientSheaf_square_nonzero :
     Ideal.Quotient.eq_zero_iff_mem.mp (h.symm.trans hzero)
   exact (by decide : (2 : ZMod 4) ≠ 0) hmem
 
+-- The square-zero thickening is a homeomorphism, but not an isomorphism of locally ringed spaces.
+example : ¬ IsIso (fromSpecQuotient isAdic_span_two) := by
+  rw [fromSpecQuotient_isIso_iff, Ideal.span_singleton_eq_bot]
+  decide
+
 -- The transition from level one to level zero agrees with the actual quotient map of schemes.
 example :
     Spec.locallyRingedSpaceMap (CommRingCat.ofHom

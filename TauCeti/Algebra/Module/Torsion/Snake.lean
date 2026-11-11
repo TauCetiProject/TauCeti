@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The kernel–cokernel exact sequence of multiplication by a scalar
@@ -25,7 +26,8 @@ The functor `QuotSMulTop r` and the right-exact half of this sequence are Mathli
 (`QuotSMulTop.map`, `QuotSMulTop.map_exact`, `QuotSMulTop.map_surjective`). This file supplies the
 torsion functor `TauCeti.torsionByMap`, the left-exact half, the connecting map
 `TauCeti.torsionByδ` (Mathlib's `SnakeLemma.δ'` for this diagram), exactness at its two ends, and
-its naturality in morphisms of short exact sequences.
+its naturality in morphisms of short exact sequences. A surjection with uniquely `r`-divisible
+kernel induces a bijection on `r`-torsion, so every `r`-torsion point lifts uniquely.
 
 Naturality is what makes the connecting map compatible with extra structure. For `R = ℤ`, `r = ℓ`
 and a group `G` acting on the sequence by additive automorphisms, each `g : G` gives a morphism of
@@ -52,6 +54,9 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 ## Main results
 
 * `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
+* `TauCeti.bijective_torsionByMap_of_bijective_ker_smul`,
+  `TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul`: a surjection with uniquely
+  `r`-divisible kernel induces a bijection on `r`-torsion and lifts `r`-torsion uniquely.
 * `TauCeti.torsionByδ_eq`: the connecting map sends `g y` to the class of `z` when `f z = r • y`.
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
@@ -180,14 +185,20 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
   SnakeLemma.exact_δ'_left _ _ _ _ _ hfg _ _ hfg _ _ _ _ _ _ _ (exact_toLinearMap_mkQ r M₂) hg hf
     _ (QuotSMulTop.map_comp_mkQ r f) (r • (⊤ : Submodule R M₁)).mkQ_surjective
 
-/-- **Finiteness of `M₁ ⧸ rM₁` along a short exact sequence**: if `M₃[r]` and `M₂ ⧸ rM₂` are finite,
-so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. -/
-theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+/-- **Finiteness of `M₁ ⧸ rM₁` along an exact sequence** `0 → M₁ → M₂ → M₃`: if `M₃[r]` and
+`M₂ ⧸ rM₂` are finite, so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. The map
+`g` need not be surjective: the sequence is read as a short exact sequence ending in the image of
+`g`. -/
+theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f)
     [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
-  let := Fintype.ofFinite (torsionBy R M₃ r)
+  have hfg' := hfg.rangeRestrict
+  have : Finite (torsionBy R (LinearMap.range g) r) := Finite.of_injective _
+    (injective_torsionByMap (r := r) (LinearMap.range g).injective_subtype)
+  let := Fintype.ofFinite (torsionBy R (LinearMap.range g) r)
   let := Fintype.ofFinite (QuotSMulTop r M₂)
-  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
-  exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
+  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg' hf g.surjective_rangeRestrict
+  exact (AddGroup.fintypeOfKerLeRange
+    (torsionByδ r hfg' hf g.surjective_rangeRestrict).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
 
 /-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
@@ -247,6 +258,43 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
     torsionByδ_eq hfg hf hg x hy hz, QuotSMulTop.map_apply_mk]
 
 end Snake
+
+section Lift
+
+variable {R : Type*} [CommRing R] (r : R) {M N : Type*}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A surjective linear map induces a bijection on `r`-torsion when multiplication
+by `r` is bijective on its kernel. -/
+theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x) :
+    Bijective (torsionByMap r f) := by
+  have hex := LinearMap.exact_subtype_ker_map f
+  have hinj := (LinearMap.ker f).injective_subtype
+  have : Subsingleton (QuotSMulTop r (LinearMap.ker f)) := by
+    apply Submodule.Quotient.subsingleton_iff.mpr
+    apply top_unique
+    intro x _
+    obtain ⟨y, rfl⟩ := hr.2 x
+    exact Submodule.smul_mem_pointwise_smul y r ⊤ trivial
+  exact ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := (exact_torsionByMap hex hinj x).1 hx
+    have hy : y = 0 := Subtype.ext (hr.1 (by simp))
+    rw [hy, map_zero],
+    fun y ↦ (exact_torsionByMap_torsionByδ hex hinj hf y).1 (Subsingleton.elim _ _)⟩
+
+/-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
+`r`-torsion point uniquely to an `r`-torsion point. -/
+theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x)
+    (y : N) (hy : r • y = 0) : ∃! x : M, r • x = 0 ∧ f x = y := by
+  obtain ⟨x, hx, huniq⟩ :=
+    (bijective_torsionByMap_of_bijective_ker_smul r f hf hr).existsUnique
+      ⟨y, (mem_torsionBy_iff _ _).mpr hy⟩
+  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.2, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
+  exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
+
+end Lift
 
 end TauCeti
 

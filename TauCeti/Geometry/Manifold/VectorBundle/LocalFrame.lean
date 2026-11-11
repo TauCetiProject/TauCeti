@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
@@ -36,9 +37,13 @@ a time.
   `e.basisAt b hx` of the fibre at a point of `e.baseSet`.
 * `TauCeti.Manifold.localFrameCoeff_localFrame`: the same duality, stated for the frame sections
   themselves.
+* `TauCeti.Manifold.trace_eq_sum_localFrameCoeff`: over the base set, the trace of a fibre
+  endomorphism is the sum of its diagonal local-frame coefficients.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame`: a fibre vector is the sum of
+  the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
 * `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
@@ -90,6 +95,19 @@ theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : �
     e.localFrameCoeff I b i x (e.basisAt b hx j) = if i = j then 1 else 0 := by
   rw [← e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_localFrame b hx]
 
+variable (I) in
+/-- Over the base set of a trivialization, the trace of a fibre endomorphism is the sum of its
+diagonal coefficients in the local frame. -/
+theorem trace_eq_sum_localFrameCoeff [Fintype ι] (hx : x ∈ e.baseSet) (B : V x →ₗ[𝕜] V x) :
+    LinearMap.trace 𝕜 (V x) B = ∑ i, e.localFrameCoeff I b i x (B (e.localFrame b i x)) := by
+  classical
+  rw [LinearMap.trace_eq_matrix_trace 𝕜 (e.basisAt b hx)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, e.localFrame_apply_of_mem_baseSet b hx]
+  have h := e.localFrameCoeff_apply_of_mem_baseSet (I := I) b hx
+    (FiberBundle.extend F (B (e.basisAt b hx i))) i
+  rwa [FiberBundle.extend_apply_self, eq_comm] at h
+
 end
 
 /-- The continuous inverse of a trivialization transports a model-fibre basis vector to the
@@ -111,6 +129,17 @@ vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+
+/-- A vector of the fibre over a point of the base set of a trivialization `e` is the sum of the
+local-frame vectors weighted by the coordinates of its reading in `e`. -/
+theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι]
+    (hx : x ∈ e.baseSet) (v : V x) :
+    v = ∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • e.localFrame b i x := by
+  calc
+    v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm
+    _ = e.symmL 𝕜 x (∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • b i) := by
+      rw [b.sum_repr]
+    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b hx]
 
 /-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
 `e`. -/

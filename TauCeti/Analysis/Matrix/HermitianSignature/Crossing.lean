@@ -419,7 +419,7 @@ theorem finite_setOfPred_not_nondegenerate (hc : ContinuousOn V (Icc a b))
   have hclosed : IsClosed {t ∈ Icc a b | ¬ (V t).toBilinForm.Nondegenerate} := by
     simpa only [Set.preimage_compl, Set.preimage_ofPred_eq, Set.compl_ofPred,
       Set.inter_ofPred_eq_sep] using hc.preimage_isClosed_of_isClosed isClosed_Icc
-        (TauCeti.isOpen_setOfPred_nondegenerate_toBilinForm ℝ E).isClosed_compl
+        ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm.isClosed_compl
   refine (isCompact_Icc.of_isClosed_subset hclosed fun t ht ↦ ht.1).finite
     (isDiscrete_iff_nhdsNE.2 fun t ht ↦ ?_)
   have ht' := mem_Ioo_of_not_nondegenerate ha hb ht.1 ht.2

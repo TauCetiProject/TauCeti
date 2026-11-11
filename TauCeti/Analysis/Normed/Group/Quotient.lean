@@ -16,7 +16,14 @@ over `s' ∈ S` if and only if `‖m / s‖` attains the quotient seminorm `‖(
 (`QuotientGroup.norm_div_eq_norm_mk_iff`), so every coset has a least-norm element precisely when
 every class in `M ⧸ S` has a representative of the same norm
 (`QuotientGroup.exists_mk_eq_and_norm_eq_iff`). The additive, submodule and ideal counterparts
-give the corresponding characterisations of strict closedness for submodules and ideals.
+give the corresponding characterisations of strict closedness for submodules and for two-sided
+ideals of possibly noncommutative seminormed rings.
+
+If every nontrivial element of `S` has seminorm at least twice that of `m`, then `m` attains the
+quotient seminorm of its class (`QuotientGroup.norm_mk_eq_norm`). So the projection `M → M ⧸ S`
+preserves the distance between two points whose distance is at most half the least seminorm of a
+nontrivial element of `S` (`QuotientGroup.dist_mk_eq_dist`); for a lattice in a normed space this
+says that the projection to the torus is an isometry on small sets.
 
 When `M` is ultrametric, the quotient seminorm on `M ⧸ S` is again ultrametric: each class has
 representatives whose norms approximate its quotient norm, and the ultrametric inequality for a
@@ -80,6 +87,35 @@ theorem exists_mk_eq_and_norm_eq_iff :
 
 end LeastNorm
 
+section Small
+
+variable {M : Type*} [SeminormedCommGroup M] {S : Subgroup M}
+
+/-- If every nontrivial element of `S` has at least twice the seminorm of `m`, then the quotient
+seminorm of `m` modulo `S` is the seminorm of `m`. -/
+@[to_additive /-- If every nonzero element of `S` has at least twice the seminorm of `m`, then the
+quotient seminorm of `m` modulo `S` is the seminorm of `m`. -/]
+theorem norm_mk_eq_norm {m : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * ‖m‖ ≤ ‖s‖) :
+    ‖(m : M ⧸ S)‖ = ‖m‖ := by
+  refine le_antisymm norm_mk_le_norm (le_norm_iff.2 fun m' hm' ↦ ?_)
+  have hs : m⁻¹ * m' ∈ S := QuotientGroup.eq.1 hm'.symm
+  by_cases hs1 : m⁻¹ * m' = 1
+  · rw [inv_mul_eq_one.1 hs1]
+  · have := (h _ hs hs1).trans (norm_mul_le' m⁻¹ m')
+    rw [norm_inv'] at this
+    linarith
+
+/-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every nontrivial
+element of `S` has at least twice that distance as seminorm. -/
+@[to_additive /-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every
+nonzero element of `S` has at least twice that distance as seminorm. -/]
+theorem dist_mk_eq_dist {x y : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * dist x y ≤ ‖s‖) :
+    dist (x : M ⧸ S) y = dist x y := by
+  rw [dist_eq_norm_div, dist_eq_norm_div, ← QuotientGroup.mk_div]
+  exact norm_mk_eq_norm fun s hs hs1 ↦ (dist_eq_norm_div x y) ▸ h s hs hs1
+
+end Small
+
 section Ultrametric
 
 variable {M : Type*} [SeminormedCommGroup M] [IsUltrametricDist M]
@@ -128,17 +164,17 @@ end Submodule
 
 section Ideal
 
-variable {R : Type*} [SeminormedCommRing R]
+variable {R : Type*} [SeminormedRing R] {I : Ideal R} [I.IsTwoSided]
 
-/-- For `s ∈ I`, the element `r - s` attains the quotient seminorm of `r` modulo the ideal `I`
-if and only if `s` minimises `‖r - s'‖` over `I`. -/
-theorem Ideal.Quotient.norm_sub_eq_norm_mk_iff {I : Ideal R} {r s : R} (hs : s ∈ I) :
+/-- For `s ∈ I`, the element `r - s` attains the quotient seminorm of `r` modulo the two-sided
+ideal `I` if and only if `s` minimises `‖r - s'‖` over `I`. -/
+theorem Ideal.Quotient.norm_sub_eq_norm_mk_iff {r s : R} (hs : s ∈ I) :
     ‖r - s‖ = ‖Ideal.Quotient.mk I r‖ ↔ ∀ s' ∈ I, ‖r - s‖ ≤ ‖r - s'‖ :=
   Submodule.Quotient.norm_sub_eq_norm_mk_iff (S := I) hs
 
 /-- Every residue class in `R ⧸ I` has a representative attaining its quotient seminorm if and only
-if every coset of `I` has an element of least seminorm. -/
-theorem Ideal.Quotient.exists_mk_eq_and_norm_eq_iff {I : Ideal R} :
+if every coset of the two-sided ideal `I` has an element of least seminorm. -/
+theorem Ideal.Quotient.exists_mk_eq_and_norm_eq_iff :
     (∀ x : R ⧸ I, ∃ r : R, Ideal.Quotient.mk I r = x ∧ ‖r‖ = ‖x‖) ↔
       ∀ r : R, ∃ s ∈ I, ∀ s' ∈ I, ‖r - s‖ ≤ ‖r - s'‖ :=
   Submodule.Quotient.exists_mk_eq_and_norm_eq_iff (S := I)

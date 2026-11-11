@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Tensor
-public import TauCeti.CategoryTheory.Monoidal.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
+public import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Frobenius–Schur indicators of pivotal categories
@@ -309,17 +310,23 @@ theorem frobeniusSchurIndicator_two :
   (rfl)
 
 /-- The first Frobenius–Schur indicator is the dimension of `𝟙_ C ⟶ V`, since `E_V^{(1)}` is the
-identity. -/
-theorem frobeniusSchurIndicator_one [Module.Free k (𝟙_ C ⟶ V)] [Module.Finite k (𝟙_ C ⟶ V)] :
+identity. When `𝟙_ C ⟶ V` is not finite, both sides are `0`. -/
+theorem frobeniusSchurIndicator_one [Module.Free k (𝟙_ C ⟶ V)] :
     frobeniusSchurIndicator k V 1 = Module.finrank k (𝟙_ C ⟶ V) := by
   let e : (𝟙_ C ⟶ tensorPow V 1) ≃ₗ[k] (𝟙_ C ⟶ V) := Linear.homCongr k (Iso.refl _) (ρ_ V)
   have : Module.Free k (𝟙_ C ⟶ tensorPow V 1) := Module.Free.of_equiv e.symm
-  have : Module.Finite k (𝟙_ C ⟶ tensorPow V 1) := Module.Finite.equiv e.symm
   have h1 : frobeniusSchurEnd k V 0 = 1 := by simpa using frobeniusSchurEnd_pow_eq_one k V 0
   -- `(1 : ℕ+)` is `⟨1, _⟩`, which is `Nat.succPNat 0` by definition; restating it this way puts
   -- the indicator in the form of `frobeniusSchurIndicator_succPNat`.
-  rw [show (1 : ℕ+) = Nat.succPNat 0 from rfl, frobeniusSchurIndicator_succPNat, h1,
-    LinearMap.trace_one, e.finrank_eq]
+  rw [show (1 : ℕ+) = Nat.succPNat 0 from rfl, frobeniusSchurIndicator_succPNat, h1]
+  by_cases hF : Module.Finite k (𝟙_ C ⟶ V)
+  · have : Module.Finite k (𝟙_ C ⟶ tensorPow V 1) := Module.Finite.equiv e.symm
+    rw [LinearMap.trace_one, e.finrank_eq]
+  · have : ¬ Module.Finite k (𝟙_ C ⟶ tensorPow V 1) := fun h ↦ hF (Module.Finite.equiv e)
+    rcases subsingleton_or_nontrivial k with _ | _
+    · exact Subsingleton.elim _ _
+    rw [LinearMap.trace_eq_zero_of_not_finite this, LinearMap.zero_apply,
+      Module.finrank_of_not_finite hF, Nat.cast_zero]
 
 /-- The Frobenius–Schur indicators of isomorphic objects agree. -/
 theorem frobeniusSchurIndicator_congr {W : C} (e : V ≅ W) (n : ℕ+) :

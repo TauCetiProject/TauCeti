@@ -382,6 +382,14 @@ theorem ord_algebraMap_restrict (f : F) :
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
+/-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
+`e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
+theorem ord_algebraMap_mul_pow {y : F'} (hy0 : y ≠ 0) {c : F} (hc : c ≠ 0) (i : ℕ) :
+    P'.ord (algebraMap F F' c * y ^ i) =
+      ramificationIdx F P' * (P'.restrict k F).ord c + i * P'.ord y := by
+  rw [P'.ord_mul (by simpa using hc) (pow_ne_zero i hy0), P'.ord_pow,
+    ord_algebraMap_restrict k F P']
+
 /-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
 of that place, because the ramification index is a positive factor. -/
 theorem ord_algebraMap_pos_iff (f : F) :
@@ -483,6 +491,38 @@ theorem ramificationIdx_eq_of_forall_ord_eq {e : ℕ}
   have h1 := h f
   rw [ord_algebraMap_restrict k F P' f, hf] at h1
   exact_mod_cast by omega
+
+/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
+elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
+theorem algebraMap_mem_integers_of_mem_integralClosure
+    (b : integralClosure ((P'.restrict k F).integers) F') :
+    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
+  rw [Subalgebra.algebraMap_eq]
+  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+
+variable {k F} in
+/-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
+vanishes to order `a` at `Q'`. -/
+theorem mul_mem_filtration_of_mem_integralClosure
+    {P : Place k F} {Q' : Place k' F'} (hQ' : Q'.restrict k F = P) {a : ℤ} {y : F'}
+    (hy : y ∈ Q'.filtration a) (s : integralClosure P.integers F') :
+    y * s ∈ Q'.filtration a := by
+  subst hQ'
+  simpa using Q'.mul_mem_filtration hy
+    (Q'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F Q' s))
+
+/-- A function of `F` that vanishes to order `m` at the place below `P'` does so at `P'`, since
+the ramification index `e(P' ∣ P)` is positive. -/
+theorem algebraMap_mem_filtration {r : F} {m : ℕ}
+    (hr : r ∈ (P'.restrict k F).filtration m) : algebraMap F F' r ∈ P'.filtration m := by
+  rcases eq_or_ne r 0 with rfl | h0
+  · simp
+  rw [mem_filtration_iff_le_ord _ h0] at hr
+  rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P']
+  have he : (1 : ℤ) ≤ ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
+  have hm : (0 : ℤ) ≤ m := by positivity
+  nlinarith
 
 end Restrict
 

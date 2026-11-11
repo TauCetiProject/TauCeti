@@ -132,7 +132,7 @@ theorem toBaseChange_ofBaseChangeAux (Q : QuadraticForm R M) (x : CliffordAlgebr
 
 /-- The canonical map to the Clifford algebra after extension of scalars is injective when the
 extension is faithful and the Clifford algebra is flat; in particular, for every extension of
-fields. -/
+fields with `2` invertible in the base field. -/
 theorem ofBaseChangeAux_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
     [Module.Flat R (CliffordAlgebra Q)] :
     Function.Injective (ofBaseChangeAux A Q) := by

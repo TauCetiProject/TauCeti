@@ -222,6 +222,12 @@ theorem surfacePart_inv {y : realSpace K} (hy : 0 ≤ archNorm y) :
   simp only [surfacePart_def, surfaceScale_apply, Pi.inv_apply, archNorm_inv, inv_inv,
     mul_inv, Real.inv_rpow hy]
 
+/-- Inverting a radially scaled parameter inverts both coordinates. -/
+theorem surfaceScale_inv (x : realSpace K) {t : ℝ} (ht : 0 ≤ t) :
+    (surfaceScale x t)⁻¹ = surfaceScale x⁻¹ t⁻¹ := by
+  ext w
+  simp [Real.inv_rpow ht, mul_comm]
+
 /-- Multiplication by a norm-one parameter translates only the surface coordinate. -/
 theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K) :
     surfacePart (c * y) = c * surfacePart y := by

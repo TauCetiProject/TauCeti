@@ -201,6 +201,14 @@ variable (θ) in
 def derivation₂ : derivationLieAlgebra ℂ (SmoothNoncommutativeTorus θ) :=
   gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.snd ℤ ℤ))
 
+/-- The first coordinate derivation is the lattice derivation with weight `2πi m`. -/
+theorem derivation₁_def : derivation₁ θ =
+    gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.fst ℤ ℤ)) := (rfl)
+
+/-- The second coordinate derivation is the lattice derivation with weight `2πi n`. -/
+theorem derivation₂_def : derivation₂ θ =
+    gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.snd ℤ ℤ)) := (rfl)
+
 @[simp]
 theorem coeff_derivation₁ (a : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
     ((derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a).coeff x =
@@ -386,7 +394,6 @@ theorem fundamentalCocycle_apply_single (x y z : ℤ × ℤ) (c₀ c₁ c₂ : �
         ![single x c₀, single y c₁, single z c₂] =
       2 * π * I * (y.1 * z.2 - y.2 * z.1) *
         trace θ (single x c₀ * single y c₁ * single z c₂) := by
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [pi_ne_zero, I_ne_zero]
   -- write the derivatives of the monomials as scalar multiples of the monomials
   have h₁ (w : ℤ × ℤ) (c : ℂ) :
       (derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) (single w c) =
@@ -406,7 +413,6 @@ theorem fundamentalCocycle_apply_star_U₁_mul_U₂ :
     ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
       MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ)
         ![star ((U₁ θ : SmoothNoncommutativeTorus θ) * U₂ θ), U₁ θ, U₂ θ] = 2 * π * I := by
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [pi_ne_zero, I_ne_zero]
   have hu : star ((U₁ θ : SmoothNoncommutativeTorus θ) * U₂ θ) * (U₁ θ * U₂ θ) = 1 :=
     Unitary.star_mul_self_of_mem (U₁ θ * U₂ θ).2
   simp only [fundamentalCocycle_apply, Matrix.cons_val_zero, Matrix.cons_val_one,

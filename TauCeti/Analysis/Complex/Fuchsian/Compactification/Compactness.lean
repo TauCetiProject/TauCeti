@@ -20,10 +20,16 @@ many cusp neighbourhoods and a finite cover of that compact subset.
 The hypothesis is the compact truncation property expected of a fundamental polygon. It is
 independent of the definition of the compactification.
 
-## Main result
+Conversely, finiteness of the cusp orbits is a consequence of compactness: the cusp orbits form a
+closed subset of the compactified quotient, and each of them is isolated in it by its cusp
+neighbourhoods.
+
+## Main results
 
 * `Subgroup.CompactifiedQuotient.compactSpace_of_compact_truncations`: compactness from a
   compact truncated fundamental set at every family of cusp heights.
+* `Subgroup.CompactifiedQuotient.finite_cuspOrbit`: a compact compactified quotient has only
+  finitely many cusp orbits.
 -/
 
 public section
@@ -33,7 +39,28 @@ open scoped MatrixGroups
 
 namespace Subgroup.CompactifiedQuotient
 
-variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] [Finite Γ.CuspOrbit]
+variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
+
+/-- A compact cusp compactification has only finitely many cusp orbits. The adjoined cusps form a
+closed, hence compact, subset, and a cusp neighbourhood of a cusp orbit contains no other cusp
+orbit. -/
+theorem finite_cuspOrbit [CompactSpace Γ.CompactifiedQuotient] : Finite Γ.CuspOrbit := by
+  have hdisc : IsDiscrete (range (ofCusp (Γ := Γ))) := by
+    refine isDiscrete_iff_forall_mem_exists_isOpen.mpr ?_
+    rintro _ ⟨C, rfl⟩
+    obtain ⟨D, rfl⟩ := CuspDatum.cuspOrbit_surjective C
+    refine ⟨cuspNhd D 0, isOpen_cuspNhd D 0, ?_⟩
+    ext x
+    simp only [mem_inter_iff, mem_range, mem_singleton_iff]
+    constructor
+    · rintro ⟨hx, C', rfl⟩
+      rw [(ofCusp_mem_cuspNhd_iff D 0).mp hx]
+    · rintro rfl
+      exact ⟨ofCusp_mem_cuspNhd D 0, _, rfl⟩
+  exact (finite_range_iff fun _ _ h ↦ ofCusp.inj h).mp
+    (isClosed_range_ofCusp.isCompact.finite hdisc)
+
+variable [Finite Γ.CuspOrbit]
 
 /-- If every truncation of the orbit space outside horodiscs has a compact set of
 representatives in the upper half-plane, then adjoining the finitely many cusp orbits makes the

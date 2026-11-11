@@ -80,6 +80,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   at `n` and `0` elsewhere.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
+* `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
+  maps.
 
 ## Tags
 
@@ -233,6 +235,15 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
 
+/-- Fourier coefficients commute with continuous linear maps: the coefficients of `x ↦ φ (f x)`
+are the images under `φ` of those of an integrable `f`. -/
+theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [CompleteSpace F] (φ : E →L[ℂ] F) {f : AddCircle T → E} (hf : Integrable f haarAddCircle)
+    (n : ℤ) :
+    fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
+  simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
+
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -278,6 +289,23 @@ theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
   filter_upwards [coeFn_fourierLp_smul m (fourierLp (T := T) ∞ n • f),
     coeFn_fourierLp_smul n f, coeFn_fourierLp_smul (m + n) f] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, fourier_add, mul_assoc]
+
+/-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_0 = 1` leaves it unchanged. -/
+@[simp]
+theorem fourierLp_zero_smul {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) :
+    (fourierLp (T := T) ∞ 0 • f : Lp ℂ p (haarAddCircle (T := T))) = f := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul 0 f] with x hx
+  rw [hx, fourier_zero, one_mul]
+
+/-- The complex conjugate of the `Lᵖ` Fourier monomial `e_n` is `e_(-n)`. -/
+@[simp]
+theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    star (fourierLp (T := T) p n) = fourierLp (T := T) p (-n) := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_star (fourierLp (T := T) p n), coeFn_fourierLp (T := T) p n,
+    coeFn_fourierLp (T := T) p (-n)] with x h hn hneg
+  rw [h, Pi.star_apply, hn, hneg, fourier_neg, RCLike.star_def]
 
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
 coefficients by `n`. -/

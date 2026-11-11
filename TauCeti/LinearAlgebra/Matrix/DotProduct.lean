@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -15,7 +16,8 @@ form sends `x` to `l i ⬝ᵥ x`, is linearly independent exactly when the squar
 `l i` is invertible. Its kernel is then trivial, so the forms cannot all vanish at a nonzero point.
 
 Relabelling the indices of a square matrix `M` along `e : I ≃ J` is an isometry of the pairing
-`(u, v) ↦ u ⬝ᵥ M *ᵥ v`.
+`(u, v) ↦ u ⬝ᵥ M *ᵥ v`, and the sesquilinear form of a compression `Aᴴ * M * A` is that of `M`
+pulled back along `A`.
 
 When `A` scales `x` to a multiple of `x'` and `Aᵀ` scales `y'` to a multiple of `y`, the scalars
 transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For the character-lattice
@@ -27,6 +29,9 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
+* `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
+  `Aᴴ * M * A` is that of `M` pulled back along `A`.
+* `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
 -/
@@ -52,6 +57,19 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     [NonUnitalNonAssocSemiring α] (e : I ≃ J) (M : Matrix I I α) (u v : I → α) :
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
+
+/-- The sesquilinear form of a compression `Aᴴ * M * A` is the form of `M` pulled back along `A`:
+`star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y)`. -/
+theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fintype k]
+    [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (M : Matrix k k α)
+    (x y : l → α) : star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y) := by
+  rw [← mulVec_mulVec, ← mulVec_mulVec, star_mulVec, dotProduct_mulVec]
+
+/-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
+@[simp]
+theorem Matrix.dotProduct_self_nonneg {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] (v : n → R) : 0 ≤ v ⬝ᵥ v :=
+  Fintype.sum_nonneg fun i ↦ mul_self_nonneg (v i)
 
 /-- **Scaling by a matrix and by its transpose transforms the dot product.** If `A` sends `x` to
 `a • x'` and `Aᵀ` sends `y'` to `b • y`, then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`. For the

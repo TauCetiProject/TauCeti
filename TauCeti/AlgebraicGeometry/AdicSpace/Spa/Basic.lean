@@ -31,12 +31,11 @@ enter only where theorems need them — spectrality (Wedhorn Theorem 7.35) is th
 theorem, and it lives with the `Spv (A, I)` machinery it consumes, not in this file. This
 mirrors how `cont` itself is defined below its Wedhorn hypotheses.
 
-Following the roadmap's conventions, the plus ring is an explicit `Subring A` argument and the
-spectrum is a `Set (Spv A)`, so a point is a valuation up to equivalence with no chosen value
-group, and the subspace topology is the one the coercion `↥(spa Aplus)` carries. (Mathlib's
-in-flight `SpaPoint` of mathlib4#42315 instead bundles a representative valuation with a chosen
-value group — the representation the roadmap warns must be compared before later layers may use
-it; the subspace form here needs no such comparison.)
+The plus ring is an explicit `Subring A` argument and the spectrum is a `Set (Spv A)`, so a point
+is a valuation up to equivalence with no chosen value group, and the subspace topology is the one
+the coercion `↥(spa Aplus)` carries. (The `SpaPoint` of mathlib4#42315 instead bundles a
+representative valuation with a chosen value group; the subspace form here needs no choice of
+representative.)
 
 ## Main definitions
 
@@ -66,6 +65,8 @@ it; the subspace form here needs no such comparison.)
   ring `A⁺` (the `1 ∈ closure {0} → Spa(A, A⁺) = ∅` half of Wedhorn Proposition 7.49(1)).
 * `TauCeti.ValuationSpectrum.trivialSection_mem_spa_iff` : the trivial valuation of a prime is a
   point of the adic spectrum exactly when the prime is open, for any plus ring.
+* `TauCeti.ValuationSpectrum.isOpen_setOf_notMem_supp` : the points of `Spa (A, A⁺)` off the
+  support of an element form an open subset.
 * `TauCeti.ValuationSpectrum.eq_top_of_spa_eq_empty` : an empty adic spectrum forces every open
   ideal to be the unit ideal.
 The converse and the full separated-quotient criterion of Wedhorn Proposition 7.49(1) require
@@ -208,6 +209,17 @@ theorem trivialSection_mem_spa_iff (Aplus : Subring A) (p : PrimeSpectrum A) :
     fun hp ↦ ⟨(isContinuous_trivialSection_iff p).mpr hp, fun a _ ↦ ?_⟩⟩
   exact (trivialSection_vle_iff p a 1).mpr
     (Or.inr ((Ideal.ne_top_iff_one _).mp p.isPrime.ne_top))
+
+/-- **Points off the support of an element.** The points of `Spa (A, A⁺)` at which `f` does not
+vanish, that is `f ∉ supp v`, form an open subset. -/
+theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
+    (Aplus : Subring A) (f : A) :
+    IsOpen {v : spa Aplus | f ∉ supp v.1} := by
+  have : {v : spa Aplus | f ∉ supp v.1} = Subtype.val ⁻¹' basicOpen f f := by
+    ext v
+    simp [ValuativeRel.vle_refl]
+  rw [this]
+  exact (isOpen_basicOpen f f).preimage continuous_subtype_val
 
 section SeparatelyContinuousAdd
 

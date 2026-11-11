@@ -15,7 +15,8 @@ public import TauCeti.Probability.Quantile
 
 The Rademacher law is the probability measure on `ℝ` assigning equal mass to `-1` and `1`.
 This file gives its masses and support, cumulative distribution and quantile, natural moments,
-and moment- and characteristic-function formulas.
+and moment- and characteristic-function formulas, and the fact that a variable with this law is
+almost surely `±1`.
 -/
 
 public section
@@ -235,5 +236,40 @@ theorem charFun_rademacherMeasure (t : ℝ) :
   rw [Complex.real_smul, Complex.real_smul]
   push_cast
   ring_nf
+
+/-- A random variable with the Rademacher law is almost everywhere measurable: an unmeasurable
+pushforward is `0` or a Dirac mass, and neither charges both atoms `±1`. -/
+theorem aemeasurable_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {ε : Ω → ℝ} (h : μ.map ε = rademacherMeasure) : AEMeasurable ε μ := by
+  by_contra hnot
+  have hpos (x : ℝ) (hx : x = -1 ∨ x = 1) : rademacherMeasure {x} ≠ 0 := by
+    simp [hx]
+  by_cases hμ : μ = 0
+  · rw [hμ, Measure.map_zero] at h
+    exact hpos 1 (Or.inr rfl) (by simp [← h])
+  · rw [Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ] at h
+    -- the Dirac mass at the chosen point `x₀` misses one of the atoms `±1`
+    obtain ⟨a, ha, hax⟩ : ∃ a : ℝ, (a = -1 ∨ a = 1) ∧ a ≠ Classical.ofNonempty := by
+      by_cases hx : Classical.ofNonempty = (1 : ℝ)
+      · exact ⟨-1, Or.inl rfl, by rw [hx]; norm_num⟩
+      · exact ⟨1, Or.inr rfl, Ne.symm hx⟩
+    refine hpos a ha ?_
+    rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _)]
+    simp [hax.symm]
+
+/-- A random variable with the Rademacher law equals `±1` almost surely. -/
+theorem ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {ε : Ω → ℝ} (h : μ.map ε = rademacherMeasure) :
+    ∀ᵐ ω ∂μ, ε ω = 1 ∨ ε ω = -1 := by
+  have hset : MeasurableSet {x : ℝ | x = 1 ∨ x = -1} :=
+    (measurableSet_singleton _).union (measurableSet_singleton _)
+  have hae : ∀ᵐ x ∂rademacherMeasure, x = 1 ∨ x = -1 := by
+    have hc : MeasurableSet {a : ℝ | ¬(a = 1 ∨ a = -1)} := hset.compl
+    rw [ae_iff, rademacherMeasure_eq, add_apply, smul_apply, smul_apply,
+      Measure.dirac_apply' _ hc, Measure.dirac_apply' _ hc]
+    norm_num
+  have hε := aemeasurable_of_map_eq_rademacherMeasure h
+  rw [← h] at hae
+  exact (ae_map_iff hε hset).1 hae
 
 end TauCeti.Probability

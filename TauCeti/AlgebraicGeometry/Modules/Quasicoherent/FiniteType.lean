@@ -31,6 +31,10 @@ union of basic opens, and the submodules found for each of them lie in a common 
 affine input of the extension of finite-type quasi-coherent submodules along quasi-compact open
 immersions into quasi-compact quasi-separated schemes.
 
+On an affine scheme, generators of the global sections of a quasi-coherent module give a
+surjection onto it from a free module of finite rank. Consequently a quasi-coherent module is of
+finite type exactly when its sections over every affine open are finitely generated.
+
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.exists_isFiniteType_mono_sections`: finitely many global
@@ -45,6 +49,11 @@ immersions into quasi-compact quasi-separated schemes.
 * `AlgebraicGeometry.Scheme.Modules.exists_isFiniteType_mono_isIso_restrict`: on an affine
   scheme, a quasi-coherent module of finite type over a quasi-compact open has a finite-type
   quasi-coherent submodule that is everything over that open.
+* `AlgebraicGeometry.Scheme.Modules.exists_epi_free_of_finite`: on an affine scheme, a
+  quasi-coherent module with finitely generated global sections is a quotient of a free module
+  of finite rank.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_iff_finite_sections`: a quasi-coherent module is
+  of finite type if and only if its sections over every affine open are finitely generated.
 
 ## References
 
@@ -221,5 +230,68 @@ theorem exists_isFiniteType_mono_isIso_restrict [IsAffine X] {N : X.Modules} [N.
   have : IsIso ((restrictFunctor (W f.1).ι).map ((restrictFunctor V.ι).map i)) :=
     (NatIso.isIso_map_iff (restrictFunctorComp (W f.1).ι V.ι) i).mp this
   exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (W f.1).ι) _).mp this
+
+/-- On an affine scheme, a quasi-coherent module whose global sections are finitely generated is
+a quotient of a free module of finite rank. -/
+theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoherent]
+    [Module.Finite Γ(X, ⊤) Γ(N, ⊤)] :
+    ∃ (I : Type u) (_ : Finite I) (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free I) N),
+      Epi π := by
+  obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := Γ(X, ⊤)) (M := Γ(N, ⊤))
+  let F : X.Modules := SheafOfModules.free (S : Set Γ(N, ⊤))
+  let φ : F ⟶ N := N.freeHomEquiv.symm fun s ↦ N.sectionsEquivTop.symm s.1
+  have : IsIso (image.ι φ) := by
+    refine isIso_of_mono_of_surjective_sectionsFunctor_map_top _ ?_
+    -- The sections functor applies `Hom.app ⊤`; state surjectivity in terms of the latter.
+    change ∀ x : Γ(N, ⊤), ∃ y, (image.ι φ).app ⊤ y = x
+    intro x
+    have hx : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)) := hS ▸ Submodule.mem_top
+    induction hx using Submodule.span_induction with
+    | mem s hs =>
+      refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
+        ?_⟩
+      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac,
+        ← sectionsEquivTop_sectionsMap]
+      -- `freeHomEquiv_apply` is stated in sheaves of modules; restate it for `X.Modules`.
+      have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection ⟨s, hs⟩) =
+          N.freeHomEquiv φ ⟨s, hs⟩ :=
+        (SheafOfModules.freeHomEquiv_apply (M := N) φ ⟨s, hs⟩).symm
+      rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+    | zero => exact ⟨0, map_zero _⟩
+    | add x y _ _ hx hy =>
+      obtain ⟨a, rfl⟩ := hx
+      obtain ⟨b, rfl⟩ := hy
+      exact ⟨a + b, map_add _ _ _⟩
+    | smul r x _ hx =>
+      obtain ⟨a, rfl⟩ := hx
+      exact ⟨r • a, Hom.app_smul _ _ _⟩
+  refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
+  have := epi_comp (factorThruImage φ) (image.ι φ)
+  rwa [image.fac] at this
+
+/-- A quasi-coherent module whose sections over every affine open are finitely generated is of
+finite type. This is the converse of `Scheme.Modules.finite_sections_of_isAffineOpen`. -/
+theorem isFiniteType_of_finite_sections (K : X.Modules) [K.IsQuasicoherent]
+    (h : ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U)) : K.IsFiniteType := by
+  refine TauCeti.AlgebraicGeometry.isFiniteType_of_isFiniteType_restrict_affineOpens K fun U ↦ ?_
+  have hU := U.2
+  have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
+  let L := K.restrict hU.fromSpec
+  have := h U.1 hU
+  have : Module.Finite Γ(X, U.1) Γ(L, ⊤) := Module.Finite.equiv (K.fromSpecSectionsEquiv hU)
+  have : Module.Finite Γ(Spec Γ(X, U.1), ⊤) Γ(L, ⊤) :=
+    Module.Finite.of_restrictScalars_finite Γ(X, U.1) _ _
+  obtain ⟨I, _, π, hπ⟩ := exists_epi_free_of_finite L
+  have : L.IsFiniteType := @isFiniteType_of_epi _ _ _ π hπ _
+  exact SheafOfModules.IsFiniteType.of_iso (R := U.1.toScheme.ringCatSheaf)
+    (M := L.restrict hU.isoSpec.hom)
+    (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app K).symm ≪≫
+      (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app K)
+
+/-- A quasi-coherent module is of finite type if and only if its sections over every affine open
+are finitely generated. -/
+theorem isFiniteType_iff_finite_sections (K : X.Modules) [K.IsQuasicoherent] :
+    K.IsFiniteType ↔ ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U) :=
+  ⟨fun _ U hU ↦ K.finite_sections_of_isAffineOpen U hU, isFiniteType_of_finite_sections K⟩
 
 end AlgebraicGeometry.Scheme.Modules

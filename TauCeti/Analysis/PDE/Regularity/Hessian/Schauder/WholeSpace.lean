@@ -54,9 +54,11 @@ The first and second derivatives are then removed from the right side by the int
 inequalities `‖D²u‖_∞ ≤ 32 ε⁻² ‖u‖_∞ + 2 ε^α [D²u]_α` and
 `‖Du‖_∞ ≤ 34 ε⁻¹ ‖u‖_∞ + 2 ε^(1+α) [D²u]_α`
 (`HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le`,
-`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`). Taking for `[D²u]_α` the Hölder
-norm `nnHolderNorm`, which is finite, and `ε` so small that `4 C ε^α ≤ 1 / 2`, the resulting
-multiple of `[D²u]_α` is absorbed into the left side.
+`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`), which for `ε ≤ 1` give the
+common bound `(34 ε⁻¹ + 32 ε⁻²) ‖u‖_∞ + 2 ε^α [D²u]_α`
+(`HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`). Taking for
+`[D²u]_α` the Hölder norm `nnHolderNorm`, which is finite, and `ε` so small that
+`4 C ε^α ≤ 1 / 2`, the resulting multiple of `[D²u]_α` is absorbed into the left side.
 
 ## Main declarations
 
@@ -116,7 +118,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
   obtain ⟨R, hR, -, hscale⟩ := Real.exists_pos_le_one_mul_rpow_le
     (2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
       ((1 + 2 ^ (α : ℝ)) * L)) (NNReal.coe_pos.2 hα) hlam
-  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam hR
+  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam
     (by simpa only [mul_assoc] using hscale) (half_lt_self hR)
   set δ : ℝ≥0 := ⟨R / 2, by positivity⟩
   have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hR
@@ -176,27 +178,16 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   set c : ℝ := 34 / ε + 32 / ε ^ 2
   have hc : 0 ≤ c := by positivity
   set A : ℝ := 2 * C₁ * (1 + c)
-  have hA : 0 ≤ A := by positivity
   refine ⟨(3 * A + c).toNNReal, fun {a} hEll hL {u N K} hu hN hbdd hmem hK => ?_⟩
   -- The Hölder norm `H` of `D²u` and the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
-  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
-    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ 32 * N / ε ^ 2 + 2 * H * ε ^ (α : ℝ) :=
-    hH.norm_iteratedFDeriv_add_two_le_of_norm_le (k := 0) hu hN0 hbdd hε x
-  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ 34 * N / ε + 2 * H * ε ^ (α : ℝ) := by
-    have h := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove (k := 0) hu hN0 hbdd hε x
-    rw [zero_add, norm_iteratedFDeriv_one] at h
-    have hε' : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
-      Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
-    nlinarith [H.coe_nonneg]
+  obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
+    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
   -- The first estimate with `N₁ = (1 + c) N + 4 H ε^α`, which bounds `|u|`, `‖Du‖` and `‖D²u‖`.
   have hNN : 0 ≤ (N : ℝ) := N.coe_nonneg
   have hHε : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
-  have h34 : 0 ≤ 34 * (N : ℝ) / ε := by positivity
-  have h32 : 0 ≤ 32 * (N : ℝ) / ε ^ 2 := by positivity
-  have hcN : 34 * N / ε + 32 * N / ε ^ 2 = c * N := by simp only [c]; ring
+  have hcN : 0 ≤ c * N := by positivity
   set N₁ : ℝ := (1 + c) * N + 4 * H * ε ^ (α : ℝ)
   have hN₁ : 0 ≤ N₁ := by positivity
   have hHN : H ≤ C₁ * (K + N₁.toNNReal) := by
@@ -212,7 +203,6 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
       rwa [NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at this
     have habs : 4 * C₁ * ε ^ (α : ℝ) * H ≤ 1 / 2 * H :=
       mul_le_mul_of_nonneg_right hεC H.coe_nonneg
-    have hKN : 0 ≤ (C₁ : ℝ) * (1 + c) * N := by positivity
     have hK0 : 0 ≤ (C₁ : ℝ) * K := by positivity
     simp only [A, N₁] at h ⊢
     nlinarith
@@ -220,7 +210,6 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   have hC : (3 * A + c) * (K + N) ≤ ((3 * A + c).toNNReal : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) hKN
   have hHε' : (H : ℝ) * ε ^ (α : ℝ) ≤ H := mul_le_of_le_one_right H.coe_nonneg hεα
-  have hA' : 0 ≤ A * (K + N) := mul_nonneg hA hKN
   have hcK : 0 ≤ c * K := mul_nonneg hc K.coe_nonneg
   refine ⟨hH.mono ?_, fun x => (h1 x).trans ?_, fun x => (h2 x).trans ?_⟩
   · rw [← NNReal.coe_le_coe]

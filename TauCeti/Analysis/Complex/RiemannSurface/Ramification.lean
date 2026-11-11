@@ -154,9 +154,9 @@ theorem coeff_ramificationDivisor (f : FiniteHolomorphicMap X Y) (x : X) :
   (rfl)
 
 /-- The ramification divisor is effective. -/
-theorem isEffective_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (ramificationDivisor f) := by
-  rw [WeilDivisor.isEffective_iff]
+theorem ramificationDivisor_nonneg (f : FiniteHolomorphicMap X Y) :
+    0 ≤ ramificationDivisor f := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [coeff_ramificationDivisor, sub_nonneg, Nat.one_le_cast]
   exact localMultiplicity_pos f x
@@ -263,6 +263,7 @@ section Comp
 
 variable [IsManifold 𝓘(ℂ) 1 Z] [T2Space X] [T2Space Y] [PreconnectedSpace Y] [CompactSpace Y]
 
+omit [T2Space X] in
 /-- **The chain rule for ramification divisors.** The ramification divisor of a composite of
 finite holomorphic maps between compact Riemann surfaces, with `Y` connected, is
 `R_{g ∘ f} = R_f + f^* R_g`: at `x` this is `e_g e_f - 1 = (e_f - 1) + e_f (e_g - 1)`. -/
@@ -275,10 +276,12 @@ theorem ramificationDivisor_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolom
   push_cast
   ring
 
+omit [CompactSpace Y] in
 /-- The ramification degree of a composite of finite holomorphic maps between compact Riemann
 surfaces, with `Y` connected, is `deg R_f + deg f · deg R_g`. -/
 theorem ramificationDegree_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDegree (g.comp f) = ramificationDegree f + degree f * ramificationDegree g := by
+  have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have h := congrArg WeilDivisor.degree (ramificationDivisor_comp g f)
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, degree_ramificationDivisor,
     degree_ramificationDivisor] at h

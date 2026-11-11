@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.Data.Finsupp.MonomialOrder.Refinement
 
 /-!
 # Leading monomials for a monomial order
@@ -17,8 +18,9 @@ multiple, the cancellation of leading terms by an S-polynomial, the behaviour of
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, the top weighted part of a binomial lifted by terms of lower weight, leading
 data of renamed polynomials, elimination orders and the lexicographic ones among them, agreement
-of leading exponents under two monomial orders, normalization to leading coefficient one over a
-field, leading exponents of substitutions of nonzero families, leading data of substitutions of
+of leading exponents under two monomial orders, leading data for nonnegative weight refinements,
+normalization to leading coefficient one over a field, leading exponents of substitutions of
+nonzero families, leading data of substitutions of
 monic families, cancellation of substituted monic binomials, and algebraic independence from
 leading monomials.
 
@@ -76,6 +78,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   polynomial whose leading monomial only involves the variables `e τ` is a renamed polynomial.
 * `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
   form a lower set for the lexicographic order.
+* `MonomialOrder.weight_degree_weightRefinement`: the refined leading exponent has maximal
+  weight. `MonomialOrder.degree_weightRefinement`, `MonomialOrder.leadingCoeff_weightRefinement`
+  and `MonomialOrder.leadingTerm_weightRefinement` identify its leading data with those of the
+  maximal-weight component in the original order.
 * `MonomialOrder.monicNormalize`: over a field, a polynomial divided by its leading coefficient,
   monic with the same leading exponent when the polynomial is nonzero
   (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`).
@@ -336,6 +342,82 @@ theorem isWeightedHomogeneous_weightedHomogeneousComponent_weight_degree (f : Mv
 
 end WeightedHomogeneous
 
+section WeightRefinement
+
+variable [CommSemiring R] (w : σ → ℕ)
+
+/-- The leading exponent for a weight-refined order has maximal weight. This includes the
+zero polynomial, whose degree and weighted total degree are both totalized at zero. -/
+@[simp]
+theorem weight_degree_weightRefinement (f : MvPolynomial σ R) :
+    Finsupp.weight w ((m.weightRefinement w).degree f) = f.weightedTotalDegree w := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [weightedTotalDegree_zero]
+  apply le_antisymm
+  · exact le_weightedTotalDegree w ((m.weightRefinement w).degree_mem_support hf)
+  · exact Finset.sup_le fun a ha ↦
+      m.weight_le_of_weightRefinement_le w ((m.weightRefinement w).le_degree ha)
+
+/-- Refining by weight does not change the leading exponent of a weighted homogeneous
+polynomial: all comparisons in its support are ties in weight. -/
+theorem degree_weightRefinement_of_isWeightedHomogeneous {f : MvPolynomial σ R} {d : ℕ}
+    (hf : f.IsWeightedHomogeneous w d) : (m.weightRefinement w).degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  apply m.degree_eq_of_forall_lt
+  intro a ha hne
+  apply (m.weightRefinement_lt_iff_of_weight_eq w
+    ((hf (mem_support_iff.1 ha)).trans
+      (hf (mem_support_iff.1 (m.degree_mem_support hf0))).symm)).2
+  exact lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne)
+
+/-- The refined leading exponent is the original-order leading exponent of the maximal-weight
+component. This is the polynomial comparison underlying refinement of weight initials. -/
+theorem degree_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).degree f =
+      m.degree (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).degree_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.degree_weightRefinement_of_isWeightedHomogeneous w
+    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)
+
+/-- The leading coefficient for a weight-refined order is the leading coefficient, in the
+original order, of the maximal-weight component. -/
+theorem leadingCoeff_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).leadingCoeff f =
+      m.leadingCoeff (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).leadingCoeff_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.leadingCoeff_eq_of_degree_eq (m.weightRefinement w)
+    (m.degree_weightRefinement_of_isWeightedHomogeneous w
+      (weightedHomogeneousComponent_isWeightedHomogeneous _ _))
+
+/-- The leading term for a weight-refined order is the leading term, in the original order,
+of the maximal-weight component. In particular, tied maximal-weight terms are not discarded
+until the original monomial order is applied. -/
+theorem leadingTerm_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).leadingTerm f =
+      m.leadingTerm (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).leadingTerm_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.leadingTerm_eq_of_degree_eq (m.weightRefinement w)
+    (m.degree_weightRefinement_of_isWeightedHomogeneous w
+      (weightedHomogeneousComponent_isWeightedHomogeneous _ _))
+
+/-- Zero-weight refinement leaves polynomial leading exponents unchanged. -/
+@[simp]
+theorem degree_weightRefinement_zero (f : MvPolynomial σ R) :
+    (m.weightRefinement 0).degree f = m.degree f :=
+  m.degree_weightRefinement_of_isWeightedHomogeneous 0 (d := 0) (by
+    intro a ha
+    simp [Finsupp.weight_apply])
+
+end WeightRefinement
+
 section Relation
 
 variable {m} {ι : Type*} [CommRing R] {a : ι → σ →₀ ℕ} {u v : ι →₀ ℕ} {Q : MvPolynomial ι R}
@@ -527,6 +609,15 @@ theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
     exact SMulMemClass.smul_mem _ h
 
 end MonicNormalize
+
+/-- Substituting nonzero polynomials into a coefficient-one monomial gives a nonzero
+polynomial over a nontrivial semiring without zero divisors. -/
+theorem _root_.MvPolynomial.aeval_monomial_one_ne_zero [CommSemiring R] [Nontrivial R]
+    [NoZeroDivisors R] {ι : Type*} {b : ι → MvPolynomial σ R}
+    (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) : aeval b (monomial u (1 : R)) ≠ 0 := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul]
+  exact Finset.prod_ne_zero_iff.2 fun i _ ↦ pow_ne_zero _ (hb i)
 
 /-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
 exponents, with the multiplicities prescribed by the monomial. -/

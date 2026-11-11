@@ -56,7 +56,7 @@ theorem adjoin_simple_eq_top_of_injOn_fiber (f : MeromorphicFunction X)
     IntermediateField.adjoin (RatFunc ℂ) {f} = ⊤ := by
   let : Algebra.IsAlgebraic (RatFunc ℂ) (MeromorphicFunction X) :=
     ⟨fun g => (isIntegral_ratFunc β g h).isAlgebraic⟩
-  apply Field.adjoin_simple_eq_top_of_forall_natDegree_minpoly_le f
+  apply (Field.adjoin_simple_eq_top_iff_forall_natDegree_minpoly_le f).mpr
   intro g
   rw [natDegree_minpoly_ratFunc_eq_degree β f h hy₀ hf hinj]
   exact natDegree_minpoly_ratFunc_le β g h

@@ -35,8 +35,8 @@ assumed here.
 
 * `TauCeti.GridDiagram.sum_pentagonPairWeight_mixedSide_eq_sum_partners`: off the diagonal, the
   mixed-side pentagon pairs and their hexagon-composite image have equal total weight.
-* `TauCeti.GridDiagram.disjoint_sameSidePentagonPartners_mixedSidePentagonPartners`: off the
-  diagonal, the two partner images are disjoint.
+* `TauCeti.GridDiagram.disjoint_sameSidePentagonPartners_mixedSidePentagonPartners`: the two
+  partner images are disjoint.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_sum_residual_eq_zero`:
   in characteristic two, the homotopy equation holds exactly when the residual unpaired
   composites have total weight zero off the diagonal.
@@ -170,11 +170,10 @@ theorem sum_pentagonPairWeight_mixedSide_eq_sum_partners
 
 /-! ### Disjointness of the two partner images -/
 
-/-- Off the diagonal, no unpaired composite is both the recut of a same-side pentagon pair and
-the underlying decomposition of a mixed-side pentagon pair: the replaced grid line is a common
-side of the latter but not of the former. -/
-theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridState n}
-    (hzx : z ≠ x) :
+/-- No unpaired composite is both the recut of a same-side pentagon pair and the underlying
+decomposition of a mixed-side pentagon pair: the replaced grid line is a common side of the latter
+but not of the former. -/
+theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridState n} :
     Disjoint (G.sameSidePentagonPartners C x z) (G.mixedSidePentagonPartners C x z) := by
   rw [Finset.disjoint_left]
   intro F hS hM
@@ -182,14 +181,14 @@ theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridS
   obtain ⟨-, E, -, hEF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hM
   have hb : b ∈ F.toRectangleDecomposition.commonSideColumns :=
     hEF ▸ G.finRotate_mem_commonSideColumns_of_pentagonPair C E
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut hzx
+  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut
   obtain ⟨-, hside⟩ := (G.mem_sameSidePentagonPairs C D).mp hD
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
     cases Q with
     | inl Q =>
-      have hcommon := (hrecut.isRecutOfRightEqRight hone (by
+      have hcommon := (hrecut.isRecutOfRightEqRight (by
         simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
           GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq,
           C.reverse_column]))
@@ -201,7 +200,7 @@ theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridS
     cases Q with
     | inl Q => simp at hside
     | inr Q =>
-      have hcommon := (hrecut.isRecutOfLeftEqLeft hone (by
+      have hcommon := (hrecut.isRecutOfLeftEqLeft (by
         simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
           GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq,
           C.reverse_column]))
@@ -227,7 +226,7 @@ theorem sum_sdiff_sameSide_eq_sum_sdiff_sameSide_iff_sum_residual_eq_zero
       G.unpairedHexagonComposites C x z \ G.sameSidePentagonPartners C x z :=
     fun F hF => Finset.mem_sdiff.mpr ⟨G.mixedSidePentagonPartners_subset C x z hF,
       Finset.disjoint_right.mp
-        (G.disjoint_sameSidePentagonPartners_mixedSidePentagonPartners C hzx) hF⟩
+        (G.disjoint_sameSidePentagonPartners_mixedSidePentagonPartners C) hF⟩
   rw [G.pentagonPairDecompositions_sdiff_sameSidePentagonPairs C,
     G.sum_pentagonPairWeight_mixedSide_eq_sum_partners C R hzx,
     ← Finset.sum_sdiff hsub (f := G.hexagonCompositeWeight C R)]

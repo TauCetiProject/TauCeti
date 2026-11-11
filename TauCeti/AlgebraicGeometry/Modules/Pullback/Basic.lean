@@ -503,8 +503,7 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
     (hU : TopologicalSpace.IsOpenCover U) {A B : X.Modules} (φ : A ⟶ B) :
     IsIso φ ↔ ∀ i, IsIso ((pullback (U i).ι).map φ) := by
   refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
-  refine SheafOfModules.isIso_of_coversTop ((_root_.Opens.coversTop_iff _ U).mpr hU) φ
-    fun i ↦ ?_
+  refine SheafOfModules.isIso_of_coversTop ((_root_.Opens.coversTop_iff _ U).mpr hU) fun i ↦ ?_
   -- Pullback along `(U i).ι` is restriction to `U i`, which is restriction to the slice at `U i`
   -- followed by an equivalence of categories.
   have : IsIso ((restrictFunctor (U i).ι).map φ) :=

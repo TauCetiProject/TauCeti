@@ -277,7 +277,7 @@ private lemma fdBoundary_ne_arc (hH : 1 < H) (hre : |w.re| < 1 / 2)
 /-- For an arc point, the branch rotated by `w⁻¹` is slit-plane-valued wherever the contour
 misses `w`: the cut ray `{r·w : r ≤ 1}` meets the contour only at `w` itself. -/
 private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im)
-    (ht : t ∈ Icc (0 : ℝ) 5) (hne : fdBoundary H t ≠ w) :
+    (hne : fdBoundary H t ≠ w) :
     (fdBoundary H t - w) * w⁻¹ ∈ Complex.slitPlane := by
   have hw0 : w ≠ 0 := fun h ↦ by rw [h, norm_zero] at hnorm; norm_num at hnorm
   by_contra hmem
@@ -294,7 +294,7 @@ private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im
   · have hn := congrArg norm hγ
     rw [norm_mul, hnorm, mul_one, show (1 + (x : ℂ)) = ((1 + x : ℝ) : ℂ) by push_cast; ring,
       Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hpos] at hn
-    have h1 := one_le_norm_fdBoundary hH.le ht
+    have h1 := one_le_norm_fdBoundary (t := t) hH.le
     have hx0 : x = 0 := le_antisymm hre0 (by rw [hn] at h1; linarith)
     refine hne ?_
     rw [hγ, hx0]
@@ -304,8 +304,8 @@ private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im
     rw [show (1 + (x : ℂ)) * w = ((1 + x : ℝ) : ℂ) * w by push_cast; ring] at hi
     simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
       add_zero] at hi
-    have him2 := sqrt_three_div_two_le_im_fdBoundary
-      (le_of_lt (sqrt_three_div_two_lt_one.trans hH)) ht
+    have him2 := sqrt_three_div_two_le_im_fdBoundary (t := t)
+      (le_of_lt (sqrt_three_div_two_lt_one.trans hH))
     nlinarith [Real.sqrt_nonneg 3, mul_neg_of_neg_of_pos hneg him]
 
 /-- **The chord-matched half-width fits the window**: for an excision radius `ε` below both
@@ -408,7 +408,7 @@ private lemma truncated_integral_spec_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
   have hw0 : w ≠ 0 := fun h ↦ by rw [h, norm_zero] at hnorm; norm_num at hnorm
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := w⁻¹)
     (inv_ne_zero hw0) (by linarith [ht₀.1]) hδ0 (by linarith [ht₀.2])
-    (fun t ht htw ↦ slit_branch_arc hH hnorm him ht (fdBoundary_ne_arc hH hre ht₀ hw
+    (fun t ht htw ↦ slit_branch_arc hH hnorm him (fdBoundary_ne_arc hH hre ht₀ hw
       fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     (fun s hs ↦ lt_norm_sub_arc_of_far_left ht₀ hw hδ0 h2sin hε₁ hs)
     (fun s hs ↦ lt_norm_sub_arc_of_far_right ht₀ hw hδ0 h2sin hε₂ hεc hs)
