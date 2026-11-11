@@ -69,10 +69,9 @@ theorem isBounded_l1Ball : Bornology.IsBounded (l1Ball ι) :=
 
 /-- Zero is an interior point of the ℓ¹ unit ball. -/
 theorem zero_mem_interior_l1Ball : (0 : ι → ℝ) ∈ interior (l1Ball ι) := by
-  have hopen : IsOpen {x : ι → ℝ | ∑ i, |x i| < 1} :=
-    isOpen_lt (by fun_prop) continuous_const
-  exact mem_interior_iff_mem_nhds.mpr <|
-    Filter.mem_of_superset (hopen.mem_nhds (by simp)) (fun x hx ↦ (mem_l1Ball ι x).mpr hx.le)
+  rw [mem_interior_iff_mem_nhds, l1Ball_eq_preimage_closedBall]
+  exact (PiLp.continuous_toLp 1 _).continuousAt.preimage_mem_nhds
+    (by simpa using Metric.closedBall_mem_nhds (0 : PiLp 1 (fun _ : ι ↦ ℝ)) one_pos)
 
 /-- The ℓ¹ unit ball absorbs every vector. -/
 theorem absorbent_l1Ball : Absorbent ℝ (l1Ball ι) :=
@@ -81,28 +80,16 @@ theorem absorbent_l1Ball : Absorbent ℝ (l1Ball ι) :=
 /-- The gauge of the ℓ¹ unit ball is the sum of absolute coordinates. -/
 theorem gauge_l1Ball (x : ι → ℝ) : gauge (l1Ball ι) x = ∑ i, |x i| := by
   rw [l1Ball_eq_preimage_closedBall]
-  have hg : gauge ((WithLp.toLp 1) ⁻¹' Metric.closedBall
-      (0 : PiLp 1 (fun _ : ι ↦ ℝ)) 1) x =
-      gauge (Metric.closedBall (0 : PiLp 1 (fun _ : ι ↦ ℝ)) 1) (WithLp.toLp 1 x) := by
-    simp only [gauge_def', Set.mem_preimage, WithLp.toLp_smul]
-  rw [hg, gauge_closedBall zero_le_one, div_one, PiLp.norm_eq_of_L1]
-  simp [Real.norm_eq_abs]
+  simpa [gauge_def', PiLp.norm_eq_of_L1] using
+    gauge_closedBall (E := PiLp 1 (fun _ : ι ↦ ℝ)) zero_le_one (WithLp.toLp 1 x)
 
 /-- The ℓ¹ unit ball has volume `2 ^ n / n!` in dimension `n`, also when `n = 0`. -/
 theorem volume_l1Ball :
     volume (l1Ball ι) = ENNReal.ofReal ((2 : ℝ) ^ Fintype.card ι / (Fintype.card ι).factorial) := by
   cases isEmpty_or_nonempty ι with
-  | inl h =>
-    have hb : l1Ball ι = Set.univ := by ext x; simp
-    rw [hb, MeasureTheory.Measure.volume_pi_eq_dirac (0 : ι → ℝ)]
-    simp
+  | inl h => simp [Measure.volume_pi_eq_dirac (0 : ι → ℝ)]
   | inr h =>
-    have hb : l1Ball ι = {x : ι → ℝ | (∑ i, |x i| ^ (1 : ℝ)) ^ (1 / (1 : ℝ)) ≤ 1} := by
-      ext x
-      simp
-    rw [hb]
-    -- The ambient space is the pi type `ι → ℝ`, so its volume is the product volume.
-    simpa [Real.Gamma_nat_eq_factorial, one_add_one_eq_two] using
-      (MeasureTheory.volume_sum_rpow_le (ι := ι) (p := 1) le_rfl 1)
+    simpa [← mem_l1Ball, Real.Gamma_nat_eq_factorial, one_add_one_eq_two] using
+      volume_sum_rpow_le (ι := ι) (p := 1) le_rfl 1
 
 end TauCeti
