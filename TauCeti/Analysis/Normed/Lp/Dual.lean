@@ -104,10 +104,7 @@ private theorem sum_norm_lp_single_top_le (f : StrongDual 𝕜 (lp (fun _ : ι �
       lp.single_apply, Pi.single_apply]
   have h := ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le (f.comp J) s
   simp only [coe_comp, Function.comp_apply, hJ] at h
-  have hJ1 : ‖J‖ ≤ 1 :=
-    J.opNorm_le_bound zero_le_one fun x ↦ by
-      rw [one_mul]
-      exact ((ZeroAtInftyContinuousMap.toLpInfty 𝕜).norm_map x).le
+  have hJ1 : ‖J‖ ≤ 1 := LinearIsometry.norm_toContinuousLinearMap_le _
   have h2 : ‖f.comp J‖ ≤ ‖f‖ :=
     (f.opNorm_comp_le J).trans (mul_le_of_le_one_right (norm_nonneg f) hJ1)
   exact h.trans h2
