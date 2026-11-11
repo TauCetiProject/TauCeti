@@ -87,33 +87,21 @@ theorem centralAction_apply (z : Subalgebra.center R (U R L)) (m : M) :
 
 variable {R L M}
 
-/-- A central element acts by a map commuting with the Lie action. -/
-theorem centralAction_lie (z : Subalgebra.center R (U R L)) (x : L) (m : M) :
-    centralAction R L M z ⁅x, m⁆ = ⁅x, centralAction R L M z m⁆ :=
-  representation_lie_of_mem_center R L M z.2 x m
-
 /-- A central element acts by a Lie module endomorphism. -/
 noncomputable def centralLieModuleHom (z : Subalgebra.center R (U R L)) : M →ₗ⁅R,L⁆ M where
   toLinearMap := centralAction R L M z
-  map_lie' := centralAction_lie z _ _
+  map_lie' := representation_lie_of_mem_center R L M z.2 _ _
 
 @[simp]
 theorem centralLieModuleHom_apply (z : Subalgebra.center R (U R L)) (m : M) :
     centralLieModuleHom z m = representation R L M (z : U R L) m :=
   (rfl)
 
-variable {N : Type x} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
-
-/-- A homomorphism of Lie modules intertwines the actions of the centre. -/
-theorem map_centralAction (f : M →ₗ⁅R,L⁆ N) (z : Subalgebra.center R (U R L)) (m : M) :
-    f (centralAction R L M z m) = centralAction R L N z (f m) :=
-  map_representation R L M N f z m
-
 /-- **The centre acts by endomorphisms in the centre of `End_L(M)`**: the action of a central
 element commutes with every Lie module endomorphism. -/
 theorem centralAction_commute (f : M →ₗ⁅R,L⁆ M) (z : Subalgebra.center R (U R L)) :
     Commute (f : Module.End R M) (centralAction R L M z) :=
-  LinearMap.ext fun m => map_centralAction f z m
+  LinearMap.ext fun m => map_representation R L M M f z m
 
 end CommRing
 
