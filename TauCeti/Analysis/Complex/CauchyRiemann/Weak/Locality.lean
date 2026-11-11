@@ -15,8 +15,9 @@ The planar weak equation `TauCeti.IsWeakCauchyRiemannOn p U J η u` has the shea
 the set `U`: it holds on `U` exactly when it holds on a relative neighbourhood of each point of
 `U`, and it holds on `U` exactly when it holds on the traces `U ∩ O i` of an open cover. The set
 `U` need not be open, so for a half-disc the neighbourhoods are relative ones in the closed upper
-half-plane and the `Lᵖ` bounds reach the real axis, as in the definition. The same holds for the
-linear equation `TauCeti.IsWeakLinearCauchyRiemannOn`, a special case.
+half-plane and the `Lᵖ` bounds reach the real axis, as in the definition. The linear equation
+`TauCeti.IsWeakLinearCauchyRiemannOn` is an abbreviation for a special case, so these results
+apply to it directly.
 
 ## Main results
 
@@ -25,9 +26,6 @@ linear equation `TauCeti.IsWeakLinearCauchyRiemannOn`, a special case.
 * `TauCeti.isWeakCauchyRiemannOn_iff_locally`: the equation holds on `U` exactly when every point
   of `U` has a neighbourhood within `U` on which it holds.
 * `TauCeti.isWeakCauchyRiemannOn_iSup_iff`: the sheaf property for open covers of an open set.
-* `TauCeti.isWeakLinearCauchyRiemannOn_iff_forall_inter`,
-  `TauCeti.isWeakLinearCauchyRiemannOn_iff_locally` and
-  `TauCeti.isWeakLinearCauchyRiemannOn_iSup_iff`: the same statements for the linear equation.
 
 The codomain is assumed complete: an empty cover carries no weak derivative to supply the
 completeness that the weak-derivative predicate demands.
@@ -104,28 +102,5 @@ theorem isWeakCauchyRiemannOn_iSup_iff {ι : Type*} (W : ι → Opens ℂ) :
       ∀ i, IsWeakCauchyRiemannOn p (W i) J η u := by
   rw [isWeakCauchyRiemannOn_iff_forall_inter W (by simp)]
   simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (W i : Set ℂ)) _)]
-
-/-! ### The linear equation -/
-
-variable {A C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
-
-/-- **Locality on an open cover** for the linear equation. -/
-theorem isWeakLinearCauchyRiemannOn_iff_forall_inter {ι : Type*} (O : ι → Opens ℂ)
-    (hU : U ⊆ ⋃ i, (O i : Set ℂ)) :
-    IsWeakLinearCauchyRiemannOn p U A C ξ ↔
-      ∀ i, IsWeakLinearCauchyRiemannOn p (U ∩ O i) A C ξ :=
-  isWeakCauchyRiemannOn_iff_forall_inter O hU
-
-/-- **Locality** for the linear equation. -/
-theorem isWeakLinearCauchyRiemannOn_iff_locally :
-    IsWeakLinearCauchyRiemannOn p U A C ξ ↔
-      ∀ x ∈ U, ∃ W ∈ 𝓝[U] x, IsWeakLinearCauchyRiemannOn p W A C ξ :=
-  isWeakCauchyRiemannOn_iff_locally
-
-/-- **The sheaf property** for the linear equation. -/
-theorem isWeakLinearCauchyRiemannOn_iSup_iff {ι : Type*} (W : ι → Opens ℂ) :
-    IsWeakLinearCauchyRiemannOn p (⨆ i, W i : Opens ℂ) A C ξ ↔
-      ∀ i, IsWeakLinearCauchyRiemannOn p (W i) A C ξ :=
-  isWeakCauchyRiemannOn_iSup_iff W
 
 end TauCeti
