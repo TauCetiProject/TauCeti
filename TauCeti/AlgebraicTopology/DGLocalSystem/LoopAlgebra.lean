@@ -11,6 +11,7 @@ public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 
 /-!
 # The augmented DG algebra of chains on the Moore loop space
@@ -30,6 +31,7 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainAlgebra B b R`: the algebra `C_*(Ω_b B; R)`.
 * `TauCeti.loopChainAugmentation B b R`: its augmentation.
 * `TauCeti.loopChainMap R f hf`: the DG algebra morphism `C_*(Ωf)` of a based map.
+* `TauCeti.loopPointChain R γ`: the `0`-chain of a Moore loop `γ`.
 * `TauCeti.loopChainToGroupAlgebra B b R`: the algebra map to the group algebra `R[π₁(B, b)]`,
   the zeroth-homology projection `loopZeroChainToGroupAlgebra` in dimension zero and zero in
   positive dimension.
@@ -50,6 +52,9 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`: it kills boundaries and elements of nonzero
   cohomological degree.
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
+* `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
+* `TauCeti.loopChainToGroupAlgebra_loopPointChain`: it sends the point chain of a loop to the basis
+  element of its class.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
@@ -115,6 +120,37 @@ theorem loopChainAugmentation_lof_succ (k : ℕ)
     loopChainAugmentation B b R (cubicalChainLof (MooreLoopSpace B b) R (k + 1) y) = 0 := by
   rw [loopChainAugmentation, cubicalChainAugmentation_lof,
     cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero k)]
+
+variable (R) in
+/-- The **point chain** of a Moore loop `γ`: the `0`-chain of the point `γ` of `Ω_b B`, an element
+of degree zero of `C_*(Ω_b B; R)`. -/
+def loopPointChain (γ : MooreLoopSpace B b) : loopChainAlgebra B b R :=
+  cubicalChainLof (MooreLoopSpace B b) R 0
+    (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
+
+theorem loopPointChain_def (γ : MooreLoopSpace B b) :
+    loopPointChain R γ = cubicalChainLof (MooreLoopSpace B b) R 0
+      (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ)) :=
+  (rfl)
+
+/-- The point chain of a Moore loop has degree zero. -/
+theorem loopPointChain_mem (γ : MooreLoopSpace B b) :
+    loopPointChain R γ ∈ cubicalChainGrading (MooreLoopSpace B b) R 0 := by
+  have h := cubicalChainLof_mem (MooreLoopSpace B b) R
+    (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
+  rwa [Nat.cast_zero, neg_zero] at h
+
+/-- The point chain of a Moore loop is a cycle. -/
+@[simp]
+theorem cubicalChainDifferential_loopPointChain (γ : MooreLoopSpace B b) :
+    cubicalChainDifferential (MooreLoopSpace B b) R (loopPointChain R γ) = 0 :=
+  cubicalChainDifferential_lof_zero _ _ _
+
+/-- The point chain of a Moore loop has augmentation one. -/
+@[simp]
+theorem loopChainAugmentation_loopPointChain (γ : MooreLoopSpace B b) :
+    loopChainAugmentation B b R (loopPointChain R γ) = 1 := by
+  rw [loopPointChain_def, loopChainAugmentation_lof_zero, NormalizedCubicalChain.augment_ofCube]
 
 end Algebra
 
@@ -274,6 +310,40 @@ theorem loopChainToGroupAlgebra_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loo
   · exact map_zero _
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
     exact loopChainToGroupAlgebra_lof_succ k y
+
+/-- The augmentation of `C_*(Ω_b B; R)` is the coefficient-sum augmentation of the group ring after
+the degree-zero ring map: both send a `0`-chain to the sum of its coefficients. -/
+@[simp]
+theorem augmentation_loopChainToGroupAlgebra (a : loopChainAlgebra B b R) :
+    MonoidAlgebra.augmentation R (FundamentalGroup B b) (loopChainToGroupAlgebra B b R a) =
+      loopChainAugmentation B b R a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R]
+    cases n with
+    | zero =>
+      rw [loopChainToGroupAlgebra_lof_zero, loopChainAugmentation_lof_zero]
+      induction y using NormalizedCubicalChain.induction_on with
+      | zero => simp
+      | add y y' hy hy' => simp only [map_add, hy, hy']
+      | smul r y hy =>
+        rw [LinearMap.map_smul (loopZeroChainToGroupAlgebra B b R),
+          LinearMap.map_smul (NormalizedCubicalChain.augment _ R),
+          ← _root_.MonoidAlgebra.augmentationLinearMap_apply, LinearMap.map_smul,
+          _root_.MonoidAlgebra.augmentationLinearMap_apply, hy]
+      | ofCube c => simp
+    | succ k => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The degree-zero ring map sends the point chain of a Moore loop to the basis element of its
+class in `π₁(B, b)`. -/
+@[simp]
+theorem loopChainToGroupAlgebra_loopPointChain (γ : MooreLoopSpace B b) :
+    loopChainToGroupAlgebra B b R (loopPointChain R γ) =
+      MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom b γ) 1 := by
+  rw [loopPointChain_def, loopChainToGroupAlgebra_lof_zero, loopZeroChainToGroupAlgebra_ofCube,
+    SingularCube.point_apply]
 
 -- The component-wise form of `loopChainToGroupAlgebra_loopChainMap`.
 private theorem loopChainToGroupAlgebraComponent_map {B' : Type u} [TopologicalSpace B']
