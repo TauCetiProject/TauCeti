@@ -26,7 +26,7 @@ For a left module `M` over a possibly noncommutative semiring `R`, the dual
 A basis of `M` indexed by `ι` identifies this dual with the coordinate module `ι → Rᵐᵒᵖ`,
 by evaluating a functional at the basis vectors. No finiteness is assumed.
 
-The linear dual of a free module over a commutative ring has the same rank as the module: for a
+The linear dual of a free module over a commutative ring has the same `finrank` as the module: for a
 finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and otherwise both
 `finrank`s are `0`. Over a field this is Mathlib's `Subspace.dual_finrank_eq`.
 
@@ -71,7 +71,7 @@ end Module.Basis
 
 namespace TauCeti.Module
 
-/-- A free module and its linear dual have the same rank. If the module is not finite, both
+/-- A free module and its linear dual have the same `finrank`. If the module is not finite, both
 `finrank`s are `0` by convention. Over a field this is `Subspace.dual_finrank_eq`. -/
 @[simp]
 theorem dual_finrank_eq (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
