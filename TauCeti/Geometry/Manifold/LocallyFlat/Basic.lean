@@ -74,8 +74,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 * `TauCeti.isLocallyFlat_iff_isSliceEmbedding`, `TauCeti.isLocallyFlat_iff` and
   `TauCeti.IsLocallyFlat.exists_isSliceChart`: the defining flattening charts, as the slice
   embedding for the standard slice, in pointwise form, and as an eliminator.
-* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: local
-  flatness is a local property of the domain.
+* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: for a
+  topological embedding, local flatness is a local property of the domain.
 * `TauCeti.IsLocallyFlat.isOpenEmbedding_comp`, `TauCeti.IsLocallyFlat.of_isOpenEmbedding_comp`,
   `TauCeti.IsLocallyFlat.codRestrict`, `TauCeti.IsLocallyFlat.homeomorph_comp`,
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
@@ -503,8 +503,10 @@ theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
   · rw [hrange]
     exact hφ.restrOpen hV
 
-/-- Being a slice embedding is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is a slice embedding, then `f` is one. -/
+/-- For a topological embedding `f`, being a slice embedding is a local property of the domain: if
+every point of `N` has an open neighbourhood on which the restriction of `f` is a slice embedding,
+then `f` is one. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsSliceEmbedding S (f ∘ ((↑) : U → N))) :
     IsSliceEmbedding S f := by
@@ -681,8 +683,10 @@ theorem restrict (h : IsLocallyFlat F F' f) {U : Set N} (hU : IsOpen U) :
     IsLocallyFlat F F' (f ∘ ((↑) : U → N)) :=
   IsSliceEmbedding.restrict h hU
 
-/-- Local flatness is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is locally flat, then `f` is locally flat. -/
+/-- For a topological embedding `f`, local flatness is a local property of the domain: if every
+point of `N` has an open neighbourhood on which the restriction of `f` is locally flat, then `f` is
+locally flat. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsLocallyFlat F F' (f ∘ ((↑) : U → N))) :
     IsLocallyFlat F F' f :=
@@ -1049,9 +1053,10 @@ private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)}
     refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
     simpa only [hψ.mk_fst_zero_eq hms hmr] using ψ.left_inv hms
 
-/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
-part of the domain lying under it with the complementary model, the map being the zero slice.
-This is the geometric content of the local product statement; the general case reduces to it by
+/-- For a topological embedding `f` and a slice chart `ψ` for `range f` whose target is a box
+`u ×ˢ ball 0 r`, the product of the part of the domain lying under the chart with the complementary
+model embeds openly into the ambient space, by a map that restricts to `f` on the zero slice. This
+is the geometric content of the local product statement; the general case reduces to it by
 shrinking the chart. -/
 private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
     {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
