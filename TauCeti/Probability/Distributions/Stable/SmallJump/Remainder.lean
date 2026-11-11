@@ -131,7 +131,7 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
           ∫ x, x ∂compoundPoissonMeasure (ν band).toNNReal (cond ν band) := by
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg] using hmean
-  rw [hmean_exact, integral_id_compoundPoissonMeasure hjump_one]
+  rw [hmean_exact, integral_id_compoundPoissonMeasure]
   have hid := ν.toNNReal_smul_integral_cond_eq_setIntegral band id htop
   simp only [id_eq, NNReal.smul_def, smul_eq_mul] at hid
   simp only [smul_eq_mul]

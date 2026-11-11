@@ -110,14 +110,24 @@ theorem integrable_id_compoundPoissonMeasure (hμ : Integrable id μ) (r : ℝ�
   exact memLp_id_compoundPoissonMeasure (by simp)
     (memLp_one_iff_integrable.2 hμ) r
 
-/-- The compound Poisson mean is the rate times the jump mean, including at rate zero. -/
+/-- The compound Poisson mean is the rate times the jump mean, including at rate zero. No
+integrability of the jump law is assumed: if it is not integrable, both sides are `0` by the
+convention for non-integrable functions. -/
 @[simp]
-theorem integral_id_compoundPoissonMeasure [NormedSpace ℝ E]
-    (hμ : Integrable id μ) (r : ℝ≥0) :
+theorem integral_id_compoundPoissonMeasure [NormedSpace ℝ E] (r : ℝ≥0) :
     ∫ x, x ∂compoundPoissonMeasure r μ = (r : ℝ) • ∫ x, x ∂μ := by
   by_cases hE : CompleteSpace E
   swap
   · simp only [integral_of_not_completeSpace hE, smul_zero]
+  by_cases hμ : Integrable id μ
+  swap
+  · rw [integral_undef (f := fun x : E ↦ x) hμ, smul_zero]
+    rcases eq_or_ne r 0 with rfl | hr
+    · rw [compoundPoissonMeasure_zero]
+      exact integral_dirac (fun x : E ↦ x) 0
+    refine integral_undef fun h ↦ hμ ?_
+    rw [← memLp_one_iff_integrable] at h ⊢
+    exact (memLp_id_compoundPoissonMeasure_iff ENNReal.one_ne_top hr).1 h
   have hint := integrable_id_compoundPoissonMeasure hμ r
   rw [compoundPoissonMeasure_def] at hint ⊢
   have hbind := Measure.integral_bind Measurable.of_discrete.aemeasurable hint
@@ -139,7 +149,7 @@ variable [NormedSpace ℝ E]
 theorem integral_of_hasLaw_compoundPoissonMeasure (hμ : Integrable id μ)
     (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
     ∫ ω, X ω ∂P = (r : ℝ) • ∫ x, x ∂μ := by
-  simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure hμ] using
+  simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure] using
     hX.integral_comp (integrable_id_compoundPoissonMeasure hμ r).aestronglyMeasurable
 
 end Normed
