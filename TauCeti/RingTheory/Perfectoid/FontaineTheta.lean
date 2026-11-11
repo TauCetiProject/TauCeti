@@ -8,9 +8,8 @@ module
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import Mathlib.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.AdicCompletion.Perfection
-public import TauCeti.RingTheory.Perfection
+public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.WittVector.Primitive.Quotient
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -40,11 +39,7 @@ This file determines the kernel of Mathlib's Fontaine map `θ : W(A♭) → A`
   ring of characteristic `p`, `θ x = 0 ↔ x.coeff 0 = 0` and `ker θ = (p)`.
 * `WittVector.surjective_fontaineTheta_of_frobeniusModPow_surjective`: `θ` is surjective when `A`
   is `π`-adically complete with `π ^ p ∣ p` and surjective Frobenius `A ⧸ (π) → A ⧸ (π ^ p)`.
-* `WittVector.isPrimitive_p_add_teichmuller_mul_of_isAdic`,
-  `WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete`: over an `I`-adically
-  complete ring `S` of characteristic `p` with `ϖ ∈ I`, `p + [ϖ] α` is primitive (for the `I`-adic
-  topology) and hence distinguished.
-* `WittVector.exists_teichmuller_mul_ker_fontaineTheta`: when `ϖ.untilt ∈ A⁰` has
+* `WittVector.exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul`: when `ϖ.untilt ∈ A⁰` has
   `ϖ.untilt ^ p ∣ p`, `A` is `(ϖ.untilt)`-adically complete, and relative Frobenius is bijective,
   `ker θ = (p + [ϖ] α)` for some `α : W(A♭)` with `p + [ϖ] α` distinguished and a nonzerodivisor.
 * `WittVector.exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta`: the same for an
@@ -94,40 +89,6 @@ theorem ker_fontaineTheta_eq_span_p :
 
 end CharP
 
-section AdicDistinguished
-
-variable {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p]
-
-/-- In an `I`-adically complete ring `S` whose topology is `I`-adic, the topological nilradical
-lies in the Jacobson radical. -/
-private theorem topologicalNilradical_le_jacobson_of_isAdic {I : Ideal S}
-    [TopologicalSpace S] [IsLinearTopology S S] (hI : IsAdic I) [IsAdicComplete I S] :
-    topologicalNilradical S ≤ Ring.jacobson S := by
-  rw [← Ideal.jacobson_bot]
-  refine topologicalNilradical_le_jacobson_bot (by simpa using hI.isOpen_pow 1) ?_
-  rw [Ideal.jacobson_bot]
-  exact IsAdicComplete.le_jacobson I
-
-/-- Over an `I`-adically complete ring `S` of characteristic `p` equipped with the `I`-adic
-topology, every Witt vector of the form `p + [ϖ] α` with `ϖ ∈ I` is primitive. -/
-theorem isPrimitive_p_add_teichmuller_mul_of_isAdic {I : Ideal S} [TopologicalSpace S]
-    [IsLinearTopology S S] (hI : IsAdic I) [IsAdicComplete I S] {ϖ : S} (hϖ : ϖ ∈ I)
-    (α : WittVector p S) :
-    ((p : WittVector p S) + teichmuller p ϖ * α).IsPrimitive :=
-  isPrimitive_p_add_teichmuller_mul (topologicalNilradical_le_jacobson_of_isAdic hI)
-    (hI.isTopologicallyNilpotent_of_mem hϖ) α
-
-/-- **Elements of the form `p + [ϖ] α` are distinguished.** Over a `ϖ`-adically complete ring `S`
-of characteristic `p`, `p + [ϖ] α` is distinguished for every `α : W(S)`. -/
-theorem isDistinguished_p_add_teichmuller_mul_of_isAdicComplete (ϖ : S)
-    [IsAdicComplete (span {ϖ}) S] (α : WittVector p S) :
-    ((p : WittVector p S) + teichmuller p ϖ * α).IsDistinguished := by
-  let _ : WithIdeal S := ⟨span {ϖ}⟩
-  exact (isPrimitive_p_add_teichmuller_mul_of_isAdic (I := span {ϖ}) rfl
-    (mem_span_singleton_self ϖ) α).isDistinguished
-
-end AdicDistinguished
-
 section Regular
 
 variable {A : Type*} [CommRing A] {p : ℕ} [hp : Fact p.Prime] [Fact ¬IsUnit (p : A)]
@@ -141,11 +102,8 @@ with `π ^ p ∣ p` and surjective relative Frobenius `A ⧸ (π) → A ⧸ (π 
 theorem surjective_fontaineTheta_of_frobeniusModPow_surjective {π : A}
     {hdvd : π ^ p ∣ (p : A)} [IsAdicComplete (span {π}) A]
     (hsurj : Function.Surjective (TauCeti.frobeniusModPow p hdvd)) :
-    Function.Surjective (fontaineTheta A p) := by
-  have hs_mul :=
-    TauCeti.exists_mul_dvd_sub_pow ((TauCeti.frobeniusModPow_surjective_iff hdvd).mp hsurj)
-  refine surjective_fontaineTheta ((TauCeti.surjective_frobenius_modP_iff A).mpr fun a ↦ ?_)
-  exact (hs_mul a).imp fun _ ↦ (dvd_mul_left (p : A) π).trans
+    Function.Surjective (fontaineTheta A p) :=
+  surjective_fontaineTheta (TauCeti.surjective_frobenius_modP_of_frobeniusModPow_surjective hsurj)
 
 /-- Approximating `-p` modulo `ϖ.untilt * p` by an untilt produces `α : W(A♭)` such that
 `p + [ϖ] α ∈ ker θ`. -/
@@ -206,8 +164,7 @@ private theorem ker_fontaineTheta_le_span {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣ 
     {ξ : WittVector p A♭} (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0)
     (hker : ξ ∈ RingHom.ker (fontaineTheta A p)) :
     RingHom.ker (fontaineTheta A p) ≤ span {ξ} := by
-  have hdvd1 : ϖ.untilt ∣ (p : A) := (dvd_pow_self _ hp.out.ne_zero).trans hdvd
-  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton hdvd1
+  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton_of_pow_dvd hdvd
   choose F hF using ker_fontaineTheta_div_step hreg hinj hξ hξ₀ hker
   let t : WittVector p A♭ ⧸ span {ξ} := Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)
   have : IsAdicComplete (span {t}) (WittVector p A♭ ⧸ span {ξ}) :=
@@ -235,18 +192,17 @@ nonzerodivisor of `A` with `ϖ.untilt ^ p ∣ p`, `A` is `(ϖ.untilt)`-adically 
 Frobenius `A ⧸ (ϖ.untilt) → A ⧸ (ϖ.untilt ^ p)` is bijective. Then there exists
 `α : W(PreTilt A p)` such that `ξ := p + [ϖ] α` is distinguished, is a nonzerodivisor of
 `W(PreTilt A p)`, and generates `ker (fontaineTheta A p)`. -/
-theorem exists_teichmuller_mul_ker_fontaineTheta {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
-    [IsAdicComplete (span {ϖ.untilt}) A] (hreg : ϖ.untilt ∈ A⁰)
+theorem exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul {ϖ : A♭}
+    {hdvd : ϖ.untilt ^ p ∣ (p : A)} [IsAdicComplete (span {ϖ.untilt}) A] (hreg : ϖ.untilt ∈ A⁰)
     (hbij : Function.Bijective (TauCeti.frobeniusModPow p hdvd)) :
     ∃ α : WittVector p A♭,
       ((p : WittVector p A♭) + teichmuller p ϖ * α).IsDistinguished ∧
         (p : WittVector p A♭) + teichmuller p ϖ * α ∈ (WittVector p A♭)⁰ ∧
         RingHom.ker (fontaineTheta A p) = span {(p : WittVector p A♭) + teichmuller p ϖ * α} := by
-  have hdvd1 : ϖ.untilt ∣ (p : A) := (dvd_pow_self _ hp.out.ne_zero).trans hdvd
-  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton hdvd1
+  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton_of_pow_dvd hdvd
   obtain ⟨α, hker⟩ := exists_ker_p_add_teichmuller_mul hreg hbij
   have hξ : ((p : WittVector p A♭) + teichmuller p ϖ * α).IsDistinguished :=
-    isDistinguished_p_add_teichmuller_mul_of_isAdicComplete ϖ α
+    isDistinguished_p_add_teichmuller_mul_of_isAdicComplete (mem_span_singleton_self ϖ) α
   have hξ₀_dvd : ϖ ∣ ((p : WittVector p A♭) + teichmuller p ϖ * α).coeff 0 :=
     mem_span_p_teichmuller_iff.mp
       (add_mem (subset_span (by simp)) (mul_mem_right _ _ (subset_span (by simp))))
@@ -266,9 +222,9 @@ private theorem exists_untilt_of_frobeniusModPow_bijective {π : A} {hdvd : π ^
         Function.Bijective (TauCeti.frobeniusModPow p hdvd') := by
   have hs := (TauCeti.frobeniusModPow_surjective_iff hdvd).mp hbij.2
   obtain ⟨ϖ, -, hassoc⟩ := PreTilt.exists_associated_untilt hdvd hs
-  have hspan : span {ϖ.untilt} = span {π} :=
-    le_antisymm (span_le.mpr (Set.singleton_subset_iff.mpr (mem_span_singleton.mpr hassoc.dvd)))
-      (span_le.mpr (Set.singleton_subset_iff.mpr (mem_span_singleton.mpr hassoc.symm.dvd)))
+  have hspan : span {ϖ.untilt} = span {π} := by
+    obtain ⟨u, hu⟩ := hassoc
+    rw [← hu, span_singleton_mul_right_unit u.isUnit]
   have hc : IsAdicComplete (span {ϖ.untilt}) A := hspan ▸ inferInstance
   have hdvd' : ϖ.untilt ^ p ∣ (p : A) := (pow_dvd_pow_of_dvd hassoc.symm.dvd p).trans hdvd
   have hinj' : Function.Injective (TauCeti.frobeniusModPow p hdvd') :=
@@ -294,7 +250,8 @@ theorem exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta {π : A}
       ξ.IsDistinguished ∧ ξ ∈ (WittVector p A♭)⁰ ∧
         RingHom.ker (fontaineTheta A p) = span {ξ} := by
   obtain ⟨ϖ, hdvd', hc, hreg', hbij'⟩ := exists_untilt_of_frobeniusModPow_bijective hreg hbij
-  obtain ⟨α, hξ, hξ_reg, hker⟩ := exists_teichmuller_mul_ker_fontaineTheta hreg' hbij'
+  obtain ⟨α, hξ, hξ_reg, hker⟩ :=
+    exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul hreg' hbij'
   exact ⟨_, hξ, hξ_reg, hker⟩
 
 /-- **Characterisation of generators of `ker θ` by distinguishedness** (Bhatt–Morrow–Scholze,
@@ -309,12 +266,12 @@ theorem ker_fontaineTheta_eq_span_iff_isDistinguished {π : A} {hdvd : π ^ p �
     {ξ' : WittVector p A♭} (hξ' : ξ' ∈ RingHom.ker (fontaineTheta A p)) :
     RingHom.ker (fontaineTheta A p) = span {ξ'} ↔ ξ'.IsDistinguished := by
   obtain ⟨ϖ, hdvd', hc, hreg', hbij'⟩ := exists_untilt_of_frobeniusModPow_bijective hreg hbij
-  obtain ⟨α, -, hξ_reg, hker⟩ := exists_teichmuller_mul_ker_fontaineTheta hreg' hbij'
+  obtain ⟨α, -, hξ_reg, hker⟩ :=
+    exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul hreg' hbij'
   let ξ : WittVector p A♭ := (p : WittVector p A♭) + teichmuller p ϖ * α
-  have hdvd1 : ϖ.untilt ∣ (p : A) := (dvd_pow_self _ hp.out.ne_zero).trans hdvd'
-  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton hdvd1
+  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton_of_pow_dvd hdvd'
   let _ : WithIdeal A♭ := ⟨span {ϖ}⟩
-  have hJac := topologicalNilradical_le_jacobson_of_isAdic (I := span {ϖ}) rfl
+  have hJac := IsAdic.topologicalNilradical_le_jacobson (I := span {ϖ}) rfl
   have hprim : ξ.IsPrimitive :=
     isPrimitive_p_add_teichmuller_mul_of_isAdic (I := span {ϖ}) rfl (mem_span_singleton_self ϖ) α
   have hker' : RingHom.ker (fontaineTheta A p) = span {ξ} := hker
@@ -334,3 +291,5 @@ theorem ker_fontaineTheta_eq_span_iff_isDistinguished {π : A} {hdvd : π ^ p �
 end Regular
 
 end WittVector
+
+end

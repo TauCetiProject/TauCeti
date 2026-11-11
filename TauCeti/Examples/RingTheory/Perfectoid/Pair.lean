@@ -71,11 +71,8 @@ example :
   let ϖ : PreTilt (Pair.powerBounded ℂ_[p]).plus p :=
     PreTilt.equivPerfection.symm (Perfection.quotientMulEquiv p I roots)
   have hϖ : ϖ.untilt = p := by
-    -- `PreTilt.untilt` is `Perfection.teichmuller₀` on `ModP`, and `equivPerfection.symm` is the
-    -- identity on the underlying `Perfection` sequence.
-    change Perfection.teichmuller₀ p I (Perfection.quotientMulEquiv p I roots) = p
-    rw [← Perfection.coeff_zero_symm_quotientMulEquiv, MulEquiv.symm_apply_apply]
-    exact hroots
+    rw [PreTilt.untilt_equivPerfection_symm, ← Perfection.coeff_zero_symm_quotientMulEquiv,
+      MulEquiv.symm_apply_apply, hroots]
   have : IsAdicComplete (span {ϖ.untilt}) (Pair.powerBounded ℂ_[p]).plus := hϖ.symm ▸ inferInstance
   have : IsAdicComplete (span {ϖ}) (PreTilt (Pair.powerBounded ℂ_[p]).plus p) :=
     PreTilt.isAdicComplete_span_singleton (hϖ.symm ▸ dvd_rfl)
@@ -87,7 +84,8 @@ example :
   have heq : (p : WittVector p _) - WittVector.teichmuller p ϖ =
       (p : WittVector p _) + WittVector.teichmuller p ϖ * (-1) := by ring
   rw [heq]
-  exact WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete ϖ (-1)
+  exact WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete
+    (mem_span_singleton_self ϖ) (-1)
 
 -- A nonzero element of `ker θ` need not generate `ker θ`: for any regular generator `ξ`, `ξ ^ 2` is
 -- a nonzero element of `ker θ` which is neither distinguished nor a generator.
@@ -142,9 +140,9 @@ example :
 -- On the zero Tate ring, `P.plus` is integral perfectoid and Frobenius modulo `p` is surjective.
 example {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
     [IsTateRing R] [CompleteSpace R] [T2Space R] [Subsingleton R] (P : Pair R) :
-    haveI := isPerfectoidTateRing_of_subsingleton p R
+    haveI := isPerfectoidTateRing_of_subsingleton (p := p) R
     IsIntegralPerfectoid p P.plus ∧ Function.Surjective fun x : ModP P.plus p ↦ x ^ p := by
-  have := isPerfectoidTateRing_of_subsingleton p R
+  have := isPerfectoidTateRing_of_subsingleton (p := p) R
   exact ⟨inferInstance, frobenius_surjective_plus P⟩
 
 end TauCeti.Examples

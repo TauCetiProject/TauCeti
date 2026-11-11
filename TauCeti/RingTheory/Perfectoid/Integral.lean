@@ -183,10 +183,7 @@ theorem of_bijective_frobeniusModPow {π : A} {hdvd : π ^ p ∣ (p : A)}
     [IsAdicComplete (span {π}) A] (hreg : π ∈ A⁰)
     (hbij : Function.Bijective (frobeniusModPow p hdvd)) : IsIntegralPerfectoid p A where
   exists_adic_element := ⟨π, hdvd, inferInstance⟩
-  frobenius_surjective := by
-    have hs := exists_mul_dvd_sub_pow ((frobeniusModPow_surjective_iff hdvd).mp hbij.2)
-    exact (surjective_pow_modP_iff A).mpr fun a ↦
-      (hs a).imp fun _ ↦ (dvd_mul_left (p : A) π).trans
+  frobenius_surjective := surjective_pow_modP_of_frobeniusModPow_surjective hbij.2
   theta_kernel_principal hp hc := by
     let : Fact (¬IsUnit (p : A)) := ⟨hp⟩
     obtain ⟨ξ, -, -, hker⟩ :=

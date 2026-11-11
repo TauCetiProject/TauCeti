@@ -6,13 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
-# Independence of adic completeness from the ideal of definition
+# Topology of adically complete rings
 
 Two ideals defining the same topology give the same notion of separated completeness.
 Mathlib identifies each with Hausdorff completeness for the additive uniformity. The result
 here uses that uniformity only locally, so callers need only specify the ring topology.
+
+In an `I`-adically complete ring carrying the `I`-adic topology, `I` is open and contained in the
+Jacobson radical, so the topological nilradical also lies in the Jacobson radical
+(`IsAdic.topologicalNilradical_le_jacobson`).
 
 ## References
 
@@ -33,5 +39,14 @@ theorem isAdicComplete_iff_of_isAdic (hI : IsAdic I) (hJ : IsAdic J) :
   let := IsTopologicalAddGroup.rightUniformSpace R
   let : IsUniformAddGroup R := isUniformAddGroup_of_addCommGroup
   exact hI.isAdicComplete_iff.trans hJ.isAdicComplete_iff.symm
+
+/-- In an `I`-adically complete ring whose topology is `I`-adic, the topological nilradical lies in
+the Jacobson radical. -/
+theorem topologicalNilradical_le_jacobson [IsLinearTopology R R] (hI : IsAdic I)
+    [IsAdicComplete I R] : topologicalNilradical R ≤ Ring.jacobson R := by
+  rw [← Ideal.jacobson_bot]
+  refine topologicalNilradical_le_jacobson_bot (by simpa using hI.isOpen_pow 1) ?_
+  rw [Ideal.jacobson_bot]
+  exact IsAdicComplete.le_jacobson I
 
 end IsAdic
