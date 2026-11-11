@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.ArcLength
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.Calculus.DerivativeTest
 
 /-!
 # The first variation of length
@@ -26,15 +24,6 @@ has constant speed `C > 0`, integrating by parts gives
 The endpoints `F s a` and `F s b` are allowed to move, so the boundary terms are kept. Up to the
 factor `1 / C`, this is the first variation of energy `TauCeti.Manifold.hasDerivAt_energy`.
 
-When `γ` is moreover a geodesic on `(a, b)`, the integral vanishes and only the boundary terms
-remain. Hence, if the length of `F s` has a local extremum at `s = 0`, then
-`⟪V(a), γ'(a)⟫ = ⟪V(b), γ'(b)⟫`; if it has a local minimum among the parameters `s ≥ 0`, then
-`⟪V(a), γ'(a)⟫ ≤ ⟪V(b), γ'(b)⟫`. When the endpoint `F s b` does not depend on `s`, the field `V`
-vanishes at `b` (`TauCeti.Manifold.variationField_eq_zero`), and these read `⟪V(a), γ'(a)⟫ = 0`
-and `⟪V(a), γ'(a)⟫ ≤ 0`. The equality is how a shortest geodesic from a submanifold to a point is
-seen to leave the submanifold orthogonally; the inequality is the corresponding statement at a
-boundary point of the submanifold, where only one-sided variations are available.
-
 ## Main results
 
 * `TauCeti.Manifold.hasDerivAt_norm_curveVelocity`: the transverse derivative of the speed at a
@@ -45,12 +34,6 @@ boundary point of the submanifold, where only one-sided variations are available
   length of a constant-speed curve, with boundary terms.
 * `TauCeti.Manifold.hasDerivAt_toReal_pathELength_of_norm_curveVelocity_eq_one`: the same for a
   unit-speed curve.
-* `TauCeti.Manifold.hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn`: the first variation of
-  the length of a constant-speed geodesic is the difference of the boundary terms.
-* `TauCeti.Manifold.inner_variationField_curveVelocity_eq_of_isLocalExtr`: at a local extremum of
-  the length, the two boundary terms of a constant-speed geodesic are equal.
-* `TauCeti.Manifold.inner_variationField_curveVelocity_le_of_isLocalMinOn_Ici`: at a local minimum
-  of the length among the parameters `s ≥ 0`, they satisfy an inequality.
 
 ## References
 
@@ -262,68 +245,5 @@ theorem hasDerivAt_toReal_pathELength_of_norm_curveVelocity_eq_one {a b : ℝ} (
         ∫ t in a..b, ⟪variationField I F t,
           acceleration (leviCivitaConnection I M) (F 0) t⟫_ℝ) 0 := by
   simpa only [div_one] using hasDerivAt_toReal_pathELength hab hF zero_lt_one hγ
-
-/-! ### Geodesics and local extrema of length -/
-
-/-- **The first variation of length of a geodesic.** Let `F` be a two-parameter family which is
-`C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant speed `C > 0` on
-`[a, b]` and is a geodesic on the open interval `(a, b)`. Then the derivative at `s = 0` of the
-length of `F s` between `a` and `b` is `(⟪V(b), γ'(b)⟫ - ⟪V(a), γ'(a)⟫) / C`, where `V` is the
-variation field: it only depends on the variation field at the two endpoints. -/
-theorem hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn {a b : ℝ} (hab : a ≤ b)
-    (hF : ∀ t ∈ Icc a b,
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
-    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b)) :
-    HasDerivAt (fun s ↦ (Manifold.pathELength I (F s) a b).toReal)
-      ((⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ -
-        ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ) / C) 0 := by
-  have hacc : ∫ t in a..b, ⟪variationField I F t,
-      acceleration (leviCivitaConnection I M) (F 0) t⟫_ℝ = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIoo_of_le hab] at ht
-    simp only [((isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mp hgeo).2 t ht, inner_zero_right]
-  simpa only [hacc, sub_zero] using hasDerivAt_toReal_pathELength hab hF hC hγ
-
-/-- **The first variation at a local extremum of length.** Let `F` be a two-parameter family which
-is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant speed `C > 0`
-on `[a, b]` and is a geodesic on the open interval `(a, b)`. If the length of `F s` between `a` and
-`b` has a local extremum at `s = 0`, for example a local minimum, then
-`⟪V(a), γ'(a)⟫ = ⟪V(b), γ'(b)⟫`, where `V` is the variation field.
-
-When the endpoint `F s b` does not depend on `s` near `0`, the right-hand side vanishes by
-`variationField_eq_zero`, so `γ'(a)` is orthogonal to `V(a)`. -/
-theorem inner_variationField_curveVelocity_eq_of_isLocalExtr {a b : ℝ} (hab : a ≤ b)
-    (hF : ∀ t ∈ Icc a b,
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
-    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b))
-    (hextr : IsLocalExtr (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) 0) :
-    ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ =
-      ⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ := by
-  have h := hextr.hasDerivAt_eq_zero
-    (hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn hab hF hC hγ hgeo)
-  exact (sub_eq_zero.mp ((div_eq_zero_iff.mp h).resolve_right hC.ne')).symm
-
-/-- **The first variation at a one-sided local minimum of length.** Let `F` be a two-parameter
-family which is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant
-speed `C > 0` on `[a, b]` and is a geodesic on the open interval `(a, b)`. If the length of `F s`
-between `a` and `b` has a local minimum at `s = 0` among the parameters `s ≥ 0`, then
-`⟪V(a), γ'(a)⟫ ≤ ⟪V(b), γ'(b)⟫`, where `V` is the variation field.
-
-When the endpoint `F s b` does not depend on `s` near `0`, the right-hand side vanishes by
-`variationField_eq_zero`, so `⟪V(a), γ'(a)⟫ ≤ 0`. -/
-theorem inner_variationField_curveVelocity_le_of_isLocalMinOn_Ici {a b : ℝ} (hab : a ≤ b)
-    (hF : ∀ t ∈ Icc a b,
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
-    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b))
-    (hmin : IsLocalMinOn (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) (Ici 0) 0) :
-    ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ ≤
-      ⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ := by
-  have h := hmin.hasDerivWithinAt_Ici_nonneg
-    (hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn hab hF hC hγ hgeo).hasDerivWithinAt
-  exact sub_nonneg.mp (by simpa only [zero_mul] using (le_div_iff₀ hC).mp h)
 
 end TauCeti.Manifold
