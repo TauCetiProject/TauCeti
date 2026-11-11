@@ -398,13 +398,18 @@ private lemma sum_fourierComponent (hunit : IsUnit (Nat.card G : K)) (v : V) :
   simp_rw [fourierComponent, ← LinearMap.sum_apply, ← map_sum, sum_charIdempotent hunit, map_one,
     one_apply_eq_self]
 
+omit [Finite G] in
 /-- **Unconditional decomposition of an invariant submodule**: the character projectors
 preserve every `ρ`-invariant submodule, so it is the supremum of its intersections with
-the joint eigenspaces — again with no finite-dimensionality hypothesis. -/
+the joint eigenspaces — again with no finite-dimensionality hypothesis. The group is finite
+because `Nat.card G` is a unit. -/
 theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
     (hcard : IsUnit (Nat.card G : K))
     (p : Submodule K V) (hp : ∀ g, ∀ x ∈ p, ρ g x ∈ p) :
     (⨆ χ₀ : G →* Kˣ, p ⊓ ⨅ g, (ρ g).eigenspace (χ₀ g)) = p := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h0 => by
+    simp only [h0, Nat.cast_zero, isUnit_zero_iff] at hcard
+    exact zero_ne_one hcard
   refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun v hv ↦ ?_
   rw [← sum_fourierComponent (ρ := ρ) hcard v]
   refine Submodule.sum_mem _ fun χ₀ _ ↦ Submodule.mem_iSup_of_mem χ₀ ?_
@@ -416,6 +421,7 @@ theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
   exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun d _ ↦
     Submodule.smul_mem _ _ (hp d v hv))
 
+omit [Finite G] in
 /-- **Unconditional character-indexed spanning** for a finite commutative group acting on
 an arbitrary module over a commutative domain with enough roots of unity: the classical
 character projectors decompose every vector, with no finite-dimensionality or

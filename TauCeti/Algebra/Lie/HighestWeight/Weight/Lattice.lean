@@ -61,6 +61,10 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 /-! ### The Weyl vector -/
 
+section WeylVector
+
+variable [Invertible (2 : K)]
+
 /-- **The Weyl vector is dominant integral**: it pairs to `1` with every simple coroot. -/
 theorem isDominantIntegral_weylVector :
     IsDominantIntegral b (weylVector (IsKilling.rootSystem H) b) :=
@@ -101,6 +105,8 @@ theorem coweightPairing_add_weylVector {lam : Dual K H} (hlam : IsIntegralWeight
   rw [coweightPairing_add hlam isDominantIntegral_weylVector.isIntegralWeight,
     coweightPairing_weylVector hi]
 
+end WeylVector
+
 /-! ### Dominance through the coroot pairings -/
 
 /-- **A dominant integral weight has nonnegative pairings against every positive coroot**, not
@@ -134,7 +140,7 @@ theorem isDominantIntegral_iff_isIntegralWeight_and_forall_coweightPairing_nonne
 /-- **The `ρ`-shift of a dominant integral weight is strictly dominant.** This is the role of `ρ`
 in the highest-weight theory, and it is an inequality between integers: over a field with no order
 it cannot be stated about the values in `K` at all. -/
-theorem IsDominantIntegral.coweightPairing_add_weylVector_pos {lam : Dual K H}
+theorem IsDominantIntegral.coweightPairing_add_weylVector_pos [Invertible (2 : K)] {lam : Dual K H}
     (hlam : IsDominantIntegral b lam) {i : H.root} (hi : i ∈ b.support) :
     0 < coweightPairing (lam + weylVector (IsKilling.rootSystem H) b) i := by
   rw [coweightPairing_add_weylVector hlam.isIntegralWeight hi]
