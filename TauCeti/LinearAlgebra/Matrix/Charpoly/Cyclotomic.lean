@@ -16,12 +16,13 @@ import TauCeti.RingTheory.Polynomial.Cyclotomic.Minpoly
 /-!
 # Integer matrices whose characteristic polynomial is cyclotomic
 
-A cyclotomic polynomial is irreducible over `ℚ`. So if `Φₐ` annihilates an integer matrix and has
-degree the dimension, it is the characteristic polynomial. The same holds for a product `Φₐ Φ_b` of
-two distinct cyclotomic polynomials, provided neither factor annihilates the matrix alone and the
-degrees add up to the dimension. No determinant is computed. Once the characteristic polynomial is
-known, the complex eigenvalues are the corresponding primitive roots of unity, written as
-`exp (2πi e / h)` with `e` coprime to `h`.
+A cyclotomic polynomial `Φₐ` with `0 < a` is irreducible over `ℚ`. So if `Φₐ` annihilates an
+integer matrix and has degree the dimension, it is the characteristic polynomial; for `a = 0` we
+have `Φ₀ = 1`, of degree `0`, and the matrix is empty, with characteristic polynomial `1`. The same
+holds for a product `Φₐ Φ_b` of two distinct cyclotomic polynomials, provided neither factor
+annihilates the matrix alone and the degrees add up to the dimension. No determinant is computed.
+Once the characteristic polynomial is known, the complex eigenvalues are the corresponding
+primitive roots of unity, written as `exp (2πi e / h)` with `e` coprime to `h`.
 
 ## Main results
 
@@ -119,21 +120,14 @@ theorem mem_roots_charpoly_of_charpoly_eq_cyclotomic {M : Matrix κ κ ℤ} {h :
     ζ ∈ (M.map (Int.castRingHom ℂ)).charpoly.roots ↔
       ∃ e ∈ (List.range h).filter (Nat.Coprime · h),
         Complex.exp (2 * Real.pi * Complex.I * (e / h)) = ζ := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · rw [charpoly_map, hM, map_cyclotomic]
-    simp
-  rw [charpoly_map, hM, map_cyclotomic, mem_roots_cyclotomic_complex_iff hh]
+  rw [charpoly_map, hM, map_cyclotomic, mem_roots_cyclotomic_complex_iff]
 
 /-- The complex eigenvalues of an integer matrix with characteristic polynomial `Φ_h` are simple. -/
 theorem nodup_roots_charpoly_of_charpoly_eq_cyclotomic {M : Matrix κ κ ℤ} {h : ℕ}
     (hM : M.charpoly = cyclotomic h ℤ) :
     (M.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · rw [charpoly_map, hM, map_cyclotomic]
-    simp
-  have : NeZero (h : ℂ) := ⟨Nat.cast_ne_zero.2 hh⟩
   rw [charpoly_map, hM, map_cyclotomic]
-  exact roots_cyclotomic_nodup
+  exact nodup_roots_cyclotomic_complex h
 
 /-- The complex eigenvalues of an integer matrix with characteristic polynomial `Φₐ Φ_b` are the
 `exp (2πi e / a)` for `e < a` coprime to `a`, and the `exp (2πi e / b)` for `e < b` coprime
@@ -147,29 +141,19 @@ theorem mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul {M : Matrix κ κ ℤ} 
         Complex.exp (2 * Real.pi * Complex.I * (e / b)) = ζ := by
   have hMa : (M.map (Int.castRingHom ℂ)).charpoly = cyclotomic a ℂ * cyclotomic b ℂ := by
     rw [charpoly_map, hM, Polynomial.map_mul, map_cyclotomic, map_cyclotomic]
-  have key (n : ℕ) : ζ ∈ (cyclotomic n ℂ).roots ↔
-      ∃ e ∈ (List.range n).filter (Nat.Coprime · n),
-        Complex.exp (2 * Real.pi * Complex.I * (e / n)) = ζ := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · exact mem_roots_cyclotomic_complex_iff hn ζ
   rw [hMa, roots_mul (mul_ne_zero (cyclotomic_ne_zero a ℂ) (cyclotomic_ne_zero b ℂ)),
-    Multiset.mem_add, key a, key b]
+    Multiset.mem_add, mem_roots_cyclotomic_complex_iff, mem_roots_cyclotomic_complex_iff]
 
 /-- The complex eigenvalues of an integer matrix with characteristic polynomial `Φₐ Φ_b`, `a ≠ b`,
 are simple: two distinct cyclotomic factors have disjoint roots. -/
 theorem nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul {M : Matrix κ κ ℤ} {a b : ℕ}
     (hab : a ≠ b) (hM : M.charpoly = cyclotomic a ℤ * cyclotomic b ℤ) :
     (M.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
-  have hnd (n : ℕ) : (cyclotomic n ℂ).roots.Nodup := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · have : NeZero (n : ℂ) := ⟨Nat.cast_ne_zero.2 hn⟩
-      exact roots_cyclotomic_nodup
   rw [charpoly_map, hM, Polynomial.map_mul, map_cyclotomic, map_cyclotomic,
     roots_mul (mul_ne_zero (cyclotomic_ne_zero a ℂ) (cyclotomic_ne_zero b ℂ)),
     Multiset.nodup_add]
-  refine ⟨hnd a, hnd b, Multiset.disjoint_left.2 ?_⟩
+  refine ⟨nodup_roots_cyclotomic_complex a, nodup_roots_cyclotomic_complex b,
+    Multiset.disjoint_left.2 ?_⟩
   intro ζ h1 h2
   have ha : a ≠ 0 := by rintro rfl; simp at h1
   have hb : b ≠ 0 := by rintro rfl; simp at h2
