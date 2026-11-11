@@ -221,11 +221,8 @@ theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
     Measure.deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
   refine ⟨fun h => ?_, fun ⟨P, hP⟩ => ?_⟩
-  · have hprob := (mem_exchangeableProbabilityMeasures_iff.1 h.1).2
-    have hπ : IsProbabilityMeasure π := by
-      refine ⟨?_⟩
-      have hmass := Measure.deFinettiBarycenter_apply π MeasurableSet.univ
-      simpa [measure_univ] using hmass.symm
+  · have hπ : IsProbabilityMeasure π := (Measure.isProbabilityMeasure_deFinettiBarycenter_iff π).1
+      (mem_exchangeableProbabilityMeasures_iff.1 h.1).2
     obtain ⟨P, hP⟩ := exchangeable_extreme_iff_iid.1 h
     exact ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq (by
       simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac])⟩

@@ -18,10 +18,10 @@ The de Finetti barycenter of a measure `π` on `ProbabilityMeasure α` is the pa
 measure. It is useful independently of any representation theorem: draw a probability measure,
 then draw an i.i.d. path from it.
 
-This file supplies evaluation on measurable events, the point-mass and zero cases, preservation
-of probability measures, additivity and homogeneity in the mixing measure, and compatibility with
-coordinatewise measurable pushforwards. The symmetry and uniqueness properties of the mixture
-belong in `TauCeti.Probability.DeFinetti.Barycenter`.
+This file supplies evaluation on measurable events, the point-mass and zero cases, the total mass
+and preservation of probability measures, additivity and homogeneity in the mixing measure, and
+compatibility with coordinatewise measurable pushforwards. The symmetry and uniqueness properties of
+the mixture belong in `TauCeti.Probability.DeFinetti.Barycenter`.
 
 ## References
 
@@ -83,6 +83,18 @@ instance isProbabilityMeasure_deFinettiBarycenter (π : Measure (ProbabilityMeas
     [IsProbabilityMeasure π] : IsProbabilityMeasure (deFinettiBarycenter π) :=
   isProbabilityMeasure_bind TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable
     (.of_forall fun _ => inferInstance)
+
+/-- The barycenter of a mixing law has the same total mass as the mixing law: every countable power
+of a probability measure has mass one. -/
+theorem deFinettiBarycenter_univ (π : Measure (ProbabilityMeasure α)) :
+    deFinettiBarycenter π Set.univ = π Set.univ := by
+  rw [deFinettiBarycenter_apply π MeasurableSet.univ]
+  simp [measure_univ]
+
+/-- The barycenter of a mixing law is a probability measure if and only if the mixing law is. -/
+theorem isProbabilityMeasure_deFinettiBarycenter_iff (π : Measure (ProbabilityMeasure α)) :
+    IsProbabilityMeasure (deFinettiBarycenter π) ↔ IsProbabilityMeasure π :=
+  ⟨fun h => ⟨by rw [← deFinettiBarycenter_univ]; exact h.measure_univ⟩, fun _ => inferInstance⟩
 
 /-- **The zero mixing law has the zero barycenter.** -/
 @[simp]
