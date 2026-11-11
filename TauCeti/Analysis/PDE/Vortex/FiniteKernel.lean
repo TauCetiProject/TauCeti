@@ -27,8 +27,8 @@ symmetric product `Sym^m ℂ` of divisors are separate.
 The proof is the classical one, combining an estimate at infinity with compactness on a disc.
 
 * **Interior estimate.** For a `C²` variation `u` supported in a closed disc, the energy identity
-  `integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero` expresses `∫ |L_x u|²` as the integral
-  of the squared covariant gradient plus zeroth-order terms. Since the coefficients of `x` are
+  `integral_norm_sq_gaugeFixedOperator` expresses `∫ |L_x u|²` as the integral of the squared
+  covariant gradient plus zeroth-order terms. Since the coefficients of `x` are
   bounded on the disc, this gives the Gårding inequality
   `∫ |Du|² ≤ C (∫ |L_x u|² + ∫ |u|²)` (`exists_integral_norm_fderiv_sq_le`).
 * **Estimate at infinity.** The exterior coercivity
@@ -103,67 +103,44 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### The interior estimate -/
 
-/-- The integrand of the energy identity `integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`:
-the squared covariant gradient of `u`, the two potentials and the coupling through `∇₁ α`. -/
+/-- The integrand of the energy identity `integral_norm_sq_gaugeFixedOperator`: the covariant
+gradient density of `u` plus the zeroth-order potential. -/
 private def energyIntegrand (x u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
-  fderiv ℝ (fun w ↦ u w 0) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w 0) z I ^ 2 +
-    fderiv ℝ (fun w ↦ u w 1) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w 1) z I ^ 2 +
-    (fderiv ℝ (fun w ↦ u w 2) z 1 - x z 0 * u z 3) ^ 2 +
-    (fderiv ℝ (fun w ↦ u w 2) z I - x z 1 * u z 3) ^ 2 +
-    (fderiv ℝ (fun w ↦ u w 3) z 1 + x z 0 * u z 2) ^ 2 +
-    (fderiv ℝ (fun w ↦ u w 3) z I + x z 1 * u z 2) ^ 2 +
-    (x z 2 ^ 2 + x z 3 ^ 2) * (u z 0 ^ 2 + u z 1 ^ 2) +
-    (3 * (x z 2 ^ 2 + x z 3 ^ 2) / 2 - 1 / 8) * (u z 2 ^ 2 + u z 3 ^ 2) +
-    2 * ((covariantDerivative x z 1).im * (u z 0 * u z 2 + u z 1 * u z 3) +
-      (covariantDerivative x z 1).re * (u z 1 * u z 2 - u z 0 * u z 3))
+  gaugeFixedGradientDensity x u z + gaugeFixedPotential x z (u z)
 
-/-- The energy integrand of a compactly supported `C²` variation is integrable. -/
-private theorem integrable_energyIntegrand (hx : ContDiff ℝ 1 x)
-    {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u) (hc : HasCompactSupport u) :
-    Integrable (energyIntegrand x u) := by
-  have hui (i : Fin 4) : ContDiff ℝ 2 fun z ↦ u z i :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hu
-  have hdi (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ u w i) z v :=
-    ((hui i).continuous_fderiv two_ne_zero).clm_apply continuous_const
-  have hcont : Continuous (energyIntegrand x u) := by
-    have hK := continuous_covariantDerivative hx 1
-    have hKre : Continuous fun z ↦ (covariantDerivative x z 1).re := continuous_re.comp hK
-    have hKim : Continuous fun z ↦ (covariantDerivative x z 1).im := continuous_im.comp hK
-    have hxi (i : Fin 4) : Continuous fun z ↦ x z i :=
-      (EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hx.continuous
-    have := hdi 0 1; have := hdi 0 I; have := hdi 1 1; have := hdi 1 I
-    have := hdi 2 1; have := hdi 2 I; have := hdi 3 1; have := hdi 3 I
-    have := hxi 0; have := hxi 1; have := hxi 2; have := hxi 3
-    have := (hui 0).continuous; have := (hui 1).continuous
-    have := (hui 2).continuous; have := (hui 3).continuous
-    unfold energyIntegrand
-    fun_prop
-  -- The integrand vanishes wherever `u` vanishes near the point.
-  refine hcont.integrable_of_hasCompactSupport (hc.mono' fun z hz ↦ ?_)
-  by_contra h'
-  have h := notMem_tsupport_iff_eventuallyEq.mp h'
-  have hfd0 (i : Fin 4) (v : ℂ) : fderiv ℝ (fun w ↦ u w i) z v = 0 := by
-    have hi : (fun w ↦ u w i) =ᶠ[𝓝 z] fun _ ↦ 0 := h.mono fun w hw ↦ by simp [hw]
-    rw [hi.fderiv_eq, fderiv_const_apply, zero_apply]
-  exact hz (by simp [energyIntegrand, hfd0, h.eq_of_nhds])
-
-/-- The pointwise lower bound behind the Gårding inequality: the energy integrand controls half
-the squared gradient, up to a zeroth-order term whose coefficient is bounded by the coefficients
-of `x`. -/
-private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+/-- The pointwise lower bound behind the Gårding inequality: where the vortex equation holds or
+`u` vanishes, the energy integrand controls half the squared gradient, up to a zeroth-order term
+whose coefficient is bounded by the coefficients of `x`. -/
+private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (hsol : u z ≠ 0 → equation x z = 0) :
     (∑ i, (fderiv ℝ (fun w ↦ u w i) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w i) z I ^ 2)) / 2 ≤
       energyIntegrand x u z +
         (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 := by
-  -- The coupling `2 ⟪ξ, K ζ⟫`, with `|K| = |∇₁ α|`, is at least `-|∇₁ α| |u|²`.
-  have hcpl := neg_mul_norm_sq_le_coupling (le_refl ‖covariantDerivative x z 1‖) (u z)
-  rw [energyIntegrand, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, Fin.sum_univ_four]
-  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at hcpl
-  have hP : 0 ≤ (x z 2 ^ 2 + x z 3 ^ 2) * (u z 0 ^ 2 + u z 1 ^ 2) := by positivity
-  have hQ : 0 ≤ (x z 2 ^ 2 + x z 3 ^ 2) * (u z 2 ^ 2 + u z 3 ^ 2) := by positivity
+  -- The potential is at least `-(1 / 8 + |∇₁ α|) |u|²`.
+  have hV : -(1 / 8 + ‖covariantDerivative x z 1‖) * ‖u z‖ ^ 2 ≤
+      gaugeFixedPotential x z (u z) := by
+    by_cases hz : u z = 0
+    · simp [gaugeFixedPotential_def, hz]
+    refine le_trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+      (vortexMass_mul_norm_sq_le_gaugeFixedPotential hx (hsol hz) (u z))
+    have hs : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
+    have hm : -(1 / 8) ≤ min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) :=
+      le_min (by linarith) (by linarith)
+    rw [vortexMass]
+    linarith
+  have hN : ‖u z‖ ^ 2 = u z 0 ^ 2 + u z 1 ^ 2 + u z 2 ^ 2 + u z 3 ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  rw [hN] at hV ⊢
+  rw [energyIntegrand, gaugeFixedGradientDensity_def, Fin.sum_univ_four]
+  have hK := norm_nonneg (covariantDerivative x z 1)
   nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z 1 - 2 * (x z 0 * u z 3)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z I - 2 * (x z 1 * u z 3)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z 1 + 2 * (x z 0 * u z 2)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z I + 2 * (x z 1 * u z 2)),
+    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (u z 0)),
+    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (u z 1)),
+    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (u z 0)),
+    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (u z 1)),
     sq_nonneg (u z 0), sq_nonneg (u z 1), sq_nonneg (u z 2), sq_nonneg (u z 3)]
 
 /-- **The Gårding inequality for the gauge-fixed vortex operator on a disc.** For a `C¹` field `x`
@@ -185,9 +162,13 @@ theorem exists_integral_norm_fderiv_sq_le (hx : ContDiff ℝ 1 x) (r : ℝ) :
   refine ⟨4 * max M 1, fun u hu hr hsol ↦ ?_⟩
   have hc : HasCompactSupport u :=
     HasCompactSupport.intro (isCompact_closedBall 0 r) fun z hz ↦ hr z (by simpa using hz)
-  have hE : ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2 = ∫ z, energyIntegrand x u z :=
-    integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero hx hu hc hsol
-  have hQi := integrable_energyIntegrand hx hu hc
+  have hG := integrable_gaugeFixedGradientDensity (μ := volume) hx.continuous
+    (hu.of_le one_le_two) hc
+  have hV := integrable_gaugeFixedPotential (μ := volume) hx hu.continuous hc
+  have hQi : Integrable (energyIntegrand x u) := hG.add hV
+  have hE : ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2 = ∫ z, energyIntegrand x u z := by
+    rw [integral_norm_sq_gaugeFixedOperator hx hu hc, ← integral_add hG hV]
+    rfl
   have hn : Integrable fun z ↦ ‖u z‖ ^ 2 :=
     Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖u z‖ ^ 2)
       (hu.continuous.norm.pow 2) (hc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp))
@@ -199,7 +180,7 @@ theorem exists_integral_norm_fderiv_sq_le (hx : ContDiff ℝ 1 x) (r : ℝ) :
   have hpt (z : ℂ) :
       ‖fderiv ℝ u z‖ ^ 2 ≤ 4 * energyIntegrand x u z + 4 * max M 1 * ‖u z‖ ^ 2 := by
     have hD := norm_fderiv_sq_le_two_mul_sum_sq u z
-    have hS := sum_sq_div_two_le (x := x) u z
+    have hS := sum_sq_div_two_le u (hx.differentiable one_ne_zero z) (hsol z)
     have hMu : (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 ≤
         max M 1 * ‖u z‖ ^ 2 := by
       by_cases hz : r < ‖z‖

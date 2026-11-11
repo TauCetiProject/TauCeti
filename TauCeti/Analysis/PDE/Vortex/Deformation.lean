@@ -101,6 +101,13 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
 
+/-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
+theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * ‖x z‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), sq_norm_sectionValue, mul_pow,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
+
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
 theorem sectionValue_eq_zero_iff (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -190,6 +197,25 @@ theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {
   exact (differentiableAt_const _).mul ((ofRealCLM.differentiableAt.comp z hp).add
     ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
 
+/-- The section of a field differentiable at a point is differentiable there. -/
+theorem differentiableAt_sectionValue_of_differentiableAt
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : DifferentiableAt ℝ x z) :
+    DifferentiableAt ℝ (sectionValue x) z :=
+  differentiableAt_sectionValue
+    ((EuclideanSpace.proj (𝕜 := ℝ) (2 : Fin 4)).differentiableAt.comp z hx :)
+    ((EuclideanSpace.proj (𝕜 := ℝ) (3 : Fin 4)).differentiableAt.comp z hx :)
+
+/-- The section of a field `C^n` at a point is `C^n` there. -/
+theorem contDiffAt_sectionValue_of_contDiffAt {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiffAt ℝ n x z) : ContDiffAt ℝ n (sectionValue x) z := by
+  have hi (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ ((x w i : ℝ) : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z
+      ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.contDiffAt.comp z hx :)
+  have h : sectionValue x = fun w ↦ 2 * (((x w 2 : ℝ) : ℂ) + ((x w 3 : ℝ) : ℂ) * I) :=
+    funext (sectionValue_apply x)
+  rw [h]
+  exact contDiffAt_const.mul ((hi 2).add ((hi 3).mul contDiffAt_const))
+
 /-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
 theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
@@ -227,19 +253,6 @@ theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ
   push_cast
   ring
 
-/-- The covariant derivative of a `C¹` field along a fixed tangent vector is continuous in the
-base point. -/
-theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
-    (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
-  have hxi (i : Fin 4) : ContDiff ℝ 1 fun z ↦ x z i :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
-  have hα := contDiff_sectionValue (hxi 2) (hxi 3)
-  simp only [covariantDerivative_apply]
-  exact ((hα.continuous_fderiv one_ne_zero).clm_apply continuous_const).add
-    ((continuous_const.mul (continuous_ofReal.comp
-      (((hxi 0).continuous.mul continuous_const).add
-        ((hxi 1).continuous.mul continuous_const)))).mul hα.continuous)
-
 /-- The covariant derivative `∇₁ α` in the real field coordinates: for a field differentiable at
 `z`, `∇₁ α = 2 ((∂₁ p - b₁ q) + i (∂₁ q + b₁ p))`. -/
 theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -257,6 +270,39 @@ theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z :
   rw [covariantDerivative_apply, he, hs.fderiv]
   simp
   linear_combination (2 * (x z 0 : ℂ) * (x z 3 : ℂ)) * I_sq
+
+/-- The real part of the covariant derivative in the real field coordinates:
+`Re ∇_v α = 2 (∂_v p - b(v) q)`. -/
+theorem covariantDerivative_re {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).re =
+      2 * (fderiv ℝ (fun w ↦ x w 2) z v - (x z 0 * v.re + x z 1 * v.im) * x z 3) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
+/-- The imaginary part of the covariant derivative in the real field coordinates:
+`Im ∇_v α = 2 (∂_v q + b(v) p)`. -/
+theorem covariantDerivative_im {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).im =
+      2 * (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
+/-- The covariant derivative of the section of a `C¹` field in a fixed direction is
+continuous. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
+    (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
+  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
+    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have := hx.continuous
+  simp only [covariantDerivative_apply, sectionValue_apply,
+    fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
+      ((hxi 3).differentiable one_ne_zero _)]
+  fun_prop
 
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
