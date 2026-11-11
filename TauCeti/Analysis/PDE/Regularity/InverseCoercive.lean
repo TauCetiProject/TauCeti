@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Ellipticity.InverseCoercive
+public import TauCeti.Analysis.PDE.EnergyForm.InverseCoercive
 public import TauCeti.Analysis.PDE.Regularity.Harnack
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.MeasureTheory.Measure.Restrict.Chain
@@ -33,8 +33,8 @@ Both reduce to the theorems for the pointwise operator-bound predicate
 `TauCeti.PDE.exists_ae_ae_value_le_mul_value`). Dividing `a` by `λ` does not change the weak
 solutions and normalizes the constants to `(1, Λ / λ)`, and changing `a` on a null set gives a
 field satisfying the operator bound with the same constants everywhere
-(`TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq`). The Hölder
-estimate is then applied with the thickening radius `r / 2`. The Harnack inequality on
+(`TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_zero`).
+The Hölder estimate is then applied with the thickening radius `r / 2`. The Harnack inequality on
 `B(x₀, r)` is assembled from the inequality on balls of radius `ρ = r / (8 √n)` centred in
 `closedBall x₀ r`: finitely many such balls cover `closedBall x₀ r`, and each is joined to
 `B(x₀, ρ)` by a chain of `⌈8 √n⌉ + 2` balls centred on a segment, consecutive balls overlapping
@@ -59,26 +59,7 @@ open scoped NNReal
 namespace TauCeti.PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
-  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
-  {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-
-/-- **Normalizing an inverse-coercive coefficient field.** A measurable field `a` which is
-inverse-coercive on `Ω` with constants `λ, Λ` agrees almost everywhere on `Ω` with `λ⁻¹ a'` for
-a measurable field `a'` satisfying the pointwise operator-bound predicate on `Ω` with constants
-`1` and `Λ / λ`. The energy forms satisfy `a'(u, v) = λ⁻¹ a(u, v)`, so `a` and `a'` have the
-same weak solutions. -/
-theorem IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq
-    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) :
-    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a' 1 (Lam / lam) ∧
-      AEStronglyMeasurable a' (mu.restrict Omega) ∧
-      ∀ u v : W1p mu Omega 2, energyFormH1 a' 0 0 u v = lam⁻¹ * energyFormH1 a 0 0 u v := by
-  obtain ⟨a', haa', h'⟩ := (h.const_smul (inv_pos.2 h.pos)).exists_ae_eq_uniformlyEllipticOn
-  rw [inv_mul_cancel₀ h.pos.ne', inv_mul_eq_div] at h'
-  refine ⟨a', h'.mono_set (subset_univ _), (ha.const_smul lam⁻¹).congr haa', fun u v => ?_⟩
-  rw [← energyFormH1_smul_coefficients, smul_zero, smul_zero]
-  exact energyFormH1_congr_ae haa'.symm .rfl .rfl u v
+  [mu.IsAddHaarMeasure]
 
 /-- **De Giorgi's theorem on a ball.** Fix a bound `ratio` for the ellipticity ratio. There are
 `α ∈ (0, 1]` and `C > 0`, depending only on `ratio`, the dimension `n` and the normalization of
@@ -113,23 +94,21 @@ theorem exists_holderOnWith_preciseRepresentative_of_isUniformlyEllipticAE (rati
   intro lam Lam x₀ r a u h hratio ha hu
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
-  obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
-    (Omega := ⟨ball x₀ (2 * r), isOpen_ball⟩) ha
-  have h'' : UniformlyEllipticOn (ball x₀ (2 * r)) a' 1 ratio :=
-    h'.mono_constants one_pos le_rfl ((div_le_iff₀ h.pos).2 hratio)
+  obtain ⟨a', h', ha', hu'⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq_zero
+    (Omega := ⟨ball x₀ (2 * r), isOpen_ball⟩) hratio ha hu
   -- The closed `r / 2`-thickening of `B(x₀, r)` lies in `B(x₀, 2r)`.
   have hthick : cthickening (r / 2) (ball x₀ r) ⊆ ball x₀ (2 * r) :=
     (cthickening_subset_of_subset _ ball_subset_closedBall).trans
       ((cthickening_closedBall (by positivity) hr.le x₀).trans_subset
         (closedBall_subset_ball (by linarith)))
-  have key := hhol (Omega := ⟨ball x₀ (2 * r), isOpen_ball⟩) (K := ball x₀ r) h'' ha'
-    (fun v => by rw [heq, hu v, mul_zero]) (half_pos hr) hthick
+  have key := hhol (Omega := ⟨ball x₀ (2 * r), isOpen_ball⟩) (K := ball x₀ r) h' ha' hu'
+    (half_pos hr) hthick
   -- Rescale the constant from the radius `r / 2` to the radius `r`.
   have hconst : ∀ S : ℝ, C * 2 ^ ((α : ℝ) + Fintype.card ι / 2) * r ^ (-(α : ℝ)) *
       (r ^ (-(Fintype.card ι : ℝ) / 2) * S) =
       C * (r / 2) ^ (-(α : ℝ)) * ((r / 2) ^ (-(Fintype.card ι : ℝ) / 2) * S) := fun S => by
-    rw [Real.div_rpow hr.le zero_le_two, Real.div_rpow hr.le zero_le_two, Real.rpow_add two_pos,
-      neg_div, Real.rpow_neg zero_le_two, Real.rpow_neg zero_le_two]
+    simp only [Real.div_rpow hr.le zero_le_two, Real.rpow_add two_pos, neg_div,
+      Real.rpow_neg zero_le_two]
     field_simp
   rw [hconst]
   exact key
@@ -172,10 +151,8 @@ theorem exists_ae_ae_value_le_mul_value_of_isUniformlyEllipticAE (ratio : ℝ) :
   intro lam Lam x₀ r a u h hratio ha hu hu0
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
-  obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
-    (Omega := ⟨ball x₀ (4 * r), isOpen_ball⟩) ha
-  have h'' : UniformlyEllipticOn (ball x₀ (4 * r)) a' 1 ratio :=
-    h'.mono_constants one_pos le_rfl ((div_le_iff₀ h.pos).2 hratio)
+  obtain ⟨a', h', ha', hu'⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq_zero
+    (Omega := ⟨ball x₀ (4 * r), isOpen_ball⟩) hratio ha hu
   have hsqrt : 0 < √(Fintype.card ι : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
   have hρ : 0 < r / (8 * √(Fintype.card ι : ℝ)) := by positivity
   refine ae_ae_le_pow_mul_of_forall_mem_closedBall hC₀.le hρ ?_ fun z hz => ?_
@@ -185,8 +162,7 @@ theorem exists_ae_ae_value_le_mul_value_of_isUniformlyEllipticAE (ratio : ℝ) :
     rw [mul_div_assoc', lt_div_iff₀ (by positivity)]
     nlinarith
   -- Moser's Harnack inequality on `B(z, ρ)`, since `B(z, 16 √n ρ) = B(z, 2r) ⊆ B(x₀, 4r)`.
-  refine hH (Omega := ⟨ball x₀ (4 * r), isOpen_ball⟩) h'' ha'
-    (fun v => by rw [heq, hu v, mul_zero]) hu0 (ball_subset_ball' ?_)
+  refine hH (Omega := ⟨ball x₀ (4 * r), isOpen_ball⟩) h' ha' hu' hu0 (ball_subset_ball' ?_)
   rw [mem_closedBall] at hz
   have : 16 * √(Fintype.card ι : ℝ) * (r / (8 * √(Fintype.card ι : ℝ))) = 2 * r := by
     field_simp; ring

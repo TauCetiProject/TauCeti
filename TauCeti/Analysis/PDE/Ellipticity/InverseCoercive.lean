@@ -190,11 +190,13 @@ theorem const_smul (h : IsUniformlyEllipticAE mu Ω a lam Lam) {c : ℝ} (hc : 0
   filter_upwards [h.ae_bounds, h.ae_isUnit] with x hx hu
   let _ : Invertible c := invertibleOfNonzero hc.ne'
   refine ⟨fun ξ => ?_, fun ξ => ?_⟩
-  · rw [Pi.smul_apply, smul_mulVec, dotProduct_smul, smul_eq_mul, mul_assoc]
-    exact mul_le_mul_of_nonneg_left (hx.1 ξ) hc.le
-  · rw [Pi.smul_apply, Matrix.inv_smul (a x) c ((isUnit_iff_isUnit_det _).mp hu), invOf_eq_inv,
-      smul_mulVec, dotProduct_smul, smul_eq_mul, mul_inv, mul_assoc]
-    exact mul_le_mul_of_nonneg_left (hx.2 ξ) (inv_nonneg.mpr hc.le)
+  · simp only [Pi.smul_apply, smul_mulVec, dotProduct_smul, smul_eq_mul, mul_assoc]
+    gcongr
+    exact hx.1 ξ
+  · simp only [Pi.smul_apply, Matrix.inv_smul (a x) c ((isUnit_iff_isUnit_det _).mp hu),
+      invOf_eq_inv, smul_mulVec, dotProduct_smul, smul_eq_mul, mul_inv, mul_assoc]
+    gcongr
+    exact hx.2 ξ
 
 /-- The principal bilinear form is essentially bounded by the inverse-coercive upper
 constant, as required for boundedness of the energy form. -/
