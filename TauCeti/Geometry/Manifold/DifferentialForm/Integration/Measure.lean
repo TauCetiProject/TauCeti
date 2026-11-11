@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVar
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+
 /-!
 # The measure of a top form
 
@@ -49,6 +51,8 @@ this construction gives the Liouville measure of a symplectic manifold.
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
+  measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
   `|Φ^* ψ|` to `|ψ|`.
 
@@ -291,6 +295,50 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   have hnull : ∀ᵐ y ∂b.addHaar, y ∉ e '' V :=
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
+
+/-! ### Top forms on the model space -/
+
+section ModelSpace
+
+/-- **The measure of a top form on the model space.** On `E`, regarded as a manifold in the
+identity chart, `|φ|` is the Haar measure normalized by any basis `b` of `E`, weighted by the
+absolute value `|φ_x(b)|` of the coefficient of `φ` in that basis. -/
+theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
+    [hE : BorelSpace E] (φ : RoughForm 𝓘(ℝ, E) E ℝ k) (b : Basis (Fin k) ℝ E) :
+    φ.measure = b.addHaar.withDensity fun x ↦ ENNReal.ofReal |φ x b| := by
+  obtain rfl : mE = borel E := hE.measurable_eq
+  set b₀ := finBasisOfFinrankEq ℝ E hk.out
+  refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
+  -- In the identity chart, the coefficient in `b₀` is `det_b b₀` times the coefficient in `b`.
+  have hchart (y : E) : φ.inChartAt α y b₀ = b.det b₀ * φ y b := by
+    -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
+    rw [inChartAt_apply, extChartAt_model_space_eq_id]
+    simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
+      mfderivWithin_univ, mfderiv_id]
+    have h := congr($((φ y).toAlternatingMap.eq_smul_basis_det b) b₀)
+    rw [smul_apply, smul_eq_mul] at h
+    exact h.trans (mul_comm _ _)
+  have hdet : ENNReal.ofReal |(b.det b₀)⁻¹| * ENNReal.ofReal |b.det b₀| = 1 := by
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b₀).ne_zero,
+      abs_one, ENNReal.ofReal_one]
+  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
+    b.addHaar_eq_smul_of_basis b₀, Measure.restrict_smul, lintegral_smul_measure]
+  have hint : ∫⁻ y in s, ENNReal.ofReal |φ.inChartAt α y b₀| ∂b.addHaar =
+      ENNReal.ofReal |b.det b₀| * ∫⁻ y in s, ENNReal.ofReal |φ y b| ∂b.addHaar := by
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine setLIntegral_congr_fun hs fun y _ ↦ ?_
+    rw [hchart, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
+  rw [hint, smul_eq_mul, ← mul_assoc, hdet, one_mul]
+
+/-- **The measure of a constant top form on the model space.** If a top form `φ` on `E` takes the
+same value `c` on a basis `b` at every point, then `|φ|` is `|c|` times the Haar measure
+normalized by `b`. -/
+theorem measure_eq_smul_addHaar [MeasurableSpace E] [BorelSpace E]
+    {φ : RoughForm 𝓘(ℝ, E) E ℝ k} (b : Basis (Fin k) ℝ E) {c : ℝ} (h : ∀ x, φ x b = c) :
+    φ.measure = ENNReal.ofReal |c| • b.addHaar := by
+  simp_rw [measure_eq_withDensity_addHaar φ b, h, withDensity_const]
+
+end ModelSpace
 
 end RoughForm
 

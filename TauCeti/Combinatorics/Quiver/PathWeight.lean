@@ -26,27 +26,31 @@ for both additive and multiplicative weights.
 
 public section
 
-namespace TauCeti
-
 universe u v
 
 variable {V : Type u} [Quiver.{v} V] {M : Type*} [AddMonoid M]
 
+namespace Quiver.Path
+
 /-- **A constant weight counts arrows**: with every arrow of weight `c`, a path has weight
 `p.length • c`. -/
 @[simp]
-theorem _root_.Quiver.Path.addWeight_const (c : M) {a b : V} (p : Quiver.Path a b) :
+theorem addWeight_const (c : M) {a b : V} (p : Quiver.Path a b) :
     p.addWeight (fun _ => c) = p.length • c := by
   induction p with
   | nil => simp
   | cons p e ih => simp [ih, succ_nsmul]
+
+end Quiver.Path
+
+namespace Prefunctor
 
 variable {W : Type*} [Quiver W]
 
 /-- **Pushing a path pulls back its arrow weight**: the weight of the image path is the sum of the
 image-arrow weights along the original path. -/
 @[simp]
-theorem _root_.Prefunctor.addWeight_mapPath (φ : V ⥤q W)
+theorem addWeight_mapPath (φ : V ⥤q W)
     (wt : ∀ {a b : W}, (a ⟶ b) → M) {a b : V} (p : Quiver.Path a b) :
     (φ.mapPath p).addWeight wt = p.addWeight fun e => wt (φ.map e) := by
   induction p with
@@ -55,11 +59,11 @@ theorem _root_.Prefunctor.addWeight_mapPath (φ : V ⥤q W)
 
 /-- The multiplicative weight of a pushed path is its pulled-back arrow weight. -/
 @[simp]
-theorem _root_.Prefunctor.weight_mapPath {N : Type*} [Monoid N] (φ : V ⥤q W)
+theorem weight_mapPath {N : Type*} [Monoid N] (φ : V ⥤q W)
     (wt : ∀ {a b : W}, (a ⟶ b) → N) {a b : V} (p : Quiver.Path a b) :
     (φ.mapPath p).weight wt = p.weight fun e => wt (φ.map e) := by
   induction p with
   | nil => simp
   | cons p e ih => simp [ih]
 
-end TauCeti
+end Prefunctor

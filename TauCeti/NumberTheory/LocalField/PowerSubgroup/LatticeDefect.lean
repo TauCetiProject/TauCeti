@@ -342,8 +342,7 @@ theorem latticeDefect_unitFiltration_eq_finrank_smul [CommRing k] [CharP k p] (i
     latticeDefect k (L ≃ₐ[K] L) p (Additive (unitFiltration L i)) =
       Module.finrank ℚ_[p] K • permK0 k (L ≃ₐ[K] L) (L ≃ₐ[K] L) := by
   have hn : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.le_mul_of_pos_left _
-      (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   rw [latticeDefect_unitFiltration_eq K L k p i _, latticeDefect_unitFiltration_eq_integerRing K L
     k p hn, latticeDefect_integerRing_eq_finrank_smul]
 
