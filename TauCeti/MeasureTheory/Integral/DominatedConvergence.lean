@@ -193,23 +193,17 @@ theorem continuousOn_parametric_intervalIntegral_of_continuousOn {X E : Type*}
     (hf : ContinuousOn (uncurry f) (s ×ˢ uIcc a b)) :
     ContinuousOn (fun x ↦ ∫ t in a..b, f x t ∂μ) s := by
   intro x₀ hx₀
-  rw [Metric.continuousWithinAt_iff']
-  intro ε hε
   have hint : ∀ x ∈ s, IntervalIntegrable (f x) μ a b := fun x hx ↦
     (hf.comp (Continuous.prodMk_right x).continuousOn fun _ ht ↦ ⟨hx, ht⟩).intervalIntegrable
-  have hC : 0 < μ.real (uIoc a b) + 1 := by positivity
-  obtain ⟨v, hv, hvf⟩ := isCompact_uIcc.mem_uniformity_of_prod hf hx₀
-    (Metric.dist_mem_uniformity (div_pos hε hC))
-  filter_upwards [hv, self_mem_nhdsWithin] with x hxv hxs
-  rw [dist_eq_norm, ← intervalIntegral.integral_sub (hint x hxs) (hint x₀ hx₀),
-    intervalIntegral.norm_integral_eq_norm_integral_uIoc]
-  calc ‖∫ t in uIoc a b, (f x t - f x₀ t) ∂μ‖
-      ≤ ε / (μ.real (uIoc a b) + 1) * μ.real (uIoc a b) :=
-        norm_setIntegral_le_of_norm_le_const measure_Ioc_lt_top fun t ht ↦ by
-          rw [← dist_eq_norm]
-          exact (hvf x hxv t (uIoc_subset_uIcc ht)).le
-    _ < ε / (μ.real (uIoc a b) + 1) * (μ.real (uIoc a b) + 1) := by gcongr; linarith
-    _ = ε := div_mul_cancel₀ _ hC.ne'
+  have hU : TendstoUniformlyOn (fun x t ↦ f x t - f x₀ t) 0 (𝓝[s] x₀) (uIcc a b) := by
+    refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
+    obtain ⟨v, hv, hvf⟩ := isCompact_uIcc.mem_uniformity_of_prod hf hx₀
+      (Metric.dist_mem_uniformity hε)
+    filter_upwards [hv] with x hx t ht
+    simpa [dist_eq_norm, norm_sub_rev] using hvf x hx t ht
+  refine tendsto_sub_nhds_zero_iff.mp ((hU.tendsto_intervalIntegral_nhds_zero (μ := μ)).congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with x hx
+  exact intervalIntegral.integral_sub (hint x hx) (hint x₀ hx₀)
 
 /-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
 then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated
