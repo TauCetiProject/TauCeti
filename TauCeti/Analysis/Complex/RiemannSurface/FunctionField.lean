@@ -255,6 +255,8 @@ end Preconnected
 
 section OfMeromorphic
 
+omit [IsManifold 𝓘(ℂ) 1 X]
+
 variable [Nonempty X] {h : X → ℂ} (hh : ∀ x, MeromorphicAt h x)
 
 /-- The meromorphic function on a nonempty Riemann surface defined by a function `h : X → ℂ`
@@ -308,7 +310,8 @@ theorem eq_ofMeromorphic_iff {p : X → Prop} (hp : ∀ x, ∀ᶠ y in 𝓝[≠]
 /-- On a connected Riemann surface, a meromorphic function is the one defined by its finite
 part. -/
 @[simp]
-theorem ofMeromorphic_finitePart [PreconnectedSpace X] (f : MeromorphicFunction X) :
+theorem ofMeromorphic_finitePart [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
+    (f : MeromorphicFunction X) :
     ofMeromorphic f.meromorphicAt_finitePart = f :=
   DFunLike.coe_injective (sphereMap_finitePart f)
 
@@ -357,18 +360,22 @@ instance : NatCast (MeromorphicFunction X) :=
 instance : IntCast (MeromorphicFunction X) :=
   ⟨fun n ↦ ofMeromorphic fun _ ↦ meromorphicAt_const (n : ℂ) _⟩
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem coe_zero : ⇑(0 : MeromorphicFunction X) = fun _ ↦ ((0 : ℂ) : OnePoint ℂ) :=
   sphereMap_const 0
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem coe_one : ⇑(1 : MeromorphicFunction X) = fun _ ↦ ((1 : ℂ) : OnePoint ℂ) :=
   sphereMap_const 1
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem finitePart_zero : (0 : MeromorphicFunction X).finitePart = 0 :=
   funext fun _ ↦ finitePart_of_eq_coe (congrFun coe_zero _)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem finitePart_one : (1 : MeromorphicFunction X).finitePart = 1 :=
   funext fun _ ↦ finitePart_of_eq_coe (congrFun coe_one _)

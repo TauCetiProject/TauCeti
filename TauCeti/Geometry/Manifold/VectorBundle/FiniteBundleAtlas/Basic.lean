@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
-public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Topology.VectorBundle.Basic
 
 /-!
@@ -25,10 +24,10 @@ In chart `i` a section `s` is read as the `F`-valued function `A.coord i s` on t
 read in chart `i'`, the coordinates in chart `i'` are the coordinate change of the bundle applied
 to the coordinates in chart `i` composed with the chart transition `A.transition i i'`
 (`TauCeti.FiniteBundleAtlas.coord_eq_coordChange`). For a `C¹` manifold without boundary modelled
-on a finite-dimensional real normed space, chart transitions are differentiable on the overlaps,
-so they carry null sets of an additive Haar measure to null sets: a property holding almost
-everywhere on the image of chart `i` holds almost everywhere on the overlap after composition with
-the transition (`TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`).
+on a real normed space, chart transitions are differentiable on the overlaps
+(`TauCeti.FiniteBundleAtlas.differentiableOn_transition`). Charts of manifolds modelled on the
+closed upper half-plane are read in `ℂ` in
+`TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.HalfPlane`.
 
 ## Main definitions
 
@@ -44,7 +43,7 @@ the transition (`TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`).
 * `TauCeti.FiniteBundleAtlas.nonempty`: compact Hausdorff manifolds have finite bundle atlases.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle.
-* `TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`: chart transitions preserve null sets.
+* `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
   vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
   domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`).
@@ -54,7 +53,7 @@ public section
 
 noncomputable section
 
-open Bundle Filter MeasureTheory Set TopologicalSpace
+open Bundle Set TopologicalSpace
 open scoped Manifold Topology
 
 universe u
@@ -267,23 +266,6 @@ theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpa
     ContDiffOn ℝ n (fun y ↦ φ ((A.chart i).symm y)) (A.chart i).target := by
   rw [← contMDiffOn_iff_contDiffOn]
   exact hφ.contMDiffOn.comp (t := univ) contMDiffOn_chart_symm fun _ _ ↦ mem_univ _
-
-/-- **Chart transitions preserve null sets.** A property holding almost everywhere on the image of
-chart `i` holds, after composition with the chart transition, almost everywhere on the overlap of
-charts `i` and `i'` read in chart `i'`. -/
-theorem ae_restrict_overlap_transition [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {μ : Measure E} [μ.IsAddHaarMeasure] [IsManifold 𝓘(ℝ, E) 1 M] {i i' : Fin A.n} {P : E → Prop}
-    (h : ∀ᵐ z ∂μ.restrict (A.image i), P z) :
-    ∀ᵐ y ∂μ.restrict (A.overlap i i'), P (A.transition i i' y) := by
-  have hN : μ ({z | ¬P z} ∩ A.overlap i' i) = 0 := by
-    rw [ae_iff, Measure.restrict_apply' (A.image i).isOpen.measurableSet] at h
-    exact measure_mono_null (inter_subset_inter_right _ (A.overlap_subset_image i' i)) h
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
-    ((A.differentiableOn_transition i' i).mono inter_subset_right) hN
-  rw [ae_iff, Measure.restrict_apply' (A.isOpen_overlap i i').measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  exact ⟨A.transition i i' y, ⟨hy.1, A.transition_mem_overlap hy.2⟩,
-    A.transition_transition hy.2⟩
 
 end FiniteBundleAtlas
 
