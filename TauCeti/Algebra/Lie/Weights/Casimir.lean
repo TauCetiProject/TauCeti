@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Lie.Weights.Trace
 /-!
 # The trace of the Casimir operator on a weight space
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, and let `M` be a
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a splitting Cartan subalgebra, and let `M` be a
 finite-dimensional `L`-module. The Casimir element `Ω ∈ U(L)` is central
 (`TauCeti.casimirElement_mem_center`), so the operator it induces on `M` commutes with the action
 and therefore preserves each weight space `Mμ`. This file computes the trace of its restriction:
@@ -273,9 +273,8 @@ theorem casimirGenWeightSpaceEnd_eq_sum {ι : Type*} [DecidableEq ι] [Fintype �
 
 section Trace
 
-variable [CharZero K] [IsAlgClosed K] [FiniteDimensional K M]
+variable [CharZero K] [FiniteDimensional K M]
 
-omit [IsTriangularizable K H L] in
 /-- **The zero-weight summands are scalars.** A raise-lower endomorphism built from two elements
 of the Cartan subalgebra acts on the `mu`-weight space by the scalar `mu` gives them, because the
 weight spaces are honest simultaneous eigenspaces. -/
@@ -297,7 +296,6 @@ theorem trace_raiseLowerEnd_of_eq_zero {mu : Module.Dual K H} {alpha : H → K} 
     simp
   rw [key, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm]
 
-omit [IsAlgClosed K] in
 /-- **The summands at a root sum to a string sum.** Each summand at the root `chi` lowers and
 raises by root vectors whose bracket is a multiple of the vector representing `chi`, so the string
 formula applies; the multiples sum to the trace `1` of a root-space projection. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Multiplication of distributions by smooth functions
@@ -25,8 +26,11 @@ functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairi
 
 * `Distribution.smulLeftCLM`: the product `g T`, with `Distribution.smulLeftCLM_apply` and
   `Distribution.coe_smulLeftCLM`.
+* `Distribution.smulLeftCLM_const`: a constant `c` acts as the scalar `c`.
 * `Distribution.smulLeftCLM_smulLeftCLM`: multiplying by `h` and then by `g` is multiplying by
   `g h`.
+* `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of `g`
+  and of `T`.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
 
 ## References
@@ -62,6 +66,16 @@ theorem coe_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
     ⇑(smulLeftCLM hg T) = ⇑T ∘ ⇑(TestFunction.smulLeftCLM hg) :=
   (rfl)
 
+/-- Multiplying a distribution by the constant function `c` is scalar multiplication by `c`. -/
+@[simp]
+theorem smulLeftCLM_const (c : ℝ) (T : 𝓓'^{n}(Ω, F)) :
+    smulLeftCLM (contDiff_const (c := c)) T = c • T := by
+  ext φ
+  have h : TestFunction.smulLeftCLM (contDiff_const (c := c)) φ = c • φ := by
+    ext x
+    simp
+  simp [h]
+
 /-- Multiplying a distribution by `h` and then by `g` is multiplying it by `g h`. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
@@ -72,6 +86,12 @@ theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
   congr 1
   ext x
   simp [mul_comm]
+
+/-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
+theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
+    dsupport (smulLeftCLM hg T) ⊆ tsupport g ∩ dsupport T := by
+  rw [coe_smulLeftCLM]
+  exact dsupport_comp_smulLeftCLM_subset T hg
 
 /-- The complex-linear extension of `g T` to complex test functions pairs `g T` with `ψ` as `T`
 with `g ψ`. -/

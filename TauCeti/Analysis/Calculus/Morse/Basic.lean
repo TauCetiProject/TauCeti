@@ -166,6 +166,16 @@ theorem hasNondegenerateCriticalPointsOn_iff {s : Set E} :
       ∀ ⦃x⦄, x ∈ s → fderiv ℝ f x = 0 → IsNondegenerateCriticalPoint f x :=
   Iff.rfl
 
+/-- A function with nondegenerate critical points on `s` is differentiable at every point of `s`:
+where it is not differentiable `fderiv` is `0` by convention, so the point would be a critical
+point, hence nondegenerate, hence a point of differentiability. -/
+theorem HasNondegenerateCriticalPointsOn.differentiableAt {s : Set E}
+    (hM : HasNondegenerateCriticalPointsOn f s) {x : E} (hx : x ∈ s) :
+    DifferentiableAt ℝ f x := by
+  by_contra hd
+  exact hd ((hasNondegenerateCriticalPointsOn_iff.1 hM hx
+    (fderiv_zero_of_not_differentiableAt hd)).contDiffAt.differentiableAt two_ne_zero)
+
 /-- Having nondegenerate critical points on `t` is inherited by every subset of `t`. -/
 theorem HasNondegenerateCriticalPointsOn.mono {s t : Set E}
     (hM : HasNondegenerateCriticalPointsOn f t) (hst : s ⊆ t) :

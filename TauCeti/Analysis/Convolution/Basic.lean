@@ -42,6 +42,8 @@ A convolution `(f ⋆ g) x` only sees `g` at the points `x - t` with `t` in the 
 convolution `ρ ⋆ u` with a continuous compactly supported `ψ` only involves `u` on the compact set
 `tsupport ψ - tsupport ρ`, and Fubini moves the kernel outside:
 `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for `u` locally integrable near that set.
+Swapping the factors, a locally integrable `K` convolved with an integrable compactly supported
+`g` pairs as `∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`.
 
 Convolving an essentially bounded `g` with an integrable kernel `K` gives a function bounded
 everywhere by `‖K‖₁ ‖g‖_∞`, whose increments `(K ⋆ g) (x + h) - (K ⋆ g) x` are the convolutions of
@@ -66,6 +68,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
 * `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
   `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound and the increment bound of the
   convolution of an `L^∞` function with an integrable kernel.
+* `MeasureTheory.convolution_eq_zero_of_not_completeSpace`: without completeness of the target
+  every convolution is the zero function.
 * `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
   for two integrable kernels and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
@@ -85,6 +89,9 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   set containing `x - support f` does not change `(f ⋆ g) x`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
   `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
+* `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`: the same
+  identity with the pairing moved onto a locally integrable kernel,
+  `∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`.
 * `MeasureTheory.norm_convolution_le_of_integral_eq_zero`: convolution with a kernel of integral
   zero is bounded by the oscillation of the other factor.
 * `MeasureTheory.enorm_sub_convolution_lsmul_le` and
@@ -102,6 +109,20 @@ open scoped Convolution ENNReal
 namespace MeasureTheory
 
 variable {G E E' F : Type*} {f : G → E} {g : G → E'} {M : ℝ}
+
+section NotCompleteSpace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [Sub G] [MeasurableSpace G] {μ : Measure G} {L : E →L[𝕜] E' →L[𝕜] F}
+
+/-- Without completeness of the target `F`, every Bochner integral valued in `F` is `0`, so every
+convolution valued in `F` is the zero function. -/
+theorem convolution_eq_zero_of_not_completeSpace (hF : ¬ CompleteSpace F) :
+    f ⋆[L, μ] g = 0 :=
+  funext fun x => by simp [convolution_def, integral_of_not_completeSpace hF]
+
+end NotCompleteSpace
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -404,6 +425,23 @@ theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
         by_cases ht : ρ t = 0
         · simp [ht]
         rw [Set.indicator_of_mem (hmem hx ht), mul_left_comm]
+
+/-- **Pairing a convolution with a test function, kernel inside.** For a continuous compactly
+supported `ψ`, a locally integrable `K` and an integrable compactly supported `g`, Fubini gives
+`∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`, so the pairing moves onto the locally integrable
+factor `K`. -/
+theorem integral_mul_convolution_eq_integral_mul_integral_left_comp_sub [SFinite μ]
+    [μ.IsAddLeftInvariant] [μ.IsAddRightInvariant] [μ.IsNegInvariant] {ψ K g : G → ℝ}
+    (hψ : Continuous ψ) (hψc : HasCompactSupport ψ) (hK : LocallyIntegrable K μ)
+    (hg : Integrable g μ) (hgc : HasCompactSupport g) :
+    ∫ x, ψ x * (K ⋆[lsmul ℝ ℝ, μ] g) x ∂μ = ∫ t, g t * ∫ x, ψ x * K (x - t) ∂μ ∂μ := by
+  have hcomm : K ⋆[lsmul ℝ ℝ, μ] g = g ⋆[lsmul ℝ ℝ, μ] K := by
+    funext x
+    rw [convolution_lsmul_swap, convolution_lsmul]
+    simp only [smul_eq_mul, mul_comm]
+  rw [hcomm]
+  exact integral_mul_convolution_eq_integral_mul_integral_comp_sub hψ hψc hg hgc
+    (hK.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _
 
 end Fubini
 
