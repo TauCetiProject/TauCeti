@@ -74,6 +74,7 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
   have : IsReduced (B ⧸ nilradical B) :=
     (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical _)
   have : Algebra.FiniteType k (B ⧸ nilradical B) := Algebra.FiniteType.of_surjective q hq
+  have hqker : RingHom.ker q = nilradical B := Ideal.mk_ker
   let G := Algebra.TensorProduct.map q (AlgHom.id k A)
   have := Algebra.FiniteType.isNoetherianRing k B
   obtain ⟨n, hn⟩ := IsNoetherianRing.isNilpotent_nilradical B
@@ -81,7 +82,7 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
     rw [Algebra.TensorProduct.rTensor_ker q hq] at hx
     refine ⟨n, ?_⟩
     have hmem := Ideal.pow_mem_pow hx n
-    rwa [← Ideal.map_pow, show RingHom.ker q = nilradical B from Ideal.mk_ker, hn,
+    rwa [← Ideal.map_pow, hqker, hn,
       Ideal.zero_eq_bot, Ideal.map_bot, Ideal.mem_bot] at hmem
   obtain ⟨cb, hcb⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_isReduced (he.map G)
   have hcbid : IsIdempotentElem cb := by
@@ -89,8 +90,8 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
       (algebraMap k A).injective
     simpa only [map_mul, Algebra.TensorProduct.includeLeft_apply, ← hcb] using (he.map G).eq
   obtain ⟨c, hc, hcq⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent (q : B →+* _)
-    (fun x hx => by simpa [mem_nilradical] using (show x ∈ nilradical B from
-      Ideal.mk_ker (I := nilradical B) ▸ hx)) cb (RingHom.mem_range.mpr (hq cb)) hcbid
+    (fun x hx => by simpa [mem_nilradical] using (hqker ▸ hx : x ∈ nilradical B)) cb
+    (RingHom.mem_range.mpr (hq cb)) hcbid
   refine ⟨c, eq_of_isNilpotent_sub_of_isIdempotentElem he ?_ (hker _ ?_)⟩
   · simpa using hc.map (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A)
   · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
