@@ -94,7 +94,6 @@ between `π / 6` and `π / 3` in absolute value. -/
 theorem one_le_norm_fourier_sub_one (hT : 0 < T) {n : ℤ} (hn : n ≠ 0) {x : ℝ}
     (hx₁ : T / (6 * |(n : ℝ)|) ≤ x) (hx₂ : x ≤ T / (3 * |(n : ℝ)|)) :
     1 ≤ ‖fourier n (x : AddCircle T) - 1‖ := by
-  have hn0 : 0 < |(n : ℝ)| := abs_pos.2 (Int.cast_ne_zero.2 hn)
   have hexp : (2 * π * I * n * x / T : ℂ) = I * ((2 * π * n * x / T : ℝ) : ℂ) := by
     push_cast
     ring

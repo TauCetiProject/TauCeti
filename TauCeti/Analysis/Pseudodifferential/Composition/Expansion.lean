@@ -40,6 +40,12 @@ the position and the frequency.
 * `TauCeti.Symbol.sharpTerm`: the terms of the expansion, with their closed form
   `TauCeti.Symbol.coefficient_sharpTerm` and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
+  The coefficients of the terms only depend on the coefficients of the two symbols
+  (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
+  linear combinations of symbols of different orders
+  (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions). For a constant symbol
+  only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
+  `TauCeti.Symbol.sharpTerm_const_succ`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
@@ -162,6 +168,111 @@ theorem coefficient_sharpTerm (a : Symbol n W U m') (b : Symbol n V W m) (k : �
     push_cast
     field_simp
     ring
+
+/-- The terms of the composition expansion only depend on the coefficients of the two symbols, not
+on the orders at which the symbols are considered. -/
+theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : Symbol n W U μ'}
+    {b : Symbol n V W m} {b' : Symbol n V W μ} (ha : a.coefficient = a'.coefficient)
+    (hb : b.coefficient = b'.coefficient) (k : ℕ) :
+    (a.sharpTerm b k).coefficient = (a'.sharpTerm b' k).coefficient := by
+  funext ⟨x, ξ⟩
+  simp only [coefficient_sharpTerm, ha, hb]
+
+/-- The terms of the composition expansion are linear in the first symbol: a linear relation
+`a₀ = ∑ᵢ cᵢ aᵢ` between the coefficients of symbols `aᵢ` of possibly different orders gives the
+same relation `sharpTerm a₀ b k = ∑ᵢ cᵢ sharpTerm aᵢ b k` between the coefficients of the terms. -/
+theorem coefficient_sharpTerm_eq_sum_left {ι : Type*} (s : Finset ι) (c : ι → ℂ) {μ : ι → ℝ}
+    (a : (i : ι) → Symbol n W U (μ i)) {a₀ : Symbol n W U m'}
+    (h : a₀.coefficient = ∑ i ∈ s, c i • (a i).coefficient) (b : Symbol n V W m) (k : ℕ) :
+    (a₀.sharpTerm b k).coefficient = ∑ i ∈ s, c i • ((a i).sharpTerm b k).coefficient := by
+  funext ⟨x, ξ⟩
+  have hd (w : Fin k → Fin n) : mixedDeriv [] (List.ofFn w) a₀.coefficient x ξ =
+      ∑ i ∈ s, c i • mixedDeriv [] (List.ofFn w) (a i).coefficient x ξ := by
+    rw [h, mixedDeriv_sum (f := fun i ↦ c i • (a i).coefficient)
+      fun i _ ↦ (a i).contDiff_coefficient.const_smul (c i)]
+    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul _ _ _ _ _
+  simp only [Finset.sum_apply, Pi.smul_apply, coefficient_sharpTerm, hd,
+    ContinuousLinearMap.finsetSum_comp, ContinuousLinearMap.smul_comp, Finset.smul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun w _ ↦ smul_comm _ _ _
+
+/-- The terms of the composition expansion are linear in the second symbol: a linear relation
+`b₀ = ∑ᵢ cᵢ bᵢ` between the coefficients of symbols `bᵢ` of possibly different orders gives the
+same relation `sharpTerm a b₀ k = ∑ᵢ cᵢ sharpTerm a bᵢ k` between the coefficients of the terms. -/
+theorem coefficient_sharpTerm_eq_sum_right {ι : Type*} (s : Finset ι) (c : ι → ℂ) {μ : ι → ℝ}
+    (b : (i : ι) → Symbol n V W (μ i)) {b₀ : Symbol n V W m}
+    (h : b₀.coefficient = ∑ i ∈ s, c i • (b i).coefficient) (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b₀ k).coefficient = ∑ i ∈ s, c i • (a.sharpTerm (b i) k).coefficient := by
+  funext ⟨x, ξ⟩
+  have hd (w : Fin k → Fin n) : mixedDeriv (List.ofFn w) [] b₀.coefficient x ξ =
+      ∑ i ∈ s, c i • mixedDeriv (List.ofFn w) [] (b i).coefficient x ξ := by
+    rw [h, mixedDeriv_sum (f := fun i ↦ c i • (b i).coefficient)
+      fun i _ ↦ (b i).contDiff_coefficient.const_smul (c i)]
+    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul _ _ _ _ _
+  simp only [Finset.sum_apply, Pi.smul_apply, coefficient_sharpTerm, hd,
+    ContinuousLinearMap.comp_finsetSum, ContinuousLinearMap.comp_smul, Finset.smul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun w _ ↦ smul_comm _ _ _
+
+/-- The terms of the composition expansion are additive in the first symbol, for symbols of
+possibly different orders: if `a₀ = a₁ + a₂` coefficientwise, then
+`sharpTerm a₀ b k = sharpTerm a₁ b k + sharpTerm a₂ b k` coefficientwise. -/
+theorem coefficient_sharpTerm_eq_add_left {μ₁ μ₂ : ℝ} {a₀ : Symbol n W U m'}
+    {a₁ : Symbol n W U μ₁} {a₂ : Symbol n W U μ₂}
+    (h : a₀.coefficient = a₁.coefficient + a₂.coefficient) (b : Symbol n V W m) (k : ℕ) :
+    (a₀.sharpTerm b k).coefficient =
+      (a₁.sharpTerm b k).coefficient + (a₂.sharpTerm b k).coefficient := by
+  funext ⟨x, ξ⟩
+  simp only [Pi.add_apply, coefficient_sharpTerm, h,
+    mixedDeriv_add a₁.contDiff_coefficient a₂.contDiff_coefficient,
+    ContinuousLinearMap.add_comp, Finset.sum_add_distrib, smul_add]
+
+/-- The terms of the composition expansion are additive in the second symbol, for symbols of
+possibly different orders: if `b₀ = b₁ + b₂` coefficientwise, then
+`sharpTerm a b₀ k = sharpTerm a b₁ k + sharpTerm a b₂ k` coefficientwise. -/
+theorem coefficient_sharpTerm_eq_add_right {μ₁ μ₂ : ℝ} {b₀ : Symbol n V W m}
+    {b₁ : Symbol n V W μ₁} {b₂ : Symbol n V W μ₂}
+    (h : b₀.coefficient = b₁.coefficient + b₂.coefficient) (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b₀ k).coefficient =
+      (a.sharpTerm b₁ k).coefficient + (a.sharpTerm b₂ k).coefficient := by
+  funext ⟨x, ξ⟩
+  simp only [Pi.add_apply, coefficient_sharpTerm, h,
+    mixedDeriv_add b₁.contDiff_coefficient b₂.contDiff_coefficient,
+    ContinuousLinearMap.comp_add, Finset.sum_add_distrib, smul_add]
+
+/-- Only the pointwise composition survives in the composition expansion of a constant symbol on
+the left: its later terms vanish. -/
+@[simp]
+theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) :
+    (const T).sharpTerm b (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  have hT : (const T : Symbol n W U 0).coefficient = fun p ↦ (fun _ ↦ T) p.1 :=
+    funext (coefficient_const T)
+  have h (w : Fin (k + 1) → Fin n) :
+      mixedDeriv [] (List.ofFn w) (const T : Symbol n W U 0).coefficient x ξ = 0 := by
+    rw [hT]
+    exact mixedDeriv_comp_fst (fun _ ↦ T) [] (β := List.ofFn w) (by simp) x ξ
+  rw [coefficient_sharpTerm]
+  simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
+    Pi.zero_apply]
+
+/-- Only the pointwise composition survives in the composition expansion of a constant symbol on
+the right: its later terms vanish. -/
+@[simp]
+theorem sharpTerm_const_succ (a : Symbol n W U m') (T : V →L[ℂ] W) (k : ℕ) :
+    a.sharpTerm (const T) (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  have hT : (const T : Symbol n V W 0).coefficient = fun p ↦ (fun _ ↦ T) p.2 :=
+    funext (coefficient_const T)
+  have h (w : Fin (k + 1) → Fin n) :
+      mixedDeriv (List.ofFn w) [] (const T : Symbol n V W 0).coefficient x ξ = 0 := by
+    rw [hT]
+    exact mixedDeriv_comp_snd (fun _ ↦ T) (α := List.ofFn w) (by simp) [] x ξ
+  rw [coefficient_sharpTerm]
+  simp only [h, ContinuousLinearMap.comp_zero, Finset.sum_const_zero, smul_zero, coefficient_zero,
+    Pi.zero_apply]
 
 /-- **Leibniz rule in the position** for the terms of the composition expansion. -/
 theorem spatialDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
