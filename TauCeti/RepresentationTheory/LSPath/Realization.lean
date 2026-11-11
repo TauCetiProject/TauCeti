@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -35,7 +36,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
   {lam : M} {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 section Timed
@@ -47,6 +48,7 @@ realization separates orbit weights. No ray condition is needed for timed presen
 theorem timed_injective (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam)) :
     Function.Injective (fun π : LSPath P b lam ↦ π.timed 𝕜 f) := by
+  have := P.flip_isReduced
   intro π π' h
   have hlen : π.length = π'.length := by
     have := congrArg List.length h
@@ -98,6 +100,7 @@ theorem toPLPath_injective (hlam : lam ∈ dominantChamber P b)
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise
       fun u v ↦ ¬ SameRay 𝕜 u v) :
     Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
   intro π π' h
   apply timed_injective (𝕜 := 𝕜) hlam hf
   simp only [toPLPath_def] at h
