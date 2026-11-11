@@ -98,7 +98,7 @@ theorem heatResolventKernel_nonneg (lambda : ℝ) (x : E) : 0 ≤ heatResolventK
   setIntegral_nonneg measurableSet_Ioi fun t (ht : 0 < t) ↦
     mul_nonneg (exp_pos _).le (heatKernel_pos ht x).le
 
-/-- The heat resolvent kernel is radial; in particular it is even. -/
+/-- The heat resolvent kernel is even. -/
 @[simp]
 theorem heatResolventKernel_neg (lambda : ℝ) (x : E) :
     heatResolventKernel lambda (-x) = heatResolventKernel lambda x := by
@@ -140,9 +140,9 @@ theorem integral_heatResolventKernel (hlambda : 0 < lambda) :
     (integrable_heatResolventKernel_integrand hlambda)
   simp only [heatResolventKernel_apply]
   rw [← hswap, setIntegral_congr_fun measurableSet_Ioi (g := fun t ↦ exp ((-lambda) * t))
-    fun t (ht : 0 < t) ↦ by simp only [integral_const_mul, integral_heatKernel ht, mul_one,
-      neg_mul], integral_exp_mul_Ioi (neg_neg_iff_pos.2 hlambda), mul_zero, exp_zero, neg_div,
-    div_neg, neg_neg, one_div]
+    fun t (ht : 0 < t) ↦ by simp [integral_const_mul, integral_heatKernel ht],
+    integral_exp_mul_Ioi (neg_neg_iff_pos.2 hlambda)]
+  simp
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -248,13 +248,13 @@ theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlambda : 
     set s := r ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
     have hs : 0 < s := by positivity
     have hnf : ‖hf.toLp φr‖ = s * a := by
-      rw [Lp.norm_toLp, Measure.eLpNorm_comp_inv_smul volume φ hr.ne', ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), abs_of_pos hr]
+      rw [Lp.norm_toLp, Measure.eLpNorm_comp_inv_smul volume φ hr.ne', abs_of_pos hr]
+      simp [ENNReal.toReal_ofReal hs.le, s, a]
     have hng : ‖hg.toLp (Δ φr)‖ = (r ^ 2)⁻¹ * (s * c) := by
       have hΔ : Δ φr = (r⁻¹) ^ 2 • fun x ↦ Δ φ (r⁻¹ • x) := laplacian_comp_smul_right r⁻¹ φ
       rw [Lp.norm_toLp, hΔ, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ hr.ne',
-        ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
-        abs_of_pos hr, toReal_enorm, norm_pow, norm_inv, norm_of_nonneg hr.le, inv_pow]
+        abs_of_pos hr]
+      simp [ENNReal.toReal_ofReal hs.le, abs_of_pos hr, s, c]
     rw [hnf, hng] at h
     refine le_of_mul_le_mul_right ?_ (mul_pos hs ha)
     calc 1 * (s * a) ≤ lambda * ‖R‖ * (s * a) + lambda⁻¹ * ((r ^ 2)⁻¹ * (s * c)) := by
