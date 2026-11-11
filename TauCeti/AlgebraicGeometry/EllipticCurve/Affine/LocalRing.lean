@@ -50,7 +50,7 @@ public section
 
 open Polynomial WeierstrassCurve WeierstrassCurve.Affine
 
-namespace TauCeti
+namespace WeierstrassCurve.Affine.CoordinateRing
 
 section
 
@@ -60,7 +60,7 @@ variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} {x : F}
 ring**, whenever `y` solves the Weierstrass equation at `x`. The curve is not assumed elliptic,
 only its coordinate ring integrally closed. The primality of the ideal is a consequence of the
 equation, through `XYIdeal_isMaximal`, so it is installed in the statement rather than assumed. -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isDiscreteValuationRing_localizationAtPrime
+theorem isDiscreteValuationRing_localizationAtPrime
     [IsIntegrallyClosed W.CoordinateRing]
     {y : F[X]} (h : (W.polynomial.eval y).eval x = 0) :
     haveI : (CoordinateRing.XYIdeal W x y).IsPrime :=
@@ -74,6 +74,6 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isDiscreteValuationRing_lo
 
 end
 
-end TauCeti
+end WeierstrassCurve.Affine.CoordinateRing
 
 end

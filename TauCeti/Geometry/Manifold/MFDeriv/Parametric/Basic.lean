@@ -37,6 +37,8 @@ boundary points.
 
 * `TauCeti.Manifold.contDiffAt_extChartAt_family`: a jointly `C^n` family of maps of `M` fixing
   `x` is jointly `C^n` when read in the chart at `x`.
+* `TauCeti.Manifold.eventuallyEq_extChartAt_family_of_eq_id`: a family of maps which is the
+  identity near `x` at time `t` is, read in the chart at `x`, the identity near the image of `x`.
 * `TauCeti.Manifold.contMDiffAt_deriv_of_contMDiffAt_uncurry`: the parameter derivative of a
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
@@ -52,7 +54,7 @@ boundary points.
 
 public section
 
-open Bundle Function Set
+open Bundle Filter Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -96,7 +98,18 @@ theorem contDiffAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → M → M} (h
   rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
   exact hcomp
 
-variable [IsManifold I 1 M]
+/-- A family of maps which is the identity near `x` at time `t`, read in the chart at `x`, is the
+identity near the image of `x` at time `t`. -/
+theorem eventuallyEq_extChartAt_family_of_eq_id [I.Boundaryless] {ψ : 𝕜 → M → M}
+    (hid : ∀ᶠ y in 𝓝 x, ψ t y = y) :
+    (fun z ↦ extChartAt I x (ψ t ((extChartAt I x).symm z))) =ᶠ[𝓝 (extChartAt I x x)] id := by
+  have hid' : ∀ᶠ z in 𝓝 (extChartAt I x x), ψ t ((extChartAt I x).symm z) =
+      (extChartAt I x).symm z :=
+    (continuousAt_extChartAt_symm x).tendsto.eventually (p := fun y ↦ ψ t y = y)
+      (by rwa [extChartAt_to_inv])
+  filter_upwards [extChartAt_target_mem_nhds x, hid'] with z hz hz'
+  simp only [hz', id_eq]
+  exact (extChartAt I x).right_inv hz
 
 /-- **Regularity of the parameter derivative.** If a family `F : 𝕜 → M → F'` is jointly `C^n` at
 `(t, x)`, then its parameter derivative `y ↦ ∂ᵣ F (r, y)` at `r = t` is `C^m` at `x` for every
@@ -104,17 +117,14 @@ variable [IsManifold I 1 M]
 theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     (hF : ContMDiffAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') n (uncurry F) (t, x)) (hmn : m + 1 ≤ n) :
     ContMDiffAt I 𝓘(𝕜, F') m (fun y ↦ deriv (fun r ↦ F r y) t) x := by
-  have hswap : ContMDiffAt (I.prod 𝓘(𝕜)) 𝓘(𝕜, F') n (uncurry fun y r ↦ F r y) (x, t) :=
-    hF.comp (x, t) (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  have h := (hswap.mfderiv (fun y r ↦ F r y) (fun _ ↦ t) contMDiffAt_const hmn).clm_apply
-    (contMDiffAt_const (c := (1 : 𝕜)))
-  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  dsimp only
-  -- Between model spaces, tangent coordinates are trivial; `erw` sees through the tangent spaces
-  -- of `𝕜` and `F'`, which are the model spaces themselves.
-  erw [inTangentCoordinates_model_space]
-  rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
-  rfl
+  have hrange (y : M) : extChartAt I x y ∈ range I := by
+    rw [extChartAt_coe]
+    exact mem_range_self _
+  have hD' := contDiffWithinAt_deriv_slice_left (m := m)
+    (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) (hrange x) hmn
+  exact contMDiffAt_iff_source.2 (contMDiffWithinAt_iff_contDiffWithinAt.2 hD')
+
+variable [IsManifold I 1 M]
 
 /-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
 `C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the

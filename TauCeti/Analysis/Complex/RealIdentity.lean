@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Holomorphic functions and their values on the real line
 
-Two entire functions with values in a complex Banach space that agree at every real point are
+Two entire functions with values in a complex normed space that agree at every real point are
 equal. This is the identity principle `AnalyticOnNhd.eq_of_frequently_eq`, applied at the
 accumulation point `0` of the real axis. It is the uniqueness statement behind analytic
 continuation of real one-parameter orbits to complex time.
@@ -29,20 +29,25 @@ public section
 
 open Filter Topology
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Two entire functions agreeing on the real line are equal. -/
 theorem Differentiable.eq_of_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (h : ∀ t : ℝ, f t = g t) : f = g := by
+  let ι : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  have hι : Function.Injective ι := UniformSpace.Completion.coe_injective E
   have hmaps : Set.MapsTo ((↑) : ℝ → ℂ) {0}ᶜ {0}ᶜ := fun t ht => by
     simpa using ht
   have htendsto : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] 0) (𝓝[≠] 0) := by
     simpa using Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
       (x := (0 : ℝ)) hmaps
-  exact AnalyticOnNhd.eq_of_frequently_eq (fun z _ => hf.analyticAt z)
-    (fun z _ => hg.analyticAt z) (htendsto.frequently (Frequently.of_forall h))
+  funext z
+  refine hι ?_
+  exact congrFun (AnalyticOnNhd.eq_of_frequently_eq
+    (f := ι ∘ f) (g := ι ∘ g) (fun z _ => (ι.differentiable.comp hf).analyticAt z)
+    (fun z _ => (ι.differentiable.comp hg).analyticAt z)
+    (htendsto.frequently (Frequently.of_forall fun t => congrArg ι (h t)))) z
 
-omit [CompleteSpace E] in
 /-- Two holomorphic functions on the slit plane agreeing on the positive real axis agree
 throughout the slit plane. -/
 theorem AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq {f g : ℂ → E}

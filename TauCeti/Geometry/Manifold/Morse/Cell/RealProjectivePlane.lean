@@ -872,7 +872,7 @@ theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
       (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
       (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
       2 := by
-  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (by positivity) one_pos 2 fun t ↦ ?_
+  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (b := 1) (by positivity) 2 fun t ↦ ?_
   simp only [Path.map_coe, Function.comp_apply, one_mul, div_pow, ← Complex.ofReal_pow,
     Complex.sq_norm, Complex.normSq_add_mul_I]
   rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,

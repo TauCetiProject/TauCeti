@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Lagrange
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The `(p,q)` type of complex-valued alternating forms
@@ -65,6 +66,9 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.isOfType_one_zero_iff`,
   `ContinuousAlternatingMap.isOfType_zero_one_iff`, `ContinuousLinearMap.typeProjection_one_zero`
   and `ContinuousLinearMap.typeProjection_zero_one`: one-forms.
+* `ContinuousAlternatingMap.IsOfType.map_smul_complex` and
+  `ContinuousAlternatingMap.IsOfType.map_smul_conj`: on a complex vector space, one-forms of type
+  `(1,0)` are complex-linear and one-forms of type `(0,1)` are conjugate-linear.
 * `ContinuousLinearMap.typeProjection_two_zero_apply`,
   `ContinuousLinearMap.typeProjection_one_one_apply` and
   `ContinuousLinearMap.typeProjection_zero_two_apply`: the type components of two-forms, in terms
@@ -285,15 +289,38 @@ theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [M
     (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (c : ℂ) (v : U) :
     α ![c • v] = c • α ![v] := by
   have hI : α ![I • v] = I • α ![v] := (isOfType_one_zero_iff α).1 h v
-  have hU : c • v = c.re • v + c.im • I • v := by
-    conv_lhs => rw [← re_add_im c]
-    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
-  have hF : c • α ![v] = c.re • α ![v] + c.im • I • α ![v] := by
-    conv_lhs => rw [← re_add_im c]
-    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
-  rw [hU, hF, ← hI]
-  rw [← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
+  rw [← Complex.re_smul_add_im_smul c v, ← Complex.re_smul_add_im_smul c (α ![v]), ← hI,
+    ← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
     ← ContinuousAlternatingMap.vecCons_add]
+
+/-- On a complex vector space, a one-form of type `(0,1)` for multiplication by `i` is
+conjugate-linear. -/
+theorem IsOfType.map_smul_conj {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 0 1) (c : ℂ) (v : U) :
+    α ![c • v] = conj c • α ![v] := by
+  have hI : α ![I • v] = -I • α ![v] := (isOfType_zero_one_iff α).1 h v
+  rw [← Complex.re_smul_add_im_smul c v, ContinuousAlternatingMap.vecCons_add,
+    ContinuousAlternatingMap.vecCons_smul, ContinuousAlternatingMap.vecCons_smul, hI]
+  rw [← Complex.re_smul_add_im_smul (conj c) (α ![v])]
+  simp only [conj_re, conj_im, neg_smul, smul_neg]
+
+/-- A one-form of type `(0,1)` on a finite complex coordinate space is the sum of its coordinate
+values, weighted by the conjugates of the vector coordinates. -/
+theorem IsOfType.apply_eq_sum_conj_smul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {α : (ι → ℂ) [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 1) (v : ι → ℂ) :
+    α ![v] = ∑ i, conj (v i) • α ![Pi.single i 1] := by
+  have hv : v = ∑ i, v i • Pi.single i (1 : ℂ) := by
+    simp [← Pi.single_smul, Finset.univ_sum_single]
+  let L := (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) F (0 : Fin 1)).symm α
+  have hL (w : ι → ℂ) : L w = α ![w] := by
+    rw [ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
+    exact congrArg α (Matrix.vec_single_eq_const w).symm
+  calc
+    α ![v] = L (∑ i, v i • Pi.single i (1 : ℂ)) := by rw [← hv, hL]
+    _ = ∑ i, L (v i • Pi.single i (1 : ℂ)) := _root_.map_sum L _ _
+    _ = _ := Finset.sum_congr rfl fun i _ ↦ by rw [hL, h.map_smul_conj]
 
 /-- On a one-dimensional complex vector space, a one-form of type `(1,0)` for multiplication by
 `i` which vanishes on a nonzero vector is zero. -/
@@ -621,11 +648,9 @@ end TypeProjection
 
 section Decomposition
 
-variable [ContinuousConstSMul ℝ F]
-
 section Interior
 
-variable {n : ℕ}
+variable [ContinuousConstSMul ℝ F] {n : ℕ}
 
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
@@ -672,6 +697,8 @@ private lemma interior_add_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : 
 end Interior
 
 section Nodal
+
+variable [ContinuousConstSMul ℝ F]
 
 /-- The derivation of an almost complex structure on `k`-forms is annihilated by the nodal
 polynomial of the type eigenvalues. -/
@@ -735,6 +762,7 @@ annihilates the derivation induced by `J` on complex-valued `k`-forms. -/
 theorem aeval_alternatingDerivation_eq_zero (hJ : ∀ v, J (J v) = -v) {g : ℂ[X]}
     (hg : ∀ p q, p + q = k → g.eval (((p : ℂ) - q) * I) = 0) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g = 0 := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
   obtain ⟨h, rfl⟩ := nodal_dvd fun pq hpq ↦ hg pq.1 pq.2 (Finset.mem_antidiagonal.1 hpq)
   rw [map_mul, aeval_alternatingDerivation_nodal hJ, zero_mul]
 
