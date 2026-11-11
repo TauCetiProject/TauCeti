@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.NNReal.Basic
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Independence.Basic
+public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Probability.Distributions.Gaussian.ChiSquared
+import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 import TauCeti.Probability.Moments.Basic
 
 /-!
@@ -24,15 +26,16 @@ used in the operator-norm tail bound for random matrices.
 
 We also develop squared-variable exponential moment bounds for
 `ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
-`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, and dot-product sub-Gaussian
-bounds for independent real and complex vectors (Vershynin 2018, §2.5–2.7;
-Rudelson–Vershynin 2013).
+`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, dot-product sub-Gaussian bounds for
+independent real and complex vectors, and Gaussianization and decoupled bilinear MGF bounds for
+jointly sub-Gaussian vectors (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
+`TauCeti.mgf_dotProduct_mulVec_prod_le`; Vershynin 2018, §2.5–2.7, §6.2; Rudelson–Vershynin 2013).
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory Real
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Matrix Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory
 
@@ -372,3 +375,89 @@ theorem integral_exp_mul_sum_elim_re_im_dotProduct_le {Z : ι → Ω → ℂ} (h
 
 end iIndepFun
 end ProbabilityTheory
+
+namespace TauCeti
+
+/-- **Gaussianization bound for Euclidean norms of sub-Gaussian linear images** (Vershynin 2018,
+Lemma 6.2.3). -/
+theorem integral_exp_half_mul_sum_mulVec_sq_le {Ω γ κ : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsProbabilityMeasure P] [Fintype γ] [Fintype κ] [DecidableEq κ]
+    {V : Ω → κ → ℝ} (hV_meas : ∀ q, AEMeasurable (fun ω ↦ V ω q) P) {K : ℝ≥0}
+    (hV_subG : ∀ (w : κ → ℝ) (r : ℝ), Integrable (fun ω ↦ exp (r * (V ω ⬝ᵥ w))) P ∧
+      ∫ ω, exp (r * (V ω ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2))
+    (M : Matrix γ κ ℝ) {a : ℝ} (ha_nonneg : 0 ≤ a) (ha_bound : (K : ℝ) * a * ‖M‖ ^ 2 ≤ 1 / 2) :
+    Integrable (fun ω ↦ exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2)) P ∧
+      ∫ ω, exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2) ∂P ≤ exp ((K : ℝ) * a * ∑ l, ∑ q, M l q ^ 2) := by
+  classical
+  let ν : Measure (γ → ℝ) := Measure.pi fun _ : γ ↦ gaussianReal 0 1
+  let r : ℝ := Real.sqrt a; have hr_sq : r ^ 2 = a := Real.sq_sqrt ha_nonneg
+  let F : Ω × (γ → ℝ) → ℝ := fun p ↦ exp (r * ((M *ᵥ V p.1) ⬝ᵥ p.2))
+  have hF_meas : AEStronglyMeasurable F (P.prod ν) := by
+    have hcont : Continuous (fun q : (κ → ℝ) × (γ → ℝ) ↦ exp (r * ((M *ᵥ q.1) ⬝ᵥ q.2))) := by
+      simp only [dotProduct, Matrix.mulVec]; fun_prop
+    have hm : AEMeasurable (fun p : Ω × (γ → ℝ) ↦ (V p.1, p.2)) (P.prod ν) :=
+      ((AEMeasurable.of_eval hV_meas).comp_quasiMeasurePreserving
+        Measure.quasiMeasurePreserving_fst).prodMk measurable_snd.aemeasurable
+    exact (hcont.measurable.comp_aemeasurable hm).aestronglyMeasurable
+  have hF_adj (ω : Ω) (g : γ → ℝ) : (M *ᵥ V ω) ⬝ᵥ g = V ω ⬝ᵥ (Mᵀ *ᵥ g) := by
+    rw [dotProduct_comm, Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, dotProduct_comm]
+  have hs_bound : 2 * ((K : ℝ) * a / 2) * ‖Mᵀ‖ ^ 2 ≤ 1 / 2 := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial M, Matrix.l2_opNorm_conjTranspose]; linarith
+  obtain ⟨hg_int, hg_le⟩ :=
+    (Mᵀ).integral_exp_mul_sum_mulVec_sq_pi_gaussianReal_le (by positivity) hs_bound
+  have hslice_P (g : γ → ℝ) : Integrable (fun ω ↦ F (ω, g)) P ∧
+      ∫ ω, F (ω, g) ∂P ≤ exp (((K : ℝ) * a / 2) * ∑ q, ((Mᵀ *ᵥ g) q) ^ 2) := by
+    obtain ⟨hint, hle⟩ := hV_subG (Mᵀ *ᵥ g) r
+    have hFeq (ω : Ω) : F (ω, g) = exp (r * (V ω ⬝ᵥ (Mᵀ *ᵥ g))) := by dsimp [F]; rw [hF_adj]
+    exact ⟨hint.congr (.of_forall fun ω ↦ (hFeq ω).symm),
+      (integral_congr_ae (.of_forall hFeq)).trans_le (by simpa only [hr_sq] using hle)⟩
+  obtain ⟨hFs_int, hFs_le⟩ := integrable_and_integral_prod_le hF_meas.prod_swap
+    (.of_forall fun _ ↦ (exp_pos _).le) hg_int (.of_forall hslice_P)
+  have hF_int : Integrable F (P.prod ν) := hFs_int.swap
+  have hgauss_id (ω : Ω) : ∫ g, F (ω, g) ∂ν = exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2) := by
+    rw [(integral_exp_mul_dotProduct_pi_gaussianReal (M *ᵥ V ω) 1 r).2,
+      NNReal.coe_one, one_mul, hr_sq]
+  refine ⟨hF_int.integral_norm_prod_left.congr (.of_forall fun ω ↦
+    (integral_congr_ae (.of_forall fun _ ↦ Real.norm_of_nonneg (exp_pos _).le)).trans
+      (hgauss_id ω)), ?_⟩
+  refine ((integral_congr_ae (.of_forall fun ω ↦ (hgauss_id ω).symm)).trans
+    ((integral_prod F hF_int).symm.trans (integral_prod_swap F).symm)).trans_le ?_
+  exact (hFs_le.trans hg_le).trans_eq
+    (by congr 1; simp only [Matrix.transpose_apply]; rw [Finset.sum_comm]; ring)
+
+/-- **Bilinear MGF bound for independent jointly sub-Gaussian vectors** (Vershynin 2018,
+Lemma 6.2.2): if `V₁` and `V₂` have `K₁`- and `K₂`-sub-Gaussian linear-form exponential moments
+under `P₁` and `P₂`, then for `B : Matrix γ κ ℝ` and `K₁ * K₂ * u ^ 2 * ‖B‖ ^ 2 ≤ 1 / 2`, the
+bilinear form `p ↦ V₁ p.1 ⬝ᵥ B *ᵥ V₂ p.2` on `P₁.prod P₂` has MGF at most
+`exp (K₁ * K₂ * u ^ 2 * ∑ i, ∑ j, B i j ^ 2)`. -/
+theorem mgf_dotProduct_mulVec_prod_le {Ω₁ Ω₂ γ κ : Type*} [MeasurableSpace Ω₁] [MeasurableSpace Ω₂]
+    {P₁ : Measure Ω₁} {P₂ : Measure Ω₂} [IsProbabilityMeasure P₁] [IsProbabilityMeasure P₂]
+    [Fintype γ] [Fintype κ] [DecidableEq κ]
+    {V₁ : Ω₁ → γ → ℝ} (hV₁_meas : ∀ l, AEMeasurable (fun ω₁ ↦ V₁ ω₁ l) P₁)
+    {V₂ : Ω₂ → κ → ℝ} (hV₂_meas : ∀ q, AEMeasurable (fun ω₂ ↦ V₂ ω₂ q) P₂) {K₁ K₂ : ℝ≥0}
+    (hV₁_subG : ∀ (w : γ → ℝ) (r : ℝ), Integrable (fun ω₁ ↦ exp (r * (V₁ ω₁ ⬝ᵥ w))) P₁ ∧
+      ∫ ω₁, exp (r * (V₁ ω₁ ⬝ᵥ w)) ∂P₁ ≤ exp ((K₁ : ℝ) * r ^ 2 / 2 * ∑ l, w l ^ 2))
+    (hV₂_subG : ∀ (w : κ → ℝ) (r : ℝ), Integrable (fun ω₂ ↦ exp (r * (V₂ ω₂ ⬝ᵥ w))) P₂ ∧
+      ∫ ω₂, exp (r * (V₂ ω₂ ⬝ᵥ w)) ∂P₂ ≤ exp ((K₂ : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2))
+    (B : Matrix γ κ ℝ) {u : ℝ} (hu : (K₁ : ℝ) * (K₂ : ℝ) * u ^ 2 * ‖B‖ ^ 2 ≤ 1 / 2) :
+    Integrable (fun p : Ω₁ × Ω₂ ↦ exp (u * (V₁ p.1 ⬝ᵥ B *ᵥ V₂ p.2))) (P₁.prod P₂) ∧
+      mgf (fun p : Ω₁ × Ω₂ ↦ V₁ p.1 ⬝ᵥ B *ᵥ V₂ p.2) (P₁.prod P₂) u ≤
+        exp ((K₁ : ℝ) * (K₂ : ℝ) * u ^ 2 * ∑ i, ∑ j, B i j ^ 2) := by
+  let G : Ω₁ × Ω₂ → ℝ := fun p ↦ exp (u * (V₁ p.1 ⬝ᵥ B *ᵥ V₂ p.2))
+  have hcont : Continuous (fun q : (γ → ℝ) × (κ → ℝ) ↦ exp (u * (q.1 ⬝ᵥ (B *ᵥ q.2)))) := by
+    simp only [dotProduct, Matrix.mulVec]; fun_prop
+  have hG_meas : AEStronglyMeasurable G (P₁.prod P₂) := by
+    have hm := ((AEMeasurable.of_eval hV₁_meas).comp_quasiMeasurePreserving
+        Measure.quasiMeasurePreserving_fst).prodMk
+      ((AEMeasurable.of_eval hV₂_meas).comp_quasiMeasurePreserving
+        Measure.quasiMeasurePreserving_snd)
+    exact (hcont.measurable.comp_aemeasurable hm).aestronglyMeasurable
+  obtain ⟨hX2_int, hX2_le⟩ := integral_exp_half_mul_sum_mulVec_sq_le hV₂_meas hV₂_subG B
+    (by positivity) (by linarith : (K₂ : ℝ) * ((K₁ : ℝ) * u ^ 2) * ‖B‖ ^ 2 ≤ 1 / 2)
+  obtain ⟨hGs_int, hGs_le⟩ := integrable_and_integral_prod_le hG_meas.prod_swap
+    (.of_forall fun _ ↦ (exp_pos _).le) hX2_int (.of_forall fun ω₂ ↦ hV₁_subG (B *ᵥ V₂ ω₂) u)
+  refine ⟨hGs_int.swap, ?_⟩
+  rw [mgf, ← integral_prod_swap G]
+  exact (hGs_le.trans hX2_le).trans_eq (by congr 1; ring)
+
+end TauCeti

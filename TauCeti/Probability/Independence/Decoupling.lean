@@ -130,7 +130,6 @@ private theorem ae_integral_swapped_eq (δ : ι → Bool) :
     · subst hij; exact .of_forall fun _ ↦ by simp [hf_diag]
     · cases hdi : δ i <;> cases hdj : δ j
       · simpa using TauCeti.ae_slice_pi_eq_zero μ (a := j) (b := i) (g := fun y x ↦ f i j x y)
-          ((hf_meas i j).comp measurable_swap).stronglyMeasurable
           (hf_int i j hij).prod_left_ae (hf_zero_left i j hij)
       · have hpair := TauCeti.measurePreserving_eval_pair μ hij
         refine .of_forall fun _ ↦ ?_; simp only [Bool.false_eq_true, false_and, ↓reduceIte]
@@ -142,7 +141,7 @@ private theorem ae_integral_swapped_eq (δ : ι → Bool) :
         simpa using integral_congr_ae (hf_zero_right i j hij)
       · exact .of_forall fun _ ↦ by simp
       · simpa using TauCeti.ae_slice_pi_eq_zero μ (a := i) (b := j) (g := f i j)
-          (hf_meas i j).stronglyMeasurable (hf_int i j hij).prod_right_ae (hf_zero_right i j hij)
+          (hf_int i j hij).prod_right_ae (hf_zero_right i j hij)
   filter_upwards [ae_all_iff.2 fun i ↦ ae_all_iff.2 fun j ↦ hcell i j] with z hz
   have hint (i : ι) := integrable_finsetSum Finset.univ fun j _ ↦ (hz i j).1
   refine ⟨(integrable_finsetSum Finset.univ fun i _ ↦ hint i).const_mul 4, ?_⟩

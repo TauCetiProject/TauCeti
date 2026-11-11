@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.L2OpNorm
+public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.Realify
-public import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 public import TauCeti.Probability.Independence.Decoupling
 public import TauCeti.Probability.Moments.SubGaussian
-import Mathlib.Probability.Independence.Integration
 import TauCeti.Analysis.Complex.Euclidean.Matrix
-import TauCeti.MeasureTheory.Integral.Prod
-import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
 import TauCeti.Probability.Moments.Basic
 
@@ -34,91 +31,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal NNReal Matrix Matrix.Norms.L2Operator RealInnerProductSpace
 
-namespace TauCeti
-
-/-- **Gaussianization bound for Euclidean norms of sub-Gaussian linear images** (Vershynin 2018,
-Lemma 6.2.3). -/
-theorem integral_exp_half_mul_sum_mulVec_sq_le {Ω γ κ : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} [IsProbabilityMeasure P] [Fintype γ] [Fintype κ] [DecidableEq κ]
-    {V : Ω → κ → ℝ} (hV_meas : ∀ q, AEMeasurable (fun ω ↦ V ω q) P) {K : ℝ≥0}
-    (hV_subG : ∀ (w : κ → ℝ) (r : ℝ), Integrable (fun ω ↦ exp (r * (V ω ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * (V ω ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2))
-    (M : Matrix γ κ ℝ) {a : ℝ} (ha_nonneg : 0 ≤ a) (ha_bound : (K : ℝ) * a * ‖M‖ ^ 2 ≤ 1 / 2) :
-    Integrable (fun ω ↦ exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2)) P ∧
-      ∫ ω, exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2) ∂P ≤ exp ((K : ℝ) * a * ∑ l, ∑ q, M l q ^ 2) := by
-  classical
-  let ν : Measure (γ → ℝ) := Measure.pi fun _ : γ ↦ gaussianReal 0 1
-  let r : ℝ := Real.sqrt a; have hr_sq : r ^ 2 = a := Real.sq_sqrt ha_nonneg
-  let F : Ω × (γ → ℝ) → ℝ := fun p ↦ exp (r * ((M *ᵥ V p.1) ⬝ᵥ p.2))
-  have hF_meas : AEStronglyMeasurable F (P.prod ν) := by
-    have hcont : Continuous (fun q : (κ → ℝ) × (γ → ℝ) ↦ exp (r * ((M *ᵥ q.1) ⬝ᵥ q.2))) := by
-      simp only [dotProduct, Matrix.mulVec]; fun_prop
-    have hm : AEMeasurable (fun p : Ω × (γ → ℝ) ↦ (V p.1, p.2)) (P.prod ν) :=
-      ((AEMeasurable.of_eval hV_meas).comp_quasiMeasurePreserving
-        Measure.quasiMeasurePreserving_fst).prodMk measurable_snd.aemeasurable
-    exact (hcont.measurable.comp_aemeasurable hm).aestronglyMeasurable
-  have hF_adj (ω : Ω) (g : γ → ℝ) : (M *ᵥ V ω) ⬝ᵥ g = V ω ⬝ᵥ (Mᵀ *ᵥ g) := by
-    rw [dotProduct_comm, Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, dotProduct_comm]
-  have hs_bound : 2 * ((K : ℝ) * a / 2) * ‖Mᵀ‖ ^ 2 ≤ 1 / 2 := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial M, Matrix.l2_opNorm_conjTranspose]; linarith
-  obtain ⟨hg_int, hg_le⟩ :=
-    (Mᵀ).integral_exp_mul_sum_mulVec_sq_pi_gaussianReal_le (by positivity) hs_bound
-  have hslice_P (g : γ → ℝ) : Integrable (fun ω ↦ F (ω, g)) P ∧
-      ∫ ω, F (ω, g) ∂P ≤ exp (((K : ℝ) * a / 2) * ∑ q, ((Mᵀ *ᵥ g) q) ^ 2) := by
-    obtain ⟨hint, hle⟩ := hV_subG (Mᵀ *ᵥ g) r
-    have hFeq (ω : Ω) : F (ω, g) = exp (r * (V ω ⬝ᵥ (Mᵀ *ᵥ g))) := by dsimp [F]; rw [hF_adj]
-    exact ⟨hint.congr (.of_forall fun ω ↦ (hFeq ω).symm),
-      (integral_congr_ae (.of_forall hFeq)).trans_le (by simpa only [hr_sq] using hle)⟩
-  obtain ⟨hFs_int, hFs_le⟩ := TauCeti.integrable_and_integral_prod_le hF_meas.prod_swap
-    (.of_forall fun _ ↦ (exp_pos _).le) hg_int (.of_forall hslice_P)
-  have hF_int : Integrable F (P.prod ν) := hFs_int.swap
-  have hgauss_id (ω : Ω) : ∫ g, F (ω, g) ∂ν = exp (a / 2 * ∑ l, ((M *ᵥ V ω) l) ^ 2) := by
-    rw [(TauCeti.integral_exp_mul_dotProduct_pi_gaussianReal (M *ᵥ V ω) 1 r).2,
-      NNReal.coe_one, one_mul, hr_sq]
-  refine ⟨hF_int.integral_norm_prod_left.congr (.of_forall fun ω ↦
-    (integral_congr_ae (.of_forall fun _ ↦ Real.norm_of_nonneg (exp_pos _).le)).trans
-      (hgauss_id ω)), ?_⟩
-  refine ((integral_congr_ae (.of_forall fun ω ↦ (hgauss_id ω).symm)).trans
-    ((integral_prod F hF_int).symm.trans ((integral_prod_symm F hF_int).trans
-      (integral_prod _ hFs_int).symm))).trans_le ?_
-  exact (hFs_le.trans hg_le).trans_eq
-    (by congr 1; simp only [Matrix.transpose_apply]; rw [Finset.sum_comm]; ring)
-
-end TauCeti
-
 namespace ProbabilityTheory.iIndepFun
-
-private lemma mgf_decoupled_le_of_adj {Ω κ : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsProbabilityMeasure P] [Fintype κ] [DecidableEq κ]
-    {V : Ω → κ → ℝ} (hV_meas : ∀ q, AEMeasurable (fun ω ↦ V ω q) P) {K : ℝ≥0}
-    (hV_subG : ∀ (w : κ → ℝ) (r : ℝ), Integrable (fun ω ↦ exp (r * (V ω ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * (V ω ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2))
-    (M : Matrix κ κ ℝ) {u : ℝ} (hu : (K : ℝ) * |u| * ‖M‖ ≤ 1 / 2)
-    {Φ : Ω × Ω → ℝ} (hadj : ∀ ω₁ ω₂, Φ (ω₁, ω₂) = V ω₂ ⬝ᵥ (M *ᵥ V ω₁)) :
-    Integrable (fun p ↦ exp (u * Φ p)) (P.prod P) ∧
-      mgf Φ (P.prod P) u ≤ exp ((K : ℝ) ^ 2 * u ^ 2 * ∑ l, ∑ q, M l q ^ 2) := by
-  have hV_vec : AEMeasurable V P := AEMeasurable.of_eval hV_meas
-  have hcont : Continuous (fun q : (κ → ℝ) × (κ → ℝ) ↦ exp (u * (q.2 ⬝ᵥ (M *ᵥ q.1)))) := by
-    simp only [dotProduct, Matrix.mulVec]; fun_prop
-  have hG_eq : (fun p : Ω × Ω ↦ exp (u * Φ p)) = fun p ↦ exp (u * (V p.2 ⬝ᵥ (M *ᵥ V p.1))) :=
-    funext fun ⟨ω₁, ω₂⟩ ↦ by dsimp only; rw [hadj ω₁ ω₂]
-  have hG_meas : AEStronglyMeasurable (fun p : Ω × Ω ↦ exp (u * Φ p)) (P.prod P) := by
-    rw [hG_eq]
-    have hm := (hV_vec.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst).prodMk
-      (hV_vec.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd)
-    exact (hcont.measurable.comp_aemeasurable hm).aestronglyMeasurable
-  have ha_bound : (K : ℝ) * ((K : ℝ) * u ^ 2) * ‖M‖ ^ 2 ≤ 1 / 2 := by
-    rw [← sq_abs u]; nlinarith [pow_le_pow_left₀ (by positivity) hu 2]
-  obtain ⟨hX1_int, hX1_le⟩ :=
-    TauCeti.integral_exp_half_mul_sum_mulVec_sq_le hV_meas hV_subG M (by positivity) ha_bound
-  obtain ⟨hG_int, hG_le⟩ := TauCeti.integrable_and_integral_prod_le hG_meas
-    (.of_forall fun _ ↦ (exp_pos _).le) hX1_int (.of_forall fun ω₁ ↦ by
-      obtain ⟨hint, hle⟩ := hV_subG (M *ᵥ V ω₁) u
-      have hslice (ω₂ : Ω) : exp (u * Φ (ω₁, ω₂)) = exp (u * (V ω₂ ⬝ᵥ (M *ᵥ V ω₁))) := by
-        rw [hadj ω₁ ω₂]
-      exact ⟨hint.congr (.of_forall fun ω₂ ↦ (hslice ω₂).symm),
-        (integral_congr_ae (.of_forall hslice)).trans_le hle⟩)
-  exact ⟨hG_int, by rw [mgf]; exact (hG_le.trans hX1_le).trans_eq (by congr 1; ring)⟩
 
 private lemma offDiag_split_bounds {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
     (A : Matrix ι ι 𝕜) {K : ℝ≥0} {θ : ℝ} (hθ : 32 * ((K : ℝ) * ‖A‖) * |θ| ≤ 1) :
@@ -182,13 +95,12 @@ theorem mgf_decoupled_dotProduct_mulVec_le (B : Matrix ι ι ℝ) {u : ℝ}
     mgf (fun p : Ω × Ω ↦ (fun i ↦ X i p.1) ⬝ᵥ B *ᵥ (fun i ↦ X i p.2)) (P.prod P) u ≤
       exp ((K : ℝ) ^ 2 * u ^ 2 * ∑ i, ∑ j, B i j ^ 2) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have hu' : (K : ℝ) * |u| * ‖Bᵀ‖ ≤ 1 / 2 := by
-    rwa [← Matrix.conjTranspose_eq_transpose_of_trivial B, Matrix.l2_opNorm_conjTranspose]
-  obtain ⟨hint, hle⟩ := mgf_decoupled_le_of_adj (fun i ↦ (hX i).aemeasurable)
-    (hindep.integral_exp_mul_dotProduct_le hX) Bᵀ hu'
-    (Φ := fun p ↦ (fun i ↦ X i p.1) ⬝ᵥ B *ᵥ (fun i ↦ X i p.2)) fun _ _ ↦ by
-      rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, dotProduct_comm]
-  exact ⟨hint, hle.trans_eq (by congr 1; rw [Finset.sum_comm]; simp only [Matrix.transpose_apply])⟩
+  have hu2 : (K : ℝ) * (K : ℝ) * u ^ 2 * ‖B‖ ^ 2 ≤ 1 / 2 := by
+    rw [← sq_abs u]; nlinarith [pow_le_pow_left₀ (by positivity) hu 2]
+  obtain ⟨hint, hle⟩ := TauCeti.mgf_dotProduct_mulVec_prod_le
+    (fun i ↦ (hX i).aemeasurable) (fun i ↦ (hX i).aemeasurable)
+    (hindep.integral_exp_mul_dotProduct_le hX) (hindep.integral_exp_mul_dotProduct_le hX) B hu2
+  exact ⟨hint, hle.trans_eq (by congr 1; ring)⟩
 
 /-- **Sub-exponential MGF bound for centred sub-Gaussian quadratic forms.** -/
 theorem mgf_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℝ) {θ : ℝ}
@@ -236,14 +148,10 @@ theorem mgf_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℝ) {θ : ℝ}
   have hsplit (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) -
       ∫ ω', (fun i ↦ X i ω') ⬝ᵥ A *ᵥ (fun i ↦ X i ω') ∂P =
         (∑ i, D i ω) + ((fun i ↦ X i ω) ⬝ᵥ B *ᵥ (fun i ↦ X i ω)) := by
-    have hAB : A = Matrix.diagonal A.diag + B := by simp [B]
-    have hdiag_quad : (fun i ↦ X i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ (fun i ↦ X i ω) =
-        ∑ i, A i i * X i ω ^ 2 := by
-      simp only [dotProduct, Matrix.mulVec_diagonal, Matrix.diag_apply]
-      exact Finset.sum_congr rfl fun _ _ ↦ by ring
-    rw [(hindep.integral_dotProduct_mulVec_eq_sum_diag hX A).2]
-    nth_rw 1 [hAB]; rw [Matrix.add_mulVec, dotProduct_add, hdiag_quad]
-    simp only [D, m, mul_sub, Finset.sum_sub_distrib]; ring
+    have hA := A.re_star_dotProduct_mulVec_eq_sum_diag_add (fun i ↦ X i ω)
+    simp only [RCLike.re_to_real, star_trivial, Real.norm_eq_abs, sq_abs] at hA
+    rw [hA, (hindep.integral_dotProduct_mulVec_eq_sum_diag hX A).2]
+    simp only [B, D, m, mul_sub, Finset.sum_sub_distrib]; ring
   simp_rw [hsplit]
   obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_exp_half_add hD_sum_int hoff_int hD_bound hoff_bound
   exact ⟨hint, hle.trans_eq (by congr 1; ring)⟩
@@ -427,26 +335,22 @@ theorem mgf_decoupled_re_star_dotProduct_mulVec_le (B : Matrix ι ι ℂ) {u : �
     rcases q with i | i <;>
       [exact Complex.continuous_re.measurable.comp_aemeasurable (hZ_meas i);
        exact Complex.continuous_im.measurable.comp_aemeasurable (hZ_meas i)]
-  have hu' : (K : ℝ) * |u| * ‖(Bᴴ).realify‖ ≤ 1 / 2 := by
-    rwa [Matrix.l2_opNorm_realify, Matrix.l2_opNorm_conjTranspose]
-  obtain ⟨hint, hle⟩ := mgf_decoupled_le_of_adj hV_meas
-    (hindep.integral_exp_mul_sum_elim_re_im_dotProduct_le hZ) (Bᴴ).realify hu'
-    (Φ := fun p ↦ (star (fun i ↦ Z i p.1) ⬝ᵥ B *ᵥ (fun i ↦ Z i p.2)).re) fun ω₁ ω₂ ↦ by
-      calc (star (fun i ↦ Z i ω₁) ⬝ᵥ B *ᵥ (fun i ↦ Z i ω₂)).re
-          = inner ℝ (TauCeti.complexToRealEuclidean ι (fun i ↦ Z i ω₁))
-              (TauCeti.complexToRealEuclidean ι (B *ᵥ fun i ↦ Z i ω₂)) :=
-            (TauCeti.inner_complexToRealEuclidean ι _ _).symm
-        _ = V ω₁ ⬝ᵥ B.realify *ᵥ V ω₂ := by
-            have hV (ω : Ω) : (TauCeti.complexToRealEuclidean ι (fun i ↦ Z i ω)).ofLp = V ω :=
-              funext (TauCeti.complexToRealEuclidean_apply ι _)
-            rw [TauCeti.complexToRealEuclidean_mulVec, EuclideanSpace.inner_eq_star_dotProduct,
-              star_trivial, Matrix.toLpLin_apply, WithLp.ofLp_toLp, hV ω₁, hV ω₂, dotProduct_comm]
-        _ = V ω₂ ⬝ᵥ ((Bᴴ).realify *ᵥ V ω₁) := by
-            rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, dotProduct_comm,
-              Matrix.realify_conjTranspose]
-  exact ⟨hint, hle.trans_eq (by
-    congr 1; rw [Matrix.sum_sq_realify, Finset.sum_comm]
-    simp only [Matrix.conjTranspose_apply, norm_star]; ring)⟩
+  have hrealify (p : Ω × Ω) :
+      (star (fun i ↦ Z i p.1) ⬝ᵥ B *ᵥ (fun i ↦ Z i p.2)).re =
+        V p.1 ⬝ᵥ B.realify *ᵥ V p.2 := by
+    have hV (ω : Ω) : (TauCeti.complexToRealEuclidean ι (fun i ↦ Z i ω)).ofLp = V ω :=
+      funext (TauCeti.complexToRealEuclidean_apply ι _)
+    rw [← TauCeti.inner_complexToRealEuclidean ι, TauCeti.complexToRealEuclidean_mulVec,
+      EuclideanSpace.inner_eq_star_dotProduct, star_trivial, Matrix.toLpLin_apply,
+      WithLp.ofLp_toLp, hV p.1, hV p.2, dotProduct_comm]
+  have hu2 : (K : ℝ) * (K : ℝ) * u ^ 2 * ‖B.realify‖ ^ 2 ≤ 1 / 2 := by
+    rw [Matrix.l2_opNorm_realify, ← sq_abs u]
+    nlinarith [pow_le_pow_left₀ (by positivity) hu 2]
+  simp_rw [hrealify]
+  obtain ⟨hint, hle⟩ := TauCeti.mgf_dotProduct_mulVec_prod_le hV_meas hV_meas
+    (hindep.integral_exp_mul_sum_elim_re_im_dotProduct_le hZ)
+    (hindep.integral_exp_mul_sum_elim_re_im_dotProduct_le hZ) B.realify hu2
+  exact ⟨hint, hle.trans_eq (by congr 1; rw [Matrix.sum_sq_realify]; ring)⟩
 
 /-- **Centred MGF bound for the real part of a complex sub-Gaussian sesquilinear form.** -/
 theorem mgf_re_star_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℂ) {θ : ℝ}
@@ -498,26 +402,16 @@ theorem mgf_re_star_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℂ) {θ
         rw [← Finset.mul_sum]; exact mul_le_mul_of_nonneg_left hdiag_frob (by positivity)))
   obtain ⟨hquad_int, hquad_mean⟩ := hindep.integral_star_dotProduct_mulVec_eq_sum_diag hZ A
   have hre_mean : ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
-      ∑ i, (A i i).re * m i := by
-    have hre_comm : ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
-        (∫ ω', star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω') ∂P).re :=
-      Complex.reCLM.integral_comp_comm hquad_int
-    rw [hre_comm, hquad_mean, Complex.re_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ by simp [m, Complex.mul_re]
+      ∑ i, (A i i).re * m i :=
+    (Complex.reCLM.integral_comp_comm hquad_int).trans <| by
+      rw [hquad_mean, map_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ by simp [m, Complex.mul_re]
   have hsplit (ω : Ω) : (star (fun i ↦ Z i ω) ⬝ᵥ A *ᵥ (fun i ↦ Z i ω)).re -
       ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
         (∑ i, D i ω) + (star (fun i ↦ Z i ω) ⬝ᵥ B *ᵥ (fun i ↦ Z i ω)).re := by
-    have hAB : A = Matrix.diagonal A.diag + B := by simp [B]
-    have hdiag_quad : (star (fun i ↦ Z i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ (fun i ↦ Z i ω)).re =
-        ∑ i, (A i i).re * ‖Z i ω‖ ^ 2 := by
-      simp only [dotProduct, Matrix.mulVec_diagonal, Matrix.diag_apply, Pi.star_apply,
-        Complex.re_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_; rw [Complex.sq_norm, Complex.normSq_apply]
-      simp only [Complex.star_def, Complex.mul_re, Complex.mul_im, Complex.conj_re,
-        Complex.conj_im]; ring
-    rw [hre_mean]; nth_rw 1 [hAB]
-    rw [Matrix.add_mulVec, dotProduct_add, Complex.add_re, hdiag_quad]
-    simp only [D, mul_sub, Finset.sum_sub_distrib]; ring
+    have hA := A.re_star_dotProduct_mulVec_eq_sum_diag_add (fun i ↦ Z i ω)
+    simp only [RCLike.re_eq_complex_re] at hA
+    rw [hA, hre_mean]; simp only [B, D, mul_sub, Finset.sum_sub_distrib]; ring
   simp_rw [hsplit]
   obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_exp_half_add hD_sum_int hoff_int hD_bound hoff_bound
   exact ⟨hint, hle.trans_eq (by congr 1; ring)⟩
