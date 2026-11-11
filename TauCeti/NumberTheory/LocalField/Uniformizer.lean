@@ -50,7 +50,7 @@ theorem irreducible_of_valuation_eq {ϖ c : 𝒪[K]} (hϖ : Irreducible ϖ)
 scaled copy `ϖ ^ k • 𝒪[K]`. -/
 theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
     ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
-  rw [ValuationRing.maximalIdeal_eq_span_singleton_of_irreducible hϖ,
+  rw [hϖ.maximalIdeal_eq_of_valuationRing,
     SubsemiringClass.coe_span_singleton_pow _ ϖ.2, image_preimage_eq_inter_range,
     Subtype.range_coe, inter_eq_left]
   rintro _ ⟨y, hy, rfl⟩
