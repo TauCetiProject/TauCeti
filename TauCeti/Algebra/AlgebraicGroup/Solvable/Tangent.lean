@@ -53,31 +53,9 @@ theorem isSolvable_lieAlgebra_of_isSolvable_points
     {k : Type u} [Field k] [IsAlgClosed k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     [IsReduced H] [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
     LieAlgebra.IsSolvable (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
-  -- The identity component is reduced and connected with solvable points, and has the same
-  -- Lie algebra.
+  -- The identity component is reduced (`isReduced_identityComponent`) and connected with
+  -- solvable points, and has the same Lie algebra.
   let Q := FiniteTypeCommHopfAlgCat.identityComponent H
-  have : IsReduced Q := by
-    let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-    let e : H := PrimeSpectrum.connectedComponentIdempotent (R := H)
-      (Bialgebra.augmentationPoint k H)
-    have he : IsIdempotentElem e := PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent _
-    have hspan : (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal =
-        Ideal.span {1 - e} := by
-      rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal]
-      ext x
-      exact PrimeSpectrum.mem_connectedComponentIdeal_iff.trans
-        Ideal.mem_span_singleton'.symm
-    change IsReduced (H ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal)
-    rw [← Ideal.isRadical_iff_quotient_reduced, hspan]
-    intro x ⟨n, hn⟩
-    obtain ⟨y, hy⟩ := Ideal.mem_span_singleton'.mp
-      ((Ideal.span {1 - e}).mul_mem_left x hn)
-    have hex : e * x = 0 := by
-      refine IsReduced.eq_zero (e * x) ⟨n + 1, ?_⟩
-      rw [mul_pow, he.pow_succ_eq, pow_succ', ← hy]
-      have he' : e * e = e := he
-      linear_combination (-y) * he'
-    exact Ideal.mem_span_singleton'.mpr ⟨x, by linear_combination (-1 : H) * hex⟩
   have : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=
     Group.isSolvable_of_isSolvable_injective
       (f := GrpCat.Hom.hom (CommHopfAlgCat.quotientPointsHom H.obj
@@ -98,8 +76,8 @@ theorem isSolvable_lieAlgebra_of_isSolvable_points
   exact (LieAlgebra.solvable_iff_equiv_solvable
     ((LieEquiv.ofEq _ _ (by rw [hI])).trans LieSubalgebra.topEquiv)).mp hsub
 
-/-- The Lie algebra of a geometrically reduced solvable affine
-group of finite type is solvable, over every field. -/
+/-- The Lie algebra of a geometrically reduced solvable affine group of finite type is solvable,
+over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty.isSolvable_lieAlgebra
     {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     [Algebra.IsGeometricallyReduced k H]

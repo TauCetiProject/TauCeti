@@ -102,10 +102,10 @@ theorem hasNonzeroWeightVector_of_isCocomm
   obtain ⟨v, c, hv, hc, hvc⟩ := hasNonzeroWeightVector_iff.mp
     (hasNonzeroWeightVector_of_pairwise_commute (k := k) (H := H) (M := N) fun g h _ ↦
       (Commute.all g h).map (basePointsRepresentation (R := k) (H := H) N))
-  refine hasNonzeroWeightVector_iff.mpr
-    ⟨N.subtype v, c, fun h ↦ hv (Subtype.ext (by simpa using h)), hc, ?_⟩
-  rw [← N.subtype.map_coact_apply, hvc, TensorProduct.map_tmul]
-  rfl
+  exact hasNonzeroWeightVector_iff.mpr
+    ⟨N.subtype v, c, fun h ↦ hv (Subtype.ext (by simpa using h)), hc,
+      _root_.GroupLike.mem_weightSpace.mp (N.subtype.map_mem_groupLikeWeightSpace (c := ⟨c, hc⟩)
+        (_root_.GroupLike.mem_weightSpace.mpr hvc))⟩
 
 /-- **Every finite-dimensional representation of a commutative affine group is trigonalizable.**
 For a reduced finite-type cocommutative Hopf algebra over an algebraically closed field, every
