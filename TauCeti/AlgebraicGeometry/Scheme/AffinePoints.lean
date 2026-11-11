@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Pullbacks
 
 /-!
@@ -70,8 +69,8 @@ noncomputable def homOfAffinePoints
       pullback.fst (X.affineOpenCover.f i) (X.affineOpenCover.f j) ≫ F (X.affineOpenCover.f i) =
         pullback.snd _ _ ≫ F (X.affineOpenCover.f j) :=
     hom_ext_of_forall_spec fun _ c ↦ by
-      rw [← Category.assoc, ← hF, ← Category.assoc, ← hF, Category.assoc, pullback.condition,
-        Category.assoc]
+      simp only [← Category.assoc, ← hF]
+      simp [pullback.condition]
   X.affineOpenCover.openCover.glueMorphisms (fun i ↦ F (X.affineOpenCover.f i)) h
 
 /-- Composing an affine point `a : Spec A ⟶ X` with `homOfAffinePoints F hF` gives `F a`. -/
@@ -90,8 +89,9 @@ theorem comp_homOfAffinePoints
   have key (i : X.affineOpenCover.I₀) {B : CommRingCat.{u}}
       (c : Spec B ⟶ pullback a (X.affineOpenCover.f i)) :
       c ≫ pullback.fst _ _ ≫ a ≫ homOfAffinePoints F hF = c ≫ pullback.fst _ _ ≫ F a := by
-    rw [pullback.condition_assoc, hι, ← Category.assoc, ← hF, ← Category.assoc, ← hF,
-      Category.assoc, Category.assoc, pullback.condition]
+    rw [pullback.condition_assoc, hι]
+    simp only [← Category.assoc, ← hF]
+    simp [pullback.condition]
   -- and these pullbacks cover `Spec A`
   exact Cover.hom_ext (X.affineOpenCover.openCover.pullback₁ a) _ _ fun i ↦
     hom_ext_of_forall_spec fun _ c ↦ key i c

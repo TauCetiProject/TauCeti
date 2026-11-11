@@ -271,9 +271,8 @@ theorem toSubmodule_baseChangeEquiv (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
 theorem baseChangeEquiv_map (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
     baseChangeEquiv R' (map f N) = map (f.restrictScalars R) (baseChangeEquiv R' N) := by
   ext : 1
-  rw [toSubmodule_baseChangeEquiv, map_toSubmodule_eq_span, map_toSubmodule_eq_span,
-    toSubmodule_baseChangeEquiv, Submodule.map_span, Submodule.map_coe, ← Set.image_comp,
-    ← Set.image_comp]
+  simp only [toSubmodule_baseChangeEquiv, map_toSubmodule_eq_span, Submodule.map_span,
+    Submodule.map_coe, ← Set.image_comp]
   refine congrArg _ (Set.image_congr' fun x ↦ ?_)
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
