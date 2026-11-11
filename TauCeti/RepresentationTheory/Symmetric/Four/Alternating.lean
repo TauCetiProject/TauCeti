@@ -71,11 +71,9 @@ representation of `S₄`: `E` lies over `L_ζ` and `L_{ζ²}` through the eigenv
   `v_ζ` by `L_ζ(g)`.
 * `TauCeti.alternatingGroupFourTwoDimensionalEquiv_symm_apply`: the inverse of the equivalence
   sends `(a, b)` to `a v_ζ + b v_{ζ²}`.
-* `TauCeti.complexEmbedding_alternatingGroupFourOmega`: the embedded cube root of unity is
-  `ω = exp (2πi/3)`.
 * `TauCeti.symmetricGroupFourTwoDimensionalRepresentation_liesOver`: `E` lies over `L_ζ` for
   every cube root of unity `ζ ≠ 1`.
-* `TauCeti.exists_simple_liesOver_alternatingGroupFour`: every irreducible representation of
+* `FDRep.exists_simple_liesOver_alternatingGroupFour`: every irreducible representation of
   `A₄` occurs in the restriction of an irreducible representation of `S₄`.
 
 ## References
@@ -177,18 +175,6 @@ theorem alternatingGroupFourLinearCharacter_inv (ζ : rootsOfUnity 3 k) :
 end LinearCharacter
 
 section CharacterTable
-
-/-- **The distinguished cube root of unity is `exp (2πi/3)`**: the embedding
-`TauCeti.Cyclotomic.complexEmbedding` sends `TauCeti.alternatingGroupFourOmega = ζ₆²` to
-`exp (2πi/6) ^ 2 = exp (2πi/3)`. -/
-theorem complexEmbedding_alternatingGroupFourOmega :
-    Cyclotomic.complexEmbedding alternatingGroupFourOmega =
-      Complex.exp (2 * Real.pi * Complex.I / 3) := by
-  rw [alternatingGroupFourOmega, map_pow, Cyclotomic.complexEmbedding_zeta,
-    Cyclotomic.complexRoot_def, ← Complex.exp_nat_mul]
-  congr 1
-  push_cast
-  ring
 
 /-- **The exact character table of `A₄` is the table of `L₁`, `L_ω`, `L_{ω²}` and `T`.** Let `ω`
 be the image of the cube root of unity `TauCeti.alternatingGroupFourOmega = ζ₆²` under the pinned
@@ -388,9 +374,11 @@ theorem symmetricGroupFourTwoDimensionalRepresentation_liesOver (ζ : rootsOfUni
 
 end LiesOver
 
-section Occurrence
+end TauCeti
 
-open CategoryTheory
+namespace FDRep
+
+open CategoryTheory TauCeti Equiv
 
 variable {k : Type} [Field k] [IsAlgClosed k] [CharZero k]
 
@@ -416,17 +404,15 @@ theorem exists_simple_liesOver_alternatingGroupFour (W : FDRep k (alternatingGro
       exact isIrreducible_standardRepresentation (by norm_num) (Or.inr (by norm_num))
   -- `W` is one of `L₁`, `L_ζ`, `L_{ζ⁻¹}` and `T`, which lie under the trivial representation,
   -- `E`, `E` and the standard representation respectively.
-  rcases (FDRep.simple_alternatingGroupFour_iff W hχ).mp ‹_› with ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩
-  · exact ⟨_, inferInstance, ((FDRep.liesOver_trivial_alternatingGroup_iff _).mpr
+  rcases (simple_alternatingGroupFour_iff W hχ).mp ‹_› with ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩
+  · exact ⟨_, inferInstance, ((liesOver_trivial_alternatingGroup_iff _).mpr
       (Or.inl ⟨Iso.refl _⟩)).of_iso_right e.symm⟩
   · exact ⟨_, hE, (symmetricGroupFourTwoDimensionalRepresentation_liesOver _ hζ).of_iso_right
       e.symm⟩
   · rw [← alternatingGroupFourLinearCharacter_inv] at e
     exact ⟨_, hE, (symmetricGroupFourTwoDimensionalRepresentation_liesOver _
       (inv_ne_one.mpr hζ)).of_iso_right e.symm⟩
-  · exact ⟨_, hV, ((FDRep.liesOver_alternatingGroupFourStandard_iff _).mpr
+  · exact ⟨_, hV, ((liesOver_alternatingGroupFourStandard_iff _).mpr
       (Or.inl ⟨Iso.refl _⟩)).of_iso_right e.symm⟩
 
-end Occurrence
-
-end TauCeti
+end FDRep

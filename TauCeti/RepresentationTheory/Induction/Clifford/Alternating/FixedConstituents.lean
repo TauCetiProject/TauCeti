@@ -209,16 +209,6 @@ end FDRep
 
 namespace TauCeti
 
-/-- **The sign character is trivial on the alternating group.** With
-`FDRep.actionRes_obj_ofLinearCharacter`, the sign representation restricts to the trivial
-one-dimensional representation `FDRep.ofLinearCharacter 1` of the alternating group. -/
-@[simp]
-theorem signLinearCharacter_comp_alternatingGroup_subtype (k : Type*) [Ring k] (α : Type*)
-    [Fintype α] [DecidableEq α] :
-    (signLinearCharacter k α).comp (alternatingGroup α).subtype = 1 :=
-  MonoidHom.ext fun g => Units.ext <| by
-    simp [coe_signLinearCharacter_apply, Equiv.Perm.mem_alternatingGroup.mp g.property]
-
 /-- The trivial and sign representations of a nontrivial symmetric group are nonisomorphic
 when `2 ≠ 0`. These give distinct extensions of the trivial alternating-group representation. -/
 theorem not_nonempty_iso_trivial_sign (k : Type*) [CommRing k] [NeZero (2 : k)]
