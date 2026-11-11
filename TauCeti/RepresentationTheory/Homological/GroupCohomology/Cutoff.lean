@@ -198,19 +198,19 @@ the complex of inhomogeneous cochains with coefficients in `X → A`: it is
 `Representation.cutoffAverage` on `0`-cochains and zero in positive degrees. -/
 def cutoffCochainMap :
     inhomogeneousCochains (Rep.of (ρ.funLeft X)) ⟶ inhomogeneousCochains (Rep.of (ρ.funLeft X)) :=
-  ofDegreeZero (ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G)))
+  CochainComplex.ofDegreeZero _ (ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G)))
     (comp_d_zero_eq_zero (d_comp_cutoffLast ρ hc) (d_zero_comp_cutoffLast ρ hc))
 
 /-- In degree `0`, `TauCeti.groupCohomology.cutoffCochainMap` is the cutoff average. -/
 @[simp]
 theorem cutoffCochainMap_f_zero :
     (cutoffCochainMap ρ hc).f 0 = ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G)) :=
-  ofDegreeZero_f_zero _
+  CochainComplex.ofDegreeZero_f_zero _
 
 /-- In positive degrees, `TauCeti.groupCohomology.cutoffCochainMap` is zero. -/
 @[simp]
 theorem cutoffCochainMap_f_succ (n : ℕ) : (cutoffCochainMap ρ hc).f (n + 1) = 0 :=
-  ofDegreeZero_f_succ _ n
+  CochainComplex.ofDegreeZero_f_succ _ n
 
 /-- **The cutoff contraction.** The identity of the complex of inhomogeneous cochains with
 coefficients in `X → A` is homotopic to the cutoff average onto the invariant functions placed in
@@ -226,7 +226,7 @@ def cutoffHomotopy : Homotopy (𝟙 (inhomogeneousCochains (Rep.of (ρ.funLeft X
 @[simp]
 theorem cutoffHomotopy_hom_succ (n : ℕ) :
     (cutoffHomotopy ρ hc).hom (n + 1) n = (-1 : k) ^ (n + 1) • cutoffLast ρ hc n :=
-  homotopyOfDCompEq_hom_succ _ _ n
+  homotopyOfDCompEq_hom_succ (d_comp_cutoffLast ρ hc) (d_zero_comp_cutoffLast ρ hc) n
 
 include hc in
 /-- **Vanishing of positive-degree cohomology.** If `c : X → k` has translates summing to one,

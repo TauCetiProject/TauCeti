@@ -7,10 +7,10 @@ module
 
 public import Mathlib.RingTheory.Ideal.IdempotentFG
 public import Mathlib.RingTheory.Jacobson.Ideal
-public import Mathlib.RingTheory.Unramified.Basic
+public import Mathlib.RingTheory.Unramified.Finite
+public import Mathlib.RingTheory.Etale.Pi
 public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.Unramified.Finite
 
 /-!
 # The diagonal of an unramified algebra
@@ -23,6 +23,12 @@ Consequently, two algebra maps `f, g : S → T` become equal after any further m
 complement of the image of this idempotent under `f ⊗ g`. If they agree modulo an ideal in the
 Jacobson radical of `T`, then they agree already in `T`. In particular, residue sections over a
 henselian pair have at most one lift, without any completeness or nilpotence hypothesis.
+
+The complementary idempotent, Mathlib's `Algebra.FormallyUnramified.elem`, is characterised by
+the two properties defining it: it annihilates every `1 ⊗ s - s ⊗ 1` and multiplies to `1`
+(`TauCeti.Algebra.FormallyUnramified.eq_elem`). This makes it computable in examples, and shows
+that it is invariant under the swap of the two tensor factors. For the split algebra `κ → R` it is
+`∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`.
 
 For an unramified quotient `S = W ⧸ I` over `R`, Mathlib's diagonal element of `S ⊗[R] S` lifts to
 some `t ∈ S ⊗[R] W` which annihilates the difference of the two images `1 ⊗ w` and `(w mod I) ⊗ 1`
@@ -97,6 +103,69 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     simpa only [sub_sub_cancel_left, Ideal.jacobson_bot] using hJ (J.neg_mem hpe)
   simpa only [AlgHom.id_comp] using comp_eq_comp_of_isUnit_one_sub_productMap he hker.le f g
     (AlgHom.id R T) hu
+
+/-- The diagonal idempotent of an essentially finite type, formally unramified algebra is the only
+element of `S ⊗[R] S` that annihilates every `1 ⊗ s - s ⊗ 1` and maps to `1` under multiplication.
+Mathlib's `Algebra.FormallyUnramified.elem` is a choice of such an element; this shows that the
+choice does not matter. -/
+theorem eq_elem {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] {t : S ⊗[R] S}
+    (ht : ∀ s, ((1 : S) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : S)) * t = 0)
+    (h1 : Algebra.TensorProduct.lmul' R t = 1) :
+    t = Algebra.FormallyUnramified.elem R S := by
+  -- An element `u` annihilating the differences `1 ⊗ s - s ⊗ 1` absorbs every `x` as the
+  -- scalar `lmul' x ⊗ 1`. This absorption step adapts the argument in the proof of Mathlib's
+  -- `Algebra.FormallyUnramified.isIdempotentElem_elem`.
+  have key (u : S ⊗[R] S) (hu : ∀ s, ((1 : S) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : S)) * u = 0)
+      (x : S ⊗[R] S) : x * u = (Algebra.TensorProduct.lmul' R x ⊗ₜ[R] 1) * u := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a b =>
+      have hb : (1 ⊗ₜ[R] b) * u = (b ⊗ₜ[R] 1) * u := sub_eq_zero.mp (by rw [← sub_mul, hu])
+      calc a ⊗ₜ[R] b * u = (a ⊗ₜ[R] 1) * ((1 ⊗ₜ[R] b) * u) := by
+            rw [← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+        _ = (Algebra.TensorProduct.lmul' R (a ⊗ₜ[R] b) ⊗ₜ[R] 1) * u := by
+            rw [hb, ← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
+              Algebra.TensorProduct.lmul'_apply_tmul]
+    | add x y hx hy => rw [add_mul, hx, hy, map_add, TensorProduct.add_tmul, add_mul]
+  calc t = (Algebra.TensorProduct.lmul' R (Algebra.FormallyUnramified.elem R S) ⊗ₜ[R] 1) * t := by
+        rw [Algebra.FormallyUnramified.lmul_elem, ← Algebra.TensorProduct.one_def, one_mul]
+    _ = t * Algebra.FormallyUnramified.elem R S := by rw [← key t ht, mul_comm]
+    _ = Algebra.FormallyUnramified.elem R S := by
+        rw [key _ Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem, h1,
+          ← Algebra.TensorProduct.one_def, one_mul]
+
+/-- The diagonal idempotent of an essentially finite type, formally unramified algebra is
+invariant under exchanging the two tensor factors. -/
+@[simp]
+theorem comm_elem (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] :
+    Algebra.TensorProduct.comm R S S (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem R S := by
+  refine eq_elem (fun s ↦ ?_) ?_
+  · have h := congrArg (Algebra.TensorProduct.comm R S S)
+      (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+    rw [map_mul, map_sub, Algebra.TensorProduct.comm_tmul, Algebra.TensorProduct.comm_tmul,
+      map_zero, ← neg_sub, neg_mul, neg_eq_zero] at h
+    exact h
+  · have hcomm : (Algebra.TensorProduct.lmul' R).comp
+        (Algebra.TensorProduct.comm R S S).toAlgHom = Algebra.TensorProduct.lmul' R :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp [mul_comm]
+    exact (DFunLike.congr_fun hcomm _).trans Algebra.FormallyUnramified.lmul_elem
+
+/-- The diagonal idempotent of the split algebra `κ → R` is `∑ₖ eₖ ⊗ eₖ`, for the standard
+idempotents `eₖ` of `κ → R`. -/
+theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
+    Algebra.FormallyUnramified.elem R (κ → R) =
+      ∑ k, Pi.single k (1 : R) ⊗ₜ[R] Pi.single k (1 : R) := by
+  refine (eq_elem (fun s ↦ ?_) ?_).symm
+  · rw [Finset.mul_sum]
+    refine Finset.sum_eq_zero fun k _ ↦ ?_
+    have hs : s * Pi.single k 1 = s k • Pi.single k (1 : R) := by
+      ext l
+      by_cases h : l = k <;> simp [h]
+    rw [sub_mul, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
+      one_mul, hs, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sub_self]
+  · simp [← Pi.single_mul, Finset.univ_sum_single, Pi.one_def]
 
 /-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
 diagonal and such that, for every `w ∈ W`, the product of `t` with the difference

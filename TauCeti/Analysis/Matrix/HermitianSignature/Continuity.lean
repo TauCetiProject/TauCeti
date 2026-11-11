@@ -57,8 +57,6 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
     ∀ᶠ B in 𝓝 A, B.IsHermitian →
       ∃ R : Matrix ι ι 𝕜, IsUnit R.det ∧ Rᴴ * A * R = B := by
   let adj : Matrix ι ι 𝕜 → Matrix ι ι 𝕜 := fun R => A⁻¹ * Rᴴ * A
-  have hadj_one : adj 1 = 1 := by
-    simp [adj, A.nonsing_inv_mul hdet]
   have hadj_mul (R S : Matrix ι ι 𝕜) : adj (R * S) = adj S * adj R := by
     simp only [adj, conjTranspose_mul]
     simp only [Matrix.mul_assoc, A.mul_nonsing_inv_cancel_left (Rᴴ * A) hdet]
@@ -79,7 +77,7 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
   have hunit : ∀ᶠ B in 𝓝 A, IsUnit (R B) :=
     hR.eventually (Units.isOpen.mem_nhds isUnit_one)
   filter_upwards [hC.eventually TauCeti.eventually_mul_self_sqrtNearOne,
-    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_one hadj_mul),
+    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_mul),
     hunit] with B hs hu hunit
   intro hB
   have hs' : R B * R B = A⁻¹ * B := hs
@@ -112,12 +110,13 @@ theorem eventually_signature_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
 /-- The negative index of the quadratic form of a continuous real symmetric matrix family is
 locally constant at a nonsingular member. Only local symmetry of the family is required. -/
 theorem eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
-    {B : X → Matrix ι ι ℝ} {x : X} (hx : (B x).IsHermitian)
+    {B : X → Matrix ι ι ℝ} {x : X}
     (hB : ∀ᶠ y in nhds x, (B y).IsHermitian) (hc : ContinuousAt B x)
     (hdet : IsUnit (B x).det) :
     ∀ᶠ y in nhds x,
       sigNeg ((B y).toQuadraticForm') = sigNeg ((B x).toQuadraticForm') := by
-  filter_upwards [hc.eventually (hx.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
+  filter_upwards
+    [hc.eventually (hB.self_of_nhds.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
     with y hy hhy
   obtain ⟨R, hR, hRB⟩ := hy hhy
   have hRB' : R.transpose * B x * R.transpose.transpose = B y := by
@@ -153,7 +152,7 @@ theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [Topologica
   have hdet : IsUnit (A x).det :=
     isUnit_iff_ne_zero.mpr ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp hnd)
   have hindex := Matrix.IsHermitian.eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt
-    (hHermitian hsymm.self_of_nhds) (hsymm.mono fun _ ↦ hHermitian) hA hdet
+    (hsymm.mono fun _ ↦ hHermitian) hA hdet
   filter_upwards [hindex] with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
 

@@ -137,7 +137,7 @@ theorem exists_biproduct_simples_of_simple (X : C) [Simple X] :
 
 /-- Decompositions of `X` and `Y` into finite biproducts of simple objects combine to one of
 `X ⊞ Y`. -/
-theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBinaryBiproduct X Y]
+theorem exists_biproduct_simples_biprod {X Y : C} [HasBinaryBiproduct X Y]
     (hX : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f))
     (hY : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
@@ -146,7 +146,8 @@ theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBi
       Nonempty (X ⊞ Y ≅ ⨁ f) := by
   obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := hX
   obtain ⟨κ, hκ, g, hg, hbg, ⟨d⟩⟩ := hY
-  have := hasBinaryBiproducts_of_finite_biproducts C
+  have : HasBinaryBiproduct (⨁ f) (⨁ g) := hasBinaryBiproduct_of_iso e d
+  have : HasBiproduct (Sum.elim f g) := hasBiproduct_sum_elim f g
   refine ⟨ι ⊕ κ, inferInstance, Sum.elim f g, fun | .inl i => hf i | .inr j => hg j,
     inferInstance, ⟨biprod.mapIso e d ≪≫ (biproductSumIso f g).symm⟩⟩
 

@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -34,7 +34,8 @@ The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
-  composition `HomogeneousSymbol.comp`, which adds degrees;
+  composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
+  `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
@@ -226,6 +227,11 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
@@ -250,6 +256,14 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a : HomogeneousSymbol X E V W m) :
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
+
+/-- In a family `a i` of homogeneous symbols whose degrees depend on the index, the coefficient of
+`a i` depends only on the value of `i`, although the types of `a i` and `a i'` differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → HomogeneousSymbol X E V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
 
 /-! Transport along an equality of degrees commutes with the vector space operations. -/
 
@@ -370,6 +384,32 @@ theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'
     (a : HomogeneousSymbol X E V W m) :
     (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
   (rfl)
+
+variable (X E V) in
+/-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
+frequency, and zero at the zero frequency by the convention of `HomogeneousSymbol`. It is the
+unit for `HomogeneousSymbol.comp`. -/
+noncomputable def id : HomogeneousSymbol X E V V 0 :=
+  mk' (fun _ ↦ ContinuousLinearMap.id ℂ V) contDiffOn_const fun _ _ _ _ _ ↦ by simp
+
+@[simp]
+theorem coefficient_id {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (id X E V).coefficient (x, ξ) = ContinuousLinearMap.id ℂ V :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- Composing with the identity symbol on the right does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem comp_id (b : HomogeneousSymbol X E V W m) :
+    b.comp (id X E V) = b.castDegree (add_zero m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+/-- Composing with the identity symbol on the left does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem id_comp (a : HomogeneousSymbol X E V W m) :
+    (id X E W).comp a = a.castDegree (zero_add m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
 
 /-! ### Pullback in the position -/
 
@@ -788,8 +828,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x : X} {ξ : E} (hξ : ξ ≠
     (ht : 0 < t) (k : ℕ) (v : Fin k → X × E) :
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i ↦ ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v :=
-  iteratedFDeriv_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht v
+  iteratedFDeriv_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht v
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -800,8 +839,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x : X} {ξ : E} (hξ :
       t ^ (m - l) •
         iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
           (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))) :=
-  iteratedFDeriv_append_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht u w
+  iteratedFDeriv_append_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht u w
 
 /-- On a proper frequency space, the derivatives of a homogeneous symbol of degree `m` in `j`
 position directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions

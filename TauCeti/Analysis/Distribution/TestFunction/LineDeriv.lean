@@ -25,6 +25,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
+* `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
+* `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
@@ -59,6 +61,17 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
+
+/-- The directional derivative of a test function is its Fréchet derivative applied to the
+direction. -/
+theorem lineDerivOp_apply_eq_fderiv (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = fderiv ℝ φ x v := by
+  rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+/-- A directional derivative of a test function is supported in the support of the function. -/
+theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
+    tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
+  rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
+  exact tsupport_fderiv_apply_subset ℝ v
 
 /-- On the real line, the directional derivative of a test function in the direction `1` is its
 derivative. -/

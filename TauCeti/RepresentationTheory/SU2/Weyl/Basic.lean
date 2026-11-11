@@ -95,6 +95,9 @@ namespace SU2
 Weyl group of `SU(2)`. -/
 def weylMatrix : Matrix (Fin 2) (Fin 2) ℂ := !![0, -1; 1, 0]
 
+/-- The entries of the quarter turn. -/
+theorem weylMatrix_def : weylMatrix = !![0, -1; 1, 0] := (rfl)
+
 /-- The quarter turn is unitary with determinant `1`. -/
 theorem weylMatrix_mem : weylMatrix ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
   refine Matrix.mem_specialUnitaryGroup_iff.mpr ⟨Matrix.mem_unitaryGroup_iff.mpr ?_, ?_⟩
@@ -110,6 +113,30 @@ def weylElement : SU2 := ⟨weylMatrix, weylMatrix_mem⟩
 /-- The matrix underlying the quarter turn of `SU(2)`. -/
 @[simp]
 theorem coe_weylElement : (weylElement : Matrix (Fin 2) (Fin 2) ℂ) = weylMatrix := (rfl)
+
+/-- The inverse of the quarter turn is the sign-opposite quarter turn `!![0, 1; -1, 0]`. -/
+@[simp]
+theorem coe_weylElement_inv :
+    ((weylElement⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = !![0, 1; -1, 0] := by
+  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, coe_weylElement, weylMatrix]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.star_apply]
+
+/-- The inverse quarter turn squares to `-1`. -/
+theorem coe_weylElement_inv_sq :
+    ((weylElement⁻¹ ^ 2 : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
+  rw [SubmonoidClass.coe_pow, coe_weylElement_inv]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [sq, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The square of the inverse quarter turn is the torus element `torusHom (-1) = -1`. -/
+theorem weylElement_inv_sq_eq_torusHom_neg_one : weylElement⁻¹ ^ 2 = torusHom (-1) := by
+  refine Subtype.ext ?_
+  rw [coe_weylElement_inv_sq, coe_torusHom]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [torusMatrix_apply_zero_zero, torusMatrix_apply_one_one, torusMatrix_apply_zero_one,
+      torusMatrix_apply_one_zero]
 
 /-- The quarter turn is not diagonal, so it does not lie in the maximal torus. -/
 theorem weylElement_notMem_torus : weylElement ∉ torus := by
@@ -140,6 +167,11 @@ whole Weyl-group action of `SU(2)`: `w diag (z, z⁻¹) w⁻¹ = diag (z⁻¹, z
 theorem weylElement_conj_torusHom (z : Circle) :
     weylElement * torusHom z * weylElement⁻¹ = torusHom z⁻¹ :=
   mul_inv_eq_iff_eq_mul.mpr (weylElement_mul_torusHom z)
+
+/-- Moving a torus element past the inverse quarter turn inverts it. -/
+theorem torusHom_mul_weylElement_inv (z : Circle) :
+    torusHom z * weylElement⁻¹ = weylElement⁻¹ * torusHom z⁻¹ := by
+  rw [eq_inv_mul_iff_mul_eq, ← mul_assoc, weylElement_conj_torusHom]
 
 /-- The quarter turn normalizes the maximal torus. -/
 theorem weylElement_mem_normalizer :

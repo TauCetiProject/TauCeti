@@ -24,8 +24,8 @@ decreasing.
 
 * `TauCeti.card_filter_le_card_filter_of_le`: a pointwise larger function has at most as many
   values in a lower set.
-* `TauCeti.exists_card_filter_lt_card_filter`: if `u ≤ w` are distinct monotone functions, then
-  at some value `u j` of `u`, fewer values of `w` than of `u` are at most `u j`.
+* `TauCeti.exists_card_filter_lt_card_filter`: if `u ≤ w` are distinct functions, then at some
+  value `u j` of `u`, fewer values of `w` than of `u` are at most `u j`.
 * `TauCeti.card_filter_le_eq_sum_card_filter_eq`: for a function with values in a finite set
   `σ`, the number of values at most `i` is the sum over `j ≤ i` in `σ` of the number of values
   equal to `j`.
@@ -46,19 +46,15 @@ theorem card_filter_le_card_filter_of_le [Preorder ι] {u w : α → ι} (huw : 
     {p : ι → Prop} [DecidablePred p] (hp : Antitone p) : #{l | p (w l)} ≤ #{l | p (u l)} :=
   card_le_card (monotone_filter_right _ fun l _ hl => hp (huw l) hl)
 
-/-- If `u ≤ w` are distinct monotone functions, then at some value `u j` of `u`, fewer values of
-`w` than of `u` are at most `u j`. -/
-theorem exists_card_filter_lt_card_filter [LinearOrder α] [PartialOrder ι] [DecidableLE ι]
-    {u w : α → ι} (hu : Monotone u) (hw : Monotone w) (huw : u ≤ w) (hne : u ≠ w) :
+/-- If `u ≤ w` are distinct functions, then at some value `u j` of `u`, fewer values of `w` than of
+`u` are at most `u j`. -/
+theorem exists_card_filter_lt_card_filter [PartialOrder ι] [DecidableLE ι]
+    {u w : α → ι} (huw : u ≤ w) (hne : u ≠ w) :
     ∃ j, #{l | w l ≤ u j} < #{l | u l ≤ u j} := by
   obtain ⟨j, hlt⟩ := (Pi.lt_def.mp (lt_of_le_of_ne huw hne)).2
-  refine ⟨j, ?_⟩
-  calc #{l | w l ≤ u j} ≤ #{l | l < j} := card_le_card fun l hl => by
-        simp only [mem_filter, mem_univ, true_and] at hl ⊢
-        exact lt_of_not_ge fun hjl => (hlt.trans_le (hw hjl)).not_ge hl
-    _ < #{l | l ≤ j} := card_lt_card <| (ssubset_iff_of_subset
-        (monotone_filter_right _ fun _ _ hl => hl.le)).mpr ⟨j, by simp, by simp⟩
-    _ ≤ #{l | u l ≤ u j} := card_le_card (monotone_filter_right _ fun _ _ hl => hu hl)
+  exact ⟨j, card_lt_card <| (ssubset_iff_of_subset
+    (monotone_filter_right _ fun l _ hl => (huw l).trans hl)).mpr
+      ⟨j, by simp, by simpa using hlt.not_ge⟩⟩
 
 /-- For a function with values in `σ`, the number of values at most `i` is the sum over the
 elements `j ≤ i` of `σ` of the number of values equal to `j`. -/

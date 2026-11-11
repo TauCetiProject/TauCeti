@@ -25,6 +25,8 @@ Distributions*, volume 1, Chapter 13.
 * `centralMoment_id_two_mul_gaussianReal` evaluates the even centered moments.
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
+* `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
+  first-moment integrability for one or two Gaussian coordinates.
 -/
 
 public section
@@ -34,6 +36,23 @@ open scoped Nat NNReal Real
 namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Real Set
+
+/-- The absolute value is integrable under every real Gaussian law. -/
+theorem integrable_abs_gaussianReal (μ : ℝ) (v : ℝ≥0) :
+    Integrable (fun x : ℝ => |x|) (gaussianReal μ v) := by
+  have h := ((memLp_id_gaussianReal' (μ := μ) (v := v) 1 (by simp)).integrable le_rfl).norm
+  simpa using h
+
+/-- The sum of the absolute coordinate values is integrable under two real Gaussian laws. -/
+theorem integrable_abs_add_abs_gaussianReal (μ₁ μ₂ : ℝ) (v₁ v₂ : ℝ≥0) :
+    Integrable (fun p : ℝ × ℝ => |p.1| + |p.2|)
+      (Measure.prod (gaussianReal μ₁ v₁) (gaussianReal μ₂ v₂)) := by
+  have h₁ := integrable_abs_gaussianReal μ₁ v₁
+  have h₂ := integrable_abs_gaussianReal μ₂ v₂
+  exact ((measurePreserving_fst (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
+    h₁.aestronglyMeasurable |>.2 h₁).add
+      ((measurePreserving_snd (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
+        h₂.aestronglyMeasurable |>.2 h₂)
 
 private lemma integral_abs_pow_mul_exp_neg_mul_sq (n : ℕ) {b : ℝ} (hb : 0 < b) :
     ∫ x : ℝ, |x| ^ n * exp (-b * x ^ 2) =

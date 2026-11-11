@@ -45,6 +45,11 @@ Springer GTM 176 (2018), Chapter 8, pp. 250–254 (Proposition 8.36).  The curva
   `CovariantDerivative.HasSectionalCurvatureAt.eq_of_one_lt_finrank`: in dimension at most one
   every `k` is a sectional curvature, since there are no tangent two-planes; from dimension two on
   the sectional curvature at a point is unique.
+* `CovariantDerivative.forall_sectionalCurvature_le_fixed_iff` and
+  `CovariantDerivative.forall_le_sectionalCurvature_fixed_iff`: an upper or lower sectional bound
+  on the two-planes containing a fixed vector is equivalent to the corresponding bound on all
+  curvature numerators with that vector in the second slot, the interface for radial curvature
+  bounds.
 -/
 
 public section
@@ -142,6 +147,18 @@ theorem IsMetricCompatible.sectionalCurvature_comm
     real_inner_comm (curvature x u v v) u, real_inner_comm v u]
   ring
 
+omit [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)] in
+/-- For a linearly dependent pair, the curvature numerator and the Gram determinant vanish. -/
+private theorem inner_curvatureTensor_eq_zero_and_det_gram_eq_zero {x : M}
+    {u v : TangentSpace I x} (huv : ¬LinearIndependent ℝ ![u, v]) :
+    inner ℝ (curvature x u v v) u = 0 ∧ (Matrix.gram ℝ ![u, v]).det = 0 := by
+  refine ⟨?_, not_not.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr huv)⟩
+  by_cases hu : u = 0
+  · simp [hu]
+  · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu).not.mp huv)
+    rw [← not_not.mp hc]
+    simp [cov.curvatureTensor_self]
+
 /-- An upper sectional-curvature bound is equivalent to the corresponding bound on every
 curvature numerator, including dependent pairs. The latter have zero numerator and Gram
 determinant, so no dimension or nonzero-vector hypothesis is needed. -/
@@ -157,16 +174,43 @@ theorem forall_sectionalCurvature_le_iff (hcov : CovariantDerivative.IsMetricCom
   refine ⟨fun h u v ↦ ?_, fun h u v huv ↦ ?_⟩
   · by_cases huv : LinearIndependent ℝ ![u, v]
     · exact (div_le_iff₀ (hind u v huv)).1 (h u v huv)
-    · by_cases hu : u = 0
-      · simp [hu, Matrix.real_det_gram_fin_two]
-      · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu).not.mp huv)
-        rw [← not_not.mp hc]
-        simp only [map_smul, cov.curvatureTensor_self, LinearMap.zero_apply, smul_zero,
-          inner_zero_left, Matrix.real_det_gram_fin_two, real_inner_smul_left,
-          real_inner_smul_right]
-        ring_nf
-        exact le_rfl
+    · obtain ⟨h₁, h₂⟩ := cov.inner_curvatureTensor_eq_zero_and_det_gram_eq_zero huv
+      rw [h₁, h₂, mul_zero]
   · exact (div_le_iff₀ (hind u v huv)).2 (h u v)
+
+/-- An upper sectional bound on planes through a fixed vector bounds every curvature numerator. -/
+theorem forall_sectionalCurvature_le_fixed_iff (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (v : TangentSpace I x) (κ : ℝ) :
+    (∀ u : TangentSpace I x, LinearIndependent ℝ ![u, v] →
+      cov.sectionalCurvature hcov x u v ≤ κ) ↔
+    ∀ u : TangentSpace I x,
+      inner ℝ (curvature x u v v) u ≤ κ * (Matrix.gram ℝ ![u, v]).det := by
+  refine ⟨fun h u ↦ ?_, fun h u huv ↦ ?_⟩
+  · by_cases huv : LinearIndependent ℝ ![u, v]
+    · have hh := h u huv
+      rw [sectionalCurvature_apply] at hh
+      exact (div_le_iff₀ (Matrix.posDef_gram_of_linearIndependent huv).det_pos).1 hh
+    · obtain ⟨h₁, h₂⟩ := cov.inner_curvatureTensor_eq_zero_and_det_gram_eq_zero huv
+      rw [h₁, h₂, mul_zero]
+  · rw [sectionalCurvature_apply]
+    exact (div_le_iff₀ (Matrix.posDef_gram_of_linearIndependent huv).det_pos).2 (h u)
+
+/-- A lower sectional bound on planes through a fixed vector bounds every curvature numerator. -/
+theorem forall_le_sectionalCurvature_fixed_iff (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (v : TangentSpace I x) (κ : ℝ) :
+    (∀ u : TangentSpace I x, LinearIndependent ℝ ![u, v] →
+      κ ≤ cov.sectionalCurvature hcov x u v) ↔
+    ∀ u : TangentSpace I x,
+      κ * (Matrix.gram ℝ ![u, v]).det ≤ inner ℝ (curvature x u v v) u := by
+  refine ⟨fun h u ↦ ?_, fun h u huv ↦ ?_⟩
+  · by_cases huv : LinearIndependent ℝ ![u, v]
+    · have hh := h u huv
+      rw [sectionalCurvature_apply] at hh
+      exact (le_div_iff₀ (Matrix.posDef_gram_of_linearIndependent huv).det_pos).1 hh
+    · obtain ⟨h₁, h₂⟩ := cov.inner_curvatureTensor_eq_zero_and_det_gram_eq_zero huv
+      rw [h₁, h₂, mul_zero]
+  · rw [sectionalCurvature_apply]
+    exact (le_div_iff₀ (Matrix.posDef_gram_of_linearIndependent huv).det_pos).2 (h u)
 
 /-- A connection has sectional curvature `k` at `x` when every tangent two-plane at `x` has
 sectional curvature `k`. -/

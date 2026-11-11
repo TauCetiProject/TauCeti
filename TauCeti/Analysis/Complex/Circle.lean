@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -20,7 +23,9 @@ stated for unit spheres of real normed spaces (such as their CW structures) appl
 without unfolding the synonym.
 
 It also packages the exponential `t ↦ exp (i t)` as a continuous homomorphism from the real line,
-and records that the coordinate function `z ↦ z` is a unitary element of `C(S¹, ℂ)`.
+and records that the coordinate function `z ↦ z` is a unitary element of `C(S¹, ℂ)`. Finally,
+it parametrizes the upper semicircle by the real part, so that the circle is two closed intervals
+glued at their endpoints `±1`.
 
 ## Main declarations
 
@@ -36,6 +41,12 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
+* `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
+  `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
+  meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
+* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
+  is differentiable.
 -/
 
 public section
@@ -125,6 +136,14 @@ theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle
   ⟨exp (Complex.arg z / n), by
     rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
 
+/-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
+is differentiable at `z`. -/
+theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {u : E → Circle} {z : E} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
+    DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.differentiableAt.comp z hu
+
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
 def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
@@ -158,5 +177,81 @@ theorem coordinate_mul_star : coordinate * star coordinate = 1 := by
 /-- The coordinate function is a unitary element of `C(S¹, ℂ)`. -/
 theorem coordinate_mem_unitary : coordinate ∈ unitary C(Circle, ℂ) :=
   ⟨star_coordinate_mul, coordinate_mul_star⟩
+
+/-- A point of the circle is its own inverse exactly when it is `1` or `-1`. -/
+theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
+  simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
+
+/-! ### The upper semicircle -/
+
+/-- The point `x + √(1 - x²) I` of the upper unit semicircle, for `-1 ≤ x ≤ 1`. Together with
+its inverse, the point `x - √(1 - x²) I` of the lower semicircle, it parametrizes the circle by
+its real part. -/
+def upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : Circle :=
+  ⟨(x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 (by
+    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.2.1, x.2.2]), add_sub_cancel,
+      Real.sqrt_one])⟩
+
+theorem coe_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
+    (upperSemicircle x : ℂ) = (x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I :=
+  (rfl)
+
+@[simp]
+theorem re_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : (upperSemicircle x : ℂ).re = x := by
+  simp [coe_upperSemicircle]
+
+@[simp]
+theorem im_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
+    (upperSemicircle x : ℂ).im = √(1 - (x : ℝ) ^ 2) := by
+  simp [coe_upperSemicircle]
+
+@[fun_prop]
+theorem continuous_upperSemicircle : Continuous upperSemicircle :=
+  Continuous.subtype_mk (by fun_prop) _
+
+theorem upperSemicircle_injective : Function.Injective upperSemicircle := fun x y h ↦
+  Subtype.ext (by rw [← re_upperSemicircle x, ← re_upperSemicircle y, h])
+
+/-- The endpoints `±1` of the upper semicircle are their own inverses. -/
+theorem inv_upperSemicircle_of_sq_eq_one {x : Set.Icc (-1 : ℝ) 1} (hx : (x : ℝ) ^ 2 = 1) :
+    (upperSemicircle x)⁻¹ = upperSemicircle x :=
+  Circle.ext (by rw [coe_inv_eq_conj]; simp [coe_upperSemicircle, hx])
+
+/-- The upper semicircle meets the lower one only at its endpoints `±1`. -/
+theorem upperSemicircle_eq_inv_iff {x y : Set.Icc (-1 : ℝ) 1} :
+    upperSemicircle x = (upperSemicircle y)⁻¹ ↔ x = y ∧ (x : ℝ) ^ 2 = 1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have hre := congrArg (fun v : Circle ↦ (v : ℂ).re) h
+    have him := congrArg (fun v : Circle ↦ (v : ℂ).im) h
+    simp only [coe_inv_eq_conj, Complex.conj_re, Complex.conj_im, re_upperSemicircle,
+      im_upperSemicircle] at hre him
+    obtain rfl : x = y := Subtype.ext hre
+    refine ⟨rfl, ?_⟩
+    have h0 : √(1 - (x : ℝ) ^ 2) = 0 := by linarith [Real.sqrt_nonneg (1 - (x : ℝ) ^ 2)]
+    nlinarith [Real.sqrt_eq_zero'.1 h0, x.2.1, x.2.2]
+  · rintro ⟨rfl, hx⟩
+    exact (inv_upperSemicircle_of_sq_eq_one hx).symm
+
+/-- Every point of the circle lies on the upper semicircle or on its inverse, the lower one. -/
+theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
+    ∃ x : Set.Icc (-1 : ℝ) 1, upperSemicircle x = v ∨ (upperSemicircle x)⁻¹ = v := by
+  have hre : (v : ℂ).re ∈ Set.Icc (-1 : ℝ) 1 := abs_le.1 (by
+    simpa using Complex.abs_re_le_norm (v : ℂ))
+  have hsqrt : √(1 - (v : ℂ).re ^ 2) = |(v : ℂ).im| := by
+    rw [← Real.sqrt_sq_eq_abs]
+    congr 1
+    linarith [re_sq_add_im_sq v]
+  refine ⟨⟨(v : ℂ).re, hre⟩, ?_⟩
+  rcases le_or_gt 0 (v : ℂ).im with him | him
+  · left
+    apply Circle.ext
+    apply Complex.ext
+    · simp
+    · simp [hsqrt, abs_of_nonneg him]
+  · right
+    apply Circle.ext
+    apply Complex.ext
+    · simp
+    · simp [hsqrt, abs_of_neg him]
 
 end Circle

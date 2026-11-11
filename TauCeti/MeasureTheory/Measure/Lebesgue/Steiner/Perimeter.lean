@@ -72,16 +72,16 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The open `r`-neighbourhood of a Steiner symmetral lies in the symmetral of the open
-`r`-neighbourhood. No measurability or finiteness hypothesis is needed. -/
-theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : Set E) (r : ℝ) :
-    thickening r (steinerSymmetrization e he s) ⊆
-      steinerSymmetrization e he (thickening r s) := by
-  intro x hx
-  obtain ⟨p, hp, hxp⟩ := mem_thickening_iff.1 hx
-  rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
-    Real.enorm_eq_ofReal_abs] at hp ⊢
-  set A := {t : ℝ | p + t • e ∈ s}
+/-- Line sections of open neighbourhoods along a unit vector `e`: write `c = ⟪e, x - p⟫` for the
+component of `x - p` along `e`. If `0 ≤ r` and `ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + c ^ 2`, then the
+open `ρ`-neighbourhood of the line section of `s` through `p` lies in the preimage under
+`t ↦ t - c` of the line section of `thickening r s` through `x`. In other words, its translate
+by `-c` lies in the line section of `thickening r s` through `x`. -/
+theorem thickening_lineSection_subset_preimage_sub_lineSection_thickening (e : E)
+    (he : ‖e‖ = 1) (s : Set E) {x p : E} {r ρ : ℝ} (hr : 0 ≤ r)
+    (hρ : ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + ⟪e, x - p⟫ ^ 2) :
+    thickening ρ {t : ℝ | p + t • e ∈ s} ⊆
+      (· - ⟪e, x - p⟫) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
   -- Split the displacement `x - p` into its components along and orthogonal to `e`.
   set c := ⟪e, x - p⟫
   set q := x - p - c • e
@@ -91,44 +91,55 @@ theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : 
   have hnorm (σ : ℝ) : ‖q + σ • e‖ ^ 2 = ‖q‖ ^ 2 + σ ^ 2 := by
     rw [norm_add_sq_real, inner_smul_right, hqe, norm_smul, he]
     simp
-  have hxp' : ‖q‖ ^ 2 + c ^ 2 < r ^ 2 := by
-    rw [← hnorm c, show q + c • e = x - p by simp [q], ← dist_eq_norm]
-    exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
-  set ρ := √(r ^ 2 - ‖q‖ ^ 2)
-  have hcρ : |c| < ρ := Real.lt_sqrt (abs_nonneg c) |>.2 (by rw [sq_abs]; linarith)
-  have hρ : 0 < ρ := (abs_nonneg c).trans_lt hcρ
-  have hA : A.Nonempty := nonempty_iff_ne_empty.2 fun h ↦ by simp [A, h] at hp
-  -- A translate of the `ρ`-neighbourhood of the section through `p` lies in the section of the
-  -- `r`-neighbourhood through `x`.
-  have hsub : thickening ρ A ⊆ (· + -c) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
-    intro σ hσ
-    obtain ⟨a, ha, hσa⟩ := mem_thickening_iff.1 hσ
-    refine mem_thickening_iff.2 ⟨p + a • e, ha, ?_⟩
-    have hsq : (σ - a) ^ 2 < ρ ^ 2 := by
-      rw [← sq_abs, ← Real.dist_eq]
-      exact pow_lt_pow_left₀ hσa dist_nonneg two_ne_zero
-    rw [Real.sq_sqrt (by nlinarith [sq_nonneg c])] at hsq
-    rw [dist_eq_norm, show x + (σ + -c) • e - (p + a • e) = q + (σ - a) • e by
-      simp only [q]; module]
-    have hr : 0 ≤ r := dist_nonneg.trans hxp.le
-    exact lt_of_pow_lt_pow_left₀ 2 hr (by rw [hnorm]; linarith)
+  have hxp : ‖x - p‖ ^ 2 = ‖q‖ ^ 2 + c ^ 2 := by
+    rw [← hnorm c, show q + c • e = x - p by simp [q]]
+  intro σ hσ
+  obtain ⟨a, ha, hσa⟩ := mem_thickening_iff.1 hσ
+  refine mem_thickening_iff.2 ⟨p + a • e, ha, ?_⟩
+  have hsq : (σ - a) ^ 2 < ρ ^ 2 := by
+    rw [← sq_abs, ← Real.dist_eq]
+    exact pow_lt_pow_left₀ hσa dist_nonneg two_ne_zero
+  rw [dist_eq_norm, show x + (σ - c) • e - (p + a • e) = q + (σ - a) • e by
+    simp only [q]; module]
+  exact lt_of_pow_lt_pow_left₀ 2 hr (by rw [hnorm]; linarith)
+
+/-- The open `r`-neighbourhood of a Steiner symmetral lies in the symmetral of the open
+`r`-neighbourhood. No measurability or finiteness hypothesis is needed. -/
+theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : Set E) (r : ℝ) :
+    thickening r (steinerSymmetrization e he s) ⊆
+      steinerSymmetrization e he (thickening r s) := by
+  intro x hx
+  obtain ⟨p, hp, hxp⟩ := mem_thickening_iff.1 hx
+  have hr : 0 ≤ r := dist_nonneg.trans hxp.le
+  have hxp' : ‖x - p‖ ^ 2 < r ^ 2 := by
+    rw [← dist_eq_norm]; exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
+  set ρ := √(r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2)
+  have hρsq : ρ ^ 2 = r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2 :=
+    Real.sq_sqrt (by nlinarith [sq_nonneg ⟪e, x - p⟫])
+  have hcρ : |⟪e, x - p⟫| < ρ := Real.lt_sqrt (abs_nonneg _) |>.2 (by rw [sq_abs]; linarith)
+  have hsub := thickening_lineSection_subset_preimage_sub_lineSection_thickening e he s hr
+    (ρ := ρ) (by linarith)
+  rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
+    Real.enorm_eq_ofReal_abs] at hp ⊢
+  have hρ : 0 < ρ := (abs_nonneg _).trans_lt hcρ
+  have hA : {t : ℝ | p + t • e ∈ s}.Nonempty := nonempty_iff_ne_empty.2 fun h ↦ by simp [h] at hp
   calc ENNReal.ofReal |⟪e, x⟫|
-      ≤ ENNReal.ofReal |⟪e, p⟫| + ENNReal.ofReal |c| := by
+      ≤ ENNReal.ofReal |⟪e, p⟫| + ENNReal.ofReal |⟪e, x - p⟫| := by
         rw [← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
         refine ENNReal.ofReal_le_ofReal ?_
-        rw [show ⟪e, x⟫ = ⟪e, p⟫ + c by simp [c, inner_sub_right]]
+        rw [show ⟪e, x⟫ = ⟪e, p⟫ + ⟪e, x - p⟫ by simp [inner_sub_right]]
         exact abs_add_le _ _
-    _ < volume A / 2 + ENNReal.ofReal ρ :=
+    _ < volume {t : ℝ | p + t • e ∈ s} / 2 + ENNReal.ofReal ρ :=
         ENNReal.add_lt_add hp ((ENNReal.ofReal_lt_ofReal_iff hρ).2 hcρ)
-    _ = (volume A + ENNReal.ofReal (2 * ρ)) / 2 := by
+    _ = (volume {t : ℝ | p + t • e ∈ s} + ENNReal.ofReal (2 * ρ)) / 2 := by
         rw [ENNReal.add_div, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
           mul_comm, ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top]
-    _ ≤ volume (thickening ρ A) / 2 := by
+    _ ≤ volume (thickening ρ {t : ℝ | p + t • e ∈ s}) / 2 := by
         gcongr
         exact Real.volume_add_le_volume_thickening hA hρ
     _ ≤ volume {t : ℝ | x + t • e ∈ thickening r s} / 2 :=
-        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq
-          (measure_preimage_add_right _ _ _)) 2
+        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq <| by
+          simpa only [sub_eq_add_neg] using measure_preimage_add_right _ _ _) 2
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 

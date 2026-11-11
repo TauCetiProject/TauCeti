@@ -38,6 +38,22 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
+  whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
+  `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
+* `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
+  `LinearMap.surjective_coprod_neg_comm`: the exchange of factors negates `(ξ, η) ↦ α ξ - β η`,
+  identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
+  and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
+* `LinearMap.fiberProductInclusionLeft`, `LinearMap.fiberProductInclusionRight`: for a subspace
+  of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`;
+  transversality passes from the smaller fibre product to the larger one
+  (`LinearMap.surjective_coprod_neg_of_comp_subtype_left` and its right analogue).
+* `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
+  coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
+  and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -124,7 +140,195 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
 
 end CommRing
 
+section Cancellation
+
+variable {A : Type*} [Semiring A] {M N : Type*} [AddCommMonoid M] [Module A M]
+  [AddCommMonoid N] [Module A N] {P : Type*} [AddCommGroup P] [Module A P]
+
+/-- **Cancellation from an invertible lower-right block.** A linear equivalence `M × P ≃ N × P`
+whose lower-right block `P → P` is invertible induces a linear equivalence `M ≃ N`. -/
+theorem nonempty_linearEquiv_of_isUnit_snd_comp_inr (e₁ : (M × P) ≃ₗ[A] (N × P))
+    (he₁ : IsUnit ((LinearMap.snd A N P).comp
+      ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P)))) :
+    Nonempty (M ≃ₗ[A] N) := by
+  -- Clear the lower-left block. The resulting triangular equivalence restricts to an
+  -- equivalence on pairs with second coordinate zero, so no subtraction in `M` or `N` is needed.
+  let c₁ : M →ₗ[A] P := (LinearMap.snd A N P).comp
+    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
+  let d₁ : Module.End A P := (LinearMap.snd A N P).comp
+    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
+  let ed : P ≃ₗ[A] P := LinearEquiv.ofBijective d₁ ((Module.End.isUnit_iff d₁).mp he₁)
+  let sourceShear : (M × P) ≃ₗ[A] (M × P) :=
+    (LinearEquiv.refl A M).skewProd (LinearEquiv.refl A P)
+      (-((ed.symm : P →ₗ[A] P).comp c₁))
+  let triangular := sourceShear.trans e₁
+  let s : M →ₗ[A] N := (LinearMap.fst A N P).comp
+    ((triangular : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
+  have he₁_snd (m : M) (p : P) : (e₁ (m, p)).2 = c₁ m + d₁ p := by
+    rw [← Prod.fst_add_snd (m, p), map_add]
+    rfl
+  have htriangular (m : M) (p : P) : (triangular (m, p)).2 = d₁ p := by
+    simp only [triangular, sourceShear, LinearEquiv.trans_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, LinearMap.neg_apply,
+      LinearMap.comp_apply]
+    rw [he₁_snd]
+    have hd_inv (x : P) : d₁ (ed.symm x) = x := ed.apply_symm_apply x
+    simp [hd_inv]
+  have hs_injective : Function.Injective s := by
+    intro m m' hmm'
+    have hpair : triangular (m, 0) = triangular (m', 0) := by
+      apply Prod.ext
+      · exact hmm'
+      · rw [htriangular, htriangular]
+    exact congrArg Prod.fst (triangular.injective hpair)
+  have hs_surjective : Function.Surjective s := by
+    intro n
+    obtain ⟨⟨m, p⟩, hmp⟩ := triangular.surjective (n, 0)
+    have hp : d₁ p = 0 := by simpa only [htriangular] using congrArg Prod.snd hmp
+    have hp : p = 0 := ed.injective (hp.trans ed.map_zero.symm)
+    subst p
+    exact ⟨m, congrArg Prod.fst hmp⟩
+  exact ⟨LinearEquiv.ofBijective s ⟨hs_injective, hs_surjective⟩⟩
+
+end Cancellation
+
 end LinearEquiv
+
+namespace LinearMap
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
+
+section Semiring
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+  [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+
+/-- Precomposing a map on a product with the exchange of the factors exchanges its components. -/
+theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
+  ext <;> simp
+
+end Semiring
+
+section Ring
+
+variable {R X Y T : Type*} [Ring R] [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y]
+  [AddCommGroup T] [Module R T] (α : X →ₗ[R] T) (β : Y →ₗ[R] T)
+
+/-- Precomposing `(η, ξ) ↦ β η - α ξ` with the exchange of factors gives the negative of
+`(ξ, η) ↦ α ξ - β η`. -/
+theorem coprod_neg_comp_prodComm :
+    β.coprod (-α) ∘ₗ (LinearEquiv.prodComm R X Y).toLinearMap = -α.coprod (-β) := by
+  rw [coprod_comp_prodComm]
+  ext <;> simp
+
+/-- The exchange of factors carries the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β`
+onto that of `β` and `α`. -/
+theorem map_prodComm_ker_coprod_neg :
+    (ker (α.coprod (-β))).map (LinearEquiv.prodComm R X Y : X × Y →ₗ[R] Y × X) =
+      ker (β.coprod (-α)) := by
+  rw [Submodule.map_equiv_eq_comap_symm, ← ker_comp, LinearEquiv.symm_prodComm,
+    coprod_neg_comp_prodComm, ker_neg]
+
+/-- Transversality of `α` and `β`, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric. -/
+theorem surjective_coprod_neg_comm (h : Function.Surjective (α.coprod (-β))) :
+    Function.Surjective (β.coprod (-α)) := by
+  intro z
+  obtain ⟨w, hw⟩ := h (-z)
+  refine ⟨LinearEquiv.prodComm R X Y w, ?_⟩
+  have hw' := LinearMap.congr_fun (coprod_neg_comp_prodComm α β) w
+  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at hw'
+  rw [hw', hw, neg_neg]
+
+end Ring
+
+section FiberProductInclusion
+
+variable {R X Y T : Type*} [Ring R] [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y]
+  [AddCommGroup T] [Module R T] (α : X →ₗ[R] T) (β : Y →ₗ[R] T)
+
+/-- For a subspace `p` of `X`, the fibre product of `α ∘ p.subtype` and `β` lies in that of `α`
+and `β`: the inclusion `p × Y → X × Y` restricts to the fibre products. -/
+def fiberProductInclusionLeft (p : Submodule R X) :
+    ker ((α ∘ₗ p.subtype).coprod (-β)) →ₗ[R] ker (α.coprod (-β)) :=
+  (p.subtype.prodMap LinearMap.id).restrict fun z hz ↦ by simpa using hz
+
+/-- For a subspace `p` of `Y`, the fibre product of `α` and `β ∘ p.subtype` lies in that of `α`
+and `β`: the inclusion `X × p → X × Y` restricts to the fibre products. -/
+def fiberProductInclusionRight (p : Submodule R Y) :
+    ker (α.coprod (-(β ∘ₗ p.subtype))) →ₗ[R] ker (α.coprod (-β)) :=
+  (LinearMap.id.prodMap p.subtype).restrict fun z hz ↦ by simpa using hz
+
+variable {α β}
+
+/-- The inclusion `p ×_T Y → X ×_T Y` is the inclusion `p × Y → X × Y` on underlying pairs. -/
+@[simp]
+theorem coe_fiberProductInclusionLeft_apply (p : Submodule R X)
+    (z : ker ((α ∘ₗ p.subtype).coprod (-β))) :
+    (fiberProductInclusionLeft α β p z : X × Y) = p.subtype.prodMap LinearMap.id z :=
+  (rfl)
+
+/-- The inclusion `X ×_T p → X ×_T Y` is the inclusion `X × p → X × Y` on underlying pairs. -/
+@[simp]
+theorem coe_fiberProductInclusionRight_apply (p : Submodule R Y)
+    (z : ker (α.coprod (-(β ∘ₗ p.subtype)))) :
+    (fiberProductInclusionRight α β p z : X × Y) = LinearMap.id.prodMap p.subtype z :=
+  (rfl)
+
+/-- The inclusion `p ×_T Y → X ×_T Y` is injective. -/
+theorem fiberProductInclusionLeft_injective (p : Submodule R X) :
+    Function.Injective (fiberProductInclusionLeft α β p) := fun _ _ h ↦
+  Subtype.ext (Prod.ext (Subtype.ext congr(($h : X × Y).1)) congr(($h : X × Y).2))
+
+/-- The inclusion `X ×_T p → X ×_T Y` is injective. -/
+theorem fiberProductInclusionRight_injective (p : Submodule R Y) :
+    Function.Injective (fiberProductInclusionRight α β p) := fun _ _ h ↦
+  Subtype.ext (Prod.ext congr(($h : X × Y).1) (Subtype.ext congr(($h : X × Y).2)))
+
+/-- A point of the fibre product of `α` and `β` lies in `p ×_T Y` exactly when its first
+component lies in `p`. -/
+theorem mem_range_fiberProductInclusionLeft {p : Submodule R X} {v : ker (α.coprod (-β))} :
+    v ∈ range (fiberProductInclusionLeft α β p) ↔ (v : X × Y).1 ∈ p := by
+  refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨(⟨_, h⟩, (v : X × Y).2), ?_⟩, Subtype.ext (by simp)⟩⟩
+  · rw [← hz, coe_fiberProductInclusionLeft_apply]
+    exact (z : p × Y).1.2
+  · have hv := mem_ker.1 v.2
+    rw [coprod_apply] at hv
+    simpa using hv
+
+/-- A point of the fibre product of `α` and `β` lies in `X ×_T p` exactly when its second
+component lies in `p`. -/
+theorem mem_range_fiberProductInclusionRight {p : Submodule R Y} {v : ker (α.coprod (-β))} :
+    v ∈ range (fiberProductInclusionRight α β p) ↔ (v : X × Y).2 ∈ p := by
+  refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨((v : X × Y).1, ⟨_, h⟩), ?_⟩, Subtype.ext (by simp)⟩⟩
+  · rw [← hz, coe_fiberProductInclusionRight_apply]
+    exact (z : X × p).2.2
+  · have hv := mem_ker.1 v.2
+    rw [coprod_apply] at hv
+    simpa using hv
+
+/-- Transversality of `α ∘ p.subtype` and `β` implies that of `α` and `β`. -/
+theorem surjective_coprod_neg_of_comp_subtype_left {p : Submodule R X}
+    (h : Function.Surjective ((α ∘ₗ p.subtype).coprod (-β))) :
+    Function.Surjective (α.coprod (-β)) := fun t ↦ by
+  obtain ⟨z, hz⟩ := h t
+  exact ⟨p.subtype.prodMap LinearMap.id z, by simpa using hz⟩
+
+/-- Transversality of `α` and `β ∘ p.subtype` implies that of `α` and `β`. -/
+theorem surjective_coprod_neg_of_comp_subtype_right {p : Submodule R Y}
+    (h : Function.Surjective (α.coprod (-(β ∘ₗ p.subtype)))) :
+    Function.Surjective (α.coprod (-β)) := fun t ↦ by
+  obtain ⟨z, hz⟩ := h t
+  exact ⟨LinearMap.id.prodMap p.subtype z, by simpa using hz⟩
+
+end FiberProductInclusion
+
+end LinearMap
 
 namespace Module.Basis
 
@@ -171,6 +375,39 @@ theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Mod
     simp [Basis.prod_apply, h]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {R : Type*} [Ring R] [HasUniqueDiv R]
+
+/-- A linear endomorphism of `R × R × R` that preserves the third coordinate and intertwines the
+map `(x, y, z) ↦ (x, -y, 0)` with itself preserves the first two coordinate axes and fixes the
+third basis vector. -/
+theorem axes_of_commute_neg_snd (A : R × R × R →ₗ[R] R × R × R) (hz : ∀ u, (A u).2.2 = u.2.2)
+    (hc : ∀ u : R × R × R, A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0)) :
+    A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) ∧ A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) ∧
+      A (0, 0, 1) = (0, 0, 1) := by
+  have h₁ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) := by
+    have h := congrArg (fun v : R × R × R => v.2.1) (hc (1, 0, 0))
+    simp only [neg_zero] at h
+    exact Prod.ext rfl (Prod.ext (self_eq_neg.1 h) (hz (1, 0, 0)))
+  have h₂ : A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) := by
+    have h := congrArg Prod.fst (hc (0, 1, 0))
+    have hneg : A (0, -1, 0) = -A (0, 1, 0) := by
+      simpa using A.map_neg (0, 1, 0)
+    rw [hneg] at h
+    simp only [Prod.fst_neg] at h
+    exact Prod.ext (neg_eq_self.1 h) (Prod.ext rfl (hz (0, 1, 0)))
+  have h₃ : A (0, 0, 1) = (0, 0, 1) := by
+    have h := hc (0, 0, 1)
+    simp only [neg_zero] at h
+    have hzero : A (0, 0, 0) = 0 := A.map_zero
+    rw [hzero] at h
+    exact Prod.ext (congrArg Prod.fst h).symm
+      (Prod.ext (neg_eq_zero.1 (congrArg (fun v : R × R × R => v.2.1) h).symm) (hz (0, 0, 1)))
+  exact ⟨h₁, h₂, h₃⟩
+
+end LinearMap
 
 namespace TauCeti
 

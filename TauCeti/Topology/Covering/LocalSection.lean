@@ -60,9 +60,7 @@ private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : 
     (hfib : ∀ e ∈ p ⁻¹' {x}, V ⊆ ball (p e) ε) (hsx : ∀ e ∈ p ⁻¹' {x}, s e x = e)
     (hmem : ∀ e', p e' ∈ V → s e' x ∈ p ⁻¹' {x} ∧ e' ∈ s (s e' x) '' V) :
     IsEvenlyCovered p x (p ⁻¹' {x}) := by
-  have : DiscreteTopology (p ⁻¹' {x}) := (discreteTopology_iff_locallyInjective x).2 <| by
-    convert hinj.comp_right continuous_subtype_val Subtype.val_injective using 1
-    exact funext fun e ↦ (mem_singleton_iff.1 e.2).symm
+  have : DiscreteTopology (p ⁻¹' {x}) := (hinj.isDiscrete_preimage_singleton x).to_subtype
   have : Nonempty (X → E) := ⟨fun _ ↦ hF.some⟩
   have : Nonempty (p ⁻¹' {x}) := hF.to_subtype
   refine .of_trivialization (t := hVo.trivializationDiscrete (fun e : p ⁻¹' {x} ↦ s e '' V) V
@@ -92,9 +90,9 @@ private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : 
     subst hzy'
     refine hee' (Subtype.ext ?_)
     rw [← hsx e e.2, ← hsx e' e'.2]
-    exact hinj.eqOn_of_leftInvOn hVc.isPreconnected ((hsc e).mono (hfib e e.2))
-      ((hsc e').mono (hfib e' e'.2)) (fun y hy ↦ hps e y (hfib e e.2 hy))
-      (fun y hy ↦ hps e' y (hfib e' e'.2 hy)) hy hzy.symm hxV
+    exact (T2Space.isSeparatedMap p).eqOn_of_leftInvOn hinj hVc.isPreconnected
+      ((hsc e).mono (hfib e e.2)) ((hsc e').mono (hfib e' e'.2))
+      (fun y hy ↦ hps e y (hfib e e.2 hy)) (fun y hy ↦ hps e' y (hfib e' e'.2 hy)) hy hzy.symm hxV
   · exact fun e' he' ↦ mem_iUnion.2 ⟨⟨_, (hmem e' he').1⟩, (hmem e' he').2⟩
 
 /-- **A map with local sections of uniform radius is a covering map.** Let `p : E → X` be a
@@ -129,9 +127,10 @@ theorem _root_.IsCoveringMap.of_forall_exists_section [T2Space E] [LocallyConnec
       s e' x ∈ p ⁻¹' {x} ∧ e' ∈ s (s e' x) '' V := by
     have hfx : s e' x ∈ p ⁻¹' {x} := hps e' x (hVball e' he' hxV)
     refine ⟨hfx, p e', he', ?_⟩
-    rw [hinj.eqOn_of_leftInvOn hVc.isPreconnected ((hsc _).mono (hfib _ hfx))
-      ((hsc _).mono (hVball e' he')) (fun y hy ↦ hps _ y (hfib _ hfx hy))
-      (fun y hy ↦ hps _ y (hVball e' he' hy)) hxV (hsx _ hfx) he', hse]
+    rw [(T2Space.isSeparatedMap p).eqOn_of_leftInvOn hinj hVc.isPreconnected
+      ((hsc _).mono (hfib _ hfx)) ((hsc _).mono (hVball e' he'))
+      (fun y hy ↦ hps _ y (hfib _ hfx hy)) (fun y hy ↦ hps _ y (hVball e' he' hy)) hxV (hsx _ hfx)
+      he', hse]
   by_cases hF : (p ⁻¹' {x}).Nonempty
   · exact isEvenlyCovered_of_sections hp hsc hso hps hinj hVo hxV hVc hF hfib hsx hmem
   · have : IsEmpty (p ⁻¹' {x}) := isEmpty_coe_sort.2 (not_nonempty_iff_eq_empty.1 hF)

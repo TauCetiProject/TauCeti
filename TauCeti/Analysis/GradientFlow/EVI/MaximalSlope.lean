@@ -98,11 +98,11 @@ private theorem dist_sq_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuo
   set Δ := (φ (u s)).toReal - (φ (u (s + τ))).toReal
   have hΔ : 0 ≤ Δ := sub_nonneg.2 <| h.antitoneOn_toReal hφ hs
     (mem_Ioi.2 (add_pos_of_pos_of_nonneg hs hτ)) (le_add_of_nonneg_right hτ)
-  have hint := h.exp_mul_dist_sq_sub_le hφ (y := u s) (h.apply_ne_top hs) hs.le
+  have hint := h.exp_mul_dist_sq_sub_le hφ (y := u s) hs.le
     (le_add_of_nonneg_right hτ) (c := Δ) (by
       rw [← h.coe_toReal hs, ← h.coe_toReal (add_pos_of_pos_of_nonneg hs hτ), ← EReal.coe_sub])
   rw [add_sub_cancel_left, dist_self, zero_pow two_ne_zero, zero_div, sub_zero] at hint
-  have hE := integral_exp_mul_le lam hτ
+  have hE := integral_exp_mul_le lam τ
   have hAB : 1 ≤ exp (lam * τ) * exp (|lam| * τ) := by
     rw [← exp_add]
     exact one_le_exp (by nlinarith [neg_abs_le lam])
@@ -323,12 +323,12 @@ private theorem frequently_slope_dist_sq_lt (h : IsEVISolution lam φ u) (hs : 0
   set F := fun t ↦ (φ (u t)).toReal
   intro x hx r hr
   rcases eq_or_lt_of_le hx.1 with rfl | hsx
-  · refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hs (c := 0) ?_ ?_).frequently
+  · refine (h.eventually_slope_lt (y := u s) hs (c := 0) ?_ ?_).frequently
     · rw [← h.coe_toReal hs, ← EReal.coe_sub, sub_self, EReal.coe_zero]
     · simpa using hr
   · have hx0 : 0 < x := hs.trans hsx
     obtain ⟨h₁, h₂⟩ := hbd x ⟨hsx, hx.2.le⟩
-    refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hx0
+    refine (h.eventually_slope_lt (y := u s) hx0
       (c := F s - F x) ?_ ?_).frequently
     · rw [← h.coe_toReal hs, ← h.coe_toReal hx0, ← EReal.coe_sub]
     · have hd2 : dist (u x) (u s) ^ 2 ≤ ((m + 1) * (x - s)) ^ 2 :=

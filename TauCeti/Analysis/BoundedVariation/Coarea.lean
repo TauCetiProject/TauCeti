@@ -17,6 +17,7 @@ import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Topology.MetricSpace.ProperSpace
 import TauCeti.Topology.Sets.Opens
 
@@ -468,30 +469,17 @@ theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure �
       Measurable fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) W := by
     obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
     exact hopen hU
-  -- The traces of `V j` have finite measure, so the restrictions to them are measurable in `t`.
-  have hrestrict (j : ℕ) : Measurable fun t =>
-      (variationMeasure μ Ω ({x | t < u x}.indicator 1)).restrict ((↑) ⁻¹' (V j : Set E)) := by
-    have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
-      rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
-      exact hVc j
-    have (t : ℝ) : IsFiniteMeasure ((variationMeasure μ Ω ({x | t < u x}.indicator 1)).restrict
-        ((↑) ⁻¹' (V j : Set E))) :=
-      isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top hK.measure_lt_top.ne
-        (measure_mono (preimage_mono subset_closure)))
-    refine .measure_of_isPiSystem BorelSpace.measurable_eq isPiSystem_isOpen
-      (fun W (hW : IsOpen W) => ?_) ?_
-    · simp_rw [Measure.restrict_apply hW.measurableSet]
-      exact hopen' (hW.inter ((V j).isOpen.preimage continuous_subtype_val))
-    · simp_rw [Measure.restrict_apply_univ]
-      exact hopen' ((V j).isOpen.preimage continuous_subtype_val)
-  -- A measure on `Ω` is the supremum of its restrictions to the traces of `V j`.
-  refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
-  convert Measurable.iSup fun j => (Measure.measurable_coe hs).comp (hrestrict j) using 1
-  funext t
-  simp_rw [Function.comp_apply]
-  rw [← Measure.restrict_iUnion_apply_eq_iSup ?_ hs, hcover, Measure.restrict_univ]
-  exact fun i j => ⟨max i j, preimage_mono (hVmono (le_max_left i j)),
-    preimage_mono (hVmono (le_max_right i j))⟩
+  -- Apply the generating π-system criterion along the finite-measure traces of `V j`.
+  refine Measurable.measure_of_isPiSystem_of_iUnion BorelSpace.measurable_eq
+    isPiSystem_isOpen (B := fun j ↦ (↑) ⁻¹' (V j : Set E))
+    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val)
+    (fun i j hij ↦ preimage_mono (hVmono hij)) hcover (fun t j ↦ ?_)
+    (fun W hW ↦ hopen' hW)
+  have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
+    exact hVc j
+  exact ne_top_of_le_ne_top hK.measure_lt_top.ne
+    (measure_mono (preimage_mono subset_closure))
 
 /-- If `u` has locally finite variation on `Ω`, then for almost every level `t` the superlevel set
 `{u > t}` has locally finite perimeter in `Ω`: every compact `K ⊆ Ω` has an open neighbourhood `U`

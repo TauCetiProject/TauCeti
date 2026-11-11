@@ -85,6 +85,12 @@ theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Non
   exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
     (EuclideanSpace.equiv (Fin p) ℝ).surjective
 
+/-- The full-dimensional simplex is the closure of its interior. -/
+theorem closure_interior_fullSimplex (p : ℕ) :
+    closure (interior (fullSimplex p)) = fullSimplex p := by
+  rw [(convex_fullSimplex p).closure_interior_eq_closure_of_nonempty_interior
+    (nonempty_interior_fullSimplex p), (isClosed_fullSimplex p).closure_eq]
+
 /-- Derivatives within the full-dimensional simplex are unique at each of its points, including
 the points of its faces and corners. -/
 theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
