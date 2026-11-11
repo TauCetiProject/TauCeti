@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.TracePowerPolynomial
 
 /-!
@@ -78,23 +79,7 @@ vanishes at `x`. -/
 theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [IsKilling K L] {x : L} :
     IsNilpotent (ad K L x) ↔
       ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0 := by
-  -- a nondegenerate Killing form forces finite dimension: the trace vanishes otherwise
-  have : FiniteDimensional K L := by
-    by_contra hfin
-    have htr : LinearMap.trace K L = 0 := by
-      classical
-      rw [LinearMap.trace, dite_eq_right_iff]
-      rintro ⟨t, ⟨b⟩⟩
-      exact (hfin (Module.Finite.of_basis b)).elim
-    have hker : LinearMap.ker (killingForm K L) = ⊤ :=
-      LinearMap.ker_eq_top.2 <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
-        simp [killingForm_apply_apply, htr]
-    rw [IsKilling.ker_killingForm_eq_bot] at hker
-    have : Subsingleton L := ⟨fun a b ↦ by
-      have ha : a - b ∈ (⊤ : Submodule K L) := trivial
-      rw [← hker, Submodule.mem_bot, sub_eq_zero] at ha
-      exact ha⟩
-    exact hfin inferInstance
+  have : FiniteDimensional K L := finite_of_isKilling (R := K) (L := L)
   refine ⟨fun hx p hp hp₀ ↦ ?_, isNilpotent_toEnd_of_forall_lift_eval_eq_zero L⟩
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
   exact lift_eval_eq_zero_of_mem_lieInvariants hp hp₀ (y := t) (a := -1)

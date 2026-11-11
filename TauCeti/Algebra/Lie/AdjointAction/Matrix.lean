@@ -38,21 +38,15 @@ theorem toMatrixAlgEquiv_expAd {ι : Type*} [Fintype ι] [DecidableEq ι]
     LinearMap.toMatrixAlgEquiv b
         (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       expSeries (LinearMap.toMatrixAlgEquiv b (ad K L e)) d t := by
-  by_cases hK : CharZero K
-  swap
-  · -- without characteristic zero, the `ℚ`-module `L` is trivial, so `ι` is empty
-    have hp : ringChar K ≠ 0 := fun h0 ↦ hK (by
-      have : CharP K 0 := h0 ▸ ringChar.charP K
-      exact CharP.charP_to_charZero K)
-    have hL : ∀ x : L, x = 0 := fun x ↦ by
-      have hx : ringChar K • x = 0 := by
-        rw [← Nat.cast_smul_eq_nsmul K, ringChar.Nat.cast_ringChar, zero_smul]
-      calc x = ((ringChar K : ℚ)⁻¹) • ((ringChar K : ℚ) • x) := by
-            rw [smul_smul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hp), one_smul]
-        _ = 0 := by rw [Nat.cast_smul_eq_nsmul, hx, smul_zero]
+  -- the `ℚ`-module `L` is trivial unless `K` has characteristic zero
+  have : HasUniqueDiv L := .of_module_rat L
+  rcases subsingleton_or_nontrivial L with _ | _
+  · -- `L` is trivial, so `ι` is empty
     have : IsEmpty ι := ⟨fun i ↦ one_ne_zero (α := K) (by
-      simpa using congrArg (fun x ↦ b.repr x i) (hL (b.repr.symm (Finsupp.single i 1))))⟩
+      simpa using congrArg (fun x ↦ b.repr x i)
+        (Subsingleton.elim (b.repr.symm (Finsupp.single i 1)) 0))⟩
     exact Subsingleton.elim _ _
+  have := CharZero.of_hasUniqueDiv K L
   have hlin : (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       ∑ k ∈ Finset.range d, ((k.factorial : K)⁻¹) • (t • ad K L e) ^ k := by
     ext y

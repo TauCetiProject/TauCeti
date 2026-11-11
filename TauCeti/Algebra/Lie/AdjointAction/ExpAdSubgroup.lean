@@ -119,22 +119,12 @@ theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent (ad K L 
     (hyv : ⁅y, v⁆ ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k)) :
     expAd y hy.exists_pow_apply_eq_zero v - v - ⁅y, v⁆ ∈
       LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + k)) := by
-  by_cases hK : CharZero K
-  swap
-  · -- without characteristic zero, the `ℚ`-module `L` is trivial
-    have hp : ringChar K ≠ 0 := fun h0 ↦ hK (by
-      have : CharP K 0 := h0 ▸ ringChar.charP K
-      exact CharP.charP_to_charZero K)
-    have : Subsingleton L := ⟨fun a b ↦ by
-      have h : ∀ x : L, x = 0 := fun x ↦ by
-        have hx : ringChar K • x = 0 := by
-          rw [← Nat.cast_smul_eq_nsmul K, ringChar.Nat.cast_ringChar, zero_smul]
-        calc x = ((ringChar K : ℚ)⁻¹) • ((ringChar K : ℚ) • x) := by
-              rw [smul_smul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hp), one_smul]
-          _ = 0 := by rw [Nat.cast_smul_eq_nsmul, hx, smul_zero]
-      rw [h a, h b]⟩
-    rw [Subsingleton.elim (expAd y hy.exists_pow_apply_eq_zero v - v - ⁅y, v⁆) 0]
+  -- the `ℚ`-module `L` is trivial unless `K` has characteristic zero
+  have : HasUniqueDiv L := .of_module_rat L
+  rcases subsingleton_or_nontrivial L with _ | _
+  · rw [Subsingleton.elim (expAd y hy.exists_pow_apply_eq_zero v - v - ⁅y, v⁆) 0]
     exact zero_mem _
+  have := CharZero.of_hasUniqueDiv K L
   set F := fun n : ℕ => LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ n)
   have hpow : ∀ m, (ad K L y ^ (m + 1)) v ∈ F k := by
     intro m
