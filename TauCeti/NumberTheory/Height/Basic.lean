@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Height.Basic
 
 import all Mathlib.NumberTheory.Height.Basic
 import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.NumberTheory.Height.Affine
 
 /-!
 # Height bounds for coordinate ratios and from local estimates
@@ -90,30 +91,14 @@ Segre product of the coordinate ratios `x i / x i₀`, `i ≠ i₀`. -/
 lemma mulHeight_le_prod_mulHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
     (hx₀ : x i₀ ≠ 0) :
     mulHeight x ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
-  let s : Finset ι := Finset.univ.erase i₀
-  let f : s → Fin 2 → K := fun j ↦ ![x j.1 / x i₀, 1]
-  have hf : ∀ j : s, f j ≠ 0 := fun _ ↦ Function.ne_iff.mpr ⟨1, one_ne_zero⟩
-  let g : ι → s → Fin 2 := fun i j ↦ if (j : ι) = i then 0 else 1
-  have hgx : (fun I : s → Fin 2 ↦ ∏ j : s, f j (I j)) ∘ g = (x i₀)⁻¹ • x := by
-    ext i
-    simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul]
-    by_cases hi : i = i₀
-    · subst hi
-      rw [Finset.prod_eq_one fun j _ ↦ by simp [f, g, Finset.ne_of_mem_erase j.2],
-        inv_mul_cancel₀ hx₀]
-    · have his : i ∈ s := Finset.mem_erase.mpr ⟨hi, Finset.mem_univ i⟩
-      rw [Finset.prod_eq_single (⟨i, his⟩ : s)
-        (fun j _ hj ↦ by simp [f, g, Subtype.ext_iff.ne.mp hj])
-        (fun h ↦ (h (Finset.mem_univ _)).elim)]
-      simp [f, g, div_eq_inv_mul]
   calc mulHeight x
       = mulHeight ((x i₀)⁻¹ • x) := (mulHeight_smul_eq_mulHeight x (inv_ne_zero hx₀)).symm
-    _ = mulHeight ((fun I : s → Fin 2 ↦ ∏ j : s, f j (I j)) ∘ g) := by rw [hgx]
-    _ ≤ mulHeight (fun I : s → Fin 2 ↦ ∏ j : s, f j (I j)) := mulHeight_comp_le g _
-    _ = ∏ j : s, mulHeight (f j) := mulHeight_fun_prod_eq hf
-    _ = ∏ i ∈ s, mulHeight₁ (x i / x i₀) := by
-        rw [Finset.prod_coe_sort s fun i ↦ mulHeight ![x i / x i₀, 1]]
-        exact Finset.prod_congr rfl fun i _ ↦ (mulHeight₁_eq_mulHeight _).symm
+    _ = mulHeight (fun i ↦ x i / x i₀) :=
+        congrArg mulHeight (funext fun i ↦ (div_eq_inv_mul (x i) (x i₀)).symm)
+    _ ≤ mulHeightAff (fun i ↦ x i / x i₀) := mulHeight_le_mulHeightAff _
+    _ ≤ ∏ i, mulHeight₁ (x i / x i₀) := mulHeightAff_le_prod_mulHeight₁ _
+    _ = ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+        rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀), div_self hx₀, mulHeight₁_one, one_mul]
 
 omit [Finite ι] in
 /-- Normalizing a tuple at a nonzero coordinate `x i₀ ≠ 0` bounds its logarithmic height by the sum

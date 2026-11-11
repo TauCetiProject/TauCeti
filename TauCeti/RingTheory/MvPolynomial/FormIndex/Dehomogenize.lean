@@ -95,17 +95,31 @@ theorem blockDehomogenize_fin_one (P : MvPolynomial (Fin 1 × Fin 2) R) :
 
 /-- `blockDehomogenize` drops the coordinate-`0` exponents of a monomial and keeps its
 coordinate-`1` exponents. -/
-theorem blockDehomogenize_monomial [Finite κ] (n : κ × Fin 2 →₀ ℕ) (c : R) :
+@[simp]
+theorem blockDehomogenize_monomial (n : κ × Fin 2 →₀ ℕ) (c : R) :
     blockDehomogenize (monomial n c) =
       monomial (n.comapDomain (·, 1) (Prod.mk_left_injective 1).injOn) c := by
-  cases nonempty_fintype κ
-  rw [monomial_eq, monomial_eq, map_mul, blockDehomogenize, algHom_C,
-    Finsupp.prod_fintype _ _ (by simp), Finsupp.prod_fintype _ _ (by simp),
-    Fintype.prod_prod_type, map_prod]
-  congr 1
-  refine Finset.prod_congr rfl fun h _ ↦ ?_
-  rw [Fin.prod_univ_two]
-  simp
+  set n₀ := n.comapDomain (·, 0) (Prod.mk_left_injective 0).injOn
+  set n₁ := n.comapDomain (·, 1) (Prod.mk_left_injective 1).injOn
+  have hn : n = n₀.mapDomain (·, 0) + n₁.mapDomain (·, 1) := by
+    ext ⟨h, i⟩
+    fin_cases i
+    · rw [Fin.zero_eta, Finsupp.add_apply,
+        Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 0) n₀ h,
+        Finsupp.mapDomain_of_notMem_range n₁ (h, 0) (by simp), add_zero (n₀ h)]
+      rfl
+    · rw [Fin.mk_one, Finsupp.add_apply,
+        Finsupp.mapDomain_of_notMem_range n₀ (h, 1) (by simp),
+        Finsupp.mapDomain_apply_of_injective (Prod.mk_left_injective 1) n₁ h, zero_add (n₁ h)]
+      rfl
+  have h0 : blockDehomogenize (rename (·, 0) (monomial n₀ (1 : R))) = 1 := by
+    simp [blockDehomogenize, aeval_rename, Function.comp_def, aeval_monomial]
+  have h1 : blockDehomogenize.comp (rename (R := R) (·, 1)) = AlgHom.id R (MvPolynomial κ R) := by
+    ext h : 1
+    simp
+  conv_lhs => rw [hn, ← one_mul c]
+  rw [← monomial_mul_monomial, ← rename_monomial, ← rename_monomial,
+    map_mul, h0, one_mul, ← AlgHom.comp_apply, h1, AlgHom.id_apply]
 
 /-- The affine exponent vector `h ↦ n (h, 1)` extracted from an exponent `n : κ × Fin 2 →₀ ℕ`. -/
 private noncomputable def affineExp (n : κ × Fin 2 →₀ ℕ) : κ →₀ ℕ :=
@@ -116,69 +130,63 @@ private theorem affineExp_apply (n : κ × Fin 2 →₀ ℕ) (h : κ) :
     affineExp n h = n (h, 1) :=
   rfl
 
-private theorem blockDehomogenize_monomial_affineExp [Finite κ] (n : κ × Fin 2 →₀ ℕ) (c : R) :
+private theorem blockDehomogenize_monomial_affineExp (n : κ × Fin 2 →₀ ℕ) (c : R) :
     blockDehomogenize (monomial n c) = monomial (affineExp n) c :=
   blockDehomogenize_monomial n c
 
-section MultiHomogeneous
-
-variable [Finite κ] [DecidableEq κ] {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) R}
-
-/-- Reconstructs the unique multidegree-`e` exponent vector on `κ × Fin 2` with coordinate-`1`
-exponents `m`. -/
-private noncomputable def liftAffineExp (e : κ → ℕ) (m : κ →₀ ℕ) : κ × Fin 2 →₀ ℕ :=
-  Finsupp.equivFunOnFinite.symm fun p ↦ ![e p.1 - m p.1, m p.1] p.2
-
-private theorem liftAffineExp_eq_of_mem_support (hP : IsMultiHomogeneous e P)
-    {n : κ × Fin 2 →₀ ℕ} (hn : n ∈ P.support) :
-    liftAffineExp e (affineExp n) = n ∧ ∀ h, affineExp n h ≤ e h := by
-  have hsum (h : κ) : n (h, 0) + n (h, 1) = e h := by
-    have := isMultiHomogeneous_iff.mp hP n (mem_support_iff.mp hn) h
-    rwa [Fin.sum_univ_two] at this
-  refine ⟨?_, fun h ↦ (hsum h) ▸ Nat.le_add_left _ _⟩
-  ext ⟨h, i⟩
-  have := hsum h
-  fin_cases i
-  · simp [liftAffineExp]
-    omega
-  · simp [liftAffineExp]
-
-private theorem coeff_blockDehomogenize_of_le (hP : IsMultiHomogeneous e P) {m : κ →₀ ℕ}
-    (hm : ∀ h, m h ≤ e h) :
-    (blockDehomogenize P).coeff m = P.coeff (liftAffineExp e m) := by
-  conv_lhs => rw [P.as_sum]
-  rw [map_sum, coeff_sum]
-  simp_rw [blockDehomogenize_monomial_affineExp, coeff_monomial]
-  rw [Finset.sum_eq_single (liftAffineExp e m)]
-  · have hleft : affineExp (liftAffineExp e m) = m := by ext h; simp [liftAffineExp]
-    exact ite_eq_left hleft
-  · intro n hn hne
-    rw [ite_eq_right]
-    rintro rfl
-    exact hne (liftAffineExp_eq_of_mem_support hP hn).1.symm
-  · intro hnotMem
-    simp [notMem_support_iff.mp hnotMem]
-
-private theorem coeff_blockDehomogenize_eq_zero_of_not_le (hP : IsMultiHomogeneous e P)
-    {m : κ →₀ ℕ} (hm : ¬ ∀ h, m h ≤ e h) :
-    (blockDehomogenize P).coeff m = 0 := by
+private theorem exists_mem_support_affineExp_eq {P : MvPolynomial (κ × Fin 2) R} {m : κ →₀ ℕ}
+    (hm : m ∈ (blockDehomogenize P).support) :
+    ∃ n ∈ P.support, affineExp n = m := by
+  classical
+  by_contra! hnone
+  refine mem_support_iff.mp hm ?_
   conv_lhs => rw [P.as_sum]
   rw [map_sum, coeff_sum]
   refine Finset.sum_eq_zero fun n hn ↦ ?_
-  rw [blockDehomogenize_monomial_affineExp, coeff_monomial, ite_eq_right]
-  rintro rfl
-  exact hm (liftAffineExp_eq_of_mem_support hP hn).2
+  rw [blockDehomogenize_monomial_affineExp, coeff_monomial, ite_eq_right (hnone n hn)]
+
+section MultiHomogeneous
+
+variable [DecidableEq κ] {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) R}
+
+private theorem add_eq_of_mem_support (hP : IsMultiHomogeneous e P)
+    {n : κ × Fin 2 →₀ ℕ} (hn : n ∈ P.support) (h : κ) :
+    n (h, 0) + n (h, 1) = e h := by
+  have := isMultiHomogeneous_iff.mp hP n (mem_support_iff.mp hn) h
+  rwa [Fin.sum_univ_two] at this
+
+private theorem affineExp_injOn_support (hP : IsMultiHomogeneous e P) :
+    Set.InjOn affineExp (P.support : Set (κ × Fin 2 →₀ ℕ)) := by
+  intro n₁ hn₁ n₂ hn₂ h
+  ext ⟨h', i⟩
+  have h1 : n₁ (h', 1) = n₂ (h', 1) := DFunLike.congr_fun h h'
+  have hs₁ := add_eq_of_mem_support hP hn₁ h'
+  have hs₂ := add_eq_of_mem_support hP hn₂ h'
+  fin_cases i
+  · dsimp
+    omega
+  · exact h1
+
+private theorem coeff_blockDehomogenize_affineExp_of_mem_support (hP : IsMultiHomogeneous e P)
+    {n : κ × Fin 2 →₀ ℕ} (hn : n ∈ P.support) :
+    (blockDehomogenize P).coeff (affineExp n) = P.coeff n := by
+  classical
+  conv_lhs => rw [P.as_sum]
+  rw [map_sum, coeff_sum]
+  simp_rw [blockDehomogenize_monomial_affineExp, coeff_monomial]
+  rw [Finset.sum_eq_single n]
+  · simp
+  · intro n' hn' hne
+    exact ite_eq_right fun h ↦ hne (affineExp_injOn_support hP hn' hn h)
+  · exact fun hnot ↦ (hnot hn).elim
 
 /-- Every nonzero coefficient of `blockDehomogenize P` is a coefficient of `P`, when `P` is
 multihomogeneous. -/
 theorem IsMultiHomogeneous.exists_coeff_eq_of_mem_support_blockDehomogenize
     (hP : IsMultiHomogeneous e P) {m : κ →₀ ℕ} (hm : m ∈ (blockDehomogenize P).support) :
     ∃ n ∈ P.support, (blockDehomogenize P).coeff m = P.coeff n := by
-  have hne := mem_support_iff.mp hm
-  by_cases hle : ∀ h, m h ≤ e h
-  · have hc := coeff_blockDehomogenize_of_le hP hle
-    exact ⟨liftAffineExp e m, mem_support_iff.mpr (hc ▸ hne), hc⟩
-  · exact (hne (coeff_blockDehomogenize_eq_zero_of_not_le hP hle)).elim
+  obtain ⟨n, hn, rfl⟩ := exists_mem_support_affineExp_eq hm
+  exact ⟨n, hn, coeff_blockDehomogenize_affineExp_of_mem_support hP hn⟩
 
 /-- Every nonzero coefficient of a multihomogeneous polynomial `P` occurs as a nonzero coefficient
 of `blockDehomogenize P` at the corresponding affine exponent. -/
@@ -186,13 +194,13 @@ theorem IsMultiHomogeneous.coeff_blockDehomogenize_eq_of_mem_support
     (hP : IsMultiHomogeneous e P) {n : κ × Fin 2 →₀ ℕ} (hn : n ∈ P.support) :
     ∃ m ∈ (blockDehomogenize P).support,
       (∀ h, m h = n (h, 1)) ∧ (blockDehomogenize P).coeff m = P.coeff n := by
-  obtain ⟨hlift, hle⟩ := liftAffineExp_eq_of_mem_support hP hn
-  have hc : (blockDehomogenize P).coeff (affineExp n) = P.coeff n := by
-    rw [coeff_blockDehomogenize_of_le hP hle, hlift]
+  have hc := coeff_blockDehomogenize_affineExp_of_mem_support hP hn
   exact ⟨affineExp n, mem_support_iff.mpr (hc ▸ mem_support_iff.mp hn), fun _ ↦ rfl, hc⟩
 
 /-- Dehomogenization of a multihomogeneous polynomial vanishes if and only if the polynomial itself
 vanishes. -/
+-- Cannot be `@[simp]` because `e` cannot be inferred by `simp` (`simpNF`).
+@[grind =>]
 theorem IsMultiHomogeneous.blockDehomogenize_eq_zero (hP : IsMultiHomogeneous e P) :
     blockDehomogenize P = 0 ↔ P = 0 := by
   refine ⟨fun h0 ↦ by_contra fun hne ↦ ?_, fun h0 ↦ by simp [h0]⟩
@@ -206,9 +214,8 @@ theorem IsMultiHomogeneous.degreeOf_blockDehomogenize_le (hP : IsMultiHomogeneou
     (blockDehomogenize P).degreeOf h ≤ e h := by
   rw [degreeOf_le_iff]
   intro m hm
-  by_contra hnot
-  exact mem_support_iff.mp hm
-    (coeff_blockDehomogenize_eq_zero_of_not_le hP fun hle ↦ hnot (hle h))
+  obtain ⟨n, hn, rfl⟩ := exists_mem_support_affineExp_eq hm
+  exact (add_eq_of_mem_support hP hn h) ▸ Nat.le_add_left _ _
 
 end MultiHomogeneous
 
@@ -245,16 +252,7 @@ theorem formIndex_le_weightedIndex_blockDehomogenize (d : κ → ℕ) (α : κ �
   rw [formIndex_eq_iInf hM, weightedIndex_eq_iInf_support, ← blockDehomogenize_substFormInv]
   set Q := substFormInv (fun h ↦ ![-α h, 1]) (fun _ ↦ 1) P
   refine le_iInf₂ fun m hm ↦ ?_
-  -- A nonzero monomial `m` of `blockDehomogenize Q` must come from at least one monomial `n` in
-  -- `Q.support` with `affineExp n = m`.
-  obtain ⟨n, hn, hnm⟩ : ∃ n ∈ Q.support, affineExp n = m := by
-    by_contra! hnone
-    refine mem_support_iff.mp hm ?_
-    conv_lhs => rw [Q.as_sum]
-    rw [map_sum, coeff_sum]
-    refine Finset.sum_eq_zero fun n hn ↦ ?_
-    rw [blockDehomogenize_monomial_affineExp, coeff_monomial, ite_eq_right (hnone n hn)]
-  subst hnm
+  obtain ⟨n, hn, rfl⟩ := exists_mem_support_affineExp_eq hm
   refine (iInf₂_le n hn).trans_eq ?_
   rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp)]
   exact Finset.sum_congr rfl fun h _ ↦ by simp [div_eq_mul_inv]

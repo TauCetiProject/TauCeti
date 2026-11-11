@@ -66,8 +66,8 @@ theorem substForm_eq_aeval_blockLinearForm (M : κ → ι → R) (i₀ : κ → 
     simp [blockLinearForm_apply]
   · simp [hl, blockLinearForm_apply]
 
-/-- `substForm M i₀` is a linear change of variables (`MvPolynomial.linearSubst`) by a
-block-diagonal matrix. -/
+/-- `substForm M i₀` is a linear substitution (`MvPolynomial.linearSubst`) by a block-diagonal
+matrix (invertible when every pivot coefficient `M h (i₀ h)` is a unit). -/
 theorem substForm_eq_linearSubst [Fintype κ] [DecidableEq κ] (M : κ → ι → R) (i₀ : κ → ι) :
     substForm M i₀ =
       linearSubst (Matrix.of fun p q : κ × ι ↦
@@ -99,8 +99,8 @@ theorem substFormInv_eq_aeval_blockLinearForm [Field K] (M : κ → ι → K) (i
     simp only [ne_of_mem_erase ha, ↓reduceIte, C_neg, C_mul, neg_mul, mul_assoc]
   · simp [hl, blockLinearForm_apply]
 
-/-- `substFormInv M i₀` is a linear change of variables (`MvPolynomial.linearSubst`) by a
-block-diagonal matrix. -/
+/-- `substFormInv M i₀` is a linear substitution (`MvPolynomial.linearSubst`) by a block-diagonal
+matrix (invertible when every pivot coefficient `M h (i₀ h)` is nonzero). -/
 theorem substFormInv_eq_linearSubst [Field K] [Fintype κ] [DecidableEq κ] (M : κ → ι → K)
     (i₀ : κ → ι) :
     substFormInv M i₀ =
@@ -126,10 +126,12 @@ section PivotHelpers
 
 variable [DecidableEq ι]
 
-/-- Setting every pivot variable `X (h, i₀ h)` to `0` while keeping complementary variables. -/
+/-- Setting every pivot variable `X (h, i₀ h)` to `0` while keeping complementary variables, via
+`MvPolynomial.killCompl` on `{p : κ × ι // p.2 ≠ i₀ p.1}`. -/
 private noncomputable def killPivot (i₀ : κ → ι) :
     MvPolynomial (κ × ι) K →ₐ[K] MvPolynomial (κ × ι) K :=
-  aeval fun p ↦ if p.2 = i₀ p.1 then 0 else X p
+  (rename (Subtype.val : {p : κ × ι // p.2 ≠ i₀ p.1} → κ × ι)).comp
+    (killCompl Subtype.val_injective)
 
 /-- Projecting each block onto `ker (M h)` along the pivot coordinate `i₀ h`. -/
 private noncomputable def kerForm (M : κ → ι → K) (i₀ : κ → ι) (p : κ × ι) :
@@ -160,8 +162,11 @@ private theorem aeval_kerForm_comp_substForm {M : κ → ι → K} {i₀ : κ �
   ext ⟨h, i⟩ : 1
   by_cases hi : i = i₀ h
   · subst hi
-    simp [killPivot, sum_C_mul_kerForm_eq_zero hi₀]
-  · simp [killPivot, kerForm, hi]
+    simp [killPivot, killCompl, sum_C_mul_kerForm_eq_zero hi₀]
+  · simp only [AlgHom.comp_apply, substForm_X_of_ne hi, aeval_X, kerForm, hi, ↓reduceIte,
+      killPivot]
+    rw [← rename_X (R := K) (f := (Subtype.val : {p : κ × ι // p.2 ≠ i₀ p.1} → κ × ι))
+      ⟨(h, i), hi⟩, killCompl_rename_app, rename_X]
 
 omit [Fintype κ] in
 private theorem killPivot_comp_substFormInv {M : κ → ι → K} {i₀ : κ → ι}
@@ -189,60 +194,29 @@ private theorem aeval_comp_aeval_kerForm {A : Type*} [CommRing A] [Algebra K A]
       ← smul_eq_C_mul, map_smul, hy0]
   · simp [kerForm, hi]
 
-omit [Fintype κ] [Fintype ι] in
-private theorem killPivot_monomial_of_eq_zero {i₀ : κ → ι} {m : κ × ι →₀ ℕ}
-    (hm : ∀ h, m (h, i₀ h) = 0) (c : K) :
-    killPivot i₀ (monomial m c) = monomial m c := by
-  rw [killPivot, aeval_monomial, monomial_eq, algebraMap_eq]
-  congr 1
-  refine Finsupp.prod_congr fun ⟨h, i⟩ hp ↦ ?_
-  have hi : i ≠ i₀ h := fun h0 ↦ Finsupp.mem_support_iff.mp hp (h0 ▸ hm h)
-  simp [hi]
-
-omit [Fintype κ] [Fintype ι] in
-private theorem killPivot_monomial_of_ne_zero {i₀ : κ → ι} {m : κ × ι →₀ ℕ} {h : κ}
-    (hm : m (h, i₀ h) ≠ 0) (c : K) :
-    killPivot i₀ (monomial m c) = 0 := by
-  rw [killPivot, aeval_monomial, Finsupp.prod]
-  refine mul_eq_zero_of_right _ (Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hm) ?_)
-  simp [zero_pow hm]
-
-omit [Fintype κ] [Fintype ι] in
+omit [Fintype κ] [Fintype ι] [DecidableEq ι] in
 private theorem exists_mem_support_of_killPivot_ne_zero {i₀ : κ → ι}
     {H : MvPolynomial (κ × ι) K} (hH : killPivot i₀ H ≠ 0) :
     ∃ r ∈ H.support, (∀ h, r (h, i₀ h) = 0) ∧ H.coeff r ≠ 0 := by
-  rw [H.as_sum, map_sum] at hH
-  obtain ⟨r, hr, hrne⟩ := exists_ne_zero_of_sum_ne_zero hH
-  refine ⟨r, hr, fun h ↦ by_contra fun hne ↦ hrne (killPivot_monomial_of_ne_zero hne _),
-    mem_support_iff.mp hr⟩
+  let f : {p : κ × ι // p.2 ≠ i₀ p.1} → κ × ι := Subtype.val
+  have hne : H.killCompl (f := f) Subtype.val_injective ≠ 0 := fun h0 ↦
+    hH (by simp [killPivot, f, h0])
+  obtain ⟨s, hs⟩ := support_nonempty.mpr hne
+  have hc : H.coeff (s.mapDomain f) ≠ 0 := by
+    rwa [← coeff_killCompl Subtype.val_injective, ← mem_support_iff]
+  exact ⟨s.mapDomain f, mem_support_iff.mpr hc, fun h ↦
+    Finsupp.mapDomain_of_notMem_range s (h, i₀ h) (by simp [f]), hc⟩
 
-omit [Fintype κ] [Fintype ι] in
+omit [Fintype κ] [Fintype ι] [DecidableEq ι] in
 private theorem coeff_killPivot_of_eq_zero {i₀ : κ → ι}
     (H : MvPolynomial (κ × ι) K) {r : κ × ι →₀ ℕ} (hr : ∀ h, r (h, i₀ h) = 0) :
     (killPivot i₀ H).coeff r = H.coeff r := by
-  classical
-  conv_lhs => rw [H.as_sum]
-  rw [map_sum, coeff_sum]
-  by_cases hmem : r ∈ H.support
-  · rw [Finset.sum_eq_single r]
-    · rw [killPivot_monomial_of_eq_zero hr, coeff_monomial, ite_eq_left rfl]
-    · intro m _ hmr
-      by_cases hm0 : ∀ h, m (h, i₀ h) = 0
-      · rw [killPivot_monomial_of_eq_zero hm0, coeff_monomial, ite_eq_right hmr]
-      · push Not at hm0
-        obtain ⟨h, hh⟩ := hm0
-        rw [killPivot_monomial_of_ne_zero hh]
-        simp
-    · exact fun hn ↦ (hn hmem).elim
-  · rw [notMem_support_iff.mp hmem]
-    refine Finset.sum_eq_zero fun m hm ↦ ?_
-    have hmr : m ≠ r := fun h0 ↦ hmem (h0 ▸ hm)
-    by_cases hm0 : ∀ h, m (h, i₀ h) = 0
-    · rw [killPivot_monomial_of_eq_zero hm0, coeff_monomial, ite_eq_right hmr]
-    · push Not at hm0
-      obtain ⟨h, hh⟩ := hm0
-      rw [killPivot_monomial_of_ne_zero hh]
-      simp
+  let f : {p : κ × ι // p.2 ≠ i₀ p.1} → κ × ι := Subtype.val
+  have hsub : (r.support : Set (κ × ι)) ⊆ Set.range f := fun ⟨h, i⟩ hp ↦
+    ⟨⟨(h, i), fun (hi : i = i₀ h) ↦ Finsupp.mem_support_iff.mp hp (hi ▸ hr h)⟩, rfl⟩
+  have hmap := Finsupp.mapDomain_comapDomain f Subtype.val_injective r hsub
+  rw [killPivot, AlgHom.comp_apply, ← hmap, coeff_rename_mapDomain f Subtype.val_injective,
+    coeff_killCompl]
 
 end PivotHelpers
 

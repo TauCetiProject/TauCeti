@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
-public import TauCeti.RingTheory.MvPolynomial.FormIndex.Dehomogenize
+public import TauCeti.NumberTheory.Height.BlockDehomogenize
 public import TauCeti.RingTheory.MvPolynomial.FormIndex.Specialization
 
 import TauCeti.NumberTheory.Height.Basic
@@ -65,33 +65,6 @@ namespace MvPolynomial
 
 open Height Module
 open scoped ENNReal
-
-section AdmissibleAbsValues
-
-variable {K κ : Type*} [Field K] [AdmissibleAbsValues K]
-
-/-- On a multihomogeneous polynomial `P` in two-coordinate blocks, `blockDehomogenize` induces a
-bijection on nonzero coefficients and therefore preserves `mulHeight`. -/
-theorem IsMultiHomogeneous.mulHeight_blockDehomogenize [Finite κ] [DecidableEq κ]
-    {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
-    (blockDehomogenize P).mulHeight = P.mulHeight :=
-  le_antisymm
-    (mulHeight_le_of_forall_exists_coeff_eq fun _ hm ↦
-      let ⟨n, _, hn⟩ := IsMultiHomogeneous.exists_coeff_eq_of_mem_support_blockDehomogenize hP hm
-      ⟨n, hn⟩)
-    (mulHeight_le_of_forall_exists_coeff_eq fun _ hn ↦
-      let ⟨m, _, _, hm⟩ := IsMultiHomogeneous.coeff_blockDehomogenize_eq_of_mem_support hP hn
-      ⟨m, hm.symm⟩)
-
-/-- On a multihomogeneous polynomial `P` in two-coordinate blocks, `blockDehomogenize` preserves
-`logHeight`. -/
-theorem IsMultiHomogeneous.logHeight_blockDehomogenize [Finite κ] [DecidableEq κ]
-    {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
-    (blockDehomogenize P).logHeight = P.logHeight := by
-  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
-    IsMultiHomogeneous.mulHeight_blockDehomogenize hP]
-
-end AdmissibleAbsValues
 
 section NumberField
 

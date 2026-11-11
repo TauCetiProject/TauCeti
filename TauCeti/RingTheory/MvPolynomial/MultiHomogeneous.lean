@@ -224,7 +224,7 @@ end HasseDeriv
 
 /-- Substituting into each variable `X (h, i)` a polynomial that is multihomogeneous of degree `1`
 in block `h` and `0` in every other block preserves multihomogeneity of multidegree `d`. -/
-theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous d P)
+protected theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous d P)
     {g : κ × ι → MvPolynomial (κ × τ) R}
     (hg : ∀ h i, IsMultiHomogeneous (Pi.single h 1) (g (h, i))) :
     IsMultiHomogeneous d (MvPolynomial.aeval g P) := fun h ↦
@@ -232,13 +232,13 @@ theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous d P)
     simpa [Pi.single_apply, eq_comm] using hg h' i h
 
 /-- Taking the remainder modulo a monomial preserves multihomogeneity. -/
-theorem IsMultiHomogeneous.modMonomial (hP : IsMultiHomogeneous d P) (s : κ × ι →₀ ℕ) :
+protected theorem IsMultiHomogeneous.modMonomial (hP : IsMultiHomogeneous d P) (s : κ × ι →₀ ℕ) :
     IsMultiHomogeneous d (P.modMonomial s) := fun h n hn ↦
   hP h (by rwa [coeff_modMonomial_of_not_le P fun hle ↦ hn (coeff_modMonomial_of_le P hle)] at hn)
 
 /-- Dividing a multihomogeneous polynomial of multidegree `d` by `monomial s 1` gives a
 multihomogeneous polynomial of residual multidegree `fun h ↦ d h - ∑ i, s (h, i)`. -/
-theorem IsMultiHomogeneous.divMonomial [Fintype ι] (hP : IsMultiHomogeneous d P)
+protected theorem IsMultiHomogeneous.divMonomial [Fintype ι] (hP : IsMultiHomogeneous d P)
     (s : κ × ι →₀ ℕ) :
     IsMultiHomogeneous (fun h ↦ d h - ∑ i, s (h, i)) (P.divMonomial s) := by
   rw [isMultiHomogeneous_iff] at hP ⊢
