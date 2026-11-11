@@ -56,6 +56,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
   `SchwartzMap.support_fourier_iteratedLineDerivOp_subset`: differentiation does not enlarge the
   support of the Fourier transform.
+* `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
+  translation multiplies the Fourier transform by a phase and keeps its support.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -202,6 +204,27 @@ theorem support_fourier_iteratedLineDerivOp_subset (u : 𝓢(E, F)) {n : ℕ} (m
   | succ n ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left]
     exact (support_fourier_lineDerivOp_subset _ _).trans (ih _)
+
+/-- The Fourier transform turns translation into modulation:
+`𝓕 (u (· - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 u ξ`. -/
+theorem fourier_compSubConstCLM_apply (u : 𝓢(E, F)) (a ξ : E) :
+    𝓕 (u.compSubConstCLM ℂ a) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 u ξ := by
+  have h : (u.compSubConstCLM ℂ a : E → F) = (u : E → F) ∘ fun x ↦ x + -a := by
+    ext x
+    simp [sub_eq_add_neg]
+  rw [fourier_coe, fourier_coe, h]
+  -- On functions, `𝓕` is the Fourier integral for the pairing `innerₗ E`.
+  have h' := congrFun (VectorFourier.fourierIntegral_comp_add_right 𝐞 volume (innerₗ E)
+    (u : E → F) (-a)) ξ
+  simp only [map_neg, LinearMap.neg_apply, innerₗ_apply_apply] at h'
+  exact h'
+
+/-- Translating a Schwartz function does not change the support of its Fourier transform. -/
+theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
+    Function.support ⇑(𝓕 (u.compSubConstCLM ℂ a) : 𝓢(E, F)) =
+      Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
+  ext ξ
+  simp [fourier_compSubConstCLM_apply, Circle.smul_def]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
