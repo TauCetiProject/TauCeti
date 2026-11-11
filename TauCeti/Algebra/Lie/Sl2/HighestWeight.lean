@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.Algebra.Lie.Sl2.DiagonalCartan
 public import TauCeti.Algebra.Lie.Sl2.Standard
 public import TauCeti.Algebra.Lie.Weights.FormalCharacter
+import TauCeti.Algebra.Lie.HighestWeight.Endomorphism
 import TauCeti.Algebra.Lie.Weights.Basis
 
 /-!
@@ -152,7 +153,7 @@ theorem nonempty_lieModuleEquiv_irreducibleQuotient :
 open scoped Classical in
 /-- **`L(λ)` occurs in `V(n)` exactly when `λ = n`, and then once.** This is Schur's lemma: `V(n)`
 and `L(λ)` are irreducible, and they are equivalent exactly when their highest weights agree. -/
-theorem isotypicMultiplicity_irreducibleQuotient [IsAlgClosed K]
+theorem isotypicMultiplicity_irreducibleQuotient
     (lam : Dual K (slTwoDiagonalCartan K)) :
     LieModule.isotypicMultiplicity K (SpecialLinear.sl (Fin 2) K) (Sl2Std K n)
         (irreducibleQuotient (slTwoPositiveBase K) lam) =
@@ -161,7 +162,16 @@ theorem isotypicMultiplicity_irreducibleQuotient [IsAlgClosed K]
   · subst h
     obtain ⟨e⟩ := nonempty_lieModuleEquiv_irreducibleQuotient (K := K) (n := n)
     rw [← LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv_type e,
-      LieModule.isotypicMultiplicity_self]
+      LieModule.isotypicMultiplicity_def]
+    have hgen : LieSubmodule.lieSpan K (SpecialLinear.sl (Fin 2) K) {basis K n 0} = ⊤ :=
+      (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ (basis K n).ne_zero 0 <| by
+        simpa [hbot] using LieSubmodule.subset_lieSpan
+          (R := K) (L := SpecialLinear.sl (Fin 2) K) (s := {basis K n 0}) rfl
+    refine (finrank_eq_one_iff_of_ne_zero' (LieModuleHom.id : Sl2Std K n →ₗ⁅K, _⁆ Sl2Std K n)
+      ?_).2 fun f ↦ ?_
+    · exact fun h ↦ (basis K n).ne_zero 0 (by simpa using LieModuleHom.congr_fun h (basis K n 0))
+    · obtain ⟨c, hc⟩ := isHighestWeightVector_basis_zero.exists_eq_smul_id hgen f
+      exact ⟨c, hc.symm⟩
   · rw [LieModule.isotypicMultiplicity_def]
     refine LieModule.finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv
       (not_nonempty_iff.mp fun he ↦ h ?_)

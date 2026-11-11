@@ -63,8 +63,6 @@ variable {K : Type*} [Field K] [CharZero K]
 
 section Multiplicity
 
-variable [IsAlgClosed K]
-
 /-- **The Clebsch-Gordan multiplicities.** The multiplicity of `L(p)` in `V(m) ⊗ V(n)` is the
 number of `k ≤ min m n` with `m + n - 2k = p`. -/
 theorem isotypicMultiplicity_tensor_irreducibleQuotient (m n p : ℕ) :
