@@ -28,6 +28,11 @@ Riemann–Lebesgue lemma the remaining integral is `o(x^{-d})` as `x → 0+`, an
 * `TauCeti.mellinInv_eq_sum_residue_add`: the shift of the line of Mellin inversion.
 * `TauCeti.mellinInv_isLittleO_nhdsGT_zero`, `TauCeti.mellinInv_isLittleO_atTop`: the
   remainder estimates, both from `TauCeti.mellinInv_isLittleO_of_tendsto_log`.
+
+The statements follow the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMFMathlib/Analysis/Complex/VerticalResidues.lean` and
+`DLMF/AsymptoticApproximations/Mellin/Transforms.lean`. The line shift is proved here through Tau
+Ceti's rectangle residue theorem instead of lean-DLMF's own contour machinery.
 -/
 
 @[expose] public section

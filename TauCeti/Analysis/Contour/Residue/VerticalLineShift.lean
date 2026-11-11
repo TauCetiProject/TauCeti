@@ -35,6 +35,11 @@ of the residue theorem.
   decreasing sequence of lines with one simple pole between consecutive lines, and
   `TauCeti.Contour.tendsto_sum_range_residue`, `TauCeti.Contour.hasSum_residue`: the resulting
   residue series.
+
+The statements follow the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMFMathlib/Analysis/Complex/VerticalResidues.lean` and
+`DLMF/AsymptoticApproximations/Mellin/Transforms.lean`. The line shift is proved here through Tau
+Ceti's rectangle residue theorem instead of lean-DLMF's own contour machinery.
 -/
 
 @[expose] public section
