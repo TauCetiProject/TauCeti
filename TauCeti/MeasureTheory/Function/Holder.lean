@@ -66,9 +66,8 @@ theorem integrable_bilinear_apply (hB : MemLp B ⊤ μ) (hf : MemLp f p μ) (hg 
   have hBf : MemLp (fun x ↦ B x (f x)) p μ := by
     exact (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F →L[𝕜] G)).memLp_of_bilin (𝕜 := 𝕜)
       (p := ⊤) (q := p) (f := B) (g := f) p hB hf
-  exact memLp_one_iff_integrable.mp
-    ((ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).memLp_of_bilin
-      (p := p) (q := q) (f := fun x ↦ B x (f x)) (g := g) 1 hBf hg)
+  -- The partial application `x ↦ B x (f x)` is an `L^p` field of linear maps `F →L[𝕜] G`.
+  exact hBf.integrable_apply hg
 
 end Bilinear
 
