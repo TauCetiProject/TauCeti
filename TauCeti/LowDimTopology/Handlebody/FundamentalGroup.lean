@@ -39,7 +39,7 @@ punctured plane is free on the punctures
 (`TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`).
 
 The boundary surface of the handlebody, its frontier in `ℂ × ℝ`, carries its fundamental group, as
-the boundary of any cylinder `s ×ˢ [a, b]` does
+the boundary of any cylinder `s ×ˢ [a, b]` with closed base `s` does
 (`TauCeti.fundamentalGroupMap_frontier_prod_Icc_surjective`). Moreover the boundary surface is a
 deformation retract of an open neighbourhood of it in the handlebody, namely the complement of a
 core sheet at height `0`, at distance at least `1 / 4` from the boundary circles of the planar
