@@ -8,6 +8,7 @@ module
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.Supernatural
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
@@ -33,7 +34,7 @@ order exactly.
 * `profiniteOrder_eq_bot_iff`: a profinite group has order `⊥ = 1` exactly when it is trivial.
 * `profiniteOrder_apply_eq_top_iff`: a prime has infinite exponent exactly when its powers divide
   the orders of finite continuous quotients without bound.
-* `Subgroup.profiniteOrder_eq_iSup_image`: a closed subgroup's order as the supremum of its
+* `Subgroup.profiniteOrder_eq_iSup_image`: a subgroup's order as the supremum of its
   images in the ambient finite quotients.
 * `Subgroup.profiniteOrder_apply_eq_iSup_image`: the primewise form of this description.
 * `profiniteOrder_le_of_surjective`: continuous surjections do not increase supernatural
@@ -194,14 +195,6 @@ section ClosedSubgroup
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] in
-/-- The index of the preimage of a normal subgroup `N` in a subgroup `H` is the order of the image
-of `H` in the quotient by `N`. -/
-private theorem index_comap_subtype_eq_card_map (H N : Subgroup G) [N.Normal] :
-    (N.comap H.subtype).index = Nat.card (H.map (QuotientGroup.mk' N)) := by
-  rw [← Subgroup.relIndex_ker H (QuotientGroup.mk' N), QuotientGroup.ker_mk', Subgroup.relIndex,
-    ← Subgroup.comap_subtype]
-
 /-- Primewise form of the supernatural order of a subgroup as the supremum of the orders of its
 images in the ambient finite continuous quotients. It holds for every subgroup, closed or not. -/
 theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ : Nat.Primes) :
@@ -215,7 +208,7 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ
       (padicValNat ℓ (Nat.card (H.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
     have hdvd : Nat.card (H ⧸ V.toSubgroup) ∣
         Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
-      rw [← V.toSubgroup.index_eq_card, ← index_comap_subtype_eq_card_map]
+      rw [← V.toSubgroup.index_eq_card, ← Subgroup.index_comap_subtype_eq_card_map]
       exact Subgroup.index_dvd_of_le hNV
     have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
     simp only [Nat.padicValNat_def]
@@ -226,7 +219,7 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ
     refine le_iSup_of_le V ?_
     have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
       OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
-    rw [← V.toSubgroup.index_eq_card, hV, index_comap_subtype_eq_card_map]
+    rw [← V.toSubgroup.index_eq_card, hV, Subgroup.index_comap_subtype_eq_card_map]
 
 /-- The supernatural order of a subgroup is the supremum of the orders of its images in the
 ambient finite continuous quotients. -/
