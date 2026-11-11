@@ -278,7 +278,7 @@ theorem exists_projection_exponential_bounds_of_aeval_eq_zero (A : E →L[ℝ] E
       rw [aeval_comp, map_neg, aeval_X] at hz
       simpa using hpu _ hz
   refine ⟨P, hP, hAP, IsIdempotentElem.exists_projection_exponential_bounds hP (C := max K₁ K₂)
-    (lt_max_of_lt_left hK₁) (lt_min hα₁ hα₂) (fun t ht w hw ↦ (h₁ t ht w hw).trans ?_)
+    (lt_min hα₁ hα₂) (fun t ht w hw ↦ (h₁ t ht w hw).trans ?_)
     fun t ht w hw ↦ ?_⟩
   · gcongr
     · exact le_max_left _ _
