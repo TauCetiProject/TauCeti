@@ -5,338 +5,652 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Geometry.Manifold.Instances.Sphere
-public import TauCeti.Geometry.Manifold.Orientation.Sphere
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Analysis.InnerProductSpace.Euclidean.CrossProduct
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Topology.Homotopy.Homotopic.Rel
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
-# The area of the unit two-sphere
+# Integrals of closed two-forms over the second homotopy group
 
-For an orientation `o` of `ℝ³ = EuclideanSpace ℝ (Fin 3)`, the outward-normal top form
-`o.sphereVolumeForm` of the unit sphere `S²` sends two tangent vectors `a, b` at `u` to
-`vol(u, a, b)`. For the standard orientation this is the triple product
-`u ⬝ᵥ (a ⨯₃ b)` (`EuclideanSpace.volumeForm_basisFun_orientation_three`), the area form of the
-round sphere. This file proves that its integral over `S²` with the outward-normal orientation is
-the area `4π` of the unit sphere (`Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`),
-for either orientation of `ℝ³`.
+Let `M` be a compact boundaryless manifold, `x ∈ M`, and `φ` a closed `C¹` two-form on `M` with
+values in a normed space `F`. This file constructs the integral of `φ` over the classes of the
+second homotopy group `π₂(M, x)`, as a homomorphism
 
-The integral is computed through inverse stereographic projection from the south pole,
+`TauCeti.sphereIntegralHom : Additive (π_ 2 M x) →+ F`.
 
-`q(x, y) = (2x, 2y, 1 - x² - y²) / (1 + x² + y²)`,
+For the symplectic form of a closed symplectic manifold it is the symplectic area of spheres. In
+capped Hamiltonian Floer theory this is the area `ω(B)` by which the action of a capped loop
+changes when a sphere `B` is glued to its cap.
 
-Mathlib's `stereoInvFunAux` from `(0, 0, -1)` read on the equatorial plane through
-`(x, y) ↦ (2x, 2y, 0)`. It is a smooth injective parametrization of the sphere minus the south
-pole. Its derivative is given by `TauCeti.fderiv_stereoInvFunAux_apply`, and in coordinates the
-triple product of `q` with its two partial derivatives is `4 / (1 + x² + y²)²`. This is positive,
-so `q` is positively oriented for the outward normal, and the integral of the area form is the
-integral of this density over the plane. The density is `4π` times the Fubini–Study density,
-whose total integral is one (`OnePoint.integral_fubiniStudyDensity`).
+An element of `π₂(M, x)` is a homotopy class, relative to the boundary of the unit square, of
+continuous maps of the unit square sending its boundary to `x`. Such a map need not be
+differentiable, so the integral is computed on a smooth representative:
+
+* a **smooth sphere** at `x` (`TauCeti.IsSmoothSphere`) is a smooth map `v : ℝ × ℝ → M` equal to
+  `x` off a closed square `[δ, 1 - δ]²` strictly inside the unit square; its restriction to the
+  unit square is a generalized loop (`TauCeti.IsSmoothSphere.genLoop`);
+* every class of `π₂(M, x)` is the class of a smooth sphere (`TauCeti.exists_isSmoothSphere`).
+  A generalized loop is first deformed to one constant near the boundary of the square, by
+  shrinking the square, and then smoothed relative to a neighbourhood of the boundary by the
+  Whitney approximation theorem (`ContinuousMap.exists_contMDiff_homotopicRel`);
+* two smooth spheres in the same class have the same integral
+  (`TauCeti.rectangleIntegral_eq_of_isSmoothSphere_of_homotopic`). A homotopy between them,
+  relative to the boundary of the square, is again made constant near the boundary of the square
+  and then smoothed relative to its ends and to a neighbourhood of that boundary, and the integral
+  of a closed form is invariant under smooth homotopies through spheres
+  (`TauCeti.rectangleIntegral_eq_of_homotopy`).
+
+So the integral `TauCeti.sphereIntegral φ x a` of `φ` over a class `a` is its integral over the
+unit square along any smooth sphere representing `a` (`TauCeti.sphereIntegral_mk`). Concatenating
+two smooth spheres along the first coordinate represents the product in `π₂(M, x)`, so the
+integral is additive (`TauCeti.sphereIntegral_mul`). It is natural: the integral of the pullback
+of a form along a smooth map `f` over a class `a` is the integral of the form over `f_* a`
+(`TauCeti.sphereIntegral_mpullback`). A form that vanishes on spheres in the sense of
+`TauCeti.VanishesOnSpheres` has zero integral over every class
+(`TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`); in particular this holds for exact forms
+(`TauCeti.sphereIntegral_mextDeriv`).
+
+## Main definitions
+
+* `TauCeti.IsSmoothSphere I x v`: `v` is a smooth sphere at `x`.
+* `TauCeti.IsSmoothSphere.genLoop`: the generalized loop of a smooth sphere.
+* `TauCeti.sphereIntegral φ x`: the integral of `φ` over the classes of `π₂(M, x)`.
+* `TauCeti.sphereIntegralHom`: for a closed form, the same integral as an additive homomorphism.
 
 ## Main results
 
-* `Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`: the outward-normal area form
-  of the unit sphere of `ℝ³` integrates to `4π`.
+* `TauCeti.exists_isSmoothSphere`: every class of `π₂(M, x)` is represented by a smooth sphere.
+* `TauCeti.rectangleIntegral_eq_of_isSmoothSphere_of_homotopic`: homotopic smooth spheres have
+  the same integral.
+* `TauCeti.sphereIntegral_mk`: the integral over the class of a smooth sphere.
+* `TauCeti.sphereIntegral_mul`, `TauCeti.sphereIntegral_one`: additivity.
+* `TauCeti.sphereIntegral_mpullback`: naturality under smooth maps.
+* `TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`, `TauCeti.sphereIntegral_mextDeriv`: forms
+  vanishing on spheres, such as exact forms, have zero integral over every class.
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer, 2013, Chapter 15 (the outward-normal orientation and the Riemannian volume form of a
-  hypersurface) and Chapter 16 (integration over parametrizations).
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., GTM 218, Springer, 2013, Theorems 6.26
+  and 6.29 (Whitney approximation, and smooth homotopies between homotopic smooth maps).
+* R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, GTM 82, Springer, 1982, §4
+  (homotopy invariance of integrals of closed forms).
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS, 2012,
+  Section 11.1 (the symplectic area of spherical classes and capped loops).
 -/
 
 public section
 
 noncomputable section
 
-open Metric Module MeasureTheory Matrix
-open scoped Manifold ContDiff
-
-attribute [local instance] TauCeti.finrank_euclideanSpace_fin_succ_fact
-
-local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
-local notation "S²" => sphere (0 : ℝ³) 1
+open Set Filter
+open scoped Manifold ContDiff Topology Topology.Homotopy Interval
 
 namespace TauCeti
 
-/-! ### Inverse stereographic projection from the south pole -/
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {x : M}
 
-/-- The coordinates `(2x, 2y, 1 - x² - y²) / (1 + x² + y²)` of inverse stereographic projection
-from the south pole. -/
-private def stereoVec (x y : ℝ) : Fin 3 → ℝ :=
-  ![2 * x / (1 + x ^ 2 + y ^ 2), 2 * y / (1 + x ^ 2 + y ^ 2),
-    (1 - x ^ 2 - y ^ 2) / (1 + x ^ 2 + y ^ 2)]
+/-! ### Smooth spheres -/
 
-/-- The south pole `(0, 0, -1)` of the unit sphere, as a vector of `ℝ³`. -/
-private def southPoleVec : ℝ³ :=
-  WithLp.toLp 2 ![0, 0, -1]
+/-- The unit cube `I^2` in the plane, `y ↦ (y 0, y 1)`. -/
+private def cubeToPlane : C((Fin 2 → unitInterval), ℝ × ℝ) :=
+  ⟨fun y ↦ ((y 0 : ℝ), (y 1 : ℝ)), by fun_prop⟩
 
-private theorem norm_southPoleVec : ‖southPoleVec‖ = 1 := by
-  rw [southPoleVec, EuclideanSpace.norm_eq, Real.sqrt_eq_one]
-  simp [Fin.sum_univ_three]
+private theorem cubeToPlane_apply (y : Fin 2 → unitInterval) :
+    cubeToPlane y = ((y 0 : ℝ), (y 1 : ℝ)) :=
+  rfl
 
-/-- The linear map `z ↦ (2 z₀, 2 z₁, 0)` onto the plane orthogonal to the south pole. -/
-private def planeEmbed : ℝ² →L[ℝ] ℝ³ :=
-  LinearMap.toContinuousLinearMap
-    { toFun z := WithLp.toLp 2 ![2 * z 0, 2 * z 1, 0]
-      map_add' z w := by ext i; fin_cases i <;> simp [mul_add]
-      map_smul' c z := by ext i; fin_cases i <;> simp [mul_left_comm] }
+/-- The boundary of the unit cube lies outside every open square `(a, 1 - a)²` with `0 ≤ a`. -/
+private theorem cubeToPlane_notMem {a : ℝ} (ha : 0 ≤ a) {y : (Fin 2 → unitInterval)}
+    (hy : y ∈ Cube.boundary (Fin 2)) :
+    cubeToPlane y ∉ Ioo a (1 - a) ×ˢ Ioo a (1 - a) := by
+  obtain ⟨i, hi⟩ := hy
+  rintro ⟨⟨h₀, h₀'⟩, ⟨h₁, h₁'⟩⟩
+  fin_cases i <;> rcases hi with hi | hi <;> simp_all [cubeToPlane_apply] <;> linarith
 
-private theorem planeEmbed_apply (z : ℝ²) :
-    planeEmbed z = WithLp.toLp 2 ![2 * z 0, 2 * z 1, 0] :=
+/-- The generalized loop of a continuous map of the plane that is constant equal to `x` outside
+the open unit square: its restriction to the unit square. -/
+private def planeGenLoop (f : C(ℝ × ℝ, M)) (hf : ∀ z ∉ Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, f z = x) :
+    Ω^ (Fin 2) M x :=
+  ⟨f.comp cubeToPlane, fun _ hy ↦ hf _ (by simpa using cubeToPlane_notMem le_rfl hy)⟩
+
+/-- Two continuous maps of the plane that are homotopic relative to a set containing the
+complement of an open square `(a, 1 - a)²`, `0 ≤ a`, have homotopic generalized loops. -/
+private theorem planeGenLoop_homotopic {f g : C(ℝ × ℝ, M)}
+    {hf : ∀ z ∉ Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, f z = x}
+    {hg : ∀ z ∉ Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, g z = x} {a : ℝ} (ha : 0 ≤ a)
+    (h : f.HomotopicRel g (Ioo a (1 - a) ×ˢ Ioo a (1 - a))ᶜ) :
+    GenLoop.Homotopic (planeGenLoop f hf) (planeGenLoop g hg) :=
+  (h.precomp cubeToPlane).mono fun _ hy ↦ cubeToPlane_notMem ha hy
+
+variable (I) in
+/-- A **smooth sphere** at `x`: a smooth map `v : ℝ × ℝ → M` that is constant equal to `x` off a
+closed square `[δ, 1 - δ]²`, for some `δ > 0`. Its restriction to the unit square sends the
+boundary of the square to `x`, so it is a generalized loop (`TauCeti.IsSmoothSphere.genLoop`)
+and represents an element of `π₂(M, x)`. -/
+structure IsSmoothSphere (x : M) (v : ℝ × ℝ → M) : Prop where
+  /-- The map is smooth. -/
+  contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ v
+  /-- The map is constant equal to `x` off a closed square strictly inside the unit square. -/
+  exists_pos : ∃ δ > 0, ∀ z ∉ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ), v z = x
+
+namespace IsSmoothSphere
+
+variable {v : ℝ × ℝ → M}
+
+/-- A smooth sphere is constant equal to `x` off `[δ, 1 - δ]²` for all small enough `δ > 0`. -/
+theorem exists_forall_le (hv : IsSmoothSphere I x v) :
+    ∃ δ > 0, ∀ δ' ≤ δ, ∀ z ∉ Icc δ' (1 - δ') ×ˢ Icc δ' (1 - δ'), v z = x := by
+  obtain ⟨δ, hδ, h⟩ := hv.exists_pos
+  refine ⟨δ, hδ, fun δ' hδ' z hz ↦ h z fun hm ↦ hz ?_⟩
+  have hsub : Icc δ (1 - δ) ⊆ Icc δ' (1 - δ') := Icc_subset_Icc hδ' (by linarith)
+  exact prod_mono hsub hsub hm
+
+/-- A smooth sphere is constant equal to `x` outside the open unit square. -/
+theorem apply_of_notMem (hv : IsSmoothSphere I x v) {z : ℝ × ℝ}
+    (hz : z ∉ Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1) : v z = x := by
+  obtain ⟨δ, hδ, h⟩ := hv.exists_pos
+  have hsub : Icc δ (1 - δ) ⊆ Ioo 0 1 := Icc_subset_Ioo hδ (by linarith)
+  exact h z fun hm ↦ hz (prod_mono hsub hsub hm)
+
+/-- The generalized loop of a smooth sphere: its restriction to the unit square. -/
+def genLoop (hv : IsSmoothSphere I x v) : Ω^ (Fin 2) M x :=
+  planeGenLoop ⟨v, hv.contMDiff.continuous⟩ fun _ hz ↦ hv.apply_of_notMem hz
+
+@[simp]
+theorem genLoop_apply (hv : IsSmoothSphere I x v) (y : (Fin 2 → unitInterval)) :
+    hv.genLoop y = v ((y 0 : ℝ), (y 1 : ℝ)) :=
   (rfl)
 
-private theorem norm_planeEmbed_sq (z : ℝ²) : ‖planeEmbed z‖ ^ 2 = 4 * (z 0 ^ 2 + z 1 ^ 2) := by
-  rw [EuclideanSpace.real_norm_sq_eq]
-  simp [planeEmbed_apply, Fin.sum_univ_three]
-  ring
+end IsSmoothSphere
 
-/-- Inverse stereographic projection from the south pole, as a map `ℝ² → ℝ³`: Mathlib's
-`stereoInvFunAux` from the south pole, after the identification `z ↦ (2 z₀, 2 z₁, 0)` of `ℝ²` with
-the equatorial plane. -/
-private def stereoParam (z : ℝ²) : ℝ³ :=
-  stereoInvFunAux southPoleVec (planeEmbed z)
+/-- The constant map is a smooth sphere. -/
+theorem isSmoothSphere_const (x : M) : IsSmoothSphere I x fun _ ↦ x :=
+  ⟨contMDiff_const, 1, one_pos, fun _ _ ↦ rfl⟩
 
-/-- In coordinates, `stereoParam z = (2x, 2y, 1 - x² - y²) / (1 + x² + y²)`. -/
-private theorem stereoParam_eq (z : ℝ²) :
-    stereoParam z = WithLp.toLp 2 (stereoVec (z 0) (z 1)) := by
-  have hs : 1 + z 0 ^ 2 + z 1 ^ 2 ≠ 0 := by positivity
-  rw [stereoParam, stereoInvFunAux_apply, norm_planeEmbed_sq]
-  ext i
-  fin_cases i <;>
-  · simp [planeEmbed_apply, southPoleVec, stereoVec]
-    field_simp
-    ring
+/-! ### Existence of smooth representatives -/
 
-private theorem planeEmbed_mem_orthogonal (z : ℝ²) : planeEmbed z ∈ (ℝ ∙ southPoleVec)ᗮ := by
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right,
-    EuclideanSpace.inner_eq_star_dotProduct]
-  simp [planeEmbed_apply, southPoleVec, dotProduct, Fin.sum_univ_three]
+section Existence
 
-private theorem stereoParam_mem_sphere (z : ℝ²) : stereoParam z ∈ S² :=
-  stereoInvFunAux_mem norm_southPoleVec (planeEmbed_mem_orthogonal z)
+/-- The coordinates of a point of the plane, as a family indexed by `Fin 2`. -/
+private def planeCoord (z : ℝ × ℝ) : Fin 2 → ℝ := ![z.1, z.2]
 
-private theorem contDiff_stereoParam : ContDiff ℝ ∞ stereoParam :=
-  contDiff_stereoInvFunAux.comp planeEmbed.contDiff
+private theorem continuous_planeCoord : Continuous planeCoord := by
+  unfold planeCoord
+  fun_prop
 
-private theorem fderiv_stereoParam_apply (z a : ℝ²) :
-    fderiv ℝ stereoParam z a =
-      fderiv ℝ (stereoInvFunAux southPoleVec) (planeEmbed z) (planeEmbed a) := by
-  -- `stereoParam` is by definition the composite `stereoInvFunAux southPoleVec ∘ planeEmbed`,
-  -- so the chain rule for that composite is its derivative.
-  have h : HasFDerivAt stereoParam
-      ((fderiv ℝ (stereoInvFunAux southPoleVec) (planeEmbed z)).comp planeEmbed) z :=
-    ((contDiff_stereoInvFunAux (v := southPoleVec) (m := 1)).differentiable
-      one_ne_zero _).hasFDerivAt.comp z planeEmbed.hasFDerivAt
-  rw [h.fderiv, ContinuousLinearMap.comp_apply]
+/-- Shrinking a generalized loop into the square `[1/4, 3/4]²`, as a map of the plane. -/
+private def shrinkPlane (p : Ω^ (Fin 2) M x) : C(ℝ × ℝ, M) :=
+  ⟨fun z ↦ p fun i ↦ projIcc 0 1 zero_le_one (2 * planeCoord z i - 1 / 2), by
+    refine p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp ?_)
+    exact (continuous_const.mul ((continuous_apply i).comp continuous_planeCoord)).sub
+      continuous_const⟩
 
-/-- The triple product of the parametrization with its two partial derivatives is the area
-density `4 / (1 + x² + y²)²`. -/
-private theorem dotProduct_cross_fderiv_stereoParam (z : ℝ²) :
-    (stereoParam z).ofLp ⬝ᵥ (fderiv ℝ stereoParam z (EuclideanSpace.single 0 1)).ofLp ⨯₃
-      (fderiv ℝ stereoParam z (EuclideanSpace.single 1 1)).ofLp =
-        4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by
-  have hs : 1 + z 0 ^ 2 + z 1 ^ 2 ≠ 0 := by positivity
-  rw [fderiv_stereoParam_apply, fderiv_stereoParam_apply, fderiv_stereoInvFunAux_apply,
-    fderiv_stereoInvFunAux_apply, norm_planeEmbed_sq, stereoParam_eq]
-  simp [stereoVec, cross_apply, dotProduct, Fin.sum_univ_three, planeEmbed_apply, southPoleVec,
-    PiLp.inner_apply]
-  field_simp
-  ring
+/-- A coordinate outside `(1/4, 3/4)` is sent to a vertex of the unit interval. -/
+private theorem projIcc_shrink_eq {s : ℝ} (hs : s ∉ Ioo (1 / 4 : ℝ) (3 / 4)) :
+    projIcc (0 : ℝ) 1 zero_le_one (2 * s - 1 / 2) = 0 ∨
+      projIcc (0 : ℝ) 1 zero_le_one (2 * s - 1 / 2) = 1 := by
+  rcases le_or_gt s (1 / 4) with h | h
+  · exact Or.inl (projIcc_of_le_left _ (by linarith))
+  · simp only [mem_Ioo, not_and, not_lt] at hs
+    exact Or.inr (projIcc_of_right_le _ (by linarith [hs h]))
 
-/-- Inverse stereographic projection from the south pole, as a map into the unit sphere. -/
-private def stereoSphere : ℝ² → S² :=
-  Set.codRestrict stereoParam _ stereoParam_mem_sphere
+private theorem shrinkPlane_of_notMem (p : Ω^ (Fin 2) M x) {z : ℝ × ℝ}
+    (hz : z ∉ Ioo (1 / 4 : ℝ) (3 / 4) ×ˢ Ioo (1 / 4 : ℝ) (3 / 4)) : shrinkPlane p z = x := by
+  refine p.2 _ ?_
+  simp only [mem_prod, not_and_or] at hz
+  rcases hz with hz | hz
+  · exact ⟨0, projIcc_shrink_eq hz⟩
+  · exact ⟨1, projIcc_shrink_eq hz⟩
 
-private theorem contMDiff_stereoSphere : ContMDiff 𝓘(ℝ, ℝ²) (𝓡 2) ∞ stereoSphere :=
-  contDiff_stereoParam.contMDiff.codRestrict_sphere stereoParam_mem_sphere
+private theorem Ioo_quarter_subset : Ioo (1 / 4 : ℝ) (3 / 4) ⊆ Ioo 0 1 :=
+  Ioo_subset_Ioo (by norm_num) (by norm_num)
 
-private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 𝓘(ℝ, ℝ²) z) :
-    mvfderiv (𝓡 2) ((↑) : S² → ℝ³) (stereoSphere z)
-      (mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z v) = fderiv ℝ stereoParam z v :=
-  (mvfderiv_comp_apply z
-    ((contMDiff_coe_sphere (n := 2) (m := 1) _).mdifferentiableAt one_ne_zero)
-    ((contMDiff_stereoSphere z).mdifferentiableAt (by simp)) v).symm.trans
-      (mvfderiv_eq_fderiv_apply stereoParam z v)
+/-- Shrinking a generalized loop does not change its class. -/
+private theorem homotopic_shrinkPlane (p : Ω^ (Fin 2) M x) :
+    GenLoop.Homotopic p (planeGenLoop (shrinkPlane p) fun _ hz ↦ shrinkPlane_of_notMem p
+      fun hm ↦ hz (prod_mono Ioo_quarter_subset Ioo_quarter_subset hm)) := by
+  -- Move each coordinate `s` linearly to `2 s - 1/2`, clamped to the unit interval.
+  refine ⟨{
+    toFun := fun q ↦ p fun i ↦ projIcc 0 1 zero_le_one (q.2 i + q.1 * (q.2 i - 1 / 2))
+    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
+      (by fun_prop))
+    map_zero_left := fun y ↦ by simp
+    map_one_left := fun y ↦ congrArg p <| funext fun i ↦ by
+      fin_cases i <;> simp [planeCoord, cubeToPlane_apply] <;> ring_nf
+    prop' := fun t y hy ↦ ?_ }⟩
+  obtain ⟨i, hi⟩ := hy
+  simp only [ContinuousMap.coe_mk]
+  rw [p.2 y ⟨i, hi⟩]
+  refine p.2 _ ⟨i, ?_⟩
+  have ht : (0 : ℝ) ≤ t := t.2.1
+  rcases hi with hi | hi
+  · exact Or.inl (projIcc_of_le_left _ (by rw [hi, Icc.coe_zero]; linarith))
+  · exact Or.inr (projIcc_of_right_le _ (by rw [hi, Icc.coe_one]; linarith))
 
-/-- On the derivatives of the parametrization, the area form is the density
-`4 / (1 + x² + y²)²`. -/
-private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
-      (fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
-        ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i)) =
-        4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by
-  rw [Orientation.sphereVolumeForm_apply, ← dotProduct_cross_fderiv_stereoParam,
-    ← EuclideanSpace.volumeForm_basisFun_orientation_three]
-  refine congrArg _ (funext fun i ↦ ?_)
-  fin_cases i
-  · rfl
-  · exact (mvfderiv_coe_mfderiv_stereoSphere z _).trans
-      (by simp [EuclideanSpace.basisFun_apply])
-  · exact (mvfderiv_coe_mfderiv_stereoSphere z _).trans
-      (by simp [EuclideanSpace.basisFun_apply])
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [CompactSpace M]
+  [T2Space M]
 
-private theorem injective_mfderiv_stereoSphere (z : ℝ²) :
-    Function.Injective (mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z) := by
-  set L := mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
-  -- The area form does not vanish on the images of the basis vectors, so they are independent.
-  have hli : LinearIndependent ℝ fun i ↦ L ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i) := by
-    by_contra h
-    have h0 := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
-      (stereoSphere z)).toAlternatingMap.map_linearDependent _ h
-    rw [ContinuousAlternatingMap.coe_toAlternatingMap, sphereVolumeForm_mfderiv_stereoSphere]
-      at h0
-    have : (0 : ℝ) < 4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by positivity
-    exact this.ne' h0
-  exact LinearMap.injective_of_linearIndependent (f := L.toLinearMap)
-    (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.span_eq hli
+/-- **Smooth representatives.** Every class of `π₂(M, x)` is the class of a smooth sphere. -/
+theorem exists_isSmoothSphere (a : π_ 2 M x) :
+    ∃ (v : ℝ × ℝ → M) (hv : IsSmoothSphere I x v), ⟦hv.genLoop⟧ = a := by
+  induction a using Quotient.inductionOn with | h p => ?_
+  -- The shrunk loop is constant near the complement `S` of `(1/5, 4/5)²`; smooth it there.
+  set f := shrinkPlane p
+  set S : Set (ℝ × ℝ) := (Ioo (1 / 5 : ℝ) (1 - 1 / 5) ×ˢ Ioo (1 / 5 : ℝ) (1 - 1 / 5))ᶜ
+  set U : Set (ℝ × ℝ) := (Icc (1 / 4 : ℝ) (3 / 4) ×ˢ Icc (1 / 4 : ℝ) (3 / 4))ᶜ
+  have hfU : ∀ z ∈ U, f z = x := fun z hz ↦ shrinkPlane_of_notMem p fun hm ↦
+    hz (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hm)
+  have hsub : Icc (1 / 4 : ℝ) (3 / 4) ⊆ Ioo (1 / 5) (1 - 1 / 5) :=
+    Icc_subset_Ioo (by norm_num) (by norm_num)
+  have hSU : S ⊆ U := fun z hz hm ↦ hz (prod_mono hsub hsub hm)
+  have hS : IsClosed S := (isOpen_Ioo.prod isOpen_Ioo).isClosed_compl
+  have hU : U ∈ 𝓝ˢ S := ((isClosed_Icc.prod isClosed_Icc).isOpen_compl.mem_nhdsSet).2 hSU
+  obtain ⟨g, hg, hfg⟩ := f.exists_contMDiff_homotopicRel (I := 𝓘(ℝ, ℝ × ℝ)) (J := I) ⊤ hS hU
+    (contMDiffOn_const.congr hfU)
+  have hgS : ∀ z ∈ S, g z = x := fun z hz ↦ (hfg.fst_eq_snd hz).symm.trans (hfU z (hSU hz))
+  have hv : IsSmoothSphere I x g := ⟨hg, 1 / 5, by norm_num, fun z hz ↦ hgS z fun hm ↦
+    hz (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hm)⟩
+  refine ⟨g, hv, Quotient.sound ?_⟩
+  exact (planeGenLoop_homotopic (by norm_num) hfg).symm.trans (homotopic_shrinkPlane p).symm
 
-/-- The derivative of the parametrization as an isomorphism onto the tangent space. -/
-private def stereoDerivEquiv (z : ℝ²) : ℝ² ≃L[ℝ] TangentSpace (𝓡 2) (stereoSphere z) :=
-  (LinearEquiv.ofInjectiveEndo (mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z : ℝ² →L[ℝ] ℝ²).toLinearMap
-    (injective_mfderiv_stereoSphere z)).toContinuousLinearEquiv
+end Existence
 
-private theorem stereoDerivEquiv_apply (z v : ℝ²) :
-    stereoDerivEquiv z v = mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z v :=
-  -- Both `toContinuousLinearEquiv` and `ofInjectiveEndo` keep the underlying function.
-  rfl
+/-! ### Homotopy invariance -/
 
-private theorem hasMFDerivAt_stereoSphere (z : ℝ²) :
-    HasMFDerivAt 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
-      ((stereoDerivEquiv z).toContinuousLinearMap.comp
-        (NormedSpace.fromTangentSpace z).toContinuousLinearMap) := by
-  have heq : (stereoDerivEquiv z).toContinuousLinearMap.comp
-      (NormedSpace.fromTangentSpace z).toContinuousLinearMap =
-        mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z := by
-    ext v
-    exact stereoDerivEquiv_apply z v
-  rw [heq]
-  exact ((contMDiff_stereoSphere z).mdifferentiableAt (by simp)).hasMFDerivAt
+section Invariance
 
-/-- The parametrization is positively oriented for the outward-normal orientation. -/
-private theorem map_stereoDerivEquiv_orientation (z : ℝ²) :
-    Orientation.map (Fin 2) (stereoDerivEquiv z).toLinearEquiv
-        (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation =
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation.orientationAt
-        (stereoSphere z) := by
-  rw [← Module.Basis.orientation_map,
-    Orientation.orientation_eq_orientationAt_sphereOrientation_iff,
-    ← Orientation.sphereVolumeForm_apply]
-  have hmap : ⇑((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.map
-      (stereoDerivEquiv z).toLinearEquiv) = fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
-        ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i) := by
-    funext i
-    rw [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv, stereoDerivEquiv_apply]
-  rw [hmap, sphereVolumeForm_mfderiv_stereoSphere]
-  positivity
+/-- A continuous map of the line onto itself which is the identity on `[δ, 1 - δ]` and doubles
+the distance to `δ` below it and to `1 - δ` above it. Clamped to the unit interval, it shrinks
+`[δ / 2, 1 - δ / 2]` onto the unit interval. -/
+private def collapse (δ s : ℝ) : ℝ :=
+  max (min s (2 * s - δ)) (2 * s - (1 - δ))
 
-/-! ### The image of the parametrization -/
+private theorem continuous_collapse (δ : ℝ) : Continuous (collapse δ) := by
+  unfold collapse
+  fun_prop
 
-/-- The identification `z ↦ (2 z₀, 2 z₁, 0)` of `ℝ²` with the plane orthogonal to the south
-pole. -/
-private def planeMk (z : ℝ²) : (ℝ ∙ southPoleVec)ᗮ :=
-  ⟨planeEmbed z, planeEmbed_mem_orthogonal z⟩
+private theorem collapse_of_mem {δ s : ℝ} (hs : s ∈ Icc δ (1 - δ)) : collapse δ s = s := by
+  rw [collapse, min_eq_left (by linarith [hs.1]), max_eq_left (by linarith [hs.2])]
 
-private theorem injective_planeMk : Function.Injective planeMk := by
-  intro z w h
-  have h' (i : Fin 3) := congrArg (fun p : (ℝ ∙ southPoleVec)ᗮ ↦ (p : ℝ³) i) h
-  ext i
-  fin_cases i
-  · simpa [planeMk, planeEmbed_apply] using h' 0
-  · simpa [planeMk, planeEmbed_apply] using h' 1
+private theorem collapse_of_lt {δ s : ℝ} (hδ : δ ≤ 1 / 4) (hs : s < δ) :
+    collapse δ s = 2 * s - δ := by
+  rw [collapse, min_eq_right (by linarith), max_eq_left (by linarith)]
 
-private theorem surjective_planeMk : Function.Surjective planeMk := by
-  rintro ⟨w, hw⟩
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right,
-    EuclideanSpace.inner_eq_star_dotProduct] at hw
-  have hw2 : w 2 = 0 := by simpa [southPoleVec, dotProduct, Fin.sum_univ_three] using hw
-  refine ⟨WithLp.toLp 2 ![w 0 / 2, w 1 / 2], Subtype.ext ?_⟩
-  ext i
-  fin_cases i <;> simp [planeMk, planeEmbed_apply, hw2, mul_div_cancel₀]
+private theorem collapse_of_gt {δ s : ℝ} (hδ : δ ≤ 1 / 4) (hs : 1 - δ < s) :
+    collapse δ s = 2 * s - (1 - δ) := by
+  rw [collapse, min_eq_left (by linarith), max_eq_right (by linarith)]
 
-/-- The parametrization is Mathlib's inverse stereographic projection from the south pole, read
-on `ℝ²` through `planeMk`. -/
-private theorem stereoSphere_eq_comp :
-    stereoSphere = (stereographic norm_southPoleVec).symm ∘ planeMk :=
-  rfl
+/-- The clamped collapse keeps points outside `[δ, 1 - δ]` outside it. -/
+private theorem projIcc_collapse_notMem {δ s : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 4)
+    (hs : s ∉ Icc δ (1 - δ)) :
+    (projIcc 0 1 zero_le_one (collapse δ s) : ℝ) ∉ Icc δ (1 - δ) := by
+  rw [coe_projIcc]
+  simp only [mem_Icc, not_and_or, not_le] at hs ⊢
+  rcases hs with hs | hs
+  · rw [collapse_of_lt hδ' hs]
+    exact Or.inl (max_lt hδ ((min_le_right _ _).trans_lt (by linarith)))
+  · rw [collapse_of_gt hδ' hs]
+    exact Or.inr ((lt_min (by linarith) (by linarith)).trans_le (le_max_right _ _))
 
-private theorem injective_stereoSphere : Function.Injective stereoSphere := by
-  rw [stereoSphere_eq_comp]
-  exact (isOpenEmbedding_stereographic_symm norm_southPoleVec).injective.comp injective_planeMk
+/-- The clamped collapse sends points outside `(δ / 2, 1 - δ / 2)` to a vertex of the unit
+interval. -/
+private theorem projIcc_collapse_eq {δ s : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 4)
+    (hs : s ∉ Ioo (δ / 2) (1 - δ / 2)) :
+    projIcc (0 : ℝ) 1 zero_le_one (collapse δ s) = 0 ∨
+      projIcc (0 : ℝ) 1 zero_le_one (collapse δ s) = 1 := by
+  simp only [mem_Ioo, not_and_or, not_lt] at hs
+  rcases hs with hs | hs
+  · exact Or.inl (projIcc_of_le_left _ (by rw [collapse_of_lt hδ' (by linarith)]; linarith))
+  · exact Or.inr (projIcc_of_right_le _ (by rw [collapse_of_gt hδ' (by linarith)]; linarith))
 
-/-- The south pole `(0, 0, -1)` of the unit sphere. -/
-private def southPole : S² :=
-  ⟨southPoleVec, mem_sphere_zero_iff_norm.2 norm_southPoleVec⟩
+/-- The collapse of the plane, coordinatewise, into the unit cube. -/
+private def planeCollapse (δ : ℝ) (z : ℝ × ℝ) : Fin 2 → unitInterval :=
+  fun i ↦ projIcc 0 1 zero_le_one (collapse δ (planeCoord z i))
 
-/-- The parametrization covers exactly the sphere minus the south pole. -/
-private theorem range_stereoSphere : Set.range stereoSphere = {southPole}ᶜ := by
-  rw [stereoSphere_eq_comp, Set.range_comp, surjective_planeMk.range_eq, Set.image_univ,
-    range_stereographic_symm]
-  rfl
+private theorem continuous_planeCollapse (δ : ℝ) : Continuous (planeCollapse δ) :=
+  continuous_pi fun i ↦ continuous_projIcc.comp
+    ((continuous_collapse δ).comp ((continuous_apply i).comp continuous_planeCoord))
 
-/-! ### The area -/
+omit [TopologicalSpace M] in
+/-- A map equal to `x` off `[δ, 1 - δ]²` does not change when precomposed with the collapse. -/
+private theorem apply_planeCollapse {u : ℝ × ℝ → M} {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 4)
+    (hu : ∀ z ∉ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ), u z = x) (z : ℝ × ℝ) :
+    u (cubeToPlane (planeCollapse δ z)) = u z := by
+  have hc : cubeToPlane (planeCollapse δ z) = ((projIcc 0 1 zero_le_one (collapse δ z.1) : ℝ),
+      (projIcc 0 1 zero_le_one (collapse δ z.2) : ℝ)) := (rfl)
+  rw [hc]
+  by_cases hz : z ∈ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ)
+  · have h01 {s : ℝ} (hs : s ∈ Icc δ (1 - δ)) : s ∈ Icc (0 : ℝ) 1 :=
+      ⟨by linarith [hs.1], by linarith [hs.2]⟩
+    rw [collapse_of_mem hz.1, collapse_of_mem hz.2, projIcc_of_mem _ (h01 hz.1),
+      projIcc_of_mem _ (h01 hz.2)]
+  · rw [hu z hz, hu]
+    simp only [mem_prod, not_and_or] at hz ⊢
+    exact hz.imp (projIcc_collapse_notMem hδ hδ') (projIcc_collapse_notMem hδ hδ')
 
-/-- The area density `4 / (1 + x² + y²)²` integrates to `4π` over the plane: it is `4π` times
-the Fubini–Study density. -/
-private theorem integral_stereoDensity :
-    ∫ z : ℝ², 4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 = 4 * Real.pi := by
-  have hn (z : ℝ²) : 1 + z 0 ^ 2 + z 1 ^ 2 = 1 + ‖z‖ ^ 2 := by
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two, add_assoc]
-  simp_rw [hn]
-  rw [← integral_comp Complex.orthonormalBasisOneI.repr (fun y : ℝ² ↦ 4 / (1 + ‖y‖ ^ 2) ^ 2)]
-  simp only [LinearIsometryEquiv.norm_map]
-  have h (w : ℂ) : 4 / (1 + ‖w‖ ^ 2) ^ 2 = 4 * Real.pi * OnePoint.fubiniStudyDensity w := by
-    rw [OnePoint.fubiniStudyDensity_def]
-    field_simp
-  simp_rw [h]
-  rw [integral_const_mul, OnePoint.integral_fubiniStudyDensity, mul_one]
+/-- Points outside `(δ / 2, 1 - δ / 2)²` collapse to the boundary of the unit cube. -/
+private theorem planeCollapse_mem_boundary {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 4) {z : ℝ × ℝ}
+    (hz : z ∉ Ioo (δ / 2) (1 - δ / 2) ×ˢ Ioo (δ / 2) (1 - δ / 2)) :
+    planeCollapse δ z ∈ Cube.boundary (Fin 2) := by
+  simp only [mem_prod, not_and_or] at hz
+  rcases hz with hz | hz
+  · exact ⟨0, projIcc_collapse_eq hδ hδ' hz⟩
+  · exact ⟨1, projIcc_collapse_eq hδ hδ' hz⟩
 
-/-- The outward-normal area form of the standard orientation integrates to `4π`. -/
-private theorem integralTopForm_sphereVolumeForm_basisFun :
-    integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 =
-        4 * Real.pi := by
-  obtain ⟨l, hl⟩ :=
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation.exists_lift
-  have hc : IsCompact (_root_.tsupport (α := ℝ² [⋀^Fin 2]→L[ℝ] ℝ)
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1) :=
-    isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)
-  have h := integralTopForm_eq_oriented_parametrization l
-    (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
-    (IsSmoothForm.integrableTopForm
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.isSmoothForm hc
-      (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis)
-    MeasurableSet.univ (Set.finite_singleton southPole)
-    (by rw [Set.image_univ, range_stereoSphere]) injective_stereoSphere.injOn stereoDerivEquiv
-    (fun z _ ↦ hasMFDerivAt_stereoSphere z)
-    (fun z _ ↦ by
-      rw [← Manifold.Orientation.orientationAt_mk, hl, map_stereoDerivEquiv_orientation])
-  rw [OrthonormalBasis.addHaar_eq_volume] at h
-  rw [← hl, h.2, Measure.restrict_univ]
-  simp_rw [stereoDerivEquiv_apply, sphereVolumeForm_mfderiv_stereoSphere]
-  exact integral_stereoDensity
+/-- A homotopy between the generalized loops of two smooth spheres, relative to the boundary of
+the square, collapsed near that boundary: a continuous map of `(ℝ × ℝ) × ℝ` that is `v` at times
+`c ≤ 0`, `w` at times `c ≥ 1`, and `x` off a square `(δ, 1 - δ)²`. -/
+private theorem exists_continuous_homotopy {v w : ℝ × ℝ → M} (hv : IsSmoothSphere I x v)
+    (hw : IsSmoothSphere I x w) (h : GenLoop.Homotopic hv.genLoop hw.genLoop) :
+    ∃ δ > 0, ∃ G : C((ℝ × ℝ) × ℝ, M), (∀ q : (ℝ × ℝ) × ℝ, q.2 ≤ 0 → G q = v q.1) ∧
+      (∀ q : (ℝ × ℝ) × ℝ, 1 ≤ q.2 → G q = w q.1) ∧
+      ∀ q : (ℝ × ℝ) × ℝ, q.1 ∉ Ioo δ (1 - δ) ×ˢ Ioo δ (1 - δ) → G q = x := by
+  obtain ⟨δv, hδv, hv'⟩ := hv.exists_forall_le
+  obtain ⟨δw, hδw, hw'⟩ := hw.exists_forall_le
+  set δ := min (min δv δw) (1 / 4)
+  have hδ : 0 < δ := lt_min (lt_min hδv hδw) (by norm_num)
+  have hδ' : δ ≤ 1 / 4 := min_le_right _ _
+  obtain ⟨K⟩ := h
+  refine ⟨δ / 2, by positivity,
+    ⟨fun q ↦ K (projIcc 0 1 zero_le_one q.2, planeCollapse δ q.1),
+      K.continuous.comp ((continuous_projIcc.comp continuous_snd).prodMk
+        ((continuous_planeCollapse δ).comp continuous_fst))⟩, fun q hq ↦ ?_, fun q hq ↦ ?_,
+    fun q hq ↦ ?_⟩
+  · rw [ContinuousMap.coe_mk, projIcc_of_le_left _ hq]
+    exact (K.apply_zero _).trans (apply_planeCollapse hδ hδ'
+      (hv' δ ((min_le_left _ _).trans (min_le_left _ _))) q.1)
+  · rw [ContinuousMap.coe_mk, projIcc_of_right_le _ hq]
+    exact (K.apply_one _).trans (apply_planeCollapse hδ hδ'
+      (hw' δ ((min_le_left _ _).trans (min_le_right _ _))) q.1)
+  · have hb := planeCollapse_mem_boundary hδ hδ' (z := q.1) (by simpa using hq)
+    exact (K.eq_fst _ hb).trans (hv.genLoop.2 _ hb)
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [CompactSpace M]
+  [T2Space M]
+
+/-- A smooth homotopy between two homotopic smooth spheres: a smooth map of `(ℝ × ℝ) × ℝ` that is
+`v` at time `-1`, `w` at time `2`, and `x` off a square `(δ, 1 - δ)²` at all times. It is the
+collapsed homotopy of `exists_continuous_homotopy`, smoothed by Whitney approximation relative to
+the closed set where it is already smooth. -/
+private theorem exists_contMDiff_homotopy {v w : ℝ × ℝ → M} (hv : IsSmoothSphere I x v)
+    (hw : IsSmoothSphere I x w) (h : GenLoop.Homotopic hv.genLoop hw.genLoop) :
+    ∃ δ > 0, ∃ G : (ℝ × ℝ) × ℝ → M, ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I ∞ G ∧
+      (∀ z, G (z, -1) = v z) ∧ (∀ z, G (z, 2) = w z) ∧
+      ∀ z ∉ Ioo δ (1 - δ) ×ˢ Ioo δ (1 - δ), ∀ c, G (z, c) = x := by
+  obtain ⟨δ, hδ, G₀, hG₀v, hG₀w, hG₀x⟩ := exists_continuous_homotopy hv hw h
+  -- `G₀` is smooth on the open set `U`, a neighbourhood of the closed set `S`.
+  set S : Set ((ℝ × ℝ) × ℝ) := {q | q.2 ≤ -1} ∪ {q | 2 ≤ q.2} ∪
+    {q | q.1 ∉ Ioo (δ / 2) (1 - δ / 2) ×ˢ Ioo (δ / 2) (1 - δ / 2)}
+  have hS : IsClosed S :=
+    ((isClosed_le continuous_snd continuous_const).union
+      (isClosed_le continuous_const continuous_snd)).union
+      ((isOpen_Ioo.prod isOpen_Ioo).preimage continuous_fst).isClosed_compl
+  have hU₀ : IsOpen {q : (ℝ × ℝ) × ℝ | q.2 < 0} := isOpen_lt continuous_snd continuous_const
+  have hU₁ : IsOpen {q : (ℝ × ℝ) × ℝ | 1 < q.2} := isOpen_lt continuous_const continuous_snd
+  have hU₂ : IsOpen {q : (ℝ × ℝ) × ℝ | q.1 ∉ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ)} :=
+    ((isClosed_Icc.prod isClosed_Icc).preimage continuous_fst).isOpen_compl
+  have hSU : S ⊆ {q | q.2 < 0} ∪ {q | 1 < q.2} ∪ {q | q.1 ∉ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ)} := by
+    rintro q ((hq | hq) | hq)
+    · exact Or.inl (Or.inl (by simp only [mem_ofPred_eq] at hq ⊢; linarith))
+    · exact Or.inl (Or.inr (by simp only [mem_ofPred_eq] at hq ⊢; linarith))
+    · have hsub : Icc δ (1 - δ) ⊆ Ioo (δ / 2) (1 - δ / 2) :=
+        Icc_subset_Ioo (by linarith) (by linarith)
+      exact Or.inr fun hm ↦ hq (prod_mono hsub hsub hm)
+  have hfst : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) 𝓘(ℝ, ℝ × ℝ) ∞ (Prod.fst : (ℝ × ℝ) × ℝ → ℝ × ℝ) :=
+    contDiff_fst.contMDiff
+  obtain ⟨G, hG, hG₀G⟩ := G₀.exists_contMDiff_homotopicRel (I := 𝓘(ℝ, (ℝ × ℝ) × ℝ)) (J := I) ⊤
+    hS ((((hU₀.union hU₁).union hU₂).mem_nhdsSet).2 hSU) (by
+      rintro q ((hq | hq) | hq)
+      · exact ((hv.contMDiff.comp hfst).contMDiffAt.congr_of_eventuallyEq
+          (eventually_of_mem (hU₀.mem_nhds hq) fun r hr ↦ hG₀v r (le_of_lt hr))).contMDiffWithinAt
+      · exact ((hw.contMDiff.comp hfst).contMDiffAt.congr_of_eventuallyEq
+          (eventually_of_mem (hU₁.mem_nhds hq) fun r hr ↦ hG₀w r (le_of_lt hr))).contMDiffWithinAt
+      · exact (contMDiffAt_const.congr_of_eventuallyEq (eventually_of_mem (hU₂.mem_nhds hq)
+          fun r hr ↦ hG₀x r fun hm ↦ hr (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hm))
+          ).contMDiffWithinAt)
+  have hGS (q : (ℝ × ℝ) × ℝ) (hq : q ∈ S) : G q = G₀ q := (hG₀G.fst_eq_snd hq).symm
+  refine ⟨δ / 2, by positivity, G, hG, fun z ↦ ?_, fun z ↦ ?_, fun z hz c ↦ ?_⟩
+  · exact (hGS _ (Or.inl (Or.inl (by simp)))).trans (hG₀v _ (by norm_num))
+  · exact (hGS _ (Or.inl (Or.inr (by simp)))).trans (hG₀w _ (by norm_num))
+  · have hsub : Ioo δ (1 - δ) ⊆ Ioo (δ / 2) (1 - δ / 2) :=
+      Ioo_subset_Ioo (by linarith) (by linarith)
+    exact (hGS _ (Or.inr hz)).trans (hG₀x _ fun hm ↦ hz (prod_mono hsub hsub hm))
+
+/-- **Homotopy invariance.** Two smooth spheres at `x` whose generalized loops are homotopic
+relative to the boundary of the unit square have the same integral of a closed `C¹` two-form over
+the unit square. -/
+theorem rectangleIntegral_eq_of_isSmoothSphere_of_homotopic {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {v w : ℝ × ℝ → M}
+    (hv : IsSmoothSphere I x v) (hw : IsSmoothSphere I x w)
+    (h : GenLoop.Homotopic hv.genLoop hw.genLoop) :
+    rectangleIntegral φ v (0, 0) (1, 1) = rectangleIntegral φ w (0, 0) (1, 1) := by
+  obtain ⟨δ, hδ, G, hG, hGv, hGw, hGx⟩ := exists_contMDiff_homotopy hv hw h
+  -- Reparametrize time so that `[0, 1]` covers `[-1, 2]`, and apply homotopy invariance.
+  let Φ : (ℝ × ℝ) × ℝ → M := fun q ↦ G (q.1, 3 * q.2 - 1)
+  have hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ :=
+    (hG.comp (contDiff_fst.prodMk (by fun_prop : ContDiff ℝ ∞
+      fun q : (ℝ × ℝ) × ℝ ↦ 3 * q.2 - 1)).contMDiff).of_le (by norm_cast)
+  -- The edges of the unit square stay at `x`.
+  have hΦx (z : ℝ × ℝ) (hz : z ∉ Ioo δ (1 - δ) ×ˢ Ioo δ (1 - δ)) (c : ℝ) : Φ (z, c) = x :=
+    hGx z hz _
+  have hlo {s : ℝ} (hs : s = 0) : s ∉ Ioo δ (1 - δ) := fun hm ↦ by linarith [hm.1]
+  have hhi {s : ℝ} (hs : s = 1) : s ∉ Ioo δ (1 - δ) := fun hm ↦ by linarith [hm.2]
+  have key := rectangleIntegral_eq_of_homotopy hφ hdφ hΦ (a := (0, 0)) (b := (1, 1))
+    (Or.inr fun t _ c _ ↦ by
+      rw [hΦx _ (fun hm ↦ hlo rfl hm.1), hΦx _ (fun hm ↦ hlo rfl hm.1)])
+    (Or.inr fun t _ c _ ↦ by
+      rw [hΦx _ (fun hm ↦ hhi rfl hm.1), hΦx _ (fun hm ↦ hhi rfl hm.1)])
+    (fun s _ c _ ↦ by
+      rw [hΦx _ (fun hm ↦ hhi rfl hm.2), hΦx _ (fun hm ↦ hlo rfl hm.2)])
+  have hΦ₁ : (fun z ↦ Φ (z, 1)) = w := funext fun z ↦ by
+    convert hGw z using 3; norm_num
+  have hΦ₀ : (fun z ↦ Φ (z, 0)) = v := funext fun z ↦ by
+    convert hGv z using 3; norm_num
+  rw [hΦ₁, hΦ₀] at key
+  exact key.symm
+
+end Invariance
+
+/-! ### Concatenation of smooth spheres -/
+
+section Concat
+
+/-- The concatenation of two maps of the plane along the first coordinate: `w` reparametrized
+on `s ≤ 1/2`, then `v` reparametrized on `s > 1/2`. For generalized loops this is
+`GenLoop.transAt 0`. -/
+private def sphereConcat (w v : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
+  if z.1 ≤ 1 / 2 then w (2 * z.1, z.2) else v (2 * z.1 - 1, z.2)
+
+variable {v w : ℝ × ℝ → M}
+
+private theorem IsSmoothSphere.concat (hw : IsSmoothSphere I x w) (hv : IsSmoothSphere I x v) :
+    IsSmoothSphere I x (sphereConcat w v) := by
+  obtain ⟨δw, hδw, hw'⟩ := hw.exists_forall_le
+  obtain ⟨δv, hδv, hv'⟩ := hv.exists_forall_le
+  set δ := min δw δv
+  have hwδ := hw' δ (min_le_left _ _)
+  have hvδ := hv' δ (min_le_right _ _)
+  have hδ : 0 < δ := lt_min hδw hδv
+  -- Near the seam `s = 1/2` both pieces are constant equal to `x`.
+  have hseam (z : ℝ × ℝ) (hz : z.1 ∈ Ioo (1 / 2 - δ / 2) (1 / 2 + δ / 2)) :
+      sphereConcat w v z = x := by
+    unfold sphereConcat
+    split_ifs with h
+    · exact hwδ _ fun hm ↦ by simp only [mem_prod, mem_Icc] at hm; linarith [hz.1]
+    · exact hvδ _ fun hm ↦ by simp only [mem_prod, mem_Icc] at hm; linarith [hz.2]
+  refine ⟨fun p ↦ ?_, δ / 2, by positivity, fun z hz ↦ ?_⟩
+  · rcases lt_trichotomy p.1 (1 / 2) with hp | hp | hp
+    · refine ((hw.contMDiff.comp (by fun_prop : ContDiff ℝ ∞ fun z : ℝ × ℝ ↦
+        (2 * z.1, z.2)).contMDiff).contMDiffAt).congr_of_eventuallyEq ?_
+      exact eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds hp)
+        fun z hz ↦ ite_eq_left (le_of_lt hz)
+    · refine contMDiffAt_const.congr_of_eventuallyEq
+        (eventually_of_mem ((isOpen_Ioo.preimage continuous_fst).mem_nhds ?_) hseam)
+      exact ⟨by linarith, by linarith⟩
+    · refine ((hv.contMDiff.comp (by fun_prop : ContDiff ℝ ∞ fun z : ℝ × ℝ ↦
+        (2 * z.1 - 1, z.2)).contMDiff).contMDiffAt).congr_of_eventuallyEq ?_
+      exact eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds hp)
+        fun z hz ↦ ite_eq_right (not_le.2 hz)
+  · unfold sphereConcat
+    split_ifs with h
+    · refine hwδ _ fun hm ↦ hz ?_
+      simp only [mem_prod, mem_Icc] at hm
+      exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+    · refine hvδ _ fun hm ↦ hz ?_
+      simp only [mem_prod, mem_Icc] at hm
+      exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+
+/-- Concatenating smooth spheres concatenates their generalized loops. -/
+private theorem IsSmoothSphere.genLoop_concat (hw : IsSmoothSphere I x w)
+    (hv : IsSmoothSphere I x v) :
+    (hw.concat hv).genLoop = GenLoop.transAt 0 hw.genLoop hv.genLoop := by
+  ext y
+  rw [GenLoop.transAt, GenLoop.coe_copy, IsSmoothSphere.genLoop_apply]
+  have h0 : (y 0 : ℝ) ∈ Icc (0 : ℝ) 1 := (y 0).2
+  unfold sphereConcat
+  split_ifs with h
+  · rw [IsSmoothSphere.genLoop_apply, Function.update_self, Function.update_of_ne (by decide),
+      projIcc_of_mem _ ⟨by linarith [h0.1], by linarith⟩]
+  · rw [IsSmoothSphere.genLoop_apply, Function.update_self, Function.update_of_ne (by decide),
+      projIcc_of_mem _ ⟨by linarith, by linarith [h0.2]⟩]
+
+/-- The integral over a concatenation of smooth spheres is the sum of the integrals. -/
+private theorem rectangleIntegral_sphereConcat [IsManifold I 1 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hw : IsSmoothSphere I x w) (hv : IsSmoothSphere I x v) :
+    rectangleIntegral φ (sphereConcat w v) (0, 0) (1, 1) =
+      rectangleIntegral φ w (0, 0) (1, 1) + rectangleIntegral φ v (0, 0) (1, 1) := by
+  have h1 {u : ℝ × ℝ → M} (hu : IsSmoothSphere I x u) : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u :=
+    hu.contMDiff.of_le (by simp)
+  rw [← rectangleIntegral_add_adjacent_fst hφ (h1 (hw.concat hv)) (0, 0) (1, 1) (1 / 2)]
+  congr 1
+  · rw [rectangleIntegral_congr (v := w ∘ Prod.map (fun s ↦ 2 * s) id) fun z hz ↦ ?_,
+      rectangleIntegral_comp_prodMap hφ (h1 hw) (σ' := fun _ ↦ 2)
+        (fun s _ ↦ by simpa using (hasDerivAt_id s).const_mul 2) continuousOn_const]
+    · norm_num
+    · have hz1 : z.1 ∈ Icc (0 : ℝ) (1 / 2) := uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2) ▸ hz.1
+      exact ite_eq_left hz1.2
+  · rw [rectangleIntegral_congr (v := v ∘ Prod.map (fun s ↦ 2 * s - 1) id) fun z hz ↦ ?_,
+      rectangleIntegral_comp_prodMap hφ (h1 hv) (σ' := fun _ ↦ 2)
+        (fun s _ ↦ by simpa using ((hasDerivAt_id s).const_mul 2).sub_const 1)
+        continuousOn_const]
+    · norm_num
+    · have hz1 := (uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1) ▸ hz.1)
+      unfold sphereConcat
+      split_ifs with h
+      · have hz' : z.1 = 1 / 2 := le_antisymm h hz1.1
+        have hw1 : w (2 * z.1, z.2) = x :=
+          hw.apply_of_notMem fun hm ↦ by rw [hz'] at hm; norm_num at hm
+        have hv0 : v (2 * z.1 - 1, z.2) = x :=
+          hv.apply_of_notMem fun hm ↦ by rw [hz'] at hm; norm_num at hm
+        exact hw1.trans hv0.symm
+      · rfl
+
+end Concat
+
+/-! ### The integral over the second homotopy group -/
+
+section Integral
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [CompactSpace M]
+  [T2Space M]
+
+/-- The integral of a two-form `φ` over a class `a ∈ π₂(M, x)`: its integral over the unit
+square along a smooth sphere representing `a`. For a closed `C¹` form it does not depend on the
+representative (`TauCeti.sphereIntegral_mk`), and it is additive (`TauCeti.sphereIntegral_mul`).
+For the symplectic form of a symplectic manifold it is the symplectic area of spheres. -/
+def sphereIntegral (φ : RoughForm I M F 2) (x : M) (a : π_ 2 M x) : F :=
+  rectangleIntegral φ (exists_isSmoothSphere (I := I) a).choose (0, 0) (1, 1)
+
+variable {φ : RoughForm I M F 2}
+
+/-- The integral of a closed `C¹` form over the class of a smooth sphere is its integral over the
+unit square along the sphere. -/
+theorem sphereIntegral_mk (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {v : ℝ × ℝ → M}
+    (hv : IsSmoothSphere I x v) :
+    sphereIntegral φ x ⟦hv.genLoop⟧ = rectangleIntegral φ v (0, 0) (1, 1) := by
+  obtain ⟨hv', h⟩ := (exists_isSmoothSphere (I := I) (⟦hv.genLoop⟧ : π_ 2 M x)).choose_spec
+  exact rectangleIntegral_eq_of_isSmoothSphere_of_homotopic hφ hdφ hv' hv (Quotient.exact h)
+
+/-- The integral of a closed `C¹` form over the identity class vanishes. -/
+@[simp]
+theorem sphereIntegral_one (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
+    sphereIntegral φ x 1 = 0 := by
+  have h : (isSmoothSphere_const (I := I) x).genLoop = GenLoop.const := GenLoop.ext _ _ fun _ ↦ rfl
+  rw [HomotopyGroup.one_def, ← h, sphereIntegral_mk hφ hdφ, rectangleIntegral_const]
+
+/-- **Additivity.** The integral of a closed `C¹` form over a product of classes of `π₂(M, x)` is
+the sum of the integrals. -/
+theorem sphereIntegral_mul (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (a b : π_ 2 M x) :
+    sphereIntegral φ x (a * b) = sphereIntegral φ x a + sphereIntegral φ x b := by
+  obtain ⟨v, hv, rfl⟩ := exists_isSmoothSphere (I := I) a
+  obtain ⟨w, hw, rfl⟩ := exists_isSmoothSphere (I := I) b
+  have hmul := HomotopyGroup.mul_spec (i := (0 : Fin 2)) (p := hv.genLoop) (q := hw.genLoop)
+  beta_reduce at hmul
+  rw [hmul, ← hw.genLoop_concat hv, sphereIntegral_mk hφ hdφ, sphereIntegral_mk hφ hdφ,
+    sphereIntegral_mk hφ hdφ, rectangleIntegral_sphereConcat (hφ.of_le (by simp)) hw hv,
+    add_comm]
+
+variable (x) in
+/-- The integral of a closed `C¹` two-form over the second homotopy group, as an additive
+homomorphism. For the symplectic form of a symplectic manifold it is the symplectic area of
+spheres. -/
+def sphereIntegralHom (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
+    Additive (π_ 2 M x) →+ F where
+  toFun a := sphereIntegral φ x a.toMul
+  map_zero' := sphereIntegral_one hφ hdφ
+  map_add' a b := sphereIntegral_mul hφ hdφ a.toMul b.toMul
+
+@[simp]
+theorem sphereIntegralHom_apply (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    (a : Additive (π_ 2 M x)) :
+    sphereIntegralHom x hφ hdφ a = sphereIntegral φ x a.toMul :=
+  (rfl)
+
+/-- A form that vanishes on spheres has zero integral over every class of `π₂(M, x)`. -/
+theorem VanishesOnSpheres.sphereIntegral_eq_zero (hS : VanishesOnSpheres φ) (a : π_ 2 M x) :
+    sphereIntegral φ x a = 0 := by
+  obtain ⟨hv, -⟩ := (exists_isSmoothSphere (I := I) a).choose_spec
+  have hx {z : ℝ × ℝ} (hz : z.1 = 0 ∨ z.1 = 1 ∨ z.2 = 0 ∨ z.2 = 1) :
+      (exists_isSmoothSphere (I := I) a).choose z = x := by
+    refine hv.apply_of_notMem fun hm ↦ ?_
+    rcases hz with hz | hz | hz | hz <;> simp [hz] at hm
+  refine (vanishesOnSpheres_iff φ).1 hS _ hv.contMDiff (fun t _ ↦ ?_) (fun t _ ↦ ?_) (fun s _ ↦ ?_)
+  · rw [hx (Or.inl rfl), hx (Or.inl rfl)]
+  · rw [hx (Or.inr (Or.inl rfl)), hx (Or.inr (Or.inl rfl))]
+  · rw [hx (Or.inr (Or.inr (Or.inr rfl))), hx (Or.inr (Or.inr (Or.inl rfl)))]
+
+/-- The integral of an exact two-form over every class of `π₂(M, x)` vanishes. -/
+@[simp]
+theorem sphereIntegral_mextDeriv {α : RoughForm I M F 1} (hα : IsSmoothForm I 1 α)
+    (a : π_ 2 M x) : sphereIntegral (mextDeriv α) x a = 0 :=
+  (vanishesOnSpheres_mextDeriv hα).sphereIntegral_eq_zero a
+
+/-- **Naturality.** For a smooth map `f : M → M'` of compact manifolds and a closed `C¹` two-form
+`φ` on `M'`, the integral of the pullback `f^* φ` over a class `a ∈ π₂(M, x)` is the integral of
+`φ` over its image `f_* a ∈ π₂(M', f x)`. -/
+theorem sphereIntegral_mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
+    [CompactSpace M'] [T2Space M'] {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    {φ : RoughForm I' M' F 2} (hφ : IsSmoothForm I' 1 φ) (hdφ : mextDeriv φ = 0)
+    (a : π_ 2 M x) :
+    sphereIntegral (mpullback I I' f φ) x a =
+      sphereIntegral φ (f x) (HomotopyGroup.map ⟨f, hf.continuous⟩ rfl a) := by
+  obtain ⟨hv, h⟩ := (exists_isSmoothSphere (I := I) a).choose_spec
+  set v := (exists_isSmoothSphere (I := I) a).choose
+  have hfv : IsSmoothSphere I' (f x) (f ∘ v) := by
+    obtain ⟨δ, hδ, hvx⟩ := hv.exists_pos
+    exact ⟨hf.comp hv.contMDiff, δ, hδ, fun z hz ↦ congrArg f (hvx z hz)⟩
+  have hmap : GenLoop.map ⟨f, hf.continuous⟩ rfl hv.genLoop = hfv.genLoop :=
+    GenLoop.ext _ _ fun _ ↦ by simp
+  conv_rhs => rw [← h, HomotopyGroup.map_mk, hmap, sphereIntegral_mk hφ hdφ hfv]
+  exact rectangleIntegral_mpullback φ (fun z _ ↦ (hf _).mdifferentiableAt (by simp))
+    (fun z _ ↦ (hv.contMDiff z).mdifferentiableAt (by simp))
+
+end Integral
 
 end TauCeti
-
-/-- **The area of the unit sphere is `4π`.** For either orientation `o` of `ℝ³`, the
-outward-normal area form `(a, b) ↦ vol(u, a, b)` of the unit sphere integrates to `4π` over the
-sphere with its outward-normal orientation. -/
-theorem Orientation.integralTopForm_sphereOrientation_sphereVolumeForm
-    (o : Orientation ℝ ℝ³ (Fin 3)) :
-    TauCeti.integralTopForm o.sphereOrientation o.sphereVolumeForm.1 = 4 * Real.pi := by
-  rcases o.eq_or_eq_neg (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation (by simp)
-    with rfl | rfl
-  · exact TauCeti.integralTopForm_sphereVolumeForm_basisFun
-  · -- Reversing `o` reverses both the orientation of the sphere and the sign of the form.
-    rw [Orientation.sphereOrientation_neg, Orientation.sphereVolumeForm_neg, Submodule.coe_neg,
-      ← neg_one_smul ℝ, TauCeti.integralTopForm_neg, TauCeti.integralTopForm_smul,
-      TauCeti.integralTopForm_sphereVolumeForm_basisFun]
-    ring

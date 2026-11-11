@@ -163,13 +163,8 @@ theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [Numb
   rw [NumberField.house, canonicalEmbedding]
   refine (pi_norm_le_iff_of_nonneg (Real.exp_pos _).le).mpr fun φ ↦ ?_
   let w : InfinitePlace K := InfinitePlace.mk φ
-  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
-    (Sum.inr w) x
-  simp only [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
-    Nat.abs_cast] at h
-  have hm : (1 : ℝ) ≤ w.mult := by exact_mod_cast InfinitePlace.mult_pos (w := w)
   have hw : Real.log (w x) ≤ logHeight₁ x :=
-    (le_abs_self _).trans ((le_mul_of_one_le_left (abs_nonneg _) hm).trans h)
+    (le_abs_self _).trans (InfinitePlace.abs_log_le_logHeight₁ w x)
   -- The place constructed from φ evaluates x as the complex norm of φ x.
   change w x ≤ Real.exp (logHeight₁ x)
   rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]

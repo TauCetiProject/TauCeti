@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 
