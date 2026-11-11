@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange.Projective
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Stable
 public import TauCeti.Algebra.Homology.GorensteinProjective.Frobenius
 public import TauCeti.Algebra.Homology.Periodic.Unfold
@@ -130,12 +131,7 @@ theorem isTotallyAcyclic_unfoldFunctor_obj_quotientPeriodicComplex_obj
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₁)
   projective n := by
     rw [PeriodicComplex.unfoldFunctor_obj_X]
-    generalize (n : ZMod 2) = a
-    rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) a with rfl | rfl
-    · exact ModuleCat.projective_of_categoryTheory_projective
-        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₀.obj
-    · exact ModuleCat.projective_of_categoryTheory_projective
-        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₁.obj
+    infer_instance
   acyclic := (PeriodicComplex.unfoldFunctor_acyclic_iff _ _ _).2
     (quotientPeriodicComplex_acyclic hw X)
   exact_dual i j k hij hjk := by

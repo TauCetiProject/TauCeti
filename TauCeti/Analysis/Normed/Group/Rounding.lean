@@ -111,6 +111,26 @@ theorem zpowCeil_eq_zero_iff (hc₀ : 0 < c) : zpowCeil c x = 0 ↔ x ≤ 0 := b
 theorem exists_zpowCeil_eq_zpow (hx : 0 < x) : ∃ n : ℤ, zpowCeil c x = c ^ n :=
   ⟨_, zpowCeil_of_pos hx⟩
 
+section Shell
+
+open Set NNReal
+
+/-- **The shell, for a positive real number**: for a real base `0 < r < 1`, every `a > 0` has a
+unique rescaling `r ^ n * a`, `n ∈ ℤ`, with `r < r ^ n * a ≤ 1`. -/
+theorem existsUnique_zpow_mul_mem_Ioc {r a : ℝ} (hr0 : 0 < r) (hr1 : r < 1) (ha : 0 < a) :
+    ∃! n : ℤ, r ^ n * a ∈ Ioc r 1 := by
+  -- Package `r` and `a` as units of `ℝ≥0`; the shell is then a fundamental domain for
+  -- multiplication by the powers of `r⁻¹`.
+  let q : ℝ≥0ˣ := Units.mk0 r.toNNReal (Real.toNNReal_pos.mpr hr0).ne'
+  let u : ℝ≥0ˣ := Units.mk0 a.toNNReal (Real.toNNReal_pos.mpr ha).ne'
+  have hq : 1 < q⁻¹ := one_lt_inv'.mpr <| by
+    simpa [← Units.val_lt_val, q, ← NNReal.coe_lt_coe, Real.coe_toNNReal _ hr0.le] using hr1
+  convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
+  simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
+    Real.coe_toNNReal _ ha.le, Real.coe_toNNReal _ hr0.le, mul_comm]
+
+end Shell
+
 section BaseLtOne
 
 variable (hc₀ : 0 < c) (hc₁ : c < 1)
@@ -149,21 +169,26 @@ theorem zpowCeil_eq_zpow_iff (n : ℤ) : zpowCeil c x = c ^ n ↔ c ^ (n + 1) < 
     have h₂ := mt (le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx (n + 1)).mp hlt.not_ge
     omega
 
+omit hc₁ in
 /-- An integer power of `c` is its own rounding. -/
 @[simp]
-theorem zpowCeil_zpow (n : ℤ) : zpowCeil c (c ^ n) = c ^ n :=
-  (zpowCeil_eq_zpow_iff hc₀ hc₁ n).mpr
-    ⟨zpow_lt_zpow_right_of_lt_one₀ hc₀ hc₁ (Int.lt_succ n), le_rfl⟩
+theorem zpowCeil_zpow (n : ℤ) : zpowCeil c (c ^ n) = c ^ n := by
+  rcases eq_or_ne c 1 with rfl | hc
+  · simp [zpowCeil]
+  · have hl : logb c (c ^ n) = n := by rw [← Real.rpow_intCast, Real.logb_rpow hc₀ hc]
+    rw [zpowCeil_of_pos (zpow_pos hc₀ n), hl, Int.floor_intCast]
 
+omit hc₀ hc₁ in
 /-- One is its own rounding. -/
 @[simp]
 theorem zpowCeil_one : zpowCeil c 1 = 1 := by
-  simpa using zpowCeil_zpow hc₀ hc₁ 0
+  simp [zpowCeil]
 
+omit hc₁ in
 /-- The constant `c` is its own rounding. -/
 @[simp]
 theorem zpowCeil_self : zpowCeil c c = c := by
-  simpa using zpowCeil_zpow hc₀ hc₁ 1
+  simpa using zpowCeil_zpow hc₀ 1
 
 /-- Rounding up is monotone. -/
 theorem monotone_zpowCeil : Monotone (zpowCeil c) := by
@@ -176,24 +201,27 @@ theorem monotone_zpowCeil : Monotone (zpowCeil c) := by
       le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
     exact hxy.trans ((le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hy _).mp le_rfl)
 
+omit hc₁ in
 /-- Rounding up is idempotent. -/
 @[simp]
 theorem zpowCeil_zpowCeil (x : ℝ) : zpowCeil c (zpowCeil c x) = zpowCeil c x := by
   rcases le_or_gt x 0 with hx | hx
   · simp [zpowCeil_of_nonpos hx]
   · obtain ⟨n, hn⟩ := exists_zpowCeil_eq_zpow (c := c) hx
-    rw [hn, zpowCeil_zpow hc₀ hc₁]
+    rw [hn, zpowCeil_zpow hc₀]
 
-/-- A nonnegative number is its own rounding exactly when it is `0` or an integer power
-of `c`. -/
-theorem zpowCeil_eq_self_iff (hx : 0 ≤ x) : zpowCeil c x = x ↔ x = 0 ∨ ∃ n : ℤ, c ^ n = x := by
+omit hc₁ in
+/-- A number is its own rounding exactly when it is `0` or an integer power of `c`. -/
+theorem zpowCeil_eq_self_iff : zpowCeil c x = x ↔ x = 0 ∨ ∃ n : ℤ, c ^ n = x := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · rcases hx.eq_or_lt with rfl | hx
+  · rcases lt_trichotomy x 0 with hx | rfl | hx
+    · rw [zpowCeil_of_nonpos hx.le] at h
+      exact absurd h.symm hx.ne
     · exact .inl rfl
     · obtain ⟨n, hn⟩ := exists_zpowCeil_eq_zpow (c := c) hx
       exact .inr ⟨n, hn ▸ h⟩
   · rintro (rfl | ⟨n, rfl⟩)
-    exacts [zpowCeil_zero, zpowCeil_zpow hc₀ hc₁ n]
+    exacts [zpowCeil_zero, zpowCeil_zpow hc₀ n]
 
 /-- **Rounding up is a closure operator onto `c ^ ℤ ∪ {0}`**: for `y` in that set,
 `zpowCeil c x ≤ y ↔ x ≤ y`. -/
@@ -209,13 +237,17 @@ theorem zpowCeil_lt_zpow_iff (n : ℤ) : zpowCeil c x < c ^ n ↔ x ≤ c ^ (n +
     · rw [zpowCeil_of_pos hx, zpow_lt_zpow_iff_right_of_lt_one₀ hc₀ hc₁] at h
       rw [← le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
       omega
-  · exact ((zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ hc₁ _)).mpr h).trans_lt
+  · exact ((zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ _)).mpr h).trans_lt
       (zpow_lt_zpow_right_of_lt_one₀ hc₀ hc₁ (Int.lt_succ n))
 
+omit hc₁ in
 /-- A number in `c ^ ℤ ∪ {0}` that is less than `1 = c ^ 0` is at most `c`. -/
 theorem le_of_zpowCeil_eq_self_of_lt_one (hx : zpowCeil c x = x) (h : x < 1) : x ≤ c := by
-  simpa using (zpowCeil_lt_zpow_iff hc₀ hc₁ 0).mp (by rwa [hx, zpow_zero])
+  rcases lt_or_ge c 1 with hc₁ | hc₁
+  · simpa using (zpowCeil_lt_zpow_iff hc₀ hc₁ 0).mp (by rwa [hx, zpow_zero])
+  · exact h.le.trans hc₁
 
+omit hc₁ in
 /-- **Rounding commutes with scaling by powers of `c`**:
 `zpowCeil c (c ^ n * x) = c ^ n * zpowCeil c x`. -/
 theorem zpowCeil_zpow_mul (n : ℤ) (x : ℝ) : zpowCeil c (c ^ n * x) = c ^ n * zpowCeil c x := by
@@ -223,11 +255,11 @@ theorem zpowCeil_zpow_mul (n : ℤ) (x : ℝ) : zpowCeil c (c ^ n * x) = c ^ n *
   rcases le_or_gt x 0 with hx | hx
   · rw [zpowCeil_of_nonpos hx, zpowCeil_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hcn.le hx),
       mul_zero]
-  · obtain ⟨k, hk⟩ := exists_zpowCeil_eq_zpow (c := c) hx
-    obtain ⟨hlt, hle⟩ := (zpowCeil_eq_zpow_iff hc₀ hc₁ k).mp hk
-    rw [hk, ← zpow_add₀ hc₀.ne', zpowCeil_eq_zpow_iff hc₀ hc₁, add_assoc,
-      zpow_add₀ hc₀.ne' n (k + 1), zpow_add₀ hc₀.ne' n k]
-    exact ⟨mul_lt_mul_of_pos_left hlt hcn, mul_le_mul_of_nonneg_left hle hcn.le⟩
+  · rcases eq_or_ne c 1 with rfl | hc
+    · simp [zpowCeil, hx]
+    · have hl : logb c (c ^ n) = n := by rw [← Real.rpow_intCast, Real.logb_rpow hc₀ hc]
+      rw [zpowCeil_of_pos hx, zpowCeil_of_pos (mul_pos hcn hx), Real.logb_mul hcn.ne' hx.ne', hl,
+        Int.floor_intCast_add, zpow_add₀ hc₀.ne']
 
 /-- **Rounding up is submultiplicative** on a nonnegative left factor:
 `zpowCeil c (x * y) ≤ zpowCeil c x * zpowCeil c y`. -/
@@ -241,7 +273,7 @@ theorem zpowCeil_mul_le (hx : 0 ≤ x) (y : ℝ) :
   · rwa [zpowCeil_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hx.le hy)]
   obtain ⟨k, hk⟩ := exists_zpowCeil_eq_zpow (c := c) hx
   obtain ⟨l, hl⟩ := exists_zpowCeil_eq_zpow (c := c) hy
-  rw [hk, hl, ← zpow_add₀ hc₀.ne', zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ hc₁ _),
+  rw [hk, hl, ← zpow_add₀ hc₀.ne', zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ _),
     zpow_add₀ hc₀.ne', ← hk, ← hl]
   exact mul_le_mul (le_zpowCeil hc₀ hc₁ x) (le_zpowCeil hc₀ hc₁ y) hy.le
     (zpowCeil_nonneg hc₀.le x)

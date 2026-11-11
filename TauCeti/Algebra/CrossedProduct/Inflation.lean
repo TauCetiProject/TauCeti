@@ -467,8 +467,8 @@ private theorem finiteLevelCoeffEquiv_symm_smul
       (L ≃ₐ[K] L) :=
     quotientFixingSubgroupFieldRangeEquiv K L L.val
   rw [galoisQuotientHomInv_apply]
-  refine AddEquiv.symm_map_smul_of_map_mulEquiv_smul (finiteLevelCoeffEquiv L) φ
-    (fun q m ↦ ?_) g b
+  refine AddEquiv.symm_map_smul_of_map_smul_of_rightInverse (finiteLevelCoeffEquiv L) φ φ.symm
+    φ.apply_symm_apply (fun q m ↦ ?_) g b
   have hφ : φ q = galoisQuotientHom L q := (galoisQuotientHom_apply L q).symm
   rw [hφ, ← finiteLevelCoeffHom_apply, ← finiteLevelCoeffHom_apply]
   exact finiteLevelCoeffHom_smul L q m

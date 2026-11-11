@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Generator.Basic
 public import TauCeti.CategoryTheory.Abelian.ImageSubobject
 
+import TauCeti.CategoryTheory.Subobject.Image
+
 /-!
 # Epimorphisms out of coproducts of a separator
 
@@ -22,6 +24,10 @@ The variant `IsSeparator.exists_epi_sigmaDesc_comp_of_le_imageSubobject` allows 
 a subobject of the image of a morphism `g : P ⟶ X`, still indexing the coproduct by subobjects
 of `P`. This is the form used to bound the sizes of acyclic subcomplexes in Grothendieck abelian
 categories.
+
+Applied to the base change of an epimorphism `π : M ⟶ Q` along a morphism `ι : N ⟶ Q`, this lifts
+every quotient `N` of an object `B` along `π` through a coproduct of copies of `G` indexed by the
+subobjects of `B` (`IsSeparator.exists_sigma_lift`).
 
 ## References
 
@@ -97,5 +103,27 @@ theorem IsSeparator.exists_epi_sigmaDesc_comp_of_le_imageSubobject (hG : IsSepar
     simp [pullback.condition]
   rw [h]
   exact epi_comp _ _
+
+/-- Let `G` be a separator, `q : B ⟶ N` an epimorphism, `π : M ⟶ Q` an epimorphism and
+`ι : N ⟶ Q` a morphism. If `I` surjects onto the subobjects of `B`, there are morphisms
+`g : ∐ G ⟶ M` and an epimorphism `e : ∐ G ⟶ N` with `g ≫ π = e ≫ ι`: the quotient `N` of `B` is
+the image of a morphism from the coproduct which lifts along `π`. -/
+theorem IsSeparator.exists_sigma_lift (hG : IsSeparator G) {B M N Q : C} (q : B ⟶ N) [Epi q]
+    (π : M ⟶ Q) [Epi π] (ι : N ⟶ Q) {I : Type*} [HasCoproduct fun _ : I ↦ G]
+    (e : I → Subobject B) (he : Function.Surjective e) :
+    ∃ (g : (∐ fun _ : I ↦ G) ⟶ M) (e' : (∐ fun _ : I ↦ G) ⟶ N), Epi e' ∧ g ≫ π = e' ≫ ι := by
+  have htop : imageSubobject q = ⊤ := by
+    have : Epi (imageSubobject q).arrow := epi_of_epi_fac (imageSubobject_arrow_comp q)
+    exact (Subobject.isIso_arrow_iff_eq_top _).1 (isIso_of_mono_of_epi _)
+  obtain ⟨φ, hφ⟩ := hG.exists_epi_sigmaDesc_comp (pullback.snd π ι)
+    (fun i ↦ imageSubobject ((e i).arrow ≫ q)) (fun Y' ↦ by
+      obtain ⟨i, hi⟩ := he ((Subobject.pullback q).obj Y')
+      refine ⟨i, ?_⟩
+      have := Subobject.epi_pullbackπ_of_le_imageSubobject q (htop ▸ le_top : Y' ≤ _)
+      dsimp only
+      rw [hi, ← (Subobject.isPullback q Y').w, imageSubobject_comp_eq_of_epi,
+        imageSubobject_mono, Subobject.mk_arrow])
+  exact ⟨Sigma.desc φ ≫ pullback.fst _ _, Sigma.desc φ ≫ pullback.snd _ _, hφ, by
+    rw [Category.assoc, Category.assoc, pullback.condition]⟩
 
 end CategoryTheory

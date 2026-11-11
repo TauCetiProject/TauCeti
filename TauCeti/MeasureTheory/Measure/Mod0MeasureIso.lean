@@ -193,18 +193,6 @@ theorem mod0MeasureIso_to_unitInterval
     ∃ (f : α → I) (g : I → α),
       MeasurePreserving f μ volume ∧ MeasurePreserving g volume μ ∧
       (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) := by
-  have hempty : (I : Set ℝ)ᶜ ∩ Set.Icc (0 : ℝ) 1 = ∅ := by
-    ext y
-    simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_Icc]
-    grind
-  have hnull : (volume.restrict (Set.Icc (0 : ℝ) 1)) (I : Set ℝ)ᶜ = 0 := by
-    rw [Measure.restrict_apply measurableSet_Icc.compl, hempty, measure_empty]
-  have hmem : ∀ᵐ x ∂μ, e.toFun x ∈ I := by
-    have hpre : {x | e.toFun x ∉ I} = e.toFun ⁻¹' (I : Set ℝ)ᶜ := by
-      ext x
-      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_compl_iff]
-    rw [ae_iff, hpre]
-    exact e.measurePreserving.preimage_null hnull
   have hclip : ∀ x : α, max (0 : ℝ) (min 1 (e.toFun x)) ∈ I := by
     intro x
     exact ⟨by grind, by grind⟩
@@ -218,7 +206,8 @@ theorem mod0MeasureIso_to_unitInterval
     dsimp [g]
     exact e.measurable_invFun.comp measurable_subtype_coe
   have hclip_id : ∀ᵐ x ∂μ, max (0 : ℝ) (min 1 (e.toFun x)) = e.toFun x := by
-    filter_upwards [hmem] with x hx
+    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae
+      (ae_restrict_mem measurableSet_Icc)] with x hx
     grind
   have hgf : (g ∘ f) =ᵐ[μ] id := by
     filter_upwards [hclip_id, e.left_inv_ae] with x hx hx'

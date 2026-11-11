@@ -5,25 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.NNReal.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 import TauCeti.Probability.Moments.Basic
 
 /-!
-# Squared, linear, and directional exponential moments of sub-Gaussian random variables
+# Sub-Gaussian linear forms and squared and directional exponential moments
 
-We develop squared-variable exponential moment bounds for `ProbabilityTheory.HasSubgaussianMGF`
-(`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`, `mgf_sq_sub_integral_le`), complex directional
-sub-Gaussianity, and dot-product sub-Gaussian bounds for independent real and complex vectors
-(Vershynin 2018, §2.5–2.7; Rudelson–Vershynin 2013).
+For independent sub-Gaussian coordinates, a fixed linear form has a sub-Gaussian tail with
+variance proxy equal to the sum of the coordinate proxies weighted by the squared coefficients.
+Applying this to coefficients of the form `u i * v j` gives the fixed-bilinear-form estimate
+used in the operator-norm tail bound for random matrices.
+
+We also develop squared-variable exponential moment bounds for
+`ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
+`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, and dot-product sub-Gaussian
+bounds for independent real and complex vectors (Vershynin 2018, §2.5–2.7;
+Rudelson–Vershynin 2013).
 -/
 
 public section
 
-open MeasureTheory Real
+open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal NNReal
 
 namespace ProbabilityTheory
@@ -56,7 +64,8 @@ theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF 
       have hg : Integrable (fun ω ↦ exp (-t * m) * exp (t * X ω)) μ :=
         (h.integrable_exp_mul t).const_mul (exp (-t * m))
       have hpt (ω : Ω) : 1 + t * (X ω - m) ≤ exp (-t * m) * exp (t * X ω) := by
-        rw [← exp_add, show -t * m + t * X ω = t * (X ω - m) by ring]
+        have hlin : -t * m + t * X ω = t * (X ω - m) := by ring
+        rw [← exp_add, hlin]
         linarith [add_one_le_exp (t * (X ω - m))]
       have hlhs : ∫ ω, (1 + t * (X ω - m)) ∂μ = 1 := by
         rw [integral_add (integrable_const 1) hmul, integral_const_mul,
@@ -68,10 +77,11 @@ theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF 
     have hc1 : (c : ℝ) + 1 ≠ 0 := by positivity
     have hstep := mul_le_mul_of_nonneg_left (hquad (m / ((c : ℝ) + 1)))
       (by positivity : (0 : ℝ) ≤ 2 * ((c : ℝ) + 1) ^ 2)
-    rw [show 2 * ((c : ℝ) + 1) ^ 2 * (m / ((c : ℝ) + 1) * m) = 2 * ((c : ℝ) + 1) * m ^ 2 by
-        field_simp,
-      show 2 * ((c : ℝ) + 1) ^ 2 * ((c : ℝ) * (m / ((c : ℝ) + 1)) ^ 2 / 2) = (c : ℝ) * m ^ 2 by
-        field_simp] at hstep
+    have hlhs_alg : 2 * ((c : ℝ) + 1) ^ 2 * (m / ((c : ℝ) + 1) * m) =
+        2 * ((c : ℝ) + 1) * m ^ 2 := by field_simp
+    have hrhs_alg : 2 * ((c : ℝ) + 1) ^ 2 * ((c : ℝ) * (m / ((c : ℝ) + 1)) ^ 2 / 2) =
+        (c : ℝ) * m ^ 2 := by field_simp
+    rw [hlhs_alg, hrhs_alg] at hstep
     have h0 : ((c : ℝ) + 2) * m ^ 2 = 0 := le_antisymm (by linarith) (by positivity)
     exact sq_eq_zero_iff.mp ((mul_eq_zero.mp h0).resolve_left (by positivity))
 
@@ -90,15 +100,16 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
   have hsq : Real.sqrt (2 * s) ^ 2 = 2 * s := Real.sq_sqrt (by positivity)
   have hleft (ω : Ω) : ∫⁻ g, F (ω, g) ∂γ = ENNReal.ofReal (exp (s * X₀ ω ^ 2)) := by
     let u : ℝ := Real.sqrt (2 * s) * X₀ ω
-    rw [show ∫⁻ g, F (ω, g) ∂γ = ENNReal.ofReal (mgf (fun g ↦ g) γ u) from
+    have hmgf_u : ∫⁻ g, F (ω, g) ∂γ = ENNReal.ofReal (mgf (fun g ↦ g) γ u) :=
       (ofReal_integral_eq_lintegral_ofReal (integrable_exp_mul_gaussianReal u)
-        (.of_forall fun _ ↦ (exp_pos _).le)).symm, mgf_fun_id_gaussianReal]
+        (.of_forall fun _ ↦ (exp_pos _).le)).symm
+    rw [hmgf_u, mgf_fun_id_gaussianReal]
     simp only [zero_mul, zero_add, NNReal.coe_one, one_mul, u]; congr 2; rw [mul_pow, hsq]; ring
   have hright (g : ℝ) : ∫⁻ ω, F (ω, g) ∂μ ≤ ENNReal.ofReal (exp (((c : ℝ) * s) * g ^ 2)) := by
     let t : ℝ := Real.sqrt (2 * s) * g
-    rw [show (fun ω ↦ F (ω, g)) = fun ω ↦ ENNReal.ofReal (exp (t * X₀ ω)) from
-        funext fun _ ↦ by dsimp [F, t]; ring_nf,
-      ← ofReal_integral_eq_lintegral_ofReal (h₀.integrable_exp_mul t)
+    have hF_slice : (fun ω ↦ F (ω, g)) = fun ω ↦ ENNReal.ofReal (exp (t * X₀ ω)) :=
+      funext fun _ ↦ by dsimp [F, t]; ring_nf
+    rw [hF_slice, ← ofReal_integral_eq_lintegral_ofReal (h₀.integrable_exp_mul t)
         (.of_forall fun _ ↦ (exp_pos _).le), ← mgf]
     refine ENNReal.ofReal_le_ofReal ((h₀.mgf_le t).trans_eq ?_)
     congr 1; dsimp [t]; rw [mul_pow, hsq]; ring
@@ -128,8 +139,9 @@ theorem integrable_exp_mul_sq (h : HasSubgaussianMGF X c μ) {s : ℝ} (hs : 2 *
       ((h.aemeasurable.pow_const 2).const_mul s)).aestronglyMeasurable
   by_cases hs0 : 0 ≤ s
   · refine ⟨haesm, ?_⟩
-    rw [hasFiniteIntegral_def, show (fun ω ↦ ‖exp (s * X ω ^ 2)‖ₑ) = fun ω ↦
-      ENNReal.ofReal (exp (s * X ω ^ 2)) from funext fun _ ↦ Real.enorm_eq_ofReal (exp_pos _).le]
+    have henorm : (fun ω ↦ ‖exp (s * X ω ^ 2)‖ₑ) = fun ω ↦ ENNReal.ofReal (exp (s * X ω ^ 2)) :=
+      funext fun _ ↦ Real.enorm_eq_ofReal (exp_pos _).le
+    rw [hasFiniteIntegral_def, henorm]
     exact (h.lintegral_ofReal_exp_mul_sq_le hs0 hs).trans_lt ENNReal.ofReal_lt_top
   · refine Integrable.of_bound haesm 1 (.of_forall fun _ ↦ ?_)
     rw [Real.norm_of_nonneg (exp_pos _).le, Real.exp_le_one_iff]
@@ -153,9 +165,9 @@ theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussi
   · exact ⟨integrable_zero_measure, by simp [mgf, (exp_pos _).le]⟩
   · by_cases hc : c = 0
     · subst hc; have hX0 : ∀ᵐ ω ∂μ, X ω = 0 := h.ae_eq_zero_of_hasSubgaussianMGF_zero
-      have hm0 : μ[fun ω' ↦ X ω' ^ 2] = 0 := by
-        rw [integral_congr_ae (hX0.mono fun _ hω ↦ show _ ^ 2 = (0 : ℝ) by rw [hω]; ring),
-          integral_zero]
+      have hsq0 : (fun ω' ↦ X ω' ^ 2) =ᵐ[μ] fun _ ↦ 0 :=
+        hX0.mono fun _ hω ↦ by dsimp only; rw [hω]; ring
+      have hm0 : μ[fun ω' ↦ X ω' ^ 2] = 0 := by rw [integral_congr_ae hsq0, integral_zero]
       have hexp1 : (fun ω ↦ exp (θ * (X ω ^ 2 - μ[fun ω' ↦ X ω' ^ 2]))) =ᵐ[μ] fun _ ↦ 1 :=
         hX0.mono fun _ hω ↦ by dsimp only; rw [hω, hm0]; simp
       refine ⟨(integrable_const 1).congr hexp1.symm, ?_⟩
@@ -168,10 +180,12 @@ theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussi
         simpa [div_eq_inv_mul] using h.integrable_exp_mul_sq hs_lt
       have hexp_le : ∫ ω, exp (X ω ^ 2 / B) ∂μ ≤ 2 := by
         have h1 := h.integral_exp_mul_sq_le (inv_nonneg.2 hB.le) hs_lt
-        rw [show 1 - 2 * (c : ℝ) * B⁻¹ = 1 / 2 by dsimp [B]; field_simp; norm_num] at h1
+        have hhalf : 1 - 2 * (c : ℝ) * B⁻¹ = 1 / 2 := by dsimp [B]; field_simp; norm_num
+        rw [hhalf] at h1
+        have hneg_half : (-1 / 2 : ℝ) = -(1 / 2 : ℝ) := by norm_num
+        have hinv_half : (1 / 2 : ℝ)⁻¹ = 2 := by norm_num
         have hrpow : (1 / 2 : ℝ) ^ (-1 / 2 : ℝ) ≤ 2 := by
-          rw [show (-1 / 2 : ℝ) = -(1 / 2 : ℝ) by norm_num, Real.rpow_neg (by norm_num),
-            ← Real.inv_rpow (by norm_num), show (1 / 2 : ℝ)⁻¹ = 2 by norm_num]
+          rw [hneg_half, Real.rpow_neg (by norm_num), ← Real.inv_rpow (by norm_num), hinv_half]
           exact (Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)).trans_eq (rpow_one 2)
         simpa [div_eq_inv_mul] using h1.trans hrpow
       obtain ⟨hint, hmgf⟩ := TauCeti.mgf_sub_integral_le_of_nonneg_exp_le_two (θ := θ)
@@ -194,15 +208,17 @@ theorem hasSubgaussianMGF_re_of_star_mul
 theorem hasSubgaussianMGF_im_of_star_mul
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
     HasSubgaussianMGF (fun ω ↦ (Z ω).im) K μ := by
-  simpa [show (fun ω ↦ (star Complex.I * Z ω).re) = fun ω ↦ (Z ω).im from
-    funext fun _ ↦ by simp [Complex.mul_re]] using hZ Complex.I
+  have him : (fun ω ↦ (star Complex.I * Z ω).re) = fun ω ↦ (Z ω).im :=
+    funext fun _ ↦ by simp [Complex.mul_re]
+  simpa [him] using hZ Complex.I
 
 /-- Every directionally sub-Gaussian complex random variable is Bochner integrable. -/
 theorem integrable_of_hasSubgaussianMGF_re_star_mul
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
     Integrable Z μ := by
-  rw [show Z = fun ω ↦ ((Z ω).re : ℂ) + ((Z ω).im : ℂ) * Complex.I from
-    funext fun ω ↦ (Complex.re_add_im (Z ω)).symm]
+  have hZ_eq : Z = fun ω ↦ ((Z ω).re : ℂ) + ((Z ω).im : ℂ) * Complex.I :=
+    funext fun ω ↦ (Complex.re_add_im (Z ω)).symm
+  rw [hZ_eq]
   exact (hasSubgaussianMGF_re_of_star_mul hZ).integrable.ofReal.add
     ((hasSubgaussianMGF_im_of_star_mul hZ).integrable.ofReal.mul_const Complex.I)
 
@@ -257,27 +273,83 @@ theorem hasSubgaussianMGF_re_star_mul_of_norm_le [IsProbabilityMeasure μ]
     rw [Real.norm_of_nonneg (by linarith [mul_nonneg (norm_nonneg u) b.coe_nonneg])]; ring
   rwa [hparam] at hsub
 
-private theorem mk_sq_eq_nnnorm_sq (x : ℝ) : (⟨x ^ 2, sq_nonneg x⟩ : ℝ≥0) = ‖x‖₊ ^ 2 :=
-  Subtype.ext <| (sq_abs x).symm.trans <| (congrArg (· ^ 2) (Real.norm_eq_abs x).symm).trans
-    (NNReal.coe_pow ‖x‖₊ 2).symm
-
 /-- Independent `K`-sub-Gaussian real and imaginary parts yield directional `K`-sub-Gaussianity. -/
 theorem hasSubgaussianMGF_re_star_mul_of_indepFun_re_im
     (hre : HasSubgaussianMGF (fun ω ↦ (Z ω).re) K μ)
     (him : HasSubgaussianMGF (fun ω ↦ (Z ω).im) K μ)
     (hindep : IndepFun (fun ω ↦ (Z ω).re) (fun ω ↦ (Z ω).im) μ) (u : ℂ) :
     HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ := by
-  rw [show (fun ω ↦ (star u * Z ω).re) = fun ω ↦ u.re * (Z ω).re + u.im * (Z ω).im from
-    funext fun _ ↦ by simp [Complex.mul_re]]
+  have hproj : (fun ω ↦ (star u * Z ω).re) = fun ω ↦ u.re * (Z ω).re + u.im * (Z ω).im :=
+    funext fun _ ↦ by simp [Complex.mul_re]
+  rw [hproj]
   refine ((hre.const_mul u.re).add_of_indepFun (him.const_mul u.im)
     (hindep.comp (measurable_const_mul u.re) (measurable_const_mul u.im))).mono (le_of_eq ?_)
-  exact Subtype.ext <| show u.re ^ 2 * (K : ℝ) + u.im ^ 2 * (K : ℝ) =
-      ((‖u‖₊ ^ 2 : ℝ≥0) : ℝ) * (K : ℝ) by
+  have hcoe : u.re ^ 2 * (K : ℝ) + u.im ^ 2 * (K : ℝ) = ((‖u‖₊ ^ 2 : ℝ≥0) : ℝ) * (K : ℝ) := by
     push_cast; rw [Complex.sq_norm, Complex.normSq_apply]; ring
+  exact Subtype.ext hcoe
 
 end ComplexSubGaussian
 
 namespace iIndepFun
+
+/-- Two-sided sub-Gaussian tail bound for a linear combination of independent coordinates. -/
+theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
+    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
+    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ι → ℝ≥0}
+    (hX : ∀ i, HasSubgaussianMGF (X i) (c i) μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp
+        (-t ^ 2 / (2 * ∑ i, (a i) ^ 2 * (c i : ℝ))) := by
+  let Y : ι → Ω → ℝ := fun i ω ↦ a i * X i ω
+  let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
+  let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
+  have hY_indep : iIndepFun Y μ :=
+    h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
+  have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c i) μ := by
+    intro i
+    exact (hX i).const_mul (a i)
+  have hS : HasSubgaussianMGF S (∑ i, a2 i * c i) μ := by
+    exact HasSubgaussianMGF.sum_of_iIndepFun hY_indep
+      (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
+        intro i hi
+        exact hY i)
+  have hset : {ω | t ≤ |S ω|} =
+      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
+    ext ω
+    simpa only [Set.mem_ofPred_eq, Set.mem_union] using (le_abs : t ≤ |S ω| ↔ _)
+  have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
+      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
+  have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by
+    calc
+      μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
+          μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
+            rw [hset']
+      _ ≤ μ.real {ω | t ≤ S ω} + μ.real {ω | t ≤ -S ω} :=
+        measureReal_union_le _ _
+      _ ≤ Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) +
+          Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) :=
+        add_le_add (hS.measure_ge_le ht) (hS.neg.measure_ge_le ht)
+      _ = 2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by ring
+  have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
+      ∑ i, (a i) ^ 2 * (c i : ℝ) := by
+    rw [NNReal.coe_sum]
+    apply Finset.sum_congr rfl
+    intro i hi
+    rw [NNReal.coe_mul]
+    rfl
+  simpa only [hproxy] using hbound
+
+/-- The linear-form tail bound when all coordinates have the same variance proxy. -/
+theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
+    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
+    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ℝ≥0}
+    (hX : ∀ i, HasSubgaussianMGF (X i) c μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp (-t ^ 2 / (2 * ((c : ℝ) * ∑ i, (a i) ^ 2))) := by
+  simpa only [Finset.mul_sum, mul_comm] using
+    h_indep.measureReal_abs_sum_mul_ge_le_of_iIndepFun hX a ht
+
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
 
 /-- The dot product of independent sub-Gaussian random variables with a deterministic vector `w`
@@ -285,10 +357,13 @@ is sub-Gaussian with variance proxy `∑ i, ‖w i‖₊ ^ 2 * K i`. -/
 theorem hasSubgaussianMGF_dotProduct {X : ι → Ω → ℝ} (hindep : iIndepFun X P) {K : ι → ℝ≥0}
     (hX : ∀ i, HasSubgaussianMGF (X i) (K i) P) (w : ι → ℝ) :
     HasSubgaussianMGF (fun ω ↦ (fun i ↦ X i ω) ⬝ᵥ w) (∑ i, ‖w i‖₊ ^ 2 * K i) P := by
+  have hproxy (i : ι) : (⟨w i ^ 2, sq_nonneg (w i)⟩ : ℝ≥0) = ‖w i‖₊ ^ 2 :=
+    Subtype.ext <| (sq_abs (w i)).symm.trans <|
+      (congrArg (· ^ 2) (Real.norm_eq_abs (w i)).symm).trans (NNReal.coe_pow ‖w i‖₊ 2).symm
   have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i, w i * X i ω) (∑ i, ‖w i‖₊ ^ 2 * K i) P :=
     HasSubgaussianMGF.sum_of_iIndepFun
       (hindep.comp (fun i x ↦ w i * x) fun i ↦ measurable_const_mul (w i))
-      fun i _ ↦ mk_sq_eq_nnnorm_sq (w i) ▸ (hX i).const_mul (w i)
+      fun i _ ↦ hproxy i ▸ (hX i).const_mul (w i)
   simpa only [dotProduct, mul_comm] using hsum
 
 /-- Exponential moment bound for the dot product of independent `K`-sub-Gaussian random variables

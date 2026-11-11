@@ -82,7 +82,7 @@ theorem integral_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (hq : -a < q)
     hg.aestronglyMeasurable).symm.trans ?_
   rw [map_rpow_kumaraswamyMeasure ha hb, integral_rpow_mul_one_sub_rpow_betaMeasure zero_lt_one hb
       ((zero_lt_one_add_div_iff ha).mpr hq) (by rwa [add_zero]),
-    add_zero, beta_comm 1 b, beta_one_right hb]
+    add_zero, beta_one_left hb]
   field_simp
 
 /-- Every natural power is integrable against a Kumaraswamy law. -/

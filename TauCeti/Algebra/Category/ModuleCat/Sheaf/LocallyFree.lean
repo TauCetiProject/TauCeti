@@ -117,6 +117,14 @@ instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeDat
     exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
       (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
 
+/-- Local generators data transported along an isomorphism is of finite type if the original
+data is. -/
+instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsFiniteType] :
+    (q.ofIsIso f).IsFiniteType where
+  isFiniteType i := by
+    rw [LocalGeneratorsData.ofIsIso_generators]
+    exact ⟨(LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) _).finite⟩
+
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
 abbrev _root_.SheafOfModules.isLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
@@ -128,7 +136,20 @@ instance : (isLocallyFree R).IsClosedUnderIsomorphisms where
     have := h.exists_isLocallyFreeData.choose_spec
     (h.exists_isLocallyFreeData.choose.ofIsIso e.hom).isLocallyFree
 
-variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+variable (R) in
+/-- A sheaf of modules is finite locally free if it is locally free and finitely presented. -/
+abbrev _root_.SheafOfModules.isFiniteLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
+  isLocallyFree R ⊓ isFinitePresentation R
+
+end LocalGeneratorsData
+
+section QuasicoherentData
+
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{u}}
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+  {M : SheafOfModules.{u} R}
 
 /-- The quasi-coherent data associated with locally free data presents each restriction by the
 free sheaf on its local basis. -/
@@ -138,12 +159,7 @@ theorem _root_.SheafOfModules.LocalGeneratorsData.isIso_quasiCoherentData_presen
   rw [LocalGeneratorsData.quasiCoherentData_presentation_generators]
   exact LocalGeneratorsData.IsLocallyFreeData.isIso i
 
-variable (R) in
-/-- A sheaf of modules is finite locally free if it is locally free and finitely presented. -/
-abbrev _root_.SheafOfModules.isFiniteLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
-  isLocallyFree R ⊓ isFinitePresentation R
-
-end LocalGeneratorsData
+end QuasicoherentData
 
 section Locality
 

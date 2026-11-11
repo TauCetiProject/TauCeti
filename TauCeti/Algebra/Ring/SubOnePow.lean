@@ -5,44 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Choose.Sum
-public import Mathlib.Data.Nat.Multiplicity
+public import Mathlib.Algebra.CharP.Lemmas
 
 /-!
 # The prime `p` divides `(x - 1) ^ p ^ k` when `x ^ p ^ k = 1`
 
-In any ring, an element `x` with `x ^ p ^ k = 1` for a prime `p` satisfies
-`(p : A) ∣ (x - 1) ^ p ^ k`: expanding `1 = (1 + (x - 1)) ^ p ^ k` by the binomial theorem, the
-extreme terms are `1` and `(x - 1) ^ p ^ k`, and every other binomial coefficient
-`(p ^ k).choose m` with `0 < m < p ^ k` is divisible by `p`. No commutativity is needed, because
-`x - 1` commutes with `1`.
+For commuting elements `x` and `y` of a ring and a prime `p`, the binomial theorem gives
+`x ^ p ^ k = ((x - y) + y) ^ p ^ k = (x - y) ^ p ^ k + y ^ p ^ k + p * c` for some `c`, because
+every binomial coefficient `(p ^ k).choose m` with `0 < m < p ^ k` is divisible by `p`. Hence
+`(p : A) ∣ (x - y) ^ p ^ k` if and only if `(p : A) ∣ x ^ p ^ k - y ^ p ^ k`. Taking `y = 1`, an
+element `x` with `x ^ p ^ k = 1` satisfies `(p : A) ∣ (x - 1) ^ p ^ k`; no commutativity of the
+ring is needed.
 
-This is the integral shadow of the freshman's dream `(x - 1) ^ p ^ k = x ^ p ^ k - 1 = 0` in
+This is the integral shadow of the freshman's dream `(x - y) ^ p ^ k = x ^ p ^ k - y ^ p ^ k` in
 characteristic `p`. It is what makes the group-like elements `g - 1`, for `g` of `p`-power order
 in a group algebra over the `p`-adic integers, topologically nilpotent.
 
-## Main result
+## Main results
 
+* `Nat.Prime.dvd_sub_pow_iff_dvd_pow_sub_pow`: for commuting `x` and `y`,
+  `(p : A) ∣ (x - y) ^ p ^ k ↔ (p : A) ∣ x ^ p ^ k - y ^ p ^ k`.
 * `Nat.Prime.dvd_sub_one_pow_of_pow_eq_one`: `(p : A) ∣ (x - 1) ^ p ^ k` when `x ^ p ^ k = 1`.
 -/
 
 public section
 
+variable {A : Type*} [Ring A] {p : ℕ}
+
+/-- For commuting elements `x` and `y` of a ring and a prime `p`, `p` divides `(x - y) ^ p ^ k`
+if and only if it divides `x ^ p ^ k - y ^ p ^ k`. -/
+theorem Nat.Prime.dvd_sub_pow_iff_dvd_pow_sub_pow (hp : p.Prime) {x y : A} (h : Commute x y)
+    (k : ℕ) : (p : A) ∣ (x - y) ^ p ^ k ↔ (p : A) ∣ x ^ p ^ k - y ^ p ^ k := by
+  obtain ⟨r, hr⟩ := (h.sub_left (Commute.refl y)).exists_add_pow_prime_pow_eq hp k
+  rw [sub_add_cancel] at hr
+  rw [hr, add_right_comm, add_sub_cancel_right, mul_assoc, mul_assoc,
+    dvd_add_left (dvd_mul_right _ _)]
+
 /-- If `x ^ p ^ k = 1` in a ring, for a prime `p`, then `p` divides `(x - 1) ^ p ^ k`. -/
-theorem Nat.Prime.dvd_sub_one_pow_of_pow_eq_one {A : Type*} [Ring A] {p : ℕ} (hp : p.Prime)
-    {x : A} {k : ℕ} (hx : x ^ p ^ k = 1) : (p : A) ∣ (x - 1) ^ p ^ k := by
-  -- Expand `1 = ((x - 1) + 1) ^ p ^ k` by the binomial theorem.
-  have h : (1 : A) = ∑ m ∈ Finset.range (p ^ k + 1), (x - 1) ^ m * ((p ^ k).choose m : A) := by
-    simpa [hx] using (Commute.one_right (x - 1)).add_pow (p ^ k)
-  -- Split off the extreme terms `m = 0` and `m = p ^ k`, which are `1` and `(x - 1) ^ p ^ k`;
-  -- what remains is `(x - 1) ^ p ^ k + S = 0` for the sum `S` of the middle terms.
-  rw [Finset.sum_range_succ, Finset.range_eq_Ico,
-    Finset.sum_eq_sum_Ico_succ_bot (pow_pos hp.pos k)] at h
-  simp only [pow_zero, Nat.choose_zero_right, Nat.choose_self, Nat.cast_one, mul_one,
-    zero_add, add_assoc, left_eq_add] at h
-  -- Every middle term is divisible by `p`, through its binomial coefficient.
-  rw [eq_neg_of_add_eq_zero_right h, dvd_neg]
-  refine Finset.dvd_sum fun m hm ↦ ?_
-  rw [Finset.mem_Ico] at hm
-  rw [← (Nat.cast_commute _ _).eq]
-  exact (Nat.cast_dvd_cast (hp.dvd_choose_pow (by omega) hm.2.ne)).mul_right _
+theorem Nat.Prime.dvd_sub_one_pow_of_pow_eq_one (hp : p.Prime) {x : A} {k : ℕ}
+    (hx : x ^ p ^ k = 1) : (p : A) ∣ (x - 1) ^ p ^ k :=
+  (hp.dvd_sub_pow_iff_dvd_pow_sub_pow (Commute.one_right x) k).2 (by simp [hx])

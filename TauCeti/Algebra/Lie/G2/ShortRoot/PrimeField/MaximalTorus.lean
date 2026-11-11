@@ -11,8 +11,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 public import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # The maximal torus of the short-root G₂ carrier over 𝔽₃
@@ -46,6 +44,29 @@ local instance : Fact (Nat.Prime 3) := ⟨by decide⟩
 
 /-- Restriction of carrier coordinates to its rank-two weight torus. -/
 abbrev weightTorusCoordinateMap := CommHopfAlgCat.commonKernelLift generator (.inr ())
+
+/-- Restricting ambient matrix coordinates to the carrier and then to its weight torus
+recovers the ambient weight-torus coordinate morphism. -/
+theorem carrierQuotient_comp_weightTorusCoordinateMap :
+    carrierQuotient ≫ weightTorusCoordinateMap =
+      GeneralLinear.weightTorusCoordinateMap (R := ZMod 3) weight := by
+  rw [CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+
+/-- The carrier's generic matrix restricts to the diagonal matrix of its weight characters. -/
+theorem carrierGenericMatrix_map_weightTorusCoordinateMap :
+    carrierGenericMatrix.map weightTorusCoordinateMap.hom.toAlgHom =
+      Matrix.diagonal (fun i ↦
+        MonoidAlgebra.single (SplitTorus.weightCharacter (weight i)) (1 : ZMod 3)) := by
+  rw [carrierGenericMatrix_def, Matrix.map_map, ← AlgHom.coe_comp,
+    ← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
+    carrierQuotient_comp_weightTorusCoordinateMap]
+  apply Matrix.ext
+  intro i j
+  simpa only [Matrix.map_apply, BialgHom.coe_toAlgHom,
+    GeneralLinear.genericMatrix_apply, Matrix.diagonal_apply,
+    ← SplitTorus.weightCharacter_coe, Finsupp.coe_equivFunOnFinite_symm] using
+      (GeneralLinear.weightTorusCoordinateMap_X (R := ZMod 3) weight i j)
 
 /-- The weight-torus coordinate morphism is surjective. -/
 theorem weightTorusCoordinateMap_surjective :
@@ -129,30 +150,16 @@ theorem eq_baseChangeHopfIdeal_weightTorusDefiningIdeal_of_le_of_isCocomm
       (CommHopfAlgCat.baseChange (K := k) carrierAlgebra) I)]
     (hI : I ≤ CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal) :
     I = CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal := by
-  let H := CommHopfAlgCat.baseChange (K := k) carrierAlgebra
-  let A := CommAlgCat.of k k
-  let GI := CommHopfAlgCat.quotientPointsSubgroup H I A
-  let GD := CommHopfAlgCat.quotientPointsSubgroup H
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal) A
-  let e := baseChangePointsEquiv k
-  let _ : IsMulCommutative GI :=
-    CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I A
-  let _ : IsMulCommutative (GI.map e.toMonoidHom) :=
-    Subgroup.map_isMulCommutative GI e.toMonoidHom
-  have hDG : GD ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hmap : GI.map e.toMonoidHom = GD.map e.toMonoidHom := by
-    rw [map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal]
-    apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
-    rw [← map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal k]
-    exact Subgroup.map_mono hDG
-  have hpoints : GI = GD := Subgroup.map_injective e.injective hmap
-  exact le_antisymm hI (HopfIdeal.le_of_quotientPointsSubgroup_le hpoints.le)
+  exact HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal)
+    (baseChangePointsEquiv k).toMonoidHom (baseChangePointsEquiv k).injective
+    (map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal k)
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative P hP) I hI
 
 /-- The weight torus is maximal after extension to an algebraically closed field. -/
 theorem isMaximalTorus_baseChangeHopfIdeal_weightTorusDefiningIdeal :
     HopfIdeal.IsMaximalTorus k (CommHopfAlgCat.baseChange (K := k) carrierAlgebra)
       (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
   have hq := CommHopfAlgCat.quotientBaseChangeIso weightTorusDefiningIdeal (K := k)
   have hT : torusCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient
@@ -173,13 +180,11 @@ theorem isMaximalTorus_baseChangeHopfIdeal_weightTorusDefiningIdeal :
         (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := k)).mapIso e⟩⟩
     exact ((splitTorusCommHopfAlgProperty k).prop_of_iso
       (ObjectProperty.isoMk _ hq.symm) hsplitK).torus k _
-  refine ⟨hT, ?_⟩
-  intro I hI hID
-  let _ : IsReduced (CommHopfAlgCat.quotient
-      (CommHopfAlgCat.baseChange (K := k) carrierAlgebra) I) := hI.geometricallyReduced.isReduced
-  let _ : Coalgebra.IsCocomm k (CommHopfAlgCat.quotient
-      (CommHopfAlgCat.baseChange (K := k) carrierAlgebra) I) := hI.isCocomm k _
-  exact (eq_baseChangeHopfIdeal_weightTorusDefiningIdeal_of_le_of_isCocomm k I hID).ge
+  exact HopfIdeal.isMaximalTorus_of_maximal_points
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal) hT
+    (baseChangePointsEquiv k).toMonoidHom (baseChangePointsEquiv k).injective
+    (map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal k)
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative P hP)
 
 end AlgebraicallyClosed
 
@@ -246,8 +251,7 @@ theorem mkQuotient_comp_splitMaximalTorusCoordinateMap :
       GeneralLinear.weightTorusCoordinateMap
         (R := ZMod 3) (fun (i : Fin 7) (j : ULift.{0} (Fin 2)) => weight i j.down) := by
   rw [splitMaximalTorusCoordinateMap, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
-    GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+    carrierQuotient_comp_weightTorusCoordinateMap]
   apply _root_.CommHopfAlgCat.hom_ext
   apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext (ZMod 3) 7
   intro i j

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
-import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 
 /-!
 # Determining tempered distributions by real test functions
@@ -15,7 +15,7 @@ Two complex-linear tempered distributions agree if they agree on real-valued smo
 compactly supported functions, embedded in complex Schwartz space. This connects the real
 test functions used to define weak derivatives with the complex tests used in Fourier analysis.
 
-The density input is `SchwartzMap.dense_hasCompactSupport`. See L. Hörmander,
+The density input is Mathlib's `SchwartzMap.dense_hasCompactSupport`. See L. Hörmander,
 *The Analysis of Linear Partial Differential Operators I*, Section 7.1.
 -/
 

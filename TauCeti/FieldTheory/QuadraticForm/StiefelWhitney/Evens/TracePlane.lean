@@ -100,13 +100,13 @@ end kummerPoint
 Thus the standard quadratic form on `(Kˢ)²`, restricted along `y ↦ φ(y)`, is the scalar extension
 of the trace transfer of the line `⟨a⟩`. -/
 theorem kummerPoint_dotProduct {L : Type v} [Field L] [Algebra K L]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L]
-    (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.finrank K L = 2) (a : L)
-    (r : SeparableClosure K) (hr : r ^ 2 = σ a) (s : AbsoluteGaloisGroup K)
+    [FiniteDimensional K L] (σ : L →ₐ[K] SeparableClosure K) (hdeg : Module.finrank K L = 2)
+    (a : L) (r : SeparableClosure K) (hr : r ^ 2 = σ a) (s : AbsoluteGaloisGroup K)
     (hs : s ∉ galoisSubgroup K L σ) (y y' : L) :
     kummerPoint σ r s y ⬝ᵥ kummerPoint σ r s y' =
       algebraMap K (SeparableClosure K) (Algebra.trace K L (a * y * y')) := by
   classical
+  have : Algebra.IsSeparable K L := Algebra.IsSeparable.of_algHom K (SeparableClosure K) σ
   let τ : L →ₐ[K] SeparableClosure K := s.toAlgHom.comp σ
   have hτσ : τ ≠ σ := by
     intro h

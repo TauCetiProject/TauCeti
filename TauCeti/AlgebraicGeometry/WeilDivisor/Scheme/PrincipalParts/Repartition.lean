@@ -116,7 +116,7 @@ private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
       WithZero.exp_zero]
     exact ha_integral
   classical
-  exact dfinsuppOfFiniteSupport q hq
+  exact DFinsupp.ofSupportFinite q hq
 
 @[simp]
 private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X)
@@ -125,7 +125,7 @@ private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X
     repartitionToPrincipalPartsFamily hex hdim D a x =
       Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField)
         (X.toPlace (k := k) (x.1 : X))) := by
-  simp only [repartitionToPrincipalPartsFamily, dfinsuppOfFiniteSupport_apply,
+  simp only [repartitionToPrincipalPartsFamily, DFinsupp.ofSupportFinite_apply,
     CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim]
 
 /-- A repartition determines a global family of principal parts by taking, at each

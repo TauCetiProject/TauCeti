@@ -38,6 +38,15 @@ open Complex Filter MeasureTheory Topology InnerProductSpace Laplacian
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- Every component of the derivative of the vortex equation vanishes at a point near which the
+equation holds. -/
+private theorem fderiv_equation_apply_eq_zero {z : ℂ} (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0)
+    (i : Fin 3) (v : ℂ) : fderiv ℝ (fun w ↦ equation x w i) z v = 0 := by
+  have he : (fun w ↦ equation x w i) =ᶠ[𝓝 z] fun _ ↦ 0 :=
+    hsol.mono fun w hw ↦ by simp [hw]
+  rw [he.fderiv_eq]
+  simp
+
 /-- The covariant Bochner identity at a plane vortex, including the zeros of its section.
 Only the connection coefficients need be differentiable at the point. -/
 theorem laplacian_normSq_of_equation_eq_zero {z : ℂ}
@@ -56,15 +65,10 @@ theorem laplacian_normSq_of_equation_eq_zero {z : ℂ}
   have hcomm (i : Fin 4) (hi : ContDiffAt ℝ 2 (fun w ↦ x w i) z) :=
     (hi.isSymmSndFDerivAt (by norm_num)).eq (1 : ℂ) I
   -- Differentiate the two holomorphicity rows, retaining the connection derivatives.
-  have hrow (i : Fin 3) (v : ℂ) : fderiv ℝ (fun w ↦ equation x w i) z v = 0 := by
-    have he : (fun w ↦ equation x w i) =ᶠ[𝓝 z] fun _ ↦ 0 :=
-      hsol.mono fun w hw ↦ by simp [hw]
-    rw [he.fderiv_eq]
-    simp
-  have h11 := hrow 1 1
-  have h1I := hrow 1 I
-  have h21 := hrow 2 1
-  have h2I := hrow 2 I
+  have h11 := fderiv_equation_apply_eq_zero hsol 1 1
+  have h1I := fderiv_equation_apply_eq_zero hsol 1 I
+  have h21 := fderiv_equation_apply_eq_zero hsol 2 1
+  have h2I := fderiv_equation_apply_eq_zero hsol 2 I
   simp (disch := fun_prop) only [equation_apply_one, equation_apply_two,
     fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
     fderiv_clm_apply hdp (differentiableAt_const _),
@@ -116,7 +120,7 @@ theorem integrable_covariantDerivative_norm_sq
     Integrable (fun z ↦ ‖covariantDerivative x z 1‖ ^ 2 +
       ‖covariantDerivative x z I‖ ^ 2) μ := by
   let s := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
-  have hs : ContDiff ℝ 2 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hs : ContDiff ℝ 2 s := contDiff_normSq hp hq
   have hsi : Integrable (fun z ↦ 1 - s z) μ :=
     integrable_one_sub_normSq μ hb₁ hb₂ hp hq hsol hlim
   have hs1 : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim

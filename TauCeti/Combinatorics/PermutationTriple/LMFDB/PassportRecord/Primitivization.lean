@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
-public import TauCeti.Combinatorics.PermutationTriple.LMFDB.BelyiRecord
+public import TauCeti.Combinatorics.PermutationTriple.LMFDB.BelyiRecord.Basic
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Basic
 
 /-!
@@ -115,8 +115,7 @@ the passport row: passing to a block quotient does not increase the genus. -/
 theorem g_le (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) : q.g ≤ r.g := by
   obtain ⟨e, hq⟩ := h.exists_isValidFor
   rw [hq.g_eq_genus (ConnectedTriple.hasPassport_passportOf _), hr.g_eq]
-  exact genus_blockQuotient_le e hr.isBlock_primitivizationBlock
-    (Finset.coe_nonempty.mpr hr.primitivizationBlock_nonempty) t.2
+  exact genus_blockQuotient_le e hr.isBlock_primitivizationBlock t.2
 
 /-- The stored primitivity flag of a valid passport row is set exactly when its primitivization
 has the same degree, that is, when the primitivization block is a single sheet. -/

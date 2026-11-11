@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 
@@ -30,13 +32,20 @@ This file supplements Mathlib's basic moment-generating-function API.
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
 * `TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero`: a finite sum of square-integrable random
   variables whose second moments sum to zero vanishes almost surely.
+* `ProbabilityTheory.iIndepFun.mgf_sum_of_aemeasurable`: the moment-generating function of a finite
+  sum of independent variables is the product of the factors, needing a.e. measurability only on
+  the summation set.
+* `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum_of_aemeasurable`: the exponential of a finite
+  sum of independent a.e. measurable variables is integrable when each factor is.
+* `ProbabilityTheory.iIndepFun.mgf_sum_le_exp_sum`: exponential MGF bound for a finite sum of
+  independent variables from coordinatewise exponential bounds.
+* `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
+  moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
 * `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: AM-GM and
   geometric-mean bounds for `mgf (X + Y)` without independence.
 * `TauCeti.mgf_sub_integral_le_of_nonneg_exp_le_two`,
   `TauCeti.measureReal_gt_le_exp_min_of_mgf_le`,
   `TauCeti.measureReal_abs_gt_le_two_mul_exp_min_of_mgf_le`: sub-exponential MGF & Chernoff bounds.
-* `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum₀`,
-  `ProbabilityTheory.iIndepFun.mgf_sum_le_exp_sum`: exponential moments of independent sums.
 -/
 
 public section
@@ -109,6 +118,54 @@ theorem ae_sum_eq_zero_of_sum_integral_sq_eq_zero {ι : Type*} {X : ι → Ω �
   filter_upwards [(Filter.eventually_all_finset s).2 hae] with ω hω
   exact Finset.sum_eq_zero hω
 
+section Symmetrization
+
+open Real
+
+variable {f : Ω → ℝ}
+
+/-- **Symmetrization by Jensen's inequality.** For a probability measure `μ`, the moment
+generating function of `f - 𝔼 f` at `t` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`. -/
+theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ]
+    (hfi : Integrable f μ) {t : ℝ} (hint : Integrable (fun x ↦ exp (t * (f x - ∫ y, f y ∂μ))) μ)
+    (hneg : Integrable (fun x ↦ exp (-t * f x)) μ) :
+    ENNReal.ofReal (mgf (fun x ↦ f x - ∫ y, f y ∂μ) μ t) ≤
+      ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ := by
+  set m := ∫ y, f y ∂μ
+  have hexp (x y : Ω) : exp (t * (f x - f y)) = exp (t * f x) * exp (-t * f y) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  have hexpi (x : Ω) : Integrable (fun y ↦ exp (t * (f x - f y))) μ := by
+    simp_rw [hexp]
+    exact hneg.const_mul _
+  -- Jensen's inequality in `y`, for each fixed `x`.
+  have hjensen (x : Ω) : exp (t * (f x - m)) ≤ ∫ y, exp (t * (f x - f y)) ∂μ := by
+    have hmean : ∫ y, t * (f x - f y) ∂μ = t * (f x - m) := by
+      rw [integral_const_mul, integral_sub (integrable_const _) hfi]
+      simp [m]
+    rw [← hmean]
+    exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
+      (((integrable_const _).sub hfi).const_mul t) (hexpi x)
+  have hf1 : AEMeasurable (fun p : Ω × Ω ↦ f p.1) (μ.prod μ) :=
+    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
+  have hf2 : AEMeasurable (fun p : Ω × Ω ↦ f p.2) (μ.prod μ) :=
+    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
+  have hF : AEMeasurable (fun p : Ω × Ω ↦ ENNReal.ofReal (exp (t * (f p.1 - f p.2)))) (μ.prod μ) :=
+    ENNReal.measurable_ofReal.comp_aemeasurable (by fun_prop)
+  rw [mgf]
+  calc ENNReal.ofReal (∫ x, exp (t * (f x - m)) ∂μ)
+      = ∫⁻ x, .ofReal (exp (t * (f x - m))) ∂μ :=
+        ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (exp_pos _).le)
+    _ ≤ ∫⁻ x, .ofReal (∫ y, exp (t * (f x - f y)) ∂μ) ∂μ :=
+        lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hjensen x)
+    _ = ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ := by
+        rw [lintegral_prod _ hF]
+        refine lintegral_congr fun x ↦ ?_
+        rw [ofReal_integral_eq_lintegral_ofReal (hexpi x) (.of_forall fun _ ↦ (exp_pos _).le)]
+
+end Symmetrization
+
 section SubExponential
 
 open Real
@@ -122,11 +179,12 @@ theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
   have hsqrt : (fun ω ↦ exp (θ * (X ω + Y ω))) =
       fun ω ↦ Real.sqrt (exp (2 * θ * X ω) * exp (2 * θ * Y ω)) := funext fun ω ↦ by
-    rw [show exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 by
-      rw [sq, ← exp_add, ← exp_add]; ring_nf, Real.sqrt_sq (exp_pos _).le]
+    have hmul_sq : exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 := by
+      rw [sq, ← exp_add, ← exp_add]; ring_nf
+    rw [hmul_sq, Real.sqrt_sq (exp_pos _).le]
   have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2 := by
-    rw [mul_add, exp_add, show exp (2 * θ * X ω) = exp (θ * X ω) ^ 2 by rw [sq, ← exp_add]; ring_nf,
-      show exp (2 * θ * Y ω) = exp (θ * Y ω) ^ 2 by rw [sq, ← exp_add]; ring_nf]
+    have hsq (z : ℝ) : exp (2 * θ * z) = exp (θ * z) ^ 2 := by rw [sq, ← exp_add]; ring_nf
+    rw [mul_add, exp_add, hsq (X ω), hsq (Y ω)]
     linarith [two_mul_le_add_sq (exp (θ * X ω)) (exp (θ * Y ω))]
   have hdom : Integrable (fun ω ↦ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2) μ :=
     (hX_int.add hY_int).div_const 2
@@ -148,9 +206,10 @@ theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
       (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω)) := by
     have hsq (z c : ℝ) : exp (-c) * exp (2 * θ * z) = exp (θ * z - c / 2) ^ 2 := by
       rw [sq, ← exp_add, ← exp_add]; ring_nf
-    rw [show exp (θ * (X ω + Y ω)) = exp ((a + b) / 2) *
-        (exp (θ * X ω - a / 2) * exp (θ * Y ω - b / 2)) by rw [← exp_add, ← exp_add]; ring_nf,
-      hsq (X ω) a, hsq (Y ω) b]
+    have hsplit : exp (θ * (X ω + Y ω)) =
+        exp ((a + b) / 2) * (exp (θ * X ω - a / 2) * exp (θ * Y ω - b / 2)) := by
+      rw [← exp_add, ← exp_add]; ring_nf
+    rw [hsplit, hsq (X ω) a, hsq (Y ω) b]
     nlinarith [two_mul_le_add_sq (exp (θ * X ω - a / 2)) (exp (θ * Y ω - b / 2)),
       exp_pos ((a + b) / 2)]
   have hdom : Integrable (fun ω ↦ exp ((a + b) / 2) / 2 *
@@ -198,19 +257,21 @@ theorem mgf_sub_integral_le_of_nonneg_exp_le_two [IsProbabilityMeasure μ] {Y : 
       (mul_le_mul_of_nonneg_left hZ_abs (abs_nonneg θ)).trans
         (by linarith [mul_le_mul_of_nonneg_right hθ (by positivity : 0 ≤ u + 1)])
     have hu_quad : (u + 1) ^ 2 ≤ 8 * exp (u / 2) := by
-      linarith [show (u + 1) ^ 2 ≤ 8 * (1 + u / 2 + (u / 2) ^ 2 / 2) by nlinarith,
-        Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ u / 2)]
+      have hpoly : (u + 1) ^ 2 ≤ 8 * (1 + u / 2 + (u / 2) ^ 2 / 2) := by nlinarith
+      linarith [hpoly, Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ u / 2)]
     have hu_exp : (u + 1) ^ 2 * exp (u / 2 + 1 / 2) ≤ 24 * exp u := by
       have hmul := mul_le_mul hu_quad (mul_le_mul_of_nonneg_left hexp_half_le (exp_pos (u / 2)).le)
         (by positivity) (by positivity)
-      rw [exp_add]; linarith [show exp (u / 2) * exp (u / 2) = exp u by rw [← exp_add]; ring_nf]
+      have hexp_sq : exp (u / 2) * exp (u / 2) = exp u := by rw [← exp_add]; ring_nf
+      rw [exp_add]; linarith [hexp_sq]
     have h1 : (θ * Z ω) ^ 2 / 2 * exp |θ * Z ω| ≤
         (B ^ 2 * θ ^ 2 / 2) * ((u + 1) ^ 2 * exp (u / 2 + 1 / 2)) := by
       have hZ_sq : (θ * Z ω) ^ 2 ≤ B ^ 2 * θ ^ 2 * (u + 1) ^ 2 := by
-        rw [show (θ * Z ω) ^ 2 = θ ^ 2 * |Z ω| ^ 2 by rw [sq_abs]; ring]
-        nlinarith [pow_le_pow_left₀ (abs_nonneg _) hZ_abs 2, sq_nonneg θ]
-      rw [show (B ^ 2 * θ ^ 2 / 2) * ((u + 1) ^ 2 * exp (u / 2 + 1 / 2)) =
-        (B ^ 2 * θ ^ 2 * (u + 1) ^ 2 / 2) * exp (u / 2 + 1 / 2) by ring]
+        have habs_sq : (θ * Z ω) ^ 2 = θ ^ 2 * |Z ω| ^ 2 := by rw [sq_abs]; ring
+        rw [habs_sq]; nlinarith [pow_le_pow_left₀ (abs_nonneg _) hZ_abs 2, sq_nonneg θ]
+      have hreassoc : (B ^ 2 * θ ^ 2 / 2) * ((u + 1) ^ 2 * exp (u / 2 + 1 / 2)) =
+          (B ^ 2 * θ ^ 2 * (u + 1) ^ 2 / 2) * exp (u / 2 + 1 / 2) := by ring
+      rw [hreassoc]
       exact mul_le_mul (by linarith) (exp_le_exp.2 hθZ) (exp_pos _).le (by positivity)
     exact (Real.exp_le_one_add_add_sq_div_two_mul_exp_abs (θ * Z ω)).trans
       (by linarith [mul_le_mul_of_nonneg_left hu_exp (by positivity : 0 ≤ B ^ 2 * θ ^ 2 / 2)])
@@ -225,8 +286,9 @@ theorem mgf_sub_integral_le_of_nonneg_exp_le_two [IsProbabilityMeasure μ] {Y : 
   rw [integral_add hf1 (hY_int_exp.const_mul _),
     integral_add (integrable_const 1) (hZ_int.const_mul θ), integral_const, probReal_univ, one_smul,
     integral_const_mul, integral_const_mul, hZ_mean, mul_zero, add_zero]
-  exact (show 1 + 12 * B ^ 2 * θ ^ 2 * ∫ ω, exp (Y ω / B) ∂μ ≤ 1 + 24 * B ^ 2 * θ ^ 2 by
-      nlinarith [sq_nonneg (B * θ)]).trans (by linarith [add_one_le_exp (24 * B ^ 2 * θ ^ 2)])
+  have hlin : 1 + 12 * B ^ 2 * θ ^ 2 * ∫ ω, exp (Y ω / B) ∂μ ≤ 1 + 24 * B ^ 2 * θ ^ 2 := by
+    nlinarith [sq_nonneg (B * θ)]
+  exact hlin.trans (by linarith [add_one_le_exp (24 * B ^ 2 * θ ^ 2)])
 
 /-- **One-sided sub-exponential Chernoff bound.** -/
 theorem measureReal_gt_le_exp_min_of_mgf_le {P : Measure Ω} [IsProbabilityMeasure P]
@@ -238,11 +300,12 @@ theorem measureReal_gt_le_exp_min_of_mgf_le {P : Measure Ω} [IsProbabilityMeasu
       exp (-min (1 / (4 * C₁)) (1 / (2 * C₂)) * min (t ^ 2 / F) (t / op)) := by
   let c : ℝ := min (1 / (4 * C₁)) (1 / (2 * C₂))
   rcases hF.eq_or_lt with rfl | hF_pos
-  · rw [show min (t ^ 2 / (0 : ℝ)) (t / op) = 0 by simp [div_nonneg ht hop], mul_zero, exp_zero]
+  · have hmin0 : min (t ^ 2 / (0 : ℝ)) (t / op) = 0 := by simp [div_nonneg ht hop]
+    rw [hmin0, mul_zero, exp_zero]
     exact (measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ
   rcases hop.eq_or_lt with rfl | hop_pos
-  · rw [show min (t ^ 2 / F) (t / (0 : ℝ)) = 0 by simp [div_nonneg (sq_nonneg t) hF_pos.le],
-      mul_zero, exp_zero]
+  · have hmin0 : min (t ^ 2 / F) (t / (0 : ℝ)) = 0 := by simp [div_nonneg (sq_nonneg t) hF_pos.le]
+    rw [hmin0, mul_zero, exp_zero]
     exact (measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ
   let θ : ℝ := min (t / (2 * C₁ * F)) (1 / (C₂ * op))
   have hθ0 : 0 ≤ θ := le_min (by positivity) (by positivity)
@@ -257,10 +320,12 @@ theorem measureReal_gt_le_exp_min_of_mgf_le {P : Measure Ω} [IsProbabilityMeasu
       (mul_div_cancel₀ t hCF.ne')]
   have hrate : c * min (t ^ 2 / F) (t / op) ≤ θ * t / 2 := by
     rcases le_total (t / (2 * C₁ * F)) (1 / (C₂ * op)) with hcase | hcase
-    · rw [show θ = t / (2 * C₁ * F) from min_eq_left hcase]
+    · have hθ_eq : θ = t / (2 * C₁ * F) := min_eq_left hcase
+      rw [hθ_eq]
       exact (mul_le_mul (min_le_left _ _) (min_le_left _ _)
         (le_min (by positivity) (by positivity)) (by positivity)).trans_eq (by field_simp; ring)
-    · rw [show θ = 1 / (C₂ * op) from min_eq_right hcase]
+    · have hθ_eq : θ = 1 / (C₂ * op) := min_eq_right hcase
+      rw [hθ_eq]
       exact (mul_le_mul (min_le_right _ _) (min_le_right _ _)
         (le_min (by positivity) (by positivity)) (by positivity)).trans_eq (by field_simp)
   have hsub : {ω | t < Y ω} ⊆ {ω | t ≤ Y ω} := fun _ (hω : t < _) ↦ hω.le
@@ -293,25 +358,44 @@ end TauCeti
 
 namespace ProbabilityTheory.iIndepFun
 
-/-- Almost-everywhere measurable counterpart of
-`ProbabilityTheory.iIndepFun.integrable_exp_mul_sum`. -/
-theorem integrable_exp_mul_sum₀ {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) (h_meas : ∀ i, AEMeasurable (X i) μ)
-    {s : Finset ι} {t : ℝ} (h_int : ∀ i ∈ s, Integrable (fun ω ↦ Real.exp (t * X i ω)) μ) :
-    Integrable (fun ω ↦ Real.exp (t * ∑ i ∈ s, X i ω)) μ := by
-  have : IsProbabilityMeasure μ := h_indep.isProbabilityMeasure
-  have hpos : 0 < mgf (∑ i ∈ s, X i) μ t :=
-    (h_indep.mgf_sum₀ h_meas s) ▸ Finset.prod_pos fun i hi ↦ mgf_pos (h_int i hi)
-  exact (mgf_pos_iff.mp hpos).congr (.of_forall fun _ ↦ by simp)
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+  {ι : Type*} {X : ι → Ω → ℝ} {t : ℝ}
 
+omit [IsProbabilityMeasure μ] in
+/-- The moment-generating function of a finite sum of independent variables is the product of
+their moment-generating functions, where only the members indexed by the sum need be a.e.
+measurable. This weakens the measurability hypothesis of `ProbabilityTheory.iIndepFun.mgf_sum₀`. -/
+theorem mgf_sum_of_aemeasurable (h_indep : iIndepFun X μ) {s : Finset ι}
+    (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) :
+    mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
+  have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
+    (fun i : s => h_meas i i.2) Finset.univ
+  rw [Finset.prod_coe_sort s (fun i => mgf (X i) μ t)] at h
+  rw [← h]
+  congr 1
+  ext ω
+  simp only [Finset.sum_apply]
+  exact (Finset.sum_coe_sort s (fun i => X i ω)).symm
+
+/-- A finite sum of independent, almost-everywhere measurable variables with integrable
+exponentials has an integrable exponential. This weakens the measurability hypothesis of
+`ProbabilityTheory.iIndepFun.integrable_exp_mul_sum`. -/
+theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
+    {s : Finset ι} (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ)
+    (h_int : ∀ i ∈ s, Integrable (fun ω => Real.exp (t * X i ω)) μ) :
+    Integrable (fun ω => Real.exp (t * (∑ i ∈ s, X i ω))) μ := by
+  rw [← mgf_pos_iff]
+  rw [h_indep.mgf_sum_of_aemeasurable h_meas (t := t)]
+  exact Finset.prod_pos fun i hi => mgf_pos (h_int i hi)
+
+omit [IsProbabilityMeasure μ] in
 /-- Exponential MGF bound for a finite sum of independent random variables from coordinatewise
 exponential MGF bounds. -/
-theorem mgf_sum_le_exp_sum {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ι → Ω → ℝ}
-    (h_indep : iIndepFun X μ) (h_meas : ∀ i, AEMeasurable (X i) μ) {s : Finset ι} {t : ℝ}
-    {b : ι → ℝ} (hb : ∀ i ∈ s, mgf (X i) μ t ≤ Real.exp (b i)) :
+theorem mgf_sum_le_exp_sum (h_indep : iIndepFun X μ) {s : Finset ι}
+    (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) {b : ι → ℝ}
+    (hb : ∀ i ∈ s, mgf (X i) μ t ≤ Real.exp (b i)) :
     mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t ≤ Real.exp (∑ i ∈ s, b i) := by
-  rw [show (fun ω ↦ ∑ i ∈ s, X i ω) = ∑ i ∈ s, X i by ext; simp,
-    h_indep.mgf_sum₀ h_meas s, Real.exp_sum]
+  rw [h_indep.mgf_sum_of_aemeasurable h_meas, Real.exp_sum]
   exact Finset.prod_le_prod₀ (fun _ _ ↦ mgf_nonneg) hb
 
 end ProbabilityTheory.iIndepFun

@@ -130,52 +130,16 @@ theorem two_dvd_two_sub_eulerChar (t : PermutationTriple n) : (2 : ℤ) ∣ 2 - 
 
 /-! ### The Euler bound and genus -/
 
--- The proof applies the combinatorial transposition route componentwise, through
--- `TauCeti.card_add_orbitCount_le_length_add_two_mul_card_orbits`.
 /-- The Euler characteristic of a permutation triple is at most twice the number of orbits of
 its monodromy group. For a connected triple the orbit quotient has one element, recovering
-`TauCeti.PermutationTriple.IsConnected.eulerChar_le_two`. -/
+`TauCeti.PermutationTriple.IsConnected.eulerChar_le_two`. This is the Euler bound
+`Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le` for the pair `t.σ0`, `t.σ1`. -/
 theorem eulerChar_le_two_mul_card_monodromyOrbits (t : PermutationTriple n) :
     t.eulerChar ≤
       2 * Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) := by
-  obtain ⟨L0, hswap0, hprod0, hlen0⟩ :=
-    t.σ0.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
-  obtain ⟨L1, hswap1, hprod1, hlen1⟩ :=
-    t.σ1.exists_isSwap_list_prod_eq_and_orbitCount_add_length_eq_card
-  let L := L1 ++ L0
-  let H := Subgroup.closure {g : Perm (Fin n) | g ∈ L}
-  have hL : ∀ g ∈ L, g.IsSwap := by
-    intro g hg
-    rcases List.mem_append.mp hg with hg | hg
-    · exact hswap1 g hg
-    · exact hswap0 g hg
-  have hσ0 : t.σ0 ∈ H := by
-    rw [← hprod0]
-    exact H.list_prod_mem fun g hg => Subgroup.subset_closure
-      (List.mem_append_right L1 hg)
-  have hσ1 : t.σ1 ∈ H := by
-    rw [← hprod1]
-    exact H.list_prod_mem fun g hg => Subgroup.subset_closure
-      (List.mem_append_left L0 hg)
-  have hmonodromy : t.monodromyGroup ≤ H := by
-    rw [← t.closure_triple_eq_monodromyGroup, Subgroup.closure_le]
-    rintro g (rfl | rfl | rfl)
-    · exact hσ0
-    · exact hσ1
-    · rw [t.σinf_eq_inv]
-      exact inv_mem (mul_mem hσ1 hσ0)
-  have hcomponent : Nat.card (MulAction.orbitRel.Quotient H (Fin n)) ≤
-      Nat.card (MulAction.orbitRel.Quotient t.monodromyGroup (Fin n)) :=
-    MulAction.card_orbitRelQuotient_anti hmonodromy
-  have hbound := card_add_orbitCount_le_length_add_two_mul_card_orbits hL
-  have hprod : L.prod = t.σinf⁻¹ := by
-    dsimp only [L]
-    rw [List.prod_append, hprod1, hprod0, t.σ1_mul_σ0_eq_σinf_inv]
-  have hn : Nat.card (Fin n) = n := by simp
-  rw [hprod, orbitCount_inv] at hbound
-  dsimp only [L, H] at hbound hcomponent
-  rw [List.length_append, hn] at hbound
-  rw [hn] at hlen0 hlen1
+  have hbound := t.σ0.orbitCount_add_orbitCount_add_orbitCount_mul_le t.σ1
+  rw [closure_pair_eq_monodromyGroup, t.σ1_mul_σ0_eq_σinf_inv, orbitCount_inv,
+    Nat.card_eq_fintype_card, Fintype.card_fin] at hbound
   rw [eulerChar_def]
   omega
 

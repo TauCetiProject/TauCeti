@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 The exterior derivative on smooth real-valued forms defines the nonnegative de Rham cochain
 complex. Its cohomology is Mathlib's categorical homology, with a concrete linear class map from
 closed forms, `HomologicalComplex.moduleCatHomologyClass` of their inclusion. This map is
-surjective and its kernel consists exactly of exact forms; exact forms in degree zero are zero.
+surjective and its kernel consists exactly of exact forms; exact forms in degree zero are zero,
+and exact one-forms are differentials of smooth real functions.
 On a manifold modelled on a finite-dimensional space every alternating form of degree above the
 dimension is zero, so de Rham cohomology vanishes there.
 
@@ -104,6 +105,21 @@ theorem exactForms_zero : exactForms I M 0 = ⊥ := (rfl)
 @[simp]
 theorem exactForms_succ (k : ℕ) :
     exactForms I M (k + 1) = LinearMap.range (mextDerivₗ I (F := ℝ) k) := (rfl)
+
+/-- An exact smooth real one-form is the differential of a smooth real function.
+This identifies its smooth zero-form primitive with a function and requires no finite
+dimensionality, separation, connectedness, or completeness assumptions. -/
+theorem exists_contMDiff_mextDeriv_eq_of_mem_exactForms {φ : SmoothForm I M ℝ 1}
+    (hφ : φ ∈ exactForms I M 1) :
+    ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧
+      mextDeriv (RoughForm.ofFunction I f) = (φ : RoughForm I M ℝ 1) := by
+  rw [exactForms_succ, LinearMap.mem_range] at hφ
+  obtain ⟨ψ, hψ⟩ := hφ
+  have hs := ψ.isSmoothForm
+  rw [RoughForm.eq_ofFunction (ψ : RoughForm I M ℝ 0), isSmoothForm_ofFunction_iff] at hs
+  refine ⟨fun x ↦ (ψ : RoughForm I M ℝ 0) x 0, hs, ?_⟩
+  rw [← RoughForm.eq_ofFunction]
+  simpa only [mextDerivₗ_apply] using congrArg Subtype.val hψ
 
 /-- An exact smooth form is closed. -/
 theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I M k := by

@@ -71,17 +71,15 @@ namespace TauCeti
 /-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero,
 `F(F(X, Y), Z) = X + Y + Z + G(X, Y) + G(X + Y, Z)`. -/
 private theorem subst_subst_left {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) (hG0 : constantCoeff G = 0) :
+    (hG : ∀ d e, coeff d G * coeff e G = 0) :
     (X 0 + X 1 + G).subst ![(X 0 + X 1 + G).subst ![X 0, X 1], X 2] =
       (X 0 + X 1 + X 2 + (G.subst ![X 0, X 1] + G.subst ![X 0 + X 1, X 2]) :
         MvPowerSeries (Fin 3) A) := by
   have h01 : HasSubst ![(X 0 : MvPowerSeries (Fin 3) A), X 1] :=
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  have hc : constantCoeff (G.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1]) = 0 :=
-    constantCoeff_subst_eq_zero h01 (fun s ↦ by fin_cases s <;> simp) hG0
-  rw [subst_X_add_X_add_eq hG h01 h01 (by simp) (by simp),
+  rw [subst_X_add_X_add_eq hG (u' := X 0) (v' := X 1) h01 (by simp) (by simp),
     subst_X_add_X_add_eq hG (u := X 0 + X 1) (v := X 2)
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [hc])
+      (u' := X 0 + X 1 + G.subst ![X 0, X 1]) (v' := X 2)
       (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
       (fun e ↦ by simpa using coeff_subst_mem_span h01 e) (by simp)]
   ring
@@ -89,17 +87,15 @@ private theorem subst_subst_left {G : MvPowerSeries (Fin 2) A}
 /-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero,
 `F(X, F(Y, Z)) = X + Y + Z + G(Y, Z) + G(X, Y + Z)`. -/
 private theorem subst_subst_right {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) (hG0 : constantCoeff G = 0) :
+    (hG : ∀ d e, coeff d G * coeff e G = 0) :
     (X 0 + X 1 + G).subst ![X 0, (X 0 + X 1 + G).subst ![X 1, X 2]] =
       (X 0 + X 1 + X 2 + (G.subst ![X 1, X 2] + G.subst ![X 0, X 1 + X 2]) :
         MvPowerSeries (Fin 3) A) := by
   have h12 : HasSubst ![(X 1 : MvPowerSeries (Fin 3) A), X 2] :=
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  have hc : constantCoeff (G.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2]) = 0 :=
-    constantCoeff_subst_eq_zero h12 (fun s ↦ by fin_cases s <;> simp) hG0
-  rw [subst_X_add_X_add_eq hG h12 h12 (by simp) (by simp),
+  rw [subst_X_add_X_add_eq hG (u' := X 1) (v' := X 2) h12 (by simp) (by simp),
     subst_X_add_X_add_eq hG (u := X 0) (v := X 1 + X 2)
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [hc])
+      (u' := X 0) (v' := X 1 + X 2 + G.subst ![X 1, X 2])
       (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
       (by simp) (fun e ↦ by simpa using coeff_subst_mem_span h12 e)]
   ring
@@ -118,11 +114,9 @@ theorem subst_add_subst_eq (F : FormalGroup A)
         (F.toPowerSeries - (X 0 + X 1)).subst ![X 0 + X 1, X 2] : MvPowerSeries (Fin 3) A) =
       (F.toPowerSeries - (X 0 + X 1)).subst ![X 0, X 1 + X 2] +
         (F.toPowerSeries - (X 0 + X 1)).subst ![X 1, X 2] := by
-  have hG0 : constantCoeff (F.toPowerSeries - (X 0 + X 1)) = 0 := by
-    simp [F.zero_constantCoeff]
   have h := F.assoc
-  rw [← add_sub_cancel (X 0 + X 1) F.toPowerSeries, TauCeti.subst_subst_left hF hG0,
-    TauCeti.subst_subst_right hF hG0] at h
+  rw [← add_sub_cancel (X 0 + X 1) F.toPowerSeries, TauCeti.subst_subst_left hF,
+    TauCeti.subst_subst_right hF] at h
   rw [add_comm (subst ![X 0, X 1 + X 2] _)]
   exact add_left_cancel h
 
@@ -194,9 +188,7 @@ def formalGroup (hf : f.IsAddCocycle₂) (h0 : constantCoeff f = 0)
     have hG : ∀ d e, MvPowerSeries.coeff d (f : MvPowerSeries (Fin 2) A) *
         MvPowerSeries.coeff e (f : MvPowerSeries (Fin 2) A) = 0 := by
       simpa [MvPolynomial.coeff_coe] using hff
-    have hG0 : MvPowerSeries.constantCoeff (f : MvPowerSeries (Fin 2) A) = 0 := by
-      simpa using (coeff_X_add_X_add_coe hf h0).1
-    rw [TauCeti.subst_subst_left hG hG0, TauCeti.subst_subst_right hG hG0]
+    rw [TauCeti.subst_subst_left hG, TauCeti.subst_subst_right hG]
     -- Both sides are polynomials, and the cocycle identity of `f` identifies them.
     simp only [← coe_X, ← coe_add, subst_coe_pair_eq_coe_aeval]
     rw [isAddCocycle₂_iff.1 hf, add_comm (aeval ![X 0, X 1 + X 2] f)]

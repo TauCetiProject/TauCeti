@@ -72,6 +72,17 @@ theorem norm_cauchyFueterKernel (q q₀ : ℍ) :
   simp
   ring
 
+/-- The kernel times the displacement is the inverse squared distance, `G(r) * r = ‖r‖⁻²`,
+including at the pole, where both sides are `0`. -/
+theorem _root_.Quaternion.cauchyFueterKernel_mul_sub (q q₀ : ℍ) :
+    cauchyFueterKernel q q₀ * (q - q₀) = ((‖q - q₀‖ ^ 2)⁻¹ : ℝ) := by
+  rw [cauchyFueterKernel_eq, smul_mul_assoc, Quaternion.star_mul_self, normSq_eq_norm_mul_self,
+    ← Quaternion.coe_smul, smul_eq_mul]
+  congr 1
+  by_cases hr : ‖q - q₀‖ = 0
+  · simp [hr]
+  · field_simp
+
 /-- Real dilation scales the kernel by the inverse cube, also with the totalized value
 at a zero dilation. -/
 theorem cauchyFueterKernel_smul (r : ℝ) (q q₀ : ℍ) :
@@ -97,6 +108,13 @@ theorem contDiffAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) {n : With
   convert hs.fun_smul (C.contDiff.contDiffAt.comp q hr) using 1
   funext x
   simp [cauchyFueterKernel_eq, hC, ← pow_mul]
+
+/-- The kernel is continuous on every set that avoids its pole. -/
+theorem continuousOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
+    ContinuousOn (fun q ↦ cauchyFueterKernel q q₀) s := by
+  intro q hq
+  exact (contDiffAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+    (n := 0)).continuousAt.continuousWithinAt
 
 /-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. -/
 theorem fderiv_cauchyFueterKernel_apply {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
@@ -137,6 +155,12 @@ theorem leftFueterAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
   ext <;> simp [Quaternion.inner_def] <;> field_simp
   <;> nlinarith [hn]
 
+/-- The kernel is left Fueter regular on every set that avoids its pole. -/
+theorem leftFueterOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
+    LeftFueterOn (fun q ↦ cauchyFueterKernel q q₀) s :=
+  leftFueterOn_iff.mpr fun _ hq ↦
+    leftFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+
 /-- The kernel satisfies the right Fueter equation away from the pole. -/
 theorem rightFueterAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
     RightFueterAt (fun x ↦ cauchyFueterKernel x q₀) q := by
@@ -149,5 +173,11 @@ theorem rightFueterAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
   have hn0 : ‖q - q₀‖ ≠ 0 := norm_ne_zero_iff.mpr (sub_ne_zero.mpr hq)
   ext <;> simp [Quaternion.inner_def] <;> field_simp
   <;> nlinarith [hn]
+
+/-- The kernel is right Fueter regular on every set that avoids its pole. -/
+theorem rightFueterOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
+    RightFueterOn (fun q ↦ cauchyFueterKernel q q₀) s :=
+  rightFueterOn_iff.mpr fun _ hq ↦
+    rightFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
 
 end TauCeti

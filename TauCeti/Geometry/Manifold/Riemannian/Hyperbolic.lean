@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Hyperbolic metrics
@@ -108,6 +109,23 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
     ⟨g.metric.toRiemannianMetric⟩
   exact Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
     g.metric (-1) g.curvature x w u v
+
+/-- A hyperbolic metric on a manifold of real dimension `n` has scalar curvature `-n (n - 1)`. -/
+@[simp]
+theorem scalarCurvature_metric (g : HyperbolicMetric (I := I) (M := M)) (x : M) :
+    g.metric.scalarCurvature x = -((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨g.metric.toRiemannianMetric⟩
+  rw [Bundle.ContMDiffRiemannianMetric.scalarCurvature_def,
+    CovariantDerivative.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub _ x (-1)
+      (g.curvatureTensor_eq x), TauCeti.finrank_tangentSpace]
+  ring
+
+/-- A hyperbolic metric on a surface has scalar curvature `-2`. -/
+theorem scalarCurvature_metric_of_finrank_eq_two (g : HyperbolicMetric (I := I) (M := M))
+    (hE : Module.finrank ℝ E = 2) (x : M) : g.metric.scalarCurvature x = -2 := by
+  rw [g.scalarCurvature_metric, hE]
+  norm_num
 
 /-- A hyperbolic metric has constant sectional curvature `-1`. -/
 theorem hasConstantSectionalCurvature (g : HyperbolicMetric (I := I) (M := M)) :

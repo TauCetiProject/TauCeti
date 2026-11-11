@@ -45,7 +45,7 @@ G-ring is the first half of quasi-excellence; the second is the J-2 condition on
 
 public section
 
-universe u
+universe u v
 
 open IsLocalRing PowerSeries
 
@@ -79,7 +79,7 @@ theorem isGRing_iff {R : Type u} [CommRing R] :
 
 namespace IsGRing
 
-variable {R S : Type u} [CommRing R] [CommRing S]
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
 /-- Being a G-ring is invariant under ring isomorphisms. -/
 theorem of_ringEquiv [IsGRing R] (e : R ≃+* S) : IsGRing S where

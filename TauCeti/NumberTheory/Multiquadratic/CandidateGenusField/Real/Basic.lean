@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Unramified.Maximality
 import Mathlib.NumberTheory.NumberField.CMField
 import Mathlib.RingTheory.RingHom.Unramified
 import TauCeti.FieldTheory.AlgHom
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 import TauCeti.NumberTheory.RamificationInertia.Tower
 

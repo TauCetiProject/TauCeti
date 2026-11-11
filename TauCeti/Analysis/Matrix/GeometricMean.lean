@@ -32,6 +32,8 @@ reversed equation.
 * `Matrix.PosDef.existsUnique_posSemidef_mul_mul`: existence and uniqueness of that matrix.
 * `Matrix.PosDef.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt`: that matrix is the congruence
   `(√S)⁻¹ * √(√S * T * √S) * (√S)⁻¹` of the positive square root of `√S * T * √S`.
+* `Matrix.PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff`: these matrices for a family
+  `C j` average to the identity exactly when `S` solves `S = ∑ j, w j • √(√S * C j * √S)`.
 * `Matrix.isHermitian_geometricMean` and `Matrix.PosDef.posDef_geometricMean_ringInverse`: the
   geometric mean is Hermitian, and this one is positive definite when `T` is.
 * `Matrix.PosDef.mul_mul_conjTranspose_geometricMean`: the solution satisfies `A * S * Aᴴ = T`.
@@ -83,6 +85,33 @@ theorem PosDef.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt (hS : S.PosDef) :
   rw [← Matrix.nonsing_inv_eq_ringInverse, geometricMean_eq_sqrt_mul_mul,
     ← Matrix.nonsing_inv_eq_ringInverse, ← hS.posSemidef.inv_sqrt,
     Matrix.nonsing_inv_nonsing_inv (A := CFC.sqrt S) hSdet]
+
+/-- **The fixed-point equation as an averaging condition.** For a positive-definite `S`, the
+standard positive matrices `geometricMean S⁻¹ʳ (C j)`, which solve `A * S * A = C j` when `C j` is
+positive semidefinite, average to the identity with real weights `w j` exactly when `S` solves the
+equation `S = ∑ j, w j • √(√S * C j * √S)`. -/
+theorem PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff {J : Type*} [Fintype J]
+    (hS : S.PosDef) (w : J → ℝ) (C : J → Matrix n n 𝕜) :
+    ∑ j, w j • geometricMean S⁻¹ʳ (C j) = 1 ↔
+      S = ∑ j, w j • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) := by
+  set R := CFC.sqrt S
+  set N := ∑ j, w j • CFC.sqrt (R * C j * R)
+  let _ : Invertible R := (hS.isStrictlyPositive.isUnit_cfcSqrt S).invertible
+  have hRR : R * R = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
+  have hsum : ∑ j, w j • geometricMean S⁻¹ʳ (C j) = R⁻¹ * N * R⁻¹ := by
+    simp only [hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt, N, Finset.mul_sum,
+      Finset.sum_mul, Matrix.mul_smul, Matrix.smul_mul, R]
+  rw [hsum, ← hRR]
+  constructor
+  · intro h
+    calc R * R = R * (R⁻¹ * N * R⁻¹) * R := by
+          rw [h, Matrix.mul_one]
+      _ = N := by
+          simp only [← Matrix.mul_assoc, Matrix.mul_inv_of_invertible, Matrix.one_mul,
+            Matrix.mul_assoc N, Matrix.inv_mul_of_invertible, Matrix.mul_one]
+  · intro h
+    rw [← h, Matrix.mul_assoc, Matrix.mul_assoc R, Matrix.mul_inv_of_invertible, Matrix.mul_one,
+      Matrix.inv_mul_of_invertible]
 
 /-- **The solution is Hermitian.** The geometric mean
 `√a * √(√a⁻¹ * b * √a⁻¹) * √a` is a Hermitian matrix sandwiched between two copies of a

@@ -214,6 +214,11 @@ theorem rootSubgroup_def (k : Fin 2 ⊕ Fin 2) :
           eqToHom groupScheme_eq_generatedGroupScheme.symm := by
   rw [rootSubgroup]
 
+/-- The seven weights of the carrier define distinct characters of its split torus. -/
+theorem weightCharacter_injective :
+    Function.Injective fun a : Fin 7 ↦ SplitTorus.weightCharacter (weight a) :=
+  SplitTorus.weightCharacter_injective.comp weight_injective
+
 /-- The rank-two split weight torus in the carrier over `𝔽₃`. -/
 noncomputable def weightTorus : SplitTorus.groupScheme (ZMod 3) (Fin 2) ⟶ groupScheme :=
   eqToHom (DiagonalizableGroup.groupScheme_def (ZMod 3) (SplitTorus.characterGroup (Fin 2))) ≫

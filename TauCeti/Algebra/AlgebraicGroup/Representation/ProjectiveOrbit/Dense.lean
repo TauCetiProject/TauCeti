@@ -30,7 +30,7 @@ Any two orbits attaining the bound **coincide**. If `[n]` lies outside the open 
 of `[m]`; as a closed point of that orbit it is the image of a rational point `g` of `G`, which
 carries the line `k ∙ m` to `k ∙ n`.
 
-These are statements about the full scheme-theoretic orbit images, including their nonclosed
+These are statements about the full topological orbit images, including their nonclosed
 points. No connectedness, smoothness or reducedness of `G` is needed. In the classification of
 nilpotent orbits by weighted Dynkin diagrams they are the uniqueness step for the dense orbit of
 the grade-zero centralizer of an `sl₂`-triple on the grade-two space, where the orbit of the
@@ -41,8 +41,10 @@ nilpositive element has full dimension because its tangent space is the whole gr
 * `TauCeti.Comodule.closure_range_projectiveOrbitMap_eq_univ`: an orbit of dimension `dim M - 1` is
   dense.
 * `TauCeti.Comodule.isOpen_range_projectiveOrbitMap`: an orbit of dimension `dim M - 1` is open.
-* `TauCeti.Comodule.exists_span_basePointsRepresentation_eq`: two lines whose orbits have dimension
-  `dim M - 1` are carried to each other by a rational point of `G`.
+* `TauCeti.Comodule.exists_span_basePointsRepresentation_eq` and
+  `TauCeti.Comodule.range_projectiveOrbitMap_eq`: two lines whose orbits have dimension
+  `dim M - 1` are carried to each other by a rational point of `G`, and their topological
+  projective orbit images, including nonclosed points, coincide.
 
 ## References
 
@@ -94,9 +96,9 @@ theorem isOpen_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m)
   rwa [closure_range_projectiveOrbitMap_eq_univ m hm hdim, ← Set.compl_eq_univ_sdiff,
     isClosed_compl_iff] at h
 
-/-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
-both have dimension `dim M - 1`, a rational point of `G` carries the line through `m` to the line
-through `n`. -/
+/-- **Two orbits of maximal dimension are conjugate.** If the orbits of the lines through `m` and
+`n` both have dimension `dim M - 1`, a rational point of `G` carries the line through `m` to the
+line through `n`. -/
 theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodular k m)
     (n : M) (hn : Module.IsUnimodular k n)
     (hmdim : (Module.finrank k M : WithBot ℕ∞) ≤
@@ -128,5 +130,19 @@ theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodula
   have h := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq m hm n hn g 1).mp
     (by simpa [AlgHom.convOne_def] using hg)
   simpa using h
+
+/-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
+both have dimension `dim M - 1`, their topological orbit images in `P(M)`, including nonclosed
+points, are equal. -/
+theorem range_projectiveOrbitMap_eq (m : M) (hm : Module.IsUnimodular k m)
+    (n : M) (hn : Module.IsUnimodular k n)
+    (hmdim : (Module.finrank k M : WithBot ℕ∞) ≤
+      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) + 1)
+    (hndim : (Module.finrank k M : WithBot ℕ∞) ≤
+      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) n hn)) + 1) :
+    Set.range (projectiveOrbitMap (H := H) m hm) =
+      Set.range (projectiveOrbitMap (H := H) n hn) := by
+  obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq m hm n hn hmdim hndim
+  exact range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq hm hn hg
 
 end TauCeti.Comodule

@@ -58,9 +58,8 @@ theorem HasCompactSupport.laplacian_convolution_right (L : E₀ →L[ℝ] E' →
       (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const⟩
   -- Each second directional derivative of `f ⋆ g` is the convolution of `f` with that of `g`.
   have hterm : ∀ x v, fderiv ℝ (fun y => fderiv ℝ (f ⋆[L, μ] g) y v) x v =
-      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z v) y v) x := fun x v => by
-    rw [funext fun y => hcg.fderiv_convolution_right_apply L hf (hg.of_le (by norm_num)) y v,
-      (hdir v).1.fderiv_convolution_right_apply L hf (hdir v).2 x v]
+      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z v) y v) x := fun x v =>
+    hcg.fderiv_fderiv_convolution_right_apply L hf hg x v v
   funext x
   have hu : DifferentiableAt ℝ (fderiv ℝ (f ⋆[L, μ] g)) x :=
     ((hcg.contDiff_convolution_right L hf hg).fderiv_right (m := 1) (by norm_num)).differentiable

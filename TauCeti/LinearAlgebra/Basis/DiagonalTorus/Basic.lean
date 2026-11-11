@@ -166,6 +166,12 @@ theorem torusCharacter_zsmul (s : κ → Rˣ) (μ : κ → ℤ) (z : ℤ) :
   refine prod_congr rfl fun j _ => ?_
   rw [mul_comm, _root_.zpow_mul]
 
+/-- Evaluating a character on a one-parameter subgroup pairs its exponents with those of the
+subgroup. -/
+theorem torusCharacter_zpow (a : Rˣ) (f μ : κ → ℤ) :
+    torusCharacter (fun j => a ^ f j) μ = a ^ ∑ j, f j * μ j := by
+  simp only [torusCharacter_def, ← _root_.zpow_mul, Finset.prod_zpow_eq_zpow_sum]
+
 /-- Every character takes the value one at the identity point. -/
 @[simp] theorem torusCharacter_one (μ : κ → ℤ) : torusCharacter (1 : κ → Rˣ) μ = 1 := by
   simp [torusCharacter]
@@ -327,6 +333,17 @@ theorem weightChar_single [DecidableEq κ] (c : κ) (s : κ → Rˣ) :
 theorem weightChar_const (z : ℤ) (s : κ → Rˣ) :
     weightChar R (fun _ ↦ z) s = (∏ j, s j) ^ z := by
   rw [weightChar_apply, torusCharacter_def, prod_zpow]
+
+/-- Negating one coordinate of a weight is inverting that coordinate of the torus point. -/
+theorem weightChar_update_neg [DecidableEq κ] (μ : κ → ℤ) (c : κ) (s : κ → Rˣ) :
+    weightChar R (Function.update μ c (-μ c)) s =
+      weightChar R μ (Function.update s c (s c)⁻¹) := by
+  rw [weightChar_apply, weightChar_apply, torusCharacter_def, torusCharacter_def]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  by_cases hjc : j = c
+  · subst hjc
+    simp [_root_.zpow_neg]
+  · simp [Function.update_of_ne hjc]
 
 end WeightChar
 

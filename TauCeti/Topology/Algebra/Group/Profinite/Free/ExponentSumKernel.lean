@@ -455,26 +455,10 @@ theorem gradedPieceOf_exponentSumKer_succ_le (hm : 1 ≤ m)
   have hpow' : ∀ τ ∈ gradedPieceOf p (exponentSumKer p X i) m,
       gradedPow p (freeProP p X) m τ ∈ W' :=
     fun τ hτ ↦ ⟨hpow τ hτ, gradedPow_mem_gradedPieceOf hτ⟩
-  -- Brackets with arbitrary degree-zero classes, by bilinearity from the generator classes.
   have hbr' : ∀ τ ∈ gradedPieceOf p (exponentSumKer p X i) m,
-      ∀ y : gradedPiece p (freeProP p X) 0, gradedBracket p (freeProP p X) m 0 τ y ∈ W' := by
-    intro τ hτ y
-    have hy : y ∈ span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) := by
-      rw [span_gradedMkZero_image_range_of_eq_top]
-      exact mem_top
-    refine span_induction (p := fun y _ ↦ gradedBracket p (freeProP p X) m 0 τ y ∈ W') ?_ ?_ ?_ ?_
-      hy
-    · rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
-      exact ⟨hbr τ hτ j, gradedBracket_mem_gradedPieceOf_left (k := 0) hτ _⟩
-    · rw [← gradedBracketLinear_apply, map_zero]
-      exact zero_mem _
-    · intro a b _ _ ha hb
-      have h := add_mem ha hb
-      rwa [← gradedBracketLinear_apply, ← gradedBracketLinear_apply, ← map_add,
-        gradedBracketLinear_apply] at h
-    · intro c a _ ha
-      have h := smul_mem _ c ha
-      rwa [← gradedBracketLinear_apply, ← map_smul, gradedBracketLinear_apply] at h
+      ∀ y : gradedPiece p (freeProP p X) 0, gradedBracket p (freeProP p X) m 0 τ y ∈ W' :=
+    fun τ hτ ↦ gradedBracket_mem_of_forall_gradedMkZero_of fun j ↦
+      ⟨hbr τ hτ j, gradedBracket_mem_gradedPieceOf_left (k := 0) hτ _⟩
   -- The brackets `[π^m ξ_i, y]` lie in `W'`: for `m ≥ 2` they are `π [π^{m-1} ξ_i, y]`, and for
   -- `m = 1` they are `π [ξ_i, y] - (p choose 2) • [[ξ_i, y], ξ_i]`.
   have hline : ∀ y : gradedPiece p (freeProP p X) 0,
@@ -579,6 +563,85 @@ private theorem gradedBracket_gradedMkZero_mem_map_basisModificationDelta_pi (hm
   refine ⟨fun k ↦ b k • τ, Submodule.mem_pi.2 fun k _ ↦ smul_mem _ _ hτ, ?_⟩
   rw [basisModificationDelta_smul_eq_gradedBracket_of_eq_zero hm hc hb₀, hb]
 
+omit [LinearOrder X] [Fintype X] in
+/-- For `a ≠ i₁`, the `p`-power class `π ξ_a` lies in `gr_1(X)`, where `X` is the kernel of the
+`i₁`-th exponent sum. -/
+private theorem gradedPow_gradedMkZero_mem_gradedPieceOf_exponentSumKer {a : X} (ha : a ≠ i₁) :
+    gradedPow p (freeProP p X) 0 (gradedMkZero p (freeProP p X) (of a)) ∈
+      gradedPieceOf p (exponentSumKer p X i₁) 1 := by
+  have h := gradedPowIter_gradedMkZero_mem_gradedPieceOf (p := p)
+    (of_mem_exponentSumKer (p := p) ha) 1
+  rwa [gradedPowIter_succ, gradedPowIter_zero] at h
+
+omit [Fact p.Prime] [LinearOrder X] [Fintype X] in
+/-- `π [ξ_a, ξ_b] = -π [ξ_b, ξ_a]`. -/
+private theorem gradedPow_gradedBracket_gradedMkZero_swap (a b : X) :
+    gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) =
+    -gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of b)) (gradedMkZero p (freeProP p X) (of a))) := by
+  have h := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of b))
+    (gradedMkZero p (freeProP p X) (of a))
+  rw [gradedCast_rfl] at h
+  rw [h, gradedPow_neg]
+
+/-- `π [ξ_a, ξ_b] = [π ξ_a, ξ_b] + (p choose 2) • [[ξ_a, ξ_b], ξ_a]` lies in a submodule `H`
+of `gr_2(F)` containing `δ_ρ(gr_1(X)^X)` and the classes `π² ξ_a` for `a ≠ i₁`, when
+`a ≠ i₁, i₂`. -/
+private theorem gradedPow_gradedBracket_mem_of_ne
+    {H : Submodule (ZMod p) (gradedPiece p (freeProP p X) 2)}
+    (hρ : span (ZMod p) (Set.range fun j ↦ degreeOneDeriv p X j ρ) = ⊤)
+    (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
+    {i₂ : X}
+    (hd : ∀ j, j ≠ i₁ → j ≠ i₂ → ∃ b : X → ZMod p, b i₀ = 0 ∧
+      ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of j))
+    (hM : (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) 1).map
+      (basisModificationDelta p X le_rfl ρ) ≤ H)
+    (hξ₂ : ∀ a : X, a ≠ i₁ → gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0
+      (gradedMkZero p (freeProP p X) (of a))) ∈ H)
+    (a : X) (ha : a ≠ i₁) (ha₂ : a ≠ i₂) (b : X) :
+    gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) ∈ H := by
+  rw [gradedPow_gradedBracket_zero_zero]
+  refine add_mem ?_ (nsmul_mem (hM
+    (gradedBracket_gradedMkZero_mem_map_basisModificationDelta_pi le_rfl hc hd
+      (gradedBracket_mem_gradedPieceOf_of_commutator_le (commutator_le_exponentSumKer i₁)
+        (j := 0) (k := 0) _ _) ha ha₂)) _)
+  exact sup_le hM (span_le.2 (Set.singleton_subset_iff.2 (hξ₂ a ha)))
+    (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow le_rfl hρ
+      (gradedPow_gradedMkZero_mem_gradedPieceOf_exponentSumKer ha) _)
+
+omit [Fintype X] in
+/-- If `π [ξ_a, ξ_b] ∈ H` for `a ≠ i₁, i₂` and `π [ξ_{i₂}, ξ_{i₁}] ∈ H`, then
+`π [ξ_a, ξ_b] ∈ H` for every `a ≠ b`. -/
+private theorem gradedPow_gradedBracket_mem_of_ne_of_mem
+    {H : Submodule (ZMod p) (gradedPiece p (freeProP p X) 2)} {i₂ : X}
+    (hB : gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of i₂)) (gradedMkZero p (freeProP p X) (of i₁))) ∈ H)
+    (hgen : ∀ a : X, a ≠ i₁ → a ≠ i₂ → ∀ b : X, gradedPow p (freeProP p X) 1
+      (gradedBracket p (freeProP p X) 0 0 (gradedMkZero p (freeProP p X) (of a))
+        (gradedMkZero p (freeProP p X) (of b))) ∈ H)
+    {a b : X} (hab : a ≠ b) :
+    gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) ∈ H := by
+  by_cases ha : a = i₁
+  · -- `[ξ_{i₁}, ξ_b] = -[ξ_b, ξ_{i₁}]` with `b ≠ i₁`.
+    subst ha
+    rw [gradedPow_gradedBracket_gradedMkZero_swap]
+    by_cases hb₂ : b = i₂
+    · subst hb₂
+      exact neg_mem hB
+    · exact neg_mem (hgen b hab.symm hb₂ a)
+  · by_cases ha₂ : a = i₂
+    · -- `[ξ_{i₂}, ξ_b]`: the exceptional class when `b = i₁`, otherwise `-[ξ_b, ξ_{i₂}]`.
+      subst ha₂
+      by_cases hb : b = i₁
+      · subst hb
+        exact hB
+      · rw [gradedPow_gradedBracket_gradedMkZero_swap]
+        exact neg_mem (hgen b hb hab.symm a)
+    · exact hgen a ha ha₂ b
+
 /-- The degree-one case of the `p`-power step of the constrained span statement: for
 `τ ∈ gr_1(X)`, `π τ` lies in `δ_ρ(gr_1(X)^X) + T_2 + 𝔽_p π [ξ_{i₂}, ξ_{i₁}]`. -/
 private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIter_one
@@ -599,14 +662,7 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
       span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
         gradedPowIter p (freeProP p X) (1 + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
       span (ZMod p) {gradedPowIterBracket p (freeProP p X) 1 (of i₂) (of i₁)} with hH
-  -- The `p`-power classes `π ξ_a` with `a ≠ i₁` lie in `gr_1(X)`, and their `p`-powers `π² ξ_a`
-  -- in the tail.
-  have hξ (a : X) (ha : a ≠ i₁) :
-      gradedPow p (freeProP p X) 0 (gradedMkZero p (freeProP p X) (of a)) ∈
-        gradedPieceOf p (exponentSumKer p X i₁) 1 := by
-    have h := gradedPowIter_gradedMkZero_mem_gradedPieceOf (p := p)
-      (of_mem_exponentSumKer (p := p) ha) 1
-    rwa [gradedPowIter_succ, gradedPowIter_zero] at h
+  -- The `p`-power classes `π² ξ_a` with `a ≠ i₁` lie in the tail.
   have hξ₂ (a : X) (ha : a ≠ i₁) :
       gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0
         (gradedMkZero p (freeProP p X) (of a))) ∈ H :=
@@ -618,27 +674,8 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
       (gradedMkZero p (freeProP p X) (of i₂)) (gradedMkZero p (freeProP p X) (of i₁))) ∈ H := by
     rw [← gradedPowIterBracket_zero, gradedPow_gradedPowIterBracket]
     exact mem_sup_right (subset_span rfl)
-  -- `π [ξ_a, ξ_b] = -π [ξ_b, ξ_a]`.
-  have hswap (a b : X) :
-      gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
-        (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) =
-      -gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
-        (gradedMkZero p (freeProP p X) (of b)) (gradedMkZero p (freeProP p X) (of a))) := by
-    have h := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of b))
-      (gradedMkZero p (freeProP p X) (of a))
-    rw [gradedCast_rfl] at h
-    rw [h, gradedPow_neg]
-  -- `π [ξ_a, ξ_b] = [π ξ_a, ξ_b] + (p choose 2) • [[ξ_a, ξ_b], ξ_a]` lies in `H` for `a ≠ i₁, i₂`.
-  have hgen (a : X) (ha : a ≠ i₁) (ha₂ : a ≠ i₂) (b : X) :
-      gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
-        (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) ∈ H := by
-    rw [gradedPow_gradedBracket_zero_zero]
-    refine add_mem ?_ (nsmul_mem (mem_sup_left (mem_sup_left
-      (gradedBracket_gradedMkZero_mem_map_basisModificationDelta_pi le_rfl hc hd
-        (gradedBracket_mem_gradedPieceOf_of_commutator_le hK (j := 0) (k := 0) _ _) ha ha₂))) _)
-    exact sup_le (le_sup_left.trans le_sup_left)
-      (span_le.2 (Set.singleton_subset_iff.2 (hξ₂ a ha)))
-      (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow le_rfl hρ (hξ a ha) _)
+  have hgen := gradedPow_gradedBracket_mem_of_ne (H := H) hρ hc hd
+    (le_sup_left.trans le_sup_left) hξ₂
   -- The preimage of `H` under `π`, inside `gr_1(X)`, contains every basis vector of `gr_1(F)`
   -- other than `π ξ_{i₁}`, so it is all of `gr_1(X)`.
   set L₁ : gradedPiece p (freeProP p X) 1 →ₗ[ZMod p] gradedPiece p (freeProP p X) 2 :=
@@ -659,7 +696,8 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
     · subst ha
       exact mem_sup_right (subset_span (Set.mem_singleton_iff.2
         (by rw [gradedPowIter_succ, gradedPowIter_zero])))
-    · refine mem_sup_left (Submodule.mem_inf.2 ⟨?_, hξ a ha⟩)
+    · refine mem_sup_left (Submodule.mem_inf.2
+        ⟨?_, gradedPow_gradedMkZero_mem_gradedPieceOf_exponentSumKer ha⟩)
       rw [Submodule.mem_comap, hL₁']
       exact hξ₂ a ha
   · rw [degreeOneFamily_inr]
@@ -667,25 +705,8 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
     refine mem_sup_left (Submodule.mem_inf.2
       ⟨?_, gradedBracket_mem_gradedPieceOf_of_commutator_le hK (j := 0) (k := 0) _ _⟩)
     rw [Submodule.mem_comap, hL₁']
-    by_cases ha : a = i₁
-    · -- `[ξ_{i₁}, ξ_b] = -[ξ_b, ξ_{i₁}]` with `b ≠ i₁`.
-      subst ha
-      have hb : b ≠ a := hab.ne'
-      by_cases hb₂ : b = i₂
-      · subst hb₂
-        rw [hswap]
-        exact neg_mem hB
-      · rw [hswap]
-        exact neg_mem (hgen b hb hb₂ a)
-    · by_cases ha₂ : a = i₂
-      · -- `[ξ_{i₂}, ξ_b]`: the exceptional class when `b = i₁`, otherwise `-[ξ_b, ξ_{i₂}]`.
-        subst ha₂
-        by_cases hb : b = i₁
-        · subst hb
-          exact hB
-        · rw [hswap]
-          exact neg_mem (hgen b hb hab.ne' a)
-      · exact hgen a ha ha₂ b
+    exact gradedPow_gradedBracket_mem_of_ne_of_mem hB hgen hab.ne
+
 
 /-- **The constrained span statement with an exceptional generator** (Labute, §4, Lemma 3 in both
 its forms). Let `F` be the free pro-`p` group on a finite linearly ordered type `X`, let

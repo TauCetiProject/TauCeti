@@ -138,12 +138,14 @@ theorem l2_opNorm_realify {m : Type*} [Fintype m] [Fintype n] [DecidableEq n] (A
       have hTR_sq : ‖TR w‖ ^ 2 = ‖TK w₁‖ ^ 2 + ‖TK w₂‖ ^ 2 := by
         simp only [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type]
         congr 1 <;> refine Finset.sum_congr rfl fun i _ ↦ ?_
-        · rw [hsq_eq, show (TR w).ofLp (.inl i) = RCLike.re ((TK w₁).ofLp i) by
+        · have hinl : (TR w).ofLp (.inl i) = RCLike.re ((TK w₁).ofLp i) := by
             simp [hTR_apply, hTK_apply, toLpLin_apply, w₁, mulVec, dotProduct,
-              Fintype.sum_sum_type, RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
-        · rw [hsq_eq, show (TR w).ofLp (.inr i) = RCLike.re ((TK w₂).ofLp i) by
+              Fintype.sum_sum_type, RCLike.im_eq_zero hI]
+          rw [hsq_eq, hinl, Real.norm_eq_abs, sq_abs]
+        · have hinr : (TR w).ofLp (.inr i) = RCLike.re ((TK w₂).ofLp i) := by
             simp [hTR_apply, hTK_apply, toLpLin_apply, w₂, mulVec, dotProduct,
-              Fintype.sum_sum_type, RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
+              Fintype.sum_sum_type, RCLike.im_eq_zero hI]
+          rw [hsq_eq, hinr, Real.norm_eq_abs, sq_abs]
       refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp (hTR_sq.trans_le ?_)
       exact (add_le_add (pow_le_pow_left₀ (norm_nonneg _) (TK.le_opNorm w₁) 2)
         (pow_le_pow_left₀ (norm_nonneg _) (TK.le_opNorm w₂) 2)).trans_eq
@@ -151,10 +153,10 @@ theorem l2_opNorm_realify {m : Type*} [Fintype m] [Fintype n] [DecidableEq n] (A
     · let z : n → 𝕜 := fun j ↦ (w.ofLp (.inl j) : 𝕜) + (w.ofLp (.inr j) : 𝕜) * RCLike.I
       have hw : w = reImToLp z := by
         ext (j | j) <;> simp [reImToLp, z, RCLike.mul_re, RCLike.mul_im, hI]
-      rw [show ‖TR w‖ = ‖TK (WithLp.toLp 2 z)‖ by
-          simpa [hTR_apply, hTK_apply, hw, toEuclideanLin_realify_reImToLp] using
-            norm_reImToLp (A *ᵥ z),
-        hw, norm_reImToLp]
+      have hnorm_eq : ‖TR w‖ = ‖TK (WithLp.toLp 2 z)‖ := by
+        simpa [hTR_apply, hTK_apply, hw, toEuclideanLin_realify_reImToLp] using
+          norm_reImToLp (A *ᵥ z)
+      rw [hnorm_eq, hw, norm_reImToLp]
       exact TK.le_opNorm (WithLp.toLp 2 z)
   · rw [hTK_apply, ← norm_reImToLp (A *ᵥ z.ofLp), ← toEuclideanLin_realify_reImToLp A z.ofLp,
       ← hTR_apply, ← norm_reImToLp z.ofLp]

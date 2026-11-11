@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.Abelian
+public import TauCeti.CategoryTheory.Abelian.FunctorialResolution
 public import TauCeti.Topology.Sheaves.Skyscraper
 public import TauCeti.Topology.Sheaves.Flasque.Products
 
@@ -36,8 +38,16 @@ monomorphism, retracted through the coordinate at `x`
 (`isSplitMono_stalkFunctor_map_toGodement_app`), so for sheaves valued in a concrete category with
 the usual stalk hypotheses `toGodement C X` is a monomorphism (`mono_toGodement_app`). Thus, when
 `C` also has a zero object, as for modules over a ring or abelian groups, every such sheaf embeds
-functorially in a flasque sheaf. This embedding is the first step of the Godement resolution, which
-iterates it on cokernels.
+functorially in a flasque sheaf.
+
+Iterating this embedding on cokernels gives the *Godement resolution*
+`F ⟶ G⁰(F) ⟶ G¹(F) ⟶ ⋯` (`godementResolution C X`), where `G⁰(F) = godement C X F`,
+`Z¹ = coker (F ⟶ G⁰(F))`, `G¹(F) = godement C X Z¹`, and so on. It is the resolution
+`CategoryTheory.NatTrans.resolution` of the natural monomorphism `toGodement C X`, so for sheaves
+valued in an abelian concrete category with the usual stalk hypotheses its augmentation
+`toGodementResolution C X` from `F` placed in degree `0` is a quasi-isomorphism
+(`quasiIso_toGodementResolution_app`), and all its terms are flasque
+(`isFlasque_godementResolution_obj_X`).
 
 ## Main definitions
 
@@ -46,6 +56,9 @@ iterates it on cokernels.
 * `TauCeti.Topology.stalksSkyscraperProductAdjunction C X`: the adjunction between them.
 * `TauCeti.Topology.godement C X`: the Godement sheaf functor `F ↦ ∏ₓ (iₓ)_* Fₓ`.
 * `TauCeti.Topology.toGodement C X`: the canonical morphism `F ⟶ godement C X F`.
+* `TauCeti.Topology.godementResolution C X`: the Godement resolution, as a functor to cochain
+  complexes of sheaves.
+* `TauCeti.Topology.toGodementResolution C X`: its augmentation.
 
 ## Main results
 
@@ -60,6 +73,10 @@ iterates it on cokernels.
   monomorphism on stalks.
 * `TauCeti.Topology.mono_toGodement_app`: `toGodement` is a monomorphism for sheaves valued in a
   concrete category.
+* `TauCeti.Topology.quasiIso_toGodementResolution_app`: the Godement resolution of a sheaf of
+  modules or abelian groups is a resolution.
+* `TauCeti.Topology.isFlasque_godementResolution_obj_X`: the terms of the Godement resolution are
+  flasque.
 
 ## References
 
@@ -335,5 +352,51 @@ instance mono_toGodement_app (F : X.Sheaf C) : Mono ((toGodement C X).app F) :=
 end Concrete
 
 end Mono
+
+section Resolution
+
+variable (C : Type*) [Category.{u} C] [Abelian C] [HasColimits C] [HasProducts.{u} C]
+  (X : TopCat.{u}) [HasSheafify (Opens.grothendieckTopology X) C]
+
+/-- The *Godement resolution* `G⁰(F) ⟶ G¹(F) ⟶ G²(F) ⟶ ⋯` of a sheaf `F`, as a functor of `F`:
+`G⁰(F) = ∏ₓ (iₓ)_* Fₓ` is the Godement sheaf of `F`, and `Gⁿ⁺¹(F)` is the Godement sheaf of the
+cokernel of `Gⁿ⁻¹(F) ⟶ Gⁿ(F)` (of `F ⟶ G⁰(F)` when `n = 0`). It is the resolution
+`CategoryTheory.NatTrans.resolution` of `toGodement C X`, whose API applies to it. -/
+abbrev godementResolution : X.Sheaf C ⥤ CochainComplex (X.Sheaf C) ℕ :=
+  (toGodement C X).resolution
+
+/-- The augmentation of the Godement resolution: the canonical morphism `F ⟶ G⁰(F)` from `F`
+placed in degree `0`. For sheaves valued in a concrete category with the usual stalk hypotheses it
+is a quasi-isomorphism, by `CategoryTheory.NatTrans.quasiIso_toResolution_app` and
+`mono_toGodement_app`. -/
+abbrev toGodementResolution :
+    CochainComplex.single₀ (X.Sheaf C) ⟶ godementResolution C X :=
+  (toGodement C X).toResolution
+
+/-- Every term of the Godement resolution is a Godement sheaf, hence flasque. -/
+instance isFlasque_godementResolution_obj_X (F : X.Sheaf C) (n : ℕ) :
+    (((godementResolution C X).obj F).X n).IsFlasque := by
+  rw [NatTrans.resolution_obj_X]
+  infer_instance
+
+section Concrete
+
+variable {FC : C → C → Type*} {CC : C → Type u} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
+  [instCC : ConcreteCategory.{u} C FC] [PreservesFilteredColimits (CategoryTheory.forget C)]
+  [HasLimits C] [PreservesLimits (CategoryTheory.forget C)]
+  [(CategoryTheory.forget C).ReflectsIsomorphisms]
+
+include instCC in
+/-- For sheaves valued in an abelian concrete category with the usual stalk hypotheses, such as
+modules over a ring or abelian groups, the Godement resolution of `F` is a resolution of `F`: its
+augmentation is a quasi-isomorphism. This is the instance
+`CategoryTheory.NatTrans.quasiIso_toResolution_app` for the monomorphism `toGodement C X`. -/
+theorem quasiIso_toGodementResolution_app (F : X.Sheaf C) :
+    QuasiIso ((toGodementResolution C X).app F) :=
+  inferInstance
+
+end Concrete
+
+end Resolution
 
 end TauCeti.Topology

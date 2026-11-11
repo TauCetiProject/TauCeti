@@ -22,7 +22,8 @@ import TauCeti.MeasureTheory.Integral.Pi
 Let `(Xᵢ)_{i : ι}` be a finite independent family in `E` with independent copy `(X'ᵢ)_{i : ι}`,
 and let `fᵢⱼ : E → E → ℝ` be jointly measurable kernels with vanishing diagonal
 (`f i i x y = 0`) such that for `i ≠ j`, `(Xᵢ, X'ⱼ)`-integrability holds and both one-variable
-slice integrals vanish (`E[fᵢⱼ x Xⱼ] = 0` and `E[fᵢⱼ Xᵢ y] = 0`). Then every convex function
+slice integrals vanish almost everywhere under the coordinate laws (`E[fᵢⱼ x Xⱼ] = 0` for
+`P.map (Xᵢ)`-a.e. `x` and `E[fᵢⱼ Xᵢ y] = 0` for `P.map (Xⱼ)`-a.e. `y`). Then every convex function
 `Φ : ℝ → ℝ` for which both `Φ (∑ i, ∑ j, fᵢⱼ (Xᵢ) (Xⱼ))` and `Φ (4 * ∑ i, ∑ j, fᵢⱼ (Xᵢ) (X'ⱼ))`
 are integrable (with coupled integrability automatic when `0 ≤ Φ`) satisfies
 `E[Φ (∑ i, ∑ j, fᵢⱼ (Xᵢ) (Xⱼ))] ≤ E[Φ (4 * ∑ i, ∑ j, fᵢⱼ (Xᵢ) (X'ⱼ))]`
@@ -99,9 +100,11 @@ private theorem selector_avg_eq_one [Fintype ι] [DecidableEq ι] {i j : ι} (hi
     Equiv.sum_comp ((hinv i).toPerm.trans (hinv j).toPerm) g
   have : Nonempty (ι → Bool) := ⟨fun _ ↦ false⟩
   have hcard : (Fintype.card (ι → Bool) : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  rw [show ∑ δ : ι → Bool, (if δ i = true ∧ δ j = false then (4 : ℝ) else 0) = 4 * ∑ δ, g δ by
-    rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun _ _ ↦ ?_; dsimp [g]; split_ifs <;> ring,
-    show 4 * ∑ δ, g δ = Fintype.card (ι → Bool) by linarith, inv_mul_cancel₀ hcard]
+  have hsum4 : ∑ δ : ι → Bool, (if δ i = true ∧ δ j = false then (4 : ℝ) else 0) =
+      4 * ∑ δ, g δ := by
+    rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun _ _ ↦ ?_; dsimp [g]; split_ifs <;> ring
+  have h4g : 4 * ∑ δ, g δ = Fintype.card (ι → Bool) := by linarith
+  rw [hsum4, h4g, inv_mul_cancel₀ hcard]
 
 section PiKernel
 variable [Fintype ι] {μ : ι → Measure E} [∀ k, IsProbabilityMeasure (μ k)] {f : ι → ι → E → E → ℝ}
@@ -177,13 +180,14 @@ private theorem ae_le_convex_offDiag_pi {Φ : ℝ → ℝ} (hΦ_conv : ConvexOn 
   have hsum_avg (z : ι → E) : ∑ i, ∑ j, f i j (z i) (z j) = ∑ δ : ι → Bool,
       c • (4 * ∑ i, ∑ j, if δ i = true ∧ δ j = false then f i j (z i) (z j) else 0) := by
     simp only [smul_eq_mul, ← Finset.mul_sum]
-    rw [show ∑ i, ∑ j, f i j (z i) (z j) = ∑ i, ∑ j,
-      (c * ∑ δ : ι → Bool, if δ i = true ∧ δ j = false then (4 : ℝ) else 0) * f i j (z i) (z j) from
+    have hsel : ∑ i, ∑ j, f i j (z i) (z j) = ∑ i, ∑ j,
+        (c * ∑ δ : ι → Bool, if δ i = true ∧ δ j = false then (4 : ℝ) else 0) *
+          f i j (z i) (z j) :=
       Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
         by_cases hij : i = j
         · subst hij; simp [hf_diag]
-        · rw [selector_avg_eq_one hij, one_mul]]
-    simp_rw [mul_assoc, ← Finset.mul_sum]; congr 1
+        · rw [selector_avg_eq_one hij, one_mul]
+    rw [hsel]; simp_rw [mul_assoc, ← Finset.mul_sum]; congr 1
     have hinner (i j : ι) : (∑ δ : ι → Bool, if δ i = true ∧ δ j = false then (4 : ℝ) else 0) *
         f i j (z i) (z j) =
         ∑ δ : ι → Bool, 4 * if δ i = true ∧ δ j = false then f i j (z i) (z j) else 0 := by
@@ -253,8 +257,8 @@ variable {Ω ι E : Type*} [MeasurableSpace Ω] [MeasurableSpace E] [Fintype ι]
   {f : ι → ι → E → E → ℝ} (hf_meas : ∀ i j, Measurable (Function.uncurry (f i j)))
   (hf_diag : ∀ i x y, f i i x y = 0)
   (hf_int : ∀ i j, i ≠ j → Integrable (fun p : Ω × Ω ↦ f i j (X i p.1) (X j p.2)) (P.prod P))
-  (hf_zero_right : ∀ i j x, i ≠ j → ∫ ω', f i j x (X j ω') ∂P = 0)
-  (hf_zero_left : ∀ i j y, i ≠ j → ∫ ω, f i j (X i ω) y ∂P = 0)
+  (hf_zero_right : ∀ i j, i ≠ j → ∀ᵐ x ∂P.map (X i), ∫ ω', f i j x (X j ω') ∂P = 0)
+  (hf_zero_left : ∀ i j, i ≠ j → ∀ᵐ y ∂P.map (X j), ∫ ω, f i j (X i ω) y ∂P = 0)
 include hindep hX hf_meas hf_diag hf_int hf_zero_right hf_zero_left
 
 omit hf_diag in
@@ -285,17 +289,17 @@ private theorem pushforward_setup {Φ : ℝ → ℝ} (hΦ_cont : Continuous Φ)
   have hmap2 : (P.prod P).map (fun p : Ω × Ω ↦ (fun i ↦ X i p.1, fun i ↦ X i p.2)) =
       (Measure.pi fun i ↦ P.map (X i)).prod (Measure.pi fun i ↦ P.map (X i)) :=
     (hindep.map_fun_eq_pi_map hX) ▸ (Measure.map_prod_map_of_aemeasurable P P hvec hvec).symm
-  refine ⟨fun i j hij ↦ ?_, fun i j hij ↦ .of_forall fun x ↦ ?_,
-      fun i j hij ↦ .of_forall fun y ↦ ?_, hS1, ?_, ?_⟩
+  refine ⟨fun i j hij ↦ ?_, fun i j hij ↦ (hf_zero_right i j hij).mono fun x hx ↦ ?_,
+      fun i j hij ↦ (hf_zero_left i j hij).mono fun y hy ↦ ?_, hS1, ?_, ?_⟩
   · have hm : AEMeasurable (Prod.map (X i) (X j)) (P.prod P) :=
       ((hX i).comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst).prodMk
         ((hX j).comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd)
     rw [Measure.map_prod_map_of_aemeasurable P P (hX i) (hX j),
       integrable_map_measure (hf_meas i j).aestronglyMeasurable hm]; exact hf_int i j hij
   · exact (integral_map (hX j) ((hf_meas i j).comp
-      (measurable_const.prodMk measurable_id)).aestronglyMeasurable).trans (hf_zero_right i j x hij)
+      (measurable_const.prodMk measurable_id)).aestronglyMeasurable).trans hx
   · exact (integral_map (hX i) ((hf_meas i j).comp
-      (measurable_id.prodMk measurable_const)).aestronglyMeasurable).trans (hf_zero_left i j y hij)
+      (measurable_id.prodMk measurable_const)).aestronglyMeasurable).trans hy
   · rwa [← hmap2, integrable_map_measure hS2.aestronglyMeasurable hvec2]
   · rw [← hmap2, integral_map hvec2 hS2.aestronglyMeasurable]
 
@@ -373,13 +377,15 @@ theorem mgf_offDiag_re_star_dotProduct_mulVec_le {𝕜 : Type*} [RCLike 𝕜] {Z
   have hf_int (i j : ι) (_ : i ≠ j) :
       Integrable (fun p : Ω × Ω ↦ f i j (Z i p.1) (Z j p.2)) (P.prod P) :=
     ((hZ_star i).mul_prod ((hZ_int j).const_mul (B i j))).re
-  have hf_zr (i j : ι) (x : 𝕜) (_ : i ≠ j) : ∫ ω', f i j x (Z j ω') ∂P = 0 := by
-    dsimp only [f]; rw [integral_re (((hZ_int j).const_mul (B i j)).const_mul (star x))]
-    simp [← mul_assoc, integral_const_mul, hZ_mean j]
-  have hf_zl (i j : ι) (y : 𝕜) (_ : i ≠ j) : ∫ ω, f i j (Z i ω) y ∂P = 0 := by
-    have h0 : ∫ ω, star (Z i ω) ∂P = 0 := by
-      simp_rw [RCLike.star_def, integral_conj, hZ_mean i, map_zero]
-    dsimp only [f]; rw [integral_re ((hZ_star i).mul_const _), integral_mul_const, h0]; simp
+  have hf_zr (i j : ι) (_ : i ≠ j) : ∀ᵐ x ∂P.map (Z i), ∫ ω', f i j x (Z j ω') ∂P = 0 :=
+    .of_forall fun x ↦ by
+      dsimp only [f]; rw [integral_re (((hZ_int j).const_mul (B i j)).const_mul (star x))]
+      simp [← mul_assoc, integral_const_mul, hZ_mean j]
+  have hf_zl (i j : ι) (_ : i ≠ j) : ∀ᵐ y ∂P.map (Z j), ∫ ω, f i j (Z i ω) y ∂P = 0 :=
+    .of_forall fun y ↦ by
+      have h0 : ∫ ω, star (Z i ω) ∂P = 0 := by
+        simp_rw [RCLike.star_def, integral_conj, hZ_mean i, map_zero]
+      dsimp only [f]; rw [integral_re ((hZ_star i).mul_const _), integral_mul_const, h0]; simp
   have hint_dec' : Integrable (fun p : Ω × Ω ↦
       Φ (4 * ∑ i, ∑ j, f i j (Z i p.1) (Z j p.2))) (P.prod P) :=
     hint_dec.congr (.of_forall fun _ ↦ by simp only [Φ, ← hsesq]; ring_nf)

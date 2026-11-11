@@ -856,6 +856,41 @@ theorem map_reducedProjection_comp_deconcatenation :
       map_reducedProjection_deconcatenation_reducedInclusion,
       reducedProjection_reducedInclusion]
 
+end TensorWords
+
+namespace ReducedTensorWords
+
+/-- Each positive bidegree of reduced deconcatenation splits the component of the total
+length. This is the positive-length restriction of the coaugmented coproduct formula. -/
+theorem map_component_comp_deconcatenation (p q : {n : ℕ // 0 < n}) :
+    TensorProduct.map (component R M p) (component R M q) ∘ₗ deconcatenation R M =
+      (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
+        component R M ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩ := by
+  have hc (k : {n : ℕ // 0 < n}) :
+      component R M k ∘ₗ TensorWords.reducedProjection R M = TensorWords.component R M k.1 :=
+    LinearMap.ext (TensorWords.component_reducedProjection R M k)
+  have hi (k : {n : ℕ // 0 < n}) :
+      TensorWords.component R M k.1 ∘ₗ TensorWords.reducedInclusion R M = component R M k := by
+    rw [← hc k, LinearMap.comp_assoc, TensorWords.reducedProjection_comp_reducedInclusion,
+      LinearMap.comp_id]
+  calc
+    _ = TensorProduct.map (component R M p) (component R M q) ∘ₗ
+        (TensorProduct.map (TensorWords.reducedProjection R M)
+          (TensorWords.reducedProjection R M) ∘ₗ TensorWords.deconcatenation R M ∘ₗ
+            TensorWords.reducedInclusion R M) := by
+      rw [TensorWords.map_reducedProjection_comp_deconcatenation_comp_reducedInclusion]
+    _ = TensorProduct.map (TensorWords.component R M p.1) (TensorWords.component R M q.1) ∘ₗ
+        TensorWords.deconcatenation R M ∘ₗ TensorWords.reducedInclusion R M := by
+      rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, ← TensorProduct.map_comp, hc p, hc q,
+        LinearMap.comp_assoc]
+    _ = _ := by
+      rw [← LinearMap.comp_assoc, TensorWords.map_component_comp_deconcatenation,
+        LinearMap.comp_assoc, hi ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩]
+
+end ReducedTensorWords
+
+namespace TensorWords
+
 /-- The letters of a tensor word are primitive.
 
 This fires ahead of `TauCeti.TensorWords.deconcatenation_of`, whose right-hand side

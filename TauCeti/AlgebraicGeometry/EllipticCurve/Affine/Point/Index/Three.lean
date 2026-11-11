@@ -195,7 +195,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     ring
   -- the slope is `ϖ N / D`, where the numerator `3 x² + 2 a₂ x + a₄ − a₁ y` is `ϖ³ N`
   refine two_nsmul_notMem_of_slope_mem v
-    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩) m₃ m₄ m₆
+    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩) m₃
     ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * X, by ring⟩)
     ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * Y, by ring⟩)
     (ℓ := ϖ * ((3 * ϖ * X ^ 2 + 2 * ϖ * A₂ * X + A₄ - A₁ * Y) * ↑hDu.unit⁻¹))

@@ -23,8 +23,8 @@ every point of `{0} × [a, b]` and that, for `s` near `0`, the curve `F s` has t
 both endpoints.
 
 These are the variations of the first variation formula and of the critical points of the energy
-(`TauCeti.Geometry.Manifold.Riemannian.FirstVariation`).  The definition uses only the manifold
-structure, not a metric; `[a, b]` is the unordered interval `Set.uIcc a b`.
+(`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic`).  The definition uses only the
+manifold structure, not a metric; `[a, b]` is the unordered interval `Set.uIcc a b`.
 
 ## Main definitions and results
 

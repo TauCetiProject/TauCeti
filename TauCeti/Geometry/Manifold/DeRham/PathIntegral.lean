@@ -30,6 +30,9 @@ coefficient space are used. Manifolds with boundary or corners are included.
 
 ## Main declarations
 
+* `TauCeti.exists_local_primitive_pathIntegral_eq_add_sub`: near a point `x`, a closed form `φ`
+  has a function `g`, `C^r` at `x` with `dg x = φ x`, such that extending a curve from the base
+  point to `x` by short curves changes its line integral by the increment of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero`: a closed `1`-form whose integrals
   along smooth loops at a base point vanish is exact.
 * `TauCeti.mem_exactForms_one_iff_forall_pathIntegral_eq_zero`: a closed smooth real `1`-form is
@@ -67,17 +70,41 @@ theorem pathIntegral_eq_of_forall_pathIntegral_eq_zero [IsManifold I 1 M]
     (hγ₁ : ∀ t, 1 ≤ t → γ t = y) (hγ' : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ')
     (hγ'₀ : ∀ t ≤ 0, γ' t = x₀) (hγ'₁ : ∀ t, 1 ≤ t → γ' t = y) :
     pathIntegral φ γ 0 1 = pathIntegral φ γ' 0 1 := by
-  have hrev : ContMDiff 𝓘(ℝ, ℝ) I ∞ fun t ↦ γ' (1 - t) :=
-    hγ'.comp (by fun_prop : ContDiff ℝ ∞ fun t : ℝ ↦ 1 - t).contMDiff
-  have h₂ : ∀ t ≤ 0, γ' (1 - t) = y := fun t ht ↦ hγ'₁ _ (by linarith)
-  have hloop := h _ (hγ.curveConcat hrev hγ₁ h₂)
-    (by rw [curveConcat_of_le (by norm_num), hγ₀ _ (by norm_num)])
-    (by rw [curveConcat_of_lt (by norm_num)]; exact hγ'₀ _ (by norm_num))
-  rw [pathIntegral_curveConcat hφ (hγ.of_le (by simp)) (hrev.of_le (by simp)) hγ₁ h₂,
-    pathIntegral_comp_sub_left hφ (hγ'.of_le (by simp)), sub_self, sub_zero] at hloop
-  exact sub_eq_zero.mp ((sub_eq_add_neg _ _).trans hloop)
+  obtain ⟨ℓ, hℓ, hℓ₀, hℓ₁, hℓφ⟩ :=
+    exists_contMDiff_loop_pathIntegral_eq_sub hφ hγ hγ₀ hγ₁ hγ' hγ'₀ hγ'₁
+  exact sub_eq_zero.mp (hℓφ ▸ h ℓ hℓ hℓ₀ hℓ₁)
 
 variable [CompleteSpace F]
+
+/-- **Local primitives extend line integrals.** Let `φ` be a `C^r` `1`-form (`1 ≤ r`) closed near
+`x`, and `γ` a smooth curve from `x₀` to `x`, constant on `(-∞, 0]` and on `[1, ∞)`. Then there is
+a function `g`, `C^r` at `x` with `dg x = φ x`, such that every `y` near `x` is reached from `x₀` by
+a smooth curve `δ`, `γ` followed by a short curve from `x` to `y`, with
+`∫_δ φ = ∫_γ φ + g y - g x`. -/
+theorem exists_local_primitive_pathIntegral_eq_add_sub [FiniteDimensional ℝ E] [T2Space M]
+    [IsManifold I ∞ M] {r : ℕ∞} (hr : 1 ≤ r) {φ : RoughForm I M F 1} (hφ : IsSmoothForm I r φ)
+    {x₀ x : M} (hclosed : ∀ᶠ y in 𝓝 x, mextDeriv φ y = 0) {γ : ℝ → M}
+    (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (hγ₀ : ∀ t ≤ 0, γ t = x₀) (hγ₁ : ∀ t, 1 ≤ t → γ t = x) :
+    ∃ g : M → F, ContMDiffAt I 𝓘(ℝ, F) r g x ∧ mextDeriv (RoughForm.ofFunction I g) x = φ x ∧
+      ∀ᶠ y in 𝓝 x, ∃ δ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ δ ∧ (∀ t ≤ 0, δ t = x₀) ∧
+        (∀ t, 1 ≤ t → δ t = y) ∧ pathIntegral φ δ 0 1 = pathIntegral φ γ 0 1 + (g y - g x) := by
+  have hφ₀ : IsSmoothForm I 0 φ := hφ.of_le (by simp)
+  obtain ⟨U, hU, ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_nhds hr hφ hclosed
+  have hψ' := hψ
+  rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ'
+  refine ⟨fun y ↦ ψ y 0, hψ' x, ?_, ?_⟩
+  · rw [← RoughForm.eq_ofFunction]
+    exact hdψ x (mem_of_mem_nhds hU)
+  filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := ⊤) hU] with y hy
+  obtain ⟨c, hc, hc₀, hc₁, hcU⟩ := hy
+  have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 c := hc.of_le (by simp)
+  -- Follow `γ` to `x`, then the short curve `c` from `x` to `y`, along which `φ = dψ`.
+  refine ⟨_, hγ.curveConcat hc hγ₁ hc₀,
+    fun t ht ↦ by rw [curveConcat_of_le (by linarith), hγ₀ _ (by linarith)],
+    fun t ht ↦ by rw [curveConcat_of_lt (by linarith), hc₁ _ (by linarith)], ?_⟩
+  rw [pathIntegral_curveConcat hφ₀ (hγ.of_le (by simp)) hc' hγ₁ hc₀,
+    pathIntegral_congr (ψ := mextDeriv ψ) fun t _ ↦ (hdψ _ (hcU t)).symm,
+    pathIntegral_mextDeriv (hψ.of_le (by exact_mod_cast hr)) hc', hc₁ 1 le_rfl, hc₀ 0 le_rfl]
 
 /-- **Line integrals detect exactness.** On a preconnected manifold, a closed `C^r` `1`-form
 (`1 ≤ r`) whose integral along every smooth loop at a base point `x₀` vanishes is the exterior
@@ -95,28 +122,13 @@ theorem exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero [FiniteDimensional �
   -- Near each point `x`, `f` differs by a constant from a local primitive `g` of `φ`.
   refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
     (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
-  obtain ⟨U, hU, ψ, hψ, hdψ⟩ :=
-    exists_mextDeriv_eq_nhds hr hφ (x := x) (Eventually.of_forall fun y ↦ congrFun hclosed y)
-  have hψ' := hψ
-  rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ'
-  refine ⟨fun y ↦ ψ y 0, f x - ψ x 0, hψ' x, ?_, ?_⟩
-  · filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := ⊤) hU] with y hy
-    obtain ⟨c, hc, hc₀, hc₁, hcU⟩ := hy
-    have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 c := hc.of_le (by simp)
-    -- Integrate along the chosen curve to `x` followed by the short curve `c` from `x` to `y`.
-    have hcat : f y = f x + pathIntegral φ c 0 1 := by
-      simp only [hf_def]
-      rw [pathIntegral_eq_of_forall_pathIntegral_eq_zero hφ₀ h (hγ y) (hγ₀ y) (hγ₁ y)
-          ((hγ x).curveConcat hc (hγ₁ x) hc₀)
-          (fun t ht ↦ by rw [curveConcat_of_le (by linarith), hγ₀ x _ (by linarith)])
-          (fun t ht ↦ by rw [curveConcat_of_lt (by linarith), hc₁ _ (by linarith)]),
-        pathIntegral_curveConcat hφ₀ ((hγ x).of_le (by simp)) hc' (hγ₁ x) hc₀]
-    rw [hcat, pathIntegral_congr (ψ := mextDeriv ψ) fun t _ ↦ (hdψ _ (hcU t)).symm,
-      pathIntegral_mextDeriv (hψ.of_le (by exact_mod_cast hr)) hc', hc₁ 1 le_rfl,
-      hc₀ 0 le_rfl]
-    abel
-  · rw [← RoughForm.eq_ofFunction]
-    exact hdψ x (mem_of_mem_nhds hU)
+  obtain ⟨g, hg, hdg, hδ⟩ := exists_local_primitive_pathIntegral_eq_add_sub hr hφ
+    (Eventually.of_forall fun y ↦ congrFun hclosed y) (hγ x) (hγ₀ x) (hγ₁ x)
+  refine ⟨g, f x - g x, hg, ?_, hdg⟩
+  filter_upwards [hδ] with y ⟨δ, hδ, hδ₀, hδ₁, hδφ⟩
+  simp only [hf_def]
+  rw [pathIntegral_eq_of_forall_pathIntegral_eq_zero hφ₀ h (hγ y) (hγ₀ y) (hγ₁ y) hδ hδ₀ hδ₁, hδφ]
+  abel
 
 /-- A closed smooth real `1`-form on a preconnected manifold is exact exactly when its integral
 along every smooth loop at a base point `x₀` vanishes. -/

@@ -50,14 +50,12 @@ example {L : Language} [L.IsRelational] {M : Type*} [L.Structure M] (φ : L.Sent
 
 -- No configuration on a finite carrier models the infinitude sentence, and every one on `ℕ` does.
 example {L : Language} [L.IsRelational] (n : ℕ) :
-    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L (Fin n))) = ∅ := by
-  ext c
-  simpa [not_infinite_iff_finite] using Finite.of_fintype (Fin n)
+    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L (Fin n))) = ∅ :=
+  modelsOf_infiniteSentence_of_finite
 
 example {L : Language} [L.IsRelational] :
-    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L ℕ)) = Set.univ := by
-  ext c
-  simpa using (inferInstance : Infinite ℕ)
+    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L ℕ)) = Set.univ :=
+  modelsOf_infiniteSentence_of_infinite
 
 -- Model classes of `L_{ω₁ω}` sentences on countable carriers are standard Borel spaces.
 example {L : Language} [L.IsRelational] [∀ n, Countable (L.Relations n)] (φ : L.Sentenceω) :

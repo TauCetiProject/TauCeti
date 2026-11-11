@@ -137,7 +137,7 @@ theorem genus_le_genus (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
   have h := hurwitz_genus_formula_geometricDegree hF hF' hex hex'
   have hn : (1 : ℤ) ≤ geometricDegree F k' F' := by
     exact_mod_cast geometricDegree_pos F k' F'
-  have hd := Divisor.zero_le_degree_different k' F' hF
+  have hd := Divisor.degree_different_nonneg k' F' hF
   rcases Nat.eq_zero_or_pos (genus k F) with hg | hg
   · simp [hg]
   · have hg' : (0 : ℤ) ≤ 2 * genus k F - 2 := by omega

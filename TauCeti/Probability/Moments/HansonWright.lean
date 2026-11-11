@@ -66,9 +66,9 @@ theorem integral_exp_half_mul_sum_mulVec_sq_le {Ω γ κ : Type*} [MeasurableSpa
   have hslice_P (g : γ → ℝ) : Integrable (fun ω ↦ F (ω, g)) P ∧
       ∫ ω, F (ω, g) ∂P ≤ exp (((K : ℝ) * a / 2) * ∑ q, ((Mᵀ *ᵥ g) q) ^ 2) := by
     obtain ⟨hint, hle⟩ := hV_subG (Mᵀ *ᵥ g) r
-    exact ⟨hint.congr (.of_forall fun ω ↦ by dsimp [F]; rw [hF_adj]),
-      (integral_congr_ae (.of_forall fun ω ↦ show F (ω, g) = exp (r * (V ω ⬝ᵥ (Mᵀ *ᵥ g))) by
-        dsimp [F]; rw [hF_adj])).trans_le (by simpa only [hr_sq] using hle)⟩
+    have hFeq (ω : Ω) : F (ω, g) = exp (r * (V ω ⬝ᵥ (Mᵀ *ᵥ g))) := by dsimp [F]; rw [hF_adj]
+    exact ⟨hint.congr (.of_forall fun ω ↦ (hFeq ω).symm),
+      (integral_congr_ae (.of_forall hFeq)).trans_le (by simpa only [hr_sq] using hle)⟩
   obtain ⟨hFs_int, hFs_le⟩ := TauCeti.integrable_and_integral_prod_le hF_meas.prod_swap
     (.of_forall fun _ ↦ (exp_pos _).le) hg_int (.of_forall hslice_P)
   have hF_int : Integrable F (P.prod ν) := hFs_int.swap
@@ -100,9 +100,10 @@ private lemma mgf_decoupled_le_of_adj {Ω κ : Type*} [MeasurableSpace Ω] {P : 
   have hV_vec : AEMeasurable V P := AEMeasurable.of_eval hV_meas
   have hcont : Continuous (fun q : (κ → ℝ) × (κ → ℝ) ↦ exp (u * (q.2 ⬝ᵥ (M *ᵥ q.1)))) := by
     simp only [dotProduct, Matrix.mulVec]; fun_prop
+  have hG_eq : (fun p : Ω × Ω ↦ exp (u * Φ p)) = fun p ↦ exp (u * (V p.2 ⬝ᵥ (M *ᵥ V p.1))) :=
+    funext fun ⟨ω₁, ω₂⟩ ↦ by dsimp only; rw [hadj ω₁ ω₂]
   have hG_meas : AEStronglyMeasurable (fun p : Ω × Ω ↦ exp (u * Φ p)) (P.prod P) := by
-    rw [show (fun p : Ω × Ω ↦ exp (u * Φ p)) = fun p ↦ exp (u * (V p.2 ⬝ᵥ (M *ᵥ V p.1))) from
-      funext fun ⟨ω₁, ω₂⟩ ↦ by dsimp only; rw [hadj ω₁ ω₂]]
+    rw [hG_eq]
     have hm := (hV_vec.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst).prodMk
       (hV_vec.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd)
     exact (hcont.measurable.comp_aemeasurable hm).aestronglyMeasurable
@@ -113,10 +114,10 @@ private lemma mgf_decoupled_le_of_adj {Ω κ : Type*} [MeasurableSpace Ω] {P : 
   obtain ⟨hG_int, hG_le⟩ := TauCeti.integrable_and_integral_prod_le hG_meas
     (.of_forall fun _ ↦ (exp_pos _).le) hX1_int (.of_forall fun ω₁ ↦ by
       obtain ⟨hint, hle⟩ := hV_subG (M *ᵥ V ω₁) u
-      exact ⟨hint.congr (.of_forall fun ω₂ ↦ by dsimp only; rw [hadj ω₁ ω₂]),
-        (integral_congr_ae (.of_forall fun ω₂ ↦
-          show exp (u * Φ (ω₁, ω₂)) = exp (u * (V ω₂ ⬝ᵥ (M *ᵥ V ω₁))) by
-            rw [hadj ω₁ ω₂])).trans_le hle⟩)
+      have hslice (ω₂ : Ω) : exp (u * Φ (ω₁, ω₂)) = exp (u * (V ω₂ ⬝ᵥ (M *ᵥ V ω₁))) := by
+        rw [hadj ω₁ ω₂]
+      exact ⟨hint.congr (.of_forall fun ω₂ ↦ (hslice ω₂).symm),
+        (integral_congr_ae (.of_forall hslice)).trans_le hle⟩)
   exact ⟨hG_int, by rw [mgf]; exact (hG_le.trans hX1_le).trans_eq (by congr 1; ring)⟩
 
 private lemma offDiag_split_bounds {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
@@ -129,18 +130,20 @@ private lemma offDiag_split_bounds {ι 𝕜 : Type*} [Fintype ι] [DecidableEq �
   have hpyth : (∑ i, ‖A i i‖ ^ 2) + ∑ i, ∑ j, ‖(A - Matrix.diagonal A.diag) i j‖ ^ 2 =
       ∑ i, ∑ j, ‖A i j‖ ^ 2 := by
     rw [← Finset.sum_add_distrib]; refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← show ∑ j : ι, (if i = j then ‖A i i‖ ^ 2 else 0) = ‖A i i‖ ^ 2 by simp,
-      ← Finset.sum_add_distrib]
+    have hite : ∑ j : ι, (if i = j then ‖A i i‖ ^ 2 else 0) = ‖A i i‖ ^ 2 := by simp
+    rw [← hite, ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun j _ ↦ ?_; rcases eq_or_ne i j with rfl | hij <;> simp_all
   have h1 : 0 ≤ ∑ i, ‖A i i‖ ^ 2 := Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
   have h2 : 0 ≤ ∑ i, ∑ j, ‖(A - Matrix.diagonal A.diag) i j‖ ^ 2 :=
     Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
   refine ⟨fun i ↦ by simp, by linarith, by linarith, ?_, fun a ha ↦ ?_⟩
-  · rw [show (4 : ℝ) * (2 * θ) = 8 * θ by ring, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 8)]
+  · have h42 : (4 : ℝ) * (2 * θ) = 8 * θ := by ring
+    rw [h42, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 8)]
     exact (mul_le_mul_of_nonneg_left A.l2_opNorm_sub_diagonal_diag_le (by positivity)).trans
       (by linarith)
   · rw [abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
-    exact (show (K : ℝ) * (2 * |θ| * |a|) ≤ (K : ℝ) * (2 * |θ| * ‖A‖) by gcongr).trans (by linarith)
+    have hmul : (K : ℝ) * (2 * |θ| * |a|) ≤ (K : ℝ) * (2 * |θ| * ‖A‖) := by gcongr
+    exact hmul.trans (by linarith)
 
 private def hwClipped {ι : Type*} [Fintype ι] [DecidableEq ι] (K : ℝ≥0) (t : ℝ)
     (M : Matrix ι ι ℝ) : ℝ :=
@@ -206,8 +209,9 @@ theorem mgf_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℝ) {θ : ℝ}
       exp (64 * ((K : ℝ) ^ 2 * ∑ i, ∑ j, A i j ^ 2) * θ ^ 2) :=
     (hoff_mgf.trans hdec_mgf).trans (exp_le_exp.2 (by
       have := mul_le_mul_of_nonneg_left hB_frob (by positivity : 0 ≤ 64 * (K : ℝ) ^ 2 * θ ^ 2)
-      linarith [show (K : ℝ) ^ 2 * (4 * (2 * θ)) ^ 2 * ∑ i, ∑ j, B i j ^ 2 =
-        64 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, B i j ^ 2 by ring]))
+      have h64 : (K : ℝ) ^ 2 * (4 * (2 * θ)) ^ 2 * ∑ i, ∑ j, B i j ^ 2 =
+          64 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, B i j ^ 2 := by ring
+      linarith [h64]))
   let m (i : ι) : ℝ := ∫ ω', X i ω' ^ 2 ∂P
   let D : ι → Ω → ℝ := fun i ω ↦ A i i * (X i ω ^ 2 - m i)
   have hD_indep : iIndepFun D P :=
@@ -217,26 +221,28 @@ theorem mgf_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℝ) {θ : ℝ}
   have hD_term (i : ι) : Integrable (fun ω ↦ exp ((2 * θ) * D i ω)) P ∧
       mgf (D i) P (2 * θ) ≤ exp (1536 * (K : ℝ) ^ 2 * θ ^ 2 * A i i ^ 2) := by
     have hθi : (K : ℝ) * |(2 * θ) * A i i| ≤ 1 / 8 :=
-      (hentry _ (by simpa using A.norm_entry_le_l2_opNorm i i)).trans (by norm_num)
+      (hentry _ (by simpa using A.norm_apply_le_l2_opNorm i i)).trans (by norm_num)
     obtain ⟨hint_i, hmgf_i⟩ := (hX i).mgf_sq_sub_integral_le hθi
     exact ⟨hint_i.congr (.of_forall fun ω ↦ by dsimp [D, m]; ring_nf),
       (mgf_const_mul (A i i)).trans_le
         ((mul_comm (A i i) (2 * θ) ▸ hmgf_i).trans_eq (by congr 1; ring))⟩
-  have hD_sum_int :=
-    hD_indep.integrable_exp_mul_sum₀ hD_meas (s := Finset.univ) fun i _ ↦ (hD_term i).1
+  have hD_sum_int := hD_indep.integrable_exp_mul_sum_of_aemeasurable (s := Finset.univ)
+    (fun i _ ↦ hD_meas i) fun i _ ↦ (hD_term i).1
   have hD_bound : mgf (fun ω ↦ ∑ i, D i ω) P (2 * θ) ≤
       exp (1536 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, A i j ^ 2) :=
-    (hD_indep.mgf_sum_le_exp_sum hD_meas fun i _ ↦ (hD_term i).2).trans (exp_le_exp.2 (by
-      rw [← Finset.mul_sum]; exact mul_le_mul_of_nonneg_left hdiag_frob (by positivity)))
+    (hD_indep.mgf_sum_le_exp_sum (fun i _ ↦ hD_meas i) fun i _ ↦ (hD_term i).2).trans
+      (exp_le_exp.2 (by
+        rw [← Finset.mul_sum]; exact mul_le_mul_of_nonneg_left hdiag_frob (by positivity)))
   have hsplit (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) -
       ∫ ω', (fun i ↦ X i ω') ⬝ᵥ A *ᵥ (fun i ↦ X i ω') ∂P =
         (∑ i, D i ω) + ((fun i ↦ X i ω) ⬝ᵥ B *ᵥ (fun i ↦ X i ω)) := by
-    rw [(hindep.integral_dotProduct_mulVec_eq_sum_diag hX A).2]
-    nth_rw 1 [show A = Matrix.diagonal A.diag + B by simp [B]]
-    rw [Matrix.add_mulVec, dotProduct_add, show (fun i ↦ X i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ
-      (fun i ↦ X i ω) = ∑ i, A i i * X i ω ^ 2 by
+    have hAB : A = Matrix.diagonal A.diag + B := by simp [B]
+    have hdiag_quad : (fun i ↦ X i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ (fun i ↦ X i ω) =
+        ∑ i, A i i * X i ω ^ 2 := by
       simp only [dotProduct, Matrix.mulVec_diagonal, Matrix.diag_apply]
-      exact Finset.sum_congr rfl fun _ _ ↦ by ring]
+      exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    rw [(hindep.integral_dotProduct_mulVec_eq_sum_diag hX A).2]
+    nth_rw 1 [hAB]; rw [Matrix.add_mulVec, dotProduct_add, hdiag_quad]
     simp only [D, m, mul_sub, Finset.sum_sub_distrib]; ring
   simp_rw [hsplit]
   obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_exp_half_add hD_sum_int hoff_int hD_bound hoff_bound
@@ -249,7 +255,8 @@ theorem measureReal_dotProduct_mulVec_sub_integral_gt_le (A : Matrix ι ι ℝ) 
       exp (-(1 / 3200) * min (t ^ 2 / ((K : ℝ) ^ 2 * ∑ i, ∑ j, A i j ^ 2))
         (t / ((K : ℝ) * ‖A‖))) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  rw [← show min (1 / (4 * (800 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 3200 by norm_num]
+  have hconst : min (1 / (4 * (800 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 3200 := by norm_num
+  rw [← hconst]
   exact TauCeti.measureReal_gt_le_exp_min_of_mgf_le (by norm_num) (by norm_num) (by positivity)
     (by positivity) (fun _ hθ ↦ hindep.mgf_dotProduct_mulVec_sub_integral_le hX A hθ) ht
 
@@ -262,7 +269,8 @@ theorem measureReal_abs_dotProduct_mulVec_sub_integral_gt_le (A : Matrix ι ι �
       2 * exp (-(1 / 3200) * min (t ^ 2 / ((K : ℝ) ^ 2 * ∑ i, ∑ j, A i j ^ 2))
         (t / ((K : ℝ) * ‖A‖))) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  rw [← show min (1 / (4 * (800 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 3200 by norm_num]
+  have hconst : min (1 / (4 * (800 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 3200 := by norm_num
+  rw [← hconst]
   exact TauCeti.measureReal_abs_gt_le_two_mul_exp_min_of_mgf_le (by norm_num) (by norm_num)
     (by positivity) (by positivity)
     (fun _ hθ ↦ hindep.mgf_dotProduct_mulVec_sub_integral_le hX A hθ) ht
@@ -300,7 +308,9 @@ private lemma measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_integral_if
         [exact ⟨le_rfl, zero_le_one⟩; exact ⟨le_min zero_le_one (by positivity), min_le_left _ _⟩])
   have hslice_le (M : Matrix ι ι ℝ) : μX.real (Prod.mk M ⁻¹' E) ≤ ψ M := by
     by_cases hM0 : M = 0
-    · subst hM0; simp [ψ, show Prod.mk (0 : Matrix ι ι ℝ) ⁻¹' E = ∅ by ext; simp [E, not_lt.2 ht]]
+    · subst hM0
+      have hpre : Prod.mk (0 : Matrix ι ι ℝ) ⁻¹' E = ∅ := by ext; simp [E, not_lt.2 ht]
+      simp [ψ, hpre]
     · simp only [ψ, hM0, ↓reduceIte, hwClipped]
       rw [map_measureReal_apply_of_aemeasurable hX_vec (hE_meas.preimage measurable_prodMk_left)]
       refine le_min ((measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ) ?_
@@ -312,15 +322,15 @@ private lemma measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_integral_if
   have hslice_eq (M : Matrix ι ι ℝ) :
       ∫ x, E.indicator (1 : Matrix ι ι ℝ × (ι → ℝ) → ℝ) (M, x) ∂μX =
         μX.real (Prod.mk M ⁻¹' E) := by
-    rw [show (fun x ↦ E.indicator (1 : Matrix ι ι ℝ × (ι → ℝ) → ℝ) (M, x)) =
-      (Prod.mk M ⁻¹' E).indicator 1 by ext x; by_cases hx : (M, x) ∈ E <;> simp [hx],
-      integral_indicator_one (hE_meas.preimage measurable_prodMk_left)]
+    have hind_pre : (fun x ↦ E.indicator (1 : Matrix ι ι ℝ × (ι → ℝ) → ℝ) (M, x)) =
+        (Prod.mk M ⁻¹' E).indicator 1 := by ext x; by_cases hx : (M, x) ∈ E <;> simp [hx]
+    rw [hind_pre, integral_indicator_one (hE_meas.preimage measurable_prodMk_left)]
   refine ⟨(integrable_map_measure hψ_meas.aestronglyMeasurable hA_meas).mp hψ_int, ?_⟩
-  rw [show P.real {ω | t < |(fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) -
-      ∑ i, A ω i i * P[fun ω' ↦ X i ω' ^ 2]|} = (μA.prod μX).real E by
+  have hprob_prod : P.real {ω | t < |(fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) -
+      ∑ i, A ω i i * P[fun ω' ↦ X i ω' ^ 2]|} = (μA.prod μX).real E := by
     rw [← hAX.map_prod_eq_prod_map_map hA_meas hX_vec,
-      map_measureReal_apply_of_aemeasurable (hA_meas.prodMk hX_vec) hE_meas]; simp [E],
-    ← integral_indicator_one hE_meas, integral_prod _ hind_int]
+      map_measureReal_apply_of_aemeasurable (hA_meas.prodMk hX_vec) hE_meas]; simp [E]
+  rw [hprob_prod, ← integral_indicator_one hE_meas, integral_prod _ hind_int]
   exact ((integral_congr_ae (.of_forall hslice_eq)).trans_le
     (integral_mono_ae (hind_int.integral_prod_left.congr (.of_forall hslice_eq))
       hψ_int (.of_forall hslice_le))).trans_eq (integral_map hA_meas hψ_meas.aestronglyMeasurable)
@@ -458,8 +468,9 @@ theorem mgf_re_star_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℂ) {θ
       exp (128 * ((K : ℝ) ^ 2 * ∑ i, ∑ j, ‖A i j‖ ^ 2) * θ ^ 2) :=
     (hoff_mgf.trans hdec_mgf).trans (exp_le_exp.2 (by
       have := mul_le_mul_of_nonneg_left hB_frob (by positivity : 0 ≤ 128 * (K : ℝ) ^ 2 * θ ^ 2)
-      linarith [show 2 * (K : ℝ) ^ 2 * (4 * (2 * θ)) ^ 2 * ∑ i, ∑ j, ‖B i j‖ ^ 2 =
-        128 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, ‖B i j‖ ^ 2 by ring]))
+      have h128 : 2 * (K : ℝ) ^ 2 * (4 * (2 * θ)) ^ 2 * ∑ i, ∑ j, ‖B i j‖ ^ 2 =
+          128 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, ‖B i j‖ ^ 2 := by ring
+      linarith [h128]))
   let m (i : ι) : ℝ := ∫ ω', ‖Z i ω'‖ ^ 2 ∂P
   let D : ι → Ω → ℝ := fun i ω ↦ (A i i).re * (‖Z i ω‖ ^ 2 - m i)
   have hD_indep : iIndepFun D P :=
@@ -469,7 +480,7 @@ theorem mgf_re_star_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℂ) {θ
       (hZ_int i).aemeasurable)).sub_const _).const_mul _
   have hD_term (i : ι) : Integrable (fun ω ↦ exp ((2 * θ) * D i ω)) P ∧
       mgf (D i) P (2 * θ) ≤ exp (6144 * (K : ℝ) ^ 2 * θ ^ 2 * ‖A i i‖ ^ 2) := by
-    have hθi := hentry _ ((Complex.abs_re_le_norm _).trans (A.norm_entry_le_l2_opNorm i i))
+    have hθi := hentry _ ((Complex.abs_re_le_norm _).trans (A.norm_apply_le_l2_opNorm i i))
     obtain ⟨hint_i, hmgf_i⟩ :=
       mgf_norm_sq_sub_integral_le_of_hasSubgaussianMGF_re_star_mul (hZ i) hθi
     have hre_sq : (A i i).re ^ 2 ≤ ‖A i i‖ ^ 2 :=
@@ -478,31 +489,34 @@ theorem mgf_re_star_dotProduct_mulVec_sub_integral_le (A : Matrix ι ι ℂ) {θ
       (mgf_const_mul (A i i).re).trans_le (((mul_comm (A i i).re (2 * θ) ▸ hmgf_i).trans_eq
         (by congr 1; ring)).trans
         (exp_le_exp.2 (mul_le_mul_of_nonneg_left hre_sq (by positivity))))⟩
-  have hD_sum_int :=
-    hD_indep.integrable_exp_mul_sum₀ hD_meas (s := Finset.univ) fun i _ ↦ (hD_term i).1
+  have hD_sum_int := hD_indep.integrable_exp_mul_sum_of_aemeasurable (s := Finset.univ)
+    (fun i _ ↦ hD_meas i) fun i _ ↦ (hD_term i).1
   have hD_bound : mgf (fun ω ↦ ∑ i, D i ω) P (2 * θ) ≤
       exp (6144 * (K : ℝ) ^ 2 * θ ^ 2 * ∑ i, ∑ j, ‖A i j‖ ^ 2) :=
-    (hD_indep.mgf_sum_le_exp_sum hD_meas fun i _ ↦ (hD_term i).2).trans (exp_le_exp.2 (by
-      rw [← Finset.mul_sum]; exact mul_le_mul_of_nonneg_left hdiag_frob (by positivity)))
+    (hD_indep.mgf_sum_le_exp_sum (fun i _ ↦ hD_meas i) fun i _ ↦ (hD_term i).2).trans
+      (exp_le_exp.2 (by
+        rw [← Finset.mul_sum]; exact mul_le_mul_of_nonneg_left hdiag_frob (by positivity)))
   obtain ⟨hquad_int, hquad_mean⟩ := hindep.integral_star_dotProduct_mulVec_eq_sum_diag hZ A
   have hre_mean : ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
       ∑ i, (A i i).re * m i := by
-    rw [show ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
-      (∫ ω', star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω') ∂P).re from
-      Complex.reCLM.integral_comp_comm hquad_int, hquad_mean, Complex.re_sum]
+    have hre_comm : ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
+        (∫ ω', star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω') ∂P).re :=
+      Complex.reCLM.integral_comp_comm hquad_int
+    rw [hre_comm, hquad_mean, Complex.re_sum]
     exact Finset.sum_congr rfl fun _ _ ↦ by simp [m, Complex.mul_re]
   have hsplit (ω : Ω) : (star (fun i ↦ Z i ω) ⬝ᵥ A *ᵥ (fun i ↦ Z i ω)).re -
       ∫ ω', (star (fun i ↦ Z i ω') ⬝ᵥ A *ᵥ (fun i ↦ Z i ω')).re ∂P =
         (∑ i, D i ω) + (star (fun i ↦ Z i ω) ⬝ᵥ B *ᵥ (fun i ↦ Z i ω)).re := by
-    rw [hre_mean]; nth_rw 1 [show A = Matrix.diagonal A.diag + B by simp [B]]
-    rw [Matrix.add_mulVec, dotProduct_add, Complex.add_re,
-      show (star (fun i ↦ Z i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ (fun i ↦ Z i ω)).re =
-        ∑ i, (A i i).re * ‖Z i ω‖ ^ 2 by
+    have hAB : A = Matrix.diagonal A.diag + B := by simp [B]
+    have hdiag_quad : (star (fun i ↦ Z i ω) ⬝ᵥ Matrix.diagonal A.diag *ᵥ (fun i ↦ Z i ω)).re =
+        ∑ i, (A i i).re * ‖Z i ω‖ ^ 2 := by
       simp only [dotProduct, Matrix.mulVec_diagonal, Matrix.diag_apply, Pi.star_apply,
         Complex.re_sum]
       refine Finset.sum_congr rfl fun i _ ↦ ?_; rw [Complex.sq_norm, Complex.normSq_apply]
       simp only [Complex.star_def, Complex.mul_re, Complex.mul_im, Complex.conj_re,
-        Complex.conj_im]; ring]
+        Complex.conj_im]; ring
+    rw [hre_mean]; nth_rw 1 [hAB]
+    rw [Matrix.add_mulVec, dotProduct_add, Complex.add_re, hdiag_quad]
     simp only [D, mul_sub, Finset.sum_sub_distrib]; ring
   simp_rw [hsplit]
   obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_exp_half_add hD_sum_int hoff_int hD_bound hoff_bound
@@ -516,7 +530,8 @@ theorem measureReal_abs_re_star_dotProduct_mulVec_sub_integral_gt_le
       2 * exp (-(1 / 12544) * min (t ^ 2 / ((K : ℝ) ^ 2 * ∑ i, ∑ j, ‖A i j‖ ^ 2))
         (t / ((K : ℝ) * ‖A‖))) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  rw [← show min (1 / (4 * (3136 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 12544 by norm_num]
+  have hconst : min (1 / (4 * (3136 : ℝ))) (1 / (2 * (32 : ℝ))) = 1 / 12544 := by norm_num
+  rw [← hconst]
   exact TauCeti.measureReal_abs_gt_le_two_mul_exp_min_of_mgf_le (by norm_num) (by norm_num)
     (by positivity) (by positivity)
     (fun _ hθ ↦ hindep.mgf_re_star_dotProduct_mulVec_sub_integral_le hZ A hθ) ht
@@ -533,10 +548,10 @@ theorem measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le
   have hQ_int : Integrable Q P := (hindep.integral_star_dotProduct_mulVec_eq_sum_diag hZ A).1
   let AI : Matrix ι ι ℂ := (-Complex.I) • A
   have hAI_re (ω : Ω) : (star (fun i ↦ Z i ω) ⬝ᵥ AI *ᵥ (fun i ↦ Z i ω)).re = (Q ω).im := by
-    rw [show star (fun i ↦ Z i ω) ⬝ᵥ AI *ᵥ (fun i ↦ Z i ω) = (-Complex.I) * Q ω by
+    have hAI_eq : star (fun i ↦ Z i ω) ⬝ᵥ AI *ᵥ (fun i ↦ Z i ω) = (-Complex.I) * Q ω := by
       simp only [AI, Q, dotProduct, Matrix.mulVec, Matrix.smul_apply, smul_eq_mul, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring]
-    simp [Complex.mul_re]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    rw [hAI_eq]; simp [Complex.mul_re]
   have hsub : {ω | t < ‖Q ω - ∫ ω', Q ω' ∂P‖} ⊆
       {ω | t / 2 < |(Q ω).re - ∫ ω', (Q ω').re ∂P|} ∪
         {ω | t / 2 < |(star (fun i ↦ Z i ω) ⬝ᵥ AI *ᵥ (fun i ↦ Z i ω)).re -
@@ -553,21 +568,23 @@ theorem measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le
     have hns : ‖Q ω - ∫ ω', Q ω' ∂P‖ ^ 2 =
         ((Q ω - ∫ ω', Q ω' ∂P).re) ^ 2 + ((Q ω - ∫ ω', Q ω' ∂P).im) ^ 2 := by
       rw [Complex.sq_norm, Complex.normSq_apply]; ring
-    nlinarith [pow_lt_pow_left₀ (show t < _ from hω) ht (by norm_num : 2 ≠ 0)]
+    have hω_lt : t < ‖Q ω - ∫ ω', Q ω' ∂P‖ := hω
+    nlinarith [pow_lt_pow_left₀ hω_lt ht (by norm_num : 2 ≠ 0)]
   set F := (K : ℝ) ^ 2 * ∑ i, ∑ j, ‖A i j‖ ^ 2; set op := (K : ℝ) * ‖A‖
   set m : ℝ := min (t ^ 2 / F) (t / op)
+  have hsq_div : (t / 2) ^ 2 / F = (t ^ 2 / F) / 4 := by ring
+  have hlin_div : (t / 2) / op = (t / op) / 2 := by ring
   have hm_half : m / 4 ≤ min ((t / 2) ^ 2 / F) ((t / 2) / op) :=
-    le_min (by linarith [min_le_left (t ^ 2 / F) (t / op),
-        show (t / 2) ^ 2 / F = (t ^ 2 / F) / 4 by ring])
+    le_min (by linarith [min_le_left (t ^ 2 / F) (t / op), hsq_div])
       (by linarith [min_le_right (t ^ 2 / F) (t / op),
-        div_nonneg ht (mul_nonneg K.coe_nonneg (norm_nonneg A)),
-        show (t / 2) / op = (t / op) / 2 by ring])
+        div_nonneg ht (mul_nonneg K.coe_nonneg (norm_nonneg A)), hlin_div])
   have ht2 : 0 ≤ t / 2 := by positivity
   have h1 := hindep.measureReal_abs_re_star_dotProduct_mulVec_sub_integral_gt_le hZ A ht2
   have h2 := hindep.measureReal_abs_re_star_dotProduct_mulVec_sub_integral_gt_le hZ AI ht2
-  rw [show ‖AI‖ = ‖A‖ by rw [norm_smul, norm_neg, Complex.norm_I, one_mul],
-    show ∑ i, ∑ j, ‖AI i j‖ ^ 2 = ∑ i, ∑ j, ‖A i j‖ ^ 2 from
-      Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by simp [AI]] at h2
+  have hAI_op : ‖AI‖ = ‖A‖ := by rw [norm_smul, norm_neg, Complex.norm_I, one_mul]
+  have hAI_frob : ∑ i, ∑ j, ‖AI i j‖ ^ 2 = ∑ i, ∑ j, ‖A i j‖ ^ 2 :=
+    Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by simp [AI]
+  rw [hAI_op, hAI_frob] at h2
   have hexp_le : exp (-(1 / 12544) * min ((t / 2) ^ 2 / F) ((t / 2) / op)) ≤
       exp (-(1 / 50176) * m) := exp_le_exp.2 (by linarith)
   have h4 : P.real {ω | t < ‖Q ω - ∫ ω', Q ω' ∂P‖} ≤ 4 * exp (-(1 / 50176) * m) :=
@@ -576,9 +593,11 @@ theorem measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le
   set u : ℝ := exp (-(1 / 150528) * m)
   by_cases hu_half : 1 / 2 ≤ u
   · exact ((measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ).trans (by linarith)
-  · refine h4.trans ((show 4 * exp (-(1 / 50176) * m) = 4 * u ^ 2 * u by
-      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_nat_mul]; congr 2; push_cast; ring).trans_le
-      (mul_le_mul_of_nonneg_right (by nlinarith [show 0 ≤ u from (exp_pos _).le]) (exp_pos _).le))
+  · have hu_cube : 4 * exp (-(1 / 50176) * m) = 4 * u ^ 2 * u := by
+      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_nat_mul]; congr 2; push_cast; ring
+    have hu_nonneg : 0 ≤ u := (exp_pos _).le
+    exact h4.trans (hu_cube.trans_le
+      (mul_le_mul_of_nonneg_right (by nlinarith) (exp_pos _).le))
 end SubGaussian
 
 /-- **Complex Hanson–Wright inequality for bounded mean-zero coordinates.** -/
@@ -632,10 +651,10 @@ theorem le_two_mul_log_two_of_hanson_wright {c : ℝ}
   have hrad_mean : ∫ b, rad b ∂μ₀ = 0 := by
     rw [integral_smul_measure, integral_add_measure Integrable.of_finite Integrable.of_finite,
       integral_dirac, integral_dirac]; simp [rad]
+  have hrad_mem : ∀ b : B, rad b ∈ Set.Icc (-1) 1 := fun ⟨b⟩ ↦ by cases b <;> simp [rad]
   have hrad_subG : HasSubgaussianMGF rad 1 μ₀ :=
     (hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero hrad_meas.aemeasurable
-      (.of_forall fun ⟨b⟩ ↦ show rad ⟨b⟩ ∈ Set.Icc (-1) 1 by cases b <;> simp [rad])
-      hrad_mean).mono (by rw [← NNReal.coe_le_coe]; push_cast; norm_num)
+      (.of_forall hrad_mem) hrad_mean).mono (by rw [← NNReal.coe_le_coe]; push_cast; norm_num)
   let P : Measure (Fin 2 → B) := Measure.pi fun _ : Fin 2 ↦ μ₀
   let X : Fin 2 → (Fin 2 → B) → ℝ := fun i ↦ rad ∘ Function.eval i
   have hindep : iIndepFun X P := by
@@ -659,12 +678,12 @@ theorem le_two_mul_log_two_of_hanson_wright {c : ℝ}
     refine (Matrix.toEuclideanCLM (𝕜 := ℝ) A).opNorm_le_bound zero_le_one fun v ↦ ?_
     rw [one_mul]; refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
     simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two, Matrix.mulVec, dotProduct, A, add_comm])
-    (by simpa [A] using A.norm_entry_le_l2_opNorm 0 1)
+    (by simpa [A] using A.norm_apply_le_l2_opNorm 0 1)
+  have hfrob : ∑ i : Fin 2, ∑ j : Fin 2, A i j ^ 2 = 2 := by simp [Fin.sum_univ_two, A]; norm_num
+  have hmin_half : min ((1 : ℝ) / 2) 1 = 1 / 2 := by norm_num
   have hbound := hc P X 1 hindep hX_subG A 1 zero_le_one
-  rw [hevent, probReal_univ, show ∑ i : Fin 2, ∑ j : Fin 2, A i j ^ 2 = 2 by
-    simp [Fin.sum_univ_two, A]; norm_num, hop] at hbound
-  simp only [NNReal.coe_one, one_pow, one_mul, div_one,
-    show min ((1 : ℝ) / 2) 1 = 1 / 2 by norm_num] at hbound
+  rw [hevent, probReal_univ, hfrob, hop] at hbound
+  simp only [NNReal.coe_one, one_pow, one_mul, div_one, hmin_half] at hbound
   have hlog := Real.log_le_log (by positivity) (by linarith : (2 : ℝ)⁻¹ ≤ Real.exp (-c * (1 / 2)))
   rw [Real.log_inv, Real.log_exp] at hlog; linarith
 
