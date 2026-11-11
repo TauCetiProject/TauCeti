@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 
 /-!
@@ -34,13 +33,14 @@ file defines `TauCeti.crFormalAdjoint` and the weak equation
 for every test function `φ ∈ 𝓓(Ω, V)` the pairing `⟪D* φ, ξ⟫` is integrable with
 `∫ ⟪D* φ, ξ⟫ = ∫ ⟪φ, η⟫`.
 
-This is the weak formulation of the PseudoholomorphicCurveAnalysis roadmap's interior regularity
-theorem with Sobolev coefficients (McDuff–Salamon, §B.4). The weak equation itself makes no
-regularity assumption on the coefficients. The theorems consuming it take
+This is the weak formulation used for interior regularity of the real Cauchy–Riemann equation
+with Sobolev coefficients (McDuff–Salamon, §B.4). The weak equation itself makes no regularity
+assumption on the coefficients. The theorems consuming it take
 `TauCeti.IsSobolevCRCoefficients p Ω J DJ S`: `DJ` is a weak derivative of `J` on `Ω`, and `J`,
 `DJ` and `S` are locally `Lᵖ`. With a Hölder triple `1/p + 1/q = 1/r` and `1 ≤ r` every pairing
-in the weak equation is then integrable. In the roadmap's setting `p > 2` and `p/(p-1) < q`, so
-`r > 1`. Neither continuity of `J` nor `J² = -1` is needed for the statements here.
+in the weak equation is then integrable. For `p > 2` and `p/(p-1) < q`, the exponents of
+McDuff–Salamon's regularity theorem, `r > 1`. Neither continuity of `J` nor `J² = -1` is needed
+for the statements here.
 
 ## Main results
 
@@ -57,11 +57,9 @@ in the weak equation is then integrable. In the roadmap's setting `p > 2` and `p
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`) and invariance under changes of
   `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω` (`TauCeti.isWeakCRSolution_congr_ae`).
 
-Two facts about vector-valued test functions are proved on the way, for an arbitrary
-finite-dimensional real inner product space of values: the inner-product form of the weak
+The proofs test against vector-valued test functions through the inner-product form of the weak
 derivative identity (`TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`) and the
-fundamental lemma (`TauCeti.ae_eq_of_forall_integral_inner_eq`). Both reduce to scalar tests
-through an orthonormal basis or a constant vector.
+fundamental lemma (`TauCeti.ae_eq_of_forall_integral_inner_eq`).
 
 ## References
 
@@ -75,97 +73,6 @@ open MeasureTheory TopologicalSpace Complex
 open scoped InnerProductSpace ContDiff Distributions ENNReal
 
 namespace TauCeti
-
-/-! ### Vector-valued test functions -/
-
-section TestFunction
-
-variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [OpensMeasurableSpace E] {μ : Measure E} {Ω : Opens E}
-  [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- The weak derivative identity tested against a vector-valued test function through the inner
-product: if `u'` is a weak derivative of `u` in the direction `v` on `Ω`, then
-`∫ ⟪∂_v φ, u⟫ = -∫ ⟪φ, u'⟫` for every `φ ∈ 𝓓(Ω, V)`. -/
-theorem HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg {u u' : E → V} {v : E}
-    (h : HasWeakLineDerivOn μ Ω u u' v) (φ : 𝓓(Ω, V)) :
-    ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, u x⟫_ℝ ∂μ = -∫ x, ⟪(φ : E → V) x, u' x⟫_ℝ ∂μ := by
-  let b := stdOrthonormalBasis ℝ V
-  let ψ : Fin (Module.finrank ℝ V) → 𝓓(Ω, ℝ) := fun i =>
-    TestFunction.postcompCLM (innerSL ℝ (b i)) φ
-  have hψ (i) (x : E) : (ψ i : E → ℝ) x = ⟪b i, (φ : E → V) x⟫_ℝ := rfl
-  have hφd : Differentiable ℝ (φ : E → V) := φ.contDiff.differentiable (by simp)
-  have hψd (i) (x : E) :
-      lineDeriv ℝ (ψ i : E → ℝ) x v = ⟪b i, lineDeriv ℝ (φ : E → V) x v⟫_ℝ := by
-    have h₁ : HasFDerivAt (ψ i : E → ℝ) ((innerSL ℝ (b i)).comp (fderiv ℝ (φ : E → V) x)) x :=
-      (innerSL ℝ (b i)).hasFDerivAt.comp x (hφd x).hasFDerivAt
-    rw [h₁.hasLineDerivAt v |>.lineDeriv, (hφd x).lineDeriv_eq_fderiv]
-    rfl
-  have hw (i) := h.clm_comp (innerSL ℝ (b i))
-  calc ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, u x⟫_ℝ ∂μ
-      = ∫ x, ∑ i, lineDeriv ℝ (ψ i : E → ℝ) x v • ⟪b i, u x⟫_ℝ ∂μ := by
-        refine integral_congr_ae (.of_forall fun x => ?_)
-        dsimp only
-        rw [← b.sum_inner_mul_inner]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        rw [hψd, smul_eq_mul, real_inner_comm (b i)]
-    _ = ∑ i, ∫ x, lineDeriv ℝ (ψ i : E → ℝ) x v • ⟪b i, u x⟫_ℝ ∂μ :=
-        integral_finsetSum _ fun i _ =>
-          integrable_lineDeriv_smul_of_locallyIntegrableOn (hw i).locallyIntegrableOn (ψ i) v
-    _ = ∑ i, -∫ x, (ψ i : E → ℝ) x • ⟪b i, u' x⟫_ℝ ∂μ := by
-        refine Finset.sum_congr rfl fun i _ => ?_
-        exact (hw i).integral_lineDeriv_smul_eq_neg_integral_smul (ψ i)
-    _ = -∫ x, ∑ i, (ψ i : E → ℝ) x • ⟪b i, u' x⟫_ℝ ∂μ := by
-        rw [Finset.sum_neg_distrib]
-        congr 1
-        exact (integral_finsetSum _ fun i _ =>
-          (ψ i).integrable_smul (hw i).locallyIntegrableOn_deriv).symm
-    _ = -∫ x, ⟪(φ : E → V) x, u' x⟫_ℝ ∂μ := by
-        congr 1
-        refine integral_congr_ae (.of_forall fun x => ?_)
-        dsimp only
-        rw [← b.sum_inner_mul_inner]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        rw [hψ, smul_eq_mul, real_inner_comm (b i)]
-
-omit [FiniteDimensional ℝ V] in
-/-- A test function paired with a locally integrable field is integrable. -/
-theorem _root_.TestFunction.integrable_inner {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
-    (φ : 𝓓(Ω, V)) : Integrable (fun x => ⟪(φ : E → V) x, w x⟫_ℝ) μ :=
-  φ.integrable_bilin (innerSL ℝ) hw
-
-variable [FiniteDimensional ℝ E] [BorelSpace E]
-
-/-- The **fundamental lemma** for vector-valued test functions: locally integrable `g, h` on the
-open set `Ω` with `∫ ⟪φ, g⟫ = ∫ ⟪φ, h⟫` for every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on
-`Ω`. -/
-theorem ae_eq_of_forall_integral_inner_eq {g h : E → V} (hg : LocallyIntegrableOn g Ω μ)
-    (hh : LocallyIntegrableOn h Ω μ)
-    (H : ∀ φ : 𝓓(Ω, V), ∫ x, ⟪(φ : E → V) x, g x⟫_ℝ ∂μ = ∫ x, ⟪(φ : E → V) x, h x⟫_ℝ ∂μ) :
-    g =ᵐ[μ.restrict Ω] h := by
-  have hgh : LocallyIntegrableOn (g - h) Ω μ := hg.sub hh
-  have key := IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero Ω.isOpen hgh
-    fun ψ hψ hψc hψΩ => by
-      set w := ∫ x, ψ x • (g - h) x ∂μ
-      let ψ' : 𝓓(Ω, ℝ) := ⟨ψ, hψ, hψc, hψΩ⟩
-      let Φ : 𝓓(Ω, V) := ⟨fun x => ψ x • w, hψ.smul contDiff_const, hψc.smul_right,
-        (tsupport_smul_subset_left _ _).trans hψΩ⟩
-      have hΦ := H Φ
-      have hint : Integrable (fun x => ψ x • (g - h) x) μ :=
-        ψ'.integrable_smul hgh
-      have : ⟪w, w⟫_ℝ = 0 := by
-        calc ⟪w, w⟫_ℝ = ∫ x, ⟪w, ψ x • (g - h) x⟫_ℝ ∂μ := (integral_inner hint w).symm
-          _ = ∫ x, ⟪(Φ : E → V) x, g x⟫_ℝ ∂μ - ∫ x, ⟪(Φ : E → V) x, h x⟫_ℝ ∂μ := by
-            rw [← integral_sub (Φ.integrable_inner hg) (Φ.integrable_inner hh)]
-            refine integral_congr_ae (.of_forall fun x => ?_)
-            simp [Φ, inner_smul_left, inner_smul_right, inner_sub_right, mul_sub]
-          _ = 0 := sub_eq_zero.2 hΦ
-      exact inner_self_eq_zero.1 this
-  rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
-  filter_upwards [key] with x hx hxΩ
-  exact sub_eq_zero.1 (hx hxΩ)
-
-end TestFunction
 
 /-! ### The formal adjoint and the weak equation -/
 
@@ -209,9 +116,9 @@ where `D*` is `TauCeti.crFormalAdjoint J DJ S`.
 
 The integrability of `ξ`, `η` and `⟪D* φ, ξ⟫` is part of the definition, since the Bochner
 integral of a non-integrable function is `0`. The coefficients are unconstrained here; the
-theorems using the weak equation assume `TauCeti.IsSobolevCRCoefficients`, under which the
-pairing is automatically integrable
-(`TauCeti.IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint`). -/
+theorems using the weak equation assume `TauCeti.IsSobolevCRCoefficients p Ω J DJ S` and the
+Hölder condition `p⁻¹ + q⁻¹ ≤ 1`, under which the pairing is automatically integrable for every
+locally `L^q` field `ξ` (`TauCeti.IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint`). -/
 def IsWeakCRSolution (q : ℝ≥0∞) (Ω : Opens ℂ) (J : ℂ → V →L[ℝ] V)
     (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V) : Prop :=
   MemLpLoc q Ω ξ ∧ LocallyIntegrableOn η Ω ∧
@@ -311,48 +218,11 @@ structure IsSobolevCRCoefficients (p : ℝ≥0∞) (Ω : Opens ℂ) (J : ℂ →
 
 section Holder
 
-/-- An exponent pair with `1/p + 1/q ≤ 1` has `1 ≤ q`. -/
-private theorem one_le_right_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ q :=
-  ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-
-/-- An exponent pair with `1/p + 1/q ≤ 1` has `1 ≤ p`. -/
-private theorem one_le_left_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ p :=
-  ENNReal.inv_le_one.1 (le_self_add.trans hpq)
-
-omit [CompleteSpace V] in
-/-- Hölder's inequality on compact subsets: an `Lᵖ_loc` operator field applied to an `L^q_loc`
-vector field is locally integrable when `1/p + 1/q ≤ 1`. -/
-private theorem locallyIntegrableOn_apply (hpq : p⁻¹ + q⁻¹ ≤ 1) {A : ℂ → V →L[ℝ] V}
-    {w : ℂ → V} (hA : MemLpLoc p Ω A) (hw : MemLpLoc q Ω w) :
-    LocallyIntegrableOn (fun z => A z (w z)) Ω := by
-  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact MemLpLoc.locallyIntegrableOn
-    (memLpLoc_iff.2 fun K hK hc => (ContinuousLinearMap.id ℝ (V →L[ℝ] V)).memLp_of_bilin _
-      (memLpLoc_iff.1 hA K hK hc) (memLpLoc_iff.1 hw K hK hc))
-    (ENNReal.one_le_inv.2 hpq) Ω.isOpen.isLocallyClosed
-
 omit [CompleteSpace V] in
 /-- The `∂_t J` coefficient `DJ · I` inherits local `Lᵖ` membership from `DJ`. -/
 private theorem IsSobolevCRCoefficients.memLpLoc_derivI
     (hc : IsSobolevCRCoefficients p Ω J DJ S) : MemLpLoc p Ω (fun z => DJ z I) :=
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
-
-omit [CompleteSpace V] in
-/-- The coordinate derivatives of a test function are coordinate derivatives in the sense of
-`fderiv`. -/
-private theorem lineDeriv_testFunction (φ : 𝓓(Ω, V)) (v z : ℂ) :
-    lineDeriv ℝ (φ : ℂ → V) z v = fderiv ℝ (φ : ℂ → V) z v :=
-  ((φ.contDiff.differentiable (by simp)) z).lineDeriv_eq_fderiv
-
-omit [CompleteSpace V] in
-/-- A coordinate derivative of a test function, paired with a locally integrable field, is
-integrable. -/
-private theorem integrable_inner_fderiv {w : ℂ → V} (hw : LocallyIntegrableOn w Ω)
-    (φ : 𝓓(Ω, V)) (v : ℂ) :
-    Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z v, w z⟫_ℝ) := by
-  have h := (TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, V)).integrable_inner hw
-  simp only [TestFunction.lineDerivCLM_apply, le_top, ite_true, lineDeriv_testFunction] at h
-  exact h
 
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the pairing
 `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. -/
@@ -360,11 +230,13 @@ theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
-  have h₁ := integrable_inner_fderiv (hξ.locallyIntegrableOn
-    (one_le_right_of_inv_add_inv_le_one hpq) Ω.isOpen.isLocallyClosed) φ 1
-  have h₂ := integrable_inner_fderiv (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hξ) φ I
-  have h₃ := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξ)
-  have h₄ := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξ)
+  have hloc := Ω.isOpen.isLocallyClosed
+  have h₁ := φ.integrable_inner_fderiv
+    (hξ.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1
+  have h₂ := φ.integrable_inner_fderiv
+    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξ hpq hloc) I
+  have h₃ := φ.integrable_inner (hc.memLpLoc_derivI.locallyIntegrableOn_clm_apply hξ hpq hloc)
+  have h₄ := φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ hpq hloc)
   simp only [inner_crFormalAdjoint]
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
@@ -381,8 +253,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
     (hDξq : MemLpLoc q Ω Dξ) (φ : 𝓓(Ω, V)) :
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       ∫ z, ⟪(φ : ℂ → V) z, Dξ z 1 + J z (Dξ z I) + S z (ξ z)⟫_ℝ := by
-  have hq1 := one_le_right_of_inv_add_inv_le_one hpq
-  have : Fact (1 ≤ p) := ⟨one_le_left_of_inv_add_inv_le_one hpq⟩
+  have hq1 := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
+  have : Fact (1 ≤ p) := ⟨ENNReal.inv_le_one.1 (le_self_add.trans hpq)⟩
   have : Fact (1 ≤ q) := ⟨hq1⟩
   have : Fact (1 ≤ (p⁻¹ + q⁻¹)⁻¹) := ⟨ENNReal.one_le_inv.2 hpq⟩
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
@@ -400,20 +272,21 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_derivI K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hDξI K hKΩ hK)
-  have hA := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξq)
-  have hB := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hDξI)
-  have hC := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξq)
+  have hA := φ.integrable_inner (hc.memLpLoc_derivI.locallyIntegrableOn_clm_apply hξq hpq hloc)
+  have hB := φ.integrable_inner (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hDξI hpq hloc)
+  have hC := φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξq hpq hloc)
   have hD := φ.integrable_inner (hDξ1.locallyIntegrableOn hq1 hloc)
-  have h₁ := integrable_inner_fderiv (hξq.locallyIntegrableOn hq1 hloc) φ 1
-  have h₂ := integrable_inner_fderiv (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hξq) φ I
+  have h₁ := φ.integrable_inner_fderiv (hξq.locallyIntegrableOn hq1 hloc) 1
+  have h₂ := φ.integrable_inner_fderiv
+    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξq hpq hloc) I
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
     have h := (hξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg φ
-    simp only [lineDeriv_testFunction] at h
+    simp only [TestFunction.lineDeriv_eq_fderiv] at h
     exact h
   have hJξI : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ =
       -((∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := by
     have h := hJξ.integral_inner_lineDeriv_eq_neg φ
-    simp only [lineDeriv_testFunction, inner_add_right] at h
+    simp only [TestFunction.lineDeriv_eq_fderiv, inner_add_right] at h
     refine h.trans ?_
     congr 1
     exact integral_add hA hB
@@ -447,13 +320,13 @@ theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V
     (hDξq : MemLpLoc q Ω Dξ) (hη : LocallyIntegrableOn η Ω) :
     IsWeakCRSolution q Ω J DJ S ξ η ↔
       ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z := by
-  have hq1 := one_le_right_of_inv_add_inv_le_one hpq
+  have hq1 := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
   have hloc := Ω.isOpen.isLocallyClosed
   have hL : LocallyIntegrableOn (fun z => Dξ z 1 + J z (Dξ z I) + S z (ξ z)) Ω :=
     (((hDξq.clm_comp (ContinuousLinearMap.apply ℝ V 1)).locallyIntegrableOn hq1 hloc).add
-      (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff
-        (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)))).add
-      (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξq)
+      (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply
+        (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)) hpq hloc)).add
+      (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξq hpq hloc)
   simp only [isWeakCRSolution_iff, hc.integral_inner_crFormalAdjoint hpq hp hq hξ hξq hDξq,
     hc.integrable_inner_crFormalAdjoint hpq hξq, hξq, hη, true_and]
   refine ⟨ae_eq_of_forall_integral_inner_eq hL hη, fun h φ => integral_congr_ae ?_⟩
