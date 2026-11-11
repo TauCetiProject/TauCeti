@@ -176,7 +176,7 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
       ⟨by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀), by rwa [zero_add]⟩
       ⟨by positivity, by rw [zero_add]⟩).1 ?_
     exact hSM.trans Real.Angle.coe_two_pi.symm
-  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hz hjM hsum
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hjM hsum
 
 /-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
 has finite order. -/

@@ -51,30 +51,32 @@ private lemma density_mul_abs_rpow (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
 
 /-- Absolute jump powers above the stable shape are integrable on every bounded ball about
 zero. This is local integrability of the Lévy measure, rather than a stable-law moment. -/
-theorem integrableOn_abs_rpow_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
-    (hq : α < q) (r : ℝ) :
+theorem integrableOn_abs_rpow_stableLevyMeasure (hq : α < q) (r : ℝ) :
     IntegrableOn (fun x : ℝ ↦ |x| ^ q) (Metric.ball 0 r) (stableLevyMeasure α β) := by
-  rw [← integrable_indicator_iff measurableSet_ball,
-    integrable_stableLevyDensity_smul_iff]
-  have hp := (TauCeti.integrableOn_norm_rpow_ball (mu := (volume : Measure ℝ))
-    (s := q - α - 1) (by simp only [Module.finrank_self, Nat.cast_one]; linarith)
-    (R := r)).const_mul (2 * (Gamma (1 + α) * sin (π * α / 2) / π))
-  have hd := measurable_stableLevyDensity_apply α β
-  refine ((integrable_indicator_iff measurableSet_ball).mpr hp).mono'
-    (hd.aestronglyMeasurable.smul
-      ((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).aestronglyMeasurable.indicator
-        measurableSet_ball)) ?_
-  filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
-  by_cases hxr : x ∈ Metric.ball (0 : ℝ) r
-  · simp only [indicator_of_mem hxr, smul_eq_mul]
-    rw [Real.norm_of_nonneg (mul_nonneg (stableLevyDensity_nonneg _ _ _)
-      (rpow_nonneg (abs_nonneg _) _)), density_mul_abs_rpow hα hβ hx]
-    have hb : (if 0 < x then 1 + β else 1 - β) ≤ 2 := by
-      split_ifs <;> linarith [(abs_le.mp hβ).1, (abs_le.mp hβ).2]
-    simpa only [Real.norm_eq_abs, mul_comm (2 : ℝ)] using mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left hb (stableLevyDensity_coefficient_pos hα).le)
-      (rpow_nonneg (abs_nonneg x) (q - α - 1))
-  · simp [indicator_of_notMem hxr]
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  · obtain ⟨hα, hβ⟩ : α ∈ Ioo 0 2 ∧ |β| ≤ 1 := ⟨⟨h.1, h.2.1⟩, h.2.2⟩
+    rw [← integrable_indicator_iff measurableSet_ball,
+      integrable_stableLevyDensity_smul_iff]
+    have hp := (TauCeti.integrableOn_norm_rpow_ball (mu := (volume : Measure ℝ))
+      (s := q - α - 1) (by simp only [Module.finrank_self, Nat.cast_one]; linarith)
+      (R := r)).const_mul (2 * (Gamma (1 + α) * sin (π * α / 2) / π))
+    have hd := measurable_stableLevyDensity_apply α β
+    refine ((integrable_indicator_iff measurableSet_ball).mpr hp).mono'
+      (hd.aestronglyMeasurable.smul
+        ((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).aestronglyMeasurable.indicator
+          measurableSet_ball)) ?_
+    filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
+    by_cases hxr : x ∈ Metric.ball (0 : ℝ) r
+    · simp only [indicator_of_mem hxr, smul_eq_mul]
+      rw [Real.norm_of_nonneg (mul_nonneg (stableLevyDensity_nonneg _ _ _)
+        (rpow_nonneg (abs_nonneg _) _)), density_mul_abs_rpow hα hβ hx]
+      have hb : (if 0 < x then 1 + β else 1 - β) ≤ 2 := by
+        split_ifs <;> linarith [(abs_le.mp hβ).1, (abs_le.mp hβ).2]
+      simpa only [Real.norm_eq_abs, mul_comm (2 : ℝ)] using mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_left hb (stableLevyDensity_coefficient_pos hα).le)
+        (rpow_nonneg (abs_nonneg x) (q - α - 1))
+    · simp [indicator_of_notMem hxr]
+  · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
 private lemma lt_of_integrableOn_abs_rpow (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hβ' : -1 < β) (hr : 0 < r)
@@ -106,7 +108,7 @@ diverges, including for either fully skewed Lévy measure. -/
 theorem integrableOn_abs_rpow_stableLevyMeasure_iff (hα : α ∈ Ioo 0 2)
     (hβ : |β| ≤ 1) (hr : 0 < r) :
     IntegrableOn (fun x : ℝ ↦ |x| ^ q) (Metric.ball 0 r) (stableLevyMeasure α β) ↔ α < q := by
-  refine ⟨fun h ↦ ?_, fun hq ↦ integrableOn_abs_rpow_stableLevyMeasure hα hβ hq r⟩
+  refine ⟨fun h ↦ ?_, fun hq ↦ integrableOn_abs_rpow_stableLevyMeasure (β := β) hq r⟩
   by_cases hb : -1 < β
   · exact lt_of_integrableOn_abs_rpow hα hβ hb hr h
   · have hreflect : MeasurePreserving (fun x : ℝ ↦ -x)
@@ -128,7 +130,7 @@ theorem integral_abs_rpow_stableLevyMeasure_ball (hα : α ∈ Ioo 0 2) (hβ : |
     ∫ x in Metric.ball (0 : ℝ) r, |x| ^ q ∂stableLevyMeasure α β =
       2 * (Gamma (1 + α) * sin (π * α / 2) / π) * r ^ (q - α) / (q - α) := by
   have hi := (integrable_indicator_iff measurableSet_ball).mpr
-    (integrableOn_abs_rpow_stableLevyMeasure hα hβ hq r)
+    (integrableOn_abs_rpow_stableLevyMeasure (β := β) hq r)
   rw [← integral_indicator measurableSet_ball, integral_stableLevyMeasure_eq hα hβ hi]
   -- Reduce the positive half-line contribution to a power integral on the cutoff interval.
   have hhalf : (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) •
@@ -185,7 +187,7 @@ theorem integrableOn_sq_stableLevyMeasure (α β r : ℝ) :
     IntegrableOn (fun x : ℝ ↦ x ^ 2) (Metric.ball 0 r) (stableLevyMeasure α β) := by
   by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
   · simpa only [rpow_two, sq_abs] using
-      integrableOn_abs_rpow_stableLevyMeasure ⟨h.1, h.2.1⟩ h.2.2 h.2.1 r
+      integrableOn_abs_rpow_stableLevyMeasure (β := β) h.2.1 r
   · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
 /-- The conditional law of jumps in any band has a finite second moment. -/
@@ -206,24 +208,28 @@ theorem integral_sq_stableLevyMeasure_ball (hα : α ∈ Ioo 0 2) (hβ : |β| �
     integral_abs_rpow_stableLevyMeasure_ball hα hβ hα.2 hr
 
 /-- Every finite absolute small-jump moment vanishes as its cutoff shrinks to zero. -/
-theorem tendsto_integral_abs_rpow_stableLevyMeasure_ball_zero (hα : α ∈ Ioo 0 2)
-    (hβ : |β| ≤ 1) (hq : α < q) :
+theorem tendsto_integral_abs_rpow_stableLevyMeasure_ball_zero (hq : α < q) :
     Tendsto (fun r : ℝ ↦ ∫ x in Metric.ball (0 : ℝ) r, |x| ^ q ∂stableLevyMeasure α β)
       (𝓝[≥] 0) (𝓝 0) := by
-  have hp : 0 < q - α := sub_pos.mpr hq
-  have ht := (((continuousAt_rpow_const (0 : ℝ) (q - α) (Or.inr hp.le)).tendsto.const_mul
-    (2 * (Gamma (1 + α) * sin (π * α / 2) / π))).div_const (q - α)).mono_left
-      (nhdsWithin_le_nhds (s := Ici (0 : ℝ)))
-  simp only [Real.zero_rpow hp.ne', mul_zero, zero_div] at ht
-  apply ht.congr'
-  filter_upwards [self_mem_nhdsWithin] with r hr
-  exact (integral_abs_rpow_stableLevyMeasure_ball hα hβ hq hr).symm
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  · obtain ⟨hα, hβ⟩ : α ∈ Ioo 0 2 ∧ |β| ≤ 1 := ⟨⟨h.1, h.2.1⟩, h.2.2⟩
+    have hp : 0 < q - α := sub_pos.mpr hq
+    have ht := (((continuousAt_rpow_const (0 : ℝ) (q - α) (Or.inr hp.le)).tendsto.const_mul
+      (2 * (Gamma (1 + α) * sin (π * α / 2) / π))).div_const (q - α)).mono_left
+        (nhdsWithin_le_nhds (s := Ici (0 : ℝ)))
+    simp only [Real.zero_rpow hp.ne', mul_zero, zero_div] at ht
+    apply ht.congr'
+    filter_upwards [self_mem_nhdsWithin] with r hr
+    exact (integral_abs_rpow_stableLevyMeasure_ball hα hβ hq hr).symm
+  · simp [stableLevyMeasure_eq_zero_of_not h]
 
 /-- The variance contribution of jumps below a shrinking cutoff tends to zero. -/
-theorem tendsto_integral_sq_stableLevyMeasure_ball_zero (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) :
+theorem tendsto_integral_sq_stableLevyMeasure_ball_zero :
     Tendsto (fun r : ℝ ↦ ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β)
       (𝓝[≥] 0) (𝓝 0) := by
-  simpa only [rpow_two, sq_abs] using
-    tendsto_integral_abs_rpow_stableLevyMeasure_ball_zero hα hβ hα.2
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  · simpa only [rpow_two, sq_abs] using
+      tendsto_integral_abs_rpow_stableLevyMeasure_ball_zero (β := β) h.2.1
+  · simp [stableLevyMeasure_eq_zero_of_not h]
 
 end TauCeti.Probability

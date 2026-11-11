@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.GroupAlgebra.Cancellation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.Algebra.MonoidAlgebra.RelationModule.FractionRing
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Swan
+import TauCeti.RingTheory.Flat.FractionRing
 import TauCeti.RingTheory.KrullSchmidt.Localization
 
 /-!
@@ -127,8 +128,9 @@ theorem nonempty_ker_linearEquiv_of_relationModule_surjective {A : Type*} [AddCo
     Nonempty (LinearMap.ker β ≃ₗ[Λ] Λ) := by
   obtain ⟨eA⟩ := hA
   have : NeZero (Nat.card G : ℤ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  have : NeZero (Nat.card G : ℚ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   -- Rationally, `relationModule ℤ_[p] G g ≃ ker β ⊕ A`, and it is `ℚ_p[G]^(n + 1) ⊕ ℚ_p`.
-  obtain ⟨e₁⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
+  obtain ⟨e₁⟩ := MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
     (LinearMap.exact_subtype_ker_map β) (Submodule.injective_subtype _) hβ
   obtain ⟨e₂⟩ := nonempty_relationModule_tensor_linearEquiv (R := ℤ_[p]) ℚ_[p] hg hι
   let e₃ : ((Fin (n + 1) → Λ) × (Λ ⧸ RingHom.ker (augmentation ℤ_[p] G))) ≃ₗ[Λ]

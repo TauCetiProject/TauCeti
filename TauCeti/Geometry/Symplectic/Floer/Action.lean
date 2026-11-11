@@ -84,6 +84,8 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
+* `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
+  Floer solution on an open interval of `s`-values.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
@@ -142,6 +144,19 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
     ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
       ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
   rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
+/-- **Reversing time negates the action.** If the loop `x` and the Hamiltonian `H` are
+`1`-periodic, the reversed loop `t ↦ x(-t)` has, for the reversed Hamiltonian
+`(t, y) ↦ -H(-t, y)`, the opposite action. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hH : Periodic H 1) (hx : Periodic x 1) :
+    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
+  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by simp only [hH t, hx t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [hamiltonianAction_def, ω.loopArea_comp_neg hx, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ H t (x t)), neg_zero, h]
+  ring
 
 end Action
 
@@ -346,17 +361,39 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
   ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
 
+/-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
+for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
+`S × [0, 1]` with `1`-periodic loops and tame almost complex structures. Then the action
+`A_H(u(s, ·))` of the loop at `s` is monotone in `s ∈ S`. -/
+theorem monotoneOn_hamiltonianAction_of_floer (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} {S : Set ℝ} (hS : IsOpen S) [S.OrdConnected]
+    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 2 u (S ×ˢ univ))
+    (hper : ∀ s ∈ S, Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ S ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    MonotoneOn (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) S := by
+  intro s₁ hs₁ s₂ hs₂ hs
+  have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
+    Set.prod_mono (Set.Icc_subset S hs₁ hs₂) le_rfl
+  exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
+    (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
+    (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
+      simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
+
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
-solving the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` there for an almost complex
-structure `J` tamed by `ω`. If the actions of the loops `t ↦ u(s, t)` tend to `A₁` as `s → -∞`
-and to `A₂` as `s → ∞`, then the energy of `u` is `A₂ - A₁`. -/
+solving the Floer equation `∂_s u + J_z (∂_t u - X_{H_t}(u)) = 0` there for almost complex
+structures `J_z` tamed by `ω`, which may depend on the domain point. If the actions of the loops
+`t ↦ u(s, t)` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`, then the energy of `u` is
+`A₂ - A₁`. -/
 theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} (hJ : ω.Tames J) (hH : ContDiff ℝ 1 (uncurry H))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H))
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
     (hper : ∀ s, u (s, 1) = u (s, 0))
     (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     {A₁ A₂ : ℝ}
     (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 A₁))
     (htop : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 A₂)) :
@@ -365,8 +402,7 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       ENNReal.ofReal (A₂ - A₁) := by
   simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
-      (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
-      hRU hper hfloer
+      (H := fun w ↦ H w.2) hJ (contDiff_uncurry_cylindrical hH) hU hu hRU hper hfloer
       (by simp only [fderiv_cylindrical_apply_stdComplexLineReal]; exact integrableOn_zero) hbot
       htop
 

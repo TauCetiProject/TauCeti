@@ -19,6 +19,10 @@ pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a fin
 exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
 isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 
+The product `x ^ y * x ^ z` is at most `x ^ (y + z)` for all real exponents `y` and `z`, with no
+hypothesis on `x`; this combines the powers of a function at two exponents when one of them may be
+negative.
+
 For `0 ≤ α ≤ 1`, `C = C₀ N / R ^ α / 2`, `M = D N` and `ρ = R / 2`, the number
 `max (2 C) (2 M / ρ ^ α)` is at most `max C₀ (4 D) * R ^ (-α) * N`; this bounds a maximum of
 rescaled constants in a power-law scaling argument.
@@ -53,12 +57,18 @@ A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d 
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
 
+For a finite `x`, or a negative exponent `q`, the extended product `x * x ^ q` is the image under
+`ENNReal.ofReal` of the real product `x.toReal * x.toReal ^ q`; both sides vanish at `x = 0` and,
+for `q < 0`, at `x = ∞`.
+
 Marcinkiewicz interpolation at the height `t / 2` produces the constant
 `p * 2⁻¹ ^ (1 - p) / (p - 1)` times twice the weak-type constant; this simplifies to
 `2 * p * 2 ^ (p - 1) / (p - 1)` times that constant.
 
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
+
+On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
 
 ## Main declarations
 
@@ -67,6 +77,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
@@ -84,10 +95,13 @@ closed intervals for a reciprocal radius parameter `α / r`.
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
 * `ENNReal.le_two_rpow_mul_inv_rpow_mul`: a bound `(s / 2) ^ q * a ≤ B` gives
   `a ≤ 2 ^ q * (s ^ q)⁻¹ * B` for `s ≠ 0, ∞`.
+* `ENNReal.ofReal_toReal_mul_rpow`: `ofReal (x.toReal * x.toReal ^ q) = x * x ^ q` for `q < 0` or
+  finite `x`.
 * `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul`: the Marcinkiewicz constant at height `t / 2`,
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
+* `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
 -/
 
 public section
@@ -122,6 +136,33 @@ theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1)
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
+
+/-- The product `x ^ y * x ^ z` is at most `x ^ (y + z)`, for every `x` and all real `y` and `z`;
+this is the `ℝ≥0∞` form of `Real.le_rpow_add`. Away from `0` and `∞` it is an equality. At `0` and
+at `∞` either the right side is `∞`, or one of the two factors on the left vanishes, or both
+exponents vanish. -/
+theorem le_rpow_add (x : ℝ≥0∞) (y z : ℝ) : x ^ y * x ^ z ≤ x ^ (y + z) := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · rcases lt_or_ge (y + z) 0 with hyz | hyz
+    · simp [zero_rpow_of_neg hyz]
+    rcases lt_or_ge 0 y with hy | hy
+    · simp [zero_rpow_of_pos hy]
+    rcases lt_or_ge 0 z with hz | hz
+    · simp [zero_rpow_of_pos hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
+  rcases eq_or_ne x ∞ with rfl | hxtop
+  · rcases lt_or_ge 0 (y + z) with hyz | hyz
+    · simp [top_rpow_of_pos hyz]
+    rcases lt_or_ge y 0 with hy | hy
+    · simp [top_rpow_of_neg hy]
+    rcases lt_or_ge z 0 with hz | hz
+    · simp [top_rpow_of_neg hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
+  exact (rpow_add _ _ hx0 hxtop).ge
 
 /-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
 for finite `F` and `G` and nonnegative exponents. -/
@@ -286,6 +327,17 @@ theorem ofReal_mul_inv_two_rpow_div_mul_two_mul (p : ℝ) (A : ℝ≥0∞) :
   rw [hinv, hsplit, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
   ring
 
+/-- The real and extended forms of `x * x ^ q` agree everywhere, including at `0` and `∞`, provided
+`q < 0` (both sides vanish at `∞`) or `x` is finite. -/
+theorem ofReal_toReal_mul_rpow {x : ℝ≥0∞} {q : ℝ} (h : q < 0 ∨ x ≠ ∞) :
+    ENNReal.ofReal (x.toReal * x.toReal ^ q) = x * x ^ q := by
+  rcases eq_or_ne x ∞ with rfl | hx
+  · simp [ENNReal.top_rpow_of_neg (h.resolve_right (by simp))]
+  rcases eq_or_ne x 0 with rfl | hx₀
+  · simp
+  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
+    ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
+
 end ENNReal
 
 namespace NNReal
@@ -368,3 +420,15 @@ lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (
         exact le_max_right _ _
 
 end NNReal
+
+namespace TauCeti
+
+/-- For a positive exponent `a`, the map `x ↦ c * ‖x‖₊ ^ a` on a seminormed group tends to `0`
+at `0`. -/
+theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
+    {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
+  have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+  simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
+
+end TauCeti

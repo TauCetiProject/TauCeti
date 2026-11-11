@@ -437,7 +437,7 @@ theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeas
   have := h.measurableSingletonClass
   have hSA : ∀ p, AEMeasurable (visitedSuccessorProcess X p) μ :=
     aemeasurable_visitedSuccessorProcess h.aemeasurable
-  rw [rowExchangeable_iff_forall_prodCongrRight_mem_finitary (AEMeasurable.of_eval hSA)]
+  rw [rowExchangeable_iff_forall_prodCongrRight_mem_finitary]
   intro π hπ
   have hsupp : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite := by
     rw [← Equiv.Perm.compl_fixedBy_prodCongrRight]
