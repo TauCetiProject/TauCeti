@@ -173,9 +173,6 @@ private noncomputable def bisectorHom :
   LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp
     ((zmodMonoidHomEquiv 2 ((Fin 4 → ℝ) ≃ₗ[ℝ] (Fin 4 → ℝ))).symm ⟨_, bisectorReflection_sq⟩)
 
-private theorem forall_cyclicTwo (g : Multiplicative (ZMod 2)) : g = 1 ∨ g = .ofAdd 1 := by
-  revert g; decide
-
 private theorem axisHom_ofAdd_one (u : Fin 4 → ℝ) :
     axisHom (.ofAdd 1) u = axisReflection u := by
   simp [axisHom, ZMod.val_one]
@@ -191,14 +188,12 @@ particles: `(a, b)` acts by `r ^ a * s ^ b`, where `r` is the axis reflection
 noncomputable def symmetryRep :
     Representation ℝ (Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) (Fin 4 → ℝ) :=
   axisHom.noncommCoprod bisectorHom fun a b ↦ by
-    rcases forall_cyclicTwo a with rfl | rfl
+    rcases eq_one_or_eq_ofAdd_one a with rfl | rfl
     · simp only [map_one, Commute.one_left]
-    rcases forall_cyclicTwo b with rfl | rfl
+    rcases eq_one_or_eq_ofAdd_one b with rfl | rfl
     · simp only [map_one, Commute.one_right]
     refine LinearMap.ext fun u ↦ ?_
-    rw [mul_apply_eq_comp, mul_apply_eq_comp, axisHom_ofAdd_one, axisHom_ofAdd_one,
-      bisectorHom_ofAdd_one, bisectorHom_ofAdd_one]
-    exact LinearEquiv.congr_fun commute_axisReflection_bisectorReflection.eq u
+    simp [axisHom_ofAdd_one, bisectorHom_ofAdd_one]
 
 /-- The element `(1, 0)` of `C₂ × C₂` acts by the axis reflection `r`. -/
 @[simp]
@@ -212,38 +207,27 @@ theorem symmetryRep_one_ofAdd_one (u : Fin 4 → ℝ) :
     symmetryRep (1, .ofAdd 1) u = bisectorReflection u := by
   simp [symmetryRep, bisectorHom_ofAdd_one]
 
-/-- The element `(1, 1)` of `C₂ × C₂` is the product of the two generators. -/
-private theorem ofAdd_one_ofAdd_one_eq_mul :
-    ((.ofAdd 1, .ofAdd 1) : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) =
-      (.ofAdd 1, 1) * (1, .ofAdd 1) := by
-  decide
-
 /-- The element `(1, 1)` of `C₂ × C₂` acts by the product `r s`, the rotation by a half turn
 about the midpoint of the rest positions. -/
 @[simp]
 theorem symmetryRep_ofAdd_one_ofAdd_one (u : Fin 4 → ℝ) :
     symmetryRep (.ofAdd 1, .ofAdd 1) u = ![-u 2, -u 3, -u 0, -u 1] := by
-  rw [ofAdd_one_ofAdd_one_eq_mul, map_mul, mul_apply_eq_comp, symmetryRep_one_ofAdd_one,
-    symmetryRep_ofAdd_one_one]
+  rw [← Prod.fst_mul_snd (Multiplicative.ofAdd (1 : ZMod 2), Multiplicative.ofAdd (1 : ZMod 2)),
+    map_mul]
   ext i
   fin_cases i <;> simp
-
-/-- An element of `C₂ × C₂` is one of the four elements `1`, `(1, 0)`, `(0, 1)` and `(1, 1)`. -/
-private theorem forall_kleinFour (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
-    g = 1 ∨ g = (.ofAdd 1, 1) ∨ g = (1, .ofAdd 1) ∨ g = (.ofAdd 1, .ofAdd 1) := by
-  revert g; decide
 
 /-- **The force matrix is equivariant**: `H` commutes with both reflections. -/
 theorem forceMatrix_mulVec_symmetryRep (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
     (u : Fin 4 → ℝ) : forceMatrix *ᵥ symmetryRep g u = symmetryRep g (forceMatrix *ᵥ u) := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl <;>
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl <;>
   · ext i
     fin_cases i <;> simp [forceMatrix_def, mulVec, dotProduct, Fin.sum_univ_four]
 
 /-- Each symmetry is an orthogonal involution, hence symmetric for the dot product. -/
 theorem symmetryRep_dotProduct (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
     (u w : Fin 4 → ℝ) : symmetryRep g u ⬝ᵥ w = u ⬝ᵥ symmetryRep g w := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl
   · simp
   all_goals simp [dotProduct, Fin.sum_univ_four]
   all_goals ring
@@ -254,7 +238,7 @@ theorem symmetryRep_dotProduct (g : Multiplicative (ZMod 2) × Multiplicative (Z
 trivial character. -/
 theorem symmetryRep_stretch (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![1, 0, -1, 0] = ![1, 0, -1, 0] := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl <;>
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl <;>
   · ext i; fin_cases i <;> simp
 
 /-- The vertical translation `(0, 1, 0, 1)` is reversed by `r` and fixed by `s`: it carries the
@@ -262,7 +246,7 @@ sign character of the first factor. -/
 theorem symmetryRep_translation_y (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![0, 1, 0, 1] =
       ((cyclicTwoSign ℝˣ).comp (MonoidHom.fst _ _) g : ℝ) • ![0, 1, 0, 1] := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl <;>
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl <;>
   · ext i; fin_cases i <;> simp
 
 /-- The horizontal translation `(1, 0, 1, 0)` is fixed by `r` and reversed by `s`: it carries
@@ -270,7 +254,7 @@ the sign character of the second factor. -/
 theorem symmetryRep_translation_x (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![1, 0, 1, 0] =
       ((cyclicTwoSign ℝˣ).comp (MonoidHom.snd _ _) g : ℝ) • ![1, 0, 1, 0] := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl <;>
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl <;>
   · ext i; fin_cases i <;> simp
 
 /-- The transverse mode `(0, 1, 0, -1)` is reversed by both `r` and `s`: it carries the product
@@ -278,7 +262,7 @@ of the two sign characters. -/
 theorem symmetryRep_transverse (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
     symmetryRep g ![0, 1, 0, -1] =
       ((cyclicTwoSign ℝˣ).coprod (cyclicTwoSign ℝˣ) g : ℝ) • ![0, 1, 0, -1] := by
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl <;>
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl <;>
   · ext i; fin_cases i <;> simp
 
 /-! ### The joint eigenspaces -/
@@ -295,13 +279,14 @@ theorem mem_iInf_eigenspace_symmetryRep_iff
   · simpa using End.mem_eigenspace_iff.1 (h (.ofAdd 1, 1))
   · simpa using End.mem_eigenspace_iff.1 (h (1, .ofAdd 1))
   rw [End.mem_eigenspace_iff]
-  rcases forall_kleinFour g with rfl | rfl | rfl | rfl
+  rcases prod_eq_one_or_eq_ofAdd_one g with rfl | rfl | rfl | rfl
   · simp
   · simpa using hr
   · simpa using hs
-  · rw [ofAdd_one_ofAdd_one_eq_mul, map_mul, map_mul, mul_apply_eq_comp,
-      symmetryRep_one_ofAdd_one, symmetryRep_ofAdd_one_one, hs, map_smul, hr, smul_smul,
-      Units.val_mul, mul_comm]
+  · rw [← Prod.fst_mul_snd (Multiplicative.ofAdd (1 : ZMod 2), Multiplicative.ofAdd (1 : ZMod 2)),
+      map_mul, map_mul]
+    simp only [mul_apply_eq_comp, symmetryRep_one_ofAdd_one, symmetryRep_ofAdd_one_one, hs,
+      map_smul, hr, smul_smul, Units.val_mul, mul_comm]
 
 /-- A joint eigenvector `v` of a character `χ` spans its joint eigenspace once every displacement
 on which the two reflections act by the values of `χ` is a multiple of `v`. -/
@@ -315,9 +300,8 @@ private theorem iInf_eigenspace_symmetryRep_eq_span
   rw [mem_iInf_eigenspace_symmetryRep_iff, Submodule.mem_span_singleton]
   refine ⟨fun ⟨hr, hs⟩ ↦ hx u hr hs, ?_⟩
   rintro ⟨c, rfl⟩
-  rw [map_smul, map_smul, ← symmetryRep_ofAdd_one_one, ← symmetryRep_one_ofAdd_one, hv, hv,
-    smul_comm c, smul_comm c]
-  exact ⟨rfl, rfl⟩
+  simp only [map_smul, ← symmetryRep_ofAdd_one_one, ← symmetryRep_one_ofAdd_one, hv, smul_comm c,
+    and_self]
 
 /-- The **trivial isotypic component** of the displacements is the line through the stretching
 mode `(1, 0, -1, 0)`. -/
@@ -385,8 +369,7 @@ private noncomputable def leftRegularToSymmetryRep :
 private theorem leftRegularToSymmetryRep_single
     (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) (c : ℝ) :
     leftRegularToSymmetryRep (MonoidAlgebra.single g c) = c • symmetryRep g ![1, 1, 0, 0] := by
-  rw [← mul_one c, ← MonoidAlgebra.smul_single', map_smul, leftRegularToSymmetryRep,
-    Representation.leftRegularMapEquiv_symm_single, mul_one]
+  simp [leftRegularToSymmetryRep]
 
 private theorem bijective_leftRegularToSymmetryRep :
     Function.Bijective leftRegularToSymmetryRep := by
@@ -400,8 +383,8 @@ private theorem bijective_leftRegularToSymmetryRep :
     fin_cases i <;> simp <;> ring
   have hrank : finrank ℝ (MonoidAlgebra ℝ (Multiplicative (ZMod 2) × Multiplicative (ZMod 2))) =
       finrank ℝ (Fin 4 → ℝ) := by
-    rw [Module.finrank_eq_nat_card_basis (MonoidAlgebra.basis _ ℝ), finrank_fin_fun, Nat.card_prod,
-      Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card]
+    rw [Module.finrank_eq_nat_card_basis (MonoidAlgebra.basis _ ℝ)]
+    simp
   exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank
     (f := leftRegularToSymmetryRep.toLinearMap)).2 hsurj, hsurj⟩
 
@@ -424,11 +407,6 @@ theorem symmetryRepEquivLeftRegular_single
 
 /-! ### The projectors onto the modes -/
 
-private theorem sum_cyclicTwo (f : Multiplicative (ZMod 2) → Fin 4 → ℝ) :
-    ∑ g, f g = f 1 + f (.ofAdd 1) := by
-  rw [show (Finset.univ : Finset (Multiplicative (ZMod 2))) = {1, .ofAdd 1} by decide,
-    Finset.sum_pair (by decide)]
-
 /-- The character idempotent `e_χ = ¼ ∑_g χ(g)⁻¹ g` of a character `χ` of `C₂ × C₂` acts on the
 displacements by `¼ (1 + χ(r) r + χ(s) s + χ(r s) r s)`. -/
 theorem symmetryRep_asAlgebraHom_charIdempotent_apply
@@ -438,14 +416,12 @@ theorem symmetryRep_asAlgebraHom_charIdempotent_apply
       (χ (.ofAdd 1, .ofAdd 1) : ℝ) • ![-u 2, -u 3, -u 0, -u 1]) := by
   have hinv (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) : g⁻¹ = g := by
     revert g; decide
-  have hcard : (Nat.card (Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) : ℝ) = 4 := by
-    rw [Nat.card_prod, Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card]
-    norm_num
-  rw [charIdempotent_eq_sum, map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply, hcard,
-    Ring.inverse_eq_inv', Fintype.sum_prod_type, sum_cyclicTwo, sum_cyclicTwo, sum_cyclicTwo]
-  simp only [← map_inv, hinv, map_smul, Representation.asAlgebraHom_of, inv_one,
-    LinearMap.smul_apply, ← Prod.one_eq_mk, map_one, Units.val_one, one_smul, one_apply_eq_self,
-    symmetryRep_ofAdd_one_one, symmetryRep_one_ofAdd_one, symmetryRep_ofAdd_one_ofAdd_one]
+  have hcard : (Nat.card (Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) : ℝ) = 4 := by simp
+  rw [charIdempotent_eq_sum, hcard, Ring.inverse_eq_inv', Fintype.sum_prod_type]
+  simp only [sum_cyclicTwo, ← map_inv, hinv, map_smul, map_add, Representation.asAlgebraHom_of,
+    LinearMap.smul_apply, LinearMap.add_apply, ← Prod.one_eq_mk, map_one, Units.val_one, one_smul,
+    one_apply_eq_self, symmetryRep_ofAdd_one_one, symmetryRep_one_ofAdd_one,
+    symmetryRep_ofAdd_one_ofAdd_one]
   congr 1
   abel
 
