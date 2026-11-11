@@ -7,15 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 import TauCeti.Analysis.Calculus.DSlope.Continuous
-import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Quadratic growth of Schwarz--Christoffel primitives and ends of opening `2π`
@@ -98,9 +97,6 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   set q : ℂ → ℂ := fun w => ∏ i, (1 - -(a i : ℂ) * w) ^ (e i : ℂ)
   have hq : AnalyticAt ℂ q 0 := analyticAt_prod_one_sub_mul_cpow _ _
   have hq0 : q 0 = 1 := by simp [q]
-  have hq' : HasDerivAt q M 0 := by
-    simpa [q, M, Finset.sum_neg_distrib] using
-      hasDerivAt_prod_one_sub_mul_cpow (fun i => -(a i : ℂ)) (fun i => (e i : ℂ))
   obtain ⟨r, hr, hqr⟩ := Metric.eventually_nhds_iff.mp
     (hq.eventually_analyticAt.mono fun _ h => h.differentiableAt)
   have hball : ball (0 : ℂ) r ∈ 𝓝 0 := ball_mem_nhds 0 hr
@@ -120,7 +116,7 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   -- The third divided difference at `w ≠ 0` has the closed form `(q w - 1 - M w - C w²) / w³`.
   have hD₃w (w : ℂ) (hw : w ≠ 0) : dslope (dslope (dslope q 0) 0) 0 w =
       (q w - 1 - M * w - C * w ^ 2) / w ^ 3 := by
-    simpa only [hq0] using dslope_dslope_dslope_zero_apply hq'
+    simpa only [hq0] using dslope_dslope_dslope_zero_apply (q := q) (M := M)
       (hlim.congr fun w => by rw [hq0]; ring) hw
   -- Match the remainder of the primitive with a primitive of `-dslope³ q` on the half-disc.
   have hint (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :
@@ -516,8 +512,9 @@ private theorem neg_le_im_quadratic_log_of_re_nonneg {M C η : ℝ} {z : ℂ} (h
     (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
     -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
   rw [im_quadratic_log]
-  have hJ := le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr hz.le)
-    (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
+  have hJ := le_pi_div_two_mul_sin (arg_nonneg_iff.mpr hz.le)
+    (arg_le_pi_div_two_iff.mpr (Or.inl hx))
+  rw [sin_arg] at hJ
   have hsx : 0 < z.re - M := by
     rw [abs_of_nonneg hx] at hnorm
     linarith [le_abs_self M]
@@ -537,8 +534,9 @@ private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C <
     · linarith
     · linarith
     · simp [h] at hz
-  have hJ := le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi z]) (by linarith)
-    (by rw [Real.sin_pi_sub, sin_arg] : Real.sin (Real.pi - arg z) = z.im / ‖z‖)
+  have hJ := le_pi_div_two_mul_sin (θ := Real.pi - arg z) (by linarith [arg_le_pi z])
+    (by linarith)
+  rw [Real.sin_pi_sub, sin_arg] at hJ
   have hsx : z.re - M < 0 := by
     rw [abs_of_neg hx] at hnorm
     linarith [neg_abs_le M]

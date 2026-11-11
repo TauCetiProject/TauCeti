@@ -32,6 +32,7 @@ mechanism behind the left-right symmetry of the radical, proved in
   the Jacobson radical of a ring.
 * `TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul`: an element all of whose left multiples
   are nilpotent lies in the radical.
+* `TauCeti.Ring.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
 * `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
@@ -110,6 +111,23 @@ proper by `Ring.jacobson_lt_top`. -/
 instance instNontrivialQuotientJacobson [Nontrivial R] :
     Nontrivial (R ⧸ Ring.jacobson R) :=
   Ideal.Quotient.nontrivial_iff.mpr (Ring.jacobson_lt_top R).ne
+
+variable (R) in
+/-- **Units lift modulo the Jacobson radical**: the quotient map `R → R ⧸ J(R)` is a local
+homomorphism. If `ab ≡ 1` and `ba ≡ 1` modulo the radical, then `ab` and `ba` are units, so `a` has
+a right and a left inverse. -/
+instance isLocalHom_mk_jacobson : IsLocalHom (Ideal.Quotient.mk (Ring.jacobson R)) where
+  map_nonunit a ha := by
+    obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑ha.unit⁻¹ : R ⧸ Ring.jacobson R)
+    have hunit {x : R} (hx : Ideal.Quotient.mk (Ring.jacobson R) x = 1) : IsUnit x := by
+      have hmem : x - 1 ∈ Ring.jacobson R := by
+        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hx, map_one, sub_self]
+      simpa using (mem_jacobson_iff_isUnit_one_add_mul_left.1 hmem) 1
+    obtain ⟨u, hu⟩ := hunit (x := a * b) (by simp [hb])
+    obtain ⟨v, hv⟩ := hunit (x := b * a) (by simp [hb])
+    have hr : a * (b * ↑u⁻¹) = 1 := by rw [← mul_assoc, ← hu, Units.mul_inv]
+    have hl : (↑v⁻¹ * b) * a = 1 := by rw [mul_assoc, ← hv, Units.inv_mul]
+    exact isUnit_iff_exists_and_exists.mpr ⟨⟨_, hr⟩, ⟨_, hl⟩⟩
 
 end Ring
 

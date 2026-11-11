@@ -20,8 +20,10 @@ import TauCeti.Topology.UnitInterval.OpenSquare
 # Euclidean disks and their boundaries
 
 The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
-dimension at least two.  The disk is a `T₃` space, in particular Hausdorff, so the inclusion of its
-boundary sphere is a closed embedding (`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
+dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
+(`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
+so the inclusion of its boundary sphere is a closed embedding
+(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
@@ -38,7 +40,10 @@ point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
 `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of `EuclideanSpace ℝ (Fin n)`
 induces homeomorphisms of the disk and of its boundary sphere, compatible with the boundary
 inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
-orthogonal reparametrizations of attached cells.
+orthogonal reparametrizations of attached cells. Likewise a linear isometry of a normed space onto
+`EuclideanSpace ℝ (Fin n)` identifies its closed unit ball with the disk
+(`LinearIsometryEquiv.closedBallHomeomorphDisk`), which relabels the coordinates of balls in
+`EuclideanSpace ℝ ι` for a finite index type `ι` of cardinality `n`.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -86,6 +91,11 @@ lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
         0 (by norm_num))
   exact Homeomorph.ulift.symm.pathConnectedSpace
 
+/-- The sphere `TopCat.sphere (n + 1)` of positive dimension, the boundary of the `(n + 2)`-disk,
+is path-connected. -/
+instance pathConnectedSpace_sphere (n : ℕ) : PathConnectedSpace (TopCat.sphere.{u} (n + 1)) :=
+  pathConnectedSpace_diskBoundary (by omega)
+
 /-- The `n`-dimensional disk is a `T₃` space, in particular Hausdorff, being homeomorphic to a
 closed ball in Euclidean space. -/
 instance t3Space_disk (n : ℕ) : T3Space (TopCat.disk.{u} n) :=
@@ -109,6 +119,12 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
       ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n)) :=
   rfl
+
+/-- A point of the boundary sphere has norm `1` in the disk. -/
+@[simp]
+theorem norm_diskBoundaryInclusion {n : ℕ} (s : TopCat.diskBoundary.{u} n) :
+    ‖(TopCat.diskBoundaryInclusion n s).down.1‖ = 1 :=
+  mem_sphere_zero_iff_norm.1 s.down.2
 
 end TauCeti.TopCat
 
@@ -511,6 +527,30 @@ end CubePair
 end TauCeti
 
 namespace LinearIsometryEquiv
+
+section ClosedBall
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+  (e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+
+/-- The homeomorphism `x ↦ e x` from the closed unit ball of `E` onto the disk `TopCat.disk n`
+induced by a linear isometry `e` of `E` onto `EuclideanSpace ℝ (Fin n)`. For instance, through
+`LinearIsometryEquiv.piLpCongrLeft`, a bijection `ι ≃ Fin n` of coordinates identifies the closed
+unit ball of `EuclideanSpace ℝ ι` with the disk. -/
+def closedBallHomeomorphDisk : Metric.closedBall (0 : E) 1 ≃ₜ TopCat.disk.{u} n :=
+  (e.toHomeomorph.subtype fun x ↦ by simp).trans Homeomorph.ulift.symm
+
+@[simp]
+lemma coe_closedBallHomeomorphDisk_apply_down (x : Metric.closedBall (0 : E) 1) :
+    ((e.closedBallHomeomorphDisk.{u} x).down : EuclideanSpace ℝ (Fin n)) = e x :=
+  (rfl)
+
+@[simp]
+lemma coe_closedBallHomeomorphDisk_symm_apply (z : TopCat.disk.{u} n) :
+    (e.closedBallHomeomorphDisk.symm z : E) = e.symm z.down :=
+  (rfl)
+
+end ClosedBall
 
 variable {n : ℕ} (e : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
 

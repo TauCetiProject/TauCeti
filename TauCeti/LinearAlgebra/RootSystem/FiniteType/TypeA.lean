@@ -22,7 +22,7 @@ at most two neighbours.
 
 The reindexing is the identification of the diagram with a path graph: a connected finite-type
 diagram is a tree (`TauCeti.IsFiniteType.isTree_diagramGraph`), a finite tree of maximum degree two
-is a path graph (`TauCeti.IsTree.nonempty_iso_pathGraph_of_degree_le_two`), and a simply-laced
+is a path graph (`SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`), and a simply-laced
 matrix is determined by its diagram, its entries being `2` on the diagonal, `-1` along the edges,
 and `0` elsewhere. Those are exactly the entries of `CartanMatrix.A n` at consecutive and
 non-consecutive indices, which is what `TauCeti.chainEntry_eq_cartanMatrix_A` records.
@@ -74,13 +74,13 @@ theorem apply_eq_chainEntry_of_iso_pathGraph {B : Type*}
   by_cases hA : A i j = 0
   · -- Distinct nonadjacent indices: the entry vanishes and the vertices are not consecutive.
     have hnot : ¬ G.Adj i j := fun hc ↦ (hadj i j).mp hc |>.2 hA
-    rw [adj_iff_of_iso_pathGraph iso] at hnot
+    rw [iso.adj_iff_of_pathGraph] at hnot
     push Not at hnot
     have hne : (iso i : ℕ) ≠ (iso j : ℕ) := fun hc ↦ hij (iso.toEquiv.injective (Fin.ext hc))
     rw [hA, chainEntry_eq_zero hne (fun hc ↦ hnot.2 hc.symm) fun hc ↦ hnot.1 hc.symm]
   · -- Adjacent indices: the entry is `-1` and the vertices are consecutive.
     have hadj' : G.Adj i j := (hadj i j).mpr ⟨hij, hA⟩
-    rw [adj_iff_of_iso_pathGraph iso] at hadj'
+    rw [iso.adj_iff_of_pathGraph] at hadj'
     rw [(hsl hij).resolve_left hA]
     rcases hadj' with hc | hc
     · rw [← hc, chainEntry_succ_right]
@@ -98,7 +98,7 @@ theorem exists_equiv_forall_eq_cartanMatrix_A_of_isTree_of_isSimplyLaced_of_degr
     (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2) :
     ∃ e : B ≃ Fin (Fintype.card B),
       ∀ i j, A i j = DynkinType.cartanMatrix (.A (Fintype.card B)) (e i) (e j) := by
-  obtain ⟨iso⟩ := IsTree.nonempty_iso_pathGraph_of_degree_le_two htree hdeg
+  obtain ⟨iso⟩ := htree.nonempty_iso_pathGraph_of_degree_le_two hdeg
   have hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 := fun i j ↦ by
     rw [diagramGraph_adj]
     exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, fun hji ↦ h.2 ((hzero i j).mpr hji)⟩⟩

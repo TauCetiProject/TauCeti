@@ -255,29 +255,13 @@ theorem boundary_boundary_eq_zero (D : Region → ℤ) :
 that is, constant along each `α`-curve. -/
 theorem alphaArcBoundary_eq_zero_iff (c : Point → ℤ) :
     H.alphaArcBoundary c = 0 ↔ ∃ a : Fin n → ℤ, ∀ p, c p = a (H.alpha p) := by
-  simp only [funext_iff, alphaArcBoundary_apply, Pi.zero_apply, sub_eq_zero]
-  constructor
-  · intro hc
-    obtain ⟨a, ha⟩ := (Function.factorsThrough_iff _).mp
-      (H.alphaNext.factorsThrough_of_forall_isCycleOn H.alphaNext_isCycleOn fun p => by
-        simpa using (hc (H.alphaNext p)).symm)
-    exact ⟨a, congrFun ha⟩
-  · rintro ⟨a, ha⟩ q
-    rw [ha, ha, alpha_alphaNext_symm]
+  simpa [funext_iff] using H.alphaNext.forall_comp_symm_sub_eq_zero_iff H.alphaNext_isCycleOn c
 
 /-- A `1`-chain on the `β`-arcs is a cycle exactly when it is a combination of whole `β`-curves,
 that is, constant along each `β`-curve. -/
 theorem betaArcBoundary_eq_zero_iff (c : Point → ℤ) :
     H.betaArcBoundary c = 0 ↔ ∃ b : Fin n → ℤ, ∀ p, c p = b (H.beta p) := by
-  simp only [funext_iff, betaArcBoundary_apply, Pi.zero_apply, sub_eq_zero]
-  constructor
-  · intro hc
-    obtain ⟨b, hb⟩ := (Function.factorsThrough_iff _).mp
-      (H.betaNext.factorsThrough_of_forall_isCycleOn H.betaNext_isCycleOn fun p => by
-        simpa using (hc (H.betaNext p)).symm)
-    exact ⟨b, congrFun hb⟩
-  · rintro ⟨b, hb⟩ q
-    rw [hb, hb, beta_betaNext_symm]
+  simpa [funext_iff] using H.betaNext.forall_comp_symm_sub_eq_zero_iff H.betaNext_isCycleOn c
 
 end Boundary
 
@@ -305,6 +289,13 @@ theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
 
 /-- The whole surface connects every generator to itself. -/
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
+  simp
+
+/-- A domain connects a generator to itself exactly when its `α`- and `β`-parts are cycles, that
+is, when its boundary is a combination of whole curves. This does not depend on the generator. -/
+theorem isDomainBetween_self_iff_arcBoundary_eq_zero {x : H.Generator} {E : Region → ℤ} :
+    H.IsDomainBetween x x E ↔
+      H.alphaArcBoundary (H.alphaBoundary E) = 0 ∧ H.betaArcBoundary (H.betaBoundary E) = 0 := by
   simp
 
 namespace IsDomainBetween
@@ -393,6 +384,17 @@ theorem isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains [Subsingleton 
   simp only [mem_periodicDomains_iff, isDomainBetween_iff, sub_self, map_sub, map_zsmul,
     alphaBoundary_one, betaBoundary_one, smul_zero, sub_zero, Pi.sub_apply, Pi.smul_apply,
     Pi.one_apply, smul_eq_mul, mul_one, Subsingleton.elim _ z, implies_true, true_and]
+
+/-- In a diagram with at most one basepoint, a nonnegative domain `E` from `x` to itself is a
+periodic domain plus a nonnegative number of copies of the whole surface: with a basepoint `z`,
+that number is `n_z(E)`, and without one `E` is itself periodic. -/
+theorem IsDomainBetween.exists_nonneg_sub_smul_one_mem_periodicDomains [Subsingleton Basepoint]
+    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) (hE₀ : 0 ≤ E) :
+    ∃ m : ℤ, 0 ≤ m ∧ E - m • 1 ∈ H.periodicDomains := by
+  rcases isEmpty_or_nonempty Basepoint with hB | ⟨⟨z⟩⟩
+  · exact ⟨0, le_rfl, by simpa using isDomainBetween_self_iff.mp ⟨hE, isEmptyElim⟩⟩
+  · exact ⟨E (H.basepoint z), hE₀ _,
+      (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE⟩
 
 variable (H) in
 /-- The supplied region incidence system is weakly admissible when every nonzero periodic domain

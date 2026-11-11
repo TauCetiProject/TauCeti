@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.NumberTheory.NumberField.Norm
+import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Norms of algebraic integers
@@ -19,6 +20,7 @@ characteristic `n`.
 ## Main results
 
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
+* `NumberField.RingOfIntegers.dvd_natAbs_norm`: every `α : 𝓞 K` divides `|N(α)|`.
 * `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
 * `NumberField.RingOfIntegers.natCast_dvd_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℕ`.
 * `NumberField.RingOfIntegers.charP_quotient_span_natCast`: `𝓞 K / n 𝓞 K` has characteristic `n`.
@@ -37,6 +39,11 @@ theorem one_le_abs_norm {α : 𝓞 K} (hα : α ≠ 0) :
     (1 : ℝ) ≤ |(Algebra.norm ℚ (α : K) : ℝ)| := by
   rw [← Algebra.coe_norm_int, Rat.cast_intCast, ← Int.cast_abs, ← Int.cast_one, Int.cast_le]
   exact Int.one_le_abs (Algebra.norm_ne_zero_iff.mpr hα)
+
+/-- An element `α` of `𝓞 K` divides the absolute value of its norm. -/
+theorem dvd_natAbs_norm (α : 𝓞 K) : α ∣ ((Algebra.norm ℤ α).natAbs : 𝓞 K) := by
+  rw [← Ideal.absNorm_span_singleton, ← Ideal.mem_span_singleton]
+  exact Ideal.absNorm_mem _
 
 /-- Divisibility between rational integers is the same in `𝓞 K` as in `ℤ`. -/
 @[simp, norm_cast]

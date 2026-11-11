@@ -153,16 +153,8 @@ theorem IsMorseSmale.finite_morseTrajectorySlice {hX : IsAdaptedPseudoGradient f
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
     (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
-    (hX.morseTrajectorySlice p q).Finite := by
-  by_cases hqp : f q < f p
-  · rw [morseTrajectorySlice]
-    exact h.finite_unstableSet_inter_stableSet_inter_level hf hp hq hind
-      ⟨by linarith, by linarith⟩
-  · have hpq : p ≠ q := by
-      rintro rfl
-      omega
-    exact finite_empty.subset fun z hz ↦
-      hqp (hX.value_lt_of_mem_morseTrajectorySlice (hf.contMDiff.mdifferentiable (by simp)) hpq hz)
+    (hX.morseTrajectorySlice p q).Finite :=
+  h.finite_unstableSet_inter_stableSet_inter_level hf hp hq hind _
 
 /-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
 trajectories from `p` to `q` are as many as the points of the middle-level slice

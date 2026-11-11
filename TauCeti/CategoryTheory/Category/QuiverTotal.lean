@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.CategoryTheory.EqToHom
+public import Mathlib.CategoryTheory.Groupoid
+public import Mathlib.Combinatorics.Quiver.Covering
 public import Mathlib.Combinatorics.Quiver.Subquiver
 
 /-!
@@ -26,11 +28,15 @@ A sum over the total arrows with source `x` is a sum over the arrows `x ⟶ y` f
 the arrows out of `x` with those out of `y` with the same targets, so the sum of a function of the
 target over the arrows with source `x` depends only on the isomorphism class of `x`
 (`Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_iso`). Such sums define the cutoff
-functions of étale groupoids.
+functions of étale groupoids. In a groupoid, inverting arrows turns it into the sum of the same
+function of the source over the arrows `Quiver.Costar x` with target `x`
+(`Quiver.Total.finsum_costar_eq_finsum_mem_preimage_left_singleton`).
 
 ## Main declarations
 
 * `Quiver.Total.comp`: the composite of two composable total arrows of a category.
+* `Quiver.Total.comp_inv_comp`, `Quiver.Total.inv_comp_comp`: in a groupoid, composing with an
+  arrow and with its inverse cancel.
 -/
 
 public section
@@ -85,6 +91,17 @@ theorem finsum_mem_preimage_left_singleton_eq_of_iso {M : Type*} [AddCommMonoid 
   exact finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ e.homFromEquiv)
     (f := fun p : Σ z, (y ⟶ z) ↦ g p.1)
 
+/-- In a groupoid, inverting arrows identifies the arrows with target `x` with those with source
+`x`. So the sum of a function of the source over the arrows with target `x` is the sum of the same
+function of the target over the total arrows with source `x`. -/
+theorem finsum_costar_eq_finsum_mem_preimage_left_singleton [IsGroupoid C] {M : Type*}
+    [AddCommMonoid M] (g : C → M) (x : C) :
+    ∑ᶠ b : Quiver.Costar x, g b.1 = ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a.right := by
+  rw [finsum_mem_preimage_left_singleton]
+  let := Groupoid.ofIsGroupoid (C := C)
+  exact (finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ Groupoid.invEquiv)
+    (f := fun b : Quiver.Costar x ↦ g b.1)).symm
+
 /-- The composite of total arrows `a` and `b` of a category with the target of `a` equal to the
 source of `b`: the first arrow is followed by the second. -/
 def comp (a b : Quiver.Total C) (h : a.right = b.left) : Quiver.Total C :=
@@ -124,5 +141,31 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
   dsimp only at hy hz hz' hw
   subst hy hz hz' hw
   simp
+
+section IsGroupoid
+
+variable [IsGroupoid C]
+
+/-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
+theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
+    (h' : a.right = ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h).left) :
+    a.comp ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h) h' = c := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨x', z, g⟩ := c
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Following the inverse of `a` by the composite of `a` with `b` gives back `b`. -/
+theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
+    (h' : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = (a.comp b h).left) :
+    (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp (a.comp b h) h' = b := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+end IsGroupoid
 
 end Quiver.Total

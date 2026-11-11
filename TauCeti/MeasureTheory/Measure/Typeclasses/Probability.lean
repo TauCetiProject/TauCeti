@@ -5,7 +5,12 @@ Authors: Jon Crall, Claude Fable 5
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-! # Probability measure support lemmas
 
@@ -25,6 +30,8 @@ simplifies totalized distribution laws that reduce to zero outside their paramet
 
 * `MeasureTheory.Measure.one_sub_measure_compl_le`
 * `MeasureTheory.not_isProbabilityMeasure_zero`
+* `Finset.norm_prod_measureReal_le_one`: a finite product of real masses of a zero-or-probability
+  measure has norm at most one.
 
 ## Source
 
@@ -64,3 +71,11 @@ theorem one_sub_measure_compl_le {Ω : Type*} [MeasurableSpace Ω] (μ : Measure
       _ ≤ μ s + μ sᶜ := measure_union_le _ _
 
 end MeasureTheory.Measure
+
+open MeasureTheory in
+/-- A finite product of values of a zero-or-probability measure has norm at most one. -/
+theorem Finset.norm_prod_measureReal_le_one {α ι : Type*} [MeasurableSpace α] (s : Finset ι)
+    (μ : Measure α) [IsZeroOrProbabilityMeasure μ] (B : ι → Set α) :
+    ‖∏ i ∈ s, μ.real (B i)‖ ≤ 1 := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (Finset.prod_nonneg fun i _ => measureReal_nonneg)]
+  exact Finset.prod_le_one₀ (fun i _ => measureReal_nonneg) fun i _ => measureReal_le_one

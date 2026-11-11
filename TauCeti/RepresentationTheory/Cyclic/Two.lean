@@ -179,11 +179,12 @@ variable {k : Type} [Ring k]
 
 /-- In characteristic two, augmentation of the regular representation of `C₂` has no
 equivariant right inverse. -/
-theorem cyclicTwoPermutationAugmentation_no_section [Nontrivial k] [CharP k 2] :
+theorem cyclicTwoPermutationAugmentation_no_section [CharP k 2] :
     ¬ ∃ s : Rep.trivial k (Multiplicative (ZMod 2)) k ⟶
         Rep.ofMulAction k (Multiplicative (ZMod 2)) (Multiplicative (ZMod 2)),
       s ≫ permutationAugmentation k (Multiplicative (ZMod 2)) (Multiplicative (ZMod 2)) = 𝟙 _ := by
   rintro ⟨s, hs⟩
+  have : Nontrivial k := CharP.nontrivial_of_char_ne_one (v := 2) (by norm_num)
   let v := s.hom (1 : k)
   have hv : Representation.ofMulAction k (Multiplicative (ZMod 2))
       (Multiplicative (ZMod 2)) (Multiplicative.ofAdd 1) v = v := by

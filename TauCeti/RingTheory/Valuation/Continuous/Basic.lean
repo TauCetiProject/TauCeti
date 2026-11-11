@@ -25,8 +25,9 @@ is used, so it is asked for per result rather than up front: the definition itse
 than a topology on `A`, the ratio results need only continuity of right multiplication
 (`[ContinuousConstSMul Aᵐᵒᵖ A]`; `isOpen_le_div` also wants the additive side), the translation
 results need `[SeparatelyContinuousAdd A]` — only translation by a *fixed* element is ever
-used, on either side — and `isContinuous_iff_continuous` needs both. Commutativity is
-never used, so `A` is a `Ring`.
+used, on either side — and `isContinuous_iff_continuous` needs both. `A` is a `Ring`;
+commutativity enters only in `IsContinuous.isClosed_supp`, because Mathlib's `Valuation.supp`
+is an ideal of a commutative ring.
 
 The codomain is treated the same way. Mathlib's `Valuation` is valued in a
 `LinearOrderedCommMonoidWithZero`, and so is most of this file. A `LinearOrderedCommGroupWithZero`
@@ -84,7 +85,7 @@ sets are *literally equal* for equivalent valuations, which is
   the zeros of a continuous valuation is continuous.
 * `Valuation.IsContinuous.isEquiv_of_dense` : two continuous valuations with the same zeros that
   agree in their comparisons on a dense subset are equivalent.
-* `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
+* `Valuation.IsContinuous.isClosed_supp` : the support of a continuous valuation is closed.
 
 ## References
 
@@ -231,6 +232,22 @@ theorem IsContinuous.comap {B : Type*} [Ring B] [TopologicalSpace B] {φ : B →
     (hφ : Continuous φ) {v : Valuation A Γ₀} (hv : v.IsContinuous) : (v.comap φ).IsContinuous :=
   fun b ↦ (hv (φ b)).preimage hφ
 
+section CommRing
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] [SeparatelyContinuousAdd R]
+
+/-- **The support of a continuous valuation is closed.** Off the support a continuous valuation is
+locally constant (`IsContinuous.eventually_eq`), so the complement of the support is open. Only
+separate continuity of addition is required, and the value monoid need not be a group. -/
+theorem IsContinuous.isClosed_supp {v : Valuation R Γ₀} (hv : v.IsContinuous) :
+    IsClosed (v.supp : Set R) := by
+  refine isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  rw [mem_compl_iff, SetLike.mem_coe, mem_supp_iff] at hx
+  filter_upwards [hv.eventually_eq hx] with y hy
+  simpa [hy] using hx
+
+end CommRing
+
 /-! ### Results needing a value **group**
 
 Two things need inverses on the codomain: writing a ratio `v b / v c`, which is how Wedhorn's
@@ -314,20 +331,3 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
 end ValueGroup
 
 end Valuation
-
-namespace TauCeti
-
-open Set Topology
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousAdd A]
-  {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀] {v : Valuation A Γ₀}
-
-/-- The support of a continuous valuation is closed. Only separate continuity of addition is
-required, and the value monoid need not be a group. -/
-theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp : Set A) := by
-  rw [← isOpen_compl_iff]
-  refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
-  have ha' : v a ≠ 0 := ha
-  filter_upwards [hv.eventually_eq ha'] with y hy using fun hyzero ↦ ha' (hy.symm.trans hyzero)
-
-end TauCeti
