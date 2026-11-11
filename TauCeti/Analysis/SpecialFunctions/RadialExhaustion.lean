@@ -45,7 +45,7 @@ theorem radialExhaustionProfile_contDiff : ContDiff ℝ ∞ radialExhaustionProf
     ((contDiff_const.mul contDiff_id).sub contDiff_const)))
 
 /-- The profile is constant on the inner plateau, including its endpoint. -/
-@[simp] theorem radialExhaustionProfile_eq_one {r : ℝ} (hr : r ≤ 1 / 2) :
+@[simp] theorem radialExhaustionProfile_eq_one {r : ℝ} (hr : r ≤ (2 : ℝ)⁻¹) :
     radialExhaustionProfile r = 1 := by
   simp only [radialExhaustionProfile,
     Real.smoothTransition.zero_of_nonpos (by linarith : 2 * r - 1 ≤ 0),
