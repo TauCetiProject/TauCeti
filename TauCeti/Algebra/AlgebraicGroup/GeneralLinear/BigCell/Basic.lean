@@ -53,6 +53,11 @@ repeat factors, which does not change the principal open. -/
 noncomputable def blockBigCellDenominator : MvPolynomial (n × n) R :=
   ∏ i, ((Matrix.mvPolynomialX n n R).toSquareBlockProp fun j => b j ≤ b i).det
 
+/-- The defining product of leading block minors for the block big-cell denominator. -/
+theorem blockBigCellDenominator_def :
+    blockBigCellDenominator R b =
+      ∏ i, ((Matrix.mvPolynomialX n n R).toSquareBlockProp fun j => b j ≤ b i).det := (rfl)
+
 /-- The coordinate algebra of the block big cell, localized at the product of its leading
 block minors. -/
 abbrev BlockBigCellCoordinateAlgebra :=
