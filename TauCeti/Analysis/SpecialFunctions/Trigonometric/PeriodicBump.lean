@@ -37,7 +37,7 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- A smooth `1`-periodic bump function centred at `t₀ + ℤ`: it is `1` where
+/-- A smooth `1`-periodic bump function centred at `t₀ + ℤ`: for `c < 1` it is `1` where
 `cos (2π(t - t₀)) ≥ (1 + c)/2` and `0` where `cos (2π(t - t₀)) ≤ c`. -/
 def periodicBump (t₀ c t : ℝ) : ℝ :=
   smoothTransition (2 * (cos (2 * π * (t - t₀)) - c) / (1 - c))
