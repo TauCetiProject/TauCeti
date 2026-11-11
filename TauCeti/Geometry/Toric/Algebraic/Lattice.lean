@@ -62,6 +62,8 @@ forcing the integral and real ranks to agree.
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
+  `p i(N)` of the image of an integral lattice is closed.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
 
@@ -242,6 +244,17 @@ theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
     simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
 
+/-- The real extension of an integral coordinate character is the corresponding coordinate of the
+real basis attached to an integral basis. -/
+theorem IsIntegralLattice.realCharacter_coord {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) (j : ι) :
+    h.realCharacter (b.coord j).toAddMonoidHom = (h.isBaseChange.basis b).coord j := by
+  classical
+  refine (h.isBaseChange.basis b).ext fun k ↦ ?_
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, h.isBaseChange.basis_apply,
+    AddMonoidHom.coe_toIntLinearMap, h.realCharacter_apply, Finsupp.single_apply]
+  simp [Module.Basis.coord_apply, Finsupp.single_apply, eq_comm]
+
 /-- A real-linear functional is the real extension of an integral character exactly when it takes
 integer values at every lattice point. -/
 theorem IsIntegralLattice.exists_realCharacter_eq_iff (h : IsIntegralLattice i)
@@ -347,6 +360,22 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
   ⟨by rw [LinearMap.coe_range]; exact h.span_range_eq_top⟩
+
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is closed in `V`: it is discrete
+for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsClosed ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have := hi.discreteTopology
+  have h : IsClosed (LinearMap.range i.toIntLinearMap : Set V) :=
+    (LinearMap.range i.toIntLinearMap).toAddSubgroup.isClosed_of_discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
 
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the

@@ -227,6 +227,7 @@ private theorem vle_iff_of_mem_cell [IsAlgClosed K] {Z : Finset K} {γ δ : K}
     valuation_eval₂RingHom_eq_pow_mul_of_mem_cell hx IsAlgClosed.card_roots_eq_natDegree hZf,
     valuation_eval₂RingHom_eq_pow_mul_of_mem_cell hx IsAlgClosed.card_roots_eq_natDegree hZg]
 
+omit [IsUltrametricDist K] in
 /-- **Comparing `x(T - γ)ʲ x(a)` with `x(T - γ)ᵏ x(b)`** for `j < k` and `ρ ^ (k - j) = a / b`
 is comparing `x(ρ)` with `x(T - γ)`, at a point with `x(T - γ) ≠ 0`: write `x(a) = x(ρ)ᵏ⁻ʲ x(b)`,
 then cancel `x(T - γ)ʲ` and `x(b)` and compare `(k - j)`-th powers. -/
@@ -414,6 +415,7 @@ private theorem vle_iff_vle_div_gcd [DecidableEq K] {x : closedPolydisc 1 K} {g 
     EuclideanDomain.mul_div_cancel' hh (gcd_dvd_right g p), valuation_le_iff,
     valuation_le_iff] at key
 
+omit [IsUltrametricDist K] in
 /-- Let `G` be a finite set of polynomials containing a nonzero constant `c`, and `p ≠ 0`. The
 points with `x(g) ≤ x(p)` for all `g ∈ G` and `x(p) ≠ 0` are those with `x(g') ≤ x(p')` for all
 `g ∈ G`, where `g' = g / gcd(g, p)` and `p' = p / gcd(g, p)` are coprime. The constant `c` forces

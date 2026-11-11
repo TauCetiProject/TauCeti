@@ -215,6 +215,14 @@ theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
     (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
       (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
 
+/-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
+theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {s : C(Y, Z)} {r : C(Z, Y)} (H : (r.comp s).Homotopic (.id Y)) :
+    Function.Injective (singularHomologyMap k n s) :=
+  Function.LeftInverse.injective (g := singularHomologyMap k n r) fun y ↦ by
+    rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic k n H,
+      singularHomologyMap_id]
+
 /-- A homotopy equivalence induces a bijection on singular homology. -/
 theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}
     [TopologicalSpace Y] [TopologicalSpace Z]

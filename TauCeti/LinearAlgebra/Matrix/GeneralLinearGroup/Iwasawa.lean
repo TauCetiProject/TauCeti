@@ -292,9 +292,7 @@ private theorem continuous_iwasawaUnitary : Continuous (iwasawaUnitary (𝕜 := 
   have hclosed : IsClosed f.graph := by
     rw [hgraph]
     have hset : IsClosed {M : Matrix (Fin n) (Fin n) 𝕜 | M.IsUpperTriangular ∧ ∀ i, 0 ≤ M i i} :=
-      (isClosed_setOfPred_blockTriangular (b := id)).inter (s₂ := {M | ∀ i, 0 ≤ M i i}) <| by
-        simp only [Set.ofPred_forall]
-        exact isClosed_iInter fun i => isClosed_le continuous_const (continuous_id.matrix_elem i i)
+      (isClosed_setOfPred_blockTriangular (b := id)).inter isClosed_setOfPred_nonneg_diag
     exact hset.preimage
       (Units.continuous_val.comp ((continuous_subtype_val.comp continuous_snd).inv.mul
         continuous_fst))

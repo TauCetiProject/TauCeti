@@ -41,7 +41,7 @@ theorem noncentralFMeasure_eq_map_noncentralBetaMeasure (ha : 0 < a) (hb : 0 < b
       (noncentralBetaMeasure a b l).map (fun x ↦ b / a * (x / (1 - x))) := by
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
   rw [noncentralFMeasure_eq_map (by positivity) (by positivity),
-    noncentralBetaMeasure_eq_map ha.le hb, Measure.map_map (by fun_prop) (by fun_prop)]
+    noncentralBetaMeasure_eq_map hb, Measure.map_map (by fun_prop) (by fun_prop)]
   refine Measure.map_congr ?_
   filter_upwards [Measure.ae_prod_mem_iff_ae_ae_mem (measurableSet_Ici.prod measurableSet_Ioi)
     |>.2 ((ae_nonneg_noncentralChiSquaredMeasure (2 * a) l).mono fun u hu ↦
