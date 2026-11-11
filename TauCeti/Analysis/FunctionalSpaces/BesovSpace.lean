@@ -39,9 +39,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
-  `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
-  (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+  `TauCeti.BesovSpace.norm_eq_tsum_rpow`, `TauCeti.BesovSpace.norm_rpow_eq_tsum` (`q < ∞`) and
+  `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
+  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
 * `TauCeti.BesovSpace.inclusion`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with norm at most `1` for
   `s' ≤ s` and `q ≤ q'`.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
@@ -389,6 +389,13 @@ theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
     ‖u‖ = (∑' j : ℕ, (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal) ^ (1 / q.toReal) := by
   rw [← norm_weightedBlocks,
     lp.norm_eq_tsum_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
+  simp_rw [norm_weightedBlocks_apply]
+
+/-- For `q < ∞` the `q`-th power of the Besov norm is `∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q`. -/
+theorem norm_rpow_eq_tsum (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
+    ‖u‖ ^ q.toReal = ∑' j : ℕ, (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal := by
+  rw [← norm_weightedBlocks,
+    lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
   simp_rw [norm_weightedBlocks_apply]
 
 /-- For `q = ∞` the Besov norm is `supⱼ 2^{js} ‖Δⱼ u‖_p`. -/

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
@@ -77,29 +78,6 @@ namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E)) {s : ℝ}
 
-/-- An `L²` function `v` with `χ(D) v = v` for a smooth compactly supported symbol `χ`, that is,
-with Fourier transform carried by the region where `χ = 1`, lies in every `H^s`. -/
-private lemma memSobolev_of_fourierMultiplierCLM_eq {v : Lp F 2 (volume : Measure E)}
-    {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-    (hv : fourierMultiplierCLM F (fun ξ ↦ (χ ξ : ℂ)) (v : 𝓢'(E, F)) = v) (s : ℝ) :
-    (v : 𝓢'(E, F)).MemSobolev s 2 := by
-  set m : E → ℂ := fun ξ ↦ ((χ ξ * (1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)
-  have hmd : ContDiff ℝ ∞ m := Complex.ofRealCLM.contDiff.comp
-    (hχ.mul ((contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun ξ ↦ by positivity))
-  have hmc : HasCompactSupport m := hχc.mul_right.comp_left Complex.ofReal_zero
-  obtain ⟨C, hC⟩ := hmd.continuous.bounded_above_of_compact_support hmc
-  have hmL : MemLp m ∞ volume :=
-    memLp_top_of_bound hmd.continuous.aestronglyMeasurable C (Eventually.of_forall hC)
-  have hχt : (fun ξ ↦ (χ ξ : ℂ)).HasTemperateGrowth :=
-    (hχc.comp_left Complex.ofReal_zero).hasTemperateGrowth (Complex.ofRealCLM.contDiff.comp hχ)
-  refine ⟨Lp.fourierMultiplierCLM F (hmL.toLp m) v, ?_⟩
-  rw [← Lp.fourierMultiplierCLM_toTemperedDistribution_eq v (hmc.hasTemperateGrowth hmd) hmL]
-  conv_lhs => rw [← hv]
-  rw [besselPotential, fourierMultiplierCLM_fourierMultiplierCLM_apply hχt (by fun_prop)]
-  congr 2
-  funext ξ
-  simp [m]
-
 /-- The symbol `ψₖ(ξ) (1 + ‖ξ‖²)^{-s/2}` of `Δₖ J^{-s}`. -/
 private def blockSymbol (s : ℝ) (k : ℕ) (ξ : E) : ℂ :=
   ((φ.inhomogeneousLittlewoodPaley k ξ * (1 + ‖ξ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)
@@ -116,8 +94,7 @@ private lemma memLp_blockSymbol (s : ℝ) (k : ℕ) : MemLp (blockSymbol φ s k)
     (hasTemperateGrowth_blockSymbol φ s k).1.continuous
   have hcs : HasCompactSupport (blockSymbol φ s k) :=
     (φ.hasCompactSupport_inhomogeneousLittlewoodPaley k).mul_right.comp_left Complex.ofReal_zero
-  obtain ⟨C, hC⟩ := hc.bounded_above_of_compact_support hcs
-  exact memLp_top_of_bound hc.aestronglyMeasurable C (Eventually.of_forall hC)
+  exact hc.memLp_top_of_hasCompactSupport hcs volume
 
 /-- If `J^s u = f ∈ L²`, then the block `Δₖ u` is the `L²` Fourier multiplier with symbol
 `ψₖ ⟨ξ⟩^{-s}` applied to `f`. -/
@@ -383,15 +360,6 @@ private lemma memSobolev_littlewoodPaleyBlock {u : 𝓢'(E, F)} {f : Lp F 2 (vol
   rw [Pi.mul_apply, ← Complex.ofReal_mul, mul_comm,
     φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL j ξ]
 
-/-- The map `H^s → 𝓢'(E, F)` is continuous. -/
-private lemma continuous_toDistr : Continuous fun v : H^{s}(E, F) ↦ v.toDistr := by
-  have h : Continuous fun v : H^{s}(E, F) ↦ besselPotential E F (-s) (v.toLp : 𝓢'(E, F)) :=
-    (besselPotential E F (-s)).continuous.comp
-      ((Lp.toTemperedDistributionCLM F volume 2).continuous.comp
-        ((BesselPotentialSpace.toLpₗᵢ E F s 2).continuous.congr
-          fun v ↦ BesselPotentialSpace.toLpₗᵢ_apply v))
-  exact h.congr fun v ↦ BesselPotentialSpace.besselPotential_neg_toLp_eq
-
 /-- `B^s_{2,2} ⊆ H^s`: the partial sums `∑_{j < n} Δⱼ u` lie in `H^s` and form a Cauchy sequence
 there, whose limit is `u`. -/
 private lemma memSobolev_of_memBesov {u : 𝓢'(E, F)} (hu : u.MemBesov φ s 2 2) :
@@ -438,7 +406,7 @@ private lemma memSobolev_of_memBesov {u : 𝓢'(E, F)} (hu : u.MemBesov φ s 2 2
   obtain ⟨w, hw⟩ := cauchySeq_tendsto_of_complete hcauchy
   have huw : u = w.toDistr :=
     tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) <|
-      ((continuous_toDistr.tendsto w).comp hw).congr fun n ↦
+      ((BesselPotentialSpace.continuous_toDistr.tendsto w).comp hw).congr fun n ↦
         MemSobolev.toBesselPotentialSpace_toDistr _
   exact huw ▸ w.memSobolev_toDistr
 
@@ -455,14 +423,6 @@ namespace BesselPotentialSpace
 open TemperedDistribution TauCeti
 
 variable (φ : ContDiffBump (0 : E)) {s : ℝ}
-
-/-- The square of the norm of `B^s_{2,2}` is `∑ⱼ (2^{js} ‖Δⱼ u‖₂)²`. -/
-private lemma norm_besovSpace_sq (v : BesovSpace F φ s 2 2) :
-    ‖v‖ ^ 2 = ∑' j : ℕ, (2 ^ (s * j) * ‖v.block j‖) ^ 2 := by
-  have h := lp.norm_rpow_eq_tsum (p := 2) (by norm_num) v.weightedBlocks
-  simp only [ENNReal.toReal_ofNat, Real.rpow_two, BesovSpace.norm_weightedBlocks,
-    BesovSpace.norm_weightedBlocks_apply] at h
-  exact h
 
 /-- The identification of `H^s` with `B^s_{2,2}` as a linear equivalence keeping the tempered
 distribution. -/
@@ -492,15 +452,19 @@ def besovSpaceEquiv : H^{s}(E, F) ≃L[ℂ] BesovSpace F φ s 2 2 where
     obtain ⟨a, b, -, hb, hab⟩ := exists_bounds (F := F) φ s
     refine AddMonoidHomClass.continuous_of_bound (besovSpaceEquivₗ φ) (√b) fun u ↦ ?_
     refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-    rw [norm_besovSpace_sq, mul_pow, Real.sq_sqrt hb, ← norm_toLp_eq]
+    have h := BesovSpace.norm_rpow_eq_tsum ENNReal.ofNat_ne_top (besovSpaceEquivₗ φ u)
+    simp only [ENNReal.toReal_ofNat, Real.rpow_two] at h
+    rw [h, mul_pow, Real.sq_sqrt hb, ← norm_toLp_eq]
     exact (hab u.bessel_toDistr_eq_toLp _ fun k ↦ by
       rw [BesovSpace.coe_block, toDistr_besovSpaceEquivₗ]).2.2
   continuous_invFun := by
     obtain ⟨a, b, ha, -, hab⟩ := exists_bounds (F := F) φ s
     refine AddMonoidHomClass.continuous_of_bound (besovSpaceEquivₗ φ).symm (√a⁻¹) fun v ↦ ?_
     refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-    rw [mul_pow, Real.sq_sqrt (inv_nonneg.2 ha.le), norm_besovSpace_sq, ← norm_toLp_eq,
-      inv_mul_eq_div, le_div_iff₀' ha]
+    have h := BesovSpace.norm_rpow_eq_tsum ENNReal.ofNat_ne_top v
+    simp only [ENNReal.toReal_ofNat, Real.rpow_two] at h
+    rw [mul_pow, Real.sq_sqrt (inv_nonneg.2 ha.le), h, ← norm_toLp_eq, inv_mul_eq_div,
+      le_div_iff₀' ha]
     exact (hab ((besovSpaceEquivₗ φ).symm v).bessel_toDistr_eq_toLp v.block fun k ↦ by
       rw [BesovSpace.coe_block, toDistr_besovSpaceEquivₗ_symm]).2.1
 

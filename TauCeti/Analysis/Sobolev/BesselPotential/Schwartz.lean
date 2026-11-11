@@ -31,6 +31,7 @@ normed complex `F`.
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
+* `BesselPotentialSpace.continuous_toDistr`: the map `H^{s,p} → 𝓢'(E, F)` is continuous.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
@@ -125,6 +126,15 @@ theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [Inner
 end SchwartzMap
 
 namespace BesselPotentialSpace
+
+/-- The map `H^{s,p} → 𝓢'(E, F)` sending an element to its tempered distribution is continuous. -/
+theorem continuous_toDistr {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    Continuous fun v : H^{s, p}(E, F) ↦ v.toDistr := by
+  have h : Continuous fun v : H^{s, p}(E, F) ↦ besselPotential E F (-s) (v.toLp : 𝓢'(E, F)) :=
+    (besselPotential E F (-s)).continuous.comp
+      ((Lp.toTemperedDistributionCLM F volume p).continuous.comp
+        ((toLpₗᵢ E F s p).continuous.congr fun v ↦ toLpₗᵢ_apply v))
+  exact h.congr fun v ↦ besselPotential_neg_toLp_eq
 
 /-- Continuous linear maps out of `H^{s,p}`, `p < ∞`, into a Hausdorff space are determined by
 their values on Schwartz functions. -/
