@@ -48,6 +48,8 @@ its closed orthant, so `M_d f` vanishes on any orthant disjoint from the support
 * `TauCeti.dyadicMaximalFunction_le_two_pow_mul_maximalFunction`,
   `TauCeti.volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction`: the comparison with
   the centred maximal function.
+* `TauCeti.volume_biUnion_ball_calderonZygmundCubes_le`: the threefold enlargements of the
+  Calderón–Zygmund cubes have at most `3ⁿ` times their volume.
 
 ## References
 
@@ -211,6 +213,29 @@ private theorem setLAverage_ball_le_of_forall_dyadicCube {r : ℝ} (hr : 0 < r)
   rw [setLAverage_eq]
   exact ENNReal.div_le_of_le_mul hint
 
+/-- The concentric cubes `3Q` of three times the side of the Calderón–Zygmund cubes `Q` of `g`
+at height `t` have total volume at most `3ⁿ` times that of the cubes. On `ℝⁿ` with the sup norm,
+`3Q` is the ball about the centre of `Q` whose radius is three halves of the side of `Q`. -/
+theorem volume_biUnion_ball_calderonZygmundCubes_le (g : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
+    volume (⋃ q ∈ calderonZygmundCubes g t,
+        ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) ≤
+      3 ^ Fintype.card ι * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+  set C := calderonZygmundCubes g t
+  have hvol (q : ℤ × (ι → ℤ)) :
+      volume (ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) =
+        3 ^ Fintype.card ι * volume (dyadicCube q.1 q.2) := by
+    rw [Real.volume_pi_ball _ (by positivity), volume_dyadicCube,
+      show 2 * (3 * (2 : ℝ) ^ q.1 / 2) = 3 * 2 ^ q.1 by ring, mul_pow,
+      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat]
+  calc volume (⋃ q ∈ C, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2))
+      ≤ ∑' q : C, volume (ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1)
+          (3 * 2 ^ q.1.1 / 2)) :=
+        measure_biUnion_le _ C.to_countable _
+    _ = 3 ^ Fintype.card ι * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
+        rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes
+          fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
+        exact tsum_congr fun q => hvol q
+
 /-- **The centred maximal function is controlled by the dyadic one in measure**: in positive
 dimension, for `f` with finite `L¹` norm and `t ≠ 0`,
 
@@ -259,19 +284,10 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
     calc dist x (c q) ≤ dist x y + dist y (c q) := dist_triangle _ _ _
       _ < r + 2 ^ q.1 / 2 := add_lt_add_of_lt_of_le (mem_ball'.1 hyB) hyq
       _ ≤ 3 * 2 ^ q.1 / 2 := by linarith
-  have hvol (q : ℤ × (ι → ℤ)) :
-      volume (ball (c q) (3 * 2 ^ q.1 / 2)) = 3 ^ n * volume (dyadicCube q.1 q.2) := by
-    rw [Real.volume_pi_ball _ (by positivity), volume_dyadicCube,
-      show 2 * (3 * (2 : ℝ) ^ q.1 / 2) = 3 * 2 ^ q.1 by ring, mul_pow,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat]
   calc volume {x | 3 ^ n * t < maximalFunction volume f x}
       ≤ volume (⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2)) := measure_mono hsub
-    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.1.1 / 2)) :=
-        measure_biUnion_le _ C.to_countable _
-    _ = 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
-        rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes
-          fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
-        exact tsum_congr fun q => hvol q
+    _ ≤ 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) :=
+        volume_biUnion_ball_calderonZygmundCubes_le _ t
     _ = 3 ^ n * volume {x | t < dyadicMaximalFunction f x} := by
         rw [setOf_lt_dyadicMaximalFunction_eq hf ht]
 

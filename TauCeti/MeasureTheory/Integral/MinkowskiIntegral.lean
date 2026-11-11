@@ -44,6 +44,7 @@ Off-diagonal Marcinkiewicz interpolation uses it with the sets cut out by a heig
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
+* `TauCeti.tsum_rpow_lintegral_le`: Minkowski's inequality for a countable family of integrals.
 
 ## References
 
@@ -272,5 +273,21 @@ theorem lintegral_mul_setLIntegral_rpow_le [SigmaFinite ν] [SFinite μ] {R : β
         refine lintegral_congr fun x => ?_
         rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **Minkowski's inequality for a countable family of integrals.** For `1 ≤ r` and a countable
+family of measurable `gᵢ : α → ℝ≥0∞`, the `ℓʳ` norm of the integrals is at most the integral of
+the pointwise `ℓʳ` norms:
+
+`∑' i, (∫⁻ x, gᵢ x ∂μ) ^ r ≤ (∫⁻ x, (∑' i, gᵢ x ^ r) ^ r⁻¹ ∂μ) ^ r`.
+
+This is `TauCeti.lintegral_Lp_lintegral_le` for the counting measure on the index type. -/
+theorem tsum_rpow_lintegral_le {κ : Type*} [Countable κ] [SFinite μ] {g : κ → α → ℝ≥0∞}
+    (hg : ∀ i, Measurable (g i)) {r : ℝ} (hr : 1 ≤ r) :
+    ∑' i, (∫⁻ x, g i x ∂μ) ^ r ≤ (∫⁻ x, (∑' i, g i x ^ r) ^ r⁻¹ ∂μ) ^ r := by
+  let _ : MeasurableSpace κ := ⊤
+  have hm : Measurable (uncurry g) := measurable_from_prod_countable_right hg
+  have h := lintegral_Lp_lintegral_le (μ := Measure.count) (ν := μ) hm.aemeasurable hr
+  simp only [lintegral_count, one_div] at h
+  rwa [ENNReal.rpow_inv_le_iff (zero_lt_one.trans_le hr)] at h
 
 end TauCeti
