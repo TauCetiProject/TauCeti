@@ -69,6 +69,7 @@ variable {A}
 
 /-- A bounded family lies in the `c₀` ideal when its coordinate norms tend to `0` along the
 cofinite filter. -/
+@[simp]
 theorem mem_c0Ideal {a : lp A ∞} :
     a ∈ c0Ideal A ↔ Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0) :=
   TwoSidedIdeal.mem_mk' _ _ _ _ _ _ a
@@ -133,12 +134,12 @@ theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
       ((norm_le_of_forall_le (by positivity) fun i ↦ ?_).trans_lt (by linarith : L + ε / 2 < L + ε))
     by_cases hi : i ∈ F
     · have h0 : (a + -y) i = 0 := by
-        change a i + -(if i ∈ F then a i else 0) = 0
-        simp [hi]
+        rw [lp.coeFn_add, lp.coeFn_neg, Pi.add_apply, Pi.neg_apply]
+        simp [y, hi]
       simpa [h0] using (by positivity : (0 : ℝ) ≤ L + ε / 2)
     · have h0 : (a + -y) i = a i := by
-        change a i + -(if i ∈ F then a i else 0) = a i
-        simp [hi]
+        rw [lp.coeFn_add, lp.coeFn_neg, Pi.add_apply, Pi.neg_apply]
+        simp [y, hi]
       rw [h0]
       exact (not_le.1 (show ¬ L + ε / 2 ≤ ‖a i‖ from hi)).le
   · -- every representative `a + z`, `z ∈ c₀`, has norm at least `L`
