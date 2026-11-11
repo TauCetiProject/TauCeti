@@ -47,16 +47,17 @@ in `TauCeti/Topology/Circle/Metric.lean`: the chord is at most the arc
 (`TauCeti.min_angleDiff_le_pi_div_two_mul_dist`). The converse bound is the one that matters here:
 it is what turns a hypothesis about the ambient distance into a bound on an arc.
 
-Together these give `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le`: two
-distinct points of the circle cut it into two preconnected pieces, the first of which stays of
-diameter at most `π / 2` times their distance after the cut points are put back. The two pieces are
-Mathlib's open arcs `Circle.path z w '' Set.Ioo 0 1` and `Circle.path w z '' Set.Ioo 0 1`, whose
-covering of the cut circle is `Circle.compl_range_path` together with
-`Circle.range_path_inter_range_path`, and each of them with its two endpoints lies in the closed arc
-`Circle.range_path`, a `Circle.exp` image of an interval of angles, on which the diameter bound is
-immediate. Only preconnectedness of the pieces is recorded, not the openness and path-connectedness
-of `TauCeti.exists_isOpen_isPathConnected_union_eq_compl_pair_circle`; that is all the transport
-below consumes.
+Together these give `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le`: two points
+of the circle (when they coincide the short piece is empty) cut it into two preconnected pieces, the
+first of which stays of diameter at most `π / 2` times their distance after the cut points are put
+back. The two pieces are Mathlib's open arcs `Circle.path z w '' Set.Ioo 0 1` and
+`Circle.path w z '' Set.Ioo 0 1`, whose covering of the cut circle is
+`Circle.compl_range_path` together with `Circle.range_path_inter_range_path`, and each of them with
+its two endpoints lies in the closed arc `Circle.range_path`, a `Circle.exp` image of an interval of
+angles, on which the diameter bound is immediate. Only preconnectedness of the pieces is recorded,
+not the openness and path-connectedness of
+`TauCeti.exists_isOpen_isPathConnected_union_eq_compl_pair_circle`; that is all the transport below
+consumes.
 
 The transport then runs both uniform continuities of the parametrization `TauCeti.jordanParam` of
 `TauCeti/Topology/JordanCurve/Basic.lean` at once: one converts "the two points are close in
@@ -109,7 +110,7 @@ which are recorded here once and spent by both transports.
 
 ## Main results
 
-* `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le` — two distinct points cut the
+* `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le` — two points cut the
   circle into two preconnected arcs, the first of which is of diameter at most `π / 2` times their
   distance even after the two points are put back, and
   `TauCeti.exists_path_injective_diam_range_le_circle` — two distinct points of the circle are the
@@ -140,7 +141,7 @@ open scoped Real
 
 /-! ## Cutting the circle into a short arc and a long one -/
 
-/-- **Two distinct points cut the circle into a short arc and a long one.** The complement of
+/-- **Two points cut the circle into a short arc and a long one.** The complement of
 `{z, w}` is the union of two preconnected sets, the first of which stays of diameter at most
 `π / 2 * dist z w` even after the two cut points are put back: it is `P ∪ {z, w}`, the *closed*
 short arc, that is bounded. For `z = w` the open piece `P` is empty and the closed short arc is
