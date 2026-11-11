@@ -9,6 +9,8 @@ public import TauCeti.Dynamics.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import TauCeti.Dynamics.Flow.Periodic.Basic
 
 /-!
 # Time-dependent Hamiltonian flows on symplectic vector spaces
@@ -32,6 +34,8 @@ the autonomous Hamiltonian vector field.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`: its global two-time evolution.
 * `TauCeti.SymplecticForm.hasDerivAt_timeDependentHamiltonianFlow`: the evolution equation.
 * `TauCeti.SymplecticForm.eq_timeDependentHamiltonianFlow`: uniqueness of solutions.
+* `TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt`: a `1`-periodic orbit
+  through a nondegenerate fixed point of the time-one map is isolated among `1`-periodic orbits.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_eq_inverse_spatialFDeriv`: the fixed-time
   Hamiltonian field in terms of the spatial Jacobian of `H`.
 * `TauCeti.SymplecticForm.contDiff_timeDependentHamiltonianSuspension`: smoothness of the
@@ -60,7 +64,7 @@ Hamiltonian vector fields and flows.
 public section
 
 open Function
-open scoped NNReal
+open scoped NNReal Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -221,6 +225,22 @@ theorem eq_timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : ℝ → 
     (hy : ∀ t, HasDerivAt y (omega.hamiltonianVectorField (H t) (y t)) t) (s t : ℝ) :
     y t = omega.timeDependentHamiltonianFlow H hX s t (y s) :=
   eq_timeDependentFlow _ hX hy s t
+
+/-- **Nondegenerate periodic orbits are isolated.** If `x` is an orbit of `X_{H_t}` and `x 0` is a
+nondegenerate fixed point of the time-one map, then every `1`-periodic orbit `y` with `y 0` close
+enough to `x 0` is `x` itself. -/
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} {hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H)}
+    {x : ℝ → V} (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (omega.hamiltonianVectorField (H t) (y t)) t) →
+      dist (y 0) (x 0) < ε → y = x := by
+  -- A nondegenerate fixed point of the time-one map is isolated among its fixed points.
+  have hiso := hnd.eventually_not_isFixedPt
+  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
+  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
+  exact ⟨ε, hε, fun y hyper hy ↦ h y hy hyper⟩
 
 /-- Each evolution map of a jointly `C²` time-dependent Hamiltonian is differentiable. -/
 theorem differentiable_timeDependentHamiltonianFlow (omega : SymplecticForm V)

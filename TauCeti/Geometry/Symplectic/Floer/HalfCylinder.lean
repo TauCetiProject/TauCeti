@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Dynamics.Flow.Periodic.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -66,7 +65,9 @@ asymptotic condition `u(s, ·) → x` at the ends of the Floer trajectories and 
 are counted in the Floer complex and its product. Nondegenerate fixed points of the time-one map
 are isolated (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), and periodic solutions
 through isolated fixed points are isolated among the periodic solutions
-(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`). So the statement is an
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`), so periodic orbits through
+nondegenerate fixed points are isolated
+(`TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt`). So the statement is an
 instance of the convergence theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`
 for loops with square-integrable defect.
 
@@ -299,21 +300,6 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
   refine (tendsto_congr' hAeq).1 ((tendsto_iff_tendsto_subseq_of_monotone hAmono hφ).2 ?_)
   exact hseq.congr' (hφ.eventually hAeq.symm)
 
-/-- A `1`-periodic orbit through a nondegenerate fixed point of the time-one map is isolated
-among the `1`-periodic orbits in the uniform distance. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {L : ℝ≥0}
-    {hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)} {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
-    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
-      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) → (∀ t, y t ∈ K) →
-      (∀ t, dist (y t) (x t) < ε) → y = x := by
-  -- A nondegenerate fixed point of the time-one map is isolated among its fixed points.
-  have hiso := hnd.eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
-
 /-- **Convergence of a finite-energy Floer half-cylinder to a nondegenerate orbit.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`, suppose
 moreover that the derivative of `u` is bounded on the half-cylinder, that the suspension of the
@@ -342,8 +328,9 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
-      hfloer hE) hC fun x hxper hx hxK ↦
-    exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+      hfloer hE) hC fun x hxper hx hxK ↦ ?_
+  obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
 
 /-! ### The negative end
 
@@ -503,7 +490,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot_of_floer
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Iio.prod measurableSet_Icc) hc hJc hJM
-      hfloer hE) hC fun x hxper hx hxK ↦
-    exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+      hfloer hE) hC fun x hxper hx hxK ↦ ?_
+  obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
 
 end TauCeti.SymplecticForm

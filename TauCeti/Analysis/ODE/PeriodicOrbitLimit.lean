@@ -191,10 +191,6 @@ theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst :
   exact hmp.setLIntegral_comp_preimage_emb negFst.toHomeomorph.measurableEmbedding
     (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
 
-private theorem contDiffOn_comp_negFst {n : WithTop ℕ∞} (hu : ContDiffOn ℝ n u (Iio a ×ˢ univ)) :
-    ContDiffOn ℝ n (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
-  hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
-
 end Reflection
 
 section Selection
@@ -658,8 +654,10 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top [Com
       ∃ φ : ℕ → ℝ, (∀ n, φ n < a) ∧ Tendsto φ atTop atBot ∧
         TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop ∧
         Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) atTop (𝓝 0) := by
+  have hur : ContDiffOn ℝ 1 (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
+    hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (contDiffOn_comp_negFst hu)
+    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top hur
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
       (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst])
   refine ⟨x, hxper, hx, fun n ↦ -φ n, fun n ↦ neg_lt.2 (hφa n),
@@ -696,8 +694,10 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot [CompleteSpace V] {K :
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ← hv]
     exact (ContinuousLinearMap.le_opNorm _ _).trans
       (mul_le_mul_of_nonneg_right (hC _ hz') (norm_nonneg _))
+  have hur : ContDiffOn ℝ 1 (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
+    hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
   obtain ⟨x, hxper, hx, hux⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_atTop (contDiffOn_comp_negFst hu)
+    exists_periodic_hasDerivAt_tendstoUniformly_atTop hur
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
       (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst]) hC' hiso
   refine ⟨x, hxper, hx, Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_⟩
