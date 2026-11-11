@@ -23,8 +23,8 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids`: stacks in groupoids over schemes for the fppf
   topology.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
-  transformations of the underlying pseudofunctors, with identities `Hom.id` and composition
-  `Hom.comp`.
+  transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
+  `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFibrewiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
@@ -67,24 +67,6 @@ abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
 
 namespace Hom
 
-/-- The identity morphism of a stack in groupoids. -/
-abbrev id (X : StackInGroupoids.{u}) : Hom X X :=
-  Pseudofunctor.StrongTrans.id X.toSchPseudofunctor
-
-/-- The composition of morphisms of stacks in groupoids. -/
-abbrev comp {X Y Z : StackInGroupoids.{u}} (f : Hom X Y) (g : Hom Y Z) : Hom X Z :=
-  Pseudofunctor.StrongTrans.vcomp f g
-
-@[simp]
-lemma id_app (X : StackInGroupoids.{u}) (T : Scheme.{u}) :
-    (id X).app (.mk (op T)) = 𝟙 (X.toSchPseudofunctor.obj (.mk (op T))) :=
-  rfl
-
-@[simp]
-lemma comp_app {X Y Z : StackInGroupoids.{u}} (f : Hom X Y) (g : Hom Y Z) (T : Scheme.{u}) :
-    (comp f g).app (.mk (op T)) = f.app (.mk (op T)) ≫ g.app (.mk (op T)) :=
-  rfl
-
 /-- A morphism of stacks in groupoids is a fibrewise equivalence if its component on every
 scheme is an equivalence of fibre groupoids. -/
 def IsFibrewiseEquiv {X Y : StackInGroupoids.{u}} (f : Hom X Y) : Prop :=
@@ -94,28 +76,31 @@ lemma isFibrewiseEquiv_iff {X Y : StackInGroupoids.{u}} (f : Hom X Y) :
     f.IsFibrewiseEquiv ↔ ∀ T : Scheme.{u}, (f.app (.mk (op T))).toFunctor.IsEquivalence :=
   Iff.rfl
 
-lemma isFibrewiseEquiv_id (X : StackInGroupoids.{u}) : (id X).IsFibrewiseEquiv := fun _ ↦
+lemma isFibrewiseEquiv_id (X : StackInGroupoids.{u}) :
+    IsFibrewiseEquiv (Pseudofunctor.StrongTrans.id X.toSchPseudofunctor) := fun _ ↦
   inferInstanceAs (Functor.id _).IsEquivalence
 
 variable {X Y Z : StackInGroupoids.{u}} {f : Hom X Y} {g : Hom Y Z}
 
 lemma IsFibrewiseEquiv.comp (hf : f.IsFibrewiseEquiv) (hg : g.IsFibrewiseEquiv) :
-    (comp f g).IsFibrewiseEquiv := fun T ↦
+    IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g) := fun T ↦
   have := hf T
   have := hg T
   inferInstanceAs ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence
 
-/-- If `g` and the composite `comp f g` are fibrewise equivalences, so is `f`. -/
+/-- If `g` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fibrewise equivalences,
+so is `f`. -/
 lemma IsFibrewiseEquiv.of_comp_right (hg : g.IsFibrewiseEquiv)
-    (hfg : (f.comp g).IsFibrewiseEquiv) : f.IsFibrewiseEquiv := fun T ↦
+    (hfg : IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : f.IsFibrewiseEquiv := fun T ↦
   have := hg T
   have : ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence :=
     hfg T
   Functor.isEquivalence_of_comp_right _ (g.app (.mk (op T))).toFunctor
 
-/-- If `f` and the composite `comp f g` are fibrewise equivalences, so is `g`. -/
+/-- If `f` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fibrewise equivalences,
+so is `g`. -/
 lemma IsFibrewiseEquiv.of_comp_left (hf : f.IsFibrewiseEquiv)
-    (hfg : (f.comp g).IsFibrewiseEquiv) : g.IsFibrewiseEquiv := fun T ↦
+    (hfg : IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : g.IsFibrewiseEquiv := fun T ↦
   have := hf T
   have : ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence :=
     hfg T
