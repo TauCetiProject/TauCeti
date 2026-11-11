@@ -99,6 +99,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a continuous function with compact support in `s`, is
   integrable.
+* `MeasureTheory.LocallyIntegrableOn.continuousOn_smul_of_isOpen`: a function locally integrable
+  on an open set, times a function continuous on it, is locally integrable on it.
 * `MeasureTheory.locallyIntegrableOn_finsetSum`: finite sums preserve local integrability on a
   set.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
@@ -600,6 +602,33 @@ theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
   exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
     ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
     (hf k hks hk).aestronglyMeasurable
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X E 𝕜 : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup E] [NormedRing 𝕜] [SecondCountableTopologyEither X 𝕜] [Module 𝕜 E]
+  [IsBoundedSMul 𝕜 E] {μ : Measure X} {s : Set X} {f : X → E} {g : X → 𝕜}
+
+/-- A function locally integrable on an open set stays locally integrable on it after
+multiplication by a function continuous on the set. Unlike
+`MeasureTheory.LocallyIntegrableOn.continuousOn_smul`, this needs no local compactness: near each
+point the factor is bounded and measurable on a small open set. -/
+theorem continuousOn_smul_of_isOpen (hs : IsOpen s) (hf : LocallyIntegrableOn f s μ)
+    (hg : ContinuousOn g s) : LocallyIntegrableOn (fun x => g x • f x) s μ := by
+  intro x hx
+  obtain ⟨t, ht, hft⟩ := hf x hx
+  rw [hs.nhdsWithin_eq hx] at ht
+  have hgx : ∀ᶠ y in nhds x, ‖g y‖ ≤ ‖g x‖ + 1 :=
+    ((hg.continuousAt (hs.mem_nhds hx)).norm.tendsto.eventually
+      (gt_mem_nhds (lt_add_one ‖g x‖))).mono fun _ h => h.le
+  obtain ⟨V, hVsub, hV, hxV⟩ := mem_nhds_iff.1 (Filter.inter_mem (Filter.inter_mem ht hgx)
+    (hs.mem_nhds hx))
+  refine ⟨V, mem_nhdsWithin_of_mem_nhds (hV.mem_nhds hxV), ?_⟩
+  exact ((hft.mono_set (fun y hy => (hVsub hy).1.1)).bdd_smul (‖g x‖ + 1)
+    ((hg.mono fun y hy => (hVsub hy).2).aestronglyMeasurable hV.measurableSet)
+    (ae_restrict_of_forall_mem hV.measurableSet fun y hy => (hVsub hy).1.2))
 
 end MeasureTheory.LocallyIntegrableOn
 
