@@ -94,7 +94,7 @@ theorem hasseDeriv_mul (k : ℕ) (f g : R⸨X⸩) :
 /-- **The product rule** for ordinary Laurent differentiation, over any ring. -/
 theorem derivative_mul (f g : R⸨X⸩) :
     derivative R (f * g) = derivative R f * g + f * derivative R g := by
-  have hanti : antidiagonal 1 = {(0, 1), (1, 0)} := rfl
-  simpa [hanti, ← derivative_apply, add_comm] using hasseDeriv_mul 1 f g
+  simpa [Finset.Nat.antidiagonal_succ, ← derivative_apply, add_comm] using
+    hasseDeriv_mul 1 f g
 
 end LaurentSeries

@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
-# The algebra action, the product rule, and residues of `φⁿ dφ` for Laurent series
+# The algebra action, derivatives, and residues of `φⁿ dφ` for Laurent series
 
 For an `R`-algebra `A`, the `R`-algebra structure on `A⸨X⸩` is the one inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by the image of a
@@ -61,7 +61,6 @@ derivative `f' / f` is the order of `f`.
   preserves the valuation.
 * `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
   the order of a power series in `R⸨X⸩` agrees with its power series order.
-* `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
