@@ -5,24 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Bounds
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
-import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic
 
 /-!
 # Completeness of the cyclotomic Dixon solver
 
-Every finite group admits an exact cyclotomic character-table certificate. Its finitely many
-central coefficients have a common bound, and there are arbitrarily large good Dixon primes.
-At a prime beyond twice that bound, the existing reconstruction theorem finds the table.
-The assembled prime search therefore succeeds after a finite number of steps, and its answer
-stays the same for every larger search budget.
+Every finite group admits an exact cyclotomic character-table certificate whose complex image is
+the labeled character table and whose central coefficients are bounded by
+`TauCeti.centralCoefficientBound G e`. At every strong Dixon prime, one beyond twice that bound,
+the existing reconstruction theorem finds the table. Such primes exist, so the assembled prime
+search succeeds after a finite number of steps, and its answer stays the same for every larger
+search budget.
 
 Consequently the search with the least successful budget is a total, executable algorithm,
 `TauCeti.ClassData.characterTableDixon`. Embedded in `ℂ`, its table is the character table of
 `G` up to a permutation of the rows.
-
-The coefficient bound here is existential: it proves termination without a quantitative
-estimate for the running time or a prescribed prime.
 
 ## Main definitions
 
@@ -30,6 +28,11 @@ estimate for the running time or a prescribed prime.
 
 ## Main results
 
+* `TauCeti.ClassData.exists_bounded_exact_character_table`: the bounded exact certificate.
+* `TauCeti.ClassData.isSome_dixonCyclotomicCharacterTable_of_centralCoefficientBound`: the solver
+  succeeds at every strong Dixon prime.
+* `TauCeti.ClassData.isSome_characterTableDixon?_of_centralCoefficientBound`: the budgeted search
+  succeeds as soon as it reaches a strong Dixon prime.
 * `TauCeti.ClassData.exists_characterTableDixon?_eq_some`: the budgeted search succeeds.
 * `TauCeti.ClassData.characterTableDixon_eq_of_characterTableDixon?_eq_some`: every successful
   budgeted search returns the table of the total algorithm.
@@ -46,20 +49,19 @@ variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
 
 include he
 
-/-- Every finite group has ordinary and central tables over the exact cyclotomic integers at
-its exponent which satisfy the executable certificate. -/
-theorem exists_isCyclotomicCharacterTableSpec :
-    ∃ (omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e))
-      (degree : Fin d.numClasses → ℕ),
-      d.IsCyclotomicCharacterTableSpec e omega table degree := by
+omit he in
+/-- Exact tables whose complex images are the labeled central and ordinary character tables pass
+the executable certificate, with the character degrees as the degree vector. -/
+theorem isCyclotomicCharacterTableSpec_of_complexEmbedding_eq [NeZero e]
+    {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
+    (homega : ∀ i k, Cyclotomic.complexEmbedding (omega i k) = centralCharacterTable ℂ G
+      (finCongr d.numClasses_eq_card_conjClasses i) (d.classOf k))
+    (htable : ∀ i k, Cyclotomic.complexEmbedding (table i k) = characterTable ℂ G
+      (finCongr d.numClasses_eq_card_conjClasses i) (d.classOf k)) :
+    d.IsCyclotomicCharacterTableSpec e omega table
+      fun i ↦ characterDegree ℂ (finCongr d.numClasses_eq_card_conjClasses i) := by
   classical
-  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   let τ := finCongr d.numClasses_eq_card_conjClasses
-  choose omega homega using fun i k ↦ centralCharacterTable_mem_range_complexEmbedding
-    e he (τ i) (d.classOf k)
-  choose table htable using fun i k ↦ characterTable_mem_range_complexEmbedding
-    e he (τ i) (d.classOf k)
-  refine ⟨omega, table, fun i ↦ characterDegree ℂ (τ i), ?_⟩
   -- Reflect the exact identities through the injective complex embedding.
   refine
     { central_one := fun i ↦ Cyclotomic.complexEmbedding_injective ?_
@@ -103,39 +105,62 @@ theorem exists_isCyclotomicCharacterTableSpec :
       htable, apply_ite, map_zero, d.card_classFinset, ← d.equivConjClasses_apply,
       τ.injective.eq_iff, Nat.card_eq_fintype_card, mul_ite, mul_one, mul_zero] using hsum
 
+/-- **The bounded exact certificate.** Every finite group has ordinary and central tables over
+the exact cyclotomic integers at its exponent which satisfy the executable certificate, whose
+ordinary table embeds in `ℂ` as the labeled character table, and whose central coefficients are
+bounded by `TauCeti.centralCoefficientBound G e`. -/
+theorem exists_bounded_exact_character_table :
+    haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+    ∃ out : d.CyclotomicCharacterTableData e,
+      d.IsCyclotomicCharacterTableSpec e out.omega out.table out.degree ∧
+      d.complexTableOfCyclotomic e out.table = characterTable ℂ G ∧
+      ∀ i k j, ((out.omega i k).coeff j).natAbs ≤ centralCoefficientBound G e := by
+  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  let τ := finCongr d.numClasses_eq_card_conjClasses
+  choose table omega htable homega _ _ hbound using
+    exists_exact_character_and_central_values (G := G) e (he.symm ▸ dvd_rfl)
+  refine ⟨⟨fun i k ↦ omega (τ i) (d.classOf k), fun i k ↦ table (τ i) (d.classOf k),
+    fun i ↦ characterDegree ℂ (τ i)⟩,
+    d.isCyclotomicCharacterTableSpec_of_complexEmbedding_eq e (fun _ _ ↦ homega _ _)
+      (fun _ _ ↦ htable _ _), ?_, fun _ _ _ ↦ hbound _ _ _⟩
+  ext i C
+  obtain ⟨i, rfl⟩ := τ.surjective i
+  obtain ⟨k, rfl⟩ := d.equivConjClasses.surjective C
+  rw [d.equivConjClasses_apply]
+  exact (d.complexTableOfCyclotomic_apply_classOf e _ i k).trans (htable _ _)
+
+/-- **The solver is complete at every strong Dixon prime.** The cyclotomic Dixon solver returns a
+table at all Dixon prime data beyond twice the central coefficient bound, whatever the primitive
+root chosen. The threshold is computable from the group order and exponent. -/
+theorem isSome_dixonCyclotomicCharacterTable_of_centralCoefficientBound (q : DixonPrimeData G)
+    (hq : 2 * centralCoefficientBound G e < q.p) :
+    (d.dixonCyclotomicCharacterTable? e q).isSome = true := by
+  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  obtain ⟨out, hspec, -, hbound⟩ := d.exists_bounded_exact_character_table e he
+  apply d.isSome_dixonCyclotomicCharacterTable_of_spec e he q out.omega out.table out.degree hspec
+  exact fun i k j ↦ (Nat.mul_le_mul_left 2 (hbound i k j)).trans_lt hq
+
+/-- The prime search returns a table as soon as it reaches a strong Dixon prime, a good Dixon prime
+beyond twice the central coefficient bound. -/
+theorem isSome_characterTableDixon?_of_centralCoefficientBound {p fuel : ℕ}
+    (hp : IsGoodDixonPrime G p) (hlt : 2 * centralCoefficientBound G e < p)
+    (hfuel : p ≤ e * fuel + 1) : (d.characterTableDixon? e he fuel).isSome := by
+  obtain ⟨q, hq, rfl⟩ := DixonPrimeData.exists_mem_candidates (he := he)
+    (hn := Nat.card_eq_fintype_card.symm) hp hfuel
+  exact (d.isSome_characterTableDixon?_iff e he fuel).mpr
+    ⟨q, hq, d.isSome_dixonCyclotomicCharacterTable_of_centralCoefficientBound e he q hlt⟩
+
 /-- The assembled cyclotomic Dixon solver returns an exact certified table after finitely many
 prime-search steps, and returns the same table for every larger budget. -/
 theorem exists_characterTableDixon?_eq_some :
     ∃ (fuel : ℕ) (output : d.CyclotomicCharacterTableData e),
       ∀ fuel' ≥ fuel, d.characterTableDixon? e he fuel' = some output := by
-  classical
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
-  obtain ⟨omega, table, degree, hspec⟩ := d.exists_isCyclotomicCharacterTableSpec e he
-  -- A bound on the finite family of actual coefficients suffices; no sharp estimate is needed.
-  obtain ⟨B, hB⟩ := Finite.exists_le fun x :
-      Fin d.numClasses × Fin d.numClasses × Fin e.totient ↦
-      2 * ((omega x.1 x.2.1).coeff x.2.2).natAbs
-  obtain ⟨p, hprime, hgt, hmod⟩ := Nat.exists_prime_gt_modEq_one
-    (k := e) (max B (max (Nat.card G) (2 * Nat.sqrt (Nat.card G)))) (NeZero.ne e)
-  have hgood : IsGoodDixonPrime G p :=
-    { prime := hprime
-      not_dvd_natCard := fun hdvd ↦ (not_le_of_gt
-        (lt_of_le_of_lt (le_trans (le_max_left _ _) (le_max_right _ _)) hgt))
-          (Nat.le_of_dvd Nat.card_pos hdvd)
-      exponent_dvd := he ▸ (Nat.modEq_iff_dvd' hprime.one_lt.le).mp hmod.symm
-      two_mul_sqrt_lt := lt_of_le_of_lt
-        (le_trans (le_max_right _ _) (le_max_right _ _)) hgt }
-  have hfuel : p ≤ e * p + 1 := by nlinarith [NeZero.pos e]
-  obtain ⟨q, hq, hqp⟩ := DixonPrimeData.exists_mem_candidates
-    (he := he) (hn := Nat.card_eq_fintype_card.symm) hgood hfuel
-  have hsolve := d.isSome_dixonCyclotomicCharacterTable_of_spec e he q omega table degree hspec
-    (fun i k l ↦ by
-      rw [hqp]
-      exact lt_of_le_of_lt (hB (i, k, l)) (lt_of_le_of_lt (le_max_left _ _) hgt))
-  have hsome : (d.characterTableDixon? e he p).isSome :=
-    (d.isSome_characterTableDixon?_iff e he p).mpr ⟨q, hq, hsolve⟩
-  obtain ⟨output, houtput⟩ := Option.isSome_iff_exists.mp hsome
-  exact ⟨p, output, fun _ hle ↦ d.characterTableDixon?_eq_some_of_le e he hle houtput⟩
+  obtain ⟨q, hq⟩ := exists_strongDixonPrime he
+  have hfuel : q.p ≤ e * q.p + 1 := by nlinarith [NeZero.pos e]
+  obtain ⟨output, houtput⟩ := Option.isSome_iff_exists.mp
+    (d.isSome_characterTableDixon?_of_centralCoefficientBound e he q.isGoodDixonPrime hq hfuel)
+  exact ⟨q.p, output, fun _ hle ↦ d.characterTableDixon?_eq_some_of_le e he hle houtput⟩
 
 /-! ### The total algorithm
 

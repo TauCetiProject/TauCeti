@@ -59,6 +59,15 @@ theorem map_face (c : RealizationCell K n)
       TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.1 :=
   (rfl)
 
+/-- The vertices of the image cell form the image of the original vertex set. -/
+theorem coe_map_face (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : InjOn f (↑c.1.1 : Set α)) :
+    (↑(c.map f hf).1.1 : Set β) = f '' (↑c.1.1 : Set α) := by
+  simp [map_face,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
+
 /-- The identity simplicial map fixes each cell. -/
 @[simp]
 theorem map_id [DecidableEq α] (c : RealizationCell K n) :
@@ -129,6 +138,27 @@ open AbstractSimplicialComplex
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β]
   {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β} {n : ℕ}
+
+/-- The identity simplicial map is strictly increasing on every cell. -/
+theorem strictMonoOn_id_realizationCell (K : AbstractSimplicialComplex α) :
+    ∀ n (c : RealizationCell K n),
+      StrictMonoOn (SimplicialMap.id K.toPreAbstractSimplicialComplex) (↑c.1.1 : Set α) := by
+  intro n c
+  simpa only [coe_id] using (strictMonoOn_id (s := (↑c.1.1 : Set α)))
+
+/-- Simplexwise strictly increasing simplicial maps remain so under composition. -/
+theorem strictMonoOn_comp_realizationCell {γ : Type*} [LinearOrder γ]
+    {P : AbstractSimplicialComplex γ}
+    (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : ∀ n (c : RealizationCell K n), StrictMonoOn f (↑c.1.1 : Set α))
+    (g : SimplicialMap L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
+    (hg : ∀ n (c : RealizationCell L n), StrictMonoOn g (↑c.1.1 : Set β)) :
+    ∀ n (c : RealizationCell K n), StrictMonoOn (g.comp f) (↑c.1.1 : Set α) := by
+  intro n c
+  rw [coe_comp]
+  refine (hg n (c.map f (hf n c).injOn)).comp (hf n c) ?_
+  simpa only [RealizationCell.coe_map_face] using
+    (mapsTo_image f (↑c.1.1 : Set α))
 
 /-- On a cell where the vertex map preserves order strictly, realization carries its
 characteristic map to the characteristic map of its image cell. No hypothesis is imposed

@@ -138,8 +138,7 @@ theorem unblockedDifferential_relabelRows_finRotate :
     ⟨y.relabelRows (finRotate n).symm, by simp⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lsingle_apply,
     GridChain.relabelRowsEquiv_single, unblockedDifferential_single_apply,
-    GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
-    GridState.relabelRows_refl, unblockedCoefficient_relabelRows_finRotate]
+    GridChain.relabelRowsEquiv_apply_relabelRows, unblockedCoefficient_relabelRows_finRotate]
 
 /-- The chain relabeling by a cyclic permutation of the rows intertwines the unblocked
 differentials pointwise. -/
@@ -161,8 +160,7 @@ theorem fullyBlockedDifferential_relabelRows_finRotate :
     ⟨y.relabelRows (finRotate n).symm, by simp⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lsingle_apply,
     GridChain.relabelRowsEquiv_single, fullyBlockedDifferential_single_apply,
-    GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
-    GridState.relabelRows_refl, fullyBlockedRectangleCount_relabelRows_finRotate]
+    GridChain.relabelRowsEquiv_apply_relabelRows, fullyBlockedRectangleCount_relabelRows_finRotate]
 
 /-- The cyclic row relabelling intertwines the fully blocked differentials pointwise. -/
 @[simp]
@@ -254,10 +252,9 @@ theorem unblockedDifferential_relabelColumns_finRotate :
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
   obtain ⟨y, rfl⟩ : ∃ y', y'.relabelColumns (finRotate n) = y :=
     ⟨y.relabelColumns (finRotate n).symm, by simp⟩
-  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply,
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lsingle_apply,
     GridChain.relabelColumnsRenameEquiv_single, map_one,
-    unblockedDifferential_single_apply, GridChain.relabelColumnsRenameEquiv_apply,
-    GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm, GridState.relabelColumns_refl,
+    unblockedDifferential_single_apply, GridChain.relabelColumnsRenameEquiv_apply_relabelColumns,
     unblockedCoefficient_relabelColumns_finRotate]
 
 /-- The chain relabeling by a cyclic permutation of the columns, followed by renaming the
@@ -281,8 +278,7 @@ theorem fullyBlockedDifferential_relabelColumns_finRotate :
     ⟨y.relabelColumns (finRotate n).symm, by simp⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lsingle_apply,
     GridChain.relabelColumnsEquiv_single, fullyBlockedDifferential_single_apply,
-    GridChain.relabelColumnsEquiv_apply, GridState.relabelColumns_relabelColumns,
-    Equiv.self_trans_symm, GridState.relabelColumns_refl,
+    GridChain.relabelColumnsEquiv_apply_relabelColumns,
     fullyBlockedRectangleCount_relabelColumns_finRotate]
 
 /-- The cyclic column relabelling intertwines the fully blocked differentials pointwise. -/

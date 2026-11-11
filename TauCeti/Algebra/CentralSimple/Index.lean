@@ -110,7 +110,7 @@ finite-dimensional central division algebra `D`, then the index of `A` is `deg K
 This is the characteristic property of `TauCeti.Algebra.index`; later results use it instead of
 unfolding the choice made in the definition. -/
 theorem index_eq_deg_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [DivisionRing D]
-    [Algebra K D] [Algebra.IsCentral K D] [FiniteDimensional K D]
+    [Algebra K D] [Algebra.IsCentral K D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : index K A = deg K D := by
   let W := wedderburnData K A
   let _ := W.divisionRing
@@ -131,7 +131,7 @@ theorem index_eq_deg_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [Divisi
 /-- **The degree read from a Wedderburn presentation.** If `A ≃ Mₙ(D)`, then
 `deg K A = n * index K A`. -/
 theorem deg_eq_mul_index_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [DivisionRing D]
-    [Algebra K D] [Algebra.IsCentral K D] [FiniteDimensional K D]
+    [Algebra K D] [Algebra.IsCentral K D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : deg K A = n * index K A := by
   rw [deg_eq_mul_deg_of_algEquiv_matrix e, index_eq_deg_of_algEquiv_matrix e]
 

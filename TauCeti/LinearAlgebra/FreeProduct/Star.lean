@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeProduct.Basic
+public import TauCeti.LinearAlgebra.FreeProduct.Basic
 public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.Module
 import Mathlib.Algebra.Algebra.Opposite
 
@@ -16,8 +17,11 @@ import Mathlib.Algebra.Algebra.Opposite
 The algebraic free product of unital star algebras is itself a star algebra: its involution
 extends those of the factors, conjugates scalars, and reverses the order of products.
 `LinearAlgebra.FreeProduct.ιStar` and `LinearAlgebra.FreeProduct.liftStar` express its
-universal property for unital star algebra homomorphisms. Forgetting star recovers Mathlib's
-algebraic coproduct and its universal maps, not a different quotient.
+universal property for unital star algebra homomorphisms,
+`LinearAlgebra.FreeProduct.iSup_range_ιStar` records that the factor images generate the free
+product as a star subalgebra, and `LinearAlgebra.FreeProduct.isEmptyStarAlgEquiv` identifies the
+empty star free product with `R`. Forgetting star recovers Mathlib's algebraic coproduct and its
+universal maps, not a different quotient.
 
 This is an algebraic construction. No positivity, norm, completion or faithfulness of the
 factor maps is asserted. The index type can be empty.
@@ -55,7 +59,7 @@ private def starAux : FreeProduct R A →+* (FreeProduct R A)ᵐᵒᵖ := by
 private theorem starAux_ι (i : I) (a : A i) :
     starAux R A (ι R A i a) = op (ι R A i (star a)) := by
   let := Algebra.compHom (FreeProduct R A)ᵐᵒᵖ (starRingEnd R)
-  exact AlgHom.congr_fun (lift_comp_ι R A _ (i := i)) a
+  exact lift_ι_apply R A _ i a
 
 private theorem starAux_algebraMap (r : R) :
     starAux R A (algebraMap R _ r) = op (algebraMap R _ (star r)) := by
@@ -71,13 +75,8 @@ private theorem starAux_involutive (x : FreeProduct R A) :
       map_zero' := by simp
       map_add' x y := by simp
       commutes' r := by simp [starAux_algebraMap] }
-  have hf : f = AlgHom.id R (FreeProduct R A) := by
-    apply (lift R A).symm.injective
-    funext i
-    apply AlgHom.ext
-    intro a
-    simp only [lift_symm_apply, AlgHom.comp_apply, AlgHom.id_apply]
-    simp [f, starAux_ι]
+  have hf : f = AlgHom.id R (FreeProduct R A) :=
+    algHom_ext fun i a ↦ by simp [f, starAux_ι]
   exact AlgHom.congr_fun hf x
 
 /-- The involution extending the factor involutions to the algebraic free product. -/
@@ -127,13 +126,8 @@ theorem _root_.AlgHom.map_star_of_comp_freeProduct_ι (f : FreeProduct R A →�
       map_zero' := by simp
       map_add' x y := by simp
       commutes' r := by simp [← algebraMap_star_comm] }
-  have hg : g = f := by
-    apply (lift R A).symm.injective
-    funext i
-    apply AlgHom.ext
-    intro a
-    simp only [lift_symm_apply, AlgHom.comp_apply]
-    simp [g, hf]
+  have hg : g = f :=
+    algHom_ext fun i a ↦ by simp [g, hf]
   have := AlgHom.congr_fun hg x
   simpa [g] using congrArg star this
 
@@ -141,17 +135,14 @@ theorem _root_.AlgHom.map_star_of_comp_freeProduct_ι (f : FreeProduct R A →�
 def liftStar : ({i : I} → A i →⋆ₐ[R] B) ≃ (FreeProduct R A →⋆ₐ[R] B) where
   toFun maps :=
     { lift R A (fun {i} => (maps (i := i)).toAlgHom) with
-      map_star' x := AlgHom.map_star_of_comp_freeProduct_ι _ (fun i a => by
-        have h := lift_comp_ι R A (fun {i} => (maps (i := i)).toAlgHom) (i := i)
-        simpa only [AlgHom.comp_apply, StarAlgHom.coe_toAlgHom] using
-          (AlgHom.congr_fun h (star a)).trans ((map_star (maps (i := i)) a).trans
-            (congrArg star (AlgHom.congr_fun h a).symm))) x }
+      map_star' x := AlgHom.map_star_of_comp_freeProduct_ι _
+        (fun i a => by simp [map_star (maps (i := i))]) x }
   invFun f := fun {i} => f.comp (ιStar R A i)
   left_inv maps := by
     funext i
     apply StarAlgHom.ext
     intro a
-    exact AlgHom.congr_fun (lift_comp_ι R A _) a
+    exact lift_ι_apply R A _ i a
   right_inv f := by
     apply StarAlgHom.ext
     intro x
@@ -170,7 +161,7 @@ theorem liftStar_symm_apply (i : I) (f : FreeProduct R A →⋆ₐ[R] B) :
 @[simp]
 theorem liftStar_ι (maps : {i : I} → A i →⋆ₐ[R] B) (i : I) (a : A i) :
     liftStar maps (ι R A i a) = maps a :=
-  AlgHom.congr_fun (lift_comp_ι R A _) a
+  lift_ι_apply R A _ i a
 
 /-- Star algebra homomorphisms out of a free product are determined on its factors. -/
 @[ext]
@@ -201,5 +192,40 @@ theorem liftStar_comp {C : Type*} [Semiring C] [Algebra R C] [StarRing C] [StarM
     liftStar (fun {i} => g.comp (maps (i := i))) = g.comp (liftStar maps) := by
   ext i a
   simp
+
+section GenerationAndEmpty
+
+variable (R A)
+
+/-- The star-subalgebra images of the factor embeddings generate `FreeProduct R A`. -/
+theorem iSup_range_ιStar :
+    (⨆ i, (ιStar R A i).range) = (⊤ : StarSubalgebra R (FreeProduct R A)) := by
+  rw [← StarSubalgebra.toSubalgebra_eq_top, eq_top_iff, ← iSup_range_ι R A, iSup_le_iff]
+  rintro i _ ⟨a, rfl⟩
+  exact le_iSup (fun j ↦ (ιStar R A j).range) i ⟨a, rfl⟩
+
+/-- The unital star-algebraic free product over an empty index type is canonically star-isomorphic
+to the base star semiring `R`. -/
+def isEmptyStarAlgEquiv [IsEmpty I] : FreeProduct R A ≃⋆ₐ[R] R :=
+  StarAlgEquiv.ofStarAlgHom
+    (liftStar fun {i} ↦ isEmptyElim i)
+    (StarAlgHom.ofId R (FreeProduct R A))
+    (starAlgHom_ext fun i ↦ isEmptyElim i)
+    (StarAlgHom.ext fun r ↦ AlgHomClass.commutes (liftStar (R := R) (A := A) fun {i} ↦
+      isEmptyElim i) r)
+
+@[simp]
+theorem isEmptyStarAlgEquiv_toAlgEquiv [IsEmpty I] :
+    (isEmptyStarAlgEquiv R A).toAlgEquiv = isEmptyAlgEquiv R A :=
+  AlgEquiv.ext fun x ↦ AlgHom.congr_fun
+    (algHom_ext (f := (isEmptyStarAlgEquiv R A).toAlgEquiv.toAlgHom)
+      (g := (isEmptyAlgEquiv R A).toAlgHom) fun i ↦ isEmptyElim i) x
+
+@[simp]
+theorem isEmptyStarAlgEquiv_symm_apply [IsEmpty I] (r : R) :
+    (isEmptyStarAlgEquiv R A).symm r = algebraMap R (FreeProduct R A) r :=
+  (rfl)
+
+end GenerationAndEmpty
 
 end LinearAlgebra.FreeProduct

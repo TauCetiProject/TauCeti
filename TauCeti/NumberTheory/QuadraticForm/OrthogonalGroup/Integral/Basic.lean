@@ -254,12 +254,12 @@ theorem eventually_integralOrthogonalSubgroup_baseChange_eq {ι' : Type*} [Finty
     rw [eq_ratCast]
     exact ⟨⟨_, (PadicInt.mem_subring_iff (p := p)).mpr (Padic.norm_rat_le_one hq)⟩, rfl⟩
   refine integralOrthogonalSubgroup_eq_of_span_eq _ _ (le_antisymm ?_ ?_)
-  · refine (b₀'.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
-      (A := PadicInt.subring p) (b₀.baseChange ℚ_[p]) fun i j ↦ ?_
+  · refine ((b₀'.baseChange ℚ_[p]).span_range_le_span_range_iff_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀.baseChange ℚ_[p])).mpr fun i j ↦ ?_
     rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
     exact hmem _ (hp' i j)
-  · refine (b₀.baseChange ℚ_[p]).span_range_le_span_range_of_forall_toMatrix_mem
-      (A := PadicInt.subring p) (b₀'.baseChange ℚ_[p]) fun i j ↦ ?_
+  · refine ((b₀.baseChange ℚ_[p]).span_range_le_span_range_iff_forall_toMatrix_mem
+      (A := PadicInt.subring p) (b₀'.baseChange ℚ_[p])).mpr fun i j ↦ ?_
     rw [Basis.baseChange_toMatrix_baseChange, Matrix.map_apply]
     exact hmem _ (hp i j)
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 import TauCeti.Data.ENNReal.Weights
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # The shift coupling of two weightings of a finite carrier

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Coalgebra.GroupLike
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.RightRigid
-public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Rigid
+public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Basic
 
 /-!
 # Monoidal trivializations of the double dual of finite-dimensional Hopf modules
@@ -24,8 +25,10 @@ natural isomorphism (`unitEvalNatIso_isMonoidal`). This is the datum of a pivota
 finite-dimensional `H`-modules: Tau Ceti's `PivotalCategory` asks for exactly such a monoidal
 natural isomorphism, for any rigid structure extending `instRightRigidCategory`. The bijectivity
 of the antipode needed for left duals follows from the same hypothesis on `g`, by
-`TauCeti.HopfAlgebra.antipode_bijective_of_antipode_antipode`. For `U_q(sl₂)` the element
-`g = K⁻¹` satisfies both hypotheses.
+`TauCeti.HopfAlgebra.antipode_bijective_of_antipode_antipode`, and `pivotalCategory` is the
+resulting pivotal structure for the rigid structure `rigidCategory` whose left duals are the
+inverse-antipode contragredients. For `U_q(sl₂)` the element `g = K⁻¹` satisfies both
+hypotheses.
 
 The comparison is described on elements, `(j_M m)(φ) = φ(g m)`
 (`dualEquiv_unitEvalIso_hom_apply`), so that it can be computed against the element forms of
@@ -41,6 +44,9 @@ evaluation, transposition and the tensor product pairing from
   `TauCeti.FiniteHopfModuleCat.unitEvalIso_tensor_hom` and
   `TauCeti.FiniteHopfModuleCat.unitEvalNatIso_isMonoidal`: for group-like `g`, the natural
   isomorphism is monoidal.
+* `TauCeti.FiniteHopfModuleCat.pivotalCategory`: for group-like `g`, the pivotal structure with
+  pivotal isomorphism `unitEvalNatIso g hg`, and `pivotalIsoApp_pivotalCategory` for its
+  components.
 
 ## References
 
@@ -223,5 +229,31 @@ theorem unitEvalNatIso_isMonoidal (hg₁ : IsGroupLikeElem k (g : H)) :
   -- The unit and tensor comparisons of the identity functor are identities.
   unit := (Category.id_comp _).trans (unitEvalIso_unit_hom hg hg₁)
   tensor X Y := (Category.id_comp _).trans (unitEvalIso_tensor_hom hg hg₁ X Y)
+
+/-- For a group-like unit `g` implementing the square of the antipode, the double dual
+comparisons `m ↦ (φ ↦ φ(g m))` form a pivotal structure on finite-dimensional `H`-modules. The
+rigid structure is `rigidCategory`, whose left duals are the inverse-antipode contragredients;
+the bijectivity of the antipode it needs is deduced from `hg`. This differs from
+`pivotalCategoryOfRightRigid`, whose left duals are the right duals themselves. Not an instance,
+since it depends on the choice of `g`. -/
+@[instance_reducible]
+def pivotalCategory (hg₁ : IsGroupLikeElem k (g : H)) :
+    letI := rigidCategory (HopfAlgebra.antipode_bijective_of_antipode_antipode hg)
+    PivotalCategory (FiniteHopfModuleCat k H) :=
+  letI := rigidCategory (HopfAlgebra.antipode_bijective_of_antipode_antipode hg)
+  { pivotalIso := unitEvalNatIso g hg
+    pivotalIso_isMonoidal := unitEvalNatIso_isMonoidal hg hg₁ }
+
+/-- The components of the pivotal structure `pivotalCategory` are the double dual
+comparisons. -/
+@[simp]
+theorem pivotalIsoApp_pivotalCategory (hg₁ : IsGroupLikeElem k (g : H))
+    (M : FiniteHopfModuleCat k H) :
+    letI := rigidCategory (HopfAlgebra.antipode_bijective_of_antipode_antipode hg)
+    letI := pivotalCategory hg hg₁
+    pivotalIsoApp M = unitEvalIso g hg M :=
+  letI := rigidCategory (HopfAlgebra.antipode_bijective_of_antipode_antipode hg)
+  letI := pivotalCategory hg hg₁
+  Iso.ext (pivotalIso_hom_app M).symm
 
 end TauCeti.FiniteHopfModuleCat

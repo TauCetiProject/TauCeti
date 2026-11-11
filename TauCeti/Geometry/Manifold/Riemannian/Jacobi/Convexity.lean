@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Jensen
@@ -68,8 +68,7 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self
         ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (V t)
           (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t), V t⟫_ℝ) s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
-    (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
     (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (h.differentiableWithinAt_sectionCoord ht)
   convert hd using 1

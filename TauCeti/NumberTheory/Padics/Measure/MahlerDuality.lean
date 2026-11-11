@@ -84,7 +84,16 @@ namespace AbstractMeasure
 section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
-  [IsUltrametricDist R] [CompleteSpace R]
+
+/-- A bound `‖μ f‖ ≤ C * ‖f‖` on a measure bounds its moments by `C`, since the Mahler basis
+functions have norm one. -/
+theorem norm_coeff_amiceTransform_le [NormOneClass R] (μ : D(ℤ_[p], R)) {C : ℝ}
+    (hμ : ∀ f, ‖μ f‖ ≤ C * ‖f‖) (n : ℕ) : ‖μ.amiceTransform.coeff n‖ ≤ C := by
+  have := hμ (mahlerTerm (1 : R) n)
+  rwa [norm_mahlerTerm, norm_one, mul_one, mahlerTerm_eq_smul, one_smul,
+    ← coeff_amiceTransform] at this
+
+variable [IsUltrametricDist R] [CompleteSpace R]
 
 /-- **Mahler expansion of an integral.** The integral of `f` against `μ` is the sum over `n` of
 the Mahler coefficients `Δ^n f (0)` of `f` times the moments `μ (x ↦ x choose n)`, the coefficients
@@ -105,15 +114,6 @@ theorem norm_apply_le_of_forall_norm_coeff_le (μ : D(ℤ_[p], R)) {C : ℝ}
   exact ((mahlerEquiv R f).norm_tsum_smul_le b).trans
     (mul_le_mul_of_nonneg_right (lp.norm_le_of_forall_le hC₀ hC) (norm_nonneg _))
 
-omit [CompleteSpace R] in
-/-- A bound `‖μ f‖ ≤ C * ‖f‖` on a measure bounds its moments by `C`, since the Mahler basis
-functions have norm one. -/
-theorem norm_coeff_amiceTransform_le [NormOneClass R] (μ : D(ℤ_[p], R)) {C : ℝ}
-    (hμ : ∀ f, ‖μ f‖ ≤ C * ‖f‖) (n : ℕ) : ‖μ.amiceTransform.coeff n‖ ≤ C := by
-  have := hμ (mahlerTerm (1 : R) n)
-  rwa [norm_mahlerTerm, norm_one, mul_one, mahlerTerm_eq_smul, one_smul,
-    ← coeff_amiceTransform] at this
-
 end NormedCommRing
 
 section IsTate
@@ -121,9 +121,8 @@ section IsTate
 open scoped TauCeti.RingOpNorm
 
 variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [Algebra ℤ_[p] R]
-  [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
+  [IsBoundedSMul ℤ_[p] R]
 
-omit [CompleteSpace R] in
 /-- Over a ring with a multiplicative pseudo-uniformiser, the moments of every measure on `ℤ_p`
 are bounded. -/
 theorem bddAbove_norm_coeff_amiceTransform (μ : D(ℤ_[p], R)) :
@@ -133,6 +132,8 @@ theorem bddAbove_norm_coeff_amiceTransform (μ : D(ℤ_[p], R)) :
   exact ⟨C, by
     rintro _ ⟨n, rfl⟩
     exact norm_coeff_amiceTransform_le μ (fun f ↦ by simpa using hC f) n⟩
+
+variable [IsUltrametricDist R] [CompleteSpace R]
 
 variable (p R) in
 /-- **Mahler duality.** Over a ring with a multiplicative pseudo-uniformiser, a measure on `ℤ_p`

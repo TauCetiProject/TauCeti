@@ -24,6 +24,8 @@ on nonzero ideals.
 * `NumberField.RingOfIntegers.mapRingEquiv_refl`, `NumberField.RingOfIntegers.mapRingEquiv_symm`,
   `NumberField.RingOfIntegers.mapRingEquiv_trans`: the same functoriality for the bundled
   isomorphisms, including inverses.
+* `NumberField.RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv`: extending `mapRingEquiv e` from
+  the rings of integers back to their fraction fields recovers `e`.
 * `Ideal.comap_mapRingEquiv_refl`, `Ideal.comap_mapRingEquiv_trans`: functoriality on ideals.
 * `Ideal.comap_mapRingEquiv_eq_bot_iff`: the pullback is the zero ideal only for the zero ideal.
 -/
@@ -62,6 +64,17 @@ rewrites in the opposite direction. -/
 theorem mapRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
     mapRingEquiv (e.trans e') = (mapRingEquiv e).trans (mapRingEquiv e') :=
   RingEquiv.ext fun x ↦ (mapRingEquiv_trans_apply e e' x).symm
+
+/-- Extending `mapRingEquiv e` from the rings of integers back to their fraction fields recovers
+`e`. -/
+@[simp]
+theorem ringEquivOfRingEquiv_mapRingEquiv [IsFractionRing (𝓞 K) K] [IsFractionRing (𝓞 L) L]
+    (e : K ≃+* L) :
+    IsFractionRing.ringEquivOfRingEquiv (K := K) (L := L) (mapRingEquiv e) = e := by
+  apply RingEquiv.toRingHom_injective
+  refine IsLocalization.ringHom_ext (nonZeroDivisors (𝓞 K)) ?_
+  ext x
+  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap (K := K) (L := L) (mapRingEquiv e) x
 
 end NumberField.RingOfIntegers
 

@@ -23,7 +23,9 @@ base changed and the tensor product stays over the base ring.
 
 If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, then the `S`-linear map
 `S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is bijective: it is the
-equivalence `IsBaseChange.equiv`. Conversely, this bijectivity characterizes base changes.
+equivalence `IsBaseChange.equiv`. Conversely, this bijectivity characterizes base changes. A
+linear map between two base changes of `M` that is compatible with the base-change maps is
+bijective.
 The original map `f` is also injective whenever the scalar-unit map `m ↦ 1 ⊗ m` is injective.
 
 Base change of linear maps is compatible with the induced maps `S ⊗[R] M →ₗ[S] N`: a commutative
@@ -41,6 +43,8 @@ the localized semiring, without requiring its image to span the target.
   `S ⊗[R] M →ₗ[S] N` induced by a base change is bijective, in particular injective.
 * `IsBaseChange.iff_liftBaseChange_bijective`: conversely, bijectivity of the induced map
   characterizes base changes.
+* `IsBaseChange.bijective_of_comp_eq`: a linear map between two base changes of the same module
+  that is compatible with the base-change maps is bijective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
@@ -87,6 +91,17 @@ theorem IsBaseChange.iff_liftBaseChange_bijective {f : M →ₗ[R] N} :
     IsBaseChange S f ↔ Function.Bijective (f.liftBaseChange S) :=
   ⟨IsBaseChange.liftBaseChange_bijective, fun h ↦
     IsBaseChange.of_equiv (LinearEquiv.ofBijective _ h) fun x ↦ by simp⟩
+
+/-- **Comparison of two base changes.** If `f : M →ₗ[R] N` and `g : M →ₗ[R] N'` both exhibit
+base changes of `M` along `R → S`, then every `S`-linear map `φ : N →ₗ[S] N'` with `φ ∘ f = g` is
+bijective: it is the composite `hg.equiv ∘ hf.equiv.symm` of the two base-change equivalences. -/
+theorem IsBaseChange.bijective_of_comp_eq {f : M →ₗ[R] N} (hf : IsBaseChange S f)
+    {g : M →ₗ[R] N'} (hg : IsBaseChange S g) (φ : N →ₗ[S] N') (h : ∀ m, φ (f m) = g m) :
+    Function.Bijective φ := by
+  have : φ = hg.equiv.toLinearMap ∘ₗ hf.equiv.symm.toLinearMap :=
+    hf.algHom_ext _ _ fun m ↦ by simp [IsBaseChange.equiv_symm_apply, IsBaseChange.equiv_tmul, h]
+  rw [this]
+  exact hg.equiv.bijective.comp hf.equiv.symm.bijective
 
 /-- If `f` exhibits `N` as the base change of `M` along `R → S`, then the induced `S`-linear map
 `f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is injective, since it is the equivalence `hf.equiv`. -/

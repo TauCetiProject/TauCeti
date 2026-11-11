@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Prod.Skew
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 
 /-!
 # Gromov's graph construction for the inhomogeneous Floer equation
@@ -40,6 +44,21 @@ the skew product of `j` and `J(z, x)` along `X_K(z, x)`
 Thus solutions of the inhomogeneous equation become pseudoholomorphic curves of a product, and
 the vertical maps, those lying in one fibre, are the pseudoholomorphic spheres for `J` frozen at a
 domain point.
+
+The same structure in complex coordinates `z = s + i t ∈ ℂ`, for a structure `J(z, x)` and a
+one-form `X(z, x) : ℂ →L[ℝ] V` that need not come from a symplectic form, is
+`J' = TauCeti.Floer.graphStructure J X`, a continuous-linear-map-valued function on the Euclidean
+product `WithLp 2 (ℂ × V)` sending `(ξ, v)` to `(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. For
+Floer data `ω`, `J`, `K_s`, `K_t` it is `J_K` read in the complex coordinate `z = s + i t`
+(`TauCeti.Floer.graphStructure_toLp_eq_floerGraphAlmostComplex`). This is the form consumed by
+the local compactness theory of pseudoholomorphic curves. The arbitrary-one-form operator is the
+native algebraic skew product in these coordinates
+(`TauCeti.Floer.graphStructure_toLp_eq_skewProd`),
+without a finite-dimensionality requirement on the target. It squares to `-1` wherever `J` does
+(`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and `X`
+(`TauCeti.Floer.contDiffOn_graphStructure`), and `u` solves
+`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` at `y` exactly when its graph `U` solves
+`∂ₜU = J'(U) ∂ₛU` there (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`).
 
 For a constant `c`, consider the two-form `Ω_c = pr₂^* ω + dK + c ds ∧ dt` on `(ℝ × ℝ) × V`, where
 `K` is read as the one-form `K_s ds + K_t dt` on the product
@@ -360,3 +379,110 @@ theorem floerGraphForm_graph (ω : SymplecticForm V) {u : ℝ × ℝ → V} {z :
 end TamingForm
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+open Complex ContinuousLinearMap Set
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+section GraphStructure
+
+variable (J : ℂ × V → V →L[ℝ] V) (X : ℂ × V → ℂ →L[ℝ] V)
+
+/-- **Gromov's structure in Euclidean graph coordinates.** For a domain-dependent structure
+`J(z, x)` on `V` and a Hamiltonian one-form `X(z, x) : ℂ →L[ℝ] V`, this is the matrix-valued
+structure on `WithLp 2 (ℂ × V)` sending `(ξ, v)` at `p = (z, x)` to
+`(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. -/
+noncomputable def graphStructure (p : WithLp 2 (ℂ × V)) :
+    WithLp 2 (ℂ × V) →L[ℝ] WithLp 2 (ℂ × V) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).symm.toContinuousLinearMap ∘L
+    (inl ℝ ℂ V ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V +
+      inr ℝ ℂ V ∘L (J p.ofLp ∘L (snd ℝ ℂ V - X p.ofLp ∘L fst ℝ ℂ V) +
+        X p.ofLp ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V)) ∘L
+    (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).toContinuousLinearMap
+
+@[simp]
+theorem graphStructure_apply (p ζ : WithLp 2 (ℂ × V)) :
+    graphStructure J X p ζ = WithLp.toLp 2 (I * ζ.fst,
+      J p.ofLp (ζ.snd - X p.ofLp ζ.fst) + X p.ofLp (I * ζ.fst)) := by
+  simp [graphStructure, WithLp.ext_iff]
+
+/-- The arbitrary-one-form Euclidean graph operator is the existing algebraic skew product,
+read through the canonical `WithLp` product coordinates. A continuous-linear representation of
+the target structure at the point suffices, without a finite-dimensionality assumption. -/
+theorem graphStructure_toLp_eq_skewProd (p ζ : ℂ × V) (K : AlmostComplexStructure V)
+    (hK : ∀ v, J p v = K v) :
+    graphStructure J X (WithLp.toLp 2 p) (WithLp.toLp 2 ζ) =
+      WithLp.toLp 2 ((AlmostComplexStructure.ofComplexModule ℂ).skewProd K
+        (X p).toLinearMap ζ) := by
+  simp [AlmostComplexStructure.ofComplexModule_apply, hK]
+
+variable {J X}
+
+/-- Gromov's structure squares to `-1` wherever `J` does. -/
+theorem graphStructure_graphStructure {p : WithLp 2 (ℂ × V)}
+    (hJ : ∀ v, J p.ofLp (J p.ofLp v) = -v) (ζ : WithLp 2 (ℂ × V)) :
+    graphStructure J X p (graphStructure J X p ζ) = -ζ := by
+  rw [WithLp.ext_iff, Prod.ext_iff]
+  simp [← mul_assoc, hJ, map_neg]
+
+/-- Gromov's structure is as regular as the almost complex structure and the Hamiltonian
+one-form. -/
+theorem contDiffOn_graphStructure {n : WithTop ℕ∞} {W : Set (ℂ × V)}
+    (hJ : ContDiffOn ℝ n J W) (hX : ContDiffOn ℝ n X W) :
+    ContDiffOn ℝ n (graphStructure J X) (WithLp.ofLp ⁻¹' W) := by
+  have hJ' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ J p.ofLp) (WithLp.ofLp ⁻¹' W) :=
+    hJ.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
+  have hX' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ X p.ofLp) (WithLp.ofLp ⁻¹' W) :=
+    hX.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
+  exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
+    ((hJ'.clm_comp (contDiffOn_const.sub (hX'.clm_comp contDiffOn_const))).add
+      (hX'.clm_comp contDiffOn_const)))).clm_comp contDiffOn_const)
+
+end GraphStructure
+
+section EuclideanGraph
+
+variable {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {u : ℂ → V} {y : ℂ}
+
+/-- **Gromov's graph construction in Euclidean coordinates.** A map `u` differentiable at `y`
+solves the inhomogeneous equation `∂ₜu - X(y, u) i = J(y, u)(∂ₛu - X(y, u) 1)` at `y` exactly when
+its graph solves `∂ₜU = J'(U) ∂ₛU` there. -/
+theorem fderiv_toLp_prodMk_I_eq_graphStructure_iff (hu : DifferentiableAt ℝ u y) :
+    fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y I =
+        graphStructure J X (WithLp.toLp 2 (y, u y))
+          (fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1) ↔
+      fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1) := by
+  simp only [fderiv_toLp_prodMk_apply differentiableAt_fun_id hu, fderiv_fun_id,
+    graphStructure_apply, WithLp.ext_iff, Prod.ext_iff, WithLp.toLp_fst, WithLp.toLp_snd,
+    ContinuousLinearMap.id_apply, mul_one, true_and]
+  exact sub_eq_iff_eq_add.symm
+
+end EuclideanGraph
+
+section FloerData
+
+variable [FiniteDimensional ℝ V]
+
+/-- **Gromov's structure in Euclidean coordinates is `floerGraphAlmostComplex`.** Read Floer
+data `ω`, `J`, `K_s`, `K_t` on `ℝ × ℝ` in the complex coordinate `Complex.equivRealProd`, so that
+the Hamiltonian one-form becomes `X(z, x) ξ = (re ξ) X_{K_s} + (im ξ) X_{K_t}`. Then
+`graphStructure J X` is `TauCeti.SymplecticForm.floerGraphAlmostComplex` in these coordinates. -/
+theorem graphStructure_toLp_eq_floerGraphAlmostComplex (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ) (z ξ : ℂ) (x v : V) :
+    graphStructure
+        (fun q ↦ LinearMap.toContinuousLinearMap (J (equivRealProd q.1) q.2).toLinearMap)
+        (fun q ↦ ω.hamiltonianOneForm Ks Kt (equivRealProd q.1) q.2 ∘L
+          (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ))
+        (WithLp.toLp 2 (z, x)) (WithLp.toLp 2 (ξ, v)) =
+      WithLp.toLp 2 (equivRealProd.symm
+          (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).1,
+        (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).2) := by
+  rw [graphStructure_toLp_eq_skewProd _ _ (z, x) (ξ, v) (J (equivRealProd z) x)
+    (fun _ ↦ rfl)]
+  simp [Complex.ext_iff]
+
+end FloerData
+
+end TauCeti.Floer

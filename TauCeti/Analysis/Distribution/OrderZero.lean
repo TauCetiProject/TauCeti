@@ -15,13 +15,15 @@ import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 /-!
 # Distributions of order zero are Radon measures
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`. A distribution
-`T ∈ 𝓓'(Ω, ℝ)` has **order zero** if on each compact `K ⊆ Ω` it is bounded in the sup norm:
-`|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported in `K`. Such a distribution is the
-difference of two regular measures on `Ω`:
+Let `Ω` be an open set of a finite-dimensional real normed space `E`. A linear functional `T` on
+the test functions `𝓓(Ω, ℝ)` has **order zero** if on each compact `K ⊆ Ω` it is bounded in the
+sup norm: `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported in `K`. Such a functional is
+the difference of two regular measures on `Ω`:
 `T φ = ∫ φ dν₁ - ∫ φ dν₂`, and conversely such a difference has order zero
 (`Distribution.forall_exists_abs_le_iff_exists_regular`). The measures are finite on compact
-subsets of `Ω` but need not be finite.
+subsets of `Ω` but need not be finite. The bound is the defining estimate of a distribution of
+order zero, so the theorem is stated for any linear functional on `𝓓(Ω, ℝ)` (a `LinearMapClass`),
+with distributions `T : 𝓓'(Ω, ℝ)` as the main case; continuity is not used.
 
 This is how a derivative of locally finite total variation becomes a measure: the distributional
 derivatives of a function of locally bounded variation have order zero.
@@ -40,8 +42,9 @@ The converse uses the sup-norm bound for integrals of test functions
 
 ## Main results
 
-* `Distribution.forall_exists_abs_le_iff_exists_regular`: a distribution has order zero if and
-  only if it is the difference of the integrals against two regular measures on `Ω`.
+* `Distribution.forall_exists_abs_le_iff_exists_regular`: a linear functional on the test
+  functions has order zero if and only if it is the difference of the integrals against two regular
+  measures on `Ω`.
 
 ## References
 
@@ -97,7 +100,7 @@ private lemma isCompact_image_tsupport (f : C_c(Ω, ℝ)) :
     IsCompact (((↑) : Ω → E) '' tsupport f) :=
   f.hasCompactSupport.isCompact.image continuous_subtype_val
 
-variable [NormedSpace ℝ E]
+variable [NormedSpace ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, ℝ) ℝ]
 
 private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x : E) :
     zeroExt φ.toCompactlySupportedContinuousMap x = φ x := by
@@ -108,7 +111,7 @@ private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x 
 
 /-- On a compact `K ⊆ Ω`, an order-zero bound can be taken with a nonnegative constant and tested
 against any pointwise bound. -/
-private lemma exists_nonneg_bound {T : 𝓓'(Ω, ℝ)}
+private lemma exists_nonneg_bound {T : 𝓕}
     (hT : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
       |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ C, 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K → ∀ c, (∀ x, |φ x| ≤ c) → |T φ| ≤ C * c := by
@@ -153,7 +156,7 @@ private lemma IsApprox.smul {f : C_c(Ω, ℝ)} {φ : ℕ → 𝓓(Ω, ℝ)} {ε 
   · simpa [zeroExt_smul, ← mul_sub, abs_mul] using
       mul_le_mul_of_nonneg_left (hφε n x) (abs_nonneg c)
 
-variable {T : 𝓓'(Ω, ℝ)}
+variable [LinearMapClass 𝓕 ℝ 𝓓(Ω, ℝ) ℝ] {T : 𝓕}
   (hT : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
   |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖)
 include hT
@@ -202,7 +205,7 @@ private lemma exists_isApprox (f : C_c(Ω, ℝ)) :
 omit hT in
 /-- The extension of `T` to a compactly supported continuous function `f` on `Ω`: the limit of
 the values of `T` along a chosen approximating sequence of `f`. -/
-private def extend (T : 𝓓'(Ω, ℝ)) (f : C_c(Ω, ℝ)) : ℝ :=
+private def extend (T : 𝓕) (f : C_c(Ω, ℝ)) : ℝ :=
   limUnder atTop fun n => T ((exists_isApprox f).choose n)
 
 /-- Along every approximating sequence of `f` with errors tending to zero, the values of `T`
@@ -291,13 +294,15 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 /-! ### The Radon representation -/
 
 omit hT in
-/-- **A distribution of order zero is a signed Radon measure.** A distribution `T` on `Ω` is
-bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ`
-supported in `K`, if and only if there are regular measures `ν₁` and `ν₂` on `Ω` with
-`T φ = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`. The measures are finite on compact subsets
-of `Ω` but need not be finite. -/
+/-- **A distribution of order zero is a signed Radon measure.** A linear functional `T` on the
+test functions of `Ω` is bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for
+the test functions `φ` supported in `K`, if and only if there are regular measures `ν₁` and `ν₂`
+on `Ω` with `T φ = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`. The measures are finite on
+compact subsets of `Ω` but need not be finite. The bound is the defining estimate of a
+distribution of order zero, so `T` need not be assumed continuous; the main case is a distribution
+`T : 𝓓'(Ω, ℝ)`. -/
 theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace E]
-    (T : 𝓓'(Ω, ℝ)) :
+    (T : 𝓕) :
     (∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
       |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) ↔
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧

@@ -8,10 +8,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 import TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SubMeanValue
 
 /-!
@@ -43,12 +46,18 @@ family with upper barriers.
 * `InnerProductSpace.HarmonicOnNhd.subharmonicOn`: harmonic functions are subharmonic.
 * `TauCeti.SubharmonicOn.frequently_le_setAverage_of_le`: a continuous function touching a
   subharmonic function from above satisfies the sub-mean-value inequality at the contact point.
+* `TauCeti.SubharmonicOn.congr`, `TauCeti.subharmonicOn_of_locally_subharmonicOn`: on open sets,
+  subharmonicity depends only on the values of the function, and it is a local property.
+* `ConvexOn.subharmonicOn`: a convex function on an open set is subharmonic, by Jensen's
+  inequality, since the centre of a ball is its barycentre.
 * `TauCeti.SubharmonicOn.sup`: the pointwise maximum of two subharmonic functions is subharmonic.
 * `TauCeti.SubharmonicOn.const_smul`: a nonnegative multiple of a subharmonic function is
   subharmonic.
 * `TauCeti.SubharmonicOn.sub_harmonicOnNhd`: subtracting a harmonic function preserves
   subharmonicity.
 * `TauCeti.SubharmonicOn.le_of_le_frontier`: the comparison principle on a bounded open set.
+* `TauCeti.eqOn_closure_of_laplacian_eq_of_eqOn_frontier`: uniqueness for Poisson's equation on a
+  bounded open set.
 * `TauCeti.SubharmonicOn.le_of_le_sphere`: the comparison principle on a ball.
 * `TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`: the comparison principle
   between a subharmonic and a superharmonic function on a bounded open set.
@@ -88,6 +97,47 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.subharmonicOn (hu : HarmonicOnNhd
   obtain ⟨hc, hmean⟩ := (harmonicOnNhd_iff_continuousOn_setAverage_ball_eq (μ := volume)
     (isOpen_setOfPred_harmonicAt (f := u))).1 fun x hx ↦ hx
   exact ⟨hc.mono hu, fun x hx ↦ (hmean x (hu x hx)).mono fun _ h ↦ h.ge⟩
+
+/-- On an open set, a function equal to a subharmonic function is subharmonic. -/
+theorem SubharmonicOn.congr (hu : SubharmonicOn u U) (hU : IsOpen U) (h : EqOn v u U) :
+    SubharmonicOn v U := by
+  refine ⟨hu.continuousOn.congr h, fun x hx ↦ ?_⟩
+  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU x hx
+  refine ((hu.frequently_le_setAverage x hx).and_eventually (Ioo_mem_nhdsGT hε)).mono
+    fun r ⟨hr, hrε⟩ ↦ ?_
+  rwa [h hx, setAverage_congr_fun measurableSet_ball
+    (ae_of_all _ fun y hy ↦ h (hεU (ball_subset_ball hrε.2.le hy)))]
+
+/-- Subharmonicity is a local property: a function subharmonic on `U ∩ V` for an open
+neighbourhood `V` of each point of `U` is subharmonic on `U`. -/
+theorem subharmonicOn_of_locally_subharmonicOn
+    (h : ∀ x ∈ U, ∃ V, IsOpen V ∧ x ∈ V ∧ SubharmonicOn u (U ∩ V)) : SubharmonicOn u U := by
+  refine ⟨continuousOn_of_locally_continuousOn fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨V, hV, hxV, hu⟩ := h x hx
+    exact ⟨V, hV, hxV, hu.continuousOn⟩
+  · obtain ⟨V, -, hxV, hu⟩ := h x hx
+    exact hu.frequently_le_setAverage x ⟨hx, hxV⟩
+
+/-- **A convex function is subharmonic.** If `g` is convex on the open set `U`, then `g` is
+subharmonic on `U`; it is automatically continuous there, `E` being finite-dimensional. -/
+theorem _root_.ConvexOn.subharmonicOn {g : E → ℝ} (hg : ConvexOn ℝ U g) (hU : IsOpen U) :
+    SubharmonicOn g U := by
+  have hgc := hg.continuousOn hU
+  refine ⟨hgc, fun x hx ↦ ?_⟩
+  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
+  refine Eventually.frequently ?_
+  filter_upwards [Ioo_mem_nhdsGT hε] with r hr
+  have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hr.2.le).trans hεU
+  -- Jensen's inequality on the ball, whose barycentre is its centre `x`.
+  have hJ := (hg.subset hrU (convex_closedBall x r)).map_set_average_le (f := fun y ↦ y)
+    (hgc.mono hrU) isClosed_closedBall (measure_ball_pos volume x hr.1).ne'
+    measure_ball_lt_top.ne (ae_restrict_of_forall_mem measurableSet_ball
+      fun y hy ↦ ball_subset_closedBall hy)
+    ((continuous_id.continuousOn.integrableOn_compact (isCompact_closedBall x r)).mono_set
+      ball_subset_closedBall)
+    (((hgc.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set
+      ball_subset_closedBall)
+  rwa [setAverage_ball_id (measure_ball_pos volume x hr.1).ne' measure_ball_lt_top.ne] at hJ
 
 /-- A function `w`, continuous on the open set `U`, that lies above a subharmonic function `v` on
 `U` and touches it at `x ∈ U` satisfies the sub-mean-value inequality at `x`. -/
@@ -182,6 +232,32 @@ theorem SubharmonicOn.le_of_le_frontier (hU : IsOpen U) (hUb : Bornology.IsBound
       (hw.continuousOn.continuousAt (hU.mem_nhds hzU)).eventually (lt_mem_nhds hzm)] with y hyU hy
     exact ⟨subset_closure hyU, hy.le⟩
   exact (disjoint_left.1 disjoint_interior_frontier (mem_interior_iff_mem_nhds.2 hnhds)) hz
+
+open Laplacian in
+/-- **Uniqueness for Poisson's equation on a bounded open set.** Let `U` be a bounded open set and
+let `u`, `v` be of class `C²` on `U` and continuous on `closure U`. If `Δu = Δv` on `U` and
+`u = v` on `frontier U`, then `u = v` on `closure U`. Unlike
+`TauCeti.eqOn_of_laplacian_eqOn_of_eqOn_frontier`, nothing is assumed at points of
+`interior (closure U)` outside `U`. -/
+theorem eqOn_closure_of_laplacian_eq_of_eqOn_frontier (hU : IsOpen U)
+    (hUb : Bornology.IsBounded U) (hu : ContDiffOn ℝ 2 u U) (hv : ContDiffOn ℝ 2 v U)
+    (huc : ContinuousOn u (closure U)) (hvc : ContinuousOn v (closure U))
+    (hΔ : ∀ x ∈ U, Δ u x = Δ v x) (hfr : EqOn u v (frontier U)) : EqOn u v (closure U) := by
+  -- The difference `u - v` is harmonic on `U`, so the comparison principle against the zero
+  -- function applies to `u - v` and to `v - u`.
+  have hh : HarmonicOnNhd (u - v) U := fun x hx ↦ by
+    refine ⟨(hu.contDiffAt (hU.mem_nhds hx)).sub (hv.contDiffAt (hU.mem_nhds hx)), ?_⟩
+    filter_upwards [hU.mem_nhds hx] with y hy
+    rw [(hu.contDiffAt (hU.mem_nhds hy)).laplacian_sub (hv.contDiffAt (hU.mem_nhds hy)),
+      hΔ y hy, sub_self, Pi.zero_apply]
+  have h0 : HarmonicOnNhd (fun _ : E ↦ (0 : ℝ)) U := fun _ _ ↦ harmonicAt_const 0
+  intro x hx
+  have h₁ := hh.subharmonicOn.le_of_le_frontier hU hUb (huc.sub hvc) h0 continuousOn_const
+    (fun y hy ↦ by simp [hfr hy]) x hx
+  have h₂ := hh.neg.subharmonicOn.le_of_le_frontier hU hUb (huc.sub hvc).neg h0
+    continuousOn_const (fun y hy ↦ by simp [hfr hy]) x hx
+  simp only [Pi.sub_apply, Pi.neg_apply] at h₁ h₂
+  linarith
 
 /-- **The comparison principle on a ball.** A function subharmonic on `ball c r` and continuous
 on `closedBall c r` lies below every function harmonic on `ball c r` and continuous on

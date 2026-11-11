@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.MeasureTheory.Integral.Bind
+public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Probability.Moments.Variance
@@ -115,6 +116,48 @@ theorem variance_bind (hK : Measurable K)
     covariance_self (memLp_integral_bind hK hprob hX).aestronglyMeasurable.aemeasurable]
   congr 1
   exact integral_congr_ae (hae.mono fun a ha ↦ covariance_self ha.aemeasurable)
+
+variable {π : Measure β} [IsProbabilityMeasure π] {F : α × β → ℝ}
+
+/-- The law of total variance on a product of probability spaces: the variance of a square
+integrable `F` splits into the average of the variances in the second coordinate and the variance
+of the average over the second coordinate. -/
+theorem evariance_prod_eq (hL : MemLp F 2 (μ.prod π)) :
+    evariance F (μ.prod π) = ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ +
+      evariance (fun a => ∫ w, F (a, w) ∂π) μ := by
+  let K : α → Measure (α × β) := fun a => π.map (Prod.mk a)
+  have hK : Measurable K := Measurable.map_prodMk_left
+  have hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a) :=
+    .of_forall fun _ => inferInstance
+  have hbind : μ.bind K = μ.prod π := (Measure.prod_eq_of_sfinite μ π).symm
+  have hX : MemLp F 2 (μ.bind K) := hbind ▸ hL
+  have hslice : ∀ᵐ a ∂μ, variance F (K a) = variance (fun w => F (a, w)) π ∧
+      ∫ x, F x ∂K a = ∫ w, F (a, w) ∂π ∧ MemLp (fun w => F (a, w)) 2 π := by
+    filter_upwards [(Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX |>.1,
+      hL.ae_memLp_prod_right] with a ha hsl
+    have hm : AEMeasurable F (K a) := ha.aestronglyMeasurable.aemeasurable
+    have hmp : AEMeasurable (Prod.mk a) π := measurable_prodMk_left.aemeasurable
+    exact ⟨variance_map hm hmp, integral_map hmp ha.aestronglyMeasurable, hsl⟩
+  have hmean : MemLp (fun a => ∫ w, F (a, w) ∂π) 2 μ :=
+    (memLp_integral_bind hK hprob hX).ae_eq (hslice.mono fun a ha => ha.2.1)
+  have hvarint : Integrable (fun a => variance (fun w => F (a, w)) π) μ := by
+    refine (integrable_covariance_bind hK hprob hX hX).congr ?_
+    filter_upwards [(Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX |>.1,
+      hslice] with a ha hs
+    rw [covariance_self ha.aestronglyMeasurable.aemeasurable, hs.1]
+  have hlint : ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ =
+      ENNReal.ofReal (∫ a, variance (fun w => F (a, w)) π ∂μ) := by
+    rw [ofReal_integral_eq_lintegral_ofReal hvarint
+      (Filter.Eventually.of_forall fun a => variance_nonneg _ _)]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hslice] with a ha
+    exact (ofReal_variance ha.2.2).symm
+  have hvar := variance_bind hK hprob hX
+  rw [hbind] at hvar
+  rw [hlint, ← ofReal_variance hmean, ← ofReal_variance hL,
+    ← ENNReal.ofReal_add (integral_nonneg fun a => variance_nonneg _ _) (variance_nonneg _ _),
+    hvar, integral_congr_ae (hslice.mono fun a ha => ha.1),
+    variance_congr (hslice.mono fun a ha => ha.2.1)]
 
 end TauCeti.Probability
 

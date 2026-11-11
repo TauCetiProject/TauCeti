@@ -93,6 +93,12 @@ noncomputable def weightSpace (π : C →ₗc[R] MonoidAlgebra R X) (x : X) :
   letI : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
   Comodule.weightSpace R X V x
 
+/-- The `x`-weight submodule is the `x`-weight space of the comodule corestricted along `π`. -/
+theorem weightSpace_eq_comoduleWeightSpace (π : C →ₗc[R] MonoidAlgebra R X) (x : X) :
+    letI : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
+    weightSpace V π x = Comodule.weightSpace R X V x :=
+  (rfl)
+
 variable {V}
 
 /-- Membership in the `x`-weight submodule, in terms of the coaction of the original comodule:

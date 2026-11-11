@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
@@ -29,8 +29,8 @@ equivalently `(p - 1) (q - 1) < 2`, whose solutions with both chains nonempty ar
 chains `Cₙ`), `p = 1` (the chains `Bₙ`), and `p = q = 2` (`F₄`).
 
 This file builds that diagram as a matrix, `TauCeti.doubleEdgeCartanMatrix`, out of the chain
-entries of `TauCeti.LinearAlgebra.RootSystem.Chain`, and proves the bound. The elimination tool is
-the one the fork bound uses: a finite-type matrix admits no nonzero
+entries of `TauCeti.LinearAlgebra.Matrix.Cartan.Chain`, and proves the bound. The elimination tool
+is the one the fork bound uses: a finite-type matrix admits no nonzero
 **subdominant** vector, one whose every coordinate `xᵢ` has `xᵢ · (A x)ᵢ ≤ 0`
 (`TauCeti.IsFiniteType.eq_zero_of_forall_mul_sum_apply_mul_nonpos`). The certificate is the vector
 of **marks** `TauCeti.doubleEdgeMark`, which grows linearly along each of the two chains towards

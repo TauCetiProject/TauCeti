@@ -62,8 +62,8 @@ the entries of `l`. -/
 noncomputable def sourceReflectionFunctorList (k : Type u) {V : Type v} [fld : Field k] :
     ∀ (l : List V) (q : _root_.Quiver.{w} V),
       Quiver.IsSourceAdmissible q l →
-      (@QuiverRep.{u, v, w, max v w x} k V fld q ⥤
-        @QuiverRep.{u, v, w, max v w x} k V fld (Quiver.reflectList q l))
+      (@QuiverRep.{u, v, w, max v w x} k V _ q ⥤
+        @QuiverRep.{u, v, w, max v w x} k V _ (Quiver.reflectList q l))
   | [], _, _ => 𝟭 _
   | i :: l, q, hl => by
       letI := q
@@ -94,7 +94,7 @@ theorem sourceReflectionFunctorList_cons (i : V) (l : List V)
 theorem sourceReflectionFunctorList_cons_obj (i : V) (l : List V)
     (q : _root_.Quiver.{w} V)
     (hl : Quiver.IsSourceAdmissible q (i :: l))
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     (sourceReflectionFunctorList.{u, v, w, x} k (i :: l) q hl).obj M =
       (sourceReflectionFunctorList k l (Quiver.reflectAt q i)
           (Quiver.isSourceAdmissible_cons.mp hl).2).obj
@@ -111,7 +111,7 @@ theorem isFinDim_sourceReflectionFunctorList_obj :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (_hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
       (hl : Quiver.IsSourceAdmissible q l)
-      (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld (Quiver.reflectList q l)
         ((sourceReflectionFunctorList k l q hl).obj M)
@@ -145,7 +145,7 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
     ∀ (l : List W) (q : _root_.Quiver.{w} W)
       (hq : ∀ a b : W, Fintype (@_root_.Quiver.Hom W q a b))
       (hl : Quiver.IsSourceAdmissible q l)
-      (M : @QuiverRep.{u, v, w, max v w x} K W fldK q),
+      (M : @QuiverRep.{u, v, w, max v w x} K W _ q),
       Indecomposable M →
       (∀ a : W, FiniteDimensional K (M.obj a)) →
       (∀ r < l.length, 0 ≤ @vertexPreReflectionList W q fW hq _ (l.take (r + 1))

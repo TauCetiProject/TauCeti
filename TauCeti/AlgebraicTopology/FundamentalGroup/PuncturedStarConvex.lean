@@ -14,6 +14,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
@@ -35,6 +36,9 @@ puncture.
 
 * `StarConvex.sphereFundamentalGroupMulEquiv`: the isomorphism
   `π₁(sphere p r, x) ≃* π₁(V \ {p}, x)` induced by the inclusion.
+* `StarConvex.isSimplyConnected_sdiff_singleton` and
+  `TauCeti.isSimplyConnected_ball_sdiff_singleton`: in dimension greater than two the sphere is
+  simply connected, so `V \ {p}`, and in particular a punctured ball, is simply connected.
 * `StarConvex.fundamentalGroupMulEquivInt`: for `V ⊆ ℂ`, `π₁(V \ {p}, x) ≃* ℤ` at a point `x` of
   the circle `sphere p r`.
 * `Complex.sphereLoop` and `StarConvex.fundamentalGroupMulEquivInt_sphereLoop`: the loop going once
@@ -96,6 +100,21 @@ theorem _root_.StarConvex.sphereFundamentalGroupMulEquiv_apply (hV : StarConvex 
     hV.sphereFundamentalGroupMulEquiv hr hS x γ =
       FundamentalGroup.map (hV.sphereHomotopyEquiv hr hS).toFun x γ :=
   (rfl)
+
+/-- **A punctured star-convex set is simply connected in dimension at least three.** If `V` is
+star-convex about `p` and contains `sphere p r` with `r > 0`, and `E` has dimension greater than
+two, then `V \ {p}` is simply connected, being homotopy equivalent to that sphere. -/
+theorem _root_.StarConvex.isSimplyConnected_sdiff_singleton (h : 2 < Module.rank ℝ E)
+    (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    IsSimplyConnected (V \ {p}) :=
+  have := simplyConnectedSpace_sphere h p hr.le
+  (hV.sphereHomotopyEquiv hr hS).symm.simplyConnectedSpace
+
+/-- **A punctured ball is simply connected in dimension at least three.** -/
+theorem isSimplyConnected_ball_sdiff_singleton (h : 2 < Module.rank ℝ E) (p : E) (hr : 0 < r) :
+    IsSimplyConnected (ball p r \ {p}) :=
+  ((convex_ball p r).starConvex (mem_ball_self hr)).isSimplyConnected_sdiff_singleton h
+    (half_pos hr) (sphere_subset_ball (half_lt_self hr))
 
 end NormedSpace
 

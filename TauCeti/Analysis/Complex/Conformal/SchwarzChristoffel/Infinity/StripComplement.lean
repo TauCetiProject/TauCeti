@@ -66,9 +66,9 @@ theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_one
   obtain ⟨R, hR⟩ := exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_one
     a e z₀ hfinite (fun i _ => (ha' i).1) (fun i _ => (ha' i).2) (Or.inr hsum)
   rw [im_schwarzChristoffelBoundary_of_forall_le_of_sum_eq_one a e z₀
-      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite A) (fun i _ => (ha' i).2) hsum,
+      (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite A) (fun i _ => (ha' i).2) hsum,
     im_schwarzChristoffelBoundary_of_forall_ge_of_sum_eq_one a e z₀
-      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite (-A)) (fun i _ => (ha' i).1)
+      (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite (-A)) (fun i _ => (ha' i).1)
       hsum] at hR
   exact ⟨R, hR⟩
 

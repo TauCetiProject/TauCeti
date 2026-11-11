@@ -126,8 +126,8 @@ theorem memHolder_iteratedDeriv_sigmoid (n : ℕ) {α : NNReal} (hα : α ≤ 1)
     rw [Real.dist_eq]
     linarith [abs_sub (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y), hC₀ x, hC₀ y,
       Real.le_coe_toNNReal (2 * C₀)]
-  exact ⟨_, holderOnWith_univ.1
-    (((holderWith_one.2 hL).holderOnWith Set.univ).of_le_of_dist_le hD hα one_pos)⟩
+  exact ⟨_, holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le
+    (fun x _ y _ _ => (holderWith_one.2 hL).dist_le x y) hD hα one_pos)⟩
 
 /-- The sigmoid is the derivative of `x ↦ log (1 + exp x)`. -/
 theorem hasDerivAt_log_one_add_exp (x : ℝ) :

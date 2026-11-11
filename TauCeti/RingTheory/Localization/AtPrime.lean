@@ -17,7 +17,8 @@ the `IsScalarTower` and `IsFractionRing` instances beside it, all target
 `Localization (nonZeroDivisors R)` on the nose. A statement about a Dedekind domain `O` and *some*
 fraction field `K` — a number field `K` with `O = 𝓞 K`, say — cannot use them.
 
-This file supplies the same three instances for an arbitrary fraction field `K`, from
+This file supplies the same three instances for an arbitrary fraction field `K` (any commutative
+ring with `IsFractionRing R K`, as in Mathlib's `IsFractionRing` API), from
 `Ideal.primeCompl_le_nonZeroDivisors`, exactly as Mathlib builds the `FractionRing` case. For
 `K = FractionRing R` the new `Algebra` instance is definitionally the existing one: both are
 `IsLocalization.localizationAlgebraOfSubmonoidLe` for `p.primeCompl ≤ nonZeroDivisors R`, an
@@ -45,7 +46,7 @@ public section
 
 namespace Localization.AtPrime
 
-variable {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Field K] [Algebra R K]
+variable {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [CommRing K] [Algebra R K]
   [IsFractionRing R K] (p : Ideal R) [p.IsPrime]
 
 /-- The localisation of a domain `R` at a prime `p` maps to any fraction field `K` of `R`: the

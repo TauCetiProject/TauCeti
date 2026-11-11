@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Kronecker's theorem for linear flows on tori
@@ -54,10 +56,6 @@ open scoped Real
 
 noncomputable section
 
-/-- The measure on `ℝ / ℤ` is a probability measure. -/
-local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  ⟨by simp [AddCircle.measure_univ]⟩
-
 namespace TauCeti
 
 namespace UnitAddTorus
@@ -71,12 +69,7 @@ theorem integral_mFourier (n : d → ℤ) : ∫ x, mFourier n x = if n = 0 then 
   have h := (orthonormal_iff_ite.mp orthonormal_mFourier) 0 n
   simp only [ContinuousMap.inner_toLp, mFourier_zero, ContinuousMap.one_apply, map_one,
     mul_one, eq_comm (a := (0 : d → ℤ))] at h
-  have hvol : (volume : Measure (UnitAddTorus d)) = Measure.pi fun _ ↦ AddCircle.haarAddCircle := by
-    rw [volume_pi]
-    congr 1
-    funext
-    simp [AddCircle.volume_eq_smul_haarAddCircle]
-  rw [hvol, ← h]
+  rw [volume_eq_pi_haarAddCircle, ← h]
   -- Mathlib states `orthonormal_mFourier` for its file-local normalization
   -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
   rfl
@@ -87,8 +80,7 @@ theorem mFourier_coe_add_mul (n : d → ℤ) (θ ν : d → ℝ) (t : ℝ) :
     mFourier n (fun i ↦ ((θ i + ν i * t : ℝ) : UnitAddCircle)) =
       Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i) *
         Complex.exp (2 * π * Complex.I * (∑ i, (n i : ℝ) * ν i : ℝ) * t) := by
-  simp only [mFourier, ContinuousMap.coe_mk, fourier_coe_apply]
-  rw [← Complex.exp_sum, ← Complex.exp_add]
+  rw [mFourier_coe_apply, ← Complex.exp_add]
   congr 1
   push_cast
   simp only [Finset.mul_sum, Finset.sum_mul, ← Finset.sum_add_distrib]
