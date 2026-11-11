@@ -73,6 +73,13 @@ on tangent fibers rather than restating the linear algebra.
   the pointwise range statement for variations of the almost complex structure in transversality
   arguments (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 3.2); the
   localized version along a map is in `TauCeti.Geometry.Symplectic.AlmostComplex.Variation`.
+* `TauCeti.SymplecticForm.Invariant.smulRight_add_mul_smulRight_mul_mem_compatibleTangentSpace`
+  and `TauCeti.SymplecticForm.Tames.exists_apply_smul_add_apply_smul_ne_zero`: the rank-one
+  endomorphism `v ↦ ω(a, v) a` is skew-adjoint for `ω`, so its average with `J` is a compatible
+  variation; it sends a nonzero `w` to `ω(a, w) a + ω(a, J w) J a`, and these vectors are not all
+  annihilated by a nonzero covector. One vector field `a` thus generates compatible variations of
+  `J` on a manifold that detect cokernel elements
+  (`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Variation`).
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -969,6 +976,56 @@ theorem Compatible.exists_mem_compatibleTangentSpace_apply_eq (h : ω.Compatible
     map_smul, hξJ, hζξ, hζJξ, zero_smul, zero_add]
   simp only [ζ]
   match_scalars <;> field_simp <;> ring
+
+/-- **Rank-one compatible variations.** For a `J`-invariant `ω` and a vector `a`, the rank-one
+endomorphism `v ↦ ω(a, v) a` is skew-adjoint for `ω`, so its average with its conjugate by `J`
+lies in the compatible tangent space of `J`. -/
+theorem Invariant.smulRight_add_mul_smulRight_mul_mem_compatibleTangentSpace
+    (h : ω.Invariant J) (a : V) :
+    (ω.toBilinForm a).smulRight a + J.toLinearMap * (ω.toBilinForm a).smulRight a * J.toLinearMap
+      ∈ ω.compatibleTangentSpace J := by
+  refine h.add_mul_mul_mem_compatibleTangentSpace_of_skew fun v w ↦ ?_
+  have hneg := ω.neg_eq a v
+  simp only [LinearMap.smulRight_apply, map_smul, LinearMap.smul_apply, smul_eq_mul] at hneg ⊢
+  rw [← hneg]
+  ring
+
+/-- **Rank-one variations detect covectors.** Let `J` be tamed by `ω`, let `w` be a nonzero vector
+and `η` a nonzero covector. The rank-one compatible variation of
+`Invariant.smulRight_add_mul_smulRight_mul_mem_compatibleTangentSpace` sends `w` to
+`ω(a, w) a + ω(a, J w) J a`, and for some `a` this vector is not annihilated by `η`.
+
+If every such pairing vanished, polarization at `J w` would give
+`ω(a, w) η(J w) - ω(w, J w) η(a) - ω(a, J w) η(w) = 0` for all `a`. Taking `a = w` and `a = J w`
+gives `η(w) = η(J w) = 0`, since `ω(w, J w) > 0`, and then `η = 0`. -/
+theorem Tames.exists_apply_smul_add_apply_smul_ne_zero (h : ω.Tames J) {w : V} (hw : w ≠ 0)
+    {η : V →ₗ[ℝ] ℝ} (hη : η ≠ 0) : ∃ a, η (ω a w • a + ω a (J w) • J a) ≠ 0 := by
+  by_contra! hF
+  have hc : 0 < ω w (J w) := h w hw
+  have hJ := J.apply_apply w
+  have hs := ω.neg_eq w (J w)
+  have hself := ω.self_eq_zero
+  simp only at hF hc hJ hs hself
+  have key (a : V) : ω a w * η (J w) - ω w (J w) * η a - ω a (J w) * η w = 0 := by
+    have h₁ := hF (a + J w)
+    have h₂ := hF a
+    have h₃ := hF (J w)
+    simp only [map_add, map_smul, map_neg, LinearMap.add_apply, smul_eq_mul, hJ, hself,
+      ← hs] at h₁ h₂ h₃ ⊢
+    linear_combination h₁ - h₂ - h₃
+  have hw' : η w = 0 := by
+    have hk := key w
+    simp only [hself, zero_mul, zero_sub] at hk
+    nlinarith [hk]
+  have hJw : η (J w) = 0 := by
+    have hk := key (J w)
+    simp only [← hs, hself, hw', mul_zero, sub_zero] at hk
+    nlinarith [hk]
+  refine hη (LinearMap.ext fun a ↦ ?_)
+  have hk := key a
+  simp only [hw', hJw, mul_zero, zero_sub, sub_zero, neg_eq_zero, mul_eq_zero, hc.ne',
+    false_or] at hk
+  simpa using hk
 
 end TangentSpace
 

@@ -89,6 +89,16 @@ theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
 
 variable [IsManifold I 1 M]
 
+/-- A covector field and a vector field along a map `u`, continuous at `z` as maps into the
+cotangent and tangent bundles, pair to a scalar function continuous at `z`. -/
+theorem continuousAt_apply {Z : Type*} [TopologicalSpace Z] {u : Z → M}
+    {η : ∀ z, TangentSpace I (u z) →L[𝕜] 𝕜} {v : ∀ z, TangentSpace I (u z)} {z : Z}
+    (hη : ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
+    (hv : ContinuousAt (fun z ↦ (⟨u z, v z⟩ : TangentBundle I M)) z) :
+    ContinuousAt (fun z ↦ η z (v z)) z :=
+  continuous_snd.continuousAt.comp ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp
+    (ContinuousAt.clm_bundle_apply (E₂ := Bundle.Trivial M 𝕜) hη hv))
+
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
 theorem extChartAt_apply (z₀ z : CotangentBundle I M) :
