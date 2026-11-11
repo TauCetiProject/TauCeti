@@ -260,8 +260,8 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
 
 /-- The projective diameter of a two-by-two kernel is the absolute logarithm of its cross ratio.
-If an entry vanishes, every cross ratio is `0` by the conventions `a / 0 = 0` and `Real.log 0 = 0`,
-and both sides are `0`. -/
+If an entry vanishes, every logarithmic cross ratio is `0` by the conventions `a / 0 = 0` and
+`Real.log 0 = 0` (or because the cross ratio is `1`), and both sides are `0`. -/
 theorem projectiveDiameter_fin_two (K : Matrix (Fin 2) (Fin 2) ℝ) :
     K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
   by_cases hK : ∀ i j, K i j ≠ 0
