@@ -24,7 +24,9 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
   recovered from its coordinates.
 * `TauCeti.TopCat.smallDiskIncl`: the inclusion of the ball of radius `d ≤ 1` into the disk.
 * `TauCeti.TopCat.annulusPoint`: the point of the annulus with given coordinates, as a continuous
-  map, and `TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`: it inverts the coordinates.
+  map, and `TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`,
+  `TauCeti.TopCat.annulusParam_annulusPoint`, `TauCeti.TopCat.annulusDir_annulusPoint`: it is
+  inverse to the coordinates.
   Its inner circle is the sphere of radius `d` (`TauCeti.TopCat.annulusPoint_zero`) and its outer
   circle is the boundary sphere (`TauCeti.TopCat.annulusPoint_one`).
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
@@ -156,8 +158,9 @@ private theorem norm_add_one_sub_mul_smul (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1)
     Real.norm_of_nonneg (hd₀.trans (le_add_one_sub_mul hd₁ p.1))]
 
 /-- The point `(d + (1 - d) s) • θ` of the annulus `d ≤ ‖w‖ ≤ 1` of the disk with annulus
-coordinates `(s, θ)`, for `0 ≤ d ≤ 1`. For `0 < d` it inverts the annulus coordinates
-(`TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`). -/
+coordinates `(s, θ)`, for `0 ≤ d ≤ 1`. For `0 < d < 1` it is inverse to the annulus coordinates
+(`TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`, `TauCeti.TopCat.annulusParam_annulusPoint`,
+`TauCeti.TopCat.annulusDir_annulusPoint`). -/
 def annulusPoint (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) : C(I × TopCat.diskBoundary.{u} k, TopCat.disk.{u} k)
     where
   toFun p := ⟨⟨(d + (1 - d) * p.1) • p.2.down.1, mem_closedBall_zero_iff.2
@@ -198,6 +201,23 @@ theorem annulusPoint_annulusParam_annulusDir (hd : 0 < d) (hd₁ : d ≤ 1)
     annulusPoint hd.le hd₁ (annulusParam d w.1, annulusDir hd w) = w.1 :=
   ULift.ext (Subtype.ext ((coe_annulusPoint_apply_down _ _ _).trans
     (add_one_sub_mul_annulusParam_smul_annulusDir hd hd₁ w)))
+
+/-- The radial parameter of the annulus point with coordinates `(s, θ)` is `s`, for `d < 1`. -/
+@[simp]
+theorem annulusParam_annulusPoint (hd₀ : 0 ≤ d) (hd₁ : d < 1) (p : I × TopCat.diskBoundary.{u} k) :
+    annulusParam d (annulusPoint hd₀ hd₁.le p) = p.1 := by
+  have h : (‖(annulusPoint hd₀ hd₁.le p).down.1‖ - d) / (1 - d) = p.1 := by
+    rw [norm_annulusPoint, add_sub_cancel_left, mul_div_cancel_left₀ _ (sub_ne_zero.2 hd₁.ne')]
+  rw [annulusParam, h, projIcc_val]
+
+/-- The direction of the annulus point with coordinates `(s, θ)` is `θ`, for `0 < d`. -/
+@[simp]
+theorem annulusDir_annulusPoint (hd : 0 < d) (hd₁ : d ≤ 1) (p : I × TopCat.diskBoundary.{u} k)
+    (hp : d ≤ ‖(annulusPoint hd.le hd₁ p).down.1‖) :
+    annulusDir hd ⟨annulusPoint hd.le hd₁ p, hp⟩ = p.2 := by
+  refine ULift.ext (Subtype.ext ?_)
+  rw [coe_annulusDir, norm_annulusPoint, coe_annulusPoint_apply_down, smul_smul,
+    inv_mul_cancel₀ (hd.trans_le (le_add_one_sub_mul hd₁ p.1)).ne', one_smul]
 
 /-- The function underlying `TauCeti.TopCat.discGlue`. -/
 private def discGlueFun (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
