@@ -201,6 +201,36 @@ theorem metrizableSpace_chartExhaustion [Countable ι]
   exact UniformSpace.metrizableSpace
 
 
+omit [IsManifold I n M] in
+/-- On a manifold with locally compact model, each extended chart target is locally compact: it is
+the intersection of an open subset with the closed range of the model. -/
+theorem _root_.locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
+    LocallyCompactSpace (extChartAt I x).target := by
+  rw [extChartAt_target]
+  exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
+    I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- On a sigma-compact manifold with locally compact, second-countable model, select a countable
+set of chart centres whose chart sources cover the manifold, together with compact exhaustions of
+their chart targets; their compact chart seminorms generate the weak Whitney topology. The empty
+manifold uses the empty set of centres. -/
+theorem exists_countable_chartExhaustion [LocallyCompactSpace E] [SecondCountableTopology E]
+    [SigmaCompactSpace M] :
+    ∃ s : Set M, s.Countable ∧ (∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source) ∧
+      ∃ A : ∀ i : s, CompactExhaustion (extChartAt I (i : M)).target,
+        WithSeminorms
+          (chartExhaustionSeminormFamily (F := F) (n := n) (fun i : s ↦ (i : M)) A) := by
+  obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
+    (fun x : M ↦ extChartAt_source_mem_nhds (I := I) x)
+  have hc : ∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source := by
+    intro x
+    have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
+    obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
+    exact ⟨⟨y, hy⟩, hx⟩
+  let _ (i : s) := locallyCompactSpace_extChartAt_target (I := I) (i : M)
+  let A (i : s) := CompactExhaustion.choice (extChartAt I (i : M)).target
+  exact ⟨s, hs, hc, A, withSeminorms_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc A⟩
+
 /-- On a sigma-compact manifold with locally compact, second-countable model,
 the existing vector-valued weak Whitney topology is metrizable. Arbitrary normed targets are
 allowed; no finite-dimensionality of the coefficient space or completeness is required. -/
@@ -208,19 +238,9 @@ theorem metrizableSpace_manifoldWeakWhitney_of_sigmaCompact
     [LocallyCompactSpace E] [SecondCountableTopology E]
     [SigmaCompactSpace M] :
     TopologicalSpace.MetrizableSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯ := by
-  obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
-    (fun x : M ↦ extChartAt_source_mem_nhds (I := I) x)
+  obtain ⟨s, hs, hc, A, -⟩ := exists_countable_chartExhaustion (I := I) (M := M) (F := F)
+    (n := n)
   let _ := hs.to_subtype
-  have hc : ∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source := by
-    intro x
-    have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
-    obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
-    exact ⟨⟨y, hy⟩, hx⟩
-  let _ (i : s) : LocallyCompactSpace (extChartAt I (i : M)).target := by
-    rw [extChartAt_target]
-    exact ((chartAt H (i : M)).open_target.preimage I.continuous_symm).isLocallyClosed.inter
-      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
-  exact metrizableSpace_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc
-    (fun i ↦ CompactExhaustion.choice (extChartAt I (i : M)).target)
+  exact metrizableSpace_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc A
 
 end ContMDiffMap
