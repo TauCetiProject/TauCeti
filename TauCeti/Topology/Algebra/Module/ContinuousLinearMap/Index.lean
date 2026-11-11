@@ -43,7 +43,8 @@ operations that need them.
   to the realification of a complex-linear map, whose index is twice the complex index.
 * `ContinuousLinearMap.finrank_ker_eq_iff_index_eq` and
   `bijective_of_surjective_of_index_eq_zero`: index zero detects bijectivity for a surjective map
-  with finite-dimensional kernel.
+  with finite-dimensional kernel; `bijective_of_injective_of_index_eq_zero` does the same for an
+  injective map with finite-dimensional cokernel.
 
 The sign convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Appendix A.1.
@@ -196,6 +197,19 @@ lemma bijective_of_surjective_of_index_eq_zero (T : E →L[𝕜] F)
     Submodule.finrank_eq_zero.1
       ((T.finrank_ker_eq_iff_index_eq hT).2 (by exact_mod_cast hindex))
   exact ⟨LinearMap.ker_eq_bot.1 hker, hT⟩
+
+/-- An injective operator of index zero with finite-dimensional cokernel is bijective. Only
+finiteness of the cokernel is used, not the full Fredholm property. This is the converse of
+`ContinuousLinearMap.index_eq_zero_of_bijective` for an injective operator. -/
+lemma bijective_of_injective_of_index_eq_zero (T : E →L[𝕜] F)
+    [FiniteDimensional 𝕜 (F ⧸ T.range)] (hT : Function.Injective T)
+    (hindex : T.index = 0) : Function.Bijective T := by
+  have hcoker : finrank 𝕜 (F ⧸ T.range) = 0 := by
+    have := T.index_of_injective hT
+    omega
+  have hrange : T.range = ⊤ :=
+    Submodule.Quotient.subsingleton_iff.mp (finrank_zero_iff.mp hcoker)
+  exact ⟨hT, LinearMap.range_eq_top.1 hrange⟩
 
 end DivisionRing
 
