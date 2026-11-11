@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
@@ -45,6 +46,7 @@ this file to restate both.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
 * `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
+* `Ideal.span_singleton_eq_op_smul_top`: the left ideal `A e` is `MulOpposite.op e • ⊤`.
 * `Submodule.mem_stabilizer_units_iff`: a unit `u` of a ring stabilizes an additive subgroup `L`
   under the pointwise action exactly when multiplication by `u` and by `u⁻¹` carries `L` into
   itself.
@@ -181,6 +183,20 @@ theorem Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff {C : Subalgebra R S}
     rwa [← mul_assoc, ← Units.val_mul, mul_assoc, mul_inv_cancel, mul_one] at this
 
 end Subalgebra
+
+namespace Ideal
+
+variable {A : Type*} [Semiring A] {e : A}
+
+/-- **The left ideal `Ae` is the piece `e • A` cut out by `e` acting on the right**, that is, by
+`MulOpposite.op e` acting through the opposite ring; this is the bridge to the Peirce
+decomposition `TauCeti.isInternal_smul_top`. -/
+theorem span_singleton_eq_op_smul_top :
+    (Ideal.span {e} : Ideal A) = MulOpposite.op e • (⊤ : Submodule A A) := by
+  ext x
+  simp [Ideal.mem_span_singleton', Submodule.mem_smul_pointwise_iff_exists]
+
+end Ideal
 
 namespace TauCeti
 

@@ -119,20 +119,6 @@ theorem op {M : Type*} [Mul M] {e : M} (he : IsIdempotentElem e) :
 
 end IsIdempotentElem
 
-namespace Ideal
-
-variable {A : Type*} [Semiring A] {e : A}
-
-/-- **The left ideal `Ae` is the piece `e • A` cut out by `e` acting on the right**, that is, by
-`MulOpposite.op e` acting through the opposite ring; this is the bridge to the Peirce
-decomposition `TauCeti.isInternal_smul_top`. -/
-theorem span_singleton_eq_op_smul_top :
-    (Ideal.span {e} : Ideal A) = MulOpposite.op e • (⊤ : Submodule A A) := by
-  ext x
-  simp [Ideal.mem_span_singleton', Submodule.mem_smul_pointwise_iff_exists]
-
-end Ideal
-
 namespace OrthogonalIdempotents
 
 variable {A ι : Type*} [Semiring A] {e : ι → A}
