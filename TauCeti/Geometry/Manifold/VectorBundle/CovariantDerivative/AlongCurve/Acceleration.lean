@@ -219,6 +219,10 @@ theorem _root_.Filter.EventuallyEq.acceleration_eq (h : γ =ᶠ[𝓝 t] η) :
       sectionCoord (F := E) η (curveVelocity I η) x := by
     filter_upwards [h, hvel] with u hu hv
     rw [sectionCoord_apply, sectionCoord_apply, hv]
+    -- The two sides read the same vector in the trivialization at base points `γ u` and `η u`,
+    -- which agree by `hu`. To rewrite along `hu`, abstract the base point `y`: every fibre
+    -- `TangentSpace I y` is definitionally the model space `E`, so the fixed vector
+    -- `curveVelocity I η u` may be read at any base point.
     exact congrArg (fun y : M ↦ (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y
       (show TangentSpace I y from curveVelocity I η u)) hu
   rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
