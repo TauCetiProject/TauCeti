@@ -653,7 +653,8 @@ theorem integrable_energyIntegrand_jetField
     (u v : W1p mu Omega 2) :
     Integrable (fun x => energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x))
       (mu.restrict Omega) := by
-  refine (integrable_bilinear_apply_of_memLp hcoeff (jetLpL u) (jetLpL v)).congr ?_
+  refine (hcoeff.integrable_bilinear_apply (Lp.memLp (jetLpL u))
+    (Lp.memLp (jetLpL v))).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
