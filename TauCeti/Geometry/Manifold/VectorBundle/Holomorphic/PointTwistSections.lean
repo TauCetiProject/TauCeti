@@ -21,9 +21,9 @@ Let `X` be a complex curve, `E → X` a `C^n` vector bundle over `𝓘(ℂ)` wit
 (`TauCeti.pointTwistCore`), as Mathlib's spaces of sections `Cₛ^n⟮𝓘(ℂ); F, E⟯`. For `n = ∞`, or
 `n = ω`, these are the holomorphic sections, and for a holomorphic line bundle `L` the comparison
 is the kernel half of the sequence
-`0 → ker ∂̄_L → ker ∂̄_{L(x)} → L(x)_x → coker ∂̄_L → coker ∂̄_{L(x)} → 0`
-of the point-twisting step in the proof of the Riemann–Roch theorem (McDuff–Salamon,
-Theorem C.1.10).
+`0 → ker D_L → ker D_{L(x)} → L(x)_x → coker D_L → coker D_{L(x)} → 0`,
+with `D` the Cauchy–Riemann operator, of the point-twisting step in the proof of the Riemann–Roch
+theorem (McDuff–Salamon, Theorem C.1.10).
 
 Multiplication by the canonical section of `𝒪(x)` is a linear map `TauCeti.pointTwistMulₗ` from
 the sections of `E` to those of `E(x)`. It is injective, since `X` has no isolated points. The
@@ -240,7 +240,8 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
       (hh _ hw.2).comp w ((contMDiffOn_chart_symm (I := 𝓘(ℂ)) (n := n)).contMDiffAt
         (φ.open_target.mem_nhds hw.1))
     exact ((contMDiffAt_iff_contDiffAt.1 h₁).differentiableAt hn).differentiableWithinAt
-  have hd : DifferentiableOn ℂ (dslope g a) U := (Complex.differentiableOn_dslope (hUo.mem_nhds haU)).2 hgd
+  have hd : DifferentiableOn ℂ (dslope g a) U :=
+    (Complex.differentiableOn_dslope (hUo.mem_nhds haU)).2 hgd
   have hk : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, F) n (dslope g a ∘ φ) x :=
     ((hd.analyticAt (hUo.mem_nhds haU)).contDiffAt.contMDiffAt).comp x
       ((contMDiffOn_chart (I := 𝓘(ℂ)) (n := n)).contMDiffAt
@@ -369,7 +370,8 @@ theorem isDivisorSectionAt_pointTwistDiv (x : X)
       RiemannSurface.meromorphicOrderAt_nonneg_of_continuousAt hρ.continuousAt
     have hc := (chartAt ℂ y).meromorphicAt_coordinate_zpow (IsManifold.chart_mem_maximalAtlas y)
       (chartAt ℂ y y) (-1) (mem_chart_source ℂ y)
-    have hco := (chartAt ℂ y).meromorphicOrderAt_coordinate_zpow (IsManifold.chart_mem_maximalAtlas y)
+    have hco := (chartAt ℂ y).meromorphicOrderAt_coordinate_zpow
+      (IsManifold.chart_mem_maximalAtlas y)
       (chartAt ℂ y y) (-1) (mem_chart_source ℂ y)
     simp only [↓reduceIte] at hco
     have heq : (fun z ↦ (pointTwistDiv ℂ (Bundle.Trivial X ℂ) y z (τ z) : ℂ)) =ᶠ[𝓝[≠] y]
@@ -380,7 +382,8 @@ theorem isDivisorSectionAt_pointTwistDiv (x : X)
       have key (w : ℂ) : (pointTwistDiv ℂ (Bundle.Trivial X ℂ) y z w : ℂ) =
           (chartAt ℂ y z - chartAt ℂ y y) ^ (-1 : ℤ) *
             (pointTwistPoleMul ℂ (Bundle.Trivial X ℂ) y z w : ℂ) := by
-        rw [pointTwistPoleMul_eq_smul_pointTwistDiv hzy, smul_eq_mul, ← pointTwistCoord_eq_of_mem hz,
+        rw [pointTwistPoleMul_eq_smul_pointTwistDiv hzy, smul_eq_mul,
+          ← pointTwistCoord_eq_of_mem hz,
           zpow_neg_one, inv_mul_cancel_left₀ hc0]
       exact key (τ z)
     refine ⟨(hc.mul hρm).congr heq.symm, ?_, fun h ↦ absurd h (not_le.2 hD), fun _ ↦ ?_⟩
@@ -427,7 +430,8 @@ theorem exists_contMDiff_pointTwistOfPole {x : X} {G : X → ℂ}
     contMDiff_pointTwistOfPole (fun y hy ↦ ?_) ?_ ?_⟩
   · have hD : (WeilDivisor.ofPoint x) y = 0 := ofPoint_apply_of_ne hy
     exact (contMDiffAt_trivial_section_iff.2 ((hG y).contMDiffAt hD.le)).contMDiffWithinAt
-  · exact contMDiffAt_trivial_section_iff.2 (RiemannSurface.contMDiffAt_affineChart_sphereMap hq hqo)
+  · exact contMDiffAt_trivial_section_iff.2
+      (RiemannSurface.contMDiffAt_affineChart_sphereMap hq hqo)
   · exact RiemannSurface.affineChart_sphereMap_eventuallyEq hq
 
 /-- **The sections of `𝒪(x)` are the sections of the divisor sheaf `𝒪_x`.** Reading a holomorphic
