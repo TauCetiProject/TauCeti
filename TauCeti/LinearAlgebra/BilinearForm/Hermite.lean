@@ -117,20 +117,18 @@ theorem apply_self_nonneg_of_forall_le {M : Type*} [AddCommGroup M] {B : LinearM
     nlinarith
 
 /-- If a vector `v` of least norm among the nonzero vectors of a symmetric integral form has
-norm `0`, then it is orthogonal to every `y` outside `ℤ v`. -/
+norm `0`, then it is orthogonal to every vector `y`. -/
 theorem apply_eq_zero_of_apply_self_eq_zero_of_forall_le {M : Type*} [AddCommGroup M]
-    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hv0 : B v v = 0)
-    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) : B y v = 0 := by
-  have hne := Submodule.ne_zero_add_zsmul_of_notMem_span hy
-  have hyy : 0 ≤ B y y := hv0 ▸ hmin y (by simpa using hne 0)
-  by_contra hne'
-  -- The witness `k = -(B y y + 1) * B y v` makes `B (y + k v) (y + k v) = B y y + 2 k B y v`
-  -- negative, since `(B y v) ^ 2 ≥ 1`; this contradicts minimality, as `B v v = 0`.
-  have h := hmin _ (hne (-(B y y + 1) * B y v))
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    hv0, ← hB.eq y v] at h
-  have hpos : 1 ≤ B y v ^ 2 := by nlinarith [sq_pos_of_ne_zero hne']
-  nlinarith [mul_le_mul_of_nonneg_left hpos (by linarith : 0 ≤ B y y + 1)]
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v : M} (hv0 : B v v = 0)
+    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (y : M) : B y v = 0 := by
+  -- The form is nonnegative, so Cauchy-Schwarz gives `B(y, v)² ≤ B(y, y) B(v, v) = 0`.
+  have hnonneg : ∀ x, 0 ≤ B x x := fun x ↦ by
+    by_cases hx : x = 0
+    · simp [hx]
+    · exact hv0 ▸ hmin x hx
+  have hsq := B.apply_sq_le_of_symm hnonneg ⟨fun x y ↦ hB.eq x y⟩ y v
+  rw [hv0, mul_zero] at hsq
+  exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hsq (sq_nonneg _))
 
 /-- **The minimality step of Hermite's inequality.** Let `v` be a vector of least norm
 `μ = B(v, v)` among the nonzero vectors, for a symmetric integral form `B`. Every `y` outside
@@ -149,7 +147,7 @@ theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
   swap
   · -- A least norm is nonnegative, so here `B v v = 0`, and then `y` is orthogonal to `v`.
     have hv0 : B v v = 0 := le_antisymm (not_lt.mp hμ) (apply_self_nonneg_of_forall_le hmin)
-    have hyv := apply_eq_zero_of_apply_self_eq_zero_of_forall_le hB hv0 hmin hy
+    have hyv := apply_eq_zero_of_apply_self_eq_zero_of_forall_le hB hv0 hmin y
     simp [hv0, hyv]
   obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ.ne'
   rw [abs_of_pos hμ] at hk
