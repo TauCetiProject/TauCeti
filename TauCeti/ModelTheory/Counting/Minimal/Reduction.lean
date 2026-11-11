@@ -180,12 +180,12 @@ private theorem branches_separated {Θ : L.Sentenceω} (a : List Bool → LargeN
       exact fun h => hsplit s ((bfEquivSetoid L ℕ _).symm h)
     · exact (hne rfl).elim
   -- At the first differing bit the branches choose separated siblings of the same node.
-  let n := Nat.find (Function.ne_iff.mp hne)
-  have hn : z n ≠ w n := Nat.find_spec (Function.ne_iff.mp hne)
+  let n := PiNat.firstDiff z w
+  have hn : z n ≠ w n := PiNat.apply_firstDiff_ne hne
   have heq : (List.ofFn fun i : Fin n => z i) = List.ofFn (fun i : Fin n => w i) := by
     apply congrArg List.ofFn
     funext i
-    exact not_ne_iff.mp (Nat.find_min (Function.ne_iff.mp hne) i.2)
+    exact PiNat.apply_eq_of_lt_firstDiff i.2
   obtain ⟨hzw, hnsep⟩ :
       (branchNode a z (n + 1)).level = (branchNode a w (n + 1)).level ∧
         ¬ bfEquivSetoid L ℕ (branchNode a z (n + 1)).level
