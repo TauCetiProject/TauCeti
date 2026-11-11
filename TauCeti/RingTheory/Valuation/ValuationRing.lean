@@ -124,12 +124,9 @@ theorem _root_.Irreducible.maximalIdeal_eq_of_valuationRing {R : Type*} [CommRin
   ext y
   rw [Ideal.mem_span_singleton, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
   refine ⟨fun hy ↦ ?_, fun h hu ↦ hϖ.not_isUnit (isUnit_of_dvd_unit h hu)⟩
-  obtain ⟨c, hc | hc⟩ := PreValuationRing.cond y ϖ
-  · rcases hϖ.isUnit_or_isUnit hc.symm with h | h
-    · exact absurd h hy
-    · obtain ⟨u, rfl⟩ := h
-      exact ⟨↑u⁻¹, by rw [← hc, mul_assoc, Units.mul_inv, mul_one]⟩
-  · exact ⟨c, hc.symm⟩
+  rcases _root_.ValuationRing.dvd_total y ϖ with h | h
+  · exact ((hϖ.dvd_iff.mp h).resolve_left hy).dvd
+  · exact h
 
 end ValuationRing
 
