@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 public import Mathlib.Algebra.Lie.BaseChange
-import TauCeti.LinearAlgebra.TensorProduct.Hom
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 
 /-!
 # Absolute irreducibility from a full enveloping-algebra image
