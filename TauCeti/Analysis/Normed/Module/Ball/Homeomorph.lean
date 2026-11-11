@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UnitInterval
+import Mathlib.Analysis.Normed.Module.Ball.Action
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Homeomorphisms onto the unit balls of normed spaces
@@ -51,6 +53,9 @@ valued in the closed unit ball.
   is homeomorphic to a closed ball of the same dimension.
 * `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
   homeomorphic to the closed unit ball of any two-dimensional real normed space.
+* `TauCeti.exists_homeomorph_apply_eq_of_finrank_eq_one`: in dimension one, a homeomorphism onto
+  the closed unit ball sending exactly the image of an injection `τ` of the unit sphere `S⁰` to
+  `S⁰` can be made to invert `τ`, by composing it with `v ↦ -v` if necessary.
 -/
 
 public section
@@ -310,5 +315,40 @@ theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup 
     (by rw [interior_prod_eq, interior_Icc, interior_Icc]
         exact (nonempty_Ioo.mpr hab).prod (nonempty_Ioo.mpr hcd))
     (by simp [hF])
+
+/-- In dimension one, a homeomorphism `e` of a space `K` onto the closed unit ball of `E` which
+sends exactly the image of an injection `τ : S⁰ → K` to the boundary `S⁰ = {u, -u}` can be made to
+invert `τ`, by composing it with the reflection `v ↦ -v` if necessary. The new homeomorphism has
+the same norm as `e` at every point. -/
+theorem exists_homeomorph_apply_eq_of_finrank_eq_one {E K : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace K] (hE : Module.finrank ℝ E = 1)
+    {τ : sphere (0 : E) 1 → K} (hτ : Function.Injective τ) (e : K ≃ₜ closedBall (0 : E) 1)
+    (he : ∀ z, ‖(e z : E)‖ = 1 ↔ z ∈ range τ) :
+    ∃ h : K ≃ₜ closedBall (0 : E) 1, (∀ x, (h (τ x) : E) = x) ∧ ∀ z, ‖(h z : E)‖ = ‖(e z : E)‖ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  -- The unit sphere of `E` is `{u, -u}`.
+  have hpm {v : E} (hv : ‖v‖ = 1) : v = u ∨ v = -u :=
+    eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hE (hv.trans (norm_eq_of_mem_sphere u).symm)
+  have hx (x : sphere (0 : E) 1) : x = u ∨ x = -u :=
+    (hpm (norm_eq_of_mem_sphere x)).imp Subtype.ext Subtype.ext
+  have hw (x : sphere (0 : E) 1) : ‖(e (τ x) : E)‖ = 1 := (he _).2 (mem_range_self x)
+  have hne : (e (τ u) : E) ≠ e (τ (-u)) := fun h ↦
+    ne_neg_of_mem_unit_sphere ℝ u (hτ (e.injective (Subtype.ext h)))
+  rcases hpm (hw u) with hu | hu
+  · -- `e` already sends `τ u` to `u`, hence `τ (-u)` to `-u`.
+    refine ⟨e, fun x ↦ ?_, fun _ ↦ rfl⟩
+    rcases hx x with rfl | rfl
+    · exact hu
+    · rcases hpm (hw (-u)) with h | h
+      · exact absurd (hu.trans h.symm) hne
+      · simpa using h
+  · -- `e` sends `τ u` to `-u`, hence `τ (-u)` to `u`: reflect.
+    refine ⟨e.trans ((Homeomorph.neg E).subtype fun v ↦ by simp), fun x ↦ ?_, fun z ↦ by simp⟩
+    rcases hx x with rfl | rfl
+    · simp [hu]
+    · rcases hpm (hw (-u)) with h | h
+      · simp [h]
+      · exact absurd (hu.trans h.symm) hne
 
 end TauCeti

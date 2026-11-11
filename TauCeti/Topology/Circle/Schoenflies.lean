@@ -49,6 +49,12 @@ components, so neither side need be contained in a single component.
 * `TauCeti.exists_closure_homeomorph_closedBall_of_finrank_eq_one`: **the generalized Schoenflies
   theorem in dimension one**, for a continuous injection `β : S⁰ × [-1, 1] → S¹`, including the
   position of the collar arcs at each point.
+* `TauCeti.exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one`: for an
+  injection `σ : S⁰ → S¹`, the closure of the component of each point off the image of `σ` in its
+  complement is homeomorphic to the closed unit ball by a homeomorphism inverting `σ` and sending
+  exactly the image of `σ` to the boundary sphere. This is the case `m = 1` of
+  `TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`, where no
+  collar is needed.
 
 ## References
 
@@ -303,5 +309,58 @@ theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one [NormedSpace ℝ 
   rw [← hS] at hunion hAcl hBcl eA eB
   exact ⟨A, B, hAo, hBo, hAc, hBc, hdisj, hunion, hAcl, hBcl, eA, eB,
     collar_mapsTo hF hβ hinj hAo hBo hdisj hunion hAcl hBcl⟩
+
+/-- **The generalized Schoenflies theorem in dimension one, component form.** Let `σ : S⁰ → S¹` be
+an injection, where `S⁰` is the unit sphere of a one-dimensional real normed space `E` and `S¹` is
+the unit sphere of a two-dimensional real normed space. No collar is needed: the two distinct
+points of the image of `σ` cut the circle into two arcs, and the closure of the connected component
+of each point `y` off the image of `σ` in its complement is homeomorphic to the closed unit ball of
+`E`, by a homeomorphism which inverts `σ` and sends exactly the image of `σ` to the boundary
+sphere. -/
+theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
+    [NormedSpace ℝ F] {σ : sphere (0 : E) 1 → sphere (0 : F) 1} (hσ : Injective σ)
+    (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2) {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
+    ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
+      (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
+        (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
+      ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  -- The image of `σ` is the pair of distinct points `σ u` and `σ (-u)`.
+  have hrange : range σ = {σ u, σ (-u)} := by
+    refine (range_subset_iff.2 fun x ↦ ?_).antisymm (by simp [insert_subset_iff])
+    have hx : (x : E) ∈ ({(u : E), -(u : E)} : Set E) :=
+      sphere_eq_pair_of_finrank_eq_one hE u.2 ▸ x.2
+    rcases hx with h | h
+    exacts [.inl (congrArg σ (Subtype.ext h)), .inr (congrArg σ (Subtype.ext h))]
+  obtain ⟨A, B, hAo, hBo, hAc, hBc, hAB, hunion, hAcl, hBcl, ⟨eA, heA⟩, ⟨eB, heB⟩⟩ :=
+    exists_closure_homeomorph_closedBall_sphere hE hF
+      fun h ↦ ne_neg_of_mem_unit_sphere ℝ u (hσ h)
+  rw [← hrange] at hunion hAcl hBcl heA heB
+  -- The component of `y` is whichever of the two arcs `A` and `B` contains it.
+  have hcc {S T : Set (sphere (0 : F) 1)} (hS : IsOpen S) (hT : IsOpen T) (hSc : IsConnected S)
+      (hST : Disjoint S T) (hSTu : S ∪ T = (range σ)ᶜ) (hyS : y ∈ S) :
+      connectedComponentIn (range σ)ᶜ y = S :=
+    (isPreconnected_connectedComponentIn.subset_left_of_subset_union hS hT hST
+      (hSTu ▸ connectedComponentIn_subset _ _)
+      ⟨y, mem_connectedComponentIn (hSTu ▸ Or.inl hyS), hyS⟩).antisymm
+      (hSc.isPreconnected.subset_connectedComponentIn hyS (hSTu ▸ subset_union_left))
+  obtain ⟨S, hS, hSσ, e, he⟩ : ∃ S, connectedComponentIn (range σ)ᶜ y = S ∧
+      range σ ⊆ closure S ∧ ∃ e : closure S ≃ₜ closedBall (0 : E) 1,
+        ∀ z : closure S, (z : sphere (0 : F) 1) ∈ range σ ↔ ‖(e z : E)‖ = 1 := by
+    rcases (hunion ▸ hy : y ∈ A ∪ B) with hyA | hyB
+    · exact ⟨A, hcc hAo hBo hAc hAB hunion hyA, hAcl ▸ subset_union_right, eA, heA⟩
+    · exact ⟨B, hcc hBo hAo hBc hAB.symm (union_comm A B ▸ hunion) hyB,
+        hBcl ▸ subset_union_right, eB, heB⟩
+  subst hS
+  -- Make `e` invert `σ` on the two endpoints.
+  obtain ⟨h, hστ, hnorm⟩ := exists_homeomorph_apply_eq_of_finrank_eq_one hE
+    (τ := fun x ↦ ⟨σ x, hSσ (mem_range_self x)⟩) (fun x x' h ↦ hσ (congrArg Subtype.val h)) e
+    fun z ↦ (he z).symm.trans ⟨fun ⟨x, hx⟩ ↦ ⟨x, Subtype.ext hx⟩,
+      fun ⟨x, hx⟩ ↦ ⟨x, congrArg Subtype.val hx⟩⟩
+  refine ⟨h, fun z x hzx ↦ ?_, fun z ↦ ?_⟩
+  · obtain rfl : z = ⟨σ x, hSσ (mem_range_self x)⟩ := Subtype.ext hzx
+    exact hστ x
+  · rw [mem_sphere_zero_iff_norm, hnorm, he]
 
 end TauCeti
