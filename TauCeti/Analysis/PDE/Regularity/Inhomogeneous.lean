@@ -163,7 +163,6 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   obtain ⟨D₀, hD₀, hbound⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
-  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   refine ⟨max (√2 * D₀) (√2 * D₀ * √ω + 1), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a u x₀ R W g h ha hg hug hR hball
   have hW : 0 ≤ W := nonneg_of_ae_abs_le_ball hR hug
@@ -184,7 +183,6 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   filter_upwards [hgbound, ae_restrict_of_ae_restrict_of_subset
     (ball_subset_ball (half_le_self hR.le)) hug] with x hx hxu
   set Q := R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
-  have hQ : 0 ≤ Q := by positivity
   calc |W1p.value u x| ≤ |W1p.value g x| + |W1p.value u x - W1p.value g x| := by
         simpa using abs_add_le (W1p.value g x) (W1p.value u x - W1p.value g x)
     _ ≤ D₀ * R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu) + W := add_le_add hx hxu
@@ -259,7 +257,6 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le [Nonempty 
   have hsρ1 : C₀ * (s / ρ) ^ α₀ ≤ C₀ :=
     mul_le_of_le_one_right hC₀.le
       (Real.rpow_le_one (by positivity) ((div_le_one hρ).2 hsρ) hα₀.le)
-  have hC₀s : 0 ≤ C₀ * (s / ρ) ^ α₀ := by positivity
   calc _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ + W - (m - W)) + 2 * W := hosc
     _ = C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * (C₀ * (s / ρ) ^ α₀) + 2) * W := by ring
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
