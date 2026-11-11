@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 
@@ -38,13 +37,11 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
-* `MeasureTheory.eLpNorm_clm_comp_le_of_ae_nnnorm_le`: composing an operator family `B` pointwise
-  with an operator family `A` bounded almost everywhere by `C` scales `eLpNorm` by at most `C`.
 -/
 
 public section
 
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -110,18 +107,5 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
     · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
         rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA))]
       exact le_top
-
-/-- **`eLpNorm` bound for pointwise composition of operator families.** If `‖A x‖ ≤ C` for almost
-every `x`, then for every exponent `p`, `‖A ∘L B‖_{Lᵖ} ≤ C ‖B‖_{Lᵖ}`. -/
-theorem eLpNorm_clm_comp_le_of_ae_nnnorm_le {𝕜 F G H : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    [NormedAddCommGroup H] [NormedSpace 𝕜 H] {A : α → G →L[𝕜] H} {B : α → F →L[𝕜] G}
-    (hA : AEStronglyMeasurable A μ) (hB : AEStronglyMeasurable B μ) {C : ℝ≥0}
-    (hC : ∀ᵐ x ∂μ, ‖A x‖₊ ≤ C) (p : ℝ≥0∞) :
-    eLpNorm (fun x => (A x).comp (B x)) p μ ≤ C * eLpNorm B p μ := by
-  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-    ((ContinuousLinearMap.compL 𝕜 F G H).continuous₂.comp_aestronglyMeasurable₂ hA hB) ?_ p
-  filter_upwards [hC] with x hx
-  exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (mul_le_mul_left hx _)
 
 end MeasureTheory

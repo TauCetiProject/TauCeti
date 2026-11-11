@@ -16,9 +16,9 @@ A continuous member `u` of `W^{1,p}_loc` on a planar set `U` composes with a map
 on an open set containing `u '' U` to give a member of `W^{1,p}_loc(U)`. The weak derivative of
 `g ∘ u` on `interior U` is `z ↦ Dg(u z) ∘ Du z`, by the weak chain rule
 `TauCeti.HasWeakFDerivOn.contDiffOn_comp`. On a compact set `K` it obeys
-`‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`, the bound
-`MeasureTheory.eLpNorm_clm_comp_le_of_ae_nnnorm_le` for the bounded factor `Dg ∘ u`; its `Lᵖ`
-membership is `MeasureTheory.MemLp.clm_comp_of_continuousOn`. The domain-dependent form
+`‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`, by Mathlib's
+`eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul` with `ContinuousLinearMap.opNNNorm_comp_le`; its
+`Lᵖ` membership is `MeasureTheory.MemLp.clm_comp_of_continuousOn`. The domain-dependent form
 `z ↦ g(z, u z)` follows by composing with the graph map `z ↦ (z, u z)`.
 
 Continuity of `u` is a hypothesis here. It is automatic for `p > 2` after changing `u` on a null
