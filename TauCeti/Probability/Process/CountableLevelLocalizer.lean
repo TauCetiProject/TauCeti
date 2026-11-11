@@ -30,6 +30,11 @@ on a raw filtration. The actual stopping times are attained minima of dyadic gri
 with infinity on exceptional paths where no minimum exists. Countable-range optional
 sampling can therefore be applied without completing the filtration.
 
+## Main results
+
+* `MeasureTheory.StronglyAdapted.exists_isLocalizingSequence_countable_range_level`
+  constructs a native localizing sequence with countable ranges and centered stopped-path bounds.
+
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -137,7 +142,7 @@ variable {Ω E : Type*} [NormedAddCommGroup E] {m : MeasurableSpace Ω}
 level localizers on its original filtration. The times are pointwise increasing; on one
 common full-measure event they lie between the half-level and full-level centered-norm hits
 and bound the entire centered stopped path. No integrability of the initial value is needed. -/
-theorem exists_countable_range_level_localizers (hX : StronglyAdapted ℱ X)
+theorem exists_isLocalizingSequence_countable_range_level (hX : StronglyAdapted ℱ X)
     (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) :
     ∃ ρ : ℕ → Ω → WithTop ℝ≥0, IsLocalizingSequence ℱ ρ P ∧
       (∀ n, (range (ρ n)).Countable) ∧ (∀ ω, Monotone (ρ · ω)) ∧
