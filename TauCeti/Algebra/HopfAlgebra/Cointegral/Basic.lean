@@ -187,11 +187,13 @@ variable {k H : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
   [Module.Finite k H] [Module.Projective k H]
 
 /-- Right cointegrals are exactly the right integrals of the finite dual bialgebra. -/
+@[simp]
 theorem toConv_mem_rightIntegral_iff (φ : Module.Dual k H) :
     WithConv.toConv φ ∈ rightIntegral k (ConvolutionDual k H) ↔ IsRightCointegral φ := by
   simp [mem_rightIntegral_iff, isRightCointegral_iff_convMul]
 
 /-- Left cointegrals are exactly the left integrals of the finite dual bialgebra. -/
+@[simp]
 theorem toConv_mem_leftIntegral_iff (φ : Module.Dual k H) :
     WithConv.toConv φ ∈ leftIntegral k (ConvolutionDual k H) ↔ IsLeftCointegral φ := by
   simp [mem_leftIntegral_iff, isLeftCointegral_iff_convMul]

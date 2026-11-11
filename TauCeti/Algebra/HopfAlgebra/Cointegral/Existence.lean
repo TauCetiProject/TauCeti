@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.HopfAlgebra.HopfModule
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 
 /-!
@@ -103,19 +104,6 @@ private theorem mul'_rTensor_antipode_matrixCoefficient (ψ : Module.Dual R H) (
   simp_rw [← Finset.smul_sum, HopfAlgebra.sum_antipode_mul_eq_smul, smul_smul,
     ← Finset.sum_smul, h3]
 
-/-- For the regular comodule, `c(φ, y x) = Σ c(φ(· x₁), y) x₂`. -/
-private theorem matrixCoefficient_mul (φ : Module.Dual R H) (y x : H)
-    {ι : Type*} (rx : Coalgebra.Repr R x ι) :
-    Comodule.matrixCoefficient (C := H) φ (y * x) =
-      ∑ l ∈ rx.index, Comodule.matrixCoefficient (C := H)
-        (φ ∘ₗ LinearMap.mulRight R (rx.left l)) y * rx.right l := by
-  simp only [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, Bialgebra.comul_mul,
-    ← rx.eq, Finset.mul_sum, map_sum]
-  refine Finset.sum_congr rfl fun l _ => ?_
-  induction comul (R := R) y using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [add_mul, map_add, ha, hb]
-  | tmul a b => simp
-
 /-- The identity `Σ S(c(φ, h₁ x)) h₂ = S(c(φ ↼ h, x))` behind the Hopf-module compatibility of
 the dual. -/
 private theorem mul'_rTensor_antipode_matrixCoefficient_mulRight (φ : Module.Dual R H) (h x : H) :
@@ -131,8 +119,8 @@ private theorem mul'_rTensor_antipode_matrixCoefficient_mulRight (φ : Module.Du
     induction z using TensorProduct.inductionOn with
     | add a b ha hb => simp only [map_add, ha, hb, mul_add, Finset.sum_add_distrib]
     | tmul a b =>
-      simp [matrixCoefficient_mul φ a x rx, HopfAlgebra.antipode_mul_antidistrib, Finset.sum_mul,
-        mul_assoc]
+      simp [Comodule.matrixCoefficient_mul φ a x rx, HopfAlgebra.antipode_mul_antidistrib,
+        Finset.sum_mul, mul_assoc]
   rw [key]
   simp only [mul'_rTensor_antipode_matrixCoefficient]
   rw [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, ← rx.eq]

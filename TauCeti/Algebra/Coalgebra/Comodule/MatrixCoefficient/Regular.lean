@@ -31,6 +31,8 @@ generated-coefficient condition.
   whole coalgebra.
 * `TauCeti.Comodule.regular_matrixCoefficientSubalgebra_eq_top`: for a bialgebra or algebra
   coalgebra, regular coefficients generate the whole algebra.
+* `TauCeti.Comodule.matrixCoefficient_mul`: for a bialgebra, a regular coefficient of a product
+  `y x` expands through the coproduct of `x`.
 * `TauCeti.Subcomodule.toSubmodule_le_matrixCoefficientSubmodule`: a subcomodule of the
   regular comodule is contained in the coefficient space of the comodule it carries.
 * `TauCeti.Subcoalgebra.le_matrixCoefficientSubalgebra_toRegularSubcomodule`: a subcoalgebra is
@@ -153,6 +155,26 @@ theorem regularObj_matrixCoefficientSubalgebra_eq_top :
   regular_matrixCoefficientSubalgebra_eq_top (R := R) (C := C)
 
 end Algebra
+
+section Bialgebra
+
+variable [Semiring C] [Bialgebra R C]
+
+/-- For the regular comodule of a bialgebra, `c(φ, y x) = Σ c(φ(· x₁), y) x₂`, where
+`c(ψ, y) = Σ ψ(y₁) y₂`. -/
+theorem matrixCoefficient_mul (φ : Module.Dual R C) (y x : C)
+    {ι : Type*} (rx : Coalgebra.Repr R x ι) :
+    matrixCoefficient (C := C) φ (y * x) =
+      ∑ l ∈ rx.index, matrixCoefficient (C := C)
+        (φ ∘ₗ LinearMap.mulRight R (rx.left l)) y * rx.right l := by
+  simp only [matrixCoefficient_def, instSelf_coact, Bialgebra.comul_mul,
+    ← rx.eq, Finset.mul_sum, map_sum]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  induction Coalgebra.comul (R := R) y using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [add_mul, map_add, ha, hb]
+  | tmul a b => simp
+
+end Bialgebra
 
 end Comodule
 
