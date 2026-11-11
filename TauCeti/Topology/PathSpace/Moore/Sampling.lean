@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
 public import TauCeti.Topology.ContinuousMap.Ascoli
+public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.UniformSpace.HeineCantor
 
@@ -21,7 +22,11 @@ For a compact family of paths in a pseudometric space, every sufficiently fine s
 has uniformly small arcs: every point of an arc is close to its initial sampled vertex.
 The same estimate holds for free loops, including the final arc back to the first vertex.
 These estimates place the sampled vertices in distance cutoffs for broken geodesics and
-control the original arcs during interpolation inside convex balls.
+control the original arcs during interpolation inside convex balls. In particular, for
+cut-offs bounded below by a positive constant, every sufficiently fine sampling of a compact
+family of free loops lies in Abouzaid's distance cut `TauCeti.cyclicDistanceCut`
+(`TauCeti.MooreFreeLoopSpace.exists_mapsTo_sample_cyclicDistanceCut`): this is the threshold
+`r(K)` of the compact-family approximation of the free loop space by broken geodesics.
 
 The argument uses the existing continuous comparison `MoorePath.toUnitPath` and the
 compact-family equicontinuity theorem `IsCompact.equicontinuous`. It concerns duration
@@ -161,6 +166,23 @@ theorem exists_sample_dist_add_one_lt {K : Set (MooreFreeLoopSpace X)} (hK : IsC
         simp only [Set.Icc.coe_one, Nat.cast_add, Nat.cast_one, hiReal,
           div_self hrpos.ne', le_refl])
     simpa only [MoorePath.toUnitPath_one, target_toMoorePath, source_toMoorePath] using hdist
+
+/-- **Compact families of free loops are sampled into the distance cuts.** For a compact family
+`K` of free Moore loops and cut-offs bounded below by `ε > 0`, every sufficiently fine sampling
+of `K` lies in the distance cut: there is `N` such that for every `r ≥ N` and all cut-offs
+`δ : Fin (r + 1) → ℝ` with `ε ≤ δ i` for every `i`, the `r + 1` sampled vertices of each loop of
+`K` lie in `cyclicDistanceCut δ`. The threshold is uniform in the cut-offs. -/
+theorem exists_mapsTo_sample_cyclicDistanceCut {K : Set (MooreFreeLoopSpace X)}
+    (hK : IsCompact K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ r ≥ N, ∀ δ : Fin (r + 1) → ℝ, (∀ i, ε ≤ δ i) →
+      MapsTo (fun γ : MooreFreeLoopSpace X ↦ γ.toMoorePath.sample (r + 1)) K
+        (cyclicDistanceCut δ) := by
+  obtain ⟨N, hN⟩ := exists_sample_dist_add_one_lt hK hε
+  refine ⟨N, fun r hr δ hδ γ hγ ↦ mem_cyclicDistanceCut.2 fun i ↦ ?_⟩
+  -- The edge ending at the vertex `i` is the edge starting at the vertex `i - 1`.
+  have hi := hN r hr γ hγ (i - 1)
+  rw [sub_add_cancel, dist_comm] at hi
+  exact hi.le.trans (hδ i)
 
 end MooreFreeLoopSpace
 end TauCeti
