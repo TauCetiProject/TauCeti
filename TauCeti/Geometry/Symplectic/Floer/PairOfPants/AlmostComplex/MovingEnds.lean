@@ -33,7 +33,8 @@ vanishes on the disc `‖w‖ ≤ 2 exp (2π)`. So when these input discs are pa
 the output disc, at most one weight is nonzero at each point and the Cayley coordinate lies in the
 Cayley ball (`TauCeti.Floer.puncturedSphereCayley_mem`). The structure
 `TauCeti.Floer.puncturedSphereAlmostComplex h₀ c a J Jout` is its inverse Cayley transform there,
-and `J₀` at configurations where the Cayley coordinate leaves the ball. The results are:
+and `J₀` at configurations where the Cayley coordinate leaves the ball
+(`TauCeti.Floer.puncturedSphereAlmostComplex_of_notMem`). The results are:
 
 * `TauCeti.Floer.tames_puncturedSphereAlmostComplex` and
   `TauCeti.Floer.compatible_puncturedSphereAlmostComplex`: the structure is `ω`-tame, and it is
@@ -183,10 +184,26 @@ def puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀) (c a : ι → ℂ)
     h₀.cayleyEquiv.symm ⟨_, h⟩
   else J₀
 
+open Classical in
+theorem puncturedSphereAlmostComplex_def (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
+    puncturedSphereAlmostComplex h₀ c a J Jout w x =
+      if h : puncturedSphereCayley J₀ c a J Jout w x ∈ ω.cayleyBall J₀ then
+        (h₀.cayleyEquiv.symm ⟨_, h⟩ : AlmostComplexStructure V)
+      else J₀ :=
+  (rfl)
+
+/-- **The fallback to the base structure.** Where the Cayley coordinate leaves the Cayley ball,
+the structure is `J₀`. -/
+@[simp]
+theorem puncturedSphereAlmostComplex_of_notMem (h₀ : ω.Compatible J₀) {w : ℂ} {x : M}
+    (h : puncturedSphereCayley J₀ c a J Jout w x ∉ ω.cayleyBall J₀) :
+    puncturedSphereAlmostComplex h₀ c a J Jout w x = J₀ := by
+  simp only [puncturedSphereAlmostComplex_def, h, ↓reduceDIte]
+
 /-- The structure on a sphere with moving input ends is tamed by `ω`. -/
 theorem tames_puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
     ω.Tames (puncturedSphereAlmostComplex h₀ c a J Jout w x) := by
-  unfold puncturedSphereAlmostComplex
+  rw [puncturedSphereAlmostComplex_def]
   split_ifs
   exacts [(h₀.cayleyEquiv.symm _).2, h₀.tames]
 
@@ -245,7 +262,7 @@ theorem compatible_puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀)
     have hJoutsa (t : ℝ) (y : M) := hsa (hJoutc t y)
     refine SymplecticForm.mem_compatibleCayleyBall.2 ⟨h, fun v v' => ?_⟩
     simp [puncturedSphereCayley_def, map_sum, hJsa, hJoutsa]
-  · simp only [puncturedSphereAlmostComplex, h, ↓reduceDIte]
+  · rw [puncturedSphereAlmostComplex_of_notMem h₀ h]
     exact h₀
 
 /-- **Off the input discs the structure is the negative plane structure.** At a point outside the
@@ -261,21 +278,21 @@ theorem puncturedSphereAlmostComplex_eq_negativePlaneAlmostComplex (h₀ : ω.Co
     (tames_negativePlaneAlmostComplex h₀ w x) ?_).symm
   rw [puncturedSphereCayley_of_forall_le_norm_sub hw, cayley_negativePlaneAlmostComplex]
 
-/-- **The structure on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint
-and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and `J i` has period one in `t`, then on the part `s > 0`
-of the input end `i`, the Cayley transform of the structure at the point `c i + a i φ₀(z)` with end
-coordinates `z = s + i t` is `β(s - 1) • cayley (J i t x)`. -/
-theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos
-    (h₀ : ω.Compatible J₀) (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι}
+/-- **The structure on an input end, for discs of any radii.** If discs `‖w - c j‖ < r j`
+containing the discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` are pairwise disjoint and lie in the disc
+`‖w‖ ≤ 2 exp (2π)`, and `J i` has period one in `t`, then at a point `c i + a i φ₀(z)` of the disc
+of the input `i`, with end coordinates `z = s + i t`, the Cayley transform of the structure is
+`β(s - 1) • cayley (J i t x)`. -/
+theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_norm_lt
+    (h₀ : ω.Compatible J₀) {r : ι → ℝ} (hr : ∀ j, ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ r j)
+    (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + r i ≤ 2 * Real.exp (2 * π)) {i : ι}
     (hJ : ∀ t x, ω.Tames (J i t x)) (hJp : Periodic (J i) 1)
-    (ha : a i ≠ 0) {z : ℂ} (hz : 0 < z.re) (x : M) :
+    (ha : a i ≠ 0) {z : ℂ} (hz : ‖a i * zero.cylindricalEndLift z‖ < r i) (x : M) :
     J₀.cayley (puncturedSphereAlmostComplex h₀ c a J Jout (c i + a i * zero.cylindricalEndLift z)
       x) = smoothTransition (z.re - 1) • J₀.cayley (J i z.im x) := by
   set w := c i + a i * zero.cylindricalEndLift z
-  have hlt : ‖w - c i‖ < ‖a i‖ / 2 := by
-    rw [add_sub_cancel_left]
-    exact norm_mul_cylindricalEndLift_zero_lt ha hz
+  have hlt : ‖w - c i‖ < r i := by rwa [add_sub_cancel_left]
   have hφ : (w - c i) / a i = zero.cylindricalEndLift z := by
     simp only [w, add_sub_cancel_left, mul_div_cancel_left₀ _ ha]
   -- Only the input `i` contributes at `w`.
@@ -286,27 +303,52 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos
       rw [hk]
       simp
     have hp : J i (z.im + k) = J i z.im := by simpa using hJp.int_mul k z.im
-    rw [puncturedSphereCayley_of_norm_sub_lt (r := fun j => ‖a j‖ / 2) (fun j => ?_) hsep hout hlt,
-      hφ, re_endCoord_cylindricalEndLift, him, hp]
-    have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-    nlinarith [norm_nonneg (a j)]
+    rw [puncturedSphereCayley_of_norm_sub_lt hr hsep hout hlt, hφ, re_endCoord_cylindricalEndLift,
+      him, hp]
   rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ (hC ▸ h₀.smul_cayley_mem_cayleyBall (hJ _ x)
     (abs_le.2 ⟨by linarith [smoothTransition.nonneg (z.re - 1)], smoothTransition.le_one _⟩)), hC]
 
-/-- **The structure is `J i t` far out on each input end.** Under the hypotheses of
-`TauCeti.Floer.cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos`, on the part
-`s ≥ 2` of the input end `i` the structure at the point `c i + a i φ₀(z)` with end coordinates
-`z = s + i t` is `J i t x`. -/
-theorem puncturedSphereAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+/-- **The structure on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint
+and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and `J i` has period one in `t`, then on the part `s > 0`
+of the input end `i`, the Cayley transform of the structure at the point `c i + a i φ₀(z)` with end
+coordinates `z = s + i t` is `β(s - 1) • cayley (J i t x)`. -/
+theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos
+    (h₀ : ω.Compatible J₀) (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
     (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι}
+    (hJ : ∀ t x, ω.Tames (J i t x)) (hJp : Periodic (J i) 1)
+    (ha : a i ≠ 0) {z : ℂ} (hz : 0 < z.re) (x : M) :
+    J₀.cayley (puncturedSphereAlmostComplex h₀ c a J Jout (c i + a i * zero.cylindricalEndLift z)
+      x) = smoothTransition (z.re - 1) • J₀.cayley (J i z.im x) :=
+  cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_norm_lt h₀
+    (fun j => by
+      have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+      nlinarith [norm_nonneg (a j)])
+    hsep hout hJ hJp ha (norm_mul_cylindricalEndLift_zero_lt ha hz) x
+
+/-- **The structure is `J i t` far out on each input end.** If the discs
+`‖w - c j‖ < ‖a j‖ exp (-2π) / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and
+`J i` has period one in `t`, then on the part `s ≥ 2` of the input end `i` the structure at the
+point `c i + a i φ₀(z)` with end coordinates `z = s + i t` is `J i t x`. -/
+theorem puncturedSphereAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
+    (hsep : Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {i : ι}
     (hJ : ∀ t x, ω.Tames (J i t x)) (hJp : Periodic (J i) 1)
     (ha : a i ≠ 0) {z : ℂ} (hz : 2 ≤ z.re) (x : M) :
     puncturedSphereAlmostComplex h₀ c a J Jout (c i + a i * zero.cylindricalEndLift z) x =
       J i z.im x := by
+  -- On the part `s ≥ 2` the point lies in the support disc of the input `i`.
+  have hlt : ‖a i * zero.cylindricalEndLift z‖ < ‖a i‖ * Real.exp (-(2 * π)) / 2 := by
+    have h := norm_cylindricalEndLift_sub_endCenter zero z
+    rw [endCenter_zero, sub_zero, endScale_zero] at h
+    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
+    rw [norm_mul, h, h2]
+    have he : Real.exp (-(2 * π * z.re)) < Real.exp (-(2 * π)) :=
+      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
+    nlinarith [norm_pos_iff.2 ha]
   refine h₀.eq_of_cayley_eq (tames_puncturedSphereAlmostComplex h₀ _ x) (hJ z.im x) ?_
-  rw [cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos h₀ hsep hout hJ hJp ha
-    (by linarith), smoothTransition.one_of_one_le (by linarith), one_smul]
+  rw [cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_norm_lt h₀ (fun _ => le_rfl) hsep
+    hout hJ hJp ha hlt, smoothTransition.one_of_one_le (by linarith), one_smul]
 
 /-- **The structure on the output end.** If the discs `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` lie in the
 disc `‖w‖ ≤ 2 exp (2π)` and `Jout` has period one in `t`, then on the part `s ≤ -1` of the output
