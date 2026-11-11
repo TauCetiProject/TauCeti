@@ -128,9 +128,7 @@ theorem rootLE_sum_int_iff (a c : b.support → ℤ) :
   classical
   rw [rootLE_iff_sub_mem_posRootCone,
     mem_posRootCone_iff_exists_nat_of_bijOn P b
-      (e := fun i : b.support ↦ (i : ι))
-      ⟨fun i _ ↦ i.property, fun _ _ _ _ h ↦ Subtype.ext h,
-        fun i hi ↦ ⟨⟨i, hi⟩, trivial, rfl⟩⟩]
+      (by simpa using (Set.injOn_subtype_val (s := Set.univ (α := b.support))).bijOn_image)]
   constructor
   · rintro ⟨n, hn⟩
     have heq : ∑ i : b.support, (c i - a i) • P.root i =
@@ -172,9 +170,7 @@ theorem Equiv.rootLE_weightMap_iff (e : P.Equiv Q) (c : Q.Base)
   rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone,
     mem_posRootCone_iff_exists_nat_of_bijOn Q c hbij,
     mem_posRootCone_iff_exists_nat_of_bijOn P b
-      (e := fun i : b.support ↦ (i : ι))
-      ⟨fun i _ ↦ i.property, fun _ _ _ _ h ↦ Subtype.ext h,
-        fun i hi ↦ ⟨⟨i, hi⟩, trivial, rfl⟩⟩]
+      (by simpa using (Set.injOn_subtype_val (s := Set.univ (α := b.support))).bijOn_image)]
   apply exists_congr
   intro n
   have hsum : e.weightMap (∑ i : b.support, n i • P.root i) =
@@ -190,7 +186,7 @@ variable [Module ℚ M]
 
 omit [CharZero R] in
 /-- Integral comparison implies comparison in the rational positive cone. -/
-theorem sub_mem_rationalCone_of_rootLE {x y : M} (h : P.rootLE b x y) :
+theorem sub_mem_hull_of_rootLE {x y : M} (h : P.rootLE b x y) :
     y - x ∈ PointedCone.hull ℚ (P.root '' (b.support : Set ι)) := by
   obtain ⟨n, hn⟩ := (P.rootLE_iff_exists_nat b).mp h
   rw [hn]
@@ -202,11 +198,11 @@ variable [Algebra ℚ R] [IsScalarTower ℚ R M]
 
 /-- Rational comparison detects integral dominance when the difference has integral
 simple-root coordinates. The condition concerns the difference, not the endpoints. -/
-theorem rootLE_iff_sub_mem_rationalCone_of_eq_sum_int {x y : M} (z : b.support → ℤ)
+theorem rootLE_iff_sub_mem_hull_of_eq_sum_int {x y : M} (z : b.support → ℤ)
     (hz : y - x = ∑ i, z i • P.root i) :
     P.rootLE b x y ↔ y - x ∈ PointedCone.hull ℚ (P.root '' (b.support : Set ι)) := by
   classical
-  refine ⟨P.sub_mem_rationalCone_of_rootLE b, fun h ↦ ?_⟩
+  refine ⟨P.sub_mem_hull_of_rootLE b, fun h ↦ ?_⟩
   obtain ⟨q, hq⟩ := (Submodule.mem_span_image_finset_iff_exists_fun' (Nonneg ℚ)).mp h
   have heq : ∑ i : b.support, (z i : ℚ) • P.root i =
       ∑ i : b.support, (q i : ℚ) • P.root i := by
