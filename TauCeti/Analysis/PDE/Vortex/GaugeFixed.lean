@@ -190,6 +190,17 @@ theorem gaugeFixedOperator_add (x : ℂ → EuclideanSpace ℝ (Fin 4))
   · simp [-gaugeAdjoint_def, gaugeAdjoint_add x hy hv]
   all_goals simp [hL]
 
+/-- `L_x y` at a point depends only on the germ of the variation `y` there. -/
+theorem gaugeFixedOperator_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y v : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : y =ᶠ[nhds z] v) :
+    gaugeFixedOperator x y z = gaugeFixedOperator x v z := by
+  have hi (i : Fin 4) : (fun w ↦ y w i) =ᶠ[nhds z] fun w ↦ v w i :=
+    h.mono fun w hw ↦ by simp only [hw]
+  ext i
+  fin_cases i <;>
+    simp [-gaugeAdjoint_def, gaugeAdjoint, linearizedEquation_apply_zero,
+      linearizedEquation_apply_one, linearizedEquation_apply_two, h.eq_of_nhds, (hi _).fderiv_eq]
+
 /-- `L_x` commutes with real scalar multiplication of variations. -/
 theorem gaugeFixedOperator_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : ℝ) (z : ℂ) :
     gaugeFixedOperator x (t • y) z = t • gaugeFixedOperator x y z := by
@@ -498,8 +509,6 @@ theorem continuous_gaugeAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
   have (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
       one_ne_zero).clm_apply continuous_const
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
   rw [funext (gaugeAdjoint_def x y)]
   fun_prop
 

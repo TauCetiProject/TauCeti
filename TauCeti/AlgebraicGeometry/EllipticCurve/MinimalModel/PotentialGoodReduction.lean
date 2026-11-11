@@ -67,6 +67,8 @@ discrete valuation ring of the extension dominating `R`.
   a change of variables.
 * `WeierstrassCurve.HasGoodReduction.isInteger_j`: a minimal equation with good reduction has
   integral `j`-invariant.
+* `WeierstrassCurve.HasPotentialGoodReduction.isElliptic`: a curve with potential good reduction
+  is elliptic.
 * `WeierstrassCurve.HasPotentialGoodReduction.isInteger_j`: a curve with potential good reduction
   has integral `j`-invariant.
 * `WeierstrassCurve.HasMultiplicativeReduction.not_isInteger_j` and
@@ -151,6 +153,17 @@ theorem hasPotentialGoodReduction_smul (D : VariableChange K) (W : WeierstrassCu
   refine .intro R L S hRS ?_
   rwa [baseChange, ← map_variableChange, hasGoodReduction_minimal_smul_iff]
 
+/-- **A curve with potential good reduction is elliptic**: its discriminant becomes a unit after
+the finite extension at which a minimal equation has good reduction, so it is nonzero. -/
+theorem HasPotentialGoodReduction.isElliptic {W : WeierstrassCurve K}
+    (h : W.HasPotentialGoodReduction R) : W.IsElliptic := by
+  obtain ⟨L, _, _, _, S, _, _, _, _, _, _, _, _, hW⟩ := hasPotentialGoodReduction_iff.1 h
+  obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
+  have h₁ : (C • W.baseChange L).IsElliptic := hC ▸ hW.isElliptic
+  have h₂ : (W.baseChange L).IsElliptic := by
+    simpa using (inferInstance : (C⁻¹ • C • W.baseChange L).IsElliptic)
+  exact ⟨isUnit_iff_ne_zero.2 fun h0 ↦ h₂.isUnit.ne_zero (by simp [baseChange, h0])⟩
+
 variable [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K]
 
 /-! ### The `j`-invariant -/
@@ -199,10 +212,22 @@ theorem HasMultiplicativeReduction.not_isInteger_j {W : WeierstrassCurve K} [W.I
   rw [map_pow, h.multiplicativeReduction, one_pow, map_mul, ← hr] at hc
   exact ((mul_le_of_le_one_left' (valuation_le_one _ r)).trans_lt h.badReduction).ne' hc
 
-/-- **Multiplicative reduction is not potentially good.** -/
+/-- **Multiplicative reduction is not potentially good.** No ellipticity is assumed: a singular
+cubic has `Δ = 0` on every model, so no model of it has good reduction. -/
 theorem HasMultiplicativeReduction.not_hasPotentialGoodReduction {W : WeierstrassCurve K}
-    [W.IsElliptic] (h : W.HasMultiplicativeReduction R) : ¬ W.HasPotentialGoodReduction R :=
-  fun hW ↦ h.not_isInteger_j R hW.isInteger_j
+    (h : W.HasMultiplicativeReduction R) : ¬ W.HasPotentialGoodReduction R := by
+  by_cases hE : W.IsElliptic
+  · exact fun hW ↦ h.not_isInteger_j R hW.isInteger_j
+  -- a singular curve has `Δ = 0`, which stays `0` on every model, while good reduction needs
+  -- the discriminant of the minimal model to be a unit
+  rintro ⟨L, _, _, _, S, _, _, _, _, _, _, _, -, hgood⟩
+  have hΔ : W.Δ = 0 := by
+    by_contra hΔ
+    exact hE (W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ))
+  obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
+  have h1 := hgood.goodReduction
+  rw [← hC, variableChange_Δ, baseChange, map_Δ, hΔ] at h1
+  simp at h1
 
 /-! ### The Legendre form -/
 

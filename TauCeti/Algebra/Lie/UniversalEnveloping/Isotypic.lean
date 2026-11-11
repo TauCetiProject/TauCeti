@@ -32,7 +32,7 @@ Mathlib's `IsIsotypicOfType`, `IsIsotypic`, and `isotypicComponent` through thos
   is isotypic of that type**, so it really is the largest Lie submodule built from copies of it.
 * `LieModule.mem_isotypicComponent_iff_mem_isotypicComponent_asModule`: canonical component
   membership normalization.
-* `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`: the top-component criterion for an
+* `LieModule.isotypicComponent_eq_top_iff`: the top-component criterion for an
   irreducible type.
 
 ## References
@@ -84,10 +84,14 @@ theorem isIsotypicOfType_iff_isIsotypicOfType_of_ι_smul
     exact (nonempty_lieModuleEquiv_iff_nonempty_linearEquiv hM S hS P).mpr
       (h (lieSubmoduleOrderIso hM P))
 
+omit [LieModule R L M] in
 /-- Lie-module isotypy is exactly Mathlib's module isotypy for a compatible `U(L)`-action. -/
 theorem isIsotypic_iff_isIsotypic_of_ι_smul
     (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆) :
     IsIsotypic R L M ↔ _root_.IsIsotypic U M := by
+  have : LieModule R L M :=
+    { smul_lie := fun t x m ↦ by rw [← hM, ← hM, map_smul, smul_assoc]
+      lie_smul := fun t x m ↦ by rw [← hM, ← hM, smul_comm] }
   rw [isIsotypic_iff]
   simp only [_root_.IsIsotypic]
   constructor
@@ -159,26 +163,6 @@ theorem mem_isotypicComponent_iff_mem_isotypicComponent_of_ι_smul
   rw [← mem_lieSubmoduleOrderIso hM,
     lieSubmoduleOrderIso_isotypicComponent hM S hS]
 
-/-- For compatible `U(L)`-actions, an irreducible type `S`, and a completely reducible Lie module,
-the isotypic component of type `S` is the whole module exactly when the Lie module is isotypic of
-type `S`. -/
-theorem isotypicComponent_eq_top_iff_of_ι_smul
-    (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆)
-    (S : Type*) [AddCommGroup S] [Module R S] [LieRingModule L S] [LieModule R L S]
-    [Module U S] [IsScalarTower R U S]
-    (hS : ∀ (x : L) (s : S), ι R x • s = ⁅x, s⁆)
-    [IsIrreducible R L S]
-    [ComplementedLattice (LieSubmodule R L M)] :
-    isotypicComponent R L M S = ⊤ ↔ IsIsotypicOfType R L M S := by
-  let : IsSimpleModule U S :=
-    (isIrreducible_iff_isSimpleModule hS).mp inferInstance
-  let : IsSemisimpleModule U M :=
-    (complementedLattice_lieSubmodule_iff_isSemisimpleModule hM).mp inferInstance
-  rw [← map_eq_top_iff (lieSubmoduleOrderIso hM),
-    lieSubmoduleOrderIso_isotypicComponent hM S hS,
-    _root_.isotypicComponent_eq_top_iff,
-    isIsotypicOfType_iff_isIsotypicOfType_of_ι_smul hM S hS]
-
 end Compatible
 
 section Canonical
@@ -196,6 +180,23 @@ theorem mem_isotypicComponent_iff_mem_isotypicComponent_asModule
     m ∈ isotypicComponent R L M S ↔ m ∈ _root_.isotypicComponent U M S :=
   mem_isotypicComponent_iff_mem_isotypicComponent_of_ι_smul
     (asModule_ι_smul R L M) (asModule_ι_smul R L S)
+
+/-- For an irreducible type `S` and a completely reducible Lie module, the isotypic component of
+type `S` is the whole module exactly when the Lie module is isotypic of type `S`. -/
+theorem isotypicComponent_eq_top_iff
+    (S : Type*) [AddCommGroup S] [Module R S] [LieRingModule L S] [LieModule R L S]
+    [IsIrreducible R L S] [ComplementedLattice (LieSubmodule R L M)] :
+    isotypicComponent R L M S = ⊤ ↔ IsIsotypicOfType R L M S := by
+  let : IsSimpleModule U S :=
+    (isIrreducible_iff_isSimpleModule (asModule_ι_smul R L S)).mp inferInstance
+  let : IsSemisimpleModule U M :=
+    (complementedLattice_lieSubmodule_iff_isSemisimpleModule (asModule_ι_smul R L M)).mp
+      inferInstance
+  rw [← map_eq_top_iff (lieSubmoduleOrderIso (asModule_ι_smul R L M)),
+    lieSubmoduleOrderIso_isotypicComponent (asModule_ι_smul R L M) S (asModule_ι_smul R L S),
+    _root_.isotypicComponent_eq_top_iff,
+    isIsotypicOfType_iff_isIsotypicOfType_of_ι_smul (asModule_ι_smul R L M) S
+      (asModule_ι_smul R L S)]
 
 /-- **The Lie isotypic component of an irreducible type is isotypic of that type**: every
 irreducible Lie submodule of the `S`-isotypic component of `M` is equivalent to `S`. This is
