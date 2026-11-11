@@ -203,9 +203,8 @@ theorem singularValues_adjoint (A : E →ₗ[𝕜] F) :
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (singularValues_antitone _) fun s hs ↦ ?_
   rcases hs.lt_or_gt with hs | hs
-  · have hempty (σ : ℕ →₀ ℝ) (hσ : ∀ i, 0 ≤ σ i) : {i | σ i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i hi ↦ (hσ i).not_gt (hi ▸ hs)
-    rw [hempty _ (singularValues_nonneg _), hempty _ (singularValues_nonneg _)]
+  · rw [ncard_ofPred_singularValues_of_nonpos _ hs.le,
+      ncard_ofPred_singularValues_of_nonpos _ hs.le]
   · rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
       finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
 
