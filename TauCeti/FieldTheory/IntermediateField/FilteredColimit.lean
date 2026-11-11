@@ -40,7 +40,9 @@ instance : IsDirected (FiniteSubextension K L) (· ≤ ·) where
   directed E F := by
     have := E.2
     have := F.2
-    exact ⟨⟨E.1 ⊔ F.1, inferInstance⟩, le_sup_left, le_sup_right⟩
+    refine ⟨⟨E.1 ⊔ F.1, inferInstance⟩, ?_, ?_⟩
+    · exact le_sup_left (a := E.1) (b := F.1)
+    · exact le_sup_right (a := E.1) (b := F.1)
 
 instance : IsFiltered (FiniteSubextension K L) :=
   isFiltered_of_directed_le_nonempty _
@@ -61,8 +63,11 @@ def finiteSubextensionCocone : Cocone (finiteSubextensionDiagram K L) where
 
 /-- Transition maps are inclusions of intermediate fields. -/
 @[simp] theorem finiteSubextensionDiagram_map {E F : FiniteSubextension K L} (f : E ⟶ F) :
-    (finiteSubextensionDiagram K L).map f =
-      CommRingCat.ofHom (_root_.IntermediateField.inclusion (leOfHom f)).toRingHom := (rfl)
+    eqToHom (finiteSubextensionDiagram_obj K L E).symm ≫
+        (finiteSubextensionDiagram K L).map f ≫
+          eqToHom (finiteSubextensionDiagram_obj K L F) =
+      CommRingCat.ofHom (_root_.IntermediateField.inclusion (leOfHom f)).toRingHom := by
+  rfl
 
 /-- The cocone point is the ambient extension. -/
 @[simp] theorem finiteSubextensionCocone_pt :
@@ -70,7 +75,11 @@ def finiteSubextensionCocone : Cocone (finiteSubextensionDiagram K L) where
 
 /-- Cocone legs are the inclusions into the ambient extension. -/
 @[simp] theorem finiteSubextensionCocone_ι_app (E : FiniteSubextension K L) :
-    (finiteSubextensionCocone K L).ι.app E = CommRingCat.ofHom (algebraMap E.1 L) := (rfl)
+    eqToHom (finiteSubextensionDiagram_obj K L E).symm ≫
+        (finiteSubextensionCocone K L).ι.app E ≫
+          eqToHom (finiteSubextensionCocone_pt K L) =
+      CommRingCat.ofHom (algebraMap E.1 L) := by
+  rfl
 
 /-- An algebraic extension is the filtered colimit of its finite intermediate fields. -/
 noncomputable def isColimitFiniteSubextensionCocone [Algebra.IsAlgebraic K L] :
@@ -80,6 +89,8 @@ noncomputable def isColimitFiniteSubextensionCocone [Algebra.IsAlgebraic K L] :
   apply isColimitOfReflects (forget CommRingCat)
   refine Types.FilteredColimit.isColimitOf' _ _ ?_ ?_
   · intro x
+    -- The forgetful functor and the cocone point law identify the ambient element with L.
+    change L at x
     let E : FiniteSubextension K L :=
       ⟨_root_.IntermediateField.adjoin K {x},
         _root_.IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)⟩
