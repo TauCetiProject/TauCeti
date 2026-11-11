@@ -376,10 +376,10 @@ private theorem expFDeriv_real_apply_eq_integral (x y : A) :
 /-- The Fréchet derivative of the noncommutative exponential, applied to `y`, is its Duhamel
 integral. -/
 theorem expFDeriv_apply_eq_integral {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-    [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 A]
-    [IsScalarTower ℝ 𝕂 A] (x y : A) :
+    [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 A] (x y : A) :
     expFDeriv 𝕂 x y =
       ∫ t in (0 : ℝ)..1, exp ((1 - t) • x) * y * exp (t • x) := by
+  -- The two real structures on `A` agree, by Mathlib's instance `Real.isScalarTower`.
   let _ : CharZero 𝕂 := Algebra.charZero_of_charZero ℝ 𝕂
   let _ : IsScalarTower ℚ ℝ 𝕂 := IsScalarTower.of_algebraMap_eq fun q ↦ by simp [map_ratCast]
   let _ : ContinuousSMul ℚ 𝕂 := IsScalarTower.continuousSMul ℝ

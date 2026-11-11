@@ -71,6 +71,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
 * `LinearMap.det_one_add_comp_comm`: the Weinstein–Aronszajn identity
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
+* `LinearEquiv.det_eq_pow_of_forall_eq_smul`: an automorphism acting as multiplication by a unit
+  `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
@@ -324,6 +326,17 @@ theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finra
 end LinearMap
 
 namespace LinearEquiv
+
+/-- An automorphism of a free module acting as multiplication by a unit `c` has determinant
+`c ^ finrank R V`. -/
+theorem det_eq_pow_of_forall_eq_smul {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    [Module.Free R V] (e : V ≃ₗ[R] V) (c : Rˣ) (h : ∀ x, e x = c • x) :
+    LinearEquiv.det e = c ^ Module.finrank R V := by
+  have he : (e : V →ₗ[R] V) = (c : R) • LinearMap.id :=
+    LinearMap.ext fun x ↦ by simp [h, Units.smul_def]
+  ext
+  rw [LinearEquiv.coe_det, he, LinearMap.det_smul, LinearMap.det_id, mul_one,
+    Units.val_pow_eq_pow_val]
 
 /-- The determinant kernel on a finite free module of rank at most one is trivial. -/
 @[simp]

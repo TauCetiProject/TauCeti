@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Transvection
+import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -112,7 +113,7 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul (hσ : Function.I
   have hσc : σ c = d * b⁻¹ := hσ _
   have hc : c ≠ 0 := (map_ne_zero σ).mpr (mul_ne_zero hd (inv_ne_zero hyx))
   have hcyx : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ x) = d := by
-    rw [RingHom.comp_smul, smul_dotProduct, smul_eq_mul, hσc, mul_assoc, inv_mul_cancel₀ hyx,
+    rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, hσc, mul_assoc, inv_mul_cancel₀ hyx,
       mul_one]
   have hcy : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ (c • y)) = 0 := by
     rw [comp_smul_dotProduct_mulVec_smul, hy, mul_zero]
@@ -164,10 +165,10 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
       rw [← map_eq_zero σ, apply_comp_dotProduct_mulVec hσ hQ, hyx, mul_zero]
     obtain ⟨u, hux, huy⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet hx0 hy0
     obtain ⟨c, hz⟩ :=
-      exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ hε htr hp hux
+      exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hp hux
     have hpair (w : n → K) : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ w) =
         (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + σ c * ((σ ∘ x) ⬝ᵥ (Q *ᵥ w)) := by
-      rw [comp_add_dotProduct_mulVec, RingHom.comp_smul, smul_dotProduct, smul_eq_mul]
+      rw [comp_add_dotProduct_mulVec, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
     have hzx : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by rwa [hpair, hp, mul_zero, add_zero]
     have hzy : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by rwa [hpair, hxy, mul_zero, add_zero]
     have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ (u + c • x)) ≠ 0 := by
@@ -182,16 +183,17 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
 /-! ### The kernel of the action -/
 
 /-- **An isometry fixing every isotropic point is central.** Under the hypotheses of
-`Matrix.isPretransitive_isotropicPoints`, if some point is isotropic, then an element of the
-special isometry group fixing every isotropic point is a scalar matrix, hence central. -/
+`Matrix.isPretransitive_isotropicPoints` (here `ε * ε = 1` is not assumed, since it follows from
+the surjectivity of the trace), if some point is isotropic, then an element of the special isometry
+group fixing every isotropic point is a scalar matrix, hence central. -/
 theorem mem_center_specialIsometryGroup_of_forall_smul_eq (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) (hdet : Q.det ≠ 0)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
     [Nonempty (Q.isotropicPoints σ)] {g : Q.specialIsometryGroup σ}
     (hg : ∀ p : Q.isotropicPoints σ, g • p = p) :
     g ∈ Subgroup.center (Q.specialIsometryGroup σ) := by
   obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
-  obtain ⟨c, hc⟩ := exists_eq_scalar_of_forall_mulVec_eq_smul hσ hQ hε hdet htr hadm
+  obtain ⟨c, hc⟩ := exists_eq_scalar_of_forall_mulVec_eq_smul hσ hQ hdet htr hadm
     (p₀ : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p₀)
     ((g : SpecialLinearGroup n K) : Matrix n n K) fun v hv ↦ by
       by_cases hv0 : v = 0

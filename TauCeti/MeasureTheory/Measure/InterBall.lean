@@ -29,6 +29,9 @@ For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric cl
 for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
 (`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
 
+The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
+once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`).
+
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
@@ -37,6 +40,10 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
   quotient of `m` is its right derivative, where that exists.
 * `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
+* `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
+  of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
+  `μ {z}`.
 -/
 
 public section
@@ -112,4 +119,31 @@ theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ
   isClosed_Ici.mem_of_frequently_of_tendsto (h.mp (eventually_nhdsWithin_of_forall
     fun r (hr : ρ < r) hle => (measure_mono (closedBall_subset_closedBall hr.le)).trans hle)) hf
 
+/-- An open ball is exhausted by the concentric balls of smaller radius, so a bound on the measures
+of the smaller balls bounds the measure of the ball. -/
+theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : ℝ≥0∞}
+    (h : ∀ r < ρ, μ (ball x r) ≤ B) : μ (ball x ρ) ≤ B := by
+  obtain ⟨r, hr, hrρ, hlim⟩ := exists_seq_strictMono_tendsto ρ
+  have hU : ⋃ n, ball x (r n) = ball x ρ :=
+    (iUnion_subset fun n => ball_subset_ball (hrρ n).le).antisymm fun z hz =>
+      mem_iUnion.2 (hlim.eventually (lt_mem_nhds hz)).exists
+  rw [← hU, Monotone.measure_iUnion fun i j hij => ball_subset_ball (hr.monotone hij)]
+  exact iSup_le fun n => h _ (hrρ n)
+
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory Metric Filter
+open scoped Topology
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+
+/-- The balls about a point `z`, one of which has finite measure, have measures tending to the
+measure of `{z}` as the radius decreases to `0`. -/
+theorem tendsto_measure_ball_nhdsGT_zero {z : X} (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤) :
+    Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 (μ {z})) := by
+  simpa [thickening_singleton] using
+    tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+
+end TauCeti

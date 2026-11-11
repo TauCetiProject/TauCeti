@@ -43,6 +43,11 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   measures is a probability measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
   supported at the same point.
+* `TauCeti.isProbabilityMeasure_natWeights`, `Finset.natWeights_compl_eq_zero` — the normalised
+  measure `(∑ m)⁻¹ • ∑ m x • δₓ` with natural multiplicities `m` on a finite set `S` is a
+  probability measure when `0 < ∑ m`, and it is carried by `S`.
+* `TauCeti.exists_finset_prod_natWeights_eq` — such a measure on terms of a sequence `u` is indexed
+  by a finite set of pairs `(i, k)`, `k` being the multiplicity of the `i`-th term.
 * `Multiset.measureReal_univ_sum_map_dirac`, `Multiset.sum_map_dirac_apply_eq_zero` — the
   counting measure `∑_{x ∈ s} δₓ` of a multiset `s` is finite, has mass `card s` and vanishes on
   measurable sets avoiding `s`.
@@ -51,7 +56,7 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 public section
 
 open MeasureTheory
-open scoped NNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace Measure
 
@@ -216,6 +221,45 @@ theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableS
   exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),
     ν.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).2)⟩
 
+section NatWeights
+
+variable {X : Type*} [MeasurableSpace X]
+
+/-- The probability measure with weights given by natural multiplicities `m x` on the points of a
+finite set `S` is a probability measure when the total multiplicity is positive. -/
+theorem isProbabilityMeasure_natWeights {S : Finset X} {m : X → ℕ} (hm : 0 < ∑ x ∈ S, m x) :
+    IsProbabilityMeasure
+      ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) := by
+  refine ⟨?_⟩
+  have hmsum : ∑ x ∈ S, ((m x : ℕ) : ℝ≥0∞) = ((∑ x ∈ S, m x : ℕ) : ℝ≥0∞) :=
+    (Nat.cast_sum _ _).symm
+  have hmass : (∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) Set.univ
+      = ((∑ x ∈ S, m x : ℕ) : ℝ≥0∞) := by
+    rw [FunLike.coe_sum, Finset.sum_apply, ← hmsum]
+    exact Finset.sum_congr rfl fun x _ ↦ by simp
+  rw [_root_.smul_apply, hmass, smul_eq_mul, hmsum,
+    ENNReal.inv_mul_cancel (Nat.cast_ne_zero.2 hm.ne') (ENNReal.natCast_ne_top _)]
+
+/-- The measure with natural multiplicities on a finite set of terms of a sequence `u` is of the
+form `(∑ m)⁻¹ • ∑ m • δ_(u i)` for a finite set of pairs `(i, k)`, where `k` is the
+multiplicity of the `i`-th term. -/
+theorem exists_finset_prod_natWeights_eq {u : ℕ → X} {S : Finset X} (m : X → ℕ)
+    (hS : ∀ x ∈ S, x ∈ Set.range u) :
+    ∃ t : Finset (ℕ × ℕ), (∑ q ∈ t, (q.2 : ℝ≥0∞))⁻¹ •
+        ∑ q ∈ t, (q.2 : ℝ≥0∞) • Measure.dirac (u q.1) =
+      (∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x := by
+  classical
+  choose! i hi using hS
+  have hinj : ∀ x ∈ S, ∀ y ∈ S, (i x, m x) = (i y, m y) → x = y := by
+    intro x hx y hy hxy
+    have hix : i x = i y := congrArg Prod.fst hxy
+    rw [← hi x hx, ← hi y hy, hix]
+  refine ⟨S.image fun x ↦ (i x, m x), ?_⟩
+  rw [Finset.sum_image hinj, Finset.sum_image hinj]
+  exact congrArg₂ _ rfl (Finset.sum_congr rfl fun x hx ↦ by rw [hi x hx])
+
+end NatWeights
+
 end TauCeti
 
 namespace TauCeti
@@ -233,3 +277,16 @@ theorem measurePreserving_const_dirac {μ : Measure X} [IsProbabilityMeasure μ]
 end MeasureTheory
 
 end TauCeti
+
+/-- The measure with natural multiplicities `m x` on the points of a finite set `S` is carried
+by `S`. -/
+theorem Finset.natWeights_compl_eq_zero {X : Type*} [MeasurableSpace X]
+    [MeasurableSingletonClass X] (S : Finset X) (m : X → ℕ) :
+    ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x)
+      ((S : Set X)ᶜ) = 0 := by
+  have hzero : (∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ((S : Set X)ᶜ) = 0 := by
+    rw [FunLike.coe_sum, Finset.sum_apply]
+    refine Finset.sum_eq_zero fun x hx ↦ ?_
+    rw [_root_.smul_apply, Measure.dirac_apply' _ S.measurableSet.compl,
+      Set.indicator_of_notMem (by simpa using hx), smul_zero]
+  rw [_root_.smul_apply, hzero, smul_zero]

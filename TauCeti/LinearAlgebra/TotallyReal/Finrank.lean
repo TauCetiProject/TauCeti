@@ -71,21 +71,33 @@ end IsTotallyReal
 
 namespace IsMaximalTotallyReal
 
-/-- A maximal totally real subspace has exactly half the dimension of the ambient space. -/
+omit [FiniteDimensional R E] in
+/-- A maximal totally real subspace has exactly half the dimension of the ambient space. (An
+infinite-dimensional space has both dimensions `0`, since `L` and `J L` span it.) -/
 theorem two_mul_finrank_eq (hL : IsMaximalTotallyReal J L)
     (hJ : Function.Injective (J.domRestrict L)) :
     2 * finrank R L = finrank R E := by
-  have h : finrank R L + finrank R (L.map J) = finrank R E :=
-    Submodule.finrank_add_eq_of_isCompl hL.isCompl
-  rw [← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj hJ] at h
-  omega
+  by_cases hE : Module.Finite R E
+  · have h : finrank R L + finrank R (L.map J) = finrank R E :=
+      Submodule.finrank_add_eq_of_isCompl hL.isCompl
+    rw [← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj hJ] at h
+    omega
+  · have hL0 : finrank R L = 0 := by
+      by_contra hne
+      have : Module.Finite R L := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero hne)
+      have : Module.Finite R (L ⊔ L.map J : Submodule R E) := inferInstance
+      rw [hL.isCompl.sup_eq_top] at this
+      exact hE (Module.Finite.equiv (Submodule.topEquiv (R := R) (M := E)))
+    rw [Module.finrank_of_not_finite hE, hL0]
 
+omit [FiniteDimensional R E] in
 /-- The ambient space of a maximal totally real subspace is even-dimensional. -/
 theorem even_finrank (hL : IsMaximalTotallyReal J L) (hJ : Function.Injective (J.domRestrict L)) :
     Even (finrank R E) := by
   rw [← hL.two_mul_finrank_eq hJ]
   exact even_two_mul _
 
+omit [FiniteDimensional R E] in
 /-- A maximal totally real subspace is half-dimensional. -/
 theorem finrank_eq_half (hL : IsMaximalTotallyReal J L)
     (hJ : Function.Injective (J.domRestrict L)) :

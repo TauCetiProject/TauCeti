@@ -16,6 +16,7 @@ import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
 import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Tactic.IntervalCases
@@ -28,13 +29,13 @@ of an element of `F` to another square root of it, so `σ x = x` or `σ x = -x`.
 also allows the radicands to come from a smaller semiring. Consequently an automorphism is
 known on such roots once its signs on them are, and a group of automorphisms in which only the
 identity fixes each of `n` square roots has at most `2ⁿ` elements. Conversely, a square root
-generating a separable quadratic extension is negated by an automorphism.
+generating a quadratic extension is negated by an automorphism.
 
 ## Main results
 
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
 * `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
-  `y` generating a separable quadratic extension `K⟮y⟯ / K`.
+  `y` generating a quadratic extension `K⟮y⟯ / K`.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -62,12 +63,19 @@ end AlgEquiv
 
 namespace TauCeti
 
-/-- **A square root generating a separable quadratic extension is negated by an automorphism**:
-if `L = K⟮y⟯` is a separable extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
-of `L` sends `y` to `-y`. -/
+/-- **A square root generating a quadratic extension is negated by an automorphism**:
+if `L = K⟮y⟯` is an extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
+of `L` sends `y` to `-y`. In characteristic `2` the identity does it; otherwise the extension is
+separable. -/
 theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
-    (hL : Module.finrank K L = 2) [Algebra.IsSeparable K L] {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
+    (hL : Module.finrank K L = 2) {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
     (hy : y ^ 2 = algebraMap K L c) : ∃ σ : L ≃ₐ[K] L, σ y = -y := by
+  by_cases h2 : (2 : K) = 0
+  · refine ⟨.refl, ?_⟩
+    have h2L : (2 : L) = 0 := by rw [← map_ofNat (algebraMap K L) 2, h2, map_zero]
+    rw [AlgEquiv.coe_refl, id_eq]
+    exact eq_neg_of_add_eq_zero_left (by rw [← two_mul, h2L, zero_mul])
+  have : Algebra.IsSeparable K L := TauCeti.Algebra.isSeparable_of_finrank_eq_two h2 hL
   have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
   obtain ⟨σ, hσ⟩ := Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L
   refine ⟨σ, (σ.apply_eq_or_eq_neg_of_sq_eq hy).resolve_left fun h ↦ hσ ?_⟩

@@ -39,7 +39,7 @@ variable {V E H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ V]
   [I.Boundaryless] [IsManifold I 2 M]
 
 /-- **Noncompact Euclidean tubular neighbourhood theorem.** A `C²` immersion inducing

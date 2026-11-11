@@ -488,7 +488,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap (weightTorusIntegralCoordinateMap n) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin (n + 1)))))) =
       weightTorusToBaseChangeCoordinateMap n A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

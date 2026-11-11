@@ -291,13 +291,11 @@ theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
   have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
     funext y
     rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
-  have hzero : ∀ y : E, ∇ f y = 0 ↔ fderiv ℝ f y = 0 := fun y ↦ by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), map_eq_zero_iff _ (toDual ℝ E).injective]
   refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
   · rw [hgradeq]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-      fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩
+      fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 /-- **A negative gradient trajectory confined to a compact set converges backwards to a critical
 point**, provided the critical locus in that set is finite.  Under these compactness, regularity,
@@ -361,12 +359,9 @@ theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  have hzero : ∀ y : E, ∇ f y = 0 ↔ fderiv ℝ f y = 0 := fun y ↦ by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y),
-      map_eq_zero_iff _ (toDual ℝ E).injective]
   apply exists_tendsto_atBot hγ hK hmaps hdiff
     ((toDual ℝ E).symm.continuous.comp_continuousOn hfderiv)
   exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-    fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩
+    fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 end IsIntegralCurveOn

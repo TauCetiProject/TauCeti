@@ -8,11 +8,9 @@ module
 public import Mathlib.Algebra.Divisibility.Units
 public import Mathlib.Algebra.Ring.Divisibility.Basic
 public import Mathlib.Data.Nat.Prime.Basic
--- Proof-only: Bernoulli's inequality, the `p`-adic factorisation of a natural number, tactics.
+-- Proof-only: Bernoulli's inequality, the `p`-adic factorisation of a natural number.
 import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # Divisibility in commutative rings
@@ -56,23 +54,15 @@ theorem natCast_add_one_dvd_pow {R : Type*} [CommSemiring R] {p : ℕ} (hp : p.P
     (hs : (p : R) ∣ s ^ (p - 1)) (hR : ∀ m : ℕ, p.Coprime m → IsUnit (m : R)) (n : ℕ) :
     (n + 1 : R) ∣ s ^ n := by
   -- Write `n + 1 = pᵏ m` with `m` prime to `p`: then `pᵏ` divides `s ^ (k (p - 1))`, and
-  -- `k (p - 1) ≤ pᵏ - 1 ≤ n`.
-  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd n.succ_ne_zero p hp.one_lt.ne'
-  have hm₀ : m ≠ 0 := by rintro rfl; simp at hm
-  -- Bernoulli's inequality `1 + k (p - 1) ≤ pᵏ`, so `k (p - 1) ≤ n`
+  -- `k (p - 1) ≤ pᵏ - 1 ≤ n` by Bernoulli's inequality.
+  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd n.add_one_ne_zero p hp.one_lt.ne'
   have hk : k * (p - 1) ≤ n := by
-    have h₂ : (-2 : ℤ) ≤ (p - 1 : ℕ) := by omega
-    have h := one_add_mul_le_pow h₂ k
-    have hp₁ : ((p - 1 : ℕ) : ℤ) + 1 = p := by rw [Nat.cast_sub hp.one_le]; ring
-    rw [add_comm (1 : ℤ) ((p - 1 : ℕ) : ℤ), hp₁] at h
-    have : p ^ k ≤ n + 1 := by
-      rw [← Nat.succ_eq_add_one, hn]
-      exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hm₀)
-    zify at this ⊢
-    linarith
-  have hcast : (n + 1 : R) = (p : R) ^ k * (m : R) := by
-    rw [← Nat.cast_pow, ← Nat.cast_mul, ← hn, Nat.cast_succ]
-  rw [hcast, (hR m ((Nat.Prime.coprime_iff_not_dvd hp).2 hm)).mul_right_dvd]
-  exact (pow_dvd_pow_of_dvd hs k).trans (by rw [← pow_mul]; exact pow_dvd_pow s (by linarith))
+    have h := one_add_le_pow_of_two_add_nonneg (Nat.zero_le (2 + (p - 1))) k
+    rw [Nat.cast_id, Nat.add_sub_cancel' hp.one_le] at h
+    have := Nat.le_of_dvd n.succ_pos ⟨m, hn⟩
+    omega
+  rw [← Nat.cast_add_one, hn, Nat.cast_mul, Nat.cast_pow,
+    (hR m (hp.coprime_iff_not_dvd.2 hm)).mul_right_dvd]
+  exact (pow_mul' s _ _ ▸ pow_dvd_pow_of_dvd hs k).trans (pow_dvd_pow s hk)
 
 end TauCeti

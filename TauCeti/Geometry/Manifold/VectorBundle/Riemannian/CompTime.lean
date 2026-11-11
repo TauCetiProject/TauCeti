@@ -89,7 +89,7 @@ def compTime (hφ : ContDiff ℝ ∞ φ) :
           (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) (p₀.1, φ p₀.2)).symm
             (q.1, φ q.2) u := by
       rw [← Trivialization.symmL_apply (R := ℝ) _ hq, ← Trivialization.symmL_apply (R := ℝ) _ hq']
-      exact symmL_trivializationAt_prod_model_space hq₁ _ _ u
+      exact symmL_trivializationAt_prod_model_space _ _ u
     refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ ?_
     simp only [hom_trivializationAt_apply, Function.comp_apply]
     refine (inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := fun _ : M × ℝ ↦ ℝ) (x := q)
@@ -141,7 +141,7 @@ theorem chartMetric_compTime (hφ : ContDiff ℝ ∞ φ) (x₀ : M) (t₀ s : �
         (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) (x₀, s)).symm (y.1, φ y.2) v := by
     rw [← Trivialization.symmL_apply (R := ℝ) _ hbase₁,
       ← Trivialization.symmL_apply (R := ℝ) _ hbase₂]
-    exact symmL_trivializationAt_prod_model_space hy₁ _ _ v
+    exact symmL_trivializationAt_prod_model_space _ _ v
   refine ContinuousLinearMap.ext fun u ↦ ContinuousLinearMap.ext fun w ↦ ?_
   rw [TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _ hz₁,
     TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _ hz₂, hpt]

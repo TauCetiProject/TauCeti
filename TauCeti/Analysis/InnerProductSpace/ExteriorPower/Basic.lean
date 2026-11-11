@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -21,11 +24,15 @@ map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations 
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
 `v₁ ∧ ⋯ ∧ vₙ` is the volume of the parallelepiped spanned by the `vᵢ`, bounded by Hadamard's
-inequality. Finally, it packages the skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the
-operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
+inequality. For a real-linear `P : E → ℂ`, it names the two-vector `p₁ ∧ p₂` of the gradients of
+`Re P` and `Im P`, which represents the two-form `Im (conj (P u) P w)`. Finally, it packages the
+skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represents the two-form
+`ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
 
 ## Main definitions
 
+* `ContinuousLinearMap.gradientWedge P`: the wedge `p₁ ∧ p₂` of the vectors representing the
+  real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 
@@ -46,7 +53,10 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
-* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
+* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
+  `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
+* `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
+  `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
@@ -175,7 +185,35 @@ theorem norm_ιMulti_le_prod_norm (v : Fin n → E) : ‖ιMulti ℝ n v‖ ≤ 
   rw [norm_ιMulti_sq, ← Finset.prod_pow]
   simpa using Matrix.re_det_gram_le_prod_norm_sq (𝕜 := ℝ) v
 
+/-- **Hadamard's inequality** for two vectors: `‖u ∧ w‖ ≤ ‖u‖ ‖w‖`. -/
+theorem norm_ιMulti_two_le (u w : E) : ‖ιMulti ℝ 2 ![u, w]‖ ≤ ‖u‖ * ‖w‖ := by
+  simpa [Fin.prod_univ_two] using norm_ιMulti_le_prod_norm ![u, w]
+
 end exteriorPower
+
+namespace ContinuousLinearMap
+
+open exteriorPower
+open scoped RealInnerProductSpace ComplexConjugate
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- The two-vector `p₁ ∧ p₂` of the gradients of the real and imaginary parts of a
+complex-valued covector `P = p₁ + i p₂`. It represents the two-form `Im (conj (P u) P w)`
+(`ContinuousLinearMap.inner_gradientWedge_ιMulti`). -/
+noncomputable def gradientWedge (P : E →L[ℝ] ℂ) : ⋀[ℝ]^2 E :=
+  ιMulti ℝ 2 ![P.reGradient, P.imGradient]
+
+/-- **The two-form `Im (conj (P u) P w)` is represented by the two-vector `p₁ ∧ p₂`** of the
+gradients of the real and imaginary parts of `P`. -/
+@[simp]
+theorem inner_gradientWedge_ιMulti (P : E →L[ℝ] ℂ) (u w : E) :
+    ⟪P.gradientWedge, ιMulti ℝ 2 ![u, w]⟫ = (conj (P u) * P w).im := by
+  rw [gradientWedge, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,
+    inner_imGradient, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+end ContinuousLinearMap
 
 namespace OrthonormalBasis
 
@@ -210,6 +248,7 @@ section FinFour
 
 open exteriorPower
 
+omit [FiniteDimensional ℝ E] in
 /-- A wedge of two vectors in the basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal
 basis `b` indexed by `Fin 4`. -/
 theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
@@ -220,6 +259,7 @@ theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
       (b.repr u 1 * b.repr w 2 - b.repr u 2 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 2] +
       (b.repr u 1 * b.repr w 3 - b.repr u 3 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 3] +
       (b.repr u 2 * b.repr w 3 - b.repr u 3 * b.repr w 2) • ιMulti ℝ 2 ![b 2, b 3] := by
+  have := Module.Finite.of_basis b.toBasis
   refine ext_inner_ιMulti_two fun a c ↦ ?_
   simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
   simp only [b.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
@@ -271,7 +311,7 @@ end OrthonormalBasis
 
 namespace TauCeti
 
-open exteriorPower
+open _root_.exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -340,12 +380,23 @@ theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm w, real_inner_comm _ F, twoVectorContraction_apply]
   simpa using (LinearMap.congr_fun key F).symm
 
+omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  rw [inner_twoVectorContraction_apply,
-    (ιMulti ℝ 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl (by decide), inner_zero_right]
+  -- The contraction `u ⌟ F` is a one-form, the image of the vector `a`, and contracting by `u`
+  -- twice gives zero.
+  set a := twoVectorContraction F u with ha
+  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
+    rw [ha, twoVectorContraction_apply]
+    exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.2)
+  have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
+  rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
+  rw [real_inner_comm]
+  exact h0
 
+omit [FiniteDimensional ℝ V] in
 /-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
 theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = -⟪u, twoVectorContraction F w⟫ := by

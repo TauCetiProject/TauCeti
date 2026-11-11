@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Convex.Intrinsic
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
+import TauCeti.CategoryTheory.ObjectProperty.Retract
 import TauCeti.Topology.Homeomorph.FixedPoint
 
 /-!
@@ -79,9 +80,8 @@ theorem noRetraction_diskBoundary (n : ℕ) :
     have hD : IsZero (F.obj (TopCat.disk.{w} (m + 1))) :=
       isZero_reducedSingularHomologyFunctor_of_contractibleSpace R _ m
     -- The identity of `H~ₘ(Sᵐ)` factors through `H~ₘ(Dᵐ⁺¹) = 0`.
-    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) := by
-      rw [IsZero.iff_id_eq_zero, ← F.map_id, ← ρ.retract, F.map_comp,
-        hD.eq_of_src (F.map ρ.r) 0, comp_zero]
+    have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) :=
+      ObjectProperty.prop_of_retract IsZero (ρ.map F) hD
     have : Subsingleton (ULift.{w} ℤ) := ModuleCat.isZero_iff_subsingleton.mp
       (hS.of_iso (reducedSingularHomologyTopCatSphereIso R m).symm)
     exact zero_ne_one (Subsingleton.elim (0 : ULift.{w} ℤ) 1)
