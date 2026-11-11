@@ -326,12 +326,14 @@ The body is exposed so these term types compute in dependent statements. -/
     ((G.simplicialResolution.obj X).obj (op (SimplexCategory.mk n))) =
       (G.resolutionStage (n + 1)).obj X := (rfl)
 
-private lemma resolutionPresentation_map_δ {n : ℕ} (i : Fin (n + 2)) :
+/-- The lifted presentation sends a face generator to its iterated counit. -/
+lemma resolutionPresentation_map_δ {n : ℕ} (i : Fin (n + 2)) :
     G.resolutionPresentation.map (SimplexCategoryGenRel.δ i) =
       (G.resolutionFace (n + 1) i).op :=
   G.resolutionPresentation_map (FreeSimplexQuiver.δ i)
 
-private lemma resolutionPresentation_map_σ {n : ℕ} (i : Fin (n + 1)) :
+/-- The lifted presentation sends a degeneracy generator to its iterated comultiplication. -/
+lemma resolutionPresentation_map_σ {n : ℕ} (i : Fin (n + 1)) :
     G.resolutionPresentation.map (SimplexCategoryGenRel.σ i) =
       (G.resolutionDegeneracy n i).op :=
   G.resolutionPresentation_map (FreeSimplexQuiver.σ i)
