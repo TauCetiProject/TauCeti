@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
 /-!
@@ -27,7 +28,9 @@ torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cota
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
 The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, has derivative the identity of `ι → ℝ` at every
-point (`AddCircle.hasMFDerivAt_coe_pi`), and it intertwines the action of `A` on the torus with
+point (`AddCircle.hasMFDerivAt_coe_pi`, stated for any family of periods), so that the tangent
+bundle of the torus is trivial in its charts (`AddCircle.symmL_trivializationAt_pi`), and it
+intertwines the action of `A` on the torus with
 multiplication of real vectors by the matrix `A` (`AddCircle.generalLinearGroup_smul_coe_pi`).
 Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting on `ι → ℝ`
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`). Choosing a basis of the period lattice of a
@@ -40,6 +43,8 @@ charts.
   `ι → AddCircle p` by additive maps.
 * `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
 * `AddCircle.hasMFDerivAt_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has derivative the identity.
+* `AddCircle.symmL_trivializationAt_pi`: the trivializations of the tangent bundle of the torus
+  are the identity of `ι → ℝ` on chart sources.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
   `AddCircle.mfderiv_generalLinearGroup_smul_apply`: the derivative of `x ↦ A • x` is the matrix
   `A`.
@@ -65,19 +70,48 @@ variable (p : ℝ) {ι : Type*} [Fintype ι]
 
 section Cover
 
-variable [Fact (0 < p)]
+variable {p : ι → ℝ} [∀ i, Fact (0 < p i)]
 
-/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, has derivative the identity of
-`ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
+variable (p) in
+/-- The covering map `(ι → ℝ) → ∀ i, AddCircle (p i)`, `t ↦ ([t i])ᵢ`, has derivative the identity
+of `ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
 theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     HasMFDerivAt 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) t (ContinuousLinearMap.id ℝ (ι → ℝ)) :=
-  (TauCeti.hasMFDerivAt_pi (M := fun _ : ι ↦ AddCircle p) (I := fun _ ↦ 𝓘(ℝ))
-    (f := fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) fun i ↦ (hasMFDerivAt_coe p (t i)).comp t
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt).congr_mfderiv <| by
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) t (ContinuousLinearMap.id ℝ (ι → ℝ)) :=
+  (TauCeti.hasMFDerivAt_pi (M := fun i : ι ↦ AddCircle (p i)) (I := fun _ ↦ 𝓘(ℝ))
+    (f := fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) fun i ↦
+      (hasMFDerivAt_coe (p i) (t i)).comp t
+        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt).congr_mfderiv <| by
     -- The product of the coordinate projections is the identity of `ι → ℝ`.
     ext v i
     rfl
+
+/-- **The tangent bundle of a torus is trivial in its charts.** For `x` in the source of the chart
+of `∀ i, AddCircle (p i)` at `x₀`, the inverse of the trivialization of the tangent bundle at `x₀`
+is the identity of `ι → ℝ` at `x`: on the target of the chart, its inverse is the covering map
+`(ι → ℝ) → ∀ i, AddCircle (p i)`, whose derivative is the identity. -/
+theorem symmL_trivializationAt_pi {x₀ x : ∀ i, AddCircle (p i)}
+    (hx : x ∈ (chartAt (ModelPi fun _ : ι ↦ ℝ) x₀).source) :
+    (trivializationAt (ι → ℝ)
+        (TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) x₀).symmL ℝ x =
+      ContinuousLinearMap.id ℝ (ι → ℝ) := by
+  set I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)
+  rw [TangentBundle.symmL_trivializationAt hx]
+  have hrange : Set.range I = Set.univ := by
+    simp [I]
+  set z := extChartAt I x₀ x
+  have hz : z ∈ (extChartAt I x₀).target :=
+    (extChartAt I x₀).map_source (by rwa [extChartAt_source])
+  -- On the target of the extended chart, its inverse is the covering map `t ↦ ([t i])ᵢ`.
+  have heq : (extChartAt I x₀).symm =ᶠ[nhds z]
+      fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i)) := by
+    filter_upwards [(isOpen_extChartAt_target x₀).mem_nhds hz] with w hw
+    rw [TauCeti.extChartAt_pi] at hw ⊢
+    funext i
+    exact extChartAt_symm_apply (x₀ i) (hw i (Set.mem_univ i))
+  rw [hrange, mfderivWithin_univ, heq.mfderiv_eq, (hasMFDerivAt_coe_pi p z).mfderiv]
+  -- The identification `tangentSpaceCast` of tangent spaces at equal points is the identity.
+  rfl
 
 end Cover
 
@@ -145,13 +179,13 @@ theorem hasMFDerivAt_generalLinearGroup_smul (A : GL ι ℤ) (x : ι → AddCirc
         (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) ∘ L :=
       funext (generalLinearGroup_smul_coe_pi p A)
     rw [hfun]
-    exact ((hasMFDerivAt_coe_pi p (L t)).comp t L.hasMFDerivAt).congr_mfderiv
+    exact ((hasMFDerivAt_coe_pi (fun _ ↦ p) (L t)).comp t L.hasMFDerivAt).congr_mfderiv
       (ContinuousLinearMap.id_comp L)
   have hd : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) :=
     ((contMDiff_const_smul A).mdifferentiableAt (n := 1) one_ne_zero)
-  have h := mfderiv_comp t hd (hasMFDerivAt_coe_pi p t).mdifferentiableAt
-  rw [hcomp.mfderiv, (hasMFDerivAt_coe_pi p t).mfderiv] at h
+  have h := mfderiv_comp t hd (hasMFDerivAt_coe_pi (fun _ ↦ p) t).mdifferentiableAt
+  rw [hcomp.mfderiv, (hasMFDerivAt_coe_pi (fun _ ↦ p) t).mfderiv] at h
   have h' : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) = L := by
     rw [h]
