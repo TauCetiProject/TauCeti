@@ -978,18 +978,6 @@ variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] 
   (P₀ : Y₀ →L[ℂ] X₀) (P₁ : Y₁ →L[ℂ] X₁)
   (hP : ∀ y : D.inter, C.fstToSum (P₀ (D.interFst y)) = C.sndToSum (P₁ (D.interSnd y)))
 
-omit [T1Space V] [T1Space W] in
-/-- If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map of sum spaces induced by `P₀`, `P₁`
-is a left inverse of the one induced by `I₀`, `I₁`. -/
-private theorem leftInverse_sumLift (hPI₀ : Function.LeftInverse P₀ I₀)
-    (hPI₁ : Function.LeftInverse P₁ I₁) :
-    Function.LeftInverse (D.sumLift (C.fstToSum.comp P₀) (C.sndToSum.comp P₁) hP)
-      (C.sumLift (D.fstToSum.comp I₀) (D.sndToSum.comp I₁) hI) :=
-  leftInverse_of_leftInverse (I := (C.sumLift _ _ hI).toLinearMap)
-    (P := (D.sumLift _ _ hP).toLinearMap) (fun x => C.sumLift_fstToSum _ _ hI x)
-    (fun x => C.sumLift_sndToSum _ _ hI x) (fun y => D.sumLift_fstToSum _ _ hP y)
-    (fun y => D.sumLift_sndToSum _ _ hP y) hPI₀ hPI₁
-
 namespace ComplexMethodSpace
 
 /-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map
