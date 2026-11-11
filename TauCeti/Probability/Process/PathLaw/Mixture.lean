@@ -86,12 +86,13 @@ instance isProbabilityMeasure_deFinettiBarycenter (π : Measure (ProbabilityMeas
 
 /-- The barycenter of a mixing law has the same total mass as the mixing law: every countable power
 of a probability measure has mass one. -/
+@[simp]
 theorem deFinettiBarycenter_univ (π : Measure (ProbabilityMeasure α)) :
-    deFinettiBarycenter π Set.univ = π Set.univ := by
-  rw [deFinettiBarycenter_apply π MeasurableSet.univ]
-  simp [measure_univ]
+    deFinettiBarycenter π Set.univ = π Set.univ :=
+  TauCeti.MeasureTheory.bind_infinitePi_univ π
 
 /-- The barycenter of a mixing law is a probability measure if and only if the mixing law is. -/
+@[simp]
 theorem isProbabilityMeasure_deFinettiBarycenter_iff (π : Measure (ProbabilityMeasure α)) :
     IsProbabilityMeasure (deFinettiBarycenter π) ↔ IsProbabilityMeasure π :=
   ⟨fun h => ⟨by rw [← deFinettiBarycenter_univ]; exact h.measure_univ⟩, fun _ => inferInstance⟩

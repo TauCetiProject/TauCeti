@@ -233,6 +233,13 @@ theorem measurable_infinitePi_const {α : Type*} [MeasurableSpace α] :
       Measure.infinitePi (fun _ : ℕ ↦ (p : Measure α)) :=
   measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
 
+/-- The mixture of countable powers has the same total mass as the mixing measure, since every
+infinite product of probability measures is itself a probability measure. -/
+theorem bind_infinitePi_univ {α : Type*} [MeasurableSpace α] (π : Measure (ProbabilityMeasure α)) :
+    (π.bind fun P => Measure.infinitePi fun _ : ℕ => (P : Measure α)) Set.univ = π Set.univ := by
+  rw [Measure.bind_apply MeasurableSet.univ measurable_infinitePi_const.aemeasurable]
+  simp
+
 /-- **Parameter-tagged product kernel.** For a measurable family of probability measures
 `P : T → ProbabilityMeasure α`, the random measure `t ↦ δ_t ⊗ (P t)^{⊗ι}` on `T × (ι → α)` is
 measurable, over an arbitrary index type `ι`.
