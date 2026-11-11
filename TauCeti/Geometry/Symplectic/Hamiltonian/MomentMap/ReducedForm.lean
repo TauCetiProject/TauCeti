@@ -98,20 +98,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold JQ ∞ Q]
   {i : Z → M} {p : Z → Q} {c : Module.Dual ℝ 𝔤}
 
-/-- On a level parametrized by `i`, the null directions of `i^* σ` at `z` are the tangent vectors
-sent by `di` into the stabilizer orbit directions `𝔤_c · i(z)`. This is
-`TauCeti.SmoothTwoForm.IsMomentMap.ker_bilinFormAt_mpullback` with the value `μ (i z) = c`. -/
-private theorem ker_bilinFormAt_mpullback_of_apply_eq (h : σ.IsMomentMap a μ)
-    (hσ : σ.IsNondegenerate) (hi : ContMDiff J I ∞ i) (hμi : ∀ z, μ (i z) = c)
-    (hc : ∀ z, σ.momentCocycle a μ (i z) = 0)
-    (hrange : ∀ z, LinearMap.range (mfderiv J I i z).toLinearMap =
-      LinearMap.ker (h.differential (i z))) (z : Z) :
-    LinearMap.ker ((SmoothForm.mpullback i hi σ).bilinFormAt z) =
-      ((lieAnnihilator ℝ 𝔤 c).toSubmodule.map (a.eval (i z))).comap
-        (mfderiv J I i z).toLinearMap := by
-  rw [h.ker_bilinFormAt_mpullback hi (hσ.nondegenerate_bilinFormAt (i z)) (hc z) (hrange z),
-    hμi z]
-
 omit [FiniteDimensional ℝ E] [IsManifold JQ ∞ Q] in
 /-- **The restricted form on a level is basic.** Let `i : Z → M` be a smooth map into a level of a
 moment map `μ`, in the sense that its tangent images lie in `ker dμ`, and let `p : Z → Q` be a
@@ -173,8 +159,9 @@ theorem existsUnique_isSymplectic_mpullback_eq_mpullback [J.Boundaryless] {K : T
     (h.isBasic_mpullback hi (fun z ↦ (hrange z).le) (hp.contMDiff.mdifferentiable (by simp))
       (fun z ↦ (hker z).le.trans (Submodule.comap_mono
         (LinearMap.map_le_range.trans_eq (a.orbitTangent_eq_range _).symm))) hK hpK hfib hinv)
-    fun z ↦ (ker_bilinFormAt_mpullback_of_apply_eq h hσ.isNondegenerate hi hμi hc hrange z).trans
-      (hker z).symm
+    fun z ↦ by
+      rw [h.ker_bilinFormAt_mpullback hi (hσ.isNondegenerate.nondegenerate_bilinFormAt (i z))
+        (hc z) (hrange z), hμi z, hker z]
 
 omit [IsManifold J ∞ Z] [IsManifold JQ ∞ Q] in
 /-- **The dimension of the reduced space.** In the setting of
