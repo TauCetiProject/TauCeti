@@ -548,7 +548,7 @@ theorem isIso_supportedHPresheafPostcomp {F G : Sheaf (Opens.grothendieckTopolog
 
 /-- An isomorphism of sheaves `f : F ⟶ G` induces an isomorphism of presheaves
 `H_Sⁿ(-, F) ≅ H_Sⁿ(-, G)`. -/
-instance isIso_supportedHPresheafPostcomp_mk₀_hom {F G : Sheaf (Opens.grothendieckTopology X)
+instance isIso_supportedHPresheafPostcomp_mk₀ {F G : Sheaf (Opens.grothendieckTopology X)
     AddCommGrpCat.{u}} (f : F ⟶ G) [IsIso f] (n : ℕ) :
     IsIso (supportedHPresheafPostcomp S (Ext.mk₀ f) (add_zero n)) :=
   isIso_supportedHPresheafPostcomp S _ _ fun _ ↦
