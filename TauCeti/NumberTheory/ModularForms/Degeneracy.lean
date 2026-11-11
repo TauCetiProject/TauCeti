@@ -1266,20 +1266,20 @@ theorem CuspForm.qExpansion_levelRaise_coeff_Gamma1 (M : ℕ) [NeZero d]
 
 /-- **The coefficients of a level-raise, read backwards.** If a cusp form `G` of level `Γ₁(M)`
 is `V_d g` as a function on `ℍ`, that is `⇑G = d ^ (1 - k) • (⇑g ∣[k] diag(d, 1))` for a cusp
-form `g` of level `Γ₁(M / d)`, then `a_m(g) = a_{dm}(G)`. This is how a form
+form `g` of level `Γ₁(N)`, then `a_m(g) = a_{dm}(G)`. This is how a form
 recovered by the level-lowering dichotomy (`ConductorDichotomy.lean`) hands its coefficients
-back.
+back, with `N = M / d`.
 
-The coefficients do not depend on the levels, so `d ∣ M` is not assumed: it is the setting where
-`M / d` is the level of `g`, but without it the statement still holds. -/
-theorem CuspForm.qExpansion_coeff_eq_qExpansion_coeff_mul_of_coe_eq_smul_slash_scaleGL {M : ℕ}
+The coefficients do not depend on the levels, so neither `d ∣ M` nor `N = M / d` is assumed: the
+levels `M` and `N` are independent. -/
+theorem CuspForm.qExpansion_coeff_eq_qExpansion_coeff_mul_of_coe_eq_smul_slash_scaleGL {M N : ℕ}
     [NeZero d] {G : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
-    {g : CuspForm ((Gamma1 (M / d)).map (mapGL ℝ)) k}
+    {g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (h : ⇑G = (d : ℂ) ^ (1 - k) • (⇑g ∣[k] scaleGL d)) (m : ℕ) :
     (qExpansion 1 g).coeff m = (qExpansion 1 G).coeff (d * m) := by
   -- the trivial group is a target group for the level raise
   have hle : (⊥ : Subgroup SL(2, ℤ)).map (mapGL ℝ) ≤
-      ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma1 (M / d)).map (mapGL ℝ) := by
+      ConjAct.toConjAct (scaleGL d)⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
     rw [Subgroup.map_bot]
     exact bot_le
   have hG : ⇑G = ⇑(CuspForm.levelRaise d hle g) := by rw [CuspForm.coe_levelRaise, h]
