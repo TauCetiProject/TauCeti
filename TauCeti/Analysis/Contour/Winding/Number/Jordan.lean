@@ -66,8 +66,7 @@ theorem windingNumber_sub_eq_of_isJordanCurve {C : Set ℂ} (hC : IsJordanCurve 
   let F : C(I × I, ℂ) :=
     ⟨fun st ↦ p st.2 - e ((1 - (st.1 : ℝ)) • e.symm (q st.2)), by fun_prop⟩
   have havoid (st : I × I) : F st ≠ 0 := by
-    change p st.2 - e ((1 - (st.1 : ℝ)) • e.symm (q st.2)) ≠ 0
-    rw [sub_ne_zero]
+    rw [ContinuousMap.coe_mk, sub_ne_zero]
     rcases eq_or_ne st.1 0 with hs | hs
     · simpa [hs] using hpq st.2
     have hpos : 0 < (st.1 : ℝ) := lt_of_le_of_ne st.1.2.1 fun h ↦ hs (Subtype.ext h.symm)
@@ -81,7 +80,14 @@ theorem windingNumber_sub_eq_of_isJordanCurve {C : Set ℂ} (hC : IsJordanCurve 
   have hw := windingNumber_eq_of_homotopy F (p := P) (q := Q) (w := 0)
     (fun t ↦ by simp [F, P]) (fun t ↦ by simp [F, Q, he₀]) (fun s ↦ by simp [F]) havoid
     (hp.sub hq) (hp.sub (.of_contDiffOn contDiffOn_const))
-  rw [show Q.extend = fun t ↦ p.extend t - z from rfl] at hw
+  -- `P` and `Q` are evaluated through `Path.extend_apply` on the parameter interval.
+  have hI {t : ℝ} (ht : t ∈ uIoo 0 1) : t ∈ Icc (0 : ℝ) 1 :=
+    Ioo_subset_Icc_self <| by rwa [uIoo_of_le zero_le_one] at ht
+  have hP : EqOn P.extend (fun t ↦ p.extend t - q.extend t) (uIoo 0 1) := fun t ht ↦ by
+    simp only [Path.extend_apply _ (hI ht), P, Path.coe_mk_mk]
+  have hQ : EqOn Q.extend (fun t ↦ p.extend t - z) (uIoo 0 1) := fun t ht ↦ by
+    simp only [Path.extend_apply _ (hI ht), Q, Path.coe_mk_mk]
+  rw [windingNumber_congr_curve hP, windingNumber_congr_curve hQ] at hw
   refine hw.trans ?_
   simpa only [sub_eq_add_neg, add_neg_cancel] using windingNumber_translate (γ := p.extend)
     (a := 0) (b := 1) (z₀ := z) (-z)
