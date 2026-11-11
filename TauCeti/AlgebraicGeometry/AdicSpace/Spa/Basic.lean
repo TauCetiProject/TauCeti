@@ -31,12 +31,11 @@ enter only where theorems need them — spectrality (Wedhorn Theorem 7.35) is th
 theorem, and it lives with the `Spv (A, I)` machinery it consumes, not in this file. This
 mirrors how `cont` itself is defined below its Wedhorn hypotheses.
 
-Following the roadmap's conventions, the plus ring is an explicit `Subring A` argument and the
-spectrum is a `Set (Spv A)`, so a point is a valuation up to equivalence with no chosen value
-group, and the subspace topology is the one the coercion `↥(spa Aplus)` carries. (Mathlib's
-in-flight `SpaPoint` of mathlib4#42315 instead bundles a representative valuation with a chosen
-value group — the representation the roadmap warns must be compared before later layers may use
-it; the subspace form here needs no such comparison.)
+The plus ring is an explicit `Subring A` argument and the spectrum is a `Set (Spv A)`, so a point
+is a valuation up to equivalence with no chosen value group, and the subspace topology is the one
+the coercion `↥(spa Aplus)` carries. (The `SpaPoint` of mathlib4#42315 instead bundles a
+representative valuation with a chosen value group; the subspace form here needs no choice of
+representative.)
 
 ## Main definitions
 

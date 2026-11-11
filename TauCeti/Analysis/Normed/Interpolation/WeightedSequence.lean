@@ -412,7 +412,7 @@ element `a` of the sum space of `(ℓ^{q₀}_{s₀}(A), ℓ^{q₁}_{s₁}(A))` s
 `c ‖(2 ^ (s_θ j) a j)_j‖_{ℓ^q} ≤ ‖a‖_{θ,q}`, where `s_θ = (1 - θ) s₀ + θ s₁` and
 `c = (|s₁ - s₀| log 2) ^ (1 / q) 2 ^ (-θ |s₁ - s₀|)`. The `ℓ^q` norm is written as the `L^q`
 seminorm for the counting measure (see `lp.eLpNorm_count`). -/
-theorem ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (hs : s₀ ≠ s₁) (hθ : 0 ≤ θ) (hq : q ≠ 0)
+theorem ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (hs : s₀ ≠ s₁) (hθ : 0 ≤ θ)
     (u : (weightedLp 𝕜 A q₀ q₁ s₀ s₁).SumSpace) :
     ENNReal.ofReal ((|s₁ - s₀| * Real.log 2) ^ q.toReal⁻¹ * 2 ^ (-(θ * |s₁ - s₀|))) *
         eLpNorm (fun j : ℕ ↦ (((2 : ℝ) ^ (((1 - θ) * s₀ + θ * s₁) * j) : ℝ) : 𝕜) •
@@ -423,8 +423,8 @@ theorem ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (hs : s₀ ≠ s₁) (hθ 
   obtain ⟨r, hr_def⟩ : ∃ r : ℝ, r = 2 ^ (-(θ * |s₁ - s₀|)) := ⟨_, rfl⟩
   have hr : 0 < r := hr_def ▸ by positivity
   -- integrate the termwise bound over the intervals `[2 ^ (-μ j), 2 ^ (-μ j + |μ|))`
-  have key := ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar (c := 1) (μ := -(s₁ - s₀))
-    one_lt_two one_pos (neg_ne_zero.2 (sub_ne_zero.2 hs.symm)) hq
+  have key := ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar (c := 1) (μ := -(s₁ - s₀)) (q := q)
+    one_lt_two one_pos (neg_ne_zero.2 (sub_ne_zero.2 hs.symm))
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u)
     (g := fun j ↦ ‖((r : ℝ) : 𝕜) • v j‖ₑ) fun j t ht ↦ by
       have ht0 : 0 < t := lt_of_lt_of_le (by positivity) ht.1
@@ -529,7 +529,7 @@ theorem mem_kMethod_weightedLp_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le hq).ne'
   rw [memℓp_iff_eLpNorm_count_lt_top hq0, mem_kMethod_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hle := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp hs hθ.1.le hq0 u
+  · have hle := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (q := q) hs hθ.1.le u
     refine lt_top_iff_ne_top.2 fun htop ↦ ?_
     rw [htop, ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'] at hle
     exact h.ne (top_le_iff.1 hle)
@@ -614,8 +614,7 @@ def weightedLpKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
       have hL : 0 < (|s₁ - s₀| * Real.log 2) ^ q.toReal⁻¹ * (2 : ℝ) ^ (-(θ * |s₁ - s₀|)) :=
         mul_pos (Real.rpow_pos_of_pos (mul_pos (abs_pos.2 (sub_ne_zero.2 hs.symm))
           (Real.log_pos one_lt_two)) _) (by positivity)
-      have h := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp hs hθ.1.le
-        (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' (toSumₗ u)
+      have h := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (q := q) hs hθ.1.le (toSumₗ u)
       rw [eLpNorm_toWeightedLp hs hθ, ← KMethodSpace.ofReal_norm u, ← _root_.ofReal_norm,
         ← ENNReal.ofReal_mul hL.le,
         ENNReal.ofReal_le_ofReal_iff (norm_nonneg u)] at h
