@@ -12,6 +12,7 @@ public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -300,7 +301,9 @@ theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s
         TauCeti.eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.enorm hp (ae_of_all _ hrow)
           (ae_of_all _ hcol)
     _ = ENNReal.ofReal (2 * K / α) * eLpNorm g p volume := by
-      rw [← ENNReal.rpow_add_of_nonneg _ _ (TauCeti.one_sub_toReal_inv_nonneg hp)
+      have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
+        simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
+      rw [← ENNReal.rpow_add_of_nonneg _ _ h₀
         (inv_nonneg.2 ENNReal.toReal_nonneg), hexp, ENNReal.rpow_one,
         eLpNorm_enorm _ hg.aestronglyMeasurable]
 

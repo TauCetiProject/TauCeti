@@ -55,7 +55,7 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
-variable {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ} [HasEnoughRootsOfUnity (𝓞 K) 4]
+variable {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
 
 /-- **The supplementary law for `i`.** If `λ = a + b i` is primary, then
 `(i / λ)_4 = i ^ (-((a - 1) / 2))`, the symbol being taken at the ideal `λ 𝓞 K` and read in `K`. -/

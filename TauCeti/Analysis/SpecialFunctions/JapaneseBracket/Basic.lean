@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -48,6 +49,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -119,6 +122,13 @@ theorem integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.I
     ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by gcongr
     _ = (1 + ‖x‖ ^ 2) ^ (-(r - p) / 2) := by rw [← Real.rpow_add hA, hexp]
+
+/-- On `ℝⁿ` the Japanese bracket weight `⟨x⟩ ^ (-(n + 1))` is integrable for every additive Haar
+measure, its decay exponent exceeding the dimension by one. -/
+theorem integrable_one_add_norm_sq_rpow_neg_succ_div_two {n : ℕ}
+    {μ : Measure (EuclideanSpace ℝ (Fin n))} [μ.IsAddHaarMeasure] :
+    Integrable (fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)) μ :=
+  integrable_rpow_neg_one_add_norm_sq (by rw [finrank_euclideanSpace_fin]; linarith)
 
 end Integrability
 
@@ -400,10 +410,7 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- In dimension zero the integral is the value at the only point, of volume one.
     have hvol : volume.real (univ : Set V) = 1 := by
-      have h := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-      rw [Subsingleton.eq_univ_of_nonempty
-        ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, zero_le_one⟩, by simp⟩⟩] at h
-      rw [measureReal_def, h, ENNReal.toReal_one]
+      rw [measureReal_def, volume_eq_one_of_subsingleton univ_nonempty, ENNReal.toReal_one]
     have : Unique V := uniqueOfSubsingleton 0
     rw [integral_unique, hvol, finrank_zero_of_subsingleton, Subsingleton.elim (default : V) 0]
     simp [(Gamma_pos_of_pos (half_pos hr0)).ne']

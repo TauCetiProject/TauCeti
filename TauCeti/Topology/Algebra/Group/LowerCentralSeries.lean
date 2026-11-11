@@ -70,9 +70,9 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   `TauCeti.isPGroup_quotient_pLowerCentralStep_subgroupOf`: `N ⧸ Nᵖ[N, G]` is commutative and
   killed by `p`.
 * `TauCeti.mk_conjNormal_eq`: conjugation by `G` acts trivially on `N ⧸ Nᵖ[N, G]`.
-* `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a closed normal subgroup
-  `R` with closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is
-  invariant under conjugation by `G`.
+* `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a normal subgroup `R` with
+  closed kernel kills the trace `(pLowerCentralStep p R).subgroupOf R` of the ambient step on `R`
+  exactly when it kills `p`-th powers and is invariant under conjugation by `G`.
 * `TauCeti.pLowerCentralSeries_antitone`, `TauCeti.isClosed_pLowerCentralSeries`,
   `TauCeti.pLowerCentralSeries_normal`: the series is descending, closed and normal.
 * `TauCeti.pow_mem_pLowerCentralSeries`, `TauCeti.commutator_pLowerCentralSeries_top_le`,
@@ -324,12 +324,12 @@ theorem mk_conjNormal_eq {N : Subgroup G} [N.Normal] (g : G) (n : N) :
   rw [h]
   exact (pLowerCentralStep p N).inv_mem (commutator_mem_pLowerCentralStep (N.inv_mem n.2) g)
 
-/-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a closed normal subgroup
-`R` and a homomorphism `φ` on `R` with closed kernel, `φ` kills `pLowerCentralStep p R` exactly when
-it kills the `p`-th powers and is invariant under conjugation by `G`. -/
-theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal]
-    (hR : IsClosed (R : Set G)) {A : Type*} [Group A] (φ : R →* A)
-    (hφ : IsClosed (φ.ker : Set R)) :
+/-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a normal subgroup `R`
+and a homomorphism `φ` on `R` with closed kernel, `φ` kills the trace
+`(pLowerCentralStep p R).subgroupOf R` of the ambient step on `R` exactly when it kills the `p`-th
+powers and is invariant under conjugation by `G`. -/
+theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal] {A : Type*} [Group A]
+    (φ : R →* A) (hφ : IsClosed (φ.ker : Set R)) :
     (pLowerCentralStep p R).subgroupOf R ≤ φ.ker ↔
       (∀ r : R, φ r ^ p = 1) ∧ ∀ (g : G) (r : R), φ (MulAut.conjNormal g r) = φ r := by
   constructor
@@ -345,12 +345,12 @@ theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal]
         Subtype.ext (by simp only [MulAut.conjNormal_apply, coe_mul, commutatorElement_def]; group)
       rw [hconj, map_mul, MonoidHom.mem_ker.mp (h (mem_subgroupOf.mpr hmem)), one_mul]
   · rintro ⟨hpow, hconj⟩
-    -- The image of the kernel in `G` is a closed subgroup containing `Rᵖ` and `⁅R, G⁆`.
-    have hK : IsClosed ((φ.ker.map R.subtype : Subgroup G) : Set G) := by
-      rw [coe_map, coe_subtype]
-      exact hR.isClosedMap_subtype_val _ hφ
-    have hle : pLowerCentralStep p R ≤ φ.ker.map R.subtype := by
-      refine (pLowerCentralStep_le_iff hK).mpr ⟨fun x hx ↦ ?_, commutator_le.mpr fun x hx g _ ↦ ?_⟩
+    -- The closure in `G` of the image of the kernel is a closed subgroup containing `Rᵖ` and
+    -- `⁅R, G⁆`; its trace on `R` is the closure of the kernel in `R`, the kernel itself.
+    have hle : pLowerCentralStep p R ≤ (φ.ker.map R.subtype).topologicalClosure := by
+      refine (pLowerCentralStep_le_iff (isClosed_topologicalClosure _)).mpr
+        ⟨fun x hx ↦ le_topologicalClosure _ ?_,
+          commutator_le.mpr fun x hx g _ ↦ le_topologicalClosure _ ?_⟩
       · exact ⟨⟨x, hx⟩ ^ p, MonoidHom.mem_ker.mpr (by rw [map_pow, hpow]), rfl⟩
       · have hxg : ⁅x, g⁆ ∈ R := commutator_le_left R ⊤ (commutator_mem_commutator hx (mem_top g))
         refine ⟨⟨⁅x, g⁆, hxg⟩, MonoidHom.mem_ker.mpr ?_, rfl⟩
@@ -358,8 +358,11 @@ theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal]
           Subtype.ext (by
             simp only [MulAut.conjNormal_apply, coe_mul, coe_inv, commutatorElement_def]; group)
         rw [this, map_mul, hconj, map_inv, mul_inv_cancel]
-    refine (comap_mono hle).trans ?_
-    rw [comap_map_eq, ker_subtype, sup_bot_eq]
+    intro r hr
+    have hr' := hle (mem_subgroupOf.mp hr)
+    rw [← SetLike.mem_coe, topologicalClosure_coe, coe_map, coe_subtype] at hr'
+    rwa [← SetLike.mem_coe, ← hφ.closure_eq,
+      Topology.IsInducing.subtypeVal.closure_eq_preimage_closure_image]
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
@@ -618,6 +621,39 @@ group and every natural number `p`. -/
 theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
     IsTopCharacteristic G (pLowerCentralSeries p G k) :=
   isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
+
+section Compact
+
+variable [CompactSpace G]
+
+/-- **Recovering elements of closed subgroups from compatible classes.** In a compact group, a
+family `q k i ∈ G ⧸ λ_k`, compatible along the quotient maps and lying at every level in the image
+of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`: the fibres over
+`q k i` are nonempty, closed and nested, so they have a common point. -/
+theorem exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries {ι : Type*} {H : ι → Subgroup G}
+    (hH : ∀ i, IsClosed (H i : Set G)) (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
+    (hq : ∀ k i, QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (q (k + 1) i) = q k i)
+    (hmem : ∀ k i, q k i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
+    ∃ t : ι → G, (∀ i, t i ∈ H i) ∧
+      ∀ k i, (t i : G ⧸ pLowerCentralSeries p G k) = q k i := by
+  have key (i : ι) : ∃ t ∈ H i, ∀ k, (t : G ⧸ pLowerCentralSeries p G k) = q k i := by
+    let S : ℕ → Set G := fun k ↦ {g | g ∈ H i ∧ (g : G ⧸ pLowerCentralSeries p G k) = q k i}
+    have hS : ∀ k, IsClosed (S k) := fun k ↦
+      (hH i).inter ((isClosed_singleton (x := q k i)).preimage QuotientGroup.continuous_mk)
+    obtain ⟨t, ht⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed S
+      (fun k g hg ↦ ⟨hg.1, by
+        rw [← hq k i, ← hg.2]
+        exact QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g |>.symm⟩)
+      (fun k ↦ by
+        obtain ⟨x, hx, hxk⟩ := Subgroup.mem_map.mp (hmem k i)
+        exact ⟨x, hx, hxk⟩)
+      (hS 0).isCompact hS
+    rw [Set.mem_iInter] at ht
+    exact ⟨t, (ht 0).1, fun k ↦ (ht k).2⟩
+  choose t htH htk using key
+  exact ⟨t, htH, fun k i ↦ htk i k⟩
+
+end Compact
 
 end Series
 
