@@ -88,10 +88,6 @@ private theorem isInvariantSesqForm_innerₛₗ {π : ContRepresentation ℂ G V
     Representation.IsInvariantSesqForm π.toRepresentation (innerₛₗ ℂ (E := V)) :=
   Representation.isInvariantSesqForm_iff.mpr fun g x y => hπ.inner_map_map g x y
 
-/-- The inner product is Hermitian. -/
-private theorem isSymm_innerₛₗ : (innerₛₗ ℂ (E := V)).IsSymm where
-  eq x y := by simpa only [innerₛₗ_apply_apply] using inner_conj_symm (𝕜 := ℂ) y x
-
 /-- The inner product is nonnegative on the diagonal, in the complex order. -/
 private theorem isNonneg_innerₛₗ : (innerₛₗ ℂ (E := V)).IsNonneg where
   nonneg x := by
@@ -137,7 +133,7 @@ theorem frobeniusSchurIndicator_eq_one_iff_exists_structureMap (hunitary : IsUni
   have := hirr
   rw [frobeniusSchurIndicator_eq_one_iff π hπ hunitary hirr]
   refine ((Representation.exists_isRealStructure_iff (isInvariantSesqForm_innerₛₗ hunitary)
-    isSymm_innerₛₗ isNonneg_innerₛₗ fun _ hx => innerₛₗ_apply_self_ne_zero hx).symm).trans ?_
+    isNonneg_innerₛₗ fun _ hx => innerₛₗ_apply_self_ne_zero hx).symm).trans ?_
   exact exists_congr fun _ => ⟨fun h => ⟨h.involutive, h.isIntertwining⟩, fun h => ⟨h.1, h.2⟩⟩
 
 /-- **The indicator is `1` exactly when the representation is realizable over `ℝ`**: the
@@ -171,7 +167,7 @@ theorem frobeniusSchurIndicator_eq_neg_one_iff_exists_isQuaternionicStructure
   have := hirr
   rw [frobeniusSchurIndicator_eq_neg_one_iff π hπ hunitary hirr]
   exact (Representation.exists_isQuaternionicStructure_iff (isInvariantSesqForm_innerₛₗ hunitary)
-    isSymm_innerₛₗ isNonneg_innerₛₗ fun _ hx => innerₛₗ_apply_self_ne_zero hx).symm
+    isNonneg_innerₛₗ fun _ hx => innerₛₗ_apply_self_ne_zero hx).symm
 
 end CompactGroup
 
