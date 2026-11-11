@@ -39,6 +39,13 @@ private noncomputable def absoluteValueBump (δ : ℝ) (hδ : 0 < δ) : ContDiff
 noncomputable def regularizedAbs (δ : ℝ) (hδ : 0 < δ) : ℝ → ℝ :=
   (absoluteValueBump δ hδ).normed volume ⋆[lsmul ℝ ℝ, volume] (fun t : ℝ ↦ |t|)
 
+/-- The regularized absolute value is the average of translated absolute values. -/
+theorem regularizedAbs_eq_integral (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
+    regularizedAbs δ hδ x = ∫ t : ℝ,
+      (⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩ : ContDiffBump (0 : ℝ)).normed volume t *
+        |x - t| := by
+  simp only [regularizedAbs, absoluteValueBump, convolution_def, lsmul_apply, smul_eq_mul]
+
 /-- Normalized bump convolution makes the regularized absolute value smooth. -/
 theorem contDiff_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
     ContDiff ℝ ∞ (regularizedAbs δ hδ) := by
@@ -54,25 +61,8 @@ theorem lipschitzWith_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
     (lipschitzWith_one_norm (E := ℝ)).normed_convolution
       (μ := volume) (absoluteValueBump δ hδ)
 
-private theorem integral_bump_mul_id (φ : ContDiffBump (0 : ℝ)) :
-    ∫ t : ℝ, φ.normed volume t * t = 0 := by
-  have h := integral_neg_eq_self (fun t : ℝ ↦ φ.normed volume t * t) volume
-  simp only [φ.normed_neg, mul_neg, integral_neg] at h
-  linarith
-
-private theorem integrable_bump_mul_id (φ : ContDiffBump (0 : ℝ)) :
-    Integrable (fun t : ℝ ↦ φ.normed volume t * t) :=
-  ((φ.contDiff_normed (n := 0)).continuous.mul continuous_id).integrable_of_hasCompactSupport
-    φ.hasCompactSupport_normed.mul_right
-
-private theorem integrable_bump_mul_abs_sub (φ : ContDiffBump (0 : ℝ)) (x : ℝ) :
-    Integrable (fun t : ℝ ↦ φ.normed volume t * |x - t|) := by
-  exact φ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
-    (lsmul ℝ ℝ) (φ.contDiff_normed (n := 0)).continuous.locallyIntegrable
-    continuous_abs x
-
 /-- The even mollifier preserves symmetry under negation. -/
-theorem regularizedAbs_neg (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
+@[simp] theorem regularizedAbs_neg (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     regularizedAbs δ hδ (-x) = regularizedAbs δ hδ x := by
   exact convolution_neg_of_neg_eq (lsmul ℝ ℝ)
     (Filter.Eventually.of_forall (absoluteValueBump δ hδ).normed_neg)
@@ -83,7 +73,7 @@ theorem regularizedAbs_eq_abs (δ : ℝ) (hδ : 0 < δ) {x : ℝ}
     (hx : δ ≤ |x|) : regularizedAbs δ hδ x = |x| := by
   have hpos (x : ℝ) (hx : δ ≤ x) : regularizedAbs δ hδ x = x := by
     let φ := absoluteValueBump δ hδ
-    change (∫ t : ℝ, φ.normed volume t * |x - t|) = x
+    rw [regularizedAbs_eq_integral]
     have heq : (fun t : ℝ ↦ φ.normed volume t * |x - t|) =
         fun t : ℝ ↦ φ.normed volume t * x - φ.normed volume t * t := by
       funext t
@@ -95,8 +85,8 @@ theorem regularizedAbs_eq_abs (δ : ℝ) (hδ : 0 < δ) {x : ℝ}
           simpa only [Metric.mem_ball, Real.dist_eq, sub_zero, φ, absoluteValueBump] using hmem
         rw [abs_of_nonneg (by linarith [le_abs_self t])]
         ring
-    rw [heq, integral_sub (φ.integrable_normed.mul_const _) (integrable_bump_mul_id φ),
-      integral_mul_const, φ.integral_normed, integral_bump_mul_id, one_mul, sub_zero]
+    rw [heq, integral_sub (φ.integrable_normed.mul_const _) (φ.integrable_normed_mul_id),
+      integral_mul_const, φ.integral_normed, ContDiffBump.integral_normed_mul_id, one_mul, sub_zero]
   rcases le_total 0 x with hx0 | hx0
   · simpa only [abs_of_nonneg hx0] using hpos x (by simpa [abs_of_nonneg hx0] using hx)
   · rw [← regularizedAbs_neg δ hδ x, hpos (-x) (by simpa [abs_of_nonpos hx0] using hx),
@@ -108,15 +98,15 @@ theorem abs_le_regularizedAbs (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
   let φ := absoluteValueBump δ hδ
   have heq : (∫ t : ℝ, φ.normed volume t * (x - t)) = x := by
     simp_rw [mul_sub]
-    rw [integral_sub (φ.integrable_normed.mul_const _) (integrable_bump_mul_id φ),
-      integral_mul_const, φ.integral_normed, integral_bump_mul_id, one_mul, sub_zero]
+    rw [integral_sub (φ.integrable_normed.mul_const _) (φ.integrable_normed_mul_id),
+      integral_mul_const, φ.integral_normed, ContDiffBump.integral_normed_mul_id, one_mul, sub_zero]
   calc
     |x| = |∫ t : ℝ, φ.normed volume t * (x - t)| := congrArg abs heq.symm
     _ ≤
         ∫ t : ℝ, |φ.normed volume t * (x - t)| := abs_integral_le_integral_abs
     _ = regularizedAbs δ hδ x := by
       simp only [abs_mul, abs_of_nonneg (φ.nonneg_normed _)]
-      rfl
+      rw [regularizedAbs_eq_integral]
 
 /-- The value error of regularized absolute value is at most the smoothing radius. -/
 theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
@@ -125,8 +115,9 @@ theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     (lipschitzWith_one_norm (E := ℝ)).continuous.aestronglyMeasurable (fun y hy ↦
       ((lipschitzWith_one_norm (E := ℝ)).dist_le_mul y x).trans (by
         simpa only [NNReal.coe_one, one_mul, absoluteValueBump] using (Metric.mem_ball.mp hy).le))
-  simp only [show (Norm.norm : ℝ → ℝ) = abs from funext Real.norm_eq_abs] at h
-  change dist (regularizedAbs δ hδ x) (abs x) ≤ δ at h
+  have hnorm : (Norm.norm : ℝ → ℝ) = abs := funext Real.norm_eq_abs
+  rw [hnorm] at h
+  fold regularizedAbs at h
   rw [Real.dist_eq] at h
   linarith [le_abs_self (regularizedAbs δ hδ x - |x|)]
 
@@ -134,7 +125,7 @@ theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
 theorem convexOn_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
     ConvexOn ℝ univ (regularizedAbs δ hδ) := by
   let φ := absoluteValueBump δ hδ
-  change ConvexOn ℝ univ (fun x ↦ ∫ t : ℝ, φ.normed volume t * |x - t|)
+  simp_rw [regularizedAbs_eq_integral]
   apply integral_convexOn_of_integrand_ae convex_univ
   · apply Filter.Eventually.of_forall
     intro t
@@ -142,7 +133,7 @@ theorem convexOn_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
       simpa only [Real.norm_eq_abs, preimage_univ, Function.comp_def, sub_eq_add_neg] using
         (convexOn_norm (E := ℝ) convex_univ).translate_left (-t)
     simpa only [smul_eq_mul] using hc.smul (φ.nonneg_normed t)
-  · exact fun x _ ↦ integrable_bump_mul_abs_sub φ x
+  · exact fun x _ ↦ φ.integrable_normed_mul_abs_sub x
 
 /-- The derivative of the smooth regularization has magnitude at most one. -/
 theorem abs_deriv_regularizedAbs_le_one (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
@@ -155,8 +146,9 @@ theorem deriv2_regularizedAbs_nonneg (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     0 ≤ deriv (deriv (regularizedAbs δ hδ)) x := by
   have hm := (convexOn_regularizedAbs δ hδ).monotoneOn_deriv
     (fun x _ ↦ (contDiff_regularizedAbs δ hδ).differentiable (by simp) x)
-  exact (show Monotone (deriv (regularizedAbs δ hδ)) from fun x y hxy ↦
-    hm (mem_univ x) (mem_univ y) hxy).deriv_nonneg
+  have hmono : Monotone (deriv (regularizedAbs δ hδ)) :=
+    fun x y hxy ↦ hm (mem_univ x) (mem_univ y) hxy
+  exact hmono.deriv_nonneg
 
 /-- Smooth minimum with transition width `δ`, lying below the actual minimum. -/
 noncomputable def regularizedMin (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) : ℝ :=
@@ -172,14 +164,14 @@ theorem contDiff_regularizedMin (δ : ℝ) (hδ : 0 < δ) :
 theorem regularizedMin_comm (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
     regularizedMin δ hδ x y = regularizedMin δ hδ y x := by
   unfold regularizedMin
-  rw [show y - x = -(x - y) by ring, regularizedAbs_neg]
+  rw [← neg_sub x y, regularizedAbs_neg]
   ring
 
 /-- A common additive constant passes through the regularized minimum. -/
 theorem regularizedMin_add (δ : ℝ) (hδ : 0 < δ) (x y t : ℝ) :
     regularizedMin δ hδ (x + t) (y + t) = regularizedMin δ hδ x y + t := by
   unfold regularizedMin
-  rw [show x + t - (y + t) = x - y by ring]
+  rw [add_sub_add_right_eq_sub]
   ring
 
 /-- The regularized minimum lies below the actual binary minimum. -/
@@ -219,7 +211,6 @@ theorem hasDerivAt_regularizedMin_right (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
     HasDerivAt (regularizedMin δ hδ x)
       ((1 + deriv (regularizedAbs δ hδ) (x - y)) / 2) y := by
   have ha := ((contDiff_regularizedAbs δ hδ).differentiable (by simp) (x - y)).hasDerivAt
-  change HasDerivAt (fun t ↦ (x + t - regularizedAbs δ hδ (x - t)) / 2) _ y
   simpa +instances only [regularizedMin, Function.comp_def, Pi.sub_apply, id_eq,
     mul_neg, mul_one, sub_neg_eq_add] using
     (((hasDerivAt_id y).const_add x).sub
@@ -259,8 +250,7 @@ theorem concaveOn_regularizedMin (δ : ℝ) (hδ : 0 < δ) :
     (mem_univ (x.1 - x.2)) (mem_univ (y.1 - y.2)) ha hb hab
   simp only [Prod.smul_fst, Prod.smul_snd, Prod.fst_add, Prod.snd_add,
     smul_eq_mul, regularizedMin] at h ⊢
-  rw [show a * x.1 + b * y.1 - (a * x.2 + b * y.2) =
-    a * (x.1 - x.2) + b * (y.1 - y.2) by ring]
+  rw [add_sub_add_comm, ← mul_sub, ← mul_sub]
   nlinarith
 
 end Real

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -40,6 +40,27 @@ open ContinuousLinearMap MeasureTheory Filter Metric
 open scoped Convolution Topology Pointwise NNReal ContDiff
 
 namespace ContDiffBump
+
+/-- The first moment of a normalized even real bump vanishes. -/
+theorem integral_normed_mul_id (φ : ContDiffBump (0 : ℝ)) :
+    ∫ t : ℝ, φ.normed volume t * t = 0 := by
+  have h := integral_neg_eq_self (fun t : ℝ ↦ φ.normed volume t * t) volume
+  simp only [φ.normed_neg, mul_neg, integral_neg] at h
+  linarith
+
+/-- The first moment integrand of a normalized real bump is integrable. -/
+theorem integrable_normed_mul_id (φ : ContDiffBump (0 : ℝ)) :
+    Integrable (fun t : ℝ ↦ φ.normed volume t * t) :=
+  ((φ.contDiff_normed (n := 0)).continuous.mul continuous_id).integrable_of_hasCompactSupport
+    φ.hasCompactSupport_normed.mul_right
+
+/-- A normalized real bump times a translate of absolute value is integrable. -/
+theorem integrable_normed_mul_abs_sub (φ : ContDiffBump (0 : ℝ)) (x : ℝ) :
+    Integrable (fun t : ℝ ↦ φ.normed volume t * |x - t|) := by
+  exact φ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
+    (lsmul ℝ ℝ) (φ.contDiff_normed (n := 0)).continuous.locallyIntegrable
+    continuous_abs x
+
 
 section Shrinking
 
