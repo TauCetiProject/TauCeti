@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -30,8 +33,12 @@ is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) 
 functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
-`|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
-growth, in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
+`|j - k| ≥ L`. The same holds between the blocks `Δⱼ` and `Δ'ₖ` built from two bump functions
+`φ` and `φ'`, and so, applying `Δ'ⱼ` to the reconstruction of `u`, each block of `φ'` is a sum of
+boundedly many blocks of `φ` composed with it: `Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u`. This
+is how a dyadic description of a function space is shown not to depend on the bump function.
+Being Fourier multipliers, the blocks commute with every Fourier multiplier of temperate growth,
+in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
 
 The blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`: there is `C`, depending only
 on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `f ∈ Lᵖ`. The kernel `𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz
@@ -57,7 +64,12 @@ blocks `Δⱼ u`.
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
-* `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality.
+* `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
+  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
+  between the blocks of two bump functions.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
+  is a sum of boundedly many blocks of another, composed with it.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
@@ -74,6 +86,8 @@ blocks `Δⱼ u`.
   first moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-j})`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
   `Δⱼ` with a Lipschitz function is `O(2^{-j})` on `Lᵖ`.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
+  `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
 
 ## References
 
@@ -189,35 +203,69 @@ theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
   tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) <| by
     simpa only [h] using tendsto_sum_littlewoodPaleyBlock φ v
 
-/-- The composition of two Littlewood–Paley blocks is the Fourier multiplier by the product of
-the two pieces. -/
-theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (j k : ℕ) :
-    littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k =
+open Distribution in
+/-- **The spectrum of a block.** The Fourier transform of `Δⱼ u` vanishes outside the closed ball
+of radius `2^j φ.rOut`, which carries the piece `ψⱼ`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ j u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ j * φ.rOut))ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
+  rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
+    (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
+
+/-- The composition of the Littlewood–Paley blocks of two bump functions is the Fourier
+multiplier by the product of the two pieces. -/
+theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (φ' : ContDiffBump (0 : E)) (j k : ℕ) :
+    littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ' k =
       fourierMultiplierCLM F fun ξ ↦
-        ((φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
+        ((φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
   rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM, littlewoodPaleyBlock_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_compL_fourierMultiplierCLM
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
+      (φ'.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
   congr 1
   funext ξ
   simp [mul_comm]
 
-/-- **Almost orthogonality of the Littlewood–Paley blocks.** There is `L`, depending only on `φ`,
-such that `Δⱼ Δₖ = Δₖ Δⱼ = 0` whenever `j + L ≤ k`. -/
-theorem exists_littlewoodPaleyBlock_compL_eq_zero :
+/-- **Almost orthogonality of the Littlewood–Paley blocks.** For two bump functions `φ` and `φ'`,
+there is `L` such that `Δⱼ Δ'ₖ = Δ'ₖ Δⱼ = 0` whenever `j + L ≤ k`, where `Δ` and `Δ'` are the
+blocks built from `φ` and `φ'`. For `φ' = φ` this is the almost orthogonality of the blocks of a
+single partition. -/
+theorem exists_littlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k →
-      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 ∧
-        littlewoodPaleyBlock F φ k ∘L littlewoodPaleyBlock F φ j = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
-  have hzero {j k : ℕ} (hjk : j + L ≤ k) :
-      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 := by
-    simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
+      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ' k = 0 ∧
+        littlewoodPaleyBlock F φ' k ∘L littlewoodPaleyBlock F φ j = 0 := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ'
+  refine ⟨L, fun j k hjk ↦ ⟨?_, ?_⟩⟩
+  · simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
-  refine ⟨L, fun j k hjk ↦ ⟨hzero hjk, ?_⟩⟩
-  rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock]
-  simp_rw [mul_comm (φ.inhomogeneousLittlewoodPaley k _),
-    ← littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hzero hjk]
+  · simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock,
+      mul_comm _ (φ.inhomogeneousLittlewoodPaley j _), hL j k hjk, Complex.ofReal_zero,
+      fourierMultiplierCLM_const, zero_smul]
+
+/-- **Change of bump function.** The blocks `Δⱼ` and `Δ'ₖ` built from two bump functions `φ` and
+`φ'` interact only at nearby indices: there is `L`, depending only on `φ` and `φ'`, such that
+`Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u` for every `j` and every tempered distribution `u`. -/
+theorem exists_littlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ (j : ℕ) (u : 𝓢'(E, F)), littlewoodPaleyBlock F φ' j u =
+      ∑ k ∈ Finset.Ico (j - L) (j + L),
+        littlewoodPaleyBlock F φ' j (littlewoodPaleyBlock F φ k u) := by
+  obtain ⟨L₁, hL₁⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ'
+  obtain ⟨L₂, hL₂⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ' φ
+  refine ⟨max L₁ L₂, fun j u ↦ ?_⟩
+  -- Apply `Δ'ⱼ` to the reconstruction `u = ∑ₖ Δₖ u`: the partial sums are eventually constant.
+  have h := ((map_continuous (littlewoodPaleyBlock F φ' j)).tendsto u).comp
+    (tendsto_sum_littlewoodPaleyBlock φ u)
+  refine tendsto_nhds_unique h (tendsto_const_nhds.congr' ?_)
+  filter_upwards [eventually_ge_atTop (j + max L₁ L₂)] with N hN
+  simp only [Function.comp_apply, map_sum]
+  refine Finset.sum_subset (fun k hk ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hk).2.trans_le hN))
+    fun k _ hk ↦ ?_
+  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+  rcases hk with hk | hk
+  · exact congr($((hL₁ k j (by omega)).2) u)
+  · exact congr($((hL₂ j k (by omega)).1) u)
 
 /-- The Littlewood–Paley blocks commute with every Fourier multiplier of temperate growth. -/
 theorem littlewoodPaleyBlock_fourierMultiplierCLM_comm {g : E → ℂ} (hg : g.HasTemperateGrowth)
@@ -392,6 +440,32 @@ theorem exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le [CompleteSpace F] :
   calc (K : ℝ≥0∞) * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ) * eLpNorm g p volume
       ≤ K * ((2 ^ j)⁻¹ * C) * eLpNorm g p volume := by gcongr
     _ = C * (2 ^ j)⁻¹ * K * eLpNorm g p volume := by ring
+
+/-- **Bernstein's inequality for the Littlewood–Paley blocks.** For `1 ≤ p ≤ r ≤ ∞` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with the following property. If the block `Δⱼ u` of
+a tempered distribution is an `Lᵖ` function `f`, then it is also an `Lʳ` function `g`, with
+
+`‖g‖_r ≤ C 2^{j n (1/p - 1/r)} ‖f‖_p`,
+
+where `n` is the dimension of `E` and `1/∞ = 0`. The Fourier transform of the block is carried by
+the ball of radius `2^j φ.rOut`, so this is Bernstein's inequality at that radius. -/
+theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r : ℝ≥0∞}
+    [Fact (1 ≤ p)] [Fact (1 ≤ r)] (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ j u = f → ∃ g : Lp F r (volume : Measure E),
+        littlewoodPaleyBlock F φ j u = g ∧
+          ‖g‖ ≤ C * 2 ^ (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹) * j) * ‖f‖ := by
+  obtain ⟨C, hC, hB⟩ :=
+    TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F) hpr
+  set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
+  refine ⟨C * φ.rOut ^ a, mul_nonneg hC (Real.rpow_nonneg φ.rOut_pos.le a), fun j u f hf ↦ ?_⟩
+  -- Bernstein's inequality without derivatives, at the radius `2^j φ.rOut` carrying `Δⱼ u`.
+  obtain ⟨g, hg, hgf⟩ := hB (mul_pos (pow_pos two_pos j) φ.rOut_pos) f
+    (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ j u)
+  refine ⟨g, hf.trans hg, hgf.trans_eq ?_⟩
+  rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
+    ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
+  ring
 
 end Lp
 
