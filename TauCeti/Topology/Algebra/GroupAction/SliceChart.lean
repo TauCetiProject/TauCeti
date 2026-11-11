@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Topology.IsLocalHomeomorph
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -48,16 +48,6 @@ variable {G X : Type*} [Group G] [MulAction G X]
 namespace TauCeti.MulAction
 
 variable {S : Type*} {σ : S → X} {U : Set S}
-
-/-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
-`G × U`, then distinct points of `U` lie in distinct orbits. -/
-theorem injOn_quotientMk_slice (hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
-    InjOn (fun s ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) U := by
-  intro s hs s' hs' hss'
-  obtain ⟨g, hg⟩ := Quotient.exact hss'
-  have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨mem_univ _, hs'⟩ ⟨mem_univ _, hs⟩
-    (by simpa only [one_smul] using hg)
-  exact (Prod.ext_iff.1 h1).2.symm
 
 variable [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace S]
 
