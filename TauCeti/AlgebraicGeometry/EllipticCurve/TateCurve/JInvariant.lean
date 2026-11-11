@@ -92,11 +92,11 @@ variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
   have hc : (tateCurveAt q hq).c₄ ≠ 0 := by
     have hn := norm_tateCurveAt_c₄ q hq
     exact fun hz ↦ by simp [hz] at hn
-  rw [map_mul, map_pow, ← WeierstrassCurve.map_c₄ tateCurve,
-    ← WeierstrassCurve.map_Δ tateCurve, ← tateCurveAt_def] at h
-  rw [WeierstrassCurve.j, Units.val_inv_eq_inv_val, WeierstrassCurve.coe_Δ']
-  field_simp
-  simpa only [mul_comm] using h
+  rw [map_mul, map_pow] at h
+  rw [tateCurveAt_c₄] at hc
+  rw [WeierstrassCurve.j_eq, mul_inv_rev, inv_inv, mul_comm,
+    ← div_eq_mul_inv, tateCurveAt_Δ, tateCurveAt_c₄]
+  exact (eq_div_iff (pow_ne_zero 3 hc)).mpr h
 
 /-- The Tate parameter with prescribed invariant `j` of norm greater than one. -/
 noncomputable def tateParameterOfJ (j : K) (hj : 1 < ‖j‖) : Kˣ :=
