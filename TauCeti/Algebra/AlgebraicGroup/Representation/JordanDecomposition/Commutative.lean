@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
+import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Hom
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
@@ -50,8 +51,8 @@ induce `g ↦ g_s`.
 
 * `TauCeti.HopfAlgebra.Point.semisimplePart_apply_of_isGroupLikeElem`: characters take the same
   value on a point and on its semisimple part.
-* `TauCeti.HopfAlgebra.Point.iSup_iInf_eigenspace_semisimplePart_eq_top`: in a finite-dimensional
-  representation of a reduced commutative affine group, the semisimple parts of the points are
+* `TauCeti.HopfAlgebra.Point.iSup_iInf_eigenspace_semisimplePart_eq_top`: in a representation of a
+  reduced commutative affine group, the semisimple parts of the points are
   simultaneously diagonalizable with characters as eigenvalues.
 * `TauCeti.HopfAlgebra.Point.exists_mem_groupLikeSetSpan_forall_apply_eq`: every coordinate
   function evaluated at semisimple parts is a linear combination of characters.
@@ -118,11 +119,8 @@ section Commutative
 variable {k H : Type u} [Field k] [IsAlgClosed k] [CommRing H] [_root_.HopfAlgebra k H]
   [Algebra.FiniteType k H] [IsReduced H] [Coalgebra.IsCocomm k H]
 
-/-- **Semisimple parts are simultaneously diagonalizable by characters.** In a finite-dimensional
-representation of a reduced commutative affine group of finite type over an algebraically closed
-field, the representation is spanned by the joint eigenspaces of the semisimple parts of the
-points, and on each of them the semisimple part of `g` acts by `g c` for a character `c`. -/
-theorem iSup_iInf_eigenspace_semisimplePart_eq_top
+/-- The finite-dimensional case of `iSup_iInf_eigenspace_semisimplePart_eq_top`. -/
+private theorem iSup_iInf_eigenspace_semisimplePart_eq_top_of_finiteDimensional
     (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M] :
     ⨆ c : GroupLike k H, ⨅ g : WithConv (H →ₐ[k] k),
       (Comodule.basePointsRepresentation (R := k) (H := H) M
@@ -172,10 +170,42 @@ theorem iSup_iInf_eigenspace_semisimplePart_eq_top
   refine le_trans ?_ (le_iSup _ c)
   simp only [E, hχ, ρ, le_refl]
 
+/-- **Semisimple parts are simultaneously diagonalizable by characters.** In a representation of a
+reduced commutative affine group of finite type over an algebraically closed field, the
+representation is spanned by the joint eigenspaces of the semisimple parts of the points, and on
+each of them the semisimple part of `g` acts by `g c` for a character `c`. -/
+theorem iSup_iInf_eigenspace_semisimplePart_eq_top
+    (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M] :
+    ⨆ c : GroupLike k H, ⨅ g : WithConv (H →ₐ[k] k),
+      (Comodule.basePointsRepresentation (R := k) (H := H) M
+        (semisimplePart k H k g)).eigenspace (g.ofConv c) = ⊤ := by
+  refine eq_top_iff.mpr fun m _ ↦ ?_
+  -- Every vector lies in a finite-dimensional subcomodule, which is stable under the points.
+  obtain ⟨N, hNfin, hm⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) (M := M) m
+  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
+  have : FiniteDimensional k N := hNfin
+  have h := iSup_iInf_eigenspace_semisimplePart_eq_top_of_finiteDimensional (k := k) (H := H) N
+  have hmN : (⟨m, hm⟩ : N) ∈ ⨆ c : GroupLike k H, ⨅ g : WithConv (H →ₐ[k] k),
+      (Comodule.basePointsRepresentation (R := k) (H := H) N
+        (semisimplePart k H k g)).eigenspace (g.ofConv c) := h ▸ Submodule.mem_top
+  have hle : ∀ (a : k) (g : WithConv (H →ₐ[k] k)),
+      (Module.End.eigenspace (Comodule.basePointsRepresentation (R := k) (H := H) N g) a).map
+        (SMulMemClass.subtype N) ≤
+      Module.End.eigenspace (Comodule.basePointsRepresentation (R := k) (H := H) M g) a := by
+    intro a g y hy
+    obtain ⟨x, hx, rfl⟩ := Submodule.mem_map.mp hy
+    rw [Module.End.mem_eigenspace_iff] at hx ⊢
+    have := congrArg (SMulMemClass.subtype N) hx
+    simpa [Subcomodule.coe_basePointsRepresentation] using this
+  have hmap := Submodule.mem_map_of_mem (f := SMulMemClass.subtype N) hmN
+  rw [Submodule.map_iSup] at hmap
+  exact (iSup_mono fun c ↦ le_iInf fun g ↦
+    (Submodule.map_mono (iInf_le _ g)).trans (hle _ _)) hmap
+
 /-- Every matrix coefficient of the semisimple parts of the points of a reduced commutative affine
 group is a linear combination of characters. -/
 private theorem exists_mem_groupLikeSetSpan_forall_apply_matrixCoefficient
-    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
+    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M]
     (φ : Module.Dual k M) (v : M) :
     ∃ h ∈ Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ,
       ∀ g : WithConv (H →ₐ[k] k),
@@ -202,12 +232,9 @@ semisimple parts, `g ↦ f(g_s)`, is given by an element of the span of the char
 theorem exists_mem_groupLikeSetSpan_forall_apply_eq (f : H) :
     ∃ h ∈ Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ,
       ∀ g : WithConv (H →ₐ[k] k), g.ofConv h = (semisimplePart k H k g).ofConv f := by
-  obtain ⟨N, hNfin, hf⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) (M := H) f
-  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
-  have _ : Module.Finite k N := hNfin
-  simpa only [Comodule.matrixCoefficient_counit_comp_subtype] using
+  simpa only [Comodule.matrixCoefficient_counit_self] using
     exists_mem_groupLikeSetSpan_forall_apply_matrixCoefficient (H := H)
-      ((Coalgebra.counit (R := k) (A := H)).comp (SMulMemClass.subtype N)) ⟨f, hf⟩
+      (Coalgebra.counit (R := k) (A := H)) f
 
 omit [Coalgebra.IsCocomm k H] in
 /-- Points valued in the algebraically closed base field separate elements of `H`. -/
