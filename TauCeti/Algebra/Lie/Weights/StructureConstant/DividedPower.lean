@@ -69,7 +69,6 @@ theorem inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul
 
 include hα hβ in
 /-- The coefficient is uniquely determined by the divided iterated bracket equation. -/
-@[simp]
 theorem eq_intDividedStructureConstant_iff
     (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
     (z : ℤ) :
@@ -87,7 +86,6 @@ theorem eq_intDividedStructureConstant_iff
 
 include hα hβ in
 /-- Degree zero has coefficient one. -/
-@[simp]
 theorem intDividedStructureConstant_zero :
     hx.intDividedStructureConstant α β hab β 0 (by simp) = 1 := by
   symm
@@ -95,7 +93,6 @@ theorem intDividedStructureConstant_zero :
   simp
 
 /-- Degree one recovers the ordinary integer structure constant. -/
-@[simp]
 theorem intDividedStructureConstant_one
     (γ : Weight K H L) (hγ : (γ : H → K) = (α : H → K) + β) :
     hx.intDividedStructureConstant α β hab γ 1 (by simpa [add_comm] using hγ) =
