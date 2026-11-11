@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.HomeomorphProd
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
+import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
 # Parallel transport and Hurewicz fibration structure of a family of tori
@@ -174,8 +175,7 @@ theorem continuous_torusFamilyParallelTransport [TopologicalSpace Y]
         (periodBasis P b hinj q.1.2).equivFunL.symm
           ((periodBasis P b hinj q.1.1).equivFunL q.2) := by
     ext q
-    rw [torusFamilyParallelTransport_eq_of_basis P hinj b]
-    rfl
+    rw [torusFamilyParallelTransport_eq_of_basis P hinj b, ContinuousLinearEquiv.trans_apply]
   rw [heq]
   exact ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp
     continuous_fst.snd).clm_apply
@@ -203,8 +203,7 @@ def torusFamilyLiftingFunction :
   letI := periodAddAction P
   let b := Module.Free.chooseBasis ℤ Λ
   (LiftingFunction.fst Y _).ofHomeomorphOver (torusFamilyHomeomorphProd P b hinj hcont)
-    fun z ↦ show ContinuousMap.fst _ = (⟨torusFamilyProjection P, _⟩ : C(_, Y)) z from
-      fst_torusFamilyHomeomorphProd P b hinj hcont z
+    fun z ↦ by simp
 
 /-- Lifting `[y, v]` along a path `γ` starting at `y` evaluates at `t` to
 `[γ t, torusFamilyParallelTransport P hinj y (γ t) v]`. -/
@@ -221,8 +220,9 @@ theorem torusFamilyLiftingFunction_lift_mk (y : Y) (v : E) (γ : C(I, Y))
   dsimp only [torusFamilyLiftingFunction]
   rw [LiftingFunction.ofHomeomorphOver_lift_apply, LiftingFunction.fst_lift_apply,
     torusFamilyHomeomorphProd_mk, torusFamilyHomeomorphProd_symm_mk,
-    torusFamilyParallelTransport_eq_of_basis P hinj (Module.Free.chooseBasis ℤ Λ)]
-  rfl
+    torusFamilyParallelTransport_eq_of_basis P hinj (Module.Free.chooseBasis ℤ Λ),
+    ContinuousLinearEquiv.trans_apply]
+  simp [← ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- Transport along a path `γ : Path y₀ y₁` carries `[y₀, v]` to
 `[y₁, torusFamilyParallelTransport P hinj y₀ y₁ v]`, depending only on the endpoints of `γ`. -/
@@ -411,12 +411,7 @@ def torusFamilyRemarkHomeomorph [TopologicalSpace Y] [TopologicalSpace E] :
     AddAction.orbitRel.Quotient Λ' (Y × E) ≃ₜ AddAction.orbitRel.Quotient Λ (Y × E) :=
   letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
   letI := periodAddAction P
-  { toFun := Quotient.map id fun _ _ h ↦ (mem_orbit_period_comp_equiv_iff P α).1 h
-    invFun := Quotient.map id fun _ _ h ↦ (mem_orbit_period_comp_equiv_iff P α).2 h
-    left_inv := fun x ↦ by induction x using Quotient.inductionOn; rfl
-    right_inv := fun x ↦ by induction x using Quotient.inductionOn; rfl
-    continuous_toFun := continuous_id.quotient_map' _
-    continuous_invFun := continuous_id.quotient_map' _ }
+  Homeomorph.Quotient.congrRight fun _ _ ↦ mem_orbit_period_comp_equiv_iff P α
 
 @[simp]
 theorem torusFamilyRemarkHomeomorph_mk [TopologicalSpace Y] [TopologicalSpace E] (p : Y × E) :
@@ -514,25 +509,9 @@ instance isIso_torusFamilyRemarkCommSq_fiberMap (y : Y) :
       continuous_torusFamilyProjection _⟩
   let p : TopCat.of (AddAction.orbitRel.Quotient Λ (Y × E)) ⟶ TopCat.of Y :=
     TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩
-  have hmem₁ : ∀ x : p'.fiber y,
-      torusFamilyRemarkHomeomorph P α x.1 ∈ p.hom ⁻¹' {(𝟙 (TopCat.of Y)) y} :=
-    fun x ↦ (torusFamilyProjection_remarkHomeomorph P α x.1).trans x.2
-  have hmem₂ : ∀ x : p.fiber ((𝟙 (TopCat.of Y)) y),
-      (torusFamilyRemarkHomeomorph P α).symm x.1 ∈ p'.hom ⁻¹' {y} := fun x ↦ by
-    have hproj :=
-      torusFamilyProjection_remarkHomeomorph P α ((torusFamilyRemarkHomeomorph P α).symm x.1)
-    rw [Homeomorph.apply_symm_apply] at hproj
-    exact hproj.symm.trans x.2
   let e : p'.fiber y ≃ₜ p.fiber ((𝟙 (TopCat.of Y)) y) :=
-    { toFun x := ⟨torusFamilyRemarkHomeomorph P α x.1, hmem₁ x⟩
-      invFun x := ⟨(torusFamilyRemarkHomeomorph P α).symm x.1, hmem₂ x⟩
-      left_inv x := Subtype.ext ((torusFamilyRemarkHomeomorph P α).symm_apply_apply x.1)
-      right_inv x := Subtype.ext ((torusFamilyRemarkHomeomorph P α).apply_symm_apply x.1)
-      continuous_toFun :=
-        ((torusFamilyRemarkHomeomorph P α).continuous.comp continuous_subtype_val).subtype_mk hmem₁
-      continuous_invFun :=
-        ((torusFamilyRemarkHomeomorph P α).symm.continuous.comp
-          continuous_subtype_val).subtype_mk hmem₂ }
+    (torusFamilyRemarkHomeomorph P α).subtype fun x ↦ by
+      simp [p', p, torusFamilyProjection_remarkHomeomorph]
   have heq : (torusFamilyRemarkCommSq P α).fiberMap y = (TopCat.isoOfHomeo e).hom := by
     ext x
     exact (torusFamilyRemarkCommSq P α).fiberMap_apply_coe y x

@@ -354,6 +354,9 @@ theorem torusFamilyHomologyLocalSystemIso_hom_app_apply
       torusFamilyHomologyMarking P hcont hinj b.as n
         ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by
   let _ := periodAddAction P
+  -- `(NatIso.ofComponents app _).hom.app b` is definitionally `(app b).hom`, and typing its
+  -- codomain as `ModuleCat.of ℤ _` crosses the semireducible equality
+  -- `((constantFunctor _).obj M).obj b = M` where `rw`/`simp` fail at `implicit` transparency.
   let f : (fiberLocalSystem L ℤ n).obj b ⟶ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
     (fiberLocalSystemSingularObjIso L ℤ n b ≪≫
       (torusFamilyFiberHomologyMarking P hcont hinj b.as n).toModuleIso).hom
@@ -361,30 +364,28 @@ theorem torusFamilyHomologyLocalSystemIso_hom_app_apply
       ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by simp [f]
   exact hf
 
-theorem constantAppIso_torusFamilyHomologyLocalSystemIso_hom_apply
-    (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y))
-    (x : letI := periodAddAction P; (fiberLocalSystem L ℤ n).obj b) :
-    letI := periodAddAction P
-    (constantAppIso (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b).hom x =
-      torusFamilyHomologyMarking P hcont hinj b.as n
-        ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) :=
-  letI := periodAddAction P
-  (ConcreteCategory.congr_hom
-    (constantAppIso_hom (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b) x).trans
-    (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b x)
-
-theorem constantAppIso_torusFamilyHomologyLocalSystemIso_inv_apply
+theorem torusFamilyHomologyLocalSystemIso_inv_app_apply
     (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y)) (w : ⋀[ℤ]^n Λ) :
     letI := periodAddAction P
-    (constantAppIso (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b).inv w =
+    (torusFamilyHomologyLocalSystemIso P hcont hinj L n).inv.app b w =
       (fiberLocalSystemSingularObjIso L ℤ n b).inv
         ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w) := by
   let _ := periodAddAction P
-  let e := constantAppIso (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b
-  apply (ConcreteCategory.bijective_of_isIso e.hom).1
-  rw [e.inv_hom_id_apply, constantAppIso_torusFamilyHomologyLocalSystemIso_hom_apply,
-    (fiberLocalSystemSingularObjIso L ℤ n b).inv_hom_id_apply
-      ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w), LinearEquiv.apply_symm_apply]
+  -- Typing the component isomorphism with codomain `ModuleCat.of ℤ _` avoids unfolding `⋀[ℤ]^n Λ`
+  -- across `((constantFunctor _).obj M).obj b = M`.
+  let e : (fiberLocalSystem L ℤ n).obj b ≅ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
+    (torusFamilyHomologyLocalSystemIso P hcont hinj L n).app b
+  have h : e.inv w =
+      (fiberLocalSystemSingularObjIso L ℤ n b).inv
+        ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w) := by
+    apply (ConcreteCategory.bijective_of_isIso e.hom).1
+    rw [e.inv_hom_id_apply]
+    exact
+      ((LinearEquiv.apply_symm_apply (torusFamilyHomologyMarking P hcont hinj b.as n) w).symm.trans
+        (congrArg (torusFamilyHomologyMarking P hcont hinj b.as n)
+          ((fiberLocalSystemSingularObjIso L ℤ n b).inv_hom_id_apply _)).symm).trans
+        (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b _).symm
+  exact h
 
 /-- **Canonical trivialization of the first fiber homology local system** of a torus family,
 identifying `TauCeti.fiberLocalSystem L ℤ 1` with the constant local system `Λ` over `Y`. -/
@@ -407,29 +408,26 @@ theorem torusFamilyFirstHomologyLocalSystemIso_hom_app_apply (b : FundamentalGro
     (constantFunctor_map_app (TopCat.of Y) (exteriorPower.oneEquiv ℤ Λ).toModuleIso.hom b) _).trans
     (oneEquiv_torusFamilyHomologyMarking P hcont hinj b.as _)
 
-theorem constantAppIso_torusFamilyFirstHomologyLocalSystemIso_hom_apply
-    (b : FundamentalGroupoid (TopCat.of Y))
-    (x : letI := periodAddAction P; (fiberLocalSystem L ℤ 1).obj b) :
-    letI := periodAddAction P
-    (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b).hom x =
-      torusFamilyMarking P hcont hinj b.as ((fiberLocalSystemSingularObjIso L ℤ 1 b).hom x) :=
-  letI := periodAddAction P
-  (ConcreteCategory.congr_hom
-    (constantAppIso_hom (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b) x).trans
-    (torusFamilyFirstHomologyLocalSystemIso_hom_app_apply P hcont hinj L b x)
-
-theorem constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply
+theorem torusFamilyFirstHomologyLocalSystemIso_inv_app_apply
     (b : FundamentalGroupoid (TopCat.of Y)) (l : Λ) :
     letI := periodAddAction P
-    (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b).inv l =
+    (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).inv.app b l =
       (fiberLocalSystemSingularObjIso L ℤ 1 b).inv
         ((torusFamilyMarking P hcont hinj b.as).symm l) := by
   let _ := periodAddAction P
-  let e := constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b
-  apply (ConcreteCategory.bijective_of_isIso e.hom).1
-  rw [e.inv_hom_id_apply, constantAppIso_torusFamilyFirstHomologyLocalSystemIso_hom_apply,
-    (fiberLocalSystemSingularObjIso L ℤ 1 b).inv_hom_id_apply
-      ((torusFamilyMarking P hcont hinj b.as).symm l), LinearEquiv.apply_symm_apply]
+  -- As above, type the component isomorphism with codomain `ModuleCat.of ℤ Λ`.
+  let e : (fiberLocalSystem L ℤ 1).obj b ≅ ModuleCat.of ℤ Λ :=
+    (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).app b
+  have h : e.inv l =
+      (fiberLocalSystemSingularObjIso L ℤ 1 b).inv
+        ((torusFamilyMarking P hcont hinj b.as).symm l) := by
+    apply (ConcreteCategory.bijective_of_isIso e.hom).1
+    rw [e.inv_hom_id_apply]
+    exact ((LinearEquiv.apply_symm_apply (torusFamilyMarking P hcont hinj b.as) l).symm.trans
+      (congrArg (torusFamilyMarking P hcont hinj b.as)
+        ((fiberLocalSystemSingularObjIso L ℤ 1 b).inv_hom_id_apply _)).symm).trans
+      (torusFamilyFirstHomologyLocalSystemIso_hom_app_apply P hcont hinj L b _).symm
+  exact h
 
 include hcont hinj in
 /-- **Trivial monodromy.** In every degree `n`, the monodromy representation of the fiber homology
@@ -780,25 +778,25 @@ theorem torusFamilyMarkingIsoEquivAut_apply
     (y : Y) (l : Λ) :
     letI := periodAddAction P
     torusFamilyMarkingIsoEquivAut P hcont hinj L e l =
-      (constantAppIso e (.mk y)).hom
+      e.hom.app (.mk y)
         ((fiberLocalSystemSingularObjIso L ℤ 1 (.mk y)).inv
           ((torusFamilyMarking P hcont hinj y).symm l)) := by
   let _ := periodAddAction P
-  let i := (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).symm ≪≫
-    constantAppIso e (.mk y)
+  let i := ((torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).app (.mk y)).symm ≪≫
+    e.app (.mk y)
   have h₁ : torusFamilyMarkingIsoEquivAut P hcont hinj L e l = i.toLinearEquiv l :=
     LinearEquiv.congr_fun
       (trivializationEquivLinearEquiv_apply
         (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (ModuleCat.of ℤ Λ) e (.mk y)) l
-  have h₂ : i.hom l = (constantAppIso e (.mk y)).hom
-      ((constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).inv l) := by
-    simp only [i, Iso.trans_hom, Iso.symm_hom]
+  have h₂ : i.hom l = e.hom.app (.mk y)
+      (((torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).inv.app (.mk y)) l) := by
+    simp only [i, Iso.trans_hom, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
     exact ModuleCat.comp_apply
-      (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).inv
-      (constantAppIso e (.mk y)).hom l
+      ((torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).inv.app (.mk y))
+      (e.hom.app (.mk y)) l
   exact h₁.trans ((Iso.toLinearEquiv_apply i l).trans (h₂.trans
-    (congrArg (constantAppIso e (.mk y)).hom
-      (constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply P hcont hinj L (.mk y) l))))
+    (congrArg (e.hom.app (.mk y))
+      (torusFamilyFirstHomologyLocalSystemIso_inv_app_apply P hcont hinj L (.mk y) l))))
 
 end
 
