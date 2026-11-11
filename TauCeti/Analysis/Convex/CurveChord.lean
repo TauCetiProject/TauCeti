@@ -28,6 +28,9 @@ windows (`ContDiff.exists_strictMonoOn_dual_comp`).
   `φ (γ a)` for some `a ≥ b'`, is the corresponding end of the chord.
 * `MonotoneOn.le_of_mem_convexHull`, `MonotoneOn.ge_of_mem_convexHull`: `φ` is bounded on the
   triangle `γ c, γ u, γ c'`, `c ≤ u ≤ c'`, by its values at `γ c` and `γ c'`.
+* `MonotoneOn.notMem_between_of_le_or_le`: a piece of the curve over `[c, d]`, or its chord,
+  lying on one side of two parameters `a`, `b` on which `φ ∘ γ` is monotone does not
+  meet the region where `φ` is strictly between its values at `γ a` and `γ b`.
 -/
 
 public section
@@ -88,3 +91,32 @@ theorem MonotoneOn.ge_of_mem_convexHull {c c' u : ℝ} {y : E}
   · exact le_rfl
   · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu, huc⟩ hcu
   · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu.trans huc, le_rfl⟩ (hcu.trans huc)
+
+/-- If `φ ∘ γ` is monotone on `I` and `[c, d] ⊆ I` lies entirely on one side of two
+points `a`, `b` of `I` (`d ≤ a` or `b ≤ c`), then the piece of the curve over `[c, d]`, and its
+chord, do not meet the region where `φ` is strictly between its values at `γ a` and `γ b`. -/
+theorem MonotoneOn.notMem_between_of_le_or_le {I : Set ℝ} {a b c d : ℝ}
+    (hφ : MonotoneOn (fun t ↦ φ (γ t)) I) (ha : a ∈ I) (hb : b ∈ I) (hcd : c ≤ d)
+    (hW : Icc c d ⊆ I) (hle : d ≤ a ∨ b ≤ c) {x : E}
+    (hx : x ∈ γ '' Icc c d ∪ segment ℝ (γ c) (γ d)) :
+    ¬ (φ (γ a) < φ x ∧ φ x < φ (γ b)) := by
+  rintro ⟨h₁, h₂⟩
+  have hc₀ : c ∈ Icc c d := left_mem_Icc.2 hcd
+  have hc₁ : d ∈ Icc c d := right_mem_Icc.2 hcd
+  rcases hle with hle | hle
+  · have hbelow : ∀ s ∈ Icc c d, φ (γ s) ≤ φ (γ a) := fun s hs ↦
+      hφ (hW hs) ha (hs.2.trans hle)
+    have : φ x ≤ φ (γ a) := by
+      rcases hx with ⟨s, hs, rfl⟩ | hx
+      · exact hbelow s hs
+      · exact (convex_halfSpace_le (φ : E →ₗ[ℝ] ℝ).isLinear _).segment_subset
+          (hbelow c hc₀) (hbelow d hc₁) hx
+    linarith
+  · have habove : ∀ s ∈ Icc c d, φ (γ b) ≤ φ (γ s) := fun s hs ↦
+      hφ hb (hW hs) (hle.trans hs.1)
+    have : φ (γ b) ≤ φ x := by
+      rcases hx with ⟨s, hs, rfl⟩ | hx
+      · exact habove s hs
+      · exact (convex_halfSpace_ge (φ : E →ₗ[ℝ] ℝ).isLinear _).segment_subset
+          (habove c hc₀) (habove d hc₁) hx
+    linarith

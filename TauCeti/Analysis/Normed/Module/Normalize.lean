@@ -19,6 +19,8 @@ point `e` of the unit sphere.
 ## Main results
 
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
+* `TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize`: rescaling a vector with the
+  direction of `w` by the ratio of the norms recovers `w`.
 
 ## Main definitions
 
@@ -58,6 +60,16 @@ theorem coe_normalizeToSphere_apply {Y : Type*} [TopologicalSpace Y] (f : Y → 
     (hf : Continuous f) (h0 : ∀ y, f y ≠ 0) (y : Y) :
     ((normalizeToSphere f hf h0 y : sphere (0 : E) 1) : E) = normalize (f y) :=
   (rfl)
+
+/-- **Rescaling to a prescribed vector.** If `x` has the direction of `w` and the length of `a`,
+that is `‖a‖⁻¹ • x = normalize w`, then stretching `x` by `‖w‖ / ‖a‖` gives `w`. -/
+theorem norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize {a w x : E}
+    (hx : ‖a‖⁻¹ • x = normalize w) : (‖w‖ / ‖a‖) • x = w := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [norm_zero, inv_zero, zero_smul, eq_comm, normalize_eq_zero_iff] at hx
+    simp [hx]
+  · rw [← smul_inv_smul₀ (norm_ne_zero_iff.2 ha) x, hx, smul_smul,
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 ha), norm_smul_normalize]
 
 section Direction
 

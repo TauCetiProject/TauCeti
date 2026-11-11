@@ -16,11 +16,13 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basi
 # Weak homotopy equivalences induce isomorphisms on singular homology
 
 A weak homotopy equivalence `f : X → Y` induces a quasi-isomorphism of normalized cubical singular
-chains, and hence isomorphisms `H_n(X; R) ≅ H_n(Y; R)` on singular homology with coefficients in
-any ring `R` (Hatcher, *Algebraic Topology*, Proposition 4.21). No CW structure on `X` or `Y` is
-needed.
+chains, and isomorphisms `H_n(X; M) ≅ H_n(Y; M)` on singular homology with coefficients in any
+module `M` over any ring `R`, in particular in any abelian group (`R = ℤ`) (Hatcher, *Algebraic
+Topology*, Proposition 4.21). No CW structure on `X` or `Y` is needed. The carrier of `M` lies in
+the universe of `X` and `Y`, as in the local-coefficient statement below; `R` may lie in any
+universe.
 
-The proof factors `f` through its mapping cylinder `M_f` as
+The proof of the cubical statement factors `f` through its mapping cylinder `M_f` as
 
   `X ≃ₜ (bottom face of M_f) ↪ M_f → Y`.
 
@@ -37,9 +39,6 @@ The proof factors `f` through its mapping cylinder `M_f` as
   (`TauCeti.isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup` and the cubical statement
   behind it).
 
-The singular homology statement is then read off through the comparison of cubical and simplicial
-singular chains.
-
 The same factorization proves the statement with local coefficients: for a local coefficient
 system `L` on `Y`, the map `H_n(X; f⁎L) ⟶ H_n(Y; L)` is an isomorphism. The bottom face of the
 mapping cylinder is handled by the compression of cubical chains with local coefficients
@@ -49,17 +48,23 @@ transported to simplicial chains through the comparison
 other two factors are homotopy equivalences, which induce isomorphisms on homology with local
 coefficients by homotopy invariance (`ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`).
 
+Singular homology with coefficients in a module `M` is homology with local coefficients in the
+constant system at `M` (`TauCeti.LocalCoefficientSystem.twistedHomologyConstantIso`), compatibly
+with maps of spaces
+(`TauCeti.LocalCoefficientSystem.twistedHomologyConstantIso_hom_space_naturality`), so the
+statement for singular homology is the case of a constant system.
+
 ## Main results
 
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_normalizedCubicalChainComplex_map`: a weak
   homotopy equivalence induces a quasi-isomorphism of normalized cubical chains.
-* `ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`: a weak homotopy
-  equivalence induces isomorphisms on singular homology.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_twistedChainComplexMap`,
   `ContinuousMap.IsWeakHomotopyEquivalence.isIso_twistedHomologyMap`: the same with local
   coefficients.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_normalizedTwistedCubicalChainComplexMap`: the
   cubical form with local coefficients.
+* `ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`: a weak homotopy
+  equivalence induces isomorphisms on singular homology with coefficients in any module.
 
 ## References
 
@@ -104,14 +109,6 @@ theorem quasiIso_normalizedCubicalChainComplex_map (hf : f.IsWeakHomotopyEquival
   rw [← proj_comp_subtypeVal_comp_inclHomeomorph (f := f), TopCat.ofHom_comp, TopCat.ofHom_comp,
     Functor.map_comp, Functor.map_comp]
   infer_instance
-
-/-- **A weak homotopy equivalence induces isomorphisms on singular homology** with coefficients in
-any ring (Hatcher, Proposition 4.21). -/
-theorem isIso_singularHomologyMap (hf : f.IsWeakHomotopyEquivalence) (n : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
-      (TopCat.ofHom f)) := by
-  have := hf.quasiIso_normalizedCubicalChainComplex_map k
-  exact TopCat.isIso_singularHomologyMap_of_quasiIso _ n
 
 end ContinuousMap.IsWeakHomotopyEquivalence
 
@@ -182,5 +179,21 @@ theorem quasiIso_normalizedTwistedCubicalChainComplexMap (hf : f.IsWeakHomotopyE
       twistedChainComplexMap (TopCat.ofHom f) L) := inferInstance
   rw [← twistedCubicalToSingularMap_naturality] at this
   exact quasiIso_of_comp_right _ (twistedCubicalToSingularMap L)
+
+/-! ### Singular homology with coefficients in a module -/
+
+/-- **A weak homotopy equivalence induces isomorphisms on singular homology** with coefficients in
+any module `M` over any ring `R`, in particular in any abelian group (`R = ℤ`) (Hatcher,
+Proposition 4.21). The carrier of `M` lies in the universe of `X` and `Y`; `R` may lie in any
+universe. This is the case of the constant coefficient system at `M` in
+`isIso_twistedHomologyMap`. -/
+theorem isIso_singularHomologyMap (hf : f.IsWeakHomotopyEquivalence) (M : ModuleCat.{v} R)
+    (n : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{v} R) n).obj M).map (TopCat.ofHom f)) := by
+  have := hf.isIso_twistedHomologyMap ((constantFunctor (TopCat.of Y)).obj M) n
+  have : IsIso (twistedHomologyMap (TopCat.ofHom f) ((constantFunctor (TopCat.of Y)).obj M) n ≫
+      (twistedHomologyConstantIso (TopCat.of Y) M n).hom) := inferInstance
+  rwa [twistedHomologyConstantIso_hom_space_naturality, isIso_comp_left_iff,
+    isIso_comp_left_iff] at this
 
 end ContinuousMap.IsWeakHomotopyEquivalence

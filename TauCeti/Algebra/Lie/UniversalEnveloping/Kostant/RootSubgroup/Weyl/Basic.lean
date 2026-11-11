@@ -143,6 +143,14 @@ noncomputable def kostantWeylRestrict : M ≃ₗ[ℤ] M :=
     (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
     (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv)
 
+/-- The integral Weyl automorphism is the restriction of the rational Weyl unit. -/
+theorem kostantWeylRestrict_eq_integralUnitRestrict :
+    kostantWeylRestrict e h ρ M hM hi hj =
+      integralUnitRestrict (weylUnit hi hj) M
+        (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
+        (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv) :=
+  (rfl)
+
 @[simp]
 theorem coe_kostantWeylRestrict_apply (v : M) :
     ((kostantWeylRestrict e h ρ M hM hi hj v : M) : V) =

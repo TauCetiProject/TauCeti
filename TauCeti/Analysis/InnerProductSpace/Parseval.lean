@@ -28,6 +28,8 @@ for the Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
   bookkeeping and can be reordered freely against other unconditional sums.
 * `OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq` — the squared values of a continuous linear
   functional on a finite orthonormal basis sum to the square of its operator norm.
+* `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
+  of a continuous linear functional on an orthonormal family are summable.
 -/
 
 public section
@@ -73,5 +75,25 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
   have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map A, ← b.sum_sq_norm_inner_left]
   simp_rw [InnerProductSpace.toDual_symm_apply]
+
+/-- **Bessel's inequality for a functional.** The values of a continuous linear functional `φ` on
+an orthonormal family are square summable. The space need not be complete. -/
+theorem _root_.Orthonormal.summable_norm_apply_sq {v : ι → E} (hv : Orthonormal 𝕜 v)
+    (φ : StrongDual 𝕜 E) : Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
+  refine summable_of_sum_le (c := ‖φ‖ ^ 2) (fun _ ↦ by positivity) fun s ↦ ?_
+  -- Test `φ` against `w = ∑ᵢ conj (φ vᵢ) vᵢ`, which has `φ w = ‖w‖² = ∑ᵢ ‖φ vᵢ‖²`.
+  set A := ∑ i ∈ s, ‖φ (v i)‖ ^ 2
+  set w := ∑ i ∈ s, (starRingEnd 𝕜) (φ (v i)) • v i
+  have hA0 : 0 ≤ A := Finset.sum_nonneg fun _ _ ↦ by positivity
+  have hφw : φ w = (A : 𝕜) := by
+    simp only [w, A, map_sum, map_smul, smul_eq_mul, RCLike.conj_mul, RCLike.ofReal_pow]
+  have hw : ‖w‖ ^ 2 = A := by
+    rw [@norm_sq_eq_re_inner 𝕜, sum_inner]
+    simp only [inner_smul_left, RCLike.conj_conj]
+    rw [Finset.sum_congr rfl fun i hi ↦ by rw [hv.inner_right_sum _ hi]]
+    simp only [A, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+  have hA : A ≤ ‖φ‖ * ‖w‖ := by
+    simpa [hφw, abs_of_nonneg hA0] using φ.le_opNorm w
+  nlinarith [norm_nonneg φ, norm_nonneg w, sq_nonneg (‖φ‖ - ‖w‖)]
 
 end TauCeti

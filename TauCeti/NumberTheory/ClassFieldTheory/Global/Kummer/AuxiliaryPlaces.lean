@@ -81,12 +81,7 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
   let M := kummerField E p Δ
   let _ : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ :=
     ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
-  have hram : TauCeti.NumberField.ramifiedSupport K M ⊆ S :=
-    ramifiedSupport_kummerField_sUnits_subset S hpS
-  have hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
-      ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
-        Algebra.IsUnramifiedAt (𝓞 K) Q := fun v hv Q _ _ ↦
-    isUnramifiedAway_ramifiedSupport (K := K) (L := M) v (fun hvram ↦ hv (hram hvram)) Q
+  have hur := isUnramifiedAt_kummerField_sUnits_of_notMem (E := E) (n := p) S hpS
   have hab : ∀ σ τ : M ≃ₐ[K] M, Commute σ τ := fun σ τ ↦
     (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ)
   have hgen : Subgroup.closure {τ : M ≃ₐ[L] M | ∃ v ∉ S,
@@ -96,20 +91,17 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
   obtain ⟨T, hST, hclosure, hcard, hsplit⟩ :=
     exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom hp
       exponent_algEquiv_kummerField_dvd hab S hur hgen
-  have hST' : Disjoint (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) := by
-    refine Set.disjoint_left.mpr fun v hvS hvT ↦ ?_
-    exact Finset.disjoint_left.mp hST hvS hvT
-  have hQ (v : T) : ∃ Q : Ideal (𝓞 M), Q.IsPrime ∧ Q.LiesOver v.1.asIdeal := by
-    obtain ⟨Q, hQ, hQv⟩ :=
-      Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 M) v.1.asIdeal
-    exact ⟨Q, hQ.isPrime, hQv⟩
-  choose Q hQprime hQover using hQ
+  have hST' := Finset.disjoint_coe.mpr hST
+  -- Choose, for each place in `T`, a prime of `M` above it.
+  choose Q hQprime hQover using fun v : T ↦
+    nonempty_subtype.1 (Ideal.nonempty_primesOver (S := 𝓞 M) v.1.asIdeal)
   let σ (v : T) : M ≃ₐ[K] M := artinElementAway hab S hur v.1
   have hσ (v : T) : IsArithFrobAt (𝓞 K) (σ v) (Q v) := by
     let _ : (Q v).IsPrime := hQprime v
     let _ : (Q v).LiesOver v.1.asIdeal := hQover v
     exact isArithFrobAt_artinElementAway hab S hur
       (fun hvS ↦ Set.disjoint_left.mp hST' hvS v.2) (Q v)
+  -- The range of `σ` is the image of `T` under `artinElementAway`, as `σ` is defined from it.
   have hrange : Set.range σ = artinElementAway hab S hur '' (T : Set _) :=
     (Set.image_eq_range (artinElementAway hab S hur) (T : Set _)).symm
   have hfix : L.fixingSubgroup = Subgroup.closure (Set.range σ) := by
@@ -117,19 +109,14 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
       L.restrictNormalHom_ker]
   have havoid (v : T) : (p : 𝓞 K) ∉ v.1.asIdeal := fun hpv ↦
     Set.disjoint_left.mp hST' (hpS v.1 hpv) v.2
-  have hrootsM : ∀ a ∈ Δ, ∃ x : M, x ^ p = algebraMap K M (a : K) := by
-    intro a ha
-    obtain ⟨x, hx⟩ := hroots a ha
-    exact ⟨⟨x, mem_kummerField_of_pow_eq ha hx⟩, Subtype.ext (by simpa using hx)⟩
+  have hrootsM := exists_pow_eq_kummerField hroots
   have hsurj : Function.Surjective
       (Set.unitLocalPowerClassMap (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) hST' p) := by
     let _ (v : T) : (Q v).IsPrime := hQprime v
     let _ (v : T) : (Q v).LiesOver v.1.asIdeal := hQover v
-    have hM : kummerField M p Δ = ⊤ := by
-      rw [kummerField_def]
-      exact adjoin_pow_eq_algebraMap_kummerField_eq_top
-    have hbound : p ^ Nat.card (T : Set (HeightOneSpectrum (𝓞 K))) ≤
-        Module.finrank L M := by
+    have hM : kummerField M p Δ = ⊤ :=
+      kummerField_def.trans adjoin_pow_eq_algebraMap_kummerField_eq_top
+    have hbound : p ^ Nat.card (T : Set (HeightOneSpectrum (𝓞 K))) ≤ Module.finrank L M := by
       rw [Nat.card_coe_set_eq, Set.ncard_coe_finset]
       exact hcard.le
     exact Set.unitLocalPowerClassMap_surjective

@@ -37,6 +37,8 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
+* `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
+  of `C`.
 
 ## References
 
@@ -192,3 +194,22 @@ lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
   (rfl)
 
 end Topology.RelCWComplex.Subcomplex
+
+namespace Topology.RelCWComplex
+
+variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+
+/-- For `n ≤ m`, the subcomplex `skeletonLT C m`, viewed as a relative CW complex in its own right,
+has the same `skeletonLT _ n` as `C`: both are the union of the base `D` with the cells of
+dimension strictly less than `n`. -/
+@[simp]
+lemma coe_skeletonLT_skeletonLT {n m : ℕ∞} (h : n ≤ m) :
+    (skeletonLT (skeletonLT C m : Set X) n : Set X) = skeletonLT C n := by
+  ext x
+  simp only [SetLike.mem_coe, mem_skeletonLT_iff]
+  refine or_congr Iff.rfl ⟨fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk, j.1, by simpa using hj⟩,
+    fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk, ⟨j, ?_⟩, by simpa using hj⟩⟩
+  rw [skeletonLT_I, mem_ofPred_eq]
+  exact hk.trans_le h
+
+end Topology.RelCWComplex

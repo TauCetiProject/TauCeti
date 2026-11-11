@@ -223,6 +223,44 @@ section MorseCharts
 
 variable {M ι : Type*} [TopologicalSpace M] {n : ℕ}
 
+/-- In a Morse chart `ψ` of index `k`, read in the coordinates `(u, v)` of
+`EuclideanSpace.sumComplEquivProd`, a point lies in the model set `quadraticSublevelUnionCell ε`
+iff it lies in the sublevel `{f ≤ c - ε}` or in the cell of the chart. -/
+private theorem sumComplEquivProd_mem_quadraticSublevelUnionCell_iff
+    {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {k : ℕ} {f : M → ℝ} {c ε : ℝ}
+    (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
+    {x : M} (hx : x ∈ ψ.source) :
+    EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) (ψ x) ∈
+        quadraticSublevelUnionCell ε ↔
+      f x ≤ c - ε ∨ x ∈ ψ.source ∩ ψ ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k ≤ j.val → y j = 0} := by
+  have hfx : f x = c + (-‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k)
+      (ψ x)).1‖ ^ 2 + ‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k)
+      (ψ x)).2‖ ^ 2) := by
+    rw [hf x hx, EuclideanSpace.sum_ite_neg_one_mul_sq_eq]
+  rw [mem_quadraticSublevelUnionCell, hfx,
+    EuclideanSpace.norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff]
+  exact or_congr ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩ (by simp [hx])
+
+/-- In a Morse chart `ψ` of index `k`, scaling the coordinates `v` of a point of `X` in the ball of
+radius `ρ` by `s ∈ [0, 1]` stays in the image of the ball under the coordinate change and in `X`,
+when `X` is preserved by this scaling. -/
+private theorem sumComplEquivProd_scale_mem_image_closedBall_and_mem
+    {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {k : ℕ} {ρ : ℝ} {X : Set M}
+    (hXscale : ∀ x ∈ X ∩ ψ.source, ‖ψ x‖ ≤ ρ → ∀ s ∈ Icc (0 : ℝ) 1,
+      ψ.symm (WithLp.toLp 2 fun j ↦ if j.val < k then ψ x j else s * ψ x j) ∈ X)
+    {x : M} (hx : x ∈ X ∩ ψ.source) (hρx : ‖ψ x‖ ≤ ρ) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
+    ((EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) (ψ x)).1,
+        s • (EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) (ψ x)).2) ∈
+      EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) '' Metric.closedBall 0 ρ ∧
+    ψ.symm ((EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k)).symm
+      ((EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) (ψ x)).1,
+        s • (EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k) (ψ x)).2)) ∈ X := by
+  refine ⟨⟨_, ?_, ContinuousLinearEquiv.apply_symm_apply _ _⟩, ?_⟩
+  · rw [Metric.mem_closedBall, dist_zero_right]
+    exact (EuclideanSpace.norm_sumComplEquivProd_symm_smul_snd_le (ψ x)
+      ((Real.norm_of_nonneg hs.1).trans_le hs.2)).trans hρx
+  · simpa only [EuclideanSpace.sumComplEquivProd_symm_smul_snd] using hXscale x hx hρx s hs
+
 /-- **Milnor's handle retraction in Morse charts.** Let `ψ i` be charts of `M` with pairwise
 disjoint sources, each containing the closed ball of radius `ρ` about `0` in its target, in which
 `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. The cell of the chart `ψ i` is the disc
@@ -260,19 +298,14 @@ theorem exists_inter_sublevel_union_cells_deformation [T2Space M] [Finite ι]
   have hφ_source (i : ι) : (φ i).source = (ψ i).source := by simp [φ]
   have hφ_apply (i : ι) (x : M) : φ i x = e i (ψ i x) := by simp [φ]
   have hφ_symm (i : ι) (z) : (φ i).symm z = (ψ i).symm ((e i).symm z) := by simp [φ]
-  -- The quadratic form in the coordinates `(u, v)`.
-  have hfφ (i : ι) {x : M} (hx : x ∈ (ψ i).source) :
-      f x = c + (-‖(φ i x).1‖ ^ 2 + ‖(φ i x).2‖ ^ 2) := by
-    rw [hf i x hx, hφ_apply, EuclideanSpace.sum_ite_neg_one_mul_sq_eq]
   set S := {x | f x ≤ c - ε} ∪
     ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}
   -- Membership of a chart point in the model set `quadraticSublevelUnionCell ε`.
   have hQ (i : ι) {x : M} (hx : x ∈ (ψ i).source) :
       φ i x ∈ quadraticSublevelUnionCell ε ↔ f x ≤ c - ε ∨
         x ∈ (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} := by
-    rw [mem_quadraticSublevelUnionCell, hfφ i hx, hφ_apply,
-      EuclideanSpace.norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff]
-    exact or_congr ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩ (by simp [hx])
+    rw [hφ_apply]
+    exact sumComplEquivProd_mem_quadraticSublevelUnionCell_iff (hf i) hx
   have hS (x : M) (hxX : x ∈ X) :
       x ∈ S ↔ ∀ i, x ∈ (φ i).source → φ i x ∈ quadraticSublevelUnionCell ε := by
     simp only [hφ_source]
@@ -305,14 +338,8 @@ theorem exists_inter_sublevel_union_cells_deformation [T2Space M] [Finite ι]
       refine hxQ ((hQ i hx).2 (.inl (hXout x hxX fun j hj ↦ ?_)))
       obtain rfl : j = i := hψ.eq (not_disjoint_iff.2 ⟨x, hj, hx⟩)
       exact lt_of_not_ge hlt
-    set w := (e i).symm ((φ i x).1, s • (φ i x).2)
-    refine ⟨⟨w, ?_, (e i).apply_symm_apply _⟩, ?_⟩
-    · rw [Metric.mem_closedBall, dist_zero_right]
-      exact (EuclideanSpace.norm_sumComplEquivProd_symm_smul_snd_le (ψ i x)
-        ((Real.norm_of_nonneg hs.1).trans_le hs.2)).trans hρx
-    · rw [hφ_symm, hφ_apply]
-      simpa only [e, EuclideanSpace.sumComplEquivProd_symm_smul_snd] using
-        hXscale i x ⟨hxX, hx⟩ hρx s hs
+    rw [hφ_symm, hφ_apply]
+    exact sumComplEquivProd_scale_mem_image_closedBall_and_mem (hXscale i) ⟨hxX, hx⟩ hρx hs
   exact exists_deformation_of_charts (φ := φ) (by simpa only [hφ_source] using hψ) hCφ hX hC hS
 
 end MorseCharts

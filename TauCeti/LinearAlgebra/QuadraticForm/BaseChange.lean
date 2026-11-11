@@ -465,12 +465,12 @@ theorem coe_orthogonalGroupEquivIsometryGroupPolarBilin_baseChange
     (orthogonalGroupEquivIsometryGroupPolarBilin (Q.baseChange A)
         ((isUnit_of_invertible (2 : A)).isSMulRegular A)
         (orthogonalGroupBaseChange (A := A) Q g) : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
-      (BilinForm.isometryGroupBaseChange A Q.polarBilin
+      (LinearMap.BilinForm.isometryGroupBaseChange A Q.polarBilin
         (orthogonalGroupEquivIsometryGroupPolarBilin Q
           ((isUnit_of_invertible (2 : R)).isSMulRegular R) g) :
             A ⊗[R] M ≃ₗ[A] A ⊗[R] M) := by
   rw [coe_orthogonalGroupEquivIsometryGroupPolarBilin_apply, coe_orthogonalGroupBaseChange,
-    BilinForm.coe_isometryGroupBaseChange,
+    LinearMap.BilinForm.coe_isometryGroupBaseChange,
     coe_orthogonalGroupEquivIsometryGroupPolarBilin_apply]
 
 /-- The matrix of a scalar-extended orthogonal automorphism in a base-changed basis is obtained
@@ -611,7 +611,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupBaseChange_congr
 
 /-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
 faithful and the original module is flat. -/
-theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Flat R M]
+theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A]
     [Module.Free R M] [Module.Finite R M] (Q : _root_.QuadraticForm R M) :
     Function.Injective (specialOrthogonalGroupBaseChange (A := A) Q) := by
   intro g h hgh

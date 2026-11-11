@@ -75,7 +75,7 @@ noncomputable def restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A)) :
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       MvPolynomial (Fin k) (A ⧸ J) := by
   letI : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
-  exact (weightedPolynomialEquiv (fun _ : Fin k ↦ ({1} : Set (A ⧸ J)))
+  exact (weightedPolynomialEquivOfDiscrete (fun _ : Fin k ↦ ({1} : Set (A ⧸ J)))
     isWeightFamily_one_weight).symm.toRingHom.comp
       (weightedMap (φ := Ideal.Quotient.mk J) (QuotientRing.isOpenQuotientMap_mk J).continuous
         isWeightFamily_one_weight isWeightFamily_one_weight (by simp))
@@ -90,7 +90,7 @@ theorem coeff_restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A))
   let : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
   dsimp only [restrictedReduction, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
     RingEquiv.coe_toRingHom]
-  rw [coeff_weightedPolynomialEquiv_symm]
+  rw [coeff_weightedPolynomialEquivOfDiscrete_symm]
   simp
 
 /-- On polynomials, reduction of restricted series is the usual coefficient map. -/

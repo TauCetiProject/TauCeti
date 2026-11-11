@@ -32,7 +32,8 @@ and more generally finite products of circles, lines and other manifolds, into m
 * `TauCeti.contDiffGroupoid_pi`: a finite product of `C^n` open partial homeomorphisms of the
   model spaces is `C^n` for the product model.
 * `TauCeti.instIsManifoldPi`: a finite product of `C^n` manifolds is a `C^n` manifold.
-* `TauCeti.extChartAt_pi`: the extended charts of a finite product.
+* `TauCeti.extChartAt_pi`, `TauCeti.extChartAt_pi_apply`: the extended charts of a finite
+  product.
 -/
 
 public section
@@ -119,5 +120,11 @@ factors at the coordinates of `x`. -/
 theorem extChartAt_pi (x : ∀ i, M i) :
     extChartAt (ModelWithCorners.pi I) x = PartialEquiv.pi fun i ↦ extChartAt (I i) (x i) :=
   PartialEquiv.pi_trans _ _
+
+/-- Each coordinate of the extended chart of a finite product at `x` is the extended chart of the
+corresponding factor at the corresponding coordinate of `x`. -/
+theorem extChartAt_pi_apply (x y : ∀ i, M i) (i : ι) :
+    extChartAt (ModelWithCorners.pi I) x y i = extChartAt (I i) (x i) (y i) := by
+  rw [extChartAt_pi, PartialEquiv.pi_apply, Pi.map_apply]
 
 end TauCeti

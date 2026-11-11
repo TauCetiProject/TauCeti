@@ -11,25 +11,26 @@ public import Mathlib.Analysis.Normed.Ring.Lemmas
 /-!
 # Uniformly continuous scalar actions on rings with an absolute value
 
-The algebra action of a commutative semiring on `WithAbs v` is uniformly continuous for every
-fixed scalar. This lets the scalar action extend to the completion without requiring the scalar
-semiring to be a ring.
+A scalar action on a ring `A` that commutes with right multiplication,
+`m • (x * y) = (m • x) * y` (`IsScalarTower M A A`), such as the algebra action of a commutative
+semiring, induces a uniformly continuous action on `WithAbs v` for every fixed scalar. This lets
+the scalar action extend to the completion; Mathlib's corresponding instance covers only algebra
+actions of a commutative ring on a field.
 -/
 
 public section
 
 namespace WithAbs
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+variable {M A : Type*} [Ring A] [SMul M A] [IsScalarTower M A A]
 
-/-- The algebra action on a ring with an absolute value is uniformly continuous in its argument. -/
+/-- A scalar action on a ring with an absolute value that commutes with right multiplication, such
+as an algebra action, is uniformly continuous in its argument. -/
 instance (priority := 100) uniformContinuousConstSMul (v : AbsoluteValue A ℝ) :
-    UniformContinuousConstSMul R (WithAbs v) where
-  -- The proof follows the scalar-continuity instance for a commutative ring base in
-  -- `Mathlib.Analysis.Normed.Field.WithAbs`, using `Ring.uniformContinuousConstSMul`
-  -- on the normed ring `WithAbs v`.
-  uniformContinuous_const_smul r := by
-    simp_rw [Algebra.smul_def]
-    exact (Ring.uniformContinuousConstSMul _).uniformContinuous_const_smul _
+    UniformContinuousConstSMul M (WithAbs v) where
+  -- An action commuting with right multiplication is left multiplication by `m • 1`.
+  uniformContinuous_const_smul m := by
+    simpa only [smul_eq_mul, smul_one_mul] using
+      uniformContinuous_const_smul (X := WithAbs v) (m • 1 : WithAbs v)
 
 end WithAbs

@@ -45,11 +45,7 @@ theorem exists_graphPlan_of_ae_exists_condKernel_eq_dirac [IsFiniteMeasure π]
     (hπ : IsCoupling π μ ν)
     (hκ : ∀ᵐ x ∂μ, ∃ y : Y, π.condKernel x = Measure.dirac y) :
     ∃ T : X → Y, Measurable T ∧ HasLaw T ν μ ∧ π = graphPlan T μ := by
-  obtain ⟨T, hT, hκT⟩ :=
-    Probability.exists_measurable_of_ae_exists_kernel_eq_dirac π.condKernel μ hκ
-  have hkernel : π.condKernel =ᵐ[μ] Kernel.deterministic T hT := by
-    filter_upwards [hκT] with x hx
-    simpa only [Kernel.deterministic_apply] using hx
+  obtain ⟨T, hT, hkernel⟩ := π.condKernel.exists_ae_eq_deterministic_of_ae_exists_eq_dirac hκ
   let _ : IsFiniteMeasure μ := by
     rw [← hπ.fst_eq]
     infer_instance

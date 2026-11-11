@@ -7,8 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
 
 /-!
 # Local bounds for Plücker coordinates
@@ -16,12 +18,14 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 The Euclidean norm of the Plücker vector is at most the product of the Euclidean
 norms of the original vectors. For a nonarchimedean absolute value, the analogous
 statement holds for maximum norms. These are the local estimates underlying the
-height bound for a subspace in terms of a spanning family.
+height bound for a subspace in terms of a spanning family. The overlapping-family
+inequality compares the common rows and their two extensions; it supplies the
+archimedean factor of subspace-height submodularity.
 
 ## References
 
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative
-  Subspace Theorem*, Ann. of Math. 177 (2013), §6.1, (6.11).
+  Subspace Theorem*, Ann. of Math. 177 (2013), §6.1, (6.11)–(6.12).
 -/
 
 public section
@@ -31,20 +35,62 @@ open Set
 
 namespace TauCeti
 
+/-- Cauchy–Binet identifies the squared Euclidean Plücker norm with the real part
+of the Gram determinant, including empty and dependent families. -/
+theorem sum_norm_plucker_sq_eq_re_det_gram {𝕜 ι : Type*} [RCLike 𝕜]
+    [LinearOrder ι] [Fintype ι] {p : ℕ} (x : Fin p → ι → 𝕜) :
+    ∑ s, ‖plucker x s‖ ^ 2 =
+      RCLike.re (Matrix.gram 𝕜 (fun i ↦ WithLp.toLp 2 (x i))).det := by
+  have hgram : Matrix.gram 𝕜 (fun i ↦ WithLp.toLp 2 (x i)) =
+      (Matrix.of x * (Matrix.of x).conjTranspose).transpose := by
+    ext i j
+    simp [Matrix.gram_apply, Matrix.mul_apply, EuclideanSpace.inner_toLp_toLp, dotProduct]
+  rw [hgram, Matrix.det_transpose, det_mul_conjTranspose_eq_sum_plucker_mul_star]
+  simp only [map_sum, RCLike.star_def, RCLike.mul_conj, RCLike.re_ofReal_pow]
+
 /-- The squared Euclidean norm of a real or complex Plücker vector is bounded by the
 product of the squared Euclidean row norms, including empty and dependent families. -/
 theorem sum_norm_plucker_sq_le {𝕜 ι : Type*} [RCLike 𝕜] [LinearOrder ι] [Fintype ι] {p : ℕ}
     (x : Fin p → ι → 𝕜) :
     ∑ s, ‖plucker x s‖ ^ 2 ≤ ∏ i, ∑ j, ‖x i j‖ ^ 2 := by
-  let v : Fin p → EuclideanSpace 𝕜 ι := fun i ↦ WithLp.toLp 2 (x i)
-  have hgram : Matrix.gram 𝕜 v = (Matrix.of x * (Matrix.of x).conjTranspose).transpose := by
-    ext i j
-    simp [Matrix.gram_apply, v, Matrix.mul_apply, EuclideanSpace.inner_toLp_toLp,
-      dotProduct]
-  have h := Matrix.re_det_gram_le_prod_norm_sq (𝕜 := 𝕜) v
-  rw [hgram, Matrix.det_transpose, det_mul_conjTranspose_eq_sum_plucker_mul_star] at h
-  simpa only [map_sum, RCLike.star_def, RCLike.mul_conj, RCLike.re_ofReal_pow,
-    EuclideanSpace.norm_sq_eq, v, WithLp.ofLp_toLp] using h
+  rw [sum_norm_plucker_sq_eq_re_det_gram]
+  simpa only [EuclideanSpace.norm_sq_eq, WithLp.ofLp_toLp] using
+    Matrix.re_det_gram_le_prod_norm_sq (𝕜 := 𝕜) (fun i ↦ WithLp.toLp 2 (x i))
+
+/-- The squared Euclidean Plücker norms satisfy the overlapping-family inequality.
+No independence assumption is needed, and empty families are included. -/
+theorem sum_norm_plucker_sq_overlap_le {𝕜 ι : Type*} [RCLike 𝕜]
+    [LinearOrder ι] [Fintype ι] {p q r : ℕ}
+    (x : Fin p → ι → 𝕜) (y : Fin q → ι → 𝕜) (z : Fin r → ι → 𝕜) :
+    (∑ s, ‖plucker x s‖ ^ 2) *
+        (∑ s, ‖plucker (Fin.append x (Fin.append y z)) s‖ ^ 2) ≤
+      (∑ s, ‖plucker (Fin.append x y) s‖ ^ 2) *
+        (∑ s, ‖plucker (Fin.append x z) s‖ ^ 2) := by
+  have hdet {α β : Type} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
+      (e : α ≃ β) (f : β → EuclideanSpace 𝕜 ι) :
+      (Matrix.gram 𝕜 (f ∘ e)).det = (Matrix.gram 𝕜 f).det :=
+    Matrix.det_submatrix_equiv_self e (Matrix.gram 𝕜 f)
+  have happ {a b : ℕ} (u : Fin a → ι → 𝕜) (v : Fin b → ι → 𝕜) :
+      Sum.elim (fun i ↦ WithLp.toLp 2 (u i)) (fun i ↦ WithLp.toLp 2 (v i)) =
+        (fun i ↦ WithLp.toLp 2 (Fin.append u v i)) ∘ finSumFinEquiv := by
+    have h := congrArg (fun f ↦ WithLp.toLp 2 ∘ f)
+      (Fin.append_comp_sumElim (xs := u) (ys := v)).symm
+    rw [Sum.comp_elim] at h
+    -- Align the equivalence coercion with Mathlib's explicit sum eliminator.
+    simpa only [Function.comp_def, finSumFinEquiv, Equiv.coe_fn_mk] using h
+  have h := Matrix.re_det_gram_mul_re_det_gram_sumElim_le (𝕜 := 𝕜)
+    (fun i ↦ WithLp.toLp 2 (x i)) (fun i ↦ WithLp.toLp 2 (y i))
+    (fun i ↦ WithLp.toLp 2 (z i))
+  rw [happ, happ, happ] at h
+  -- Reindex the inner and outer sum types together in the full Gram matrix.
+  have hfull : Sum.elim (fun i ↦ WithLp.toLp 2 (x i))
+      ((fun i ↦ WithLp.toLp 2 (Fin.append y z i)) ∘ finSumFinEquiv) =
+      (fun i ↦ WithLp.toLp 2 (Fin.append x (Fin.append y z) i)) ∘
+        ((Equiv.sumCongr (Equiv.refl _) finSumFinEquiv).trans finSumFinEquiv) := by
+    ext i
+    rcases i with i | (i | i) <;> simp
+  rw [hfull, hdet, hdet, hdet] at h
+  simpa only [sum_norm_plucker_sq_eq_re_det_gram] using h
 
 end TauCeti
 

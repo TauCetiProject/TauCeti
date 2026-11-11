@@ -10,8 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-import TauCeti.Algebra.Category.ModuleCat.AB
-import Mathlib.Algebra.Homology.HomologySequence
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
 
 /-!
 # Mod-two vanishing and integral homology
@@ -20,9 +19,11 @@ If the mod-two homology of a space vanishes in degrees n and n + 1, multiplicati
 its integral homology in degree n is bijective. This is the algebraic step used with the Hurewicz
 isomorphism to deduce unique two-divisibility of a first nonzero homotopy group.
 
-The proof uses the coefficient sequence ℤ → ℤ → ℤ/2 and Mathlib's homology long exact
-sequence, specifically `CategoryTheory.ShortComplex.ShortExact.homology_exact₁` and
-`CategoryTheory.ShortComplex.ShortExact.homology_exact₂`. It requires no connectivity or
+The proof uses the long exact sequence of the coefficient sequence ℤ → ℤ → ℤ/2, through the
+reduction modulo two: its kernel is twice integral homology
+(`TopCat.ker_singularHomologyReductionModTwo`), and it is onto in degree n + 1 exactly when
+multiplication by two is injective in degree n
+(`TopCat.surjective_singularHomologyReductionModTwo_succ_iff`). It requires no connectivity or
 finite-generation assumptions. The coefficients are universe-lifted so that the space can live
 in any universe. The reusable coefficient sequence and its exactness are
 `TauCeti.modTwoCoefficientSequence` and `TauCeti.modTwoCoefficientSequence_shortExact`.
@@ -35,7 +36,7 @@ in any universe. The reusable coefficient sequence and its exactness are
 
 public noncomputable section
 
-open CategoryTheory Limits HomologicalComplex
+open CategoryTheory Limits
 
 universe u
 
@@ -51,37 +52,17 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
     TauCeti.IsUniquelyTwoDivisible
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := by
-  -- The coefficient sequence is exact before taking singular chains.
-  let S := TauCeti.modTwoCoefficientSequence.{u}
-  have hS : S.ShortExact := TauCeti.modTwoCoefficientSequence_shortExact
-  let T := S.map (AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} ℤ) ⋙
-    (evaluation _ _).obj X)
-  have hT : T.ShortExact := by
-    convert hS.map_simplicialChains (TopCat.toSSet.obj X) using 1
-    rfl
-  -- Vanishing in the two adjacent degrees gives injectivity and surjectivity.
-  have hmono : Mono (homologyMap T.f n) :=
-    (hT.homology_exact₁ (n + 1) n (by simp)).mono_g (hn'.eq_of_src _ _)
-  have hepi : Epi (homologyMap T.f n) :=
-    (hT.homology_exact₂ n).epi_f (hn.eq_of_tgt _ _)
-  -- Additivity identifies the induced coefficient map with multiplication by two.
-  have hmap : homologyMap T.f n = (2 : ℤ) • 𝟙 (T.X₁.homology n) := by
-    have hf : T.f = 𝟙 T.X₁ + 𝟙 T.X₁ := by
-      simp [T, S, two_smul]
-    rw [hf, homologyMap_add, homologyMap_id]
-    exact (two_smul ℤ _).symm
-  -- Transport the bundled module, including its group instance, to the chain-homology carrier.
-  have hcarrier : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) = T.X₁.homology n := by rfl
-  apply (congrArg (fun M : ModuleCat.{u} ℤ ↦ TauCeti.IsUniquelyTwoDivisible M) hcarrier).mpr
+  -- Vanishing in degree `n + 1` makes the reduction onto, so two is injective in degree `n`.
+  have hinj := (X.surjective_singularHomologyReductionModTwo_succ_iff n).1 fun y ↦
+    ⟨0, (ModuleCat.isZero_iff_subsingleton.1 hn').elim _ _⟩
+  -- Vanishing in degree `n` makes every class reduce to zero, hence twice a class.
+  have hsurj := LinearMap.range_eq_top.1 ((X.ker_singularHomologyReductionModTwo n).symm.trans
+    (LinearMap.ker_eq_top.2
+      (LinearMap.ext fun _ ↦ (ModuleCat.isZero_iff_subsingleton.1 hn).elim _ _)))
   rw [TauCeti.isUniquelyTwoDivisible_iff]
-  simp only [two_zsmul]
-  constructor
-  · have h := (ModuleCat.mono_iff_injective (homologyMap T.f n)).mp hmono
-    rw [hmap] at h
-    simpa [two_mul, two_smul, Pi.add_def, Function.id_def] using h
-  · have h := (ModuleCat.epi_iff_surjective (homologyMap T.f n)).mp hepi
-    rw [hmap] at h
-    simpa [two_mul, two_smul, Pi.add_def, Function.id_def] using h
+  -- the integer action of the abelian group agrees with that of the integer module
+  convert (show Function.Bijective _ from ⟨hinj, hsurj⟩) using 1
+  ext x
+  simp [two_smul, two_zsmul]
 
 end TopCat

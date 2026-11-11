@@ -16,10 +16,11 @@ import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
 /-!
 # The finite-variable Frobenius characteristic and Frobenius's formula
 
-For `d ≥ n`, the complex class functions of `Sₙ` and the symmetric homogeneous polynomials of
-degree `n` in `d` variables have bases indexed by the partitions of `n`. The first basis consists
-of the characters of the complex Specht modules; the second consists of the Schur polynomials.
-The Frobenius characteristic is the linear equivalence taking one basis to the other.
+For a finite alphabet `σ` of at least `n` letters, the complex class functions of `Sₙ` and the
+symmetric homogeneous polynomials of degree `n` in the variables `σ` have bases indexed by the
+partitions of `n`. The first basis consists of the characters of the complex Specht modules; the
+second consists of the Schur polynomials. The Frobenius characteristic is the linear equivalence
+taking one basis to the other.
 
 Its classical description is the **cycle-type formula**: the Frobenius characteristic of a class
 function `f` is the average of the power-sum products over the cycle types,
@@ -78,62 +79,65 @@ public section
 
 namespace TauCeti
 
-variable {n : ℕ}
+variable {n : ℕ} {σ : Type*} [Fintype σ]
 
-/-- The finite-variable Frobenius characteristic is the linear equivalence sending the
-character of each complex Specht module to the Schur polynomial of the same shape. -/
-noncomputable def frobeniusCharacteristic (n d : ℕ) (h : n ≤ d) :
-    ClassFunction ℂ (Equiv.Perm (Fin n)) ≃ₗ[ℂ]
-      symmetricHomogeneousSubmodule (Fin d) ℂ n :=
-  (spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n)
-    (partitionEquivSchurIndex n d h)
+section Characteristic
+
+variable (σ)
+
+/-- The finite-variable Frobenius characteristic, for an alphabet `σ` of at least `n` letters, is
+the linear equivalence sending the character of each complex Specht module to the Schur polynomial
+of the same shape. -/
+noncomputable def frobeniusCharacteristic (n : ℕ) (h : n ≤ Fintype.card σ) :
+    ClassFunction ℂ (Equiv.Perm (Fin n)) ≃ₗ[ℂ] symmetricHomogeneousSubmodule σ ℂ n :=
+  (spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) (partitionEquivSchurIndex σ n h)
 
 /-- The Frobenius characteristic takes an irreducible character to its Schur polynomial. -/
 @[simp]
-theorem frobeniusCharacteristic_spechtCharacter (d : ℕ) (h : n ≤ d)
-    (μ : n.Partition) :
-    ((frobeniusCharacteristic n d h
-      (ClassFunction.ofCharacter (spechtModuleℂ μ).ρ) :
-        symmetricHomogeneousSubmodule (Fin d) ℂ n) : MvPolynomial (Fin d) ℂ) =
-      schurPoly (Fin d) ℂ μ := by
+theorem frobeniusCharacteristic_spechtCharacter (h : n ≤ Fintype.card σ) (μ : n.Partition) :
+    ((frobeniusCharacteristic σ n h (ClassFunction.ofCharacter (spechtModuleℂ μ).ρ) :
+        symmetricHomogeneousSubmodule σ ℂ n) : MvPolynomial σ ℂ) =
+      schurPoly σ ℂ μ := by
   rw [← spechtCharacterBasis_apply, frobeniusCharacteristic, Module.Basis.equiv_apply]
   simpa only [partitionEquivSchurIndex_apply] using
-    coe_schurPolyBasis (partitionEquivSchurIndex n d h μ)
+    coe_schurPolyBasis (partitionEquivSchurIndex σ n h μ)
 
 /-- The Schur coordinate of a Frobenius characteristic is the pairing with the corresponding
 Specht character. -/
 @[simp]
-theorem schurPolyBasis_repr_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
+theorem schurPolyBasis_repr_frobeniusCharacteristic (h : n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Equiv.Perm (Fin n)))
-    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
-    (schurPolyBasis (Fin d) ℂ n).repr (frobeniusCharacteristic n d h f) μ =
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (schurPolyBasis σ ℂ n).repr (frobeniusCharacteristic σ n h f) μ =
       ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.1).ρ) f := by
-  let e := partitionEquivSchurIndex n d h
+  let e := partitionEquivSchurIndex σ n h
   have hμ : e μ.1 = μ := by
     apply Subtype.ext
-    exact partitionEquivSchurIndex_apply n d h μ.1
+    exact partitionEquivSchurIndex_apply σ n h μ.1
   conv_lhs => rw [← hμ]
   rw [frobeniusCharacteristic]
-  have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis (Fin d) ℂ n)
-    ((spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n) e f) e.symm μ.1
+  have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis σ ℂ n)
+    ((spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) e f) e.symm μ.1
   simp only [Equiv.symm_symm] at hrepr
   rw [← hrepr]
-  rw [← Module.Basis.map_equiv (spechtCharacterBasis n) (schurPolyBasis (Fin d) ℂ n) e]
+  rw [← Module.Basis.map_equiv (spechtCharacterBasis n) (schurPolyBasis σ ℂ n) e]
   simp only [Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
   exact spechtCharacterBasis_repr f μ.1
 
 /-- The Schur coefficient of a class function under the Frobenius characteristic is its
 character pairing with the corresponding Specht character. This gives an explicit formula for
 the map on arbitrary class functions. -/
-theorem frobeniusCharacteristic_apply (d : ℕ) (h : n ≤ d)
+theorem frobeniusCharacteristic_apply (h : n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Equiv.Perm (Fin n))) :
-    ((frobeniusCharacteristic n d h f : symmetricHomogeneousSubmodule (Fin d) ℂ n) :
-      MvPolynomial (Fin d) ℂ) =
+    ((frobeniusCharacteristic σ n h f : symmetricHomogeneousSubmodule σ ℂ n) :
+      MvPolynomial σ ℂ) =
       ∑ μ : n.Partition,
         ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ).ρ) f •
-          schurPoly (Fin d) ℂ μ := by
+          schurPoly σ ℂ μ := by
   conv_lhs => rw [← (spechtCharacterBasis n).sum_repr f]
   simp [spechtCharacterBasis_repr, frobeniusCharacteristic_spechtCharacter]
+
+end Characteristic
 
 /-! ### Frobenius's formula -/
 
@@ -141,7 +145,7 @@ section Formula
 
 open Equiv MvPolynomial
 
-variable {σ : Type*} [Fintype σ] (R : Type*) [CommRing R]
+variable (R : Type*) [CommRing R]
 
 /-- Young's rule on the fixed-tabloid counts, over `ℤ`: the number of `ν`-tabloids fixed by `π` is
 `∑_λ K_{λν} χ^λ(π)`. -/
@@ -212,21 +216,22 @@ end Formula
 /-! ### The cycle-type formula -/
 
 open Equiv MvPolynomial in
+variable (σ) in
 /-- **The cycle-type formula for the Frobenius characteristic**: the Frobenius characteristic of a
 class function `f` of `Sₙ` is `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`, the average of the power-sum
 products over the cycle types weighted by `f`. -/
-theorem frobeniusCharacteristic_eq_sum_psumPart (d : ℕ) (h : n ≤ d)
+theorem frobeniusCharacteristic_eq_sum_psumPart (h : n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Perm (Fin n))) :
-    ((frobeniusCharacteristic n d h f : symmetricHomogeneousSubmodule (Fin d) ℂ n) :
-      MvPolynomial (Fin d) ℂ) =
+    ((frobeniusCharacteristic σ n h f : symmetricHomogeneousSubmodule σ ℂ n) :
+      MvPolynomial σ ℂ) =
       (n.factorial : ℂ)⁻¹ •
-        ∑ π : Perm (Fin n), (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition := by
+        ∑ π : Perm (Fin n), (f : Perm (Fin n) → ℂ) π • psumPart σ ℂ π.partition := by
   -- both sides are linear in `f`, and they agree on the basis of Specht characters
-  let L : ClassFunction ℂ (Perm (Fin n)) →ₗ[ℂ] MvPolynomial (Fin d) ℂ :=
+  let L : ClassFunction ℂ (Perm (Fin n)) →ₗ[ℂ] MvPolynomial σ ℂ :=
     (n.factorial : ℂ)⁻¹ • (Fintype.linearCombination ℂ fun π : Perm (Fin n) =>
-      psumPart (Fin d) ℂ π.partition) ∘ₗ (ClassFunction ℂ (Perm (Fin n))).subtype
-  have hL : (symmetricHomogeneousSubmodule (Fin d) ℂ n).subtype ∘ₗ
-      (frobeniusCharacteristic n d h).toLinearMap = L := by
+      psumPart σ ℂ π.partition) ∘ₗ (ClassFunction ℂ (Perm (Fin n))).subtype
+  have hL : (symmetricHomogeneousSubmodule σ ℂ n).subtype ∘ₗ
+      (frobeniusCharacteristic σ n h).toLinearMap = L := by
     refine (spechtCharacterBasis n).ext fun μ => ?_
     have hfac : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
@@ -243,7 +248,7 @@ section HallInner
 
 open Equiv MvPolynomial
 
-variable {σ : Type*} [Fintype σ] {R : Type*} [CommRing R]
+variable {R : Type*} [CommRing R]
 
 /-- **A power sum pairs with a Schur polynomial to a character value**: `⟨p_ρ, s_μ⟩ = χ^μ(ρ)` for
 the Hall inner product, over every commutative ring.  This is Frobenius's formula
@@ -284,19 +289,19 @@ theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
 symmetric polynomials.  Both forms make the bases matched by the Frobenius characteristic
 orthonormal: the characters of the Specht modules and the Schur polynomials. -/
 @[simp]
-theorem hallInner_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
+theorem hallInner_frobeniusCharacteristic (h : n ≤ Fintype.card σ)
     (f g : ClassFunction ℂ (Perm (Fin n))) :
-    hallInner (Fin d) ℂ n (frobeniusCharacteristic n d h f) (frobeniusCharacteristic n d h g) =
+    hallInner σ ℂ n (frobeniusCharacteristic σ n h f) (frobeniusCharacteristic σ n h g) =
       ClassFunction.characterPairing f g := by
-  have key : (hallInner (Fin d) ℂ n).compl₁₂ (frobeniusCharacteristic n d h).toLinearMap
-      (frobeniusCharacteristic n d h).toLinearMap = ClassFunction.characterPairing := by
+  have key : (hallInner σ ℂ n).compl₁₂ (frobeniusCharacteristic σ n h).toLinearMap
+      (frobeniusCharacteristic σ n h).toLinearMap = ClassFunction.characterPairing := by
     refine LinearMap.BilinForm.ext_basis (spechtCharacterBasis n) fun μ ν => ?_
     have hν := spechtCharacterBasis_repr (spechtCharacterBasis n ν) μ
     rw [← spechtCharacterBasis_apply, Module.Basis.repr_self] at hν
     rw [← hν, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, frobeniusCharacteristic,
       Module.Basis.equiv_apply, Module.Basis.equiv_apply, hallInner_schurPolyBasis,
       Finsupp.single_apply]
-    exact if_congr ((partitionEquivSchurIndex n d h).injective.eq_iff.trans eq_comm) rfl rfl
+    exact if_congr ((partitionEquivSchurIndex σ n h).injective.eq_iff.trans eq_comm) rfl rfl
   exact congr($key f g)
 
 end HallInner

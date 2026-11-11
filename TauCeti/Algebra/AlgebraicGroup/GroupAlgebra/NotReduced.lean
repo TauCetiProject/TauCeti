@@ -26,7 +26,7 @@ group scheme.
 ## Main declarations
 
 * `TauCeti.RootsOfUnityGroup.coordinateRing_not_isReduced`: the coordinate Hopf algebra of
-  `μ_p = D(ℤ/p)` is not reduced over a nontrivial base of characteristic `p`.
+  `μ_p = D(ℤ/p)` is not reduced over a base of characteristic `p`.
 * `TauCeti.RootsOfUnityGroup.isNilpotent_single_generator_sub_one`: the explicit nonzero
   nilpotent `single (ofAdd 1) 1 - 1`.
 
@@ -52,12 +52,12 @@ theorem generator_ne_one : generator p ≠ 1 := by
   exact one_ne_zero
 
 /-- **The coordinate Hopf algebra of `μ_p` is non-reduced in characteristic `p`.** Over a
-nontrivial base `R` of characteristic `p`, the group algebra `R[Multiplicative (ZMod p)]`
+base `R` of characteristic `p`, the group algebra `R[Multiplicative (ZMod p)]`
 representing `μ_p = D(ℤ/p)` is not reduced: the group-like difference
 `single (ofAdd 1) 1 - 1` is a nonzero nilpotent. Geometrically this exhibits `μ_p` as a
 non-smooth affine group scheme, the canonical non-reduced example admitted by the
 finite-type theory. -/
-theorem coordinateRing_not_isReduced [Nontrivial R] :
+theorem coordinateRing_not_isReduced :
     ¬ IsReduced (MonoidAlgebra R (Multiplicative (ZMod p))) :=
   not_isReduced_monoidAlgebra p (generator_ne_one p) (generator_pow_eq_one p)
 

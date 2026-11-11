@@ -7,6 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PrekopaLeindler
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Brunn–Minkowski in finite-dimensional Euclidean spaces
@@ -21,6 +24,13 @@ geometric mean of volumes. The additive formulation bounds its dimension root by
 weighted sum of dimension roots, for arbitrary nonnegative coefficients. Real-valued
 versions assume finite outer volume of the weighted sum. These inequalities support
 convex isoperimetric estimates and concavity of outer parallel volumes.
+
+If the `r`-neighbourhood of a set `G` lies in a set `F` of finite volume, Brunn–Minkowski
+bounds the volume of `F \ G` from below by `n |G|^(1 - 1/n) ω_n^(1/n) r`, where
+`ω_n = volume (ball 0 1)` (`TauCeti.finrank_mul_rpow_pow_mul_le_volume_real_sub`). This is the
+shell estimate behind the isoperimetric inequality. The isoperimetric constant
+`n^n ω_n |s|^(n-1)` is the `n`-th power of `n ω_n^(1/n) |s|^(1 - 1/n)`
+(`TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal`).
 
 ## References
 
@@ -201,5 +211,53 @@ theorem volume_real_rpow_add_volume_real_rpow_le {A B : Set E}
   simpa only [one_mul, one_smul] using
     mul_volume_real_rpow_add_mul_volume_real_rpow_le hn hAn hA hBn hB
       (c := 1) (d := 1) zero_le_one zero_le_one (by simpa only [one_smul] using hfin)
+
+section Shell
+
+open Metric Module
+
+/-- **Brunn–Minkowski for a shell.** If the `r`-neighbourhood `G + ball 0 r` of a nonempty
+null-measurable set `G` lies in a set `F` of finite volume, then in dimension `n ≥ 1`
+`volume F - volume G ≥ n (volume G ^ (1 / n)) ^ (n - 1) r ω_n ^ (1 / n)`. -/
+theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {G F : Set E}
+    (hG : NullMeasurableSet G volume) (hG0 : G.Nonempty) (hF : volume F ≠ ∞) {r : ℝ} (hr : 0 < r)
+    (hsub : G + ball (0 : E) r ⊆ F) :
+    finrank ℝ E * (volume.real G ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1) *
+        (r * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹) ≤
+      volume.real F - volume.real G := by
+  set n := finrank ℝ E
+  set a := volume.real G ^ (n : ℝ)⁻¹
+  set b := r * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹
+  have hball : volume.real (ball (0 : E) r) ^ (n : ℝ)⁻¹ = b := by
+    rw [volume.addHaar_real_ball_of_pos 0 hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+      Real.pow_rpow_inv_natCast hr.le hn]
+  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0 hG
+    (nonempty_ball.2 hr) measurableSet_ball.nullMeasurableSet
+    (ne_top_of_le_ne_top hF (measure_mono hsub))
+  rw [hball] at hBM
+  have hab : a + b ≤ volume.real F ^ (n : ℝ)⁻¹ := hBM.trans
+    (Real.rpow_le_rpow measureReal_nonneg (measureReal_mono hsub hF) (by positivity))
+  have ha : 0 ≤ a := by positivity
+  have hb : 0 ≤ b := by positivity
+  have hpow := pow_le_pow_left₀ (by positivity) hab n
+  rw [Real.rpow_inv_natCast_pow measureReal_nonneg hn] at hpow
+  have hbin := (Commute.all a b).pow_add_mul_le_add_pow_of_sq_nonneg ha (sq_nonneg b)
+    (sq_nonneg _) (by positivity) n
+  have han : a ^ n = volume.real G := Real.rpow_inv_natCast_pow measureReal_nonneg hn
+  linarith
+
+/-- The isoperimetric bound `n^n ω_n |s|^(n-1)` for a set `s` of finite volume is the `n`-th
+power of the real quantity `n ω_n^(1/n) |s|^(1 - 1/n)`, read in `ℝ≥0∞`. -/
+theorem finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal {s : Set E}
+    (hs : volume s ≠ ∞) (hn : finrank ℝ E ≠ 0) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) =
+      ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+        volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
+  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
+    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
+  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
+  simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, hs]
+
+end Shell
 
 end TauCeti

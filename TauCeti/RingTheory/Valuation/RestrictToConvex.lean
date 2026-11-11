@@ -451,6 +451,22 @@ theorem one_lt_restrictToConvex_mul_inv (v : Valuation R Γ₀) (H : ConvexSubgr
     simpa [← Units.val_lt_val] using hlt
   rwa [← div_eq_mul_inv, one_lt_div₀ (zero_lt_iff.mpr hbr)]
 
+/-- **Dividing a restricted value by a kept value is at most `1` exactly when the quotient is.**
+If `v a = v b * g` with `v b` a kept nonzero value, then `v.restrictToConvex a` divided by
+`v.restrictToConvex b` is at most `1` if and only if `g ≤ 1`. -/
+theorem restrictToConvex_mul_inv_le_one_iff (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ)
+    (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H) {a b : R}
+    (hb : v b ≠ 0) (hmem : Units.mk0 (v b) hb ∈ H) {g : Γ₀} (hg : v a = v b * g) :
+    v.restrictToConvex H hH a * (v.restrictToConvex H hH b)⁻¹ ≤ 1 ↔ g ≤ 1 := by
+  constructor
+  · intro hle
+    by_contra hgt
+    refine (not_lt_of_ge hle) (one_lt_restrictToConvex_mul_inv v H hH hb hmem ?_)
+    rw [hg]
+    exact lt_mul_of_one_lt_right (zero_lt_iff.mpr hb) (lt_of_not_ge hgt)
+  · intro hg1
+    exact restrictToConvex_mul_inv_le_one v H hH hb hmem (hg ▸ mul_le_of_le_one_right' hg1)
+
 /-- The support can only grow under the restriction: every zero of `v` is a zero of the
 restricted valuation, alongside the discarded values. Stated over a commutative ring because
 `Valuation.supp` is. -/

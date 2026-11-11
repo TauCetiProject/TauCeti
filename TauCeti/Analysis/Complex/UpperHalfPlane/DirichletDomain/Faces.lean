@@ -24,8 +24,8 @@ The geometric statements apply to any family of translates in the upper half-pla
 discontinuity is needed only for the exact boundary and interior characterizations, where it
 ensures local finiteness of the distance constraints. Indices fixing the centre are explicitly
 excluded from the boundary description: their equality face is the whole domain. For an
-isometric action, the interior characterization shows that an element moving the centre moves
-the interior of the Dirichlet domain off itself.
+isometric action, an element moving the centre moves the interior of the Dirichlet domain off
+itself, since the face it indexes lies on the boundary; this needs no discreteness.
 
 ## References
 
@@ -175,20 +175,19 @@ variable {G : Type*} [Group G] [MulAction G ℍ] [IsIsometricSMul G ℍ]
   [ProperlyDiscontinuousSMul G ℍ]
 
 open scoped Pointwise in
+omit [ProperlyDiscontinuousSMul G ℍ] in
 /-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** If
 `g • p ≠ p`, then the translate `g • interior D` of the interior of the Dirichlet domain `D`
 centred at `p` is disjoint from `interior D`. -/
 theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p ≠ p) :
     Disjoint (g • interior (dirichletDomain G p)) (interior (dirichletDomain G p)) := by
-  -- An interior point is strictly closer to `p` than to every other orbit point, which cannot
-  -- hold both for a point and for its translate.
+  -- A point of the interior and its translate, both in the interior, force the point onto the
+  -- face of `g⁻¹`, which lies on the boundary.
   refine disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨w, hw, rfl⟩ := mem_smul_set.1 hz
-  have h₁ := mem_interior_dirichletDomain_iff.1 hw g⁻¹ fun h ↦
-    hg ((smul_eq_iff_eq_inv_smul g).2 h.symm)
-  have h₂ := mem_interior_dirichletDomain_iff.1 hz' g hg
-  have he : dist (g • w) p = dist w (g⁻¹ • p) := by rw [← dist_smul g w, smul_inv_smul]
-  rw [dist_smul, he] at h₂
-  exact (h₁.trans h₂).false
+  have hg' : g⁻¹ • p ≠ p := fun h ↦ hg ((smul_eq_iff_eq_inv_smul g).2 h.symm)
+  have hf := (inv_smul_mem_dirichletDomain_iff (interior_subset hw) g⁻¹).mp
+    (by simpa using interior_subset hz')
+  exact (dirichletFace_subset_frontier hg' hf).2 hw
 
 end TauCeti.UpperHalfPlane

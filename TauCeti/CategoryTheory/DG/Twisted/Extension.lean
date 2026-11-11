@@ -50,6 +50,11 @@ With `Q` the shift `P'⟦1⟧` of a twisted object `P'` and `g` the degree-one m
 cone of `u`, the basic construction of the pretriangulated envelope of Bondal and Kapranov; see
 `TauCeti/CategoryTheory/DG/Twisted/Cone.lean`.
 
+A DG functor `G : E ⥤ E'` preserves extensions: the image under the induced DG functor of
+`extension P Q g` is isomorphic in the homotopy category to the extension of the images of `P`
+and `Q` along the image of `g`, through the closed morphisms built from the images of the
+projections and inclusions of one extension and the inclusions and projections of the other.
+
 ## Main definitions
 
 * `TauCeti.DGTwistedObject.extensionTwist`: the block twisting matrix of an extension.
@@ -65,6 +70,8 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
   second summands.
 * `TauCeti.DGTwistedObject.extensionIsoOfIso`: the isomorphism in the homotopy category between
   extensions along isomorphic second summands.
+* `CategoryTheory.EnrichedFunctor.mapExtensionIso`: the isomorphism in the homotopy category
+  between the image of an extension under a DG functor and the extension of the images.
 
 ## Main results
 
@@ -81,8 +88,8 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
 * `TauCeti.DGTwistedObject.extension_dgHom_ext`: morphisms out of an extension are determined by
   their composites with the two inclusions.
 * `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
-  `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
-  contractible.
+  `TauCeti.DGTwistedObject.isZero_extension_of_dgComp_eq_dgId`: an extension along an invertible
+  morphism is contractible.
 * `TauCeti.DGTwistedObject.isZero_of_isEmpty`: a twisted object with no summands is a zero object
   of the homotopy category; in particular the homotopy category has a zero object.
 * `TauCeti.DGTwistedObject.extensionHomOfHomotopy_zero`: the zero morphism induces the identity.
@@ -98,6 +105,10 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
 * `TauCeti.DGTwistedObject.dgDifferential_extensionMap` and
   `TauCeti.DGTwistedObject.dgComp_extensionMap`: the morphism of extensions induced by a closed
   morphism compatible with the gluing morphisms is closed, and these morphisms compose.
+* `CategoryTheory.EnrichedFunctor.dgComp_dgMap_extensionInl_mapExtensionHom`,
+  `CategoryTheory.EnrichedFunctor.dgComp_mapExtensionHom_extensionSnd` and their companions: the
+  comparison of the image of an extension with the extension of the images commutes with the
+  structure maps.
 
 ## References
 
@@ -551,7 +562,7 @@ theorem dgComp_extensionInr_extensionSnd :
 
 /-- **An extension is the direct sum of `P` and `Q` as a graded object**: the projections
 followed by the inclusions sum to the identity. -/
-theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
+theorem extension_total :
     dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) +
       dgComp R (extensionSnd R hg) (extensionInr R hg) (add_zero 0) = dgId R _ :=
   dgHom_ext' fun a b ↦ by
@@ -577,7 +588,7 @@ theorem extension_dgHom_ext {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : �
       dgComp R (extensionInr R hg) f' (zero_add n)) :
     f = f' := by
   rw [← dgId_dgComp R f, ← dgId_dgComp R f',
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg, add_dgComp,
+    ← extension_total R hg, add_dgComp,
     add_dgComp, dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f' (add_zero 0) (zero_add n) (by omega),
@@ -653,13 +664,13 @@ theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
     dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
   simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
     Units.neg_smul, one_smul, hsnd, hfst]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 /-- **An extension along an invertible morphism is contractible**: if the closed degree-one
 morphism `g : Q ⟶ P` has an inverse of degree `-1`, then the extension of `Q` by `P` along `g` is
 a zero object of the homotopy category. -/
-theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+theorem isZero_extension_of_dgComp_eq_dgId (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
     (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
     Limits.IsZero (DGHomotopyCategory.of R (extension P Q g hg)) :=
   (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R _).mpr
@@ -716,7 +727,7 @@ theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
 theorem extensionHomOfHomotopy_zero :
     extensionHomOfHomotopy R hg hg 0 = dgId R (extension P Q g hg) := by
   rw [extensionHomOfHomotopy_def, zero_dgComp, dgComp_zero, add_zero,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a homotopy is closed**: if `d k = g - g'`, then the
 differential of `TauCeti.DGTwistedObject.extensionHomOfHomotopy` vanishes. -/
@@ -779,7 +790,7 @@ theorem dgComp_extensionHomOfHomotopy_neg (k : DGHom R 0 Q P) :
     dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
     dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, dgComp_zero,
     add_zero]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 variable {hg hg'} in
@@ -874,7 +885,7 @@ theorem extensionMap_def (φ : DGHom R 0 Q Q') :
 @[simp↓]
 theorem extensionMap_dgId : extensionMap R hg hg (dgId R Q) = dgId R (extension P Q g hg) := by
   rw [extensionMap_def, dgId_dgComp,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a closed morphism compatible with the gluing morphisms
 is closed**: if `φ : Q ⟶ Q'` is closed and `φ` followed by `g'` is `g`, then the differential of
@@ -1039,3 +1050,197 @@ end map
 end DGTwistedObject
 
 end TauCeti
+
+namespace CategoryTheory.EnrichedFunctor
+
+open TauCeti DGTwistedObject
+
+universe u₂
+
+variable {R : Type v} [CommRing R] {E : Type u} {E' : Type u₂} [DGCategory R E]
+  [DGCategory R E'] (G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) E E')
+
+/-! ### Images of extensions -/
+
+section extension
+
+variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
+  (hg : dgDifferential R 1 g = 0)
+
+/-- The comparison `G (extension P Q g) ⟶ extension (G P) (G Q) (G g)` of the image of an
+extension under the DG functor induced by `G` with the extension of the images: the images of
+the projections followed by the inclusions of the target. -/
+noncomputable def mapExtensionHom :
+    DGHom R 0 (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg))
+      (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg)) :=
+  dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg))
+      (extensionInl R _) (add_zero 0) +
+    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
+      (extensionInr R _) (add_zero 0)
+
+/-- The comparison `extension (G P) (G Q) (G g) ⟶ G (extension P Q g)`, inverse to
+`CategoryTheory.EnrichedFunctor.mapExtensionHom`: the projections of the source followed by the
+images of the inclusions. -/
+noncomputable def mapExtensionInv :
+    DGHom R 0 (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg))
+      (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg)) :=
+  dgComp R (extensionFst R _)
+      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg)) (add_zero 0) +
+    dgComp R (extensionSnd R _)
+      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg)) (add_zero 0)
+
+/-- The comparison of the image of an extension with the extension of the images is the images of
+the projections followed by the inclusions. -/
+theorem mapExtensionHom_def :
+    mapExtensionHom G hg =
+      dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg))
+          (extensionInl R _) (add_zero 0) +
+        dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
+          (extensionInr R _) (add_zero 0) :=
+  (rfl)
+
+/-- The inverse comparison is the projections followed by the images of the inclusions. -/
+theorem mapExtensionInv_def :
+    mapExtensionInv G hg =
+      dgComp R (extensionFst R _)
+          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg)) (add_zero 0) +
+        dgComp R (extensionSnd R _)
+          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg)) (add_zero 0) :=
+  (rfl)
+
+/-- The comparison of the image of an extension with the extension of the images is closed. -/
+@[simp↓]
+theorem dgDifferential_mapExtensionHom : dgDifferential R 0 (mapExtensionHom G hg) = 0 := by
+  have hfst : dgDifferential R 0
+      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg)) =
+        -dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
+          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g) (zero_add 1) := by
+    rw [← dgMap_dgDifferential, dgDifferential_extensionFst, map_neg,
+      dgMap_dgComp]
+  rw [mapExtensionHom_def, map_add, dgDifferential_dgComp, dgDifferential_dgComp, hfst,
+    G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero
+      (dgDifferential_extensionSnd R hg)]
+  simp only [dgDifferential_extensionInl, dgDifferential_extensionInr, neg_dgComp, zero_dgComp,
+    dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+  exact neg_add_eq_zero.2 (dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) rfl)
+
+
+/-- The image of the inclusion of `P` followed by the comparison is the inclusion of `G P`. -/
+@[simp↓]
+theorem dgComp_dgMap_extensionInl_mapExtensionHom :
+    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg))
+      (mapExtensionHom G hg) (add_zero 0) = extensionInl R _ := by
+  rw [mapExtensionHom_def, dgComp_add,
+    dgMap_dgComp_dgMap_assoc_of_eq_dgId _ (dgComp_extensionInl_extensionFst R hg),
+    dgMap_dgComp_dgMap_assoc_of_eq_zero _ (dgComp_extensionInl_extensionSnd R hg),
+    add_zero]
+
+/-- The image of the inclusion of `Q` followed by the comparison is the inclusion of `G Q`. -/
+@[simp↓]
+theorem dgComp_dgMap_extensionInr_mapExtensionHom :
+    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg))
+      (mapExtensionHom G hg) (add_zero 0) = extensionInr R _ := by
+  rw [mapExtensionHom_def, dgComp_add,
+    dgMap_dgComp_dgMap_assoc_of_eq_zero _ (dgComp_extensionInr_extensionFst R hg),
+    dgMap_dgComp_dgMap_assoc_of_eq_dgId _ (dgComp_extensionInr_extensionSnd R hg),
+    zero_add]
+
+/-- The comparison followed by the projection onto `G Q` is the image of the projection onto
+`Q`. -/
+@[simp↓]
+theorem dgComp_mapExtensionHom_extensionSnd :
+    dgComp R (mapExtensionHom G hg) (extensionSnd R _) (add_zero 0) =
+      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg) := by
+  simp only [mapExtensionHom_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionSnd R _) (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, zero_add,
+    dgComp_dgId]
+
+/-- The inclusion of `G P` followed by the inverse comparison is the image of the inclusion of
+`P`. -/
+@[simp↓]
+theorem dgComp_extensionInl_mapExtensionInv :
+    dgComp R (extensionInl R _) (mapExtensionInv G hg) (add_zero 0) =
+      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg) := by
+  simp only [mapExtensionInv_def, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
+    dgComp_extensionInl_extensionSnd_assoc, add_zero]
+
+/-- The inclusion of `G Q` followed by the inverse comparison is the image of the inclusion of
+`Q`. -/
+@[simp↓]
+theorem dgComp_extensionInr_mapExtensionInv :
+    dgComp R (extensionInr R _) (mapExtensionInv G hg) (add_zero 0) =
+      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg) := by
+  simp only [mapExtensionInv_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- The comparison of the image of an extension with the extension of the images, followed by its
+inverse, is the identity. -/
+@[simp↓]
+theorem dgComp_mapExtensionHom_mapExtensionInv :
+    dgComp R (mapExtensionHom G hg) (mapExtensionInv G hg) (add_zero 0) = dgId R _ := by
+  rw [mapExtensionHom_def, add_dgComp,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_mapExtensionInv, dgComp_extensionInr_mapExtensionInv,
+    ← dgMap_dgComp, ← dgMap_dgComp, ← map_add,
+    extension_total,
+    dgMap_dgId]
+
+/-- The inverse comparison followed by the comparison is the identity of the extension of the
+images. -/
+@[simp↓]
+theorem dgComp_mapExtensionInv_mapExtensionHom :
+    dgComp R (mapExtensionInv G hg) (mapExtensionHom G hg) (add_zero 0) = dgId R _ := by
+  refine extension_dgHom_ext ?_ ?_
+  · rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+      dgComp_extensionInl_mapExtensionInv, dgComp_dgMap_extensionInl_mapExtensionHom, dgComp_dgId]
+  · rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+      dgComp_extensionInr_mapExtensionInv, dgComp_dgMap_extensionInr_mapExtensionHom, dgComp_dgId]
+
+/-- The inverse comparison of the extension of the images with the image of an extension is
+closed. -/
+@[simp↓]
+theorem dgDifferential_mapExtensionInv : dgDifferential R 0 (mapExtensionInv G hg) = 0 :=
+  dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_mapExtensionHom G hg) (add_zero 0)
+    (dgComp_mapExtensionHom_mapExtensionInv G hg) (dgComp_mapExtensionInv_mapExtensionHom G hg)
+
+/-- **A DG functor preserves extensions**: the image of `extension P Q g` under the DG functor
+induced by `G` is isomorphic in the homotopy category to the extension of the images along the
+image of `g`. -/
+noncomputable def mapExtensionIso :
+    DGHomotopyCategory.of R (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg)) ≅
+      DGHomotopyCategory.of R (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
+        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg)) where
+  hom := DGHomotopyCategory.homOf R (mapExtensionHom G hg)
+    ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg))
+  inv := DGHomotopyCategory.homOf R (mapExtensionInv G hg)
+    ((mem_dgCycles R).mpr (dgDifferential_mapExtensionInv G hg))
+  hom_inv_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
+    (dgComp_mapExtensionHom_mapExtensionInv G hg)
+  inv_hom_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
+    (dgComp_mapExtensionInv_mapExtensionHom G hg)
+
+@[simp]
+theorem mapExtensionIso_hom :
+    (mapExtensionIso G hg).hom = DGHomotopyCategory.homOf R (mapExtensionHom G hg)
+      ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg)) :=
+  (rfl)
+
+@[simp]
+theorem mapExtensionIso_inv :
+    (mapExtensionIso G hg).inv = DGHomotopyCategory.homOf R (mapExtensionInv G hg)
+      ((mem_dgCycles R).mpr (dgDifferential_mapExtensionInv G hg)) :=
+  (rfl)
+
+end extension
+
+end CategoryTheory.EnrichedFunctor

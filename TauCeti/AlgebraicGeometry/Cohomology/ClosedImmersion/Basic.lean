@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.Topology.Sheaves.Cohomology.Basic
 
 /-!

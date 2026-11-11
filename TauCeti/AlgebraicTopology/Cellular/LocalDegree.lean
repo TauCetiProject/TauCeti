@@ -390,24 +390,15 @@ private lemma isIso_singularHomologyMap_compl_cellBall (k : ℕ) :
     (cellChart_mem_closedBall C x hx) isBounded_closedBall isClosed_closedBall
     (isClosed_cellBall C x hx) (closedBall_subset_target_cellChart C x hx) k
 
-/-- **Excision onto the open cell.** The characteristic map induces isomorphisms from the
-homology of the disk relative to the complement of `diskCore` to that of the skeleton relative
-to the complement of `cellBall`. -/
-private lemma isIso_singularHomologyMap_cellDiskHom (k : ℕ) :
-    IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap (cellDiskHom i)
-      (mapsTo_cellDiskHom_compl C x hx)) R k) := by
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
-    (X := TopCat.disk.{w} n) isOpen_diskInterior (isClosed_diskCore C x i)
-    (diskCore_subset_diskInterior C x hx) k
-  suffices h : IsIso (TopPair.singularHomologyMap
+/-- The composite of the excision map of the interior of the disk with the characteristic map
+induces isomorphisms on homology: on the interior of the disk the characteristic map is an
+embedding onto the open cell, and the open cell and the complement of `cellBall` cover the
+skeleton. -/
+private lemma isIso_singularHomologyMap_excisionMap_comp_cellDiskHom (k : ℕ) :
+    IsIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (diskInterior n) (diskCore C x i)ᶜ ≫
         TopPair.ofSubsetMap (cellDiskHom i) (mapsTo_cellDiskHom_compl C x hx))
-      R k) by
-    rw [TopPair.singularHomologyMap_comp] at h
-    exact IsIso.of_isIso_comp_left
-      (TopPair.singularHomologyMap (TopPair.excisionMap (diskInterior n) (diskCore C x i)ᶜ) R k) _
-  -- On the interior of the disk the characteristic map is an embedding onto the open cell; the
-  -- open cell and the complement of `cellBall` cover the skeleton.
+      R k) := by
   set g := TopPair.excisionMap (diskInterior n) (diskCore C x i)ᶜ ≫
     TopPair.ofSubsetMap (cellDiskHom i) (mapsTo_cellDiskHom_compl C x hx)
   have hg : ∀ z, TopPair.Hom.fst g z = cellDiskHom i z.1 := fun z ↦ by
@@ -452,6 +443,20 @@ private lemma isIso_singularHomologyMap_cellDiskHom (k : ℕ) :
         rw [coe_cellDiskHom_apply,
           Homeomorph.apply_symm_apply]
         exact map_map_symm n hm
+
+/-- **Excision onto the open cell.** The characteristic map induces isomorphisms from the
+homology of the disk relative to the complement of `diskCore` to that of the skeleton relative
+to the complement of `cellBall`. -/
+private lemma isIso_singularHomologyMap_cellDiskHom (k : ℕ) :
+    IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap (cellDiskHom i)
+      (mapsTo_cellDiskHom_compl C x hx)) R k) := by
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
+    (X := TopCat.disk.{w} n) isOpen_diskInterior (isClosed_diskCore C x i)
+    (diskCore_subset_diskInterior C x hx) k
+  have h := isIso_singularHomologyMap_excisionMap_comp_cellDiskHom C R x hx (i := i) k
+  rw [TopPair.singularHomologyMap_comp] at h
+  exact IsIso.of_isIso_comp_left
+    (TopPair.singularHomologyMap (TopPair.excisionMap (diskInterior n) (diskCore C x i)ᶜ) R k) _
 
 /-- **The radial deformation.** The inclusion of the boundary sphere of the disk into the
 complement of `diskCore` induces isomorphisms on relative homology. -/

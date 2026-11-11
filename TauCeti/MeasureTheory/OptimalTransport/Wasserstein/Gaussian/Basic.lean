@@ -144,8 +144,10 @@ theorem Probability.integral_norm_sub_affineGeometricMean_sq
     rw [hmap]
     exact (memLp_two_iff_integrable_sq_norm IsGaussian.memLp_two_id.aestronglyMeasurable).mp
       IsGaussian.memLp_two_id
-  rw [← integral_map hmeas hint.aestronglyMeasurable, hmap,
-    integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix _ IsGaussian.memLp_two_id,
+  have hsq := integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix
+    (multivariateGaussian (m₁ - m₂) C) IsGaussian.memLp_two_id 0
+  simp only [sub_zero] at hsq
+  rw [← integral_map hmeas hint.aestronglyMeasurable, hmap, hsq,
     integral_id_multivariateGaussian, Probability.covMatrix_multivariateGaussian _ hC]
   dsimp only [C, B, A]
   rw [gaussianWassersteinSq_def, ← Matrix.conjTranspose_eq_transpose_of_trivial,

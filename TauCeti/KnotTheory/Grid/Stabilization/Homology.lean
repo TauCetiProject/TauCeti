@@ -46,6 +46,9 @@ treated here; the other stabilization types and commutation moves are not.
 
 * `TauCeti.GridDiagram.stabilizeXChainMap_unblockedDifferential`: `stabilizeXChainMap` commutes
   with the unblocked differentials.
+* `TauCeti.GridDiagram.exists_sub_stabilizeXChainMap_mem_range` and
+  `TauCeti.GridDiagram.mem_range_of_stabilizeXChainMap_mem_range`: the chain-level form of
+  bijectivity on homology, for transfer to quotient complexes.
 * `TauCeti.GridDiagram.stabilizeXHomologyMap_unblockedHomologyClass`: the class of a cycle `z`
   goes to the class of `stabilizeXChainMap z`.
 * `TauCeti.GridDiagram.stabilizeXHomologyMap_bijective`: **stabilization invariance of `GH⁻`**,
@@ -92,27 +95,6 @@ theorem stabilizeXChainMap_apply (c : GridChainMinus R (n + 1)) :
     G.stabilizeXChainMap s R c = Finsupp.mapRange (rename s.predAbove) (map_zero _)
       (G.stabilizeXOffCenterToCenter s R (G.stabilizeXOffCenterProjection s R c)) :=
   (rfl)
-
-/-- `stabilizeXChainMap` carries multiplication by `V_j` to multiplication by `V_{s.predAbove j}`,
-merging the two stabilization variables `V_{s.castSucc}` and `V_{s.succ}` into `V_s`.
-
-Not a `simp` lemma: `LinearMap.map_smulₛₗ` and `MvPolynomial.rename_X` already simplify the
-left-hand side. -/
-theorem stabilizeXChainMap_X_smul (j : Fin (n + 1)) (c : GridChainMinus R (n + 1)) :
-    G.stabilizeXChainMap s R ((MvPolynomial.X j : S) • c) =
-      (MvPolynomial.X (s.predAbove j) : A) • G.stabilizeXChainMap s R c := by
-  rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
-  simp
-
-/-- For any column `i` of `G`, `stabilizeXChainMap` carries multiplication by the variable
-`V_{s.castSucc.succAbove i}` of the transported old `O`-marking in `G'` to multiplication by `V_i`.
-
-Not a `simp` lemma: `LinearMap.map_smulₛₗ`, `MvPolynomial.rename_X`, and `Fin.predAbove_succAbove`
-already simplify the left-hand side. -/
-theorem stabilizeXChainMap_X_succAbove_smul (i : Fin n) (c : GridChainMinus R (n + 1)) :
-    G.stabilizeXChainMap s R ((MvPolynomial.X (s.castSucc.succAbove i) : S) • c) =
-      (MvPolynomial.X i : A) • G.stabilizeXChainMap s R c := by
-  rw [G.stabilizeXChainMap_X_smul, Fin.predAbove_succAbove]
 
 variable [CharP R 2]
 

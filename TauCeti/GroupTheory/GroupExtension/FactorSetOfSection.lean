@@ -90,31 +90,6 @@ universe u v w
 
 variable {G : Type u} {M : Type v} {E : Type w} [Group G] [Group E]
 
-section InlInv
-
-variable [Group M] (S : GroupExtension M E G)
-
-/-- The partial inverse of the inclusion `S.inl : M →* E` of a group extension. It is a genuine
-inverse on the range of `S.inl` and junk off it, so it stays file-local: the public API records
-its values through `S.inl` instead, in `TauCeti.GroupExtension.inl_factorSetFun` and
-`TauCeti.GroupExtension.inl_sectionDiff`. -/
-private noncomputable def inlInv (e : E) : M := Function.invFun S.inl e
-
-variable {S}
-
-@[simp]
-private theorem inlInv_inl (m : M) : inlInv S (S.inl m) = m :=
-  Function.leftInverse_invFun S.inl_injective m
-
-private theorem inl_inlInv {e : E} (he : e ∈ S.inl.range) : S.inl (inlInv S e) = e :=
-  Function.invFun_eq (MonoidHom.mem_range.1 he)
-
-@[simp]
-private theorem inlInv_one : inlInv S (1 : E) = 1 := by
-  simpa using inlInv_inl (S := S) (1 : M)
-
-end InlInv
-
 section Conj
 
 variable [Group M] {S : GroupExtension M E G}
@@ -255,12 +230,14 @@ cocycle law `GroupExtension.Section.factorSetFun_mul`. When the kernel is abelia
 is normalized and the ambient action is the conjugation action, it bundles as a `FactorSet`; see
 `TauCeti.GroupExtension.factorSet`. -/
 noncomputable def factorSetFun (σ : S.Section) (p : G × G) : M :=
-  inlInv S (σ p.1 * σ p.2 * (σ (p.1 * p.2))⁻¹)
+  (MonoidHom.ofInjective S.inl_injective).symm
+    ⟨σ p.1 * σ p.2 * (σ (p.1 * p.2))⁻¹,
+      GroupExtension.Section.mul_mul_mul_inv_mem_range_inl σ p.1 p.2⟩
 
 @[simp]
 theorem inl_factorSetFun (σ : S.Section) (g h : G) :
     S.inl (factorSetFun σ (g, h)) = σ g * σ h * (σ (g * h))⁻¹ :=
-  inl_inlInv (GroupExtension.Section.mul_mul_mul_inv_mem_range_inl σ g h)
+  MonoidHom.apply_ofInjective_symm S.inl_injective _
 
 /-- **The factor set measures the failure of a section to be a homomorphism.** This matches the
 convention of `TauCeti.FactorSet.canonicalSection_mul`. -/
@@ -451,11 +428,13 @@ variable [Group M] {S : GroupExtension M E G} (σ σ' : S.Section)
 /-- The difference of two sections, as a function `G → M`: `σ g * (σ' g)⁻¹` lies in the kernel, and
 this is its preimage there. It is the rescaling relating the two factor sets; see
 `TauCeti.GroupExtension.isMulCoboundary₂_div`. -/
-noncomputable def sectionDiff (g : G) : M := inlInv S (σ g * (σ' g)⁻¹)
+noncomputable def sectionDiff (g : G) : M :=
+  (MonoidHom.ofInjective S.inl_injective).symm
+    ⟨σ g * (σ' g)⁻¹, GroupExtension.Section.mul_inv_mem_range_inl σ σ' g⟩
 
 @[simp]
 theorem inl_sectionDiff (g : G) : S.inl (sectionDiff σ σ' g) = σ g * (σ' g)⁻¹ :=
-  inl_inlInv (GroupExtension.Section.mul_inv_mem_range_inl σ σ' g)
+  MonoidHom.apply_ofInjective_symm S.inl_injective _
 
 end SectionDiff
 

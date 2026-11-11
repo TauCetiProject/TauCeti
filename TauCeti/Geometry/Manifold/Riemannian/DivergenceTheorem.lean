@@ -30,6 +30,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 ## Main results
 
 * `TauCeti.Manifold.integral_divergence_eq_zero`: the divergence theorem `∫ div X dV = 0`.
+* `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero`: `∫ Δf dV = 0` for a compactly supported
+  `C²` function `f`.
 * `TauCeti.Manifold.integral_mul_divergence`,
   `TauCeti.Manifold.integral_mul_divergence_of_hasCompactSupport_right`:
   `∫ f div X dV = -∫ df(X) dV` when `f` or `X` has compact support.

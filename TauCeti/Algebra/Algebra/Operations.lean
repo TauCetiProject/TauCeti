@@ -11,13 +11,18 @@ import Mathlib.Tactic.Ring
 /-!
 # Powers of submodules of an algebra
 
-Two facts about the powers of a submodule of an algebra.
+Three facts about the powers of a submodule of an algebra.
 
 Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
 on. This is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow` for submodules, which Mathlib makes a monoid
 only over a commutative base (`Submodule.idemSemiring`). Only the recursion
 `M ^ (k + 1) = M ^ k * M` is used, so it holds without that assumption, in particular for left
 ideals (`Ideal R`) of a noncommutative ring.
+
+To bound `span R s ^ (t + 1)` by the span of a set `W t` of words (for instance the words left
+irreducible by a rewriting system), it suffices that `s ⊆ span R (W 0)` and that each product
+`b * c` of a word `b ∈ W t` with a generator `c ∈ s` lies in `span R (W (t + 1))`; the induction on
+`t` is `Submodule.span_pow_succ_le_span_of_forall_mul_mem`.
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -34,6 +39,8 @@ the computation of the cohomology of the twisting sheaves on the projective line
 ## Main results
 
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
+* `Submodule.span_pow_succ_le_span_of_forall_mul_mem`: `span R s ^ (t + 1) ≤ span R (W t)` if
+  `s ⊆ span R (W 0)` and right multiplication by `s` maps each `W t` into `span R (W (t + 1))`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
   `X ^ (i + 1) * (X ⊔ Y) ^ j ⊔ Y ^ (j + 1) * (X ⊔ Y) ^ i`.
 -/
@@ -57,6 +64,28 @@ theorem pow_eq_pow_of_pow_succ_eq_pow {M : Submodule R A} {n : ℕ} (h : M ^ (n 
   | succ m _ ih => rw [Submodule.pow_succ, ih, ← Submodule.pow_succ, h]
 
 end Semiring
+
+section Algebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- **Bounding powers of a span by words.** Let `W t` be sets of words with
+`s ⊆ span R (W 0)`, such that each product of a word in `W t` with an element of `s` is an
+`R`-linear combination of words in `W (t + 1)`. Then every product of `t + 1` elements of
+`span R s` is an `R`-linear combination of words in `W t`. -/
+theorem span_pow_succ_le_span_of_forall_mul_mem {s : Set A} {W : ℕ → Set A}
+    (h₀ : s ⊆ span R (W 0)) (hS : ∀ t, ∀ b ∈ W t, ∀ c ∈ s, b * c ∈ span R (W (t + 1)))
+    (t : ℕ) : span R s ^ (t + 1) ≤ span R (W t) := by
+  induction t with
+  | zero => rwa [pow_one, span_le]
+  | succ t ih =>
+    rw [pow_succ]
+    refine (mul_le_mul' ih le_rfl).trans ?_
+    rw [span_mul_span, span_le]
+    rintro _ ⟨b, hb, c, hc, rfl⟩
+    exact hS t b hb c hc
+
+end Algebra
 
 section CommSemiring
 

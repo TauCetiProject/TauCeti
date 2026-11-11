@@ -376,6 +376,50 @@ private lemma graph_D_adj_bourbakiNode {n : ℕ} (hn : 4 ≤ n) (i j : Fin (D n)
     bourbakiNode_D_val, bourbakiNode_D_val]
   split_ifs <;> omega
 
+/-- The case `A n` (the affine diagram of type A) of `cartanMatrix_submatrix_bourbakiNode`. -/
+private lemma cartanMatrix_submatrix_bourbakiNode_A {n : ℕ} (ht : (A n).Valid) :
+    (A n).cartanMatrix.submatrix (A n).bourbakiNode (A n).bourbakiNode =
+      (A n).finiteType.cartanMatrix := by
+  rcases eq_or_ne n 1 with rfl | hn1
+  · -- `Ã₁` is the one diagram whose matrix is not read off its graph; both sides are `!![2]`.
+    ext i j
+    have hi : (i : ℕ) < 1 := i.isLt
+    have hj : (j : ℕ) < 1 := j.isLt
+    have hij : i = j := Fin.ext (by omega)
+    subst hij
+    rw [Matrix.submatrix_apply, cartanMatrix_apply_same, finiteType_cartanMatrix_apply_A]
+    exact ((cartanMatrix_a_eq 1 i i).trans (ite_eq_left rfl)).symm
+  · refine cartanMatrix_submatrix_eq (by simp [hn1]) (bourbakiNode_injective ht)
+      (fun i ↦ ?_) (fun i j hne hA ↦ ?_) (fun i j hne hA ↦ ?_)
+    · rw [finiteType_cartanMatrix_apply_A]
+      exact (cartanMatrix_a_eq n i i).trans (ite_eq_left rfl)
+    · rw [graph_A_adj (valid_A.mp ht), bourbakiNode_A_val, bourbakiNode_A_val] at hA
+      have h : (i : ℕ) + 1 = (j : ℕ) ∨ (j : ℕ) + 1 = (i : ℕ) := by omega
+      rw [finiteType_cartanMatrix_apply_A]
+      exact (cartanMatrix_a_eq n i j).trans ((ite_eq_right hne).trans (ite_eq_left h))
+    · rw [graph_A_adj (valid_A.mp ht), bourbakiNode_A_val, bourbakiNode_A_val] at hA
+      have h : ¬((i : ℕ) + 1 = (j : ℕ) ∨ (j : ℕ) + 1 = (i : ℕ)) := by omega
+      rw [finiteType_cartanMatrix_apply_A]
+      exact (cartanMatrix_a_eq n i j).trans ((ite_eq_right hne).trans (ite_eq_right h))
+
+/-- The case `D n` (the affine diagram of type D) of `cartanMatrix_submatrix_bourbakiNode`. -/
+private lemma cartanMatrix_submatrix_bourbakiNode_D {n : ℕ} (ht : (D n).Valid) :
+    (D n).cartanMatrix.submatrix (D n).bourbakiNode (D n).bourbakiNode =
+      (D n).finiteType.cartanMatrix := by
+  have hn : 4 ≤ n := valid_D.mp ht
+  refine cartanMatrix_submatrix_eq (by simp) (bourbakiNode_injective ht)
+    (fun i ↦ ?_) (fun i j hne hA ↦ ?_) (fun i j hne hA ↦ ?_)
+  · rw [finiteType_cartanMatrix_apply_D]
+    exact CartanMatrix.D_diag n i
+  · rw [graph_D_adj_bourbakiNode hn] at hA
+    rw [finiteType_cartanMatrix_apply_D]
+    refine (cartanMatrix_d_eq n i j).trans ((ite_eq_right hne).trans ?_)
+    split_ifs <;> omega
+  · rw [graph_D_adj_bourbakiNode hn] at hA
+    rw [finiteType_cartanMatrix_apply_D]
+    refine (cartanMatrix_d_eq n i j).trans ((ite_eq_right hne).trans ?_)
+    split_ifs <;> omega
+
 /-- **Deleting the affine node from the generalized Cartan matrix gives the standard Cartan matrix
 of the finite type**, in the Bourbaki numbering: the principal submatrix of `t.cartanMatrix` on the
 nodes other than `t.affineNode`, read along `TauCeti.AffineDynkinType.bourbakiNode`, is
@@ -383,42 +427,8 @@ nodes other than `t.affineNode`, read along `TauCeti.AffineDynkinType.bourbakiNo
 theorem cartanMatrix_submatrix_bourbakiNode {t : AffineDynkinType} (ht : t.Valid) :
     t.cartanMatrix.submatrix t.bourbakiNode t.bourbakiNode = t.finiteType.cartanMatrix := by
   cases t with
-  | A n =>
-      rcases eq_or_ne n 1 with rfl | hn1
-      · -- `Ã₁` is the one diagram whose matrix is not read off its graph; both sides are `!![2]`.
-        ext i j
-        have hi : (i : ℕ) < 1 := i.isLt
-        have hj : (j : ℕ) < 1 := j.isLt
-        have hij : i = j := Fin.ext (by omega)
-        subst hij
-        rw [Matrix.submatrix_apply, cartanMatrix_apply_same, finiteType_cartanMatrix_apply_A]
-        exact ((cartanMatrix_a_eq 1 i i).trans (ite_eq_left rfl)).symm
-      · refine cartanMatrix_submatrix_eq (by simp [hn1]) (bourbakiNode_injective ht)
-          (fun i ↦ ?_) (fun i j hne hA ↦ ?_) (fun i j hne hA ↦ ?_)
-        · rw [finiteType_cartanMatrix_apply_A]
-          exact (cartanMatrix_a_eq n i i).trans (ite_eq_left rfl)
-        · rw [graph_A_adj (valid_A.mp ht), bourbakiNode_A_val, bourbakiNode_A_val] at hA
-          have h : (i : ℕ) + 1 = (j : ℕ) ∨ (j : ℕ) + 1 = (i : ℕ) := by omega
-          rw [finiteType_cartanMatrix_apply_A]
-          exact (cartanMatrix_a_eq n i j).trans ((ite_eq_right hne).trans (ite_eq_left h))
-        · rw [graph_A_adj (valid_A.mp ht), bourbakiNode_A_val, bourbakiNode_A_val] at hA
-          have h : ¬((i : ℕ) + 1 = (j : ℕ) ∨ (j : ℕ) + 1 = (i : ℕ)) := by omega
-          rw [finiteType_cartanMatrix_apply_A]
-          exact (cartanMatrix_a_eq n i j).trans ((ite_eq_right hne).trans (ite_eq_right h))
-  | D n =>
-      have hn : 4 ≤ n := valid_D.mp ht
-      refine cartanMatrix_submatrix_eq (by simp) (bourbakiNode_injective ht)
-        (fun i ↦ ?_) (fun i j hne hA ↦ ?_) (fun i j hne hA ↦ ?_)
-      · rw [finiteType_cartanMatrix_apply_D]
-        exact CartanMatrix.D_diag n i
-      · rw [graph_D_adj_bourbakiNode hn] at hA
-        rw [finiteType_cartanMatrix_apply_D]
-        refine (cartanMatrix_d_eq n i j).trans ((ite_eq_right hne).trans ?_)
-        split_ifs <;> omega
-      · rw [graph_D_adj_bourbakiNode hn] at hA
-        rw [finiteType_cartanMatrix_apply_D]
-        refine (cartanMatrix_d_eq n i j).trans ((ite_eq_right hne).trans ?_)
-        split_ifs <;> omega
+  | A n => exact cartanMatrix_submatrix_bourbakiNode_A ht
+  | D n => exact cartanMatrix_submatrix_bourbakiNode_D ht
   | E6 =>
       refine cartanMatrix_submatrix_eq (by simp) (bourbakiNode_injective ht)
         (fun i ↦ ?_) (fun i j hne hA ↦ ?_) (fun i j hne hA ↦ ?_)

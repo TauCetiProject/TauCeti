@@ -33,6 +33,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 ## Main results
 
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
+* `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
+  volume one.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
@@ -60,6 +62,13 @@ variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [In
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 namespace TauCeti
+
+/-- In a zero-dimensional real inner product space every nonempty set has volume one. -/
+theorem volume_eq_one_of_subsingleton [Subsingleton E] {s : Set E} (hs : s.Nonempty) :
+    volume s = 1 := by
+  have hpar := (stdOrthonormalBasis ℝ E).volume_parallelepiped
+  rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
+    ← Subsingleton.eq_univ_of_nonempty hs] at hpar
 
 /-- In a finite-dimensional real inner product space, the parallelepiped spanned by a family of
 as many vectors as the dimension has volume the square root of the Gram determinant of the
@@ -113,10 +122,11 @@ If a property holds for almost every point of a finite-dimensional space `W`, an
 isomorphism from `K × Kᗮ` to `W`, then for almost every `a ∈ E` the property holds at the image
 under `T` of the components of `a` along `K` and `Kᗮ`. -/
 theorem ae_of_ae_orthogonalProjectionOnto_prod {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W]
+    [NormedSpace ℝ W] [MeasurableSpace W] [BorelSpace W]
     (μ : Measure E) [μ.IsAddHaarMeasure] (K : Submodule ℝ E) (T : (K × Kᗮ) ≃L[ℝ] W)
     (ν : Measure W) [ν.IsAddHaarMeasure] {p : W → Prop} (hp : ∀ᵐ w ∂ν, p w) :
     ∀ᵐ a ∂μ, p (T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a)) := by
+  have : FiniteDimensional ℝ W := T.toLinearEquiv.finiteDimensional
   let S : E ≃L[ℝ] W :=
     (K.prodEquivOfIsCompl Kᗮ K.isCompl_orthogonal).symm.toContinuousLinearEquiv.trans T
   have hS : ∀ a, S a = T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a) :=

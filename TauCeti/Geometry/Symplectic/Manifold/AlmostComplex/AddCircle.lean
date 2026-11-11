@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
 # The standard almost complex structure on a product of two circles
@@ -35,6 +34,10 @@ to the suspension vector field.
   coordinates of the two circles, which determines it.
 * `TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply`: the same formula
   `v ↦ (-v.2, v.1)` for a tangent vector viewed directly as a pair, in simp-normal form.
+* `TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_prodMap_coe`: the quotient map
+  `ℝ × ℝ → AddCircle p × AddCircle q` is pseudoholomorphic for the standard structure of the plane.
+* `TauCeti.SmoothAlmostComplexStructure.eq_addCircleProd_iff`: the standard structure is the only
+  almost complex structure on the torus for which the quotient map is pseudoholomorphic.
 
 ## References
 
@@ -49,64 +52,35 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothAlmostComplexStructure
 
-variable (p q : ℝ)
+variable (p q : ℝ) [Fact (0 < p)] [Fact (0 < q)]
 
-/-- The quotient map `(s, t) ↦ ([s], [t])` from the plane onto the product of the circles of
-periods `p` and `q`. -/
-private def addCircleProdCover (z : ℝ × ℝ) : AddCircle p × AddCircle q :=
-  ((z.1 : AddCircle p), (z.2 : AddCircle q))
-
-private theorem addCircleProdCover_surjective : Surjective (addCircleProdCover p q) := by
-  rintro ⟨x, y⟩
-  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y
-  exact ⟨(s, t), rfl⟩
-
-variable [Fact (0 < p)] [Fact (0 < q)]
-
-private theorem isLocalDiffeomorph_addCircleProdCover :
-    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) ∞ (addCircleProdCover p q) := by
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-  exact IsLocalDiffeomorph.prodMap (AddCircle.isLocalDiffeomorph_coe p ∞)
-    (AddCircle.isLocalDiffeomorph_coe q ∞)
-
-/-- The quotient map has the identity as differential, in the real coordinates of the circles. -/
-private theorem hasMFDerivAt_addCircleProdCover (z : ℝ × ℝ) :
-    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z
-      (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
-  have h : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z _ :=
-    ((AddCircle.hasMFDerivAt_coe p z.1).comp z hasFDerivAt_fst.hasMFDerivAt).prodMk
-      ((AddCircle.hasMFDerivAt_coe q z.2).comp z hasFDerivAt_snd.hasMFDerivAt)
-  refine h.congr_mfderiv ?_
-  -- Both sides send `(a, b)` to `(a, b)`.
-  ext <;> rfl
-
-private theorem mfderiv_addCircleProdCover_apply (z : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z v = v := by
-  rw [(hasMFDerivAt_addCircleProdCover p q z).mfderiv]
-  rfl
-
-/-- The standard structure of the plane respects the identifications of the quotient map. -/
+/-- The standard structure of the plane respects the identifications of the quotient map
+`ℝ × ℝ → AddCircle p × AddCircle q`. -/
 private theorem product_respects ⦃z z' : ℝ × ℝ⦄ (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z)
-    (v' : TangentSpace 𝓘(ℝ, ℝ × ℝ) z') (_ : addCircleProdCover p q z = addCircleProdCover p q z')
-    (hvv' : mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z v =
-      mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z' v') :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z (product ℝ z v) =
-      mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (addCircleProdCover p q) z' (product ℝ z' v') := by
-  -- Both differentials are the identity, so `v = v'` and the claim is `J v = J v'`.
-  have hv : v = v' := (mfderiv_addCircleProdCover_apply p q z v).symm.trans
-    (hvv'.trans (mfderiv_addCircleProdCover_apply p q z' v'))
-  refine (mfderiv_addCircleProdCover_apply p q z _).trans
-    (Eq.trans ?_ (mfderiv_addCircleProdCover_apply p q z' _).symm)
+    (v' : TangentSpace 𝓘(ℝ, ℝ × ℝ) z')
+    (_ : Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z =
+      Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z')
+    (hvv' : mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v =
+      mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z' v') :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z (product ℝ z v) =
+      mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z' (product ℝ z' v') := by
+  -- Both differentials are the identity, so `v = v'` and the claim is `J v = J v'`. The identity
+  -- of `ℝ × ℝ` is applied here to tangent vectors, which `ContinuousLinearMap.id_apply` does not
+  -- match syntactically; it reduces to them by definition.
+  simp only [AddCircle.mfderiv_prodMap_coe] at hvv' ⊢
   exact (product_apply z v).trans
-    ((congrArg (fun w : ℝ × ℝ ↦ (-w.2, w.1)) hv).trans (product_apply z' v').symm)
+    ((congrArg (fun w : ℝ × ℝ ↦ (-w.2, w.1)) hvv').trans (product_apply z' v').symm)
 
 /-- The standard almost complex structure on the product `AddCircle p × AddCircle q` of two
 circles: in the real coordinates of the circles it sends `a ∂_s + b ∂_t` to `-b ∂_s + a ∂_t`
 (`TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply_symm`). It is the descent of the standard
 structure `(a, b) ↦ (-b, a)` of the plane along `(s, t) ↦ ([s], [t])`. -/
 def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q) :=
-  descend (isLocalDiffeomorph_addCircleProdCover p q) (addCircleProdCover_surjective p q)
+  descend (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞) (AddCircle.prodMap_coe_surjective p q)
     (product ℝ) (product_respects p q)
 
 /-- In the real coordinates of the two circles, the standard almost complex structure of
@@ -116,14 +90,13 @@ def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (Add
 theorem addCircleProd_apply_symm (x : AddCircle p × AddCircle q) (a b : ℝ) :
     addCircleProd p q x ((Manifold.tangentSpaceProdEquiv x).symm (a, b)) =
       (Manifold.tangentSpaceProdEquiv x).symm (-b, a) := by
-  obtain ⟨z, rfl⟩ := addCircleProdCover_surjective p q x
-  have h := descend_apply_mfderiv (isLocalDiffeomorph_addCircleProdCover p q)
-    (addCircleProdCover_surjective p q) (product ℝ) (product_respects p q) z (a, b)
+  obtain ⟨z, rfl⟩ := AddCircle.prodMap_coe_surjective p q x
+  have h := descend_apply_mfderiv (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
+    (AddCircle.prodMap_coe_surjective p q) (product ℝ) (product_respects p q) z (a, b)
   rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
-  -- Both differentials in `h` are the identity of `ℝ × ℝ`.
-  exact (congrArg (addCircleProd p q (addCircleProdCover p q z))
-    (mfderiv_addCircleProdCover_apply p q z (a, b)).symm).trans
-      (h.trans ((mfderiv_addCircleProdCover_apply p q z _).trans (product_apply z (a, b))))
+  -- Both differentials in `h` are the identity of `ℝ × ℝ`, which reduces to its argument.
+  simp only [AddCircle.mfderiv_prodMap_coe] at h
+  exact h.trans (product_apply z (a, b))
 
 /-- The standard almost complex structure of `AddCircle p × AddCircle q` sends a tangent vector
 `v = (a, b)`, written in the real coordinates of the two circles, to `(-b, a)`. This is the
@@ -136,5 +109,21 @@ theorem addCircleProd_apply (x : AddCircle p × AddCircle q)
   rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply] at h
   -- `h` is the claim for the pair `(v.1, v.2)`, which is `v` by eta.
   exact h
+
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is pseudoholomorphic, for the standard
+structure of the plane and the standard structure of the torus. -/
+theorem isPseudoholomorphic_prodMap_coe :
+    IsPseudoholomorphic (product ℝ) (addCircleProd p q)
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
+  isPseudoholomorphic_descend _ _ _ (product_respects p q)
+
+/-- The standard structure is the only almost complex structure on the torus for which the
+quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is pseudoholomorphic. -/
+theorem eq_addCircleProd_iff
+    (K : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q)) :
+    K = addCircleProd p q ↔
+      IsPseudoholomorphic (product ℝ) K
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
+  eq_descend_iff_isPseudoholomorphic _ _ _ (product_respects p q) K
 
 end TauCeti.SmoothAlmostComplexStructure

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.RootLattice
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -40,6 +41,11 @@ split reductive with the pinned root datum, or construct admissible lattices for
   exactly in the types `E₈`, `F₄` and `G₂`.
 * `TauCeti.DynkinType.span_range_geckWeight_E8_eq_top`, and the analogous `F4` and `G2` results:
   the three cases of that classification in which the span is full.
+* `TauCeti.DynkinType.range_geckWeightFin`: the finite-ordinal reindexing does not change the set
+  of Geck weights, so the two spanning conditions agree
+  (`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff`).
+* `TauCeti.DynkinType.span_range_geckWeightFin_eq_rootSpan`: the finite-ordinal Geck weights
+  span the root lattice.
 
 ## References
 
@@ -117,6 +123,29 @@ theorem span_range_geckWeight_F4_eq_top (ht : F4.Valid) :
 theorem span_range_geckWeight_G2_eq_top (ht : G2.Valid) :
     Submodule.span ℤ (Set.range (G2.geckWeight ht)) = ⊤ :=
   (span_range_geckWeight_eq_top_iff G2 ht).mpr (Or.inr (Or.inr rfl))
+
+/-! ## Finite-ordinal reindexing -/
+
+/-- Reindexing the Geck weights by a finite ordinal does not change the set of weights. -/
+@[simp]
+theorem range_geckWeightFin :
+    Set.range (t.geckWeightFin ht) = Set.range (t.geckWeight ht) :=
+  EquivLike.range_comp (t.geckWeight ht) (Fintype.equivFin (t.GeckIndex ht)).symm
+
+/-- The finite-ordinal Geck weights generate the character lattice exactly when the Geck weights
+do. This relates the weights the carrier is built from to the weights the spanning results are
+stated for. -/
+theorem span_range_geckWeightFin_eq_top_iff :
+    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) = ⊤ ↔
+      Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤ := by
+  rw [range_geckWeightFin]
+
+/-- The finite-ordinal Geck weights span the root lattice. -/
+theorem span_range_geckWeightFin_eq_rootSpan :
+    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) =
+      (t.simplyConnectedRootDatum ht).rootSpan ℤ :=
+  (congrArg (Submodule.span ℤ) (t.range_geckWeightFin ht)).trans
+    (t.span_range_geckWeight_eq_span_range_root ht)
 
 end
 

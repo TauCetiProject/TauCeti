@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Hypoexponential.PDF
 public import TauCeti.Probability.Cdf
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 import TauCeti.Probability.Distributions.Gamma.Cdf
 import TauCeti.Probability.Distributions.Gamma.PDF
 

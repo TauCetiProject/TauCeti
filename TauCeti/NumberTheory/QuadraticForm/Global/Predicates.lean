@@ -307,16 +307,16 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
       fun place ↦ ((hQlocal.2 place).isRepresentedBy_congr
         (hRlocal.2 place)).mpr (h.2 place)⟩
 
-/-- Locally equivalent finite-dimensional quadratic forms have the same global rank. -/
-theorem LocallyEquivalent.finrank_eq [FiniteDimensional K V] [FiniteDimensional K W]
+/-- Locally equivalent quadratic forms have the same global rank. -/
+theorem LocallyEquivalent.finrank_eq
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (h : Q.LocallyEquivalent R) : Module.finrank K V = Module.finrank K W := by
   obtain ⟨e⟩ := h.1 (Classical.arbitrary _)
   simpa only [Module.finrank_baseChange] using LinearEquiv.finrank_eq e.toLinearEquiv
 
-/-- Local representation of finite-dimensional forms forces the expected inequality between
-their global dimensions. -/
-theorem LocallyRepresents.finrank_le [FiniteDimensional K V] [FiniteDimensional K W]
+/-- Local representation of a form by a form on a finite-dimensional space forces the expected
+inequality between their global dimensions. -/
+theorem LocallyRepresents.finrank_le [FiniteDimensional K W]
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (h : Q.LocallyRepresents R) : Module.finrank K V ≤ Module.finrank K W := by
   have hp := h.1 (Classical.arbitrary _)

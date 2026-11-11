@@ -199,29 +199,9 @@ private theorem definingIdeal_toIdeal_le_rootSubgroupCoordinateMap_ker
       (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)))).mp hmem x hx
   have hmatrix := TauCeti.GeneralLinear.pointsMulEquiv_rootSubgroupPoints
     (R := ℤ) hij q
-  have hconv :
-      (TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-          (TauCeti.transvectionUnit hij
-            (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q))) =
-        TauCeti.GeneralLinear.rootSubgroupPoints hij q := by
-    calc
-      _ = (TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-            ((TauCeti.GeneralLinear.pointsMulEquiv
-              (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1))
-                (TauCeti.GeneralLinear.rootSubgroupPoints hij q)) :=
-          congrArg _ hmatrix.symm
-      _ = _ := Equiv.symm_apply_apply _ _
-  have hzero' :
-      (TauCeti.GeneralLinear.rootSubgroupPoints hij q).ofConv x = 0 := by
-    calc
-      _ = ((TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-            (TauCeti.transvectionUnit hij
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)))).ofConv x :=
-        congrArg (fun f => f.ofConv x) hconv.symm
-      _ = 0 := hzero
+  have hzero' : (TauCeti.GeneralLinear.rootSubgroupPoints hij q).ofConv x = 0 := by
+    rw [← (Equiv.symm_apply_eq _).2 hmatrix.symm]
+    exact hzero
   have hpoint := TauCeti.GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app
     (R := ℤ) hij (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hpoint

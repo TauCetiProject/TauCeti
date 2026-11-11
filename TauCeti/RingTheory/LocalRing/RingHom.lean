@@ -5,19 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
+public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+
+import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.Tactic.LinearCombination
 
 /-!
-# Unit reflection and kernels of ring homomorphisms
+# Units along surjective ring homomorphisms
 
 A surjective map of commutative rings whose kernel consists of nilpotent elements reflects
-units. The kernel of any unit-reflecting map is contained in the Jacobson radical.
-Here unit reflection is Mathlib's `IsLocalHom`; neither ring is required to be local.
+units. Here unit reflection is Mathlib's `IsLocalHom`; neither ring is required to be local.
 
-These facts allow unit reflection to propagate through inverse systems with locally nilpotent
-transition kernels. Elementwise nilpotence suffices, without a uniform exponent.
+Together with Mathlib's kernel containment for unit-reflecting maps, this allows unit reflection
+to propagate through inverse systems with locally nilpotent transition kernels. Elementwise
+nilpotence suffices, without a uniform exponent.
+
+A surjective map out of a semilocal ring (one with finitely many maximal ideals) is surjective
+on units. This is the semilocal counterpart of Mathlib's
+`IsLocalRing.surjective_units_map_of_local_ringHom`; it needs no unit reflection. By the Chinese
+remainder theorem a lift of a unit can be corrected by an element of the kernel so that it avoids
+every maximal ideal.
 -/
 
 public section
@@ -36,13 +45,37 @@ theorem isLocalHom_of_surjective_of_isNilpotent_ker (f : R →+* S)
   have hxy : IsNilpotent (x * y - 1) := hnil _ (by simp [hy, hx.mul_val_inv])
   exact isUnit_of_mul_isUnit_left (by simpa using hxy.isUnit_add_one)
 
-/-- The kernel of a unit-reflecting ring map is contained in the Jacobson radical. -/
-theorem ker_le_jacobson_bot (f : R →+* S) [IsLocalHom f] :
-    ker f ≤ Ideal.jacobson (⊥ : Ideal R) := by
-  intro x hx
-  rw [Ideal.jacobson_bot]
-  refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_of_map_unit f _ ?_
-  simp only [mem_ker] at hx
-  simp [hx]
+/-- A surjective ring homomorphism out of a semilocal ring is surjective on units. -/
+theorem surjective_units_map_of_surjective [_root_.Finite (MaximalSpectrum R)] (f : R →+* S)
+    (hf : Function.Surjective f) : Function.Surjective (Units.map f.toMonoidHom) := by
+  classical
+  have := Fintype.ofFinite (MaximalSpectrum R)
+  intro u
+  obtain ⟨a, ha⟩ := hf u
+  obtain ⟨c, hc⟩ := hf ↑u⁻¹
+  -- Write `1 = k + b` with `k ∈ ker f` and `b` in every maximal ideal not containing `ker f`.
+  let s : Finset (MaximalSpectrum R) := {P | ¬ker f ≤ P.asIdeal}
+  have hs : ker f ⊔ ⨅ P ∈ s, P.asIdeal = ⊤ := Ideal.sup_iInf_eq_top fun P hP ↦ by
+    by_contra hne
+    exact (Finset.mem_filter.mp hP).2
+      (le_sup_left.trans_eq (P.isMaximal.eq_of_le hne le_sup_right).symm)
+  obtain ⟨k, hk, b, hb, hkb⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top (x := (1 : R)))
+  -- The lift `a * b + k` of `u` lies in no maximal ideal `P`.
+  have hunit : IsUnit (a * b + k) := by
+    by_contra h
+    obtain ⟨P, hP, haP⟩ := exists_max_ideal_of_mem_nonunits h
+    refine hP.ne_top ((Ideal.eq_top_iff_one _).mpr ?_)
+    by_cases hkP : ker f ≤ P
+    · -- Modulo `P` the lift is congruent to `a`, which is invertible modulo `ker f`.
+      have hac : a * c - 1 ∈ ker f := by simp [mem_ker, ha, hc]
+      rw [show (1 : R) = c * (a * b + k) + (a * c - c) * k - (a * c - 1) by
+        linear_combination (-(a * c)) * hkb]
+      exact P.sub_mem (P.add_mem (P.mul_mem_left _ haP) (P.mul_mem_left _ (hkP hk))) (hkP hac)
+    · -- Modulo `P` the lift is congruent to `1`.
+      have hbP : b ∈ P := Ideal.mem_iInf.mp (Ideal.mem_iInf.mp hb ⟨P, hP⟩) (by simpa [s])
+      rw [show (1 : R) = (a * b + k) + (1 - a) * b by linear_combination -hkb]
+      exact P.add_mem haP (P.mul_mem_left _ hbP)
+  have hfb : f b = 1 := by simpa [mem_ker.mp hk] using congrArg f hkb
+  exact ⟨hunit.unit, Units.ext (by simp [ha, hfb, mem_ker.mp hk])⟩
 
 end RingHom

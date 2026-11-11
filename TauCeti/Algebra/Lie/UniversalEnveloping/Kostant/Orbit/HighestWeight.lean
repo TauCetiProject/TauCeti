@@ -50,6 +50,8 @@ This is Steinberg, *Lectures on Chevalley Groups*, Chapter 2, Corollary 1 to The
   integral span of the lowering monomials applied to `v`.
 * `LieAlgebra.Basis.orbitOfRep_kostantForm_le_iSup_jointWeightSpace`: the orbit lies in the span
   of the integral joint weight spaces.
+* `LieAlgebra.Basis.isInternal_weightSublattice_orbitOfRep`: the weight sublattices of the orbit
+  form an internal direct sum.
 * `LieAlgebra.Basis.fg_orbitOfRep_kostantForm`: the orbit is finitely generated over `ℤ` when `V`
   is finite-dimensional.
 * `LieAlgebra.Basis.exists_eq_zsmul_of_mem_orbitOfRep_kostantForm`: the vectors of weight `λ` in
@@ -301,6 +303,21 @@ theorem orbitOfRep_kostantForm_le_iSup_jointWeightSpace
   refine Submodule.span_le.2 (range_subset_iff.2 fun l => ?_)
   exact Submodule.mem_iSup_of_mem _
     ((mem_jointWeightSpace_iff b.h ρ).2 (b.isCartanWeightVector_loweringMonomial hv l))
+
+variable (b) in
+/-- The weight sublattices of the Kostant orbit of a highest weight vector form an internal
+direct sum. -/
+theorem isInternal_weightSublattice_orbitOfRep [DecidableEq (ι → ℤ)]
+    (hv : IsCartanWeightVector b.h ρ wt v)
+    (hve : ∀ i, ρ (UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0) :
+    DirectSum.IsInternal
+      (weightSublattice b.h ρ (Subring.orbitOfRep b.kostantForm ρ {v}).toAddSubgroup) := by
+  apply isInternal_weightSublattice b.rootGenerator b.h ρ
+  · intro u hu x hx
+    rw [← b.kostantForm_def] at hu
+    exact Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
+  · intro x
+    exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hv hve x.property
 
 /-! ## Finite generation -/
 

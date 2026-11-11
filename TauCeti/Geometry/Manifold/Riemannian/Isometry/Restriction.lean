@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 
 /-!
 # Curvature of a metric restricted to an open submanifold
