@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyPotential
 public import TauCeti.Analysis.PDE.Parabolic.Holder.DuhamelPotential.Basic
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
+public import TauCeti.Analysis.PDE.Parabolic.Holder.InitialData
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -17,7 +17,9 @@ The map `u ↦ (∂ₜu - Δu, u(·,0))` is a bounded linear isomorphism from
 `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}` on a finite positive time slab, for
 `0 < α < 1`. Its inverse is the sum of the Duhamel potential of the forcing and the
 Cauchy potential of the initial datum. This is the starting isomorphism for perturbation
-and method-of-continuity arguments for parabolic equations.
+and method-of-continuity arguments for parabolic equations. The theorem
+`existsUnique_initialDataL_eq_of_near_heat` applies the quantitative coefficient perturbation
+criterion to obtain existence and uniqueness near the heat operator.
 
 The data and solution operators work on finite-dimensional real inner product spaces
 with Banach-valued data. The isomorphism is proved for scalar functions on Euclidean space,
@@ -57,8 +59,7 @@ private local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[
 def heatInitialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
     ParabolicC2HolderSpace α E F hT →L[ℝ]
       HolderSpace α (slab (E := E) 0 T) F × CkHolderSpace 2 α E F :=
-  (parabolicOperatorL hα (HolderSpace.const traceL) 0 0).prod
-    (spatialTraceL ⟨0, left_mem_Icc.2 hT.le⟩)
+  initialDataL hα (HolderSpace.const traceL) 0 0
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The first component is `∂ₜu - Δu`, with the recorded one-sided derivatives at endpoints. -/
@@ -74,7 +75,7 @@ omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 @[simp]
 theorem heatInitialDataL_snd (hα : α ≤ 1) (u : ParabolicC2HolderSpace α E F hT) :
     (heatInitialDataL hα hT u).2 = u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ := by
-  simp [heatInitialDataL, spatialTraceL_apply]
+  simp [heatInitialDataL]
 
 /-- The solution operator for forcing and initial data, in that order: the Duhamel potential
 of the forcing plus the Cauchy potential of the initial datum. -/
@@ -113,6 +114,14 @@ theorem heatInitialDataL_heatSolutionL (hα₀ : 0 < α) (hα₁ : α < 1)
 section Euclidean
 
 variable {ι : Type*} [Fintype ι]
+
+/-- Shortcut for the Hessian norm in Euclidean coefficient fields. The general shortcut above
+cannot infer the spatial and target spaces when they occur only inside the coefficient type. -/
+local instance euclideanHessianNormedAddCommGroup :
+    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+/-- Shortcut for scalar operations on Euclidean Hessians, for the same coefficient elaboration. -/
+local instance euclideanHessianNormedSpace :
+    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
 
 variable [DecidableEq ι] in
 /-- The coordinate identity identifies the first data component with the existing Euclidean
@@ -175,6 +184,49 @@ theorem heatInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα₁ : α < 1)
   apply (heatInitialDataCLE (ι := ι) hα₀ hα₁ hT).injective
   simp only [ContinuousLinearEquiv.apply_symm_apply, heatInitialDataCLE_apply,
     heatInitialDataL_heatSolutionL]
+
+/-- The heat initial-data map is invertible for `0 < α < 1`. -/
+theorem isInvertible_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatInitialDataL (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).IsInvertible := by
+  refine ⟨heatInitialDataCLE hα₀ hα₁ hT, ?_⟩
+  ext1 u
+  exact heatInitialDataCLE_apply hα₀ hα₁ u
+
+/-- The totalized operator inverse of the heat initial-data map is the heat solution map. -/
+@[simp]
+theorem inverse_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatInitialDataL (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).inverse =
+      heatSolutionL hα₀ hα₁ hT := by
+  apply ContinuousLinearMap.ext
+  intro d
+  apply heatInitialDataL_injective hα₁.le
+  rw [(isInvertible_heatInitialDataL hα₀ hα₁).self_apply_inverse,
+    heatInitialDataL_heatSolutionL]
+
+/-- **The Cauchy problem near the heat operator.** If the coefficient distance to the heat
+operator is small against the heat solution norm, every Hölder forcing and order-two initial
+datum has a unique solution in the closed-slab order-two parabolic Hölder space. -/
+theorem existsUnique_initialDataL_eq_of_near_heat (hα₀ : 0 < α) (hα₁ : α < 1)
+    (A : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T)
+      ((EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (B : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T)
+      ((EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (C : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) (ℝ →L[ℝ] ℝ))
+    (hsmall : ‖heatSolutionL (E := EuclideanSpace ℝ ι) (F := ℝ) hα₀ hα₁ hT‖ *
+      (‖A - HolderSpace.const traceL‖ + 24 * (‖B‖ + ‖C‖)) < 1)
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ∃! u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
+      initialDataL hα₁.le A B C u = d := by
+  have hheat := isInvertible_heatInitialDataL (ι := ι) (hT := hT) hα₀ hα₁
+  rw [heatInitialDataL] at hheat
+  have hpert := isInvertible_initialDataL_of_mul_norm_sub_lt hα₁.le
+    (A := HolderSpace.const traceL) (B := 0) (C := 0) hheat
+    (M := ‖heatSolutionL hα₀ hα₁ hT‖)
+    (by rw [← heatInitialDataL, inverse_heatInitialDataL hα₀ hα₁])
+    (A' := A) (B' := B) (C' := C) (by simpa using hsmall)
+  exact ⟨(initialDataL hα₁.le A B C).inverse d, hpert.self_apply_inverse d,
+    fun u hu ↦ hpert.injective (hu.trans (hpert.self_apply_inverse d).symm)⟩
 
 end Euclidean
 
