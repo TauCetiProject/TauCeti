@@ -127,6 +127,15 @@ def subgroup (a : S.graph.V) : Subgroup (FreeGroup α) where
 theorem read_mem_subgroup {a : S.graph.V} (p : S.graph.Path a a) :
     S.read p ∈ S.subgroup a := ⟨p, rfl⟩
 
+/-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
+theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
+    S.subgroup a = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr ?_
+  rintro _ ⟨p, rfl⟩
+  cases p with
+  | nil => exact S.read_nil a
+  | cons p e => exact isEmptyElim e.1
+
 /-- Every path has a reduced path with the same endpoints and free-group reading. -/
 theorem exists_reduced_path_read_eq
     {a b : S.graph.V} (p : S.graph.Path a b) :

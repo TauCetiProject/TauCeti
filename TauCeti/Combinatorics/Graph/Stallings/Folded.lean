@@ -176,5 +176,12 @@ theorem IsFolded.eq_tgt_iff_read_mul_inv_mem (hS : S.IsFolded) {a b c : S.graph.
     apply hS.eq_tgt_of_read_eq S p (l.comp q)
     simp [hl]
 
+/-- A folded graph over a finite alphabet with finitely many vertices has finitely many
+darts, since a dart is determined by its initial vertex and its label. -/
+theorem IsFolded.finite_dart {S : StallingsGraph α} [Finite α] [Finite S.graph.V]
+    (hS : S.IsFolded) : Finite S.graph.E :=
+  Finite.of_injective (fun e => (S.graph.src e, S.label e)) fun e f h =>
+    hS e f (congrArg Prod.fst h) (congrArg Prod.snd h)
+
 end StallingsGraph
 end TauCeti
