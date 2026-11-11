@@ -42,10 +42,25 @@ class, this is the compatibility of the Thom map `a ↦ π^*a ⌣ u` with the Ma
 sequences, which the proof that it is an isomorphism by induction over trivializing open sets
 uses.
 
+The connecting morphism of the pairs is also linear over the cohomology of `X` itself, now acting
+on the relative classes, up to the Koszul sign: for `a ∈ Hᵖ(X)` and `y ∈ H^q(U ∩ V, A ∩ B)`,
+
+`δ (a|_{U ∩ V} ⌣ y) = (-1)ᵖ a|_{U ∪ V} ⌣ δ y`
+
+(`TopCat.singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap`), for `U` and `V`
+open in `U ∪ V`, which need not cover `X`. The chase is the same with the roles exchanged: lift a
+cocycle `η` representing `y` to `(y_U, y_V)` whose coboundary is the restriction of a cocycle `ζ`
+representing `δ y`. Then `(α|_U ⌣ y_U, α|_V ⌣ y_V)` lifts `α|_{U ∩ V} ⌣ η`, and by the Leibniz rule
+its coboundary is `(-1)ᵖ` times the restriction of `α ⌣ ζ`, since `α` is a cocycle. With
+`U = V = X` this computes the Thom map of a product bundle one fibre dimension at a time
+(`TauCeti.exists_bijective_singularCup_subspaceComplPair`).
+
 ## Main results
 
 * `TopCat.singularCohomologyPairMayerVietorisδ_singularCup`: the connecting morphism of the
   Mayer–Vietoris sequence of two pairs, applied to `a ⌣ b|`, is `δ a ⌣ b`.
+* `TopCat.singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap`: applied to
+  `a| ⌣ y` for an ambient class `a ∈ Hᵖ(X)`, it is `(-1)ᵖ a| ⌣ δ y`.
 * `TopCat.interToUnionMap`: the map of pairs `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` along which `b`
   is restricted.
 
@@ -548,4 +563,255 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ
       (p + 1) q (p + q + 1) h', moduleCat_homologyMap_homologyπ]
   exact pairMayerVietorisδ_cup_eq k hAU hBV u μ h' x₂ α ζ β hd hg
+/-! ### The connecting morphism and the action of ambient cohomology -/
+
+section Ambient
+
+variable (hU' : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV' : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)))
+
+/-- Restricting the cup product of an ambient cochain with a relative cochain from a member of the
+cover to the intersection restricts both factors. -/
+private lemma ambientCup_restrict_component {W D : Set X} (hDW : D ⊆ W) (hW : U ∩ V ⊆ W)
+    (hD : A ∩ B ⊆ D) (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q n : ℕ} (h : p + q = n)
+    (z : ((toSSet.obj X).chainComplex R).X p ⟶ M)
+    (ψ : ((TopPair.ofInclusion hDW).singularChainComplex S).X q ⟶ N) :
+    (TopPair.singularChainComplexMap (TopPair.ofInclusionMap (Set.inter_subset_inter hAU hBV) hDW
+        (ContinuousMap.inclusion hW) fun _ hx ↦ hD hx) T).f n ≫
+        cupCochain k ((TopPair.ofInclusion hDW).rightAlexanderWhitneyDiagonal u) μ p q n h
+          ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) R).f p ≫ z) ψ =
+      cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h
+        ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V)))) R).f p ≫ z)
+        ((TopPair.singularChainComplexMap (TopPair.ofInclusionMap (Set.inter_subset_inter hAU hBV)
+          hDW (ContinuousMap.inclusion hW) fun _ hx ↦ hD hx) S).f q ≫ ψ) :=
+  (TopPair.singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal (k := k)
+    _ u μ p q n h _ _).trans (congrArg (fun a ↦ cupCochain k
+      ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h a _)
+        (chainComplexMap_f_comp_subtypeVal (S' := U ∩ V) (T' := W)
+          (TopPair.Hom.fst (TopPair.ofInclusionMap (Set.inter_subset_inter hAU hBV) hDW
+            (ContinuousMap.inclusion hW) fun _ hx ↦ hD hx))
+          (fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)) p z))
+
+/-- Restricted from the union to a member of the cover through the small singular pair, the cup
+product of an ambient cocycle `z` with a relative cochain `ψ`, multiplied by `(-1)ᵖ`, is the
+coboundary of the cup product of `z` with a cochain `y` whose coboundary is the restriction of
+`ψ`. -/
+private lemma ambientCup_component_coboundary {W D : Set X} (hDW : D ⊆ W) {i : Fin 2}
+    (hWi : W ⊆ ![U, V] i) (hDi : D ⊆ ![A, B] i) (hW : W ⊆ U ∪ V) (hD : D ⊆ A ∪ B)
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ} (h' : p + (q + 1) = p + q + 1)
+    (z : ((toSSet.obj X).chainComplex R).X p ⟶ M)
+    (hz : ((toSSet.obj X).chainComplex R).d (p + 1) p ≫ z = 0)
+    (ψ : ((unionPair hAU hBV).singularChainComplex S).X (q + 1) ⟶ N)
+    (y : ((TopPair.ofInclusion hDW).singularChainComplex S).X q ⟶ N)
+    (hy : ((TopPair.ofInclusion hDW).singularChainComplex S).d (q + 1) q ≫ y =
+      (TopPair.singularChainComplexMap (TopPair.ofInclusionMap hDW
+        (Set.union_subset_union hAU hBV) (ContinuousMap.inclusion hW)
+          (fun _ hx ↦ hD hx)) S).f (q + 1) ≫ ψ) :
+    ((-1 : ℤ) ^ p) •
+        ((SSetPair.chainComplexMap (toSmallSingularPair hAU hBV hDW hWi hDi) T).f (p + q + 1) ≫
+          (SSetPair.chainComplexMap (smallSingularPairToUnion hAU hBV) T).f (p + q + 1) ≫
+            cupCochain k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ
+              p (q + 1) (p + q + 1) h'
+              ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) R).f
+                p ≫ z) ψ) =
+      ((TopPair.ofInclusion hDW).singularChainComplex T).d (p + q + 1) (p + q) ≫
+        cupCochain k ((TopPair.ofInclusion hDW).rightAlexanderWhitneyDiagonal u) μ p q (p + q) rfl
+          ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) R).f p ≫ z)
+          y := by
+  rw [cupLift_union_component k hAU hBV hDW hWi hDi hW hD u μ h', ← hy,
+    TauCeti.ChainComplex.d_comp_cupCochain]
+  -- The first term of the Leibniz rule vanishes, since `z` is a cocycle.
+  have h₀ : ((toSSet.obj (TopPair.ofInclusion hDW).fst).chainComplex R).d (p + 1) p ≫
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) R).f p ≫ z = 0 := by
+    have := congrArg (· ≫ z)
+      ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal W))) R).comm (p + 1) p)
+    simp only [Category.assoc, hz, Limits.comp_zero] at this
+    exact this.symm
+  rw [h₀, LinearMap.map_zero₂, zero_add]
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- The coboundary of a component of a lift in the relative Mayer–Vietoris sequence restricts the
+cocycle `ζ` whose restriction to the small singular pair is the coboundary of the lift. -/
+private lemma relLift_component_d {W D : Set X} (hDW : D ⊆ W) {i : Fin 2}
+    (hWi : W ⊆ ![U, V] i) (hDi : D ⊆ ![A, B] i) (hW : W ⊆ U ∪ V) (hD : D ⊆ A ∪ B) {q : ℕ}
+    (x₂ : ((SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₂.X q))
+    (π : (SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₂ ⟶
+      (TopPair.ofInclusion hDW).singularCochainComplex S k N)
+    (ζ : ((unionPair hAU hBV).singularCochainComplex S k N).cycles (q + 1))
+    (hd : ((SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₂.d q (q + 1)).hom x₂ =
+      ((SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).f.f (q + 1)).hom
+        (((SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₁.iCycles (q + 1)).hom
+          (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) (q + 1) ζ)))
+    (hπ : (SSetPair.mayerVietorisCochainShortComplex S k N
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).f ≫ π =
+      SSetPair.cochainComplexMap (toSmallSingularPair hAU hBV hDW hWi hDi)) :
+    ((TopPair.ofInclusion hDW).singularChainComplex S).d (q + 1) q ≫ (π.f q).hom x₂ =
+      (TopPair.singularChainComplexMap (TopPair.ofInclusionMap hDW
+        (Set.union_subset_union hAU hBV) (ContinuousMap.inclusion hW)
+          (fun _ hx ↦ hD hx)) S).f (q + 1) ≫
+        ((unionPair hAU hBV).singularCochainComplex S k N).iCycles (q + 1) ζ := by
+  refine (HomologicalComplex.Hom.comm_apply π q (q + 1) x₂).trans
+    ((congrArg (π.f _).hom hd).trans ?_)
+  refine ((ModuleCat.comp_apply _ _ _).symm.trans
+    (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.f (q + 1)) hπ) _)).trans ?_
+  refine (congrArg (_ ≫ ·) (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _)).trans ?_
+  refine (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ?_)
+  rw [Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← HomologicalComplex.comp_f, ← Functor.map_comp,
+    toSmallSingularPair_comp_smallSingularPairToUnion hAU hBV hDW hWi hDi hW hD]
+
+/-- **The Mayer–Vietoris connecting morphism of two pairs is linear over ambient cohomology, up to
+sign.** Let `A ⊆ U` and `B ⊆ V` be subsets of `X`, with `U` and `V` open in `U ∪ V` and `A` and `B`
+open in `A ∪ B`. For `a ∈ Hᵖ(X)` and `y ∈ H^q(U ∩ V, A ∩ B)`, the connecting morphism of the
+Mayer–Vietoris sequence of the pairs `(U, A)` and `(V, B)` sends `a|_{U ∩ V} ⌣ y` to
+`(-1)ᵖ a|_{U ∪ V} ⌣ δ y`. -/
+theorem singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q n q' m : ℕ} (h : p + q = n) (hq : q + 1 = q')
+    (hm : n + 1 = m) (h' : p + q' = m) (a : X.singularCohomology R k M p)
+    (y : (TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCohomology S k N q) :
+    singularCohomologyPairMayerVietorisδ T k L hAU hBV hU' hV' hA hB n m hm
+        ((TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCup k u μ p q n h
+          (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∩ V))) p a) y) =
+      ((-1 : ℤ) ^ p) • (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCup k u μ
+        p q' m h' (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∪ V))) p a)
+        (singularCohomologyPairMayerVietorisδ S k N hAU hBV hU' hV' hA hB q q' hq y) := by
+  subst hq hm h
+  obtain ⟨α, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p a
+  obtain ⟨ζ, hζ⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ (q + 1)
+    (singularCohomologyPairMayerVietorisδ S k N hAU hBV hU' hV' hA hB q (q + 1) rfl y)
+  -- The source sequence: `y` is the class of a cocycle `η` lifting to `x₂`, whose coboundary is
+  -- the restriction of `ζ` to the singular simplices lying in `U` or in `V`.
+  have hS := SSetPair.shortExact_mayerVietorisCochainShortComplex S k N
+    (isPushout_toSmallSingularPair_left hAU hBV) (isPushout_toSmallSingularPair_right hAU hBV)
+  have hδ : (hS.δ q (q + 1) rfl).hom y =
+      (((smallSingularPair hAU hBV).chainComplex S).linearYonedaObj k N).homologyπ (q + 1)
+        (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) (q + 1) ζ) := by
+    have := ConcreteCategory.congr_hom
+      (singularCohomologyPairMayerVietorisδ_comp_homologyMap S k N hAU hBV hU' hV' hA hB q (q + 1)
+        rfl) y
+    rw [ConcreteCategory.comp_apply, ← hζ, moduleCat_homologyMap_homologyπ,
+      SSetPair.mayerVietorisCochainδ_def S k N (isPushout_toSmallSingularPair_left hAU hBV)
+        (isPushout_toSmallSingularPair_right hAU hBV) q (q + 1) rfl] at this
+    exact this.symm
+  obtain ⟨x₂, η, hd, hg, rfl⟩ := hS.moduleCat_exists_d_eq_of_δ_eq q (q + 1) rfl y _ hδ
+  -- It suffices to compare both sides after restricting to the singular simplices lying in `U` or
+  -- in `V`, which is injective on cohomology.
+  have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion T k L hAU hBV hU' hV' hA hB
+    (p + q + 1)
+  apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T) (k := k)
+    (M := L) (smallSingularPairToUnion hAU hBV)) (p + q + 1))).1 inferInstance
+  rw [← ConcreteCategory.comp_apply, singularCohomologyPairMayerVietorisδ_comp_homologyMap T k L
+      hAU hBV hU' hV' hA hB (p + q) (p + q + 1) rfl,
+    SSetPair.mayerVietorisCochainδ_def T k L (isPushout_toSmallSingularPair_left hAU hBV)
+      (isPushout_toSmallSingularPair_right hAU hBV) (p + q) (p + q + 1) rfl,
+    ← hζ, TopCat.singularCohomologyMap, moduleCat_homologyMap_homologyπ,
+    TopCat.singularCohomologyMap, moduleCat_homologyMap_homologyπ]
+  erw [TopPair.singularCup_homologyπ k (interPair hAU hBV) u μ p q (p + q) rfl,
+    TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ p (q + 1) (p + q + 1) h']
+  rw [map_zsmul, moduleCat_homologyMap_homologyπ, ← map_zsmul]
+  refine (SSetPair.shortExact_mayerVietorisCochainShortComplex T k L
+    (isPushout_toSmallSingularPair_left hAU hBV)
+    (isPushout_toSmallSingularPair_right hAU hBV)).moduleCat_δ_homologyπ (p + q) (p + q + 1) rfl _
+    (((biprod.inl : (TopPair.ofInclusion hAU).singularCochainComplex T k L ⟶
+        _ ⊞ (TopPair.ofInclusion hBV).singularCochainComplex T k L).f (p + q)).hom
+      (cupCochain k ((TopPair.ofInclusion hAU).rightAlexanderWhitneyDiagonal u) μ p q (p + q) rfl
+        ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal U))) R).f p ≫
+          (X.singularCochainComplex R k M).iCycles p α)
+        (((biprod.fst : (TopPair.ofInclusion hAU).singularCochainComplex S k N ⊞
+          (TopPair.ofInclusion hBV).singularCochainComplex S k N ⟶ _).f q).hom x₂)) +
+     ((biprod.inr : (TopPair.ofInclusion hBV).singularCochainComplex T k L ⟶
+        (TopPair.ofInclusion hAU).singularCochainComplex T k L ⊞ _).f (p + q)).hom
+      (cupCochain k ((TopPair.ofInclusion hBV).rightAlexanderWhitneyDiagonal u) μ p q (p + q) rfl
+        ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) R).f p ≫
+          (X.singularCochainComplex R k M).iCycles p α)
+        (((biprod.snd : (TopPair.ofInclusion hAU).singularCochainComplex S k N ⊞
+          (TopPair.ofInclusion hBV).singularCochainComplex S k N ⟶ _).f q).hom x₂))) ?_ _ ?_
+  · -- The lift restricts to `α|_{U ∩ V} ⌣ η` on `(U ∩ V, A ∩ B)`.
+    have hgx := hg
+    rw [HomologicalComplex.biprod_desc_f_apply, HomologicalComplex.neg_f_apply, ModuleCat.hom_neg,
+      LinearMap.neg_apply] at hgx
+    have eU := ambientCup_restrict_component k hAU hBV hAU Set.inter_subset_left
+      Set.inter_subset_left u μ (rfl : p + q = p + q) ((X.singularCochainComplex R k M).iCycles p α)
+      (((biprod.fst : (TopPair.ofInclusion hAU).singularCochainComplex S k N ⊞
+          (TopPair.ofInclusion hBV).singularCochainComplex S k N ⟶ _).f q).hom x₂)
+    have eV := ambientCup_restrict_component k hAU hBV hBV Set.inter_subset_right
+      Set.inter_subset_right u μ (rfl : p + q = p + q)
+      ((X.singularCochainComplex R k M).iCycles p α)
+      (((biprod.snd : (TopPair.ofInclusion hAU).singularCochainComplex S k N ⊞
+          (TopPair.ofInclusion hBV).singularCochainComplex S k N ⟶ _).f q).hom x₂)
+    refine (map_add _ _ _).trans ?_
+    refine (congrArg₂ (· + ·) ((ModuleCat.comp_apply _ _ _).symm.trans
+        (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inl_desc_f _ _ _) _))
+      ((ModuleCat.comp_apply _ _ _).symm.trans
+        (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inr_desc_f _ _ _) _))).trans ?_
+    refine (congrArg₂ (· + ·) eU (Eq.trans (by
+      -- Negation in the linear-Yoneda cochain module is pointwise negation of morphisms of C.
+      rw [HomologicalComplex.neg_f_apply]
+      rfl) (congrArg Neg.neg eV))).trans ?_
+    rw [← LinearMap.map_neg]
+    refine (map_add (cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q
+      (p + q) rfl ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V))))
+        R).f p ≫ (X.singularCochainComplex R k M).iCycles p α)) _ _).symm.trans ?_
+    refine (congrArg (cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q
+      (p + q) rfl ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V))))
+        R).f p ≫ (X.singularCochainComplex R k M).iCycles p α)) hgx).trans ?_
+    exact ((iCycles_cupCycles _ _ _ _ _ _ _ _).trans (congrArg (fun a ↦ cupCochain k
+      ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q (p + q) rfl a _)
+        (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))).symm
+  · -- The coboundary of the lift is `(-1)ᵖ` times the restriction of `α ⌣ ζ`, componentwise.
+    have hz := d_comp_linearYonedaObj_iCycles p (p + 1) α
+    have cU := ambientCup_component_coboundary k hAU hBV hAU (i := 0)
+      (Matrix.cons_val_zero U ![V]).superset (Matrix.cons_val_zero A ![B]).superset
+      Set.subset_union_left Set.subset_union_left u μ h' _ hz _ _
+      (relLift_component_d k hAU hBV hAU (i := 0) (Matrix.cons_val_zero U ![V]).superset
+        (Matrix.cons_val_zero A ![B]).superset Set.subset_union_left Set.subset_union_left x₂
+        biprod.fst ζ hd (biprod.lift_fst _ _))
+    have cV := ambientCup_component_coboundary k hAU hBV hBV (i := 1)
+      ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset
+      ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
+      Set.subset_union_right Set.subset_union_right u μ h' _ hz _ _
+      (relLift_component_d k hAU hBV hBV (i := 1)
+        ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset
+        ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
+        Set.subset_union_right Set.subset_union_right x₂ biprod.snd ζ hd (biprod.lift_snd _ _))
+    have hc : ((SSetPair.mayerVietorisCochainShortComplex T k L
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+          (isPushout_toSmallSingularPair_right hAU hBV).w)).X₁.iCycles (p + q + 1)).hom
+        (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) (p + q + 1)
+          (cupCycles k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p (q + 1)
+            (p + q + 1) h' (cyclesMap (singularCochainComplexMap
+              (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) p α) ζ)) =
+        (SSetPair.chainComplexMap (smallSingularPairToUnion hAU hBV) T).f (p + q + 1) ≫
+          cupCochain k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ
+            p (q + 1) (p + q + 1) h'
+            ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) R).f p ≫
+              (X.singularCochainComplex R k M).iCycles p α)
+            (((unionPair hAU hBV).singularCochainComplex S k N).iCycles (q + 1) ζ) :=
+      (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _).trans (congrArg (_ ≫ ·)
+        ((iCycles_cupCycles _ _ _ _ _ _ _ _).trans (congrArg (fun a ↦ cupCochain k
+          ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p (q + 1) (p + q + 1) h' a _)
+            (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))))
+    refine (congrArg _ ((map_zsmul _ _ _).trans (congrArg _ hc))).trans ?_
+    refine (map_zsmul _ _ _).trans ?_
+    refine (congrArg _ (HomologicalComplex.biprod_lift_f_apply _ _ _ _)).trans (Eq.trans ?_
+      ((map_add _ _ _).trans (congrArg₂ (· + ·) (HomologicalComplex.Hom.comm_apply _ _ _ _)
+        (HomologicalComplex.Hom.comm_apply _ _ _ _))).symm)
+    rw [smul_add]
+    refine congrArg₂ (· + ·) ((map_zsmul _ _ _).symm.trans (congrArg _ ?_))
+      ((map_zsmul _ _ _).symm.trans (congrArg _ ?_))
+    · exact cU
+    · exact cV
+
+end Ambient
+
+
 end TopCat

@@ -49,6 +49,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
 * `TauCeti.prodThomPairSnd`: the projection onto the fibre pair, a retraction of each fibre
   inclusion (`TauCeti.prodThomPairFiberMap_comp_prodThomPairSnd`).
+* `TauCeti.isZero_singularHomology_prod_compl_halfSubspace`: `B × F` is acyclic modulo the
+  complement of `B` times a closed half-subspace of `F`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
@@ -152,6 +154,40 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {B : Type w} [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']
   {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+variable (B) in
+/-- **The relative homology of `B × F` modulo the complement of a closed half-subspace vanishes.**
+For a subspace `W` of `F` and a functional `φ` with `φ v = 1` for some `v ∈ W`, the pair
+`(B × F, B × (F ∖ {x ∈ W | φ x ≤ 0}))` has vanishing homology: `B × F` deforms into the subspace
+along straight lines towards `v`. These are the hypotheses of
+`TauCeti.isZero_singularHomology_subspaceComplPair` for the projection `B × F → F`. -/
+theorem isZero_singularHomology_prod_compl_halfSubspace (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ)
+    (v : F) (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
+    IsZero ((TopPair.ofSubset (X := TopCat.of (B × F))
+      ((ContinuousMap.snd : C(B × F, F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology R n) := by
+  set S : Set (TopCat.of (B × F)) :=
+    (ContinuousMap.snd : C(B × F, F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
+  let P := TopPair.ofSubset S
+  have hmem : ∀ p : B × F, (p.1, v) ∈ S := fun p h ↦
+    (hφv ▸ one_pos : 0 < φ v).not_ge h.2
+  let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
+    TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩
+  let H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy c.hom :=
+    { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
+      continuous_toFun := by fun_prop
+      map_zero_left _ := by simp
+      map_one_left _ := by simp [c] }
+  have hH := TopPair.ofSubsetHomotopy (B := S) (B' := S) H
+    fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
+      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
+  let g : P.fst ⟶ P.snd :=
+    TopCat.ofHom ⟨fun p ↦ ⟨(p.1, v), hmem p⟩, by fun_prop⟩
+  refine TopPair.isZero_singularHomology_of_homotopy
+    (f := TopPair.ofSubsetMap c fun p _ ↦ hmem p) ?_ g ?_ R n
+  · rw [← TopPair.ofSubsetMap_id (B := S) fun _ hx ↦ hx]
+    exact hH
+  · ext p
+    exact (TopPair.ofSubsetMap_fst_apply _ _ p).symm
+
 namespace ProdThomPair
 
 /-- The projection `B × F → F`. -/
@@ -165,39 +201,6 @@ private abbrev pair (B : Type w) [TopologicalSpace B] (W : Submodule ℝ F) : To
 /-- The map of pairs `(B × F, B × (F ∖ W)) ⟶ (B' × F, B' × (F ∖ W))` induced by `g : B → B'`. -/
 private abbrev pairMap (g : C(B, B')) (W : Submodule ℝ F) : pair B W ⟶ pair B' W :=
   subspaceComplPairMap (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl) W
-
-/-- The complement in `B × F` of `B` times the closed half-subspace `{x ∈ W | φ x ≤ 0}`. -/
-private abbrev halfCompl (B : Type w) [TopologicalSpace B] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
-    Set (TopCat.of (B × F)) :=
-  proj B ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
-
-variable (B) in
-/-- The relative homology of `B × F` modulo the complement of a closed half-subspace vanishes:
-`B × F` deforms into that complement along straight lines towards `v`. -/
-private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F)
-    (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (halfCompl B W φ)).singularHomology R n) := by
-  let P := TopPair.ofSubset (halfCompl B W φ)
-  have hmem : ∀ p : B × F, (p.1, v) ∈ halfCompl B W φ := fun p h ↦
-    (hφv ▸ one_pos : 0 < φ v).not_ge h.2
-  let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
-    TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩
-  let H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy c.hom :=
-    { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
-      continuous_toFun := by fun_prop
-      map_zero_left _ := by simp
-      map_one_left _ := by simp [c] }
-  have hH := TopPair.ofSubsetHomotopy (B := halfCompl B W φ) (B' := halfCompl B W φ) H
-    fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
-      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
-  let g : P.fst ⟶ P.snd :=
-    TopCat.ofHom ⟨fun p ↦ ⟨(p.1, v), hmem p⟩, by fun_prop⟩
-  refine TopPair.isZero_singularHomology_of_homotopy
-    (f := TopPair.ofSubsetMap c fun p _ ↦ hmem p) ?_ g ?_ R n
-  · rw [← TopPair.ofSubsetMap_id (B := halfCompl B W φ) fun _ hx ↦ hx]
-    exact hH
-  · ext p
-    exact (TopPair.ofSubsetMap_fst_apply _ _ p).symm
 
 variable (B)
 
@@ -282,8 +285,8 @@ variable (B F) [FiniteDimensional ℝ F]
 `Hₙ(B × F, B × (F ∖ {0})) = 0` for `n < dim F`. -/
 theorem isZero_singularHomology_prodThomPair {n : ℕ} (hn : n < finrank ℝ F) :
     IsZero ((prodThomPair B F).singularHomology R n) :=
-  (isZero_singularHomology_subspaceComplPair R (proj B) (isZero_singularHomology_halfCompl R B) n
-    ⊥ (by simpa using hn)).of_iso
+  (isZero_singularHomology_subspaceComplPair R (proj B)
+    (isZero_singularHomology_prod_compl_halfSubspace R B) n ⊥ (by simpa using hn)).of_iso
     (asIso (TopPair.singularHomologyMap (botIso B F).hom R n))
 
 /-- **The homology of the Thom pair of a product bundle**: for `F` of dimension `r` and
@@ -295,8 +298,9 @@ def prodThomPairSingularHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by
     (prodThomPair B F).singularHomology R m ≅
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of B) :=
   asIso (TopPair.singularHomologyMap (botIso B F).hom R m) ≪≫
-    subspaceComplPairSingularHomologyIso R (proj B) (isZero_singularHomology_halfCompl R B)
-      (finrank ℝ F) ⊥ (by simp) n m h ≪≫ emptyIso R B F n
+    subspaceComplPairSingularHomologyIso R (proj B)
+      (isZero_singularHomology_prod_compl_halfSubspace R B) (finrank ℝ F) ⊥ (by simp) n m h ≪≫
+        emptyIso R B F n
 
 /-- The isomorphism `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)` is natural in continuous maps of the
 base. -/
@@ -309,7 +313,8 @@ theorem prodThomPairSingularHomologyIso_hom_naturality (g : C(B, B')) (n m : ℕ
         ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map (TopCat.ofHom g) := by
   simp only [prodThomPairSingularHomologyIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [emptyIso_hom_naturality, subspaceComplPairSingularHomologyIso_hom_naturality_assoc R
-      (isZero_singularHomology_halfCompl R B) (isZero_singularHomology_halfCompl R B')
+      (isZero_singularHomology_prod_compl_halfSubspace R B)
+      (isZero_singularHomology_prod_compl_halfSubspace R B')
       (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl),
     ← TopPair.singularHomologyMap_comp_assoc (botIso B F).hom, botIso_hom_naturality,
     TopPair.singularHomologyMap_comp_assoc]

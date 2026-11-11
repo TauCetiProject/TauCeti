@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
+public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.SubspaceCompl
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 import TauCeti.AlgebraicTopology.Singular.Reduced
 
@@ -38,6 +40,16 @@ Mayer–Vietoris over unions of trivializing open sets: the vanishing below the 
 restriction to the two pieces injective in degree `r`, and the determination by fibres makes local
 Thom classes agree on overlaps.
 
+In every degree, with coefficients in a commutative ring `K` and any `K`-module `M`, the product
+bundle satisfies the **Thom isomorphism**: for a generator `u` of `Hʳ(F, F ∖ {0}; K) ≅ K`, the
+Thom map `a ↦ pr₁^* a ⌣ pr₂^* u` is a bijection `Hⁿ(B; M) ⟶ Hⁿ⁺ʳ(B × F, B × (F ∖ {0}); M)`
+(`TauCeti.bijective_prodThomPair_singularCup_of_span_eq_top`). This is the base case of the Thom
+isomorphism theorem over a trivializing open set. One generator has this property by
+`TauCeti.exists_bijective_singularCup_subspaceComplPair`, for the projection `B × F → F` and the
+zero subspace, after `B × F` is identified with `B` through the first projection. Every other
+generator is a unit multiple of it: over a point, every class of `(F, F ∖ {0})` is a multiple of
+the scalar relating them, which is therefore a unit in `K ≅ Hʳ(F, F ∖ {0}; K)`.
+
 ## Main definitions and results
 
 * `TauCeti.isZero_singularCohomology_prodThomPair`: `Hⁿ(B × F, B × (F ∖ {0})) = 0` for
@@ -47,13 +59,15 @@ Thom classes agree on overlaps.
   `TauCeti.prodThomPairSingularCohomologyEquiv_naturality`.
 * `TauCeti.singularCohomology_prodThomPair_ext`: classes in degree `dim F` agreeing on every fibre
   are equal.
+* `TauCeti.bijective_prodThomPair_singularCup_of_span_eq_top`: the Thom isomorphism of the product
+  bundle in every degree.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 4.D, Theorem 4D.10 and its proof (the Thom
   isomorphism, first over a trivializing open set and then by Mayer–Vietoris).
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton (1974), §10.
+  Princeton (1974), §10, proof of Theorem 10.4 (the case of a trivial bundle).
 -/
 
 public section
@@ -164,5 +178,169 @@ theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
         singularHomology₀Section R b :=
     singularHomology₀Section_naturality R (TopCat.ofHom c) PUnit.unit
   rw [← hpt, Category.assoc, Category.assoc, hb']
+
+/-! ### The Thom isomorphism of a product bundle -/
+
+section ThomIsomorphism
+
+open MonoidalCategory
+
+variable {K : Type w} [CommRing K] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F]
+
+variable (F) in
+/-- The pair `(F, F ∖ {0})` is the pair `(F, F ∖ ⊥)` of the zero subspace. -/
+private def complZeroIso :
+    TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) ≅
+      subspaceComplPair (X := TopCat.of F) (ContinuousMap.id F) ⊥ :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by simp
+
+variable (F) in
+/-- The Thom pair of the product bundle is the pair `(B × F, B × (F ∖ ⊥))` of the zero subspace. -/
+private def prodBotIso :
+    prodThomPair B F ≅ subspaceComplPair (X := TopCat.of (B × F)) ContinuousMap.snd ⊥ :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun p ↦ by simp
+
+/-- Some class `u ∈ Hʳ(F, F ∖ {0}; K)`, `r = dim F`, has bijective Thom maps over every base:
+`a ↦ pr₁^* a ⌣ pr₂^* u` is a bijection `Hⁿ(B; M) ⟶ Hⁿ⁺ʳ(B × F, B × (F ∖ {0}); M)`. -/
+private theorem exists_bijective_prodThomPair_singularCup :
+    ∃ u : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
+        (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
+      ∀ (B : Type w) [TopologicalSpace B] (M : ModuleCat.{w} K) (n m : ℕ)
+        (h : n + finrank ℝ F = m),
+        Function.Bijective fun a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M n ↦
+          (prodThomPair B F).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n
+            (finrank ℝ F) m h
+            (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+            (TopPair.singularCohomologyMap (prodThomPairSnd B F) _ u) := by
+  obtain ⟨g, hg⟩ := exists_bijective_singularCup_subspaceComplPair (K := K) (F := F)
+    (finrank ℝ F) ⊥ (by simp)
+  refine ⟨TopPair.singularCohomologyMap (complZeroIso F).hom _ g, fun B _ M n m h ↦ ?_⟩
+  -- Through `prodBotIso`, the Thom map is cupping with the pull-back of `g` along the projection
+  -- `B × F → F`, precomposed with the pull-back along the projection `B × F → B`.
+  let φ := subspaceComplPairMap (X := TopCat.of (B × F)) (q := ContinuousMap.snd)
+    (X' := TopCat.of F) (q' := ContinuousMap.id F)
+    (TopCat.ofHom (ContinuousMap.snd : C(B × F, F))) (fun _ ↦ rfl) ⊥
+  -- The ambient spaces of the pairs are `B × F` and `F` only up to unfolding `TopPair.ofSubset`,
+  -- so the rewrites of their ambient maps and of classes on them need `erw`.
+  have hfst : TopPair.Hom.fst (prodBotIso B F).hom = 𝟙 _ := by
+    erw [prodBotIso, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst]
+    rfl
+  have hsnd : prodThomPairSnd B F ≫ (complZeroIso F).hom = (prodBotIso B F).hom ≫ φ := by
+    have h₁ : TopPair.Hom.fst (prodThomPairSnd B F) =
+        TopCat.ofHom (ContinuousMap.snd : C(B × F, F)) :=
+      TopCat.ext fun p ↦ prodThomPairSnd_fst_apply F p
+    have h₂ : TopPair.Hom.fst (complZeroIso F).hom = 𝟙 _ := by
+      erw [complZeroIso, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst]
+      rfl
+    refine TopPair.hom_ext_of_fst _ ?_
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, h₁, h₂, hfst]
+    erw [subspaceComplPairMap_fst]
+    rfl
+  have key : ∀ a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M n,
+      (prodThomPair B F).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n
+          (finrank ℝ F) m h
+          (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+          (TopPair.singularCohomologyMap (prodThomPairSnd B F) _
+            (TopPair.singularCohomologyMap (complZeroIso F).hom _ g)) =
+        TopPair.singularCohomologyMap (prodBotIso B F).hom m
+          ((subspaceComplPair (X := TopCat.of (B × F)) ContinuousMap.snd ⊥).singularCup K
+            (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n (finrank ℝ F) m h
+            (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+            (TopPair.singularCohomologyMap φ _ g)) := fun a ↦ by
+    have e := TopPair.singularCup_naturality K (prodBotIso B F).hom (λ_ (𝟙_ (ModuleCat.{w} K))).inv
+      (ρ_ M).hom n (finrank ℝ F) m h
+      (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+      (TopPair.singularCohomologyMap φ _ g)
+    rw [hfst] at e
+    erw [TopCat.singularCohomologyMap_id] at e
+    have hy : TopPair.singularCohomologyMap (prodThomPairSnd B F) (finrank ℝ F)
+        (TopPair.singularCohomologyMap (complZeroIso F).hom (finrank ℝ F) g) =
+        TopPair.singularCohomologyMap (prodBotIso B F).hom (finrank ℝ F)
+          (TopPair.singularCohomologyMap φ (finrank ℝ F) g) := by
+      rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+        hsnd]
+    erw [hy, ← e]
+    rfl
+  have : IsIso (TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K) (M := M)
+      (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n) := by
+    have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
+      (ModuleCat.of K K) K M n
+    rwa [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
+  have : IsIso (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K) (M := M)
+      (prodBotIso B F).hom m) :=
+    (inferInstance : IsIso ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K M m).map
+      (prodBotIso B F).hom.op))
+  convert (ConcreteCategory.bijective_of_isIso _).comp ((hg (TopCat.of (B × F))
+    ContinuousMap.snd (isZero_singularHomology_prod_compl_halfSubspace (ModuleCat.of K K) B)
+      M n m h).comp (ConcreteCategory.bijective_of_isIso _)) using 1
+  · funext a
+    exact key a
+  all_goals assumption
+
+/-- **The Thom isomorphism of a product bundle.** Let `u` generate the local cohomology
+`Hʳ(F, F ∖ {0}; K) ≅ K`, `r = dim F`, for instance a Thom class of a point. For every space `B`,
+the Thom map of the pull-back of `u` to the product bundle `B × F → B`,
+`a ↦ pr₁^* a ⌣ pr₂^* u`, is a bijection `Hⁿ(B; M) ⟶ Hⁿ⁺ʳ(B × F, B × (F ∖ {0}); M)` for every
+module `M` and every `n`. -/
+theorem bijective_prodThomPair_singularCup_of_span_eq_top
+    (u : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
+      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
+    (hu : Submodule.span K {u} = ⊤) (B : Type w) [TopologicalSpace B] (M : ModuleCat.{w} K)
+    (n m : ℕ) (h : n + finrank ℝ F = m) :
+    Function.Bijective fun a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M n ↦
+      (prodThomPair B F).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n
+        (finrank ℝ F) m h
+        (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+        (TopPair.singularCohomologyMap (prodThomPairSnd B F) _ u) := by
+  obtain ⟨u₀, hu₀⟩ := exists_bijective_prodThomPair_singularCup (K := K) (F := F)
+  obtain ⟨κ, rfl⟩ := Submodule.mem_span_singleton.1 (hu ▸ Submodule.mem_top :
+    u₀ ∈ Submodule.span K {u})
+  -- The Thom map of `κ • u` is `κ` times that of `u`.
+  have hsmul (B : Type w) [TopologicalSpace B] (M : ModuleCat.{w} K) (n m : ℕ)
+      (h : n + finrank ℝ F = m) (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M n) :
+      (prodThomPair B F).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n
+          (finrank ℝ F) m h
+          (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+          (TopPair.singularCohomologyMap (prodThomPairSnd B F) _ (κ • u)) =
+        κ • (prodThomPair B F).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n
+          (finrank ℝ F) m h
+          (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
+          (TopPair.singularCohomologyMap (prodThomPairSnd B F) _ u) := by
+    rw [map_smul, LinearMap.map_smul]
+  -- Over a point, every class of `(F, F ∖ {0})` is a multiple of `κ`, so `κ` is a unit.
+  have hκ : IsUnit κ := by
+    obtain ⟨a, ha⟩ := (hu₀ PUnit.{w + 1} (ModuleCat.of K K) 0 (finrank ℝ F) (zero_add _)).2
+      (TopPair.singularCohomologyMap (prodThomPairSnd PUnit.{w + 1} F) _ u)
+    have hw := congrArg (TopPair.singularCohomologyMap
+      (prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1})) (finrank ℝ F))
+      ((hsmul PUnit.{w + 1} (ModuleCat.of K K) 0 (finrank ℝ F) (zero_add _) a).symm.trans ha)
+    rw [map_smul, ← TopPair.singularCohomologyMap_comp_apply,
+      prodThomPairFiberMap_comp_prodThomPairSnd, TopPair.singularCohomologyMap_id,
+      ModuleCat.id_apply] at hw
+    obtain ⟨x, hx⟩ : ∃ x, κ • x = u := ⟨_, hw⟩
+    obtain ⟨μ, hμ⟩ := Submodule.mem_span_singleton.1 (hu ▸ Submodule.mem_top :
+      x ∈ Submodule.span K {u})
+    -- The local cohomology is `K`, in which `u` corresponds to a unit.
+    let e := singularCohomologyComplSingletonFinrankEquivSelf (ModuleCat.of K K)
+      (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)
+    obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hu ▸ Submodule.mem_top :
+      e.symm 1 ∈ Submodule.span K {u})
+    have h₁ : t * e u = 1 := by
+      simpa [smul_eq_mul] using congrArg e ht
+    have h₂ : κ * μ * e u = e u := by
+      have := congrArg e (show (κ * μ) • u = u by rw [mul_smul, hμ, hx])
+      rwa [map_smul, smul_eq_mul] at this
+    refine IsUnit.of_mul_eq_one μ ?_
+    calc κ * μ = κ * μ * (e u * t) := by rw [mul_comm (e u) t, h₁, mul_one]
+      _ = e u * t := by rw [← mul_assoc, h₂]
+      _ = 1 := by rw [mul_comm, h₁]
+  -- So the Thom map of `u` is `κ⁻¹` times the bijective Thom map of `κ • u`.
+  obtain ⟨κ, rfl⟩ := hκ
+  convert (MulAction.bijective κ⁻¹).comp (hu₀ B M n m h) using 1
+  funext a
+  rw [Function.comp_apply, hsmul, Units.smul_def, smul_smul, Units.inv_mul, one_smul]
+
+end ThomIsomorphism
 
 end TauCeti

@@ -125,29 +125,19 @@ private lemma isOpen_half [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : 
 
 variable {W : Submodule ℝ F}
 
-/-- A chosen extension to `F` of the functional of an extension by a line. -/
-private def extension (s : W.LineExtension) : F →ₗ[ℝ] ℝ :=
-  (LinearMap.exists_extend s.φ).choose
-
-private lemma extension_comp (s : W.LineExtension) : extension s ∘ₗ s.W'.subtype = s.φ :=
-  (LinearMap.exists_extend s.φ).choose_spec
-
-private lemma extension_apply_v (s : W.LineExtension) : extension s s.v = 1 :=
-  (LinearMap.congr_fun (extension_comp s) s.v).trans s.apply_v
-
 /-- The identification of `(X, q⁻¹(F ∖ W))` with the pair modulo the union of the two
 half-subspace complements of a step. -/
 private def unionIso (s : W.LineExtension) :
     subspaceComplPair q W ≅
-      TopPair.ofSubset (half q s.W' (extension s) ∪ half q s.W' (-extension s)) :=
+      TopPair.ofSubset (half q s.W' s.extend ∪ half q s.W' (-s.extend)) :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
-    rw [← Set.preimage_union, s.compl_union_compl (extension_comp s)]
+    rw [← Set.preimage_union, s.compl_union_compl s.extend_comp_subtype]
     rfl
 
 /-- The identification of the pair modulo the intersection of the two half-subspace complements of
 a step with `(X, q⁻¹(F ∖ W'))`. -/
 private def interIso (s : W.LineExtension) :
-    TopPair.ofSubset (half q s.W' (extension s) ∩ half q s.W' (-extension s)) ≅
+    TopPair.ofSubset (half q s.W' s.extend ∩ half q s.W' (-s.extend)) ≅
       subspaceComplPair q s.W' :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
     rw [← Set.preimage_inter, s.compl_inter_compl]
@@ -165,21 +155,21 @@ variable (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈
 include hq
 
 private lemma isZero_biprod (s : W.LineExtension) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (half q s.W' (extension s))).singularHomology R n ⊞
-      (TopPair.ofSubset (half q s.W' (-extension s))).singularHomology R n) :=
-  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.2 (extension_apply_v s) n,
-    hq _ _ _ (neg_mem s.v.2) (by simp [extension_apply_v]) n⟩
+    IsZero ((TopPair.ofSubset (half q s.W' s.extend)).singularHomology R n ⊞
+      (TopPair.ofSubset (half q s.W' (-s.extend))).singularHomology R n) :=
+  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.2 s.extend_apply_v n,
+    hq _ _ _ (neg_mem s.v.2) (by simp) n⟩
 
 variable [FiniteDimensional ℝ F]
 
 private lemma isIso_relativeMayerVietorisδ (s : W.LineExtension) (n : ℕ) :
-    IsIso (TopCat.relativeMayerVietorisδ R (isOpen_half q s.W' (extension s))
-      (isOpen_half q s.W' (-extension s)) (n + 1) n rfl) := by
-  have := (TopCat.relativeMayerVietoris_exact₃ R (isOpen_half q s.W' (extension s))
-    (isOpen_half q s.W' (-extension s)) (n + 1) n rfl).mono_g
+    IsIso (TopCat.relativeMayerVietorisδ R (isOpen_half q s.W' s.extend)
+      (isOpen_half q s.W' (-s.extend)) (n + 1) n rfl) := by
+  have := (TopCat.relativeMayerVietoris_exact₃ R (isOpen_half q s.W' s.extend)
+    (isOpen_half q s.W' (-s.extend)) (n + 1) n rfl).mono_g
       ((isZero_biprod R q hq s _).eq_of_src _ _)
-  have := (TopCat.relativeMayerVietoris_exact₁ R (isOpen_half q s.W' (extension s))
-    (isOpen_half q s.W' (-extension s)) (n + 1) n rfl).epi_f
+  have := (TopCat.relativeMayerVietoris_exact₁ R (isOpen_half q s.W' s.extend)
+    (isOpen_half q s.W' (-s.extend)) (n + 1) n rfl).epi_f
       ((isZero_biprod R q hq s _).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
@@ -189,14 +179,14 @@ private def stepIso (s : W.LineExtension) (n : ℕ) :
       (subspaceComplPair q s.W').singularHomology R n :=
   haveI := isIso_relativeMayerVietorisδ R q hq s n
   asIso (TopPair.singularHomologyMap (unionIso q s).hom R (n + 1)) ≪≫
-    asIso (TopCat.relativeMayerVietorisδ R (isOpen_half q s.W' (extension s))
-      (isOpen_half q s.W' (-extension s)) (n + 1) n rfl) ≪≫
+    asIso (TopCat.relativeMayerVietorisδ R (isOpen_half q s.W' s.extend)
+      (isOpen_half q s.W' (-s.extend)) (n + 1) n rfl) ≪≫
     asIso (TopPair.singularHomologyMap (interIso q s).hom R n)
 
 private lemma isZero_singularHomology_zero (s : W.LineExtension) :
     IsZero ((subspaceComplPair q W).singularHomology R 0) := by
-  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (isOpen_half q s.W' (extension s))
-    (isOpen_half q s.W' (-extension s))
+  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (isOpen_half q s.W' s.extend)
+    (isOpen_half q s.W' (-s.extend))
   exact ((isZero_biprod R q hq s 0).of_epi
     (TopCat.relativeMayerVietorisFromBiprod R _ _ 0)).of_iso
       (asIso (TopPair.singularHomologyMap (unionIso q s).hom R 0))
@@ -212,8 +202,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
         TopPair.singularHomologyMap (subspaceComplPairMap f hf s.W') R n =
       TopPair.singularHomologyMap (subspaceComplPairMap f hf W) R (n + 1) ≫
         (stepIso R q' hq' s n).hom := by
-  have hU := mapsTo_preimage f hf {y | y ∈ s.W' ∧ extension s y ≤ 0}ᶜ
-  have hV := mapsTo_preimage f hf {y | y ∈ s.W' ∧ (-extension s) y ≤ 0}ᶜ
+  have hU := mapsTo_preimage f hf {y | y ∈ s.W' ∧ s.extend y ≤ 0}ᶜ
+  have hV := mapsTo_preimage f hf {y | y ∈ s.W' ∧ (-s.extend) y ≤ 0}ᶜ
   have hinter : (interIso q s).hom ≫ subspaceComplPairMap f hf s.W' =
       TopPair.ofSubsetMap f (hU.inter_inter hV) ≫ (interIso q' s).hom := by
     simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf _ (mapsTo_preimage f hf _),
@@ -226,8 +216,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   simp only [stepIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [← TopPair.singularHomologyMap_comp, hinter, TopPair.singularHomologyMap_comp,
-    TopCat.relativeMayerVietorisδ_naturality_assoc R _ _ (isOpen_half q' s.W' (extension s))
-      (isOpen_half q' s.W' (-extension s)) f hU hV (n + 1) n rfl,
+    TopCat.relativeMayerVietorisδ_naturality_assoc R _ _ (isOpen_half q' s.W' s.extend)
+      (isOpen_half q' s.W' (-s.extend)) f hU hV (n + 1) n rfl,
     ← TopPair.singularHomologyMap_comp_assoc, hunion,
     TopPair.singularHomologyMap_comp_assoc]
 
