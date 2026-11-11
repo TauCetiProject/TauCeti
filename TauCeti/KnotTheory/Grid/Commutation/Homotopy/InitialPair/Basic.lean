@@ -207,6 +207,53 @@ private theorem initialPair_notMem_XSet_away {x y z : GridState n}
   · apply Finset.disjoint_left.mp hQ ((Q.mem_coveredSquares_iff_of_ne ha hb).mpr hp)
     simpa only [G.mem_XSet_swapColumns, Equiv.swap_apply_of_ne_of_ne ha hb] using hX
 
+/-- A point of a rectangle with columns in `[l, r)`, for `l` strictly between the two commuted
+columns and `r`, lies away from both commuted columns, so an initial-side pentagon pair covering
+it avoids the `X`-markings there. -/
+private theorem initialPair_notMem_XSet_of_mem_cIco {x y z : GridState n}
+    (P : GridInitialPentagonBetween C.column C.turnRow x y)
+    (Q : GridInitialPentagonBetween C.column C.oppositeTurnRow y z)
+    (hP : Disjoint P.coveredSquares G.XSet)
+    (hQ : Disjoint Q.coveredSquares
+      (G.swapColumns C.column (finRotate n C.column)).XSet)
+    {l r : Fin n} (hcol : l ∈ Grid.cIoo (finRotate n C.column) r) {p : Fin n × Fin n}
+    (hcolumn : p.1 ∈ Grid.cIco l r)
+    (hp : p ∈ P.toGridRectangle.coveredSquares ∪ Q.toGridRectangle.coveredSquares) :
+    p ∉ G.XSet := by
+  have hbig := Grid.cIco_subset_of_mem_cIoo hcol hcolumn
+  have ha : p.1 ≠ C.column := by
+    intro heq
+    simp only [heq] at hbig
+    simp at hbig
+  have hb : p.1 ≠ finRotate n C.column := by
+    intro heq
+    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
+      (Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm) (heq ▸ hcolumn)
+  exact G.initialPair_notMem_XSet_away C P Q hP hQ ha hb hp
+
+/-- An initial-side hexagon on column `C.column` whose squares lie in the union of the covered
+squares of an initial-side pentagon pair covers no `X`-marking. -/
+private theorem initialPair_disjoint_initialHexagon_XSet {x y z u v : GridState n} {s s' : Fin n}
+    (P : GridInitialPentagonBetween C.column C.turnRow x y)
+    (Q : GridInitialPentagonBetween C.column C.oppositeTurnRow y z)
+    (hP : Disjoint P.coveredSquares G.XSet)
+    (hQ : Disjoint Q.coveredSquares
+      (G.swapColumns C.column (finRotate n C.column)).XSet)
+    (H : GridInitialHexagonBetween C.column s s' u v)
+    (hcov : ∀ {p : Fin n × Fin n}, p ∈ H.toGridRectangleBetween.toGridRectangle.coveredSquares →
+      p ∈ P.toGridRectangle.coveredSquares ∪ Q.toGridRectangle.coveredSquares) :
+    Disjoint H.coveredSquares G.XSet := by
+  rw [Finset.disjoint_right]
+  intro p hpX hp
+  obtain ⟨hb, hp⟩ := (H.mem_coveredSquares p).mp hp
+  have ha : p.1 ≠ C.column := by
+    intro heq
+    have hcolumn := ((H.toGridRectangle.mem_coveredSquares p).mp hp).1
+    simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, H.left_eq, heq] at hcolumn
+    simp at hcolumn
+  exact G.initialPair_notMem_XSet_away C P Q hP hQ ha hb (hcov hp) hpX
+
 /-- The initial-side pentagon recut is a counted hexagon--rectangle composite when the
 forward pentagon and the reverse pentagon avoid their respective `X`-markings. -/
 theorem recutHexagonRectangle_mem_hexagonRectangleDecompositions {x y z : GridState n}
@@ -247,17 +294,8 @@ theorem recutHexagonRectangle_mem_hexagonRectangleDecompositions {x y z : GridSt
       have hside := P.recutHexagonRectangle_hexagon_isLeft Q hcol hP hQ
       simp only [F, hhex, Sum.isLeft_inl, Bool.true_eq_false] at hside
     | inr H =>
-      rw [GridCommutationHexagonBetween.coveredSquares_inr, Finset.disjoint_right]
-      intro p hpX hp
-      obtain ⟨hb, hp⟩ := (H.mem_coveredSquares p).mp hp
-      have ha : p.1 ≠ C.column := by
-        intro heq
-        have hcolumn := ((H.toGridRectangle.mem_coveredSquares p).mp hp).1
-        simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-          GridRectangleBetween.toGridRectangle_right, H.left_eq, heq] at hcolumn
-        simp at hcolumn
-      apply G.initialPair_notMem_XSet_away C P Q hPX hQX ha hb _ hpX
-      apply hcov
+      rw [GridCommutationHexagonBetween.coveredSquares_inr]
+      refine G.initialPair_disjoint_initialHexagon_XSet C P Q hPX hQX H fun hp => hcov ?_
       apply Finset.mem_union_left
       simpa only [hhex, GridCommutationHexagonBetween.toGridRectangleBetween_inr] using hp
   -- The remaining rectangle lies strictly between the two terminal sides, so it
@@ -267,16 +305,7 @@ theorem recutHexagonRectangle_mem_hexagonRectangleDecompositions {x y z : GridSt
     have hcolumn := ((F.rectangle.toGridRectangle.mem_coveredSquares p).mp hp).1
     simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
       GridRectangleBetween.toGridRectangle_right, hsecondLeft, hsecondRight] at hcolumn
-    have hbig := Grid.cIco_subset_of_mem_cIoo hcol hcolumn
-    have ha : p.1 ≠ C.column := by
-      intro heq
-      simp only [heq] at hbig
-      simp at hbig
-    have hb : p.1 ≠ finRotate n C.column := by
-      intro heq
-      exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
-        (Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm) (heq ▸ hcolumn)
-    exact G.initialPair_notMem_XSet_away C P Q hPX hQX ha hb
+    exact G.initialPair_notMem_XSet_of_mem_cIco C P Q hPX hQX hcol hcolumn
       (hcov (Finset.mem_union_right _ hp)) hpX
 
 /-- The complementary initial-side pentagon recut is a counted rectangle--hexagon composite
@@ -318,33 +347,15 @@ theorem recutRectangleHexagon_mem_rectangleHexagonDecompositions {x y z : GridSt
     have hcolumn := ((F.rectangle.toGridRectangle.mem_coveredSquares p).mp hp).1
     simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
       GridRectangleBetween.toGridRectangle_right, hfirstLeft, hfirstRight] at hcolumn
-    have hbig := Grid.cIco_subset_of_mem_cIoo hcol hcolumn
-    have ha : p.1 ≠ C.column := by
-      intro heq
-      simp only [heq] at hbig
-      simp at hbig
-    have hb : p.1 ≠ finRotate n C.column := by
-      intro heq
-      exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
-        (Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm) (heq ▸ hcolumn)
-    exact G.initialPair_notMem_XSet_away C P Q hPX hQX ha hb
+    exact G.initialPair_notMem_XSet_of_mem_cIco C P Q hPX hQX hcol hcolumn
       (hcov (Finset.mem_union_left _ hp)) hpX
   · cases hhex : F.hexagon with
     | inl H =>
       have hside := P.recutRectangleHexagon_hexagon_isLeft Q hcol hP hQ
       simp only [F, hhex, Sum.isLeft_inl, Bool.true_eq_false] at hside
     | inr H =>
-      rw [GridCommutationHexagonBetween.coveredSquares_inr, Finset.disjoint_right]
-      intro p hpX hp
-      obtain ⟨hb, hp⟩ := (H.mem_coveredSquares p).mp hp
-      have ha : p.1 ≠ C.column := by
-        intro heq
-        have hcolumn := ((H.toGridRectangle.mem_coveredSquares p).mp hp).1
-        simp only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-          GridRectangleBetween.toGridRectangle_right, H.left_eq, heq] at hcolumn
-        simp at hcolumn
-      apply G.initialPair_notMem_XSet_away C P Q hPX hQX ha hb _ hpX
-      apply hcov
+      rw [GridCommutationHexagonBetween.coveredSquares_inr]
+      refine G.initialPair_disjoint_initialHexagon_XSet C P Q hPX hQX H fun hp => hcov ?_
       apply Finset.mem_union_right
       simpa only [hhex, GridCommutationHexagonBetween.toGridRectangleBetween_inr] using hp
 
@@ -421,9 +432,8 @@ theorem recutHexagonRectangle_mem_unpairedHexagonComposites {x y z : GridState n
     P.recutHexagonRectangle_toRectangleDecomposition Q hcol hP hQ
   have hrecut : D.IsRecut F.toRectangleDecomposition :=
     hF.symm ▸ D.isRecut_recut hone hP hQ
-  have hsymm := hrecut.symm hone hP hQ
+  have hsymm := hrecut.symm hP hQ
   have honeF := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-    (D.target_ne_source_of_hasOneCommonSide hone)
   rw [G.mem_unpairedHexagonComposites C,
     G.inl_mem_hexagonCompositeDecompositions C,
     GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
@@ -432,7 +442,7 @@ theorem recutHexagonRectangle_mem_unpairedHexagonComposites {x y z : GridState n
   intro E _ hE
   have heq : E.toRectangleDecomposition = D :=
     (F.toRectangleDecomposition.existsUnique_isRecut honeF
-      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hone hP hQ)
+      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hP hQ)
   exact G.initialPair_ne_composite C P Q (Grid.ne_right_of_mem_cIoo hcol).symm hP hQ E heq
 
 /-- The counted complementary initial-side recut has no counted composite recut partner. -/
@@ -456,9 +466,8 @@ theorem recutRectangleHexagon_mem_unpairedHexagonComposites {x y z : GridState n
     P.recutRectangleHexagon_toRectangleDecomposition Q hcol hP hQ
   have hrecut : D.IsRecut F.toRectangleDecomposition :=
     hF.symm ▸ D.isRecut_recut hone hP hQ
-  have hsymm := hrecut.symm hone hP hQ
+  have hsymm := hrecut.symm hP hQ
   have honeF := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-    (D.target_ne_source_of_hasOneCommonSide hone)
   rw [G.mem_unpairedHexagonComposites C,
     G.inr_mem_hexagonCompositeDecompositions C,
     GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
@@ -468,7 +477,7 @@ theorem recutRectangleHexagon_mem_unpairedHexagonComposites {x y z : GridState n
   intro E _ hE
   have heq : E.toRectangleDecomposition = D :=
     (F.toRectangleDecomposition.existsUnique_isRecut honeF
-      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hone hP hQ)
+      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hP hQ)
   exact G.initialPair_ne_composite C P Q (Grid.ne_right_of_mem_cIoo hcol) hP hQ E heq
 
 /-- Two counted initial-side pentagons for an actual commutation and its reverse admit

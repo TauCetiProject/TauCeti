@@ -57,7 +57,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
 * `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/p⋆ + 1/n = 1/p` of `W^{1,p}`
-  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`), and
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
+  (`TauCeti.ne_top_of_inv_add_inv_eq_inv`), and
   multiplying by `n` gives `n/p⋆ + 1 = n/p`
   (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`).
 
@@ -237,6 +238,12 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
 
+/-- For `q < ∞` and any `s`, there is an exponent `r < ∞` with `1/r = 1/q + s`: the intermediate
+exponent of a chain of Sobolev embeddings ending in `L^q`. -/
+theorem exists_inv_eq_inv_add_of_ne_top {q : ENNReal} (hq : q ≠ ∞) (s : ENNReal) :
+    ∃ r : ENNReal, r ≠ ∞ ∧ r⁻¹ = q⁻¹ + s :=
+  ⟨(q⁻¹ + s)⁻¹, ENNReal.inv_ne_top.2 (by simp [hq]), inv_inv _⟩
+
 omit [Fact (1 ≤ p)] in
 /-- The exponent relation `1/p⋆ + 1/n = 1/p` of the Sobolev embedding of `W^{1,p}` in dimension
 `n`, read in `ℝ`. No finiteness hypothesis on `p⋆` is needed: at `p⋆ = ∞` the relation forces
@@ -255,6 +262,13 @@ theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
     (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : n ≠ 0 :=
   Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <|
     ne_top_of_le_ne_top (ENNReal.inv_ne_top.2 hp) (hexp ▸ le_add_self)
+
+omit [Fact (1 ≤ p)] in
+/-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only for finite `p`. -/
+theorem ne_top_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : p ≠ ∞ := by
+  rintro rfl
+  rw [ENNReal.inv_top, add_eq_zero] at hexp
+  exact ENNReal.natCast_ne_top n (ENNReal.inv_eq_zero.1 hexp.2)
 
 omit [Fact (1 ≤ p)] in
 /-- Multiplying the exponent relation `1/p⋆ + 1/n = 1/p` by the dimension `n` gives
@@ -283,17 +297,13 @@ theorem W1p.eLpNorm_value_le_mul_enorm_gradient (hpstar : pstar ≠ ∞)
     eLpNorm (W1p.value u : E → ℝ) pstar (mu.restrict Omega) ≤
       SNormLESNormFDerivOfEqConst ℝ mu p.toReal * ‖W1p.gradient u‖ₑ := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hncast : ((finrank ℝ E : ℕ) : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
   have hn : 0 < finrank ℝ E := by
     rcases Nat.eq_zero_or_pos (finrank ℝ E) with h | h
     · rw [h, Nat.cast_zero, ENNReal.inv_zero, add_top, eq_comm, ENNReal.inv_eq_top] at hexp
       rw [hexp] at hp1
       simp at hp1
     · exact h
-  have hpne : p ≠ ∞ := by
-    intro h
-    rw [h, ENNReal.inv_top, add_eq_zero] at hexp
-    exact hncast (ENNReal.inv_eq_zero.1 hexp.2)
+  have hpne : p ≠ ∞ := ne_top_of_inv_add_inv_eq_inv hexp
   have hpstar0 : pstar ≠ 0 := by
     intro h
     rw [h, ENNReal.inv_zero, top_add, eq_comm, ENNReal.inv_eq_top] at hexp

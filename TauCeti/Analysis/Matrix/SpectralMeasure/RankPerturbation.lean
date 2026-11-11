@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.SpectralMeasure
+public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!

@@ -192,8 +192,7 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
             (B * (A : Matrix (Fin p) (Fin p) ℝ)).trace ≤ τ := by
   let A₀ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
     ⟨1, Matrix.isHermitian_iff_isSelfAdjoint.1 Matrix.isHermitian_one⟩
-  obtain ⟨ε, hε, hball⟩ :=
-    Metric.isOpen_iff.1 (isOpen_setOfPred_posDefMatrix p) A₀ Matrix.PosDef.one
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (isOpen_posDefMatrix p) A₀ Matrix.PosDef.one
   set r := min (ε / 2) (δ / 3)
   have hr0 : 0 < r := lt_min (half_pos hε) (by positivity)
   set K := Metric.closedBall A₀ r

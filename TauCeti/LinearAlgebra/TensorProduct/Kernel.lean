@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
@@ -33,6 +34,8 @@ where flatness of the cokernel is its torsion-freeness.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
   linear map is the extension of its kernel**, with no hypothesis on the coefficient algebra.
 * `LinearMap.ker_baseChange_of_flat_quotient_range`: the same for a map with flat cokernel.
+* `LinearMap.finite_tensorProduct_ker`: the scalar extension of the kernel of a surjection
+  is finite if the extended source is finite and the extended target is finitely presented.
 
 ## References
 
@@ -85,5 +88,15 @@ theorem ker_baseChange_of_flat_quotient_range (f : M →ₗ[R] N) [Module.Flat R
   rw [← f.subtype_comp_rangeRestrict, baseChange_comp, ker_comp_of_ker_eq_bot _ (ker_eq_bot.2 hinj),
     ker_baseChange_of_surjective A _ f.surjective_rangeRestrict, ker_comp_of_ker_eq_bot _
       (range f).ker_subtype]
+
+/-- For a flat scalar extension, the extended kernel of a surjection is finite whenever the
+extended source is finite and the extended target is finitely presented. -/
+theorem finite_tensorProduct_ker {S : Type*} [Ring S] [Algebra R S] [Module.Flat R S]
+    [Module.Finite S (S ⊗[R] M)] [Module.FinitePresentation S (S ⊗[R] N)]
+    (f : M →ₗ[R] N) (hf : Function.Surjective f) : Module.Finite S (S ⊗[R] ker f) := by
+  have hfg := Module.FinitePresentation.fg_ker (f.baseChange S) (f.lTensor_surjective S hf)
+  rw [ker_baseChange_of_flat] at hfg
+  have : Module.Finite S ((ker f).baseChange S) := Module.Finite.iff_fg.mpr hfg
+  exact Module.Finite.equiv (Submodule.toBaseChange.toLinearEquiv S (ker f)).symm
 
 end LinearMap

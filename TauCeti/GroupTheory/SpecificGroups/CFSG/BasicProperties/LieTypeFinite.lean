@@ -50,17 +50,14 @@ namespace TauCeti
 
 namespace ValidLieTypeIndex
 
-/-- **Endomorphisms with an iterate equal to a positive iterate of the Frobenius have finitely many
-fixed points.** If `F ^ r = Frob_q ^ k` on the ambient group of a valid Lie-type index with
-`k ≠ 0`, then every point fixed by `F` has its matrix entries among the roots of
-`X ^ (q ^ k) - X`, so the fixed subgroup of `F` is finite. -/
-theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIndex)
+/-- The fixed subgroup is finite on the ordinary and graph-twisted families. -/
+private theorem finite_fixedSubgroup_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
+    (hd : ¬ d.1.UsesHalfFrobenius)
     {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
     (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
-  -- On each constructor the Frobenius is that of the family carrier, a subgroup of `GL n` over
-  -- the closure on which it raises every entry to the field order.
+  -- On each constructor the Frobenius is that of the family carrier.
   obtain ⟨d, hv⟩ := d
-  cases d
+  cases d <;> try (simp [LieTypeIndex.usesHalfFrobenius_iff] at hd; done)
   · rw [frobenius_A, GraphTwistedIndex.frobenius_A] at hF
     exact Subgroup.finite_fixedSubgroup_of_iterate_eq_iterate _
       (LieTypeIndex.one_lt_fieldOrder _) hk (TypeALieIndex.coe_frobenius_apply _) hF
@@ -100,6 +97,15 @@ theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIn
   · rw [frobenius_trialityD4, GraphTwistedIndex.frobenius_trialityD4] at hF
     exact Subgroup.finite_fixedSubgroup_of_iterate_eq_iterate _
       (LieTypeIndex.one_lt_fieldOrder _) hk (TypeTrialityD4LieIndex.coe_frobenius_apply _) hF
+
+/-- The fixed subgroup is finite on the Suzuki, Ree and Tits families. -/
+private theorem finite_fixedSubgroup_of_usesHalfFrobenius (d : ValidLieTypeIndex)
+    (hd : d.1.UsesHalfFrobenius)
+    {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
+    (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
+  -- On each constructor the Frobenius is that of the family carrier.
+  obtain ⟨d, hv⟩ := d
+  cases d <;> try (simp [LieTypeIndex.usesHalfFrobenius_iff] at hd; done)
   · rw [frobenius_suzuki] at hF
     exact Subgroup.finite_fixedSubgroup_of_iterate_eq_iterate _
       (LieTypeIndex.one_lt_fieldOrder _) hk (RankTwoBLieIndex.coe_frobenius_apply _) hF
@@ -112,6 +118,17 @@ theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIn
   · rw [frobenius_tits] at hF
     exact Subgroup.finite_fixedSubgroup_of_iterate_eq_iterate _ one_lt_two hk
       (TitsLieIndex.coe_frobenius_apply _) hF
+
+/-- **Endomorphisms with an iterate equal to a positive iterate of the Frobenius have finitely many
+fixed points.** If `F ^ r = Frob_q ^ k` on the ambient group of a valid Lie-type index with
+`k ≠ 0`, then every point fixed by `F` has its matrix entries among the roots of
+`X ^ (q ^ k) - X`, so the fixed subgroup of `F` is finite. -/
+theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIndex)
+    {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
+    (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
+  by_cases hd : d.1.UsesHalfFrobenius
+  · exact finite_fixedSubgroup_of_usesHalfFrobenius d hd hk hF
+  · exact finite_fixedSubgroup_of_not_usesHalfFrobenius d hd hk hF
 
 /-- **The Steinberg fixed points of every valid Lie-type index are finite.** The Steinberg
 endomorphism squares to the Frobenius on the Suzuki, Ree and Tits families, and its twist-order

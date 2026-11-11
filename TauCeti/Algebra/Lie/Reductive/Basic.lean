@@ -171,15 +171,15 @@ theorem isSolvable_normalizer_center :
     ← le_bot_iff, ← hcentral]
   exact LieSubmodule.mono_lie hle hle
 
-variable [IsNoetherian K L] [LieAlgebra.HasCentralRadical K L]
+variable [LieAlgebra.HasCentralRadical K L]
 
 /-- **Over a reductive Lie algebra the centre is its own normalizer.** The normalizer is a solvable
 ideal by `TauCeti.isSolvable_normalizer_center`, hence lies in the radical, which is the centre. -/
 theorem normalizer_center_eq_center :
     (LieAlgebra.center K L).normalizer = LieAlgebra.center K L := by
   refine le_antisymm ?_ (LieSubmodule.le_normalizer _)
-  have h := (LieIdeal.solvable_iff_le_radical K L (LieAlgebra.center K L).normalizer).1
-    (isSolvable_normalizer_center K L)
+  have h : (LieAlgebra.center K L).normalizer ≤ LieAlgebra.radical K L :=
+    le_sSup (isSolvable_normalizer_center K L)
   rwa [LieAlgebra.radical_eq_center] at h
 
 /-- A convenient elementwise form of `TauCeti.normalizer_center_eq_center`: over a reductive Lie

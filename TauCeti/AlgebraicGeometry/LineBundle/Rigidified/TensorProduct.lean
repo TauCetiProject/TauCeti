@@ -82,14 +82,15 @@ abbrev tensorProduct (P Q : RigidifiedLineBundle s) : RigidifiedLineBundle s whe
 
 /-- The line bundle of a tensor product of rigidified line bundles is the tensor product of their
 line bundles. -/
-@[simp]
+-- Not `@[simp]`: `simp` already unfolds the reducible `tensorProduct` and reaches the same normal
+-- form.
 lemma tensorProduct_lineBundle (P Q : RigidifiedLineBundle s) :
     (tensorProduct P Q).lineBundle = InvertibleSheaf.tensorProduct P.lineBundle Q.lineBundle :=
   (rfl)
 
 /-- The rigidification of a tensor product of rigidified line bundles is
 `s^* (L ⊗ K) ≅ s^* L ⊗ s^* K ≅ 𝒪_T ⊗ 𝒪_T ≅ 𝒪_T`. -/
-@[simp]
+-- Not `@[simp]`, for the same reason as `tensorProduct_lineBundle`.
 lemma tensorProduct_rigidification (P Q : RigidifiedLineBundle s) :
     (tensorProduct P Q).rigidification =
       (Scheme.Modules.pullback s).mapIso (InvertibleSheaf.tensorProductObjIso _ _) ≪≫

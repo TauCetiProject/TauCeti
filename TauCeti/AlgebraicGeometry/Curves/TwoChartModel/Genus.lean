@@ -65,11 +65,9 @@ theorem genus_eq_genus (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F
     (twoChartModel hF hx).genus k = genus k F := by
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   have := isNoetherian (hF := hF) (hx := hx) hxt
-  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
-  have hF' : IsFunctionField k (twoChartModel hF hx).functionField :=
-    (isFunctionField_functionField_iff k).mpr (topologicalKrullDim_eq_one hxt)
   rw [SchemeWeilDivisor.genus_eq_genus_functionField (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt) hF' ((functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk)]
+    (coheight_le_one hxt) (isFunctionField_functionField hxt)
+    (isIntegrallyClosedIn_functionField hxt hk)]
   exact (genus_eq_of_ringEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
     (functionFieldEquiv hxt).commutes).symm
 
@@ -92,8 +90,7 @@ theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
   have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
     (topologicalKrullDim_eq_one hxt)
   rw [SchemeWeilDivisor.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one k
-      ((functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk)
-      ((genus_eq_genus hxt hk).trans hg) _ hn,
+      (isIntegrallyClosedIn_functionField hxt hk) ((genus_eq_genus hxt hk).trans hg) _ hn,
     ← degree_equivPlace hxt, Equiv.apply_symm_apply]
 
 end TauCeti.AlgebraicGeometry.twoChartModel

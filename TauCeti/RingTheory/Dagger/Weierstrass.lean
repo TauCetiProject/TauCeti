@@ -18,12 +18,18 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 /-!
 # Multivariable overconvergent Weierstrass division
 
-Let `K` be a complete ultrametric normed field. A series in `K⟨X, Y⟩†`, with `Y = X none`,
-which is distinguished of degree `s` in `Y` at unit radius and has a unit coefficient in
-degree `s`, divides every overconvergent series. The quotient is overconvergent in all
-variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
+Let `K` be a complete ultrametric normed field, except where noted below. A series in `K⟨X, Y⟩†`,
+with `Y = X none`, which is distinguished of degree `s` in `Y` at unit radius and has a unit
+coefficient in degree `s`, divides every overconvergent series. The quotient is overconvergent in
+all variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
 in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coefficients of the
 remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
+Uniqueness, and the statements deduced from it alone (the comparison of divisibility, descent of
+irreducibility, and the implication from primality in `K⟨X, Y⟩†` to primality in `K⟨X⟩†[Y]`), need
+only that `K` is an ultrametric normed commutative ring with multiplicative norm. All other results,
+including existence, the norm bounds, the quotient identification, the converse direction of
+primality and the integral-quotient results, assume that `K` is a complete ultrametric normed
+field.
 
 Existence uses unequal radii: first select `1 < ρ ≤ r` preserving distinguishedness, then
 apply fixed-radius division over the Banach ring `K{X/ρ}` at radius `r` in `Y`. The quotient
@@ -42,7 +48,9 @@ descends from `K⟨X, Y⟩†` to `K⟨X⟩†[Y]`, and `ω` is prime in one rin
 Dividing one variable at a time by its minimal polynomial over `K`, a polynomial with constant
 coefficients and hence distinguished at unit radius, shows that every quotient of `K⟨X⟩†` in
 finitely many variables which is integral over `K` is spanned by the images of polynomials
-(`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`).
+(`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`). Consequently two
+algebra homomorphisms from `K⟨X⟩†` into an algebra integral over `K` that agree on the variables
+are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
 
 ## References
 
@@ -64,6 +72,96 @@ namespace TauCeti.Dagger
 open _root_.MvPowerSeries
 open TauCeti.MvPowerSeries (isRestricted_of_le)
 open washnitzerAlgebra (optionSeries toTate)
+
+section UniquenessOverRing
+
+variable {σ K : Type*} [NormedCommRing K] [IsUltrametricDist K] [NormMulClass K]
+
+local notation "W" => washnitzerAlgebra σ K
+local notation "W'" => washnitzerAlgebra (Option σ) K
+local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
+
+/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
+with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+`q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
+theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    {r r' : Polynomial W} (hr : r.degree < (s : WithBot ℕ))
+    (hr' : r'.degree < (s : WithBot ℕ))
+    (h : optionSeries q * optionSeries g + (r : PowerSeries W) =
+      optionSeries q' * optionSeries g + (r' : PowerSeries W)) : q = q' ∧ r = r' := by
+  have hmap := congrArg (PowerSeries.map (toTate σ K : washnitzerAlgebra σ K →+*
+      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))) h
+  simp only [map_add, map_mul, washnitzerAlgebra.map_toTate_optionSeries] at hmap
+  have hz (p : Polynomial W) (hp : p.degree < (s : WithBot ℕ)) (m : ℕ) (hm : s ≤ m) :
+      PowerSeries.coeff m
+        (PowerSeries.map (toTate σ K : washnitzerAlgebra σ K →+*
+      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) (p : PowerSeries W)) = 0 := by
+    simp [Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))]
+  obtain ⟨hqq, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add zero_lt_one
+    (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).2
+    (restrictedOptionEquiv (toTate _ K q')).2 (hz r hr) (hz r' hr') hmap
+  refine ⟨washnitzerAlgebra.optionSeries_injective ?_, ?_⟩
+  · apply PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
+      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) washnitzerAlgebra.toTate_injective
+    simpa only [washnitzerAlgebra.map_toTate_optionSeries] using hqq
+  · have he := PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
+      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))
+      washnitzerAlgebra.toTate_injective hrr
+    exact Polynomial.coe_injective _ he
+
+namespace washnitzerAlgebra
+
+variable {s : ℕ} {ω : Polynomial (washnitzerAlgebra σ K)}
+
+/-- Divisibility of polynomials by a distinguished monic polynomial `ω` is unchanged on passing
+to `K⟨X, Y⟩†`. This holds without assuming `K` complete. -/
+theorem polynomialToOption_dvd_iff
+    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
+    (hm : ω.IsMonicOfDegree s) (p : Polynomial W) :
+    polynomialToOption ω ∣ polynomialToOption p ↔ ω ∣ p := by
+  have : Nontrivial Tate := nontrivial_of_ne _ _ hω.coeff_ne_zero
+  have : Nontrivial W := (toTate σ K).domain_nontrivial
+  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun h ↦ map_dvd _ h⟩
+  have hg : PowerSeries.IsDistinguished 1 s
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
+    rwa [restrictedOptionEquiv_toTate_polynomialToOption]
+  have hdeg : (p %ₘ ω).degree < (s : WithBot ℕ) := by
+    simpa [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq] using
+      Polynomial.degree_modByMonic_lt p hm.monic
+  -- Compare `p = a * ω` in `W'` with the polynomial division `p = (p /ₘ ω) * ω + p %ₘ ω`.
+  have heq : optionSeries a * optionSeries (polynomialToOption ω) + ((0 : Polynomial W) :
+      PowerSeries W) = optionSeries (polynomialToOption (p /ₘ ω)) *
+        optionSeries (polynomialToOption ω) + ((p %ₘ ω : Polynomial W) : PowerSeries W) := by
+    simpa [ha, mul_comm, add_comm] using congrArg (fun x ↦ optionSeries (polynomialToOption x))
+      (Polynomial.modByMonic_add_div p ω).symm
+  have hzero := (eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished hg
+    (by simp [Polynomial.degree_zero]) hdeg heq).2
+  exact (Polynomial.modByMonic_eq_zero_iff_dvd hm.monic).mp hzero.symm
+
+/-- A distinguished monic polynomial which is irreducible in `K⟨X, Y⟩†` is irreducible in
+`K⟨X⟩†[Y]`. -/
+theorem irreducible_of_irreducible_polynomialToOption
+    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
+    (hm : ω.IsMonicOfDegree s) (h : Irreducible (polynomialToOption ω)) : Irreducible ω := by
+  have : Nontrivial Tate := nontrivial_of_ne _ _ hω.coeff_ne_zero
+  have : Nontrivial W := (toTate σ K).domain_nontrivial
+  exact h.of_map_of_dvd hm.ne_zero fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
+
+/-- If a distinguished monic polynomial is prime in `K⟨X, Y⟩†`, it is prime in `K⟨X⟩†[Y]`. This
+holds without assuming `K` complete. -/
+theorem prime_of_prime_polynomialToOption
+    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
+    (hm : ω.IsMonicOfDegree s) (h : Prime (polynomialToOption ω)) : Prime ω := by
+  have hdvd := polynomialToOption_dvd_iff hω hm
+  refine ⟨fun h0 ↦ h.ne_zero (by simp [h0]), fun hu ↦ h.not_isUnit (hu.map _), fun a b hab ↦ ?_⟩
+  simpa only [← hdvd] using
+    h.dvd_or_dvd (by simpa only [map_mul] using map_dvd polynomialToOption hab)
+
+end washnitzerAlgebra
+
+end UniquenessOverRing
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
@@ -99,7 +197,7 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
     (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hGmap) (restrictedOptionEquiv fC).2
   -- Pull `Q` and `R` back to the overconvergent algebras and compare formal series.
   let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
-    washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl
+    (washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl).toRingHom
   refine ⟨washnitzerAlgebra.ofRestricted hρ (le_splitRadius hρr)
     ((restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩), PowerSeries.map φ R,
     fun m hm ↦ by simp [hR m hm], washnitzerAlgebra.map_val_injective ?_⟩
@@ -181,37 +279,6 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
   exact (washnitzerAlgebra.norm_toTate (r.coeff i)).symm.trans_le
     (hle.trans ((le_max_right _ _).trans hnorm.ge))
 
-omit [CompleteSpace K] in
-/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
-with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
-`q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
-theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
-    {r r' : Polynomial W} (hr : r.degree < (s : WithBot ℕ))
-    (hr' : r'.degree < (s : WithBot ℕ))
-    (h : optionSeries q * optionSeries g + (r : PowerSeries W) =
-      optionSeries q' * optionSeries g + (r' : PowerSeries W)) : q = q' ∧ r = r' := by
-  have hmap := congrArg (PowerSeries.map (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))) h
-  simp only [map_add, map_mul, washnitzerAlgebra.map_toTate_optionSeries] at hmap
-  have hz (p : Polynomial W) (hp : p.degree < (s : WithBot ℕ)) (m : ℕ) (hm : s ≤ m) :
-      PowerSeries.coeff m
-        (PowerSeries.map (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) (p : PowerSeries W)) = 0 := by
-    simp [Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))]
-  obtain ⟨hqq, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add zero_lt_one
-    (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).2
-    (restrictedOptionEquiv (toTate _ K q')).2 (hz r hr) (hz r' hr') hmap
-  refine ⟨washnitzerAlgebra.optionSeries_injective ?_, ?_⟩
-  · apply PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) washnitzerAlgebra.toTate_injective
-    simpa only [washnitzerAlgebra.map_toTate_optionSeries] using hqq
-  · have he := PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))
-      washnitzerAlgebra.toTate_injective hrr
-    exact Polynomial.coe_injective _ he
-
 /-- **Unique overconvergent Weierstrass division**, with the quotient and polynomial remainder
 bundled as a unique pair. No characteristic or nontrivial-norm assumption is required. -/
 theorem existsUnique_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
@@ -231,38 +298,6 @@ namespace washnitzerAlgebra
 section Polynomial
 
 variable {s : ℕ} {ω : Polynomial (washnitzerAlgebra σ K)}
-
-omit [CompleteSpace K] in
-/-- Divisibility of polynomials by a distinguished monic polynomial `ω` is unchanged on passing
-to `K⟨X, Y⟩†`. This holds without assuming `K` complete. -/
-theorem polynomialToOption_dvd_iff
-    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
-    (hm : ω.IsMonicOfDegree s) (p : Polynomial W) :
-    polynomialToOption ω ∣ polynomialToOption p ↔ ω ∣ p := by
-  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun h ↦ map_dvd _ h⟩
-  have hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
-    rwa [restrictedOptionEquiv_toTate_polynomialToOption]
-  have hdeg : (p %ₘ ω).degree < (s : WithBot ℕ) := by
-    simpa [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq] using
-      Polynomial.degree_modByMonic_lt p hm.monic
-  -- Compare `p = a * ω` in `W'` with the polynomial division `p = (p /ₘ ω) * ω + p %ₘ ω`.
-  have heq : optionSeries a * optionSeries (polynomialToOption ω) + ((0 : Polynomial W) :
-      PowerSeries W) = optionSeries (polynomialToOption (p /ₘ ω)) *
-        optionSeries (polynomialToOption ω) + ((p %ₘ ω : Polynomial W) : PowerSeries W) := by
-    simpa [ha, mul_comm, add_comm] using congrArg (fun x ↦ optionSeries (polynomialToOption x))
-      (Polynomial.modByMonic_add_div p ω).symm
-  have hzero := (eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished hg
-    (by simp [Polynomial.degree_zero]) hdeg heq).2
-  exact (Polynomial.modByMonic_eq_zero_iff_dvd hm.monic).mp hzero.symm
-
-omit [CompleteSpace K] in
-/-- A distinguished monic polynomial which is irreducible in `K⟨X, Y⟩†` is irreducible in
-`K⟨X⟩†[Y]`. -/
-theorem irreducible_of_irreducible_polynomialToOption
-    (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
-    (hm : ω.IsMonicOfDegree s) (h : Irreducible (polynomialToOption ω)) : Irreducible ω :=
-  h.of_map_of_dvd hm.ne_zero fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
 
 /-- Every overconvergent series is congruent modulo a distinguished monic polynomial `ω` to a
 polynomial in `Y` of degree less than that of `ω`, with coefficients in `K⟨X⟩†`. -/
@@ -348,11 +383,8 @@ theorem prime_polynomialToOption_iff
     (hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate))
     (hm : ω.IsMonicOfDegree s) : Prime (polynomialToOption ω) ↔ Prime ω := by
   have hdvd := polynomialToOption_dvd_iff hω hm
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero (by simp [h0]), fun hu ↦ h.not_isUnit (hu.map _),
-    fun a b hab ↦ ?_⟩, fun h ↦ ⟨fun h0 ↦ h.ne_zero (polynomialToOption_injective (by simp [h0])),
-    fun hu ↦ h.not_isUnit ?_, fun a b hab ↦ ?_⟩⟩
-  · simpa only [← hdvd] using
-      h.dvd_or_dvd (by simpa only [map_mul] using map_dvd polynomialToOption hab)
+  refine ⟨prime_of_prime_polynomialToOption hω hm, fun h ↦ ⟨fun h0 ↦ h.ne_zero
+    (polynomialToOption_injective (by simp [h0])), fun hu ↦ h.not_isUnit ?_, fun a b hab ↦ ?_⟩⟩
   · -- A unit `polynomialToOption ω` divides `polynomialToOption 1`, so `ω` divides `1`.
     exact isUnit_of_dvd_one ((hdvd 1).mp (by simpa using hu.dvd))
   · -- Reduce `a` and `b` to polynomial remainders modulo `ω`.
@@ -491,6 +523,28 @@ theorem surjective_mkₐ_comp_ofMvPolynomial {σ : Type*} [Finite σ]
     Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K)) :=
   Finite.induction_empty_option (P := PolynomialsSurject (K := K))
     polynomialsSurject_of_equiv polynomialsSurject_of_isEmpty polynomialsSurject_option σ I
+
+/-- **Homomorphisms into integral algebras are determined by the variables.** Two `K`-algebra
+homomorphisms from the Monsky–Washnitzer algebra in finitely many variables into a `K`-algebra
+integral over `K`, for instance a finite-dimensional one, agree as soon as they agree on every
+variable. No continuity is assumed. -/
+theorem algHom_ext_of_isIntegral {σ : Type*} [Finite σ] {B : Type*} [CommRing B] [Algebra K B]
+    [Algebra.IsIntegral K B] {φ ψ : washnitzerAlgebra σ K →ₐ[K] B}
+    (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ := by
+  -- Both maps factor through the quotient by `ker φ ∩ ker ψ`, which embeds in `B × B`; there
+  -- every class has a polynomial representative, on which the two maps agree.
+  set I := RingHom.ker (φ.prod ψ)
+  have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ I) :=
+    Algebra.IsIntegral.of_injective (Ideal.kerLiftAlg (φ.prod ψ)) (Ideal.kerLiftAlg_injective _)
+  have hpoly : φ.comp (ofMvPolynomial σ K) = ψ.comp (ofMvPolynomial σ K) :=
+    MvPolynomial.algHom_ext fun i ↦ by simpa using h i
+  ext f
+  obtain ⟨p, hp⟩ := surjective_mkₐ_comp_ofMvPolynomial I (Ideal.Quotient.mk I f)
+  have hfp : (φ.prod ψ) (f - ofMvPolynomial σ K p) = 0 :=
+    Ideal.Quotient.eq.mp (by simpa using hp.symm)
+  simp only [map_sub, AlgHom.prod_apply, Prod.mk_sub_mk, Prod.mk_eq_zero, sub_eq_zero] at hfp
+  rw [hfp.1, hfp.2]
+  exact AlgHom.congr_fun hpoly p
 
 end IntegralQuotient
 

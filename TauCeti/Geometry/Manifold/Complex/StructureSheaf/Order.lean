@@ -42,6 +42,33 @@ namespace OpenPartialHomeomorph
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (x : X)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The analytic order in a chart of a section representing a nonzero germ is finite. -/
+private lemma analyticOrderAt_extend_comp_symm_ne_top (hx : x ∈ e.source)
+    {f : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x} (hf : f ≠ 0) {U : Opens X}
+    (hxU : x ∈ U) (s : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.obj (op U))
+    (hs : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ U x hxU s = f) :
+    analyticOrderAt (Function.extend Subtype.val s (fun _ => 0) ∘ e.symm) (e x) ≠ ⊤ := by
+  classical
+  let S := (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf
+  let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
+  have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
+  intro htop
+  have hzero : ∀ᶠ y in 𝓝 x, F y = 0 := by
+    filter_upwards [(e.continuousAt hx).eventually (analyticOrderAt_eq_top.mp htop),
+      e.open_source.mem_nhds hx] with y hy hye
+    simpa only [Function.comp_apply, e.left_inv hye] using hy
+  obtain ⟨V, hV, hVopen, hxV⟩ := eventually_nhds_iff.mp hzero
+  let W : Opens X := U ⊓ ⟨V, hVopen⟩
+  have hxW : x ∈ W := ⟨hxU, hxV⟩
+  have hres : S.map (homOfLE (inf_le_left : W ≤ U)).op s = 0 := by
+    apply holomorphicStructureSheaf.ext
+    intro y
+    rw [map_apply, holomorphicStructureSheaf.zero_apply, ← hF]
+    exact hV y y.2.2
+  apply hf
+  rw [← hs, ← S.germ_res_apply (homOfLE (inf_le_left : W ≤ U)) x hxW, hres, map_zero]
+
 /-- A nonzero holomorphic germ is not divisible by arbitrarily high powers of a centered
 chart coordinate. -/
 theorem exists_not_dvd_holomorphicCoordinateGerm_pow (hx : x ∈ e.source)
@@ -55,24 +82,8 @@ theorem exists_not_dvd_holomorphicCoordinateGerm_pow (hx : x ∈ e.source)
   have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
   have hA : AnalyticAt ℂ A (e x) :=
     e.analyticAt_holomorphicSection_extend_comp_symm he x hx U hxU s
-  -- Infinite analytic order would make the original germ zero on a smaller neighborhood.
-  have hfinite : analyticOrderAt A (e x) ≠ ⊤ := by
-    intro htop
-    have hzero : ∀ᶠ y in 𝓝 x, F y = 0 := by
-      filter_upwards [(e.continuousAt hx).eventually (analyticOrderAt_eq_top.mp htop),
-        e.open_source.mem_nhds hx] with y hy hye
-      simpa only [A, Function.comp_apply, e.left_inv hye] using hy
-    obtain ⟨V, hV, hVopen, hxV⟩ := eventually_nhds_iff.mp hzero
-    let W : Opens X := U ⊓ ⟨V, hVopen⟩
-    have hxW : x ∈ W := ⟨hxU, hxV⟩
-    have hres : S.map (homOfLE (inf_le_left : W ≤ U)).op s = 0 := by
-      apply holomorphicStructureSheaf.ext
-      intro y
-      rw [map_apply, holomorphicStructureSheaf.zero_apply, ← hF]
-      exact hV y y.2.2
-    apply hf
-    rw [← hs, ← S.germ_res_apply (homOfLE (inf_le_left : W ≤ U)) x hxW,
-      hres, map_zero]
+  have hfinite : analyticOrderAt A (e x) ≠ ⊤ :=
+    analyticOrderAt_extend_comp_symm_ne_top e x hx hf hxU s hs
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hfinite
   refine ⟨n + 1, fun hdiv => ?_⟩
   -- A putative divisibility relation gives an analytic factorization in the same chart.

@@ -16,7 +16,8 @@ import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 The image of the integer-ring units in `Kˣ / (Kˣ)²` consists exactly of the classes of even
 normalized valuation. The valuation modulo two descends to a surjective homomorphism on square
 classes, with this image as its kernel. Consequently the unit square classes have index two,
-including in residue characteristic two.
+including in residue characteristic two. They are also the image of the depth-zero unit filtration
+`U(K, 0)`, so their number is the relative index of the squares in `U(K, 0)`.
 
 This subgroup is the intended comparison target for the almost-everywhere reference images of
 the standard integral special orthogonal family in dimension at least three. Its index
@@ -165,6 +166,29 @@ theorem card_unitSquareClasses_dyadic [FinitePadicExtension K 2] :
       2 * Nat.card 𝓀[K] ^ absoluteRamificationIndex K 2 := by
   rw [absoluteRamificationIndex_eq_natCastValuation]
   exact card_unitSquareClasses K _
+
+/-- The unit square classes are the image of `U(K, 0)`, the units of valuation one, in the
+square-class quotient. -/
+theorem map_unitFiltration_zero_eq_unitSquareClasses :
+    (unitFiltration K 0).map (QuotientGroup.mk' (Subgroup.square Kˣ)) = unitSquareClasses K := by
+  ext c
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk'_surjective (Subgroup.square Kˣ) c
+  constructor
+  · rintro ⟨x, hx, hxa⟩
+    rw [← hxa, QuotientGroup.mk'_apply, mk_mem_unitSquareClasses_iff,
+      (normalizedValuation_eq_one_iff x).mpr ((mem_unitFiltration_zero x).mp hx), toAdd_one]
+    exact Even.zero
+  · rintro ⟨u, hu⟩
+    exact ⟨_, (mem_unitFiltration_zero _).mpr
+      ((Valuation.integer.integers (valuation K)).valuation_unit u), hu⟩
+
+/-- When two is nonzero, `U(K, 0)` has `2 · q ^ v_K(2)` classes modulo the squares of `Kˣ`, where
+`q` is the cardinality of the residue field. -/
+theorem relIndex_square_unitFiltration_zero (h2 : (2 : K) ≠ 0) :
+    (Subgroup.square Kˣ).relIndex (unitFiltration K 0) =
+      2 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  rw [← card_unitSquareClasses K h2, ← map_unitFiltration_zero_eq_unitSquareClasses,
+    ← Subgroup.relIndex_ker, QuotientGroup.ker_mk']
 
 section Padic
 

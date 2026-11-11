@@ -34,11 +34,9 @@ and the SAGBI criterion for presentations.
 * `MonomialOrder.isSAGBIBasis_iff_exists_mem_closure`: over a field, `B ⊆ A` is a SAGBI basis of
   `A` if and only if the leading exponent of every nonzero element of `A` is the leading exponent
   of a nonzero product of elements of `B`.
-* `MonomialOrder.IsSAGBIBasis.mem_span`: **subduction**, every element `f` of `A` is a linear
-  combination of products of elements of a SAGBI basis, each of leading exponent at most that of
-  `f`. Conversely such representations characterize SAGBI bases
-  (`MonomialOrder.isSAGBIBasis_iff_forall_mem_span`).
-* `MonomialOrder.IsSAGBIBasis.adjoin_eq`: a SAGBI basis of `A` generates `A` as an algebra.
+
+Bounded subduction representations and the fact that a SAGBI basis generates its algebra are
+proved in `TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction`.
 
 ## Implementation notes
 
@@ -378,67 +376,6 @@ theorem isSAGBIBasis_iff_exists_mem_closure :
     m.IsSAGBIBasis B A ↔ B ⊆ A ∧
       ∀ f ∈ A, f ≠ 0 → ∃ g ∈ Submonoid.closure B, g ≠ 0 ∧ m.degree g = m.degree f := by
   simp only [isSAGBIBasis_iff_degree_mem_closure, mem_closure_image_degree_iff]
-
-/-- **Subduction.** Every element `f` of a subalgebra `A` with SAGBI basis `B` is a `k`-linear
-combination of products of elements of `B` whose leading exponents are at most that of `f`. -/
-theorem IsSAGBIBasis.mem_span (h : m.IsSAGBIBasis B A) (hf : f ∈ A) :
-    f ∈ Submodule.span k {g ∈ Submonoid.closure B | m.degree g ≼[m] m.degree f} := by
-  -- Cancel the leading term of `f` by a scalar multiple of a product of elements of `B` with the
-  -- same leading exponent, and induct on the degree in the well-founded synonym order.
-  induction hd : m.toWithBotSyn (m.withBotDegree f) using WellFoundedLT.induction
-    generalizing f with
-  | ind d ih =>
-  subst hd
-  rcases eq_or_ne f 0 with rfl | hf0
-  · exact zero_mem _
-  obtain ⟨q, hq, hq0, hqf⟩ := (isSAGBIBasis_iff_exists_mem_closure.1 h).2 f hf hf0
-  have hqA : q ∈ A := (Submonoid.closure_le (S := A.toSubmonoid)).2 h.subset hq
-  obtain ⟨c, hc⟩ : ∃ c : k, c * m.leadingCoeff q = m.leadingCoeff f :=
-    ⟨_, div_mul_cancel₀ _ (m.leadingCoeff_ne_zero_iff.2 hq0)⟩
-  have hdeg : m.degree (c • q) ≼[m] m.degree f := hqf ▸ m.degree_smul_le
-  have hle : m.toWithBotSyn (m.withBotDegree (c • q)) ≤ m.toWithBotSyn (m.withBotDegree f) := by
-    rw [(m.withBotDegree_eq_coe_degree_iff f).2 hf0, toWithBotSyn_apply_coe]
-    exact (m.toWithBotSyn_withBotDegree_le_toSyn_degree _).trans (WithBot.coe_le_coe.2 hdeg)
-  have hcoeff : (c • q).coeff (m.degree f) = m.leadingCoeff f := by
-    rw [coeff_smul, ← hqf, smul_eq_mul, ← leadingCoeff, hc]
-  have hlt := m.withBotDegree_sub_lt hf0 hle hcoeff
-  have hsub : m.degree (f - c • q) ≼[m] m.degree f := m.degree_sub_le.trans (sup_le le_rfl hdeg)
-  have h₁ : f - c • q ∈
-      Submodule.span k {g ∈ Submonoid.closure B | m.degree g ≼[m] m.degree f} :=
-    Submodule.span_mono (Set.ofPred_subset_ofPred.2 fun _ hg ↦ ⟨hg.1, hg.2.trans hsub⟩)
-      (ih _ hlt (sub_mem hf (A.smul_mem hqA c)) rfl)
-  have h₂ : c • q ∈ Submodule.span k {g ∈ Submonoid.closure B | m.degree g ≼[m] m.degree f} :=
-    Submodule.smul_mem _ c (Submodule.subset_span ⟨hq, (congrArg m.toSyn hqf).le⟩)
-  simpa using add_mem h₁ h₂
-
-/-- Over a field, `B ⊆ A` is a SAGBI basis of `A` if and only if every element `f` of `A` is a
-`k`-linear combination of products of elements of `B` whose leading exponents are at most that
-of `f`. -/
-theorem isSAGBIBasis_iff_forall_mem_span :
-    m.IsSAGBIBasis B A ↔ B ⊆ A ∧
-      ∀ f ∈ A, f ∈ Submodule.span k {g ∈ Submonoid.closure B | m.degree g ≼[m] m.degree f} := by
-  refine ⟨fun h ↦ ⟨h.subset, fun f ↦ h.mem_span⟩, fun ⟨hBA, h⟩ ↦
-    isSAGBIBasis_iff_exists_mem_closure.2 ⟨hBA, fun f hf hf0 ↦ ?_⟩⟩
-  -- Otherwise every product in the representation of `f` has vanishing coefficient at the leading
-  -- exponent of `f`, and so does `f`.
-  by_contra hne
-  simp only [not_exists, not_and] at hne
-  have hker : Submodule.span k {g ∈ Submonoid.closure B | m.degree g ≼[m] m.degree f} ≤
-      LinearMap.ker (lcoeff k (m.degree f)) := by
-    refine Submodule.span_le.2 fun g ⟨hg, hgf⟩ ↦ ?_
-    rw [SetLike.mem_coe, LinearMap.mem_ker, lcoeff_apply]
-    by_contra hc
-    exact hne g hg (fun h0 ↦ hc (by simp [h0]))
-      (m.toSyn.injective (le_antisymm hgf (m.le_degree (mem_support_iff.2 hc))))
-  have hf' := hker (h f hf)
-  rw [LinearMap.mem_ker, lcoeff_apply] at hf'
-  exact hf0 (m.coeff_degree_eq_zero_iff.1 hf')
-
-/-- A SAGBI basis of `A` generates `A` as a `k`-algebra. -/
-theorem IsSAGBIBasis.adjoin_eq (h : m.IsSAGBIBasis B A) : Algebra.adjoin k B = A := by
-  refine le_antisymm (Algebra.adjoin_le h.subset) fun f hf ↦ ?_
-  rw [← Subalgebra.mem_toSubmodule, Algebra.adjoin_eq_span]
-  exact Submodule.span_mono (Set.sep_subset _ _) (h.mem_span hf)
 
 end Field
 

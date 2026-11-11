@@ -193,6 +193,13 @@ lemma rationalUnitClass_eq_of_le {D : CartierDivisor X} {V W : X.Opens} [Nonempt
     rationalUnitClass X W (Additive.ofMul f) = D |_ W := by
   rw [← rationalUnitClass_restrict X hWV, hf, TopCat.Presheaf.restrict_restrict]
 
+/-- The inverse of an equation on an open subset represents the negative divisor. -/
+lemma rationalUnitClass_inv_eq_neg_of_eq {D : CartierDivisor X} {V : X.Opens} [Nonempty V]
+    {f : X.functionFieldˣ} (hf : rationalUnitClass X V (Additive.ofMul f) = D |_ V) :
+    rationalUnitClass X V (Additive.ofMul f⁻¹) = (-D) |_ V := by
+  rw [ofMul_inv, map_neg, hf]
+  simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
+
 /-- A nonzero rational function `f` is a *local equation* of the Cartier divisor `D` at the point
 `x` when `D` is the class of `f` over some open neighbourhood of `x`. -/
 def IsLocalEquationAt (D : CartierDivisor X) (x : X) (f : X.functionFieldˣ) : Prop :=
@@ -234,9 +241,7 @@ lemma IsLocalEquationAt.inv {D : CartierDivisor X} {x : X} {f : X.functionField�
     (hf : D.IsLocalEquationAt x f) : (-D).IsLocalEquationAt x f⁻¹ := by
   obtain ⟨V, hx, hV⟩ := hf
   have : Nonempty V := ⟨⟨x, hx⟩⟩
-  refine ⟨V, hx, ?_⟩
-  rw [ofMul_inv, map_neg, hV]
-  simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
+  exact ⟨V, hx, rationalUnitClass_inv_eq_neg_of_eq hV⟩
 
 /-- One is a local equation of the zero Cartier divisor at every point. -/
 lemma isLocalEquationAt_zero (x : X) : (0 : CartierDivisor X).IsLocalEquationAt x 1 := by

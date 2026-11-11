@@ -89,7 +89,6 @@ private theorem integral_graphonDegree_sq_ge (W : Graphon Ω μ) :
     (∫ x, graphonDegree W x ∂μ) ^ 2 ≤ ∫ x, graphonDegree W x ^ 2 ∂μ := by
   have h := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (graphonDegree W) Set.univ (measure_ne_top μ Set.univ)
-    (by simpa using integrable_graphonDegree W)
     (by simpa using integrable_graphonDegree_sq W)
   simpa [measureReal_def, IsProbabilityMeasure.measure_univ] using h
 
@@ -436,7 +435,6 @@ theorem sidorenko_cycleGraph_four (W : Graphon Ω μ) :
   have hmean := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (fun p : Ω × Ω ↦ twoStepIntegral W p.1 p.2) Set.univ
     (measure_ne_top (μ.prod μ) Set.univ)
-    (by simpa using integrable_twoStep W)
     (by simpa using integrable_twoStep_sq W)
   have hmean' :
       (∫ p : Ω × Ω, twoStepIntegral W p.1 p.2 ∂(μ.prod μ)) ^ 2 ≤

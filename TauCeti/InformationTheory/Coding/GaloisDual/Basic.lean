@@ -40,11 +40,11 @@ variable {R ι : Type*} [CommSemiring R] [Fintype ι]
 /-- The Galois dual of a code, with the automorphism acting on the second argument.
 For an involutive automorphism, this is the Hermitian dual. -/
 noncomputable def galoisDual (σ : R ≃+* R) (C : Submodule R (ι → R)) :
-    Submodule R (ι → R) := C.orthogonalBilin (sesquilinearForm σ)
+    Submodule R (ι → R) := C.orthogonalBilin (σ : R →+* R).sesquilinearForm
 
 /-- The Galois dual is the orthogonal submodule for the standard sesquilinear form. -/
 theorem galoisDual_def (σ : R ≃+* R) (C : Submodule R (ι → R)) :
-    galoisDual σ C = C.orthogonalBilin (sesquilinearForm σ) := by
+    galoisDual σ C = C.orthogonalBilin (σ : R →+* R).sesquilinearForm := by
   rfl
 
 /-- Membership in the Galois dual means being orthogonal to every codeword with respect
@@ -64,7 +64,8 @@ theorem galoisDual_top (σ : R ≃+* R) :
     galoisDual σ (⊤ : Submodule R (ι → R)) = ⊥ := by
   apply le_antisymm _ bot_le
   intro y hy
-  exact (nondegenerate_sesquilinearForm σ).2 y (fun x ↦ hy x (Submodule.mem_top))
+  exact ((σ : R →+* R).nondegenerate_sesquilinearForm σ.injective).2 y
+    (fun x ↦ hy x (Submodule.mem_top))
 
 /-- Galois duality reverses inclusion. -/
 theorem galoisDual_antitone (σ : R ≃+* R) :
@@ -101,7 +102,7 @@ theorem galoisDual_range_vecMulLinear (σ : R ≃+* R)
   apply forall_congr'
   intro i
   rw [← σ.symm.map_eq_zero_iff]
-  simp [sesquilinearForm_apply, Matrix.mulVec, dotProduct]
+  simp [Matrix.mulVec, dotProduct]
 
 /-- For an involutive automorphism, the Galois dual of a row space is the kernel of
 the entrywise-conjugate matrix. -/
@@ -121,7 +122,7 @@ theorem finrank_add_finrank_galoisDual (σ : K ≃+* K) (C : Submodule K (ι →
     finrank K C + finrank K (galoisDual σ C) = Fintype.card ι := by
   have hd : finrank K (galoisDual σ C) = finrank K C.dualAnnihilator := by
     rw [galoisDual, ← Submodule.comap_dualAnnihilator_eq_orthogonalBilin]
-    let f := (sesquilinearForm σ (ι := ι)).flip
+    let f := ((σ : K →+* K).sesquilinearForm (ι := ι)).flip
     have hf := sesquilinearForm_flip_bijective σ (ι := ι)
     let g := f.submoduleComap C.dualAnnihilator
     have hg : Function.Bijective g := by

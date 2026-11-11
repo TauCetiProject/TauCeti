@@ -31,8 +31,10 @@ element to the class of its translation part is still onto when restricted to `�
 coweights modulo coroots has a representative in `Ω`, with translation part in that class. Its
 kernel is `Ω ∩ W_aff`.
 
-Classically `W_aff` acts simply transitively on the alcoves, so that `Ω ∩ W_aff` is trivial and
-the restricted homomorphism is an isomorphism `Ω ≃ P∨ / Q∨`; that injectivity is not proved here.
+The affine Weyl group acts freely on the alcoves
+(`RootPairing.eq_one_of_mem_affineWeylGroup_of_mapsTo`), so `Ω ∩ W_aff` is trivial and the
+restricted homomorphism is injective. Over an archimedean linearly ordered field it is therefore an
+isomorphism `Ω ≃ P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerEquivQuotient`).
 
 ## Main definitions
 
@@ -40,6 +42,7 @@ the restricted homomorphism is an isomorphism `Ω ≃ P∨ / Q∨`; that injecti
   extended affine Weyl group.
 * `RootPairing.fundamentalAlcoveStabilizerToQuotient`: the homomorphism `Ω → P∨ / Q∨` taking an
   element to the class of its translation part.
+* `RootPairing.fundamentalAlcoveStabilizerEquivQuotient`: **the isomorphism `Ω ≃ P∨ / Q∨`.**
 
 ## Main results
 
@@ -53,6 +56,9 @@ the restricted homomorphism is an isomorphism `Ω ≃ P∨ / Q∨`; that injecti
   congruent modulo the coroot lattice to the translation part `ω 0` of some `ω ∈ Ω`.
 * `RootPairing.ker_fundamentalAlcoveStabilizerToQuotient`: the kernel of `Ω → P∨ / Q∨` is
   `Ω ∩ W_aff`.
+* `RootPairing.affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot`: `Ω ∩ W_aff` is
+  trivial, and `RootPairing.fundamentalAlcoveStabilizerToQuotient_injective`: `Ω → P∨ / Q∨` is
+  injective.
 
 ## References
 
@@ -181,13 +187,32 @@ end Quotient
 
 end CommRing
 
-/-! ### `W_ext = W_aff ⊔ Ω`, and `Ω → P∨ / Q∨` is onto -/
-
 section Field
 
 variable {ι R M N : Type*} [Field R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} (b : P.Base) [LinearOrder R] [IsStrictOrderedRing R] [Archimedean R]
+  {P : RootPairing ι R M N} (b : P.Base) [LinearOrder R] [IsStrictOrderedRing R]
   [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
+
+/-! ### `Ω ∩ W_aff` is trivial, and `Ω → P∨ / Q∨` is injective -/
+
+/-- **The only element of the stabilizer of the fundamental alcove lying in the affine Weyl group
+is the identity**: the affine Weyl group acts freely on the alcoves. -/
+theorem affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot :
+    P.affineWeylGroup.subgroupOf (P.fundamentalAlcoveStabilizer b) = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun ω hω ↦ Subtype.ext ?_
+  exact eq_one_of_mem_affineWeylGroup_of_mapsTo b (fundamentalAlcove_nonempty b)
+    (Subgroup.mem_subgroupOf.mp hω) fun x hx ↦
+      ((P.mem_fundamentalAlcoveStabilizer b).mp ω.2).2 ▸ mem_image_of_mem _ hx
+
+/-- **The homomorphism `Ω → P∨ / Q∨` is injective**: its kernel `Ω ∩ W_aff` is trivial. -/
+theorem fundamentalAlcoveStabilizerToQuotient_injective :
+    Function.Injective (P.fundamentalAlcoveStabilizerToQuotient b) := by
+  rw [← MonoidHom.ker_eq_bot_iff, ker_fundamentalAlcoveStabilizerToQuotient,
+    affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot]
+
+/-! ### `W_ext = W_aff ⊔ Ω`, and `Ω → P∨ / Q∨` is onto -/
+
+variable [Archimedean R]
 
 /-- **Every element of the extended affine Weyl group is an element of the affine Weyl group times
 an element of the stabilizer of the fundamental alcove**: the affine Weyl group is transitive on
@@ -242,6 +267,39 @@ theorem exists_mem_fundamentalAlcoveStabilizer_sub_mem_corootSpan {v : N}
   rw [fundamentalAlcoveStabilizerToQuotient_apply, Multiplicative.ofAdd.injective.eq_iff,
     Submodule.Quotient.eq, Submodule.mem_comap] at hω
   exact ⟨ω, ω.2, by simpa using hω⟩
+
+/-! ### `Ω ≃ P∨ / Q∨` -/
+
+variable (P) in
+/-- **The stabilizer of the fundamental alcove is isomorphic to `P∨ / Q∨`**, by the class of the
+translation part `ω 0` modulo the coroot lattice: the coweight lattice modulo the coroot lattice,
+written multiplicatively. -/
+noncomputable def fundamentalAlcoveStabilizerEquivQuotient :
+    P.fundamentalAlcoveStabilizer b ≃*
+      Multiplicative (P.coweightLattice ⧸ (P.corootSpan ℤ).comap P.coweightLattice.subtype) :=
+  MulEquiv.ofBijective (P.fundamentalAlcoveStabilizerToQuotient b)
+    ⟨fundamentalAlcoveStabilizerToQuotient_injective b,
+      fundamentalAlcoveStabilizerToQuotient_surjective b⟩
+
+@[simp]
+lemma fundamentalAlcoveStabilizerEquivQuotient_apply (ω : P.fundamentalAlcoveStabilizer b) :
+    P.fundamentalAlcoveStabilizerEquivQuotient b ω = P.fundamentalAlcoveStabilizerToQuotient b ω :=
+  (rfl)
+
+/-- The representative chosen by the inverse quotient isomorphism has the prescribed coweight
+class modulo the coroot lattice. -/
+@[simp]
+lemma ofAdd_mk_fundamentalAlcoveStabilizerEquivQuotient_symm_apply
+    (q : Multiplicative
+      (P.coweightLattice ⧸ (P.corootSpan ℤ).comap P.coweightLattice.subtype)) :
+    Multiplicative.ofAdd (Submodule.Quotient.mk
+      ⟨((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).1 0,
+        (P.mem_extendedAffineWeylGroup_iff.1
+          (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b
+            ((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).2)).2⟩) = q := by
+  simpa only [fundamentalAlcoveStabilizerEquivQuotient_apply,
+    fundamentalAlcoveStabilizerToQuotient_apply] using
+    (P.fundamentalAlcoveStabilizerEquivQuotient b).apply_symm_apply q
 
 end Field
 

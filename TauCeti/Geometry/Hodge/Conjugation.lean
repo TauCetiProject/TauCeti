@@ -43,7 +43,7 @@ models.
 * `TauCeti.Hodge.Conjugation.restrict`: the conjugation induced on a stable complex subspace.
 * `TauCeti.Hodge.Conjugation.quotient`: the conjugation induced on the quotient by a stable
   complex subspace.
-* `TauCeti.Hodge.Conjugation.map_comap_eq_comap_map`: an equivalence intertwining two conjugations
+* `TauCeti.Hodge.Conjugation.map_comap_eq_comap_map`: a linear map intertwining two conjugations
   exchanges conjugation with taking preimages of subspaces.
 * `TauCeti.Hodge.Conjugation.map_prod`: a conjugation acting componentwise on a product carries a
   product subspace to the product of the conjugate subspaces.
@@ -314,22 +314,14 @@ theorem map_restrict_comap_subtype (ω : Conjugation W) {U : Submodule ℂ W}
   ext x
   simp
 
-/-- A linear equivalence intertwining two conjugations exchanges conjugating a preimage with
-taking the preimage of the conjugate. -/
+/-- A linear map intertwining two conjugations exchanges conjugating a preimage with taking the
+preimage of the conjugate. -/
 theorem map_comap_eq_comap_map {W' : Type v} [AddCommGroup W'] [Module ℂ W']
-    (ω : Conjugation W) (ω' : Conjugation W') (e : W ≃ₗ[ℂ] W')
-    (he : ∀ x, e (ω.toEquiv x) = ω'.toEquiv (e x)) (A : Submodule ℂ W') :
-    (A.comap e.toLinearMap).map ω.toEquiv.toLinearMap =
-      (A.map ω'.toEquiv.toLinearMap).comap e.toLinearMap := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.mem_comap, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨e x, hx, (he x).symm⟩
-  · rintro ⟨z, hz, hzy⟩
-    refine ⟨ω.toEquiv y, ?_, ω.apply_apply y⟩
-    rw [he y, ← hzy, ω'.apply_apply]
-    exact hz
+    (ω : Conjugation W) (ω' : Conjugation W') (f : W →ₗ[ℂ] W')
+    (hf : ∀ x, f (ω.toEquiv x) = ω'.toEquiv (f x)) (A : Submodule ℂ W') :
+    (A.comap f).map ω.toEquiv.toLinearMap = (A.map ω'.toEquiv.toLinearMap).comap f := by
+  ext x
+  simp [hf]
 
 /-- The conjugation induced on a quotient by a stable complex subspace is involutive. -/
 private theorem quotient_involutive (ω : Conjugation W) {U : Submodule ℂ W}

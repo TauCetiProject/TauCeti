@@ -22,8 +22,8 @@ only on `gⁱ` and form a multiplicative `1`-cocycle.
 
 ## Main results
 
-* `TauCeti.exists_smul_div_eq_of_norm_eq_one`: Hilbert's Theorem 90 for a cyclic Galois
-  extension.
+* `TauCeti.exists_smul_div_eq_iff_norm_eq_one`: Hilbert's Theorem 90 for a cyclic Galois
+  extension, together with its converse.
 
 ## References
 
@@ -38,10 +38,16 @@ namespace TauCeti
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 
-/-- **Hilbert's Theorem 90 for cyclic extensions.** If `g` generates `Gal(L/K)` and the unit `x`
-of `L` has norm one, then `x = g y / y` for a unit `y` of `L`. -/
-theorem exists_smul_div_eq_of_norm_eq_one {g : L ≃ₐ[K] L} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
-    {x : Lˣ} (hx : Algebra.norm K (x : L) = 1) : ∃ y : Lˣ, g • y / y = x := by
+/-- **Hilbert's Theorem 90 for cyclic extensions.** If `g` generates `Gal(L/K)`, then a unit `x`
+of `L` has norm one if and only if `x = g y / y` for a unit `y` of `L`. -/
+theorem exists_smul_div_eq_iff_norm_eq_one {g : L ≃ₐ[K] L} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
+    {x : Lˣ} : (∃ y : Lˣ, g • y / y = x) ↔ Algebra.norm K (x : L) = 1 := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨y, rfl⟩
+    simp only [AlgEquiv.smul_units_def, Units.val_div_eq_div_val, Units.coe_map,
+      MonoidHom.coe_ofClass]
+    rw [div_eq_mul_inv, map_mul, Algebra.norm_inv, Algebra.norm_eq_of_algEquiv,
+      mul_inv_cancel₀ (Algebra.norm_ne_zero_iff.2 y.ne_zero)]
   classical
   have hfin : IsOfFinOrder g := isOfFinOrder_of_finite g
   -- The partial products `P i = x · g x ⋯ g^{i-1} x`.
@@ -53,13 +59,10 @@ theorem exists_smul_div_eq_of_norm_eq_one {g : L ≃ₐ[K] L} (hg : ∀ σ, σ �
     have hprod : P (orderOf g) = ∏ σ : L ≃ₐ[K] L, σ • x := by
       simp only [P]
       rw [Finset.prod_range]
-      refine Fintype.prod_equiv ((finEquivZPowers hfin).trans (Equiv.subtypeUnivEquiv hg)) _ _
-        fun j ↦ ?_
-      simp [finEquivZPowers_apply]
+      exact Fintype.prod_equiv ((finEquivZPowers hfin).trans (Equiv.subtypeUnivEquiv hg)) _ _
+        fun j ↦ by simp [finEquivZPowers_apply]
     refine hprod.trans (Units.ext ?_)
-    simp only [Units.coe_prod, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass,
-      Units.val_one]
-    rw [← Algebra.norm_eq_prod_automorphisms, hx, map_one]
+    simp [AlgEquiv.smul_units_def, ← Algebra.norm_eq_prod_automorphisms, hx]
   have hP_mod (i : ℕ) : P (i % orderOf g) = P i := by
     conv_rhs => rw [← Nat.mod_add_div i (orderOf g)]
     induction i / orderOf g with
@@ -70,15 +73,13 @@ theorem exists_smul_div_eq_of_norm_eq_one {g : L ≃ₐ[K] L} (hg : ∀ σ, σ �
   have hf (i : ℕ) : f (g ^ i) = P i := by
     simp only [f]
     rw [finEquivZPowers_symm_apply hfin i, hP_mod]
-  have hsurj (σ : L ≃ₐ[K] L) : ∃ i : ℕ, g ^ i = σ :=
-    ⟨_, pow_finEquivZPowers_symm_apply hfin ⟨σ, hg σ⟩⟩
   have hcocycle : IsMulCocycle₁ f := by
     intro σ τ
-    obtain ⟨a, rfl⟩ := hsurj σ
-    obtain ⟨b, rfl⟩ := hsurj τ
+    obtain ⟨a, rfl⟩ := hfin.mem_powers_iff_mem_zpowers.2 (hg σ)
+    obtain ⟨b, rfl⟩ := hfin.mem_powers_iff_mem_zpowers.2 (hg τ)
     rw [← pow_add, hf, hf, hf, hP_add, mul_comm]
   obtain ⟨y, hy⟩ := isMulCoboundary₁_of_isMulCocycle₁_of_aut_to_units f hcocycle
-  refine ⟨y, (hy g).trans ?_⟩
-  simpa only [pow_one, P, Finset.prod_range_one, pow_zero, one_smul] using hf 1
+  exact ⟨y, (hy g).trans <| by
+    simpa only [pow_one, P, Finset.prod_range_one, pow_zero, one_smul] using hf 1⟩
 
 end TauCeti

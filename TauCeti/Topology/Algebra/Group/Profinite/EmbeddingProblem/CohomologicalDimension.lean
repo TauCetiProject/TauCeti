@@ -21,7 +21,7 @@ profinite pro-`p` group lifts continuously.
 
 Conversely, a projective pro-`p` group has vanishing `H²` on every finite discrete `p`-primary
 module, because every profinite extension of it by such a module splits
-(`TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion`), and the
+(`TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isAddPGroup`), and the
 `p`-cohomological dimension of a compact group is detected in degree two on finite coefficients
 (`TauCeti.cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ`). So for a pro-`p` group
 projectivity and `cd_p ≤ 1` are the same condition.
@@ -66,7 +66,7 @@ theorem CohomologicalDimensionLE.hasElementaryAbelianSolutions
   apply hasElementaryAbelianSolutions_of_subsingleton_continuousCohomology_two
   intro M _ _ _ _ _ _ hM
   exact cohomologicalDimensionLE_iff.mp h M
-    (isPPrimaryTorsion_iff.mpr fun m ↦ ⟨1, by rw [pow_one]; exact hM m⟩) 2 one_lt_two
+    (fun m ↦ ⟨1, by rw [pow_one]; exact hM m⟩) 2 one_lt_two
 
 /-- **Cohomological dimension at most one gives projectivity.** A profinite group with
 `cd_p G ≤ 1` is projective: every continuous homomorphism into a quotient of a profinite pro-`p`
@@ -82,7 +82,7 @@ theorem CohomologicalDimensionLE.isProjective [Fact p.Prime]
 theorem IsProjective.cohomologicalDimensionLE_one (hp : p ≠ 0) (hproj : IsProjective.{u, u, u} p G)
     (hG : IsProP p G) : CohomologicalDimensionLE.{u} p G 1 :=
   (cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ hp 1).2
-    fun M _ _ _ _ _ _ hM ↦ hproj.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion hG M hM
+    fun M _ _ _ _ _ _ hM ↦ hproj.subsingleton_continuousCohomology_two_of_isAddPGroup hG M hM
 
 /-- **A projective pro-`p` group has cohomological dimension at most one**: `cd_p G ≤ 1` for a
 projective pro-`p` group `G` and `p ≠ 0`. -/

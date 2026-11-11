@@ -86,19 +86,7 @@ theorem continuation_iff (ν : P → Q →₀ A)
       Finsupp.mapRange.linearMap d (ν x) =
         Finsupp.linearCombination A ν (mP.m x) +
           (ν x).sum (fun y a ↦ (indP x - indQ y - 1).negOnePow • (a • mQ.m y)) := by
-  classical
-  have hd : (∑ y ∈ (ν x).support, Finsupp.single y (d (ν x y))) =
-      Finsupp.mapRange.linearMap d (ν x) := by
-    conv_rhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum]
-    rw [map_sum]
-    simp
-  have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (ν x) =
-      Finsupp.mapRange.linearMap d (ν x) +
-        (ν x).sum (fun y a ↦ (indQ y - indP x).negOnePow • (a • mQ.m y)) := by
-    conv_lhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum, map_sum]
-    simp_rw [rowFiniteTwistedDifferential_single mQ.m _ (hν x _)]
-    rw [Finset.sum_add_distrib, hd, Finsupp.sum]
-  rw [hD]
+  rw [rowFiniteTwistedDifferential_apply_of_mem mQ.m (hν x)]
   simp only [Int.negOnePow_sub_sub_one, Units.neg_smul, Finsupp.sum, Finset.sum_neg_distrib]
   constructor
   · intro heq
@@ -108,41 +96,57 @@ theorem continuation_iff (ν : P → Q →₀ A)
     rw [heq]
     abel
 
+/-- A continuation cocycle from images `g x` of the generators of total degree `-indP x`, the
+degrees of a degree-zero map, satisfying the generator equation. -/
+def ofTotalGrading (g : P → Q →₀ A) (hg : ∀ x, g x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hgd : ∀ x, Finsupp.linearCombination A g (mP.m x) =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (g x)) :
+    RowFiniteContinuationCocycle mP mQ where
+  ν := g
+  mem_graded x y := by
+    simpa only [neg_add_eq_sub] using (mem_rowFiniteTotalGrading_iff _ _).mp (hg x) y
+  continuation x := (hgd x).symm
+
+@[simp]
+theorem ofTotalGrading_ν (g : P → Q →₀ A)
+    (hg : ∀ x, g x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hgd : ∀ x, Finsupp.linearCombination A g (mP.m x) =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (g x)) :
+    (ofTotalGrading g hg hgd).ν = g :=
+  (rfl)
+
 variable (ν : RowFiniteContinuationCocycle mP mQ)
+
+/-- Over an algebra concentrated in cohomological degrees `≤ 0`, a row-finite continuation cocycle
+has no entries strictly increasing the index: `ν x y` has degree `indQ y - indP x`. -/
+theorem ν_eq_zero_of_lt_of_nonpos (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) {x : P} {y : Q}
+    (hxy : indP x < indQ y) : ν.ν x y = 0 := by
+  have hν := ν.mem_graded x y
+  rw [h𝒜 _ (by omega)] at hν
+  exact (Submodule.mem_bot R).1 hν
+
+/-- The row of a generator `x` has total degree `-indP x`: it is the image of a generator under a
+degree-zero map. -/
+theorem ν_mem_rowFiniteTotalGrading (x : P) :
+    ν.ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x) :=
+  (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+    simpa only [neg_add_eq_sub] using ν.mem_graded x y
 
 /-- Substitution of finite continuation rows preserves total degree. -/
 theorem linearCombination_mem_totalGrading {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
-    Finsupp.linearCombination A ν.ν f ∈ rowFiniteTotalGrading 𝒜 indQ n := by
-  classical
-  rw [mem_rowFiniteTotalGrading_iff] at hf ⊢
-  intro y
-  rw [Finsupp.linearCombination_apply, Finsupp.sum_apply, Finsupp.sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have := SetLike.GradedMul.mul_mem (hf x) (ν.mem_graded x y)
-  simp only [Finsupp.smul_apply, smul_eq_mul]
-  convert this using 2; ring
+    Finsupp.linearCombination A ν.ν f ∈ rowFiniteTotalGrading 𝒜 indQ n :=
+  linearCombination_mem_of_mem_rowFiniteTotalGrading ν.ν_mem_rowFiniteTotalGrading hf
 
 /-- The generator equation extends to the entire free left module by the DG Leibniz rule. -/
 theorem linearCombination_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m
         (Finsupp.linearCombination A ν.ν f) =
       Finsupp.linearCombination A ν.ν
-        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) := by
-  classical
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg => simp only [map_add, hf, hg]
-  | single x a =>
-    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q a =>
-      rw [Finsupp.linearCombination_single,
-        rowFiniteTwistedDifferential_smul mQ.m hA a.2,
-        rowFiniteTwistedDifferential_single mP.m x a.2, map_add,
-        Finsupp.linearCombination_single, ν.continuation x]
-      simp only [map_smul, LinearMap.map_smul_of_tower]
-    | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
+        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) :=
+  (linearCombination_rowFiniteTwistedDifferential
+    (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) mP.m
+    (fun x ↦ (ν.continuation x).symm) f).symm
 
 /-- The identity continuation cocycle has one unit entry in each row. -/
 def refl (m : RowFiniteTwistingCocycle 𝒜 d P indP) (hA : IsDGAlgebra 𝒜 d) :
@@ -167,11 +171,7 @@ def comp (μ : RowFiniteContinuationCocycle mQ mS) (hA : IsDGAlgebra 𝒜 d) :
     RowFiniteContinuationCocycle mP mS where
   ν x := Finsupp.linearCombination A μ.ν (ν.ν x)
   mem_graded x y := by
-    have hrow : ν.ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x) := by
-      rw [mem_rowFiniteTotalGrading_iff]
-      intro z
-      simpa only [neg_add_eq_sub] using ν.mem_graded x z
-    have hmem := μ.linearCombination_mem_totalGrading hrow
+    have hmem := μ.linearCombination_mem_totalGrading (ν.ν_mem_rowFiniteTotalGrading x)
     rw [mem_rowFiniteTotalGrading_iff] at hmem
     have := hmem y
     simpa only [neg_add_eq_sub] using this

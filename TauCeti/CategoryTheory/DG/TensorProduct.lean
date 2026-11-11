@@ -126,11 +126,10 @@ theorem dgTensorHom_smul (r : R) (f : DGHom R p X.1 Y.1) (g : DGHom R q X.2 Y.2)
 end Bilinear
 
 /-- **Induction on morphisms of a tensor product of differential graded categories**: a property
-of the morphisms of degree `n` which holds for `0` and for every tensor product of homogeneous
-morphisms, and is closed under addition, holds for every morphism of degree `n`. -/
+of the morphisms of degree `n` which holds for every tensor product of homogeneous morphisms and
+is closed under addition holds for every morphism of degree `n`. -/
 @[elab_as_elim]
 theorem dgTensorHom_induction {X Y : C × D} {n : ℤ} {motive : DGHom R n X Y → Prop}
-    (zero : motive 0)
     (tmul : ∀ (p q : ℤ) (h : p + q = n) (f : DGHom R p X.1 Y.1) (g : DGHom R q X.2 Y.2),
       motive (dgTensorHom R f g h))
     (add : ∀ x y, motive x → motive y → motive (x + y)) (x : DGHom R n X Y) : motive x := by
@@ -157,7 +156,7 @@ theorem dgTensorHom_induction {X Y : C × D} {n : ℤ} {motive : DGHom R n X Y �
     intro r
     rw [← smul_dgTensorHom]
     exact tmul p q h (r • f) g
-  | zero => exact fun _ ↦ by simpa using zero
+  | zero => exact fun _ ↦ by simpa using tmul n 0 (add_zero n) 0 0
   | add y z _ _ hy hz => exact fun r ↦ by simpa [smul_add] using add _ _ (hy r) (hz r)
   | smul s y _ hy => exact fun r ↦ by simpa [smul_smul] using hy (r * s)
 

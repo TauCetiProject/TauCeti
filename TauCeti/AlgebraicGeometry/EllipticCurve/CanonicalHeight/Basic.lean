@@ -298,7 +298,8 @@ theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder [W.toAffine.IsElliptic]
 
 /-- **Northcott finiteness transfers from the naïve height to the canonical one.** This is what
 lets the results below assume Northcott for the canonical height itself while callers supply only
-the naïve height — or, through `MordellWeil/NaiveHeight.lean`, only the field height. -/
+the naïve height — or, through Mathlib's `Northcott` instance for `Point.naiveHeight`, only the
+field height. -/
 instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
     Northcott (Point.canonicalHeight (W := W)) := by
   -- `abs_canonicalHeight_sub_naiveHeight_le` gives a `D` for which `canonicalHeight Q ≤ B` forces
@@ -312,8 +313,8 @@ instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
 
 /-- **A point of canonical height zero is torsion.** The hypothesis is `Northcott` for the
 canonical height, the class this API takes finiteness from; the instance above supplies it from
-the naïve height and `MordellWeil/NaiveHeight.lean` from the field height, so a caller carrying
-either of those needs nothing extra. -/
+the naïve height and Mathlib's instance for `Point.naiveHeight` from the field height, so a caller
+carrying either of those needs nothing extra. -/
 theorem Point.isOfFinAddOrder_of_canonicalHeight_eq_zero [W.toAffine.IsElliptic]
     [Northcott (Point.canonicalHeight (W := W))] {P : W.Point} (h : P.canonicalHeight = 0) :
     IsOfFinAddOrder P := by

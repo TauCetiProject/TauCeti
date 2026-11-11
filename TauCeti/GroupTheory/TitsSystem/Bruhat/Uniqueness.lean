@@ -40,8 +40,8 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
     obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
     have hnprod : (n : G) ∈ T.bruhatCell s * T.bruhatCell (s * w) := by
       rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs (s * w) with hmul | hmul
-      · simpa only [hmul, ← mul_assoc, T.simple_sq_eq_one hs, one_mul] using hn
-      · rw [hmul, ← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+      · simpa only [hmul, ← mul_assoc, T.simple_mul_simple_self hs, one_mul] using hn
+      · rw [hmul, ← mul_assoc, T.simple_mul_simple_self hs, one_mul]
         exact Or.inl hn
     rw [h] at hnprod
     have hnunion : (n : G) ∈ T.bruhatCell (s * v) ∪ T.bruhatCell v := by
@@ -51,7 +51,7 @@ theorem bruhatCell_injective : Function.Injective T.bruhatCell := by
     rcases hnunion with hnv | hnv
     · have hw : w = s * v := ih _
         ((T.bruhatCell_eq_doubleCoset hn).trans (T.bruhatCell_eq_doubleCoset hnv).symm)
-      rw [hw, ← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+      rw [hw, ← mul_assoc, T.simple_mul_simple_self hs, one_mul]
     · have hw : w = v := ih _
         ((T.bruhatCell_eq_doubleCoset hn).trans (T.bruhatCell_eq_doubleCoset hnv).symm)
       have hsw : w = s * w := ih _ (h.trans (congrArg T.bruhatCell hw.symm)).symm

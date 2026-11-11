@@ -159,7 +159,7 @@ theorem ramificationIdx_mul_relativeDegree_eq_two_of_isPoleNumber {P : Place k F
   set z₀ : k⟮x⟯ := ⟨u, hzx⟩
   have hz₀ : z₀ ≠ 0 := fun h ↦ hz0 (congrArg Subtype.val h)
   refine ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq hx hdeg hm
-    (Divisor.isEffective_poles hK (Units.mk0 z₀ hz₀)).zero_le ?_
+    (Divisor.poles_nonneg hK (Units.mk0 z₀ hz₀)) ?_
   rw [Divisor.conorm_poles k F hK hF, ← hpoles]
   congr 1
   exact Units.ext (by simp [z₀])
@@ -189,7 +189,7 @@ private theorem conorm_ofPoint_restrict_of_one_lt_ramificationIdx {P : Place k F
     · simp [he, P₀]
     · rw [WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero, sub_zero]
       exact mul_nonneg (Int.natCast_nonneg _)
-        (WeilDivisor.coeff_le_coeff (WeilDivisor.isEffective_ofPoint P₀).zero_le _)
+        (WeilDivisor.coeff_le_coeff (WeilDivisor.ofPoint_nonneg P₀) _)
   have hEdeg : Divisor.degree E = 0 := by
     simp only [E, map_sub, Divisor.degree_conorm_of_finrank_eq_one k F hK (Module.finrank_self k),
       hdeg, Divisor.degree_ofPoint, hP₀, Divisor.degree_zsmul, hP]
@@ -316,8 +316,7 @@ private theorem two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two (hF : IsFunctio
     2 ≤ Divisor.dim ((2 : ℤ) • WeilDivisor.ofPoint P) := by
   have hlt := (P.isPoleNumber_iff_dim_lt hF (by norm_num : 0 < 2)).mp hpole
   have hle : Divisor.dim (0 : Divisor k F) ≤ Divisor.dim ((1 : ℤ) • WeilDivisor.ofPoint P) :=
-    Divisor.dim_mono hF (by simpa using
-      WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
+    Divisor.dim_mono hF (by simp)
   rw [Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at hle
   simp only [Nat.add_one_sub_one, Nat.cast_one, Nat.cast_ofNat] at hlt
   omega

@@ -79,11 +79,11 @@ theorem cartier_one (q r : ℕ) (hq : q ≠ 0) :
 
 /-- On a monomial, a Cartier operator keeps precisely its residue class. -/
 @[simp]
-theorem cartier_monomial (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (a : R) :
+theorem cartier_monomial (q r m : ℕ) (hr : r < q) (a : R) :
     cartier R q r (monomial m a) =
       if m % q = r then monomial (m / q) a else 0 := by
   ext n
-  have hq' := Nat.pos_of_ne_zero hq
+  have hq' : 0 < q := Nat.lt_of_le_of_lt (Nat.zero_le r) hr
   have hn : q * n + r = m ↔ m % q = r ∧ n = m / q := by
     constructor
     · rintro rfl
