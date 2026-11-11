@@ -119,8 +119,10 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   squared norms over sets `s` and `t` with `μ t = k μ s`, read between averages in `ℝ≥0∞`.
 * `TauCeti.ofReal_div_sq_mul_setLAverage_eq`: a factor `1 / λ²` in front of the average of `f²`
   moves inside it as `(f / λ)²`.
-* `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
-  nonnegative function and `r ≥ 1`.
+* `TauCeti.rpow_laverage_le_laverage_rpow`, `TauCeti.laverage_le_laverage_rpow_rpow`: Jensen's
+  inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a nonnegative function and `r ≥ 1`.
+* `TauCeti.laverage_Lp_mul_le_Lq_mul_Lr`, `TauCeti.laverage_mul_le_Lq_mul_Lr`: Hölder's inequality
+  for averages of nonnegative functions with exponents `q⁻¹ + r⁻¹ = s⁻¹`.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
   `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
   when the measure is multiplied by a positive finite scalar.
@@ -523,6 +525,34 @@ theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} (hu : AEMeasurable
       rw [ENNReal.rpow_sub _ _ h0 htop, ENNReal.rpow_one, ENNReal.div_eq_inv_mul,
         ENNReal.div_eq_inv_mul]
       ring
+
+/-- **Jensen's inequality for the average of a nonnegative function**, in the form
+`⨍ u ≤ (⨍ u ^ r) ^ (1 / r)` for `r ≥ 1`. -/
+theorem laverage_le_laverage_rpow_rpow {u : X → ℝ≥0∞} (hu : AEMeasurable u μ) {r : ℝ}
+    (hr : 1 ≤ r) : ⨍⁻ x, u x ∂μ ≤ (⨍⁻ x, u x ^ r ∂μ) ^ (1 / r) := by
+  have hr0 : 0 < r := one_pos.trans_le hr
+  calc ⨍⁻ x, u x ∂μ = ((⨍⁻ x, u x ∂μ) ^ r) ^ (1 / r) := by
+        rw [one_div, ENNReal.rpow_rpow_inv hr0.ne']
+    _ ≤ _ := ENNReal.rpow_le_rpow (rpow_laverage_le_laverage_rpow hu hr) (by positivity)
+
+/-- **Hölder's inequality for averages**: if `q⁻¹ + r⁻¹ = s⁻¹` with `q, r > 0`, then
+
+`(⨍ (u v) ^ s) ^ (1 / s) ≤ (⨍ u ^ q) ^ (1 / q) (⨍ v ^ r) ^ (1 / r)`.
+
+This is `ENNReal.lintegral_Lp_mul_le_Lq_mul_Lr` for the normalized measure `(μ univ)⁻¹ • μ`. -/
+theorem laverage_Lp_mul_le_Lq_mul_Lr {u v : X → ℝ≥0∞} (hu : AEMeasurable u μ)
+    (hv : AEMeasurable v μ) {q r s : ℝ} (hqrs : q.HolderTriple r s) :
+    (⨍⁻ x, (u x * v x) ^ s ∂μ) ^ (1 / s) ≤
+      (⨍⁻ x, u x ^ q ∂μ) ^ (1 / q) * (⨍⁻ x, v x ^ r ∂μ) ^ (1 / r) :=
+  ENNReal.lintegral_Lp_mul_le_Lq_mul_Lr hqrs _ (hu.smul_measure _) (hv.smul_measure _)
+
+/-- **Hölder's inequality for averages**: if `q⁻¹ + r⁻¹ = s⁻¹` with `q, r > 0` and `1 ≤ s`, then
+`⨍ u v ≤ (⨍ u ^ q) ^ (1 / q) (⨍ v ^ r) ^ (1 / r)`. Unlike Hölder's inequality for integrals, the
+exponents need only satisfy `q⁻¹ + r⁻¹ ≤ 1`, by Jensen's inequality. -/
+theorem laverage_mul_le_Lq_mul_Lr {u v : X → ℝ≥0∞} (hu : AEMeasurable u μ)
+    (hv : AEMeasurable v μ) {q r s : ℝ} (hqrs : q.HolderTriple r s) (hs : 1 ≤ s) :
+    ⨍⁻ x, u x * v x ∂μ ≤ (⨍⁻ x, u x ^ q ∂μ) ^ (1 / q) * (⨍⁻ x, v x ^ r ∂μ) ^ (1 / r) :=
+  (laverage_le_laverage_rpow_rpow (hu.mul hv) hs).trans (laverage_Lp_mul_le_Lq_mul_Lr hu hv hqrs)
 
 end Jensen
 

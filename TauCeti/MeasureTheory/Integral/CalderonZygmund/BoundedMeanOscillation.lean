@@ -56,6 +56,8 @@ and replacing the constant by the average costs a factor `2`
 
 ## Main declarations
 
+* `TauCeti.enorm_integral_sub_integral_le_lintegral`: the kernel integrals of `g` against `k` and
+  `k'` differ by at most `∫ ‖k y - k' y‖ ‖g y‖ dy`.
 * `TauCeti.enorm_integral_sub_integral_le_of_hormander`: a bounded function vanishing near `x'`
   has kernel integrals at `x` and `x'` that differ by at most `B ‖b‖_∞`.
 * `ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_le`:
@@ -82,6 +84,32 @@ open scoped ENNReal
 
 section Kernel
 
+/-- The integrals of `g` against two kernels `k` and `k'` differ by at most
+`∫ ‖k y - k' y‖ ‖g y‖ dy`. No integrability of `y ↦ k y (g y)` is assumed: when the right-hand
+side is finite, `y ↦ k y (g y)` and `y ↦ k' y (g y)` are integrable together, and otherwise the
+bound is trivial. -/
+theorem enorm_integral_sub_integral_le_lintegral {X E F : Type*} [MeasurableSpace X]
+    {μ : Measure X} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {k k' : X → E →L[ℝ] F} (hk : AEStronglyMeasurable k μ)
+    (hk' : AEStronglyMeasurable k' μ) {g : X → E} (hg : AEStronglyMeasurable g μ) :
+    ‖∫ y, k y (g y) ∂μ - ∫ y, k' y (g y) ∂μ‖ₑ ≤ ∫⁻ y, ‖k y - k' y‖ₑ * ‖g y‖ₑ ∂μ := by
+  have hlint : ∫⁻ y, ‖(k y - k' y) (g y)‖ₑ ∂μ ≤ ∫⁻ y, ‖k y - k' y‖ₑ * ‖g y‖ₑ ∂μ :=
+    lintegral_mono fun y => ContinuousLinearMap.le_opENorm _ _
+  rcases eq_or_ne (∫⁻ y, ‖k y - k' y‖ₑ * ‖g y‖ₑ ∂μ) ∞ with htop | htop
+  · simp [htop]
+  have hint : Integrable (fun y => (k y - k' y) (g y)) μ :=
+    ⟨(ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hg (hk.sub hk'),
+      hlint.trans_lt htop.lt_top⟩
+  by_cases hk'i : Integrable (fun y => k' y (g y)) μ
+  · have hki : Integrable (fun y => k y (g y)) μ :=
+      (hint.add hk'i).congr (.of_forall fun y => by simp)
+    rw [← integral_sub hki hk'i]
+    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
+    simp
+  · have hki : ¬Integrable (fun y => k y (g y)) μ := fun hki =>
+      hk'i ((hki.sub hint).congr (.of_forall fun y => by simp))
+    simp [integral_undef hki, integral_undef hk'i]
+
 variable {X E F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -97,39 +125,24 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
     {b : X → E} (hb : AEStronglyMeasurable b μ) {M : ℝ≥0∞} (hM : ∀ᵐ y ∂μ, ‖b y‖ₑ ≤ M)
     (hsupp : ∀ᵐ y ∂μ, y ∈ closedBall x' (2 * dist x x') → b y = 0) :
     ‖∫ y, K x y (b y) ∂μ - ∫ y, K x' y (b y) ∂μ‖ₑ ≤ B * M := by
-  have hKd : AEStronglyMeasurable (fun y => K x y - K x' y) μ := hKx.sub hKx'
   have hS : MeasurableSet {y | 2 * dist x x' < dist y x'} :=
     (isOpen_lt continuous_const (continuous_id.dist continuous_const)).measurableSet
   -- Since `b` vanishes off the region of Hörmander's condition, the difference of the integrands
   -- has integral at most `B M`.
-  have hlint : ∫⁻ y, ‖(K x y - K x' y) (b y)‖ₑ ∂μ ≤ B * M := by
-    calc ∫⁻ y, ‖(K x y - K x' y) (b y)‖ₑ ∂μ
-        ≤ ∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ * M ∂μ := by
-          rw [← lintegral_indicator hS]
-          refine lintegral_mono_ae ?_
-          filter_upwards [hM, hsupp] with y hy hy'
-          by_cases h : 2 * dist x x' < dist y x'
-          · rw [indicator_of_mem (show y ∈ {y | 2 * dist x x' < dist y x'} from h)]
-            exact (ContinuousLinearMap.le_opENorm _ _).trans (by gcongr)
-          · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
-            simp
-      _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
-          lintegral_mul_const'' _ hKd.enorm.restrict
-      _ ≤ B * M := by gcongr
-  rcases eq_or_ne (B * M) ∞ with hBM | hBM
-  · simp [hBM]
-  have hint : Integrable (fun y => (K x y - K x' y) (b y)) μ :=
-    ⟨(ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKd,
-      hlint.trans_lt hBM.lt_top⟩
-  by_cases hx' : Integrable (fun y => K x' y (b y)) μ
-  · have hx : Integrable (fun y => K x y (b y)) μ :=
-      (hint.add hx').congr (.of_forall fun y => by simp)
-    rw [← integral_sub hx hx']
-    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
-    simp
-  · have hx : ¬Integrable (fun y => K x y (b y)) μ := fun hx =>
-      hx' ((hx.sub hint).congr (.of_forall fun y => by simp))
-    simp [integral_undef hx, integral_undef hx']
+  refine (enorm_integral_sub_integral_le_lintegral hKx hKx' hb).trans ?_
+  calc ∫⁻ y, ‖K x y - K x' y‖ₑ * ‖b y‖ₑ ∂μ
+      ≤ ∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ * M ∂μ := by
+        rw [← lintegral_indicator hS]
+        refine lintegral_mono_ae ?_
+        filter_upwards [hM, hsupp] with y hy hy'
+        by_cases h : 2 * dist x x' < dist y x'
+        · rw [indicator_of_mem (show y ∈ {y | 2 * dist x x' < dist y x'} from h)]
+          gcongr
+        · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
+          simp
+    _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
+        lintegral_mul_const'' _ (hKx.sub hKx').enorm.restrict
+    _ ≤ B * M := by gcongr
 
 end Kernel
 

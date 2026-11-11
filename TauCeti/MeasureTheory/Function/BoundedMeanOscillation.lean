@@ -60,6 +60,8 @@ easy half of Sarason's characterization.
   modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
+* `TauCeti.enorm_setAverage_ball_two_pow_mul_sub_le`: the averages over `B(c, 2ᵏ ρ)` and
+  `B(c, ρ)` differ by at most `k 2ⁿ ‖f‖_{BMO}`.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
@@ -577,5 +579,53 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
 
 end Invariance
+
+section Dilation
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **Averages over concentric dyadic balls.** For an additive Haar measure on a real normed space
+of dimension `n`, the averages of `f` over `B(c, 2ᵏ ρ)` and `B(c, ρ)` differ by at most
+`k 2ⁿ ‖f‖_{BMO}`: each doubling of the radius moves the average by at most `2ⁿ` times the mean
+oscillation on the larger ball. -/
+theorem enorm_setAverage_ball_two_pow_mul_sub_le {f : E → F} (hf : AEStronglyMeasurable f μ)
+    (c : E) {ρ : ℝ} (hρ : 0 < ρ) (k : ℕ) :
+    ‖(⨍ z in ball c (2 ^ k * ρ), f z ∂μ) - ⨍ z in ball c ρ, f z ∂μ‖ₑ ≤
+      k * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) := by
+  set a : ℕ → F := fun j => ⨍ z in ball c (2 ^ j * ρ), f z ∂μ
+  have hstep (j : ℕ) : ‖a j - a (j + 1)‖ₑ ≤ 2 ^ Module.finrank ℝ E * bmoSeminorm f μ := by
+    have hρj : 0 < 2 ^ j * ρ := by positivity
+    have hsub : ball c (2 ^ j * ρ) ⊆ ball c (2 ^ (j + 1) * ρ) :=
+      ball_subset_ball (by gcongr <;> norm_num)
+    have hμ : μ (ball c (2 ^ (j + 1) * ρ)) =
+        2 ^ Module.finrank ℝ E * μ (ball c (2 ^ j * ρ)) := by
+      rw [Measure.addHaar_ball_of_pos μ c (by positivity), Measure.addHaar_ball_of_pos μ c hρj,
+        show 2 ^ (j + 1) * ρ = 2 * (2 ^ j * ρ) by ring, mul_pow,
+        ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat,
+        mul_assoc]
+    refine (enorm_setAverage_sub_le_of_subset hsub (measure_ball_pos μ c hρj).ne'
+      measure_ball_lt_top.ne hf.restrict (a (j + 1))).trans ?_
+    rw [hμ, ENNReal.mul_div_cancel_right (measure_ball_pos μ c hρj).ne' measure_ball_lt_top.ne]
+    gcongr
+    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c _
+  have h0 : a 0 = ⨍ z in ball c ρ, f z ∂μ := by simp [a]
+  rw [← h0]
+  induction k with
+  | zero => simp [h0]
+  | succ k ih =>
+    calc ‖a (k + 1) - a 0‖ₑ = edist (a (k + 1)) (a 0) := (edist_eq_enorm_sub _ _).symm
+      _ ≤ edist (a (k + 1)) (a k) + edist (a k) (a 0) := edist_triangle _ _ _
+      _ = ‖a k - a (k + 1)‖ₑ + ‖a k - a 0‖ₑ := by
+          rw [edist_comm, edist_eq_enorm_sub, edist_eq_enorm_sub]
+      _ ≤ 2 ^ Module.finrank ℝ E * bmoSeminorm f μ +
+            k * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) :=
+          add_le_add (hstep k) ih
+      _ = ((k + 1 : ℕ) : ℝ≥0∞) * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) := by
+          push_cast
+          ring
+
+end Dilation
 
 end TauCeti
