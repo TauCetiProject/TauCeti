@@ -15,8 +15,8 @@ A map `p : V → V` defines a Serre graph on `V` with one geometric edge joining
 its parent `p v`. A reduced path in this graph first climbs along the parent map and then
 descends, without passing twice through the same edge at its top. Hence the graph is a forest as
 soon as no vertex is a proper iterated parent of itself, and it is a tree when moreover any two
-vertices have a common iterated parent. Rooted trees, and the trees attached by Serre to an
-increasing union of subgroups, are of this form.
+vertices have a common iterated parent. Every vertex has a parent, so rooted trees, whose root
+has none, are not of this form; the tree attached by Serre to an increasing union of subgroups is.
 
 A group acting on `V` and commuting with the parent map acts on the graph by automorphisms that
 preserve the orientation of every edge towards the parent.

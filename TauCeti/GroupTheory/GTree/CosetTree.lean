@@ -82,15 +82,8 @@ theorem cosetParent_smul (g : G) (x : Σ n, G ⧸ H n) :
   induction x using QuotientGroup.induction_on
   rfl
 
-/-- Two cosets of members of the sequence are equal when they are cosets of the same subgroup
-and their representatives differ by an element of it. -/
-private theorem sigma_mk_eq {m n : ℕ} {g h : G} (hmn : m = n) (hgh : g⁻¹ * h ∈ H m) :
-    (⟨m, g⟩ : Σ n, G ⧸ H n) = ⟨n, h⟩ := by
-  subst hmn
-  exact congrArg _ (QuotientGroup.eq.mpr hgh)
-
 /-- No coset is a proper iterated parent of itself. -/
-theorem cosetParent_iterate_eq_iterate (x : Σ n, G ⧸ H n) (k l : ℕ)
+theorem eq_of_cosetParent_iterate_eq (x : Σ n, G ⧸ H n) (k l : ℕ)
     (h : (cosetParent H)^[k] x = (cosetParent H)^[l] x) : k = l := by
   obtain ⟨n, x⟩ := x
   induction x using QuotientGroup.induction_on
@@ -106,8 +99,8 @@ theorem exists_cosetParent_iterate_eq (hH : ∀ g, ∃ n, g ∈ H n) (x y : Σ n
   induction y using QuotientGroup.induction_on with | _ h
   obtain ⟨N, hN⟩ := hH (g⁻¹ * h)
   refine ⟨n + N, m + N, ?_⟩
-  rw [cosetParent_iterate_mk, cosetParent_iterate_mk]
-  exact sigma_mk_eq H (by omega) (H.monotone (by omega) hN)
+  rw [cosetParent_iterate_mk, cosetParent_iterate_mk, show m + (n + N) = n + (m + N) by omega]
+  exact congrArg _ (QuotientGroup.eq.mpr (H.monotone (by omega) hN))
 
 /-! ### The coset tree -/
 
@@ -119,7 +112,7 @@ by left translation. -/
 @[expose] def cosetTree : GTree.{w, w} G where
   toSerreGraph := ofParent (cosetParent H)
   isTree :=
-    ofParent_isTree _ (cosetParent_iterate_eq_iterate H) (exists_cosetParent_iterate_eq H hH)
+    ofParent_isTree _ (eq_of_cosetParent_iterate_eq H) (exists_cosetParent_iterate_eq H hH)
   action := ofParentAction _ (cosetParent_smul H)
   action_smul_ne_rev := ofParentAction_equivE_ne_rev _
 
@@ -136,9 +129,8 @@ theorem mem_stabilizer_cosetTreeVertexEquiv_symm {g a : G} {n : ℕ} :
     g ∈ stabilizer G ((cosetTreeVertexEquiv H hH).symm ⟨n, (a : G ⧸ H n)⟩) ↔
       a⁻¹ * g * a ∈ H n := by
   rw [mem_stabilizer_iff, ← (cosetTreeVertexEquiv H hH).apply_eq_iff_eq,
-    cosetTreeVertexEquiv_smul, Equiv.apply_symm_apply, Sigma.smul_mk, Sigma.mk.injEq, heq_eq_eq,
-    eq_self_iff_true, true_and, MulAction.Quotient.smul_mk, eq_comm, QuotientGroup.eq,
-    smul_eq_mul, mul_assoc]
+    cosetTreeVertexEquiv_smul, Equiv.apply_symm_apply, eq_comm]
+  simp [QuotientGroup.eq, mul_assoc]
 
 /-- The stabilizer of the vertex `H n` of the coset tree is `H n`. -/
 @[simp] theorem stabilizer_cosetTreeVertexEquiv_symm_one (n : ℕ) :
