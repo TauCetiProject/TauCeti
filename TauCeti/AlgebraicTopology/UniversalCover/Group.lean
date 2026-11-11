@@ -114,7 +114,7 @@ private theorem mk_eq_mk {x y : G} {p : Path 1 x} {q : Path 1 y} (h : ∀ t, p t
   UniversalCover.ext (by simpa using h 1) (Path.Homotopic.hpath_hext h)
 
 /-- The classes of two paths from `1` are equal when a continuous square joins them while keeping
-its edges `s = 0` and `s = 1` at `1` and at the common endpoint. -/
+its edges `t = 0` and `t = 1` at `1` and at the common endpoint. -/
 private theorem mk_eq_mk_of_homotopy {x y : G} (hxy : x = y) {p : Path 1 x} {q : Path 1 y}
     (F : I × I → G) (hF : Continuous F) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
     (hs₀ : ∀ s, F (s, 0) = 1) (hs₁ : ∀ s, F (s, 1) = x) :
