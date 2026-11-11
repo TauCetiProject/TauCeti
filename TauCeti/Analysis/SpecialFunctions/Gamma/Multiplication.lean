@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
