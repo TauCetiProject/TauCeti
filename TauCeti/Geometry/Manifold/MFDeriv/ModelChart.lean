@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 
 /-!
 # Calculus in the charts of a manifold modelled on its own model space
@@ -37,6 +38,9 @@ open set.
 * `TauCeti.exists_hasFDerivAt_symm_trans`: such a transition map, for `n ≠ 0`, has an invertible
   derivative at each point of its source, which is strict over `ℝ` or `ℂ`
   (`TauCeti.exists_hasStrictFDerivAt_symm_trans`).
+* `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is in the
+  atlas, which avoids needing `IsManifold` to know that it lies in the maximal atlas; it rests on
+  `TauCeti.contDiffAt_of_mem_contDiffGroupoid`.
 * `TauCeti.fderiv_symm_trans_comp_eq`: the chain rule for transitions between charts of the
   maximal atlas, read through the preferred chart.
 * `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: a chart of the `C^n` maximal atlas followed by a
@@ -204,6 +208,21 @@ theorem exists_hasFDerivAt_symm_trans (hn : n ≠ 0)
     ((contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).differentiableAt hn)
     ((contDiffAt_symm_trans_symm_of_mem_maximalAtlas hq hq'
       ((q.symm.trans q').map_source hz)).differentiableAt hn)
+
+/-- The transition map `q.symm.trans q'` from a chart `q` of the atlas to a chart `q'` of the
+`C^n` maximal atlas, `n ≠ 0`, has an invertible derivative at each point of its source. Since `q`
+is in the atlas, its membership in the `C^n` maximal atlas, which `exists_hasFDerivAt_symm_trans`
+takes as a hypothesis and which in general comes from an `IsManifold` instance, is not needed. -/
+theorem exists_hasFDerivAt_symm_trans_of_mem_atlas (hn : n ≠ 0) (hq : q ∈ atlas E M)
+    (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    {z : E} (hz : z ∈ (q.symm.trans q').source) :
+    ∃ A : E ≃L[𝕜] E, HasFDerivAt (q.symm.trans q') (A : E →L[𝕜] E) z := by
+  have h := hq' q hq
+  refine OpenPartialHomeomorph.exists_hasFDerivAt_of_chart _ hz
+    ((contDiffAt_of_mem_contDiffGroupoid h.2 hz).differentiableAt hn)
+    ((contDiffAt_of_mem_contDiffGroupoid ?_ ((q.symm.trans q').map_source hz)).differentiableAt hn)
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+  exact h.1
 
 end FDeriv
 
