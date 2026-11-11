@@ -237,6 +237,26 @@ theorem eq_path {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
     (hpT : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : p = T.path a b :=
   T.eq_of_isReduced hp (T.isReduced_path a b) hpT fun _ => T.mem_of_mem_darts_path
 
+/-- A path whose darts lie in a spanning tree reduces to the tree path between its endpoints. -/
+theorem reduce_eq_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.reduce Γ p = T.path a b :=
+  T.eq_path (Path.isReduced_reduce Γ p) fun e he =>
+    hp e ((Path.darts_reduce_sublist Γ p).subset he)
+
+/-- A path whose darts lie in a spanning tree is backtrack homotopic to the tree path between
+its endpoints. -/
+theorem homotopic_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.Homotopic Γ p (T.path a b) := by
+  simpa only [T.reduce_eq_path p hp] using Path.homotopic_reduce Γ p
+
+/-- Consecutive tree paths compose, up to backtrack homotopy, to the tree path between the
+outer endpoints. -/
+theorem homotopic_path_comp_path (a b c : Γ.V) :
+    Path.Homotopic Γ ((T.path a b).comp (T.path b c)) (T.path a c) :=
+  T.homotopic_path _ fun e he => by
+    rw [Path.darts_comp, List.mem_append] at he
+    exact he.elim T.mem_of_mem_darts_path T.mem_of_mem_darts_path
+
 @[simp] theorem path_self (a : Γ.V) : T.path a a = Quiver.Path.nil :=
   (T.eq_path (Path.isReduced_nil Γ a) (by simp)).symm
 
