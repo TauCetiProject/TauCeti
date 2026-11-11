@@ -211,7 +211,6 @@ theorem halfSpacePoissonKernel_le_mul (v : U) {x x₁ y : E} {A : ℝ} (hy : ⟪
     rw [Real.mul_rpow hA0.le hyx.le, Real.rpow_neg hA0.le, Real.rpow_natCast] at this
     rwa [inv_mul_le_iff₀ (by positivity)] at this
   rw [halfSpacePoissonKernel_def, halfSpacePoissonKernel_def]
-  have hc : 0 ≤ ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ := by positivity
   calc 2 * ⟪(v : E), x⟫_ℝ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ * ‖y - x‖ ^ (-(n : ℝ)))
       ≤ 2 * ⟪(v : E), x⟫_ℝ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ *
           (A ^ n * ‖y - x₁‖ ^ (-(n : ℝ)))) := by gcongr

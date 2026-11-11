@@ -719,7 +719,6 @@ private theorem center_neg_of_vertexAngle_lt {a b c : ℍ ⊕ OnePoint ℝ} {m �
     have hξ := hab.smul_zero_eq
     rw [one_smul] at hξ
     subst hξ
-    have hy := im_toComplex_nonneg c
     simp [Complex.normSq_apply] at ham hcm
     nlinarith
 
