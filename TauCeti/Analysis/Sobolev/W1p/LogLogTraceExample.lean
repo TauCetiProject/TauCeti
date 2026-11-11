@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.SpecialFunctions.Integrability.LogLog
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log.LogLog
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.MeasureTheory.Constructions.HaarToSphere

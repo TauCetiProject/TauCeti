@@ -16,7 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
-import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence

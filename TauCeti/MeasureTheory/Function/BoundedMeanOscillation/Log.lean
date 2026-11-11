@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log.Basic
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!

@@ -18,8 +18,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 On `(0, 2)` the inner logarithm of `r ↦ log log (4 / r)` exceeds `log 2 > 0`
 (`TauCeti.log_two_lt_log_four_div`), so the profile is differentiable there with derivative
-`-(r log (4 / r))⁻¹` (`TauCeti.hasDerivAt_log_log_four_div`). Both the profile and its derivative
-are square integrable against the planar polar weight `r dr`:
+`-(r log (4 / r))⁻¹` (`TauCeti.hasDerivAt_log_log_four_div`). The profile is antitone on `(0, 4)`
+(`TauCeti.antitoneOn_log_log_four_div`) and positive on `(0, 4 / e)`
+(`TauCeti.log_log_four_div_pos`), and `t ↦ t log (4 / t)` is monotone on `(0, 4 / e]`
+(`TauCeti.monotoneOn_mul_log_four_div`), so the size of the derivative is antitone there. Both
+the profile and its derivative are square integrable against the planar polar weight `r dr`:
 
 * `TauCeti.integrableOn_mul_log_log_four_div_sq`: `r (log log (4 / r))²` is integrable on
   `(0, 2)`, being bounded by `36` there;
@@ -50,6 +53,47 @@ theorem log_two_lt_log_four_div {r : ℝ} (h0 : 0 < r) (h2 : r < 2) :
 /-- For `0 < r < 2` the inner logarithm `log (4 / r)` is positive. -/
 theorem log_four_div_pos {r : ℝ} (h0 : 0 < r) (h2 : r < 2) : 0 < Real.log (4 / r) :=
   (Real.log_pos one_lt_two).trans (log_two_lt_log_four_div h0 h2)
+
+/-- For `0 < s < 4 / e` the inner logarithm `log (4 / s)` exceeds `1`. -/
+theorem one_lt_log_four_div {s : ℝ} (h0 : 0 < s) (h : s < 4 / Real.exp 1) :
+    1 < Real.log (4 / s) := by
+  rw [lt_div_iff₀ (Real.exp_pos 1)] at h
+  rw [Real.lt_log_iff_exp_lt (by positivity), lt_div_iff₀ h0]
+  linarith
+
+/-- For `0 < s < 4 / e` the radial profile `log log (4 / s)` is positive. -/
+theorem log_log_four_div_pos {s : ℝ} (h0 : 0 < s) (h : s < 4 / Real.exp 1) :
+    0 < Real.log (Real.log (4 / s)) :=
+  Real.log_pos (one_lt_log_four_div h0 h)
+
+/-- The radial profile `s ↦ log log (4 / s)` is antitone on `(0, 4)`, where its inner logarithm
+is positive. -/
+theorem antitoneOn_log_log_four_div :
+    AntitoneOn (fun s : ℝ => Real.log (Real.log (4 / s))) (Ioo 0 4) := by
+  rintro a ⟨ha, -⟩ b ⟨hb0, hb⟩ hab
+  exact Real.log_le_log (Real.log_pos ((one_lt_div hb0).2 hb))
+    (Real.log_le_log (by positivity) (div_le_div_of_nonneg_left (by norm_num) ha hab))
+
+/-- `t ↦ t log (4 / t)` is monotone on `(0, 4 / e]`, where `log (4 / t) ≥ 1`. Equivalently, the
+size `(t log (4 / t))⁻¹` of the derivative of the radial profile `log log (4 / t)` is antitone
+there. -/
+theorem monotoneOn_mul_log_four_div :
+    MonotoneOn (fun t : ℝ => t * Real.log (4 / t)) (Ioc 0 (4 / Real.exp 1)) := by
+  rintro a ⟨ha, -⟩ b ⟨hb0, hb⟩ hab
+  have hLb : 1 ≤ Real.log (4 / b) := by
+    rw [le_div_iff₀ (Real.exp_pos 1)] at hb
+    rw [Real.le_log_iff_exp_le (by positivity), le_div_iff₀ hb0]
+    linarith
+  have hsplit : Real.log (4 / a) = Real.log (4 / b) + Real.log (b / a) := by
+    have h4 : 4 / a = 4 / b * (b / a) := by field_simp
+    rw [h4, Real.log_mul (by positivity) (by positivity)]
+  have hba : Real.log (b / a) ≤ b / a - 1 := Real.log_le_sub_one_of_pos (by positivity)
+  have : a * Real.log (b / a) ≤ b - a := by
+    calc a * Real.log (b / a) ≤ a * (b / a - 1) := by gcongr
+      _ = b - a := by field_simp
+  dsimp only
+  rw [hsplit, mul_add]
+  nlinarith
 
 /-- `r ↦ 4 / r` has derivative `-(4 / r²)` at `r ≠ 0`. -/
 private theorem hasDerivAt_four_div {r : ℝ} (h0 : r ≠ 0) :

@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
-import TauCeti.Analysis.SpecialFunctions.Integrability.LogLog
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log.LogLog
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 
@@ -55,7 +55,9 @@ The constant `4` keeps the inner logarithm above `1` on `D`, so both logarithms 
 the regularised functions satisfy `0 < u_ε ≤ u`. The radial calculus is shared with
 `TauCeti.logLogTraceExample`, the same profile placed at a boundary point of the unit disc:
 `TauCeti.hasDerivAt_log_log_four_div`, `TauCeti.integrableOn_mul_log_log_four_div_sq` and
-`TauCeti.integrableOn_mul_inv_mul_log_four_div_sq`.
+`TauCeti.integrableOn_mul_inv_mul_log_four_div_sq`. The bounds `0 < u_ε ≤ u` and the gradient
+domination come from `TauCeti.log_log_four_div_pos`, `TauCeti.antitoneOn_log_log_four_div` and
+`TauCeti.monotoneOn_mul_log_four_div`.
 
 ## References
 
@@ -89,12 +91,10 @@ namespace LogLogInterior
 private def profileDeriv (s : ℝ) : ℝ :=
   -(s * Real.log (4 / s))⁻¹
 
-/-- For `0 < s < 1` the inner logarithm exceeds `1`, since `4 / s > 4 > e`. -/
-private theorem one_lt_log_four_div {s : ℝ} (h0 : 0 < s) (h1 : s < 1) :
-    1 < Real.log (4 / s) := by
-  rw [Real.lt_log_iff_exp_lt (by positivity)]
-  have h4 : 4 < 4 / s := by rw [lt_div_iff₀ h0]; linarith
-  linarith [Real.exp_one_lt_d9]
+/-- Points below `1` lie below `4 / e`. -/
+private theorem lt_four_div_exp_one {s : ℝ} (h1 : s < 1) : s < 4 / Real.exp 1 := by
+  rw [lt_div_iff₀ (Real.exp_pos 1)]
+  nlinarith [Real.exp_one_lt_d9, Real.exp_pos 1]
 
 /-- On `(0, 2)` the profile derivative has size `(s log (4 / s))⁻¹`. -/
 private theorem abs_profileDeriv {s : ℝ} (h0 : 0 < s) (h2 : s < 2) :
@@ -102,35 +102,14 @@ private theorem abs_profileDeriv {s : ℝ} (h0 : 0 < s) (h2 : s < 2) :
   have := log_four_div_pos h0 h2
   rw [profileDeriv, abs_neg, abs_inv, abs_of_pos (by positivity)]
 
-/-- The radial profile `log log (4 / s)` is positive on `(0, 1)`. -/
-private theorem log_log_four_div_pos {s : ℝ} (h0 : 0 < s) (h1 : s < 1) :
-    0 < Real.log (Real.log (4 / s)) :=
-  Real.log_pos (one_lt_log_four_div h0 h1)
-
-/-- The radial profile `log log (4 / s)` is antitone on `(0, 1)`. -/
-private theorem log_log_four_div_le {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) :
-    Real.log (Real.log (4 / b)) ≤ Real.log (Real.log (4 / a)) :=
-  Real.log_le_log ((one_lt_log_four_div (ha.trans_le hab) hb).trans' one_pos)
-    (Real.log_le_log (div_pos four_pos (ha.trans_le hab))
-      (div_le_div_of_nonneg_left (by norm_num) ha hab))
-
-/-- `t ↦ t log (4 / t)` is monotone on `(0, 1)`, so the size of the profile derivative is
-antitone there. -/
+/-- The size of the profile derivative is antitone on `(0, 1)`. -/
 private theorem abs_profileDeriv_le {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) :
     |profileDeriv b| ≤ |profileDeriv a| := by
   have hb0 : 0 < b := ha.trans_le hab
-  have hLb := one_lt_log_four_div hb0 hb
-  have hLa := one_lt_log_four_div ha (hab.trans_lt hb)
-  have hsplit : Real.log (4 / a) = Real.log (4 / b) + Real.log (b / a) := by
-    have h4 : 4 / a = 4 / b * (b / a) := by field_simp
-    rw [h4, Real.log_mul (by positivity) (by positivity)]
-  have hba : Real.log (b / a) ≤ b / a - 1 := Real.log_le_sub_one_of_pos (by positivity)
-  have hmono : a * Real.log (4 / a) ≤ b * Real.log (4 / b) := by
-    rw [hsplit, mul_add]
-    have : a * Real.log (b / a) ≤ b - a := by
-      calc a * Real.log (b / a) ≤ a * (b / a - 1) := by gcongr
-        _ = b - a := by field_simp
-    nlinarith
+  have hmono : a * Real.log (4 / a) ≤ b * Real.log (4 / b) :=
+    monotoneOn_mul_log_four_div ⟨ha, (lt_four_div_exp_one (hab.trans_lt hb)).le⟩
+      ⟨hb0, (lt_four_div_exp_one hb).le⟩ hab
+  have hLa := log_four_div_pos ha (by linarith)
   rw [abs_profileDeriv hb0 (by linarith), abs_profileDeriv ha (by linarith)]
   exact inv_anti₀ (by positivity) hmono
 
@@ -194,10 +173,11 @@ private theorem abs_reg_sub_le {z : ℂ} {ε : ℝ} (hz : z ∈ ball (0 : ℂ) (
     (hε0 : 0 ≤ ε) (hε : ε < 1 / 2) : |reg ε z - logLogInterior z| ≤ |logLogInterior z| := by
   obtain ⟨hle, hlt⟩ := norm_mem hz hε0 hε
   have h0 := norm_pos_iff.2 hz0
-  have hp := log_log_four_div_pos (h0.trans_le hle) hlt
-  have hm := log_log_four_div_le h0 hle hlt
+  have hp := log_log_four_div_pos (h0.trans_le hle) (lt_four_div_exp_one hlt)
+  have hm : Real.log (Real.log (4 / (‖z‖ + ε))) ≤ Real.log (Real.log (4 / ‖z‖)) :=
+    antitoneOn_log_log_four_div ⟨h0, by linarith⟩ ⟨h0.trans_le hle, by linarith⟩ hle
   rw [← reg_zero, reg, reg, add_zero, abs_of_nonpos (by linarith),
-    abs_of_pos (log_log_four_div_pos h0 (hle.trans_lt hlt))]
+    abs_of_pos (log_log_four_div_pos h0 (lt_four_div_exp_one (hle.trans_lt hlt)))]
   linarith
 
 private theorem ae_mem_ne (R : ℝ) : ∀ᵐ z ∂volume.restrict (ball (0 : ℂ) R),
