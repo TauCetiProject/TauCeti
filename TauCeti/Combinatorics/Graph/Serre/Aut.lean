@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Convex
 public import TauCeti.Combinatorics.Graph.Serre.Dist
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Combinatorics.Quiver.Cast
 
@@ -60,6 +61,19 @@ variable {Γ}
   obtain rfl : φV = ψV := Equiv.ext hV
   obtain rfl : φE = ψE := Equiv.ext hE
   rfl
+
+/-- The automorphisms of a Serre graph are its isomorphisms with itself. -/
+def equivIso : Γ.Aut ≃ Γ.Iso Γ where
+  toFun φ := ⟨φ.equivV, φ.equivE, φ.map_src, φ.map_rev⟩
+  invFun φ := ⟨φ.equivV, φ.equivE, φ.map_src, φ.map_rev⟩
+
+@[simp] theorem equivIso_equivV (φ : Γ.Aut) : (equivIso φ).equivV = φ.equivV := (rfl)
+
+@[simp] theorem equivIso_equivE (φ : Γ.Aut) : (equivIso φ).equivE = φ.equivE := (rfl)
+
+@[simp] theorem equivIso_symm_equivV (φ : Γ.Iso Γ) : (equivIso.symm φ).equivV = φ.equivV := (rfl)
+
+@[simp] theorem equivIso_symm_equivE (φ : Γ.Iso Γ) : (equivIso.symm φ).equivE = φ.equivE := (rfl)
 
 /-- Automorphisms form a group under composition, with `φ * ψ` acting as `ψ` followed by `φ`. -/
 instance : Group Γ.Aut where
