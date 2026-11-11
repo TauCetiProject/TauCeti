@@ -61,9 +61,11 @@ below.
 
 ## Main results
 
+* `TauCeti.tetrahedronSymmetryMatrix_swap`: transpositions act by reflections.
 * `TauCeti.isSymm_tetrahedronSpringMatrix`, `TauCeti.posSemidef_neg_tetrahedronSpringMatrix`:
   `H` is symmetric and `-H` is positive semidefinite.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_displacementRep`: `H` commutes with the `S₄`-action.
+* `TauCeti.tetrahedronDisplacementRep_affineFieldEquiv`: the action in the coordinates `(t, A)`.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_affineFieldEquiv`: `H` in the coordinates `(t, A)`.
 * `TauCeti.charpoly_tetrahedronSpringMatrix`: `charpoly H = X⁶ (X + 2)² (X + 4)³ (X + 8)`.
 * `TauCeti.finrank_eigenspace_tetrahedronSpringMatrix`: the eigenspace dimensions.
@@ -225,6 +227,29 @@ theorem tetrahedronSymmetryMatrix_mem_orthogonalGroup (σ : Equiv.Perm (Fin 4)) 
     tetrahedronSymmetryMatrix σ ∈ Matrix.orthogonalGroup (Fin 3) ℝ := by
   rw [Matrix.mem_orthogonalGroup_iff', transpose_tetrahedronSymmetryMatrix, ← map_mul,
     inv_mul_cancel, map_one]
+
+/-- A transposition acts on `ℝ³` by the reflection in the plane orthogonal to its edge,
+`R_{(j k)} = 1 - (qⱼ - qₖ)(qⱼ - qₖ)ᵀ`, the edge `qⱼ - qₖ` having squared length `2` for `j ≠ k`.
+For `j = k` both sides are the identity. -/
+theorem tetrahedronSymmetryMatrix_swap (j k : Fin 4) :
+    tetrahedronSymmetryMatrix (Equiv.swap j k) =
+      1 - vecMulVec (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k)
+        (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k) := by
+  rcases eq_or_ne j k with rfl | h
+  · simp [← Equiv.Perm.one_def]
+  refine ext_of_mulVec_tetrahedronCenteredVertex fun l ↦ ?_
+  rw [tetrahedronSymmetryMatrix_mulVec, sub_mulVec, one_mulVec, vecMulVec_mulVec,
+    op_smul_eq_smul, sub_dotProduct, dotProduct_tetrahedronCenteredVertex,
+    dotProduct_tetrahedronCenteredVertex]
+  by_cases hj : l = j
+  · subst hj
+    simp [Ne.symm h]
+    module
+  by_cases hk : l = k
+  · subst hk
+    simp [h]
+    module
+  · simp [Equiv.swap_apply_of_ne_of_ne hj hk, Ne.symm hj, Ne.symm hk]
 
 /-! ### Displacements -/
 
@@ -427,6 +452,24 @@ theorem tetrahedronAffineFieldEquiv_symm_apply (u : Fin 4 × Fin 3 → ℝ) :
     tetrahedronAffineFieldEquiv.symm u = ((4 : ℝ)⁻¹ • ∑ i, Function.curry u i,
       ∑ i, vecMulVec (Function.curry u i) (tetrahedronCenteredVertex i)) :=
   (rfl)
+
+/-- In the coordinates `uᵢ = t + A qᵢ`, the symmetry `σ` acts by
+`(t, A) ↦ (R_σ t, R_σ A R_σ⁻¹)`. -/
+@[simp]
+theorem tetrahedronDisplacementRep_affineFieldEquiv (σ : Equiv.Perm (Fin 4)) (t : Fin 3 → ℝ)
+    (A : Matrix (Fin 3) (Fin 3) ℝ) :
+    tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) =
+      tetrahedronAffineFieldEquiv (tetrahedronSymmetryMatrix σ *ᵥ t,
+        tetrahedronSymmetryMatrix σ * A * tetrahedronSymmetryMatrix σ⁻¹) := by
+  ext ⟨m, k⟩
+  have h := congrFun
+    (curry_tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) m) k
+  simp only [Function.curry_apply] at h
+  have hc : Function.curry (tetrahedronAffineFieldEquiv (t, A)) (σ⁻¹ m) =
+      t + A *ᵥ tetrahedronCenteredVertex (σ⁻¹ m) := by
+    ext l; simp
+  rw [h, hc]
+  simp [mulVec_add, ← mulVec_mulVec]
 
 /-- The force matrix in the coordinates `uᵢ = t + A qᵢ`: it kills the translation `t` and maps
 `A` to `-2 (A + Aᵀ) + 2 diag(A) - 2 tr(A) I`. -/

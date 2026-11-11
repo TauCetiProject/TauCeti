@@ -5,174 +5,97 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
 # The double-bond braid relation in Chevalley data
 
-Pinned simple Weyl representatives at a double bond satisfy the length-four braid relation
-in the actual group of points over every commutative ring. This includes bad characteristic
-and nonreduced rings, and imposes no condition on the datum's weight lattice.
+Pinned simple Weyl representatives at a double bond satisfy the length-four braid
+relation over every commutative ring. This is an equality in the actual point group,
+not just in a Weyl quotient. It supplies the double-bond relation needed to identify
+the quotient of the Weyl subgroup by the torus.
 
-The two long roots obtained by reflecting one another across the short simple root are
-strongly orthogonal. Their rank-one subgroups therefore commute. The square of the short
-Weyl representative also commutes with the long rank-one subgroup: it is the coroot at
-minus one, and the relevant Cartan integer is even. Together these two commutations give
-the braid relation without computing the signs of the reflected root vectors.
+The rational operator identity is
+`IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two`. Restrict it to the datum's
+Kostant-stable lattice, then use multiplicativity of scalar extension and the matrix
+realization. In particular, no division takes place in the value ring, and no
+restriction on weight multiplicities, characteristic or reducedness is needed.
+The lattice-to-matrix transport follows the single-bond construction in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic`.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 15 and 19, and Chapter 6.
-* R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.2.
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Chapter 6.
+* R. W. Carter, *Simple Groups of Lie Type*, §6.4.
 -/
 
 public section
 
+open TauCeti.UniversalEnvelopingAlgebra
+
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+attribute [local instance high] Algebra.toModule
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-private theorem doubleBond_stronglyOrthogonal (i j : Fin t.rank)
-    (hji : t.cartanMatrix j i = -2) :
-    let P := t.simplyConnectedRootDatum ht
-    let α := t.simpleIndex ht i
-    let β := t.simpleIndex ht j
-    let γ := P.reflectionPerm α β
-    (P.root γ + P.root β ∉ Set.range P.root) ∧
-      (P.root γ + P.root β ≠ 0) ∧
-      (P.root γ - P.root β ∉ Set.range P.root) ∧
-      (P.root γ - P.root β ≠ 0) := by
+private theorem weylRestrict_braid_doubleBond (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2) :
+    let n := fun i => kostantWeylRestrict (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+      D.representation D.lattice D.representation_mem_lattice
+      (D.isNilpotent_representation_rootGenerator (.inl i))
+      (D.isNilpotent_representation_rootGenerator (.inr i))
+    (n i * n j * n i * n j : D.lattice ≃ₗ[ℤ] D.lattice) = n j * n i * n j * n i := by
   dsimp only
-  let P := t.simplyConnectedRootDatum ht
-  let α := t.simpleIndex ht i
-  let β := t.simpleIndex ht j
-  have := t.isReduced_simplyConnectedRootDatum ht
-  have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two i j hji
-  have hγ : P.root (P.reflectionPerm α β) = P.root β + 2 • P.root α := by
-    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root]
-    simp only [P, α, β, t.pairing_simpleIndex, hji, neg_smul, sub_neg_eq_add]
-    module
-  have hsum : P.root (P.reflectionPerm α β) + P.root β =
-      2 • P.root (P.reflectionPerm β α) := by
-    rw [hγ, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root]
-    simp only [P, α, β, t.pairing_simpleIndex, hij, neg_one_smul, sub_neg_eq_add]
-    module
-  have hsub : P.root (P.reflectionPerm α β) - P.root β = 2 • P.root α := by
-    rw [hγ]
-    module
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [hsum]
-    exact P.nsmul_notMem_range_root (n := 2)
-  · rw [hsum]
-    exact fun h => P.ne_zero _ ((nsmul_right_injective (by decide))
-      (h.trans (smul_zero _).symm))
-  · rw [hsub]
-    exact P.nsmul_notMem_range_root (n := 2)
-  · rw [hsub]
-    exact fun h => P.ne_zero _ ((nsmul_right_injective (by decide))
-      (h.trans (smul_zero _).symm))
-
-private theorem doubleBond_commute_conjugate (i j : Fin t.rank)
-    (hji : t.cartanMatrix j i = -2)
-    (A : Type v) [CommRing A] :
-    let a := D.weylElement (t.simpleIndex ht i) A 1
-    let b := D.weylElement (t.simpleIndex ht j) A 1
-    Commute (a * b * a⁻¹) b := by
-  let P := t.simplyConnectedRootDatum ht
-  let α := t.simpleIndex ht i
-  let β := t.simpleIndex ht j
-  let γ := P.reflectionPerm α β
-  let a := D.weylElement α A 1
-  let b := D.weylElement β A 1
-  let R := Subgroup.closure (Set.range (D.rootSubgroupPoints γ A) ∪
-    Set.range (D.rootSubgroupPoints (P.reflectionPerm γ γ) A))
-  have hneg : P.reflectionPerm α (P.reflectionPerm β β) = P.reflectionPerm γ γ := by
-    apply P.root.injective
-    rw [RootPairing.root_reflectionPerm, RootPairing.root_reflectionPerm,
-      RootPairing.reflection_apply_self, map_neg, ← RootPairing.root_reflectionPerm,
-      RootPairing.root_reflectionPerm P γ γ, RootPairing.reflection_apply_self]
-  have hc (δ : Fin t.numRoots) (u : A) :
-      a * D.rootSubgroupPoints δ A (Multiplicative.ofAdd u) * a⁻¹ =
-        D.rootSubgroupPoints (P.reflectionPerm α δ) A
-          (Multiplicative.ofAdd (((t.chevalleyWeylSign ht α δ : ℤ) : A) * u)) :=
-    D.weylElement_conj_rootSubgroupPoints i δ A u
-  have hab : a * b * a⁻¹ ∈ R := by
-    have hp (u : A) : a * D.rootSubgroupPoints β A (Multiplicative.ofAdd u) * a⁻¹ ∈ R := by
-      rw [hc]
-      exact Subgroup.subset_closure (Or.inl ⟨_, rfl⟩)
-    have hn (u : A) : a * D.rootSubgroupPoints (P.reflectionPerm β β) A
-        (Multiplicative.ofAdd u) * a⁻¹ ∈ R := by
-      rw [hc, hneg]
-      exact Subgroup.subset_closure (Or.inr ⟨_, rfl⟩)
-    have hclosure : Subgroup.closure (Set.range (D.rootSubgroupPoints β A) ∪
-        Set.range (D.rootSubgroupPoints (P.reflectionPerm β β) A)) ≤
-        R.comap (MulAut.conj a).toMonoidHom := by
-      rw [Subgroup.closure_le]
-      rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩)
-      · exact hp (Multiplicative.toAdd u)
-      · exact hn (Multiplicative.toAdd u)
-    exact hclosure (D.weylElement_mem_closure_rootPair β A 1)
-  have horth := doubleBond_stronglyOrthogonal (ht := ht) i j hji
-  exact (Subgroup.mem_centralizer_iff.mp
-      (D.closure_rootPair_le_centralizer A γ β horth.1 horth.2.1 horth.2.2.1
-        horth.2.2.2 hab) b (D.weylElement_mem_closure_rootPair β A 1)).symm
-
-private theorem doubleBond_commute_square (i j : Fin t.rank)
-    (hji : t.cartanMatrix j i = -2) (A : Type v) [CommRing A] :
-    Commute (D.weylElement (t.simpleIndex ht i) A 1 *
-      D.weylElement (t.simpleIndex ht i) A 1) (D.weylElement (t.simpleIndex ht j) A 1) := by
-  let P := t.simplyConnectedRootDatum ht
-  let β := t.simpleIndex ht j
-  have hx (δ : Fin t.numRoots) (hδ : P.root δ i = -2 ∨ P.root δ i = 2) (u : A) :
-      Commute (D.simpleCorootPoints i A (-1))
-        (D.rootSubgroupPoints δ A (Multiplicative.ofAdd u)) := by
-    apply mul_inv_eq_iff_eq_mul.mp
-    rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints]
-    simp only [coordinateRoot_def, D.torusCharacter_simpleCorootParameter]
-    dsimp only [P] at hδ
-    rcases hδ with hδ | hδ <;> simp [hδ]
-  have hp : P.root β i = -2 := by simp [P, β, t.root_simpleIndex, hji]
-  have hn : P.root (P.reflectionPerm β β) i = 2 := by
-    simp only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, Pi.neg_apply,
-      hp, neg_neg]
-  have hclosure : Subgroup.closure (Set.range (D.rootSubgroupPoints β A) ∪
-      Set.range (D.rootSubgroupPoints (P.reflectionPerm β β) A)) ≤
-      Subgroup.centralizer {D.simpleCorootPoints i A (-1)} := by
-    rw [Subgroup.closure_le]
-    rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩) <;>
-      apply Subgroup.mem_centralizer_singleton_iff.mpr
-    · exact (hx β (Or.inl hp) (Multiplicative.toAdd u)).symm.eq
-    · exact (hx (P.reflectionPerm β β) (Or.inr hn) (Multiplicative.toAdd u)).symm.eq
-  rw [D.weylElement_mul_self]
-  exact (Subgroup.mem_centralizer_singleton_iff.mp
-    (hclosure (D.weylElement_mem_closure_rootPair β A 1))).symm
+  let φ := D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+  have hs := (t.isSerreSystem_lieBasis ht).map φ
+  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
+    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+      LieAlgebra.Basis.rootGenerator_inl] using
+      D.isNilpotent_representation_rootGenerator (.inl k)
+  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
+    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+      LieAlgebra.Basis.rootGenerator_inr] using
+      D.isNilpotent_representation_rootGenerator (.inr k)
+  -- The Lie basis uses the transpose of the displayed Cartan matrix. Reverse the
+  -- two nodes in the operator theorem and then reverse its equality.
+  have h := (hs.weylUnit_braid_of_cartan_eq_neg_two
+    (i := j) (j := i) (by simp) (by simp) hij hji (hE j) (hF j) (hE i) (hF i)).symm
+  ext v
+  have hv := congrArg (fun u : (Module.End ℚ D.carrier)ˣ => (u : Module.End ℚ D.carrier) v) h
+  simpa only [mul_apply_eq_comp, coe_kostantWeylRestrict_apply, Units.val_mul,
+    Module.End.smul_def, φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using hv
 
 /-- Pinned simple Weyl representatives at a double bond satisfy the length-four braid
 relation over every commutative value ring. The Cartan matrix is indexed by root, then coroot,
 so `j` is the long node and `i` the short node. -/
 theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
     (hji : t.cartanMatrix j i = -2)
-    (A : Type v) [CommRing A] :
+    (A : Type*) [CommRing A] :
     D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
-  let a := D.weylElement (t.simpleIndex ht i) A 1
-  let b := D.weylElement (t.simpleIndex ht j) A 1
-  have hcomm : Commute (a * b * a⁻¹) b := D.doubleBond_commute_conjugate i j hji A
-  have hsq : Commute (a * a) b := D.doubleBond_commute_square i j hji A
-  -- Replace the inverse in the orthogonal-pair commutation using the commuting square.
-  have h := congrArg (fun g => g * a * a) hcomm.eq
-  calc
-    a * b * a * b = (a * b * a⁻¹ * b) * a * a := by
-      calc
-        _ = (a * b * a⁻¹) * ((a * a) * b) := by group
-        _ = (a * b * a⁻¹) * (b * (a * a)) := by rw [hsq.eq]
-        _ = _ := by group
-    _ = (b * (a * b * a⁻¹)) * a * a := h
-    _ = b * a * b * a := by group
+  let n := fun i => kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+    D.representation D.lattice D.representation_mem_lattice
+    (D.isNilpotent_representation_rootGenerator (.inl i))
+    (D.isNilpotent_representation_rootGenerator (.inr i)) A
+  have hn : n i * n j * n i * n j = n j * n i * n j * n i := by
+    apply Units.ext
+    have h := congrArg (fun e : D.lattice ≃ₗ[ℤ] D.lattice =>
+      (e : Module.End ℤ D.lattice).baseChange A) (D.weylRestrict_braid_doubleBond i j
+        (t.cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two i j hji) hji)
+    simpa only [LinearEquiv.coe_toLinearMap_mul, LinearMap.baseChange_mul,
+      Units.val_mul, n, kostantWeylGL_val, kostantWeylPoints_toLinearMap] using h
+  let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+  have hf (k : Fin t.rank) :
+      (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+        f (n k) := D.coe_weylElement_simpleIndex_one k A
+  apply Subtype.ext
+  simpa only [Subgroup.coe_mul, hf, map_mul] using congrArg f hn
 
 end TauCeti.DynkinType.ChevalleyDatum
