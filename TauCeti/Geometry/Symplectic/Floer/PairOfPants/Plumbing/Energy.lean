@@ -116,25 +116,6 @@ private theorem plumbedPerturbation_of_mem_truncation (hq : q ≠ inf) (hab : Hb
   rw [endSign_eq_one hq, one_mul] at h
   rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x]
 
-/-- On the inserted truncation `S_{L/2}`, the pullback of the plumbed perturbation along the
-plumbing map is the perturbation of the inserted pair of pants. -/
-private theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ}
-    (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) (v : ℂ) :
-    perturbationPullback (realChart (q.plumbingMap L))
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (Complex.equivRealProdCLM v) w =
-      fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x v := by
-  have hw' := mem_truncation.1 hw
-  ext x
-  rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-    ContinuousLinearEquiv.symm_apply_apply]
-  refine plumbedPerturbation_plumbingMap hq hab hw'.1 ?_ x v
-  have h := hw'.2.2 inf
-  rw [endSign_inf, neg_one_mul] at h
-  linarith
-
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
@@ -267,12 +248,12 @@ private theorem setIntegral_floerEnergyDensity_inserted (hq : q ≠ inf)
       (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w) (fun w hw ↦ hud hw)
       (fun w hw ↦ hK hw 1) (fun w hw ↦ hK hw Complex.I)]
     refine setIntegral_congr_fun hT fun w hw ↦ ?_
-    have hpR := perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha) (Hb := Hb)
-      hq hab hL hw (Complex.equivRealProdCLM.symm stdComplexLineReal)
-    have hpI := perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha) (Hb := Hb)
-      hq hab hL hw (Complex.equivRealProdCLM.symm stdComplexLineImag)
-    rw [ContinuousLinearEquiv.apply_symm_apply, equivRealProdCLM_symm_stdComplexLineReal] at hpR
-    rw [ContinuousLinearEquiv.apply_symm_apply, equivRealProdCLM_symm_stdComplexLineImag] at hpI
+    have hpR := funext (perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha)
+      (Hb := Hb) (L := L) (R := L / 2) hq hab (by linarith) hw stdComplexLineReal)
+    have hpI := funext (perturbationPullback_plumbedPerturbation_of_mem_truncation (Ha := Ha)
+      (Hb := Hb) (L := L) (R := L / 2) hq hab (by linarith) hw stdComplexLineImag)
+    rw [equivRealProdCLM_symm_stdComplexLineReal] at hpR
+    rw [equivRealProdCLM_symm_stdComplexLineImag] at hpI
     simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
       perturbedMFDeriv_apply_stdComplexLineImag, hpR, hpI]
   · have h := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hT hinj
