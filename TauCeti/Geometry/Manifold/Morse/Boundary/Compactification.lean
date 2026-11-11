@@ -46,8 +46,9 @@ The converse inclusion, that every broken trajectory is a limit of unbroken ones
 `IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
 neighbourhood homeomorphic to a half-open interval, by
 `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
-`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectory
-pairs are even in number, which is `∂ ∘ ∂ = 0` by
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this shows that the broken trajectory pairs
+are even in number (`TauCeti.Geometry.Manifold.Morse.Boundary.Differential`), which is
+`∂ ∘ ∂ = 0` by
 `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`.
 
 ## Main declarations
