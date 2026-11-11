@@ -106,8 +106,7 @@ private theorem exists_homeomorph_closure_connectedComponentIn_of_notMem (hb : I
       g ⁻¹' {w | 0 ≤ ⟪(w : F), (p : F)⟫} := by
     rw [connectedComponentIn_compl_range_eq_setOf_pos hEF hb.continuous hb.injective hφ hφσ hφ1'
         hφy,
-      hb.closure_setOf_pos hEF hE hφ hφσ hφy hφ1']
-    rfl
+      hb.closure_setOf_pos hEF hE hφ hφσ hφy hφ1', preimage_ofPred_eq]
   -- The inverse set over `p` is cellular, so the preimage of the closed hemisphere is a closed
   -- ball.
   have hcell : IsCellularSet (EuclideanSpace ℝ (Fin (finrank ℝ E))) (g ⁻¹' {p}) :=
@@ -129,11 +128,12 @@ private theorem exists_homeomorph_closure_connectedComponentIn_of_notMem (hb : I
     e.symm.sphereCone.subtype fun v ↦ by
       simp only [mem_closedBall_zero_iff, Homeomorph.norm_sphereCone_apply]
   let s : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ g ⁻¹' {w | 0 ≤ ⟪(w : F), (p : F)⟫} :=
-    (Homeomorph.refl _).subtype fun w ↦ by rw [hcl]; rfl
+    (Homeomorph.refl _).subtype fun w ↦ by rw [hcl, Homeomorph.refl_apply, id_eq]
   refine ⟨s.trans (h₀.trans c), fun x ↦ ?_⟩
   -- On the image of `σ`, which `g` sends to the equator by `e`, the homeomorphism inverts `σ`.
-  have hσx : σ x ∈ closure (connectedComponentIn (range σ)ᶜ y) :=
-    hcl ▸ (show 0 ≤ φ (σ x) from ((hφσ _).2 ⟨x, rfl⟩).ge)
+  have hσx : σ x ∈ closure (connectedComponentIn (range σ)ᶜ y) := by
+    rw [hcl, mem_preimage, mem_ofPred_eq]
+    exact ((hφσ _).2 ⟨x, rfl⟩).ge
   have hgσ : (g (σ x) : F) = ((e x : (ℝ ∙ (p : F))ᗮ) : F) := by
     simpa [hb.apply_zero] using hlat x 0 ⟨by norm_num, by norm_num⟩
   have key : s.trans (h₀.trans c) ⟨σ x, hσx⟩ = ⟨x, sphere_subset_closedBall x.2⟩ := by
