@@ -36,9 +36,10 @@ of the summands with `M` derivatives
 (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialSymbol`). In this convention the
 derivative `∂_v` has principal symbol `i ⟪ξ, v⟫`. The coefficients need no bounds, since the
 estimates of classical symbols are only required on compact sets of positions. As an example, the
-Laplacian `-Δ` (`TauCeti.ClassicalSymbol.laplacian`) has full and principal symbol `‖ξ‖² id`,
-which is elliptic (`TauCeti.ClassicalSymbol.isElliptic_principal_laplacian`), and its quantization
-is `-Δ` on Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_laplacian`).
+negative Laplacian `-Δ` (`TauCeti.ClassicalSymbol.negLaplacian`) has full and principal symbol
+`‖ξ‖² id`, which is elliptic (`TauCeti.ClassicalSymbol.isElliptic_principal_negLaplacian`), and its
+quantization is `-Δ` on Schwartz input
+(`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
 
 ## References
 
@@ -229,21 +230,22 @@ theorem coefficient_principal_ofDifferentialSymbol {x ξ : CoordinateSpace n} (h
   rw [coefficient_principal, coefficient_term_ofDifferentialSymbol M s v b hb hk 0 hξ,
     Finset.filter_congr fun i hi ↦ (by have := hk i hi; omega : M - k i = 0 ↔ k i = M)]
 
-/-! ### The Laplacian -/
+/-! ### The negative Laplacian -/
 
 variable (V) in
-/-- The classical symbol of order `2` of the Laplacian `-∑ⱼ ∂ⱼ²` on `V`-valued functions, where
-`∂ⱼ` is the derivative along the `j`-th coordinate vector. -/
-def laplacian : ClassicalSymbol n V V 2 :=
+/-- The classical symbol of order `2` of the negative Laplacian `-Δ = -∑ⱼ ∂ⱼ²` on `V`-valued
+functions, where `∂ⱼ` is the derivative along the `j`-th coordinate vector. -/
+def negLaplacian : ClassicalSymbol n V V 2 :=
   ofDifferentialSymbol 2 Finset.univ
     (fun j : Fin n ↦ ![EuclideanSpace.single j 1, EuclideanSpace.single j 1])
     (fun _ _ ↦ -ContinuousLinearMap.id ℂ V) (fun _ _ ↦ contDiff_const) fun _ _ ↦ le_rfl
 
-/-- The full symbol of the Laplacian `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`. -/
+/-- The full symbol of the negative Laplacian `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`. -/
 @[simp]
-theorem coefficient_toSymbol_laplacian (p : CoordinateSpace n × CoordinateSpace n) :
-    (laplacian V).toSymbol.coefficient p = ((‖p.2‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
-  simp only [laplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
+theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSpace n) :
+    (negLaplacian V).toSymbol.coefficient p =
+      ((‖p.2‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
+  simp only [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
     Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
     EuclideanSpace.inner_single_right, conj_trivial, one_mul, EuclideanSpace.norm_sq_eq,
     Real.norm_eq_abs, sq_abs, smul_neg, ← neg_smul, ← Finset.sum_smul]
@@ -253,20 +255,20 @@ theorem coefficient_toSymbol_laplacian (p : CoordinateSpace n × CoordinateSpace
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   linear_combination (-(p.2 j : ℂ) ^ 2) * Complex.I_sq
 
-/-- Away from `ξ = 0`, the principal symbol of the Laplacian `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`. -/
-theorem coefficient_principal_laplacian {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    (laplacian V).principal.coefficient (x, ξ) =
+/-- Away from `ξ = 0`, the principal symbol of the negative Laplacian `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`. -/
+theorem coefficient_principal_negLaplacian {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (negLaplacian V).principal.coefficient (x, ξ) =
       ((‖ξ‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
-  rw [laplacian, coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ,
+  rw [negLaplacian, coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ,
     Finset.filter_true_of_mem fun _ _ ↦ rfl]
   exact (congrFun (coefficient_toSymbol_ofDifferentialSymbol 2 _ _ _ (fun _ _ ↦ contDiff_const)
-    fun _ _ ↦ le_rfl) (x, ξ)).symm.trans (coefficient_toSymbol_laplacian (x, ξ))
+    fun _ _ ↦ le_rfl) (x, ξ)).symm.trans (coefficient_toSymbol_negLaplacian (x, ξ))
 
-/-- **The Laplacian is elliptic**: its principal symbol `‖ξ‖² id` is invertible at every nonzero
-frequency. -/
-theorem isElliptic_principal_laplacian : (laplacian (n := n) V).principal.IsElliptic := by
+/-- **The negative Laplacian is elliptic**: its principal symbol `‖ξ‖² id` is invertible at every
+nonzero frequency. -/
+theorem isElliptic_principal_negLaplacian : (negLaplacian (n := n) V).principal.IsElliptic := by
   refine HomogeneousSymbol.isElliptic_iff.2 fun x ξ hξ ↦ ?_
-  rw [coefficient_principal_laplacian hξ, ContinuousLinearMap.isInvertible_smul_iff
+  rw [coefficient_principal_negLaplacian hξ, ContinuousLinearMap.isInvertible_smul_iff
     (by exact_mod_cast pow_ne_zero 2 (norm_ne_zero_iff.2 hξ))]
   simpa using ContinuousLinearMap.isInvertible_equiv (f := .refl ℂ V)
 
@@ -394,12 +396,12 @@ theorem ClassicalSymbol.quantizeSchwartzValue_ofDifferentialSymbol {n : ℕ} (M 
     quantizeSchwartzValue_differentialSymbol]
 
 open Laplacian in
-/-- The left quantization of the classical symbol `ClassicalSymbol.laplacian` is the negative
+/-- The left quantization of the classical symbol `ClassicalSymbol.negLaplacian` is the negative
 Laplacian `-Δ` on Schwartz input. -/
-theorem ClassicalSymbol.quantizeSchwartzValue_laplacian {n : ℕ} (u : 𝓢(CoordinateSpace n, V))
+theorem ClassicalSymbol.quantizeSchwartzValue_negLaplacian {n : ℕ} (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (ClassicalSymbol.laplacian V).toSymbol.coefficient u x = -Δ u x := by
-  rw [ClassicalSymbol.laplacian, ClassicalSymbol.quantizeSchwartzValue_ofDifferentialSymbol,
+    quantizeSchwartzValue (ClassicalSymbol.negLaplacian V).toSymbol.coefficient u x = -Δ u x := by
+  rw [ClassicalSymbol.negLaplacian, ClassicalSymbol.quantizeSchwartzValue_ofDifferentialSymbol,
     SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ)]
   simp [LineDeriv.iteratedLineDerivOp_succ_left, EuclideanSpace.basisFun_apply]
 
