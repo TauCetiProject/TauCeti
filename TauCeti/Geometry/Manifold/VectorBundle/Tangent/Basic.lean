@@ -102,6 +102,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   regularity.
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
+* `TauCeti.Manifold.mfderiv_fst_apply` and `TauCeti.Manifold.mfderiv_snd_apply`: the differentials
+  of the product projections take the corresponding components under this equivalence.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
 * `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
@@ -1004,6 +1006,20 @@ theorem tangentSpaceProdEquiv_symm_apply (p : M × N)
     (v : TangentSpace I p.1 × TangentSpace J p.2) :
     (tangentSpaceProdEquiv (I := I) (J := J) p).symm v = v := by
   exact (rfl)
+
+/-- The differential of the first projection takes the first component of a product tangent
+vector. -/
+theorem mfderiv_fst_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    mfderiv (I.prod J) I Prod.fst p v = (tangentSpaceProdEquiv p v).1 := by
+  rw [mfderiv_fst]
+  rfl
+
+/-- The differential of the second projection takes the second component of a product tangent
+vector. -/
+theorem mfderiv_snd_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    mfderiv (I.prod J) J Prod.snd p v = (tangentSpaceProdEquiv p v).2 := by
+  rw [mfderiv_snd]
+  rfl
 
 /-- The differential of a product map acts componentwise under the canonical
 identifications of the product tangent spaces. -/

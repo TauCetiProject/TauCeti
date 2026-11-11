@@ -293,4 +293,13 @@ omit [IsManifold J ∞ N]
   rw [Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)]
   simp
 
+/-- When the vertical kernel at `x` is trivial, O'Neill's vertical tensor vanishes at `x`. -/
+theorem oneillT_eq_zero_of_ker_eq_bot {x : M} (hker : (mfderiv I J f x).ker = ⊥) :
+    h.oneillT x = 0 := by
+  ext u v
+  have hu0 : (mfderiv I J f x).ker.starProjection u = 0 :=
+    (Submodule.starProjection_apply_eq_zero_iff _).mpr (by simp [hker])
+  rw [← h.oneillT_starProjection_ker x u, hu0]
+  simp
+
 end TauCeti.IsRiemannianSubmersion

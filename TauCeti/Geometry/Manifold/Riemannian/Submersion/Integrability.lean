@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 
 /-!
 # Symmetries of O'Neill's tensors and integrability of the horizontal distribution
@@ -32,7 +31,6 @@ orthogonal projections. O'Neill's tensors `A` and `T` (`IsRiemannianSubmersion.o
   into the lifted base bracket plus `2 A_X Y`, the Levi-Civita derivative along a horizontal lift
   decomposes into the lifted base derivative plus `A_X Y`, and the horizontal part of the
   Levi-Civita derivative along a vertical vector `U` is `A_Y U`.
-* On a Riemannian product projection `Prod.fst : M × N → M`, both `A` and `T` vanish identically.
 
 These are the algebraic and connection inputs to O'Neill's curvature equations. For instance, they
 are used to compare the sectional curvature of a horizontal plane with that of its image in the
@@ -67,8 +65,6 @@ is constant along the fibres.
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`, and
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`: the Lie bracket
   and Levi-Civita derivative of basic horizontal lifts.
-* `TauCeti.oneillA_fst` and `TauCeti.oneillT_fst`: both O'Neill tensors vanish for the Riemannian
-  product projection `Prod.fst : M × N → M`.
 
 ## References
 
@@ -100,6 +96,10 @@ variable
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 -- These regularity indices are propositionally, but not definitionally, equal to two.
+local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+  rw [one_add_one_eq_two]
+  exact .of_le (by norm_cast)
+
 local instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
@@ -454,16 +454,6 @@ theorem oneillA_eq_zero_of_ker_eq_bot (hker : (mfderiv I J f x).ker = ⊥) :
   have hmem := h.oneillA_apply_mem_ker u hv
   rwa [hker, Submodule.mem_bot] at hmem
 
-omit [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N] in
-/-- When the vertical kernel at `x` is trivial, O'Neill's vertical tensor vanishes at `x`. -/
-theorem oneillT_eq_zero_of_ker_eq_bot (hker : (mfderiv I J f x).ker = ⊥) :
-    h.oneillT x = 0 := by
-  ext u v
-  have hu0 : (mfderiv I J f x).ker.starProjection u = 0 :=
-    (Submodule.starProjection_apply_eq_zero_iff _).mpr (by simp [hker])
-  rw [← h.oneillT_starProjection_ker x u, hu0]
-  simp
-
 end Symmetry
 
 /-! ### Basic horizontal lifts -/
@@ -481,9 +471,6 @@ theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
       h.horizontalLift x (mlieBracket J X Y (f x)) +
         (2 : ℝ) • h.oneillA x (h.horizontalLift x (X (f x)))
           (h.horizontalLift x (Y (f x))) := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    rw [one_add_one_eq_two]
-    exact .of_le (by norm_cast)
   have hXd := (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
   have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
   rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
@@ -503,9 +490,6 @@ theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
         (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v) =
       h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
         h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    rw [one_add_one_eq_two]
-    exact .of_le (by norm_cast)
   have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
   have hA := h.oneillA_apply_of_eventually_mem_orthogonal_ker hYd
     (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) (h.horizontalLift x v)
@@ -519,7 +503,7 @@ theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
       (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection J) hY v,
     ← hA]
 
-/-- **O'Neill's Lemma 2.** The horizontal part of the Levi-Civita derivative of a basic horizontal
+/-- **O'Neill's Lemma 3.** The horizontal part of the Levi-Civita derivative of a basic horizontal
 lift `Y` in a vertical direction `u` equals `A_Y u`. -/
 theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker
     {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x))
@@ -528,9 +512,6 @@ theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem
         (CovariantDerivative.leviCivitaConnection I M
           (fun y ↦ h.horizontalLift y (Y (f y))) x u) =
       h.oneillA x (h.horizontalLift x (Y (f x))) u := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    rw [one_add_one_eq_two]
-    exact .of_le (by norm_cast)
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
   have hXd : MDiffAt (T% X) x :=
     (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
@@ -559,9 +540,6 @@ theorem leviCivitaConnection_horizontalLift_of_mem_ker
         (fun y ↦ h.horizontalLift y (Y (f y))) x u =
       h.oneillA x (h.horizontalLift x (Y (f x))) u +
         h.oneillT x u (h.horizontalLift x (Y (f x))) := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    rw [one_add_one_eq_two]
-    exact .of_le (by norm_cast)
   have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
   have hT := h.oneillT_apply_of_eventually_mem_orthogonal_ker hYd
     (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) u
@@ -584,10 +562,7 @@ theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift
           (CovariantDerivative.leviCivitaConnection J N Y (f x) (mfderiv I J f x w)) +
         h.oneillA x (h.horizontalLift x (Y (f x)))
           ((mfderiv I J f x).ker.starProjection w) := by
-  have hw : w = (mfderiv I J f x).ker.starProjection w +
-      h.horizontalLift x (mfderiv I J f x w) := by
-    rw [h.horizontalLift_mfderiv, Submodule.starProjection_add_starProjection_orthogonal]
-  conv_lhs => rw [hw]
+  conv_lhs => rw [← h.starProjection_ker_add_horizontalLift_mfderiv x w]
   rw [map_add, map_add,
     h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker hY
       (Submodule.starProjection_apply_mem _ _),
@@ -610,10 +585,7 @@ theorem leviCivitaConnection_horizontalLift_apply
         h.oneillA x (h.horizontalLift x (Y (f x)))
           ((mfderiv I J f x).ker.starProjection w) +
         h.oneillT x w (h.horizontalLift x (Y (f x))) := by
-  have hw : w = (mfderiv I J f x).ker.starProjection w +
-      h.horizontalLift x (mfderiv I J f x w) := by
-    rw [h.horizontalLift_mfderiv, Submodule.starProjection_add_starProjection_orthogonal]
-  conv_lhs => rw [hw]
+  conv_lhs => rw [← h.starProjection_ker_add_horizontalLift_mfderiv x w]
   rw [map_add, h.leviCivitaConnection_horizontalLift_of_mem_ker hY
       (Submodule.starProjection_apply_mem _ _),
     h.leviCivitaConnection_horizontalLift hY, h.horizontalLift_mfderiv,
@@ -624,141 +596,3 @@ theorem leviCivitaConnection_horizontalLift_apply
 end BasicLift
 
 end TauCeti.IsRiemannianSubmersion
-
-namespace TauCeti
-
-/-! ### Product Riemannian submersions -/
-
-section Product
-
-open scoped TauCeti
-
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the horizontal projection keeps
-the first tangent component and zeroes the second. -/
-theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
-    (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
-      (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
-  have hmf : mfderiv (I.prod J) I (@Prod.fst M N) p v =
-      (Manifold.tangentSpaceProdEquiv p v).1 := by
-    apply ext_inner_left ℝ
-    intro w
-    rw [← ContinuousLinearMap.adjoint_inner_left,
-      ← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_apply,
-      horizontalLift_fst, Manifold.inner_tangentSpace_prod,
-      ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero]
-  rw [← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_mfderiv,
-    horizontalLift_fst, hmf]
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the vertical projection zeroes
-the first tangent component and keeps the second. -/
-theorem starProjection_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
-    (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection v =
-      (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2) := by
-  apply (Manifold.tangentSpaceProdEquiv p).injective
-  rw [eq_sub_of_add_eq
-      ((mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection_add_starProjection_orthogonal v),
-    starProjection_orthogonal_ker_fst, map_sub,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-  ext <;> simp only [Prod.fst_sub, Prod.snd_sub, sub_self, sub_zero]
-
-/-- O'Neill's horizontal tensor vanishes identically for the Riemannian product projection
-`Prod.fst : M × N → M`. -/
-@[simp]
-theorem oneillA_fst (p : M × N) :
-    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillA p = 0 := by
-  rw [(isRiemannianSubmersion_fst (I := I) (J := J)).oneillA_eq_zero_iff_horizontalLift]
-  intro u v
-  let Y₁ : Π x : M, TangentSpace I x := FiberBundle.extend E v
-  have hY₁ : MDiffAt (T% Y₁) p.1 := FiberBundle.mdifferentiableAt_extend I E v
-  have h0N : MDiffAt (T% (0 : Π z : N, TangentSpace J z)) p.2 :=
-    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
-  have hY : MDiffAt (T% (Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z))) p :=
-    Manifold.mdifferentiableAt_prodVectorField hY₁ h0N
-  have hYp : Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z) p =
-      (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p v := by
-    rw [horizontalLift_fst]
-    apply (Manifold.tangentSpaceProdEquiv p).injective
-    rw [Manifold.tangentSpaceProdEquiv_prodVectorField, ContinuousLinearEquiv.apply_symm_apply]
-    ext <;> simp [Y₁, FiberBundle.extend_apply_self]
-  have hYh (q : M × N) :
-      Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z) q ∈
-        (mfderiv (I.prod J) I (@Prod.fst M N) q).kerᗮ := by
-    rw [← Submodule.starProjection_eq_self_iff, starProjection_orthogonal_ker_fst]
-    apply (Manifold.tangentSpaceProdEquiv q).injective
-    rw [ContinuousLinearEquiv.apply_symm_apply, Manifold.tangentSpaceProdEquiv_prodVectorField]
-    rfl
-  rw [← hYp, (isRiemannianSubmersion_fst
-        (I := I) (J := J)).oneillA_apply_of_eventually_mem_orthogonal_ker hY (.of_forall hYh),
-    starProjection_ker_fst,
-    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hY₁ h0N,
-    (CovariantDerivative.leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero]
-  simp only [zero_apply, Prod.mk_zero_zero, map_zero]
-
-/-- O'Neill's vertical tensor vanishes identically for the Riemannian product projection
-`Prod.fst : M × N → M`. -/
-@[simp]
-theorem oneillT_fst (p : M × N) :
-    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT p = 0 := by
-  ext u v
-  let Y₁ : Π x : M, TangentSpace I x :=
-    FiberBundle.extend E (Manifold.tangentSpaceProdEquiv p v).1
-  let Y₂ : Π y : N, TangentSpace J y :=
-    FiberBundle.extend F (Manifold.tangentSpaceProdEquiv p v).2
-  have hY₁ : MDiffAt (T% Y₁) p.1 := FiberBundle.mdifferentiableAt_extend I E _
-  have hY₂ : MDiffAt (T% Y₂) p.2 := FiberBundle.mdifferentiableAt_extend J F _
-  have h0M : MDiffAt (T% (0 : Π x : M, TangentSpace I x)) p.1 :=
-    (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
-  have h0N : MDiffAt (T% (0 : Π y : N, TangentSpace J y)) p.2 :=
-    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
-  have hY : MDiffAt (T% (Manifold.prodVectorField Y₁ Y₂)) p :=
-    Manifold.mdifferentiableAt_prodVectorField hY₁ hY₂
-  have hYp : Manifold.prodVectorField Y₁ Y₂ p = v := by
-    apply (Manifold.tangentSpaceProdEquiv p).injective
-    rw [Manifold.tangentSpaceProdEquiv_prodVectorField]
-    ext <;> simp [Y₁, Y₂, FiberBundle.extend_apply_self]
-  have hH : (fun q ↦ (mfderiv (I.prod J) I (@Prod.fst M N) q).kerᗮ.starProjection
-      (Manifold.prodVectorField Y₁ Y₂ q)) =
-      Manifold.prodVectorField Y₁ (0 : Π y : N, TangentSpace J y) := by
-    funext q
-    apply (Manifold.tangentSpaceProdEquiv q).injective
-    rw [starProjection_orthogonal_ker_fst, ContinuousLinearEquiv.apply_symm_apply,
-      Manifold.tangentSpaceProdEquiv_prodVectorField,
-      Manifold.tangentSpaceProdEquiv_prodVectorField]
-    rfl
-  have hV : (fun q ↦ (mfderiv (I.prod J) I (@Prod.fst M N) q).ker.starProjection
-      (Manifold.prodVectorField Y₁ Y₂ q)) =
-      Manifold.prodVectorField (0 : Π x : M, TangentSpace I x) Y₂ := by
-    funext q
-    apply (Manifold.tangentSpaceProdEquiv q).injective
-    rw [starProjection_ker_fst, ContinuousLinearEquiv.apply_symm_apply,
-      Manifold.tangentSpaceProdEquiv_prodVectorField,
-      Manifold.tangentSpaceProdEquiv_prodVectorField]
-    rfl
-  simp only [zero_apply]
-  rw [← hYp, (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT_apply hY u, hV, hH,
-    starProjection_orthogonal_ker_fst, starProjection_ker_fst, starProjection_ker_fst,
-    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField h0M hY₂,
-    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hY₁ h0N,
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.zero,
-    (CovariantDerivative.leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero]
-  simp only [zero_apply, Prod.mk_zero_zero, map_zero, add_zero]
-
-end Product
-
-end TauCeti

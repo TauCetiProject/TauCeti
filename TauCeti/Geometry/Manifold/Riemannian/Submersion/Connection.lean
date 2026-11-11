@@ -70,6 +70,14 @@ theorem contMDiffAt_horizontalLift {X : Π y : N, TangentSpace J y} {x : M}
   simpa only [h.horizontalLift_apply, Function.comp_def] using
     hf.mfderiv_adjoint_apply (hX.comp x (hf.of_le le_self_add))
 
+/-- Horizontal lifting of a `C^n` base vector field is `C^n`, for `C^n` metrics and
+`n + 1 ≤ ∞`. -/
+theorem contMDiff_horizontalLift {X : Π y : N, TangentSpace J y}
+    (hX : ContMDiff J (J.prod 𝓘(ℝ, F)) n (T% X)) (hn : n + 1 ≤ ∞) :
+    ContMDiff I (I.prod 𝓘(ℝ, E)) n
+      (T% (fun y ↦ h.horizontalLift y (X (f y)))) :=
+  fun x ↦ h.contMDiffAt_horizontalLift (hX (f x)) hn
+
 end Regularity
 
 section Connection
