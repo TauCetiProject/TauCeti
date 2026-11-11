@@ -35,7 +35,9 @@ is injective and `S` has a solution in `H`, both coefficient maps are injective,
 The radical genuinely depends on the group `H` in which the solutions are taken, and differs from
 the normal closure: over a torsion-free `H` with injective coefficients, the radical of the
 one-variable system `x ^ n = 1` (`n ≠ 0`) is the normal closure of `x`, which does not lie in the
-normal closure of `x ^ n` when `n ≠ 1`.
+normal closure of `x ^ n` when `n ≠ 1`. At the other extreme, over `F(a, b)` the one-variable
+system `{a, b, x}` has no solutions; its radical and its normal closure are both all of
+`F(a, b)[x]`, so its group is trivial.
 
 ## Main definitions
 
@@ -67,6 +69,11 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `TauCeti.GroupAlgGeom.SystemGroup.isEmpty_gHom_iff`: a system containing a constant that is
   nontrivial in `H` has no solutions; the radical of such a system is everything and its group has
   no `G`-homomorphism to `H`.
+* `TauCeti.GroupAlgGeom.V_inl_of_inl_of_inr_of_eq_empty`,
+  `TauCeti.GroupAlgGeom.normalClosure_inl_of_inl_of_inr_of_eq_top`,
+  `TauCeti.GroupAlgGeom.SystemGroup.isEmpty_gHom_inl_of_inl_of_inr_of`: over `F(a, b)` the system
+  `{a, b, x}` has no solutions and its group is trivial, with no coefficient-preserving
+  homomorphism to `F(a, b)`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
   correspond to the points of `V_H(N)`.
 * `TauCeti.GroupAlgGeom.CoordGroup.homEquiv`, `TauCeti.GroupAlgGeom.SystemGroup.homEquiv`:
@@ -834,5 +841,63 @@ theorem rad_sq_prod_zmod_two :
   simp [Prod.ext_iff] at this
 
 end Pow
+
+/-! ### An inconsistent system
+
+Over `F(a, b)` with one variable `x`, the system `{a, b, x}` has no solutions, and both its
+radical and its normal closure are all of `F(a, b)[x]`. Its group is therefore trivial: the
+coefficients do not embed in it and it has no coefficient-preserving homomorphism to `F(a, b)`. -/
+
+section Inconsistent
+
+open FreeGroup
+
+/-- The system `{a, b, x}` has no solutions in `F(a, b)`. -/
+theorem V_inl_of_inl_of_inr_of_eq_empty :
+    V (.id (FreeGroup (Fin 2)))
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ∅ :=
+  V_eq_empty_of_inl_mem (g := of 0) (by simp) (Set.mem_insert _ _)
+
+/-- The radical over `F(a, b)` of the system `{a, b, x}` is all of `F(a, b)[x]`. -/
+theorem Rad_inl_of_inl_of_inr_of_eq_top :
+    Rad (.id (FreeGroup (Fin 2)))
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ⊤ :=
+  Rad_eq_top_of_V_eq_empty V_inl_of_inl_of_inr_of_eq_empty
+
+/-- The normal closure of the system `{a, b, x}` is all of `F(a, b)[x]`, which the system
+generates. -/
+theorem normalClosure_inl_of_inl_of_inr_of_eq_top :
+    normalClosure
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ⊤ := by
+  refine top_le_iff.1 (le_trans ?_ closure_le_normalClosure)
+  rw [← range_inl_sup_range_inr, sup_le_iff, MonoidHom.range_eq_map, MonoidHom.range_eq_map,
+    ← closure_range_of, ← closure_range_of, MonoidHom.map_closure, MonoidHom.map_closure]
+  constructor <;> refine closure_mono ?_
+  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+    fin_cases i <;> simp
+  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+    simp
+
+/-- The group of the system `{a, b, x}` over `F(a, b)` is trivial. -/
+theorem SystemGroup.subsingleton_inl_of_inl_of_inr_of :
+    Subsingleton (SystemGroup (FreeGroup (Fin 2))
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit))) :=
+  QuotientGroup.subsingleton_iff.2 normalClosure_inl_of_inl_of_inr_of_eq_top
+
+/-- The coefficients `F(a, b)` do not embed in the group of the system `{a, b, x}`. -/
+theorem SystemGroup.not_injective_coeff_inl_of_inl_of_inr_of :
+    ¬Function.Injective (SystemGroup.coeff
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit))) :=
+  SystemGroup.not_injective_coeff_of_inl_mem (of_ne_one 0) (Set.mem_insert _ _)
+
+/-- The group of the system `{a, b, x}` has no coefficient-preserving homomorphism to
+`F(a, b)`. -/
+theorem SystemGroup.isEmpty_gHom_inl_of_inl_of_inr_of :
+    IsEmpty (GHom (SystemGroup.coeff
+      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)))
+      (.id (FreeGroup (Fin 2)))) :=
+  (SystemGroup.isEmpty_gHom_iff _ _).2 V_inl_of_inl_of_inr_of_eq_empty
+
+end Inconsistent
 
 end TauCeti.GroupAlgGeom

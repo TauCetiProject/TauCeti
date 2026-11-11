@@ -49,9 +49,8 @@ also cover systems without solutions, whose coordinate group is trivial.
   only if `Rad_H(S) = ncl(S)`.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl`: for injective
   coefficients, the group of a system prescribing the value of every variable is separated by `H`.
-* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`,
-  `TauCeti.GroupAlgGeom.SystemGroup.isEmpty_gHom_inl_of_inl_of_inr_of`: the trivial group of the
-  system `{a, b, x}` over `F(a, b)` is separated by `F(a, b)` without having any
+* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`: the trivial group
+  of the system `{a, b, x}` over `F(a, b)` is separated by `F(a, b)`, although it has no
   coefficient-preserving homomorphism to it.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_exists_coordGroup`: a group generated over `G` by the
   images of `X` is separated by `H` if and only if it is `G`-isomorphic to a coordinate group over
@@ -152,75 +151,16 @@ theorem SystemGroup.isSeparatedBy_coeff_singleton_inr_of (hι : Function.Injecti
     IsSeparatedBy (SystemGroup.coeff {(inr (FreeGroup.of ()) : GX G Unit)}) ι :=
   (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_singleton_inr_of hι)
 
-/-! ### An inconsistent system
-
-Over `F(a, b)` with one variable `x`, the system `{a, b, x}` has no solutions, and both its
-radical and its normal closure are all of `F(a, b)[x]`. Its group is therefore trivial: the
-coefficients do not embed in it, it has no coefficient-preserving homomorphism to `F(a, b)`, and it
-is separated by `F(a, b)` because it has no nonidentity element. -/
-
-section Inconsistent
-
-open FreeGroup
-
-/-- The system `{a, b, x}` has no solutions in `F(a, b)`. -/
-theorem V_inl_of_inl_of_inr_of_eq_empty :
-    V (.id (FreeGroup (Fin 2)))
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ∅ :=
-  V_eq_empty_of_inl_mem (g := of 0) (by simp) (Set.mem_insert _ _)
-
-/-- The radical over `F(a, b)` of the system `{a, b, x}` is all of `F(a, b)[x]`. -/
-theorem Rad_inl_of_inl_of_inr_of_eq_top :
-    Rad (.id (FreeGroup (Fin 2)))
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ⊤ :=
-  Rad_eq_top_of_V_eq_empty V_inl_of_inl_of_inr_of_eq_empty
-
-/-- The normal closure of the system `{a, b, x}` is all of `F(a, b)[x]`, which the system
-generates. -/
-theorem normalClosure_inl_of_inl_of_inr_of_eq_top :
-    normalClosure
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ⊤ := by
-  refine top_le_iff.1 (le_trans ?_ closure_le_normalClosure)
-  rw [← range_inl_sup_range_inr, sup_le_iff, MonoidHom.range_eq_map, MonoidHom.range_eq_map,
-    ← closure_range_of, ← closure_range_of, MonoidHom.map_closure, MonoidHom.map_closure]
-  constructor <;> refine closure_mono ?_
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    fin_cases i <;> simp
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    simp
-
-/-- The group of the system `{a, b, x}` over `F(a, b)` is trivial. -/
-theorem SystemGroup.subsingleton_inl_of_inl_of_inr_of :
-    Subsingleton (SystemGroup (FreeGroup (Fin 2))
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit))) :=
-  QuotientGroup.subsingleton_iff.2 normalClosure_inl_of_inl_of_inr_of_eq_top
-
-/-- The coefficients `F(a, b)` do not embed in the group of the system `{a, b, x}`. -/
-theorem SystemGroup.not_injective_coeff_inl_of_inl_of_inr_of :
-    ¬Function.Injective (SystemGroup.coeff
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit))) :=
-  SystemGroup.not_injective_coeff_of_inl_mem (of_ne_one 0) (Set.mem_insert _ _)
-
-/-- The group of the system `{a, b, x}` has no coefficient-preserving homomorphism to
-`F(a, b)`. -/
-theorem SystemGroup.isEmpty_gHom_inl_of_inl_of_inr_of :
-    IsEmpty (GHom (SystemGroup.coeff
-      ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)))
-      (.id (FreeGroup (Fin 2)))) :=
-  (SystemGroup.isEmpty_gHom_iff _ _).2 V_inl_of_inl_of_inr_of_eq_empty
-
-/-- The group of the system `{a, b, x}` is separated by `F(a, b)`, although it has no
-coefficient-preserving homomorphism to `F(a, b)`: it is trivial, so the empty intersection of
-kernels is trivial. -/
+/-- Over `F(a, b)`, the group of the inconsistent system `{a, b, x}` is separated by `F(a, b)`,
+although it has no coefficient-preserving homomorphism to `F(a, b)`: it is trivial, so the empty
+intersection of kernels is trivial. -/
 theorem SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of :
     IsSeparatedBy
-      (SystemGroup.coeff
-        ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)))
+      (SystemGroup.coeff ({inl (FreeGroup.of 0), inl (FreeGroup.of 1), inr (FreeGroup.of ())} :
+        Set (GX (FreeGroup (Fin 2)) Unit)))
       (.id (FreeGroup (Fin 2))) := by
   rw [SystemGroup.isSeparatedBy_coeff_iff, Rad_inl_of_inl_of_inr_of_eq_top,
     normalClosure_inl_of_inl_of_inr_of_eq_top]
-
-end Inconsistent
 
 /-- A group `K` generated over `G` by the images of the variables `X` is separated by `H` if and
 only if it is `G`-isomorphic to a coordinate group over `H` in the variables `X`. -/
