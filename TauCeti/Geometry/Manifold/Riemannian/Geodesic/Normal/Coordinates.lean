@@ -180,10 +180,13 @@ theorem curveVelocity_riemannianExp_smul_eq_normalCoordinateField
     (h : IsNormalDomain I M p U) {t : ℝ} (ht : t • v ∈ U) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (s • v)) t =
       normalCoordinateField I M p U v (riemannianExp I M p (t • v)) := by
-  have hg : HasDerivAt (fun s : ℝ ↦ s • v) v t := by
-    simpa using (hasDerivAt_id t).smul_const v
-  rw [h.normalCoordinateField_riemannianExp ht]
-  exact ((h.isLocalDiffeomorphOn ⟨_, ht⟩).mdifferentiableAt (by simp)).curveVelocity_comp_mfderiv hg
+  have h' := h.curveVelocity_riemannianExp_add_smul_eq_normalCoordinateField (v := 0) (w := v)
+    (u := t) (by simpa only [zero_add] using ht)
+  have hcurve : (fun s : ℝ ↦ riemannianExp I M p (0 + s • v)) =
+      fun s : ℝ ↦ riemannianExp I M p (s • v) := by
+    funext s
+    rw [zero_add]
+  rwa [hcurve, zero_add] at h'
 
 omit [I.Boundaryless] [T2Space M] in
 /-- A path in `T_p M` through the origin stays in the normal domain near the origin. -/
