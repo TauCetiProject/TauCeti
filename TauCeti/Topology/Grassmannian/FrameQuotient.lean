@@ -173,6 +173,30 @@ theorem range_fromBlocksOne_eq_unitaryStabilizer (m : ℕ) :
     funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
+/-- The block embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)` is continuous. -/
+theorem _root_.Matrix.UnitaryGroup.continuous_fromBlocksOne (m : ℕ) :
+    Continuous (UnitaryGroup.fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, UnitaryGroup.coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtype_val).matrix_reindex _ _
+
+variable (𝕜 r) in
+/-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `U(m)` onto the stabilizer of the
+standard `r`-frame in `U(r + m)`. -/
+def unitaryStabilizerHomeomorph (m : ℕ) :
+    unitaryGroup (Fin m) 𝕜 ≃ₜ unitaryStabilizer 𝕜 (Nat.le_add_right r m) :=
+  ((UnitaryGroup.continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
+    (f := Equiv.ofInjective _ (UnitaryGroup.fromBlocksOne_injective 𝕜 r))).trans
+    (Homeomorph.setCongr <| by
+      rw [← range_fromBlocksOne_eq_unitaryStabilizer, MonoidHom.coe_range])
+
+@[simp]
+theorem coe_unitaryStabilizerHomeomorph_apply (m : ℕ) (B : unitaryGroup (Fin m) 𝕜) :
+    (unitaryStabilizerHomeomorph 𝕜 r m B : unitaryGroup (Fin (r + m)) 𝕜) =
+      UnitaryGroup.fromBlocksOne 𝕜 r m B :=
+  (rfl)
+
 /-! ### Real frames and the special orthogonal group -/
 
 /-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`. -/
