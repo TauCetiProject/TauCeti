@@ -155,8 +155,9 @@ noncomputable def hodgeStructure (h : hs.IsSubstructure U) :
     exact ⟨p, by rw [hp, Submodule.comap_top]⟩
   opposed p := by
     rw [conjugation, Conjugation.map_restrict_comap_subtype, ← hs.conjF_def]
-    exact TauCeti.Submodule.isCompl_comap_subtype (hs.isCompl_F_conjF p).disjoint
-      (h.le_inf_F_sup_inf_conjF p)
+    exact Submodule.isCompl_comap_subtype_iff.2
+      ⟨(hs.isCompl_F_conjF p).disjoint.mono inf_le_right inf_le_right,
+        h.le_inf_F_sup_inf_conjF p⟩
 
 /-- The induced Hodge filtration is the ambient filtration intersected with the subspace. -/
 @[simp]
