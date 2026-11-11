@@ -11,7 +11,7 @@ import Mathlib.CategoryTheory.Functor.OfSequence
 import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 import TauCeti.Topology.Category.TopCat.DisjointOpens
 import TauCeti.Topology.CWComplex.Abstract.Hausdorff
-import TauCeti.Topology.CWComplex.Classical.TowerUnion
+import TauCeti.Topology.CWComplex.Classical.Tower.Union
 import TauCeti.Topology.Homotopy.Extension.Pushout
 
 /-!
@@ -50,11 +50,6 @@ colimit `W` of the tower of closed embeddings `W 0 → W 1 → ⋯` in `TopCat`.
   map `W → X`, which is a homotopy equivalence because both sides are unions of towers of
   cofibrations (`TauCeti.exists_homotopyEquiv_of_isCoherentWith`).
 
-The tower-union theorem compares the characteristic maps of consecutive stages as partial
-equivalences, including their inverses off the open cells, which are arbitrary. So the CW
-structure of each stage is read in the colimit with characteristic maps whose inverses are
-determined by their underlying functions alone.
-
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
@@ -70,7 +65,7 @@ noncomputable section
 
 universe u
 
-open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+open CategoryTheory Limits Set Topology Topology.RelCWComplex
 open scoped ContinuousMap
 
 namespace TauCeti
@@ -144,70 +139,16 @@ def Stage.next (Φ : Adj a ≃ₕ Y') : Stage Y' where
 
 end Next
 
-section BallNormal
+section Univ
 
-variable {Y : Type u} [TopologicalSpace Y] (C : Set Y) [RelCWComplex C ∅] (κ : ℕ → Type u)
-  (e : ∀ m, κ m ≃ cell C m)
-
-/-- A copy of a CW structure on `C`, with cells reindexed along `e`, in which the characteristic
-map of each cell is the partial equivalence with source the open unit ball determined by its
-underlying function alone. Two such characteristic maps with the same underlying function are
-equal. -/
-@[instance_reducible]
-def ballNormal : CWComplex C where
-  cell := κ
-  map m i := InjOn.toPartialEquiv (map m (e m i)) (ball 0 1)
-    (source_eq m (e m i) ▸ (map m (e m i)).injOn)
-  source_eq _ _ := rfl
-  continuousOn m i := continuousOn m (e m i)
-  continuousOn_symm m i := by
-    have hs := source_eq m (e m i)
-    have hinj : InjOn (map m (e m i)) (ball 0 1) := hs ▸ (map m (e m i)).injOn
-    refine ((continuousOn_symm m (e m i)).mono ?_).congr ?_
-    · rintro _ ⟨x, hx, rfl⟩
-      exact (map m (e m i)).map_source (hs ▸ hx)
-    · rintro _ ⟨x, hx, rfl⟩
-      exact (hinj.leftInvOn_invFunOn hx).trans ((map m (e m i)).left_inv (hs ▸ hx)).symm
-  pairwiseDisjoint' := by
-    rintro ⟨m, i⟩ - ⟨m', i'⟩ - h
-    refine RelCWComplex.pairwiseDisjoint (C := C) (mem_univ ⟨m, e m i⟩) (mem_univ ⟨m', e m' i'⟩)
-      fun h' ↦ h ?_
-    obtain ⟨rfl, h'⟩ := Sigma.mk.inj_iff.1 h'
-    rw [(e m).injective (eq_of_heq h')]
-  mapsTo' m i := by
-    classical
-    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo (C := C) m (e m i)
-    rw [empty_union] at hI
-    refine ⟨fun l ↦ (I l).map (e l).symm.toEmbedding, hI.mono_right ?_⟩
-    refine iUnion₂_mono fun l _ ↦ iUnion₂_subset fun j hj ↦ ?_
-    refine subset_iUnion₂_of_subset ((e l).symm j) (Finset.mem_map_of_mem _ hj) ?_
-    -- The closed cell of the reindexed cell is that of `e l ((e l).symm j)` by definition.
-    change closedCell l j ⊆ closedCell l (e l ((e l).symm j))
-    rw [Equiv.apply_symm_apply]
-  closed' A hAC H := RelCWComplex.closed' A hAC
-    ⟨fun m j ↦ by simpa using H m ((e m).symm j), by simp⟩
-  union' := (iUnion_congr fun m ↦ (e m).surjective.iUnion_comp fun j ↦ closedCell m j).trans
-    ((empty_union _).symm.trans (RelCWComplex.union (C := C)))
-
-variable {C κ e}
-
-theorem coe_map_ballNormal {m : ℕ} (i : κ m) : ⇑((ballNormal C κ e).map m i) = map m (e m i) :=
-  rfl
-
-theorem map_ballNormal_eq {C' : Set Y} [RelCWComplex C' ∅] {κ' : ℕ → Type u}
-    {e' : ∀ m, κ' m ≃ cell C' m} {m : ℕ} (i : κ m) (i' : κ' m)
-    (h : ⇑((ballNormal C κ e).map m i) = (ballNormal C' κ' e').map m i') :
-    (ballNormal C κ e).map m i = (ballNormal C' κ' e').map m i' := by
-  -- Both maps are `InjOn.toPartialEquiv` of their underlying functions, by definition.
-  change InjOn.toPartialEquiv _ _ _ = InjOn.toPartialEquiv _ _ _
-  congr 1
+variable {Y : Type u} [TopologicalSpace Y]
 
 theorem exists_cwComplex_univ {C : Set Y} (h : CWComplex C) (hC : C = univ) :
     ∃ h' : CWComplex (univ : Set Y), ∀ m, Nonempty (h'.cell m ≃ h.cell m) := by
   subst hC
   exact ⟨h, fun m ↦ ⟨Equiv.refl _⟩⟩
 
-end BallNormal
+end Univ
 
 variable (s₀ : Stage (Z 0)) (a : ∀ k i, C(TopCat.diskBoundary.{u} (n k i), Z k))
   (Φ : ∀ k, Adj (a k) ≃ₕ Z (k + 1))
@@ -290,36 +231,37 @@ theorem exists_ιL_eq (y : L s₀ a Φ) : ∃ k w, ιL s₀ a Φ k w = y :=
 def stageCW (k : ℕ) : CWComplex (range (ιL s₀ a Φ k)) :=
   letI := (isClosedEmbedding_ιL s₀ a Φ k).relCWComplex (C := univ) (D := ∅) image_univ
     (image_empty _)
-  ballNormal _ (fun m ↦ cell (univ : Set (stage s₀ a Φ k).W) m) fun m ↦
-    ((isClosedEmbedding_ιL s₀ a Φ k).relCWComplexCellEquiv image_univ (image_empty _) m).symm
+  RelCWComplex.toCWComplex _
 
-theorem coe_map_stageCW (k m : ℕ) (j : cell (univ : Set (stage s₀ a Φ k).W) m) :
-    ⇑((stageCW s₀ a Φ k).map m j) = ιL s₀ a Φ k ∘ map m j := by
-  let := (isClosedEmbedding_ιL s₀ a Φ k).relCWComplex (C := univ) (D := ∅) image_univ
-    (image_empty _)
-  refine (coe_map_ballNormal (C := range (ιL s₀ a Φ k)) _).trans ?_
-  rw [IsClosedEmbedding.coe_map_relCWComplex, Equiv.apply_symm_apply]
+/-- The cells of a stage, read in its image in the colimit, are the cells of the stage. -/
+def stageCWCellEquiv (k m : ℕ) :
+    (stageCW s₀ a Φ k).cell m ≃ cell (univ : Set (stage s₀ a Φ k).W) m :=
+  (isClosedEmbedding_ιL s₀ a Φ k).relCWComplexCellEquiv image_univ (image_empty _) m
+
+theorem coe_map_stageCW (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
+    ⇑((stageCW s₀ a Φ k).map m j) = ιL s₀ a Φ k ∘ map m (stageCWCellEquiv s₀ a Φ k m j) :=
+  IsClosedEmbedding.coe_map_relCWComplex _ image_univ (image_empty _) m j
 
 /-- The cells of a stage, as cells of the next stage. -/
 def cellIncl (k m : ℕ) : (stageCW s₀ a Φ k).cell m → (stageCW s₀ a Φ (k + 1)).cell m :=
   letI := sigmaDiskRelCWComplex (n k)
-  fun j ↦ (sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
-    ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl j)
+  fun j ↦ (stageCWCellEquiv s₀ a Φ (k + 1) m).symm
+    ((sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
+      ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl (stageCWCellEquiv s₀ a Φ k m j)))
 
 theorem map_cellIncl (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
-    (stageCW s₀ a Φ (k + 1)).map m (cellIncl s₀ a Φ k m j) = (stageCW s₀ a Φ k).map m j := by
+    ⇑((stageCW s₀ a Φ (k + 1)).map m (cellIncl s₀ a Φ k m j)) =
+      ⇑((stageCW s₀ a Φ k).map m j) := by
   let := sigmaDiskRelCWComplex (n k)
-  let := (isClosedEmbedding_ιL s₀ a Φ k).relCWComplex (C := univ) (D := ∅) image_univ
-    (image_empty _)
-  let := (isClosedEmbedding_ιL s₀ a Φ (k + 1)).relCWComplex (C := univ) (D := ∅) image_univ
-    (image_empty _)
-  refine map_ballNormal_eq _ _ (funext fun x ↦ ?_)
-  -- Restate the goal through `stageCW`, which unfolds to `ballNormal`.
-  change ⇑((stageCW s₀ a Φ (k + 1)).map m (cellIncl s₀ a Φ k m j)) x =
-    ⇑((stageCW s₀ a Φ k).map m j) x
-  rw [coe_map_stageCW, coe_map_stageCW, Function.comp_apply, Function.comp_apply]
+  have hj : stageCWCellEquiv s₀ a Φ (k + 1) m (cellIncl s₀ a Φ k m j) =
+      (sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
+        ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl (stageCWCellEquiv s₀ a Φ k m j)) :=
+    Equiv.apply_symm_apply _ _
+  funext x
+  rw [coe_map_stageCW, coe_map_stageCW, Function.comp_apply, Function.comp_apply, hj]
   exact (congrArg (ιL s₀ a Φ (k + 1)) (sigmaDiskAdjunctionCWComplex_map_inl (n k)
-    ((stage s₀ a Φ k).nextAttach (a k)) ((stage s₀ a Φ k).nextAttach_mem (a k)) m j x)).trans
+    ((stage s₀ a Φ k).nextAttach (a k)) ((stage s₀ a Φ k).nextAttach_mem (a k)) m
+      (stageCWCellEquiv s₀ a Φ k m j) x)).trans
       (ιL_incl_apply s₀ a Φ k _)
 
 /-- The cells of a stage which do not come from the previous stage are the attached cells. -/
@@ -327,15 +269,18 @@ def newCellEquiv (k m : ℕ) :
     {c : (stageCW s₀ a Φ (k + 1)).cell m // c ∉ range (cellIncl s₀ a Φ k m)} ≃
       {i : ι k // n k i = m} :=
   letI := sigmaDiskRelCWComplex (n k)
-  let e := sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
-    ((stage s₀ a Φ k).nextAttach_mem (a k)) m
+  let E := stageCWCellEquiv s₀ a Φ k m
+  let e := (stageCWCellEquiv s₀ a Φ (k + 1) m).trans
+    (sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
+      ((stage s₀ a Φ k).nextAttach_mem (a k)) m)
+  have he (j : (stageCW s₀ a Φ k).cell m) : cellIncl s₀ a Φ k m j = e.symm (.inl (E j)) := rfl
   (Equiv.subtypeEquiv e fun c ↦ by
     rcases h : e c with j | i
     · simp only [Sum.isRight_inl, Bool.false_eq_true, iff_false, not_not]
-      exact ⟨j, e.symm_apply_eq.2 h.symm⟩
+      exact ⟨E.symm j, by rw [he, E.apply_symm_apply, e.symm_apply_eq, h]⟩
     · simp only [Sum.isRight_inr, iff_true]
       rintro ⟨j, rfl⟩
-      rw [show cellIncl s₀ a Φ k m j = e.symm (.inl j) from rfl, e.apply_symm_apply] at h
+      rw [he, e.apply_symm_apply] at h
       cases h).trans Equiv.sumIsRight
 
 theorem isClosed_of_forall_isClosed_inter (A : Set (L s₀ a Φ))
@@ -366,7 +311,8 @@ def unionCWCellEquiv (m : ℕ) :
   (cwSubcomplexTowerUnionCellEquiv (ι := cellIncl s₀ a Φ) (map_cellIncl s₀ a Φ)
     (fun A _ hA ↦ isClosed_of_forall_isClosed_inter s₀ a Φ A hA) m).trans <|
   (Equiv.sigmaNatSucc _).trans <| Equiv.sumCongr
-    (Equiv.subtypeUnivEquiv fun i ↦ isNewTowerCell_zero (cellIncl s₀ a Φ) i)
+    ((Equiv.subtypeUnivEquiv fun i ↦ isNewTowerCell_zero (cellIncl s₀ a Φ) i).trans
+      (stageCWCellEquiv s₀ a Φ 0 m))
     (Equiv.sigmaCongrRight fun k ↦
       (Equiv.subtypeEquivRight fun i ↦ isNewTowerCell_succ_iff (cellIncl s₀ a Φ) i).trans
         (newCellEquiv s₀ a Φ k m))
