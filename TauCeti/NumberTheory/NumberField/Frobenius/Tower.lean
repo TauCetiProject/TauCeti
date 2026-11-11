@@ -259,7 +259,7 @@ theorem restrictScalars_eq_of_inertiaDeg_eq_one [Algebra.IsUnramifiedAt (𝓞 K)
     AlgEquiv.restrictScalars K τ = σ := by
   rw [restrictScalars_eq_pow_inertiaDeg hσ hτ, hf, pow_one]
 
-omit [IsGalois K L] in
+omit [IsGalois K L] [NumberField K] [NumberField M] in
 /-- **A relative Frobenius at residue degree one restricts to an absolute one.**  If `Q ∩ 𝓞 M`
 has residue degree one over `𝓞 K`, then the restriction to `Gal(L/K)` of an arithmetic Frobenius
 of `Gal(L/M)` at `Q` is itself an arithmetic Frobenius at `Q` over `𝓞 K`.
@@ -271,6 +271,10 @@ theorem isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one
     {τ : L ≃ₐ[M] L} (hτ : IsArithFrobAt (𝓞 M) τ Q)
     (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
     IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q := by
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := NumberField.of_tower ℚ L K
+  have : CharZero M := RingHom.charZero (algebraMap M L)
+  have : NumberField M := NumberField.of_tower ℚ L M
   have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hτ.ne_bot inferInstance
   have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
   have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
