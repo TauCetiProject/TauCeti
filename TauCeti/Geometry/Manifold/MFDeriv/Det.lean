@@ -81,7 +81,9 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
       (((A x).det • (LinearMap.toContinuousLinearMap (Matrix.traceLinearMap n 𝕜 𝕜)).comp
         (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 (A x)⁻¹))).comp L) (A' x) :=
     (Matrix.hasFDerivAt_det hdet).comp (A' x) L.hasFDerivAt
-  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [L, A']; rfl
+  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by
+    have hAy : Matrix.of (A y).row = A y := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
+    simp [L, A', hAy]
   have hcomp := mvfderiv_comp_apply_of_differentiableAt hdet'.differentiableAt hA' v
   rw [Function.comp_def, hLA] at hcomp
   rw [hcomp, hdet'.fderiv]
