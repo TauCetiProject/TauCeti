@@ -457,13 +457,13 @@ theorem fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian {
     ring
 
 /-- **Radial reduction of central-force motion.** Let `γ` be an integral curve of the Hamiltonian
-vector field of a central-force Hamiltonian on a preconnected open set `s` of times, avoiding the
+vector field of a central-force Hamiltonian on a preconnected set `s` of times, avoiding the
 collision set, with `U` differentiable along it. If `ℓ²` is the squared angular momentum
 `‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` at one time `t₀ ∈ s`, then `t ↦ (‖q(t)‖, p_r(t))` is an integral curve
 on `s` of the Hamiltonian vector field of the reduced Hamiltonian
 `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)`. -/
 theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hs : IsPreconnected s)
     (hγ : ∀ t ∈ s, HasDerivAt γ
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
     (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ : ℝ}
@@ -476,7 +476,7 @@ theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : �
   have h := ((hasFDerivAt_radialProjection (hq t ht)).comp_hasDerivAt t (hγ t ht))
   rwa [← (hasFDerivAt_radialProjection (hq t ht)).fderiv,
     fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian (hU t ht).hasDerivAt
-      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hs' hγ hq hU ht₀ ht).symm)] at h
+      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht).symm)] at h
 
 /-! ### Circular orbits -/
 
