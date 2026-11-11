@@ -136,35 +136,6 @@ theorem localFourier_transportCLM_tensorProduct {φ : 𝓓(Ω, ℂ)} {ψ : 𝓓(
     ofLp_fst, ofLp_snd, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul]
   ring
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-/-- Around a point `p` of `W` there are neighbourhoods `B₁` of `p.fst` and `B₂` of `p.snd` such that
-cutoffs `φ` supported in `B₁` and `ψ` supported in `B₂` have a product cutoff
-`χ (x, y) = φ x * ψ y` on `W`, supported in the product of their supports. -/
-private theorem exists_nhds_prod_cutoff {p : WithLp 2 (E × D)} (hp : p ∈ W) :
-    ∃ B₁ ∈ 𝓝 p.fst, ∃ B₂ ∈ 𝓝 p.snd, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ B₁ →
-      tsupport ψ ⊆ B₂ → ∃ χ : 𝓓(W, ℂ), (∀ q, χ q = φ q.fst * ψ q.snd) ∧
-        tsupport χ ⊆ ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) := by
-  -- A box `B₁ × B₂` around `p` whose Euclidean copy lies in `W`.
-  have hW' : toLp 2 ⁻¹' (W : Set (WithLp 2 (E × D))) ∈ 𝓝 (ofLp p) :=
-    (W.isOpen.preimage (prod_continuous_toLp 2 E D)).mem_nhds (by simpa using hp)
-  obtain ⟨B₁, hB₁, B₂, hB₂, hB⟩ := mem_nhds_prod_iff.1 hW'
-  refine ⟨B₁, hB₁, B₂, hB₂, fun φ ψ hφ hψ ↦ ?_⟩
-  -- The product cutoff is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
-  set K : Set (WithLp 2 (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) with hK_def
-  have hK : IsCompact K :=
-    (prodContinuousLinearEquiv 2 ℝ E D).toHomeomorph.isCompact_preimage.2
-      (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
-  have hsupp : tsupport (fun q : WithLp 2 (E × D) ↦ φ q.fst * ψ q.snd) ⊆ K := fun q hq ↦
-    ⟨tsupport_comp_subset_preimage φ (continuous_fst.comp (prod_continuous_ofLp 2 E D))
-        (tsupport_mul_subset_left hq),
-      tsupport_comp_subset_preimage ψ (continuous_snd.comp (prod_continuous_ofLp 2 E D))
-        (tsupport_mul_subset_right hq)⟩
-  have hKW : K ⊆ W := fun q ⟨hq₁, hq₂⟩ ↦ by
-    simpa using hB ⟨hφ hq₁, hψ hq₂⟩
-  exact ⟨⟨fun q ↦ φ q.fst * ψ q.snd,
-    (φ.contDiff.comp (fstL 2 ℝ E D).contDiff).mul (ψ.contDiff.comp (sndL 2 ℝ E D).contDiff),
-    hK.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp.trans hKW⟩, fun _ ↦ (rfl), hsupp⟩
-
 /-- Around a point `p` of `W`, a cutoff `φ` near `p.fst` inside `U₁` and a cutoff `ψ` near
 `p.snd` inside `U₂` give a product cutoff on `W`, not vanishing at `p`, for which the localized
 Fourier transform of `S ⊗ T` is the product of those of `S` and `T`. -/
