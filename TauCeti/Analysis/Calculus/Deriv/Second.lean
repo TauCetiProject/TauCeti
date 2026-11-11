@@ -28,7 +28,8 @@ since Mathlib's derivative is `0` wherever it is undefined. Mathlib's
 `iteratedDeriv_comp_const_smul` states the same formula under a `ContDiff` hypothesis.
 
 The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`, and
-the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative.
+the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative; in
+particular the scalar affine function `s ↦ c s + d` has derivative `c`.
 
 A linear fractional function `s ↦ (a s + b) / (c s + d)` has derivative
 `(a d - b c) / (c s + d) ^ 2` and second derivative `-2 c (a d - b c) / (c s + d) ^ 3` away from
@@ -50,7 +51,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
-  second derivatives of the affine line `t ↦ a + t • b`.
+  second derivatives of the affine line `t ↦ a + t • b`, and `TauCeti.hasDerivAt_mul_add` the
+  derivative of `s ↦ c * s + d`.
 * `TauCeti.hasDerivAt_linearFractional`, `TauCeti.deriv_deriv_linearFractional`: the first and
   second derivatives of `s ↦ (a s + b) / (c s + d)`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
@@ -123,6 +125,10 @@ variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] 
 theorem deriv_const_add_smul (a b : F) : deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b :=
   funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
 
+/-- The affine function `s ↦ c * s + d` has derivative `c`. -/
+theorem hasDerivAt_mul_add (c d t : 𝕜) : HasDerivAt (fun s ↦ c * s + d) c t := by
+  simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
+
 /-- The second derivative of the affine line `t ↦ a + t • b` vanishes. -/
 @[simp]
 theorem iteratedDeriv_two_const_add_smul (a b : F) :
@@ -135,10 +141,6 @@ end AffineLine
 section LinearFractional
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a b c d t : 𝕜}
-
-/-- The affine function `s ↦ c * s + d` has derivative `c`. -/
-private theorem hasDerivAt_mul_add (c d t : 𝕜) : HasDerivAt (fun s ↦ c * s + d) c t := by
-  simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
 
 /-- Away from its pole, the linear fractional function `s ↦ (a * s + b) / (c * s + d)` has
 derivative `(a * d - b * c) / (c * t + d) ^ 2` at `t`. -/
