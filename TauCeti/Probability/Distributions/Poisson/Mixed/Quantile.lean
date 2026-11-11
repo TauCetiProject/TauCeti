@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Poisson.Mixed.Basic
+public import TauCeti.Probability.Distributions.Poisson.Mixed.Support
 public import TauCeti.Probability.Quantile.Discrete
 public import Mathlib.Topology.Instances.EReal.Lemmas
+
+import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
 # Quantiles of mixed Poisson laws
@@ -19,6 +22,8 @@ the explicit cumulative mass series, so it can be evaluated directly from the mi
 Every mixed Poisson law has positive mass at zero: conditionally on any finite rate `x`, the
 zero-count probability is `exp (-x)`. Consequently its lower quantiles are zero on a nonempty
 initial interval, and their one-sided limit at probability level zero is zero.
+At level one the limit is positive infinity whenever the mixing law gives positive mass to
+nonzero rates, and zero when it is concentrated at rate zero.
 
 ## References
 
@@ -79,5 +84,33 @@ theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsGT_zero (ρ : Measure 
       simpa using mixedPoissonMeasure_real_singleton ρ 0
     exact hu.2.le.trans_eq hmass_eq
   exact congrArg (fun x : ℝ ↦ (x : EReal)) hzero.symm
+
+/-- Mixed Poisson quantiles tend to infinity at level one unless the mixing law is concentrated
+at rate zero, in which case their upper endpoint is zero. -/
+theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsLT_one (ρ : Measure ℝ≥0)
+    [IsProbabilityMeasure ρ] :
+    Tendsto
+      (fun u ↦ (((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 (if ρ {0}ᶜ = 0 then 0 else ⊤)) := by
+  by_cases hρ : ρ {0}ᶜ = 0
+  · have hz : ∀ᵐ r ∂ρ, r = 0 := by
+      filter_upwards [mem_ae_iff.mpr hρ] with r hr
+      exact mem_singleton_iff.mp hr
+    have hlaw : mixedPoissonMeasure ρ = dirac 0 := by
+      rw [mixedPoissonMeasure_def]
+      calc
+        ρ.bind poissonMeasure = ρ.bind (fun _ ↦ dirac 0) :=
+          bind_congr_right (hz.mono fun r hr ↦ by simp [hr, poissonMeasure_zero])
+        _ = dirac 0 := by simp [bind_const]
+    simp only [hρ, ↓reduceIte, hlaw, map_dirac, Nat.cast_zero]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Ioo_mem_nhdsLT (zero_lt_one : (0 : ℝ) < 1)] with u hu
+    simp [quantile_dirac 0 hu.1 hu.2.le]
+  · simp only [hρ, ↓reduceIte]
+    apply tendsto_quantile_nhdsLT_one_of_cdf_lt_one
+    intro x
+    obtain ⟨n, hn⟩ := exists_nat_gt x
+    apply cdf_lt_one_of_mem_support_of_lt _ (y := (n : ℝ)) _ hn
+    simp [support_map_cast_mixedPoissonMeasure, hρ]
 
 end MeasureTheory.Measure
