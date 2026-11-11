@@ -38,7 +38,8 @@ ring. One inclusion holds because each arc is the action of a cap-cup diagram, w
 `I_1`. For the other, a diagram with a cap is a loop-free stack of a cap-cup diagram on another
 diagram (`TauCeti.BrauerDiagram.exists_composeDiagram_capCup_eq`), so its action factors through
 an arc. Over a star-ordered field such as `ℚ`, `ℝ` or `ℂ` the harmonic tensors therefore
-complement `F_1` (`TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceFiltration_one`), so
+complement `F_1`: rewriting by `TauCeti.orthogonalTraceFiltration_one` turns
+`TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors` into this statement, so
 `V^{⊗d}` is the direct sum of the harmonic tensors and `F_1` as a representation of the
 orthogonal group.
 
@@ -60,8 +61,6 @@ orthogonal group.
 * `TauCeti.range_brauerActionOrth_le_orthogonalTraceTensors`: an element of `I_1` maps into the
   trace tensors.
 * `TauCeti.orthogonalTraceFiltration_one`: **`F_1` is the space of trace tensors.**
-* `TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceFiltration_one`: over a star-ordered
-  field the harmonic tensors and `F_1` are complementary subrepresentations.
 
 ## References
 
@@ -223,20 +222,11 @@ theorem orthogonalTraceFiltration_one :
 
 end CommRing
 
-section StarOrderedField
-
-variable (k : Type u) [Field k] [PartialOrder k] [StarRing k] [StarOrderedRing k] (n d : ℕ)
-
-/-- **The harmonic tensors complement the first step of the trace filtration** over a
-star-ordered field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`), so
-`Subrepresentation.equivProdOfIsCompl` presents `V^{⊗d}` as the direct sum of the harmonic
-tensors and `F_1` as a representation of the orthogonal group. -/
-theorem isCompl_harmonicTensorsSubrep_orthogonalTraceFiltration_one :
+-- Over a star-ordered field the harmonic tensors complement `F_1`, by the trace-tensor complement.
+example (k : Type u) [Field k] [PartialOrder k] [StarRing k] [StarOrderedRing k] (n d : ℕ) :
     IsCompl (harmonicTensorsSubrep k n d) (orthogonalTraceFiltration k n d 1) := by
   rw [orthogonalTraceFiltration_one]
   exact isCompl_harmonicTensorsSubrep_orthogonalTraceTensors k n d
-
-end StarOrderedField
 
 -- On two strands `F_1` is the trace line spanned by the invariant form, a line for `n ≠ 0`, and
 -- `F_2 = 0`; on one strand already `F_1 = 0`, since a single strand carries no cap.
