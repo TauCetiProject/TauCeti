@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!
@@ -33,6 +33,19 @@ for a unit in the second input (`NovikovModule.kernelProduct_sub_kernelMap_left`
 infinite sums. The proofs reduce to the chain homotopy of a kernel homotopy between one-input
 kernels (`NovikovModule.kernelMap_sub_kernelMap`).
 
+On finite unions of torsors with invariant kernels, the product, the cylinder map, the homotopy and
+the differentials are given by matrices of Novikov series relative to reference generators
+(`NovikovModule.novikovProductOfMatrix`, `NovikovModule.novikovMapOfMatrix`). If `uᵢ` are the
+coordinates of `e`, the kernel identity becomes the identity
+
+`∑ᵢ uᵢ Qᵢⱼₗ - Φⱼₗ = ∑ₖ Kⱼₖ D₀ₖₗ + ∑ₖ D₂ⱼₖ Kₖₗ`
+
+between finite sums of Novikov series, and it gives the same homotopy
+`e ⋆ b - Φ b = D₀ (K b) + K (D₂ b)` for the maps of the matrices
+(`NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`, and
+`NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left` for a unit in the second
+input). This is the form in which counts indexed by classes of a period group enter.
+
 If `K` lowers degree by one, then on a cocycle `b` the difference `e ⋆ b - φ b` is the coboundary
 `δ₀ (K b)` (`NovikovModule.kernelProduct_sub_kernelMap_mem_coboundaries_right`). On a common
 complex, with `φ` the identity kernel, the class of a cocycle `e` is therefore a two-sided unit for
@@ -52,6 +65,9 @@ bounds remain hypotheses: they are the geometric input from the compactified mod
 * `NovikovModule.cohomologyProduct_kernelProduct_unit_mk`,
   `NovikovModule.cohomologyProduct_kernelProduct_mk_unit`: on a common complex the class of the
   unit is a left and a right identity for the product on cohomology.
+* `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`,
+  `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left`: the unit homotopies for
+  matrices of Novikov series.
 
 ## References
 
@@ -276,6 +292,78 @@ theorem cohomologyProduct_kernelProduct_mk_unit {i j : ℤ} (hij : i + j + ε = 
 end MkUnit
 
 end Cohomology
+
+section Matrix
+
+variable {H ι₁ ι₂ ι₀ : Type*} [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **A unit in the first input up to homotopy, for matrices of Novikov series.** Let `Q` be the
+matrix of a product, `e` a completed combination of generators of its first input with
+coordinates `uᵢ`, `Φ` and `K` matrices of maps from the second input to the output, and `D₂`, `D₀`
+matrices of maps on the second input and on the output, all relative to reference generators. If
+the matrices obey the homotopy identity
+
+`∑ᵢ uᵢ Qᵢⱼₗ - Φⱼₗ = ∑ₖ Kⱼₖ D₀ₖₗ + ∑ₖ D₂ⱼₖ Kₖₗ`,
+
+then `e ⋆ b - Φ b = D₀ (K b) + K (D₂ b)` for every completed combination `b` of the second
+input. -/
+theorem novikovProductOfMatrix_sub_novikovMapOfMatrix_right
+    (Φ K : Matrix ι₂ ι₀ (NovikovSeries R H N)) (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N))
+    (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    (e : NovikovModule R F₁)
+    (hunit : ∀ j l, ∑ i, coordinates hF₁ r₁ e i * Q i j l - Φ j l =
+      ∑ k, K j k * D₀ k l + ∑ k, D₂ j k * K k l)
+    (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q e b - novikovMapOfMatrix hF₂ hF₀ r₂ r₀ Φ b =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovMapOfMatrix hF₂ hF₀ r₂ r₀ K b) +
+        novikovMapOfMatrix hF₂ hF₀ r₂ r₀ K (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  have hM : Matrix.of (fun j l => ∑ i, coordinates hF₁ r₁ e i * Q i j l) = Φ + (K * D₀ + D₂ * K) :=
+    Matrix.ext fun j l => by
+      rw [Matrix.of_apply, Matrix.add_apply, Matrix.add_apply, Matrix.mul_apply, Matrix.mul_apply,
+        ← hunit j l, add_sub_cancel]
+  rw [novikovProductOfMatrix_eq_novikovMapOfMatrix_right, hM, novikovMapOfMatrix_add,
+    novikovMapOfMatrix_add, novikovMapOfMatrix_mul hF₂ hF₀ hF₀ r₂ r₀ r₀,
+    novikovMapOfMatrix_mul hF₂ hF₀ hF₂ r₂ r₀ r₂]
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, add_sub_cancel_left]
+
+/-- **A unit in the second input up to homotopy, for matrices of Novikov series.** Let `Q` be the
+matrix of a product, `e` a completed combination of generators of its second input with
+coordinates `uⱼ`, `Φ` and `K` matrices of maps from the first input to the output, and `D₁`, `D₀`
+matrices of maps on the first input and on the output, all relative to reference generators. If
+the matrices obey the homotopy identity
+
+`∑ⱼ uⱼ Qᵢⱼₗ - Φᵢₗ = ∑ₖ Kᵢₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖₗ`,
+
+then `a ⋆ e - Φ a = D₀ (K a) + K (D₁ a)` for every completed combination `a` of the first
+input. -/
+theorem novikovProductOfMatrix_sub_novikovMapOfMatrix_left
+    (Φ K : Matrix ι₁ ι₀ (NovikovSeries R H N)) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    (e : NovikovModule R F₂)
+    (hunit : ∀ i l, ∑ j, coordinates hF₂ r₂ e j * Q i j l - Φ i l =
+      ∑ k, K i k * D₀ k l + ∑ k, D₁ i k * K k l)
+    (a : NovikovModule R F₁) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a e - novikovMapOfMatrix hF₁ hF₀ r₁ r₀ Φ a =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ K a) +
+        novikovMapOfMatrix hF₁ hF₀ r₁ r₀ K (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) := by
+  have hM : Matrix.of (fun i l => ∑ j, coordinates hF₂ r₂ e j * Q i j l) = Φ + (K * D₀ + D₁ * K) :=
+    Matrix.ext fun i l => by
+      rw [Matrix.of_apply, Matrix.add_apply, Matrix.add_apply, Matrix.mul_apply, Matrix.mul_apply,
+        ← hunit i l, add_sub_cancel]
+  rw [novikovProductOfMatrix_eq_novikovMapOfMatrix_left, hM, novikovMapOfMatrix_add,
+    novikovMapOfMatrix_add, novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
+    novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁]
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, add_sub_cancel_left]
+
+end Matrix
 
 end NovikovModule
 

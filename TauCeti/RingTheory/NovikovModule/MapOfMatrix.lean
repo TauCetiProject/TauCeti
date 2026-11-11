@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.KernelMap
+public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovSeries.Topology
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
@@ -30,7 +30,14 @@ obeys a potential bound, so it has a Novikov-linear map
 `cₖ = ∑ᵢ aᵢ Mᵢₖ`. Relative to the reference bases it is Mathlib's `Matrix.toLin` of the transpose
 of `M` (`TauCeti.NovikovModule.novikovMapOfMatrix_eq_toLin`), so it is linear in `M`, composition
 of maps is multiplication of matrices (`TauCeti.NovikovModule.novikovMapOfMatrix_mul`), and the
-identity matrix gives the identity map.
+identity matrix gives the identity map. A matrix with homogeneous entries gives a map of the
+corresponding degree (`TauCeti.NovikovModule.novikovMapOfMatrix_mem_gradeBy`).
+
+The product of a matrix of Novikov series with one input fixed is the map of a matrix: for fixed
+`a` with coordinates `aᵢ`, the map `b ↦ a ⋆ b` is the map of the matrix `∑ᵢ aᵢ Qᵢⱼₖ`
+(`TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`), and likewise in the
+other input. These are the matrix forms of `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_right`
+and `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_left`.
 
 This is the one-input counterpart of `TauCeti.NovikovModule.kernelOfMatrix` and
 `TauCeti.NovikovModule.novikovProductOfMatrix`. In Floer theory the generators are capped
@@ -61,6 +68,11 @@ which is the form that the energy estimate takes for class-indexed counts.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_mul`, `TauCeti.NovikovModule.novikovMapOfMatrix_one`:
   the map of a product of matrices is the composite of their maps, and the identity matrix gives
   the identity.
+* `TauCeti.NovikovModule.novikovMapOfMatrix_mem_gradeBy`: the degree of the map of a matrix with
+  homogeneous entries.
+* `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_left`: the product of a
+  matrix with one input fixed is the map of a matrix in the other input.
 
 ## References
 
@@ -300,5 +312,66 @@ theorem novikovMapOfMatrix_one [DecidableEq ι₁] :
   rw [novikovMapOfMatrix_eq_toLin, Matrix.transpose_one, Matrix.toLin_one]
 
 end Map
+
+section Grading
+
+variable [CommSemiring R] [Finite ι₁] [Finite ι₀]
+
+/-- **Degree of the map of a matrix.** Let the generators be graded by functions `d₁` and `d₀`
+that change by `δ h` under the translation by `h`. If every entry `Mᵢₖ` is homogeneous of the
+degree `d₁ (r₁ i) + ε - d₀ (r₀ k)`, then the map of `M` shifts degrees by `ε`: it sends a
+combination of degree `e` to a combination of degree `e + ε`. -/
+theorem novikovMapOfMatrix_mem_gradeBy {D : Type*} [AddCommGroup D] (δ : H →+ D)
+    {d₁ : (Σ i, P₁ i) → D} {d₀ : (Σ k, P₀ k) → D}
+    (hd₁ : ∀ i h (p : P₁ i), d₁ ⟨i, h +ᵥ p⟩ = δ h + d₁ ⟨i, p⟩)
+    (hd₀ : ∀ k h (p : P₀ k), d₀ ⟨k, h +ᵥ p⟩ = δ h + d₀ ⟨k, p⟩)
+    {M : Matrix ι₁ ι₀ (NovikovSeries R H N)} {ε : D}
+    (hM : ∀ i k, M i k ∈ NovikovSeries.gradeBy R N δ (d₁ ⟨i, r₁ i⟩ + ε - d₀ ⟨k, r₀ k⟩))
+    {e : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M a ∈ gradeBy R F₀ d₀ (e + ε) := by
+  have := Fintype.ofFinite ι₁
+  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
+  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
+  intro k
+  rw [coordinates_novikovMapOfMatrix]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  convert SetLike.mul_mem_graded (ha i) (hM i k) using 2
+  abel
+
+end Grading
+
+section Product
+
+variable [CommSemiring R] [Finite ι₀] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **A product of a matrix as a map in its second input.** For fixed `a` with coordinates `aᵢ`,
+the product of `a` and `b` is the image of `b` under the map of the matrix `∑ᵢ aᵢ Qᵢⱼₖ`. This is
+the matrix form of `NovikovModule.kernelProduct_eq_kernelMap_right`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_right [Fintype ι₁] [Finite ι₂]
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b =
+      novikovMapOfMatrix hF₂ hF₀ r₂ r₀
+        (Matrix.of fun j k => ∑ i, coordinates hF₁ r₁ a i * Q i j k) b := by
+  have := Fintype.ofFinite ι₂
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  rw [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Finset.sum_comm]
+  simp only [Matrix.of_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
+
+/-- **A product of a matrix as a map in its first input.** For fixed `b` with coordinates `bⱼ`,
+the product of `a` and `b` is the image of `a` under the map of the matrix `∑ⱼ bⱼ Qᵢⱼₖ`. This is
+the matrix form of `NovikovModule.kernelProduct_eq_kernelMap_left`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_left [Finite ι₁] [Fintype ι₂]
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀
+        (Matrix.of fun i k => ∑ j, coordinates hF₂ r₂ b j * Q i j k) a := by
+  have := Fintype.ofFinite ι₁
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  rw [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix]
+  simp only [Matrix.of_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
+end Product
 
 end TauCeti.NovikovModule
