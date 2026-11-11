@@ -108,9 +108,7 @@ theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [IsDominant f] :
   refine ⟨fun h a ↦ ?_, fun h ↦ ?_⟩
   · subst h
     simp
-  have : Y.IsSeparated := by
-    rw [Scheme.isSeparated_iff, ← Limits.terminal.comp_from (Y ↘ Spec (.of k))]
-    infer_instance
+  have := Scheme.IsSeparated.of_isSeparated (Y ↘ Spec (.of k))
   refine Hom.ext_of_functionFieldMap_eq (⊤_ Scheme) ?_
   rw [functionFieldMap_homOfFunctionFieldAlgHom]
   ext a
