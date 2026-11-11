@@ -120,7 +120,6 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
   have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
   have : NeZero M := NeZero.of_dvd (dvd_of_mul_left_dvd hdvd)
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hdpos : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
   have hMdvd : M ∣ N := dvd_of_mul_left_dvd hdvd
   have hpM : Nat.Coprime p M := hpN.coprime_dvd_right hMdvd
   have hpd : Nat.Coprime p d := hpN.coprime_dvd_right ((dvd_mul_right d M).trans hdvd)
@@ -137,7 +136,7 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
     CuspForm.diamondOpCusp_levelRaise hdvd k (ZMod.unitOfCoprime p hpN) f, hunits,
     SlashAction.add_slash, smul_add, heckeSlashUpperTri_smul, hscale]
   refine congrArg₂ (· + ·) ?_ ?_
-  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hdpos hpd.symm (slash_mapGL_T k hf)]
+  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hpd.symm (slash_mapGL_T k hf)]
   · rw [ModularForm.rat_smul_slash_of_det_pos k (det_scaleRep_pos p), ← SlashAction.slash_mul,
       ← SlashAction.slash_mul, scaleRep_def, scaleRep_def, natDiagGL_comm]
 
@@ -163,9 +162,8 @@ theorem heckeTCuspNat_levelRaise_mul {n e : ℕ} [NeZero N] (hdvd : n * e * M �
   refine CuspForm.qExpansion_injective one_pos (one_mem_strictPeriods_Gamma1_map N)
     (PowerSeries.ext fun m ↦ ?_)
   simp only [qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hn,
-    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
-      (one_mem_strictPeriods_Gamma1_map N), Nat.mul_dvd_mul_iff_left hn0,
-    Nat.mul_div_mul_left _ _ hn0]
+    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M),
+    Nat.mul_dvd_mul_iff_left hn0, Nat.mul_div_mul_left _ _ hn0]
 
 /-- **`T_n` commutes with `V_d` when `n` is supported on the source level and prime to `d`**:
 for `d * M ∣ N`, `n` coprime to `d` and every prime factor of `n` dividing `M`,
@@ -188,8 +186,8 @@ theorem heckeTCuspNat_levelRaise_of_primeFactors_subset {n : ℕ} [NeZero N] [Ne
     (PowerSeries.ext fun m ↦ ?_)
   simp only [qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hnN,
     qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hn,
-    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
-      (one_mem_strictPeriods_Gamma1_map N), hnd.symm.dvd_mul_left]
+    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M),
+    hnd.symm.dvd_mul_left]
   split_ifs with hdm
   · rw [Nat.mul_div_assoc n hdm]
   · rfl
@@ -226,8 +224,8 @@ theorem heckeTCuspNat_levelRaise_eq_sub [NeZero N] (hp : p.Prime)
   rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos hΓN, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos hΓN, map_sub, map_smul, smul_eq_mul,
     qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k p hpN,
-    CuspForm.qExpansion_levelRaise_coeff hΓM hΓN, CuspForm.qExpansion_levelRaise_coeff hΓM hΓN,
-    CuspForm.qExpansion_levelRaise_coeff hΓM hΓN]
+    CuspForm.qExpansion_levelRaise_coeff hΓM, CuspForm.qExpansion_levelRaise_coeff hΓM,
+    CuspForm.qExpansion_levelRaise_coeff hΓM]
   by_cases hdm : d ∣ m
   · -- `m = d t`: both sides are the `Tₚ` recurrence at level `M`, read at `t`
     obtain ⟨t, rfl⟩ := hdm

@@ -109,13 +109,23 @@ variable [Fact (1 ≤ p)] {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAd
 
 /-- Applying a map with `‖g v‖ ≤ C * ‖v‖` to each member of a finite family multiplies its
 `Lᵖ` norm by at most `C`. -/
-theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hC : 0 ≤ C) (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
+theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
     (x : ι → E) : ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ C * ‖WithLp.toLp p x‖ := by
-  calc
-    ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
-      norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
-    _ = C * ‖WithLp.toLp p x‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
+  by_cases hC : 0 ≤ C
+  · calc
+      ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
+        norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
+      _ = C * ‖WithLp.toLp p x‖ := by
+        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
+  · -- A negative constant forces every norm to vanish.
+    have hv (v : E) : ‖v‖ = 0 :=
+      le_antisymm (by nlinarith [norm_nonneg (g v), norm_nonneg v, hg v]) (norm_nonneg v)
+    have hx : ‖WithLp.toLp p x‖ = 0 := le_antisymm
+      (by simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ E)) fun i ↦ by simp [hv])
+      (norm_nonneg _)
+    rw [hx, mul_zero]
+    simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ F))
+      fun i ↦ by simpa [hv] using hg (x i)
 
 /-- A finite family of multiples of one vector has `Lᵖ` norm equal to the `Lᵖ` norm of the
 coefficients times the norm of the vector. -/

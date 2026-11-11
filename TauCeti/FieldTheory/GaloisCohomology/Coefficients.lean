@@ -83,7 +83,8 @@ are strictly larger than `Kˣ`.
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
 * `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
-* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `𝔽_ℓ` for a prime `ℓ` invertible in `K`.
+* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `ℤ/ℓℤ` for `ℓ` invertible in `K`, so over
+  `𝔽_ℓ` for a prime `ℓ`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
@@ -175,16 +176,6 @@ theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) =
   exact (Nat.card_congr Additive.toMul).trans
     (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
 
-variable {K} in
-/-- **`μ_ℓ` is a line over `𝔽_ℓ`** for a prime `ℓ` invertible in `K`. -/
-theorem finrank_kummerCoeff {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : IsUnit (ℓ : K)) :
-    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
-  have hp : ℓ.Prime := Fact.out
-  apply Nat.pow_right_injective hp.two_le
-  dsimp only
-  conv_rhs => rw [pow_one, ← natCard_kummerCoeff hℓ]
-  rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ), Nat.card_zmod]
-
 variable {K n} in
 /-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
 are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
@@ -193,6 +184,31 @@ def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n 
   have : NeZero (n : K) := ⟨hn.ne_zero⟩
   have : NeZero n := NeZero.of_neZero_natCast K
   addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
+
+variable {K n} in
+/-- **In characteristic `n` there are no nontrivial `n`-th roots of unity**: the Kummer coefficient
+module `μₙ(Kˢ)` is trivial for a prime `n` with `CharP K n`. -/
+theorem subsingleton_kummerCoeff_of_charP [Fact n.Prime] [CharP K n] :
+    Subsingleton (KummerCoeff K n) := by
+  have : CharP (SeparableClosure K) n :=
+    charP_of_injective_algebraMap (algebraMap K (SeparableClosure K)).injective n
+  have : ExpChar (SeparableClosure K) n := ExpChar.prime Fact.out
+  refine ⟨fun x y ↦ ?_⟩
+  have h1 (z : KummerCoeff K n) : z = 0 := by
+    have hz : (z.toMul : (SeparableClosure K)ˣ) ∈
+        rootsOfUnity (n ^ 1 * 1) (SeparableClosure K) := by simp
+    rw [mem_rootsOfUnity_prime_pow_mul_iff (SeparableClosure K) n 1 1, rootsOfUnity_one,
+      Subgroup.mem_bot] at hz
+    exact Additive.toMul.injective (Subtype.ext hz)
+  rw [h1 x, h1 y]
+
+variable {K} in
+/-- **`μ_ℓ` is a line over `ℤ/ℓℤ`** for `ℓ` invertible in `K`, in particular a line over `𝔽_ℓ` for
+a prime `ℓ`. -/
+theorem finrank_kummerCoeff {ℓ : ℕ} (hℓ : IsUnit (ℓ : K)) :
+    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
+  rw [((kummerCoeffAddEquivZMod hℓ).toLinearEquiv (ZMod.map_smul _)).finrank_eq]
+  exact CommSemiring.finrank_self _
 
 /-! ### The two maps of the Kummer sequence -/
 

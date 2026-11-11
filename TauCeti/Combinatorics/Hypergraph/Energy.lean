@@ -40,8 +40,8 @@ equitability or regularity.
 
 The conditional-expectation argument adapts `TauCeti.Colored3Graph.sum_relativeDensity_ofTriple_mul`
 and the defect identity follows the tuple form of `TauCeti.Colored3Graph.polyadDensityDeviation_sq`,
-both in `TauCeti.Combinatorics.Hypergraph.Polyad.Energy`, from polyads of a colored `3`-graph to
-boxes of parts of a uniform hypergraph.
+both in `TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Basic`, from polyads of a colored
+`3`-graph to boxes of parts of a uniform hypergraph.
 
 ## Main definitions
 

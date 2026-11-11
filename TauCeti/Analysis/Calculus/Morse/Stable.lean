@@ -103,14 +103,14 @@ theorem IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet
 
 /-- An orbit on which `f` is constant is constant: any two of its points coincide. -/
 private theorem IsNegativeGradient.orbit_eq_of_const_value (hφ : IsNegativeGradient φ f)
-    (hf : ∀ t, DifferentiableAt ℝ f (φ t x)) (hc : ∀ t, f (φ t x) = f x) (t u : ℝ) :
+    (hc : ∀ t, f (φ t x) = f x) (t u : ℝ) :
     φ t x = φ u x := by
   let γ : ℝ → E := fun v ↦ φ v x
   have hγ : IsIntegralCurve γ (fun _ y ↦ -∇ f y) := hφ.isIntegralCurve x
   apply is_const_of_deriv_eq_zero (fun v ↦ (hγ v).differentiableAt) _ t u
   intro v
   have hgrad : ∇ f (γ v) = 0 :=
-    hγ.gradient_eq_zero_of_eventually_const_value (hf v) (Eventually.of_forall hc)
+    hγ.gradient_eq_zero_of_eventually_const_value (Eventually.of_forall hc)
   rw [(hγ v).deriv]
   simp only [hgrad, neg_zero]
 
@@ -128,7 +128,7 @@ private theorem IsNegativeGradient.orbit_eq_self_of_tendsto_const_value
       ((hanti.ge_of_tendsto hbot 0).trans (hanti.le_of_tendsto htop t))
   intro t
   simpa only [_root_.Flow.map_zero_apply] using
-    hφ.orbit_eq_of_const_value hf hvalue t 0
+    hφ.orbit_eq_of_const_value hvalue t 0
 
 /-- A connecting orbit whose two endpoint values agree lies on the constant orbit through the
 shared endpoint: `x = p` and `p = q`. -/

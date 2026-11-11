@@ -140,6 +140,13 @@ theorem conformalCoefficient_pos {n : ℕ} (hn : 2 < n) : 0 < conformalCoefficie
   rw [conformalCoefficient_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The conformal coefficient is nonnegative in every dimension: positive for `n > 2`, `0` for
+`n = 1` and (by division by zero) `n = 2`, and `2` for `n = 0`. -/
+theorem conformalCoefficient_nonneg (n : ℕ) : 0 ≤ conformalCoefficient n := by
+  rcases lt_or_ge 2 n with hn | hn
+  · exact (conformalCoefficient_pos hn).le
+  · interval_cases n <;> norm_num [conformalCoefficient_def]
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The **bubble** `U_{t,b}(x) = (2 t / (t² + ‖x - b‖²)) ^ ((n - 2) / 2)` of scale `t` centred at

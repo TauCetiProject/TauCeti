@@ -11,13 +11,12 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.AdicHom.Basic
+import TauCeti.RingTheory.Huber.AdicHom.Localization
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Valuation.Microbial
-import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
-import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
@@ -279,6 +278,7 @@ theorem isOpen_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Subrin
   rw [hset]
   exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtype_val
 
+omit [IsTopologicalRing A] in
 /-- A rational subset whose denominator belongs to the extended ideal of definition consists of
 analytic points. -/
 theorem rationalSubset_subset_spaAnalytic_of_mem_extendedIdealOfDefinition
@@ -287,9 +287,13 @@ theorem rationalSubset_subset_spaAnalytic_of_mem_extendedIdealOfDefinition
     rationalSubset Aplus T s ⊆ spaAnalytic Aplus := by
   intro v hv
   have hmem := (mem_rationalSubset_iff Aplus T s v).mp hv
-  refine (mem_spaAnalytic_iff Aplus v).mpr ⟨hmem.1, ?_⟩
-  rw [isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P]
-  exact ⟨s, hs, fun hsupp ↦ hmem.2.2 ((mem_supp_iff v s).mp hsupp)⟩
+  refine (mem_spaAnalytic_iff Aplus v).mpr ⟨hmem.1, fun hopen ↦ ?_⟩
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp (hopen.mem_nhds v.supp.zero_mem)
+  have hle : P.extendedIdealOfDefinition ^ n ≤ v.supp := by
+    rw [P.extendedIdealOfDefinition_pow]
+    exact Ideal.span_le.mpr hn
+  exact hmem.2.2 ((mem_supp_iff v s).mp
+    ((inferInstance : v.supp.IsPrime).mem_of_pow_mem n (hle (Ideal.pow_mem_pow hs n))))
 
 open scoped Classical in
 /-- **A finite rational cover of the analytic locus.** If `T` generates the extended ideal of
@@ -443,8 +447,7 @@ rational subset of `Spa(A, A⁺)`, where `A⁺` contains the ring of definition 
 `isTateRing_completion_locTopology_of_mem_generators`. -/
 theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
     {Aplus : Subring A} (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
-    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -463,12 +466,9 @@ theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
     simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
     rw [← spaComapLoc_val, ← h]
   have hw : IsAnalyticPoint w.1 := isAnalyticPoint_of_isTateRing w.1
-  -- adding the denominator to the numerators keeps the ideal open
-  have hT' : IsOpen (Ideal.span (insert s (T : Set A)) : Set A) :=
-    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT
   refine ⟨hvspa, ?_⟩
   rw [hvw]
-  exact hw.comap (isTopologicallyFiniteType_toCompletionLoc P T s S hden hT').isAdicHom
+  exact hw.comap (PairOfDefinition.isAdicHom_toCompletionLoc P T s S hden)
 
 end TopologicalRing
 
