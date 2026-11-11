@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
 public import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
-public import TauCeti.Analysis.Calculus.ContDiff.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.MeanValue
@@ -157,13 +157,6 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
   have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set δ : ℝ := (2 * (1 + 2 * C))⁻¹ with hδdef
   obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le⟩ := hρ c r hr
-  -- The perturbation `u = ρ • (h - id)`.
-  let u : E → E := fun x ↦ ρ x • (h x - x)
-  have hu0 (x : E) (hx : x ∉ closedBall c (2 * r)) : u =ᶠ[𝓝 x] fun _ ↦ 0 := by
-    have hx' : 2 * r < dist x c := not_le.1 hx
-    filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds
-      hx'] with y hy
-    simp [u, hρ0 y hy]
   have hsupport : tsupport ρ ⊆ closedBall c (2 * r) :=
     closure_minimal (fun x hx ↦ by
       by_contra h
@@ -193,10 +186,8 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
         rw [hδdef]
         field_simp
       exact hle.trans_eq (by simpa using heq)
-    · have heq : (fun y ↦ y + ρ y • (h y - y)) =ᶠ[𝓝 x] id := by
-        filter_upwards [hu0 x hx] with y hy
-        exact congrArg (fun z ↦ y + z) hy |>.trans (add_zero y)
-      rw [heq.fderiv_eq, fderiv_id, sub_self, norm_zero]
+    · rw [fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport (fun h ↦ hx (hsupport h)),
+        sub_self, norm_zero]
       positivity
   obtain ⟨φ, hφ⟩ := hcdcut.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le
     (by exact_mod_cast hn) (by norm_num) hclose

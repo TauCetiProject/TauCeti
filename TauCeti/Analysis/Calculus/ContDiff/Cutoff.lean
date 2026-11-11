@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Topology.Algebra.Support
 
@@ -53,17 +53,29 @@ section Perturbation
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-open scoped Manifold
-
 /-- A `C^n` scalar cutoff turns a map that is `C^n` near its closed support into a globally
 `C^n` perturbation of the identity. -/
 theorem _root_.ContDiff.contDiff_cutoff_perturbation_of_contDiffAt
     {χ : E → ℝ} (hχ : ContDiff ℝ n χ) {f : E → E}
     (hf : ∀ x ∈ tsupport χ, ContDiffAt ℝ n f x) :
     ContDiff ℝ n (fun x ↦ x + χ x • (f x - x)) := by
-  exact contDiff_id.add (contMDiff_iff_contDiff.mp (contMDiff_of_tsupport fun x hx ↦
-    (hχ.contDiffAt.smul ((hf x (tsupport_smul_subset_left _ _ hx)).sub
-      contDiffAt_id)).contMDiffAt))
+  refine contDiff_id.add (contDiff_iff_contDiffAt.mpr fun x ↦ ?_)
+  by_cases hx : x ∈ tsupport χ
+  · exact hχ.contDiffAt.smul ((hf x hx).sub contDiffAt_id)
+  · refine (contDiffAt_const (c := (0 : E))).congr_of_eventuallyEq ?_
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hx] with y hy
+    simp only [Pi.zero_apply] at hy
+    simp only [hy, zero_smul]
+
+/-- Outside the closed support of the cutoff, the derivative of its perturbation is the identity. -/
+theorem fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport
+    {χ : E → ℝ} {f : E → E} {x : E} (hx : x ∉ tsupport χ) :
+    fderiv ℝ (fun y ↦ y + χ y • (f y - y)) x = ContinuousLinearMap.id ℝ E := by
+  have heq : (fun y ↦ y + χ y • (f y - y)) =ᶠ[𝓝 x] id := by
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hx] with y hy
+    simp only [Pi.zero_apply] at hy
+    simp only [hy, zero_smul, add_zero, id_eq]
+  rw [heq.fderiv_eq, fderiv_id]
 
 /-- Product-rule bound for the derivative error of a cutoff perturbation, in terms of the value and
 derivative errors of the local map. -/

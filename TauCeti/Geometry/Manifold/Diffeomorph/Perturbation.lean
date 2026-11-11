@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-public import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Lipschitz-small perturbations of the identity are diffeomorphisms

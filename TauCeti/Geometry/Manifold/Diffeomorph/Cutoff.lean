@@ -20,7 +20,7 @@ an arbitrary filter of indices and any regularity order `n ≥ 1`.
 
 ## Main results
 
-* `ContDiff.eventually_exists_cutoff_diffeomorphism_of_contDiffAt`: a fixed cutoff extends
+* `ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt`: a fixed cutoff extends
   sufficiently close local maps to diffeomorphisms, with exact inner and outer agreement.
 * `TauCeti.eventually_exists_local_transition_correction`: correct convergent transition maps
   and preserve their overlap domain.
@@ -40,9 +40,10 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞}
 
-/-- A local coordinate perturbation tending to the identity in value and first
-derivative extends, through a fixed cutoff, to global `C^n` diffeomorphisms. -/
-theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorphism_of_contDiffAt
+/-- Eventually along the index filter, the cutoff perturbation
+`x ↦ x + χ x • (f k x - x)` is a global `C^n` diffeomorphism. It agrees with `f k`
+where `χ = 1` and is the identity off `tsupport χ`. -/
+theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt
     {χ : E → ℝ} (hχ : ContDiff ℝ n χ) (hχcompact : HasCompactSupport χ)
     (hn : 1 ≤ n)
     {ι : Type*} {l : Filter ι} {f : ι → E → E}
@@ -81,11 +82,7 @@ theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorphism_of_contDiffAt
         nlinarith
       norm_num only [NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat] at ⊢
       linarith
-    · have heq : (fun y ↦ y + χ y • (f k y - y)) =ᶠ[𝓝 x] id := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hx] with y hy
-        simp only [Pi.zero_apply] at hy
-        simp only [hy, zero_smul, add_zero, id_eq]
-      rw [heq.fderiv_eq, fderiv_id, sub_self, norm_zero]
+    · rw [fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport hx, sub_self, norm_zero]
       positivity
   -- The derivative bound gives a global diffeomorphism.
   obtain ⟨e, he⟩ := ContDiff.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le
@@ -102,7 +99,7 @@ and `g : V → U` is a `C^n` right inverse of `f`, a cutoff supported in `V` eve
 fixes the complement of `tsupport χ`, and maps `V` onto itself. -/
 theorem eventually_exists_local_transition_correction
     {ι : Type*} {l : Filter ι} {U V : Set E} (hU : IsOpen U) (hV : IsOpen V)
-    {f g : E → E} (hf : ContDiffOn ℝ n f U) (hg : ContDiffOn ℝ n g V)
+    {f g : E → E} (hf : DifferentiableOn ℝ f U) (hg : ContDiffOn ℝ n g V)
     (hgU : MapsTo g V U) (hfg : EqOn (f ∘ g) id V)
     {fseq : ι → E → E}
     (hlocal : ∀ x ∈ U, ∃ W : Set E, IsOpen W ∧ x ∈ W ∧
@@ -131,16 +128,16 @@ theorem eventually_exists_local_transition_correction
   -- Composition with the limiting inverse preserves uniform derivative convergence.
   obtain ⟨B, hB⟩ := hχcompact.isCompact.exists_bound_of_continuousOn
     ((hg.continuousOn_fderiv_of_isOpen hV hn).mono hχV)
-  have ho := (hone _ hK hKU).fderiv_comp_eq_id
-    (fun x hx ↦ (hf.contDiffAt (hU.mem_nhds (hgU (hχV hx)))).differentiableAt
-      (zero_lt_one.trans_le hn).ne')
+  have ho := (hone _ hK hKU).fderiv_comp_of_rightInverse
+    (fun x hx ↦ (hf _ (hgU (hχV hx))).differentiableAt
+      (hU.mem_nhds (hgU (hχV hx))))
     (fun x hx ↦ (hg.contDiffAt (hV.mem_nhds (hχV hx))).differentiableAt
       (zero_lt_one.trans_le hn).ne')
     (hs.mono fun _ hk x hx ↦ (hk _ (mem_image_of_mem g hx)).differentiableAt
       (zero_lt_one.trans_le hn).ne')
     (fun x hx ↦ Filter.eventuallyEq_of_mem (hV.mem_nhds (hχV hx)) hfg) hB
   -- Apply the cutoff construction and use the fixed complement to preserve `V`.
-  filter_upwards [ContDiff.eventually_exists_cutoff_diffeomorphism_of_contDiffAt
+  filter_upwards [ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt
     hχ hχcompact hn hscomp hz ho] with k hk
   obtain ⟨e, he, heone, hefix⟩ := hk
   refine ⟨e, he, heone, hefix, ?_⟩
