@@ -98,6 +98,7 @@ section Transport
 
 variable (F) (P : Place k F') (g : P.integers.decompositionSubgroup F)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` preserves every step of the order filtration at `P`. -/
 theorem mem_filtration_decompositionSubgroup_apply {a : ℤ} {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.filtration a ↔ x ∈ P.filtration a := by
@@ -290,6 +291,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       rw [hcdef]
       ring)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The value of the ramification residue at a function `x` integral at `P`, computed on any
 representative `y` of `(σ x - x)/t^{i+2}` in `𝒪_P`. -/
 theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
@@ -304,6 +306,7 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
   rw [hrfl, filtrationResidue_apply]
   exact congrArg _ (Subtype.ext hy.symm)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The kernel of the ramification residue is the next ramification group** (Stichtenoth,
 Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group of functions from
 `𝒪_P` to the residue field at `P`. -/
@@ -338,6 +341,7 @@ section Structure
 
 variable (F) (P : Place k F')
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The successive quotients of the ramification filtration are abelian**
 (Stichtenoth, Proposition 3.8.5): a commutator of `G_{i+1}(P)` lies in `G_{i+2}(P)`. -/
 theorem commutator_ramificationGroup_le (i : ℕ) :
@@ -357,6 +361,7 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
   rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
   simpa using hmem
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
 `G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. -/
@@ -374,6 +379,7 @@ theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i
   rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
   simpa using hmem
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
 Proposition 3.8.5): each successive quotient embeds in a
 torsion-free additive group, so the filtration is constant from `1` on and meets in `1`. -/

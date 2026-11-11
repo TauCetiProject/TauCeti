@@ -404,23 +404,6 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
 /-! ### The energy identity on the truncated pair of pants -/
 
 omit [IsManifold I ⊤ M] in
-/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
-of `S` and the target point, for `C¹` Hamiltonians on a manifold. -/
-private theorem contMDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (v : ℂ) :
-    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hK := contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs
-    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x
-  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
-      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
-    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
-      contMDiffAt_snd
-  exact ((hK.comp (z, x) hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
-
-omit [IsManifold I ⊤ M] in
 /-- Along a map continuous on `S`, the curvature of the pair-of-pants perturbation in the
 coordinates of the end `q`, multiplied by the Jacobian of the end chart, is
 `±β'(±s - 1) H_q(t, u)`, a continuous function on the part `±s > 0` of the end. -/
@@ -440,33 +423,6 @@ private theorem continuousOn_endSign_mul_deriv_smoothTransition_mul
     (hHs q).continuous.comp_continuousOn (continuousOn_snd.prodMk hu')
   exact (continuous_const.mul (hβ.comp (by fun_prop))).continuousOn.mul hHu
 
-/-- Along a map continuous on `S`, the curvature of the pair-of-pants perturbation is integrable
-over the image of each end piece. -/
-private theorem integrableOn_image_endPiece_hamiltonianCurvature (ω : SmoothTwoForm I M)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
-    (hu : ContinuousOn u thricePuncturedSphereReal) (q : Puncture) (R : ℝ) :
-    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z)) (endChart q '' endPiece q R) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endPiece q R)
-    (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
-    ((injOn_endChart q).mono (endPiece_subset_endStrip q R))]
-  -- In the coordinates of the end the integrand is `±β'(±s - 1) H_q(t, u)`, which is continuous
-  -- on the compact closure of the end piece.
-  have hpos {w : ℝ × ℝ}
-      (hw : w ∈ {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
-      0 < q.endSign * w.1 := by
-    linarith [hw.1.1]
-  refine IntegrableOn.mono_set ?_ (prod_mono subset_rfl Ico_subset_Icc_self)
-  refine ContinuousOn.integrableOn_compact (isCompact_closedEndPiece q R) ?_
-  refine ((continuousOn_endSign_mul_deriv_smoothTransition_mul hHs hu q).mono
-    fun w hw ↦ hpos hw).congr fun w hw ↦ ?_
-  rw [smul_eq_mul, abs_of_pos (det_fderiv_endChart_pos q w),
-    det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs (hpos hw)]
-
 /-- **The curvature is integrable over the pair of pants, for a manifold target.** Along a map `u`
 which is continuous on `S`, the curvature of the pair-of-pants perturbation of period-one `C¹`
 Hamiltonians on a manifold is integrable over `S`. It vanishes off the images of the collars
@@ -480,20 +436,29 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)) thricePuncturedSphereReal := by
-  refine (integrableOn_finite_iUnion.2 fun q ↦
-    integrableOn_image_endPiece_hamiltonianCurvature ω hH hHs hu q 2).of_forall_sdiff_eq_zero
-    isOpen_thricePuncturedSphereReal.measurableSet fun z ⟨hzS, hzA⟩ ↦ ?_
-  by_cases h₂ : ∃ q : Puncture, 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-  · obtain ⟨q, hq⟩ := h₂
-    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hzS hq _
-  -- Otherwise `z` lies in the truncation `S_2`, outside the end pieces, hence in its core.
-  simp only [not_exists, not_lt] at h₂
-  have hzT : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation 2 :=
-    mem_truncation.2 ⟨hzS.1, hzS.2, h₂⟩
-  refine ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
-    (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hzS (fun q ↦ ?_) (u z)
-  by_contra! h
-  exact hzA (mem_iUnion.2 ⟨q, mem_image_endPiece hzT h⟩)
+  refine ω.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip
+    (fun _ hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
+    (fun w x ↦ (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs w x).mdifferentiableAt
+      one_ne_zero) fun q ↦ ?_
+  -- In the coordinates of the end the pulled-back curvature along `u` is `±β'(±s - 1) H_q(t, u)`,
+  -- which is continuous on the compact closure of the collar `1 ≤ ±s ≤ 2` and vanishes off it.
+  have hpos {w : ℝ × ℝ}
+      (hw : w ∈ {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ 2} ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
+      0 < q.endSign * w.1 := by
+    linarith [hw.1.1]
+  refine ((((continuousOn_endSign_mul_deriv_smoothTransition_mul hHs hu q).mono
+    fun w hw ↦ hpos hw).integrableOn_compact (isCompact_closedEndPiece q 2)).of_forall_sdiff_eq_zero
+    (measurableSet_endStrip q) fun w ⟨hw, hwC⟩ ↦ ?_).congr_fun (fun w hw ↦ ?_)
+    (measurableSet_endStrip q)
+  · have hσ : q.endSign * w.1 - 1 < 0 ∨ 1 < q.endSign * w.1 - 1 := by
+      by_contra! h
+      exact hwC ⟨⟨by linarith [h.1], by linarith [h.2]⟩,
+        Ico_subset_Icc_self (mem_endStrip_iff.1 hw).2⟩
+    rcases hσ with hσ | hσ
+    · simp [smoothTransition.deriv_of_neg hσ]
+    · simp [smoothTransition.deriv_of_one_lt hσ]
+  · rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs
+      (endSign_mul_pos_of_mem_endStrip hw)]
 
 section Energy
 
@@ -649,16 +614,9 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     rw [h]
     simp only [smul_eq_mul, abs_of_nonneg (det_fderiv_endChart_nonneg q w)]
   -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
-  have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
-    hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
-    (fun w hw => hud (hsU hw)) (fun _ _ => mdifferentiableAt_const)
-    (fun _ _ => mdifferentiableAt_const)
-  have h₀ (v : ℝ × ℝ) : perturbationPullback (endChart q) (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ))
-      (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
-    funext w x
-    simp [perturbationPullback_apply]
-  simp only [h₀, floerEnergyDensity_zero] at harea
-  rw [harea, ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
+  rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ => hφ w)
+      (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw)),
+    ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
       (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw))
       (fun w hw => htgt (hsU hw) 1) (fun w hw => htgt (hsU hw) _),
     ω.integral_hamiltonianCurvature_image hmeas hinj
@@ -717,48 +675,6 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
 
-/-- Over a compact part `T` of `S`, along a map which is `C¹` on `S`, the Floer energy density of
-the pair-of-pants perturbation is integrable: it differs from the symplectic area density, which is
-continuous on `S`, by the exterior derivative `d(K(u))`, which is continuous on `S`, and by the
-curvature. -/
-private theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation
-    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {T : Set (ℝ × ℝ)}
-    (hT : IsCompact T) (hTS : T ⊆ thricePuncturedSphereReal) :
-    IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) T := by
-  have hmem : MapsTo (fun w ↦ (w, u w)) thricePuncturedSphereReal
-      (thricePuncturedSphereReal ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
-    isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
-  -- Each pulled-back component `K(u)` is `C¹` on `S`, so its derivative is continuous on `S`.
-  have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
-      (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) T := by
-    have hK : ContDiffOn ℝ 1
-        (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v)
-        thricePuncturedSphereReal :=
-      contMDiffOn_iff_contDiffOn.mp ((contMDiffOn_pairOfPantsPerturbation hH hHs v).comp
-        (contMDiffOn_id.prodMk hu) hmem)
-    exact (((hK.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl).clm_apply
-      continuousOn_const).mono hTS).integrableOn_compact hT
-  have hR := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
-    hu.continuousOn).mono_set hTS
-  refine ((harea.add ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).sub
-    hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
-  have hzS := hTS hz
-  have hzS' : (z, u z) ∈ thricePuncturedSphereReal ×ˢ (univ : Set M) := hmem hzS
-  have hKz (v : ℂ) := ((contMDiffOn_pairOfPantsPerturbation hH hHs v).contMDiffAt
-    ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds hzS')).mdifferentiableAt
-      one_ne_zero
-  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt
-    (isOpen_thricePuncturedSphereReal.mem_nhds hzS)).mdifferentiableAt one_ne_zero) (hKz 1)
-    (hKz Complex.I)]
-  rfl
-
 /-- **The energy identity on the truncated pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a finite-dimensional manifold
 with a nondegenerate two-form, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the
@@ -795,13 +711,16 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   set C := T \ ⋃ q, A q
   have hT : IsCompact T := isCompact_preimage_truncation R
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
-  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
   have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
     isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
   simp only [← SmoothBundleForm.eval₂_apply] at harea
   replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
   have hcurv := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
+  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs)
+  have hE := hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu (hKp 1)
+    (hKp Complex.I) hT hTS hcurv
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
   have hAm (q : Puncture) : MeasurableSet (A q) := measurableSet_image_endPiece q R

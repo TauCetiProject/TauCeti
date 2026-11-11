@@ -155,6 +155,13 @@ theorem toeplitz_const (c : ℂ) :
   rw [coe_toeplitz_apply, ← Lp.multiplicationOperator_apply, Lp.multiplicationOperator_const]
   simp [Submodule.starProjection_eq_self_iff.mpr (hardySubmodule.smul_mem c f.property)]
 
+/-- A symbol in the scalar embedding acts on Hardy space by scalar multiplication. -/
+@[simp]
+theorem toeplitz_algebraMap (c : ℂ) :
+    toeplitz (algebraMap ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) c) =
+      c • ContinuousLinearMap.id ℂ HardySpace := by
+  rw [Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply, toeplitz_const]
+
 /-- The Toeplitz operator of the Fourier monomial `e_m`, `m ≥ 0`, raises the Hardy basis by
 `m`. -/
 @[simp]

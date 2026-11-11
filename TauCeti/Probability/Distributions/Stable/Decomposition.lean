@@ -48,34 +48,20 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hr : 0 < r) :
     ∃! μ : ProbabilityMeasure ℝ,
       (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0 := by
-  -- Keep every lower cutoff below `r`, so even the initial finite-band laws are probabilities.
-  let ν := stableLevyMeasure α β
+  -- Keep every lower cutoff positive and below `r`, so the finite splitting identity applies.
   let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
-  let band (n : ℕ) := {x : ℝ | ε n < |x| ∧ |x| ≤ r}
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
-  have hfinite (n : ℕ) : IsFiniteMeasure (ν.restrict (band n)) :=
-    isFiniteMeasure_restrict.mpr (ne_top_of_le_ne_top
-      (stableLevyMeasure_abs_gt_ne_top (α := α) (β := β) (hε n))
-      (measure_mono fun _ hx ↦ hx.1))
   let μ (n : ℕ) : ProbabilityMeasure ℝ :=
-    ⟨(compoundPoissonMeasure (ν (band n)).toNNReal (cond ν (band n))).map
-      (fun x ↦ x - ∫ y in band n, sin y ∂ν), by
-        let _ := hfinite n
-        have hprob := isProbabilityMeasure_compoundPoissonMeasure_cond (ν.restrict (band n))
-        let _ : IsProbabilityMeasure
-            (compoundPoissonMeasure (ν (band n)).toNNReal (cond ν (band n))) := by
-          simpa only [Measure.restrict_apply_univ, ProbabilityTheory.cond,
-            Measure.restrict_univ] using hprob
-        infer_instance⟩
+    ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
+  have hsplit (n : ℕ) : (μ n : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r =
+      stableCompensatedPoissonMeasure α β (ε n) :=
+    (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left r _)).symm
   let large := stableCompensatedPoissonMeasure α β r
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hlarge (t : ℝ) : charFun large t ≠ 0 := by
     rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
-  have hsplit (n : ℕ) :
-      (μ n : Measure ℝ) ∗ large = stableCompensatedPoissonMeasure α β (ε n) := by
-    have h := (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left _ _)).symm
-    rwa [stableSmallJumpRemainderMeasure_def] at h
   -- Divide the finite splitting identity by the nonvanishing large-jump characteristic function.
   have hεlim : Tendsto ε atTop (𝓝[>] 0) := by
     apply tendsto_nhdsWithin_iff.mpr

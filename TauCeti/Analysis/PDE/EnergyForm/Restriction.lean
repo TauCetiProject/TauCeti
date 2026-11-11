@@ -39,11 +39,18 @@ integrability hypotheses on `Ω`.
   solves the equation without lower-order terms, with some `L²` forcing.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
   restrict to weak solutions of the same equation.
+* `TauCeti.PDE.energyFormH1_restrictL_eq_of_forall_testFunction`: if a continuous functional
+  `ℓ` on `H¹(B)` agrees with `a(u, ·)` on test functions on `B ⊆ Ω`, then `a(u|_B, v) = ℓ(v)`
+  for every `v ∈ H¹₀(B)`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
   every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence. This is the
   hypothesis of the energy estimate for the replacement on a ball.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
+  weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
+  essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
+  `v ∈ H¹₀(B)`, with no integrability of `f` on all of `Ω`.
 * `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
   `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
 -/
@@ -311,6 +318,41 @@ theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)
         rw [integral_sub ((hGint.add hcint).congr (ae_of_all _ fun x => by simp)) hcint, hc,
           sub_zero]
 
+/-- **Weak equations restrict to smaller domains.** Let `B ⊆ Ω` be open, let the coefficients
+be essentially bounded on `B`, and let `ℓ` be a continuous linear functional on `H¹(B)`. If
+`a(u, ψ) = ℓ(φ)` whenever the test function `ψ` on `Ω` is a test function `φ` on `B`, then
+`a(u|_B, v) = ℓ(v)` for every `v ∈ H¹₀(B)`. -/
+theorem energyFormH1_restrictL_eq_of_forall_testFunction {B : Opens (EuclideanSpace ℝ ι)}
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    (ℓ : W1p mu B 2 →L[ℝ] ℝ)
+    (hℓ : ∀ (φ : 𝓓(B, ℝ)) (ψ : 𝓓(Omega, ℝ)), (ψ : EuclideanSpace ℝ ι → ℝ) = φ →
+      energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 ψ) = ℓ (W1p.ofTestFunctionₗ mu B 2 φ))
+    (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) = ℓ v := by
+  set L : W1p mu B 2 →L[ℝ] ℝ := energyFormH1L ha (W1p.restrictL hB u) - ℓ
+  have hL : ∀ w, L w = energyFormH1 a 0 0 (W1p.restrictL hB u) w - ℓ w := fun w => by
+    simp only [L, sub_apply, energyFormH1L_apply, Pi.zero_def]
+  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
+  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
+    have := hzero v.2
+    simp only [mem_ofPred_eq, hL] at this
+    linarith
+  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
+  simp only [mem_ofPred_eq, hL, sub_eq_zero]
+  -- The zero extension of `φ` from `B` to `Ω` is `φ` regarded as a test function on `Ω`, so
+  -- `a(u|_B, φ) = a(u, φ)`.
+  have hext : ((W1p0.extendByZeroL hB
+      (⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩ : W1p0 mu B 2) : W1p0 mu Omega 2) :
+      W1p mu Omega 2) = W1p.ofTestFunctionₗ mu Omega 2 (TestFunction.monoCLM ℝ φ) := by
+    apply Subtype.ext
+    rw [W1p0.coe_extendByZeroL]
+    exact Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ hB φ
+  have hφ := energyFormH1_restrictL a 0 0 hB u ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  rw [hext] at hφ
+  rw [hφ]
+  exact hℓ φ _ (by rw [TestFunction.monoCLM_apply]; simp [hB])
+
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
 provided `G - c` is square integrable on `B` and the coefficients are essentially bounded on `B`:
@@ -325,34 +367,49 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
     (v : W1p0 mu B 2) :
     energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
       ⟪hGc.toLp, W1p.gradient (v : W1p mu B 2)⟫_ℝ := by
-  set L : W1p mu B 2 →L[ℝ] ℝ :=
-    energyFormH1L ha (W1p.restrictL hB u) - (innerSL ℝ hGc.toLp).comp W1p.gradientL
-  have hL : ∀ w, L w = energyFormH1 a 0 0 (W1p.restrictL hB u) w -
-      ⟪hGc.toLp, W1p.gradient w⟫_ℝ := fun w => by
-    simp only [L, sub_apply, ContinuousLinearMap.comp_apply,
-      innerSL_apply_apply, W1p.gradientL_apply, energyFormH1L_apply, Pi.zero_def]
-  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
-  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
-    have := hzero v.2
-    simp only [mem_ofPred_eq, hL] at this
-    linarith
-  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
-  simp only [mem_ofPred_eq, hL, inner_toLp_gradient_ofTestFunctionₗ hGc φ, sub_eq_zero]
-  -- The zero extension of `φ` from `B` to `Ω` is `φ` regarded as a test function on `Ω`, so
-  -- `a(u|_B, φ) = a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ = ∫_B ⟪G, ∇φ⟫`.
-  have hext : ((W1p0.extendByZeroL hB
-      (⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩ : W1p0 mu B 2) : W1p0 mu Omega 2) :
-      W1p mu Omega 2) = W1p.ofTestFunctionₗ mu Omega 2 (TestFunction.monoCLM ℝ φ) := by
-    apply Subtype.ext
-    rw [W1p0.coe_extendByZeroL]
-    exact Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ hB φ
-  have hφ := energyFormH1_restrictL a 0 0 hB u ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
-  have hmono : ((TestFunction.monoCLM ℝ φ : 𝓓(Omega, ℝ)) : EuclideanSpace ℝ ι → ℝ) = φ := by
-    rw [TestFunction.monoCLM_apply]
-    simp [hB]
-  rw [hext, hu, hmono] at hφ
-  rw [hφ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G (φ.tsupport_subset.trans hB),
+  refine (energyFormH1_restrictL_eq_of_forall_testFunction hB ha
+    ((innerSL ℝ hGc.toLp).comp W1p.gradientL) (fun φ ψ hψ => ?_) v).trans (by
+      simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.gradientL_apply])
+  -- `a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ = ∫_B ⟪G, ∇φ⟫`.
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.gradientL_apply,
+    inner_toLp_gradient_ofTestFunctionₗ hGc φ]
+  rw [hu, hψ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G
+    (φ.tsupport_subset.trans hB),
     φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+
+/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f` on `Ω`, tested against test functions, holds on every
+open `B ⊆ Ω` against all of `H¹₀(B)`, provided `f` is square integrable on `B` and the
+coefficients are essentially bounded on `B`. Nothing is assumed about `f` outside `B`, so this
+applies to right-hand sides that are only locally integrable on `Ω`. -/
+theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace ℝ ι)}
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu)
+    (hf : MemLp f 2 (mu.restrict B)) (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      ∫ x in B, f x * W1p.value (v : W1p mu B 2) x ∂mu := by
+  -- On `B`, the integral against `f` is the `L²` inner product with `f`.
+  have hinner (w : W1p mu B 2) :
+      ⟪hf.toLp, W1p.value w⟫_ℝ = ∫ x in B, f x * W1p.value w x ∂mu := by
+    rw [L2.inner_def]
+    refine integral_congr_ae (hf.coeFn_toLp.mono fun x hx => ?_)
+    simp [hx, RCLike.inner_apply, mul_comm]
+  rw [← hinner]
+  refine (energyFormH1_restrictL_eq_of_forall_testFunction hB ha
+    ((innerSL ℝ hf.toLp).comp W1p.valueL) (fun φ ψ hψ => ?_) v).trans (by
+      simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply])
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply, hinner]
+  rw [hu, hψ]
+  -- `a(u, φ) = ∫_Ω f φ = ∫_B f φ`: both integrals vanish off `tsupport φ ⊆ B`, and on `B` the
+  -- value of `φ` is `φ`.
+  have hsupp : ∀ x ∉ (B : Set (EuclideanSpace ℝ ι)), f x * φ x = 0 := fun x hx => by
+    rw [image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h), mul_zero]
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => hsupp x fun h => hx (hB h),
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp]
+  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
+    simp only [hx])
 
 end Transfer
 

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -81,9 +80,6 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
 * `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
   the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
   the two boundary circles, is the change of action minus the integrated curvature.
-* `SymplecticForm.hamiltonianAction_comp_neg`: running a loop backwards and replacing `H` by
-  `t ↦ -H(-t)` negates the action, as when the loops of a Floer cylinder are read in the
-  coordinates `(s, t) ↦ (-s, -t)`.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`: the energy of a map over
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
@@ -140,18 +136,6 @@ theorem hamiltonianAction_const (ω : SymplecticForm V) (H : ℝ → V → ℝ) 
     ω.hamiltonianAction H (fun _ ↦ v) = ∫ t in (0 : ℝ)..1, H t v := by
   simp [hamiltonianAction_def]
 
-/-- **The action of a reversed loop.** Running a `1`-periodic loop backwards and replacing the
-`1`-periodic Hamiltonian `H` by `t ↦ -H(-t)` negates the Hamiltonian action. This is the action of
-the loops of a Floer cylinder read in the coordinates `(s, t) ↦ (-s, -t)`. -/
-theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1)
-    {x : ℝ → V} (hx : Periodic x 1) :
-    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
-  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by
-    simp only [hH t, hx t]
-  rw [hamiltonianAction_def, hamiltonianAction_def, ω.loopArea_comp_neg hx,
-    intervalIntegral.integral_neg, hper.intervalIntegral_comp_neg]
-  ring
-
 /-- **Normalizing a Hamiltonian shifts the action.** Adding a function `c` of time to the
 Hamiltonian adds its time average `∫₀¹ c` to the action of every loop. -/
 theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → ℝ} {c : ℝ → ℝ}
@@ -160,6 +144,19 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
     ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
       ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
   rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
+/-- **Reversing time negates the action.** If the loop `x` and the Hamiltonian `H` are
+`1`-periodic, the reversed loop `t ↦ x(-t)` has, for the reversed Hamiltonian
+`(t, y) ↦ -H(-t, y)`, the opposite action. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hH : Periodic H 1) (hx : Periodic x 1) :
+    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
+  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by simp only [hH t, hx t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [hamiltonianAction_def, ω.loopArea_comp_neg hx, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ H t (x t)), neg_zero, h]
+  ring
 
 end Action
 

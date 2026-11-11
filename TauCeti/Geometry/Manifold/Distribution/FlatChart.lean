@@ -42,6 +42,8 @@ transverse to the vertical factor at the base point, so
 ## Main results
 
 * `TauCeti.IsInvolutiveDistribution.exists_flatChart`: the local Frobenius theorem.
+* `TauCeti.IsInvolutiveDistribution.exists_flatChart_extend`: flat extended coordinates with
+  open source and injective differential.
 * `TauCeti.IsInvolutiveDistribution.exists_flatChart_eventually_sub_mem`: a horizontal
   differentiable map stays locally in a single affine slice of a Frobenius chart.
 
@@ -256,6 +258,36 @@ theorem IsInvolutiveDistribution.exists_flatChart [FiniteDimensional ℝ E] [IsM
   exact (Submodule.map_comp _ _ (D y)).trans ((congrArg _ (Submodule.map_comp _ _ (D y))).trans
     ((congrArg _ hL).trans (Submodule.map_ker_snd_prodEquivOfIsCompl W T hT)))
 
+
+/-- An involutive `C^m` distribution admits extended flat coordinates near each interior point,
+for `1 ≤ m` and ambient regularity `n ≥ m + 1`. The coordinate source is open, its differential
+is injective there, and it carries the distribution onto a fixed rank-`k` subspace. -/
+theorem IsInvolutiveDistribution.exists_flatChart_extend [FiniteDimensional ℝ E]
+    [IsManifold I 1 M] {m : ℕ∞} (hm : 1 ≤ m) {n : ℕ∞ω}
+    (hmn : (m : ℕ∞ω) + 1 ≤ n) [IsManifold I n M]
+    {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+    (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I m k D)
+    {x : M} (hx : I.IsInteriorPoint x) :
+    ∃ (Φ : PartialEquiv M E) (W : Submodule ℝ E),
+      IsOpen Φ.source ∧ x ∈ Φ.source ∧ finrank ℝ W = k ∧
+        ContMDiffOn I 𝓘(ℝ, E) m Φ Φ.source ∧
+        (∀ z ∈ Φ.source, (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W) ∧
+        ∀ z ∈ Φ.source, Function.Injective (mfderiv I 𝓘(ℝ, E) Φ z) := by
+  let _ : IsManifold I (m : ℕ∞ω) M := .of_le (le_self_add.trans hmn)
+  obtain ⟨e, W, he, hxe, hdim, hflat⟩ := hinv.exists_flatChart hm hmn hD hx
+  let Φ := e.extend I
+  refine ⟨Φ, W, e.isOpen_extend_source, ?_, hdim, ?_, ?_, ?_⟩
+  · simpa only [Φ, e.extend_source] using hxe
+  · simpa only [Φ, e.extend_coe, e.extend_source] using e.contMDiffOn_extend he
+  · intro z hz
+    rw [show (Φ : M → E) = I ∘ e from e.extend_coe]
+    exact hflat z (by simpa only [Φ, e.extend_source] using hz)
+  · intro z hz
+    exact (isInvertible_mfderiv_extend
+      (IsManifold.maximalAtlas_subset_of_le
+        (show (1 : ℕ∞ω) ≤ m from by exact_mod_cast hm) he)
+      (by simpa only [Φ, e.extend_source] using hz)).injective
+
 section Horizontal
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -280,9 +312,8 @@ theorem IsInvolutiveDistribution.exists_flatChart_eventually_sub_mem [FiniteDime
   have hm0 : (m : ℕ∞ω) ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hm))
   have hDp (z : M) (hz : z ∈ e.source) :
       (D z).map (mvfderiv I (I ∘ e) z).toLinearMap ≤ W := by
-    rintro v ⟨w, hw, rfl⟩
-    rw [ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply, ← hflat z hz]
-    exact ⟨w, hw, rfl⟩
+    rw [(D z).map_mvfderiv_eq_map_mfderiv (I := I) (x := z) (I ∘ e)]
+    exact (hflat z hz).le
   have hconst := hf.eventually_sub_mem hfd hs
     ((e.contMDiffOn_extend he).mdifferentiableOn hm0) e.open_source W.closed_of_finiteDimensional
     hDp hxs hxsrc

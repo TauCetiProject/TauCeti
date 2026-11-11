@@ -22,6 +22,14 @@ injective, and it preserves orientation, so the change of variables formula appl
 of the three strips; these images are disjoint and measurable. Along the end chart, the
 pair-of-pants perturbation pulls back to its components in the end coordinates.
 
+On the input ends `0`, `1` the end coordinate `s` tends to `+∞`, on the output end `∞` to `-∞`.
+The positive end chart `φ'_q(s, t) = φ_q(±s, ±t)` (`TauCeti.Floer.positiveEndChart q`), with the
+sign of the end, reads every end as a positive end; it is again holomorphic, orientation
+preserving and `1`-periodic in `t`. Where a perturbation is `H_q(t) dt` on the end `q`, it pulls
+back along `φ'_q` to `H'_q(t) dt` for the Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
+(`TauCeti.Floer.positiveEndHamiltonian`), so that results about positive Floer half-cylinders
+apply to all three ends.
+
 ## Main definitions
 
 * `TauCeti.Floer.thricePuncturedSphereReal`: the pair of pants `S` in the real coordinates
@@ -29,8 +37,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
-* `TauCeti.Floer.signedEndChart q`: the end chart precomposed with `ζ ↦ ±ζ`, whose longitudinal
-  coordinate tends to `+∞` towards the puncture on every end.
+* `TauCeti.Floer.positiveEndChart q`: the end chart of `q` read as a positive end.
+* `TauCeti.Floer.positiveEndHamiltonian H q`: the end Hamiltonian in the positive end chart.
 
 ## Main results
 
@@ -45,13 +53,14 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_target`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians, and in particular
   differentiable in the target point for `C¹` Hamiltonians.
+* `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
+  which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
-* `TauCeti.Floer.isComplexLinearMap_fderiv_endChart`: the end chart is holomorphic.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
@@ -67,13 +76,19 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   under the end lift.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
-* `TauCeti.Floer.isComplexLinearMap_fderiv_signedEndChart`,
-  `TauCeti.Floer.injOn_signedEndChart`, `TauCeti.Floer.perturbationPullback_signedEndChart`: the
-  signed end chart is holomorphic and injective on every band of angular width one, and on the
-  half-cylinder `s ≥ 2` the pair-of-pants perturbation pulls back to the cylindrical datum
-  `±H_q(±t) dt`.
-* `TauCeti.Floer.perturbationPullback_endChart_stdComplexLineImag_of_le`: where a perturbation is
-  `H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to `H_q(t)`.
+* `TauCeti.Floer.isComplexLinearMap_fderiv_endChart`: the end chart is holomorphic.
+* `TauCeti.Floer.perturbationPullback_endChart_stdComplexLineImag_of_le`,
+  `TauCeti.Floer.perturbationPullback_endChart_stdComplexLineReal_of_le`: where a perturbation is
+  `H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to `H_q(t)` and `∂_s`
+  to `0`.
+* `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
+  `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
+  `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
+  preserving, injective on the band `ℝ × (0, 1)` and `1`-periodic in `t`.
+* `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
+  `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
+  perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
+  `H'_q(t) dt`.
 
 ## References
 
@@ -176,6 +191,30 @@ theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H
   ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).differentiableAt
     one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
 
+section Manifold
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- A perturbation one-form `K` on `ℂ` which is `C¹` at every point of `S × M` has components
+`(z, x) ↦ K(z, x)(v)`, in the real coordinates of `S`, that are `C¹` jointly on `S × M`. -/
+theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    {K : ℂ → M → ℂ →L[ℝ] ℝ}
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x)) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
+    contMDiffAt_const).contMDiffWithinAt
+
+end Manifold
+
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
@@ -194,6 +233,12 @@ theorem endChart_eq_realChart (q : Puncture) :
 theorem endChart_mk (q : Puncture) (s t : ℝ) :
     endChart q (s, t) = Complex.equivRealProdCLM (q.cylindricalEndLift (↑s + ↑t * Complex.I)) := by
   simp [endChart_apply, Complex.equivRealProdCLM_symm_apply]
+
+/-- The end chart is `1`-periodic in the angular coordinate. -/
+theorem endChart_add_one (q : Puncture) (s t : ℝ) :
+    endChart q (s, t + 1) = endChart q (s, t) := by
+  rw [endChart_mk, endChart_mk]
+  exact congrArg Complex.equivRealProdCLM (by exact_mod_cast q.periodic_cylindricalEndLift s t)
 
 /-- In complex coordinates the end chart is the end lift. -/
 @[simp]
@@ -258,6 +303,17 @@ theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
   rw [(hasFDerivAt_endChart q z).fderiv]
   simp [mul_comm]
 
+/-- The end charts are holomorphic: their derivatives are complex linear. -/
+theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (endChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply,
+    AlmostComplexStructure.product_apply]
+  apply Prod.ext <;>
+    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
+
 theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (endChart q) := by
   exact Complex.equivRealProdCLM.contDiff.comp
     (((q.contDiff_cylindricalEndLift n).restrict_scalars ℝ).comp
@@ -320,6 +376,26 @@ theorem perturbationPullback_endChart_stdComplexLineImag_of_le {X : Type*}
     hk, smul_eq_mul, Complex.I_im, mul_one]
   simpa using congrFun ((hH q).int_mul k ζ.2) x
 
+/-- Where `K = H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_s` to `0`. -/
+theorem perturbationPullback_endChart_stdComplexLineReal_of_le {X : Type*}
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
+    perturbationPullback (endChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal ζ x =
+      0 := by
+  have h1 : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
+    apply Complex.ext <;> simp [stdComplexLineReal_eq]
+  rw [perturbationPullback_endChart_eq_cylindricalEndLift K, h1]
+  beta_reduce
+  have hre : (q.endCoord (q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re = ζ.1 := by
+    rw [re_endCoord_cylindricalEndLift]
+    simp [Complex.equivRealProdCLM_symm_apply]
+  rw [hKH q _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift, Complex.one_im,
+    smul_zero]
+
 /-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
 with the same image differ by an integer multiple of `i`. -/
 theorem injOn_endChart_univ_prod_Ico (q : Puncture) (t₀ : ℝ) :
@@ -344,17 +420,6 @@ theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereRea
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
-
-/-- The end charts are holomorphic: their derivatives are complex linear for the standard complex
-structure `(v₁, v₂) ↦ (-v₂, v₁)` of `ℝ × ℝ`. -/
-theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (endChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply,
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;> simp [Complex.equivRealProdCLM_symm_apply] <;> ring
 
 /-- The points of `S` at which the longitudinal coordinate of the end `q` lies in a set `P` of
 positive signed values are exactly the images under the end chart of `P × [0, 1)`. -/
@@ -430,117 +495,168 @@ theorem pairwise_disjoint_image_endChart :
   · simpa using endSign_mul_pos_of_mem_endStrip hζ
   · simpa using endSign_mul_pos_of_mem_endStrip hζ'
 
-/-- The end loops `t ↦ u(φ_q(R + i t))` of a map on the pair of pants are `1`-periodic. -/
-theorem periodic_comp_cylindricalEndLift {α : Type*} (u : ℝ × ℝ → α) (q : Puncture) (R : ℝ) :
-    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM (q.cylindricalEndLift (↑R + ↑t * Complex.I))))
-      1 := fun t ↦
-  congrArg (fun w ↦ u (Complex.equivRealProdCLM w)) (q.periodic_cylindricalEndLift R t)
+/-! ### Positive end charts -/
 
-/-- The end chart of `q` precomposed with `ζ ↦ ±ζ`, the sign being that of the end. Unlike
-`endChart q`, its longitudinal coordinate tends to `+∞` towards the puncture on the output end as
-well as on the inputs. -/
-noncomputable def signedEndChart (q : Puncture) : ℝ × ℝ → ℝ × ℝ :=
-  endChart q ∘ fun ζ ↦ q.endSign • ζ
+/-- The end chart of `q` read as a positive end: `(s, t) ↦ φ_q(±s, ±t)`, with the sign `±` of the
+end, so that `s → ∞` along every end. It is the end chart `TauCeti.Floer.endChart q` on the input
+ends, and `(s, t) ↦ φ_∞(-s, -t)` on the output end. -/
+noncomputable def positiveEndChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
+  endChart q (q.endSign • z)
 
-theorem signedEndChart_apply (q : Puncture) (ζ : ℝ × ℝ) :
-    signedEndChart q ζ = endChart q (q.endSign • ζ) :=
+theorem positiveEndChart_apply (q : Puncture) (z : ℝ × ℝ) :
+    positiveEndChart q z = endChart q (q.endSign • z) :=
   (rfl)
 
-/-- The signed end chart in coordinates: `(s, t) ↦ φ_q(±s ± i t)`. -/
-theorem signedEndChart_mk (q : Puncture) (s t : ℝ) :
-    signedEndChart q (s, t) = endChart q (q.endSign * s, q.endSign * t) := by
-  simp [signedEndChart]
+theorem positiveEndChart_mk (q : Puncture) (s t : ℝ) :
+    positiveEndChart q (s, t) = endChart q (q.endSign * s, q.endSign * t) := by
+  simp [positiveEndChart_apply]
 
-private theorem endSign_mul_fst_smul (q : Puncture) (ζ : ℝ × ℝ) :
-    q.endSign * (q.endSign • ζ).1 = ζ.1 := by
-  simp
+/-- The end chart at `(±s, t)` is the positive end chart at `(s, ±t)`. -/
+theorem endChart_eq_positiveEndChart (q : Puncture) (s t : ℝ) :
+    endChart q (q.endSign * s, t) = positiveEndChart q (s, q.endSign * t) := by
+  rw [positiveEndChart_mk, ← mul_assoc, endSign_mul_self, one_mul]
 
-/-- The derivative of the signed end chart is `±` that of the end chart at `±ζ`. -/
-theorem hasFDerivAt_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
-    HasFDerivAt (signedEndChart q) (q.endSign • fderiv ℝ (endChart q) (q.endSign • ζ)) ζ := by
-  have h := ((contDiff_endChart q 1).differentiable one_ne_zero (q.endSign • ζ)).hasFDerivAt.comp ζ
-    ((hasFDerivAt_id ζ).const_smul q.endSign)
-  rwa [ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id] at h
+/-- The positive end chart is `1`-periodic in the angular coordinate. -/
+theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
+    positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
+  rw [positiveEndChart_mk, positiveEndChart_mk]
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · rw [show q.endSign * (t + 1) = q.endSign * t + 1 by rw [h]; ring, endChart_add_one]
+  · rw [show q.endSign * t = q.endSign * (t + 1) + 1 by rw [h]; ring, endChart_add_one]
 
-/-- The signed end charts are smooth. -/
-theorem contDiff_signedEndChart (q : Puncture) (n : WithTop ℕ∞) :
-    ContDiff ℝ n (signedEndChart q) :=
-  (contDiff_endChart q n).comp (contDiff_const_smul _)
+/-- The derivative of the positive end chart is the derivative of the end chart at the reflected
+point, composed with the reflection `v ↦ ±v`. -/
+theorem hasFDerivAt_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
+    HasFDerivAt (positiveEndChart q)
+      ((fderiv ℝ (endChart q) (q.endSign • z)).comp
+        (q.endSign • ContinuousLinearMap.id ℝ (ℝ × ℝ))) z :=
+  ((contDiff_endChart q 1).differentiable one_ne_zero _).hasFDerivAt.comp z
+    ((hasFDerivAt_id z).const_smul q.endSign)
 
-/-- The signed end charts preserve orientation. -/
-theorem det_fderiv_signedEndChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
-    0 ≤ (fderiv ℝ (signedEndChart q) ζ).det := by
-  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
-  exact mul_nonneg (by simp [Module.finrank_prod, sq_nonneg]) (det_fderiv_endChart_nonneg q _)
+theorem fderiv_positiveEndChart_apply (q : Puncture) (z v : ℝ × ℝ) :
+    fderiv ℝ (positiveEndChart q) z v = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) v := by
+  simp [(hasFDerivAt_positiveEndChart q z).fderiv]
 
-/-- The signed end charts are holomorphic. -/
-theorem isComplexLinearMap_fderiv_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
+    ContDiff ℝ n (positiveEndChart q) :=
+  (contDiff_endChart q n).comp (contDiff_const_smul q.endSign)
+
+/-- The positive end charts are holomorphic. -/
+theorem isComplexLinearMap_fderiv_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (signedEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.toLinearMap_smul]
-  exact (isComplexLinearMap_fderiv_endChart q _).smul _
+      (fderiv ℝ (positiveEndChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  have h := (isComplexLinearMap_iff_apply _ _ _).1 (isComplexLinearMap_fderiv_endChart q
+    (q.endSign • z))
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, fderiv_positiveEndChart_apply] at h ⊢
+  rw [h, map_smul]
 
-/-- The signed end chart sends the half-cylinder `s > 0` into `S`. -/
-theorem signedEndChart_mem_thricePuncturedSphereReal {q : Puncture} {ζ : ℝ × ℝ}
-    (hζ : 0 < ζ.1) : signedEndChart q ζ ∈ thricePuncturedSphereReal :=
-  endChart_mem_thricePuncturedSphereReal (by rwa [endSign_mul_fst_smul])
+/-- The positive end charts preserve orientation strictly. -/
+theorem det_fderiv_positiveEndChart_pos (q : Puncture) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (positiveEndChart q) z).det := by
+  have h : fderiv ℝ (positiveEndChart q) z = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) :=
+    ContinuousLinearMap.ext fun v ↦ fderiv_positiveEndChart_apply q z v
+  rw [h, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul,
+    Module.finrank_prod, Module.finrank_self, one_add_one_eq_two, sq, endSign_mul_self, one_mul]
+  exact det_fderiv_endChart_pos q _
 
-/-- The signed end chart is injective on every band `t ∈ [t₀, t₀ + 1)` of angular width one. -/
-theorem injOn_signedEndChart (q : Puncture) (t₀ : ℝ) :
-    InjOn (signedEndChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
+/-- The positive end chart sends the part `s > 0` of the end into `S`. -/
+theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
+    (hz : 0 < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal := by
+  refine endChart_mem_thricePuncturedSphereReal ?_
+  simpa [← mul_assoc] using hz
+
+/-- The positive end chart is injective on the open band `ℝ × (0, 1)`. -/
+theorem injOn_positiveEndChart (q : Puncture) :
+    InjOn (positiveEndChart q) (univ ×ˢ Ioo 0 1) := by
   intro a ha b hb hab
-  -- The angular coordinates of `±a` and `±b` differ by less than one period.
-  have hlt : |(q.endSign • a).2 - (q.endSign • b).2| < 1 := by
-    rw [Prod.smul_snd, Prod.smul_snd, smul_eq_mul, smul_eq_mul, ← mul_sub, abs_mul, abs_endSign,
-      one_mul, abs_sub_lt_iff]
-    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2]
-  obtain ⟨h₁, h₂⟩ := abs_sub_lt_iff.1 hlt
-  -- So both lie in the band of angular width one starting at the smaller of them.
-  have hband (c : ℝ) (hc : c - (q.endSign • a).2 < 1) (hc' : c - (q.endSign • b).2 < 1) :
-      c < min (q.endSign • a).2 (q.endSign • b).2 + 1 := by
-    rw [← min_add_add_right]
-    exact lt_min (by linarith) (by linarith)
-  have h := injOn_endChart_univ_prod_Ico q (min (q.endSign • a).2 (q.endSign • b).2)
-    ⟨mem_univ _, min_le_left _ _, hband _ (by simp) (by linarith)⟩
-    ⟨mem_univ _, min_le_right _ _, hband _ (by linarith) (by simp)⟩ hab
-  exact smul_right_injective _ (endSign_ne_zero q) h
+  -- The reflection `v ↦ ±v` moves the band `ℝ × (0, 1)` into a band of width one.
+  obtain ⟨t₀, ht₀⟩ : ∃ t₀ : ℝ, ∀ c : ℝ × ℝ, c ∈ univ ×ˢ Ioo (0 : ℝ) 1 →
+      q.endSign • c ∈ univ ×ˢ Ico t₀ (t₀ + 1) := by
+    rcases q.endSign_eq_one_or_eq_neg_one with h | h
+    · refine ⟨0, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
+        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
+    · refine ⟨-1, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
+        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
+  exact smul_right_injective _ q.endSign_ne_zero
+    (injOn_endChart_univ_prod_Ico q t₀ (ht₀ a ha) (ht₀ b hb) hab)
 
-/-- On the part `s ≥ 2` of the signed end chart, the pair-of-pants perturbation pulls back to the
-cylindrical datum `±H_q(±t) dt`. -/
-theorem perturbationPullback_signedEndChart {X : Type*} {H : Puncture → ℝ → X → ℝ}
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) :
-    perturbationPullback (signedEndChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal ζ = (fun _ ↦ 0) ∧
-      perturbationPullback (signedEndChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag ζ = fun x ↦ q.endSign * H q (q.endSign * ζ.2) x := by
-  have hpos : 0 < q.endSign * (q.endSign • ζ).1 := by
-    rw [endSign_mul_fst_smul]
-    linarith
-  have hd : DifferentiableAt ℝ (endChart q) (q.endSign • ζ) :=
-    (contDiff_endChart q 1).differentiable one_ne_zero _
-  have hψ : DifferentiableAt ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ :=
-    ((hasFDerivAt_id ζ).const_smul q.endSign).differentiableAt
-  have hcomp (v : ℝ × ℝ) : perturbationPullback (signedEndChart q)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ =
-        perturbationPullback (fun ζ : ℝ × ℝ ↦ q.endSign • ζ)
-          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineReal))
-          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineImag)) v ζ := by
-    rw [← perturbationPullback_endChart, ← perturbationPullback_endChart]
-    exact perturbationPullback_comp _ _ hd hψ v
-  have hfd : fderiv ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ = q.endSign • ContinuousLinearMap.id ℝ _ :=
-    ((hasFDerivAt_id ζ).const_smul q.endSign).fderiv
-  refine ⟨?_, ?_⟩ <;> rw [hcomp] <;> funext x <;>
-    simp only [perturbationPullback_apply, hfd, equivRealProdCLM_symm_stdComplexLineReal,
-      equivRealProdCLM_symm_stdComplexLineImag, pairOfPantsEndComponent_one_of_pos (hH q) hpos,
-      pairOfPantsEndComponent_I_of_pos (hH q) hpos, endSign_mul_fst_smul,
-      smoothTransition.one_of_one_le (show 1 ≤ ζ.1 - 1 by linarith)] <;>
-    simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
+/-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
+sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
+noncomputable def positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
+    (t : ℝ) (x : X) : ℝ :=
+  q.endSign * H q (q.endSign * t) x
+
+theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
+    (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x :=
+  (rfl)
+
+theorem periodic_positiveEndHamiltonian {X : Type*} {H : Puncture → ℝ → X → ℝ} {q : Puncture}
+    (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 := by
+  intro t
+  funext x
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h <;>
+    simp only [positiveEndHamiltonian_apply, h, mul_add, mul_one, one_mul, neg_one_mul,
+      ← sub_eq_add_neg, hH.sub_eq, hH _]
+
+theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {H : Puncture → ℝ → E → ℝ} {q : Puncture} {n : WithTop ℕ∞}
+    (hH : ContDiff ℝ n (uncurry (H q))) : ContDiff ℝ n (uncurry (positiveEndHamiltonian H q)) :=
+  contDiff_const.mul (hH.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
+
+/-- A `1`-periodic loop read with the time `±t` of an end is `1`-periodic. -/
+theorem periodic_comp_endSign_mul {α : Type*} {q : Puncture} {x : ℝ → α} (hx : Periodic x 1) :
+    Periodic (fun t ↦ x (q.endSign * t)) 1 := by
+  have h := hx.const_mul q.endSign
+  rw [inv_endSign, mul_one] at h
+  rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
+  · simpa only [hσ] using h
+  · simpa only [hσ, neg_neg] using h.neg
+
+/-- The pullback of a perturbation along the positive end chart is the pullback along the end
+chart at the reflected point, multiplied by the sign of the end. -/
+theorem perturbationPullback_positiveEndChart {X : Type*} {K : ℂ → X → ℂ →L[ℝ] ℝ} (q : Puncture)
+    (v ζ : ℝ × ℝ) (x : X) :
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ x =
+      q.endSign * perturbationPullback (endChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v (q.endSign • ζ) x := by
+  simp only [perturbationPullback_apply, fderiv_positiveEndChart_apply, positiveEndChart_apply,
+    Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
+  ring
+
+/-- Where `K = H_q(t) dt` on the end `q`, its pullback along the positive end chart sends `∂_s`
+to `0`. -/
+theorem perturbationPullback_positiveEndChart_stdComplexLineReal_of_le {X : Type*}
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal ζ x =
+      0 := by
+  rw [perturbationPullback_positiveEndChart,
+    perturbationPullback_endChart_stdComplexLineReal_of_le hKH (by simpa [← mul_assoc] using hζ),
+    mul_zero]
+
+/-- Where `K = H_q(t) dt` on the end `q`, its pullback along the positive end chart sends `∂_t`
+to the end Hamiltonian `H'_q(t)` of the positive end. -/
+theorem perturbationPullback_positiveEndChart_stdComplexLineImag_of_le {X : Type*}
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag ζ x =
+      positiveEndHamiltonian H q ζ.2 x := by
+  rw [perturbationPullback_positiveEndChart,
+    perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH
+      (by simpa [← mul_assoc] using hζ), positiveEndHamiltonian_apply, Prod.smul_snd, smul_eq_mul]
 
 end Floer
 

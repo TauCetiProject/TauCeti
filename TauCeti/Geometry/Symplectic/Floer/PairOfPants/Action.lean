@@ -559,16 +559,12 @@ private theorem integral_floerEnergyDensity_image_endChart_eq (ω : SymplecticFo
   have hud {w : ℝ × ℝ} (hw : w ∈ U) : DifferentiableAt ℝ u (endChart q w) :=
     (hu.differentiableOn two_ne_zero _ (hS hw)).differentiableAt
       (isOpen_thricePuncturedSphereReal.mem_nhds (hS hw))
-  have hK {w : ℝ × ℝ} (hw : w ∈ U) (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (endChart q w)) x v)
-      (u (endChart q w)) :=
-    ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs (hS hw) _ v).differentiableAt
-      one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
   rw [ω.integral_floerEnergyDensity_image hm
       ((injOn_endChart_univ_prod_Ico q 0).mono (prod_mono (subset_univ _) (by norm_num)))
       (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt)
       (fun w _ ↦ det_fderiv_endChart_nonneg q w) (fun w hw ↦ hud (hPU hw.1))
-      (fun w hw ↦ hK (hPU hw.1) 1) (fun w hw ↦ hK (hPU hw.1) _),
+      (fun w hw ↦ differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hPU hw.1)) _ 1)
+      (fun w hw ↦ differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hPU hw.1)) _ _),
     perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   -- Where `±s ≥ 2` the datum in the cylinder coordinates of the end is `H_q(t) dt`, so the energy
