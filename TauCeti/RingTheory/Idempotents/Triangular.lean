@@ -91,11 +91,13 @@ theorem isStrictlyTriangular_iff :
 namespace IsStrictlyTriangular
 
 /-- The component of a strictly triangular element from `i` to `j` vanishes unless `i < j`. -/
+@[simp]
 theorem mul_mul_eq_zero (ha : IsStrictlyTriangular e a) {i j : I} (h : ¬i < j) :
     e j * a * e i = 0 :=
   ha h
 
 /-- Zero is strictly triangular. -/
+@[simp]
 theorem zero : IsStrictlyTriangular e (0 : R) := fun _ _ _ ↦ by
   rw [mul_zero, zero_mul]
 
