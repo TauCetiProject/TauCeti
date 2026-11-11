@@ -52,6 +52,7 @@ variable {E V P H G M N : Type*}
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
+omit [FiniteDimensional ℝ E] in
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/

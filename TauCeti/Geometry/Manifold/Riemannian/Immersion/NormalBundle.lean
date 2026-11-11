@@ -119,6 +119,7 @@ theorem finrank_orthogonalNormalSpace_add_finrank {f : M → N} {x : M}
   rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
+omit [FiniteDimensional ℝ E] in
 /-- The orthogonal projection onto the normal space subtracts the tangential component of an
 ambient vector `v`. Inverting the pullback metric `df* df` on `T_x M` recovers that component from
 the covector `df* v`. Only injectivity of the differential at `x` is used; the ambient metric need
@@ -129,6 +130,9 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
     let φ := (RiemannianBundle.g.inner (f x) v).comp d
     let a := (ContinuousLinearMap.precomp ℝ d).comp ((RiemannianBundle.g.inner (f x)).comp d)
     (orthogonalNormalSpace I J f x).starProjection v = v - d (a.inverse φ) := by
+  -- Injectivity into the finite-dimensional ambient tangent space makes the source finite.
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] V).toLinearMap hinj
   intro d φ a
   let : CompleteSpace E := FiniteDimensional.complete ℝ E
   have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
@@ -148,6 +152,7 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
 variable {n m : ℕ∞ω} [IsManifold J 1 N] [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The normal projection is smooth.** For a `C^n` immersion `f` with `m + 1 ≤ n` and a `C^m`
 ambient metric, orthogonal projection onto the normal spaces is a `C^m` self-map of the
 pulled-back tangent bundle `f *ᵖ TN`. Both the base point and the ambient vector may vary. -/
@@ -157,6 +162,11 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : C^n⟮I, M; J, N⟯}
       (fun p : TotalSpace V (f *ᵖ (TangentSpace J)) ↦
         (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.2⟩ :
           TotalSpace V (f *ᵖ (TangentSpace J)))) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact fun p ↦ isEmptyElim p.proj
+  -- An immersion into a finite-dimensional target has finite-dimensional source.
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap (hinj x₀)
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let : CompleteSpace E := FiniteDimensional.complete ℝ E
   have hf₁ : ContMDiff I J (m + 1) f := f.contMDiff.of_le hm
@@ -208,6 +218,7 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : C^n⟮I, M; J, N⟯}
   refine (Pullback.contMDiff_iff fc fc.contMDiff).mpr ⟨hbase, ?_⟩
   exact hsub.congr fun p ↦ congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.2)
 
+omit [FiniteDimensional ℝ E] in
 /-- **Local frames of the normal bundle.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a `C^m`
 ambient metric and `dim N = dim M + r`, the normal spaces have `C^m` local frames of size `r` in
 the pulled-back tangent bundle `f *ᵖ TN`. By

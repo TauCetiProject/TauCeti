@@ -86,7 +86,6 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
     |>.exists_bound_of_continuousOn
       ((a.contDiff_smul_coefficient χ).mixedDeriv α β).continuous.continuousOn
   refine ⟨C * 2 ^ (|r| / 2) + max B 0 * 5 ^ (|r| / 2), by positivity, fun x hx ξ => ?_⟩
-  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by positivity
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · have h := hB (x, ξ) (Set.mk_mem_prod hx (mem_closedBall_zero_iff.2 hξ))
     calc _ ≤ max B 0 := h.trans (le_max_left _ _)
