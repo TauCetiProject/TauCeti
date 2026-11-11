@@ -12,6 +12,7 @@ import TauCeti.Data.Int.Round
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Hermite's inequality for positive definite integral forms
@@ -115,17 +116,12 @@ theorem apply_self_nonneg_of_forall_le {M : Type*} [AddCommGroup M] {B : LinearM
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
     nlinarith
 
-/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
-private theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
-    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
-  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
-
 /-- If a vector `v` of least norm among the nonzero vectors of a symmetric integral form has
 norm `0`, then it is orthogonal to every `y` outside `ℤ v`. -/
 theorem apply_eq_zero_of_apply_self_eq_zero_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hv0 : B v v = 0)
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) : B y v = 0 := by
-  have hne := ne_zero_add_zsmul_of_notMem_span hy
+  have hne := Submodule.ne_zero_add_zsmul_of_notMem_span hy
   have hyy : 0 ≤ B y y := hv0 ▸ hmin y (by simpa using hne 0)
   by_contra hne'
   -- The witness `k = -(B y y + 1) * B y v` makes `B (y + k v) (y + k v) = B y y + 2 k B y v`
@@ -148,7 +144,7 @@ theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M}
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
-  have hne := ne_zero_add_zsmul_of_notMem_span hy
+  have hne := Submodule.ne_zero_add_zsmul_of_notMem_span hy
   by_cases hμ : 0 < B v v
   swap
   · -- A least norm is nonnegative, so here `B v v = 0`, and then `y` is orthogonal to `v`.
