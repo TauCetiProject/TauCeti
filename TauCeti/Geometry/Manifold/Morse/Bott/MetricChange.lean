@@ -258,21 +258,23 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
       Submodule.projection_eq_self_sub_projection
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s)]
     abel
-  -- The change of metric is invertible, with inverse the inverse change of metric read in the
-  -- trivialization, so its inverse is `C^k` as well.
-  let v (s : S) (hs : s ∈ V) : (P →L[ℝ] P)ˣ :=
-    ((e.linearEquivAt ℝ s hs.2).symm ≪≫ₗ h.normalMetricChange hn g g' s ≪≫ₗ
-      e.linearEquivAt ℝ s hs.2).toContinuousLinearEquiv.toUnit
-  have hv (s : S) (hs : s ∈ V) : (v s hs : P →L[ℝ] P) = A s := by rw [hAC s hs]; rfl
+  -- The change of metric read in the trivialization is a bijection, hence invertible, so its
+  -- inverse is `C^k` as well and is the inverse change of metric read in the trivialization.
+  have hAu (s : S) (hs : s ∈ V) : IsUnit (A s) := by
+    rw [hAC s hs, ContinuousLinearMap.isUnit_iff_bijective]
+    convert ((e.linearEquivAt ℝ s hs.2).symm ≪≫ₗ h.normalMetricChange hn g g' s ≪≫ₗ
+      e.linearEquivAt ℝ s hs.2).bijective using 1
+    ext u
+    simp only [C, LinearMap.coe_toContinuousLinearMap', LinearEquiv.conj_apply_apply,
+      LinearEquiv.coe_coe, LinearEquiv.trans_apply]
   refine ⟨A, fun s ↦ Ring.inverse (A s), hA, fun s hs ↦ ?_, fun s hs u ↦ ⟨?_, ?_⟩⟩
-  · have hinv := contDiffAt_ringInverse ℝ (n := k) (v s hs)
-    rw [hv s hs] at hinv
+  · have hinv := contDiffAt_ringInverse ℝ (n := k) (hAu s hs).unit
+    rw [IsUnit.unit_spec] at hinv
     exact hinv.comp_contMDiffWithinAt (hA s hs)
   · rw [hAC s hs, hC s hs, LinearEquiv.coe_coe]
   · beta_reduce
     rw [LinearEquiv.eq_symm_apply, ← LinearEquiv.coe_coe, ← hC s hs, ← hAC s hs,
-      ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ (hv s hs ▸ (v s hs).isUnit),
-      one_apply_eq_self]
+      ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ (hAu s hs), one_apply_eq_self]
 
 end Smooth
 
