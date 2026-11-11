@@ -44,27 +44,29 @@ def affineMulAction : MulAction G V where
 /-- Evaluation of the affine action. -/
 @[simp]
 theorem affineMulAction_smul (g : G) (v : V) :
-    (ρ.affineMulAction b hb).smul g v = ρ g v + b g :=
+    letI := ρ.affineMulAction b hb
+    g • v = ρ g v + b g :=
   (rfl)
 
 /-- The difference of two points transforms by the linear part of the affine action. -/
 theorem affineMulAction_smul_sub (g : G) (v w : V) :
-    (ρ.affineMulAction b hb).smul g v - (ρ.affineMulAction b hb).smul g w =
-      ρ g (v - w) := by
+    letI := ρ.affineMulAction b hb
+    g • v - g • w = ρ g (v - w) := by
   simp [map_sub]
 
 /-- A point is fixed by an affine transformation exactly when its translation is the
 corresponding coboundary. -/
 theorem affineMulAction_smul_eq_self_iff (g : G) (v : V) :
-    (ρ.affineMulAction b hb).smul g v = v ↔ b g = v - ρ g v := by
+    letI := ρ.affineMulAction b hb
+    g • v = v ↔ b g = v - ρ g v := by
   simp only [affineMulAction_smul, eq_sub_iff_add_eq, add_comm]
 
 /-- Changing a cocycle by `c - ρ g c` conjugates its affine action by translation by `c`. -/
 theorem affineMulAction_smul_add {b' : G → V}
     (hb' : ∀ g h, b' (g * h) = ρ g (b' h) + b' g) (c : V)
     (hc : ∀ g, b' g = b g + c - ρ g c) (g : G) (v : V) :
-    (ρ.affineMulAction b' hb').smul g (v + c) =
-      (ρ.affineMulAction b hb).smul g v + c := by
+    (letI := ρ.affineMulAction b' hb'; g • (v + c)) =
+      (letI := ρ.affineMulAction b hb; g • v) + c := by
   simp only [affineMulAction_smul, hc, map_add]
   abel
 

@@ -68,8 +68,8 @@ def affineCoadjointAction (x₀ : M) : MulAction G (Module.Dual ℝ (GroupLieAlg
 /-- The action is the coadjoint representation plus the moment-map defect. -/
 theorem affineCoadjointAction_smul (x₀ : M) (g : G)
     (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
-    (h.affineCoadjointAction hσ x₀).smul g ν =
-      Lie.coadjointRepresentation ℝ I G g ν + momentDefect μ g x₀ :=
+    letI := h.affineCoadjointAction hσ x₀
+    g • ν = Lie.coadjointRepresentation ℝ I G g ν + momentDefect μ g x₀ :=
   Representation.affineMulAction_smul _ _ _ g ν
 
 /-- The affine coadjoint action does not depend on the chosen point. -/
@@ -77,12 +77,16 @@ theorem affineCoadjointAction_eq (x₀ x₁ : M) :
     h.affineCoadjointAction hσ x₀ = h.affineCoadjointAction hσ x₁ := by
   apply MulAction.ext
   funext g ν
-  simp only [affineCoadjointAction_smul, h.momentDefect_eq (hσ g) x₀ x₁]
+  exact (h.affineCoadjointAction_smul hσ x₀ g ν).trans
+    ((congrArg (Lie.coadjointRepresentation ℝ I G g ν + ·)
+      (h.momentDefect_eq (hσ g) x₀ x₁)).trans
+      (h.affineCoadjointAction_smul hσ x₁ g ν).symm)
 
 /-- An infinitesimal moment map is equivariant for its affine coadjoint action, with no
 connectedness assumption on the group. -/
 theorem apply_smul_affineCoadjointAction (x₀ : M) (g : G) (x : M) :
-    μ (g • x) = (h.affineCoadjointAction hσ x₀).smul g (μ x) := by
+    letI := h.affineCoadjointAction hσ x₀
+    μ (g • x) = g • μ x := by
   rw [affineCoadjointAction_smul]
   exact h.apply_smul_eq_add_momentDefect (hσ g) x x₀
 
@@ -90,8 +94,8 @@ theorem apply_smul_affineCoadjointAction (x₀ : M) (g : G) (x : M) :
 same translation. -/
 theorem affineCoadjointAction_add_const_smul (x₀ : M)
     (c ν : Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) :
-    ((h.add_const c).affineCoadjointAction hσ x₀).smul g (ν + c) =
-      (h.affineCoadjointAction hσ x₀).smul g ν + c := by
+    (letI := (h.add_const c).affineCoadjointAction hσ x₀; g • (ν + c)) =
+      (letI := h.affineCoadjointAction hσ x₀; g • ν) + c := by
   apply Representation.affineMulAction_smul_add
   intro k
   rw [momentDefect_add_const]
@@ -101,25 +105,15 @@ theorem affineCoadjointAction_add_const_smul (x₀ : M)
 point of the affine coadjoint action. This tests all components of the group. -/
 theorem isEquivariantMomentMap_sub_const_iff (x₀ : M)
     (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
-    σ.IsEquivariantMomentMap (fun x ↦ μ x - ν) ↔
-      ∀ g : G, (h.affineCoadjointAction hσ x₀).smul g ν = ν := by
-  rw [isEquivariantMomentMap_iff_momentDefect_eq_zero]
+    letI := h.affineCoadjointAction hσ x₀
+    σ.IsEquivariantMomentMap (fun x ↦ μ x - ν) ↔ ∀ g : G, g • ν = ν := by
   have hm : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) (fun x ↦ μ x - ν) := by
     simpa only [sub_eq_add_neg] using h.add_const (-ν)
-  rw [and_iff_right hm]
-  simp only [sub_eq_add_neg, momentDefect_add_const,
-    affineCoadjointAction_smul, map_neg]
-  constructor
-  · intro he g
-    have hg := he g x₀
-    apply sub_eq_zero.mp
-    abel_nf at hg ⊢
-    exact hg
-  · intro he g x
-    rw [h.momentDefect_eq (hσ g) x x₀]
-    have hg := he g
-    apply sub_eq_zero.mpr at hg
-    abel_nf at hg ⊢
-    exact hg
+  rw [hm.isEquivariantMomentMap_iff hσ x₀]
+  apply forall_congr'
+  intro g
+  rw [Representation.affineMulAction_smul_eq_self_iff, map_sub,
+    h.apply_smul_eq_add_momentDefect (hσ g) x₀ x₀]
+  rw [sub_eq_sub_iff_add_eq_add, add_assoc, add_left_cancel_iff, eq_sub_iff_add_eq]
 
 end TauCeti.SmoothTwoForm.IsMomentMap
