@@ -233,7 +233,7 @@ end Semiring
 
 section Ring
 
-variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Ring H] [Bialgebra R H]
+variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H] [Bialgebra R H]
   [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
 
 /-- The invariants `{a : a ⊗ 1 = coact a}` of the projection and the action
