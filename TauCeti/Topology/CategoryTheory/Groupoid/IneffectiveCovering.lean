@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Topology.CategoryTheory.Groupoid.Effective
-public import TauCeti.Topology.Covering.Degree
 
 /-!
 # The covering of ineffective arrows
@@ -15,7 +15,6 @@ When the ineffective arrows of a proper étale groupoid form a closed set, their
 is a proper covering. Its fibre over an object is the full ineffective kernel, not a quotient
 of that kernel. This identifies the ineffective-kernel order with a covering degree.
 
-`coarseCardIneffectiveKernel` descends this order to the actual quotient by isomorphism classes.
 Closedness of ineffective arrows is a separate hypothesis here: it need not hold for arbitrary
 topological étale groupoids.
 
@@ -67,48 +66,5 @@ theorem isCoveringMap_source_ineffectiveArrows [T2Space (Quiver.Total C)]
     (hloc.isLocallyInjective.isDiscrete_preimage_singleton x)
 
 end Quiver
-
-variable {C : Type*} [Groupoid C] [TopologicalSpace C]
-  [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C]
-  (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
-
-/-- The ineffective kernel at an object is the fibre of the source map on ineffective arrows.
-Every automorphism is retained as a separate point of this fibre. -/
-def ineffectiveKernelEquivFiber (x : C) :
-    ineffectiveKernel hs x ≃
-      (fun a : ineffectiveArrows C ↦ (a : Quiver.Total C).left) ⁻¹' {x} :=
-  Equiv.ofBijective
-    (fun g ↦ ⟨⟨⟨x, x, g.val.asIso.hom⟩, (mem_ineffectiveKernel hs).mp g.property⟩, rfl⟩) <| by
-    constructor
-    · intro g h heq
-      apply Subtype.ext
-      apply Aut.ext
-      apply Iso.ext
-      exact eq_of_heq (Quiver.Total.mk.inj
-        (congrArg (fun a ↦ a.val.val) heq)).2.2
-    · rintro ⟨⟨⟨a, b, f⟩, hf⟩, ha⟩
-      simp only [mem_preimage, mem_singleton_iff] at ha
-      subst a
-      have hb := left_eq_right_of_mem_ineffectiveArrows hf
-      dsimp only at hb
-      subst b
-      exact ⟨⟨Aut.of (asIso f), (mem_ineffectiveKernel hs).mpr hf⟩, rfl⟩
-
-/-- The fibre equivalence sends an ineffective automorphism to its actual total arrow. -/
-@[simp]
-theorem ineffectiveKernelEquivFiber_apply_val (x : C) (g : ineffectiveKernel hs x) :
-    (ineffectiveKernelEquivFiber hs x g).val.val = ⟨x, x, g.val.asIso.hom⟩ := (rfl)
-
-/-- The order of the ineffective kernel on the coarse quotient. As usual, `Nat.card` is zero
-for infinite groups; proper étale groupoids have finite ineffective kernels. -/
-def coarseCardIneffectiveKernel : _root_.Quotient (isIsomorphicSetoid C) → ℕ :=
-  _root_.Quotient.lift (fun x ↦ Nat.card (ineffectiveKernel hs x)) fun _ _ ⟨e⟩ ↦
-    card_ineffectiveKernel_eq_of_iso hs e
-
-/-- At the class of an object, the coarse kernel order is the order of its ineffective kernel. -/
-@[simp]
-theorem coarseCardIneffectiveKernel_mk (x : C) :
-    coarseCardIneffectiveKernel hs (_root_.Quotient.mk' (s := isIsomorphicSetoid C) x) =
-      Nat.card (ineffectiveKernel hs x) := (rfl)
 
 end TauCeti

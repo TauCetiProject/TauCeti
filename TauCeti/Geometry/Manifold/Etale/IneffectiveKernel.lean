@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Etale.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 public import TauCeti.Topology.CategoryTheory.Groupoid.IneffectiveCovering
+public import TauCeti.Topology.Covering.Degree
 
 /-!
 # Locally constant ineffective isotropy
@@ -62,14 +63,12 @@ theorem isClosed_ineffectiveArrows
       (closure_mono hsub ha)
   subst y
   have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
-  obtain ⟨U, hxU, act, F, hsmul, -, hobj, -, -, hopen, -, hcentre⟩ :=
+  obtain ⟨U, hxU, act, F, hsmul, -, -, -, -, hopen, -, hsource, htarget, hcentre⟩ :=
     exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht
       IsTopologicalGroupoid.continuous_unit IsTopologicalGroupoid.continuous_comp x
   let : MulAction (Aut x) U := act
   let σ (g : Aut x) (z : U) : Quiver.Total C :=
     ⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, z)).hom⟩
-  have hback (z : U) : (ActionCategory.objEquiv (Aut x) U z).back = z :=
-    (ActionCategory.objEquiv (Aut x) U).left_inv z
   -- A labelled arrow is ineffective precisely on the interior of its fixed-point set.
   have hpre (g : Aut x) : σ g ⁻¹' ineffectiveArrows C = interior (MulAction.fixedBy U g) := by
     ext z
@@ -77,8 +76,9 @@ theorem isClosed_ineffectiveArrows
       Filter.eventually_map, mem_interior_iff_mem_nhds]
     apply Filter.eventually_congr
     exact Filter.Eventually.of_forall fun w ↦ by
-      simp only [hobj, ActionCategory.totalEquiv_symm_apply_left,
-        ActionCategory.totalEquiv_symm_apply_right, hback]
+      have hl : (σ g w).left = (w : C) := congrFun (hsource g) w
+      have hr : (σ g w).right = (g • w : U).val := congrFun (htarget g) w
+      rw [hl, hr]
       exact ⟨fun h ↦ Subtype.ext h.symm, fun h ↦ (congrArg Subtype.val h).symm⟩
   let g : Aut x := Aut.of (asIso f)
   have hzero : σ g ⟨x, hxU⟩ = ⟨x, x, f⟩ := hcentre g
@@ -117,9 +117,11 @@ theorem isLocallyConstant_coarseCardIneffectiveKernel
     (ht : IsLocalDiffeomorph J I 1 (Quiver.Total.right : Quiver.Total C → C)) :
     IsLocallyConstant (coarseCardIneffectiveKernel hs.isLocalHomeomorph) := by
   refine IsLocallyConstant.iff_isOpen_fiber.mpr fun k ↦ ?_
-  rw [← isQuotientMap_quotient_mk'.isOpen_preimage]
+  have hquot : IsQuotientMap (_root_.Quotient.mk (isIsomorphicSetoid C)) :=
+    isQuotientMap_quotient_mk'
+  rw [← hquot.isOpen_preimage]
   have hcomp : coarseCardIneffectiveKernel hs.isLocalHomeomorph ∘
-      _root_.Quotient.mk' (s := isIsomorphicSetoid C) =
+      _root_.Quotient.mk (isIsomorphicSetoid C) =
       fun x ↦ Nat.card (ineffectiveKernel hs.isLocalHomeomorph x) :=
     funext (coarseCardIneffectiveKernel_mk hs.isLocalHomeomorph)
   rw [← Set.preimage_comp, hcomp]
