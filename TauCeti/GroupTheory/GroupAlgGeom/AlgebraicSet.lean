@@ -252,6 +252,14 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
   ext v
   simp [hg]
 
+/-- If a coefficient `c` remains nontrivial in `H`, an equation `u⁻¹ c u = 1` saying that a
+conjugate of `c` is trivial has no solutions; `V_singleton_inl_eq_empty` is the case `u = 1`. In
+particular, for a variable `z`, the equation `z⁻¹ c z = 1` has no solutions. -/
+theorem V_singleton_inv_mul_inl_mul_eq_empty (u : GX G X) {c : G} (hc : ι c ≠ 1) :
+    V ι {u⁻¹ * inl c * u} = ∅ := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, hc]
+
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
