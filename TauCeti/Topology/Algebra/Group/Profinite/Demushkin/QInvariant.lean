@@ -68,9 +68,9 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
   subgroup, and is `p^{v_p(q)}` otherwise; `p ∣ q` holds automatically.
 * `TauCeti.demushkinQ_presentedProP_eq_iff_exists_not_dvd`,
   `TauCeti.demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero`: for a relator
-  `r ∈ Φ(F)` presenting a Demushkin group, `q = p` exactly when some exponent sum of `r` is not
-  divisible by `p ^ 2`, that is, when the class of `r` in `gr_1(F)` has a nonzero `p`-power
-  coordinate.
+  `r` presenting a Demushkin group (which lies in `Φ(F)`), `q = p` exactly when some exponent sum
+  of `r` is not divisible by `p ^ 2`, that is, when the class of `r` in `gr_1(F)` has a nonzero
+  `p`-power coordinate.
 
 ## References
 
@@ -413,9 +413,9 @@ attribute [local instance 2000] Ring.toAddCommGroup
 variable [LinearOrder X]
 
 /-- **The `q`-invariant is `p` exactly when the relator has a `p`-power part.** For a relator
-`r ∈ Φ(F)` presenting a Demushkin group, the `q`-invariant of the group is `p` exactly when the
-class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some exponent sum of
-`r` is not divisible by `p ^ 2`. -/
+`r` presenting a Demushkin group (which lies in `Φ(F)`), the `q`-invariant of the group is `p`
+exactly when the class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some
+exponent sum of `r` is not divisible by `p ^ 2`. -/
 theorem demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero
     (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = p ↔ ∃ i, (freeProP.degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1
