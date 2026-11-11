@@ -123,6 +123,13 @@ def idem (s : Finset α) : StrandsAlgebra R α :=
 theorem idem_def (s : Finset α) : (idem s : StrandsAlgebra R α) = of (StrandDiagram.idOn s) :=
   (rfl)
 
+/-- The coefficient of `φ` in a finite linear combination is the combination of the coefficients
+of `φ`. -/
+theorem repr_sum_smul_apply {ι : Type*} [Fintype ι] (c : ι → R) (v : ι → StrandsAlgebra R α)
+    (φ : StrandDiagram α) :
+    (basis R α).repr (∑ i, c i • v i) φ = ∑ i, c i * (basis R α).repr (v i) φ := by
+  simp [Finsupp.coe_finsetSum, Finset.sum_apply]
+
 open scoped Classical in
 /-- The coefficients of a sum of basis elements: `1` on the summed diagrams and `0` elsewhere. -/
 theorem repr_sum_of_apply (s : Finset (StrandDiagram α)) (ψ : StrandDiagram α) :
@@ -195,6 +202,18 @@ theorem idem_source_mul_of (φ : StrandDiagram α) :
 theorem of_mul_idem_target (φ : StrandDiagram α) :
     (of φ * idem φ.target : StrandsAlgebra R α) = of φ := by
   simp [of_mul_idem]
+
+/-- Two single strands meeting at `j` multiply to their concatenation. -/
+theorem of_single_mul_of_single {i j k : α} (h : i ≤ j) (h' : j ≤ k) :
+    (of (.single i j h) * of (.single j k h') : StrandsAlgebra R α) =
+      of (.single i k (h.trans h')) := by
+  rw [of_mul_of_of_composable (StrandDiagram.composable_single_single_iff.2 rfl),
+    StrandDiagram.single_trans_single]
+
+/-- Two single strands multiply to zero unless the first ends where the second starts. -/
+theorem of_single_mul_of_single_of_ne {i j j' k : α} (h : i ≤ j) (h' : j' ≤ k) (hj : j ≠ j') :
+    (of (.single i j h) * of (.single j' k h') : StrandsAlgebra R α) = 0 :=
+  of_mul_of_of_not_composable (StrandDiagram.composable_single_single_iff.not.2 hj)
 
 /-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
 otherwise. -/
