@@ -358,6 +358,13 @@ theorem trivialization_apply_mk {T : {T : E →L[𝕜] F // T.IsFredholm}}
     trivialization D₂ q ⟨T, v⟩ = (T, chartCoord D₂ q h v) :=
   pretrivialization_apply_mk h v
 
+/-- Over its base set, the inverse of the trivialization of a kernel chart is the inverse chart
+coordinate. -/
+theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
+    (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
+  pretrivialization_symm_apply h c
+
 end FredholmDetLine
 
 end TauCeti
