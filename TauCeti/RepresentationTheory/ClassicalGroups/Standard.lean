@@ -32,20 +32,20 @@ namespace TauCeti
 
 variable (k : Type u) (n : ℕ)
 
-section CommRing
+section CommSemiring
 
-variable [CommRing k]
+variable [CommSemiring k]
 
 /-- The standard representation of `GL n k` on column vectors. -/
 def stdRep : Representation k (GL (Fin n) k) (Fin n → k) :=
-  (Units.coeHom ((Fin n → k) →ₗ[k] (Fin n → k))).comp
-    Matrix.GeneralLinearGroup.toLin.toMonoidHom
+  (MonoidHom.ofClass (Matrix.toLinAlgEquiv' (R := k) (n := Fin n))).comp
+    (Units.coeHom _)
 
 /-- The standard representation acts by matrix-vector multiplication. -/
 @[simp]
 theorem stdRep_apply (g : GL (Fin n) k) :
     stdRep k n g = Matrix.mulVecLin (g : Matrix (Fin n) (Fin n) k) :=
-  Matrix.GeneralLinearGroup.coe_toLin g
+  LinearMap.ext (Matrix.toLinAlgEquiv'_apply (g : Matrix (Fin n) (Fin n) k))
 
 /-- Evaluation of the standard action is matrix-vector multiplication. -/
 theorem stdRep_apply_apply (g : GL (Fin n) k) (v : Fin n → k) :
@@ -53,13 +53,35 @@ theorem stdRep_apply_apply (g : GL (Fin n) k) (v : Fin n → k) :
   rw [stdRep_apply, Matrix.mulVecLin_apply]
 
 /-- The standard representation is faithful. -/
-theorem stdRep_injective : Function.Injective (stdRep k n) := by
-  simpa [stdRep] using
-    Units.coeHom_injective.comp Matrix.GeneralLinearGroup.toLin.injective
+theorem stdRep_injective : Function.Injective (stdRep k n) :=
+  fun _ _ h => Units.ext (Matrix.toLinAlgEquiv'.injective h)
+
+/-- The dual, or contragredient, of the standard representation. -/
+noncomputable def stdDualRep :
+    Representation k (GL (Fin n) k) (Module.Dual k (Fin n → k)) :=
+  (stdRep k n).dual
+
+/-- The dual standard action is the transpose of the inverse standard action. -/
+@[simp]
+theorem stdDualRep_apply (g : GL (Fin n) k) :
+    stdDualRep k n g =
+      Module.Dual.transpose (R := k)
+        (Matrix.mulVecLin ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k)) := by
+  rw [stdDualRep, Representation.dual_apply, stdRep_apply]
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing k]
 
 /-- The standard representation of `GL n k`, bundled as an object of `FDRep`. -/
 noncomputable abbrev stdFDRep : FDRep k (GL (Fin n) k) :=
   FDRep.of (stdRep k n)
+
+/-- The dual standard representation, bundled as an object of `FDRep`. -/
+noncomputable abbrev stdDualFDRep : FDRep k (GL (Fin n) k) :=
+  FDRep.of (stdDualRep k n)
 
 end CommRing
 
@@ -80,35 +102,6 @@ theorem char_stdFDRep (g : GL (Fin n) k) :
     (stdFDRep k n).character g = Matrix.trace (g : Matrix (Fin n) (Fin n) k) := by
   simpa only [FDRep.character, FDRep.of_ρ', Representation.character] using
     char_stdRep k n g
-
-end Field
-
-section CommRing
-
-variable [CommRing k]
-
-/-- The dual, or contragredient, of the standard representation. -/
-noncomputable def stdDualRep :
-    Representation k (GL (Fin n) k) (Module.Dual k (Fin n → k)) :=
-  (stdRep k n).dual
-
-/-- The dual standard action is the transpose of the inverse standard action. -/
-@[simp]
-theorem stdDualRep_apply (g : GL (Fin n) k) :
-    stdDualRep k n g =
-      Module.Dual.transpose (R := k)
-        (Matrix.mulVecLin ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k)) := by
-  rw [stdDualRep, Representation.dual_apply, stdRep_apply]
-
-/-- The dual standard representation, bundled as an object of `FDRep`. -/
-noncomputable abbrev stdDualFDRep : FDRep k (GL (Fin n) k) :=
-  FDRep.of (stdDualRep k n)
-
-end CommRing
-
-section Field
-
-variable [Field k]
 
 /-- The character of the dual standard representation is the trace at the inverse matrix. -/
 @[simp]

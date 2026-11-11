@@ -56,7 +56,6 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
       y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
   let φ := negativeGradientFlow f hf
   have hanti := negativeGradientFlow_orbit_antitone f hf y
-    (fun _ ↦ hfs.differentiable (by norm_num) _)
   have hmaps : MapsTo (fun t ↦ φ t y) (Ici 0) {z | f z ≤ f y} := by
     intro t ht
     simpa only [Set.mem_ofPred_eq, φ, _root_.Flow.map_zero_apply] using hanti ht

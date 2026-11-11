@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Branchless
+import TauCeti.Data.Int.MulEqTwo
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.ForkedDoubleEdge
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.TwoDoubleEdges
 
@@ -271,7 +272,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
     exact hdegree
   rcases h.isAcyclic_diagramGraph.dist_eq_dist_add_one_of_adj_of_reachable
       c huvAdj hreach with hdist | hdist
-  · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
         (c := c) (near := v) (far := u) h hreachV hc huvAdj.symm hdist hvuEntry
@@ -280,7 +281,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
         (by rw [hgraph]; exact hreachV) (by rw [hdegree]; exact hc)
         (by rw [hgraph]; exact huvAdj.symm) (by rw [hgraph]; exact hdist)
         (by simpa using huvEntry)
-  · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two h.transpose
         (c := c) (near := u) (far := v)
