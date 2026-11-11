@@ -335,8 +335,10 @@ theorem multiplierExtension_integratedFull_groupMultiplier (P : CovariantReprese
       (eq_disintegrate_of_integratedStarAlgHom_eq h P.integratedFull_comp_of.symm).symm
 
 /-- Universal property of `(A ⋊_α G, i_A, i_G)` for nondegenerate Hilbert-space representations:
-`P.integratedFull μ` is the unique nondegenerate representation of `A ⋊_α G` whose multiplier
-extension sends `i_A` to `P.coefficient` and `i_G` to `P.group`. -/
+a nondegenerate representation `L` of `A ⋊_α G` equals `P.integratedFull μ` if and only if its
+multiplier extension sends `i_A` to `P.coefficient` and `i_G` to `P.group`. When `P.coefficient` is
+nondegenerate, `P.integratedFull μ` is therefore the unique nondegenerate representation with this
+property. -/
 theorem eq_integratedFull_iff {P : CovariantRepresentation α H}
     {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hL : L.IsNondegenerate) :
     L = P.integratedFull μ ↔
@@ -500,9 +502,10 @@ theorem extendToMultiplier_integratedFull_groupMultiplier (μ : Measure G) [μ.I
     congrArg (fun N => (N.group r : 𝓜(ℂ, B))) (disintegrateMultiplier_integratedFull M μ hM)
 
 /-- Universal property of `(A ⋊_α G, i_A, i_G)` for nondegenerate multiplier homomorphisms:
-`M.integratedFull μ` is the unique multiplier-nondegenerate ⋆-homomorphism
-`FullCrossedProduct α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` whose multiplier extension sends `i_A` to `M.coefficient`
-and `i_G` to `M.group`. -/
+a multiplier-nondegenerate ⋆-homomorphism `Φ : FullCrossedProduct α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` equals
+`M.integratedFull μ` if and only if its multiplier extension sends `i_A` to `M.coefficient` and
+`i_G` to `M.group`. When `M.coefficient` is multiplier-nondegenerate, `M.integratedFull μ` is
+therefore the unique multiplier-nondegenerate ⋆-homomorphism with this property. -/
 theorem eq_integratedFull_iff {M : CovariantMultiplierHom α B}
     {Φ : FullCrossedProduct α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B)} (hΦ : Φ.IsMultiplierNondegenerate) :
     Φ = M.integratedFull μ ↔

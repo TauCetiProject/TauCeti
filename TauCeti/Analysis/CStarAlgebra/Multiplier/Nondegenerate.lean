@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Nondegenerate homomorphisms into multiplier algebras
@@ -21,11 +22,11 @@ Every nondegenerate `φ` extends uniquely to a unital ⋆-homomorphism
 Norm-bounded strictly continuous families remain strictly continuous under `φ'`
 (`continuous_extendToMultiplier_fst_apply`), and nondegenerate multiplier homomorphisms compose with
 one another and with nondegenerate Hilbert-space representations (`extendToMultiplier_comp`,
-`multiplierExtension_comp`). We also record norm continuity of `DoubleCentralizer.toProd`.
+`multiplierExtension_comp`).
 
 ## References
 
-* Dana Williams, *Crossed Products of C*-Algebras*, Proposition 2.46.
+* Dana Williams, *Crossed Products of C*-Algebras*, Proposition 2.39 and Proposition 2.46.
 * Iain Raeburn and Dana Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
   Proposition 2.50.
 -/
@@ -36,24 +37,6 @@ noncomputable section
 
 open Filter Topology
 open scoped CStarAlgebra MultiplierAlgebra
-
-namespace DoubleCentralizer
-
-section Continuous
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
-
-/-- Projection from a multiplier to its pair of left and right centralizers is norm continuous. -/
-@[fun_prop]
-theorem continuous_toProd :
-    Continuous (DoubleCentralizer.toProd : 𝓜(𝕜, A) → (A →L[𝕜] A) × (A →L[𝕜] A)) :=
-  AddMonoidHomClass.continuous_of_bound toProdHom 1 fun m => by
-    rw [one_mul, norm_def]
-
-end Continuous
-
-end DoubleCentralizer
 
 namespace NonUnitalStarAlgHom
 
@@ -107,96 +90,15 @@ theorem isMultiplierNondegenerate_coeHom :
   refine fun b => mem_closure_of_tendsto (hl.tendsto_mul_right b) <| .of_forall fun e => ?_
   exact Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, b, by simp⟩
 
-section ApproximateUnit
-
-variable [PartialOrder A] {l : Filter A}
-
-/-- Along an increasing approximate unit, `(φ (m.fst e)).fst ((φ a).fst b)` converges to
-`(φ (m.fst a)).fst b`. -/
-private theorem tendsto_fst_apply_apply (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A))
-    (a : A) (b : B) :
-    Tendsto (fun e => (φ (m.fst e)).fst ((φ a).fst b)) l (𝓝 ((φ (m.fst a)).fst b)) := by
-  have hcont : Continuous fun x : A => (φ (m.fst x)).fst b := by fun_prop
-  refine ((hcont.tendsto a).comp (hl.tendsto_mul_right a)).congr fun e => ?_
-  simp only [Function.comp_apply, DoubleCentralizer.fst_mul]
-  rw [← mul_apply_eq_comp, ← DoubleCentralizer.mul_fst, ← map_mul]
-
-/-- Along an increasing approximate unit, `‖(φ (m.fst e)).fst‖` is eventually at most `‖m‖`. -/
-private theorem eventually_norm_fst_le (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) :
-    ∀ᶠ e in l, ‖(φ (m.fst e)).fst‖ ≤ ‖m‖ :=
-  hl.eventually_norm.mono fun e he =>
-    calc ‖(φ (m.fst e)).fst‖ = ‖φ (m.fst e)‖ := DoubleCentralizer.norm_fst _
-      _ ≤ ‖m.fst e‖ := norm_apply_le φ _
-      _ ≤ ‖m.fst‖ * ‖e‖ := m.fst.le_opNorm e
-      _ ≤ ‖m‖ := by simpa using mul_le_of_le_one_right (norm_nonneg m) he
-
-private theorem exists_tendsto_fst_of_mem_span (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A))
-    {x : B} (hx : x ∈ Submodule.span ℂ (⋃ a, Set.range (φ a).fst)) :
-    ∃ y, Tendsto (fun e => (φ (m.fst e)).fst x) l (𝓝 y) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨a, b, rfl⟩ := Set.mem_iUnion.1 hx
-    exact ⟨_, tendsto_fst_apply_apply hl m a b⟩
-  | zero => exact ⟨0, by simpa using tendsto_const_nhds⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨u, hu⟩ := hx
-    obtain ⟨v, hv⟩ := hy
-    exact ⟨u + v, by simpa using hu.add hv⟩
-  | smul c x _ hx =>
-    obtain ⟨u, hu⟩ := hx
-    exact ⟨c • u, by simpa using hu.const_smul c⟩
-
-/-- When `φ` is nondegenerate, `(φ (m.fst e)).fst b` is Cauchy along an increasing approximate
-unit: approximate `b` in the dense span and use the eventual bound `‖(φ (m.fst e)).fst‖ ≤ ‖m‖`. -/
-private theorem cauchy_map_fst_apply (hφ : φ.IsMultiplierNondegenerate)
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (b : B) :
-    Cauchy (map (fun e => (φ (m.fst e)).fst b) l) := by
-  have := hl.neBot
-  set F : A → B → B := fun e b => (φ (m.fst e)).fst b
-  refine Metric.cauchy_iff.2 ⟨inferInstance, fun ε hε => ?_⟩
-  set δ := ε / (3 * (‖m‖ + 1))
-  obtain ⟨x, hx, hbx⟩ := Metric.mem_closure_iff.1 (hφ b) δ (by positivity)
-  obtain ⟨y, hy⟩ := exists_tendsto_fst_of_mem_span hl m hx
-  obtain ⟨t, ht, htε⟩ := Metric.cauchy_iff.1 hy.cauchy_map |>.2 (ε / 3) (by positivity)
-  refine ⟨(F · b) '' ({e | ‖(φ (m.fst e)).fst‖ ≤ ‖m‖} ∩ (F · x) ⁻¹' t),
-    image_mem_map (inter_mem (eventually_norm_fst_le hl m) ht), ?_⟩
-  have hclose : ∀ e, ‖(φ (m.fst e)).fst‖ ≤ ‖m‖ → dist (F e b) (F e x) < ε / 3 := fun e he => by
-    have hmδ : ‖m‖ * δ < ε / 3 := by
-      simp only [δ]
-      rw [← mul_div_assoc, div_lt_iff₀ (by positivity)]
-      nlinarith
-    rw [dist_eq_norm, ← map_sub]
-    refine (((φ (m.fst e)).fst.le_opNorm _).trans ?_).trans_lt hmδ
-    exact mul_le_mul he (dist_eq_norm b x ▸ hbx.le) (norm_nonneg _) (norm_nonneg _)
-  rintro _ ⟨e, ⟨he, het⟩, rfl⟩ _ ⟨e', ⟨he', het'⟩, rfl⟩
-  calc dist (F e b) (F e' b) ≤ dist (F e b) (F e x) + dist (F e x) (F e' x) +
-        dist (F e' x) (F e' b) := dist_triangle4 _ _ _ _
-    _ < ε / 3 + ε / 3 + ε / 3 := by
-        gcongr
-        · exact hclose e he
-        · exact htε _ het _ het'
-        · exact dist_comm (F e' x) _ ▸ hclose e' he'
-    _ = ε := by ring
-
-private theorem exists_tendsto_fst (hφ : φ.IsMultiplierNondegenerate)
-    (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) :
+private theorem exists_tendsto_fst [PartialOrder A] {l : Filter A}
+    (hφ : φ.IsMultiplierNondegenerate) (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) :
     ∃ T : B →L[ℂ] B, (∀ a, T * (φ a).fst = (φ (m.fst a)).fst) ∧
       ∀ b, Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 (T b)) := by
   have := hl.neBot
-  set f : B → B := fun b => limUnder l fun e => (φ (m.fst e)).fst b
-  have hf (b : B) : Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 (f b)) :=
-    tendsto_nhds_limUnder (cauchy_map_iff_exists_tendsto.1 (cauchy_map_fst_apply hφ hl m b))
-  have hmem : f ∈ closure (((↑) : (B →L[ℂ] B) → B → B) '' Metric.closedBall 0 ‖m‖) :=
-    mem_closure_of_tendsto (tendsto_pi_nhds.2 hf) <| (eventually_norm_fst_le hl m).mono
-      fun e he => ⟨(φ (m.fst e)).fst, mem_closedBall_zero_iff.2 he, rfl⟩
-  set T := ContinuousLinearMap.ofMemClosureImageCoeBounded f
-    (Metric.isBounded_closedBall (x := (0 : B →L[ℂ] B)) (r := ‖m‖)) hmem
-  have hT : ⇑T = f := ContinuousLinearMap.ofMemClosureImageCoeBounded_apply _ _ _
-  refine ⟨T, fun a => ContinuousLinearMap.ext fun b => ?_, fun b => hT ▸ hf b⟩
-  rw [mul_apply_eq_comp, hT]
-  exact tendsto_nhds_unique (hf ((φ a).fst b)) (tendsto_fst_apply_apply hl m a b)
-
-end ApproximateUnit
+  exact m.exists_clm_tendsto_fst (K := 1) (L := fun a => (φ a).fst) hl.eventually_norm
+    hl.tendsto_mul_right (fun _ => by fun_prop)
+    (fun a b => by rw [map_mul, DoubleCentralizer.mul_fst])
+    (fun a => by simpa only [DoubleCentralizer.norm_fst, one_mul] using norm_apply_le φ a) hφ
 
 private theorem exists_clm_mul_eq (hφ : φ.IsMultiplierNondegenerate) (m : 𝓜(ℂ, A)) :
     ∃ T : B →L[ℂ] B, ∀ a, T * (φ a).fst = (φ (m.fst a)).fst := by
@@ -352,38 +254,13 @@ theorem continuous_extendToMultiplier_fst_apply {X : Type*} [TopologicalSpace X]
     {u : X → 𝓜(ℂ, A)} (hu : ∀ a, Continuous fun x => (u x).fst a) {K : ℝ}
     (hK : ∀ x, ‖u x‖ ≤ K) (b : B) :
     Continuous fun x => (φ.extendToMultiplier hφ (u x)).fst b := by
-  set Φ : B → X → B := fun y x => (φ.extendToMultiplier hφ (u x)).fst y
-  have hspan : ∀ y ∈ Submodule.span ℂ (⋃ a, Set.range (φ a).fst), Continuous (Φ y) := by
-    intro y hy
-    induction hy using Submodule.span_induction with
-    | mem z hz =>
-      obtain ⟨a, y, rfl⟩ := Set.mem_iUnion.1 hz
-      simp only [Φ, extendToMultiplier_fst_apply]
-      fun_prop
-    | zero => simpa [Φ] using continuous_const
-    | add y z _ _ hy hz =>
-      simp only [Φ, map_add] at hy hz ⊢
-      exact hy.add hz
-    | smul c y _ hy =>
-      simp only [Φ, map_smul] at hy ⊢
-      exact hy.const_smul c
-  refine continuous_of_uniform_approx_of_continuous fun U hU => ?_
-  obtain ⟨ε, hε, hεU⟩ := Metric.mem_uniformity_dist.1 hU
-  obtain ⟨y, hy, hby⟩ := Metric.mem_closure_iff.1 (hφ b) (ε / (|K| + 1)) (by positivity)
-  refine ⟨Φ y, hspan y hy, fun x => hεU ?_⟩
-  calc dist (Φ b x) (Φ y x) = ‖(φ.extendToMultiplier hφ (u x)).fst (b - y)‖ := by
-        rw [dist_eq_norm, map_sub]
-    _ ≤ ‖u x‖ * ‖b - y‖ := by
-        refine (((φ.extendToMultiplier hφ (u x)).fst.le_opNorm _).trans ?_)
-        rw [DoubleCentralizer.norm_fst]
-        exact mul_le_mul_of_nonneg_right
-          (norm_apply_le (φ.extendToMultiplier hφ).toNonUnitalStarAlgHom _) (norm_nonneg _)
-    _ ≤ |K| * (ε / (|K| + 1)) := by
-        rw [← dist_eq_norm]
-        exact mul_le_mul ((hK x).trans (le_abs_self K)) hby.le dist_nonneg (abs_nonneg K)
-    _ < ε := by
-        rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
-        nlinarith [abs_nonneg K]
+  refine ContinuousLinearMap.continuous_apply_of_dense_span (C := K)
+    (f := fun x => (φ.extendToMultiplier hφ (u x)).fst) hφ (fun x => ?_) (fun _ hz => ?_) b
+  · rw [DoubleCentralizer.norm_fst]
+    exact (norm_apply_le (φ.extendToMultiplier hφ).toNonUnitalStarAlgHom _).trans (hK x)
+  · obtain ⟨a, y, rfl⟩ := Set.mem_iUnion.1 hz
+    simp only [extendToMultiplier_fst_apply]
+    fun_prop
 
 /-- A ⋆-homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if `(φ e).fst b → b`
 in norm for every `b : B` along an increasing approximate unit `e` of `A`. -/
@@ -410,7 +287,9 @@ theorem IsMultiplierNondegenerate.extendToMultiplier_comp
   have hmem (b : B) (c : C) : (ψ b).fst c ∈ S.topologicalClosure := by
     let f : B →ₗ[ℂ] C :=
       { toFun y := (ψ y).fst c, map_add' _ _ := by simp, map_smul' _ _ := by simp }
-    have hf : Continuous f := show Continuous fun y => (ψ y).fst c by fun_prop
+    have hf : Continuous f := by
+      simp only [f, LinearMap.coe_mk, AddHom.coe_mk]
+      fun_prop
     refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
       (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
     rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
@@ -447,7 +326,9 @@ theorem IsNondegenerate.multiplierExtension_comp {H : Type*} [NormedAddCommGroup
   have hmem (b : B) (ξ : H) : π b ξ ∈ S.topologicalClosure := by
     let f : B →ₗ[ℂ] H :=
       { toFun y := π y ξ, map_add' _ _ := by simp, map_smul' _ _ := by simp }
-    have hf : Continuous f := show Continuous fun y => π y ξ by fun_prop
+    have hf : Continuous f := by
+      simp only [f, LinearMap.coe_mk, AddHom.coe_mk]
+      fun_prop
     refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
       (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
     rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
@@ -479,52 +360,14 @@ section DenseRange
 
 variable {ι A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- Restricting a Hilbert-space representation of `A` to a dense subset `Set.range g` generates the
-same closed essential subspace of `H`. -/
-theorem topologicalClosure_span_range_comp_eq {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {g : ι → A} (hg : DenseRange g)
-    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
-    (Submodule.span ℂ (⋃ i, Set.range (π (g i)))).topologicalClosure =
-      (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure := by
-  set S := Submodule.span ℂ (⋃ i, Set.range (π (g i)))
-  refine le_antisymm (Submodule.topologicalClosure_mono <| Submodule.span_mono <|
-    Set.iUnion_subset fun i => Set.subset_iUnion (fun a => Set.range (π a)) (g i))
-    (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_) S.isClosed_topologicalClosure)
-  rintro _ ⟨_, ⟨a, rfl⟩, ξ, rfl⟩
-  have hclosed : IsClosed {x : A | π x ξ ∈ S.topologicalClosure} :=
-    S.isClosed_topologicalClosure.preimage (by fun_prop)
-  refine hclosed.closure_subset_iff.2 ?_ (hg a)
-  rintro _ ⟨i, rfl⟩
-  exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, ξ, rfl⟩))
-
-/-- For any `g : ι → A` with dense range, a Hilbert-space representation
-`π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only if the vectors `π (g i) ξ` span a dense
-subspace of `H`. -/
-theorem isNondegenerate_iff_dense_span_comp {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {g : ι → A} (hg : DenseRange g)
-    {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
-    π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
-  rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
-    Submodule.dense_iff_topologicalClosure_eq_top, topologicalClosure_span_range_comp_eq hg]
-
 /-- Restricting a multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` to a dense subset `Set.range g`
 generates the same closed essential subspace of `B`. -/
 theorem topologicalClosure_span_fst_comp_eq {B : Type*} [NonUnitalCStarAlgebra B] {g : ι → A}
     (hg : DenseRange g) (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
     (Submodule.span ℂ (⋃ i, Set.range (φ (g i)).fst)).topologicalClosure =
-      (Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure := by
-  set S := Submodule.span ℂ (⋃ i, Set.range (φ (g i)).fst)
-  refine le_antisymm (Submodule.topologicalClosure_mono <| Submodule.span_mono <|
-    Set.iUnion_subset fun i => Set.subset_iUnion (fun a => Set.range (φ a).fst) (g i))
-    (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_) S.isClosed_topologicalClosure)
-  rintro _ ⟨_, ⟨a, rfl⟩, b, rfl⟩
-  have hcont : Continuous fun x : A => (φ x).fst b :=
-    ((DoubleCentralizer.continuous_toProd.fst.comp (map_continuous φ))).clm_apply continuous_const
-  have hclosed : IsClosed {x : A | (φ x).fst b ∈ S.topologicalClosure} :=
-    S.isClosed_topologicalClosure.preimage hcont
-  refine hclosed.closure_subset_iff.2 ?_ (hg a)
-  rintro _ ⟨i, rfl⟩
-  exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, b, rfl⟩))
+      (Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure :=
+  ContinuousLinearMap.topologicalClosure_span_iUnion_range_comp_eq (L := fun a => (φ a).fst) hg
+    fun _ => by fun_prop
 
 /-- For any `g : ι → A` with dense range, a multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is
 nondegenerate if and only if the elements `(φ (g i)).fst b` span a dense subspace of `B`. -/
