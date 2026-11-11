@@ -14,10 +14,10 @@ import all TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 A map `V_H(S) → V_H(T)` between algebraic sets is a *morphism* if it is given at every point by a
 tuple of coefficient words. A tuple of words that maps one algebraic set into another induces a
 coefficient-preserving homomorphism in the opposite direction between their coordinate groups,
-and this respects identities and composition. Conversely, every such homomorphism is represented
-by a tuple of words, and two tuples represent the same homomorphism precisely when their word maps
-agree at every point of the source algebraic set. This describes polynomial maps without choosing
-presentations of coordinate functions.
+`CoordGroup.homOfMapsToWordMap`, contravariantly functorially. Conversely, every such
+homomorphism is represented by a tuple of words, and two tuples represent the same homomorphism
+precisely when their word maps agree at every point of the source algebraic set. This describes
+polynomial maps without choosing presentations of coordinate functions.
 
 In the other direction, a coefficient-preserving homomorphism `φ : Γ(T) → Γ(S)` of coordinate
 groups induces the map `CoordGroup.comap φ : V_H(S) → V_H(T)`: a solution of `S`, viewed as a
@@ -39,11 +39,11 @@ without solutions, whose coordinate groups are trivial.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_id`,
-  `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_comp`: the coordinate-group homomorphism
-  of a word map is contravariantly functorial.
+* `TauCeti.GroupAlgGeom.isWordMap_id`, `TauCeti.GroupAlgGeom.IsWordMap.comp`: morphisms of
+  algebraic sets contain the identities and are closed under composition.
 * `TauCeti.GroupAlgGeom.CoordGroup.comap_id`, `TauCeti.GroupAlgGeom.CoordGroup.comap_comp`:
-  so is the map of algebraic sets induced by a coordinate-group homomorphism.
+  the map of algebraic sets induced by a coordinate-group homomorphism is contravariantly
+  functorial.
 * `TauCeti.GroupAlgGeom.CoordGroup.exists_wordMap_representation`,
   `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_eq_iff`: every coordinate-group
   homomorphism comes from a word map, unique up to agreement on the algebraic set.
@@ -101,36 +101,7 @@ namespace CoordGroup
 
 variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y)) (U : Set (GX G Z))
 
-/-! ### From word maps to coordinate-group homomorphisms -/
-
-/-- The tuple of variables maps an algebraic set to itself. -/
-theorem mapsToWordMap_id : MapsToWordMap ι S S fun x => inr (FreeGroup.of x) :=
-  (mapsToWordMap_iff ι S S _).2 fun v hv => by rwa [wordMap_id]
-
-variable {ι S T U} in
-/-- Substituting one tuple of words into another composes the corresponding maps of algebraic
-sets. -/
-theorem MapsToWordMap.comp {w : Y → GX G X} {u : Z → GX G Y} (hu : MapsToWordMap ι T U u)
-    (hw : MapsToWordMap ι S T w) :
-    MapsToWordMap ι S U fun z => eval (inl : G →* GX G X) w (u z) := by
-  refine (mapsToWordMap_iff ι S U _).2 fun v hv => ?_
-  rw [← wordMap_wordMap]
-  exact (mapsToWordMap_iff ι T U u).1 hu _ ((mapsToWordMap_iff ι S T w).1 hw v hv)
-
-/-- The tuple of variables induces the identity of the coordinate group. -/
-@[simp]
-theorem homOfMapsToWordMap_id :
-    homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsToWordMap_id ι S) =
-      GHom.id (coeff ι S) :=
-  gHom_ext fun _ => by simp
-
-/-- The homomorphism induced by a composite of word maps is the composite of the induced
-homomorphisms, in the opposite order. -/
-theorem homOfMapsToWordMap_comp {w : Y → GX G X} {u : Z → GX G Y} (hw : MapsToWordMap ι S T w)
-    (hu : MapsToWordMap ι T U u) :
-    homOfMapsToWordMap ι S U (fun z => eval (inl : G →* GX G X) w (u z)) (hu.comp hw) =
-      (homOfMapsToWordMap ι S T w hw).comp (homOfMapsToWordMap ι T U u hu) :=
-  gHom_ext fun _ => by simp
+/-! ### Coordinate-group homomorphisms are given by word maps -/
 
 /-- Every coefficient-preserving coordinate-group homomorphism is represented by a tuple of
 coefficient words, whose word map carries source solutions to target solutions. -/
