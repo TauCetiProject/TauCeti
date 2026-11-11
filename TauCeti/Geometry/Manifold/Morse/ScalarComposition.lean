@@ -68,7 +68,7 @@ theorem scalar_comp
 /-- A decreasing scalar change of values complements the manifold Morse index at a
 nondegenerate critical point. -/
 theorem manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsManifoldNondegenerateCriticalPoint I f x)
+    (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) < 0) :
     manifoldMorseIndex I (φ ∘ f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   rw [isManifoldNondegenerateCriticalPoint_iff] at h
@@ -151,7 +151,7 @@ namespace IsManifoldNondegenerateCriticalPoint
 /-- At a nondegenerate critical point, taking the reciprocal of one plus the function
 complements its index, provided the denominator is nonzero. -/
 theorem manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsManifoldNondegenerateCriticalPoint I f x)
+    (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hf : 1 + f x ≠ 0) :
     manifoldMorseIndex I (fun y ↦ (1 + f y)⁻¹) x + manifoldMorseIndex I f x =
       Module.finrank ℝ E := by

@@ -101,7 +101,7 @@ theorem linearPointsMap_injective :
     Function.Injective (linearPointsMap R : (N →ₗ[R] M) → _) := by
   intro f g h
   ext n
-  apply ι_injective R M
+  apply SymmetricAlgebra.ι_injective R M
   exact congrArg (fun τ ↦ (τ.app (.of R (_root_.SymmetricAlgebra R M))
     (_root_.SymmetricAlgebra.ι R M)) n) h
 

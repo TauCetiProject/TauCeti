@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Mean inequalities
@@ -41,10 +42,15 @@ Mathlib states the two-point weighted AM-GM inequality in `ℝ≥0∞` with `ℝ
 (`ENNReal.geom_mean_le_arith_mean2_weighted`); it is restated here for the real weights `1 - θ`
 and `θ`, as they appear in interpolation inequalities such as Prékopa–Leindler.
 
-Finally, the two-point weighted AM-GM inequality is restated after normalizing by positive scalars
+The two-point weighted AM-GM inequality is also restated after normalizing by positive scalars
 `a` and `b`: `A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ)`,
 strictly when `0 < θ < 1` and `A / a ≠ B / b`. This is the form used to compare volumes of
 hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowski.
+
+The triangle inequality for the Euclidean norm on `ℝ²`, applied to finitely many coordinate pairs
+`(a i, b i)`, reads `√((∑ a i) ^ 2 + (∑ b i) ^ 2) ≤ ∑ √(a i ^ 2 + b i ^ 2)`. It bounds a norm
+defined as the Euclidean combination of two component norms, each subadditive, such as the norm
+of a higher-order Sobolev space.
 
 ## Main statements
 
@@ -52,6 +58,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
+* `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
+  sums of coordinate pairs.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -108,11 +116,12 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
 
 /-- Splitting a weighted geometric mean through positive normalizers `a` and `b`:
 `A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ)`. -/
-theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (ha : 0 < a)
-    (hb : 0 < b) :
+theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0 < b) :
     A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ) := by
-  rw [mul_mul_mul_comm, ← mul_rpow (div_nonneg hA ha.le) ha.le,
-    ← mul_rpow (div_nonneg hB hb.le) hb.le, div_mul_cancel₀ A ha.ne', div_mul_cancel₀ B hb.ne']
+  rw [div_rpow_of_pos_right ha, div_rpow_of_pos_right hb]
+  have := (rpow_pos_of_pos ha (1 - θ)).ne'
+  have := (rpow_pos_of_pos hb θ).ne'
+  field_simp
 
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
@@ -120,7 +129,7 @@ weighted geometric mean of `a` and `b`. -/
 theorem geom_mean_le_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
     (ha : 0 < a) (hb : 0 < b) (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
     A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_one_sub_mul_rpow_eq_div_mul hA hB ha hb]
+  rw [rpow_one_sub_mul_rpow_eq_div_mul ha hb]
   exact mul_le_mul_of_nonneg_right (geom_mean_le_arith_mean2_weighted (by linarith) hθ₀
     (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring))
     (mul_nonneg (rpow_nonneg ha.le _) (rpow_nonneg hb.le _))
@@ -130,10 +139,20 @@ theorem geom_mean_le_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤
 theorem geom_mean_lt_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
     (ha : 0 < a) (hb : 0 < b) (hθ₀ : 0 < θ) (hθ₁ : θ < 1) (hne : A / a ≠ B / b) :
     A ^ (1 - θ) * B ^ θ < ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_one_sub_mul_rpow_eq_div_mul hA hB ha hb]
+  rw [rpow_one_sub_mul_rpow_eq_div_mul ha hb]
   exact mul_lt_mul_of_pos_right ((geom_mean_lt_arith_mean2_weighted_iff_of_pos
     (by linarith) hθ₀ (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring)).2 hne)
     (mul_pos (rpow_pos_of_pos ha _) (rpow_pos_of_pos hb _))
+
+/-- **Triangle inequality in the plane.** For finite families `a` and `b`,
+`√((∑ i ∈ s, a i) ^ 2 + (∑ i ∈ s, b i) ^ 2) ≤ ∑ i ∈ s, √(a i ^ 2 + b i ^ 2)`. -/
+theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : ι → ℝ) :
+    √((∑ i ∈ s, a i) ^ 2 + (∑ i ∈ s, b i) ^ 2) ≤ ∑ i ∈ s, √(a i ^ 2 + b i ^ 2) := by
+  have h (x y : ℝ) : √(x ^ 2 + y ^ 2) = ‖(⟨x, y⟩ : ℂ)‖ := by
+    rw [Complex.norm_def, Complex.normSq_mk, sq, sq]
+  have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
+    Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
+  simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
 
 end Real
 

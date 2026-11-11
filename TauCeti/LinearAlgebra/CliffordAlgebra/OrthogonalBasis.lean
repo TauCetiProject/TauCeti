@@ -566,11 +566,16 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrd
     · simp [hs]
     · simp [h s hs]
 
+omit [LinearOrder I] in
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
-`τ (reverse x * x) = 0` only for `x = 0`. -/
+`τ (reverse x * x) = 0` only for `x = 0`. The index type of the basis need not be ordered. -/
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
+  classical
+  -- The order only enters through the auxiliary basis `CliffordAlgebra.basis`, so any linear order
+  -- on `I` will do.
+  let _ : LinearOrder I := linearOrderOfSTO WellOrderingRel
   rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
     forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hQ i).ne']
 

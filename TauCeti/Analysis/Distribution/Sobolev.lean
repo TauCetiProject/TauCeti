@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -51,7 +52,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
-  `H^{s,p}`.
+  `H^{s,p}`; a symbol without temperate growth gives the junk value `0`, so only symbols of
+  temperate growth are covered.
 * `MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: for
   `1 < p < ∞`, real symbols of order `0`, whose `k`-th derivatives are bounded by
   `C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)`, map `H^{s,p}` to `H^{s,p}`.
@@ -63,8 +65,6 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
-* `TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`: for `s > dim E / 2`, the Fourier
-  transform of `f ∈ H^s` is an `L¹` function `v` with `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v ∈ L²`.
 
 ## References
 
@@ -176,13 +176,23 @@ section inner
 variable [InnerProductSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Mihlin multipliers act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a symbol
-of temperate growth satisfying Mihlin's condition of order `N`, `2N > dim E`, maps `H^{s,p}` to
-`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`). -/
+satisfying Mihlin's condition of order `N`, `2N > dim E`, away from the origin maps `H^{s,p}` to
+`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`).
+
+Temperate growth of `g` is not assumed: if `g` lacks it, `fourierMultiplierCLM F g` is the junk
+value `0` (`TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`), so the
+statement has content only for symbols of temperate growth, and symbols singular at the origin,
+such as the Riesz symbols `ξⱼ / ‖ξ‖`, are not covered. -/
 theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
+    {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
     (hgA : ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k g ξ‖ ≤ A / ‖ξ‖ ^ k) :
     MemSobolev s p (fourierMultiplierCLM F g f) := by
+  -- without temperate growth the symbol acts as `0`
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hg]
+    exact (sobolevSubmodule E F s p).zero_mem
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every symbol is constant.
     have hconst : g = fun _ ↦ g 0 := funext fun x ↦ congrArg g (Subsingleton.elim x 0)
@@ -203,15 +213,23 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
 /-- **Order-zero real symbols act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a
 real symbol `g` of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)` for
 every `k`, maps `H^{s,p}` to `H^{s,p}`. This is the Japanese-bracket form of Mihlin's condition in
-`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. -/
+`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. As there, temperate growth of `g` is
+not assumed: without it the multiplier is the junk value `0`. -/
 theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
     (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℝ}
-    (hg : g.HasTemperateGrowth)
     (hgk : ∀ k : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2)) :
     MemSobolev s p (fourierMultiplierCLM F (fun x ↦ (g x : ℂ)) f) := by
+  -- without temperate growth the multiplier is `0`, and the complexification is temperate only
+  -- if `g` is
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · have hc : ¬ (fun x ↦ (g x : ℂ)).HasTemperateGrowth := fun hc ↦ hg <| by
+      simpa using (show (fun x ↦ ((g x : ℂ)).re).HasTemperateGrowth by fun_prop)
+    rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hc]
+    exact (sobolevSubmodule E F s p).zero_mem
   choose C hC using hgk
   set N := finrank ℝ E + 1
-  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (by fun_prop) (N := N)
+  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (N := N)
     (by omega) (A := ∑ k ∈ Finset.range (N + 1), ‖C k‖₊) fun k hk ξ hξ ↦ ?_
   have hreal : ‖iteratedFDeriv ℝ k (fun x ↦ (g x : ℂ)) ξ‖ = ‖iteratedFDeriv ℝ k g ξ‖ :=
     Complex.ofRealLI.norm_iteratedFDeriv_comp_left hg.1.contDiffAt (mod_cast le_top)
@@ -231,7 +249,7 @@ theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ}
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s' p f := by
   rw [← sub_add_cancel s' s, ← memSobolev_besselPotential_iff, besselPotential]
   refine hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_
+    fun k ↦ ?_
   -- The symbol `(1 + ‖x‖ ^ 2) ^ ((s' - s) / 2)` has nonpositive order.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E)
     ((s' - s) / 2) k
@@ -248,7 +266,7 @@ theorem MemSobolev.lineDerivOp_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s : 
   rw [SubNegMonoid.sub_eq_add_neg s 1, add_comm, ← memSobolev_besselPotential_iff,
     besselPotential_neg_one_lineDerivOp_eq f]
   refine (hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_).smul _
+    fun k ↦ ?_).smul _
   -- The symbol `⟪x, m⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` has order `0`.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le m
     (-1 / 2) k
@@ -400,30 +418,5 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
   simp [h₁, h₂]
 
 end realFunctions
-
-section fourier
-
-open scoped FourierTransform
-
-/-- **The Fourier transform of an `H^s` function, `s > n / 2`.** For `s > dim E / 2` the Fourier
-transform of a Sobolev function `f ∈ H^s` is an `L¹` function `v` for which
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
-theorem MemSobolev.fourier_memL1_and_memLp {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) :
-    ∃ v : Lp ℂ 1 (volume : Measure E), 𝓕 f = (v : 𝓢'(E, ℂ)) ∧
-      MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-  obtain ⟨v, hv⟩ := hf.fourier_memL1 hs
-  obtain ⟨U, hU⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
-  refine ⟨v, hv, (Lp.memLp U).ae_eq ?_⟩
-  -- The `L²` function `U` represents the weight times `v`, by comparing their pairings.
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwc : Continuous fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := hwg.1.continuous
-  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq U ?_ fun φ => ?_
-  · refine locallyIntegrable_iff.2 fun K hK => ?_
-    exact (L1.integrable_coeFn v).integrableOn.continuousOn_mul hwc.continuousOn hK
-  · rw [← hU, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-    simp only [smul_eq_mul]
-
-end fourier
 
 end TemperedDistribution
