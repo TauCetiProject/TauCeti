@@ -40,8 +40,8 @@ shift `T ^ i` — is read off the determinants rather than off a formula for tho
 * `TauCeti.eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one`: **the vanishing horn**.
 * `TauCeti.cuspFormOfSmulSlashScaleGL_mem_cuspFormCharSpace`: the descent horn carries any
   character `χ₀` that `χ` pulls back from; the dichotomy specializes it to `hfac.χ₀`.
-* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**, in
-  the roadmap's `DirichletCharacter` phrasing — either `χ` factors through `N / l` and `f` is a
+* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**,
+  phrased over a `DirichletCharacter` — either `χ` factors through `N / l` and `f` is a
   cusp form of level `N / l` for the lowered character, or `f = 0`.
 
 ## Implementation notes
