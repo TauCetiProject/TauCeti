@@ -42,8 +42,8 @@ root system is irreducible exactly when its graph is connected.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
 * `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: over a domain with `2 ≠ 0`,
   different component spaces are orthogonal under every invariant form.
-* `RootPairing.Equiv.map_componentSpace`: an equivalence carries component spaces to component
-  spaces.
+* `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`: an
+  equivalence carries component spaces to component spaces, and likewise for coroots.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
   the graph.
 
@@ -97,14 +97,24 @@ theorem corootComponentSpace_def (C : P.Component) :
 
 variable {P}
 
-/-- Roots in different irreducible components are orthogonal. -/
-theorem isOrthogonal_of_componentOf_ne {i j : ι} (h : P.componentOf i ≠ P.componentOf j) :
-    P.IsOrthogonal i j := by
-  by_contra hij
-  have hne : i ≠ j := by
+/-- Roots indexed, along an injective map, by vertices in different components of the pulled-back
+non-orthogonality graph are orthogonal. -/
+theorem isOrthogonal_of_connectedComponentMk_comap_ne {V : Type*} {f : V → ι}
+    (hf : Function.Injective f) {u v : V}
+    (h : (P.nonorthogonalGraph.comap f).connectedComponentMk u ≠
+      (P.nonorthogonalGraph.comap f).connectedComponentMk v) :
+    P.IsOrthogonal (f u) (f v) := by
+  by_contra huv
+  have hne : u ≠ v := by
     rintro rfl
     exact h rfl
-  exact h (SimpleGraph.ConnectedComponent.sound (P.nonorthogonalGraph_adj.mpr ⟨hne, hij⟩).reachable)
+  refine h (SimpleGraph.ConnectedComponent.sound (SimpleGraph.Adj.reachable ?_))
+  exact SimpleGraph.comap_adj.mpr (P.nonorthogonalGraph_adj.mpr ⟨hf.ne hne, huv⟩)
+
+/-- Roots in different irreducible components are orthogonal. -/
+theorem isOrthogonal_of_componentOf_ne {i j : ι} (h : P.componentOf i ≠ P.componentOf j) :
+    P.IsOrthogonal i j :=
+  isOrthogonal_of_connectedComponentMk_comap_ne Function.injective_id h
 
 /-- Roots with a nonzero pairing lie in the same irreducible component. -/
 theorem componentOf_eq_of_pairing_ne_zero {i j : ι} (h : P.pairing i j ≠ 0) :
@@ -213,21 +223,13 @@ theorem componentSpace_mem_invtSubmodule (C : P.Component) (i : ι) :
 theorem InvariantForm.apply_eq_zero_of_mem_componentSpace [IsDomain R] [NeZero (2 : R)]
     (B : P.InvariantForm) {C D : P.Component} (hCD : C ≠ D) {x y : M}
     (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace D) : B.form x y = 0 := by
-  have hroot (j : ι) (hj : j ∈ D.supp) : B.form x (P.root j) = 0 := by
-    have hle : P.componentSpace C ≤ LinearMap.ker (B.form.flip (P.root j)) := by
-      refine span_le.mpr ?_
-      rintro _ ⟨i, hi, rfl⟩
-      have hij : P.componentOf i ≠ P.componentOf j := by
-        have hi' : P.componentOf i = C := (C.mem_supp_iff i).mp hi
-        have hj' : P.componentOf j = D := (D.mem_supp_iff j).mp hj
-        rwa [hi', hj']
-      exact (B.apply_root_root_zero_iff i j).mpr (isOrthogonal_of_componentOf_ne hij).1
-    exact hle hx
-  have hle : P.componentSpace D ≤ LinearMap.ker (B.form x) := by
-    refine span_le.mpr ?_
-    rintro _ ⟨j, hj, rfl⟩
-    exact hroot j hj
-  exact hle hy
+  have hle : Submodule.map₂ B.form (P.componentSpace C) (P.componentSpace D) ≤ ⊥ := by
+    rw [componentSpace_def, componentSpace_def, Submodule.map₂_span_span, span_le,
+      Set.image2_subset_iff]
+    rintro _ ⟨i, hi, rfl⟩ _ ⟨j, hj, rfl⟩
+    refine (B.apply_root_root_zero_iff i j).mpr (isOrthogonal_of_componentOf_ne ?_).1
+    exact ((C.mem_supp_iff i).mp hi).trans_ne (hCD.trans_eq ((D.mem_supp_iff j).mp hj).symm)
+  exact (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
 
 /-! ### Transport along equivalences -/
 
@@ -258,6 +260,11 @@ theorem Equiv.componentEquiv_componentOf (e : P.Equiv Q) (i : ι) :
     e.componentEquiv (P.componentOf i) = Q.componentOf (e.indexEquiv i) :=
   (rfl)
 
+@[simp]
+theorem Equiv.componentEquiv_symm_componentOf (e : P.Equiv Q) (i : ι₂) :
+    e.componentEquiv.symm (Q.componentOf i) = P.componentOf (e.indexEquiv.symm i) :=
+  e.componentEquiv.symm_apply_eq.mpr (by simp)
+
 theorem Equiv.indexEquiv_mem_supp_iff (e : P.Equiv Q) {C : P.Component} {i : ι} :
     e.indexEquiv i ∈ (e.componentEquiv C).supp ↔ i ∈ C.supp := by
   simp only [SimpleGraph.ConnectedComponent.mem_supp_iff, ← e.componentEquiv_componentOf,
@@ -278,6 +285,23 @@ theorem Equiv.map_componentSpace (e : P.Equiv Q) (C : P.Component) :
     refine ⟨e.indexEquiv.symm i, ?_, ?_⟩
     · exact e.indexEquiv_mem_supp_iff.mp (by simpa using hi)
     · simpa using Hom.root_weightMap_apply P Q (e.indexEquiv.symm i) e.toHom
+
+/-- An equivalence of root pairings carries coroot component spaces to coroot component spaces. -/
+theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
+    (Q.corootComponentSpace (e.componentEquiv C)).map e.coweightEquiv.toLinearMap =
+      P.corootComponentSpace C := by
+  rw [corootComponentSpace_def, corootComponentSpace_def, Submodule.map_span]
+  congr 1
+  ext x
+  simp only [Set.mem_image, LinearEquiv.coe_coe, exists_exists_and_eq_and, coweightEquiv_apply]
+  constructor
+  · rintro ⟨i, hi, rfl⟩
+    refine ⟨e.indexEquiv.symm i, ?_, ?_⟩
+    · exact e.indexEquiv_mem_supp_iff.mp (by simpa using hi)
+    · exact (Hom.coroot_coweightMap_apply P Q i e.toHom).symm
+  · rintro ⟨i, hi, rfl⟩
+    exact ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr hi,
+      by simpa using Hom.coroot_coweightMap_apply P Q (e.indexEquiv i) e.toHom⟩
 
 end Equiv
 

@@ -95,30 +95,19 @@ private theorem isOrthogonal_of_connectedComponentMk_ne {i j : b.support}
     (h : (diagramGraph b.cartanMatrix).connectedComponentMk i ≠
       (diagramGraph b.cartanMatrix).connectedComponentMk j) :
     P.IsOrthogonal i j := by
-  by_contra hij
-  have hne : i ≠ j := by
-    rintro rfl
-    exact h rfl
-  refine h (SimpleGraph.ConnectedComponent.sound (SimpleGraph.Adj.reachable ?_))
-  rw [diagramGraph_cartanMatrix_eq_comap, SimpleGraph.comap_adj, nonorthogonalGraph_adj]
-  exact ⟨fun h ↦ hne (Subtype.ext h), hij⟩
+  rw [diagramGraph_cartanMatrix_eq_comap] at h
+  exact isOrthogonal_of_connectedComponentMk_comap_ne Subtype.val_injective h
 
 /-- Different diagram components have orthogonal spans. -/
 private theorem apply_eq_zero_of_mem_of_mem {C D : (diagramGraph b.cartanMatrix).ConnectedComponent}
     (h : C ≠ D) {x : M} {y : N} (hx : x ∈ b.rootSpanOf C) (hy : y ∈ b.corootSpanOf D) :
     P.toLinearMap x y = 0 := by
-  have hroot (j : b.support) (hj : j ∈ D.supp) : P.toLinearMap x (P.coroot j) = 0 := by
-    have hle : b.rootSpanOf C ≤ LinearMap.ker (P.coroot' j) := by
-      refine span_le.mpr ?_
-      rintro _ ⟨_, ⟨i, hi, rfl⟩, rfl⟩
-      refine (isOrthogonal_of_connectedComponentMk_ne ?_).1
-      rwa [(C.mem_supp_iff i).mp hi, (D.mem_supp_iff j).mp hj]
-    exact hle hx
-  have hle : b.corootSpanOf D ≤ LinearMap.ker (P.toLinearMap x) := by
-    refine span_le.mpr ?_
-    rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-    exact hroot j hj
-  exact hle hy
+  have hle : Submodule.map₂ P.toLinearMap (b.rootSpanOf C) (b.corootSpanOf D) ≤ ⊥ := by
+    rw [Submodule.map₂_span_span, span_le, Set.image2_subset_iff]
+    rintro _ ⟨_, ⟨i, hi, rfl⟩, rfl⟩ _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+    refine (isOrthogonal_of_connectedComponentMk_ne ?_).1
+    rwa [(C.mem_supp_iff i).mp hi, (D.mem_supp_iff j).mp hj]
+  exact (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
 
 /-- A root is attached to at most one diagram component. -/
 private theorem eq_of_attachedTo {C D : (diagramGraph b.cartanMatrix).ConnectedComponent}
