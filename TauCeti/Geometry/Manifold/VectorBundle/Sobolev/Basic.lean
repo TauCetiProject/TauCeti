@@ -44,6 +44,8 @@ subsequence. Forgetting the highest derivative of every component gives the cont
 
 ## Main definitions
 
+* `TauCeti.SobolevData.mapL`: a continuous linear map on each chart applied to every component of a
+  tuple in that chart.
 * `TauCeti.FiniteBundleAtlas.chartValueL`: the `F`-valued `Lᵖ` function on `A.image i` assembled
   from the chart-`i` Sobolev components of a tuple.
 * `TauCeti.sobolevSections A μ p k`: the tuples of chartwise Sobolev components of sections.
@@ -55,6 +57,8 @@ subsequence. Forgetting the highest derivative of every component gives the cont
   components of a section exactly when its chart data satisfy the cocycle relations.
 * `TauCeti.isClosed_sobolevSections`, `TauCeti.SobolevSection.instCompleteSpace`: completeness.
 * `TauCeti.SobolevSection.lowerOrderL`: the continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`.
+* `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
+  section whose coordinates its chart data are.
 
 ## References
 
@@ -91,6 +95,26 @@ of the standard basis `Module.finBasis ℝ F` of the model fibre. -/
 abbrev SobolevData : Type u :=
   ∀ (i : Fin A.n) (_ : Fin (finrank ℝ F)), Wkp μ (A.image i) p k
 
+namespace SobolevData
+
+variable {A μ p k} {k' : ℕ}
+
+/-- Applies a continuous linear map between scalar Sobolev spaces of the image of chart `i` to
+every chart-`i` component of a tuple. -/
+def mapL (T : ∀ i : Fin A.n, Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k') :
+    SobolevData A μ p k →L[ℝ] SobolevData A μ p k' :=
+  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun _ ↦ T i
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [FiniteDimensional ℝ F] in
+@[simp]
+theorem mapL_apply (T : ∀ i : Fin A.n, Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k')
+    (w : SobolevData A μ p k) (i : Fin A.n) (j : Fin (finrank ℝ F)) :
+    mapL T w i j = T i (w i j) := by
+  rfl
+
+end SobolevData
+
 namespace FiniteBundleAtlas
 
 /-- The `F`-valued `Lᵖ` function on the image of chart `i` whose components in the basis
@@ -121,6 +145,35 @@ theorem chartValueL_apply_ae (i : Fin A.n) (w : SobolevData A μ p k) :
   filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
   rw [heq, hy, Finset.sum_apply]
   exact Finset.sum_congr rfl fun j _ ↦ by simp [hy' j]
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+variable {A μ p k} in
+/-- The components of the chart data of a tuple of Sobolev functions are the values of its
+entries: if the chart data in chart `i` agree with `A.coord i s`, then the `j`th component of
+`A.coord i s` in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`, almost
+everywhere on `A.image i`. -/
+theorem value_ae_eq_repr_coord {w : SobolevData A μ p k} {s : ∀ x, V x} {i : Fin A.n}
+    (hs : A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (j : Fin (finrank ℝ F)) :
+    (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j := by
+  filter_upwards [A.chartValueL_apply_ae μ p k i w, hs] with y hy hy'
+  rw [← hy', hy, (finBasis ℝ F).repr_sum_self]
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+variable {A μ p k} in
+/-- Conversely, if the values of the entries of a tuple of Sobolev functions in chart `i` are the
+components of `A.coord i s` in the basis `Module.finBasis ℝ F`, then the chart data in chart `i`
+agree with `A.coord i s`, almost everywhere on `A.image i`. -/
+theorem chartValueL_ae_eq_coord_of_value_ae_eq {w : SobolevData A μ p k} {s : ∀ x, V x}
+    {i : Fin A.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j) :
+    A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  filter_upwards [A.chartValueL_apply_ae μ p k i w, ae_all_iff.2 h] with y hy hj
+  rw [hy]
+  simp_rw [hj]
+  exact (finBasis ℝ F).sum_repr _
 
 omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
 /-- Forgetting the highest derivative of every component does not change the chart data. -/
@@ -287,14 +340,22 @@ theorem ext {w w' : SobolevSection A μ p k}
       Wkp.value k ((w' : SobolevData A μ p k) i j)) : w = w' :=
   Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ext k (h i j)
 
+omit [IsManifold 𝓘(ℝ, E) 1 M] in
+variable {A μ p k} in
+/-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the coordinates of the same
+section are equal. -/
+theorem eq_of_ae_eq_coord {w w' : SobolevSection A μ p k} {s : ∀ x, V x}
+    (hw : ∀ i, A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (hw' : ∀ i, A.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i s) :
+    w = w' :=
+  ext A μ p k fun i j ↦ Lp.ext <|
+    (FiniteBundleAtlas.value_ae_eq_repr_coord (hw i) j).trans
+      (FiniteBundleAtlas.value_ae_eq_repr_coord (hw' i) j).symm
+
 /-- The continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`, forgetting the highest derivative of
 every component. -/
 def lowerOrderL : SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ p k :=
-  ((ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦ (Wkp.lowerOrderL k).comp
-    ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (A.image i) p (k + 1)) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin A.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (A.image i) p (k + 1)) i))).comp
+  ((SobolevData.mapL fun _ ↦ Wkp.lowerOrderL k).comp
     (sobolevSections A μ p (k + 1)).subtypeL).codRestrict (sobolevSections A μ p k) fun w ↦ by
       obtain ⟨s, hs⟩ := w.2
       refine ⟨s, fun i ↦ ?_⟩
