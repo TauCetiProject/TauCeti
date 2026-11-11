@@ -27,6 +27,9 @@ set (`TauCeti.isNullSet_boundary`).
 
 ## Main results
 
+* `LocallyLipschitzOn.comp_extChartAt_symm`: a map locally Lipschitz on an open set `U`, read
+  through the inverse of an extended chart, is locally Lipschitz on the interior of the chart
+  target, within the preimage of `U`.
 * `LocallyLipschitzOn.isNullSet_setOf_not_mdifferentiableAt`: the points of an open set `U` at
   which a map locally Lipschitz on `U` is not differentiable form a null set.
 * `LocallyLipschitzOn.ae_mdifferentiableAt_of_mem`: such a map is differentiable at almost every
@@ -44,13 +47,38 @@ public section
 open Bundle MeasureTheory Metric Set
 open scoped Manifold NNReal Topology
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {f : M → F} {U : Set M}
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] {U : Set M}
+
+namespace LocallyLipschitzOn
+
+/-- A map locally Lipschitz on an open set `U` of a Riemannian manifold, read through the inverse
+of an extended chart, is locally Lipschitz on the interior of the chart target, intersected with
+the preimage of `U`. -/
+theorem comp_extChartAt_symm {X : Type*} [PseudoEMetricSpace X] {g : M → X}
+    (hg : LocallyLipschitzOn U g) (hU : IsOpen U) (p : M) :
+    LocallyLipschitzOn (interior (extChartAt I p).target ∩ (extChartAt I p).symm ⁻¹' U)
+      (g ∘ (extChartAt I p).symm) := by
+  intro y hy
+  obtain ⟨K, t, ht, hK⟩ := hg hy.2
+  rw [nhdsWithin_eq_nhds.2 (hU.mem_nhds hy.2)] at ht
+  have he : ContMDiffAt 𝓘(ℝ, E) I 1 (extChartAt I p).symm y :=
+    (contMDiffOn_extChartAt_symm p y (interior_subset hy.1)).contMDiffAt
+      (mem_interior_iff_mem_nhds.1 hy.1)
+  obtain ⟨r, hr, C, hC⟩ :=
+    TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt (I := I) he
+  obtain ⟨r', hr', hr't⟩ := Metric.mem_nhds_iff.1 (he.continuousAt.preimage_mem_nhds ht)
+  refine ⟨K * C, ball y (min r r'), mem_nhdsWithin_of_mem_nhds
+    (ball_mem_nhds y (lt_min hr hr')), hK.comp (hC.mono (ball_subset_ball (min_le_left _ _)))
+      fun z hz ↦ hr't (ball_subset_ball (min_le_right _ _) hz)⟩
+
+end LocallyLipschitzOn
+
+variable [FiniteDimensional ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {f : M → F}
 
 namespace LocallyLipschitzOn
 
@@ -67,26 +95,14 @@ theorem isNullSet_setOf_not_mdifferentiableAt [MeasurableSpace E] [BorelSpace E]
     let V := interior e.target ∩ e.symm ⁻¹' U
     have hV : IsOpen V := ((continuousOn_extChartAt_symm p).mono interior_subset)
       |>.isOpen_inter_preimage isOpen_interior hU
-    have hlocal : LocallyLipschitzOn V (f ∘ e.symm) := by
-      intro y hy
-      obtain ⟨K, t, ht, hK⟩ := hf hy.2
-      rw [nhdsWithin_eq_nhds.2 (hU.mem_nhds hy.2)] at ht
-      have he : ContMDiffAt 𝓘(ℝ, E) I 1 e.symm y :=
-        (contMDiffOn_extChartAt_symm p y (interior_subset hy.1)).contMDiffAt
-          (mem_interior_iff_mem_nhds.1 hy.1)
-      obtain ⟨r, hr, C, hC⟩ :=
-        TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt (I := I) he
-      obtain ⟨r', hr', hr't⟩ := Metric.mem_nhds_iff.1 (he.continuousAt.preimage_mem_nhds ht)
-      refine ⟨K * C, ball y (min r r'), mem_nhdsWithin_of_mem_nhds
-        (ball_mem_nhds y (lt_min hr hr')), hK.comp (hC.mono (ball_subset_ball (min_le_left _ _)))
-          fun z hz ↦ hr't (ball_subset_ball (min_le_right _ _) hz)⟩
     have hz : μ {y | y ∈ V ∧ ¬DifferentiableAt ℝ (f ∘ e.symm) y} = 0 := by
-      simpa only [ae_iff, not_imp] using hlocal.ae_differentiableAt_of_mem (μ := μ) hV
+      simpa only [ae_iff, not_imp] using
+        (hf.comp_extChartAt_symm hU p).ae_differentiableAt_of_mem (μ := μ) hV
     refine measure_mono_null ?_ hz
     rintro _ ⟨x, ⟨⟨hxU, hxint, hxbad⟩, hxsrc⟩, rfl⟩
     have hxchart : x ∈ (chartAt H p).source := by simpa only [extChartAt_source] using hxsrc
     refine ⟨⟨(I.isInteriorPoint_iff_of_mem_atlas one_ne_zero (chart_mem_atlas H p)
-      hxchart).1 hxint, show e.symm (e x) ∈ U by rwa [e.left_inv hxsrc]⟩, fun hd ↦ ?_⟩
+      hxchart).1 hxint, by rw [mem_preimage, e.left_inv hxsrc]; exact hxU⟩, fun hd ↦ ?_⟩
     refine hxbad ((mdifferentiableAt_iff_of_mem_source hxchart (mem_chart_source F (f x))).2
       ⟨hf.continuousOn.continuousAt (hU.mem_nhds hxU), ?_⟩)
     simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp] using
