@@ -11,8 +11,10 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -42,6 +44,9 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
 * `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
   computes the Hessian against the value of the vector field `Y`.
+* `TauCeti.mvfderiv_mvfderiv_extend_eq_criticalHessian`: at any point, differentiating `df(W)`
+  along `v`, for `W` the vector field with constant coordinates `w` in the preferred chart,
+  computes the Hessian `criticalHessian I f x v w`.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
@@ -292,13 +297,14 @@ theorem finrank_le_manifoldMorseIndex_of_negDef_criticalHessian
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
   exact le_sigNeg_of_negDef _ hW
 
+omit [FiniteDimensional ℝ E] in
 /-- There is a negative-definite tangent subspace whose dimension is the Morse index. -/
 theorem exists_negDef_subspace_finrank_eq_manifoldMorseIndex :
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W = manifoldMorseIndex I f x ∧
         ((-(criticalHessian I f x).toBilinForm.toQuadraticMap).restrict W).PosDef := by
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
-  exact exists_finrank_eq_sigNeg_and_negDef _
+  exact QuadraticForm.exists_submodule_finrank_eq_sigNeg_and_negDef _
 
 /-- A tangent subspace on which the critical Hessian is positive definite has dimension at most
 the Morse index of `-f`. -/
@@ -309,13 +315,14 @@ theorem finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
   exact le_sigPos_of_posDef _ hW
 
+omit [FiniteDimensional ℝ E] in
 /-- There is a positive-definite tangent subspace whose dimension is the Morse index of `-f`. -/
 theorem exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg :
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W = manifoldMorseIndex I (-f) x ∧
         ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef := by
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
-  exact exists_finrank_eq_sigPos_and_posDef _
+  exact QuadraticForm.exists_submodule_finrank_eq_sigPos_and_posDef _
 
 /-- A tangent subspace on which the critical Hessian is positive definite has dimension at most the
 dimension of the manifold minus the Morse index. -/
@@ -331,8 +338,10 @@ theorem finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
   have : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
   lia
 
+omit [FiniteDimensional ℝ E] in
 /-- At a nondegenerate critical point there is a positive-definite tangent subspace of dimension
-the dimension of the manifold minus the Morse index. -/
+the dimension of the manifold minus the Morse index. For a space that is not finite, the dimension
+is `0` by convention and the index is `0`. -/
 theorem IsManifoldNondegenerateCriticalPoint.exists_posDef_subspace_finrank_add_index_eq
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     ∃ W : Submodule ℝ (TangentSpace I x),
@@ -523,8 +532,6 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
       fderivWithin_univ] using
       eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
   -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
-  have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
-    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
   have hzero : fderiv ℝ g (ψ x) = 0 := by
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
   rw [criticalHessian_def, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
@@ -532,6 +539,25 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
   simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
   exact (ContinuousLinearMap.flip_apply (fderiv ℝ (fderiv ℝ g) (ψ x)) v (Y x)).symm
+
+/-- At every point, critical or not, differentiating `df(W)` along `v`, where
+`W = FiberBundle.extend E w` is the vector field with constant coordinates `w` in the preferred
+chart at `x`, gives `criticalHessian I f x v w`. -/
+theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ mvfderiv I f y (FiberBundle.extend E w y)) x v =
+      criticalHessian I f x v w := by
+  let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
+  have hDg : DifferentiableAt ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x) :=
+    (hf.contDiffAt_comp_extChartAt_symm.fderiv_right
+      (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
+  -- Near `x`, `df(extend w)` is the coordinate expression of `df` along `w`, read in the chart.
+  rw [(Manifold.mvfderiv_extend_eventuallyEq (hf.of_le one_le_two) w).mvfderiv_eq,
+    mvfderiv_comp_apply_of_differentiableAt (hDg.clm_apply (differentiableAt_const w))
+      (mdifferentiableAt_extChartAt (mem_chart_source H x)),
+    mvfderiv_apply_of_eventuallyEq_extChartAt EventuallyEq.rfl, criticalHessian_def]
+  -- `v` is a tangent vector at `x`, which is by definition a vector of the model space `E`.
+  exact fderiv_clm_apply_const_apply hDg w v
 
 section Tangent
 

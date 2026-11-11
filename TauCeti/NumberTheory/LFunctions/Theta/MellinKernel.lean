@@ -230,8 +230,6 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
           (u / (ZLattice.covolume (idealLattice K I))⁻¹ ^ 2) := by
       rw [archNorm_mult_sq, h16]
       field_simp
-    have hN' : (0 : ℝ) < archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) ^
-        (1 / (Module.finrank ℚ K : ℝ)) := Real.rpow_pos_of_pos hN _
     rw [covolume_mixedDual, covolume_idealLattice_dual hJ, mixedDual_idealLattice hJ,
       latticeTheta_map_traceToEuclidean, surfaceMul_apply, hrad]
     congr 1

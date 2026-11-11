@@ -518,9 +518,6 @@ theorem normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor (hf : f.IsMultip
   -- `N(P)` divides `N(A) = p ^ k`, so it is a positive power of `p`, and `p ∈ P`.
   obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp
     ((mem_normFiber K).mp hA ▸ map_dvd Ideal.absNorm hdvd)
-  have hj0 : j ≠ 0 := by
-    rintro rfl
-    exact P.isPrime.ne_top (Ideal.absNorm_eq_one_iff.mp (by simpa using hj))
   have hmem := Ideal.absNorm_mem P.asIdeal
   rw [hj, Nat.cast_pow] at hmem
   exact P.isPrime.mem_of_pow_mem _ hmem
