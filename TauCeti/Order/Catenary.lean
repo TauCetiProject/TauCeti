@@ -32,6 +32,9 @@ Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the ta
 * `TauCeti.Order.IsCatenary.of_forall_exists_ordConnected`: a preorder is catenary as soon as any
   two comparable elements lie in a common catenary order-connected subset.
 * An order of Krull dimension at most one is catenary.
+* `TauCeti.Order.IsCatenary.exists_covBy_series_of_lt`: in a catenary preorder any `a < b` are
+  joined by a saturated chain; `TauCeti.Order.IsCatenary.exists_covBy_series` is the form for
+  `a ≤ b` in a catenary partial order.
 * `TauCeti.Order.IsCatenary.krullDim_Icc_eq_length`: in a catenary preorder every saturated chain
   from `a` to `b` has length the Krull dimension of the interval `[a, b]`.
 * `TauCeti.Order.krullDim_Icc_eq_length_of_add`: the same conclusion in any preorder where Krull
@@ -208,8 +211,10 @@ private theorem exists_covBy_series_forall_length_le {a b : α} (t₀ : LTSeries
   have := hmax u (by simp [u, hta]) (by simp [u, htb])
   simp [u] at this
 
-/-- In a catenary preorder, any `a < b` are joined by a saturated chain. -/
-private theorem exists_covBy_series_of_lt {a b : α} (hab : a < b) :
+/-- In a catenary preorder, any `a < b` are joined by a saturated chain. This is the preorder
+form of `exists_covBy_series`: if `a ≤ b`, `b ≤ a` and `a ≠ b`, then no saturated chain joins
+`a` to `b`. -/
+theorem exists_covBy_series_of_lt {a b : α} (hab : a < b) :
     ∃ s : RelSeries {(x, y) : α × α | x ⋖ y}, s.head = a ∧ s.last = b :=
   let ⟨s, hsa, hsb, _⟩ := exists_covBy_series_forall_length_le
     ((RelSeries.singleton _ a).snoc b (by simpa using hab)) (by simp) (by simp)
