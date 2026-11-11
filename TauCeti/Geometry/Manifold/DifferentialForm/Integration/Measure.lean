@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVar
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+
 /-!
 # The measure of a top form
 
@@ -49,6 +51,8 @@ this construction gives the Liouville measure of a symplectic manifold.
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
+  measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
   `|Φ^* ψ|` to `|ψ|`.
 
@@ -70,6 +74,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I 1 M] [MeasurableSpace M] [BorelSpace M] {k : ℕ} [hk : Fact (finrank ℝ E = k)]
 
 attribute [local instance] TauCeti.extChartAtMeasurableSpaceE TauCeti.extChartAtBorelSpaceE
+
+omit [FiniteDimensional ℝ E] in
+/-- Transporting a basis along the identity equivalence does not change it. -/
+private theorem map_basis_refl {ι : Type*} (b : Module.Basis ι ℝ E) :
+    b.map (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv = b :=
+  Module.Basis.eq_of_apply_eq fun _ ↦ rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- The image of a measure under the identity equivalence is the measure itself. -/
+private theorem map_measure_refl [MeasurableSpace E] (μ : Measure E) :
+    μ.map (ContinuousLinearEquiv.refl ℝ E) = μ := by
+  rw [ContinuousLinearEquiv.coe_refl', Measure.map_id]
 
 namespace TauCeti
 
@@ -114,9 +130,10 @@ private theorem chartMeasure_restrict_overlap (φ : RoughForm I M ℝ k) (α β 
     (isOpen_extChartAt_source α).measurableSet.inter (isOpen_extChartAt_source β).measurableSet
   ext s hs
   have hcov := φ.setLIntegral_ofReal_abs_inChartAt_mpullback (finBasisOfFinrankEq ℝ E hk.out)
-    (injOn_id _) (fun x _ ↦ mdifferentiableAt_id) (hs.inter hU).isChartMeasurable
-    (inter_subset_right : s ∩ U ⊆ U) (finBasisOfFinrankEq ℝ E hk.out).addHaar
-  rw [mpullback_id, image_id] at hcov
+    (ContinuousLinearEquiv.refl ℝ E) (injOn_id _) (fun x _ ↦ mdifferentiableAt_id)
+    (hs.inter hU).isChartMeasurable (inter_subset_right : s ∩ U ⊆ U)
+    (finBasisOfFinrankEq ℝ E hk.out).addHaar
+  rw [mpullback_id, image_id, map_basis_refl, map_measure_refl] at hcov
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, chartMeasure_apply φ α (hs.inter hU),
     chartMeasure_apply φ β (hs.inter hU),
     inter_eq_left.2 (inter_subset_right.trans inter_subset_left),
@@ -279,6 +296,50 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
 
+/-! ### Top forms on the model space -/
+
+section ModelSpace
+
+/-- **The measure of a top form on the model space.** On `E`, regarded as a manifold in the
+identity chart, `|φ|` is the Haar measure normalized by any basis `b` of `E`, weighted by the
+absolute value `|φ_x(b)|` of the coefficient of `φ` in that basis. -/
+theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
+    [hE : BorelSpace E] (φ : RoughForm 𝓘(ℝ, E) E ℝ k) (b : Basis (Fin k) ℝ E) :
+    φ.measure = b.addHaar.withDensity fun x ↦ ENNReal.ofReal |φ x b| := by
+  obtain rfl : mE = borel E := hE.measurable_eq
+  set b₀ := finBasisOfFinrankEq ℝ E hk.out
+  refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
+  -- In the identity chart, the coefficient in `b₀` is `det_b b₀` times the coefficient in `b`.
+  have hchart (y : E) : φ.inChartAt α y b₀ = b.det b₀ * φ y b := by
+    -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
+    rw [inChartAt_apply, extChartAt_model_space_eq_id]
+    simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
+      mfderivWithin_univ, mfderiv_id]
+    have h := congr($((φ y).toAlternatingMap.eq_smul_basis_det b) b₀)
+    rw [smul_apply, smul_eq_mul] at h
+    exact h.trans (mul_comm _ _)
+  have hdet : ENNReal.ofReal |(b.det b₀)⁻¹| * ENNReal.ofReal |b.det b₀| = 1 := by
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b₀).ne_zero,
+      abs_one, ENNReal.ofReal_one]
+  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
+    b.addHaar_eq_smul_of_basis b₀, Measure.restrict_smul, lintegral_smul_measure]
+  have hint : ∫⁻ y in s, ENNReal.ofReal |φ.inChartAt α y b₀| ∂b.addHaar =
+      ENNReal.ofReal |b.det b₀| * ∫⁻ y in s, ENNReal.ofReal |φ y b| ∂b.addHaar := by
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine setLIntegral_congr_fun hs fun y _ ↦ ?_
+    rw [hchart, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
+  rw [hint, smul_eq_mul, ← mul_assoc, hdet, one_mul]
+
+/-- **The measure of a constant top form on the model space.** If a top form `φ` on `E` takes the
+same value `c` on a basis `b` at every point, then `|φ|` is `|c|` times the Haar measure
+normalized by `b`. -/
+theorem measure_eq_smul_addHaar [MeasurableSpace E] [BorelSpace E]
+    {φ : RoughForm 𝓘(ℝ, E) E ℝ k} (b : Basis (Fin k) ℝ E) {c : ℝ} (h : ∀ x, φ x b = c) :
+    φ.measure = ENNReal.ofReal |c| • b.addHaar := by
+  simp_rw [measure_eq_withDensity_addHaar φ b, h, withDensity_const]
+
+end ModelSpace
+
 end RoughForm
 
 end TauCeti
@@ -320,8 +381,9 @@ theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferenti
     simpa only [mem_preimage, Homeomorph.symm_apply_apply] using hx.2.2
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.map_apply Φ.measurable hsU,
     RoughForm.measure_apply_of_subset _ hpre (hsub.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ Φ.injective.injOn (fun x _ ↦ hΦ x)
-      hpre.isChartMeasurable hsub,
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
+      Φ.injective.injOn (fun x _ ↦ hΦ x) hpre.isChartMeasurable hsub,
+    map_basis_refl, map_measure_refl,
     image_preimage_eq _ Φ.surjective,
     ψ.measure_apply_of_subset hsU (inter_subset_right.trans inter_subset_left)]
 

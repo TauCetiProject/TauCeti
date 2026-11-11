@@ -159,7 +159,7 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine ReducedTensorWords.gradedPiece_induction
-    (motive := fun w ↦ F w ∈ (G.shift 1).piece (D + 1)) hz ?_ ?_ ?_ ?_
+    (motive := fun w ↦ F w ∈ (G.shift 1).piece (D + 1)) hz ?_ ?_ ?_
   · intro n hn e x hx hD
     let d : ℕ → ℤ := fun i ↦ if h : i < n then e ⟨i, h⟩ + 1 else 0
     let y : ℕ → A := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
@@ -183,8 +183,6 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
     have hdeg : D + 1 + 1 = (D + (n : ℤ)) + (2 - (n : ℤ)) := by ring
     rw [hdeg]
     simpa only [evalNat_def] using hop
-  · rw [_root_.map_zero]
-    exact Submodule.zero_mem _
   · intro u v _hu _hv ihu ihv
     rw [map_add]
     exact Submodule.add_mem _ ihu ihv

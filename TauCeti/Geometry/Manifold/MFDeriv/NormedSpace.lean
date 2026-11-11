@@ -9,12 +9,12 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
-# Vanishing of the derivative of a vector-valued function
+# Derivatives of vector-valued functions
 
 For a function `g` from a manifold to a normed space `F`, Mathlib has two derivatives at `x`:
 `mfderiv I 𝓘(𝕜, F) g x`, with values in the tangent space `TangentSpace 𝓘(𝕜, F) (g x)`, and
 `mvfderiv I g x`, with values in `F` itself. They differ by the identification of the tangent space
-with `F`, so one vanishes exactly when the other does.
+with `F`. The canonical identification relates their vanishing, injectivity and ranges.
 
 ## Main results
 
@@ -29,9 +29,15 @@ with `F`, so one vanishes exactly when the other does.
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
+  family along a `C¹` manifold-valued map is continuous.
+* `TauCeti.mfderiv_apply_eq_zero_of_const_line`: the derivative of a map from a normed space
+  vanishes on a direction along which the map is constant.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
+  submodule.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
@@ -41,6 +47,7 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.injective_mvfderiv_iff`:
   `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
@@ -87,6 +94,14 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
+
+/-- The image of a tangent submodule under the vector-valued derivative agrees with its image
+under the manifold derivative into the self model of the target. -/
+@[simp] theorem _root_.Submodule.map_mvfderiv_eq_map_mfderiv {x : M}
+    (S : Submodule 𝕜 (TangentSpace I x)) (f : M → F) :
+    S.map (mvfderiv I f x).toLinearMap = S.map (mfderiv I 𝓘(𝕜, F) f x).toLinearMap := by
+  exact congrArg (fun A : TangentSpace I x →ₗ[𝕜] F ↦ S.map A)
+    (LinearMap.ext fun v ↦ mvfderiv_apply_eq_mfderiv_apply f x v)
 
 /-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
 the germ of the function at `x`. -/
@@ -186,6 +201,18 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
 
+/-- Along a `C¹` map `u : F → M` from a normed space to a manifold, the derivative in the domain
+variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)`, depends continuously on `y`. It is
+a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
+theorem continuous_fderiv_of_contMDiff {u : F → M} {f : F → M → F'}
+    (hu : ContMDiff 𝓘(𝕜, F) I 1 u)
+    (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) :
+    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y :=
+  Continuous.fderiv_one (f := fun y w ↦ f w (u y))
+    (contMDiff_iff_contDiff.mp
+      (hf.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))))
+    continuous_id
+
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
 a complex normed space regarded as a real one. -/
@@ -232,6 +259,14 @@ theorem mvfderiv_fun_sum {ι : Type*} {u : Finset ι} {f : ι → M → F} {x : 
   -- The tangent spaces of `F` in which `mfderiv` takes values are `F` itself.
   rfl
 
+/-- The range of the vector-valued derivative is the image of the manifold derivative's range
+under the canonical identification of the target tangent space with its model. -/
+theorem range_mvfderiv {g : M → F} {x : M} :
+    (mvfderiv I g x).range =
+      (mfderiv I 𝓘(𝕜, F) g x).range.map
+        (NormedSpace.fromTangentSpace (g x)).toLinearMap :=
+  LinearMap.range_comp _ _
+
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/
 theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
@@ -271,5 +306,28 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
   ext v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
   exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
+
+/-- The derivative of a map from a normed space vanishes on a direction `w` along which the map is
+constant. -/
+theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
+    (hconst : ∀ t : 𝕜, f (z + t • w) = f z) : mfderiv 𝓘(𝕜, F) I f z w = 0 := by
+  by_cases hd : MDifferentiableAt 𝓘(𝕜, F) I f z
+  · let c : 𝕜 → F := fun t ↦ z + t • w
+    have hc : HasFDerivAt c ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) 0 :=
+      ((hasFDerivAt_id (0 : 𝕜)).smul_const w).const_add z
+    have hmc : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 = (1 : 𝕜 →L[𝕜] 𝕜).smulRight w := by
+      rw [mfderiv_eq_fderiv, hc.fderiv]
+      -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
+      rfl
+    have hmc' : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 (1 : 𝕜) = w := by
+      rw [hmc]
+      -- Read the tangent spaces of the model spaces as the model spaces.
+      change ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) (1 : 𝕜) = w
+      simp
+    rw [← hmc', ← mfderiv_comp_apply_of_eq (0 : 𝕜) hd hc.differentiableAt.mdifferentiableAt
+      (by simp [c]) (1 : 𝕜), show f ∘ c = fun _ ↦ f z from funext hconst, mfderiv_const]
+    rfl
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
+    rfl
 
 end TauCeti

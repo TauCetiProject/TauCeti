@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 
 /-!
-# Real iterated derivatives of the complex exponential
+# Derivatives of exponential functions
 
 Viewed as a function of a real vector variable, `Complex.exp` has the same iterated derivatives
 as it has over `ℂ`, restricted to real scalars. Since every complex derivative of `exp` is `exp`,
@@ -26,6 +26,21 @@ Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-diffe
 -/
 
 public section
+
+namespace Real
+
+/-- The derivative of an exponential with linear exponent. -/
+@[simp] theorem deriv_exp_mul (a x : ℝ) :
+    deriv (fun y : ℝ => exp (a * y)) x = a * exp (a * x) := by
+  simpa [mul_comm] using (((hasDerivAt_id x).const_mul a).exp).deriv
+
+/-- The norm of the Fréchet derivative of an exponential with linear exponent. -/
+@[simp] theorem norm_fderiv_exp_mul (a x : ℝ) :
+    ‖fderiv ℝ (fun y : ℝ => exp (a * y)) x‖ = |a| * exp (a * x) := by
+  rw [← norm_deriv_eq_norm_fderiv, deriv_exp_mul, Real.norm_eq_abs, abs_mul,
+    abs_of_pos (exp_pos _)]
+
+end Real
 
 namespace TauCeti
 

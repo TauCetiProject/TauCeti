@@ -55,14 +55,14 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
     {ε : ℕ → ℝ} (hε : ∀ n, 0 < ε n) (hεr : ∀ n, ε n ≤ r)
     (hlim : Tendsto ε atTop (𝓝[>] 0)) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun n ↦ ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)⟩ :
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩ :
         ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
   have hr : 0 < r := (hε 0).trans_le (hεr 0)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ hr
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
   have hne : charFun (stableCompensatedPoissonMeasure α β r) t ≠ 0 := by
-    rw [charFun_stableCompensatedPoissonMeasure hα hβ hr]
+    rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
   have hquot : charFun μ t = Complex.exp (stableCharacteristicExponent α β t) /
       charFun (stableCompensatedPoissonMeasure α β r) t := by
@@ -75,7 +75,7 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
   apply ht.congr'
   apply Eventually.of_forall
   intro n
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)
+  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure (α := α) (β := β) (r := r) (hε n)
   simp only [Function.comp_apply, ProbabilityMeasure.coe_mk]
   rw [stableCompensatedPoissonMeasure_split α β (hε n) (hεr n),
     charFun_conv, mul_div_cancel_right₀ _ hne]
@@ -92,7 +92,7 @@ private theorem lintegral_sq_le_of_conv_eq
   have hεr (n : ℕ) : ε n ≤ r := min_le_left _ _
   let ρ (n : ℕ) : ProbabilityMeasure ℝ :=
     ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)⟩
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
   have hεlim : Tendsto ε atTop (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, .of_forall hε⟩
     simpa only [min_eq_right hr.le] using

@@ -98,6 +98,6 @@ theorem maximalProPQuotient.map_injective_of_le_range (f : H →* G) (hf : Topol
       QuotientGroup.map _ _ f hker.le :=
     QuotientGroup.monoidHom_ext _ <| MonoidHom.ext <| maximalProPQuotient.map_mk f hf.continuous
   rw [hmap]
-  exact QuotientGroup.map_injective_of_eq_comap f (proPKernel p G) hker
+  exact (QuotientGroup.map_injective_iff f (proPKernel p G) hker.le).mpr hker
 
 end TauCeti

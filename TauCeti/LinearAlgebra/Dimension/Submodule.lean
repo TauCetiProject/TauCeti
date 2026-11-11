@@ -21,6 +21,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
 subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
+`span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
@@ -28,8 +30,11 @@ The rank of a product `V.prod W` of free submodules is the sum of their ranks ov
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
 `f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. The dimension of the range
 of a linear map is unchanged by composing on the left with an injective map and on the right with a
-surjective one. Conjugating an endomorphism by a linear equivalence preserves the dimension of its
-kernel.
+surjective one, and composing on the left with a map that does not lower the dimension of the range
+does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
+dimension of its kernel.
+The kernel of a surjection from a finite-dimensional space has dimension the difference of the
+dimensions.
 -/
 
 public section
@@ -134,6 +139,28 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
 
+/-- A subspace with more dimensions than a finite set has elements contains a vector outside the
+span of the set. -/
+theorem exists_mem_notMem_span_of_ncard_lt {V : Submodule 𝕜 E} {s : Set E} (hs : s.Finite)
+    (h : s.ncard < finrank 𝕜 V) : ∃ z ∈ V, z ∉ span 𝕜 s := by
+  by_contra! hz
+  have : Module.Finite 𝕜 V := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
+  have h1 := Submodule.finrank_mono (fun u hu ↦ hz u hu : V ≤ span 𝕜 s)
+  have h2 := finrank_span_le_ncard (R := 𝕜) s hs
+  omega
+
+/-- A subspace of dimension at least three contains a vector `x` outside `𝕜 ∙ a` and a vector `z`
+outside `span {a, x}`. -/
+theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ finrank 𝕜 V) :
+    ∃ x ∈ V, x ∉ 𝕜 ∙ a ∧ ∃ z ∈ V, z ∉ span 𝕜 {a, x} := by
+  obtain ⟨x, hxV, hxa⟩ := exists_mem_notMem_span_of_ncard_lt (V := V) (Set.finite_singleton a)
+    (by rw [Set.ncard_singleton]; omega)
+  refine ⟨x, hxV, hxa, exists_mem_notMem_span_of_ncard_lt (Set.toFinite _) ?_⟩
+  have := Set.ncard_insert_le a ({x} : Set E)
+  rw [Set.ncard_singleton] at this
+  omega
+
 end DivisionRing
 
 /-- A submodule meeting the kernel of `f` trivially has rank at most the rank of `f`, since `f`
@@ -175,6 +202,40 @@ theorem finrank_range_comp_comp {V : Type*} [AddCommMonoid V] [Module 𝕜 V] (A
     finrank 𝕜 (range (A ∘ₗ L ∘ₗ B)) = finrank 𝕜 (range L) := by
   rw [range_comp, range_comp_of_range_eq_top _ (range_eq_top.2 hB)]
   exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
+
+/-- If composing a map `A` of finite rank on the left with `P` does not lower the dimension of its
+range, then it does not enlarge its kernel: `ker (P ∘ A) = ker A`. Indeed `P` is then injective on
+the range of `A`. -/
+theorem ker_comp_eq_of_finrank_range_le {K V V₂ V₃ : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [AddCommGroup V₂] [Module K V₂] [AddCommGroup V₃] [Module K V₃]
+    (A : V →ₗ[K] V₂) (P : V₂ →ₗ[K] V₃) [FiniteDimensional K (range A)]
+    (h : finrank K (range A) ≤ finrank K (range (P ∘ₗ A))) : ker (P ∘ₗ A) = ker A := by
+  refine le_antisymm (fun v hv ↦ ?_) (ker_le_ker_comp A P)
+  -- The restriction of `P` to the range of `A` has the same range as `P ∘ A`, hence trivial kernel.
+  set P' := P ∘ₗ (range A).subtype
+  have hrange : range P' = range (P ∘ₗ A) := by
+    rw [range_comp, range_comp, Submodule.range_subtype]
+  have hP' := P'.finrank_range_add_finrank_ker
+  rw [hrange] at hP'
+  have hker : ker P' = ⊥ := Submodule.finrank_eq_zero.1 (by omega)
+  have hAv : (⟨A v, mem_range_self A v⟩ : range A) ∈ ker P' := by
+    simpa [P'] using mem_ker.1 hv
+  rw [hker, Submodule.mem_bot] at hAv
+  exact congrArg Subtype.val hAv
+
+end LinearMap
+
+namespace LinearMap
+
+/-- **Rank–nullity for a surjection**: the kernel of a surjective linear map from a
+finite module has dimension the difference of the dimensions. -/
+theorem finrank_ker_eq_sub_of_surjective {K : Type*} {M : Type v} {N : Type*} [Ring K]
+    [HasRankNullity.{v} K] [StrongRankCondition K] [AddCommGroup M] [Module K M]
+    [Module.Finite K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N) (hf : Function.Surjective f) :
+    Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
+  have h := (ker f).finrank_quotient_add_finrank
+  rw [(f.quotKerEquivOfSurjective hf).finrank_eq] at h
+  omega
 
 end LinearMap
 
