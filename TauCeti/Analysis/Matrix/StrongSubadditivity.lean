@@ -10,8 +10,10 @@ public import TauCeti.Analysis.Matrix.Entropy
 import TauCeti.Analysis.Matrix.Exponential.Log
 import TauCeti.Analysis.Matrix.Kronecker
 import TauCeti.Analysis.Matrix.OperatorJensen
+import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+import TauCeti.LinearAlgebra.Matrix.Vec
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -87,11 +89,6 @@ namespace Matrix
 variable {𝕜 : Type*} [RCLike 𝕜] {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
   [DecidableEq n]
 
-/-- The square root of a positive definite matrix is invertible. -/
-private theorem PosDef.isUnit_det_sqrt {A : Matrix m m 𝕜} (hA : A.PosDef) :
-    IsUnit (CFC.sqrt A).det :=
-  (isUnit_iff_isUnit_det _).1 ((CFC.isUnit_sqrt_iff _ hA.posSemidef.nonneg).2 hA.isUnit)
-
 /-- The *relative modular operator* `Δ(ρ, σ) : X ↦ σ * X * ρ⁻¹` on the Hilbert–Schmidt space of
 `m × m` matrices, as a matrix acting on column-stacked matrices `Matrix.vec X`. -/
 def relativeModularOperator (ρ σ : Matrix m m 𝕜) : Matrix (m × m) (m × m) 𝕜 :=
@@ -106,11 +103,6 @@ theorem relativeModularOperator_def (ρ σ : Matrix m m 𝕜) :
 theorem relativeModularOperator_mulVec_vec (ρ σ X : Matrix m m 𝕜) :
     relativeModularOperator ρ σ *ᵥ vec X = vec (σ * X * ρ⁻¹) := by
   rw [relativeModularOperator_def, kronecker_mulVec_vec, transpose_transpose]
-
-/-- The relative modular operator of two positive definite matrices is positive definite. -/
-theorem posDef_relativeModularOperator {ρ σ : Matrix m m 𝕜} (hρ : ρ.PosDef) (hσ : σ.PosDef) :
-    (relativeModularOperator ρ σ).PosDef :=
-  hρ.inv.transpose.kronecker hσ
 
 /-- For positive definite `ρ` and `σ`, the logarithm of `Δ(ρ, σ)` acts by
 `X ↦ log σ * X - X * log ρ`. -/
@@ -133,22 +125,13 @@ theorem PosDef.star_vec_dotProduct_cfc_log_relativeModularOperator_mulVec_vec {�
   have hr : (CFC.sqrt ρ).IsHermitian :=
     (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian
   have hrr := CFC.sqrt_mul_sqrt_self ρ hρ.posSemidef.nonneg
-  rw [hρ.cfc_log_relativeModularOperator hσ, sub_mulVec, dotProduct_sub, kronecker_mulVec_vec,
-    kronecker_mulVec_vec, star_vec_dotProduct_vec, star_vec_dotProduct_vec, transpose_transpose,
-    transpose_one, hr.eq, Matrix.mul_one, Matrix.one_mul,
-    ← Matrix.mul_assoc (CFC.sqrt ρ) (CFC.sqrt ρ), hrr, trace_mul_comm, Matrix.mul_assoc, hrr,
-    mul_sub, trace_sub, trace_mul_comm ρ (cfc Real.log σ)]
-  ring
-
-omit [DecidableEq m] in
-/-- Two square matrices acting on column-stacked matrices agree when their sesquilinear forms
-agree on all column-stacked matrices. -/
-private theorem eq_of_star_vec_dotProduct_mulVec_vec {M N : Matrix (m × m) (m × m) 𝕜}
-    (h : ∀ X Y : Matrix m m 𝕜, star (vec X) ⬝ᵥ M *ᵥ vec Y = star (vec X) ⬝ᵥ N *ᵥ vec Y) :
-    M = N := by
-  classical
-  ext p q
-  simpa [vec_single] using h (single p.2 p.1 1) (single q.2 q.1 1)
+  -- Vectorization: both terms are Hilbert–Schmidt inner products of matrices.
+  simp only [hρ.cfc_log_relativeModularOperator hσ, sub_mulVec, dotProduct_sub,
+    kronecker_mulVec_vec, star_vec_dotProduct_vec, transpose_transpose, transpose_one, hr.eq,
+    Matrix.mul_one, Matrix.one_mul]
+  -- Trace algebra: merge `ρ^(1/2) * ρ^(1/2) = ρ`, cycling the trace in the first term.
+  rw [trace_mul_comm (CFC.sqrt ρ), Matrix.mul_assoc, ← Matrix.mul_assoc (CFC.sqrt ρ), hrr,
+    trace_mul_comm (cfc Real.log σ), mul_sub, trace_sub, neg_sub]
 
 private theorem mulVec_vec_eq_vec_kronecker_one_mul (B : Matrix (m × n) (m × n) 𝕜)
     (Y : Matrix m m 𝕜) :
@@ -186,45 +169,35 @@ theorem PosDef.partialTraceIsometry_mulVec_vec_sqrt [Nonempty n]
     (hρ.partialTraceRight.isUnit_det_sqrt), one_kronecker_one,
     Matrix.one_mul]
 
-omit [DecidableEq m] in
-/-- The conjugate transpose of `((Y * a) ⊗ₖ 1) * r` for Hermitian `a` and `r`. -/
-private theorem conjTranspose_kronecker_one_mul {a : Matrix m m 𝕜} {r : Matrix (m × n) (m × n) 𝕜}
-    (ha : a.IsHermitian) (hr : r.IsHermitian) (X : Matrix m m 𝕜) :
-    (((X * a) ⊗ₖ (1 : Matrix n n 𝕜)) * r)ᴴ = r * ((a * Xᴴ) ⊗ₖ (1 : Matrix n n 𝕜)) := by
-  rw [conjTranspose_mul, conjTranspose_kronecker, conjTranspose_one, conjTranspose_mul, ha.eq,
-    hr.eq]
-
 /-- The partial-trace isometry of a positive definite `ρ` is an isometry for the Hilbert–Schmidt
 inner product: `Vᴴ * V = 1`. -/
 theorem PosDef.conjTranspose_mul_partialTraceIsometry [Nonempty n]
     {ρ : Matrix (m × n) (m × n) 𝕜} (hρ : ρ.PosDef) :
     (partialTraceIsometry ρ)ᴴ * partialTraceIsometry ρ = 1 := by
+  have hsH : (CFC.sqrt ρ.partialTraceRight)⁻¹ᴴ = (CFC.sqrt ρ.partialTraceRight)⁻¹ :=
+    (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian.inv.eq
+  have hrH : (CFC.sqrt ρ)ᴴ = CFC.sqrt ρ :=
+    (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian.eq
+  refine eq_of_star_vec_dotProduct_mulVec_vec fun X Y ↦ ?_
+  rw [← Matrix.mul_one (partialTraceIsometry ρ)ᴴ, star_dotProduct_conjTranspose_mul_mul_mulVec,
+    one_mulVec, one_mulVec]
+  simp only [partialTraceIsometry_mulVec_vec, star_vec_dotProduct_vec, conjTranspose_mul,
+    conjTranspose_kronecker, conjTranspose_one, hsH, hrH]
   set s := CFC.sqrt ρ.partialTraceRight
   have hs : IsUnit s.det := hρ.partialTraceRight.isUnit_det_sqrt
   have hss : s * s = ρ.partialTraceRight :=
     CFC.sqrt_mul_sqrt_self _ hρ.partialTraceRight.posSemidef.nonneg
-  have ha : s⁻¹.IsHermitian := ((IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian).inv
-  refine eq_of_star_vec_dotProduct_mulVec_vec fun X Y ↦ ?_
-  rw [← Matrix.mul_one (partialTraceIsometry ρ)ᴴ, star_dotProduct_conjTranspose_mul_mul_mulVec,
-    one_mulVec, one_mulVec, partialTraceIsometry_mulVec_vec, partialTraceIsometry_mulVec_vec,
-    star_vec_dotProduct_vec, star_vec_dotProduct_vec,
-    conjTranspose_kronecker_one_mul ha
-      (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian]
-  have h : CFC.sqrt ρ * ((s⁻¹ * Xᴴ) ⊗ₖ (1 : Matrix n n 𝕜)) *
-      (((Y * s⁻¹) ⊗ₖ (1 : Matrix n n 𝕜)) * CFC.sqrt ρ) =
-      CFC.sqrt ρ * ((s⁻¹ * (Xᴴ * Y) * s⁻¹) ⊗ₖ (1 : Matrix n n 𝕜)) * CFC.sqrt ρ := by
-    rw [← Matrix.mul_assoc, Matrix.mul_assoc (CFC.sqrt ρ), ← mul_kronecker_mul, Matrix.one_mul]
-    simp only [Matrix.mul_assoc]
   -- The trace form of `x ⊗ₖ 1` sandwiched by `ρ^(1/2)` is that of `x` against `ρ_A = Tr₂ ρ`.
   have htr (Z : Matrix m m 𝕜) : (CFC.sqrt ρ * (Z ⊗ₖ (1 : Matrix n n 𝕜)) * CFC.sqrt ρ).trace =
       (Z * ρ.partialTraceRight).trace := by
     rw [trace_mul_cycle, CFC.sqrt_mul_sqrt_self ρ hρ.posSemidef.nonneg, trace_mul_comm,
       ← trace_partialTraceRight, partialTraceRight_kronecker_one_mul]
-  rw [h, htr, ← hss,
-    show s⁻¹ * (Xᴴ * Y) * s⁻¹ * (s * s) = s⁻¹ * (Xᴴ * Y) * (s⁻¹ * s) * s by
-      simp only [Matrix.mul_assoc],
-    nonsing_inv_mul _ hs, Matrix.mul_one, trace_mul_cycle, ← Matrix.mul_assoc,
-    mul_nonsing_inv _ hs, Matrix.one_mul]
+  rw [← Matrix.mul_assoc, Matrix.mul_assoc (CFC.sqrt ρ), ← mul_kronecker_mul, Matrix.one_mul, htr,
+    ← hss]
+  -- Cancel `s⁻¹ * s` inside the product and `s * s⁻¹` after cycling the trace.
+  simp only [Matrix.mul_assoc, nonsing_inv_mul_cancel_left _ _ hs]
+  rw [trace_mul_comm]
+  simp only [Matrix.mul_assoc, mul_nonsing_inv _ hs, Matrix.mul_one]
 
 /-- **The modular compression identity.** Compressing the relative modular operator `Δ(ρ, σ)`
 by the partial-trace isometry of `ρ` gives the relative modular operator `Δ(ρ_A, σ_A)` of the
@@ -233,34 +206,40 @@ theorem PosDef.conjTranspose_mul_relativeModularOperator_mul_partialTraceIsometr
     {ρ : Matrix (m × n) (m × n) 𝕜} (hρ : ρ.PosDef) (σ : Matrix (m × n) (m × n) 𝕜) :
     (partialTraceIsometry ρ)ᴴ * relativeModularOperator ρ σ * partialTraceIsometry ρ =
       relativeModularOperator ρ.partialTraceRight σ.partialTraceRight := by
+  have hsH : (CFC.sqrt ρ.partialTraceRight)⁻¹ᴴ = (CFC.sqrt ρ.partialTraceRight)⁻¹ :=
+    (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian.inv.eq
+  have hrH : (CFC.sqrt ρ)ᴴ = CFC.sqrt ρ :=
+    (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian.eq
+  refine eq_of_star_vec_dotProduct_mulVec_vec fun X Y ↦ ?_
+  rw [star_dotProduct_conjTranspose_mul_mul_mulVec]
+  simp only [relativeModularOperator_mulVec_vec, partialTraceIsometry_mulVec_vec,
+    star_vec_dotProduct_vec, conjTranspose_mul, conjTranspose_kronecker, conjTranspose_one, hsH,
+    hrH]
   set s := CFC.sqrt ρ.partialTraceRight
   set r := CFC.sqrt ρ
   have hs : IsUnit s.det := hρ.partialTraceRight.isUnit_det_sqrt
   have hss : s * s = ρ.partialTraceRight :=
     CFC.sqrt_mul_sqrt_self _ hρ.partialTraceRight.posSemidef.nonneg
   have hr : IsUnit r.det := hρ.isUnit_det_sqrt
-  have hrr : r * ρ⁻¹ * r = 1 := by
-    rw [← CFC.sqrt_mul_sqrt_self ρ hρ.posSemidef.nonneg, Matrix.mul_inv_rev,
-      show r * (r⁻¹ * r⁻¹) * r = (r * r⁻¹) * (r⁻¹ * r) by simp only [Matrix.mul_assoc],
-      mul_nonsing_inv _ hr, nonsing_inv_mul _ hr, Matrix.mul_one]
-  refine eq_of_star_vec_dotProduct_mulVec_vec fun X Y ↦ ?_
-  rw [star_dotProduct_conjTranspose_mul_mul_mulVec, relativeModularOperator_mulVec_vec,
-    partialTraceIsometry_mulVec_vec, partialTraceIsometry_mulVec_vec,
-    relativeModularOperator_mulVec_vec, star_vec_dotProduct_vec, star_vec_dotProduct_vec,
-    conjTranspose_kronecker_one_mul
-      ((IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian).inv
-      (IsSelfAdjoint.of_nonneg (CFC.sqrt_nonneg _)).isHermitian]
-  -- Cycle `ρ^(1/2)` around the trace and cancel `ρ^(1/2) * ρ⁻¹ * ρ^(1/2) = 1`.
-  have e1 : (r * ((s⁻¹ * Xᴴ) ⊗ₖ (1 : Matrix n n 𝕜)) *
-      (σ * (((Y * s⁻¹) ⊗ₖ (1 : Matrix n n 𝕜)) * r) * ρ⁻¹)).trace =
-      ((s⁻¹ * Xᴴ) ⊗ₖ (1 : Matrix n n 𝕜) * σ * (Y * s⁻¹) ⊗ₖ (1 : Matrix n n 𝕜) *
-        (r * ρ⁻¹ * r)).trace := by
-    rw [Matrix.mul_assoc r, trace_mul_comm r]
-    simp only [Matrix.mul_assoc]
-  rw [e1, hrr, Matrix.mul_one, Matrix.mul_assoc, trace_mul_comm, Matrix.mul_assoc,
-    ← mul_kronecker_mul, Matrix.one_mul, ← trace_partialTraceRight,
-    partialTraceRight_mul_kronecker_one, ← hss, Matrix.mul_inv_rev, trace_mul_comm Xᴴ]
+  have hρinv : ρ⁻¹ = r⁻¹ * r⁻¹ := by
+    rw [← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self ρ hρ.posSemidef.nonneg]
+  -- Cancel `ρ^(1/2) * ρ⁻¹ = ρ^(-1/2)`, then cycle the leading `ρ^(1/2)` around the trace.
+  rw [hρinv]
+  simp only [Matrix.mul_assoc, mul_nonsing_inv_cancel_left _ _ hr]
+  rw [trace_mul_comm r]
+  simp only [Matrix.mul_assoc, nonsing_inv_mul _ hr, Matrix.mul_one]
+  -- Merge the two Kronecker factors and trace out the second system.
+  rw [trace_mul_comm, Matrix.mul_assoc, ← mul_kronecker_mul, Matrix.one_mul,
+    ← trace_partialTraceRight, partialTraceRight_mul_kronecker_one, ← hss, Matrix.mul_inv_rev,
+    trace_mul_comm Xᴴ]
   simp only [Matrix.mul_assoc]
+
+-- Stated after the lemmas whose statements mention `Matrix.relativeModularOperator`: inside the
+-- `Matrix.PosDef` namespace, that bare name would otherwise resolve to this lemma.
+/-- The relative modular operator of two positive definite matrices is positive definite. -/
+theorem PosDef.relativeModularOperator {ρ σ : Matrix m m 𝕜} (hρ : ρ.PosDef) (hσ : σ.PosDef) :
+    (Matrix.relativeModularOperator ρ σ).PosDef :=
+  hρ.inv.transpose.kronecker hσ
 
 /-- **Monotonicity of the relative entropy under the partial trace.** For positive definite
 complex matrices `ρ` and `σ` on a bipartite system indexed by `m × n`, tracing out the second
@@ -277,7 +256,7 @@ theorem PosDef.relativeEntropy_partialTraceRight_le {ρ σ : Matrix (m × n) (m 
   have hρA := hρ.partialTraceRight
   have hσA := hσ.partialTraceRight
   -- Jensen's operator inequality for `log` and the isometry `V`, at the vector `vec ρ_A^(1/2)`.
-  have hJ := (posDef_relativeModularOperator hρ hσ).conjTranspose_mul_log_mul_le_log
+  have hJ := (hρ.relativeModularOperator hσ).conjTranspose_mul_log_mul_le_log
     hρ.conjTranspose_mul_partialTraceIsometry
   rw [hρ.conjTranspose_mul_relativeModularOperator_mul_partialTraceIsometry, le_iff] at hJ
   have hq := hJ.dotProduct_mulVec_nonneg (vec (CFC.sqrt ρ.partialTraceRight))
@@ -291,19 +270,6 @@ theorem PosDef.relativeEntropy_partialTraceRight_le {ρ σ : Matrix (m × n) (m 
   simp only [Complex.sub_re, Complex.neg_re] at this
   simp only [RCLike.re_to_complex]
   linarith
-
-/-- The relative entropy of a Hermitian `ρ` on a bipartite system with respect to `1 ⊗ₖ τ` for a
-positive definite `τ` is `-S(ρ) + S(Tr₁ ρ)` once `τ = Tr₁ ρ`. -/
-private theorem relativeEntropy_one_kronecker_partialTraceLeft {k l : Type*} [Fintype k]
-    [DecidableEq k] [Fintype l] [DecidableEq l] {ρ : Matrix (k × l) (k × l) ℂ}
-    (hρ : ρ.IsHermitian) (hτ : ρ.partialTraceLeft.PosDef) :
-    relativeEntropy ρ ((1 : Matrix k k ℂ) ⊗ₖ ρ.partialTraceLeft) =
-      ((-ρ.vonNeumannEntropy + ρ.partialTraceLeft.vonNeumannEntropy : ℝ) : EReal) := by
-  rw [hρ.relativeEntropy_eq_neg_vonNeumannEntropy_sub (by
-      rw [LinearMap.ker_eq_bot.mpr (PosDef.one.kronecker hτ).mulVec_injective]; exact bot_le),
-    cfc_one_kronecker, ← trace_partialTraceLeft, partialTraceLeft_mul_one_kronecker,
-    hτ.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log]
-  ring_nf
 
 /-- Strong subadditivity for positive definite matrices, by monotonicity of the relative entropy
 under the partial trace over the third factor, applied to `ρ` and `1 ⊗ₖ ρ_BC`. -/
@@ -333,38 +299,21 @@ private theorem PosDef.vonNeumannEntropy_add_le {a b c : Type*} [Fintype a] [Dec
   have hmono := hρ.relativeEntropy_partialTraceRight_le hσ
   rw [partialTraceRight_reindex_prodAssoc_symm_kronecker,
     partialTraceRight_partialTraceLeft_reindex_prodAssoc,
-    relativeEntropy_one_kronecker_partialTraceLeft hρ.partialTraceRight.1 hB,
+    hρ.partialTraceRight.1.relativeEntropy_one_kronecker_partialTraceLeft hB,
     hρ.1.relativeEntropy_eq_neg_vonNeumannEntropy_sub (by
       rw [LinearMap.ker_eq_bot.mpr hσ.mulVec_injective]; exact bot_le)] at hmono
   -- `Tr (ρ log σ) = Tr (ρ_BC log ρ_BC)`, after regrouping the indices along `e`.
   have hlog : RCLike.re (ρ * cfc Real.log σ).trace =
       -(reindex e e ρ).partialTraceLeft.vonNeumannEntropy := by
-    rw [cfc_reindex, cfc_one_kronecker, ← trace_reindex_self e, ← trace_partialTraceLeft,
-      show reindex e e (ρ * reindex e.symm e.symm ((1 : Matrix a a ℂ) ⊗ₖ
-        cfc Real.log (reindex e e ρ).partialTraceLeft)) = reindex e e ρ * ((1 : Matrix a a ℂ) ⊗ₖ
-        cfc Real.log (reindex e e ρ).partialTraceLeft) by
-        rw [reindex_apply, reindex_apply, ← submatrix_mul_equiv _ _ _ e.symm, reindex_apply,
-          submatrix_submatrix]
-        simp,
+    -- Reindexing along `e` is multiplicative: it moves onto `ρ` and cancels on `σ`.
+    have hre (L : Matrix (a × b × c) (a × b × c) ℂ) :
+        reindex e e (ρ * reindex e.symm e.symm L) = reindex e e ρ * L := by
+      simp [reindex_apply, ← submatrix_mul_equiv _ _ _ e.symm]
+    rw [cfc_reindex, cfc_one_kronecker, ← trace_reindex_self e, hre, ← trace_partialTraceLeft,
       partialTraceLeft_mul_one_kronecker, hBC.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log,
       neg_neg]
   rw [hlog, EReal.coe_le_coe_iff] at hmono
   linarith
-
-/-- Along the regularization `ρ + t • 1`, `t → 0⁺`, of a positive semidefinite `ρ`, the entropy of
-the image under a continuous positivity-preserving map `L` converges to that of `L ρ`. -/
-private theorem tendsto_vonNeumannEntropy_add_smul_one {ι k : Type*} [DecidableEq ι] [Fintype k]
-    [DecidableEq k] {ρ : Matrix ι ι ℂ} (hρ : ρ.PosSemidef)
-    {L : Matrix ι ι ℂ → Matrix k k ℂ} (hL : Continuous L)
-    (hLpsd : ∀ τ : Matrix ι ι ℂ, τ.PosSemidef → (L τ).PosSemidef) :
-    Tendsto (fun t : ℝ ↦ (L (ρ + t • 1)).vonNeumannEntropy) (𝓝[>] 0)
-      (𝓝 (L ρ).vonNeumannEntropy) := by
-  have hγ : Continuous fun t : ℝ ↦ ρ + t • (1 : Matrix ι ι ℂ) :=
-    continuous_const.add (continuous_id.smul continuous_const)
-  have h := (continuousOn_vonNeumannEntropy.comp (hL.comp hγ).continuousOn
-    fun t ht ↦ (hLpsd _ (hρ.add (PosSemidef.one.smul ht))).1).continuousWithinAt
-    (Set.self_mem_Ici (a := (0 : ℝ)))
-  simpa [Function.comp_def] using h.tendsto.mono_left (nhdsWithin_mono _ Set.Ioi_subset_Ici_self)
 
 /-- **Strong subadditivity of the von Neumann entropy.** For a positive semidefinite complex matrix
 `ρ` on a tripartite system indexed by `(a × b) × c`, with reduced matrices `ρ_AB = Tr₃ ρ`,
@@ -383,13 +332,13 @@ theorem PosSemidef.vonNeumannEntropy_strong_subadditivity
       (reindex e e τ).PosSemidef := by
     simpa only [reindex_apply] using hτ.submatrix e.symm
   refine le_of_tendsto_of_tendsto
-    ((tendsto_vonNeumannEntropy_add_smul_one hρ (L := id) continuous_id fun _ h ↦ h).add
-      (tendsto_vonNeumannEntropy_add_smul_one hρ
+    ((hρ.tendsto_vonNeumannEntropy_add_smul_one (L := id) continuous_id fun _ h ↦ h).add
+      (hρ.tendsto_vonNeumannEntropy_add_smul_one
         continuous_id.matrix_partialTraceRight.matrix_partialTraceLeft
         fun _ h ↦ h.partialTraceRight.partialTraceLeft))
-    ((tendsto_vonNeumannEntropy_add_smul_one hρ continuous_id.matrix_partialTraceRight
+    ((hρ.tendsto_vonNeumannEntropy_add_smul_one continuous_id.matrix_partialTraceRight
         fun _ h ↦ h.partialTraceRight).add
-      (tendsto_vonNeumannEntropy_add_smul_one hρ
+      (hρ.tendsto_vonNeumannEntropy_add_smul_one
         (continuous_id.matrix_reindex e e).matrix_partialTraceLeft
         fun τ h ↦ (hreindex τ h).partialTraceLeft))
     (eventually_nhdsWithin_of_forall fun t ht ↦ ?_)
