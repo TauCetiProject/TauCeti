@@ -23,8 +23,7 @@ theory.  In particular, if `s ⊆ c ⊆ t` and `t` strong deformation retracts o
 of pairs `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology
 (`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`), and if `t` strong
 deformation retracts onto `s` the relative homology of `(t, s)` vanishes
-(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`); in particular so does that of
-`(s, s)` (`TopPair.isZero_singularHomology_ofInclusion_self`).  In the absolute
+(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`).  In the absolute
 case, a homotopy equivalence of spaces induces an isomorphism on singular homology
 (`ContinuousMap.HomotopyEquiv.singularHomologyIso`).
 
@@ -163,12 +162,6 @@ theorem isZero_singularHomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t
   have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
   rw [h]
   exact hx
-
-/-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
-relative singular homology of the pair `(s, s)` vanishes in every degree. -/
-theorem isZero_singularHomology_ofInclusion_self {X : TopCat.{w}} (s : Set X) (R : C) (n : ℕ) :
-    IsZero ((ofInclusion (subset_refl s)).singularHomology R n) :=
-  isZero_singularHomology_ofInclusion_of_homotopyRel _ (ContinuousMap.id _) (.refl _ _) R n
 
 end TopPair
 

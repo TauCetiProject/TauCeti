@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Monomial
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
-import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 
 /-!
@@ -97,7 +96,7 @@ theorem finite_singularHomology_ofInclusion_of_forall_mem_Ico {a b : ℤ} (hab :
   induction b, hab using Int.leInduction with
   | base =>
     have := ModuleCat.isZero_iff_subsingleton.1
-      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V n)
+      (TopPair.isZero_singularHomology_ofInclusion_self V (X a) n)
     infer_instance
   | succ b hab ih =>
     have : Module.Finite k ((TopTriple.innerPair.obj (stepTriple hX hab)).singularHomology V n :
@@ -119,7 +118,7 @@ theorem finrank_singularHomology_ofInclusion_le_sum {a b : ℤ} (hab : a ≤ b) 
   induction b, hab using Int.leInduction with
   | base =>
     have := ModuleCat.isZero_iff_subsingleton.1
-      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V n)
+      (TopPair.isZero_singularHomology_ofInclusion_self V (X a) n)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have h' : ∀ q ∈ Finset.Ico a b, Module.Finite k
@@ -148,7 +147,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le {a b :
   induction b, hab using Int.leInduction with
   | base =>
     have (i : ℕ) := ModuleCat.isZero_iff_subsingleton.1
-      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V i)
+      (TopPair.isZero_singularHomology_ofInclusion_self V (X a) i)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have h' : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
@@ -176,7 +175,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq {a b :
   induction b, hab using Int.leInduction with
   | base =>
     have (i : ℕ) := ModuleCat.isZero_iff_subsingleton.1
-      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V i)
+      (TopPair.isZero_singularHomology_ofInclusion_self V (X a) i)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have hsub : Finset.Ico a b ⊆ Finset.Ico a (b + 1) :=

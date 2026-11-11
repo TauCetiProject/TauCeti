@@ -352,6 +352,14 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
+relative singular homology of the pair `(s, s)` vanishes in every degree. -/
+lemma isZero_singularHomology_ofInclusion_self {X : TopCat.{w}} (s : Set X) (n : ℕ) :
+    IsZero ((ofInclusion (subset_refl s)).singularHomology R n) := by
+  -- The identity of `(s, s)` factors through the subspace `s`, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id]
+  exact singularHomologyMap_eq_zero_of_fac _ R (𝟙 _) rfl n
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=
