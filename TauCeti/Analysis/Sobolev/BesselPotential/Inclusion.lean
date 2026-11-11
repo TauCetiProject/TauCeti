@@ -49,6 +49,11 @@ Banach space is continuous as soon as its composite with this embedding is
   maps into `H^{s,p}`.
 * `BesselPotentialSpace.inclusionOfOneLt`: the inclusion `H^{s,p}(E, F) →L[ℂ] H^{r,p}(E, F)` for
   `r ≤ s` and `1 < p < ∞`, with `BesselPotentialSpace.toDistr_inclusionOfOneLt`.
+* `BesselPotentialSpace.inclusionOfOneLt_self`,
+  `BesselPotentialSpace.inclusionOfOneLt_inclusionOfOneLt`,
+  `BesselPotentialSpace.inclusionOfOneLt_toBesselPotentialSpaceCLM`: as for `p = 2`, the inclusion
+  of a space into itself is the identity, inclusions compose, and it is the identity on Schwartz
+  functions.
 -/
 
 public section
@@ -192,6 +197,28 @@ def inclusionOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s) :
 theorem toDistr_inclusionOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s) (u : H^{s, p}(E, F)) :
     (inclusionOfOneLt hp hp_top h u).toDistr = u.toDistr :=
   MemSobolev.toBesselPotentialSpace_toDistr _
+
+/-- The inclusion of `H^{s,p}` into itself is the identity. -/
+@[simp]
+theorem inclusionOfOneLt_self (hp : 1 < p) (hp_top : p ≠ ∞) (u : H^{s, p}(E, F)) :
+    inclusionOfOneLt hp hp_top le_rfl u = u :=
+  ext (by simp)
+
+/-- Inclusions compose: `H^{s,p} ⊆ H^{r,p} ⊆ H^{t,p}` is `H^{s,p} ⊆ H^{t,p}`. -/
+@[simp]
+theorem inclusionOfOneLt_inclusionOfOneLt {t : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞) (h₁ : r ≤ s)
+    (h₂ : t ≤ r) (u : H^{s, p}(E, F)) :
+    inclusionOfOneLt hp hp_top h₂ (inclusionOfOneLt hp hp_top h₁ u) =
+      inclusionOfOneLt hp hp_top (h₂.trans h₁) u :=
+  ext (by simp)
+
+/-- On Schwartz functions the inclusion `H^{s,p} ⊆ H^{r,p}` is the identity. -/
+@[simp]
+theorem inclusionOfOneLt_toBesselPotentialSpaceCLM (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s)
+    (u : 𝓢(E, F)) :
+    inclusionOfOneLt hp hp_top h (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
+      SchwartzMap.toBesselPotentialSpaceCLM r p u :=
+  ext (by simp)
 
 end Lp
 

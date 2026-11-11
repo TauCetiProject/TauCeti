@@ -106,9 +106,8 @@ private theorem compLpL_ofRealCLM (g : Lp ℝ p (volume : Measure E)) :
 private theorem complexValue_apply (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
     complexValue k u =
       Complex.ofRealCLM.compLp (castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k u)) := by
-  rw [complexValue, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, valueL_apply,
-    compLpL_ofRealCLM, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  simp only [complexValue, ContinuousLinearMap.comp_apply, valueL_apply, compLpL_ofRealCLM,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The tempered distribution of the complexified value of a Sobolev function. -/
 private def toDistrValue (k : ℕ) : Wkp (volume : Measure E) ⊤ p k →L[ℝ] 𝓢'(E, ℂ) :=
@@ -155,15 +154,12 @@ def toBesselPotentialSpace (k : ℕ) : Wkp (volume : Measure E) ⊤ p k →L[ℝ
   let L : Wkp (volume : Measure E) ⊤ p k →ₗ[ℝ] H^{k, p}(E, ℂ) :=
     { toFun u := (memSobolev_complexValue hp hp_top k u).toBesselPotentialSpace
       map_add' u v := BesselPotentialSpace.ext <| by
-        rw [BesselPotentialSpace.toDistr_add, MemSobolev.toBesselPotentialSpace_toDistr,
-          MemSobolev.toBesselPotentialSpace_toDistr, MemSobolev.toBesselPotentialSpace_toDistr]
-        exact map_add (toDistrValue k) u v
+        simpa only [BesselPotentialSpace.toDistr_add, MemSobolev.toBesselPotentialSpace_toDistr,
+          toDistrValue_apply] using map_add (toDistrValue k) u v
       map_smul' c u := BesselPotentialSpace.ext <| by
-        rw [RingHom.id_apply, MemSobolev.toBesselPotentialSpace_toDistr, ← toDistrValue_apply,
-          map_smul, RCLike.real_smul_eq_coe_smul (K := ℂ) c (MemSobolev.toBesselPotentialSpace _),
+        simpa only [RingHom.id_apply, RCLike.real_smul_eq_coe_smul (K := ℂ) c,
           BesselPotentialSpace.toDistr_smul, MemSobolev.toBesselPotentialSpace_toDistr,
-          toDistrValue_apply]
-        exact RCLike.real_smul_eq_coe_smul (K := ℂ) c _ }
+          toDistrValue_apply] using map_smul (toDistrValue k) c u }
   { L with
     cont := BesselPotentialSpace.continuous_of_continuous_toDistr
       (X := Wkp (volume : Measure E) ⊤ p k) L <|
