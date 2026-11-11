@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
+import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
@@ -68,13 +69,8 @@ variable {R : Type*} [Ring R]
 /-- An element congruent to one modulo a left ideal remains so under natural powers. -/
 theorem pow_sub_one_mem (I : Ideal R) {a : R} (ha : a - 1 ∈ I) (n : ℕ) :
     a ^ n - 1 ∈ I := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have he : a ^ (n + 1) - 1 = a * (a ^ n - 1) + (a - 1) := by
-      simp [pow_succ', mul_sub]
-    rw [he]
-    exact I.add_mem (I.mul_mem_left a ih) ha
+  rw [← geom_sum_mul]
+  exact I.mul_mem_left _ ha
 
 variable (I : Ideal R) in
 /-- The principal unit group of an ideal `I`: the units `u` with `u - 1 ∈ I`. -/
