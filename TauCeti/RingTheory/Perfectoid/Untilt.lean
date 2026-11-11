@@ -38,8 +38,9 @@ isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.
 
 ## Main results
 
-* `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`: compatibility of
-  `PreTilt.untilt` and `Perfection.teichmuller₀` across `PreTilt.equivPerfection`.
+* `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`,
+  `PreTilt.untilt_zero`: compatibility of `PreTilt.untilt` and `Perfection.teichmuller₀` across
+  `PreTilt.equivPerfection`, and `(0 : PreTilt A p).untilt = 0`.
 * `PreTilt.coeff_eq_mk_untilt_iterate`: the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the
   reduction modulo `p` of `untilt ((frobeniusEquiv.symm^[n]) x)`.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
@@ -91,6 +92,11 @@ theorem teichmuller₀_equivPerfection (x : PreTilt A p) :
   symm
   simpa using untilt_equivPerfection_symm (equivPerfection x)
 
+/-- The untilt of `0 : PreTilt A p` is `0`. -/
+@[simp]
+theorem untilt_zero : (0 : PreTilt A p).untilt = 0 := by
+  rw [← teichmuller₀_equivPerfection, map_zero, map_zero]
+
 /-- **Nonzerodivisors lift along `untilt`.** If `ϖ.untilt` is a nonzerodivisor of `A`, then `ϖ`
 is a nonzerodivisor of `PreTilt A p` (the converse can fail when `A` has nilpotent elements killed
 by perfection). -/
@@ -104,8 +110,7 @@ theorem mem_nonZeroDivisors_of_untilt {ϖ : PreTilt A p} (hreg : ϖ.untilt ∈ A
     | succ k ih => rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
         Function.iterate_succ_apply', ih, map_mul]
   have hmul : untilt ((ψ^[n]) ϖ) * untilt ((ψ^[n]) x) = 0 := by
-    rw [← map_mul, ← hψ_mul, hx, Function.iterate_fixed (map_zero ψ)]
-    exact Perfection.teichmuller_zero
+    rw [← map_mul, ← hψ_mul, hx, Function.iterate_fixed (map_zero ψ), untilt_zero]
   have hpow : untilt ((ψ^[n]) ϖ) ^ p ^ n = ϖ.untilt :=
     untilt_iterate_frobeniusEquiv_symm_pow ϖ n
   have hreg_n : untilt ((ψ^[n]) ϖ) ∈ A⁰ :=
@@ -122,13 +127,21 @@ theorem exists_mul_natCast_dvd_sub_untilt {π : A} (hdvd : π ^ p ∣ (p : A))
     [IsAdicComplete (span {π}) A] (hs : ∀ x : A, ∃ y, π ^ p ∣ x - y ^ p) (x : A) :
     ∃ f : PreTilt A p, π * (p : A) ∣ x - f.untilt := by
   choose r hr using fun a : A ↦ TauCeti.exists_mul_dvd_sub_pow hs a
-  let f : PreTilt A p := ⟨fun n ↦ Ideal.Quotient.mk (span {(p : A)}) (r^[n] x), fun n ↦ by
-    dsimp only
-    rw [Function.iterate_succ_apply', ← map_pow, Ideal.Quotient.eq, mem_span_singleton]
-    exact (dvd_mul_left (p : A) π).trans (dvd_sub_comm.mp (hr (r^[n] x)))⟩
+  let f₀ : Perfection (ModP A p) p := ⟨fun n ↦ Ideal.Quotient.mk (span {(p : A)}) (r^[n] x),
+    fun n ↦ by
+      dsimp only
+      rw [Function.iterate_succ_apply', ← map_pow, Ideal.Quotient.eq, mem_span_singleton]
+      exact (dvd_mul_left (p : A) π).trans (dvd_sub_comm.mp (hr (r^[n] x)))⟩
+  let f : PreTilt A p := equivPerfection.symm f₀
   have hmod : (r x) ^ p ≡ f.untilt [SMOD (span {(p : A)}) ^ 2] := by
-    have h := Perfection.teichmuller₀_sModEq (I := span {(p : A)}) (x := f) (y := r x) (n := 1) rfl
-    rw [pow_one] at h
+    have hf1 : Ideal.Quotient.mk (span {(p : A)}) (r x) =
+        Perfection.coeff (ModP A p) p 1 (equivPerfection f) := by
+      rw [equivPerfection.apply_symm_apply]
+      symm
+      exact Perfection.coeff_mk _ _ 1
+    have h := Perfection.teichmuller₀_sModEq (I := span {(p : A)})
+      (x := equivPerfection f) (y := r x) (n := 1) hf1
+    rw [teichmuller₀_equivPerfection, pow_one] at h
     exact h.symm
   have hp2 : (p : A) ^ 2 ∣ (r x) ^ p - f.untilt := by
     rwa [SModEq.sub_mem, span_singleton_pow, mem_span_singleton] at hmod
@@ -195,10 +208,14 @@ theorem dvd_iff_untilt_dvd {ϖ : PreTilt A p} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
       _ = (w (n + 1) * q (n + 1)) ^ p := by rw [← hw_pow n, mul_pow]
       _ = y n := by rw [← hq (n + 1), hy_pow n]
       _ = w n * q n := hq n
-  let g : PreTilt A p := ⟨fun n ↦ Ideal.Quotient.mk (span {(p : A)}) (q n), fun n ↦ by
-    dsimp only
-    rw [← map_pow, hq_compat]⟩
-  have hg (n : ℕ) : coeff n g = Ideal.Quotient.mk (span {(p : A)}) (q n) := rfl
+  let g₀ : Perfection (ModP A p) p := ⟨fun n ↦ Ideal.Quotient.mk (span {(p : A)}) (q n),
+    fun n ↦ by
+      dsimp only
+      rw [← map_pow, hq_compat]⟩
+  let g : PreTilt A p := equivPerfection.symm g₀
+  have hg (n : ℕ) : coeff n g = Ideal.Quotient.mk (span {(p : A)}) (q n) := by
+    rw [coeff_equivPerfection_symm]
+    exact Perfection.coeff_mk _ _ n
   refine ⟨g, ext fun n ↦ ?_⟩
   rw [map_mul, coeff_eq_mk_untilt_iterate n f, coeff_eq_mk_untilt_iterate n ϖ, hg, ← map_mul]
   exact congrArg (Ideal.Quotient.mk (span {(p : A)})) (hq n)

@@ -9,8 +9,6 @@ public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 public import TauCeti.RingTheory.WittVector.Units
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Primitive and distinguished Witt vectors
