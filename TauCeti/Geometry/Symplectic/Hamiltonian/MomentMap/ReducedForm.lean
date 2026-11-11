@@ -179,10 +179,10 @@ theorem existsUnique_isSymplectic_mpullback_eq_mpullback [J.Boundaryless] {K : T
 omit [IsManifold J ∞ Z] [IsManifold JQ ∞ Q] in
 /-- **The dimension of the reduced space.** In the setting of
 `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`, at a point
-`z` where `i` is an immersion and the action is locally free, the model space of `Q` has dimension
-`dim M - dim 𝔤 - dim 𝔤_c`. -/
-theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ)
-    (hσ : σ.IsNondegenerate) {z : Z} (hμi : μ (i z) = c)
+`z` where `σ` is nondegenerate at `i z`, `i` is an immersion and the action is locally free, the
+model space of `Q` has dimension `dim M - dim 𝔤 - dim 𝔤_c`. -/
+theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ) {z : Z}
+    (hσx : (σ.bilinFormAt (i z)).Nondegenerate) (hμi : μ (i z) = c)
     (hc : σ.momentCocycle a μ (i z) = 0)
     (hrange : LinearMap.range (mfderiv J I i z).toLinearMap = LinearMap.ker (h.differential (i z)))
     (hinj : Injective (mfderiv J I i z)) (hfree : a.isotropy (i z) = ⊥)
@@ -213,7 +213,7 @@ theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ)
   have hrn := LinearMap.finrank_range_add_finrank_ker (mfderiv J JQ p z).toLinearMap
   rw [LinearMap.range_eq_top.2 hp, finrank_top, finrank_tangentSpace,
     finrank_tangentSpace] at hrn
-  have hlev := h.finrank_ker_differential_add_finrank (hσ.nondegenerate_bilinFormAt (i z)) hfree
+  have hlev := h.finrank_ker_differential_add_finrank hσx hfree
   omega
 
 end IsMomentMap
