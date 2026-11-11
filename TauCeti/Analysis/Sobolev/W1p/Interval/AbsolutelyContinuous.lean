@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The absolutely continuous characterization of interval Sobolev classes
@@ -90,6 +91,41 @@ theorem existsUnique_intervalRepresentativeL_eq (hab : a < b) {f : ℝ → ℝ}
   apply intervalRepresentativeL_injective hab
   ext t
   exact (hv t).trans ((congrArg (fun g : C(Icc a b, ℝ) ↦ g t) heq).symm)
+
+/-- The primitive `c + ∫ s in a..t, h s` of a function `h ∈ Lᵖ(a,b)` is the continuous
+representative of an interval Sobolev class whose weak gradient is `h`, including at `p = ∞`. -/
+theorem exists_intervalRepresentativeL_eq_add_intervalIntegral (hab : a < b) (c : ℝ)
+    {h : ℝ → ℝ} (hh : MemLp h p (volume.restrict (Ioo a b))) :
+    ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      (∀ t : Icc a b, intervalRepresentativeL hab u t = c + ∫ s in a..(t : ℝ), h s) ∧
+        gradient u =ᵐ[volume.restrict (Ioo a b)] h := by
+  set f : ℝ → ℝ := fun t ↦ c + ∫ s in a..t, h s
+  have hi : IntegrableOn h (Ioo a b) := hh.integrable Fact.out
+  have hfc : ContinuousOn f (Icc a b) := continuousOn_const.add
+    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hi
+      (left_mem_Icc.2 hab.le))
+  have hv : MemLp f p (volume.restrict (Ioo a b)) :=
+    hfc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
+  have hline : TauCeti.HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ f h 1 :=
+    ((TauCeti.hasWeakLineDerivOn_const c).add
+      (TauCeti.hasWeakLineDerivOn_intervalIntegral_left hi)).congr_ae_deriv
+      (EventuallyEq.of_eq (zero_add h))
+  have hw : TauCeti.HasWeakFDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ f
+      (fun t ↦ innerSL ℝ (h t)) := by
+    apply TauCeti.hasWeakFDerivOn_iff.2
+    intro v
+    simpa [Pi.smul_def, smul_eq_mul, real_inner_comm, mul_comm] using hline.smul_direction v
+  let u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p := mk (hv.toLp f) (hh.toLp h)
+    ((hw.congr_ae hv.coeFn_toLp.symm).congr_ae_deriv (by
+      filter_upwards [hh.coeFn_toLp] with t ht
+      rw [ht]))
+  have heq : intervalRepresentativeL hab u = ⟨fun t ↦ f t, hfc.domRestrict⟩ := by
+    apply (intervalRepresentativeL_eq_iff hab u _).2
+    filter_upwards [hv.coeFn_toLp, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [value_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
+    exact ht
+  refine ⟨u, fun t ↦ by rw [heq]; rfl, ?_⟩
+  simpa only [u, gradient_mk] using hh.coeFn_toLp
 
 /-- Characterization of the range of the continuous-representative map. The projection
 extends a function on `[a,b]` by constants outside the interval and imposes no extra endpoint
