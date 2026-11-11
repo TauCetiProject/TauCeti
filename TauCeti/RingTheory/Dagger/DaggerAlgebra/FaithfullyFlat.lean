@@ -45,8 +45,8 @@ and compares `A` and `Â` locally at their classical points.
   `Â_{m Â}`, so one local ring is regular iff the other is. Hence `A` is a regular ring iff `Â` is.
 
 Since `τ` is injective, `A` is reduced, resp. a domain, as soon as `Â` is
-(`isReduced_of_injective`, `Function.Injective.isDomain`), and normality descends along the
-faithfully flat `τ`.
+(`isReduced_of_injective`, `Function.Injective.isDomain`), and integral closedness descends along
+the faithfully flat `τ`.
 
 ## Main results
 
@@ -277,8 +277,8 @@ theorem isRegularRing_completion_iff : IsRegularRing (completion K A) ↔ IsRegu
       isAffinoidAlgebra_completion.comap_isMaximal _ m
     exact (isRegularLocalRing_localization_iff m).mpr (h _)
 
-/-- **Normality descends from the completion.** If the completion `Â` of a dagger algebra `A` is
-integrally closed, then `A` is integrally closed. -/
+/-- **Integral closedness descends from the completion.** If the completion `Â` of a dagger
+algebra `A` is integrally closed, then `A` is integrally closed. -/
 theorem isIntegrallyClosed_of_completion [IsIntegrallyClosed (completion K A)] :
     IsIntegrallyClosed A := by
   let := (toCompletion K A).toRingHom.toAlgebra
