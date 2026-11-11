@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -99,6 +101,13 @@ families of operators.
   `TauCeti.Symbol.quantizeSobolev_sub`: linearity of `Op(a)` in the symbol.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
+  and different symbol orders `m` agree, as maps of tempered distributions, on symbols with the same
+  coefficient.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial`: the symbol `φ(x)` of a Schwartz function
+  quantizes to multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`).
+* `TauCeti.Symbol.IsSmoothing.exists_toDistr_quantizeSobolev_eq`: a smoothing symbol with compact
+  spatial support maps `H^t` to every `H^s`, bounded by any weaker norm `H^r`, `r ≤ t`.
 
 ## References
 
@@ -890,6 +899,84 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
         ((withSeminorms.continuous_seminorm (K, α, [])).comp
           (hcont.sub continuous_const)).tendsto' t₀ 0 (by simp)
     simpa using h.const_mul C
+
+/-- On Schwartz functions the operators of two symbols with the same coefficient agree, so their
+Sobolev extensions agree on `H^s ⊆ H^t`, `t ≤ s`. -/
+private theorem toDistr_quantizeSobolev_inclusion {m' : ℝ} {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {s t : ℝ} (hts : t ≤ s)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    (a.quantizeSobolev ha s u).toDistr =
+      (b.quantizeSobolev hb t (BesselPotentialSpace.inclusion hts u)).toDistr := by
+  have key : BesselPotentialSpace.inclusion (min_le_left (s - m) (t - m')) ∘L
+        a.quantizeSobolev ha s =
+      BesselPotentialSpace.inclusion (min_le_right (s - m) (t - m')) ∘L
+        b.quantizeSobolev hb t ∘L BesselPotentialSpace.inclusion hts := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+      BesselPotentialSpace.ext ?_
+    ext φ
+    simp [hab]
+  simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+/-- **Compatibility of the Sobolev extensions.** The operator `Op(a) : H^s → H^{s - m}` only
+depends on the coefficient of `a` and on the tempered distribution of its argument: symbols `a`
+and `b` of orders `m` and `m'` with the same coefficient give the same tempered distribution on
+`u ∈ H^s` and `v ∈ H^t` whenever `u` and `v` have the same tempered distribution. -/
+theorem toDistr_quantizeSobolev_congr {m' : ℝ} {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {s t : ℝ} {u : H^{s}(CoordinateSpace n, V)}
+    {v : H^{t}(CoordinateSpace n, V)} (huv : u.toDistr = v.toDistr) :
+    (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb t v).toDistr := by
+  rcases le_total t s with h | h
+  · rw [toDistr_quantizeSobolev_inclusion hab ha hb h u]
+    congr 2
+    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+  · rw [toDistr_quantizeSobolev_inclusion hab.symm hb ha h v]
+    congr 2
+    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+
+/-- **Multiplication operators.** For a Schwartz function `φ`, the symbol `φ(x) id` of order `0`
+quantizes to multiplication by `φ` on `H^s`. -/
+theorem toDistr_quantizeSobolev_ofSpatial (φ : 𝓢(CoordinateSpace n, ℂ))
+    (hφ : ContDiff ℝ ∞ fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+    (h : (ofSpatial _ hφ).HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ((ofSpatial _ hφ).quantizeSobolev h s u).toDistr =
+      (BesselPotentialSpace.smulLeftCLM s φ u).toDistr := by
+  have key : (ofSpatial _ hφ).quantizeSobolev h s =
+      BesselPotentialSpace.inclusion (sub_zero s).le ∘L BesselPotentialSpace.smulLeftCLM s φ := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+      BesselPotentialSpace.ext ?_
+    ext ψ
+    have hc : (ofSpatial _ hφ).coefficient = fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
+      funext (coefficient_ofSpatial _ _)
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
+      ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+      BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      smulLeftCLM_apply_apply, SchwartzMap.coe_apply,
+      SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul]
+    refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V),
+      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_comm]
+  rw [key, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
+
+/-- **Smoothing operators gain every number of derivatives.** For a smoothing symbol `a` with
+compact spatial support and real orders `r ≤ t` and `s`, the operator `Op(a) : H^t → H^{t - m}`
+takes values in `H^s`, with `‖Op(a) v‖_{H^s} ≤ C ‖v‖_{H^r}`. -/
+theorem IsSmoothing.exists_toDistr_quantizeSobolev_eq (hsm : a.IsSmoothing)
+    (ha : a.HasCompactSpatialSupport) {r t : ℝ} (hrt : r ≤ t) (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ v : H^{t}(CoordinateSpace n, V), ∃ w : H^{s}(CoordinateSpace n, W),
+      w.toDistr = (a.quantizeSobolev ha t v).toDistr ∧
+        ‖w‖ ≤ C * ‖BesselPotentialSpace.inclusion hrt v‖ := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp hsm (r - s)
+  have hbK := ha.of_coefficient_eq hb
+  refine ⟨‖b.quantizeSobolev hbK r‖, norm_nonneg _, fun v ↦ ⟨BesselPotentialSpace.inclusion
+    (by rw [sub_sub_cancel]) (b.quantizeSobolev hbK r (BesselPotentialSpace.inclusion hrt v)),
+    ?_, ?_⟩⟩
+  · rw [BesselPotentialSpace.toDistr_inclusion]
+    exact toDistr_quantizeSobolev_congr hb hbK ha (BesselPotentialSpace.toDistr_inclusion hrt v)
+  · exact (BesselPotentialSpace.norm_inclusion_apply_le _ _).trans
+      ((b.quantizeSobolev hbK r).le_opNorm _)
 
 end Sobolev
 
