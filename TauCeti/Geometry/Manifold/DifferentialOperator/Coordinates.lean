@@ -37,6 +37,8 @@ with smooth coefficients `c_α`; the coefficients are unique. No continuity of `
   operators of order at most `m` are exactly the coordinate expressions of order `m`.
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
+* `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators do not
+  enlarge supports.
 
 ## References
 
@@ -110,3 +112,78 @@ theorem coordinateOperator_eq_zero_iff {m : ℕ} {c : (ι → ℕ) → C^∞⟮�
     ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top
 
 end Module.Basis
+
+/-! ### Differential operators do not enlarge supports -/
+
+namespace TauCeti
+
+open Function
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The support of a directional derivative lies in the support of the function. -/
+theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport (lineDerivation ℝ v f) ⊆ tsupport f := by
+  rw [show ⇑(lineDerivation ℝ v f) = (fderiv ℝ f · v) from funext (lineDerivation_apply_apply v f)]
+  exact tsupport_fderiv_apply_subset ℝ (f := ⇑f) v
+
+/-- Multiplication by a smooth function does not enlarge supports. -/
+theorem tsupport_mulLeft_apply_subset (c f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport (LinearMap.mulLeft ℝ c f) ⊆ tsupport f := by
+  rw [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul]
+  exact tsupport_mul_subset_right
+
+/-- A scalar multiple of an operator on `C^∞(E)` that does not enlarge supports does not enlarge
+supports. -/
+theorem tsupport_smul_apply_subset {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hD : ∀ f, tsupport (D f) ⊆ tsupport f) (c : ℝ) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport ((c • D) f) ⊆ tsupport f := by
+  rw [LinearMap.smul_apply, ContMDiffMap.coe_smul]
+  exact (tsupport_smul_subset_right (fun _ ↦ c) _).trans (hD f)
+
+/-- A finite sum of operators on `C^∞(E)` that do not enlarge supports does not enlarge
+supports. -/
+theorem tsupport_sum_apply_subset {ι : Type*} (s : Finset ι)
+    {D : ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hD : ∀ i ∈ s, ∀ f, tsupport (D i f) ⊆ tsupport f) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport ((∑ i ∈ s, D i) f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  rw [mem_support, LinearMap.coe_sum, Finset.sum_apply, ContMDiffMap.coe_sum,
+    Finset.sum_apply] at hx
+  obtain ⟨i, hi, hx⟩ := Finset.exists_ne_zero_of_sum_ne_zero hx
+  exact hD i hi f (subset_tsupport _ hx)
+
+variable {ι : Type*} [Fintype ι] (v : ι → E)
+
+/-- The support of `∂^α f`, for directional derivatives `∂ᵢ` along vectors `vᵢ`, lies in the
+support of `f`. -/
+theorem tsupport_multiIndexDeriv_apply_subset (α : ι → ℕ) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport (multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+      (fun i j ↦ commute_lineDerivation (v i) (v j)) α f) ⊆ tsupport f := by
+  classical
+  induction α using multiIndex_induction_add_single generalizing f with
+  | zero => simp
+  | add_single α i ih =>
+    rw [multiIndexDeriv_add_single, mul_apply_eq_comp]
+    exact (ih _).trans (tsupport_lineDerivation_apply_subset _ _)
+
+/-- The support of a coordinate expression `∑_{|α| ≤ m} c_α ∂^α f` lies in the support of `f`. -/
+theorem tsupport_coordinateOperator_apply_subset [DecidableEq ι] (m : ℕ)
+    (c : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport (coordinateOperator (fun i ↦ lineDerivation ℝ (v i))
+      (fun i j ↦ commute_lineDerivation (v i) (v j)) m c f) ⊆ tsupport f := by
+  rw [coordinateOperator_eq_sum_mulLeft]
+  refine tsupport_sum_apply_subset _ (fun k _ ↦ tsupport_sum_apply_subset _ fun α _ g ↦ ?_) f
+  exact (tsupport_mulLeft_apply_subset _ _).trans (tsupport_multiIndexDeriv_apply_subset v α g)
+
+/-- **Locality of differential operators.** A differential operator on `C^∞(E)`, in the sense of
+iterated commutators with multiplication operators, does not enlarge supports. -/
+theorem tsupport_apply_subset_of_mem_differentialOperators [FiniteDimensional ℝ E]
+    {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    tsupport (D f) ⊆ tsupport f := by
+  rw [(Module.finBasis ℝ E).eq_coordinateOperator_coordinateCoeff hD]
+  exact tsupport_coordinateOperator_apply_subset _ _ _ f
+
+end TauCeti

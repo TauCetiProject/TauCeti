@@ -35,7 +35,7 @@ Haar measure. In coordinates, with `D f = ∑_{|α| ≤ m} c_α ∂^α f`, it is
 derivative `∂_v` to the other factor as `-∂_v` (`LinearMap.isFormalTranspose_lineDerivation`).
 Since continuous functions are determined by their integrals against compactly supported smooth
 functions, the formal transpose is unique whenever `μ` is locally finite and positive on open sets
-(`LinearMap.IsFormalTranspose.eq`). On differential operators, `LinearMap.formalTranspose` is
+(`LinearMap.IsFormalTranspose.unique`). On differential operators, `LinearMap.formalTranspose` is
 therefore linear, involutive and reverses compositions.
 
 ## Main definitions
@@ -45,20 +45,20 @@ therefore linear, involutive and reverses compositions.
 
 ## Main results
 
-* `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators do not
-  enlarge supports.
-* `LinearMap.IsFormalTranspose.eq`: uniqueness of formal transposes.
+* `LinearMap.IsFormalTranspose.unique`: uniqueness of formal transposes.
 * `LinearMap.isFormalTranspose_lineDerivation`: the formal transpose of `∂_v` is `-∂_v`.
 * `LinearMap.isFormalTranspose_multiIndexDeriv`,
-  `LinearMap.isFormalTranspose_coordinateOperator`: the formal transposes of `∂^α` and of a
+  `LinearMap.isFormalTranspose_coordinateOperator`, `LinearMap.formalTranspose_multiIndexDeriv`,
+  `LinearMap.formalTranspose_coordinateOperator`: the formal transposes of `∂^α` and of a
   coordinate expression.
 * `LinearMap.isFormalTranspose_formalTranspose`,
   `LinearMap.formalTranspose_mem_differentialOperators`: a differential operator of order at most
   `m` has a formal transpose with respect to an additive Haar measure, again of order at most `m`;
   by `LinearMap.formalTranspose_eq_of_isAddHaarMeasure` it does not depend on the Haar measure.
 * `LinearMap.formalTranspose_formalTranspose`, `LinearMap.formalTranspose_comp`,
-  `LinearMap.formalTranspose_add`, `LinearMap.formalTranspose_smul`: the formal transpose is a
-  linear involution of the differential operators that reverses compositions.
+  `LinearMap.formalTranspose_add`, `LinearMap.formalTranspose_smul`,
+  `LinearMap.formalTranspose_sum`: the formal transpose is a linear involution of the
+  differential operators that reverses compositions.
 * `LinearMap.formalTranspose_mulLeft_comp_lineDerivation`: the formal transpose of `c ∂_v` is
   `-c ∂_v - (∂_v c)`, not just `-c ∂_v`.
 
@@ -75,109 +75,18 @@ noncomputable section
 open MeasureTheory Finset Function TauCeti
 open scoped ContDiff Manifold
 
-/-! ### Differential operators do not enlarge supports -/
+namespace ContMDiffMap
 
-namespace TauCeti
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+/-- The product of two smooth functions, one of which has compact support, is integrable. -/
+theorem integrable_mul_of_hasCompactSupport {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hfg : HasCompactSupport f ∨ HasCompactSupport g) : Integrable (fun x ↦ f x * g x) μ :=
+  (f.contMDiff.continuous.mul g.contMDiff.continuous).integrable_of_hasCompactSupport
+    (hfg.elim (·.mul_right) (·.mul_left))
 
-/-- The support of a directional derivative lies in the support of the function. -/
-theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (lineDerivation ℝ v f) ⊆ tsupport f := by
-  rw [show ⇑(lineDerivation ℝ v f) = (fderiv ℝ f · v) from funext (lineDerivation_apply_apply v f)]
-  exact tsupport_fderiv_apply_subset ℝ (f := ⇑f) v
-
-private theorem tsupport_mulLeft_apply_subset (c f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (LinearMap.mulLeft ℝ c f) ⊆ tsupport f := by
-  rw [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul]
-  exact tsupport_mul_subset_right
-
-private theorem tsupport_smul_apply_subset {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
-    (hD : ∀ f, tsupport (D f) ⊆ tsupport f) (c : ℝ) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport ((c • D) f) ⊆ tsupport f := by
-  rw [LinearMap.smul_apply, ContMDiffMap.coe_smul]
-  exact (tsupport_smul_subset_right (fun _ ↦ c) _).trans (hD f)
-
-private theorem tsupport_sum_apply_subset {ι : Type*} (s : Finset ι)
-    {D : ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
-    (hD : ∀ i ∈ s, ∀ f, tsupport (D i f) ⊆ tsupport f) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport ((∑ i ∈ s, D i) f) ⊆ tsupport f := by
-  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
-  rw [mem_support, LinearMap.coe_sum, Finset.sum_apply, ContMDiffMap.coe_sum,
-    Finset.sum_apply] at hx
-  obtain ⟨i, hi, hx⟩ := Finset.exists_ne_zero_of_sum_ne_zero hx
-  exact hD i hi f (subset_tsupport _ hx)
-
-private theorem multiIndex_induction {ι : Type*} [Finite ι] [DecidableEq ι]
-    {P : (ι → ℕ) → Prop} (zero : P 0) (add_single : ∀ α i, P α → P (α + Pi.single i 1))
-    (α : ι → ℕ) : P α := by
-  have := Fintype.ofFinite ι
-  induction h : ∑ i, α i generalizing α with
-  | zero =>
-    obtain rfl : α = 0 := funext fun i ↦ (Finset.sum_eq_zero_iff.1 h) i (mem_univ i)
-    exact zero
-  | succ n ih =>
-    obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-      by_contra! h'
-      simp [h'] at h
-    have hα : α - Pi.single i 1 + Pi.single i 1 = α := by
-      ext j
-      rcases eq_or_ne j i with rfl | hj
-      · simp only [Pi.add_apply, Pi.sub_apply, Pi.single_eq_same]
-        omega
-      · simp [hj]
-    rw [← hα]
-    refine add_single _ i (ih _ ?_)
-    have := congrArg (fun β : ι → ℕ ↦ ∑ j, β j) hα
-    simp only [Pi.add_apply, sum_add_distrib, h, Finset.sum_pi_single', mem_univ,
-      ite_true] at this
-    omega
-
-variable {ι : Type*} [Fintype ι] (v : ι → E)
-
-/-- The support of `∂^α f`, for directional derivatives `∂ᵢ` along vectors `vᵢ`, lies in the
-support of `f`. -/
-theorem tsupport_multiIndexDeriv_apply_subset (α : ι → ℕ) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
-      (fun i j ↦ commute_lineDerivation (v i) (v j)) α f) ⊆ tsupport f := by
-  classical
-  induction α using multiIndex_induction generalizing f with
-  | zero => simp
-  | add_single α i ih =>
-    rw [multiIndexDeriv_add_single, mul_apply_eq_comp]
-    exact (ih _).trans (tsupport_lineDerivation_apply_subset _ _)
-
-variable [DecidableEq ι]
-
-private theorem coordinateOperator_eq_sum (m : ℕ) (c : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    coordinateOperator (fun i ↦ lineDerivation ℝ (v i))
-        (fun i j ↦ commute_lineDerivation (v i) (v j)) m c =
-      ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k,
-        LinearMap.mulLeft ℝ (c α) ∘ₗ multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
-          (fun i j ↦ commute_lineDerivation (v i) (v j)) α := by
-  ext1 f
-  simp [smul_eq_mul, mul_comm]
-
-/-- The support of a coordinate expression `∑_{|α| ≤ m} c_α ∂^α f` lies in the support of `f`. -/
-private theorem tsupport_coordinateOperator_apply_subset (m : ℕ)
-    (c : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (coordinateOperator (fun i ↦ lineDerivation ℝ (v i))
-      (fun i j ↦ commute_lineDerivation (v i) (v j)) m c f) ⊆ tsupport f := by
-  rw [coordinateOperator_eq_sum]
-  refine tsupport_sum_apply_subset _ (fun k _ ↦ tsupport_sum_apply_subset _ fun α _ g ↦ ?_) f
-  exact (tsupport_mulLeft_apply_subset _ _).trans (tsupport_multiIndexDeriv_apply_subset v α g)
-
-/-- **Locality of differential operators.** A differential operator on `C^∞(E)`, in the sense of
-iterated commutators with multiplication operators, does not enlarge supports. -/
-theorem tsupport_apply_subset_of_mem_differentialOperators [FiniteDimensional ℝ E]
-    {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (D f) ⊆ tsupport f := by
-  rw [(Module.finBasis ℝ E).eq_coordinateOperator_coordinateCoeff hD]
-  exact tsupport_coordinateOperator_apply_subset _ _ _ f
-
-end TauCeti
+end ContMDiffMap
 
 namespace LinearMap
 
@@ -217,6 +126,16 @@ theorem IsFormalTranspose.symm (h : D.IsFormalTranspose D' μ) : D'.IsFormalTran
 theorem isFormalTranspose_comm : D.IsFormalTranspose D' μ ↔ D'.IsFormalTranspose D μ :=
   ⟨.symm, .symm⟩
 
+/-- The zero operator is its own formal transpose, for every measure. -/
+protected theorem IsFormalTranspose.zero :
+    (0 : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯).IsFormalTranspose 0 μ :=
+  fun _ _ _ ↦ by simp
+
+/-- The identity is its own formal transpose, for every measure. -/
+protected theorem IsFormalTranspose.one :
+    (1 : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯).IsFormalTranspose 1 μ :=
+  fun _ _ _ ↦ rfl
+
 /-- Formal transposes are compatible with scalar multiplication. -/
 theorem IsFormalTranspose.smul (h : D.IsFormalTranspose D' μ) (c : ℝ) :
     (c • D).IsFormalTranspose (c • D') μ := by
@@ -249,21 +168,17 @@ section Integrable
 
 variable [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
 
-/-- The product of two smooth functions, one of which has compact support, is integrable. -/
-private theorem integrable_mul {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
-    (hfg : HasCompactSupport f ∨ HasCompactSupport g) : Integrable (fun x ↦ f x * g x) μ :=
-  (f.contMDiff.continuous.mul g.contMDiff.continuous).integrable_of_hasCompactSupport
-    (hfg.elim (·.mul_right) (·.mul_left))
-
 private theorem integrable_apply_mul (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
     {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ D f x * g x) μ :=
-  integrable_mul (hfg.imp (·.mono' ((subset_tsupport _).trans (hD f))) _root_.id)
+  ContMDiffMap.integrable_mul_of_hasCompactSupport
+    (hfg.imp (·.mono' ((subset_tsupport _).trans (hD f))) _root_.id)
 
 private theorem integrable_mul_apply (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
     {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ f x * D g x) μ :=
-  integrable_mul (hfg.imp _root_.id (·.mono' ((subset_tsupport _).trans (hD g))))
+  ContMDiffMap.integrable_mul_of_hasCompactSupport
+    (hfg.imp _root_.id (·.mono' ((subset_tsupport _).trans (hD g))))
 
 /-- Formal transposes of operators that do not enlarge supports add. -/
 theorem IsFormalTranspose.add (h₁ : D₁.IsFormalTranspose D₁' μ)
@@ -276,6 +191,15 @@ theorem IsFormalTranspose.add (h₁ : D₁.IsFormalTranspose D₁' μ)
   rw [integral_add (integrable_apply_mul hD₁ hfg) (integrable_apply_mul hD₂ hfg),
     integral_add (integrable_mul_apply hD₁' hfg) (integrable_mul_apply hD₂' hfg), h₁ f g hfg,
     h₂ f g hfg]
+
+/-- Formal transposes of operators that do not enlarge supports subtract. -/
+theorem IsFormalTranspose.sub (h₁ : D₁.IsFormalTranspose D₁' μ)
+    (h₂ : D₂.IsFormalTranspose D₂' μ) (hD₁ : ∀ f, tsupport (D₁ f) ⊆ tsupport f)
+    (hD₂ : ∀ f, tsupport (D₂ f) ⊆ tsupport f) (hD₁' : ∀ g, tsupport (D₁' g) ⊆ tsupport g)
+    (hD₂' : ∀ g, tsupport (D₂' g) ⊆ tsupport g) :
+    (D₁ - D₂).IsFormalTranspose (D₁' - D₂') μ := by
+  rw [sub_eq_add_neg, sub_eq_add_neg]
+  exact h₁.add h₂.neg hD₁ (fun f ↦ by simpa using hD₂ f) hD₁' (fun g ↦ by simpa using hD₂' g)
 
 /-- Formal transposes of operators that do not enlarge supports add. -/
 theorem IsFormalTranspose.sum {ι : Type*} (s : Finset ι)
@@ -303,7 +227,7 @@ variable [FiniteDimensional ℝ E] [BorelSpace E] [IsLocallyFiniteMeasure μ] [�
 
 /-- **Uniqueness of formal transposes.** With respect to a locally finite measure that is positive
 on open sets, a linear operator on `C^∞(E)` has at most one formal transpose. -/
-theorem IsFormalTranspose.eq (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ) :
+theorem IsFormalTranspose.unique (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ) :
     D₁ = D₂ := by
   ext g x
   have key : ∀ᵐ x ∂μ, D₁ g x = D₂ g x := by
@@ -320,7 +244,18 @@ theorem IsFormalTranspose.formalTranspose_eq (h : D.IsFormalTranspose D' μ) :
     D.formalTranspose μ = D' := by
   have hex : ∃ D', D.IsFormalTranspose D' μ := ⟨D', h⟩
   simp only [formalTranspose, hex, ↓reduceDIte]
-  exact hex.choose_spec.eq h
+  exact hex.choose_spec.unique h
+
+/-- The formal transpose of the zero operator is zero. -/
+@[simp]
+theorem formalTranspose_zero :
+    (0 : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯).formalTranspose μ = 0 :=
+  IsFormalTranspose.zero.formalTranspose_eq
+
+/-- The identity is its own formal transpose. -/
+@[simp]
+theorem formalTranspose_one : (1 : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯).formalTranspose μ = 1 :=
+  IsFormalTranspose.one.formalTranspose_eq
 
 end Unique
 
@@ -345,14 +280,15 @@ theorem isFormalTranspose_lineDerivation [FiniteDimensional ℝ E] [BorelSpace E
   have hs (h : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (hh : HasCompactSupport h) :
       HasCompactSupport (lineDerivation ℝ v h) :=
     hh.mono' ((subset_tsupport _).trans (tsupport_lineDerivation_apply_subset v h))
-  have hint := integrable_mul (μ := μ) (f := lineDerivation ℝ v f) (g := g)
-    (hfg.imp (hs f) _root_.id)
-  have hint' := integrable_mul (μ := μ) (f := f) (g := lineDerivation ℝ v g)
-    (hfg.imp _root_.id (hs g))
+  have hint := ContMDiffMap.integrable_mul_of_hasCompactSupport (μ := μ)
+    (f := lineDerivation ℝ v f) (g := g) (hfg.imp (hs f) _root_.id)
+  have hint' := ContMDiffMap.integrable_mul_of_hasCompactSupport (μ := μ)
+    (f := f) (g := lineDerivation ℝ v g) (hfg.imp _root_.id (hs g))
   simp only [LinearMap.neg_apply, Derivation.coeFn_coe, ContMDiffMap.coe_neg, Pi.neg_apply,
     lineDerivation_apply_apply, mul_neg, integral_neg] at hint hint' ⊢
-  rw [integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable hint hint' (integrable_mul hfg)
-    (fun x _ ↦ hd f x) (fun x _ ↦ hd g x), neg_neg]
+  rw [integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable hint hint'
+    (ContMDiffMap.integrable_mul_of_hasCompactSupport hfg) (fun x _ ↦ hd f x)
+    (fun x _ ↦ hd g x), neg_neg]
 
 /-- Multiplication by a smooth function is its own formal transpose, for every measure. -/
 theorem isFormalTranspose_mulLeft (c : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
@@ -384,28 +320,27 @@ theorem isFormalTranspose_multiIndexDeriv (α : ι → ℕ) :
       ((-1 : ℝ) ^ (∑ i, α i) • multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
         (fun i j ↦ commute_lineDerivation (v i) (v j)) α) μ := by
   classical
-  induction α using TauCeti.multiIndex_induction with
-  | zero => simpa using (show (1 : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯).IsFormalTranspose 1 μ
-      from fun _ _ _ ↦ rfl)
+  induction α using multiIndex_induction_add_single with
+  | zero => simpa using IsFormalTranspose.one (μ := μ)
   | add_single α i ih =>
     have h := ih.comp (isFormalTranspose_lineDerivation (μ := μ) (v i))
       (tsupport_lineDerivation_apply_subset (v i))
       (tsupport_smul_apply_subset (tsupport_multiIndexDeriv_apply_subset v α) _)
-    have hcomm : (lineDerivation ℝ (v i) : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯) *
-        multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
-          (fun i j ↦ commute_lineDerivation (v i) (v j)) α =
-        multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
-          (fun i j ↦ commute_lineDerivation (v i) (v j)) α * lineDerivation ℝ (v i) := by
-      rw [← multiIndexDeriv_add_single, add_comm, multiIndexDeriv_add, multiIndexDeriv_single,
-        pow_one]
-    rw [multiIndexDeriv_add_single, Module.End.mul_eq_comp]
-    convert h using 1
-    rw [LinearMap.neg_comp, LinearMap.comp_smul, ← Module.End.mul_eq_comp, ← hcomm,
-      Module.End.mul_eq_comp]
-    simp only [Pi.add_apply, Finset.sum_add_distrib, Finset.sum_pi_single', Finset.mem_univ,
-      ite_true, pow_succ, mul_neg_one]
-    ext1 f
-    simp
+    have hsign : (-1 : ℝ) ^ ∑ j, (α + Pi.single i 1 : ι → ℕ) j = -(-1) ^ ∑ j, α j := by
+      simp [Finset.sum_add_distrib, pow_succ]
+    rw [LinearMap.neg_comp, LinearMap.comp_smul] at h
+    nth_rw 2 [multiIndexDeriv_add_single']
+    rwa [multiIndexDeriv_add_single, hsign, show ∀ (c : ℝ) (X : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯),
+      (-c) • X = -(c • X) from fun c X ↦ neg_smul c X]
+
+/-- The formal transpose of the monomial `∂^α` in directional derivatives is `(-1) ^ |α| ∂^α`,
+with respect to an additive Haar measure. -/
+theorem formalTranspose_multiIndexDeriv (α : ι → ℕ) :
+    (multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) α).formalTranspose μ =
+      (-1 : ℝ) ^ (∑ i, α i) • multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) α :=
+  (isFormalTranspose_multiIndexDeriv v α).formalTranspose_eq
 
 /-- The formal transpose of the coordinate expression `f ↦ ∑_{|α| ≤ m} c_α ∂^α f` in directional
 derivatives is `g ↦ ∑_{|α| ≤ m} (-1) ^ |α| ∂^α (c_α g)`, with respect to an additive Haar
@@ -417,7 +352,7 @@ theorem isFormalTranspose_coordinateOperator [DecidableEq ι] (m : ℕ)
       (∑ k ∈ Finset.range (m + 1), ∑ α ∈ piAntidiag univ k,
         (-1 : ℝ) ^ k • (multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
           (fun i j ↦ commute_lineDerivation (v i) (v j)) α ∘ₗ mulLeft ℝ (c α))) μ := by
-  rw [coordinateOperator_eq_sum]
+  rw [coordinateOperator_eq_sum_mulLeft]
   have hmul (a : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
       tsupport (mulLeft ℝ a f) ⊆ tsupport f :=
     tsupport_mulLeft_apply_subset a f
@@ -440,6 +375,18 @@ theorem isFormalTranspose_coordinateOperator [DecidableEq ι] (m : ℕ)
     (isFormalTranspose_multiIndexDeriv (μ := μ) v α)
     (tsupport_multiIndexDeriv_apply_subset v α) (hmul _)
   rwa [hα.1, LinearMap.smul_comp] at h
+
+/-- The formal transpose of the coordinate expression `f ↦ ∑_{|α| ≤ m} c_α ∂^α f` in directional
+derivatives is `g ↦ ∑_{|α| ≤ m} (-1) ^ |α| ∂^α (c_α g)`, with respect to an additive Haar
+measure. -/
+theorem formalTranspose_coordinateOperator [DecidableEq ι] (m : ℕ)
+    (c : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    (coordinateOperator (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) m c).formalTranspose μ =
+      ∑ k ∈ Finset.range (m + 1), ∑ α ∈ piAntidiag univ k,
+        (-1 : ℝ) ^ k • (multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+          (fun i j ↦ commute_lineDerivation (v i) (v j)) α ∘ₗ mulLeft ℝ (c α)) :=
+  (isFormalTranspose_coordinateOperator v m c).formalTranspose_eq
 
 end Coordinates
 
@@ -511,6 +458,10 @@ theorem formalTranspose_formalTranspose : (D.formalTranspose μ).formalTranspose
 theorem formalTranspose_smul (c : ℝ) : (c • D).formalTranspose μ = c • D.formalTranspose μ :=
   ((isFormalTranspose_formalTranspose μ hD).smul c).formalTranspose_eq
 
+/-- The formal transpose of a differential operator is compatible with negation. -/
+theorem formalTranspose_neg : (-D).formalTranspose μ = -D.formalTranspose μ :=
+  (isFormalTranspose_formalTranspose μ hD).neg.formalTranspose_eq
+
 /-- The formal transpose of a sum of differential operators is the sum of their formal
 transposes. -/
 theorem formalTranspose_add
@@ -518,6 +469,20 @@ theorem formalTranspose_add
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k) :
     (D + D').formalTranspose μ = D.formalTranspose μ + D'.formalTranspose μ :=
   ((isFormalTranspose_formalTranspose μ hD).add (isFormalTranspose_formalTranspose μ hD')
+    (tsupport_apply_subset_of_mem_differentialOperators hD)
+    (tsupport_apply_subset_of_mem_differentialOperators hD')
+    (tsupport_apply_subset_of_mem_differentialOperators
+      (formalTranspose_mem_differentialOperators μ hD))
+    (tsupport_apply_subset_of_mem_differentialOperators
+      (formalTranspose_mem_differentialOperators μ hD'))).formalTranspose_eq
+
+/-- The formal transpose of a difference of differential operators is the difference of their
+formal transposes. -/
+theorem formalTranspose_sub
+    (hD' : D' ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k) :
+    (D - D').formalTranspose μ = D.formalTranspose μ - D'.formalTranspose μ :=
+  ((isFormalTranspose_formalTranspose μ hD).sub (isFormalTranspose_formalTranspose μ hD')
     (tsupport_apply_subset_of_mem_differentialOperators hD)
     (tsupport_apply_subset_of_mem_differentialOperators hD')
     (tsupport_apply_subset_of_mem_differentialOperators
@@ -537,6 +502,19 @@ theorem formalTranspose_comp
       (formalTranspose_mem_differentialOperators μ hD))).formalTranspose_eq
 
 end DifferentialOperator
+
+/-- The formal transpose of a finite sum of differential operators is the sum of their formal
+transposes. -/
+theorem formalTranspose_sum [FiniteDimensional ℝ E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {ι : Type*} (s : Finset ι)
+    {D : ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ι → ℕ}
+    (hD : ∀ i ∈ s, D i ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (m i)) :
+    (∑ i ∈ s, D i).formalTranspose μ = ∑ i ∈ s, (D i).formalTranspose μ :=
+  (IsFormalTranspose.sum s (fun i hi ↦ isFormalTranspose_formalTranspose μ (hD i hi))
+    (fun i hi ↦ tsupport_apply_subset_of_mem_differentialOperators (hD i hi))
+    (fun i hi ↦ tsupport_apply_subset_of_mem_differentialOperators
+      (formalTranspose_mem_differentialOperators μ (hD i hi)))).formalTranspose_eq
 
 section Examples
 
