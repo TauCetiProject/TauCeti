@@ -11,7 +11,6 @@ public import TauCeti.Analysis.InnerProductSpace.SymplecticCokernel
 public import TauCeti.LinearAlgebra.Determinant.Line
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -220,8 +219,9 @@ variable (J₀ S) in
 def orbitTorusOperatorₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusOperator J₀ S u
-  map_add' u v := funext fun z => orbitTorusOperator_add (u.2.1.differentiable two_ne_zero z)
-    (v.2.1.differentiable two_ne_zero z)
+  map_add' u v := funext fun z => orbitTorusOperator_add
+    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusOperator_smul c
 
 variable (J₀ S) in
@@ -229,8 +229,9 @@ variable (J₀ S) in
 def orbitTorusAdjointₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusAdjoint J₀ S u
-  map_add' u v := funext fun z => orbitTorusAdjoint_add (u.2.1.differentiable two_ne_zero z)
-    (v.2.1.differentiable two_ne_zero z)
+  map_add' u v := funext fun z => orbitTorusAdjoint_add
+    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusAdjoint_smul c
 
 @[simp]
@@ -260,8 +261,9 @@ cover, in the coordinate form of the kernel theorems for `TauCeti.orbitTorusOper
 private theorem twists_of_mem {k n : ℕ} {a : ℤ}
     (hu : u ∈ doublyTwistedContDiff ℝ V 2 ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂) :
     (∀ s t, u (s + k * ℓ, t) = ε₁ • u (s, t)) ∧
-      ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t) :=
-  ⟨fun s t => by simpa using hu.2.1 (s, t), fun s t => by simpa using hu.2.2 (s, t)⟩
+      ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t) := by
+  rw [mem_doublyTwistedContDiff] at hu
+  exact ⟨fun s t => by simpa using hu.2.1 (s, t), fun s t => by simpa using hu.2.2 (s, t)⟩
 
 /-- The reflection `(s, t) ↦ u (-s, t)` of a map twisted by `ε₁` along `(k ℓ, 0)` and by `ε₂`
 along `(a ℓ, n d)` is twisted by `ε₁` along `(k ℓ, 0)` and by `ε₂` along `(-a ℓ, n d)`. -/
@@ -270,6 +272,7 @@ private theorem reflect_mem {k n : ℕ} {a : ℤ} (hε₁ : ε₁ ^ 2 = 1)
     (fun w : ℝ × ℝ => u (-w.1, w.2)) ∈
       doublyTwistedContDiff ℝ V 2 ((k : ℝ) * ℓ, 0) (((-a : ℤ) : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂ := by
   obtain ⟨hs, ht⟩ := twists_of_mem hu
+  rw [mem_doublyTwistedContDiff] at hu ⊢
   refine ⟨hu.1.comp (contDiff_fst.neg.prodMk contDiff_snd), fun ⟨s, t⟩ => ?_,
     fun ⟨s, t⟩ => ?_⟩
   · have h := hs (-s - k * ℓ) t
@@ -289,8 +292,9 @@ theorem ker_orbitTorusOperatorₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
       ⊥ := by
   refine eq_bot_iff.2 fun u hu => ?_
   obtain ⟨hs, ht⟩ := twists_of_mem u.2
-  have h := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont u.2.1
-    (by norm_num) hε₂ hk hn hs ht (mem_ker_orbitTorusOperatorₗ.1 hu)
+  have h := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont
+    (mem_doublyTwistedContDiff.1 u.2).1 (by norm_num) hε₂ hk hn hs ht
+    (mem_ker_orbitTorusOperatorₗ.1 hu)
   rw [Submodule.mem_bot]
   exact Subtype.ext (h.resolve_left (by norm_num))
 
@@ -308,10 +312,11 @@ theorem ker_orbitTorusAdjointₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
   obtain ⟨hs, ht⟩ := twists_of_mem hw
   have hDw (z : ℝ × ℝ) :
       orbitTorusOperator J₀ S (fun w : ℝ × ℝ => (u : ℝ × ℝ → V) (-w.1, w.2)) z = 0 := by
-    rw [orbitTorusOperator_comp_neg_fst (u.2.1.differentiable two_ne_zero),
+    rw [orbitTorusOperator_comp_neg_fst
+      ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero),
       mem_ker_orbitTorusAdjointₗ.1 hu]
-  have h := (eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont hw.1
-    (by norm_num) hε₂ hk hn hs ht hDw).resolve_left (by norm_num)
+  have h := (eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont
+    (mem_doublyTwistedContDiff.1 hw).1 (by norm_num) hε₂ hk hn hs ht hDw).resolve_left (by norm_num)
   rw [Submodule.mem_bot]
   ext1; funext ⟨s, t⟩
   simpa using congrFun h (-s, t)
@@ -355,6 +360,7 @@ private theorem propagatorField_mem (hS1 : ContDiff ℝ 1 S) (hper : Function.Pe
   have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
   have hΨ : ContDiff ℝ 2 Ψ := (contDiff_dysonSeriesLeft (n := 1)
     ((contDiff_const (c := J₀)).clm_comp (by simpa using hS1))).of_le (by norm_num)
+  rw [mem_doublyTwistedContDiff]
   refine ⟨(hΨ.clm_apply contDiff_const).comp contDiff_snd, fun z => ?_, fun ⟨s, t⟩ => ?_⟩
   · simp [propagatorField]
   · have hadd : Ψ (t + n * d) = Ψ t * Ψ d ^ n :=
@@ -375,12 +381,13 @@ private theorem of_mem_ker (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, ⟪J�
     u = propagatorField J₀ S (u 0) ∧ u 0 ∈ LinearMap.ker
       (ε₂ • 1 - ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
   obtain ⟨hs, ht⟩ := twists_of_mem hu
+  have hu := (mem_doublyTwistedContDiff.1 hu).1
   refine ⟨funext
     (eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hℓ hd hJ₀
-      hJ₀sq hS hScont hu.1 hε₁ hε₂ hk hn hs ht hD).2, ?_⟩
+      hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD).2, ?_⟩
   rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
     ContinuousLinearMap.coe_coe, dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero hℓ
-      hd hJ₀ hJ₀sq hS hScont hper hu.1 hε₁ hε₂ hk hn hs ht hD, sub_self]
+      hd hJ₀ hJ₀sq hS hScont hper hu hε₁ hε₂ hk hn hs ht hD, sub_self]
 
 /-- The adjoint version of `of_mem_ker`, obtained by reflection in `s`. -/
 private theorem of_mem_ker_adjoint (hℓ : 0 < ℓ) (hd : 0 < d)
@@ -394,7 +401,8 @@ private theorem of_mem_ker_adjoint (hℓ : 0 < ℓ) (hd : 0 < d)
       (ε₂ • 1 - ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
   have hw := reflect_mem hε₁ hu
   have hDw (z : ℝ × ℝ) : orbitTorusOperator J₀ S (fun w : ℝ × ℝ => u (-w.1, w.2)) z = 0 := by
-    rw [orbitTorusOperator_comp_neg_fst (hu.1.differentiable two_ne_zero), hD]
+    rw [orbitTorusOperator_comp_neg_fst
+      ((mem_doublyTwistedContDiff.1 hu).1.differentiable two_ne_zero), hD]
   obtain ⟨h₂, h₃⟩ := of_mem_ker hℓ hd hJ₀ hJ₀sq hS hScont hper hε₁ hε₂ hk hn hw hDw
   have h0 : u (-(0 : ℝ × ℝ).1, (0 : ℝ × ℝ).2) = u 0 := congrArg u (by ext <;> simp)
   rw [h0] at h₂ h₃
@@ -494,8 +502,8 @@ theorem kerOrbitTorusAdjointEquiv_symm_apply
       ℝ × ℝ → V) z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
   (rfl)
 
-/-- The kernels of `D` and of `D†`, on maps periodic along `(k ℓ, 0)` and twisted by `ε₂` along
-`(a ℓ, n d)`, have the dimension of the `ε₂`-eigenspace of `Ψ(d) ^ n`. -/
+/-- The kernel of `D`, on maps periodic along `(k ℓ, 0)` and twisted by `ε₂` along `(a ℓ, n d)`,
+has the dimension of the `ε₂`-eigenspace of `Ψ(d) ^ n`. -/
 theorem finrank_ker_orbitTorusOperatorₗ (hℓ : 0 < ℓ) (hd : 0 < d)
     (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫)
     (hJ₀sq : ∀ x, J₀ (J₀ x) = -x) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)

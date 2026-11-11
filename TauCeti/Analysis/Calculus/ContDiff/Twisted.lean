@@ -32,7 +32,6 @@ variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
 
 /-- The `C^n` maps `u : E → F` twisted by the scalar `ε₁` along `p` and by the scalar `ε₂` along
 `q`: `u (z + p) = ε₁ • u z` and `u (z + q) = ε₂ • u z`. -/
-@[expose]
 def doublyTwistedContDiff (n : WithTop ℕ∞) (p q : E) (ε₁ ε₂ : 𝕜) : Submodule 𝕜 (E → F) where
   carrier := {u | ContDiff 𝕜 n u ∧ (∀ z, u (z + p) = ε₁ • u z) ∧ ∀ z, u (z + q) = ε₂ • u z}
   add_mem' {u v} hu hv := ⟨hu.1.add hv.1, fun z => by simp [hu.2.1 z, hv.2.1 z],
@@ -43,6 +42,7 @@ def doublyTwistedContDiff (n : WithTop ℕ∞) (p q : E) (ε₁ ε₂ : 𝕜) : 
 
 variable {𝕜 F}
 
+@[simp]
 theorem mem_doublyTwistedContDiff {n : WithTop ℕ∞} {p q : E} {ε₁ ε₂ : 𝕜} {u : E → F} :
     u ∈ doublyTwistedContDiff 𝕜 F n p q ε₁ ε₂ ↔
       ContDiff 𝕜 n u ∧ (∀ z, u (z + p) = ε₁ • u z) ∧ ∀ z, u (z + q) = ε₂ • u z :=
