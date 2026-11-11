@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -99,12 +98,8 @@ of its components, so its matrix coefficients are sums of those of `X` and `Y`. 
 theorem isContinuous_biprod [ContinuousAdd k] {X Y : FDRep k G} (hX : isContinuous k G X)
     (hY : isContinuous k G Y) : isContinuous k G (X ⊞ Y) := by
   intro f v
-  have hv : v = (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ((biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom v) +
-      (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ((biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom v) := by
-    have h := congrArg (fun t : X ⊞ Y ⟶ X ⊞ Y => t.hom.hom.hom v) (biprod.total (X := X) (Y := Y))
-    simpa [-biprod.total, FGModuleCat.hom_hom_add] using h.symm
-  rw [hv]
-  simp only [map_add]
+  rw [← LinearMap.id_apply (R := k) v, ← biprod_total_hom_hom_hom X Y]
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add]
   exact (continuous_apply_ρ_hom_apply hX _ f _).add (continuous_apply_ρ_hom_apply hY _ f _)
 
 instance [ContinuousAdd k] : (isContinuous k G).IsClosedUnderBinaryProducts :=
