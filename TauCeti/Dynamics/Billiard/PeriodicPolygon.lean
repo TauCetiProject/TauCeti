@@ -13,12 +13,10 @@ public import Mathlib.Data.ZMod.Defs
 public import Mathlib.Topology.Order.Basic
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Convex.StrictConvexBetween
 import Mathlib.Analysis.InnerProductSpace.Convex
-import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Calculus.Deriv.PeriodicSegment
 import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
@@ -28,14 +26,18 @@ Let `χ : ℝ → F` be a differentiable `L`-periodic curve, `L > 0`, in a real 
 whose derivative vanishes nowhere. For the boundary of a convex billiard table, parametrized by
 arclength, a closed billiard trajectory with `N` bounces is a closed polygon with vertices
 `χ(s_k)`, `k ∈ ℤ/N`, obeying the reflection law at each vertex: the incoming and the outgoing
-chords make equal angles with the tangent line. This file proves Birkhoff's theorem that such
-polygons exist for every `N ≥ 2` (`TauCeti.exists_billiard_periodic_reflection`): there are
+chords make equal angles with the tangent line. This file proves, by perimeter maximization (the
+variational step of Birkhoff's argument), that such polygons exist for every `N ≥ 2`
+(`TauCeti.exists_billiard_periodic_reflection`): there are
 `s_k` with `χ(s_(k+1)) ≠ χ(s_k)` and
 
 `⟪u_(k-1), χ'(s_k)⟫ = ⟪u_k, χ'(s_k)⟫` for every `k`,
 
 where `u_k` is the unit vector from `χ(s_k)` to `χ(s_(k+1))`. Nonconsecutive vertices may
-coincide, and the least period of the polygon may be a proper divisor of `N`.
+coincide, and the least period of the polygon may be a proper divisor of `N`. The rotation number
+is not controlled, so this is not Birkhoff's theorem on periodic orbits of every rotation number
+`p/N`: for even `N` the polygon can be a double normal traversed `N / 2` times, as for the
+doubled diameter of a circle.
 
 The polygons are the maximizers of the inscribed perimeter
 `P(s) = ∑ₖ ‖χ(s_(k+1)) - χ(s_k)‖` (`TauCeti.inscribedPerimeter`). It is continuous and
@@ -64,8 +66,8 @@ polygon need not stay on one side of it.
   are distinct.
 * `TauCeti.inner_eq_inner_of_isMaxOn_inscribedPerimeter`: at a maximizer, the reflection law holds
   at every vertex.
-* `TauCeti.exists_billiard_periodic_reflection`: Birkhoff's periodic billiard polygons with `N`
-  vertices, for every `N ≥ 2`.
+* `TauCeti.exists_billiard_periodic_reflection`: periodic billiard polygons with `N` vertices, for
+  every `N ≥ 2`.
 * `TauCeti.exists_double_normal`: a chord orthogonal to the curve at both of its endpoints.
 
 ## References
@@ -151,36 +153,6 @@ section NormedSpace
 
 variable [NormedSpace ℝ F]
 
-omit [NeZero N] in
-/-- A differentiable periodic curve with nowhere vanishing derivative does not lie in a segment. -/
-private theorem exists_not_mem_segment (hχ : Differentiable ℝ χ) (hper : Periodic χ L)
-    (hL : 0 < L) (hχ' : ∀ t, deriv χ t ≠ 0) (a b : F) : ∃ t, χ t ∉ segment ℝ a b := by
-  by_contra! h
-  -- A coordinate `f` of `χ` along the segment attains its maximum at some `t₀`.
-  set v := b - a
-  obtain ⟨g, -, hg⟩ := exists_dual_vector'' ℝ v
-  set f : ℝ → ℝ := fun t ↦ g (χ t - a)
-  have hf : Differentiable ℝ f := g.differentiable.comp (hχ.sub_const a)
-  have hfper : Periodic f L := fun t ↦ by simp only [f, hper t]
-  obtain ⟨-, ⟨t₀, rfl⟩, ht₀⟩ :=
-    (hfper.compact_of_continuous hL.ne' hf.continuous).exists_isGreatest (range_nonempty f)
-  have hmax : IsLocalMax f t₀ :=
-    Filter.Eventually.of_forall fun t ↦ ht₀ (mem_range_self t)
-  -- On the segment `χ = a + (f / ‖v‖) • v`, so `χ'(t₀) = (f'(t₀) / ‖v‖) • v = 0`.
-  have hχeq : χ = fun t ↦ a + (f t / ‖v‖) • v := by
-    funext t
-    obtain ⟨θ, -, hθ⟩ := (segment_eq_image' ℝ a b ▸ h t :)
-    have hθ' : χ t = a + θ • v := hθ.symm
-    rcases eq_or_ne v 0 with hv | hv
-    · simp [hθ', hv]
-    · have hfθ : f t = θ * ‖v‖ := by
-        simp only [f, hθ', add_sub_cancel_left, map_smul, hg, smul_eq_mul,
-          RCLike.ofReal_real_eq_id, id_eq]
-      rw [hfθ, mul_div_cancel_right₀ _ (norm_ne_zero_iff.2 hv), hθ']
-  apply hχ' t₀
-  rw [hχeq, deriv_const_add, deriv_smul_const ((hf t₀).div_const _), deriv_div_const,
-    hmax.deriv_eq_zero, zero_div, zero_smul]
-
 /-- **Consecutive vertices of a perimeter maximizer are distinct.** For a differentiable periodic
 curve with nowhere vanishing derivative in a strictly convex real normed space, and at least two
 vertices, two consecutive vertices of an inscribed polygon of maximal perimeter never coincide. -/
@@ -194,7 +166,7 @@ theorem apply_add_one_ne_of_isMaxOn_inscribedPerimeter [StrictConvexSpace ℝ F]
   -- segment between the neighbours `χ(s_k)` and `χ(s_(k+2))` of that vertex.
   set j := k + 1
   have hj : j - 1 = k := add_sub_cancel_right k 1
-  refine (exists_not_mem_segment hχ hper hL hχ' (χ (s k)) (χ (s (j + 1)))).elim fun t ht ↦ ht ?_
+  refine (hper.exists_notMem_segment hL hχ hχ' (χ (s k)) (χ (s (j + 1)))).elim fun t ht ↦ ht ?_
   have hle := isMaxOn_iff.1 hs (update s j t) (mem_univ _)
   rw [inscribedPerimeter_update hN, hj, hk, sub_self, norm_zero, zero_add] at hle
   rw [mem_segment_iff_wbtw, ← dist_add_dist_eq_iff]
@@ -240,13 +212,14 @@ theorem inner_eq_inner_of_isMaxOn_inscribedPerimeter (hχ : Differentiable ℝ �
   linarith
 
 omit [NeZero N] in
-/-- **Birkhoff's periodic billiard polygons.** Let `χ` be a differentiable `L`-periodic curve,
-`L > 0`, in a real inner product space, with nowhere vanishing derivative. For every `N ≥ 2` there
-are parameters `s_k`, `k ∈ ℤ/N`, such that consecutive vertices `χ(s_k)` and `χ(s_(k+1))` are
-distinct and the reflection law holds at every vertex: with `u_k` the unit vector from `χ(s_k)` to
-`χ(s_(k+1))`, `⟪u_(k-1), χ'(s_k)⟫ = ⟪u_k, χ'(s_k)⟫`. For the arclength parametrization of the
-boundary of a strictly convex planar table, these are closed billiard trajectories with `N`
-bounces, whose least period divides `N`. -/
+/-- **Periodic billiard polygons by perimeter maximization.** Let `χ` be a differentiable
+`L`-periodic curve, `L > 0`, in a real inner product space, with nowhere vanishing derivative. For
+every `N ≥ 2` there are parameters `s_k`, `k ∈ ℤ/N`, such that consecutive vertices `χ(s_k)` and
+`χ(s_(k+1))` are distinct and the reflection law holds at every vertex: with `u_k` the unit vector
+from `χ(s_k)` to `χ(s_(k+1))`, `⟪u_(k-1), χ'(s_k)⟫ = ⟪u_k, χ'(s_k)⟫`. For the arclength
+parametrization of the boundary of a strictly convex planar table, these are closed billiard
+trajectories with `N` bounces, whose least period divides `N`. The rotation number is not
+controlled: for even `N` the polygon can be a double normal traversed `N / 2` times. -/
 theorem exists_billiard_periodic_reflection (hχ : Differentiable ℝ χ) (hper : Periodic χ L)
     (hL : 0 < L) (hχ' : ∀ t, deriv χ t ≠ 0) (hN : 2 ≤ N) :
     ∃ s : ZMod N → ℝ, ∀ k, χ (s (k + 1)) ≠ χ (s k) ∧
