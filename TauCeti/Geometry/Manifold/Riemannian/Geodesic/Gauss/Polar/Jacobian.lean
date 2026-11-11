@@ -114,11 +114,8 @@ theorem norm_curveVelocity_riemannianExp_const_smul {e : ℝ → TangentSpace I 
     (hmem : r • e t ∈ expDomain I M p) :
     ‖curveVelocity I (fun s ↦ riemannianExp I M p (r • e s)) t‖ =
       polarJacobian (I := I) p (e t) e' r := by
-  have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • e t) :=
-    ((contMDiffOn_riemannianExp p).contMDiffAt
-      ((isOpen_expDomain p).mem_nhds hmem)).mdifferentiableAt (by simp)
-  exact (congrArg norm (hexp.curveVelocity_comp_mfderiv (he.const_smul r))).trans
-    (polarJacobian_eq_norm p (e t) e' r).symm
+  simpa only [Function.comp_def, Pi.smul_apply, polarJacobian_eq_norm] using
+    congrArg norm (curveVelocity_riemannianExp_comp (he.const_smul r) hmem)
 
 /-- The full polar metric, evaluated on two coordinate tangent vectors.
 The angular coefficient is the polar Jacobian. -/
