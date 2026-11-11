@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import Mathlib.Algebra.Category.ModuleCat.Products
 import Mathlib.Algebra.DirectSum.Finsupp
-import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
@@ -89,8 +88,8 @@ theorem bettiNumber_zero [StrongRankCondition k] :
   classical
   let e := (TopCat.singularHomology₀Iso (TopCat.of X) (ModuleCat.of k k) ≪≫
     ModuleCat.coprodIsoDirectSum _).toLinearEquiv
-  rw [bettiNumber_def, e.finrank_eq, ← (finsuppLEquivDirectSum k k _).finrank_eq, finrank,
-    rank_finsupp_self, Cardinal.toNat_lift, Cardinal.toNat_mk]
+  rw [bettiNumber_def, e.finrank_eq, ← (finsuppLEquivDirectSum k k _).finrank_eq]
+  exact finrank_eq_nat_card_basis Finsupp.basisSingleOne
 
 variable {X} in
 /-- **The positive-degree Betti numbers of a contractible space vanish.** -/
