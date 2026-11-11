@@ -33,7 +33,8 @@ everywhere (`TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`)
 there is no condition on `u`; for a function analytic on a disc, such as `log (1 + z)`, the
 condition is a bound on `‖u‖_{H^s}`. This is how analytic functions act on the Sobolev algebra
 without any composition (Moser) estimate. In particular, for `U ∈ H^s` the function `exp U - 1`
-lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and `sin f`.
+lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and `sin f`. For
+`U ∈ H^s` with small `H^s` norm, `log (1 + U)` lies in `H^s`.
 
 The action is moreover locally Lipschitz. Differences of powers satisfy
 `‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}` for
@@ -60,6 +61,8 @@ what the charts of a gauge group modelled on `H^s` require.
   `exp U - 1` is an `L²` function in `H^s`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_exp_mul_sub_one`: for a real `f ∈ H^s` and a
   complex constant `c`, `exp (c f) - 1` is an `L²` function in `H^s`.
+* `TemperedDistribution.exists_memSobolev_ae_eq_log_one_add`: for an `L²` function `U ∈ H^s`
+  with `C ‖U‖_{H^s} < 1`, `log (1 + U)` is an `L²` function in `H^s`.
 * `TemperedDistribution.cos_sub_one_mem_realSobolevFunctions`,
   `TemperedDistribution.sin_mem_realSobolevFunctions`: for a real `f ∈ H^s`, the real functions
   `cos f - 1` and `sin f` lie in `H^s`.
@@ -204,6 +207,37 @@ theorem exists_memSobolev_ae_eq_exp_mul_sub_one {s : ℝ} (hs : finrank ℝ E < 
   filter_upwards [hv, Lp.coeFn_smul c (Complex.ofRealCLM.compLp u),
     Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, huf] with x hx hUx hcx hfx
   rw [hx, hUx, Pi.smul_apply, hcx, Complex.ofRealCLM_apply, hfx, smul_eq_mul]
+
+/-- **The logarithm of `1 + U` for small `U ∈ H^s`, `s > n / 2`.** There is a constant `C`,
+depending only on `s` and `E`, such that for an `L²` function `U ∈ H^s` with `C ‖U‖_{H^s} < 1`, the
+function `log (1 + U)` is an `L²` function in `H^s`: it is the logarithm series of `U`, which
+converges since `|U| < 1` almost everywhere by the Sobolev embedding. -/
+theorem exists_memSobolev_ae_eq_log_one_add {s : ℝ} (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {U : Lp ℂ 2 (volume : Measure E)} (hU : MemSobolev s 2 (U : 𝓢'(E, ℂ))),
+      C * ‖hU.toBesselPotentialSpace‖ < 1 →
+      ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x ↦ Complex.log (1 + U x)) ∧
+        MemSobolev s 2 (v : 𝓢'(E, ℂ)) := by
+  obtain ⟨C₁, hC₁, hser⟩ := exists_hasSum_mul_pow hs
+  obtain ⟨C₂, hC₂, hsup⟩ :=
+    exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := E) (F := ℂ) hs
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {U} hU hCU ↦ ?_⟩
+  set R := ‖hU.toBesselPotentialSpace‖
+  have hR : 0 ≤ R := norm_nonneg _
+  have hC₁R : C₁ * R < 1 := (mul_le_mul_of_nonneg_right (le_max_left _ _) hR).trans_lt hCU
+  have hC₂R : C₂ * R < 1 := (mul_le_mul_of_nonneg_right (le_max_right _ _) hR).trans_lt hCU
+  -- The logarithm series `∑ₙ (-1)ⁿ z ^ (n + 1) / (n + 1)`, majorized by the geometric series.
+  have hsum : Summable fun n : ℕ ↦ ‖((-1) ^ n / (n + 1) : ℂ)‖ * (C₁ * R) ^ n := by
+    refine (summable_geometric_of_lt_one (by positivity) hC₁R).of_nonneg_of_le
+      (fun n ↦ by positivity) fun n ↦ ?_
+    refine mul_le_of_le_one_left (by positivity) ?_
+    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow]
+    refine div_le_one_of_le₀ ?_ (norm_nonneg _)
+    rw [← Nat.cast_add_one, Complex.norm_natCast]
+    exact_mod_cast Nat.le_add_left 1 n
+  obtain ⟨v, hv, hvs, -⟩ := hser hU hsum
+  refine ⟨v, ?_, hvs⟩
+  filter_upwards [hv, hsup hU] with x hx hUx
+  exact hx.unique (Complex.hasSum_taylorSeries_log' (hUx.trans_lt hC₂R))
 
 /-- **The cosine of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s`, the function
 `cos f - 1` lies in `H^s`: it is the half sum of `exp (i f) - 1` and `exp (-i f) - 1`. -/
