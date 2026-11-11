@@ -170,10 +170,11 @@ theorem sectionProdMap_add {x : M}
     sectionProdMap D₁ D₂ (σ + σ') x = sectionProdMap D₁ D₂ σ x + sectionProdMap D₁ D₂ σ' x := by
   obtain ⟨hσ₁, hσ₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
   obtain ⟨hσ₁', hσ₂'⟩ := mdifferentiableAt_section_prod_iff.1 hσ'
-  rw [sectionProdMap_apply, show (fun y ↦ ((σ + σ') y).1) = (fun y ↦ (σ y).1) + fun y ↦ (σ' y).1
-    from rfl, show (fun y ↦ ((σ + σ') y).2) = (fun y ↦ (σ y).2) + fun y ↦ (σ' y).2 from rfl,
-    h₁ hσ₁ hσ₁', h₂ hσ₂ hσ₂']
-  ext v <;> simp [sectionProdMap_apply]
+  have k₁ := h₁ hσ₁ hσ₁'
+  have k₂ := h₂ hσ₂ hσ₂'
+  rw [Pi.add_def] at k₁ k₂
+  simp only [sectionProdMap_apply, Pi.add_apply, Prod.fst_add, Prod.snd_add, k₁, k₂]
+  ext v <;> simp
 
 section ComplexPart
 
@@ -331,8 +332,9 @@ theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (
     [∀ x, LinearMap.CompatibleSMul (W x) (V x) S ℂ] (c : S) (σ : Π x : M, W x) (x : M) :
     sectionTransport Φ D (c • σ) x =
       ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (c • fun y ↦ (Φ y).symm (σ y)) x) := by
-  rw [sectionTransport_apply, show (fun y ↦ (Φ y).symm ((c • σ) y)) =
-    c • fun y ↦ (Φ y).symm (σ y) from funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _]
+  rw [sectionTransport_apply, Pi.smul_def, Pi.smul_def]
+  congr 2 with y
+  exact LinearMapClass.map_smul_of_tower _ _ _
 
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
@@ -341,8 +343,9 @@ pulled back section. -/
 theorem sectionTransport_smul' (g : M → ℝ) (σ : Π x : M, W x) (x : M) :
     sectionTransport Φ D (g • σ) x =
       ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (g • fun y ↦ (Φ y).symm (σ y)) x) := by
-  rw [sectionTransport_apply, show (fun y ↦ (Φ y).symm ((g • σ) y)) =
-    g • fun y ↦ (Φ y).symm (σ y) from funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _]
+  rw [sectionTransport_apply, Pi.smul_def', Pi.smul_def']
+  congr 2 with y
+  exact LinearMapClass.map_smul_of_tower _ _ _
 
 omit [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The transport of an operator additive on sections differentiable at `x` along a fibrewise
@@ -355,10 +358,9 @@ theorem sectionTransport_add
       D (τ + τ') x = D τ x + D τ' x)
     {σ σ' : Π x : M, W x} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) :
     sectionTransport Φ D (σ + σ') x = sectionTransport Φ D σ x + sectionTransport Φ D σ' x := by
-  rw [sectionTransport_apply, sectionTransport_apply, sectionTransport_apply,
-    show (fun y ↦ (Φ y).symm ((σ + σ') y)) =
-      (fun y ↦ (Φ y).symm (σ y)) + fun y ↦ (Φ y).symm (σ' y) from
-      funext fun y ↦ map_add _ _ _, hD (hΦ hσ) (hΦ hσ'), ContinuousLinearMap.comp_add]
+  have k := hD (hΦ hσ) (hΦ hσ')
+  rw [Pi.add_def] at k
+  simp only [sectionTransport_apply, Pi.add_apply, map_add, k, ContinuousLinearMap.comp_add]
 
 section ComplexPart
 
