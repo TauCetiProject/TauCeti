@@ -12,10 +12,10 @@ public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
 public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
 public import TauCeti.NumberTheory.HeckeRing.Normalizer
 
+import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.LinearAlgebra.Matrix.Integer
 import Mathlib.Tactic.Group
 import TauCeti.NumberTheory.HeckeRing.GLn.ScalarMul
-import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # Rational and full `GL_n` Hecke rings, global comparison, and central scalar units
@@ -152,14 +152,11 @@ theorem exists_pos_natDiagGL_mul_mem_posDetInt {g : GL (Fin n) ℚ}
 /-- **The commensurator of `SL_n(ℤ)` in `GL_n(ℚ)` is the whole group.** -/
 theorem commensurator_SLnZ_eq_top : commensurator (SLnZ n) = ⊤ := by
   rw [Subgroup.eq_top_iff']; intro g
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact Subsingleton.elim g 1 ▸ (commensurator (SLnZ 0)).one_mem
-  · have : NeZero n := ⟨hn.ne'⟩
-    obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_intEntries n g
-    have h1 := mem_commensurator_of_hasIntEntries n (hasIntEntries_natDiagGL n (fun _ ↦ c))
-    have h2 := mem_commensurator_of_hasIntEntries n ((mem_intEntries n).mp hcg)
-    simpa only [inv_mul_cancel_left] using
-      (commensurator (SLnZ n)).mul_mem ((commensurator (SLnZ n)).inv_mem h1) h2
+  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_intEntries n g
+  have h1 := mem_commensurator_of_hasIntEntries n (hasIntEntries_natDiagGL n (fun _ ↦ c))
+  have h2 := mem_commensurator_of_hasIntEntries n ((mem_intEntries n).mp hcg)
+  simpa only [inv_mul_cancel_left] using
+    (commensurator (SLnZ n)).mul_mem ((commensurator (SLnZ n)).inv_mem h1) h2
 
 /-- **The commensurator of `GL_n(ℤ)` in `GL_n(ℚ)` is the whole group.** -/
 theorem commensurator_GLnZ_eq_top : commensurator (GLnZ n) = ⊤ :=
@@ -185,38 +182,36 @@ end Commensurator
 
 section Comparison
 
--- Upstream `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` (`GLn/Basic.lean`) carries `[NeZero n]`.
-
 /-- **Integral-to-rational Hecke ring embedding** (`Shimura` Proposition 3.16 /
 `Rhodes–Shemanske` §2): enlarging `posDetInt n` to `GL_n^+(ℚ)` embeds `𝕋 (posDetInt n) (SLnZ n) R`
 injectively into `𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R` over any coefficient semiring `R`. -/
-noncomputable def integralToRationalRingHom [NeZero n] (R : Type*) [Semiring R] :
+noncomputable def integralToRationalRingHom (R : Type*) [Semiring R] :
     𝕋 (posDetInt n) (SLnZ n) R →+* 𝕋 (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R :=
   HeckeCosetModule.mapSubmonoidRingHom R (posDetInt_le_glpos n)
 
 /-- The integral-to-rational embedding over `ℤ`. -/
-noncomputable abbrev integralToRational [NeZero n] : IntegralHeckeRing n →+* RationalHeckeRing n :=
+noncomputable abbrev integralToRational : IntegralHeckeRing n →+* RationalHeckeRing n :=
   integralToRationalRingHom n ℤ
 
 /-- `integralToRationalRingHom` maps a basis element to the corresponding rational basis element. -/
 @[simp]
-theorem integralToRationalRingHom_single [NeZero n] (R : Type*) [Semiring R]
+theorem integralToRationalRingHom_single (R : Type*) [Semiring R]
     (D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) (b : R) :
     integralToRationalRingHom n R (HeckeCosetModule.single R D b) =
       HeckeCosetModule.single R (D.map (posDetInt_le_glpos n) le_rfl le_rfl) b :=
   HeckeCosetModule.mapSubmonoidRingHom_single R (posDetInt_le_glpos n) D b
 
 /-- `integralToRationalRingHom` is injective over any coefficient semiring `R`. -/
-theorem integralToRationalRingHom_injective [NeZero n] (R : Type*) [Semiring R] :
+theorem integralToRationalRingHom_injective (R : Type*) [Semiring R] :
     Function.Injective (integralToRationalRingHom n R) :=
   HeckeCosetModule.mapSubmonoidRingHom_injective R (posDetInt_le_glpos n)
 
 /-- `integralToRational` is injective. -/
-theorem integralToRational_injective [NeZero n] : Function.Injective (integralToRational n) :=
+theorem integralToRational_injective : Function.Injective (integralToRational n) :=
   integralToRationalRingHom_injective n ℤ
 
 /-- Image of a diagonal Hecke operator `diagElem a` under `integralToRational`. -/
-theorem integralToRational_diagElem [NeZero n] (a : Fin n → ℕ) :
+theorem integralToRational_diagElem (a : Fin n → ℕ) :
     integralToRational n (diagElem a) = HeckeCosetModule.single ℤ
       (HeckeCoset.mk (SLnZ n) (SLnZ n)
         ⟨natDiagGL n a, posDetInt_le_glpos n (natDiagGL_mem_posDetInt n a)⟩) 1 := by
@@ -314,21 +309,21 @@ theorem rationalToFullRingEquiv_single (R : Type*) [Semiring R]
 
 /-- Composite embedding `H_R(SL_n(ℤ), M_n^+(ℤ)) ↪ H_R(GL_n(ℤ), GL_n(ℚ))` of the integral Hecke ring
 into the full rational Hecke ring. -/
-noncomputable def integralToFullRingHom [NeZero n] (R : Type*) [Semiring R] :
+noncomputable def integralToFullRingHom (R : Type*) [Semiring R] :
     𝕋 (posDetInt n) (SLnZ n) R →+* 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R :=
   (rationalToFullRingEquiv n R).toRingHom.comp (integralToRationalRingHom n R)
 
 /-- `integralToFullRingHom` maps a basis element to the corresponding `GL_n(ℤ)`-coset basis
 element. -/
 @[simp]
-theorem integralToFullRingHom_single [NeZero n] (R : Type*) [Semiring R]
+theorem integralToFullRingHom_single (R : Type*) [Semiring R]
     (D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) (b : R) :
     integralToFullRingHom n R (HeckeCosetModule.single R D b) =
       HeckeCosetModule.single R (D.map le_top (SLnZ_le_GLnZ n) (SLnZ_le_GLnZ n)) b := by
   simp [integralToFullRingHom]
 
 /-- `integralToFullRingHom` is injective over any coefficient semiring `R`. -/
-theorem integralToFullRingHom_injective [NeZero n] (R : Type*) [Semiring R] :
+theorem integralToFullRingHom_injective (R : Type*) [Semiring R] :
     Function.Injective (integralToFullRingHom n R) :=
   (rationalToFullRingEquiv n R).injective.comp (integralToRationalRingHom_injective n R)
 
@@ -360,9 +355,6 @@ theorem transposeRationalAntiInvolution_onHeckeCoset_eq_self
     (transposeRationalAntiInvolution n).onHeckeCoset D = D := by
   induction D using HeckeCoset.induction with | h g =>
   rw [(transposeRationalAntiInvolution n).onHeckeCoset_mk]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact congrArg (HeckeCoset.mk _ _) (Subtype.ext (Subsingleton.elim _ _))
-  have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
   have hbar_int := (transposeAntiInvolution n).bar_mem_doubleCoset_self
     (transposeAntiInvolution_onHeckeCoset_eq_self n) ⟨natDiagGL n (fun _ ↦ c) * g, hcg⟩
@@ -490,9 +482,6 @@ theorem scalarUnit_pow (c k : ℕ) :
     | zero => simp
     | succ k ih => rw [pow_succ, pow_succ, ih, scalarUnit_mul n (pow_pos hc k) hc]
 
--- Upstream `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` (`GLn/Basic.lean`) carries `[NeZero n]`.
-variable [NeZero n]
-
 /-- The underlying element of `scalarUnit` is the image of `diagElem (fun _ ↦ c)` in
 `RationalHeckeRing n`. -/
 @[simp]
@@ -535,25 +524,38 @@ rational Hecke operator `z` becomes integral after multiplying by a positive sca
 theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
     ∃ x : IntegralHeckeRing n, ∃ s ∈ scalarSubmonoid n,
       z * integralToRational n s = integralToRational n x := by
-  rw [← RingHom.mem_denClearingSubring]
-  induction z using HeckeCosetModule.induction_linear with
-  | h0 => exact Subring.zero_mem _
-  | hadd _ _ ih₁ ih₂ => exact Subring.add_mem _ ih₁ ih₂
-  | hsingle D m =>
-    induction D using HeckeCoset.induction with | h g =>
-    obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
-    have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
-      natDiagGL_const_comm n c g ▸ hcg
-    refine RingHom.mem_denClearingSubring.mpr ⟨HeckeCosetModule.single ℤ
-        (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) m,
-      diagElem (fun _ ↦ c), diagElem_const_mem_scalarSubmonoid n hc, ?_⟩
-    have h1 := (one_smul ℤ _).symm.trans
-      ((HeckeCosetModule.single_mul_single ℤ _ _ 1 1).symm.trans (single_mul_natDiagGL_const n g c))
-    rw [integralToRational_diagElem, HeckeCosetModule.single_mul_single, h1,
-      HeckeCosetModule.smul_single_one, integralToRational, integralToRationalRingHom_single,
-      HeckeCoset.map_mk]
-    exact congrArg (HeckeCosetModule.single ℤ · m)
-      (HeckeCoset.mk_congr_val (Submonoid.coe_inclusion (posDetInt_le_glpos n) ⟨_, hgc⟩).symm)
+  let f := integralToRational n
+  have hM : (scalarSubmonoid n).map f ≤ (subalgebraOfSubring f.range).toSubmonoid := by
+    rintro _ ⟨s, _, rfl⟩; exact ⟨s, rfl⟩
+  let sat : Subring (RationalHeckeRing n) :=
+    ((subalgebraOfSubring f.range).saturation ((scalarSubmonoid n).map f) hM).toSubring
+  have hz : z ∈ sat := by
+    induction z using HeckeCosetModule.induction_linear with
+    | h0 => exact sat.zero_mem
+    | hadd _ _ ih₁ ih₂ => exact sat.add_mem ih₁ ih₂
+    | hsingle D m =>
+      induction D using HeckeCoset.induction with | h g =>
+      obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+      have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
+        natDiagGL_const_comm n c g ▸ hcg
+      refine Subalgebra.mem_toSubring.mpr (Subalgebra.mem_saturation_iff.mpr
+        ⟨f (diagElem (fun _ ↦ c)), ⟨diagElem (fun _ ↦ c),
+          diagElem_const_mem_scalarSubmonoid n hc, rfl⟩,
+        HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) m, ?_⟩)
+      have h1 := (one_smul ℤ _).symm.trans
+        ((HeckeCosetModule.single_mul_single ℤ _ _ 1 1).symm.trans
+          (single_mul_natDiagGL_const n g c))
+      dsimp only [f]
+      rw [smul_eq_mul, mul_comm (integralToRational n _), integralToRational_diagElem,
+        HeckeCosetModule.single_mul_single, h1, HeckeCosetModule.smul_single_one,
+        integralToRational, integralToRationalRingHom_single, HeckeCoset.map_mk]
+      exact congrArg (HeckeCosetModule.single ℤ · m)
+        (HeckeCoset.mk_congr_val (Submonoid.coe_inclusion (posDetInt_le_glpos n) ⟨_, hgc⟩).symm)
+  obtain ⟨_, ⟨s, hs, rfl⟩, x, hx⟩ :=
+    Subalgebra.mem_saturation_iff.mp (Subalgebra.mem_toSubring.mp hz)
+  dsimp only [f] at hx
+  exact ⟨x, s, hs, (mul_comm z (integralToRational n s)).trans
+    (by simpa only [smul_eq_mul] using hx.symm)⟩
 
 end ScalarUnits
 

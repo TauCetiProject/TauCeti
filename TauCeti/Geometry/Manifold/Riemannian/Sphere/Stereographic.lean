@@ -35,6 +35,8 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
 * `TauCeti.fderiv_stereoInvFunAux_apply`: the differential of `σ⁻¹`.
 * `TauCeti.inner_fderiv_stereoInvFunAux`: the conformal factor of `σ⁻¹` on the hyperplane
   orthogonal to `v`.
+* `TauCeti.inner_fderiv_stereoInvFunAux_two_smul`: the conformal factor `(2 / (1 + ‖y‖²))²` of
+  `y ↦ σ⁻¹ (2 J y)` for a linear isometry `J` into that hyperplane.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
 
@@ -87,6 +89,29 @@ theorem inner_fderiv_stereoInvFunAux (hv : ‖v‖ = 1) {w a b : E} (hw : w ∈ 
   simp only [inner_sub_left, inner_sub_right, inner_add_left, inner_add_right,
     real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq, hv,
     real_inner_comm v, real_inner_comm w a, hw, ha, hb]
+  field_simp
+  ring
+
+/-- **The conformal factor of equatorial stereographic coordinates.** For a unit vector `v` and a
+linear isometry `J` of a real inner product space `F` into the hyperplane orthogonal to `v`, the
+map `y ↦ σ⁻¹ (2 J y)` satisfies `⟪dσ⁻¹ a, dσ⁻¹ b⟫ = (2 / (1 + ‖y‖²))² ⟪a, b⟫` at `y`. -/
+theorem inner_fderiv_stereoInvFunAux_two_smul {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (hv : ‖v‖ = 1) (J : F →ₗᵢ[ℝ] E) (hJ : ∀ c, J c ∈ (ℝ ∙ v)ᗮ)
+    (y a b : F) :
+    ⟪fderiv ℝ (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w)) y a,
+      fderiv ℝ (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w)) y b⟫_ℝ =
+      (2 / (1 + ‖y‖ ^ 2)) ^ 2 * ⟪a, b⟫_ℝ := by
+  set L : F →L[ℝ] E := (2 : ℝ) • J.toContinuousLinearMap
+  have hL (c : F) : L c ∈ (ℝ ∙ v)ᗮ := Submodule.smul_mem _ _ (hJ c)
+  have hd : HasFDerivAt (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w))
+      ((fderiv ℝ (stereoInvFunAux v) (L y)).comp L) y :=
+    ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp y
+      L.hasFDerivAt
+  rw [hd.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    inner_fderiv_stereoInvFunAux hv (hL y) (hL a) (hL b)]
+  simp only [L, smul_apply, LinearIsometry.coe_toContinuousLinearMap,
+    norm_smul, LinearIsometry.norm_map, Real.norm_eq_abs, abs_two, real_inner_smul_left,
+    real_inner_smul_right, LinearIsometry.inner_map_map]
   field_simp
   ring
 

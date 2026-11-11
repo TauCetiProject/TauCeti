@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.ODE.ExistUnique
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.ODE.SmoothParameter
 
@@ -53,10 +54,11 @@ connected Lie subgroup.
 
 ## Implementation notes
 
-Existence is proved in finite dimension, where a smooth germ has a globally Lipschitz smooth
-representative, so that the parameterized Picard theorem
-`ODE.exists_contDiffOn_picard_solution_of_contDiff` applies. The solution through `(x₀, y₀)` is
-built along rays: for a small parameter `z`, the ordinary differential equation
+The parameterized Picard theorem `ODE.exists_contDiffOn_picard_solution` applies to fields
+that are only locally smooth, including on Banach spaces. The present existence proof still
+uses finite dimension to choose a globally Lipschitz smooth representative for the subsequent
+uniqueness argument. The solution through `(x₀, y₀)` is built along rays: for a small parameter
+`z`, the ordinary differential equation
 `b' = f (x₀ + t • z, b) z` with `b 0 = y₀` is solved on `[0, 1]`, smoothly in `z`, and
 `u (x₀ + z) = b 1`. Translating the state by a variable initial value makes the Picard solution
 smooth jointly in `z` and that initial value. Rescaling time shows that
@@ -129,6 +131,77 @@ section Real
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The derivative in `s` at `s = 0` of the point `x₀ + t • (z + s • w)` of the ray from `x₀` in the
+direction `z + s • w`. -/
+private theorem hasDerivAt_ray_direction (x₀ z w : E) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ x₀ + t • (z + s • w)) (t • w) 0 := by
+  simpa using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul t).const_add x₀
+
+/-- The derivative in `s` at `s = 0` of `α` along the ray from `x₀` in the direction `z + s • w`,
+at time `t`. -/
+private theorem hasDerivAt_apply_ray_direction_self {α : E → F} {x₀ z : E} (w : E) {t : ℝ}
+    (hα : DifferentiableAt ℝ α (x₀ + t • z)) :
+    HasDerivAt (fun s : ℝ ↦ α (x₀ + t • (z + s • w))) (fderiv ℝ α (x₀ + t • z) (t • w)) 0 := by
+  have hd : HasFDerivAt α (fderiv ℝ α (x₀ + t • z)) (x₀ + t • (z + (0 : ℝ) • w)) := by
+    rw [zero_smul, add_zero]
+    exact hα.hasFDerivAt
+  exact hd.comp_hasDerivAt (0 : ℝ) (hasDerivAt_ray_direction x₀ z w t)
+
+/-- The derivative in `s` at `s = 0` of the field `g (y, α y)` applied to the direction `z + s • w`,
+evaluated at the point `x₀ + τ • (z + s • w)` of the ray in that direction. -/
+private theorem hasDerivAt_apply_ray_direction {g : E × F → E →L[ℝ] F} (hg : ContDiff ℝ 1 g)
+    {α : E → F} {x₀ z : E} (w : E) {τ : ℝ} (hα : DifferentiableAt ℝ α (x₀ + τ • z)) :
+    HasDerivAt (fun s : ℝ ↦
+      g (x₀ + τ • (z + s • w), α (x₀ + τ • (z + s • w))) (z + s • w))
+      (fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z)) (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z +
+        g (x₀ + τ • z, α (x₀ + τ • z)) w) 0 := by
+  have hgP := (hg.differentiable one_ne_zero (x₀ + τ • (z + (0 : ℝ) • w),
+    α (x₀ + τ • (z + (0 : ℝ) • w)))).hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    ((hasDerivAt_ray_direction x₀ z w τ).prodMk (hasDerivAt_apply_ray_direction_self w hα))
+  have hdir : HasDerivAt (fun s : ℝ ↦ z + s • w) w 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z
+  refine (hgP.clm_apply hdir).congr_deriv ?_
+  simp [map_smul]
+
+/-- The derivative in time of `α` along the ray from `x₀` in the direction `z + s • w` is the field
+`g (y, α y)` applied to the direction, at every time `τ ≠ 0` at which the ray lies in the open set
+`U` where `α` is `C¹` and solves the radial equation. -/
+private theorem hasDerivAt_apply_ray_of_radial {g : E × F → E →L[ℝ] F} {α : E → F} {U : Set E}
+    (hU : IsOpen U) (hα : ContDiffOn ℝ 1 α U) {x₀ : E}
+    (hrad : ∀ y ∈ U, fderiv ℝ α y (y - x₀) = g (y, α y) (y - x₀)) {z : E} (w : E) {s τ : ℝ}
+    (hτ : τ ≠ 0) (hmem : x₀ + τ • (z + s • w) ∈ U) :
+    HasDerivAt (fun τ : ℝ ↦ α (x₀ + τ • (z + s • w)))
+      (g (x₀ + τ • (z + s • w), α (x₀ + τ • (z + s • w))) (z + s • w)) τ := by
+  have hray : HasDerivAt (fun τ : ℝ ↦ x₀ + τ • (z + s • w)) (z + s • w) τ := by
+    simpa using ((hasDerivAt_id τ).smul_const (z + s • w)).const_add x₀
+  have hd := ((hα.contDiffAt (hU.mem_nhds hmem)).differentiableAt one_ne_zero).hasFDerivAt
+  refine (hd.comp_hasDerivAt τ hray).congr_deriv ?_
+  -- The radial equation at the point, divided by `τ ≠ 0`.
+  have h := hrad _ hmem
+  simp only [add_sub_cancel_left, map_smul] at h
+  exact smul_right_injective F hτ h
+
+/-- The integrand in the integral formula for `t • fderiv α (x₀ + t • z) w` below is continuous on
+the open set of times at which the ray from `x₀` in the direction `z` lies in `U`. -/
+private theorem continuousOn_fderiv_apply_add_apply_ray {g : E × F → E →L[ℝ] F}
+    (hg : ContDiff ℝ 1 g) {α : E → F} {U : Set E} (hU : IsOpen U) (hα : ContDiffOn ℝ 1 α U)
+    (x₀ z w : E) :
+    ContinuousOn (fun τ : ℝ ↦ fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z))
+      (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z + g (x₀ + τ • z, α (x₀ + τ • z)) w)
+      {τ : ℝ | x₀ + τ • z ∈ U} := by
+  have hDα : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
+    (hα.continuousOn_fderiv_of_isOpen hU le_rfl).comp (by fun_prop) fun _ hτ ↦ hτ
+  have hα' : ContinuousOn (fun τ : ℝ ↦ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
+    hα.continuousOn.comp (by fun_prop) fun _ hτ ↦ hτ
+  have hgraph : ContinuousOn (fun τ : ℝ ↦ (x₀ + τ • z, α (x₀ + τ • z)))
+      {τ : ℝ | x₀ + τ • z ∈ U} :=
+    (continuous_const.add (continuous_id.smul continuous_const)).continuousOn.prodMk hα'
+  exact (((hg.continuous_fderiv one_ne_zero).comp_continuousOn hgraph).clm_apply
+    ((continuous_id.smul continuous_const).continuousOn.prodMk
+      (continuousOn_id.smul (hDα.clm_apply continuousOn_const)))).clm_apply
+    continuousOn_const |>.add ((hg.continuous.comp_continuousOn hgraph).clm_apply
+      continuousOn_const)
+
 /-- **The variational equation along a ray, integrated.** Let `α` be `C¹` on an open set `U` and
 solve the total differential equation `D α y = g (y, α y)` in the radial direction `y - x₀` at
 every point of `U`, and let the segment `x₀ + [0, 1] • z` lie in `U`. Then along that segment the
@@ -164,14 +237,8 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
     have hst (τ : ℝ) (hτ : τ ∈ Icc 0 t) : (s, τ) ∈ P ⁻¹' U := hs τ ⟨hτ.1, hτ.2.trans ht.2⟩
     have hderiv (τ : ℝ) (hτ : τ ∈ Ioo 0 t) : HasDerivAt (fun τ ↦ α (P (s, τ))) (G (s, τ)) τ := by
       have hmem : P (s, τ) ∈ U := hst τ (Ioo_subset_Icc_self hτ)
-      have hray : HasDerivAt (fun τ : ℝ ↦ P (s, τ)) (z + s • w) τ := by
-        simpa [hP] using ((hasDerivAt_id τ).smul_const (z + s • w)).const_add x₀
-      have hd := ((hα.contDiffAt (hU.mem_nhds hmem)).differentiableAt one_ne_zero).hasFDerivAt
-      refine (hd.comp_hasDerivAt τ hray).congr_deriv ?_
-      -- The radial equation at `P (s, τ)`, divided by `τ ≠ 0`.
-      have h := hrad _ hmem
-      simp only [hP, add_sub_cancel_left, map_smul] at h
-      simpa [hG, hP] using smul_right_injective F hτ.1.ne' h
+      simpa only [hG, hP] using hasDerivAt_apply_ray_of_radial hU hα hrad (z := z) w hτ.1.ne'
+        (by simpa only [hP] using hmem)
     have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1
       (hαV.continuousOn.comp (hslice s).continuousOn hst) hderiv
       ((hGV.continuousOn.comp (hslice s).continuousOn
@@ -184,14 +251,8 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
       rintro ⟨s, τ⟩ ⟨rfl, hτ⟩
       rw [uIcc_of_le ht.1] at hτ
       exact hV0 τ ⟨hτ.1, hτ.2.trans ht.2⟩)
-  have hL : HasDerivAt (fun s : ℝ ↦ α (x₀ + t • (z + s • w))) (fderiv ℝ α (x₀ + t • z) (t • w))
-      0 := by
-    have hd : HasFDerivAt α (fderiv ℝ α (x₀ + t • z)) (x₀ + t • (z + (0 : ℝ) • w)) := by
-      rw [zero_smul, add_zero]
-      exact ((hα.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero).hasFDerivAt
-    have hray : HasDerivAt (fun s : ℝ ↦ x₀ + t • (z + s • w)) (t • w) 0 := by
-      simpa using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul t).const_add x₀
-    exact hd.comp_hasDerivAt (0 : ℝ) hray
+  have hL := hasDerivAt_apply_ray_direction_self (α := α) (x₀ := x₀) w (t := t)
+    ((hα.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero)
   rw [← map_smul, hL.unique ((hR.const_add (α x₀)).congr_of_eventuallyEq hint)]
   -- Identify the partial derivative of `G` in `s`.
   refine intervalIntegral.integral_congr fun τ hτ ↦ ?_
@@ -202,23 +263,10 @@ private theorem smul_fderiv_apply_eq_intervalIntegral [CompleteSpace F] {g : E �
     ((hGV.differentiableOn one_ne_zero _ hmem).differentiableAt
       (hV.mem_nhds hmem)).hasFDerivAt.comp_hasDerivAt (0 : ℝ)
       ((hasDerivAt_id (0 : ℝ)).prodMk (hasDerivAt_const (0 : ℝ) τ))
-  have hray : HasDerivAt (fun s : ℝ ↦ P (s, τ)) (τ • w) 0 := by
-    simpa [hP] using ((((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z).const_smul τ).const_add
-      x₀
-  have hP0 : P (0, τ) = x₀ + τ • z := by simp [hP]
-  have hdα := ((hα.contDiffAt (hU.mem_nhds hmem')).differentiableAt one_ne_zero).hasFDerivAt
-  rw [← hP0] at hdα
-  have h2 : HasDerivAt (fun s : ℝ ↦ G (s, τ))
-      (fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z)) (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z +
-        g (x₀ + τ • z, α (x₀ + τ • z)) w) 0 := by
-    have hgP := (hg.differentiable one_ne_zero (P (0, τ), α (P (0, τ)))).hasFDerivAt.comp_hasDerivAt
-      (0 : ℝ) (hray.prodMk (hdα.comp_hasDerivAt (0 : ℝ) hray))
-    have hdir : HasDerivAt (fun s : ℝ ↦ z + s • w) w 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add z
-    rw [hG]
-    refine (hgP.clm_apply hdir).congr_deriv ?_
-    simp [hP0, map_smul]
-  exact h1.unique h2
+  have h2 := hasDerivAt_apply_ray_direction hg w
+    ((hα.contDiffAt (hU.mem_nhds hmem')).differentiableAt one_ne_zero)
+  refine h1.unique ?_
+  simpa only [hG, hP] using h2
 
 /-- **The defect of a radial solution along a ray.** Let `α` be `C¹` on an open set `U` and solve
 the total differential equation `D α y = g (y, α y)` in the radial direction `y - x₀` on `U`, and
@@ -238,21 +286,7 @@ private theorem hasDerivWithinAt_smul_radialDefect [CompleteSpace F] {g : E × F
   have hmem : x₀ + t • z ∈ U := hseg t (Ico_subset_Icc_self ht)
   have hT : IsOpen {τ : ℝ | x₀ + τ • z ∈ U} := hU.preimage (by fun_prop)
   -- The integrand of `smul_fderiv_apply_eq_intervalIntegral` is continuous near `[0, 1]`.
-  have hφ : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ g (x₀ + τ • z, α (x₀ + τ • z))
-      (τ • w, τ • fderiv ℝ α (x₀ + τ • z) w) z + g (x₀ + τ • z, α (x₀ + τ • z)) w)
-      {τ : ℝ | x₀ + τ • z ∈ U} := by
-    have hDα : ContinuousOn (fun τ : ℝ ↦ fderiv ℝ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
-      (hα.continuousOn_fderiv_of_isOpen hU le_rfl).comp (by fun_prop) fun _ hτ ↦ hτ
-    have hα' : ContinuousOn (fun τ : ℝ ↦ α (x₀ + τ • z)) {τ : ℝ | x₀ + τ • z ∈ U} :=
-      hα.continuousOn.comp (by fun_prop) fun _ hτ ↦ hτ
-    have hgraph : ContinuousOn (fun τ : ℝ ↦ (x₀ + τ • z, α (x₀ + τ • z)))
-        {τ : ℝ | x₀ + τ • z ∈ U} :=
-      (continuous_const.add (continuous_id.smul continuous_const)).continuousOn.prodMk hα'
-    exact (((hg.continuous_fderiv one_ne_zero).comp_continuousOn hgraph).clm_apply
-      ((continuous_id.smul continuous_const).continuousOn.prodMk
-        (continuousOn_id.smul (hDα.clm_apply continuousOn_const)))).clm_apply
-      continuousOn_const |>.add ((hg.continuous.comp_continuousOn hgraph).clm_apply
-        continuousOn_const)
+  have hφ := continuousOn_fderiv_apply_add_apply_ray hg hU hα x₀ z w
   have h1 : HasDerivWithinAt (fun s : ℝ ↦ s • fderiv ℝ α (x₀ + s • z) w)
       (fderiv ℝ g (x₀ + t • z, α (x₀ + t • z)) (t • w, t • fderiv ℝ α (x₀ + t • z) w) z +
         g (x₀ + t • z, α (x₀ + t • z)) w) (Ici t) t := by
@@ -532,8 +566,9 @@ private theorem exists_rayFamily_of_initial [CompleteSpace E] [CompleteSpace F] 
     dsimp only [G]
     fun_prop
   obtain ⟨γ, U, hU, hbaseU, hγ, hγ0, hprop⟩ :=
-    ODE.exists_contDiffOn_picard_solution_of_contDiff
-    G ((0 : E), y₀) (x₀, 0) hG (.of_forall fun q ↦ by simp [G])
+    ODE.exists_contDiffOn_picard_solution
+      G ((0 : E), y₀) (x₀, 0) isOpen_univ (mem_univ _) hG.contDiffOn
+      (.of_forall fun q ↦ by simp [G])
   obtain ⟨r, hr, hP⟩ := Metric.eventually_nhds_iff_ball.1 (hU.mem_nhds hbaseU)
   let c : E × F → ℝ → E × F := fun q t ↦
     let z := γ q (projIcc 0 1 zero_le_one t)
@@ -551,7 +586,7 @@ private theorem exists_rayFamily_of_initial [CompleteSpace E] [CompleteSpace F] 
   · simp [c, hγ0]
   · exact ((γ q).continuous.comp continuous_projIcc).fst.prodMk
       (continuous_const.add ((γ q).continuous.comp continuous_projIcc).snd)
-  obtain ⟨hpicard, hinterior, hright⟩ := hprop q (hP q hq)
+  obtain ⟨-, hpicard, hinterior, hright⟩ := hprop q (hP q hq)
   have hc0 : c q 0 = (x₀, q.2) := by
     have := hpicard ⟨0, left_mem_Icc.2 zero_le_one⟩
     simp only [intervalIntegral.integral_same, add_zero] at this
@@ -815,19 +850,18 @@ private theorem hasFDerivAt_graph_of_solution_family {n : ℕ∞}
   exact (husmooth.differentiableAt (by simp)).hasFDerivAt_fst_prodMk_of_slices hx hy
 
 /-- **Flat coordinates for an integrable graph field.** The smooth family of Frobenius solutions
-defines a local coordinate change `(x, y) ↦ (x, u (x, y))`. Its derivative at the base point is
-the invertible graph shear, and its horizontal slices have derivative equal to the prescribed
-graph field. -/
+defines a local coordinate change `e (x, y) = (x, u (x, y))`, of class `C^(n+1)` with inverse of
+class `C^(n+1)` on its whole domain, fixing the base point. Its horizontal slices have derivative
+equal to the prescribed graph field. -/
 theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
     {n : ℕ∞} {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {x₀ : E} {y₀ : F}
     (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (x₀, y₀))
     (hint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt f p) :
     ∃ (u : E × F → F) (e : OpenPartialHomeomorph (E × F) (E × F)),
-      u (x₀, y₀) = y₀ ∧ ContDiffAt ℝ (n + 1) u (x₀, y₀) ∧
-      (∀ᶠ y in 𝓝 y₀, u (x₀, y) = y) ∧
+      u (x₀, y₀) = y₀ ∧ (∀ᶠ y in 𝓝 y₀, u (x₀, y) = y) ∧
       (e : E × F → E × F) = (fun p ↦ (p.1, u p)) ∧ (x₀, y₀) ∈ e.source ∧
-      ContDiffAt ℝ (n + 1) e.symm (x₀, y₀) ∧
-      ∀ᶠ p in 𝓝 (x₀, y₀), HasFDerivAt (fun x ↦ e (x, p.2))
+      ContDiffOn ℝ (n + 1) e e.source ∧ ContDiffOn ℝ (n + 1) e.symm e.target ∧
+      ∀ p ∈ e.source, HasFDerivAt (fun x ↦ e (x, p.2))
         ((ContinuousLinearMap.id ℝ E).prod (f (e p))) p.1 := by
   obtain ⟨u, U, hU, hp₀U, husmoothOn, hu₀, huinit, husol⟩ :=
     exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt hf hs hint
@@ -844,33 +878,16 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
   let Φ : E × F → E × F := fun p ↦ (p.1, u p)
   let A : (E × F) ≃L[ℝ] (E × F) :=
     (ContinuousLinearEquiv.refl ℝ E).skewProd (ContinuousLinearEquiv.refl ℝ F) (f (x₀, y₀))
-  have hΦsmooth : ContDiffAt ℝ (n + 1) Φ (x₀, y₀) := contDiffAt_fst.prodMk husmooth
+  have hΦOn : ContDiffOn ℝ (n + 1) Φ U := contDiffOn_fst.prodMk husmoothOn
   have hΦ : HasFDerivAt Φ (A : (E × F) →L[ℝ] (E × F)) (x₀, y₀) := by
     simpa only [Φ, A] using
       hasFDerivAt_graph_of_solution_family hu₀ husmooth huinit' husol'
-  have hΦ₀ : Φ (x₀, y₀) = (x₀, y₀) := by simp [Φ, hu₀]
-  let e : OpenPartialHomeomorph (E × F) (E × F) :=
-    hΦsmooth.toOpenPartialHomeomorph Φ hΦ (by simp)
-  have hefun : (e : E × F → E × F) = Φ := by
-    exact hΦsmooth.toOpenPartialHomeomorph_coe hΦ (by simp)
-  have hesource : (x₀, y₀) ∈ e.source :=
-    hΦsmooth.mem_toOpenPartialHomeomorph_source hΦ (by simp)
-  have hesymm : ContDiffAt ℝ (n + 1) e.symm (x₀, y₀) := by
-    rw [← hΦ₀]
-    have heinv : e.symm (Φ (x₀, y₀)) = (x₀, y₀) := by
-      rw [← hefun]
-      exact e.left_inv hesource
-    apply e.contDiffAt_symm
-      (hΦsmooth.image_mem_toOpenPartialHomeomorph_target hΦ (by simp))
-    · rw [heinv, hefun]
-      exact hΦ
-    · rw [heinv, hefun]
-      exact hΦsmooth
-  have hefun' : (e : E × F → E × F) = (fun p ↦ (p.1, u p)) := by
-    simpa only [Φ] using hefun
-  refine ⟨u, e, hu₀, husmooth, huinit', hefun', hesource, hesymm, ?_⟩
-  filter_upwards [husol'] with p hp
-  simpa only [hefun, Φ, id_eq] using (hasFDerivAt_id p.1).prodMk hp
+  obtain ⟨e, hefun, hesource, hesourceU, hesymm⟩ :=
+    TauCeti.ContDiffOn.exists_openPartialHomeomorph hΦOn hU hp₀U (by simp) hΦ.fderiv.symm
+  have heOn : ContDiffOn ℝ (n + 1) e e.source := hefun ▸ hΦOn.mono hesourceU
+  refine ⟨u, e, hu₀, huinit', hefun, hesource, heOn, hesymm, fun p hp ↦ ?_⟩
+  rw [hefun]
+  simpa only [id_eq] using (hasFDerivAt_id p.1).prodMk (husol p (hesourceU hp))
 
 /-- **The Frobenius theorem for total differential equations.** Let `E` and `F` be
 finite-dimensional real normed spaces and let `f : E × F → (E →L[ℝ] F)` be `C^(n+1)` near `p₀`,

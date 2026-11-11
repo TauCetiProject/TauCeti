@@ -96,6 +96,46 @@ private theorem trivializationAt_geodesicSpray_coord [IsManifold I 2 M]
     TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hzT]
   exact tangentCoordChange_geodesicSpray (I := I) (M := M) hbase z.2
 
+/-- In the trivialisation of the tangent bundle at `z₀`, the geodesic spray is
+`(x, v) ↦ (v, -Γₓ(v, v))`, which is `C^n` on the source of the trivialisation. -/
+private theorem contMDiffOn_geodesicSpray_coord [IsManifold I 2 M] [IsManifold I m M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) (z₀ : TangentBundle I M) :
+    let e := trivializationAt E (TangentSpace I) z₀.proj
+    ContMDiffOn I.tangent 𝓘(ℝ, E × E) n
+      (fun z : TangentBundle I M ↦
+        ((e z).2, -christoffelMap (finBasis ℝ E)
+          ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
+          (e z).2 (e z).2)) e.source := by
+  intro e
+  let _ : IsManifold I (n + 2) M := IsManifold.of_le (n := m) hm
+  let _ : IsManifold I (n + 1) M :=
+    IsManifold.of_le (n := m) ((by gcongr; norm_num : n + 1 ≤ n + 2).trans hm)
+  let _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hv : ContMDiffOn I.tangent 𝓘(ℝ, E) n (fun z ↦ (e z).2) e.source := by
+    intro z hz
+    exact (e.contMDiffOn z hz).snd
+  have hproj : ContMDiffOn I.tangent I n
+      (fun z : TangentBundle I M ↦ z.proj) e.source := by
+    exact Bundle.contMDiffOn_proj (E := fun x : M ↦ TangentSpace I x)
+  have hmaps : MapsTo (fun z : TangentBundle I M ↦ z.proj) e.source e.baseSet := by
+    intro z hz
+    simpa only [e, TangentBundle.trivializationAt_source, mem_preimage,
+      TangentBundle.trivializationAt_baseSet] using hz
+  have hΓ : ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
+      (christoffelMap (finBasis ℝ E)
+        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet))) e.baseSet :=
+    contMDiffOn_christoffelMap_leviCivitaConnection (n := n) (m := m) (k := k)
+      (finBasis ℝ E) hm hk
+  have hΓ' : ContMDiffOn I.tangent 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
+      (fun z : TangentBundle I M ↦ christoffelMap (finBasis ℝ E)
+        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj) e.source :=
+    hΓ.comp hproj hmaps
+  exact (contMDiffOn_prod_module_iff _).2
+    ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩
+
 /-- **The geodesic spray is a `C^n` vector field on the tangent bundle.** A `C^(n + 1)` metric
 and `C^(n + 2)` manifold structure suffice. In particular, the spray of a smooth Riemannian
 manifold is smooth. -/
@@ -130,37 +170,12 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
     simpa only [e, TangentBundle.trivializationAt_source, mem_preimage] using
       mem_chart_source H z₀.proj
   have hopen : IsOpen e.source := e.open_source
-  suffices hcoord : ContMDiffOn I.tangent 𝓘(ℝ, E × E) n
-      (fun z : TangentBundle I M ↦
-        ((e z).2, -christoffelMap (finBasis ℝ E)
-          ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj
-          (e z).2 (e z).2)) e.source by
-    refine (hcoord z₀ hz₀e).contMDiffAt (hopen.mem_nhds hz₀e) |>.congr_of_eventuallyEq ?_
-    · filter_upwards [hopen.mem_nhds hz₀e] with z hz
-      have hzbase : z.proj ∈ (chartAt H z₀.proj).source := by
-        simpa only [e, TangentBundle.trivializationAt_source, mem_preimage] using hz
-      exact trivializationAt_geodesicSpray_coord z₀ z hzbase
-  have hv : ContMDiffOn I.tangent 𝓘(ℝ, E) n (fun z ↦ (e z).2) e.source := by
-    intro z hz
-    exact (e.contMDiffOn z hz).snd
-  have hproj : ContMDiffOn I.tangent I n
-      (fun z : TangentBundle I M ↦ z.proj) e.source := by
-    exact Bundle.contMDiffOn_proj (E := fun x : M ↦ TangentSpace I x)
-  have hmaps : MapsTo (fun z : TangentBundle I M ↦ z.proj) e.source e.baseSet := by
-    intro z hz
-    simpa only [e, TangentBundle.trivializationAt_source, mem_preimage,
-      TangentBundle.trivializationAt_baseSet] using hz
-  have hΓ : ContMDiffOn I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
-      (christoffelMap (finBasis ℝ E)
-        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet))) e.baseSet :=
-    contMDiffOn_christoffelMap_leviCivitaConnection (n := n) (m := m) (k := k)
-      (finBasis ℝ E) hm hk
-  have hΓ' : ContMDiffOn I.tangent 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
-      (fun z : TangentBundle I M ↦ christoffelMap (finBasis ℝ E)
-        ((leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet)) z.proj) e.source :=
-    hΓ.comp hproj hmaps
-  exact (contMDiffOn_prod_module_iff _).2
-    ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩
+  have hcoord := contMDiffOn_geodesicSpray_coord (n := n) (m := m) (k := k) hm hk z₀
+  refine (hcoord z₀ hz₀e).contMDiffAt (hopen.mem_nhds hz₀e) |>.congr_of_eventuallyEq ?_
+  · filter_upwards [hopen.mem_nhds hz₀e] with z hz
+    have hzbase : z.proj ∈ (chartAt H z₀.proj).source := by
+      simpa only [e, TangentBundle.trivializationAt_source, mem_preimage] using hz
+    exact trivializationAt_geodesicSpray_coord z₀ z hzbase
 
 /-- **The geodesic spray is a `C^1` vector field** on the tangent bundle of a `C^3` manifold with
 a `C^2` Riemannian metric.  This is the regularity at which Mathlib's integral-curve existence,

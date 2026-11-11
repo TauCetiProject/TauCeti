@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.NumberTheory.QuadraticForm.Global.CohomologicalSymbol
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
 import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo

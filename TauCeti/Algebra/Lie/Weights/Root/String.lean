@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
+public import TauCeti.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
@@ -30,6 +31,8 @@ relations among the constants.
 
 ## Main results
 
+* `TauCeti.coe_add_natCast_smul_ne_zero`: an ascending root string through a root other than `-α`
+  never meets the zero weight.
 * `TauCeti.lie_f_lie_e_eq_nsmul_of_mem_rootSpace`: the ladder identity above, and
   `TauCeti.lie_e_lie_f_eq_nsmul_of_mem_rootSpace` its mirror
   `⁅e, ⁅f, y⁆⁆ = (p * (q + 1)) • y`.
@@ -82,6 +85,40 @@ universe u v
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+
+/-- **Root strings avoid the zero weight.** If `α` and `β` are roots with `β ≠ -α`, then no
+weight `β + n α` of the ascending `α`-string through `β` is zero.
+
+Only `± α` are multiples of a root `α`, so a vanishing member of the string would force `β = α`
+and then `(n + 1) α = 0`. -/
+theorem coe_add_natCast_smul_ne_zero {α β : Weight K H L} (hα : α.IsNonZero) (hβ : β.IsNonZero)
+    (hαβ : (α : H → K) + β ≠ 0) (n : ℕ) : (β : H → K) + (n : K) • (α : H → K) ≠ 0 := by
+  intro h
+  have hsmul : (β : H → K) = (-(n : K)) • (α : H → K) := by
+    rw [neg_smul, eq_neg_iff_add_eq_zero]
+    exact h
+  rcases eq_neg_or_eq_of_eq_smul α β hβ _ hsmul with hb | hb
+  · refine hαβ ?_
+    rw [hb, Weight.coe_neg]
+    abel
+  · refine hα ?_
+    rw [hb] at h
+    have hzero : ((n : K) + 1) • (α : H → K) = 0 := by
+      rw [add_smul, one_smul, add_comm]
+      exact h
+    have hn1 : ((n : K) + 1) ≠ 0 := by
+      have : ((n + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero n)
+      push_cast at this
+      exact this
+    exact (smul_eq_zero.mp hzero).resolve_left hn1
+
+/-- A weight on a nonopposite ascending root string is nonzero. -/
+theorem _root_.LieModule.Weight.isNonZero_of_coe_eq_add_natCast_smul
+    (γ : Weight K H L) {α β : Weight K H L} (hα : α.IsNonZero) (hβ : β.IsNonZero)
+    (hab : (α : H → K) + β ≠ 0) {n : ℕ}
+    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) : γ.IsNonZero := by
+  rw [Weight.IsNonZero, Weight.IsZero, hγ]
+  exact coe_add_natCast_smul_ne_zero hα hβ hab n
 
 /-! ### The ladder identity -/
 
@@ -252,31 +289,9 @@ theorem rootSystem_chainCoeffs_eq {a b : Weight K H L}
   let ib : H.root := ⟨b, by simpa [LieSubalgebra.root] using hb⟩
   have hlin : LinearIndependent K ![P.root ia, P.root ib] := by
     simpa only [P, rootSystem_root_apply, ia, ib] using hab
-  -- Step 1: Equivalence between range membership in `P.root` and Lie weight space non-triviality.
   have hmem (n : ℤ) :
-      P.root ib + n • P.root ia ∈ Set.range P.root ↔ rootSpace H (n • a + b) ≠ ⊥ := by
-    constructor
-    · rintro ⟨c, hc⟩
-      have hc' : (c.1 : H → K) = n • (a : H → K) + b := by
-        ext z
-        simpa only [P, rootSystem_root_apply, ia, ib, Weight.toLinear_apply,
-          LinearMap.add_apply, LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply,
-          smul_eq_mul, add_comm] using DFunLike.congr_fun hc z
-      simpa only [hc'] using c.1.genWeightSpace_ne_bot
-    · intro h
-      let c : Weight K H L := ⟨n • (a : H → K) + b, h⟩
-      have hc : c.IsNonZero := by
-        intro hc₀
-        -- Definitional equality: `c.IsNonZero` is `(c : H → K) ≠ 0`, so `hc₀` means `c.1 = 0`.
-        change n • (a : H → K) + b = 0 at hc₀
-        have hrel : (n : K) • (a : Module.Dual K H) +
-            (1 : K) • (b : Module.Dual K H) = 0 := by
-          ext z
-          simpa [Weight.toLinear_apply] using congrFun hc₀ z
-        exact one_ne_zero (hab.eq_zero_of_pair hrel).2
-      refine ⟨⟨c, by simpa [LieSubalgebra.root] using hc⟩, ?_⟩
-      ext z
-      simp [P, ia, ib, c, Weight.toLinear_apply, add_comm]
+      P.root ib + n • P.root ia ∈ Set.range P.root ↔ rootSpace H (n • a + b) ≠ ⊥ :=
+    root_add_zsmul_mem_range_iff hlin n
   -- Step 2: Compare `chainTopCoeff` via characterization by maximal non-vanishing.
   constructor
   · apply le_antisymm

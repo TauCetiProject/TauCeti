@@ -92,7 +92,7 @@ private theorem conjugateInverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) 
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
     simp [conjugateInverse_T, conjugateInverse_algebraMap,
-      Units.star_eq_inv_of_mem_unitary hq.out, Units.star_inv_eq_of_mem_unitary hq.out]
+      Units.mem_unitary_iff_star_eq_inv.1 hq.out, Units.star_inv_eq_of_mem_unitary hq.out]
     abel
   | algebraMap r => simp [conjugateInverse_algebraMap]
   | add x y _ _ hx hy => simp [map_add, hx, hy]
@@ -157,7 +157,7 @@ theorem braidHom_mem_unitary {n : ℕ} (b : BraidGroup n) :
 @[simp]
 theorem star_braidHom {n : ℕ} (b : BraidGroup n) :
     star (braidHom R q n b : InfiniteTypeAHeckeAlgebra R q) = ↑(braidHom R q n b)⁻¹ :=
-  Units.star_eq_inv_of_mem_unitary (braidHom_mem_unitary b)
+  Units.mem_unitary_iff_star_eq_inv.1 (braidHom_mem_unitary b)
 
 section UniversalProperty
 
@@ -224,7 +224,7 @@ involution. -/
 theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacter R q (star x) = star (signCharacter R q x) :=
   map_star_iff.mpr (fun i ↦ by
-    simpa only [signCharacter_T, ← Units.star_eq_inv_of_mem_unitary hq.out, Unitary.coe_neg,
+    simpa only [signCharacter_T, ← Units.mem_unitary_iff_star_eq_inv.1 hq.out, Unitary.coe_neg,
       Unitary.coe_star] using
       (-star ⟨(q : R), hq.out⟩ : unitary R).prop) x
 

@@ -277,7 +277,7 @@ theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → 
   apply HahnSeries.ext
   funext j
   exact laurentQExpansion_coeff_unique D k' f hf hhol
-    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width_pos.le
       (k := (k : ℝ)) (k' := (k' : ℝ)) (by exact_mod_cast hkk') hbound)
     (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
     (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound) j

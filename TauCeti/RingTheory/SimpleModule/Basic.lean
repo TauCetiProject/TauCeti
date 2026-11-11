@@ -34,6 +34,8 @@ idempotents.
 * `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
   killing one nonzero element kills every element.
 * `IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
+* `LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker`: a linear map out of a semisimple
+  module is unchanged by an idempotent endomorphism whose range meets the kernel trivially.
 * `IsSemisimpleModule.exists_apply_eq_iff`: a linear map from a semisimple module
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
 * `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
@@ -66,6 +68,20 @@ instance _root_.IsSemisimpleModule.prod [IsSemisimpleModule R M] [IsSemisimpleMo
     (IsSemisimpleModule.range (LinearMap.inr R M N))
   rw [LinearMap.sup_range_inl_inr] at hsup
   exact .congr Submodule.topEquiv.symm
+
+/-- **A semisimple module has an idempotent endomorphism cutting out a complement of a kernel.**
+For a linear map `q` out of a semisimple module `M`, there is an idempotent `e` with `q ∘ e = q`
+whose range meets `ker q` only in `0`: the projection onto a complement of `ker q`. -/
+theorem _root_.LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker [IsSemisimpleModule R M]
+    (q : M →ₗ[R] N) :
+    ∃ e : Module.End R M, IsIdempotentElem e ∧ q ∘ₗ e = q ∧
+      Disjoint (LinearMap.range e) (LinearMap.ker q) := by
+  obtain ⟨C, hC⟩ := exists_isCompl (LinearMap.ker q)
+  refine ⟨C.projection (LinearMap.ker q) hC.symm, Submodule.isIdempotentElem_projection _,
+    LinearMap.ext fun x ↦ ?_, by rw [Submodule.range_projection]; exact hC.symm.disjoint⟩
+  have hker := LinearMap.mem_ker.mp (Submodule.sub_projection_mem hC.symm x)
+  rw [map_sub, sub_eq_zero] at hker
+  exact hker.symm
 
 /-- **Linear maps from a semisimple module with a prescribed value.** Some `R`-linear map from
 the semisimple module `M` to an arbitrary module `N` sends `w` to `x` exactly when every scalar

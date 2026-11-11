@@ -67,6 +67,8 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
   `TauCeti.onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial`: all disc norms,
   equivalently all dual stage norms, are finite exactly when the series lies on the open unit
   disc.
+* `TauCeti.memℓp_factorial_mul_coeff_of_onOpenDisc`: on the open unit disc of a normed
+  `ℚ_p`-algebra, the weighted coefficients `⌊n / pʰ⌋! coeff n F` are bounded at every level.
 * `TauCeti.bddAbove_norm_coeff_mul_norm_factorial_zero_exp` and
   `TauCeti.not_bddAbove_norm_coeff_mul_norm_factorial_one_exp`: the exponential series has finite
   dual stage norm at level zero but not at level one.
@@ -131,6 +133,20 @@ theorem amiceRadius_pow (h n : ℕ) :
   congr 1
   ring
 
+/-- `r_0 ^ (p - 1) = p⁻¹`: the radius `r_0 = p ^ (-1 / (p - 1))` is the radius of convergence of
+the `p`-adic exponential. -/
+theorem amiceRadius_zero_pow_sub_one : amiceRadius p 0 ^ (p - 1) = (p : ℝ)⁻¹ := by
+  rw [amiceRadius_pow, Nat.cast_sub hp.out.one_le, Nat.cast_one, pow_zero, mul_one,
+    div_self (sub_one_pos (p := p)).ne', Real.rpow_neg_one]
+
+/-- `r_{h+1} ^ p = r_h`: each radius is the `p`-th root of the previous one. -/
+theorem amiceRadius_succ_pow (h : ℕ) : amiceRadius p (h + 1) ^ p = amiceRadius p h := by
+  have := natCast_pos (p := p)
+  have := sub_one_pos (p := p)
+  rw [amiceRadius_pow, amiceRadius_def, pow_succ]
+  congr 1
+  field_simp
+
 /-- The radii `r_h` increase strictly with the level `h`. -/
 theorem strictMono_amiceRadius : StrictMono (amiceRadius p) := by
   refine strictMono_nat_of_lt_succ fun h ↦ Real.rpow_lt_rpow_of_exponent_lt one_lt_natCast ?_
@@ -140,14 +156,23 @@ theorem strictMono_amiceRadius : StrictMono (amiceRadius p) := by
   gcongr
   exact lt_mul_of_one_lt_right (by positivity) one_lt_natCast
 
+omit hp in
 /-- The radii `r_h` tend to `1`. -/
 theorem tendsto_amiceRadius : Tendsto (amiceRadius p) atTop (𝓝 1) := by
-  have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
-    simpa using ((tendsto_pow_atTop_atTop_of_one_lt (one_lt_natCast (p := p))).const_mul_atTop
-      (sub_one_pos (p := p))).inv_tendsto_atTop.neg
-  have hlim := (Real.continuousAt_const_rpow (natCast_pos (p := p)).ne').tendsto.comp hexp
-  rw [Real.rpow_zero] at hlim
-  exact hlim
+  rcases lt_or_ge 1 p with hp1 | hp1
+  · have h1 : (1 : ℝ) < p := by exact_mod_cast hp1
+    have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
+      simpa using ((tendsto_pow_atTop_atTop_of_one_lt h1).const_mul_atTop
+        (sub_pos.mpr h1)).inv_tendsto_atTop.neg
+    have hlim := (Real.continuousAt_const_rpow (zero_lt_one.trans h1).ne').tendsto.comp hexp
+    rw [Real.rpow_zero] at hlim
+    exact hlim
+  · -- The degenerate values `p = 0` and `p = 1`: the radii are eventually constant `1`.
+    interval_cases p
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [eventually_ge_atTop 1] with h hh
+      simp [amiceRadius, zero_pow (Nat.pos_iff_ne_zero.mp hh)]
+    · exact tendsto_const_nhds.congr fun h ↦ by simp [amiceRadius]
 
 /-! ### The weights `‖⌊n / pʰ⌋!‖` -/
 
@@ -326,6 +351,23 @@ theorem onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial :
   rw [onOpenDisc_iff_forall_hasGaussNorm_amiceRadius (p := p)]
   exact ⟨fun hF h ↦ bddAbove_norm_coeff_mul_norm_factorial_of_hasGaussNorm (hF (h + 1)),
     fun hF h ↦ hasGaussNorm_amiceRadius_of_bddAbove (hF h)⟩
+
+open scoped ENNReal in
+variable (p) in
+/-- **Weighted coefficients on the open unit disc are bounded.** If `F` lies on the open unit disc
+of a normed `ℚ_p`-algebra `K`, then at every level `h` the family `⌊n / pʰ⌋! coeff n F`, the
+factorials being taken in `K`, is bounded. -/
+theorem memℓp_factorial_mul_coeff_of_onOpenDisc [NormedAlgebra ℚ_[p] K]
+    (hF : F.OnOpenDisc 1) (h : ℕ) : Memℓp (fun n ↦ ((n / p ^ h)! : K) * F.coeff n) ∞ := by
+  obtain ⟨B, hB⟩ := (onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp hF h
+  refine memℓp_infty ⟨B * ‖(1 : K)‖, ?_⟩
+  rintro _ ⟨n, rfl⟩
+  have hn : ‖((n / p ^ h)! : K)‖ = ‖((n / p ^ h)! : ℚ_[p])‖ * ‖(1 : K)‖ := by
+    rw [← map_natCast (algebraMap ℚ_[p] K), Algebra.algebraMap_eq_smul_one, norm_smul]
+  calc ‖((n / p ^ h)! : K) * F.coeff n‖
+      ≤ ‖((n / p ^ h)! : K)‖ * ‖F.coeff n‖ := norm_mul_le _ _
+    _ = ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ * ‖(1 : K)‖ := by rw [hn]; ring
+    _ ≤ B * ‖(1 : K)‖ := mul_le_mul_of_nonneg_right (hB ⟨n, rfl⟩) (norm_nonneg _)
 
 /-! ### Examples: the exponential and the logarithm -/
 

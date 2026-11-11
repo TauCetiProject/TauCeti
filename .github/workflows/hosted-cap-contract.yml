@@ -1,0 +1,31 @@
+name: Hosted concurrency contract
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/hosted-cap-contract.yml
+      - .github/workflows/pick-runner.yml
+      - .github/workflows/pr-build.yml
+      - .github/workflows/nightly-verify.yml
+      - scripts/test_pick_runner.py
+
+permissions:
+  contents: read
+
+jobs:
+  native-queue:
+    # Three jobs enter one group together. All three must complete: the default
+    # one-pending behavior would cancel one. Run on Namespace so this contract
+    # check does not consume the GitHub-hosted capacity it protects.
+    strategy:
+      fail-fast: false
+      matrix:
+        entrant: [1, 2, 3]
+    concurrency:
+      group: hosted-cap-contract-${{ github.run_id }}
+      queue: max
+      cancel-in-progress: false
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4-with-features
+    timeout-minutes: 5
+    steps:
+      - run: echo 'Native concurrency queue accepted entrant ${{ matrix.entrant }}'

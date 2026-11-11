@@ -122,19 +122,18 @@ end Forms
 
 section Classes
 
-variable (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (hpos : 0 < D)
+variable (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)]
 
 /-- **Dirichlet composition of proper classes.** If primitive forms `f = (a, B, a'C)` and
-`g = (a', B, aC)` of positive nonsquare discriminant `D` have Dirichlet composition
+`g = (a', B, aC)` of nonsquare discriminant `D` have Dirichlet composition
 `h = (aa', B, C)`, then the narrow class of the proper class of `h` is the product of those of `f`
 and `g`. -/
 theorem properClassToNarrowPic_mk_mul_of_united {a a' B C : ℤ} {f g h : primitiveForms D}
     (hf : (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩)
     (hg : (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩)
     (hh : (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩) :
-    properClassToNarrowPic D hD hpos (Quotient.mk'' f) *
-        properClassToNarrowPic D hD hpos (Quotient.mk'' g) =
-      properClassToNarrowPic D hD hpos (Quotient.mk'' h) := by
+    properClassToNarrowPic D hD (Quotient.mk'' f) * properClassToNarrowPic D hD (Quotient.mk'' g) =
+      properClassToNarrowPic D hD (Quotient.mk'' h) := by
   obtain ⟨f, hfm⟩ := f
   obtain ⟨g, hgm⟩ := g
   obtain ⟨h, hhm⟩ := h
@@ -147,7 +146,7 @@ theorem properClassToNarrowPic_mk_mul_of_united {a a' B C : ℤ} {f g h : primit
   exact narrowPicClass_mul_narrowPicClass_of_united hhD hfp hgp
 
 /-- **Every product of proper classes is a Dirichlet composition.** Any two proper classes of
-primitive forms of positive nonsquare discriminant `D` have representatives `f = (a, B, a'C)` and
+primitive forms of nonsquare discriminant `D` have representatives `f = (a, B, a'C)` and
 `g = (a', B, aC)`; their composition `h = (aa', B, C)` is again primitive of discriminant `D`, and
 its proper class maps to the product of the narrow classes. -/
 theorem exists_properClassToNarrowPic_mul_properClassToNarrowPic_eq
@@ -156,8 +155,8 @@ theorem exists_properClassToNarrowPic_mul_properClassToNarrowPic_eq
       Quotient.mk'' f = q₁ ∧ Quotient.mk'' g = q₂ ∧
       (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
       (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧
-      properClassToNarrowPic D hD hpos q₁ * properClassToNarrowPic D hD hpos q₂ =
-        properClassToNarrowPic D hD hpos (Quotient.mk'' h) := by
+      properClassToNarrowPic D hD q₁ * properClassToNarrowPic D hD q₂ =
+        properClassToNarrowPic D hD (Quotient.mk'' h) := by
   induction q₁ using Quotient.inductionOn with | h f₀ => ?_
   induction q₂ using Quotient.inductionOn with | h g₀ => ?_
   obtain ⟨γ, δ, a, a', B, C, h, hf, hg, hh, -⟩ := exists_picClass_mul_picClass_eq D hD f₀ g₀
@@ -165,11 +164,11 @@ theorem exists_properClassToNarrowPic_mul_properClassToNarrowPic_eq
     orbitRel.Quotient.quotient_smul_eq, hf, hg, hh, ?_⟩
   rw [← orbitRel.Quotient.quotient_smul_eq (g := γ) (a := f₀),
     ← orbitRel.Quotient.quotient_smul_eq (g := δ) (a := g₀)]
-  exact properClassToNarrowPic_mk_mul_of_united D hD hpos hf hg hh
+  exact properClassToNarrowPic_mk_mul_of_united D hD hf hg hh
 
 /-- **The principal proper class has trivial narrow class.** -/
 theorem properClassToNarrowPic_principalForm :
-    properClassToNarrowPic D hD hpos
+    properClassToNarrowPic D hD
       (Quotient.mk'' ⟨principalForm D, principalForm_mem_primitiveForms hD⟩) = 1 := by
   rw [properClassToNarrowPic_mk]
   exact narrowPicClass_principalForm _ _
@@ -177,11 +176,11 @@ theorem properClassToNarrowPic_principalForm :
 /-- **The trivial narrow class is the class of the principal form.** A proper class of primitive
 forms of positive nonsquare discriminant `D` has trivial narrow class exactly when it is the class
 of the principal form. -/
-@[simp] theorem properClassToNarrowPic_eq_one_iff
+@[simp] theorem properClassToNarrowPic_eq_one_iff (hpos : 0 < D)
     (q : orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :
-    properClassToNarrowPic D hD hpos q = 1 ↔
+    properClassToNarrowPic D hD q = 1 ↔
       q = Quotient.mk'' ⟨principalForm D, principalForm_mem_primitiveForms hD⟩ := by
-  rw [← properClassToNarrowPic_principalForm D hD hpos,
+  rw [← properClassToNarrowPic_principalForm D hD,
     (properClassToNarrowPic_injective D hD hpos).eq_iff]
 
 end Classes

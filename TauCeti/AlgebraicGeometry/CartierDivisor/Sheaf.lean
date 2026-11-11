@@ -202,7 +202,7 @@ def sectionMk {D : CartierDivisor X} {U : X.Opens} (s : Γ(rationalFunctions X, 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : CartierDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app D.sheafι U) :=
-  TauCeti.SheafOfModules.ι_val_app_injective D.submodule (op U)
+  PresheafOfModules.injective_of_mono D.submodule.toSubmodule.ι (op U)
 
 /-- Including a section built from a rational function recovers that function. -/
 @[simp]
@@ -214,7 +214,7 @@ lemma sheafι_app_sectionMk {D : CartierDivisor X} {U : X.Opens}
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` sends a section of `𝒪_X(D)` over `U` into `sections D U`. -/
 lemma sheafι_app_mem (D : CartierDivisor X) (U : X.Opens) (t : Γ(D.sheaf, U)) :
     Scheme.Modules.Hom.app D.sheafι U t ∈ D.sections U :=
-  TauCeti.SheafOfModules.ι_val_app_mem D.submodule (op U) t
+  D.submodule.toSubmodule.ι_app_mem (op U) t
 
 /-- **The sections of `𝒪_X(D)` over `U` are exactly `sections D U`.** Together with
 `sheafι_app_injective` this identifies the sections of `𝒪_X(D)` with the submodule of
@@ -222,7 +222,7 @@ lemma sheafι_app_mem (D : CartierDivisor X) (U : X.Opens) (t : Γ(D.sheaf, U)) 
 @[simp]
 lemma range_sheafι_app (D : CartierDivisor X) (U : X.Opens) :
     Set.range (Scheme.Modules.Hom.app D.sheafι U) = D.sections U :=
-  TauCeti.SheafOfModules.range_ι_val_app D.submodule (op U)
+  D.submodule.toSubmodule.range_ι_app (op U)
 
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism. -/
 instance (D : CartierDivisor X) : Mono D.sheafι :=
@@ -237,7 +237,7 @@ instance (D : CartierDivisor X) (V : X.Opens) : Mono (D.sheafι.over V) :=
 def sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U) :
     M ⟶ D.sheaf :=
-  TauCeti.SheafOfModules.liftToSubmodule D.submodule φ fun U s ↦ hφ U.unop s
+  D.submodule.lift φ fun U s ↦ hφ U.unop s
 
 /-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the inclusion
 `sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers `φ`. -/
@@ -245,7 +245,7 @@ def sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctio
 lemma sheafLift_ι {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U) :
     D.sheafLift φ hφ ≫ D.sheafι = φ :=
-  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+  SheafOfModules.Submodule.lift_ι _ _ _
 
 /-- On sections, `sheafLift` followed by the inclusion into `𝒦_X` is the original morphism. -/
 @[simp]
@@ -255,7 +255,7 @@ lemma sheafι_app_sheafLift {M : X.Modules} (D : CartierDivisor X)
     (U : X.Opens) (s : Γ(M, U)) :
     Scheme.Modules.Hom.app D.sheafι U (Scheme.Modules.Hom.app (D.sheafLift φ hφ) U s) =
       Scheme.Modules.Hom.app φ U s :=
-  TauCeti.SheafOfModules.liftToSubmodule_val_app_coe D.submodule φ
+  D.submodule.lift_val_app_coe φ
     (fun V t ↦ hφ V.unop t) (op U) s
 
 /-- A factorization through `𝒪_X(D)` is an isomorphism if its map into rational functions is
@@ -266,7 +266,7 @@ theorem isIso_sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ ratio
     (hsurj : ∀ (U : X.Opens) (s : Γ(rationalFunctions X, U)),
       s ∈ D.sections U → ∃ t, Scheme.Modules.Hom.app φ U t = s) :
     IsIso (D.sheafLift φ hφ) :=
-  TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _ (fun U ↦ hinj U.unop)
+  SheafOfModules.Submodule.isIso_lift _ _ _ (fun U ↦ hinj U.unop)
     fun U s hs ↦ hsurj U.unop s ((D.submodule_obj U) ▸ hs)
 
 /-- **Divisors agreeing on an open subset have isomorphic sheaves there.** If `D` and `E` have the
@@ -348,7 +348,7 @@ instance isIso_unitToSheafPrincipalCartierDivisor (f : X.functionFieldˣ) :
     IsIso (unitToSheafPrincipalCartierDivisor X f) := by
   -- Injectivity comes from that of `𝒪_X ⟶ 𝒦_X`; surjectivity from the description of the
   -- sections of `𝒪_X(div f)` as the rational functions `g` with `f g` regular.
-  refine TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _ (fun U a b hab ↦ ?_)
+  refine SheafOfModules.Submodule.isIso_lift _ _ _ (fun U a b hab ↦ ?_)
     fun U t ht ↦ ?_
   · -- Multiplication by `f⁻¹` is injective on sections, with left inverse multiplication by `f`.
     refine toRationalFunctions_app_injective U.unop ?_
@@ -434,6 +434,10 @@ def toInvertibleSheaf (D : CartierDivisor X) : InvertibleSheaf X :=
 @[simp]
 lemma toInvertibleSheaf_obj (D : CartierDivisor X) : D.toInvertibleSheaf.obj = D.sheaf :=
   (rfl)
+
+/-- The divisor sheaf `𝒪_X(D)` is quasicoherent. -/
+instance isQuasicoherent_sheaf (D : CartierDivisor X) : D.sheaf.IsQuasicoherent :=
+  InvertibleSheaf.isQuasicoherent_obj D.toInvertibleSheaf
 
 end CartierDivisor
 

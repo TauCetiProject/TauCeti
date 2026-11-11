@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.Fiberwise
+import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Product
 
 /-!
@@ -68,17 +70,25 @@ variable {R : Type u} [CommRing R] {H : FiniteTypeCommHopfAlgCat.{u, u} R}
 theorem smooth (hH : reductiveCommHopfAlgPropertyOver R H) : Algebra.Smooth R H :=
   smoothFiberwiseCommHopfAlgPropertyOver.smooth hH
 
-/-- Every geometric fiber of a reductive group scheme is reductive. -/
-theorem geometricFiber (hH : reductiveCommHopfAlgPropertyOver R H)
-    (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k] :
-    reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) :=
-  smoothFiberwiseCommHopfAlgPropertyOver.geometricFiber hH k
-
 /-- Reductivity of affine group schemes is preserved by arbitrary base change. -/
 theorem baseChange (hH : reductiveCommHopfAlgPropertyOver R H)
     (S : Type u) [CommRing S] [Algebra R S] :
     reductiveCommHopfAlgPropertyOver S (FiniteTypeCommHopfAlgCat.baseChange (K := S) H) :=
   smoothFiberwiseCommHopfAlgPropertyOver.baseChange hH S
+
+/-- **Every fiber of a reductive group scheme is reductive**, over any field `k` receiving an
+`R`-algebra structure, not only over algebraically closed ones: reductivity over `k` is tested
+after extension to `AlgebraicClosure k`, which is a geometric fiber. -/
+theorem fiber (hH : reductiveCommHopfAlgPropertyOver R H)
+    (k : Type u) [Field k] [Algebra R k] :
+    reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) := by
+  obtain ⟨hs, hk⟩ := (reductiveCommHopfAlgPropertyOver_iff k _).mp (hH.baseChange k)
+  obtain ⟨-, hconn, hrad⟩ :=
+    (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation _ _).mp
+      (hk (AlgebraicClosure k))
+  rw [reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation]
+  exact ⟨hs, geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k) _
+    hconn, hrad⟩
 
 /-- **A direct product of reductive group schemes over a ring is reductive.** The tensor product
 is the coordinate Hopf algebra of the direct product of groups. -/

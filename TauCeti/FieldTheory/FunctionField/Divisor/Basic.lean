@@ -132,9 +132,8 @@ lemma degree_range_eq_top_of_degree_eq_one (P : Place k F) (hP : P.degree = 1) :
 /-- The degree of an effective divisor is nonnegative.  This does not need a function-field
 hypothesis, since `finrank` is always a natural number even before its finiteness is known. -/
 lemma degree_nonneg {D : Divisor k F} (hD : 0 ≤ D) : 0 ≤ degree D := by
-  have hD' : WeilDivisor.IsEffective D := WeilDivisor.isEffective_iff_zero_le.mpr hD
   simpa only [degree] using
-    hD'.weightedDegree_nonneg fun P : Place k F => Int.natCast_nonneg P.degree
+    WeilDivisor.weightedDegree_nonneg (fun P : Place k F => Int.natCast_nonneg P.degree) hD
 
 /-- Residue-degree weighting is monotone for the coefficientwise order on divisors. -/
 lemma degree_le_of_le {D E : Divisor k F} (hDE : D ≤ E) : degree D ≤ degree E := by
@@ -152,16 +151,14 @@ private lemma degree_pos_of_isFunctionField (hF : IsFunctionField k F) (P : Plac
 /-- A nonzero effective divisor of a function field has positive degree. -/
 lemma degree_pos (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hD0 : D ≠ 0) :
     0 < degree D := by
-  have hD' : WeilDivisor.IsEffective D := WeilDivisor.isEffective_iff_zero_le.mpr hD
   simpa only [degree] using
-    hD'.weightedDegree_pos_of_pos (degree_pos_of_isFunctionField hF) hD0
+    WeilDivisor.weightedDegree_pos_of_pos (degree_pos_of_isFunctionField hF) hD hD0
 
 /-- An effective divisor of a function field has degree zero exactly when it is zero. -/
 lemma degree_eq_zero_iff (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) :
     degree D = 0 ↔ D = 0 := by
-  have hD' : WeilDivisor.IsEffective D := WeilDivisor.isEffective_iff_zero_le.mpr hD
   simpa only [degree] using
-    hD'.weightedDegree_eq_zero_iff_of_pos (degree_pos_of_isFunctionField hF)
+    WeilDivisor.weightedDegree_eq_zero_iff_of_pos (degree_pos_of_isFunctionField hF) hD
 
 /-- The contribution of one place to the degree of an effective divisor is at most the whole
 degree, every other contribution being nonnegative. -/
@@ -198,20 +195,21 @@ lemma card_support_le_degree (hF : IsFunctionField k F) {D : Divisor k F} (hD : 
 
 /-- An effective divisor of degree one on an algebraic function field contains a rational place.
 
-Indeed, any place in its support contributes at least its positive residue degree to the total
-degree, so both that residue degree and its coefficient must equal one. -/
-theorem exists_place_degree_eq_one_of_isEffective_of_degree_eq_one
-    (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
+Indeed, a place whose contribution to the total degree is nonzero contributes at least its
+residue degree, so that residue degree and its coefficient must equal one. -/
+theorem exists_place_degree_eq_one_of_nonneg_of_degree_eq_one
+    {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
     ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
-  have hD0 : D ≠ 0 := by
-    rintro rfl
-    simp at hdeg
-  obtain ⟨P, hP⟩ := Finsupp.support_nonempty_iff.mpr hD0
+  have hsum : degree D ≠ 0 := by
+    rw [hdeg]
+    exact one_ne_zero
+  rw [degree_eq_sum_support] at hsum
+  obtain ⟨P, hP, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum
   refine ⟨P, hP, ?_⟩
   have hle : (P.degree : ℤ) ≤ 1 := by
     rw [← hdeg]
     exact degree_le_degree_of_coeff_ne_zero hD (WeilDivisor.mem_support_iff.mp hP)
-  have hone : 1 ≤ P.degree := P.one_le_degree_of_isFunctionField hF
+  have hpos : P.degree ≠ 0 := fun h ↦ hne (by simp [h])
   omega
 
 /-- The coefficients of an effective divisor of a function field are bounded by its degree. -/
@@ -236,8 +234,7 @@ prime divisor of a single place, and that place has degree one. -/
 lemma exists_eq_ofPoint_of_degree_eq_one (hF : IsFunctionField k F) {D : Divisor k F}
     (hD : 0 ≤ D) (hdeg : degree D = 1) :
     ∃ P : Place k F, P.degree = 1 ∧ D = WeilDivisor.ofPoint P := by
-  obtain ⟨P, hP, hDP⟩ := (WeilDivisor.isEffective_iff_zero_le.mpr
-    hD).exists_eq_ofPoint_of_weightedDegree_eq_one
+  obtain ⟨P, hP, hDP⟩ := WeilDivisor.exists_eq_ofPoint_of_weightedDegree_eq_one hD
     (fun P _ ↦ degree_pos_of_isFunctionField hF P) (by simpa only [degree] using hdeg)
   exact ⟨P, by exact_mod_cast hP, hDP⟩
 

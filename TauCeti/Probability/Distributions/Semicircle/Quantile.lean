@@ -57,7 +57,7 @@ theorem continuousOn_quantile_semicircleMeasure :
 /-- Semicircle quantiles are strictly increasing on the interior probability levels. -/
 theorem strictMonoOn_quantile_semicircleMeasure :
     StrictMonoOn semicircleMeasure.quantile (Ioo 0 1) := by
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile_of_noAtoms _
 
 /-- Semicircle quantiles tend to the lower support endpoint as the level tends to zero. -/
 theorem tendsto_quantile_semicircleMeasure_nhdsGT_zero :

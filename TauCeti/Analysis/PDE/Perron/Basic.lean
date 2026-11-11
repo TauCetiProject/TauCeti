@@ -273,6 +273,35 @@ private lemma harmonicOnNhd_iSup_ballLift (hΩ : IsOpen Ω) (hb : Bornology.IsBo
     (fun x _ m n hmn ↦ ballLift_mono (hsph m) (hsph n) (hmono hmn) x) (mem_ball_self hr)
     (hbdd c (mem_ball_self hr)), hbdd⟩
 
+/-- On a ball whose closure lies in `Ω`, there is a monotone sequence of members of the Perron
+family whose lifts to the ball have supremum at the centre at least the Perron solution there. -/
+private lemma exists_monotone_perronFamily_le_iSup_ballLift (hΩ : IsOpen Ω)
+    (hb : Bornology.IsBounded Ω) (hg : BddAbove (g '' frontier Ω))
+    (hne : (perronFamily Ω g).Nonempty) (hr : 0 < r) (hrΩ : closedBall c r ⊆ Ω) :
+    ∃ w : ℕ → E → ℝ, (∀ n, w n ∈ perronFamily Ω g) ∧ Monotone w ∧
+      perronSolution Ω g c ≤ ⨆ n, ballLift c r (w n) c := by
+  obtain ⟨M, hM⟩ := hg
+  have hM' : ∀ x ∈ frontier Ω, g x ≤ M := fun x hx ↦ hM (mem_image_of_mem g hx)
+  have hc : c ∈ ball c r := mem_ball_self hr
+  have hball : ∀ x ∈ ball c r, x ∈ closure Ω := fun x hx ↦
+    subset_closure (hrΩ (ball_subset_closedBall hx))
+  -- Members `v n` of the Perron family whose values at `c` tend to the Perron solution there,
+  -- and their running maxima `partialSups v n`, again members of the family.
+  obtain ⟨s, -, hs, hsS⟩ := exists_seq_tendsto_sSup (hne.image fun v ↦ v c)
+    ⟨M, forall_mem_image.2 fun v hv ↦
+      (le_of_mem_perronFamily hΩ hb hM' hv (hball c hc) : v c ≤ M)⟩
+  choose v hv hvc using hsS
+  have hw : ∀ n, partialSups v n ∈ perronFamily Ω g := fun n ↦ by
+    rw [partialSups_apply]
+    exact Finset.sup'_induction _ _ (fun a ha b hb ↦ sup_mem_perronFamily hΩ ha hb)
+      fun i _ ↦ hv i
+  obtain ⟨-, hWbdd⟩ :=
+    harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw (partialSups v).monotone
+  refine ⟨partialSups v, hw, (partialSups v).monotone, le_of_tendsto' hs fun n ↦ ?_⟩
+  rw [← hvc n]
+  exact (le_partialSups v n c).trans
+    ((le_ballLift hrΩ (hw n) c).trans (le_ciSup (hWbdd c hc) n))
+
 /-- On a ball whose closure lies in `Ω`, the Perron solution agrees with a harmonic function. -/
 private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
     (hb : Bornology.IsBounded Ω) (hg : BddAbove (g '' frontier Ω))
@@ -287,38 +316,25 @@ private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
     hv.2.1.mono (sphere_subset_closedBall.trans (hrΩ.trans subset_closure))
   have hle : ∀ v ∈ perronFamily Ω g, ∀ x ∈ ball c r, v x ≤ perronSolution Ω g x :=
     fun v hv x hx ↦ le_perronSolution hΩ hb ⟨M, hM⟩ hv (hball x hx)
-  -- Members `v n` of the Perron family whose values at `c` tend to the Perron solution there,
-  -- and their running maxima `partialSups v n`, again members of the family.
-  obtain ⟨s, -, hs, hsS⟩ := exists_seq_tendsto_sSup (hne.image fun v ↦ v c)
-    ⟨M, forall_mem_image.2 fun v hv ↦
-      (le_of_mem_perronFamily hΩ hb hM' hv (hball c hc) : v c ≤ M)⟩
-  choose v hv hvc using hsS
-  have hw : ∀ n, partialSups v n ∈ perronFamily Ω g := fun n ↦ by
-    rw [partialSups_apply]
-    exact Finset.sup'_induction _ _ (fun a ha b hb ↦ sup_mem_perronFamily hΩ ha hb)
-      fun i _ ↦ hv i
-  obtain ⟨hW, hWbdd⟩ :=
-    harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw (partialSups v).monotone
-  -- `W`, the limit of the lifts of the running maxima, lies below the Perron solution on the ball
-  -- and agrees with it at `c`.
-  set W := fun x ↦ ⨆ n, ballLift c r (partialSups v n) x
+  obtain ⟨w, hw, hmono, hcw⟩ :=
+    exists_monotone_perronFamily_le_iSup_ballLift hΩ hb ⟨M, hM⟩ hne hr hrΩ
+  obtain ⟨hW, hWbdd⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw hmono
+  -- `W`, the limit of the lifts of the monotone sequence, lies below the Perron solution on the
+  -- ball and agrees with it at `c`.
+  set W := fun x ↦ ⨆ n, ballLift c r (w n) x
   have hWu : ∀ x ∈ ball c r, W x ≤ perronSolution Ω g x := fun x hx ↦
     ciSup_le fun n ↦ hle _ (ballLift_mem_perronFamily hΩ hr hrΩ (hw n)) x hx
-  have hWc : W c = perronSolution Ω g c := by
-    refine le_antisymm (hWu c hc) (le_of_tendsto' hs fun n ↦ ?_)
-    rw [← hvc n]
-    exact (le_partialSups v n c).trans
-      ((le_ballLift hrΩ (hw n) c).trans (le_ciSup (hWbdd c hc) n))
+  have hWc : W c = perronSolution Ω g c := le_antisymm (hWu c hc) hcw
   refine ⟨W, hW, fun z hz ↦ ?_⟩
   by_contra hzne
   -- Otherwise some member `v'` of the Perron family has `W z < v' z`.
   obtain ⟨_, ⟨v', hv', rfl⟩, hv'z⟩ :=
     exists_lt_of_lt_csSup (hne.image _) (lt_of_le_of_ne (hWu z hz) (Ne.symm hzne))
-  have hw' : ∀ n, partialSups v n ⊔ v' ∈ perronFamily Ω g := fun n ↦
+  have hw' : ∀ n, w n ⊔ v' ∈ perronFamily Ω g := fun n ↦
     sup_mem_perronFamily hΩ (hw n) hv'
   obtain ⟨hW', hW'bdd⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw'
-    fun m n hmn ↦ sup_le_sup_right ((partialSups v).monotone hmn) v'
-  set W' := fun x ↦ ⨆ n, ballLift c r (partialSups v n ⊔ v') x
+    fun m n hmn ↦ sup_le_sup_right (hmono hmn) v'
+  set W' := fun x ↦ ⨆ n, ballLift c r (w n ⊔ v') x
   have hWW' : ∀ x ∈ ball c r, W x ≤ W' x := fun x hx ↦
     ciSup_mono (hW'bdd x hx) fun n ↦
       ballLift_mono (hsph _ (hw n)) (hsph _ (hw' n)) (fun _ ↦ le_sup_left) x

@@ -82,7 +82,7 @@ open Filter Topology ZeroAtInftyContinuousMap
 open scoped ZeroAtInfty
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
-  [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+  [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R]
 
 namespace ContinuousLinearMap
