@@ -14,8 +14,8 @@ import TauCeti.MeasureTheory.Measure.Haar.Differentiable
 
 Let `M` and `N` be real manifolds, possibly with boundary or corners, modelled on
 finite-dimensional spaces `E` and `F` with `finrank ℝ E ≤ finrank ℝ F`, and let `M` be Lindelöf.
-A map `g : M → N` that is differentiable at every point of a null set `A` of `M` sends it to a
-null set of `N`. No measurable structure on `M` or `N` and no measurability of `A` is needed.
+A map `g : M → N` that is differentiable within a null set `A` of `M` sends it to a null set of
+`N`. No measurable structure on `M` or `N` and no measurability of `A` is needed.
 
 In charts this is `DifferentiableOn.addHaar_image_eq_zero`, and nullity of an image is read in
 charts by `TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`.
@@ -29,8 +29,8 @@ way.
 
 * `TauCeti.isNullSet_modelWithCornersSelf_iff`: in a finite-dimensional real normed space, null
   sets are the Haar-null sets.
-* `TauCeti.IsNullSet.image_of_mdifferentiableAt`: a map differentiable at every point of a null
-  set sends it to a null set, when the dimension of the source is at most that of the target.
+* `TauCeti.IsNullSet.image_of_mdifferentiableOn`: a map differentiable within a null set sends
+  it to a null set, when the dimension of the source is at most that of the target.
 -/
 
 public section
@@ -59,18 +59,19 @@ theorem isNullSet_modelWithCornersSelf_iff (μ : Measure E) [μ.IsAddHaarMeasure
   simpa [extChartAt_model_space_eq_id] using Measure.absolutelyContinuous_isAddHaarMeasure ν μ hs
 
 /-- **Differentiable maps preserve null sets.** Let `M` be Lindelöf, with model of dimension at
-most that of the model of `N`. If `g : M → N` is differentiable at every point of a null set `A`,
-then `g '' A` is null. -/
-theorem IsNullSet.image_of_mdifferentiableAt (hA : IsNullSet I A)
-    (hdim : finrank ℝ E ≤ finrank ℝ F) (hg : ∀ x ∈ A, MDifferentiableAt I J g x) :
+most that of the model of `N`. If `g : M → N` is differentiable within a null set `A`, then
+`g '' A` is null. -/
+theorem IsNullSet.image_of_mdifferentiableOn (hA : IsNullSet I A)
+    (hdim : finrank ℝ E ≤ finrank ℝ F) (hg : MDifferentiableOn I J g A) :
     IsNullSet J (g '' A) := by
   refine isNullSet_image_of_forall_addHaar_image_extChartAt (I := I) fun x₀ y₀ ν _ ↦ ?_
   refine DifferentiableOn.addHaar_image_eq_zero (Basis.addHaar (finBasis ℝ E)) ν hdim ?_ ?_
   · rintro _ ⟨x, hx, rfl⟩
-    refine ((mdifferentiableAt_iff_of_mem_source hx.1.2 hx.2).1 (hg x hx.1.1)).2.mono ?_
-    rintro _ ⟨x', -, rfl⟩
-    rw [extChartAt_coe]
-    exact mem_range_self _
+    refine ((mdifferentiableWithinAt_iff_of_mem_source hx.1.2 hx.2).1 (hg x hx.1.1)).2.mono ?_
+    rintro _ ⟨x', hx', rfl⟩
+    refine ⟨?_, by rw [extChartAt_coe]; exact mem_range_self _⟩
+    rw [mem_preimage, (extChartAt I x₀).left_inv (by rw [extChartAt_source]; exact hx'.1.2)]
+    exact hx'.1.1
   · refine measure_mono_null (image_mono ?_) (hA.chartwise x₀ (finBasis ℝ E).addHaar)
     rintro x ⟨⟨hxA, hxsrc⟩, -⟩
     exact ⟨hxA, by rwa [extChartAt_source]⟩
