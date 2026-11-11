@@ -191,8 +191,8 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
   [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] {P : Set V}
 
 /-- If one ray in direction `v` based at `p` stays in `P`, then `v` is in the asymptotic cone
-of `P`. The points `p + t • v = t • (v + t⁻¹ • p)` tend to infinity in directions tending
-to `v`. -/
+of `P`. As the scaling parameter `t` tends to infinity, the directions `v + t⁻¹ • p`
+tend to `v`. -/
 theorem mem_asymptoticCone_of_forall_add_smul_mem {p v : V}
     (h : ∀ t : ℝ, 0 ≤ t → p + t • v ∈ P) : v ∈ asymptoticCone ℝ P := by
   have hdir : Tendsto (fun t : ℝ => v + t⁻¹ • p) atTop (𝓝 v) := by

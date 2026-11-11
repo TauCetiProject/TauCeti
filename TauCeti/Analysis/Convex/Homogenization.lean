@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Order.Module
 public import TauCeti.Analysis.Convex.Recession.Basic
@@ -23,8 +24,21 @@ nonnegative heights meeting height one is the homogenization of that slice.
 Pulling back its lineality to height zero recovers the lineality of the
 recession cone.
 
+`ContinuousAffineMap.homogenize` sends an affine functional `g` to the linear functional
+`(x, t) ↦ g.contLinear x + t * g 0`. The cone `TauCeti.homogeneousInequalityCone g`
+consists of points of nonnegative height satisfying the homogenized inequalities.
+`Set.homogenization_setOf_forall_eq` identifies this cone with the homogenization of a
+nonempty solution set of continuous affine inequalities, allowing infinite families.
+`Set.asymptoticCone_setOf_forall` describes its asymptotic directions by the linear parts.
+Nonemptiness is essential: different presentations of the empty set can give different
+homogeneous inequality cones, whereas its homogenization is the closure of the zero cone
+(and is the zero cone in a Hausdorff space).
+
 Adapted from `Mei/Geometry/Convex/Homogenization.lean` at Mei commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`. The affine-inequality API is adapted from
+`Mei/Geometry/Convex/Homogenization/Inequalities.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, licensed under Apache 2.0.
 -/
 
 public section
@@ -273,3 +287,102 @@ theorem homogenization_slice_one (C : PointedCone ℝ (V × ℝ))
     · exact hpos ht hz
 
 end PointedCone
+
+variable {V ι : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V]
+
+namespace ContinuousAffineMap
+
+/-- The linear functional on `V × ℝ` homogenizing an affine functional `g`: it sends `(x, t)` to
+`g.contLinear x + t * g 0`. -/
+def homogenize (g : V →ᴬ[ℝ] ℝ) : (V × ℝ) →L[ℝ] ℝ :=
+  g.contLinear.comp (ContinuousLinearMap.fst ℝ V ℝ) + g 0 • ContinuousLinearMap.snd ℝ V ℝ
+
+/-- At height `t`, homogenization adds `t` times the value of the affine functional at zero. -/
+@[simp]
+theorem homogenize_apply (g : V →ᴬ[ℝ] ℝ) (x : V) (t : ℝ) :
+    g.homogenize (x, t) = g.contLinear x + t * g 0 := by
+  simp [homogenize, mul_comm]
+
+/-- At height one, the homogenized functional recovers the affine functional. -/
+@[simp high] -- Apply before `homogenize_apply` expands the value into linear part and offset.
+theorem homogenize_one (g : V →ᴬ[ℝ] ℝ) (x : V) : g.homogenize (x, (1 : ℝ)) = g x := by
+  have h := g.map_vadd (0 : V) x
+  simpa [homogenize_apply] using h.symm
+
+/-- At a nonzero height `t`, the homogenized functional is `t` times the affine functional at
+`t⁻¹ • x`. -/
+theorem homogenize_apply_of_ne_zero (g : V →ᴬ[ℝ] ℝ) (x : V) {t : ℝ} (ht : t ≠ 0) :
+    g.homogenize (x, t) = t * g (t⁻¹ • x) := by
+  have heval : g (t⁻¹ • x) = t⁻¹ * g.contLinear x + g 0 := by
+    simpa only [vadd_eq_add, add_zero, map_smul, smul_eq_mul,
+      ContinuousAffineMap.coe_contLinear] using g.map_vadd 0 (t⁻¹ • x)
+  rw [heval, homogenize_apply, mul_add, ← mul_assoc, mul_inv_cancel₀ ht, one_mul]
+
+end ContinuousAffineMap
+
+namespace TauCeti
+
+/-- The cone of `(x, t)` with `t ≥ 0` satisfying the homogenized inequalities of the family `g`.
+For a nonempty solution set of `g`, this is its homogenization
+(`Set.homogenization_setOf_forall_eq`). -/
+def homogeneousInequalityCone (g : ι → (V →ᴬ[ℝ] ℝ)) : PointedCone ℝ (V × ℝ) :=
+  (PointedCone.positive ℝ ℝ).comap (LinearMap.snd ℝ V ℝ) ⊓
+    ⨅ i, (PointedCone.positive ℝ ℝ).comap (-(g i).homogenize.toLinearMap)
+
+/-- Membership in the homogeneous inequality cone records the height and every homogenized row. -/
+@[simp]
+theorem mem_homogeneousInequalityCone {g : ι → (V →ᴬ[ℝ] ℝ)} {z : V × ℝ} :
+    z ∈ homogeneousInequalityCone g ↔ 0 ≤ z.2 ∧ ∀ i, (g i).homogenize z ≤ 0 := by
+  simp [homogeneousInequalityCone]
+
+/-- The homogeneous inequality cone is closed, being cut out by continuous functionals. -/
+theorem isClosed_homogeneousInequalityCone (g : ι → (V →ᴬ[ℝ] ℝ)) :
+    IsClosed (homogeneousInequalityCone g : Set (V × ℝ)) := by
+  have : (homogeneousInequalityCone g : Set (V × ℝ)) =
+      {z | 0 ≤ z.2} ∩ ⋂ i, {z | (g i).homogenize z ≤ 0} := by
+    ext z
+    simp
+  rw [this]
+  exact (isClosed_le continuous_const continuous_snd).inter
+    (isClosed_iInter fun i => isClosed_le (g i).homogenize.continuous continuous_const)
+
+end TauCeti
+
+namespace Set
+
+variable [ContinuousSMul ℝ V]
+
+/-- **Homogenization by inequalities.** The homogenization of a nonempty solution set of
+continuous affine inequalities is the homogeneous inequality cone of the family.
+The index family may be infinite. -/
+theorem homogenization_setOf_forall_eq (g : ι → (V →ᴬ[ℝ] ℝ))
+    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) :
+    homogenization {x : V | ∀ i, g i x ≤ 0} = TauCeti.homogeneousInequalityCone g := by
+  simpa using (TauCeti.homogeneousInequalityCone g).homogenization_slice_one
+    (TauCeti.isClosed_homogeneousInequalityCone g)
+    (fun z hz => (TauCeti.mem_homogeneousInequalityCone.mp hz).1) (by simpa using hne)
+
+/-- The membership criterion for the homogenization of a nonempty solution set: nonnegative height
+and the homogenized inequalities. -/
+theorem mem_homogenization_setOf_forall_iff {g : ι → (V →ᴬ[ℝ] ℝ)}
+    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) {x : V} {t : ℝ} :
+    (x, t) ∈ homogenization {x : V | ∀ i, g i x ≤ 0} ↔
+      0 ≤ t ∧ ∀ i, (g i).homogenize (x, t) ≤ 0 := by
+  rw [homogenization_setOf_forall_eq g hne, TauCeti.mem_homogeneousInequalityCone]
+
+/-- The asymptotic cone of a nonempty solution set of continuous affine inequalities consists
+of the directions on which every linear part is nonpositive. The index family may be infinite. -/
+theorem asymptoticCone_setOf_forall (g : ι → (V →ᴬ[ℝ] ℝ))
+    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) :
+    asymptoticCone ℝ {x : V | ∀ i, g i x ≤ 0} = {v | ∀ i, (g i).contLinear v ≤ 0} := by
+  have hconvex : Convex ℝ {x : V | ∀ i, g i x ≤ 0} := by
+    rw [ofPred_forall]
+    exact convex_iInter fun i => (convex_Iic 0).affine_preimage (g i).toAffineMap
+  have hclosed : IsClosed {x : V | ∀ i, g i x ≤ 0} := by
+    rw [ofPred_forall]
+    exact isClosed_iInter fun i => isClosed_le (g i).continuous continuous_const
+  rw [← hconvex.recessionCone_eq_asymptoticCone hclosed hne]
+  exact recessionCone_setOf_forall_eq (fun i => (g i).toAffineMap) hne
+
+end Set
