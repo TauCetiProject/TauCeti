@@ -98,22 +98,34 @@ theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocityWithin {γ : ℝ → M
 integral of its speed. -/
 theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
     {γ : ℝ → M} {s : Set ℝ}
-    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
-    {a b : ℝ} (hab : a ≤ b) (hsub : Icc a b ⊆ s) :
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) {a b : ℝ} (hsub : Icc a b ⊆ s) :
     Manifold.pathELength I γ a b =
       ENNReal.ofReal (∫ t in a..b, ‖curveVelocityWithin I γ s t‖) := by
-  have hcont : ContinuousOn (fun t ↦ ‖curveVelocityWithin I γ s t‖) (Icc a b) :=
-    (hγ.continuousOn_norm_curveVelocityWithin hs).mono hsub
-  have hint : IntegrableOn (fun t ↦ ‖curveVelocityWithin I γ s t‖) (Ioo a b) :=
-    (hcont.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
-  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
-    ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ norm_nonneg _),
-    Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
-  refine setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
-  have hmem : s ∈ 𝓝 t := mem_nhds_iff.2 ⟨Ioo a b, Ioo_subset_Icc_self.trans hsub, isOpen_Ioo, ht⟩
-  rw [ofReal_norm, curveVelocityWithin_of_mem_nhds hmem, curveVelocity_apply]
-  -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
-  rfl
+  rcases lt_trichotomy a b with hab | rfl | hab
+  · have hcont : ContinuousOn (fun t ↦ ‖curveVelocityWithin I γ (Icc a b) t‖) (Icc a b) :=
+      (hγ.mono hsub).continuousOn_norm_curveVelocityWithin (uniqueDiffOn_Icc hab).uniqueMDiffOn
+    have hint : IntegrableOn (fun t ↦ ‖curveVelocityWithin I γ (Icc a b) t‖) (Ioo a b) :=
+      (hcont.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
+    have hcongr : ∀ t ∈ Ioo a b, curveVelocityWithin I γ s t = curveVelocity I γ t := fun t ht ↦
+      curveVelocityWithin_of_mem_nhds
+        (mem_nhds_iff.2 ⟨Ioo a b, Ioo_subset_Icc_self.trans hsub, isOpen_Ioo, ht⟩)
+    have hcongr' : ∀ t ∈ Ioo a b, curveVelocityWithin I γ (Icc a b) t = curveVelocity I γ t :=
+      fun t ht ↦ curveVelocityWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
+    have hI : ∫ t in Ioo a b, ‖curveVelocityWithin I γ s t‖ =
+        ∫ t in Ioo a b, ‖curveVelocityWithin I γ (Icc a b) t‖ :=
+      setIntegral_congr_fun measurableSet_Ioo fun t ht ↦ by simp only [hcongr t ht, hcongr' t ht]
+    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, hI,
+      ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ norm_nonneg _),
+      Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
+    refine setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
+    rw [ofReal_norm, hcongr' t ht, curveVelocity_apply]
+    -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
+    rfl
+  · simp
+  · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty (not_le.2 hab),
+      Measure.restrict_empty, lintegral_zero_measure, intervalIntegral.integral_symm,
+      ENNReal.ofReal_of_nonpos]
+    exact neg_nonpos.2 (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ norm_nonneg _)
 
 /-- The squared Riemannian speed of a `C¹` curve is interval integrable between any two
 parameters of a parameter set with unique derivatives containing the interval between them. -/
@@ -205,11 +217,17 @@ theorem pathELength_lt_of_energy_lt_of_intervalIntegrable {γ : ℝ → M} {a b 
 interval `[a, b]` inside its parameter set and its energy `E` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
 This is the Cauchy–Schwarz inequality for the speed `‖γ'‖` on `[a, b]`. -/
 theorem _root_.ContMDiffOn.pathELength_le_ofReal_sqrt_energy {γ : ℝ → M} {s : Set ℝ}
-    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
-    {a b : ℝ} (hab : a ≤ b) (hsub : Icc a b ⊆ s) :
-    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) :=
-  pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable hab
-    (hγ.intervalIntegrable_norm_curveVelocity_sq hs (by rwa [uIcc_of_le hab]))
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) {a b : ℝ} (hsub : Icc a b ⊆ s) :
+    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
+  rcases lt_trichotomy a b with hab | rfl | hab
+  · exact pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable hab.le
+      ((hγ.mono hsub).intervalIntegrable_norm_curveVelocity_sq (uniqueDiffOn_Icc hab).uniqueMDiffOn
+        (by rw [uIcc_of_le hab.le]))
+  · exact pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable le_rfl
+      (IntervalIntegrable.refl)
+  · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty (not_le.2 hab),
+      Measure.restrict_empty, lintegral_zero_measure]
+    exact zero_le
 
 /-- If the energy of a `C¹` curve over a compact interval `[a, b]` inside its parameter set, where
 `a < b`, is less than `(b - a) / 2`, then its length over `[a, b]` is less than `b - a`. -/
@@ -270,7 +288,7 @@ theorem exists_unit_speed_reparametrization_Icc {γ : ℝ → M} {a b : ℝ} (ha
       (by rw [hψa, hψb]; exact hγ.mdifferentiableOn one_ne_zero)
     simpa only [hψa, hψb] using h
   have hlength_toReal : L = (Manifold.pathELength I γ a b).toReal := by
-    rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hU hab.le subset_rfl,
+    rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin subset_rfl,
       ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ norm_nonneg _)]
   refine ⟨ψ, hleft, fun s hs ↦ (hright s hs).2.1, hmaps, hψmono.strictMonoOn _,
     hψC1, hγ.comp (contMDiffOn_iff_contDiffOn.2 hψC1.contDiffOn) hmaps,
