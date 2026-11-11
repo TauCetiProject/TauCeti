@@ -31,9 +31,11 @@ of equations and let `T ⊆ G[X ⊔ Y]` be a system in the variables `X` and fur
 Evaluating at a solution of `S` specialises a formal solution, so an `S`-lift of a system of
 equations forces compatibility (`HasLift.isCompatible`). This fails as soon as an inequation is
 present: over the empty system, `y = x ∧ y ≠ 1` has the solution `y = x` at the generic point but
-no solution at `x = 1`. The converse fails already for equations: over a free group `F`, every
-commuting pair `x`, `y` has one of `x`, `y`, `x y` a square, while none of them is a square in
-the coordinate group of `[x, y] = 1` (`compatible_no_lift`).
+no solution at `x = 1`. In the other direction, over a free group `F` on a nonempty set the
+formula `x = z² ∨ y = z² ∨ x y = z²` holds at every solution of `[x, y] = 1` in `F`, but not at
+the generic point of `[x, y] = 1` (`compatible_no_lift`). Over a non-abelian free group this
+formula is equivalent to an equation, so there compatibility of an equation does not imply a
+lift.
 
 The definitions follow the sources, which take `H = G` and assume that `S` has a solution. For a
 system `S` without solutions the coordinate group is trivial, so every system of equations is
@@ -63,11 +65,13 @@ compatible with `S` and admits an `S`-lift, while no system admits a complete `S
 * `TauCeti.GroupAlgGeom.Lift.IsCompatible.hasCompleteLift_of_V_eq_singleton`,
   `TauCeti.GroupAlgGeom.Lift.isGenericFamily_singleton`: if `S` has a unique solution in `G`, every
   system compatible with `S` admits a complete `S`-lift, and the solution is a generic family.
-* `TauCeti.GroupAlgGeom.Lift.not_isGenericFamily_empty`: the empty family is not generic.
+* `TauCeti.GroupAlgGeom.Lift.isGenericFamily_empty_iff`: the empty family is generic exactly over
+  a trivial group.
 * `TauCeti.GroupAlgGeom.Lift.hasLift_sq_eq_sq`, `TauCeti.GroupAlgGeom.Lift.not_isCompatible_sqrt`:
   `y² = x²` lifts over every system, while `y² = x` is not compatible with the empty system over
   a free group.
-* `TauCeti.GroupAlgGeom.Lift.compatible_no_lift`: compatibility does not imply a lift.
+* `TauCeti.GroupAlgGeom.Lift.compatible_no_lift`: over a free group, a disjunction of equations
+  that holds at every solution of `[x, y] = 1` but not at its generic point.
 
 ## References
 
@@ -343,13 +347,31 @@ theorem isGenericFamily_singleton_one :
     ext v
     simp [funext_iff, Unique.forall_iff]
 
-/-- The empty family of solutions of a system `S` with a solution in `H` is not generic when
-some coefficient `a` is nontrivial in `H`: the equation `a = 1` is solvable over every member of
-the family but admits no `S`-lift. -/
-theorem not_isGenericFamily_empty {a : G} (ha : ι a ≠ 1) (hS : (V ι S).Nonempty) :
-    ¬IsGenericFamily ι S ∅ := fun h =>
-  not_isCompatible_singleton_inl ha hS
-    (h.hasCompleteLift (n := 0) (t := inl a) (by simp)).isCompatible
+/-- The empty family of solutions of `S` is generic exactly over a trivial group. Over a
+nontrivial group `H` genericity of the empty family would give every single equation a complete
+`S`-lift, in particular make it compatible with `S`; so every solution of `S` in `H` would be
+trivial with trivial coefficients, the coordinate group would be trivial, and the compatible
+inequation `y ≠ 1` would have no `S`-lift. -/
+theorem isGenericFamily_empty_iff : IsGenericFamily ι S ∅ ↔ Subsingleton H := by
+  refine ⟨fun h => ?_, fun _ => ⟨Set.empty_subset _, fun _ _ _ => hasCompleteLift_of_subsingleton⟩⟩
+  have hc {n : ℕ} (t : GX G (X ⊕ Fin n)) : HasCompleteLift ι S {t} := h.hasCompleteLift (by simp)
+  have hev : ∀ v ∈ V ι S, eval ι v = 1 := fun v hv =>
+    hom_ext (MonoidHom.ext fun a => by
+        obtain ⟨w, hw⟩ := (hc (n := 0) (inl a)).isCompatible v hv
+        simpa using hw)
+      (FreeGroup.ext_hom _ _ fun x => by
+        obtain ⟨w, hw⟩ := (hc (n := 0) (inr (FreeGroup.of (Sum.inl x)))).isCompatible v hv
+        simpa using hw)
+  have hRad : Rad ι S = ⊤ := eq_top_iff.2 fun q _ => mem_Rad.2 fun v hv => by simp [hev v hv]
+  have : Subsingleton (CoordGroup ι S) := QuotientGroup.subsingleton_iff.2 hRad
+  refine subsingleton_of_forall_eq 1 fun h₀ => by_contra fun hh₀ => ?_
+  obtain ⟨w, -, hw⟩ := (hc (n := 1) 1).hasLiftNe (W := inr (FreeGroup.of (Sum.inr 0))) <|
+    isCompatibleNe_iff.2 fun v hv => ⟨fun _ => h₀, by simp, by simpa using hh₀⟩
+  exact hw (Subsingleton.elim _ _)
+
+/-- Over a nontrivial group the empty family of solutions is not generic. -/
+theorem not_isGenericFamily_empty [Nontrivial H] : ¬IsGenericFamily ι S ∅ :=
+  fun h => not_subsingleton H (isGenericFamily_empty_iff.1 h)
 
 end GenericFamily
 
@@ -440,9 +462,10 @@ theorem not_exists_genericPoint_eq_sq {α : Type*} [Nonempty α] :
   · exact hsq _ (by simpa using congrArg (CoordGroup.evalGHom _ h₂) hz)
   · exact hsq _ (by simpa using congrArg (CoordGroup.evalGHom _ h₁) hz)
 
-/-- Compatibility does not imply a lift. Over a free group `F` on a nonempty set, every solution
-`(x, y)` of `[x, y] = 1` in `F` has one of `x`, `y`, `x y` a square in `F`, but none of them is a
-square at the generic point of `[x, y] = 1`. -/
+/-- Over a free group `F` on a nonempty set, the formula `x = z² ∨ y = z² ∨ x y = z²` holds at
+every solution `(x, y)` of `[x, y] = 1` in `F`, but not at the generic point of `[x, y] = 1`.
+Over a non-abelian free group this formula is equivalent to an equation, so there compatibility
+of an equation does not imply a lift. -/
 theorem compatible_no_lift {α : Type*} [Nonempty α] :
     (∀ v ∈ V (.id (FreeGroup α)) {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆},
         ∃ z : FreeGroup α, v false = z ^ 2 ∨ v true = z ^ 2 ∨ v false * v true = z ^ 2) ∧
