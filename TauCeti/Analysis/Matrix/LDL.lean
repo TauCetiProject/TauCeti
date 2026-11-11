@@ -36,13 +36,13 @@ public section
 
 open scoped ComplexOrder Matrix
 
-/-- Every finite linear order is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the elements below
-`a`. This is useful for applying results stated for a `LocallyFiniteOrderBot` index type, such as
-Mathlib's `LDL` decomposition, to any finite linear order. It is not an instance, so it never
-competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
-abbrev Fintype.toLocallyFiniteOrderBot (n : Type*) [LinearOrder n] [Fintype n] :
+/-- Every finite preorder with decidable `≤` is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the
+elements below `a`. This is useful for applying results stated for a `LocallyFiniteOrderBot` index
+type, such as Mathlib's `LDL` decomposition, to any finite linear order. It is not an instance, so
+it never competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
+abbrev Fintype.toLocallyFiniteOrderBot (n : Type*) [Preorder n] [Fintype n] [DecidableLE n] :
     LocallyFiniteOrderBot n :=
-  LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
+  LocallyFiniteOrderBot.ofIic' n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
 
 namespace TauCeti
 
