@@ -365,9 +365,8 @@ theorem nonempty_algEquiv_quaternion_of_finrank_eq_four (D : Type*) [Ring D] [Is
     obtain ⟨b, c, hjsq⟩ := exists_smul_sub_mul_self_eq_neg_one hybot
     obtain ⟨j, hjdef⟩ : ∃ j : D, j = c • (y - algebraMap ℝ D (b / 2)) := ⟨_, rfl⟩
     rw [← hjdef] at hjsq
-    have hprod : (i - j) * (i + j) = 0 := by
-      calc (i - j) * (i + j) = i * i + (i * j - j * i) - j * j := by noncomm_ring
-        _ = 0 := by rw [← hc j, hi, hjsq]; abel
+    have hij : i = j ∨ i = -j :=
+      (show Commute i j from (hc j).symm).mul_self_eq_mul_self_iff.mp (hi.trans hjsq.symm)
     have hc0 : c ≠ 0 := by
       rintro rfl
       rw [zero_smul] at hjdef
@@ -380,10 +379,10 @@ theorem nonempty_algEquiv_quaternion_of_finrank_eq_four (D : Type*) [Ring D] [Is
     rw [hyj]
     refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
       (Submodule.smul_mem _ _ ?_)
-    rcases mul_eq_zero.1 hprod with h | h
-    · rw [← sub_eq_zero.1 h]
+    rcases hij with h | h
+    · rw [← h]
       exact Submodule.subset_span ⟨1, rfl⟩
-    · rw [eq_neg_of_add_eq_zero_right h]
+    · rw [neg_eq_iff_eq_neg.1 h.symm]
       exact Submodule.neg_mem _ (Submodule.subset_span ⟨1, rfl⟩)
   -- The anticommuting partner, and the quaternion basis the pair forms.
   obtain ⟨j, hj, hanti⟩ := exists_mul_self_eq_neg_one_and_mul_eq_neg_mul hi hx
