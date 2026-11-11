@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
@@ -22,11 +21,12 @@ norm: the surjective maps form an open subset of the space of continuous linear 
 is an arbitrary seminormed space over a complete nontrivially normed field.
 
 Surjectivity onto a complete normed group is stable under perturbations that are small relative
-to the map itself. If `Q` is a surjective linear map from a module `D` over any ring into a
+to the map itself. If `Q` is a surjective linear map from a module `D` over any semiring into a
 complete normed group and `‖K z‖ ≤ θ * ‖Q z‖` for every `z` with `θ < 1`, then `Q + K` is
-surjective: `K` factors as `S ∘ Q` with `‖S y‖ ≤ θ * ‖y‖`, and `Q + K = (1 + S) ∘ Q` with `1 + S`
-within `θ` of the identity. No topology on `D` is needed, which is what makes the statement usable
-for operators defined on the domain of an unbounded operator.
+surjective: `K` factors as `S ∘ Q` with `S` additive and `‖S y‖ ≤ θ * ‖y‖`, and
+`Q + K = (id + S) ∘ Q` with `id + S` within `θ` of the identity. No topology on `D` is needed,
+which is what makes the statement usable for operators defined on the domain of an unbounded
+operator.
 
 Mathlib records the companion fact that a surjective continuous linear map between Banach spaces
 is an open map, in `ContinuousLinearMap.isOpenMap`; the openness proved here is openness of the
@@ -106,30 +106,31 @@ end TauCeti
 
 namespace LinearMap
 
-variable {R D Y : Type*} [Ring R] [AddCommGroup D] [Module R D]
+variable {R D Y : Type*} [Semiring R] [AddCommGroup D] [Module R D]
   [NormedAddCommGroup Y] [Module R Y] [CompleteSpace Y]
 
 /-- **Surjectivity is stable under relatively small perturbations.** If `Q : D →ₗ[R] Y` is a
 surjective linear map into a complete normed group and `‖K z‖ ≤ θ * ‖Q z‖` for every `z`, with
-`θ < 1`, then `Q + K` is surjective. The scalars `R` are an arbitrary ring, unrelated to the
-norm of `Y`. -/
+`θ < 1`, then `Q + K` is surjective. Only additivity is used: the scalars `R` are an arbitrary
+semiring, unrelated to the norm of `Y`, and `R = ℕ` covers additive homomorphisms. -/
 theorem surjective_add_of_norm_le (Q K : D →ₗ[R] Y) (hQ : Surjective Q) {θ : ℝ} (hθ : θ < 1)
     (hK : ∀ z, ‖K z‖ ≤ θ * ‖Q z‖) : Surjective (Q + K) := by
-  have hker : ker Q ≤ ker K := fun z hz ↦ by
-    rw [mem_ker] at hz ⊢
+  have hker : Q.toAddMonoidHom.ker ≤ K.toAddMonoidHom.ker := fun z hz ↦ by
+    rw [AddMonoidHom.mem_ker, toAddMonoidHom_coe] at hz ⊢
     simpa [hz] using hK z
-  -- `K` factors through `Q` as `S ∘ Q`.
-  let S : Y →ₗ[R] Y := (ker Q).liftQ K hker ∘ₗ (Q.quotKerEquivOfSurjective hQ).symm.toLinearMap
-  have hS : ∀ z, S (Q z) = K z := fun z ↦ by
-    simp [S, quotKerEquivOfSurjective_symm_apply]
-  -- `Q + K = (1 + S) ∘ Q`, and `1 + S` is within `θ` of the identity, hence onto.
-  have hQK : Q + K = (1 + S) ∘ₗ Q := by
+  -- `K` factors through `Q` as `S ∘ Q`, with `S` additive.
+  let S : Y →+ Y := Q.toAddMonoidHom.liftOfSurjective hQ ⟨K.toAddMonoidHom, hker⟩
+  have hS (z : D) : S (Q z) = K z :=
+    Q.toAddMonoidHom.liftOfRightInverse_comp_apply _ _ ⟨K.toAddMonoidHom, hker⟩ z
+  -- `Q + K = (id + S) ∘ Q`, and `id + S` is within `θ` of the identity, hence onto.
+  have hQK : ⇑(Q + K) = ⇑(AddMonoidHom.id Y + S) ∘ ⇑Q := by
     ext z
     simp [hS]
-  have hSY : Surjective ⇑(1 + S) := TauCeti.surjective_of_norm_sub_apply_le hθ fun y ↦ by
-    obtain ⟨z, rfl⟩ := hQ y
-    simpa [hS] using hK z
-  rw [hQK, coe_comp]
+  have hSY : Surjective ⇑(AddMonoidHom.id Y + S) :=
+    TauCeti.surjective_of_norm_sub_apply_le hθ fun y ↦ by
+      obtain ⟨z, rfl⟩ := hQ y
+      simpa [hS] using hK z
+  rw [hQK]
   exact hSY.comp hQ
 
 end LinearMap
