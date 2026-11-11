@@ -262,7 +262,7 @@ private theorem half_le_rpow_of_dynamicCurvatureDimension_zero
   have hent {s : ℝ} (hs : 0 < s) : renyiEntropy N M.reference M.reference[|closedBall 0 s] =
       -((M.reference (closedBall 0 s) ^ N⁻¹ : ℝ≥0∞) : EReal) := by
     rw [ProbabilityTheory.cond]
-    exact renyiEntropy_smul_restrict hN₀ measurableSet_closedBall
+    exact renyiEntropy_smul_restrict measurableSet_closedBall
       (measure_closedBall_pos _ _ hs).ne' (M.finite_bounded _ isBounded_closedBall).ne
   obtain ⟨η, hη, hle⟩ :=
     ((dynamicCurvatureDimension_zero_iff hN₀).1 h).2 (hμ₀ ▸ cond_absolutelyContinuous)

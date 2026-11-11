@@ -17,8 +17,7 @@ import Mathlib.Tactic.Abel
 
 Topological complementedness is preserved by continuous semilinear equivalences, allowing
 continuous projections to be transported between different presentations of a module. It is also
-preserved by restriction of scalars. The projection onto a complement of `L`, precomposed with a
-continuous linear map `A`, has kernel `A⁻¹ L` (`Submodule.ker_projectionOntoL_comp`).
+preserved by restriction of scalars.
 A continuous linear map is unchanged by the projection along its kernel onto a topological
 complement of that kernel.
 A continuous linear quotient map admits a continuous linear section exactly when its kernel is
@@ -75,27 +74,6 @@ theorem ClosedComplemented.restrictScalars {p : Submodule A M} (hp : p.ClosedCom
     fun x ↦ (P x).2, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.2⟩))⟩
 
 end RestrictScalars
-
-section ProjectionOntoLComp
-
-variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
-  [AddCommGroup F] [Module R F] [TopologicalSpace F]
-
-/-- The projection onto a topological complement `C` of `L` along `L`, precomposed with a
-continuous linear map `A`, has kernel the preimage of `L` under `A`. (Not a `simp` lemma: `simp`
-already rewrites the composite to `Submodule.projectionOnto`.) -/
-theorem ker_projectionOntoL_comp {L C : Submodule R F} (h : C.IsTopCompl L) (A : E →L[R] F) :
-    ((C.projectionOntoL L h).comp A).ker = L.comap (A : E →ₗ[R] F) := by
-  ext v
-  simp
-
-/-- The projection onto a topological complement, precomposed with a surjective continuous linear
-map, is surjective. -/
-theorem range_projectionOntoL_comp {L C : Submodule R F} (h : C.IsTopCompl L) {A : E →L[R] F}
-    (hA : Function.Surjective A) : ((C.projectionOntoL L h).comp A).range = ⊤ :=
-  LinearMap.range_eq_top.2 <| (projectionOntoL_surjective h).comp hA
-
-end ProjectionOntoLComp
 
 end Submodule
 

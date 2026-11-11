@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
-public import TauCeti.RepresentationTheory.Continuous.LeftRegular
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Group.Convolution.Support

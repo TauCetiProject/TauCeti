@@ -347,7 +347,7 @@ private theorem ker_familyToPullback_le_of_forall
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
         Spec.map (CommRingCat.ofHom (x : H →+* C)) ∧ N.evalIdeal x = ⊥) :
     (familyToPullback R H k).ker ≤ p.left.ker := by
-  refine p.left.le_ker_of_openCover _ T.left.affineCover fun j ↦ ?_
+  refine (p.left.le_ker_iff_of_openCover _ T.left.affineCover).2 fun j ↦ ?_
   suffices ∀ (C : CommRingCat.{u}) (g : Spec C ⟶ T.left),
       (familyToPullback R H k).ker ≤ (g ≫ p.left).ker from this _ _
   intro C g

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 public import TauCeti.MeasureTheory.Measure.ArctanCenter
+public import TauCeti.MeasureTheory.Measure.FiniteMeasure.WithDensity
 
 /-!
 # A slice for the translation action on Floer cylinders
@@ -40,7 +41,16 @@ center of its strip energy measure (`MeasureTheory.Measure.arctanCenter`), the u
 
 The center is continuous for the weak topology on energy measures
 (`MeasureTheory.FiniteMeasure.tendsto_arctanCenter`), so cylinders whose finite energy measures
-converge weakly to a nonzero limit have converging centers. Unlike the usual action level slice
+converge weakly to a nonzero limit have converging centers. Weak convergence holds along cylinders
+`u i → u₀` whose energy densities converge almost everywhere on the strip, as they do under `C¹`
+convergence on compact sets, provided no energy is lost in the limit: the energies of `u i`
+converge to the energy of `u₀`. By Scheffé's lemma the densities then converge in `L¹`, so the
+strip energy measures converge weakly
+(`MeasureTheory.FiniteMeasure.tendsto_of_ae_tendsto_of_tendsto_integral`), and if the energy of
+`u₀` is nonzero the centers of `u i` converge to that of `u₀`
+(`TauCeti.SymplecticForm.tendsto_arctanCenter_stripEnergyMeasure`). This is the continuity of the
+slice where convergence loses no energy; along a sequence which breaks, part of the energy escapes
+along the ends and the hypothesis fails. Unlike the usual action level slice
 `A_H(u(0, ·)) = a`, which needs a level strictly between the actions of the two ends and the strict
 monotonicity of the action along the cylinder, this slice needs neither unique continuation nor a
 choice of level.
@@ -57,6 +67,8 @@ considered: the statements are about the action of `ℝ` on classical solutions.
 * `SymplecticForm.existsUnique_arctanCenter_stripEnergyMeasure_comp_add_right_eq_zero_of_floer`:
   each translation orbit of a nonstationary finite-energy Floer cylinder meets the slice of center
   zero exactly once.
+* `TauCeti.SymplecticForm.tendsto_arctanCenter_stripEnergyMeasure`: the center is continuous along
+  cylinders whose energy densities converge without loss of energy.
 
 ## References
 
@@ -64,13 +76,15 @@ considered: the statements are about the action of `ℝ` on classical solutions.
   575–611, on the translation action on connecting trajectories.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
   Math. Ser. 7 (1999), Lecture 1, on moduli spaces of Floer cylinders modulo translation.
+* H. Scheffé, *A useful convergence theorem for probability distributions*, Ann. Math. Statist.
+  **18** (1947), 434–438.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Set
+open Filter MeasureTheory Set Topology
 
 namespace TauCeti.SymplecticForm
 
@@ -152,5 +166,63 @@ theorem comp_add_arctanCenter_stripEnergyMeasure_comp_add_right
   simp_rw [add_assoc, hm]
 
 end Slice
+
+section Continuity
+
+variable {ω : SymplecticForm V} {Ks Kt : ℝ × ℝ → V → ℝ} {ι : Type*} {l : Filter ι}
+  [l.IsCountablyGenerated] {u : ι → ℝ × ℝ → V} {u₀ : ℝ × ℝ → V}
+
+/-- **Continuity of the energy center.** Let maps `u i` of the strip `ℝ × [0, 1]` have integrable
+energy densities, nonnegative almost everywhere, which converge almost everywhere on the strip to
+the integrable energy density of a map `u₀`. If moreover no energy is lost in the limit, that is,
+the energies of `u i` over the strip converge to the energy of `u₀`, and the energy of `u₀` is
+nonzero, then the arctan centers of the strip energy measures of `u i` converge to that of `u₀`.
+-/
+theorem tendsto_arctanCenter_stripEnergyMeasure
+    (hint : ∀ i, IntegrableOn (ω.floerEnergyDensity Ks Kt (u i)) ((univ : Set ℝ) ×ˢ Icc 0 1))
+    (hint₀ : IntegrableOn (ω.floerEnergyDensity Ks Kt u₀) ((univ : Set ℝ) ×ˢ Icc 0 1))
+    (hnonneg : ∀ i, 0 ≤ᵐ[volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1)]
+      ω.floerEnergyDensity Ks Kt (u i))
+    (hlim : ∀ᵐ z ∂volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1),
+      Tendsto (fun i ↦ ω.floerEnergyDensity Ks Kt (u i) z) l
+        (𝓝 (ω.floerEnergyDensity Ks Kt u₀ z)))
+    (henergy : Tendsto
+      (fun i ↦ ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt (u i) z) l
+      (𝓝 (∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u₀ z)))
+    (hE : ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u₀ z ≠ 0) :
+    Tendsto (fun i ↦ (ω.stripEnergyMeasure Ks Kt (u i)).arctanCenter) l
+      (𝓝 (ω.stripEnergyMeasure Ks Kt u₀).arctanCenter) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  set S := (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1
+  -- The energy measures on the strip, as finite measures.
+  let μ (v : ℝ × ℝ → V) (hv : IntegrableOn (ω.floerEnergyDensity Ks Kt v) S) :
+      FiniteMeasure (ℝ × ℝ) :=
+    ⟨(volume.restrict S).withDensity fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt v z),
+      isFiniteMeasure_withDensity_ofReal hv.hasFiniteIntegral⟩
+  -- Their pushforwards to the `s`-axis are the strip energy measures.
+  have hμ (v : ℝ × ℝ → V) (hv : IntegrableOn (ω.floerEnergyDensity Ks Kt v) S) :
+      ((μ v hv).map Prod.fst).toMeasure = ω.stripEnergyMeasure Ks Kt v := by
+    rw [FiniteMeasure.toMeasure_map, stripEnergyMeasure_def]
+    simp only [μ, S, FiniteMeasure.toMeasure_mk]
+  -- By Scheffé's lemma the finite measures converge weakly, and so do their pushforwards.
+  have h := FiniteMeasure.tendsto_map_of_tendsto_of_continuous _ _
+    (FiniteMeasure.tendsto_of_ae_tendsto_of_tendsto_integral (μs := fun i ↦ μ (u i) (hint i))
+      (ν := μ u₀ hint₀) hint hint₀ hnonneg (fun _ ↦ rfl) rfl hlim henergy) continuous_fst
+  -- The limit is nonzero: otherwise the energy density of `u₀` would be nonpositive almost
+  -- everywhere, while its energy is a limit of nonnegative energies.
+  have hne : (μ u₀ hint₀).map Prod.fst ≠ 0 := by
+    intro h0
+    have h0' : ω.stripEnergyMeasure Ks Kt u₀ = 0 := by
+      rw [← hμ u₀ hint₀, h0, FiniteMeasure.toMeasure_zero]
+    have hle : ω.floerEnergyDensity Ks Kt u₀ ≤ᵐ[volume.restrict S] 0 := by
+      filter_upwards [(lintegral_eq_zero_iff' hint₀.aemeasurable.ennreal_ofReal).1
+        (stripEnergyMeasure_eq_zero_iff.1 h0')] with z hz
+      exact ENNReal.ofReal_eq_zero.1 hz
+    exact hE (le_antisymm (integral_nonpos_of_ae hle)
+      (ge_of_tendsto' henergy fun i ↦ integral_nonneg_of_ae (hnonneg i)))
+  simpa only [hμ] using FiniteMeasure.tendsto_arctanCenter hne h
+
+end Continuity
 
 end TauCeti.SymplecticForm

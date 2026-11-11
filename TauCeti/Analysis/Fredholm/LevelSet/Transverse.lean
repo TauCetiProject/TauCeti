@@ -8,17 +8,17 @@ module
 public import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
 public import TauCeti.Analysis.Calculus.TangentCone.Chart
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Topology.Algebra.Module.Complement
+import Mathlib.Topology.Algebra.Module.Complement
 
 /-!
 # Parametric transversality to a flattened set
 
 Let `G : V × Λ → E` be a parametrized map between finite-dimensional real normed spaces and `S ⊆ E`
-a set which is flattened near each of its points met by `G` by a `C^n` chart, with inverse
-differentiable along `S`, onto a fixed linear subspace `L`. The tangent space of `S` at such a point
-is the span of its tangent cone, `Submodule.span ℝ (tangentConeAt ℝ S y)`. This file proves the
-transversality theorem in its measure form for this situation: if the total derivative of `G` is
-transverse to `S` at every point of a set `U` that `G` sends into `S`, then for almost every
+a set which is flattened near each of its points met by `G`, onto a fixed linear subspace `L`, by a
+chart that is `C^n` along `S` with inverse differentiable along `S`. The tangent space of `S` at
+such a point is the span of its tangent cone, `Submodule.span ℝ (tangentConeAt ℝ S y)`. This file
+proves the transversality theorem in its measure form for this situation: if the total derivative of
+`G` is transverse to `S` at every point of a set `U` that `G` sends into `S`, then for almost every
 parameter `l` the partial derivative in `V` is transverse to `S` at every such point of `U` over
 `l`.
 
@@ -50,6 +50,16 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
+/-- A composite `f ∘ g` with `f` surjective is surjective exactly when the range of `g` and the
+kernel of `f` together span. -/
+private theorem surjective_comp_iff_range_sup_ker_eq_top {X Y F : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : Y →L[ℝ] F} (hf : LinearMap.range (f : Y →ₗ[ℝ] F) = ⊤) (g : X →L[ℝ] Y) :
+    Surjective (f.comp g) ↔
+      LinearMap.range (g : X →ₗ[ℝ] Y) ⊔ LinearMap.ker (f : Y →ₗ[ℝ] F) = ⊤ := by
+  rw [← LinearMap.map_eq_top_iff hf, ← LinearMap.range_comp]
+  exact LinearMap.range_eq_top.symm
+
 variable {V Λ E : Type*}
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ]
@@ -57,15 +67,15 @@ variable {V Λ E : Type*}
 
 variable [MeasurableSpace Λ] [BorelSpace Λ] (ν : Measure Λ) [Measure.IsAddHaarMeasure ν]
 
-/-- **Parametric transversality in one chart.** Let `e` be a `C^n` chart, with inverse
-differentiable at the images of the points of `S`, flattening `S` onto a linear subspace `L`. If, at
-each point of `U` sent into `S`, the map `G` is `C^n` and its derivative is transverse to `S`, then
-for almost every parameter `l` the partial derivative of `G` in `V` is transverse to `S` at every
-point of `U` over `l` sent into `S` within the source of `e`. The smoothness order must exceed
+/-- **Parametric transversality in one chart.** Let `e` be a chart flattening `S` onto a linear
+subspace `L`, which is `C^n` at the points of `S` with inverse differentiable at their images. If,
+at each point of `U` sent into `S`, the map `G` is `C^n` and its derivative is transverse to `S`,
+then for almost every parameter `l` the partial derivative of `G` in `V` is transverse to `S` at
+every point of `U` over `l` sent into `S` within the source of `e`. The smoothness order must exceed
 `max (dim V - codim L, 0)`. -/
 theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G : V × Λ → E}
     {U : Set (V × Λ)} {S : Set E} {L : Submodule ℝ E} {n : ℕ∞ω} {e : OpenPartialHomeomorph E E}
-    (hS : IsSliceChart e (L : Set E) S) (he : ∀ y ∈ e.source, ContDiffAt ℝ n e y)
+    (hS : IsSliceChart e (L : Set E) S) (he : ∀ y ∈ e.source, y ∈ S → ContDiffAt ℝ n e y)
     (hes : ∀ y ∈ e.source, y ∈ S → DifferentiableAt ℝ e.symm (e y))
     (hcont : ∀ z ∈ U, G z ∈ S → ContDiffAt ℝ n G z)
     (htotal : ∀ z ∈ U, G z ∈ S →
@@ -94,41 +104,35 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
       Submodule.span ℝ (tangentConeAt ℝ S (G w)) =
         LinearMap.ker (P.comp (A : E →L[ℝ] E) : E →ₗ[ℝ] C) := by
     intro w hw hwS
-    obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hw.2 ((he _ hw.2).differentiableAt hn0)
+    obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hw.2 ((he _ hw.2 hwS).differentiableAt hn0)
       (hes _ hw.2 hwS)
-    have hker := Submodule.ker_projectionOntoL_comp hCL (A : E →L[ℝ] E)
-    have hrange := Submodule.range_projectionOntoL_comp hCL (A := (A : E →L[ℝ] E)) A.surjective
     refine ⟨A, (P.hasFDerivAt.comp (G w) hA).comp w
-      ((hcont w hw.1 hwS).differentiableAt hn0).hasFDerivAt, hrange, ?_⟩
+      ((hcont w hw.1 hwS).differentiableAt hn0).hasFDerivAt,
+      LinearMap.range_eq_top.2 <| (Submodule.projectionOntoL_surjective hCL).comp A.surjective, ?_⟩
     rw [hS.span_tangentConeAt_eq_comap L.closed_of_finiteDimensional hw.2 hwS hA]
-    exact hker.symm
+    ext v
+    simp [P]
   have hreg : ∀ᵐ l ∂ν, IsRegularParameterOn (fun w ↦ P (e (G w))) W 0 l := by
     refine ae_isRegularParameterOn ν (n := n) (fun w hw hw0 ↦ ?_) (fun w hw hw0 ↦ ?_)
       (by rwa [hfinrank])
-    · exact P.contDiff.contDiffAt.comp w ((he _ hw.2).comp w (hcont w hw.1 ((hsol w hw).1 hw0)))
+    · have hwS := (hsol w hw).1 hw0
+      exact P.contDiff.contDiffAt.comp w ((he _ hw.2 hwS).comp w (hcont w hw.1 hwS))
     · have hwS := (hsol w hw).1 hw0
       obtain ⟨A, hg, hrange, hker⟩ := hderiv w hw hwS
-      have h : LinearMap.range ((P.comp (A : E →L[ℝ] E) : E →ₗ[ℝ] C) ∘ₗ
-          (fderiv ℝ G w : V × Λ →ₗ[ℝ] E)) = ⊤ := by
-        rw [LinearMap.range_comp, LinearMap.map_eq_top_iff hrange, ← hker]
-        exact htotal w hw.1 hwS
-      rw [hg.fderiv]
-      exact LinearMap.range_eq_top.1 h
+      rw [hg.fderiv, surjective_comp_iff_range_sup_ker_eq_top hrange, ← hker]
+      exact htotal w hw.1 hwS
   filter_upwards [hreg] with l hl v hvU hve hvS
   obtain ⟨A, hg, hrange, hker⟩ := hderiv (v, l) ⟨hvU, hve⟩ hvS
   have h := isRegularParameterOn_iff.1 hl v ⟨hvU, hve⟩ ((hsol _ ⟨hvU, hve⟩).2 hvS)
-  rw [hg.fderiv] at h
-  have h' : LinearMap.range ((P.comp (A : E →L[ℝ] E) : E →ₗ[ℝ] C) ∘ₗ
-      ((fderiv ℝ G (v, l)).comp (ContinuousLinearMap.inl ℝ V Λ) : V →ₗ[ℝ] E)) = ⊤ :=
-    LinearMap.range_eq_top.2 h
-  rwa [LinearMap.range_comp, LinearMap.map_eq_top_iff hrange, ← hker] at h'
+  rwa [hg.fderiv, ContinuousLinearMap.comp_assoc, surjective_comp_iff_range_sup_ker_eq_top hrange,
+    ← hker] at h
 
 /-- **Parametric transversality to a flattened set, measure form.** Let `G : V × Λ → E` be a
-parametrized map and `S` a set flattened onto a linear subspace `L` by a `C^n` chart, with inverse
-differentiable along `S`, around each point of `S` that `G` reaches from `U`. If, at each point of
-`U` sent into `S`, `G` is `C^n` and its derivative is transverse to `S`, then for almost every
-parameter `l` the partial derivative of `G` in `V` is transverse to `S` at every point of `U` over
-`l` sent into `S`.
+parametrized map and `S` a set flattened onto a linear subspace `L`, by a chart that is `C^n` along
+`S` with inverse differentiable along `S`, around each point of `S` that `G` reaches from `U`. If,
+at each point of `U` sent into `S`, `G` is `C^n` and its derivative is transverse to `S`, then for
+almost every parameter `l` the partial derivative of `G` in `V` is transverse to `S` at every point
+of `U` over `l` sent into `S`.
 
 The smoothness order must exceed `max (dim V - codim L, 0)`, the Morse--Sard threshold of
 `TauCeti.ae_isRegularParameterOn` for the level equations cutting out `G⁻¹ S`. -/
@@ -136,7 +140,7 @@ theorem ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G : V × Λ → 
     {U : Set (V × Λ)} {S : Set E} {L : Submodule ℝ E} {n : ℕ∞ω}
     (hcont : ∀ z ∈ U, G z ∈ S → ContDiffAt ℝ n G z)
     (hchart : ∀ z ∈ U, G z ∈ S → ∃ e : OpenPartialHomeomorph E E, G z ∈ e.source ∧
-      (∀ y ∈ e.source, ContDiffAt ℝ n e y) ∧
+      (∀ y ∈ e.source, y ∈ S → ContDiffAt ℝ n e y) ∧
       (∀ y ∈ e.source, y ∈ S → DifferentiableAt ℝ e.symm (e y)) ∧ IsSliceChart e (L : Set E) S)
     (htotal : ∀ z ∈ U, G z ∈ S →
       LinearMap.range (fderiv ℝ G z : V × Λ →ₗ[ℝ] E) ⊔
@@ -147,7 +151,8 @@ theorem ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G : V × Λ → 
         Submodule.span ℝ (tangentConeAt ℝ S (G (v, l))) = ⊤ := by
   -- A chart around each point to be covered, with an open neighbourhood mapped into its source.
   set Z := {z | z ∈ U ∧ G z ∈ S}
-  have key : ∀ z : Z, ∃ e : OpenPartialHomeomorph E E, (∀ y ∈ e.source, ContDiffAt ℝ n e y) ∧
+  have key : ∀ z : Z, ∃ e : OpenPartialHomeomorph E E,
+      (∀ y ∈ e.source, y ∈ S → ContDiffAt ℝ n e y) ∧
       (∀ y ∈ e.source, y ∈ S → DifferentiableAt ℝ e.symm (e y)) ∧ IsSliceChart e (L : Set E) S ∧
       (z : V × Λ) ∈ interior (G ⁻¹' e.source) := fun z ↦ by
     obtain ⟨e, hze, he, hes, hS⟩ := hchart z z.2.1 z.2.2
