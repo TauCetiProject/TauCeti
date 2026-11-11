@@ -162,7 +162,7 @@ theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
         ∫ x, ‖x - b‖ ^ p * bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ = 0 := by
       refine integral_undef fun hint ↦ ?_
       simp only [hcrit, Real.rpow_zero, mul_one] at hint
-      exact μ.not_integrable_norm_sub_rpow hp.le b hint
+      exact μ.not_integrable_norm_sub_rpow p b hint
     simpa only [hzero] using tendsto_const_nhds
   have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
     simpa only [Real.zero_rpow hp.ne'] using
