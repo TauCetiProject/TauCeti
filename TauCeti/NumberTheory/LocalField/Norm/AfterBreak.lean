@@ -100,6 +100,52 @@ theorem norm_one_add_sub_one_sub_trace_mem_after_break (hℓ : (finrank K L).Pri
   rw [heq]
   exact add_mem htrace hnorm
 
+/-- The graded norm is surjective above the break, given the trace depth computation:
+a unit congruent to `1` modulo `𝓂[K] ^ v` is lifted through the trace to depth `ψℕ(v)` and the
+norm error lies in the next ideal power. -/
+private theorem normGradedMap_surjective_after_break (hℓ : (finrank K L).Prime) {t v : ℕ}
+    (hvt : t < v) (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩)
+    (hdiv : (psiNat K L v + differentExponent K L) / ramificationIndex K L = v)
+    (hm : v + 1 ≤ psiNat K L v) :
+    Function.Surjective (normGradedMap K L v) := by
+  intro c
+  induction c using QuotientGroup.induction_on with | H u => ?_
+  obtain ⟨a, ha, hau⟩ := mem_unitFiltration_iff_exists.1 u.2
+  have hmap := map_intTrace_maximalIdeal_pow K L (psiNat K L v)
+  rw [hdiv] at hmap
+  obtain ⟨x, hx, hxa⟩ := Submodule.mem_map.1 (hmap.symm ▸ ha)
+  have hx' : x ∈ 𝓂[L] ^ psiNat K L v := (Submodule.restrictScalars_mem ..).1 hx
+  have hx1 : x ∈ 𝓂[L] := Ideal.pow_le_self (by omega) hx'
+  have hunit : IsUnit (1 + x) := by
+    apply isUnit_of_mem_nonunits_one_sub_self
+    simpa using (mem_maximalIdeal _).1 (neg_mem hx1)
+  let z : Lˣ := Units.map (Subring.subtype 𝒪[L]).toMonoidHom hunit.unit
+  have hz : z ∈ unitFiltration L (psiNat K L v) :=
+    mem_unitFiltration_iff_exists.2 ⟨hunit.unit, by simpa [hunit.unit_spec] using hx', rfl⟩
+  refine ⟨QuotientGroup.mk (⟨z, hz⟩ : unitFiltration L (psiNat K L v)), ?_⟩
+  rw [normGradedMap_mk, QuotientGroup.eq]
+  rw [Subgroup.mem_subgroupOf]
+  have hNa : Algebra.norm 𝒪[K] (1 + x) - (a : 𝒪[K]) ∈ 𝓂[K] ^ (v + 1) := by
+    have herr := norm_one_add_sub_one_sub_trace_mem_after_break hℓ hvt ht hx'
+    rw [← Algebra.intTrace_eq_trace, hxa] at herr
+    simpa only [sub_sub_sub_cancel_right] using herr
+  let b : 𝒪[K]ˣ := Units.map (Algebra.norm 𝒪[K]) hunit.unit
+  have hb : (b : 𝒪[K]) = Algebra.norm 𝒪[K] (1 + x) := by
+    simp only [b, Units.coe_map, hunit.unit_spec]
+  have hNb : Algebra.normUnits K z = Units.map (Subring.subtype 𝒪[K]).toMonoidHom b := by
+    apply Units.ext
+    simp [z, b, Algebra.coe_normUnits, coe_norm_integerRing]
+  refine mem_unitFiltration_iff_exists.2 ⟨a * b⁻¹, ?_, ?_⟩
+  · have heq : (↑(a * b⁻¹) : 𝒪[K]) - 1 =
+        -(Algebra.norm 𝒪[K] (1 + x) - ↑a) * ↑b⁻¹ := by
+      rw [Units.val_mul, ← hb]
+      linear_combination (Units.mul_inv b)
+    rw [heq]
+    exact Ideal.mul_mem_right _ _ (neg_mem hNa)
+  · have hbInv : ((↑b⁻¹ : 𝒪[K]) : K) = ((↑b : 𝒪[K]) : K)⁻¹ :=
+      map_units_inv (Subring.subtype 𝒪[K]) b
+    simp [hNb, ← hau, mul_comm, hbInv]
+
 /-- **The graded norm is bijective above the break.** In a Galois extension of prime degree
 with an upper break at a natural number `t`, every graded norm at unit depth `v > t` is
 bijective. The source depth is the canonical integral inverse Herbrand value `ψℕ(v)`. -/
@@ -111,45 +157,7 @@ theorem normGradedMap_after_break (hℓ : (finrank K L).Prime) {t v : ℕ} (hvt 
   obtain ⟨hdiv, hm, -⟩ := trace_depth_after_break hvt hG hG' hℓ.two_le
   have htotal : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
     top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
-  -- Surjectivity on the graded piece follows by lifting `u - 1` through the trace.
-  have hsurj : Function.Surjective (normGradedMap K L v) := by
-    intro c
-    induction c using QuotientGroup.induction_on with | H u => ?_
-    obtain ⟨a, ha, hau⟩ := mem_unitFiltration_iff_exists.1 u.2
-    have hmap := map_intTrace_maximalIdeal_pow K L (psiNat K L v)
-    rw [hdiv] at hmap
-    obtain ⟨x, hx, hxa⟩ := Submodule.mem_map.1 (hmap.symm ▸ ha)
-    have hx' : x ∈ 𝓂[L] ^ psiNat K L v := (Submodule.restrictScalars_mem ..).1 hx
-    have hx1 : x ∈ 𝓂[L] := Ideal.pow_le_self (by omega) hx'
-    have hunit : IsUnit (1 + x) := by
-      apply isUnit_of_mem_nonunits_one_sub_self
-      simpa using (mem_maximalIdeal _).1 (neg_mem hx1)
-    let z : Lˣ := Units.map (Subring.subtype 𝒪[L]).toMonoidHom hunit.unit
-    have hz : z ∈ unitFiltration L (psiNat K L v) :=
-      mem_unitFiltration_iff_exists.2 ⟨hunit.unit, by simpa [hunit.unit_spec] using hx', rfl⟩
-    refine ⟨QuotientGroup.mk (⟨z, hz⟩ : unitFiltration L (psiNat K L v)), ?_⟩
-    rw [normGradedMap_mk, QuotientGroup.eq]
-    rw [Subgroup.mem_subgroupOf]
-    have hNa : Algebra.norm 𝒪[K] (1 + x) - (a : 𝒪[K]) ∈ 𝓂[K] ^ (v + 1) := by
-      have herr := norm_one_add_sub_one_sub_trace_mem_after_break hℓ hvt ht hx'
-      rw [← Algebra.intTrace_eq_trace, hxa] at herr
-      simpa only [sub_sub_sub_cancel_right] using herr
-    let b : 𝒪[K]ˣ := Units.map (Algebra.norm 𝒪[K]) hunit.unit
-    have hb : (b : 𝒪[K]) = Algebra.norm 𝒪[K] (1 + x) := by
-      simp only [b, Units.coe_map, hunit.unit_spec]
-    have hNb : Algebra.normUnits K z = Units.map (Subring.subtype 𝒪[K]).toMonoidHom b := by
-      apply Units.ext
-      simp [z, b, Algebra.coe_normUnits, coe_norm_integerRing]
-    refine mem_unitFiltration_iff_exists.2 ⟨a * b⁻¹, ?_, ?_⟩
-    · have heq : (↑(a * b⁻¹) : 𝒪[K]) - 1 =
-          -(Algebra.norm 𝒪[K] (1 + x) - ↑a) * ↑b⁻¹ := by
-        rw [Units.val_mul, ← hb]
-        linear_combination (Units.mul_inv b)
-      rw [heq]
-      exact Ideal.mul_mem_right _ _ (neg_mem hNa)
-    · have hbInv : ((↑b⁻¹ : 𝒪[K]) : K) = ((↑b : 𝒪[K]) : K)⁻¹ :=
-        map_units_inv (Subring.subtype 𝒪[K]) b
-      simp [hNb, ← hau, mul_comm, hbInv]
+  have hsurj := normGradedMap_surjective_after_break hℓ hvt ht hdiv hm
   -- Both positive-depth graded pieces have the same finite cardinality.
   have hv0 : 0 < v := by omega
   have hm0 : 0 < psiNat K L v := by omega

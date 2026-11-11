@@ -325,7 +325,7 @@ theorem coe_restrictedOptionEquiv_X_some (i : σ) :
 theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = ‖f‖ := by
   have hpos (n : ℕ) : 0 < c none ^ n := pow_pos Fact.out n
   apply le_antisymm
-  · rw [TauCeti.PowerSeries.norm_le_iff (norm_nonneg _)]
+  · rw [TauCeti.PowerSeries.norm_le_iff]
     intro n
     rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
       (div_nonneg (norm_nonneg _) (hpos n).le)]

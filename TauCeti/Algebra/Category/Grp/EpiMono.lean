@@ -49,19 +49,13 @@ theorem epi_biprod_desc_map_prod_fst_neg_map_prod_snd_iff_surjective
         P.map (homOfLE inf_le_left : U ⊓ V ⟶ U).op x.1 -
           P.map (homOfLE inf_le_right : U ⊓ V ⟶ V).op x.2 := by
   -- the product `U ⨯ V` is the meet `U ⊓ V`, so restriction between them is invertible
-  let e := iso_of_both_ways (homOfLE (CompleteLattice.prod_eq_inf U V).ge)
-    (homOfLE (CompleteLattice.prod_eq_inf U V).le)
-  have he : biprod.desc (P.map (prod.fst : U ⨯ V ⟶ U).op)
-      (-P.map (prod.snd : U ⨯ V ⟶ V).op) ≫ P.map e.hom.op =
-        biprod.desc (P.map (homOfLE inf_le_left : U ⊓ V ⟶ U).op)
-          (-P.map (homOfLE inf_le_right : U ⊓ V ⟶ V).op) := by
-    -- morphisms of `X` are unique, so `e` followed by a projection is the inequality of the meet
-    have h₀ : e.hom ≫ prod.fst = homOfLE inf_le_left := Subsingleton.elim _ _
-    have h₁ : e.hom ≫ prod.snd = homOfLE inf_le_right := Subsingleton.elim _ _
-    apply biprod.hom_ext' <;> simp [← P.map_comp, ← op_comp, h₀, h₁]
-  rw [← epi_comp_iff_of_isIso _ (P.map e.hom.op), he,
+  let e : U ⊓ V ≅ U ⨯ V := eqToIso (CompleteLattice.prod_eq_inf U V).symm
+  -- morphisms of `X` are unique, so `e` followed by a projection is the inequality of the meet
+  have h₀ : e.hom ≫ prod.fst = homOfLE inf_le_left := Subsingleton.elim _ _
+  have h₁ : e.hom ≫ prod.snd = homOfLE inf_le_right := Subsingleton.elim _ _
+  rw [← epi_comp_iff_of_isIso _ (P.map e.hom.op),
     ← epi_comp_iff_of_epi (AddCommGrpCat.biprodIsoProd _ _).inv, AddCommGrpCat.epi_iff_surjective]
-  refine Iff.of_eq (congrArg _ (funext fun x ↦ ?_))
-  simp [AddCommGrpCat.biprodIsoProd_inv_comp_desc_apply, sub_eq_add_neg]
+  congr! with x
+  simp [AddCommGrpCat.biprodIsoProd_inv_comp_desc_apply, sub_eq_add_neg, ← h₀, ← h₁]
 
 end CategoryTheory.Functor

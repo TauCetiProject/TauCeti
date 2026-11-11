@@ -35,6 +35,8 @@ the dimension.
 * `Matrix.eval_one_charpolyRev`: the value of `det (1 - X A)` at `X = 1` is `det (1 - A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
+* `Matrix.charpolyRev_eq_charpolyRev_iff`: for matrices of the same size, `det (1 - X A)`
+  determines the characteristic polynomial and conversely.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
   block-triangular matrices, with `Matrix.charpolyRev_of_isUpperTriangular` and
   `Matrix.charpolyRev_diagonal` as special cases.
@@ -158,6 +160,14 @@ theorem charpolyRev_transpose (A : Matrix ι ι R) : Aᵀ.charpolyRev = A.charpo
 theorem charpolyRev_reindex (e : ι ≃ κ) (A : Matrix ι ι R) :
     (reindex e e A).charpolyRev = A.charpolyRev := by
   rw [charpolyRev_eq_reflect, charpolyRev_eq_reflect, charpoly_reindex, Fintype.card_congr e]
+
+/-- For square matrices of the same size, `det (1 - X A) = det (1 - X B)` if and only if `A` and
+`B` have the same characteristic polynomial. -/
+theorem charpolyRev_eq_charpolyRev_iff {A : Matrix ι ι R} {B : Matrix κ κ R}
+    (h : Fintype.card ι = Fintype.card κ) :
+    A.charpolyRev = B.charpolyRev ↔ A.charpoly = B.charpoly := by
+  rw [charpolyRev_eq_reflect, charpolyRev_eq_reflect, h]
+  exact ⟨fun h' ↦ by simpa using congrArg (reflect (Fintype.card κ)) h', fun h' ↦ h' ▸ rfl⟩
 
 /-- `det (1 - X A)` of an empty matrix is `1`. -/
 @[simp]

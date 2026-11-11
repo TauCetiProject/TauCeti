@@ -62,7 +62,7 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   refine Quotient.inductionOn a ?_
   intro p
   rw [map_mk]
-  exact congrArg _ (GenLoop.map_continuousMap_const y p)
+  exact congrArg _ (GenLoop.map_continuousMap_const y hy p)
 
 /-- Every homotopy group of a subsingleton space is a subsingleton: any two generalized loops
 in it are equal. This includes dimension zero. -/
@@ -231,6 +231,12 @@ theorem map_mul [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
 theorem map_one [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y) :
     map f hf (1 : HomotopyGroup N X x) = 1 :=
   (mapHom f hf).map_one
+
+@[simp]
+theorem map_inv [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
+    (a : HomotopyGroup N X x) :
+    map f hf a⁻¹ = (map f hf a)⁻¹ :=
+  (mapHom f hf).map_inv a
 
 /-- In dimension one, the induced map on homotopy groups is the induced map on fundamental groups,
 under Mathlib's identification `pi1EquivFundamentalGroup` of `π_1` with the fundamental group. -/

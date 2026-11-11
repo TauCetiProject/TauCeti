@@ -65,7 +65,7 @@ theorem finiteDimensional_ker_of_compact_estimate [CompleteSpace 𝕜]
   have h := hbound ((v m : E) - (v n : E))
   have hTv (i : ℕ) : T (v i : E) = 0 := (v i).property
   simp only [map_sub, hTv, sub_self, norm_zero, mul_zero, zero_add] at h
-  have hsep : 1 ≤ ‖(v m : E) - (v n : E)‖ := hvsep hmn
+  have hsep : 1 ≤ ‖(v m : E) - (v n : E)‖ := hvsep hmn.ne
   exact (hsep.trans h).not_gt (by simpa [dist_eq_norm] using hclose)
 
 section CompleteDomain

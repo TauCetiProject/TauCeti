@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
 # The Mayer–Vietoris sequence of compactly supported de Rham complexes
@@ -105,45 +104,25 @@ theorem surjective_coprod_extendByZero [FiniteDimensional ℝ E] [IsManifold I �
     Function.Surjective
       ((extendByZero (I := I) (le_sup_left : U ≤ U ⊔ V) k).coprod
         (extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V) k)) := by
+  classical
   intro φ
-  -- The open subset `U ⊔ V` is again a Hausdorff σ-compact manifold.
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : SecondCountableTopology H := I.secondCountableTopology
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
   have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
-  -- A smooth partition of unity on `U ⊔ V` subordinate to the cover by `V` and `U`.
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
-    (fun b : Bool ↦ cond b {x : (U ⊔ V : Opens M) | (x : M) ∈ V} {x | (x : M) ∈ U})
-    (fun b ↦ by
-      cases b
-      exacts [U.isOpen.preimage continuous_subtype_val, V.isOpen.preimage continuous_subtype_val])
-    fun x _ ↦ by
-      rcases Opens.mem_sup.mp x.2 with hx | hx
-      exacts [mem_iUnion.mpr ⟨false, hx⟩, mem_iUnion.mpr ⟨true, hx⟩]
-  -- The cut-off forms `ρ b φ` are compactly supported, with support in `V` or `U`. The
-  -- supports are computed for the model-fibre view of `φ`, for the function support lemmas.
-  let ρφ (b : Bool) : compactlySupportedForms I (U ⊔ V : Opens M) k :=
-    ⟨⟨fun x ↦ ρ b x • φ.1.1 x, (φ.1.isSmoothForm.fun_smul (ρ b).contMDiff).mem_smoothBundleForms⟩,
-      (mem_compactlySupportedForms I).mpr <|
-        ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (isClosed_tsupport _)
-          (tsupport_smul_subset_right (ρ b)
-            (show (U ⊔ V : Opens M) → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1))⟩
-  have hρφ (b : Bool) : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (ρφ b).1.1 ⊆
-      cond b {x : (U ⊔ V : Opens M) | (x : M) ∈ V} {x | (x : M) ∈ U} :=
-    (tsupport_smul_subset_left (ρ b)
-      (show (U ⊔ V : Opens M) → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1)).trans (hρ b)
-  obtain ⟨α, hα⟩ := (mem_range_extendByZero_iff le_sup_left).mpr (hρφ false)
-  obtain ⟨β, hβ⟩ := (mem_range_extendByZero_iff le_sup_right).mpr (hρφ true)
-  refine ⟨(α, β), ?_⟩
-  rw [LinearMap.coprod_apply, hα, hβ]
-  refine Subtype.ext <| Subtype.ext <| funext fun x ↦ ?_
-  -- `ρ false + ρ true = 1`, so the two cut-off forms sum to `φ`.
-  have hsum := ρ.sum_eq_one (mem_univ x)
-  rw [finsum_eq_sum_of_fintype, Fintype.sum_bool] at hsum
-  -- Sums of compactly supported forms, and the cut-off forms, are computed pointwise.
-  simp only [Submodule.coe_add, Pi.add_apply, ρφ]
-  rw [← add_smul, add_comm, hsum, one_smul]
+  let W : Bool → Opens M := fun b ↦ cond b V U
+  have hW (b : Bool) : W b ≤ U ⊔ V := by
+    cases b
+    exacts [le_sup_left, le_sup_right]
+  have hcover : U ⊔ V ≤ iSup W := by
+    simp [W, iSup_bool_eq, sup_comm]
+  obtain ⟨s, ψ, hψ⟩ := exists_sum_extendByZero W hW hcover k φ
+  let θ (b : Bool) : compactlySupportedForms I (W b) k := if b ∈ s then ψ b else 0
+  have hsum : φ = ∑ b : Bool, extendByZero (hW b) k (θ b) := by
+    simpa only [θ, apply_ite, map_zero, Finset.sum_ite_mem_eq] using hψ
+  rw [Fintype.sum_bool, add_comm] at hsum
+  exact ⟨(θ false, θ true), hsum.symm⟩
 
 end compactlySupportedForms
 

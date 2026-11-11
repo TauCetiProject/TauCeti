@@ -40,6 +40,8 @@ model vector space, so the naming records a difference of setting, not of mathem
   `TauCeti.IsPseudoholomorphicAt.mfderiv_isComplexLinear`: the manifold derivative of a
   pseudoholomorphic map intertwines the two structures, and their within-set analogues.
 * `TauCeti.IsPseudoholomorphicAt.comp`: pseudoholomorphic maps compose.
+* `TauCeti.IsPseudoholomorphicAt.of_comp`: a map whose composite with a pseudoholomorphic
+  immersion is pseudoholomorphic is pseudoholomorphic.
 * `TauCeti.isPseudoholomorphicAt_neg_neg_iff` and its within-set, setwise, and global analogues:
   reversing both structures changes nothing.
 * `TauCeti.isPseudoholomorphicAt_stdComplexLine_iff`: for a curve out of the standard complex
@@ -403,6 +405,20 @@ theorem IsPseudoholomorphicAt.comp (hv : IsPseudoholomorphicAt J K v (u x))
   refine isPseudoholomorphicAt_of_hasMFDerivAt (hv'.comp x hu') fun w ↦ ?_
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply]
   rw [hulin w, hvlin (u' w)]
+
+/-- A map whose composite with a pseudoholomorphic map of injective differential is
+pseudoholomorphic is itself pseudoholomorphic: the Cauchy--Riemann equation lifts through an
+immersion. -/
+theorem IsPseudoholomorphicAt.of_comp (hvu : IsPseudoholomorphicAt j K (v ∘ u) x)
+    (hv : IsPseudoholomorphicAt J K v (u x)) (hinj : Function.Injective (mfderiv I' I'' v (u x)))
+    (hu : MDifferentiableAt I I' u x) : IsPseudoholomorphicAt j J u x := by
+  refine isPseudoholomorphicAt_iff_mfderiv.2 ⟨hu, fun w ↦ hinj ?_⟩
+  have hchain (w' : TangentSpace I x) :
+      mfderiv I I'' (v ∘ u) x w' = mfderiv I' I'' v (u x) (mfderiv I I' u x w') := by
+    rw [mfderiv_comp x hv.mdifferentiableAt hu, ContinuousLinearMap.comp_apply]
+  rw [← hchain, hvu.mfderiv_apply_commute, hchain, hv.mfderiv_apply_commute]
+  -- The two sides differ only by `(v ∘ u) x = v (u x)` in the point at which `K` is evaluated.
+  rfl
 
 /-- The composition of pseudoholomorphic maps is pseudoholomorphic within a set at a point. -/
 theorem IsPseudoholomorphicWithinAt.comp {r : Set M'}

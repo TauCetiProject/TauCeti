@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
+public import Mathlib.AlgebraicGeometry.Noetherian
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -40,7 +41,8 @@ algebras `Γ(X, U)[I(U)t]` are finitely generated, and the blowup is proper over
   lies over `U` (`blowupChart_blowupToBase`) and its image is the preimage of `U`
   (`opensRange_blowupChart`).
 * `AlgebraicGeometry.Scheme.IdealSheafData.isProper_blowupToBase`: the blowup along an ideal sheaf
-  of finite type is proper.
+  of finite type is proper; in particular every blowup of a locally noetherian scheme is proper
+  (`isProper_blowupToBase_of_isLocallyNoetherian`).
 
 ## References
 
@@ -191,9 +193,8 @@ generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/
 theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
     IsProper I.blowupToBase := by
   refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U hU ↦ ?_)
-  · have : Algebra.FiniteType Γ(X, U) (_root_.reesAlgebra (I.ideal ⟨U, hU⟩)) :=
-      ⟨(_root_.reesAlgebra _).fg_top.mpr (reesAlgebra.fg (hI ⟨U, hU⟩))⟩
-    exact Algebra.FiniteType.equiv this (I.reesAlgebraSectionsEquiv hU).symm
+  · exact Algebra.FiniteType.equiv (reesAlgebra.finiteType_of_fg (hI ⟨U, hU⟩))
+      (I.reesAlgebraSectionsEquiv hU).symm
   · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism, so `Γ(I⁰, U) ≅ Γ(X, U)`
     refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
       (Scheme.Modules.sectionsFunctor U).map I.reesAlgebra.obj.toMon.one).hom ?_
@@ -201,6 +202,14 @@ theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
       rw [Scheme.Modules.sectionsFunctor_ε]
       exact IsIso.id _
     exact (ConcreteCategory.bijective_of_isIso _).2
+
+/-- **The blowup of a locally noetherian scheme is proper.** On a locally noetherian scheme every
+ideal sheaf is of finite type, so `Bl_I X ⟶ X` is proper for every ideal sheaf `I`. -/
+instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
+    IsProper I.blowupToBase :=
+  I.isProper_blowupToBase fun U ↦
+    have := IsLocallyNoetherian.component_noetherian U
+    IsNoetherian.noetherian _
 
 end Blowup
 

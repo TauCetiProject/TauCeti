@@ -44,9 +44,8 @@ Petersson trace adjunction and specializes the result to a character space.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 open HeckeRing.GLn
-open TauCeti (adjugateGL)
 
 open scoped MatrixGroups ModularForm
 
@@ -68,16 +67,17 @@ theorem peterssonInnerCosets_heckeTCuspNat_left (hn : n.Coprime N)
     CuspForm.peterssonInnerCosets (heckeTCuspNat k n f) g =
       CuspForm.peterssonInnerCosets f
         (diamondOpCusp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTCuspNat k n g)) := by
-  have := isFiniteRelIndex_adjugateGL_natDiagGL hn
+  have := isFiniteRelIndex_adjugate_natDiagGL hn
   have hdet : 0 < ((φ (natDiagGL 2 ![1, n]) : GL (Fin 2) ℝ) :
       Matrix (Fin 2) (Fin 2) ℝ).det := by
     have h : φ (natDiagGL 2 ![1, n]) ∈ Matrix.GLPos (Fin 2) ℝ :=
-      Matrix.GeneralLinearGroup.map_mem_glpos (f := algebraMap ℚ ℝ) Rat.cast_strictMono
+      (Matrix.GeneralLinearGroup.map_mem_glpos_iff
+        (f := algebraMap ℚ ℝ) Rat.cast_strictMono.monotone).mpr
         (posDetInt_le_glpos 2 (natDiagGL_mem_posDetInt 2 ![1, n]))
     rwa [Matrix.mem_glpos] at h
   rw [TauCeti.heckeTCuspNat_eq_trace_translate,
     CuspForm.peterssonInnerCosets_trace_translate hdet Iff.rfl,
-    trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat k hn]
+    trace_translate_adjugate_natDiagGL_eq_diamondOpCusp_heckeTCuspNat k hn]
 
 /-- For `g` of nebentypus `χ`, the adjoint formula simplifies to
 `⟪Tₙ f, g⟫ = ⟪f, χ(n)⁻¹ Tₙ g⟫`. -/

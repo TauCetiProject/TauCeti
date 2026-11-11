@@ -114,6 +114,34 @@ theorem cgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
       log ((p : ℝ) / (1 - (1 - (p : ℝ)) * exp t)) := by
   rw [cgf, mgf_id_map_cast_geometricMeasure hp ht]
 
+/-- At success probability zero, Mathlib's totalized geometric law is Dirac at zero. -/
+theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
+  simp [geometricMeasure]
+
+/-- At success probability one, the geometric law is concentrated at zero. -/
+@[simp]
+theorem geometricMeasure_one : geometricMeasure (1 : unitInterval) = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  rw [geometricMeasure_singleton (by norm_num), Measure.dirac_apply]
+  cases n <;> simp
+
+/-- The real cast of a geometric random variable is integrable, including at the totalized
+zero parameter. -/
+theorem integrable_cast_geometricMeasure :
+    Integrable (Nat.cast : ℕ → ℝ) (geometricMeasure p) := by
+  by_cases hp : p = 0
+  · subst p
+    rw [geometricMeasure_zero]
+    exact integrable_dirac (by simp)
+  · have hgeom : Integrable id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
+      rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
+      have hp0 := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
+      let := isProbabilityMeasure_negativeBinomialMeasure zero_le_one hp0 p.2.2
+      exact (memLp_id_map_cast_negativeBinomialMeasure zero_le_one hp0 p.2.2 1).integrable le_rfl
+    exact (integrable_map_measure aestronglyMeasurable_id
+      (Measurable.of_discrete (f := (Nat.cast : ℕ → ℝ))).aemeasurable).mp hgeom
+
 /-- The mean of the real cast of a geometric law. -/
 theorem integral_id_map_cast_geometricMeasure :
     ∫ x, x ∂((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) =
@@ -211,10 +239,6 @@ theorem geometricMeasure_cond_Ici (p : unitInterval) (n m : ℕ)
       rw [← geometricMeasure_real_Ici hp]
       exact (measureReal_ne_zero_iff (μ := geometricMeasure p) (s := {k | n ≤ k})).2 hn
     field_simp
-
-/-- At success probability zero, Mathlib's totalized geometric law is Dirac at zero. -/
-theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
-  simp [geometricMeasure]
 
 /-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
 probability-generating function is identically one. -/

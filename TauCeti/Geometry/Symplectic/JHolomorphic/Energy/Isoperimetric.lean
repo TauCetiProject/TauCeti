@@ -46,7 +46,7 @@ The inner product is the fixed compatible metric of `(ω, J₀)`, while `J` may 
 target point. Smoothness is required only near the closed annulus, not in its hole. -/
 theorem integral_norm_fderiv_one_sq_annulus_le {u : ℂ → V} {J : V → V →L[ℝ] V}
     (z₀ : ℂ) {a b c : ℝ} (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
-    (ha : 0 < a) (hab : a ≤ b) (hc : 0 < c)
+    (ha : 0 ≤ a) (hab : a ≤ b) (hc : 0 < c)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z)
     (hCR : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))

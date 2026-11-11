@@ -98,4 +98,18 @@ theorem green_polygonal {γ : ℝ → ℂ} {a b : ℝ}
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := hpoly
   exact green_polygon_of_subdivision hs ha hb hsegments hclosed hP hQ
 
+/-- Green's theorem for a finite real-weighted family of closed polygonal curves and globally
+`C¹` fields. -/
+theorem green_polygonal_sum {ι : Type*} {s : Finset ι} {γ : ι → ℝ → ℂ} {a b : ι → ℝ} {w : ι → ℝ}
+    {P Q : ℂ → ℝ} (hpoly : ∀ i ∈ s, IsPolygonalOnInterval (γ i) (a i) (b i))
+    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i)) (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
+    (∑ i ∈ s, w i * ∫ t in a i..b i, circulationFun P Q (γ i) t) =
+      ∫ z : ℂ, (∑ i ∈ s, w i * windingWeight (γ i) (a i) (b i) z) * curl P Q z := by
+  have hgreen (i) (hi : i ∈ s) := green_polygonal (hpoly i hi) (hclosed i hi) hP hQ
+  simp only [Finset.sum_mul, mul_assoc]
+  rw [integral_finsetSum s (fun i hi ↦ (hgreen i hi).2.1.const_mul (w i))]
+  apply Finset.sum_congr rfl
+  intro i hi
+  rw [integral_const_mul, (hgreen i hi).2.2]
+
 end TauCeti.Green

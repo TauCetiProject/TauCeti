@@ -118,6 +118,11 @@ namespace HalfDiagram
 
 variable {n k : ℕ}
 
+/-- A half-diagram has no more defects than points. -/
+theorem defects_le (D : HalfDiagram n k) : k ≤ n := by
+  rw [← D.property.2]
+  exact (Finset.card_filter_le _ _).trans_eq (Fintype.card_fin n)
+
 /-! ### Deleting and adjoining a last point -/
 
 /-- An involution has the same fixed points as a function and as a permutation. -/
@@ -558,6 +563,15 @@ theorem halfCount_eq_zero_of_lt {n k : ℕ} (h : n < k) : halfCount n k = 0 :=
 points that are not defects come in pairs. -/
 theorem halfCount_eq_zero_of_odd {n k : ℕ} (h : Odd (n + k)) : halfCount n k = 0 :=
   halfCount_eq_zero_of_lt_or_odd (Or.inr h)
+
+/-- The non-defect points of a half-diagram come in pairs. -/
+theorem HalfDiagram.even_sub {n k : ℕ} (D : HalfDiagram n k) : Even (n - k) := by
+  have hpos : 0 < halfCount n k := Fintype.card_pos_iff.mpr ⟨D⟩
+  have hnot : ¬ Odd (n + k) := fun h => hpos.ne' (halfCount_eq_zero_of_odd h)
+  rw [Nat.not_odd_iff_even, Nat.even_iff] at hnot
+  rw [Nat.even_iff]
+  have := D.defects_le
+  omega
 
 /-- There is a half-diagram on `n` points with `k` defects whenever `k ≤ n` and `n - k` is
 even. -/
