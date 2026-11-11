@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.SpanRank
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
-import TauCeti.Data.Nat.Card
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Generators of products of groups of coprime orders
