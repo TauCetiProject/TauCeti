@@ -9,13 +9,14 @@ public import TauCeti.Topology.Schoenflies.Components
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.CellularSet.InverseSet
+import TauCeti.Topology.Circle.Schoenflies
 import TauCeti.Topology.Schoenflies.Collapse
 import TauCeti.Topology.Schoenflies.Hemisphere
 
 /-!
 # Brown's generalized Schoenflies theorem
 
-Let `σ : Sᵐ⁻¹ → Sᵐ` be a map from the unit sphere of a real normed space `E` of dimension `m ≥ 2`
+Let `σ : Sᵐ⁻¹ → Sᵐ` be a map from the unit sphere of a real normed space `E` of dimension `m ≥ 1`
 into the unit sphere of a real inner product space of dimension `m + 1`, with a bicollar
 `b : Sᵐ⁻¹ × ℝ → Sᵐ` (`TauCeti.IsBicollar`), and write `Σ` for the image of `σ`. By the
 Jordan–Brouwer separation theorem `Sᵐ ∖ Σ` has exactly two connected components. This file proves
@@ -37,10 +38,15 @@ such a preimage with the closed hemisphere, hence with a ball
 (`TauCeti.IsCellularSet.exists_homeomorph_preimage_hemisphere`). The other complementary domain is
 treated in the same way with the collar coordinate reversed.
 
+For `m = 1` the bicollar plays no role: `Σ` is a pair of points of the circle, and the two closed
+arcs between them are the closures of its two complementary domains
+(`TauCeti.exists_closure_homeomorph_closedBall_sphere`). Composing with the reflection of the
+interval if necessary makes the homeomorphism invert `σ` on these two points.
+
 ## Main results
 
 * `TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`: **Brown's
-  generalized Schoenflies theorem** in dimension `m ≥ 2`: the closure of each complementary domain
+  generalized Schoenflies theorem** in dimension `m ≥ 1`: the closure of each complementary domain
   of a bicollared sphere `Σ` in `Sᵐ` is homeomorphic to the closed unit ball of `E`, with `Σ` going
   to the boundary sphere.
 
@@ -145,14 +151,9 @@ private theorem exists_homeomorph_closure_of_pos :
     simp only [← hu, B, Homeomorph.symm_apply_apply, coe_closedBallHomeomorphOfFinrankEq_apply,
       ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff]
 
-/-- **Brown's generalized Schoenflies theorem.** Let `σ` be a map from the unit sphere `Sᵐ⁻¹` of a
-real normed space `E` of dimension `m ≥ 2` into the unit sphere `Sᵐ` of a real inner product space
-of dimension `m + 1`, with a bicollar `b`. Then the closure of the connected component of each
-point `y ∉ Σ` in the complement of the image `Σ` of `σ` is homeomorphic to the closed unit ball of
-`E`, by a homeomorphism which inverts `σ` on `Σ` and sends exactly the points of `Σ` to the
-boundary sphere. -/
-theorem exists_homeomorph_closure_connectedComponentIn_compl_range {y : sphere (0 : F) 1}
-    (hy : y ∉ range σ) :
+/-- Brown's generalized Schoenflies theorem in dimension `m ≥ 2`. -/
+private theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_one_lt
+    {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
     ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
       (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
         (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
@@ -183,5 +184,106 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range {y : sphere (
   · exact hpos y hy0
 
 end IsBicollar
+
+/-- In dimension one, a homeomorphism `e` of a space `K` onto the closed unit ball of `E` which
+sends exactly the image of an injection `τ : S⁰ → K` to the boundary `S⁰ = {u, -u}` can be made to
+invert `τ`, by composing it with the reflection `v ↦ -v` if necessary. -/
+private theorem exists_homeomorph_apply_eq_of_finrank_eq_one {K : Type*} [TopologicalSpace K]
+    (hE : finrank ℝ E = 1) {τ : sphere (0 : E) 1 → K} (hτ : Injective τ)
+    (e : K ≃ₜ closedBall (0 : E) 1) (he : ∀ z, ‖(e z : E)‖ = 1 ↔ z ∈ range τ) :
+    ∃ h : K ≃ₜ closedBall (0 : E) 1, (∀ x, (h (τ x) : E) = x) ∧ ∀ z, ‖(h z : E)‖ = ‖(e z : E)‖ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  -- The unit sphere of `E` is `{u, -u}`.
+  have hpm {v : E} (hv : ‖v‖ = 1) : v = u ∨ v = -u := by
+    have hv' : v ∈ ({(u : E), -(u : E)} : Set E) :=
+      sphere_eq_pair_of_finrank_eq_one hE u.2 ▸ mem_sphere_zero_iff_norm.2 hv
+    simpa using hv'
+  have hx (x : sphere (0 : E) 1) : x = u ∨ x = -u :=
+    (hpm (norm_eq_of_mem_sphere x)).imp Subtype.ext Subtype.ext
+  have hw (x : sphere (0 : E) 1) : ‖(e (τ x) : E)‖ = 1 := (he _).2 (mem_range_self x)
+  have hne : (e (τ u) : E) ≠ e (τ (-u)) := fun h ↦
+    ne_neg_of_mem_unit_sphere ℝ u (hτ (e.injective (Subtype.ext h)))
+  rcases hpm (hw u) with hu | hu
+  · -- `e` already sends `τ u` to `u`, hence `τ (-u)` to `-u`.
+    refine ⟨e, fun x ↦ ?_, fun _ ↦ rfl⟩
+    rcases hx x with rfl | rfl
+    · exact hu
+    · rcases hpm (hw (-u)) with h | h
+      · exact absurd (hu.trans h.symm) hne
+      · simpa using h
+  · -- `e` sends `τ u` to `-u`, hence `τ (-u)` to `u`: reflect.
+    refine ⟨e.trans ((Homeomorph.neg E).subtype fun v ↦ by simp), fun x ↦ ?_, fun z ↦ by simp⟩
+    rcases hx x with rfl | rfl
+    · simp [hu]
+    · rcases hpm (hw (-u)) with h | h
+      · simp [h]
+      · exact absurd (hu.trans h.symm) hne
+
+/-- Brown's generalized Schoenflies theorem in dimension one, where no bicollar is needed: two
+distinct points cut the circle into two arcs whose closures are closed intervals. -/
+private theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
+    (hσ : Injective σ) (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2) {y : sphere (0 : F) 1}
+    (hy : y ∉ range σ) :
+    ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
+      (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
+        (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
+      ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  -- The image of `σ` is the pair of distinct points `σ u` and `σ (-u)`.
+  have hrange : range σ = {σ u, σ (-u)} := by
+    refine (range_subset_iff.2 fun x ↦ ?_).antisymm (by simp [insert_subset_iff])
+    have hx : (x : E) ∈ ({(u : E), -(u : E)} : Set E) :=
+      sphere_eq_pair_of_finrank_eq_one hE u.2 ▸ x.2
+    rcases hx with h | h
+    exacts [.inl (congrArg σ (Subtype.ext h)), .inr (congrArg σ (Subtype.ext h))]
+  obtain ⟨A, B, hAo, hBo, hAc, hBc, hAB, hunion, hAcl, hBcl, ⟨eA, heA⟩, ⟨eB, heB⟩⟩ :=
+    exists_closure_homeomorph_closedBall_sphere hE hF
+      fun h ↦ ne_neg_of_mem_unit_sphere ℝ u (hσ h)
+  rw [← hrange] at hunion hAcl hBcl heA heB
+  -- The component of `y` is whichever of the two arcs `A` and `B` contains it.
+  have hcc {S T : Set (sphere (0 : F) 1)} (hS : IsOpen S) (hT : IsOpen T) (hSc : IsConnected S)
+      (hST : Disjoint S T) (hSTu : S ∪ T = (range σ)ᶜ) (hyS : y ∈ S) :
+      connectedComponentIn (range σ)ᶜ y = S :=
+    (isPreconnected_connectedComponentIn.subset_left_of_subset_union hS hT hST
+      (hSTu ▸ connectedComponentIn_subset _ _)
+      ⟨y, mem_connectedComponentIn (hSTu ▸ Or.inl hyS), hyS⟩).antisymm
+      (hSc.isPreconnected.subset_connectedComponentIn hyS (hSTu ▸ subset_union_left))
+  obtain ⟨S, hS, hSσ, e, he⟩ : ∃ S, connectedComponentIn (range σ)ᶜ y = S ∧
+      range σ ⊆ closure S ∧ ∃ e : closure S ≃ₜ closedBall (0 : E) 1,
+        ∀ z : closure S, (z : sphere (0 : F) 1) ∈ range σ ↔ ‖(e z : E)‖ = 1 := by
+    rcases (hunion ▸ hy : y ∈ A ∪ B) with hyA | hyB
+    · exact ⟨A, hcc hAo hBo hAc hAB hunion hyA, hAcl ▸ subset_union_right, eA, heA⟩
+    · exact ⟨B, hcc hBo hAo hBc hAB.symm (union_comm A B ▸ hunion) hyB,
+        hBcl ▸ subset_union_right, eB, heB⟩
+  subst hS
+  -- Make `e` invert `σ` on the two endpoints.
+  obtain ⟨h, hστ, hnorm⟩ := exists_homeomorph_apply_eq_of_finrank_eq_one hE
+    (τ := fun x ↦ ⟨σ x, hSσ (mem_range_self x)⟩) (fun x x' h ↦ hσ (congrArg Subtype.val h)) e
+    fun z ↦ (he z).symm.trans ⟨fun ⟨x, hx⟩ ↦ ⟨x, Subtype.ext hx⟩,
+      fun ⟨x, hx⟩ ↦ ⟨x, congrArg Subtype.val hx⟩⟩
+  refine ⟨h, fun z x hzx ↦ ?_, fun z ↦ ?_⟩
+  · obtain rfl : z = ⟨σ x, hSσ (mem_range_self x)⟩ := Subtype.ext hzx
+    exact hστ x
+  · rw [mem_sphere_zero_iff_norm, hnorm, he]
+
+/-- **Brown's generalized Schoenflies theorem.** Let `σ` be a map from the unit sphere `Sᵐ⁻¹` of a
+real normed space `E` of dimension `m ≥ 1` into the unit sphere `Sᵐ` of a real inner product space
+of dimension `m + 1`, with a bicollar `b`. Then the closure of the connected component of each
+point `y ∉ Σ` in the complement of the image `Σ` of `σ` is homeomorphic to the closed unit ball of
+`E`, by a homeomorphism which inverts `σ` on `Σ` and sends exactly the points of `Σ` to the
+boundary sphere. For `m = 1` only the injectivity of `σ` is used. -/
+theorem IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range
+    (hb : IsBicollar σ b) (hEF : finrank ℝ F = finrank ℝ E + 1) (hE : 0 < finrank ℝ E)
+    {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
+    ∃ h : closure (connectedComponentIn (range σ)ᶜ y) ≃ₜ closedBall (0 : E) 1,
+      (∀ (z : closure (connectedComponentIn (range σ)ᶜ y)) x,
+        (z : sphere (0 : F) 1) = σ x → (h z : E) = x) ∧
+      ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
+  by_cases hE1 : finrank ℝ E = 1
+  · exact exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
+      hb.injective hE1 (by omega) hy
+  · exact hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_one_lt hEF (by omega) hy
 
 end TauCeti
