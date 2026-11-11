@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.LaurentCover.Module
 public import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.Topology.Algebra.Module.TensorProduct
-import TauCeti.Analysis.Normed.Module.Finite.QuotientNorm
+import TauCeti.Analysis.Normed.Group.Quotient
 
 /-!
 # Strictness of the finite-module Laurent sequence
@@ -23,8 +23,10 @@ uniformities, nonarchimedean additive topologies, and continuous coefficient-alg
 The finite-module topology
 theorem identifies these topologies with the canonical module topologies. In particular,
 the results apply to compatible complete ultrametric module norms, without requiring equality
-of chosen norms, projectivity, or reducedness. Such norms exist by
-`TauCeti.exists_complete_norm_of_module_finite`.
+of chosen norms, projectivity, or reducedness. Apply
+`TauCeti.exists_complete_norm_of_module_finite` separately to the module and its three Laurent
+scalar extensions to obtain such norms; `isClosedEmbedding_moduleAugmentation` and
+`isOpenQuotientMap_moduleDiff` then supply strictness.
 
 The tensors are algebraic scalar extensions by the Laurent coordinate algebras, not completed
 tensors of arbitrary Banach modules. No topology is imposed on infinitely generated modules.
@@ -61,19 +63,11 @@ variable [TopologicalSpace M] [IsTopologicalAddGroup M] [T2Space M] [BaireSpace 
     [TopologicalSpace (G(f) ⊗[A] M)] [ContinuousAdd (G(f) ⊗[A] M)]
     [ContinuousSMul G(f) (G(f) ⊗[A] M)]
 
-include K in
-/-- The finite-module Laurent augmentation is continuous for compatible Baire topologies. -/
-theorem continuous_moduleAugmentation : Continuous (moduleAugmentation M f) := by
-  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
+/-- The finite-module Laurent augmentation is continuous for compatible Baire topologies
+when the coefficient algebra is a Tate ring. -/
+theorem continuous_moduleAugmentation [Huber.IsTateRing A] :
+    Continuous (moduleAugmentation M f) := by
   have : IsModuleTopology A M := Huber.IsTateRing.isModuleTopology
-  have : ContinuousSMul A L(f) := continuousSMul_of_algebraMap A L(f)
-    (continuous_quotient_mk'.comp
-      (MvPowerSeries.isometry_algebraMap_isRestrictedSubring
-        (R := A) (c := fun _ : Fin 1 ↦ 1)).continuous)
-  have : ContinuousSMul A G(f) := continuousSMul_of_algebraMap A G(f)
-    (continuous_quotient_mk'.comp
-      (MvPowerSeries.isometry_algebraMap_isRestrictedSubring
-        (R := A) (c := fun _ : Fin 1 ↦ 1)).continuous)
   have : ContinuousSMul A (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
   have : ContinuousSMul A (G(f) ⊗[A] M) := IsScalarTower.continuousSMul G(f)
   exact IsModuleTopology.continuous_of_linearMap (moduleAugmentation M f)
@@ -139,19 +133,14 @@ variable [UniformSpace (L(f) ⊗[A] M)] [IsTopologicalAddGroup (L(f) ⊗[A] M)]
 
 /-- **Closedness and strictness of the Laurent augmentation.** A finite module is identified
 topologically with the closed space of compatible pairs on the two Laurent pieces. -/
-theorem isClosedEmbedding_moduleAugmentation [Module K M] [IsScalarTower K A M]
+theorem isClosedEmbedding_moduleAugmentation
     [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M] [(𝓤 M).IsCountablyGenerated]
     [T2Space M] [NonarchimedeanAddGroup M] [ContinuousSMul A M]
     (hA : IsAffinoidAlgebra K A) : IsClosedEmbedding (moduleAugmentation M f) := by
-  let : Huber.IsTateRing K := Huber.IsTateRing.of_normedAlgebra K K
-  have : ContinuousSMul K M := IsScalarTower.continuousSMul A
-  have : ContinuousSMul K L(f) := continuousSMul_of_algebraMap K L(f)
-    (continuous_quotient_mk'.comp (continuous_algebraMap K _))
-  have : ContinuousSMul K G(f) := continuousSMul_of_algebraMap K G(f)
-    (continuous_quotient_mk'.comp (continuous_algebraMap K _))
-  have : ContinuousSMul K (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
-  have : ContinuousSMul K (G(f) ⊗[A] M) := IsScalarTower.continuousSMul G(f)
-  have hc := continuous_moduleAugmentation (K := K) M f
+  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
+  have : ContinuousSMul A (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
+  have : ContinuousSMul A (G(f) ⊗[A] M) := IsScalarTower.continuousSMul G(f)
+  have hc := continuous_moduleAugmentation M f
   have hrange : Set.range (moduleAugmentation M f) = (moduleDiff M f).ker := by
     ext z
     exact ((exact_moduleAugmentation_moduleDiff M f) z).symm
@@ -159,7 +148,7 @@ theorem isClosedEmbedding_moduleAugmentation [Module K M] [IsScalarTower K A M]
     rw [hrange]
     exact isClosed_singleton.preimage (continuous_moduleDiff M f hA)
   exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨((moduleAugmentation M f).restrictScalars K).isStrictMap_of_isClosed_range_of_isTateRing
+    ⟨(moduleAugmentation M f).isStrictMap_of_isClosed_range_of_isTateRing
       hc.continuousAt hclosed, moduleAugmentation_injective M hA f⟩, hclosed⟩
 
 omit [IsTopologicalAddGroup (L(f) ⊗[A] M)] [IsTopologicalAddGroup (G(f) ⊗[A] M)] in
@@ -170,90 +159,15 @@ theorem isOpenQuotientMap_moduleDiff
     [IsUniformAddGroup (G(f) ⊗[A] M)] [NonarchimedeanAddGroup (G(f) ⊗[A] M)]
     [BaireSpace (O(f) ⊗[A] M)]
     (hA : IsAffinoidAlgebra K A) : IsOpenQuotientMap (moduleDiff M f) := by
-  let : Huber.IsTateRing K := Huber.IsTateRing.of_normedAlgebra K K
-  have : ContinuousSMul K L(f) := continuousSMul_of_algebraMap K L(f)
-    (continuous_quotient_mk'.comp (continuous_algebraMap K _))
-  have : ContinuousSMul K G(f) := continuousSMul_of_algebraMap K G(f)
-    (continuous_quotient_mk'.comp (continuous_algebraMap K _))
-  have : ContinuousSMul K O(f) := continuousSMul_of_algebraMap K O(f)
-    (continuous_quotient_mk'.comp (continuous_algebraMap K _))
-  have : ContinuousSMul K (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
-  have : ContinuousSMul K (G(f) ⊗[A] M) := IsScalarTower.continuousSMul G(f)
-  have : ContinuousSMul K (O(f) ⊗[A] M) := IsScalarTower.continuousSMul O(f)
+  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
+  have : ContinuousSMul A (L(f) ⊗[A] M) := IsScalarTower.continuousSMul L(f)
+  have : ContinuousSMul A (G(f) ⊗[A] M) := IsScalarTower.continuousSMul G(f)
+  have : ContinuousSMul A (O(f) ⊗[A] M) := IsScalarTower.continuousSMul O(f)
   have hc := continuous_moduleDiff M f hA
   exact ⟨moduleDiff_surjective M f, hc,
-    ((moduleDiff M f).restrictScalars K).isOpenMap_of_isTateRing
+    (moduleDiff M f).isOpenMap_of_isTateRing
       (moduleDiff_surjective M f) hc.continuousAt⟩
 
 end Strictness
-
-/-- A finite module and its Laurent scalar extensions admit compatible complete ultrametric
-norms inducing their canonical module topologies, for which the Laurent sequence is strict.
-All additive groups and scalar actions are the original algebraic ones. -/
-theorem exists_complete_norms [Module K M] [IsScalarTower K A M]
-    (hA : IsAffinoidAlgebra K A) :
-    ∃ p : AddGroupNorm M, ∃ pL : AddGroupNorm (L(f) ⊗[A] M),
-      ∃ pG : AddGroupNorm (G(f) ⊗[A] M), ∃ pO : AddGroupNorm (O(f) ⊗[A] M),
-    letI := p.toNormedAddCommGroup
-    letI := pL.toNormedAddCommGroup
-    letI := pG.toNormedAddCommGroup
-    letI := pO.toNormedAddCommGroup
-    (CompleteSpace M ∧ IsUltrametricDist M ∧ IsBoundedSMul A M ∧ IsModuleTopology A M) ∧
-      (CompleteSpace (L(f) ⊗[A] M) ∧ IsUltrametricDist (L(f) ⊗[A] M) ∧
-        IsBoundedSMul L(f) (L(f) ⊗[A] M) ∧ IsModuleTopology L(f) (L(f) ⊗[A] M)) ∧
-      (CompleteSpace (G(f) ⊗[A] M) ∧ IsUltrametricDist (G(f) ⊗[A] M) ∧
-        IsBoundedSMul G(f) (G(f) ⊗[A] M) ∧ IsModuleTopology G(f) (G(f) ⊗[A] M)) ∧
-      (CompleteSpace (O(f) ⊗[A] M) ∧ IsUltrametricDist (O(f) ⊗[A] M) ∧
-        IsBoundedSMul O(f) (O(f) ⊗[A] M) ∧ IsModuleTopology O(f) (O(f) ⊗[A] M)) ∧
-      IsClosedEmbedding (moduleAugmentation M f) ∧ IsOpenQuotientMap (moduleDiff M f) := by
-  -- The coefficient algebras have complete quotient norms and are noetherian Tate rings.
-  have := hA.isNoetherianRing
-  have := hA.isRestricted_subring.isClosed_ideal
-    (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A))
-  have := hA.isRestricted_subring.isClosed_ideal
-    (laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f))
-  have := hA.isRestricted_subring.isClosed_ideal
-    (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
-  have := (LaurentFraction.isAffinoidAlgebra hA
-    (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)).isNoetherianRing
-  have := (LaurentFraction.isAffinoidAlgebra hA
-    (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)).isNoetherianRing
-  have := (LaurentFraction.isAffinoidAlgebra hA
-    (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f)).isNoetherianRing
-  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
-  let : Huber.IsTateRing L(f) := Huber.IsTateRing.of_normedAlgebra K L(f)
-  let : Huber.IsTateRing G(f) := Huber.IsTateRing.of_normedAlgebra K G(f)
-  let : Huber.IsTateRing O(f) := Huber.IsTateRing.of_normedAlgebra K O(f)
-  -- The shared quotient-norm construction preserves the original algebraic structures.
-  obtain ⟨p, hp, hu, hb, ht⟩ := exists_complete_norm_of_module_finite A M
-  obtain ⟨pL, hpL, huL, hbL, htL⟩ := exists_complete_norm_of_module_finite L(f) (L(f) ⊗[A] M)
-  obtain ⟨pG, hpG, huG, hbG, htG⟩ := exists_complete_norm_of_module_finite G(f) (G(f) ⊗[A] M)
-  obtain ⟨pO, hpO, huO, hbO, htO⟩ := exists_complete_norm_of_module_finite O(f) (O(f) ⊗[A] M)
-  refine ⟨p, pL, pG, pO, ?_⟩
-  let := p.toNormedAddCommGroup
-  let := pL.toNormedAddCommGroup
-  let := pG.toNormedAddCommGroup
-  let := pO.toNormedAddCommGroup
-  have : CompleteSpace M := hp
-  have : CompleteSpace (L(f) ⊗[A] M) := hpL
-  have : CompleteSpace (G(f) ⊗[A] M) := hpG
-  have : CompleteSpace (O(f) ⊗[A] M) := hpO
-  have : IsUltrametricDist M := hu
-  have : IsUltrametricDist (L(f) ⊗[A] M) := huL
-  have : IsUltrametricDist (G(f) ⊗[A] M) := huG
-  have : IsBoundedSMul A M := hb
-  have : IsBoundedSMul L(f) (L(f) ⊗[A] M) := hbL
-  have : IsBoundedSMul G(f) (G(f) ⊗[A] M) := hbG
-  have : IsBoundedSMul O(f) (O(f) ⊗[A] M) := hbO
-  -- Specify the metric carriers explicitly when passing from boundedness to continuity.
-  have : ContinuousSMul L(f) (L(f) ⊗[A] M) :=
-    IsBoundedSMul.continuousSMul (α := L(f)) (β := L(f) ⊗[A] M)
-  have : ContinuousSMul G(f) (G(f) ⊗[A] M) :=
-    IsBoundedSMul.continuousSMul (α := G(f)) (β := G(f) ⊗[A] M)
-  have : ContinuousSMul O(f) (O(f) ⊗[A] M) :=
-    IsBoundedSMul.continuousSMul (α := O(f)) (β := O(f) ⊗[A] M)
-  exact ⟨⟨hp, hu, hb, ht⟩, ⟨hpL, huL, hbL, htL⟩, ⟨hpG, huG, hbG, htG⟩,
-    ⟨hpO, huO, hbO, htO⟩, isClosedEmbedding_moduleAugmentation M f hA,
-    isOpenQuotientMap_moduleDiff M f hA⟩
 
 end TauCeti.LaurentCover
