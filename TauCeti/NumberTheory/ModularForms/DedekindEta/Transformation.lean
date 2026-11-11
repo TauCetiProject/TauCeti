@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.Discriminant
-import Mathlib.Analysis.Complex.SqrtDeriv
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 
 /-!
 # The transformation of the Dedekind eta function under `SL(2, ℤ)`
@@ -91,20 +91,6 @@ theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
 
 /-! ### The eta multiplier -/
 
-/-- The principal square root of the automorphy factor `c τ + d` of `γ ∈ SL(2, ℤ)` is
-continuous on the upper half-plane: it is constant if `c = 0`, and otherwise `c τ + d` stays
-off the real axis. -/
-private theorem continuous_sqrt_denom (γ : SL(2, ℤ)) :
-    Continuous fun τ : ℍ ↦ Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) := by
-  by_cases hc : γ 1 0 = 0
-  · simp only [hc, Int.cast_zero, zero_mul, zero_add]
-    exact continuous_const
-  refine continuous_iff_continuousAt.2 fun τ ↦ ?_
-  have him : ((γ 1 0 : ℂ) * τ + γ 1 1).im ≠ 0 := by
-    simpa [hc] using τ.im_pos.ne'
-  exact (continuousAt_sqrt (Or.inr him)).comp
-    (f := fun τ : ℍ ↦ (γ 1 0 : ℂ) * τ + γ 1 1) (by fun_prop)
-
 /-- The automorphy factor `c τ + d` of `γ ∈ SL(2, ℤ)` does not vanish on the upper half-plane. -/
 private theorem denom_ne_zero' (γ : SL(2, ℤ)) (τ : ℍ) : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 := by
   simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (γ : GL (Fin 2) ℝ) τ
@@ -142,7 +128,9 @@ private theorem continuous_etaQuotient (γ : SL(2, ℤ)) : Continuous (etaQuotie
   have hγ : Continuous fun τ : ℍ ↦ γ • τ := by
     simp_rw [MulAction.compHom_smul_def]
     exact continuous_const_smul _
-  exact (hη.comp hγ).div ((continuous_sqrt_denom γ).mul hη) (sqrt_denom_mul_eta_ne_zero γ)
+  have hs : Continuous fun τ : ℍ ↦ Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) := by
+    simpa using UpperHalfPlane.continuous_sqrt_ofReal_mul_add (γ 1 0) (γ 1 1)
+  exact (hη.comp hγ).div (hs.mul hη) (sqrt_denom_mul_eta_ne_zero γ)
 
 /-- The quotient `η(γ τ) / (√(c τ + d) η(τ))` is independent of `τ`: it is a continuous function
 on the connected upper half-plane with values in the finite set of 24th roots of unity. -/
