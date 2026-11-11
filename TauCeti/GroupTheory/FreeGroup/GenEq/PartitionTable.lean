@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
+import TauCeti.Algebra.Group.Bool
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Sigma
 import Mathlib.Algebra.BigOperators.Fin
@@ -216,14 +217,23 @@ carrying a letter of `A^{±1}` is a constant base with that letter. -/
         obtain ⟨a', -, h⟩ := hb'
         exact (congrArg Prod.fst h).symm))
 
+/-- The items of `ofEntries E` are the positions of the concatenated word. -/
+theorem numItems_ofEntries : (ofEntries E).numItems = (E.flatMap Prod.snd).length :=
+  (rfl)
+
 /-- The letter of the concatenated word at the position of an item of `ofEntries E`. -/
 def itemLetter (c : Fin (ofEntries E).numItems) : (Z ⊕ A) × Bool :=
   (E.flatMap Prod.snd)[(c : ℕ)]'c.isLt
 
+/-- The letter of an item is the letter of the concatenated word at its position. -/
+theorem itemLetter_def (c : Fin (ofEntries E).numItems) :
+    itemLetter E c = (E.flatMap Prod.snd)[(c : ℕ)]'(c.isLt.trans_eq (numItems_ofEntries E)) :=
+  (rfl)
+
 /-- Reading the letters of all items in order gives the concatenated word. -/
 theorem map_itemLetter_finRange :
     (List.finRange (ofEntries E).numItems).map (itemLetter E) = E.flatMap Prod.snd := by
-  apply List.ext_getElem <;> simp [itemLetter]
+  apply List.ext_getElem <;> simp [itemLetter_def]
 
 /-- The items spanned by the word of an entry are as many as the letters of that word. -/
 theorem length_segment_entryStart {k : ℕ} (hk : k < E.length) (s : Bool) :
@@ -262,7 +272,7 @@ theorem mem_equations_ofEntries_of_itemLetter {c c' : Fin (ofEntries E).numItems
     {z : Z} {s s' : Bool} (hc : itemLetter E c = (Sum.inl z, s))
     (hc' : itemLetter E c' = (Sum.inl z, s')) :
     ([(Sum.inl c, s)], [(Sum.inl c', s')]) ∈ (ofEntries E).equations := by
-  simp only [itemLetter] at hc hc'
+  rw [itemLetter_def] at hc hc'
   have hq : IsLetterPair E (c, c') := ⟨h, by simp [hc], by simp [hc, hc']⟩
   have : _ ∈ (ofEntries E).equations :=
     (mem_equations_ofBases_iff ..).2 (Or.inl ⟨Sum.inr ⟨(c, c'), hq⟩, rfl⟩)
@@ -655,6 +665,22 @@ letter. -/
 def itemWord (c : Fin (ofEntries E).numItems) : List (A × Bool) :=
   substituteVars w [itemLetter E c]
 
+/-- The word of an item is its letter with the words `w z` substituted for the letters of `Z`. -/
+theorem itemWord_def (c : Fin (ofEntries E).numItems) :
+    itemWord E w c = substituteVars w [itemLetter E c] :=
+  (rfl)
+
+/-- An item carrying the letter `z ^ s` of `Z^{±1}` gets the word `(w z) ^ s`. -/
+theorem itemWord_of_itemLetter_eq_inl {c : Fin (ofEntries E).numItems} {z : Z} {s : Bool}
+    (hc : itemLetter E c = (Sum.inl z, s)) :
+    itemWord E w c = cond s (w z) (FreeGroup.invRev (w z)) := by
+  cases s <;> simp [itemWord_def, hc]
+
+/-- An item carrying the letter `a ^ s` of `A^{±1}` gets the one-letter word `a ^ s`. -/
+theorem itemWord_of_itemLetter_eq_inr {c : Fin (ofEntries E).numItems} {a : A} {s : Bool}
+    (hc : itemLetter E c = (Sum.inr a, s)) : itemWord E w c = [(a, s)] := by
+  simp [itemWord_def, hc]
+
 /-- The words of the items between two boundaries spell the corresponding subword of the
 concatenated word, with the letters of `Z` replaced by their words. -/
 theorem substituteVars_itemWord_segment (i j : ℕ) :
@@ -664,7 +690,7 @@ theorem substituteVars_itemWord_segment (i j : ℕ) :
     ← List.map_take, ← List.map_drop, FreeGroup.substituteVars, List.flatMap_map]
   congr 1
   funext c
-  simp [itemWord, FreeGroup.substituteVars]
+  simp [itemWord_def, FreeGroup.substituteVars]
 
 /-- The items spanned by the word of an entry carrying a letter with sign `s` spell the substituted
 word of the entry, raised to `s`. -/
@@ -680,7 +706,7 @@ theorem substituteVars_itemWord_entry {k : ℕ} (hk : k < E.length) (s : Bool) :
 private theorem substituteVars_itemWord_singleton {c : Fin (ofEntries E).numItems} {z : Z}
     {s : Bool} (hc : itemLetter E c = (Sum.inl z, s)) :
     substituteVars (itemWord E w) [(Sum.inl c, s)] = w z := by
-  cases s <;> simp [itemWord, hc, FreeGroup.invRev_invRev]
+  cases s <;> simp [itemWord_of_itemLetter_eq_inl E w hc, FreeGroup.invRev_invRev]
 
 /-- The solution of `ofEntries E` given by words `w z` for the letters of `Z` that are nonempty
 and reduced for every letter `z` occurring in the concatenated word, provided that the substituted
@@ -697,12 +723,13 @@ def Solution.ofLetterWords
   word := itemWord E w
   isReduced_word c := by
     obtain ⟨⟨z | a, s⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩
-    · cases s <;> simp [itemWord, hy, hw c z _ hy, FreeGroup.isReduced_invRev]
-    · simp [itemWord, hy, FreeGroup.IsReduced.singleton]
+    · cases s <;> simp [itemWord_of_itemLetter_eq_inl E w hy, hw c z _ hy,
+        FreeGroup.isReduced_invRev]
+    · simp [itemWord_of_itemLetter_eq_inr E w hy, FreeGroup.IsReduced.singleton]
   word_ne_nil c := by
     obtain ⟨⟨z | a, s⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩
-    · cases s <;> simp [itemWord, hy, hw₀ c z _ hy, FreeGroup.invRev]
-    · simp [itemWord, hy]
+    · cases s <;> simp [itemWord_of_itemLetter_eq_inl E w hy, hw₀ c z _ hy, FreeGroup.invRev]
+    · simp [itemWord_of_itemLetter_eq_inr E w hy]
   isReduced_subst := (forall_mem_equations_ofEntries E).2
     ⟨fun p hp => by
       rw [substituteVars_itemWord_entry E w p.1.isLt, substituteVars_itemWord_entry E w p.2.isLt]
@@ -711,14 +738,15 @@ def Solution.ofLetterWords
     fun c c' _ z s s' hc hc' => by
       rw [substituteVars_itemWord_singleton E w hc, substituteVars_itemWord_singleton E w hc']
       exact ⟨hw c z s hc, hw c z s hc⟩,
-    fun c a s hc => by simp [itemWord, hc, FreeGroup.IsReduced.singleton]⟩
+    fun c a s hc => by
+      simp [itemWord_of_itemLetter_eq_inr E w hc, FreeGroup.IsReduced.singleton]⟩
   subst_eq := (forall_mem_equations_ofEntries E).2
     ⟨fun p hp => by
       rw [substituteVars_itemWord_entry E w p.1.isLt, substituteVars_itemWord_entry E w p.2.isLt]
       exact heq p hp,
     fun c c' _ z s s' hc hc' => by
       rw [substituteVars_itemWord_singleton E w hc, substituteVars_itemWord_singleton E w hc'],
-    fun c a s hc => by simp [itemWord, hc]⟩
+    fun c a s hc => by simp [itemWord_of_itemLetter_eq_inr E w hc]⟩
 
 /-- The words of the items of `Solution.ofLetterWords` are given by `itemWord`. -/
 @[simp]

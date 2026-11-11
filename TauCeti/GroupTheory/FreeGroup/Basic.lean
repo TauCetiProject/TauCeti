@@ -24,11 +24,6 @@ free group.
 
 public section
 
-/-- Raising an element to a sign twice returns the element. -/
-theorem Bool.cond_cond_inv {G : Type*} [InvolutiveInv G] (s : Bool) (g : G) :
-    cond s (cond s g g⁻¹) (cond s g g⁻¹)⁻¹ = g := by
-  cases s <;> simp
-
 namespace MonoidHom
 
 /-- A homomorphism out of a free group into a division monoid evaluates on the word `L` as the
