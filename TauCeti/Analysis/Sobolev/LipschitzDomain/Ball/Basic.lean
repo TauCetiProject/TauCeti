@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Graph
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -47,25 +48,6 @@ open scoped NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- In the model `WithLp 2 (ℝ × E)`, inside the cylinder `normalCylinder r r`, the ball of radius
-`r` about `(r, 0)` is the region above the lower hemisphere `y ↦ r - √(r² - ‖y‖²)`. -/
-private theorem norm_sub_smul_lt_iff {r : ℝ} {z : WithLp 2 (ℝ × E)}
-    (hz : z ∈ normalCylinder r r) :
-    ‖z - r • WithLp.toLp 2 ((1 : ℝ), (0 : E))‖ < r ↔ r - √(r ^ 2 - ‖z.snd‖ ^ 2) < z.fst := by
-  rw [mem_normalCylinder] at hz
-  obtain ⟨-, hzr, hzy⟩ := hz
-  have hr : 0 < r := (norm_nonneg _).trans_lt hzy
-  have hnorm : ‖z - r • WithLp.toLp 2 ((1 : ℝ), (0 : E))‖ ^ 2 =
-      (r - z.fst) ^ 2 + ‖z.snd‖ ^ 2 := by
-    rw [WithLp.prod_norm_sq_eq_of_L2]
-    simp only [WithLp.sub_fst, WithLp.sub_snd, WithLp.smul_fst, WithLp.smul_snd,
-      WithLp.toLp_fst, WithLp.toLp_snd, smul_eq_mul, mul_one, smul_zero, sub_zero,
-      Real.norm_eq_abs, sq_abs]
-    ring
-  rw [← sq_lt_sq₀ (norm_nonneg _) hr.le, hnorm, sub_lt_comm,
-    Real.lt_sqrt (sub_pos.2 hzr).le]
-  constructor <;> intro h <;> linarith
-
 /-- **Balls are Lipschitz domains.** An open ball of positive radius in `WithLp 2 (ℝ × E)` is a
 Lipschitz domain with every positive Lipschitz constant: its boundary is a `C¹` sphere. -/
 theorem isLipschitzDomainWith_ball (c : WithLp 2 (ℝ × E)) {r : ℝ} (hr : 0 < r) {L : ℝ≥0}
@@ -97,7 +79,11 @@ theorem isLipschitzDomainWith_ball (c : WithLp 2 (ℝ × E)) {r : ℝ} (hr : 0 <
       (by simp [hr.ne'])), ?_, fun z hz ↦ ?_⟩
   · simpa using ((hasFDerivAt_sqrt_sub_norm_sq (x := (0 : E)) (a := r ^ 2)
       (by simp [hr.ne'])).const_sub r).fderiv
+  -- Translated by `r • u`, the ball becomes `ball 0 r`, cut out by `TauCeti.ballGraph`.
+  have hball := symm_mem_ball_iff_ballGraph_lt (e := AffineIsometryEquiv.vaddConst ℝ (r • u))
+    (ρ := r) hr.le (by simp [u]) (by simp [u]) hz
+  rw [mem_normalCylinder] at hz
   rw [mem_ball, dist_eq_norm, he, LinearIsometryEquiv.norm_map]
-  exact norm_sub_smul_lt_iff hz
+  simpa [u, ballGraph_def, min_eq_left hz.2.2.le] using hball
 
 end TauCeti
