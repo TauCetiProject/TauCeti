@@ -84,8 +84,9 @@ theorem valuation_xCoord_formalPoint_mul_sq {t : O_u} (ht : t ∈ m_u) (ht0 : t 
     HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one.mp
       (C.isUnit_formalUEval
         (u.isAdic_maximalIdeal_adicCompletionIntegers.isTopologicallyNilpotent_of_mem ht))
-  rwa [map_mul, map_one, Algebra.algebraMap_ofSubsemiring_apply, Subring.coe_mul,
-    SubmonoidClass.coe_pow, map_mul, map_pow, hU, mul_one] at hkey
+  rw [Algebra.algebraMap_ofSubsemiring_apply] at hkey
+  push_cast [map_mul, map_pow, map_one] at hkey
+  rwa [hU, mul_one] at hkey
 
 open scoped Classical in
 /-- **A nonzero parameter in the maximal ideal has a pole in the `x`-coordinate of its point**:
