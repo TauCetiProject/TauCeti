@@ -26,9 +26,7 @@ multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). The topolog
 principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
 multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
 with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
-(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`); equivalently, its counting function
-is the zero multiplicity function of the section
-(`TauCeti.Vortex.exists_isZeroMultiplicity_of_tendsto`). Only the holomorphicity rows are
+(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
 used; the curvature equation is not needed. The divisor is determined by the section, since zero
 multiplicities are unique (`TauCeti.IsZeroMultiplicity.unique`).
 
@@ -94,19 +92,6 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
     isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
   obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
   exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
-
-/-- **The zero divisor of a framed degree-`m` vortex as a zero multiplicity function.** Under
-the hypotheses of `exists_sym_sectionValue_eq_pow_count_mul`, there is a multiset `D` of `m`
-points whose counting function `z ↦ D.count z` is the zero multiplicity function of the
-section. -/
-theorem exists_isZeroMultiplicity_of_tendsto {m : ℕ}
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    ∃ D : Multiset ℂ, Multiset.card D = m ∧
-      IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
-  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol hframe
-  refine ⟨D, D.2, isZeroMultiplicity_iff.2 fun z ↦ ?_⟩
-  obtain ⟨V, hV, hV₀, hf⟩ := hD z
-  exact ⟨V, hV.continuousAt, hV₀, hf⟩
 
 omit hn hb₁ hb₂ hp hq hhol
 
