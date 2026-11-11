@@ -80,15 +80,6 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {p : PSSPlane} {H : ℝ → V → ℝ}
 
-/-- The end lift sends the circle `s = ε R` of the end to the circle of radius `exp (2πR)`,
-run through with angle `2π ε t`. -/
-private theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
-    p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I) =
-      circleMap 0 (Real.exp (2 * π * R)) (p.endSign * (2 * π * t)) := by
-  rw [cylindricalEndLift_def, circleMap, zero_add, Complex.ofReal_exp, ← Complex.exp_add]
-  congr 1
-  cases p <;> push_cast [endSign_positive, endSign_negative] <;> ring
-
 /-- **The symplectic area of a disc of a PSS plane.** For a `C²` map `u`, the symplectic area over
 the disc `‖w‖ ≤ exp (2πR)` is `ε` times the loop area of the loop `ℓ_R(t) = u(φ(ε R + i t))`
 along its boundary circle. -/
@@ -135,36 +126,12 @@ theorem integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_m
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   -- The curvature vanishes outside the disc, which contains the collar `1 ≤ ε s ≤ 2`.
-  have hcurv : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R)),
-      ω.hamiltonianCurvature
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
-      ∫ z, ω.hamiltonianCurvature
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-    refine setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_
-    refine ω.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt hH hHs ?_ _
-    simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right, not_le] at hz
-    have hlog := Real.log_lt_log (Real.exp_pos _) hz
-    rw [Real.log_exp] at hlog
-    rw [endSign_mul_re_endCoord, lt_div_iff₀ (by positivity)]
-    nlinarith [Real.pi_pos]
+  have hcurv :=
+    ω.setIntegral_hamiltonianCurvature_pssPlanePerturbation_closedBall (p := p) hH hHs u hR
   rw [integral_floerEnergyDensity_pssPlanePerturbation_closedBall ω hH hHs (hu.of_le one_le_two)
       (by linarith), integral_symplecticForm_fderiv_closedBall ω hu R, hcurv,
     smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ R - 1), hamiltonianAction_def]
   ring
-
-/-- The integrated curvature of the perturbation of a PSS plane over the plane is at most `B` in
-absolute value, if `|H| ≤ B`. -/
-private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V) (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → V) :
-    |∫ z, ω.hamiltonianCurvature
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)| ≤ B := by
-  have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
-    (ω.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u)
 
 /-- **The energy and the action on discs of a PSS plane.** If `|H| ≤ B`, then for every `R ≥ 2`
 the Floer energy of a `C²` map over the disc `‖w‖ ≤ exp (2πR)` differs from `ε` times the action
@@ -180,7 +147,7 @@ theorem abs_integral_floerEnergyDensity_pssPlanePerturbation_closedBall_sub_le
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I))))| ≤ B := by
   rw [integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_hamiltonianAction
       ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
-  exact abs_integral_hamiltonianCurvature_le ω hH hHs hB u
+  exact ω.abs_integral_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u
 
 /-- **The action bound on the circles of a PSS plane.** Let `K` be the perturbation of a PSS plane
 given by a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, and let `u` be a `C²` map solving the
@@ -325,7 +292,7 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_le (ω : SymplecticFor
   linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)),
-    abs_integral_hamiltonianCurvature_le (p := p) ω hH hHs hB u]
+    ω.abs_integral_hamiltonianCurvature_pssPlanePerturbation_le (p := p) hH hHs hB u]
 
 /-- **The action bound for a PSS plane.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pssPlanePerturbation_eq`, if moreover `|H| ≤ B`, then
