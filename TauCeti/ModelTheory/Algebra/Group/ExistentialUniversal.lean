@@ -32,6 +32,8 @@ coefficients with solvability statements for finite families of equation–inequ
 * `FirstOrder.Language.group.noSolutionSentence`: conversely, for finite sets of words `E` and
   `I` in `n` variables, a universal sentence of the group language without coefficients saying
   that no `n`-tuple satisfies `e = 1` for `e ∈ E` and `i ≠ 1` for `i ∈ I`.
+* `MonoidHom.realize_of_isUniversal_of_injective`: universal sentences of the group language
+  pass to subgroups.
 
 The reduction of existential and universal sentences to systems of equations and inequations
 follows Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3.
@@ -259,3 +261,19 @@ and the inequations `I`. -/
 end NoSolution
 
 end FirstOrder.Language.group
+
+open FirstOrder in
+/-- Universal sentences of the group language pass to subgroups: if `φ : G →* H` is injective,
+every universal sentence that holds in `H` holds in `G`. -/
+theorem MonoidHom.realize_of_isUniversal_of_injective {G H : Type*} [Group G] [Group H]
+    (φ : G →* H) (hφ : Function.Injective φ) {σ : Language.group.Sentence}
+    (hσ : σ.IsUniversal) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+    H ⊨ σ → G ⊨ σ := by
+  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+  let : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+  intro h
+  refine hσ.realize_embedding (φ.groupLanguageEmbedding hφ) ?_
+  -- A sentence has no free or bound variables, so every assignment is the default one.
+  rwa [Subsingleton.elim (_ ∘ default) default, Subsingleton.elim (_ ∘ default) default]

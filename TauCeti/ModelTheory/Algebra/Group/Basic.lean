@@ -23,6 +23,8 @@ interface needed to turn group formulas into equations in words.
 A model of the group theory yields a group whose operations recover the symbol interpretations.
 The multiplicative monoid `ℕ` is not a model, however inversion is interpreted.
 Group homomorphisms, including those preserving named coefficients, induce language homomorphisms.
+Injective group homomorphisms induce language embeddings and group isomorphisms induce language
+isomorphisms, so isomorphic groups satisfy the same sentences.
 Including group-language terms into the coefficient language preserves the group operations.
 The coefficient sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b`
 commute, so it is false in the free group on two letters and true in `ℤ²`, with the bases as
@@ -451,9 +453,49 @@ def coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
   change φ x = φ x
   rfl
 
+/-- An injective group homomorphism is an embedding of canonical group-language structures. -/
+def groupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ) :
+    G ↪[Language.group] H where
+  toFun := φ
+  inj' := hφ
+  map_fun' := (groupLanguageHom φ).map_fun'
+  map_rel' := by
+    intro n r
+    cases r
+
+/-- The canonical language embedding acts as the original group homomorphism. -/
+@[simp] theorem groupLanguageEmbedding_apply (φ : G →* H) (hφ : Function.Injective φ) (x : G) :
+    groupLanguageEmbedding φ hφ x = φ x := (rfl)
+
 end Homomorphisms
 
 end MonoidHom
+
+namespace MulEquiv
+
+open FirstOrder
+
+variable {G H : Type*} [Group G] [Group H]
+
+attribute [local instance] TauCeti.Group.structureOfGroup
+
+/-- A group isomorphism is an isomorphism of canonical group-language structures. -/
+def groupLanguageEquiv (e : G ≃* H) : G ≃[Language.group] H where
+  toEquiv := e.toEquiv
+  map_fun' := (MonoidHom.groupLanguageHom e.toMonoidHom).map_fun'
+  map_rel' := by
+    intro n r
+    cases r
+
+/-- The canonical language isomorphism acts as the original group isomorphism. -/
+@[simp] theorem groupLanguageEquiv_apply (e : G ≃* H) (x : G) :
+    e.groupLanguageEquiv x = e x := (rfl)
+
+/-- Isomorphic groups satisfy the same sentences of the group language. -/
+theorem realize_sentence_iff (e : G ≃* H) (σ : Language.group.Sentence) : G ⊨ σ ↔ H ⊨ σ :=
+  Language.StrongHomClass.realize_sentence e.groupLanguageEquiv σ
+
+end MulEquiv
 
 namespace TauCeti
 

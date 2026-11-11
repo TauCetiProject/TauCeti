@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.ModelTheory.Algebra.Group.Basic
-public import Mathlib.ModelTheory.Complexity
+public import TauCeti.ModelTheory.Complexity
 
 /-!
 # Discrimination preserves universal sentences
@@ -29,6 +29,8 @@ sentence true in the free group of rank two
 
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_of_isUniversal`: universal sentences with
   coefficients from `G` pass from `H` to `K`.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_group_of_isUniversal`: universal sentences
+  without coefficients pass from `H` to `K`.
 
 ## References
 
@@ -154,6 +156,23 @@ theorem realize_of_isUniversal (h : IsDiscriminatedBy ιK ιH) (c : A → G)
   refine realize_of_forall_realize_comp h c hσ default default fun f => ?_
   -- A sentence has no free or bound variables, so every assignment is the default one.
   rwa [Subsingleton.elim (f ∘ default) default, Subsingleton.elim (f ∘ default) default]
+
+/-- If `K` is discriminated by `H` over `G`, every universal sentence of the group language
+without coefficients that holds in `H` also holds in `K`. -/
+theorem realize_group_of_isUniversal (h : IsDiscriminatedBy ιK ιH)
+    {σ : Language.group.Sentence} (hσ : σ.IsUniversal) :
+    letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+    letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+    H ⊨ σ → K ⊨ σ := by
+  let : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+  let : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+  -- Read `σ` in the group language with an empty set of coefficient names.
+  let c : Empty → G := Empty.elim
+  let : (constantsOn Empty).Structure K := constantsOn.structure (ιK ∘ c)
+  let : (constantsOn Empty).Structure H := constantsOn.structure (ιH ∘ c)
+  have := h.realize_of_isUniversal
+    (σ := (Language.group.lhomWithConstants Empty).onSentence σ) c (hσ.onBoundedFormula _)
+  rwa [LHom.realize_onSentence, LHom.realize_onSentence] at this
 
 end IsDiscriminatedBy
 
