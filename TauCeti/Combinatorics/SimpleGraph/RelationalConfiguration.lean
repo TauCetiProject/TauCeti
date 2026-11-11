@@ -314,9 +314,9 @@ theorem map_comap_toRelationalConfiguration
         (relationalConfigurationEquiv.measurableSet_image.2 hs)
   refine Measure.ext fun T hT ↦ ?_
   rw [Measure.map_apply measurable_toRelationalConfiguration hT,
-    Measure.comap_apply₀ _ _ toRelationalConfiguration_injective hnull
-      (measurable_toRelationalConfiguration hT).nullMeasurableSet,
-    Set.image_preimage_eq_inter_range, range_toRelationalConfiguration, ← Measure.restrict_apply hT,
+    Measure.comap_preimage _ _ toRelationalConfiguration_injective
+      measurable_toRelationalConfiguration hnull hT,
+    range_toRelationalConfiguration, ← Measure.restrict_apply hT,
     Measure.restrict_eq_self_of_ae_mem hμ]
 
 /-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
