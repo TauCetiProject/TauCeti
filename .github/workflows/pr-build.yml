@@ -183,7 +183,7 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
+          tools-ref: 6feb17048dff7a2453f21809d853fe6f355f5a4a
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
@@ -1717,7 +1717,7 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
+          tools-ref: 6feb17048dff7a2453f21809d853fe6f355f5a4a
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
