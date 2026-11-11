@@ -53,8 +53,7 @@ map of ordered simplicial chains. -/
 @[reassoc]
 theorem universalGSpaceChainComplexForget₂Iso_naturality (φ : G →* H) :
     (universalGSpaceChainComplexForget₂Iso k G).hom ≫
-        orderedSimplicialChainComplexMap k φ.universalGSpaceSimplicialMap
-          (fun _ c ↦ φ.universalGSpaceSimplicialMap_strictMonoOn c) =
+        orderedSimplicialChainComplexMap k φ.universalGSpaceSimplicialMap =
       ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
           φ.universalGSpaceChainMap ≫
         ((universalGSpaceChainComplex k H).repResForget₂Iso φ).hom ≫
@@ -69,7 +68,9 @@ theorem universalGSpaceChainComplexForget₂Iso_naturality (φ : G →* H) :
   rw [cancel_mono]
   apply ModuleCat.hom_ext
   refine MonoidAlgebra.lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp [universalGSpaceChainHom, ← universalGSpaceCellMap_def]
+  simp [universalGSpaceChainHom, universalGSpaceCellMap_def,
+    OrderedSimplicialChain.map_single_of_strictMonoOn _ c
+      (φ.universalGSpaceSimplicialMap_strictMonoOn c)]
 
 /-- Cellular chains and ordered join chains are naturally identified under maps of groups.
 Forgetting the restricted target action yields the usual underlying module complex. -/

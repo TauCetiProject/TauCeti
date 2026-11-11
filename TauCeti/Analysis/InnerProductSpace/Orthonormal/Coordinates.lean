@@ -57,9 +57,13 @@ open scoped RealInnerProductSpace
 /-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
 prescribed coordinate. This also holds for `v = 0`. -/
 theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] (v : E) (i : Fin (Module.finrank ℝ E)) :
+    [InnerProductSpace ℝ E] (v : E) (i : Fin (Module.finrank ℝ E)) :
     ∃ f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)),
       ∀ x, ⟪v, x⟫ = ‖v‖ * f x i := by
+  -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
+  have hE : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by
+    have := i.2
+    omega)
   let g := (stdOrthonormalBasis ℝ E).repr
   let w : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := ‖v‖ • EuclideanSpace.single i 1
   have hnorm : ‖g v‖ = ‖w‖ := by simp [w, g, norm_smul]

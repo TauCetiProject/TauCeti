@@ -380,6 +380,13 @@ theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : �
   refine ContinuousLinearMap.ext fun a ↦ ?_
   simp only [perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
 
+/-- The perturbed derivative at `z` only depends on the components of the perturbation at `z`. -/
+theorem perturbedFDeriv_congr (ω : SymplecticForm V) {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hs : Ks z = Ks' z) (ht : Kt z = Kt' z) :
+    ω.perturbedFDeriv Ks Kt u z = ω.perturbedFDeriv Ks' Kt' u z := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedFDeriv_apply, hs, ht]
+
 end Differential
 
 section Density
@@ -874,6 +881,14 @@ each set `A` of `s`-values the Floer energy of `u` over `A × [0, 1]` for the pe
 noncomputable def stripEnergyMeasure : Measure ℝ :=
   ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
     ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst
+
+/-- The strip energy measure is the pushforward to the `s`-axis of the measure with density the
+positive part of the energy density on the strip. -/
+theorem stripEnergyMeasure_def :
+    ω.stripEnergyMeasure Ks Kt u =
+      ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
+        ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst :=
+  (rfl)
 
 /-- The strip energy measure of a measurable set `A` is the energy over `A × [0, 1]`. -/
 theorem stripEnergyMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :

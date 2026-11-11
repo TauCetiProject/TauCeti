@@ -13,6 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Analysis.ODE.NormalMode
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # The spring tetrahedron: its symmetry, its force matrix and its normal modes
@@ -39,6 +42,12 @@ and computes its spectrum exactly. The computation goes through the coordinates
 
 and the characteristic polynomial of `H` is `X⁶ (X + 2)² (X + 4)³ (X + 8)`.
 
+These eigenspaces span `ℝ¹²`. Springs of stiffness `κ` between particles of mass `m` give the
+linearized equation of motion `u'' = (κ / (2m)) H u`, so the vibrational angular frequencies are
+`√(κ/m)` twice, `√(2κ/m)` three times and `2√(κ/m)` once, and every motion is the uniform motion
+of the zero modes plus the normal-mode oscillations `TauCeti.normalModeMotion` at these
+frequencies.
+
 The vertices are indexed by `Fin 4`, so `pᵢ` here is the vertex `p_{i+1}` of the handout cited
 below.
 
@@ -52,14 +61,21 @@ below.
 
 ## Main results
 
+* `TauCeti.tetrahedronSymmetryMatrix_swap`: transpositions act by reflections.
 * `TauCeti.isSymm_tetrahedronSpringMatrix`, `TauCeti.posSemidef_neg_tetrahedronSpringMatrix`:
   `H` is symmetric and `-H` is positive semidefinite.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_displacementRep`: `H` commutes with the `S₄`-action.
+* `TauCeti.tetrahedronDisplacementRep_affineFieldEquiv`: the action in the coordinates `(t, A)`.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_affineFieldEquiv`: `H` in the coordinates `(t, A)`.
 * `TauCeti.charpoly_tetrahedronSpringMatrix`: `charpoly H = X⁶ (X + 2)² (X + 4)³ (X + 8)`.
 * `TauCeti.finrank_eigenspace_tetrahedronSpringMatrix`: the eigenspace dimensions.
 * `TauCeti.tetrahedronAffineFieldEquiv_mem_eigenspace_zero_iff` and its `neg_two`, `neg_four`,
   `neg_eight` companions: the four eigenspaces in the coordinates `(t, A)`.
+* `TauCeti.sup_eigenspace_tetrahedronSpringMatrix_eq_top`: the four eigenspaces span `ℝ¹²`.
+* `TauCeti.finrank_eigenspace_smul_tetrahedronSpringMatrix`: the frequencies of
+  `u'' = (κ / (2m)) H u` and their multiplicities.
+* `TauCeti.eq_normalModeMotion_tetrahedronSpringMatrix`: every solution of
+  `u'' = (κ / (2m)) H u` is a superposition of normal-mode motions.
 
 ## References
 
@@ -211,6 +227,29 @@ theorem tetrahedronSymmetryMatrix_mem_orthogonalGroup (σ : Equiv.Perm (Fin 4)) 
     tetrahedronSymmetryMatrix σ ∈ Matrix.orthogonalGroup (Fin 3) ℝ := by
   rw [Matrix.mem_orthogonalGroup_iff', transpose_tetrahedronSymmetryMatrix, ← map_mul,
     inv_mul_cancel, map_one]
+
+/-- A transposition acts on `ℝ³` by the reflection in the plane orthogonal to its edge,
+`R_{(j k)} = 1 - (qⱼ - qₖ)(qⱼ - qₖ)ᵀ`, the edge `qⱼ - qₖ` having squared length `2` for `j ≠ k`.
+For `j = k` both sides are the identity. -/
+theorem tetrahedronSymmetryMatrix_swap (j k : Fin 4) :
+    tetrahedronSymmetryMatrix (Equiv.swap j k) =
+      1 - vecMulVec (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k)
+        (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k) := by
+  rcases eq_or_ne j k with rfl | h
+  · simp [← Equiv.Perm.one_def]
+  refine ext_of_mulVec_tetrahedronCenteredVertex fun l ↦ ?_
+  rw [tetrahedronSymmetryMatrix_mulVec, sub_mulVec, one_mulVec, vecMulVec_mulVec,
+    op_smul_eq_smul, sub_dotProduct, dotProduct_tetrahedronCenteredVertex,
+    dotProduct_tetrahedronCenteredVertex]
+  by_cases hj : l = j
+  · subst hj
+    simp [Ne.symm h]
+    module
+  by_cases hk : l = k
+  · subst hk
+    simp [h]
+    module
+  · simp [Equiv.swap_apply_of_ne_of_ne hj hk, Ne.symm hj, Ne.symm hk]
 
 /-! ### Displacements -/
 
@@ -414,6 +453,24 @@ theorem tetrahedronAffineFieldEquiv_symm_apply (u : Fin 4 × Fin 3 → ℝ) :
       ∑ i, vecMulVec (Function.curry u i) (tetrahedronCenteredVertex i)) :=
   (rfl)
 
+/-- In the coordinates `uᵢ = t + A qᵢ`, the symmetry `σ` acts by
+`(t, A) ↦ (R_σ t, R_σ A R_σ⁻¹)`. -/
+@[simp]
+theorem tetrahedronDisplacementRep_affineFieldEquiv (σ : Equiv.Perm (Fin 4)) (t : Fin 3 → ℝ)
+    (A : Matrix (Fin 3) (Fin 3) ℝ) :
+    tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) =
+      tetrahedronAffineFieldEquiv (tetrahedronSymmetryMatrix σ *ᵥ t,
+        tetrahedronSymmetryMatrix σ * A * tetrahedronSymmetryMatrix σ⁻¹) := by
+  ext ⟨m, k⟩
+  have h := congrFun
+    (curry_tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) m) k
+  simp only [Function.curry_apply] at h
+  have hc : Function.curry (tetrahedronAffineFieldEquiv (t, A)) (σ⁻¹ m) =
+      t + A *ᵥ tetrahedronCenteredVertex (σ⁻¹ m) := by
+    ext l; simp
+  rw [h, hc]
+  simp [mulVec_add, ← mulVec_mulVec]
+
 /-- The force matrix in the coordinates `uᵢ = t + A qᵢ`: it kills the translation `t` and maps
 `A` to `-2 (A + Aᵀ) + 2 diag(A) - 2 tr(A) I`. -/
 theorem tetrahedronSpringMatrix_mulVec_affineFieldEquiv (t : Fin 3 → ℝ)
@@ -591,5 +648,109 @@ theorem tetrahedronAffineFieldEquiv_mem_eigenspace_neg_eight_iff (t : Fin 3 → 
   · rintro ⟨a, rfl⟩
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.trace] <;> ring
+
+/-- The eigenspaces of the force matrix for `0`, `-2`, `-4` and `-8` span `ℝ¹²`: every
+displacement is a sum of eigenvectors for these eigenvalues. -/
+theorem sup_eigenspace_tetrahedronSpringMatrix_eq_top :
+    Module.End.eigenspace tetrahedronSpringMatrix.toLin' 0 ⊔
+        Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2) ⊔
+        Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-4) ⊔
+        Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-8) = ⊤ := by
+  refine eq_top_iff.2 ?_
+  rw [← tetrahedronModeBasis.span_eq, Submodule.span_le]
+  rintro _ ⟨m, rfl⟩
+  have hm : tetrahedronModeBasis m ∈
+      Module.End.eigenspace tetrahedronSpringMatrix.toLin' (tetrahedronModeEigenvalue m) := by
+    rw [Module.End.mem_eigenspace_iff, toLin'_apply, tetrahedronSpringMatrix_mulVec_modeBasis]
+  obtain h | h | h | h : tetrahedronModeEigenvalue m = 0 ∨ tetrahedronModeEigenvalue m = -2 ∨
+      tetrahedronModeEigenvalue m = -4 ∨ tetrahedronModeEigenvalue m = -8 := by
+    fin_cases m <;> simp [tetrahedronModeEigenvalue]
+  all_goals rw [h] at hm
+  · exact Submodule.mem_sup_left (Submodule.mem_sup_left (Submodule.mem_sup_left hm))
+  · exact Submodule.mem_sup_left (Submodule.mem_sup_left (Submodule.mem_sup_right hm))
+  · exact Submodule.mem_sup_left (Submodule.mem_sup_right hm)
+  · exact Submodule.mem_sup_right hm
+
+/-! ### Frequencies and normal-mode motions
+
+A spring of stiffness `κ` along an edge of squared length `2` between particles of mass `m`
+gives the equation of motion `u'' = (κ / (2m)) H u`. -/
+
+/-- The squared vibrational angular frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)` are
+`-(κ / (2m)) μ` for the eigenvalues `μ = -2`, `-4` and `-8` of the force matrix. -/
+private theorem sq_frequencies_tetrahedron {κ m : ℝ} (hκm : 0 ≤ κ / m) :
+    √(κ / m) ^ 2 = -(κ / (2 * m) * -2) ∧ √(2 * κ / m) ^ 2 = -(κ / (2 * m) * -4) ∧
+      (2 * √(κ / m)) ^ 2 = -(κ / (2 * m) * -8) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [Real.sq_sqrt hκm]; field_simp
+  · rw [Real.sq_sqrt (by rw [mul_div_assoc]; positivity)]; field_simp; ring
+  · rw [mul_pow, Real.sq_sqrt hκm]; field_simp; ring
+
+/-- For stiffness `κ` and mass `m` with `κ / m > 0`, the acceleration operator `(κ / (2m)) H`
+has the eigenvalue `-ω²`, `ω ≥ 0`, exactly for the zero modes `ω = 0`, with multiplicity `6`, and
+for the vibrational angular frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)`, with multiplicities
+`2`, `3` and `1`. -/
+theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 0 < κ / m)
+    (hω : 0 ≤ ω) :
+    Module.finrank ℝ (Module.End.eigenspace
+        (Matrix.toLin' ((κ / (2 * m)) • tetrahedronSpringMatrix)) (-(ω ^ 2))) =
+      (if ω = 0 then 6 else 0) + (if ω = √(κ / m) then 2 else 0) +
+        (if ω = √(2 * κ / m) then 3 else 0) + (if ω = 2 * √(κ / m) then 1 else 0) := by
+  have hm : m ≠ 0 := by
+    rintro rfl
+    simp at hκm
+  have hc : κ / (2 * m) ≠ 0 := by
+    rw [mul_comm, ← div_div]
+    positivity
+  obtain ⟨h₂, h₄, h₈⟩ := sq_frequencies_tetrahedron hκm.le
+  -- `-ω² / (κ / (2m)) = μ` exactly when `ω` is the frequency `s ≥ 0` with `s² = -(κ / (2m)) μ`.
+  have hev {μ s : ℝ} (hs : 0 ≤ s) (h : s ^ 2 = -(κ / (2 * m) * μ)) :
+      -(ω ^ 2) / (κ / (2 * m)) = μ ↔ ω = s := by
+    rw [← sq_eq_sq₀ hω hs, h, div_eq_iff hc, mul_comm μ, neg_eq_iff_eq_neg]
+  rw [map_smul, ← mul_div_cancel₀ (-(ω ^ 2)) hc, Module.End.eigenspace_smul _ hc,
+    finrank_eigenspace_tetrahedronSpringMatrix]
+  simp only [hev (μ := 0) le_rfl (by simp), hev (Real.sqrt_nonneg _) h₂,
+    hev (Real.sqrt_nonneg _) h₄, hev (by positivity) h₈]
+
+/-- **The motions of the spring tetrahedron.** Let `u` solve the linearized equation of motion
+`u'' = (κ / (2m)) H u`, `κ / m ≥ 0`, with initial position `x₀ + x₂ + x₄ + x₈` and initial
+velocity `y₀ + y₂ + y₄ + y₈`, where `x_k` and `y_k` are eigenvectors of `H` for `-k`
+(such decompositions exist by `TauCeti.sup_eigenspace_tetrahedronSpringMatrix_eq_top`). Then `u`
+is the uniform motion `x₀ + t y₀` of the zero modes plus the normal-mode oscillations of angular
+frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)`. -/
+theorem eq_normalModeMotion_tetrahedronSpringMatrix {κ m : ℝ} (hκm : 0 ≤ κ / m)
+    {u u' : ℝ → Fin 4 × Fin 3 → ℝ} (hu : ∀ t, HasDerivAt u (u' t) t)
+    (hu' : ∀ t, HasDerivAt u' ((κ / (2 * m)) • (tetrahedronSpringMatrix *ᵥ u t)) t)
+    {x₀ x₂ x₄ x₈ y₀ y₂ y₄ y₈ : Fin 4 × Fin 3 → ℝ}
+    (hx₀ : x₀ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' 0)
+    (hy₀ : y₀ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' 0)
+    (hx₂ : x₂ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2))
+    (hy₂ : y₂ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2))
+    (hx₄ : x₄ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-4))
+    (hy₄ : y₄ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-4))
+    (hx₈ : x₈ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-8))
+    (hy₈ : y₈ ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-8))
+    (h₀ : u 0 = x₀ + x₂ + x₄ + x₈) (h₀' : u' 0 = y₀ + y₂ + y₄ + y₈) (t : ℝ) :
+    u t = x₀ + t • y₀ + normalModeMotion √(κ / m) x₂ y₂ t +
+      normalModeMotion √(2 * κ / m) x₄ y₄ t + normalModeMotion (2 * √(κ / m)) x₈ y₈ t := by
+  let A : (Fin 4 × Fin 3 → ℝ) →L[ℝ] Fin 4 × Fin 3 → ℝ :=
+    LinearMap.toContinuousLinearMap (Matrix.toLin' ((κ / (2 * m)) • tetrahedronSpringMatrix))
+  have hA (v : Fin 4 × Fin 3 → ℝ) : A v = (κ / (2 * m)) • (tetrahedronSpringMatrix *ᵥ v) := by
+    simp [A]
+  -- An eigenvector of `H` for `μ` is an eigenvector of `A` for `-ω²` when `ω² = -(κ / (2m)) μ`.
+  have key {μ ω : ℝ} {v : Fin 4 × Fin 3 → ℝ}
+      (hv : v ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' μ)
+      (hω : ω ^ 2 = -(κ / (2 * m) * μ)) : A v = -(ω ^ 2) • v := by
+    rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hv
+    rw [hA, hv, smul_smul, hω, neg_neg]
+  obtain ⟨h₁, h₂, h₃⟩ := sq_frequencies_tetrahedron hκm
+  have h := eq_sum_normalModeMotion (A := A) (ω := ![0, √(κ / m), √(2 * κ / m), 2 * √(κ / m)])
+    (x := ![x₀, x₂, x₄, x₈]) (y := ![y₀, y₂, y₄, y₈])
+    (fun i ↦ by fin_cases i; exacts [key hx₀ (by simp), key hx₂ h₁, key hx₄ h₂, key hx₈ h₃])
+    (fun i ↦ by fin_cases i; exacts [key hy₀ (by simp), key hy₂ h₁, key hy₄ h₂, key hy₈ h₃])
+    hu (fun t ↦ by simpa [hA] using hu' t) (by simp [h₀, Fin.sum_univ_four])
+    (by simp [h₀', Fin.sum_univ_four])
+  rw [h]
+  simp [Fin.sum_univ_four]
 
 end TauCeti

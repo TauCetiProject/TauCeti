@@ -14,9 +14,10 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 # Iterated derivatives in one variable of a product
 
 The iterated derivative of a slice `x ↦ f (p, x)` is the total iterated derivative of `f`
-restricted to directions in the second factor. Consequently these partial derivatives vary
-continuously in both variables when `f` is sufficiently differentiable. This gives the
-joint derivative continuity needed for smooth families in function spaces.
+restricted to directions in the second factor, and likewise for a slice `p ↦ f (p, x)` in the
+first factor. Consequently these partial derivatives vary continuously in both variables when `f`
+is sufficiently differentiable. This gives the joint derivative continuity needed for smooth
+families in function spaces.
 
 The within-set versions require unique derivatives only on the product,
 so they also handle coordinate domains of manifolds with boundary or corners.
@@ -39,6 +40,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} {f : P × E → F}
 
+/-- The iterated derivative in the first variable is the total iterated derivative restricted
+to directions with zero second component. -/
+theorem iteratedFDeriv_prod_left (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n)
+    (p : P) (x : E) :
+    iteratedFDeriv 𝕜 m (fun q ↦ f (q, x)) p =
+      (iteratedFDeriv 𝕜 m f (p, x)).compContinuousLinearMap
+        (fun _ ↦ ContinuousLinearMap.inl 𝕜 P E) := by
+  have h := (ContinuousLinearMap.inl 𝕜 P E).iteratedFDeriv_comp_right
+    (hf.comp (contDiff_const.add contDiff_id) :
+      ContDiff 𝕜 n (fun z : P × E ↦ f ((0, x) + z))) p hm
+  simpa only [Function.comp_def, ContinuousLinearMap.inl_apply, Prod.mk_add_mk,
+    add_zero, zero_add, iteratedFDeriv_comp_add_left] using h
+
 /-- The iterated derivative in the second variable is the total iterated derivative restricted
 to directions with zero first component. -/
 theorem iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n)
@@ -51,6 +65,15 @@ theorem iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤
       ContDiff 𝕜 n (fun z : P × E ↦ f ((p, 0) + z))) x hm
   simpa only [Function.comp_def, ContinuousLinearMap.inr_apply, Prod.mk_add_mk,
     add_zero, zero_add, iteratedFDeriv_comp_add_left] using h
+
+/-- An iterated derivative in the second variable is bounded by the total iterated derivative:
+`‖Dᵐ (y ↦ f (p, y)) x‖ ≤ ‖Dᵐ f (p, x)‖`. -/
+theorem norm_iteratedFDeriv_prod_right_le (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n)
+    (p : P) (x : E) :
+    ‖iteratedFDeriv 𝕜 m (fun y ↦ f (p, y)) x‖ ≤ ‖iteratedFDeriv 𝕜 m f (p, x)‖ := by
+  rw [iteratedFDeriv_prod_right hf m hm]
+  exact (iteratedFDeriv 𝕜 m f (p, x)).norm_compContinuous_linearIsometry_le
+    fun _ ↦ LinearIsometry.inr 𝕜 P E
 
 /-- The iterated derivatives in the second variable of a `C^n` function are jointly continuous
 in the parameter and the evaluation point, through order `n`. -/
