@@ -142,10 +142,22 @@ structure IsDelzant : Prop where
 
 variable {i u c}
 
+theorem facetPolyhedron_def : facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
+
 @[simp]
 theorem mem_facetPolyhedron {x : StrongDual ℝ V} :
     x ∈ facetPolyhedron i u c ↔ ∀ j, c j ≤ x (i (u j)) := by
   simp [facetPolyhedron]
+
+/-- The pairing with the `j`-th facet normal vanishes exactly when that normal maps to zero in
+`V`. -/
+@[simp]
+theorem facetPairing_eq_zero_iff {j : ι} : facetPairing i u j = 0 ↔ i (u j) = 0 := by
+  refine ⟨fun h ↦ SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun x ↦ ?_, fun h ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h x
+  · ext x
+    simp [h]
 
 theorem isSmoothVertex_def {x : StrongDual ℝ V} :
     IsSmoothVertex i u c x ↔
