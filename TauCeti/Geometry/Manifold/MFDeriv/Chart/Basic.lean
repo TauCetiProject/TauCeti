@@ -476,6 +476,18 @@ section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
 
+/-- On a manifold modelled on its model space, the inverse of the preferred extended chart is the
+inverse of the preferred chart. -/
+private theorem extChartAt_model_symm_eq_chartAt_symm :
+    ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by
+  ext; simp
+
+/-- On a manifold modelled on its model space, the preferred extended chart sends a point to the
+same coordinate as the preferred chart. -/
+private theorem extChartAt_model_apply_eq_chartAt_apply :
+    extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by
+  simp
+
 namespace ContMDiffAt
 
 /-- On a manifold modelled on its model space, the preferred-chart coordinate expression of a
@@ -483,7 +495,8 @@ namespace ContMDiffAt
 theorem contDiffAt_comp_chartAt_symm {n : WithTop ℕ∞}
     (hg : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n g z) :
     ContDiffAt 𝕜 n (g ∘ (chartAt E z).symm) (chartAt E z z) := by
-  simpa [extChartAt] using hg.contDiffAt_comp_extChartAt_symm
+  simpa only [extChartAt_model_symm_eq_chartAt_symm, extChartAt_model_apply_eq_chartAt_apply] using
+    hg.contDiffAt_comp_extChartAt_symm
 
 end ContMDiffAt
 
@@ -492,9 +505,8 @@ expression is the vector-valued manifold derivative. Both sides are `0` when the
 differentiable at the point. -/
 theorem TauCeti.fderiv_comp_chartAt_symm :
     fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) = mvfderiv 𝓘(𝕜, E) g z := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, extChartAt_model_symm_eq_chartAt_symm,
+    extChartAt_model_apply_eq_chartAt_apply]
 
 /-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
 is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
