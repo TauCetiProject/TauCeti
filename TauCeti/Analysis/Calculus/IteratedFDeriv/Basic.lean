@@ -19,7 +19,8 @@ continuous multilinear second derivatives with curried bilinear maps, and the co
 exact comparison for differences of second derivatives, which transfers Hölder bounds between
 the two forms of the second derivative. Where a function `ζ` equals one on a neighbourhood of a
 point, every iterated derivative of `ζ * u` there is that of `u`
-(`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
+(`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Adding a constant to a function does not change its
+iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
 -/
 
 public section
@@ -106,6 +107,13 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Adding a constant to a function does not change its iterated derivatives of positive order. No
+differentiability is needed, since the derivative of `f + c` is that of `f` everywhere. -/
+theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
+    iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
+  funext x
+  simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/
