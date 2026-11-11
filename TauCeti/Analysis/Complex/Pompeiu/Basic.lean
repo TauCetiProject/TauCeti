@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+public import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Analysis.Complex.CauchyKernel
+import TauCeti.Analysis.Convolution.Holder
 
 /-!
 # The Cauchy–Pompeiu formula
@@ -69,6 +70,11 @@ compact-support left and right inverse identities are available in this module.
 * `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
   `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes, in
   particular off `tsupport f`.
+* `HasCompactSupport.contDiff_cauchyTransform`,
+  `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+  `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
+  supported smooth data is smooth and holomorphic off `tsupport f`, and that of compactly
+  supported integrable data tends to `0` at infinity.
 
 ## References
 
@@ -107,6 +113,36 @@ theorem cauchyTransform_eq_convolution (f : ℂ → F) :
   simpa only [ContinuousLinearMap.lsmul_apply] using
     (convolution_eq_swap (L := ContinuousLinearMap.lsmul ℝ ℂ)
       (f := fun z : ℂ ↦ z⁻¹) (g := f) (x := w)).symm
+
+/-- On a fixed output disc, truncating the reciprocal kernel at the sum of the input and
+output radii leaves its convolution integrand unchanged. -/
+theorem truncatedCauchyKernel_smul_eq {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) (z : ℂ) :
+    truncatedCauchyKernel (r + R) z • f (w - z) = z⁻¹ • f (w - z) := by
+  simpa only [truncatedCauchyKernel_def] using
+    (indicator_kernel_smul_sub_eq (K := fun z : ℂ ↦ z⁻¹) hs hw z)
+
+/-- On a fixed output disc, cutting the reciprocal off at the sum of the input and output
+radii preserves the actual Cauchy integral. -/
+theorem integral_sub_inv_smul_eq_truncatedCauchyKernel_smul
+    {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
+    (∫ z, (w - z)⁻¹ • f z) = ∫ z, truncatedCauchyKernel (r + R) z • f (w - z) := by
+  have h := integral_sub_left_eq_self (fun z : ℂ ↦ (w - z)⁻¹ • f z) volume w
+  simp only [sub_sub_cancel] at h
+  rw [← h]
+  apply integral_congr_ae
+  exact ae_of_all _ fun z ↦ (truncatedCauchyKernel_smul_eq hs hw z).symm
+
+/-- On the output disc, truncating the reciprocal kernel at the sum of the radii leaves
+the Cauchy integral unchanged. No integrability assumption is required for this identity. -/
+theorem cauchyTransform_eq_truncatedCauchyKernel_convolution
+    {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
+    cauchyTransform f w = (Real.pi : ℂ)⁻¹ •
+      ((truncatedCauchyKernel (r + R)) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f) w := by
+  rw [cauchyTransform_apply, integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw]
+  simp only [convolution_def, ContinuousLinearMap.lsmul_apply]
 
 /-- A supported input may be integrated over its input disc in the Cauchy formula. -/
 theorem cauchyTransform_eq_integral_closedBall {f : ℂ → F} {c : ℂ} {r : ℝ≥0}
@@ -479,5 +515,43 @@ theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {f : ℂ → F}
   rw [hc.fderiv_cauchyTransform hf, cauchyTransform_apply, cauchyTransform_apply,
     smul_apply, ContinuousLinearMap.integral_apply hi]
   simp only [smul_apply]
+
+section Regularity
+
+open Bornology
+
+variable {c : ℂ → F}
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported `C¹` map is holomorphic off the support of the
+map. -/
+theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport
+    (hc : HasCompactSupport c) (hs : ContDiff ℝ 1 c) {w : ℂ} (hw : w ∉ tsupport c) :
+    DifferentiableAt ℂ (cauchyTransform c) w := by
+  have h := (differentiableOn_integral_sub_inv_smul_compl hc
+    (fun x hx ↦ image_eq_zero_of_notMem_tsupport hx) hs).differentiableAt
+    ((isClosed_tsupport c).isOpen_compl.mem_nhds hw)
+  rw [funext (cauchyTransform_apply c)]
+  exact h.const_smul _
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported integrable map tends to `0` at infinity. -/
+theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasCompactSupport c)
+    (hi : Integrable c) :
+    Tendsto (cauchyTransform c) (cobounded ℂ) (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  have hbound : ∀ᶠ w in cobounded ℂ,
+      ‖cauchyTransform c w‖ ≤ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹ := by
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually
+      (eventually_gt_atTop (max (2 * R) 0))] with w hw
+    rw [le_mul_inv_iff₀ ((le_max_right _ _).trans_lt hw), mul_comm ‖cauchyTransform c w‖]
+    exact norm_mul_norm_cauchyTransform_le ((subset_tsupport c).trans hR) hi
+      ((le_max_left _ _).trans hw.le)
+  have hlim : Tendsto (fun w : ℂ ↦ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹) (cobounded ℂ) (𝓝 0) := by
+    simpa using (tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).const_mul
+      (2 * π⁻¹ * ∫ z, ‖c z‖)
+  exact squeeze_zero_norm' hbound hlim
+
+end Regularity
 
 end TauCeti
