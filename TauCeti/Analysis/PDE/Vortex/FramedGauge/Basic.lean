@@ -203,6 +203,12 @@ theorem gaugeForm_one (z : ℂ) : gaugeForm 1 z = 0 := by
   ext v
   simp
 
+/-- A constant gauge has vanishing logarithmic derivative. -/
+@[simp]
+theorem gaugeForm_const (c : Circle) (z : ℂ) : gaugeForm (fun _ ↦ c) z = 0 := by
+  ext v
+  simp
+
 /-- The logarithmic derivative of the inverse gauge is the negative of the logarithmic
 derivative. -/
 theorem gaugeForm_inv {u : ℂ → Circle} {z : ℂ}

@@ -119,17 +119,13 @@ theorem gaugeTransform_rotateField_referenceField (f : ContDiffBump (0 : ℝ)) (
       ring
     · simp only [mul_im, I_re, I_im, smul_im, smul_eq_mul, add_im]
       ring
-  -- The constant gauge has vanishing logarithmic derivative.
-  have hconst : gaugeForm (fun _ ↦ u⁻¹ ^ m) z = 0 := by
-    ext v
-    simp
   refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_zero,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_zero,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin 1]
     simp only [add_im, smul_im, smul_eq_mul, mul_one]
-  · simp only [gaugeTransform_apply, hconst, rotateField_apply_one,
+  · simp only [gaugeTransform_apply, gaugeForm_const, rotateField_apply_one,
       referenceField_apply, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       zero_apply, sub_zero]
     rw [hlin I]
