@@ -93,9 +93,8 @@ theorem isometry_washnitzerCompletionAlgEquiv (I : Ideal W) :
 /-- The completion comparison preserves the norm of every completed quotient element. -/
 @[simp]
 theorem norm_washnitzerCompletionAlgEquiv (I : Ideal W) (x : Completion (W ⧸ I)) :
-    ‖I.washnitzerCompletionAlgEquiv x‖ = ‖x‖ := by
-  exact Isometry.norm_map_of_map_zero (E := Completion (W ⧸ I))
-    (F := T ⧸ I.map (toTate σ K)) I.isometry_washnitzerCompletionAlgEquiv (map_zero _) x
+    ‖I.washnitzerCompletionAlgEquiv x‖ = ‖x‖ :=
+  AlgHom.norm_completionAlgEquiv _ _ _ x
 
 end Ideal
 

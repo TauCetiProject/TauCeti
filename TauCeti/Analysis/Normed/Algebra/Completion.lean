@@ -63,4 +63,10 @@ theorem isometry_completionAlgEquiv (f : A →ₐ[R] B) (hf : Isometry f) (hd : 
     Isometry (f.completionAlgEquiv hf hd) :=
   hf.completion_extension
 
+/-- The algebraic completion comparison preserves norms. -/
+@[simp]
+theorem norm_completionAlgEquiv (f : A →ₐ[R] B) (hf : Isometry f) (hd : DenseRange f)
+    (x : Completion A) : ‖f.completionAlgEquiv hf hd x‖ = ‖x‖ :=
+  (AddMonoidHomClass.isometry_iff_norm _).mp (isometry_completionAlgEquiv f hf hd) x
+
 end AlgHom

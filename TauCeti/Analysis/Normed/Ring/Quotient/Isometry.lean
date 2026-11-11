@@ -7,32 +7,20 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import TauCeti.Topology.Algebra.Ring.MaximalIdeals
+public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Isometries on ideal quotients
 
-A ring homomorphism with dense range induces a map with dense range on quotients by an ideal
-and its extension. If the original homomorphism is isometric, so is the induced map. Indeed,
-the extended ideal and the image of the original ideal have the same closure, so distances to
-the two ideals agree.
+An isometric ring homomorphism with dense range induces an isometry on quotients by an ideal
+and its extension. Indeed, the extended ideal and the image of the original ideal have the same
+closure, so distances to the two ideals agree.
 This applies in particular to residue norms of presentation quotients inside completed algebras.
 -/
 
 public section
 
 namespace RingHom
-
-/-- A homomorphism with dense range induces a map with dense range on ideal quotients. -/
-theorem denseRange_quotientMap {A B : Type*} [CommRing A] [CommRing B]
-    [TopologicalSpace B] (f : A →+* B) (hd : DenseRange f)
-    (I : Ideal A) :
-    DenseRange (Ideal.quotientMap (I.map f) f Ideal.le_comap_map) := by
-  have h : DenseRange (fun a : A ↦ Ideal.Quotient.mk (I.map f) (f a)) :=
-    (Ideal.Quotient.mk_surjective (I := I.map f)).denseRange.comp hd
-      continuous_quotient_mk'
-  refine Dense.mono ?_ h
-  rintro _ ⟨a, rfl⟩
-  exact ⟨Ideal.Quotient.mk I a, Ideal.quotientMap_mk⟩
 
 variable {A B : Type*} [SeminormedCommRing A] [SeminormedCommRing B]
 
@@ -42,7 +30,7 @@ theorem isometry_quotientMap (f : A →+* B) (hf : Isometry f) (hd : DenseRange 
     Isometry (Ideal.quotientMap (I.map f) f Ideal.le_comap_map) := by
   have hclosure : closure (f '' (I : Set A)) = closure (I.map f : Set B) := by
     apply Set.Subset.antisymm
-    · exact closure_mono Ideal.subset_span
+    · exact closure_mono (Set.image_subset_iff.2 Ideal.le_comap_map)
     · exact closure_minimal (Ideal.map_subset_closure_image_of_denseRange hd I)
         isClosed_closure
   apply AddMonoidHomClass.isometry_of_norm

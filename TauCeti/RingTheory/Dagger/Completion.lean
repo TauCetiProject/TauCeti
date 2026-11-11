@@ -66,7 +66,7 @@ theorem isometry_completionAlgEquiv : Isometry (completionAlgEquiv σ K) :=
 @[simp]
 theorem norm_completionAlgEquiv (f : Completion (washnitzerAlgebra σ K)) :
     ‖completionAlgEquiv σ K f‖ = ‖f‖ :=
-  (AddMonoidHomClass.isometry_iff_norm _).mp isometry_completionAlgEquiv f
+  AlgHom.norm_completionAlgEquiv _ _ _ f
 
 end Complete
 
