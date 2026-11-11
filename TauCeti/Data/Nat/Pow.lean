@@ -35,7 +35,7 @@ theorem forall_ne_pow_or_exists_pos_eq_pow {b n : ℕ} (hn : n ≠ 1) :
     (∀ k : ℕ, n ≠ b ^ k) ∨ ∃ k, 0 < k ∧ n = b ^ k := by
   refine or_iff_not_imp_left.2 fun h ↦ ?_
   obtain ⟨k, hk⟩ := not_forall_not.mp h
-  exact ⟨k, Nat.pos_of_ne_zero fun h0 ↦ hn (by rw [hk, h0, Nat.pow_zero]), hk⟩
+  exact ⟨k, Nat.pos_of_ne_zero fun h0 ↦ hn (by rw [hk, h0, pow_zero]), hk⟩
 
 /-- For positive bases `b < a` and `n ≥ 3`, `a ^ n - b ^ n` strictly exceeds
 `(a + b) * a ^ (n - 2) = a ^ (n - 1) + b * a ^ (n - 2)`. -/
@@ -48,12 +48,12 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
   have hb' : b ^ n = b ^ (n - 2) * b ^ 2 := by
     rw [← pow_add, Nat.sub_add_cancel (by omega : 2 ≤ n)]
   have hsq : a + b ≤ a ^ 2 - b ^ 2 := by
-    rw [Nat.pow_two_sub_pow_two]
+    rw [pow_two_sub_pow_two]
     exact Nat.le_mul_of_pos_right _ (by omega)
-  have hmul := Nat.mul_le_mul_right (a ^ (n - 2)) hsq
+  have hmul := mul_le_mul_right (a ^ (n - 2)) hsq
   have hstrict := Nat.mul_lt_mul_of_pos_right hpow (Nat.pow_pos hb : 0 < b ^ 2)
   have hfactor : (a ^ 2 - b ^ 2) * a ^ (n - 2) + a ^ (n - 2) * b ^ 2 = a ^ n := by
-    rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← Nat.add_mul,
+    rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← add_mul,
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
 
