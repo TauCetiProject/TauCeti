@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import TauCeti.Analysis.Complex.Polynomial.ImaginaryAxis
-public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import TauCeti.Algebra.Polynomial.Semiconj
