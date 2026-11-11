@@ -11,8 +11,6 @@ public import Mathlib.Analysis.Calculus.Deriv.Slope
 public import TauCeti.Analysis.Calculus.Deriv.Second
 public import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 
 /-!
 # A smooth increasing exhaustion profile
@@ -47,14 +45,14 @@ theorem radialExhaustionProfile_contDiff : ContDiff ℝ ∞ radialExhaustionProf
     ((contDiff_const.mul contDiff_id).sub contDiff_const)))
 
 /-- The profile is constant on the inner plateau, including its endpoint. -/
-theorem radialExhaustionProfile_eq_one {r : ℝ} (hr : r ≤ 1 / 2) :
+@[simp] theorem radialExhaustionProfile_eq_one {r : ℝ} (hr : r ≤ 1 / 2) :
     radialExhaustionProfile r = 1 := by
   simp only [radialExhaustionProfile,
     Real.smoothTransition.zero_of_nonpos (by linarith : 2 * r - 1 ≤ 0),
     mul_zero, add_zero]
 
 /-- The profile is affine on the outer region, including radius one. -/
-theorem radialExhaustionProfile_eq_add {r : ℝ} (hr : 1 ≤ r) :
+@[simp] theorem radialExhaustionProfile_eq_add {r : ℝ} (hr : 1 ≤ r) :
     radialExhaustionProfile r = 1 + r := by
   simp only [radialExhaustionProfile,
     Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ 2 * r - 1), mul_one]
@@ -72,8 +70,7 @@ theorem radialExhaustionProfile_monotone : Monotone radialExhaustionProfile := b
   by_cases hr : r ≤ 1 / 2
   · rw [radialExhaustionProfile_eq_one hr]
     exact one_le_radialExhaustionProfile s
-  · change 1 + r * Real.smoothTransition (2 * r - 1) ≤
-      1 + s * Real.smoothTransition (2 * s - 1)
+  · unfold radialExhaustionProfile
     simpa only [add_comm] using add_le_add_left
       (mul_le_mul hrs (Real.smoothTransition.monotone (by linarith : 2 * r - 1 ≤ 2 * s - 1))
         (Real.smoothTransition.nonneg (2 * r - 1)) (by linarith)) 1
@@ -88,7 +85,7 @@ theorem le_radialExhaustionProfile (r : ℝ) : r ≤ radialExhaustionProfile r :
 /-- On nonnegative arguments the profile grows at most as one plus the radius. -/
 theorem radialExhaustionProfile_le_add {r : ℝ} (hr : 0 ≤ r) :
     radialExhaustionProfile r ≤ 1 + r := by
-  change 1 + r * Real.smoothTransition (2 * r - 1) ≤ 1 + r
+  unfold radialExhaustionProfile
   have h : r * Real.smoothTransition (2 * r - 1) ≤ r := by
     simpa only [mul_one] using
       mul_le_mul_of_nonneg_left (Real.smoothTransition.le_one (2 * r - 1)) hr
@@ -116,12 +113,12 @@ private theorem profile_derivs_outside {r : ℝ} (hr : r ∉ Icc (1 / 2 : ℝ) 1
     · exact Or.inr (by rw [h.deriv_eq, deriv_const_add_id])
     · rw [h.deriv.deriv_eq, deriv_const_add_id', deriv_const]
 
-/-- A single universal constant, at least one, bounds both absolute derivatives.
-Compactness is used only on the transition interval; both tails are explicit. -/
+/-- A single universal constant, at least one, bounds both absolute derivatives. -/
 theorem exists_radialExhaustionProfile_deriv_bounds :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ r : ℝ,
       |deriv radialExhaustionProfile r| ≤ C ∧
         |deriv (deriv radialExhaustionProfile) r| ≤ C := by
+  -- Compactness is used only on the transition interval; both tails are explicit.
   have hfirst : ContDiff ℝ ∞ (deriv radialExhaustionProfile) :=
     (contDiff_infty_iff_deriv.mp radialExhaustionProfile_contDiff).2
   have hsecond : ContDiff ℝ ∞ (deriv (deriv radialExhaustionProfile)) :=
@@ -156,14 +153,23 @@ For Ricci-flow applications one takes `c = n*K` and supplies the actual distance
 noncomputable def rescaledRadialExhaustionProfile (c t r : ℝ) : ℝ :=
   radialExhaustionProfile (Real.exp (c * t) * r)
 
-/-- Exponential rescaling preserves the profile's lower and linear growth bounds. -/
-theorem rescaledRadialExhaustionProfile_growth (c t : ℝ) {r : ℝ} (hr : 0 ≤ r) :
-    1 ≤ rescaledRadialExhaustionProfile c t r ∧
-      Real.exp (c * t) * r ≤ rescaledRadialExhaustionProfile c t r ∧
-      rescaledRadialExhaustionProfile c t r ≤ 1 + Real.exp (c * t) * r := by
-  have h := mul_nonneg (Real.exp_pos (c * t)).le hr
-  exact ⟨one_le_radialExhaustionProfile _, le_radialExhaustionProfile _,
-    radialExhaustionProfile_le_add h⟩
+/-- Evaluation of the exponentially rescaled radial profile. -/
+theorem rescaledRadialExhaustionProfile_apply (c t r : ℝ) :
+    rescaledRadialExhaustionProfile c t r = radialExhaustionProfile (Real.exp (c * t) * r) :=
+  (rfl)
+
+/-- Each radial slice of the rescaled profile is smooth. -/
+theorem contDiff_rescaledRadialExhaustionProfile (c t : ℝ) :
+    ContDiff ℝ ∞ (rescaledRadialExhaustionProfile c t) := by
+  unfold rescaledRadialExhaustionProfile
+  exact radialExhaustionProfile_contDiff.comp (contDiff_const.mul contDiff_id)
+
+/-- Positive exponential rescaling preserves radial monotonicity. -/
+theorem monotone_rescaledRadialExhaustionProfile (c t : ℝ) :
+    Monotone (rescaledRadialExhaustionProfile c t) := by
+  intro r s hrs
+  rw [rescaledRadialExhaustionProfile_apply, rescaledRadialExhaustionProfile_apply]
+  exact radialExhaustionProfile_monotone (mul_le_mul_of_nonneg_left hrs (Real.exp_pos _).le)
 
 /-- The actual exponential-rescaling consumer has uniform radial derivative bounds
 with the exact first and second scaling factors, for all real times and coefficients. -/
@@ -174,8 +180,7 @@ theorem exists_rescaledRadialExhaustionProfile_deriv_bounds :
         C * Real.exp (c * t) ^ 2 := by
   obtain ⟨C, hC, h⟩ := exists_radialExhaustionProfile_deriv_bounds
   refine ⟨C, hC, fun c t r ↦ ?_⟩
-  change |deriv (fun s ↦ radialExhaustionProfile (Real.exp (c * t) * s)) r| ≤ _ ∧
-    |deriv (deriv (fun s ↦ radialExhaustionProfile (Real.exp (c * t) * s))) r| ≤ _
+  unfold rescaledRadialExhaustionProfile
   rw [deriv_comp_mul_left, TauCeti.deriv_deriv_comp_mul_left]
   simp only [smul_eq_mul]
   simp only [abs_mul, abs_pow, abs_of_pos (Real.exp_pos _)]
