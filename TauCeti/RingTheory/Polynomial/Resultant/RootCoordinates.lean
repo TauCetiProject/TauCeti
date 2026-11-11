@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.Normalization
 import TauCeti.RingTheory.Polynomial.RootEnumeration
-public import Mathlib.Algebra.Polynomial.Reverse
+public import TauCeti.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Taylor
 
 /-!
@@ -120,31 +120,10 @@ private theorem discr_reverse_of_splits {K : Type*} [Field K] {f : K[X]}
       simp only [eval_mul, eval_C, eval_prod, eval_sub, eval_X]
       rw [prod_eq_zero (mem_univ i) (by simp [hi]), mul_zero]
     exact h0 (by simpa only [coeff_zero_eq_eval_zero] using hz)
-  -- Reverse each linear factor and extract its nonzero scalar.
-  have h1 : (1 : K[X]).reverse = 1 := by
-    simpa only [C_1] using reverse_C (1 : K)
-  have hrev (s : Finset (Fin f.natDegree)) :
-      (∏ i ∈ s, (X - C (r i))).reverse = ∏ i ∈ s, (1 - C (r i) * X) := by
-    induction s using Finset.induction with
-    | empty => simpa only [prod_empty] using h1
-    | @insert i s hi ih =>
-      rw [prod_insert hi, prod_insert hi, reverse_mul_of_domain, ih]
-      congr 1
-      rw [sub_eq_add_neg, ← C_neg, reverse_add_C]
-      have hX : (X : K[X]).reverse = 1 := by
-        simpa only [one_mul, h1] using reverse_mul_X (1 : K[X])
-      simp only [hX, natDegree_X, pow_one, C_neg]
-      ring
-  have hlin (i : Fin f.natDegree) :
-      1 - C (r i) * X = C (-r i) * (X - C (r i)⁻¹) := by
-    rw [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ (hr0 i)]
-    simp [C_neg]
-    ring
   have hrevfac : f.reverse =
       C (f.leadingCoeff * ∏ i, -r i) * ∏ i, (X - C (r i)⁻¹) := by
-    conv_lhs => rw [hfac, reverse_mul_of_domain, reverse_C, hrev]
-    simp only [hlin, prod_mul_distrib, ← map_prod]
-    rw [← mul_assoc, ← C_mul]
+    conv_lhs => rw [hfac]
+    exact reverse_C_mul_prod_X_sub_C univ r _ fun i _ ↦ hr0 i
   -- Each root occurs in exactly `n - 1` unordered pairs. Squaring removes
   -- the signs introduced by reciprocal differences and reversed leading coefficients.
   have hpair : ∏ i, ∏ j ∈ Ioi i, r i * r j =

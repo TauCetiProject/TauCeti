@@ -35,7 +35,7 @@ attaching curve `αᵢ` of a Heegaard diagram, `Γ` locally parametrizes the tor
 points because attaching curves are pairwise disjoint. Thus, after supplying those local
 parametrizations, the result gives the tangent-space criterion needed for the tori in the
 holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, closed-torus result is
-`TauCeti.Sym.piHomeomorph`.
+`Sym.piHomeomorph`.
 
 ## Main declarations
 

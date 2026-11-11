@@ -32,6 +32,9 @@ sharp outward cusp, `W^{1,p}(Ω)` is not contained in `L^{p⋆}(Ω)`.
   `‖u‖_{L^q(Ω)} ≤ C ‖u‖_{W^{1,p}(Ω)}` for `q ≤ p⋆`.
 * `TauCeti.W1p.memLp_value_of_isLipschitzDomainWith`: every `u ∈ W^{1,p}(Ω)` lies in `L^q(Ω)`
   for `q ≤ p⋆`.
+* `TauCeti.W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith`: the
+  estimate `‖u‖_{L^s(Ω)} ≤ C ‖u‖_{W^{1,p}(Ω)}` for every finite `s` with `1/p - 1/s < 1/n`,
+  including `p ≥ n`, where there is no Sobolev conjugate.
 
 ## References
 
@@ -104,6 +107,54 @@ theorem W1p.memLp_value_of_isLipschitzDomainWith (hpstar : pstar ≠ ∞)
   obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_value_le_of_isLipschitzDomainWith hpstar hexp hΩ hb hq
   have hfin : C * ‖u‖ₑ < ∞ := by finiteness
   exact (hC u).trans_lt hfin
+
+/-- **The Sobolev inequality on bounded Lipschitz domains for subcritical exponents.** If
+`Ω ⊆ ℝ × E` is a bounded Lipschitz domain of dimension `n` and `1 ≤ p`, then for every finite `s`
+with `1/p - 1/s < 1/n` there is a constant `C` with `‖u‖_{L^s(Ω)} ≤ C ‖u‖_{W^{1,p}(Ω)}` for all
+`u ∈ W^{1,p}(Ω)`. For `p < n` this is every `s < p⋆`; for `p ≥ n` it is every finite `s`. -/
+theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith {s : ℝ≥0∞}
+    (hs : s ≠ ∞) (hps : p⁻¹ < s⁻¹ + (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)⁻¹)
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    ∃ C : ℝ≥0, ∀ u : W1p volume Ω p,
+      eLpNorm (W1p.value u) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) ≤ C * ‖u‖ₑ := by
+  rcases le_total s p with hsp | hps'
+  · -- Below `p`, Hölder's inequality on the set `Ω` of finite measure suffices.
+    exact W1p.exists_eLpNorm_value_le_of_ae_eq hb.measure_lt_top.ne hsp W1p.valueL
+      fun u => by rw [W1p.valueL_apply]
+  -- Above `p`, extend to the whole space and use the interior estimate on `Ω`.
+  have hC : ∃ C : ℝ≥0, ∀ v : W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p,
+      eLpNorm (W1p.value v) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) ≤ C * ‖v‖ₑ := by
+    have hn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≠ 0 := by
+      exact_mod_cast Module.finrank_pos.ne'
+    have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    have hs0 : s ≠ 0 := (zero_lt_one.trans_le ((Fact.out : (1 : ℝ≥0∞) ≤ p).trans hps')).ne'
+    have hgap : p.toReal⁻¹ - s.toReal⁻¹ < (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ)⁻¹ := by
+      have h := (ENNReal.toReal_lt_toReal (ENNReal.inv_ne_top.2 hp0)
+        (ENNReal.add_ne_top.2 ⟨ENNReal.inv_ne_top.2 hs0, ENNReal.inv_ne_top.2 hn⟩)).2 hps
+      rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 hs0) (ENNReal.inv_ne_top.2 hn)] at h
+      simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast] at h
+      linarith
+    have hp : p ≠ ∞ := ne_top_of_le_ne_top hs hps'
+    lift p to ℝ≥0 using hp
+    lift s to ℝ≥0 using hs
+    rw [ENNReal.coe_toReal, ENNReal.coe_toReal] at hgap
+    exact W1p.exists_eLpNorm_value_le_of_subcritical_gain (Ω := ⊤)
+      (by exact_mod_cast hps') hgap hb.isCompact_closure (subset_univ _)
+  obtain ⟨C, hC⟩ := hC
+  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  refine ⟨(C * ‖T‖ₑ).toNNReal, fun u => ?_⟩
+  have hu : W1p.restrictL le_top (T u) = u := by
+    simpa using congrArg (· u) hT
+  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top enorm_ne_top)]
+  calc eLpNorm (W1p.value u) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))
+      = eLpNorm (W1p.value (W1p.restrictL le_top (T u))) s
+          (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) := by rw [hu]
+    _ = eLpNorm (W1p.value (T u)) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
+        eLpNorm_congr_ae (W1p.value_restrictL_ae le_top (T u))
+    _ ≤ C * ‖T u‖ₑ := hC (T u)
+    _ ≤ C * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
+    _ = C * ‖T‖ₑ * ‖u‖ₑ := (mul_assoc _ _ _).symm
 
 end TauCeti
 

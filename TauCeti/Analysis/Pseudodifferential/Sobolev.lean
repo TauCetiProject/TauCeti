@@ -69,7 +69,9 @@ families of operators.
   Fourier transform in the position.
 * Further facts about the Fourier transform `â(η, ξ)` of the position slices: linearity in `a`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_add`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), joint continuity
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), integrability in `η` and Fourier
+  inversion (`TauCeti.Symbol.HasCompactSpatialSupport.integrable_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourierInv_fourier_slice`), joint continuity
   (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
@@ -83,6 +85,8 @@ families of operators.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
   on Schwartz functions.
+* `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
+  extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 * `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm` and
@@ -159,6 +163,19 @@ theorem HasCompactSpatialSupport.fourier_slice_smul (ha : a.HasCompactSpatialSup
   rw [← (ha.smul c).fourier_sliceSchwartz, h, FourierTransform.fourier_smul,
     ← ha.fourier_sliceSchwartz]
   rfl
+
+/-- The Fourier transform `η ↦ â(η, ξ)` of each position slice is integrable. -/
+theorem HasCompactSpatialSupport.integrable_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : Integrable (𝓕 fun y ↦ a.coefficient (y, ξ)) := by
+  rw [← ha.coe_sliceSchwartz, ← SchwartzMap.fourier_coe]
+  exact (𝓕 (ha.sliceSchwartz ξ)).integrable
+
+/-- **Fourier inversion for the position slices**: `a(x, ξ) = ∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη`. -/
+theorem HasCompactSpatialSupport.fourierInv_fourier_slice [CompleteSpace W]
+    (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
+    𝓕⁻ (𝓕 fun y ↦ a.coefficient (y, ξ)) = fun y ↦ a.coefficient (y, ξ) := by
+  rw [← ha.coe_sliceSchwartz, ← SchwartzMap.fourier_coe, ← SchwartzMap.fourierInv_coe,
+    fourierInv_fourier_eq]
 
 /-- The Schwartz seminorms of the position slices of a symbol vanishing outside a compact set `K`
 grow at most like `⟨ξ⟩ ^ m`, with a constant given by the seminorms `p_{K,α,[]}(a)` of its
@@ -384,9 +401,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
   by_cases hx : p.1 ∈ K
   · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul]
     refine ((a.coefficient _).le_opNorm _).trans ?_
-    have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-      (by linarith [Real.two_le_pi]) m (x := (2 * π) • p.2) (y := p.2)
-      (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+    have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m p.2
     calc ‖a.coefficient (p.1, (2 * π) • p.2)‖ * ‖𝓕 u p.2‖
         ≤ C * (1 + ‖(2 * π) • p.2‖ ^ 2) ^ (m / 2) * ‖𝓕 u p.2‖ := by
           gcongr
@@ -444,18 +459,11 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ :
   have hA : ‖A‖ ≤ C₀ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * (t ^ N)⁻¹ := by
     rw [le_mul_inv_iff₀ (by positivity), mul_comm]
     exact hdecay _ _
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-    (by linarith [Real.two_le_pi]) m (x := (2 * π) • ζ) (y := ζ)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
   have hpeetre := one_add_norm_sq_rpow_le_mul_sub (s - m) ξ ζ
   -- The bracket `⟨η⟩ ^ |s - m|` is at most `(1 + ‖η‖) ^ |s - m|`.
-  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| := by
-    calc (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ (t ^ 2) ^ (|s - m| / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg (ξ - ζ)]) (by positivity)
-      _ = t ^ |s - m| := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le]
-          norm_num
-          ring_nf
+  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| :=
+    one_add_norm_sq_rpow_le_one_add_norm_rpow _ (abs_nonneg _)
   have hk : t ^ |s - m| * (t ^ N)⁻¹ = t ^ (-((N : ℝ) - |s - m|)) := by
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
@@ -860,6 +868,47 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
 
 end Sobolev
 
+section Transport
+
+variable {V W V' W' : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] [NormedAddCommGroup V']
+  [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W'] [NormedSpace ℂ W']
+  [CompleteSpace W']
+
+/-- **Change of fibres for Sobolev extensions of quantizations.** Let `e₁ : V ≃L[ℂ] V'` and
+`e₂ : W ≃L[ℂ] W'`, and let `T : H^s(ℝⁿ; V') → H^r(ℝⁿ; W')` agree on Schwartz functions with the
+quantization of the conjugated symbol `e₂ a e₁⁻¹`. Then `e₂⁻¹ ∘ T ∘ e₁ : H^s(ℝⁿ; V) → H^r(ℝⁿ; W)`
+agrees on Schwartz functions with the quantization of `a`
+(`TauCeti.quantizeSchwartzValue_arrowCongr`). -/
+theorem toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply
+    (a : Symbol n V W m) (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') {r s : ℝ}
+    {T : H^{s}(CoordinateSpace n, V') →L[ℂ] H^{r}(CoordinateSpace n, W')}
+    (hT : ∀ (u : 𝓢(CoordinateSpace n, V')) (φ : 𝓢(CoordinateSpace n, ℂ)),
+      (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+        ∫ x, φ x • quantizeSchwartzValue
+          (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient u x)
+    (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)) :
+    ((BesselPotentialSpace.postcomp _ r 2 (e₂.symm : W' →L[ℂ] W) ∘L T ∘L
+        BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] V'))
+        (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+      ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
+  have hc : (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
+      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
+    funext fun p ↦ by simp
+  have hq (x : CoordinateSpace n) :
+      quantizeSchwartzValue
+          (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient
+          (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
+        e₂ (quantizeSchwartzValue a.coefficient u x) := by
+    rw [hc, quantizeSchwartzValue_arrowCongr]
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+    BesselPotentialSpace.toDistr_postcomp_apply, hT]
+  simp only [hq, ← map_smul, ContinuousLinearEquiv.integral_comp_comm,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+end Transport
+
 section FiniteDimensional
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
@@ -875,7 +924,7 @@ The norms of `V` and `W` need not come from inner products: isomorphisms `e₁ :
 `e₂ : W ≃L[ℂ] ℂ^l` induce isomorphisms of the Bessel-potential spaces
 (`BesselPotentialSpace.postcomp`), and the operator is `e₂⁻¹ ∘ Op(e₂ a e₁⁻¹) ∘ e₁` with the
 Hilbert-space operator `TauCeti.Symbol.quantizeSobolev`
-(`TauCeti.quantizeSchwartzValue_arrowCongr`). -/
+(`TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`). -/
 theorem exists_quantizeSobolev (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) (s : ℝ) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m}(CoordinateSpace n, W),
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
@@ -886,22 +935,8 @@ theorem exists_quantizeSobolev (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   let e₂ : W ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ W)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let Φ := (e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ
-  refine ⟨BesselPotentialSpace.postcomp _ _ 2 (e₂.symm : _ →L[ℂ] W) ∘L
-    (a.map Φ).quantizeSobolev (ha.map Φ) s ∘L BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] _),
-    fun u φ ↦ ?_⟩
-  have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp [Φ]
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (a.map Φ).coefficient (u.postcompCLM (e₁ : V →L[ℂ] _)) x =
-        e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
-    BesselPotentialSpace.toDistr_postcomp_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-  simp only [hq, ← map_smul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+  exact ⟨_, toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply a e₁ e₂
+    (toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply (ha.map _) s)⟩
 
 end FiniteDimensional
 

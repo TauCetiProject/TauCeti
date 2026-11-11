@@ -63,7 +63,7 @@ theorem derivedDefiningIdeal_eq_bot :
   let e := pointsMulEquiv (R := k) (A := K) n
   apply _root_.CommHopfAlgCat.derivedDefiningIdeal_eq_bot_of_commutator_eq_top (K := K)
   apply Subgroup.map_injective (f := e.toMonoidHom) e.injective
-  rw [Subgroup.map_commutator_eq_commutator e.surjective, hSL,
+  rw [map_commutator_of_surjective e.surjective, hSL,
     Subgroup.map_top_of_surjective e.toMonoidHom e.surjective]
 
 /-- Every homomorphism from `SLₙ` to a commutative affine group is trivial, in every

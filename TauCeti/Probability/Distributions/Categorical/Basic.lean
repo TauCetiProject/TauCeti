@@ -98,6 +98,24 @@ theorem categoricalMeasure_singleton (p : StdSimplex NNReal I) (i : I) :
   rw [categoricalMeasure_def, _root_.sum_apply]
   simp [Pi.single_apply]
 
+/-- Every probability measure on a finite type with measurable singletons is categorical. -/
+theorem _root_.MeasureTheory.Measure.exists_categoricalMeasure_eq
+    (μ : Measure I) [IsProbabilityMeasure μ] :
+    ∃ p : StdSimplex ℝ≥0 I, categoricalMeasure p = μ := by
+  classical
+  let p : StdSimplex ℝ≥0 I :=
+    { weights := Finsupp.equivFunOnFinite.symm fun i => (μ {i}).toNNReal
+      nonneg := fun _ => bot_le
+      total := by
+        rw [Finsupp.sum_fintype _ _ (by simp)]
+        simp only [Finsupp.coe_equivFunOnFinite_symm]
+        apply ENNReal.coe_injective
+        push_cast
+        simp only [ENNReal.coe_toNNReal (measure_ne_top μ _)]
+        rw [sum_measure_singleton, Finset.coe_univ, measure_univ] }
+  refine ⟨p, Measure.ext_of_singleton fun i => ?_⟩
+  simp [categoricalMeasure_singleton, p, ENNReal.coe_toNNReal]
+
 /-- The real mass of a category under its categorical law is its simplex weight. -/
 @[simp]
 theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
@@ -162,7 +180,7 @@ end Continuity
 section Aggregation
 
 variable [Fintype I] [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
-  [MeasurableSingletonClass I] [MeasurableSingletonClass J]
+  [MeasurableSingletonClass I]
 
 /-- Mapping a categorical law along a map of category types adds weights over its fibres. -/
 @[simp]
@@ -170,17 +188,15 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
     (categoricalMeasure p).map f = categoricalMeasure (p.map f) := by
   classical
   have hf : Measurable f := measurable_of_finite f
-  apply Measure.ext_of_singleton
-  intro j
-  rw [Measure.map_apply hf (MeasurableSet.singleton j),
-    categoricalMeasure_def, _root_.sum_apply, categoricalMeasure_singleton,
-    StdSimplex.weights_map_apply]
-  simp only [_root_.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
-    Set.indicator, Set.mem_preimage, Set.mem_singleton_iff, Pi.one_apply, smul_eq_mul, mul_ite,
-    mul_one, mul_zero]
-  rw [← Finset.sum_filter]
-  push_cast
-  rfl
+  rw [categoricalMeasure_def, categoricalMeasure_def,
+    Measure.map_finset_sum' (by simpa using hf.aemeasurable)]
+  simp only [StdSimplex.weights_map_apply]
+  simp_rw [Measure.map_smul _ hf.aemeasurable, Measure.map_dirac' hf,
+    ENNReal.ofNNReal_finsetSum, Finset.sum_smul]
+  rw [← Finset.sum_fiberwise Finset.univ f
+    (fun i => (p.weights i : ENNReal) • Measure.dirac (f i))]
+  refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i hi => ?_
+  rw [(Finset.mem_filter.1 hi).2]
 
 end Aggregation
 
@@ -261,18 +277,19 @@ theorem ae_mem_image_support_map_categoricalMeasure [MeasurableSingletonClass β
 
 open Classical in
 /-- Every positive-weight label has nonzero mass, even when several categories share it. -/
-theorem map_categoricalMeasure_singleton_ne_zero [MeasurableSingletonClass β]
+theorem map_categoricalMeasure_singleton_ne_zero
     (p : StdSimplex ℝ≥0 I) (f : I → β) {x : β} (hx : x ∈ p.weights.support.image f) :
     (categoricalMeasure p).map f {x} ≠ 0 := by
   classical
   obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hx
-  rw [Measure.map_apply (measurable_of_finite f) (measurableSet_singleton _)]
   apply ne_of_gt
   calc
     0 < categoricalMeasure p {i} := by
       simpa only [categoricalMeasure_singleton, ENNReal.coe_pos] using
         (pos_iff_ne_zero.mpr (Finsupp.mem_support_iff.mp hi))
     _ ≤ categoricalMeasure p (f ⁻¹' {f i}) := measure_mono (by simp)
+    _ ≤ (categoricalMeasure p).map f {f i} :=
+      Measure.le_map_apply (measurable_of_finite f).aemeasurable _
 
 /-- The real mass below a cutoff after assigning real labels to categorical outcomes is the sum
 of the weights of all categories whose labels lie below that cutoff. Equal labels are therefore

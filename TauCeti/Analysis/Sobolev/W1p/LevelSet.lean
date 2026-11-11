@@ -37,7 +37,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set TopologicalSpace
+open Filter _root_.MeasureTheory Set TopologicalSpace
 open scoped ENNReal InnerProductSpace Gradient Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
