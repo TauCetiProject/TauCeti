@@ -34,6 +34,8 @@ open Function
 
 namespace AlternatingMap
 
+section Ring
+
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N]
 
@@ -89,6 +91,13 @@ theorem map_succ_sub_zero {n : ℕ} (f : M [⋀^Fin n]→ₗ[R] N) (w : Fin (n +
     Fin.val_zero, pow_zero, one_smul]
   exact sub_eq_add_neg _ _
 
+end Ring
+
+section Semiring
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
 /-- If the interior product of `f` with `w` vanishes, then `f` vanishes whenever one of its
 arguments is `w`. -/
 theorem map_update_eq_zero_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {w : M}
@@ -101,10 +110,9 @@ theorem map_update_eq_zero_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1
     rwa [← Fin.cons_self_tail (update u 0 w), update_self, Fin.tail_update_zero]
   rcases eq_or_ne i 0 with rfl | hi
   · exact h₀ v
-  -- Otherwise swap the arguments `0` and `i`, which only changes the sign.
-  rw [← neg_eq_zero, ← f.map_swap (update v i w) hi.symm, update_comp_equiv,
-    Equiv.symm_swap, Equiv.swap_apply_right]
-  exact h₀ _
+  -- Otherwise swapping the arguments `0` and `i` moves `w` to the first argument.
+  have h := f.map_swap_add (update v i w) hi.symm
+  rwa [update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_right, h₀, zero_add] at h
 
 /-- If the interior product of `f` with `w` vanishes, then adding multiples of `w` to the
 arguments of `f` does not change its value. -/
@@ -114,9 +122,8 @@ theorem map_add_smul_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1)]→�
   classical
   -- Expand multilinearly: every term with some argument `c i • w` vanishes.
   have h := f.toMultilinearMap.map_add_univ v fun i ↦ c i • w
-  simp only [coe_multilinearMap] at h
-  rw [show (fun i ↦ v i + c i • w) = v + fun i ↦ c i • w from rfl, h,
-    Finset.sum_eq_single Finset.univ]
+  simp only [coe_multilinearMap, Pi.add_def] at h
+  rw [h, Finset.sum_eq_single Finset.univ]
   · simp
   · intro s _ hs
     obtain ⟨i, hi⟩ : ∃ i, i ∉ s := by
@@ -127,5 +134,7 @@ theorem map_add_smul_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1)]→�
       rw [eq_comm, update_eq_self_iff, Finset.piecewise_eq_of_notMem _ _ _ hi]
     rw [hu, f.map_update_smul, map_update_eq_zero_of_curryLeft_eq_zero hw, smul_zero]
   · exact fun h ↦ absurd (Finset.mem_univ _) h
+
+end Semiring
 
 end AlternatingMap

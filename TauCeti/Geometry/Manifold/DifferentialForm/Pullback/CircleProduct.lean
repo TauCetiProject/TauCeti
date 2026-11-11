@@ -75,8 +75,8 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 variable {E H Y F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace Y] [ChartedSpace H Y]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {p : ℝ} [Fact (0 < p)]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace Y] [ChartedSpace H Y] {k : ℕ} {p : ℝ}
+  [Fact (0 < p)]
 
 /-! ### Horizontality -/
 
@@ -87,6 +87,7 @@ private theorem prodVectorField_timeVectorField_apply (x : AddCircle p × Y) :
   Prod.ext ((Manifold.prodVectorField_fst _ _ x).trans (AddCircle.timeVectorField_apply p x.1))
     (Manifold.prodVectorField_snd _ _ x)
 
+variable [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] in
 /-- **Horizontality.** If the contraction of a form `α` on `AddCircle p × Y` with the unit field
 `∂ₛ` of the circle factor vanishes at `x`, then the value of `α` at `x` only depends on the images
 of the tangent vectors under the derivative of the projection to `Y`. -/
@@ -119,6 +120,8 @@ theorem RoughForm.apply_eq_apply_of_interior_eq_zero
   exact (AlternatingMap.map_add_smul_of_curryLeft_eq_zero hT _ _).symm
 
 /-! ### Invariance under the rotations of the circle factor -/
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 variable (Y p) in
 /-- The rotation of the circle factor of `AddCircle p × Y` by `[u]`, as an equivalence. -/
@@ -170,15 +173,6 @@ private theorem eulerianField_rotation (t : ℝ) :
   rw [h.mfderiv]
   exact hc.trans (prodVectorField_timeVectorField_apply _).symm
 
-/-- The rotations of the circle factor are the identity on tangent vectors. -/
-private theorem mfderiv_prodMap_add_right (c : AddCircle p) (x : AddCircle p × Y)
-    (w : TangentSpace (𝓘(ℝ).prod I) x) :
-    mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Prod.map (· + c) id) x w = w := by
-  rw [((mdifferentiableAt_add_right (I := 𝓘(ℝ)) (a := c) (b := x.1)).hasMFDerivAt.prodMap
-    (hasMFDerivAt_id (I := I) x.2)).mfderiv, AddCircle.mfderiv_add_right, mfderiv_id]
-  -- `(id ×ₗ id) w = (w.1, w.2)`, which is `w` by the eta rule for pairs.
-  rfl
-
 /-- A rotation-invariant form takes the same values on the same tangent vectors at all points of
 a circle `AddCircle p × {y}`. -/
 private theorem apply_eq_apply_of_forall_mpullback_eq
@@ -192,7 +186,7 @@ private theorem apply_eq_apply_of_forall_mpullback_eq
   -- The rotation by `c - s` moves `(s, y)` to `(c, y)` and is the identity on tangent vectors.
   have hpt : Prod.map (· + (c - s)) id (s, y) = (c, y) := by
     refine Prod.ext ?_ ?_ <;> simp
-  simp only [mfderiv_prodMap_add_right]
+  simp only [AddCircle.mfderiv_prodMap_add_right]
   rw [hpt]
 
 section Rotation
