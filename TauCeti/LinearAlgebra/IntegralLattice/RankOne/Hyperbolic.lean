@@ -29,33 +29,33 @@ public section
 namespace TauCeti.IntegralLattice
 
 /-- The rational map `x ↦ (x, dx)` embeds `⟨2d⟩` in the hyperbolic plane. -/
-def rankOneToHyperbolic (d : ℤ) : ℚ →ₗ[ℚ] (Fin 2 → ℚ) :=
+def rankOneToHyperbolicPlane (d : ℤ) : ℚ →ₗ[ℚ] (Fin 2 → ℚ) :=
   LinearMap.toSpanSingleton ℚ (Fin 2 → ℚ) ![1, (d : ℚ)]
 
 /-- The coordinates of the rank-one embedding. -/
 @[simp]
-theorem rankOneToHyperbolic_apply (d : ℤ) (x : ℚ) :
-    rankOneToHyperbolic d x = ![x, (d : ℚ) * x] := by
+theorem rankOneToHyperbolicPlane_apply (d : ℤ) (x : ℚ) :
+    rankOneToHyperbolicPlane d x = ![x, (d : ℚ) * x] := by
   ext i
-  fin_cases i <;> simp [rankOneToHyperbolic, mul_comm]
+  fin_cases i <;> simp [rankOneToHyperbolicPlane, mul_comm]
 
-/-- The first coordinate is a left inverse to the embedding. -/
-theorem rankOneToHyperbolic_injective (d : ℤ) :
-    Function.Injective (rankOneToHyperbolic d) := by
+/-- The rank-one embedding `x ↦ (x, dx)` is injective. -/
+theorem rankOneToHyperbolicPlane_injective (d : ℤ) :
+    Function.Injective (rankOneToHyperbolicPlane d) := by
   intro x y h
   simpa using congrFun h 0
 
 /-- The rank-one embedding preserves the bilinear form, including when `d = 0`. -/
-theorem form_rankOneToHyperbolic (d : ℤ) (x y : ℚ) :
-    hyperbolicPlane.form (rankOneToHyperbolic d x) (rankOneToHyperbolic d y) =
+theorem form_rankOneToHyperbolicPlane (d : ℤ) (x y : ℚ) :
+    hyperbolicPlane.form (rankOneToHyperbolicPlane d x) (rankOneToHyperbolicPlane d y) =
       (rankOne (2 * d)).form x y := by
-  simp only [rankOneToHyperbolic_apply, hyperbolicPlane_form_apply, rankOne_form_apply,
+  simp only [rankOneToHyperbolicPlane_apply, hyperbolicPlane_form_apply, rankOne_form_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Int.cast_mul, Int.cast_ofNat]
   ring
 
 /-- The preimage of the hyperbolic-plane carrier is exactly the rank-one carrier. -/
-theorem rankOneToHyperbolic_mem_carrier_iff (d : ℤ) (x : ℚ) :
-    rankOneToHyperbolic d x ∈ hyperbolicPlane.carrier ↔ x ∈ (rankOne (2 * d)).carrier := by
+theorem rankOneToHyperbolicPlane_mem_hyperbolicPlane_carrier_iff (d : ℤ) (x : ℚ) :
+    rankOneToHyperbolicPlane d x ∈ hyperbolicPlane.carrier ↔ x ∈ (rankOne (2 * d)).carrier := by
   rw [mem_hyperbolicPlane_carrier_iff, mem_rankOne_carrier_iff]
   constructor
   · intro h
@@ -67,62 +67,64 @@ theorem rankOneToHyperbolic_mem_carrier_iff (d : ℤ) (x : ℚ) :
 
 /-- Every even rank-one lattice embeds primitively in the hyperbolic plane. -/
 @[simp]
-theorem isPrimitiveEmbedding_rankOneToHyperbolic (d : ℤ) :
-    IsPrimitiveEmbedding (rankOne (2 * d)) hyperbolicPlane (rankOneToHyperbolic d) where
-  injective := rankOneToHyperbolic_injective d
-  map_form := form_rankOneToHyperbolic d
+theorem isPrimitiveEmbedding_rankOneToHyperbolicPlane (d : ℤ) :
+    IsPrimitiveEmbedding (rankOne (2 * d)) hyperbolicPlane (rankOneToHyperbolicPlane d) where
+  injective := rankOneToHyperbolicPlane_injective d
+  map_form := form_rankOneToHyperbolicPlane d
   map_carrier := by
     rintro _ ⟨x, hx, rfl⟩
-    exact (rankOneToHyperbolic_mem_carrier_iff d x).mpr hx
+    exact (rankOneToHyperbolicPlane_mem_hyperbolicPlane_carrier_iff d x).mpr hx
   saturated y hy k hk hky := by
     obtain ⟨x, _, hx⟩ := hky
     have hx₀ : x = (k : ℚ) * y 0 := by
       simpa [zsmul_eq_mul] using congrFun hx 0
     have hy₁ : y 1 = (d : ℚ) * y 0 := by
       have h := congrFun hx 1
-      simp only [LinearMap.restrictScalars_apply, rankOneToHyperbolic_apply,
+      simp only [LinearMap.restrictScalars_apply, rankOneToHyperbolicPlane_apply,
         Matrix.cons_val_one, Matrix.cons_val_zero, Pi.smul_apply, zsmul_eq_mul, hx₀] at h
       have hk' : (k : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hk
       apply mul_left_cancel₀ hk'
       linear_combination -h
-    have hfy : rankOneToHyperbolic d (y 0) = y := by
+    have hfy : rankOneToHyperbolicPlane d (y 0) = y := by
       ext i
       fin_cases i <;> simp [hy₁]
     refine ⟨y 0, ?_, hfy⟩
-    exact (rankOneToHyperbolic_mem_carrier_iff d (y 0)).mp (hfy.symm ▸ hy)
+    exact (rankOneToHyperbolicPlane_mem_hyperbolicPlane_carrier_iff d (y 0)).mp (hfy.symm ▸ hy)
 
 /-- The orthogonal complement of the rational line `(1,d)` is the line `(1,-d)`. -/
-theorem orthogonal_range_rankOneToHyperbolic (d : ℤ) :
-    hyperbolicPlane.form.orthogonal (LinearMap.range (rankOneToHyperbolic d)) =
-      LinearMap.range (rankOneToHyperbolic (-d)) := by
+theorem orthogonal_range_rankOneToHyperbolicPlane (d : ℤ) :
+    hyperbolicPlane.form.orthogonal (LinearMap.range (rankOneToHyperbolicPlane d)) =
+      LinearMap.range (rankOneToHyperbolicPlane (-d)) := by
   ext y
   rw [LinearMap.BilinForm.mem_orthogonal_iff, LinearMap.mem_range]
   constructor
   · intro h
-    have h₁ := h _ (LinearMap.mem_range_self (rankOneToHyperbolic d) 1)
+    have h₁ := h _ (LinearMap.mem_range_self (rankOneToHyperbolicPlane d) 1)
     have hy : y 1 = -(d : ℚ) * y 0 := by
-      simp only [rankOneToHyperbolic_apply, hyperbolicPlane_form_apply,
+      simp only [rankOneToHyperbolicPlane_apply, hyperbolicPlane_form_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, mul_one, one_mul] at h₁
       linear_combination h₁
     refine ⟨y 0, ?_⟩
     ext i
     fin_cases i <;> simp [hy]
   · rintro ⟨x, rfl⟩ z ⟨a, rfl⟩
-    simp [hyperbolicPlane_form_apply]
+    simp only [rankOneToHyperbolicPlane_apply, hyperbolicPlane_form_apply,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Int.cast_neg]
     ring
 
 /-- The integral orthogonal complement is exactly the image of `⟨-2d⟩` under the same
 construction with parameter `-d`. This includes the equality of the integral carriers. -/
-theorem mem_orthogonal_rankOneToHyperbolic_iff (d : ℤ) (y : Fin 2 → ℚ) :
+theorem mem_hyperbolicPlane_carrier_and_mem_orthogonal_range_rankOneToHyperbolicPlane_iff
+    (d : ℤ) (y : Fin 2 → ℚ) :
     y ∈ hyperbolicPlane.carrier ∧
-        y ∈ hyperbolicPlane.form.orthogonal (LinearMap.range (rankOneToHyperbolic d)) ↔
-      y ∈ (rankOne (2 * -d)).carrier.map ((rankOneToHyperbolic (-d)).restrictScalars ℤ) := by
-  rw [orthogonal_range_rankOneToHyperbolic]
+        y ∈ hyperbolicPlane.form.orthogonal (LinearMap.range (rankOneToHyperbolicPlane d)) ↔
+      y ∈ (rankOne (2 * -d)).carrier.map ((rankOneToHyperbolicPlane (-d)).restrictScalars ℤ) := by
+  rw [orthogonal_range_rankOneToHyperbolicPlane]
   constructor
   · rintro ⟨hy, x, rfl⟩
-    exact ⟨x, (rankOneToHyperbolic_mem_carrier_iff (-d) x).mp hy, rfl⟩
+    exact ⟨x, (rankOneToHyperbolicPlane_mem_hyperbolicPlane_carrier_iff (-d) x).mp hy, rfl⟩
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨(rankOneToHyperbolic_mem_carrier_iff (-d) x).mpr hx,
+    exact ⟨(rankOneToHyperbolicPlane_mem_hyperbolicPlane_carrier_iff (-d) x).mpr hx,
       LinearMap.mem_range_self _ x⟩
 
 end TauCeti.IntegralLattice

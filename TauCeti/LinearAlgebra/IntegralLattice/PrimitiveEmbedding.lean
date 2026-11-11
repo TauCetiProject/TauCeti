@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
@@ -48,17 +48,26 @@ structure IsPrimitiveEmbedding (L : IntegralLattice V) (M : IntegralLattice W)
     k • y ∈ L.carrier.map (f.restrictScalars ℤ) →
       y ∈ L.carrier.map (f.restrictScalars ℤ)
 
+/-- Every integral-lattice isometry is a primitive embedding. -/
+@[simp]
+theorem Isometry.isPrimitiveEmbedding (e : Isometry L M) :
+    IsPrimitiveEmbedding L M (e : V ≃ₗ[ℚ] W).toLinearMap where
+  injective := e.injective
+  map_form := e.map_app
+  map_carrier := e.map_carrier.le
+  saturated y hy _ _ _ := by
+    rwa [← LinearEquiv.restrictScalars_toLinearMap, e.map_carrier]
+
 namespace IsPrimitiveEmbedding
 
 variable {f : V →ₗ[ℚ] W} {g : W →ₗ[ℚ] X}
 
 /-- The identity is a primitive embedding, including for degenerate lattices. -/
 @[simp]
-theorem id (L : IntegralLattice V) : IsPrimitiveEmbedding L L LinearMap.id where
-  injective := Function.injective_id
-  map_form _ _ := rfl
-  map_carrier := by simp
-  saturated y hy _ _ _ := by simpa using hy
+theorem id (L : IntegralLattice V) : IsPrimitiveEmbedding L L LinearMap.id := by
+  convert (Isometry.refl L).isPrimitiveEmbedding using 1
+  ext x
+  simp
 
 /-- Composites of primitive embeddings are primitive. -/
 theorem comp (hg : IsPrimitiveEmbedding M N g) (hf : IsPrimitiveEmbedding L M f) :
@@ -88,6 +97,26 @@ theorem isTorsionFree_quotient (hf : IsPrimitiveEmbedding L M f) :
 
 end IsPrimitiveEmbedding
 
+/-- Postcomposition with a lattice isometry preserves and reflects primitivity. -/
+@[simp]
+theorem Isometry.isPrimitiveEmbedding_comp_iff (e : Isometry M N) (f : V →ₗ[ℚ] W) :
+    IsPrimitiveEmbedding L N ((e : W ≃ₗ[ℚ] X).toLinearMap.comp f) ↔
+      IsPrimitiveEmbedding L M f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ e.isPrimitiveEmbedding.comp h⟩
+  convert e.symm.isPrimitiveEmbedding.comp h using 1
+  ext x
+  simp
+
+/-- Precomposition with a lattice isometry preserves and reflects primitivity. -/
+@[simp]
+theorem Isometry.isPrimitiveEmbedding_comp_right_iff (e : Isometry L M) (g : W →ₗ[ℚ] X) :
+    IsPrimitiveEmbedding L N (g.comp (e : V ≃ₗ[ℚ] W).toLinearMap) ↔
+      IsPrimitiveEmbedding M N g := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp e.isPrimitiveEmbedding⟩
+  convert h.comp e.symm.isPrimitiveEmbedding using 1
+  ext x
+  simp
+
 /-- For an injective form-preserving map carrying one lattice into another, primitivity is
 exactly torsion-freeness of its integral cokernel. -/
 theorem isPrimitiveEmbedding_iff_isTorsionFree_quotient (f : V →ₗ[ℚ] W)
@@ -96,14 +125,10 @@ theorem isPrimitiveEmbedding_iff_isTorsionFree_quotient (f : V →ₗ[ℚ] W)
     IsPrimitiveEmbedding L M f ↔ Module.IsTorsionFree ℤ
       (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
   refine ⟨fun hf ↦ hf.isTorsionFree_quotient, fun h ↦ ⟨hi, hB, hL, ?_⟩⟩
-  let S := (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype
-  let : Module.IsTorsionFree ℤ (M ⧸ S) := h
+  have := h
   intro y hy k hk hky
-  have hz : k • S.mkQ ⟨y, hy⟩ = 0 := by
-    rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact hky
-  have hz' := (smul_eq_zero.mp hz).resolve_left hk
-  exact (Submodule.Quotient.mk_eq_zero S).mp (by simpa only [Submodule.mkQ_apply] using hz')
+  exact Submodule.mem_of_smul_mem_of_isTorsionFree_quotient
+    ((L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) (z := ⟨y, hy⟩) hk hky
 
 /-- The integral image of a form-preserving injection is saturated exactly when it has an
 integral-module complement. This does not assert an orthogonal splitting. -/
