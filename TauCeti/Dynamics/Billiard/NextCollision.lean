@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.Analysis.InnerProductSpace.TwoDim
 import Mathlib.Algebra.Order.ToIntervalMod
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -102,18 +104,14 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 instance : CoeFun (StrictConvexBilliardTable o) fun _ ↦ ℝ → E :=
   ⟨toFun⟩
 
-theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s := by
-  by_contra h
-  have := χ.norm_deriv s
-  rw [deriv_zero_of_not_differentiableAt h, norm_zero] at this
-  exact zero_ne_one this
+theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s :=
+  differentiableAt_of_deriv_ne_zero (norm_ne_zero_iff.1 (by rw [χ.norm_deriv s]; exact one_ne_zero))
 
 theorem continuous : Continuous χ :=
   continuous_iff_continuousAt.2 fun s ↦ (χ.differentiableAt s).continuousAt
 
-theorem deriv_add_period (s : ℝ) : deriv χ (s + χ.period) = deriv χ s := by
-  rw [← deriv_comp_add_const]
-  exact congrArg (deriv · s) (funext χ.periodic)
+theorem deriv_add_period (s : ℝ) : deriv χ (s + χ.period) = deriv χ s :=
+  χ.periodic.deriv s
 
 /-- The parametrization is injective on every half-open interval of length `L`. -/
 theorem injOn_Ico (s : ℝ) : InjOn χ (Ico s (s + χ.period)) := by
@@ -158,13 +156,6 @@ theorem norm_outgoingDir {s v : ℝ} (hv : v ∈ Icc (-1) 1) : ‖χ.outgoingDir
   have : ‖χ.outgoingDir s v‖ ^ 2 = 1 ^ 2 := by linarith
   exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 this
 
-/-- In the plane, a vector `x` with `ω(a, x) = 0` is the multiple `⟪a, x⟫ / ‖a‖ ^ 2` of `a`. -/
-private theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
-    ‖a‖ ^ 2 • x = ⟪a, x⟫ • a := by
-  refine ext_inner_right ℝ fun y ↦ ?_
-  rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
-    h, zero_mul, add_zero]
-
 /-- A collision parameter: a point `χ(t)` on the line through `χ(s)` in the direction `u` is
 `χ(s) + ‖χ(t) - χ(s)‖ u`. -/
 theorem sub_eq_norm_smul_outgoingDir_of_areaForm_eq_zero {s v t : ℝ} (hv : v ∈ Ioo (-1) 1)
@@ -172,7 +163,7 @@ theorem sub_eq_norm_smul_outgoingDir_of_areaForm_eq_zero {s v t : ℝ} (hv : v �
     χ t - χ s = ‖χ t - χ s‖ • χ.outgoingDir s v := by
   set u := χ.outgoingDir s v
   have hu : ‖u‖ = 1 := χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩
-  have hx := sq_norm_smul_eq_of_areaForm_eq_zero h
+  have hx := o.sq_norm_smul_eq_of_areaForm_eq_zero h
   rw [hu, one_pow, one_smul] at hx
   by_cases h0 : χ t = χ s
   · simp [h0]
@@ -298,15 +289,19 @@ next state. -/
 def nextTangential (s v : ℝ) : ℝ :=
   ⟪χ.outgoingDir s v, deriv χ (χ.nextParam s v)⟫
 
+theorem nextTangential_def (s v : ℝ) :
+    χ.nextTangential s v = ⟪χ.outgoingDir s v, deriv χ (χ.nextParam s v)⟫ :=
+  (rfl)
+
 /-- The next-collision map `(s, v) ↦ (t, w)` on the strip `ℝ × (-1, 1)`, defined by the straight
 chord and specular reflection. Its values outside the strip carry no meaning. -/
-@[expose] def nextCollision (x : ℝ × ℝ) : ℝ × ℝ :=
+def nextCollision (x : ℝ × ℝ) : ℝ × ℝ :=
   (χ.nextParam x.1 x.2, χ.nextTangential x.1 x.2)
 
 @[simp]
 theorem nextCollision_apply (x : ℝ × ℝ) :
     χ.nextCollision x = (χ.nextParam x.1 x.2, χ.nextTangential x.1 x.2) :=
-  rfl
+  (rfl)
 
 /-- At the next collision point the velocity points out of the table:
 `ω(χ'(t), u) < 0`. -/
@@ -326,7 +321,7 @@ theorem areaForm_deriv_nextParam_outgoingDir {s v : ℝ} (hv : v ∈ Ioo (-1) 1)
   have h := o.inner_sq_add_areaForm_sq T (χ.outgoingDir s v)
   rw [χ.norm_deriv _, χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩, real_inner_comm] at h
   have key : √(1 - χ.nextTangential s v ^ 2) = -o.areaForm T (χ.outgoingDir s v) :=
-    (Real.sqrt_eq_iff_mul_self_eq_of_pos (neg_pos.2 hneg)).2 (by rw [nextTangential]; nlinarith)
+    (Real.sqrt_eq_iff_mul_self_eq_of_pos (neg_pos.2 hneg)).2 (by rw [nextTangential_def]; nlinarith)
   rw [key, neg_neg]
 
 /-- The chord is never tangent to the boundary at its far end: the next tangential component lies
@@ -338,7 +333,7 @@ theorem nextTangential_mem_Ioo {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
   have h := o.inner_sq_add_areaForm_sq T (χ.outgoingDir s v)
   rw [χ.norm_deriv _, χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩, real_inner_comm] at h
   have hw : χ.nextTangential s v ^ 2 < 1 := by
-    rw [nextTangential]; nlinarith
+    rw [nextTangential_def]; nlinarith
   constructor <;> nlinarith
 
 /-- The law of specular reflection: the outgoing velocity of the next state is the mirror image of
@@ -379,7 +374,7 @@ theorem nextParam_add_period {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
 
 theorem nextTangential_add_period {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     χ.nextTangential (s + χ.period) v = χ.nextTangential s v := by
-  rw [nextTangential, nextTangential, χ.nextParam_add_period hv, χ.deriv_add_period,
+  rw [nextTangential_def, nextTangential_def, χ.nextParam_add_period hv, χ.deriv_add_period,
     χ.outgoingDir_add_period]
 
 /-- The next-collision map commutes with the deck translation `τ(s, v) = (s + L, v)`. -/
