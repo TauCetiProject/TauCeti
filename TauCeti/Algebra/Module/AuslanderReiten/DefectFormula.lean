@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
 public import TauCeti.Algebra.Module.Injective.Hom
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Auslander's defect formula
@@ -121,21 +122,6 @@ noncomputable def homCokernelMap (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] 
     rintro _ ⟨F, rfl⟩
     exact ⟨φ.comp F, rfl⟩)
 
-/-- `Hom_A(-, M)` is left exact on a cokernel presentation `P₁ → P₀ → X → 0`. -/
-private theorem exact_lcomp_lcomp {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X} (hfp : Exact f p)
-    (hp : Surjective p) (M : Type*) [AddCommGroup M] [Module A M] [Module k M]
-    [IsScalarTower k A M] : Exact (p.lcomp k M) (f.lcomp k M) := by
-  intro h
-  refine ⟨fun hh ↦ ?_, ?_⟩
-  · refine ⟨((range f).liftQ h ?_).comp (hfp.linearEquivOfSurjective hp).symm.toLinearMap, ?_⟩
-    · rw [range_le_ker_iff]
-      exact hh
-    · ext x
-      simp
-  · rintro ⟨g, rfl⟩
-    ext x
-    simp [hfp.apply_apply_eq_zero]
-
 /-- `Hom_A(P, -)` is left exact. -/
 private theorem exact_compRight_compRight {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃} (hφ : Injective φ)
     (hφψ : Exact φ ψ) (P : Type*) [AddCommGroup P] [Module A P] :
@@ -166,13 +152,13 @@ noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P�
   let δ := SnakeLemma.δ' (f.lcomp k M₁) (f.lcomp k M₂) (f.lcomp k M₃)
     (φ.compRight k) (ψ.compRight k) (exact_compRight_compRight hφ hφψ P₀)
     (φ.compRight k) (ψ.compRight k) (exact_compRight_compRight hφ hφψ P₁) rfl rfl
-    (p.lcomp k M₃) (exact_lcomp_lcomp hfp hp M₃) (range (f.lcomp k M₁)).mkQ
+    (p.lcomp k M₃) (hfp.lcomp_of_surjective (T := k) M₃ hp) (range (f.lcomp k M₁)).mkQ
     (exact_map_mkQ_range _)
     (fun g ↦ Module.projective_lifting_property ψ g hψ)
     (fun _ _ hgh ↦ LinearMap.ext fun x ↦ hφ (LinearMap.congr_fun hgh x))
   have h₁ : Exact (ψ.compRight k : (X →ₗ[A] M₂) →ₗ[k] (X →ₗ[A] M₃)) δ :=
     SnakeLemma.exact_δ'_right _ _ _ _ _ _ _ _ _ _ _ (p.lcomp k M₂)
-      (exact_lcomp_lcomp hfp hp M₂) _ _ _ _ _ _ _ rfl
+      (hfp.lcomp_of_surjective (T := k) M₂ hp) _ _ _ _ _ _ _ rfl
       (lcomp_injective_of_surjective p hp)
   have h₂ : Exact δ (homCokernelMap k f φ) :=
     SnakeLemma.exact_δ'_left _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (range (f.lcomp k M₂)).mkQ
