@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.Algebra.Group.Subgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Positive
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortLong
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortPair
@@ -41,21 +41,6 @@ namespace TauCeti.DynkinType
 
 open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 open scoped commutatorElement
-
-/-- The positive roots of the rational `G₂` system are the first six entries of the native
-root table, just as for the integral datum. -/
-theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
-    k ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ (k : ℕ) < 6 := by
-  rw [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
-  -- The uniform integral base is transported to the native G₂ datum by its assembly equation.
-  have hb := simplyConnectedBase_G2 ht
-  have h : ∀ i : Fin 12, 0 < g2SimplyConnectedBase.height i ↔ (i : ℕ) < 6 := by
-    intro i
-    simpa only [mem_posRoots, RootPairing.Base.isPos_iff] using mem_posRoots_g2_iff i
-  convert h k using 2
-  congr 1
-  · exact simplyConnectedRootDatum_G2 ht
-  · exact heq_of_eqRec_eq _ hb
 
 noncomputable section
 
