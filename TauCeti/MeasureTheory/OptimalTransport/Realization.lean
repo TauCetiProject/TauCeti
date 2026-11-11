@@ -167,18 +167,21 @@ theorem exists_measurePreserving_map_graphPlan_eq (hπ : IsCoupling π μ ν)
   have hm : Measurable (Prod.map q (id : Y → Y)) := hq.prodMap measurable_id
   rw [Measure.map_apply hm (hs.prod ht), Measure.map_apply hm (hs.prod ht)]
   simp only [Set.preimage_prod_map_prod, Set.preimage_id]
-  have hu : (q ⁻¹' s) ×ˢ t = ⋃ a : {a : κ // a.1 ⊆ s}, (q ⁻¹' a.1.1) ×ˢ t := by
+  -- Restricting to the strip `univ ×ˢ t` and observing `q`, the two plans agree on measurable
+  -- atoms of `ι` by `hcell`, hence on every measurable set.
+  have hqf : Measurable (q ∘ Prod.fst : X × Y → ι) := hq.comp measurable_fst
+  have hrect (ρ : Measure (X × Y)) {u : Set ι} (hu : MeasurableSet u) :
+      (ρ.restrict (univ ×ˢ t)).map (q ∘ Prod.fst) u = ρ ((q ⁻¹' u) ×ˢ t) := by
+    rw [Measure.map_apply hqf hu, Measure.restrict_apply (hqf hu)]
+    congr 1
     ext z
-    refine ⟨fun ⟨hz, hzt⟩ ↦ mem_iUnion.2 ⟨⟨⟨measurableAtom (q z.1), q z.1, rfl⟩,
-      measurableAtom_subset hs hz⟩, mem_measurableAtom_self _, hzt⟩, fun hz ↦ ?_⟩
-    obtain ⟨a, haq, hzt⟩ := mem_iUnion.1 hz
-    exact ⟨a.2 haq, hzt⟩
-  have hd : Pairwise (Disjoint on fun a : {a : κ // a.1 ⊆ s} ↦ (q ⁻¹' a.1.1) ×ˢ t) := by
-    intro a b hab
-    exact disjoint_prod.mpr <| Or.inl <| hκd fun h ↦ hab (Subtype.ext h)
-  have hmcell (a : {a : κ // a.1 ⊆ s}) : MeasurableSet ((q ⁻¹' a.1.1) ×ˢ t) :=
-    (hκm a.1).prod ht
-  rw [hu, measure_iUnion hd hmcell, measure_iUnion hd hmcell]
-  exact tsum_congr fun a ↦ hcell a.1 t ht
+    simp [and_comm]
+  have hext : ((graphPlan T μ).restrict (univ ×ˢ t)).map (q ∘ Prod.fst) =
+      (π.restrict (univ ×ˢ t)).map (q ∘ Prod.fst) :=
+    ext_of_measurableAtoms fun x ↦ by
+      rw [hrect _ (.measurableAtom_of_countable x), hrect _ (.measurableAtom_of_countable x)]
+      exact hcell ⟨measurableAtom x, x, rfl⟩ t ht
+  have h := DFunLike.congr_fun hext s
+  rwa [hrect _ hs, hrect _ hs] at h
 
 end TauCeti.IsCoupling
