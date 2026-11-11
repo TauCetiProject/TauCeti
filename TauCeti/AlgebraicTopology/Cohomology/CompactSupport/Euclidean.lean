@@ -59,15 +59,11 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] {R : C}
   {k : Type v} [Ring k] [Linear k C] {M : C}
   {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-private lemma singleton_le_starHull (y : E) (K : Compacts (TopCat.of E)) :
-    ({y} : Compacts (TopCat.of E)) ≤ Compacts.starHull (E := E) ℝ y K :=
-  Compacts.singleton_le_iff.2 (Compacts.mem_starHull_self (E := E) ℝ y K)
-
 private lemma isIso_singularCohomologyMap_singleton_starHull (y : E)
     (K : Compacts (TopCat.of E)) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-        (mapsTo_id_compl_compacts (singleton_le_starHull y K))) n) :=
+        (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y K))) n) :=
   TauCeti.isIso_singularCohomologyMap_compl_of_starConvex R k M
     (Compacts.starConvex_starHull (E := E) ℝ y K) (Compacts.mem_starHull_self (E := E) ℝ y K)
     (Compacts.starHull (E := E) ℝ y K).isCompact.isBounded n
@@ -89,7 +85,7 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
     refine (injective_iff_map_eq_zero _).1
       ((ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
         (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-          (mapsTo_id_compl_compacts (singleton_le_starHull y L))) n)).1) z ?_
+          (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).1) z ?_
     rw [← singularCohomologyMap_ofSubsetMap_id_trans hL (Compacts.le_starHull (E := E) ℝ y L),
       ConcreteCategory.comp_apply, hzL, map_zero]
   · obtain ⟨L, -, w, rfl⟩ := exists_compactSupportCohomologyι_eq x {y}
@@ -97,12 +93,12 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
       (M := M) y L n
     obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
       (R := R) (k := k) (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-        (mapsTo_id_compl_compacts (singleton_le_starHull y L))) n)).2
+        (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).2
       (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
         (mapsTo_id_compl_compacts (Compacts.le_starHull (E := E) ℝ y L))) n w)
     refine ⟨z, ?_⟩
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n
-      (singleton_le_starHull y L), hz,
+      (Compacts.singleton_le_starHull (E := E) ℝ y L), hz,
       singularCohomologyMap_comp_compactSupportCohomologyι_apply n
         (Compacts.le_starHull (E := E) ℝ y L)]
 

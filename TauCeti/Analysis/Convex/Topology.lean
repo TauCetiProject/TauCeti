@@ -135,6 +135,9 @@ theorem mem_starHull_self : y ∈ K.starHull 𝕜 y :=
 theorem le_starHull : K ≤ K.starHull 𝕜 y :=
   (subset_insert y _).trans (insert_subset_starHull 𝕜 y K)
 
+theorem singleton_le_starHull : {y} ≤ K.starHull 𝕜 y :=
+  singleton_le_iff.2 (mem_starHull_self 𝕜 y K)
+
 theorem starConvex_starHull : StarConvex 𝕜 y (K.starHull 𝕜 y : Set E) :=
   TauCeti.starConvex_convexJoin_singleton_left y _
 
