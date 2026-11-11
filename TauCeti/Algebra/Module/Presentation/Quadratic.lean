@@ -7,7 +7,10 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RingTheory.FittingIdeal.Determinant
+public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
+
+import TauCeti.Algebra.Module.Projective.Schanuel
 
 /-!
 # Quadratic presentations
@@ -46,6 +49,8 @@ ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentati
   free module of positive finite rank with zero relation matrix.
 * `TauCeti.QuadraticPresentation.map`, `TauCeti.QuadraticPresentation.baseChange`: transport
   along a linear equivalence and base change along an algebra `R → S`.
+* `TauCeti.QuadraticPresentation.extension`: the presentation of an extension `0 → A → B → C → 0`
+  of quadratically presented modules by the block upper triangular matrix `[[ψ, -X], [0, φ]]`.
 
 ## Main results
 
@@ -59,12 +64,16 @@ ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentati
 * `TauCeti.isQuadraticallyPresented_of_finite_maximalSpectrum`: over a ring with finitely many
   maximal ideals, a presentation by finite flat modules of the same constant rank yields a
   quadratic presentation.
+* `TauCeti.QuadraticPresentation.det_extension_rel`,
+  `TauCeti.QuadraticPresentation.exists_extension`: an extension of quadratically presented
+  modules of sizes `n` and `m` is quadratically presented, with size `n + m` and relation
+  determinant `det ψ * det φ`.
 
 ## References
 
 * S. Dasgupta, M. Kakde, *On the Brumer–Stark conjecture*, Ann. of Math. (2) 197 (2023),
-  §2.3 (quadratically presented modules and their Fitting ideals) and Remark A.7 (locally
-  quadratic presentations over `ℤ_p[G]`).
+  §2.3 (quadratically presented modules and their Fitting ideals), Lemma 2.6 (extensions) and
+  Remark A.7 (locally quadratic presentations over `ℤ_p[G]`).
 -/
 
 public section
@@ -367,5 +376,114 @@ theorem isQuadraticallyPresented_of_finite_maximalSpectrum [Finite (MaximalSpect
   obtain ⟨b₁⟩ := Module.nonempty_basis_of_flat_of_finrank_eq R P₁ r fun 𝔪 ↦
     (finrank_quotient_tensorProduct_eq_rankAtStalk P₁ 𝔪).trans (h₁ 𝔪)
   exact .of_exact b₁ b₀ hf hπ
+
+section Extension
+
+open LinearMap
+
+variable {A B C : Type*} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
+  [AddCommGroup C] [Module R C] {i : A →ₗ[R] B} {q : B →ₗ[R] C}
+
+namespace QuadraticPresentation
+
+variable (PA : QuadraticPresentation R A) (PC : QuadraticPresentation R C)
+  (hi : Function.Injective i) (hiq : Function.Exact i q) {c : (Fin PC.size → R) →ₗ[R] B}
+  (hc : q ∘ₗ c = PC.gen) {X : Matrix (Fin PA.size) (Fin PC.size) R}
+  (hX : (i ∘ₗ PA.gen) ∘ₗ Matrix.toLin' X = c ∘ₗ Matrix.toLin' PC.rel)
+
+/-- **The quadratic presentation of an extension.** Let `0 → A →i B →q C` be exact with `i`
+injective, and let `A` and `C` have quadratic presentations by `ψ` and `φ`, of sizes `n` and `m`,
+with generators `aₖ` and `γⱼ`. Let `c : R^m → B` lift the generator map of `C` through `q`, so
+that `cⱼ = c eⱼ` lifts `γⱼ`, and let `X` be an `n × m` matrix expressing the lifted relations
+through the generators of `A`: `∑ⱼ φⱼₗ cⱼ = ∑ₖ Xₖₗ i(aₖ)`. Then `B` is presented, with size
+`n + m`, by the generators `i(a₁), …, i(aₙ), c₁, …, cₘ` (`extension_gen_castAdd`,
+`extension_gen_natAdd`) and the block upper triangular matrix `[[ψ, -X], [0, φ]]`
+(`extension_rel`), of determinant `det ψ * det φ` (`det_extension_rel`). The presentation depends
+on the choice of `c` and `X`; suitable choices exist when `q` is surjective
+(`exists_extension`). -/
+@[expose]
+def extension : QuadraticPresentation R B :=
+  ofExact (m := PA.size + PC.size) (by have := PA.size_pos; omega)
+    (((Pi.basisFun R (Fin PA.size)).prod (Pi.basisFun R (Fin PC.size))).reindex finSumFinEquiv)
+    (((Pi.basisFun R (Fin PA.size)).prod (Pi.basisFun R (Fin PC.size))).reindex finSumFinEquiv)
+    (f := ((fst R _ _ - Matrix.toLin' X ∘ₗ snd R _ _).prod (Matrix.toLin' PC.rel ∘ₗ snd R _ _)) ∘ₗ
+      (Matrix.toLin' PA.rel).prodMap LinearMap.id)
+    (π := (i ∘ₗ PA.gen).coprod c)
+    (LinearMap.exact_iff.2 <| by
+      rw [ker_coprod_eq_map_prod_top hi hiq.linearMap_comp_eq_zero PA.gen PC.range_rel_eq_ker hc
+        hX, ← PA.range_rel_eq_ker, ← range_id, ← range_prodMap, range_comp])
+    (Function.Exact.surjective_coprod hiq PA.gen_surjective PC.gen_surjective hc)
+
+/-- The presentation of an extension has size `n + m`. -/
+@[simp]
+theorem extension_size : (PA.extension PC hi hiq hc hX).size = PA.size + PC.size :=
+  rfl
+
+/-- The relation matrix of the presentation of an extension is the block upper triangular matrix
+`[[ψ, -X], [0, φ]]`, indexed through `Fin n ⊕ Fin m ≃ Fin (n + m)`. -/
+@[simp]
+theorem extension_rel : (PA.extension PC hi hiq hc hX).rel =
+    Matrix.reindex finSumFinEquiv finSumFinEquiv (Matrix.fromBlocks PA.rel (-X) 0 PC.rel) := by
+  ext k l
+  obtain ⟨k, rfl⟩ := finSumFinEquiv.surjective k
+  obtain ⟨l, rfl⟩ := finSumFinEquiv.surjective l
+  rcases k with k | k <;> rcases l with l | l <;>
+    simp [extension, LinearMap.toMatrix_apply]
+
+/-- The relation matrix of the presentation of an extension has determinant `det ψ * det φ`. -/
+theorem det_extension_rel :
+    (PA.extension PC hi hiq hc hX).rel.det = PA.rel.det * PC.rel.det := by
+  have h := Matrix.det_fromBlocks_zero₂₁ PA.rel (-X) PC.rel
+  rw [← Matrix.det_reindex_self finSumFinEquiv] at h
+  exact (congrArg Matrix.det (PA.extension_rel PC hi hiq hc hX)).trans h
+
+/-- The first `n` generators of the presentation of an extension are the images of the generators
+of `A`. -/
+theorem extension_gen_castAdd (k : Fin PA.size) :
+    (PA.extension PC hi hiq hc hX).gen (Pi.single (Fin.castAdd PC.size k) 1) =
+      i (PA.gen (Pi.single k 1)) := by
+  simp only [extension, ofExact_gen]
+  -- The index type `Fin (PA.extension PC hi hiq hc hX).size` is `Fin (PA.size + PC.size)` only
+  -- after unfolding `extension`, so the rewrites below match up to that unfolding.
+  erw [LinearMap.comp_apply, LinearEquiv.coe_coe, Basis.equivFun_symm_single]
+  simp
+
+/-- The last `m` generators of the presentation of an extension are the chosen lifts of the
+generators of `C`. -/
+theorem extension_gen_natAdd (j : Fin PC.size) :
+    (PA.extension PC hi hiq hc hX).gen (Pi.single (Fin.natAdd PA.size j) 1) =
+      c (Pi.single j 1) := by
+  simp only [extension, ofExact_gen]
+  -- The index type `Fin (PA.extension PC hi hiq hc hX).size` is `Fin (PA.size + PC.size)` only
+  -- after unfolding `extension`, so the rewrites below match up to that unfolding.
+  erw [LinearMap.comp_apply, LinearEquiv.coe_coe, Basis.equivFun_symm_single]
+  simp
+
+include hi hiq in
+/-- **An extension of quadratically presented modules is quadratically presented**
+(Dasgupta–Kakde, Lemma 2.6). For a short exact sequence `0 → A → B → C → 0` and quadratic
+presentations of `A` and `C` of sizes `n` and `m`, the module `B` has a quadratic presentation of
+size `n + m` whose relation matrix has determinant `det ψ * det φ`. -/
+theorem exists_extension (hq : Function.Surjective q) :
+    ∃ P : QuadraticPresentation R B,
+      P.size = PA.size + PC.size ∧ P.rel.det = PA.rel.det * PC.rel.det := by
+  obtain ⟨c, hc⟩ := Module.projective_lifting_property q PC.gen hq
+  -- The lifted relations lie in `ker q = range (i ∘ PA.gen)`, so they factor through `i ∘ PA.gen`.
+  obtain ⟨X, hX⟩ := exists_comp_eq_of_range_le (a := c ∘ₗ Matrix.toLin' PC.rel)
+    (b := i ∘ₗ PA.gen) <| by
+    rw [range_comp_of_range_eq_top i (range_eq_top.2 PA.gen_surjective), ← hiq.linearMap_ker_eq,
+      range_le_ker_iff, ← comp_assoc, hc, PC.exact.linearMap_comp_eq_zero]
+  refine ⟨PA.extension PC hi hiq hc (X := LinearMap.toMatrix' X) ?_, rfl, det_extension_rel ..⟩
+  rwa [Matrix.toLin'_toMatrix']
+
+end QuadraticPresentation
+
+/-- An extension of quadratically presented modules is quadratically presented. -/
+theorem IsQuadraticallyPresented.of_injective_of_exact (hA : IsQuadraticallyPresented R A)
+    (hC : IsQuadraticallyPresented R C) (hi : Function.Injective i) (hiq : Function.Exact i q)
+    (hq : Function.Surjective q) : IsQuadraticallyPresented R B :=
+  ⟨(hA.some.exists_extension hC.some hi hiq hq).choose⟩
+
+end Extension
 
 end TauCeti
