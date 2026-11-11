@@ -77,6 +77,16 @@ theorem isSemisimple_one [IsSemisimpleModule K V] :
   unfold IsSemisimple
   exact Module.End.isSemisimple_id
 
+/-- A linear automorphism that is both semisimple and unipotent is the identity, over any
+commutative ring. -/
+theorem IsSemisimple.eq_one_of_isUnipotent {g : GeneralLinearGroup K V} (hg : IsSemisimple g)
+    (hu : IsUnipotent g) : g = 1 := by
+  rw [isSemisimple_def] at hg
+  have hs : Module.End.IsSemisimple ((g : End K V) - 1) := by
+    simpa using (Module.End.isSemisimple_sub_algebraMap_iff (μ := (1 : K))).mpr hg
+  exact Units.ext (sub_eq_zero.mp
+    (Module.End.eq_zero_of_isNilpotent_isSemisimple ((isUnipotent_def g).mp hu) hs))
+
 end Definitions
 
 section Field
@@ -113,16 +123,6 @@ theorem IsSemisimple.zpow {g : GeneralLinearGroup K V} (hg : IsSemisimple g) (n 
   cases n with
   | ofNat n => simpa only [Int.ofNat_eq_natCast, zpow_natCast] using hg.pow n
   | negSucc n => simpa only [zpow_negSucc] using (hg.pow n.succ).inv
-
-/-- A linear automorphism that is both semisimple and unipotent is the identity, over any
-field. -/
-theorem IsSemisimple.eq_one_of_isUnipotent {g : GeneralLinearGroup K V} (hg : IsSemisimple g)
-    (hu : IsUnipotent g) : g = 1 := by
-  rw [isSemisimple_def] at hg
-  have hs : Module.End.IsSemisimple ((g : End K V) - 1) :=
-    hg.of_mem_adjoin_singleton (sub_mem (Algebra.self_mem_adjoin_singleton K _) (one_mem _))
-  exact Units.ext (sub_eq_zero.mp
-    (Module.End.eq_zero_of_isNilpotent_isSemisimple ((isUnipotent_def g).mp hu) hs))
 
 section PerfectField
 
