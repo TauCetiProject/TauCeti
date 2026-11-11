@@ -18,20 +18,15 @@ of the products is controlled by the sum of the pointwise differences:
 ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ ∑ i ∈ s, ‖a i - b i‖
 ```
 
-Only `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` are needed; the argument uses subadditivity and submultiplicativity
-of the norm and nothing else, so it holds over `ℂ` as well as `ℝ`, and norm definiteness is never
-used — hence `SeminormedCommRing` rather than `NormedCommRing`. The unit-ball bound is what makes
-the constant `1`; the same telescoping argument with a uniform bound `C` gives `C ^ (s.card - 1)`
-and is not needed here.
+Only `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` are needed, and the norm enters only through subadditivity and
+submultiplicativity, so the bound holds in any seminormed commutative ring, `ℝ` and `ℂ` included.
 
-`abs_prod_sub_prod_le_sum_abs_sub` is the real-valued corollary, phrased with `|·|`, which is the
-form the probability consumers use.
+The file also records the auxiliary bounds `norm_prod_le_prod_norm` (the seminormed version of
+Mathlib's `Finset.norm_prod_le`) and `norm_prod_le_one`, and the real-valued corollary
+`abs_prod_sub_prod_le_sum_abs_sub`, phrased with `|·|`.
 
 This is the elementary step that turns coordinatewise convergence of finitely many bounded
 observables into convergence of their product, without Hölder or dominated-convergence machinery.
-It is motivated by `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** (the L² averaging library
-and the standard-Borel de Finetti route): both that route and the Layer 5 Koopman route reduce a
-block factorization to convergence of a product of finitely many block averages.
 -/
 
 public section
@@ -41,15 +36,11 @@ namespace TauCeti
 open Finset
 
 /-- The norm of a finite product is bounded by the product of the norms, over a seminormed
-commutative ring with `‖1‖ = 1`. -/
+commutative ring with `‖1‖ = 1`. Mathlib's `Finset.norm_prod_le` states this only for a
+`NormedCommRing`. -/
 theorem norm_prod_le_prod_norm {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
-    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert j s hj ih =>
-    rw [Finset.prod_insert hj, Finset.prod_insert hj]
-    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ :=
+  le_prod_of_submultiplicative_of_nonneg norm norm_nonneg norm_one.le norm_mul_le s f
 
 /-- **A finite product of unit-ball elements lies in the unit ball**, over a seminormed
 commutative ring with `‖1‖ = 1`. -/
@@ -90,8 +81,9 @@ theorem norm_prod_sub_prod_le_sum_norm_sub {ι R : Type*} [SeminormedCommRing R]
           _ = ‖a j - b j‖ := mul_one _
       linarith
 
-/-- **Real-valued form**, phrased with `|·|`: the shape the probability consumers use, where the
-factors are block averages and conditional expectations of indicators, all in `[0, 1]`. -/
+/-- **Real-valued form** of `norm_prod_sub_prod_le_sum_norm_sub`, phrased with `|·|`: if
+`|a i| ≤ 1` and `|b i| ≤ 1` for every `i ∈ s`, then the difference of the products is at most the
+sum of the pointwise differences. -/
 theorem abs_prod_sub_prod_le_sum_abs_sub {ι : Type*} (s : Finset ι) {a b : ι → ℝ}
     (ha : ∀ i ∈ s, |a i| ≤ 1) (hb : ∀ i ∈ s, |b i| ≤ 1) :
     |∏ i ∈ s, a i - ∏ i ∈ s, b i| ≤ ∑ i ∈ s, |a i - b i| := by
