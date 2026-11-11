@@ -15,8 +15,7 @@ A product of two monoids is their coproduct in commutative monoids: a homomorphi
 `N →* P`, recovered by restricting along the two inclusions. Mathlib has the two directions
 separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `MonoidHom.inr`,
 together with the fact that they are mutually inverse; this file packages them as the
-corresponding equivalence, and records that such a homomorphism is the product of its two
-restrictions pulled back along the projections.
+corresponding equivalence.
 
 For a homomorphism `f : M × N →* P` into a group, the triangular map
 `(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
@@ -39,8 +38,6 @@ identities as the product of the two factors.
 
 ## Main results
 
-* `MonoidHom.comp_inl_comp_fst_mul_comp_inr_comp_snd`: a homomorphism out of a product is the
-  product of its two restrictions pulled back along the projections.
 * `MonoidHom.surjective_fst_prod_iff`: the triangular map `(m, n) ↦ (m, f (m, n))` is surjective
   if and only if `f.comp (MonoidHom.inr M N)` is.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
@@ -80,15 +77,6 @@ theorem coprodEquiv_apply (f : (M →* P) × (N →* P)) (x : M × N) :
 product restricts it along the two inclusions. -/]
 theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
-
-/-- A homomorphism out of a product is the product of its restrictions to the two factors,
-pulled back along the two projections. -/
-@[to_additive /-- A homomorphism out of a product is the sum of its restrictions to the two
-factors, pulled back along the two projections. -/]
-theorem comp_inl_comp_fst_mul_comp_inr_comp_snd (f : M × N →* P) :
-    (f.comp (inl M N)).comp (fst M N) * (f.comp (inr M N)).comp (snd M N) = f :=
-  -- The left-hand side is `MonoidHom.coprod` of the two restrictions, unfolded.
-  coprod_unique f
 
 end CoprodEquiv
 
