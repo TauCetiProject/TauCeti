@@ -116,9 +116,8 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
   have hlim : Tendsto (fun t : ℝ => eLpNorm
       ((fun a => ((Real.exp (-((m a : ℝ) * t)) - 1) / t) • f a) -
         (fun a => -(m a : ℝ) • f a)) p μ) (𝓝[>] 0) (𝓝 0) := by
-    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto
-      (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp
-      (.of_forall fun t => by fun_prop) (by fun_prop) hf (C := 1)
+    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto hp (.of_forall fun t => by fun_prop) hf
+      (C := 1)
     · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
       filter_upwards with a
       have he : Real.exp (-((m a : ℝ) * t)) ≤ 1 :=

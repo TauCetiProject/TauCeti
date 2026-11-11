@@ -46,13 +46,8 @@ group structure, and in particular no inverse. -/
 need be open, and `G` need only carry a continuous subtraction — no group structure, and in
 particular no negation. -/]
 theorem closure_div_closure_subset (s t : Set G) : closure s / closure t ⊆ closure (s / t) :=
-  calc closure s / closure t
-      = (fun p : G × G ↦ p.1 / p.2) '' (closure s ×ˢ closure t) := by
-        rw [Set.image_prod, Set.image2_div]
-    _ = (fun p : G × G ↦ p.1 / p.2) '' closure (s ×ˢ t) := by rw [closure_prod_eq]
-    _ ⊆ closure ((fun p : G × G ↦ p.1 / p.2) '' (s ×ˢ t)) :=
-        image_closure_subset_closure_image (continuous_fst.div' continuous_snd)
-    _ = closure (s / t) := by rw [Set.image_prod, Set.image2_div]
+  image2_subset_iff.2 fun _ ha _ hb ↦
+    map_mem_closure₂ continuous_div' ha hb fun _ hx _ hy ↦ div_mem_div hx hy
 
 end TauCeti
 
@@ -63,20 +58,15 @@ contained in a compact set. -/]
 theorem IsClosed.image_mul_of_snd_subset {G : Type*} [TopologicalSpace G]
     [Group G] [ContinuousDiv G] {s : Set (G × G)} (hs : IsClosed s)
     {C : Set G} (hC : IsCompact C) (hsub : Prod.snd '' s ⊆ C) :
-    IsClosed ((fun p : G × G => p.1 * p.2) '' s) := by
+    IsClosed ((fun p : G × G ↦ p.1 * p.2) '' s) := by
   have : CompactSpace C := isCompact_iff_compactSpace.mp hC
-  have hc : Continuous (fun p : G × C => (p.1 / p.2, (p.2 : G))) :=
-    (continuous_fst.div' (continuous_subtype_val.comp continuous_snd)).prodMk
-      (continuous_subtype_val.comp continuous_snd)
-  have heq : (fun p : G × G => p.1 * p.2) '' s =
-      Prod.fst '' ((fun p : G × C => (p.1 / p.2, (p.2 : G))) ⁻¹' s) := by
-    ext z
-    constructor
-    · rintro ⟨p, hp, rfl⟩
-      exact ⟨(p.1 * p.2, ⟨p.2, hsub ⟨p, hp, rfl⟩⟩), by simpa, rfl⟩
-    · rintro ⟨p, hp, rfl⟩
-      exact ⟨(p.1 / p.2, p.2), hp, by simp⟩
-  rw [heq]
-  exact isClosedMap_fst_of_compactSpace _ (hs.preimage hc)
+  convert isClosedMap_fst_of_compactSpace _
+    (hs.preimage (f := fun p : G × C ↦ (p.1 / p.2, (p.2 : G))) (by fun_prop)) using 1
+  ext z
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨(p.1 * p.2, ⟨p.2, hsub ⟨p, hp, rfl⟩⟩), by simpa, rfl⟩
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨(p.1 / p.2, p.2), hp, by simp⟩
 
 end

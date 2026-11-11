@@ -31,6 +31,8 @@ rings and to finitely generated ideals with Noetherian quotient.
 * `Ideal.isNoetherianRing_adicCompletion_of_fg`: the completion along a finitely generated ideal
   `I` is Noetherian when `R ⧸ I` is.
 * `Ideal.isNoetherianRing_adicCompletion`: the adic completion of a Noetherian ring is Noetherian.
+* `IsLocalRing.isNoetherianRing_adicCompletion_of_fg`: the completion of a local ring with
+  finitely generated maximal ideal is Noetherian.
 * `Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange`: an `I`-adically complete ring with
   separately continuous addition and `I` finitely generated and open is Noetherian as soon as it
   receives a ring map with dense range from a Noetherian semiring. This is the form used for
@@ -235,3 +237,13 @@ theorem isNoetherianRing_of_isAdicComplete_of_denseRange [TopologicalSpace R]
   exact isNoetherianRing_of_isAdicComplete I hI
 
 end Ideal
+
+namespace IsLocalRing
+
+/-- The completion of a local ring at its finitely generated maximal ideal is Noetherian. -/
+theorem isNoetherianRing_adicCompletion_of_fg [IsLocalRing R] (h : (maximalIdeal R).FG) :
+    IsNoetherianRing (AdicCompletion (maximalIdeal R) R) := by
+  let := Ideal.Quotient.field (maximalIdeal R)
+  exact Ideal.isNoetherianRing_adicCompletion_of_fg _ h
+
+end IsLocalRing

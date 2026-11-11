@@ -78,24 +78,24 @@ namespace TauCeti
 
 section JacobsonMorozov
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [IsKilling K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
 
-/-- **The Jacobson–Morozov theorem.** In a finite-dimensional Lie algebra with nondegenerate
+/-- **The Jacobson–Morozov theorem.** In a Lie algebra with nondegenerate
 Killing form over a field of characteristic zero, every nonzero `ad`-nilpotent element `e` is the
 nilpositive element of an `sl₂` triple `(h, e, f)`. -/
 theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
     ∃ h f : L, IsSl2Triple h e f := by
   obtain ⟨h, hh, hhe⟩ := exists_mem_range_ad_lie_eq_two_nsmul_of_isNilpotent_ad he
+  have := HasUniqueDiv.of_isTorsionFree K L
   obtain ⟨f, hf, -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad he hhe hh
-    (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero he0)
+    (left_ne_zero_of_lie_eq_nsmul hhe two_ne_zero he0)
   exact ⟨h, f, hf⟩
 
-/-- In a finite-dimensional Lie algebra with nondegenerate Killing form over a field of
-characteristic zero, the nilpositive elements of `sl₂` triples are exactly the nonzero
-`ad`-nilpotent elements. -/
+/-- In a Lie algebra with nondegenerate Killing form over a field of characteristic zero, the
+nilpositive elements of `sl₂` triples are exactly the nonzero `ad`-nilpotent elements. -/
 theorem exists_isSl2Triple_iff {e : L} :
     (∃ h f : L, IsSl2Triple h e f) ↔ IsNilpotent (ad K L e) ∧ e ≠ 0 := by
+  have := finite_of_isKilling (R := K) (L := L)
   refine ⟨fun ⟨_, _, t⟩ => ⟨t.isNilpotent_toEnd_e (M := L), t.e_ne_zero⟩, fun ⟨he, he0⟩ =>
     exists_isSl2Triple_of_isNilpotent_ad he he0⟩
 
@@ -118,7 +118,7 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
     {k : ℕ} (hk : 1 ≤ k) {z : L}
     (hz : z ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k))
     (hy : IsNilpotent (ad K L ((k : K)⁻¹ • z))) :
-    expAd ((k : K)⁻¹ • z) hy (h + z) - h ∈
+    expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h ∈
       LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + 1)) := by
   set F := fun n : ℕ => LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ n)
   have hk0 : (k : K) ≠ 0 := by exact_mod_cast (by omega : k ≠ 0)
@@ -137,8 +137,9 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
       (Submodule.smul_mem _ _ (antitone_ker_inf_range_pow e k.le_succ hw))
   have hrest := antitone_ker_inf_range_pow e (by omega : k + 1 ≤ k + k)
     (expAd_apply_sub_sub_mem hy hyk hyvk)
-  have heq : expAd ((k : K)⁻¹ • z) hy (h + z) - h =
-      (expAd ((k : K)⁻¹ • z) hy (h + z) - (h + z) - ⁅(k : K)⁻¹ • z, h + z⁆) -
+  have heq : expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h =
+      (expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - (h + z) -
+          ⁅(k : K)⁻¹ • z, h + z⁆) -
         (k : K)⁻¹ • w := by
     rw [hyv]
     abel
@@ -172,7 +173,7 @@ private theorem exists_lieEquiv_apply_eq_of_sub_mem (hhe : ⁅h, e⁆ = 2 • e)
     have hy := isNilpotent_ad_of_mem_ker_inf_range hyU
     obtain ⟨ψ, hψ, hψh⟩ := ih (k + 1) (by omega) (by omega) _
       (expAd_add_sub_mem hhe hh hk hh' hy)
-    refine ⟨ψ.trans (expAd _ hy).symm, ?_, ?_⟩
+    refine ⟨ψ.trans (expAd _ hy.exists_pow_apply_eq_zero).symm, ?_, ?_⟩
     · have hmem := expAd_toLinearEquiv_mem_expAdSubgroup hy hyU
       convert Subgroup.mul_mem _ (Subgroup.inv_mem _ hmem) hψ using 1
       ext x
@@ -213,9 +214,10 @@ theorem exists_isSl2Triple_iff_sub_mem (t : IsSl2Triple h e f) {h' : L} :
     have hh : h' ∈ LinearMap.range (ad K L e) := by
       rw [← sub_add_cancel h' h]
       exact add_mem hrange ⟨f, by rw [ad_apply, t.lie_e_f]⟩
+    have := HasUniqueDiv.of_isTorsionFree K L
     obtain ⟨f', hf', -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad
       (t.isNilpotent_toEnd_e (K := K) (M := L)) hhe hh
-      (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero t.e_ne_zero)
+      (left_ne_zero_of_lie_eq_nsmul hhe two_ne_zero t.e_ne_zero)
     exact ⟨f', hf'⟩
 
 variable [LieAlgebra ℚ L]

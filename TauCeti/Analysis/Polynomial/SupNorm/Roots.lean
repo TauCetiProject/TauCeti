@@ -26,16 +26,15 @@ The root estimate uses Mathlib's `Polynomial.IsRoot.norm_lt_cauchyBound`.
 
 public section
 
-open Polynomial
 open scoped NNReal
 
-namespace TauCeti
+namespace Polynomial
 
 variable {K : Type*} [RCLike K]
 
 /-- A real or complex root of a nonzero integer polynomial has modulus strictly less
 than its coefficient sup norm plus one. -/
-theorem _root_.Polynomial.norm_lt_supNorm_add_one_of_aeval_eq_zero (p : ℤ[X])
+theorem norm_lt_supNorm_add_one_of_aeval_eq_zero (p : ℤ[X])
     (hp : p ≠ 0) {z : K} (hz : aeval z p = 0) : ‖z‖ < p.supNorm + 1 := by
   let q := p.map (Int.castRingHom K)
   have hq : q ≠ 0 := (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).mpr hp
@@ -62,7 +61,7 @@ theorem _root_.Polynomial.norm_lt_supNorm_add_one_of_aeval_eq_zero (p : ℤ[X])
 
 /-- A nonzero real or complex root of a nonzero integer polynomial has modulus
 strictly greater than the reciprocal of its coefficient sup norm plus one. -/
-theorem _root_.Polynomial.inv_supNorm_add_one_lt_norm_of_aeval_eq_zero (p : ℤ[X])
+theorem inv_supNorm_add_one_lt_norm_of_aeval_eq_zero (p : ℤ[X])
     (hp : p ≠ 0) {z : K} (hz : aeval z p = 0) (hz0 : z ≠ 0) :
     (p.supNorm + 1)⁻¹ < ‖z‖ := by
   let := invertibleOfNonzero hz0
@@ -74,4 +73,4 @@ theorem _root_.Polynomial.inv_supNorm_add_one_lt_norm_of_aeval_eq_zero (p : ℤ[
   rw [supNorm_reverse, norm_inv] at h
   exact (inv_lt_comm₀ (by linarith [p.supNorm_nonneg]) (norm_pos_iff.mpr hz0)).mpr h
 
-end TauCeti
+end Polynomial

@@ -201,7 +201,7 @@ private noncomputable def uniqueBasicOpenCoordIdem (n : ℕ) :
     rw [Pi.mul_apply, Pi.zero_apply, coordIdem]
     by_cases hj : j = n
     · subst hj
-      have hxn : x j = 0 := hx
+      have hxn : x j = 0 := by simpa only [RingHom.mem_ker, Pi.evalRingHom_apply] using hx
       simp [hxn]
     · rw [Pi.single_eq_of_ne hj, mul_zero]
   have hmem : x * coordIdem k n ∈ q.1.1.asIdeal := hx0 ▸ q.1.1.asIdeal.zero_mem
@@ -300,6 +300,18 @@ private noncomputable def sectionsInfiniteUnionRingEquiv :
   (RingEquiv.ofBijective φRing ⟨hglue.injective, surjective_restrict_pi_coordIdem k⟩).trans
     (RingEquiv.piCongrRight (basicOpenCoordIdemRingEquiv k))
 
+@[simp]
+private theorem sectionsInfiniteUnionRingEquiv_apply
+    (s : (structureSheaf (isAdic_bot_pi k)).obj.obj
+      (op (⨆ n : ℕ, basicOpen (coordIdem k n)))) (n : ℕ) :
+    sectionsInfiniteUnionRingEquiv k s n =
+      basicOpenCoordIdemRingEquiv k n
+        ((structureSheaf (isAdic_bot_pi k)).obj.map
+          (homOfLE (le_iSup (fun i : ℕ ↦ basicOpen (coordIdem k i)) n)).op s) := by
+  simp only [sectionsInfiniteUnionRingEquiv, RingEquiv.trans_apply, RingEquiv.piCongrRight_apply]
+  exact congrArg (basicOpenCoordIdemRingEquiv k n)
+    ((congrFun (RingEquiv.ofBijective_apply _ _ s) n).trans (RingHom.pi_apply _ s n))
+
 private noncomputable def basicOpenCoordIdemHomeomorph (n : ℕ) :
     letI := quotientSectionsTopology (isAdic_bot_pi k) (basicOpen (coordIdem k n))
     letI : TopologicalSpace k := ⊥
@@ -338,9 +350,7 @@ private theorem isHomeomorph_sectionsInfiniteUnionRingEquiv :
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo₁ hhomeo₂
   have heq : (sectionsInfiniteUnionRingEquiv k : _ → _) = hhomeo.toFun := by
     ext s n
-    simpa [sectionsInfiniteUnionRingEquiv, hhomeo, hhomeo₁, hhomeo₂,
-      basicOpenCoordIdemHomeomorph] using
-      (congrFun (RingEquiv.ofBijective_apply _ _ s) n).trans (RingHom.pi_apply _ s n)
+    exact sectionsInfiniteUnionRingEquiv_apply k s n
   have hh := @Homeomorph.isHomeomorph _ _
     (quotientSectionsTopology hI U)
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo

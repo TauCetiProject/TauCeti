@@ -69,6 +69,7 @@ a common location and scale has exactly the parent law.
   `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
 * `TauCeti.Probability.cauchyPDFReal_zero_loc_isBigO_rpow_neg_two` — centred Cauchy density
   has quadratic decay at infinity;
+* `TauCeti.Probability.contDiff_cauchyPDFReal` — the Cauchy density is smooth;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
@@ -128,6 +129,19 @@ theorem cauchyPDFReal_zero_loc_isBigO_rpow_neg_two (γ : ℝ≥0) :
       exact div_le_div_of_nonneg_left (by positivity) (sq_pos_of_ne_zero hx0)
         (by nlinarith [sq_nonneg (γ : ℝ)])
     _ = ((γ : ℝ) / Real.pi) * (x ^ 2)⁻¹ := div_eq_mul_inv _ _
+
+/-- The Cauchy density is smooth, including at zero scale, where it vanishes identically. -/
+theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (cauchyPDFReal x₀ γ) := by
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · rw [cauchyPDFReal_scale_zero]
+    exact contDiff_const
+  · have hpos : (0 : ℝ) < γ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hγ)
+    have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+      funext (cauchyPDFReal_def x₀ γ)
+    rw [h]
+    exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv
+      fun x ↦ by positivity)
 
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :

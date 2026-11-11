@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Topology.Sheaves.Functors
 public import Mathlib.Topology.Sheaves.Limits
+public import Mathlib.Topology.Sheaves.LocallySurjective
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
 public import TauCeti.AlgebraicGeometry.StructureSheaf
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.AdicRing.CompletedAway
 
-import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+import Mathlib.Algebra.Category.Ring.Constructions
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
 import TauCeti.RingTheory.Localization.Away.Quotient
 
 /-!
@@ -47,7 +49,8 @@ maps `TauCeti.AdicRing.CompletedAway.restrict` of completed localisations.
 For any ideal of definition `K`, some power `I ^ (n + 1)` lies in `K`, and composing the
 projection `O_{Spf A} → O_{I ^ (n + 1)}` with the reduction map `O_{I ^ (n + 1)} → O_K` gives a
 projection `O_{Spf A} → O_K`, independent of `n`. This is the sheaf map of the closed immersion
-`Spec (A ⧸ K) → Spf A` (EGA I, Ch. I, 10.3.2).
+`Spec (A ⧸ K) → Spf A` (EGA I, Ch. I, 10.3.2). These projections are surjective on
+basic opens, and hence locally surjective as morphisms of presheaves.
 
 The construction is made with a chosen ideal of definition `I`; another ideal of definition gives a
 canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
@@ -110,6 +113,12 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
   on `D(f)` the reduction map `O_J → O_K` is the quotient map `A_f ⧸ J A_f → A_f ⧸ K A_f`.
 * `TauCeti.FormalScheme.Spf.basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ`: a section over
   `D(f)` evaluates in `A_f ⧸ I ^ (n + 1) A_f` to its projection to the `n`-th thickening.
+* `TauCeti.FormalScheme.Spf.quotientProjection_app_basicOpen_surjective`,
+  `TauCeti.FormalScheme.Spf.quotientTransition_app_basicOpen_surjective`,
+  `TauCeti.FormalScheme.Spf.toQuotientSheaf_app_basicOpen_surjective`: the projections and
+  reduction maps are surjective on basic opens.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf_isLocallySurjective`: projection to an
+  ideal-of-definition quotient is locally surjective.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_basicOpenSectionsAdicCompletionIso_hom`,
   `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_basicOpenSectionsIso_hom`: the global
   section corresponding to `a ∈ A` restricts on `D(f)` to the image of `a`.
@@ -228,6 +237,12 @@ noncomputable def quotientSheafGlobalSectionsIso (hJ : IsAdic J) :
     (quotientSheaf hJ).obj.obj (op ⊤) ≅ CommRingCat.of (A ⧸ J) :=
   (StructureSheaf.globalSectionsIso (A ⧸ J)).symm
 
+/-- The inverse of the identification of the global sections of `O_J` with `A ⧸ J` is the
+canonical map from `A ⧸ J` to the global sections of the structure sheaf of `Spec (A ⧸ J)`. -/
+theorem quotientSheafGlobalSectionsIso_inv (hJ : IsAdic J) :
+    (quotientSheafGlobalSectionsIso hJ).inv = CommRingCat.ofHom (algebraMap _ _) :=
+  (rfl)
+
 /-- On global sections, the reduction map `O_J → O_K` is the quotient map `A ⧸ J → A ⧸ K`. -/
 @[reassoc]
 theorem quotientSheafGlobalSectionsIso_inv_comp_quotientTransition (hJ : IsAdic J) (hK : IsAdic K)
@@ -317,6 +332,14 @@ theorem structureSheaf.hom_ext (hI : IsAdic I)
     (h : ∀ n, f ≫ quotientProjection hI n = g ≫ quotientProjection hI n) : f = g :=
   limit.hom_ext fun n ↦ h n.unop
 
+/-- Evaluating sections of `O_{Spf A}` over `U` in `Type u` preserves the limit cone of the
+thickenings `O_{I ^ (n + 1)}`. -/
+private noncomputable def structureSheaf.isLimitSections (hI : IsAdic I) (U : Opens (carrier A)) :
+    IsLimit ((sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat ⋙
+      (evaluation _ CommRingCat).obj (op U) ⋙ CategoryTheory.forget CommRingCat).mapCone
+        (limit.cone (quotientDiagram hI))) :=
+  isLimitOfPreserves _ (limit.isLimit (quotientDiagram hI))
+
 /-- Sections of `O_{Spf A}` over an open `U` are determined by their projections to the
 thickenings `O_{I ^ (n + 1)}`. -/
 theorem structureSheaf.sections_ext (hI : IsAdic I) {U : Opens (carrier A)}
@@ -324,10 +347,7 @@ theorem structureSheaf.sections_ext (hI : IsAdic I) {U : Opens (carrier A)}
     (h : ∀ n : ℕ, (quotientProjection hI n).hom.app (op U) s =
       (quotientProjection hI n).hom.app (op U) t) :
     s = t := by
-  let G := sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat ⋙
-    (evaluation _ CommRingCat).obj (op U) ⋙ CategoryTheory.forget CommRingCat
-  apply (Types.isLimitEquivSections (isLimitOfPreserves G (limit.isLimit (quotientDiagram hI)))
-    ).injective
+  apply (Types.isLimitEquivSections (structureSheaf.isLimitSections hI U)).injective
   ext ⟨n⟩
   exact h n
 
@@ -339,9 +359,7 @@ noncomputable def structureSheaf.mkSection (hI : IsAdic I) (U : Opens (carrier A
       (quotientTransition (is_ideal_adic_pow hI n.succ_pos) (is_ideal_adic_pow hI m.succ_pos)
         (Ideal.pow_le_pow_right (Nat.succ_le_succ h))).hom.app (op U) (y n) = y m) :
     (structureSheaf hI).obj.obj (op U) :=
-  let G := sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat ⋙
-    (evaluation _ CommRingCat).obj (op U) ⋙ CategoryTheory.forget CommRingCat
-  (Types.isLimitEquivSections (isLimitOfPreserves G (limit.isLimit (quotientDiagram hI)))).symm
+  (Types.isLimitEquivSections (structureSheaf.isLimitSections hI U)).symm
     ⟨fun j ↦ y j.unop, fun f ↦ hy (leOfHom f.unop)⟩
 
 /-- The section `structureSheaf.mkSection` projects to `y n` in `Γ(U, O_{I ^ (n + 1)})` for every
@@ -353,18 +371,14 @@ theorem structureSheaf.quotientProjection_mkSection (hI : IsAdic I) (U : Opens (
       (quotientTransition (is_ideal_adic_pow hI n.succ_pos) (is_ideal_adic_pow hI m.succ_pos)
         (Ideal.pow_le_pow_right (Nat.succ_le_succ h))).hom.app (op U) (y n) = y m)
     (n : ℕ) :
-    (quotientProjection hI n).hom.app (op U) (structureSheaf.mkSection hI U y hy) = y n := by
-  let G := sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat ⋙
-    (evaluation _ CommRingCat).obj (op U) ⋙ CategoryTheory.forget CommRingCat
-  exact Types.isLimitEquivSections_symm_apply
-    (isLimitOfPreserves G (limit.isLimit (quotientDiagram hI)))
+    (quotientProjection hI n).hom.app (op U) (structureSheaf.mkSection hI U y hy) = y n :=
+  Types.isLimitEquivSections_symm_apply (structureSheaf.isLimitSections hI U)
     ⟨fun j ↦ y j.unop, fun f ↦ hy (leOfHom f.unop)⟩ (op n)
 
 /-- Sections of `O_{Spf A}` over the empty open `⊥` form a subsingleton. -/
 instance subsingleton_sections_bot (hI : IsAdic I) :
     Subsingleton ((structureSheaf hI).obj.obj (op (⊥ : Opens (carrier A)))) :=
-  ⟨fun s t ↦ TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI) Empty.elim ⊥ (fun i ↦ i.elim)
-    (by simp) s t fun i ↦ i.elim⟩
+  CommRingCat.subsingleton_of_isTerminal (TopCat.Sheaf.isTerminalOfEmpty (structureSheaf hI))
 
 /-- For ideals of definition `I` and `K`, the projection `O_{Spf A} → O_K` from the structure
 sheaf built from `I` to the structure sheaf of the thickening `Spec (A ⧸ K)`: the projection to
@@ -417,6 +431,24 @@ theorem structureSheaf.lift_toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K)
     {n : ℕ} (hn : I ^ (n + 1) ≤ K) :
     structureSheaf.lift hI f hf ≫ toQuotientSheaf hI hK = f n ≫ quotientTransition _ hK hn := by
   rw [toQuotientSheaf_eq hI hK hn, structureSheaf.lift_quotientProjection_assoc]
+
+/-- Projection to the zero-ideal thickening is an isomorphism of sheaves whenever zero is an
+ideal of definition. This holds for the structure sheaf built from any ideal of definition. -/
+instance toQuotientSheaf_bot_isIso (hI : IsAdic I) (h0 : IsAdic (⊥ : Ideal A)) :
+    IsIso (toQuotientSheaf hI h0) := by
+  let g := structureSheaf.lift hI
+    (fun _ ↦ quotientTransition h0 _ bot_le)
+    (fun _ ↦ quotientTransition_comp _ _ _ _ _)
+  refine ⟨⟨g, ?_, ?_⟩⟩
+  · refine structureSheaf.hom_ext hI fun n ↦ ?_
+    have hg : g ≫ quotientProjection hI n = quotientTransition h0 _ bot_le :=
+      structureSheaf.lift_quotientProjection hI _ _ n
+    rw [Category.assoc, hg, toQuotientSheaf_comp_quotientTransition,
+      toQuotientSheaf_pow_succ, Category.id_comp]
+  · obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (J := (⊥ : Ideal A))
+      (by simpa using h0.isOpen_pow 1)
+    exact (structureSheaf.lift_toQuotientSheaf hI h0 _ _ hn).trans
+      ((quotientTransition_comp _ _ _ _ _).trans (quotientTransition_self _))
 
 /-- On global sections, the diagram of the thickenings is the diagram of the quotients
 `A ⧸ I ^ (n + 1)`. -/
@@ -556,6 +588,19 @@ theorem quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom
   ext x
   simp [-Ideal.Quotient.mk_algebraMap]
 
+/-- Reduction between two ideals of definition is surjective on every basic open. -/
+theorem quotientTransition_app_basicOpen_surjective (hJ : IsAdic J) (hK : IsAdic K)
+    (hJK : J ≤ K) (f : A) :
+    Function.Surjective ((quotientTransition hJ hK hJK).hom.app (op (basicOpen f))) := by
+  have h : Function.Surjective ((quotientSheafBasicOpenIso hJ f).hom ≫
+      CommRingCat.ofHom (Ideal.Quotient.factor (Ideal.map_mono hJK))) :=
+    (Ideal.Quotient.factor_surjective (Ideal.map_mono hJK)).comp
+      (ConcreteCategory.bijective_of_isIso (quotientSheafBasicOpenIso hJ f).hom).surjective
+  rw [← quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom hJ hK hJK f] at h
+  intro s
+  obtain ⟨x, hx⟩ := h ((quotientSheafBasicOpenIso hK f).hom s)
+  exact ⟨x, (ConcreteCategory.bijective_of_isIso (quotientSheafBasicOpenIso hK f).hom).injective hx⟩
+
 end QuotientSheafBasicOpen
 
 section BasicOpenSections
@@ -608,6 +653,43 @@ theorem basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ (hI : IsAdic I) (f :
   calc _ = (preservesLimitIso _ _).hom ≫ (HasLimit.isoOfNatIso _).hom ≫ limit.π _ (op n) :=
         congrArg (_ ≫ _ ≫ ·) hc
     _ = _ := (congrArg (_ ≫ ·) hb).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ha))
+
+/-- Projection to an infinitesimal thickening is surjective on every basic open. -/
+theorem quotientProjection_app_basicOpen_surjective (hI : IsAdic I) (f : A) (n : ℕ) :
+    Function.Surjective ((quotientProjection hI n).hom.app (op (basicOpen f))) := by
+  have h : Function.Surjective
+      ((basicOpenSectionsAdicCompletionIso hI f).hom ≫ CommRingCat.ofHom
+        (AdicCompletion.evalₐ (I.map (algebraMap A (Localization.Away f))) (n + 1)).toRingHom) :=
+    (AdicCompletion.surjective_evalₐ _ _).comp
+      (ConcreteCategory.bijective_of_isIso (basicOpenSectionsAdicCompletionIso hI f).hom).surjective
+  simp only [AlgHom.toRingHom_eq_coe] at h
+  rw [basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ] at h
+  intro s
+  obtain ⟨x, hx⟩ := h ((Ideal.quotEquivOfEq (Ideal.map_pow _ I (n + 1)))
+    ((quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom s))
+  refine ⟨x, ?_⟩
+  apply (ConcreteCategory.bijective_of_isIso
+    (quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom).injective
+  exact (Ideal.quotEquivOfEq (Ideal.map_pow _ I (n + 1))).injective hx
+
+/-- The projection to the structure sheaf modulo any ideal of definition is surjective on
+basic opens. This does not assert surjectivity on arbitrary opens. -/
+theorem toQuotientSheaf_app_basicOpen_surjective (hI : IsAdic I) (hJ : IsAdic J) (f : A) :
+    Function.Surjective ((toQuotientSheaf hI hJ).hom.app (op (basicOpen f))) := by
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (by simpa using hJ.isOpen_pow 1)
+  rw [toQuotientSheaf_eq hI hJ hn]
+  exact (quotientTransition_app_basicOpen_surjective _ hJ hn f).comp
+    (quotientProjection_app_basicOpen_surjective hI f n)
+
+/-- The structure-sheaf projection to an ideal-of-definition quotient is locally surjective. -/
+theorem toQuotientSheaf_isLocallySurjective (hI : IsAdic I) (hJ : IsAdic J) :
+    TopCat.Presheaf.IsLocallySurjective (toQuotientSheaf hI hJ).hom := by
+  rw [TopCat.Presheaf.isLocallySurjective_iff]
+  intro U s p hp
+  obtain ⟨V, ⟨f, rfl⟩, hpf, hfU⟩ := (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) hp
+  obtain ⟨t, ht⟩ := toQuotientSheaf_app_basicOpen_surjective hI hJ f
+    ((quotientSheaf hJ).obj.map (homOfLE hfU).op s)
+  exact ⟨basicOpen f, hfU, ⟨t, ht⟩, hpf⟩
 
 variable [IsAdicComplete I A]
 

@@ -35,91 +35,58 @@ universe u
 
 variable {X Y : PreAdicSpace.{u}}
 
+/-- If `q` restricted over the pullback of `W` to a chart is locally of finite type, so is the
+restriction of `f` over `W` to the part of the source chart `U` lying over `W`. -/
+private theorem locallyOfFiniteType_restrict_chart {f : X ⟶ Y} {W : Opens Y} {U : Opens X}
+    {V : Opens Y} {XA YA : PreAdicSpace.{u}} (eU : X.restrict U.isOpenEmbedding ≅ XA)
+    (eV : Y.restrict V.isOpenEmbedding ≅ YA) {q : XA ⟶ YA}
+    (hfac : X.ofRestrict U.isOpenEmbedding ≫ f =
+      eU.hom ≫ q ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding)
+    (hq : LocallyOfFiniteType (q.restrictPreimage ((Opens.map eV.inv.base).obj
+      ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)))) :
+    LocallyOfFiniteType (((X.restrict ((Opens.map f.base).obj W).isOpenEmbedding).ofRestrict
+      ((Opens.map (X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base).obj
+        U).isOpenEmbedding) ≫ f.restrictPreimage W) := by
+  set R : Opens YA := (Opens.map eV.inv.base).obj
+    ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W) with hR
+  have w := restrictPreimage_comp_eq_of_chart eU eV hfac R
+  let eK := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_source_eq (W := W) eU eV hfac)
+  let eO := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_target_eq (W := W) eV)
+  have heq : ((X.restrict ((Opens.map f.base).obj W).isOpenEmbedding).ofRestrict
+      ((Opens.map (X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base).obj
+        U).isOpenEmbedding) ≫ f.restrictPreimage W =
+      eK.hom ≫ q.restrictPreimage R ≫ eO.inv ≫ (Y.restrict W.isOpenEmbedding).ofRestrict
+        ((Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj V).isOpenEmbedding := by
+    rw [← cancel_mono (Y.ofRestrict W.isOpenEmbedding)]
+    simp only [Category.assoc, Hom.restrictPreimage_ofRestrict]
+    rw [IsOpenImmersion.isoOfRangeEq_inv_comp, w, IsOpenImmersion.isoOfRangeEq_hom_comp_assoc]
+    rfl
+  rw [heq, MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
+  have hq' : LocallyOfFiniteType (q.restrictPreimage R ≫ eO.inv) :=
+    (MorphismProperty.cancel_right_of_respectsIso @LocallyOfFiniteType.{u} _ _).mpr hq
+  simpa only [Category.assoc] using hq'.comp_of_isOpenImmersion
+    ((Y.restrict W.isOpenEmbedding).ofRestrict
+      ((Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj V).isOpenEmbedding)
+
 /-- A morphism locally of finite type into a sheafy pre-adic space remains locally of finite
 type after restriction over any open of the target. -/
 theorem LocallyOfFiniteType.restrictPreimage {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
     (hY : isSheafy Y) (W : Opens Y) : LocallyOfFiniteType (f.restrictPreimage W) := by
   classical
-  let XW := X.restrict ((Opens.map f.base).obj W).isOpenEmbedding
-  let YW := Y.restrict W.isOpenEmbedding
-  -- Restrict each finite-type chart over `W`, retaining its image as an open of `XW`.
-  have hlocal : ∀ x : XW, ∃ K : Opens XW, x ∈ K ∧
-      LocallyOfFiniteType (XW.ofRestrict K.isOpenEmbedding ≫ f.restrictPreimage W) := by
+  -- Restrict each finite-type chart over `W`, retaining its image as an open of the source.
+  have hlocal : ∀ x : X.restrict ((Opens.map f.base).obj W).isOpenEmbedding, ∃ K : Opens _,
+      x ∈ K ∧ LocallyOfFiniteType
+        (((X.restrict ((Opens.map f.base).obj W).isOpenEmbedding).ofRestrict
+          K.isOpenEmbedding) ≫ f.restrictPreimage W) := by
     intro x
     obtain ⟨U, hx, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
       hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.1
-    let XA := presentationLimitPreAdicSpace P' T.plus
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP'
-    let YA := presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP
-    let q := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      φ.map_mem_plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
-    let R : Opens YA := (Opens.map eV.inv.base).obj
-      ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)
     have hsA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
         (presentationLimitPresheaf P S.plus) :=
       ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)
-    have hq : LocallyOfFiniteType (q.restrictPreimage R) :=
-      locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
-        P P' hP hP' φ hφ hsheaf hsA R
-    let u := XA.ofRestrict ((Opens.map q.base).obj R).isOpenEmbedding ≫
-      eU.inv ≫ X.ofRestrict U.isOpenEmbedding
-    let v := YA.ofRestrict R.isOpenEmbedding ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding
-    have w : q.restrictPreimage R ≫ v = u ≫ f := by
-      dsimp only [u, v]
-      rw [Hom.restrictPreimage_ofRestrict_assoc]
-      simp only [hfac, Category.assoc, Iso.inv_hom_id_assoc]
-      rfl
-    let K : Opens XW := (Opens.map (X.ofRestrict
-      ((Opens.map f.base).obj W).isOpenEmbedding).base).obj U
-    let O : Opens YW := (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj V
-    let a := XW.ofRestrict K.isOpenEmbedding ≫
-      X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding
-    let b := YW.ofRestrict O.isOpenEmbedding ≫ Y.ofRestrict W.isOpenEmbedding
-    -- Compare the restricted charts with the canonical open restrictions, inside `X` and `Y`.
-    have hb : Set.range b.base = Set.range v.base := by
-      ext y
-      constructor
-      · rintro ⟨⟨⟨y, hyW⟩, hyV⟩, rfl⟩
-        have hi := congrArg (fun g ↦ g.base ⟨y, hyV⟩) eV.hom_inv_id
-        refine ⟨⟨eV.hom.base ⟨y, hyV⟩, ?_⟩, ?_⟩
-        · exact Opens.mem_map.mpr (Opens.mem_map.mpr (hi.symm ▸ hyW))
-        · exact congrArg Subtype.val hi
-      · rintro ⟨r, rfl⟩
-        exact ⟨⟨⟨v.base r, Opens.mem_map.mp (Opens.mem_map.mp r.2)⟩,
-          (eV.inv.base r.1).2⟩, rfl⟩
-    have ha : Set.range a.base = Set.range u.base := by
-      ext z
-      constructor
-      · rintro ⟨⟨⟨z, hzW⟩, hzU⟩, rfl⟩
-        let z' : X.restrict U.isOpenEmbedding := ⟨z, hzU⟩
-        have hz : eU.hom.base z' ∈ (Opens.map q.base).obj R := by
-          have hw := congrArg (fun g ↦ g.base z') hfac
-          exact Opens.mem_map.mpr (Opens.mem_map.mpr (Opens.mem_map.mpr (hw ▸ hzW)))
-        exact ⟨⟨eU.hom.base z', hz⟩,
-          congrArg (fun g ↦ (g.base z').1) eU.hom_inv_id⟩
-      · rintro ⟨r, rfl⟩
-        have hw := congrArg (fun g ↦ g.base r) w
-        exact ⟨⟨⟨u.base r, Opens.mem_map.mpr (hw ▸
-          Opens.mem_map.mp (Opens.mem_map.mp ((q.restrictPreimage R).base r).2))⟩,
-          (eU.inv.base r.1).2⟩, rfl⟩
-    let eK := IsOpenImmersion.isoOfRangeEq a u ha
-    let eO := IsOpenImmersion.isoOfRangeEq b v hb
-    have heq : XW.ofRestrict K.isOpenEmbedding ≫ f.restrictPreimage W =
-        eK.hom ≫ q.restrictPreimage R ≫ eO.inv ≫ YW.ofRestrict O.isOpenEmbedding := by
-      rw [← cancel_mono (Y.ofRestrict W.isOpenEmbedding)]
-      simp only [Category.assoc, Hom.restrictPreimage_ofRestrict]
-      rw [IsOpenImmersion.isoOfRangeEq_inv_comp, w,
-        IsOpenImmersion.isoOfRangeEq_hom_comp_assoc]
-      rfl
-    refine ⟨K, hx, ?_⟩
-    rw [heq, MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
-    have hq' : LocallyOfFiniteType (q.restrictPreimage R ≫ eO.inv) :=
-      (MorphismProperty.cancel_right_of_respectsIso @LocallyOfFiniteType.{u} _ _).mpr hq
-    simpa only [Category.assoc] using
-      hq'.comp_of_isOpenImmersion (YW.ofRestrict O.isOpenEmbedding)
+    exact ⟨_, hx, locallyOfFiniteType_restrict_chart eU eV hfac
+      (locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
+        P P' hP hP' φ hφ hsheaf hsA _)⟩
   choose K hxK hK using hlocal
   exact LocallyOfFiniteType.of_iSup_eq_top K
     (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxK x⟩) hK

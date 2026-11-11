@@ -95,8 +95,9 @@ This holds over an algebraically closed field, for a group of finite type. -/
 theorem torusCommHopfAlgProperty_of_isSemisimplePoint
     (hss : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsSemisimplePoint g) :
     torusCommHopfAlgProperty k H :=
-  torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top H
-    (HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint k H hss)
+  splitTorusCommHopfAlgProperty.torus k H
+    (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top H
+      (HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint k H hss))
 
 end
 
@@ -119,8 +120,7 @@ theorem groupLikeSpannedProperty_iff_isCocomm_and_forall_isSemisimplePoint :
       simpa only [coordinateRingFunctor_obj, ObjectProperty.ι_obj] using
         ((finiteTypeCommHopfAlgProperty k).ι.mapIso e)
     let e' : MonoidAlgebra k G ≃ₐc[k] H := _root_.CommHopfAlgCat.ofIso e₀
-    have hc : Coalgebra.IsCocomm k H :=
-      e'.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e'.surjective
+    have hc : Coalgebra.IsCocomm k H := Coalgebra.IsCocomm.of_surjective e' e'.surjective
     refine ⟨hc, fun g ↦ ?_⟩
     exact (HopfAlgebra.isSemisimplePoint_mapDomain_iff e' g).mp
       (isSemisimplePoint (BialgHom.mapDomain (e' : MonoidAlgebra k G →ₐc[k] H) g))

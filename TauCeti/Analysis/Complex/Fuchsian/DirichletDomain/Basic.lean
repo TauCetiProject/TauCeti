@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Faces
 public import TauCeti.Topology.MetricSpace.IsometricSMul
+import TauCeti.MeasureTheory.Group.DirichletDomain.Compact
 
 /-!
 # Dirichlet domains of Fuchsian groups
@@ -71,5 +72,13 @@ theorem exists_isFundamentalDomain_dirichletDomain :
     ∃ p : ℍ, IsFundamentalDomain Γ (dirichletDomain Γ p) :=
   let ⟨p, hp⟩ := freeLocus_nonempty Γ
   ⟨p, isFundamentalDomain_dirichletDomain Γ hp⟩
+
+variable {Γ}
+
+/-- A discrete subgroup with compact coarse quotient is cofinite. Its compact Dirichlet
+fundamental domain has finite hyperbolic area. -/
+theorem isCofinite_of_compactSpace [CompactSpace (orbitRel.Quotient Γ ℍ)] : Γ.IsCofinite := by
+  obtain ⟨p, hp⟩ := Γ.exists_isFundamentalDomain_dirichletDomain
+  exact hp.isCofinite_of_volume_ne_top (isCompact_dirichletDomain_of_compactSpace p).measure_ne_top
 
 end Subgroup
