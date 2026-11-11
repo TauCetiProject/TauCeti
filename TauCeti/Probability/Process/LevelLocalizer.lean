@@ -17,14 +17,12 @@ a finite level. Its entrance event is determined by its value at the current tim
 stopping times on the original filtration, without completeness or right continuity of the
 filtration. Starting below the level makes the stopping time strictly later than the start.
 For continuous paths, the hit is exact and the entire stopped process is bounded by the level.
-Levels tending
-to infinity give a native localizing sequence whenever the process is finite at every finite
-time almost surely.
+Levels tending to infinity give a localizing sequence (`IsLocalizingSequence`) whenever the
+process is finite at every finite time almost surely.
 
 These results apply to continuous accumulated-energy processes used to localize stochastic
 integrands. Extended values are retained: a path may reach infinity in finite time, but such a
 path is excluded only from the exhaustion conclusion, not from the stopping or bound results.
-Constructing a continuous accumulated-energy process from a general integrand is separate.
 
 The results use general ordered time and value spaces and an arbitrary starting time.
 The exhaustion and localizing-sequence results additionally require a top element in the value
@@ -91,8 +89,7 @@ theorem lt_hittingAfter_Ici (hmono : Monotone (A · ω))
 variable [OrderTop β] {c : ℕ → β}
 
 /-- At any time where the process is finite, level times for levels tending to infinity
-eventually exceed that time. In particular their minima with a fixed finite horizon eventually
-equal that horizon. -/
+eventually exceed that time. -/
 theorem eventually_lt_hittingAfter_Ici (hmono : Monotone (A · ω))
     (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : A t ω ≠ ⊤)
     (hc : Tendsto c atTop (𝓝 ⊤)) :
@@ -126,10 +123,11 @@ variable {Ω ι β : Type*} [ConditionallyCompleteLinearOrder ι]
 
 /-- A continuous increasing process starting at or below a level hits it exactly, whenever
 the entrance time is finite. No finite-valuedness assumption on the path is needed. -/
-theorem apply_untopA_hittingAfter_Ici_eq (hcont : Continuous (A · ω))
+theorem stoppedValue_hittingAfter_Ici_eq (hcont : Continuous (A · ω))
     (hmono : Monotone (A · ω)) (hstart : A n ω ≤ c)
     (hfinite : hittingAfter A (Ici c) n ω ≠ ⊤) :
-    A (hittingAfter A (Ici c) n ω).untopA ω = c := by
+    stoppedValue A (hittingAfter A (Ici c) n) ω = c := by
+  simp only [stoppedValue]
   have hright : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s :=
     fun _ => hcont.continuousAt.continuousWithinAt
   lift hittingAfter A (Ici c) n ω to ι using hfinite with s hs
@@ -154,8 +152,9 @@ theorem stoppedProcess_hittingAfter_Ici_le (hcont : Continuous (A · ω))
     · exact hlt.le
   · have hle := le_of_not_gt ht
     rw [stoppedProcess_eq_of_ge hle]
-    exact (apply_untopA_hittingAfter_Ici_eq hcont hmono hstart (ne_top_of_le_ne_top
-      WithTop.coe_ne_top hle)).le
+    simpa only [stoppedValue] using
+      (stoppedValue_hittingAfter_Ici_eq hcont hmono hstart (ne_top_of_le_ne_top
+        WithTop.coe_ne_top hle)).le
 
 end Continuous
 
@@ -183,7 +182,7 @@ theorem isStoppingTime_hittingAfter_Ici_of_monotone (hA : Adapted F A)
 variable [OrderTop β] {c : ℕ → β}
 
 /-- The level times of an increasing right-continuous adapted process at increasing levels
-tending to infinity form a native localizing sequence when its finite-time values are almost
+tending to infinity form a localizing sequence when its finite-time values are almost
 surely finite. No moment assumption is used. -/
 theorem isLocalizingSequence_hittingAfter_Ici (hA : Adapted F A)
     (hcont : ∀ ω s, ContinuousWithinAt (A · ω) (Ici s) s)
