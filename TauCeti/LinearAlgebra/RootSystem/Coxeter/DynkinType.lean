@@ -126,11 +126,12 @@ lemma coxeterMatrix_apply (t : DynkinType) (i j : Fin t.rank) :
   coxeterMatrixOfCartanMatrix_apply ..
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when they are not joined**: the two simple
-reflections commute exactly when the two simple roots are orthogonal. -/
-lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} (hij : i ≠ j) :
+reflections commute exactly when the two simple roots are orthogonal. On the diagonal both sides
+fail. -/
+lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} :
     t.coxeterMatrix i j = 2 ↔ t.cartanMatrix i j = 0 :=
   coxeterMatrixOfCartanMatrix_apply_eq_two_iff _ _ _
-    (fun i j h ↦ (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp h) hij
+    (fun i j h ↦ (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp h)
 
 /-- **On a simply-laced type the Coxeter matrix is the diagram**: distinct nodes carry the entry `2`
 when they are not joined and `3` when they are, there being no multiple edge to raise an entry to
@@ -140,7 +141,7 @@ lemma coxeterMatrix_apply_of_isSimplyLaced {t : DynkinType} (ht : t.cartanMatrix
     t.coxeterMatrix i j = if t.cartanMatrix i j = 0 then 2 else 3 := by
   rcases eq_or_ne (t.cartanMatrix i j) 0 with h | h
   · rw [ite_eq_left h]
-    exact (t.coxeterMatrix_apply_eq_two_iff hij).mpr h
+    exact t.coxeterMatrix_apply_eq_two_iff.mpr h
   · rw [ite_eq_right h, coxeterMatrix_apply, (ht hij).resolve_left h,
       (ht hij.symm).resolve_left fun hc ↦ h ((t.cartanMatrix_apply_eq_zero_iff_symm i j).mpr hc)]
     norm_num
