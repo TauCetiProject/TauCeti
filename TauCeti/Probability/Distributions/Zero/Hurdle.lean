@@ -25,7 +25,8 @@ Write `p₀ = ν.real {0}`. This file combines the zero-inflation formulas of
   masses `w + (1 - w) (ν.real (Iic k) - p₀) / (1 - p₀)`;
 * the nonzero natural moments `(1 - w) E[X ^ n] / (1 - p₀)` of the real cast, its mean and
   variance, and its exponential-integrability domain, which is all of `ℝ` at `w = 1` and otherwise
-  that of `ν`;
+  that of `ν` (the moment and mean identities are stated for Bochner integrals, which are `0` when
+  the integrand is not integrable; they are the usual finite moments exactly when `ν` has them);
 * the cdf of the real cast and its quantile: zero up to the level `w`, and above it the quantile of
   `ν` at the level `p₀ + (u - w) / (1 - w) * (1 - p₀)`.
 
@@ -101,7 +102,9 @@ theorem integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero :
     integrableExpSet_id_map_natCast_cond_compl_zero]
 
 /-- Every nonzero natural moment of the real cast of the hurdle law is the corresponding moment of
-`ν` rescaled by `(1 - w) / (1 - ν.real {0})`. -/
+`ν` rescaled by `(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are
+`0` for a non-integrable integrand, so with no integrability hypothesis both sides vanish when `ν`
+has no `n`-th moment; under integrability it is the usual moment identity. -/
 theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn : n ≠ 0) :
     ∫ x, x ^ n ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ^ n ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by
@@ -124,7 +127,9 @@ theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn 
     mul_zero, zero_add, mul_div_assoc]
 
 /-- The mean of the real cast of the hurdle law is the mean of `ν` rescaled by
-`(1 - w) / (1 - ν.real {0})`. -/
+`(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are `0` for a
+non-integrable integrand, so both sides vanish when `ν` has no mean; under integrability it is the
+usual mean identity. -/
 theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero :
     ∫ x, x ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by

@@ -135,14 +135,14 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_of_lt_one (hr : 0 <
 
 /-- At an interior level `u`, the quantile of the zero-truncated negative-binomial law is the
 negative-binomial quantile at the rescaled level `p ^ r + u (1 - p ^ r)`. -/
-theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 < r) (hp : 0 < p)
-    (hp1 : p < 1) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     (((negativeBinomialMeasure r p)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile
         (p ^ r + u * (1 - p ^ r)) := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
+  let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   rw [Measure.quantile_map_natCast_cond_compl_zero _ hu,
-    negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
+    negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 
 /-- A natural number is the quantile of the zero-truncated negative-binomial law at an interior
 level `u` exactly when it is the least index whose negative-binomial cumulative mass
@@ -154,7 +154,7 @@ theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_eq_iff (hr : 0
   have hpos := one_sub_rpow_pos hr hp hp1
   have hv : p ^ r + u * (1 - p ^ r) ∈ Ioo 0 1 :=
     ⟨by nlinarith [rpow_pos_of_pos hp r, hu.1], by nlinarith [hu.2]⟩
-  rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr hp hp1 hu,
+  rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr.le hp hp1.le hu,
     quantile_map_cast_negativeBinomialMeasure_eq_iff hr.le hp hv]
 
 end TauCeti.Probability

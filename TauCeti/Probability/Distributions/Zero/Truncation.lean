@@ -153,11 +153,9 @@ theorem quantile_map_natCast_cond_compl_zero {u : ℝ} (hu : u ∈ Ioo (0 : ℝ)
     have hreal : ν.real {0} = 1 := by simp [measureReal_def, h]
     have hcompl : ν {0}ᶜ = 0 := by rw [prob_compl_eq_one_sub (measurableSet_singleton 0), h]; simp
     have hdirac : ν = Measure.dirac 0 := by
-      refine Measure.ext_iff_singleton.2 fun a ↦ ?_
-      rcases eq_or_ne a 0 with rfl | ha
-      · simp [h]
-      · have hνa : ν {a} = 0 := measure_mono_null (by rintro x rfl; simpa using ha) hcompl
-        simp [ha, hνa]
+      have hr := Measure.restrict_eq_self_of_ae_mem (μ := ν) (s := {0})
+        (ae_iff.2 hcompl)
+      simpa [Measure.restrict_singleton, h] using hr.symm
     rw [cond_compl_singleton_eq_zero_iff.2 h, Measure.map_zero, Measure.quantile_zero, hreal,
       sub_self, mul_zero, add_zero, hdirac, Measure.map_dirac (f := (Nat.cast : ℕ → ℝ)) 0,
       Nat.cast_zero,
