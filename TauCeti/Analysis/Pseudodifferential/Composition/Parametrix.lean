@@ -76,39 +76,6 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-! ### Successive corrections -/
-
-/-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
-order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
-and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
-private theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
-    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
-    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), P N b →
-      b'.coefficient = b.coefficient + d.coefficient → P N b')
-    (hsucc : ∀ (N : ℕ) b, P N b →
-      ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
-    ∃ b, ∀ N, P N b := by
-  choose d hd using hsucc
-  -- The successive approximations `s N`, with `P N (s N)`, and the corrections `c N` between them.
-  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
-  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2
-  have hs (N : ℕ) : (s N).1.coefficient = b₀.coefficient + ∑ j ∈ range N, (c j).coefficient := by
-    induction N with
-    | zero => simp [s]
-    | succ N ih =>
-      rw [sum_range_succ, ← add_assoc, ← ih]
-      simp [s, c]
-  have hm : Antitone fun j : ℕ ↦ μ - j := fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ
-  have hm' : Tendsto (fun j : ℕ ↦ μ - j) atTop atBot :=
-    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
-  refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
-  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
-  refine hcongr N (s N).1 _ r (s N).2 ?_
-  rw [coefficient_add, coefficient_inclusion, ← hr, hs]
-  abel
-
 /-! ### Left parametrix symbols -/
 
 section Left
