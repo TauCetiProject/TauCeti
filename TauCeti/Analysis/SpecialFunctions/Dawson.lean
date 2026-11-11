@@ -36,6 +36,10 @@ The segment integral `z ∫₀¹ f(sz) ds` of an entire function `f` is `g(z) �
 primitive `g` of `f`, by the fundamental theorem of calculus along the segment. A primitive
 exists by Mathlib's `Differentiable.isExactOn_univ`, so the segment integral is a primitive of
 `f`. This gives `F′` without differentiating under the integral sign.
+
+The segment-primitive lemmas are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMFMathlib/Analysis/Complex/SegmentPrimitive.lean`.
 -/
 
 @[expose] public section
