@@ -88,6 +88,16 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
     (End.of s ^ (m + 1)).asHom.f i = (End.of s ^ m).asHom.f i ≫ s.f i := by
   rw [pow_succ', End.mul_asHom, comp_f]
 
+/-- A chain map intertwining two chain endomorphisms intertwines their powers, degreewise. -/
+@[reassoc]
+lemma pow_f_comp_eq_comp_pow_f {L : HomologicalComplex C c} {t : L ⟶ L} {φ : K ⟶ L}
+    (h : s ≫ φ = φ ≫ t) (m : ℕ) (i : ι) :
+    (End.of s ^ m).asHom.f i ≫ φ.f i = φ.f i ≫ (End.of t ^ m).asHom.f i := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [pow_f_succ, pow_f_succ, Category.assoc, ← comp_f, h, comp_f, reassoc_of% ih]
+
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
 instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=

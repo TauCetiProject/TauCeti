@@ -219,6 +219,18 @@ lemma subcomplexSubdivisionHomotopy_hom (n : ℕ) :
     (subcomplexSubdivisionHomotopy R S).hom n (n + 1) = subcomplexPrismX R S n :=
   Homotopy.mkChainComplex_hom_succ _ _ _ _ n
 
+/-- Inclusion intertwines the restricted and ordinary subdivision homotopies in every
+bidegree. -/
+@[reassoc]
+lemma subcomplexSubdivisionHomotopy_hom_ι (i j : ℕ) :
+    (subcomplexSubdivisionHomotopy R S).hom i j ≫ (SSet.chainComplexMap S.ι R).f j =
+      (SSet.chainComplexMap S.ι R).f i ≫ (singularSubdivisionHomotopy R X).hom i j := by
+  by_cases hij : (ComplexShape.down ℕ).Rel j i
+  · obtain rfl : i + 1 = j := hij
+    simp
+  · rw [(subcomplexSubdivisionHomotopy R S).zero i j hij,
+      (singularSubdivisionHomotopy R X).zero i j hij, zero_comp, comp_zero]
+
 /-- Subdivision acts as the identity on the homology of the chains of an affinely stable
 subcomplex. -/
 @[simp]

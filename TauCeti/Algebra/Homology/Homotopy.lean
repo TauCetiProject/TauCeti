@@ -223,6 +223,17 @@ def idPow (h : Homotopy (𝟙 K) s) (m : ℕ) : Homotopy (𝟙 K) (End.of s ^ m)
 lemma idPow_hom (h : Homotopy (𝟙 K) s) (m : ℕ) (i j : ι) :
     (h.idPow m).hom i j = ∑ k ∈ Finset.range m, (End.of s ^ k).asHom.f i ≫ h.hom i j := (rfl)
 
+/-- A chain map intertwining two endomorphisms `s` and `t`, and the components of two chain
+homotopies `h` and `h'` from the identity to them, intertwines the iterated homotopies
+`h.idPow m` and `h'.idPow m`. -/
+@[reassoc]
+lemma idPow_hom_comp_eq_comp_idPow_hom {L : HomologicalComplex C c} {t : L ⟶ L} {φ : K ⟶ L}
+    (h : Homotopy (𝟙 K) s) (h' : Homotopy (𝟙 L) t) (hs : s ≫ φ = φ ≫ t)
+    (hh : ∀ i j, h.hom i j ≫ φ.f j = φ.f i ≫ h'.hom i j) (m : ℕ) (i j : ι) :
+    (h.idPow m).hom i j ≫ φ.f j = φ.f i ≫ (h'.idPow m).hom i j := by
+  simp only [idPow_hom, Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc, hh,
+    HomologicalComplex.pow_f_comp_eq_comp_pow_f_assoc hs]
+
 end Homotopy
 
 end Pow

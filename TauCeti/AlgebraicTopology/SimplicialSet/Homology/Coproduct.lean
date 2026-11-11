@@ -20,7 +20,10 @@ forming a coproduct of copies of `R` preserves colimits; hence so does `X ↦ X.
 
 The case of a coproduct is chain-level additivity: the chain complex of a disjoint union of
 simplicial sets is the coproduct of the chain complexes of the summands.
-The chain map induced by a monomorphism of simplicial sets is also a monomorphism.
+The chain map induced by a monomorphism of simplicial sets is also a monomorphism. For two
+subcomplexes `S` and `T` of a simplicial set, a chain of `S` whose image is a chain of `T` is a
+chain of `S ⊓ T` (`SSet.Subcomplex.exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq`), because in
+each degree all three chain objects are coproducts of copies of `R` indexed by simplices.
 
 ## Sources
 
@@ -70,5 +73,58 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 instance mono_chainComplexMap [Mono f] : Mono (chainComplexMap f R) :=
   HomologicalComplex.mono_of_mono_f _ fun _ ↦
     inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
+
+namespace Subcomplex
+
+variable {K : SSet.{w}} (S T : K.Subcomplex)
+
+/-- A chain of a subcomplex `S` whose image in the chains of `K` is the image of a chain of a
+subcomplex `T` is a chain of `S ⊓ T`. -/
+theorem exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq {n : ℕ}
+    {g : R ⟶ ((S : SSet).chainComplex R).X n} {h : R ⟶ ((T : SSet).chainComplex R).X n}
+    (hgh : g ≫ (chainComplexMap S.ι R).f n = h ≫ (chainComplexMap T.ι R).f n) :
+    ∃ g' : R ⟶ ((S ⊓ T).toSSet.chainComplex R).X n,
+      g' ≫ (chainComplexMap (homOfLE (inf_le_left : S ⊓ T ≤ S)) R).f n = g := by
+  classical
+  have : Mono ((chainComplexMap S.ι R).f n) :=
+    inferInstanceAs (Mono ((sigmaConst.obj R).map (S.ι.app (Opposite.op ⦋n⦌))))
+  -- The projections onto the summands of the simplices of `T`.
+  let π : ((S : SSet).chainComplex R).X n ⟶ ((S ⊓ T).toSSet.chainComplex R).X n :=
+    Cofan.IsColimit.desc ((S : SSet).isColimitChainComplexXCofan R n) fun σ ↦
+      if hσ : σ.1 ∈ T.obj (Opposite.op ⦋n⦌) then
+        (S ⊓ T).toSSet.ιChainComplex ⟨σ.1, Set.mem_inter σ.2 hσ⟩
+      else 0
+  let πK : (K.chainComplex R).X n ⟶ ((T : SSet).chainComplex R).X n :=
+    Cofan.IsColimit.desc (K.isColimitChainComplexXCofan R n) fun σ ↦
+      if hσ : σ ∈ T.obj (Opposite.op ⦋n⦌) then (T : SSet).ιChainComplex ⟨σ, hσ⟩ else 0
+  have hπσ (σ : (S : SSet) _⦋n⦌) : (S : SSet).ιChainComplex σ ≫ π =
+      if hσ : σ.1 ∈ T.obj (Opposite.op ⦋n⦌) then
+        (S ⊓ T).toSSet.ιChainComplex ⟨σ.1, Set.mem_inter σ.2 hσ⟩
+      else 0 :=
+    Cofan.IsColimit.fac _ _ σ
+  have hπKσ (σ : K _⦋n⦌) : K.ιChainComplex σ ≫ πK =
+      if hσ : σ ∈ T.obj (Opposite.op ⦋n⦌) then (T : SSet).ιChainComplex ⟨σ, hσ⟩ else 0 :=
+    Cofan.IsColimit.fac _ _ σ
+  have hπK : (chainComplexMap T.ι R).f n ≫ πK = 𝟙 _ := by
+    ext τ
+    rw [← Category.assoc, ι_chainComplexMap_f, hπKσ, Category.comp_id]
+    split_ifs with hτ
+    · rfl
+    · exact (hτ τ.2).elim
+  have hπ : π ≫ (chainComplexMap (homOfLE (inf_le_left : S ⊓ T ≤ S)) R).f n ≫
+        (chainComplexMap S.ι R).f n =
+      (chainComplexMap S.ι R).f n ≫ πK ≫ (chainComplexMap T.ι R).f n := by
+    ext σ
+    rw [reassoc_of% (hπσ σ), ι_chainComplexMap_f_assoc, reassoc_of% (hπKσ _)]
+    split_ifs with h₁ h₂ h₂
+    · rw [ι_chainComplexMap_f_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f]
+      rfl
+    · exact (h₂ h₁).elim
+    · exact (h₁ h₂).elim
+    · rw [zero_comp, zero_comp]
+  refine ⟨g ≫ π, (cancel_mono ((chainComplexMap S.ι R).f n)).1 ?_⟩
+  rw [Category.assoc, Category.assoc, hπ, reassoc_of% hgh, reassoc_of% hπK, hgh]
+
+end Subcomplex
 
 end SSet
