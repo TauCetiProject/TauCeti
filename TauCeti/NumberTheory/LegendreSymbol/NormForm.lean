@@ -49,16 +49,16 @@ theorem jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq {b : ℕ} {D n x y 
     have : Fact p.Prime := ⟨hp⟩
     have hn0 : (n : ZMod p) ≠ 0 :=
       ZMod.ne_zero_of_gcd_eq_one hp (Int.gcd_eq_one_of_gcd_mul_right_eq_one_left hbn)
-    rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p hn0]
+    rw [← jacobiSym.legendreSym.to_jacobiSym]
     rcases eq_or_ne p 2 with rfl | hp2
-    · exact key _ hn0
+    · exact (legendreSym.eq_one_iff 2 hn0).mpr (key _ hn0)
     have h2 : (2 : ZMod p) ≠ 0 := Ring.two_ne_zero (by rwa [ZMod.ringChar_zmod_n])
     have hD0 : (D : ZMod p) = 0 :=
       (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr (dvd_of_mul_right_dvd hbD)
     have h4 : (4 : ZMod p) * n = x ^ 2 := by
       simpa [hD0] using congrArg (Int.cast : ℤ → ZMod p) h
-    refine ⟨x * 2⁻¹, ?_⟩
-    field_simp
-    linear_combination h4
+    -- `x² - n · 2² = 0` modulo `p`, so `n` is the square of `x / 2`
+    exact legendreSym.eq_one_of_sq_sub_mul_sq_eq_zero hn0 (x := (x : ZMod p)) h2
+      (by linear_combination -h4)
 
 end TauCeti
