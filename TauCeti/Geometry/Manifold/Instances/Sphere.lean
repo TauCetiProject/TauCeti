@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.Immersion.Units
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
@@ -58,9 +59,12 @@ a parameter likewise acts smoothly on the sphere.
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
 away from `-1`. A differentiable path or loop in a sphere of dimension at least two omits a point,
-allowing the entire path or loop to be read in one stereographic chart.
+allowing the entire path or loop to be read in one stereographic chart. The native inclusion
+`Circle.toUnits : Circle → ℂˣ` is a smooth immersion.
 
 ## Main results
+
+* `Circle.isImmersion_toUnits`: the native circle inclusion into complex units is an immersion.
 
 * `TauCeti.finrank_euclideanSpace_fin_succ_fact`: the dimension of `ℝⁿ⁺¹`, in the form the
   stereographic charts of its unit sphere take it.
@@ -971,3 +975,24 @@ theorem contMDiff_conjSphere {m : ℕ∞ω} : ContMDiff (𝓡 1) (𝓡 1) m conj
 end Conj
 
 end TauCeti
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The native circle inclusion into complex units is a smooth immersion. -/
+theorem Circle.isImmersion_toUnits {m : ℕ∞ω} :
+    Manifold.IsImmersion (𝓡 1) 𝓘(ℝ, ℂ) m Circle.toUnits := by
+  suffices h : Manifold.IsImmersion (𝓡 1) 𝓘(ℝ, ℂ) ω Circle.toUnits from h.of_le le_top
+  have hval : (fun z : Circle ↦ ((Circle.toUnits z : ℂˣ) : ℂ)) =
+      (fun z : Circle ↦ (z : ℂ)) := by
+    funext z
+    simp [Circle.toUnits_apply]
+  have hs : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ω Circle.toUnits := by
+    apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
+    rw [Function.comp_def, hval]
+    exact contMDiff_coe_sphere
+  apply hs.isImmersion_units_of_injective_mfderiv_val (by simp)
+  intro z
+  apply (TauCeti.injective_mvfderiv_iff
+    (g := fun w : Circle ↦ (Circle.toUnits w : ℂ)) (x := z)).mp
+  rw [hval]
+  exact injective_mvfderiv_subtypeVal_sphere (E := ℂ) (n := 1) z
