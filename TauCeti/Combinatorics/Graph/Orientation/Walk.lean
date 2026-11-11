@@ -22,6 +22,10 @@ the two opposite traversals of one nonloop edge cannot both follow the orientati
 parallel edges need no exceptions. These identifications allow directed ear and strong
 connectivity arguments to return native multigraph walk witnesses. The conversion interface
 parallels `Graph.Walk.bidirectedEquiv`, but restricts to walks following the chosen directions.
+
+Conversely, a trail determines an orientation, `Graph.Walk.orientation`, that directs each of
+its edges in the order traversed, and the trail follows that orientation. Edges off the trail
+keep an arbitrary direction; following an orientation depends only on the traversed edges.
 -/
 
 public section
@@ -99,46 +103,52 @@ theorem FollowsOrientation.congr {o' : G.Orientation} {p : G.Walk x y}
 
 /-- Orient a graph so that a trail is traversed from its start to its end. Edges outside the
 trail retain an arbitrary orientation. -/
-noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.edges.Nodup → G.Orientation
+noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.IsTrail → G.Orientation
   | _, _, .nil, _ => Orientation.ofEdgeEnds G
   | _, _, .cons' x y z e h p, hp => by
       classical
-      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
+      have hpTail : p.IsTrail := ((isTrail_cons e h p).1 hp).1
       exact Orientation.ofHead
-        (fun f ↦ if hf : f.1 = e then ⟨y, h.right_mem⟩
-          else (p.orientation (List.nodup_cons.1 hp').2).head f)
+        (fun f ↦ if hf : f.1 = e then ⟨y, h.right_mem⟩ else (p.orientation hpTail).head f)
         fun f ↦ by
           split_ifs with hf
           · subst hf
             exact h.inc_right
-          · exact (p.orientation (List.nodup_cons.1 hp').2).head_inc f
+          · exact (p.orientation hpTail).head_inc f
 
 @[simp]
 theorem orientation_cons_head {x y z : α} (e : β) (h : G.IsLink e x y)
-    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) :
     ((Walk.cons e h p).orientation hp).head ⟨e, h.edge_mem⟩ = ⟨y, h.right_mem⟩ := by
   simp [orientation]
 
 @[simp]
 theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
-    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) :
     ((Walk.cons e h p).orientation hp).tail ⟨e, h.edge_mem⟩ = ⟨x, h.left_mem⟩ := by
   apply Subtype.ext
   apply (((Walk.cons e h p).orientation hp).isLink ⟨e, h.edge_mem⟩).left_unique
   simpa using h
 
+/-- Away from the first edge of a trail, its orientation agrees with that of the remaining
+trail. -/
+@[simp]
+theorem orientation_cons_head_of_ne {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).IsTrail) {f : G.edgeSet} (hf : f.1 ≠ e) :
+    ((Walk.cons e h p).orientation hp).head f =
+      (p.orientation ((isTrail_cons e h p).1 hp).1).head f := by
+  simp [orientation, hf]
+
 /-- A trail follows the orientation obtained by directing its successive edges forward. -/
-theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.edges.Nodup) :
+theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.IsTrail) :
     p.FollowsOrientation (p.orientation hp) := by
   induction p with
   | nil => simp
   | @cons x y z e h p ih =>
-      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
-      have hpTail : p.edges.Nodup := (List.nodup_cons.1 hp').2
+      have hp' := (isTrail_cons e h p).1 hp
       rw [followsOrientation_cons]
-      refine ⟨by simp, by simp, ih hpTail |>.congr fun f hf ↦ ?_⟩
-      have hne : f.1 ≠ e := fun hfe ↦ (List.nodup_cons.1 hp').1 (hfe ▸ hf)
-      simp [orientation, hne]
+      refine ⟨by simp, by simp, ih hp'.1 |>.congr fun f hf ↦ ?_⟩
+      exact (orientation_cons_head_of_ne e h p hp fun hfe ↦ hp'.2 (hfe ▸ hf)).symm
 
 /-- A walk following an orientation, viewed as a directed walk on the actual vertices. -/
 def toOriented : {x y : α} → (p : G.Walk x y) → (hp : p.FollowsOrientation o) →

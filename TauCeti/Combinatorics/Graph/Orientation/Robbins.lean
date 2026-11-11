@@ -43,7 +43,7 @@ namespace Ear
 
 /-- Orient the graph traced by an ear in the order of its underlying walk. -/
 noncomputable def toGraphOrientation (ear : G.Ear H) : ear.toGraph.Orientation :=
-  (ear.toWalk.2.2.orientation ear.edges_nodup).restrict ear.toGraph_le
+  (ear.toWalk.2.2.orientation ear.isTrail).restrict ear.toGraph_le
 
 /-- The underlying walk of an ear, restricted to its traced graph, follows the canonical
 orientation of that trace. -/
@@ -51,7 +51,7 @@ theorem followsOrientation_toGraphOrientation (ear : G.Ear H) :
     (ear.toWalk.2.2.transfer ear.toGraph_le fun e he ↦
       (by rw [ear.edgeSet_toGraph]; exact he)).FollowsOrientation
         ear.toGraphOrientation := by
-  exact (ear.toWalk.2.2.followsOrientation_orientation ear.edges_nodup).transfer
+  exact (ear.toWalk.2.2.followsOrientation_orientation ear.isTrail).transfer
     ear.toGraph_le fun e he ↦ by
       rw [ear.edgeSet_toGraph]
       exact he
@@ -60,45 +60,31 @@ end Ear
 
 namespace Orientation
 
-private noncomputable def unionOfEq {K : Graph α β} (o₁ : H.Orientation)
-    {L : Graph α β} (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) :
-    K.Orientation := by
-  rw [hK]
-  exact o₁.union o₂ h
-
-private theorem restrict_unionOfEq_left {K L : Graph α β} (o₁ : H.Orientation)
-    (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) (hH : H ≤ K) :
-    (unionOfEq o₁ o₂ h hK).restrict hH = o₁ := by
-  subst K
-  exact restrict_union_left
-
-private theorem restrict_unionOfEq_right {K L : Graph α β} (o₁ : H.Orientation)
-    (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) (hL : L ≤ K)
-    (hE : Disjoint E(H) E(L)) : (unionOfEq o₁ o₂ h hK).restrict hL = o₂ := by
-  subst K
-  exact restrict_union_right hE
-
 /-- Extend an orientation over an adjoined ear by directing every new edge in the order of the
 ear's underlying walk. -/
 noncomputable def addEar (o : H.Orientation) (ear : G.Ear H) : ear.add.Orientation :=
-  unionOfEq o ear.toGraphOrientation ear.compatible ear.add_eq_union
+  (o.union ear.toGraphOrientation ear.compatible).restrict ear.add_eq_union.le
 
 @[simp]
 theorem restrict_addEar_base (o : H.Orientation) (ear : G.Ear H) :
     (o.addEar ear).restrict ear.base_le_add = o := by
-  exact restrict_unionOfEq_left o ear.toGraphOrientation ear.compatible ear.add_eq_union
-    ear.base_le_add
+  rw [addEar, restrict_restrict]
+  exact restrict_union_left ..
 
 @[simp]
 theorem restrict_addEar_toGraph (o : H.Orientation) (ear : G.Ear H) :
     (o.addEar ear).restrict ear.toGraph_le_add = ear.toGraphOrientation := by
-  exact restrict_unionOfEq_right o ear.toGraphOrientation ear.compatible ear.add_eq_union
-    ear.toGraph_le_add ear.disjoint_edgeSet_toGraph
+  rw [addEar, restrict_restrict]
+  exact restrict_union_right ear.disjoint_edgeSet_toGraph
 
-/-- Directing an ear from its old start to its old end preserves strong connectivity. -/
-theorem isStronglyConnected_addEar (o : H.Orientation) (ear : G.Ear H)
-    (hH : @Quiver.IsStronglyConnected H.vertexSet ⟨o.Hom⟩) :
-    @Quiver.IsStronglyConnected ear.add.vertexSet ⟨(o.addEar ear).Hom⟩ := by
+/-- Every vertex traced by an ear lies on the directed ear, so it is reachable from the ear's
+start and reaches the ear's end. -/
+private theorem nonempty_arrowWalk_of_mem_toGraph (o : H.Orientation) (ear : G.Ear H)
+    (x : ear.add.vertexSet) (hx : x.1 ∈ V(ear.toGraph)) :
+    Nonempty (ArrowWalk (o.addEar ear).Hom
+        (Set.inclusion ear.base_le_add.vertexSet_mono ⟨ear.toWalk.1, ear.toWalk_fst_mem⟩) x) ∧
+      Nonempty (ArrowWalk (o.addEar ear).Hom x
+        (Set.inclusion ear.base_le_add.vertexSet_mono ⟨ear.toWalk.2.1, ear.toWalk_snd_mem⟩)) := by
   let p := ear.toWalk.2.2
   let q := p.transfer ear.toGraph_le fun e he ↦ by
     rw [ear.edgeSet_toGraph]
@@ -108,75 +94,55 @@ theorem isStronglyConnected_addEar (o : H.Orientation) (ear : G.Ear H)
   have hqAdd : (q.mapLe ear.toGraph_le_add).FollowsOrientation (o.addEar ear) := by
     apply (Walk.followsOrientation_mapLe_iff ear.toGraph_le_add q (o.addEar ear)).2
     simpa only [restrict_addEar_toGraph] using hq
-  have hstart : ear.toWalk.1 ∈ V(ear.add) :=
-    ear.base_le_add.vertexSet_mono ear.toWalk_fst_mem
-  have hend : ear.toWalk.2.1 ∈ V(ear.add) :=
-    ear.base_le_add.vertexSet_mono ear.toWalk_snd_mem
-  let source : ear.add.vertexSet := ⟨ear.toWalk.1, hstart⟩
-  let target : ear.add.vertexSet := ⟨ear.toWalk.2.1, hend⟩
-  let directed : TauCeti.ArrowWalk (o.addEar ear).Hom source target :=
-    (q.mapLe ear.toGraph_le_add).toOriented hqAdd hstart
-  have hvertices : directed.vertices.unattach = p.support := by
-    rw [Walk.vertices_toOriented]
-    simp only [Walk.support_mapLe_eq_support, q, Walk.support_transfer]
-  have splitAt (x : ear.add.vertexSet) (hx : x.1 ∈ V(ear.toGraph)) :
-      Nonempty (TauCeti.ArrowWalk (o.addEar ear).Hom source x) ∧
-        Nonempty (TauCeti.ArrowWalk (o.addEar ear).Hom x target) := by
-    have hxSupport : x.1 ∈ p.support := by
-      simpa only [Ear.vertexSet_toGraph, Set.mem_ofPred_eq] using hx
-    have hxDirected : x ∈ directed.vertices := by
-      have : x.1 ∈ directed.vertices.unattach := hvertices.symm ▸ hxSupport
-      rw [List.mem_unattach] at this
-      obtain ⟨hxProof, hxmem⟩ := this
-      simpa using hxmem
-    obtain ⟨r, s, -⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices
-      ear.add.vertexSet ⟨(o.addEar ear).Hom⟩ source target directed x hxDirected
-    exact ⟨⟨r⟩, ⟨s⟩⟩
-  have oldPath (a b : H.vertexSet) :
-      Nonempty (TauCeti.ArrowWalk (o.addEar ear).Hom
-        (Set.inclusion ear.base_le_add.vertexSet_mono a)
-        (Set.inclusion ear.base_le_add.vertexSet_mono b)) := by
-    obtain ⟨r⟩ := hH a b
-    let w := o.forgetWalk r
-    have hw : w.FollowsOrientation o := o.followsOrientation_forgetWalk r
-    have hwAdd : (w.mapLe ear.base_le_add).FollowsOrientation (o.addEar ear) := by
-      apply (Walk.followsOrientation_mapLe_iff ear.base_le_add w (o.addEar ear)).2
-      simpa only [restrict_addEar_base] using hw
-    exact ⟨(w.mapLe ear.base_le_add).toOriented hwAdd
-      (ear.base_le_add.vertexSet_mono a.2)⟩
-  have fromOld (x : ear.add.vertexSet) :
-      ∃ a : H.vertexSet, Nonempty (ArrowWalk (o.addEar ear).Hom
-        (Set.inclusion ear.base_le_add.vertexSet_mono a) x) := by
-    have hxUnion : x.1 ∈ V(H) ∪ V(ear.toGraph) := by
-      rw [← ear.vertexSet_add]
-      exact x.2
-    rcases hxUnion with hx | hx
-    · let a : H.vertexSet := ⟨x, hx⟩
-      have hax : Set.inclusion ear.base_le_add.vertexSet_mono a = x := Subtype.ext rfl
-      exact ⟨a, hax ▸ ⟨TauCeti.ArrowWalk.nil x⟩⟩
-    · have hs := (splitAt x hx).1
-      let a : H.vertexSet := ⟨ear.toWalk.1, ear.toWalk_fst_mem⟩
-      have ha : Set.inclusion ear.base_le_add.vertexSet_mono a = source := Subtype.ext rfl
-      exact ⟨a, ha ▸ hs⟩
-  have toOld (x : ear.add.vertexSet) :
-      ∃ a : H.vertexSet, Nonempty (TauCeti.ArrowWalk (o.addEar ear).Hom x
-        (Set.inclusion ear.base_le_add.vertexSet_mono a)) := by
-    have hxUnion : x.1 ∈ V(H) ∪ V(ear.toGraph) := by
-      rw [← ear.vertexSet_add]
-      exact x.2
-    rcases hxUnion with hx | hx
-    · let a : H.vertexSet := ⟨x, hx⟩
-      have hax : Set.inclusion ear.base_le_add.vertexSet_mono a = x := Subtype.ext rfl
-      exact ⟨a, hax ▸ ⟨TauCeti.ArrowWalk.nil x⟩⟩
-    · have ht := (splitAt x hx).2
-      let a : H.vertexSet := ⟨ear.toWalk.2.1, ear.toWalk_snd_mem⟩
-      have ha : Set.inclusion ear.base_le_add.vertexSet_mono a = target := Subtype.ext rfl
-      exact ⟨a, ha ▸ ht⟩
+  let directed := (q.mapLe ear.toGraph_le_add).toOriented hqAdd
+    (ear.base_le_add.vertexSet_mono ear.toWalk_fst_mem)
+  have hxDirected : x ∈ directed.vertices := by
+    have hxSupport : x.1 ∈ directed.vertices.unattach := by
+      rw [Walk.vertices_toOriented]
+      simpa only [Walk.support_mapLe_eq_support, q, Walk.support_transfer,
+        Ear.vertexSet_toGraph, Set.mem_ofPred_eq] using hx
+    obtain ⟨_, hxmem⟩ := List.mem_unattach.1 hxSupport
+    simpa using hxmem
+  obtain ⟨r, s, -⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices
+    ear.add.vertexSet ⟨(o.addEar ear).Hom⟩ _ _ directed x hxDirected
+  exact ⟨⟨r⟩, ⟨s⟩⟩
+
+/-- Directed walks of the base orientation remain directed walks after adjoining an ear. -/
+private theorem nonempty_arrowWalk_addEar_of_base (o : H.Orientation) (ear : G.Ear H)
+    {a b : H.vertexSet} (r : ArrowWalk o.Hom a b) :
+    Nonempty (ArrowWalk (o.addEar ear).Hom (Set.inclusion ear.base_le_add.vertexSet_mono a)
+      (Set.inclusion ear.base_le_add.vertexSet_mono b)) := by
+  let w := o.forgetWalk r
+  have hwAdd : (w.mapLe ear.base_le_add).FollowsOrientation (o.addEar ear) := by
+    apply (Walk.followsOrientation_mapLe_iff ear.base_le_add w (o.addEar ear)).2
+    simpa only [restrict_addEar_base] using o.followsOrientation_forgetWalk r
+  exact ⟨(w.mapLe ear.base_le_add).toOriented hwAdd (ear.base_le_add.vertexSet_mono a.2)⟩
+
+/-- Every vertex of the extended graph is reachable from a base vertex and reaches a base
+vertex. -/
+private theorem exists_arrowWalks_base (o : H.Orientation) (ear : G.Ear H)
+    (x : ear.add.vertexSet) :
+    ∃ a b : H.vertexSet,
+      Nonempty (ArrowWalk (o.addEar ear).Hom (Set.inclusion ear.base_le_add.vertexSet_mono a) x) ∧
+        Nonempty (ArrowWalk (o.addEar ear).Hom x
+          (Set.inclusion ear.base_le_add.vertexSet_mono b)) := by
+  have hx : x.1 ∈ V(H) ∪ V(ear.toGraph) := by
+    rw [← ear.vertexSet_add]
+    exact x.2
+  rcases hx with hx | hx
+  · exact ⟨⟨x, hx⟩, ⟨x, hx⟩, ⟨.nil x⟩, ⟨.nil x⟩⟩
+  · exact ⟨_, _, nonempty_arrowWalk_of_mem_toGraph o ear x hx⟩
+
+/-- Directing an ear from its old start to its old end preserves strong connectivity. -/
+theorem isStronglyConnected_addEar (o : H.Orientation) (ear : G.Ear H)
+    (hH : @Quiver.IsStronglyConnected H.vertexSet ⟨o.Hom⟩) :
+    @Quiver.IsStronglyConnected ear.add.vertexSet ⟨(o.addEar ear).Hom⟩ := by
   intro x y
-  obtain ⟨a, ⟨r⟩⟩ := toOld x
-  obtain ⟨b, ⟨t⟩⟩ := fromOld y
-  obtain ⟨s⟩ := oldPath a b
-  exact ⟨(r.comp s).comp t⟩
+  obtain ⟨-, a, -, ⟨r⟩⟩ := exists_arrowWalks_base o ear x
+  obtain ⟨b, -, ⟨t⟩, -⟩ := exists_arrowWalks_base o ear y
+  obtain ⟨s⟩ := hH a b
+  obtain ⟨s'⟩ := nonempty_arrowWalk_addEar_of_base o ear s
+  exact ⟨(r.comp s').comp t⟩
 
 end Orientation
 

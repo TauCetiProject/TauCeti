@@ -17,6 +17,8 @@ chosen tail and head, which are also its ends in the subgraph. Conversely, orien
 compatible graphs combine into an orientation of their union, taking the direction of a shared
 edge from the first orientation. When the edge sets are disjoint, restricting the combined
 orientation recovers both inputs, so orientations of the union are exactly pairs of orientations.
+A walk in a subgraph follows the restricted orientation exactly when its image in the larger
+graph follows the original orientation.
 
 Restriction keeps the head of every remaining edge. Hence deleting a set of edges lowers the
 indegree of a vertex by the number of deleted edges with their head there. In a union, a vertex
@@ -26,6 +28,8 @@ for every vertex of a vertex-disjoint union.
 ## Main declarations
 
 * `Graph.Orientation.restrict`: the orientation of a subgraph induced by an orientation.
+* `Graph.Walk.followsOrientation_mapLe_iff`: walks in a subgraph follow the restricted
+  orientation exactly when their images follow the original one.
 * `Graph.Orientation.union`: the orientation of a compatible union built from two orientations.
 * `Graph.Orientation.unionEquiv`: orientations of an edge-disjoint union are pairs of
   orientations.

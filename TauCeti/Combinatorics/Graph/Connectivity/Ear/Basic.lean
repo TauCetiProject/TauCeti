@@ -178,15 +178,15 @@ theorem length_pos : ∀ e : G.Ear H, 0 < e.toWalk.2.2.length
   | .closed _ _walk isCycle _ _ _ =>
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil ((Walk.length_eq_zero_iff.mp h))
 
-/-- The underlying walk of an ear traverses no edge identity twice. -/
-theorem edges_nodup (e : G.Ear H) : e.toWalk.2.2.edges.Nodup := by
+/-- The underlying walk of an ear is a trail. -/
+theorem isTrail (e : G.Ear H) : e.toWalk.2.2.IsTrail := by
   cases e with
   | «open» h walk isPath start_mem end_mem endpoints_ne internal_new edges_new =>
       rw [toWalk_open]
-      exact (Walk.isTrail_def walk).1 isPath.isTrail
+      exact isPath.isTrail
   | «closed» h walk isCycle base_mem internal_new edges_new =>
       rw [toWalk_closed]
-      exact (Walk.isTrail_def walk).1 isCycle.isTrail
+      exact isCycle.isTrail
 
 /-- The graph traced by an ear is a subgraph of its ambient graph. -/
 theorem toGraph_le (e : G.Ear H) : e.toGraph ≤ G :=
@@ -223,10 +223,8 @@ theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
 
 /-- Adjoining an ear is the compatible union of its base and traced graph. -/
-theorem add_eq_union (e : G.Ear H) : e.add = e.compatible.union := by
-  apply le_antisymm
-  · exact e.add_le_iff.2 ⟨e.compatible.left_le_union, e.compatible.right_le_union⟩
-  · exact e.compatible.union_le_iff.2 ⟨e.base_le_add, e.toGraph_le_add⟩
+theorem add_eq_union (e : G.Ear H) : e.add = e.compatible.union :=
+  (rfl)
 
 /-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
 theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
