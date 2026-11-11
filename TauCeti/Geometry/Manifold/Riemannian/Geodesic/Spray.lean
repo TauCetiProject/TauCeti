@@ -189,7 +189,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   have hxbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
-    accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht,
+    accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hγd ht,
     derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
   -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
@@ -197,7 +197,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
       derivWithin (extChartAt I (γ t) ∘ γ) s := by
     filter_upwards [(hγd t ht).continuousWithinAt.preimage_mem_nhdsWithin
         ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds hxbase),
-      sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγd ht hxbase] with r hr hr'
+      sectionCoord_curveVelocityWithin_eventuallyEq γ hγd ht hxbase] with r hr hr'
     rw [← hr', curveVelocityLiftWithin_apply, sectionCoord_apply]
     exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
   have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)

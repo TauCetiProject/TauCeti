@@ -36,6 +36,7 @@ wedge of the time forms of the two factors, integrates to `p q`
 * `AddCircle.integralTopForm_timeForm`: `∫ dt_p = p`.
 * `AddCircle.integralTopForm_prod_eq_setIntegral`: the integral of a two-form over
   `AddCircle p × AddCircle q` is its integral over a fundamental rectangle.
+* `AddCircle.eval₂_wedge_timeForm`: `(ds_p ∧ dt_q)(v, w) = v₁ w₂ - w₁ v₂`.
 * `AddCircle.integralTopForm_wedge_timeForm`: `∫ ds_p ∧ dt_q = p q`.
 
 ## References
@@ -123,6 +124,21 @@ theorem integralTopForm_prod_eq_setIntegral
   -- The tangent spaces of the torus are `ℝ × ℝ`, so the standard frame is `((1, 0), (0, 1))`.
   fin_cases i <;> simp <;> rfl
 
+/-- The area form `ds_p ∧ dt_q`, the wedge of the time forms of the two factors, is the
+determinant `v₁ w₂ - w₁ v₂` of two tangent vectors written in the real coordinates of the two
+circles. -/
+theorem eval₂_wedge_timeForm (x : AddCircle p × AddCircle q)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x) :
+    SmoothBundleForm.eval₂ (SmoothForm.wedge
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))) x v w =
+      v.1 * w.2 - w.1 * v.2 := by
+  refine (SmoothForm.eval₂_wedge_one_one _ _ x _ _).trans ?_
+  simp only [SmoothForm.coe_mpullback, mpullback_apply, mfderiv_fst, mfderiv_snd,
+    timeForm_apply, Matrix.cons_val]
+  -- The two projections of a tangent vector of the torus are its real coordinates.
+  rfl
+
 /-- The area form `ds_p ∧ dt_q`, the wedge of the time forms of the two factors, integrates to
 `p q` over `AddCircle p × AddCircle q`. -/
 theorem integralTopForm_wedge_timeForm :
@@ -133,13 +149,9 @@ theorem integralTopForm_wedge_timeForm :
       SmoothBundleForm.eval₂ (SmoothForm.wedge
         (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))) x
-        ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) = 1 := by
+        ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) = 1 :=
     -- The tangent spaces of the torus are `ℝ × ℝ`, so the frame is stated in the model.
-    refine (SmoothForm.eval₂_wedge_one_one _ _ x _ _).trans ?_
-    simp only [SmoothForm.coe_mpullback, mpullback_apply, mfderiv_fst, mfderiv_snd,
-      timeForm_apply, Matrix.cons_val]
-    -- The two projections of the tangent vectors `(1, 0)` and `(0, 1)` are their coordinates.
-    exact (by norm_num : (1 : ℝ) * 1 - 0 * 0 = 1)
+    (eval₂_wedge_timeForm p q x _ _).trans (by norm_num)
   rw [integralTopForm_prod_eq_setIntegral p q
     ((SmoothForm.isSmoothForm _).integrableTopForm
       (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))

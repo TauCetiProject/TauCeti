@@ -147,7 +147,7 @@ theorem of_isCSA {ι : G →* H} (hH : IsCSA H) {a b : G} (hab : ¬Commute (ι a
     Subgroup.mem_centralizer_singleton_iff.2 (by simpa using (hxy 1).eq.symm)
   have hmem (g : G) : ι g ∈ Subgroup.centralizer {x} := by
     by_contra hg
-    exact (hH.centralizer_isTISubgroup hx).conj_notMem hg hyM hy
+    exact (hH.centralizer_isTISubgroup x).conj_notMem hg hyM hy
       (Subgroup.mem_centralizer_singleton_iff.2 (hxy g).eq.symm)
   have := hH.centralizer_isMulCommutative hx
   exact hab (setLike_mul_comm (hmem a) (hmem b))
