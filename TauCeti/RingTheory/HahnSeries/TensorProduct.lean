@@ -32,7 +32,7 @@ module-valued Laurent series used in residue duality.
 
 In arbitrary dimension the comparison is injective for free coefficients. Over a field its
 image consists exactly of series whose coefficients lie in a single finite-dimensional
-subspace. For integer exponents and free coefficients over a nontrivial commutative ring, it
+subspace. For integer exponents and free coefficients over a commutative ring, it
 is surjective if and only if the coefficient module is finitely generated (equivalently,
 finite-dimensional over a field): a series with an independent sequence of coefficients cannot
 be a finite sum of scalar series times vectors. This distinguishes tensor currents from their
@@ -173,19 +173,40 @@ theorem tensorProductEquiv_symm_single [Module.Free R V] [Module.Finite R V]
   apply (tensorProductEquiv Γ R V).injective
   simp
 
-/-- For finite free coefficients, linear maps on module-valued Hahn series are determined
+/-- Over a finitely generated coefficient module, every module-valued Hahn series is a finite sum
+of scalar series times constant vectors. -/
+theorem exists_sum_smul_single_zero [Module.Finite R V] (x : HahnModule Γ R V) :
+    ∃ (s : Finset V) (a : V → HahnSeries Γ R),
+      ∑ v ∈ s, a v • of R (single 0 v) = x := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := V)
+  have hex (g : Γ) : ∃ c : V → R, ∑ v ∈ s, c v • v = ((of R).symm x).coeff g := by
+    have : ((of R).symm x).coeff g ∈ Submodule.span R (s : Set V) := by
+      rw [hs]; trivial
+    obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp this
+    exact ⟨c, hc⟩
+  choose c hc using hex
+  refine ⟨s, fun v ↦ ⟨fun g ↦ if g ∈ ((of R).symm x).support then c g v else 0,
+    ((of R).symm x).isPWO_support.mono (by intro g hg; by_contra h; exact hg (by simp [h]))⟩, ?_⟩
+  apply HahnModule.ext
+  funext g
+  rw [← ofLinearEquiv_symm_apply]
+  simp only [map_sum, ofLinearEquiv_symm_apply, coeff_sum, coeff_smul_single_zero]
+  by_cases hg : g ∈ ((of R).symm x).support
+  · simp [hg, hc g]
+  · simp only [HahnSeries.mem_support, not_not] at hg
+    simp [hg]
+
+/-- For finitely generated coefficients, linear maps on module-valued Hahn series are determined
 by scalar series times constant vectors. -/
-theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero
-    [Module.Free R V] [Module.Finite R V]
+theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero [Module.Finite R V]
     {M : Type*} [AddCommMonoid M] [Module R M]
     {f g : HahnModule Γ R V →ₗ[R] M}
     (h : ∀ (a : HahnSeries Γ R) (v : V), f (a • of R (single 0 v)) =
       g (a • of R (single 0 v))) : f = g := by
   ext x
-  obtain ⟨z, rfl⟩ := (tensorProductEquiv Γ R V).surjective x
-  induction z using TensorProduct.inductionOn with
-  | tmul a v => simpa using h a v
-  | add z w hz hw => simp only [map_add, hz, hw]
+  obtain ⟨s, a, rfl⟩ := exists_sum_smul_single_zero x
+  simp only [map_sum, h]
 
 /-- In any basis of the coefficient module, scalar-series coordinates agree with the
 coordinates of the coefficients of the scalar-extension comparison. -/
@@ -275,12 +296,17 @@ theorem notMem_range_tensorProductToHahnModule_of_linearIndependent
   let := Module.Finite.iff_fg.mpr hS
   exact Module.Finite.not_linearIndependent_of_infinite _ (h.codRestrict S fun i ↦ hz (e i))
 
-/-- For free coefficients over a nontrivial commutative ring, scalar extension to Laurent series
+omit [Nontrivial R] in
+/-- For free coefficients over a commutative ring, scalar extension to Laurent series
 is surjective exactly when the coefficient module is finitely generated. Over a field this is
 finite-dimensionality, with no characteristic-zero hypothesis. -/
 theorem tensorProductToHahnModule_int_surjective_iff [Module.Free R V] :
     Function.Surjective (tensorProductToHahnModule ℤ R V) ↔ Module.Finite R V := by
   classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton V := Module.subsingleton R V
+    exact iff_of_true (fun x ↦ ⟨0, HahnModule.ext _ _
+      (funext fun _ ↦ Subsingleton.elim _ _)⟩) inferInstance
   constructor
   · intro hsurj
     by_contra hfinite

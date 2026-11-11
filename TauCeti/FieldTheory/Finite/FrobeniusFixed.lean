@@ -131,9 +131,15 @@ theorem pow_natCard_notMem_range_algebraMap {a : L}
     exact iterateFrobenius_inj L p n
   exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp (hinj h1))
 
-/-- **An element outside the base field is not fixed by the `q`-power map.** -/
-theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
-  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+omit [Finite K] in
+/-- **An element outside the base field is not fixed by the `q`-power map.** (For an infinite base
+field `Nat.card K = 0`, and `a ^ 0 = 1` lies in the base field.) -/
+theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a := by
+  by_cases hK : Finite K
+  · exact fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+  · rw [not_finite_iff_infinite] at hK
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact fun h => ha ⟨1, by rw [map_one, h]⟩
 
 omit [IsDomain L] in
 /-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/

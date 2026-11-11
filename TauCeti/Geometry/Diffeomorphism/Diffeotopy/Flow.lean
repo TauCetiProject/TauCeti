@@ -170,15 +170,15 @@ def timeDependentFlowDiffeotopy (hn : 1 ≤ n)
             { toFun := fun p => (p.1, timeDependentFlowOf X 0 p.1 p.2)
               invFun := fun p => (p.1, timeDependentFlowOf X p.1 0 p.2)
               left_inv := fun p => by
-                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self hX₁]
+                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self]
               right_inv := fun p => by
-                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self hX₁] }
+                simp [timeDependentFlowOf_trans hcomplete hX₁, timeDependentFlowOf_self] }
           contMDiff_toFun := contMDiff_fst.prodMk (hs.comp
             ((contMDiff_const.prodMk (ht.comp contMDiff_fst)).prodMk contMDiff_snd))
           contMDiff_invFun := contMDiff_fst.prodMk (hs.comp
             (((ht.comp contMDiff_fst).prodMk contMDiff_const).prodMk contMDiff_snd)) }
       fst_apply := fun _ => rfl
-      snd_apply_zero' := fun x => timeDependentFlowOf_self hX₁ 0 x }
+      snd_apply_zero' := fun x => timeDependentFlowOf_self X 0 x }
 
 variable (hn : 1 ≤ n)
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n

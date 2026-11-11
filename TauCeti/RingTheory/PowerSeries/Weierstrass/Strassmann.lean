@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Analysis.Normed.Algebra.Ultra
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+public import TauCeti.RingTheory.PowerSeries.Restricted.GoodZero
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.RingTheory.PowerSeries.RootBound
 
 /-!
 # Strassmann's theorem
@@ -26,8 +29,15 @@ of the ring of series restricted at `c`. Evaluation at a point `x` with `‖x‖
 homomorphism on that ring, so it sends `e` to a unit, and the zeros of `f` in the disc are roots of
 `ω`. The field `L` is automatically ultrametric, since `K` is and `L` is a normed `K`-algebra.
 
-As a consequence, a series restricted at `c` that vanishes on an infinite subset of the closed disc
-of radius `c` is zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
+At points of `K`, counting zeros with their multiplicities, the orders of the good zeros of `f` in
+the closed disc add up to at most `s`, since they are root multiplicities of `ω`. Every root of a
+polynomial `P` with `f = u * P`, `u` a unit of the ring of series restricted at `c` and `P` of
+degree at most `s`, lies in the closed disc, so over an algebraically closed `K` the bound is an
+equality: the zeros of `f` in the closed disc, counted with multiplicity, number exactly `s`.
+
+As a consequence, a nonzero series restricted at `c` has only finitely many zeros in the closed disc
+of radius `c`, so a series restricted at `c` that vanishes on an infinite subset of that disc is
+zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
 the unit radius and vanishes at the `p` Teichmüller representatives in `ℤ_p`.
 
 The identity principle extends to series with coefficients in a normed space `E` over `K` that
@@ -37,6 +47,15 @@ field extensions of `K`: each `φⱼ` turns such a series into a restricted seri
 ## Main results
 
 * `TauCeti.PowerSeries.IsDistinguished.encard_setOf_evalAt_eq_zero_le`: Strassmann's theorem.
+* `TauCeti.PowerSeries.IsDistinguished.sum_le_of_isGoodZero`: Strassmann's theorem with
+  multiplicities.
+* `TauCeti.PowerSeries.IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul`: the prepared
+  polynomial has its roots in the closed disc.
+* `TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`: over an algebraically closed
+  field, a series distinguished of degree `s` at `c > 0` has exactly `s` zeros in the closed disc,
+  counted with multiplicity.
+* `PowerSeries.IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero`: a nonzero restricted
+  series has finitely many zeros in the closed disc.
 * `PowerSeries.IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero`: the identity principle for
   restricted series.
 * `TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`: the identity principle for series with
@@ -54,6 +73,40 @@ field extensions of `K`: each `φⱼ` turns such a series into a restricted seri
 public section
 
 namespace TauCeti.PowerSeries
+
+section RootBound
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] {c : ℝ} {s : ℕ} {f : PowerSeries K}
+
+/-- **The prepared polynomial has its roots in the closed disc.** If `f` is distinguished of degree
+`s` at `c > 0` and `f = u * P` with `u` a unit of the ring of series restricted at `c` and `P` a
+polynomial of degree at most `s`, then every root of `P` has norm at most `c`. -/
+theorem IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul (hf : IsDistinguished c s f)
+    (hc : 0 < c) {u : _root_.PowerSeries.IsRestricted.subring (R := K) c} (hu : IsUnit u)
+    {P : Polynomial K} (hPdeg : P.natDegree ≤ s)
+    (hmul : (u : PowerSeries K) * (P : PowerSeries K) = f) {α : K}
+    (hα : α ∈ P.roots) : ‖α‖ ≤ c := by
+  have ha : P.leadingCoeff ≠ 0 :=
+    Polynomial.leadingCoeff_ne_zero.2 (Polynomial.ne_zero_of_mem_roots hα)
+  -- normalise `P` to the monic `Q = P.leadingCoeff⁻¹ • P`, which is still distinguished
+  set Q := Polynomial.C P.leadingCoeff⁻¹ * P
+  have hQm : Q.IsMonicOfDegree s :=
+    ⟨by rw [Polynomial.natDegree_C_mul (inv_ne_zero ha),
+        natDegree_eq_of_isUnit_mul hc hf hu hPdeg hmul],
+      by rw [Polynomial.Monic, Polynomial.leadingCoeff_C_mul_of_isUnit (inv_ne_zero ha).isUnit,
+        inv_mul_cancel₀ ha]⟩
+  have hPQ : Polynomial.C P.leadingCoeff * Q = P := by
+    rw [← mul_assoc, ← Polynomial.C_mul, mul_inv_cancel₀ ha, Polynomial.C_1, one_mul]
+  have hQd : IsDistinguished c s (Q : PowerSeries K) := by
+    refine IsDistinguished.of_isUnit_mul (u := algebraMap K _ P.leadingCoeff) ?_ hc
+      (ha.isUnit.map _)
+    have hP := IsDistinguished.of_isUnit_mul (hmul ▸ hf) hc hu
+    rw [← hPQ, Polynomial.coe_mul, Polynomial.coe_C] at hP
+    simpa using hP
+  refine hQd.norm_le_of_eval_eq_zero hc hQm ?_
+  rw [Polynomial.eval_mul, (Polynomial.isRoot_of_mem_roots hα).eq_zero, mul_zero]
+
+end RootBound
 
 variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [NormedField L] [NormedAlgebra K L] [CompleteSpace L] {c : ℝ} {s : ℕ} {f : PowerSeries K}
@@ -87,6 +140,41 @@ theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le (hf : IsDistinguished c s
     _ ≤ ω.natDegree := Polynomial.natDegree_map_le
     _ = s := hω.natDegree_eq
 
+/-- **Strassmann's theorem with multiplicities.** Let `f` be restricted at `c > 0` and
+distinguished of degree `s` there. If `f` has a good zero of order `h a` at each point `a` of a
+finite set `S` in the closed disc of radius `c`, then `∑_{a ∈ S} h a ≤ s`. -/
+theorem IsDistinguished.sum_le_of_isGoodZero (hfd : IsDistinguished c s f) (hc : 0 < c)
+    (hfr : f.IsRestricted c) {S : Finset K} {h : K → ℕ}
+    (hS : ∀ a ∈ S, ‖a‖ ≤ c ∧ f.IsGoodZero a (h a)) :
+    ∑ a ∈ S, h a ≤ s := by
+  classical
+  obtain ⟨u, P, hu, hP, hmul⟩ :=
+    hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
+  have hroot : ∀ a ∈ S, h a = P.roots.count a := fun a ha ↦ (hS a ha).2.unique
+    (_root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero (hS a ha).1)
+  rw [Finset.sum_congr rfl hroot, ← hP.natDegree_eq]
+  calc ∑ a ∈ S, P.roots.count a ≤ ∑ a ∈ S ∪ P.roots.toFinset, P.roots.count a :=
+        Finset.sum_le_sum_of_subset Finset.subset_union_left
+    _ = Multiset.card P.roots :=
+        Multiset.sum_count_eq_card fun a ha ↦ Finset.mem_union_right _ (Multiset.mem_toFinset.2 ha)
+    _ ≤ P.natDegree := Polynomial.card_roots' P
+
+/-- **Zeros in a closed disc, with multiplicity.** Over an algebraically closed field, the zeros
+of a series `f` restricted at `c > 0` and distinguished of degree `s` there, in the closed disc of
+radius `c` and counted with multiplicity, form a multiset `Z` with exactly `s` elements: `f` has a
+good zero of order `Z.count a` at every `a` of norm at most `c`. -/
+theorem IsDistinguished.exists_card_eq_isGoodZero [IsAlgClosed K] [DecidableEq K]
+    (hfd : IsDistinguished c s f) (hc : 0 < c) (hfr : f.IsRestricted c) :
+    ∃ Z : Multiset K, Multiset.card Z = s ∧ (∀ a ∈ Z, ‖a‖ ≤ c) ∧
+      ∀ a, ‖a‖ ≤ c → f.IsGoodZero a (Z.count a) := by
+  obtain ⟨u, P, hu, hP, hmul⟩ :=
+    hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
+  refine ⟨P.roots, ?_, fun a ha ↦ (IsDistinguished.of_isUnit_mul (hmul ▸ hfd) hc hu
+      ).norm_le_of_eval_eq_zero hc hP (Polynomial.isRoot_of_mem_roots ha), fun a ha ↦ ?_⟩
+  · rw [← hP.natDegree_eq]
+    exact Polynomial.splits_iff_card_roots.1 (IsAlgClosed.splits P)
+  · exact _root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha
+
 end TauCeti.PowerSeries
 
 namespace PowerSeries
@@ -96,6 +184,14 @@ open TauCeti.PowerSeries
 variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [NormedField L] [NormedAlgebra K L] [CompleteSpace L] {c : ℝ} {f : PowerSeries K}
 
+/-- A nonzero power series over a complete ultrametric normed field, restricted at a radius
+`c > 0`, has only finitely many zeros of norm at most `c` in any complete normed field
+extension. -/
+theorem IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (hfr : f.IsRestricted c)
+    (hc : 0 < c) (hf0 : f ≠ 0) : {x : L | ‖x‖ ≤ c ∧ f.evalAt x = 0}.Finite := by
+  obtain ⟨s, hs⟩ := exists_isDistinguished hc hfr hf0
+  exact Set.finite_of_encard_le_coe (hs.encard_setOf_evalAt_eq_zero_le hc hfr)
+
 /-- **Identity principle for restricted series.** A power series over a complete ultrametric
 normed field, restricted at a radius `c > 0`, that vanishes on an infinite set of points of norm at
 most `c` in a complete normed field extension is zero. -/
@@ -103,11 +199,8 @@ theorem IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero (hfr : f.IsRestricted
     {S : Set L} (hS : S.Infinite) (hSc : ∀ x ∈ S, ‖x‖ ≤ c) (hfS : ∀ x ∈ S, f.evalAt x = 0) :
     f = 0 := by
   by_contra hf0
-  obtain ⟨s, hs⟩ := exists_isDistinguished hc hfr hf0
-  have h := (Set.encard_le_encard (t := {x : L | ‖x‖ ≤ c ∧ f.evalAt x = 0})
-    fun x hx ↦ ⟨hSc x hx, hfS x hx⟩).trans (hs.encard_setOf_evalAt_eq_zero_le hc hfr)
-  rw [hS.encard_eq] at h
-  exact ENat.natCast_ne_top s (top_le_iff.mp h)
+  exact hS ((hfr.finite_setOf_norm_le_and_evalAt_eq_zero hc hf0).subset
+    fun x hx ↦ ⟨hSc x hx, hfS x hx⟩)
 
 end PowerSeries
 

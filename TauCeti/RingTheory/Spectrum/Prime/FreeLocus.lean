@@ -111,7 +111,8 @@ theorem iInter_freeLocus_subquotient_subset_freeLocus (N : ℕ → Submodule R M
   let L : ℕ → Submodule Rp (LocalizedModule S M) := fun j ↦ (N j).localized S
   have hL : Monotone L := fun _ _ hij ↦
     (Submodule.localized'gi Rp S (LocalizedModule.mkLinearMap S M)).gc.monotone_l (hN hij)
-  refine Module.Free.of_filtration L hL (by simp [L, h0])
+  have hL0 : L 0 = ⊥ := by simp [L, h0]
+  refine Module.Free.of_filtration L hL (by rw [hL0]; infer_instance)
     (by simp only [L]; rw [← Submodule.localized'_iSup, htop, Submodule.localized'_top])
     fun j ↦ ?_
   -- Localize the subquotient through the localization of `N (j + 1)`.
