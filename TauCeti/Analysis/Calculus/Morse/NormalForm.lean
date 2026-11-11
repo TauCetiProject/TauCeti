@@ -66,9 +66,9 @@ The operators are a definite choice: the canonical congruence `TauCeti.morseCong
 is the square root near the identity of `B₀⁻¹ ∘ B`. It is a congruence for every pair of symmetric
 forms near a pair `(B₀, B₀)` with `B₀` invertible (`TauCeti.eventually_morseCongruence_apply`),
 and it depends smoothly on both forms, so the reference form may vary too. Being canonical, it
-is compatible with linear changes of coordinates
-(`TauCeti.eventually_morseCongruence_bilinearComp`), which is what the parametric Morse lemma on
-a vector bundle needs to glue local normal forms.
+is exactly compatible with linear changes of coordinates, for all pairs of forms
+(`TauCeti.morseCongruence_bilinearComp`), which is what the parametric Morse lemma on a vector
+bundle needs to glue local normal forms.
 
 The varying-reference variant `TauCeti.exists_parametric_congruence_of_symmetric_family`
 compares a jointly smooth family `B (b, v)` to `B (b, 0)` by jointly smooth invertible
@@ -90,7 +90,7 @@ differentiability order, including order zero.
   reference form `B₀`, with `TauCeti.eventually_morseCongruence_apply` (it is a congruence),
   `TauCeti.eventually_contDiffAt_morseCongruence` (it is smooth in both forms),
   `TauCeti.tendsto_morseCongruence`, `TauCeti.eventually_morseCongruence_eq_of_tendsto` (it is
-  the unique square root near the identity) and `TauCeti.eventually_morseCongruence_bilinearComp`
+  the unique square root near the identity) and `TauCeti.morseCongruence_bilinearComp`
   (it is natural for linear changes of coordinates).
 * `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
   bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
@@ -272,8 +272,6 @@ section Congruence
 
 open Set
 
-variable [CompleteSpace E]
-
 /-- The **canonical Morse congruence** comparing a bilinear form `B` with a reference form `B₀`:
 the square root near the identity of the comparison operator `B₀⁻¹ ∘ B`. When `B₀` is
 invertible, both forms are symmetric and `B` is close to `B₀`, it is a congruence,
@@ -293,6 +291,24 @@ variable {B₀ : E →L[ℝ] E →L[ℝ] ℝ}
 @[simp]
 theorem morseCongruence_self (hB₀ : B₀.IsInvertible) : morseCongruence B₀ B₀ = 1 := by
   rw [morseCongruence, hB₀.inverse_comp_self, ← ContinuousLinearMap.one_def, sqrtNearOne_one]
+
+/-- **The canonical congruence is natural for linear changes of coordinates.** Pulling both forms
+back along a continuous linear equivalence `e` conjugates their canonical congruence by `e`. This
+holds for all pairs of forms, since the square root near the identity commutes with conjugation
+(`TauCeti.map_sqrtNearOne`). -/
+theorem morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    (B₁ B : E →L[ℝ] E →L[ℝ] ℝ) (e : E' ≃L[ℝ] E) :
+    morseCongruence (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+        (B.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) =
+      ((e.symm : E →L[ℝ] E') ∘L morseCongruence B₁ B ∘L (e : E' →L[ℝ] E)) := by
+  have hconj (X : E →L[ℝ] E) :
+      (e.symm : E →L[ℝ] E') ∘L X ∘L (e : E' →L[ℝ] E) = e.symm.conjContinuousAlgEquiv X := by
+    ext
+    simp
+  rw [morseCongruence, morseCongruence, ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp,
+    hconj, hconj, map_sqrtNearOne]
+
+variable [CompleteSpace E]
 
 /-- The canonical congruence tends to the identity as both forms tend to an invertible form. -/
 theorem tendsto_morseCongruence (hB₀ : B₀.IsInvertible) :
@@ -356,43 +372,6 @@ theorem eventually_morseCongruence_eq_of_tendsto {α : Type*} {l : Filter α}
     (hsq : ∀ᶠ t in l, r t * r t = (B₁ t).inverse ∘L B t) :
     ∀ᶠ t in l, morseCongruence (B₁ t) (B t) = r t := by
   simpa only [morseCongruence] using eventually_sqrtNearOne_eq_of_tendsto hr hsq
-
-/-- **The canonical congruence is natural for linear changes of coordinates.** Along a filter on
-which a pair of forms tends to a pair `(B₀, B₀)` of equal invertible forms and continuous linear
-equivalences `e t` tend to an equivalence, pulling both forms back along `e t` eventually
-conjugates their canonical congruence by `e t`. -/
-theorem eventually_morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [CompleteSpace E'] {α : Type*} {l : Filter α}
-    {B₁ B : α → E →L[ℝ] E →L[ℝ] ℝ} {e : α → E' ≃L[ℝ] E} {e₀ : E' ≃L[ℝ] E}
-    (hB₀ : B₀.IsInvertible) (hB : Tendsto (fun t ↦ (B₁ t, B t)) l (𝓝 (B₀, B₀)))
-    (he : Tendsto (fun t ↦ (e t : E' →L[ℝ] E)) l (𝓝 e₀)) :
-    ∀ᶠ t in l, morseCongruence ((B₁ t).bilinearComp (e t : E' →L[ℝ] E) (e t : E' →L[ℝ] E))
-        ((B t).bilinearComp (e t : E' →L[ℝ] E) (e t : E' →L[ℝ] E)) =
-      ((e t).symm : E →L[ℝ] E') ∘L morseCongruence (B₁ t) (B t) ∘L (e t : E' →L[ℝ] E) := by
-  -- The inverses converge too, since inversion is continuous at `e₀`.
-  have he' : Tendsto (fun t ↦ ((e t).symm : E →L[ℝ] E')) l (𝓝 (e₀.symm : E →L[ℝ] E')) := by
-    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-      ((ContinuousLinearMap.isInvertible_equiv (f := e₀)).contDiffAt_map_inverse
-        (n := 0)).continuousAt.tendsto.comp he
-  have hc : Continuous fun q : (E →L[ℝ] E') × (E →L[ℝ] E) × (E' →L[ℝ] E) ↦
-      q.1 ∘L q.2.1 ∘L q.2.2 :=
-    continuous_fst.clm_comp (continuous_snd.fst.clm_comp continuous_snd.snd)
-  have h := (hc.tendsto ((e₀.symm : E →L[ℝ] E'), 1, (e₀ : E' →L[ℝ] E))).comp
-    (he'.prodMk_nhds (((tendsto_morseCongruence hB₀).comp hB).prodMk_nhds he))
-  have hlim : (e₀.symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L (e₀ : E' →L[ℝ] E) = 1 := by
-    ext x
-    simp
-  -- `h` is the convergence of the conjugated congruences, with the projections not yet reduced.
-  have hr : Tendsto (fun t ↦ ((e t).symm : E →L[ℝ] E') ∘L morseCongruence (B₁ t) (B t) ∘L
-      (e t : E' →L[ℝ] E)) l (𝓝 ((e₀.symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L
-        (e₀ : E' →L[ℝ] E))) := h
-  rw [hlim] at hr
-  refine eventually_morseCongruence_eq_of_tendsto hr ?_
-  filter_upwards [hB.eventually (eventually_morseCongruence_mul_self hB₀),
-    hB.fst_nhds.eventually hB₀.eventually_nhds] with t hsq hinv
-  rw [ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hinv, ← hsq]
-  ext x
-  simp [mul_apply_eq_comp]
 
 /-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
 `a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
