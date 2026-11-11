@@ -151,9 +151,6 @@ theorem dirichletMultinomialMeasure_singleton_ne_zero_iff {a : ι → ℝ}
   rw [dirichletMultinomialMeasure_singleton ha]
   split_ifs with hk
   · have hsum : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty
-    have hGamma := Real.Gamma_pos_of_pos hsum
-    have hGammaSum := Real.Gamma_pos_of_pos
-      (add_pos_of_pos_of_nonneg hsum (Nat.cast_nonneg n))
     have hGammaProd : 0 < ∏ i, Real.Gamma (a i + k i) / Real.Gamma (a i) :=
       Finset.prod_pos fun i _ ↦ div_pos
         (Real.Gamma_pos_of_pos (add_pos_of_pos_of_nonneg (ha i) (Nat.cast_nonneg _)))

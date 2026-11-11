@@ -161,7 +161,6 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
     (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hdJ.continuousAt) hpair) 1 one_pos
   -- `dJ` is bounded along `x` on the compact set `T`, hence eventually along `u`.
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hdJ.continuousOn
-  have hM : 0 < |C| + 1 := by positivity
   have h₄ := Metric.tendstoUniformlyOn_iff.1 hδ (ε / 2 / (|C| + 1)) (by positivity)
   filter_upwards [h₁, h₂, h₃, h₄] with s hs₁ hs₂ hs₃ hs₄ t ht ξ
   refine (norm_floerLinearization_sub_stationaryCylinderOperator_le ω J H u ξ x (s, t)).trans ?_

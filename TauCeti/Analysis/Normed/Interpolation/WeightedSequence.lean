@@ -211,7 +211,6 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
     simp only [hc_def]
     rw [min_rpow_eq hs ht]
     ring
-  have hB0 : 0 ≤ B := le_trans (by positivity) (hB 0)
   -- the costs are dominated by the convergent series `t ^ θ B ∑ j, φ(t 2 ^ ((s₁ - s₀) j))`
   have hsum : Summable c := by
     refine Summable.of_nonneg_of_le (fun j ↦ ?_) (fun j ↦ ?_) ((hφ.mul_left B).mul_left (t ^ θ))
@@ -465,7 +464,6 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
   have hK0 : K ≠ 0 := kMethodConst_ne_zero θ one_ne_zero
   rcases eq_or_ne (eLpNorm v q Measure.count) ∞ with hv | hv
   · -- an infinite right-hand side
-    have hL : 0 < |μ| * Real.log 2 := mul_pos (abs_pos.2 hμ) (Real.log_pos one_lt_two)
     rw [hv, ENNReal.mul_top (mul_ne_zero (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 (by positivity))
       ENNReal.ofReal_ne_top).ne' hK0)]
     exact le_top
@@ -529,8 +527,6 @@ theorem mem_kMethod_weightedLp_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
       Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ (((1 - θ) * s₀ + θ * s₁) * j) : ℝ) : 𝕜) •
         (weightedLp 𝕜 A q₀ q₁ s₀ s₁).sumSpaceEmbed u j) q := by
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le hq).ne'
-  have hμ : 0 < |s₁ - s₀| * Real.log 2 :=
-    mul_pos (abs_pos.2 (sub_ne_zero.2 hs.symm)) (Real.log_pos one_lt_two)
   rw [memℓp_iff_eLpNorm_count_lt_top hq0, mem_kMethod_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hle := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp hs hθ.1.le hq0 u

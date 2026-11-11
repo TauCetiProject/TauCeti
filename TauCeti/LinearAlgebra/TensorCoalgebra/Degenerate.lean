@@ -296,7 +296,6 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
     hle hz
   rw [degenerateWords_le_iff]
   rintro ⟨n, hn⟩ x ⟨i, hi⟩
-  have hin : i.1 < n := i.isLt
   rw [Submodule.mem_comap, gradedCoderiv_of_tprod]
   refine Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦ ?_
   by_cases hfit : 0 < d ∧ p + d ≤ n

@@ -772,9 +772,6 @@ private theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt (hs
   have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
     rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
       Real.sin_sub_pi_div_two]
-  have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-    (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-      (by nlinarith [Real.pi_pos])).ne
   calc
     _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
           t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
@@ -978,7 +975,6 @@ theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
     rw [hf, Real.norm_eq_abs, abs_mul, abs_of_pos (by positivity : 0 < a / (1 + x ^ 2))]
     have hle : |(a * x - 1) / (x + a)| ≤ a + a⁻¹ := by
       rw [abs_div, abs_of_pos (by positivity : 0 < x + a), div_le_iff₀ (by positivity)]
-      have hi : 0 ≤ a⁻¹ * x := by positivity
       rw [abs_le]
       constructor <;> field_simp <;> nlinarith [sq_nonneg a, mul_nonneg ha.le hx.le]
     calc

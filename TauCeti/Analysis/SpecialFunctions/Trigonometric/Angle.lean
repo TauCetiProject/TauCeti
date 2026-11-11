@@ -111,7 +111,6 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
     β = 2 * α := by
   have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
   have hαπ : α ≤ Real.pi := hθ ▸ θ.abs_toReal_le_pi
-  have hπ := Real.pi_pos
   have hβrep : (β : Real.Angle).toReal = β :=
     Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, hβπ.le⟩
   have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by

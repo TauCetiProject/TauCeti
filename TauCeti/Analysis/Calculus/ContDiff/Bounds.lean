@@ -203,7 +203,6 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
       ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
     (hf.continuous_iteratedFDeriv le_rfl).continuousOn
-  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
   refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
   calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
         (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)

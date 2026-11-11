@@ -190,7 +190,6 @@ theorem endCoord_zero (p : PSSPlane) : p.endCoord 0 = 0 := by
 /-- The end coordinate is a right inverse of the end lift away from the pole. -/
 theorem cylindricalEndLift_endCoord (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) :
     p.cylindricalEndLift (p.endCoord w) = w := by
-  have hπ : (2 * π : ℝ) ≠ 0 := by positivity
   rw [cylindricalEndLift_def, endCoord_def, ← mul_assoc, ← Complex.ofReal_mul,
     show 2 * π * p.endSign * (p.endSign / (2 * π)) = p.endSign * p.endSign by field_simp,
     endSign_mul_endSign, Complex.ofReal_one, one_mul, Complex.exp_log hw]

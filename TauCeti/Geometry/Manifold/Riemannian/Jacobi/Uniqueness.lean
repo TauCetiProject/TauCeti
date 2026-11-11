@@ -140,7 +140,6 @@ theorem IsJacobiFieldOn.eq_zero_of_eq_zero_of_alongCurveWithin_eq_zero
   have hbound (r : ℝ) (hr : r ∈ Icc (min t₀ t) (max t₀ t)) :
       ‖2 * inner ℝ (D r) (V r) - 2 * inner ℝ (R r) (D r)‖ ≤
         (1 + max C 0 * c ^ 2) * ‖‖V r‖ ^ 2 + ‖D r‖ ^ 2‖ := by
-    have hK : 0 ≤ max C 0 * c ^ 2 := by positivity
     rw [Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (a := ‖V r‖ ^ 2 + ‖D r‖ ^ 2) (by positivity)]
     calc |2 * inner ℝ (D r) (V r) - 2 * inner ℝ (R r) (D r)|

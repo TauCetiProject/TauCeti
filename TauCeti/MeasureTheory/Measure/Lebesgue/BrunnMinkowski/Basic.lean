@@ -238,7 +238,6 @@ theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {
   have hab : a + b ≤ volume.real F ^ (n : ℝ)⁻¹ := hBM.trans
     (Real.rpow_le_rpow measureReal_nonneg (measureReal_mono hsub hF) (by positivity))
   have ha : 0 ≤ a := by positivity
-  have hb : 0 ≤ b := by positivity
   have hpow := pow_le_pow_left₀ (by positivity) hab n
   rw [Real.rpow_inv_natCast_pow measureReal_nonneg hn] at hpow
   have hbin := (Commute.all a b).pow_add_mul_le_add_pow_of_sq_nonneg ha (sq_nonneg b)

@@ -417,7 +417,6 @@ theorem dist_preciseRepresentative_restrict_le_of_setAverage_norm_sub_le {y : E}
       (hoscx _ (by positivity) le_rfl)
   have hCq : 2 ^ α * D = C * (2 ^ α - 1) := by
     simp only [C, D]
-    have hc' : (0 : ℝ) < c := hc
     field_simp [(one_sub_two_rpow_neg_pos hα).ne']
     rw [Real.rpow_neg zero_le_two]
     field_simp
@@ -571,7 +570,6 @@ theorem holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le {α : ℝ�
   have hM : 0 ≤ M := by
     have h := (average_nonneg fun _ => norm_nonneg _).trans (hosc x hx ρ hρ le_rfl)
     exact nonneg_of_mul_nonneg_left h (by positivity)
-  have hd0 : 0 ≤ dist x y ^ (α : ℝ) := by positivity
   rw [Real.coe_toNNReal _ (by positivity)]
   rcases le_or_gt (2 * dist x y) ρ with hd | hd
   · -- Nearby points: the local Campanato estimate.
@@ -598,7 +596,6 @@ theorem holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le {α : ℝ�
     have hρd : ρ ^ (α : ℝ) ≤ 2 ^ (α : ℝ) * dist x y ^ (α : ℝ) := by
       rw [← Real.mul_rpow zero_le_two dist_nonneg]
       exact Real.rpow_le_rpow hρ.le hd.le hα'.le
-    have hK : 0 ≤ C * M + B * ρ ^ (-(α : ℝ)) := by positivity
     calc dist (preciseRepresentative μ f x) (preciseRepresentative μ f y)
         ≤ ‖preciseRepresentative μ f x‖ + ‖preciseRepresentative μ f y‖ := dist_le_norm_add_norm _ _
       _ ≤ 2 * ((C * M + B * ρ ^ (-(α : ℝ))) * ρ ^ (α : ℝ)) := by
@@ -795,11 +792,9 @@ theorem setAverage_norm_sub_le_of_campanatoSeminormPow_le {M : ℝ≥0} {α r : 
   set ω := μ.real (closedBall (0 : E) 1)
   set n : ℝ := (finrank ℝ E : ℝ)
   have hp0 : 0 < p := one_pos.trans_le hp
-  have hc' : (0 : ℝ) < c := hc
   have hω : 0 < ω :=
     ENNReal.toReal_pos (measure_closedBall_pos μ 0 one_pos).ne' measure_closedBall_lt_top.ne
   have hA : 0 ≤ A := average_nonneg fun _ ↦ norm_nonneg _
-  have hrn : 0 < r ^ n := Real.rpow_pos_of_pos hr _
   -- Hölder's inequality on the ball.
   have h₁ : ENNReal.ofReal A ^ p ≤ (μ.restrict Ω (closedBall x r))⁻¹ *
       ∫⁻ y in closedBall x r, ‖f y - a‖ₑ ^ p ∂μ.restrict Ω := by

@@ -410,8 +410,6 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
     (hg.comp (contMDiffOn_chart_symm.mono inter_subset_left) fun z hz ↦ hz.2).contDiffOn
   have hC : ∀ z ∈ e.target ∩ e.symm ⁻¹' U, ContDiffAt 𝕜 n (fun z ↦ g (e.symm z) - c) z :=
     fun z hz ↦ ((hgc.contDiffAt (hU'.mem_nhds hz)).sub contDiffAt_const)
-  have hd : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g y :=
-    (hg.contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt hn
   have hstrict := (hC _ hyU').hasStrictFDerivAt_fderiv hn
   rw [fderiv_sub_const] at hstrict
   refine ⟨?_, by simp [hyy, hgy], hU', hyU', hC, ?_⟩
