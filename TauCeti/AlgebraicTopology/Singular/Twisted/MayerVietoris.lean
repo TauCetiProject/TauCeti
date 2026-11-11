@@ -30,13 +30,13 @@ supported in `A` (`TauCeti.LocalCoefficientSystem.subspaceTwistedChainComplexIso
 small-chain theorem `TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexι` identifies
 the homology of the chains subordinate to the cover with `Hₙ(X; L)`. The long exact homology
 sequence of the short exact sequence then becomes the Mayer–Vietoris sequence.
+The maps of the sequence on subspaces are induced by
+`TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap`, and its naturality in the space
+uses `TauCeti.LocalCoefficientSystem.restrictTwistedChainComplexMap` and the action of maps on
+small chains, `TauCeti.LocalCoefficientSystem.smallTwistedChainComplexMap`.
 
 ## Main definitions and results
 
-* `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap`,
-  `TauCeti.LocalCoefficientSystem.restrictTwistedChainComplexMap`: the maps of twisted chains of
-  subspaces induced by an inclusion `A ⊆ B` and by the restriction of a map `f` with
-  `f '' A ⊆ B`.
 * `TauCeti.LocalCoefficientSystem.twistedMayerVietorisToBiprod`,
   `TauCeti.LocalCoefficientSystem.twistedMayerVietorisFromBiprod`: the maps `(i_U, -i_V)` and
   `j_U + j_V`.
@@ -74,38 +74,6 @@ namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-section Subspace
-
-variable {A B : Set X}
-
-/-- The map of twisted chains induced by an inclusion `A ⊆ B` of subsets of `X`, with `L`
-restricted to `A` and to `B`. -/
--- The source of the coefficient comparison is the pullback along
--- `(subtypeVal B).comp (inclusion h)`, which is `subtypeVal A` by definition
--- (`ContinuousMap.subtypeVal_comp_inclusion` is proved by `rfl`).
-def subsetTwistedChainComplexMap (h : A ⊆ B) :
-    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L).twistedChainComplex ⟶
-      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L).twistedChainComplex :=
-  twistedChainComplexCoefficientMap
-      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
-        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
-    twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
-      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
-
-/-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
-`A ⊆ X`. -/
-@[reassoc (attr := simp)]
-lemma subsetTwistedChainComplexMap_twistedChainComplexMap (h : A ⊆ B) :
-    subsetTwistedChainComplexMap L h ≫
-        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) L =
-      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L := by
-  rw [subsetTwistedChainComplexMap, Category.assoc]
-  -- The composite of the two inclusions is the inclusion of `A` by definition, as above.
-  exact (twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
-    (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).symm
-
-end Subspace
 
 section MayerVietoris
 
@@ -176,25 +144,42 @@ private def homologyIsoInter (n : ℕ) :
   (HomologicalComplex.homologyFunctor _ _ n).mapIso
     (subspaceTwistedChainComplexIso L (U ∩ V)).symm
 
+-- Homology is an additive functor, so it preserves binary biproducts.
+attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
+
 /-- The homology of the sum of the small-chain complexes of `U` and `V`. -/
 private def homologyIsoBiprod (n : ℕ) :
     (smallTwistedChainComplex L (fun _ : Unit ↦ U) ⊞
         smallTwistedChainComplex L (fun _ : Unit ↦ V)).homology n ≅
       ((pullback (X := TopCat.of ↥U) (ContinuousMap.subtypeVal U)).obj L).twistedHomology n ⊞
-        ((pullback (X := TopCat.of ↥V) (ContinuousMap.subtypeVal V)).obj L).twistedHomology n where
-  hom := biprod.lift
-    (HomologicalComplex.homologyMap (biprod.fst ≫ (subspaceTwistedChainComplexIso L U).inv) n)
-    (HomologicalComplex.homologyMap (biprod.snd ≫ (subspaceTwistedChainComplexIso L V).inv) n)
-  inv := biprod.desc
-    (HomologicalComplex.homologyMap ((subspaceTwistedChainComplexIso L U).hom ≫ biprod.inl) n)
-    (HomologicalComplex.homologyMap ((subspaceTwistedChainComplexIso L V).hom ≫ biprod.inr) n)
-  hom_inv_id := by
-    simp only [biprod.lift_desc, ← HomologicalComplex.homologyMap_comp, Category.assoc,
-      Iso.inv_hom_id_assoc, ← HomologicalComplex.homologyMap_add, biprod.total,
-      HomologicalComplex.homologyMap_id]
-  inv_hom_id := by
-    apply biprod.hom_ext' <;> apply biprod.hom_ext <;>
-      simp [← HomologicalComplex.homologyMap_comp]
+        ((pullback (X := TopCat.of ↥V) (ContinuousMap.subtypeVal V)).obj L).twistedHomology n :=
+  (HomologicalComplex.homologyFunctor _ _ n).mapBiprod _ _ ≪≫
+    biprod.mapIso ((HomologicalComplex.homologyFunctor _ _ n).mapIso
+        (subspaceTwistedChainComplexIso L U).symm)
+      ((HomologicalComplex.homologyFunctor _ _ n).mapIso (subspaceTwistedChainComplexIso L V).symm)
+
+-- The objects of the homology functor are the stated objects of `homologyIsoBiprod` only up to
+-- unfolding, so its components are computed in the functor's objects and then transferred.
+private lemma homologyIsoBiprod_hom (n : ℕ) :
+    (homologyIsoBiprod L U V n).hom = biprod.lift
+      (HomologicalComplex.homologyMap (biprod.fst ≫ (subspaceTwistedChainComplexIso L U).inv) n)
+      (HomologicalComplex.homologyMap (biprod.snd ≫ (subspaceTwistedChainComplexIso L V).inv)
+        n) := by
+  have h : ((HomologicalComplex.homologyFunctor _ _ n).mapBiprod (smallTwistedChainComplex L
+        (fun _ : Unit ↦ U)) (smallTwistedChainComplex L (fun _ : Unit ↦ V))).hom ≫
+      biprod.map ((HomologicalComplex.homologyFunctor _ _ n).map
+          (subspaceTwistedChainComplexIso L U).inv)
+        ((HomologicalComplex.homologyFunctor _ _ n).map (subspaceTwistedChainComplexIso L V).inv) =
+      biprod.lift ((HomologicalComplex.homologyFunctor _ _ n).map
+          (biprod.fst ≫ (subspaceTwistedChainComplexIso L U).inv))
+        ((HomologicalComplex.homologyFunctor _ _ n).map
+          (biprod.snd ≫ (subspaceTwistedChainComplexIso L V).inv)) := by
+    apply biprod.hom_ext
+    · rw [Category.assoc, biprod.map_fst, Functor.mapBiprod_hom, biprod.lift_fst_assoc,
+        biprod.lift_fst, Functor.map_comp]
+    · rw [Category.assoc, biprod.map_snd, Functor.mapBiprod_hom, biprod.lift_snd_assoc,
+        biprod.lift_snd, Functor.map_comp]
+  exact h
 
 private lemma shortExact_mk_smallTwistedMayerVietoris :
     (ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L U V)).ShortExact := by
@@ -226,11 +211,11 @@ private lemma homologyMap_toBiprod_comp_homologyIsoBiprod_hom (n : ℕ) :
         (homologyIsoBiprod L U V n).hom =
       (homologyIsoInter L U V n).hom ≫ twistedMayerVietorisToBiprod L U V n := by
   apply biprod.hom_ext
-  · simp only [homologyIsoBiprod, homologyIsoInter, Category.assoc, biprod.lift_fst,
+  · simp only [homologyIsoBiprod_hom, homologyIsoInter, Category.assoc, biprod.lift_fst,
       ← HomologicalComplex.homologyMap_comp, smallTwistedMayerVietorisToBiprod_fst_inv,
       twistedMayerVietorisToBiprod_fst, Functor.mapIso_hom, Iso.symm_hom,
       HomologicalComplex.homologyFunctor_map]
-  · simp only [homologyIsoBiprod, homologyIsoInter, Category.assoc, biprod.lift_snd,
+  · simp only [homologyIsoBiprod_hom, homologyIsoInter, Category.assoc, biprod.lift_snd,
       ← HomologicalComplex.homologyMap_comp, smallTwistedMayerVietorisToBiprod_snd_inv,
       twistedMayerVietorisToBiprod_snd, Functor.mapIso_hom, Iso.symm_hom,
       HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyMap_neg,
@@ -240,16 +225,10 @@ private lemma homologyMap_fromBiprod_comp_ι (n : ℕ) :
     HomologicalComplex.homologyMap (smallTwistedMayerVietorisFromBiprod L U V) n ≫
         HomologicalComplex.homologyMap (smallTwistedChainComplexι L (Bool.rec U V)) n =
       (homologyIsoBiprod L U V n).hom ≫ twistedMayerVietorisFromBiprod L U V n := by
-  rw [← Iso.inv_comp_eq]
-  apply biprod.hom_ext'
-  · simp only [homologyIsoBiprod, biprod.inl_desc_assoc, ← HomologicalComplex.homologyMap_comp,
-      Category.assoc, smallTwistedMayerVietorisFromBiprod_comp_ι, Preadditive.comp_add,
-      biprod.inl_fst_assoc, biprod.inl_snd_assoc, zero_comp, comp_zero, add_zero,
-      subspaceTwistedChainComplexIso_hom_ι, inl_twistedMayerVietorisFromBiprod]
-  · simp only [homologyIsoBiprod, biprod.inr_desc_assoc, ← HomologicalComplex.homologyMap_comp,
-      Category.assoc, smallTwistedMayerVietorisFromBiprod_comp_ι, Preadditive.comp_add,
-      biprod.inr_fst_assoc, biprod.inr_snd_assoc, zero_comp, comp_zero, zero_add,
-      subspaceTwistedChainComplexIso_hom_ι, inr_twistedMayerVietorisFromBiprod]
+  rw [homologyIsoBiprod_hom, twistedMayerVietorisFromBiprod, biprod.lift_desc]
+  simp only [twistedHomologyMap, ← HomologicalComplex.homologyMap_comp,
+    ← HomologicalComplex.homologyMap_add, smallTwistedMayerVietorisFromBiprod_comp_ι,
+    Category.assoc, subspaceTwistedChainComplexIso_inv_twistedChainComplexMap]
 
 variable {U V} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
 
@@ -355,33 +334,16 @@ end MayerVietoris
 
 section CoefficientNaturality
 
-variable {L} {K : LocalCoefficientSystem.{u, v, max v w} R X} (η : L ⟶ K)
-
-/-- Change of coefficients on chains subordinate to a family of subsets. -/
-private def smallCoefficientMap {ι : Type*} (W : ι → Set X) :
-    smallTwistedChainComplex L W ⟶ smallTwistedChainComplex K W :=
-  smallTwistedChainComplexLift
-    (smallTwistedChainComplexι L W ≫ twistedChainComplexCoefficientMap η) fun n ↦ by
-      rintro _ ⟨c, rfl⟩
-      exact twistedChainComplexCoefficientMap_mem_smallTwistedChains W η
-        (by rw [← range_smallTwistedChainComplexι_f]; exact LinearMap.mem_range_self _ c)
-
-@[reassoc (attr := simp)]
-private lemma smallCoefficientMap_ι {ι : Type*} (W : ι → Set X) :
-    smallCoefficientMap η W ≫ smallTwistedChainComplexι K W =
-      smallTwistedChainComplexι L W ≫ twistedChainComplexCoefficientMap η :=
-  smallTwistedChainComplexLift_ι _ _
-
-variable (U V : Set X)
+variable {L} {K : LocalCoefficientSystem.{u, v, max v w} R X} (η : L ⟶ K) (U V : Set X)
 
 /-- Change of coefficients as a morphism of the short exact sequences of small chains. -/
 private def smallTwistedMayerVietorisCoefficientMap :
     ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L U V) ⟶
       ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod K U V) where
-  τ₁ := smallCoefficientMap η (fun _ : Unit ↦ U ∩ V)
-  τ₂ := biprod.map (smallCoefficientMap η (fun _ : Unit ↦ U))
-    (smallCoefficientMap η (fun _ : Unit ↦ V))
-  τ₃ := smallCoefficientMap η (Bool.rec U V)
+  τ₁ := smallTwistedChainComplexCoefficientMap (fun _ : Unit ↦ U ∩ V) η
+  τ₂ := biprod.map (smallTwistedChainComplexCoefficientMap (fun _ : Unit ↦ U) η)
+    (smallTwistedChainComplexCoefficientMap (fun _ : Unit ↦ V) η)
+  τ₃ := smallTwistedChainComplexCoefficientMap (Bool.rec U V) η
   comm₁₂ := by
     apply biprod.hom_ext
     · apply (cancel_mono (smallTwistedChainComplexι K (fun _ : Unit ↦ U))).1
@@ -395,7 +357,8 @@ private def smallTwistedMayerVietorisCoefficientMap :
 private lemma homologyIsoInter_hom_naturality (n : ℕ) :
     (homologyIsoInter L U V n).hom ≫ twistedHomologyCoefficientMap
         ((pullback (X := TopCat.of ↥(U ∩ V)) (ContinuousMap.subtypeVal (U ∩ V))).map η) n =
-      HomologicalComplex.homologyMap (smallCoefficientMap η (fun _ : Unit ↦ U ∩ V)) n ≫
+      HomologicalComplex.homologyMap
+          (smallTwistedChainComplexCoefficientMap (fun _ : Unit ↦ U ∩ V) η) n ≫
         (homologyIsoInter K U V n).hom := by
   simp only [homologyIsoInter, Functor.mapIso_hom, Iso.symm_hom,
     HomologicalComplex.homologyFunctor_map, ← HomologicalComplex.homologyMap_comp]
@@ -418,17 +381,21 @@ lemma twistedMayerVietorisδ_coefficient_naturality (n m : ℕ) (h : m + 1 = n :
   have := quasiIso_smallTwistedChainComplexι_bool K hU hV hUV
   have hunion : HomologicalComplex.homologyMap (smallTwistedChainComplexι L (Bool.rec U V)) n ≫
       twistedHomologyCoefficientMap η n =
-        HomologicalComplex.homologyMap (smallCoefficientMap η (Bool.rec U V)) n ≫
+        HomologicalComplex.homologyMap (smallTwistedChainComplexCoefficientMap (Bool.rec U V) η)
+            n ≫
           HomologicalComplex.homologyMap (smallTwistedChainComplexι K (Bool.rec U V)) n := by
-    simp only [← HomologicalComplex.homologyMap_comp, smallCoefficientMap_ι]
+    simp only [← HomologicalComplex.homologyMap_comp, smallTwistedChainComplexCoefficientMap_ι]
   have hinv : (homologyIsoUnion L hU hV hUV n).inv ≫
-      HomologicalComplex.homologyMap (smallCoefficientMap η (Bool.rec U V)) n =
+      HomologicalComplex.homologyMap (smallTwistedChainComplexCoefficientMap (Bool.rec U V) η)
+          n =
         twistedHomologyCoefficientMap η n ≫ (homologyIsoUnion K hU hV hUV n).inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
     exact hunion.symm
   have key : (shortExact_mk_smallTwistedMayerVietoris L U V).δ n m h ≫
-      HomologicalComplex.homologyMap (smallCoefficientMap η (fun _ : Unit ↦ U ∩ V)) m =
-        HomologicalComplex.homologyMap (smallCoefficientMap η (Bool.rec U V)) n ≫
+      HomologicalComplex.homologyMap
+          (smallTwistedChainComplexCoefficientMap (fun _ : Unit ↦ U ∩ V) η) m =
+        HomologicalComplex.homologyMap (smallTwistedChainComplexCoefficientMap (Bool.rec U V) η)
+            n ≫
           (shortExact_mk_smallTwistedMayerVietoris K U V).δ n m h :=
     HomologicalComplex.HomologySequence.δ_naturality
       (smallTwistedMayerVietorisCoefficientMap η U V) _ _ n m h
@@ -440,60 +407,7 @@ end CoefficientNaturality
 section SpaceNaturality
 
 variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : LocalCoefficientSystem.{u, v, max v w} R Y)
-
-section Subspace
-
-variable {A : Set X} {B : Set Y} (hf : Set.MapsTo f A B)
-
-/-- The map of twisted chains of subspaces induced by the restriction `A ⟶ B` of a continuous map
-`f : X ⟶ Y` carrying `A` into `B`, with coefficients in `f⁎M` restricted to `A` and in `M`
-restricted to `B`. -/
-def restrictTwistedChainComplexMap :
-    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj
-        ((pullback f.hom).obj M)).twistedChainComplex ⟶
-      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M).twistedChainComplex :=
-  twistedChainComplexCoefficientMap
-      (((pullbackCompIso (TopCat.ofHom (ContinuousMap.subtypeVal A)).hom f.hom).app M).symm ≪≫
-        eqToIso (congrArg (fun k : TopCat.of A ⟶ Y ↦ (pullback k.hom).obj M)
-          (TopCat.ofHom_subtypeVal_comp f hf)) ≪≫
-        (pullbackCompIso (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩).hom
-          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).app M).hom ≫
-    twistedChainComplexMap (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩)
-      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M)
-
-/-- The restriction of `f` followed by the inclusion of `B` is the inclusion of `A` followed by
-`f`. -/
-@[reassoc (attr := simp)]
-lemma restrictTwistedChainComplexMap_twistedChainComplexMap :
-    restrictTwistedChainComplexMap f M hf ≫
-        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) M =
-      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A))
-          ((pullback f.hom).obj M) ≫ twistedChainComplexMap f M := by
-  rw [restrictTwistedChainComplexMap, Category.assoc]
-  exact (twistedChainComplexMap_naturality_square _ _ _ _ M
-    (TopCat.ofHom_subtypeVal_comp f hf)).symm
-
-end Subspace
-
-/-- Pushing chains forward along `f`, on chains subordinate to families of subsets. -/
-private def smallSpaceMap {ι κ : Type*} (W : ι → Set X) (W' : κ → Set Y) (r : ι → κ)
-    (hW : ∀ i, Set.MapsTo f (W i) (W' (r i))) :
-    smallTwistedChainComplex ((pullback f.hom).obj M) W ⟶ smallTwistedChainComplex M W' :=
-  smallTwistedChainComplexLift
-    (smallTwistedChainComplexι ((pullback f.hom).obj M) W ≫ twistedChainComplexMap f M)
-    fun n ↦ by
-      rintro _ ⟨c, rfl⟩
-      exact twistedChainComplexMap_mem_smallTwistedChains W W' f M r hW
-        (by rw [← range_smallTwistedChainComplexι_f]; exact LinearMap.mem_range_self _ c)
-
-@[reassoc (attr := simp)]
-private lemma smallSpaceMap_ι {ι κ : Type*} (W : ι → Set X) (W' : κ → Set Y) (r : ι → κ)
-    (hW : ∀ i, Set.MapsTo f (W i) (W' (r i))) :
-    smallSpaceMap f M W W' r hW ≫ smallTwistedChainComplexι M W' =
-      smallTwistedChainComplexι ((pullback f.hom).obj M) W ≫ twistedChainComplexMap f M :=
-  smallTwistedChainComplexLift_ι _ _
-
-variable {U V : Set X} {U' V' : Set Y} (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')
+  {U V : Set X} {U' V' : Set Y} (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')
 
 /-- Pushing chains forward along `f` as a morphism of the short exact sequences of small
 chains. -/
@@ -501,11 +415,13 @@ private def smallTwistedMayerVietorisSpaceMap :
     ShortComplex.mk _ _
         (smallTwistedMayerVietorisToBiprod_fromBiprod ((pullback f.hom).obj M) U V) ⟶
       ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod M U' V') where
-  τ₁ := smallSpaceMap f M (fun _ : Unit ↦ U ∩ V) (fun _ : Unit ↦ U' ∩ V') id
+  τ₁ := smallTwistedChainComplexMap (fun _ : Unit ↦ U ∩ V) (fun _ : Unit ↦ U' ∩ V') f M id
     fun _ ↦ hfU.inter_inter hfV
-  τ₂ := biprod.map (smallSpaceMap f M (fun _ : Unit ↦ U) (fun _ : Unit ↦ U') id fun _ ↦ hfU)
-    (smallSpaceMap f M (fun _ : Unit ↦ V) (fun _ : Unit ↦ V') id fun _ ↦ hfV)
-  τ₃ := smallSpaceMap f M (Bool.rec U V) (Bool.rec U' V') id fun b ↦ by cases b <;> assumption
+  τ₂ := biprod.map
+    (smallTwistedChainComplexMap (fun _ : Unit ↦ U) (fun _ : Unit ↦ U') f M id fun _ ↦ hfU)
+    (smallTwistedChainComplexMap (fun _ : Unit ↦ V) (fun _ : Unit ↦ V') f M id fun _ ↦ hfV)
+  τ₃ := smallTwistedChainComplexMap (Bool.rec U V) (Bool.rec U' V') f M id fun b ↦ by
+    cases b <;> assumption
   comm₁₂ := by
     apply biprod.hom_ext
     · apply (cancel_mono (smallTwistedChainComplexι M (fun _ : Unit ↦ U'))).1
@@ -520,8 +436,8 @@ private lemma homologyIsoInter_hom_space_naturality (n : ℕ) :
     (homologyIsoInter ((pullback f.hom).obj M) U V n).hom ≫
         HomologicalComplex.homologyMap
           (restrictTwistedChainComplexMap f M (hfU.inter_inter hfV)) n =
-      HomologicalComplex.homologyMap (smallSpaceMap f M (fun _ : Unit ↦ U ∩ V)
-          (fun _ : Unit ↦ U' ∩ V') id fun _ ↦ hfU.inter_inter hfV) n ≫
+      HomologicalComplex.homologyMap (smallTwistedChainComplexMap (fun _ : Unit ↦ U ∩ V)
+          (fun _ : Unit ↦ U' ∩ V') f M id fun _ ↦ hfU.inter_inter hfV) n ≫
         (homologyIsoInter M U' V' n).hom := by
   simp only [homologyIsoInter, Functor.mapIso_hom, Iso.symm_hom,
     HomologicalComplex.homologyFunctor_map, ← HomologicalComplex.homologyMap_comp]
@@ -545,17 +461,17 @@ lemma twistedMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
   have := quasiIso_smallTwistedChainComplexι_bool ((pullback f.hom).obj M) hU hV hUV
   have := quasiIso_smallTwistedChainComplexι_bool M hU' hV' hUV'
   have hinv : (homologyIsoUnion ((pullback f.hom).obj M) hU hV hUV n).inv ≫
-      HomologicalComplex.homologyMap (smallSpaceMap f M (Bool.rec U V) (Bool.rec U' V') id
-        fun b ↦ by cases b <;> assumption) n =
+      HomologicalComplex.homologyMap (smallTwistedChainComplexMap (Bool.rec U V) (Bool.rec U' V')
+        f M id fun b ↦ by cases b <;> assumption) n =
         twistedHomologyMap f M n ≫ (homologyIsoUnion M hU' hV' hUV' n).inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
     simp only [homologyIsoUnion, asIso_hom, ← HomologicalComplex.homologyMap_comp,
-      smallSpaceMap_ι]
+      smallTwistedChainComplexMap_ι]
   have key : (shortExact_mk_smallTwistedMayerVietoris ((pullback f.hom).obj M) U V).δ n m h ≫
-      HomologicalComplex.homologyMap (smallSpaceMap f M (fun _ : Unit ↦ U ∩ V)
-          (fun _ : Unit ↦ U' ∩ V') id fun _ ↦ hfU.inter_inter hfV) m =
-        HomologicalComplex.homologyMap (smallSpaceMap f M (Bool.rec U V) (Bool.rec U' V') id
-          fun b ↦ by cases b <;> assumption) n ≫
+      HomologicalComplex.homologyMap (smallTwistedChainComplexMap (fun _ : Unit ↦ U ∩ V)
+          (fun _ : Unit ↦ U' ∩ V') f M id fun _ ↦ hfU.inter_inter hfV) m =
+        HomologicalComplex.homologyMap (smallTwistedChainComplexMap (Bool.rec U V)
+          (Bool.rec U' V') f M id fun b ↦ by cases b <;> assumption) n ≫
           (shortExact_mk_smallTwistedMayerVietoris M U' V').δ n m h :=
     HomologicalComplex.HomologySequence.δ_naturality
       (smallTwistedMayerVietorisSpaceMap f M hfU hfV) _ _ n m h

@@ -22,7 +22,9 @@ The boundary, barycentric subdivision and its prism operator preserve these subm
 They therefore give a chain complex with an injective inclusion into twisted singular chains.
 Nested support submodules give functorial inclusions between these small-chain complexes, and
 a chain map into twisted chains with subordinate values factors through them
-(`TauCeti.LocalCoefficientSystem.smallTwistedChainComplexLift`). For a subspace `A`, the
+(`TauCeti.LocalCoefficientSystem.smallTwistedChainComplexLift`). In particular change of
+coefficients and continuous maps compatible with the families act on small chains
+(`smallTwistedChainComplexCoefficientMap`, `smallTwistedChainComplexMap`). For a subspace `A`, the
 twisted chains of `A` with the restricted system are exactly the chains supported in `A`
 (`TauCeti.LocalCoefficientSystem.subspaceTwistedChainComplexIso`); this identifies the terms
 of the Mayer–Vietoris sequence with homology of subspaces. For an open cover, every finite
@@ -513,6 +515,50 @@ lemma smallTwistedChainComplexLift_ι (g : A ⟶ L.twistedChainComplex)
   simp [smallTwistedChainComplexLift, ← ModuleCat.ofHom_comp]
 
 end Lift
+
+section LiftNaturality
+
+variable {L} {K : LocalCoefficientSystem.{u, v, max v w} R X} (η : L ⟶ K)
+
+/-- Change of local coefficients on twisted chains subordinate to a family of subsets. -/
+def smallTwistedChainComplexCoefficientMap :
+    smallTwistedChainComplex L U ⟶ smallTwistedChainComplex K U :=
+  smallTwistedChainComplexLift
+    (smallTwistedChainComplexι L U ≫ twistedChainComplexCoefficientMap η) fun n ↦ by
+      rintro _ ⟨c, rfl⟩
+      exact twistedChainComplexCoefficientMap_mem_smallTwistedChains U η
+        (by rw [← range_smallTwistedChainComplexι_f]; exact LinearMap.mem_range_self _ c)
+
+/-- Change of coefficients on small chains is compatible with their inclusions into twisted
+chains. -/
+@[reassoc (attr := simp)]
+lemma smallTwistedChainComplexCoefficientMap_ι :
+    smallTwistedChainComplexCoefficientMap U η ≫ smallTwistedChainComplexι K U =
+      smallTwistedChainComplexι L U ≫ twistedChainComplexCoefficientMap η :=
+  smallTwistedChainComplexLift_ι _ _
+
+variable {Y : TopCat.{v}} {κ : Type*} (V : κ → Set Y)
+  (f : X ⟶ Y) (M : LocalCoefficientSystem.{u, v, max v w} R Y)
+
+/-- Pushing twisted chains forward along a continuous map carrying each member of one family of
+subsets into a member of another, on the chains subordinate to these families. -/
+def smallTwistedChainComplexMap (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) :
+    smallTwistedChainComplex ((pullback f.hom).obj M) U ⟶ smallTwistedChainComplex M V :=
+  smallTwistedChainComplexLift
+    (smallTwistedChainComplexι ((pullback f.hom).obj M) U ≫ twistedChainComplexMap f M)
+    fun n ↦ by
+      rintro _ ⟨c, rfl⟩
+      exact twistedChainComplexMap_mem_smallTwistedChains U V f M r hf
+        (by rw [← range_smallTwistedChainComplexι_f]; exact LinearMap.mem_range_self _ c)
+
+/-- Pushing small chains forward is compatible with their inclusions into twisted chains. -/
+@[reassoc (attr := simp)]
+lemma smallTwistedChainComplexMap_ι (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) :
+    smallTwistedChainComplexMap U V f M r hf ≫ smallTwistedChainComplexι M V =
+      smallTwistedChainComplexι ((pullback f.hom).obj M) U ≫ twistedChainComplexMap f M :=
+  smallTwistedChainComplexLift_ι _ _
+
+end LiftNaturality
 
 section Subspace
 
