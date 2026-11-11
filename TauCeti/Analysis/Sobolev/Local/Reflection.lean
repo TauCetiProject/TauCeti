@@ -56,7 +56,8 @@ statement.
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
-  constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights.
+  constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
+  derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
 
 ## References
 
@@ -746,6 +747,12 @@ weights times the Jacobian factors `|higherReflectionNode j|^(-1 / p)` of the re
 With the Vandermonde weights it is `TauCeti.higherReflectionBound k p`. -/
 def planarReflectionBound (d : Fin k → ℝ) (p : ℝ≥0∞) : ℝ≥0∞ :=
   1 + ∑ j, ‖d j‖ₑ * ENNReal.ofReal |(higherReflectionNode j)⁻¹| ^ (1 / p).toReal
+
+/-- The constant only sees the absolute values of the weights. -/
+@[simp]
+theorem planarReflectionBound_abs (d : Fin k → ℝ) (p : ℝ≥0∞) :
+    planarReflectionBound (fun j => |d j|) p = planarReflectionBound d p := by
+  simp [planarReflectionBound]
 
 /-- With the Vandermonde weights the constant is the one of the normal-slice reflection. -/
 theorem planarReflectionBound_higherReflectionCoeff (k : ℕ) (p : ℝ≥0∞) :

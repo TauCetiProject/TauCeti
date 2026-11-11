@@ -138,8 +138,6 @@ theorem encodeCode_ofNatCode : ∀ n, encodeCode (ofNatCode n) = n
     have IH2 := encodeCode_ofNatCode (n / 4).unpair.2
     rw [ofNatCode]
     -- split on the constructor tag `n % 4`
-    have h4 := Nat.div_add_mod n 4
-    have hlt := Nat.mod_lt n (show 4 > 0 by omega)
     rcases (by omega : n % 4 = 0 ∨ n % 4 = 1 ∨ n % 4 = 2 ∨ n % 4 = 3) with h | h | h | h <;>
       simp only [h, encodeCode, IH, IH1, IH2, Nat.pair_unpair] <;> omega
 
