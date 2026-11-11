@@ -160,12 +160,11 @@ theorem eLpNorm_fourierInv_comp_inv_smul (g : E → F) {R : ℝ} (hR : 0 < R) (r
 `𝓕 (f (· - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ`. -/
 theorem fourier_comp_sub_const (f : E → F) (a ξ : E) :
     𝓕 (fun x ↦ f (x - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ := by
-  simp only [Real.fourier_eq]
-  rw [← integral_add_right_eq_self (fun x ↦ 𝐞 (-⟪x, ξ⟫) • f (x - a)) a, Circle.smul_def,
-    ← integral_smul]
-  congr 1 with x
-  rw [← Circle.smul_def, smul_smul, ← AddChar.map_add_eq_mul, add_sub_cancel_right,
-    inner_add_left, neg_add, add_comm]
+  -- On functions, `𝓕` is the Fourier integral for the pairing `innerₗ E`.
+  have h := congrFun (VectorFourier.fourierIntegral_comp_add_right 𝐞 volume (innerₗ E) f (-a)) ξ
+  simp only [Function.comp_def, ← sub_eq_add_neg, map_neg, LinearMap.neg_apply,
+    innerₗ_apply_apply] at h
+  exact h
 
 /-- **Frequencies of a translate**: translating a function does not change the support of its
 Fourier transform. -/

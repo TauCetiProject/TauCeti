@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
 # The spectrum of a product
@@ -79,13 +80,6 @@ open scoped ENNReal FourierTransform SchwartzMap Pointwise Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The set `s - K` is closed when `s` is closed and `K` is compact. -/
-private theorem isClosed_sub_of_isCompact {s K : Set E} (hs : IsClosed s) (hK : IsCompact K) :
-    IsClosed (s - K) := by
-  rw [sub_eq_add_neg]
-  exact hs.add_right_of_isCompact hK.neg
-
 namespace TemperedDistribution
 
 omit [CompleteSpace F] in
@@ -115,7 +109,7 @@ theorem isVanishingOn_fourier_smulLeftCLM {u : 𝓢'(E, F)} {s K : Set E}
     intro ξ hξ
     rw [mem_support, fourierInv_apply_eq_fourier_neg] at hξ
     exact Set.mem_neg.2 (hgK hξ)
-  refine (closure_minimal hsupp (isClosed_sub_of_isCompact (isClosed_tsupport ψ) hK)).trans ?_
+  refine (closure_minimal hsupp ((isClosed_tsupport ψ).sub_right_of_isCompact hK)).trans ?_
   rintro _ ⟨y, hy, t, ht, rfl⟩ hs
   exact hψ hy ⟨y - t, hs, t, ht, sub_add_cancel y t⟩
 
@@ -157,9 +151,10 @@ private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [h
       _ ≤ eLpNorm (fun y ↦ ψ (x - y)) (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume :=
           eLpNorm_smul_le_mul_eLpNorm hψx (Lp.aestronglyMeasurable u)
       _ = C := by
-          rw [show (fun y ↦ ψ (x - y)) = ψ ∘ fun y ↦ x - y from rfl,
-            eLpNorm_comp_measurePreserving ψ.continuous.aestronglyMeasurable
-              (volume.measurePreserving_sub_left x)]
+          have h := eLpNorm_comp_measurePreserving (p := (1 - p⁻¹)⁻¹)
+            ψ.continuous.aestronglyMeasurable (volume.measurePreserving_sub_left x)
+          rw [Function.comp_def] at h
+          rw [h]
   rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
   calc ∫⁻ x, ∫⁻ y, ‖uncurry (fun x y ↦ (ψ (x - y) • u y) • (θ x • v x)) (x, y)‖ₑ
       ≤ ∫⁻ x, C * ‖θ x • v x‖ₑ := lintegral_mono hinner
@@ -179,7 +174,7 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
   intro φ hφ
   -- The open set `U = (tsupport φ - K₂)ᶜ` contains `K₁`, and `U + K₂` misses `tsupport φ`.
   have hU : IsOpen (tsupport φ - K₂)ᶜ :=
-    (isClosed_sub_of_isCompact (isClosed_tsupport φ) hK₂).isOpen_compl
+    ((isClosed_tsupport φ).sub_right_of_isCompact hK₂).isOpen_compl
   have hK₁U : K₁ ⊆ (tsupport φ - K₂)ᶜ := by
     rintro x hx ⟨y, hy, k, hk, rfl⟩
     exact hφ hy ⟨y - k, hx, k, hk, sub_add_cancel y k⟩
@@ -192,8 +187,9 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
     ext ξ
     simp [hχ]
   have hχ1 : tsupport (⇑χ - 1) ⊆ K₁ᶜ := by
-    have hsub : support (⇑χ - 1) ⊆ (interior (χ₀ ⁻¹' {1}))ᶜ := fun ξ hξ hint ↦
-      hξ (by simp [hχ, show χ₀ ξ = 1 from interior_subset hint])
+    have hsub : support (⇑χ - 1) ⊆ (interior (χ₀ ⁻¹' {1}))ᶜ := fun ξ hξ hint ↦ by
+      have hξ1 : χ₀ ξ = 1 := interior_subset hint
+      exact hξ (by simp [hχ, hξ1])
     exact (closure_minimal hsub isOpen_interior.isClosed_compl).trans
       (compl_subset_compl.2 hχ₀1)
   -- `u` is reproduced by convolution with `ψ = 𝓕⁻ χ`.
