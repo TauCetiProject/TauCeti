@@ -394,10 +394,6 @@ theorem factor_comp (K : LieIdeal R L) (hIJ : I ≤ J) (hJK : J ≤ K) :
 theorem factor_surjective (h : I ≤ J) : Function.Surjective (I.factor J h) :=
   I.liftQ_surjective _ _ J.surjective_mkQ
 
-/-- The kernel of a quotient transition is the image of the larger ideal. -/
-theorem ker_factor (h : I ≤ J) : (I.factor J h).ker = J.map I.mkQ := by
-  exact J.ker_liftQ_mkQ _
-
 /-- An ideal has central image in the quotient by `I` exactly when all its
 brackets with the ambient algebra belong to `I`. -/
 theorem map_mkQ_le_center_iff :
@@ -414,7 +410,7 @@ the larger ideal lands in the smaller ideal. -/
 theorem ker_factor_le_center_iff (h : I ≤ J) :
     (I.factor J h).ker ≤ LieAlgebra.center R (L ⧸ I) ↔
       ⁅(⊤ : LieIdeal R L), J⁆ ≤ I := by
-  rw [ker_factor]
+  rw [factor, J.ker_liftQ_mkQ]
   exact I.map_mkQ_le_center_iff J
 
 end Nested
