@@ -50,21 +50,25 @@ theorem surfaceScale_one (x : realSpace K) : surfaceScale x 1 = x := by
   ext w
   simp
 
+/-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
+the second factor. -/
+theorem _root_.Real.mul_rpow_of_nonneg_left {s : ℝ} (hs : 0 ≤ s) (t z : ℝ) :
+    (s * t) ^ z = s ^ z * t ^ z := by
+  rcases hs.eq_or_lt with rfl | hs
+  · rcases eq_or_ne z 0 with rfl | hz
+    · simp
+    · simp [Real.zero_rpow hz]
+  rcases le_or_gt 0 t with ht | ht
+  · exact Real.mul_rpow hs.le ht
+  · rw [Real.rpow_def_of_neg ht, Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hs ht),
+      Real.rpow_def_of_pos hs, Real.log_mul hs.ne' ht.ne, add_mul, Real.exp_add]
+    ring
+
 /-- Successive radial scalings multiply their norm coordinates, the first being nonnegative. -/
 theorem surfaceScale_surfaceScale (x : realSpace K) {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
     surfaceScale (surfaceScale x s) t = surfaceScale x (s * t) := by
   ext w
-  rw [surfaceScale_apply, surfaceScale_apply, surfaceScale_apply, mul_assoc]
-  congr 1
-  rcases hs.eq_or_lt with rfl | hs
-  · rcases eq_or_ne (1 / (Module.finrank ℚ K : ℝ)) 0 with hq | hq
-    · simp only [hq, Real.rpow_zero, mul_one]
-    · simp only [zero_mul, Real.zero_rpow hq]
-  rcases le_or_gt 0 t with ht | ht
-  · exact (Real.mul_rpow hs.le ht).symm
-  · rw [Real.rpow_def_of_neg ht, Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hs ht),
-      Real.rpow_def_of_pos hs, Real.log_mul hs.ne' ht.ne, add_mul, Real.exp_add]
-    ring
+  simp [surfaceScale_apply, Real.mul_rpow_of_nonneg_left hs, mul_assoc]
 
 theorem surfaceScale_pos {x : realSpace K} (hx : ∀ w, 0 < x w) {t : ℝ} (ht : 0 < t)
     (w : InfinitePlace K) : 0 < surfaceScale x t w :=
@@ -174,8 +178,9 @@ theorem surfacePart_smul {c : ℝ} (hc : 0 < c) {y : realSpace K} :
     ext w
     rw [surfaceScale_apply, ← Real.rpow_natCast, ← Real.rpow_mul hc.le, mul_one_div_cancel hn,
       Real.rpow_one, Pi.smul_apply, smul_eq_mul, mul_comm]
-  rw [surfacePart_def, surfacePart_def, hsmul, surfaceScale_surfaceScale _ hcn.le, ← hsmul,
-    archNorm_smul, mul_inv, ← mul_assoc, mul_inv_cancel₀ hcn.ne', one_mul]
+  rw [surfacePart_def, surfacePart_def, hsmul, surfaceScale_surfaceScale _ hcn.le,
+    archNorm_surfaceScale _ hcn.le, mul_inv, mul_comm (archNorm y)⁻¹,
+    ← mul_assoc, mul_inv_cancel₀ hcn.ne', one_mul]
 
 variable (K) in
 /-- Positive archimedean parameters are the product of the norm-one hypersurface and the
