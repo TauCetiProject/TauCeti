@@ -439,30 +439,23 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
 theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Continuous f)
     (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
     [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
-  obtain ⟨x₀, hx₀, hmin⟩ := hcompact.exists_isMinOn (Set.nonempty_coe_sort.1 hK) hf.continuousOn
-  -- Membership in a set-builder set `{x | f x ≤ b}` is by definition the inequality.
-  have hx₀b : f x₀ ≤ b := hx₀
-  rcases hx₀b.lt_or_eq with hlt | heq
-  · let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
-    have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
-    have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
-    have : LocallyCompactSpace U :=
-      (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
-        -- A point of `U` lies in `{f < b}`: the underlying set of the `Opens` structure `U` is
-        -- `{x | f x < b}`, and membership in it is the strict inequality by definition.
-        (fun x hx ↦ by
-          have hlt : f x < b := hx
-          simpa using hlt.le)
-        (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
-    exact FiniteDimensional.of_locallyCompact_manifold U I
-  · -- Otherwise `x₀` is a global minimum of `f` on the level `b`, contradicting regularity.
-    exfalso
-    have hmin' : IsMinOn f univ x₀ := fun x _ ↦ by
-      by_cases hx : f x ≤ b
-      · exact hmin hx
-      · exact heq ▸ (not_le.1 hx).le
-    have hcrit : x₀ ∈ criticalPoints I f := (hmin'.isLocalMin Filter.univ_mem).mem_criticalPoints
-    exact isRegularValue_iff_notMem_image_criticalPoints.1 hb ⟨x₀, hcrit, heq⟩
+  obtain ⟨x₀, hcrit, hx₀b⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
+    hf.continuousOn hcompact (Set.nonempty_coe_sort.1 hK)
+  -- A critical point cannot have the regular value `b`, so it lies strictly below `b`.
+  have hlt : f x₀ < b := hx₀b.lt_of_ne fun heq ↦
+    isRegularValue_iff_notMem_image_criticalPoints.1 hb ⟨x₀, hcrit, heq⟩
+  let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
+  have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
+  have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
+  have : LocallyCompactSpace U :=
+    (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
+      -- A point of `U` lies in `{f < b}`: the underlying set of the `Opens` structure `U` is
+      -- `{x | f x < b}`, and membership in it is the strict inequality by definition.
+      (fun x hx ↦ by
+        have hlt : f x < b := hx
+        simpa using hlt.le)
+      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+  exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
 
