@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Coleman's finite spectral transform
@@ -138,33 +139,6 @@ degree of `B`. -/
 theorem natDegree_one_sub_C_X_mul_map_le (hB : B.natDegree ≤ m) :
     (1 - C X * B.map C).natDegree ≤ m :=
   (natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB)
-
-/-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
-`m` of the first polynomial and at most `n` of the second. -/
-theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
-    (hf : ∀ i ≤ m, f.coeff i = f'.coeff i) (hg : ∀ i ≤ n, g.coeff i = g'.coeff i) :
-    resultant f g m n = resultant f' g' m n := by
-  rw [resultant, resultant]
-  congr 1
-  ext i j
-  induction j using Fin.addCases with
-  | left j =>
-    simp only [sylvester, Matrix.of_apply, Fin.addCases_left]
-    split_ifs with h
-    · exact hg _ (by simp only [Set.mem_Icc] at h; omega)
-    · rfl
-  | right j =>
-    simp only [sylvester, Matrix.of_apply, Fin.addCases_right]
-    split_ifs with h
-    · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
-    · rfl
-
-/-- Every polynomial agrees up to index `m` with one of degree at most `m`. -/
-theorem exists_natDegree_le_forall_coeff_eq (B : R[X]) (m : ℕ) :
-    ∃ B' : R[X], B'.natDegree ≤ m ∧ ∀ i ≤ m, B.coeff i = B'.coeff i :=
-  ⟨PowerSeries.trunc (m + 1) (B : PowerSeries R),
-    Nat.lt_succ_iff.1 (PowerSeries.natDegree_trunc_lt _ _), fun i hi ↦ by
-      simp [PowerSeries.coeff_trunc, Nat.lt_succ_of_le hi]⟩
 
 /-- Coleman's transform of rank `n` and degree bound `m` only involves the coefficients of index
 at most `m` of `B` and at most `n` of `P`. -/
