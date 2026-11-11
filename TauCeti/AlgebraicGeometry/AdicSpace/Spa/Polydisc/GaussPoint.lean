@@ -544,8 +544,9 @@ theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (h
       closedDiscGaussValuationBelow hr₀ hr₁
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) := by
   have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
-  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := -c) (by rwa [norm_neg])
-  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀)
+  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := -c) (by rwa [norm_neg])
+  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := (0 : R))
+    (by simpa using hr₀)
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
   -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -483,9 +484,6 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     simp only [x, endChart_apply, Complex.equivRealProdCLM_symm_apply]
     push_cast at h ⊢
     rw [h]
-  have hper' : Periodic (deriv x) 1 := fun t ↦ by
-    rw [← deriv_comp_add_const]
-    exact congrArg (deriv · t) (funext hper)
   -- The integrand is continuous and periodic, so its integral over any period is the same.
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
     ((huq t).continuousAt).comp (continuous_const.prodMk continuous_id).continuousAt
@@ -498,7 +496,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     (hHc q).comp (continuous_id.prodMk hxc)
   have hωc : Continuous fun t ↦ ω (x t) (deriv x t) := ω.continuous_apply_comp hxc hdxc
   have hG : Periodic (fun t ↦ H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) 1 := fun t ↦ by
-    simp only [hper t, hper' t, hH q t]
+    simp only [hper t, hper.deriv t, hH q t]
   calc _ = ∫ t in (-1 / 2 : ℝ)..(-1 / 2 + 1), (H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) := by
         rw [intervalIntegral.integral_of_le (by norm_num), ← integral_Ico_eq_integral_Ioc,
           show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num]

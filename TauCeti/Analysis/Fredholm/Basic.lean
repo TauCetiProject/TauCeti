@@ -39,6 +39,8 @@ intended throughout.
   `NontriviallyNormedField`, without completeness or separation assumptions.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
   Fredholm operator of index zero is invertible.
+* `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
+  equivalences are simultaneously Fredholm.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
@@ -128,6 +130,25 @@ lemma IsFredholm.comp_equiv (hT : IsFredholm T) (e : G ≃L[𝕜] E) :
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
       Submodule.comap_equiv_eq_map_symm]
     exact hT.closedComplemented_ker.map e.symm
+
+/-- Operators conjugate under continuous linear equivalences, `e' ∘ T = S ∘ e`, are
+simultaneously Fredholm. -/
+lemma isFredholm_iff_of_comp_eq {H : Type*} [AddCommGroup H] [TopologicalSpace H] [Module 𝕜 H]
+    {S : G →L[𝕜] H} (e : E ≃L[𝕜] G) (e' : F ≃L[𝕜] H)
+    (h : (e' : F →L[𝕜] H).comp T = S.comp (e : E →L[𝕜] G)) : IsFredholm T ↔ IsFredholm S := by
+  have hS : S = ((e' : F →L[𝕜] H).comp T).comp (e.symm : G →L[𝕜] E) := by
+    rw [h]
+    ext x
+    simp
+  have hT : T = ((e'.symm : H →L[𝕜] F).comp S).comp (e : E →L[𝕜] G) := by
+    rw [hS]
+    ext x
+    simp
+  refine ⟨fun hT' ↦ ?_, fun hS' ↦ ?_⟩
+  · rw [hS]
+    exact (hT'.equiv_comp e').comp_equiv e.symm
+  · rw [hT]
+    exact (hS'.equiv_comp e'.symm).comp_equiv e
 
 end CompEquiv
 

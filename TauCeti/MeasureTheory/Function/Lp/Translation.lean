@@ -42,6 +42,8 @@ for a `C¹` function, and needs no integrability of the function itself.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of `translateLp` for `p < ∞`.
+* `MeasureTheory.Measure.tendsto_translateLp_of_tendsto`: translates of convergent `Lᵖ` classes
+  by vanishing translations converge to the same limit.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
@@ -163,6 +165,24 @@ theorem continuous_translateLp [TopologicalSpace E] [ContinuousAdd E] [BorelSpac
     Continuous fun h : E ↦ translateLp mu p h f := by
   simpa only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply] using
     Lp.continuous_compMeasurePreserving_add_right hp f
+
+/-- Translations by vectors tending to zero of `Lᵖ` classes converging to `g` converge to `g`,
+when `p < ∞`. -/
+theorem tendsto_translateLp_of_tendsto [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
+    [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] (hp : p ≠ ∞)
+    {I : Type*} {l : Filter I} {h : I → E} (hh : Filter.Tendsto h l (nhds 0))
+    {A : I → Lp F p mu} {g : Lp F p mu} (hA : Filter.Tendsto A l (nhds g)) :
+    Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l (nhds g) := by
+  let T : E → C(E, E) := fun h ↦ ⟨(· + h), by fun_prop⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have key : Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l
+      (nhds (translateLp mu p 0 g)) := by
+    simp only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply]
+    exact hA.compMeasurePreservingLp ((hT.tendsto 0).comp hh)
+      (fun i ↦ measurePreserving_add_right mu (h i)) (measurePreserving_add_right mu 0) hp
+  rwa [translateLp_zero] at key
 
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :

@@ -232,10 +232,10 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
   -- The difference quotient `g = Dᵗ u` and the test function `v = D⁻ᵗ g`, both in `H¹₀(Ω)`.
   obtain ⟨g, hg0⟩ : ∃ g : W1p0 mu Omega 2,
       (g : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w t (hw t) (u : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (by norm_num) (hw t) (hrev t) u.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw t) (hrev t) u.2⟩, rfl⟩
   obtain ⟨v, hv0⟩ : ∃ v : W1p0 mu Omega 2,
       (v : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w (-t) (hw (-t)) (g : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (by norm_num) (hw (-t)) (hrev (-t)) g.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw (-t)) (hrev (-t)) g.2⟩, rfl⟩
   -- Discrete integration by parts is performed on the invariant domain itself.
   have hDQ := abs_energyFormH1_differenceQuotient_add_le hw hcoeff hK t
     (u : W1p mu Omega 2) (g : W1p mu Omega 2)

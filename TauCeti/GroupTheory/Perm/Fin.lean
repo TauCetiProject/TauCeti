@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
@@ -27,6 +28,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `Equiv.Perm.eq_one_of_rows`: a permutation of `Fin (m * n)` that fixes every point of each
   row `finProdFinEquiv (i, ·)` is the identity. Checking one row at a time keeps each
   `decide +kernel` certificate small.
+* `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
+  `Fin (n + 1)` counts each value `n!` times.
 -/
 
 public section
@@ -91,5 +94,17 @@ theorem eq_one_of_rows {m n : ℕ} (p : Equiv.Perm (Fin (m * n)))
   refine Equiv.ext fun k ↦ ?_
   obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   exact h i j
+
+/-- A product over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each value
+`n!` times. -/
+@[to_additive /-- A sum over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each
+value `n!` times. -/]
+theorem prod_comp_symm_apply_zero {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    ∏ σ : Perm (Fin (n + 1)), f (σ.symm 0) = (∏ p, f p) ^ n.factorial := by
+  rw [← Fintype.prod_equiv (Equiv.inv (Perm (Fin (n + 1)))) (fun σ ↦ f (σ 0))
+    (fun σ ↦ f (σ.symm 0)) fun σ ↦ rfl,
+    ← Fintype.prod_equiv (decomposeFin.symm : Fin (n + 1) × Perm (Fin n) ≃ _)
+      (fun pe ↦ f pe.1) (fun σ ↦ f (σ 0)) fun pe ↦ by rw [decomposeFin_symm_apply_zero]]
+  simp [Fintype.prod_prod_type, Finset.prod_const, Fintype.card_perm, Finset.prod_pow]
 
 end Equiv.Perm

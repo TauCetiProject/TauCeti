@@ -148,7 +148,7 @@ private theorem apply_globalFlow_eq (hσ : σ.IsNondegenerate) (hF : MDifferenti
     (hvX : ∀ x, ∃ a : ℝ, v x = a • σ.hamiltonianVectorField F x) (t : ℝ) (x : M) :
     F (globalFlow v hv hcomplete t x) = F x := by
   have h := ((isMIntegralCurve_globalFlow hv hcomplete x).isMIntegralCurveOn univ)
-    |>.apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ isPreconnected_univ (fun u _ ↦ hF _)
+    |>.apply_eq_of_mvfderiv_apply_eq_zero isPreconnected_univ (fun u _ ↦ hF _)
       (fun u _ ↦ by
         obtain ⟨a, ha⟩ := hvX (globalFlow v hv hcomplete u x)
         rw [ha, map_smul,

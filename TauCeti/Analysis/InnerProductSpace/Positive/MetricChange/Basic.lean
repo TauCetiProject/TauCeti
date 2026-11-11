@@ -251,17 +251,24 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
     metricChangeTransport_mul_mul_self hK, map_one]
   exact ⟨map_nonneg _ (isStrictlyPositive_metricChangeTransport hK).nonneg, rfl⟩
 
-/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` with positive Riesz
-operator back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of
-its Riesz operator by `e`. -/
+/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` back along a linear
+isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of its Riesz operator by `e`. This
+holds for every `k`; when the Riesz operator `k♯` is not nonnegative both sides are `0`, as
+`CFC.sqrt` is `0` there. -/
 theorem sqrt_continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
-    (hK : 0 ≤ k♯) (x : E) :
+    (x : E) :
     CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ x =
       e.symm (CFC.sqrt k♯ (e x)) := by
   suffices CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
       e.symm.conjStarAlgEquiv (CFC.sqrt k♯) from congr($this x)
-  rw [continuousLinearMapOfBilin_bilinearComp, CFC.sqrt_eq_iff _ _ (map_nonneg _ hK)
-    (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul, CFC.sqrt_mul_sqrt_self _ hK]
+  rw [continuousLinearMapOfBilin_bilinearComp]
+  by_cases hK : 0 ≤ k♯
+  · rw [CFC.sqrt_eq_iff _ _ (map_nonneg _ hK) (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul,
+      CFC.sqrt_mul_sqrt_self _ hK]
+  · have hK' : ¬ 0 ≤ e.symm.conjStarAlgEquiv k♯ := fun h ↦ hK <| by
+      have h' := map_nonneg e.conjStarAlgEquiv h
+      rwa [show e.conjStarAlgEquiv (e.symm.conjStarAlgEquiv k♯) = k♯ by ext; simp] at h'
+    rw [CFC.sqrt_of_not_nonneg hK, CFC.sqrt_of_not_nonneg hK', map_zero]
 
 /-- **Isometries onto a second inner product.** On a finite-dimensional space, the linear maps
 `S` that are isometries from the original inner product to `h` are exactly the composites of the

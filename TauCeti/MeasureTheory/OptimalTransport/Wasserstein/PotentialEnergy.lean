@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeod
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
@@ -340,7 +341,7 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   have hgrowth (x : E) : |V x - V 0| ≤ C * (1 + ‖x‖) * ‖x‖ := by
     have hb : ∀ y ∈ Metric.closedBall (0 : E) ‖x‖, ‖fderiv ℝ V y‖ ≤ C * (1 + ‖x‖) := by
       intro y hy
-      rw [← toDual_gradient, LinearIsometryEquiv.norm_map]
+      rw [← norm_gradient_eq_norm_fderiv]
       exact (hV' y).trans (mul_le_mul_of_nonneg_left (by simpa using hy)
         (by simpa using (norm_nonneg _).trans (hV' 0)))
     have := (convex_closedBall (0 : E) ‖x‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
