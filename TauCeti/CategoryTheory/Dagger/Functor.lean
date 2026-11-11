@@ -78,7 +78,7 @@ variable {D : Type u₂} [Category.{v₂} D] [DaggerCategory D]
 variable {F G H : C ⥤ D} [F.PreservesDagger] [G.PreservesDagger]
 
 /-- The pointwise dagger of a natural transformation between dagger-preserving functors.
-Naturality follows by taking the dagger of naturality at the dagger of an arrow. -/
+For `α : F ⟶ G`, this gives `G ⟶ F` with components `dagger (α.app X)`. -/
 def dagger (α : F ⟶ G) : G ⟶ F where
   app X := TauCeti.dagger (α.app X)
   naturality X Y f := by
