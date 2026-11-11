@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
