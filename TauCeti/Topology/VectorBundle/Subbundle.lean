@@ -64,6 +64,9 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
   space of `E`.
 * `TauCeti.isInducing_totalSpaceMk_subbundle`: each fibre `V x` carries the topology induced from
   the total space of `V`.
+* `TauCeti.exists_homeomorph_totalSpace_subbundle_of_map_eq`: a fibrewise linear homeomorphism of
+  the total space of `E` carrying each `V x` onto `W x` restricts to a homeomorphism between the
+  total spaces of `V` and `W`.
 * `TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`: the coordinate changes between the
   trivializations of two local frames are continuous on the overlap.
 * `TauCeti.vectorBundle_of_forall_mem_trivializationAtlas`: a fibre bundle structure on a family
@@ -119,6 +122,43 @@ theorem isEmbedding_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 
   refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
   obtain rfl : x = y := congrArg TotalSpace.proj h
   exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+
+omit [TopologicalSpace B] in
+/-- **Transporting a subbundle along an automorphism of the bundle.** Let `Φ` be a homeomorphism
+of the total space of `E` acting on each fibre `E x` by a linear equivalence `φ x`, which carries
+the subspace `V x` onto `W x` for every `x`. Then `Φ` restricts to a homeomorphism between the
+total spaces of `V` and `W`, with their subspace topologies, acting on each fibre by the
+restriction `ψ x : V x ≃ W x` of `φ x`. -/
+theorem exists_homeomorph_totalSpace_subbundle_of_map_eq (F' : Type*)
+    {V W : Π x, Submodule 𝕜 (E x)} (φ : ∀ x, E x ≃ₗ[𝕜] E x)
+    (Φ : TotalSpace F E ≃ₜ TotalSpace F E) (hΦ : ∀ x v, Φ ⟨x, v⟩ = ⟨x, φ x v⟩)
+    (hVW : ∀ x, (V x).map (φ x : E x →ₗ[𝕜] E x) = W x) :
+    letI := subbundleTopology F (F' := F') V
+    letI := subbundleTopology F (F' := F') W
+    ∃ (ψ : ∀ x, V x ≃ₗ[𝕜] W x) (Ψ : TotalSpace F' (fun x ↦ V x) ≃ₜ TotalSpace F' fun x ↦ W x),
+      (∀ x v, (ψ x v : E x) = φ x v) ∧ ∀ x v, Ψ ⟨x, v⟩ = ⟨x, ψ x v⟩ := by
+  let := subbundleTopology F (F' := F') V
+  let := subbundleTopology F (F' := F') W
+  let ψ x : V x ≃ₗ[𝕜] W x := ((φ x).submoduleMap (V x)).trans (LinearEquiv.ofEq _ _ (hVW x))
+  have hψ x (v : V x) : (ψ x v : E x) = φ x v := (rfl)
+  have hψsymm x (w : W x) : ((ψ x).symm w : E x) = (φ x).symm w := by
+    rw [LinearEquiv.eq_symm_apply, ← hψ, LinearEquiv.apply_symm_apply]
+  have hΦsymm x (w : E x) : Φ.symm ⟨x, w⟩ = ⟨x, (φ x).symm w⟩ := by
+    rw [Homeomorph.symm_apply_eq, hΦ, LinearEquiv.apply_symm_apply]
+  have hV := isEmbedding_totalSpace_subbundle F F' V
+  have hW := isEmbedding_totalSpace_subbundle F F' W
+  refine ⟨ψ,
+    { toFun := fun p ↦ ⟨p.proj, ψ p.proj p.2⟩
+      invFun := fun q ↦ ⟨q.proj, (ψ q.proj).symm q.2⟩
+      left_inv := fun p ↦ by simp
+      right_inv := fun q ↦ by simp
+      continuous_toFun := ?_
+      continuous_invFun := ?_ }, hψ, fun _ _ ↦ rfl⟩
+  -- In the total space of `E`, the restriction of `Φ` is `Φ` itself, and likewise for `Φ⁻¹`.
+  · exact hW.continuous_iff.mpr ((Φ.continuous.comp hV.continuous).congr fun p ↦ by
+      simp only [Function.comp_apply, hΦ, hψ])
+  · exact hV.continuous_iff.mpr ((Φ.symm.continuous.comp hW.continuous).congr fun q ↦ by
+      simp only [Function.comp_apply, hΦsymm, hψsymm])
 
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 

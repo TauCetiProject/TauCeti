@@ -31,6 +31,12 @@ it injective (`TauCeti.injective_sub_smul`). This is the algebraic step of proje
 direction `d`: every map `x ↦ f x - a x • d`, for instance the projection `f - φ (f) • d` along `d`,
 remains injective.
 
+For two idempotents `p` and `q`, the operator `q * p + (1 - q) * (1 - p)` carries the range of `p`
+into the range of `q` and the kernel of `p` into the kernel of `q`. It is injective as soon as the
+range of `p` meets the kernel of `q` only in `0` and the kernel of `p` meets the range of `q` only
+in `0` (`LinearMap.IsIdempotentElem.injective_mul_add_one_sub_mul_one_sub`). This compares two
+splittings of a module into complementary pieces that are transversal to each other.
+
 ## Main definitions
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
@@ -49,6 +55,8 @@ remains injective.
   its values on a basis of a complement of `F₀`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
+* `LinearMap.IsIdempotentElem.injective_mul_add_one_sub_mul_one_sub`: the operator
+  `q * p + (1 - q) * (1 - p)` intertwining two transversal idempotents is injective.
 
 ## Implementation notes
 
@@ -194,3 +202,32 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
   simp only [coe_sum, coe_smul, map_sum, map_smul]
 
 end Submodule
+
+namespace LinearMap.IsIdempotentElem
+
+variable {R : Type u} {M : Type v} [Ring R] [AddCommGroup M] [Module R M] {p q : Module.End R M}
+
+/-- **The intertwining operator of two transversal projections is injective.** For idempotents
+`p` and `q`, the operator `q * p + (1 - q) * (1 - p)` carries the range of `p` into the range of `q`
+and the kernel of `p` into the kernel of `q`. It is injective when the range of `p` meets the kernel
+of `q` only in `0` and the kernel of `p` meets the range of `q` only in `0`. -/
+theorem injective_mul_add_one_sub_mul_one_sub (hp : IsIdempotentElem p)
+    (hq : IsIdempotentElem q) (h₁ : Disjoint (range p) (ker q)) (h₂ : Disjoint (ker p) (range q)) :
+    Function.Injective ⇑(q * p + (1 - q) * (1 - p)) := by
+  have hqq (x : M) : q (q x) = q x := LinearMap.congr_fun hq.eq x
+  have hpp (x : M) : p (p x) = p x := LinearMap.congr_fun hp.eq x
+  refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ ?_
+  -- Write the image of `v` as `q (p v) + (w - q w)` with `w = v - p v`.
+  have hv' : q (p v) + ((v - p v) - q (v - p v)) = 0 := hv
+  -- Applying `q` kills the second summand, so `q (p v) = 0`, and then the second summand vanishes.
+  have hqpv : q (p v) = 0 := by
+    simpa [hqq] using congrArg q hv'
+  rw [hqpv, zero_add, sub_eq_zero] at hv'
+  -- So `p v` lies in the range of `p` and the kernel of `q`, and `v - p v` in the kernel of `p`
+  -- and the range of `q`.
+  have hpv : p v = 0 := Submodule.disjoint_def.mp h₁ _ (mem_range_self p v) hqpv
+  have hw : v - p v = 0 := Submodule.disjoint_def.mp h₂ _
+    (by simp [hpp]) ⟨v - p v, hv'.symm⟩
+  simpa [hpv] using hw
+
+end LinearMap.IsIdempotentElem

@@ -40,6 +40,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_apply_self_pos_of_mem_positiveNormalSpace`: the normal
   Hessian is negative definite on the negative normal space and positive definite on the positive
   normal space.
+* `IsCriticalSubmanifold.disjoint_negativeNormalSpace_positiveNormalSpace'`: the negative normal
+  space relative to one fibre metric meets the positive normal space relative to any other fibre
+  metric only in `0`.
 * `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
@@ -136,6 +139,18 @@ theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
     (hv : v ∈ h.positiveNormalSpace hn g s) (hv0 : v ≠ 0) : 0 < h.normalHessian hn s v v :=
   LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi
     (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
+
+/-- **A negative normal space meets every positive normal space only in `0`.** The negative normal
+space relative to a fibre metric `g` and the positive normal space relative to any other fibre
+metric `g'` meet only in `0`: the normal Hessian is negative definite on the first and positive
+definite on the second. For `g' = g` this is
+`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.disjoint_negativeNormalSpace_positiveNormalSpace`. -/
+theorem disjoint_negativeNormalSpace_positiveNormalSpace'
+    (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) :
+    Disjoint (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) :=
+  Submodule.disjoint_def.mpr fun _ hv hv' ↦ by_contra fun hv0 ↦
+    (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
+      (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g' hv' hv0)
 
 end IsCriticalSubmanifold
 
