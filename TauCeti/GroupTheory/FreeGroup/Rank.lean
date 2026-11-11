@@ -22,7 +22,8 @@ rank, the least number of generators, is at most the cardinality of `α`.
 Conversely, a free basis has at most as many elements as any generating family. If a free group
 `H` with basis `ι` is the image of `FreeGroup α` for a finite type `α`, then `ι` is finite and
 `#ι ≤ #α`: the homomorphisms `H →* ℤ/2`, which correspond to the functions `ι → ℤ/2`, are
-determined by their values on the images of the elements of `α`.
+determined by their values on the images of the elements of `α`. In the other direction, if every
+homomorphism `FreeGroup α →* ℤ/2` factors through `H`, then `#α ≤ #ι`.
 
 Consequently, a group with a free basis is finitely generated exactly when the basis is
 finite, and its rank is the cardinality of that basis. These results allow rank computations
@@ -63,6 +64,24 @@ theorem card_le_of_surjective (b : FreeGroupBasis ι H) [Finite α] (hf : Functi
   have := b.finite_of_surjective hf
   have hcard := Nat.card_le_card_of_injective _
     (b.injective_lift_comp (M := Multiplicative (ZMod 2)) hf)
+  rw [Nat.card_fun, Nat.card_fun, Nat.card_eq_fintype_card (α := Multiplicative (ZMod 2)),
+    Fintype.card_multiplicative, ZMod.card] at hcard
+  exact (Nat.pow_le_pow_iff_right Nat.one_lt_two).mp hcard
+
+/-- A free basis has at least as many elements as a finite generating family all of whose
+`ℤ/2`-valued assignments extend to the group: if `FreeGroup α` surjects onto a free group `H` with
+basis `ι` and every homomorphism `FreeGroup α →* ℤ/2` factors through `H`, then `#α ≤ #ι`. -/
+theorem card_le_of_forall_exists_comp_eq (b : FreeGroupBasis ι H) [Finite α]
+    (hf : Function.Surjective f)
+    (h : ∀ v : α → Multiplicative (ZMod 2),
+      ∃ φ : H →* Multiplicative (ZMod 2), φ.comp f = FreeGroup.lift v) :
+    Nat.card α ≤ Nat.card ι := by
+  have := b.finite_of_surjective hf
+  choose φ hφ using h
+  have hinj : Function.Injective fun (v : α → Multiplicative (ZMod 2)) (i : ι) ↦ φ v (b i) :=
+    fun v w hvw ↦ FreeGroup.lift.injective <| by
+      rw [← hφ v, ← hφ w, b.ext_hom (φ v) (φ w) (congr_fun hvw)]
+  have hcard := Nat.card_le_card_of_injective _ hinj
   rw [Nat.card_fun, Nat.card_fun, Nat.card_eq_fintype_card (α := Multiplicative (ZMod 2)),
     Fintype.card_multiplicative, ZMod.card] at hcard
   exact (Nat.pow_le_pow_iff_right Nat.one_lt_two).mp hcard

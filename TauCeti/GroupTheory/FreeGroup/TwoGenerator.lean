@@ -9,9 +9,8 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 import TauCeti.GroupTheory.FreeGroup.Basis
+import TauCeti.GroupTheory.FreeGroup.Hopfian
 import TauCeti.GroupTheory.FreeGroup.Rank
-import TauCeti.GroupTheory.FreeGroup.ResiduallyP
-import TauCeti.GroupTheory.ResiduallyFinite
 
 /-!
 # Two noncommuting elements of a free group generate a free group of rank two
@@ -25,9 +24,10 @@ two-generated subgroup of a free group is trivial, infinite cyclic, or free of r
 The proof is the classical one. The subgroup `H = ⟨a, b⟩` is free by the Nielsen–Schreier theorem,
 say on a basis `ι`. As `H` is the image of `FreeGroup (Fin 2)`, the basis `ι` has at most two
 elements (`FreeGroupBasis.card_le_of_surjective`). It has at least two since `H` is not
-commutative (`FreeGroupBasis.nontrivial_of_not_commute`). Hence `H ≃* FreeGroup (Fin 2)`, and
-the surjection `FreeGroup (Fin 2) →* H` becomes a surjective endomorphism of `FreeGroup (Fin 2)`,
-which is injective because finitely generated residually finite groups are Hopfian.
+commutative (`FreeGroupBasis.nontrivial_of_not_commute`). Hence the surjection
+`FreeGroup (Fin 2) →* H` is one between free groups of the same finite rank, and it is injective
+because free groups of finite rank are Hopfian
+(`FreeGroupBasis.injective_of_surjective_of_card_le`).
 
 ## Main results
 
@@ -61,23 +61,15 @@ theorem injective_lift_of_not_commute {a b : F} (h : ¬Commute a b) :
     Function.Injective (FreeGroup.lift ![a, b]) := by
   set φ := FreeGroup.lift ![a, b]
   have hsurj : Function.Surjective φ.rangeRestrict := φ.rangeRestrict_surjective
-  -- The range of `φ` is free by the Nielsen–Schreier theorem, on a basis of exactly two elements.
+  -- The range of `φ` is free by the Nielsen–Schreier theorem, on a basis of at least two elements.
   have := (basis φ.range).finite_of_surjective hsurj
-  have hle := (basis φ.range).card_le_of_surjective hsurj
-  rw [Nat.card_fin] at hle
   have hge : ¬Nat.card (Generators φ.range) ≤ 1 := by
     rw [Finite.card_le_one_iff_subsingleton, not_subsingleton_iff_nontrivial]
     exact (basis φ.range).nontrivial_of_not_commute (x := ⟨a, FreeGroup.of 0, by simp [φ]⟩)
       (y := ⟨b, FreeGroup.of 1, by simp [φ]⟩) fun hc => h (congrArg Subtype.val hc.eq)
-  let e : Generators φ.range ≃ Fin 2 := Finite.equivFinOfCardEq (by omega)
-  -- Identifying the range with `FreeGroup (Fin 2)`, `φ` becomes a surjective endomorphism.
-  let ψ : FreeGroup (Fin 2) →* FreeGroup (Fin 2) :=
-    ((basis φ.range).repr.trans (FreeGroup.freeGroupCongr e)).toMonoidHom.comp φ.rangeRestrict
-  have hψ : Function.Injective ψ :=
-    Group.ResiduallyFinite.injective_of_surjective
-      (((basis φ.range).repr.trans (FreeGroup.freeGroupCongr e)).surjective.comp hsurj)
-  rw [MonoidHom.coe_comp] at hψ
-  exact MonoidHom.rangeRestrict_injective_iff.mp hψ.of_comp
+  -- A surjection between free groups of the same finite rank is injective.
+  exact MonoidHom.rangeRestrict_injective_iff.mp <|
+    (basis φ.range).injective_of_surjective_of_card_le hsurj (by rw [Nat.card_fin]; omega)
 
 /-- Elements `a` and `b` of a free group freely generate a free group of rank two if and only if
 they do not commute. -/
