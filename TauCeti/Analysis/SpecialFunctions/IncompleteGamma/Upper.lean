@@ -19,7 +19,9 @@ when `z` belongs to the slit plane. On the positive real axis it agrees with the
 integral over `(x, ∞)`, including parameters with nonpositive real part.
 
 This integral definition does not use division by Gamma, so it remains meaningful at
-nonpositive integral parameters. Values on the branch cut are not specified by the API.
+nonpositive integral parameters. On the branch cut the same totalized Bochner integral
+is used: it need not converge and then takes the junk value zero. No agreement with
+analytic continuation on the branch cut is asserted.
 
 ## References
 
@@ -32,10 +34,12 @@ public section
 open MeasureTheory Set Filter Asymptotics
 open scoped Topology
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- The principal upper incomplete Gamma function, defined by a horizontal ray integral.
-Its values on the nonpositive real axis are unspecified. -/
+On the nonpositive real axis this still uses the principal complex power and the
+Bochner integral, which is zero when the integrand is not integrable; agreement with
+analytic continuation there is not asserted. -/
 noncomputable def upperIncompleteGamma (a z : ℂ) : ℂ :=
   _root_.Complex.exp (-z) *
     ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ))
@@ -130,4 +134,4 @@ theorem partialGamma_add_upperIncompleteGamma {a : ℂ} (ha : 0 < a.re)
     intervalIntegral.integral_interval_add_Ioi (_root_.Complex.GammaIntegral_convergent ha)
       ((_root_.Complex.GammaIntegral_convergent ha).mono_set (Ioi_subset_Ioi hx))
 
-end TauCeti.Complex
+end Complex
