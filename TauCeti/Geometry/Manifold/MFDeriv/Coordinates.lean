@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -21,10 +20,6 @@ differentiability order.
 These operator families give the ranges whose quotients are the intrinsic normal
 fibres of an embedding. Their regularity on one chart overlap permits a single
 smooth family of fixed complementary coordinates for that normal bundle.
-
-`TauCeti.hasLeftInverse_inTangentCoordinates_iff` reads off the coordinate expression, in
-tangent charts whose sources contain the base points, whether a continuous linear map between
-tangent spaces, such as a split-injective differential, has a continuous linear left inverse.
 
 Reuse Mathlib's `ContMDiffAt.mfderiv_const` for regularity in charts centred at
 the evaluation point, and its smooth tangent-bundle transitions to change centres.
@@ -105,25 +100,3 @@ theorem ContMDiff.mfderiv_inTangentCoordinates (hf : ContMDiff I I' n f)
       (inTangentCoordinates I I' id f (mfderiv I I' f) x₀)
       ((chartAt H x₀).source ∩ f ⁻¹' (chartAt H' (f x₀)).source) := by
   simpa using hf.contMDiffOn.mfderiv_inTangentCoordinates hmn isOpen_univ x₀
-
-/-- In tangent charts at `f x₀` and `g x₀` whose sources contain `f x` and `g x`, a continuous
-linear map `ϕ x` between tangent spaces has a continuous linear left inverse exactly when its
-coordinate expression `inTangentCoordinates I I' f g ϕ x₀ x` does. -/
-theorem TauCeti.hasLeftInverse_inTangentCoordinates_iff [IsManifold I 1 M] [IsManifold I' 1 M']
-    {N : Type*} {f : N → M} {g : N → M'}
-    {ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)} {x₀ x : N}
-    (hx : f x ∈ (chartAt H (f x₀)).source) (hy : g x ∈ (chartAt H' (g x₀)).source) :
-    (inTangentCoordinates I I' f g ϕ x₀ x).HasLeftInverse ↔ (ϕ x).HasLeftInverse := by
-  -- The base sets of the preferred tangent trivializations are the chart sources.
-  rw [← TangentBundle.trivializationAt_baseSet (I := I)] at hx
-  rw [← TangentBundle.trivializationAt_baseSet (I := I')] at hy
-  rw [inTangentCoordinates, ContinuousLinearMap.inCoordinates_eq hx hy]
-  refine ⟨fun h ↦ ?_, fun h ↦
-    (h.comp (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp⟩
-  -- Drop the target equivalence, then undo the source equivalence.
-  refine (h.of_comp.comp_continuousLinearEquivalence
-    (f₀ := (trivializationAt E (TangentSpace I) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
-      hx)).congr ?_
-  ext v
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.symm_apply_apply]
