@@ -12,6 +12,9 @@ public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Option
 public import Mathlib.Data.List.TakeDrop
 public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # The flower of a finite list of words
@@ -72,6 +75,25 @@ edges, and a one-letter word contributes a loop at the base vertex. -/
 @[simp] theorem flower_base (ws : List (List (α × Bool))) :
     (flower ws).base = none := rfl
 
+@[simp] theorem flower_rev (ws : List (List (α × Bool)))
+    (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
+    (flower ws).graph.rev (⟨i, j⟩, s) = (⟨i, j⟩, !s) := rfl
+
+/-- Two darts of a flower are equal exactly when they lie on the same petal, at the same
+position, with the same direction. -/
+-- The equality is stated in the dart type of the flower, the type in which equations between
+-- darts of the graph arise, so that the lemma rewrites them.
+theorem flower_dart_eq_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
+    (j : Fin ws[i].length) (j' : Fin ws[i'].length) (s s' : Bool) :
+    @Eq (flower ws).graph.E (⟨i, j⟩, s) (⟨i', j'⟩, s') ↔
+      i = i' ∧ j.val = j'.val ∧ s = s' := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain rfl : i = i' := congrArg (fun e => e.1.1) h
+    exact ⟨rfl, congrArg (fun e => e.1.2.val) h, congrArg Prod.snd h⟩
+  · rintro ⟨rfl, hj, rfl⟩
+    obtain rfl : j = j' := Fin.ext hj
+    rfl
+
 @[simp] theorem flower_src_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
     (flower ws).graph.src (⟨i, j⟩, true) = flowerPos ws i j.val := rfl
@@ -79,6 +101,20 @@ edges, and a one-letter word contributes a loop at the base vertex. -/
 @[simp] theorem flower_src_reverse (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
     (flower ws).graph.src (⟨i, j⟩, false) = flowerPos ws i (j.val + 1) := rfl
+
+/-- The origin of a dart of a flower: a forward dart starts at its own position on the petal
+and a reverse dart at the next one. -/
+theorem flower_src (ws : List (List (α × Bool)))
+    (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
+    (flower ws).graph.src (⟨i, j⟩, s) = flowerPos ws i (if s then j.val else j.val + 1) := by
+  cases s <;> rfl
+
+/-- The label of a dart of a flower: a forward dart reads the letter at its position and a
+reverse dart reads the inverse letter. -/
+theorem flower_label (ws : List (List (α × Bool)))
+    (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
+    (flower ws).label (⟨i, j⟩, s) =
+      if s then ws[i][j.val] else (ws[i][j.val].1, !ws[i][j.val].2) := rfl
 
 @[simp] theorem flower_label_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
@@ -99,6 +135,44 @@ theorem flowerPos_of_pos_of_lt (ws : List (List (α × Bool))) (i : Fin ws.lengt
     flowerPos ws i k = some ⟨i, ⟨k - 1, by omega⟩⟩ := by
   exact dite_eq_left ⟨h0, hk⟩
 
+/-- A position on a petal is the base vertex exactly when it is not interior. -/
+theorem flowerPos_eq_none_iff (ws : List (List (α × Bool))) (i : Fin ws.length) (k : ℕ) :
+    flowerPos ws i k = none ↔ k = 0 ∨ ws[i].length ≤ k := by
+  by_cases h : 0 < k ∧ k < ws[i].length
+  · simp only [flowerPos_of_pos_of_lt ws i k h.1 h.2, reduceCtorEq, false_iff]
+    omega
+  · exact ⟨fun _ => by omega, fun _ => dite_eq_right h⟩
+
+/-- Two positions on petals give the same vertex exactly when both are interior positions of
+the same petal that agree, or neither is interior: distinct petals meet only at the base
+vertex. -/
+-- The equality is stated in the vertex type of the flower, the type in which equations between
+-- origins and termini of darts arise, so that the lemma rewrites them.
+theorem flowerPos_eq_flowerPos_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
+    (k k' : ℕ) :
+    @Eq (flower ws).graph.V (flowerPos ws i k) (flowerPos ws i' k') ↔
+      (0 < k ∧ k < ws[i].length ∧ i = i' ∧ k = k') ∨
+        ((k = 0 ∨ ws[i].length ≤ k) ∧ (k' = 0 ∨ ws[i'].length ≤ k')) := by
+  by_cases h : 0 < k ∧ k < ws[i].length
+  · by_cases h' : 0 < k' ∧ k' < ws[i'].length
+    · rw [flowerPos_of_pos_of_lt ws i k h.1 h.2, flowerPos_of_pos_of_lt ws i' k' h'.1 h'.2]
+      refine ⟨fun heq => ?_, ?_⟩
+      · obtain rfl : i = i' := congrArg Sigma.fst (Option.some.inj heq)
+        have := congrArg (fun x => x.2.val) (Option.some.inj heq)
+        grind
+      · rintro (⟨-, -, rfl, rfl⟩ | h'')
+        · rfl
+        · omega
+    · rw [flowerPos_of_pos_of_lt ws i k h.1 h.2,
+        (flowerPos_eq_none_iff ws i' k').mpr (by omega)]
+      refine ⟨fun heq => absurd heq (by simp), ?_⟩
+      rintro (⟨-, -, rfl, rfl⟩ | ⟨h'', -⟩) <;> omega
+  · rw [(flowerPos_eq_none_iff ws i k).mpr (by omega)]
+    refine ⟨fun heq => .inr ⟨by omega, (flowerPos_eq_none_iff ws i' k').mp heq.symm⟩, ?_⟩
+    rintro (⟨h₁, h₂, -⟩ | ⟨-, h''⟩)
+    · omega
+    · exact ((flowerPos_eq_none_iff ws i' k').mpr h'').symm
+
 @[simp] theorem flower_tgt_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
     (flower ws).graph.tgt (⟨i, j⟩, true) = flowerPos ws i (j.val + 1) := by
@@ -108,6 +182,15 @@ theorem flowerPos_of_pos_of_lt (ws : List (List (α × Bool))) (i : Fin ws.lengt
     (i : Fin ws.length) (j : Fin ws[i].length) :
     (flower ws).graph.tgt (⟨i, j⟩, false) = flowerPos ws i j.val := by
   exact ((flower ws).graph.tgt_def (⟨i, j⟩, false)).trans (by rfl)
+
+/-- The terminus of a dart of a flower: a forward dart ends at the position after its own on
+the petal and a reverse dart at its own position. -/
+theorem flower_tgt (ws : List (List (α × Bool)))
+    (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
+    (flower ws).graph.tgt (⟨i, j⟩, s) = flowerPos ws i (if s then j.val + 1 else j.val) := by
+  cases s
+  · exact flower_tgt_reverse ws i j
+  · exact flower_tgt_forward ws i j
 
 @[simp] theorem flower_label_reverse (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
@@ -274,6 +357,18 @@ instance flower_finite_vertex (ws : List (List (α × Bool))) :
 instance flower_finite_dart (ws : List (List (α × Bool))) :
     Finite (flower ws).graph.E := by
   exact inferInstanceAs (Finite ((Σ i : Fin ws.length, Fin ws[i].length) × Bool))
+
+/-- A flower has two darts for every letter of its words. -/
+theorem card_flower_E (ws : List (List (α × Bool))) :
+    Nat.card (flower ws).graph.E = 2 * (ws.map List.length).sum := by
+  rw [← Fin.sum_univ_fun_getElem ws List.length]
+  simp [flower, FlowerDart, Nat.card_eq_fintype_card, mul_comm]
+
+/-- A flower has its base vertex and one vertex for every letter but the last of each word. -/
+theorem card_flower_V (ws : List (List (α × Bool))) :
+    Nat.card (flower ws).graph.V = (ws.map fun w => w.length - 1).sum + 1 := by
+  rw [← Fin.sum_univ_fun_getElem ws fun w => w.length - 1]
+  simp [flower, FlowerVertex, Nat.card_eq_fintype_card]
 
 /-- Every vertex of the flower is reachable by a path from the base vertex. -/
 theorem flower_reachable (ws : List (List (α × Bool)))
