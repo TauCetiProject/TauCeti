@@ -114,8 +114,17 @@ theorem value_lt_of_mem_morseTrajectorySlice (hfd : Differentiable ℝ f)
     (fun _ ↦ hfd.differentiableAt) hfd.continuous.continuousAt hfd.continuous.continuousAt hpq
     ⟨hz.1, hz.2.1⟩
 
+/-- The middle-level slice between distinct endpoints is empty unless the critical value drops
+strictly. -/
+theorem morseTrajectorySlice_eq_empty_of_le (hfd : Differentiable ℝ f)
+    {hf : LipschitzWith K (∇ f)} {p q : E} (hpq : p ≠ q) (hqp : f p ≤ f q) :
+    morseTrajectorySlice hf p q = ∅ :=
+  eq_empty_of_forall_notMem fun _ hz ↦
+    (value_lt_of_mem_morseTrajectorySlice hfd hpq hz).not_ge hqp
+
 /-- The canonical middle-level trajectory slice is finite for points of consecutive index under
-compact-sublevel and Morse--Smale hypotheses. It is empty unless the critical value drops. -/
+compact-sublevel and Morse--Smale hypotheses. It is empty unless the critical value drops
+(`morseTrajectorySlice_eq_empty_of_le`). -/
 theorem finite_morseTrajectorySlice_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hM : HasNondegenerateCriticalPointsOn f univ)
@@ -126,8 +135,8 @@ theorem finite_morseTrajectorySlice_of_isCompact_sublevel
   · exact finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
       hfs hf hM hcompact hind (c := (f p + f q) / 2) (by constructor <;> linarith) htr
   · have hpq : p ≠ q := fun h ↦ by simp [h] at hind
-    exact finite_empty.subset fun z hz ↦
-      hqp (value_lt_of_mem_morseTrajectorySlice (hfs.differentiable (by norm_num)) hpq hz)
+    exact morseTrajectorySlice_eq_empty_of_le (hfs.differentiable (by norm_num)) hpq
+      (not_lt.1 hqp) ▸ finite_empty
 
 /-- The mod-two count of a finite middle-level trajectory slice. The finiteness witness is an
 explicit argument so the definition cannot silently assign zero to an infinite slice. -/
@@ -149,24 +158,23 @@ variable (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
   (htr : IsMorseSmale f hf)
 
 /-- The coefficient of `q` in the mod-two boundary of `p`. It is zero unless the Morse index
-drops by one and the critical value strictly decreases; otherwise it counts the canonical
-middle-level trajectory slice modulo two. -/
+drops by one; otherwise it counts the canonical middle-level trajectory slice modulo two. That
+slice is empty unless the critical value strictly decreases, so the coefficient vanishes in that
+case too (`morseBoundaryCoeff_eq_zero_of_value_le`). -/
 noncomputable def morseBoundaryCoeff (p q : MorseCriticalPoint f) : ZMod 2 :=
   if hind : morseIndex f p = morseIndex f q + 1 then
-    if f q < f p then
-      morseTrajectoryCount hf p q
-        (finite_morseTrajectorySlice_of_isCompact_sublevel hfs hf hM hcompact hind htr)
-    else 0
+    morseTrajectoryCount hf p q
+      (finite_morseTrajectorySlice_of_isCompact_sublevel hfs hf hM hcompact hind htr)
   else 0
 
-/-- When the endpoints have consecutive index and decreasing critical value, the boundary
-coefficient is the parity of the middle-level trajectory slice. -/
+/-- When the endpoints have consecutive index, the boundary coefficient is the parity of the
+middle-level trajectory slice. -/
 theorem morseBoundaryCoeff_eq_trajectoryCount (p q : MorseCriticalPoint f)
-    (hind : morseIndex f p = morseIndex f q + 1) (hqp : f q < f p) :
+    (hind : morseIndex f p = morseIndex f q + 1) :
     morseBoundaryCoeff hfs hf hM hcompact htr p q =
       morseTrajectoryCount hf p q
         (finite_morseTrajectorySlice_of_isCompact_sublevel hfs hf hM hcompact hind htr) := by
-  simp only [morseBoundaryCoeff, dite_eq_left hind, ite_eq_left hqp]
+  simp only [morseBoundaryCoeff, dite_eq_left hind]
 
 /-- The boundary coefficient vanishes when the endpoint indices do not differ by one. -/
 @[simp]
@@ -181,7 +189,10 @@ theorem morseBoundaryCoeff_eq_zero_of_value_le (p q : MorseCriticalPoint f)
     (hqp : f p ≤ f q) :
     morseBoundaryCoeff hfs hf hM hcompact htr p q = 0 := by
   by_cases hind : morseIndex f p = morseIndex f q + 1
-  · simp only [morseBoundaryCoeff, dite_eq_left hind, ite_eq_right (not_lt_of_ge hqp)]
+  · have hpq : (p : E) ≠ q := fun h ↦ by simp [h] at hind
+    rw [morseBoundaryCoeff_eq_trajectoryCount hfs hf hM hcompact htr p q hind,
+      morseTrajectoryCount_eq_ncard, morseTrajectorySlice_eq_empty_of_le
+        (hfs.differentiable (by norm_num)) hpq hqp, ncard_empty, Nat.cast_zero]
   · exact morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one
       hfs hf hM hcompact htr p q hind
 
@@ -195,12 +206,9 @@ theorem morseIndex_eq_add_one_of_morseBoundaryCoeff_ne_zero {p q : MorseCritical
 /-- A nonzero boundary coefficient strictly decreases the critical value. -/
 theorem value_lt_of_morseBoundaryCoeff_ne_zero {p q : MorseCriticalPoint f}
     (hcoeff : morseBoundaryCoeff hfs hf hM hcompact htr p q ≠ 0) :
-    f q < f p := by
-  have hind := morseIndex_eq_add_one_of_morseBoundaryCoeff_ne_zero
-    hfs hf hM hcompact htr hcoeff
-  by_contra hqp
-  exact hcoeff (by
-    simp only [morseBoundaryCoeff, dite_eq_left hind, ite_eq_right hqp])
+    f q < f p :=
+  lt_of_not_ge fun hqp ↦
+    hcoeff (morseBoundaryCoeff_eq_zero_of_value_le hfs hf hM hcompact htr p q hqp)
 
 /-- Only finitely many critical points have a nonzero coefficient in the boundary of `p`. -/
 private theorem finite_support_morseBoundaryCoeff (p : MorseCriticalPoint f) :

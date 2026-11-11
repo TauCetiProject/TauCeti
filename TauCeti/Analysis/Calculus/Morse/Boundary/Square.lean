@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Boundary.Basic
-import TauCeti.Analysis.Calculus.Morse.Stable
 
 /-!
 # The square of the mod-two Morse boundary counts broken trajectories
@@ -138,15 +137,8 @@ theorem morseBoundaryCoeff_eq_ncard {p q : MorseCriticalPoint f}
     (hind : morseIndex f p = morseIndex f q + 1) :
     morseBoundaryCoeff hfs hf hM hcompact htr p q =
       ((morseTrajectorySlice hf p q).ncard : ZMod 2) := by
-  by_cases hqp : f q < f p
-  · rw [morseBoundaryCoeff_eq_trajectoryCount hfs hf hM hcompact htr p q hind hqp,
-      morseTrajectoryCount_eq_ncard]
-  · have hpq : (p : E) ≠ q := fun h ↦ by simp [h] at hind
-    have hempty : morseTrajectorySlice hf p q = ∅ :=
-      eq_empty_of_forall_notMem fun z hz ↦
-        hqp (value_lt_of_mem_morseTrajectorySlice (hfs.differentiable (by norm_num)) hpq hz)
-    rw [morseBoundaryCoeff_eq_zero_of_value_le hfs hf hM hcompact htr p q (not_lt.mp hqp),
-      hempty, ncard_empty, Nat.cast_zero]
+  rw [morseBoundaryCoeff_eq_trajectoryCount hfs hf hM hcompact htr p q hind,
+    morseTrajectoryCount_eq_ncard]
 
 /-- The `r`-coefficient of the boundary of the boundary of `p` is the number of broken
 index-two trajectories from `p` to `r`, modulo two. -/
