@@ -359,9 +359,6 @@ theorem exists_setIntegral_norm_fourierInv_sum_sub_sub_le {ι : Type*} [Fintype 
   have hq : (2 : ℝ) ^ (-δ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
   refine ⟨D * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹), mul_nonneg hD (by
     have := inv_pos.2 (sub_pos.2 hq); positivity), fun σ s A hA hσ hσk h ↦ ?_⟩
-  rcases eq_or_ne h 0 with rfl | hh
-  · simp only [sub_zero, sub_self, norm_zero, integral_zero]
-    exact mul_nonneg (mul_nonneg hD (by have := inv_pos.2 (sub_pos.2 hq); positivity)) hA
   have he : (finrank ℝ V : ℝ) / 2 - N = -δ := by simp only [δ, neg_sub]
   set S : Set V := {x | 2 * ‖h‖ < ‖x‖}
   -- Each dyadic piece contributes at most `D A min (2 ^ j ‖h‖, (2 ^ j ‖h‖) ^ (-δ))`.
@@ -382,7 +379,7 @@ theorem exists_setIntegral_norm_fourierInv_sum_sub_sub_le {ι : Type*} [Fintype 
     _ = D * A * ∑ j ∈ s, min (2 ^ j * ‖h‖) ((2 ^ j * ‖h‖) ^ (-δ)) := by rw [Finset.mul_sum]
     _ ≤ D * A * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹) := by
         gcongr
-        exact TauCeti.sum_min_zpow_mul_rpow_neg_le hδ (norm_pos_iff.2 hh) s
+        exact (TauCeti.sum_min_zpow_mul_rpow_neg_le one_lt_two hδ ‖h‖ s).trans_eq (by norm_num)
     _ = D * (2 + (1 - (2 : ℝ) ^ (-δ))⁻¹) * A := by ring
 
 end Hilbert
