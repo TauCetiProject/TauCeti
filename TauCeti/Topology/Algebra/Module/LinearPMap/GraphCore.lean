@@ -47,18 +47,9 @@ theorem IsClosed.mem_domain_of_tendsto
     (hlim : Tendsto u l (𝓝 x))
     (hAlim : Tendsto (fun i => A ⟨u i, hu i⟩) l (𝓝 y)) :
     ∃ h : x ∈ A.domain, A ⟨x, h⟩ = y := by
-  have hmem : ∀ i, (u i, A ⟨u i, hu i⟩) ∈ (A.graph : Set (E × F)) :=
-    fun i => A.mem_graph ⟨u i, hu i⟩
-  have hpair : Tendsto (fun i => (u i, A ⟨u i, hu i⟩)) l (𝓝 (x, y)) :=
-    hlim.prodMk_nhds hAlim
-  have hlimmem : (x, y) ∈ (A.graph : Set (E × F)) :=
-    hA.mem_of_tendsto hpair (Eventually.of_forall hmem)
-  obtain ⟨v, hv1, hv2⟩ := (LinearPMap.mem_graph_iff A).1 hlimmem
-  dsimp only at hv1 hv2
-  have hxmem : x ∈ A.domain := hv1 ▸ v.property
-  refine ⟨hxmem, ?_⟩
-  have hveq : (⟨x, hxmem⟩ : A.domain) = v := Subtype.ext hv1.symm
-  rw [hveq, hv2]
+  have h := hA.mem_of_tendsto (hlim.prodMk_nhds hAlim)
+    (.of_forall fun i => A.mem_graph ⟨u i, hu i⟩)
+  exact ⟨mem_domain_of_mem_graph h, ((image_iff _).2 h).symm⟩
 
 variable [ContinuousAdd E] [ContinuousAdd F]
 variable [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]

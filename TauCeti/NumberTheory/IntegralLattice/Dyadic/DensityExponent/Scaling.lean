@@ -151,9 +151,9 @@ theorem shiftCorrection_def (P : DyadicJordanProfile) :
         ∑ i ∈ P.ranks.support,
           ∑ j ∈ P.ranks.support.filter fun j ↦ i < j, P.ranks i * P.ranks j := (rfl)
 
-/-- The empty profile has zero scale-shift correction. -/
+/-- The zero profile has zero scale-shift correction. -/
 @[simp]
-theorem shiftCorrection_empty : empty.shiftCorrection = 0 := by
+theorem shiftCorrection_zero : (0 : DyadicJordanProfile).shiftCorrection = 0 := by
   rw [shiftCorrection_def]
   simp
 

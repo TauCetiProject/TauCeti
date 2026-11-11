@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Coordinate continuity of regular differential forms
@@ -15,7 +16,10 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 The coordinate expression of a differential form is the fiber coordinate of its section in the
 existing alternating tangent-bundle trivialization. Consequently even `C⁰` section regularity
 implies coordinate continuity on the extended chart target, including boundary and corner points.
-The zero set of a regular form is closed, as can be checked in local bundle trivializations.
+The zero set of a regular form is closed, as can be checked in local bundle trivializations. A
+`C⁰` form evaluated on tangent vectors that converge in the tangent bundle converges to the value
+on the limit vectors (`TauCeti.IsSmoothForm.tendsto_apply`), as can likewise be read off in the
+trivialization at the limit point.
 -/
 
 public section
@@ -104,5 +108,41 @@ theorem IsSmoothForm.isClosed_zeroSet {n : WithTop ℕ∞} {φ : RoughForm I M F
     (isOpen_compl_singleton.mem_nhds hxne)
   filter_upwards [hnear, e.open_baseSet.mem_nhds hxbase] with y hy hybase
   exact mt (heq y hybase).2 hy
+
+open Filter in
+/-- **Evaluating a continuous form along converging tangent vectors.** If the base points `x i`
+tend to `x₀` and, for each `j`, the tangent vectors `v i j ∈ T_(x i) M` tend to `v₀ j` in the
+tangent bundle, then `φ (x i) (v i)` tends to `φ x₀ v₀` for every `C⁰` form `φ`. -/
+theorem IsSmoothForm.tendsto_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ) {ι : Type*}
+    {l : Filter ι} {x : ι → M} {x₀ : M} {v : (i : ι) → Fin k → TangentSpace I (x i)}
+    {v₀ : Fin k → TangentSpace I x₀} (hx : Tendsto x l (𝓝 x₀))
+    (hv : ∀ j, Tendsto (fun i ↦ (⟨x i, v i j⟩ : TangentBundle I M)) l (𝓝 ⟨x₀, v₀ j⟩)) :
+    Tendsto (fun i ↦ φ (x i) (v i)) l (𝓝 (φ x₀ v₀)) := by
+  set T := trivializationAt E (TangentSpace I) x₀
+  have hx₀ : x₀ ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E _ x₀
+  -- The coordinate expression `A y` of `φ y` in the trivialization at `x₀` is continuous at `x₀`.
+  set A : M → E [⋀^Fin k]→L[ℝ] F := fun y ↦
+    ContinuousAlternatingMap.inCoordinates E F x₀ y x₀ y (φ y)
+  have hA : ContinuousAt A x₀ :=
+    ((continuousAt_continuousAlternatingMap_bundle
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y))).1
+        (hφ.contMDiff.continuous.continuousAt)).2
+  -- On the base set, `φ y` acts on vectors as `A y` acts on their coordinates.
+  have hφA (y : M) (hy : y ∈ T.baseSet) (w : Fin k → TangentSpace I y) :
+      φ y w = A y fun j ↦ T.continuousLinearMapAt ℝ y (w j) := by
+    simp only [A, ContinuousAlternatingMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+      Trivial.continuousLinearMapAt_trivialization,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
+      ContinuousLinearMap.id_apply]
+    congr 1
+    funext j
+    exact (T.symmL_continuousLinearMapAt hy (w j)).symm
+  have hcoord : Tendsto (fun i j ↦ T.continuousLinearMapAt ℝ (x i) (v i j)) l
+      (𝓝 fun j ↦ T.continuousLinearMapAt ℝ x₀ (v₀ j)) :=
+    tendsto_pi_nhds.2 fun j ↦ ((T.tendsto_mk_nhds_mk_iff ℝ hx₀).1 (hv j)).2
+  rw [hφA x₀ hx₀]
+  refine ((continuous_eval.tendsto _).comp ((hA.tendsto.comp hx).prodMk_nhds hcoord)).congr'
+    ((hx.eventually_mem (T.open_baseSet.mem_nhds hx₀)).mono fun i hi ↦ (hφA (x i) hi (v i)).symm)
 
 end TauCeti
