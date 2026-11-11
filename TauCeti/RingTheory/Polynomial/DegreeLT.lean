@@ -42,7 +42,7 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
 rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` needs only a semiring, and
-`Monic.sub_mem_degreeLT` only a ring.
+`Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -82,20 +82,9 @@ theorem Monic.sub_mem_degreeLT {P Q : R[X]} (hP : P.Monic) (hQ : Q.Monic)
   refine degree_sub_lt_left ?_ hP.ne_zero (by rw [hP.leadingCoeff, hQ.leadingCoeff])
   rw [degree_eq_natDegree hP.ne_zero, degree_eq_natDegree hQ.ne_zero, hPQ]
 
-end Ring
-
-variable {R : Type*} [CommRing R] {g q : R[X]} {n : ℕ}
-
-@[simp]
-theorem Monic.modByMonic_mul_add (hg : g.Monic) (v u : R[X]) :
-    (g * v + u) %ₘ g = u %ₘ g := by
-  rw [add_modByMonic, self_mul_modByMonic hg, zero_add]
-
-theorem modByMonic_mem_degreeLT (hg : g.Monic) (q : R[X]) :
-    q %ₘ g ∈ degreeLT R g.natDegree := by
-  nontriviality R
-  exact (mem_degreeLT_natDegree_iff hg.ne_zero).mpr (degree_modByMonic_lt q hg)
-
+variable {g q : R[X]} {n : ℕ} in
+/-- If `q` has degree `< g.natDegree + n`, then `q /ₘ g` has degree `< n`. This holds for every
+`g`: when `g` is not monic, `q /ₘ g` is zero by convention. -/
 theorem divByMonic_mem_degreeLT (hq : q ∈ degreeLT R (g.natDegree + n)) :
     q /ₘ g ∈ degreeLT R n := by
   nontriviality R
@@ -110,6 +99,20 @@ theorem divByMonic_mem_degreeLT (hq : q ∈ degreeLT R (g.natDegree + n)) :
   refine Nat.sub_lt_left_of_lt_add ?_ <| (natDegree_lt_iff_degree_lt hq0).mpr hq
   by_contra! hcon
   exact h <| (divByMonic_eq_zero_iff hg).mpr <| degree_lt_degree hcon
+
+end Ring
+
+variable {R : Type*} [CommRing R] {g q : R[X]} {n : ℕ}
+
+@[simp]
+theorem Monic.modByMonic_mul_add (hg : g.Monic) (v u : R[X]) :
+    (g * v + u) %ₘ g = u %ₘ g := by
+  rw [add_modByMonic, self_mul_modByMonic hg, zero_add]
+
+theorem modByMonic_mem_degreeLT (hg : g.Monic) (q : R[X]) :
+    q %ₘ g ∈ degreeLT R g.natDegree := by
+  nontriviality R
+  exact (mem_degreeLT_natDegree_iff hg.ne_zero).mpr (degree_modByMonic_lt q hg)
 
 theorem Monic.divByMonic_mul_add (hg : g.Monic) (v u : R[X]) :
     (g * v + u) /ₘ g = v + u /ₘ g := by
