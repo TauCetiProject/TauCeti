@@ -191,14 +191,8 @@ theorem map_pow_dvd_map_iff (hx : Irreducible x) (hfx : ¬IsUnit (f x)) (hfx₀ 
   rcases eq_or_ne t 0 with rfl | ht
   · exact dvd_zero _
   obtain ⟨j, w, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ht hx
-  obtain hmj | hjm := le_or_gt m j
-  · exact (pow_dvd_pow x hmj).mul_left _
-  -- Otherwise cancelling `f x ^ j` shows that `f x` divides the unit `f w`.
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hjm
-  rw [map_mul, map_pow, mul_comm (f w), show j + k + 1 = j + (k + 1) by omega, pow_add,
-    mul_dvd_mul_iff_left (pow_ne_zero j hfx₀)] at h
-  exact (hfx (isUnit_of_dvd_unit ((dvd_pow_self _ k.succ_ne_zero).trans h)
-    (w.isUnit.map f))).elim
+  rw [map_mul, map_pow, (w.isUnit.map f).dvd_mul_left] at h
+  exact (pow_dvd_pow x ((pow_dvd_pow_iff hfx₀ hfx).mp h)).mul_left _
 
 end Map
 
