@@ -317,6 +317,13 @@ def seamAlmostComplexStructure :
   suspensionAlmostComplexStructure φ (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
     (mfderiv_symm_seamFamily hσ hJ₀)
 
+/-- The seam structure is the descent of the block structure of the seam-compatible vertical
+family built from `J₀`. -/
+theorem seamAlmostComplexStructure_def :
+    seamAlmostComplexStructure hσ hJ₀ =
+      suspensionAlmostComplexStructure φ (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
+        (mfderiv_symm_seamFamily hσ hJ₀) := (rfl)
+
 /-- In the coordinates `(s, t, x)`, the descended structure sends `a ∂_s + b ∂_t + v` at
 `([s], [t, x])` to `-b ∂_s + a ∂_t + K_((s, t), x) v`. -/
 theorem seamAlmostComplexStructure_mk_apply (s t : ℝ) (x : M) (a b : ℝ) (v : TangentSpace I x) :
