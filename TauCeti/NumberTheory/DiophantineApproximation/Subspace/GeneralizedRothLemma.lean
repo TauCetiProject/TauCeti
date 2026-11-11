@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
 public import TauCeti.NumberTheory.Height.BlockDehomogenize
+public import TauCeti.RingTheory.MvPolynomial.FormIndex.Dehomogenize
 public import TauCeti.RingTheory.MvPolynomial.FormIndex.Specialization
 
 import TauCeti.NumberTheory.Height.Basic
