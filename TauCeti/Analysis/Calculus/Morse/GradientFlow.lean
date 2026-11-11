@@ -276,8 +276,8 @@ theorem eq_of_tendsto_atBot_of_tendsto_atTop
       (hanti.le_of_tendsto (hfp.tendsto.comp htop) u)
   have hconst : ∀ u, γ u = γ t := fun u ↦
     is_const_of_deriv_eq_zero (fun v ↦ (hγ v).differentiableAt) (fun v ↦ by
-      simp only [(hγ v).deriv, gradient_eq_zero_of_eventually_const_value hγ (hf v)
-        (Eventually.of_forall hval), neg_zero]) u t
+      simp only [(hγ v).deriv,
+        gradient_eq_zero_of_eventually_const_value hγ (Eventually.of_forall hval), neg_zero]) u t
   exact tendsto_nhds_unique (tendsto_const_nhds.congr fun u ↦ (hconst u).symm) htop
 
 end IsIntegralCurve
