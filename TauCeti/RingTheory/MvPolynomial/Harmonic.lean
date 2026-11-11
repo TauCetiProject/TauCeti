@@ -55,7 +55,7 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 * `MvPolynomial.eq_zero_of_laplacian_normSq_mul_eq_zero` and
   `MvPolynomial.exists_laplacian_normSq_mul_eq`: `q ↦ Δ (r² q)` is bijective on `P_e`.
 * `MvPolynomial.harmonicSubmodule_sup_map_mulLeft_normSq` and
-  `MvPolynomial.disjoint_ker_laplacian_map_mulLeft_normSq`: the Fischer decomposition
+  `MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`: the Fischer decomposition
   `P_(e+2) = H_(e+2) ⊕ r² P_e`.
 * `MvPolynomial.homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow`: iterating, every
   homogeneous polynomial of degree `d` is a sum `∑_{k ≤ d/2} r^(2k) h_k` with `h_k ∈ H_(d-2k)`.
@@ -321,23 +321,23 @@ theorem exists_laplacian_normSq_mul_eq {p : MvPolynomial σ K} {e : ℕ} (hp : p
   exact ⟨q, q.2, congrArg Subtype.val hq⟩
 
 omit [Nonempty σ] in
-/-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` with
-homogeneous quotient is zero. -/
-theorem disjoint_ker_laplacian_map_mulLeft_normSq (e : ℕ) :
+/-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` is
+zero. -/
+theorem disjoint_ker_laplacian_range_mulLeft_normSq :
     Disjoint (LinearMap.ker (laplacian : MvPolynomial σ K →ₗ[K] MvPolynomial σ K))
-      ((homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K))) := by
+      (LinearMap.range (LinearMap.mulLeft K (normSq σ K))) := by
   rcases isEmpty_or_nonempty σ with hσ | hσ
   · have h0 : normSq σ K = 0 := by simp [normSq_def]
     have hz : LinearMap.mulLeft K (normSq σ K) = 0 := by ext; simp [h0]
     simp [hz]
   rw [Submodule.disjoint_def]
-  rintro _ hΔ ⟨q, hq, rfl⟩
+  rintro _ hΔ ⟨q, rfl⟩
   rw [LinearMap.mulLeft_apply, eq_zero_of_laplacian_normSq_mul_eq_zero hΔ, mul_zero]
 
 omit [Nonempty σ] in
 /-- **The Fischer decomposition**: every homogeneous polynomial of degree `e + 2` is the sum of a
 harmonic one and `r²` times a homogeneous polynomial of degree `e`. The sum is direct by
-`MvPolynomial.disjoint_ker_laplacian_map_mulLeft_normSq`. -/
+`MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`. -/
 theorem harmonicSubmodule_sup_map_mulLeft_normSq (e : ℕ) :
     harmonicSubmodule σ K (e + 2) ⊔
         (homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K)) =
@@ -397,7 +397,8 @@ theorem finrank_harmonicSubmodule_add_finrank (e : ℕ) :
     ((homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K)))
   have hdisj : Disjoint (harmonicSubmodule σ K (e + 2))
       ((homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K))) :=
-    (disjoint_ker_laplacian_map_mulLeft_normSq e).mono_left inf_le_right
+    (disjoint_ker_laplacian_range_mulLeft_normSq.mono_left inf_le_right).mono_right
+      LinearMap.map_le_range
   rwa [harmonicSubmodule_sup_map_mulLeft_normSq, hdisj.eq_bot, finrank_bot,
     add_zero, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq, eq_comm] at h
 
