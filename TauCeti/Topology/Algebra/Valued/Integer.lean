@@ -185,11 +185,8 @@ theorem LinearEquiv.isBounded_image_iff_of_integer [Finite ι] {ι' : Type*}
     IsBounded (e '' s) ↔ IsBounded s := by
   -- `e` is `K`-linear, so `ι' → K` is a quotient of the finite-dimensional space `ι → K`.
   have hfin : Finite ι' := by
-    let g := e.toLinearMap.extendScalarsOfIsLocalization (nonZeroDivisors (Valued.integer K)) K
-    have hg : (g : (ι → K) → (ι' → K)) = e :=
-      funext (LinearMap.extendScalarsOfIsLocalization_apply' (nonZeroDivisors _) K e.toLinearMap)
     have : Module.Finite K (ι' → K) :=
-      Module.Finite.of_surjective g (hg ▸ e.surjective)
+      Module.Finite.equiv (e.extendScalarsOfIsLocalization (nonZeroDivisors (Valued.integer K)) K)
     classical
     exact (Pi.linearIndependent_single_one ι' K).finite
   cases nonempty_fintype ι
