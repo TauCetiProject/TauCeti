@@ -182,8 +182,10 @@ theorem geodesicSegment_subset_setOf_dist_le_dist {p q z w : ℍ}
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq z).mpr hz)
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq w).mpr hw) hu
 
-/-- The two centres lie strictly on opposite sides of their perpendicular bisector, whichever
-orientation of it is chosen: no open half-plane bounded by the bisector contains both. -/
+/-- No open half-plane bounded by the perpendicular bisector of two centres contains both
+centres, whichever orientation of the bisector is chosen. For distinct centres this says that
+they lie strictly on opposite sides of the bisector; at coincident centres the chosen line passes
+through the common centre. -/
 theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)}
     (hk : range (geodesicLine (perpBisector p q)) = range (geodesicLine k))
     (hp : p ∈ leftHalfPlane k) : q ∉ leftHalfPlane k := by
