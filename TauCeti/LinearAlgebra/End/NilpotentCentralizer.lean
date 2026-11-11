@@ -43,6 +43,64 @@ namespace Module.End
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [Module.Finite K V]
 
 omit [Module.Finite K V] in
+/-- A nilpotent endomorphism with finite-dimensional kernel lives on a finite-dimensional space. -/
+theorem finite_of_pow_eq_zero_of_finite_ker {f : Module.End K V} {n : ℕ} (hn : f ^ n = 0)
+    (hfin : Module.Finite K (LinearMap.ker f)) : Module.Finite K V := by
+  have hfg : ∀ k : ℕ, (LinearMap.ker (f ^ k)).FG := by
+    intro k
+    induction k with
+    | zero => rw [pow_zero, Module.End.one_eq_id, LinearMap.ker_id]; exact Submodule.fg_bot
+    | succ k ih =>
+      refine Submodule.fg_of_fg_map_of_fg_inf_ker f (s := LinearMap.ker (f ^ (k + 1))) ?_ ?_
+      · refine Submodule.FG.of_le ih ?_
+        rintro _ ⟨v, hv, rfl⟩
+        rw [SetLike.mem_coe, LinearMap.mem_ker, pow_succ, Module.End.mul_eq_comp,
+          LinearMap.comp_apply] at hv
+        exact hv
+      · exact Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) inf_le_right
+  have h := hfg n
+  rw [hn, LinearMap.ker_zero] at h
+  exact Module.finite_def.2 h
+
+omit [Module.Finite K V] in
+/-- The centralizer of a nilpotent endomorphism of an infinite-dimensional space is
+infinite-dimensional: `w ↦ (x ↦ φ x • w)` embeds `ker f` for a nonzero functional `φ` vanishing on
+the range of `f`. -/
+theorem not_finite_centralizer_of_pow_eq_zero {f : Module.End K V} {n : ℕ} (hn : f ^ n = 0)
+    (hV : ¬ Module.Finite K V) : ¬ Module.Finite K (Subalgebra.centralizer K {f}) := by
+  intro hfin
+  have hker : ¬ Module.Finite K (LinearMap.ker f) := fun hk ↦
+    hV (finite_of_pow_eq_zero_of_finite_ker hn hk)
+  have hlt : LinearMap.range f < ⊤ := by
+    refine lt_top_iff_ne_top.2 fun h ↦ hV ?_
+    have hs' : Function.Surjective (f ^ n) := by
+      rw [FunLike.coe_pow_eq_iterate]
+      exact (LinearMap.range_eq_top.1 h).iterate n
+    have : Subsingleton V := ⟨fun a b ↦ by
+      obtain ⟨a', rfl⟩ := hs' a
+      obtain ⟨b', rfl⟩ := hs' b
+      simp [hn]⟩
+    infer_instance
+  obtain ⟨φ, hφ0, hφ⟩ := Submodule.exists_dual_map_eq_bot_of_lt_top hlt inferInstance
+  have hφf (x : V) : φ (f x) = 0 := by
+    have : φ (f x) ∈ (LinearMap.range f).map φ := ⟨f x, ⟨x, rfl⟩, rfl⟩
+    rw [hφ] at this
+    simpa using this
+  obtain ⟨x₀, hx₀⟩ := DFunLike.ne_iff.1 hφ0
+  let ψ : LinearMap.ker f →ₗ[K] Subalgebra.centralizer K {f} :=
+    LinearMap.codRestrict (Subalgebra.centralizer K {f}).toSubmodule
+      (LinearMap.smulRightₗ φ ∘ₗ (LinearMap.ker f).subtype) fun w ↦ by
+        rw [Subalgebra.mem_toSubmodule, Subalgebra.mem_centralizer_iff]
+        intro g hg
+        rw [Set.mem_singleton_iff.1 hg]
+        ext x
+        simp [hφf, LinearMap.mem_ker.1 w.2]
+  refine hker (Module.Finite.of_injective ψ fun w w' h ↦ ?_)
+  have : φ x₀ • (w : V) = φ x₀ • (w' : V) :=
+    congrArg (fun z : Subalgebra.centralizer K {f} ↦ (z : Module.End K V) x₀) h
+  exact Subtype.ext (smul_right_injective V hx₀ this)
+
+omit [Module.Finite K V] in
 /-- The centralizer dimension of a nilpotent endomorphism is the sum of squared
 successive kernel-dimension increases. Any bound with `f ^ n = 0` is allowed,
 including `n = 0` when the vector space is zero. For an infinite-dimensional vector space both
@@ -127,70 +185,16 @@ theorem finrank_centralizer_eq_sum_sq_ker (f : Module.End K V) {n : ℕ}
     apply Finset.sum_congr rfl
     intro i hi
     split_ifs <;> omega
-  · -- `V` is infinite-dimensional and both sides vanish. A finite-dimensional kernel of a
-    -- nilpotent endomorphism would force finite dimension.
-    have hker : ¬ Module.Finite K (LinearMap.ker f) := by
-      intro hfin
-      have hfg : ∀ k : ℕ, (LinearMap.ker (f ^ k)).FG := by
-        intro k
-        induction k with
-        | zero => rw [pow_zero, Module.End.one_eq_id, LinearMap.ker_id]; exact Submodule.fg_bot
-        | succ k ih =>
-          refine Submodule.fg_of_fg_map_of_fg_inf_ker f (s := LinearMap.ker (f ^ (k + 1))) ?_ ?_
-          · refine Submodule.FG.of_le ih ?_
-            rintro _ ⟨v, hv, rfl⟩
-            rw [SetLike.mem_coe, LinearMap.mem_ker, pow_succ, Module.End.mul_eq_comp,
-              LinearMap.comp_apply] at hv
-            exact hv
-          · exact Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) inf_le_right
-      have h := hfg n
-      rw [hn, LinearMap.ker_zero] at h
-      exact hV (Module.finite_def.2 h)
+  · -- `V` is infinite-dimensional and both sides vanish.
+    have hker : ¬ Module.Finite K (LinearMap.ker f) := fun hfin ↦
+      hV (finite_of_pow_eq_zero_of_finite_ker hn hfin)
     -- Every positive power of `f` then has an infinite-dimensional kernel, so the right side is
     -- `0`.
-    have hpow (k : ℕ) : ¬ Module.Finite K (LinearMap.ker (f ^ (k + 1))) := by
-      intro hfin
-      refine hker (Module.Finite.iff_fg.2 (Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) ?_))
-      intro v hv
-      rw [LinearMap.mem_ker] at hv ⊢
-      rw [pow_succ, Module.End.mul_eq_comp, LinearMap.comp_apply, hv, map_zero]
-    -- The centralizer is infinite-dimensional: `w ↦ (x ↦ φ x • w)` embeds `ker f` for a nonzero
-    -- functional `φ` vanishing on the range of `f`.
-    have hcent : ¬ Module.Finite K (Subalgebra.centralizer K {f}) := by
-      intro hfin
-      have hlt : LinearMap.range f < ⊤ := by
-        refine lt_top_iff_ne_top.2 fun h ↦ hV ?_
-        have hsurj : (f ^ n : Module.End K V) = 0 → Function.Surjective f → Finite V := by
-          intro h0 hs
-          have hs' : Function.Surjective (f ^ n) := by
-            rw [FunLike.coe_pow_eq_iterate]
-            exact hs.iterate n
-          have : Subsingleton V := ⟨fun a b ↦ by
-            obtain ⟨a', rfl⟩ := hs' a
-            obtain ⟨b', rfl⟩ := hs' b
-            rw [h0]; rfl⟩
-          infer_instance
-        have := hsurj hn (LinearMap.range_eq_top.1 h)
-        infer_instance
-      obtain ⟨φ, hφ0, hφ⟩ := Submodule.exists_dual_map_eq_bot_of_lt_top hlt inferInstance
-      have hφf (x : V) : φ (f x) = 0 := by
-        have : φ (f x) ∈ (LinearMap.range f).map φ := ⟨f x, ⟨x, rfl⟩, rfl⟩
-        rw [hφ] at this
-        simpa using this
-      obtain ⟨x₀, hx₀⟩ := DFunLike.ne_iff.1 hφ0
-      let ψ : LinearMap.ker f →ₗ[K] Subalgebra.centralizer K {f} :=
-        { toFun := fun w ↦ ⟨φ.smulRight (w : V), by
-            rw [Subalgebra.mem_centralizer_iff]
-            intro g hg
-            rw [Set.mem_singleton_iff.1 hg]
-            ext x
-            simp [hφf, LinearMap.mem_ker.1 w.2]⟩
-          map_add' := fun w w' ↦ Subtype.ext (LinearMap.ext fun x ↦ by simp)
-          map_smul' := fun c w ↦ Subtype.ext (LinearMap.ext fun x ↦ smul_comm (φ x) c (w : V)) }
-      refine hker (Module.Finite.of_injective ψ fun w w' h ↦ ?_)
-      have := congrArg (fun z : Subalgebra.centralizer K {f} ↦ (z : Module.End K V) x₀) h
-      exact Subtype.ext (smul_right_injective V hx₀ (by simpa [ψ] using this))
-    rw [Module.finrank_of_not_finite hcent]
+    have hpow (k : ℕ) : ¬ Module.Finite K (LinearMap.ker (f ^ (k + 1))) := fun hfin ↦
+      hker (Module.Finite.iff_fg.2 (Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) (by
+        rw [pow_succ, Module.End.mul_eq_comp]
+        exact LinearMap.ker_le_ker_comp f (f ^ k))))
+    rw [Module.finrank_of_not_finite (not_finite_centralizer_of_pow_eq_zero hn hV)]
     refine (Finset.sum_eq_zero fun k _ ↦ ?_).symm
     rw [Module.finrank_of_not_finite (hpow k)]
     simp
