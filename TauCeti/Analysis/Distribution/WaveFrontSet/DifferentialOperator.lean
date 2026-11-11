@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
-import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # Differential operators do not enlarge the wave front set
@@ -19,8 +16,8 @@ Let `T` be a complex distribution on an open subset `Ω` of a finite-dimensional
 space `E`. This file shows that directional differentiation does not enlarge the wave front set of
 `T`. Together with the corresponding statement for multiplication by a smooth function
 (`Distribution.waveFrontSet_smulLeftCLM_subset`), a linear differential operator
-`P = ∑ᵢ cᵢ gᵢ ∂^{mᵢ}` with smooth coefficients satisfies `WF(P T) ⊆ WF(T)`: differential
-operators are *microlocal*.
+`P = ∑ᵢ cᵢ gᵢ ∂^{mᵢ}` with coefficients smooth on all of `E` satisfies `WF(P T) ⊆ WF(T)`:
+differential operators are *microlocal*.
 
 The statement for derivatives is read off the localized Fourier transform `η ↦ T (φ e_η)` of
 `Distribution.localFourier`, where `e_η x = 𝐞 (-⟪x, η⟫)`. For a direction `v`, differentiating
@@ -43,7 +40,7 @@ singular along `x = 0`, while its derivative in `y` vanishes.
   `Distribution.waveFrontSet_iteratedLineDerivOp_subset`: `WF(∂_v T) ⊆ WF(T)`, and the same for
   iterated derivatives.
 * `Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`: `WF(P T) ⊆ WF(T)`
-  for every linear differential operator `P` with smooth coefficients.
+  for every linear differential operator `P` with coefficients smooth on all of `E`.
 
 ## References
 
@@ -64,12 +61,6 @@ namespace Distribution
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
   {T : 𝓓'(Ω, ℂ)} {x ξ : E}
 
-/-- The modulated cutoff `φ e_η` paired with `T` in `Distribution.localFourier T φ η`. -/
-private theorem bilinLeftCLM_fourierAtom_apply (φ : 𝓓(Ω, ℂ)) (η y : E) :
-    bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ y =
-      φ y * 𝐞 (-⟪y, η⟫) := by
-  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
-
 /-! ### Directional derivatives -/
 
 /-- The derivative of the modulated cutoff `φ e_η` in the direction `v` is
@@ -80,19 +71,13 @@ private theorem lineDerivOp_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) (v η 
         (2 * Real.pi * I * ⟪v, η⟫) •
           bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ := by
   ext y
-  have he : HasFDerivAt (TauCeti.fourierAtom η)
-      ((-2 * Real.pi * I * TauCeti.fourierAtom η y) • (ofRealCLM ∘L (innerSL ℝ).flip η)) y := by
-    have h := Real.hasFDerivAt_fourierChar_neg_bilinear_left (innerSL ℝ) y η
-    rw [show (fun z : E ↦ ((𝐞 (-(innerSL ℝ z) η) : Circle) : ℂ)) = TauCeti.fourierAtom η from
-      funext fun z ↦ (TauCeti.fourierAtom_eq_fourierChar η z).symm] at h
-    convert h using 4
-    exact TauCeti.fourierAtom_eq_fourierChar η y
+  have he := TauCeti.hasFDerivAt_fourierAtom η y
   have hφ : HasFDerivAt (φ : E → ℂ) (fderiv ℝ φ y) y :=
     (φ.contDiff.differentiable (by simp)).differentiableAt.hasFDerivAt
   have hχ (ψ : 𝓓(Ω, ℂ)) :
       ⇑(bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) ψ) =
         fun z ↦ ψ z * TauCeti.fourierAtom η z :=
-    funext fun z ↦ by simp [bilinLeftCLM_apply, mul_comm]
+    funext fun z ↦ by rw [bilinLeftCLM_fourierAtom_apply, TauCeti.fourierAtom_eq_fourierChar]
   simp only [TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, coe_lineDerivCLM, hχ]
   rw [((hφ.fun_mul he).hasLineDerivAt v).lineDeriv]
   have hin : innerSL ℝ η v = ⟪v, η⟫ := by rw [innerSL_apply_apply, real_inner_comm]
@@ -112,24 +97,6 @@ theorem localFourier_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ
 
 variable [FiniteDimensional ℝ E]
 
-
-/-- **Transfer of decay to nearby cutoffs.** If `T` is microlocally smooth at `(x, ξ)`, there are
-an open cone `Γ` containing `ξ` and a cutoff `ψ` with `ψ x = 1` such that the localized Fourier
-transform of `T` decays rapidly on `Γ` for every cutoff supported in the support of `ψ`. -/
-private theorem IsMicrolocallySmoothAt.exists_cutoff_cone (h : T.IsMicrolocallySmoothAt x ξ) :
-    ∃ ψ : 𝓓(Ω, ℂ), ψ x = 1 ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
-      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-      ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ tsupport ψ →
-        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 h
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
-  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hdecay⟩ := h.exists_nhds_cone
-  obtain ⟨ψ, hψ, hψx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
-    (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
-  exact ⟨ψ, hψx, Γ, hΓ, hξ, hcone, fun φ hφ ↦ hdecay φ (hφ.trans (hψ.trans inter_subset_left))⟩
-
-
 /-- A derivative of a distribution microlocally smooth at `(x, ξ)` is microlocally smooth
 there. -/
 theorem IsMicrolocallySmoothAt.lineDerivOp (h : T.IsMicrolocallySmoothAt x ξ) (v : E) :
@@ -143,10 +110,11 @@ theorem IsMicrolocallySmoothAt.lineDerivOp (h : T.IsMicrolocallySmoothAt x ξ) (
   have h₂ := hC₂ η hη
   have hη₁ : ‖η‖ ≤ 1 + ‖η‖ := le_add_of_nonneg_left zero_le_one
   have hinner : ‖(2 * Real.pi * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * Real.pi * ‖v‖ * (1 + ‖η‖) := by
-    rw [norm_mul, norm_mul, norm_mul, norm_I, mul_one, Complex.norm_real, Complex.norm_two,
-      Complex.norm_real, Real.norm_of_nonneg Real.pi_pos.le, mul_assoc (2 * Real.pi)]
-    gcongr
-    exact (norm_inner_le_norm v η).trans (by gcongr)
+    calc ‖(2 * Real.pi * I * ⟪v, η⟫ : ℂ)‖ = 2 * Real.pi * |⟪v, η⟫| := by simp
+      _ ≤ 2 * Real.pi * (‖v‖ * (1 + ‖η‖)) := by
+        gcongr
+        exact (abs_real_inner_le_norm v η).trans (by gcongr)
+      _ = 2 * Real.pi * ‖v‖ * (1 + ‖η‖) := by ring
   rw [localFourier_lineDerivOp]
   calc (1 + ‖η‖) ^ N *
         ‖2 * Real.pi * I * ⟪v, η⟫ * T.localFourier ψ η - T.localFourier (∂_{v} ψ) η‖
@@ -177,10 +145,11 @@ theorem waveFrontSet_iteratedLineDerivOp_subset {k : ℕ} (m : Fin k → E) (T :
     exact (waveFrontSet_lineDerivOp_subset _ _).trans (ih _)
 
 /-- **Differential operators do not enlarge the wave front set.** A linear differential operator
-`P = ∑ᵢ cᵢ gᵢ ∂^{mᵢ}` with complex constants `cᵢ`, smooth real functions `gᵢ` and iterated
-directional derivatives `∂^{mᵢ}` satisfies `WF(P T) ⊆ WF(T)`. Every differential operator with
-smooth complex coefficients has this form, by splitting each coefficient into its real and
-imaginary parts. -/
+`P = ∑ᵢ cᵢ gᵢ ∂^{mᵢ}` with complex constants `cᵢ`, real functions `gᵢ` smooth on all of `E` and
+iterated directional derivatives `∂^{mᵢ}` satisfies `WF(P T) ⊆ WF(T)`. Every differential operator
+whose complex coefficients are smooth on all of `E` has this form, by splitting each coefficient
+into its real and imaginary parts. Coefficients smooth only on `Ω` are not covered by this
+statement. -/
 theorem waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset {ι : Type*} (s : Finset ι)
     (c : ι → ℂ) {g : ι → E → ℝ} (hg : ∀ i, ContDiff ℝ ∞ (g i)) {k : ι → ℕ}
     (m : (i : ι) → Fin (k i) → E) (T : 𝓓'(Ω, ℂ)) :

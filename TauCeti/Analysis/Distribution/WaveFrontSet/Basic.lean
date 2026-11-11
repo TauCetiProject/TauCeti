@@ -10,12 +10,12 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
+public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Topology.Algebra.Module.Cone
 
@@ -104,6 +104,13 @@ def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
     (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
 
+/-- The modulated cutoff `φ e_η` paired with `T` in `Distribution.localFourier T φ η` takes the
+value `φ x * 𝐞 (-⟪x, η⟫)` at `x`. -/
+theorem bilinLeftCLM_fourierAtom_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
+    bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ x =
+      φ x * 𝐞 (-⟪x, η⟫) := by
+  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
+
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
 theorem localFourier_eq (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {η : E} {ψ : 𝓓(Ω, ℂ)}
@@ -111,7 +118,7 @@ theorem localFourier_eq (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {η : E} {ψ :
   rw [localFourier]
   congr 1
   ext x
-  simp [hψ, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
+  rw [hψ, bilinLeftCLM_fourierAtom_apply]
 
 /-- The localized Fourier transform is additive in the distribution. -/
 @[simp]

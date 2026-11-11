@@ -55,6 +55,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
+* `Distribution.IsMicrolocallySmoothAt.exists_cutoff_cone`: the same with `U` replaced by the
+  support of a single cutoff `ψ` with `ψ x = 1`.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -273,6 +275,23 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
     simp only [θ, hχy, ofReal_one]
     field_simp
+
+/-- **Transfer of decay to nearby cutoffs.** If `T` is microlocally smooth at `(x, ξ)`, there are
+an open cone `Γ` containing `ξ` and a cutoff `ψ` with `ψ x = 1` such that the localized Fourier
+transform of `T` decays rapidly on `Γ` for every cutoff supported in the support of `ψ`. -/
+theorem IsMicrolocallySmoothAt.exists_cutoff_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySmoothAt x ξ) :
+    ∃ ψ : 𝓓(Ω, ℂ), ψ x = 1 ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
+      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ tsupport ψ →
+        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C := by
+  have hx : x ∈ Ω := by
+    obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 h
+    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hdecay⟩ := h.exists_nhds_cone
+  obtain ⟨ψ, hψ, hψx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
+    (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
+  exact ⟨ψ, hψx, Γ, hΓ, hξ, hcone, fun φ hφ ↦ hdecay φ (hφ.trans (hψ.trans inter_subset_left))⟩
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}

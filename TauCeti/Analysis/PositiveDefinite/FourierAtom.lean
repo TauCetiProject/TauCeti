@@ -27,6 +27,7 @@ It uses Mathlib's `2π` Fourier convention.
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
 * `TauCeti.contDiff_fourierAtom`: Fourier atoms are smooth in the spatial variable.
+* `TauCeti.hasFDerivAt_fourierAtom`: the derivative of a Fourier atom in the spatial variable.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -133,6 +134,18 @@ theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
     ((Complex.ofRealCLM.contDiff.comp
       (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
         contDiff_const)
+
+/-- The derivative of the Fourier atom `fourierAtom q` at `v` is
+`w ↦ -2πi ⟪w, q⟫ fourierAtom q v`. -/
+theorem hasFDerivAt_fourierAtom (q v : W) :
+    HasFDerivAt (fourierAtom q)
+      ((-2 * Real.pi * I * fourierAtom q v) • (ofRealCLM ∘L (innerSL ℝ).flip q)) v := by
+  have h : HasFDerivAt (fun w : W ↦ -2 * (Real.pi : ℂ) * I * ((inner ℝ w q : ℝ) : ℂ))
+      ((-2 * Real.pi * I : ℂ) • (ofRealCLM ∘L (innerSL ℝ).flip q)) v :=
+    (ofRealCLM.hasFDerivAt.comp v ((innerSL ℝ).flip q).hasFDerivAt).const_mul _
+  convert h.cexp using 1
+  · exact funext (fourierAtom_apply q)
+  · rw [fourierAtom_apply, smul_smul, mul_comm]
 
 end ContDiff
 
