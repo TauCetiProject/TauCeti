@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Meromorphic.Basic
 import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
@@ -27,9 +28,9 @@ dimension. In the plane, for `k = 1`, this is the local integrability of the log
 fundamental solution of the Laplacian. On the real line it says that `t ↦ (log t) ^ k` is interval
 integrable, as needed for the logarithmic radial integrals defining the polylogarithms.
 
-The principal complex logarithm of a real-analytic function `f : ℝ → ℂ` is interval integrable,
-even across zeros of `f`: its real part is Mathlib's interval integrable `log ‖f‖` and its imaginary
-part is bounded by `π`.
+The principal complex logarithm of a real-meromorphic function `f : ℝ → ℂ` is interval integrable,
+even across zeros and poles of `f`: its real part is Mathlib's interval integrable `log ‖f‖` and its
+imaginary part is bounded by `π`.
 
 On the half-line `[1, ∞)` the iterated logarithm `t ↦ log (log t)` is locally integrable as well:
 its singularity at `t = 1` is integrable, by Mathlib's `Real.integrableOn_log_log_mul_rpow`. This
@@ -40,8 +41,8 @@ is the integrability that Abelian arguments against `log log t` need, as in Mert
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
 * `TauCeti.intervalIntegrable_log_pow`: `t ↦ (log t) ^ k` is interval integrable.
-* `AnalyticOnNhd.intervalIntegrable_clog`: `t ↦ Log (f t)` is interval integrable for
-  real-analytic `f : ℝ → ℂ`.
+* `MeromorphicOn.intervalIntegrable_clog`: `t ↦ Log (f t)` is interval integrable for
+  real-meromorphic `f : ℝ → ℂ`; `AnalyticOnNhd.intervalIntegrable_clog` is the analytic case.
 * `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
 -/
 
@@ -110,17 +111,24 @@ theorem intervalIntegrable_log_pow (k : ℕ) {a b : ℝ} :
     ((locallyIntegrable_log_norm_pow (E := ℝ) (μ := volume) k).integrableOn_isCompact
       (isCompact_uIcc (a := a) (b := b))).intervalIntegrable
 
-/-- The principal complex logarithm of a real-analytic function `f : ℝ → ℂ` is interval
-integrable, even across zeros of `f`: its real part `log ‖f‖` has only integrable logarithmic
-singularities, and its imaginary part `arg f` is bounded by `π`. -/
-theorem _root_.AnalyticOnNhd.intervalIntegrable_clog {f : ℝ → ℂ} {a b : ℝ}
-    (hf : AnalyticOnNhd ℝ f (Set.uIcc a b)) :
+/-- The principal complex logarithm of a real-meromorphic function `f : ℝ → ℂ` is interval
+integrable, even across zeros and poles of `f`: its real part `log ‖f‖` has only integrable
+logarithmic singularities, and its imaginary part `arg f` is bounded by `π`. -/
+theorem _root_.MeromorphicOn.intervalIntegrable_clog {f : ℝ → ℂ} {a b : ℝ}
+    (hf : MeromorphicOn f (Set.uIcc a b)) :
     IntervalIntegrable (fun t ↦ Complex.log (f t)) volume a b := by
-  have hmeas : AEStronglyMeasurable (fun t ↦ Complex.log (f t)) (volume.restrict (Set.uIoc a b)) :=
-    (Complex.measurable_log.comp_aemeasurable
-      ((hf.continuousOn.mono Set.uIoc_subset_uIcc).aemeasurable
-        measurableSet_uIoc)).aestronglyMeasurable
-  refine (hf.meromorphicOn.intervalIntegrable_log_norm.norm.add
+  -- `f` is continuous off the countable, hence null, set `S` of its non-analytic points.
+  set S := {t | AnalyticAt ℝ f t}ᶜ ∩ Set.uIcc a b
+  have hS : S.Countable := hf.countable_compl_analyticAt_inter
+  have hcont : ContinuousOn f (Set.uIoc a b \ S) := fun t ht ↦
+    (of_not_not fun h ↦ ht.2 ⟨h, Set.uIoc_subset_uIcc ht.1⟩ :
+      AnalyticAt ℝ f t).continuousAt.continuousWithinAt
+  have hmeas :
+      AEStronglyMeasurable (fun t ↦ Complex.log (f t)) (volume.restrict (Set.uIoc a b)) := by
+    rw [← Measure.restrict_congr_set (sdiff_null_ae_eq_self (hS.measure_zero volume))]
+    exact (Complex.measurable_log.comp_aemeasurable
+      (hcont.aemeasurable (measurableSet_uIoc.diff hS.measurableSet))).aestronglyMeasurable
+  refine (hf.intervalIntegrable_log_norm.norm.add
     (intervalIntegrable_const (c := Real.pi))).mono_fun' hmeas (.of_forall fun t ↦ ?_)
   calc ‖Complex.log (f t)‖ ≤ |(Complex.log (f t)).re| + |(Complex.log (f t)).im| :=
         Complex.norm_le_abs_re_add_abs_im _
@@ -128,6 +136,14 @@ theorem _root_.AnalyticOnNhd.intervalIntegrable_clog {f : ℝ → ℂ} {a b : �
         rw [Complex.log_re, Complex.log_im, Real.norm_eq_abs]
         gcongr
         exact Complex.abs_arg_le_pi _
+
+/-- The principal complex logarithm of a real-analytic function `f : ℝ → ℂ` is interval
+integrable, even across zeros of `f`. This is the analytic case of
+`MeromorphicOn.intervalIntegrable_clog`. -/
+theorem _root_.AnalyticOnNhd.intervalIntegrable_clog {f : ℝ → ℂ} {a b : ℝ}
+    (hf : AnalyticOnNhd ℝ f (Set.uIcc a b)) :
+    IntervalIntegrable (fun t ↦ Complex.log (f t)) volume a b :=
+  hf.meromorphicOn.intervalIntegrable_clog
 
 /-- `t ↦ log (log t)` is locally integrable on `[1, ∞)`: its logarithmic singularity at `t = 1`
 is integrable. This lets Abelian integrals `∫_1^∞ t ^ (-s) f(t) dt` treat `log (log t)` like any
