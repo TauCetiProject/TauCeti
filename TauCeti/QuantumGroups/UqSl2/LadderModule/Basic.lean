@@ -485,7 +485,6 @@ private theorem e_smul_string (j : ℕ) :
     zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
   generalize quantumFactorial q j = P at hP ⊢
   generalize quantumInteger q (j + 1) = Q at hj ⊢
-  have hq1 := hq.sub_inv_ne_zero
   rw [inv_pow]
   rcases Int.units_eq_one_or ε with rfl | rfl
   · push_cast
