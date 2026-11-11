@@ -10,9 +10,9 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.Compact
 
 /-!
-# Controlled point selection on proper metric spaces
+# Controlled point selection on metric spaces
 
-Continuity bounds a size function on the compact closed ball enclosing the search. The
+A bound on a size function on the closed ball encloses the search. The
 selected point has at least the original size, stays within half the distance to a basepoint,
 and has a controlled ball with a fixed size-radius product. No global bound or nonnegativity
 assumption on the field is needed. For a square-root curvature field the doubling estimate
@@ -29,12 +29,12 @@ open Set
 
 namespace Metric
 
-/-- Continuous fields on a proper metric space admit a controlled ball,
+/-- A field bounded above on the enclosing closed ball admits a controlled ball,
 with the original distance and size-scale budgets retained. -/
-theorem exists_doubling_controlled_point_of_continuous
-    {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
-    (f : X → ℝ) (hcontinuous : Continuous f)
-    (p x : X) (hd : 0 < dist p x) (hx : 0 < f x) :
+theorem exists_doubling_controlled_point_of_bddAbove
+    {X : Type*} [PseudoMetricSpace X]
+    (f : X → ℝ) (p x : X)
+    (hbound : BddAbove (f '' Metric.closedBall x (dist p x / 2))) (hd : 0 < dist p x) (hx : 0 < f x) :
     ∃ q : X, ∃ r : ℝ, q ∈ Metric.ball x (dist p x / 2) ∧
       0 < r ∧ f x ≤ f q ∧ dist p x / 2 ≤ dist p q ∧
       r * f q = dist p x * f x / 4 ∧
@@ -44,9 +44,6 @@ theorem exists_doubling_controlled_point_of_continuous
   let L : ℝ := dist p x * f x / 4
   have hfx : 0 < f x := hx
   have hL : 0 < L := by dsimp [L]; positivity
-  have hbound : BddAbove (f '' S) :=
-    (isCompact_closedBall x (dist p x / 2)).bddAbove_image
-      hcontinuous.continuousOn
   obtain ⟨q, _, _, hscore, hmargin, hcontrol⟩ :=
     TauCeti.exists_point_with_doubling_bound S f (dist x)
       (fun _ ↦ 0) hbound hL.le (Metric.mem_closedBall_self (by positivity)) hfx
@@ -62,12 +59,8 @@ theorem exists_doubling_controlled_point_of_continuous
   have hq : q ∈ Metric.ball x (dist p x / 2) := by
     rw [Metric.mem_ball, dist_comm]
     linarith
-  have hsubset : Metric.ball q r ⊆ Metric.ball x (dist p x / 2) := by
-    intro y hy
-    have hqy : dist q y < r := by simpa [dist_comm] using Metric.mem_ball.mp hy
-    have htri := dist_triangle x q y
-    rw [Metric.mem_ball, dist_comm]
-    linarith
+  have hsubset : Metric.ball q r ⊆ Metric.ball x (dist p x / 2) :=
+    Metric.ball_subset_ball' (by rw [dist_comm q x]; linarith)
   refine ⟨q, r, hq, hr, ?_, ?_, ?_, hsubset, ?_⟩
   · exact hscore
   · have htri := dist_triangle p q x
@@ -83,5 +76,19 @@ theorem exists_doubling_controlled_point_of_continuous
       dsimp [r] at hqy
       linarith)
     exact hfy
+
+/-- Continuous fields on a proper metric space admit a controlled ball,
+with the original distance and size-scale budgets retained. -/
+theorem exists_doubling_controlled_point_of_continuous
+    {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
+    (f : X → ℝ) (hcontinuous : Continuous f)
+    (p x : X) (hd : 0 < dist p x) (hx : 0 < f x) :
+    ∃ q : X, ∃ r : ℝ, q ∈ Metric.ball x (dist p x / 2) ∧
+      0 < r ∧ f x ≤ f q ∧ dist p x / 2 ≤ dist p q ∧
+      r * f q = dist p x * f x / 4 ∧
+      Metric.ball q r ⊆ Metric.ball x (dist p x / 2) ∧
+      ∀ y ∈ Metric.ball q r, f y ≤ 2 * f q :=
+  exists_doubling_controlled_point_of_bddAbove f p x
+    ((isCompact_closedBall x (dist p x / 2)).bddAbove_image hcontinuous.continuousOn) hd hx
 
 end Metric
