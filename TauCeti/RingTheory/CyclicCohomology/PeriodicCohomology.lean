@@ -413,6 +413,7 @@ theorem isUnit_algebraMap_periodicComparisonScalar {R : Type*} [CommRing R] [Alg
     (n k : ℕ) : IsUnit (algebraMap ℚ R (periodicComparisonScalar n k)) :=
   (periodicComparisonScalar_ne_zero n k).isUnit.map (algebraMap ℚ R)
 
+/-- Image in `R` of `periodicComparisonScalar_mul_neg`. -/
 private theorem algebraMap_periodicComparisonScalar_succ_mul_neg {R : Type*} [CommRing R]
     [Algebra ℚ R] (n k : ℕ) :
     algebraMap ℚ R (periodicComparisonScalar n (k + 1)) *
@@ -422,6 +423,8 @@ private theorem algebraMap_periodicComparisonScalar_succ_mul_neg {R : Type*} [Co
     Nat.cast_mul, Nat.cast_ofNat] using
     congrArg (algebraMap ℚ R) (periodicComparisonScalar_mul_neg n k)
 
+/-- Recurrence in `R` for the inverse comparison scalars
+`algebraMap ℚ R (periodicComparisonScalar n k)⁻¹`. -/
 private theorem algebraMap_periodicComparisonScalar_succ_inv {R : Type*} [CommRing R]
     [Algebra ℚ R] (n k : ℕ) :
     algebraMap ℚ R (periodicComparisonScalar n (k + 1))⁻¹ =
@@ -504,16 +507,6 @@ theorem cyclicCohomology.periodicTransition_comp (n : ℕ) {i j k : ℕ} (hij : 
       cyclicCohomology.periodicTransition R A M n (hij.trans hjk) :=
   (Functor.OfSequence.map_comp _ i j k hij hjk).symm
 
-/-- Restatement of `cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal` at
-stage `k + 1`, exposing the definitional equality `(n + 2 * k) + 2 = n + 2 * (k + 1)` for `rw`. -/
-private theorem periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul (n k : ℕ) :
-    cyclicCohomology.periodicity R A M (n + 2 * k) ≫
-        HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * (k + 1)) =
-      -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) •
-        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
-          cyclicTotalHomologyPeriodicity R A M (n + 2 * k)) :=
-  cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k)
-
 /-- Compatibility between `cyclicCohomology.periodicTransition` and
 `cyclicTotalHomologyPeriodicTransition` after rescaling by `periodicComparisonScalar`. -/
 theorem cyclicCohomology.smul_periodicTransition_comp_homologyMap (n : ℕ) {i j : ℕ} (h : i ≤ j) :
@@ -529,10 +522,12 @@ theorem cyclicCohomology.smul_periodicTransition_comp_homologyMap (n : ℕ) {i j
       Category.id_comp, Category.comp_id]
   | succ j hij ih =>
     rw [← cyclicCohomology.periodicTransition_comp R A M n hij (Nat.le_add_right j 1),
-      cyclicCohomology.periodicTransition_succ, Category.assoc,
-      periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul, Linear.comp_smul,
-      smul_smul, algebraMap_periodicComparisonScalar_succ_mul_neg, ← Linear.smul_comp,
-      ← Category.assoc, Linear.smul_comp, ih, Linear.smul_comp, Category.assoc,
+      cyclicCohomology.periodicTransition_succ, Category.assoc]
+    -- `n + 2 * (j + 1)` is definitionally `(n + 2 * j) + 2` (`Nat.mul_succ`).
+    erw [cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M
+      (n + 2 * j)]
+    rw [Linear.comp_smul, smul_smul, algebraMap_periodicComparisonScalar_succ_mul_neg,
+      ← Linear.smul_comp, ← Category.assoc, Linear.smul_comp, ih, Linear.smul_comp, Category.assoc,
       ← cyclicTotalHomologyPeriodicTransition_succ, cyclicTotalHomologyPeriodicTransition_comp]
 
 namespace periodicCyclicCohomology
@@ -634,8 +629,11 @@ def descCyclicCohomology {n : ℕ} {P : ModuleCat R}
   rw [← cancel_epi (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)),
     Linear.comp_smul, Linear.comp_smul, algebraMap_periodicComparisonScalar_succ_inv, mul_smul,
     ← Category.assoc, ← Linear.smul_comp,
-    ← periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul,
-    Category.assoc, IsIso.hom_inv_id_assoc, hg, Linear.comp_smul, IsIso.hom_inv_id_assoc]
+    ← cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k),
+    Category.assoc]
+  -- `(n + 2 * k) + 2` is definitionally `n + 2 * (k + 1)` (`Nat.mul_succ`).
+  erw [IsIso.hom_inv_id_assoc]
+  rw [hg, Linear.comp_smul, IsIso.hom_inv_id_assoc]
 
 /-- The map out of `HP^n(A; M)` induced by a compatible family restricts to the given family on each
 cyclic cohomology stage. -/

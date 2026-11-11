@@ -171,16 +171,14 @@ variable {M : Type*} [AddCommGroup M] {n : ℕ}
 /-- Reindexing `{is | ¬ (is.1 : ℕ) ≤ is.2}` onto `{is | (is.1 : ℕ) ≤ is.2}` via
 `(i, s) ↦ (s.succ, i.castLT _)` folds the complementary double-face terms under the simplicial
 identity `F s.succ i = F i.castSucc s`. -/
-private theorem sum_compl_le_smul_eq_sum_le {F : Fin (n + 3) → Fin (n + 2) → M}
-    (hF : ∀ i s : Fin (n + 2), i ≤ s → F s.succ i = F i.castSucc s)
-    (w : Fin (n + 3) → ℤ) :
+private theorem sum_compl_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) → M}
+    (hF : ∀ i s : Fin (n + 2), i ≤ s → F s.succ i = F i.castSucc s) :
     (∑ x ∈ ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _)ᶜ,
         ((-(x.2 : ℤ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2) +
-          w x.1 * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2))) • F x.1 x.2) =
+          cupOneWeight n x.1 * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2))) • F x.1 x.2) =
       ∑ x ∈ ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _),
-        (((x.1 : ℤ) - w x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2 := by
-  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
-  change (∑ x ∈ Sᶜ, _) = ∑ x ∈ S, _
+        (((x.1 : ℤ) - cupOneWeight n x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2 := by
+  set S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
   refine (Finset.sum_bij (fun x hx ↦ (x.2.succ, x.1.castLT
       (lt_of_le_of_lt (Finset.mem_filter.1 hx).2 x.2.2))) ?_ ?_ ?_ ?_).symm
   · intro x hx
@@ -221,8 +219,7 @@ private theorem sum_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) →
           (((x.1 : ℤ) - cupOneWeight n x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2)) =
       ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j,
         (-1 : ℤ) ^ ((j : ℕ) - r) • F j.succ.castSucc r.castSucc := by
-  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
-  change (∑ x ∈ S, _) = _
+  set S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
   trans ∑ s : Fin (n + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (n + 3) ↦ (i : ℕ) ≤ s),
       (((n + 1 : ℤ) - s - cupOneWeight n s.succ) * (-1 : ℤ) ^ ((i : ℕ) + s)) • F i s
   · rw [show S = (Finset.univ ×ˢ Finset.univ).filter (fun x : Fin (n + 3) × Fin (n + 2) ↦
@@ -339,7 +336,7 @@ private theorem hochschildCoboundary_cupOneSelf_add
   simp only [← Finset.sum_product']
   rw [Finset.univ_product_univ,
     ← Finset.sum_add_sum_compl ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _),
-    sum_compl_le_smul_eq_sum_le hF (cupOneWeight n), ← Finset.sum_add_distrib]
+    sum_compl_le_cupOneWeight_smul_eq hF, ← Finset.sum_add_distrib]
   -- Stage 3: collect the combined weights (`1` for `s < n + 1` and `0` at `s = n + 1`).
   rw [cochainPeriodicity_apply]
   exact sum_le_cupOneWeight_smul_eq hF
