@@ -18,9 +18,9 @@ presheaf on a space is a sheaf exactly when it is a sheaf for covers by basis el
 (`isSheaf_iff_isSheafFor_basisCoverage_comp`). Putting the two together, sheafhood on the adic
 spectrum is decided by the rational covers alone.
 
-This is the fourth bullet of roadmap Layer 3.5, instantiated at the basis the roadmap names. It is
-stated for an arbitrary presheaf, so it does not mention the structure presheaf; applying it to
-`𝒪_X` is what turns the definition of sheafiness into Wedhorn's rational-cover condition.
+The criterion is stated for an arbitrary presheaf, so it does not mention the structure presheaf;
+applying it to `𝒪_X` is what turns the definition of sheafiness into Wedhorn's rational-cover
+condition.
 
 The rational opens also form a dense subsite of the opens of `Spa(A,A⁺)`, so a sheaf on the
 rational opens for the restricted topology extends to a sheaf on `Spa(A,A⁺)` by right Kan
