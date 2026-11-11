@@ -16,6 +16,8 @@ public import Mathlib.Analysis.Analytic.Order
 `1 - z`. Its deviation from one is quadratic near zero, which supplies the
 summable majorant for genus-one canonical products. The global logarithmic
 bound supplies the elementary growth estimate used in Hadamard factorization.
+Both bounds are also recorded in exponential form, for estimating finite products of
+elementary factors.
 
 The quadratic estimate uses Mathlib's `Complex.norm_exp_sub_one_sub_id_le` and
 `Complex.norm_exp_sub_one_le`. The simple-zero statement uses
@@ -127,5 +129,24 @@ theorem log_norm_weierstrassFactorOne_le (z : ℂ) :
   have hl := Real.log_le_sub_one_of_pos h
   have hr := re_le_norm z
   linarith
+
+/-- The global logarithmic bound in exponential form, which also covers the zero at one. -/
+theorem norm_weierstrassFactorOne_le_exp (z : ℂ) :
+    ‖weierstrassFactorOne z‖ ≤ Real.exp (2 * ‖z‖) := by
+  rcases (norm_nonneg (weierstrassFactorOne z)).eq_or_lt with h | h
+  · rw [← h]
+    positivity
+  · rw [← Real.exp_log h]
+    exact Real.exp_le_exp.mpr (log_norm_weierstrassFactorOne_le z)
+
+/-- The quadratic deviation bound in exponential form, on the closed unit disk. -/
+theorem norm_weierstrassFactorOne_le_exp_sq {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    ‖weierstrassFactorOne z‖ ≤ Real.exp (3 * ‖z‖ ^ 2) := by
+  calc
+    _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactorOne z - 1‖ := norm_le_norm_add_norm_sub' _ _
+    _ ≤ 3 * ‖z‖ ^ 2 + 1 := by
+      rw [norm_one, add_comm]
+      exact add_le_add_left (norm_weierstrassFactorOne_sub_one_le hz) 1
+    _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.add_one_le_exp _
 
 end Complex
