@@ -16,6 +16,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 A basis determines a real top-degree coefficient and normalized Haar measure. Their integral
 changes by the orientation sign of the basis change. Relative orientation signs make it
 independent of an arbitrary basis, including negative orientations in dimension zero.
+The Lebesgue integral of the absolute value of a coefficient is independent of the basis outright:
+the absolute determinant of the basis change cancels the Haar rescaling. This is the coordinate
+expression of the measure of a top form.
 -/
 
 public section
@@ -67,5 +70,20 @@ theorem integrable_apply_basis_iff (b b' : Basis ι ℝ E)
     (ENNReal.ofReal_ne_zero_iff.mpr (abs_pos.mpr (inv_ne_zero hd))) ENNReal.ofReal_ne_top]
   simp_rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b')]
   exact integrable_const_mul_iff (b.isUnit_det b') _
+
+omit [DecidableEq ι] in
+/-- The Lebesgue integral of the absolute value of a top-form coefficient against the Haar measure
+normalized by the same basis does not depend on the basis. -/
+theorem setLIntegral_ofReal_abs_apply_basis_change (b b' : Basis ι ℝ E)
+    (ω : E → E [⋀^ι]→L[ℝ] ℝ) (s : Set E) :
+    ∫⁻ x in s, ENNReal.ofReal |ω x b'| ∂b'.addHaar =
+      ∫⁻ x in s, ENNReal.ofReal |ω x b| ∂b.addHaar := by
+  classical
+  rw [addHaar_eq_smul_of_basis b b', Measure.restrict_smul, lintegral_smul_measure, smul_eq_mul,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  congr 1
+  funext x
+  rw [ContinuousAlternatingMap.apply_eq_det_mul (ω x) b b', ← ENNReal.ofReal_mul (abs_nonneg _),
+    ← abs_mul, ← mul_assoc, inv_mul_cancel₀ (b.isUnit_det b').ne_zero, one_mul]
 
 end Module.Basis

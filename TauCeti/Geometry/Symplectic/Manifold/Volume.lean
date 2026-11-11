@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
@@ -33,6 +34,10 @@ linear symplectic orientation: its orientation of each tangent space is the symp
 (`TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`), so every Darboux basis
 of a tangent space is positively oriented. Closedness of `σ` is not used.
 
+The volume form of a product form `σ ⊕ τ` on `M × N` factors on product frames:
+`(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` takes the value `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family
+`(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` (`TauCeti.SmoothTwoForm.volumeForm_prod_apply`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.volumeForm σ n`: the form `σⁿ / n!`.
@@ -52,6 +57,8 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
   on it.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`: the symplectic
   orientation of each tangent space is the linear symplectic orientation of the value of the form.
+* `TauCeti.SmoothTwoForm.volumeForm_prod_apply`: the volume form of a product form on product
+  frames.
 
 ## References
 
@@ -175,6 +182,41 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+/-- **The volume form of a product form factors on product frames.** For two-forms `σ` on a
+manifold of dimension `2 n` and `τ` on a manifold of dimension `2 m`, the volume form
+`(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` of the product form takes the value `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the
+family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` of tangent vectors at `(x, y)`. -/
+theorem volumeForm_prod_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold J ∞ N] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {m : ℕ}
+    (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ E' = 2 * m) (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) (x : M) (y : N) (v : Fin (2 * n) → TangentSpace I x)
+    (w : Fin (2 * m) → TangentSpace J y) :
+    ((σ.prod τ).volumeForm (n + m)).1 (x, y)
+        (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × E')) (fun j ↦ (0, w j))
+          (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
+      (σ.volumeForm n).1 x v * (τ.volumeForm m).1 y w := by
+  have hσ : (σ.prod τ).1 (x, y) = (σ.1 x).compContinuousLinearMap (.fst ℝ E E') +
+      (τ.1 y).compContinuousLinearMap (.snd ℝ E E') := by
+    rw [prod_def]
+    ext u
+    simp only [SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+      SmoothForm.mpullback_apply, mfderiv_fst, mfderiv_snd]
+    -- The tangent spaces of `M` and `N` are the model spaces `E` and `E'`.
+    rfl
+  simp only [volumeForm_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul, hσ]
+  -- The tangent spaces carry their instances through `TangentSpace`, so the linear identity is
+  -- applied up to unfolding rather than by rewriting.
+  refine (congrArg (_ * ·)
+    (ContinuousAlternatingMap.wedgePow_prod_apply hn hm (σ.1 x) (τ.1 y) v w)).trans ?_
+  rw [← Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right n m), Nat.add_sub_cancel_left]
+  have hc : ((n + m).choose n : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (Nat.choose_pos (Nat.le_add_right n m)).ne'
+  push_cast
+  field_simp
+  -- The two sides differ only in the instances of the tangent spaces.
+  rfl
 
 end SmoothTwoForm
 

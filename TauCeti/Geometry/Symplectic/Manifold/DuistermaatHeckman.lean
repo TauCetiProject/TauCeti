@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
+public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure.Prod
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Support
 
@@ -37,6 +38,10 @@ This file develops the basic properties of the measure that need no reduction th
   changes of moment map: shifting `μ` by a constant translates the measure
   (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_add_const`), and restricting the action to a
   subtorus `𝔰 ⊆ 𝔱` replaces `μ` by its composition with the restriction `𝔱* → 𝔰*`.
+* **Products.** The measure of the product form `σ ⊕ τ` on `M × N` and the map `μ × ν` is the
+  product of the measures of `(σ, μ)` and `(τ, ν)`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_prod`). For Hamiltonian actions of tori `T₁`
+  on `M` and `T₂` on `N`, `μ × ν` is the moment map of the action of `T₁ × T₂` on `M × N`.
 * **Support.** For a nondegenerate form and a continuous map, the support of the measure is the
   closure of the image of `μ` (`TauCeti.SmoothTwoForm.support_duistermaatHeckmanMeasure`).
 * **Invariance.** A differentiable homeomorphism `Φ : M → N` with `Φ^* τ = σ`, intertwining the
@@ -141,6 +146,25 @@ theorem support_duistermaatHeckmanMeasure [TopologicalSpace F] [BorelSpace F]
     (σ.duistermaatHeckmanMeasure n μ).support = closure (range μ) := by
   have := hσ.isOpenPosMeasure_liouvilleMeasure (n := n)
   exact Measure.support_map_eq_closure_range _ Measure.support_eq_univ hμ
+
+section Prod
+
+variable {E' H' N G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [SecondCountableTopology N] {m : ℕ}
+  [Fact (finrank ℝ E' = 2 * m)] [Fact (finrank ℝ (E × E') = 2 * (n + m))] [MeasurableSpace G]
+
+/-- **The Duistermaat–Heckman measure of a product.** For the product form `σ ⊕ τ` on `M × N`
+and measurable maps `μ` on `M` and `ν` on `N`, the Duistermaat–Heckman measure of `μ × ν` is the
+product of the Duistermaat–Heckman measures of `μ` and of `ν`. -/
+theorem duistermaatHeckmanMeasure_prod [SecondCountableTopology M] (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) {ν : N → G} (hμ : Measurable μ) (hν : Measurable ν) :
+    (σ.prod τ).duistermaatHeckmanMeasure (n + m) (Prod.map μ ν) =
+      (σ.duistermaatHeckmanMeasure n μ).prod (τ.duistermaatHeckmanMeasure m ν) := by
+  rw [duistermaatHeckmanMeasure_def, duistermaatHeckmanMeasure_def,
+    duistermaatHeckmanMeasure_def, liouvilleMeasure_prod, Measure.map_prod_map _ _ hμ hν]
+
+end Prod
 
 end SmoothTwoForm
 
