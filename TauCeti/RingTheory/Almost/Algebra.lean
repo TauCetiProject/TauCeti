@@ -176,6 +176,7 @@ theorem elements_map_apply {A B : Algebra S} (f : A ⟶ B) (x : (elements S).obj
 
 /-- The unit of the algebra `A_*` is the almost element `V^a ≅ 𝟙_ → A` given by the unit of
 `A`. -/
+@[simp]
 theorem elements_one (A : Algebra S) :
     ((1 : (elements S).obj A) : (Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) =
       Functor.OplaxMonoidal.η (Module.toAlmost S) ≫ η[A.X] :=
@@ -183,6 +184,7 @@ theorem elements_one (A : Algebra S) :
 
 /-- The product of two almost elements `x, y : V^a → A` is the composite
 `V^a ≅ V^a ⊗ V^a → A ⊗ A → A` of `x ⊗ y` with the multiplication of `A`. -/
+@[simp]
 theorem elements_mul (A : Algebra S) (x y : (elements S).obj A) :
     ((x * y : (elements S).obj A) : (Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) =
       (λ_ ((Module.toAlmost S).obj (𝟙_ (ModuleCat.{u} V)))).inv ≫
