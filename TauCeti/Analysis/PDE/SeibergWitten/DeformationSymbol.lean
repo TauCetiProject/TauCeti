@@ -19,8 +19,9 @@ from covectors to `ℝ ⊕ Λ⁺` (`TauCeti.SeibergWitten.deformationSymbol`); h
 identified with a vector, and a two-form with a two-vector, through the metric. This file
 proves the pointwise algebra of `σ_ξ` used to orient the determinant line of `δ₀`.
 
-**Ellipticity.** `|⟪ξ, a⟫|² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`, so for `ξ ≠ 0` the symbol is `‖ξ‖`
-times an isometry, and in particular injective. This uses only that `(ξ ∧ a) ∧ (ξ ∧ a) = 0`.
+**Ellipticity.** `⟪ξ, a⟫ ⟪ξ, b⟫ + ⟪√2 (ξ ∧ a)⁺, √2 (ξ ∧ b)⁺⟫ = ‖ξ‖² ⟪a, b⟫`, so for `ξ ≠ 0` the
+symbol is `‖ξ‖` times an isometry onto its image in `ℝ ⊕ Λ⁺` with the Euclidean inner product, and
+in particular injective. This uses only that `(ξ ∧ a) ∧ (ξ ∧ b)` repeats `ξ`.
 
 **Complex linearity.** Let `J` be an orthogonal almost complex structure inducing the
 orientation, with Kähler two-vector `ω` (`TauCeti.AlmostComplexStructure.kahlerForm`) and
@@ -31,7 +32,16 @@ two-forms. As a formula on `ℝ ⊕ ⋀²`, `J′(f, η) = (-⟪ω_u, η⟫, f �
 (`TauCeti.SeibergWitten.deformationComplexStructure`). Then `J′` preserves `ℝ ⊕ Λ⁺`, squares to
 `-1` there, and `σ_ξ (J a) = J′ (σ_ξ a)` for every `ξ`. Consequently the complex-linear part
 `δ_ω = (δ₀ - J′ δ₀ J) / 2` of `δ₀` has the same principal symbol as `δ₀`: their difference is of
-order zero. At a unit `ξ` the symbol sends `ξ ↦ (1, 0)` and `J ξ ↦ (0, ω_u)`.
+order zero.
+
+**The frame calculation.** Let `e` be a positively oriented orthonormal basis with `J e₀ = e₁` and
+`J e₂ = e₃`, and put `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`.
+At `ξ = e₀` the symbol sends the frame `(e₀, e₁, e₂, e₃)` to `((1, 0), (0, ω_u), (0, ρ₁), (0, ρ₂))`,
+an orthonormal frame of `ℝ ⊕ Λ⁺`, and `J′ (1, 0) = (0, ω_u)`, `J′ (0, ρ₁) = (0, ρ₂)`. So the
+symbol carries the complex frame `(e₀, J e₀, e₂, J e₂)` of `(V, J)` to the complex frame
+`(1, J′ 1, ρ₁, J′ ρ₁)` of `(ℝ ⊕ Λ⁺, J′)`. Every unit covector is `e₀` for such a frame
+(`TauCeti.AlmostComplexStructure.exists_orthonormalBasis_apply_zero_eq`), so by unitary covariance
+the calculation holds at every unit `ξ`.
 
 The statements involving `J` take a positively oriented orthonormal basis `e` with `J e₀ = e₁`
 and `J e₂ = e₃` as a witness that the orientation is the complex orientation of `J`.
@@ -46,6 +56,8 @@ and `J e₂ = e₃` as a witness that the orientation is the complex orientation
 ## Main results
 
 * `TauCeti.SeibergWitten.hodgeStar_deformationSymbol_snd`: `σ_ξ` takes values in `ℝ ⊕ Λ⁺`.
+* `TauCeti.SeibergWitten.deformationSymbol_fst_mul_add_inner_snd`: the polarized ellipticity
+  identity `⟪ξ, a⟫ ⟪ξ, b⟫ + ⟪√2 (ξ ∧ a)⁺, √2 (ξ ∧ b)⁺⟫ = ‖ξ‖² ⟪a, b⟫`.
 * `TauCeti.SeibergWitten.deformationSymbol_fst_sq_add_norm_snd_sq`: the ellipticity identity
   `⟪ξ, a⟫² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`, and `TauCeti.SeibergWitten.deformationSymbol_injective`.
 * `TauCeti.SeibergWitten.hodgeStar_deformationComplexStructure_snd` and
@@ -54,6 +66,12 @@ and `J e₂ = e₃` as a witness that the orientation is the complex orientation
 * `TauCeti.SeibergWitten.deformationSymbol_comp_toLinearMap`: `σ_ξ ∘ J = J′ ∘ σ_ξ`.
 * `TauCeti.SeibergWitten.two_inv_smul_sub_deformationComplexStructure_deformationSymbol`: the
   complex-linear part of the symbol is the symbol, `(σ_ξ a - J′ (σ_ξ (J a))) / 2 = σ_ξ a`.
+* `TauCeti.SeibergWitten.deformationSymbol_toLinearMap_self`,
+  `TauCeti.SeibergWitten.deformationSymbol_apply_two`,
+  `TauCeti.SeibergWitten.deformationSymbol_apply_three`: the frame calculation
+  `J e₀ ↦ (0, ω_u)`, `e₂ ↦ (0, ρ₁)`, `e₃ ↦ (0, ρ₂)` at `ξ = e₀`.
+* `TauCeti.SeibergWitten.deformationComplexStructure_one_zero`,
+  `TauCeti.SeibergWitten.deformationComplexStructure_zero_smul_sub`: `J′ 1 = ω_u` and `J′ ρ₁ = ρ₂`.
 
 ## References
 
@@ -106,23 +124,33 @@ theorem hodgeStar_deformationSymbol_snd (ξ a : V) :
   rw [deformationSymbol_apply_snd, map_smul, map_add,
     o.hodgeStar_hodgeStar_of_even even_two hkl, add_comm]
 
+/-- **Polarized ellipticity of `δ₀`**: `⟪ξ, a⟫ ⟪ξ, b⟫ + ⟪√2 (ξ ∧ a)⁺, √2 (ξ ∧ b)⁺⟫ = ‖ξ‖² ⟪a, b⟫`.
+For a unit `ξ` the symbol is therefore an isometry into `ℝ ⊕ Λ⁺` with its Euclidean inner
+product, and it carries orthonormal frames to orthonormal frames. -/
+theorem deformationSymbol_fst_mul_add_inner_snd (ξ a b : V) :
+    (deformationSymbol o hkl ξ a).1 * (deformationSymbol o hkl ξ b).1 +
+      ⟪(deformationSymbol o hkl ξ a).2, (deformationSymbol o hkl ξ b).2⟫ =
+      ‖ξ‖ ^ 2 * ⟪a, b⟫ := by
+  -- `⟪x, ⋆y⟫ = vol(ξ, b, ξ, a) = 0` and `⟪⋆x, y⟫ = vol(ξ, a, ξ, b) = 0` for `x = ξ ∧ a` and
+  -- `y = ξ ∧ b`, since both volumes repeat `ξ`.
+  have hxy : ⟪ιMulti ℝ 2 ![ξ, a], o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, b])⟫ = 0 := by
+    rw [real_inner_comm, o.inner_hodgeStar_ιMulti_two hkl]
+    exact o.volumeForm.map_eq_zero_of_eq ![ξ, b, ξ, a] (i := 0) (j := 2) rfl (by decide)
+  have hyx : ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a]), ιMulti ℝ 2 ![ξ, b]⟫ = 0 := by
+    rw [o.inner_hodgeStar_ιMulti_two hkl]
+    exact o.volumeForm.map_eq_zero_of_eq ![ξ, a, ξ, b] (i := 0) (j := 2) rfl (by decide)
+  simp only [deformationSymbol_apply_fst, deformationSymbol_apply_snd, real_inner_smul_left,
+    real_inner_smul_right, inner_add_left, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar,
+    inner_ιMulti_two, real_inner_comm ξ a, real_inner_self_eq_norm_sq]
+  linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪ξ, a⟫) / 2 * Real.mul_self_sqrt zero_le_two
+
 /-- **Ellipticity of `δ₀`**: `⟪ξ, a⟫² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`. Thus `σ_ξ` is `‖ξ‖` times an
 isometry into `ℝ ⊕ Λ⁺` with its Euclidean norm. -/
 theorem deformationSymbol_fst_sq_add_norm_snd_sq (ξ a : V) :
     (deformationSymbol o hkl ξ a).1 ^ 2 + ‖(deformationSymbol o hkl ξ a).2‖ ^ 2 =
       ‖ξ‖ ^ 2 * ‖a‖ ^ 2 := by
-  -- `⟪x, ⋆x⟫ = vol(ξ, a, ξ, a) = 0` for `x = ξ ∧ a`, since `x ∧ x = 0`.
-  have hx : ⟪ιMulti ℝ 2 ![ξ, a], o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])⟫ = 0 := by
-    rw [real_inner_comm, o.inner_hodgeStar_ιMulti_two hkl]
-    exact o.volumeForm.map_eq_zero_of_eq ![ξ, a, ξ, a] (i := 0) (j := 2) rfl (by decide)
-  have h2 : (√2 / 2) ^ 2 = 2⁻¹ := by
-    rw [div_pow, Real.sq_sqrt zero_le_two]
-    norm_num
-  rw [deformationSymbol_apply_fst, deformationSymbol_apply_snd, norm_smul, mul_pow,
-    Real.norm_of_nonneg (by positivity), h2, norm_add_sq_real, o.norm_hodgeStar, hx,
-    ← real_inner_self_eq_norm_sq (ιMulti ℝ 2 ![ξ, a]), inner_ιMulti_two,
-    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, real_inner_comm a ξ]
-  ring
+  rw [sq, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq a,
+    deformationSymbol_fst_mul_add_inner_snd]
 
 /-- **The symbol of `δ₀` is injective at every nonzero covector**: `δ₀` is elliptic. -/
 theorem deformationSymbol_injective {ξ : V} (hξ : ξ ≠ 0) :
@@ -182,6 +210,38 @@ theorem deformationComplexStructure_apply_snd (J : AlmostComplexStructure V)
     (deformationComplexStructure J p).2 =
       (√2 / 2 * p.1) • J.kahlerForm + (2⁻¹ : ℝ) • exteriorPower.lieMap 2 J.toLinearMap p.2 :=
   (rfl)
+
+/-- `J′ (1, 0) = (0, ω_u)`, with `ω_u = (√2 / 2) ω`. -/
+theorem deformationComplexStructure_one_zero (J : AlmostComplexStructure V) :
+    deformationComplexStructure J (1, 0) = (0, (√2 / 2) • J.kahlerForm) := by
+  refine Prod.ext ?_ ?_ <;> simp
+
+/-! ### The symbol in a positively oriented orthonormal coframe -/
+
+section Coframe
+
+variable {o} {e : OrthonormalBasis (Fin 4) ℝ V} (he : e.toBasis.orientation = o)
+include he
+
+/-- At `ξ = e₀` the symbol sends `e₂` to `(0, ρ₁)`, `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)`, since
+`⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` in a positively oriented orthonormal basis. -/
+theorem deformationSymbol_apply_two :
+    deformationSymbol o hkl (e 0) (e 2) =
+      (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
+  refine Prod.ext ?_ ?_
+  · simp
+  · rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_zero_two hkl he, sub_eq_add_neg]
+
+/-- At `ξ = e₀` the symbol sends `e₃` to `(0, ρ₂)`, `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, since
+`⋆(e₀ ∧ e₃) = e₁ ∧ e₂` in a positively oriented orthonormal basis. -/
+theorem deformationSymbol_apply_three :
+    deformationSymbol o hkl (e 0) (e 3) =
+      (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
+  refine Prod.ext ?_ ?_
+  · simp
+  · rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_zero_three hkl he]
+
+end Coframe
 
 /-! ### Complex linearity for the complex orientation -/
 
@@ -260,6 +320,34 @@ theorem deformationSymbol_toLinearMap_self (ξ : V) :
   rw [← LinearMap.comp_apply, deformationSymbol_comp_toLinearMap hkl he h₀ h₂,
     LinearMap.comp_apply, deformationSymbol_self]
   refine Prod.ext ?_ ?_ <;> simp
+
+omit he in
+/-- **`J′ ρ₁ = ρ₂`**: `J′ (0, ρ₁) = (0, ρ₂)` for `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and
+`ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, the images of `e₂` and `e₃ = J e₂` under the symbol at `e₀`.
+With `J′ (1, 0) = (0, ω_u)` (`deformationComplexStructure_one_zero`), the symbol at `e₀` thus sends
+the frame `(e₀, J e₀, e₂, J e₂)` to `(1, J′ 1, ρ₁, J′ ρ₁) = (1, ω_u, ρ₁, ρ₂)`. -/
+theorem deformationComplexStructure_zero_smul_sub :
+    deformationComplexStructure J
+        (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) =
+      (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  refine Prod.ext ?_ ?_
+  · -- `⟪ω, e₀ ∧ e₂⟫ = ⟪e₁, e₂⟫ = 0` and `⟪ω, e₁ ∧ e₃⟫ = -⟪e₀, e₃⟫ = 0`.
+    simp only [deformationComplexStructure_apply_fst, real_inner_smul_right, inner_sub_right,
+      AlmostComplexStructure.inner_kahlerForm_ιMulti hJ, h₀, h₁, inner_neg_left,
+      e.orthonormal.inner_eq_zero (by decide : (1 : Fin 4) ≠ 2),
+      e.orthonormal.inner_eq_zero (by decide : (0 : Fin 4) ≠ 3)]
+    simp
+  · -- `D_J (e₀ ∧ e₂ - e₁ ∧ e₃) = 2 (e₀ ∧ e₃ + e₁ ∧ e₂)`.
+    have hneg₀ (u w : V) : ιMulti ℝ 2 ![-u, w] = -ιMulti ℝ 2 ![u, w] := by
+      rw [← neg_one_smul ℝ u, ιMulti_two_smul_left, neg_one_smul]
+    have hneg₁ (u w : V) : ιMulti ℝ 2 ![u, -w] = -ιMulti ℝ 2 ![u, w] := by
+      rw [← neg_one_smul ℝ w, ιMulti_two_smul_right, neg_one_smul]
+    simp only [deformationComplexStructure_apply_snd, map_smul, map_sub, lieMap_two_apply_ιMulti]
+    rw [h₀, h₁, h₂, h₃, hneg₀, hneg₁]
+    module
 
 /-- **The complex-linear part of `δ₀` has the same principal symbol as `δ₀`**: the symbol of
 `δ_ω = (δ₀ - J′ δ₀ J) / 2` at `ξ`, namely `(σ_ξ - J′ σ_ξ J) / 2`, equals `σ_ξ`. Hence `δ₀` and
