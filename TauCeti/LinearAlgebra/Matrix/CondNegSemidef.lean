@@ -149,12 +149,6 @@ theorem CondNegSemidef.submatrix {m : Type*} {M : Matrix n n R} (hM : M.CondNegS
   condNegSemidef_iff_finite_sum.mpr ⟨fun a b ↦ hM.isHermitian.apply (f b) (f a),
     fun {_ : Type} _ v x hx ↦ (condNegSemidef_iff_finite_sum.mp hM).2 (f ∘ v) x hx⟩
 
-end Ring
-
-section CommRing
-
-variable [CommRing R] [PartialOrder R] [StarRing R]
-
 omit [PartialOrder R] in
 /-- The quadratic form of the centring of `ψ` at `a₀` is the negative of the quadratic form of `ψ`
 on the family extended by the base point `a₀` with coefficient `-∑ᵢ xᵢ`. -/
@@ -177,8 +171,7 @@ private theorem sum_centered_eq_neg {ι : Type*} [Fintype ι] (ψ : Matrix n n R
     rw [Finset.sum_mul, Finset.sum_mul_sum]
   have hD : ∑ i, star (x i) * ψ (v i) a₀ * (-∑ k, x k) =
       -((∑ i, star (x i) * ψ (v i) a₀) * ∑ j, x j) := by
-    rw [← Finset.sum_mul]
-    ring
+    rw [← Finset.sum_mul, mul_neg]
   have hE : ∑ j, star (-∑ k, x k) * ψ a₀ (v j) * x j =
       -((∑ i, star (x i)) * ∑ j, ψ a₀ (v j) * x j) := by
     simp only [star_neg, star_sum, neg_mul, Finset.sum_neg_distrib, mul_assoc, ← Finset.mul_sum]
@@ -186,7 +179,7 @@ private theorem sum_centered_eq_neg {ι : Type*} [Fintype ι] (ψ : Matrix n n R
   rw [hD, hE]
   simp only [mul_add, add_mul, mul_sub, sub_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib,
     hA, hB, hC, star_neg, star_sum]
-  ring
+  noncomm_ring
 
 /-- **Centring criterion.** For a Hermitian matrix `ψ` and a base point `a₀`, `ψ` is conditionally
 negative semidefinite exactly when the centred kernel
@@ -208,6 +201,6 @@ theorem IsHermitian.condNegSemidef_iff_posSemidef_centered [IsOrderedAddMonoid R
     simp only [of_apply, sum_centered_eq_neg] at h'
     simpa [Fintype.sum_option, hx] using neg_nonneg.mp h'
 
-end CommRing
+end Ring
 
 end Matrix
