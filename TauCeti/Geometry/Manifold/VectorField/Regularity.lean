@@ -222,10 +222,16 @@ theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_snd_apply
       (mfderiv (J.prod I) I'' f q).comp (mfderiv I (J.prod I) (fun y : M ↦ (q.1, y)) q.2) :=
     mfderiv_comp_of_eq hfq (mdifferentiableAt_const.prodMk mdifferentiableAt_id) rfl
   rw [mfderiv_prod_right] at hcurry
-  change (⟨f q, mfderiv I I'' (fun y ↦ f (q.1, y)) q.2 (A q)⟩ : TangentBundle I'' M') =
-    ⟨f q, mfderivWithin (J.prod I) I'' f W q (0, A q)⟩
-  rw [mfderivWithin_of_isOpen hW hq, hcurry]
-  rfl
+  -- `(equivTangentBundleProd J N I M).symm` is defined componentwise: it pairs the base points and
+  -- the tangent vectors, so the lifted vector is `(0, A q)` at `q`. The `@[simps]` projections
+  -- cannot rewrite the base point alone, since the tangent vector's type depends on it.
+  have hpt : (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩) = ⟨q, (0, A q)⟩ := rfl
+  -- Evaluating `hcurry` at `A q`: the second-factor inclusion sends `A q` to `(0, A q)`.
+  have happly : mfderiv I I'' (fun y ↦ f (q.1, y)) q.2 (A q) =
+      mfderiv (J.prod I) I'' f q (0, A q) :=
+    congrArg (· (A q)) hcurry
+  rw [Function.comp_apply, hpt]
+  simp only [tangentMapWithin, mfderivWithin_of_isOpen hW hq, happly]
 
 end Partial
 
