@@ -210,6 +210,17 @@ theorem inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero
     fourierMultiplierCLM_fourierMultiplierCLM_apply, h, fourierMultiplierCLM_zero, zero_apply,
     inner_zero_right]
 
+/-- The pairing of `g` with the multiplier `T_m f`, computed on the Fourier side:
+`⟪g, T_m f⟫ = ∫ m ξ ⟪𝓕 g ξ, 𝓕 f ξ⟫ dξ`. -/
+theorem inner_fourierMultiplierCLM_apply (g : Lp F 2 (volume : Measure E)) :
+    inner ℂ g (fourierMultiplierCLM F m f) =
+      ∫ ξ, m ξ * inner ℂ ((𝓕 g : Lp F 2 (volume : Measure E)) ξ)
+        ((𝓕 f : Lp F 2 (volume : Measure E)) ξ) := by
+  rw [← inner_fourier_eq, fourier_fourierMultiplierCLM, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_lpSMul (r := 2) m (𝓕 f)] with ξ h
+  rw [h, Pi.smul_apply', inner_smul_right]
+
 /-! ### Comparison with multipliers on Schwartz functions and tempered distributions -/
 
 variable {g : E → ℂ}
