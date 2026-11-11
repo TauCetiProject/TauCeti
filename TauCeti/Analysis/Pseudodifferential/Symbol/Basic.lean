@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The symbol classes `S^m_{1,0}`
@@ -28,7 +31,11 @@ space, and develop the first operations of the symbol calculus:
 
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
-* `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the
+  order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it;
+* `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
+  frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
+  `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -39,15 +46,17 @@ space, and develop the first operations of the symbol calculus:
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
   `∂_x^{α₁} ∂_ξ^{β₁} b ∘ ∂_x^{α₂} ∂_ξ^{β₂} a`, each of size
-  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`. It is bilinear and associative, with
-  the constant symbol `id` as identity, and spatial and frequency derivatives obey the Leibniz
-  rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
+  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`; this estimate holds for every continuous
+  bilinear map (`ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear`). It is bilinear and
+  associative, with the constant symbol `id` as identity, and spatial and frequency derivatives
+  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
 (`TauCeti.Symbol.IsSmoothing.comp_right`, `TauCeti.Symbol.IsSmoothing.comp_left`). A smooth
 coefficient vanishing at all large frequencies is smoothing
-(`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`), while in positive dimension a nonzero
+(`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`,
+`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
@@ -260,6 +269,12 @@ theorem exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace 
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
   exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
+
+/-- A growth bound for the frequency slice `ξ ↦ a(x, ξ)` of a symbol at a single position `x`. -/
+theorem exists_bound_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
+    ∃ C, 0 ≤ C ∧ ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+  exact ⟨C, hC0, hC x rfl⟩
 
 section Module
 
@@ -479,6 +494,24 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
     (frequencyDeriv j a).coefficient (x, ξ) =
       coordinateDeriv [j] (fun η => a.coefficient (x, η)) ξ := (rfl)
 
+/-- Along the `j`-th coordinate direction, the frequency slice `ξ ↦ a(x, ξ)` of a symbol has line
+derivative `∂_{ξ_j} a (x, ξ)`. -/
+theorem hasLineDerivAt_coefficient_single (a : Symbol n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    HasLineDerivAt ℝ (fun η => a.coefficient (x, η)) ((frequencyDeriv j a).coefficient (x, ξ)) ξ
+      (EuclideanSpace.single j 1) := by
+  rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+  exact ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable
+    (by simp) ξ).hasFDerivAt.hasLineDerivAt _
+
+/-- The frequency derivative of the slice `ξ ↦ a(x, ξ)` of a symbol in the `j`-th coordinate
+direction is the coefficient of its frequency derivative `∂_{ξ_j} a`. -/
+theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    fderiv ℝ (fun η ↦ a.coefficient (x, η)) ξ (EuclideanSpace.single j 1) =
+      (frequencyDeriv j a).coefficient (x, ξ) := by
+  rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
@@ -528,6 +561,32 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
     funext fun p => coefficient_spatialDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
 
+/-- Two frequency derivatives of a symbol commute. -/
+theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_frequencyDeriv]
+  rw [← coordinateDeriv_append, ← coordinateDeriv_append]
+  exact coordinateDeriv_pair_comm
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j l ξ
+
+/-- Two spatial derivatives of a symbol commute. -/
+theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (spatialDeriv l a) = spatialDeriv l (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_spatialDeriv]
+  rw [← coordinateDeriv_append, ← coordinateDeriv_append]
+  exact coordinateDeriv_pair_comm ((a.contDiff_coefficient_slice ξ).of_le (by simp)) j l x
+
+/-- A spatial and a frequency derivative of a symbol commute. -/
+theorem spatialDeriv_frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (frequencyDeriv l a) = frequencyDeriv l (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  exact (coordinateDeriv_coordinateDeriv_comm a.contDiff_coefficient [j] [l] x ξ).symm
+
 /-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
 its spatial derivative `∂_{x_j} a`. -/
 theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -570,6 +629,70 @@ theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
   have h := hA (List.ofFn w) x hx ξ
   rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
 
+/-- **Increments of a symbol in the frequency.** For a symbol `a` of order `m`,
+`‖a(x, ξ + v) - a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - 1) ⟨v⟩ ^ (|m - 1| + 1)` uniformly for positions in a
+compact set: by the mean value theorem and Peetre's inequality, the frequency derivative of `a`,
+of order `m - 1`, is at most `C ⟨ξ⟩ ^ (m - 1) ⟨v⟩ ^ |m - 1|` on the segment from `ξ` to
+`ξ + v`. -/
+theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ v, ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) * (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) := by
+  obtain ⟨G, hG0, hG⟩ := a.exists_norm_iteratedFDeriv_coordinateDeriv_le hK [] 1
+  refine ⟨G * 2 ^ (|m - 1| / 2), by positivity, fun x hx ξ v ↦ ?_⟩
+  set B := G * 2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+    (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) with hB
+  have hf : ContDiff ℝ ∞ fun ζ ↦ a.coefficient (x, ζ) :=
+    a.contDiff_coefficient.comp (contDiff_prodMk_right x)
+  have hbound : ∀ ζ ∈ segment ℝ ξ (ξ + v),
+      ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) ζ‖ ≤ B := by
+    intro ζ hζ
+    rw [segment_eq_image', add_sub_cancel_left] at hζ
+    obtain ⟨t, ht, rfl⟩ := hζ
+    have h := hG x hx (ξ + t • v)
+    simp only [coordinateDeriv_nil, norm_iteratedFDeriv_one, Nat.cast_one] at h
+    have htv : ‖t • v‖ ≤ ‖v‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg v) ht.2
+    calc ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) (ξ + t • v)‖
+        ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖t • v‖ ^ 2) ^ (|m - 1| / 2)) :=
+          h.trans (by gcongr; exact one_add_norm_add_sq_rpow_le_mul _ _ _)
+      _ ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2)) := by gcongr
+      _ = B := by ring
+  have hmv := (convex_segment ξ (ξ + v)).norm_image_sub_le_of_norm_fderiv_le
+    (fun ζ _ ↦ (hf.differentiable (by simp)).differentiableAt) hbound
+    (left_mem_segment ℝ ξ (ξ + v)) (right_mem_segment ℝ ξ (ξ + v))
+  rw [add_sub_cancel_left] at hmv
+  have hv : ‖v‖ ≤ (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
+    rw [← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le (by linarith)
+  have hB0 : 0 ≤ B := by positivity
+  have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
+      (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  calc ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤ B * ‖v‖ := hmv
+    _ ≤ B * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by gcongr
+    _ = _ := by rw [hsplit, hB]; ring
+
+/-- Frequency derivatives commute with the order inclusions. -/
+@[simp]
+theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
+/-- Spatial derivatives commute with the order inclusions. -/
+@[simp]
+theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
   intro α β
@@ -585,6 +708,53 @@ theorem IsUniform.spatialDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin 
   refine ⟨C, hC, fun x ξ => ?_⟩
   rw [mixedDeriv_spatialDeriv]
   exact hCa x ξ
+
+/-- The frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξ_j} a` of a symbol of order `m`, a symbol of order
+`m - 2`. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  ∑ j, inclusion (by linarith) ∘ₗ frequencyDeriv j ∘ₗ frequencyDeriv (m := m) j
+
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j]
+        (fun η => coordinateDeriv [j] (fun ζ => a.coefficient (x, ζ)) η) ξ := by
+  simp [frequencyLaplacian]
+
+/-- The frequency Laplacian is the sum of the second frequency derivatives `∂²_{ξ_j} a`. -/
+theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
+    frequencyLaplacian a =
+      ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
+  simp [frequencyLaplacian]
+
+/-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
+`m - 2N`. -/
+def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
+  | 0, _ => inclusion (by simp)
+  | N + 1, _ => inclusion (by push_cast; linarith) ∘ₗ frequencyLaplacianPow N ∘ₗ frequencyLaplacian
+
+@[simp]
+theorem coefficient_frequencyLaplacianPow_zero (a : Symbol n V W m) :
+    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by
+  simp [frequencyLaplacianPow]
+
+theorem coefficient_frequencyLaplacianPow_succ (N : ℕ) (a : Symbol n V W m) :
+    (frequencyLaplacianPow (N + 1) a).coefficient =
+      (frequencyLaplacianPow N (frequencyLaplacian a)).coefficient := by
+  simp [frequencyLaplacianPow]
+
+theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
+    (frequencyLaplacianPow (N + 1) a).coefficient =
+      (frequencyLaplacian (frequencyLaplacianPow N a)).coefficient := by
+  induction N generalizing m with
+  | zero =>
+    funext ⟨x, ξ⟩
+    simp only [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacian,
+      coefficient_frequencyLaplacianPow_zero]
+  | succ N ih =>
+    funext ⟨x, ξ⟩
+    rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
+      coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
 
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
@@ -722,47 +892,53 @@ section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
-/-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
-`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
-`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
-Leibniz rule. -/
-theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
-    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
-    (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
-    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
-    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
-    (α β : List (Fin n)) :
-    ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
-      (β.sublists'.revzip.map fun t =>
+/-- The **Leibniz estimate** for a continuous bilinear map `B`: bounds `C s t ⟨ξ⟩^(μ - |t|)` and
+`D s t ⟨ξ⟩^(ν - |t|)` on the mixed derivatives of `f` and `g` at `(x, ξ)` of total length at most
+`|α| + |β|` bound the mixed derivative `∂_x^α ∂_ξ^β` of `p ↦ B (f p) (g p)` by `‖B‖` times a
+constant times `⟨ξ⟩^(μ + ν - |β|)`. The constant sums `C s₁ t₁ * D s₂ t₂` over all splittings of
+`α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the Leibniz rule
+`ContinuousLinearMap.mixedDeriv_of_bilinear`. -/
+theorem _root_.ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear {F G H : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] (B : F →L[ℝ] G →L[ℝ] H)
+    {f : CoordinateSpace n × CoordinateSpace n → F} {g : CoordinateSpace n × CoordinateSpace n → G}
+    (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) {x ξ : CoordinateSpace n} {μ ν : ℝ}
+    {C D : List (Fin n) → List (Fin n) → ℝ} (α β : List (Fin n))
+    (hC : ∀ s t, s.length + t.length ≤ α.length + β.length →
+      ‖mixedDeriv s t f x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.length) / 2))
+    (hD : ∀ s t, s.length + t.length ≤ α.length + β.length →
+      ‖mixedDeriv s t g x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.length) / 2)) :
+    ‖mixedDeriv α β (fun p => B (f p) (g p)) x ξ‖ ≤
+      ‖B‖ * (β.sublists'.revzip.map fun t =>
         (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
-        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
-  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
-  have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).mixedDeriv_of_bilinear
-    (α := α) (β := β) (hb.of_le (by exact_mod_cast le_top)) (ha.of_le (by exact_mod_cast le_top))
-    x ξ
-  simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    ContinuousLinearMap.compL_apply] at h
-  rw [h, ← List.sum_map_mul_right]
+        (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) := by
+  have hlen : ∀ {l : List (Fin n)}, ∀ q ∈ l.sublists'.revzip,
+      q.1.length + q.2.length = l.length := fun q hq => by
+    rw [← List.length_append, (List.revzip_sublists' _ _ _ hq).length_eq]
+  rw [B.mixedDeriv_of_bilinear (hf.of_le (by exact_mod_cast le_top))
+    (hg.of_le (by exact_mod_cast le_top)), ← List.sum_map_mul_left, ← List.sum_map_mul_right]
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map]
   refine List.sum_le_sum fun t ht => ?_
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
-  rw [List.map_map, ← List.sum_map_mul_right]
-  refine List.sum_le_sum fun s _ => ?_
-  have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2) := by
-    rw [← Real.rpow_add (by positivity), ← (List.revzip_sublists' _ _ _ ht).length_eq,
-      List.length_append]
+  rw [List.map_map, ← List.sum_map_mul_left, ← List.sum_map_mul_right]
+  refine List.sum_le_sum fun s hs => ?_
+  have hs' := hlen s hs
+  have ht' := hlen t ht
+  have hC' := hC s.1 t.1 (by omega)
+  have hD' := hD s.2 t.2 (by omega)
+  have hw : (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2) := by
+    rw [← Real.rpow_add (by positivity), ← ht']
     push_cast
     ring_nf
-  calc ‖(mixedDeriv s.1 t.1 b x ξ).comp (mixedDeriv s.2 t.2 a x ξ)‖
-      ≤ ‖mixedDeriv s.1 t.1 b x ξ‖ * ‖mixedDeriv s.2 t.2 a x ξ‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2)) *
-        (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2)) :=
-        mul_le_mul (hC _ _) (hD _ _) (norm_nonneg _) ((norm_nonneg _).trans (hC _ _))
-    _ = C s.1 t.1 * D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  calc ‖B (mixedDeriv s.1 t.1 f x ξ) (mixedDeriv s.2 t.2 g x ξ)‖
+      ≤ ‖B‖ * ‖mixedDeriv s.1 t.1 f x ξ‖ * ‖mixedDeriv s.2 t.2 g x ξ‖ := B.le_opNorm₂ _ _
+    _ ≤ ‖B‖ * (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.1.length) / 2)) *
+        (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((ν - t.2.length) / 2)) :=
+        mul_le_mul (mul_le_mul_of_nonneg_left hC' B.opNorm_nonneg) hD' (norm_nonneg _)
+          (mul_nonneg B.opNorm_nonneg ((norm_nonneg _).trans hC'))
+    _ = ‖B‖ * (C s.1 t.1 * D s.2 t.2) * (1 + ‖ξ‖ ^ 2) ^ ((μ + ν - β.length) / 2) := by
         rw [hw]
         ring
 
@@ -776,6 +952,33 @@ private theorem comp_bound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
     exact List.sum_nonneg fun _ h' => by
       obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
       exact mul_nonneg (hC _ _) (hD _ _)
+
+/-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
+`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+Leibniz rule. This is `ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear` for composition, whose
+norm is at most `1`. -/
+theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
+    (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
+    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
+    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
+    (α β : List (Fin n)) :
+    ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
+      (β.sublists'.revzip.map fun t =>
+        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
+        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map of norm at most `1`.
+  let B := (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
+  have hB : ‖B‖ ≤ 1 := B.opNorm_le_bound₂ zero_le_one fun u v => by
+    simpa [B] using ContinuousLinearMap.opNorm_comp_le u v
+  have hS := comp_bound_nonneg
+    (fun s t => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC s t)) (by positivity))
+    (fun s t => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD s t)) (by positivity)) α β
+  refine (B.norm_mixedDeriv_le_of_bilinear hb ha α β (fun s t _ => hC s t)
+    (fun s t _ => hD s t)).trans ?_
+  exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_left hS hB) (by positivity)
 
 /-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols of orders `m'` and `m` is a
 symbol of order `m' + m`. For matrix-valued symbols this is the matrix product. -/
@@ -1080,6 +1283,11 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
+
+/-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
+theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
+    (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
+  fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
 
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
