@@ -24,10 +24,12 @@ that the constant in an interior estimate for `D` must depend on a bound for `S`
 
 ## Main results
 
+* `TauCeti.differentiatedCRCoefficient`: the coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`,
+  as a function of `S` and of the derivative `DJ` of `J` at a point.
 * `TauCeti.crOperator_differentiated_system`: for `ξ` that is `C²` near `z`, `J, S`
   differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
   at `z` the equation `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with
-  `J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`.
+  `J₂ = diag(J, J)` and `S₂ = TauCeti.differentiatedCRCoefficient (S z) (fderiv ℝ J z)`.
 * `TauCeti.crOperator_differentiated_system_diag_ne`: for a non-constant complex structure `J`
   on `ℝ²`, the plausible wrong coefficient `S₂ = diag(S, S)` gives a false equation.
 * `TauCeti.eLpNorm_partialS_expNegRe`: for `J = i`, `S = m` and `m ≥ 0`, the function
@@ -60,19 +62,31 @@ section Differentiated
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- The zeroth-order coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` of the differentiated
+Cauchy–Riemann system on `V × V`, built from the value `S` of the zeroth-order coefficient and the
+derivative `DJ` of the complex structure at a point, with `∂_s J = DJ 1` and `∂_t J = DJ I`. -/
+noncomputable def differentiatedCRCoefficient (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) :
+    V × V →L[ℝ] V × V :=
+  (S.coprod (DJ 1)).prod ((0 : V →L[ℝ] V).coprod (S + DJ I))
+
+/-- The two rows of `S₂`: `S₂ (a, b) = (S a + (∂_s J) b, S b + (∂_t J) b)`. -/
+@[simp]
+theorem differentiatedCRCoefficient_apply (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) (x : V × V) :
+    differentiatedCRCoefficient S DJ x = (S x.1 + DJ 1 x.2, S x.2 + DJ I x.2) := by
+  simp [differentiatedCRCoefficient]
+
 /-- **The differentiated system.** For a map `ξ` that is `C²` near `z`, coefficients `J, S`
 differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
 at `z` the equation `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with
-`J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`. The off-diagonal `∂_s J` and the
-`∂_t J` term come from differentiating the coefficient `J`. -/
+`J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` (`TauCeti.differentiatedCRCoefficient`).
+The off-diagonal `∂_s J` and the `∂_t J` term come from differentiating the coefficient `J`. -/
 theorem crOperator_differentiated_system {ξ η : ℂ → V} {Ξ : ℂ → V × V} {J S : ℂ → V →L[ℝ] V}
     {z : ℂ} (hξ : ContDiffAt ℝ 2 ξ z) (hJ : DifferentiableAt ℝ J z)
     (hS : DifferentiableAt ℝ S z)
     (hη : η = fun w => fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I) + S w (ξ w))
     (hΞ : Ξ = fun w => (fderiv ℝ ξ w 1, fderiv ℝ ξ w I)) :
     fderiv ℝ Ξ z 1 + (J z).prodMap (J z) (fderiv ℝ Ξ z I) +
-        (((S z).coprod (fderiv ℝ J z 1)).prod
-          ((0 : V →L[ℝ] V).coprod (S z + fderiv ℝ J z I))) (Ξ z) =
+        differentiatedCRCoefficient (S z) (fderiv ℝ J z) (Ξ z) =
       (fderiv ℝ η z 1 - fderiv ℝ S z 1 (ξ z), fderiv ℝ η z I - fderiv ℝ S z I (ξ z)) := by
   subst hη hΞ
   set D2 := fderiv ℝ (fderiv ℝ ξ) z

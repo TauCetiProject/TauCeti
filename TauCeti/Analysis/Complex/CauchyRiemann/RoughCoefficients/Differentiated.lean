@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Prod
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Examples
 public import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
@@ -37,19 +37,18 @@ mixed-exponent products of higher order and is not addressed here.
 
 ## Main declarations
 
-* `TauCeti.differentiatedCRCoefficient`: the coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`,
-  as a function of `S` and of the derivative `DJ` of `J` at a point.
 * `TauCeti.memWkpLoc_one_partials_of_memWkpLoc_two`: `Ξ = (∂_s ξ, ∂_t ξ) ∈ W^{1,q}_loc` for
   `ξ ∈ W^{2,q}_loc`.
 * `TauCeti.ae_differentiated_cauchyRiemann`: the differentiated system, almost everywhere.
-* `TauCeti.MemWkpLoc.prodMap_self` and `TauCeti.MemWkpLoc.differentiatedCRCoefficient`: the
-  regularity of `J₂` and `S₂`.
+* `TauCeti.MemWkpLoc.differentiatedCRCoefficient`: the regularity of `S₂`.
 * `TauCeti.memLpLoc_differentiatedCR_rightSide`: the right side is locally `L^q`.
 * `TauCeti.differentiatedCRCoefficient_ne_prodMap`: `S₂ ≠ diag(S, S)` as soon as `∂_s J ≠ 0`.
 * `TauCeti.ae_differentiated_cauchyRiemann_const`: for a constant coefficient `J` and `S = 0`,
   the system is the original operator applied to each component of `Ξ`.
 
-That `J₂² = -1` whenever `J² = -1` is `TauCeti.prodMap_mul_self_eq_neg_one`.
+The coefficient `S₂` is `TauCeti.differentiatedCRCoefficient`. The regularity of `J₂` is
+`TauCeti.MemWkpLoc.prodMap`, and `J₂² = -1` whenever `J² = -1` is
+`TauCeti.prodMap_mul_self_eq_neg_one`.
 
 ## References
 
@@ -65,19 +64,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The zeroth-order coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` of the differentiated
-Cauchy–Riemann system on `V × V`, built from the value `S` of the zeroth-order coefficient and the
-derivative `DJ` of the complex structure at a point, with `∂_s J = DJ 1` and `∂_t J = DJ I`. -/
-def differentiatedCRCoefficient (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) :
-    V × V →L[ℝ] V × V :=
-  (S.coprod (DJ 1)).prod ((0 : V →L[ℝ] V).coprod (S + DJ I))
-
-/-- The two rows of `S₂`: `S₂ (a, b) = (S a + (∂_s J) b, S b + (∂_t J) b)`. -/
-@[simp]
-theorem differentiatedCRCoefficient_apply (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) (x : V × V) :
-    differentiatedCRCoefficient S DJ x = (S x.1 + DJ 1 x.2, S x.2 + DJ I x.2) := by
-  simp [differentiatedCRCoefficient]
 
 /-- **Check: the coupling term cannot be dropped.** If `∂_s J ≠ 0` at a point, then the coefficient
 `S₂` differs from the plausible wrong `diag(S, S)`: its first row contains `∂_s J`. -/
@@ -95,20 +81,12 @@ theorem differentiatedCRCoefficient_zero_zero :
 
 variable [FiniteDimensional ℝ V] {Ω : Opens ℂ} {k : ℕ}
 
-/-- Every weak derivative of a member of `W^{k+1,p}_loc` is in `W^{k,p}_loc`, not only the one
-supplied by the definition: weak derivatives are unique almost everywhere. -/
-private theorem MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {p : ℝ≥0∞} {f : ℂ → F} {D : ℂ → ℂ →L[ℝ] F} (hf : MemWkpLoc p Ω (k + 1) f)
-    (hD : HasWeakFDerivOn volume Ω f D) : MemWkpLoc p Ω k D := by
-  obtain ⟨D', hD', hD'k⟩ := hf.exists_weakFDeriv_of_isOpen
-  exact hD'k.congr_ae (hD'.ae_eq hD)
-
 /-- **The partial derivatives of a `W^{2,q}_loc` map.** For a weak derivative `Dξ` of
 `ξ ∈ W^{2,q}_loc`, the pair `Ξ = (∂_s ξ, ∂_t ξ) = (Dξ(·) 1, Dξ(·) I)` is in `W^{1,q}_loc`. -/
 theorem memWkpLoc_one_partials_of_memWkpLoc_two {q : ℝ≥0∞} {ξ : ℂ → V} {Dξ : ℂ → ℂ →L[ℝ] V}
     (hξ : MemWkpLoc q Ω 2 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) :
     MemWkpLoc q Ω 1 (fun z => (Dξ z 1, Dξ z I)) := by
-  have h := MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn hξ hDξ
+  have h := hξ.memWkpLoc_of_hasWeakFDerivOn hDξ
   exact (h.clm_comp (ContinuousLinearMap.apply ℝ V 1)).prodMk
     (h.clm_comp (ContinuousLinearMap.apply ℝ V I))
 
@@ -132,7 +110,7 @@ theorem ae_differentiated_cauchyRiemann {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q
         differentiatedCRCoefficient (S z) (DJ z) (Dξ z 1, Dξ z I) =
       (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z)) := by
   have : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
-  have hDξ1 : MemWkpLoc q Ω 1 Dξ := MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn hξ hDξ
+  have hDξ1 : MemWkpLoc q Ω 1 Dξ := hξ.memWkpLoc_of_hasWeakFDerivOn hDξ
   obtain ⟨D2, hD2, hD2q⟩ := hDξ1.exists_weakFDeriv_of_isOpen
   rw [memWkpLoc_zero_iff] at hD2q
   -- The partial derivatives `z ↦ Dξ z v` have weak derivatives `w ↦ D2 z w v`.
@@ -160,21 +138,25 @@ theorem ae_differentiated_cauchyRiemann {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q
   have hη := hsum.ae_eq hDη
   have hΞ := hDΞ.ae_eq ((hpart 1).prodMk (hpart I))
   filter_upwards [hη, hΞ, hsymm] with z h1 h2 h3
-  have e1 := congr($h1 1)
-  have eI := congr($h1 I)
-  simp at e1 eI
+  -- The `∂_s` and `∂_t` components of the differentiated equation.
+  have e1 : D2 z 1 1 + (DJ z 1 (Dξ z I) + J z (D2 z 1 I)) + (DS z 1 (ξ z) + S z (Dξ z 1)) =
+      Dη z 1 := by
+    simpa using congr($h1 1)
+  have eI : D2 z I 1 + (DJ z I (Dξ z I) + J z (D2 z I I)) + (DS z I (ξ z) + S z (Dξ z I)) =
+      Dη z I := by
+    simpa using congr($h1 I)
   rw [h2]
   ext
-  · simp [h3, ← e1]
+  · simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.apply_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply,
+      Prod.mk_add_mk, differentiatedCRCoefficient_apply, h3]
+    rw [← e1]
     abel
-  · simp [← h3, ← eI]
+  · simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.apply_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply,
+      Prod.mk_add_mk, differentiatedCRCoefficient_apply, ← h3]
+    rw [← eI]
     abel
-
-/-- **Regularity of `J₂ = diag(J, J)`.** The block-diagonal structure has the local Sobolev
-regularity of `J`. -/
-theorem MemWkpLoc.prodMap_self {p : ℝ≥0∞} {U : Set ℂ} {J : ℂ → V →L[ℝ] V}
-    (hJ : MemWkpLoc p U k J) : MemWkpLoc p U k (fun z => (J z).prodMap (J z)) := by
-  simpa using (hJ.prodMk hJ).clm_comp (ContinuousLinearMap.prodMapL ℝ V V V V)
 
 /-- **Regularity of `S₂`.** If `S ∈ W^{k,p}_loc(Ω)` and `J ∈ W^{k+1,p}_loc(Ω)` with weak
 derivative `DJ`, then `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` is in `W^{k,p}_loc(Ω)`. For
@@ -190,28 +172,26 @@ theorem MemWkpLoc.differentiatedCRCoefficient {p : ℝ≥0∞} {J S : ℂ → V 
         ext <;> simp [add_add_add_comm]
       map_smul' := fun c x => by
         ext <;> simp [smul_add] }
-  simpa [L] using (hS.prodMk (MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn hJ hDJ)).clm_comp
+  simpa [L] using (hS.prodMk (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ)).clm_comp
     (LinearMap.toContinuousLinearMap L)
 
-/-- **The right side of the differentiated system is locally `L^q`.** For `p > 2`, `1 < q ≤ p`,
+/-- **The right side of the differentiated system is locally `L^q`.** For `p > 2`, `1 ≤ q ≤ p`,
 `S ∈ W^{1,p}_loc(Ω)` with weak derivative `DS` and `ξ, η ∈ W^{1,q}_loc(Ω)` with `η` having weak
 derivative `Dη`, the map `(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` is in `L^q_loc(Ω)`. -/
-theorem memLpLoc_differentiatedCR_rightSide {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
+theorem memLpLoc_differentiatedCR_rightSide {p q : ℝ≥0} (hp : 2 < p) (hq : 1 ≤ q) (hqp : q ≤ p)
     {S : ℂ → V →L[ℝ] V} {DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V} {Dη : ℂ → ℂ →L[ℝ] V}
     (hS : MemWkpLoc p Ω 1 S) (hDS : HasWeakFDerivOn volume Ω S DS) (hξ : MemWkpLoc q Ω 1 ξ)
     (hη : MemWkpLoc q Ω 1 η) (hDη : HasWeakFDerivOn volume Ω η Dη) :
     MemLpLoc q Ω (fun z => (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
-  have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
+  have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
   have hDSp := hS.memLpLoc_of_hasWeakFDerivOn hDS
   have hDηq := hη.memLpLoc_of_hasWeakFDerivOn hDη
   have hcomp (v : ℂ) : MemLpLoc q Ω (fun z => Dη z v - DS z v (ξ z)) :=
     (hDηq.clm_comp (ContinuousLinearMap.apply ℝ V v)).sub
       (MemLpLoc.bilin_of_memWkpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hqp
         (hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)) hξ)
-  have h := ((hcomp 1).clm_comp (ContinuousLinearMap.inl ℝ V V)).add
-    ((hcomp I).clm_comp (ContinuousLinearMap.inr ℝ V V))
-  convert h using 1
-  ext z <;> simp
+  exact memWkpLoc_zero_iff.1
+    ((memWkpLoc_zero_iff.2 (hcomp 1)).prodMk (memWkpLoc_zero_iff.2 (hcomp I)))
 
 /-- **Check: the constant case.** For a constant structure `J = A` and `S = 0`, the differentiated
 system is the original operator `∂_s + A ∂_t` applied to each component of `Ξ = (∂_s ξ, ∂_t ξ)`:
