@@ -52,7 +52,7 @@ theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
     MemLp (fun ω => ξ ω * (W t ω - W s ω)) 2 P := by
   have hΔ : MemLp (W t - W s) 2 P :=
     (hW.hasLaw_sub_of_le hst).memLp (memLp_id_gaussianReal 2)
-  exact (hW.indepFun_sub hst hξ.measurable).memLp_two_mul hξ₂ hΔ
+  exact (hW.indepFun_sub hst hξ.measurable).memLp_mul hξ₂ hΔ
 
 /-- A measurable height known at the left endpoint times a Brownian increment has mean zero.
 No integrability is required: the Bochner integral is zero also in the nonintegrable case. -/

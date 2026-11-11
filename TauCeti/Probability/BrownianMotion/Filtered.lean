@@ -34,9 +34,11 @@ produce a new Brownian motion.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
   `W_t - W_s` has law `N(0, t - s)`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_of_le` and
-  `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_sub_of_le`: second and fourth moments
-  of increments; the centered square is square integrable with mean zero and second moment
-  twice the squared interval length.
+  `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_sub`: second and fourth moments
+  of increments.
+* `ProbabilityTheory.IsPreBrownianReal.memLp_sq_sub_sub` and
+  `ProbabilityTheory.IsPreBrownianReal.integral_sq_sq_sub_sub`: the centered square is square
+  integrable with second moment twice the squared interval length.
 * `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_sub_eq_zero`: the centered square
   of an increment has mean zero.
 * `MeasureTheory.Adapted.isFilteredPreBrownianReal`: the characterization by Gaussian increments
@@ -151,14 +153,16 @@ theorem integral_sq_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst 
   simpa only [Function.comp_apply, Pi.sub_apply, integral_sq_gaussianReal,
     zero_pow two_ne_zero, add_zero, NNReal.coe_sub hst] using h
 
-/-- The fourth moment of a Brownian increment is three times the squared elapsed time. -/
-theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
-    (hst : s ≤ t) : ∫ ω, (B t ω - B s ω) ^ 4 ∂P = 3 * ((t : ℝ) - s) ^ 2 := by
-  have hm : ∫ x : ℝ, x ^ 4 ∂gaussianReal 0 (t - s) = 3 * ((t : ℝ) - s) ^ 2 := by
-    simpa only [sub_zero, NNReal.coe_sub hst] using
-      integral_sub_pow_four_gaussianReal 0 (t - s)
+/-- The fourth moment of a Brownian increment is three times the squared time difference,
+in either time order. -/
+theorem integral_pow_four_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
+    ∫ ω, (B t ω - B s ω) ^ 4 ∂P = 3 * ((t : ℝ) - s) ^ 2 := by
+  have hm : ∫ x : ℝ, x ^ 4 ∂gaussianReal 0 (nndist (t : ℝ) (s : ℝ)) =
+      3 * ((t : ℝ) - s) ^ 2 := by
+    simpa only [sub_zero, coe_nndist, Real.dist_eq, sq_abs] using
+      integral_sub_pow_four_gaussianReal 0 (nndist (t : ℝ) (s : ℝ))
   simpa only [Function.comp_apply, Pi.sub_apply] using
-    ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
+    ((hB.hasLaw_sub t s).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
 
 /-- The square of every Brownian increment is square integrable, in either time order. -/
 theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
@@ -203,7 +207,7 @@ theorem integral_sq_sq_sub_sub (hB : IsPreBrownianReal B P)
     simpa only [Pi.sub_def] using h4i.sub (h2i.const_mul (2 * ((t : ℝ) - s)))
   rw [integral_add hsub (integrable_const _),
     integral_sub h4i (h2i.const_mul _), integral_const_mul,
-    hB.integral_pow_four_sub_of_le hst, hB.integral_sq_sub_of_le hst, integral_const]
+    hB.integral_pow_four_sub s t, hB.integral_sq_sub_of_le hst, integral_const]
   simp only [smul_eq_mul, probReal_univ, one_mul]
   ring
 

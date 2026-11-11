@@ -106,7 +106,7 @@ theorem variance_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
   rw [variance_eq_sub (hL i)]
   simp only [Pi.pow_def, ← pow_mul, Nat.reduceMul]
   rw [hB.integral_sq_sub_of_le (ht (Fin.castSucc_le_succ i)),
-    hB.integral_pow_four_sub_of_le (ht (Fin.castSucc_le_succ i))]
+    hB.integral_pow_four_sub (t i.castSucc) (t i.succ)]
   ring
 
 /-- The mean squared error of the Brownian quadratic sum is twice the sum of squared
