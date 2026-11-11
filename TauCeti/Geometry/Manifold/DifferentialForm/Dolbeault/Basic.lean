@@ -117,6 +117,14 @@ theorem delBar_apply (φ : SmoothForm I M F k) :
       J.typeProjection pq.1 (pq.2 + 1) (mextDerivₗ I k (J.typeProjection pq.1 pq.2 φ)) :=
   (rfl)
 
+/-- The Dolbeault differential commutes with transport across an equality of total degrees. -/
+theorem delBar_cast {l : ℕ} (h : k = l) (φ : SmoothForm I M F k) :
+    J.delBar (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n)
+        (congrArg (· + 1) h) (J.delBar φ) := by
+  subst l
+  rfl
+
 end SmoothAlmostComplexStructure
 
 namespace SmoothForm
@@ -165,6 +173,18 @@ end SmoothForm
 namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
+
+/-- The restriction of `∂bar` to forms of type `(p,q)`, with codomain the forms of type
+`(p,q+1)`. This restriction is available even without integrability. -/
+def delBarType (p q : ℕ) :
+    J.typeForms (F := F) p q →ₗ[ℂ] J.typeForms (F := F) p (q + 1) :=
+  (J.delBar.comp (J.typeForms (F := F) p q).subtype).codRestrict _ fun φ ↦
+    (J.mem_typeForms p (q + 1) _).mpr ((J.mem_typeForms p q _).mp φ.2).delBar
+
+/-- The differential on type forms agrees with `∂bar` on the underlying smooth forms. -/
+@[simp]
+theorem coe_delBarType (p q : ℕ) (φ : J.typeForms (F := F) p q) :
+    (J.delBarType p q φ : SmoothForm I M F (p + (q + 1))) = J.delBar φ.1 := (rfl)
 
 /-! ### Type components of `∂` and `∂bar` -/
 
@@ -331,6 +351,13 @@ theorem del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : Smooth
     J.del (J.delBar φ) + J.delBar (J.del φ) = 0 :=
   J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.delBar + J.delBar ∘ₗ J.del)
     (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.1) φ
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then
+`∂bar ∂φ = -∂ ∂bar φ`. -/
+theorem delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.delBar (J.del φ) = -J.del (J.delBar φ) :=
+  eq_neg_of_add_eq_zero_right
+    (del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd' φ)
 
 end DelAddDelBar
 

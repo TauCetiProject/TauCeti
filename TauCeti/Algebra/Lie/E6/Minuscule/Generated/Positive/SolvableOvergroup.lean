@@ -10,10 +10,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.BorelCandidate
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight.Positive
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
-import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
-import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
-import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
-import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SolvableOvergroup
 import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.StandardComodule
 import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
@@ -120,10 +117,7 @@ theorem quotient_genericMatrix_eq_zero_of_posRootCone
     {a b : Fin 27} (hcone : μ b - μ a ∈ C₊) (hne : μ b - μ a ≠ 0) :
     Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal
       (GeneralLinear.genericMatrix k 27 a b) = 0 := by
-  classical
-  let H := GeneralLinear.coordinateHopfAlgebra k 27 ⧸ J.toIdeal
   let q := Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal
-  let _ := GeneralLinear.corestrictStandardComodule k 27 q
   let π := CommHopfAlgCat.liftQuotient J (generatorCoordinateMap k (.inr ()))
     (((le_definingIdeal_iff k J).mp hJ).2)
   have hπ : π.hom.comp q = GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ := by
@@ -134,37 +128,13 @@ theorem quotient_genericMatrix_eq_zero_of_posRootCone
       _ = GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ := by
         rw [generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap,
           weightTable_weight]
-  have hweights := GeneralLinear.corestrict_corestrict_standardComodule_eq_ofWeights q π.hom μ hπ
-  obtain ⟨n, bas, htri, _⟩ :=
-    Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable
-      (M := Fin 27 → k) hconn hsolv
-  let F := Comodule.flagSubcomodule bas htri
-  have hcoord (r : Fin (n + 1)) :
-      (F r).toSubmodule = Submodule.span k ((Pi.basisFun k (Fin 27)) ''
-        {a | Pi.single a (1 : k) ∈ F r}) :=
-    Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights π.hom.toCoalgHom
-      (fun a ↦ SplitTorus.weightCharacter (μ a)) minusculeCharacter_injective hweights (F r)
-  have hbas (r : Fin (n + 1)) : bas.flag r = Submodule.span k
-      ((Pi.basisFun k (Fin 27)) '' {a | Pi.single a (1 : k) ∈ bas.flag r}) := by
-    simpa only [F, Comodule.flagSubcomodule_toSubmodule,
-      ← Subcomodule.mem_toSubmodule] using hcoord r
   have hab : a ≠ b := by
     intro hab
     subst b
     exact hne (sub_self _)
   have hpath := (e6Minuscule_raisingPath_iff_mem_posRootCone a b).mpr hcone
-  have hzero : Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 27)) a b = 0 := by
-    apply Comodule.coefficient_eq_zero_of_coordinate_flag (Pi.basisFun k (Fin 27)) bas htri
-    · simpa only [Pi.basisFun_apply] using hbas
-    · exact hab
-    · intro N
-      simpa only [Pi.basisFun_apply] using single_mem_of_raising_path J hJ N hpath
-  have hcoeff : Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 27)) =
-      (GeneralLinear.genericMatrix k 27).map q := by
-    let _ := GeneralLinear.standardComodule k 27
-    rw [← GeneralLinear.coefficientMatrix_basisFun]
-    exact Comodule.coefficientMatrix_corestrict (Pi.basisFun k (Fin 27)) q.toCoalgHom
-  simpa only [hcoeff, Matrix.map_apply] using hzero
+  exact GeneralLinear.quotient_genericMatrix_eq_zero_of_single_mem J hconn hsolv μ π.hom hπ
+    minusculeCharacter_injective hab fun N ↦ single_mem_of_raising_path J hJ N hpath
 
 /-- Every nonzero negative-cone character has zero actual adjoint weight space in a reduced
 geometrically connected solvable overgroup. The character is integral, in every characteristic. -/
@@ -199,14 +169,11 @@ private theorem carrier_comap_le_definingIdeal
     (hI : I ≤ carrierDefiningIdeal k) :
     I.comapOfSurjective (generatedCoordinateMap k).hom
       (generatedCoordinateMap_surjective k) ≤ definingIdeal k := by
+  apply (generatedCoordinateMap k).comapOfSurjective_le_of_comp_eq_mkQuotient
+    (generatedCoordinateMap_surjective k) (definingIdeal k)
+    (restriction k) (generatedCoordinateMap_comp_restriction k) I
   intro z hz
-  have hzero := (mem_carrierDefiningIdeal k _).mp
-    (hI (HopfIdeal.mem_comapOfSurjective.mp hz))
-  have hcomp := congrArg _root_.CommHopfAlgCat.Hom.hom
-    (generatedCoordinateMap_comp_restriction k)
-  apply (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ z).mp
-  simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] using
-    (BialgHom.congr_fun hcomp z).symm.trans hzero
+  exact (mem_carrierDefiningIdeal k z).mp (hI hz)
 
 /-- The positive-cone equations hold in every reduced connected solvable overgroup inside
 the field-generated E₆ minuscule carrier, in its actual quotient coordinate algebra. -/

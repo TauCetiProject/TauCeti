@@ -35,6 +35,8 @@ relative to a fixed family of objects; here no covering is chosen.
   multiplication.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
+* `CategoryTheory.Sheaf.Torsor.exists_sections_eq_of_smul_invariant`: a `G`-invariant morphism
+  from a torsor to a sheaf of sets is given by a global section.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
@@ -216,6 +218,23 @@ lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.o
     (x := fun i : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ i.2.some)
     (fun _ _ _ _ _ ↦ Subsingleton.elim _ _) P.coversTop P.sheaf.property
   exact ⟨s.1, s.2⟩
+
+/-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
+are those of a global section of `F`. -/
+lemma exists_sections_eq_of_smul_invariant (P : Torsor G) {F : Sheaf J (Type w)}
+    (f : P.sheaf ⟶ F) (hf : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      f.hom.app U (g • p) = f.hom.app U p) :
+    ∃ s : F.obj.sections, ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U), f.hom.app U p = s.1 U := by
+  have key {U : Cᵒᵖ} (p p' : P.sheaf.obj.obj U) : f.hom.app U p = f.hom.app U p' := by
+    obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (G.obj.obj U) p' p
+    exact hf U g p'
+  obtain ⟨s, hs, -⟩ := Presheaf.FamilyOfElementsOnObjects.IsCompatible.existsUnique_section
+    (x := fun j : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ f.hom.app _ j.2.some)
+    (fun Z j k a b ↦ by
+      rw [← NatTrans.naturality_apply, ← NatTrans.naturality_apply]
+      exact key _ _)
+    P.coversTop F.property
+  exact ⟨s, fun ⟨U⟩ p ↦ (key p _).trans (hs ⟨U, ⟨p⟩⟩).symm⟩
 
 end Torsor
 

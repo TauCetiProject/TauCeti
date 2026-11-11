@@ -100,7 +100,7 @@ lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < l
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand A b₀ c₀ U U := by
-  have hnorm := U.min_mul_norm_sq_le_add
+  have hnorm := U.min_mul_norm_pow_le_add 2
     (a := mu - beta ^ 2 / (2 * lam)) (b := lam / 2)
     ((half_pos hlam).le.trans (le_max_right _ _))
   rw [min_comm, add_comm, Real.norm_eq_abs, sq_abs] at hnorm
@@ -113,7 +113,7 @@ lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self {A : Matrix n 
     {c₀ : ℝ} (hlam : 0 ≤ lam) (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (U : ℝ × EuclideanSpace ℝ n) :
     min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand A 0 c₀ U U := by
-  have hprod := U.min_mul_norm_sq_le_add (a := c₀) (b := lam)
+  have hprod := U.min_mul_norm_pow_le_add 2 (a := c₀) (b := lam)
     (hlam.trans (le_max_right _ _))
   have hA' := hA U.2
   rw [energyIntegrand_self]

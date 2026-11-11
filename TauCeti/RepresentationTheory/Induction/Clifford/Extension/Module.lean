@@ -16,7 +16,8 @@ A normalized section of the canonical Clifford extension makes `Hom_N(A, W)` a m
 for the crossed product with coefficients `(End A)ᵐᵒᵖ` and factors `op (a(q,r)⁻¹)`.
 The coefficient `op d` acts by precomposition with `d`, and the basis element `[q]`
 acts by the section's Clifford operator. Postcomposition with an inertia intertwiner
-is linear over this algebra, giving a functor from inertia representations to modules.
+is linear over this algebra, giving an additive, ground-field-linear functor from
+inertia representations to modules.
 
 This constructs the multiplicity side of the isotypic correspondence over nonsplitting
 fields. It does not require simplicity of `A`, semisimplicity, or finiteness of the
@@ -100,5 +101,41 @@ noncomputable abbrev cliffordMultiplicityFunctor :
     let := (cliffordMultiplicitySemilinearAction A s hs W'').module
     apply ModuleCat.hom_ext
     exact LinearMap.ext fun f => by simp
+
+/-- The multiplicity functor sends an inertia intertwiner to postcomposition
+with its restriction to the normal subgroup. -/
+theorem cliffordMultiplicityFunctor_map_apply {W W' : FDRep k (inertia A)} (g : W ⟶ W')
+    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
+    (cliffordMultiplicityFunctor A s hs).map g f =
+      f ≫ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).map g := by
+  simp only [cliffordMultiplicityFunctor, ModuleCat.hom_ofHom,
+    CrossedSystem.SemilinearAction.linearMap_apply, Linear.rightComp_apply]
+
+open scoped ModuleCat.Algebra
+
+instance : (cliffordMultiplicityFunctor A s hs).Additive where
+  map_add {W W'} f g := by
+    let := (cliffordMultiplicitySemilinearAction A s hs W).module
+    let := (cliffordMultiplicitySemilinearAction A s hs W').module
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro a
+    simp [cliffordMultiplicityFunctor, Linear.rightComp_apply]
+
+instance : (cliffordMultiplicityFunctor A s hs).Linear k where
+  map_smul {W W'} f r := by
+    let := (cliffordMultiplicitySemilinearAction A s hs W).module
+    let := (cliffordMultiplicitySemilinearAction A s hs W').module
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro a
+    simp only [cliffordMultiplicityFunctor, ModuleCat.hom_ofHom,
+      CrossedSystem.SemilinearAction.linearMap_apply, Linear.rightComp_apply,
+      Functor.map_smul, Linear.comp_smul, ModuleCat.hom_smul, LinearMap.smul_apply]
+    -- Ground scalars in ModuleCat act through the algebra map. The algebra action
+    -- agrees with the original ground-field action on multiplicities.
+    exact (congrArg (fun e => e (a ≫ (Action.res (FGModuleCat k)
+      (Subgroup.inclusion (le_inertia A))).map f))
+      ((cliffordMultiplicitySemilinearAction A s hs W').toAlgHom.commutes r)).symm
 
 end FDRep

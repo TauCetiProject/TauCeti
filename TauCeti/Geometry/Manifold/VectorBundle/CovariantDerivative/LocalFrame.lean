@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Covariant derivatives read in a local frame
@@ -39,7 +42,12 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
 
 * `TauCeti.Manifold.frameCovariantDerivative`: the flat covariant derivative attached to a local
   frame, and `TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative`, the proof that
-  it is a covariant derivative over the trivialization base set.
+  it is a covariant derivative over the trivialization base set, and
+  `TauCeti.Manifold.contMDiffCovariantDerivativeOn_frameCovariantDerivative`, its regularity
+  there.
+* `TauCeti.Manifold.frameCovariantDerivative_eq_symmL_comp`: the flat derivative of a section whose
+  frame coefficients are the coordinates of a model-valued map, and
+  `TauCeti.Manifold.frameCovariantDerivative_symmL_const`, its vanishing on constant coordinates.
 * `TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum`: the local frame
   formula for an arbitrary covariant derivative.
 * `TauCeti.Manifold.covariantDerivative_eq_of_localFrame_eq`: two covariant derivatives which
@@ -53,7 +61,8 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
   form transported to a continuous bilinear map on the model spaces (for a general vector bundle
   and for the tangent bundle), with `TauCeti.Manifold.bundleChristoffelMap_apply`,
   `TauCeti.Manifold.christoffelMap_apply`, `TauCeti.Manifold.contMDiffOn_bundleChristoffelMap`,
-  and `TauCeti.Manifold.contMDiffOn_christoffelMap`.
+  `CovariantDerivative.contMDiffOn_bundleChristoffelMap`, and
+  `TauCeti.Manifold.contMDiffOn_christoffelMap`.
 * `TauCeti.Manifold.covariantDerivative_symm_eq_christoffelForm`,
   `TauCeti.Manifold.covariantDerivative_symm_apply_symm_bundle`, and
   `TauCeti.Manifold.covariantDerivative_symm_apply_symm`: a covariant derivative differentiates a
@@ -72,8 +81,6 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 2, §2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 4.
 -/
@@ -169,6 +176,50 @@ theorem frameCovariantDerivative_apply (v : TangentSpace I x) :
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
 
+/-- If the coefficients of a section in the frame of `e` agree near `x` with the coordinates of a
+model-valued map `g` that has derivative `A` at `x`, then its flat frame derivative at `x` is
+`e.symmL x ∘ A`. -/
+theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
+    {A : TangentSpace I x →L[𝕜] F} (hg : HasMFDerivAt I 𝓘(𝕜, F) g x A)
+    (hcoeff : ∀ i, (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] fun z ↦ b.coord i (g z))
+    (hx : x ∈ e.baseSet) :
+    frameCovariantDerivative I b e σ x = (e.symmL 𝕜 x).comp A := by
+  ext v
+  rw [frameCovariantDerivative_apply]
+  have hterm (i : ι) :
+      mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = b.coord i (A v) := by
+    let k : F →L[𝕜] 𝕜 := LinearMap.toContinuousLinearMap (b.coord i)
+    have hk : (fun z ↦ b.coord i (g z)) = ⇑k ∘ g := by
+      rw [Function.comp_def]
+      simp [k]
+    have h := (((ContinuousLinearMap.hasMFDerivAt k).comp x hg).congr_of_eventuallyEq
+      (hk ▸ hcoeff i)).mfderiv
+    rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
+    -- `tangentSpaceCast` and `fromTangentSpace` are the identity of the model space `𝕜` and
+    -- `LinearMap.toContinuousLinearMap` has the same underlying function, so this is `rfl`.
+    rfl
+  simp only [hterm]
+  have h1 : e.symmL 𝕜 x (A v) = e.symmL 𝕜 x (∑ i, b.coord i (A v) • b i) := by
+    simp [Basis.sum_repr, Basis.coord_apply]
+  rw [ContinuousLinearMap.comp_apply, h1, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, symmL_basis_eq_localFrame b hx i]
+
+/-- The section `z ↦ e.symmL z v` has constant coefficients in the frame of `e`, so its flat frame
+derivative at a point of the base set vanishes. -/
+@[simp]
+theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
+    frameCovariantDerivative I b e (fun z ↦ e.symmL 𝕜 z v) x = 0 := by
+  have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
+      (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
+  have h := frameCovariantDerivative_eq_symmL_comp (I := I) (b := b) (e := e)
+    (σ := fun z ↦ e.symmL 𝕜 z v) hconst (fun i ↦ ?_) hx
+  · rw [h, ContinuousLinearMap.comp_zero]
+  · filter_upwards [e.open_baseSet.mem_nhds hx] with z hz
+    rw [e.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e.symmL 𝕜 z v) hz,
+      ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hz,
+      ← Basis.coord_apply]
+    exact congrArg (b.coord i) (e.continuousLinearMapAt_symmL (R := 𝕜) hz v)
+
 /-- The flat frame derivative satisfies the covariant-derivative axioms on the base set of the
 trivialization defining the frame. -/
 theorem isCovariantDerivativeOn_frameCovariantDerivative :
@@ -198,7 +249,8 @@ theorem isCovariantDerivativeOn_frameCovariantDerivative :
           g * (LinearMap.piApply (e.localFrameCoeff I b i)) σ := by
         ext y; simp
       rw [hsplit, mvfderiv_mul hg (hcoeff i)]
-      simp [-mvfderiv_apply_eq_mfderiv_apply, mul_comm]
+      simp only [add_apply, smul_apply, smul_eq_mul, LinearMap.piApply_apply_apply]
+      ring
     ext v
     simp only [frameCovariantDerivative_apply, add_apply, smul_apply,
       ContinuousLinearMap.smulRight_apply, key, add_smul, mul_smul, Finset.sum_add_distrib,
@@ -274,23 +326,49 @@ theorem covariantDerivative_symm_eq_christoffelForm
     ((contMDiffOn_symm_baseSet v).mdifferentiableOn one_ne_zero).mdifferentiableAt
       (e.open_baseSet.mem_nhds hx)
   rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_eq_right]
-  ext w
-  rw [frameCovariantDerivative_apply]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  -- The `i`-th coefficient of the section is the constant `b.repr v i` on `e.baseSet`.
-  have hconst : (LinearMap.piApply (e.localFrameCoeff I b i)) (fun y ↦ e.symm y v) =ᶠ[𝓝 x]
-      fun _ ↦ b.repr v i :=
+  -- The `i`-th coefficient of the section is the constant `b.coord i v` on `e.baseSet`.
+  have hcoeff (i : ι) : (fun y ↦ e.localFrameCoeff I b i y (e.symm y v)) =ᶠ[𝓝 x]
+      fun _ ↦ b.coord i v :=
     Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
       (e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y v) hy).trans
         (by simp [e.apply_mk_symm hy])
-  have hzero :
-      mvfderiv I ((LinearMap.piApply (e.localFrameCoeff I b i)) fun y ↦ e.symm y v) x = 0 := by
-    have h := ((hasMFDerivAt_const (I := I) (I' := 𝓘(𝕜, 𝕜)) (b.repr v i) x).congr_of_eventuallyEq
-      hconst).mfderiv
-    ext u
-    simp only [mvfderiv, ContinuousLinearMap.comp_apply, h, zero_apply, map_zero]
-  rw [hzero]
-  simp
+  have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
+      (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
+  rw [frameCovariantDerivative_eq_symmL_comp b hconst hcoeff hx, ContinuousLinearMap.comp_zero]
+
+/-! ### Regularity of the flat covariant derivative of a local frame -/
+
+/-- The flat covariant derivative of a local frame is `C^n` on the base set of the trivialization
+defining the frame, on a `C^m` manifold and a `C^k` bundle with `n + 1 ≤ m` and `n + 1 ≤ k`: it
+sends a section which is `C^(n + 1)` there to a `C^n` section of `Hom(TM, V)` there. -/
+theorem contMDiffCovariantDerivativeOn_frameCovariantDerivative
+    [FiniteDimensional 𝕜 E] {m k n : ℕ∞ω} [IsManifold I m M]
+    [ContMDiffVectorBundle k F V I] (hm : n + 1 ≤ m) (hk : n + 1 ≤ k) :
+    -- The class needs `IsManifold I 1 M` merely to be stated; it follows from `hm`.
+    haveI : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+    ContMDiffCovariantDerivativeOn F n (frameCovariantDerivative I b e) e.baseSet := by
+  have : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+  refine ⟨fun {σ} hσ ↦ ?_⟩
+  have : IsManifold I (n + 1) M := .of_le hm
+  have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
+  have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hk)
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  -- Test the hom-bundle section on the local frame of the tangent bundle at each point.
+  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
+  let eT := trivializationAt E (TangentSpace I : M → Type _) x
+  let bT := Module.Basis.ofVectorSpace 𝕜 E
+  have hu : IsOpen (e.baseSet ∩ eT.baseSet) := e.open_baseSet.inter eT.open_baseSet
+  refine ⟨eT.baseSet, eT.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x, ?_⟩
+  refine contMDiffOn_hom_of_localFrame (b := bT) (e := eT) (e' := e) (f := id)
+    (u := e.baseSet ∩ eT.baseSet) contMDiffOn_id
+    (fun y hy ↦ ⟨hy.2, hy.1⟩) fun j ↦ ?_
+  simp only [id, frameCovariantDerivative_apply]
+  refine ContMDiffOn.sum_section fun i _ ↦ ContMDiffOn.smul_section ?_ ?_
+  · exact ((contMDiffOn_baseSet_localFrameCoeff b hσ i).mono inter_subset_left
+      ).contMDiffOn_mvfderiv_apply hu
+      ((eT.contMDiffOn_localFrame_baseSet n bT j).mono inter_subset_right) le_rfl
+  · exact ((e.contMDiffOn_localFrame_baseSet n b i).mono inter_subset_left)
 
 section BundleChristoffelMap
 
@@ -405,6 +483,40 @@ theorem contMDiffOn_bundleChristoffelMap {n : ℕ∞ω}
 end BundleChristoffelMap
 
 end GeneralFibre
+
+/-- For a `C^∞` connection `cov` on a `C^∞` real vector bundle over a `C^∞` manifold, the
+model-space Christoffel map
+`bundleChristoffelMap b eT (cov.isCovariantDerivativeOn (s := e.baseSet))` is `C^∞` on
+`e.baseSet ∩ eT.baseSet`. -/
+theorem _root_.CovariantDerivative.contMDiffOn_bundleChristoffelMap
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+    [∀ x, ContinuousSMul ℝ (V x)]
+    [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+    (cov : _root_.CovariantDerivative I F V) [cov.ContMDiffCovariantDerivative ∞]
+    {ι : Type*} [Fintype ι] (b : Basis ι ℝ F)
+    (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [MemTrivializationAtlas e]
+    (eT : Trivialization E (TotalSpace.proj : TangentBundle I M → M)) [MemTrivializationAtlas eT] :
+    haveI : ContMDiffVectorBundle 1 F V I := .of_le (n := ∞) (by simp)
+    CMDiff[e.baseSet ∩ eT.baseSet] ∞
+      (bundleChristoffelMap b eT (cov.isCovariantDerivativeOn (s := e.baseSet))) := by
+  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun e.baseSet :=
+    cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) e.open_baseSet
+  have : ContMDiffVectorBundle 1 F V I := .of_le (n := ∞) (by simp)
+  have : ContMDiffVectorBundle (∞ + 1) F V I :=
+    by simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
+  have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M :=
+    by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  exact TauCeti.Manifold.contMDiffOn_bundleChristoffelMap (n := ∞) b eT
+    (cov.isCovariantDerivativeOn (s := e.baseSet))
 
 /-! ### Christoffel symbols on the tangent bundle -/
 

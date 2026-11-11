@@ -181,4 +181,35 @@ theorem mono_cechCohomology_map_zero : Mono ((cechCohomology A E hE 0).map S.f) 
   have := NatTrans.mono_of_mono_app ((cechCohomologyDiagram A E hE 0).flip.map S.f)
   exact Functor.map_mono colim _
 
+include hS in
+/-- A coefficient sequence with short exact fixed-family Čech complexes induces an
+isomorphism on the right map if its left coefficient has zero Čech cohomology in every degree. -/
+theorem isIso_cechCohomology_map_g_of_isZero
+    (h₁ : ∀ n, IsZero ((cechCohomology A E hE n).obj S.X₁)) (n : ℕ) :
+    IsIso ((cechCohomology A E hE n).map S.g) := by
+  have : Mono ((cechCohomology A E hE n).map S.g) :=
+    (ShortComplex.exact_iff_mono _ ((h₁ n).eq_zero_of_src _)).1
+      (cechCohomology_exact₂ E hE hS n)
+  have : Epi ((cechCohomology A E hE n).map S.g) :=
+    (ShortComplex.exact_iff_epi _ ((h₁ (n + 1)).eq_zero_of_tgt _)).1
+      (cechCohomology_exact₃ E hE hS n)
+  exact isIso_of_mono_of_epi _
+
+include hS in
+/-- A coefficient sequence with short exact fixed-family Čech complexes induces an
+isomorphism on the left map if its right coefficient has zero Čech cohomology in every degree. -/
+theorem isIso_cechCohomology_map_f_of_isZero
+    (h₃ : ∀ n, IsZero ((cechCohomology A E hE n).obj S.X₃)) (n : ℕ) :
+    IsIso ((cechCohomology A E hE n).map S.f) := by
+  have : Epi ((cechCohomology A E hE n).map S.f) :=
+    (ShortComplex.exact_iff_epi _ ((h₃ n).eq_zero_of_tgt _)).1
+      (cechCohomology_exact₂ E hE hS n)
+  have : Mono ((cechCohomology A E hE n).map S.f) := by
+    cases n with
+    | zero => exact mono_cechCohomology_map_zero E hE hS
+    | succ n =>
+      exact (ShortComplex.exact_iff_mono _ ((h₃ n).eq_zero_of_src _)).1
+        (cechCohomology_exact₁ E hE hS n)
+  exact isIso_of_mono_of_epi _
+
 end TauCeti.CategoryTheory

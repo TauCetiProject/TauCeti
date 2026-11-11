@@ -29,6 +29,8 @@ quasicoherent coordinate algebra `p_* 𝒪_V` of an affine morphism `p : V ⟶ X
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMapId`,
   `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMapComp`: its compatibility with
   identities and composition.
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullbackPushforwardSpecMapAdjunction`: pullback
+  of quasicoherent sheaves along a morphism of spectra is left adjoint to this pushforward.
 
 ## References
 
@@ -137,6 +139,57 @@ theorem pushforwardSpecMapComp_inv_app_hom {T : CommRingCat.{u}} (f : R ⟶ S) (
       (Scheme.Modules.pushforwardCongr (Spec.map_comp f g).symm).inv.app M.obj ≫
         (Scheme.Modules.pushforwardComp (Spec.map g) (Spec.map f)).inv.app M.obj := by
   rfl
+
+/-- Pullback of quasicoherent sheaves along the morphism of spectra induced by a ring
+homomorphism is left adjoint to pushforward. It is the restriction of Mathlib's
+`Scheme.Modules.pullbackPushforwardAdjunction` to quasicoherent sheaves. -/
+def pullbackPushforwardSpecMapAdjunction (f : R ⟶ S) :
+    pullback (Spec.map f) ⊣ pushforwardSpecMap f :=
+  (Scheme.Modules.pullbackPushforwardAdjunction (Spec.map f)).restrictFullyFaithful
+    (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).fullyFaithfulι
+    (_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι
+    (pullbackCompιIso (Spec.map f)).symm (Iso.refl _)
+
+/-- The unit of the affine quasicoherent pullback--pushforward adjunction is the unit of the
+adjunction for modules. -/
+@[simp]
+theorem pullbackPushforwardSpecMapAdjunction_unit_app_hom (f : R ⟶ S)
+    (M : QuasicoherentSheaf (Spec R)) :
+    ((pullbackPushforwardSpecMapAdjunction f).unit.app M).hom =
+      (Scheme.Modules.pullbackPushforwardAdjunction (Spec.map f)).unit.app M.obj ≫
+        (Scheme.Modules.pushforward (Spec.map f)).map
+          (eqToHom (pullback_obj_obj (Spec.map f) M).symm) := by
+  have h :=
+    (Scheme.Modules.pullbackPushforwardAdjunction (Spec.map f)).map_restrictFullyFaithful_unit_app
+    (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).fullyFaithfulι
+    (_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι
+    (L := pullback (Spec.map f)) (R := pushforwardSpecMap f)
+    (pullbackCompιIso (Spec.map f)).symm (Iso.refl _) M
+  refine h.trans ?_
+  rw [Iso.symm_hom, pullbackCompιIso_inv_app]
+  -- The identity is formed in `SheafOfModules` rather than in `Scheme.Modules`, so `simp` does
+  -- not remove it.
+  exact congrArg (_ ≫ ·) (Category.comp_id _)
+
+/-- The counit of the affine quasicoherent pullback--pushforward adjunction is the counit of
+the adjunction for modules. -/
+@[simp]
+theorem pullbackPushforwardSpecMapAdjunction_counit_app_hom (f : R ⟶ S)
+    (M : QuasicoherentSheaf (Spec S)) :
+    ((pullbackPushforwardSpecMapAdjunction f).counit.app M).hom =
+      eqToHom (pullback_obj_obj (Spec.map f) ((pushforwardSpecMap f).obj M)) ≫
+        (Scheme.Modules.pullbackPushforwardAdjunction (Spec.map f)).counit.app M.obj := by
+  have h :=
+    (Scheme.Modules.pullbackPushforwardAdjunction (Spec.map f)).map_restrictFullyFaithful_counit_app
+    (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).fullyFaithfulι
+    (_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι
+    (L := pullback (Spec.map f)) (R := pushforwardSpecMap f)
+    (pullbackCompιIso (Spec.map f)).symm (Iso.refl _) M
+  refine h.trans ?_
+  rw [Iso.symm_inv, pullbackCompιIso_hom_app]
+  -- As above, the identity is formed in `SheafOfModules`, so `simp` does not remove it.
+  exact congrArg (_ ≫ ·) ((congrArg (· ≫ _)
+    ((Scheme.Modules.pullback (Spec.map f)).map_id _)).trans (Category.id_comp _))
 
 end AlgebraicGeometry.QuasicoherentSheaf
 

@@ -46,6 +46,14 @@ and split off (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and t
 is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
 (`TopCat.singularKroneckerEquivOfProjectiveHomology`).
 
+Over a hereditary ring, a single projective homology module already kills the `Ext¹` term next
+to it: if `Hₙ(X; R)` is projective, the Kronecker map is an isomorphism in degree `n + 1`
+(`TopCat.singularKronecker_bijective_succ_of_projective_homology`). So if `Hₙ(X; R)` is projective
+and `Hₙ₊₁(X; R) = 0`, then `Hⁿ⁺¹(X; R, M) = 0`
+(`TopCat.isZero_singularCohomology_succ_of_projective_homology`), and likewise for pairs. For
+instance, integral cohomology vanishes above the top degree of a space whose integral homology is
+free in that degree and zero above it, while in the top degree it need not be torsion-free.
+
 ## Main declarations
 
 * `TopCat.singularKronecker_bijective_of_projective_homology` and
@@ -59,6 +67,10 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
   vanishes there.
 * `TopPair.isZero_singularCohomology_of_isZero_singularHomology`: relative cohomology vanishes in
   degree `n` when relative homology vanishes up to degree `n`.
+* `TopCat.singularKronecker_bijective_succ_of_projective_homology`,
+  `TopCat.isZero_singularCohomology_succ_of_projective_homology` and their `TopPair` versions: over
+  a hereditary ring, the Kronecker map is bijective in degree `n + 1` when `Hₙ(X; R)` is
+  projective, and cohomology vanishes in degree `n + 1` when moreover `Hₙ₊₁(X; R) = 0`.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -247,6 +259,32 @@ lemma singularExtToCohomology_naturality {Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ
       TopCat.singularCohomologyMap f (n + 1) (Y.singularExtToCohomology R M n e) :=
   TauCeti.ChainComplex.extToHomology_naturality (SSet.chainComplexMap (toSSet.map f) R) (n + 1) n e
 
+/-- **The universal coefficient theorem above a projective homology module**, over a hereditary
+commutative ring: for a projective coefficient module `R`, if `Hₙ(X; R)` is projective, the
+Kronecker map `Hⁿ⁺¹(X; R, M) →ₗ[k] (Hₙ₊₁(X; R) ⟶ M)` is bijective, for every module `M`. The
+`Ext¹(Hₙ(X; R), M)` term of the universal coefficient sequence vanishes. -/
+theorem singularKronecker_bijective_succ_of_projective_homology (n : ℕ)
+    [Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)] :
+    Function.Bijective (X.singularKronecker (R := R) (M := M) k (n + 1)) := by
+  -- `Hₙ(X; R)` is by definition the homology of the singular chain complex `C(X; R)`.
+  have : Projective (((toSSet.obj X).chainComplex R).homology n) :=
+    ‹Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)›
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.kronecker_bijective_succ_of_projective_homology n
+
+/-- **Cohomology vanishes above a projective homology module followed by a zero one**, over a
+hereditary commutative ring: for a projective coefficient module `R`, if `Hₙ(X; R)` is projective
+and `Hₙ₊₁(X; R) = 0`, then `Hⁿ⁺¹(X; R, M) = 0` for every module `M`. With `k = R = ℤ`: if
+`Hₙ(X; ℤ)` is free abelian and `Hₙ₊₁(X; ℤ) = 0`, then `Hⁿ⁺¹(X; M) = 0`. -/
+theorem isZero_singularCohomology_succ_of_projective_homology (n : ℕ)
+    [Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    (h : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X)) :
+    IsZero (X.singularCohomology R k M (n + 1)) := by
+  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
+    ⟨h.eq_of_src⟩
+  have := (X.singularKronecker_bijective_succ_of_projective_homology R M n).1.subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
+
 end Hereditary
 
 end TopCat
@@ -278,6 +316,34 @@ theorem isZero_singularCohomology_of_isZero_singularHomology [Linear k (ModuleCa
   have := (P.singularKronecker_bijective_of_projective_homology_lt R M n fun j hj ↦
     (h j hj.le).projective).1.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
+
+section Hereditary
+
+variable [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1]
+
+/-- **The relative universal coefficient theorem above a projective homology module**, over a
+hereditary commutative ring: for a projective coefficient module `R`, if `Hₙ(X, A; R)` is
+projective, the relative Kronecker map `Hⁿ⁺¹(X, A; R, M) →ₗ[k] (Hₙ₊₁(X, A; R) ⟶ M)` is bijective,
+for every module `M`. Nothing is assumed about the relative homology in the other degrees. -/
+theorem singularKronecker_bijective_succ_of_projective_homology [Linear k (ModuleCat.{w} k)]
+    (n : ℕ) [Projective (P.singularHomology R n)] :
+    Function.Bijective (P.singularKronecker (R := R) (M := M) k (n + 1)) := by
+  rw [singularKronecker_def]
+  -- `Hₙ(X, A; R)` is by definition the homology of the relative singular chain complex, whose
+  -- terms are retracts of the absolute singular chain modules, hence projective.
+  exact TauCeti.ChainComplex.kronecker_bijective_succ_of_projective_homology n
+
+/-- **Relative cohomology vanishes above a projective homology module followed by a zero one**,
+over a hereditary commutative ring: for a projective coefficient module `R`, if `Hₙ(X, A; R)` is
+projective and `Hₙ₊₁(X, A; R) = 0`, then `Hⁿ⁺¹(X, A; R, M) = 0` for every module `M`. -/
+theorem isZero_singularCohomology_succ_of_projective_homology [Linear k (ModuleCat.{w} k)]
+    (n : ℕ) [Projective (P.singularHomology R n)] (h : IsZero (P.singularHomology R (n + 1))) :
+    IsZero (P.singularCohomology R k M (n + 1)) := by
+  have : Subsingleton (P.singularHomology R (n + 1) ⟶ M) := ⟨h.eq_of_src⟩
+  have := (P.singularKronecker_bijective_succ_of_projective_homology R M n).1.subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
+
+end Hereditary
 
 variable [hP : ∀ n, Projective (P.singularHomology R n)]
 

@@ -78,6 +78,21 @@ theorem prime_ι (hℓ : ℓ ≠ 0) : Prime (ι K M ℓ) := by
   rw [hb, MulEquiv.prime_iff]
   exact MvPolynomial.prime_X
 
+/-- Nonzero linear forms cutting out different hyperplanes are relatively prime as elements
+of the algebra of polynomial functions. -/
+theorem isRelPrime_ι_of_ker_ne {V : Type*} [AddCommGroup V] [Module K V]
+    {ℓ m : Module.Dual K V} (hℓ : ℓ ≠ 0) (hm : m ≠ 0)
+    (hker : LinearMap.ker ℓ ≠ LinearMap.ker m) :
+    IsRelPrime (ι K (Module.Dual K V) ℓ) (ι K (Module.Dual K V) m) := by
+  apply (prime_ι hℓ).irreducible.isRelPrime_iff_not_dvd.2
+  intro h
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (ι_dvd_ι_iff.1 h)
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact hm (by simpa using hc.symm)
+  apply hker
+  rw [← hc, LinearMap.ker_smul _ c hc0]
+
 /-- Over a field, a nonzero degree-one element of the symmetric algebra of a finite-dimensional
 vector space spans a prime ideal of height one. -/
 theorem height_span_singleton_ι [Module.Finite K M] (hℓ : ℓ ≠ 0) :

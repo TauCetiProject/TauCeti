@@ -68,6 +68,16 @@ theorem finiteReflection_basis (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (i : Fin 
     LinearIsometryEquiv.coe_coe'', LinearIsometryEquiv.piLpCongrLeft_single,
     Fin.revPerm_apply, finiteInclusion_single]
 
+/-- A finite reflection annihilates basis vectors beyond its finite section. -/
+@[simp]
+theorem finiteReflection_basis_eq_zero (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) {i : ℕ}
+    (hi : n < i) : b.finiteReflection n (b i) = 0 := by
+  apply b.repr.injective
+  ext j
+  simp only [repr_finiteReflection, map_zero, lp.coeFn_zero, Pi.zero_apply]
+  simp [HilbertBasis.repr_apply_apply, orthonormal_iff_ite.mp b.orthonormal,
+    show ∀ j, n - j ≠ i by omega]
+
 /-- A finite reflection is self-adjoint. -/
 @[simp]
 theorem adjoint_finiteReflection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :

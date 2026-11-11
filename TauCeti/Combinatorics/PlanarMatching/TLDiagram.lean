@@ -223,6 +223,13 @@ theorem matching_verticalReflect (x : TLDiagram n m) :
     (verticalReflect n m x).matching =
       PlanarMatching.cast (Nat.add_comm n m) (PlanarMatching.reflect (n + m) x.matching) := (rfl)
 
+/-- Vertical reflection sends a partner to its reflected boundary label. -/
+theorem coe_verticalReflect_matching_val_apply (D : TLDiagram n m) (i : Fin (m + n)) :
+    ((verticalReflect n m D).matching.1.val i : ℕ) =
+      n + m - 1 - (D.matching.1.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
+  simp [matching_verticalReflect, PlanarMatching.coe_cast_apply,
+    PlanarMatching.coe_reflect_apply, PerfectMatching.congr_val, Fin.rev, Nat.sub_sub, Nat.add_comm]
+
 @[simp]
 theorem circles_verticalReflect (x : TLDiagram n m) :
     (verticalReflect n m x).circles = x.circles := (rfl)
@@ -338,7 +345,10 @@ top point `2n - 1 - i`, so the matching is the fully nested `TauCeti.PlanarMatch
 def id (n : ℕ) : TLDiagram n n :=
   ⟨PlanarMatching.nested n, 0⟩
 
+/-- The matching of the identity diagram is the fully nested one. -/
 @[simp]
+theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
+
 theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 

@@ -59,7 +59,8 @@ variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
 include hφ in
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
   [Fintype ι] [DecidableEq ι] in
-private theorem presentation_ker_le_comap :
+/-- The kernel of the presentation map lies in the preimage of the Galois subgroup. -/
+theorem presentation_ker_le_comap :
     (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker ≤
       (galoisSubgroup K L j).toSubgroup.comap φ.toMonoidHom := by
   intro r hr
@@ -67,23 +68,18 @@ private theorem presentation_ker_le_comap :
     MonoidHom.mem_ker]
   simpa using (hφ r).trans (MonoidHom.mem_ker.mp hr)
 
-/-- A surjective free profinite presentation of `G_K` induces a `ℤ_p[Gal(L/K)]`-linear
-surjection from the relation module onto the completed multiplicative group `A(L)`.
-On a class of a relation `r`, the map is the class of `φ r` read through local reciprocity.
-No hypothesis of tame ramification or bound on the number of generators is needed. -/
-theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surjective φ) :
-    ∃ β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g →ₗ[
-        MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L),
-      Function.Surjective β ∧
-      ∀ r : (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker,
-        padicCompletionUnitsEquivAbelianizationProP p K L j
-          (β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg
-            (ofMul (abelianizationProPMk p _ _ r)))).toMul =
-          abelianizationProPMk p (AbsoluteGaloisGroup K) (galoisSubgroup K L j).toSubgroup
-            ⟨φ r, by
-              rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom,
-                MonoidHom.mem_ker, hφ]
-              exact MonoidHom.mem_ker.mp r.2⟩ := by
+include hφ in
+omit [Fintype ι] [DecidableEq ι] [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+  [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] in
+/-- Restricting a presentation of `G_K` to the presentation kernel and reading it through local
+reciprocity gives a continuous surjection from `R^ab(p)` onto `A(L)`. -/
+private theorem exists_surjective_continuousMonoidHom (hsurj : Function.Surjective φ) :
+    ∃ ψ : abelianizationProP p (freeProfiniteGroup ι)
+        (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker →ₜ*
+          ↑(padicCompletionUnits p L),
+      Function.Surjective ψ ∧ ∀ x, padicCompletionUnitsEquivAbelianizationProP p K L j (ψ x) =
+        abelianizationProPMap p φ.toMonoidHom φ.continuous
+          (presentation_ker_le_comap K L j φ hφ) x := by
   let R := (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker
   let V := (galoisSubgroup K L j).toSubgroup
   have hRV : R ≤ V.comap φ.toMonoidHom := presentation_ker_le_comap K L j φ hφ
@@ -102,16 +98,33 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
       continuous_abelianizationProPMap p φ.toMonoidHom φ.continuous hRV⟩
   have hκ : Function.Surjective κ :=
     abelianizationProPMap_surjective p φ.toMonoidHom φ.continuous hRV hVR
-  have hκ_mk (r : R) : κ (abelianizationProPMk p _ R r) =
-      abelianizationProPMk p _ V ⟨φ r, Subgroup.mem_comap.mp (hRV r.2)⟩ :=
-    abelianizationProPMap_mk p φ.toMonoidHom φ.continuous hRV r
   let a := padicCompletionUnitsEquivAbelianizationProP p K L j
   let ψ : abelianizationProP p (freeProfiniteGroup ι) R →ₜ* ↑(padicCompletionUnits p L) :=
     (a.symm : _ →ₜ* _).comp κ
-  have hψ : Function.Surjective ψ := a.symm.surjective.comp hκ
-  have haψ (x) : a (ψ x) = κ x := by
-    simp only [ψ, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.coe_coe, ContinuousMulEquiv.apply_symm_apply]
+  refine ⟨ψ, a.symm.surjective.comp hκ, fun x ↦ ?_⟩
+  simp only [ψ, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    ContinuousMonoidHom.coe_coe]
+  exact a.apply_symm_apply (κ x)
+
+include hφ in
+/-- A continuous homomorphism `ψ` from `R^ab(p)` to `A(L)` which is equivariant for `Gal(L/K)`,
+as read through local reciprocity, gives a `ℤ_p[Gal(L/K)]`-linear map from the relation module
+whose composite with Lyndon's isomorphism is `ψ`. -/
+private theorem exists_linearMap_of_equivariant
+    (ψ : abelianizationProP p (freeProfiniteGroup ι)
+        (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker →ₜ*
+          ↑(padicCompletionUnits p L))
+    (haψ : ∀ x, padicCompletionUnitsEquivAbelianizationProP p K L j (ψ x) =
+      abelianizationProPMap p φ.toMonoidHom φ.continuous
+        (presentation_ker_le_comap K L j φ hφ) x) :
+    ∃ β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g →ₗ[
+        MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L),
+      ∀ x, β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg (ofMul x)) =
+        ofMul (ψ x) := by
+  let R := (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker
+  let V := (galoisSubgroup K L j).toSubgroup
+  have hRV : R ≤ V.comap φ.toMonoidHom := presentation_ker_le_comap K L j φ hφ
+  let a := padicCompletionUnitsEquivAbelianizationProP p K L j
   -- The pro-p module structure is p-adic exponentiation. Continuity makes ψ linear.
   have : CompactSpace R :=
     isCompact_iff_compactSpace.mp (isClosed_singleton.preimage
@@ -151,17 +164,34 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
         padicCompletionUnitsEquivAbelianizationProP_smul p K L j (φ f) z
     rw [haψ, ha, haψ]
     exact abelianizationProPMap_smul p φ.toMonoidHom φ.continuous hRV f _
-  let β := MonoidAlgebra.equivariantOfLinearOfComm β₀ hequiv
-  refine ⟨β, ?_, ?_⟩
-  · intro z
-    obtain ⟨x, hx⟩ := hψ z.toMul
-    refine ⟨e (ofMul x), ?_⟩
-    simp only [β, MonoidAlgebra.equivariantOfLinearOfComm_apply, hβ₀,
-      e.symm_apply_apply, toMul_ofMul, hx, ofMul_toMul]
-  · intro r
-    simp only [β, MonoidAlgebra.equivariantOfLinearOfComm_apply]
-    rw [hβ₀, ← freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply,
-      e.symm_apply_apply, toMul_ofMul]
-    rw [toMul_ofMul, haψ, hκ_mk]
+  refine ⟨MonoidAlgebra.equivariantOfLinearOfComm β₀ hequiv, fun x ↦ ?_⟩
+  simp only [MonoidAlgebra.equivariantOfLinearOfComm_apply, hβ₀]
+  rw [← freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply]
+  simp only [e, LinearEquiv.symm_apply_apply, toMul_ofMul]
+
+/-- A surjective free profinite presentation of `G_K` induces a `ℤ_p[Gal(L/K)]`-linear
+surjection from the relation module onto the completed multiplicative group `A(L)`.
+On a class of a relation `r`, the map is the class of `φ r` read through local reciprocity.
+No hypothesis of tame ramification or bound on the number of generators is needed. -/
+theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surjective φ) :
+    ∃ β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g →ₗ[
+        MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L),
+      Function.Surjective β ∧
+      ∀ r : (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker,
+        padicCompletionUnitsEquivAbelianizationProP p K L j
+          (β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg
+            (ofMul (abelianizationProPMk p _ _ r)))).toMul =
+          abelianizationProPMk p (AbsoluteGaloisGroup K) (galoisSubgroup K L j).toSubgroup
+            ⟨φ r, by
+              rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom,
+                MonoidHom.mem_ker, hφ]
+              exact MonoidHom.mem_ker.mp r.2⟩ := by
+  obtain ⟨ψ, hψ, haψ⟩ := exists_surjective_continuousMonoidHom p K L j φ hφ hsurj
+  obtain ⟨β, hβ⟩ := exists_linearMap_of_equivariant p K L hg j φ hφ ψ haψ
+  refine ⟨β, fun z ↦ ?_, fun r ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := hψ z.toMul
+    exact ⟨_, (hβ x).trans (by rw [hx, ofMul_toMul])⟩
+  · rw [hβ, toMul_ofMul, haψ, abelianizationProPMap_mk]
+    rfl
 
 end TauCeti

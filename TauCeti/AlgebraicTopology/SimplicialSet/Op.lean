@@ -26,6 +26,10 @@ constructions on simplicial sets, such as joins and slices, along the opposite.
   the constant map at the reversed vertex.
 * `SSet.stdSimplex.opIso_inv_comp_opFunctor_map_yonedaEquiv_symm`: the map `Δ[n] ⟶ Xᵒᵖ` given by
   an `n`-simplex of `Xᵒᵖ` is the opposite of the map `Δ[n] ⟶ X` given by the same simplex of `X`.
+* `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
+* `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
+  and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
+  opposites of `e₁₂` and `e₀₁`.
 -/
 
 public section
@@ -114,5 +118,65 @@ lemma opIso_inv_comp_opFunctor_map_yonedaEquiv_symm {X : SSet.{u}} {n : SimplexC
   simp
 
 end stdSimplex
+
+namespace Edge
+
+variable {X : SSet.{u}} {x₀ x₁ x₂ : X _⦋0⦌}
+
+/-- The edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged: the same
+`1`-simplex, read with its vertices in the reverse order. -/
+def opEquiv : X.Edge x₀ x₁ ≃ X.op.Edge (X.opObjEquiv.symm x₁) (X.opObjEquiv.symm x₀) where
+  toFun e := mk (X.opObjEquiv.symm e.edge) (by simp) (by simp)
+  invFun e := mk (X.opObjEquiv e.edge)
+    (X.opObjEquiv.symm.injective ((X.op_δ 0 e.edge).symm.trans e.tgt_eq))
+    (X.opObjEquiv.symm.injective ((X.op_δ 1 e.edge).symm.trans e.src_eq))
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma opEquiv_edge (e : X.Edge x₀ x₁) : (opEquiv e).edge = X.opObjEquiv.symm e.edge :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_edge (e : X.op.Edge (X.opObjEquiv.symm x₁) (X.opObjEquiv.symm x₀)) :
+    (opEquiv.symm e).edge = X.opObjEquiv e.edge :=
+  (rfl)
+
+/-- The opposite of an identity edge is an identity edge. -/
+@[simp]
+lemma opEquiv_id (x : X _⦋0⦌) : opEquiv (id x) = id (X.opObjEquiv.symm x) := by
+  ext
+  simp
+
+namespace CompStruct
+
+variable {e₀₁ : X.Edge x₀ x₁} {e₁₂ : X.Edge x₁ x₂} {e₀₂ : X.Edge x₀ x₂}
+
+/-- A `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁` and `e₁₂` is a `2`-simplex of
+`Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the opposites of `e₁₂` and `e₀₁`. -/
+def opEquiv : CompStruct e₀₁ e₁₂ e₀₂ ≃
+    CompStruct (Edge.opEquiv e₁₂) (Edge.opEquiv e₀₁) (Edge.opEquiv e₀₂) where
+  toFun h := mk (X.opObjEquiv.symm h.simplex) (by simp) (by simp) (by simp)
+  invFun h := mk (X.opObjEquiv h.simplex)
+    (X.opObjEquiv.symm.injective (((X.op_δ 0 h.simplex).symm.trans h.d₀).trans (opEquiv_edge _)))
+    (X.opObjEquiv.symm.injective (((X.op_δ 2 h.simplex).symm.trans h.d₂).trans (opEquiv_edge _)))
+    (X.opObjEquiv.symm.injective (((X.op_δ 1 h.simplex).symm.trans h.d₁).trans (opEquiv_edge _)))
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma opEquiv_simplex (h : CompStruct e₀₁ e₁₂ e₀₂) :
+    (opEquiv h).simplex = X.opObjEquiv.symm h.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_simplex
+    (h : CompStruct (Edge.opEquiv e₁₂) (Edge.opEquiv e₀₁) (Edge.opEquiv e₀₂)) :
+    (opEquiv.symm h).simplex = X.opObjEquiv h.simplex :=
+  (rfl)
+
+end CompStruct
+
+end Edge
 
 end SSet

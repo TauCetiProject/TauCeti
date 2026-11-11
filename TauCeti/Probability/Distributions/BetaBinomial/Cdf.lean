@@ -66,11 +66,7 @@ theorem betaBinomialMeasure_real_Iic_eq_one {a b : ℝ} (ha : 0 < a) (hb : 0 < b
   let _ := isProbabilityMeasure_betaBinomialMeasure ha hb n
   rw [← probReal_univ (μ := betaBinomialMeasure n a b)]
   apply measureReal_congr
-  have hle : ∀ᵐ j ∂betaBinomialMeasure n a b, j ≤ k := by
-    rw [ae_iff_of_countable]
-    intro j hj
-    exact ((betaBinomialMeasure_singleton_ne_zero_iff ha hb n j).mp hj).trans hk
-  filter_upwards [hle] with j hj
-  simp only [mem_Iic, mem_univ, hj]
+  filter_upwards [ae_le_betaBinomialMeasure n a b] with j hj
+  simp only [mem_Iic, mem_univ, hj.trans hk]
 
 end TauCeti.Probability

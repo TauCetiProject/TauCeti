@@ -357,19 +357,21 @@ theorem graphPlan_apply_compl_graph (hT : AEMeasurable T μ) (hS : AEMeasurable 
 
 /-- A graph plan of `T` is carried by the graph of `S` exactly when `S` agrees with `T`
 almost everywhere. -/
-theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
+theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) :
     (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔ T =ᵐ[μ] S := by
+  refine ⟨fun h ↦ ae_of_ae_map (aemeasurable_prodMk_self hT) h, fun h ↦ ?_⟩
+  have hS : AEMeasurable S μ := hT.congr h
   have h₁ : (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔
       graphPlan T μ {z : X × Y | ¬ z.2 = S z.1} = 0 := ae_iff
   have h₂ : (∀ᵐ x ∂μ, T x = S x) ↔ μ {x | ¬ T x = S x} = 0 := ae_iff
   rw [h₁, graphPlan_apply_compl_graph hT hS, ← h₂]
-  exact Iff.rfl
+  exact h
 
 /-- A graph plan is carried by the graph of its map: almost every point of `graphPlan T μ` has
 second coordinate the value of `T` at its first. -/
 theorem ae_snd_eq_graphPlan (hT : AEMeasurable T μ) :
     ∀ᵐ z ∂graphPlan T μ, z.2 = T z.1 :=
-  (ae_snd_eq_graphPlan_iff hT hT).2 (Filter.EventuallyEq.refl _ _)
+  (ae_snd_eq_graphPlan_iff hT).2 (Filter.EventuallyEq.refl _ _)
 
 omit [MeasurableEq Y] in
 /-- A plan carried by the graph of `T` is the graph plan of `T` over its own first marginal.
@@ -398,7 +400,7 @@ theorem eq_graphPlan_iff (hT : AEMeasurable T π.fst) :
 plan exactly when they agree `μ`-almost everywhere. -/
 theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
-  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
+  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
 
 /-- **A plan dominated by a graph plan is a graph plan of the same map.** If `π` is absolutely
 continuous with respect to the graph plan of `T` over `μ`, then `π` is carried by the graph of `T`,

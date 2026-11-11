@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
 /-!
@@ -18,6 +19,10 @@ Consequently, convergence of inverse maps to any nonzero map forces eventual inv
 The inverse of an invertible map also suffices, including on trivial spaces. These results apply
 without completeness or continuity of the original family, and are useful when differentiating
 inverse families.
+
+Over a field, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
+maps is seen to be homogeneous of the opposite degree.
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -77,17 +82,43 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
     (hB : B.IsInvertible) {l : Filter ι}
     (h : Tendsto (fun i => (A i).inverse) l (𝓝 B.inverse)) :
     ∀ᶠ i in l, (A i).IsInvertible := by
-  by_cases hE : Subsingleton E
-  · obtain ⟨e, _⟩ := hB
-    let : Subsingleton E := hE
-    let : Subsingleton F := e.toEquiv.symm.subsingleton
-    exact Eventually.of_forall fun i => by
-      simpa only [Subsingleton.elim (A i) 0, isInvertible_zero_iff] using
-        And.intro (inferInstance : Subsingleton E) (inferInstance : Subsingleton F)
-  · have hne : B.inverse ≠ 0 := by
-      intro hzero
-      exact hE (isInvertible_zero_iff.mp (hzero ▸ hB.inverse)).2
-    exact eventually_isInvertible_of_tendsto_inverse h hne
+  by_cases hzero : B.inverse = 0
+  · -- Then the zero map `F → E` is invertible, so both spaces are trivial.
+    obtain ⟨hF, hE⟩ := isInvertible_zero_iff.mp (hzero ▸ hB.inverse)
+    exact Eventually.of_forall fun i ↦
+      Subsingleton.elim 0 (A i) ▸ isInvertible_zero_iff.mpr ⟨hE, hF⟩
+  · exact eventually_isInvertible_of_tendsto_inverse h hzero
+
+section Smul
+
+variable {𝕜 M M₂ : Type*} [Field 𝕜]
+  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+
+omit [ContinuousConstSMul 𝕜 M] in
+/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+    (c • f).IsInvertible ↔ f.IsInvertible := by
+  rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
+when `c = 0` or when `f` is not invertible. -/
+theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- `zero_smul` is unavailable here: `M →L[𝕜] M₂` is a `𝕜`-module only under
+    -- `ContinuousAdd M₂`, which these lemmas do not assume.
+    have h0 : (0 : 𝕜) • f = 0 := by ext; simp
+    ext y
+    simp [h0]
+  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp]
+  ext y
+  rw [comp_apply, ContinuousLinearEquiv.coe_coe,
+    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
+    map_smul, smul_apply]
+
+end Smul
 
 section ProdMap
 
@@ -173,23 +204,16 @@ variable {R M N : Type*} [Ring R]
 private theorem isUnit_one_sub_comp_of (u : N →L[R] M) (v : M →L[R] N)
     (h : IsUnit (1 - v.comp u)) : IsUnit (1 - u.comp v) := by
   obtain ⟨t, ht, ht'⟩ := isUnit_iff_exists.mp h
-  have hleft (y : N) : t y - v (u (t y)) = y := by
-    simpa using DFunLike.congr_fun ht y
-  have hright (y : N) : t y - t (v (u y)) = y := by
-    simpa using DFunLike.congr_fun ht' y
-  refine isUnit_iff_exists.mpr ⟨1 + u.comp (t.comp v), ?_, ?_⟩
-  · ext x
-    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_add]
-    calc
-      x - u (v x) + (u (t (v x)) - u (v (u (t (v x))))) =
-          x + u (t (v x) - v (u (t (v x))) - v x) := by simp only [map_sub]; abel
-      _ = x := by rw [hleft]; simp
-  · ext x
-    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_sub]
-    calc
-      x + u (t (v x)) - (u (v x) + u (t (v (u (v x))))) =
-          x + u (t (v x) - t (v (u (v x))) - v x) := by simp only [map_sub]; abel
-      _ = x := by rw [hright]; simp
+  -- Both identities for `1 + u ∘ t ∘ v` are `u` applied to those for `t` at `v x`, rearranged.
+  refine isUnit_iff_exists.mpr ⟨1 + u.comp (t.comp v), ?_, ?_⟩ <;> ext x
+  · have := sub_eq_zero.mpr (congrArg u (DFunLike.congr_fun ht (v x)))
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_add,
+      map_sub] at this ⊢
+    exact sub_eq_zero.mp (.trans (by abel) this)
+  · have := sub_eq_zero.mpr (congrArg u (DFunLike.congr_fun ht' (v x)))
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply,
+      map_sub] at this ⊢
+    exact sub_eq_zero.mp (.trans (by abel) this)
 
 /-- The rectangular Jacobson identity: for maps between two topological modules,
 `1 - u ∘ v` is invertible exactly when `1 - v ∘ u` is invertible. -/

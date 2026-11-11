@@ -766,8 +766,9 @@ which commutes with the grading shift induces a homomorphism of triangulated Gro
 sending the class of `M{1}` and the class of `M` to the same element, that is, one invariant under
 the grading shift.
 
-No factorization of this map through the shift coinvariants is constructed for triangulated `K₀`;
-the exact case has one, `TauCeti.LaurentK0.forgetGrading`. -/
+Its factorization through the specialization of graded triangulated `K₀` at `q = 1` is
+`TauCeti.LaurentTriangulatedK0.forgetGrading`, as `TauCeti.LaurentK0.forgetGrading` is in the exact
+case. -/
 theorem map_shiftEquiv_of_commShift (comm : e.functor ⋙ F ≅ F) (x : TriangulatedK0 C) :
     map F (mapEquiv e x) = map F x := by
   have key : (map F).comp (mapEquiv e).toAddMonoidHom = map F :=

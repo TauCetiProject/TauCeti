@@ -85,6 +85,69 @@ private theorem innerTrivialF2Iso_apply_tprod
   exact Finset.prod_congr rfl fun b _ ↦
     eqToHom_smoothResFunctor_trivialF2_apply V _ _ (m b)
 
+/-- The transitivity square for tensor-induced trivial `𝔽₂` coefficients, evaluated on a pure
+tensor of pure tensors: both routes multiply the same factors of the tower. -/
+private theorem smoothTensorInducedTrivialF2Iso_transitivity_hom_apply_tprod
+    (m : G ⧸ U → U ⧸ V.subgroupOf U → (DiscreteRep.trivialF2 V).V) :
+    letI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
+    letI : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
+    letI : Fintype (U ⧸ V.subgroupOf U) := (V.subgroupOf U).fintypeQuotientOfFiniteIndex
+    letI : Fintype (G ⧸ V) := V.fintypeQuotientOfFiniteIndex
+    letI : Module ℤ (DiscreteRep.trivialF2 V).V := (DiscreteRep.trivialF2 V).module
+    letI : Module ℤ (trivialF2 U).V := (trivialF2 U).hV2
+    letI : Module ℤ (trivialF2 G).V := (trivialF2 G).hV2
+    let x := fun a ↦ PiTensorProduct.tprod ℤ (m a)
+    let z := PiTensorProduct.tprod ℤ x
+    let f := (smoothTensorInductionFunctor ℤ U (V.subgroupOf U)
+        (U.subgroupOf_isOpen V hV) t).map
+          (eqToHom (smoothResFunctor_trivialF2 V
+            (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
+            (Subgroup.continuous_subgroupOfEquivOfLe hVU))) ≫
+        (smoothTensorInducedTrivialF2Iso U (V.subgroupOf U)
+          (U.subgroupOf_isOpen V hV) t).hom
+    trivialF2Equiv G
+        ((smoothTensorInducedTrivialF2Iso G V hV
+          (Subgroup.compositeLeftTransversal hVU s t)).hom.hom.hom
+            ((smoothTensorInducedTransitivityIso hVU s t hU hV
+              ⟨trivialF2 V, isSmoothDiscrete_trivialF2 V⟩).hom.hom.hom z)) =
+      trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
+        (((smoothTensorInductionFunctor ℤ G U hU s).map f).hom.hom z)) := by
+  let : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
+  let : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
+  let : Fintype (U ⧸ V.subgroupOf U) := (V.subgroupOf U).fintypeQuotientOfFiniteIndex
+  let : Fintype (G ⧸ V) := V.fintypeQuotientOfFiniteIndex
+  let : Module ℤ (DiscreteRep.trivialF2 V).V := (DiscreteRep.trivialF2 V).module
+  let : Module ℤ (trivialF2 U).V := (trivialF2 U).hV2
+  let : Module ℤ (trivialF2 G).V := (trivialF2 G).hV2
+  intro x z f
+  have ht := smoothTensorInducedTransitivityIso_hom_apply_tprod hVU s t hU hV
+    ⟨trivialF2 V, isSmoothDiscrete_trivialF2 V⟩ m
+  refine (congrArg (fun w ↦ trivialF2Equiv G
+    ((smoothTensorInducedTrivialF2Iso G V hV
+      (Subgroup.compositeLeftTransversal hVU s t)).hom.hom.hom w)) ht).trans ?_
+  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G V hV
+    (Subgroup.compositeLeftTransversal hVU s t) _).trans ?_
+  -- Compute the iterated route by mapping the inner normalization in each outer factor.
+  have ho := smoothTensorInductionFunctor_map_hom_hom_apply ℤ G U hU s f z
+  refine Eq.trans ?_ (congrArg (fun w ↦ trivialF2Equiv G
+    ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom w)) ho.symm)
+  have hp := PiTensorProduct.map_tprod
+    (fun _ : G ⧸ U ↦ f.hom.hom.toLinearMap) x
+  refine Eq.trans ?_ (congrArg (fun w ↦ trivialF2Equiv G
+    ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom w)) hp.symm)
+  refine Eq.trans ?_
+    (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G U hU s _).symm
+  -- The direct product becomes an iterated product in the tower's coset coordinates.
+  have hi (a : G ⧸ U) :
+      trivialF2Equiv U (f.hom.hom (x a)) = ∏ b, trivialF2Equiv V (m a b) :=
+    innerTrivialF2Iso_apply_tprod hVU t hV (m a)
+  let e := Subgroup.quotientEquivProdOfLE' hVU (Subgroup.leftTransversalRep U s)
+    (Subgroup.leftTransversalRep_mk U s)
+  refine (Fintype.prod_equiv e _ (fun q ↦ trivialF2Equiv V (m q.1 q.2))
+    (fun _ ↦ rfl)).trans ?_
+  refine (Fintype.prod_prod_type _).trans ?_
+  exact Finset.prod_congr rfl fun a _ ↦ (hi a).symm
+
 /-- The canonical identification of tensor-induced trivial `𝔽₂` coefficients commutes with
 transitivity: direct multiplication of the tensor factors agrees with multiplication in stages.
 The inner restriction is identified with trivial coefficients by `smoothResFunctor_trivialF2`. -/
@@ -118,51 +181,7 @@ theorem smoothTensorInducedTrivialF2Iso_transitivity_hom :
   apply PiTensorProduct.ext_sigma_tprod (R := ℤ)
     (M := fun (_ : G ⧸ U) (_ : U ⧸ V.subgroupOf U) ↦ (DiscreteRep.trivialF2 V).V)
   intro m
-  let x := fun a ↦ PiTensorProduct.tprod ℤ (m a)
-  let z := PiTensorProduct.tprod ℤ x
   apply (trivialF2Equiv G).injective
-  let f := (smoothTensorInductionFunctor ℤ U (V.subgroupOf U)
-      (U.subgroupOf_isOpen V hV) t).map
-        (eqToHom (smoothResFunctor_trivialF2 V
-          (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
-          (Subgroup.continuous_subgroupOfEquivOfLe hVU))) ≫
-      (smoothTensorInducedTrivialF2Iso U (V.subgroupOf U)
-        (U.subgroupOf_isOpen V hV) t).hom
-  -- The smooth/discrete dictionaries preserve carriers and maps. Write the underlying
-  -- composites explicitly: rewriting the categorical composites changes their object indices.
-  change trivialF2Equiv G
-      ((smoothTensorInducedTrivialF2Iso G V hV
-        (Subgroup.compositeLeftTransversal hVU s t)).hom.hom.hom
-          ((smoothTensorInducedTransitivityIso hVU s t hU hV
-            ⟨trivialF2 V, isSmoothDiscrete_trivialF2 V⟩).hom.hom.hom z)) =
-    trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
-      (((smoothTensorInductionFunctor ℤ G U hU s).map f).hom.hom z))
-  have ht := smoothTensorInducedTransitivityIso_hom_apply_tprod hVU s t hU hV
-    ⟨trivialF2 V, isSmoothDiscrete_trivialF2 V⟩ m
-  refine (congrArg (fun w ↦ trivialF2Equiv G
-    ((smoothTensorInducedTrivialF2Iso G V hV
-      (Subgroup.compositeLeftTransversal hVU s t)).hom.hom.hom w)) ht).trans ?_
-  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G V hV
-    (Subgroup.compositeLeftTransversal hVU s t) _).trans ?_
-  -- Compute the iterated route by mapping the inner normalization in each outer factor.
-  have ho := smoothTensorInductionFunctor_map_hom_hom_apply ℤ G U hU s f z
-  refine Eq.trans ?_ (congrArg (fun w ↦ trivialF2Equiv G
-    ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom w)) ho.symm)
-  have hp := PiTensorProduct.map_tprod
-    (fun _ : G ⧸ U ↦ f.hom.hom.toLinearMap) x
-  refine Eq.trans ?_ (congrArg (fun w ↦ trivialF2Equiv G
-    ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom w)) hp.symm)
-  refine Eq.trans ?_
-    (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G U hU s _).symm
-  -- The direct product becomes an iterated product in the tower's coset coordinates.
-  have hi (a : G ⧸ U) :
-      trivialF2Equiv U (f.hom.hom (x a)) = ∏ b, trivialF2Equiv V (m a b) :=
-    innerTrivialF2Iso_apply_tprod hVU t hV (m a)
-  let e := Subgroup.quotientEquivProdOfLE' hVU (Subgroup.leftTransversalRep U s)
-    (Subgroup.leftTransversalRep_mk U s)
-  refine (Fintype.prod_equiv e _ (fun q ↦ trivialF2Equiv V (m q.1 q.2))
-    (fun _ ↦ rfl)).trans ?_
-  refine (Fintype.prod_prod_type _).trans ?_
-  exact Finset.prod_congr rfl fun a _ ↦ (hi a).symm
+  exact smoothTensorInducedTrivialF2Iso_transitivity_hom_apply_tprod hVU s t hU hV m
 
 end TauCeti

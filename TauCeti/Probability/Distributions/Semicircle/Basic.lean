@@ -17,6 +17,28 @@ measure-level construction and its elementary consequences: normalization, exact
 support, the almost-sure carrier `(-1, 1)`, natural moments as a binomial expansion of beta
 moments, mean, variance, and exponential-integrability domain.
 
+This is the semicircle law of radius one: it is supported on `[-1, 1]` and has variance `1 / 4`.
+Semicircle laws with other centres and variances, including the radius-two, variance-one law
+`semicircleReal 0 1`, are built from it in
+`TauCeti.Probability.Distributions.Semicircle.LocationScale`.
+
+## Main definitions
+
+* `semicircleMeasure`: the unit-radius semicircle law, the image of the beta `(3 / 2, 3 / 2)` law
+  under `x ↦ -1 + 2 * x` (`semicircleMeasure_eq_map_betaMeasure`).
+
+## Main results
+
+* `isProbabilityMeasure_semicircleMeasure`: the semicircle law is a probability measure.
+* `ae_mem_Ioo_semicircleMeasure`: it is carried by the open interval `(-1, 1)`.
+* `support_semicircleMeasure`: its topological support is `[-1, 1]`.
+* `integral_pow_semicircleMeasure`: its `n`-th moment, as the binomial expansion of the moments
+  of the beta `(3 / 2, 3 / 2)` law.
+* `integral_id_semicircleMeasure`, `variance_id_semicircleMeasure`: its mean is `0` and its
+  variance is `1 / 4`.
+* `integrableExpSet_id_semicircleMeasure`: every exponential moment is finite.
+* `integrable_pow_semicircleMeasure`: every natural power is integrable.
+
 ## References
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
@@ -41,7 +63,7 @@ theorem semicircleMeasure_eq_map_betaMeasure :
   (rfl)
 
 /-- The semicircle law is a probability measure. -/
-noncomputable instance isProbabilityMeasure_semicircleMeasure :
+instance isProbabilityMeasure_semicircleMeasure :
     IsProbabilityMeasure semicircleMeasure := by
   rw [semicircleMeasure]
   let _ : IsProbabilityMeasure (betaMeasure (3 / 2) (3 / 2)) :=
@@ -61,28 +83,26 @@ theorem support_semicircleMeasure : semicircleMeasure.support = Icc (-1) 1 := by
   rw [semicircleMeasure, support_map_affine (by norm_num),
     support_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num)]
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨by linarith [hy.1], by linarith [hy.2]⟩
-  · intro hx
-    refine ⟨(x + 1) / 2, ⟨by linarith [hx.1], by linarith [hx.2]⟩, ?_⟩
-    ring
+  simp only [add_comm (-1 : ℝ), image_affine_Icc' (by norm_num : (0 : ℝ) < 2)]
+  norm_num
 
 /-- The natural moments of the semicircle law, as the affine binomial expansion of the moments
 of its beta realization. -/
 theorem integral_pow_semicircleMeasure (n : ℕ) :
     ∫ x, x ^ n ∂semicircleMeasure =
       ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (-1) ^ (n - k) * 2 ^ k *
-        (Real.Gamma (3 / 2 + k) * Real.Gamma (3 / 2 + 3 / 2) /
-          (Real.Gamma (3 / 2) * Real.Gamma (3 / 2 + 3 / 2 + k))) := by
+        (Real.Gamma (3 / 2 + k) * 2 / (Real.Gamma (3 / 2) * (k + 2).factorial)) := by
   let μ := betaMeasure (3 / 2) (3 / 2)
   let _ : IsProbabilityMeasure μ := isProbabilityMeasureBeta (by norm_num) (by norm_num)
   have habs : Integrable (fun x : ℝ ↦ |x| ^ n) μ := by
     exact integrable_pow_abs_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num) n
+  have hΓ (k : ℕ) : Real.Gamma (3 / 2 + 3 / 2 + k) = (k + 2).factorial := by
+    rw [show (3 / 2 + 3 / 2 + k : ℝ) = ((k + 2 : ℕ) : ℝ) + 1 by push_cast; ring,
+      Real.Gamma_nat_eq_factorial]
+  have hΓ₀ : Real.Gamma (3 / 2 + 3 / 2) = 2 := by simp
   have hmoment := moment_id_map_affine (μ := μ) (a := -1) (b := 2) habs
-  simpa only [semicircleMeasure, moment, Pi.pow_apply, id_eq, μ,
+  simpa only [semicircleMeasure, moment, Pi.pow_apply, id_eq, μ, hΓ, hΓ₀,
     integral_pow_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num)] using hmoment
 

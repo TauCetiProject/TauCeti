@@ -155,17 +155,9 @@ theorem curvatureTensor_symm_trivializationAt_bundle {x : M}
   have hxO : x ∈ O := ⟨hxV, hxT⟩
   have hOopen : IsOpen O := eV.open_baseSet.inter eT.open_baseSet
   have hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
-  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
-  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
-  have : ContMDiffVectorBundle (∞ + 1) F V I := by
-    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
   set Γ := bundleChristoffelMap b eT hcov
   have hΓ : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ x :=
-    ((contMDiffOn_bundleChristoffelMap (n := ∞) b eT hcov).contMDiffAt
+    ((cov.contMDiffOn_bundleChristoffelMap b eV eT).contMDiffAt
       (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
   have hX (u : E) : CMDiff[O] ∞ (T% (fun y ↦ eT.symm y u)) :=
     (contMDiffOn_symm_baseSet u).mono inter_subset_right
@@ -184,20 +176,17 @@ theorem curvatureTensor_symm_trivializationAt_bundle {x : M}
       (hΓ.clm_apply mdifferentiableAt_const).clm_apply mdifferentiableAt_const
     have hL_mv : mvfderiv I (fun y ↦ Γ y w v') x (eT.symm x v) =
         mvfderiv I Γ x (eT.symm x v) w v' :=
-      mvfderiv_clm_apply_const_apply₂ hΓ w v' (eT.symm x v)
-    have hsmooth : CMDiff[O] ∞
-        (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) :=
-      ContMDiffOn.clm_bundle_apply
-        ((ContMDiffCovariantDerivativeOn.contMDiff
-          (contMDiffOn_symm_baseSet (e := eV) (n := ∞ + 1) w)).mono inter_subset_left)
-        (hX v')
+      mvfderiv_clm_apply_const₂ hΓ w v' (eT.symm x v)
     have heq : ∀ᶠ y in 𝓝 x, cov (fun z ↦ eV.symm z w) y (eT.symm y v') = eV.symm y (Γ y w v') :=
       Filter.eventually_of_mem (hOopen.mem_nhds hxO) fun y hy ↦
         covariantDerivative_symm_apply_symm_bundle b eT hcov hy.1 hy.2 w v'
-    have hd₁ : MDiffAt (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) x :=
-      (hsmooth.contMDiffAt (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
+    have hread : ∀ᶠ y in 𝓝 x, (eV ⟨y, eV.symm y (Γ y w v')⟩).2 = Γ y w v' :=
+      Filter.eventually_of_mem (eV.open_baseSet.mem_nhds hxV) fun y hy ↦ by
+        rw [eV.apply_mk_symm hy]
     have hd₂ : MDiffAt (T% (fun y ↦ eV.symm y (Γ y w v'))) x :=
-      hd₁.congr_of_eventuallyEq (heq.mono fun y hy ↦ by simp only [hy])
+      (eV.mdifferentiableAt_section_iff I _ hxV).2 (hL_diff.congr_of_eventuallyEq hread)
+    have hd₁ : MDiffAt (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) x :=
+      hd₂.congr_of_eventuallyEq (heq.mono fun y hy ↦ by simp only [hy])
     rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hd₁ hd₂ Filter.univ_mem heq,
       covariantDerivative_symm_comp_apply_symm_bundle b eT hcov hxV hxT hL_diff v, hL_mv]
   have hsub (A B : F) : eV.symm x A - eV.symm x B = eV.symm x (A - B) := by

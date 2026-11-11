@@ -38,11 +38,13 @@ finite-dimensional real Lie group `G`:
 
 ## Main results
 
+* `TauCeti.Lie.IsTorus.subgroupOf`, `TauCeti.Lie.IsMaximalTorus.subgroupOf`: tori and maximal
+  tori remain such in a subgroup containing them.
+* `TauCeti.Lie.IsMaximalTorus.map_conj`: conjugation preserves maximal tori in a topological group.
 * `TauCeti.Lie.IsTorus.image_lieExp_lieSubalgebraOfSubgroup`: a torus is the exponential image of
   its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`).
-* `TauCeti.Lie.IsTorus.le_of_lieSubalgebraOfSubgroup_le` and
-  `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus lies in a closed subgroup whose
-  Lie algebra contains its own; in particular a torus is determined by its Lie algebra.
+* `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus is determined by its Lie
+  algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
   torus is contained in a maximal torus; in particular maximal tori exist.
 * `TauCeti.Lie.IsTorus.elim`: a torus is a compact connected commutative Lie group modelled on
@@ -128,6 +130,13 @@ theorem IsMaximalTorus.map_mulEquiv {G' : Type*} [TopologicalSpace G'] [Group G'
   have heq := hT.eq_of_le (hS.map f.symm.toMonoidHom hf') hle'
   simpa [Subgroup.map_map] using Subgroup.map_mono (f := f.toMonoidHom) heq.ge
 
+/-- Conjugation preserves maximal tori in a topological group. -/
+theorem IsMaximalTorus.map_conj [IsTopologicalGroup G] {T : Subgroup G}
+    (hT : IsMaximalTorus T) (g : G) : IsMaximalTorus (T.map (MulAut.conj g).toMonoidHom) :=
+  hT.map_mulEquiv (MulAut.conj g) (IsTopologicalGroup.continuous_conj g)
+    ((by fun_prop : Continuous fun x ↦ g⁻¹ * x * g).congr fun x ↦
+      (MulAut.conj_symm_apply g x).symm)
+
 /-- The trivial subgroup is a torus. -/
 theorem isTorus_bot : IsTorus (⊥ : Subgroup G) where
   isCompact := by
@@ -154,6 +163,27 @@ theorem isMaximalTorus_top [CompactSpace G] [ConnectedSpace G] [IsMulCommutative
     IsMaximalTorus (⊤ : Subgroup G) :=
   ⟨isTorus_top, fun _ _ _ => le_top⟩
 
+/-- A torus remains a torus when viewed inside a subgroup containing it. -/
+theorem IsTorus.subgroupOf {T K : Subgroup G} (hT : IsTorus T) (hTK : T ≤ K) :
+    IsTorus (T.subgroupOf K) := by
+  let _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
+  let _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
+  let _ : IsMulCommutative T := hT.isMulCommutative
+  have h := (isTorus_top (G := T)).map (Subgroup.inclusion hTK)
+    (continuous_subtype_val.subtype_mk fun t ↦ hTK t.property)
+  simpa only [← MonoidHom.range_eq_map, Subgroup.inclusion_range] using h
+
+/-- A maximal torus remains maximal in any subgroup containing it. -/
+theorem IsMaximalTorus.subgroupOf {T K : Subgroup G} (hT : IsMaximalTorus T) (hTK : T ≤ K) :
+    IsMaximalTorus (T.subgroupOf K) := by
+  refine ⟨hT.isTorus.subgroupOf hTK, fun S hS hle ↦ ?_⟩
+  have hle' : T ≤ S.map K.subtype := by
+    rw [← Subgroup.map_subgroupOf_eq_of_le hTK]
+    exact Subgroup.map_mono hle
+  have heq := hT.eq_of_le (hS.map K.subtype continuous_subtype_val) hle'
+  intro s hs
+  exact Subgroup.mem_subgroupOf.mpr (heq.ge ⟨s, hs, rfl⟩)
+
 end Definitions
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -172,21 +202,13 @@ theorem IsTorus.image_lieExp_lieSubalgebraOfSubgroup {T : Subgroup G} (hT : IsTo
   have := hT.isMulCommutative
   image_lieExp_lieSubalgebraOfSubgroup_of_isConnected hT.isClosed hT.isConnected
 
-/-- **A torus lies in a closed subgroup whose Lie algebra contains its own.** -/
-theorem IsTorus.le_of_lieSubalgebraOfSubgroup_le {T K : Subgroup G} (hT : IsTorus T)
-    (hK : IsClosed (K : Set G))
-    (h : lieSubalgebraOfSubgroup (I := I) T ≤ lieSubalgebraOfSubgroup (I := I) K) : T ≤ K := by
-  intro t ht
-  rw [← SetLike.mem_coe, ← hT.image_lieExp_lieSubalgebraOfSubgroup (I := I)] at ht
-  obtain ⟨X, hX, rfl⟩ := ht
-  exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK (h hX)
-
 /-- **A torus is determined by its Lie algebra.** -/
 theorem IsTorus.eq_of_lieSubalgebraOfSubgroup_eq {T T' : Subgroup G} (hT : IsTorus T)
     (hT' : IsTorus T')
     (h : lieSubalgebraOfSubgroup (I := I) T = lieSubalgebraOfSubgroup (I := I) T') : T = T' :=
-  le_antisymm (hT.le_of_lieSubalgebraOfSubgroup_le hT'.isClosed h.le)
-    (hT'.le_of_lieSubalgebraOfSubgroup_le hT.isClosed h.ge)
+  le_antisymm
+    (le_of_lieSubalgebraOfSubgroup_le hT.isClosed hT.isConnected.isPreconnected hT'.isClosed h.le)
+    (le_of_lieSubalgebraOfSubgroup_le hT'.isClosed hT'.isConnected.isPreconnected hT.isClosed h.ge)
 
 section Existence
 
@@ -199,9 +221,11 @@ private noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDeriv
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
 
+omit [T2Space G] in
 /-- **Every torus is contained in a maximal torus.** No compactness of `G` is needed. -/
 theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
     ∃ T', IsMaximalTorus T' ∧ T ≤ T' := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   -- The lattice of Lie subalgebras of `𝔤` is well-founded, so some torus containing `T` has a
   -- maximal Lie algebra; a torus containing it has the same Lie algebra, hence is equal to it.
   obtain ⟨T', ⟨hT', hle⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT
@@ -210,6 +234,7 @@ theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
   rw [hT'.eq_of_lieSubalgebraOfSubgroup_eq hT'' (le_antisymm (lieSubalgebraOfSubgroup_mono hle')
     (hmax ⟨hT'', hle.trans hle'⟩ (lieSubalgebraOfSubgroup_mono hle')))]
 
+omit [T2Space G] in
 /-- **Maximal tori exist.** -/
 theorem exists_isMaximalTorus : ∃ T : Subgroup G, IsMaximalTorus T :=
   ((isTorus_bot (G := G)).exists_isMaximalTorus_le I).imp fun _ h => h.1

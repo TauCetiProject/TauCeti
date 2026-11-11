@@ -228,8 +228,11 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
   apply Algebra.FormallySmooth.of_comp_surjective
   intro B _ _ I hI f
   let g := pointsMulEquiv R n (A := B ⧸ I) (toConv f)
+  have : IsLocalHom (Ideal.Quotient.mk I) :=
+    ⟨fun _ ↦ (IsNilpotent.isUnit_quotient_mk_iff ⟨2, hI⟩).mp⟩
   obtain ⟨N, hNupper, hN⟩ :=
-    Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq_of_isNilpotent I ⟨2, hI⟩ g.1
+    Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq (Ideal.Quotient.mk I)
+      Ideal.Quotient.mk_surjective g.1
       (UpperTriangularGroup.mem_comap_toGL_iff.mp g.2)
   let lift : WithConv (coordinateHopfAlgebra R n →ₐ[R] B) :=
     (pointsMulEquiv R n (A := B)).symm ⟨N, UpperTriangularGroup.mem_comap_toGL_iff.mpr hNupper⟩
@@ -246,9 +249,10 @@ instance instSmoothCoordinateHopfAlgebra : Algebra.Smooth R (coordinateHopfAlgeb
     Algebra.FinitePresentation.quotient (definingHopfIdeal_toIdeal_fg R n)
   exact ⟨inferInstance, inferInstance⟩
 
-/-- The upper-triangular coordinate Hopf algebra of `SLₙ` is smooth over a field. -/
-theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [Field k] :
-    smoothCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by
+/-- The upper-triangular coordinate Hopf algebra of `SLₙ` is smooth over every commutative
+ring. -/
+theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra :
+    smoothCommHopfAlgProperty R (coordinateHopfAlgebra R n) := by
   rw [smoothCommHopfAlgProperty_iff]
   infer_instance
 

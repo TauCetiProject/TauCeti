@@ -357,6 +357,30 @@ private noncomputable def coneCompHomotopy :
             (dgDifferential_coneHomOfHomotopy_dgId_zero hu hv hw huv))) (add_zero 0))
         (add_zero (-1))) (zero_add (-1))) (zero_add (-1))
 
+omit hv huv in
+/-- The first cancellation in the differential of `coneCompHomotopy`: the comparison morphisms
+`P⟦1⟧⟦1⟧ ⟶ P⟦1⟧ ⟶ P⟦1⟧⟦1⟧` cancel in the term coming from the projection onto `cone w`. -/
+private theorem dgComp_extensionSnd_comparison_cancel
+    (hm₁ : dgDifferential R 0 (coneHomOfHomotopy hu hw (dgId R P) v 0) = 0) :
+    dgComp R (dgComp R (extensionSnd R (dgDifferential_coneMorphism hm₁))
+      (dgComp R (fromShift (cone u hu) 1) (coneHomOfHomotopy hu hw (dgId R P) v 0) (add_zero 1))
+      (zero_add 1))
+      (dgComp R (extensionSnd R (dgDifferential_coneMorphism hw))
+        (dgComp R (toShift ((shiftFunctor R 1).obj P) 1)
+          (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+            (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero (-1)))
+        (zero_add (-1))) (add_neg_cancel 1) =
+    dgComp R (extensionSnd R (dgDifferential_coneMorphism hm₁))
+      (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionSnd R (dgDifferential_coneMorphism hu)))
+        (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+          (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero 0))
+      (add_zero 0) := by
+  rw [dgComp_assoc R (extensionSnd R (dgDifferential_coneMorphism hm₁)) _ _ (zero_add 1)
+      (add_neg_cancel 1) (by omega),
+    dgComp_assoc R (fromShift (cone u hu) 1) _ _ (add_zero 1) (zero_add (-1)) (by omega),
+    dgComp_coneHomOfHomotopy_extensionSnd_assoc, EnrichedFunctor.dgMap_dgId, dgId_dgComp,
+    ← dgMap_dgComp_fromShift_assoc, dgComp_fromShift_toShift_assoc]
+
 /-- The comparison morphism `cone (cone u ⟶ cone w) ⟶ cone v` followed by its inverse, through
 the summands `S` and `P⟦1⟧` of `cone w` and `Q⟦1⟧` of `(cone u)⟦1⟧`. -/
 private theorem dgComp_coneCompInv_coneCompHom :
@@ -426,9 +450,9 @@ private theorem dgId_cone_coneHomOfHomotopy_dgId_zero
       dgComp_extensionInr_extensionSnd_assoc, add_zero, zero_add] <;>
     rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
       ← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0), ← add_dgComp]
-  · rw [dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr, dgId_dgComp]
+  · rw [extension_total, dgId_dgComp]
   · rw [← EnrichedFunctor.dgMap_dgComp, ← EnrichedFunctor.dgMap_dgComp, ← map_add,
-      dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr,
+      extension_total,
       EnrichedFunctor.dgMap_dgId, dgId_dgComp]
 
 /-- The comparison morphism `cone (cone u ⟶ cone w) ⟶ cone v` followed by its inverse
@@ -443,24 +467,7 @@ private theorem dgDifferential_coneCompHomotopy :
   -- of the projection onto `cone w` (`h₁`), of the shift of the inclusion of `P⟦1⟧` into `cone u`
   -- (`h₂`) and of the inclusion of `(cone u)⟦1⟧` (`h₃`).  In each of them the comparison
   -- morphisms `P⟦1⟧⟦1⟧ ⟶ P⟦1⟧ ⟶ P⟦1⟧⟦1⟧` or `P⟦1⟧ ⟶ P⟦1⟧⟦1⟧ ⟶ P⟦1⟧` cancel.
-  have h₁ : dgComp R (dgComp R (extensionSnd R (dgDifferential_coneMorphism hm₁))
-        (dgComp R (fromShift (cone u hu) 1) (coneHomOfHomotopy hu hw (dgId R P) v 0) (add_zero 1))
-        (zero_add 1))
-        (dgComp R (extensionSnd R (dgDifferential_coneMorphism hw))
-          (dgComp R (toShift ((shiftFunctor R 1).obj P) 1)
-            (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
-              (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero (-1)))
-          (zero_add (-1))) (add_neg_cancel 1) =
-      dgComp R (extensionSnd R (dgDifferential_coneMorphism hm₁))
-        (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionSnd R (dgDifferential_coneMorphism hu)))
-          (dgComp R ((shiftFunctor R 1).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
-            (extensionInr R (dgDifferential_coneMorphism hm₁)) (add_zero 0)) (add_zero 0))
-        (add_zero 0) := by
-    rw [dgComp_assoc R (extensionSnd R (dgDifferential_coneMorphism hm₁)) _ _ (zero_add 1)
-        (add_neg_cancel 1) (by omega),
-      dgComp_assoc R (fromShift (cone u hu) 1) _ _ (add_zero 1) (zero_add (-1)) (by omega),
-      dgComp_coneHomOfHomotopy_extensionSnd_assoc, EnrichedFunctor.dgMap_dgId, dgId_dgComp,
-      ← dgMap_dgComp_fromShift_assoc, dgComp_fromShift_toShift_assoc]
+  have h₁ := dgComp_extensionSnd_comparison_cancel hu hw hm₁
   have h₂ : dgComp R (toShift ((shiftFunctor R 1).obj P) 1)
         (dgComp R (dgComp R (dgComp R (fromShift ((shiftFunctor R 1).obj P) 1)
           ((shiftFunctor R 1).dgMap 0 u) (add_zero 1))

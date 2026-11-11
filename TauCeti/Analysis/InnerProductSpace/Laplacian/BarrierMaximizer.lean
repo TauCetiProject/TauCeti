@@ -12,21 +12,19 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 
 /-!
-# The maximizer step shared by the lower-order weak maximum principles
+# The maximizer step of the lower-order weak maximum principle
 
-Both lower-order weak maximum principles — for `-Δ + c` in
-`TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple` and for
-`-Δ - b·∇ + c` in `TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple` —
-perturb a subsolution by a barrier, take a maximizer of the perturbation over the compact set, and
-then argue that the frontier bound already holds at that maximizer. Only the last step is common:
-the two differ in how they produce the maximizer and in which barrier they use.
+The lower-order weak maximum principle for `-Δ - b·∇ + c` in
+`TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple` perturbs a subsolution by
+a barrier, takes a maximizer of the perturbation over the compact set, and then argues that the
+frontier bound already holds at that maximizer. This module holds that last step, stated once for
+the operator `Δ + b·∇` with an arbitrary barrier. The `-Δ + c` principle of
+`TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple` is its special case
+`b = 0`.
 
-This module holds that step, stated once for the operator `Δ + b·∇` with an arbitrary barrier. The
-`-Δ + c` principle runs it at `b = 0` with the quadratic barrier `‖·‖²`.
-
-It is a support module: `TauCeti.le_of_isMaxOn_add_smul` is support API for those two proofs. Both
-principles import this module non-publicly, so neither re-exports it and nothing downstream of
-either principle sees the step in its interface.
+It is a support module: `TauCeti.le_of_isMaxOn_add_smul` is support API for the proof of the
+lower-order principle, which imports this module non-publicly, so it does not re-export it and
+nothing downstream sees the step in its interface.
 -/
 
 public section

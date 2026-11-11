@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Manifold derivatives of continuous-linear-map applications
@@ -25,9 +25,9 @@ It is stated for any map agreeing with `y ↦ c y (u y)` near the point, which i
 coordinates in two trivializations are related.
 
 It also records the manifold derivative of evaluating a differentiable family of continuous linear
-maps at a fixed vector (`TauCeti.mvfderiv_clm_apply_const_apply`) and of evaluating a
+maps at a fixed vector (`TauCeti.mvfderiv_clm_apply_const`) and of evaluating a
 differentiable family of bilinear maps at two fixed vectors
-(`TauCeti.mvfderiv_clm_apply_const_apply₂`).
+(`TauCeti.mvfderiv_clm_apply_const₂`).
 
 For maps on a normed space, it also records how `mvfderiv` acts on vectors given in the
 model space through `NormedSpace.fromTangentSpace`: there it is the Fréchet derivative.
@@ -85,26 +85,22 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
   -- `MDifferentiableAt.mvfderiv` is the identification of that chart derivative with `mvfderiv`.
   exact congrArg (c x).comp hu.mvfderiv.symm
 
-/-- Differentiating `y ↦ c y v` on a manifold for a fixed vector `v` along a tangent vector `u`
-gives the derivative of `c` along `u`, applied to `v`. -/
-theorem mvfderiv_clm_apply_const_apply {c : M → F →L[𝕜] F'}
-    (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (v : F) (u : TangentSpace I x) :
-    mvfderiv I (fun y ↦ c y v) x u = mvfderiv I c x u v := by
-  have h := mvfderiv_comp_apply_of_differentiableAt
-    (ContinuousLinearMap.apply 𝕜 F' v).differentiableAt hc u
-  simpa only [Function.comp_def, ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply]
-    using h
+/-- Applying a differentiable family of continuous linear maps to a fixed vector commutes with the
+vector-valued manifold derivative: `d (fun z ↦ c z w) x v = (d c x v) w`. -/
+theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
+    (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
+  exact (ContinuousLinearMap.apply 𝕜 F' w).mvfderiv_comp_apply hc v
 
-/-- Differentiating `y ↦ c y v w` on a manifold for a field `c` of bilinear maps and fixed vectors
-`v` and `w` along a tangent vector `u` gives the derivative of `c` along `u`, applied to `v` and
-`w`. -/
-theorem mvfderiv_clm_apply_const_apply₂ {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
+/-- Applying a differentiable family of continuous bilinear maps to two fixed vectors commutes with
+the vector-valued manifold derivative: `d (fun z ↦ c z v w) x u = (d c x u) v w`. -/
+theorem mvfderiv_clm_apply_const₂ {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
     {c : M → F →L[𝕜] F' →L[𝕜] F''}
     (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F' →L[𝕜] F'') c x)
     (v : F) (w : F') (u : TangentSpace I x) :
-    mvfderiv I (fun y ↦ c y v w) x u = mvfderiv I c x u v w := by
-  rw [mvfderiv_clm_apply_const_apply (hc.clm_apply mdifferentiableAt_const),
-    mvfderiv_clm_apply_const_apply hc]
+    mvfderiv I (fun z ↦ c z v w) x u = mvfderiv I c x u v w := by
+  rw [mvfderiv_clm_apply_const (hc.clm_apply mdifferentiableAt_const),
+    mvfderiv_clm_apply_const hc]
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 public import Mathlib.Topology.Algebra.Polynomial
 
 /-!
@@ -22,6 +23,9 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   integrable when every monomial is;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
+* `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
+  `δ` on `[-M, M]` has integral within `δ` of that of the function, against a probability measure
+  concentrated on `[-R, R]` with `R ≤ M`;
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
@@ -121,5 +125,20 @@ lemma coeFn_polynomialEvalLp (𝕜 : Type*) [RCLike 𝕜]
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     ⇑(polynomialEvalLp 𝕜 hmom q) =ᵐ[μ] fun x : ℝ => (algebraMap ℝ 𝕜) (q.eval x) :=
   MemLp.coeFn_toLp (memLp_two_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) hmom q)
+
+open scoped BoundedContinuousFunction in
+/-- If `|f - p| < δ` on `[-M, M]` and `μ` is a probability measure concentrated on `[-R, R]` with
+`R ≤ M`, then `|∫ p dμ - ∫ f dμ| ≤ δ`. -/
+theorem abs_integral_eval_sub_le {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {R M δ : ℝ} (hRM : R ≤ M) (hae : ∀ᵐ x ∂μ, |x| ≤ R)
+    (hp : ∀ x ∈ Set.Icc (-M) M, |p.eval x - f x| < δ) :
+    |∫ x, p.eval x ∂μ - ∫ x, f x ∂μ| ≤ δ := by
+  have hμ := integrable_pow_of_ae_abs_le hae
+  rw [← integral_sub (integrable_eval_of_forall_integrable_pow hμ p) (f.integrable _)]
+  have hb : ∀ᵐ x ∂μ, ‖p.eval x - f x‖ ≤ δ := by
+    filter_upwards [hae] with x hx
+    exact (Real.norm_eq_abs _).trans_le (hp x (abs_le.1 (hx.trans hRM))).le
+  have := norm_integral_le_of_norm_le_const hb
+  rwa [Real.norm_eq_abs, probReal_univ, mul_one] at this
 
 end TauCeti

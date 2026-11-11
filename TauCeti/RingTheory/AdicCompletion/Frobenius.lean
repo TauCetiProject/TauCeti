@@ -101,10 +101,11 @@ theorem exists_mul_dvd_sub_pow [IsHausdorff (Ideal.span {π}) A]
     ∃ y, π * p ∣ x - y ^ p := by
   obtain ⟨s, b, hs, hb, hbπ, hx⟩ := exists_seq_pow_add_mul h x
   -- the pairs `(s (m + 1), b (m + 1))` converge `π`-adically, to `(L 0, L 1)`
-  obtain ⟨L, hL⟩ := exists_forall_pow_dvd_sub π (fun m ↦ ![s (m + 1), b (m + 1)]) fun m i ↦ by
-    fin_cases i
-    · simpa using hs (m + 1)
-    · simpa using hb (m + 1)
+  obtain ⟨L, hL⟩ := exists_forall_pow_dvd_sub π (fun m ↦ ![s (m + 1), b (m + 1)])
+    fun m i ↦ (pow_dvd_pow π m.le_succ).trans <| by
+      fin_cases i
+      · simpa using hs (m + 1)
+      · simpa using hb (m + 1)
   have hLs (m : ℕ) : π ^ m ∣ L 0 - s (m + 1) := by simpa using hL m 0
   have hLb (m : ℕ) : π ^ m ∣ L 1 - b (m + 1) := by simpa using hL m 1
   -- in the limit, `x = L 0 ^ p + p * L 1`

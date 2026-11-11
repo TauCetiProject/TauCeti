@@ -41,10 +41,23 @@ and Pietro Monticone.
 
 public section
 
-namespace TauCeti
-
 open Filter
 open scoped RestrictedProduct
+
+namespace RestrictedProduct
+
+/-- The coercion homomorphism from a restricted product to the full product acts as the
+coercion. -/
+@[to_additive (attr := simp)]
+theorem coeMonoidHom_apply {ι : Type*} {R : ι → Type*} {S : ι → Type*}
+    [∀ i, SetLike (S i) (R i)] {B : ∀ i, S i} {𝓕 : Filter ι} [∀ i, Monoid (R i)]
+    [∀ i, SubmonoidClass (S i) (R i)] (x : Πʳ i, [R i, B i]_[𝓕]) :
+    coeMonoidHom x = ⇑x :=
+  rfl
+
+end RestrictedProduct
+
+namespace TauCeti
 
 universe u v w
 
@@ -66,13 +79,6 @@ condition. -/
 abbrev RestrictedProductGroupWithFactor (H : Type w) (U : ∀ i, Subgroup (G i)) :=
   H × RestrictedProductGroup U
 
-/-- The coercion homomorphism from a restricted product to the full product acts as the
-coercion. -/
-@[to_additive (attr := simp)]
-theorem coeMonoidHom_apply (U : ∀ i, Subgroup (G i)) (x : Πʳ i, [G i, (U i : Set (G i))]) :
-    RestrictedProduct.coeMonoidHom x = ⇑x := by
-  rfl
-
 /-- The subgroup of a restricted product cut out by a second family of subgroups. -/
 @[to_additive /-- The additive subgroup of a restricted product cut out by a second family of
 additive subgroups. -/]
@@ -85,8 +91,7 @@ def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
 theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
     x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := by
-  rw [integralSubgroupOf, Subgroup.mem_comap, Subgroup.mem_pi]
-  simp [RestrictedProduct.coeMonoidHom]
+  simp [integralSubgroupOf, Subgroup.mem_pi]
 
 /-- The subgroup whose coordinates lie in the reference subgroup at every index. -/
 @[to_additive /-- The additive subgroup whose coordinates lie in the reference subgroup at every
@@ -137,115 +142,64 @@ theorem integralSubgroupOf_le_integralSubgroup_iff (U V : ∀ i, Subgroup (G i))
 
 variable [∀ i, TopologicalSpace (G i)]
 
-/-- Openness when the second family agrees with the reference family eventually. -/
-@[to_additive isOpen_integralAddSubgroupOf_of_eventually_eq]
-theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
-    (hV : ∀ i, IsOpen (V i : Set (G i)))
-    (hUV : ∀ᶠ i in cofinite, U i = V i) :
+/-- Openness when every `V i` is open and the reference subgroup `U i` lies in `V i` at all but
+finitely many indices. -/
+@[to_additive]
+theorem isOpen_integralSubgroupOf_of_eventually_le (U V : ∀ i, Subgroup (G i))
+    (hV : ∀ i, IsOpen (V i : Set (G i))) (hUV : ∀ᶠ i in cofinite, U i ≤ V i) :
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  classical
-  let S : Set ι := {i | U i = V i}
-  have _ : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
-  have hopenU : IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
-      ∀ i, i ∈ S → x i ∈ U i} := by
-    simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite,
-      isOpen_iSup_iff, isOpen_coinduced]
-    intro T hT
-    have hfinite : (S \ T).Finite :=
-      (mem_cofinite.mp (le_principal_iff.mp hT)).subset fun i hi ↦ hi.2
-    have hopen : IsOpen ((S \ T : Set ι).pi fun i ↦ (V i : Set (G i))) :=
-      isOpen_set_pi hfinite (fun i _ ↦ hV i)
-    convert hopen.preimage RestrictedProduct.continuous_coe using 1
-    ext x
-    constructor
-    · intro hx i hi
-      have hi' : U i = V i := hi.1
-      -- The preimage is stated using the ambient function coercion; `x i` is the
-      -- restricted-product coordinate, and the two are definitionally equal.
-      change x i ∈ V i
-      rw [← hi']
-      exact hx i hi.1
-    · intro hx i hi
-      by_cases hiT : i ∈ T
-      · exact x.2 hiT
-      · have hi' : U i = V i := hi
-        -- As above, this `change` exposes the restricted-product coordinate
-        -- hidden by the ambient function coercion in the preimage.
-        change x i ∈ U i
-        rw [hi']
-        exact hx i ⟨hi, hiT⟩
-  have hopenV : IsOpen ((Sᶜ : Set ι).pi fun i ↦ (V i : Set (G i)) :
-      Set (∀ i, G i)) :=
-    isOpen_set_pi (mem_cofinite.mp hUV) (fun i _ ↦ hV i)
-  have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
-  convert hopen using 1
-  ext x
-  constructor
-  · intro hx
-    have hx' := (mem_integralSubgroupOf U V x).mp hx
-    constructor
-    · exact fun i hi ↦ hi ▸ hx' i
-    · exact fun i _ ↦ hx' i
-  · rintro ⟨hxS, hxSc⟩
-    apply (mem_integralSubgroupOf U V x).mpr
-    intro i
-    by_cases hi : i ∈ S
-    · exact hi ▸ hxS i hi
-    · exact hxSc i hi
+  simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite, isOpen_iSup_iff,
+    isOpen_coinduced]
+  intro T hT
+  -- For a point of the restricted product relative to `𝓟 T`, membership in `V i` is automatic
+  -- at the indices of `{i | U i ≤ V i} ∩ T`; only finitely many conditions remain.
+  have hfin : ({i | U i ≤ V i} ∩ T)ᶜ.Finite := mem_cofinite.mp (hUV.and (le_principal_iff.mp hT))
+  convert (isOpen_set_pi hfin fun i _ ↦ hV i).preimage RestrictedProduct.continuous_coe using 1
+  ext y
+  simp only [Set.mem_preimage, SetLike.mem_coe, mem_integralSubgroupOf, Set.mem_pi]
+  refine ⟨fun h i _ ↦ h i, fun h i ↦ ?_⟩
+  by_cases hi : i ∈ {i | U i ≤ V i} ∩ T
+  · exact hi.1 (y.2 hi.2)
+  · exact h i hi
 
-/-- Compactness when the second family is eventually contained in the reference family. -/
-@[to_additive isCompact_integralAddSubgroupOf_of_eventually_subset]
-theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
-    (hV : ∀ i, IsCompact (V i : Set (G i)))
-    (hUV : ∀ᶠ i in cofinite, (V i : Set (G i)) ⊆ (U i : Set (G i))) :
+/-- Compactness when every `V i` is compact and lies in the reference subgroup `U i` at all but
+finitely many indices. -/
+@[to_additive]
+theorem isCompact_integralSubgroupOf_of_eventually_le (U V : ∀ i, Subgroup (G i))
+    (hV : ∀ i, IsCompact (V i : Set (G i))) (hVU : ∀ᶠ i in cofinite, V i ≤ U i) :
     IsCompact (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  classical
-  let S : Set ι := {i | (V i : Set (G i)) ⊆ (U i : Set (G i))}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
+  -- Realize the subgroup as the image of a compact set in the restricted product relative to
+  -- `𝓟 S`, where `S` is the cofinite set of indices with `V i ≤ U i`.
+  let S : Set ι := {i | V i ≤ U i}
+  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hVU
   let Q : Set (∀ i, G i) := Set.univ.pi fun i ↦ (V i : Set (G i))
-  have hQ : IsCompact Q := isCompact_univ_pi hV
-  have hQrange : Q ⊆ Set.range
-      ((↑) : (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) := by
+  have hK : IsCompact (((↑) : Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S] → ∀ i, G i) ⁻¹' Q) := by
+    refine RestrictedProduct.isEmbedding_coe_of_principal.isCompact_preimage'
+      (isCompact_univ_pi hV) ?_
     rw [RestrictedProduct.range_coe_principal]
-    intro x hx i hi
-    exact hi (hx i trivial)
-  have hK : IsCompact (((↑) :
-      (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) ⁻¹' Q) :=
-    (RestrictedProduct.isEmbedding_coe_of_principal (S := S)).isCompact_preimage' hQ hQrange
-  have himage :
-      (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) =
-        RestrictedProduct.inclusion (fun i ↦ G i) (fun i ↦ (U i : Set (G i))) hS ''
-          (((↑) : (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) ⁻¹' Q) := by
-    ext x
-    constructor
-    · intro hx
-      have hx' := (mem_integralSubgroupOf U V x).mp hx
-      refine ⟨⟨x, ?_⟩, ?_, rfl⟩
-      · exact fun i hi ↦ hi (hx' i)
-      · exact fun i _ ↦ hx' i
-    · rintro ⟨y, hy, rfl⟩
-      apply (mem_integralSubgroupOf U V _).mpr
-      exact fun i ↦ hy i trivial
-  rw [himage]
-  exact hK.image (RestrictedProduct.continuous_inclusion hS)
+    exact fun x hx i hi ↦ hi (hx i trivial)
+  convert hK.image (RestrictedProduct.continuous_inclusion hS) using 1
+  ext x
+  simp only [SetLike.mem_coe, mem_integralSubgroupOf]
+  refine ⟨fun hx ↦ ⟨⟨x, fun i hi ↦ hi (hx i)⟩, fun i _ ↦ hx i, rfl⟩, ?_⟩
+  rintro ⟨y, hy, rfl⟩
+  exact fun i ↦ hy i trivial
 
 /-- Openness of the everywhere-integral subgroup from coordinatewise openness. -/
 @[to_additive]
 theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  convert RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU using 1
-  ext x
-  simp
-  rfl
+  rw [← integralSubgroupOf_self]
+  exact isOpen_integralSubgroupOf_of_eventually_le U U hU (.of_forall fun _ ↦ le_rfl)
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 @[to_additive]
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hK : ∀ i, IsCompact (U i : Set (G i))) :
     IsCompact (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  simpa [integralSubgroup] using
-    isCompact_forall_mem_of_eventually_subset U U hK (.of_forall fun _ ↦ subset_rfl)
+  rw [← integralSubgroupOf_self]
+  exact isCompact_integralSubgroupOf_of_eventually_le U U hK (.of_forall fun _ ↦ le_rfl)
 
 /-- A family of compact open additive subgroups, one in each factor. -/
 structure CompactOpenAddSubgroups (G : ι → Type v) [∀ i, AddGroup (G i)]

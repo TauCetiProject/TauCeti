@@ -53,6 +53,8 @@ only the ring and its units, not the group scheme.
   `L ⊗[k] K → L` along a `k`-embedding `K → L` is the maximal ideal.
 * `TauCeti.IsPurelyInseparable.finrank_maximalIdeal_tensorProduct_add_one`: for finite `K / k`
   admitting a `k`-embedding `K → L`, the maximal ideal has dimension `[K : k] - 1` over `L`.
+* `TauCeti.IsPurelyInseparable.not_isReduced_tensorProduct`: hence, when moreover `K ≠ k`, the ring
+  `L ⊗[k] K` is not reduced.
 * `TauCeti.IsPurelyInseparable.ker_unitsMap_productLeftAlgHom`: on units, multiplication along a
   `k`-embedding `K → L` has kernel `1 + 𝔪`.
 * `TauCeti.IsPurelyInseparable.unitsTensorProductQuotientEquiv`: for a `k`-embedding `K → L`,
@@ -137,6 +139,19 @@ theorem finrank_maximalIdeal_tensorProduct_add_one [IsPurelyInseparable k K]
   have h := LinearMap.finrank_range_add_finrank_ker φ
   rw [hker, hrange, finrank_top, Module.finrank_self, Module.finrank_baseChange] at h
   omega
+
+variable (k K L) in
+/-- For a nontrivial finite purely inseparable extension `K / k` that embeds into a field `L`, the
+ring `L ⊗[k] K` is not reduced: its maximal ideal is nonzero, and consists of nilpotents. -/
+theorem not_isReduced_tensorProduct [IsPurelyInseparable k K] [FiniteDimensional k K]
+    [Nonempty (K →ₐ[k] L)] (hK : 1 < Module.finrank k K) : ¬ IsReduced (L ⊗[k] K) := by
+  have hfin := finrank_maximalIdeal_tensorProduct_add_one k K L
+  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p :=
+    (maximalIdeal (L ⊗[k] K)).restrictScalars L) fun h ↦ by
+      rw [h, finrank_bot] at hfin
+      omega
+  rw [Submodule.restrictScalars_mem, ← nilradical_tensorProduct, mem_nilradical] at hx
+  exact fun h ↦ hx0 (h.eq_zero x hx)
 
 /-- For a purely inseparable extension `K / k` and a `k`-embedding `ι : K → L`, the kernel of
 multiplication `(L ⊗[k] K)ˣ → Lˣ` on units is the principal unit group `1 + 𝔪` of the maximal

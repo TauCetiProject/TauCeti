@@ -23,10 +23,10 @@ assuming manifold regularity
 (`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
 
 For sections whose covariant derivatives vanish, metric compatibility implies that their inner
-product has vanishing differential (`IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero`),
-is locally constant on open sets (`IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero`),
-and is constant on preconnected open sets
-(`IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero`).
+product has vanishing differential (`IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero`,
+`IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero`), is locally constant on open sets
+(`IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero`), and is constant on preconnected open
+sets (`IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero`).
 
 It also records the twice-differentiated product rule for a metric-compatible covariant
 derivative. It supplies the second-derivative calculation used to establish curvature
@@ -65,7 +65,19 @@ as a tensor. Unlike the section-based characterization, this needs no manifold r
 theorem isMetricCompatible_iff_derivMetricTensor_eq_zero :
     cov.IsMetricCompatible ↔ cov.derivMetricTensor = fun _ ↦ 0 := (Iff.rfl)
 
-variable [IsManifold I 1 M]
+/-- The inner product of two sections parallel at a point has zero derivative there. -/
+theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCompatible)
+    {σ τ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
+    (hσ₀ : cov σ x = 0) (hτ₀ : cov τ x = 0) :
+    HasMFDerivAt I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x 0 := by
+  have hd : mfderiv I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 := by
+    ext w
+    apply (NormedSpace.fromTangentSpace (inner ℝ (σ x) (τ x))).injective
+    simpa only [mvfderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, hσ₀, hτ₀, zero_apply,
+      inner_zero_left, inner_zero_right, add_zero, map_zero] using
+      hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
+  simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
 
 /-- For a metric-compatible connection, the inner product of two sections that are differentiable
 and parallel at `x` has vanishing differential at `x`. -/
@@ -73,14 +85,10 @@ theorem IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero
     (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {x : M}
     (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
     (hσ0 : cov σ x = 0) (hτ0 : cov τ x = 0) :
-    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 := by
-  ext u
-  let X : Π y : M, TangentSpace I y := extend E u
-  have hX : X x = u := extend_apply_self E u
-  rw [← hX, hcov.mvfderiv_inner_eq X hσ hτ]
-  beta_reduce
-  rw [hσ0, hτ0]
-  simp
+    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 :=
+  TauCeti.mvfderiv_eq_zero_iff.mpr (hcov.hasMFDerivAt_inner_of_eq_zero hσ hτ hσ0 hτ0).mfderiv
+
+variable [IsManifold I 1 M]
 
 /-- For a metric-compatible connection, the inner product of two sections that are differentiable
 and parallel on an open set `U` is locally constant on `U`. -/
@@ -89,14 +97,14 @@ theorem IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero
     (hσ : MDiff[U] (T% σ)) (hτ : MDiff[U] (T% τ))
     (hσ0 : ∀ y ∈ U, cov σ y = 0) (hτ0 : ∀ y ∈ U, cov τ y = 0) {x : M} (hx : x ∈ U) :
     (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ inner ℝ (σ x) (τ x) := by
-  have hdiff : MDifferentiableOn I 𝓘(ℝ, ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) U := fun y hy ↦
+  have hdiff : MDifferentiableOn I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) U := fun y hy ↦
     (((hσ y hy).mdifferentiableAt (hU.mem_nhds hy)).inner_bundle
       ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))).mdifferentiableWithinAt
   refine hdiff.eventuallyEq_const_of_mfderiv_eq_zero hU (fun y hy ↦ ?_) hx
-  exact TauCeti.mvfderiv_eq_zero_iff.mp (hcov.mvfderiv_inner_eq_zero_of_cov_eq_zero
+  exact (hcov.hasMFDerivAt_inner_of_eq_zero
     ((hσ y hy).mdifferentiableAt (hU.mem_nhds hy))
     ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))
-    (hσ0 y hy) (hτ0 y hy))
+    (hσ0 y hy) (hτ0 y hy)).mfderiv
 
 /-- **Parallel sections of a metric-compatible connection have constant inner products** on any
 preconnected open set. Neither boundarylessness nor finite dimensionality of `M` is required. -/

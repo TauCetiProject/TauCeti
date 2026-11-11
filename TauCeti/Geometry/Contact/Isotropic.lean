@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -37,6 +38,12 @@ dimension `2 n + 1` is a smooth isotropic immersion from a manifold of dimension
 largest dimension allowed. A **Legendrian embedding** (`TauCeti.IsLegendrianEmbedding`) is
 moreover a topological embedding, so that it parametrizes an embedded Legendrian submanifold;
 the image of a Legendrian immersion may have self-intersections.
+The tangent image of a Legendrian immersion at every point is its own Levi orthogonal in the
+contact hyperplane
+(`TauCeti.IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero`), the contact
+counterpart of the maximality of Lagrangian subspaces. Both notions are unchanged by
+reparametrizing the source (`TauCeti.isLegendrianImmersion_comp_diffeomorph_iff`) and are
+transported by contactomorphisms (`TauCeti.isLegendrianImmersion_diffeomorph_comp_iff`).
 
 ## Main declarations
 
@@ -44,6 +51,11 @@ the image of a Legendrian immersion may have self-intersections.
   for isotropic maps into a contact manifold with injective differential at some point.
 * `TauCeti.IsLegendrianImmersion`, `TauCeti.IsLegendrianEmbedding`: Legendrian immersions and
   embeddings.
+* `TauCeti.IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero`: the tangent
+  images of a Legendrian immersion are maximal isotropic for the Levi form.
+* `TauCeti.isLegendrianImmersion_comp_diffeomorph_iff`,
+  `TauCeti.isLegendrianImmersion_diffeomorph_comp_iff`: invariance under reparametrization and
+  transport by contactomorphisms, with their embedding counterparts.
 
 ## References
 
@@ -74,6 +86,20 @@ section DimensionBound
 variable [CompleteSpace E] [FiniteDimensional ℝ E] [IsManifold I 2 M] [IsManifold J 2 N]
   {n : ℕ∞ω} {k : ℕ}
 
+/-- The tangent image of a horizontal map, viewed in the contact hyperplane, is isotropic for the
+Levi form. -/
+theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) (hf : IsHorizontalMap J D f) {y : N}
+    (hfy : ContMDiffAt J I 2 f y) :
+    (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
+      ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+        (distributionLeviForm D (f y)) := by
+  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
+    have := hD.finrank_add_one (f y)
+    omega
+  rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
+  exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
+
 /-- **Isotropic maps into a contact manifold have at most half the dimension of the contact
 hyperplanes.** If `D` is a `C^n` contact structure, with `1 ≤ n`, on a manifold of dimension
 `2 m + 1`, and `f` is horizontal for `D`, that is isotropic, of class `C²` at `y` and with
@@ -83,14 +109,10 @@ theorem IsHorizontalMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
     (hfy : ContMDiffAt J I 2 f y) (hinj : Injective (mfderiv J I f y)) :
     2 * finrank ℝ E' + 1 ≤ finrank ℝ E := by
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
   -- The tangent image, as a subspace of the contact hyperplane.
   set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
-  have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
-    rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
-    exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy v w
+  have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 :=
+    fun u hu u' hu' ↦ hf.le_orthogonalBilin hD hn hfy hu' u hu
   have hle := LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective
     (hD.bijective_distributionLeviForm (f y)).injective (hD.finrank_quotient (f y)) hW
   have hWf : finrank ℝ W = finrank ℝ E' := by
@@ -155,5 +177,107 @@ theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n 
   obtain ⟨y⟩ := ‹Nonempty N›
   exact hfD.two_mul_finrank_add_one_le hD hn ((hf.contMDiff y).of_le (by simp))
     (hf.mfderiv_injective (by simp) y)
+
+
+/-- **The tangent images of a Legendrian immersion are maximal isotropic.** A vector of the contact
+hyperplane at `f y` which is Levi-orthogonal to the tangent image `df_y(T_y N)` lies in it. This is
+the contact counterpart of the fact that Lagrangian subspaces are maximal isotropic. -/
+theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
+    [IsManifold J 2 N] (h : IsLegendrianImmersion J D f) {y : N} {a : D (f y)}
+    (ha : ∀ u, distributionLeviForm D (f y) a ⟨_, h.isHorizontalMap.mfderiv_mem y u⟩ = 0) :
+    a.1 ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
+  have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
+  have hD := h.isContactDistribution
+  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
+    have := hD.finrank_add_one (f y)
+    omega
+  -- The tangent image, as a subspace of the contact hyperplane.
+  set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
+  have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
+    rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
+    exact h.isHorizontalMap.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk le_rfl
+      ((h.isImmersion.contMDiff y).of_le (by simp)) v w
+  have hWf : finrank ℝ W = finrank ℝ E' := by
+    rw [LinearEquiv.finrank_eq
+        (Submodule.comapSubtypeEquivOfLe (h.isHorizontalMap.range_mfderiv_le y)),
+      LinearMap.finrank_range_of_inj (h.isImmersion.mfderiv_injective (by simp) y)]
+    exact finrank_tangentSpace y
+  have hdim : 2 * finrank ℝ W = finrank ℝ (D (f y)) := by
+    have := hD.finrank_add_one (f y)
+    have := h.two_mul_finrank_add_one
+    omega
+  exact LinearMap.mem_of_apply_eq_zero_of_two_mul_finrank_eq
+    (hD.bijective_distributionLeviForm (f y)).injective (hD.finrank_quotient (f y)) hW hdim
+    fun b ⟨u, hu⟩ ↦ by
+      obtain rfl : b = ⟨_, h.isHorizontalMap.mfderiv_mem y u⟩ := Subtype.ext hu.symm
+      exact ha u
+
+/-! ### Reparametrization and transport -/
+
+section Reparametrization
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J ∞ N] [IsManifold J ∞ P]
+
+/-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
+does not change whether a map is a Legendrian immersion. -/
+@[simp]
+theorem isLegendrianImmersion_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
+    IsLegendrianImmersion J D (f ∘ φ) ↔ IsLegendrianImmersion J D f :=
+  ⟨fun h ↦ ⟨h.isContactDistribution, (isImmersion_comp_diffeomorph_iff φ).1 h.isImmersion,
+      (isHorizontalMap_comp_diffeomorph_iff φ (by simp)).1 h.isHorizontalMap,
+      h.two_mul_finrank_add_one⟩,
+    fun h ↦ ⟨h.isContactDistribution, (isImmersion_comp_diffeomorph_iff φ).2 h.isImmersion,
+      (isHorizontalMap_comp_diffeomorph_iff φ (by simp)).2 h.isHorizontalMap,
+      h.two_mul_finrank_add_one⟩⟩
+
+/-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
+does not change whether a map is a Legendrian embedding. -/
+@[simp]
+theorem isLegendrianEmbedding_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
+    IsLegendrianEmbedding J D (f ∘ φ) ↔ IsLegendrianEmbedding J D f :=
+  ⟨fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      ((isSmoothEmbedding_comp_diffeomorph_iff φ).1 h.isSmoothEmbedding)).2
+      ((isLegendrianImmersion_comp_diffeomorph_iff φ).1 h.toIsLegendrianImmersion),
+    fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      (isSmoothEmbedding_comp_diffeomorph φ h.isSmoothEmbedding)).2
+      ((isLegendrianImmersion_comp_diffeomorph_iff φ).2 h.toIsLegendrianImmersion)⟩
+
+end Reparametrization
+
+section Transport
+
+variable {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂] [IsManifold I ∞ M]
+  [IsManifold I ∞ M₂] [IsManifold I 2 M₂] {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I x)}
+
+/-- **Transport by contactomorphisms.** If the differential of a diffeomorphism `ψ : M → M₂`
+carries the contact structure `D` onto the contact structure `D₂`, then `ψ ∘ f` is a Legendrian
+immersion for `D₂` exactly when `f` is a Legendrian immersion for `D`. -/
+theorem isLegendrianImmersion_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
+    (hD : IsContactDistribution I 1 D) (hD₂ : IsContactDistribution I 1 D₂)
+    (hψ : ∀ x (v : TangentSpace I x), v ∈ D x ↔ mfderiv I I ψ x v ∈ D₂ (ψ x)) :
+    IsLegendrianImmersion J D₂ (ψ ∘ f) ↔ IsLegendrianImmersion J D f :=
+  ⟨fun h ↦ ⟨hD, (isImmersion_diffeomorph_comp_iff ψ).1 h.isImmersion,
+      (isHorizontalMap_diffeomorph_comp_iff ψ (by simp) hψ).1 h.isHorizontalMap,
+      h.two_mul_finrank_add_one⟩,
+    fun h ↦ ⟨hD₂, (isImmersion_diffeomorph_comp_iff ψ).2 h.isImmersion,
+      (isHorizontalMap_diffeomorph_comp_iff ψ (by simp) hψ).2 h.isHorizontalMap,
+      h.two_mul_finrank_add_one⟩⟩
+
+/-- **Transport by contactomorphisms.** If the differential of a diffeomorphism `ψ : M → M₂`
+carries the contact structure `D` onto the contact structure `D₂`, then `ψ ∘ f` is a Legendrian
+embedding for `D₂` exactly when `f` is a Legendrian embedding for `D`. -/
+theorem isLegendrianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
+    (hD : IsContactDistribution I 1 D) (hD₂ : IsContactDistribution I 1 D₂)
+    (hψ : ∀ x (v : TangentSpace I x), v ∈ D x ↔ mfderiv I I ψ x v ∈ D₂ (ψ x)) :
+    IsLegendrianEmbedding J D₂ (ψ ∘ f) ↔ IsLegendrianEmbedding J D f :=
+  ⟨fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      ((isSmoothEmbedding_diffeomorph_comp_iff ψ).1 h.isSmoothEmbedding)).2
+      ((isLegendrianImmersion_diffeomorph_comp_iff ψ hD hD₂ hψ).1 h.toIsLegendrianImmersion),
+    fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      (isSmoothEmbedding_diffeomorph_comp h.isSmoothEmbedding ψ)).2
+      ((isLegendrianImmersion_diffeomorph_comp_iff ψ hD hD₂ hψ).2 h.toIsLegendrianImmersion)⟩
+
+end Transport
 
 end TauCeti

@@ -42,11 +42,7 @@ the automorphisms and mapping the unit factors. -/
 def map (c : CrossedSystem k D G) (e : D ≃ₐ[k] E) : CrossedSystem k E G where
   action g := e.autCongr (c.action g)
   factor g h := Units.map e.toMonoidHom (c.factor g h)
-  action_one := by
-    rw [c.action_one]
-    exact e.autCongr.map_one
   factor_one_left g := by simp
-  factor_one_right g := by simp
   action_mul g h d := by
     simpa using congrArg e (c.action_mul g h (e.symm d))
   factor_assoc g h j := by

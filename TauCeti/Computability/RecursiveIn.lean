@@ -28,7 +28,10 @@ join of two oracles.
 
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
-statement on codes `Nat.pair a b` of pairs.
+statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
+composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
+These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
+`Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
 -/
 
 public section
@@ -121,5 +124,71 @@ theorem iff_nat {f : ℕ → ℕ → ℕ} :
   -- `ComputableIn₂` is recursiveness of the function on encodings, which `simp` unpairs
   unfold ComputableIn₂ ComputableIn RecursiveIn
   exact ⟨fun h => h.of_eq fun n => by simp, fun h => h.of_eq fun n => by simp⟩
+
+end ComputableIn₂
+
+namespace ComputableIn
+
+open Encodable
+
+variable {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+variable {O : Set (ℕ →. ℕ)}
+
+/-- Composition of total oracle-computable functions. -/
+theorem comp {f : β → γ} {g : α → β} (hf : ComputableIn O f) (hg : ComputableIn O g) :
+    ComputableIn O (fun a => f (g a)) := by
+  exact (Nat.RecursiveIn.comp hf hg).of_eq fun n => by
+    cases decode (α := α) n <;> simp [Encodable.encodek]
+
+/-- Pairing total oracle-computable functions. -/
+theorem pair {f : α → β} {g : α → γ} (hf : ComputableIn O f) (hg : ComputableIn O g) :
+    ComputableIn O (fun a => (f a, g a)) := by
+  exact (Nat.RecursiveIn.pair hf hg).of_eq fun n => by
+    cases decode (α := α) n <;> simp [Seq.seq]
+
+/-- Primitive recursion of total oracle-computable functions. The recursion counter is allowed
+to depend on the parameter. -/
+theorem nat_rec {f : α → ℕ} {g : α → β} {h : α → ℕ × β → β}
+    (hf : ComputableIn O f) (hg : ComputableIn O g)
+    (hh : ComputableIn₂ O h) :
+    ComputableIn O (fun a => Nat.rec (motive := fun _ => β) (g a)
+      (fun n b => h a (n, b)) (f a)) := by
+  have hr := (Nat.RecursiveIn.prec hg hh).comp (Nat.RecursiveIn.pair
+    (Nat.Primrec.id.recursiveIn (O := O)) hf)
+  refine hr.of_eq fun n => ?_
+  cases e : decode (α := α) n with
+  | none => simp [Seq.seq]
+  | some a =>
+    simp only [Seq.seq, e, id_eq, Part.coe_some, Part.map_eq_map, Part.map_some, encode_nat,
+      Part.bind_some, decode_prod_val, Nat.unpair_pair, decode_nat, Option.bind_some,
+      Option.map_map, Part.bind_eq_bind]
+    generalize f a = k
+    induction k with
+    | zero => rfl
+    | succ k ih => simp [ih]
+
+end ComputableIn
+
+namespace ComputableIn₂
+
+variable {α β : Type*} [Primcodable α] [Primcodable β] {O : Set (ℕ →. ℕ)}
+
+/-- A finite initial segment of an oracle-computable sequence can be computed uniformly in its
+length and in the sequence parameter. -/
+theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
+    ComputableIn₂ O (fun a n => (List.range n).map (f a)) := by
+  have hstep : ComputableIn₂ O (fun p : α × ℕ => fun q : ℕ × List β =>
+      q.2 ++ [f p.1 q.1]) :=
+    Primrec.list_concat.computableIn.comp <|
+      ComputableIn.snd.comp ComputableIn.snd |>.pair
+        (hf.comp ((ComputableIn.fst.comp ComputableIn.fst).pair
+          (ComputableIn.fst.comp ComputableIn.snd)))
+  refine RecursiveIn.of_eq
+    (ComputableIn.nat_rec ComputableIn.snd (ComputableIn.const []) hstep) ?_
+  rintro ⟨a, n⟩
+  congr 1
+  induction n with
+  | zero => rfl
+  | succ n ih => simp [List.range_succ, ih]
 
 end ComputableIn₂

@@ -20,6 +20,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Multiplication by an integer on the projective Weierstrass model
@@ -355,11 +356,8 @@ theorem projModelAffinePoint_projModelMulBy_ne_projModelZero_iff (n : ℤ) (s : 
   have := s.isPrime
   let g := algebraMap R s.asIdeal.ResidueField
   -- the closed point of `Spec κ(s)` lies over `s`
-  let t : Spec (.of s.asIdeal.ResidueField) := ⟨⊥, Ideal.isPrime_bot⟩
-  have ht : Spec.map (CommRingCat.ofHom g) t = s := by
-    refine PrimeSpectrum.ext ?_
-    rw [Spec.map_apply, PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom,
-      ← RingHom.ker_eq_comap_bot, Ideal.ker_algebraMap_residueField]
+  let t : Spec (.of s.asIdeal.ResidueField) := IsLocalRing.closedPoint _
+  have ht : Spec.map (CommRingCat.ofHom g) t = s := Spec.map_algebraMap_residueField_closedPoint s
   have hns : (W.map g).toAffine.Nonsingular (g x) (g y) :=
     Affine.equation_iff_nonsingular.mp (h.map g)
   -- the point `[x : y : 1]` with values in `κ(s)`

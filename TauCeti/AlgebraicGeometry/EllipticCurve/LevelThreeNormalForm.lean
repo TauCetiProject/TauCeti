@@ -465,6 +465,28 @@ noncomputable def levelThreeRootOfUnity : R :=
   levelThreeParameter h + ↑(toLevelThreeNormalForm h).u⁻¹ *
     (y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹
 
+/-- A change of variables `C` with `C.r = x₁`, `C.t = y₁` that satisfies the shear and scaling
+equations carries a curve through `(x₁, y₁)` to the level-three normal form with parameter `μ`. -/
+private theorem smul_eq_levelThreeNormalForm {C : VariableChange R} {μ : R} (hr : C.r = x₁)
+    (ht : C.t = y₁) (hσ : C.s * (2 * y₁ + W.a₁ * x₁ + W.a₃) =
+      W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2)
+    (hP : y₁ ^ 2 + W.toAffine.a₁ * x₁ * y₁ + W.toAffine.a₃ * y₁ =
+      x₁ ^ 3 + W.toAffine.a₂ * x₁ ^ 2 + W.toAffine.a₄ * x₁ + W.toAffine.a₆)
+    (ha₁ : W.a₁ + 2 * C.s = C.u * (3 * μ)) (ha₂ : W.a₂ - C.s * W.a₁ + 3 * x₁ - C.s ^ 2 = 0)
+    (ha₃ : 2 * y₁ + W.a₁ * x₁ + W.a₃ = C.u ^ 3 * (μ ^ 3 - 1)) :
+    C • W = levelThreeNormalForm μ := by
+  have hu' := C.u.inv_mul
+  ext
+  · simp only [variableChange_a₁, levelThreeNormalForm_a₁, ha₁, Units.inv_mul_cancel_left]
+  · simp only [variableChange_a₂, hr, levelThreeNormalForm_a₂, ha₂, mul_zero]
+  · rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃]
+    linear_combination (↑C.u⁻¹ : R) ^ 3 * ha₃ +
+      (μ ^ 3 - 1) * (((↑C.u⁻¹ : R) * C.u) ^ 2 + (↑C.u⁻¹ : R) * C.u + 1) * hu'
+  · rw [variableChange_a₄, hr, ht, levelThreeNormalForm_a₄]
+    linear_combination -(↑C.u⁻¹ : R) ^ 4 * hσ
+  · rw [variableChange_a₆, hr, ht, levelThreeNormalForm_a₆]
+    linear_combination -(↑C.u⁻¹ : R) ^ 6 * hP
+
 /-- The properties of `toLevelThreeNormalForm h`, `levelThreeParameter h` and
 `levelThreeRootOfUnity h`. -/
 private theorem toLevelThreeNormalForm_spec :
@@ -517,17 +539,8 @@ private theorem toLevelThreeNormalForm_spec :
       3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * hwₓ
   obtain ⟨hζ₀, ha₁, ha₃, hX, hY⟩ :=
     scaling_spec h.isUnit_three h.isUnit_sub hv hE hF hu hμv hζv
-  refine ⟨hζ₀, ?_, by linear_combination hX, by linear_combination hY + C.s * hX⟩
-  ext
-  · simp only [variableChange_a₁, levelThreeNormalForm_a₁, ha₁, Units.inv_mul_cancel_left]
-  · simp only [variableChange_a₂, hr, levelThreeNormalForm_a₂, ha₂, mul_zero]
-  · rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃]
-    linear_combination (↑C.u⁻¹ : R) ^ 3 * ha₃ +
-      (μ ^ 3 - 1) * (((↑C.u⁻¹ : R) * C.u) ^ 2 + (↑C.u⁻¹ : R) * C.u + 1) * hu'
-  · rw [variableChange_a₄, hr, ht, levelThreeNormalForm_a₄]
-    linear_combination -(↑C.u⁻¹ : R) ^ 4 * hσ
-  · rw [variableChange_a₆, hr, ht, levelThreeNormalForm_a₆]
-    linear_combination -(↑C.u⁻¹ : R) ^ 6 * hP
+  exact ⟨hζ₀, smul_eq_levelThreeNormalForm hr ht hσ hP ha₁ ha₂ ha₃, by linear_combination hX,
+    by linear_combination hY + C.s * hX⟩
 
 /-- The root of unity of a basis of the `3`-torsion is a root of `ζ² + ζ + 1`. -/
 theorem levelThreeRootOfUnity_sq_add_levelThreeRootOfUnity_add_one :
