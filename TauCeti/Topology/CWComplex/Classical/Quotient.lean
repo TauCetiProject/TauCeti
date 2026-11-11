@@ -19,7 +19,8 @@ inclusion of `D` and by the characteristic maps, is a quotient map onto `C`.
 Products with a locally compact space preserve quotient maps, so a map out of `Z × C`, for `Z`
 locally compact, is continuous as soon as it is continuous on `Z × D` and on the product of `Z`
 with every closed cell, the latter read through the characteristic maps.  This is how homotopies
-out of a CW complex (the case `Z = I`) are built cell by cell.
+out of a CW complex (the case `Z = I`) are built cell by cell.  The criterion also holds for maps
+out of `Z × U` with `U` open in `C`, where continuity is only required at the points over `U`.
 
 ## Main results
 
@@ -29,6 +30,9 @@ out of a CW complex (the case `Z = I`) are built cell by cell.
   continuous on the base and along every characteristic map.
 * `TauCeti.continuous_prod_complex_iff`: the same criterion for maps out of `Z × C` with `Z`
   locally compact.
+* `TauCeti.continuous_prod_subtype_of_continuousOn_map`,
+  `TauCeti.continuousOn_prod_of_continuousOn_map`: the same criterion for maps out of `Z × U`
+  with `U` open in `C`.
 
 ## References
 

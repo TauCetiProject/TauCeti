@@ -17,8 +17,10 @@ Characteristic-map lemmas describe their continuity on the closed unit ball (bun
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+skeleton above any given level, which gives induction principles over the skeleta
+(`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
+`0`-cell, the `0`-skeleton is the base together with that point
+(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
 soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
 preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
 also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
@@ -157,6 +159,31 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
+
+/-- **Induction on the skeleta.** A property of points holds on `skeletonLT C n` as soon as it
+holds on the base and, at every point `map m j y` of an open `m`-cell, it follows from its truth
+on `skeletonLT C m`. -/
+lemma forall_mem_skeletonLT_of_map {P : X → Prop} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ m (j : cell C m) (y : Fin m → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (m : ℕ∞) : Set X), P x) → P (map m j y)) (n : ℕ) :
+    ∀ x ∈ (skeletonLT C (n : ℕ∞) : Set X), P x := by
+  induction n with
+  | zero => simpa [skeletonLT_zero_eq_base] using hD
+  | succ n ih =>
+    intro x hx
+    obtain hx | ⟨j, y, hy, rfl⟩ := mem_skeletonLT_or_exists_map hx
+    · exact ih x hx
+    · exact hcell n j y hy ih
+
+/-- **Induction on the skeleta**, for all points of the complex: a property holds on `C` as soon
+as it holds on the base and, at every point `map n j y` of an open `n`-cell, it follows from its
+truth on `skeletonLT C n`. -/
+lemma forall_mem_complex_of_map {P : X → Prop} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ n (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (n : ℕ∞) : Set X), P x) → P (map n j y)) :
+    ∀ x ∈ C, P x := fun x hx ↦ by
+  obtain ⟨n, hn⟩ := exists_mem_skeletonLT_add 0 hx
+  exact forall_mem_skeletonLT_of_map hD hcell (0 + n) x hn
 
 /-- **Closed subsets of the `0`-skeleton.** A subset `A` of the `0`-skeleton `skeletonLT C 1`,
 which consists of the base `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
