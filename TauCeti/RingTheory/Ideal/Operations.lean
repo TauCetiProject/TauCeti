@@ -32,6 +32,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
+* `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
+  under multiplication, passes from the factors of a finite product to the product with any
+  cofactor, at the power `J ^ card ι`.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
   module over `R`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
@@ -200,6 +203,30 @@ theorem image_fintypeLinearCombination_pi {R M ι : Type*} [Semiring R] [AddComm
     refine ⟨c, fun i _ ↦ hc i, ?_⟩
     rw [Fintype.linearCombination_apply,
       Finsupp.sum_fintype c (fun i a ↦ a • v i) fun _ ↦ zero_smul _ _]
+
+section Prod
+
+variable {A S ι : Type*} [CommMonoid A] [CommSemiring S]
+
+/-- Let `P I x` be a property of an ideal `I` of `S` and an element `x` of `A`, which holds for
+`⊤` and every element, and passes to products in the form `P I x → P J y → P (I * J) (x * y)`.
+If `P J (f i)` for every factor of a finite product, then `P (J ^ card ι) (g * ∏ i, f i)` for
+every cofactor `g`. -/
+theorem pow_card_mul_prod_induction [Fintype ι] {J : Ideal S} (P : Ideal S → A → Prop)
+    (htop : ∀ x, P ⊤ x) (hmul : ∀ {I : Ideal S} {x y : A}, P I x → P J y → P (I * J) (x * y))
+    {f : ι → A} (hf : ∀ i, P J (f i)) (g : A) :
+    P (J ^ Fintype.card ι) (g * ∏ i, f i) := by
+  classical
+  suffices ∀ s : Finset ι, P (J ^ s.card) (g * ∏ i ∈ s, f i) from this Finset.univ
+  intro s
+  induction s using Finset.induction_on with
+  | empty => simpa using htop g
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.card_insert_of_notMem hi, pow_succ, mul_left_comm,
+      mul_comm (f i)]
+    exact hmul ih (hf i)
+
+end Prod
 
 end Ideal
 
