@@ -63,8 +63,8 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   set a singleton, in particular at a point of `U` where `f` is continuous; conversely a
   subsingleton cluster set at a point of `closure U` produces a limit, provided `f` maps `U` into a
   compact set.
-* `TauCeti.subsingleton_clusterSetOn_of_notMem_frontier` — off the frontier of `U` a cluster set of
-  a continuous map is a point or empty.
+* `ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier` — off the frontier of `U` a cluster
+  set of a continuous map is a point or empty.
 * `TauCeti.exists_mem_closure_mem_clusterSetOn`,
   `TauCeti.exists_mem_frontier_mem_clusterSetOn_of_notMem_image`,
   `TauCeti.closure_image_eq_biUnion_clusterSetOn` and
@@ -224,8 +224,8 @@ theorem exists_tendsto_of_clusterSetOn_subsingleton (hK : IsCompact K) (hfK : Ma
 
 /-- **Off the frontier of a set the cluster set is a subsingleton.** At a point of the interior of
 `U` it is the single value `f w` by continuity, and at a point outside `closure U` it is empty. -/
-theorem subsingleton_clusterSetOn_of_notMem_frontier [T2Space Y] (hfc : ContinuousOn f U)
-    (hw : w ∉ frontier U) : (clusterSetOn f U w).Subsingleton := by
+theorem _root_.ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier [T2Space Y]
+    (hfc : ContinuousOn f U) (hw : w ∉ frontier U) : (clusterSetOn f U w).Subsingleton := by
   by_cases hwU : w ∈ U
   · rw [clusterSetOn_eq_singleton_of_continuousWithinAt hwU (hfc w hwU)]
     exact subsingleton_singleton

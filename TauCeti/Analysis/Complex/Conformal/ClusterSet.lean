@@ -425,7 +425,7 @@ which `TauCeti.isCompact_clusterSetOn_of_isBounded`,
 `TauCeti.clusterSetOn_subset_frontier_image` together exhibit as a compact connected subset of the
 curve. Carathéodory's theorem is the assertion that for a Riemann map of a Jordan domain the first
 case always holds. Off `frontier U` the cluster set is a point or empty
-(`TauCeti.subsingleton_clusterSetOn_of_notMem_frontier`), so no hypothesis `w ∈ frontier U` is
+(`ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier`), so no hypothesis `w ∈ frontier U` is
 needed. -/
 theorem subsingleton_or_exists_injective_path_clusterSetOn (hUo : IsOpen U) (hUc : Convex ℝ U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hfb : Bornology.IsBounded (f '' U))
@@ -435,7 +435,7 @@ theorem subsingleton_or_exists_injective_path_clusterSetOn (hUo : IsOpen U) (hUc
       ∃ (p q : ℂ) (γ : Path p q), Function.Injective γ ∧ range γ = clusterSetOn f U w := by
   by_cases hw : w ∈ frontier U
   swap
-  · exact Or.inl (subsingleton_clusterSetOn_of_notMem_frontier hfd.continuousOn hw)
+  · exact Or.inl (hfd.continuousOn.subsingleton_clusterSetOn_of_notMem_frontier hw)
   exact hJ.subsingleton_or_exists_injective_path (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
     (isCompact_clusterSetOn_of_isBounded hfb)
     (hUc.isConnected_clusterSetOn_of_isBounded hfd.continuousOn hfb
@@ -459,7 +459,7 @@ theorem subsingleton_clusterSetOn_of_subset_closure_sdiff (hUo : IsOpen U) (hUc 
     (clusterSetOn f U w).Subsingleton := by
   by_cases hw : w ∈ frontier U
   swap
-  · exact subsingleton_clusterSetOn_of_notMem_frontier hfd.continuousOn hw
+  · exact hfd.continuousOn.subsingleton_clusterSetOn_of_notMem_frontier hw
   exact hJ.subsingleton_of_subset_closure_sdiff (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
     (isCompact_clusterSetOn_of_isBounded hfb)
     (hUc.isConnected_clusterSetOn_of_isBounded hfd.continuousOn hfb
