@@ -61,17 +61,6 @@ theorem bruhatCell_subset_of_mem {P : Subgroup G} (hB : T.subgroupB ≤ P)
   obtain ⟨a, ha, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
   exact P.mul_mem (P.mul_mem (hB ha) hP) (hB hb)
 
-/-- A subgroup containing a Bruhat cell contains `B`: for `n` in the cell, `n` and `n * b` lie in
-it for every `b ∈ B`, hence so does `b`. -/
-theorem subgroupB_le_of_bruhatCell_subset {P : Subgroup G} {w : T.WeylGroup}
-    (hw : T.bruhatCell w ⊆ P) : T.subgroupB ≤ P := by
-  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
-  intro b hb
-  have hnb : (n : G) * b ∈ T.bruhatCell w := by
-    rw [← T.bruhatCell_mul_subgroupB w]
-    exact Set.mul_mem_mul hn hb
-  simpa using P.mul_mem (P.inv_mem (hw hn)) (hw hnb)
-
 /-- If a simple reflection shortens a cell contained in a subgroup, both the simple cell and the
 shortened cell lie in that subgroup. -/
 theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G}
