@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.GaloisClosure
+public import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # The normal closure of a finite intermediate field
@@ -77,10 +78,8 @@ subgroup fixing the normal closure of an intermediate field `L` is the largest n
 fixing `L`, that is, the normal core of the subgroup fixing `L`. -/
 theorem fixingSubgroup_normalClosure [Normal k K] (L : IntermediateField k K) :
     (normalClosure k L K).fixingSubgroup = L.fixingSubgroup.normalCore := by
-  -- The subgroup fixing the normal closure is the kernel of restriction to it, hence normal.
-  have : (normalClosure k L K).fixingSubgroup.Normal := by
-    rw [← restrictNormalHom_ker]
-    infer_instance
+  -- The subgroup fixing the normal closure is normal (`IntermediateField.fixingSubgroup_normal`),
+  -- so it lies in the normal core.
   refine le_antisymm (Subgroup.normal_le_normalCore.2 (fixingSubgroup_le (le_normalClosure L)))
     ?_
   -- The fixed field of the normal core is stable under `Gal(K/k)`, hence normal over `k`, as in
