@@ -1086,12 +1086,12 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
   exact hfinal.trans_eq hCK.symm
 
 /-- **The John–Nirenberg inequality for functions of bounded mean oscillation.** There are
-constants `A > 0` and `C`, depending only on the dimension `n ≥ 1`, such that the following holds
+constants `A > 0` and `C`, depending only on the dimension `n`, such that the following holds
 for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
 integrable with `‖f‖_{BMO} ≤ M` and `σ M ≤ A`, then on every ball `B`,
 
 `∫_B exp (σ ‖f - f_B‖) ≤ C |B|`. -/
-theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le [Nonempty ι] :
+theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le :
     ∃ A : ℝ, 0 < A ∧ ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
       [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
       {f : EuclideanSpace ℝ ι → E} {M : ℝ≥0} {σ : ℝ},
@@ -1099,6 +1099,17 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
       ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
         ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖)) ∂μ ≤
           C * μ (ball x₀ r) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
+    by_cases h0 : μ (ball x₀ r) = 0
+    · simp [Measure.restrict_eq_zero.2 h0]
+    by_cases htop : μ (ball x₀ r) = ∞
+    · simp [htop]
+    have hfc : f = fun _ ↦ f x₀ := funext fun y ↦ congrArg f (Subsingleton.elim _ _)
+    rw [hfc, setAverage_const h0 htop]
+    simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
   have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
@@ -1178,7 +1189,7 @@ open Filter Topology
 
 /-- The `Lᵖ` form of the John–Nirenberg inequality for a fixed positive bound `M` on the BMO
 seminorm. -/
-private theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le [Nonempty ι]
+private theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le
     {p : ℝ} (hp : 0 < p) :
     ∃ C : ℝ≥0, 0 < C ∧ ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
       {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E}
@@ -1231,7 +1242,7 @@ for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f 
 integrable, then on every ball `B`
 
 `⨍_B ‖f - f_B‖ ^ p ≤ C ‖f‖_{BMO} ^ p`. -/
-theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow [Nonempty ι] {p : ℝ}
+theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow {p : ℝ}
     (hp : 0 < p) :
     ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
       {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E},
@@ -1264,7 +1275,7 @@ theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow [No
 /-- **Functions of bounded mean oscillation are locally in every `Lᵖ`, `p < ∞`.** On
 `ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, with an additive Haar measure, a function of bounded mean
 oscillation lies in `Lᵖ` of every ball for every finite exponent `p`. -/
-theorem MemBMO.memLp_restrict_ball [Nonempty ι] [CompleteSpace E]
+theorem MemBMO.memLp_restrict_ball [CompleteSpace E]
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E}
     (hf : MemBMO f μ) {p : ℝ≥0∞} (hp : p ≠ ∞) (x₀ : EuclideanSpace ℝ ι) (r : ℝ) :
     MemLp f p (μ.restrict (ball x₀ r)) := by

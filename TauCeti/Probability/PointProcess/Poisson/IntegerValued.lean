@@ -74,8 +74,7 @@ theorem IsPoissonRandomMeasure.ae_isIntegerValued (h : IsPoissonRandomMeasure P 
       simpa only [Measure.restrict_apply (hmeas A hA)] using hω A hA
     · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using hω univ huniv
   filter_upwards [ae_all_iff.2 hpiece] with ω hω
-  exact Measure.isIntegerValued_of_restrict (measurableSet_spanningSets Λ)
-    (iUnion_spanningSets Λ) hω
+  exact Measure.isIntegerValued_of_restrict (iUnion_spanningSets Λ) hω
 
 /-- If the intensity is finite on compact sets, almost every realization of a Poisson
 random measure is locally finite. The assertion holds simultaneously at every location. -/

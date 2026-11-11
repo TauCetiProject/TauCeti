@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Invariants
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
-import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -21,14 +20,14 @@ algebraically closed field `k`, and let `I` be a normal Hopf ideal cutting out a
 `N` whose coordinate ring is reduced, of finite type, and has only unipotent points. If `H` is
 linearly reductive then `N` is the identity subgroup, that is, `I` is the augmentation ideal.
 
-The argument is the standard one. Fix a finite-dimensional representation `V` of the ambient
-group. Its `N`-invariants are stable under the ambient group because `I` is normal, and geometric
+The argument is the standard one. Fix a representation `V` of the ambient group. Its
+`N`-invariants are stable under the ambient group because `I` is normal, and geometric
 point separation promotes that stable subspace to a subcomodule of `V`. Complete reducibility
 supplies an ambient complement, which then contains no nonzero `N`-fixed vector; Kolchin's
 theorem, already available for unipotent groups, forces such a complement to vanish. So `N` acts
-trivially on every finite-dimensional representation of the ambient group. Applying this to the
-finite-dimensional subcomodules of the regular representation, which exhaust `H`, shows that the
-quotient morphism `H ⟶ H ⧸ I` sends `h` to `ε h • 1`, hence that `I` is the kernel of the counit.
+trivially on every representation of the ambient group. Applying this to the regular
+representation shows that the quotient morphism `H ⟶ H ⧸ I` sends `h` to `ε h • 1`, hence that `I`
+is the kernel of the counit.
 
 The whole-group case — a linearly reductive unipotent group is trivial — is
 `TauCeti.HopfAlgebra.counitBialgEquivOfIsLinearlyReductiveOfForallIsUnipotentPoint`, and it does
@@ -45,7 +44,7 @@ characteristic zero is not proved here.
 
 * `mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible`:
   over an algebraically closed field, a normal unipotent closed subgroup of a reduced finite-type
-  affine group acts trivially on every completely reducible finite-dimensional representation.
+  affine group acts trivially on every completely reducible representation.
 * `mkQuotient_eq_counit_smul_one_of_isNormal_of_forall_isUnipotentPoint_of_isLinearlyReductive`:
   under the same hypotheses, the quotient morphism of a linearly reductive group is
   `h ↦ ε h • 1`.
@@ -97,13 +96,12 @@ variable (hu : ∀ g : WithConv
 
 section Comodule
 
-variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
+variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
 include hI hu in
 /-- Over an algebraically closed field, a normal closed subgroup whose coordinate ring is
 reduced, of finite type and has only unipotent points acts trivially on every completely reducible
-finite-dimensional representation of an ambient affine group with reduced, finite-type
-coordinate ring.
+representation of an ambient affine group with reduced, finite-type coordinate ring.
 
 Normality makes the subgroup's fixed subspace an ambient subcomodule, complete reducibility
 supplies an ambient complement, and Kolchin's theorem finds a nonzero fixed vector inside a
@@ -162,29 +160,17 @@ include hI hu hlr in
 reduced finite-type affine group is fixed by a normal unipotent closed subgroup: comultiplication
 followed by the quotient morphism in the second factor sends `h` to `h ⊗ 1`.
 
-Every element lies in a finite-dimensional subcoalgebra, hence in a finite-dimensional
-subcomodule of the regular comodule, where the previous theorem applies. -/
+This is the previous theorem applied to the regular comodule. -/
 theorem mkQuotient_comul_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isLinearlyReductive
     (h : H) :
     TensorProduct.map LinearMap.id
         (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) I).hom.toLinearMap
         (Coalgebra.comul (R := k) h) =
       h ⊗ₜ[k] (1 : CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I) := by
-  obtain ⟨D, hDfin, hD⟩ := Subcoalgebra.exists_finiteDimensional_subcoalgebra_mem (k := k) h
-  set N : Subcomodule k H H := D.toRegularSubcomodule with hNdef
-  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
-  have hNfin : FiniteDimensional k N.toSubmodule := by
-    rw [hNdef, Subcoalgebra.toRegularSubcomodule_toSubmodule]
-    exact hDfin
-  -- `↥N` and `↥N.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
-  have _ : FiniteDimensional k N := hNfin
-  have hmem : h ∈ N := Subcoalgebra.mem_toRegularSubcomodule.mpr hD
   have hfix :=
     mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible
-      (M := N) hI hu hlr.isCompletelyReducible ⟨h, hmem⟩
-  have hpush := Subcomodule.map_id_coact_coe_eq_tmul_one
-    (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) I).hom.toCoalgHom N hfix
-  rwa [Comodule.instSelf_coact] at hpush
+      (M := H) hI hu hlr.isCompletelyReducible h
+  rwa [Comodule.instSelf_coact] at hfix
 
 include hI hu hlr in
 /-- Over an algebraically closed field, the quotient morphism of a linearly reductive, reduced
