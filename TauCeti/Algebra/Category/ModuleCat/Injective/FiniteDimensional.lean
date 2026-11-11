@@ -56,13 +56,8 @@ theorem exists_injectivePresentation_of_finite (M : ModuleCat.{w} A) [Module.Fin
       refine ⟨0, 1, fun h => hm ?_⟩
       simpa [← h] using (one_smul A m).symm
     have : Small.{w} k := by
-      refine small_of_injective (f := fun c : k ↦ algebraMap k A c • m) fun c d h => ?_
-      by_contra hcd
-      have hu : algebraMap k A (c - d) • m = 0 := by simpa [map_sub, sub_smul, sub_eq_zero] using h
-      have := congrArg (algebraMap k A (c - d)⁻¹ • ·) hu
-      simp only [smul_smul, ← map_mul, inv_mul_cancel₀ (sub_ne_zero.mpr hcd), map_one, one_smul,
-        smul_zero] at this
-      exact hm this
+      let : Module k M := Module.compHom M (algebraMap k A)
+      exact small_of_injective (smul_left_injective k hm)
     exact Module.Finite.small k A
   obtain ⟨Q, _, _, _, _, _, i, hi⟩ :=
     TauCeti.exists_isInjectiveEnvelope_of_finite (k := k) (A := A) M
