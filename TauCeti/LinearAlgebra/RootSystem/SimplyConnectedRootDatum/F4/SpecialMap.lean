@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Length
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 
 /-!
@@ -386,10 +385,8 @@ theorem f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
       rw [hα, hβ, hγ] at hlen
       omega
     · intro h
-      have hlen := f4Length_of_root_eq_add_zsmul (f4SpecialIsogenyIndexEquiv α)
-        (f4SpecialIsogenyIndexEquiv β) (f4SpecialIsogenyIndexEquiv γ) 1
-        (by simpa only [one_zsmul] using h)
-      rw [hα', hβ', hγ'] at hlen
+      have := f4Length_eq_two_of_root_eq_add_of_long_long (f4SpecialIsogenyIndexEquiv α)
+        (f4SpecialIsogenyIndexEquiv β) (f4SpecialIsogenyIndexEquiv γ) hα' hβ' h
       omega
   · simpa only [hα'] using
       f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ
