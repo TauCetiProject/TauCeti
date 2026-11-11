@@ -72,9 +72,8 @@ variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
 open scoped Classical in
-/-- **The valuation of the `x`-coordinate of a parametrised point**: for a nonzero parameter `t`,
-`v(x) · v(t) ^ 2 = 1`. This is the closed form `x * (t ^ 2 u(t)) = 1` of
-`xCoord_formalPoint_mul_eq_one`, `u(t)` being a unit. -/
+/-- **The valuation of the `x`-coordinate of a parametrised point**: for a nonzero parameter `t`
+in the maximal ideal, `v(x) · v(t) ^ 2 = 1`. -/
 theorem valuation_xCoord_formalPoint_mul_sq {t : O_u} (ht : t ∈ m_u) (ht0 : t ≠ 0) :
     Valued.v ((C.formalPoint (K := F_u)
       (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht).xCoord) *
@@ -89,8 +88,8 @@ theorem valuation_xCoord_formalPoint_mul_sq {t : O_u} (ht : t ∈ m_u) (ht0 : t 
     SubmonoidClass.coe_pow, map_mul, map_pow, hU, mul_one] at hkey
 
 open scoped Classical in
-/-- **A nonzero parameter has a pole in the `x`-coordinate of its point**:
-`v(x) = v(t) ^ (-2)` (`valuation_xCoord_formalPoint_mul_sq`) and `v(t) < 1`. -/
+/-- **A nonzero parameter in the maximal ideal has a pole in the `x`-coordinate of its point**:
+`1 < v(x)`. -/
 theorem one_lt_valuation_xCoord_formalPoint {t : O_u} (ht : t ∈ m_u) (ht0 : t ≠ 0) :
     1 < Valued.v ((C.formalPoint (K := F_u)
       (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht).xCoord) := by

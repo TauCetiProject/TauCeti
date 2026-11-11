@@ -354,8 +354,7 @@ private theorem map_pointMapHom_map_filtration_le {c : F_u} (hc0 : c ≠ 0) {R :
 
 open scoped Classical in
 /-- **An isogeny is injective on the deep levels**: if `deg φ` is nonzero in `A`, then for all
-large `k` the kernel of `φ` meets `E_k(F_u)` trivially. The kernel is killed by `deg φ`, and the
-deep levels have no `deg φ`-torsion. -/
+large `k` the kernel of `φ` meets `E_k(F_u)` trivially. -/
 theorem eventually_map_filtration_inf_ker_pointMapHom_eq_bot (hn : (φ.degree : A) ≠ 0) :
     ∀ᶠ k : ℕ in atTop,
       (FormalGroupPoint.filtration C₁ m_u k).map (C₁.formalPointHomAdicCompletion u) ⊓
@@ -381,13 +380,7 @@ as `φ^*ω₂ = c ω₁`, with `2 ≠ 0` in `F_u` and `deg φ` nonzero in `A`. T
 
 `φ(E_k(F_u)) = E_j(F_u)`, where `v c · exp j = exp k`,
 
-that is, `j = k + ord(c)`. The inclusion `⊆` is the effect `v(x ∘ φ) = v(x) · v c ^ (-2)` of `φ` on
-the `x`-coordinate near the point at infinity
-(`TauCeti.Isogeny.exists_valuation_xCoord_pointMap_mul_sq`). For the equality, the same holds for
-the dual `φ̂` with its constant `c'`, and `c c' = deg φ`, so `φ̂` carries `E_j(F_u)` into
-`E_(k+e)(F_u) = n E_k(F_u)`, where `n = deg φ` and `n O_u = 𝔪_u ^ e`; as `E_j(F_u)` has no
-`n`-torsion, `φ(E_k(F_u))` is all of `E_j(F_u)`
-(`AddMonoidHom.map_eq_of_map_le_of_map_le_map_nsmul`). -/
+that is, `j = k + ord(c)`. -/
 theorem eventually_map_pointMapHom_map_filtration_eq {c : F_u}
     (hc : φ.pullbackDifferential (Affine.invariantDifferential _) =
       c • Affine.invariantDifferential _)
@@ -454,9 +447,8 @@ without finiteness assumptions: indices are read as `0` when infinite. When the 
 are finite, it gives the local factor
 `[E₂(F_u) : φ E₁(F_u)] / #E₁(F_u)[φ] = [E₂(F_u) : E_j(F_u)] / [E₁(F_u) : E_k(F_u)]`,
 including at a place dividing `deg φ`.
-For minimal models the indices of the levels are finite when the residue field
-is, since then the kernel of reduction has finite index
-(`WeierstrassCurve.finiteIndex_kerReduction`). -/
+For minimal models every formal level has finite index when the residue field is finite
+(`WeierstrassCurve.finiteIndex_formalPointFiltration`). -/
 theorem eventually_index_range_pointMapHom_mul_index_map_filtration {c : F_u}
     (hc : φ.pullbackDifferential (Affine.invariantDifferential _) =
       c • Affine.invariantDifferential _)
