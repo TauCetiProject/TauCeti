@@ -14,6 +14,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
@@ -95,6 +96,8 @@ Morse-theoretic definitions that use them.
   derivative.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
 * `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple.
+* `TauCeti.sum_mul_fderiv_eq_zero_of_sum_sq_eventuallyEq_one`: the first and second derivatives
+  of a partition of unity by squares `∑ₐ Jₐ² = 1`.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
@@ -445,6 +448,42 @@ theorem fderiv_fderiv_smul_apply {f : E → 𝕜} {g : E → F} {x : E} (hf : Co
   simp only [add_apply, smul_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply]
   abel
+
+/-- **Derivatives of a partition of unity by squares.** If `∑ₐ Jₐ² = 1` near `x`, differentiating
+this identity once and twice in a direction `v` gives `∑ₐ Jₐ ∂ᵥJₐ = 0` and
+`∑ₐ (Jₐ ∂ᵥ²Jₐ + (∂ᵥJₐ)²) = 0` at `x`. -/
+theorem sum_mul_fderiv_eq_zero_of_sum_sq_eventuallyEq_one [CharZero 𝕜] {α : Type*}
+    {A : Finset α} {J : α → E → 𝕜} {x : E} (hJ : ∀ a ∈ A, ContDiffAt 𝕜 2 (J a) x)
+    (hJA : (fun y ↦ ∑ a ∈ A, J a y ^ 2) =ᶠ[𝓝 x] fun _ ↦ 1) (v : E) :
+    ∑ a ∈ A, J a x * fderiv 𝕜 (J a) x v = 0 ∧
+      ∑ a ∈ A, (J a x * fderiv 𝕜 (fderiv 𝕜 (J a)) x v v + fderiv 𝕜 (J a) x v ^ 2) = 0 := by
+  set G : E → 𝕜 := fun y ↦ ∑ a ∈ A, J a y * fderiv 𝕜 (J a) y v
+  have hdiff : ∀ᶠ y in 𝓝 x, ∀ a ∈ A, DifferentiableAt 𝕜 (J a) y :=
+    (Filter.eventually_all_finset A).2 fun a ha ↦
+      (((hJ a ha).of_le (m := 1) (by norm_num)).eventually (by simp)).mono fun y hy ↦
+        hy.differentiableAt one_ne_zero
+  -- `2 G` is the derivative of `∑ₐ Jₐ²` in the direction `v`, which vanishes near `x`.
+  have hG : G =ᶠ[𝓝 x] fun _ ↦ 0 := by
+    filter_upwards [hdiff, hJA.fderiv (𝕜 := 𝕜)] with y hy hS
+    have hd : HasFDerivAt (fun y ↦ ∑ a ∈ A, J a y ^ 2)
+        (∑ a ∈ A, (2 • J a y ^ (2 - 1)) • fderiv 𝕜 (J a) y) y :=
+      HasFDerivAt.fun_sum fun a ha ↦ HasFDerivAt.pow (hy a ha).hasFDerivAt 2
+    have h := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) (hd.fderiv.symm.trans hS)
+    simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, smul_apply,
+      nsmul_eq_mul, Nat.cast_ofNat, Nat.reduceSub, pow_one, smul_eq_mul, mul_assoc,
+      ← Finset.mul_sum] at h
+    simp only [G]
+    linear_combination (1 / 2 : 𝕜) * h
+  have hGd : HasFDerivAt G (∑ a ∈ A, (J a x • (fderiv 𝕜 (fderiv 𝕜 (J a)) x).flip v +
+      fderiv 𝕜 (J a) x v • fderiv 𝕜 (J a) x)) x :=
+    HasFDerivAt.fun_sum fun a ha ↦ ((hJ a ha).differentiableAt (by norm_num)).hasFDerivAt.mul
+      ((hJ a ha).hasFDerivAt_fderiv_apply le_rfl v)
+  refine ⟨hG.eq_of_nhds, ?_⟩
+  have h := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) (hGd.fderiv.symm.trans hG.fderiv_eq)
+  simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, add_apply,
+    smul_apply, ContinuousLinearMap.flip_apply, smul_eq_mul] at h
+  rw [← h]
+  exact Finset.sum_congr rfl fun a _ ↦ by ring
 
 /-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
 containing the topological support of `f`, then the second-order product rule

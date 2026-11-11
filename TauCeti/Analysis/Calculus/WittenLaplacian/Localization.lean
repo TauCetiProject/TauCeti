@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Localization of the Witten Laplacian on Euclidean space
@@ -39,8 +39,9 @@ quadratic form of `Δ_t` along a partition of unity, at the cost of the bounded 
 **The lower bound away from the critical points.** The fibre endomorphism of the frame formula
 is `t² |df|² + t ∑_{i,j} Hess f(∂ᵢ, ∂ⱼ) ⁅εᵢ, ιⱼ⁆`, and each `⁅εᵢ, ιⱼ⁆` has quadratic form bounded by
 `1` (`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`). As the
-quadratic form of `Δ` is nonnegative on compactly supported forms, for every compactly supported
-`C²` form `φ`
+quadratic form of `Δ` is the nonnegative Dirichlet energy on compactly supported forms
+(`TauCeti.integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq`), for every compactly
+supported `C²` form `φ`
 
 `∫ (t² |df|² - |t| ∑_{i,j} |∂ᵢ∂ⱼf|) |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`
 
@@ -123,42 +124,6 @@ theorem euclideanWittenLaplacian_smul_apply {f J : (ι → ℝ) → ℝ} {φ : (
     ← Finset.smul_sum, ← Finset.smul_sum, ← Finset.sum_smul, smul_add]
   abel
 
-/-- If `∑ₐ Jₐ² = 1` near `x`, differentiating this identity once and twice in a direction `v`
-gives `∑ₐ Jₐ ∂ᵥJₐ = 0` and `∑ₐ (Jₐ ∂ᵥ²Jₐ + (∂ᵥJₐ)²) = 0` at `x`. -/
-private theorem sum_mul_fderiv_eq_zero_of_sum_sq_eventuallyEq_one {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : Type*} {A : Finset α} {J : α → E → ℝ} {x : E}
-    (hJ : ∀ a ∈ A, ContDiffAt ℝ 2 (J a) x)
-    (hJA : (fun y ↦ ∑ a ∈ A, J a y ^ 2) =ᶠ[𝓝 x] fun _ ↦ 1) (v : E) :
-    ∑ a ∈ A, J a x * fderiv ℝ (J a) x v = 0 ∧
-      ∑ a ∈ A, (J a x * fderiv ℝ (fderiv ℝ (J a)) x v v + fderiv ℝ (J a) x v ^ 2) = 0 := by
-  set G : E → ℝ := fun y ↦ ∑ a ∈ A, J a y * fderiv ℝ (J a) y v
-  have hdiff : ∀ᶠ y in 𝓝 x, ∀ a ∈ A, DifferentiableAt ℝ (J a) y :=
-    (Filter.eventually_all_finset A).2 fun a ha ↦
-      (((hJ a ha).of_le (m := 1) (by norm_num)).eventually (by simp)).mono fun y hy ↦
-        hy.differentiableAt one_ne_zero
-  -- `2 G` is the derivative of `∑ₐ Jₐ²` in the direction `v`, which vanishes near `x`.
-  have hG : G =ᶠ[𝓝 x] fun _ ↦ 0 := by
-    filter_upwards [hdiff, hJA.fderiv (𝕜 := ℝ)] with y hy hS
-    have hd : HasFDerivAt (fun y ↦ ∑ a ∈ A, J a y ^ 2)
-        (∑ a ∈ A, (2 • J a y ^ (2 - 1)) • fderiv ℝ (J a) y) y :=
-      HasFDerivAt.fun_sum fun a ha ↦ HasFDerivAt.pow (hy a ha).hasFDerivAt 2
-    have h := congrArg (fun L : E →L[ℝ] ℝ ↦ L v) (hd.fderiv.symm.trans hS)
-    simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, smul_apply,
-      nsmul_eq_mul, Nat.cast_ofNat, Nat.reduceSub, pow_one, smul_eq_mul, mul_assoc,
-      ← Finset.mul_sum] at h
-    simp only [G]
-    linear_combination (1 / 2 : ℝ) * h
-  have hGd : HasFDerivAt G (∑ a ∈ A, (J a x • (fderiv ℝ (fderiv ℝ (J a)) x).flip v +
-      fderiv ℝ (J a) x v • fderiv ℝ (J a) x)) x :=
-    HasFDerivAt.fun_sum fun a ha ↦ ((hJ a ha).differentiableAt (by norm_num)).hasFDerivAt.mul
-      ((hJ a ha).hasFDerivAt_fderiv_apply le_rfl v)
-  refine ⟨hG.eq_of_nhds, ?_⟩
-  have h := congrArg (fun L : E →L[ℝ] ℝ ↦ L v) (hGd.fderiv.symm.trans hG.fderiv_eq)
-  simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, add_apply,
-    smul_apply, ContinuousLinearMap.flip_apply, smul_eq_mul] at h
-  rw [← h]
-  exact Finset.sum_congr rfl fun a _ ↦ by ring
-
 /-- **The IMS localization formula.** Let `(Jₐ)_{a ∈ A}` be functions that are `C²` at `x` with
 `∑ₐ Jₐ² = 1` near `x`. Then for `f` and a form `φ` that are `C²` at `x`,
 
@@ -209,30 +174,6 @@ theorem sum_smul_euclideanWittenLaplacian_smul_apply {α : Type*} {A : Finset α
   rw [Finset.sum_congr rfl hterm, Finset.sum_add_distrib, Finset.sum_add_distrib, hA, hB, hC,
     add_zero]
 
-/-! ### Integrability -/
-
-omit [LinearOrder ι] in
-/-- The pointwise pairing `x ↦ ⟨g x, φ x⟩` of continuous forms is integrable if `φ` has compact
-support. -/
-private theorem integrable_sum_mul {g φ : (ι → ℝ) → Finset ι → ℝ} (hg : Continuous g)
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) :
-    Integrable (fun x ↦ ∑ s, g x s * φ x s) :=
-  (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hg).mul
-    ((continuous_apply s).comp hφ)).integrable_of_hasCompactSupport
-      (hφc.mono (Function.support_subset_iff'.2 fun x hx ↦ by
-        simp [Function.notMem_support.1 hx]))
-
-omit [LinearOrder ι] in
-/-- The function `x ↦ h x |φ x|²` is integrable for continuous `h` if the continuous form `φ` has
-compact support. -/
-private theorem integrable_mul_sum_sq {h : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
-    (hh : Continuous h) (hφ : Continuous φ) (hφc : HasCompactSupport φ) :
-    Integrable (fun x ↦ h x * ∑ s, φ x s ^ 2) :=
-  (hh.mul (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ).pow 2)
-    ).integrable_of_hasCompactSupport
-      (hφc.mono (Function.support_subset_iff'.2 fun x hx ↦ by
-        simp [Function.notMem_support.1 hx]))
-
 /-! ### The IMS formula for the quadratic form -/
 
 /-- **The IMS localization formula for the quadratic form of the Witten Laplacian.** Let `φ` be a
@@ -273,41 +214,21 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
   have hint : ∀ a ∈ A, Integrable fun x ↦
       ∑ s, euclideanWittenLaplacian f t (fun y ↦ J a y • φ y) x s * (J a x • φ x) s := by
     intro a ha
-    exact integrable_sum_mul (continuous_euclideanWittenLaplacian hf ((hJ a ha).smul hφ) t)
-      ((hJ a ha).continuous.smul hφ.continuous) (HasCompactSupport.smul_left (f := J a) hφc)
+    exact (continuous_euclideanWittenLaplacian hf ((hJ a ha).smul hφ) t
+      ).integrable_sum_mul_of_hasCompactSupport ((hJ a ha).continuous.smul hφ.continuous)
+        (HasCompactSupport.smul_left (f := J a) hφc)
   have hP : Integrable fun x ↦ ∑ s, euclideanWittenLaplacian f t φ x s * φ x s :=
-    integrable_sum_mul (continuous_euclideanWittenLaplacian hf hφ t) hφ.continuous hφc
+    (continuous_euclideanWittenLaplacian hf hφ t).integrable_sum_mul_of_hasCompactSupport
+      hφ.continuous hφc
   have hQ : Integrable fun x ↦
       (∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 :=
-    integrable_mul_sum_sq (continuous_finsetSum _ fun a ha ↦ continuous_finsetSum _ fun i _ ↦
-      ((hcont a ha).clm_apply continuous_const).pow 2) hφ.continuous hφc
+    (continuous_finsetSum _ fun a ha ↦ continuous_finsetSum _ fun i _ ↦
+      ((hcont a ha).clm_apply continuous_const).pow 2).integrable_mul_sum_sq_of_hasCompactSupport
+        hφ.continuous hφc
   rw [← integral_finsetSum A hint, integral_congr_ae (Eventually.of_forall hpt), integral_add hP hQ,
     add_sub_cancel_right]
 
 /-! ### The lower bound away from the critical points -/
-
-/-- The Hessian term of the frame formula is bounded: for a fibre vector `v` and any real
-coefficients `Hᵢⱼ`, `|⟨∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆ v, v⟩| ≤ (∑ᵢⱼ |Hᵢⱼ|) |v|²`. -/
-private theorem abs_sum_sum_sum_smul_lie_apply_mul_le (H : ι → ι → ℝ) (v : Finset ι → ℝ) :
-    |∑ s, (∑ i, ∑ j, H i j •
-        ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆ v) s *
-          v s| ≤ (∑ i, ∑ j, |H i j|) * ∑ s, v s ^ 2 := by
-  have h : ∑ s, (∑ i, ∑ j, H i j •
-      ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆ v) s * v s =
-        ∑ i, ∑ j, H i j * ∑ s, ⁅(Pi.basisFun ℝ ι).exteriorCreation i,
-          (Pi.basisFun ℝ ι).exteriorContraction j⁆ v s * v s := by
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_mul, Finset.mul_sum,
-      mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
-  rw [h, Finset.sum_mul]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-  rw [Finset.sum_mul]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-  rw [abs_mul]
-  exact mul_le_mul_of_nonneg_left
-    ((Pi.basisFun ℝ ι).abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le i j v)
-    (abs_nonneg _)
 
 /-- **A lower bound for the quadratic form of the Witten Laplacian.** For a `C²` function `f` and
 a compactly supported `C²` form `φ` on `ℝ^ι`,
@@ -324,7 +245,8 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
         |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) *
           ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have hφ₁ : ContDiff ℝ 1 (fderiv ℝ φ) := hφ.fderiv_right (m := 1) (by norm_num)
+  have hφ₂ : Continuous (fderiv ℝ (fderiv ℝ φ)) :=
+    (hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
   have hf₁ : Continuous (fderiv ℝ f) := hf.continuous_fderiv (by norm_num)
   have hf₂ : Continuous (fderiv ℝ (fderiv ℝ f)) :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
@@ -333,65 +255,16 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
     ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s
   set V : (ι → ℝ) → ℝ := fun x ↦ t ^ 2 * ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2 -
     |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|
-  -- The pairing `⟨φ, ∂ᵢφ⟩`, whose derivative in the direction `∂ᵢ` is `|∂ᵢφ|² + ⟨φ, ∂ᵢ²φ⟩`.
-  set P : ι → (ι → ℝ) → ℝ := fun i y ↦ ∑ s, φ y s * fderiv ℝ φ y (Pi.single i 1) s
-  have hPd : ∀ i x, fderiv ℝ (P i) x (Pi.single i 1) =
-      ∑ s, (fderiv ℝ φ x (Pi.single i 1) s ^ 2 +
-        φ x s * fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s) := by
-    intro i x
-    have hφs : ∀ s, HasFDerivAt (fun y ↦ φ y s)
-        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp
-          (fderiv ℝ φ x)) x := fun s ↦
-      (hasFDerivAt_apply (𝕜 := ℝ) s (φ x)).comp x
-        (hφ.differentiable (by norm_num) x).hasFDerivAt
-    have hψs : ∀ s, HasFDerivAt (fun y ↦ fderiv ℝ φ y (Pi.single i 1) s)
-        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp
-          ((fderiv ℝ (fderiv ℝ φ) x).flip (Pi.single i 1))) x := fun s ↦
-      by simpa only [Function.comp_def] using (hasFDerivAt_apply (𝕜 := ℝ) s
-        (fderiv ℝ φ x (Pi.single i 1))).comp x
-          (hφ.contDiffAt.hasFDerivAt_fderiv_apply le_rfl (Pi.single i 1))
-    have h : HasFDerivAt (P i) (∑ s, (φ x s •
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp
-          ((fderiv ℝ (fderiv ℝ φ) x).flip (Pi.single i 1)) + fderiv ℝ φ x (Pi.single i 1) s •
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp
-          (fderiv ℝ φ x))) x :=
-      HasFDerivAt.fun_sum fun s _ ↦ (hφs s).mul (hψs s)
-    rw [h.fderiv]
-    simp only [FunLike.coe_sum, Finset.sum_apply, add_apply, smul_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
-      ContinuousLinearMap.flip_apply, smul_eq_mul]
-    exact Finset.sum_congr rfl fun s _ ↦ by ring
-  have hPc : ∀ i, ContDiff ℝ 1 (P i) := fun i ↦
-    ContDiff.sum fun s _ ↦ (contDiff_pi.1 (hφ.of_le (by norm_num)) s).mul
-      (contDiff_pi.1 (hφ₁.clm_apply contDiff_const) s)
-  have hPs : ∀ i, HasCompactSupport (P i) := fun i ↦
-    hφc.mono (Function.support_subset_iff'.2 fun x hx ↦ by
-      simp [P, Function.notMem_support.1 hx])
   -- The Dirichlet energy is nonnegative: `∫ K = ∑ᵢ ∫ |∂ᵢφ|² ≥ 0`.
-  have hint : ∀ i ∈ (Finset.univ : Finset ι), Integrable fun x ↦
-      ∑ s, fderiv ℝ φ x (Pi.single i 1) s ^ 2 - fderiv ℝ (P i) x (Pi.single i 1) := by
-    intro i _
-    refine Integrable.sub ?_
-      (integrable_fderiv_apply_of_hasCompactSupport (hPc i) (hPs i) (Pi.single i 1))
-    simpa [sq] using integrable_sum_mul (hφ₁.continuous.clm_apply continuous_const)
-      (hφ₁.continuous.clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) (Pi.single i 1))
-  have hKx : ∀ x, K x = ∑ i, (∑ s, fderiv ℝ φ x (Pi.single i 1) s ^ 2 -
-      fderiv ℝ (P i) x (Pi.single i 1)) := by
-    intro x
-    simp only [K]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hPd, Finset.sum_add_distrib, sub_add_cancel_left, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun s _ ↦ by ring
-  have hKi : Integrable K :=
-    (integrable_finsetSum _ hint).congr (Eventually.of_forall fun x ↦ (hKx x).symm)
+  have hKint : ∀ i ∈ (Finset.univ : Finset ι), Integrable fun x ↦
+      ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s := fun i _ ↦
+    ((hφ₂.clm_apply continuous_const).clm_apply continuous_const).neg
+      |>.integrable_sum_mul_of_hasCompactSupport hφ.continuous hφc
+  have hKi : Integrable K := integrable_finsetSum _ hKint
   have hK : 0 ≤ ∫ x, K x := by
-    rw [integral_congr_ae (Eventually.of_forall hKx), integral_finsetSum _ hint]
-    refine Finset.sum_nonneg fun i hi ↦ ?_
-    have hsq : Integrable fun x ↦ ∑ s, fderiv ℝ φ x (Pi.single i 1) s ^ 2 := by
-      simpa [sq] using integrable_sum_mul (hφ₁.continuous.clm_apply continuous_const)
-        (hφ₁.continuous.clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) (Pi.single i 1))
-    rw [integral_sub hsq (integrable_fderiv_apply_of_hasCompactSupport (hPc i) (hPs i) _),
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport (hPc i) (hPs i), sub_zero]
+    rw [integral_finsetSum _ hKint]
+    refine Finset.sum_nonneg fun i _ ↦ ?_
+    rw [integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq hφ hφc]
     exact integral_nonneg fun x ↦ Finset.sum_nonneg fun s _ ↦ sq_nonneg _
   -- Pointwise, the pairing is `K` plus `t² |df|² |φ|²` plus `t` times the Hessian term `HT`,
   -- and `|HT| ≤ (∑ᵢⱼ |∂ᵢ∂ⱼf|) |φ|²`.
@@ -413,8 +286,9 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
         exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun s _ ↦ by ring
       · exact Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦
           Finset.sum_congr rfl fun j _ ↦ by ring
-    have hHT := abs_sum_sum_sum_smul_lie_apply_mul_le
-      (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)) (φ x)
+    have hHT :=
+      (Pi.basisFun ℝ ι).abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
+        (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)) (φ x)
     have htHT : -(t * HT) ≤ |t| * ((∑ i, ∑ j,
         |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) * ∑ s, φ x s ^ 2) :=
       calc -(t * HT) ≤ |t * HT| := neg_le_abs _
@@ -424,13 +298,14 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
     simp only [V]
     linarith
   have hV : Integrable fun x ↦ V x * ∑ s, φ x s ^ 2 :=
-    integrable_mul_sum_sq ((continuous_const.mul (continuous_finsetSum _ fun i _ ↦
-      (hf₁.clm_apply continuous_const).pow 2)).sub (continuous_const.mul
-        (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
+    Continuous.integrable_mul_sum_sq_of_hasCompactSupport ((continuous_const.mul
+      (continuous_finsetSum _ fun i _ ↦ (hf₁.clm_apply continuous_const).pow 2)).sub
+        (continuous_const.mul (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
           ((hf₂.clm_apply continuous_const).clm_apply continuous_const).abs)))
       hφ.continuous hφc
   have hP : Integrable fun x ↦ ∑ s, euclideanWittenLaplacian f t φ x s * φ x s :=
-    integrable_sum_mul (continuous_euclideanWittenLaplacian hf hφ t) hφ.continuous hφc
+    (continuous_euclideanWittenLaplacian hf hφ t).integrable_sum_mul_of_hasCompactSupport
+      hφ.continuous hφc
   calc ∫ x, V x * ∑ s, φ x s ^ 2 ≤ (∫ x, K x) + ∫ x, V x * ∑ s, φ x s ^ 2 :=
         le_add_of_nonneg_left hK
     _ = ∫ x, (K x + V x * ∑ s, φ x s ^ 2) := (integral_add hKi hV).symm
@@ -458,10 +333,10 @@ theorem mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have hf₂ : Continuous (fderiv ℝ (fderiv ℝ f)) :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
   refine integral_mono ?_ ?_ fun x ↦ ?_
-  · exact integrable_mul_sum_sq continuous_const hφ.continuous hφc
-  · exact integrable_mul_sum_sq ((continuous_const.mul (continuous_finsetSum _ fun i _ ↦
-      (hf₁.clm_apply continuous_const).pow 2)).sub (continuous_const.mul
-        (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
+  · exact continuous_const.integrable_mul_sum_sq_of_hasCompactSupport hφ.continuous hφc
+  · exact Continuous.integrable_mul_sum_sq_of_hasCompactSupport ((continuous_const.mul
+      (continuous_finsetSum _ fun i _ ↦ (hf₁.clm_apply continuous_const).pow 2)).sub
+        (continuous_const.mul (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
           ((hf₂.clm_apply continuous_const).clm_apply continuous_const).abs)))
       hφ.continuous hφc
   by_cases hx : φ x = 0

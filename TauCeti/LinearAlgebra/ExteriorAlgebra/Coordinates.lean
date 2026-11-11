@@ -40,9 +40,12 @@ of `εᵢ` for the standard pairing of coordinate vectors
 (`Module.Basis.sum_exteriorCreation_apply_mul`). Hence `|ιᵢ φ|² + |εᵢ φ|² = |φ|²`
 (`Module.Basis.sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq`), and over an
 ordered ring the commutator `⁅εᵢ, ιⱼ⁆` has quadratic form bounded by `|φ|²`
-(`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`). Combining the
-anticommutation relation with these commutators, a double sum of products `εᵢ ιⱼ` and `ιⱼ εᵢ`
-reduces to a diagonal term plus commutators (`TauCeti.sum_creation_contraction_of_anticommutator`).
+(`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`), so a combination
+`∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆` has quadratic form bounded by `(∑ᵢⱼ |Hᵢⱼ|) |φ|²`
+(`Module.Basis.abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le`).
+Combining the anticommutation relation with these commutators, a double sum of products `εᵢ ιⱼ`
+and `ιⱼ εᵢ` reduces to a diagonal term plus commutators
+(`TauCeti.sum_creation_contraction_of_anticommutator`).
 For an orthonormal basis of a Euclidean space the standard pairing is the induced inner product on
 `⋀ M`, so `ιᵢ` is the adjoint of `εᵢ`.
 
@@ -288,6 +291,27 @@ theorem abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le [LinearOrd
   simp only [← Finset.mul_sum, Finset.sum_add_distrib, hi, hj] at hup hlow
   rw [key, abs_le]
   constructor <;> linarith
+
+/-- **A weighted sum of commutators `⁅εᵢ, ιⱼ⁆` is bounded by the weights.** For coordinates in an
+ordered ring and any coefficients `Hᵢⱼ`, `|⟨∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ (∑ᵢⱼ |Hᵢⱼ|) |φ|²`, by the
+triangle inequality and the bound for a single commutator. -/
+theorem abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
+    [LinearOrder R] [IsStrictOrderedRing R] (H : I → I → R) (φ : Finset I → R) :
+    |∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s| ≤
+      (∑ i, ∑ j, |H i j|) * ∑ s, φ s ^ 2 := by
+  have h : ∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s =
+      ∑ i, ∑ j, H i j * ∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s := by
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_mul, Finset.mul_sum,
+      mul_assoc]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
+  rw [h, Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [abs_mul]
+  exact mul_le_mul_of_nonneg_left
+    (b.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le i j φ) (abs_nonneg _)
 
 end Module.Basis
 

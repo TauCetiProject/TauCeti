@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -54,6 +55,9 @@ Lipschitz test function.
   derivative, and `TauCeti.setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero` its form for a
   difference of two directional derivatives over a set containing both supports.
   `TauCeti.integrable_fderiv_apply_of_hasCompactSupport` records the integrability.
+* `TauCeti.integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq`: the Dirichlet energy
+  identity `∫ ⟨-∂_v² φ, φ⟩ = ∫ |∂_v φ|²` for a compactly supported `C²` map into finite coordinate
+  vectors.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -167,6 +171,58 @@ theorem integral_fderiv_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
   rw [ContinuousLinearMap.integral_apply ((hu.continuous_fderiv one_ne_zero)
     |>.integrable_of_hasCompactSupport (hsupp.fderiv (𝕜 := ℝ))) v,
     integral_fderiv_apply_eq_zero_of_hasCompactSupport hu hsupp v, zero_apply]
+
+/-- **The Dirichlet energy by parts.** For a compactly supported `C²` map `φ` into a space of
+finite coordinate vectors and a direction `v`, `∫ ⟨-∂_v² φ, φ⟩ = ∫ |∂_v φ|²` for the coordinatewise
+pairing `⟨a, b⟩ = ∑ₖ aₖ bₖ`. Each coordinate is Mathlib's integration by parts
+`integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable` applied to `φₖ` and `∂_v φₖ`. -/
+theorem integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq {κ : Type*} [Fintype κ]
+    {φ : E → κ → ℝ} (hφ : ContDiff ℝ 2 φ) (hsupp : HasCompactSupport φ) (v : E) :
+    ∫ x, ∑ k, -fderiv ℝ (fderiv ℝ φ) x v v k * φ x k ∂μ = ∫ x, ∑ k, fderiv ℝ φ x v k ^ 2 ∂μ := by
+  have hφ₁ : ContDiff ℝ 1 (fderiv ℝ φ) := hφ.fderiv_right (m := 1) (by norm_num)
+  have hc₁ : Continuous fun x ↦ fderiv ℝ φ x v :=
+    (hφ.continuous_fderiv (by norm_num)).clm_apply continuous_const
+  have hc₂ : Continuous fun x ↦ fderiv ℝ (fderiv ℝ φ) x v v :=
+    ((hφ₁.continuous_fderiv one_ne_zero).clm_apply continuous_const).clm_apply continuous_const
+  have hs₀ : ∀ k, HasCompactSupport fun x ↦ φ x k := fun k ↦
+    hsupp.comp_left (g := fun a : κ → ℝ ↦ a k) rfl
+  have hs₁ : ∀ k, HasCompactSupport fun x ↦ fderiv ℝ φ x v k := fun k ↦
+    (hsupp.fderiv_apply (𝕜 := ℝ) v).comp_left (g := fun a : κ → ℝ ↦ a k) rfl
+  -- The coordinates of `φ` and of `∂_v φ`, and their derivatives in the direction `v`.
+  have hd₀ : ∀ k x, HasFDerivAt (fun y ↦ φ y k)
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ↦ ℝ) k).comp (fderiv ℝ φ x)) x :=
+    fun k x ↦ (hasFDerivAt_apply (𝕜 := ℝ) k (φ x)).comp x
+      (hφ.differentiable (by norm_num) x).hasFDerivAt
+  have hd₁ : ∀ k x, HasFDerivAt (fun y ↦ fderiv ℝ φ y v k)
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ↦ ℝ) k).comp
+        ((fderiv ℝ (fderiv ℝ φ) x).flip v)) x := fun k x ↦ by
+    simpa only [Function.comp_def] using (hasFDerivAt_apply (𝕜 := ℝ) k (fderiv ℝ φ x v)).comp x
+      (hφ.contDiffAt.hasFDerivAt_fderiv_apply le_rfl v)
+  have hibp : ∀ k, ∫ x, φ x k * fderiv ℝ (fderiv ℝ φ) x v v k ∂μ =
+      -∫ x, fderiv ℝ φ x v k * fderiv ℝ φ x v k ∂μ := fun k ↦ by
+    have h := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (μ := μ) (v := v)
+      (f := fun y ↦ φ y k) (g := fun y ↦ fderiv ℝ φ y v k) ?_ ?_ ?_
+      (fun x _ ↦ (hd₀ k x).differentiableAt) (fun x _ ↦ (hd₁ k x).differentiableAt)
+    · simpa [(hd₀ _ _).fderiv, (hd₁ _ _).fderiv] using h
+    · simp only [(hd₀ _ _).fderiv]
+      exact ((continuous_apply k).comp hc₁).mul ((continuous_apply k).comp hc₁)
+        |>.integrable_of_hasCompactSupport (hs₁ k).mul_left
+    · simp only [(hd₁ _ _).fderiv]
+      exact ((continuous_apply k).comp (hφ.continuous)).mul ((continuous_apply k).comp hc₂)
+        |>.integrable_of_hasCompactSupport (hs₀ k).mul_right
+    · exact ((continuous_apply k).comp (hφ.continuous)).mul ((continuous_apply k).comp hc₁)
+        |>.integrable_of_hasCompactSupport (hs₀ k).mul_right
+  have hint₂ : ∀ k ∈ (Finset.univ : Finset κ),
+      Integrable (fun x ↦ -fderiv ℝ (fderiv ℝ φ) x v v k * φ x k) μ := fun k _ ↦
+    ((continuous_apply k).comp hc₂).neg.mul ((continuous_apply k).comp hφ.continuous)
+      |>.integrable_of_hasCompactSupport (hs₀ k).mul_left
+  have hint₁ : ∀ k ∈ (Finset.univ : Finset κ),
+      Integrable (fun x ↦ fderiv ℝ φ x v k ^ 2) μ := fun k _ ↦
+    Continuous.integrable_of_hasCompactSupport (((continuous_apply k).comp hc₁).pow 2)
+      ((hs₁ k).comp_left (g := fun a : ℝ ↦ a ^ 2) (by simp))
+  rw [integral_finsetSum _ hint₂, integral_finsetSum _ hint₁]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp only [neg_mul, integral_neg, mul_comm (fderiv ℝ (fderiv ℝ φ) _ v v k), hibp, neg_neg, sq]
 
 variable [FiniteDimensional ℝ V]
 

@@ -62,9 +62,10 @@ keeps it locally integrable on `s`.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
-In particular, the squared norm of a continuous compactly supported function is integrable, and so
-is the product of a continuous function whose compact support lies in a set `U` with a
-function continuous on `U`.
+In particular, the squared norm of a continuous compactly supported function is integrable, as are
+the coordinatewise pairing `∑ₖ gₖ fₖ` and the weighted squared length `h ∑ₖ fₖ²` of a continuous
+compactly supported family of finite coordinate vectors `f`, and so is the product of a continuous
+function whose compact support lies in a set `U` with a function continuous on `U`.
 
 For a locally finite measure, the indicator of a constant on a set that is null-measurable for
 the restriction of the measure to `s` is locally integrable on `s`.
@@ -113,6 +114,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   every `Lᵖ` on its measurable subsets.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_sum_mul_of_hasCompactSupport` and
+  `Continuous.integrable_mul_sum_sq_of_hasCompactSupport`: the coordinatewise pairing of a
+  continuous family of coordinate vectors with a continuous compactly supported one, and a
+  continuous multiple of the coordinatewise squared length of the latter, are integrable.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
@@ -482,6 +487,28 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- The coordinatewise pairing `x ↦ ∑ k, g x k * f x k` of a continuous family of finite
+coordinate vectors `g` with a continuous compactly supported one `f` is integrable, for any measure
+finite on compact sets. -/
+theorem Continuous.integrable_sum_mul_of_hasCompactSupport {R κ : Type*} [NormedRing R]
+    [Fintype κ] {g f : X → κ → R} (hg : Continuous g) (hf : Continuous f)
+    (hcf : HasCompactSupport f) : Integrable (fun x ↦ ∑ k, g x k * f x k) μ :=
+  (continuous_finsetSum _ fun k _ ↦ ((continuous_apply k).comp hg).mul
+    ((continuous_apply k).comp hf)).integrable_of_hasCompactSupport
+      (hcf.mono (Function.support_subset_iff'.2 fun x hx ↦ by
+        simp [Function.notMem_support.1 hx]))
+
+/-- The function `x ↦ h x * ∑ k, f x k ^ 2` is integrable for a continuous `h` and a continuous
+compactly supported family of finite coordinate vectors `f`, for any measure finite on compact
+sets. -/
+theorem Continuous.integrable_mul_sum_sq_of_hasCompactSupport {R κ : Type*} [NormedRing R]
+    [Fintype κ] {h : X → R} {f : X → κ → R} (hh : Continuous h) (hf : Continuous f)
+    (hcf : HasCompactSupport f) : Integrable (fun x ↦ h x * ∑ k, f x k ^ 2) μ :=
+  (hh.mul (continuous_finsetSum _ fun k _ ↦ ((continuous_apply k).comp hf).pow 2)
+    ).integrable_of_hasCompactSupport
+      (hcf.mono (Function.support_subset_iff'.2 fun x hx ↦ by
+        simp [Function.notMem_support.1 hx]))
 
 /-- The product of a continuous compactly supported function `f`, whose support lies in a set
 `U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.
