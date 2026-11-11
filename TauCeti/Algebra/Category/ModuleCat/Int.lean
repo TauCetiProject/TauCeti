@@ -5,14 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
-# Additive homomorphisms as morphisms of integer modules
+# Integer modules
 
 Bundling additive homomorphisms as integer-linear categorical morphisms preserves and
 reflects vanishing of their composite. This transports zero-composite laws between
 additive groups and `ModuleCat ℤ`.
+
+An endomorphism `φ` of `ℤ` in `ModuleCat ℤ` is multiplication by `φ 1`, so its cokernel is
+`ℤ / φ 1` and has `|φ 1|` elements (`ModuleCat.natCard_cokernel_int`); this recovers `φ` up to sign
+from its cokernel.
 -/
 
 public section
@@ -36,3 +41,19 @@ theorem ofHom_toIntLinearMap_comp_eq_zero_iff (a : M →+ N) (b : N →+ P) :
     AddMonoidHom.ext_iff, AddMonoidHom.comp_apply, AddMonoidHom.zero_apply]
 
 end AddMonoidHom
+
+namespace ModuleCat
+
+open Limits
+
+/-- **The cokernel of an endomorphism of `ℤ`.** The cokernel of `φ : ℤ ⟶ ℤ` in `ModuleCat ℤ` has
+`|φ 1|` elements; when `φ = 0` it is `ℤ`, which is infinite, and `Nat.card` is `0`. -/
+theorem natCard_cokernel_int (φ : of ℤ ℤ ⟶ of ℤ ℤ) :
+    Nat.card (cokernel (C := ModuleCat.{0} ℤ) φ) = (φ.hom 1).natAbs := by
+  have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ (φ.hom 1) := LinearMap.ext_ring (by simp)
+  rw [Nat.card_congr (cokernelIsoRangeQuotient φ).toLinearEquiv.toEquiv, hφ,
+    LinearMap.range_toSpanSingleton,
+    Nat.card_congr (Int.quotientSpanEquivZMod (φ.hom 1)).toEquiv, Nat.card_zmod]
+  simp
+
+end ModuleCat

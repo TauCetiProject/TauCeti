@@ -48,6 +48,7 @@ block of the same sign to its inertia.
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
+* `TauCeti.projectiveMomentFunction_mem_Icc`: its values lie between the weights.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
@@ -379,6 +380,21 @@ theorem projectiveMomentFunction_mk_single (w : Fin (n + 1) → ℝ) (k : Fin (n
     projectiveMomentFunction 𝕜 w (mk 𝕜 (Pi.single k 1) (by simp)) = w k := by
   rw [← affineChart_symm_zero, ← comp_apply (f := projectiveMomentFunction 𝕜 w),
     projectiveMomentFunction_comp_affineChart_symm, model_zero]
+
+/-- **The values of the moment function lie between the weights.** If every weight lies in
+`[a, b]`, so does every value of the moment function, a weighted average of the weights. -/
+theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} {a b : ℝ}
+    (hw : ∀ i, w i ∈ Icc a b) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w x ∈ Icc a b := by
+  induction x using Projectivization.ind with | h v hv => ?_
+  rw [projectiveMomentFunction_mk]
+  have hpos : 0 < ∑ i, ‖v i‖ ^ 2 := by
+    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+    exact Finset.sum_pos' (fun j _ ↦ by positivity) ⟨i, Finset.mem_univ _, by
+      have : ‖v i‖ ≠ 0 := norm_ne_zero_iff.2 hi
+      positivity⟩
+  refine ⟨(le_div_iff₀ hpos).2 ?_, (div_le_iff₀ hpos).2 ?_⟩ <;> rw [Finset.mul_sum] <;>
+    exact Finset.sum_le_sum fun i _ ↦ by nlinarith [(hw i).1, (hw i).2, sq_nonneg ‖v i‖]
 
 private theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     projectiveMomentFunction 𝕜 w ∘ ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)).symm =
