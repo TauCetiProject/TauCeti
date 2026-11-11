@@ -18,7 +18,7 @@ If `A` has no left identity (or is a star ring with no two-sided identity), the 
 coordinate is bounded by the operator norm of this action. When `A` is a regular normed
 algebra, the action is therefore isometric
 for the minimal unitization norm and has closed image. In particular, this applies to
-complex C⋆-algebras with their C⋆-unitization norm.
+complex C⋆-algebras without a two-sided identity, with their C⋆-unitization norm.
 
 The absence of an identity is essential: for an already unital algebra, the external
 unitization acts through `(z, a) ↦ z • 1 + a` and is not faithful.
@@ -93,7 +93,8 @@ theorem norm_lift_Lmul
   rw [norm_eq_sup]
   exact (max_eq_right (norm_fst_le_norm_lift_Lmul hA u)).symm
 
-/-- The left action embeds the minimal unitization isometrically into the bounded operators. -/
+/-- When `A` has no two-sided identity, the left action embeds the minimal unitization
+isometrically into the bounded operators on `A`. -/
 theorem isometry_lift_Lmul
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) :
     Isometry (lift (NonUnitalAlgHom.Lmul 𝕜 A)) :=
