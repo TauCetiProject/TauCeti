@@ -594,26 +594,21 @@ noncomputable def decompQuotientEquivOfInf {H H' P : Subgroup G} (hHP : H = H' �
       ((ConjAct.toConjAct g • H').subgroupOf H').comap
         (Subgroup.inclusion (hHP ▸ inf_le_left)) := by
     have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
-    ext x
-    have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.2).2
+    ext x; have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.2).2
     simp only [Subgroup.mem_subgroupOf, Subgroup.mem_comap, Subgroup.coe_inclusion,
       Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
-      ConjAct.ofConjAct_toConjAct, inv_inv]
-    rw [hmem_iff]
+      ConjAct.ofConjAct_toConjAct, inv_inv, hmem_iff]
     exact and_iff_left (P.mul_mem (P.mul_mem (P.inv_mem hgP) hxP) hgP)
   (Subgroup.quotientEquivOfEq hsub).trans
     (TauCeti.QuotientGroup.congrComapOfSurjectiveMk (Subgroup.inclusion (hHP ▸ inf_le_left))
-      ((ConjAct.toConjAct g • H').subgroupOf H') fun q ↦ by
-        induction q using QuotientGroup.induction_on with
-        | _ u =>
-          obtain ⟨x, hxH, hxu⟩ := hstab (u : G) u.2
-          exact ⟨⟨x, hxH⟩, QuotientGroup.eq.mpr (by
-            simpa [Subgroup.mem_subgroupOf] using hxu)⟩)
+      ((ConjAct.toConjAct g • H').subgroupOf H') fun q ↦
+        QuotientGroup.induction_on q fun u ↦
+          let ⟨x, hxH, hxu⟩ := hstab (u : G) u.2
+          ⟨⟨x, hxH⟩, QuotientGroup.eq.mpr (by simpa [Subgroup.mem_subgroupOf] using hxu)⟩)
 
 open scoped Pointwise in
 /-- `decompQuotientEquivOfInf` sends the coset of `x : H` to the coset of `x` in `H'`. -/
-@[simp]
-theorem decompQuotientEquivOfInf_mk {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
+@[simp] theorem decompQuotientEquivOfInf_mk {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
     (hgP : g ∈ P) (hstab : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H') (x : H) :
     decompQuotientEquivOfInf hHP hgP hstab (QuotientGroup.mk x) =
       QuotientGroup.mk (Subgroup.inclusion (hHP ▸ inf_le_left) x) := by

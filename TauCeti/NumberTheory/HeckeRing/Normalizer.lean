@@ -269,11 +269,9 @@ section Units
 open scoped HeckeCosetModule
 
 /-- **A normalizing element invertible in `Δ` gives a unit of the Hecke ring.** When `x ∈ Δ`
-normalizes `Γ` and `x⁻¹ ∈ Δ`, the basis elements `[ΓxΓ]` and `[Γx⁻¹Γ]` are two-sided inverses in
-`𝕋 Δ Γ R` over any coefficient semiring. -/
-noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
-    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ)
-    (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) : (𝕋 Δ Γ R)ˣ where
+normalizes `Γ` and `x⁻¹ ∈ Δ`, `[ΓxΓ]` and `[Γx⁻¹Γ]` are two-sided inverses in `𝕋 Δ Γ R`. -/
+noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R] {x : G}
+    (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) : (𝕋 Δ Γ R)ˣ where
   val := single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1
   inv := single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1
   val_inv := by
@@ -287,23 +285,14 @@ noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semi
 @[simp]
 theorem val_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
     {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
-    (unitOfMemNormalizer R hx hxi hnorm : 𝕋 Δ Γ R) = single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1 :=
-  (rfl)
+    (unitOfMemNormalizer R hx hxi hnorm : 𝕋 Δ Γ R) = single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1 := (rfl)
 
 /-- The inverse of `unitOfMemNormalizer` has underlying element the basis element `[Γx⁻¹Γ]`. -/
 @[simp]
 theorem val_inv_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
     {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
     (↑(unitOfMemNormalizer R hx hxi hnorm)⁻¹ : 𝕋 Δ Γ R) =
-      single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1 :=
-  (rfl)
-
-/-- The basis element of a `Γ`-normalizing element whose inverse also lies in `Δ` is a unit of the
-Hecke ring. -/
-theorem isUnit_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
-    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
-    IsUnit (single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1 : 𝕋 Δ Γ R) :=
-  (unitOfMemNormalizer R hx hxi hnorm).isUnit
+      single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1 := (rfl)
 
 end Units
 

@@ -14,35 +14,22 @@ import TauCeti.NumberTheory.HeckeRing.LinearExtension
 /-!
 # Enlarging the ambient submonoid of a Hecke coset module
 
-When `Δ₁ ≤ Δ₂` are submonoids of a group `G` and the subgroups `H₁, H₂, H₃ ≤ G` are held fixed,
-widening the ambient submonoid from `Δ₁` to `Δ₂` embeds `HeckeCoset Δ₁ H₁ H₂` into
-`HeckeCoset Δ₂ H₁ H₂` without merging any double cosets (`HeckeCoset.map_injective_of_le`): each
-double coset `H₁gH₂` has the same underlying subset of `G` (`HeckeCoset.toSet_map_of_le`) and the
-same decomposition quotients, and when `g ∈ Δ₁` and `h ∈ Δ₁` every double coset occurring with
-nonzero multiplicity in `H₁gH₂hH₃` already lies in `Δ₁`.
-
-Consequently, pushing finitely supported linear combinations forward along `HeckeCoset.map` gives
-an injective `R`-linear map `HeckeCosetModule.mapSubmonoid` compatible with the bimodule
-convolution product `HeckeCosetModule.mul`, and in the diagonal case `H₁ = H₂ = H` an injective
-ring homomorphism `HeckeCosetModule.mapSubmonoidRingHom : 𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` over any
-coefficient semiring `R`.
-
-This is the abstract half of Shimura's Proposition 3.16 / Rhodes–Shemanske §2 embedding of an
-integral Hecke ring (such as `H(SL_n(ℤ), M_n^+(ℤ))`) into its rational counterpart
-(`H(SL_n(ℤ), GL_n^+(ℚ))`).
+When `Δ₁ ≤ Δ₂` are submonoids of a group `G` and `H₁, H₂, H₃ ≤ G` are held fixed, widening `Δ₁` to
+`Δ₂` embeds `HeckeCoset Δ₁ H₁ H₂` injectively into `HeckeCoset Δ₂ H₁ H₂` with the same underlying
+double cosets and decomposition quotients, and any coset appearing with nonzero multiplicity in a
+product of `Δ₁`-cosets already lies in `Δ₁`. Pushing combinations forward along `HeckeCoset.map`
+therefore gives an injective `R`-linear map `HeckeCosetModule.mapSubmonoid` compatible with
+`HeckeCosetModule.mul` and an injective ring homomorphism
+`HeckeCosetModule.mapSubmonoidRingHom : 𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` (the abstract half of Proposition
+3.16 of [Shimura][shimura1971] and §2 of [Rhodes–Shemanske][rhodes1999]).
 
 ## Main definitions and results
 
 * `HeckeCoset.toSet_map_of_le`, `HeckeCoset.map_injective_of_le`,
-  `HeckeCoset.mem_range_map_of_le_iff`: keeping the subgroups fixed preserves the underlying
-  double coset in `G`, so `HeckeCoset.map hΔ le_rfl le_rfl` is injective with range the double
-  cosets whose representatives lie in `Δ₁`.
-* `HeckeCosetModule.mapSubmonoid`: the injective `R`-linear map
-  `HeckeCosetModule Δ₁ H₁ H₂ R →ₗ[R] HeckeCosetModule Δ₂ H₁ H₂ R` induced by `Δ₁ ≤ Δ₂`.
-* `HeckeCosetModule.mapSubmonoid_mul`: `mapSubmonoid` intertwines the bimodule convolution product
-  `HeckeCosetModule.mul`.
-* `HeckeCosetModule.mapSubmonoidRingHom`: the injective ring homomorphism
-  `𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` induced by `Δ₁ ≤ Δ₂`.
+  `HeckeCoset.mem_range_map_of_le_iff`: injectivity and range of `HeckeCoset.map hΔ le_rfl le_rfl`.
+* `HeckeCosetModule.mapSubmonoid`, `HeckeCosetModule.mapSubmonoid_mul`: the injective `R`-linear
+  pushforward intertwining `HeckeCosetModule.mul`.
+* `HeckeCosetModule.mapSubmonoidRingHom`: the injective ring homomorphism `𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R`.
 
 ## References
 
@@ -68,8 +55,7 @@ theorem toSet_map_of_le (hΔ : Δ₁ ≤ Δ₂) (D : HeckeCoset Δ₁ H₁ H₂)
   induction D using HeckeCoset.induction with | h g => simp
 
 /-- Widening the ambient submonoid with the subgroups fixed injects `HeckeCoset Δ₁ H₁ H₂` into
-`HeckeCoset Δ₂ H₁ H₂`: two elements of `Δ₁` spanning the same `(H₁, H₂)`-double coset in `G`
-already define equal classes in `HeckeCoset Δ₁ H₁ H₂`. -/
+`HeckeCoset Δ₂ H₁ H₂`. -/
 theorem map_injective_of_le (hΔ : Δ₁ ≤ Δ₂) :
     Function.Injective (HeckeCoset.map hΔ (le_refl H₁) (le_refl H₂)) := fun D₁ D₂ h ↦
   toSet_injective (by rw [← toSet_map_of_le hΔ D₁, ← toSet_map_of_le hΔ D₂, h])
@@ -115,8 +101,7 @@ theorem mapSubmonoid_apply_of_notMem_range (hΔ : Δ₁ ≤ Δ₂) (f : HeckeCos
     mapSubmonoid R hΔ f E = 0 :=
   Finsupp.mapDomain_of_notMem_range f E hE
 
-/-- `mapSubmonoid` sends each basis element `single R D b` to the corresponding basis element in
-`Δ₂`. -/
+/-- `mapSubmonoid` sends each basis element `single R D b` to the mapped basis element in `Δ₂`. -/
 @[simp]
 theorem mapSubmonoid_single (hΔ : Δ₁ ≤ Δ₂) (D : HeckeCoset Δ₁ H₁ H₂) (b : R) :
     mapSubmonoid R hΔ (single R D b) = single R (D.map hΔ le_rfl le_rfl) b :=
@@ -130,21 +115,16 @@ theorem mapSubmonoid_injective (hΔ : Δ₁ ≤ Δ₂) :
 
 /-- `mapSubmonoid` acts as the identity along `Δ₁ ≤ Δ₁`. -/
 @[simp]
-theorem mapSubmonoid_id :
-    mapSubmonoid R (H₁ := H₁) (H₂ := H₂) (le_refl Δ₁) = LinearMap.id := by
-  have hmap : HeckeCoset.map (le_refl Δ₁) (le_refl H₁) (le_refl H₂) = _root_.id :=
-    funext HeckeCoset.map_id
-  rw [mapSubmonoid, hmap]
+theorem mapSubmonoid_id : mapSubmonoid R (H₁ := H₁) (H₂ := H₂) (le_refl Δ₁) = LinearMap.id := by
+  rw [mapSubmonoid, funext HeckeCoset.map_id]
   exact Finsupp.lmapDomain_id R R
 
 /-- `mapSubmonoid` is functorial along a chain `Δ₁ ≤ Δ₂ ≤ Δ₃`. -/
 theorem mapSubmonoid_comp (h₁₂ : Δ₁ ≤ Δ₂) (h₂₃ : Δ₂ ≤ Δ₃) :
     (mapSubmonoid R (H₁ := H₁) (H₂ := H₂) h₂₃).comp (mapSubmonoid R h₁₂) =
       mapSubmonoid R (h₁₂.trans h₂₃) := by
-  have hmap : HeckeCoset.map (h₁₂.trans h₂₃) (le_refl H₁) (le_refl H₂) =
-      HeckeCoset.map h₂₃ le_rfl le_rfl ∘ HeckeCoset.map h₁₂ le_rfl le_rfl :=
-    funext fun D ↦ (HeckeCoset.map_map h₁₂ le_rfl le_rfl h₂₃ le_rfl le_rfl D).symm
-  rw [mapSubmonoid, mapSubmonoid, mapSubmonoid, hmap]
+  rw [mapSubmonoid, mapSubmonoid, mapSubmonoid,
+    funext fun D ↦ (HeckeCoset.map_map h₁₂ le_rfl le_rfl h₂₃ le_rfl le_rfl D).symm]
   exact (Finsupp.lmapDomain_comp R R _ _).symm
 
 /-- `mapSubmonoid` preserves the multiplicative identity of a Hecke ring. -/
@@ -191,12 +171,10 @@ theorem mapSubmonoid_mul [IsHeckeTriple Δ₁ H₁ H₂] [IsHeckeTriple Δ₁ H�
 /-- Enlarging the ambient submonoid from `Δ₁` to `Δ₂` induces an injective ring homomorphism
 `𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` over any coefficient semiring `R`. -/
 noncomputable def mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
-    (hΔ : Δ₁ ≤ Δ₂) : 𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R where
-  toFun := mapSubmonoid R hΔ
-  map_one' := mapSubmonoid_one R hΔ
-  map_mul' f g := mapSubmonoid_mul R hΔ f g
-  map_zero' := map_zero _
-  map_add' := map_add _
+    (hΔ : Δ₁ ≤ Δ₂) : 𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R :=
+  { (mapSubmonoid R hΔ).toAddMonoidHom with
+    map_one' := mapSubmonoid_one R hΔ
+    map_mul' := mapSubmonoid_mul R hΔ }
 
 /-- `mapSubmonoidRingHom` coerces to `mapSubmonoid`. -/
 -- Deliberately not `@[simp]`: rewriting `⇑(mapSubmonoidRingHom …)` to a `LinearMap` prevents

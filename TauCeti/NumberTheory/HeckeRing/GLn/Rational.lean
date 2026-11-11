@@ -27,21 +27,14 @@ file constructs the rational Hecke triples `(SL_n(ℤ), GL_n^+(ℚ))` and `(GL_n
 and packages the central scalar units `T(c, …, c)` that clear denominators across
 `RationalHeckeRing n`.
 
-Clearing denominators by `diag(c, …, c)` (`exists_pos_natDiagGL_mul_mem_intEntries`) combined with
-Shimura's Lemma 3.10 (`mem_commensurator_of_hasIntEntries`) forces `commensurator (SL_n(ℤ)) = ⊤`
-and `commensurator (GL_n(ℤ)) = ⊤`. Enlarging `posDetInt n` to `GL_n^+(ℚ)` gives
-`integralToRationalRingHom`, while `HeckeCosetModule.mapSubgroupRingEquiv` gives
-`rationalToFullRingEquiv` via Smith normal form conjugation of `diag(-1, 1, …, 1)`.
-
 ## Main definitions
 
 * `HeckeRing.GLn.RationalHeckeRing`, `HeckeRing.GLn.FullHeckeRing`: the Hecke rings of
   `(SL_n(ℤ), GL_n^+(ℚ))` and `(GL_n(ℤ), GL_n(ℚ))` over `ℤ`.
-* `HeckeRing.GLn.integralToRationalRingHom`, `HeckeRing.GLn.integralToRational`: the injective
-  embedding `𝕋 (posDetInt n) (SLnZ n) R →+* 𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R`.
-* `HeckeRing.GLn.rationalToFullRingEquiv`, `HeckeRing.GLn.rationalToFullEquiv`,
-  `HeckeRing.GLn.integralToFullRingHom`: the ring isomorphism
-  `𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R ≃+* 𝕋 ⊤ (GLnZ n) R` and composite embedding.
+* `HeckeRing.GLn.integralToRationalRingHom`, `HeckeRing.GLn.integralToRational`,
+  `HeckeRing.GLn.rationalToFullRingEquiv`, `HeckeRing.GLn.rationalToFullEquiv`,
+  `HeckeRing.GLn.integralToFullRingHom`: the comparison maps across `posDetInt n`, `GL_n^+(ℚ)`,
+  and `GL_n(ℚ)`.
 * `HeckeRing.GLn.commSemiringRationalHeckeRing`, `HeckeRing.GLn.commRingRationalHeckeRing`,
   `HeckeRing.GLn.commSemiringFullHeckeRing`, `HeckeRing.GLn.commRingFullHeckeRing`: commutativity of
   both rational Hecke rings.
@@ -51,10 +44,9 @@ and `commensurator (GL_n(ℤ)) = ⊤`. Enlarging `posDetInt n` to `GL_n^+(ℚ)` 
 ## Main results
 
 * `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_intEntries`,
-  `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_posDetInt`: clearing denominators by a positive scalar
-  matrix.
+  `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_posDetInt`: clearing denominators by `diag(c, …, c)`.
 * `HeckeRing.GLn.commensurator_SLnZ_eq_top`, `HeckeRing.GLn.commensurator_GLnZ_eq_top`: both
-  arithmetic subgroups have commensurator all of `GL_n(ℚ)`.
+  arithmetic subgroups have commensurator `⊤` in `GL_n(ℚ)`.
 * `HeckeRing.GLn.isUnit_integralToRational_of_mem_scalarSubmonoid`,
   `HeckeRing.GLn.exists_mul_mem_scalarSubmonoid_eq`: `integralToRational n` sends
   `scalarSubmonoid n` to units and clears denominators across `RationalHeckeRing n`.
@@ -116,10 +108,8 @@ theorem signFlipGL_comm_diagGL [NeZero n] (t : Fin n → ℚˣ) :
 theorem signFlipGL_comm_natDiagGL [NeZero n] (a : Fin n → ℕ) :
     signFlipGL n * natDiagGL n a = natDiagGL n a * signFlipGL n := by
   by_cases ha : ∀ i, 0 < a i
-  · apply Units.ext
-    simp only [Units.val_mul, natDiagGL_coe n a ha, signFlipGL, TauCeti.diagGL_coe,
-      Matrix.diagonal_mul_diagonal]
-    exact congrArg Matrix.diagonal (funext fun _ ↦ mul_comm _ _)
+  · exact Units.ext (by simp [natDiagGL_coe n a ha, signFlipGL, Matrix.diagonal_mul_diagonal,
+      mul_comm])
   · rw [natDiagGL_of_not_pos n ha, mul_one, one_mul]
 
 end SignFlip
@@ -133,8 +123,7 @@ theorem exists_pos_natDiagGL_mul_mem_intEntries (g : GL (Fin n) ℚ) :
   set A : Matrix (Fin n) (Fin n) ℚ := ↑g with hA
   have hc : 0 < A.den := Nat.pos_of_ne_zero A.den_ne_zero
   refine ⟨A.den, hc, (mem_intEntries n).mpr ((hasIntEntries_iff n).mpr ⟨A.num, ?_⟩)⟩
-  ext i j
-  simp only [Units.val_mul, ← hA, natDiagGL_coe n _ fun _ ↦ hc, Matrix.diagonal_mul,
+  ext i j; simp only [Units.val_mul, ← hA, natDiagGL_coe n _ fun _ ↦ hc, Matrix.diagonal_mul,
     Matrix.map_apply]
   rw [← A.num_div_den i j, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr A.den_ne_zero)]
 
@@ -219,8 +208,7 @@ theorem integralToRational_diagElem (a : Fin n → ℕ) :
   exact congrArg (HeckeCosetModule.single ℤ · 1)
     (HeckeCoset.mk_congr_val (Submonoid.coe_inclusion _ _))
 
-/-- Every `g ∈ GL_n(ℚ)` can be translated on the left into `GL_n^+(ℚ)` by an element of
-`GL_n(ℤ)`. -/
+/-- Every `g ∈ GL_n(ℚ)` can be translated on the left into `GL_n^+(ℚ)` by `GL_n(ℤ)`. -/
 theorem exists_mem_GLnZ_mul_mem_glpos (g : GL (Fin n) ℚ) :
     ∃ u ∈ GLnZ n, u * g ∈ Matrix.GLPos (Fin n) ℚ := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -244,15 +232,12 @@ private lemma exists_mem_GLnZ_det_neg_one_mul_eq_mul [NeZero n] {g : GL (Fin n) 
   obtain ⟨a, -, -, hD⟩ :=
     exists_diagonal_representative (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hcg⟩)
   have hmem : natDiagGL n (fun _ ↦ c) * g ∈ doubleCoset (natDiagGL n a) (SLnZ n) (SLnZ n) := by
-    have hset := congrArg HeckeCoset.toSet hD
-    rw [HeckeCoset.toSet_mk, diagCoset_toSet] at hset
-    exact hset ▸ mem_doubleCoset_self _ _ _
+    rw [← diagCoset_toSet, ← hD, HeckeCoset.toSet_mk]; exact mem_doubleCoset_self _ _ _
   obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hsnf⟩ := mem_doubleCoset.mp hmem
-  refine ⟨γ₁ * signFlipGL n * γ₁⁻¹,
-    (GLnZ n).mul_mem ((GLnZ n).mul_mem (SLnZ_le_GLnZ n hγ₁) (signFlipGL_mem_GLnZ n))
-      ((GLnZ n).inv_mem (SLnZ_le_GLnZ n hγ₁)), γ₂⁻¹ * signFlipGL n * γ₂,
-    (GLnZ n).mul_mem ((GLnZ n).mul_mem ((GLnZ n).inv_mem (SLnZ_le_GLnZ n hγ₂))
-      (signFlipGL_mem_GLnZ n)) (SLnZ_le_GLnZ n hγ₂), ?_, ?_⟩
+  have hγ₁' := SLnZ_le_GLnZ n hγ₁; have hγ₂' := SLnZ_le_GLnZ n hγ₂; have hs := signFlipGL_mem_GLnZ n
+  refine ⟨γ₁ * signFlipGL n * γ₁⁻¹, (GLnZ n).mul_mem ((GLnZ n).mul_mem hγ₁' hs)
+    ((GLnZ n).inv_mem hγ₁'), γ₂⁻¹ * signFlipGL n * γ₂,
+    (GLnZ n).mul_mem ((GLnZ n).mul_mem ((GLnZ n).inv_mem hγ₂') hs) hγ₂', ?_, ?_⟩
   · simp only [Units.val_mul, Matrix.det_mul, det_signFlipGL,
       det_eq_one_of_mem_SLnZ n hγ₁, det_eq_one_of_mem_SLnZ n ((SLnZ n).inv_mem hγ₁)]; ring
   · apply mul_left_cancel (a := natDiagGL n (fun _ ↦ c))
@@ -435,8 +420,7 @@ theorem single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmonoid) 
     (natDiagGL_const_mem_normalizer n c (SLnZ n))
 
 /-- The scalar operator `T(c, …, c)` as a central unit of `RationalHeckeRing n`, with inverse
-`[SL_n(ℤ) · (natDiagGL n (fun _ ↦ c))⁻¹ · SL_n(ℤ)]` (taking the fallback value `1` at `c = 0` to
-match `natDiagGL`). -/
+`[SL_n(ℤ) · (natDiagGL n (fun _ ↦ c))⁻¹ · SL_n(ℤ)]` (fallback `1` at `c = 0`). -/
 noncomputable def scalarUnit (c : ℕ) : (RationalHeckeRing n)ˣ :=
   HeckeCosetModule.unitOfMemNormalizer ℤ
     (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c)))
@@ -472,12 +456,9 @@ theorem scalarUnit_mul {c d : ℕ} (hc : 0 < c) (hd : 0 < d) :
     (natDiagGL_mul n (fun _ ↦ c) (fun _ ↦ d) (fun _ ↦ hc) (fun _ ↦ hd)).symm)
 
 /-- The `k`-th power of `scalarUnit` at `c` is `scalarUnit` at `c ^ k`. -/
-theorem scalarUnit_pow (c k : ℕ) :
-    scalarUnit n c ^ k = scalarUnit n (c ^ k) := by
+theorem scalarUnit_pow (c k : ℕ) : scalarUnit n c ^ k = scalarUnit n (c ^ k) := by
   rcases Nat.eq_zero_or_pos c with rfl | hc
-  · rcases k with _ | k
-    · simp
-    · rw [Nat.zero_pow (Nat.succ_pos k), scalarUnit_zero, one_pow]
+  · rcases k with _ | k <;> simp
   · induction k with
     | zero => simp
     | succ k ih => rw [pow_succ, pow_succ, ih, scalarUnit_mul n (pow_pos hc k) hc]
@@ -488,11 +469,6 @@ theorem scalarUnit_pow (c k : ℕ) :
 theorem val_scalarUnit (c : ℕ) :
     (scalarUnit n c : RationalHeckeRing n) = integralToRational n (diagElem (fun _ ↦ c)) := by
   rw [scalarUnit, HeckeCosetModule.val_unitOfMemNormalizer, integralToRational_diagElem]
-
-/-- Every scalar operator `diagElem (fun _ ↦ c)` becomes a unit in `RationalHeckeRing n`. -/
-theorem isUnit_integralToRational_diagElem_const (c : ℕ) :
-    IsUnit (integralToRational n (diagElem (fun _ ↦ c))) :=
-  val_scalarUnit n c ▸ (scalarUnit n c).isUnit
 
 /-- The multiplicative submonoid of `IntegralHeckeRing n` consisting of the positive scalar Hecke
 operators `T(c, …, c)` (`0 < c`). -/
@@ -516,7 +492,7 @@ theorem diagElem_const_mem_scalarSubmonoid {c : ℕ} (hc : 0 < c) :
 theorem isUnit_integralToRational_of_mem_scalarSubmonoid {s : IntegralHeckeRing n}
     (hs : s ∈ scalarSubmonoid n) : IsUnit (integralToRational n s) := by
   obtain ⟨c, -, rfl⟩ := hs
-  exact isUnit_integralToRational_diagElem_const n c
+  exact val_scalarUnit n c ▸ (scalarUnit n c).isUnit
 
 /-- **Global denominator clearing in `RationalHeckeRing n`** (`Shimura`, Proposition 3.16): every
 rational Hecke operator `z` becomes integral after multiplying by a positive scalar operator
@@ -534,28 +510,25 @@ theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
     | h0 => exact sat.zero_mem
     | hadd _ _ ih₁ ih₂ => exact sat.add_mem ih₁ ih₂
     | hsingle D m =>
+      rw [← HeckeCosetModule.smul_single_one ℤ D m]
+      refine sat.zsmul_mem ?_ m
       induction D using HeckeCoset.induction with | h g =>
       obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
       have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
         natDiagGL_const_comm n c g ▸ hcg
       refine Subalgebra.mem_toSubring.mpr (Subalgebra.mem_saturation_iff.mpr
-        ⟨f (diagElem (fun _ ↦ c)), ⟨diagElem (fun _ ↦ c),
-          diagElem_const_mem_scalarSubmonoid n hc, rfl⟩,
-        HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) m, ?_⟩)
-      have h1 := (one_smul ℤ _).symm.trans
-        ((HeckeCosetModule.single_mul_single ℤ _ _ 1 1).symm.trans
-          (single_mul_natDiagGL_const n g c))
+        ⟨f (diagElem (fun _ ↦ c)),
+          ⟨diagElem (fun _ ↦ c), diagElem_const_mem_scalarSubmonoid n hc, rfl⟩,
+          HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) 1, ?_⟩)
       dsimp only [f]
       rw [smul_eq_mul, mul_comm (integralToRational n _), integralToRational_diagElem,
-        HeckeCosetModule.single_mul_single, h1, HeckeCosetModule.smul_single_one,
-        integralToRational, integralToRationalRingHom_single, HeckeCoset.map_mk]
-      exact congrArg (HeckeCosetModule.single ℤ · m)
+        single_mul_natDiagGL_const n g c, integralToRational, integralToRationalRingHom_single,
+        HeckeCoset.map_mk]
+      exact congrArg (HeckeCosetModule.single ℤ · 1)
         (HeckeCoset.mk_congr_val (Submonoid.coe_inclusion (posDetInt_le_glpos n) ⟨_, hgc⟩).symm)
   obtain ⟨_, ⟨s, hs, rfl⟩, x, hx⟩ :=
     Subalgebra.mem_saturation_iff.mp (Subalgebra.mem_toSubring.mp hz)
-  dsimp only [f] at hx
-  exact ⟨x, s, hs, (mul_comm z (integralToRational n s)).trans
-    (by simpa only [smul_eq_mul] using hx.symm)⟩
+  exact ⟨x, s, hs, (mul_comm z (f s)).trans (by simpa only [smul_eq_mul] using hx.symm)⟩
 
 end ScalarUnits
 

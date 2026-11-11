@@ -412,28 +412,22 @@ section GLnZ
 /-- `GL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, embedded entrywise via
 `Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ)`. -/
 noncomputable def GLnZ : Subgroup (GL (Fin n) ℚ) :=
-  (Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) :
-    GL (Fin n) ℤ →* GL (Fin n) ℚ).range
+  (Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) : GL (Fin n) ℤ →* GL (Fin n) ℚ).range
 
 /-- Canonical membership of an integral invertible matrix in `GLnZ n`. -/
 theorem map_intCast_mem_GLnZ (γ : GL (Fin n) ℤ) :
-    Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ ∈ GLnZ n :=
-  ⟨γ, rfl⟩
+    Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ ∈ GLnZ n := ⟨γ, rfl⟩
 
 /-- Membership in `GLnZ n` characterised by an integral `GL_n(ℤ)` witness. -/
 @[simp]
 theorem mem_GLnZ_iff {g : GL (Fin n) ℚ} :
-    g ∈ GLnZ n ↔
-      ∃ γ : GL (Fin n) ℤ, Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ = g := by
-  rw [GLnZ, MonoidHom.mem_range]
+    g ∈ GLnZ n ↔ ∃ γ : GL (Fin n) ℤ, Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ = g :=
+  Iff.rfl
 
 /-- Every element of `GL_n(ℤ)` has integer matrix entries. -/
-theorem hasIntEntries_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
-    HasIntEntries n g := by
+theorem hasIntEntries_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) : HasIntEntries n g := by
   obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
-  refine (hasIntEntries_iff n).mpr ⟨(γ : Matrix (Fin n) (Fin n) ℤ), ?_⟩
-  ext i j
-  simp [Matrix.GeneralLinearGroup.map_apply]
+  exact (hasIntEntries_iff n).mpr ⟨γ, by ext i j; simp [Matrix.GeneralLinearGroup.map_apply]⟩
 
 /-- `GL_n(ℤ)` lies in the integral-entry submonoid `intEntries n`. -/
 theorem GLnZ_le_intEntries : (GLnZ n).toSubmonoid ≤ intEntries n :=
@@ -463,36 +457,25 @@ theorem mem_GLnZ_iff_hasIntEntries_and_det {g : GL (Fin n) ℚ} :
   obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp hint
   rw [hA, ← Int.cast_det] at hdet
   have hAunit : IsUnit A.det := by
-    rcases hdet with h1 | h1
-    · have hA1 : A.det = 1 := by exact_mod_cast h1
-      exact hA1 ▸ isUnit_one
-    · have hA1 : A.det = -1 := by exact_mod_cast h1
-      exact hA1 ▸ IsUnit.neg isUnit_one
+    rcases hdet with h | h <;> exact (by exact_mod_cast h : A.det = _) ▸ by simp
   refine (mem_GLnZ_iff n).mpr ⟨Matrix.nonsingInvUnit A hAunit, Units.ext ?_⟩
-  ext i j
-  simpa [Matrix.GeneralLinearGroup.map_apply, Matrix.nonsingInvUnit] using
+  ext i j; simpa [Matrix.GeneralLinearGroup.map_apply, Matrix.nonsingInvUnit] using
     (congrFun (congrFun hA i) j).symm
 
 /-- `SL_n(ℤ)` is the positive-determinant part of `GL_n(ℤ)`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)`. -/
 theorem SLnZ_eq_GLnZ_inf_glpos : SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ := by
-  ext g
-  rw [Subgroup.mem_inf]
-  constructor
-  · intro hg
-    refine ⟨?_, SLnZ_le_glpos n hg⟩
-    obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff n).mp hg
+  ext g; rw [Subgroup.mem_inf]
+  refine ⟨fun hg ↦ ⟨?_, SLnZ_le_glpos n hg⟩, fun ⟨hgZ, hgPos⟩ ↦ ?_⟩
+  · obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff n).mp hg
     refine (mem_GLnZ_iff n).mpr ⟨σ.toGL, Units.ext ?_⟩
     rw [mapGL_coe_matrix]; ext i j; simp [algebraMap_int_eq, Matrix.GeneralLinearGroup.map_apply]
-  · rintro ⟨hgZ, hgPos⟩
-    rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hgPos
-    have hdet1 : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 :=
-      (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
+  · rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hgPos
+    have hdet1 := (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
     obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp (hasIntEntries_of_mem_GLnZ n hgZ)
     have hAdet : A.det = 1 := by rw [hA, ← Int.cast_det] at hdet1; exact_mod_cast hdet1
-    let σ : Matrix.SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
+    let σ : SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
     refine (mem_SLnZ_iff n).mpr ⟨σ, Units.ext ?_⟩
-    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]
-    simp [σ]
+    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]; rfl
 
 /-- An element of `GL_n(ℤ)` with determinant `1` belongs to `SL_n(ℤ)`. -/
 theorem mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n)
@@ -501,23 +484,13 @@ theorem mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ
     Matrix.GeneralLinearGroup.val_det_apply, hdet]
   exact ⟨hg, one_pos⟩
 
-/-- Two elements of `GL_n(ℤ)` with equal determinants lie in the same left `SL_n(ℤ)`-coset. -/
-theorem inv_mul_mem_SLnZ_of_mem_GLnZ_of_det_eq {g₁ g₂ : GL (Fin n) ℚ}
-    (hg₁ : g₁ ∈ GLnZ n) (hg₂ : g₂ ∈ GLnZ n)
-    (hdet : (↑g₁ : Matrix (Fin n) (Fin n) ℚ).det = (↑g₂ : Matrix (Fin n) (Fin n) ℚ).det) :
-    g₁⁻¹ * g₂ ∈ SLnZ n := by
-  refine mem_SLnZ_of_mem_GLnZ_of_det_eq_one n ((GLnZ n).mul_mem ((GLnZ n).inv_mem hg₁) hg₂) ?_
-  rw [Units.val_mul, Matrix.det_mul, det_inv_of_mem_GLnZ n hg₁, ← hdet]
-  rcases det_eq_one_or_neg_one_of_mem_GLnZ n hg₁ with h | h <;> simp [h]
-
 /-- `SL_n(ℤ)` is a subgroup of `GL_n(ℤ)`. -/
-theorem SLnZ_le_GLnZ : SLnZ n ≤ GLnZ n :=
-  SLnZ_eq_GLnZ_inf_glpos n ▸ inf_le_left
+theorem SLnZ_le_GLnZ : SLnZ n ≤ GLnZ n := SLnZ_eq_GLnZ_inf_glpos n ▸ inf_le_left
 
 /-- `-I_n` belongs to `GL_n(ℤ)` in every rank `n`. -/
-theorem neg_one_mem_GLnZ : (-1 : GL (Fin n) ℚ) ∈ GLnZ n := by
-  refine (mem_GLnZ_iff n).mpr ⟨-1, Units.ext ?_⟩
-  ext i j; by_cases hij : i = j <;> simp [Matrix.GeneralLinearGroup.map_apply, hij]
+theorem neg_one_mem_GLnZ : (-1 : GL (Fin n) ℚ) ∈ GLnZ n :=
+  (mem_GLnZ_iff n).mpr ⟨-1, Units.ext (by
+    ext i j; by_cases hij : i = j <;> simp [Matrix.GeneralLinearGroup.map_apply, hij])⟩
 
 /-- Negating a matrix leaves its `GL_n(ℤ)`-double coset unchanged (`Rhodes–Shemanske`, §2). -/
 @[simp]
@@ -554,18 +527,16 @@ theorem doubleCoset_neg_SLnZ_of_even (hn : Even n) (g : GL (Fin n) ℚ) :
 
 /-- `SL_n(ℤ)` has finite index (at most `2`) inside `GL_n(ℤ)`. -/
 instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).FiniteIndex := by
-  have : Finite (GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n)) := Finite.of_injective
-    (fun q ↦ decide (((q.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det = 1)) fun q₁ q₂ h ↦ by
-      have hiff := decide_eq_decide.mp h
-      have hdet : ((q₁.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det =
-          ((q₂.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det := by
-        rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h₁ | h₁
-        · exact h₁.trans (hiff.mp h₁).symm
-        · exact h₁.trans ((det_eq_one_or_neg_one_of_mem_GLnZ n q₂.out.2).resolve_left
-            fun h₂ ↦ absurd (hiff.mpr h₂) (by rw [h₁]; norm_num)).symm
-      simpa only [QuotientGroup.out_eq'] using QuotientGroup.eq.mpr <| Subgroup.mem_subgroupOf.mpr
-        (inv_mul_mem_SLnZ_of_mem_GLnZ_of_det_eq n q₁.out.2 q₂.out.2 hdet)
-  exact Subgroup.finiteIndex_of_finite_quotient
+  let φ := (Matrix.GeneralLinearGroup.det.comp (GLnZ n).subtype).rangeRestrict
+  have : Finite (Matrix.GeneralLinearGroup.det.comp (GLnZ n).subtype).range :=
+    ((Set.finite_singleton (1 : ℚˣ)).insert (-1)).subset (by
+      rintro _ ⟨g, rfl⟩
+      simpa [Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply, or_comm] using
+        det_eq_one_or_neg_one_of_mem_GLnZ n g.2) |>.to_subtype
+  have hker : (SLnZ n).subgroupOf (GLnZ n) = φ.ker := by
+    ext g; rw [Subgroup.mem_subgroupOf, MonoidHom.mem_ker, Subtype.ext_iff, Units.ext_iff]
+    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.2⟩
+  exact hker ▸ Subgroup.finiteIndex_ker φ
 
 /-- `GL_n(ℤ)` and `SL_n(ℤ)` are commensurable in `GL_n(ℚ)`. -/
 theorem commensurable_GLnZ_SLnZ : Subgroup.Commensurable (GLnZ n) (SLnZ n) :=
