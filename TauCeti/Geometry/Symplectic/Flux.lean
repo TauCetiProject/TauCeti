@@ -437,11 +437,10 @@ fixing both time ends have the same flux with respect to every closed two-form p
 common final diffeomorphism. -/
 theorem flux_eq_of_homotopy (σ : closedForms J M 2)
     (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
     (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
     (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p)
     (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) :
-    Ψ.flux σ hΨ = Φ.flux σ hΦ := by
+    Ψ.flux σ (Φ.final_eq_of_homotopy hG₁ h₁ ▸ hΦ) = Φ.flux σ hΦ := by
   rw [flux_def, flux_def, ← sub_eq_zero, ← map_sub, deRhamCohomology.mk_eq_zero_iff]
   exact Φ.fluxForm_sub_fluxForm_mem_exactForms
     ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hG hG₀ hG₁ h₀ h₁
@@ -456,13 +455,12 @@ theorem flux_eq_zero_of_homotopy_refl (σ : closedForms J M 2)
     (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = p.1)
     (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = x) :
     Φ.flux σ hΦ = 0 := by
-  have hfinal (x : M) : Φ.final x = x := by
-    rw [final_apply, ← cylinderMap_apply Φ (x, 1), ← hG₀, h₁]
-  have href : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.1 := by
-    rw [final_refl]
-    exact (SmoothForm.diffeomorphStabilizer σ.1).one_mem
-  rw [← Φ.flux_eq_of_homotopy σ hΦ href hG hG₀ (fun p ↦ by rw [hG₁, cylinderMap_apply, refl_apply])
-    h₀ fun x s ↦ by rw [h₁, hfinal], flux_refl]
+  -- Running `G` backwards in `s` joins the constant motion to the motion of `Φ`.
+  have hfinal : Φ.final = (refl J ∞ M).final :=
+    (refl J ∞ M).final_eq_of_homotopy (G := fun q ↦ G (q.1, unitInterval.symm q.2))
+      (fun p ↦ by rw [unitInterval.symm_one, hG₀]) fun x s ↦ by rw [h₁, final_refl]; rfl
+  rw [← Φ.flux_eq_of_homotopy σ hΦ hG hG₀ (fun p ↦ by rw [hG₁, cylinderMap_apply, refl_apply])
+    h₀ fun x s ↦ by rw [h₁, hfinal, final_refl]; rfl, flux_refl]
 
 end Homotopy
 

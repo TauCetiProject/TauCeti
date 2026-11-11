@@ -49,6 +49,8 @@ bundled smooth embeddings, used for geometric knot presentations, is in
   diffeomorphisms.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
+* `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
+  stationary at the final time have the same final diffeomorphism.
 
 ## References
 
