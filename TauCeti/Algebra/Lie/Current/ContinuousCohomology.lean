@@ -82,9 +82,9 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
   in a module `Z` with trivial action.
 * `TauCeti.CurrentAlgebra.residueClassMap_injective`: it is injective for a nonzero form over a
   domain and torsion-free `Z`.
-* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a nonzero form
-  `Ψ` spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is
-  a residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
+* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a form `Ψ`
+  spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is a
+  residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
 * `TauCeti.CurrentAlgebra.residueClassEquiv`: for a nonzero form `Ψ` spanning the invariant forms,
   the linear equivalence `z ↦ [c_Ψ ⊗ z]` from any vector space `Z` onto continuous second
   cohomology with coefficients in `Z`.
