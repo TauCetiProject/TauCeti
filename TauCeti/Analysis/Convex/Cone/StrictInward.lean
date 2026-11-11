@@ -19,7 +19,8 @@ A vector is strictly inward to a set at a point if small positive steps along it
 whose radius is proportional to the step size into the set. Unlike the closed tangent cone,
 this excludes directions tangent to the boundary of a half-space.
 
-For convex sets, membership is equivalent to reaching an interior point along the positive ray.
+For convex sets and base points in the set, membership is equivalent to reaching an interior
+point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
 near each admissible point and vector. These estimates supply the local geometric input for
 constructing strictly inward vector fields on models with corners.
