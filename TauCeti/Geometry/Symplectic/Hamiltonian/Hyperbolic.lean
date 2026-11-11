@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Elliptic
+import TauCeti.Algebra.CharZero.NatCast
 import TauCeti.Algebra.Polynomial.RingDivision
+import TauCeti.LinearAlgebra.End.SquareDiagonal
 
 /-!
 # The hyperbolic blocks are nondegenerate
@@ -169,37 +171,13 @@ theorem IsDarbouxBasis.aeval_hamiltonianEnd_sum_smul_hyperbolic_prod (hb : ω.Is
 polynomial `(∏ₜ (X² - t)) X`, the product running over the nonzero squares `t = cₖ²`. -/
 theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_hyperbolic
     (hb : ω.IsDarbouxBasis b) : (ω.hamiltonianEnd (∑ k, c k • hyperbolic b k)).IsSemisimple := by
-  set S := (Finset.univ.image fun k ↦ c k ^ 2).filter (· ≠ 0)
-  refine Module.End.isSemisimple_of_squarefree_aeval_eq_zero
-    (p := (∏ t ∈ S, (X ^ 2 - C t)) * X) ?_ ?_
-  · refine (Polynomial.Separable.mul (Polynomial.separable_prod' (fun s _ t _ hst ↦ ?_)
-      fun t ht ↦ ?_) separable_X (IsCoprime.prod_left fun t ht ↦ ?_)).squarefree
-    · exact Polynomial.isCoprime_sub_C_of_isUnit_sub _ (sub_ne_zero.2 hst).isUnit
-    · exact Polynomial.separable_X_pow_sub_C _ (by norm_num) (Finset.mem_filter.1 ht).2
-    · refine ⟨-C t⁻¹, C t⁻¹ * X, ?_⟩
-      have h : C t⁻¹ * C t = (1 : ℝ[X]) := by
-        rw [← C_mul, inv_mul_cancel₀ (Finset.mem_filter.1 ht).2, C_1]
-      linear_combination h
-  · -- A vector of the plane `span(qⱼ, pⱼ)` is killed by `X` if `cⱼ = 0` and by the factor
-    -- `X² - cⱼ²` otherwise, and the factors commute.
-    refine b.ext fun i ↦ ?_
-    rw [LinearMap.zero_apply]
-    by_cases hi : c i.1 = 0
-    · have h0 : ω.hamiltonianEnd (∑ k, c k • hyperbolic b k) (b i) = 0 := by
-        obtain ⟨j, a⟩ := i
-        obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-        · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst, hi, zero_smul]
-        · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd, hi, neg_zero, zero_smul]
-      rw [map_mul, mul_apply_eq_comp, aeval_X, h0, map_zero]
-    have hS : c i.1 ^ 2 ∈ S :=
-      Finset.mem_filter.2 ⟨Finset.mem_image_of_mem _ (Finset.mem_univ _), pow_ne_zero _ hi⟩
-    rw [← Finset.prod_erase_mul _ _ hS, mul_right_comm, map_mul, mul_apply_eq_comp]
-    have hi : aeval (ω.hamiltonianEnd (∑ k, c k • hyperbolic b k)) (X ^ 2 - C (c i.1 ^ 2))
-        (b i) = 0 := by
-      rw [map_sub, map_pow, aeval_X, aeval_C, sq, LinearMap.sub_apply, mul_apply_eq_comp,
-        hb.hamiltonianEnd_sum_smul_hyperbolic_apply_apply, Algebra.algebraMap_eq_smul_one,
-        LinearMap.smul_apply, one_apply_eq_self, sub_self]
-    rw [hi, map_zero]
+  refine Module.End.isSemisimple_of_apply_apply_basis_eq_smul two_ne_zero b (fun i ↦ c i.1 ^ 2)
+    (hb.hamiltonianEnd_sum_smul_hyperbolic_apply_apply c) fun ⟨j, a⟩ hj ↦ ?_
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst, pow_eq_zero_iff two_ne_zero |>.1 hj,
+      zero_smul]
+  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd, pow_eq_zero_iff two_ne_zero |>.1 hj,
+      neg_zero, zero_smul]
 
 /-- A quadratic form `R` Poisson-commuting with `∑ₖ cₖ Hₖ`, for nonzero rates with distinct
 squares, has a polar form pairing each `qₖ` only with `pₖ`, and each `pₖ` only with `qₖ`. -/
@@ -274,11 +252,6 @@ theorem IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero
     Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self k))
 
 end Regular
-
-/-- The rates `cₖ = k + 1` have distinct squares. -/
-private theorem pairwise_sq_natCast_add_one_ne :
-    Pairwise fun k l : Fin n ↦ ((k : ℝ) + 1) ^ 2 ≠ ((l : ℝ) + 1) ^ 2 := fun _ _ hkl h ↦
-  hkl (by norm_cast at h; simpa [Fin.val_inj] using h)
 
 /-- **The hyperbolic blocks are nondegenerate.** In a Darboux basis, the hyperbolic blocks
 `Hₖ = xₖ yₖ` form a nondegenerate family: their Hamiltonian endomorphisms span a Cartan
