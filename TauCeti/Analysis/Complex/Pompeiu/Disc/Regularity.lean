@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Disc.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Normed.Field.Lipschitz
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.ContDiff.Comp

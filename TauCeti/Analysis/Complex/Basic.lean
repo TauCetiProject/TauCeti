@@ -26,8 +26,7 @@ Inversion preserves the open right half-plane: `z⁻¹` has positive real part e
 does (`Complex.inv_re_pos`).
 
 The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
-`‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`). In any
-normed field, `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}` (`norm_sq_div_sub_sq_div_le`).
+`‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
 
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
@@ -154,21 +153,3 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
     _ ≤ _ := by linarith
 
 end Complex
-
-/-- In a normed field, `y ↦ c ^ 2 / y` is `1`-Lipschitz on the points whose norm is at least
-`‖c‖`. -/
-theorem norm_sq_div_sub_sq_div_le {𝕜 : Type*} [NormedField 𝕜] {c x y : 𝕜}
-    (hx : ‖c‖ ≤ ‖x‖) (hy : ‖c‖ ≤ ‖y‖) :
-    ‖c ^ 2 / x - c ^ 2 / y‖ ≤ ‖x - y‖ := by
-  rcases eq_or_ne x 0 with rfl | hxn
-  · simp [norm_le_zero_iff.mp (by simpa using hx : ‖c‖ ≤ 0)]
-  rcases eq_or_ne y 0 with rfl | hyn
-  · simp [norm_le_zero_iff.mp (by simpa using hy : ‖c‖ ≤ 0)]
-  have hx0 : 0 < ‖x‖ := norm_pos_iff.mpr hxn
-  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyn
-  simp_rw [div_eq_mul_inv]
-  rw [← mul_sub, norm_mul, ← dist_eq_norm, dist_inv_inv₀ hxn hyn, dist_eq_norm, norm_pow]
-  have hb : ‖c‖ ^ 2 ≤ ‖x‖ * ‖y‖ := by nlinarith [norm_nonneg c]
-  calc ‖c‖ ^ 2 * (‖x - y‖ / (‖x‖ * ‖y‖)) ≤ (‖x‖ * ‖y‖) * (‖x - y‖ / (‖x‖ * ‖y‖)) :=
-        mul_le_mul_of_nonneg_right hb (by positivity)
-    _ = ‖x - y‖ := mul_div_cancel₀ _ (mul_pos hx0 hy0).ne'
