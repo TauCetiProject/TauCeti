@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.Basic
 public import TauCeti.Algebra.Homology.CochainComplex.Double
+import TauCeti.CategoryTheory.Triangulated.TriangleIso
 
 /-!
 # The distinguished triangle of a conflation
@@ -197,12 +198,6 @@ private noncomputable def δ' (hS : E.Conflation S) :
       (mkMap S.doubleTopι : bSingle 1 S.X₃ ⟶ bDouble S))⟦(1 : ℤ)⟧') ≫
       (doubleιIso hS).inv⟦(1 : ℤ)⟧'
 
-/-- In an isomorphism of triangles `e : T ≅ T'`, the second morphism of `T` is that of `T'`
-conjugated by the components of `e`. -/
-private lemma mor₂_eq_of_triangleIso {D : Type*} [Category D] [HasShift D ℤ] {T T' : Triangle D}
-    (e : T ≅ T') : T.mor₂ = e.hom.hom₂ ≫ T'.mor₂ ≫ e.inv.hom₃ := by
-  rw [← reassoc_of% e.hom.comm₂, Iso.hom_inv_id_triangle_hom₃, Category.comp_id]
-
 /-- **The triangle of a conflation is distinguished**, for the classes of the complexes `X[0]`,
 `Y[0]`, `Z[0]`. -/
 private theorem distinguished' (hS : E.Conflation S) :
@@ -224,7 +219,7 @@ private theorem distinguished' (hS : E.Conflation S) :
   -- `E₀` is the identity on the first two objects, so it expresses `g'` and `h'`.
   have hg' : (HomotopyCategory.Bounded.ι C).map g' =
       (_root_.HomotopyCategory.quotient C (.up ℤ)).map S.doubleπ ≫ E₀.inv.hom₃ :=
-    (mor₂_eq_of_triangleIso E₀).trans (Category.id_comp _)
+    (Triangle.mor₂_eq_of_iso E₀).trans (Category.id_comp _)
   have hh' : (HomotopyCategory.Bounded.ι C).map h' = E₀.hom.hom₃ ≫
       (_root_.HomotopyCategory.quotient C (.up ℤ)).map
         (CochainComplex.homOfDegreewiseSplit _ S.doubleTopSplitting) ≫

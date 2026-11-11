@@ -27,7 +27,8 @@ is `g`, up to the identification `Z[-1][1] ≅ Z[0]`.
 * `CategoryTheory.ShortComplex.doubleTopSplitting`: the degreewise splitting of
   `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y[0]`.
 * `CategoryTheory.ShortComplex.doubleMap`: the map of two-term complexes induced by a morphism of
-  short complexes.
+  short complexes, with its components `doubleMap_f_zero` and `doubleMap_f_one`, functoriality
+  `doubleMap_id` and `doubleMap_comp`, and naturality of `doubleι`, `doubleTopι` and `doubleπ`.
 
 ## Main results
 
@@ -176,7 +177,39 @@ noncomputable def doubleMap : S.double ⟶ S'.double :=
       rintro k (hk : 1 + 1 = k)
       exact (S'.isZero_double_X (by lia) (by lia)).eq_of_tgt _ _)
 
-@[reassoc]
+/-- The degree-`0` component of `doubleMap φ` is `φ.τ₂`. -/
+@[simp]
+theorem doubleMap_f_zero : (doubleMap φ).f 0 =
+    (HomologicalComplex.doubleXIso₀ S.g ComplexShape.up_rel_zero_one).hom ≫ φ.τ₂ ≫
+      (HomologicalComplex.doubleXIso₀ S'.g ComplexShape.up_rel_zero_one).inv :=
+  HomologicalComplex.mkHomFromDouble_f₀ _ _ _ _ _ _
+
+/-- The degree-`1` component of `doubleMap φ` is `φ.τ₃`. -/
+@[simp]
+theorem doubleMap_f_one : (doubleMap φ).f 1 =
+    (HomologicalComplex.doubleXIso₁ S.g ComplexShape.up_rel_zero_one (by simp)).hom ≫ φ.τ₃ ≫
+      (HomologicalComplex.doubleXIso₁ S'.g ComplexShape.up_rel_zero_one (by simp)).inv :=
+  HomologicalComplex.mkHomFromDouble_f₁ _ _ _ _ _ _
+
+variable (S) in
+@[simp]
+theorem doubleMap_id : doubleMap (𝟙 S) = 𝟙 S.double := by
+  ext <;> simp
+
+@[simp]
+theorem doubleMap_comp {S'' : ShortComplex C} (ψ : S' ⟶ S'') :
+    doubleMap (φ ≫ ψ) = doubleMap φ ≫ doubleMap ψ := by
+  ext <;> simp
+
+/-- The projection onto the degree-`0` term is natural. -/
+@[reassoc (attr := simp)]
+theorem doubleMap_doubleπ :
+    doubleMap φ ≫ S'.doubleπ = S.doubleπ ≫ (HomologicalComplex.single C (.up ℤ) 0).map φ.τ₂ := by
+  ext
+  · simp [doubleπ_f_zero, HomologicalComplex.single_map_f_self]
+  · exact (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp)).eq_of_tgt _ _
+
+@[reassoc (attr := simp)]
 theorem doubleι_doubleMap :
     S.doubleι ≫ doubleMap φ = (HomologicalComplex.single C (.up ℤ) 0).map φ.τ₁ ≫ S'.doubleι := by
   apply HomologicalComplex.from_single_hom_ext
@@ -184,7 +217,7 @@ theorem doubleι_doubleMap :
     HomologicalComplex.single_map_f_self, doubleMap, HomologicalComplex.mkHomFromDouble_f₀]
   simp [reassoc_of% φ.comm₁₂]
 
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem doubleTopι_doubleMap : S.doubleTopι ≫ doubleMap φ =
     (HomologicalComplex.single C (.up ℤ) 1).map φ.τ₃ ≫ S'.doubleTopι := by
   apply HomologicalComplex.from_single_hom_ext
