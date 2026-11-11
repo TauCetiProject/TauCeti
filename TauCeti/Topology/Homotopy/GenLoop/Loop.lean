@@ -15,13 +15,16 @@ Reindexing the cube directions along `M ≃ N` is a homeomorphism `GenLoop.congr
 `GenLoop.genLoopGenLoopEquiv` curries `Ω^ M (Ω^ N X x) const ≃ₜ Ω^ (M ⊕ N) X x`. This file
 specializes the latter to a single extra direction, which is the path parameter of the loop space
 `Ω X x`: cube loops in the directions `M` of `Ω X x`, based at the constant loop, are cube loops of
-`X` in the directions `M ⊕ Fin 1`, and, for `Fin k`, in `k + 1` directions. These are statements
+`X` in the directions `M ⊕ Fin 1`, in `Option M` (the path parameter becoming the direction
+`none`), and, for `Fin k`, in `k + 1` directions. These are statements
 about the topology of spaces of cube loops, and use no homotopy groups.
 
 ## Main declarations
 
 * `GenLoop.genLoopLoopSumHomeomorph`: `Ω^ M (Ω X x) (refl x) ≃ₜ Ω^ (M ⊕ Fin 1) X x`.
 * `GenLoop.genLoopLoopHomeomorph`: `Ω^ (Fin k) (Ω X x) (refl x) ≃ₜ Ω^ (Fin (k + 1)) X x`.
+* `GenLoop.genLoopLoopOptionHomeomorph`: `Ω^ N (Ω X x) (refl x) ≃ₜ Ω^ (Option N) X x`, with the
+  path parameter in the direction `none`.
 -/
 
 public section
@@ -163,6 +166,53 @@ theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
     (s : I^(Fin k)) (u : I) :
     (genLoopLoopHomeomorph x k).symm q s u = q (Fin.snoc s u) := by
   have h := genLoopLoopHomeomorph_apply x k ((genLoopLoopHomeomorph x k).symm q) (Fin.snoc s u)
+  rw [Homeomorph.apply_symm_apply] at h
+  simpa using h.symm
+
+variable (x) in
+/-- Currying the path parameter of the loop space `Ω X x` into the cube direction `none`: cube
+loops in the directions `N` of `Ω X x`, based at the constant loop, are cube loops of `X` in the
+directions `Option N`. This is `genLoopLoopSumHomeomorph` with the directions `N ⊕ Fin 1`
+identified with `Option N`. -/
+def genLoopLoopOptionHomeomorph (N : Type*) : Ω^ N (Ω X x) (Path.refl x) ≃ₜ Ω^ (Option N) X x :=
+  (genLoopLoopSumHomeomorph x N).trans (GenLoop.congr x
+    ((Equiv.sumCongr (Equiv.refl N) finOneEquiv).trans (Equiv.optionEquivSumPUnit.{0} N).symm))
+
+variable (x) in
+/-- The direction `none` of `genLoopLoopOptionHomeomorph` is the path parameter. -/
+@[simp]
+theorem genLoopLoopOptionHomeomorph_apply {N : Type*} (p : Ω^ N (Ω X x) (Path.refl x))
+    (t : I^(Option N)) :
+    genLoopLoopOptionHomeomorph x N p t = p (fun i => t (some i)) (t none) := by
+  rw [genLoopLoopOptionHomeomorph, Homeomorph.trans_apply, congr_apply,
+    genLoopLoopSumHomeomorph_apply]
+  simp
+
+variable (x) in
+/-- The homeomorphism `genLoopLoopOptionHomeomorph` is based. -/
+@[simp]
+theorem genLoopLoopOptionHomeomorph_const (N : Type*) :
+    genLoopLoopOptionHomeomorph x N (GenLoop.const : Ω^ N (Ω X x) (Path.refl x)) =
+      GenLoop.const :=
+  _root_.GenLoop.ext _ _ fun t => by simp
+
+variable (x) in
+/-- The inverse of `genLoopLoopOptionHomeomorph` also carries the constant cube loop to the
+constant cube loop. -/
+@[simp]
+theorem genLoopLoopOptionHomeomorph_symm_const (N : Type*) :
+    (genLoopLoopOptionHomeomorph x N).symm (GenLoop.const : Ω^ (Option N) X x) =
+      (GenLoop.const : Ω^ N (Ω X x) (Path.refl x)) :=
+  (genLoopLoopOptionHomeomorph x N).symm_apply_eq.2 (genLoopLoopOptionHomeomorph_const x N).symm
+
+variable (x) in
+/-- The inverse of `genLoopLoopOptionHomeomorph` evaluated at the cube coordinates `s` in the
+directions `some i` and the path parameter `u` in the direction `none`. -/
+@[simp]
+theorem genLoopLoopOptionHomeomorph_symm_apply {N : Type*} (q : Ω^ (Option N) X x) (s : I^N)
+    (u : I) : (genLoopLoopOptionHomeomorph x N).symm q s u = q fun o => o.elim u s := by
+  have h := genLoopLoopOptionHomeomorph_apply x ((genLoopLoopOptionHomeomorph x N).symm q)
+    fun o => o.elim u s
   rw [Homeomorph.apply_symm_apply] at h
   simpa using h.symm
 

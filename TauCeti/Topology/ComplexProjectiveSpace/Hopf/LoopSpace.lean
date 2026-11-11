@@ -29,16 +29,16 @@ as soon as `j` has degree `±1`, in the sense that the composite
 
 of the map induced by `j`, the loop-space shift `HomotopyGroup.loopSpaceOptionMulEquiv` and the
 boundary map of the Hopf fibration (`TauCeti.ComplexProjectiveSpace.hopfBoundary`) is bijective
-(`TauCeti.ComplexProjectiveSpace.isWeakHomotopyEquivalence_hopfLoopProduct`). Thus
-`Ω CPⁿ ≃ S¹ × Ω S²ⁿ⁺¹` up to weak equivalence.
+(`TauCeti.ComplexProjectiveSpace.isWeakHomotopyEquivalence_hopfLoopProduct`). Thus, given such a
+`j`, `Ω CPⁿ ≃ S¹ × Ω S²ⁿ⁺¹` up to weak equivalence.
 
 This is the splitting of the loop space of the base of a Serre fibration
 (`TauCeti.TopCat.bijective_homotopyGroupMap_loopProduct`) applied to the Hopf fibration, whose
 fibre inclusion `S¹ → S²ⁿ⁺¹` is trivial on all homotopy groups in positive degrees: the higher
 homotopy groups of the circle vanish, and `S²ⁿ⁺¹` is simply connected for `n ≥ 1`. In degree
-`k ≥ 2` the boundary map has trivial source and target, so only the degree-one condition on `j`
-remains. In degree zero both spaces are path connected, since `S²ⁿ⁺¹` and `CPⁿ` are simply
-connected.
+`k ≥ 2` the composite `π_k(S¹) → π_(k+1)(CPⁿ) → π_k(S¹)` has trivial source and target, since
+`π_k(S¹)` vanishes, so only the degree-one condition on `j` remains. In degree zero both spaces
+are path connected, since `S²ⁿ⁺¹` and `CPⁿ` are simply connected.
 
 ## Main declarations
 
@@ -79,8 +79,11 @@ theorem hopfLoopProduct_apply (j : C(sphere (0 : ℂ) 1, Ω (ComplexProjectiveSp
     (z : sphere (0 : ℂ) 1) (γ : Ω (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) :
     hopfLoopProduct v j (z, γ) = (j z).trans (γ.map (continuous_mk n)) := by
   rw [hopfLoopProduct, TopCat.loopProduct_apply]
-  exact congrArg _ (Path.ext (funext fun t ↦
-    (TopCat.fiberLoopMap_apply (p := hopfHom n) ⟨v, rfl⟩ γ t).trans rfl))
+  refine congrArg _ (Path.ext (funext fun t ↦ ?_))
+  rw [Path.map_coe, Function.comp_apply]
+  -- `hopfHom n` is the abbreviation `TopCat.ofHom ⟨mk n, _⟩`, so applied to `γ t` it is
+  -- `mk n (γ t)` by definition.
+  exact TopCat.loopSpaceMap_apply (p := hopfHom n) ⟨v, rfl⟩ γ t
 
 /-- For `n ≥ 1`, the based Hopf product is defined on a path-connected space. -/
 private theorem pathConnectedSpace_prod_loopSpace (hn : 0 < n) :

@@ -50,6 +50,8 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.loopSpaceOptionMulEquiv`: the shift `π_N(Ω X x, refl x) ≃* π_(Option N)(X, x)`
+  with the path parameter in the cube direction `none`.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
@@ -388,7 +390,8 @@ theorem pathLoopSpaceMulEquiv_mk (m : ℕ)
   (pathLoopSpaceMulEquiv_apply m _).trans <|
     (congrArg (fun a : HomotopyGroup (Fin (m + 1)) (Ω^ (Fin 1) X x) _root_.GenLoop.const =>
         piLoopSpaceMulEquiv m 1 a)
-      ((homeomorphMulEquivOfEq_symm_apply _ _ _).trans (map_mk _ _ p))).trans
+      ((homeomorphMulEquivOfEq_symm_apply _ (GenLoop.homeomorphOfUnique_const (Fin 1)) _).trans
+        (map_mk _ _ p))).trans
         (piLoopSpaceMulEquiv_mk m 1 _)
 
 @[simp]
@@ -412,6 +415,34 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
           (GenLoop.homeomorphOfUnique_const (Fin 1)) a)
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
+
+/-- **The loop-space shift in the direction `none`**: `π_N(Ω X x, refl x) ≃* π_(Option N)(X, x)`,
+currying the path parameter of the loop space into the cube direction `none`. This is the
+indexing of the boundary map of a Serre fibration, whose lifting direction is also `none`. -/
+noncomputable def loopSpaceOptionMulEquiv [DecidableEq N] [Nonempty N] :
+    HomotopyGroup N (Ω X x) (Path.refl x) ≃* HomotopyGroup (Option N) X x :=
+  (homeomorphMulEquivOfEq (N := N) (GenLoop.homeomorphOfUnique (Fin 1))
+    (GenLoop.homeomorphOfUnique_const (Fin 1))).symm.trans <| loopSpaceMulEquiv.trans <|
+      congrMulEquiv
+        ((Equiv.sumCongr (Equiv.refl N) finOneEquiv).trans (Equiv.optionEquivSumPUnit.{0} N).symm)
+
+@[simp]
+theorem loopSpaceOptionMulEquiv_mk [DecidableEq N] [Nonempty N]
+    (p : Ω^ N (Ω X x) (Path.refl x)) :
+    loopSpaceOptionMulEquiv (⟦p⟧ : HomotopyGroup N (Ω X x) (Path.refl x)) =
+      ⟦GenLoop.genLoopLoopOptionHomeomorph x N p⟧ :=
+  (congrArg (congrMulEquiv _) ((congrArg loopSpaceMulEquiv
+      ((homeomorphMulEquivOfEq_symm_apply _ (GenLoop.homeomorphOfUnique_const (Fin 1)) _).trans
+        (map_mk _ _ p))).trans
+    (loopSpaceMulEquiv_mk _))).trans <|
+    (congrMulEquiv_mk _ _).trans (congrArg _ (_root_.GenLoop.ext _ _ fun t => by simp))
+
+@[simp]
+theorem loopSpaceOptionMulEquiv_symm_mk [DecidableEq N] [Nonempty N] (q : Ω^ (Option N) X x) :
+    loopSpaceOptionMulEquiv.symm (⟦q⟧ : HomotopyGroup (Option N) X x) =
+      ⟦(GenLoop.genLoopLoopOptionHomeomorph x N).symm q⟧ :=
+  (MulEquiv.symm_apply_eq _).2 <|
+    ((loopSpaceOptionMulEquiv_mk _).trans (congrArg _ (Homeomorph.apply_symm_apply _ q))).symm
 
 /-- **The fundamental group of the loop space is the second homotopy group**:
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
@@ -480,6 +511,19 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
       simp [F', hFf]
   rw [key]
   exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun p t => _root_.GenLoop.map_apply f hf p t) _
+
+/-- The shift `loopSpaceOptionMulEquiv` is natural: it commutes with the maps induced on homotopy
+groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
+theorem _root_.ContinuousMap.loopSpaceOptionMulEquiv_map [DecidableEq N] [Nonempty N]
+    (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t))
+    (a : HomotopyGroup N (Ω X x) (Path.refl x)) :
+    loopSpaceOptionMulEquiv (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
+      map f hf (loopSpaceOptionMulEquiv a) := by
+  induction a using Quotient.inductionOn with
+  | h p =>
+    rw [map_mk, loopSpaceOptionMulEquiv_mk, loopSpaceOptionMulEquiv_mk, map_mk]
+    refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
+    simp [hFf]
 
 end Natural
 

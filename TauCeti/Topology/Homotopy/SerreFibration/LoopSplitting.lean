@@ -31,16 +31,17 @@ inclusion is null-homotopic.
 
 The argument is the exact homotopy sequence of `p`
 (`TauCeti.Topology.Homotopy.SerreFibration.Exact`), read through the loop-space shift. Under the
-shift the map induced by `p ∘ -` on `π_n(Ω E e)` is `p_* : π_(n+1)(E) → π_(n+1)(B)`. It is injective
-because the fibre inclusion is trivial on `π_(n+1)` (`TauCeti.TopCat.injective_map_fiberLoopMap`),
-the boundary map vanishes on its image, and its image is the kernel of the boundary map
-(`TauCeti.TopCat.exists_map_fiberLoopMap_eq_iff`). Since the loop product induces
+shift the map induced by `p ∘ -` on `π_n(Ω E e)` is `p_* : π_(n+1)(E) → π_(n+1)(B)`. It is
+injective because the fibre inclusion is trivial on `π_(n+1)`
+(`TauCeti.TopCat.injective_homotopyGroupMap_loopSpaceMap`), the boundary map vanishes on its
+image, and its image is the kernel of the boundary map
+(`TauCeti.TopCat.exists_homotopyGroupMap_loopSpaceMap_eq_iff`). Since the loop product induces
 `(a, c) ↦ j_* a * (p ∘ -)_* c` (`HomotopyGroup.map_hmul_comp_prodMap`), the splitting gives the
 bijection.
 
 ## Main declarations
 
-* `TauCeti.TopCat.fiberLoopMap`: the map `Ω E e → Ω B b`, `γ ↦ p ∘ γ`.
+* `TauCeti.TopCat.loopSpaceMap`: the map `Ω E e → Ω B b`, `γ ↦ p ∘ γ`.
 * `TauCeti.TopCat.loopProduct`: the loop product `(z, γ) ↦ j z ⋀ p ∘ γ`.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_loopProduct`: the loop product induces a bijection on
   `π_n`, `n ≥ 1`, when the fibre inclusion is trivial on `π_(n+1)` and `j` splits the boundary
@@ -68,83 +69,84 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {F : Type*} [TopologicalSpace 
 variable (p) in
 /-- The map `Ω E e → Ω B b`, `γ ↦ p ∘ γ`, induced on loop spaces by `p`, for `e` in the fibre over
 `b`. -/
-def fiberLoopMap (e : p.fiber b) : C(Ω E e.1, Ω B b) where
+def loopSpaceMap (e : p.fiber b) : C(Ω E e.1, Ω B b) where
   toFun γ := (γ.map p.hom.continuous).cast (mem_singleton_iff.1 e.2).symm
     (mem_singleton_iff.1 e.2).symm
   continuous_toFun := continuous_induced_rng.2 <|
     (ContinuousMap.continuous_postcomp p.hom).comp continuous_induced_dom
 
 @[simp]
-theorem fiberLoopMap_apply (e : p.fiber b) (γ : Ω E e.1) (t : unitInterval) :
-    fiberLoopMap p e γ t = p (γ t) :=
+theorem loopSpaceMap_apply (e : p.fiber b) (γ : Ω E e.1) (t : unitInterval) :
+    loopSpaceMap p e γ t = p (γ t) :=
   (rfl)
 
 @[simp]
-theorem fiberLoopMap_refl (e : p.fiber b) : fiberLoopMap p e (Path.refl e.1) = Path.refl b :=
+theorem loopSpaceMap_refl (e : p.fiber b) : loopSpaceMap p e (Path.refl e.1) = Path.refl b :=
   Path.ext (funext fun _ ↦ mem_singleton_iff.1 e.2)
 
 variable (p) in
 /-- The **loop product** of a map `j : F → Ω B b`: the map `F × Ω E e → Ω B b` concatenating the
 loop `j z` with the image `p ∘ γ` of a loop `γ` of `E` at `e`. -/
 def loopProduct (e : p.fiber b) (j : C(F, Ω B b)) : C(F × Ω E e.1, Ω B b) :=
-  HSpace.hmul.comp (j.prodMap (fiberLoopMap p e))
+  HSpace.hmul.comp (j.prodMap (loopSpaceMap p e))
 
 @[simp]
 theorem loopProduct_apply (e : p.fiber b) (j : C(F, Ω B b)) (z : F) (γ : Ω E e.1) :
-    loopProduct p e j (z, γ) = (j z).trans (fiberLoopMap p e γ) :=
+    loopProduct p e j (z, γ) = (j z).trans (loopSpaceMap p e γ) :=
   (rfl)
 
 /-- The loop product of a based map `j` is based. -/
 theorem loopProduct_apply_refl (e : p.fiber b) {j : C(F, Ω B b)} (hj : j f₀ = Path.refl b) :
     loopProduct p e j (f₀, Path.refl e.1) = Path.refl b := by
-  rw [loopProduct_apply, hj, fiberLoopMap_refl, Path.refl_trans_refl]
+  rw [loopProduct_apply, hj, loopSpaceMap_refl, Path.refl_trans_refl]
 
 variable {e : p.fiber b} {N : Type*} [DecidableEq N] [Nonempty N]
 
 /-- Under the loop-space shift, the map induced by `p ∘ -` on `π_N(Ω E e)` is the map induced by
 `p` on `π_(Option N)(E)`. -/
-private theorem loopSpaceOptionMulEquiv_map_fiberLoopMap
+private theorem loopSpaceOptionMulEquiv_homotopyGroupMap_loopSpaceMap
     (c : HomotopyGroup N (Ω E e.1) (Path.refl e.1)) :
     HomotopyGroup.loopSpaceOptionMulEquiv
-        (HomotopyGroup.map (fiberLoopMap p e) (fiberLoopMap_refl e) c) =
+        (HomotopyGroup.map (loopSpaceMap p e) (loopSpaceMap_refl e) c) =
       HomotopyGroup.map p.hom (mem_singleton_iff.1 e.2)
-        (HomotopyGroup.loopSpaceOptionMulEquiv c) := by
-  rw [HomotopyGroup.loopSpaceOptionMulEquiv_apply, HomotopyGroup.loopSpaceOptionMulEquiv_apply]
-  exact p.hom.loopSpaceOptionEquiv_map (mem_singleton_iff.1 e.2) (fiberLoopMap p e)
-    (fiberLoopMap_apply e) c
+        (HomotopyGroup.loopSpaceOptionMulEquiv c) :=
+  p.hom.loopSpaceOptionMulEquiv_map (mem_singleton_iff.1 e.2) (loopSpaceMap p e)
+    (loopSpaceMap_apply e) c
 
 /-- **The loop map of a Serre fibration is injective on `π_n(Ω E)`** when the fibre inclusion
 induces the trivial map on `π_(n+1)`. Indeed, under the loop-space shift the loop map is
 `p_* : π_(n+1)(E) → π_(n+1)(B)`, whose kernel is the image of the fibre. -/
-theorem injective_map_fiberLoopMap [Finite N] (hp : serreFibrations p) {φ : p.fiber b ≃ₜ F}
-    (hφ : φ e = f₀) {i : C(F, E)} (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1)
+theorem injective_homotopyGroupMap_loopSpaceMap [Finite N] (hp : serreFibrations p)
+    {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) {i : C(F, E)} (hi : ∀ y, i y = (φ.symm y).1)
+    (hi₀ : i f₀ = e.1)
     (hiN : ∀ c : HomotopyGroup (Option N) F f₀, HomotopyGroup.map i hi₀ c = 1) :
-    Function.Injective (HomotopyGroup.map (N := N) (fiberLoopMap p e) (fiberLoopMap_refl e)) := by
+    Function.Injective (HomotopyGroup.map (N := N) (loopSpaceMap p e) (loopSpaceMap_refl e)) := by
   refine (injective_iff_map_eq_one
-    (HomotopyGroup.mapHom (N := N) (fiberLoopMap p e) (fiberLoopMap_refl e))).2 fun c hc ↦ ?_
+    (HomotopyGroup.mapHom (N := N) (loopSpaceMap p e) (loopSpaceMap_refl e))).2 fun c hc ↦ ?_
   rw [HomotopyGroup.mapHom_apply] at hc
   -- Shift to `π_(Option N)(E)`, where `p_* d = 1` puts `d` in the image of the fibre.
   apply HomotopyGroup.loopSpaceOptionMulEquiv.injective
   have hd := congrArg HomotopyGroup.loopSpaceOptionMulEquiv hc
-  rw [loopSpaceOptionMulEquiv_map_fiberLoopMap, map_one, _root_.HomotopyGroup.one_def] at hd
+  rw [loopSpaceOptionMulEquiv_homotopyGroupMap_loopSpaceMap, map_one,
+    _root_.HomotopyGroup.one_def] at hd
   obtain ⟨c', hc'⟩ := (mem_range_homotopyGroupMap_of_homeomorph_iff hp hφ hi hi₀).2 hd
   rw [← hc', hiN, map_one]
 
 /-- **The image of the loop map of a Serre fibration** on `π_n(Ω E)` consists of the classes whose
 shift to `π_(n+1)(B)` has trivial boundary. -/
-theorem exists_map_fiberLoopMap_eq_iff [Finite N] (hp : serreFibrations p) {φ : p.fiber b ≃ₜ F}
-    (hφ : φ e = f₀) (g : HomotopyGroup N (Ω B b) (Path.refl b)) :
-    (∃ c, HomotopyGroup.map (fiberLoopMap p e) (fiberLoopMap_refl e) c = g) ↔
+theorem exists_homotopyGroupMap_loopSpaceMap_eq_iff [Finite N] (hp : serreFibrations p)
+    {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) (g : HomotopyGroup N (Ω B b) (Path.refl b)) :
+    (∃ c, HomotopyGroup.map (loopSpaceMap p e) (loopSpaceMap_refl e) c = g) ↔
       fibrationBoundaryOfHomeomorph N hp φ hφ (HomotopyGroup.loopSpaceOptionMulEquiv g) = 1 := by
   rw [_root_.HomotopyGroup.one_def,
     ← mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq hp hφ]
   constructor
   · rintro ⟨c, rfl⟩
-    exact ⟨_, (loopSpaceOptionMulEquiv_map_fiberLoopMap c).symm⟩
+    exact ⟨_, (loopSpaceOptionMulEquiv_homotopyGroupMap_loopSpaceMap c).symm⟩
   · rintro ⟨d, hd⟩
     refine ⟨HomotopyGroup.loopSpaceOptionMulEquiv.symm d,
       HomotopyGroup.loopSpaceOptionMulEquiv.injective ?_⟩
-    rw [loopSpaceOptionMulEquiv_map_fiberLoopMap, MulEquiv.apply_symm_apply, hd]
+    rw [loopSpaceOptionMulEquiv_homotopyGroupMap_loopSpaceMap, MulEquiv.apply_symm_apply, hd]
 
 /-- **The loop product splits `π_n(Ω B)`.** Let `p` be a Serre fibration, `φ` a homeomorphism
 from its fibre over `b` to `F` sending `e` to `f₀`, and `i : F → E` the corresponding inclusion.
@@ -168,24 +170,23 @@ theorem bijective_homotopyGroupMap_loopProduct [Finite N] (hp : serreFibrations 
     (fibrationBoundaryOfHomeomorphHom N hp φ hφ).comp
       HomotopyGroup.loopSpaceOptionMulEquiv.toMonoidHom with hδ
   set J := HomotopyGroup.mapHom (N := N) j hj
-  set P := HomotopyGroup.mapHom (N := N) (fiberLoopMap p e) (fiberLoopMap_refl e)
+  set P := HomotopyGroup.mapHom (N := N) (loopSpaceMap p e) (loopSpaceMap_refl e)
   have hδ_apply (g) :
       δ g = fibrationBoundaryOfHomeomorph N hp φ hφ (HomotopyGroup.loopSpaceOptionMulEquiv g) := by
-    rw [hδ, MonoidHom.comp_apply, coe_fibrationBoundaryOfHomeomorphHom]
-    rfl
+    rw [hδ, MonoidHom.comp_apply, coe_fibrationBoundaryOfHomeomorphHom, MulEquiv.coe_toMonoidHom]
   have hδJ : Function.Bijective (δ ∘ J) := by
     convert hjN using 1
     exact funext fun a ↦ hδ_apply _
-  have hP : Function.Injective P := injective_map_fiberLoopMap hp hφ hi hi₀ hiN
+  have hP : Function.Injective P := injective_homotopyGroupMap_loopSpaceMap hp hφ hi hi₀ hiN
   have hker (g) : (∃ c, P c = g) ↔ δ g = 1 := by
     rw [hδ_apply]
-    exact exists_map_fiberLoopMap_eq_iff hp hφ g
+    exact exists_homotopyGroupMap_loopSpaceMap_eq_iff hp hφ g
   have hδP (c) : δ (P c) = 1 := (hker _).1 ⟨c, rfl⟩
   -- On a product class, the loop product induces `(a, c) ↦ J a * P c`.
   have hmap (a : HomotopyGroup N F f₀) (c : HomotopyGroup N (Ω E e.1) (Path.refl e.1)) :
       HomotopyGroup.map (loopProduct p e j) (loopProduct_apply_refl e hj)
         (HomotopyGroup.prod a c) = J a * P c :=
-    HomotopyGroup.map_hmul_comp_prodMap j (fiberLoopMap p e) hj (fiberLoopMap_refl e) a c
+    HomotopyGroup.map_hmul_comp_prodMap j (loopSpaceMap p e) hj (loopSpaceMap_refl e) a c
   refine (Function.Bijective.of_comp_iff _
     (HomotopyGroup.prodEquiv f₀ (Path.refl e.1)).symm.bijective).1 ⟨fun ⟨a, c⟩ ⟨a', c'⟩ h ↦ ?_,
       fun g ↦ ?_⟩
