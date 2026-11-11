@@ -204,6 +204,7 @@ def cellAttachmentCellLoop (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι)
 
 /-- The sphere of a cell attached along a constant map is the characteristic map of the cell,
 read on the cube through `TauCeti.diskHomeomorphCube`. -/
+@[simp]
 lemma cellAttachmentCellLoop_apply (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι)
     (hi : φ i = TopCat.ofHom (ContinuousMap.const _ x)) (t : I^(Fin n)) :
     cellAttachmentCellLoop φ i hi t = cellAttachmentCell φ i ((diskHomeomorphCube n).symm t) :=

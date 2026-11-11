@@ -108,6 +108,7 @@ def sphereWedgeLoop (i : ι) : Ω^ (Fin n) (sphereWedge ι n) (sphereWedgeBase �
 variable {ι n} in
 /-- The `i`-th sphere of the wedge is the characteristic map of the `i`-th cell, read on the cube
 through `TauCeti.diskHomeomorphCube`. -/
+@[simp]
 lemma sphereWedgeLoop_apply (i : ι) (t : I^(Fin n)) :
     sphereWedgeLoop ι n i t =
       cellAttachmentCell (sphereWedgeAttachingMap ι n) i ((diskHomeomorphCube n).symm t) :=
@@ -223,8 +224,7 @@ private lemma sphereWedgeCellularEquiv_sphereWedgeLoop (i : ι) :
   have hpair : diskBoundaryPairToCube (n + 2) ≫
       GenLoop.toCubeBoundaryPairHom (sphereWedgeLoop ι (n + 2) i) ≫
         sphereWedgePairToSkeletonPair ι n =
-      TopPair.sigmaι (fun _ ↦ diskBoundaryPair (n + 2)) j ≫
-        (sigmaDiskBoundaryPairIso _ (n + 2)).hom ≫ characteristicPairMap _ (n + 2) := by
+      characteristicCellPairMap _ j := by
     refine TopPair.hom_ext_of_fst _ ?_
     ext z
     refine Subtype.ext ?_
@@ -233,21 +233,15 @@ private lemma sphereWedgeCellularEquiv_sphereWedgeLoop (i : ι) :
     refine (GenLoop.toCubeBoundaryPairHom_fst_apply _ _).trans ?_
     rw [diskBoundaryPairToCube_fst_apply_down, sphereWedgeLoop_apply]
     refine (congrArg _ ((diskHomeomorphCube (n + 2)).symm_apply_apply z)).trans ?_
-    refine Eq.trans ?_
-      (characteristicPairMap_fst_apply (univ : Set (sphereWedge ι (n + 2))) _ _).symm
-    -- The point of the disjoint union of disks is the radial rescaling of `z` in the summand `j`.
-    have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst
-      (cell (univ : Set (sphereWedge ι (n + 2))) (n + 2)) (n + 2) ⟨j, z⟩
-    have h₂ : ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso _ (n + 2)).hom) ⟨j, z⟩).2 =
-        diskHomeomorphClosedBall (n + 2) z :=
-      Subtype.ext ((coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd _ _ ⟨j, z⟩).trans
-        (coe_diskHomeomorphClosedBall_apply z).symm)
-    erw [h₁, h₂]
-    refine Eq.trans ?_ ((sphereWedgeAttachCells ι n).map_cellToRelCWComplexEquiv_symm i _).symm
+    refine Eq.trans ?_ ((coe_characteristicCellPairMap_fst_apply _ j z).trans
+      (congrArg (map (n + 2) j) (coe_diskHomeomorphClosedBall_apply z)).symm).symm
+    refine Eq.trans ?_ ((sphereWedgeAttachCells ι n).map_cellToRelCWComplexEquiv_symm i
+      (diskHomeomorphClosedBall (n + 2) z)).symm
     rw [cellAttachmentAttachCells_cell]
     exact (congrArg _ ((diskHomeomorphClosedBall (n + 2)).symm_apply_apply z)).symm
   have hR := ConcreteCategory.congr_hom
-    (ι_cellularChainGroupIso_inv (univ : Set (sphereWedge ι (n + 2))) R (n + 2) j) (1 : ℤ)
+    (ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap
+      (univ : Set (sphereWedge ι (n + 2))) R (n + 2) j) (1 : ℤ)
   rw [cellularChainBasis_apply, ← ConcreteCategory.comp_apply, hR, ← hpair]
   rw [TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_comp, ← Category.assoc,
     ← singularHomologyCubeBoundaryPairIso_inv, ← Category.assoc,
