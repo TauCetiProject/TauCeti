@@ -76,7 +76,7 @@ namespace StarPositiveFunctional
 section NonUnital
 
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
-  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] (φ : StarPositiveFunctional A)
+  [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
