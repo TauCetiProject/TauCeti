@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+import TauCeti.MeasureTheory.Group.Arithmetic
 -- Proof-only: pushing a measure forward along a measurable embedding.
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 
@@ -129,6 +130,35 @@ theorem _root_.MeasureTheory.Measure.measure_inter_addSubgroup_eq_zero_of_encard
 end TauCeti
 
 namespace MeasureTheory.Measure
+
+/-- **The pullback of a left-invariant measure to a subgroup is left-invariant**, without any
+measurability assumption on the subgroup: if the pullback is undefined, it is the zero measure. -/
+@[to_additive /-- **The pullback of a left-invariant measure to an additive subgroup is
+left-invariant**, without any measurability assumption on the subgroup: if the pullback is
+undefined, it is the zero measure. -/]
+theorem isMulLeftInvariant_comap_subtype {G S : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul G] [SetLike S G] [SubgroupClass S G] (H : S) (μ : Measure G)
+    [μ.IsMulLeftInvariant] : (μ.comap ((↑) : H → G)).IsMulLeftInvariant := by
+  -- Adapted from Mathlib's `Measure.IsMulLeftInvariant.comap` (the image/preimage identity and
+  -- the invariance computation); the new case is the undefined pullback, which is the zero
+  -- measure and so trivially invariant.
+  refine ⟨fun h ↦ ?_⟩
+  by_cases hc : Function.Injective ((↑) : H → G) ∧
+      ∀ s, MeasurableSet s → NullMeasurableSet (((↑) : H → G) '' s) μ
+  · ext s hs
+    rw [Measure.map_apply (by fun_prop) hs,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 (hs.preimage (by fun_prop)).nullMeasurableSet,
+      Measure.comap_apply₀ _ _ hc.1 hc.2 hs.nullMeasurableSet]
+    have himg : ((↑) : H → G) '' ((h * ·) ⁻¹' s) =
+        ((h : G) * ·) ⁻¹' (((↑) : H → G) '' s) := by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact ⟨h * y, hy, by simp⟩
+      · rintro ⟨y, hy, hyx⟩
+        exact ⟨h⁻¹ * y, by simpa using hy, by simp [hyx]⟩
+    rw [himg, measure_preimage_mul]
+  · rw [Measure.comap_undef hc, Measure.map_zero]
 
 /-- The inverse of a probability measure is a probability measure. -/
 @[to_additive /-- The negation of a probability measure is a probability measure. -/]

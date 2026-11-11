@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.MeasureTheory.Function.Lp.Subtype
 public import TauCeti.MeasureTheory.Group.Arithmetic
+public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.SigmaCompactSupport
 public import TauCeti.MeasureTheory.Integral.PeakFunction
@@ -248,12 +249,10 @@ theorem eLpNorm_restrict_leftCoset_eq_comap {ε : Type*} [TopologicalSpace ε]
 /-- **Left-coset representative independence for lower Lebesgue integrals.** -/
 @[to_additive /-- **Left-coset representative independence for lower Lebesgue integrals.** -/]
 theorem lintegral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] [μ.IsMulLeftInvariant]
-    (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → ℝ≥0∞) :
+    {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → ℝ≥0∞) :
     ∫⁻ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫⁻ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-      (MeasurableEmbedding.subtype_coe hH)
+  have := Measure.isMulLeftInvariant_comap_subtype H μ
   rw [← lintegral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
