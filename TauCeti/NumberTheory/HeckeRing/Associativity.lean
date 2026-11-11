@@ -23,9 +23,8 @@ two bookkeepings are matched through the one-sided description of the multiplici
 (`multiplicity_eq_card_filter`).
 
 Vendored from the in-review mathlib4 PR
-[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck); migrate to
+Mathlib and delete this file when that stack merges.
 
 ## Main results
 

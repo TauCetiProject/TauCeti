@@ -18,9 +18,8 @@ structure constants `m` are Shimura's multiplicities cast into `R`. On the diago
 `H₁ = H₂ = H₃` this is the multiplication of the Hecke ring.
 
 Vendored from the in-review mathlib4 PR
-[#41277](https://github.com/leanprover-community/mathlib4/pull/41277) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+[#41277](https://github.com/leanprover-community/mathlib4/pull/41277) (Chris Birkbeck); migrate to
+Mathlib and delete this file when that stack merges.
 
 ## Main definitions
 

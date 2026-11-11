@@ -18,9 +18,8 @@ a finite set; this is what makes the convolution product of Hecke coset modules 
 the next file.
 
 Vendored from the in-review mathlib4 PR
-[#41256](https://github.com/leanprover-community/mathlib4/pull/41256) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+[#41256](https://github.com/leanprover-community/mathlib4/pull/41256) (Chris Birkbeck); migrate to
+Mathlib and delete this file when that stack merges.
 
 ## Main results
 

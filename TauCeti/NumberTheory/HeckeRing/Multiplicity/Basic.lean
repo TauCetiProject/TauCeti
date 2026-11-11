@@ -20,9 +20,8 @@ to the mixed double coset of their product, and the uniqueness lemmas for the fi
 multiplicity.
 
 Vendored from the in-review mathlib4 PR
-[#41254](https://github.com/leanprover-community/mathlib4/pull/41254) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+[#41254](https://github.com/leanprover-community/mathlib4/pull/41254) (Chris Birkbeck); migrate to
+Mathlib and delete this file when that stack merges.
 
 ## Main definitions
 
