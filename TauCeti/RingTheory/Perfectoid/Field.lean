@@ -205,8 +205,7 @@ theorem isPerfectoidField_iff :
     IsPerfectoidField.norm_natCast_lt_one p K, IsPerfectoidTateRing.exists_natCast_dvd_sub_pow⟩,
     fun ⟨hacc, hp, hs⟩ ↦ ?_⟩
   obtain ⟨ϖ, hϖ0, hϖ1, hpϖ⟩ :=
-    NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt hacc hp
-      (Fact.out : p.Prime).ne_zero
+    NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt hacc hp p
   refine isPerfectoidField_iff_isPerfectoidTateRing.mpr
     (isPerfectoidTateRing_iff_frobenius_surjective_modP.mpr ⟨⟨ϖ, ?_⟩, ?_, ?_, hs⟩)
   · exact mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hϖ1.le)

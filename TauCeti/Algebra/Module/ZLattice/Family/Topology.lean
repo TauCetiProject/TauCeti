@@ -46,6 +46,8 @@ holomorphic triviality.
   fibres are compact.
 * `TauCeti.t2Space_torusFamily`: the total space is Hausdorff over a Hausdorff base.
 * `TauCeti.compactSpace_torusFamily`: the total space is compact over a compact base.
+* `TauCeti.locallyCompactSpace_torusFamily`: the total space is locally compact over a locally
+  compact base.
 
 ## References
 
@@ -119,5 +121,24 @@ theorem compactSpace_torusFamily [CompactSpace Y] (hcont : ∀ l, Continuous fun
   exact e.symm.compactSpace
 
 end Trivialization
+
+section LocallyCompact
+
+variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ] {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] (P : Y → Λ →ₗ[ℤ] E)
+
+/-- **A family of tori over a locally compact base is locally compact.** For a continuous family of
+periods over a locally compact space `Y`, the total space `(Y × E)/Λ` is locally compact, as the
+image of the locally compact space `Y × E` under the orbit map of the period translation action, an
+open quotient map. No fullness, discreteness or injectivity of the periods is needed. -/
+theorem locallyCompactSpace_torusFamily [LocallyCompactSpace Y]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    letI := periodAddAction P
+    LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) := by
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  exact AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
+
+end LocallyCompact
 
 end TauCeti

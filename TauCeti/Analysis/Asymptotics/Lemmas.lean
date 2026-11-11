@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
 # Elementary asymptotic criteria
 
-Six general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
+Seven general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
 elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
@@ -36,7 +37,9 @@ remainder of one order be read as a remainder of a smaller order.
 
 A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`. This is how
 rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
-theta kernels of a lattice at a level.
+theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence likewise passes to
+the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
+partial sums of a sequence enters an integral against the partial-sum step function.
 
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
 dominated function is bounded on compact intervals and the dominating one is bounded away from
@@ -64,6 +67,8 @@ evaluations of elliptic integrals.
   whenever `n ≤ m`.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
   `F (c x) = O(x ^ r)` for `c > 0`.
+* `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
+  `t → ∞`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
@@ -130,6 +135,20 @@ theorem IsBigO.comp_const_mul_rpow {E : Type*} [Norm E] {F : ℝ → E} {r c : �
   refine ((isBigO_refl (fun x : ℝ ↦ x ^ r) atTop).const_mul_left (c ^ r)).congr' ?_ .rfl
   filter_upwards [eventually_ge_atTop 0] with x hx
   simp [Real.mul_rpow hc.le hx]
+
+/-- **A power bound on a sequence passes to its step function.** If `u n = O(n ^ r)` as
+`n → ∞`, then `u ⌊t⌋₊ = O(t ^ r)` as `t → ∞`, for every real exponent `r`. -/
+theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
+    (hu : u =O[atTop] fun n ↦ (n : ℝ) ^ r) :
+    (fun t : ℝ ↦ u ⌊t⌋₊) =O[atTop] (· ^ r) := by
+  have hmax : (fun t : ℝ ↦ max t 0) =ᶠ[atTop] fun t ↦ t := by
+    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+    exact max_eq_left ht
+  have hequiv : (fun t : ℝ ↦ (⌊t⌋₊ : ℝ)) ~[atTop] fun t ↦ max t 0 :=
+    isEquivalent_nat_floor.congr_right hmax.symm
+  exact (hu.comp_tendsto tendsto_nat_floor_atTop).trans <|
+    (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
+      (hmax.fun_comp fun t ↦ t ^ r)
 
 /-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
 bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on

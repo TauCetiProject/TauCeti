@@ -36,7 +36,7 @@ fibre, whose components then carry the multiplicities `ord_C(π)`.
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.finite_setOf_mem_zeroLocus`: the zero locus of a
   nonzero global function on a Noetherian integral scheme contains finitely many codimension-one
   points;
-* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isEffective_principalDivisor_ofMul_mk0`: the
+* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.principalDivisor_ofMul_mk0_nonneg`: the
   principal divisor of a nonzero global function is effective;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.mem_support_principalDivisor_ofMul_mk0`: its
   support is the set of codimension-one points of the zero locus.
@@ -106,11 +106,11 @@ theorem finite_setOf_mem_zeroLocus {a : Γ(X, ⊤)} (ha : a ≠ 0) :
 
 /-- The principal divisor of a nonzero global function is effective: a regular function has no
 poles. -/
-theorem isEffective_principalDivisor_ofMul_mk0 {a : Γ(X, ⊤)}
+theorem principalDivisor_ofMul_mk0_nonneg {a : Γ(X, ⊤)}
     (ha : X.germToFunctionField ⊤ a ≠ 0) :
-    WeilDivisor.IsEffective ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor
-      (Additive.ofMul (Units.mk0 _ ha))) := by
-  rw [WeilDivisor.isEffective_iff]
+    0 ≤ (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+      (Additive.ofMul (Units.mk0 _ ha)) := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
     orderAt_apply, toMul_ofMul, Units.val_mk0]

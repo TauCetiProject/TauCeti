@@ -30,7 +30,7 @@ the inclusions of the subspaces and applies Mathlib's composition formula for th
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
@@ -44,7 +44,7 @@ variable {T : E →L[K] F} {E₁ : Submodule K E} {F₁ : Submodule K F}
 finite-codimensional subspaces `E₁` and `F₁` is the index of the full operator minus `codim E₁`
 plus `codim F₁`. -/
 @[simp]
-theorem _root_.ContinuousLinearMap.index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
+theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
     (hF₁ : IsClosed (F₁ : Set F)) [F₁.CoFG] (hT : Set.MapsTo T E₁ F₁)
     (hT₁ : ContinuousLinearMap.IsFredholm (T.restrict hT)) :
     ContinuousLinearMap.index (T.restrict hT) = ContinuousLinearMap.index T -
@@ -73,6 +73,6 @@ theorem _root_.ContinuousLinearMap.index_restrict (hE₁ : IsClosed (E₁ : Set 
   omega
 
 
-end TauCeti
+end ContinuousLinearMap
 
 end

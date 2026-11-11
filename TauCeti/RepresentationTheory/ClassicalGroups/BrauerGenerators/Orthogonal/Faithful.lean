@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.Algebra.BrauerAlgebra.Discriminant
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
-public import TauCeti.RingTheory.Jacobson.FiniteOverArtinian
 import Mathlib.Algebra.Order.Star.Rat
+import Mathlib.RingTheory.Artinian.Ring
 
 /-!
 # The orthogonal Brauer action is faithful in large dimension; `B_k(δ)` is generically semisimple
@@ -132,8 +132,9 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
     simp [Φ, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   have hinj : Function.Injective Φ :=
     (LinearMap.toMatrixAlgEquiv _).injective.comp (brauerActionOrth_injective K n k hk)
-  rw [isSemisimpleRing_iff_jacobson_eq_bot (K := K)]
-  obtain ⟨m, hm⟩ := isNilpotent_jacobson (K := K) (A := BrauerAlgebra K (n : K) k)
+  have := IsArtinianRing.of_finite K (BrauerAlgebra K (n : K) k)
+  rw [IsArtinianRing.isSemisimpleRing_iff_jacobson]
+  obtain ⟨m, hm⟩ := IsArtinianRing.isNilpotent_jacobson (BrauerAlgebra K (n : K) k)
   refine eq_bot_iff.mpr fun x hx => ?_
   -- the reflected diagrams with conjugate coefficients act by the conjugate transpose of `Φ x`
   let y : BrauerAlgebra K (n : K) k :=

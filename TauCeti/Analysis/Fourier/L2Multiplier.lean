@@ -139,6 +139,12 @@ theorem fourierMultiplierCLM_add :
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
 
+/-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
+theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
+    (m : ι → Lp ℂ ∞ (volume : Measure E)) :
+    fourierMultiplierCLM F (∑ i ∈ s, m i) = ∑ i ∈ s, fourierMultiplierCLM F (m i) :=
+  map_sum (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m s
+
 theorem fourierMultiplierCLM_smul (c : ℂ) :
     fourierMultiplierCLM F (c • m) = c • fourierMultiplierCLM F m := by
   ext1 f
@@ -183,6 +189,17 @@ theorem adjoint_fourierMultiplierCLM :
   filter_upwards [coeFn_lpSMul (r := 2) (star m) (𝓕 f), coeFn_lpSMul (r := 2) m (𝓕 g),
     Lp.coeFn_star m] with x h₁ h₂ h₃
   simp [h₁, h₂, h₃, inner_smul_left, inner_smul_right]
+
+/-- The pairing of `g` with the multiplier `T_m f`, computed on the Fourier side:
+`⟪g, T_m f⟫ = ∫ m ξ ⟪𝓕 g ξ, 𝓕 f ξ⟫ dξ`. -/
+theorem inner_fourierMultiplierCLM_apply (g : Lp F 2 (volume : Measure E)) :
+    inner ℂ g (fourierMultiplierCLM F m f) =
+      ∫ ξ, m ξ * inner ℂ ((𝓕 g : Lp F 2 (volume : Measure E)) ξ)
+        ((𝓕 f : Lp F 2 (volume : Measure E)) ξ) := by
+  rw [← inner_fourier_eq, fourier_fourierMultiplierCLM, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_lpSMul (r := 2) m (𝓕 f)] with ξ h
+  rw [h, Pi.smul_apply', inner_smul_right]
 
 /-! ### Comparison with multipliers on Schwartz functions and tempered distributions -/
 
@@ -313,9 +330,9 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     rw [Lp.enorm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable g)]
     exact ae_le_eLpNormEssSup
   -- Dominated convergence on the Fourier side, with dominating function `‖𝓕 f‖`.
-  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp) (by simp)
-    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-    (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp)
+    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.memLp (𝓕 f))
+    (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
   · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
       hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,

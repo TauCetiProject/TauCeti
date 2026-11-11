@@ -211,9 +211,9 @@ theorem isUnitary_toGroupOfInverse (S T : ContractionSemigroup H)
     exact hS
   · rcases le_or_gt 0 t with ht | ht
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonneg _ _ _ _ ht]
-      exact S.contracting_real t ht
+      exact S.contracting_real t
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonpos _ _ _ _ ht.le]
-      exact T.contracting_real (-t) (neg_nonneg.mpr ht.le)
+      exact T.contracting_real (-t)
 
 /-- The generator domain of a unitary strongly continuous group, regarded as a complex submodule:
 the complex generator domain of its forward semigroup. Its carrier is the real generator domain. -/

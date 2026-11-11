@@ -37,7 +37,8 @@ is substituting `h'(h)` with weight `g · g'(h)`
 identity, while `h = 0` gives the map `f ↦ f(0) · g`, since `f(0)` is the constant coefficient
 (`TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`,
 `TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_zero_apply`). This map has finite rank
-(`TauCeti.MvPowerSeries.isFiniteRank_weightedSubstCLM_zero`). Row compactness of weighted
+(`TauCeti.MvPowerSeries.isFiniteRank_restrictedWeightedSubstCLM_zero`,
+`TauCeti.MvPowerSeries.isFiniteRank_weightedSubstCLM_zero`). Row compactness of weighted
 substitutions converging on a larger polydisc is in
 `TauCeti.Analysis.Normed.Operator.RowCompact.WeightedSubst`.
 
@@ -57,6 +58,7 @@ substitutions converging on a larger polydisc is in
   `TauCeti.MvPowerSeries.weightedSubstCLM_one_X`: the identity.
 * `TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_zero_apply`,
   `TauCeti.MvPowerSeries.weightedSubstCLM_zero_apply`,
+  `TauCeti.MvPowerSeries.isFiniteRank_restrictedWeightedSubstCLM_zero`,
   `TauCeti.MvPowerSeries.isFiniteRank_weightedSubstCLM_zero`: substitution of zero has finite
   rank.
 
@@ -140,6 +142,16 @@ theorem restrictedWeightedSubstCLM_zero_apply (g : IsRestricted.subring (R := R)
     restrictedWeightedSubstCLM g 0 hh f = constantCoeff (f : MvPowerSeries (Fin k) R) • g := by
   rw [restrictedWeightedSubstCLM_apply, restrictedAnalyticSubst_zero_apply, mul_comm,
     Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
+
+/-- **Substituting zero has finite rank** at any polyradii: the range of the weighted
+substitution with `h = 0` lies in the line spanned by the weight. -/
+theorem isFiniteRank_restrictedWeightedSubstCLM_zero (g : IsRestricted.subring (R := R) s)
+    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i) :
+    (restrictedWeightedSubstCLM g 0 hh : IsRestricted.subring (R := R) r →ₗ[R]
+      IsRestricted.subring (R := R) s).IsFiniteRank :=
+  LinearMap.isFiniteRank_iff_forall_mem.2 ⟨R ∙ g, Submodule.fg_span_singleton g, fun f ↦ by
+    rw [ContinuousLinearMap.coe_coe, restrictedWeightedSubstCLM_zero_apply]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self g)⟩
 
 end Restricted
 

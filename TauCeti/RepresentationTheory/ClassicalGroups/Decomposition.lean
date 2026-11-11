@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Tensor.Square
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!
 # The first decomposition of the standard representation

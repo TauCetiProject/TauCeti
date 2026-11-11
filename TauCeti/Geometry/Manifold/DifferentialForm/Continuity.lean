@@ -23,7 +23,7 @@ public section
 noncomputable section
 
 open Bundle Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -48,6 +48,16 @@ theorem RoughForm.inChartAt_eq_trivializationAt (φ : RoughForm I M F k) (α : M
   ext v
   rw [RoughForm.inChartAt_apply]
   rfl
+
+/-- Within the model range near the image of the chart centre, the section's fiber coordinate in
+the preferred alternating-bundle trivialization is the form's coordinate expression. -/
+theorem RoughForm.trivializationAt_snd_eventuallyEq_inChartAt (φ : RoughForm I M F k) (α : M) :
+    (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
+      (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) α
+        ⟨(extChartAt I α).symm z, φ ((extChartAt I α).symm z)⟩).2) =ᶠ[
+          𝓝[range I] (extChartAt I α α)] φ.inChartAt α := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) α] with z hz
+  exact (φ.inChartAt_eq_trivializationAt α hz).symm
 
 /-- Every regular fixed-coefficient form, including a `C⁰` form, has continuous coordinate
 coefficients on each preferred extended chart target. -/

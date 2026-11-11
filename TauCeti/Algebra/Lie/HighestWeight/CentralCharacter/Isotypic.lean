@@ -10,8 +10,7 @@ public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CenterEigenspace
 import Mathlib.Algebra.Lie.CartanExists
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
-import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
+import TauCeti.Algebra.Lie.HighestWeight.Decomposition
 
 /-!
 # The centre of `U(L)` on isotypic components
@@ -42,9 +41,9 @@ under the centre.
 
 This is the eigenspace-of-the-centre refinement of the isotypic decomposition
 `M ≅ ⨁ L(lam)^{m lam}` (`TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`): it groups
-the isotypic components by central character. That distinct dominant integral weights have
-distinct central characters, which would make the two decompositions coincide, is the
-Harish-Chandra orbit theorem and is not proved here.
+the isotypic components by central character. Distinct dominant integral weights have distinct
+central characters, so the two decompositions coincide; that consequence of the Harish-Chandra
+orbit theorem is `TauCeti.centerEigenspace_vermaCentralCharacter_eq_isotypicComponent`.
 
 ## Main results
 
@@ -72,7 +71,8 @@ public section
 
 namespace TauCeti
 
-open LieAlgebra LieModule Module TauCeti.UniversalEnvelopingAlgebra
+-- `TauCeti.LieModule` exists in the imports, so the root namespace is named explicitly.
+open LieAlgebra _root_.LieModule Module TauCeti.UniversalEnvelopingAlgebra
 
 universe u v w
 
@@ -140,22 +140,14 @@ variable [IsAlgClosed K] [FiniteDimensional K M] (b : (IsKilling.rootSystem H).B
 
 variable (M) in
 /-- **A finite-dimensional module is spanned by the centre eigenspaces of the central characters
-of dominant integral weights.** By Weyl's theorem the module is a sum of irreducible submodules,
-each a copy of some `L(lam)` with `lam` dominant integral, on which the centre acts by
-`chi_lam`. -/
+of dominant integral weights.** By Weyl's theorem the module is the sum of its `L(lam)`-isotypic
+components over the dominant integral weights `lam`, and the centre acts on the `L(lam)`-isotypic
+component by `chi_lam`. -/
 theorem iSup_centerEigenspace_vermaCentralCharacter_eq_top :
     ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
-      centerEigenspace K L M (vermaCentralCharacter b lam.1) = ⊤ := by
-  obtain ⟨k, N, hint, hirr⟩ := exists_isInternal_isIrreducible_of_isKilling K L M
-  -- each irreducible summand is a copy of some `L(lam)`, so it lies in `M_{chi_lam}`
-  have hN (i : Fin k) : N i ≤ ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
-      centerEigenspace K L M (vermaCentralCharacter b lam.1) := by
-    have := hirr i
-    obtain ⟨lam, hlam, e⟩ :=
-      exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient (M := N i) b
-    exact le_iSup_of_le ⟨lam, hlam⟩ (le_centerEigenspace_of_nonempty_lieModuleEquiv e)
-  exact top_unique <| LieSubmodule.iSup_toSubmodule_eq_top.mp hint.submodule_iSup_eq_top ▸
-    iSup_le hN
+      centerEigenspace K L M (vermaCentralCharacter b lam.1) = ⊤ :=
+  top_unique <| (iSup_isotypicComponent_irreducibleQuotient_eq_top M b).ge.trans <|
+    iSup_mono fun _ ↦ isotypicComponent_irreducibleQuotient_le_centerEigenspace
 
 open Classical in
 variable (M) in

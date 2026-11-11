@@ -36,8 +36,9 @@ universe w
 
 namespace TopPair
 
-variable {k : Type*} [CommRing k] (R M : ModuleCat.{w} k) [Module.Projective k R]
-  {J : Type w} [SmallCategory J] [IsFiltered J] {D : J ⥤ TopPair.{w}} (c : Cocone D)
+variable {k : Type*} [CommRing k] [Linear k (ModuleCat.{w} k)] (R M : ModuleCat.{w} k)
+  [Module.Projective k R] {J : Type w} [SmallCategory J] [IsFiltered J] {D : J ⥤ TopPair.{w}}
+  (c : Cocone D)
 
 /-- Compatible relative cohomology classes on a compact-absorbing filtered union extend
 uniquely in degree `n` if the homology of every member vanishes below `n`. -/

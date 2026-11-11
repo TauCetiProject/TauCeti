@@ -90,8 +90,8 @@ theorem divMatrixGradient_eq_neg_of_forall_energyFormH1_eq
     let ψ : 𝓓(Omega, ℝ) := ⟨φ, hφ, hφc, hφs⟩
     have he := energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient (A := A) hg hug ψ
     rw [hu ψ] at he
-    have hfi := integrable_smul_of_locallyIntegrableOn hfl ψ
-    have hDi := integrable_smul_of_locallyIntegrableOn hDl ψ
+    have hfi := ψ.integrable_smul hfl
+    have hDi := ψ.integrable_smul hDl
     have hset : ∫ x in Omega, f x * ψ x ∂mu = ∫ x, ψ x * f x ∂mu := by
       rw [setIntegral_eq_integral_of_forall_compl_eq_zero
         (fun x hx => by simp [ψ.zero_on_compl hx])]

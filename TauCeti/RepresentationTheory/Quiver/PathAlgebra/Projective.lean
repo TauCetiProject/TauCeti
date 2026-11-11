@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.ProjectiveBasis
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
-import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 import TauCeti.RepresentationTheory.Quiver.PrimitiveIdempotent

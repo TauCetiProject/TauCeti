@@ -24,20 +24,30 @@ equivalence; when `f` collapses two indices it is the multiplication of those tw
 when a slot is not hit it is the unit there. These are the merge and birth maps of a commutative
 Frobenius algebra acting on tensor products indexed by finite sets of circles.
 
+For a finite tensor power of a single commutative algebra `B`, multiplying all the factors
+together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the indexed analogue of
+`Algebra.TensorProduct.lmul'`.
+
 ## Main definitions
 
 * `PiTensorProduct.fiberwiseMul`: the algebra map along `f : σ → τ`.
+* `PiTensorProduct.mulAlgHom`: multiplication of all the factors of a finite tensor power of a
+  commutative algebra.
 
 ## Main results
 
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
+* `PiTensorProduct.mulAlgHom_tprod`, `PiTensorProduct.mulAlgHom_singleAlgHom`: the values of
+  `PiTensorProduct.mulAlgHom` on pure tensors and on the factor inclusions.
 * `PiTensorProduct.tprod_eq_prod_singleAlgHom`: a pure tensor is the product of its factors.
 * `PiTensorProduct.fiberwiseMul_tprod_eq_tprod_prod`: for a constant family, the image of a pure
   tensor is the pure tensor of the products over the fibres.
 * `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
   `PiTensorProduct.reindex`.
+* `PiTensorProduct.reindex_fiberwiseMul`: it commutes with reindexing along a commuting square of
+  index maps.
 * `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
   product of the multiplications on its two summands.
 * `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
@@ -114,6 +124,24 @@ section Constant
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
+/-- Multiplication of the tensor factors, as an algebra map from a finite tensor power of `B` to
+`B`. It is the indexed analogue of `Algebra.TensorProduct.lmul'`. -/
+noncomputable def mulAlgHom : (⨂[R] _ : σ, B) →ₐ[R] B :=
+  liftAlgHom (MultilinearMap.mkPiAlgebra R σ B) (by simp) fun x y ↦ by
+    simp [Finset.prod_mul_distrib]
+
+/-- `PiTensorProduct.mulAlgHom` multiplies the factors of a pure tensor. -/
+@[simp]
+theorem mulAlgHom_tprod (x : σ → B) : mulAlgHom (R := R) (tprod R x) = ∏ i, x i :=
+  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
+
+/-- `PiTensorProduct.mulAlgHom` is a left inverse of each factor inclusion. It is a pre-simp lemma
+since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem mulAlgHom_singleAlgHom [DecidableEq σ] (i : σ) (b : B) :
+    mulAlgHom (R := R) (σ := σ) (singleAlgHom i b) = b := by
+  simp [mulAlgHom_tprod]
+
 /-- For a constant family, `PiTensorProduct.fiberwiseMul f` sends a pure tensor to the pure tensor
 of the products of its factors over the fibres of `f`. In particular, an index `j` outside the
 range of `f` receives the empty product `1`. -/
@@ -138,6 +166,19 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
+
+/-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
+source and target carries multiplication along `f` to multiplication along `f'` when the square
+`eτ ∘ f = f' ∘ eσ` commutes. -/
+theorem reindex_fiberwiseMul {σ' τ' : Type*} [Fintype σ'] [Finite τ] [DecidableEq τ']
+    (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
+    (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
+    reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
+      fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
+  classical
+  have := Fintype.ofFinite τ
+  simp only [← LinearEquiv.coe_coe, ← toLinearMap_fiberwiseMul_equiv, AlgHom.toLinearMap_apply]
+  rw [← AlgHom.comp_apply, fiberwiseMul_comp, ← AlgHom.comp_apply, fiberwiseMul_comp, h]
 
 /-- Multiplication along a disjoint union of index maps acts separately on its two tensor
 factors, through the native sum-indexed tensor equivalence. -/

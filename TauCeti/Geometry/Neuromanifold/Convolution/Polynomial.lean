@@ -19,6 +19,9 @@ with convolutional realization. The bias-free tuple substitutes zero for every b
 retains only filter coordinates. Thus both tuples feed the coefficient extraction and
 faithful bounded-degree presentation for jointly polynomial models.
 
+With identity hidden activations, the activation polynomials `X` give the tuples of linear
+convolutional networks.
+
 All index types are finite, so `Fintype.equivFin` can number the coordinates by `Fin p`.
 Depth zero and empty filters are included. The output head remains affine, with no activation.
 
@@ -155,5 +158,21 @@ theorem realizedFunctions_polynomialRealizeWeights (A : ConvolutionSpec K L)
       realizedFunctions A.realizeWeights := by
   rw [A.polynomialRealization_polynomialRealizeWeights q hq, realizedFunctions_def,
     realizedFunctions_def, A.weightEquiv.surjective.range_comp]
+
+/-- With identity hidden activations, the tuple built from the activation polynomials `X`
+realizes the linear convolutional network with shared biases. -/
+theorem polynomialRealization_polynomialRealize_of_activation_eq_id (A : ConvolutionSpec K L)
+    (h : ∀ j, A.activation j = id) :
+    polynomialRealization (A.polynomialRealize fun _ => Polynomial.X) =
+      A.realize ∘ A.parameterEquiv :=
+  A.polynomialRealization_polynomialRealize _ fun _ _ => by simp [h]
+
+/-- With identity hidden activations, the bias-free tuple built from the activation polynomials
+`X` realizes the bias-free linear convolutional network on its filter coordinates. -/
+theorem polynomialRealization_polynomialRealizeWeights_of_activation_eq_id
+    (A : ConvolutionSpec K L) (h : ∀ j, A.activation j = id) :
+    polynomialRealization (A.polynomialRealizeWeights fun _ => Polynomial.X) =
+      A.realizeWeights ∘ A.weightEquiv :=
+  A.polynomialRealization_polynomialRealizeWeights _ fun _ _ => by simp [h]
 
 end TauCeti.Neuromanifold.ConvolutionSpec

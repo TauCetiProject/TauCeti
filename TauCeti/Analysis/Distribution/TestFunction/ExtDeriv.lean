@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -101,17 +102,20 @@ theorem extDerivCLM_comp_extDerivCLM :
 theorem tsupport_extDerivCLM_subset (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     tsupport (extDerivCLM ω : E → E [⋀^Fin (k + 1)]→L[ℝ] F) ⊆ tsupport ω := by
   rw [coe_extDerivCLM]
-  exact (tsupport_comp_subset (map_zero (alternatizeUncurryFinCLM ℝ E F)) _).trans
-    (tsupport_fderiv_subset ℝ)
+  exact TauCeti.tsupport_extDeriv_subset
 
 /-- The exterior derivative of a test form extended from `Ω'` to a larger open set `Ω` is the
-extension of its exterior derivative. -/
+extension of its exterior derivative. If `Ω' ⊄ Ω` both sides are `0`, since `monoCLM` is then the
+zero map. -/
 @[simp]
-theorem extDerivCLM_monoCLM (h : Ω' ≤ Ω) (ω : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F)) :
+theorem extDerivCLM_monoCLM (ω : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F)) :
     extDerivCLM (monoCLM ℝ ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) =
       (monoCLM ℝ (extDerivCLM ω) : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) := by
-  ext x : 1
-  simp [monoCLM_apply, h]
+  by_cases h : Ω' ≤ Ω
+  · ext x : 1
+    simp [monoCLM_apply, h]
+  · have H : ¬ ((⊤ : ℕ∞) ≤ ⊤ ∧ Ω' ≤ Ω) := fun hh ↦ h hh.2
+    simp [monoCLM_eq_zero H]
 
 /-- In degree zero, the exterior derivative of the `0`-form with values `f` is the `1`-form
 `Df`. -/
@@ -182,11 +186,11 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **Restriction commutes with the boundary**: for a current `T` on `Ω` and an open subset
 `Ω' ⊆ Ω`, the boundary of the restriction `T ∘ monoCLM` of `T` to `Ω'` is the restriction of the
 boundary `∂ T = T ∘ d`. -/
-theorem comp_monoCLM_comp_extDerivCLM (h : Ω' ≤ Ω)
+theorem comp_monoCLM_comp_extDerivCLM
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) :
     (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ∘L extDerivCLM =
       (T ∘L extDerivCLM) ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) := by
   ext ω
-  simp [extDerivCLM_monoCLM h]
+  simp [extDerivCLM_monoCLM]
 
 end ContinuousLinearMap

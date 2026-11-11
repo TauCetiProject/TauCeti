@@ -49,10 +49,8 @@ tight. The three remaining steps are:
 3. add the atom `L • δ₀`, whose Laplace transform is the constant `L`, to represent `f` itself.
 
 Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
-`finite_measure_subseq_limit`: the latter needs `FirstCountableTopology (FiniteMeasure ℝ≥0)`, and
-Mathlib's metrizability instances for spaces of measures are stated for `ProbabilityMeasure`, not
-`FiniteMeasure`. No subsequence is actually required — every ingredient is a filter limit, so an
-ultrafilter below `atTop` suffices, and being `NeBot` it still gives uniqueness of limits.
+`finite_measure_subseq_limit`. Every ingredient is a filter limit, so an ultrafilter below `atTop`
+suffices, and being `NeBot` it still gives uniqueness of limits.
 
 ## References
 

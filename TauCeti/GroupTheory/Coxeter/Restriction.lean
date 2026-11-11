@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
-public import TauCeti.GroupTheory.Coxeter.Geometric
+public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import Mathlib.Data.Set.List
 
 /-!

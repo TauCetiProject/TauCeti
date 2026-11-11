@@ -83,7 +83,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 -- The finiteness structure on the neighbourhoods under which the `D₄` algebras of
 -- `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.Basic` are stated.
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Walks and their signs -/
 

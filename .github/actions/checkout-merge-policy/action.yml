@@ -1,7 +1,7 @@
 name: Checkout the pinned merge policy
 description: >-
   Check out TauCetiReview's runner (read-only) into .tauceti-review, at the same commit as the
-  reusable merge-sweep/review workflows and the Auto-merge batch.
+  reusable review workflow. Read-only readiness and reporting consumers use this policy.
 
 # This is the only place in TauCeti that names the policy commit outside the reusable workflow `uses:` lines,
 # which GitHub requires to be literal. scripts/test_workflow_pins.py fails if the pins disagree.
@@ -18,7 +18,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         repository: TauCetiProject/TauCetiReview
-        ref: 2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
+        ref: 6b07b400ba129a0f2771d2d315a410f72d462244
         path: .tauceti-review
         sparse-checkout: runner
         persist-credentials: false

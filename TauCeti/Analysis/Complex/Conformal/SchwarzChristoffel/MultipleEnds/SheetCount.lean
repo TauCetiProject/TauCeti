@@ -106,11 +106,11 @@ theorem ncard_schwarzChristoffelPrimitive_fiber_eq_of_joinedIn
   let γ : Path u v := hjoined.joined_subtype.somePath
   have hcard := Nat.card_congr (coveringFiberEquiv hcov (Path.Homotopic.Quotient.mk γ))
   calc
-    (F ⁻¹' {w₁}).ncard = ((Pᶜ.restrictPreimage F) ⁻¹' {u}).ncard :=
-      (ncard_fiber_restrictPreimage F Pᶜ u).symm
+    (F ⁻¹' {w₁}).ncard = ((Pᶜ.restrictPreimage F) ⁻¹' {u}).ncard := by
+      rw [ncard_preimage_restrictPreimage, image_singleton]
     _ = ((Pᶜ.restrictPreimage F) ⁻¹' {v}).ncard := by
       simpa only [Nat.card_coe_set_eq] using hcard
-    _ = (F ⁻¹' {w₂}).ncard := ncard_fiber_restrictPreimage F Pᶜ v
+    _ = (F ⁻¹' {w₂}).ncard := by rw [ncard_preimage_restrictPreimage, image_singleton]
 
 /-- If the image avoids the finite boundary trace, the primitive has a positive finite
 constant number of preimages throughout its image. No boundary simplicity is required. -/

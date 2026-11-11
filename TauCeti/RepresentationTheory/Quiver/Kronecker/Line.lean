@@ -190,14 +190,6 @@ theorem dimVector_kroneckerLineRep (w : Quiver.Kronecker A) :
   rw [dimVector_apply]
   cases w <;> exact Module.finrank_self k
 
-/-- A line representation is nonzero: its vertex spaces are the base field. -/
-theorem not_isZero_kroneckerLineRep :
-    ¬ IsZero (kroneckerLineRep k a₁ c) := by
-  intro hz
-  have : Subsingleton k :=
-    ModuleCat.subsingleton_of_isZero (hz.obj (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))
-  exact false_of_nontrivial_of_subsingleton k
-
 /-! ### The morphisms between two line representations -/
 
 /-- **The scalar recording a morphism of line representations**: the value at `1` of its component
@@ -448,7 +440,7 @@ simples. That quiver has only the three isomorphism classes counted by
 `TauCeti.card_skeleton_indecomposable_kronecker`, with no room for a family. -/
 theorem indecomposable_kroneckerLineRep (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Indecomposable (kroneckerLineRep k a₁ c) :=
-  indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerLineRep kroneckerLineRepScalar
+  indecomposable_of_injective_of_isLocalRing kroneckerLineRepScalar
     (kroneckerLineRepScalar_injective h) kroneckerLineRepScalar_zero kroneckerLineRepScalar_id
     fun e ↦ kroneckerLineRepScalar_comp e e
 

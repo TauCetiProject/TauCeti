@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiS
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
-public import TauCeti.Topology.Sheaves.Leray
+public import TauCeti.Topology.Sheaves.Leray.Basic
 import Mathlib.Algebra.Category.Grp.Zero
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 

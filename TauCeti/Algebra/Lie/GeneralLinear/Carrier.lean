@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.Existence
 public import TauCeti.Algebra.Lie.GeneralLinear.Restriction
 public import TauCeti.Algebra.Lie.GeneralLinear.Twist
 public import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
@@ -73,6 +74,8 @@ are marked `@[no_expose]`, which is what lets their bodies name those private co
   `mu`**: every irreducible `gl N K`-module carrying a highest weight vector of weight `mu` is
   isomorphic to it, and `TauCeti.finrank_glIrreducible_le` bounds its dimension by that of any
   finite-dimensional module carrying such a vector.
+* `TauCeti.nonempty_lieModuleEquiv_glIrreducible_iff`: **the highest weight determines `L(mu)`**:
+  the carriers of distinct dominant integral weights are not isomorphic.
 * `TauCeti.isIrreducible_glIrreducible_restrict_sl`: **`L(mu)` stays irreducible on restriction to
   `sl N K`**, over any characteristic-zero field: by
   `TauCeti.one_lie_glIrreducible_eq_smul` the identity matrix acts by the explicit scalar
@@ -299,12 +302,24 @@ theorem nonempty_lieModuleEquiv_glIrreducible
   nonempty_lieModuleEquiv_of_isGlHighestWeightVector hv
     (isGlHighestWeightVector_glIrreducibleGenerator hmu)
 
+/-- **The highest weight determines the carrier**: for dominant integral `mu` and `nu`, the
+carriers `L(mu)` and `L(nu)` are isomorphic exactly when `mu = nu`. -/
+theorem nonempty_lieModuleEquiv_glIrreducible_iff {nu : Fin N → K}
+    (hmu : IsGlDominantIntegral mu) (hnu : IsGlDominantIntegral nu) :
+    Nonempty (glIrreducible N mu ≃ₗ⁅K, Matrix (Fin N) (Fin N) K⁆ glIrreducible N nu) ↔
+      mu = nu := by
+  refine ⟨fun ⟨e⟩ => ?_, fun h => h ▸ ⟨LieModuleEquiv.refl⟩⟩
+  have := isIrreducible_glIrreducible (K := K) hnu
+  exact (isGlHighestWeightVector_glIrreducibleGenerator hnu).weight_eq_of_isIrreducible
+    ((isGlHighestWeightVector_glIrreducibleGenerator hmu).congr e)
+
 /-- **`L(mu)` has the smallest dimension of the modules of highest weight `mu`**: any
 finite-dimensional `gl N K`-module carrying a highest weight vector of weight `mu` has at least the
 dimension of the carrier. -/
 theorem finrank_glIrreducible_le [FiniteDimensional K M] {v : M}
-    (hmu : IsGlDominantIntegral mu) (hv : IsGlHighestWeightVector mu v) :
+    (hv : IsGlHighestWeightVector mu v) :
     finrank K (glIrreducible N mu) ≤ finrank K M :=
+  have hmu := hv.isGlDominantIntegral
   have := isIrreducible_glIrreducible (K := K) hmu
   finrank_le_of_isGlHighestWeightVector (isGlHighestWeightVector_glIrreducibleGenerator hmu) hv
 

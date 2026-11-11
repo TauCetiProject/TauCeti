@@ -7,9 +7,10 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Recut
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Partner
 
 /-!
-# Off-diagonal unpaired crossing change composites have a mixed-side overlap
+# Off-diagonal unpaired crossing change composites are pentagon partners
 
 Let `C` be a column turn at the columns `a` and `b = finRotate n a` of a grid diagram `G`, turning
 in row `s`, and let `t` be a second row such that the annulus squares
@@ -19,9 +20,12 @@ homotopy equation, a counted composite whose two rectangles share exactly one si
 against its recut whenever that recut is again a counted composite (`Homotopy.Recut`). This file
 shows that this always happens when the shared column is initial for both rectangles or terminal
 for both. Consequently, off the diagonal, every unpaired composite has a mixed-side overlap, and
-only those remain to be matched with the pairs of pentagons counted by `Ψ ∘ Φ`.
+only those remain to be matched with the pairs of pentagons counted by `Ψ ∘ Φ`. Every such
+composite is the partner of a counted pentagon pair: the recut of a pair whose pentagons turn on
+the same side of the replaced grid line, or the composite with the rectangles of a pair turning
+on opposite sides.
 
-The argument has two independent parts.
+The mixed-side overlap has two independent ingredients.
 
 * *Markings.* A counted composite covers exactly one `X`-marking, that of the column its hexagon
   cuts away. The rectangle under any crossing-change hexagon covers the `X`-marking of its own
@@ -38,6 +42,12 @@ The argument has two independent parts.
   kind (`GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`), exactly as for the
   homotopy of a column commutation.
 
+The pentagon partners come from the case analysis shared with the column commutation,
+`GridDiagram.exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff`. The annulus condition places
+the `X`-marking of column `a` in the rows from `t` up to `s` and that of column `b` in the rows
+from `s` up to `t`, which is what that analysis needs to show that the pentagons it produces avoid
+the `X`-markings of the two exchanged columns.
+
 ## Main results
 
 * `TauCeti.GridDiagram.exists_crossingChange_toRectangleDecomposition_eq_of_isRepartition`:
@@ -47,6 +57,9 @@ The argument has two independent parts.
   recut of a counted composite with a same-side overlap underlies a counted composite.
 * `TauCeti.GridDiagram.hasMixedSideOverlap_of_mem_crossingChangeUnpairedHexagonComposites`: off the
   diagonal, every unpaired composite has a mixed-side overlap.
+* `TauCeti.GridDiagram.exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites`: off the
+  diagonal, every unpaired composite is the recut of a counted same-side pentagon pair, or has the
+  rectangles of a counted mixed-side pentagon pair.
 
 ## References
 
@@ -64,11 +77,12 @@ namespace TauCeti.GridDiagram
 variable {n : ℕ} {G : GridDiagram n} {C : ColumnTurn n} {t : Fin n}
 
 local notation "a" => C.column
+local notation "b" => finRotate n C.column
 
 /-! ### Promoting a repartition to a counted composite -/
 
 /-- The counted composites are the counted hexagons and unblocked rectangles, in either order. -/
-private theorem mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum
+theorem mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum
     {x z : GridState n} (F : GridHexagonCompositeDecomposition a C.turnRow t x z) :
     F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ↔
       F ∈ (GridTwoStepDecomposition.decompositionsOf (G.crossingChangeCommutationHexagons C t)
@@ -133,5 +147,40 @@ theorem hasMixedSideOverlap_of_mem_crossingChangeUnpairedHexagonComposites
   obtain ⟨F', hF', hrecut⟩ :=
     exists_crossingChange_isRecut_of_hasSameSideOverlap hX hF hsame
   exact hnot F' hF' hrecut
+
+/-! ### Unpaired composites are pentagon partners -/
+
+/-- **Unpaired composites of a crossing change are pentagon partners.** If the annulus squares
+carry no `X`-marking, then off the diagonal every unpaired composite of the crossing change
+homotopy equation is the partner of a pentagon pair, made of a counted pentagon of `G` turning in
+row `s` and a counted pentagon of `G.swapColumns a b` turning in row `t`: either both pentagons
+turn on the same side of the replaced grid line and the pair recuts the composite, or they turn on
+opposite sides and the pair has the rectangles of the composite. -/
+theorem exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x z : GridState n} (hzx : z ≠ x)
+    {F : GridHexagonCompositeDecomposition a C.turnRow t x z}
+    (hF : F ∈ G.crossingChangeUnpairedHexagonComposites C t x z) :
+    ∃ D : GridPentagonPairDecomposition a C.turnRow a t x z,
+      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
+        D.second ∈ ((G.swapColumns a b).pentagons (C.withTurnRow t) D.middle z).disjSum
+          ((G.swapColumns a b).initialPentagons (C.withTurnRow t) D.middle z)) ∧
+      (D.first.isLeft = D.second.isLeft ∧
+          D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
+        D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = F.toRectangleDecomposition) := by
+  obtain ⟨hFc, -, hnot⟩ := (G.mem_crossingChangeUnpairedHexagonComposites C t F).mp hF
+  -- The two corner rows of the hexagon of `F` differ.
+  have hst : C.turnRow ≠ t := by
+    rcases F with D | D
+    exacts [D.hexagon.ne, D.hexagon.ne]
+  exact exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C (C.withTurnRow t) rfl rfl
+    (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
+    (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
+    (mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq hX)
+    (cutColumn_X_mem_toGridRectangle_coveredSquares_of_disjoint_crossingChangeAnnulusSquares hX)
+    ((mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum F).mp hFc)
+    (fun F' hF' => hnot F'
+      ((mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum F').mpr hF'))
+    (hasMixedSideOverlap_of_mem_crossingChangeUnpairedHexagonComposites hX hzx hF)
 
 end TauCeti.GridDiagram

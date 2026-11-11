@@ -73,12 +73,15 @@ variable [Fintype ι]
 
 namespace AbsoluteValue
 
-variable {R : Type*} [CommRing R] [Nontrivial R]
+variable {R : Type*} [CommRing R]
 
 /-- A monomial `∏ i, x_i ^ s_i` with exponents `s_i ≤ L i` has absolute value at most
 `∏ i, max(v(x_i), 1) ^ L i`. -/
 theorem apply_prod_pow_le (v : AbsoluteValue R ℝ) {s L : ι → ℕ} (hs : ∀ i, s i ≤ L i)
     (x : ι → R) : v (∏ i, x i ^ s i) ≤ ∏ i, max (v (x i)) 1 ^ L i := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · rw [Subsingleton.elim (∏ i, x i ^ s i) 0, map_zero]
+    positivity
   rw [map_prod]
   refine prod_le_prod₀ (fun i _ ↦ by positivity) fun i _ ↦ ?_
   rw [v.map_pow]
@@ -127,7 +130,7 @@ end AbsoluteValue
 
 namespace IsNonarchimedean
 
-variable {R : Type*} [CommRing R] [Nontrivial R]
+variable {R : Type*} [CommRing R]
 
 /-- **The trivial bound at a nonarchimedean absolute value.** If `P` has partial degrees
 `degreeOf i P ≤ L i` and coefficients of absolute value at most `B`, then
@@ -155,6 +158,9 @@ theorem apply_aeval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v)
   refine (hv.apply_eval_le (fun i ↦ (degreeOf_map_le _ P i).trans (hL i)) (fun s ↦ ?_) x).trans_eq
     (one_mul _)
   rw [coeff_map, algebraMap_int_eq, eq_intCast]
+  rcases subsingleton_or_nontrivial R with _ | _
+  · rw [Subsingleton.elim (Int.cast (P.coeff s) : R) 0, map_zero]
+    exact zero_le_one
   exact hv.apply_intCast_le_one (by simp) v.map_one v.map_neg
 
 end IsNonarchimedean

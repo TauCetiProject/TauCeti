@@ -18,7 +18,9 @@ transpose instead. These identities transport Wishart trace transforms along con
 also records the scalar regrouping that produces a congruence in the first place: expanding the
 two weights of a doubly indexed family along the rows of `M` replaces the weight matrix by its
 congruate. The basis substitution `r ↦ r + a + b` has determinant one when `r` differs
-from `a` and `b`; its action on a bilinear form is computed entrywise below.
+from `a` and `b`; its action on a bilinear form is computed entrywise below. Congruence by a
+product, twisted entrywise by a ring endomorphism `σ` as for sesquilinear forms, is congruence by
+one factor after the other.
 
 ## Main results
 
@@ -33,6 +35,7 @@ from `a` and `b`; its action on a bilinear form is computed entrywise below.
 * `Matrix.det_one_add_vecMulVec_single_add_single` and
   `Matrix.one_add_vecMulVec_single_add_single_mul_mul_transpose_apply` — the determinant and
   entries of congruence under the basis substitution `r ↦ r + a + b`.
+* `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
 
 ## References
 
@@ -118,6 +121,14 @@ theorem sum_sum_smul_congruence {m n R P : Type*} [Fintype m] [Fintype n] [CommS
         refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
         simp only [← Finset.sum_smul]
         rw [hcoef a b]
+
+/-- Twisted congruence by a product is congruence by one factor after the other:
+`((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`, where `^ σ` applies `σ` to every entry. -/
+theorem transpose_map_mul_mul_mul {l m n R : Type*} [Fintype l] [Fintype m] [CommSemiring R]
+    (σ : R →+* R) (Q : Matrix l l R) (M : Matrix l m R) (N : Matrix m n R) :
+    ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
+  rw [Matrix.map_mul, transpose_mul]
+  simp only [Matrix.mul_assoc]
 
 section BasisSubstitution
 

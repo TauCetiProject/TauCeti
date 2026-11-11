@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.LMFDB.BelyiRecord
+public import TauCeti.Combinatorics.PermutationTriple.LMFDB.BelyiRecord.Basic
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Basic
 
 /-!

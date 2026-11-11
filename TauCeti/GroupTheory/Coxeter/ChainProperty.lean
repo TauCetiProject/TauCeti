@@ -224,6 +224,6 @@ theorem MinimalCosetRepCovBy.simple_mul_of_isLeftDescent {z x : W}
   have := h.length_add_one_eq
   exact minimalCosetRepCovBy_iff.mpr ⟨h.isMinimalCosetRep_left.simple_mul_of_isLeftDescent cs hz,
     h.isMinimalCosetRep_right.simple_mul_of_isLeftDescent cs hx,
-    h.bruhatLE.simple_mul_simple_mul_of_isLeftDescent hz hx, by omega⟩
+    h.bruhatLE.simple_mul_simple_mul_of_isLeftDescent hz, by omega⟩
 
 end CoxeterSystem

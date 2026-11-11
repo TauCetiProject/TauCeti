@@ -42,12 +42,17 @@ for `df = 0`, `∫_X ⟨f, -2 d*a⟩ vol = -2 ∫_X ⟨df, a⟩ vol = 0`, and fo
 `∫_X ⟨(da)⁺, γ⟩ vol = ∫_X da ∧ γ = 0`
 (`TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`). These are the harmonic
 functions and harmonic self-dual two-forms, so `H⁰ ⊕ H⁺` lies in the `L²`-orthogonal complement of
-the range of `T`; that it is the whole complement needs the Hodge decomposition.
+the range of `T`. The formal adjoint is `T*(f, γ) = -2 df + d*γ`, and its kernel consists
+exactly of these closed pairs. Green's formula identifies them with the whole smooth annihilator
+of the range. This does not identify a Sobolev cokernel: closed range and regularity of weak
+annihilators are separate analytic requirements.
 
 ## Main definitions
 
 * `TauCeti.SeibergWitten.abelianDeformationOperator o`: the operator `a ↦ (-2 d*a, (da)⁺)` from
   smooth one-forms to smooth functions and smooth self-dual two-forms.
+* `TauCeti.SeibergWitten.abelianDeformationFormalAdjoint o`: the formal adjoint
+  `(f, γ) ↦ -2 df + d*γ`.
 
 ## Main results
 
@@ -59,6 +64,10 @@ the range of `T`; that it is the whole complement needs the Hodge decomposition.
   `TauCeti.SeibergWitten.integralTopForm_inner_abelianDeformationOperator_snd_eq_zero`: on a closed
   four-manifold, the range of `T` is `L²`-orthogonal to the closed functions and to the closed
   self-dual two-forms.
+* `TauCeti.SeibergWitten.ker_abelianDeformationFormalAdjoint`: the formal-adjoint kernel is the
+  product of the closed functions and closed self-dual two-forms.
+* `TauCeti.SeibergWitten.forall_integralTopForm_inner_abelianDeformationOperator_eq_zero_iff`:
+  these pairs are exactly the smooth annihilator of the range of `T`.
 
 ## References
 
@@ -108,6 +117,23 @@ theorem abelianDeformationOperator_apply_fst (a : SmoothForm I M ℝ 1) :
 theorem coe_abelianDeformationOperator_apply_snd (a : SmoothForm I M ℝ 1) :
     ((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2) =
       SmoothForm.selfDualPart o (mextDerivₗ I 1 a) :=
+  (rfl)
+
+/-- The formal adjoint of the abelian deformation operator, with scalar component first:
+`T*(f, γ) = -2 df + d*γ`. -/
+def abelianDeformationFormalAdjoint :
+    (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) →ₗ[ℝ]
+      SmoothForm I M ℝ 1 :=
+  (-2 : ℝ) • (mextDerivₗ I 0).comp (LinearMap.fst ℝ _ _) +
+    (SmoothForm.codifferential o (show 1 + 1 + 2 = 2 + 2 from rfl)).comp
+      ((SmoothForm.selfDualForms o).subtype.comp (LinearMap.snd ℝ _ _))
+
+/-- The formal adjoint acts by `-2 df + d*γ`. -/
+@[simp]
+theorem abelianDeformationFormalAdjoint_apply
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
+    abelianDeformationFormalAdjoint o p = (-2 : ℝ) • mextDerivₗ I 0 p.1 +
+      SmoothForm.codifferential o (show 1 + 1 + 2 = 2 + 2 from rfl) p.2 :=
   (rfl)
 
 variable [CompactSpace M] [BoundarylessManifold I M] [T2Space M]
@@ -171,5 +197,97 @@ theorem integralTopForm_inner_abelianDeformationOperator_snd_eq_zero (a : Smooth
     (by rw [exactForms_succ]; exact LinearMap.mem_range_self _ a)
     ((mem_compactlySupportedClosedForms I).2 ⟨by simp [compactlySupportedForms_eq_top],
       (mem_closedForms_iff_mextDerivₗ_eq_zero I _).2 hγ⟩) γ.2
+
+/-- On a closed four-manifold the formal adjoint vanishes exactly on closed functions and
+closed self-dual two-forms, the harmonic `H⁰ ⊕ H⁺` representatives. -/
+theorem abelianDeformationFormalAdjoint_eq_zero_iff
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
+    abelianDeformationFormalAdjoint o p = 0 ↔
+      mextDerivₗ I 0 p.1 = 0 ∧ mextDerivₗ I 2 (p.2 : SmoothForm I M ℝ 2) = 0 := by
+  have hclosed := SmoothForm.codifferential_eq_zero_iff_mextDeriv_eq_zero_of_mem_selfDualForms
+    o p.2.property
+  rw [abelianDeformationFormalAdjoint_apply]
+  constructor
+  · intro h
+    have hδ := congrArg (SmoothForm.codifferential o
+      (show 0 + 1 + 3 = 2 + 2 from rfl)) h
+    have hΔ : SmoothForm.hodgeLaplacian o (show 0 + 4 = 2 + 2 from rfl) p.1 = 0 := by
+      rw [SmoothForm.hodgeLaplacian_zero_add_one o rfl rfl]
+      simpa using hδ
+    have hf := (SmoothForm.hodgeLaplacian_eq_zero_iff_mextDeriv_eq_zero o rfl
+      (by simp [compactlySupportedForms_eq_top])).mp hΔ
+    refine ⟨hf, hclosed.mp ?_⟩
+    simpa [hf] using h
+  · rintro ⟨hf, hγ⟩
+    simp [hf, hclosed.mpr hγ]
+
+/-- The formal-adjoint kernel is the product of closed functions and closed self-dual
+two-forms on a closed four-manifold. -/
+theorem ker_abelianDeformationFormalAdjoint :
+    LinearMap.ker (abelianDeformationFormalAdjoint o) =
+      (LinearMap.ker (mextDerivₗ I (F := ℝ) 0)).prod
+        (LinearMap.ker (mextDerivₗ I 2 ∘ₗ (SmoothForm.selfDualForms o).subtype)) := by
+  ext p
+  simp only [LinearMap.mem_ker, Submodule.mem_prod, LinearMap.comp_apply,
+    Submodule.subtype_apply, abelianDeformationFormalAdjoint_eq_zero_iff]
+
+/-- Green's formula for the abelian deformation operator and its formal adjoint. The target
+pairing is the sum of the scalar and self-dual pairings, in that order. -/
+theorem integralTopForm_inner_abelianDeformationOperator_eq_inner_abelianDeformationFormalAdjoint
+    (a : SmoothForm I M ℝ 1)
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0
+      ((abelianDeformationOperator o a).1.1 x) (p.1.1 x) • riemannianVolumeForm o x) +
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
+      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
+      ((p.2 : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) =
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 1
+      (a.1 x) ((abelianDeformationFormalAdjoint o p).1 x) • riemannianVolumeForm o x) := by
+  have hf := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
+    (show 0 + 1 + 3 = 2 + 2 from rfl) p.1 a
+    (.inl (by simp [compactlySupportedForms_eq_top]))
+  have hγ := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
+    (show 1 + 1 + 2 = 2 + 2 from rfl) a (p.2 : SmoothForm I M ℝ 2)
+    (.inl (by simp [compactlySupportedForms_eq_top]))
+  rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (α := a.1),
+    abelianDeformationFormalAdjoint_apply,
+    SmoothForm.integralTopForm_inner_add_left o (show 1 + 3 = 2 + 2 from rfl) _ _ _
+      (.inr (by simp [compactlySupportedForms_eq_top]))]
+  congr 1
+  · simp only [abelianDeformationOperator_apply_fst, Submodule.coe_smul, Pi.smul_apply,
+      map_smul, LinearMap.smul_apply, smul_eq_mul, mul_smul]
+    rw [← Pi.smul_def, integralTopForm_smul, ← Pi.smul_def, integralTopForm_smul]
+    congr 1
+    rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm]
+    exact hf.symm
+  · simp only [coe_abelianDeformationOperator_apply_snd, SmoothForm.coe_selfDualPart,
+      RoughForm.alternatingFormInner_selfDualPart_of_mem_selfDualForms o even_two _
+        (SmoothForm.coe_mem_selfDualForms_iff.mpr p.2.property)]
+    rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
+      (α := (SmoothForm.codifferential o rfl (p.2 : SmoothForm I M ℝ 2)).1)]
+    exact hγ
+
+/-- The smooth annihilator of the range of `T` is exactly the closed scalar and self-dual
+pairs. This does not assert closed range or regularity of distributional annihilators. -/
+theorem forall_integralTopForm_inner_abelianDeformationOperator_eq_zero_iff
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
+    (∀ a : SmoothForm I M ℝ 1,
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0
+        ((abelianDeformationOperator o a).1.1 x) (p.1.1 x) • riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
+        (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
+        ((p.2 : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) = 0) ↔
+      mextDerivₗ I 0 p.1 = 0 ∧ mextDerivₗ I 2 (p.2 : SmoothForm I M ℝ 2) = 0 := by
+  simp_rw [
+    integralTopForm_inner_abelianDeformationOperator_eq_inner_abelianDeformationFormalAdjoint]
+  rw [← abelianDeformationFormalAdjoint_eq_zero_iff]
+  constructor
+  · intro h
+    exact (SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o
+      (show 1 + 3 = 2 + 2 from rfl) (by simp [compactlySupportedForms_eq_top])).mp
+        (h (abelianDeformationFormalAdjoint o p))
+  · intro h a
+    simp only [h, ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero, zero_smul]
+    exact integralTopForm_zero o
 
 end TauCeti.SeibergWitten
