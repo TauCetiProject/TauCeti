@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Mollification
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 
 /-!
 # Mollifiers of continuous Sobolev functions
