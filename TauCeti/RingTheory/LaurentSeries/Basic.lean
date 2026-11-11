@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.HasseDeriv
+public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
@@ -29,13 +29,10 @@ nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its 
 unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every coefficient, preserves
 valuations.
 
-The imported higher Leibniz rule gives the product rule for the derivative of Laurent series,
-`(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` as a linear map,
-the first Hasse derivative; the product rule is what makes it a derivation, so that composing it
-with a ring homomorphism into `R⸨X⸩` gives a derivation, as for Laurent expansions of functions.
-This file also records its compatibility with power-series differentiation.
+This file also records the compatibility of Laurent-series differentiation with power-series
+differentiation.
 
-The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
+Finally, this file computes the residue of the formal one-form `φ ^ n * φ' dX`
 for any power series `φ` over a field and every integer `n`:
 it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in characteristic zero,
 `φ ^ n * φ'` is the derivative of `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when
