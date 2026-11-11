@@ -106,6 +106,7 @@ theorem IsRowCompact.projective_range_sum_of_isRieszProjection (hu : u.IsRowComp
   (hu.isRowCompact_sum_of_isRieszProjection s hE).projective_range_of_isIdempotentElem
     (isIdempotentElem_sum_of_isRieszProjection s hE ha)
 
+omit [NormOneClass R] in
 /-- The common complementary Fredholm factor is a unit at every selected parameter.
 Thus removing several spectral summands does not leave any of their zeros behind. -/
 theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_sum_of_isRieszProjection
