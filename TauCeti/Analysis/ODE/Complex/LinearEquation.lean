@@ -255,6 +255,30 @@ theorem IsCompanionSolution.isSolution {v : ℂ → Fin n → ℂ}
   simp only [← hv.eq_iteratedDeriv z hz]
   exact neg_add_cancel _
 
+/-- The first coordinate of a companion-system solution, bundled on the domain as a
+scalar solution. -/
+def IsCompanionSolution.toSolutionSpace {v : ℂ → Fin n → ℂ}
+    (hv : E.IsCompanionSolution v) : E.solutionSpace :=
+  ⟨HolomorphicFunctions.of U (fun z ↦ v z ⟨0, E.order_pos⟩)
+      hv.isSolution.analyticOnNhd.differentiableOn,
+    hv.isSolution.congr (fun z hz ↦ by
+      simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])⟩
+
+/-- The bundled scalar solution evaluates to the first vector coordinate on the domain. -/
+@[simp]
+theorem IsCompanionSolution.toSolutionSpace_apply {v : ℂ → Fin n → ℂ}
+    (hv : E.IsCompanionSolution v) (z : U) :
+    hv.toSolutionSpace.val.val z = v z ⟨0, E.order_pos⟩ := by
+  simp [toSolutionSpace]
+
+/-- The initial jet of the bundled scalar solution is the companion solution's value. -/
+@[simp]
+theorem IsCompanionSolution.initialJet_toSolutionSpace {v : ℂ → Fin n → ℂ}
+    (hv : E.IsCompanionSolution v) {a : ℂ} (ha : a ∈ U) :
+    E.initialJet ha hv.toSolutionSpace = v a := by
+  ext j
+  exact (HolomorphicFunctions.jet_of ha n _ _ j).trans (hv.eq_iteratedDeriv a ha j).symm
+
 /-- Scalar solutions are exactly those whose unscaled derivative vector solves the
 companion system. -/
 theorem isSolution_iff_isCompanionSolution :
