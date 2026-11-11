@@ -91,8 +91,8 @@ theorem map_refl (I : GlobalFormInvariants K) : I.map (RingEquiv.refl K) = I := 
   · rfl
   · simp
   · funext v
-    simp only [map_finiteHasse]
-    congr 1
+    simp only [map_finiteHasse, RingOfIntegers.mapRingEquiv_refl,
+      HeightOneSpectrum.equivOfRingEquiv_refl, Equiv.refl_symm, Equiv.refl_apply]
   · funext w
     simp
 
@@ -104,7 +104,8 @@ theorem map_map (I : GlobalFormInvariants K) (e : K ≃+* L) (f : L ≃+* M) :
   · rfl
   · exact (LinearMap.congr_fun (RingHom.squareClassMap_comp f.toRingHom e.toRingHom)
       I.discr).symm
-  · congr 1
+  · simp only [map_finiteHasse, RingOfIntegers.mapRingEquiv_trans,
+      HeightOneSpectrum.equivOfRingEquiv_trans, Equiv.symm_trans_apply]
   · simp only [map_realPositiveIndex, InfinitePlace.realEquivOfRingEquiv_symm,
       InfinitePlace.realEquivOfRingEquiv_trans_apply, RingEquiv.symm_trans]
 
