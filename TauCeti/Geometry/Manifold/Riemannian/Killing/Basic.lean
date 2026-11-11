@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Killing vector fields
@@ -120,26 +121,9 @@ theorem IsKillingField.const_smul (h : IsKillingField I X) (c : ℝ) :
     IsKillingField I (c • X) where
   contMDiff := h.contMDiff.const_smul_section
   mvfderiv_inner Y Z hY hZ x := by
-    -- scaling the first field scales the Lie bracket; no differentiability or completeness is
-    -- needed, as `fderivWithin` of a constant multiple is the constant multiple of `fderivWithin`
-    have hbr (W : Π x : M, TangentSpace I x) :
-        mlieBracket I (c • X) W x = c • mlieBracket I X W x := by
-      have hs : UniqueDiffWithinAt ℝ ((extChartAt I x).symm ⁻¹' univ ∩ range I)
-          (extChartAt I x x) := by
-        rw [preimage_univ, univ_inter]
-        exact I.uniqueDiffOn _ (mem_range_self _)
-      have key (V' W' : E → E) :
-          lieBracketWithin ℝ (c • V') W' ((extChartAt I x).symm ⁻¹' univ ∩ range I)
-              (extChartAt I x x) =
-            c • lieBracketWithin ℝ V' W' ((extChartAt I x).symm ⁻¹' univ ∩ range I)
-              (extChartAt I x x) := by
-        simp only [lieBracketWithin, fderivWithin_const_smul_field c hs, Pi.smul_apply, map_smul,
-          smul_apply, smul_sub]
-      simp only [← mlieBracketWithin_univ, mlieBracketWithin_def, mpullbackWithin_const_smul,
-        mpullback]
-      exact (congrArg _ (key _ _)).trans (map_smul _ _ _)
-    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x, hbr, hbr, inner_smul_left,
-      inner_smul_right, smul_eq_mul, RCLike.conj_to_real]
+    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x,
+      VectorField.mlieBracket_const_smul_left_field, VectorField.mlieBracket_const_smul_left_field,
+      inner_smul_left, inner_smul_right, smul_eq_mul, RCLike.conj_to_real]
     ring
 
 end LinearCombination
