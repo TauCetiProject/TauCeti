@@ -68,6 +68,15 @@ def capacity : Assignment (fun _ _ : Fin 4 ↦ Unit) LexIntPair :=
       lexPair 1 0
     else if x = 1 ∧ y = 2 then lexPair 0 1 else 0
 
+/-- Evaluation of the capacity assignment on an arrow. -/
+@[simp]
+theorem capacity_apply (x y : Fin 4) (e : Unit) :
+    capacity (x := x) (y := y) e =
+      if (x = 0 ∧ y = 1) ∨ (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) ∨ (x = 2 ∧ y = 3) then
+        lexPair 1 0
+      else if x = 1 ∧ y = 2 then lexPair 0 1 else 0 := by
+  rw [capacity]
+
 /-- After `2m` alternating augmentations, every outer arrow carries `(0, m)` and the cross arrow
 carries zero. -/
 def evenAssignment (m : ℕ) :
@@ -77,6 +86,15 @@ def evenAssignment (m : ℕ) :
       lexPair 0 m
     else 0
 
+/-- Evaluation of the even-indexed assignment on an arrow. -/
+@[simp]
+theorem evenAssignment_apply (m : ℕ) (x y : Fin 4) (e : Unit) :
+    evenAssignment m (x := x) (y := y) e =
+      if (x = 0 ∧ y = 1) ∨ (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) ∨ (x = 2 ∧ y = 3) then
+        lexPair 0 m
+      else 0 := by
+  rw [evenAssignment]
+
 /-- After `2m + 1` alternating augmentations, the first path's outer arrows carry `(0, m + 1)`,
 the other two outer arrows carry `(0, m)`, and the cross arrow carries `(0, 1)`. -/
 def oddAssignment (m : ℕ) :
@@ -85,6 +103,15 @@ def oddAssignment (m : ℕ) :
     if (x = 0 ∧ y = 1) ∨ (x = 2 ∧ y = 3) then lexPair 0 (m + 1)
     else if (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) then lexPair 0 m
     else if x = 1 ∧ y = 2 then lexPair 0 1 else 0
+
+/-- Evaluation of the odd-indexed assignment on an arrow. -/
+@[simp]
+theorem oddAssignment_apply (m : ℕ) (x y : Fin 4) (e : Unit) :
+    oddAssignment m (x := x) (y := y) e =
+      if (x = 0 ∧ y = 1) ∨ (x = 2 ∧ y = 3) then lexPair 0 (m + 1)
+      else if (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) then lexPair 0 m
+      else if x = 1 ∧ y = 2 then lexPair 0 1 else 0 := by
+  rw [oddAssignment]
 
 private theorem lexPair_nonneg_of_nonneg {a b : ℤ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     0 ≤ lexPair a b := by
@@ -175,6 +202,11 @@ def evenFlow (m : ℕ) : Flow capacity (0 : Fin 4) 3 where
       intro w e
       fin_cases w <;> simp [evenAssignment])
 
+/-- The assignment underlying the even-indexed flow. -/
+@[simp]
+theorem evenFlow_toFun (m : ℕ) : (evenFlow m).toFun = evenAssignment m := by
+  rw [evenFlow]
+
 /-- The feasible flow after an odd number `2m + 1` of alternating augmentations. -/
 def oddFlow (m : ℕ) : Flow capacity (0 : Fin 4) 3 where
   toFun := oddAssignment m
@@ -186,6 +218,11 @@ def oddFlow (m : ℕ) : Flow capacity (0 : Fin 4) 3 where
     excessAt_nonneg_of_nonneg_of_forall_out_eq_zero (oddAssignment_nonneg m) (by
       intro w e
       fin_cases w <;> simp [oddAssignment])
+
+/-- The assignment underlying the odd-indexed flow. -/
+@[simp]
+theorem oddFlow_toFun (m : ℕ) : (oddFlow m).toFun = oddAssignment m := by
+  rw [oddFlow]
 
 /-- The residual path `0 → 1 → 2 → 3`, using the forward copy of the cross arrow. -/
 def forwardPath :
@@ -200,6 +237,30 @@ def reversePath :
   (((ArrowWalk.nil (Q := ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0).cons
     (x := 2) (Sum.inl ())).cons (x := 1) (Sum.inr ())).cons
     (x := 3) (Sum.inl ())
+
+/-- The residual arrows traversed by `forwardPath`. -/
+@[simp]
+theorem forwardPath_arrows :
+    forwardPath.arrows =
+      [⟨0, 1, Sum.inl ()⟩, ⟨1, 2, Sum.inl ()⟩, ⟨2, 3, Sum.inl ()⟩] := by
+  simp [forwardPath, ArrowWalk.arrows_cons]
+
+/-- The path `forwardPath` has three arrows. -/
+@[simp]
+theorem forwardPath_length : forwardPath.length = 3 := by
+  simp [forwardPath, ArrowWalk.length]
+
+/-- The residual arrows traversed by `reversePath`. -/
+@[simp]
+theorem reversePath_arrows :
+    reversePath.arrows =
+      [⟨0, 2, Sum.inl ()⟩, ⟨2, 1, Sum.inr ()⟩, ⟨1, 3, Sum.inl ()⟩] := by
+  simp [reversePath, ArrowWalk.arrows_cons]
+
+/-- The path `reversePath` has three arrows. -/
+@[simp]
+theorem reversePath_length : reversePath.length = 3 := by
+  simp [reversePath, ArrowWalk.length]
 
 /-- The residual path `0 → 1 → 2 → 3` uses no residual arrow twice. -/
 theorem forwardPath_nodup : forwardPath.arrows.Nodup := by
@@ -362,6 +423,13 @@ theorem exists_infinite_augmentation_sequence :
 def firstShortestAssignment : Assignment (fun _ _ : Fin 4 ↦ Unit) LexIntPair :=
   fun x y _ ↦ if (x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 3) then lexPair 1 0 else 0
 
+/-- Evaluation of the first shortest-path assignment on an arrow. -/
+@[simp]
+theorem firstShortestAssignment_apply (x y : Fin 4) (e : Unit) :
+    firstShortestAssignment (x := x) (y := y) e =
+      if (x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 3) then lexPair 1 0 else 0 := by
+  rw [firstShortestAssignment]
+
 /-- The assignment saturating all four outer arrows, obtained after the two shortest-path
 augmentations. -/
 def maximumAssignment : Assignment (fun _ _ : Fin 4 ↦ Unit) LexIntPair :=
@@ -369,6 +437,15 @@ def maximumAssignment : Assignment (fun _ _ : Fin 4 ↦ Unit) LexIntPair :=
     if (x = 0 ∧ y = 1) ∨ (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) ∨ (x = 2 ∧ y = 3) then
       lexPair 1 0
     else 0
+
+/-- Evaluation of the maximum assignment on an arrow. -/
+@[simp]
+theorem maximumAssignment_apply (x y : Fin 4) (e : Unit) :
+    maximumAssignment (x := x) (y := y) e =
+      if (x = 0 ∧ y = 1) ∨ (x = 0 ∧ y = 2) ∨ (x = 1 ∧ y = 3) ∨ (x = 2 ∧ y = 3) then
+        lexPair 1 0
+      else 0 := by
+  rw [maximumAssignment]
 
 private theorem firstShortestAssignment_nonneg : 0 ≤ firstShortestAssignment := by
   intro x y e
@@ -397,6 +474,11 @@ def firstShortestFlow : Flow capacity 0 3 where
       intro w e
       fin_cases w <;> simp [firstShortestAssignment])
 
+/-- The assignment underlying the flow after the first shortest-path augmentation. -/
+@[simp]
+theorem firstShortestFlow_toFun : firstShortestFlow.toFun = firstShortestAssignment := by
+  rw [firstShortestFlow]
+
 /-- The maximum flow obtained after the two shortest-path augmentations. -/
 def maximumFlow : Flow capacity 0 3 where
   toFun := maximumAssignment
@@ -407,6 +489,11 @@ def maximumFlow : Flow capacity 0 3 where
     excessAt_nonneg_of_nonneg_of_forall_out_eq_zero maximumAssignment_nonneg (by
       intro w e
       fin_cases w <;> simp [maximumAssignment])
+
+/-- The assignment underlying the maximum flow. -/
+@[simp]
+theorem maximumFlow_toFun : maximumFlow.toFun = maximumAssignment := by
+  rw [maximumFlow]
 
 /-- The residual path `0 → 1 → 3`, the first shortest augmenting path from zero. -/
 def firstShortestPath :
@@ -419,6 +506,28 @@ def secondShortestPath :
     ArrowWalk (ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0 3 :=
   ((ArrowWalk.nil (Q := ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0).cons
     (x := 2) (Sum.inl ())).cons (x := 3) (Sum.inl ())
+
+/-- The residual arrows traversed by `firstShortestPath`. -/
+@[simp]
+theorem firstShortestPath_arrows :
+    firstShortestPath.arrows = [⟨0, 1, Sum.inl ()⟩, ⟨1, 3, Sum.inl ()⟩] := by
+  simp [firstShortestPath, ArrowWalk.arrows_cons]
+
+/-- The path `firstShortestPath` has two arrows. -/
+@[simp]
+theorem firstShortestPath_length : firstShortestPath.length = 2 := by
+  simp [firstShortestPath, ArrowWalk.length]
+
+/-- The residual arrows traversed by `secondShortestPath`. -/
+@[simp]
+theorem secondShortestPath_arrows :
+    secondShortestPath.arrows = [⟨0, 2, Sum.inl ()⟩, ⟨2, 3, Sum.inl ()⟩] := by
+  simp [secondShortestPath, ArrowWalk.arrows_cons]
+
+/-- The path `secondShortestPath` has two arrows. -/
+@[simp]
+theorem secondShortestPath_length : secondShortestPath.length = 2 := by
+  simp [secondShortestPath, ArrowWalk.length]
 
 /-- The residual path `0 → 1 → 3` is nonempty. -/
 theorem firstShortestPath_nonempty : firstShortestPath.arrows ≠ [] := by
