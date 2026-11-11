@@ -262,10 +262,9 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
     SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
   constructor
   · intro h
-    obtain h | h | ⟨r₁, r₂, hr₁, hr₂, h⟩ := h
-    · exact absurd (by simp [h]) hy.ne'
-    · exact absurd (by simp [h]) hz.ne'
-    · rw [← Prod.inv_fst_smul_snd_smul hr₁.ne' y, ← Prod.inv_fst_smul_snd_smul hr₂.ne' z, h]
+    obtain ⟨r₁, r₂, hr₁, hr₂, h⟩ := h.exists_pos (fun h0 ↦ hy.ne' (by simp [h0]))
+      (fun h0 ↦ hz.ne' (by simp [h0]))
+    rw [← Prod.inv_fst_smul_snd_smul hr₁.ne' y, ← Prod.inv_fst_smul_snd_smul hr₂.ne' z, h]
   · intro h
     -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
     have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
