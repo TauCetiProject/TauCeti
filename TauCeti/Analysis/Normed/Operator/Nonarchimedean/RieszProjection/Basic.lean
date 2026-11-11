@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Idempotents
 import Mathlib.RingTheory.Polynomial.Basic
-import TauCeti.Algebra.Polynomial.Coprime
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
@@ -338,14 +338,29 @@ theorem orthogonalIdempotents_of_isRieszProjection
     (ha : Pairwise fun i j ↦ IsUnit (a i - a j)) : OrthogonalIdempotents E :=
   ⟨fun i ↦ (hE i).isIdempotentElem, fun i j hij ↦ (hE i).mul_eq_zero (hE j) (ha hij)⟩
 
+private theorem orthogonalIdempotents_subtype_of_isRieszProjection (s : Finset ι)
+    (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
+    (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) :
+    OrthogonalIdempotents (fun i : s ↦ E i) :=
+  orthogonalIdempotents_of_isRieszProjection (fun i : s ↦ hE i i.property)
+    (fun i j hij ↦ ha i.property j.property (Subtype.coe_ne_coe.mpr hij))
+
+/-- Multiplying a sum of unit-separated Riesz projectors by one of its members on the left
+recovers that member. -/
+theorem mul_sum_of_isRieszProjection (s : Finset ι)
+    (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
+    (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) {i : ι} (hi : i ∈ s) :
+    E i * ∑ j ∈ s, E j = E i := by
+  have he := orthogonalIdempotents_subtype_of_isRieszProjection s hE ha
+  simpa only [Finset.sum_coe_sort] using
+    he.mul_sum_of_mem (i := ⟨i, hi⟩) (Finset.mem_univ _)
+
 /-- A finite sum of Riesz projectors at pairwise unit-separated parameters is idempotent. -/
 theorem isIdempotentElem_sum_of_isRieszProjection (s : Finset ι)
     (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
     (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) :
     IsIdempotentElem (∑ i ∈ s, E i) := by
-  have he := orthogonalIdempotents_of_isRieszProjection
-    (fun i : s ↦ hE i i.property)
-    (fun i j hij ↦ ha i.property j.property (Subtype.coe_ne_coe.mpr hij))
+  have he := orthogonalIdempotents_subtype_of_isRieszProjection s hE ha
   simpa only [Finset.sum_coe_sort] using he.isIdempotentElem_sum (s := Finset.univ)
 
 end Module
