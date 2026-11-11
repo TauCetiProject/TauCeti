@@ -145,13 +145,12 @@ whose normalized vector is constant as well. -/
 theorem indepFun_dirichletNormalize_sum_of_hasLaw_gammaMeasure (ha : ∀ i, 0 < a i) (hr : 0 < r)
     (h_ind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gammaMeasure (a i) r) P) :
     IndepFun (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) (fun ω ↦ ∑ i, X i ω) P := by
+  have : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
-    have hconst : (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) =
+  · have hconst : (fun ω ↦ dirichletNormalize (fun i ↦ X i ω)) =
         fun _ ↦ (0 : EuclideanSpace ℝ ι) := funext fun _ ↦ Subsingleton.elim _ _
     rw [hconst]
     exact indepFun_const_left _ _
-  let _ : IsProbabilityMeasure P := h_ind.isProbabilityMeasure
   have hsum : HasLaw (fun ω ↦ ∑ i, X i ω) (gammaMeasure (∑ i, a i) r) P :=
     h_ind.hasLaw_sum_gammaMeasure hr Finset.univ_nonempty
       (fun i _ ↦ ha i) (fun i _ ↦ hX i)

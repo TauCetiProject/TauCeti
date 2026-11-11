@@ -73,9 +73,7 @@ theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
       dirichletMeasure fun j ↦ ∑ i with f i = j, a i := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · have hκ : IsEmpty κ := ⟨fun j ↦ (hf j).elim fun i _ ↦ isEmptyElim i⟩
-    rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hι) h.1,
-      dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hκ) h.1,
-      Measure.map_zero]
+    rw [dirichletMeasure_of_isEmpty, dirichletMeasure_of_isEmpty, Measure.map_zero]
   · have : Nonempty κ := ⟨f (Classical.arbitrary ι)⟩
     have hpos (j : κ) : 0 < ∑ i with f i = j, a i := by
       obtain ⟨i₀, hi₀⟩ := hf j

@@ -171,9 +171,7 @@ theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s 
     Var[fun x ↦ ∑ i ∈ s, x i; dirichletMeasure a] =
       (∑ i ∈ s, a i) * (∑ i ∈ sᶜ, a i) / ((∑ i, a i) ^ 2 * ((∑ i, a i) + 1)) := by
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have h0 : dirichletMeasure a = 0 :=
-      dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hι) h.1
-    simp [h0, Finset.eq_empty_of_isEmpty s]
+  · simp [Finset.eq_empty_of_isEmpty s]
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
   have hconst : ∀ c : ℝ, Var[fun _ : EuclideanSpace ℝ ι ↦ c; dirichletMeasure a] = 0 := by
     intro c
@@ -265,9 +263,7 @@ theorem covarianceBilin_dirichletMeasure (ha : ∀ i, 0 < a i)
       ⟪x, (((∑ k, a k) ^ 2 * ((∑ k, a k) + 1))⁻¹ •
         ((∑ k, a k) • Matrix.diagonal a - Matrix.vecMulVec a a)).toEuclideanLin y⟫ := by
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have h0 : dirichletMeasure a = 0 :=
-      dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hι) h.1
-    simp [h0, Subsingleton.elim x 0]
+  · simp [Subsingleton.elim x 0]
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
   rw [← covMatrix_dirichletMeasure ha]
   exact covarianceBilin_eq_covMatrix _ (memLp_id_dirichletMeasure 2) x y
