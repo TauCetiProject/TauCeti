@@ -62,6 +62,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
   correspond to the points of `V_H(N)`.
+* `TauCeti.GroupAlgGeom.GX.exists_gHom_apply_eq_eval`: for `K` presented over `G` by
+  `π : G[X] →* K`, a point of `H^X` at which every relation of `K` vanishes defines a
+  `G`-homomorphism `K → H` through which evaluation at the point factors.
 * `TauCeti.GroupAlgGeom.CoordGroup.homEquiv`, `TauCeti.GroupAlgGeom.SystemGroup.homEquiv`:
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
@@ -460,6 +463,16 @@ theorem exists_bijective_gHom_of_eq_ker {K : Type*} [Group K] {κ : G →* K}
   let e := QuotientGroup.liftEquiv N (φ := (π : GX G X →* K)) hπ hN
   refine ⟨⟨e.toMonoidHom, fun g => ?_⟩, e.bijective, fun w => rfl⟩
   simp [e]
+
+/-- Let `K` be presented over `G` by a surjective `G`-homomorphism `π : G[X] →* K`. A point
+`v ∈ H^X` at which every relation of `K` vanishes defines a `G`-homomorphism `K → H` through which
+evaluation at `v` factors. -/
+theorem exists_gHom_apply_eq_eval {K : Type*} [Group K] {κ : G →* K}
+    {π : GHom (inl : G →* GX G X) κ} (hπ : Function.Surjective π)
+    (hv : v ∈ V ι ((π : GX G X →* K).ker : Set (GX G X))) :
+    ∃ φ : GHom κ ι, ∀ w, φ (π w) = eval ι v w := by
+  obtain ⟨ψ, hψ, hψπ⟩ := exists_bijective_gHom_of_eq_ker π hπ rfl
+  exact ⟨(quotientEvalGHom v hv).comp (ψ.symmOfBijective hψ), fun w => by simp [← hψπ]⟩
 
 end GX
 

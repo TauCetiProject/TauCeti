@@ -229,17 +229,6 @@ private theorem isSolution_map_iff {M : Type*} [Group M] {e : Y → X} {c : A �
       (∀ w ∈ E, eval μ v w = 1) ∧ ∀ w ∈ I, eval μ v w ≠ 1 := by
   simp [EqIneqSystem.isSolution_iff, ← eval_wordHom, hr]
 
-/-- A point of `H` at which every relation of `K`, presented over `G` by `π`, vanishes defines a
-coefficient-preserving homomorphism `K →* H` through which evaluation at the point factors. -/
-private theorem exists_gHom_apply_eq_eval {π : GHom (inl : G →* GX G X) ιK}
-    (hπ : Function.Surjective π) {v : X → H}
-    (hv : v ∈ V ιH ((π : GX G X →* K).ker : Set (GX G X))) :
-    ∃ φ : GHom ιK ιH, ∀ w, φ (π w) = eval ιH v w := by
-  obtain ⟨ψ, hψ, hψπ⟩ := GX.exists_bijective_gHom_of_eq_ker π hπ rfl
-  refine ⟨(GX.quotientEvalGHom v hv).comp (ψ.symmOfBijective hψ), fun w => ?_⟩
-  rw [GHom.coe_comp, Function.comp_apply, ← hψπ, GHom.symmOfBijective_apply_apply,
-    GX.quotientEvalGHom_mk]
-
 /-- **Discrimination from universal sentences.** Let `H` be equationally Noetherian over `G`,
 let `K` be generated over `G` by the images of finitely many variables `X` through
 `π : G[X] →* K`, and let the coefficient names `c : A → G` generate `G`. If every universal
@@ -275,7 +264,7 @@ theorem isDiscriminatedBy_of_forall_isUniversal [Finite X] (hH : IsEquationallyN
   have hu' := (isSolution_map_iff hr _ _ ιH (u ∘ e)).1
     (by rwa [Function.comp_assoc, e.self_comp_symm, Function.comp_id])
   -- The tuple `u ∘ e` solves every relation of `K`, so evaluation at it factors through `π`.
-  obtain ⟨φ, hφ⟩ := exists_gHom_apply_eq_eval hπ (v := u ∘ e) <| by
+  obtain ⟨φ, hφ⟩ := GX.exists_gHom_apply_eq_eval hπ (v := u ∘ e) <| by
     rw [← hV]
     exact mem_V.2 fun w hw => hu'.1 w (Finset.mem_toList.2 ((Set.Finite.mem_toFinset hfin).2 hw))
   refine ⟨φ, fun k hk => ?_⟩
