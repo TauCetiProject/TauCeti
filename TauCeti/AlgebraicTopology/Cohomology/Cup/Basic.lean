@@ -290,7 +290,7 @@ lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
-  exact TopCat.cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
+  exact cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
 
 /-- **The left unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a left unit, under the hypotheses of
@@ -306,8 +306,8 @@ lemma singularCup_constSingularCocycle_left (X : TopCat.{w}) (k : Type*)
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, TopCat.iCycles_constSingularCocycle]
-  exact TopCat.cupCochain_constCochain_left X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
+  exact cupCochain_constCochain_left X hu hμ h _
 
 /-- **The right unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a right unit, under the hypotheses of
@@ -323,8 +323,8 @@ lemma singularCup_constSingularCocycle_right (X : TopCat.{w}) (k : Type*)
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, TopCat.iCycles_constSingularCocycle]
-  exact TopCat.cupCochain_constCochain_right X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
+  exact cupCochain_constCochain_right X hu hμ h _
 
 end Laws
 
