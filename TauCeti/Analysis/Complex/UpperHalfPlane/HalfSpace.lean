@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Euclidean.Prod
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
@@ -36,35 +37,29 @@ noncomputable section
 
 namespace TauCeti.UpperHalfPlane
 
-private def coordinates : ℂ ≃L[ℝ] WithLp 2 (ℝ × ℝ) :=
-  Complex.equivRealProdCLM.trans (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm
-
-private theorem coordinates_apply (z : ℂ) :
-    coordinates z = WithLp.toLp 2 (z.re, z.im) := rfl
-
-private theorem coordinates_symm_im (p : WithLp 2 (ℝ × ℝ)) :
-    (coordinates.symm p).im = p.snd := by
-  simp [coordinates, Complex.equivRealProdCLM_symm_apply]
+open Complex (equivRealProdLp)
 
 private def halfSpaceEquiv : ℍ ≃ UpperHalfSpace ℝ where
-  toFun z := UpperHalfSpace.mk (coordinates z) (by simpa [coordinates_apply] using z.im_pos)
-  invFun p := ⟨coordinates.symm p, by
-    rw [coordinates_symm_im, UpperHalfSpace.snd_coe]
-    exact UpperHalfSpace.height_pos p⟩
+  toFun z := UpperHalfSpace.mk (equivRealProdLp z) (by simpa using z.im_pos)
+  invFun p := ⟨equivRealProdLp.symm p, by simpa using UpperHalfSpace.height_pos p⟩
   left_inv z := by
     apply _root_.UpperHalfPlane.ext
-    simpa only [UpperHalfSpace.coe_mk] using coordinates.symm_apply_apply (z : ℂ)
+    simpa only [UpperHalfSpace.coe_mk] using equivRealProdLp.symm_apply_apply (z : ℂ)
   right_inv p := by
     apply UpperHalfSpace.ext
-    simpa only [UpperHalfSpace.coe_mk] using coordinates.apply_symm_apply
+    simpa only [UpperHalfSpace.coe_mk] using equivRealProdLp.apply_symm_apply
       (p : WithLp 2 (ℝ × ℝ))
 
 private theorem coe_halfSpaceEquiv (z : ℍ) :
-    (halfSpaceEquiv z : WithLp 2 (ℝ × ℝ)) = coordinates z :=
+    (halfSpaceEquiv z : WithLp 2 (ℝ × ℝ)) = equivRealProdLp z :=
   UpperHalfSpace.coe_mk _ _
 
+private theorem height_halfSpaceEquiv (z : ℍ) :
+    UpperHalfSpace.height (halfSpaceEquiv z) = z.im := by
+  simp [← UpperHalfSpace.snd_coe, coe_halfSpaceEquiv]
+
 private theorem coe_halfSpaceEquiv_symm (p : UpperHalfSpace ℝ) :
-    (halfSpaceEquiv.symm p : ℂ) = coordinates.symm p := rfl
+    (halfSpaceEquiv.symm p : ℂ) = equivRealProdLp.symm p := rfl
 
 private theorem contMDiff_halfSpaceEquiv :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) ∞ halfSpaceEquiv := by
@@ -72,21 +67,21 @@ private theorem contMDiff_halfSpaceEquiv :
   have hcoe : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ _root_.UpperHalfPlane.coe :=
     fun _ ↦ contMDiffAt_extChartAt
   simpa only [Function.comp_def, coe_halfSpaceEquiv] using
-    coordinates.contDiff.contMDiff.comp hcoe
+    equivRealProdLp.contDiff.contMDiff.comp hcoe
 
 private theorem contMDiff_halfSpaceEquiv_symm :
     ContMDiff 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) 𝓘(ℝ, ℂ) ∞ halfSpaceEquiv.symm := by
   apply ContMDiff.of_comp_isOpenEmbedding _root_.UpperHalfPlane.isOpenEmbedding_coe
   simpa only [Function.comp_def, coe_halfSpaceEquiv_symm] using
-    coordinates.symm.contDiff.contMDiff.comp (UpperHalfSpace.contMDiff_coe.of_le le_top)
+    equivRealProdLp.symm.contDiff.contMDiff.comp (UpperHalfSpace.contMDiff_coe.of_le le_top)
 
 private theorem differential_halfSpaceEquiv (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (halfSpaceEquiv z)
         (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) halfSpaceEquiv z v) =
-      coordinates (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
+      equivRealProdLp (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
   rw [(contMDiff_halfSpaceEquiv.mdifferentiableAt (by simp)).tangentSpaceCastModel_mfderiv_apply]
   have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) z halfSpaceEquiv
-      =ᶠ[nhds (z : ℂ)] coordinates := by
+      =ᶠ[nhds (z : ℂ)] equivRealProdLp := by
     filter_upwards [isOpen_lt continuous_const Complex.continuous_im |>.mem_nhds z.im_pos]
       with w hw
     have hchart (p : UpperHalfSpace ℝ) :
@@ -96,7 +91,8 @@ private theorem differential_halfSpaceEquiv (z : ℍ) (v : TangentSpace 𝓘(ℝ
     congr 1
     exact (extChartAt 𝓘(ℝ, ℂ) z).right_inv (by simpa using hw)
   have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
-  rw [hchart, hlocal.fderiv_eq, coordinates.hasFDerivAt.fderiv]
+  rw [hchart, hlocal.fderiv_eq, equivRealProdLp.hasFDerivAt.fderiv]
+  -- The continuous linear map underlying the isometry has the same pointwise application.
   rfl
 
 /-- The coordinate identification `x + iy ↦ (x, y)` is a Riemannian isometry from the
@@ -115,23 +111,22 @@ def upperHalfSpaceIsometry :
       poincareRiemannianMetric.inner z v w
     rw [UpperHalfSpace.inner_def, differential_halfSpaceEquiv, differential_halfSpaceEquiv,
       _root_.UpperHalfPlane.poincareRiemannianMetric_inner]
-    have hh : UpperHalfSpace.height (halfSpaceEquiv z) = z.im := by
-      rw [← UpperHalfSpace.snd_coe, coe_halfSpaceEquiv, coordinates_apply]
-      rfl
-    simp [hh, coordinates_apply, WithLp.prod_inner_apply, Complex.inner]
+    simp [height_halfSpaceEquiv, WithLp.prod_inner_apply, Complex.inner]
 
 /-- The identification with half-space sends a point to its real and imaginary coordinates. -/
 @[simp]
 theorem _root_.UpperHalfPlane.coe_upperHalfSpaceIsometry_apply (z : ℍ) :
-    (upperHalfSpaceIsometry z : WithLp 2 (ℝ × ℝ)) = WithLp.toLp 2 (z.re, z.im) :=
-  coe_halfSpaceEquiv z
+    (upperHalfSpaceIsometry z : WithLp 2 (ℝ × ℝ)) = WithLp.toLp 2 (z.re, z.im) := by
+  -- Reduce the bundled map's coercion to its defining equivalence before rewriting coordinates.
+  change (halfSpaceEquiv z : WithLp 2 (ℝ × ℝ)) = _
+  simpa only [Complex.equivRealProdLp_apply,
+    _root_.UpperHalfPlane.coe_re, _root_.UpperHalfPlane.coe_im] using coe_halfSpaceEquiv z
 
 /-- The identification with half-space preserves height. -/
 @[simp]
 theorem _root_.UpperHalfPlane.height_upperHalfSpaceIsometry_apply (z : ℍ) :
-    UpperHalfSpace.height (upperHalfSpaceIsometry z) = z.im := by
-  rw [← UpperHalfSpace.snd_coe, z.coe_upperHalfSpaceIsometry_apply]
-  rfl
+    UpperHalfSpace.height (upperHalfSpaceIsometry z) = z.im :=
+  height_halfSpaceEquiv z
 
 /-- The inverse identification sends `(x, y)` to `x + iy`. -/
 @[simp]
@@ -143,6 +138,35 @@ theorem coe_upperHalfSpaceIsometry_symm_apply (p : UpperHalfSpace ℝ) :
   apply Complex.ext
   · simpa using congrArg WithLp.fst h
   · simpa using congrArg WithLp.snd h
+
+/-- The inverse identification recovers the horizontal coordinate as the real part. -/
+@[simp]
+theorem re_upperHalfSpaceIsometry_symm_apply (p : UpperHalfSpace ℝ) :
+    (upperHalfSpaceIsometry.symm p).re = (p : WithLp 2 (ℝ × ℝ)).fst := by
+  have h := congrArg Complex.re (coe_upperHalfSpaceIsometry_symm_apply p)
+  rw [_root_.UpperHalfPlane.coe_re] at h
+  simpa using h
+
+/-- The inverse identification recovers height as the imaginary part. -/
+@[simp]
+theorem im_upperHalfSpaceIsometry_symm_apply (p : UpperHalfSpace ℝ) :
+    (upperHalfSpaceIsometry.symm p).im = UpperHalfSpace.height p := by
+  have h := congrArg Complex.im (coe_upperHalfSpaceIsometry_symm_apply p)
+  rw [_root_.UpperHalfPlane.coe_im] at h
+  simpa using h
+
+/-- In model coordinates, the differential sends a tangent vector to its real and imaginary
+parts. -/
+theorem _root_.UpperHalfPlane.tangentSpaceCastModel_mfderiv_upperHalfSpaceIsometry
+    (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (upperHalfSpaceIsometry z)
+        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) upperHalfSpaceIsometry z v) =
+      WithLp.toLp 2 ((tangentSpaceCastModel 𝓘(ℝ, ℂ) z v).re,
+        (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v).im) := by
+  -- The defining equivalence and the bundled isometry are the same function, including in mfderiv.
+  change tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (halfSpaceEquiv z)
+    (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) halfSpaceEquiv z v) = _
+  simpa only [Complex.equivRealProdLp_apply] using differential_halfSpaceEquiv z v
 
 /-- The Poincaré metric on the upper half-plane has constant sectional curvature `−1`. -/
 theorem hasConstantSectionalCurvature :
