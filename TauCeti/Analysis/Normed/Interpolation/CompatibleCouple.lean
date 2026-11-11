@@ -380,6 +380,20 @@ theorem leftInverse_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
   obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
   rw [map_add, map_add, hI₀, hI₁, hP₀, hP₁, h₀, h₁]
 
+/-- If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map of sum spaces induced by `P₀`, `P₁`
+is a left inverse of the one induced by `I₀`, `I₁`. -/
+theorem leftInverse_sumLift (I₀ : X₀ →L[𝕜] Y₀) (I₁ : X₁ →L[𝕜] Y₁)
+    (hI : ∀ x : C.inter, D.fstToSum (I₀ (C.interFst x)) = D.sndToSum (I₁ (C.interSnd x)))
+    (P₀ : Y₀ →L[𝕜] X₀) (P₁ : Y₁ →L[𝕜] X₁)
+    (hP : ∀ y : D.inter, C.fstToSum (P₀ (D.interFst y)) = C.sndToSum (P₁ (D.interSnd y)))
+    (hPI₀ : Function.LeftInverse P₀ I₀) (hPI₁ : Function.LeftInverse P₁ I₁) :
+    Function.LeftInverse (D.sumLift (C.fstToSum.comp P₀) (C.sndToSum.comp P₁) hP)
+      (C.sumLift (D.fstToSum.comp I₀) (D.sndToSum.comp I₁) hI) :=
+  leftInverse_of_leftInverse (I := (C.sumLift _ _ hI).toLinearMap)
+    (P := (D.sumLift _ _ hP).toLinearMap) (fun x => C.sumLift_fstToSum _ _ hI x)
+    (fun x => C.sumLift_sndToSum _ _ hI x) (fun y => D.sumLift_fstToSum _ _ hP y)
+    (fun y => D.sumLift_sndToSum _ _ hP y) hPI₀ hPI₁
+
 variable {e : C.SumSpace ≃ₗ[𝕜] D.SumSpace} {e₀ : X₀ ≃L[𝕜] Y₀} {e₁ : X₁ ≃L[𝕜] Y₁}
 
 /-- If a linear equivalence of sum spaces restricts to an isomorphism `e₀` of the first
