@@ -94,6 +94,7 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
   derivative.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
+* `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
@@ -421,6 +422,29 @@ theorem fderiv_fderiv_mul_apply {f g : E → 𝕜} {x : E} (hf : ContDiffAt 𝕜
     (hgx.smul (hf.hasFDerivAt_fderiv le_rfl)))).congr_of_eventuallyEq hev).fderiv]
   simp
   ring
+
+/-- **The second-order product rule for a scalar multiple.** For a scalar-valued map `f` and a
+vector-valued map `g` which are `C²` at `x`,
+`D²(f • g)(v, w) = f D²g(v, w) + D²f(v, w) g + Df(v) Dg(w) + Df(w) Dg(v)`. -/
+theorem fderiv_fderiv_smul_apply {f : E → 𝕜} {g : E → F} {x : E} (hf : ContDiffAt 𝕜 2 f x)
+    (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ f y • g y) x v w =
+      f x • fderiv 𝕜 (fderiv 𝕜 g) x v w + fderiv 𝕜 (fderiv 𝕜 f) x v w • g x +
+        fderiv 𝕜 f x v • fderiv 𝕜 g x w + fderiv 𝕜 f x w • fderiv 𝕜 g x v := by
+  have hev : (fun y ↦ fderiv 𝕜 (fun y ↦ f y • g y) y w) =ᶠ[𝓝 x]
+      fun y ↦ f y • fderiv 𝕜 g y w + fderiv 𝕜 f y w • g y := by
+    filter_upwards [(hf.of_le (m := 1) (by norm_num)).eventually (by simp),
+      (hg.of_le (m := 1) (by norm_num)).eventually (by simp)] with y hfy hgy
+    simp [fderiv_fun_smul (hfy.differentiableAt one_ne_zero) (hgy.differentiableAt one_ne_zero)]
+  have hfx := (hf.differentiableAt (by norm_num)).hasFDerivAt
+  have hgx := (hg.differentiableAt (by norm_num)).hasFDerivAt
+  have hfg : ContDiffAt 𝕜 2 (fun y ↦ f y • g y) x := hf.smul hg
+  rw [← fderiv_clm_apply_const_apply (hfg.hasFDerivAt_fderiv le_rfl).differentiableAt w v,
+    (((hfx.fun_smul (hg.hasFDerivAt_fderiv_apply le_rfl w)).add
+      ((hf.hasFDerivAt_fderiv_apply le_rfl w).fun_smul hgx)).congr_of_eventuallyEq hev).fderiv]
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply]
+  abel
 
 /-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
 containing the topological support of `f`, then the second-order product rule

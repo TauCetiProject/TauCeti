@@ -62,6 +62,8 @@ second derivatives of `C²` maps.
 * `TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`: the
   Lagrange identity exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
+* `TauCeti.continuous_euclideanWittenLaplacian`: the Witten Laplacian of a `C²` form is
+  continuous.
 
 ## References
 
@@ -414,6 +416,24 @@ theorem euclideanWittenLaplacian_add_apply {f : (ι → ℝ) → ℝ} {φ ψ : (
     fderiv_add hφ' hψ']
   simp only [add_apply, Pi.add_apply, map_add, smul_add, neg_add, Finset.sum_add_distrib]
   abel
+
+/-- The Witten Laplacian of a `C²` form, for a `C²` function `f`, is continuous. -/
+theorem continuous_euclideanWittenLaplacian {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    (hf : ContDiff ℝ 2 f) (hφ : ContDiff ℝ 2 φ) (t : ℝ) :
+    Continuous (euclideanWittenLaplacian f t φ) := by
+  have hφ₂ : Continuous (fderiv ℝ (fderiv ℝ φ)) :=
+    (hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
+  have hf₁ : Continuous (fderiv ℝ f) := hf.continuous_fderiv (by norm_num)
+  have hf₂ : Continuous (fderiv ℝ (fderiv ℝ f)) :=
+    (hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
+  refine Continuous.congr ?_ fun x ↦
+    (euclideanWittenLaplacian_apply hf.contDiffAt hφ.contDiffAt t).symm
+  refine (continuous_finsetSum _ fun i _ ↦ ?_).add
+    ((continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦ ?_).const_smul t)
+  · exact ((hφ₂.clm_apply continuous_const).clm_apply continuous_const).neg.add
+      ((continuous_const.mul ((hf₁.clm_apply continuous_const).pow 2)).smul hφ.continuous)
+  · exact ((hf₂.clm_apply continuous_const).clm_apply continuous_const).smul
+      ((LinearMap.continuous_of_finiteDimensional _).comp hφ.continuous)
 
 end FrameFormula
 
