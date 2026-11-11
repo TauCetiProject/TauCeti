@@ -377,7 +377,8 @@ then `x` and `-y` are the extensions of one class of `Hⁿ_c(U ∩ V)`. Represen
 compact sets `K ⊆ U` and `L ⊆ V`; the sum of their extensions vanishes on some compact `C ⊇ K ∪ L`
 of `X`, which splits as `K₂ ∪ L₂` with `K ⊆ K₂ ⊆ U` and `L ⊆ L₂ ⊆ V` compact; Mayer–Vietoris for
 `(X, X ∖ K₂)` and `(X, X ∖ L₂)` gives a class supported in `K₂ ∩ L₂ ⊆ U ∩ V`. -/
-private lemma exists_compactSupportCohomologyExtend_eq (hUV : U ∪ V = Set.univ) {n : ℕ}
+private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV : U ∪ V = Set.univ)
+    {n : ℕ}
     (x : (of U).compactSupportCohomology R k M n) (y : (of V).compactSupportCohomology R k M n)
     (h : compactSupportCohomologyExtend (isOpenEmbedding_ofHom_subtypeVal hU) n x +
       compactSupportCohomologyExtend (isOpenEmbedding_ofHom_subtypeVal hV) n y = 0) :
@@ -494,7 +495,8 @@ lemma compactSupportCohomologyMayerVietoris_exact₂ (hUV : U ∪ V = Set.univ) 
   rw [moduleCat_biprod_eq_inl_add_inr p] at hp ⊢
   dsimp only at hp ⊢
   rw [map_add, h₁, h₂] at hp
-  obtain ⟨w, hwU, hwV⟩ := exists_compactSupportCohomologyExtend_eq hU hV hUV _ _ hp
+  obtain ⟨w, hwU, hwV⟩ :=
+    exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero hU hV hUV _ _ hp
   refine ⟨w, ?_⟩
   have h₃ := ConcreteCategory.congr_hom
     (compactSupportCohomologyMayerVietorisToBiprod_fst R k M hU hV n) w
