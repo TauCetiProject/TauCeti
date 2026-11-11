@@ -164,12 +164,12 @@ theorem equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq
   -- the trace of `c + e x` is `2 c`, so `Tr a ≠ 0` forces `2 ≠ 0`
   have h2 : (2 : K) ≠ 0 := by
     intro h2
-    have h1 : Algebra.trace K L (1 : L) = 0 := by
-      rw [← map_one (algebraMap K L), Algebra.trace_algebraMap, hfin, nsmul_one]
-      exact h2
     refine htr ?_
-    rw [← (quadraticExtensionBasis K L hx hfin).sum_repr a, map_sum]
-    simp [Fin.sum_univ_two, hx0, h1]
+    rw [← (quadraticExtensionBasis K L hx hfin).sum_repr a, Fin.sum_univ_two,
+      quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
+      Algebra.smul_def, mul_one,
+      Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2, h2,
+      zero_mul]
   have : Invertible (2 : K) := invertibleOfNonzero h2
   set Q := (a • QuadraticMap.sq (R := L) (A := L)).traceTransfer K
   have hQ (z : L) : Q z = Algebra.trace K L (a * (z * z)) := by
