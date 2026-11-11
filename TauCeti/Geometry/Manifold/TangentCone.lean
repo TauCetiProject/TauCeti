@@ -523,15 +523,7 @@ theorem span_tangentConeAt_sup_eq_top_of_span_mtangentConeAt_sup_eq_top (hn : n 
     simp [hy, mem_chart_source]
   -- The transition map from the preferred chart is a `C^n` change of coordinates of the model
   -- space, since `p` is in the maximal atlas.
-  have hcd : ∀ f : OpenPartialHomeomorph E E, f ∈ contDiffGroupoid n 𝓘(𝕜, E) →
-      ∀ z ∈ f.source, ContDiffAt 𝕜 n f z := fun f hf z hz ↦
-    (contMDiffOn_of_mem_contDiffGroupoid hf).contDiffOn.contDiffAt (f.open_source.mem_nhds hz)
-  have hpe := hp (chartAt E y) (chart_mem_atlas E y)
-  obtain ⟨A, hA⟩ := OpenPartialHomeomorph.exists_hasFDerivAt_of_chart _ hy'
-    ((hcd _ hpe.2 _ hy').differentiableAt hn)
-    ((hcd _ (by rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-        OpenPartialHomeomorph.symm_symm]; exact hpe.1) _
-      (((chartAt E y).symm.trans p).map_source hy')).differentiableAt hn)
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans_of_mem_atlas hn (chart_mem_atlas E y) hp hy'
   have h := congrArg (Submodule.map (A : E →ₗ[𝕜] E)) htr
   rw [Submodule.map_sup, ← Submodule.span_image, ← Submodule.span_image, Submodule.map_top,
     LinearMap.range_eq_top_of_surjective _ A.surjective] at h
