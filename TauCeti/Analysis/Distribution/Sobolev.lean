@@ -61,6 +61,10 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
   `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
   they are exactly the real `Lᵖ` functions.
+* `TemperedDistribution.realSobolevToBesselPotential`: the additive map sending a real function
+  in `realSobolevFunctions E s p` to its complexification in Mathlib's bundled `H^{s,p}(E)`, with
+  `TemperedDistribution.realSobolevToBesselPotential_eq_iff`: two functions have the same image
+  exactly when they agree almost everywhere.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`; a symbol without temperate growth gives the junk value `0`, so only symbols of
@@ -506,6 +510,95 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
     (Complex.ofRealCLM.contDiff.comp hf) (hc.comp_left Complex.ofReal_zero) ?_
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
   simp [h₁, h₂]
+
+/-- The complexification of a real function in `realSobolevFunctions E s p` lies in `Lᵖ`. -/
+private theorem memLp_ofReal_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : MemLp (fun x ↦ (f x : ℂ)) p volume :=
+  Complex.ofRealCLM.comp_memLp' (memLp_of_mem_realSobolevFunctions hf)
+
+/-- The complexification of a real function in `realSobolevFunctions E s p` lies in `H^{s,p}`. -/
+private theorem memSobolev_toLp_ofReal {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) :
+    MemSobolev s p (((memLp_ofReal_of_mem_realSobolevFunctions hf).toLp _ :
+      Lp ℂ p (volume : Measure E)) : 𝓢'(E, ℂ)) := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  convert hu using 2
+  refine Lp.ext ?_
+  filter_upwards [MemLp.coeFn_toLp (memLp_ofReal_of_mem_realSobolevFunctions hf),
+    Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u, huf] with x h₁ h₂ h₃
+  rw [h₁, h₂, Complex.ofRealCLM_apply, h₃]
+
+open scoped BesselPotentialSpace in
+/-- The complexification of a real function in `realSobolevFunctions E s p`, as an element of
+`H^{s,p}(E)`, before bundling. -/
+private noncomputable def realSobolevToBesselPotentialAux {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : H^{s, p}(E) :=
+  (memSobolev_toLp_ofReal hf).toBesselPotentialSpace
+
+open scoped BesselPotentialSpace in
+private theorem toDistr_realSobolevToBesselPotentialAux {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) {u : Lp ℂ p (volume : Measure E)}
+    (hu : u =ᵐ[volume] fun x ↦ (f x : ℂ)) :
+    (realSobolevToBesselPotentialAux hf).toDistr = u := by
+  rw [realSobolevToBesselPotentialAux, MemSobolev.toBesselPotentialSpace_toDistr]
+  congr 1
+  exact Lp.ext ((MemLp.coeFn_toLp _).trans hu.symm)
+
+open scoped BesselPotentialSpace in
+variable (E) in
+/-- **Real `H^{s,p}` functions in the complex Bessel-potential space.** The additive map sending a
+real function in `realSobolevFunctions E s p` to its complexification, as an element of Mathlib's
+bundled `H^{s,p}(E)`. Functions that agree almost everywhere have the same image
+(`TemperedDistribution.realSobolevToBesselPotential_eq_iff`), and the image is characterized by
+its tempered distribution (`TemperedDistribution.toDistr_realSobolevToBesselPotential`). -/
+noncomputable def realSobolevToBesselPotential (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    realSobolevFunctions E s p →+ H^{s, p}(E) where
+  toFun f := realSobolevToBesselPotentialAux f.2
+  map_zero' := BesselPotentialSpace.ext <| by
+    rw [toDistr_realSobolevToBesselPotentialAux _ (u := 0)
+      ((Lp.coeFn_zero ℂ p (volume : Measure E)).mono fun x hx ↦ by rw [hx]; simp),
+      BesselPotentialSpace.toDistr_zero, Lp.toTemperedDistribution_zero]
+  map_add' f g := BesselPotentialSpace.ext <| by
+    have hf := MemLp.coeFn_toLp (memLp_ofReal_of_mem_realSobolevFunctions f.2)
+    have hg := MemLp.coeFn_toLp (memLp_ofReal_of_mem_realSobolevFunctions g.2)
+    rw [BesselPotentialSpace.toDistr_add, toDistr_realSobolevToBesselPotentialAux _ hf,
+      toDistr_realSobolevToBesselPotentialAux _ hg, ← Lp.toTemperedDistribution_add]
+    refine toDistr_realSobolevToBesselPotentialAux _ ?_
+    filter_upwards [hf, hg, Lp.coeFn_add
+      ((memLp_ofReal_of_mem_realSobolevFunctions f.2).toLp _ : Lp ℂ p (volume : Measure E))
+      ((memLp_ofReal_of_mem_realSobolevFunctions g.2).toLp _)] with x h₁ h₂ h₃
+    rw [h₃, Pi.add_apply, h₁, h₂, Submodule.coe_add, Pi.add_apply, Complex.ofReal_add]
+
+open scoped BesselPotentialSpace in
+/-- **The tempered distribution of `realSobolevToBesselPotential E s p f`** is that of every complex
+`Lᵖ` function agreeing almost everywhere with the complexification of `f`. -/
+theorem toDistr_realSobolevToBesselPotential {s : ℝ} (f : realSobolevFunctions E s p)
+    {u : Lp ℂ p (volume : Measure E)} (hu : u =ᵐ[volume] fun x ↦ ((f : E → ℝ) x : ℂ)) :
+    (realSobolevToBesselPotential E s p f).toDistr = u :=
+  toDistr_realSobolevToBesselPotentialAux f.2 hu
+
+open scoped BesselPotentialSpace in
+/-- `realSobolevToBesselPotential E s p` identifies exactly the real functions that agree almost
+everywhere. -/
+theorem realSobolevToBesselPotential_eq_iff {s : ℝ} {f g : realSobolevFunctions E s p} :
+    realSobolevToBesselPotential E s p f = realSobolevToBesselPotential E s p g ↔
+      (f : E → ℝ) =ᵐ[volume] g := by
+  set u := (memLp_ofReal_of_mem_realSobolevFunctions f.2).toLp _
+  set v := (memLp_ofReal_of_mem_realSobolevFunctions g.2).toLp _
+  have hu : u =ᵐ[volume] fun x ↦ ((f : E → ℝ) x : ℂ) := MemLp.coeFn_toLp _
+  have hv : v =ᵐ[volume] fun x ↦ ((g : E → ℝ) x : ℂ) := MemLp.coeFn_toLp _
+  constructor
+  · intro h
+    have huv : u = v := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simpa [← toDistr_realSobolevToBesselPotential f hu,
+        ← toDistr_realSobolevToBesselPotential g hv] using congrArg BesselPotentialSpace.toDistr h
+    have huv' : (u : E → ℂ) =ᵐ[volume] v := by rw [huv]
+    filter_upwards [hu, hv, huv'] with x h₁ h₂ h₃
+    exact_mod_cast h₁.symm.trans (h₃.trans h₂)
+  · intro h
+    refine BesselPotentialSpace.ext ?_
+    rw [toDistr_realSobolevToBesselPotential f hu, toDistr_realSobolevToBesselPotential g
+      (hu.trans (h.mono fun x hx ↦ by simp only [hx]))]
 
 end realFunctions
 

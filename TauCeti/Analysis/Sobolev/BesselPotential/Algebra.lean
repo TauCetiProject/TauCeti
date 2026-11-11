@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Convolution.Weighted
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Convolution
@@ -33,9 +34,9 @@ function is an `Lᵖ` function, since the first factor is bounded by the Sobolev
 This is the basic input for nonlinear analysis on the scale `H^s`, `s > n / 2`: polynomial
 expressions without constant term in `H^s` fields stay in `H^s`, and the functions `1 + h`,
 `h ∈ H^s`, are closed under multiplication, which is the closure step towards a gauge group. The
-estimate makes the product a bounded bilinear operation for the `H^s` norm, so that polynomial
-expressions depend continuously on `H^s` fields and multiplication `(1 + h)(1 + g)` is continuous
-for the distance `‖h - g‖_{H^s}`.
+estimate makes the product a bounded bilinear operation for the `H^s` norm
+(`BesselPotentialSpace.mulCLM`), so that polynomial expressions depend continuously on `H^s`
+fields and multiplication `(1 + h)(1 + g)` is continuous for the distance `‖h - g‖_{H^s}`.
 
 ## The Fourier argument
 
@@ -75,6 +76,10 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
+* `BesselPotentialSpace.mulCLM`: the product on `H^s(E)` as a continuous bilinear map,
+  characterized by `BesselPotentialSpace.toDistr_mulCLM_apply`.
+* `TemperedDistribution.realSobolevToBesselPotential_mul`: the complexification of a product of
+  real `H^s` functions is the product `mulCLM` of their complexifications.
 
 ## References
 
@@ -268,5 +273,158 @@ theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g
   refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hw) ?_
   filter_upwards [hwuv, huf, hvg] with x h h₁ h₂
   rw [h, h₁, h₂, Pi.mul_apply]
+
+end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TemperedDistribution
+open scoped BesselPotentialSpace
+
+variable {s : ℝ}
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
+  have := (finrank ℝ E).cast_nonneg (α := ℝ)
+  linarith
+
+/-- The `L²` function underlying `f ∈ H^s(E)`, `s > dim E / 2`. -/
+private def toL2 (hs : finrank ℝ E < 2 * s) (f : H^{s}(E)) : Lp ℂ 2 (volume : Measure E) :=
+  (inclusion (nonneg_of_finrank_lt hs) f).toLp
+
+private theorem toDistr_eq_toL2 (hs : finrank ℝ E < 2 * s) (f : H^{s}(E)) :
+    f.toDistr = (toL2 hs f : 𝓢'(E, ℂ)) :=
+  toDistr_eq_toLp_inclusion _ f
+
+private theorem memSobolev_toL2 (hs : finrank ℝ E < 2 * s) (f : H^{s}(E)) :
+    MemSobolev s 2 (toL2 hs f : 𝓢'(E, ℂ)) :=
+  toDistr_eq_toL2 hs f ▸ f.memSobolev_toDistr
+
+private theorem toDistr_add_eq_toL2 (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) :
+    (f + g).toDistr = ((toL2 hs f + toL2 hs g : Lp ℂ 2 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
+  rw [toDistr_add, toDistr_eq_toL2 hs f, toDistr_eq_toL2 hs g, Lp.toTemperedDistribution_add]
+
+private theorem toDistr_smul_eq_toL2 (hs : finrank ℝ E < 2 * s) (c : ℂ) (f : H^{s}(E)) :
+    (c • f).toDistr = ((c • toL2 hs f : Lp ℂ 2 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
+  rw [toDistr_smul, toDistr_eq_toL2 hs f, Lp.toTemperedDistribution_smul]
+
+/-- The `L²` product of the functions underlying `f, g ∈ H^s(E)`. -/
+private def mulL2 (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) : Lp ℂ 2 (volume : Measure E) :=
+  ((memSobolev_toL2 hs f).memLp_mul hs (toL2 hs g)).toLp _
+
+private theorem coeFn_mulL2 (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) :
+    mulL2 hs f g =ᵐ[volume] fun x => toL2 hs f x * toL2 hs g x :=
+  MemLp.coeFn_toLp _
+
+/-- The pointwise product of two elements of `H^s(E)`, before bundling. -/
+private def mulAux (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) : H^{s}(E) :=
+  ((memSobolev_toL2 hs f).mul hs (memSobolev_toL2 hs g)).toBesselPotentialSpace
+
+private theorem toDistr_mulAux_eq_mulL2 (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) :
+    (mulAux hs f g).toDistr = (mulL2 hs f g : 𝓢'(E, ℂ)) :=
+  MemSobolev.toBesselPotentialSpace_toDistr _
+
+private theorem lp_eq_of_toTemperedDistribution_eq {u v : Lp ℂ 2 (volume : Measure E)}
+    (h : (u : 𝓢'(E, ℂ)) = v) : u = v :=
+  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot (by simpa using h)
+
+private theorem toDistr_mulAux (hs : finrank ℝ E < 2 * s) {f g : H^{s}(E)}
+    {u v w : Lp ℂ 2 (volume : Measure E)} (hf : f.toDistr = u) (hg : g.toDistr = v)
+    (hw : w =ᵐ[volume] fun x => u x * v x) : (mulAux hs f g).toDistr = w := by
+  have hu : toL2 hs f = u := lp_eq_of_toTemperedDistribution_eq (by rw [← toDistr_eq_toL2, hf])
+  have hv : toL2 hs g = v := lp_eq_of_toTemperedDistribution_eq (by rw [← toDistr_eq_toL2, hg])
+  rw [toDistr_mulAux_eq_mulL2]
+  congr 1
+  refine Lp.ext ?_
+  filter_upwards [coeFn_mulL2 hs f g, hw] with x hx hx'
+  rw [hx, hx', hu, hv]
+
+private theorem norm_mulAux_le (hs : finrank ℝ E < 2 * s) (f g : H^{s}(E)) :
+    ‖mulAux hs f g‖ ≤
+      (exists_norm_toBesselPotentialSpace_mul_le (E := E) hs).choose * ‖f‖ * ‖g‖ := by
+  have hf : (memSobolev_toL2 hs f).toBesselPotentialSpace = f :=
+    ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, ← toDistr_eq_toL2])
+  have hg : (memSobolev_toL2 hs g).toBesselPotentialSpace = g :=
+    ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, ← toDistr_eq_toL2])
+  have h := (exists_norm_toBesselPotentialSpace_mul_le (E := E) hs).choose_spec.2
+    (memSobolev_toL2 hs f) (memSobolev_toL2 hs g)
+  rwa [hf, hg] at h
+
+/-- **The product on `H^s(E)`, `s > dim E / 2`, as a continuous bilinear map.** The pointwise
+product of two functions in `H^s(E)` lies in `H^s(E)` (`TemperedDistribution.MemSobolev.mul`),
+and the algebra estimate `TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le` bounds
+it. The product is characterized by `BesselPotentialSpace.toDistr_mulCLM_apply`. -/
+def mulCLM (hs : finrank ℝ E < 2 * s) : H^{s}(E) →L[ℂ] H^{s}(E) →L[ℂ] H^{s}(E) :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ (mulAux hs)
+      (fun f₁ f₂ g ↦ ext <| by
+        rw [toDistr_add, toDistr_mulAux_eq_mulL2 hs f₁ g, toDistr_mulAux_eq_mulL2 hs f₂ g,
+          ← Lp.toTemperedDistribution_add]
+        refine toDistr_mulAux hs (toDistr_add_eq_toL2 hs f₁ f₂) (toDistr_eq_toL2 hs g) ?_
+        filter_upwards [Lp.coeFn_add (mulL2 hs f₁ g) (mulL2 hs f₂ g), coeFn_mulL2 hs f₁ g,
+          coeFn_mulL2 hs f₂ g, Lp.coeFn_add (toL2 hs f₁) (toL2 hs f₂)] with x h h₁ h₂ h₃
+        rw [h, Pi.add_apply, h₁, h₂, h₃, Pi.add_apply, add_mul])
+      (fun c f g ↦ ext <| by
+        rw [toDistr_smul, toDistr_mulAux_eq_mulL2 hs f g, ← Lp.toTemperedDistribution_smul]
+        refine toDistr_mulAux hs (toDistr_smul_eq_toL2 hs c f) (toDistr_eq_toL2 hs g) ?_
+        filter_upwards [Lp.coeFn_smul c (mulL2 hs f g), coeFn_mulL2 hs f g,
+          Lp.coeFn_smul c (toL2 hs f)] with x h h₁ h₂
+        rw [h, Pi.smul_apply, h₁, h₂, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_assoc])
+      (fun f g₁ g₂ ↦ ext <| by
+        rw [toDistr_add, toDistr_mulAux_eq_mulL2 hs f g₁, toDistr_mulAux_eq_mulL2 hs f g₂,
+          ← Lp.toTemperedDistribution_add]
+        refine toDistr_mulAux hs (toDistr_eq_toL2 hs f) (toDistr_add_eq_toL2 hs g₁ g₂) ?_
+        filter_upwards [Lp.coeFn_add (mulL2 hs f g₁) (mulL2 hs f g₂), coeFn_mulL2 hs f g₁,
+          coeFn_mulL2 hs f g₂, Lp.coeFn_add (toL2 hs g₁) (toL2 hs g₂)] with x h h₁ h₂ h₃
+        rw [h, Pi.add_apply, h₁, h₂, h₃, Pi.add_apply, mul_add])
+      (fun c f g ↦ ext <| by
+        rw [toDistr_smul, toDistr_mulAux_eq_mulL2 hs f g, ← Lp.toTemperedDistribution_smul]
+        refine toDistr_mulAux hs (toDistr_eq_toL2 hs f) (toDistr_smul_eq_toL2 hs c g) ?_
+        filter_upwards [Lp.coeFn_smul c (mulL2 hs f g), coeFn_mulL2 hs f g,
+          Lp.coeFn_smul c (toL2 hs g)] with x h h₁ h₂
+        rw [h, Pi.smul_apply, h₁, h₂, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm]))
+    _ (norm_mulAux_le hs)
+
+/-- **The product on `H^s(E)` is the pointwise product.** If `f, g ∈ H^s(E)` are the tempered
+distributions of the `L²` functions `u` and `v`, then `mulCLM hs f g` is the tempered distribution
+of every `L²` function `w` equal to `u v` almost everywhere. -/
+theorem toDistr_mulCLM_apply (hs : finrank ℝ E < 2 * s) {f g : H^{s}(E)}
+    {u v w : Lp ℂ 2 (volume : Measure E)} (hf : f.toDistr = u) (hg : g.toDistr = v)
+    (hw : w =ᵐ[volume] fun x => u x * v x) : (mulCLM hs f g).toDistr = w :=
+  toDistr_mulAux hs hf hg hw
+
+/-- **The algebra estimate for the bundled product.** There is a constant `C`, depending only on
+`s` and `E`, with `‖f g‖_{H^s} ≤ C ‖f‖_{H^s} ‖g‖_{H^s}`. -/
+theorem exists_norm_mulCLM_apply_le (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ f g : H^{s}(E), ‖mulCLM hs f g‖ ≤ C * ‖f‖ * ‖g‖ :=
+  ⟨_, (exists_norm_toBesselPotentialSpace_mul_le (E := E) hs).choose_spec.1, norm_mulAux_le hs⟩
+
+end BesselPotentialSpace
+
+namespace TemperedDistribution
+
+open scoped BesselPotentialSpace
+
+variable {s : ℝ}
+
+/-- **`realSobolevToBesselPotential` is multiplicative.** For `s > dim E / 2`, the complexification
+of the product of two real `H^s` functions is the product `mulCLM` of their complexifications. -/
+theorem realSobolevToBesselPotential_mul (hs : finrank ℝ E < 2 * s)
+    (f g : realSobolevFunctions E s 2) :
+    realSobolevToBesselPotential E s 2 ⟨_, mul_mem_realSobolevFunctions hs f.2 g.2⟩ =
+      BesselPotentialSpace.mulCLM hs (realSobolevToBesselPotential E s 2 f)
+        (realSobolevToBesselPotential E s 2 g) := by
+  have hmem (h : realSobolevFunctions E s 2) : MemLp (fun x ↦ ((h : E → ℝ) x : ℂ)) 2 volume :=
+    Complex.ofRealCLM.comp_memLp' (memLp_of_mem_realSobolevFunctions h.2)
+  have hfg : MemLp (fun x ↦ (((f : E → ℝ) * g) x : ℂ)) 2 volume :=
+    Complex.ofRealCLM.comp_memLp'
+      (memLp_of_mem_realSobolevFunctions (mul_mem_realSobolevFunctions hs f.2 g.2))
+  refine BesselPotentialSpace.ext ?_
+  rw [toDistr_realSobolevToBesselPotential _ hfg.coeFn_toLp]
+  refine (BesselPotentialSpace.toDistr_mulCLM_apply hs
+    (toDistr_realSobolevToBesselPotential f (hmem f).coeFn_toLp)
+    (toDistr_realSobolevToBesselPotential g (hmem g).coeFn_toLp) ?_).symm
+  filter_upwards [hfg.coeFn_toLp, (hmem f).coeFn_toLp, (hmem g).coeFn_toLp] with x h h₁ h₂
+  rw [h, h₁, h₂, Pi.mul_apply, Complex.ofReal_mul]
 
 end TemperedDistribution

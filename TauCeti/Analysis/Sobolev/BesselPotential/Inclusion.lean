@@ -29,6 +29,8 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.inclusion`: the inclusion `H^s(E, F) →L[ℂ] H^r(E, F)` for `r ≤ s`.
 * `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution.
+* `BesselPotentialSpace.toDistr_eq_toLp_inclusion`: for `s ≥ 0`, an element of `H^s` is the
+  tempered distribution of the `L²` function of its image in `H^0 = L²`.
 * `BesselPotentialSpace.norm_inclusion_le`: its operator norm is at most `1`.
 * `BesselPotentialSpace.inclusion_self`, `BesselPotentialSpace.inclusion_inclusion`: the inclusion
   of a space into itself is the identity, and inclusions compose.
@@ -118,6 +120,13 @@ theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ
 /-- The inclusion `H^s ⊆ H^r` does not increase norms. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h u‖ ≤ ‖u‖ := by
   simpa only [one_mul] using (inclusion h).le_of_opNorm_le (norm_inclusion_le h) u
+
+/-- For `s ≥ 0`, an element `f ∈ H^s(E, F)` is the tempered distribution of the `L²` function
+underlying its image in `H^0(E, F) = L²`. -/
+theorem toDistr_eq_toLp_inclusion (hs : 0 ≤ s) (f : H^{s}(E, F)) :
+    f.toDistr = ((inclusion hs f).toLp : 𝓢'(E, F)) := by
+  have h := (inclusion hs f).bessel_toDistr_eq_toLp
+  rwa [besselPotential_zero, ContinuousLinearMap.id_apply, toDistr_inclusion] at h
 
 /-- The inclusion of `H^s` into itself is the identity. -/
 @[simp]
