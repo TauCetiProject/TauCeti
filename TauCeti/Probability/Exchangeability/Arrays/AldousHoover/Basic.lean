@@ -60,9 +60,7 @@ theorem separatelyExchangeable_separateArray
           separateNoiseCongr rowPerm colPerm := by
     funext u p
     simpa only [Function.comp_apply] using separateArray_reindex f rowPerm colPerm u p
-  rw [hfun]
-  exact Measure.map_comp_measurableEquiv_of_map_eq
-    (map_separateNoiseCongr_noiseMeasure rowPerm colPerm) _
+  rw [hfun, ← MeasurableEquiv.map_map_measure, map_separateNoiseCongr_noiseMeasure]
 
 /-- **Every joint Aldous--Hoover coding is jointly exchangeable.** -/
 theorem jointlyExchangeable_jointArray
@@ -75,8 +73,7 @@ theorem jointlyExchangeable_jointArray
         (fun u => fun p => jointArray f p u) ∘ jointNoiseCongr perm := by
     funext u p
     simpa only [Function.comp_apply] using jointArray_reindex f perm u p
-  rw [hfun]
-  exact Measure.map_comp_measurableEquiv_of_map_eq (map_jointNoiseCongr_noiseMeasure perm) _
+  rw [hfun, ← MeasurableEquiv.map_map_measure, map_jointNoiseCongr_noiseMeasure]
 
 end TauCeti.Probability.AldousHoover
 
