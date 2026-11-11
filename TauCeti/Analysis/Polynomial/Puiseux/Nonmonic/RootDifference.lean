@@ -87,7 +87,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
   refine ⟨r, g, hra, hg, hr, ?_⟩
   intro i j hij
   have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
-  refine TauCeti.exists_analyticOnNhd_eq_zpow_mul hU hUc isOpen_ball (mem_ball_self hR')
+  refine TauCeti.exists_analyticOnNhd_eq_zpow_mul hU hUc isOpen_ball
     ((hra i).sub (hra j)) (fun b hb ↦ sub_ne_zero.mpr ((hr b hb).1.ne hij)) ?_
   intro x hx
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)

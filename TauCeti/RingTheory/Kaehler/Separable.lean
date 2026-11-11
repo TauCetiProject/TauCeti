@@ -45,12 +45,14 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F] {x : F}
 
 /-- A separable algebraic element has vanishing universal differential, so the universal
 derivation detects only the inseparable or transcendental part of an extension. -/
-theorem D_eq_zero_of_isSeparable (hx : IsSeparable k x) : D k F x = 0 := by
-  have hcoeff : aeval x (minpoly k x).derivative ≠ 0 :=
-    Separable.aeval_derivative_ne_zero hx (minpoly.aeval k x)
-  have hder := (D k F).map_aeval (minpoly k x) x
+theorem D_eq_zero_of_isSeparable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {a : A}
+    (ha : IsSeparable R a) : D R A a = 0 := by
+  obtain ⟨p, q, hpq⟩ := ha
+  have hunit : IsUnit (aeval a (minpoly R a).derivative) :=
+    .of_mul_eq_one (aeval a q) (by simpa [mul_comm] using congr(aeval a $hpq))
+  have hder := (D R A).map_aeval (minpoly R a) a
   rw [minpoly.aeval, map_zero] at hder
-  exact (smul_eq_zero.mp hder.symm).resolve_left hcoeff
+  exact hunit.smul_left_cancel.mp (by rw [← hder, smul_zero])
 
 /-- An intermediate ring containing an element with nonzero differential makes a field
 extension formally unramified when its differential module has dimension one. -/
@@ -86,12 +88,10 @@ theorem isSeparable_left_or_right_of_adjoin_eq_top {E₁ E₂ : Type*} [Field E�
     (htop : IntermediateField.adjoin E₁ (Set.range (algebraMap E₂ F)) = ⊤) :
     Algebra.IsSeparable E₁ F ∨ Algebra.IsSeparable E₂ F := by
   by_contra! hsep
-  have h₁ (y : E₁) : D k F (algebraMap E₁ F y) = 0 := by
-    by_contra hy
-    exact hsep.1 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
-  have h₂ (y : E₂) : D k F (algebraMap E₂ F y) = 0 := by
-    by_contra hy
-    exact hsep.2 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
+  have h₁ (y : E₁) : D k F (algebraMap E₁ F y) = 0 :=
+    of_not_not fun hy ↦ hsep.1 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
+  have h₂ (y : E₂) : D k F (algebraMap E₂ F y) = 0 :=
+    of_not_not fun hy ↦ hsep.2 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
   have hD (y : F) : D k F y = 0 := by
     have hy : y ∈ IntermediateField.adjoin E₁ (Set.range (algebraMap E₂ F)) :=
       htop.symm ▸ IntermediateField.mem_top
@@ -146,9 +146,8 @@ theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] := by
 
 /-- The Kähler differentials of an essentially finite type field extension that is not algebraic
 form a nonzero finite-dimensional `F`-vector space. -/
-theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] := by
-  have := nontrivial_kaehlerDifferential (k := k) (F := F)
-  exact Module.finrank_pos
+theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] :=
+  Module.finrank_pos_iff.mpr nontrivial_kaehlerDifferential
 
 end Transcendental
 
