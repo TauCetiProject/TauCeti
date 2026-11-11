@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Analysis.Calculus.ContDiff.Polynomial
+public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.VectorField
 
@@ -152,12 +153,6 @@ theorem mdifferentiable_section_twistCore_iff (k : ℤ) (s : OnePoint 𝕜 → �
 
 /-! ### Polynomial sections -/
 
-omit [ProperSpace 𝕜] in
-/-- A polynomial of degree less than `n + 1` has degree at most `n`. -/
-private theorem natDegree_le_of_mem_degreeLT {n : ℕ} {p : 𝕜[X]} (hp : p ∈ degreeLT 𝕜 (n + 1)) :
-    p.natDegree ≤ n :=
-  natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
-
 /-- The section of `𝒪(n)` attached to a polynomial `p`: its affine coordinate is `p`, and its
 value at `∞` is `p.coeff n`. For `p` of degree at most `n` its inverted coordinate is the
 reflected polynomial `wⁿ p(w⁻¹)` (`OnePoint.twistInvCoeff_polynomialSection`), and the section is
@@ -210,9 +205,11 @@ theorem twistInvCoeff_polynomialSection {n : ℕ} {p : 𝕜[X]} (hp : p ∈ degr
   · simp [← coeff_zero_eq_eval_zero, coeff_reflect]
   · rw [twistInvCoeff_of_ne_zero _ _ hw, polynomialSection_coe, zpow_natCast]
     let : Invertible w⁻¹ := invertibleOfNonzero (inv_ne_zero hw)
-    have h := eval₂_reflect_mul_pow (RingHom.id 𝕜) w⁻¹ n p (natDegree_le_of_mem_degreeLT hp)
+    have hn : p.natDegree ≤ n :=
+      natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
+    have h := eval₂_reflect_mul_pow (RingHom.id 𝕜) w⁻¹ n p hn
     rw [invOf_eq_inv, inv_inv] at h
-    change (reflect n p).eval w * w⁻¹ ^ n = p.eval w⁻¹ at h
+    simp only [eval₂_id] at h
     rw [← h, inv_pow, mul_comm, inv_mul_cancel_right₀ (pow_ne_zero n hw)]
 
 /-- **Polynomial sections are global.** For `p` of degree at most `n`, the section of `𝒪(n)`
@@ -412,21 +409,14 @@ theorem finrank_real_holomorphicTwistSections (n : ℕ) :
 `j ≤ n` (`OnePoint.coe_holomorphicTwistSectionsBasis`). -/
 def holomorphicTwistSectionsBasis (n : ℕ) :
     Module.Basis (Fin (n + 1)) ℂ (holomorphicTwistSections n) :=
-  ((Pi.basisFun ℂ (Fin (n + 1))).map (degreeLTEquiv ℂ (n + 1)).symm).map
-    (holomorphicTwistSectionsEquiv n).symm
+  (degreeLT.basis ℂ (n + 1)).map (holomorphicTwistSectionsEquiv n).symm
 
 /-- **The monomial sections form a basis.** The `j`-th vector of
 `OnePoint.holomorphicTwistSectionsBasis n` is the monomial section `zʲ` of `𝒪(n)`. -/
 @[simp]
 theorem coe_holomorphicTwistSectionsBasis (n : ℕ) (j : Fin (n + 1)) :
     (holomorphicTwistSectionsBasis n j : OnePoint ℂ → ℂ) = monomialSection n j := by
-  have hX : (X ^ (j : ℕ) : ℂ[X]) ∈ degreeLT ℂ (n + 1) :=
-    mem_degreeLT.2 <| (degree_X_pow_le _).trans_lt (by exact_mod_cast j.isLt)
-  have h : (degreeLTEquiv ℂ (n + 1)).symm (Pi.single j 1) = ⟨X ^ (j : ℕ), hX⟩ := by
-    rw [LinearEquiv.symm_apply_eq]
-    funext i
-    simp [degreeLTEquiv, coeff_X_pow, Pi.single_apply, Fin.ext_iff, eq_comm]
-  simp [holomorphicTwistSectionsBasis, h]
+  simp [holomorphicTwistSectionsBasis]
 
 /-- **The coordinate `z` is not a global section of the trivial bundle.** A section of `𝒪(0)`
 whose affine coordinate is `z` is not holomorphic, whatever its value at `∞`: in the inverted
@@ -437,8 +427,8 @@ theorem not_mdifferentiable_section_twistCore_zero_of_coe {s : OnePoint ℂ → 
       (fun x ↦ TotalSpace.mk' ℂ (E := (twistCore (0 : ℤ)).Fiber) x (s x)) := by
   intro h
   obtain ⟨p, hp, rfl⟩ := (mdifferentiable_section_twistCore_natCast_iff 0 s).1 h
-  have hp0 : p = C (p.coeff 0) := eq_C_of_natDegree_eq_zero <|
-    Nat.le_zero.1 (natDegree_le_of_mem_degreeLT hp)
+  have hp0 : p = C (p.coeff 0) := eq_C_of_natDegree_eq_zero <| Nat.le_zero.1 <|
+    natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
   have h0 := hs 0
   have h1 := hs 1
   rw [polynomialSection_coe, hp0, eval_C] at h0 h1
@@ -465,6 +455,7 @@ theorem holomorphicVectorFieldsEquivTwistSections_apply_coe (X : holomorphicVect
   rw [polynomialSection_coe, eval_holomorphicVectorFieldsEquiv_apply] at h
   exact h
 
+@[simp]
 theorem holomorphicVectorFieldsEquivTwistSections_apply_infty (X : holomorphicVectorFields) :
     (holomorphicVectorFieldsEquivTwistSections X : OnePoint ℂ → ℂ) ∞ =
       -(X : OnePoint ℂ → ℂ) ∞ := by
