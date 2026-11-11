@@ -50,6 +50,7 @@ theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
 /-- Arbitrary labels of a Dirichlet-multinomial count vector have support equal to the labels
 of the count antidiagonal for valid concentrations, and empty support otherwise. Labels need
 not be injective. -/
+@[simp]
 theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
     [T1Space E] [MeasurableSpace E] [BorelSpace E]
     (n : ℕ) (a : ι → ℝ) (f : (ι → ℕ) → E) :
@@ -68,7 +69,6 @@ theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
 /-- For positive concentrations, the Euclidean topological support is the finite image of all
 natural count vectors with the prescribed total. No additional limit points occur.
 For invalid concentrations, the support is empty. -/
-@[simp]
 theorem support_map_multinomialToEuclidean_dirichletMultinomialMeasure
     (n : ℕ) (a : ι → ℝ) :
     ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support =
