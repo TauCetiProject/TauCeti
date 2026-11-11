@@ -127,7 +127,8 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
       abs_of_nonneg (pow_nonneg hr.le _)]
     calc
       r ^ (k - m) * ‖iteratedFDeriv ℝ m φ (r⁻¹ * x)‖ ≤ r ^ (k - m) * C :=
-        mul_le_mul_of_nonneg_left ((hB m hm.le _).trans (by dsimp only [C]; linarith)) (pow_nonneg hr.le _)
+        mul_le_mul_of_nonneg_left
+          ((hB m hm.le _).trans (by dsimp only [C]; linarith)) (pow_nonneg hr.le _)
       _ ≤ r * C := mul_le_mul_of_nonneg_right hpow hC.le
       _ ≤ ε := hrC
   have hnear : f =ᶠ[𝓝 0] endpointJetPolynomial k A := by
