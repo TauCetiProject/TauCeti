@@ -43,6 +43,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.I ι Y`: the ideal `I_H(Y)`, a normal subgroup of `G[X]`.
 * `TauCeti.GroupAlgGeom.Rad ι S`: the radical `Rad_H(S) = I_H(V_H(S))`.
 * `TauCeti.GroupAlgGeom.CoordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
+* `TauCeti.GroupAlgGeom.CoordGroup.genericPoint ι S`: the generic point of `S`, the tuple of the
+  images of the variables in `G_{R(S)}`.
 * `TauCeti.GroupAlgGeom.SystemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
 * `TauCeti.GroupAlgGeom.SystemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
 
@@ -250,6 +252,11 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
   refine (V_antitone ι subset_normalClosure).antisymm fun v hv => ?_
   have : normalClosure S ≤ (eval ι v).ker := normalClosure_le_normal fun s hs => mem_V.1 hv s hs
   exact mem_V.2 fun s hs => this hs
+
+/-- A `G`-homomorphism maps solutions of a system to solutions of the same system. -/
+theorem GHom.comp_mem_V {K : Type*} [Group K] {κ : G →* K} (φ : GHom ι κ) (hv : v ∈ V ι S) :
+    φ ∘ v ∈ V κ S :=
+  mem_V.2 fun s hs => by rw [← map_eval, mem_V.1 hv s hs, map_one]
 
 /-! ### Finite subsystems -/
 
@@ -533,6 +540,48 @@ variable (ι) in
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
+
+variable (ι) in
+/-- The generic point `μ : X → G_{R(S)}` of a system `S`: the tuple of the images of the
+variables in the coordinate group. -/
+def genericPoint (S : Set (GX G X)) : X → CoordGroup ι S :=
+  fun x => ((inr (FreeGroup.of x) : GX G X) : CoordGroup ι S)
+
+theorem genericPoint_apply (S : Set (GX G X)) (x : X) :
+    genericPoint ι S x = ((inr (FreeGroup.of x) : GX G X) : CoordGroup ι S) := (rfl)
+
+/-- Evaluating an equation at the generic point gives its class in the coordinate group. -/
+@[simp]
+theorem eval_genericPoint (S : Set (GX G X)) (w : GX G X) :
+    eval (coeff ι S) (genericPoint ι S) w = (w : CoordGroup ι S) :=
+  DFunLike.congr_fun (eval_eq_of_comp_inl (f := QuotientGroup.mk' (Rad ι S)) rfl) w
+
+/-- The generic point of `S` is a solution of `S` in the coordinate group. -/
+theorem genericPoint_mem_V (S : Set (GX G X)) : genericPoint ι S ∈ V (coeff ι S) S :=
+  mem_V.2 fun s hs => by
+    rw [eval_genericPoint]
+    exact (QuotientGroup.eq_one_iff s).2 (subset_Rad S hs)
+
+/-- Evaluation at a solution `v` sends each coordinate of the generic point to that of `v`. -/
+@[simp]
+theorem evalGHom_genericPoint (hv : v ∈ V ι S) (x : X) :
+    evalGHom v hv (genericPoint ι S x) = v x :=
+  eval_inr_of ι v x
+
+/-- Composing the generic point with evaluation at a solution `v` gives `v`. -/
+@[simp]
+theorem evalGHom_comp_genericPoint (hv : v ∈ V ι S) : evalGHom v hv ∘ genericPoint ι S = v :=
+  funext (evalGHom_genericPoint hv)
+
+/-- If every solution of `S` is the point with coordinates `ι (g x)`, the generic point of `S` has
+the coefficients `g x` as coordinates. -/
+theorem genericPoint_eq_coeff_comp {g : X → G} (hS : V ι S ⊆ {ι ∘ g}) :
+    genericPoint ι S = coeff ι S ∘ g := by
+  funext x
+  rw [genericPoint_apply, Function.comp_apply, coeff_apply, QuotientGroup.eq]
+  refine mem_Rad.2 fun v hv => ?_
+  obtain rfl := hS hv
+  simp
 
 variable {Y : Type*}
 variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y))
