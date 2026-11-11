@@ -179,7 +179,6 @@ theorem isSupersingular_iff_frobeniusTrace_eq_zero (hq : Nat.card F = p) (hp : 5
   right
   -- `p² k² ≤ 4 p` gives `p k² ≤ 4`, which `p ≥ 5` and `k² ≥ 1` contradict
   by_contra hk0
-  have hp' : (5 : ℤ) ≤ p := mod_cast hp
   have hpk : p * k ^ 2 ≤ 4 := le_of_mul_le_mul_left (by linarith [hHasse]) (by omega : (0 : ℤ) < p)
   nlinarith [sq_abs k, Int.one_le_abs hk0]
 

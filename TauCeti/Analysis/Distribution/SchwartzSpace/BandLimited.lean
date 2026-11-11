@@ -235,7 +235,6 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
   have h₀ := norm_toLp_two_le_of_support_subset_closedBall σ ht.le hσ hσA
   have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le
     (div_nonneg hA (by positivity)) (closure_minimal hσ isClosed_closedBall) hσN
-  have ha : 0 < t ^ ((finrank ℝ V : ℝ) / 2) := by positivity
   have h₁ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2) = (t ^ ((finrank ℝ V : ℝ) / 2))⁻¹ :=
     Real.inv_rpow ht.le _
   have h₂ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2 - N) = t ^ N / t ^ ((finrank ℝ V : ℝ) / 2) := by
@@ -281,7 +280,6 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
   have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le b σ ht hA hσt
     (innerSL ℝ h) M (hσk M (by omega)) (hσk (M + 1) le_rfl)
   rw [innerSL_apply_norm] at hτ hsum
-  have ha : 0 < t ^ ((finrank ℝ V : ℝ) / 2) := by positivity
   have h₁ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2) = (t ^ ((finrank ℝ V : ℝ) / 2))⁻¹ :=
     Real.inv_rpow ht.le _
   have h₂ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2 - (M + 1 : ℕ)) =

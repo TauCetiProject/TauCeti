@@ -353,7 +353,6 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
   have hsplit : C * (K + γ * N + 2 * β * e * H) = C * (K + γ * N) + 2 * C * β * e * H := by
     ring
   rw [hsplit] at hHle ⊢
-  have hH2 : H ≤ 2 * (C * (K + γ * N)) := by linarith
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
   linarith

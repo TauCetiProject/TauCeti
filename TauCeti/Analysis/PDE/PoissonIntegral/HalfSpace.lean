@@ -164,7 +164,6 @@ theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x�
   have hπ : π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) = π ^ ((n : ℝ) / 2) := by
     rw [Real.Gamma_one_half_eq, Real.sqrt_eq_rpow, ← Real.rpow_add pi_pos]
     ring_nf
-  have hΓ := Real.Gamma_pos_of_pos (show 0 < (n : ℝ) / 2 by positivity)
   rw [volume_real_unitBall, finrank_euclideanSpace_fin, Real.Gamma_add_one (by positivity)]
   calc _ = 2 * ((n : ℝ) * (π ^ ((n : ℝ) / 2) / ((n : ℝ) / 2 * Real.Gamma (n / 2))))⁻¹ *
         (π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) / Real.Gamma (n / 2)) *

@@ -105,7 +105,6 @@ theorem hasDerivAt_arcsin_add_mul_sub_div_sub_mul (ha : 0 < a) {x : ℝ} (hx : x
   have hx0 : 0 < x := ha.trans hx.1
   have hb : 0 < b := hx0.trans hx.2
   have hR := sqrt_mul_sub_mul_sub_pos hx
-  have hab : 0 < √(a * b) := sqrt_pos.2 (mul_pos ha hb)
   have hsq : 1 - (((a + b) * x - 2 * a * b) / ((b - a) * x)) ^ 2 =
       (2 * √(a * b) / ((b - a) * x)) ^ 2 * ((x - a) * (b - x)) := by
     rw [div_pow, div_pow, mul_pow (2 : ℝ), sq_sqrt (mul_pos ha hb).le]

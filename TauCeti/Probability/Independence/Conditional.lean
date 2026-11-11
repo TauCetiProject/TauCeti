@@ -584,7 +584,6 @@ theorem condIndepFun_domRestrict_of_reindexing {C R D : Set ι} (hRD : R ⊆ D) 
   have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
   let W : (ι → α) → D → α := K ∘ R.domRestrict
   have hW_eq : W = fun x ↦ D.domRestrict (H x) := (rfl)
-  have hW : Measurable W := hK.comp (Set.measurable_restrict R)
   have hWR : MeasurableSpace.comap W inferInstance ≤
       MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance := by
     rw [← MeasurableSpace.comap_comp]

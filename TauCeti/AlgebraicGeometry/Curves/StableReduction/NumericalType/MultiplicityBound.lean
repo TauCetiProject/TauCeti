@@ -435,7 +435,6 @@ private lemma branch_row_forkTest_nonpos (hf : T.IsSelfIntersectionMinusTwoFork 
     T.intersection branch branch + ∑ s ∈ range t,
       T.intersection branch (c s) * (if s = t - 1 then 1 else 2) ≤ 0 := by
   have ht := hf.two_lt
-  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
   have hbself : T.intersection branch branch = -(2 * (W : ℤ)) := by
     rw [hf.branch_intersection_self, hwb]
   -- the extra leaf meets the chain only at `c (t - 2)`

@@ -189,7 +189,6 @@ theorem infinite_setOf_isSeparable_residueField_of_finiteDimensional {E : Type*}
     (hF : IsFunctionField k F) {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     {Q : Place k E | Algebra.IsSeparable k Q.ResidueField}.Infinite := by
   have : Algebra.IsAlgebraic E F := Algebra.IsAlgebraic.of_finite E F
-  have hE : IsFunctionField k E := hF.of_isAlgebraic_top
   intro hfin
   refine infinite_setOf_isSeparable_residueField hF hx ((hfin.preimage' fun Q _ ↦
     finite_setOf_restrict_eq (k' := k) (F' := F) k E Q).subset fun P (hP : Algebra.IsSeparable k
