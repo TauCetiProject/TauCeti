@@ -44,7 +44,8 @@ theorem toSpecialLinear_mem_fixedSubgroup_iff
           d.characteristic d.fieldExponent) := by
   rw [fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup,
     typeAGraphConjugator_two, Matrix.mem_specialIsometryGroup_iff,
-    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.transpose_map_toMatrix_mul_form_iff]
+    HeisenbergGroup.coe_toSpecialLinear,
+    ← HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq]
 
 /-- The embedding of the unitary Heisenberg root subgroup into the finite special unitary
 model `SU₃(q)` by its upper unitriangular matrix. -/
@@ -104,8 +105,8 @@ end TauCeti.ValidLieTypeIndex
 
 namespace TauCeti.TypeALieIndex
 
-/-- The embedding of the unitary root group into the Steinberg fixed points of `²A₂(q)`;
-its range is the upper root subgroup. -/
+/-- The injective embedding of the unitary root group into the Steinberg fixed points of
+`²A₂(q)`, via finite-field descent. -/
 def unitaryRootHom (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     HeisenbergGroup.unitarySubgroup
         (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
