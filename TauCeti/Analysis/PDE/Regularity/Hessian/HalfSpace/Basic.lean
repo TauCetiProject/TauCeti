@@ -308,7 +308,9 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
   have hν : ν ≠ 0 := fun h => one_ne_zero (congrArg (fun x => (WithLp.ofLp x).1) h)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
     ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => (hSA ξ).symm ▸ hA ξ) hν
+      (fun ξ => by rw [RCLike.re_to_real, hSA]; exact hA ξ) hν
+  -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
+  rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
     simp [ν, WithLp.prod_inner_apply]
   -- `(e y).fst = ⟪e y, ν⟫ = ⟪y, e† ν⟫ = c y.fst`
