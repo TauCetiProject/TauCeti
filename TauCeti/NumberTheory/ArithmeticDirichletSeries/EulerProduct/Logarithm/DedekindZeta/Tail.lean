@@ -65,8 +65,8 @@ converse costs work.
 The two halves carry different hypotheses on purpose. The `tsum` is nonnegative for every real
 `s`, with no hypothesis: for `0 < s` the terms are termwise nonnegative, since
 `N(𝔭) ^ (-s) < 1`, and for `s ≤ 0` the family is not summable, so the `tsum` is `0` by convention.
-The uniform upper bound uses `N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as `s ↓ 1 / 2`, where the dominating
-prime series approaches its convergence endpoint.
+The uniform upper bound uses `N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as
+`s ↓ 1 / 2`, where the dominating prime series approaches its convergence endpoint.
 
 The one-variable estimate behind the termwise bound is not proved again: it is Mathlib's
 `Complex.norm_log_one_sub_inv_sub_self_le` read along the reals, which is where the factor `2`
