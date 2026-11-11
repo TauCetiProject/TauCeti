@@ -31,17 +31,43 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
+omit [NeZero N] in
+/-- The reciprocal of a Dirichlet archimedean factor is entire, including at its poles. -/
+@[fun_prop]
+theorem differentiable_inv_gammaFactor :
+    Differentiable ℂ (fun s ↦ (χ.gammaFactor s)⁻¹) := by
+  classical
+  by_cases he : χ.Even
+  · simpa only [gammaFactor, ite_eq_left he] using differentiable_Gammaℝ_inv
+  · have hi : Differentiable ℂ (fun z : ℂ ↦ z + 1) := differentiable_id.add_const 1
+    simpa only [gammaFactor, ite_eq_right he, Function.comp_def] using
+      differentiable_Gammaℝ_inv.comp hi
+
+omit [NeZero N] in
+/-- The archimedean factor has no zeros on the positive half-plane. -/
+theorem gammaFactor_ne_zero_of_re_pos
+    {s : ℂ} (hs : 0 < s.re) : χ.gammaFactor s ≠ 0 := by
+  rcases χ.even_or_odd with he | ho
+  · rw [he.gammaFactor_def]
+    exact Gammaℝ_ne_zero_of_re_pos hs
+  · rw [ho.gammaFactor_def]
+    exact Gammaℝ_ne_zero_of_re_pos (by simpa using add_pos hs zero_lt_one)
+
+omit [NeZero N] in
+/-- The archimedean factor is analytic on the positive half-plane. -/
+@[fun_prop]
+theorem analyticAt_gammaFactor_of_re_pos
+    {s : ℂ} (hs : 0 < s.re) : AnalyticAt ℂ χ.gammaFactor s := by
+  have h := (χ.differentiable_inv_gammaFactor.analyticAt s).inv
+    (inv_ne_zero (χ.gammaFactor_ne_zero_of_re_pos hs))
+  simpa only [Pi.inv_def, inv_inv] using h
+
 /-- On the half-plane of absolute convergence, the completed Dirichlet function is its
 archimedean gamma factor times its Dirichlet series. -/
 theorem completedLFunction_eq_gammaFactor_mul_LSeries {s : ℂ} (hs : 1 < s.re) :
     χ.completedLFunction s = χ.gammaFactor s * LSeries (χ ·) s := by
   have hs0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have hΓ : χ.gammaFactor s ≠ 0 := by
-    rcases χ.even_or_odd with h | h
-    · rw [h.gammaFactor_def]
-      exact Gammaℝ_ne_zero_of_re_pos (by linarith)
-    · rw [h.gammaFactor_def]
-      exact Gammaℝ_ne_zero_of_re_pos (by simp only [add_re, one_re]; linarith)
+  have hΓ : χ.gammaFactor s ≠ 0 := χ.gammaFactor_ne_zero_of_re_pos (by linarith)
   rw [← χ.LFunction_eq_LSeries hs, χ.LFunction_eq_completed_div_gammaFactor s (.inl hs0)]
   exact (mul_div_cancel₀ _ hΓ).symm
 

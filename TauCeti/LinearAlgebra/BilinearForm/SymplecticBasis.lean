@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -402,12 +403,7 @@ theorem IsAlt.even_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup 
     [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
     (hL : L.IsAlt) (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) :
     Even (Module.finrank K V) := by
-  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
-  let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
-  refine BilinForm.IsAlt.even_finrank (B := L.compr₂ e.toLinearMap)
-    (fun v ↦ by simp [hL.self_eq_zero v]) (.ofSeparatingLeft fun v hv ↦ hinj ?_)
-  rw [map_zero]
-  ext w
-  simpa using hv w
+  obtain ⟨e, hB⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
+  exact BilinForm.IsAlt.even_finrank (fun v ↦ by simp [hL.self_eq_zero v]) hB
 
 end LinearMap

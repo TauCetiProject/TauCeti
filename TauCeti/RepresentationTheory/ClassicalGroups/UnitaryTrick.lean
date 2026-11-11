@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Unitary
@@ -13,6 +12,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.Compact.Semisimple
 public import TauCeti.RepresentationTheory.Semisimple
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.RepresentationTheory.ClassicalGroups.Rational.Analytic
 
 /-!
 # Weyl's unitarian trick for the rational representations of `GL n ℂ`
@@ -189,18 +189,19 @@ theorem coe_intertwiningMapEquiv_symm_apply (hρ : IsRationalRep ρ) (hσ : IsRa
 
 end Intertwining
 
-/-- **The restriction of a rational representation to the unitary group is continuous**: its
-matrix coefficients `u ↦ f (ρ u w)` are continuous functions on `U(n)`, being polynomials in the
-entries of `u` divided by a power of the nonvanishing `det u`. -/
+section Continuity
+
+open scoped Matrix.Norms.Operator
+
+/-- The restriction of a rational representation to the unitary group has continuous matrix
+coefficients. -/
 theorem continuous_dual_apply_toUnits (h : IsRationalRep ρ) (f : Module.Dual ℂ W) (w : W) :
     Continuous fun u : Matrix.unitaryGroup (Fin n) ℂ => f (ρ (Unitary.toUnits u) w) := by
-  obtain ⟨P, m, hP⟩ := mem_rationalFunctions_iff_inv.mp (h.dual_apply_mem_rationalFunctions f w)
-  have hU : Continuous fun u : Matrix.unitaryGroup (Fin n) ℂ =>
-      (u : Matrix (Fin n) (Fin n) ℂ) := continuous_subtype_val
-  simp only [hP, Unitary.val_toUnits_apply]
-  refine ((hU.matrix_det.pow m).inv₀ fun u => pow_ne_zero m ?_).mul
-    ((MvPolynomial.continuous_eval P).comp (continuous_pi fun ij => hU.matrix_elem ij.1 ij.2))
-  simpa using _root_.Matrix.GeneralLinearGroup.det_ne_zero (Unitary.toUnits u)
+  let _ := Matrix.linftyOpTopologicalSpace (Fin n) (Fin n) ℂ
+  let _ := Matrix.linftyOpContinuousStar (Fin n) ℂ
+  exact (h.contMDiff_dual_apply f w).continuous.comp Unitary.continuous_toUnits
+
+end Continuity
 
 /-- **Every rational representation of `GL n ℂ` is completely reducible.** Its restriction to the
 compact group `U(n)` is continuous, hence completely reducible by Haar averaging

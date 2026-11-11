@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
 public import TauCeti.RepresentationTheory.Tensor.PermRange
 import TauCeti.RepresentationTheory.Subrepresentation

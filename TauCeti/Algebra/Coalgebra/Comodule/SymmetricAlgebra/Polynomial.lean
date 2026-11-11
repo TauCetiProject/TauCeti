@@ -330,7 +330,8 @@ private theorem polynomialCoact_X_pow_mul_X_pow_mem (b : Basis (Fin 2) R V) {d i
   -- The monomial `x^(r + s) y^(d - r - s)` has nonzero binomial coefficient, by the
   -- factorization of `C(d, i) C(i, r) C(j, s)` through `C(d, r + s)`.
   refine (X_pow_mul_X_pow_mem_restrictSupport_binomial_iff (R := R)).mpr ⟨by omega, fun hrs ↦ ?_⟩
-  have key := congrArg (Nat.cast : ℕ → R) (Nat.add_choose_mul_choose_mul_choose hr' hs')
+  have key := congrArg (Nat.cast : ℕ → R)
+    (Nat.add_choose_mul_choose_mul_choose (i := i) (r := r) hs')
   rw [hij] at key
   push_cast at key h0
   rw [hrs, zero_mul, zero_mul, mul_assoc, mul_eq_zero] at key

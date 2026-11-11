@@ -102,18 +102,18 @@ theorem IsProP.finite_pPrimary_induction (hG : IsProP p G)
       [DiscreteTopology B] [DistribMulAction G B] [ContinuousSMul G B] [Finite B] [AddCommGroup C]
       [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C] [ContinuousSMul G C]
       [Finite C], DiscreteShortExact G A B C → Nat.card A = p → (∀ (g : G) (a : A), g • a = a) →
-      IsPPrimaryTorsion p A → IsPPrimaryTorsion p B → IsPPrimaryTorsion p C →
+      IsAddPGroup p A → IsAddPGroup p B → IsAddPGroup p C →
       motive A → motive C → motive B)
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     motive M :=
-  finite_induction_of_exists_addSubgroup (fun M _ _ ↦ IsPPrimaryTorsion p M) (· = p)
+  finite_induction_of_exists_addSubgroup (fun M _ _ ↦ IsAddPGroup p M) (· = p)
     (fun _ hk ↦ hk ▸ hp.out.one_lt)
     (fun _ _ _ _ _ _ f hf hM ↦ hM.of_surjective f.toAddMonoidHom hf)
     (fun _ _ _ _ _ _ _ _ hM ↦
-      exists_addSubgroup_natCard_eq_invariant_of_isProP hG (isPPrimaryTorsion_iff.1 hM)) zero
+      exists_addSubgroup_natCard_eq_invariant_of_isProP hG hM) zero
     (fun A B C _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ S hA hAtriv hB hC ↦
-      extension A B C S hA hAtriv (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))
+      extension A B C S hA hAtriv (IsAddPGroup.of_card (hA.trans (pow_one p).symm))
         hB hC (prime A hA hAtriv))
     M hM
 
@@ -127,7 +127,7 @@ theorem IsProP.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_se
       (∀ (g : G) (a : A), g • a = a) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)))
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
   refine hG.finite_pPrimary_induction
     (motive := fun M _ _ _ _ _ ↦ Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)))
@@ -147,7 +147,7 @@ theorem IsProP.subsingleton_continuousCohomology_of_forall_smul_eq_self (hG : Is
       (∀ (g : G) (a : A), g • a = a) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)))
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) :=
   hG.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self
     (fun A _ _ _ _ _ _ hA ↦ h A fun a ↦ by rw [← hA]; exact card_nsmul_eq_zero') M hM
@@ -159,13 +159,13 @@ acts trivially. -/
 theorem IsProP.forall_subsingleton_continuousCohomology_iff_forall_natCard_eq (hG : IsProP p G)
     (n : ℕ) :
     (∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M))) ↔
     ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], Nat.card A = p →
       (∀ (g : G) (a : A), g • a = a) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)) :=
-  ⟨fun H A _ _ _ _ _ _ hA _ ↦ H A (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm)),
+  ⟨fun H A _ _ _ _ _ _ hA _ ↦ H A (IsAddPGroup.of_card (hA.trans (pow_one p).symm)),
     fun h M _ _ _ _ _ _ hM ↦
       hG.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self h M hM⟩
 
@@ -175,14 +175,14 @@ for every finite discrete `p`-primary `G`-module `M` if and only if it vanishes 
 discrete `G`-module killed by `p` on which `G` acts trivially. -/
 theorem IsProP.forall_subsingleton_continuousCohomology_iff (hG : IsProP p G) (n : ℕ) :
     (∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M))) ↔
     ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], (∀ a : A, p • a = 0) →
       (∀ (g : G) (a : A), g • a = a) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)) :=
   ⟨fun H A _ _ _ _ _ _ hA _ ↦
-    H A (isPPrimaryTorsion_iff.2 fun a ↦ ⟨1, by rw [pow_one]; exact hA a⟩),
+    H A (fun a ↦ ⟨1, by rw [pow_one]; exact hA a⟩),
     fun h M _ _ _ _ _ _ hM ↦ hG.subsingleton_continuousCohomology_of_forall_smul_eq_self h M hM⟩
 
 /-- **Finiteness dévissage for pro-`p` groups.** Let `G` be a compact pro-`p` group. If `Hⁿ(G, A)`
@@ -195,7 +195,7 @@ theorem IsProP.finite_continuousCohomology_of_forall_natCard_eq_smul_eq_self (hG
       (∀ (g : G) (a : A), g • a = a) →
       Finite (continuousCohomology n (ofDiscreteModule ℤ G A)))
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     Finite (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
   refine hG.finite_pPrimary_induction
     (motive := fun M _ _ _ _ _ ↦ Finite (continuousCohomology n (ofDiscreteModule ℤ G M)))

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Density
 import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
@@ -56,7 +56,7 @@ theorem gaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) 
 /-- Every Gaussian mixture is a probability measure, including zero-variance components. -/
 instance isProbabilityMeasure_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ)
     (v : ι → ℝ≥0) : IsProbabilityMeasure (gaussianMixtureMeasure p m v) := by
-  exact isProbabilityMeasure_finiteMixtureMeasure fun _ ↦ inferInstance
+  exact isProbabilityMeasure_finiteMixtureMeasure
 
 /-- The Gaussian mixture is the categorical mixture of its Gaussian components. -/
 theorem gaussianMixtureMeasure_eq_bind [MeasurableSpace ι] [MeasurableSingletonClass ι]

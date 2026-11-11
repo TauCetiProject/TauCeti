@@ -25,6 +25,10 @@ at a prime.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
   `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
+* `AdicCompletion.mapₐ_injective` and `AdicCompletion.mapₐ_bijective`: the map of completions is
+  injective, resp. bijective, when all the maps `S ⧸ I ^ n → S' ⧸ I' ^ n` are. For instance a
+  ring whose quotients by the powers of `I` agree with those of an `I'`-adically complete ring
+  `S'` has completion `S'`.
 * `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism,
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
@@ -82,6 +86,40 @@ theorem evalₐ_mapₐ (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) (n : ℕ) (x
 theorem mapₐ_of (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) (x : S) :
     mapₐ f hf (of I S x) = of I' S' (f x) :=
   ext_evalₐ fun n ↦ by simp
+
+/-- The map of completions is injective if every map `S ⧸ I ^ n → S' ⧸ I' ^ n` induced by `f` is
+injective. -/
+theorem mapₐ_injective (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
+    (h : ∀ n, Function.Injective (Ideal.quotientMap (I' ^ n) f.toRingHom
+      ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n)))) :
+    Function.Injective (mapₐ f hf) := fun x y hxy ↦
+  ext_evalₐ fun n ↦ h n (by simpa using congrArg (evalₐ I' n) hxy)
+
+/-- **Completions agree when all the quotients do.** The map of completions is bijective if every
+map `S ⧸ I ^ n → S' ⧸ I' ^ n` induced by `f` is bijective. -/
+theorem mapₐ_bijective (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
+    (h : ∀ n, Function.Bijective (Ideal.quotientMap (I' ^ n) f.toRingHom
+      ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n)))) :
+    Function.Bijective (mapₐ f hf) := by
+  refine ⟨mapₐ_injective f hf fun n ↦ (h n).1, fun y ↦ ?_⟩
+  -- The inverses of the maps of quotients are compatible, so they lift to the completion.
+  let e (n : ℕ) := RingEquiv.ofBijective _ (h n)
+  let g (n : ℕ) : AdicCompletion I' S' →+* S ⧸ I ^ n :=
+    (e n).symm.toRingHom.comp (evalₐ I' n).toRingHom
+  have hg {m n : ℕ} (hle : m ≤ n) : (Ideal.Quotient.factorPow I hle).comp (g n) = g m := by
+    ext z
+    apply (e m).injective
+    obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective ((e n).symm (evalₐ I' n z))
+    have hz : evalₐ I' n z = Ideal.Quotient.mk (I' ^ n) (f s) := by
+      rw [← (e n).apply_symm_apply (evalₐ I' n z), ← hs]
+      simp [e]
+    simp only [g, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe]
+    rw [← hs, ← factor_evalₐ hle z, hz]
+    simp [e]
+  refine ⟨liftRingHom I g hg y, ext_evalₐ fun n ↦ ?_⟩
+  rw [evalₐ_mapₐ, evalₐ_liftRingHom]
+  exact (e n).apply_symm_apply _
 
 /-- The identity of `S` induces the identity of `AdicCompletion I S`. -/
 @[simp]

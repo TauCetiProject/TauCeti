@@ -30,7 +30,7 @@ trivialization gives a bilinear field continuous on its base set
 Riemannian metrics.
 
 The openness proof uses the matrix-cone openness theorem
-`TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos`, transported through a basis and the native
+`TauCeti.isOpen_setOfPred_re_dotProduct_pos`, transported through a basis and the native
 iterated hom-bundle trivializations.
 -/
 

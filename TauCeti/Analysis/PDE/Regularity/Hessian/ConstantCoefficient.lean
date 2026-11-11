@@ -38,8 +38,9 @@ linear automorphism `e` with `‖e⁻¹‖ ≤ λ^(-1/2)` such that `Δ (u ∘ e
 (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). The Schwartz function
 `v = u ∘ e` then satisfies `D²u (e y) = D²v y ∘ (e⁻¹ × e⁻¹)`, so `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖`
 pointwise, while `Δ v = (L_A u) ∘ e`. Composing with `e` multiplies both `Lᵖ` norms by the same
-factor `|det e|^(-1 / p)` (`TauCeti.eLpNorm_comp_continuousLinearEquiv`), which cancels. This
-transfer is stated for any codomain and any exponent in which the estimate for the Laplacian holds
+factor `|det e|^(-1 / p)` (`MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`), which
+cancels. This transfer is stated for any codomain and any exponent in which the estimate for the
+Laplacian holds
 (`TauCeti.PDE.eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian`).
 
 ## References
@@ -109,8 +110,8 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
     (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
   have hc0 : c ≠ 0 := (ENNReal.rpow_pos (by simpa using hdet) ENNReal.ofReal_ne_top).ne'
   have hctop : c ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top
-  have h1 := eLpNorm_comp_continuousLinearEquiv volume (iteratedFDeriv ℝ 2 ⇑u) e p
-  have h2 := eLpNorm_comp_continuousLinearEquiv volume L e p
+  have h1 := Measure.eLpNorm_comp_continuousLinearEquiv volume (iteratedFDeriv ℝ 2 ⇑u) e p
+  have h2 := Measure.eLpNorm_comp_continuousLinearEquiv volume L e p
   rw [← hc_def] at h1 h2
   have hmeas : AEStronglyMeasurable (iteratedFDeriv ℝ 2 ⇑u ∘ e) volume :=
     (((u.smooth ⊤).continuous_iteratedFDeriv (by simp)).comp e.continuous).aestronglyMeasurable

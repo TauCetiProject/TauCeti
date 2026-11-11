@@ -30,7 +30,8 @@ Freeze the coefficients at `A`:
 most `n² ε ‖D²u‖` pointwise (`Matrix.abs_contraction_le`). The constant-coefficient
 estimate (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq`) gives
 `‖D²u‖ ≤ (C₀ / λ) (‖f‖ + n² ε ‖D²u‖)`, and the choice of `δ` makes the coefficient of `‖D²u‖`
-on the right at most `1 / 2`, so it is absorbed on the left. This is the step of the `W^{2,p}`
+on the right at most `1 / 2`, so it is absorbed on the left
+(`TauCeti.PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add`). This is the step of the `W^{2,p}`
 theory for continuous coefficients that is applied, after a partition of unity, on each ball small
 enough that the oscillation of the coefficients is below `δ λ`.
 
@@ -52,6 +53,26 @@ open MeasureTheory TopologicalSpace
 open scoped ENNReal NNReal InnerProductSpace
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The absorption step of the perturbation argument for coefficients of small oscillation: if
+`d ≤ (C / μ) g` and `g ≤ f + N ε d`, where `0 ≤ d` and `ε ≤ μ / (2 (C + 1) N)`, then
+`d ≤ (2 C / μ) f`. The choice of `ε` makes the error coefficient `C N ε / μ` at most `1 / 2`. -/
+theorem le_two_mul_div_mul_of_le_div_mul_of_le_add {C N ε μ d g f : ℝ} (hμ : 0 < μ)
+    (hC : 0 ≤ C) (hN : 0 < N) (hε : ε ≤ 1 / (2 * (C + 1) * N) * μ) (hd : 0 ≤ d)
+    (hdg : d ≤ C / μ * g) (hg : g ≤ f + N * ε * d) : d ≤ 2 * C / μ * f := by
+  have hK : C / μ * (N * ε) ≤ 1 / 2 := by
+    calc C / μ * (N * ε) ≤ C / μ * (N * (1 / (2 * (C + 1) * N) * μ)) := by gcongr
+      _ = C / (2 * (C + 1)) := by field_simp
+      _ ≤ 1 / 2 := by
+          rw [div_le_div_iff₀ (by positivity) two_pos]
+          linarith
+  have habs : d ≤ C / μ * f + 1 / 2 * d := by
+    calc d ≤ C / μ * g := hdg
+      _ ≤ C / μ * (f + N * ε * d) := by gcongr
+      _ = C / μ * f + C / μ * (N * ε) * d := by ring
+      _ ≤ C / μ * f + 1 / 2 * d := by gcongr
+  have h2 : 2 * C / μ * f = 2 * (C / μ * f) := by ring
+  linarith
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for coefficients of small oscillation.**
 Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
@@ -92,13 +113,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
     filter_upwards [(ae_restrict_iff' htop).1 (T.coeFn_compLpL H)] with x hx using hx (by simp)
   -- The weak Hessian vanishes outside `s`, where `u` does.
   have hH0 : ∀ᵐ x, x ∉ s → H x = 0 := by
-    let V : Opens (EuclideanSpace ℝ (Fin n)) := ⟨sᶜ, hs.isOpen_compl⟩
-    have hval : ∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (V : Set (EuclideanSpace ℝ (Fin n))), Wkp.value 2 u x = 0 := by
-      rw [ae_restrict_iff' V.isOpen.measurableSet]
-      filter_upwards [hu] with x hx hxV using hx hxV
-    exact (ae_restrict_iff' V.isOpen.measurableSet).1
-      (Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero 1 u le_top hval)
+    simpa using Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen 1 u hs.isOpen_compl
+      (by simpa using hu)
   -- The constant-coefficient estimate, applied to the frozen operator.
   have hHg : ‖H‖ ≤ C / lam * ‖g‖ :=
     hC hlam hA u g (by filter_upwards [hg] with x hx; rw [hx, Matrix.contraction_apply])
@@ -118,22 +134,9 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
         exact hax hxs i j) (H x)
     · rw [hsub, Pi.sub_apply, hgx, ← hfx, hHx hxs]
       simp
-  have hK : (C : ℝ) / lam * (n ^ 2 * ε) ≤ 1 / 2 := by
-    calc (C : ℝ) / lam * (n ^ 2 * ε)
-        ≤ (C : ℝ) / lam * (n ^ 2 * (1 / (2 * ((C : ℝ) + 1) * n ^ 2) * lam)) := by gcongr
-      _ = (C : ℝ) / (2 * ((C : ℝ) + 1)) := by field_simp
-      _ ≤ 1 / 2 := by
-          rw [div_le_div_iff₀ (by positivity) two_pos]
-          linarith [C.coe_nonneg]
-  have hfg := norm_sub_norm_le g f
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
-  have habs : ‖H‖ ≤ C / lam * ‖f‖ + 1 / 2 * ‖H‖ := by
-    calc ‖H‖ ≤ C / lam * ‖g‖ := hHg
-      _ ≤ C / lam * (‖f‖ + n ^ 2 * ε * ‖H‖) := by gcongr; linarith
-      _ = C / lam * ‖f‖ + C / lam * (n ^ 2 * ε) * ‖H‖ := by ring
-      _ ≤ C / lam * ‖f‖ + 1 / 2 * ‖H‖ := by gcongr
-  have h2 : ((2 * C : ℝ≥0) : ℝ) / lam * ‖f‖ = 2 * (C / lam * ‖f‖) := by push_cast; ring
-  linarith
+  rw [NNReal.coe_mul, NNReal.coe_ofNat]
+  exact le_two_mul_div_mul_of_le_div_mul_of_le_add hlam C.coe_nonneg (pow_pos hn0 2) hε
+    (norm_nonneg _) hHg (by linarith [norm_sub_norm_le g f])
 
 end PDE
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Integral
 import Mathlib.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Function.PosPart
 
 /-!
 # The cut norm of a symmetric kernel
@@ -571,69 +572,32 @@ theorem cutNorm_le_cutNormSigned (K : SymmKernel Ω μ) : cutNorm μ K ≤ cutNo
     (measurable_one.indicator hT) (indicator_one_mem_Icc_neg_one_one _)
       (indicator_one_mem_Icc_neg_one_one _)
 
+/-- Splitting a `[-1,1]`-valued left test function into its positive and negative parts bounds a
+test integral against a `[0,1]`-valued right one by twice the cut norm. -/
+private theorem abs_testIntegral_le_two_mul_cutNorm (K : SymmKernel Ω μ) {u v : Ω → ℝ}
+    (hu : Measurable u) (hv : Measurable v)
+    (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (hv1 : ∀ y, v y ∈ Icc (0 : ℝ) 1) :
+    |K.testIntegral μ u v| ≤ 2 * cutNorm μ K := by
+  have h01 : Icc (0 : ℝ) 1 ⊆ Icc (-1) 1 := Icc_subset_Icc (by norm_num) le_rfl
+  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := hu.exists_eq_sub_of_mem_Icc hu1
+  rw [K.testIntegral_sub_left μ
+    (K.integrable_testIntegrand μ hp hv (fun x => h01 (hp1 x)) fun y => h01 (hv1 y))
+    (K.integrable_testIntegrand μ hn hv (fun x => h01 (hn1 x)) fun y => h01 (hv1 y)), two_mul]
+  exact (abs_sub _ _).trans (add_le_add (abs_testIntegral_le_cutNorm μ K hp hv hp1 hv1)
+    (abs_testIntegral_le_cutNorm μ K hn hv hn1 hv1))
+
 /-- **Upper side of the factor sandwich.** Relaxing indicators to `[-1,1]`-valued test functions
 increases the cut norm by at most a factor of `4`. -/
 theorem cutNormSigned_le_four_mul_cutNorm (K : SymmKernel Ω μ) :
     cutNormSigned μ K ≤ 4 * cutNorm μ K := by
   refine cutNormSigned_le μ fun u v hu hv hu1 hv1 => ?_
-  let up := fun x => max (u x) 0
-  let un := fun x => max (-u x) 0
-  let vp := fun x => max (v x) 0
-  let vn := fun x => max (-v x) 0
-  have hupm : Measurable up := hu.max measurable_const
-  have hunm : Measurable un := hu.neg.max measurable_const
-  have hvpm : Measurable vp := hv.max measurable_const
-  have hvnm : Measurable vn := hv.neg.max measurable_const
-  have hup1 : ∀ x, up x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (hu1 x).2 zero_le_one⟩
-  have hun1 : ∀ x, un x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (by linarith [(hu1 x).1]) zero_le_one⟩
-  have hvp1 : ∀ x, vp x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (hv1 x).2 zero_le_one⟩
-  have hvn1 : ∀ x, vn x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (by linarith [(hv1 x).1]) zero_le_one⟩
-  have hup1' : ∀ x, up x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hup1 x).1], (hup1 x).2⟩
-  have hun1' : ∀ x, un x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hun1 x).1], (hun1 x).2⟩
-  have hvp1' : ∀ x, vp x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hvp1 x).1], (hvp1 x).2⟩
-  have hvn1' : ∀ x, vn x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hvn1 x).1], (hvn1 x).2⟩
-  have hu_eq : u = up - un := by
-    funext x
-    exact (max_zero_sub_max_neg_zero_eq_self (u x)).symm
-  have hv_eq : v = vp - vn := by
-    funext x
-    exact (max_zero_sub_max_neg_zero_eq_self (v x)).symm
-  have hu_sub1 : ∀ x, (up - un) x ∈ Icc (-1 : ℝ) 1 := by
-    rw [← hu_eq]
-    exact hu1
-  have hpp := abs_testIntegral_le_cutNorm μ K hupm hvpm hup1 hvp1
-  have hmp := abs_testIntegral_le_cutNorm μ K hunm hvpm hun1 hvp1
-  have hpm := abs_testIntegral_le_cutNorm μ K hupm hvnm hup1 hvn1
-  have hmm := abs_testIntegral_le_cutNorm μ K hunm hvnm hun1 hvn1
-  rw [hu_eq, hv_eq,
-    K.testIntegral_sub_right μ
-      (K.integrable_testIntegrand μ (hupm.sub hunm) hvpm hu_sub1 hvp1')
-      (K.integrable_testIntegrand μ (hupm.sub hunm) hvnm hu_sub1 hvn1'),
-    K.testIntegral_sub_left μ
-      (K.integrable_testIntegrand μ hupm hvpm hup1' hvp1')
-      (K.integrable_testIntegrand μ hunm hvpm hun1' hvp1'),
-    K.testIntegral_sub_left μ
-      (K.integrable_testIntegrand μ hupm hvnm hup1' hvn1')
-      (K.integrable_testIntegrand μ hunm hvnm hun1' hvn1')]
-  calc
-    |K.testIntegral μ up vp - K.testIntegral μ un vp -
-        (K.testIntegral μ up vn - K.testIntegral μ un vn)|
-        ≤ |K.testIntegral μ up vp - K.testIntegral μ un vp| +
-            |K.testIntegral μ up vn - K.testIntegral μ un vn| := abs_sub _ _
-    _ ≤ (|K.testIntegral μ up vp| + |K.testIntegral μ un vp|) +
-          (|K.testIntegral μ up vn| + |K.testIntegral μ un vn|) :=
-      add_le_add (abs_sub _ _) (abs_sub _ _)
-    _ ≤ (cutNorm μ K + cutNorm μ K) + (cutNorm μ K + cutNorm μ K) :=
-      add_le_add (add_le_add hpp hmp) (add_le_add hpm hmm)
-    _ = 4 * cutNorm μ K := by ring
+  have h01 : Icc (0 : ℝ) 1 ⊆ Icc (-1) 1 := Icc_subset_Icc (by norm_num) le_rfl
+  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := hv.exists_eq_sub_of_mem_Icc hv1
+  rw [K.testIntegral_sub_right μ (K.integrable_testIntegrand μ hu hp hu1 fun y => h01 (hp1 y))
+    (K.integrable_testIntegrand μ hu hn hu1 fun y => h01 (hn1 y))]
+  linarith [abs_sub (K.testIntegral μ u p) (K.testIntegral μ u n),
+    abs_testIntegral_le_two_mul_cutNorm μ K hu hp hu1 hp1,
+    abs_testIntegral_le_two_mul_cutNorm μ K hu hn hu1 hn1]
 
 end DenseGraphLimits
 

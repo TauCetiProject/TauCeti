@@ -258,6 +258,166 @@ theorem stableToHomotopyCategory_commShiftIso_one_hom_app (X : C) :
   rw [stableToHomotopyCategoryCommShift, commShiftOfIntertwiningStableSuspensionShift_iso_one]
   simp [stableSuspensionCompStableToHomotopyCategoryIso]
 
+/-- For any morphism `ψ` from the complete resolution of `X₃` to the shifted complete resolution
+of `X₁`, the lift of its cycles map followed by the shift comparison equals `ψ` in the homotopy
+category. -/
+theorem quotient_map_liftMap_cyclesMap_comp_shiftHomotopyEquiv_hom (X₁ X₃ : C)
+    (ψ : (hE.completeResolution X₃).complex ⟶ (hE.completeResolution X₁).shift.complex) :
+    (HomotopyCategory.quotient C _).map
+        (hE.liftMap ((hE.completeResolutionIso X₃).inv ≫ CompleteResolution.cyclesMap ψ) ≫
+          (hE.shiftHomotopyEquiv X₁).hom) = (HomotopyCategory.quotient C _).map ψ :=
+  (hE.quotient_map_eq_iff _ ψ).2 (by
+    rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
+      cyclesMap_liftMap]
+    simp)
+
+/-- The first square of the comparison between the image of the triangle of a conflation and the
+triangle of the horseshoe of complete resolutions. -/
+private theorem completeResolutionFunctor_map_f_comp_isoOfHomotopyEquiv_hom {S : ShortComplex C}
+    {g' : S.X₂ ⟶ (hE.completeResolution S.X₃).Z 0}
+    (h : CompleteResolution.Horseshoe ((hE.completeResolutionIso S.X₁).hom ≫ S.f) g') :
+    hE.completeResolutionFunctor.map S.f ≫
+        (eqToIso (hE.completeResolutionFunctor_obj S.X₂) ≪≫
+          HomotopyCategory.isoOfHomotopyEquiv
+            (CompleteResolution.homotopyEquiv (hE.completeResolution S.X₂) h.resolution
+              (hE.completeResolutionIso S.X₂ ≪≫ h.iso.symm))).hom =
+      (eqToIso (hE.completeResolutionFunctor_obj S.X₁)).hom ≫
+        (HomotopyCategory.quotient C _).map h.ι := by
+  let e₂ := CompleteResolution.homotopyEquiv (hE.completeResolution S.X₂) h.resolution
+    (hE.completeResolutionIso S.X₂ ≪≫ h.iso.symm)
+  have key : (HomotopyCategory.quotient C _).map (hE.liftMap S.f) ≫
+      (HomotopyCategory.quotient C _).map e₂.hom = (HomotopyCategory.quotient C _).map h.ι := by
+    rw [← Functor.map_comp]
+    exact (hE.quotient_map_eq_iff (hE.liftMap S.f ≫ e₂.hom) h.ι).2 (by
+      rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
+        cyclesMap_liftMap, h.cyclesMap_ι]
+      simp)
+  simp only [completeResolutionFunctor_map, Iso.trans_hom, eqToIso.hom,
+    HomotopyCategory.isoOfHomotopyEquiv, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, key, e₂]
+
+/-- The second square of the comparison between the image of the triangle of a conflation and the
+triangle of the horseshoe of complete resolutions. -/
+private theorem completeResolutionFunctor_map_g_comp_eqToIso_hom {S : ShortComplex C}
+    {f' : (hE.completeResolution S.X₁).Z 0 ⟶ S.X₂}
+    (h : CompleteResolution.Horseshoe f' (S.g ≫ (hE.completeResolutionIso S.X₃).inv)) :
+    hE.completeResolutionFunctor.map S.g ≫ (eqToIso (hE.completeResolutionFunctor_obj S.X₃)).hom =
+      (eqToIso (hE.completeResolutionFunctor_obj S.X₂) ≪≫
+          HomotopyCategory.isoOfHomotopyEquiv
+            (CompleteResolution.homotopyEquiv (hE.completeResolution S.X₂) h.resolution
+              (hE.completeResolutionIso S.X₂ ≪≫ h.iso.symm))).hom ≫
+        (HomotopyCategory.quotient C _).map h.π := by
+  let e₂ := CompleteResolution.homotopyEquiv (hE.completeResolution S.X₂) h.resolution
+    (hE.completeResolutionIso S.X₂ ≪≫ h.iso.symm)
+  have key : (HomotopyCategory.quotient C _).map (hE.liftMap S.g) =
+      (HomotopyCategory.quotient C _).map e₂.hom ≫ (HomotopyCategory.quotient C _).map h.π := by
+    rw [← Functor.map_comp]
+    exact (hE.quotient_map_eq_iff (hE.liftMap S.g) (e₂.hom ≫ h.π)).2 (by
+      rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
+        cyclesMap_liftMap, h.cyclesMap_π]
+      simp)
+  simp only [completeResolutionFunctor_map, Iso.trans_hom, eqToIso.hom,
+    HomotopyCategory.isoOfHomotopyEquiv, Category.assoc, eqToHom_trans, eqToHom_refl,
+    Category.comp_id, key, e₂]
+
+/-- The cocycle of a horseshoe of complete resolutions, read in the shifted complete resolution of
+the first term, is induced by a map `a` extending the inflation `S.f` to the first conflation
+of the complete resolution of `S.X₁`. -/
+private theorem exists_comp_eq_presentation_of_horseshoe {S : ShortComplex C}
+    (h : CompleteResolution.Horseshoe ((hE.completeResolutionIso S.X₁).hom ≫ S.f)
+      (S.g ≫ (hE.completeResolutionIso S.X₃).inv))
+    (σ : ∀ n, ((ShortComplex.mk h.ι h.π h.ι_π).map
+      (HomologicalComplex.eval C (ComplexShape.up ℤ) n)).Splitting) :
+    ∃ a : S.X₂ ⟶ (hE.completeResolution S.X₁).X 0,
+      S.f ≫ a = (hE.completeResolutionPresentation S.X₁).i ∧
+        S.g ≫ (hE.completeResolutionIso S.X₃).inv ≫ CompleteResolution.cyclesMap
+          (CochainComplex.homOfDegreewiseSplit _ σ ≫
+            (hE.completeResolution S.X₁).shiftComplexIso.inv) =
+          a ≫ (hE.completeResolutionPresentation S.X₁).p := by
+  let r₁ := hE.completeResolution S.X₁
+  let ψ : (hE.completeResolution S.X₃).complex ⟶ r₁.shift.complex :=
+    CochainComplex.homOfDegreewiseSplit _ σ ≫ r₁.shiftComplexIso.inv
+  let κ : (hE.completeResolution S.X₃).Z 0 ⟶ r₁.Z (0 + 1) := CompleteResolution.cyclesMap ψ
+  let a : S.X₂ ⟶ r₁.X 0 := h.iso.inv ≫ h.resolution.ι 0 ≫ (σ 0).r
+  have hfr : h.ι.f 0 ≫ (σ 0).r = 𝟙 _ := (σ 0).f_r
+  have ha : S.f ≫ a = (hE.completeResolutionPresentation S.X₁).i := by
+    have h₁ : S.f ≫ h.iso.inv = (hE.completeResolutionIso S.X₁).inv ≫
+        CompleteResolution.cyclesMap h.ι := by
+      rw [h.cyclesMap_ι]
+      simp
+    simp only [a, reassoc_of% h₁, CompleteResolution.cyclesMap_ι_assoc, hfr, Category.comp_id]
+  have hψ : ψ.f 0 = (σ 0).s ≫ h.resolution.complex.d 0 (0 + 1) ≫ (σ (0 + 1)).r := by
+    rw [HomologicalComplex.comp_f, CompleteResolution.shiftComplexIso_inv_f, Category.comp_id,
+      CochainComplex.homOfDegreewiseSplit_f]
+    -- The cocycle of a degreewise split sequence is defined componentwise by this formula.
+    rfl
+  have hκ : κ ≫ r₁.ι (0 + 1) = -((hE.completeResolution S.X₃).ι 0 ≫ (σ 0).s ≫
+      h.resolution.d 0 ≫ (σ (0 + 1)).r) := by
+    have := CompleteResolution.cyclesMap_ι ψ
+    rw [hψ, CompleteResolution.complex_d] at this
+    rw [← this]
+    simp [κ]
+  refine ⟨a, ha, ?_⟩
+  rw [← cancel_mono (r₁.ι (0 + 1)), Category.assoc, Category.assoc]
+  simp only [κ, ψ] at hκ
+  rw [hκ, Preadditive.comp_neg, Preadditive.comp_neg, ← Category.assoc S.g, h.g_comp_connecting σ,
+    neg_neg]
+  simp [a, CompleteResolution.d_def]
+  -- `r₁` is the chosen complete resolution of `S.X₁`.
+  rfl
+
+open Pretriangulated in
+/-- The third square of the comparison between the image of the triangle of a conflation and the
+triangle of the horseshoe of complete resolutions. -/
+private theorem stableToHomotopyCategory_map_connectingMap_comp_eq {S : ShortComplex C}
+    (hS : E.Conflation S)
+    (h : CompleteResolution.Horseshoe ((hE.completeResolutionIso S.X₁).hom ≫ S.f)
+      (S.g ≫ (hE.completeResolutionIso S.X₃).inv))
+    (σ : ∀ n, ((ShortComplex.mk h.ι h.π h.ι_π).map
+      (HomologicalComplex.eval C (ComplexShape.up ℤ) n)).Splitting) :
+    letI := hE.stableHasShift
+    letI := hE.stableToHomotopyCategoryCommShift
+    (hE.stableToHomotopyCategory.map (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm ≫
+          hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj S.X₁)) ≫
+        (hE.stableToHomotopyCategory.commShiftIso (1 : ℤ)).hom.app
+          (E.projectiveStableFunctor.obj S.X₁)) ≫
+        (shiftFunctor (HomotopyCategory C (ComplexShape.up ℤ)) (1 : ℤ)).map
+          (eqToIso (hE.completeResolutionFunctor_obj S.X₁)).hom =
+      (eqToIso (hE.completeResolutionFunctor_obj S.X₃)).hom ≫
+        (HomotopyCategory.quotient C _).map (CochainComplex.homOfDegreewiseSplit _ σ) ≫
+          ((HomotopyCategory.quotient C _).commShiftIso (1 : ℤ)).hom.app
+            (hE.completeResolution S.X₁).complex := by
+  let := hE.stableHasShift
+  let := hE.stableToHomotopyCategoryCommShift
+  let r₁ := hE.completeResolution S.X₁
+  obtain ⟨a, ha, hδ⟩ := hE.exists_comp_eq_presentation_of_horseshoe h σ
+  have hconn := hE.projectiveStableFunctor_map_eq_connectingMap_comp hS
+    (hE.completeResolutionPresentation S.X₁) a _ ha hδ
+  have key : (HomotopyCategory.quotient C _).map (hE.liftMap ((hE.completeResolutionIso S.X₃).inv ≫
+        CompleteResolution.cyclesMap (CochainComplex.homOfDegreewiseSplit _ σ ≫
+          r₁.shiftComplexIso.inv))) ≫
+      (HomotopyCategory.quotient C _).map (hE.shiftHomotopyEquiv S.X₁).hom ≫
+        (HomotopyCategory.quotient C _).map r₁.shiftComplexIso.hom =
+      (HomotopyCategory.quotient C _).map (CochainComplex.homOfDegreewiseSplit _ σ) := by
+    rw [← Functor.map_comp_assoc, hE.quotient_map_liftMap_cyclesMap_comp_shiftHomotopyEquiv_hom,
+      ← Functor.map_comp]
+    simp
+  rw [stableToHomotopyCategory_commShiftIso_one_hom_app]
+  simp only [Functor.map_comp, Category.assoc]
+  rw [← Functor.map_comp_assoc hE.stableToHomotopyCategory
+    (hE.stableShiftFunctorOneIso.inv.app _), Iso.inv_hom_id_app,
+    CategoryTheory.Functor.map_id, Category.id_comp]
+  simp only [stableSuspensionIsoCompleteResolutionSuspension, completeResolutionSuspensionCompIso,
+    NatIso.ofComponents_hom_app, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, Functor.mapIso_hom,
+    Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, HomotopyCategory.isoOfHomotopyEquiv, Iso.app_hom]
+  rw [← Functor.map_comp_assoc, ← hconn,
+    stableToHomotopyCategory_map_projectiveStableFunctor_map, completeResolutionFunctor_map]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl, Category.id_comp,
+    Category.comp_id]
+  rw [reassoc_of% key]
+
 open Pretriangulated in
 /-- The image of the standard triangle of a conflation is distinguished in the homotopy
 category: it is isomorphic to the triangle of the degreewise split sequence of complete
@@ -297,101 +457,9 @@ theorem stableToHomotopyCategory_map_stableConflationTriangle_mem_distTriang
       CochainComplex.triangleOfDegreewiseSplit_obj₁, CochainComplex.triangleOfDegreewiseSplit_obj₂,
       CochainComplex.triangleOfDegreewiseSplit_obj₃, CochainComplex.triangleOfDegreewiseSplit_mor₁,
       CochainComplex.triangleOfDegreewiseSplit_mor₂, CochainComplex.triangleOfDegreewiseSplit_mor₃]
-  · have key : (HomotopyCategory.quotient C _).map (hE.liftMap S.f) ≫
-        (HomotopyCategory.quotient C _).map e₂.hom = (HomotopyCategory.quotient C _).map h.ι := by
-      rw [← Functor.map_comp]
-      exact (hE.quotient_map_eq_iff (hE.liftMap S.f ≫ e₂.hom) h.ι).2 (by
-        rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
-          cyclesMap_liftMap, h.cyclesMap_ι]
-        simp)
-    -- Restate the square with the objects of both triangles in their plain form.
-    change hE.completeResolutionFunctor.map S.f ≫ i₂.hom =
-      i₁.hom ≫ (HomotopyCategory.quotient C _).map h.ι
-    simp only [completeResolutionFunctor_map, i₁, i₂, Iso.trans_hom, eqToIso.hom,
-      HomotopyCategory.isoOfHomotopyEquiv, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp, key]
-  · have key : (HomotopyCategory.quotient C _).map (hE.liftMap S.g) =
-        (HomotopyCategory.quotient C _).map e₂.hom ≫ (HomotopyCategory.quotient C _).map h.π := by
-      rw [← Functor.map_comp]
-      exact (hE.quotient_map_eq_iff (hE.liftMap S.g) (e₂.hom ≫ h.π)).2 (by
-        rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
-          cyclesMap_liftMap, h.cyclesMap_π]
-        simp)
-    -- Restate the square with the objects of both triangles in their plain form.
-    change hE.completeResolutionFunctor.map S.g ≫ i₃.hom =
-      i₂.hom ≫ (HomotopyCategory.quotient C _).map h.π
-    simp only [completeResolutionFunctor_map, i₂, i₃, Iso.trans_hom, eqToIso.hom,
-      HomotopyCategory.isoOfHomotopyEquiv, Category.assoc, eqToHom_trans, eqToHom_refl,
-      Category.comp_id, key]
-  · -- The cycles map of the connecting cocycle, read in the shifted complete resolution.
-    let r₁ := hE.completeResolution S.X₁
-    let ψ : (hE.completeResolution S.X₃).complex ⟶ r₁.shift.complex :=
-      CochainComplex.homOfDegreewiseSplit _ σ ≫ r₁.shiftComplexIso.inv
-    let κ : (hE.completeResolution S.X₃).Z 0 ⟶ r₁.Z (0 + 1) := CompleteResolution.cyclesMap ψ
-    let a : S.X₂ ⟶ r₁.X 0 := h.iso.inv ≫ h.resolution.ι 0 ≫ (σ 0).r
-    have hfr : h.ι.f 0 ≫ (σ 0).r = 𝟙 _ := (σ 0).f_r
-    have ha : S.f ≫ a = (hE.completeResolutionPresentation S.X₁).i := by
-      have h₁ : S.f ≫ h.iso.inv = (hE.completeResolutionIso S.X₁).inv ≫
-          CompleteResolution.cyclesMap h.ι := by
-        rw [h.cyclesMap_ι]
-        simp
-      simp only [a, reassoc_of% h₁, CompleteResolution.cyclesMap_ι_assoc, hfr, Category.comp_id]
-    have hψ : ψ.f 0 = (σ 0).s ≫ h.resolution.complex.d 0 (0 + 1) ≫ (σ (0 + 1)).r := by
-      rw [HomologicalComplex.comp_f, CompleteResolution.shiftComplexIso_inv_f, Category.comp_id,
-        CochainComplex.homOfDegreewiseSplit_f]
-      -- The cocycle of a degreewise split sequence is defined componentwise by this formula.
-      rfl
-    have hκ : κ ≫ r₁.ι (0 + 1) = -((hE.completeResolution S.X₃).ι 0 ≫ (σ 0).s ≫
-        h.resolution.d 0 ≫ (σ (0 + 1)).r) := by
-      have := CompleteResolution.cyclesMap_ι ψ
-      rw [hψ, CompleteResolution.complex_d] at this
-      rw [← this]
-      simp [κ]
-    have hδ : S.g ≫ (hE.completeResolutionIso S.X₃).inv ≫ κ =
-        a ≫ (hE.completeResolutionPresentation S.X₁).p := by
-      rw [← cancel_mono (r₁.ι (0 + 1)), Category.assoc, Category.assoc, hκ, Preadditive.comp_neg,
-        Preadditive.comp_neg, ← Category.assoc S.g, h.g_comp_connecting σ, neg_neg]
-      simp [a, CompleteResolution.d_def]
-      -- `r₁` is the chosen complete resolution of `S.X₁`.
-      rfl
-    have hconn := hE.projectiveStableFunctor_map_eq_connectingMap_comp hS
-      (hE.completeResolutionPresentation S.X₁) a _ ha hδ
-    have key : (HomotopyCategory.quotient C _).map
-          (hE.liftMap ((hE.completeResolutionIso S.X₃).inv ≫ κ)) ≫
-        (HomotopyCategory.quotient C _).map (hE.shiftHomotopyEquiv S.X₁).hom ≫
-          (HomotopyCategory.quotient C _).map r₁.shiftComplexIso.hom =
-        (HomotopyCategory.quotient C _).map (CochainComplex.homOfDegreewiseSplit _ σ) := by
-      have h₁ : (HomotopyCategory.quotient C _).map
-          (hE.liftMap ((hE.completeResolutionIso S.X₃).inv ≫ κ) ≫
-            (hE.shiftHomotopyEquiv S.X₁).hom) = (HomotopyCategory.quotient C _).map ψ :=
-        (hE.quotient_map_eq_iff _ ψ).2 (by
-          rw [CompleteResolution.cyclesMap_comp, CompleteResolution.cyclesMap_homotopyEquiv_hom,
-            cyclesMap_liftMap]
-          simp [κ])
-      rw [← Functor.map_comp_assoc, h₁, ← Functor.map_comp]
-      simp [ψ]
-    -- Restate the square with the objects of both triangles in their plain form.
-    change (hE.stableToHomotopyCategory.map (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
-        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm ≫
-          hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj S.X₁)) ≫
-        (hE.stableToHomotopyCategory.commShiftIso (1 : ℤ)).hom.app
-          (E.projectiveStableFunctor.obj S.X₁)) ≫ (shiftFunctor _ (1 : ℤ)).map i₁.hom =
-      i₃.hom ≫ (HomotopyCategory.quotient C _).map (CochainComplex.homOfDegreewiseSplit _ σ) ≫
-        ((HomotopyCategory.quotient C _).commShiftIso (1 : ℤ)).hom.app r₁.complex
-    rw [stableToHomotopyCategory_commShiftIso_one_hom_app]
-    simp only [Functor.map_comp, Category.assoc]
-    rw [← Functor.map_comp_assoc hE.stableToHomotopyCategory
-      (hE.stableShiftFunctorOneIso.inv.app _), Iso.inv_hom_id_app,
-      CategoryTheory.Functor.map_id, Category.id_comp]
-    simp only [stableSuspensionIsoCompleteResolutionSuspension, completeResolutionSuspensionCompIso,
-      NatIso.ofComponents_hom_app, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, Functor.mapIso_hom,
-      Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-      Category.id_comp, HomotopyCategory.isoOfHomotopyEquiv, Iso.app_hom]
-    rw [← Functor.map_comp_assoc, ← hconn,
-      stableToHomotopyCategory_map_projectiveStableFunctor_map, completeResolutionFunctor_map]
-    simp only [i₁, i₃, eqToIso.hom, eqToHom_map, Category.assoc, eqToHom_trans_assoc,
-      eqToHom_trans, eqToHom_refl, Category.id_comp, Category.comp_id]
-    rw [reassoc_of% key]
+  · exact hE.completeResolutionFunctor_map_f_comp_isoOfHomotopyEquiv_hom h
+  · exact hE.completeResolutionFunctor_map_g_comp_eqToIso_hom h
+  · exact hE.stableToHomotopyCategory_map_connectingMap_comp_eq hS h σ
 
 /-- **The complete-resolution functor from the stable category to the homotopy category is a
 triangle functor.** -/

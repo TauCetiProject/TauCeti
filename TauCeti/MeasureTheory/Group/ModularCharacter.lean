@@ -116,6 +116,17 @@ theorem modularCharacter_rpow_mul_inv (r : ℝ) (x : G) :
   rw [← Real.mul_rpow (by positivity) (by positivity), ← NNReal.coe_mul, ← map_mul,
     mul_inv_cancel, map_one, NNReal.coe_one, Real.one_rpow]
 
+/-- The values `c(x)` and `c(x⁻¹)` of the modular character multiply to one. -/
+theorem modularCharacter_mul_inv (x : G) :
+    (Measure.modularCharacter x : ℝ) * (Measure.modularCharacter x⁻¹ : ℝ) = 1 := by
+  simpa using modularCharacter_rpow_mul_inv 1 x
+
+/-- The values `c(x * y)` and `c(y⁻¹)` of the modular character multiply to `c(x)`. -/
+theorem modularCharacter_mul_inv_cancel_right (x y : G) :
+    (Measure.modularCharacter (x * y) : ℝ) * (Measure.modularCharacter y⁻¹ : ℝ) =
+      Measure.modularCharacter x := by
+  rw [map_mul, NNReal.coe_mul, mul_assoc, modularCharacter_mul_inv, mul_one]
+
 
 section Integral
 

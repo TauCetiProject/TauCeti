@@ -27,7 +27,7 @@ statements about nonnegative real numbers, one monotone functional at a time.
 
 * `TauCeti.le_iff_forall_monotone_dual_le`: `x ≤ y` if and only if `f x ≤ f y` for every
   monotone continuous linear functional `f`.
-* `TauCeti.eq_of_forall_monotone_dual_eq`: monotone continuous linear functionals separate points.
+* `TauCeti.eq_iff_forall_monotone_dual_eq`: monotone continuous linear functionals separate points.
 * `TauCeti.tendsto_iff_forall_monotone_dual`: in finite dimension, `f → c` if and only if
   `φ ∘ f → φ c` for every monotone continuous linear functional `φ`.
 -/
@@ -51,20 +51,18 @@ theorem le_iff_forall_monotone_dual_le :
   -- Otherwise `y - x` lies outside the closed positive cone, and Farkas' lemma separates them.
   by_contra hxy
   obtain ⟨f, hf, hfyx⟩ := (ProperCone.positive ℝ E).hyperplane_separation_point
-    (x₀ := y - x) (by simpa [sub_nonneg] using hxy)
-  have hmono : Monotone f :=
-    (monotone_iff_map_nonneg f).2 fun z hz ↦ hf z (ProperCone.mem_positive.2 hz)
-  have := h f hmono
-  rw [map_sub] at hfyx
-  linarith
+    (x₀ := y - x) (by simpa using hxy)
+  refine (h f <| (monotone_iff_map_nonneg f).2 fun z hz ↦ hf z ?_).not_gt (by simpa using hfyx)
+  exact ProperCone.mem_positive.2 hz
 
 /-- **Monotone functionals separate points.** In a locally convex real ordered vector space with
-closed positive cone, two vectors on which every monotone continuous linear functional agrees are
-equal. -/
-theorem eq_of_forall_monotone_dual_eq (h : ∀ f : StrongDual ℝ E, Monotone f → f x = f y) :
-    x = y :=
-  le_antisymm (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).le)
-    (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).ge)
+closed positive cone, two vectors are equal if and only if every monotone continuous linear
+functional agrees on them. -/
+theorem eq_iff_forall_monotone_dual_eq :
+    x = y ↔ ∀ f : StrongDual ℝ E, Monotone f → f x = f y :=
+  ⟨fun hxy f _ ↦ congrArg f hxy, fun h ↦
+    le_antisymm (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).le)
+      (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).ge)⟩
 
 /-- **Monotone functionals detect convergence in finite dimension.** In a finite-dimensional
 locally convex real ordered vector space with closed positive cone, `f` tends to `c` along `l` if
@@ -81,7 +79,7 @@ theorem tendsto_iff_forall_monotone_dual [FiniteDimensional ℝ E] {α : Type*} 
   have ev_apply (x : E) (φ : {φ : StrongDual ℝ E // Monotone φ}) : ev x φ = φ.1 x := by
     rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe]
   have hev : IsClosedEmbedding ev := LinearMap.isClosedEmbedding_of_injective <|
-    LinearMap.ker_eq_bot.2 fun x y hxy ↦ eq_of_forall_monotone_dual_eq fun φ hφ ↦ by
+    LinearMap.ker_eq_bot.2 fun x y hxy ↦ eq_iff_forall_monotone_dual_eq.2 fun φ hφ ↦ by
       simpa only [ev_apply] using congr_fun hxy ⟨φ, hφ⟩
   refine hev.tendsto_nhds_iff.2 <| tendsto_pi_nhds.2 fun φ ↦ ?_
   simpa only [Function.comp_apply, ev_apply] using h φ.1 φ.2

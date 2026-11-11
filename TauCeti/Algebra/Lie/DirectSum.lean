@@ -46,6 +46,8 @@ Mathlib's API for it stays reachable.
   projection of an external direct sum of Lie modules are `DirectSum.of` and evaluation.
 * `DirectSum.lof_lie`: the linear inclusion `DirectSum.lof` of a summand commutes with the Lie
   action.
+* `DirectSum.isNilpotent_toEnd_iff`: an element acts nilpotently on a finite external direct sum
+  exactly when it acts nilpotently on every summand.
 
 ## Roadmap
 
@@ -93,6 +95,34 @@ theorem lieModuleComponent_apply (i : ι) (x : ⨁ i, P i) :
   (rfl)
 
 end LieModules
+
+section Nilpotent
+
+variable {R : Type u} {L : Type v} {ι : Type w₂} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {P : ι → Type w₁} [∀ i, AddCommGroup (P i)] [∀ i, Module R (P i)]
+  [∀ i, LieRingModule L (P i)] [∀ i, LieModule R L (P i)]
+
+open LieModule in
+/-- **An element acts nilpotently on a finite external direct sum of Lie modules exactly when it
+acts nilpotently on every summand.** The action is summand by summand, so a power of it vanishes on
+the sum exactly when it vanishes on each summand, and finitely many summands have a common
+vanishing power. -/
+theorem isNilpotent_toEnd_iff [Finite ι] {x : L} :
+    IsNilpotent (toEnd R L (⨁ i, P i) x) ↔ ∀ i, IsNilpotent (toEnd R L (P i) x) := by
+  classical
+  refine ⟨fun ⟨n, hn⟩ i => ⟨n, LinearMap.ext fun m => of_injective (β := P) i ?_⟩, fun h => ?_⟩
+  · rw [← lieModuleOf_apply R ι L P i, ← toEnd_pow_apply_map, hn]
+    simp
+  · choose n hn using h
+    have := Fintype.ofFinite ι
+    refine ⟨∑ i, n i, LinearMap.ext fun m => DFinsupp.ext fun i => ?_⟩
+    have h' := toEnd_pow_apply_map (lieModuleComponent R ι L P i) (∑ i, n i) x m
+    rw [lieModuleComponent_apply, lieModuleComponent_apply,
+      pow_eq_zero_of_le (Finset.single_le_sum (fun j _ => Nat.zero_le (n j)) (Finset.mem_univ i))
+        (hn i)] at h'
+    simpa using h'.symm
+
+end Nilpotent
 
 section Transport
 

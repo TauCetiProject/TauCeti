@@ -56,6 +56,15 @@ lemma supportedModuleHSheafFunctor_obj (n : ℕ) :
     (supportedModuleHSheafFunctor S n).obj F = F.supportedModuleHSheaf S n :=
   (rfl)
 
+/-- Local cohomology is additive in the coefficient sheaf. -/
+instance additive_supportedModuleHSheafFunctor (n : ℕ) :
+    (supportedModuleHSheafFunctor (R := R) S n).Additive := by
+  have : (supportedModuleHPresheafFunctor (R := R) S n).Additive := inferInstance
+  have : (presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive :=
+    inferInstance
+  exact inferInstanceAs ((supportedModuleHPresheafFunctor (R := R) S n ⋙
+    presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive)
+
 /-- The local cohomology map is induced by the supported cohomology presheaf map through
 sheafification, in every degree. -/
 @[simp, reassoc]
@@ -123,6 +132,20 @@ lemma supportedModuleHSheafZeroIso_hom_naturality
     _ = f.hom.app W ((F.supportedModuleHPresheafZeroIso S).hom.app W x).val :=
       congrArg (f.hom.app W) (coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W x).symm
     _ = _ := (coe_supportedSubmoduleFunctor_map_hom_app_apply S f W _).symm
+
+/-- Degree-zero local cohomology preserves monomorphisms, giving the initial
+monomorphism in the coefficient long exact sequence. -/
+instance mono_supportedModuleHSheafFunctor_map_zero
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : F ⟶ G) [Mono f] :
+    Mono ((supportedModuleHSheafFunctor S 0).map f) := by
+  have : Mono ((supportedSubmoduleFunctor S).map f) :=
+    mono_supportedSubmoduleFunctor_map S f
+  have : Mono ((supportedModuleHSheafFunctor S 0).map f ≫
+      (G.supportedModuleHSheafZeroIso S).hom) := by
+    rw [supportedModuleHSheafZeroIso_hom_naturality]
+    exact mono_comp (F.supportedModuleHSheafZeroIso S).hom
+      ((supportedSubmoduleFunctor S).map f)
+  exact mono_of_mono _ (G.supportedModuleHSheafZeroIso S).hom
 
 /-- Local cohomology with supports in `S` has zero stalks outside `S`. -/
 theorem isZero_stalk_supportedModuleHSheaf_of_notMem {x : X} (hx : x ∉ S) (n : ℕ) :

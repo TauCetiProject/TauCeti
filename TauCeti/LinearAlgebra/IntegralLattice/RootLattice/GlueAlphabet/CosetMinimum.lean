@@ -55,6 +55,9 @@ shortest vector of the word's coset is a family of shortest vectors of the label
 half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.  For words
 over the `A₂` alphabet `ℤ/3`, every nonzero label has shortest norm `2/3`, so `μ(w)` is two
 thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two_eq_two_div_three_mul_hammingNorm`).
+Reindexing the components along an equivalence to an equal family, through
+`TauCeti.DynkinType.piGlueAlphabetCongr`, does not change `μ(w)`
+(`sum_glueMinimum_piGlueAlphabetCongr`).
 
 ## Main declarations
 
@@ -74,6 +77,8 @@ thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two_eq_two_div_three_mul
   is two thirds of the Hamming weight of `w`.
 * `TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`: for a word in copies of the
   `A₁` glue alphabet, `μ(w)` is half its Hamming weight.
+* `TauCeti.DynkinType.sum_glueMinimum_piGlueAlphabetCongr`: `μ(w)` is unchanged by reindexing
+  the components along an equivalence to an equal family.
 
 ## References
 
@@ -429,5 +434,26 @@ theorem sum_glueMinimum_A_one_eq_hammingNorm_div_two {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [typeA1GlueAlphabetZModStandardIsometry_apply]
   exact (glueMinimum_A 1 _ (w j)).trans (h (w j))
+
+/-- **Shortest norms are unchanged by passing to an equal family of components**: if the
+components `s k` are the components `t (σ k)` for an equivalence `σ : κ ≃ ι`, a glue word and its
+image under `piGlueAlphabetCongr` have the same shortest norm `μ(w)`. -/
+theorem sum_glueMinimum_piGlueAlphabetCongr {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (t : ι → DynkinType) (ht : ∀ i, (t i).IsSimplyLaced) {s : κ → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (σ : κ ≃ ι) (h : ∀ k, t (σ k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    ∑ k, (s k).glueMinimum (hs k) (piGlueAlphabetCongr t ht σ h w k) =
+      ∑ i, (t i).glueMinimum (ht i) (w i) := by
+  have hofEq {a b : DynkinType} (hab : a = b) (ha : a.IsSimplyLaced) (hb : b.IsSimplyLaced)
+      (x : a.glueAlphabet ha) :
+      b.glueMinimum hb
+          (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr hab ha hb) x) =
+        a.glueMinimum ha x := by
+    subst hab
+    rw [FiniteQuadraticModule.Isometry.ofEq_rfl]
+    rfl
+  refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans
+    (σ.sum_comp fun i ↦ (t i).glueMinimum (ht i) (w i))
+  rw [piGlueAlphabetCongr_apply, hofEq (h k)]
 
 end TauCeti.DynkinType

@@ -510,14 +510,9 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   -- `w` is the point of `Spa (A⟨T/s⟩⟨ρ(p)⟩, ·)` over `y`
   set w := (spaCompletedLocalizationHomeomorph _ _ hP' q.num q.den _ q.hasDenominatorPower).symm
     ⟨y, mem_spaBasicOpen.mp hy⟩
-  have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y := by
-    have h := spaCompletedLocalizationHomeomorph_apply _ _ hP' q.num q.den _
-      q.hasDenominatorPower w
-    have h' : spaCompletedLocalizationHomeomorph _ _ hP' q.num q.den _ q.hasDenominatorPower w =
-        ⟨y, mem_spaBasicOpen.mp hy⟩ :=
-      Homeomorph.apply_symm_apply _ _
-    exact (spaLocToRationalSubset_val _ _ _ _ _ _ w).symm.trans
-      (congrArg Subtype.val (h.symm.trans h'))
+  have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y :=
+    spaComapLoc_spaCompletedLocalizationHomeomorph_symm _ _ hP' q.num q.den _
+      q.hasDenominatorPower ⟨y, mem_spaBasicOpen.mp hy⟩
   have hw := (mem_spa_iff _ _).mp w.2
   have hjy : spaComapLoc P Aplus T s S hden y ∈ spaBasicOpen Aplus p.num p.den := by
     rwa [← locOpensComap_spaBasicOpen, mem_locOpensComap] at hy
@@ -528,12 +523,9 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   have hmem : comap (e : _ →+* _) w.1 ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
-      (continuous_iteratedLocalizationRingEquiv ..) hw.1 (fun a ha ↦ ?_) ?_
-    · rw [← RingHom.comp_apply, he, RingHom.comp_apply]
-      exact hw.2 _ (toCompletionLoc_mem_completedPlusSubring _ _ _ _ _ _
-        (toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha))
-    · rw [hcomap]
-      exact mem_spaBasicOpen.mp hjy
+      (continuous_iteratedLocalizationRingEquiv ..) hw.1 ?_
+    rw [hcomap]
+    exact mem_spaBasicOpen.mp hjy
   -- and the point of `Spa (A⟨p⟩, A_p⁺)` over `j(y)` is unique
   have hpt : (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
       p.hasDenominatorPower).symm ⟨spaComapLoc P Aplus T s S hden y, mem_spaBasicOpen.mp hjy⟩ =

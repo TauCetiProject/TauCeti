@@ -12,8 +12,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Fiber
 -- Proof-only: a polynomial with as many distinct roots as its degree is separable, which is what
 -- each of the three counts below ends in.
 import TauCeti.FieldTheory.Separable.OfRootCount
--- Proof-only: an even index with nonzero cast keeps `2` nonzero.
-import TauCeti.Data.Int.CastNeZero
+-- Proof-only: a nonzero even element keeps `2` nonzero.
+import TauCeti.Algebra.Ring.Parity
 -- Proof-only: `ΨSqₙ` is nonzero on a nonsingular curve, and vanishes only at torsion. This also
 -- carries the degree, evaluation-bridge and algebraic-closure material the count uses.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Coprimality
@@ -175,7 +175,7 @@ two-to-one onto its roots, and `(n ² - 4) / 2` is its degree. -/
 private theorem separable_preΨ_of_even_of_isAlgClosed {n : ℤ} (heven : Even n)
     (hchar : (n : F) ≠ 0) : ((W⁄F).preΨ n).Separable := by
   classical
-  have h2F : ((2 : ℤ) : F) ≠ 0 := Int.two_ne_zero_of_even_of_cast_ne_zero heven hchar
+  have h2F : ((2 : ℤ) : F) ≠ 0 := by exact_mod_cast heven.intCast.two_ne_zero_of_ne_zero hchar
   obtain ⟨T, hTcard, hTmem⟩ := exists_finset_zsmul_eq_zero W hchar
   set s : Finset (W⁄F).toAffine.Point := {P ∈ T | ¬ ((2 : ℤ) • P = 0)} with hs
   have hscard : n.natAbs ^ 2 - 4 ≤ #s := by
@@ -281,7 +281,7 @@ theorem separable_minpoly_of_aeval_ΨSq_eq_zero {Ω : Type*} [Ring Ω] [IsDomain
   rcases hprime.dvd_mul.mp hdvd with hd | hd
   · exact (separable_preΨ W hchar).of_dvd (hprime.dvd_of_dvd_pow hd)
   · by_cases he : Even n
-    · exact (separable_Ψ₂Sq W (Int.two_ne_zero_of_even_of_cast_ne_zero he hchar)).of_dvd
+    · exact (separable_Ψ₂Sq W (by exact_mod_cast he.intCast.two_ne_zero_of_ne_zero hchar)).of_dvd
         (by simpa [he] using hd)
     · exact Polynomial.separable_one.of_dvd (by simpa [he] using hd)
 

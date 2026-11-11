@@ -163,11 +163,9 @@ theorem mul_diagGL_of_coe_eq_permMatrix
 `Matrix.isUnit_diagonal`, this assumes no commutativity of `k`. -/
 theorem isUnit_apply_of_isDiag {g : GL ι k} (hg : (g : Matrix ι ι k).IsDiag) (i : ι) :
     IsUnit ((g : Matrix ι ι k) i i) := by
-  have h₁ := congrFun (congrFun g.mul_inv i) i
-  have h₂ := congrFun (congrFun g.inv_mul i) i
-  rw [← hg.diagonal_diag, Matrix.diagonal_mul, Matrix.one_apply_eq] at h₁
-  rw [← hg.diagonal_diag, Matrix.mul_diagonal, Matrix.one_apply_eq] at h₂
-  exact ⟨⟨_, _, h₁, h₂⟩, rfl⟩
+  have := g.isUnit
+  rw [← hg.diagonal_diag] at this
+  exact Pi.isUnit_iff.mp (isUnit_diagonal_iff.mp this) i
 
 /-- The **diagonal torus** of `GL n k`: the image of the coordinatewise units under `diagGL`. -/
 def diagonalTorus (k : Type u) [Semiring k] (n : ℕ) : Subgroup (GL (Fin n) k) :=
@@ -459,8 +457,7 @@ theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q : Type*} [CommRing Q]
 /-- The determinant of an element of the diagonal torus is the product of its diagonal entries. -/
 theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
     (Matrix.GeneralLinearGroup.det g : k) = ∏ i, (g : Matrix (Fin n) (Fin n) k) i i := by
-  rw [Matrix.GeneralLinearGroup.val_det_apply,
-    ← (mem_diagonalTorus_iff.mp hg).diagonal_diag, Matrix.det_diagonal]
-  simp [Matrix.diag]
+  obtain ⟨t, rfl⟩ := hg
+  simp
 
 end TauCeti

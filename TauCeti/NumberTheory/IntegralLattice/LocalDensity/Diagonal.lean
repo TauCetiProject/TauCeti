@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.FromBlocks
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The local density at an odd prime from a diagonal Jordan form
@@ -44,6 +45,8 @@ recursion `α_p(L₀ ⊥ p L') = p^{(n' + 1) n' / 2} · α_p(L₀) · α_p(L')`
   any basis, of a bilinear form over `ℤ_p` with an orthogonal basis of diagonal entries `uᵢ pᵏⁱ`,
   as produced at an odd prime by
   `TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`.
+* `LinearMap.BilinForm.valuation_det_toMatrix_of_iIsOrtho`: the valuation of the Gram determinant
+  of such a form, in any basis, is `∑ kᵢ`.
 
 ## References
 
@@ -170,13 +173,32 @@ theorem localDensity_toMatrix_of_iIsOrtho (hp : p ≠ 2) {ι : Type*} [Fintype �
   have hdiag : toMatrix b₀ B = diagonal fun i => (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i := by
     simpa only [hu] using hb₀.toMatrix_eq_diagonal
   set e := b₀.indexEquiv b
-  have hb : toMatrix (b.reindex e.symm) B = reindex e.symm e.symm (toMatrix b B) := by
-    ext i j
-    simp only [toMatrix_apply, Basis.reindex_apply, Equiv.symm_symm, reindex_apply,
-      submatrix_apply]
   have := b₀.invertibleToMatrix (b.reindex e.symm)
-  rw [← localDensity_reindex e.symm, ← hb, ← toMatrix_mul_basis_toMatrix b₀ _ B, hdiag,
-    localDensity_transpose_mul_mul (isUnit_det_of_invertible _)]
+  rw [← localDensity_reindex e.symm, ← toMatrix_reindex, ← toMatrix_mul_basis_toMatrix b₀ _ B,
+    hdiag, localDensity_transpose_mul_mul (isUnit_det_of_invertible _)]
   exact localDensity_diagonal_unit_mul_pow hp u k
+
+/-- **The valuation of the Gram determinant of a form with a diagonal Jordan basis.** Let `B` be a
+bilinear form over `ℤ_p` with an orthogonal basis `b₀` whose diagonal entries are
+`B (b₀ i) (b₀ i) = uᵢ pᵏⁱ`. Then the Gram matrix of `B` in every basis `b`, with any index type, has
+determinant of valuation `∑ kᵢ`. -/
+theorem valuation_det_toMatrix_of_iIsOrtho {ι : Type*} [Fintype ι]
+    {B : LinearMap.BilinForm ℤ_[p] M} {b₀ : Basis ι ℤ_[p] M} (hb₀ : B.iIsOrtho b₀) {u : ι → ℤ_[p]ˣ}
+    {k : ι → ℕ} (hu : ∀ i, B (b₀ i) (b₀ i) = u i * (p : ℤ_[p]) ^ k i) {κ : Type*} [Fintype κ]
+    [DecidableEq κ] (b : Basis κ ℤ_[p] M) :
+    (toMatrix b B).det.valuation = ∑ i, k i := by
+  classical
+  set e := b₀.indexEquiv b
+  have hU : IsUnit ((b₀.toMatrix (b.reindex e.symm)).det ^ 2 * ∏ i, (u i : ℤ_[p])) := by
+    rw [← Basis.det_apply]
+    exact ((b₀.isUnit_det _).pow 2).mul (IsUnit.prod_univ_iff.mpr fun i => (u i).isUnit)
+  -- the Gram determinant is `p ^ ∑ kᵢ` times a unit
+  have hdet : (toMatrix b B).det = (p : ℤ_[p]) ^ (∑ i, k i) *
+      ((b₀.toMatrix (b.reindex e.symm)).det ^ 2 * ∏ i, (u i : ℤ_[p])) := by
+    rw [← det_toMatrix_reindex b e.symm, det_toMatrix_eq_det_sq_mul_det b₀, hb₀.det_toMatrix]
+    simp_rw [hu, prod_mul_distrib, prod_pow_eq_pow_sum]
+    ring
+  rw [hdet, PadicInt.valuation_p_pow_mul _ _ hU.ne_zero, PadicInt.valuation_eq_zero_of_isUnit hU,
+    add_zero]
 
 end LinearMap.BilinForm

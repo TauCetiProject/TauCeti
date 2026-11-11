@@ -42,6 +42,8 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
 
 * `Diffeomorph.mul_apply` / `one_apply` / `inv_apply` and the `coe_*` companions: the group
   operations act by composition, the identity, and the inverse diffeomorphism.
+* `Diffeomorph.contMDiff_mul_apply`, `Diffeomorph.contMDiff_list_prod_apply`: pointwise products
+  of jointly smooth families of self-diffeomorphisms are jointly smooth.
 * `Function.Semiconj.diffeomorph_zpow_right`: a map intertwining two self-diffeomorphisms
   intertwines all of their integer powers.
 -/
@@ -192,6 +194,34 @@ theorem toHomeomorph_symm_zpow_apply (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℤ) (x :
       simpa only [inv_def, symm_toHomeomorph, coe_toHomeomorph] using
         congrArg (fun g : M ≃ₜ M ↦ g x) (toHomeomorph_zpow (f⁻¹) k).symm
     _ = (f ^ (-k)) x := by rw [inv_zpow']
+
+section SmoothFamily
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*}
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {P : Type*} [TopologicalSpace P]
+  [ChartedSpace H' P] {m : ℕ∞ω}
+
+/-- The pointwise product of two jointly `C^m` families of self-diffeomorphisms is jointly
+`C^m`. -/
+theorem contMDiff_mul_apply {f g : P → M ≃ₘ^n⟮I, I⟯ M}
+    (hf : ContMDiff (I'.prod I) I m fun q : P × M ↦ f q.1 q.2)
+    (hg : ContMDiff (I'.prod I) I m fun q : P × M ↦ g q.1 q.2) :
+    ContMDiff (I'.prod I) I m fun q : P × M ↦ (f q.1 * g q.1) q.2 :=
+  hf.comp (contMDiff_fst.prodMk hg)
+
+/-- The pointwise product of a finite list of jointly `C^m` families of self-diffeomorphisms is
+jointly `C^m`. -/
+theorem contMDiff_list_prod_apply (l : List (P → M ≃ₘ^n⟮I, I⟯ M))
+    (hl : ∀ f ∈ l, ContMDiff (I'.prod I) I m fun q : P × M ↦ f q.1 q.2) :
+    ContMDiff (I'.prod I) I m fun q : P × M ↦ (l.map (· q.1)).prod q.2 := by
+  induction l with
+  | nil => exact contMDiff_snd
+  | cons f l ih =>
+    simp only [List.map_cons, List.prod_cons]
+    exact contMDiff_mul_apply (g := fun p ↦ (l.map (· p)).prod) (hl f List.mem_cons_self)
+      (ih fun g hg ↦ hl g (List.mem_cons_of_mem f hg))
+
+end SmoothFamily
 
 end Diffeomorph
 

@@ -154,8 +154,6 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed 
 
 section Exhaust
 
-variable [Finite ι]
-
 include hind hcard
 
 /-- **A complete family lists every primitive central idempotent.** Every irreducible

@@ -35,8 +35,6 @@ Mathlib's `GL(2, ℝ)`-invariance).
   faithful `PGL(2, ℝ)`-action along the injective `toPGL` and `psl2zToPSL2R`.
 * `SMulInvariantMeasure` instances for `SL(2, R)` and `PSL(2, R)` (any coefficients
   mapping to `ℝ`) on `(ℍ, volume)`.
-* `UpperHalfPlane.smul_eq_smul_of_coe_eq_smul` — matrices differing by a nonzero scalar act
-  identically on `ℍ`.
 * `UpperHalfPlane.psl2zToPSL2R_smul` and `UpperHalfPlane.sl2zToPSL2R_smul` — the integral
   actions factor through the `PSL(2, ℝ)`-action along `psl2zToPSL2R` and `sl2zToPSL2R`.
 * `Subgroup.orbitRel_map_sl2zToPSL2R_iff` — the orbits of the image in `PSL(2, ℝ)` of a
@@ -89,21 +87,6 @@ instance : SMulInvariantMeasure SL(2, R) ℍ volume where
     simp only [MulAction.compHom_smul_def]
     exact (measurePreserving_smul (mapGL ℝ g) volume).measure_preimage hs.nullMeasurableSet
 
-/-- Nonzero-scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a nonzero
-scalar multiple of another acts identically on `ℍ`, through Mathlib's scalar-matrix
-action `glScalar_smul`. -/
-lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ} (hc : c ≠ 0)
-    (h_eq : ((h : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
-      c • ((g : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ))
-    (τ : ℍ) :
-    h • τ = g • τ := by
-  have h_mul : h = Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 c hc) * g := by
-    refine Units.ext ?_
-    rw [Units.val_mul, Matrix.GeneralLinearGroup.coe_scalar, h_eq]
-    ext i j
-    simp [Matrix.scalar, Matrix.diagonal_mul]
-  rw [h_mul, mul_smul, glScalar_smul]
-
 /-- Central elements of `SL(2, R)` fix every point of `ℍ`, for any coefficients mapping
 to `ℝ`: they are the scalar matrices `r • 1` with `r ^ 2 = 1`, and nonzero-scalar
 matrices act as the identity Möbius transformation. -/
@@ -113,14 +96,10 @@ theorem smul_eq_self_of_mem_center (c : SL(2, R)) (hc : c ∈ Subgroup.center SL
   obtain ⟨r, hr, hrc⟩ := Matrix.SpecialLinearGroup.mem_center_iff.mp hc
   have hr' : r ^ 2 = 1 := by simpa using hr
   have hr2 : algebraMap R ℝ r ^ 2 = 1 := by rw [← map_pow, hr', map_one]
-  have ha : algebraMap R ℝ r ≠ 0 := by
-    intro h
-    rw [h] at hr2
-    simp at hr2
   -- the representative acts as the nonzero scalar matrix `algebraMap R ℝ r • 1`, which is
   -- the identity Möbius transformation
   have h1 : mapGL ℝ c • τ = (1 : GL (Fin 2) ℝ) • τ := by
-    refine smul_eq_smul_of_coe_eq_smul ha ?_ τ
+    refine smul_eq_smul_of_coe_eq_smul (c := algebraMap R ℝ r) ?_ τ
     rw [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
     ext i j
     simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
@@ -223,12 +202,10 @@ instance : FaithfulSMul PSL(2, ℤ) ℍ where
 theorem glPosToPSL2R_smul (g : GL(2, ℝ)⁺) (τ : ℍ) :
     glPosToPSL2R g • τ = g • τ := by
   have hg_pos : 0 < ((g : GL (Fin 2) ℝ).det.val : ℝ) := g.property
-  have h_sqrt_ne : (Real.sqrt ((g : GL (Fin 2) ℝ).det.val))⁻¹ ≠ 0 :=
-    inv_ne_zero (Real.sqrt_ne_zero'.mpr hg_pos)
   rw [glPosToPSL2R_apply, pslMk_smul]
   -- the `SL(2, ℝ)`-action is definitionally the `GL(2, ℝ)`-action of the `mapGL ℝ` image
   change (mapGL ℝ (glPosToSL2R g) : GL (Fin 2) ℝ) • τ = (g : GL (Fin 2) ℝ) • τ
-  refine smul_eq_smul_of_coe_eq_smul h_sqrt_ne ?_ τ
+  refine smul_eq_smul_of_coe_eq_smul (c := (Real.sqrt ((g : GL (Fin 2) ℝ).det.val))⁻¹) ?_ τ
   -- read off the matrix of the normalized representative through `mapGL`
   change ((mapGL ℝ (glPosToSL2R g) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
     (Real.sqrt ((g : GL (Fin 2) ℝ).det.val))⁻¹ •

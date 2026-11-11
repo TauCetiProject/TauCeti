@@ -90,7 +90,8 @@ theorem IsGeodesicSegment.concaveOn_dist_sq_sub (hγ : IsGeodesicSegment γ x y)
   rw [← neg_convexOn_iff]
   have hcont : ContinuousOn (fun t => dist z (γ t)) (Icc 0 1) :=
     (continuous_const.dist continuous_id).comp_continuousOn hγ.continuousOn
-  refine convexOn_of_midpoint (convex_Icc 0 1) ((hcont.pow 2).sub (by fun_prop)).neg
+  refine convexOn_of_midpoint (convex_Icc 0 1)
+    ((hcont.pow 2).sub (by fun_prop)).neg.upperSemicontinuousOn
     fun s hs t ht => ?_
   have hm : midpoint ℝ s t = (s + t) / 2 := by
     rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]

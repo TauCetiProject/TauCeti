@@ -117,7 +117,7 @@ group C⋆-seminorm `GroupConvolutionAlgebra.fullSeminorm G μ`. -/
       GroupConvolutionAlgebra.fullSeminorm G μ := by
   ext f
   exact le_antisymm
-    ((fullSeminorm_le_iff (apply_nonneg _ _)).2 fun _ _ _ _ P =>
+    (fullSeminorm_le_iff.2 fun _ _ _ _ P =>
       norm_integratedStarAlgHom_le_groupFullSeminorm P f)
     ((GroupConvolutionAlgebra.fullSeminorm_le_iff (apply_nonneg _ f)).2 fun _ _ _ _ _ hU hcont => by
       rw [← congrFun (congrArg DFunLike.coe (hU.integratedStarAlgHom_toTrivialCovariant hcont μ)) f]

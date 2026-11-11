@@ -124,7 +124,7 @@ lemma twistedChainComplex_condition_f (i : ℕ) :
 
 /-- The summand of a simplex coming from the subspace vanishes in relative twisted chains. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_comp_twistedChainComplexπ (n : ℕ)
+lemma ιTwistedChainComplex_twistedChainComplexπ_f (n : ℕ)
     (σ : (TopCat.toSSet.obj P.snd) _⦋n⦌) :
     LocalCoefficientSystem.ιTwistedChainComplex L n ((TopCat.toSSet.map P.map).app _ σ) ≫
       (P.twistedChainComplexπ L).f n = 0 := by
@@ -202,11 +202,11 @@ lemma not_range_simplexMap_subset_range_ofSubset_compl_map_iff {X : TopCat.{v}} 
 
 /-- The summand of a simplex whose image lies in the subspace vanishes in relative twisted
 chains. -/
-lemma ιTwistedChainComplex_comp_twistedChainComplexπ_of_range_subset
+lemma ιTwistedChainComplex_twistedChainComplexπ_f_of_range_subset
     (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
     LocalCoefficientSystem.ιTwistedChainComplex L k σ ≫ (P.twistedChainComplexπ L).f k = 0 := by
   obtain ⟨τ, rfl⟩ := (P.mem_range_toSSet_map_app_iff_range_simplexMap_subset σ).2 hσ
-  exact P.ιTwistedChainComplex_comp_twistedChainComplexπ L k τ
+  exact P.ιTwistedChainComplex_twistedChainComplexπ_f L k τ
 
 /-- The coefficient of a relative twisted chain on a singular simplex of the ambient space whose
 image does not lie in the subspace: the coefficient on that simplex of any ambient twisted chain
@@ -256,7 +256,7 @@ lemma twistedChainComplex_ext_coeff {y y' : (P.twistedChainComplex L).X k}
   refine Finset.sum_eq_zero fun σ _ ↦ ?_
   by_cases hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map
   · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      P.ιTwistedChainComplex_comp_twistedChainComplexπ_of_range_subset L σ hσ, ModuleCat.hom_zero,
+      P.ιTwistedChainComplex_twistedChainComplexπ_f_of_range_subset L σ hσ, ModuleCat.hom_zero,
       LinearMap.zero_apply]
   · rw [ha σ hσ, map_zero, map_zero]
 

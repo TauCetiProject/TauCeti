@@ -95,7 +95,6 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_iff_isSolvable_lieAlgebra
       LieAlgebra.IsSolvable (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let _ : Algebra.Smooth k H :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H.obj)
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   constructor
   · exact fun hsolv ↦ hsolv.isSolvable_lieAlgebra hconn
   · intro hlie

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
-public import TauCeti.RepresentationTheory.Continuous.LeftRegular
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -166,7 +166,7 @@ theorem dense_span_integratedOperator [LocallyCompactSpace G] [R1Space G]
     simp [hg, hf_apply, image_eq_zero_of_notMem_tsupport fun h => hgV (hφV h)]
   have hle := TauCeti.norm_integral_smul_sub_le hf_int hf_supp
     ((U.integrable_integrand hcont μ f v).aestronglyMeasurable.congr
-      (hfL1.symm.mono fun g hg => congrArg (· • U g v) hg)) (fun _ hg => hg)
+      (hfL1.symm.mono fun g hg => congrArg (· • U g v) hg)) (.of_forall fun _ hg => hg)
   have heq : ∫ g, fL1 g • U g v ∂μ = hU.integratedOperator hcont μ f v :=
     integral_congr_ae (hfL1.mono fun g hg => congrArg (· • U g v) hg)
   refine ⟨hU.integratedOperator hcont μ f v, ?_,
