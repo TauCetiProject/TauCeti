@@ -58,44 +58,48 @@ private theorem parallelLoop_zero_disjoint : Disjoint E(parallelLoopPart) E(zero
 def graph : Graph (Fin 3) Edge :=
   (Graph.Compatible.of_disjoint_edgeSet parallelLoop_zero_disjoint).union
 
+private theorem isLink_graph (e : Edge) (x y : Fin 3) :
+    graph.IsLink e x y ↔
+      (((e = 0 ∨ e = 1) ∧ ((x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 0))) ∨
+        (e = 2 ∧ x = 0 ∧ y = 0)) ∨
+        (e = 3 ∧ ((x = 1 ∧ y = 2) ∨ (x = 2 ∧ y = 1))) := by
+  simp [graph, parallelLoopPart, parallelPart, loopPart, zeroPart]
+
 /-- Every ambient vertex is an actual vertex of `graph`. -/
 @[simp]
 theorem vertexSet_graph : V(graph) = Set.univ := by
   ext x
-  fin_cases x <;> simp [graph, parallelLoopPart, parallelPart, loopPart, zeroPart]
+  simp only [Set.mem_univ, iff_true]
+  fin_cases x
+  · exact ((isLink_graph 0 0 1).2 (by simp)).left_mem
+  · exact ((isLink_graph 0 0 1).2 (by simp)).right_mem
+  · exact ((isLink_graph 3 1 2).2 (by simp)).right_mem
 
 /-- Every ambient edge identity is an actual edge of `graph`. -/
 @[simp]
 theorem edgeSet_graph : E(graph) = Set.univ := by
   ext e
-  fin_cases e <;> simp [graph, parallelLoopPart, parallelPart, loopPart, zeroPart]
+  simp only [Set.mem_univ, iff_true]
+  fin_cases e
+  · exact ((isLink_graph 0 0 1).2 (by simp)).edge_mem
+  · exact ((isLink_graph 1 0 1).2 (by simp)).edge_mem
+  · exact ((isLink_graph 2 0 0).2 (by simp)).edge_mem
+  · exact ((isLink_graph 3 1 2).2 (by simp)).edge_mem
 
 /-- The actual vertex set is finite in the aggregation example. -/
 noncomputable local instance : Fintype V(graph) :=
   Fintype.ofEquiv (Fin 3)
-    { toFun := fun x ↦ ⟨x, by simp⟩
-      invFun := Subtype.val
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+    (Equiv.subtypeUnivEquiv (p := (· ∈ V(graph))) (by simp)).symm
 
 /-- The actual edge set is finite in the aggregation example. -/
 noncomputable local instance : Fintype E(graph) :=
   Fintype.ofEquiv Edge
-    { toFun := fun e ↦ ⟨e, by simp⟩
-      invFun := Subtype.val
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+    (Equiv.subtypeUnivEquiv (p := (· ∈ E(graph))) (by simp)).symm
 
 private theorem sum_edges (f : E(graph) → ℕ) :
     ∑ e, f e = ∑ e : Edge, f ⟨e, by simp⟩ := by
-  let eEquiv : E(graph) ≃ Edge :=
-    { toFun := Subtype.val
-      invFun := fun e ↦ ⟨e, by simp⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  apply Fintype.sum_equiv eEquiv
-  intro e
-  rfl
+  exact Fintype.sum_equiv
+    (Equiv.subtypeUnivEquiv (p := (· ∈ E(graph))) (by simp)) _ _ (fun _ ↦ rfl)
 
 /-- Include one of the three ambient vertices into the actual vertex set of `graph`. -/
 abbrev vertex (i : Fin 3) : V(graph) :=
@@ -132,8 +136,7 @@ theorem pairCapacity_zero_one :
   classical
   rw [graph.pairCapacity_mk_of_ne edgeCapacity (by decide)]
   rw [sum_edges]
-  norm_num [Fin.sum_univ_four, graph, parallelLoopPart, parallelPart, loopPart, zeroPart,
-    edgeCapacity]
+  norm_num [Fin.sum_univ_four, isLink_graph]
 
 /-- The loop is discarded by aggregation, so the diagonal capacity at vertex zero is zero. -/
 theorem pairCapacity_zero_zero :
@@ -146,8 +149,7 @@ theorem pairCapacity_one_two :
   classical
   rw [graph.pairCapacity_mk_of_ne edgeCapacity (by decide)]
   rw [sum_edges]
-  norm_num [Fin.sum_univ_four, graph, parallelLoopPart, parallelPart, loopPart, zeroPart,
-    edgeCapacity]
+  norm_num [Fin.sum_univ_four, isLink_graph]
 
 /-- A pair-capacity function obtained from the multigraph aggregation by assigning eleven to
 every diagonal pair. -/
