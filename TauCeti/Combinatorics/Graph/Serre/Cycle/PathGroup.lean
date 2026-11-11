@@ -209,7 +209,8 @@ theorem mapRange_intCast_coe_cycleClass (hO : Γ.IsOrientation O) (g : PathGroup
   simp [coe_cycleClass]
 
 /-- The cycle class of a positive loop dart is its unit chain. Together with `map_inv`, such a
-loop and its reverse have opposite nonzero classes; this applies to every petal of a rose. -/
+loop and its reverse have opposite classes, nonzero over a nontrivial ring; this applies to every
+petal of a rose. -/
 theorem coe_cycleClass_ofPath_toPath (hO : Γ.IsOrientation O) (e : v ⟶ v) (he : e.1 ∈ O) :
     ((cycleClass hO R (ofPath e.toPath)).toAdd : O →₀ R) = Finsupp.single ⟨e.1, he⟩ 1 := by
   rw [coe_cycleClass_ofPath, Path.chain_toPath, dartChain_of_mem R hO he]
