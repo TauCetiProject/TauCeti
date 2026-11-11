@@ -36,10 +36,10 @@ itself (`TauCeti.bijOn_stripNormalization`) which commutes with the deck transla
 `(x, y) ↦ (x + 1, y)` (`TauCeti.stripNormalization_add_one`), fixes each boundary line
 (`TauCeti.stripNormalization_mk_zero`, `TauCeti.stripNormalization_mk_one`), and is as smooth on
 the strip as `ρ` (`TauCeti.contDiffOn_stripNormalization`). Its first coordinate depends only on
-`x` and is strictly increasing (`TauCeti.strictMono_stripNormalizedAngle`), so it preserves the
-order of the displacements of a lift along either boundary line. For the constant density `1` it is
-the identity (`TauCeti.stripNormalization_one`); for the density `1 + y` it is
-`(x, y) ↦ (x, (2 y + y²) / 3)` (`TauCeti.stripNormalization_one_add_snd`).
+`x` and is strictly increasing (`TauCeti.stripNormalizedAngle_strictMono`), so for a boundary
+lift `f : ℝ → ℝ` the displacements `f x - x` and `u (f x) - u x` have the same sign. For the
+constant density `1` it is the identity (`TauCeti.stripNormalization_one`); for the density `1 + y`
+it is `(x, y) ↦ (x, (2 y + y²) / 3)` (`TauCeti.stripNormalization_one_add_snd`).
 
 Conjugation by `Φ` compares area-preserving maps for the two forms. If `Φ ∘ F = G ∘ Φ` on the
 strip, then `ρ(F p) · det dF_p = ρ(p) · det dG_(Φ p)` at every point `p` at which `F` and `G` are
@@ -207,9 +207,8 @@ theorem continuous_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip) :
     Continuous (stripNormalizedAngle ρ) :=
   (contDiff_stripNormalizedAngle (n := 0) (contDiffOn_zero.2 hρ)).continuous
 
-/-- For a positive density the first coordinate of the normalization is strictly increasing, so
-it preserves the order of horizontal displacements. -/
-theorem strictMono_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip)
+/-- For a positive density the first coordinate of the normalization is strictly increasing. -/
+theorem stripNormalizedAngle_strictMono (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : StrictMono (stripNormalizedAngle ρ) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_stripNormalizedAngle hρ)
     fun x ↦ div_pos (stripColumnMass_pos hρ hpos x) (stripMass_pos hρ hpos)
@@ -228,11 +227,11 @@ theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip)
 
 /-- For a positive periodic density the first coordinate of the normalization is onto `ℝ`: it is
 a continuous lift of a degree-one circle map. -/
-theorem surjective_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip)
+theorem stripNormalizedAngle_surjective (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p) :
     Function.Surjective (stripNormalizedAngle ρ) :=
   let u : CircleDeg1Lift :=
-    ⟨⟨stripNormalizedAngle ρ, (strictMono_stripNormalizedAngle hρ hpos).monotone⟩,
+    ⟨⟨stripNormalizedAngle ρ, (stripNormalizedAngle_strictMono hρ hpos).monotone⟩,
       stripNormalizedAngle_add_one hρ hpos hper⟩
   u.continuous_iff_surjective.1 (continuous_stripNormalizedAngle hρ)
 
@@ -253,7 +252,7 @@ theorem stripNormalization_mk_one (hρ : ContinuousOn ρ unitStrip)
 
 /-- On each vertical segment of the strip, the second coordinate of the normalization is strictly
 increasing. -/
-theorem strictMonoOn_stripNormalization_snd (hρ : ContinuousOn ρ unitStrip)
+theorem stripNormalization_snd_strictMonoOn (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (x : ℝ) :
     StrictMonoOn (fun y ↦ (stripNormalization ρ (x, y)).2) (Icc 0 1) := by
   intro y hy y' hy' hlt
@@ -279,7 +278,7 @@ bijection of `[0, 1]`. -/
 theorem bijOn_stripNormalization_snd (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (x : ℝ) :
     BijOn (fun y ↦ (stripNormalization ρ (x, y)).2) (Icc 0 1) (Icc 0 1) := by
-  have hmono := strictMonoOn_stripNormalization_snd hρ hpos x
+  have hmono := stripNormalization_snd_strictMonoOn hρ hpos x
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
   have hv0 : (stripNormalization ρ (x, 0)).2 = 0 := by rw [stripNormalization_mk_zero]
@@ -306,12 +305,12 @@ theorem bijOn_stripNormalization (hρ : ContinuousOn ρ unitStrip)
     BijOn (stripNormalization ρ) unitStrip unitStrip := by
   refine ⟨mapsTo_stripNormalization hρ hpos, ?_, ?_⟩
   · rintro ⟨x, y⟩ hp ⟨x', y'⟩ hp' h
-    have hx : x = x' := (strictMono_stripNormalizedAngle hρ hpos).injective (congrArg Prod.fst h)
+    have hx : x = x' := (stripNormalizedAngle_strictMono hρ hpos).injective (congrArg Prod.fst h)
     subst hx
     exact Prod.ext rfl ((bijOn_stripNormalization_snd hρ hpos x).injOn (mem_unitStrip.1 hp)
       (mem_unitStrip.1 hp') (congrArg Prod.snd h))
   · rintro ⟨u, v⟩ hq
-    obtain ⟨x, rfl⟩ := surjective_stripNormalizedAngle hρ hpos hper u
+    obtain ⟨x, rfl⟩ := stripNormalizedAngle_surjective hρ hpos hper u
     obtain ⟨y, hy, hyv⟩ := (bijOn_stripNormalization_snd hρ hpos x).surjOn (mem_unitStrip.1 hq)
     exact ⟨(x, y), mem_unitStrip.2 hy, Prod.ext rfl hyv⟩
 
@@ -355,13 +354,6 @@ theorem stripNormalization_one_add_snd (p : ℝ × ℝ) :
 
 /-! ### Smoothness -/
 
-/-- The vertical integral `∫₀ʸ ρ(x, r) dr` as an integral over the unit interval. -/
-private theorem integral_comp_mk_left_eq_integral_unitInterval (x y : ℝ) :
-    ∫ r in (0 : ℝ)..y, ρ (x, r) = ∫ t : I, y * ρ (x, y * t) := by
-  rw [← intervalIntegral_eq_integral_unitInterval (fun t ↦ y * ρ (x, y * t)),
-    intervalIntegral.integral_const_mul, ← smul_eq_mul,
-    smul_integral_comp_mul_left (f := fun r ↦ ρ (x, r)), mul_zero, mul_one]
-
 /-- The vertical primitive `(x, y) ↦ ∫₀ʸ ρ(x, r) dr` of a `C^n` density is `C^n` on the strip. -/
 private theorem contDiffOn_integral_comp_mk_left {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip) :
     ContDiffOn ℝ n (fun p : ℝ × ℝ ↦ ∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) unitStrip := by
@@ -378,7 +370,7 @@ private theorem contDiffOn_integral_comp_mk_left {n : ℕ∞} (hρ : ContDiffOn 
   refine (convex_unitStrip.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtype_val uniqueDiffOn_unitStrip hW
     hF fun p hp t ↦ ⟨hp, t.2⟩).congr fun p _ ↦ ?_
-  simp [integral_comp_mk_left_eq_integral_unitInterval]
+  simp [intervalIntegral_zero_eq_integral_unitInterval_smul fun r ↦ ρ (p.1, r)]
 
 /-- **The normalization is as smooth as the density**, up to the boundary of the strip. -/
 theorem contDiffOn_stripNormalization {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip)
