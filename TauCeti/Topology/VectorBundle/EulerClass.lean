@@ -54,7 +54,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
   `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
 * `TauCeti.thomPairProj`: the projection of the total space to the base, as a morphism of
-  topological spaces out of the ambient space of the Thom pair.
+  topological spaces out of the ambient space of the Thom pair; `TauCeti.thomPairOverProj` is the
+  projection `E|_W ⟶ W` out of the ambient space of the Thom pair over `W`.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
 * `TauCeti.negTotalSpace`, `TauCeti.negThomPairMap`: fibrewise negation, as a self-map of the
@@ -212,6 +213,17 @@ def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
 
 @[simp]
 theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
+  (rfl)
+
+/-- The projection `E|_W ⟶ W` of the restriction of a fibre bundle to a subset `W` of its base, as a
+morphism of topological spaces out of the ambient space of the Thom pair over `W`. -/
+def thomPairOverProj (W : Set B) : (thomPairOver F E W).fst ⟶ TopCat.of W :=
+  TopCat.ofHom ⟨fun v ↦ ⟨v.1.proj, v.2⟩,
+    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _⟩
+
+@[simp]
+theorem thomPairOverProj_apply (W : Set B) (v : π F E ⁻¹' W) :
+    thomPairOverProj F E W v = ⟨v.1.proj, v.2⟩ :=
   (rfl)
 
 /-- The fibre inclusion over `b` followed by the projection is constant at `b`. -/

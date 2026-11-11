@@ -44,7 +44,9 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
   `TopPair.singularCohomologyπ_singularCup` its compatibility with the absolute cup product,
-  `TopPair.singularCup_naturality`, and the module laws `TopPair.singularCup_assoc` and
+  `TopPair.singularCup_naturality` (with the variant
+  `TopPair.singularCohomologyMap_singularCup_singularCohomologyMap` for classes pulled back from a
+  common space), and the module laws `TopPair.singularCup_assoc` and
   `TopPair.singularCup_constSingularCocycle_left`.
 * `TopCat.singularRelativeCup`, characterized by
   `TopCat.homologyMap_cochainComplexMap_singularRelativeCup`, with
@@ -246,6 +248,20 @@ lemma singularCup_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (u : T ⟶ R �
       TopPair.singularCohomologyMap f n (P'.singularCup k u μ p q n h a b) :=
   TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (rightAlexanderWhitneyDiagonal_naturality f u)
     p q n h a b
+
+/-- Pulling back the cup product of a pulled-back absolute class with a relative class along a map
+of pairs: if `f : P ⟶ P'` covers `g : P.fst ⟶ Z` through `g' : P'.fst ⟶ Z`, then
+`f^*(g'^*a ⌣ b) = g^*a ⌣ f^*b`. -/
+lemma singularCohomologyMap_singularCup_singularCohomologyMap {P P' : TopPair.{w}} (f : P ⟶ P')
+    {Z : TopCat.{w}} (g' : P'.fst ⟶ Z) (g : P.fst ⟶ Z) (hf : Hom.fst f ≫ g' = g)
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    (a : Z.singularCohomology R k M p) (b : P'.singularCohomology S k N q) :
+    TopPair.singularCohomologyMap f n
+        (P'.singularCup k u μ p q n h (TopCat.singularCohomologyMap g' p a) b) =
+      P.singularCup k u μ p q n h (TopCat.singularCohomologyMap g p a)
+        (TopPair.singularCohomologyMap f q b) := by
+  rw [← singularCup_naturality, ← ConcreteCategory.comp_apply,
+    ← TopCat.singularCohomologyMap_comp, hf]
 
 section Laws
 
