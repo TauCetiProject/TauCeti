@@ -55,15 +55,19 @@ theorem mem_pow_span_X_iff_order {f : MvPowerSeries σ R} {n : ℕ} :
     f ∈ (Ideal.span (Set.range X) : Ideal (MvPowerSeries σ R)) ^ n ↔
       (n : ℕ∞) ≤ f.order := by
   let e := (toAdicCompletionAlgEquiv σ R).toRingEquiv
+  -- Transport the ideal power to the extension of the polynomial variable ideal.
   rw [← Ideal.apply_mem_of_equiv_iff (f := e), Ideal.map_pow,
-    map_toAdicCompletionAlgEquiv_span_X, ← Ideal.map_pow,
-    ← Submodule.restrictScalars_mem (MvPolynomial σ R), ← Ideal.smul_top_eq_map,
-    AdicCompletion.pow_smul_top_eq_ker_eval (MvPolynomial.fg_idealOfVars σ R),
-    LinearMap.mem_ker, AdicCompletion.eval_apply]
+    map_toAdicCompletionAlgEquiv_span_X, ← Ideal.map_pow]
+  -- View this extension as a submodule, where it is the kernel of the completion projection.
+  rw [← Submodule.restrictScalars_mem (MvPolynomial σ R), ← Ideal.smul_top_eq_map,
+    AdicCompletion.pow_smul_top_eq_ker_eval (MvPolynomial.fg_idealOfVars σ R)]
+  -- Membership in that kernel means the nth completion coordinate vanishes.
+  rw [LinearMap.mem_ker, AdicCompletion.eval_apply]
   -- The completion projection is the quotient class of the total-degree truncation.
   simp only [e, AlgEquiv.coe_toRingEquiv, toAdicCompletionAlgEquiv_apply,
     toAdicCompletion_apply_eq_mk_truncTotal]
   rw [Ideal.Quotient.eq_zero_iff_mem]
+  -- Polynomial ideal-power membership is vanishing of coefficients below total degree n.
   simp only [Ideal.smul_eq_mul, Ideal.mul_top, MvPolynomial.mem_pow_idealOfVars_iff']
   constructor
   · intro h
@@ -118,6 +122,7 @@ theorem localOrder_span_singleton (f : MvPowerSeries σ k) :
 
 /-- Generator orders compute local ideal order in a finite-variable formal chart. In
 particular, a finite generating family's order is its minimum, and an empty family's is `∞`. -/
+@[simp]
 theorem localOrder_span_range {ι : Type*} (f : ι → MvPowerSeries σ k) :
     (Ideal.span (Set.range f)).localOrder = ⨅ i, (f i).order := by
   simp [Ideal.localOrder_span_range]
