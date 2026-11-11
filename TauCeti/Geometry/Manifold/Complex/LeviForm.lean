@@ -280,7 +280,7 @@ end Pullback
 
 section Chart
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **The Levi form in an arbitrary holomorphic chart.** Let `e` be a chart of the `C²` maximal
 atlas of the complex manifold `M`, with `x` in its source, and let `f` be `C²` at `x`. The Levi
@@ -298,11 +298,8 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
   -- The holomorphic transition map from the preferred chart to `e`.
   set φ : E → E := e ∘ (chartAt E x).symm
   have hφy : φ y = e x := by simp only [φ, comp_apply, hy]
-  have hφ : ContDiffAt ℂ 2 φ y := by
-    have h := (contMDiffAt_of_mem_maximalAtlas he hx).comp_of_eq
-      (contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x)
-        (mem_chart_target E x)) hy
-    exact contMDiffAt_iff_contDiffAt.mp h
+  have hφ : ContDiffAt ℂ 2 φ y :=
+    (contMDiffAt_of_mem_maximalAtlas he hx).contDiffAt_comp_chartAt_symm
   have hDφ : fderiv ℂ φ y = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x := by
     rw [(mdifferentiableAt_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mfderiv_abuse]
@@ -491,7 +488,7 @@ theorem IsManifoldStronglyPseudoconvexAt.comp [FiniteDimensional ℂ E] [FiniteD
 
 end Pullback
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **Strict plurisubharmonicity in an arbitrary holomorphic chart.** For `f` real `C²` at `x` and
 a chart `e` at `x` of the holomorphic `C²` maximal atlas, `f` is strictly plurisubharmonic at `x`

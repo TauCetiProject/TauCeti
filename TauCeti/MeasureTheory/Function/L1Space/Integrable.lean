@@ -94,6 +94,16 @@ theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpa
   have h := (integrableOn_singleton_iff (μ := ν)).1 hint.integrableOn
   simp [hx, hf] at h
 
+/-- For a positive real order `p`, if `g` lies in `Lᵖ` then `g ^ p` is integrable. -/
+theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {g : X → ℝ}
+    {p : ℝ} (hp : 0 < p) (hg : MemLp g (ENNReal.ofReal p) μ) :
+    Integrable (fun y => g y ^ p) μ := by
+  have hn := hg.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top
+  rw [ENNReal.toReal_ofReal hp.le] at hn
+  exact hn.mono' (hg.aestronglyMeasurable.aemeasurable.pow_const p).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => by
+      simpa only [Real.norm_eq_abs, abs_abs] using Real.abs_rpow_le_abs_rpow (g y) p)
+
 end MeasureTheory
 
 namespace TauCeti

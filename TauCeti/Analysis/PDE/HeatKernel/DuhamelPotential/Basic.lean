@@ -563,8 +563,7 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
   rw [dist_eq_norm, iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα₀ ht le_rfl,
     ← intervalIntegral.integral_sub (hint x) (hint y), dist_eq_norm]
   refine (norm_integral_le_of_ae_norm_le_rpow (A := 2 * C₂ * H) (B := C₃ * H) hα₀' hα₁' ht
-    (norm_pos_iff.2 (sub_ne_zero.2 hxy)) (by positivity) (by positivity) ((hint x).sub (hint y))
-    ?_ ?_).trans_eq ?_
+    (norm_pos_iff.2 (sub_ne_zero.2 hxy)) ?_ ?_).trans_eq ?_
   · filter_upwards [hae₂] with s hs hsI
     refine (norm_sub_le _ _).trans ?_
     linarith [hs hsI x, hs hsI y]
