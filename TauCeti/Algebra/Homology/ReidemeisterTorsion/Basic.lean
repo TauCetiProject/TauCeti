@@ -90,7 +90,8 @@ which the matrices of the differentials are the images under `φ` of those of `C
 `c i`, then `τ(D) = φ(τ(C))`. The ranks of the differentials do not change under `φ`, so `D` is
 acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_toMatrix_eq`), and the brackets
 of `D` are computed from the images of the boundary bases and lifts of `C` under the semilinear map
-`Module.Basis.semilinearMap φ (c i) (e i)`, whose determinants are the images under `φ` of those
+`Module.Basis.semilinearMap φ (c i) (e i)` (`HomologicalComplex.semilinearMapChosenBoundaryBasis`),
+whose determinants are the images under `φ` of those
 in `C`. Thus the torsion of a based complex over a ring with several residue or fraction fields can
 be compared componentwise along the field homomorphisms between them.
 
@@ -314,22 +315,47 @@ theorem torsionBracket_semilinearMap {j : ι} (h : C.ExactAt (j + 1))
   obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
   induction m using Fin.addCases <;> simp [hb₁]
 
-/-- For an acyclic complex, the images of the chosen boundary bases under the `φ`-semilinear maps
-`semilinearMap φ (c j) (e j)` are linearly independent: together with the images of the chosen
-lifts they form a family whose determinant is the image of a bracket, which is nonzero. -/
-theorem linearIndependent_semilinearMap_chosenBoundaryBasis (h : C.Acyclic) (j : ι) :
-    LinearIndependent K fun k ↦ (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
-  obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, (sub_add_cancel j 1).symm⟩
-  have hn := eq_add_of_exactAt c (h (i + 1)) (chosenBoundaryBasis C c (i + 1))
-    (chosenBoundaryBasis C c i)
-  have hdet := torsionBracket_ne_zero c (h (i + 1)) (chosenBoundaryBasis C c (i + 1))
-    (chosenBoundaryBasis C c i) (chosenBoundaryLift C c i) (chosenBoundaryLift_spec C c i)
-  rw [torsionBracket_eq_det_append c _ _ _ _ _ hn, ← map_ne_zero φ,
-    ← Basis.det_comp_semilinearMap φ (c (i + 1)) (e (i + 1))] at hdet
-  convert ((Basis.is_basis_iff_det (e (i + 1))).2 (isUnit_iff_ne_zero.2 hdet)).1.comp _
-    ((Fin.cast_injective hn.symm).comp (Fin.castAdd_injective _ _)) using 1
-  ext k
-  simp
+section Transport
+
+variable {j : ι} (hd : LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom =
+    (LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom).map φ)
+
+/-- The images of the chosen boundary basis of `Bⱼ = d(Cⱼ₊₁)` under the `φ`-semilinear map
+`semilinearMap φ (c j) (e j)`, as a basis of the boundaries `d(Dⱼ₊₁)`, when the matrix of the
+differential `Dⱼ₊₁ → Dⱼ` in the bases `e` is the image under `φ` of that of `Cⱼ₊₁ → Cⱼ` in the
+bases `c`. These images are boundaries since the semilinear maps intertwine the differentials, they
+are linearly independent since the chosen boundary basis is, and there are as many as the dimension
+of `d(Dⱼ₊₁)` since the ranks of the differentials agree. -/
+def semilinearMapChosenBoundaryBasis :
+    Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) K
+      (LinearMap.range (D.d (j + 1) j).hom) :=
+  haveI : Module.Finite K (D.X (j + 1)) := .of_basis (e (j + 1))
+  basisOfLinearIndependentOfCardEqFinrank'
+    (fun k ↦ ⟨(c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k),
+      LinearMap.mem_range.2 ⟨_, by
+        rw [Basis.semilinearMap_comp_apply_of_toMatrix_eq hd, chosenBoundaryLift_spec]⟩⟩)
+    (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
+      ((Basis.linearIndependent_semilinearMap_comp_iff φ (c j) (e j)).2
+        ((chosenBoundaryBasis C c j).linearIndependent.map' _ (Submodule.ker_subtype _))))
+    (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ hd])
+
+/-- The vectors of `semilinearMapChosenBoundaryBasis φ hd` are the images of the vectors of the
+chosen boundary basis of `C`. -/
+@[simp]
+theorem coe_semilinearMapChosenBoundaryBasis (k) :
+    (semilinearMapChosenBoundaryBasis φ hd k : D.X j) =
+      (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
+  simp [semilinearMapChosenBoundaryBasis]
+
+/-- The images of the chosen lifts of `C` are lifts of `semilinearMapChosenBoundaryBasis φ hd`
+through the differential of `D`. -/
+theorem d_semilinearMap_chosenBoundaryLift (k) :
+    (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (chosenBoundaryLift C c j k)) =
+      semilinearMapChosenBoundaryBasis φ hd k := by
+  rw [coe_semilinearMapChosenBoundaryBasis, Basis.semilinearMap_comp_apply_of_toMatrix_eq hd,
+    chosenBoundaryLift_spec]
+
+end Transport
 
 end ScalarExtension
 
@@ -858,38 +884,18 @@ theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterT
   · rw [reidemeisterTorsion_of_not_acyclic C c h, reidemeisterTorsion_of_not_acyclic D e
       (mt hDC.1 h), map_zero]
   have hD := hDC.2 h
-  have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
-  have hcomm (j : ℤ) (x : C.X (j + 1)) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) x) =
-        (c j).semilinearMap φ (e j) ((C.d (j + 1) j).hom x) :=
-    Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd j) x
-  -- The images of the chosen boundary bases of `C` are boundaries of `D`.
-  have hmem (j : ℤ) (k) : (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) ∈
-      LinearMap.range (D.d (j + 1) j).hom :=
-    LinearMap.mem_range.2 ⟨_, by rw [hcomm, chosenBoundaryLift_spec]⟩
-  -- The images of the chosen boundary bases of `C` form boundary bases of `D`, and the images of
-  -- the chosen lifts are lifts of them.
-  let b (j : ℤ) : Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) K
-      (LinearMap.range (D.d (j + 1) j).hom) :=
-    basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j k⟩)
-      (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
-        (linearIndependent_semilinearMap_chosenBoundaryBasis φ h j))
-      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j)])
-  have hb (j : ℤ) (k) : (b j k : D.X j) =
-      (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
-    simp [b]
-  have hs (j : ℤ) (k) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (chosenBoundaryLift C c j k)) =
-        b j k := by
-    rw [hb, hcomm, chosenBoundaryLift_spec]
+  -- The images of the chosen boundary bases and lifts of `C` are boundary bases and lifts of `D`.
   rw [reidemeisterTorsion_eq_finprod hn h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c),
-    reidemeisterTorsion_eq_finprod hn hD b
-      (fun j ↦ (c (j + 1)).semilinearMap φ (e (j + 1)) ∘ chosenBoundaryLift C c j) hs]
+    reidemeisterTorsion_eq_finprod hn hD (fun j ↦ semilinearMapChosenBoundaryBasis φ (hd j))
+      (fun j ↦ (c (j + 1)).semilinearMap φ (e (j + 1)) ∘ chosenBoundaryLift C c j)
+      (fun j ↦ d_semilinearMap_chosenBoundaryLift φ (hd j))]
   refine (MonoidHom.map_finprod_of_injective (φ : F →* K) φ.injective _).trans
     (finprod_congr fun j ↦ ?_)
   rw [MonoidHom.coe_ofClass, map_zpow₀,
-    torsionBracket_semilinearMap φ (h (j + 1)) (hD (j + 1)) _ _ _ _ _ _ (hb (j + 1)) (hs j)]
+    torsionBracket_semilinearMap φ (h (j + 1)) (hD (j + 1)) _ _ _ _ _ _
+      (coe_semilinearMapChosenBoundaryBasis φ (hd (j + 1)))
+      (d_semilinearMap_chosenBoundaryLift φ (hd j))]
 
 end ScalarExtension
 

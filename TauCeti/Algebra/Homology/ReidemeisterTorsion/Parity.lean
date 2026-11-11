@@ -66,6 +66,9 @@ particular the torsion is invariant under isomorphisms of based parity complexes
 * `HomologicalComplex.parityReidemeisterTorsion_eq_zero_iff`: the torsion vanishes if and only if
   the complex is not acyclic.
 * `HomologicalComplex.parityReidemeisterTorsion_eq_one`: the zero complex has torsion `1`.
+* `HomologicalComplex.range_d_one_zero_eq_ker_d_zero_one`,
+  `HomologicalComplex.range_d_zero_one_eq_ker_d_one_zero`: exactness of a parity complex in each
+  degree, as an equality of the image of one differential with the kernel of the other.
 * `HomologicalComplex.parityReidemeisterTorsion_eq_inv_det`,
   `HomologicalComplex.parityReidemeisterTorsion_eq_det`: the torsion of an acyclic complex with
   one vanishing differential.
@@ -151,6 +154,10 @@ theorem parityReidemeisterTorsion_eq_div {p q : ℕ}
       (b₀.reindex (finCongr hp))]
   set D₀ := (chosenBoundaryBasis C c 0).det (b₀.reindex (finCongr hp))
   set D₁ := (chosenBoundaryBasis C c 1).det (b₁.reindex (finCongr hq))
+  -- Identify the determinants in the degrees `0 + 1` and `1 + 1` with `D₁` and `D₀`. The bases
+  -- `b₁` and `b₀` are typed in the degrees `1` and `0`, so rewriting `0 + 1 = 1` or `1 + 1 = 0`
+  -- in the boundary bases alone gives an ill-typed motive; the two sides agree definitionally,
+  -- as `0 + 1` and `1 + 1` compute to `1` and `0` in `ZMod 2`.
   rw [show (chosenBoundaryBasis C c (0 + 1)).det (b₁.reindex (finCongr hq)) = D₁ from rfl,
     show (chosenBoundaryBasis C c (1 + 1)).det (b₀.reindex (finCongr hp)) = D₀ from rfl,
     mul_comm D₀ D₁, mul_div_mul_right _ _
@@ -167,6 +174,7 @@ theorem parityReidemeisterTorsion_ne_zero : C.parityReidemeisterTorsion c ≠ 0 
 end Acyclic
 
 /-- The torsion of a parity complex vanishes if and only if the complex is not acyclic. -/
+@[simp]
 theorem parityReidemeisterTorsion_eq_zero_iff :
     C.parityReidemeisterTorsion c = 0 ↔ ¬C.Acyclic :=
   ⟨fun h hC ↦ parityReidemeisterTorsion_ne_zero hC h,
@@ -198,8 +206,9 @@ theorem parityReidemeisterTorsion_eq_mul_div_det :
       (chosenBoundaryBasis C c 1) (chosenBoundaryLift C c 0) (chosenBoundaryLift_spec C c 0)
       (chosenBoundaryLift C c 1) (chosenBoundaryLift_spec C c 1),
     torsionBracket_eq_det_mul c (c' := c'), torsionBracket_eq_det_mul c (c' := c'),
-    show (c' (0 + 1)).det (c (0 + 1)) = (c' 1).det (c 1) from rfl,
-    show (c' (1 + 1)).det (c (1 + 1)) = (c' 0).det (c 0) from rfl, hinv, hinv]
+    show (c' (0 + 1)).det (c (0 + 1)) = (c' 1).det (c 1) by rw [zero_add],
+    show (c' (1 + 1)).det (c (1 + 1)) = (c' 0).det (c 0) by rw [CharTwo.add_self_eq_zero], hinv,
+    hinv]
   field_simp [hne 0, hne 1]
 
 /-- Reordering the bases `c i` of a parity complex by permutations `σ i` multiplies the torsion by
@@ -241,19 +250,19 @@ section TwoTerm
 
 variable {C} (h : C.Acyclic)
 
-include h in
-/-- In an acyclic parity complex, the odd boundaries `d(C₁) ⊆ C₀` are the even cycles. -/
-private theorem range_d_one_zero : LinearMap.range (C.d 1 0).hom = LinearMap.ker (C.d 0 1).hom :=
+/-- In a parity complex exact in even degree, the odd boundaries `d(C₁) ⊆ C₀` are the even
+cycles. -/
+theorem range_d_one_zero_eq_ker_d_zero_one (h : C.ExactAt 0) :
+    LinearMap.range (C.d 1 0).hom = LinearMap.ker (C.d 0 1).hom :=
   (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' 1 0 1 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1
-      (h 0))
+    ((C.exactAt_iff' 1 0 1 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1 h)
 
-include h in
-/-- In an acyclic parity complex, the even boundaries `d(C₀) ⊆ C₁` are the odd cycles. -/
-private theorem range_d_zero_one : LinearMap.range (C.d 0 1).hom = LinearMap.ker (C.d 1 0).hom :=
+/-- In a parity complex exact in odd degree, the even boundaries `d(C₀) ⊆ C₁` are the odd
+cycles. -/
+theorem range_d_zero_one_eq_ker_d_one_zero (h : C.ExactAt 1) :
+    LinearMap.range (C.d 0 1).hom = LinearMap.ker (C.d 1 0).hom :=
   (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' 0 1 0 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1
-      (h 1))
+    ((C.exactAt_iff' 0 1 0 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1 h)
 
 include h in
 /-- In an acyclic parity complex whose even-to-odd differential vanishes, the odd-to-even
@@ -261,10 +270,10 @@ differential `C₁ → C₀` is bijective. -/
 theorem bijective_d_one_zero_of_d_zero_one_eq_zero (hd : C.d 0 1 = 0) :
     Function.Bijective (C.d 1 0).hom := by
   refine ⟨?_, fun y ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, ← range_d_zero_one h, hd]
+  · rw [← LinearMap.ker_eq_bot, ← range_d_zero_one_eq_ker_d_one_zero (h 1), hd]
     exact LinearMap.range_zero
   · have hy : y ∈ LinearMap.ker (C.d 0 1).hom := by simp [hd]
-    rw [← range_d_one_zero h] at hy
+    rw [← range_d_one_zero_eq_ker_d_zero_one (h 0)] at hy
     exact hy
 
 include h in
@@ -273,10 +282,10 @@ differential `C₀ → C₁` is bijective. -/
 theorem bijective_d_zero_one_of_d_one_zero_eq_zero (hd : C.d 1 0 = 0) :
     Function.Bijective (C.d 0 1).hom := by
   refine ⟨?_, fun y ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, ← range_d_one_zero h, hd]
+  · rw [← LinearMap.ker_eq_bot, ← range_d_one_zero_eq_ker_d_zero_one (h 0), hd]
     exact LinearMap.range_zero
   · have hy : y ∈ LinearMap.ker (C.d 1 0).hom := by simp [hd]
-    rw [← range_d_zero_one h] at hy
+    rw [← range_d_zero_one_eq_ker_d_one_zero (h 1)] at hy
     exact hy
 
 include c h in
@@ -369,38 +378,21 @@ theorem map_parityReidemeisterTorsion :
   · rw [parityReidemeisterTorsion_of_not_acyclic C c h,
       parityReidemeisterTorsion_of_not_acyclic D e (mt hDC.1 h), map_zero]
   have hD := hDC.2 h
-  have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
-  have hcomm (j : ZMod 2) (x : C.X (j + 1)) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) x) =
-        (c j).semilinearMap φ (e j) ((C.d (j + 1) j).hom x) :=
-    Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd j) x
-  -- The images of the chosen boundary bases of `C` are boundaries of `D`.
-  have hmem (j : ZMod 2) (k) : (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) ∈
-      LinearMap.range (D.d (j + 1) j).hom :=
-    LinearMap.mem_range.2 ⟨_, by rw [hcomm, chosenBoundaryLift_spec]⟩
-  -- The images of the chosen boundary bases of `C` form boundary bases of `D`, and the images of
-  -- the chosen lifts are lifts of them.
-  let b (j : ZMod 2) : Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) K
-      (LinearMap.range (D.d (j + 1) j).hom) :=
-    basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j k⟩)
-      (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
-        (linearIndependent_semilinearMap_chosenBoundaryBasis φ h j))
-      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j)])
-  have hb (j : ZMod 2) (k) : (b j k : D.X j) =
-      (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
-    simp [b]
-  have hs (j : ZMod 2) (k) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (chosenBoundaryLift C c j k)) =
-        b j k := by
-    rw [hb, hcomm, chosenBoundaryLift_spec]
+  -- The images of the chosen boundary bases and lifts of `C` are boundary bases and lifts of `D`.
   rw [parityReidemeisterTorsion_eq_div h (chosenBoundaryBasis C c 0) (chosenBoundaryBasis C c 1)
       (chosenBoundaryLift C c 0) (chosenBoundaryLift_spec C c 0) (chosenBoundaryLift C c 1)
       (chosenBoundaryLift_spec C c 1),
-    parityReidemeisterTorsion_eq_div hD (b 0) (b 1)
-      ((c (0 + 1)).semilinearMap φ (e (0 + 1)) ∘ chosenBoundaryLift C c 0) (hs 0)
-      ((c (1 + 1)).semilinearMap φ (e (1 + 1)) ∘ chosenBoundaryLift C c 1) (hs 1),
-    map_div₀, torsionBracket_semilinearMap φ (h (0 + 1)) (hD (0 + 1)) _ _ _ _ _ _ (hb 1) (hs 0),
-    torsionBracket_semilinearMap φ (h (1 + 1)) (hD (1 + 1)) _ _ _ _ _ _ (hb 0) (hs 1)]
+    parityReidemeisterTorsion_eq_div hD (semilinearMapChosenBoundaryBasis φ (hd 0))
+      (semilinearMapChosenBoundaryBasis φ (hd 1))
+      ((c (0 + 1)).semilinearMap φ (e (0 + 1)) ∘ chosenBoundaryLift C c 0)
+      (d_semilinearMap_chosenBoundaryLift φ (hd 0))
+      ((c (1 + 1)).semilinearMap φ (e (1 + 1)) ∘ chosenBoundaryLift C c 1)
+      (d_semilinearMap_chosenBoundaryLift φ (hd 1)),
+    map_div₀,
+    torsionBracket_semilinearMap φ (h (0 + 1)) (hD (0 + 1)) _ _ _ _ _ _
+      (coe_semilinearMapChosenBoundaryBasis φ (hd 1)) (d_semilinearMap_chosenBoundaryLift φ (hd 0)),
+    torsionBracket_semilinearMap φ (h (1 + 1)) (hD (1 + 1)) _ _ _ _ _ _
+      (coe_semilinearMapChosenBoundaryBasis φ (hd 0)) (d_semilinearMap_chosenBoundaryLift φ (hd 1))]
 
 end ScalarExtension
 

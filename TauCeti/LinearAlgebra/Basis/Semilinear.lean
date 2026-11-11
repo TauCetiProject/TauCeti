@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # Transporting coordinates along a ring homomorphism
@@ -22,6 +23,7 @@ maps and to determinants: a linear map `g` whose matrix in the bases `b'` is the
 the matrix of a linear map `f` in the bases `b` is intertwined with `f`, and the determinant in `b'`
 of the image of a family is `σ` of its determinant in `b`. This is how invariants computed from
 matrices, such as the torsion of a based chain complex, are compared along a homomorphism of fields.
+Along a homomorphism of fields it also preserves and reflects linear independence of families.
 
 When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
@@ -37,6 +39,8 @@ carries complex bases to complex bases.
   matrices correspond under `σ`.
 * `Module.Basis.det_comp_semilinearMap`: the determinant of the image of a family is the image of
   its determinant.
+* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: over fields, the image of a family is
+  linearly independent exactly when the family is.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
@@ -113,6 +117,28 @@ theorem det_comp_semilinearMap (b : Basis ι R M) (b' : Basis ι S M') (v : ι �
   simp [toMatrix_apply]
 
 end CommRing
+
+section Field
+
+variable {ι κ K L M M' : Type*} [Field K] [Field L] (σ : K →+* L)
+  [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M'] [Finite ι]
+
+/-- Along a homomorphism of fields `σ`, the image of a family `v` under `semilinearMap σ b b'` is
+linearly independent exactly when `v` is: the coordinates of the image are the images under `σ` of
+the coordinates of `v`, and linear independence of coordinate vectors is unchanged by extending
+scalars along `σ`. -/
+theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
+    {v : κ → M} : LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v := by
+  let := σ.toAlgebra
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 σ.injective
+  rw [← b'.equivFun.toLinearMap.linearIndependent_iff (LinearEquiv.ker _),
+    ← b.equivFun.toLinearMap.linearIndependent_iff (LinearEquiv.ker _),
+    ← linearIndependent_algebraMap_comp_iff (R := K) (S := L)]
+  congr! 1
+  ext k i
+  simp [RingHom.algebraMap_toAlgebra]
+
+end Field
 
 section Map
 
