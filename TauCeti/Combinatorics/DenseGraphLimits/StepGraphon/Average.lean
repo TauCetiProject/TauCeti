@@ -48,8 +48,6 @@ contribution.
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — `stepGraphonAvg` and the
-  null-cell validation gate preceding graphon partition energy.
 * The null-cell convention and its compatibility with Mathlib set averages follow
   `Graphon/RegularityFinpartition.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
   `dfd7ecc9b197d8211842935204bcec6051d57863`.
