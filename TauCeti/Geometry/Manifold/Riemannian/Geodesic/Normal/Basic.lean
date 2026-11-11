@@ -415,10 +415,14 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
   rwa [riemannianExp_zero] at h0
 
 /-- The differential of the logarithm at the base point is the identity. -/
-theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U) (v : TangentSpace I p) :
+@[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)
+    (v : TangentSpace I p) :
     mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) p v = v := by
   have hcomp := DFunLike.congr_fun
     (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp h.zero_mem) v
+  -- The composite runs through `TangentSpace I (riemannianExp I M p 0)`, which is only
+  -- definitionally `TangentSpace I p`, so `ContinuousLinearMap.comp_apply` and `id_apply` do not
+  -- match syntactically under `rw` or `simp`; unfold the application by defeq instead.
   change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
   rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
