@@ -333,7 +333,7 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
 /-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
 theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
     ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
-  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
+  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← rpow_add hρ, sub_add_cancel]
     _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
 
 /-- If `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q` with `a, b ≥ 0`, `t > 0` and `q ≥ 0`, then
@@ -343,14 +343,14 @@ theorem rpow_le_mul_of_mul_le_of_inv_le {a b K c t q : ℝ} (hq : 0 ≤ q)
     a ^ q ≤ K ^ q * c * t := by
   have hc : 0 ≤ c := by
     by_contra hc
-    have := mul_nonpos_of_nonpos_of_nonneg (not_le.1 hc).le (Real.rpow_nonneg hb q)
+    have := mul_nonpos_of_nonpos_of_nonneg (not_le.1 hc).le (rpow_nonneg hb q)
     linarith [inv_pos.2 ht]
   have hone : 1 ≤ c * b ^ q * t := by
     rw [← inv_mul_cancel₀ ht.ne']
     exact mul_le_mul_of_nonneg_right hx ht.le
   calc a ^ q ≤ a ^ q * (c * b ^ q * t) := le_mul_of_one_le_right (by positivity) hone
     _ = (a * b) ^ q * (c * t) := by
-        rw [Real.mul_rpow ha hb]
+        rw [mul_rpow ha hb]
         ring
     _ ≤ K ^ q * (c * t) := by gcongr
     _ = K ^ q * c * t := by ring
@@ -372,17 +372,17 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
     (hR : 0 < R) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
     C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
-    _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
+    _ = 2 * (C * r ^ α) := by rw [hC, div_rpow hr hR.le]; field_simp
 
 /-- If `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, then `x ≤ √B * d ^ (β - 1)`. -/
 theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
-    (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ Real.sqrt B * d ^ (β - 1) := by
+    (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ sqrt B * d ^ (β - 1) := by
   have hsq : (d * x) ^ 2 ≤ B * (d ^ β) ^ 2 := by
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
-      simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
+      simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
-  have h' := Real.le_sqrt_mul_of_sq_le_mul (Real.rpow_nonneg hd.le β) hsq
-  rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
+  rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
 
 end Real
