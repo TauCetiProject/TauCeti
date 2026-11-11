@@ -1400,6 +1400,40 @@ theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a
     exact Φ.coordinateDeriv_comp_left [j]
       ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
 
+/-- The commutator `S ↦ S ∘ T - T ∘ S` with a fixed operator `T`, as a continuous real-linear map;
+a symbol commutes with `T` exactly when its image under this map vanishes. -/
+private def commutatorCLM (T : V →L[ℂ] V) : (V →L[ℂ] V) →L[ℝ] (V →L[ℂ] V) :=
+  ((ContinuousLinearMap.compL ℂ V V V).flip T -
+    ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ
+
+private theorem map_commutatorCLM_eq_zero {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) : a.map (commutatorCLM T) = 0 :=
+  Symbol.ext (funext fun p ↦ by
+    simp [commutatorCLM, ← ContinuousLinearMap.mul_def, (h p).eq])
+
+private theorem commute_of_coefficient_map_commutatorCLM {a : Symbol n V V m} {T : V →L[ℂ] V}
+    {p : CoordinateSpace n × CoordinateSpace n} (h : (a.map (commutatorCLM T)).coefficient p = 0) :
+    Commute (a.coefficient p) T := by
+  simpa [commutatorCLM, sub_eq_zero, commute_iff_eq, ContinuousLinearMap.mul_def] using h
+
+/-- If every value of a symbol commutes with an operator `T`, so does every value of its spatial
+derivatives. -/
+theorem commute_coefficient_spatialDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    Commute ((spatialDeriv j a).coefficient p) T :=
+  commute_of_coefficient_map_commutatorCLM (by
+    rw [← spatialDeriv_map, map_commutatorCLM_eq_zero h, map_zero, coefficient_zero,
+      Pi.zero_apply])
+
+/-- If every value of a symbol commutes with an operator `T`, so does every value of its frequency
+derivatives. -/
+theorem commute_coefficient_frequencyDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    Commute ((frequencyDeriv j a).coefficient p) T :=
+  commute_of_coefficient_map_commutatorCLM (by
+    rw [← frequencyDeriv_map, map_commutatorCLM_eq_zero h, map_zero, coefficient_zero,
+      Pi.zero_apply])
+
 /-- The image of a symbol with estimates uniform in the position under a continuous linear map of
 the coefficient spaces again has estimates uniform in the position. -/
 theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)

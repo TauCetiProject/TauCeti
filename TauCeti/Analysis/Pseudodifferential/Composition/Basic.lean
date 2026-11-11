@@ -62,6 +62,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
+  compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -984,6 +986,32 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
     (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
 
 end Operator
+
+/-! ### Associativity -/
+
+section Assoc
+
+variable {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] [CompleteSpace V]
+  [CompleteSpace W] [CompleteSpace U] [CompleteSpace U'] {m'' : ℝ}
+
+/-- **Associativity of the composition symbol.** For symbols `b` and `c` with compact spatial
+support, `(a # b) # c = a # (b # c)`, up to the identification of the orders
+`(m'' + m') + m = m'' + (m' + m)`: both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`. -/
+theorem sharp_assoc (a : Symbol n U U' m'') {b : Symbol n W U m'} {c : Symbol n V W m}
+    (hb : b.HasCompactSpatialSupport) (hc : c.HasCompactSpatialSupport) :
+    (a.sharp b hb).sharp c hc =
+      inclusion (add_assoc m'' m' m).ge (a.sharp (b.sharp c hc) (hb.sharp hc)) := by
+  ext1
+  rw [coefficient_inclusion]
+  refine coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq (hb.sharp hc) fun u _ x ↦ ?_
+  rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hc,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
+  congr 1
+  ext y
+  simp only [HasCompactSupport.toSchwartzMap_toFun,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hc]
+
+end Assoc
 
 end Symbol
 

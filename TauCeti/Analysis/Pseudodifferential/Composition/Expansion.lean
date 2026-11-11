@@ -49,6 +49,15 @@ the position and the frequency.
 * `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
   spatial support and their values commute pointwise, for instance for scalar symbols, the
   commutator symbol `a # b - b # a` has order `m' + m - 1`.
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_sub_commutator`: **the commutator
+  expansion**. In general `a # b - b # a` is
+  `[a, b] - i ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{ξⱼ} b ∘ ∂_{xⱼ} a)` up to a symbol of order
+  `m' + m - 2`, where `[a, b]` is the pointwise commutator.
+* `TauCeti.Symbol.poissonBracket` and
+  `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`: if every value of `a`
+  commutes with every value of `b`, for instance if one of them is scalar, then
+  `a # b - b # a = -i {a, b}` up to a symbol of order `m' + m - 2`, where
+  `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` is the Poisson bracket.
 * `TauCeti.ClassicalSymbol.exists_sharp_sub_cutoffSymbol_principal_comp`: **the principal symbol
   of a composition**. For classical `a` and `b`, the symbol `a # b` differs from the cut-off
   composition `χ(ξ) (σ(a) ∘ σ(b))` of the principal symbols by a symbol of order `m' + m - 1`.
@@ -138,6 +147,14 @@ theorem coefficient_sharpTerm_succ (a : Symbol n W U m') (b : Symbol n V W m) (k
     (a.sharpTerm b (k + 1)).coefficient p = (-Complex.I / (k + 1)) •
       ∑ j, ((frequencyDeriv j a).sharpTerm (spatialDeriv j b) k).coefficient p := by
   simp [sharpTerm_succ]
+
+/-- The first-order term of the composition expansion is `-i ∑ⱼ ∂_{ξⱼ} a ∘ ∂_{xⱼ} b`. -/
+@[simp]
+theorem coefficient_sharpTerm_one (a : Symbol n W U m') (b : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.sharpTerm b 1).coefficient p = (-Complex.I) •
+      ∑ j, ((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) := by
+  simp [coefficient_sharpTerm_succ]
 
 /-- **The terms of the composition expansion** are
 `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w b`, the sum running over the words `w` of coordinate
@@ -529,6 +546,29 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
 
 end Symbol
 
+/-! ### The Poisson bracket -/
+
+section PoissonBracket
+
+variable (a : Symbol n W U m') (b : Symbol n V W m)
+
+/-- The **Poisson bracket** `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of a symbol
+`a` of order `m'` and a symbol `b` of order `m`, a symbol of order `m' + m - 1`. For symbols whose
+values commute with each other, `-i {a, b}` is the leading term of the composition symbol of the
+commutator `[Op(a), Op(b)]` (`exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`). -/
+def poissonBracket : Symbol n V U (m' + m - 1) :=
+  ∑ j, (inclusion (by linarith) ((frequencyDeriv j a).comp (spatialDeriv j b)) -
+    inclusion (by linarith) ((spatialDeriv j a).comp (frequencyDeriv j b)))
+
+@[simp]
+theorem coefficient_poissonBracket (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.poissonBracket b).coefficient p =
+      ∑ j, (((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) -
+        ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p)) := by
+  simp [poissonBracket, coefficient_sum]
+
+end PoissonBracket
+
 /-! ### Commutators -/
 
 section Commutator
@@ -552,6 +592,54 @@ theorem exists_coefficient_eq_sharp_sub_sharp {a : Symbol n V V m'} {b : Symbol 
   simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply, coefficient_sharpRemainder,
     Finset.sum_range_one, coefficient_sharpTerm_zero, h]
   abel
+
+/-- **The commutator expansion to second order.** For symbols `a` of order `m'` and `b` of order
+`m` with compact spatial support, the composition symbol `a # b - b # a` of the commutator
+`[Op(a), Op(b)]` is
+
+`[a, b] - i ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{ξⱼ} b ∘ ∂_{xⱼ} a)`
+
+up to a symbol `r` of order `m' + m - 2`, where `[a, b] = a ∘ b - b ∘ a` is the pointwise
+commutator. -/
+theorem exists_coefficient_eq_sharp_sub_sharp_sub_commutator {a : Symbol n V V m'}
+    {b : Symbol n V V m} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport) :
+    ∃ r : Symbol n V V (m' + m - 2), ∀ p, r.coefficient p =
+      (a.sharp b hb).coefficient p - (b.sharp a ha).coefficient p -
+        ((a.coefficient p).comp (b.coefficient p) - (b.coefficient p).comp (a.coefficient p)) +
+        Complex.I • ∑ j, (((frequencyDeriv j a).coefficient p).comp
+            ((spatialDeriv j b).coefficient p) -
+          ((frequencyDeriv j b).coefficient p).comp ((spatialDeriv j a).coefficient p)) := by
+  refine ⟨(inclusion (by simp) (a.sharpRemainder b hb 2) : Symbol n V V (m' + m - 2)) -
+    inclusion (by push_cast; linarith) (b.sharpRemainder a ha 2), fun p ↦ ?_⟩
+  simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply, coefficient_sharpRemainder,
+    Finset.sum_range_succ, Finset.sum_range_zero, zero_add, Pi.add_apply,
+    coefficient_sharpTerm_zero, coefficient_sharpTerm_one, Finset.sum_sub_distrib, smul_sub,
+    neg_smul]
+  abel
+
+/-- **The Poisson bracket formula for commutators.** If every value of `a` commutes with every
+value of `b`, for instance if one of them is a scalar symbol times the identity, the composition
+symbol `a # b - b # a` of `[Op(a), Op(b)]` is `-i {a, b}` up to a symbol `r` of order
+`m' + m - 2`, where `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` is the Poisson
+bracket. -/
+theorem exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket {a : Symbol n V V m'}
+    {b : Symbol n V V m} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : ∀ p q, Commute (a.coefficient p) (b.coefficient q)) :
+    ∃ r : Symbol n V V (m' + m - 2), r.coefficient =
+      (a.sharp b hb).coefficient - (b.sharp a ha).coefficient +
+        Complex.I • (a.poissonBracket b).coefficient := by
+  obtain ⟨r, hr⟩ := exists_coefficient_eq_sharp_sub_sharp_sub_commutator ha hb
+  refine ⟨r, funext fun p ↦ ?_⟩
+  have h0 : (a.coefficient p).comp (b.coefficient p) =
+      (b.coefficient p).comp (a.coefficient p) := by
+    simpa only [ContinuousLinearMap.mul_def] using (hab p p).eq
+  -- The derivatives of `a` and `b` inherit the commutation of their values.
+  have hder : ∀ j, ((frequencyDeriv j b).coefficient p).comp ((spatialDeriv j a).coefficient p) =
+      ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p) := fun j ↦ by
+    simpa only [ContinuousLinearMap.mul_def] using (commute_coefficient_frequencyDeriv (fun q ↦
+      (commute_coefficient_spatialDeriv (fun p' ↦ hab p' q) j p).symm) j p).eq
+  simp only [hr p, h0, hder, sub_self, sub_zero, coefficient_poissonBracket,
+    Pi.add_apply, Pi.sub_apply, Pi.smul_apply]
 
 end Commutator
 
