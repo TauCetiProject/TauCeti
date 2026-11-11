@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 

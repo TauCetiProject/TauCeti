@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Normed.Field.Inversion
@@ -30,10 +29,11 @@ reciprocal tail `M / (w - c)` up to an error of order `‖w‖⁻²`:
 * `‖T f w - (w - c)⁻¹ • M‖ ≤ 2 π⁻¹ r ‖f‖₁ / ‖w - c‖²` for `2 r < ‖w - c‖`;
 * `‖(T f)' w + ((w - c)²)⁻¹ • M‖ ≤ 6 π⁻¹ r ‖f‖₁ / ‖w - c‖³` for `2 r < ‖w - c‖`.
 
-Consequently `T f → 0` at infinity, while for nonzero mass `T f` belongs to no `Lᵖ`, `0 < p ≤ 2`,
-on the complement of any disc, in particular not to `Lᵖ(ℂ)`. In contrast its derivative is in
-`Lᵖ` of the complement of every disc `ball c R` with `r < R`, for every `1 < p < ∞`. This is why
-the global `Lᵖ` estimate for the Cauchy transform concerns only its derivative.
+In particular `T f → 0` at infinity (`HasCompactSupport.tendsto_cauchyTransform_cobounded`),
+while for nonzero mass `T f` belongs to no `Lᵖ`, `0 < p ≤ 2`, on the complement of any disc, in
+particular not to `Lᵖ(ℂ)`. In contrast its derivative is in `Lᵖ` of the complement of every
+disc `ball c R` with `r < R`, for every `1 < p < ∞`. This is why the global `Lᵖ` estimate for the
+Cauchy transform concerns only its derivative.
 
 The explicit disc indicator computations of `Pompeiu.Disc.Basic` and `Pompeiu.Disc.Lp` are
 instances: there `M = r²` and the remainder vanishes identically outside the disc.
@@ -41,7 +41,6 @@ instances: there `M = r²` and the remainder vanishes identically outside the di
 ## Main results
 
 * `TauCeti.cauchyTransform_sub_inv_smul_isBigO`: `T f w - (w - c)⁻¹ • M = O(w⁻²)` at infinity.
-* `TauCeti.tendsto_cauchyTransform_cobounded`: `T f → 0` at infinity.
 * `TauCeti.deriv_cauchyTransform_add_inv_sq_smul_isBigO`:
   `(T f)' w + ((w - c)²)⁻¹ • M = O(w⁻³)` at infinity.
 * `TauCeti.not_memLp_cauchyTransform_compl_closedBall` and `TauCeti.not_memLp_cauchyTransform`:
@@ -111,18 +110,6 @@ theorem cauchyTransform_sub_inv_smul_isBigO (hf : Integrable f)
       fun w : ℂ ↦ w⁻¹ ^ 2 :=
   isBigO_inv_pow_cobounded_of_norm_le (R := 2 * r) 2 fun _ hw ↦
     norm_cauchyTransform_sub_inv_smul_le_of_two_mul_lt hf hsupp hw
-
-/-- The Cauchy transform of integrable data with bounded support tends to zero at infinity. -/
-theorem tendsto_cauchyTransform_cobounded (hf : Integrable f)
-    (hsupp : support f ⊆ closedBall c r) :
-    Tendsto (cauchyTransform f) (cobounded ℂ) (𝓝 0) := by
-  have htail : Tendsto (fun w : ℂ ↦ (w - c)⁻¹ • ((Real.pi : ℂ)⁻¹ • ∫ z, f z)) (cobounded ℂ)
-      (𝓝 0) := by
-    simpa using (tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded c)).smul_const
-      ((Real.pi : ℂ)⁻¹ • ∫ z, f z)
-  have hrem := (cauchyTransform_sub_inv_smul_isBigO hf hsupp).trans_tendsto
-    (by simpa using (tendsto_inv₀_cobounded (α := ℂ)).pow 2)
-  simpa using hrem.add htail
 
 /-- A pointwise bound for the derivative off the disc:
 `‖(T f)' w‖ ≤ π⁻¹ ‖f‖₁ / (‖w - c‖ - r)²`. -/

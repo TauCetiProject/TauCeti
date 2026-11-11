@@ -77,6 +77,11 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   `\bar∂ (∫ (w - z)⁻¹ • f z) = π f`.
 * `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero`: holomorphy where `f`
   vanishes.
+* `HasCompactSupport.contDiff_cauchyTransform`,
+  `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+  `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
+  supported smooth data is smooth and holomorphic off `tsupport f`, and that of compactly
+  supported integrable data tends to `0` at infinity.
 
 ## References
 
@@ -533,5 +538,40 @@ theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {f : ℂ → F}
   rw [hc.fderiv_cauchyTransform hf, cauchyTransform_apply, cauchyTransform_apply,
     smul_apply, ContinuousLinearMap.integral_apply hi]
   simp only [smul_apply]
+
+section Regularity
+
+open Bornology
+
+variable {c : ℂ → F}
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported `C¹` map is holomorphic off the support of the
+map. -/
+theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport
+    (hc : HasCompactSupport c) (hs : ContDiff ℝ 1 c) {w : ℂ} (hw : w ∉ tsupport c) :
+    DifferentiableAt ℂ (cauchyTransform c) w :=
+  (hasDerivAt_cauchyTransform_of_notMem_tsupport
+    (hs.continuous.integrable_of_hasCompactSupport hc) hw).differentiableAt
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported integrable map tends to `0` at infinity. -/
+theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasCompactSupport c)
+    (hi : Integrable c) :
+    Tendsto (cauchyTransform c) (cobounded ℂ) (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  have hbound : ∀ᶠ w in cobounded ℂ,
+      ‖cauchyTransform c w‖ ≤ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹ := by
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually
+      (eventually_gt_atTop (max (2 * R) 0))] with w hw
+    rw [le_mul_inv_iff₀ ((le_max_right _ _).trans_lt hw), mul_comm ‖cauchyTransform c w‖]
+    exact norm_mul_norm_cauchyTransform_le ((subset_tsupport c).trans hR) hi
+      ((le_max_left _ _).trans hw.le)
+  have hlim : Tendsto (fun w : ℂ ↦ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹) (cobounded ℂ) (𝓝 0) := by
+    simpa using (tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).const_mul
+      (2 * π⁻¹ * ∫ z, ‖c z‖)
+  exact squeeze_zero_norm' hbound hlim
+
+end Regularity
 
 end TauCeti

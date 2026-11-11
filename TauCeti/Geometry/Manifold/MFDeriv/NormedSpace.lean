@@ -36,6 +36,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
+  submodule.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
@@ -92,6 +94,14 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
+
+/-- The image of a tangent submodule under the vector-valued derivative agrees with its image
+under the manifold derivative into the self model of the target. -/
+@[simp] theorem _root_.Submodule.map_mvfderiv_eq_map_mfderiv {x : M}
+    (S : Submodule 𝕜 (TangentSpace I x)) (f : M → F) :
+    S.map (mvfderiv I f x).toLinearMap = S.map (mfderiv I 𝓘(𝕜, F) f x).toLinearMap := by
+  exact congrArg (fun A : TangentSpace I x →ₗ[𝕜] F ↦ S.map A)
+    (LinearMap.ext fun v ↦ mvfderiv_apply_eq_mfderiv_apply f x v)
 
 /-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
 the germ of the function at `x`. -/

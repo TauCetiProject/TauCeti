@@ -105,7 +105,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- The level cut `s ∩ g⁻¹ {g y}` is flattened by a chart `q'` onto `F = T ⊓ ker dg`, which is
   -- also its tangent space.
   obtain ⟨q', hyq', hq', hs₀⟩ :=
-    exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top hn hq hs hy hys hU
+    exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top hn hq hs hy hU
       hyU hg rfl hrange htrK (hcc _) (hcc _) (hcc _)
   have hmT := mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top hn hq hs hy hys
     hU hyU hg rfl hrange htrK (hcc _) (hcc _) (hcc _)
