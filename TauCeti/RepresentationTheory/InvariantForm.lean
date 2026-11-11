@@ -68,6 +68,11 @@ representation, is what makes `G` a group.
   invariants of `linHom ρ ρ.dual`.
 * `TauCeti.Representation.symmetricInvariantForms_inf_alternatingInvariantForms`: away from
   characteristic two the symmetric and the alternating invariant forms meet only in `0`.
+* `Representation.symmetricInvariantForms_sup_alternatingInvariantForms`: when `2` is invertible,
+  every invariant form is the sum of a symmetric and an alternating one.
+* `Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms`: so
+  away from characteristic two, in finite dimensions, the two counts add to the number of invariant
+  forms.
 * `TauCeti.Representation.IsInvariantForm.nondegenerate` and
   `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`: an invariant form on an
   irreducible representation is nondegenerate exactly when it is nonzero.
@@ -523,3 +528,60 @@ end Irreducible
 end Representation
 
 end TauCeti
+
+/-! ### Splitting an invariant form into its symmetric and alternating parts -/
+
+namespace Representation
+
+open LinearMap (BilinForm)
+open Module (finrank)
+open TauCeti.Representation
+
+section SymmetricAlternatingSup
+
+variable {k G V : Type*} [CommRing k] [Invertible (2 : k)] [Monoid G] [AddCommGroup V]
+  [Module k V]
+
+/-- **Every invariant form is the sum of a symmetric and an alternating invariant form** when `2` is
+invertible: `B = ⅟2 • (B + B.flip) + ⅟2 • (B - B.flip)`, and both parts are invariant. -/
+theorem symmetricInvariantForms_sup_alternatingInvariantForms (ρ : Representation k G V) :
+    symmetricInvariantForms ρ ⊔ alternatingInvariantForms ρ = invariantForms ρ := by
+  refine le_antisymm (sup_le (symmetricInvariantForms_le ρ) (alternatingInvariantForms_le ρ))
+    fun B hB ↦ Submodule.mem_sup.mpr ⟨⅟(2 : k) • (B + B.flip), ?_, ⅟(2 : k) • (B - B.flip), ?_, ?_⟩
+  · exact Submodule.smul_mem _ _ (mem_symmetricInvariantForms.mpr
+      ⟨(mem_invariantForms.mp hB).add (mem_invariantForms.mp hB).flip,
+        ⟨fun x y ↦ by simp [add_comm]⟩⟩)
+  · refine Submodule.smul_mem _ _ (mem_alternatingInvariantForms.mpr ⟨?_, fun x ↦ by simp⟩)
+    have e : B - B.flip = B + (-1 : k) • B.flip := by
+      ext x y
+      simp [sub_eq_add_neg]
+    rw [e]
+    exact (mem_invariantForms.mp hB).add ((mem_invariantForms.mp hB).flip.smul _)
+  · ext x y
+    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
+    linear_combination B x y * invOf_mul_self (2 : k)
+
+end SymmetricAlternatingSup
+
+section SymmetricAlternatingFinrank
+
+variable {k G V : Type*} [Field k] [NeZero (2 : k)] [Monoid G] [AddCommGroup V] [Module k V]
+  [FiniteDimensional k V]
+
+/-- **The two invariant form counts add to the number of invariant forms**, away from
+characteristic two and in finite dimensions: every invariant form is the sum of its symmetric and
+its alternating parts, and the two kinds of form meet only in `0`. -/
+theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
+    (ρ : Representation k G V) :
+    finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ) =
+      finrank k (invariantForms ρ) := by
+  have : Invertible (2 : k) := invertibleOfNonzero two_ne_zero
+  have h := Submodule.finrank_sup_add_finrank_inf_eq (K := k) (V := BilinForm k V)
+    (symmetricInvariantForms ρ) (alternatingInvariantForms ρ)
+  rwa [symmetricInvariantForms_sup_alternatingInvariantForms,
+    symmetricInvariantForms_inf_alternatingInvariantForms
+      (IsRegular.of_ne_zero (two_ne_zero (α := k))).left ρ, finrank_bot, add_zero, eq_comm] at h
+
+end SymmetricAlternatingFinrank
+
+end Representation
