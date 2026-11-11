@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Data.Fin.Basic
 public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -153,6 +154,20 @@ def cornerVertex (c : C.Corner) : C.graph.V := C.graph.src (C.outgoing c)
 @[simp] theorem tgt_incoming (c : C.Corner) : C.graph.tgt (C.incoming c) = C.cornerVertex c := by
   rw [incoming_eq_outgoing_prevCorner, tgt_outgoing, nextCorner_prevCorner]
 
+/-- A side of a face ends where the side at the cyclically next position starts. -/
+theorem tgt_side_eq_src_side {f : C.Face} {i j : Fin (C.sides f)}
+    (h : (j : ℕ) = if (i : ℕ) + 1 = C.sides f then 0 else (i : ℕ) + 1) :
+    C.graph.tgt (C.side f i) = C.graph.src (C.side f j) := by
+  rw [C.tgt_side, Fin.ext (h.trans (Fin.coe_finRotate_eq_ite i).symm)]
+
+/-- The incoming side of the corner at a position is the outgoing side of the corner at the
+cyclically preceding position. -/
+theorem incoming_mk_eq_outgoing_mk {f : C.Face} {i j : Fin (C.sides f)}
+    (h : (j : ℕ) = if (i : ℕ) + 1 = C.sides f then 0 else (i : ℕ) + 1) :
+    C.incoming ⟨f, j⟩ = C.outgoing ⟨f, i⟩ := by
+  rw [incoming_def, outgoing_def, Fin.ext (h.trans (Fin.coe_finRotate_eq_ite i).symm),
+    Equiv.symm_apply_apply]
+
 /-- The two germs of a corner, both starting at its vertex: the reverse of its incoming side and
 its outgoing side. -/
 def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=
@@ -203,6 +218,13 @@ theorem nonempty_vertexLink_path {x : C.graph.V} (c : {c : C.Corner // C.cornerV
     {a b : (C.vertexLink x).V} (ha : a.1 = C.outgoing c.1)
     (hb : b.1 = C.graph.rev (C.incoming c.1)) : Nonempty ((C.vertexLink x).Path a b) :=
   ⟨Quiver.Hom.toPath (⟨(c, true), Subtype.ext ha.symm, Subtype.ext hb.symm⟩ : Quiver.Hom a b)⟩
+
+/-- In the link of `x`, a corner whose outgoing side is a germ at `x` joins that germ to the
+reverse of its incoming side. -/
+theorem nonempty_vertexLink_path_of_corner {x : C.graph.V} (c : C.Corner)
+    {a b : (C.vertexLink x).V} (ha : a.1 = C.outgoing c)
+    (hb : b.1 = C.graph.rev (C.incoming c)) : Nonempty ((C.vertexLink x).Path a b) :=
+  C.nonempty_vertexLink_path ⟨c, by rw [← src_outgoing, ← ha]; exact a.2⟩ ha hb
 
 /-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
 starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is
