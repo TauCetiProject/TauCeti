@@ -55,6 +55,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 * `Set.convexSegment` — an affine segment in a convex set, clamped to `[0, 1]`.
 * `Set.sub_mul_add_mem_uIcc` — `(b - a) * t + a ∈ [[a, b]]` for `t ∈ [0, 1]`, in a linear
   ordered field.
+* `Set.image_comp_lineMap_uIcc_zero_one` — reparametrizing a function on `[a, b]` by `lineMap a b`
+  from `[0, 1]` does not change its image, in a linear ordered field.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
@@ -144,6 +146,12 @@ whichever of `a` and `b` is larger. -/
 theorem sub_mul_add_mem_uIcc {a b t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) : (b - a) * t + a ∈ uIcc a b := by
   simpa [← segment_eq_uIcc, AffineMap.lineMap_apply_ring', mul_comm] using
     lineMap_mem_segment 𝕜 a b ht
+
+/-- Reparametrizing a function on `[a, b]` by `lineMap a b` from `[0, 1]` does not change the
+image. -/
+theorem image_comp_lineMap_uIcc_zero_one {α : Type*} (f : 𝕜 → α) (a b : 𝕜) :
+    (f ∘ AffineMap.lineMap a b) '' uIcc (0 : 𝕜) 1 = f '' uIcc a b := by
+  rw [image_comp, uIcc_of_le zero_le_one, ← segment_eq_image_lineMap, segment_eq_uIcc]
 
 end UIcc
 
