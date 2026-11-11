@@ -11,7 +11,13 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
-# Zero-dimensional Hausdorff measure
+# Hausdorff measure
+
+Results on the `d`-dimensional Hausdorff measure `μH[d]`: it is counting measure in dimension
+zero, the fiber measures of a map continuous on a compact or σ-compact set are measurable, and
+countable covers by closed balls of small radii bound `μH[d]` from above.
+
+## Zero-dimensional Hausdorff measure
 
 Zero-dimensional Hausdorff measure `μH[0]` is counting measure on every extended metric Borel
 space: each singleton has measure `1`, so finite sets are counted by finite additivity, and an
@@ -141,10 +147,8 @@ private theorem upperSemicontinuous_openContent [TopologicalSpace Y] [T2Space Y]
     {K : Set X} (hK : IsCompact K) (hf : ContinuousOn f K) (d : ℝ) (r : ℝ≥0∞) :
     UpperSemicontinuous fun y ↦ openContent d r (K ∩ f ⁻¹' {y}) := by
   intro y a ha
-  obtain ⟨t, ht⟩ := iInf_lt_iff.1 ha
-  obtain ⟨hto, ht⟩ := iInf_lt_iff.1 ht
-  obtain ⟨hcov, ht⟩ := iInf_lt_iff.1 ht
-  obtain ⟨htr, ht⟩ := iInf_lt_iff.1 ht
+  simp only [openContent, iInf_lt_iff] at ha
+  obtain ⟨t, hto, hcov, htr, ht⟩ := ha
   -- The points of `K` outside the open set `⋃ n, t n` have a compact image, which misses `y`.
   have hC : IsClosed (f '' (K \ ⋃ n, t n)) :=
     ((hK.diff (isOpen_iUnion hto)).image_of_continuousOn (hf.mono sdiff_subset)).isClosed
@@ -153,9 +157,7 @@ private theorem upperSemicontinuous_openContent [TopologicalSpace Y] [T2Space Y]
     exact hx.2 (hcov ⟨hx.1, rfl⟩)
   filter_upwards [hC.isOpen_compl.mem_nhds hy] with y' hy'
   refine lt_of_le_of_lt (iInf_le_of_le t <| iInf_le_of_le hto <| iInf_le_of_le
-    (fun x hx ↦ ?_) <| iInf_le_of_le htr le_rfl) ht
-  by_contra hxU
-  exact hy' ⟨x, ⟨hx.1, hxU⟩, hx.2⟩
+    (fun x hx ↦ by_contra fun hxU ↦ hy' ⟨x, ⟨hx.1, hxU⟩, hx.2⟩) <| iInf_le_of_le htr le_rfl) ht
 
 variable [MeasurableSpace X] [BorelSpace X]
 
@@ -167,8 +169,7 @@ private theorem hausdorffMeasure_eq_iSup_openContent (d : ℝ) (s : Set X) :
   · rw [hausdorffMeasure_apply]
     refine iSup₂_le fun r hr ↦ ?_
     obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hr.ne'
-    exact (content_anti d hk.le s).trans ((content_le_openContent d _ s).trans
-      (le_iSup (fun k : ℕ ↦ openContent d (k : ℝ≥0∞)⁻¹ s) k))
+    exact le_iSup_of_le k ((content_anti d hk.le s).trans (content_le_openContent d _ s))
   · have hk : ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ < (k : ℝ≥0∞)⁻¹ :=
       ENNReal.inv_lt_inv.2 (by exact_mod_cast k.lt_succ_self)
     refine (openContent_le_content d hk s).trans ?_
@@ -215,7 +216,7 @@ namespace TauCeti
 covered by countably many closed balls of radii at most `δ` with `∑ (2 rᵢ) ^ d ≤ M + ε`, then
 `μH[d] A ≤ M`. This is `hausdorffMeasure_le_liminf_tsum` for covers by closed balls. -/
 theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [MetricSpace X]
-    [MeasurableSpace X] [BorelSpace X] {d : ℝ} (hd : 0 ≤ d) {A : Set X} {M : ℝ≥0∞}
+    [MeasurableSpace X] [BorelSpace X] {d : ℝ} {A : Set X} {M : ℝ≥0∞}
     (h : ∀ δ : ℝ, 0 < δ → ∀ ε : ℝ≥0∞, 0 < ε →
       ∃ (ι : Type u) (_ : Countable ι) (x : ι → X) (r : ι → ℝ), (∀ i, r i ≤ δ) ∧
         A ⊆ ⋃ i, closedBall (x i) (r i) ∧ ∑' i, ENNReal.ofReal (2 * r i) ^ d ≤ M + ε) :
@@ -226,6 +227,18 @@ theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [Metr
     simpa using tendsto_const_nhds.add ENNReal.tendsto_inv_nat_nhds_zero
   have hδ : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1)))) atTop (𝓝 0) := by
     simpa using ENNReal.tendsto_ofReal (tendsto_one_div_add_atTop_nhds_zero_nat.const_mul 2)
+  rcases le_or_gt 0 d with hd | hd
+  swap
+  · -- For a negative exponent the sums blow up, so `M = ⊤` unless `A` is empty.
+    rcases A.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
+    · simp
+    have hT : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1))) ^ d) atTop (𝓝 ⊤) := by
+      simpa only [ENNReal.zero_rpow_of_neg hd] using hδ.ennrpow_const d
+    refine le_top.trans (le_of_tendsto_of_tendsto hT hlim (Eventually.of_forall fun n => ?_))
+    obtain ⟨i, hi⟩ := mem_iUnion.1 (hA n ha)
+    exact (ENNReal.rpow_le_rpow_of_nonpos
+      (ENNReal.ofReal_le_ofReal (by linarith [hrδ n i])) hd.le).trans
+      ((le_tsum _ i).trans (hsum n))
   -- Instance argument of `hausdorffMeasure_le_liminf_tsum`.
   have : ∀ n, Countable (ι n) := hι
   calc μH[d] A ≤ liminf (fun n => ∑' i, ediam (closedBall (x n i) (r n i)) ^ d) atTop :=
