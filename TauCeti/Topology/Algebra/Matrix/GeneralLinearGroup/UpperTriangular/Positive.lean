@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Topology.Instances.Matrix
 
 /-!

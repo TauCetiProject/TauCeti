@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 import Mathlib.Topology.Homeomorph.Quotient
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
-import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
