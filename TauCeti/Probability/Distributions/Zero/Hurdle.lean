@@ -116,11 +116,7 @@ theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn 
     · simp [hw, hn]
     refine integral_undef fun h ↦ hν ?_
     rw [← integrable_map_natCast_cond_compl_zero_iff ν]
-    have h1 : 0 < 1 - (w : ℝ) := sub_pos.2 (lt_of_le_of_ne (unitInterval.le_one w)
-      (fun h' ↦ hw (Subtype.ext h')))
-    rw [Measure.atomMixture_def] at h
-    exact (integrable_smul_measure (ENNReal.ofReal_pos.2 h1).ne' ENNReal.ofReal_ne_top).1
-      (h.mono_measure (Measure.le_add_left le_rfl))
+    exact (integrable_atomMixture_iff _ _ _ hw (integrable_dirac (by simp))).1 h
   rw [map_natCast_atomMixture_zero,
     integral_atomMixture _ _ _ _ (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν),
     integral_pow_map_natCast_cond_compl_zero ν hn, smul_eq_mul, smul_eq_mul, zero_pow hn,
