@@ -55,17 +55,24 @@ Assembling the directions gives `TauCeti.HasWeakFDerivOn μ Ω u U` for a candid
 
 Two facts make the notion usable, and both are proved here.
 
-* **Uniqueness.** Two weak derivatives of the same function in the same direction agree almost
-  everywhere on `Ω` (`TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`). This
-  is the fundamental lemma of the calculus of variations, consumed from Mathlib as the injectivity
-  of the embedding of locally integrable functions into distributions
-  (`Distribution.ofFun_injective`).
-* **Consistency.** For a Haar measure `μ`, a classical derivative that is locally integrable on
-  `Ω` is a weak derivative (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`,
-  `TauCeti.hasWeakFDerivOn_of_differentiableOn`), by integration by parts. Differentiability alone
-  is not enough: local integrability of `u` and of its derivative is part of what it means to have
-  a weak derivative, so both are hypotheses of these theorems and of the comparison theorems
-  `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`.
+* **Uniqueness.** When `E` is finite-dimensional and carries its Borel σ-algebra, two weak
+  derivatives of the same function in the same direction agree almost everywhere on `Ω`, for every
+  `μ` (`TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`). This is the
+  fundamental lemma of the calculus of variations, consumed from Mathlib as the injectivity of
+  the embedding of locally integrable functions into distributions
+  (`Distribution.ofFun_injective`). Finite dimension cannot be dropped: in
+  infinite dimension every test function is `0`, so for a complete `F` any two functions locally
+  integrable on `Ω` are weak derivatives of any `u` locally integrable on `Ω`.
+* **Consistency.** For an additive Haar measure `μ` on a finite-dimensional `E` with its Borel
+  σ-algebra, a classical derivative that is locally integrable on `Ω` is a weak derivative
+  (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`, `TauCeti.hasWeakFDerivOn_of_differentiableOn`),
+  by integration by parts. Differentiability alone is not enough: local integrability of `u` and
+  of its derivative is part of what it means to have a weak derivative. Local integrability of the
+  derivative is a hypothesis of both theorems and of the comparison theorems
+  `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`. Local
+  integrability of `u` is a hypothesis of `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` only:
+  `TauCeti.hasWeakFDerivOn_of_differentiableOn` derives it from the continuity of `u`, and the
+  comparison theorems take it from the weak derivative they are given.
   Together with uniqueness this pins the notion down: on a `C¹` function whose derivative is
   locally integrable on `Ω`, the weak derivative is the classical one almost everywhere.
 
@@ -76,12 +83,16 @@ purely interior notion, and boundary hypotheses enter only with traces and exten
 
 `LocallyIntegrableOn u Ω μ` and `LocallyIntegrableOn u' Ω μ` are part of the definition rather
 than side hypotheses on the theorems. That is the textbook statement — a weak derivative is a
-relation between two members of `L¹_loc(Ω)` — and in Lean it is also what makes the predicate say
-what it claims: `MeasureTheory.integral` is `0` on a function that is not integrable, so the bare
-integration-by-parts identity is satisfied spuriously by junk-valued pairs, for instance by any
-`u` with a non-integrable singularity inside `Ω` together with `u' = 0`. Mathlib guards the same
-corner in `TestFunction.integralAgainstBilinCLM`, which pairs against a function only when it is
-locally integrable on `Ω` and is the zero map otherwise.
+relation between two members of `L¹_loc(Ω)` — and in Lean it also guards against junk values:
+`MeasureTheory.integral` is `0` on a function that is not integrable, so without these conjuncts
+the bare integration-by-parts identity could hold merely because its integrals take that junk
+value. When open sets are measurable (`[OpensMeasurableSpace E]`, implied by `[BorelSpace E]`),
+local integrability on `Ω` makes both integrands integrable for every test function
+(`TestFunction.integrable_smul` and `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`),
+so neither side of the identity is a junk value. For an arbitrary σ-algebra on `E` the guard is
+weaker: a test function need not be measurable, and its integrals can again be junk. Mathlib
+guards the same corner in `TestFunction.integralAgainstBilinCLM`, which pairs against a function
+only when it is locally integrable on `Ω` and is the zero map otherwise.
 
 The components are projected out by `TauCeti.HasWeakLineDerivOn.completeSpace`,
 `TauCeti.HasWeakLineDerivOn.locallyIntegrableOn`,
@@ -106,10 +117,13 @@ The defining identity is *not* the distributional derivative for an arbitrary `�
 advertised as one. Integrating against `μ` produces the adjoint of `∂_v` relative to `μ`: for a
 weighted `μ = volume.withDensity w`, the identity reads `∂_v (w • u) = w • u'` in the sense of
 distributions, a condition on `u` and `u'` in which the weight cannot be cancelled: it constrains
-`w • u'`, not `u'`, so a constant `u` need not have weak derivative `0`. Exactly when `μ` is
-translation invariant — an additive Haar measure, hence a positive multiple of Lebesgue measure
-on a finite-dimensional `E` — does the identity say that `u'` represents `∂_v u` as a
-distribution on `Ω`, and that is the `μ` out of which `W^{k,p}(Ω)` will be built.
+`w • u'`, not `u'`, so a constant `u` need not have weak derivative `0`. When `μ` is an additive
+Haar measure on a finite-dimensional `E` with its Borel σ-algebra, hence a positive multiple of
+Lebesgue measure, the identity says that `u'` represents `∂_v u` as a distribution on `Ω`, and
+that is the `μ` out of which `W^{k,p}(Ω)` will be built. This condition is sufficient, not
+necessary: the relation only sees `μ` on `Ω` (when open sets are measurable, `μ.restrict Ω`
+defines the same relation as `μ`), so Lebesgue measure restricted to `Ω = (0, 1)`, which is not
+translation invariant, also gives the usual weak derivative on `(0, 1)`.
 
 Accordingly `[μ.IsAddHaarMeasure]` is a hypothesis of every result below that ties the notion to
 the classical derivative: `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`,
@@ -146,10 +160,14 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.congr_ae` and `.congr_ae_deriv`, together with their
   `TauCeti.HasWeakFDerivOn` counterparts: the notion only sees the function and its weak
   derivative up to almost-everywhere equality on `Ω`.
+* `TauCeti.HasWeakLineDerivOn.indicator` and `TauCeti.HasWeakFDerivOn.indicator`: extending a
+  function and its weak derivative by zero off `Ω` preserves the weak derivative on `Ω`.
 * `TauCeti.hasWeakLineDerivOn_zero` and `TauCeti.hasWeakFDerivOn_zero`: the zero function has
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
+* `TauCeti.HasWeakFDerivOn.prodMk`: the pair of two weakly differentiable maps is weakly
+  differentiable, with the paired derivative.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
   linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
   derivative is read off its scalar components.
@@ -161,12 +179,19 @@ weaken them for no gain.
   the `TauCeti.HasWeakFDerivOn` packaging the right one.
 * `Module.Basis.hasWeakFDerivOn_of_forall`: a candidate weak derivative need only be checked in
   the directions of a basis.
+* `TauCeti.contDiffOn_sum_innerSL_and_hasWeakFDerivOn`: `Cᵏ` weak derivatives along an orthonormal
+  basis assemble into a `Cᵏ` weak Fréchet derivative.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
 * `ContDiffOn.hasWeakFDerivOn_fderiv`: a `C¹` function on `Ω` has its classical derivative as
   weak derivative.
+* `TauCeti.hasWeakFDerivOn_of_forall_integral_fderiv_smul`: for any `μ`, integration by parts on
+  the whole space against every `C¹` function with compact support makes `U` a weak derivative of
+  `u` on every open set, which is how a function with an integrable singularity, such as a
+  fundamental solution, is shown to be weakly differentiable.
 * `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
+* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_gradient`: a weak gradient is locally integrable.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
   the linear functional represented by its gradient.
 * `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
@@ -174,13 +199,14 @@ weaken them for no gain.
 * `TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test
   function vanishes off its support, so pairings with it may be integrated over any set
   containing it.
-* `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: uniqueness almost
-  everywhere on `Ω`.
-* `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: a weak line derivative vanishes almost
-  everywhere on an open set where the function does.
-* `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
-  the classical derivative exists and is locally integrable on `Ω`, the weak one agrees with it
-  almost everywhere.
+* `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: for a
+  finite-dimensional `E` with its Borel σ-algebra, uniqueness almost everywhere on `Ω`.
+* `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: under the same assumptions, a weak line
+  derivative vanishes almost everywhere on an open set where the function does.
+* `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: for an
+  additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, where the classical
+  derivative exists and is locally integrable on `Ω`, the weak one agrees with it almost
+  everywhere.
 -/
 
 public section
