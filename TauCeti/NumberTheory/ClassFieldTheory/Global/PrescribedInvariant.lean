@@ -1166,7 +1166,7 @@ private theorem exists_ideleLocalization_eq_pi_single [DecidableEq (InfinitePlac
   -- At the real place `w` the two nonzero classes have the same invariant `1 / 2`.
   have hb' : (ideleLocalization K x).2 w = b := by
     refine infiniteInvMap_injective w ?_
-    rw [hw', infiniteInvMap_apply_of_isReal w hw]
+    rw [hw', infiniteInvMap_apply_eq_ite w]
     simp [hb]
   refine ⟨x, Prod.ext hfin (funext fun u ↦ ?_)⟩
   dsimp only

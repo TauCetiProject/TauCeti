@@ -315,10 +315,13 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
     exact h
   · simp only [hloop]
     exact huy.comp fun t ↦ -t
-  · rw [ω.hamiltonianAction_comp_neg hH hyper]
+  · have hrev {x : ℝ → V} (hx : Periodic x 1) : ω.hamiltonianAction H (fun t ↦ x (-t)) =
+        -ω.hamiltonianAction (fun t y ↦ -H (-t) y) x := by
+      simpa only [neg_neg] using ω.hamiltonianAction_comp_neg hH' hx
+    rw [hrev hyper]
     refine hA.neg.congr fun R ↦ ?_
     simp only [hloop]
-    exact (ω.hamiltonianAction_comp_neg hH (hper R)).symm
+    exact (hrev (hper R)).symm
 
 /-- **The energy of a finite-energy PSS plane.** Let `K` be the perturbation of a PSS plane `p`
 given by a period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` solution of the Floer equation
