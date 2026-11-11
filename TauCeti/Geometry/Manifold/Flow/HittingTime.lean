@@ -281,9 +281,13 @@ variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hT : (T
   (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
 include hv hT hg hgv
 
-/-- The hitting time of a transverse section is continuous at `p`. -/
-theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p :=
-  (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).continuousAt
+omit hv hT hg hgv in
+/-- The hitting time of a transverse section is continuous at `p`. Outside the hypotheses of the
+implicit function theorem the hitting time is the constant `T`, so none are needed. -/
+theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p := by
+  by_cases h : HittingData v g T p
+  · exact (contMDiffAt_flowHittingTime le_rfl h.1 h.2.1 h.2.2.1 h.2.2.2).continuousAt
+  · simpa only [flowHittingTime, h, dite_false] using continuousAt_const
 
 /-- The transition to a transverse section is continuous at `p`. -/
 theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=
