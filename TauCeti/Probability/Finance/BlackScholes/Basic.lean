@@ -53,6 +53,9 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   when `σ √τ = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_id` — the discounted stock is priced at `s`.
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
+* `TauCeti.BlackScholes.callPrice_of_volatility_zero`,
+  `TauCeti.BlackScholes.putPrice_of_volatility_zero` — without volatility the prices are
+  affine in the spot.
 * `TauCeti.BlackScholes.riskNeutralPrice_call` — the risk-neutral price of a call is `callPrice`.
 * `TauCeti.BlackScholes.riskNeutralPrice_put` — the risk-neutral price of a put is `putPrice`.
 * `TauCeti.BlackScholes.callPrice_nonneg`, `TauCeti.BlackScholes.callPrice_le`,
@@ -293,6 +296,22 @@ theorem callPrice_sub_putPrice (s r σ K τ : ℝ) :
 theorem putPrice_eq_callPrice (s r σ K τ : ℝ) :
     putPrice s r σ K τ = callPrice s r σ K τ - s + K * exp (-r * τ) := by
   linear_combination -callPrice_sub_putPrice s r σ K τ
+
+/-- Without volatility `d₊ = d₋ = 0`, so the call price is the affine function
+`(s - K e^{-rτ}) / 2`. -/
+@[simp] theorem callPrice_of_volatility_zero (s r K τ : ℝ) :
+    callPrice s r 0 K τ = (s - K * exp (-r * τ)) / 2 := by
+  simp only [callPrice_def, dMinus_def, dPlus_def, zero_mul, div_zero, sub_zero,
+    TauCeti.Probability.cdf_gaussianReal_self 0 one_ne_zero]
+  ring
+
+/-- Without volatility `d₊ = d₋ = 0`, so the put price is the affine function
+`(K e^{-rτ} - s) / 2`. -/
+@[simp] theorem putPrice_of_volatility_zero (s r K τ : ℝ) :
+    putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 := by
+  simp only [putPrice_def, dMinus_def, dPlus_def, zero_mul, div_zero, sub_zero, neg_zero,
+    TauCeti.Probability.cdf_gaussianReal_self 0 one_ne_zero]
+  ring
 
 /-! ### Risk-neutral prices of calls and puts -/
 
