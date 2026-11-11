@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Algebra.Squarefree.Basic
+import TauCeti.Algebra.GCDMonoid.Basic
+import TauCeti.Algebra.Polynomial.Irreducible
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -68,22 +70,6 @@ public section
 
 open Polynomial
 
-section Helpers
-
-variable {D : Type*} [CommRing D]
-
-/-- If `D[X]` has an irreducible element then `D` is not the zero ring. -/
-private theorem nontrivial_of_irreducible {q : D[X]} (hq : Irreducible q) : Nontrivial D := by
-  by_contra h
-  rw [not_nontrivial_iff_subsingleton] at h
-  exact hq.not_isUnit (isUnit_of_subsingleton q)
-
-/-- A nontrivial commutative ring with GCDs is a domain. -/
-private theorem isDomain_of_nontrivial [IsGCDMonoid D] [Nontrivial D] : IsDomain D :=
-  { IsGCDMonoid.isCancelMulZero (α := D) with }
-
-end Helpers
-
 namespace Finset
 
 section Defs
@@ -136,7 +122,7 @@ basis of `F` exactly when it divides a nonzero member of `F`. -/
 theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irreducible q)
     (hdeg : 0 < q.natDegree) : (∃ b ∈ B, Associated q b) ↔ ∃ f ∈ F, f ≠ 0 ∧ q ∣ f := by
   have := nontrivial_of_irreducible hq
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   refine ⟨fun ⟨b, hb, hqb⟩ ↦ ?_, fun ⟨f, hf, hf0, hqf⟩ ↦ ?_⟩
   · obtain ⟨f, hf, hf0, hbf⟩ := hB.exists_dvd b hb
     exact ⟨f, hf, hf0, hqb.dvd.trans hbf⟩
@@ -163,7 +149,7 @@ basis of the same family. -/
 theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ b' ∈ B', ∃ r : D, IsUnit r ∧ b = C r * b' := by
   have := nontrivial_of_irreducible (hB.irreducible b hb)
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   obtain ⟨b', hb', hbb'⟩ := hB.exists_associated hB' hb
   obtain ⟨u, hu⟩ := hbb'.symm
   obtain ⟨r, hr, hru⟩ := Polynomial.isUnit_iff.1 u.isUnit
@@ -179,7 +165,7 @@ theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
       eq_empty_of_forall_notMem fun b hb ↦
         (hB.irreducible b hb).not_isUnit (isUnit_of_subsingleton b)
     rw [hempty hB, hempty hB']
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   have hinj {B : Finset D[X]} (hB : F.IsIrreducibleBasis B) : Set.InjOn Associates.mk B :=
     fun b hb b' hb' h ↦ hB.eq_of_associated b hb b' hb' (Associates.mk_eq_mk_iff_associated.1 h)
   have himage : B.image Associates.mk = B'.image Associates.mk := by
@@ -200,7 +186,7 @@ member of any other irreducible basis of the same family. -/
 theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ c ∈ B', Associated b.discr c.discr := by
   have := nontrivial_of_irreducible (hB.irreducible b hb)
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   refine ⟨c, hc, ?_⟩
   rw [TauCeti.discr_C_mul _ hr.ne_zero]
@@ -213,7 +199,7 @@ theorem exists_associated_resultant (hB : F.IsIrreducibleBasis B)
     (hB' : F.IsIrreducibleBasis B') (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
     ∃ c ∈ B', ∃ c' ∈ B', c ≠ c' ∧ Associated (resultant b b') (resultant c c') := by
   have := nontrivial_of_irreducible (hB.irreducible b hb)
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   obtain ⟨c', hc', r', hr', rfl⟩ := hB.exists_eq_C_mul hB' hb'
   -- distinct members of `B` are not associated, so neither are the members of `B'` they are
@@ -255,7 +241,7 @@ theorem exists_eq_C_mul_prod_irreducible (f : D[X]) :
       (∀ q ∈ s, Irreducible q ∧ 0 < q.natDegree) ∧ f = C c * s.prod := by
   rcases subsingleton_or_nontrivial D with hD | hD
   · exact ⟨0, 0, by simp, Subsingleton.elim _ _⟩
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   classical
   let := Classical.arbitrary (NormalizedGCDMonoid D)
   induction hn : f.natDegree using Nat.strong_induction_on generalizing f with
@@ -305,7 +291,7 @@ variable {D : Type*} [CommRing D] [IsGCDMonoid D]
 theorem exists_isIrreducibleBasis (F : Finset D[X]) : ∃ B, F.IsIrreducibleBasis B := by
   rcases subsingleton_or_nontrivial D with hD | hD
   · exact ⟨∅, by simp, by simp, by simp, fun f _ ↦ ⟨0, 0, Subsingleton.elim _ _⟩, by simp⟩
-  have : IsDomain D := isDomain_of_nontrivial
+  have : IsDomain D := IsGCDMonoid.isDomain_of_nontrivial
   classical
   choose c factors hirr hfactor using (exists_eq_C_mul_prod_irreducible (D := D))
   -- Collect the positive-degree irreducible factors of the nonzero members of `F`.
