@@ -995,6 +995,7 @@ theorem mem_trivializationAt_opens_model_space_baseSet (x y : U) :
   exact mem_chart_source E y
 
 /-- The tangent-bundle trivializations of an open subset of a normed space are the identity. -/
+@[simp]
 theorem trivializationAt_opens_model_space_symmL (x y : U) (u : E) :
     (trivializationAt E (TangentSpace 𝓘(𝕜, E) : U → Type _) x).symmL 𝕜 y u = u := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (by
@@ -1342,6 +1343,17 @@ theorem coe_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
     (hU.opensHomothety t v : V) = (t : ℝ) • (v : V) :=
   (rfl)
 
+/-- The homothety of ratio `0` is the constant map to the origin. -/
+@[simp]
+theorem opensHomothety_zero (v : U) :
+    hU.opensHomothety 0 v = ⟨0, hU.mem (Set.nonempty_of_mem v.2)⟩ :=
+  Subtype.ext ((hU.coe_opensHomothety 0 v).trans (_root_.zero_smul ℝ (v : V)))
+
+/-- The homothety of ratio `1` is the identity. -/
+@[simp]
+theorem opensHomothety_one : hU.opensHomothety 1 = id :=
+  funext fun v ↦ Subtype.ext ((hU.coe_opensHomothety 1 v).trans (one_smul ℝ (v : V)))
+
 theorem contMDiff_opensHomothety {n : ℕ∞ω} (t : Icc (0 : ℝ) 1) :
     ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V) n (hU.opensHomothety t) := by
   refine (TauCeti.ContMDiff.subtypeVal_comp_iff U (hU.opensHomothety t)).1 ?_
@@ -1351,6 +1363,7 @@ theorem contMDiff_opensHomothety {n : ℕ∞ω} (t : Icc (0 : ℝ) 1) :
   exact (contDiff_const_smul (t : ℝ)).contMDiff.comp contMDiff_subtype_val
 
 /-- The differential of the homothety of ratio `t` is multiplication by `t`. -/
+@[simp]
 theorem mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
     mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v = (t : ℝ) • ContinuousLinearMap.id ℝ V := by
   ext u
@@ -1368,7 +1381,8 @@ theorem isInvertible_mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (ht : (t : ℝ
     (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v).IsInvertible := by
   have h : ((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 (t : ℝ) ht) : V ≃L[ℝ] V) :
       V →L[ℝ] V) = (t : ℝ) • ContinuousLinearMap.id ℝ V :=
-    ContinuousLinearMap.ext fun u ↦ rfl
+    ContinuousLinearMap.ext fun u ↦ by
+      simp [ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def]
   rw [hU.mfderiv_opensHomothety t v, ← h]
   exact ContinuousLinearMap.isInvertible_equiv
 

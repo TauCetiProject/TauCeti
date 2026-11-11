@@ -458,12 +458,9 @@ theorem chartMetric_opens_model_space {V : Type*} [NormedAddCommGroup V] [Normed
     {U : Opens V} (g : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x))
     (x₀ : U) {z : V} (hz : z ∈ U) :
     g.toNondegenerateMetric.chartMetric x₀ z = g.inner ⟨z, hz⟩ := by
-  have hsymm : (extChartAt 𝓘(ℝ, V) x₀).symm z = ⟨z, hz⟩ := by
-    simp only [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr]
-    exact Subtype.ext ((U.openPartialHomeomorphSubtypeCoe _).right_inv (by simpa using hz))
   ext u w
   rw [Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _
-      (by rwa [Opens.extChartAt_opens_target]), hsymm,
+      (by rwa [Opens.extChartAt_opens_target]), Opens.extChartAt_opens_model_space_symm_apply x₀ hz,
     ← Trivialization.symmL_apply (R := ℝ) _
       (Manifold.mem_trivializationAt_opens_model_space_baseSet _ _),
     ← Trivialization.symmL_apply (R := ℝ) _

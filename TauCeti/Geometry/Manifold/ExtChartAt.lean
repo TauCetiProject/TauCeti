@@ -45,10 +45,10 @@ boundaryless model, their domains are open. A compact coordinate set of a chart 
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
 the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
 inverse charts agree through inclusion on the smaller target; on an open subset of a normed space
-all charts coincide. Near a chart point the inverse charts of nested open subsets likewise differ
-only by the inclusion. Over `ℝ`, every chart point has a convex neighbourhood within the model
-range, inside the chart target, on which flat calculus
-applies even when the manifold has boundary.
+all charts coincide and the inverse charts fix the points of the subset. Near a chart point the
+inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart
+point has a convex neighbourhood within the model range, inside the chart target, on which flat
+calculus applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
@@ -790,9 +790,14 @@ theorem extChartAt_opens_target (U : Opens E) (x : U) :
 
 /-- All charts of an open subset of a normed space are the same restriction of the identity. -/
 theorem chartAt_opens_model_space_eq {U : Opens E} (x y : U) : chartAt E x = chartAt E y := by
-  simp only [Opens.chartAt_eq]
-  -- Both sides restrict the identity chart of `E`, whose `chartAt` is definitionally `refl`.
-  rfl
+  simp only [Opens.chartAt_eq, chartAt_self_eq]
+
+/-- On an open subset of a normed space, every inverse extended chart sends a point of the subset
+to itself. -/
+theorem extChartAt_opens_model_space_symm_apply {U : Opens E} (x : U) {z : E} (hz : z ∈ U) :
+    (extChartAt 𝓘(𝕜, E) x).symm z = ⟨z, hz⟩ :=
+  Subtype.ext ((coe_extChartAt_symm_apply U x (by rwa [extChartAt_opens_target])).trans
+    (by simp))
 
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :

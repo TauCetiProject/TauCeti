@@ -109,19 +109,14 @@ theorem blowUp_inner (t : Icc (0 : ℝ) 1) (v : U) :
 
 /-- At scale `0` the blow-up is the constant metric with the value of `h` at the origin. -/
 theorem blowUp_zero_inner (v : U) :
-    (h.blowUp hU 0).inner v =
-      h.inner ⟨0, by simpa using starConvex_zero_iff.1 hU v.2 le_rfl zero_le_one⟩ := by
-  rw [blowUp_inner]
-  congr 1
-  exact Subtype.ext ((hU.coe_opensHomothety 0 v).trans (zero_smul ℝ (v : V)))
+    (h.blowUp hU 0).inner v = h.inner ⟨0, hU.mem (Set.nonempty_of_mem v.2)⟩ := by
+  rw [blowUp_inner, StarConvex.opensHomothety_zero]
 
 /-- At scale `1` the blow-up is the metric itself. -/
 @[simp]
 theorem blowUp_one : h.blowUp hU 1 = h := by
   ext v u w
-  have hv : hU.opensHomothety 1 v = v :=
-    Subtype.ext ((hU.coe_opensHomothety 1 v).trans (one_smul ℝ (v : V)))
-  rw [blowUp_inner, hv]
+  rw [blowUp_inner, StarConvex.opensHomothety_one, id_eq]
 
 /-- In coordinates, the blow-up at scale `t` reads the chart metric of `h` at `t • z`. -/
 theorem chartMetric_blowUp (t : Icc (0 : ℝ) 1) (x₀ : U) {z : V} (hz : z ∈ U) :
@@ -194,6 +189,8 @@ theorem blowUp_eq_rescale_pullback (t : Icc (0 : ℝ) 1) (ht : 0 < (t : ℝ)) :
   -- `hs` is stated in `V`; the metric pairs the tangent space `TangentSpace 𝓘(ℝ, V) _ = V`.
   erw [hs (h.inner (hU.opensHomothety t v)) u w]
   field_simp
+  -- `field_simp` leaves the two sides as the same pairing, read in `V` on the left and in the
+  -- tangent space `TangentSpace 𝓘(ℝ, V) _ = V` on the right.
   rfl
 
 /-- For `t > 0`, the blow-up at scale `t` has scalar curvature `t² Scal(h)(t • v)` at `v`. -/

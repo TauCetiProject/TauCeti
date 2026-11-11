@@ -66,49 +66,27 @@ variable {p : M} {U : Set (TangentSpace I p)}
 the inner product of `T_p M`. -/
 theorem blowUp_normalCoordinateMetric_zero_inner [T2Space M] [I.Boundaryless]
     (hU : IsNormalDomain I M p U) (v : hU.opens) (u w : TangentSpace I p) :
-    (hU.normalCoordinateMetric.blowUp hU.starConvex 0).inner v u w = inner ℝ u w := by
-  have h0 := ContMDiffRiemannianMetric.blowUp_zero_inner hU.normalCoordinateMetric hU.starConvex v
-  rw [h0]
+    (hU.normalCoordinateMetric.blowUp hU.starConvex_opens 0).inner v u w = inner ℝ u w := by
+  rw [ContMDiffRiemannianMetric.blowUp_zero_inner]
   refine (normalCoordinateMetric_inner hU _ u w).trans ?_
-  have hd : mfderiv 𝓘(ℝ, TangentSpace I p) I
-      (riemannianExp I M p ∘ (Subtype.val : hU.opens → TangentSpace I p)) ⟨0, hU.zero_mem⟩ =
-        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0).comp
-          (mfderiv 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ, TangentSpace I p)
-            (Subtype.val : hU.opens → TangentSpace I p) ⟨0, hU.zero_mem⟩) :=
-    mfderiv_comp (⟨0, hU.zero_mem⟩ : hU.opens)
-      ((contMDiffAt_riemannianExp (zero_mem_expDomain (I := I) (M := M) p)).mdifferentiableAt
-        (by simp)) (contMDiff_subtype_val.contMDiffAt.mdifferentiableAt one_ne_zero)
-  have hd' (z : TangentSpace I p) : mfderiv 𝓘(ℝ, TangentSpace I p) I
-      (riemannianExp I M p ∘ (Subtype.val : hU.opens → TangentSpace I p)) ⟨0, hU.zero_mem⟩ z =
-        z := by
-    rw [hd, mfderiv_subtype_val (I := 𝓘(ℝ, TangentSpace I p))]
-    exact (congrArg (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0)
-      (tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, TangentSpace I p)) _ z)).trans
-        (mfderiv_riemannianExp_apply_zero p z)
-  -- The differential lands in the tangent space at `exp_p 0`, which is `p` only propositionally.
-  have key : ∀ q : M, q = p → ∀ a b : E, inner ℝ (show TangentSpace I q from a)
-      (show TangentSpace I q from b) = inner ℝ (show TangentSpace I p from a)
-        (show TangentSpace I p from b) := by
-    rintro q rfl a b
-    rfl
-  exact (congrArg₂ (inner ℝ) (hd' u) (hd' w)).trans (key _ (riemannianExp_zero p) u w)
+  refine (congrArg₂ (inner ℝ) (hU.mfderiv_riemannianExp_comp_val_zero_apply u)
+    (hU.mfderiv_riemannianExp_comp_val_zero_apply w)).trans ?_
+  rw [Function.comp_apply, riemannianExp_zero]
 
 /-- For `t > 0`, the blow-up at scale `t` of the metric in normal coordinates has scalar
 curvature `t² Scal(g)(exp_p (t • v))` at `v`. -/
 theorem scalarCurvature_blowUp_normalCoordinateMetric [T2Space M] (hU : IsNormalDomain I M p U)
     (t : Icc (0 : ℝ) 1) (ht : 0 < (t : ℝ)) (v : hU.opens) :
-    (hU.normalCoordinateMetric.blowUp hU.starConvex t).scalarCurvature v =
+    (hU.normalCoordinateMetric.blowUp hU.starConvex_opens t).scalarCurvature v =
       (t : ℝ) ^ 2 * (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
         (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)).scalarCurvature
           (riemannianExp I M p ((t : ℝ) • (v : TangentSpace I p))) := by
   have ht' := ContMDiffRiemannianMetric.scalarCurvature_blowUp hU.normalCoordinateMetric
-    hU.starConvex t ht v
+    hU.starConvex_opens t ht v
   rw [ht', normalCoordinateMetric_eq_pullback,
     ContMDiffRiemannianMetric.scalarCurvature_pullback_of_isInvertible _ _
-      hU.isInvertible_mfderiv_riemannianExp_comp_val, Function.comp_apply]
-  exact congrArg (fun x ↦ (t : ℝ) ^ 2 * (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)).scalarCurvature
-      (riemannianExp I M p x)) (hU.starConvex.coe_opensHomothety (U := hU.opens) t v)
+      hU.isInvertible_mfderiv_riemannianExp_comp_val, Function.comp_apply,
+    StarConvex.coe_opensHomothety]
 
 end IsNormalDomain
 
