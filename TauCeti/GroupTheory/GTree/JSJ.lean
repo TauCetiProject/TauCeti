@@ -26,9 +26,12 @@ JSJ trees are not unique, but any two of them dominate each other: by
 `GTree.IsJSJ.isEllipticSubgroup_iff` they all have the same elliptic subgroups.
 
 An `(𝒜, ℋ)`-tree all of whose vertices are rigid is a JSJ tree
-(`GTree.IsJSJ.of_forall_isRigidVertex`), in particular one with trivial vertex stabilizers, such
-as a free action of a free group. For the infinite cyclic group the line is a JSJ tree and the
-one-vertex tree is not; for the trivial group the JSJ trees are the one-vertex trees.
+(`GTree.IsJSJ.of_forall_isRigidVertex`), in particular an `(𝒜, ℋ)`-tree with trivial vertex
+stabilizers (`GTree.IsJSJ.of_forall_stabilizer_eq_bot`). For instance, when `𝒜` contains the
+trivial subgroup and every member of `ℋ` is trivial, a minimal free action of a free group on a
+tree is a JSJ tree. For the infinite cyclic group, under the same two hypotheses on `𝒜` and `ℋ`,
+the line is a JSJ tree and the one-vertex tree is not (both in `GTree.{0, 0}`). For the trivial
+group the JSJ trees are exactly the one-vertex trees, whatever `𝒜` and `ℋ`.
 
 ## Rigid vertices
 
@@ -57,10 +60,12 @@ both are at least the universe of `G`; taking both equal to that universe is the
   `TauCeti.GTree.IsJSJ.isJSJ_iff_forall_isEllipticSubgroup`: the JSJ trees form one deformation
   space of universally elliptic trees.
 * `TauCeti.GTree.IsJSJ.of_forall_isRigidVertex`, `TauCeti.GTree.IsJSJ.of_forall_stabilizer_eq_bot`:
-  trees with universally elliptic, in particular trivial, vertex stabilizers are JSJ trees.
-* `TauCeti.GTree.isJSJ_iff_subsingleton`, `TauCeti.GTree.line_isJSJ`,
-  `TauCeti.GTree.not_point_isJSJ_int`: the JSJ trees of the trivial group, and the line and the
-  point for the infinite cyclic group.
+  minimal relative trees with universally elliptic, in particular trivial, vertex stabilizers are
+  JSJ trees.
+* `TauCeti.GTree.isJSJ_iff_subsingleton`: the JSJ trees of the trivial group.
+* `TauCeti.GTree.line_isJSJ`, `TauCeti.GTree.not_point_isJSJ_int`: over a family containing the
+  trivial subgroup, relative to a family of trivial subgroups, the line is a JSJ tree of the
+  infinite cyclic group and the one-vertex tree is not.
 
 ## References
 
