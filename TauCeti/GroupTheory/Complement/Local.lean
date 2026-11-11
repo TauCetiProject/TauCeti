@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Complement
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Local complements of subgroups
@@ -321,5 +322,27 @@ theorem leftProjection_eq_one_iff (x : H) : h.leftProjection x = 1 ↔ (x : G) �
     exact h.leftProjection_right ⟨x, hx⟩
 
 end IsLocalComplement
+
+section Conjugation
+
+variable [N.Normal]
+
+attribute [local instance] conjugationAction
+
+/-- On `N` the left projection is the identity, hence equivariant for conjugation by `G`. -/
+theorem IsLocalComplement.smul_leftProjection_of_mem (h : N.IsLocalComplement K H) (g : G)
+    (x y : H) (hx : (x : G) ∈ N) (hy : (y : G) = g * x * g⁻¹) :
+    g • h.leftProjection x = h.leftProjection y := by
+  obtain ⟨x, hxH⟩ := x
+  obtain ⟨y, hyH⟩ := y
+  dsimp only at hx hy
+  subst hy
+  have hx' : h.leftProjection ⟨x, hxH⟩ = ⟨x, hx⟩ := h.leftProjection_left ⟨x, hx⟩
+  have hy' : h.leftProjection ⟨_, hyH⟩ = ⟨_, ‹N.Normal›.conj_mem x hx g⟩ :=
+    h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
+  rw [hx', hy']
+  exact Subtype.ext (coe_conjugationAction_smul N g _)
+
+end Conjugation
 
 end Subgroup
