@@ -392,7 +392,7 @@ theorem exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le (hα : α < 1)
       ‖valueHolderL hα.le f‖ + ‖spatialFDerivHolderL hα.le f‖ ≤ η * ‖f‖ + C * ‖valueL f‖ := by
   have hα' : 0 < 1 - (α : ℝ) := sub_pos.2 (by exact_mod_cast hα)
   -- Choose `ε ≤ 1` with `7 ε^(1 - α) ≤ η`.
-  set ε := min 1 ((η / 7) ^ (1 - (α : ℝ))⁻¹) with hε_def
+  set ε := min 1 ((η / 7) ^ (1 - (α : ℝ))⁻¹)
   have hε : 0 < ε := lt_min one_pos (by positivity)
   have hpow : 7 * ε ^ (1 - (α : ℝ)) ≤ η := by
     have h := Real.rpow_le_rpow hε.le (min_le_right _ _) hα'.le

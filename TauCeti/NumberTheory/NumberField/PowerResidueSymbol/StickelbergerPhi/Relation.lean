@@ -253,7 +253,6 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     simpa using (mem_of_liesOver P (span {(p : ℤ)}) (p : ℤ)).1 (mem_span_singleton_self _)
   have hNP : p ^ inertiaDeg P ℤ = absNorm P := pow_inertiaDeg p P
   have hΦ := stickelbergerPhi_ne_zero hP hm
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, inferInstance, hQ⟩
   by_cases hpQ : (p : 𝓞 K) ∈ Q
   swap
   · -- Away from `p`: no `σ⁻¹ • P` is `Q`, and `Φ(P) ∉ Q` as `N P = p ^ f ∉ Q`.
@@ -272,6 +271,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     IsPrime.ne_top' ((span_singleton_le_iff_mem _).2 (by simpa using hpQ))⟩
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   obtain ⟨τ, rfl⟩ := exists_smul_eq_of_isGaloisGroup (span {(p : ℤ)}) P Q Gal(K/ℚ)
+  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨τ • P, inferInstance, hQ⟩
   have hΦτ : τ⁻¹ • stickelbergerPhi v.asIdeal m = stickelbergerPhi P m := by
     have h := map_stickelbergerPhi (m := m) P (MulSemiringAction.toRingEquiv _ (𝓞 K) τ)
     rw [MulSemiringAction.toRingEquiv_apply_apply] at h
@@ -325,7 +325,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
       fun hS ↦ Multiset.count_eq_zero.2 fun h ↦ hQ ⟨(hS Q h).ne_zero, isPrime_of_prime (hS Q h)⟩
     rw [hQ' fun _ h ↦ prime_of_normalized_factor _ h, hQ' hMprime]
   have : Q.IsPrime := hQ.2
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, hQ.2, hQ.1⟩
   -- The multiplicity of `Q` on the right is the sum of the `c σ` with `σ⁻¹ • P = Q`.
   have hcount : M.count Q = ∑ σ with σ⁻¹ • P = Q, c σ := by
     simp [hM, Multiset.count_sum', Multiset.count_singleton, Finset.sum_filter, eq_comm]
