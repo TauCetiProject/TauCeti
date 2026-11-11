@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -41,7 +40,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {f : P → M} {X Y : Π p : P, TangentSpace I (f p)} {σ : Π p : P, V (f p)}
   {s : Set P} {p : P} {n : ℕ∞ω}
 
@@ -62,10 +60,6 @@ theorem contMDiffWithinAt_curvatureTensor_alongMap
   let _ : NormedSpace ℝ (F →L[ℝ] F) := inferInstance
   let _ : ∀ x : M, NormedAddCommGroup (V x →L[ℝ] V x) := fun _ ↦ inferInstance
   let _ : ∀ x : M, NormedSpace ℝ (V x →L[ℝ] V x) := fun _ ↦ inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup (TangentSpace I x →L[ℝ] V x →L[ℝ] V x) :=
-    fun _ ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ (TangentSpace I x →L[ℝ] V x →L[ℝ] V x) :=
-    fun _ ↦ inferInstance
   have hR := (cov.contMDiff_curvatureTensorCLM.of_le hn).contMDiffAt.comp_contMDiffWithinAt
     p hf
   simpa only [curvatureTensorCLM_apply] using
