@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
@@ -27,8 +28,9 @@ Here perfection is stated as bijectivity of the curried map: every additive char
 `H¹(K, E[m])`, respectively of `H¹(K, E₂[φ̂])`, is pairing with a unique class. This is the
 finite-coefficient duality used to study annihilators of local Kummer images; for an isogeny it is
 the local duality between the local conditions of `Sel_φ` and `Sel_φ̂` in Cassels' comparison of
-these Selmer groups. Orthogonality of the Kummer images is a further result, not part of the
-perfection statement.
+these Selmer groups. The image of the Kummer map `E(K) → H¹(K, E[m])` is isotropic for the first
+pairing (`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`); orthogonality of
+the Kummer images of an isogeny and of its dual is a further result.
 
 No assumption that `K` contains the torsion or the roots of unity is required. In mixed
 characteristic, `m` and `n` may be divisible by the residue characteristic.
@@ -93,6 +95,14 @@ theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPair
   simp only [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
     AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]
 
+/-- **The local Kummer image is isotropic for local Tate duality**: the local Tate pairing of the
+Kummer classes of two points of `E(K)` vanishes. -/
+theorem localTateWeilPairing_kummerMap_kummerMap_eq_zero [DecidableEq K]
+    (P Q : W.toAffine.Point) :
+    W.localTateWeilPairing m hm (W.kummerMap m hm P) (W.kummerMap m hm Q) = 0 := by
+  rw [localTateWeilPairing_apply, torsionH1WeilPairing_kummerMap_kummerMap_eq_zero, map_zero,
+    map_zero]
+
 end WeierstrassCurve
 
 namespace TauCeti.Isogeny
@@ -118,6 +128,18 @@ theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny
     φ.localTateKerWeilPairing hn a b =
       h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
+
+/-- The local Tate pairings are compatible with inclusion into degree-torsion and
+projection onto the dual kernel. No restriction on the residue characteristic is needed. -/
+theorem localTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.localTateKerWeilPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.localTateWeilPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  simp only [localTateKerWeilPairing_apply, localTateWeilPairing_apply,
+    kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
 
 /-- **Perfect local Tate duality for the kernels of an isogeny and of its dual.** Pairing with a
 class gives a bijection from `H¹(K, E₁[φ])` to the additive characters of `H¹(K, E₂[φ̂])` with

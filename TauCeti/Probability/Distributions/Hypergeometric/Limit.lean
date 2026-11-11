@@ -69,7 +69,7 @@ theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ
     filter_upwards [eventually_ge_atTop (max n 1), hK] with N hN hKN
     have hnN : n ≤ N := le_trans (le_max_left n 1) hN
     have hNpos : 0 < N := lt_of_lt_of_le (by omega) hN
-    rw [hypergeometricMeasure_real_singleton hKN hnN k, ite_eq_left hkn]
+    rw [hypergeometricMeasure_real_singleton hKN k, ite_eq_left hkn]
     have hchooseN : (N.choose n : ℝ) ≠ 0 := by
       exact_mod_cast Nat.choose_ne_zero hnN
     simp only [id_eq]
@@ -84,8 +84,8 @@ theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ
     rw [binomial_real_singleton, Nat.choose_eq_zero_of_lt (lt_of_not_ge hkn)]
     simp only [Nat.cast_zero, zero_mul]
     refine Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [eventually_ge_atTop n, hK] with N hnN hKN
-    rw [hypergeometricMeasure_real_singleton hKN hnN k, ite_eq_right hkn]
+    filter_upwards [hK] with N hKN
+    rw [hypergeometricMeasure_real_singleton hKN k, ite_eq_right hkn]
 
 end Probability
 

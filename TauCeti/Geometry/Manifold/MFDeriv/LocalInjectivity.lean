@@ -26,6 +26,10 @@ points, where the inverse function theorem is not available.
 In particular a curve which is `C^n`, `n ≠ 0`, at a parameter where its velocity does not vanish
 is injective near that parameter (`ContMDiffAt.exists_mem_nhds_injOn_of_curveVelocity_ne_zero`).
 
+Without any smoothness assumption, an injective manifold derivative at `x` still isolates `x` in
+its fibre (`TauCeti.eventually_ne_of_mfderiv_injective`): the derivative of the coordinate
+expression within the range of the model is injective, hence antilipschitz.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
@@ -80,3 +84,35 @@ theorem ContMDiffAt.exists_mem_nhds_injOn_of_curveVelocity_ne_zero {n : WithTop 
     rw [TauCeti.Manifold.curveVelocity_apply, ← (mfderiv 𝓘(𝕜, 𝕜) J γ t).map_smul c (1 : 𝕜)]
     exact (congrArg (mfderiv 𝓘(𝕜, 𝕜) J γ t) (mul_one c)).trans hc
   exact (smul_eq_zero.1 hc').resolve_right hv
+
+namespace TauCeti
+
+/-- A map between real or complex manifolds, the source modelled on a finite-dimensional space,
+with injective manifold derivative at `x` takes values different from `f x` at all points near `x`
+other than `x`: the point `x` is isolated in its fibre. Only differentiability at `x` is used,
+which follows from the injectivity of the derivative, and the manifolds may have boundary or
+corners. -/
+theorem eventually_ne_of_mfderiv_injective (hinj : Injective (mfderiv I J f x)) :
+    ∀ᶠ z in 𝓝[≠] x, f z ≠ f x := by
+  let := IsRCLikeNormedField.rclike 𝕜
+  -- In the extended charts, `f` has the injective derivative `mfderiv I J f x` within `range I`,
+  -- so its coordinate expression avoids its value at `extChartAt I x x` near that point.
+  let f' : E →L[𝕜] E' := mfderiv I J f x
+  obtain ⟨C, -, hC⟩ := (LinearMap.injective_iff_antilipschitz f'.toLinearMap).1 hinj
+  have h := (mdifferentiableAt_of_mfderiv_injective hinj).hasMFDerivAt.2.eventually_ne ⟨C, hC⟩
+    (c := writtenInExtChartAt I J x f (extChartAt I x x))
+  -- The extended chart at `x` maps the punctured neighbourhoods of `x` into `range I` minus
+  -- `extChartAt I x x`, as it is injective on its source.
+  have hsrc : ∀ᶠ z in 𝓝[≠] x, z ∈ (extChartAt I x).source :=
+    nhdsWithin_le_nhds (extChartAt_source_mem_nhds x)
+  have ht : Tendsto (extChartAt I x) (𝓝[≠] x) (𝓝[range I \ {extChartAt I x x}] extChartAt I x x) :=
+    tendsto_nhdsWithin_iff.2 ⟨(continuousAt_extChartAt x).tendsto.mono_left nhdsWithin_le_nhds, by
+      filter_upwards [self_mem_nhdsWithin, hsrc] with z hzx hzs
+      exact ⟨extChartAt_target_subset_range x ((extChartAt I x).map_source hzs),
+        fun hz ↦ hzx ((extChartAt I x).injOn hzs (mem_extChartAt_source x) hz)⟩⟩
+  filter_upwards [ht.eventually h, hsrc] with z hz hzs hfz
+  refine hz ?_
+  simp only [writtenInExtChartAt, comp_apply, (extChartAt I x).left_inv hzs,
+    (extChartAt I x).left_inv (mem_extChartAt_source x), hfz]
+
+end TauCeti

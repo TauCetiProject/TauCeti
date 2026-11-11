@@ -62,15 +62,14 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 /-- The operator representing the form `(u, v) ↦ ⟪J u, J v⟫` relative to a coercive form `B`.
 It is characterized by `IsCoercive.apply_formPerturbationOperator` without unfolding. -/
 def formPerturbationOperator (hB : IsCoercive B) (J : V →L[ℝ] H) : V →L[ℝ] V :=
-  hB.solutionOfFunctionalCLM.comp
+  hB.solutionOfFunctional.comp
     ((ContinuousLinearMap.toSesqForm J).comp J)
 
 /-- The form perturbation operator solves the forcing functional `v ↦ ⟪J u, J v⟫`. -/
 theorem formPerturbationOperator_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (u : V) :
     hB.formPerturbationOperator J u =
       hB.solutionOfFunctional (ContinuousLinearMap.toSesqForm J (J u)) := by
-  simp only [formPerturbationOperator, ContinuousLinearMap.comp_apply,
-    solutionOfFunctionalCLM_apply]
+  simp only [formPerturbationOperator, ContinuousLinearMap.comp_apply]
 
 /-- Characterization of the form perturbation operator by its variational equation. -/
 @[simp]
@@ -85,7 +84,7 @@ theorem isCompactOperator_formPerturbationOperator (hB : IsCoercive B) {J : V �
     (hJ : IsCompactOperator J) : IsCompactOperator (hB.formPerturbationOperator J) := by
   rw [formPerturbationOperator]
   exact (hJ.clm_comp (ContinuousLinearMap.toSesqForm J)).clm_comp
-    hB.solutionOfFunctionalCLM
+    hB.solutionOfFunctional
 
 /-- The compactly perturbed operator equation is equivalent to its variational formulation. -/
 theorem one_sub_smul_formPerturbationOperator_apply_eq_iff (hB : IsCoercive B)
@@ -98,10 +97,7 @@ theorem one_sub_smul_formPerturbationOperator_apply_eq_iff (hB : IsCoercive B)
     simpa only [sub_apply, one_apply_eq_self, smul_apply, map_sub, map_smul, smul_eq_mul,
       apply_formPerturbationOperator, apply_solutionOfInner_eq_inner] using h
   · intro hu
-    apply hB.continuousLinearEquivOfBilin.injective
-    apply ext_inner_right ℝ
-    intro v
-    rw [continuousLinearEquivOfBilin_apply, continuousLinearEquivOfBilin_solutionOfInner]
+    refine hB.eq_solutionOfInner fun v => ?_
     simpa only [sub_apply, one_apply_eq_self, smul_apply, map_sub, map_smul, smul_eq_mul,
       apply_formPerturbationOperator] using hu v
 
@@ -112,7 +108,7 @@ theorem one_sub_smul_formPerturbationOperator_apply_eq_iff_functional (hB : IsCo
     (1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V) u =
         hB.solutionOfFunctional ell ↔
       ∀ v : V, B u v - kappa * ⟪J u, J v⟫_ℝ = ell v := by
-  rw [solutionOfFunctional_def,
+  rw [solutionOfFunctional_apply,
     one_sub_smul_formPerturbationOperator_apply_eq_iff]
   simp only [InnerProductSpace.toDual_symm_apply]
 

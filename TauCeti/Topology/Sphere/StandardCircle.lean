@@ -23,6 +23,8 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
 * `TauCeti.circleLoop_eq_east_iff`, `TauCeti.circleLoop_surjective` and
   `TauCeti.eq_or_of_circleLoop_eq`: it collapses exactly the boundary to `(1, 0)`, is surjective,
   and is injective elsewhere.
+* `TauCeti.sphereHomeomorphCircle_circleLoop`: identified with the complex unit circle, it is
+  `t ↦ exp(2πit)`.
 * `TauCeti.diskBoundaryTwoLoop`: the same counterclockwise parametrization as a loop of the
   boundary circle `∂D²`, based at `(1, 0)`.
 * `TauCeti.diskBoundaryTwoReflect`: the reflection `(w₀, w₁) ↦ (-w₀, w₁)` of `∂D²`.
@@ -163,6 +165,17 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
     rw [mul_div_cancel₀ _ hp.ne', hrc]
   · simp only [Fin.mk_one, circleLoop_apply_one]
     rw [mul_div_cancel₀ _ hp.ne', hrs]
+
+/-- Under the identification of `S¹ ⊆ ℝ²` with the complex unit circle, the standard loop is
+`t ↦ exp(2πit)`. -/
+@[simp]
+theorem sphereHomeomorphCircle_circleLoop (t : Fin 1 → I) :
+    EuclideanSpace.sphereHomeomorphCircle (circleLoop t) = Circle.exp (2 * π * t 0) := by
+  rw [← Homeomorph.eq_symm_apply]
+  refine Subtype.ext ?_
+  rw [EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp]
+  ext j
+  fin_cases j <;> simp
 
 /-! ### The counterclockwise loop of `∂D²` -/
 

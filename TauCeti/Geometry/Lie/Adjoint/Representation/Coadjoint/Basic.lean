@@ -33,6 +33,8 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main results
 
+* `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
+  along the adjoint automorphism `Ad_g` to `ν`.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
 * `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
@@ -85,6 +87,26 @@ theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAl
     (X : GroupLieAlgebra I G) :
     coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
   (rfl)
+
+section TangentAd
+
+variable [CompleteSpace E] [LieGroup I (minSmoothness 𝕜 3) G]
+
+/-- The translate `Ad*_g ν = ν ∘ Ad_{g⁻¹}` pulls back along the adjoint automorphism `Ad_g` to
+`ν`. -/
+@[simp]
+theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
+    (ν : Module.Dual 𝕜 (GroupLieAlgebra I G)) :
+    (coadjointRepresentation 𝕜 I G g ν).comp
+        ((tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅𝕜⁆ GroupLieAlgebra I G) :
+          GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I G) = ν := by
+  ext X
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
+    coadjointRepresentation_apply]
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+
+end TangentAd
 
 section Smooth
 
