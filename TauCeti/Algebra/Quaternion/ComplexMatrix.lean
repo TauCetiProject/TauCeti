@@ -294,11 +294,35 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
 /-! ### First columns and the complex line -/
 
 /-- The quaternion whose matrix under `Quaternion.toComplexMatrix` has first column `z`
-(`toComplexMatrix_ofFirstColumn_apply_zero`). Through it, matrices of quaternions act on `ℂ²` by
-left multiplication (`ofFirstColumn_toComplexMatrix_mulVec`) and complex scalars by right
-multiplication (`ofFirstColumn_smul`). -/
-@[expose] def ofFirstColumn (z : Fin 2 → ℂ) : ℍ[ℝ] :=
+(`toComplexMatrix_ofFirstColumn_apply_zero`), and every quaternion is recovered from the first
+column of its matrix (`ofFirstColumn_toComplexMatrix_apply_zero`). Through it, matrices of
+quaternions act on `ℂ²` by left multiplication (`ofFirstColumn_toComplexMatrix_mulVec`) and complex
+scalars by right multiplication (`ofFirstColumn_smul`). -/
+def ofFirstColumn (z : Fin 2 → ℂ) : ℍ[ℝ] :=
   ⟨(z 0).re, (z 0).im, -(z 1).re, (z 1).im⟩
+
+/-- The real part of `ofFirstColumn z` is the real part of `z 0`. -/
+@[simp]
+theorem re_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).re = (z 0).re := (rfl)
+
+/-- The `i`-part of `ofFirstColumn z` is the imaginary part of `z 0`. -/
+@[simp]
+theorem imI_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imI = (z 0).im := (rfl)
+
+/-- The `j`-part of `ofFirstColumn z` is minus the real part of `z 1`. -/
+@[simp]
+theorem imJ_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imJ = -(z 1).re := (rfl)
+
+/-- The `k`-part of `ofFirstColumn z` is the imaginary part of `z 1`. -/
+@[simp]
+theorem imK_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imK = (z 1).im := (rfl)
+
+/-- A quaternion is recovered from the first column of its matrix. -/
+@[simp]
+theorem ofFirstColumn_toComplexMatrix_apply_zero (q : ℍ[ℝ]) :
+    ofFirstColumn (fun i => toComplexMatrix q i 0) = q := by
+  rw [toComplexMatrix_apply]
+  ext <;> simp
 
 /-- The first column of the matrix of `ofFirstColumn z` is `z`. -/
 @[simp]

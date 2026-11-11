@@ -79,14 +79,11 @@ private theorem coe_star_circleToUnitary_inv (w : Circle) :
   rw [Unitary.coe_star, Quaternion.coe_circleToUnitary]
   ext <;> simp
 
-private theorem realCliffordForm_four_ne_zero : realCliffordForm 4 0 ≠ 0 := by
-  intro h
-  simpa [h] using realCliffordForm_apply_single 4 0 0 1
-
 /-- The class `[(a, w⁻¹), w]` in `Spinᶜ(4)` of the compact coordinate model, whose rotation is
 `q ↦ a q w` in quaternion coordinates. -/
 private def spinCOfPair :
-    unitary ℍ[ℝ] × Circle →* spinCGroup (realCliffordForm 4 0) realCliffordForm_four_ne_zero :=
+    unitary ℍ[ℝ] × Circle →*
+      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
   (spinCGroup.mk _ _).comp
     ((realSpinFourEquivQuaternionUnitaryProd.symm.toMonoidHom.comp
       ((MonoidHom.fst _ _).prod
@@ -110,12 +107,14 @@ private theorem ker_le_ker_spinCOfPair :
       Subtype.ext (by ext <;> simp [Unitary.coe_neg])
     rw [MonoidHom.mem_ker, spinCOfPair_apply, Prod.fst_neg, Prod.snd_neg, Prod.fst_one,
       Prod.snd_one, hc, ← Prod.neg_mk, Prod.mk_one_one, (MulEquiv.symm_apply_eq _).mpr
-        (realSpinFourEquivQuaternionUnitaryProd_negOne realCliffordForm_four_ne_zero).symm,
+        (realSpinFourEquivQuaternionUnitaryProd_negOne
+          (nondegenerate_realCliffordForm 4 0).ne_zero).symm,
       spinCGroup.mk_negOne_neg_one]
 
 /-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model, descended from `spinCOfPair`. -/
 private def realSpinCUnitary :
-    unitaryGroup (Fin 2) ℂ →* spinCGroup (realCliffordForm 4 0) realCliffordForm_four_ne_zero :=
+    unitaryGroup (Fin 2) ℂ →*
+      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
   Quaternion.unitaryProdCircleToUnitaryGroup.liftOfRightInverse _
     (Function.rightInverse_surjInv Quaternion.unitaryProdCircleToUnitaryGroup_surjective)
     ⟨spinCOfPair, ker_le_ker_spinCOfPair⟩
@@ -190,7 +189,7 @@ private theorem quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec (z : F
       b.complexCoords.symm z := by
   rw [negRealCliffordFormIsometryEquiv_apply, quaternionFrame, OrthonormalBasis.coe_mk,
     Fin.sum_univ_four, complexCoords_symm_apply]
-  simp [coordVec, Quaternion.ofFirstColumn]
+  simp [coordVec]
   abel
 
 variable (hQ₀ : Q ≠ 0)
@@ -201,7 +200,8 @@ variable (hQ₀ : Q ≠ 0)
 `b.complexCoords` (`complexCoords_toSpecialOrthogonal_spinCUnitary_apply`, `det_spinCUnitary`).
 It is the only such homomorphism (`eq_spinCUnitary`). -/
 def spinCUnitary : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀ :=
-  (b.quaternionFrame.realSpinCGroupHom hQ realCliffordForm_four_ne_zero hQ₀).comp realSpinCUnitary
+  (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
+    realSpinCUnitary
 
 /-- **The rotation of `spinCUnitary g` is `g`** in the complex coordinates of the frame. -/
 theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (Fin 2) ℂ)
