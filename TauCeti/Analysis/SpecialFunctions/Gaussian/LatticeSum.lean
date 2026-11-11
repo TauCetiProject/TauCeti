@@ -101,7 +101,7 @@ theorem hasSum_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
 
 /-- The direct Gaussian lattice series converges uniformly in the centre on every bounded set,
 for each nonzero width. -/
-theorem hasSumUniformlyOn_gaussianLatticeSum (s : ℝ) (hs : s ≠ 0)
+theorem hasSumUniformlyOn_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0)
     {S : Set ℝ} (hS : Bornology.IsBounded S) :
     HasSumUniformlyOn
       (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
@@ -131,12 +131,12 @@ theorem hasSumUniformlyOn_gaussianLatticeSum (s : ℝ) (hs : s ≠ 0)
 
 /-- The direct Gaussian lattice series converges locally uniformly in the centre for every
 nonzero width. In particular, its partial sums converge uniformly on compact intervals. -/
-theorem hasSumLocallyUniformly_gaussianLatticeSum (s : ℝ) (hs : s ≠ 0) :
+theorem hasSumLocallyUniformly_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0) :
     HasSumLocallyUniformly
       (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
       (fun c => gaussianLatticeSum c s) := by
   exact hasSumLocallyUniformly_of_forall_compact fun _ hK =>
-    hasSumUniformlyOn_gaussianLatticeSum s hs hK.isBounded
+    hasSumUniformlyOn_gaussianLatticeSum hs hK.isBounded
 
 /-- At width zero every term of the Gaussian lattice series is `1`, so the totalized sum is `0`. -/
 @[simp]

@@ -29,6 +29,18 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
+/-- A translated density term in the coordinates used by the Gaussian lattice sum. -/
+private theorem gaussianPDFReal_add_zsmul_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0)
+    {T : ℝ} (hT : T ≠ 0) (x : ℝ) (k : ℤ) :
+    gaussianPDFReal m v (x + k • T) =
+      (√(2 * π * v))⁻¹ * rexp (-((k : ℝ) - (m - x) / T) ^ 2 / (2 * (√(v : ℝ) / T) ^ 2)) := by
+  have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
+  rw [gaussianPDFReal]
+  congr 2
+  rw [div_pow, sq_sqrt hv'.le, zsmul_eq_mul]
+  field_simp
+  ring
+
 /-- Periodizing a Gaussian density with nonzero variance gives a rescaled Gaussian lattice sum. -/
 theorem hasSum_gaussianPDFReal_add_zsmul (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {T : ℝ} (hT : T ≠ 0)
     (x : ℝ) :
@@ -36,12 +48,8 @@ theorem hasSum_gaussianPDFReal_add_zsmul (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) 
       ((√(2 * π * v))⁻¹ * gaussianLatticeSum ((m - x) / T) (√(v : ℝ) / T)) := by
   have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
   have hs : √(v : ℝ) / T ≠ 0 := div_ne_zero (sqrt_ne_zero'.mpr hv') hT
-  refine ((hasSum_gaussianLatticeSum _ hs).mul_left (√(2 * π * v))⁻¹).congr_fun fun k ↦ ?_
-  rw [gaussianPDFReal]
-  congr 2
-  rw [div_pow, sq_sqrt hv'.le, zsmul_eq_mul]
-  field_simp
-  ring
+  exact ((hasSum_gaussianLatticeSum _ hs).mul_left (√(2 * π * v))⁻¹).congr_fun
+    fun k ↦ gaussianPDFReal_add_zsmul_eq m hv hT x k
 
 /-- The translates of a point by the multiples of a nonzero period give a summable family of
 Gaussian densities, at every variance. -/
@@ -67,7 +75,7 @@ theorem hasSumLocallyUniformly_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0)
       (f := fun (_ : ℤ) (_ : ℝ) => (0 : ℝ)) summable_zero (s := K) (by simp)
   have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
   have hs : √(v : ℝ) / T ≠ 0 := div_ne_zero (sqrt_ne_zero'.mpr hv') hT
-  have h := hasSumLocallyUniformly_gaussianLatticeSum _ hs
+  have h := hasSumLocallyUniformly_gaussianLatticeSum hs
   rw [hasSumLocallyUniformly_iff_tendstoLocallyUniformly] at h ⊢
   have hc : Continuous (fun x : ℝ => (m - x) / T) := by fun_prop
   have hl := Real.uniformContinuous_const_mul
@@ -77,11 +85,6 @@ theorem hasSumLocallyUniformly_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0)
   convert hl using 1
   funext K x
   simp only [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [gaussianPDFReal]
-  congr 2
-  rw [div_pow, sq_sqrt hv'.le, zsmul_eq_mul]
-  field_simp
-  ring
+  exact Finset.sum_congr rfl fun k _ => gaussianPDFReal_add_zsmul_eq m hv hT x k
 
 end TauCeti.Probability
