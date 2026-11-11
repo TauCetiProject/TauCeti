@@ -26,7 +26,8 @@ multiplication by `H` and with the quotient `G ⧸ K`.
   multiplication by `H`.
 * `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
 * `DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset`: the double coset `H (r w) K` of a product
-  lies in the product `(H r L) (L w K)` of double cosets.
+  lies in the product `(H r L) (L w K)` of double cosets, for arbitrary sets `H`, `K` and a
+  subgroup `L`.
 
 The left-coset decomposition `DoubleCoset.doubleCoset_eq_iUnion_leftCosets` is vendored from
 mathlib4 PR [#41253](https://github.com/leanprover-community/mathlib4/pull/41253)
@@ -85,9 +86,10 @@ lemma mem_doubleCoset_of_quotient_eq {H : Set G} {K : Subgroup G} {w x l : G} (h
     (mul_inv_cancel_left _ _).symm⟩
 
 /-- The double coset of a product occurs in the product of the corresponding double cosets. -/
-theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w : G) :
+theorem doubleCoset_mul_subset_mul_doubleCoset (B : Set G) (C : Subgroup G) (D : Set G)
+    (r w : G) :
     doubleCoset (r * w) B D ⊆
-      doubleCoset r B C * doubleCoset w C D := by
+      doubleCoset r B (C : Set G) * doubleCoset w (C : Set G) D := by
   rintro x hx
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := mem_doubleCoset.mp hx
   refine ⟨b₁ * r, ?_, w * b₂, ?_, ?_⟩
