@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -73,11 +72,8 @@ theorem _root_.HasCompactSupport.laplacian_cauchyTransform {h : ℂ → F}
   have hd2 (a b : ℂ) : fderiv ℝ (fun y ↦ fderiv ℝ u y b) w a = fderiv ℝ (fderiv ℝ u) w a b := by
     rw [fderiv_clm_apply ((hu1.differentiable one_ne_zero) w) (differentiableAt_const _)]
     simp
-  have hΔ : Δ u w = fderiv ℝ (fun y ↦ fderiv ℝ u y 1) w 1 +
-      fderiv ℝ (fun y ↦ fderiv ℝ u y I) w I := by
-    rw [laplacian_eq_sum_fderiv_fderiv_apply Complex.orthonormalBasisOneI
-      ((hu1.differentiable one_ne_zero) w), Fin.sum_univ_two]
-    simp
+  have hΔ := laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I
+    ((hu1.differentiable one_ne_zero) w)
   have h1 := hdbar 1
   have hI := hdbar I
   rw [hd2, hd2] at h1 hI
