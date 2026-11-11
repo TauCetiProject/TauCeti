@@ -13,8 +13,9 @@ public import Mathlib.Analysis.Normed.Module.Connected
 
 Spheres in real normed spaces of dimension at least two are connected. In particular, the unit
 sphere in `EuclideanSpace ℝ (Fin m)` is connected for `m ≥ 2`.
-`TauCeti.connectedSpace_euclideanSphere` supplies the connected-space instance used by
-covering-space and separation arguments on spheres, independently of their manifold structure.
+`TauCeti.connectedSpace_sphere` and `TauCeti.connectedSpace_euclideanSphere` supply the
+connected-space instances used by covering-space, separation and orientation arguments on spheres,
+independently of their manifold structure.
 -/
 
 public section
@@ -33,6 +34,12 @@ theorem isConnected_sphere_of_one_le (hn : 1 ≤ n) : IsConnected (sphere (0 : E
   refine isConnected_sphere ?_ 0 zero_le_one
   rw [← finrank_eq_rank, Fact.out (p := finrank ℝ E = n + 1)]
   exact_mod_cast (by omega : 1 < n + 1)
+
+variable (n) in
+/-- For `n ≥ 1`, the unit sphere in an `(n + 1)`-dimensional real normed space is a connected
+space. -/
+theorem connectedSpace_sphere [NeZero n] : ConnectedSpace (sphere (0 : E) 1) :=
+  Subtype.connectedSpace (isConnected_sphere_of_one_le (NeZero.one_le (n := n)))
 
 /-- The unit sphere of `ℝᵐ` is connected for `m ≥ 2`. -/
 theorem connectedSpace_euclideanSphere {m : ℕ} (hm : 1 < m) :

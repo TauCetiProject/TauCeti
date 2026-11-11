@@ -75,7 +75,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
-open TauCeti.SSet (chainComplexMap_f_comp chainComplexMap_f_comp_assoc)
 
 universe w v u
 

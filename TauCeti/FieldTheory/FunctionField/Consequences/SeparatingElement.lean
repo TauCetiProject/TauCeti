@@ -104,7 +104,7 @@ theorem finrank_le_dim_of_forall_mem_fieldRange_frobenius (hF : IsFunctionField 
     have h := (frobenius F p).rangeRestrictFieldEquiv_apply_symm_apply ⟨v, hVp v v.2⟩
     rwa [frobenius_def] at h
   have hrootE (v : V) : root v ∈ riemannRochSpace E :=
-    mem_riemannRochSpace_of_pow_mem (expChar_pos F p) hDE (by rw [hroot v]; exact hV v.2)
+    mem_riemannRochSpace_of_pow_mem (n := p) hDE (by rw [hroot v]; exact hV v.2)
   -- Taking `p`-th roots is additive and injective.
   let j : V →+ riemannRochSpace E :=
     { toFun v := ⟨root v, hrootE v⟩
@@ -165,9 +165,9 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_constantCompositum_eq_t
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hp : 0 < (p : ℤ) := by exact_mod_cast expChar_pos F' p
   -- The conorm `Con D` has the degree of `D`.
-  have hdegCon : degree (conorm k' F' D) = degree D := by
-    rw [degree_conorm k' F' hF hdisj D, (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one,
-      one_mul]
+  have hdegCon : degree (conorm k' F' D) = degree D :=
+    degree_conorm_of_finrank_eq_finrank k' F' hF h
+      (by rwa [h, IntermediateField.finrank_top'] at hdisj) D
   -- The divisor `E = ⌊Con D / p⌋` of `F' / k'`.
   let E : Divisor k' F' := Finsupp.mapRange (· / (p : ℤ)) (Int.zero_ediv _) (conorm k' F' D)
   have hE (P : Place k' F') : E.coeff P = (conorm k' F' D).coeff P / p :=
@@ -178,7 +178,7 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_constantCompositum_eq_t
     rw [← frobenius_def]
     exact hβ i
   have hβE (i : ι) : β i ∈ riemannRochSpace E := by
-    refine mem_riemannRochSpace_of_pow_mem (D := conorm k' F' D) (expChar_pos F' p)
+    refine mem_riemannRochSpace_of_pow_mem (D := conorm k' F' D) (n := p)
       (fun P ↦ ?_) (by rw [hβ' i]; exact (mem_riemannRochSpace_conorm_iff hF' D (b i)).2 (hbD i))
     -- `Con D < p (⌊Con D / p⌋ + 1)`.
     rw [hE, mul_add_one]
@@ -298,11 +298,7 @@ theorem exists_mem_transcendental_and_isSeparable_adjoin [PerfectField k]
     (hlt : degree D < p * (2 * (finrank k V : ℤ) - 2)) :
     ∃ x ∈ V, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
   obtain ⟨x, hxV, hx⟩ := exists_mem_notMem_fieldRange_frobenius hF hex p hD₀ hDg hV hlt
-  cases (inferInstance : ExpChar F p) with
-  | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
-  | prime hp =>
-    let _ : Fact p.Prime := ⟨hp⟩
-    exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
+  exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
 
 end Divisor
 
@@ -344,7 +340,7 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
   -- It suffices to find a separating element of `L(W)`.
   suffices hx : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F by
     obtain ⟨x, hxW, hxt, hxs⟩ := hx
-    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
+    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW
     exact ⟨x, hxt, hxs, by omega⟩
   obtain ⟨p, hp⟩ := ExpChar.exists F
   cases hp with

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantField
+import Mathlib.FieldTheory.FinTrdeg
 
 /-!
 # A rational place forces exact constants
@@ -15,6 +16,9 @@ A constant algebraic over the base field is regular at every place. At a rationa
 residue is the residue of a base-field element. Their difference is algebraic and has valuation
 less than one, so it must vanish. Thus the existence of a rational place certifies exactness of
 the constant field, including for composita with a completely split rational place.
+
+Conversely, a place of a finite extension over a larger constant field forces that field to be
+algebraic over the base.
 
 ## References
 
@@ -27,6 +31,23 @@ public section
 namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **The degree of every place is divisible by the degree of the field of constants**: the
+residue field is an algebra over `algebraicClosure k F`, which is regular at every place. -/
+theorem finrank_algebraicClosure_dvd_degree (P : Place k F) :
+    Module.finrank k (algebraicClosure k F) ∣ P.degree := by
+  let : Algebra (algebraicClosure k F) P.integers :=
+    ((algebraicClosure k F).val.toRingHom.codRestrict P.integers
+      fun x ↦ P.mem_integers_of_mem_algebraicClosure x.2).toAlgebra
+  have : IsScalarTower k (algebraicClosure k F) P.integers :=
+    .of_algebraMap_eq fun c ↦ Subtype.ext rfl
+  have : IsScalarTower k (algebraicClosure k F) P.ResidueField :=
+    .of_algebraMap_eq fun c ↦ by
+      rw [IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+        IsScalarTower.algebraMap_apply k (algebraicClosure k F) P.integers,
+        ← IsScalarTower.algebraMap_apply (algebraicClosure k F) P.integers P.ResidueField]
+  rw [P.degree_eq_finrank, ← Module.finrank_mul_finrank k (algebraicClosure k F) P.ResidueField]
+  exact dvd_mul_right _ _
 
 /-- If `F / k` has a rational place, every element of `F` algebraic over `k` belongs to `k`.
 No function-field or separability hypothesis is needed. -/
@@ -43,5 +64,25 @@ theorem isIntegrallyClosedIn_of_degree_eq_one (P : Place k F) (hP : P.degree = 1
       (mem_algebraicClosure_iff.mpr hx) ((algebraicClosure k F).algebraMap_mem c)
   rw [P.valuation_eq_one_of_isAlgebraic halg hne] at hc
   exact lt_irrefl _ hc
+
+universe u u' v'
+
+/-- If `F' / k` is a function field and `F'` has a place over `k'`, then it is a function field
+over `k'`: the existence of a place forces `k'` to be algebraic over `k`. -/
+theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F' : Type v'}
+    [Field k] [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
+    [IsScalarTower k k' F'] (hFk : IsFunctionField k F') (P' : Place k' F') :
+    IsFunctionField k' F' := by
+  have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
+    obtain ⟨t, ht⟩ := P'.ord_surjective 1
+    exact P'.transcendental_of_ord_ne_zero (by rw [ht]; norm_num) (h.isAlgebraic t)
+  have : Algebra.EssFiniteType k F' := hFk.essFiniteType
+  have : Algebra.EssFiniteType k' F' := Algebra.EssFiniteType.of_comp k k' F'
+  have hb : 1 ≤ Algebra.trdeg k' F' := by
+    rw [Cardinal.one_le_iff_ne_zero, Ne, trdeg_eq_zero_iff]
+    exact hnot
+  have : Algebra.IsAlgebraic k k' :=
+    isAlgebraic_of_trdeg_le (hFk.trdeg_eq_one.trans_le hb) (trdeg_lt_aleph0 k' F')
+  exact hFk.of_isAlgebraic (k' := k')
 
 end TauCeti.Place

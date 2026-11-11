@@ -110,7 +110,7 @@ test("failed refresh retains the successful snapshot and labels its age", async 
   assert.match(b.elements["[data-ci-counts]"].textContent, /2 running/);
   assert.match(
     b.elements["[data-ci-status]"].textContent,
-    /Updates paused.*last updated/,
+    /Updates paused.*counts refreshed/,
   );
   assert.equal(b.requests[1].opts.headers["If-None-Match"], "revision");
 });
@@ -135,9 +135,9 @@ test("current activity presents runner counts without exposing raw run records",
   assert.match(cells[2].textContent, /eastanglia2 running 0 waiting/);
   assert.match(cells[3].textContent, /leanfro1 running 0 waiting/);
   assert.match(cells[4].textContent, /Other self-hosted1 running/);
-  assert.match(b.elements["[data-ci-status]"].textContent, /^Updated just now$/);
+  assert.match(b.elements["[data-ci-status]"].textContent, /^Counts refreshed just now$/);
   assert.equal(b.root.dataset.stale, "false");
-  assert.equal(b.elements["[data-ci-backlog]"].textContent, "4 pull requests ready to merge.");
+  assert.match(b.elements["[data-ci-backlog]"].textContent, /Last complete count: 4 pull requests ready to merge/);
   assert.doesNotMatch(cells.map((cell) => cell.textContent).join(""), /39201955793|attempt|in_progress/);
   assert.ok(b.requests.every((request) => request.url.startsWith("https://ci-data.taucetiproject.org/")));
 });
@@ -153,7 +153,8 @@ test("fresh publication does not conceal incomplete inventory or stale merge cou
   })]);
   assert.match(b.elements["[data-ci-status]"].textContent, /Counts may be incomplete/);
   assert.equal(b.root.dataset.stale, "true");
-  assert.equal(b.elements["[data-ci-backlog]"].hidden, true);
+  assert.equal(b.elements["[data-ci-backlog]"].hidden, false);
+  assert.match(b.elements["[data-ci-backlog]"].textContent, /Last complete count: 4 pull requests.*31 minutes ago/);
 });
 test("unchanged charts keep readable age labels current without marking fleet bins as daily data", async () => {
   let clock = Date.now();
@@ -171,11 +172,11 @@ test("unchanged charts keep readable age labels current without marking fleet bi
     }),
     new Response(null, { status: 304 }),
   ], [image], false, Clock);
-  assert.equal(figure.children[0].textContent, "Updated just now.");
+  assert.equal(figure.children[0].textContent, "Chart published just now.");
   clock += 2 * 60 * 1000;
   b.timers[0]();
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(figure.children[0].textContent, "Updated 2 minutes ago.");
+  assert.equal(figure.children[0].textContent, "Chart published 2 minutes ago.");
 });
 test("a failed chart download retains its previous image", async () => {
   const image = {
@@ -198,4 +199,49 @@ test("a failed chart download retains its previous image", async () => {
     image.src,
     "https://taucetiproject.org/static/ci-build-duration.svg",
   );
+});
+test("queue chart separates complete snapshot age from publication and partial live scans", async () => {
+  let clock = Date.parse("2026-11-03T06:28:00Z");
+  class Clock extends Date { static now() { return clock; } }
+  const figure = new Element();
+  figure.querySelector = () => figure.children.find((node) => node.dataset.ciChartAge !== undefined);
+  const image = { src: "https://ci-data.taucetiproject.org/v1/ci/assets/abcdef/ci-queue-size.svg", closest: () => figure };
+  const manifest = {
+    schema: "tauceti-ci.manifest/v1", mode: "live",
+    current: {
+      computed_at: "2026-11-03T06:27:00Z", as_of: "2026-11-03T06:25:00Z",
+      ready_to_merge: { count: 475, complete: false, at: "2026-11-03T06:26:00Z" },
+    },
+    groups: { queue: {
+      published_at: "2026-11-03T06:27:00Z", status: "updated",
+      latest_complete: { count: 931, at: "2026-11-03T06:20:00Z", snapshot_at: "2026-11-03T06:15:00Z" },
+      latest_scan_incomplete: true,
+    } },
+    assets: { "ci-queue-size.svg": { url: "/v1/ci/assets/abcdef/ci-queue-size.svg" } },
+  };
+  const b = await browser([Response.json(manifest), new Response(null, { status: 304 })], [image], false, Clock);
+  assert.equal(figure.children[0].textContent,
+    "Last complete count: 931 PRs · snapshot 13 minutes ago (2026-11-03 06:15 UTC). " +
+    "Chart published 1 minute ago. Newer scans are incomplete; the plotted count has not been refreshed.");
+  assert.match(b.elements["[data-ci-backlog]"].textContent, /latest scan is incomplete/);
+  assert.doesNotMatch(b.elements["[data-ci-backlog]"].textContent, /475/);
+  clock += 2 * 60 * 1000;
+  b.timers.at(-1)();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.match(figure.children[0].textContent, /snapshot 15 minutes ago.*Chart published 3 minutes ago/);
+});
+test("older queue reports do not use publication time as the complete snapshot time", async () => {
+  for (const latest_complete of [undefined, { count: 931, at: "2026-11-03T06:20:00Z", snapshot_at: null }]) {
+    const figure = new Element();
+    figure.querySelector = () => figure.children[0];
+    const image = { src: "https://ci-data.taucetiproject.org/v1/ci/assets/abcdef/ci-queue-size.svg", closest: () => figure };
+    await browser([Response.json({
+      schema: "tauceti-ci.manifest/v1", mode: "live", current: {},
+      groups: { queue: { published_at: new Date().toISOString(), latest_complete } },
+      assets: { "ci-queue-size.svg": { url: "/v1/ci/assets/abcdef/ci-queue-size.svg" } },
+    })], [image]);
+    assert.match(figure.children[0].textContent, latest_complete
+      ? /931 PRs.*snapshot time unavailable.*Chart published just now/
+      : /Latest complete queue count unavailable.*Chart published just now/);
+  }
 });

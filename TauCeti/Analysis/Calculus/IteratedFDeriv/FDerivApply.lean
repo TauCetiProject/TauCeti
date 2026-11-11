@@ -35,6 +35,7 @@ of a smooth family of compactly supported functions with respect to a parameter.
 ## Main declarations
 
 * `ContDiff.iteratedFDeriv_fderiv_apply`: `Dⁱ (y ↦ Df(y) v) = D(Dⁱ f)(·) v`.
+* `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
@@ -85,6 +86,14 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
     ext w : 1
     rw [TauCeti.fderiv_clm_apply_const_apply hD]
     exact (hg.contDiffAt (x := x)).isSymmSndFDerivAt le_rfl w v
+
+/-- The `i`-th iterated derivative of a directional derivative `y ↦ Df(y) v` is bounded by the
+`(i + 1)`-th iterated derivative of `f`: `‖Dⁱ (y ↦ Df(y) v) (x)‖ ≤ ‖D^{i+1} f (x)‖ ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E → F}
+    (hf : ContDiff 𝕜 n f) {i : ℕ} (hi : minSmoothness 𝕜 (i + 1) ≤ n) (v x : E) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
+  rw [hf.iteratedFDeriv_fderiv_apply hi, ← norm_fderiv_iteratedFDeriv]
+  exact (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) x).le_opNorm v
 
 namespace TauCeti
 

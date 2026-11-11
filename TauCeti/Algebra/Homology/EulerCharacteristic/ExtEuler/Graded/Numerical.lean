@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Sesquilinear
-public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Basic
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Map
+public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.FullSubcategory
+public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Functoriality
 
 /-!
 # Numerical quotients of the graded Ext-Euler pairing
@@ -29,6 +30,10 @@ pairings, while the results here expose their values in terms of graded Ext.
   Grothendieck groups.
 * `TauCeti.gradedExtEulerNumericalPairing`: the nondegenerate q-Euler pairing between both
   numerical quotients.
+* `TauCeti.gradedExtEulerLeftNumericalEquiv` and `TauCeti.gradedExtEulerRightNumericalEquiv`: the
+  identifications of numerical graded Grothendieck groups induced by a shift-compatible exact
+  functor which is bijective on bigraded `Ext` and whose images exhaust the target subcategories up
+  to isomorphism.
 
 ## Main results
 
@@ -38,6 +43,8 @@ pairings, while the results here expose their values in terms of graded Ext.
   classes.
 * `TauCeti.gradedExtEulerNumericalPairing_nondegenerate` proves two-sided nondegeneracy after
   taking both quotients.
+* `TauCeti.gradedExtEulerNumericalPairing_equiv_equiv`: those identifications preserve the
+  numerical q-Euler pairing.
 
 ## References
 
@@ -51,7 +58,7 @@ namespace TauCeti
 
 open CategoryTheory LaurentPolynomial
 
-universe w v u t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Field k] [Linear k C]
   [HasExt.{w} C] {e : C ≌ C} [e.functor.Additive] [e.functor.Linear k]
@@ -211,5 +218,118 @@ theorem gradedExtEulerNumericalPairing_unique
   intro x y
   simpa only [gradedExtEulerLeftNumericalQuotientMk,
     gradedExtEulerRightNumericalQuotientMk] using hb x y
+
+section Functoriality
+
+/-! ### Invariance under graded exact functors
+
+A shift-compatible exact functor `F : C ⥤ D` which carries `P` and `Q` into `P'` and `Q'` and is
+bijective on the bigraded `Ext` groups of every pair in `P × Q` intertwines the two q-Euler forms
+(`TauCeti.gradedExtEulerSesquilinear_map_map`). If moreover every object of `P'` and of `Q'` is
+isomorphic to the image of an object of `P`, respectively `Q`, then the induced maps of graded
+`K₀` are surjective, and the numerical graded Grothendieck groups on both sides are identified as
+`ℤ[q,q⁻¹]`-modules. -/
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [HasExt.{w'} D]
+  [LocallySmall.{w'} D] {e' : D ≌ D} [e'.functor.Additive] [e'.functor.Linear k]
+  (F : C ⥤ D) [F.Additive] [F.Linear k] [Limits.PreservesFiniteLimits F]
+  [Limits.PreservesFiniteColimits F] (σ : e.functor ⋙ F ≅ F ⋙ e'.functor)
+  {P' Q' : ObjectProperty D} [P'.EssentiallySmall.{w'}] [Q'.EssentiallySmall.{w'}]
+  [P'.ContainsZero] [P'.IsClosedUnderBinaryProducts]
+  [Q'.ContainsZero] [Q'.IsClosedUnderBinaryProducts]
+  (hP' : (GradedExactStructure.abelian D e').toExactStructure.IsExtensionClosed P')
+  (hQ' : (GradedExactStructure.abelian D e').toExactStructure.IsExtensionClosed Q')
+  (hP'shift : P'.inverseImage (GradedExactStructure.abelian D e').shift.functor = P')
+  (hQ'shift : Q'.inverseImage (GradedExactStructure.abelian D e').shift.functor = Q')
+  (h' : IsGradedEulerAdmissibleOn.{w'} (k := k) (e := e') P' Q')
+  (hFP : ∀ ⦃X⦄, P X → P' (F.obj X)) (hFQ : ∀ ⦃Y⦄, Q Y → Q' (F.obj Y))
+  (hFext : ∀ ⦃X Y⦄, P X → Q Y → ∀ n (j : ℤ),
+    Function.Bijective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n))
+  (hP'F : P' ≤ P.map F) (hQ'F : Q' ≤ Q.map F)
+
+/-- **Invariance of the left numerical graded Grothendieck group.** A shift-compatible exact
+functor which is bijective on bigraded `Ext` between `P` and `Q`, and whose images of `P` and `Q`
+exhaust `P'` and `Q'` up to isomorphism, identifies the left graded Ext-Euler numerical
+quotients. -/
+noncomputable def gradedExtEulerLeftNumericalEquiv :
+    GradedExtEulerLeftNumericalQuotient hP hQ hPshift hQshift h ≃ₗ[LaurentPolynomial ℤ]
+      GradedExtEulerLeftNumericalQuotient hP' hQ' hP'shift hQ'shift h' :=
+  leftNumericalEquiv (gradedExtEulerSesquilinear hP hQ hPshift hQshift h)
+    (gradedExtEulerSesquilinear hP' hQ' hP'shift hQ'shift h')
+    (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ P hP hP' hPshift hP'shift
+      fun X ↦ hFP X.property))
+    (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ Q hQ hQ' hQshift hQ'shift
+      fun Y ↦ hFQ Y.property))
+    (LaurentK0.map_lift_surjective hP hP' hPshift hP'shift (GradedConflationExact.abelian F σ)
+      (fun X ↦ hFP X.property) hP'F)
+    (LaurentK0.map_lift_surjective hQ hQ' hQshift hQ'shift (GradedConflationExact.abelian F σ)
+      (fun Y ↦ hFQ Y.property) hQ'F)
+    (gradedExtEulerSesquilinear_map_map F σ hP hQ hPshift hQshift hP' hQ' hP'shift hQ'shift h'
+      hFP hFQ hFext)
+
+/-- **Invariance of the right numerical graded Grothendieck group.** A shift-compatible exact
+functor which is bijective on bigraded `Ext` between `P` and `Q`, and whose images of `P` and `Q`
+exhaust `P'` and `Q'` up to isomorphism, identifies the right graded Ext-Euler numerical
+quotients. -/
+noncomputable def gradedExtEulerRightNumericalEquiv :
+    GradedExtEulerRightNumericalQuotient hP hQ hPshift hQshift h ≃ₗ[LaurentPolynomial ℤ]
+      GradedExtEulerRightNumericalQuotient hP' hQ' hP'shift hQ'shift h' :=
+  rightNumericalEquiv (gradedExtEulerSesquilinear hP hQ hPshift hQshift h)
+    (gradedExtEulerSesquilinear hP' hQ' hP'shift hQ'shift h')
+    (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ P hP hP' hPshift hP'shift
+      fun X ↦ hFP X.property))
+    (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ Q hQ hQ' hQshift hQ'shift
+      fun Y ↦ hFQ Y.property))
+    (LaurentK0.map_lift_surjective hP hP' hPshift hP'shift (GradedConflationExact.abelian F σ)
+      (fun X ↦ hFP X.property) hP'F)
+    (LaurentK0.map_lift_surjective hQ hQ' hQshift hQ'shift (GradedConflationExact.abelian F σ)
+      (fun Y ↦ hFQ Y.property) hQ'F)
+    (gradedExtEulerSesquilinear_map_map F σ hP hQ hPshift hQshift hP' hQ' hP'shift hQ'shift h'
+      hFP hFQ hFext)
+
+/-- The left numerical graded equivalence sends the class of `x` to the class of its image under
+the map of graded `K₀` induced by `F`. -/
+@[simp]
+theorem gradedExtEulerLeftNumericalEquiv_mk
+    (x : LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory P hP hPshift)) :
+    gradedExtEulerLeftNumericalEquiv hP hQ hPshift hQshift h F σ hP' hQ' hP'shift hQ'shift h'
+      hFP hFQ hFext hP'F hQ'F
+        (gradedExtEulerLeftNumericalQuotientMk hP hQ hPshift hQshift h x) =
+      gradedExtEulerLeftNumericalQuotientMk hP' hQ' hP'shift hQ'shift h'
+        (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ P hP hP' hPshift hP'shift
+          fun X ↦ hFP X.property) x) := by
+  rw [gradedExtEulerLeftNumericalEquiv, gradedExtEulerLeftNumericalQuotientMk,
+    gradedExtEulerLeftNumericalQuotientMk, leftNumericalEquiv_mk]
+
+/-- The right numerical graded equivalence sends the class of `y` to the class of its image under
+the map of graded `K₀` induced by `F`. -/
+@[simp]
+theorem gradedExtEulerRightNumericalEquiv_mk
+    (y : LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory Q hQ hQshift)) :
+    gradedExtEulerRightNumericalEquiv hP hQ hPshift hQshift h F σ hP' hQ' hP'shift hQ'shift h'
+      hFP hFQ hFext hP'F hQ'F
+        (gradedExtEulerRightNumericalQuotientMk hP hQ hPshift hQshift h y) =
+      gradedExtEulerRightNumericalQuotientMk hP' hQ' hP'shift hQ'shift h'
+        (LaurentK0.map ((GradedConflationExact.abelian F σ).lift _ Q hQ hQ' hQshift hQ'shift
+          fun Y ↦ hFQ Y.property) y) := by
+  rw [gradedExtEulerRightNumericalEquiv, gradedExtEulerRightNumericalQuotientMk,
+    gradedExtEulerRightNumericalQuotientMk, rightNumericalEquiv_mk]
+
+/-- The two numerical graded equivalences induced by `F` preserve the numerical q-Euler
+pairing. -/
+theorem gradedExtEulerNumericalPairing_equiv_equiv
+    (x : GradedExtEulerLeftNumericalQuotient hP hQ hPshift hQshift h)
+    (y : GradedExtEulerRightNumericalQuotient hP hQ hPshift hQshift h) :
+    gradedExtEulerNumericalPairing hP' hQ' hP'shift hQ'shift h'
+        (gradedExtEulerLeftNumericalEquiv hP hQ hPshift hQshift h F σ hP' hQ' hP'shift hQ'shift h'
+          hFP hFQ hFext hP'F hQ'F x)
+        (gradedExtEulerRightNumericalEquiv hP hQ hPshift hQshift h F σ hP' hQ' hP'shift hQ'shift h'
+          hFP hFQ hFext hP'F hQ'F y) =
+      gradedExtEulerNumericalPairing hP hQ hPshift hQshift h x y := by
+  rw [gradedExtEulerNumericalPairing, gradedExtEulerNumericalPairing,
+    gradedExtEulerLeftNumericalEquiv, gradedExtEulerRightNumericalEquiv,
+    numericalPairing_equiv_equiv]
+
+end Functoriality
 
 end TauCeti

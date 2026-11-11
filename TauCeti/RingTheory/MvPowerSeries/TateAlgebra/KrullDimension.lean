@@ -76,8 +76,7 @@ local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ 1
 
 /-- Without variables, the Tate algebra is the coefficient field, of Krull dimension zero. -/
 private theorem ringKrullDim_isRestricted_subring_pEmpty : ringKrullDim (Tate PEmpty) = 0 := by
-  rw [← ringKrullDim_eq_of_ringEquiv (RingEquiv.ofBijective _
-    ⟨(algebraMap K (Tate PEmpty)).injective, algebraMap_isRestrictedSubring_surjective⟩)]
+  rw [ringKrullDim_eq_of_ringEquiv (IsRestricted.isEmptyEquiv (R := K) (σ := PEmpty) _).toRingEquiv]
   exact ringKrullDim_eq_zero_of_field K
 
 variable [CompleteSpace K]
@@ -90,7 +89,7 @@ private theorem ringKrullDim_quotient_span_le_option {σ : Type*} [Finite σ] (f
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
   obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
-  have := hd.finite_quotient zero_lt_one hu
+  have := (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
   have : Algebra.IsIntegral R (S ⧸ Ideal.span {Φ (e f)}) := Algebra.IsIntegral.of_finite R _
   let E : Tate (Option σ) ≃+* S := (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Φ
   rw [ringKrullDim_eq_of_ringEquiv (Ideal.quotientEquiv (Ideal.span {f})
@@ -158,8 +157,9 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   -- `S ⧸ (g)` is finite free over `R`, so it is integral with going down; as `g` is a
   -- non-zero-divisor, `N` has height at least one more than some maximal ideal of `R`.
   let B := S ⧸ Ideal.span {g}
-  have : Module.Free R B := hd.free_quotient zero_lt_one hu
-  have : Module.Finite R B := hd.finite_quotient zero_lt_one hu
+  have hd' := PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩
+  have : Module.Free R B := hd'.free_quotient zero_lt_one
+  have : Module.Finite R B := hd'.finite_quotient zero_lt_one
   have : Algebra.IsIntegral R B := Algebra.IsIntegral.of_finite R B
   have hg : g ∈ S⁰ := mem_nonZeroDivisors_of_ne_zero (by simpa [g] using hf)
   obtain ⟨p, _, hp⟩ :=

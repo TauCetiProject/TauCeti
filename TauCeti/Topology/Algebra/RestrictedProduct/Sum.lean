@@ -10,11 +10,13 @@ public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 /-!
 # Splitting a restricted product over a sum of index types
 
-A restricted product of groups indexed by `ι₁ ⊕ ι₂` is the product of the restricted products
-over the two summands.  For a filter `𝓕` on `ι₁ ⊕ ι₂` the summand filters are the comaps
-`𝓕.comap Sum.inl` and `𝓕.comap Sum.inr`, and the algebraic content is that `𝓕` is recovered from
-them (`Filter.map_comap_inl_sup_map_comap_inr`), so the restrictedness conditions match up in
-both directions; the equivalence `restrictedProductSum` is the restriction of
+A restricted product indexed by `ι₁ ⊕ ι₂` is the product of the restricted products over the two
+summands.  The factors need only carry a multiplication and the reference sets need only be closed
+under it (`MulMemClass`), so the splitting is a `MulEquiv` for submonoids and subgroups alike.
+For a filter `𝓕` on `ι₁ ⊕ ι₂` the summand filters are the comaps `𝓕.comap Sum.inl` and
+`𝓕.comap Sum.inr`, and the algebraic content is that `𝓕` is recovered from them
+(`Filter.map_comap_inl_sup_map_comap_inr`), so the restrictedness conditions match up in both
+directions; the equivalence `restrictedProductSum` is the restriction of
 `Equiv.sumPiEquivProdPi` to the restricted subtypes.  It takes the two summand filters as
 arguments together with the equations identifying them with the comaps, so that each can be given
 in its preferred form: for the cofinite filter both comaps are cofinite again, because `Sum.inl`
@@ -29,16 +31,16 @@ filter it is continuous for every family (`continuous_restrictedProductSum_symm_
 and hence so is its composite with the inclusions of principal stages
 (`continuous_restrictedProductSum_symm_comp_prodMap_inclusion`).  For the cofinite filter,
 Mathlib's universal property with parameters passes from the stages to the restricted products
-when the reference subgroups are open: over both summands (`continuous_restrictedProductSum_symm`,
+when the reference subsets are open: over both summands (`continuous_restrictedProductSum_symm`,
 the openness hypothesis under which `RestrictedProduct.isTopologicalGroup` holds), or over the
 right summand alone when the left summand is finite
 (`continuous_restrictedProductSum_symm_of_finite_left`).  Under either hypothesis
 `restrictedProductSum` is a homeomorphism.  Openness cannot be dropped altogether:
-`not_continuous_restrictedProductSum_symm` exhibits a family with trivial reference subgroups for
-which the inverse is discontinuous.
+`not_continuous_restrictedProductSum_symm`, in
+`TauCeti.Topology.Algebra.RestrictedProduct.NotContinuousMul`, exhibits a family with trivial
+reference subgroups for which the inverse is discontinuous.
 
-Everything here except that counterexample is also stated for additive groups
-(`addRestrictedProductSum`, …).
+Everything here is also stated for additive structures (`addRestrictedProductSum`, …).
 
 ## References
 
@@ -53,29 +55,29 @@ namespace TauCeti
 open Filter
 open scoped RestrictedProduct
 
-universe u₁ u₂ v
+universe u₁ u₂ v w
 
-variable {ι₁ : Type u₁} {ι₂ : Type u₂} {G : ι₁ ⊕ ι₂ → Type v}
-variable [∀ k, Group (G k)]
+variable {ι₁ : Type u₁} {ι₂ : Type u₂} {G : ι₁ ⊕ ι₂ → Type v} {S : ι₁ ⊕ ι₂ → Type w}
+variable [∀ k, Mul (G k)] [∀ k, SetLike (S k) (G k)] [∀ k, MulMemClass (S k) (G k)]
 variable {𝓕 : Filter (ι₁ ⊕ ι₂)} {𝓕₁ : Filter ι₁} {𝓕₂ : Filter ι₂}
 
 /-- A restricted product over `ι₁ ⊕ ι₂` with respect to a filter `𝓕` is the product of the
 restricted products over the two summands with respect to the comaps of `𝓕` along `Sum.inl` and
 `Sum.inr`, coordinatewise the identity in both directions. -/
-@[to_additive addRestrictedProductSum /-- A restricted product of additive groups over `ι₁ ⊕ ι₂`
-with respect to a filter `𝓕` is the product of the restricted products over the two summands with
+@[to_additive addRestrictedProductSum /-- An additive restricted product over `ι₁ ⊕ ι₂` with
+respect to a filter `𝓕` is the product of the restricted products over the two summands with
 respect to the comaps of `𝓕` along `Sum.inl` and `Sum.inr`, coordinatewise the identity in both
 directions. -/]
-def restrictedProductSum (U : ∀ k, Subgroup (G k)) (h₁ : 𝓕.comap Sum.inl = 𝓕₁)
+def restrictedProductSum (U : ∀ k, S k) (h₁ : 𝓕.comap Sum.inl = 𝓕₁)
     (h₂ : 𝓕.comap Sum.inr = 𝓕₂) :
     (Πʳ k, [G k, (U k : Set (G k))]_[𝓕]) ≃*
       (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]_[𝓕₁]) ×
         (Πʳ j, [G (Sum.inr j), (U (Sum.inr j) : Set (G (Sum.inr j)))]_[𝓕₂]) where
   toFun x :=
-    (x.mapAlongMonoidHom G (fun i ↦ G (Sum.inl i)) Sum.inl (tendsto_iff_comap.mpr h₁.ge)
-        (fun _ ↦ MonoidHom.id _) (.of_forall fun _ ↦ Set.mapsTo_id _),
-      x.mapAlongMonoidHom G (fun j ↦ G (Sum.inr j)) Sum.inr (tendsto_iff_comap.mpr h₂.ge)
-        (fun _ ↦ MonoidHom.id _) (.of_forall fun _ ↦ Set.mapsTo_id _))
+    (x.mapAlong G (fun i ↦ G (Sum.inl i)) Sum.inl (tendsto_iff_comap.mpr h₁.ge) (fun _ ↦ id)
+        (.of_forall fun _ ↦ Set.mapsTo_id _),
+      x.mapAlong G (fun j ↦ G (Sum.inr j)) Sum.inr (tendsto_iff_comap.mpr h₂.ge) (fun _ ↦ id)
+        (.of_forall fun _ ↦ Set.mapsTo_id _))
   invFun y := ⟨(Equiv.sumPiEquivProdPi G).symm (⇑y.1, ⇑y.2), by
     rw [← map_comap_inl_sup_map_comap_inr 𝓕, eventually_sup, eventually_map, eventually_map, h₁,
       h₂]
@@ -87,7 +89,7 @@ def restrictedProductSum (U : ∀ k, Subgroup (G k)) (h₁ : 𝓕.comap Sum.inl 
   map_mul' x y := by
     ext <;> rfl
 
-variable (U : ∀ k, Subgroup (G k)) (h₁ : 𝓕.comap Sum.inl = 𝓕₁) (h₂ : 𝓕.comap Sum.inr = 𝓕₂)
+variable (U : ∀ k, S k) (h₁ : 𝓕.comap Sum.inl = 𝓕₁) (h₂ : 𝓕.comap Sum.inr = 𝓕₂)
 
 /-- The left component of the splitting is the restriction of coordinates to `ι₁`. -/
 @[to_additive (attr := simp) addRestrictedProductSum_apply_inl /-- The left component of the
@@ -155,11 +157,11 @@ theorem continuous_restrictedProductSum_symm_of_principal {T : Set (ι₁ ⊕ ι
     exact (RestrictedProduct.continuous_eval j).comp continuous_snd
 
 /-- On principal stages the inverse of the splitting over a sum is continuous for every filter
-and every reference family: for the cofinite filter, openness of the reference subgroups is needed
+and every reference family: for the cofinite filter, openness of the reference subsets is needed
 only to pass from the stages to the restricted products themselves. -/
 @[to_additive continuous_addRestrictedProductSum_symm_comp_prodMap_inclusion /-- On principal stages
 the inverse of the additive splitting over a sum is continuous for every filter and every reference
-family: for the cofinite filter, openness of the reference subgroups is needed only to pass from the
+family: for the cofinite filter, openness of the reference subsets is needed only to pass from the
 stages to the restricted products themselves. -/]
 theorem continuous_restrictedProductSum_symm_comp_prodMap_inclusion {S₁ : Set ι₁} {S₂ : Set ι₂}
     (hS₁ : 𝓕₁ ≤ 𝓟 S₁) (hS₂ : 𝓕₂ ≤ 𝓟 S₂) :
@@ -186,11 +188,11 @@ theorem continuous_restrictedProductSum_symm_comp_prodMap_inclusion {S₁ : Set 
     (continuous_restrictedProductSum_symm_of_principal U hT₁ hT₂)
 
 /-- The inverse of the splitting over a sum, for the cofinite filter, is continuous when every
-reference subgroup is open. This is the same openness hypothesis under which Mathlib's
+reference subset is open. This is the same openness hypothesis under which Mathlib's
 `RestrictedProduct.isTopologicalGroup` holds; the forward direction
 `continuous_restrictedProductSum` needs no such hypothesis. -/
 @[to_additive continuous_addRestrictedProductSum_symm /-- The inverse of the additive splitting over
-a sum, for the cofinite filter, is continuous when every reference subgroup is open. This is the
+a sum, for the cofinite filter, is continuous when every reference subset is open. This is the
 same openness hypothesis under which Mathlib's `RestrictedProduct.isTopologicalAddGroup` holds; the
 forward direction `continuous_addRestrictedProductSum` needs no such hypothesis. -/]
 theorem continuous_restrictedProductSum_symm (hU : ∀ k, IsOpen (U k : Set (G k))) :
@@ -204,11 +206,11 @@ theorem continuous_restrictedProductSum_symm (hU : ∀ k, IsOpen (U k : Set (G k
   exact continuous_restrictedProductSum_symm_comp_prodMap_inclusion U _ _ hS₁ hS₂
 
 /-- The inverse of the splitting over a sum, for the cofinite filter, is continuous when the left
-summand is finite and every reference subgroup over the right summand is open; the reference
-subgroups over the finite summand need not be open. -/
+summand is finite and every reference subset over the right summand is open; the reference
+subsets over the finite summand need not be open. -/
 @[to_additive continuous_addRestrictedProductSum_symm_of_finite_left /-- The inverse of the additive
 splitting over a sum, for the cofinite filter, is continuous when the left summand is finite and
-every reference subgroup over the right summand is open; the reference subgroups over the finite
+every reference subset over the right summand is open; the reference subsets over the finite
 summand need not be open. -/]
 theorem continuous_restrictedProductSum_symm_of_finite_left [Finite ι₁]
     (hU : ∀ j, IsOpen (U (Sum.inr j) : Set (G (Sum.inr j)))) :
@@ -218,9 +220,7 @@ theorem continuous_restrictedProductSum_symm_of_finite_left [Finite ι₁]
   intro S₂ hS₂
   -- Over the finite summand the cofinite filter is `⊥ = 𝓟 ∅`, so the whole restricted product
   -- is the empty stage.
-  have hempty : (cofinite : Filter ι₁) ≤ 𝓟 (∅ : Set ι₁) := by
-    rw [principal_empty]
-    exact cofinite_eq_bot.le
+  have hempty : (cofinite : Filter ι₁) ≤ 𝓟 (∅ : Set ι₁) := by simp
   let p : (Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]) →
       Πʳ i, [G (Sum.inl i), (U (Sum.inl i) : Set (G (Sum.inl i)))]_[𝓟 ∅] :=
     fun x ↦ RestrictedProduct.mk x (eventually_principal.mpr fun _ h ↦ h.elim)

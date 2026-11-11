@@ -379,4 +379,11 @@ theorem dgMap_mapDGTwistedObject {X Y : DGTwistedObject R C} {n : ℤ} (f : DGHo
     F.mapDGTwistedObject.dgMap n f = F.mapDGTwistedObjectHom X Y n f :=
   (EnrichedFunctor.dgMap_apply _ f).trans rfl
 
+/-- The underlying morphism of the image of a morphism under the induced DG functor is the image of
+its underlying morphism. -/
+theorem dgHomEquiv_dgMap_mapDGTwistedObject {X Y : DGTwistedObject R C} {n : ℤ}
+    (f : DGHom R n X Y) :
+    dgHomEquiv R _ _ n (F.mapDGTwistedObject.dgMap n f) = F.dgMap n (dgHomEquiv R X Y n f) := by
+  rw [dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom]
+
 end CategoryTheory.EnrichedFunctor

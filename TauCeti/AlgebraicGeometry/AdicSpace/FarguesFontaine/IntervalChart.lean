@@ -115,8 +115,7 @@ theorem rationalSubset_windowNumerators (hq : q ≠ 0) :
   have ha := NNRat.num_ne_zero.mpr hq
   -- a positive power of `x` has positive valuation exactly when `x` is off the support
   have hpos {x : WittVector p R} {k : ℕ} (hk : k ≠ 0) : 0 <ᵥ x ^ k ↔ x ∉ v.supp := by
-    rw [← ValuativeRel.not_vle, ← mem_supp_iff,
-      Ideal.IsPrime.pow_mem_iff_mem inferInstance k (Nat.pos_of_ne_zero hk)]
+    rw [← ValuativeRel.not_vle, vle_pow_zero_iff v x hk, mem_supp_iff]
   -- `s = p ^ a [ϖ] ^ b'` has positive valuation exactly when both factors do
   have hs : 0 <ᵥ windowDenominator p ϖ q q' ↔
       0 <ᵥ (p : WittVector p R) ^ q.num ∧ 0 <ᵥ teichmuller p ϖ ^ q'.den := by

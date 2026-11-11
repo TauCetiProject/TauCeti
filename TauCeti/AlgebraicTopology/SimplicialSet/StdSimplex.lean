@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
+public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import Mathlib.Data.Finset.Sort
 
 /-!
 # Complements on standard simplices
@@ -18,26 +20,40 @@ simplices are nerves of finite linear orders, hence quasicategories. These facts
 maps from horns and simplices to `Δ[n]`, for instance to `Δ[1]` when splitting a simplex into
 an initial and a final segment.
 
+An injective `m`-simplex of `Δ[n]` is the increasing enumeration of its set of vertices, and the
+faces of the increasing enumeration of a set `J` enumerate the sets `J` with one element removed.
+
 ## Main results
 
 * `SSet.stdSimplex.hom_app_apply`: the vertices of the image of a simplex under a map of standard
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
+  vertices.
+* `SSet.stdSimplex.objMk_orderEmbOfFin_image`: an injective simplex is the increasing enumeration
+  of its set of vertices.
 * `SSet.stdSimplex.subcomplex_hom_app_apply`: the vertices of the image of a simplex under a map
   from a subcomplex of a standard simplex to a standard simplex.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
   to the vertex `yonedaEquiv g j`.
+* `SSet.stdSimplex.edge_edge_apply_zero`, `SSet.stdSimplex.edge_edge_apply_one`: the endpoints of an
+  edge of `Δ[n]` are its vertices `0` and `1`.
+* `SSet.stdSimplex.nonempty_edge_iff`: `Δ[n]` has an edge from `a` to `b` exactly when `a ≤ b`,
+  and it is then unique (`SSet.stdSimplex.subsingleton_edge`).
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
+
+* `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
 -/
 
 public section
 
-open CategoryTheory Opposite Simplicial
+open CategoryTheory Finset Opposite Simplicial MonoidalCategory CartesianMonoidalCategory
 
 universe u
 
@@ -56,6 +72,40 @@ vertices are `e`. -/
 lemma const_app_apply {X : SSet.{u}} {n d : ℕ} (e : Fin (n + 1)) (x : X _⦋d⦌)
     (j : Fin (d + 1)) : (SSet.const (stdSimplex.const n e _) : X ⟶ Δ[n]).app _ x j = e :=
   (rfl)
+
+/-- The vertex map `asOrderHom x` of a simplex `x` of `Δ[n]` evaluates like `x` itself: both are
+the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the simplex category. -/
+@[simp]
+lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
+  rfl
+
+/-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
+enumerates `J` with its `i`-th smallest element removed. -/
+lemma δ_objMk_orderEmbOfFin {n m : ℕ} (J : Finset (Fin (n + 1))) (h : #J = m + 2)
+    (i : Fin (m + 2)) :
+    (Δ[n] : SSet.{u}).δ i (objMk (m := op ⦋m + 1⦌) (J.orderEmbOfFin h).toOrderHom) =
+      objMk (m := op ⦋m⦌) ((J.erase (J.orderEmbOfFin h i)).orderEmbOfFin
+        (by rw [card_erase_of_mem (J.orderEmbOfFin_mem h i), h]; rfl)).toOrderHom := by
+  refine ext _ _ fun k ↦ ?_
+  rw [δ_apply, objMk_apply, objMk_apply]
+  exact congrFun (orderEmbOfFin_unique
+    (by rw [card_erase_of_mem (J.orderEmbOfFin_mem h i), h]; rfl)
+    (f := fun k ↦ J.orderEmbOfFin h (i.succAbove k))
+    (fun k ↦ mem_erase.2 ⟨fun hk ↦ i.succAbove_ne k ((J.orderEmbOfFin h).injective hk),
+      J.orderEmbOfFin_mem h _⟩)
+    ((J.orderEmbOfFin h).strictMono.comp (Fin.strictMono_succAbove i))) k
+
+/-- A simplex `x` of `Δ[n]` whose vertices are pairwise distinct, that is whose set of vertices has
+`m + 1` elements, enumerates its set of vertices in increasing order. -/
+lemma objMk_orderEmbOfFin_image {n m : ℕ} (x : (Δ[n] : SSet.{u}) _⦋m⦌)
+    (h : #(univ.image x) = m + 1) :
+    objMk (m := op ⦋m⦌) ((univ.image x).orderEmbOfFin h).toOrderHom = x := by
+  have hx : Function.Injective x :=
+    Set.injOn_univ.1 (by simpa using card_image_iff.1 (h.trans (by simp)))
+  refine ext _ _ fun k ↦ ?_
+  rw [objMk_apply]
+  exact (congrFun (orderEmbOfFin_unique h (f := x) (fun k ↦ mem_image_of_mem _ (mem_univ k))
+    ((monotone_apply x).strictMono_of_injective hx)) k).symm
 
 /-- The top simplex of `Δ[n]`, corresponding to its identity map, has `j` as its `j`-th vertex. -/
 @[simp]
@@ -109,6 +159,34 @@ lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) 
     g.app _ (obj₀Equiv.symm j) = obj₀Equiv.symm (yonedaEquiv g j) :=
   stdSimplex.ext _ _ fun t ↦ by
     rw [hom_app_apply, obj₀Equiv_symm_apply, const_apply, obj₀Equiv_symm_apply, const_apply]
+
+/-- The vertex `0` of an edge of `Δ[n]` from `y` to `x` is the vertex `y`, the face `δ 1` of the
+edge. -/
+lemma edge_edge_apply_zero {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
+    e.edge 0 = y 0 :=
+  (δ_apply e.edge 1 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.src_eq)
+
+/-- The vertex `1` of an edge of `Δ[n]` from `y` to `x` is the vertex `x`, the face `δ 0` of the
+edge. -/
+lemma edge_edge_apply_one {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
+    e.edge 1 = x 0 :=
+  (δ_apply e.edge 0 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.tgt_eq)
+
+/-- A standard simplex has at most one edge between any two vertices: an edge of `Δ[n]` is
+determined by its endpoints. -/
+instance subsingleton_edge {n : ℕ} (y x : (Δ[n] : SSet.{u}) _⦋0⦌) : Subsingleton (Edge y x) where
+  allEq e e' := Edge.ext (stdSimplex.ext _ _ (Fin.forall_fin_two.2
+    ⟨(edge_edge_apply_zero e).trans (edge_edge_apply_zero e').symm,
+      (edge_edge_apply_one e).trans (edge_edge_apply_one e').symm⟩))
+
+/-- The standard simplex `Δ[n]` has an edge from the vertex `a` to the vertex `b` exactly when
+`a ≤ b`. -/
+lemma nonempty_edge_iff {n : ℕ} (a b : Fin (n + 1)) :
+    Nonempty (Edge (obj₀Equiv.{u}.symm a) (obj₀Equiv.symm b)) ↔ a ≤ b :=
+  ⟨fun ⟨e⟩ ↦ (edge_edge_apply_zero e).symm.trans_le
+      ((monotone_apply e.edge (by decide)).trans_eq (edge_edge_apply_one e)),
+    fun h ↦ ⟨Edge.mk (edge n a b h) (obj₀Equiv.injective (edge_apply_zero.{u} n a b h))
+      (obj₀Equiv.injective (edge_apply_one.{u} n a b h))⟩⟩
 
 /-- Standard simplices are quasicategories, being isomorphic to nerves of linear orders. -/
 instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where
@@ -172,5 +250,44 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [stdSimplex.obj₀Equiv_symm_apply]
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+/-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
+def fstStdSimplexZeroIso (K : SSet.{u}) : K ⊗ Δ[0] ≅ K where
+  hom := fst K Δ[0]
+  inv := lift (𝟙 K) (stdSimplex.isTerminalObj₀.from K)
+  hom_inv_id :=
+    CartesianMonoidalCategory.hom_ext _ _ (by simp) (stdSimplex.isTerminalObj₀.hom_ext _ _)
+
+@[simp]
+lemma fstStdSimplexZeroIso_hom (K : SSet.{u}) : (fstStdSimplexZeroIso K).hom = fst K Δ[0] :=
+  (rfl)
+
+@[simp]
+lemma fstStdSimplexZeroIso_inv (K : SSet.{u}) :
+    (fstStdSimplexZeroIso K).inv = lift (𝟙 K) (stdSimplex.isTerminalObj₀.from K) :=
+  (rfl)
+
+/-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism. -/
+instance (K : SSet.{u}) : IsIso (fst K Δ[0]) :=
+  (fstStdSimplexZeroIso K).isIso_hom
+
+/-- The boundary `∂Δ[n + 2]` is connected: it contains every edge of `Δ[n + 2]`, in particular
+the edge from `0` to each vertex. -/
+instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected where
+  nonempty := ⟨⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩⟩
+  allEq := π₀.rec fun x ↦ π₀.rec fun y ↦ by
+    -- Every vertex and every edge of `Δ[n + 2]` lies in its boundary.
+    let v (k : Fin (n + 3)) : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌ :=
+      ⟨stdSimplex.obj₀Equiv.symm k, by simp [boundary_obj_eq_univ]⟩
+    suffices h : ∀ k, π₀.mk (v k) = π₀.mk (v 0) by
+      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.1) :=
+        Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply _).symm
+      rw [hv x, hv y]
+      exact (h _).trans (h _).symm
+    intro k
+    exact (π₀.sound (Edge.mk (x₀ := v 0) (x₁ := v k)
+      ⟨stdSimplex.edge.{u} _ 0 k (Fin.zero_le k), by simp [boundary_obj_eq_univ]⟩
+      (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl))
+      (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)))).symm
 
 end SSet

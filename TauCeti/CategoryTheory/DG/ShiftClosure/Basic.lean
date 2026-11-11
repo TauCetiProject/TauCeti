@@ -39,6 +39,10 @@ morphism `TauCeti.DGShiftClosure.toShift : X[r] ⟶ X[r + n]` of degree `-n` and
 times the identity of `X`.  With this sign, `toShift` is natural up to the Koszul sign:
 `f ≫ toShift = (-1)^(n * p) • toShift ≫ f[n]` for `f` of degree `p`, and so is `fromShift`.
 
+A DG functor `F : C ⥤ D` induces a DG functor `F.mapDGShiftClosure` between the shift closures,
+sending `X[r]` to `(F X)[r]` and applying `F` to the underlying morphisms; it commutes with the
+shifts and preserves the comparison morphisms.
+
 The shift closure is the home of the matrix entries of one-sided twisted complexes, the objects
 `(⊕ᵢ Xᵢ[rᵢ], δ)` of the pretriangulated envelope of Bondal and Kapranov.
 
@@ -52,6 +56,8 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
 * `TauCeti.DGShiftClosure.shiftFunctor`: the DG functor `X[r] ↦ X[r + n]`.
 * `TauCeti.DGShiftClosure.toShift` and `TauCeti.DGShiftClosure.fromShift`: the closed comparison
   morphisms `X[r] ⟶ X[r + n]` of degree `-n` and `X[r + n] ⟶ X[r]` of degree `n`.
+* `CategoryTheory.EnrichedFunctor.mapDGShiftClosure`: the DG functor `X[r] ↦ (F X)[r]` induced by
+  a DG functor `F`.
 
 ## Main results
 
@@ -67,6 +73,10 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
   inverse.
 * `TauCeti.DGShiftClosure.dgComp_toShift` and `TauCeti.DGShiftClosure.dgComp_fromShift`: the
   comparison morphisms are natural up to the Koszul sign.
+* `CategoryTheory.EnrichedFunctor.mapDGShiftClosureHom_shiftHomEquiv`,
+  `CategoryTheory.EnrichedFunctor.mapDGShiftClosureHom_toShift` and
+  `CategoryTheory.EnrichedFunctor.mapDGShiftClosureHom_fromShift`: the DG functor induced by `F`
+  commutes with shifting every object and preserves the comparison morphisms.
 
 ## References
 
@@ -460,3 +470,90 @@ theorem dgComp_fromShift {X Y : DGShiftClosure C} (n : ℤ) {p m : ℤ} (f : DGH
 end DGShiftClosure
 
 end TauCeti
+
+namespace CategoryTheory.EnrichedFunctor
+
+open TauCeti DGShiftClosure
+
+universe u₂
+
+/-! ### Functoriality -/
+
+variable {R : Type v} [CommRing R] {C : Type u} {D : Type u₂} [DGCategory R C] [DGCategory R D]
+  (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+
+/-- The action of a DG functor on morphisms `X[r] ⟶ Y[s]` of degree `n`: its action on the
+underlying morphisms `X ⟶ Y` of degree `n + (s - r)`. -/
+noncomputable def mapDGShiftClosureHom (X Y : DGShiftClosure C) (n : ℤ) :
+    DGHom R n X Y →ₗ[R]
+      DGHom R n (⟨F.obj X.obj, X.shift⟩ : DGShiftClosure D) ⟨F.obj Y.obj, Y.shift⟩ :=
+  (dgHomEquiv R _ _ n).symm.toLinearMap ∘ₗ F.dgMap (n + (Y.shift - X.shift)) ∘ₗ
+    (dgHomEquiv R X Y n).toLinearMap
+
+/-- The underlying morphism of the image of a morphism of the shift closure is the image of its
+underlying morphism. -/
+@[simp]
+theorem dgHomEquiv_mapDGShiftClosureHom {X Y : DGShiftClosure C} {n : ℤ} (f : DGHom R n X Y) :
+    dgHomEquiv R _ _ n (F.mapDGShiftClosureHom X Y n f) =
+      F.dgMap (n + (Y.shift - X.shift)) (dgHomEquiv R X Y n f) := by
+  simp [mapDGShiftClosureHom]
+
+/-- The DG functor between shift closures induced by a DG functor `F`, sending `X[r]` to
+`(F X)[r]` and applying `F` to the underlying morphisms. -/
+-- This is reducible, with the object map given explicitly, so that the image of `X[r]` is
+-- reducibly `(F X)[r]`.
+noncomputable abbrev mapDGShiftClosure :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGShiftClosure C) (DGShiftClosure D) where
+  obj X := ⟨F.obj X.obj, X.shift⟩
+  __ := EnrichedFunctor.ofDGMap (fun X ↦ (⟨F.obj X.obj, X.shift⟩ : DGShiftClosure D))
+    (fun {X Y} n ↦ F.mapDGShiftClosureHom X Y n)
+    (fun {X Y} n f ↦ (dgHomEquiv R _ _ (n + 1)).injective <| by
+      rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_dgDifferential, dgHomEquiv_dgDifferential,
+        dgHomEquiv_mapDGShiftClosureHom, map_zsmul_unit, dgMap_d])
+    (fun X ↦ (dgHomEquiv R _ _ 0).injective <| by
+      rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_dgId, dgHomEquiv_dgId]
+      simp only [← castDeg_def, dgMap_castDeg, dgMap_dgId])
+    (fun {X Y Z p q n} f g h ↦ (dgHomEquiv R _ _ n).injective <| by
+      rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_dgComp, dgHomEquiv_dgComp, map_zsmul_unit,
+        dgMap_dgComp, dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_mapDGShiftClosureHom])
+
+/-- The induced DG functor acts on morphisms by
+`CategoryTheory.EnrichedFunctor.mapDGShiftClosureHom`. -/
+@[simp]
+theorem dgMap_mapDGShiftClosure {X Y : DGShiftClosure C} {n : ℤ} (f : DGHom R n X Y) :
+    F.mapDGShiftClosure.dgMap n f = F.mapDGShiftClosureHom X Y n f :=
+  (EnrichedFunctor.dgMap_apply _ f).trans rfl
+
+/-- The induced DG functor commutes with shifting every object: the images of a morphism under the
+two composites have the same underlying morphism of `D`. -/
+theorem mapDGShiftClosureHom_shiftHomEquiv {X Y : DGShiftClosure C} (n : ℤ) {p : ℤ}
+    (f : DGHom R p X Y) :
+    F.mapDGShiftClosureHom _ _ p (shiftHomEquiv R X Y n p f) =
+      shiftHomEquiv R _ _ n p (F.mapDGShiftClosureHom X Y p f) :=
+  (dgHomEquiv R _ _ p).injective <| by
+    -- After the first rewrite the right side's objects are unreduced projections such as
+    -- `{ obj := X.obj, shift := X.shift + n }.shift`, which keyed matching does not unify with the
+    -- pattern of `dgHomEquiv_shiftHomEquiv`: its second use is given the objects explicitly.
+    rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_shiftHomEquiv,
+      dgHomEquiv_shiftHomEquiv R (X := ⟨F.obj X.obj, X.shift⟩) (Y := ⟨F.obj Y.obj, Y.shift⟩),
+      dgHomEquiv_mapDGShiftClosureHom, dgMap_castDeg]
+
+/-- The induced DG functor sends the comparison morphism `X[r] ⟶ X[r + n]` to the comparison
+morphism `(F X)[r] ⟶ (F X)[r + n]`. -/
+@[simp]
+theorem mapDGShiftClosureHom_toShift (X : DGShiftClosure C) (n : ℤ) :
+    F.mapDGShiftClosureHom _ _ (-n) (toShift R X n) = toShift R ⟨F.obj X.obj, X.shift⟩ n :=
+  (dgHomEquiv R _ _ (-n)).injective <| by
+    rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_toShift,
+      dgHomEquiv_toShift R ⟨F.obj X.obj, X.shift⟩ n, map_zsmul_unit, dgMap_castDeg, dgMap_dgId]
+
+/-- The induced DG functor sends the comparison morphism `X[r + n] ⟶ X[r]` to the comparison
+morphism `(F X)[r + n] ⟶ (F X)[r]`. -/
+@[simp]
+theorem mapDGShiftClosureHom_fromShift (X : DGShiftClosure C) (n : ℤ) :
+    F.mapDGShiftClosureHom _ _ n (fromShift R X n) = fromShift R ⟨F.obj X.obj, X.shift⟩ n :=
+  (dgHomEquiv R _ _ n).injective <| by
+    rw [dgHomEquiv_mapDGShiftClosureHom, dgHomEquiv_fromShift,
+      dgHomEquiv_fromShift R ⟨F.obj X.obj, X.shift⟩ n, map_zsmul_unit, dgMap_castDeg, dgMap_dgId]
+
+end CategoryTheory.EnrichedFunctor

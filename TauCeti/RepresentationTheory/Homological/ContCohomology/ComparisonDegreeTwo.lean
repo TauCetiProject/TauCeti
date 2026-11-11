@@ -96,7 +96,7 @@ theorem explicitIso_coeffMap2
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
       f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
       ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+    ofDiscreteModulePair_id _ _
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff2_eq_explicitMap2, ← hpair]
   exact explicitIso_map2 G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
     (fun g m ↦ map_smul f g m) x

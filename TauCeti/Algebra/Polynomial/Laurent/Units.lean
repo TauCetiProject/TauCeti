@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Units
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Data.ZMod.QuotientGroup
+public import TauCeti.Algebra.MonoidAlgebra.Grading
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -28,6 +30,8 @@ the form taken by a unimodular determinant over the Laurent ring.
 * `LaurentPolynomial.isUnit_iff`: over a commutative ring without zero divisors, the units of
   `R[T;T⁻¹]` are the monomials `C r * T n` with `r` a unit.
 * `LaurentPolynomial.isUnit_iff_exists_eq_T_or_neg_T`: the units of `ℤ[T;T⁻¹]` are the `±Tⁿ`.
+* `TauCeti.shiftClassGroupLaurentPolynomialEquiv`: for `R[T;T⁻¹]` graded with `T` of degree `w`,
+  the shift class group `TauCeti.ShiftClassGroup` of homogeneous unit degrees is `ZMod |w|`.
 -/
 
 public section
@@ -93,3 +97,31 @@ theorem isUnit_iff_exists_eq_T_or_neg_T {f : ℤ[T;T⁻¹]} :
     · exact ⟨-1, isUnit_one.neg, n, by simp⟩
 
 end LaurentPolynomial
+
+namespace TauCeti
+
+open AddMonoidAlgebra
+
+open scoped LaurentPolynomial
+
+/-- For the Laurent ring `R[T;T⁻¹]` over a nontrivial commutative semiring, graded with `T` of
+degree `w`, the degrees of the homogeneous units are the multiples of `w` (by
+`homogeneousUnitDegrees_gradeBy`), so the shift class group is `ZMod |w|`. This is the graded ring
+of `𝔾_m` acting on itself by `s • x = s ^ w * x`. -/
+noncomputable def shiftClassGroupLaurentPolynomialEquiv (R : Type*) [CommSemiring R]
+    [Nontrivial R] (w : ℤ) :
+    ShiftClassGroup (gradeBy R (zmultiplesHom ℤ w) : ℤ → Submodule R R[T;T⁻¹]) ≃+
+      ZMod w.natAbs :=
+  (QuotientAddGroup.quotientAddEquivOfEq (by simp)).trans
+    (Int.quotientZMultiplesEquivZMod w)
+
+/-- The identification of the shift classes of `R[T;T⁻¹]` with `ZMod |w|` sends the class of a
+shift `d` to `d mod |w|`. -/
+@[simp]
+theorem shiftClassGroupLaurentPolynomialEquiv_mk (R : Type*) [CommSemiring R] [Nontrivial R]
+    (w d : ℤ) : shiftClassGroupLaurentPolynomialEquiv R w d = d := by
+  -- Both quotient equivalences are induced by maps on representatives, and the last one is the
+  -- cast `ℤ → ZMod |w|`; Mathlib states no lemma evaluating them on a class.
+  rfl
+
+end TauCeti

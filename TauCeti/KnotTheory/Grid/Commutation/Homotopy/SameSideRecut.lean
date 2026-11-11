@@ -38,6 +38,8 @@ same-side overlap. Each homotopy instantiates this with its own counted hexagons
 * `TauCeti.GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`: for a hexagon composite
   whose two empty rectangles have a same-side overlap, one piece of its recut underlies a
   commutation hexagon.
+* `TauCeti.GridDiagram.isEmpty_of_mem_disjSum_of_mem_iff`: for a hexagon family counted by its
+  markings, both rectangles of a counted composite are empty.
 * `TauCeti.GridDiagram.exists_toRectangleDecomposition_eq_of_isRepartition_of_mem_iff`: for a
   hexagon family counted by its markings, a repartition of a counted composite into empty
   rectangles, one of which underlies a hexagon, underlies a counted composite.
@@ -336,6 +338,25 @@ theorem exists_toRectangleDecomposition_eq_of_isRepartition_of_mem_iff
     · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
         GridRectangleHexagonDecomposition.toRectangleDecomposition, hP]
 
+/-- For a hexagon family counted by its markings, both rectangles of a counted composite are
+empty. -/
+theorem isEmpty_of_mem_disjSum_of_mem_iff
+    {x z : GridState n} {F : GridHexagonCompositeDecomposition a s s' x z}
+    (hF : F ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+      (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z)) :
+    F.toRectangleDecomposition.first.IsEmpty ∧ F.toRectangleDecomposition.second.IsEmpty := by
+  cases F with
+  | inl F =>
+    obtain ⟨hP, hr⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ F).mp
+      (Finset.inl_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
+    exact ⟨((hH _).mp hP).1, G.isEmpty_of_mem_unblockedRectangles hr⟩
+  | inr F =>
+    obtain ⟨hr, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ F).mp
+      (Finset.inr_mem_disjSum.mp hF)
+    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
+    exact ⟨G.isEmpty_of_mem_unblockedRectangles hr, ((hH _).mp hP).1⟩
+
 include hcut in
 /-- For a hexagon family counted by its markings, the recut of a counted composite whose two
 rectangles share a side column with the same orientation, initial for both or terminal for both,
@@ -349,20 +370,7 @@ theorem exists_isRecut_of_hasSameSideOverlap_of_mem_iff
       F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
         (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) ∧
       F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition := by
-  have hempty : F.toRectangleDecomposition.first.IsEmpty ∧
-      F.toRectangleDecomposition.second.IsEmpty := by
-    cases F with
-    | inl F =>
-      obtain ⟨hP, hr⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ F).mp
-        (Finset.inl_mem_disjSum.mp hF)
-      rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
-      exact ⟨((hH _).mp hP).1, G.isEmpty_of_mem_unblockedRectangles hr⟩
-    | inr F =>
-      obtain ⟨hr, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ F).mp
-        (Finset.inr_mem_disjSum.mp hF)
-      rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
-      exact ⟨G.isEmpty_of_mem_unblockedRectangles hr, ((hH _).mp hP).1⟩
-  obtain ⟨hfirst, hsecond⟩ := hempty
+  obtain ⟨hfirst, hsecond⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
   have hrecut := F.toRectangleDecomposition.isRecut_recut
     (F.toRectangleDecomposition.hasSameSideOverlap_iff.mp hsame).1 hfirst hsecond
   obtain ⟨F', hF', hF'E⟩ := exists_toRectangleDecomposition_eq_of_isRepartition_of_mem_iff hH hcut

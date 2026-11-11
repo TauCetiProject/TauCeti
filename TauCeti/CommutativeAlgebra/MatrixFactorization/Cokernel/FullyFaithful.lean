@@ -138,9 +138,10 @@ theorem quotientGorensteinProjectiveCokernel_full (hw : w ∈ nonZeroDivisors S)
 
 /-! ### Faithfulness -/
 
-/-- If the cokernel of the reduction of `g` factors through a projective `S/(w)`-module, then `g`
-is null-homotopic. -/
-private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ nonZeroDivisors S)
+/-- A morphism of matrix factorizations whose reduced cokernel map factors through a projective
+module agrees, modulo `d₀` and modulo `w`, with a homotopy-like map `h : X₁ → Y₁`: `g₁ - h` lands
+in the image of `d₀`, and `h ∘ d₀` lands in `w • Y₁`. -/
+private theorem exists_sub_mem_range_d₀_and_comp_d₀_mem_range_smul
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) {Q : ModuleCat.{u} (S ⧸ Ideal.span {w})}
     [Projective Q]
     (i : (cokernelFunctor.obj
@@ -149,8 +150,10 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)).obj)
     (hg : (cokernelFunctor.map
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g)).hom = i ≫ p) :
-    g ∈ (nullHomotopic (S := S) (w := w)).hom X Y := by
-  have hr : IsSMulRegular Y.obj.X₁ w := Module.Flat.isSMulRegular_of_nonZeroDivisors hw
+    ∃ h : X.obj.X₁.obj ⟶ Y.obj.X₁.obj,
+      (∀ y : X.obj.X₁, g.hom.f₁.hom y - h y ∈ LinearMap.range Y.obj.d₀.hom.hom) ∧
+      ∀ x : X.obj.X₀, h (X.obj.d₀.hom x) ∈
+        LinearMap.range (w • LinearMap.id : Y.obj.X₁ →ₗ[S] Y.obj.X₁) := by
   -- Lift `p` through the cokernel projection of the reduction of `Y`.
   let p' := Projective.factorThru p
     (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y))
@@ -180,17 +183,33 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
         ((ConcreteCategory.congr_hom hp' (i (quotientCokernelπ X y))).symm.trans
           ((congrArg (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y))
             (hh y).symm).trans (quotientCokernelπ_apply Y (h y)).symm)))
-  obtain ⟨k, hk⟩ := Module.projective_lifting_property Y.obj.d₀.hom.hom.rangeRestrict
-    ((g.hom.f₁.hom.hom - h.hom).codRestrict _ ha) (LinearMap.surjective_rangeRestrict _)
-  have hk' (y : X.obj.X₁) : Y.obj.d₀.hom (k y) = g.hom.f₁.hom y - h y :=
-    congrArg Subtype.val (LinearMap.congr_fun hk y)
-  -- `h ∘ d₀` vanishes after reduction, so it is `w • t`.
   have hb (x : X.obj.X₀) : h (X.obj.d₀.hom x) ∈
       LinearMap.range (w • LinearMap.id : Y.obj.X₁ →ₗ[S] Y.obj.X₁) := by
     have : u (h (X.obj.d₀.hom x)) = 0 := by
       rw [hh, (exact_d₀_quotientCokernelπ X _).2 ⟨x, rfl⟩, map_zero]
     obtain ⟨y', hy'⟩ := (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq w _).1 this
     exact ⟨y', hy'⟩
+  exact ⟨h, ha, hb⟩
+
+/-- If the cokernel of the reduction of `g` factors through a projective `S/(w)`-module, then `g`
+is null-homotopic. -/
+private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ nonZeroDivisors S)
+    {X Y : MatrixFactorization S w} (g : X ⟶ Y) {Q : ModuleCat.{u} (S ⧸ Ideal.span {w})}
+    [Projective Q]
+    (i : (cokernelFunctor.obj
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj ⟶ Q)
+    (p : Q ⟶ (cokernelFunctor.obj
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)).obj)
+    (hg : (cokernelFunctor.map
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g)).hom = i ≫ p) :
+    g ∈ (nullHomotopic (S := S) (w := w)).hom X Y := by
+  have hr : IsSMulRegular Y.obj.X₁ w := Module.Flat.isSMulRegular_of_nonZeroDivisors hw
+  obtain ⟨h, ha, hb⟩ := exists_sub_mem_range_d₀_and_comp_d₀_mem_range_smul g i p hg
+  obtain ⟨k, hk⟩ := Module.projective_lifting_property Y.obj.d₀.hom.hom.rangeRestrict
+    ((g.hom.f₁.hom.hom - h.hom).codRestrict _ ha) (LinearMap.surjective_rangeRestrict _)
+  have hk' (y : X.obj.X₁) : Y.obj.d₀.hom (k y) = g.hom.f₁.hom y - h y :=
+    congrArg Subtype.val (LinearMap.congr_fun hk y)
+  -- `h ∘ d₀` vanishes after reduction, so it is `w • t`.
   obtain ⟨t, ht⟩ := Module.projective_lifting_property
     (w • LinearMap.id : Y.obj.X₁ →ₗ[S] Y.obj.X₁).rangeRestrict
     ((h.hom ∘ₗ X.obj.d₀.hom.hom).codRestrict _ hb) (LinearMap.surjective_rangeRestrict _)

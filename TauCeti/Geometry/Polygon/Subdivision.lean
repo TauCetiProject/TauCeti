@@ -279,16 +279,25 @@ theorem exists_strictMono_boundaryParam_insertVertex_edgePath (hs : s ∈ Ioo (0
 vertex `c` after vertex `i` of a polygon changes its boundary parametrization, away from edge `i`,
 by an increasing change of time `φ`. At each time `t ∈ [0, n)` at which `poly` does not run along
 edge `i`, the time `φ t` lies in `[0, n + 1)`, and the new polygon is at the same point at time
-`φ t`, running along an edge with the same direction. -/
+`φ t`, running along an edge with the same direction. Explicitly, `φ` is the identity up to the
+time `i`, at which edge `i` begins, and the shift by `1` from the time `i + 1`, at which it ends. -/
 theorem exists_strictMono_boundaryParam_insertVertex (c : P) :
-    ∃ φ : ℝ → ℝ, StrictMono φ ∧ ∀ t ∈ Ico (0 : ℝ) n, edgeIndexAt n t ≠ i →
+    ∃ φ : ℝ → ℝ, StrictMono φ ∧ (∀ t ∈ Ico (0 : ℝ) n, edgeIndexAt n t ≠ i →
       φ t ∈ Ico (0 : ℝ) (n + 1 : ℕ) ∧
       (poly.insertVertex i c).boundaryParam (φ t) = poly.boundaryParam t ∧
       poly.insertVertex i c (finRotate (n + 1) (edgeIndexAt (n + 1) (φ t))) -ᵥ
           poly.insertVertex i c (edgeIndexAt (n + 1) (φ t)) =
-        poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t) := by
+        poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t)) ∧
+      (∀ t ≤ ((i : ℕ) : ℝ), φ t = t) ∧ ∀ t, ((i : ℕ) : ℝ) + 1 ≤ t → φ t = t + 1 := by
   have hs : (2⁻¹ : ℝ) ∈ Ioo (0 : ℝ) 1 := by norm_num
-  refine ⟨subdivisionTime ((i : ℕ) : ℝ) 2⁻¹, strictMono_subdivisionTime _ hs, fun t ht hti ↦ ?_⟩
+  refine ⟨subdivisionTime ((i : ℕ) : ℝ) 2⁻¹, strictMono_subdivisionTime _ hs, fun t ht hti ↦ ?_,
+    fun t ht ↦ ?_, fun t ht ↦ ?_⟩
+  rotate_left
+  · rw [subdivisionTime, max_eq_right (by linarith), max_eq_right (by linarith)]
+    norm_num
+  · rw [subdivisionTime, max_eq_left (by linarith), max_eq_left (by linarith),
+      min_eq_right (by linarith), min_eq_right (by linarith)]
+    ring
   obtain ⟨j, u, hu, rfl⟩ := TauCeti.exists_eq_natCast_add_of_mem_Ico ht
   rw [edgeIndexAt_natCast_add _ hu] at hti ⊢
   obtain ⟨j', hφ, hpath, hdir⟩ := exists_subdivisionTime_eq_of_ne poly i hs c hti hu

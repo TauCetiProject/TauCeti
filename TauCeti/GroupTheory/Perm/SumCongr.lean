@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Tactic.Abel
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The cycles of a permutation acting separately on the two halves of a sum
@@ -37,6 +39,8 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
 * `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
+* `Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm`: the cyclic rotation of `Fin (m + n)` is the
+  blockwise rotation followed by one transposition between the blocks.
 * `Fin.append_comp_finSumPerm`: it permutes the two halves of an appended tuple separately.
 -/
 
@@ -375,6 +379,35 @@ theorem orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
 theorem sign_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     sign (finSumPerm σ τ) = sign σ * sign τ := by
   rw [finSumPerm, sign_permCongr, sign_sumCongr]
+
+/-- Under `Equiv.Perm.finSumPerm σ τ`, a point of the first block and a point of the second block
+never lie in the same cycle. -/
+@[simp]
+theorem not_sameCycle_finSumPerm_castAdd_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (i : Fin m) (j : Fin n) : ¬ (finSumPerm σ τ).SameCycle (Fin.castAdd n i) (Fin.natAdd m j) := by
+  rw [← finSumFinEquiv_apply_left, ← finSumFinEquiv_apply_right, finSumPerm, sameCycle_permCongr]
+  exact not_sameCycle_sumCongr_inl_inr σ τ i j
+
+/-- **Rotating a split ordinal.** For nonempty blocks, the cyclic rotation of `Fin (m + n)` is the
+rotation of each block separately followed by the exchange of the first points of the two blocks,
+which joins the two rotations into one cycle. -/
+theorem finRotate_add_eq_swap_mul_finSumPerm [NeZero m] [NeZero n] :
+    finRotate (m + n) = swap (Fin.castAdd n 0) (Fin.natAdd m 0) *
+      finSumPerm (finRotate m) (finRotate n) := by
+  have hm := NeZero.pos m
+  have hn := NeZero.pos n
+  ext x
+  induction x using Fin.addCases with
+  | left i =>
+    have hi := i.isLt
+    rw [Perm.mul_apply, finSumPerm_apply_castAdd, swap_apply_def]
+    split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
+      Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
+  | right j =>
+    have hj := j.isLt
+    rw [Perm.mul_apply, finSumPerm_apply_natAdd, swap_apply_def]
+    split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
+      Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
 
 end Equiv.Perm
 

@@ -62,7 +62,7 @@ def coxeterMatrix : CoxeterMatrix T.simple where
     have h := orderOf_inv ((s : T.WeylGroup) * t)
     simpa only [mul_inv_rev, T.inv_simple s.property,
       T.inv_simple t.property] using h
-  diagonal s := by simp [T.simple_sq_eq_one s.property]
+  diagonal s := by simp [T.simple_mul_simple_self s.property]
   off_diagonal s t hst := by
     intro horder
     have h := orderOf_eq_one_iff.mp horder

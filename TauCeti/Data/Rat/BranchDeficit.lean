@@ -7,15 +7,17 @@ module
 
 -- `TauCeti.one_div_forty_two_le_hyperbolic_triangle_deficit` is the extremal case of the bound
 -- below.
-public import TauCeti.Data.Rat.HurwitzTriangle
+public import TauCeti.Algebra.Order.Field.HurwitzTriangle
 -- `Multiset.sum` over the branch indices occurs in the statements below, and the ordered field
 -- structure of `ℚ` it sums in is what the estimates are read in.
 public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 public import Mathlib.Algebra.Order.Field.Rat
--- Non-public: `Multiset.card_nsmul_le_sum` and `Multiset.sum_le_card_nsmul` bound that sum by the
+-- Non-public: `Nat.one_sub_one_div_cast_le_one` bounds one branch contribution by `1`,
+-- `Multiset.card_nsmul_le_sum` and `Multiset.sum_le_card_nsmul` bound that sum by the
 -- number of branch points, and the arithmetic is closed by `linarith` and `positivity`, in the
 -- proofs only.
 import Mathlib.Algebra.Order.BigOperators.Group.Multiset
+import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -36,16 +38,17 @@ each branch point contributes between `1/2` and `1`, so genus at least two leave
 genus one at least `1/2`, while genus zero needs more than two branch points, and with four or more
 of them a positive deficit is at least `1/6`. Only genus-zero data with exactly three branch points
 comes closer, and there the deficit `1 - 1/a - 1/b - 1/c` is the hyperbolic triple bound of
-`TauCeti/Data/Rat/HurwitzTriangle.lean`, whose values do drop below `1/6` — `(2, 3, 8)` gives
-`1/24` — down to `1/42`.
+`TauCeti/Algebra/Order/Field/HurwitzTriangle.lean`, whose values do drop below `1/6` —
+`(2, 3, 8)` gives `1/24` — down to `1/42`.
 
 ## Main results
 
 * `TauCeti.one_div_forty_two_le_hyperbolic_deficit`: a positive deficit is at least `1/42`.
 * `TauCeti.hyperbolic_deficit_two_three_seven`: the genus-zero data `(2, 3, 7)` attains it.
-* `TauCeti.half_le_one_sub_one_div` and `Nat.one_sub_one_div_le_one`: the contribution of one
-  branch point, with the sums `TauCeti.card_div_two_le_sum_one_sub_one_div`,
-  `Multiset.sum_one_sub_one_div_le_card` and `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
+* `TauCeti.half_le_one_sub_one_div`: the contribution of one branch point is at least `1/2`
+  (it is at most `1` by Mathlib's `Nat.one_sub_one_div_cast_le_one`), with the sums
+  `TauCeti.card_div_two_le_sum_one_sub_one_div`, `Multiset.sum_one_sub_one_div_le_card` and
+  `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
 
 ## Reference
 
@@ -54,11 +57,6 @@ H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Exercise 
 
 public section
 
-/-- The contribution `1 - 1/n` of a branch point is at most `1`. -/
-theorem Nat.one_sub_one_div_le_one (n : ℕ) : 1 - 1 / (n : ℚ) ≤ 1 := by
-  have hnonneg : (0 : ℚ) ≤ 1 / n := by positivity
-  linarith
-
 /-- The total contribution of the branch points is at most their number. -/
 theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
     (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum ≤ e.card := by
@@ -66,7 +64,7 @@ theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
   have hhigh : ∀ x ∈ e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ), x ≤ 1 := by
     intro x hx
     obtain ⟨n, _, rfl⟩ := Multiset.mem_map.mp hx
-    exact Nat.one_sub_one_div_le_one n
+    exact Nat.one_sub_one_div_cast_le_one n
   have := Multiset.sum_le_card_nsmul _ 1 hhigh
   rwa [hcard, nsmul_eq_mul, mul_one] at this
 
@@ -199,5 +197,29 @@ theorem hyperbolic_deficit_two_three_seven :
   simp only [Multiset.insert_eq_cons, Multiset.map_cons, Multiset.sum_cons,
     Multiset.map_singleton, Multiset.sum_singleton]
   norm_num
+
+/-- The numerical half of the Hurwitz bound: if `n * (2 γ - 2 + ∑ᵢ (1 - 1/eᵢ)) = 2 g - 2` with all
+`eᵢ ≥ 2`, `n > 0` and `g ≥ 2`, then `n ≤ 84 (g - 1)`. -/
+theorem card_le_eighty_four_mul_sub_one {n g γ : ℕ} {e : Multiset ℕ} (hg : 2 ≤ g)
+    (hn : 0 < n) (he : ∀ m ∈ e, 2 ≤ m)
+    (hkey : (n : ℚ) * (2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum) =
+      2 * (g : ℚ) - 2) :
+    n ≤ 84 * (g - 1) := by
+  have hnQ : (0 : ℚ) < n := by exact_mod_cast hn
+  have hgQ : (2 : ℚ) ≤ g := by exact_mod_cast hg
+  have hDpos : 0 < 2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum := by
+    by_contra hcon
+    have hle := mul_nonpos_of_nonneg_of_nonpos hnQ.le (not_lt.mp hcon)
+    rw [hkey] at hle
+    linarith
+  have hdef := one_div_forty_two_le_hyperbolic_deficit he hDpos
+  -- `n · (1/42) ≤ n · D = 2g - 2`.
+  have hfinal : (n : ℚ) ≤ 42 * (2 * (g : ℚ) - 2) := by
+    rw [← hkey]
+    nlinarith [hdef, hnQ]
+  have hnat : (n : ℚ) ≤ ((84 * (g - 1) : ℕ) : ℚ) := by
+    push_cast [Nat.cast_sub (by omega : 1 ≤ g)]
+    linarith
+  exact_mod_cast hnat
 
 end TauCeti

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Manifold.Instances.LensSpace
-public import TauCeti.LowDimTopology.SeifertFibration
+public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -123,31 +123,8 @@ end Descend
 /-! #### The two solid tori -/
 
 /-- The twist `(u, w) ↦ (u w ^ e, w)` of the solid torus. -/
-private def twist (e : ℤ) : SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 where
-  toFun x := (⟨x.1 * (x.2 ^ e : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 x.1.2⟩,
-    Circle.homeomorphSphere x.2)
-  invFun y := (⟨y.1 * (Circle.homeomorphSphere.symm y.2 ^ (-e) : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 y.1.2⟩,
-    Circle.homeomorphSphere.symm y.2)
-  left_inv x := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.symm_apply_apply x.2)
-    simp only [Homeomorph.symm_apply_apply, mul_assoc, ← Circle.coe_mul, ← zpow_add,
-      add_neg_cancel, zpow_zero, Circle.coe_one, mul_one]
-  right_inv y := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.apply_symm_apply y.2)
-    simp only [mul_assoc, ← Circle.coe_mul, ← zpow_add, neg_add_cancel, zpow_zero, Circle.coe_one,
-      mul_one]
-  continuous_toFun := by
-    refine .prodMk (.subtype_mk ?_ _) (Circle.homeomorphSphere.continuous.comp continuous_snd)
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) e).comp continuous_snd))
-  continuous_invFun := by
-    have h : Continuous fun y : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 ↦
-        Circle.homeomorphSphere.symm y.2 := by fun_prop
-    refine .prodMk (.subtype_mk ?_ _) h
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) (-e)).comp h))
+private def twist (e : ℤ) : SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 :=
+  (SolidTorus.twist e).trans (Homeomorph.prodCongr (Homeomorph.refl _) Circle.homeomorphSphere)
 
 /-- The solid torus `‖x 0‖ ≤ ‖x 1‖` of the unit sphere of `ℂ²`, parametrized so that `(u, w)` goes
 to the unit vector proportional to `(u w ^ e, w)`. -/

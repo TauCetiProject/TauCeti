@@ -100,9 +100,9 @@ once one is proved.
   `Bₙ` diagram that the root subgroups below are indexed by.
 -/
 
--- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD`, which attaches the type-`D` spin
--- carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic` for the rank
--- offset of the carrier.
+-- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD.Basic`, which attaches the type-`D`
+-- spin carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic`
+-- for the rank offset of the carrier.
 
 public section
 

@@ -47,23 +47,6 @@ namespace IsQuotientCoveringMap
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k]
 
-private def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
-    Rep.of (hG.fiberRepresentation k x) ≅ Rep.leftRegular k G := by
-  letI := hG.mulActionFiber x
-  refine Rep.mkIso (.mk (Finsupp.domLCongr (hG.fiberEquivGroup e) ≪≫ₗ
-    (MonoidAlgebra.coeffLinearEquiv k).symm) fun g ↦ ?_)
-  ext e' r
-  have he : hG.fiberEquivGroup e (g • e') = g * hG.fiberEquivGroup e e' := by
-    apply (hG.fiberEquivGroup_eq_iff e _ _).2
-    simp only [coe_mulActionFiber_smul, mul_smul, fiberEquivGroup_smul_self]
-  simp [fiberRepresentation_single, he]
-
-private lemma fiberRepresentationIsoLeftRegular_hom_single {x : B} (e e' : p ⁻¹' {x})
-    (r : k) :
-    (fiberRepresentationIsoLeftRegular hG k e).hom.hom (Finsupp.single e' r) =
-      MonoidAlgebra.single (hG.fiberEquivGroup e e') r := by
-  simp [fiberRepresentationIsoLeftRegular]
-
 /-- A choice of sheet identifies the fibre of the associated local system with the
 underlying coefficient module. -/
 def associatedLocalSystemFiberIso (A : Rep.{u} k G) {x : FundamentalGroupoid B}

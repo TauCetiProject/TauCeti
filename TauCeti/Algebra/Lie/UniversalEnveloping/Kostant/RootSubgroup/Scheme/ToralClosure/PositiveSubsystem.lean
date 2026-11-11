@@ -116,7 +116,7 @@ theorem generalLinearUpperTriangularDefiningHopfIdeal_le_kostantTorusSubsystemDe
           (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (i, j)))) = 0 := by
       rw [GeneralLinear.weightTorusCoordinateMap_X]
       simp only [hji.ne', ↓reduceIte]
-    simpa only [BialgHom.coe_toAlgHom] using hzero
+    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom] using hzero
 
 include α hwt hα hpos in
 /-- The canonical closed immersion from a torus-plus-positive-root Kostant subsystem into the

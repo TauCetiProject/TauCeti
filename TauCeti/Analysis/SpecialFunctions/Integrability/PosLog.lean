@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 public import Mathlib.MeasureTheory.Integral.CircleAverage
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Circle averages of `log⁺ ‖f‖⁻¹` and a Fatou bound
@@ -22,6 +23,12 @@ approach zero through nonzero values; this last result only needs circle integra
 ## Main results
 
 * `MeromorphicOn.circleIntegrable_posLog_inv_norm` — `log⁺ ‖f‖⁻¹` is circle integrable.
+* `ContinuousOn.circleIntegrable_posLog_norm` — `log⁺ ‖f‖` is circle integrable when `f` is
+  continuous on the circle.
+* `DifferentiableOn.circleIntegrable_posLog_norm` — `log⁺ ‖f‖` is circle integrable on every
+  circle inside a disc on which `f` is holomorphic.
+* `CircleIntegrable.circleAverage_posLog_norm_sub_const_le` — circle averages of `log⁺ ‖f - a‖`
+  are at most those of `log⁺ ‖f‖` plus `log⁺ ‖a‖ + log 2`.
 * `MeromorphicOn.circleAverage_posLog_inv_norm` — the circle average of `log⁺ ‖f‖⁻¹` is the
   difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`.
 * `MeromorphicOn.lintegral_ofReal_posLog_inv_norm_circleMap` — the lower Lebesgue integral of
@@ -42,6 +49,37 @@ private lemma posLog_inv_norm_eq_sub (f : ℂ → ℂ) :
   funext z
   simp only [Pi.sub_apply]
   linarith [posLog_sub_posLog_inv (x := ‖f z‖)]
+
+/-- `log⁺ ‖f‖` is circle integrable if `f` is continuous on the circle. -/
+theorem _root_.ContinuousOn.circleIntegrable_posLog_norm
+    {E : Type*} [SeminormedAddCommGroup E] {f : ℂ → E}
+    (hf : ContinuousOn f (sphere c |r|)) :
+    CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r :=
+  (continuous_posLog.comp_continuousOn hf.norm).circleIntegrable'
+
+/-- `log⁺ ‖f‖` is circle integrable over every circle inside a disc on which `f` is
+holomorphic. -/
+theorem _root_.DifferentiableOn.circleIntegrable_posLog_norm {R : ℝ}
+    (hf : DifferentiableOn ℂ f (ball c R)) (hr : r ∈ Ioo 0 R) :
+    CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r :=
+  (hf.continuousOn.mono (Metric.sphere_abs_subset_ball hr)).circleIntegrable_posLog_norm
+
+/-- Circle averages of `log⁺ ‖f - a‖` are at most those of `log⁺ ‖f‖` plus
+`log⁺ ‖a‖ + log 2`, whenever both integrands are circle integrable. -/
+theorem _root_.CircleIntegrable.circleAverage_posLog_norm_sub_const_le
+    {E : Type*} [SeminormedAddCommGroup E] {f : ℂ → E}
+    (hf : CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r)
+    (a : E) (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a‖) c r) :
+    circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤
+      circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := by
+  have hadd := circleAverage_add hf (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
+  rw [circleAverage_const] at hadd
+  rw [← hadd]
+  refine circleAverage_mono hfa (hf.add (circleIntegrable_const _ _ _)) fun z _ ↦ ?_
+  have := Real.posLog_norm_add_le (f z) (-a)
+  simp only [norm_neg, ← sub_eq_add_neg] at this
+  simp only [Pi.add_apply]
+  linarith
 
 namespace MeromorphicOn
 

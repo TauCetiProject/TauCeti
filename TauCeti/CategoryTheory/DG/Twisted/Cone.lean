@@ -77,8 +77,8 @@ times this comparison followed by the twisting entry `P⟦n⟧⟦1⟧ ⟶ P⟦n�
   gives a homotopy between the twisting entries of their cones.
 * `TauCeti.DGTwistedObject.cone_zero`: the cone of the zero morphism is the direct sum
   `Q ⊕ P⟦1⟧`.
-* `TauCeti.DGTwistedObject.isZero_of_cone`: the cone of an isomorphism is a zero object of the
-  homotopy category.
+* `TauCeti.DGTwistedObject.isZero_cone_of_dgComp_eq_dgId`: the cone of an isomorphism is a zero
+  object of the homotopy category.
 * `TauCeti.DGTwistedObject.isZero_of_cone_dgId`: `Cone(id_P)` is contractible.
 * `TauCeti.DGTwistedObject.dgMap_coneMorphism`: the shift of the twisting entry of a cone.
 * `TauCeti.DGTwistedObject.dgComp_shiftConeHom_shiftConeInv` and
@@ -270,10 +270,11 @@ variable {u : DGHom R 0 P Q} {u' : DGHom R 0 Q P}
 /-- **The cone of an isomorphism is contractible**: if the closed degree-zero morphism
 `u : P ⟶ Q` has a two-sided inverse `u' : Q ⟶ P` of degree zero, then its cone is a zero object
 of the homotopy category of twisted objects. -/
-theorem isZero_of_cone (hu : dgDifferential R 0 u = 0)
+theorem isZero_cone_of_dgComp_eq_dgId (hu : dgDifferential R 0 u = 0)
     (huu' : dgComp R u u' (add_zero 0) = dgId R P) (hu'u : dgComp R u' u (add_zero 0) = dgId R Q) :
     Limits.IsZero (DGHomotopyCategory.of R (cone u hu)) := by
-  refine isZero_of_extension R _ (g' := dgComp R u' (toShift P 1) (zero_add (-1))) ?_ ?_
+  refine isZero_extension_of_dgComp_eq_dgId R _
+    (g' := dgComp R u' (toShift P 1) (zero_add (-1))) ?_ ?_
   · rw [coneMorphism_def, dgComp_assoc R (fromShift P 1) u _ (add_zero 1) (zero_add (-1))
         (by omega),
       ← dgComp_assoc R u u' _ (add_zero 0) (zero_add (-1)) (by omega), huu', dgId_dgComp,
@@ -287,7 +288,7 @@ variable (R P) in
 category of twisted objects. -/
 theorem isZero_of_cone_dgId :
     Limits.IsZero (DGHomotopyCategory.of R (cone (dgId R P) (dgDifferential_dgId R P))) :=
-  isZero_of_cone _ (dgComp_dgId R _) (dgComp_dgId R _)
+  isZero_cone_of_dgComp_eq_dgId _ (dgComp_dgId R _) (dgComp_dgId R _)
 
 end contractible
 
@@ -444,7 +445,7 @@ private theorem shiftFunctor_cone_dgHom_ext
         f' (zero_add m)) :
     f = f' := by
   rw [← dgId_dgComp R f, ← dgId_dgComp R f', ← EnrichedFunctor.dgMap_dgId,
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R
+    ← extension_total R
       (dgDifferential_coneMorphism hu),
     map_add, EnrichedFunctor.dgMap_dgComp, EnrichedFunctor.dgMap_dgComp, add_dgComp, add_dgComp,
     dgComp_assoc R _ _ f (add_zero 0) (zero_add m) (by omega),

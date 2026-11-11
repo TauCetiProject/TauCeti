@@ -59,6 +59,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.derived
   exact (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e
     (CommHopfAlgCat.geometricallyConnectedCommHopfAlgProperty_derived G)
 
+omit [Algebra.FiniteType k H] in
 /-- The derived subgroup of a smooth finite-type affine group is smooth over the ground field.
 Connectedness, perfectness, and restrictions on the characteristic are unnecessary. -/
 theorem smoothCommHopfAlgProperty.derived (hH : smoothCommHopfAlgProperty k H) :
@@ -69,6 +70,7 @@ theorem smoothCommHopfAlgProperty.derived (hH : smoothCommHopfAlgProperty k H) :
   let _ : Algebra k K := Algebra.compHom K (algebraMap k (ULift.{v} k))
   let G := CommHopfAlgCat.baseChange (K := K) H
   let _ : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff H).mp hH
+  let _ : Algebra.FiniteType k H := inferInstance
   let _ : Algebra.Smooth K G := inferInstance
   let _ : IsReduced G := isReduced_of_smooth K G
   let e := CommHopfAlgCat.quotientBaseChangeIso (K := K)

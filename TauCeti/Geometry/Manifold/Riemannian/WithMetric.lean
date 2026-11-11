@@ -326,14 +326,22 @@ theorem mfderiv_comp_ofWithMetric (u : M → M') (x : WithMetric g) :
   · rw [mfderiv_zero_of_not_mdifferentiableAt h, ContinuousLinearMap.zero_comp,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_ofWithMetric_iff.not.2 h)]
 
+/-- The differential of a vector-valued function pulls back along `ofWithMetric`, without
+any differentiability hypothesis on the function. -/
+theorem mvfderiv_comp_ofWithMetric {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (u : M → F) (x : WithMetric g) :
+    mvfderiv I (u ∘ ofWithMetric) x =
+      (mvfderiv I u x.ofWithMetric).comp (mfderiv I I ofWithMetric x) := by
+  simp only [mvfderiv, mfderiv_comp_ofWithMetric, ContinuousLinearMap.comp_assoc]
+  -- The remaining goal only differs by `(u ∘ ofWithMetric) x = u x.ofWithMetric`.
+  rfl
+
 /-- The differential of a vector-valued function read on the copy of `M`. -/
 theorem mvfderiv_comp_ofWithMetric_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (u : M → F) (x : WithMetric g) (v : TangentSpace I x) :
     mvfderiv I (u ∘ ofWithMetric) x v =
-      mvfderiv I u x.ofWithMetric (mfderiv I I ofWithMetric x v) := by
-  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_comp_ofWithMetric]
-  -- The remaining goal only differs by `(u ∘ ofWithMetric) x = u x.ofWithMetric`.
-  rfl
+      mvfderiv I u x.ofWithMetric (mfderiv I I ofWithMetric x v) :=
+  DFunLike.congr_fun (mvfderiv_comp_ofWithMetric u x) v
 
 end Derivatives
 

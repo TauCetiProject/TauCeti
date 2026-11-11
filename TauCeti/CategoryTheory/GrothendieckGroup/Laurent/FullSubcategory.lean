@@ -27,6 +27,8 @@ exact category.
   resolution.
 * `TauCeti.LaurentK0.mapEquiv_congrFullSubcategory_of`: a graded exact equivalence restricted to
   full subcategories induces the isomorphism of graded Grothendieck groups `[X] ↦ [e X]`.
+* `TauCeti.LaurentK0.map_lift_surjective`: a graded conflation-exact functor whose images exhaust
+  the target full subcategory up to isomorphism induces a surjection of graded Grothendieck groups.
 -/
 
 public section
@@ -178,6 +180,16 @@ theorem mapEquiv_congrFullSubcategory_symm_of (Y : Q.FullSubcategory) :
   (mapEquiv_symm_of _ Y).trans <|
     congrArg (fun F ↦ of (E.fullSubcategory P hP hPshift) (F.inverse.obj Y))
       (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ h)
+
+/-- The restriction of a graded conflation-exact functor to shift-stable, extension-closed full
+subcategories induces a surjection of graded Grothendieck groups when every object of the target
+property is isomorphic to the image of an object of the source property. -/
+theorem map_lift_surjective {F : C ⥤ D} [F.Additive] (hF : GradedConflationExact E E' F)
+    (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj)) (hQP : Q ≤ P.map F) :
+    Function.Surjective (map (hF.lift E P hP hQ hPshift hQshift hPQ)) :=
+  have : (Q.lift (P.ι ⋙ F) hPQ).EssSurj := by
+    rwa [ObjectProperty.essSurj_lift_iff, Functor.essImage_ι_comp]
+  map_surjective _
 
 end LaurentK0
 

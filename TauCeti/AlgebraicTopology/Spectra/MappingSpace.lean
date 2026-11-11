@@ -73,6 +73,12 @@ noncomputable def tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.
     (DayFunctor.η X ((free 0).obj K)).app (FiniteBijection.mk n, FiniteBijection.mk 0) ≫
       (X ⊗ (free 0).obj K).functor.map (ρ_ (FiniteBijection.mk n)).hom
 
+/-- The identity-shuffle inclusion inserts the level-zero generator and the right unitor. -/
+lemma tensorFreeZeroι_def (X : SymmetricSequence.{0}) (K : PointedSSet.{0}) (n : ℕ) :
+    tensorFreeZeroι X K n = X.functor.obj (FiniteBijection.mk n) ◁ freeι 0 K ≫
+      (DayFunctor.η X ((free 0).obj K)).app (FiniteBijection.mk n, FiniteBijection.mk 0) ≫
+        (X ⊗ (free 0).obj K).functor.map (ρ_ (FiniteBijection.mk n)).hom := (rfl)
+
 /-- **The level formula** `X_n ∧ K ≅ (X ⊗ G₀ K)_n`: in the wedge formula for `(X ⊗ G₀ K)_n`, every
 summand other than `X_n ∧ (G₀ K)₀ ≅ X_n ∧ K` is the point. -/
 instance isIso_tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.{0}) (n : ℕ) :

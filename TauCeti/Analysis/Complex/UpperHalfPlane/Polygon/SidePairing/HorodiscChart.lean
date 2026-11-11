@@ -112,6 +112,51 @@ private theorem exists_cycleMap_zpow_mul_inv_partialCycleMap_mul_inv_map_eq (j :
     inv_inv, partialCycleMap_succ]
   group
 
+/-- Crossing a side of a tile `(T ^ k * (partialCycleMap j m)⁻¹) • P` of the first circuit that
+passes through the ideal vertex `ξ` of `P`, at a point high enough in the coordinate `g` sending
+`ξ` to `∞`, leads to a tile of the same form. -/
+private theorem mul_mem_range_cycleMap_zpow_mul_inv_partialCycleMap_of_mem_localNeighbors
+    {j : Fin n} {ξ : OnePoint ℝ} (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} {A₁ : ℝ}
+    (him : ∀ (k : ℤ) (z : ℍ), (g • σ.cycleMap j ^ k • z).im = (g • z).im)
+    (hside : ∀ {m : ℕ}, m < σ.cycleLength j → ∀ {v : ℍ},
+      A₁ ≤ (g • (σ.partialCycleMap j m)⁻¹ • v).im → ∀ {i : Fin n}, v ∈ P.side i →
+        i = σ.next^[m] j - 1 ∨ i = σ.next^[m] j)
+    {h : PSL(2, ℝ)}
+    (hh : h ∈ range fun p : ℤ × ℕ ↦ σ.cycleMap j ^ p.1 * (σ.partialCycleMap j p.2)⁻¹)
+    {v : ℍ} (hvW : A₁ ≤ (g • h • v).im) {c : PSL(2, ℝ)}
+    (hc : c ∈ σ.localNeighbors v) :
+    h * c ∈ range fun p : ℤ × ℕ ↦ σ.cycleMap j ^ p.1 * (σ.partialCycleMap j p.2)⁻¹ := by
+  have hmem (k : ℤ) (m : ℕ) : σ.cycleMap j ^ k * (σ.partialCycleMap j m)⁻¹ ∈
+      range fun p : ℤ × ℕ ↦ σ.cycleMap j ^ p.1 * (σ.partialCycleMap j p.2)⁻¹ := ⟨(k, m), rfl⟩
+  obtain ⟨k, m, hm, rfl⟩ : ∃ k : ℤ, ∃ m < σ.cycleLength j,
+      h = σ.cycleMap j ^ k * (σ.partialCycleMap j m)⁻¹ := by
+    obtain ⟨⟨k, m⟩, rfl⟩ := hh
+    exact σ.exists_lt_cycleLength_cycleMap_zpow_mul_inv_partialCycleMap_eq j k m
+  have hvA : A₁ ≤ (g • (σ.partialCycleMap j m)⁻¹ • v).im := by
+    rwa [mul_smul, him] at hvW
+  rcases σ.mem_localNeighbors_iff.1 hc with rfl | ⟨i, hi, rfl⟩ | ⟨l, m', hl, -⟩
+  · rw [mul_one]
+    exact hmem k m
+  · rcases hside hm hvA hi with rfl | rfl
+    · obtain ⟨k', m', h⟩ := σ.exists_cycleMap_zpow_mul_inv_partialCycleMap_mul_inv_map_eq j k m
+      rw [h]
+      exact hmem k' m'
+    · rw [mul_assoc, ← mul_inv_rev, ← partialCycleMap_succ]
+      exact hmem k (m + 1)
+  · -- a finite vertex lies on two sides, which cannot both pass through the ideal vertex
+    exfalso
+    have hJ : P.vertex (σ.next^[m] j) = .inr (σ.partialCycleMap j m • ξ) := by
+      rw [← σ.partialCycleMap_smul_vertex, hj, Sum.smul_inr]
+    rcases hside hm hvA (P.mem_side_of_vertex_eq_inl hl) with h₁ | h₁
+    · rcases hside hm hvA
+        (P.mem_side_of_vertex_add_one_eq_inl (i := l - 1) (by rwa [sub_add_cancel])) with
+        h₂ | h₂
+      · exact sub_one_ne_self (by have := P.three_le; omega) l (h₂.trans h₁.symm)
+      · have hl1 : l + 1 = σ.next^[m] j := by rw [h₁, sub_add_cancel]
+        exact add_one_add_one_ne_self P.three_le (l - 1) (by rw [sub_add_cancel, hl1, h₂])
+    · rw [h₁, hJ] at hl
+      exact Sum.inr_ne_inl hl
+
 /-- **The tiling chart at an ideal vertex.** Let `vertex j = ξ` be an ideal vertex whose cycle
 transformation `T` is parabolic, let `g` carry `ξ` to `∞`, and let every finite vertex cycle
 satisfy the angle condition. Then above some height, every horodisc `{z | B < Im (g • z)}` at `ξ`
@@ -163,33 +208,9 @@ theorem exists_isTilingChart_of_vertex_eq_inr
   -- crossing a side through the ideal vertex moves to the previous or the next tile of the cycle
   have hmul (h : PSL(2, ℝ)) (hh : h ∈ M) (v : ℍ) (hv : v ∈ P.carrier)
       (hvW : h • v ∈ {z : ℍ | max A₀ A₁ < (g • z).im}) (c : PSL(2, ℝ))
-      (hc : c ∈ σ.localNeighbors v) : h * c ∈ M := by
-    obtain ⟨k, m, hm, rfl⟩ := hnorm hh
-    have hvA : A₁ ≤ (g • (σ.partialCycleMap j m)⁻¹ • v).im := by
-      rw [mem_ofPred_eq, mul_smul, him] at hvW
-      exact (le_max_right _ _).trans hvW.le
-    rcases σ.mem_localNeighbors_iff.1 hc with rfl | ⟨i, hi, rfl⟩ | ⟨l, m', hl, -⟩
-    · rw [mul_one]
-      exact hmem k m
-    · rcases hside hm hvA hi with rfl | rfl
-      · obtain ⟨k', m', h⟩ := σ.exists_cycleMap_zpow_mul_inv_partialCycleMap_mul_inv_map_eq j k m
-        rw [h]
-        exact hmem k' m'
-      · rw [mul_assoc, ← mul_inv_rev, ← partialCycleMap_succ]
-        exact hmem k (m + 1)
-    · -- a finite vertex lies on two sides, which cannot both pass through the ideal vertex
-      exfalso
-      have hJ : P.vertex (σ.next^[m] j) = .inr (σ.partialCycleMap j m • ξ) := by
-        rw [← σ.partialCycleMap_smul_vertex, hj, Sum.smul_inr]
-      rcases hside hm hvA (P.mem_side_of_vertex_eq_inl hl) with h₁ | h₁
-      · rcases hside hm hvA
-          (P.mem_side_of_vertex_add_one_eq_inl (i := l - 1) (by rwa [sub_add_cancel])) with
-          h₂ | h₂
-        · exact sub_one_ne_self (by have := P.three_le; omega) l (h₂.trans h₁.symm)
-        · have hl1 : l + 1 = σ.next^[m] j := by rw [h₁, sub_add_cancel]
-          exact add_one_add_one_ne_self P.three_le (l - 1) (by rw [sub_add_cancel, hl1, h₂])
-      · rw [h₁, hJ] at hl
-        exact Sum.inr_ne_inl hl
+      (hc : c ∈ σ.localNeighbors v) : h * c ∈ M :=
+    σ.mul_mem_range_cycleMap_zpow_mul_inv_partialCycleMap_of_mem_localNeighbors hj him hside hh
+      (by rw [mem_ofPred_eq] at hvW; exact (le_max_right _ _).trans hvW.le) hc
   have hcont : Continuous fun z : ℍ ↦ (g • z).im :=
     UpperHalfPlane.continuous_im.comp (continuous_const_smul g)
   refine ⟨max A₀ A₁, fun B hB ↦ (σ.isLocalTiling hcyc).isTilingChart_of_closure_subset

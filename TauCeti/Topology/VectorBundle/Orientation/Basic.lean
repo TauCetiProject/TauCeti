@@ -45,6 +45,8 @@ preconnected base these are all of its orientations
 * `TauCeti.VectorBundleOrientation.ofEventually`: an orientation from local constancy in chosen
   trivializations of the atlas.
 * `TauCeti.VectorBundleOrientation.trivial`: the constant orientations of a trivial bundle.
+* `TauCeti.VectorBundleOrientation.pullback`: the pullback of an orientation along a continuous
+  map of bases.
 
 ## Main results
 
@@ -124,8 +126,25 @@ theorem mapOrientation_eq_map_coordChangeL (e e' : Trivialization F (π F E)) [e
       _ = _ := by rw [LinearEquiv.self_trans_symm, LinearEquiv.refl_trans]
   simp only [mapOrientation_apply, ← Orientation.map_trans, hcomp]
 
+section AddCommGroup
+
+variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]
+  [∀ b, Module ℝ (E' b)]
+
+/-- Reading an orientation of a fibre in a linear trivialization `e` gives the orientation of a
+basis `β` of the model fibre exactly when the orientation is that of the basis of the fibre carried
+from `β` by `e`. -/
+theorem mapOrientation_eq_orientation_iff [Fintype ι] [DecidableEq ι]
+    (e : Trivialization F (π F E')) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
+    (β : Basis ι ℝ F) (o : Orientation ℝ (E' b) ι) :
+    e.mapOrientation ι hb o = β.orientation ↔
+      o = (β.map (e.linearEquivAt ℝ b hb).symm).orientation := by
+  rw [mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
+  exact (Equiv.eq_symm_apply _).symm
+
+end AddCommGroup
+
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
-  [FiniteDimensional ℝ F]
 
 /-- If a family of fibre orientations is locally constant near `b` when read in one trivialization
 of the atlas, then it is locally constant near `b` when read in any other, provided `ι` has
@@ -140,6 +159,14 @@ theorem eventually_mapOrientation_eq_of_eventually (hι : Fintype.card ι = finr
       e'.mapOrientation ι hx (o x) = e'.mapOrientation ι hb' (o b) := by
   have hmem : e.baseSet ∩ e'.baseSet ∈ 𝓝 b :=
     (e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hb, hb'⟩
+  -- With `ι` empty, transport along any self-equivalence of `F` fixes every orientation.
+  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
+  · filter_upwards [h, hmem] with x hx hxs hx'
+    rw [mapOrientation_eq_map_coordChangeL e e' hxs.1 hx', hx hxs.1,
+      mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_of_isEmpty,
+      Orientation.map_of_isEmpty]
+  -- Otherwise `F` has positive, hence finite, dimension.
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
   -- The determinant of the coordinate change is continuous at `b` and nonzero there, so its
   -- product with its value at `b` stays positive near `b`.
   set d : B → ℝ := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det
@@ -259,6 +286,32 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+section Pullback
+
+variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+
+/-- **The pullback of an orientation** along a continuous map `f : B' → B`: the orientation of the
+pullback bundle `f*E` whose fibre over `b'` is oriented as the fibre of `E` over `f b'`. -/
+def pullback (o : VectorBundleOrientation F E ι) : VectorBundleOrientation F ((⇑f) *ᵖ E) ι where
+  toFun b' := o (f b')
+  eventually_mapOrientation_eq' b' := by
+    -- The preferred trivialization of `f*E` at `b'` is the pullback of that of `E` at `f b'`,
+    -- in which fibre orientations read as in the original trivialization.
+    filter_upwards [f.continuous.continuousAt.eventually (o.eventually_mapOrientation_eq' (f b'))]
+      with x hx hx'
+    exact ((trivializationAt F E (f b')).mapOrientation_pullback f hx' _).trans <|
+      (hx _).trans ((trivializationAt F E (f b')).mapOrientation_pullback f _ _).symm
+
+@[simp]
+theorem pullback_apply (o : VectorBundleOrientation F E ι) (b' : B') : o.pullback f b' = o (f b') :=
+  (rfl)
+
+@[simp]
+theorem pullback_neg (o : VectorBundleOrientation F E ι) : (-o).pullback f = -o.pullback f :=
+  ext fun _ ↦ (rfl)
+
+end Pullback
+
 /-- The set of points where two orientations agree is open. -/
 theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
     IsOpen {b | o b = o' b} := by
@@ -276,6 +329,7 @@ theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
 
 variable [Fintype ι] [FiniteDimensional ℝ F]
 
+omit [FiniteDimensional ℝ F] in
 /-- An orientation is locally constant when read in any trivialization of the atlas. -/
 theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
@@ -284,6 +338,7 @@ theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
   (trivializationAt F E b).eventually_mapOrientation_eq_of_eventually hι e
     (FiberBundle.mem_baseSet_trivializationAt' b) hb (o.eventually_mapOrientation_eq' b)
 
+omit [FiniteDimensional ℝ F] in
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
 point `b` when read in some trivialization `e b` of the atlas whose base set contains `b`. -/
 def ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation ℝ (E b) ι)
@@ -297,6 +352,7 @@ def ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation
     (e b).eventually_mapOrientation_eq_of_eventually hι (trivializationAt F E b) (he b)
       (FiberBundle.mem_baseSet_trivializationAt' b) (ho b)
 
+omit [FiniteDimensional ℝ F] in
 @[simp]
 theorem coe_ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation ℝ (E b) ι)
     (e : B → Trivialization F (π F E)) [∀ b, MemTrivializationAtlas (e b)]

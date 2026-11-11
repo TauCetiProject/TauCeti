@@ -46,15 +46,16 @@ variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
 local instance : IsManifold 𝓘(ℝ, E) r M :=
   IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) r M)
 
-/-- A globally strongly `q`-pseudoconvex `C^r` function, `r ≥ 2`, has a strong Whitney ball of
-order exactly two consisting of globally strongly `q`-pseudoconvex functions. The control uses a
-locally finite compact chart cover and separate positive tolerances on its members. -/
-theorem exists_strongCkControl_isManifoldStronglyPseudoconvexAt [T2Space M]
-    [SigmaCompactSpace M] (hr : 2 ≤ r) (q : ℕ)
-    (f : C^r⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
-    (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x) :
-    ∃ c : StrongCkControl 𝓘(ℝ, E) M r, c.order = 2 ∧
-      ∀ g ∈ c.ball f, ∀ x, IsManifoldStronglyPseudoconvexAt E q g x := by
+/-- Strong `q`-pseudoconvexity at a point is detected by the second chart jet: there is an open
+set `V` of second-order jets such that, in every chart, the second jet of `g` at a point of the
+chart target lies in `V` exactly when `g` is strongly `q`-pseudoconvex at the corresponding
+point of the manifold. -/
+theorem exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvexAt
+    (hr : 2 ≤ r) (q : ℕ) :
+    ∃ V : Set (E [×2]→L[ℝ] ℝ), IsOpen V ∧
+      ∀ (g : C^r⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (a : M) (z : (extChartAt 𝓘(ℝ, E) a).target),
+        chartIteratedFDeriv g a 2 hr z ∈ V ↔
+          IsManifoldStronglyPseudoconvexAt E q g ((extChartAt 𝓘(ℝ, E) a).symm z) := by
   have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le hr
   let curry : (E [×2]→L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ :=
     (ContinuousLinearMap.compL ℝ E (E [×1]→L[ℝ] ℝ) (E →L[ℝ] ℝ)
@@ -88,6 +89,20 @@ theorem exists_strongCkControl_isManifoldStronglyPseudoconvexAt [T2Space M]
       (chartAt E a).right_inv hz] using
       (isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas
         (IsManifold.chart_mem_maximalAtlas a) hx (g.contMDiff.of_le hr).contMDiffAt).symm
+  exact ⟨V, hV, htest⟩
+
+/-- A globally strongly `q`-pseudoconvex `C^r` function, `r ≥ 2`, has a strong Whitney ball of
+order exactly two consisting of globally strongly `q`-pseudoconvex functions. The control uses a
+locally finite compact chart cover and separate positive tolerances on its members. -/
+theorem exists_strongCkControl_isManifoldStronglyPseudoconvexAt [T2Space M]
+    [SigmaCompactSpace M] (hr : 2 ≤ r) (q : ℕ)
+    (f : C^r⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
+    (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x) :
+    ∃ c : StrongCkControl 𝓘(ℝ, E) M r, c.order = 2 ∧
+      ∀ g ∈ c.ball f, ∀ x, IsManifoldStronglyPseudoconvexAt E q g x := by
+  obtain ⟨V, hV, htest⟩ :=
+    exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvexAt (E := E) (M := M)
+      hr q
   obtain ⟨α, a, K, hlf, hcover⟩ :=
     exists_locallyFinite_compact_extChartAt_cover (I := 𝓘(ℝ, E)) (M := M)
   have hmaps (i : α) : MapsTo (chartIteratedFDeriv f (a i) 2 hr) (K i) V :=

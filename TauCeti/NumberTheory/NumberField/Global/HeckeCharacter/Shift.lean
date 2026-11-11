@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Instances.RealVectorSpace
-import TauCeti.Analysis.Normed.Field.CompactGroup
+import TauCeti.Analysis.Normed.Ring.CompactMonoid
 import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Compact
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic

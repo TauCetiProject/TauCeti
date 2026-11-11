@@ -8,11 +8,17 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Analytic constructions: slices and geometric-power series
+# Analytic constructions: products, finite sums, and geometric-power series
 
 Mathlib's `AnalyticAt.curry_right` says that a function analytic at `p` on a product has an
 analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, the same holds for the
 slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_curry_right`).
+
+Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
+(`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`).
+
+Finite sums of functions admitting power series on a common ball admit the summed power series on
+that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1` and represents
@@ -24,7 +30,7 @@ public section
 
 open Filter Topology
 
-section Slices
+section Products
 
 variable {𝕜 E E' F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F]
@@ -37,7 +43,25 @@ theorem AnalyticAt.eventually_analyticAt_curry_right {f : E × E' → F} {p : E 
   ((continuous_id.prodMk continuous_const).tendsto p.1).eventually hf.eventually_analyticAt
     |>.mono fun _ hx ↦ hx.curry_right
 
-end Slices
+namespace TauCeti
+
+/-- Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic. -/
+theorem analyticAt_sumElim {ι ι' : Type*} [Fintype ι] [Fintype ι'] {p : (ι → E) × (ι' → E)} :
+    AnalyticAt 𝕜 (fun p : (ι → E) × (ι' → E) ↦ Sum.elim p.1 p.2) p := by
+  refine analyticAt_pi_iff.2 fun i ↦ ?_
+  cases i with
+  | inl i => exact (analyticAt_pi_iff.1 analyticAt_fst) i
+  | inr i => exact (analyticAt_pi_iff.1 analyticAt_snd) i
+
+/-- Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic. -/
+theorem analyticOnNhd_sumElim {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {s : Set ((ι → E) × (ι' → E))} :
+    AnalyticOnNhd 𝕜 (fun p : (ι → E) × (ι' → E) ↦ Sum.elim p.1 p.2) s :=
+  fun _ _ ↦ analyticAt_sumElim
+
+end TauCeti
+
+end Products
 
 section FinsetSum
 

@@ -228,11 +228,11 @@ the Frobenius property of the trace normalized by the chosen incident edges. -/
 instance skewZigzagTracePairing_isPerfPair :
     (skewZigzagTracePairing k G c t).IsPerfPair := by
   classical
+  let _ := moduleFinite_skewZigzagQuotient k G c fun i => ⟨_, (t i).2⟩
+  let _ := moduleFree_skewZigzagQuotient k G c fun i => ⟨_, (t i).2⟩
   let _ : Finite G.Dart :=
     Finite.of_injective _ (SimpleGraph.Dart.toProd_injective (G := G))
   let B := skewZigzagBasis k G c t
-  let _ : Module.Finite k (skewZigzagQuotient k G c) := Module.Finite.of_basis B
-  let _ : Module.Free k (skewZigzagQuotient k G c) := Module.Free.of_basis B
   let w := skewZigzagPairingWeight k G c t
   let ι := (zigzagDualIndex_involutive G).toPerm
   have hleft : skewZigzagTracePairing k G c t =

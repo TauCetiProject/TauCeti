@@ -108,7 +108,7 @@ theorem exists_supSeminorm_smul_pow_eq_one (hA : IsAffinoidAlgebra K A) :
   obtain ⟨c, hc⟩ := h f
   have hc0 : c ≠ 0 := norm_pos_iff.mp (hc ▸ pow_pos hf m)
   refine ⟨(Units.mk0 c hc0)⁻¹, ?_⟩
-  rw [hA.supSeminorm_smul, hA.supSeminorm_pow f (by omega), hc]
+  rw [supSeminorm_smul, supSeminorm_pow f (by omega), hc]
   simp [norm_ne_zero_iff.mpr hc0]
 
 end TauCeti.IsAffinoidAlgebra

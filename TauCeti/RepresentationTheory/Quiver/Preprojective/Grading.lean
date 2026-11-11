@@ -247,9 +247,9 @@ theorem preprojectiveGrade_zero_eq_span_range_vertexIdempotent :
         preprojectiveMk k Q (vertexIdempotent k v)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (Symmetrify Q)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (Symmetrify Q))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span ⟨v, rfl⟩
@@ -266,9 +266,9 @@ theorem preprojectiveGrade_one_eq_span_range_ofArrow :
         preprojectiveMk k Q (PathAlgebra.ofArrow e.2.2)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 1)
-      PathAlgebra.grade_one_eq_span_range_ofArrow ?_ hw
+      PathAlgebra.grade_one_eq_span_range_ofArrow).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span
@@ -287,9 +287,9 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
           preprojectiveMk k Q (PathAlgebra.ofPath x.1)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := n)
-      (PathAlgebra.grade_eq_span_range k (Symmetrify Q) n) ?_ hw
+      (PathAlgebra.grade_eq_span_range k (Symmetrify Q) n)).2 ?_ hw
     rintro z ⟨x, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span ⟨x, rfl⟩

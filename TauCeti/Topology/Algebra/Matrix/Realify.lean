@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # Realification of matrices is a closed embedding
@@ -40,6 +41,8 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
   groups from `U(n)` onto the orthogonal symplectic matrices.
+* `TauCeti.GLSymplectic.ofUnitary`: the realification `U(n) →* Sp(2n, ℝ)`, a continuous group
+  morphism (`TauCeti.GLSymplectic.continuous_ofUnitary`).
 
 ## References
 
@@ -104,11 +107,7 @@ theorem isClosedEmbedding_realify_comp_toUnits :
   -- The unitary group is compact, so a continuous injection into a Hausdorff space suffices.
   refine Continuous.isClosedEmbedding ?_
     ((realify_injective).comp Unitary.toUnits_injective)
-  refine (isClosedEmbedding_realify n 𝕜).continuous.comp (Units.continuous_iff.2
-    ⟨continuous_subtype_val, ?_⟩)
-  -- The inverse of the unit of a unitary matrix is its conjugate transpose, again unitary.
-  simp only [Unitary.val_inv_toUnits_apply, UnitaryGroup.inv_val, continuous_fun_star_iff]
-  exact continuous_subtype_val
+  exact (isClosedEmbedding_realify n 𝕜).continuous.comp Unitary.continuous_toUnits
 
 end GeneralLinearGroup
 
@@ -141,3 +140,35 @@ theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
   rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
 
 end Matrix
+
+open Matrix
+
+namespace TauCeti.GLSymplectic
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- Realification `U(n) → Sp(2n, ℝ)`, identifying complex unitary matrices with the orthogonal
+symplectic matrices. -/
+noncomputable def ofUnitary : unitaryGroup n ℂ →* GLSymplectic n ℝ :=
+  (Subgroup.inclusion inf_le_left).comp
+    (unitaryGroupEquivSymplecticInfOrthogonal (n := n)).toMulEquiv.toMonoidHom
+
+/-- `ofUnitary U` is the orthogonal symplectic matrix realifying `U`. -/
+theorem ofUnitary_apply (U : unitaryGroup n ℂ) :
+    ofUnitary U = Subgroup.inclusion inf_le_left (unitaryGroupEquivSymplecticInfOrthogonal U) :=
+  (rfl)
+
+/-- The underlying matrix of `ofUnitary U` is the realification of `U`. -/
+@[simp]
+theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
+    ((ofUnitary U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (U : Matrix n n ℂ).realify := by
+  rw [ofUnitary_apply, Subgroup.coe_inclusion, unitaryGroupEquivSymplecticInfOrthogonal_apply]
+  simp
+
+/-- Realification of unitary matrices is continuous. -/
+theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
+  refine continuous_induced_rng.2 ((continuous_subtype_val.comp
+    (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
+  rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
+
+end TauCeti.GLSymplectic

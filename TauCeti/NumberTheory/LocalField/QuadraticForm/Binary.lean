@@ -43,7 +43,7 @@ theorem mem_unitValueSet_binary_iff_hilbertSymbol_eq (a b c : Kˣ) :
     c ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ↔
       hilbertSymbol c (-(a * b)) = hilbertSymbol a b := by
   have hself : hilbertSymbol (-(a * b)) a = hilbertSymbol a b := by
-    rw [hilbertSymbol_comm, hilbertSymbol_neg_self_mul (Invertible.ne_zero 2)]
+    rw [hilbertSymbol_comm, hilbertSymbol_neg_self_mul]
   rw [mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup,
     ← Units.val_mul, ← Units.val_neg,
     ← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (-(a * b)),
@@ -64,7 +64,7 @@ theorem equivalent_binary_iff_isSquare_and_hilbertSymbol_eq (a b c d : Kˣ) :
   rw [mem_unitValueSet_binary_iff_hilbertSymbol_eq]
   have hneg : IsSquare (-(a * b) * -(c * d)) := by simpa using hd
   rw [hilbertSymbol_congr_sq c c (-(a * b)) (-(c * d)) ⟨c, rfl⟩ hneg, hs]
-  exact hilbertSymbol_neg_self_mul (Invertible.ne_zero 2) c d
+  exact hilbertSymbol_neg_self_mul c d
 
 end TauCeti
 

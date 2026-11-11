@@ -117,9 +117,9 @@ private theorem weightBasis_eq_reindex :
 /-- The index of the highest weight is the constant unordered tuple `(0, …, 0)`: the monomial that
 is the `d`-th power of the first standard basis vector. -/
 private theorem symFinTwoEquiv_symm_last :
-    (symFinTwoEquiv d).symm (Fin.last d) = TauCeti.Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
+    (symFinTwoEquiv d).symm (Fin.last d) = Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
   refine Sym.coe_injective ?_
-  rw [coe_symFinTwoEquiv_symm_apply, TauCeti.Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
+  rw [coe_symFinTwoEquiv_symm_apply, Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
   simp
 
 /-! ### The rotated weight vectors have nonzero coordinates -/
