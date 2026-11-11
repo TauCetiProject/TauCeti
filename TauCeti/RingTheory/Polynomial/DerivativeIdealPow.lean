@@ -32,7 +32,9 @@ The multivariate form is `MvPolynomial.pderiv_prod_mem_ideal_pow`.
 
 ## References
 
-* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, Lemma 11.14 and (11.22), p. 283.
+* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, Lemma 11.14 and (11.22), p. 283, for
+  the Hasse statement `Polynomial.hasseDeriv_prod_mem_ideal_pow`; the ordinary statement adapts
+  their argument to iterated derivatives.
 -/
 
 public section
@@ -49,8 +51,11 @@ order at most `K` of the product with an arbitrary cofactor `g` evaluates into `
 No factorial is cancelled and `K` is unrestricted. -/
 theorem derivative_prod_mem_ideal_pow [Fintype ι] (f : ι → R[X]) (g : R[X]) (a : R)
     (J : Ideal R) (K : ℕ) (hf : ∀ i, ∀ k ≤ K, (derivative^[k] (f i)).eval a ∈ J) :
-    ∀ k ≤ K, (derivative^[k] (g * ∏ i, f i)).eval a ∈ J ^ Fintype.card ι :=
-  derivative'.iterate_mul_prod_mem_ideal_pow (evalRingHom a) f g J K hf
+    ∀ k ≤ K, (derivative^[k] (g * ∏ i, f i)).eval a ∈ J ^ Fintype.card ι := by
+  have hD : ⇑(derivative' : Derivation R R[X] R[X]) = ⇑derivative := funext derivative'_apply
+  have h := derivative'.iterate_mul_prod_mem_ideal_pow (evalRingHom a) f g J K
+  rw [hD, coe_evalRingHom] at h
+  exact h hf
 
 /-- If the Hasse derivatives of order at most `K` of `p` and `q` evaluate at `a` into the ideals
 `I` and `I'`, then those of `p * q` evaluate into `I * I'`. -/
@@ -71,7 +76,7 @@ Hasse derivative of order at most `K` of each of the `card ι` factors `f i` eva
 theorem hasseDeriv_prod_mem_ideal_pow [Fintype ι] (f : ι → R[X]) (g : R[X]) (a : R)
     (J : Ideal R) (K : ℕ) (hf : ∀ i, ∀ k ≤ K, (hasseDeriv k (f i)).eval a ∈ J) :
     ∀ k ≤ K, (hasseDeriv k (g * ∏ i, f i)).eval a ∈ J ^ Fintype.card ι :=
-  Ideal.mul_prod_mem_pow_of_mul_mem (fun I p => ∀ k ≤ K, (hasseDeriv k p).eval a ∈ I)
+  Ideal.pow_card_mul_prod_induction (fun I p => ∀ k ≤ K, (hasseDeriv k p).eval a ∈ I)
     (fun _ _ _ => Submodule.mem_top) hasseDeriv_mul_mem_ideal_mul hf g
 
 end Polynomial

@@ -32,7 +32,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
-* `Ideal.mul_prod_mem_pow_of_mul_mem`: a property of pairs of an ideal and an element, stable
+* `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
   under multiplication, passes from the factors of a finite product to the product with any
   cofactor, at the power `J ^ card ι`.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
@@ -204,7 +204,6 @@ theorem image_fintypeLinearCombination_pi {R M ι : Type*} [Semiring R] [AddComm
     rw [Fintype.linearCombination_apply,
       Finsupp.sum_fintype c (fun i a ↦ a • v i) fun _ ↦ zero_smul _ _]
 
-
 section Prod
 
 variable {A S ι : Type*} [CommMonoid A] [CommSemiring S]
@@ -213,7 +212,7 @@ variable {A S ι : Type*} [CommMonoid A] [CommSemiring S]
 `⊤` and every element, and passes to products in the form `P I x → P J y → P (I * J) (x * y)`.
 If `P J (f i)` for every factor of a finite product, then `P (J ^ card ι) (g * ∏ i, f i)` for
 every cofactor `g`. -/
-theorem mul_prod_mem_pow_of_mul_mem [Fintype ι] {J : Ideal S} (P : Ideal S → A → Prop)
+theorem pow_card_mul_prod_induction [Fintype ι] {J : Ideal S} (P : Ideal S → A → Prop)
     (htop : ∀ x, P ⊤ x) (hmul : ∀ {I : Ideal S} {x y : A}, P I x → P J y → P (I * J) (x * y))
     {f : ι → A} (hf : ∀ i, P J (f i)) (g : A) :
     P (J ^ Fintype.card ι) (g * ∏ i, f i) := by

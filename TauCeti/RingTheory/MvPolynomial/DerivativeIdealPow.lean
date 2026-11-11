@@ -25,7 +25,9 @@ the univariate forms are in `TauCeti.RingTheory.Polynomial.DerivativeIdealPow`.
 
 ## References
 
-* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, Lemma 11.14 and (11.22), p. 283.
+* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, Lemma 11.14 and (11.22), p. 283, prove
+  the analogue for Hasse derivatives of univariate polynomials; the argument here adapts it to
+  iterated partial derivatives.
 -/
 
 public section
