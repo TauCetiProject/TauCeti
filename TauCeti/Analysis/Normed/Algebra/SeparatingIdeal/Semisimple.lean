@@ -84,14 +84,9 @@ theorem continuous_of_surjective_of_nonUnitalJacobson_eq_bot {B : Type*}
   have hΘ (a : A) :
       Θ (WithLp.toLp 1 (a : Unitization ℂ A)) = WithLp.toLp 1 (θ a : Unitization ℂ B) := by
     simp [Θ, eA, eB]
-  -- `Unitization.map θ` keeps the scalar part and applies `θ` to the `A` part.
-  have hmap : Function.Surjective (Unitization.map θ) := fun y ↦ by
-    obtain ⟨a, ha⟩ := hθ y.snd
-    exact ⟨.inl y.fst + a, Unitization.ext (by rw [Unitization.fst_map]; simp)
-      (by rw [Unitization.snd_map]; simp [ha])⟩
   have hΘs : Function.Surjective Θ := by
     simpa only [Θ, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom] using
-      eB.symm.surjective.comp (hmap.comp eA.surjective)
+      eB.symm.surjective.comp ((Unitization.map_surjective hθ).comp eA.surjective)
   have hc := Θ.toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot hΘs
     ((TauCeti.jacobson_withLp_unitization_eq_bot_iff ℂ B).2 hB)
   refine (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).comp_continuous_iff.1 ?_
@@ -120,12 +115,8 @@ variable {A B : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 zero Jacobson radical, not assumed continuous, is a homeomorphism. The inverse is continuous by
 the open mapping theorem. -/
 theorem isHomeomorph_of_jacobson_eq_bot (e : A ≃ₐ[ℂ] B) (hB : Ring.jacobson B = ⊥) :
-    IsHomeomorph e := by
-  refine (e : A →ₐ[ℂ] B).toNonUnitalAlgHom.isHomeomorph_of_bijective_of_nonUnitalJacobson_eq_bot
-    e.bijective ?_
-  -- For unital `B`, the nonunital Jacobson radical is the ordinary one.
-  rw [TauCeti.nonUnitalJacobson_eq_toTwoSided_jacobson]
-  ext
-  simp [hB]
+    IsHomeomorph e :=
+  (e : A →ₐ[ℂ] B).toNonUnitalAlgHom.isHomeomorph_of_bijective_of_nonUnitalJacobson_eq_bot
+    e.bijective (TauCeti.nonUnitalJacobson_eq_bot_iff.2 hB)
 
 end AlgEquiv
