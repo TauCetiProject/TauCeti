@@ -244,13 +244,13 @@ theorem coeff_le_weightedGaussValuation (hv : v.IsContinuous)
     v (coeff ν (f : MvPowerSeries (Fin k) A)) ≤ weightedGaussValuation k hv f :=
   coeff_le_weightedGaussValAux hv f ν
 
-/-- When `weightedGaussValuation k hv f ≠ 0`, the Gauss valuation is attained at some
-multi-index. -/
+/-- The Gauss valuation is attained at some multi-index. -/
 theorem exists_coeff_eq_weightedGaussValuation (hv : v.IsContinuous)
-    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
-    (hf : weightedGaussValuation k hv f ≠ 0) :
-    ∃ ν, v (coeff ν (f : MvPowerSeries (Fin k) A)) = weightedGaussValuation k hv f :=
-  exists_coeff_eq_weightedGaussValAux hv f hf
+    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight} :
+    ∃ ν, v (coeff ν (f : MvPowerSeries (Fin k) A)) = weightedGaussValuation k hv f := by
+  rcases eq_or_ne (weightedGaussValuation k hv f) 0 with h0 | h0
+  · exact ⟨0, (le_zero_iff.mp (h0 ▸ coeff_le_weightedGaussValuation hv f 0)).trans h0.symm⟩
+  · exact exists_coeff_eq_weightedGaussValAux hv f h0
 
 /-- `weightedGaussValuation k hv f ≤ γ` holds if and only if every coefficient of `f` has
 valuation at most `γ`. -/
@@ -270,18 +270,16 @@ theorem weightedGaussValuation_eq_zero_iff (hv : v.IsContinuous)
       ∀ ν, v (coeff ν (f : MvPowerSeries (Fin k) A)) = 0 := by
   simp only [← le_zero_iff, weightedGaussValuation_le_iff hv]
 
-/-- Because the Gauss valuation is attained whenever it is nonzero, for `γ ≠ 0` the strict bound
-`weightedGaussValuation k hv f < γ` is equivalent to the strict bound on every coefficient. -/
+/-- Because the Gauss valuation is attained, the strict bound `weightedGaussValuation k hv f < γ`
+is equivalent to the strict bound on every coefficient. -/
 theorem weightedGaussValuation_lt_iff (hv : v.IsContinuous)
     {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight}
-    {γ : Γ₀} (hγ : γ ≠ 0) :
+    {γ : Γ₀} :
     weightedGaussValuation k hv f < γ ↔
       ∀ ν, v (coeff ν (f : MvPowerSeries (Fin k) A)) < γ := by
   refine ⟨fun h ν ↦ (coeff_le_weightedGaussValuation hv f ν).trans_lt h, fun h ↦ ?_⟩
-  rcases eq_or_ne (weightedGaussValuation k hv f) 0 with h0 | h0
-  · exact h0.symm ▸ zero_lt_iff.mpr hγ
-  · obtain ⟨ν, hν⟩ := exists_coeff_eq_weightedGaussValuation hv h0
-    exact hν ▸ h ν
+  obtain ⟨ν, hν⟩ := exists_coeff_eq_weightedGaussValuation hv (f := f)
+  exact hν ▸ h ν
 
 /-- On constants, the unit-radius Gauss valuation restricts to `v`. -/
 @[simp]
@@ -324,7 +322,7 @@ theorem isContinuous_weightedGaussValuation (hv : v.IsContinuous) :
     (weightedGaussValuation k hv).IsContinuous := by
   rw [Valuation.isContinuous_iff_forall_ne_zero]
   intro g hg
-  obtain ⟨ν₀, hν₀⟩ := exists_coeff_eq_weightedGaussValuation hv hg
+  obtain ⟨ν₀, hν₀⟩ := exists_coeff_eq_weightedGaussValuation hv (f := g)
   have hb : v (coeff ν₀ (g : MvPowerSeries (Fin k) A)) ≠ 0 := by rwa [hν₀]
   have heq : {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
         isWeightFamily_one_weight |
@@ -332,7 +330,7 @@ theorem isContinuous_weightedGaussValuation (hv : v.IsContinuous) :
       (weightedNhd (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
         (v.ltAddSubgroupOfNeZero hb) : Set _) := by
     ext f
-    simp only [Set.mem_ofPred_eq, weightedGaussValuation_lt_iff hv hg, SetLike.mem_coe,
+    simp only [Set.mem_ofPred_eq, weightedGaussValuation_lt_iff hv, SetLike.mem_coe,
       mem_weightedNhd, weightMul_one_weight, Valuation.mem_ltAddSubgroupOfNeZero, hν₀]
   rw [heq]
   exact isOpen_weightedNhd isWeightFamily_one_weight
