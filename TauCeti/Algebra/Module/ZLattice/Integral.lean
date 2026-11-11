@@ -117,6 +117,10 @@ theorem isEven_comap_iff [NormedSpace ℝ E] [NormedSpace ℝ F] (L : Submodule 
   refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ e.norm_map x ▸ h _ hx⟩
   simpa using h (e.symm y) (by rwa [e.apply_symm_apply])
 
+/-- An even lattice is discrete: a nonzero vector has squared norm at least `2`. -/
+theorem IsEven.discreteTopology {L : Submodule ℤ E} (hL : IsEven L) : DiscreteTopology L :=
+  discreteTopology_of_norm_sq_mem_int_mul (c := 2) (by norm_num) hL
+
 variable [InnerProductSpace ℝ E] [InnerProductSpace ℝ F]
 
 /-! ### Integral lattices -/

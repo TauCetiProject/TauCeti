@@ -64,6 +64,10 @@ centrally symmetric up to translation lies in a ball of half its diameter about 
 
 The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
 (`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
+
+For `ρ ≤ ‖ξ‖ / 2`, the points of the dilate `t • ball ξ ρ` with `t > 0` have norms strictly between
+`t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2` (`TauCeti.norm_bounds_of_mem_smul_ball`), so the dilates
+`c ^ k • ball ξ ρ` with `c ≥ 3` are pairwise disjoint (`TauCeti.pairwise_disjoint_pow_smul_ball`).
 -/
 
 public section
@@ -338,6 +342,40 @@ theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
   exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
 
 end Diameter
+
+section Dilate
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A point of the dilate `t • ball ξ ρ`, for `t > 0` and `ρ ≤ ‖ξ‖ / 2`, has norm between
+`t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2`. -/
+theorem norm_bounds_of_mem_smul_ball {ξ : E} {ρ t : ℝ} (hρ : ρ ≤ ‖ξ‖ / 2) (ht : 0 < t)
+    {x : E} (hx : x ∈ t • ball ξ ρ) : t * ‖ξ‖ / 2 < ‖x‖ ∧ ‖x‖ < 3 * t * ‖ξ‖ / 2 := by
+  obtain ⟨y, hy, rfl⟩ := mem_smul_set.1 hx
+  have hy' : ‖y - ξ‖ < ‖ξ‖ / 2 := (mem_ball_iff_norm.1 hy).trans_le hρ
+  have h₁ := norm_sub_norm_le y ξ
+  have h₂ := norm_sub_norm_le ξ y
+  rw [norm_sub_rev] at h₂
+  rw [norm_smul, Real.norm_of_nonneg ht.le]
+  constructor <;> nlinarith
+
+/-- For `ρ ≤ ‖ξ‖ / 2` and `c ≥ 3`, the dilates `c ^ k • ball ξ ρ` are pairwise disjoint: their
+norms lie in the disjoint intervals `(c ^ k ‖ξ‖ / 2, 3 c ^ k ‖ξ‖ / 2)`. -/
+theorem pairwise_disjoint_pow_smul_ball {c : ℝ} (hc : 3 ≤ c) {ξ : E} {ρ : ℝ}
+    (hρ : ρ ≤ ‖ξ‖ / 2) :
+    Pairwise (Function.onFun Disjoint fun k : ℕ ↦ (c ^ k) • ball ξ ρ) := by
+  have hc0 : 0 < c := by linarith
+  refine (pairwise_disjoint_on _).2 fun j k hjk ↦ Set.disjoint_left.2 fun x hxj hxk ↦ ?_
+  have h₁ := (norm_bounds_of_mem_smul_ball hρ (pow_pos hc0 j) hxj).2
+  have h₂ := (norm_bounds_of_mem_smul_ball hρ (pow_pos hc0 k) hxk).1
+  -- `3 c ^ j ≤ c ^ (j + 1) ≤ c ^ k`, so the two norm intervals cannot overlap.
+  have hpow : 3 * c ^ j ≤ c ^ k :=
+    calc 3 * c ^ j ≤ c * c ^ j := by gcongr
+      _ = c ^ (j + 1) := (pow_succ' c j).symm
+      _ ≤ c ^ k := pow_le_pow_right₀ (by linarith) hjk
+  nlinarith [norm_nonneg ξ]
+
+end Dilate
 
 section Rescaling
 
