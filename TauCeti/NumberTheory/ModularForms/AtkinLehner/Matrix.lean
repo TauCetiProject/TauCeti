@@ -367,7 +367,7 @@ private lemma IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (hN : 
     rw [Matrix.det_fin_two, h10] at this
     linear_combination this
   refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩,
-    mem_Gamma0_zero_iff.mpr rfl, ?_, ?_⟩ <;>
+    mem_Gamma0_zero_iff.mpr (by simp), ?_, ?_⟩ <;>
   · rw [h.eq_of_eq_zero rfl rfl]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10, mul_comm]
@@ -415,15 +415,11 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨(a + d) * c, by rw [hG]; simp [hc]; ring⟩
   refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
   ext i j
-  fin_cases i <;> fin_cases j
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
-    linear_combination (-1 : ℤ) * hdet
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
-    ring
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
-    ring
-  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
-    linear_combination (-1 : ℤ) * hdet
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
+  · linear_combination (-1 : ℤ) * hdet
+  · ring
+  · ring
+  · linear_combination (-1 : ℤ) * hdet
 
 /-- **Multiplicativity of the family.** As soon as `Q * R` divides the level, an Atkin–Lehner
 matrix for `Q` times one for `R` is an Atkin–Lehner matrix for `Q * R`. Coprime exact divisors
