@@ -172,7 +172,7 @@ The rate outside the horizon is irrelevant. -/
 theorem hasDerivWithinAt_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ)
     (ht : t ∈ Icc 0 T) :
     HasDerivWithinAt (bondPrice r β₀) (r t * bondPrice r β₀ t) (Icc 0 T) t := by
-  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ht.1.trans ht.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc
   have h := (hasDerivAt_bondPrice hρc β₀ t).hasDerivWithinAt (s := Icc 0 T)
   rw [hρ ht, bondPrice_eq_of_eqOn hρ ht] at h
   exact h.congr_of_mem (fun u hu ↦ (bondPrice_eq_of_eqOn hρ hu β₀).symm) ht
@@ -187,7 +187,7 @@ continuous, the interest accrued between two dates of the horizon is the change 
 theorem integral_mul_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ) (ha : a ∈ Icc 0 T)
     (hb : b ∈ Icc 0 T) :
     ∫ u in a..b, r u * bondPrice r β₀ u = bondPrice r β₀ b - bondPrice r β₀ a := by
-  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ha.1.trans ha.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc
   have hab := uIcc_subset_Icc ha hb
   have hint : EqOn (fun u ↦ r u * bondPrice r β₀ u) (fun u ↦ ρ u * bondPrice ρ β₀ u)
       (uIcc a b) := fun u hu ↦ by
@@ -205,7 +205,7 @@ theorem eqOn_bondPrice_of_hasDerivWithinAt {B : ℝ → ℝ} (hr : ContinuousOn 
     (hd : ∀ t ∈ Ico 0 T, HasDerivWithinAt B (r t * B t) (Ici t) t) :
     EqOn B (bondPrice r β₀) (Icc 0 T) := by
   intro t ht
-  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ht.1.trans ht.2)
+  obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc
   -- Discounted by the unit account, `B` has zero right derivative, so it is constant.
   have hne (u : ℝ) : bondPrice ρ 1 u ≠ 0 := by simp
   have hc : ContinuousOn (fun u ↦ B u / bondPrice ρ 1 u) (Icc 0 T) :=

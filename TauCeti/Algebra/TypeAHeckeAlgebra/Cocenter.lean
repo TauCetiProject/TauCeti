@@ -485,7 +485,7 @@ private theorem mul_T_mul_mul_cosetRep_sub_mem {a n : ℕ} (han : a < n)
     b * T q a * e * cosetRep q n (a + 1) - e * b * cosetRep q n a ∈
       stageCommutatorSpan R q (n + 1) := by
   have hbc : b * cosetRep q n (a + 1) = cosetRep q n (a + 1) * b := by
-    rw [cosetRep_eq_smul_shift_cycleWord han, mul_smul_comm, smul_mul_assoc,
+    rw [cosetRep_eq_smul_shift_cycleWord, mul_smul_comm, smul_mul_assoc,
       (commute_shift_of_mem_stage hb _).eq]
   have hle : a + 1 ≤ n + 1 := by omega
   have hbTe : b * T q a * e ∈ stage R q (n + 1) :=
@@ -516,7 +516,7 @@ private theorem mul_cosetRep_mem_lastCycleSpan {a n : ℕ} (han : a ≤ n)
     y * cosetRep q n a ∈ lastCycleSpan (q := q) n := by
   have hgen : ∀ {j}, j ≤ n → ∀ {x}, x ∈ stage R q j → x * cosetRep q n j ∈ lastCycleSpan n :=
     fun hj x hx ↦ by
-      rw [cosetRep_eq_smul_shift_cycleWord hj, mul_smul_comm]
+      rw [cosetRep_eq_smul_shift_cycleWord, mul_smul_comm]
       exact Submodule.smul_mem _ _ (Submodule.mem_sup_left (Submodule.subset_span ⟨_, hj, x, hx,
         rfl⟩))
   induction a generalizing y with

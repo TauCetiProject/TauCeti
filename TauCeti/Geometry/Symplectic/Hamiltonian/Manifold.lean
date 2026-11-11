@@ -90,7 +90,7 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
-  of energy along integral curves on open preconnected sets of times, with the global case
+  of energy along integral curves on preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`:
   the dichotomy for the integral curves of `X_{G + f ∘ F}`.
@@ -170,20 +170,20 @@ theorem mvfderiv_apply_self (hX : σ.IsHamiltonianVectorField f X) (x : M) :
   exact SmoothForm.isAlt_bilinFormAt σ x (X x)
 
 /-- **Conservation of energy.** A Hamiltonian, differentiable along an integral curve of its
-Hamiltonian vector field on an open interval of times (or any open preconnected set of times), is
-constant along that curve. -/
+Hamiltonian vector field on an interval of times (or any preconnected set of times), is constant
+along that curve. -/
 theorem apply_eq_of_isMIntegralCurveOn (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
-    {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
+    {s : Set ℝ} (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
     (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     f (γ t) = f (γ t₀) :=
-  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
 
 /-- **Conservation of energy** along a global integral curve: a Hamiltonian, differentiable along
 an integral curve of its Hamiltonian vector field, is constant along that curve. -/
 theorem apply_eq_of_isMIntegralCurve (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ X) (hf : ∀ t, MDifferentiableAt I 𝓘(ℝ) f (γ t)) (s t : ℝ) :
     f (γ t) = f (γ s) :=
-  hX.apply_eq_of_isMIntegralCurveOn isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hX.apply_eq_of_isMIntegralCurveOn isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hf t) (Set.mem_univ s) (Set.mem_univ t)
 
 end IsHamiltonianVectorField
@@ -406,7 +406,7 @@ theorem IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
         ((isClosed_tsupport G).isOpen_compl.preimage hγc) t hmem
       refine Filter.mem_of_superset (Metric.ball_mem_nhds t hε) fun u hu ↦ ?_
       have h := (hγ.isMIntegralCurveOn (Metric.ball t ε)).apply_eq_of_mvfderiv_apply_eq_zero
-        Metric.isOpen_ball (convex_ball t ε).isPreconnected (fun v _ ↦ hF _) (fun v hv ↦ ?_)
+        (convex_ball t ε).isPreconnected (fun v _ ↦ hF _) (fun v hv ↦ ?_)
         (Metric.mem_ball_self hε) hu
       · exact h.trans ht
       rw [hXH, hXG _ (hball hv), zero_add, map_smul,
