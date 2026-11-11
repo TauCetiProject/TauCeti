@@ -190,7 +190,7 @@ theorem coefficient_sharpTerm_eq_sum_left {ι : Type*} (s : Finset ι) (c : ι �
       ∑ i ∈ s, c i • mixedDeriv [] (List.ofFn w) (a i).coefficient x ξ := by
     rw [h, mixedDeriv_sum (f := fun i ↦ c i • (a i).coefficient)
       fun i _ ↦ (a i).contDiff_coefficient.const_smul (c i)]
-    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul (a i).contDiff_coefficient _ _ _ _ _
+    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul _ _ _ _ _
   simp only [Finset.sum_apply, Pi.smul_apply, coefficient_sharpTerm, hd,
     ContinuousLinearMap.finsetSum_comp, ContinuousLinearMap.smul_comp, Finset.smul_sum]
   rw [Finset.sum_comm]
@@ -208,7 +208,7 @@ theorem coefficient_sharpTerm_eq_sum_right {ι : Type*} (s : Finset ι) (c : ι 
       ∑ i ∈ s, c i • mixedDeriv (List.ofFn w) [] (b i).coefficient x ξ := by
     rw [h, mixedDeriv_sum (f := fun i ↦ c i • (b i).coefficient)
       fun i _ ↦ (b i).contDiff_coefficient.const_smul (c i)]
-    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul (b i).contDiff_coefficient _ _ _ _ _
+    exact Finset.sum_congr rfl fun i _ ↦ mixedDeriv_const_smul _ _ _ _ _
   simp only [Finset.sum_apply, Pi.smul_apply, coefficient_sharpTerm, hd,
     ContinuousLinearMap.comp_finsetSum, ContinuousLinearMap.comp_smul, Finset.smul_sum]
   rw [Finset.sum_comm]
