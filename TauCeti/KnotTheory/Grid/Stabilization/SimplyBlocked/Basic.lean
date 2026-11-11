@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
+import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 
 /-!
 # The simply blocked stabilization chain map
@@ -19,6 +20,24 @@ variables and then kills the chosen old variable; it need not be a renaming of v
 The specialization identity characterizes the map on all chains and proves that it commutes
 with the differentials. These constructions apply to arbitrary grid diagrams. For knots,
 blocking one `O`-marking gives the simply blocked theory.
+
+The specialized map is again a quasi-isomorphism. Specialization at a variable `V` is the
+quotient of `GC⁻` by multiplication by `V`, which is injective, and the unblocked stabilization
+map carries the variable of the transported marking to that of the original marking. So the
+unblocked and specialized maps form a morphism of short exact sequences of complexes, and the
+five lemma for their long exact homology sequences
+(`AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact` and
+`AddMonoidHom.mem_range_of_map_mem_range_of_exact`) transfers stabilization invariance of `GH⁻`
+to the specialized complexes.
+
+## Main results
+
+* `TauCeti.GridDiagram.simplyBlockedStabilizeXMap_simplyBlockedSpecialization`: the specialized
+  map is the descent of the unblocked stabilization map through specialization.
+* `TauCeti.GridDiagram.simplyBlockedStabilizeXMap_simplyBlockedDifferential`: it is a chain map.
+* `TauCeti.GridDiagram.exists_sub_simplyBlockedStabilizeXMap_mem_range` and
+  `TauCeti.GridDiagram.mem_range_of_simplyBlockedStabilizeXMap_mem_range`: it induces a bijection
+  on homology, in elementwise form.
 
 ## References
 
@@ -150,5 +169,82 @@ theorem simplyBlockedStabilizeXMap_simplyBlockedDifferential (c : GridChainHat R
     simplyBlockedStabilizeXMap_simplyBlockedSpecialization,
     ← simplyBlockedSpecialization_unblockedDifferential,
     stabilizeXChainMap_unblockedDifferential]
+
+/-! ### Quasi-isomorphism after blocking -/
+
+local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
+  (Fin.castSucc (GridDiagram.X G s)) s
+
+omit [CharP R 2] in
+/-- Stabilization carries multiplication by the variable of the transported marking to
+multiplication by `V_i`. -/
+private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXChainMap s R c := by
+  rw [map_smulₛₗ]
+  simp [Fin.predAbove_succAbove]
+
+/-- `exists_sub_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
+private theorem exists_sub_stabilizeXChainMap_mem_addRange (c : GridChainMinus R n)
+    (hc : c ∈ (G.unblockedDifferential R).toAddMonoidHom.ker) :
+    ∃ m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker,
+      c - (G.stabilizeXChainMap s R).toAddMonoidHom m ∈
+        (G.unblockedDifferential R).toAddMonoidHom.range := by
+  simpa using G.exists_sub_stabilizeXChainMap_mem_range s R (by simpa using hc)
+
+/-- `mem_range_of_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
+private theorem mem_addRange_of_stabilizeXChainMap_mem_addRange (m : GridChainMinus R (n + 1))
+    (hm : m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker)
+    (h : (G.stabilizeXChainMap s R).toAddMonoidHom m ∈
+      (G.unblockedDifferential R).toAddMonoidHom.range) :
+    m ∈ ((G').unblockedDifferential R).toAddMonoidHom.range := by
+  simpa using G.mem_range_of_stabilizeXChainMap_mem_range s R (by simpa using hm)
+    (by simpa using h)
+
+/-- Every simply blocked cycle of `G` differs from the image of a simply blocked cycle of the
+stabilized diagram by a boundary. -/
+theorem exists_sub_simplyBlockedStabilizeXMap_mem_range {y : GridChainHat R n i}
+    (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
+    ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
+      y - G.simplyBlockedStabilizeXMap s i R x ∈
+        LinearMap.range (G.simplyBlockedDifferential R i) := by
+  -- Specialization at the blocked variable is a morphism from the short exact sequence
+  -- `0 → GC⁻ --V_j--> GC⁻ → GC^ → 0` of the stabilized diagram to that of `G`, and the unblocked
+  -- stabilization map is a quasi-isomorphism.
+  simpa using AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
+    (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
+    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
+    (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
+    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
+    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hy)
+
+/-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
+boundary. -/
+theorem mem_range_of_simplyBlockedStabilizeXMap_mem_range {x : GridChainHat R (n + 1) j}
+    (hx : x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j))
+    (h : G.simplyBlockedStabilizeXMap s i R x ∈
+      LinearMap.range (G.simplyBlockedDifferential R i)) :
+    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
+  -- The same morphism of short exact sequences as in
+  -- `exists_sub_simplyBlockedStabilizeXMap_mem_range`.
+  simpa using AddMonoidHom.mem_range_of_map_mem_range_of_exact
+    (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
+    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
+    (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
+    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hx) (by simpa using h)
 
 end TauCeti.GridDiagram

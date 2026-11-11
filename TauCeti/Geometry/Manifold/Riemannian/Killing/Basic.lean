@@ -334,9 +334,9 @@ private theorem IsKillingField.inner_alongCurveWithin_alongCurveWithin_eq
       simp only [W, V, hpull hX hr, A]
       exact hskew _ _ _
   -- Differentiate both sides with the metric product rule along `γ`.
-  have hleft := hcov.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) (hγd t ht) hWcoord
+  have hleft := hcov.hasDerivWithinAt_inner_alongCurveWithin (hγd t ht) hWcoord
     (hcoord hZ)
-  have hright := (hcov.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) (hγd t ht) hγ'coord
+  have hright := (hcov.hasDerivWithinAt_inner_alongCurveWithin (hγd t ht) hγ'coord
     (hcoord hA)).neg
   have hderiv := (hs t ht).eq_deriv _ (hleft.congr_of_mem (fun r hr ↦ (heqOn hr).symm) ht)
     hright
