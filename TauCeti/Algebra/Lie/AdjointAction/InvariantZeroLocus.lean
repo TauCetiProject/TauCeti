@@ -17,9 +17,9 @@ Let `L` be a Lie algebra over a field `K` of characteristic zero. The polynomial
 are the symmetric algebra `S(L*)` of the dual, a point `x : L` evaluating `p` through
 `SymmetricAlgebra.lift (Module.Dual.eval K L x)`, and `L` acts on them through the coadjoint
 action by derivations. Its invariants `S(L*)^L` (`TauCeti.SymmetricAlgebra.lieInvariants`) are
-the invariant polynomial functions. This file proves that when `L` is finite-dimensional with
-nondegenerate Killing form, an element `x` has nilpotent `ad x` exactly when every invariant
-polynomial function with zero constant term vanishes at `x`
+the invariant polynomial functions. This file proves that when `L` has a nondegenerate Killing form
+(which forces `L` to be finite-dimensional), an element `x` has nilpotent `ad x` exactly when every
+invariant polynomial function with zero constant term vanishes at `x`
 (`TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`). That is, the ad-nilpotent elements form
 the common zero locus of the invariants of positive degree.
 
@@ -48,7 +48,7 @@ this describes the points of its zero fibre wherever its invariant algebra is `S
 
 ## Main results
 
-* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a finite-dimensional Lie algebra with
+* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a Lie algebra with
   nondegenerate Killing form, `ad x` is nilpotent exactly when every invariant polynomial function
   with zero constant term vanishes at `x`.
 
@@ -71,13 +71,30 @@ open SymmetricAlgebra
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 /-- **The ad-nilpotent elements are the common zeros of the invariants of positive degree.** In a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic zero,
+Lie algebra with nondegenerate Killing form (hence finite-dimensional) over a field of
+characteristic zero,
 `ad x` is nilpotent exactly when every invariant polynomial function on `L` with zero constant term
 vanishes at `x`. -/
-theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [FiniteDimensional K L] [IsKilling K L]
-    {x : L} :
+theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [IsKilling K L] {x : L} :
     IsNilpotent (ad K L x) ↔
       ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0 := by
+  -- a nondegenerate Killing form forces finite dimension: the trace vanishes otherwise
+  have : FiniteDimensional K L := by
+    by_contra hfin
+    have htr : LinearMap.trace K L = 0 := by
+      classical
+      rw [LinearMap.trace, dite_eq_right_iff]
+      rintro ⟨t, ⟨b⟩⟩
+      exact (hfin (Module.Finite.of_basis b)).elim
+    have hker : LinearMap.ker (killingForm K L) = ⊤ :=
+      LinearMap.ker_eq_top.2 <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
+        simp [killingForm_apply_apply, htr]
+    rw [IsKilling.ker_killingForm_eq_bot] at hker
+    have : Subsingleton L := ⟨fun a b ↦ by
+      have ha : a - b ∈ (⊤ : Submodule K L) := trivial
+      rw [← hker, Submodule.mem_bot, sub_eq_zero] at ha
+      exact ha⟩
+    exact hfin inferInstance
   refine ⟨fun hx p hp hp₀ ↦ ?_, isNilpotent_toEnd_of_forall_lift_eval_eq_zero L⟩
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
   exact lift_eval_eq_zero_of_mem_lieInvariants hp hp₀ (y := t) (a := -1)
