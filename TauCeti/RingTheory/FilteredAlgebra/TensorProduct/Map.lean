@@ -36,7 +36,7 @@ variable (R : Type*) {A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
   [Algebra R A] [Algebra R B] (F : AlgFiltration A) (G : AlgFiltration B)
 
 /-- Tensoring filtration-preserving algebra maps preserves the total-degree filtration. -/
-theorem tensorProduct_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
+theorem tensorProduct_ideal_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
     [Algebra R C] [Algebra R D] (H : AlgFiltration C) (K : AlgFiltration D)
     (f : A →ₐ[R] C) (g : B →ₐ[R] D)
     (hf : ∀ k, F.ideal k ≤ (H.ideal k).comap f)
@@ -52,7 +52,7 @@ theorem tensorProduct_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
 
 /-- The sum of independent cutoff moduli bounds the tensor map at each order.
 Monotonicity of the moduli is not needed for this finite-order bound. -/
-theorem tensorProduct_le_comap_map_of_moduli {C D : Type*} [Semiring C] [Semiring D]
+theorem tensorProduct_ideal_le_comap_map_of_moduli {C D : Type*} [Semiring C] [Semiring D]
     [Algebra R C] [Algebra R D] (H : AlgFiltration C) (K : AlgFiltration D)
     (f : A →ₐ[R] C) (g : B →ₐ[R] D) (ρ σ : ℕ → ℕ)
     (hf : ∀ k, F.ideal (ρ k + 1) ≤ (H.ideal (k + 1)).comap f)
@@ -77,7 +77,7 @@ theorem tensorProduct_le_comap_map_of_moduli {C D : Type*} [Semiring C] [Semirin
 
 /-- Factor exchange identifies the total-degree tensor ideals. -/
 @[simp]
-theorem tensorProduct_comap_comm (k : ℕ) :
+theorem tensorProduct_ideal_comap_comm (k : ℕ) :
     ((G.tensorProduct R F).ideal k).comap (Algebra.TensorProduct.comm R A B).toAlgHom =
       (F.tensorProduct R G).ideal k := by
   have hc : (Algebra.TensorProduct.comm R A B).toLinearEquiv =
@@ -100,7 +100,28 @@ noncomputable def completedTensorComm :
     (F.tensorProduct R G).completion ≃ₐ[R] (G.tensorProduct R F).completion :=
   (F.tensorProduct R G).completionEquiv (G.tensorProduct R F)
     (Algebra.TensorProduct.comm R A B)
-    (tensorProduct_comap_comm R F G)
+    (tensorProduct_ideal_comap_comm R F G)
+
+/-- Completed factor exchange is the completion of the tensor factor equivalence. -/
+theorem completedTensorComm_eq_completionEquiv :
+    F.completedTensorComm R G =
+      (F.tensorProduct R G).completionEquiv (G.tensorProduct R F)
+        (Algebra.TensorProduct.comm R A B) (tensorProduct_ideal_comap_comm R F G) := (rfl)
+
+/-- Completed factor exchange preserves and reflects every completed filtration ideal. -/
+@[simp]
+theorem completedTensorComm_mem_completionIdeal_iff (k : ℕ)
+    (x : (F.tensorProduct R G).completion) :
+    F.completedTensorComm R G x ∈ (G.tensorProduct R F).completionIdeal k ↔
+      x ∈ (F.tensorProduct R G).completionIdeal k := by
+  rw [completedTensorComm_eq_completionEquiv, completionEquiv_mem_completionIdeal_iff]
+
+/-- Completed factor exchange identifies completed filtration ideals by comap. -/
+@[simp]
+theorem completionIdeal_comap_completedTensorComm (k : ℕ) :
+    ((G.tensorProduct R F).completionIdeal k).comap (F.completedTensorComm R G).toAlgHom =
+      (F.tensorProduct R G).completionIdeal k := by
+  rw [completedTensorComm_eq_completionEquiv, completionIdeal_comap_completionEquiv]
 
 /-- The finite projections of factor exchange are the induced quotient maps. -/
 @[simp]
@@ -108,11 +129,11 @@ theorem projection_completedTensorComm (k : ℕ) (x : (F.tensorProduct R G).comp
     (G.tensorProduct R F).projection k (F.completedTensorComm R G x) =
       Ideal.quotientMapₐ ((G.tensorProduct R F).ideal (k + 1))
         (Algebra.TensorProduct.comm R A B).toAlgHom
-        (by rw [tensorProduct_comap_comm])
+        (by rw [tensorProduct_ideal_comap_comm])
         ((F.tensorProduct R G).projection k x) :=
   (F.tensorProduct R G).projection_completionEquiv (G.tensorProduct R F)
     (Algebra.TensorProduct.comm R A B)
-    (tensorProduct_comap_comm R F G) k x
+    (tensorProduct_ideal_comap_comm R F G) k x
 
 /-- On original tensors the completed exchange is the original factor exchange. -/
 @[simp]
@@ -121,7 +142,7 @@ theorem completedTensorComm_toCompletion (t : A ⊗[R] B) :
       (G.tensorProduct R F).toCompletion (Algebra.TensorProduct.comm R A B t) :=
   (F.tensorProduct R G).completionEquiv_toCompletion (G.tensorProduct R F)
     (Algebra.TensorProduct.comm R A B)
-    (tensorProduct_comap_comm R F G) t
+    (tensorProduct_ideal_comap_comm R F G) t
 
 /-- Factor exchange reverses arbitrary completed pure tensors. -/
 @[simp]
@@ -155,7 +176,7 @@ theorem mapCompletionₐ_completedTensor_of_moduli {C D : Type*} [Ring C] [Ring 
     (x : F.completion) (y : G.completion) :
     (F.tensorProduct R G).mapCompletionₐ (H.tensorProduct R K)
       (Algebra.TensorProduct.map f g) (fun k => ρ k + σ k) (hρ.add hσ)
-      (F.tensorProduct_le_comap_map_of_moduli R G H K f g ρ σ hf hg)
+      (F.tensorProduct_ideal_le_comap_map_of_moduli R G H K f g ρ σ hf hg)
       (F.completedTensor R G x y) =
       H.completedTensor R K (F.mapCompletionₐ H f ρ hρ hf x)
         (G.mapCompletionₐ K g σ hσ hg y) := by
@@ -186,7 +207,7 @@ theorem mapCompletionₐ_completedTensor {C D : Type*} [Ring C] [Ring D]
     (x : F.completion) (y : G.completion) :
     (F.tensorProduct R G).mapCompletionₐ (H.tensorProduct R K)
       (Algebra.TensorProduct.map f g) id monotone_id
-      (fun k => F.tensorProduct_le_comap_map R G H K f g hf hg (k + 1))
+      (fun k => F.tensorProduct_ideal_le_comap_map R G H K f g hf hg (k + 1))
       (F.completedTensor R G x y) =
       H.completedTensor R K
         (F.mapCompletionₐ H f id monotone_id (fun k => hf (k + 1)) x)
@@ -194,7 +215,7 @@ theorem mapCompletionₐ_completedTensor {C D : Type*} [Ring C] [Ring D]
   rw [(F.tensorProduct R G).mapCompletionₐ_eq (H.tensorProduct R K)
     (Algebra.TensorProduct.map f g) id monotone_id _ (fun k => k + k)
     (monotone_id.add monotone_id)
-    (F.tensorProduct_le_comap_map_of_moduli R G H K f g id id
+    (F.tensorProduct_ideal_le_comap_map_of_moduli R G H K f g id id
       (fun k => hf (k + 1)) (fun k => hg (k + 1)))]
   exact F.mapCompletionₐ_completedTensor_of_moduli R G H K f g id id
     monotone_id monotone_id (fun k => hf (k + 1)) (fun k => hg (k + 1)) x y

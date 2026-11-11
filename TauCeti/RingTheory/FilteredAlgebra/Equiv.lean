@@ -68,6 +68,11 @@ def completionEquivOfModuli : F.completion ≃ₐ[R] G.completion where
   left_inv := F.mapCompletionₐ_equiv_leftInverse G e ρ σ hρ hσ hf hi
   right_inv := G.mapCompletionₐ_equiv_leftInverse F e.symm σ ρ hσ hρ hi hf
 
+/-- The underlying algebra homomorphism is the completion map with forward cutoff `ρ`. -/
+theorem toAlgHom_completionEquivOfModuli :
+    (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).toAlgHom =
+      F.mapCompletionₐ G e.toAlgHom ρ hρ hf := (rfl)
+
 /-- Finite projections use the forward quotient map at the prescribed source cutoff. -/
 @[simp]
 theorem projection_completionEquivOfModuli (k : ℕ) (x : F.completion) :
@@ -155,7 +160,7 @@ end Moduli
 include he
 
 /-- Exact identification of filtration ideals also holds for the inverse map. -/
-theorem comap_ideal_equiv_symm (k : ℕ) :
+theorem ideal_comap_symm (k : ℕ) :
     (F.ideal k).comap e.symm.toAlgHom = G.ideal k := by
   ext y
   rw [Ideal.mem_comap, ← he k]
@@ -165,7 +170,14 @@ theorem comap_ideal_equiv_symm (k : ℕ) :
 def completionEquiv : F.completion ≃ₐ[R] G.completion :=
   F.completionEquivOfModuli G e id id monotone_id monotone_id
     (fun k => (he (k + 1)).ge)
-    (fun k => (F.comap_ideal_equiv_symm G e he (k + 1)).ge)
+    (fun k => (F.ideal_comap_symm G e he (k + 1)).ge)
+
+/-- The underlying algebra homomorphism uses the identity cutoff modulus. -/
+theorem toAlgHom_completionEquiv :
+    (F.completionEquiv G e he).toAlgHom =
+      F.mapCompletionₐ G e.toAlgHom id monotone_id (fun k => (he (k + 1)).ge) :=
+  F.toAlgHom_completionEquivOfModuli G e id id monotone_id monotone_id
+    (fun k => (he (k + 1)).ge) (fun k => (F.ideal_comap_symm G e he (k + 1)).ge)
 
 /-- Finite projections of the completed equivalence are induced quotient maps. -/
 @[simp]
@@ -184,16 +196,17 @@ theorem completionEquiv_toCompletion (a : A) :
 /-- Inverting the completed equivalence completes the inverse equivalence. -/
 theorem completionEquiv_symm :
     (F.completionEquiv G e he).symm =
-      G.completionEquiv F e.symm (F.comap_ideal_equiv_symm G e he) := by
-  ext x
-  rfl
+      G.completionEquiv F e.symm (F.ideal_comap_symm G e he) := by
+  unfold completionEquiv
+  exact F.completionEquivOfModuli_symm G e id id monotone_id monotone_id
+    (fun k => (he (k + 1)).ge) (fun k => (F.ideal_comap_symm G e he (k + 1)).ge)
 
 /-- Finite projections of the inverse use the inverse quotient map. -/
 @[simp]
 theorem projection_completionEquiv_symm (k : ℕ) (y : G.completion) :
     F.projection k ((F.completionEquiv G e he).symm y) =
       Ideal.quotientMapₐ (F.ideal (k + 1)) e.symm.toAlgHom
-        (by simp only [F.comap_ideal_equiv_symm G e he, le_refl]) (G.projection k y) := by
+        (by simp only [F.ideal_comap_symm G e he, le_refl]) (G.projection k y) := by
   rw [completionEquiv_symm, projection_completionEquiv]
 
 /-- The inverse extension agrees with the inverse on canonical elements. -/
