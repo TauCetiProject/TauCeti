@@ -38,6 +38,9 @@ amplitude on Schwartz functions. In angular frequency,
 * `TauCeti.Amplitude.leftSymbol_ofRight_ofSpatial`: the right quantization of multiplication by a
   compactly supported `f(y)` has left symbol `f(x)`.
 
+The asymptotic expansion `c(x, ξ) ∼ ∑_α (1 / α!) ∂_ξ^α D_y^α a(x, y, ξ)|_{y = x}` of the left symbol
+is in `TauCeti.Analysis.Pseudodifferential.Amplitude.Expansion`.
+
 ## Proof outline
 
 Compact input support gives the rapid decay of `â` in `θ`, and Peetre's inequality
@@ -77,7 +80,7 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 
 /-- Differentiation of `â(x, θ, ξ)` in the output position and the frequency under the integral
 sign. -/
-private theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}
+theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (q : CoordinateSpace n × CoordinateSpace n) :
     HasFDerivAt (fun q : CoordinateSpace n × CoordinateSpace n ↦
@@ -93,7 +96,7 @@ private theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude 
 
 /-- The derivative of `â(x, θ, ξ)` in the direction `v` of output positions and frequencies is the
 Fourier transform of the directional derivative of `a` in the direction `(v.1, 0, v.2)`. -/
-private theorem HasCompactInputSupport.fderiv_fourier_slice_apply {a : Amplitude n V W m}
+theorem HasCompactInputSupport.fderiv_fourier_slice_apply {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (q v : CoordinateSpace n × CoordinateSpace n) :
     (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ (fun q : CoordinateSpace n × CoordinateSpace n ↦
