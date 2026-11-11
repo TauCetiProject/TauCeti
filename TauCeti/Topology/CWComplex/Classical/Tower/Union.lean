@@ -90,7 +90,7 @@ abbrev TowerNewCell (n : ℕ) : Type u :=
 open Classical in
 /-- The new cell from which a cell of the stage `W k` comes: following `ι` backwards as long as
 possible, every cell of `W k` is the image of a new cell of some stage `k' ≤ k`
-(`TauCeti.towerOrigin_fst_le`), with the same characteristic map (`TauCeti.map_towerOrigin`). -/
+(`TauCeti.towerOrigin_fst_le`), with the same characteristic map (`TauCeti.coe_map_towerOrigin`). -/
 def towerOrigin : ∀ (k : ℕ) {n : ℕ}, cell (W k) n → TowerNewCell ι n
   | 0, _, i => ⟨0, i, trivial⟩
   | k + 1, n, i => if h : i ∈ range (ι k n) then towerOrigin k h.choose else ⟨k + 1, i, h⟩
@@ -138,12 +138,12 @@ theorem towerOrigin_ι {k n : ℕ} (i : cell (W k) n) : towerOrigin ι (k + 1) (
 
 /-- The new cell from which a cell of `W k` comes has the same characteristic map. -/
 @[simp]
-theorem map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
+theorem coe_map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
     ⇑(map n (towerOrigin ι k i).2.1) = ⇑(map n i)
   | 0, _, _ => rfl
   | k + 1, n, i => by
     by_cases h : i ∈ range (ι k n)
-    · rw [towerOrigin, dite_eq_left h, map_towerOrigin k, ← hι, h.choose_spec]
+    · rw [towerOrigin, dite_eq_left h, coe_map_towerOrigin k, ← hι, h.choose_spec]
     · rw [towerOrigin, dite_eq_right h]
 
 /-- The open cell of the new cell from which a cell of `W k` comes is the open cell of that
@@ -151,14 +151,14 @@ cell. -/
 @[simp]
 theorem openCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
     openCell n (towerOrigin ι k i).2.1 = openCell n i := by
-  simp only [openCell, map_towerOrigin hι]
+  simp only [openCell, coe_map_towerOrigin hι]
 
 /-- The closed cell of the new cell from which a cell of `W k` comes is the closed cell of that
 cell. -/
 @[simp]
 theorem closedCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
     closedCell n (towerOrigin ι k i).2.1 = closedCell n i := by
-  simp only [closedCell, map_towerOrigin hι]
+  simp only [closedCell, coe_map_towerOrigin hι]
 
 /-- The stages of a tower of CW complexes increase. -/
 theorem monotone_of_forall_map_eq : Monotone W := by
@@ -306,24 +306,24 @@ omit hW in
 /-- A cell of the stage `W k` has the characteristic map of the new cell to which it
 corresponds. -/
 @[simp]
-theorem map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
+theorem coe_map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
     ⇑(map n ((towerStageCellEquiv hι k n).symm c)) = ⇑(map n c.1.2.1) := by
   conv_rhs => rw [← (towerStageCellEquiv hι k n).apply_symm_apply c]
-  rw [coe_towerStageCellEquiv_apply, map_towerOrigin hι]
+  rw [coe_towerStageCellEquiv_apply, coe_map_towerOrigin hι]
 
 omit hW in
 /-- A cell of the stage `W k` has the open cell of the new cell to which it corresponds. -/
 @[simp]
 theorem openCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
     openCell n ((towerStageCellEquiv hι k n).symm c) = openCell n c.1.2.1 := by
-  simp only [openCell, map_towerStageCellEquiv_symm hι]
+  simp only [openCell, coe_map_towerStageCellEquiv_symm hι]
 
 omit hW in
 /-- A cell of the stage `W k` has the closed cell of the new cell to which it corresponds. -/
 @[simp]
 theorem closedCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
     closedCell n ((towerStageCellEquiv hι k n).symm c) = closedCell n c.1.2.1 := by
-  simp only [closedCell, map_towerStageCellEquiv_symm hι]
+  simp only [closedCell, coe_map_towerStageCellEquiv_symm hι]
 
 omit hW in
 /-- A cell of the stage `W k`, seen as a cell of `W (k + 1)`, corresponds to the same new cell. -/

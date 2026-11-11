@@ -249,7 +249,7 @@ def cellIncl (k m : ℕ) : (stageCW s₀ a Φ k).cell m → (stageCW s₀ a Φ (
     ((sigmaDiskAdjunctionCWComplexCellEquiv (n k) ((stage s₀ a Φ k).nextAttach (a k))
       ((stage s₀ a Φ k).nextAttach_mem (a k)) m).symm (.inl (stageCWCellEquiv s₀ a Φ k m j)))
 
-theorem map_cellIncl (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
+theorem coe_map_cellIncl (k m : ℕ) (j : (stageCW s₀ a Φ k).cell m) :
     ⇑((stageCW s₀ a Φ (k + 1)).map m (cellIncl s₀ a Φ k m j)) =
       ⇑((stageCW s₀ a Φ k).map m j) := by
   let := sigmaDiskRelCWComplex (n k)
@@ -301,14 +301,14 @@ theorem iUnion_range_ιL : ⋃ k, range (ιL s₀ a Φ k) = univ :=
 @[instance_reducible]
 def unionCW : CWComplex (⋃ k, range (ιL s₀ a Φ k)) :=
   letI := stageCW s₀ a Φ
-  cwSubcomplexTowerUnion (ι := cellIncl s₀ a Φ) (map_cellIncl s₀ a Φ)
+  cwSubcomplexTowerUnion (ι := cellIncl s₀ a Φ) (coe_map_cellIncl s₀ a Φ)
     fun A _ hA ↦ isClosed_of_forall_isClosed_inter s₀ a Φ A hA
 
 /-- The cells of the colimit are the cells of the first stage and the attached cells. -/
 def unionCWCellEquiv (m : ℕ) :
     (unionCW s₀ a Φ).cell m ≃ (s₀.cw.cell m ⊕ Σ k, {i : ι k // n k i = m}) :=
   letI := stageCW s₀ a Φ
-  (cwSubcomplexTowerUnionCellEquiv (ι := cellIncl s₀ a Φ) (map_cellIncl s₀ a Φ)
+  (cwSubcomplexTowerUnionCellEquiv (ι := cellIncl s₀ a Φ) (coe_map_cellIncl s₀ a Φ)
     (fun A _ hA ↦ isClosed_of_forall_isClosed_inter s₀ a Φ A hA) m).trans <|
   (Equiv.sigmaNatSucc _).trans <| Equiv.sumCongr
     ((Equiv.subtypeUnivEquiv fun i ↦ isNewTowerCell_zero (cellIncl s₀ a Φ) i).trans
