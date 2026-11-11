@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.HopfAlgebra.HopfModule
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
-public import TauCeti.Algebra.HopfAlgebra.Frobenius
 
 /-!
 # Existence of cointegrals
@@ -20,22 +19,15 @@ and `H` acts by `(φ ↼ h)(x) = φ(h x)`. The vectors fixed by this coaction ar
 cointegrals, and the coinvariant projection of `TauCeti.Algebra.HopfAlgebra.HopfModule` shows
 that a nonzero Hopf module has nonzero fixed vectors.
 
-Over a field this removes the nonzero-cointegral hypothesis from the results of
-`TauCeti.Algebra.HopfAlgebra.Frobenius`: a finite-dimensional Hopf algebra is a Frobenius
-algebra, its antipode is bijective, and its spaces of left and right integrals and of left and
-right cointegrals are lines.
+Over a field, `TauCeti.Algebra.HopfAlgebra.Frobenius` uses this to show that a
+finite-dimensional Hopf algebra is a Frobenius algebra with bijective antipode and
+one-dimensional integral and cointegral spaces.
 
 ## Main declarations
 
 * `TauCeti.mem_fixedSubcomodule_dual_iff_isRightCointegral`: the fixed vectors of the dual of
   the regular comodule are the right cointegrals.
 * `TauCeti.exists_isRightCointegral_ne_zero`: existence of a nonzero right cointegral.
-* `TauCeti.HopfAlgebra.exists_isFrobeniusFunctional`: a finite-dimensional Hopf algebra over a
-  field is Frobenius.
-* `TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`: bijectivity of the antipode.
-* `TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`,
-  `TauCeti.finrank_leftCointegrals`, `TauCeti.finrank_rightCointegrals`: the integral and
-  cointegral spaces are one-dimensional.
 
 ## References
 
@@ -207,60 +199,5 @@ theorem exists_isRightCointegral_ne_zero [Nontrivial R] :
 end FiniteProjective
 
 end
-
-section Field
-
-variable {k H : Type*} [Field k] [Ring H] [_root_.HopfAlgebra k H] [FiniteDimensional k H]
-
-variable (k H) in
-/-- **Larson–Sweedler theorem**: a finite-dimensional Hopf algebra over a field is a Frobenius
-algebra. A nonzero right cointegral is a Frobenius functional. -/
-theorem HopfAlgebra.exists_isFrobeniusFunctional :
-    ∃ φ : H →ₗ[k] k, φ.IsFrobeniusFunctional := by
-  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero k H
-  exact ⟨φ, (LinearMap.isRightInvariantIntegral_iff.mpr
-    ((isRightCointegral_def φ).mp hφ)).isFrobeniusFunctional h0⟩
-
-variable (k H) in
-/-- The antipode of a finite-dimensional Hopf algebra over a field is bijective. -/
-theorem HopfAlgebra.antipode_bijective_of_finiteDimensional :
-    Function.Bijective (antipode k : H → H) := by
-  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero k H
-  exact (LinearMap.isRightInvariantIntegral_iff.mpr
-    ((isRightCointegral_def φ).mp hφ)).antipode_bijective h0
-
-variable (k H) in
-/-- The left integrals of a finite-dimensional Hopf algebra over a field form a line. -/
-theorem finrank_leftIntegral : Module.finrank k (leftIntegral k H) = 1 :=
-  (HopfAlgebra.exists_isFrobeniusFunctional k H).choose_spec.finrank_leftIntegral
-
-variable (k H) in
-/-- The right integrals of a finite-dimensional Hopf algebra over a field form a line. -/
-theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 :=
-  (HopfAlgebra.exists_isFrobeniusFunctional k H).choose_spec.finrank_rightIntegral
-
-variable (k H) in
-/-- The right cointegrals of a finite-dimensional Hopf algebra over a field form a line. -/
-theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 := by
-  let e := (WithConv.linearEquiv k (Module.Dual k H)).symm
-  have hmap : (rightCointegrals k H).map e.toLinearMap =
-      rightIntegral k (ConvolutionDual k H) := by
-    ext ψ
-    rw [Submodule.mem_map_equiv, ← WithConv.toConv_ofConv ψ, toConv_mem_rightIntegral_iff]
-    simp [e, mem_rightCointegrals]
-  rw [← LinearEquiv.finrank_map_eq e, hmap, finrank_rightIntegral]
-
-variable (k H) in
-/-- The left cointegrals of a finite-dimensional Hopf algebra over a field form a line. -/
-theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 := by
-  let e := (WithConv.linearEquiv k (Module.Dual k H)).symm
-  have hmap : (leftCointegrals k H).map e.toLinearMap =
-      leftIntegral k (ConvolutionDual k H) := by
-    ext ψ
-    rw [Submodule.mem_map_equiv, ← WithConv.toConv_ofConv ψ, toConv_mem_leftIntegral_iff]
-    simp [e, mem_leftCointegrals]
-  rw [← LinearEquiv.finrank_map_eq e, hmap, finrank_leftIntegral]
-
-end Field
 
 end TauCeti

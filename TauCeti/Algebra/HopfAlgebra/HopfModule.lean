@@ -18,15 +18,18 @@ map `act : M →ₗ[R] H →ₗ[R] M`, written `act m h = m · h`, and the compa
 
 The coinvariant projection is `P(m) = Σ m₀ · S(m₁)`. It is defined for any bilinear map
 `act` and any right comodule. Compatibility alone makes `P(m)` coinvariant, that is,
-`ρ(P m) = P m ⊗ 1`; the action laws alone give the reconstruction formula
-`Σ P(m₀) · m₁ = m`. Together they show that a nonzero Hopf module has a nonzero coinvariant
-vector. This is the step of the fundamental theorem of Hopf modules used to show that a
-finite projective Hopf algebra has nonzero cointegrals.
+`ρ(P m) = P m ⊗ 1`; the unit law makes `P` fix coinvariants, so `P` is a projection onto
+them, and the action laws alone give the reconstruction formula `Σ P(m₀) · m₁ = m`.
+Together they show that a nonzero Hopf module has a nonzero coinvariant vector. This is the
+step of the fundamental theorem of Hopf modules used to show that a finite projective Hopf
+algebra has nonzero cointegrals.
 
 ## Main declarations
 
 * `TauCeti.Comodule.coinvariantProj`: the projection `m ↦ Σ m₀ · S(m₁)`.
 * `TauCeti.Comodule.coact_coinvariantProj`: its values are coinvariant.
+* `TauCeti.Comodule.coinvariantProj_eq_self`, `TauCeti.Comodule.isIdempotentElem_coinvariantProj`:
+  it fixes coinvariants, so it is a projection onto them.
 * `TauCeti.Comodule.lift_rTensor_coinvariantProj_coact`: the reconstruction formula.
 * `TauCeti.Comodule.fixedSubcomodule_ne_bot_of_hopfModule`: a nonzero Hopf module has
   nonzero coinvariants.
@@ -147,6 +150,29 @@ theorem coinvariantProj_mem_fixedSubcomodule (act : M →ₗ[R] H →ₗ[R] M)
         (coact m ⊗ₜ comul h))) (m : M) :
     coinvariantProj act m ∈ fixedSubcomodule R H M :=
   mem_fixedSubcomodule.mpr (coact_coinvariantProj act hcoact m)
+
+/-- Under the unit law, the coinvariant projection fixes every coinvariant vector. -/
+@[simp]
+theorem coinvariantProj_eq_self (act : M →ₗ[R] H →ₗ[R] M) (one : ∀ m, act m 1 = m) {m : M}
+    (hm : m ∈ fixedSubcomodule R H M) : coinvariantProj act m = m := by
+  rw [coinvariantProj_apply, mem_fixedSubcomodule.mp hm]
+  simp [one]
+
+/-- For a unital Hopf-module action, the coinvariant projection is idempotent. -/
+theorem coinvariantProj_coinvariantProj (act : M →ₗ[R] H →ₗ[R] M) (one : ∀ m, act m 1 = m)
+    (hcoact : ∀ m h, coact (R := R) (act m h) = TensorProduct.map (TensorProduct.lift act)
+      (LinearMap.mul' R H) (TensorProduct.tensorTensorTensorComm R M H H H
+        (coact m ⊗ₜ comul h))) (m : M) :
+    coinvariantProj act (coinvariantProj act m) = coinvariantProj act m :=
+  coinvariantProj_eq_self act one (coinvariantProj_mem_fixedSubcomodule act hcoact m)
+
+/-- For a unital Hopf-module action, the coinvariant projection is an idempotent endomorphism. -/
+theorem isIdempotentElem_coinvariantProj (act : M →ₗ[R] H →ₗ[R] M) (one : ∀ m, act m 1 = m)
+    (hcoact : ∀ m h, coact (R := R) (act m h) = TensorProduct.map (TensorProduct.lift act)
+      (LinearMap.mul' R H) (TensorProduct.tensorTensorTensorComm R M H H H
+        (coact m ⊗ₜ comul h))) :
+    IsIdempotentElem (coinvariantProj act) :=
+  LinearMap.ext (coinvariantProj_coinvariantProj act one hcoact)
 
 /-- A nonzero right Hopf module has a nonzero coinvariant vector. -/
 theorem fixedSubcomodule_ne_bot_of_hopfModule [Nontrivial M] (act : M →ₗ[R] H →ₗ[R] M)
