@@ -199,16 +199,23 @@ theorem IsUngradedDGAlgebra.tensorProduct [CharP R 2] {d : A →ₗ[R] A} {d' : 
         TensorProduct.zero_tmul, TensorProduct.tmul_zero, zero_add, add_zero]
       exact add_self_eq_zero_of_charTwo R _
 
-open scoped Kronecker in
+end TensorProduct
+
+end TauCeti
+
+namespace Matrix
+
+open scoped Kronecker TensorProduct
+
+variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+
 /-- **The Leibniz rule for Kronecker products.** The entrywise differential `d ⊗ 1 + 1 ⊗ d'` of
 the Kronecker product `F ⊗ₖₜ G` of matrices over `A` and over `B` is `d F ⊗ₖₜ G + F ⊗ₖₜ d' G`. -/
-theorem Matrix.kroneckerTMul_map_ungradedTensorDifferential {l m n p : Type*} {d : A →ₗ[R] A}
+theorem kroneckerTMul_map_ungradedTensorDifferential {l m n p : Type*} {d : A →ₗ[R] A}
     {d' : B →ₗ[R] B} (F : Matrix l m A) (G : Matrix n p B) :
-    (F ⊗ₖₜ[R] G).map (ungradedTensorDifferential d d') =
+    (F ⊗ₖₜ[R] G).map (TauCeti.ungradedTensorDifferential d d') =
       F.map d ⊗ₖₜ[R] G + F ⊗ₖₜ[R] G.map d' := by
   ext ⟨i, k⟩ ⟨j, o⟩
   simp
 
-end TensorProduct
-
-end TauCeti
+end Matrix
