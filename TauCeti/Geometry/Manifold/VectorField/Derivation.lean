@@ -160,6 +160,12 @@ theorem lineDerivation_apply_apply (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜�
     lineDerivation 𝕜 v f x = fderiv 𝕜 f x v :=
   (ContMDiffSection.vectorFieldDerivation_apply_apply _ f x).trans (mvfderiv_eq_fderiv_apply f x v)
 
+/-- The support of a directional derivative lies in the support of the function. -/
+theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) :
+    tsupport (lineDerivation 𝕜 v f) ⊆ tsupport f := by
+  rw [show ⇑(lineDerivation 𝕜 v f) = (fderiv 𝕜 f · v) from funext (lineDerivation_apply_apply v f)]
+  exact tsupport_fderiv_apply_subset 𝕜 (f := ⇑f) v
+
 /-- Directional derivatives of smooth functions commute, by the symmetry of second
 derivatives. -/
 theorem commute_lineDerivation {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E]

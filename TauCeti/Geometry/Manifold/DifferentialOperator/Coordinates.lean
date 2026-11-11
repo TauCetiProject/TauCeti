@@ -121,12 +121,6 @@ open Function
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The support of a directional derivative lies in the support of the function. -/
-theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (lineDerivation ℝ v f) ⊆ tsupport f := by
-  rw [show ⇑(lineDerivation ℝ v f) = (fderiv ℝ f · v) from funext (lineDerivation_apply_apply v f)]
-  exact tsupport_fderiv_apply_subset ℝ (f := ⇑f) v
-
 /-- Multiplication by a smooth function does not enlarge supports. -/
 theorem tsupport_mulLeft_apply_subset (c f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
     tsupport (LinearMap.mulLeft ℝ c f) ⊆ tsupport f := by

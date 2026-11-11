@@ -314,6 +314,21 @@ theorem coordinateOperator_eq_sum_mulLeft (m : ℕ) (c : (ι → ℕ) → A) :
   ext1 f
   simp [smul_eq_mul, mul_comm]
 
+omit [IsScalarTower R A N] in
+/-- The operator `f ↦ ∑_{|α| ≤ m} (-1) ^ |α| ∂^α (c α * f)`, which has the shape of the formal
+transpose of a coordinate expression, is a differential operator of order at most `m`. -/
+theorem sum_neg_one_pow_smul_multiIndexDeriv_comp_mulLeft_mem_differentialOperators (m : ℕ)
+    (c : (ι → ℕ) → A) :
+    ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k,
+        (-1 : R) ^ k • (multiIndexDeriv d hd α ∘ₗ LinearMap.mulLeft R (c α)) ∈
+      differentialOperators R A A A m := by
+  refine sum_mem fun k hk ↦ sum_mem fun α hα ↦ Submodule.smul_mem _ _ ?_
+  rw [mem_piAntidiag] at hα
+  refine differentialOperators_mono (show k ≤ m by simpa [Nat.lt_succ_iff] using hk) ?_
+  simpa [hα.1] using comp_mem_differentialOperators
+    (multiIndexDeriv_mem_differentialOperators d hd α)
+    (LinearMap.mulLeft_mem_differentialOperators_zero (c α))
+
 variable [Algebra ℚ R]
 
 /-- The coefficients of the coordinate expression of `D : A →ₗ[R] N` in the coordinates `u`:
