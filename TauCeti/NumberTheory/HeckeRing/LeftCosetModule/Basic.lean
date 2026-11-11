@@ -27,7 +27,8 @@ operations, not yet an action: Shimura's compatibility law `(f * g) • m = g �
 Ported from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/AbstractHeckeRing/Module.lean`,
 <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), rebuilt on the
-left-coset quotient of the vendored Mathlib stack.
+double-coset quotient `HeckeCoset`, whose bottom-left case `HeckeCoset Δ ⊥ H` serves as the
+left-coset quotient.
 
 ## Main definitions
 
