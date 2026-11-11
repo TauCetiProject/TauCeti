@@ -89,7 +89,7 @@ theorem banach_steinhaus [CompleteSpace E] {ι : Type*} (g : ι → E →L[R] F)
   obtain ⟨k, hk⟩ : ∃ k : ℕ, ‖(ϖ.unit : R)‖ ^ k < ε :=
     exists_pow_lt_of_lt_one hε ϖ.norm_lt_one
   refine ⟨2 * n * (‖(ϖ.unit : R)‖ ^ ((k : ℤ) + 1))⁻¹, fun i ↦ ?_⟩
-  refine ϖ.ringOpNorm_le_of_forall_norm_lt (g i) k (by simpa using hk) (by positivity)
+  refine ϖ.ringOpNorm_le_of_forall_norm_lt (g i) k (by simpa using hk)
     fun x hx ↦ ?_
   have hmem : x + x₀ ∈ ball x₀ ε := by simpa [mem_ball, dist_eq_norm] using hx
   have hx1 : ‖g i (x + x₀)‖ ≤ n := hball hmem i

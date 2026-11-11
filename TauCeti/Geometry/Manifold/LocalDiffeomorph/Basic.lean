@@ -58,6 +58,8 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
 * `TauCeti.isLocalDiffeomorphAt_iff_exists_mfderiv_eq`: the resulting characterisation of
   `IsLocalDiffeomorphAt` at an interior point, for a map which is `C^n` on an open set.
+* `TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv`: in equal finite dimensions, an injective
+  differential suffices.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas`: a maximal-atlas chart is a
@@ -155,6 +157,13 @@ theorem toPartialDiffeomorphOfMemMaximalAtlas_symm_apply (v : E) :
   -- The constructor is opaque; expose its inverse field for the inverse evaluation rule.
   change (e.extend I).symm v = _
   exact congrFun (e.extend_coe_symm (I := I)) v
+
+/-- The inverse partial diffeomorphism of the extended maximal-atlas chart is the inverse of the
+extended chart. -/
+theorem coe_toPartialDiffeomorphOfMemMaximalAtlas_symm :
+    ⇑(e.toPartialDiffeomorphOfMemMaximalAtlas he).symm = (e.extend I).symm :=
+  -- The constructor is opaque; its inverse field is the inverse of the extended chart.
+  (rfl)
 
 end OpenPartialHomeomorph
 
@@ -639,6 +648,22 @@ theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) 
   refine ⟨fun h => ⟨h.mfderivToContinuousLinearEquiv hn0, rfl⟩, ?_⟩
   rintro ⟨e, he⟩
   exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn he
+
+/-- **The inverse function theorem for manifolds**, injective form: between manifolds of the same
+finite dimension, a map which is `C^n` on an open set, with `1 ≤ n`, and has injective differential
+at an interior point `x` of that set is a `C^n` local diffeomorphism at `x`. -/
+theorem isLocalDiffeomorphAt_of_injective_mfderiv [FiniteDimensional 𝕂 E]
+    [FiniteDimensional 𝕂 F] (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s)
+    (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n) (hinj : Function.Injective (mfderiv I J f x))
+    (hdim : Module.finrank 𝕂 E = Module.finrank 𝕂 F) :
+    IsLocalDiffeomorphAt I J n f x := by
+  -- The tangent spaces are the model spaces by definition.
+  have : FiniteDimensional 𝕂 (TangentSpace I x) := inferInstanceAs (FiniteDimensional 𝕂 E)
+  have : FiniteDimensional 𝕂 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕂 F)
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn
+    (e := (LinearMap.linearEquivOfInjective (mfderiv I J f x).toLinearMap hinj
+      hdim).toContinuousLinearEquiv)
+    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim w)
 
 variable [BoundarylessManifold I M]
 

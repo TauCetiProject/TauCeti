@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `Module.Free`, `Module.Finite` and `Module.finrank` occur in the statement, and
 -- `Module.finBasisOfFinrankEq`, which this import defines, in the body.
 public import Mathlib.LinearAlgebra.Dimension.Free
+-- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
+public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
@@ -30,6 +32,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.endAlgEquivMatrix_apply`: its evaluation as `LinearMap.toMatrix` in that basis.
+* `TauCeti.Algebra.det_endAlgEquivMatrix`: its matrices compute determinants of endomorphisms.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -247,6 +250,8 @@ end Algebra
 
 namespace TauCeti.Algebra
 
+section CommSemiring
+
 variable (R : Type*) [CommSemiring R] [StrongRankCondition R] (M : Type*) [AddCommMonoid M]
   [Module R M] [Module.Free R M] [Module.Finite R M]
 
@@ -275,5 +280,22 @@ theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank R M = n) (f : Mod
   ext i j
   simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
     LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
+
+end CommSemiring
+
+section CommRing
+
+-- `LinearMap.det` needs a commutative ring and an additive group.
+variable (R : Type*) [CommRing R] [StrongRankCondition R] (M : Type*) [AddCommGroup M]
+  [Module R M] [Module.Free R M] [Module.Finite R M]
+
+/-- The chosen-basis matrix of an endomorphism has the determinant of the endomorphism. Since
+`endAlgEquivMatrix` is an algebra isomorphism, this computes the determinant of every polynomial
+expression in `f`, such as `det (1 - f ^ n)`, as that of the same expression in its matrix. -/
+theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank R M = n) (f : Module.End R M) :
+    (endAlgEquivMatrix R M hn f).det = LinearMap.det f := by
+  rw [endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
+
+end CommRing
 
 end TauCeti.Algebra
