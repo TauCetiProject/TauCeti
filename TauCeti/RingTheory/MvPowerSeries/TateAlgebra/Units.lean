@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 /-!
 # Units of restricted power series
 
-Let `R` be a complete ultrametric normed ring with `‖1‖ = 1`, and let `c` be positive polyradii.
+Let `R` be a complete ultrametric normed ring, and let `c` be positive polyradii.
 A restricted series `f ∈ R{X/c}` close to a constant `a` that is a multiplicative unit of `R`
 (`TauCeti.IsNormMulUnit`), in the sense that `‖f - a‖ < ‖a‖` for the Gauss norm, factors as
 
