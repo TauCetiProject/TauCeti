@@ -139,6 +139,31 @@ theorem dirichlet_linearForms [Nonempty κ] (A : Matrix ι κ ℝ) {Q : ℝ}
   rw [← Real.rpow_mul_natCast hQ₀.le, div_mul_cancel₀ _ hm.ne', Real.rpow_neg hQ₀.le,
     Real.rpow_natCast, mul_inv_cancel₀ (by positivity)]
 
+/-- If `A y = x` for a nonzero integer vector `y` and an integer vector `x`, the multiples
+`(k y, k x)` with `k ≥ 1` are infinitely many exact solutions of the approximation problem. -/
+private theorem infinite_of_exists_int_sum_mul_eq (A : Matrix ι κ ℝ) {y : κ → ℤ} {x : ι → ℤ}
+    (hy : y ≠ 0) (hx : ∀ i, ∑ j, A i j * y j = x i) :
+    {p : (κ → ℤ) × (ι → ℤ) | p.1 ≠ 0 ∧ ∀ i, |∑ j, A i j * p.1 j - p.2 i| ≤
+      ‖p.1‖ ^ (-(Fintype.card κ : ℝ) / Fintype.card ι)}.Infinite := by
+  obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
+  replace hj₀ : y j₀ ≠ 0 := hj₀
+  refine Set.infinite_of_injective_forall_mem
+    (f := fun m : ℕ ↦ ((((m + 1 : ℕ) : ℤ) • y), (((m + 1 : ℕ) : ℤ) • x))) (fun m n h ↦ ?_)
+    fun m ↦ ⟨fun h ↦ hj₀ ?_, fun i ↦ ?_⟩
+  · have := congrFun (congrArg Prod.fst h) j₀
+    simpa [hj₀] using this
+  · have := congrFun h j₀
+    simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero, Nat.cast_eq_zero,
+      Nat.add_one_ne_zero, false_or] at this
+    exact this
+  · have : ∑ j, A i j * (((m + 1 : ℕ) : ℤ) • y) j = ((m + 1 : ℕ) : ℝ) * x i := by
+      rw [← hx i, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
+    have h2 : (((((m + 1 : ℕ) : ℤ) • x) i : ℤ) : ℝ) = ((m + 1 : ℕ) : ℝ) * x i := by simp
+    dsimp only
+    rw [this, h2, sub_self, abs_zero]
+    positivity
+
 /-- **Dirichlet's theorem for systems of linear forms, infinitely many solutions.** Let `A` be
 a real matrix with `m = |ι|` rows and `n = |κ| ≥ 1` columns. Then infinitely many pairs of integer
 vectors `(y, x)` with `y ≠ 0` satisfy `|∑ⱼ Aᵢⱼ yⱼ - xᵢ| ≤ ‖y‖ ^ (-n / m)` for every `i`, where
@@ -153,24 +178,7 @@ theorem dirichlet_linearForms_infinite [Nonempty κ] (A : Matrix ι κ ℝ) :
     push Not at hA
     obtain ⟨y, hyx, hy⟩ := hA
     choose x hx using hyx
-    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
-    replace hj₀ : y j₀ ≠ 0 := hj₀
-    refine Set.infinite_of_injective_forall_mem
-      (f := fun m : ℕ ↦ ((((m + 1 : ℕ) : ℤ) • y), (((m + 1 : ℕ) : ℤ) • x))) (fun m n h ↦ ?_)
-      fun m ↦ ⟨fun h ↦ hj₀ ?_, fun i ↦ ?_⟩
-    · have := congrFun (congrArg Prod.fst h) j₀
-      simpa [hj₀] using this
-    · have := congrFun h j₀
-      simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero, Nat.cast_eq_zero,
-        Nat.add_one_ne_zero, false_or] at this
-      exact this
-    · have : ∑ j, A i j * (((m + 1 : ℕ) : ℤ) • y) j = ((m + 1 : ℕ) : ℝ) * x i := by
-        rw [← hx i, Finset.mul_sum]
-        exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
-      have h2 : (((((m + 1 : ℕ) : ℤ) • x) i : ℤ) : ℝ) = ((m + 1 : ℕ) : ℝ) * x i := by simp
-      dsimp only
-      rw [this, h2, sub_self, abs_zero]
-      positivity
+    exact A.infinite_of_exists_int_sum_mul_eq hy hx
   -- Without rows, the hypothesis would force every integer vector to vanish.
   have : Nonempty ι := by
     by_contra hι
