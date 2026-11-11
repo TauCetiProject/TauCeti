@@ -12,17 +12,12 @@ public import Mathlib.Probability.IdentDistrib
 /-!
 # An i.i.d. sequence is mixed i.i.d., exchangeable, and contractable
 
-This file discharges the first worked example of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Worked examples"):
-
-> The law of an i.i.d. sequence is `MixedIID`, `Exchangeable`, and `Contractable`.
-
 For a sequence `X : ℕ → Ω → α` on a probability space whose coordinates are independent
 (`ProbabilityTheory.iIndepFun X μ`) and identically distributed
 (`∀ i, IdentDistrib (X i) (X 0) μ μ`), the constant random measure `ω ↦ law of X 0` is a
 mixing representative: `MixedIIDWith.of_iIndepFun_identDistrib`. Exchangeability and
-contractability then follow from the Layer 0 implications
-`MixedIIDWith.exchangeable` and `MixedIIDWith.contractable`.
+contractability then follow from the implications `MixedIIDWith.exchangeable` and
+`MixedIIDWith.contractable`.
 
 Only the *conclusions* `Exchangeable` and `Contractable` need `ℕ`. The mixed-i.i.d. results hold
 for a family over an arbitrary index type: `MixedIIDWith.of_iIndepFun_map_eq` takes the common law
@@ -35,12 +30,11 @@ The mathematical content is the block-law identity: along an injective selection
 family, `ProbabilityTheory.iIndepFun.precomp`) with common law `μ.map (X 0)`, so their joint
 law is the `m`-fold product `Measure.pi (fun _ => μ.map (X 0))`
 (`ProbabilityTheory.iIndepFun.map_fun_eq_pi_map`); this is exactly the value of the mixture
-against a constant mixing representative. The example validates the Layer 0 mixed-i.i.d.
-API on the canonical i.i.d. case and needs no material from
-`cameronfreer/exchangeability`.
+against a constant mixing representative. The example validates the mixed-i.i.d. API on the
+canonical i.i.d. case and needs no material from `cameronfreer/exchangeability`.
 
-The roadmap's worked-example entry also asks for the sharper statement that an i.i.d. sequence is
-genuinely `ConditionallyIID`, with this constant measure as its *directing measure*. That is
+The sharper statement that an i.i.d. sequence is genuinely `ConditionallyIID`, with this constant
+measure as its *directing measure*, is
 `TauCeti.Probability.ConditionallyIIDWith.of_iIndepFun_identDistrib`, in
 `TauCeti/Probability/Exchangeability/ConditionallyIID/Const.lean`, which upgrades the mixture form
 below; the same file records that a constant witness makes the two predicates equivalent.
