@@ -66,9 +66,8 @@ particular the torsion is invariant under isomorphisms of based parity complexes
 * `HomologicalComplex.parityReidemeisterTorsion_eq_zero_iff`: the torsion vanishes if and only if
   the complex is not acyclic.
 * `HomologicalComplex.parityReidemeisterTorsion_eq_one`: the zero complex has torsion `1`.
-* `HomologicalComplex.range_d_one_zero_eq_ker_d_zero_one`,
-  `HomologicalComplex.range_d_zero_one_eq_ker_d_one_zero`: exactness of a parity complex in each
-  degree, as an equality of the image of one differential with the kernel of the other.
+* `HomologicalComplex.range_d_eq_ker_d`: exactness of a parity complex in a degree, as an
+  equality of the image of one differential with the kernel of the other.
 * `HomologicalComplex.parityReidemeisterTorsion_eq_inv_det`,
   `HomologicalComplex.parityReidemeisterTorsion_eq_det`: the torsion of an acyclic complex with
   one vanishing differential.
@@ -250,61 +249,36 @@ section TwoTerm
 
 variable {C} (h : C.Acyclic)
 
-/-- In a parity complex exact in even degree, the odd boundaries `d(C₁) ⊆ C₀` are the even
-cycles. -/
-theorem range_d_one_zero_eq_ker_d_zero_one (h : C.ExactAt 0) :
-    LinearMap.range (C.d 1 0).hom = LinearMap.ker (C.d 0 1).hom :=
+/-- In a parity complex exact in degree `i`, the boundaries `d(Cᵢ₊₁) ⊆ Cᵢ` are the cycles of
+degree `i`. -/
+theorem range_d_eq_ker_d (i : ZMod 2) (h : C.ExactAt i) :
+    LinearMap.range (C.d (i + 1) i).hom = LinearMap.ker (C.d i (i + 1)).hom :=
   (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' 1 0 1 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1 h)
-
-/-- In a parity complex exact in odd degree, the even boundaries `d(C₀) ⊆ C₁` are the odd
-cycles. -/
-theorem range_d_zero_one_eq_ker_d_one_zero (h : C.ExactAt 1) :
-    LinearMap.range (C.d 0 1).hom = LinearMap.ker (C.d 1 0).hom :=
-  (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' 0 1 0 (by rw [ChainComplex.prev]; rfl) (by rw [ChainComplex.next]; rfl)).1 h)
+    ((C.exactAt_iff' (i + 1) i (i + 1) (ChainComplex.prev _ i)
+      (by rw [ChainComplex.next, CharTwo.sub_eq_add])).1 h)
 
 include h in
-/-- In an acyclic parity complex whose even-to-odd differential vanishes, the odd-to-even
-differential `C₁ → C₀` is bijective. -/
-theorem bijective_d_one_zero_of_d_zero_one_eq_zero (hd : C.d 0 1 = 0) :
-    Function.Bijective (C.d 1 0).hom := by
+/-- In an acyclic parity complex whose differential `Cᵢ → Cᵢ₊₁` vanishes, the differential
+`Cᵢ₊₁ → Cᵢ` is bijective. -/
+theorem bijective_d_of_d_eq_zero (i : ZMod 2) (hd : C.d i (i + 1) = 0) :
+    Function.Bijective (C.d (i + 1) i).hom := by
+  have hker := range_d_eq_ker_d (i + 1) (h (i + 1))
+  rw [add_assoc, CharTwo.add_self_eq_zero, add_zero, hd] at hker
   refine ⟨?_, fun y ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, ← range_d_zero_one_eq_ker_d_one_zero (h 1), hd]
+  · rw [← LinearMap.ker_eq_bot, ← hker]
     exact LinearMap.range_zero
-  · have hy : y ∈ LinearMap.ker (C.d 0 1).hom := by simp [hd]
-    rw [← range_d_one_zero_eq_ker_d_zero_one (h 0)] at hy
-    exact hy
-
-include h in
-/-- In an acyclic parity complex whose odd-to-even differential vanishes, the even-to-odd
-differential `C₀ → C₁` is bijective. -/
-theorem bijective_d_zero_one_of_d_one_zero_eq_zero (hd : C.d 1 0 = 0) :
-    Function.Bijective (C.d 0 1).hom := by
-  refine ⟨?_, fun y ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, ← range_d_one_zero_eq_ker_d_zero_one (h 0), hd]
-    exact LinearMap.range_zero
-  · have hy : y ∈ LinearMap.ker (C.d 1 0).hom := by simp [hd]
-    rw [← range_d_zero_one_eq_ker_d_one_zero (h 1)] at hy
+  · have hy : y ∈ LinearMap.ker (C.d i (i + 1)).hom := by simp [hd]
+    rw [← range_d_eq_ker_d i (h i)] at hy
     exact hy
 
 include c h in
-/-- An acyclic parity complex whose even-to-odd differential vanishes has bases of the same size
-in both degrees, as its odd-to-even differential is then an isomorphism. -/
-theorem card_zero_eq_card_one_of_d_zero_one_eq_zero (hd : C.d 0 1 = 0) : n 0 = n 1 := by
-  have hd' :=
-    (LinearEquiv.ofBijective _ (bijective_d_one_zero_of_d_zero_one_eq_zero h hd)).finrank_eq
-  simpa using (finrank_eq_card_basis (c 0)).symm.trans
-    (hd'.symm.trans (finrank_eq_card_basis (c 1)))
-
-include c h in
-/-- An acyclic parity complex whose odd-to-even differential vanishes has bases of the same size
-in both degrees, as its even-to-odd differential is then an isomorphism. -/
-theorem card_one_eq_card_zero_of_d_one_zero_eq_zero (hd : C.d 1 0 = 0) : n 1 = n 0 := by
-  have hd' :=
-    (LinearEquiv.ofBijective _ (bijective_d_zero_one_of_d_one_zero_eq_zero h hd)).finrank_eq
-  simpa using (finrank_eq_card_basis (c 1)).symm.trans
-    (hd'.symm.trans (finrank_eq_card_basis (c 0)))
+/-- An acyclic parity complex whose differential `Cᵢ → Cᵢ₊₁` vanishes has bases of the same size
+in both degrees, as its differential `Cᵢ₊₁ → Cᵢ` is then an isomorphism. -/
+theorem card_eq_card_add_one_of_d_eq_zero (i : ZMod 2) (hd : C.d i (i + 1) = 0) :
+    n i = n (i + 1) := by
+  have hd' := (LinearEquiv.ofBijective _ (bijective_d_of_d_eq_zero h i hd)).finrank_eq
+  simpa using (finrank_eq_card_basis (c i)).symm.trans
+    (hd'.symm.trans (finrank_eq_card_basis (c (i + 1))))
 
 include h in
 /-- **Normalization of the parity torsion.** An acyclic parity complex whose even-to-odd
@@ -313,14 +287,14 @@ isomorphism `d : C₁ → C₀` in the bases `c 1` and `c 0`. For instance multi
 `F`, from odd to even, has torsion `a⁻¹`. -/
 theorem parityReidemeisterTorsion_eq_inv_det (hd : C.d 0 1 = 0) :
     C.parityReidemeisterTorsion c = ((c 0).det fun k ↦
-      (C.d 1 0).hom (c 1 (Fin.cast (card_zero_eq_card_one_of_d_zero_one_eq_zero c h hd) k)))⁻¹ := by
+      (C.d 1 0).hom (c 1 (Fin.cast (card_eq_card_add_one_of_d_eq_zero c h 0 hd) k)))⁻¹ := by
   -- The images of the basis `c 1` form a basis of the boundaries `B₀ = C₀`, with the basis `c 1`
   -- itself as lifts; the boundaries `B₁` vanish.
   let β := (c 1).map
-    (LinearEquiv.ofInjective _ (bijective_d_one_zero_of_d_zero_one_eq_zero h hd).1)
+    (LinearEquiv.ofInjective (C.d 1 0).hom (bijective_d_of_d_eq_zero h 0 hd).1)
   have hβ (k : Fin (n 1)) : (C.d 1 0).hom (c 1 k) = β k := by simp [β]
   -- the degrees `1 + 1` and `0 + 1` of the brackets are `0` and `1`
-  have hn : n (1 + 1) = n 1 := card_zero_eq_card_one_of_d_zero_one_eq_zero c h hd
+  have hn : n (1 + 1) = n 1 := card_eq_card_add_one_of_d_eq_zero c h 0 hd
   rw [parityReidemeisterTorsion_eq_div h β (chosenBoundaryBasis C c 1) (c 1) hβ
       (chosenBoundaryLift C c 1) (chosenBoundaryLift_spec C c 1),
     torsionBracket_eq_det_right c (h (0 + 1)) _ _ _ _ (rfl : n (0 + 1) = n 1),
@@ -335,14 +309,14 @@ include h in
 `det (d)` is the determinant of the isomorphism `d : C₀ → C₁` in the bases `c 0` and `c 1`. -/
 theorem parityReidemeisterTorsion_eq_det (hd : C.d 1 0 = 0) :
     C.parityReidemeisterTorsion c = (c 1).det fun k ↦
-      (C.d 0 1).hom (c 0 (Fin.cast (card_one_eq_card_zero_of_d_one_zero_eq_zero c h hd) k)) := by
+      (C.d 0 1).hom (c 0 (Fin.cast (card_eq_card_add_one_of_d_eq_zero c h 1 hd) k)) := by
   -- The images of the basis `c 0` form a basis of the boundaries `B₁ = C₁`, with the basis `c 0`
   -- itself as lifts; the boundaries `B₀` vanish.
   let β := (c 0).map
-    (LinearEquiv.ofInjective _ (bijective_d_zero_one_of_d_one_zero_eq_zero h hd).1)
+    (LinearEquiv.ofInjective (C.d 0 1).hom (bijective_d_of_d_eq_zero h 1 hd).1)
   have hβ (k : Fin (n 0)) : (C.d 0 1).hom (c 0 k) = β k := by simp [β]
   -- the degrees `0 + 1` and `1 + 1` of the brackets are `1` and `0`
-  have hn : n (0 + 1) = n 0 := card_one_eq_card_zero_of_d_one_zero_eq_zero c h hd
+  have hn : n (0 + 1) = n 0 := card_eq_card_add_one_of_d_eq_zero c h 1 hd
   rw [parityReidemeisterTorsion_eq_div h (chosenBoundaryBasis C c 0) β
       (chosenBoundaryLift C c 0) (chosenBoundaryLift_spec C c 0) (c 0) hβ,
     torsionBracket_eq_det_left c (h (0 + 1)) _ _ _ _ hn,
@@ -408,12 +382,8 @@ theorem parityReidemeisterTorsion_map :
       C.parityReidemeisterTorsion c := by
   -- `D` with the transported bases is the scalar extension of `C` along the identity: the
   -- matrices of the differentials agree.
-  refine (map_parityReidemeisterTorsion (RingHom.id F) fun i ↦ ?_).symm
-  ext k l
-  simp only [LinearMap.toMatrix_apply, Basis.map_repr, Iso.toLinearEquiv_symm, Basis.map_apply,
-    Iso.toLinearEquiv_apply, Hom.isoApp_hom, Hom.comm_apply, LinearEquiv.trans_apply, Iso.symm_hom,
-    Hom.isoApp_inv, RingHom.coe_id, Matrix.map_apply, id_eq]
-  rw [← ConcreteCategory.comp_apply, ← comp_f, e.hom_inv_id, id_f, ConcreteCategory.id_apply]
+  exact (map_parityReidemeisterTorsion (RingHom.id F) fun i ↦
+    (toMatrix_map_isoApp_d e c (i + 1) i).trans (Matrix.map_id _).symm).symm
 
 end Iso
 
