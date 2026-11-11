@@ -34,8 +34,9 @@ Three steps carry the whole file.
   arithmetic enters.
 * A left descent `i` of `w` turns a reduced word for `s i * w` into a reduced word for `w`
   beginning with `i`. If both `i` and `i'` are left descents of a parabolic `w`, that produces two
-  reduced words for `w` with different first letters, hence — the two alternating words being the
-  only candidates — *both* alternating words of length `ℓ w` spell `w`.
+  reduced words for `w` with different first letters when `i ≠ i'`, hence — the two alternating
+  words being the only candidates — *both* alternating words of length `ℓ w` spell `w`. When
+  `i = i'` the two alternating words coincide, and the statement reduces to the single descent.
 
 Together these pin the length down: an element of `cs.parabolic {i, i'}` with both `i` and `i'` as
 left descents has length exactly `orderOf (s i * s i')`
@@ -213,8 +214,7 @@ theorem wordProd_alternatingWord_add_two_mul (i i' : B) {n : ℕ} (hn : (s i * s
 /-! ### Two left descents -/
 
 /-- **An element of a rank-two standard parabolic subgroup with two left descents is
-spelled by both alternating words of its length.** The two descents produce two reduced words with
-different first letters, and the two alternating words of that length are the only candidates. -/
+spelled by both alternating words of its length.** -/
 theorem wordProd_alternatingWord_eq_of_isLeftDescent_pair {i i' : B} {w : W}
     (hw : w ∈ cs.parabolic {i, i'}) (hd : cs.IsLeftDescent w i) (hd' : cs.IsLeftDescent w i') :
     π (alternatingWord i i' (ℓ w)) = w ∧ π (alternatingWord i' i (ℓ w)) = w := by
