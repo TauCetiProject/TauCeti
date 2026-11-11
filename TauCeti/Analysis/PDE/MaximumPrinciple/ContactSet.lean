@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Topology.MetricSpace.Sequences
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.Gradient
@@ -51,6 +52,8 @@ elliptic operator applied to it, in
   contact set is relatively closed, hence measurable.
 * `TauCeti.PDE.fderiv_fderiv_self_nonpos_of_mem_upperContactSet`: the second derivative of a `C²`
   function is nonpositive on the diagonal at a point of the upper contact set.
+* `TauCeti.PDE.isPositive_neg_hessianOperator_of_mem_upperContactSet`: there the negated Hessian
+  operator is positive.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`: the ball of radius
   `(u x - m) / diam Ω` lies in the gradient image of the upper contact set.
 * `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
@@ -188,6 +191,17 @@ theorem measurableSet_upperContactSet [MeasurableSpace E] [OpensMeasurableSpace 
     ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   exact ((mem_upperContactSet_iff_gradient hΩ hdiff).1 hz).2 x hx
+
+/-- At a point of the upper contact set of a function that is `C²` on an open set, the negated
+Hessian operator is positive. -/
+theorem isPositive_neg_hessianOperator_of_mem_upperContactSet (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 2 u Ω) (hy : y ∈ upperContactSet u Ω) :
+    (-hessianOperator u y).IsPositive := by
+  have hu' := hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy))
+  refine (ContinuousLinearMap.isPositive_iff' _).2
+    ⟨hu'.isSelfAdjoint_hessianOperator.neg, fun w => ?_⟩
+  rw [neg_apply, inner_neg_left, inner_hessianOperator_left, neg_nonneg]
+  exact fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy w
 
 variable [FiniteDimensional ℝ E]
 

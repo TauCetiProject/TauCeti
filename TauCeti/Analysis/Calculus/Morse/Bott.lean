@@ -163,7 +163,7 @@ theorem exists_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
     filter_upwards [hcrit, hC2b] with b hb hb2
     rw [fderiv_slice_right (hb2.differentiableAt (by norm_num)), hb,
       ContinuousLinearMap.zero_comp]
-  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUV, hψfst, hψ0, hψsymm, hψ, hψinv, hψf⟩ :=
+  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUV, -, hψfst, hψ0, hψsymm, hψ, hψinv, hψf⟩ :=
     exists_parametric_morse_chart_of_contDiffOn hW hf hcrit' hHa hn
   -- Shrink the base to a ball on which the zero section is critical and the vertical Hessian
   -- invertible; the critical value is constant on that ball.
