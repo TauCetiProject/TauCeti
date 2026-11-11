@@ -493,7 +493,7 @@ conjugate of the derivative of the original function at the conjugate point. -/
 
 section StarSchwarzReflection
 
-variable {F : Type*} [AddMonoid F] [StarAddMonoid F] {ξ : ℂ → F}
+variable {F : Type*} [Star F] {ξ : ℂ → F}
 
 /-- Schwarz reflection across the real axis with respect to the real structure `star` of the
 coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` below it. -/
@@ -515,12 +515,14 @@ theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
   rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
 
 @[simp]
-theorem starSchwarzReflection_zero : starSchwarzReflection (0 : ℂ → F) = 0 := by
+theorem starSchwarzReflection_zero {F : Type*} [AddMonoid F] [StarAddMonoid F] :
+    starSchwarzReflection (0 : ℂ → F) = 0 := by
   ext z
   simp [starSchwarzReflection]
 
 /-- Off the real axis the reflection is conjugation-symmetric. -/
-theorem starSchwarzReflection_conj {z : ℂ} (hz : z.im ≠ 0) :
+theorem starSchwarzReflection_conj {F : Type*} [InvolutiveStar F] {ξ : ℂ → F} {z : ℂ}
+    (hz : z.im ≠ 0) :
     starSchwarzReflection ξ (conj z) = star (starSchwarzReflection ξ z) := by
   rcases hz.lt_or_gt with hz | hz
   · rw [starSchwarzReflection_of_im_nonneg (by simpa using hz.le),
