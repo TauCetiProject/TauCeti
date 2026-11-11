@@ -130,11 +130,11 @@ theorem cutNorm_congr_ae {K L : SymmKernel Ω μ}
     (h : ∀ᵐ p ∂(μ.prod μ), K p.1 p.2 = L p.1 p.2) : cutNorm μ K = cutNorm μ L := by
   have hrect (S T : Set Ω) : K.rectIntegral μ S T = L.rectIntegral μ S T :=
     SymmKernel.rectIntegral_congr_ae h S T
-  refine le_antisymm (cutNorm_le μ fun S hS T hT => ?_) (cutNorm_le μ fun S hS T hT => ?_)
+  refine le_antisymm (cutNorm_le μ fun S _ T _ => ?_) (cutNorm_le μ fun S _ T _ => ?_)
   · rw [hrect]
-    exact abs_rectIntegral_le_cutNorm μ L hS hT
+    exact abs_rectIntegral_le_cutNorm μ L S T
   · rw [← hrect]
-    exact abs_rectIntegral_le_cutNorm μ K hS hT
+    exact abs_rectIntegral_le_cutNorm μ K S T
 
 end Kernel
 
