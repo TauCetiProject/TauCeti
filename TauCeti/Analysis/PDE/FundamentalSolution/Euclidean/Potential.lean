@@ -125,12 +125,12 @@ private theorem newtonianKernel_convolution_eq_zero_of_not_integrable
     have : f = 0 := funext fun y => by_contra fun hy =>
       (norm_nonneg y).not_gt ((mem_closedBall_zero_iff.1 (hR hy)).trans_lt hR0)
     simp [this]
+  have hxy : ∀ y ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) R, x - y ≠ 0 := fun y hy =>
+    sub_ne_zero.2 fun h => (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h])
   have hne : ∀ y ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) R, newtonianKernel n (x - y) ≠ 0 :=
-    fun y hy => newtonianKernel_ne_zero n hn (sub_ne_zero.2 fun h =>
-      (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h]))
+    fun y hy => newtonianKernel_ne_zero n hn (hxy y hy)
   have hcont : ContinuousOn (fun y => (newtonianKernel n (x - y))⁻¹) (closedBall 0 R) :=
-    fun y hy => (((contDiffAt_newtonianKernel n (sub_ne_zero.2 fun h =>
-      (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h])))).continuousAt.comp
+    fun y hy => ((contDiffAt_newtonianKernel n (hxy y hy)).continuousAt.comp
         (continuousAt_const.sub continuousAt_id)).continuousWithinAt.inv₀ (hne y hy)
   refine (integrableOn_iff_integrable_of_support_subset hR).1 ?_
   refine (hg.integrableOn.continuousOn_smul hcont (isCompact_closedBall _ _)).congr_fun

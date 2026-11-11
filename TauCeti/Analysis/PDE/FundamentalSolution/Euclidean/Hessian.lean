@@ -101,17 +101,11 @@ private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) 
   simp only [zero_smul, fderiv_newtonianKernel_zero, zero_apply] at hlim
   obtain ⟨t, ht, htlt⟩ := ((hlim.eventually (Metric.ball_mem_nhds _ hc)).and
     (Ioo_mem_nhdsGT one_pos)).exists
-  have hne : t • e ≠ 0 := by
-    rw [← norm_pos_iff, norm_smul, he, Real.norm_eq_abs, abs_of_pos htlt.1, mul_one]
-    exact htlt.1
   have hval : fderiv ℝ (newtonianKernel n) (t • e) e = -(c * t ^ (1 - (n : ℝ))) := by
-    rw [fderiv_newtonianKernel_apply n hn (t • e) e, norm_smul, real_inner_smul_left,
-      real_inner_self_eq_norm_sq, he, Real.norm_eq_abs, abs_of_pos htlt.1,
-      sub_eq_add_neg, Real.rpow_add htlt.1, Real.rpow_one]
-    have hc' : c = (n : ℝ)⁻¹ * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-      mul_inv _ _
-    rw [hc']
-    ring_nf
+    rw [fderiv_newtonianKernel_apply n hn (t • e) e]
+    simp only [norm_smul, real_inner_smul_left, real_inner_self_eq_norm_sq, he, Real.norm_eq_abs,
+      abs_of_pos htlt.1, c, sub_eq_add_neg, Real.rpow_add htlt.1, Real.rpow_one]
+    field_simp
   have hge : 1 ≤ t ^ (1 - (n : ℝ)) :=
     Real.one_le_rpow_of_pos_of_le_one_of_nonpos htlt.1 htlt.2.le (by
       have : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn0
