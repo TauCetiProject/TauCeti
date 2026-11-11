@@ -10,6 +10,7 @@ import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # The discriminant field `F(√disc f)`
@@ -225,19 +226,28 @@ theorem finrank_discrField_baseChange_eq_two {K : Type w} [Field K] [Algebra F K
   · rwa [Polynomial.discr_map_of_natDegree_eq _ hdeg]
 
 /-- Away from characteristic `2`, the discriminant field of a polynomial is a Galois extension of
-the base field. For nonzero discriminant it is the splitting field of `X ^ 2 - C f.discr`, which is
-separable because the discriminant is nonzero and `2` is invertible; for zero discriminant it is
-the base field itself. For a monic polynomial, `Polynomial.Monic.discr_ne_zero_iff` reads the
-nonvanishing of the discriminant as separability of `f`. -/
-theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
-    (hchar : ringChar F ≠ 2) : IsGalois F (discrField f E) := by
-  by_cases hdisc : f.discr = 0
-  · rw [(discrField_eq_bot_iff hδ).mpr (by simp [hdisc])]
+the base field. When `E` contains a square root of a nonzero discriminant, the discriminant field
+is the splitting field of `X ^ 2 - C f.discr`, which is separable because the discriminant is
+nonzero and `2` is invertible. For zero discriminant it is the base field itself, and so it is when
+the ambient extension contains no square root of the discriminant, since the root set is then
+empty. For a monic polynomial, `Polynomial.Monic.discr_ne_zero_iff` reads the nonvanishing of the
+discriminant as separability of `f`. -/
+theorem isGalois_discrField (hchar : ringChar F ≠ 2) : IsGalois F (discrField f E) := by
+  by_cases hδ : ∃ δ : E, δ ^ 2 = algebraMap F E f.discr
+  · obtain ⟨δ, hδ⟩ := hδ
+    by_cases hdisc : f.discr = 0
+    · rw [(discrField_eq_bot_iff hδ).mpr (by simp [hdisc])]
+      infer_instance
+    have hsep2 : ((X : F[X]) ^ 2 - C f.discr).Separable :=
+      separable_X_pow_sub_C _ (by simpa using Ring.two_ne_zero hchar) hdisc
+    have := isSplittingField_discrField hδ
+    exact IsGalois.of_separable_splitting_field hsep2
+  · have hempty : ((X : F[X]) ^ 2 - C f.discr).rootSet E = ∅ := by
+      refine Set.eq_empty_of_forall_notMem fun x hx ↦ hδ ⟨x, ?_⟩
+      have h := (mem_rootSet.mp hx).2
+      simpa [sub_eq_zero] using h
+    rw [discrField_def, hempty, IntermediateField.adjoin_empty]
     infer_instance
-  have hsep2 : ((X : F[X]) ^ 2 - C f.discr).Separable :=
-    separable_X_pow_sub_C _ (by simpa using Ring.two_ne_zero hchar) hdisc
-  have := isSplittingField_discrField hδ
-  exact IsGalois.of_separable_splitting_field hsep2
 
 /-- **Irreducibility over the discriminant field does not depend on the ambient extension.** If
 `E` and `E'` both contain a square root of the discriminant of `f`, then a polynomial `g` is
@@ -382,28 +392,15 @@ theorem irreducible_map_discrField_iff (hsep : f.Separable)
     fixingSubgroup_discrField hsep hchar, isPretransitive_evenAutSubgroup_iff]
   -- The root action in `E` is the transport of the root action in the splitting field.
   let ε := Gal.rootsEquivRoots f E f.SplittingField
-  let φ : ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
-        Subgroup (Equiv.Perm (f.rootSet E))) →
-      ((Gal.galActionHom f f.SplittingField).range ⊓ alternatingGroup (f.rootSet f.SplittingField) :
-        Subgroup (Equiv.Perm (f.rootSet f.SplittingField))) :=
-    fun σ ↦ ⟨ε.permCongr σ, by
-      obtain ⟨⟨g, hg⟩, halt⟩ := Subgroup.mem_inf.mp σ.2
-      refine Subgroup.mem_inf.mpr ⟨⟨g, ?_⟩, ?_⟩
-      · rw [Gal.galActionHom_eq_permCongr f E f.SplittingField g, hg]
-      · rwa [Equiv.Perm.mem_alternatingGroup, Equiv.Perm.sign_permCongr,
-          ← Equiv.Perm.mem_alternatingGroup]⟩
-  refine (MulAction.isPretransitive_congr (φ := φ) (f := ⟨ε, fun σ x ↦ ?_⟩) ?_
-    ε.bijective).symm
-  · simp [φ, Subgroup.smul_def, Equiv.Perm.smul_def]
-  · rintro ⟨π, hπ⟩
-    obtain ⟨⟨g, hg⟩, halt⟩ := Subgroup.mem_inf.mp hπ
-    refine ⟨⟨Gal.galActionHom f E g, ⟨g, rfl⟩, ?_⟩, Subtype.ext ?_⟩
-    · have h1 := Equiv.Perm.mem_alternatingGroup.mp halt
-      rw [← hg, Gal.galActionHom_eq_permCongr f E f.SplittingField g,
-        Equiv.Perm.sign_permCongr] at h1
-      exact Equiv.Perm.mem_alternatingGroup.mpr h1
-    · simp only [φ]
-      rw [← Gal.galActionHom_eq_permCongr f E f.SplittingField g, hg]
+  have hε : (Gal.galActionHom f E).range.map ε.permCongrHom.toMonoidHom =
+      (Gal.galActionHom f f.SplittingField).range := by
+    simp only [MonoidHom.map_range]
+    congr 1
+    ext g x
+    rw [MonoidHom.comp_apply, Gal.galActionHom_eq_permCongr f E f.SplittingField g]
+    rfl
+  rw [← hε, MulEquiv.toMonoidHom_eq_coe,
+    Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff]
 
 open scoped Classical in
 /-- **The discriminant test, read on the discriminant field.** The discriminant field is trivial
