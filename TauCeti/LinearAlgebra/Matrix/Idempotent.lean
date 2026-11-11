@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -74,13 +75,6 @@ fixed by `e`. -/
 theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)
     {v : ι → A} : v ∈ range e.vecMulLinear ↔ v ᵥ* e = v :=
   he.vecMulLinear.mem_range_iff
-
-/-- Each row of a matrix lies in the range of right multiplication by it: it is the image of the
-corresponding standard basis vector. -/
-theorem Matrix.row_mem_range_vecMulLinear (e : Matrix ι ι A) (i : ι) :
-    e i ∈ range e.vecMulLinear := by
-  classical
-  exact ⟨Pi.single i 1, Matrix.single_one_vecMul i e⟩
 
 /-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
 the rows `eᵢ` of `e`. -/
