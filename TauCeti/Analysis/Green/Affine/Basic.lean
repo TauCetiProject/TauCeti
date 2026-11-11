@@ -153,13 +153,6 @@ theorem integral_circulationFun_affineMap (A : ℂ →L[ℝ] ℂ) (c : ℂ)
   exact intervalIntegral.integral_congr_ae_restrict
     (circulationFun_affineMap_ae A c P Q hγ)
 
-/-- An invertible affine coordinate map is the linear part followed by a translation. -/
-private theorem affineMap_eq_addRight_comp (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
-    affineMap A.toContinuousLinearMap c = Homeomorph.addRight c ∘ A := by
-  ext z
-  rw [affineMap_apply]
-  rfl
-
 /-- An invertible affine coordinate map is the translation by `c` after the linear part. -/
 private theorem affineMap_eq_add (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
     affineMap A.toContinuousLinearMap c = fun z ↦ c + A z := by
@@ -169,11 +162,11 @@ private theorem affineMap_eq_add (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
 /-- An invertible affine coordinate map is a homeomorphism. -/
 theorem isHomeomorph_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
     IsHomeomorph (affineMap A.toContinuousLinearMap c) := by
-  rw [affineMap_eq_addRight_comp]
-  exact (Homeomorph.addRight c).isHomeomorph.comp A.toHomeomorph.isHomeomorph
+  rw [affineMap_eq_add]
+  exact (Homeomorph.addLeft c).isHomeomorph.comp A.toHomeomorph.isHomeomorph
 
 /-- Affine images scale planar area by the absolute real determinant. -/
-theorem volume_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} :
+theorem volume_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
     volume (affineMap A.toContinuousLinearMap c '' s) =
       ENNReal.ofReal |A.toLinearEquiv.toLinearMap.det| * volume s := by
   have hf : affineMap A.toContinuousLinearMap c =
@@ -187,7 +180,7 @@ theorem volume_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} :
   rw [hf, Measure.addHaar_image_affineMap, hlin]
 
 /-- The area measure on an affine image is the pushforward of the absolute determinant density. -/
-theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} :
+theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
     Measure.map (affineMap A.toContinuousLinearMap c)
       ((volume.restrict s).withDensity
         (fun _ ↦ ENNReal.ofReal |A.toLinearEquiv.toLinearMap.det|)) =
@@ -196,18 +189,18 @@ theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ
     (isHomeomorph_affineMap A c).continuous.measurable
   ext t ht
   rw [Measure.map_apply he ht, withDensity_apply _ (he ht), setLIntegral_const,
-    Measure.restrict_apply (he ht), Measure.restrict_apply ht, ← volume_affineMap_image A c,
+    Measure.restrict_apply (he ht), Measure.restrict_apply ht, ← volume_affineMap_image A c _,
     image_preimage_inter]
 
 /-- Change of variables for planar area under an invertible affine coordinate map. -/
-theorem integral_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} (f : ℂ → ℝ) :
+theorem integral_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) (f : ℂ → ℝ) :
     (∫ z in affineMap A.toContinuousLinearMap c '' s, f z) =
       |A.toLinearEquiv.toLinearMap.det| * ∫ z in s, f (affineMap A.toContinuousLinearMap c z) := by
   rw [affineMap_eq_add]
   simpa only [smul_eq_mul, integral_const_mul] using A.integral_image_affine c f s volume
 
 /-- Area integrability is preserved under an invertible affine coordinate map. -/
-theorem integrableOn_affineMap_image_iff (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} (f : ℂ → ℝ) :
+theorem integrableOn_affineMap_image_iff (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) (f : ℂ → ℝ) :
     IntegrableOn f (affineMap A.toContinuousLinearMap c '' s) ↔
       IntegrableOn (f ∘ affineMap A.toContinuousLinearMap c) s := by
   rw [affineMap_eq_add]
@@ -254,7 +247,7 @@ theorem oneForm_coordinateSwap (P Q : ℂ → ℝ) (z : ℂ) :
   ring
 
 /-- Interchanging real and imaginary coordinates negates the curl. -/
-theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ} :
+theorem curl_coordinateSwap (P Q : ℂ → ℝ) (z : ℂ) :
     curl (Q ∘ Complex.coordinateSwapCLE) (P ∘ Complex.coordinateSwapCLE) z =
       -curl P Q (Complex.coordinateSwapCLE z) := by
   unfold curl
