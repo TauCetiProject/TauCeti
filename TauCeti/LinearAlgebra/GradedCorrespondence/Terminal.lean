@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
@@ -40,7 +40,7 @@ property. The terminal-face convention is that of Gross–Hacking–Siebert,
 Adapted from `Mei/LinearAlgebra/GradedCorrespondence/Terminal.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
-Original copyright and author credit are retained.
+Original author credit is retained; the file uses the required Tau Ceti copyright header.
 -/
 
 public noncomputable section
