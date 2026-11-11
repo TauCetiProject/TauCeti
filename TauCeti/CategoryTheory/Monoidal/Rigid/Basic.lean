@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
@@ -36,6 +38,8 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   object having a right (resp. left) dual is a right (resp. left) adjoint on the left and a left
   (resp. right) adjoint on the right, so in a rigid category tensoring on either side preserves all
   limits and colimits;
+* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
+  is not a zero object, by the zigzag identity;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
   correspond to morphisms `𝟙_ C ⟶ Y`.
 -/
@@ -225,5 +229,17 @@ theorem homUnitEquiv_symm_apply (s : 𝟙_ C ⟶ Y) :
   simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
 
 end ExactPairing
+
+open Limits in
+/-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
+the zigzag identity would make the identity of `X` zero. Only zero morphisms are needed. -/
+theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
+  intro h
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have := (tensorRightAdjunction X Y).isLeftAdjoint
+  have h0 : (0 : 𝟙_ C ⟶ X ⊗ Y) ▷ X = 0 := (tensorRight X).map_zero _ _
+  rw [h, h0, zero_comp] at hz
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
 
 end TauCeti
