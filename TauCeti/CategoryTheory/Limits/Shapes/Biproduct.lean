@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
+public import Mathlib.CategoryTheory.Limits.Shapes.CombinedProducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
@@ -174,72 +175,25 @@ family indexed by the sum of the index types has a biproduct. -/
 theorem hasBiproduct_sum_elim {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
     [HasBiproduct f] [HasBiproduct g] [HasBinaryBiproduct (⨁ f) (⨁ g)] :
     HasBiproduct (Sum.elim f g) := by
-  refine HasBiproduct.mk
+  -- Unfold the partially applied family, so that `Sum.elim f g (.inl i)` reduces to `f i` at
+  -- reducible transparency; otherwise `simp` cannot apply the biproduct lemmas for `f` and `g`.
+  dsimp +unfoldPartialApp only [Sum.elim]
+  classical
+  -- The bicone's cone and cocone are Mathlib's combined fan and cofan of the two biproducts
+  -- and their binary biproduct, so Mathlib's limit and colimit proofs for these apply directly.
+  exact HasBiproduct.mk
     { bicone :=
         { pt := (⨁ f) ⊞ (⨁ g)
-          π := fun
-            | .inl i => biprod.fst ≫ biproduct.π f i
-            | .inr j => biprod.snd ≫ biproduct.π g j
-          ι := fun
-            | .inl i => biproduct.ι f i ≫ biprod.inl
-            | .inr j => biproduct.ι g j ≫ biprod.inr
-          ι_π := by
-            rintro (i | i) (j | j)
-            · by_cases h : i = j
-              · subst h; simp; rfl
-              · simp [h]; rfl
-            · simp; rfl
-            · simp; rfl
-            · by_cases h : i = j
-              · subst h; simp; rfl
-              · simp [h]; rfl }
+          π := Fan.combPairHoms (biproduct.bicone f).toCone (biproduct.bicone g).toCone
+            (BinaryBiproduct.bicone (⨁ f) (⨁ g)).toCone
+          ι := Cofan.combPairHoms (biproduct.bicone f).toCocone (biproduct.bicone g).toCocone
+            (BinaryBiproduct.bicone (⨁ f) (⨁ g)).toCocone
+          ι_π := by rintro (i | i) (j | j) <;> simp [biproduct.ι_π] }
       isBilimit :=
-        { isLimit := Fan.IsLimit.mk _
-            (fun s => biprod.lift (biproduct.lift fun i => s.proj (.inl i))
-              (biproduct.lift fun j => s.proj (.inr j)))
-            (by
-              rintro s (i | j)
-              · simp only [Sum.elim_inl, Bicone.toCone_pt, Bicone.toCone_proj,
-                  biprod.lift_fst_assoc]
-                exact biproduct.lift_π _ _
-              · simp only [Sum.elim_inr, Bicone.toCone_pt, Bicone.toCone_proj,
-                  biprod.lift_snd_assoc]
-                exact biproduct.lift_π _ _)
-            (fun s m hm => by
-              apply biprod.hom_ext
-              · apply biproduct.hom_ext
-                intro i
-                rw [biprod.lift_fst]
-                erw [biproduct.lift_π]
-                simpa using hm (.inl i)
-              · apply biproduct.hom_ext
-                intro j
-                rw [biprod.lift_snd]
-                erw [biproduct.lift_π]
-                simpa using hm (.inr j))
-          isColimit := Cofan.IsColimit.mk _
-            (fun s => biprod.desc (biproduct.desc fun i => s.inj (.inl i))
-              (biproduct.desc fun j => s.inj (.inr j)))
-            (by
-              rintro s (i | j)
-              · simp only [Sum.elim_inl, Bicone.toCocone_pt, Bicone.toCocone_inj, Category.assoc,
-                  biprod.inl_desc]
-                exact biproduct.ι_desc _ _
-              · simp only [Sum.elim_inr, Bicone.toCocone_pt, Bicone.toCocone_inj, Category.assoc,
-                  biprod.inr_desc]
-                exact biproduct.ι_desc _ _)
-            (fun s m hm => by
-              apply biprod.hom_ext'
-              · apply biproduct.hom_ext'
-                intro i
-                rw [biprod.inl_desc]
-                erw [biproduct.ι_desc]
-                simpa using hm (.inl i)
-              · apply biproduct.hom_ext'
-                intro j
-                rw [biprod.inr_desc]
-                erw [biproduct.ι_desc]
-                simpa using hm (.inr j)) } }
+        { isLimit := Fan.combPairIsLimit (biproduct.isLimit f) (biproduct.isLimit g)
+            (BinaryBiproduct.isLimit (⨁ f) (⨁ g))
+          isColimit := Cofan.combPairIsColimit (biproduct.isColimit f) (biproduct.isColimit g)
+            (BinaryBiproduct.isColimit (⨁ f) (⨁ g)) } }
 
 /-- A biproduct indexed by a sum type is the binary biproduct of the two indexed parts. -/
 noncomputable def biproductSumIso {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
@@ -411,17 +365,12 @@ theorem biproduct_π_ι_add_toSubtype_fromSubtype :
     biproduct.π f j ≫ biproduct.ι f j +
       biproduct.toSubtype f (· ≠ j) ≫ biproduct.fromSubtype f (· ≠ j) = 𝟙 (⨁ f) := by
   classical
-  ext a b
-  by_cases hab : b = a
-  · subst hab
-    by_cases hb : b = j
-    · subst hb
-      simp
-    · simp [biproduct.ι_π_ne_assoc _ hb, hb]
-  · by_cases hb : b = j
-    · subst hb
-      simp [biproduct.ι_π_ne _ hab, biproduct.ι_π_ne_assoc _ hab]
-    · simp [biproduct.ι_π_ne_assoc _ hb, biproduct.ι_π_ne_assoc _ hab, biproduct.ι_π_ne _ hab]
+  rw [biproduct.toSubtype_fromSubtype]
+  refine biproduct.hom_ext' _ _ fun a ↦ ?_
+  by_cases ha : a = j
+  · subst ha
+    simp
+  · simp [ha, biproduct.ι_π_ne_assoc _ ha]
 
 end Additive
 
