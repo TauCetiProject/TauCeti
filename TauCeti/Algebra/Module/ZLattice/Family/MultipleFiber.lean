@@ -279,7 +279,7 @@ theorem contMDiffConstSMul_torusFamilyFiberMulAction :
   rw [comp_apply, torusFamilyFiberMulAction_smul, AddEquiv.affineEquiv_apply,
     torusFamilyFiberLinearPart_mk, ← hβ, comp_apply, Submodule.orbitRelQuotient_mk_add]
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The orbit map `T_y → T_y / Γ` is a `C^n` local diffeomorphism, and `T_y / Γ` is a `C^n`
 manifold. -/
 private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
@@ -305,7 +305,7 @@ private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
   have := contMDiffConstSMul_torusFamilyFiberMulAction P R ρ hequiv b hb hone hmul hbone hbmul hR hy
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit space of the fibre over a fixed point is a manifold.** Let `Γ` act properly
 discontinuously on `Y`, fixing `y`, and freely on the family of tori `X = (Y × E)/Λ` of a `C^n`
 family of full lattices by an affine cocycle with `C^n` linear-part evaluations and translation
@@ -322,7 +322,7 @@ theorem isManifold_torusFamilyFiberQuotient :
   (isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
     hmul hbone hbmul hR hbc hfree hy).2
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit map of the fibre over a fixed point is a local diffeomorphism.** Under the
 hypotheses of `TauCeti.isManifold_torusFamilyFiberQuotient`, the orbit map `T_y → T_y / Γ` is a
 `C^n` local diffeomorphism. -/

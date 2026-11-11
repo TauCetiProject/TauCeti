@@ -30,9 +30,11 @@ nonzero multiple in a submodule `N`, then a single nonzero scalar carries all of
 the image of a finite family in the torsion of `M ⧸ N` has a common nonzero annihilator.
 
 Torsion also commutes with products and additive equivalences. When `a ∣ b`, the `a`-torsion
-inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup. Linear maps send torsion
-elements to torsion elements, so submodules and linear images of torsion modules are torsion, and
-the torsion submodule of `M × N` is the product of the torsion submodules.
+inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a scalar `a` of a
+commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
+`LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
+linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
+of the torsion submodules.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ the torsion submodule of `M × N` is the product of the torsion submodules.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
+* `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
+  `LinearMap.lsmul R M a`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
   multiples in `N` have a common nonzero multiplier into `N`.
 * `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
@@ -299,6 +303,15 @@ end Module.IsTorsion
 
 namespace Submodule
 
+/-- The `a`-torsion submodule of an `R`-module `M` is the kernel of left scalar multiplication by
+`a` (`LinearMap.lsmul R M a`). -/
+theorem torsionBy_eq_ker_lsmul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (a : R) : torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := by
+  ext x
+  rw [mem_torsionBy_iff, LinearMap.mem_ker, LinearMap.lsmul_apply]
+
+section
+
 variable {R M : Type*} [CommSemiring R] [NoZeroDivisors R] [Nontrivial R] [AddCommMonoid M]
   [Module R M]
 
@@ -312,6 +325,8 @@ theorem exists_smul_mem_of_forall_exists_smul_mem (N : Submodule R M) {ι : Type
   refine ⟨∏ i ∈ s, r i, Finset.prod_ne_zero_iff.mpr hr0, fun i hi ↦ ?_⟩
   rw [← Finset.prod_erase_mul _ _ hi, mul_smul]
   exact N.smul_mem _ (hr i hi)
+
+end
 
 end Submodule
 
