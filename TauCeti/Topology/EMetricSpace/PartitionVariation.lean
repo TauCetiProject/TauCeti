@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.EMetricSpace.BoundedVariation
+public import TauCeti.Data.Finset.Sort
 public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
@@ -16,11 +17,19 @@ vanishing mesh whose variation sums converge to its extended total variation. No
 bounded-variation assumption is needed. The partitions are chosen for the function: convergence
 along every vanishing-mesh sequence is not asserted.
 
-We first recover variation by nested finite subsets of any linearly ordered domain. On a compact
-real interval, adjoining finite metric nets makes the mesh small without decreasing variation.
-These partitions allow finite variation sums to approximate both finite and infinite variation.
-The finite-set formulation uses native `eVariationOn`; its interpretation as a consecutive
-increment sum is given by `eVariationOn.image_range_of_monotone`.
+Building on `eVariationOn.exists_monotone_finset_tendsto` from
+`TauCeti.Topology.EMetricSpace.BoundedVariation`, we adjoin finite metric nets on a compact real
+interval to make the mesh small without decreasing variation. These partitions allow finite
+variation sums to approximate both finite and infinite variation. The finite-set formulation uses
+native `eVariationOn`; its interpretation as a consecutive increment sum is given by
+`eVariationOn.image_range_of_monotone`.
+
+## Main results
+
+* `TauCeti.exists_nested_partitions_tendsto_eVariationOn`: nested finite partitions recovering
+  extended variation with prescribed positive mesh bounds.
+* `TauCeti.exists_nested_grids_tendsto_sum_edist`: the same construction as ordered grids with
+  consecutive-increment sums.
 -/
 
 public section
@@ -92,41 +101,19 @@ theorem exists_nested_grids_tendsto_sum_edist
   classical
   obtain ⟨p, hp, hps, habp, hgap, hlim⟩ :=
     exists_nested_partitions_tendsto_eVariationOn f hab δ hδ
-  have hcard (n : ℕ) : 0 < (p n).card := Finset.card_pos.mpr ⟨a, (habp n).1⟩
+  have hpne (n : ℕ) : (p n).Nonempty := ⟨a, (habp n).1⟩
+  choose u hum hstrict hus himage hzero hlast using
+    fun n ↦ (p n).exists_strictMonoOn_Iic_surj (hpne n)
   let k (n : ℕ) := (p n).card - 1
-  let u (n i : ℕ) := (p n).orderEmbOfFin rfl
-    ⟨min i (k n), lt_of_le_of_lt (min_le_right _ _) (by have := hcard n; dsimp [k]; omega)⟩
-  have hum (n : ℕ) : Monotone (u n) := fun i j hij ↦
-    (p n).orderEmbOfFin rfl |>.monotone (min_le_min_right _ hij)
-  have hus (n i : ℕ) : u n i ∈ p n := Finset.orderEmbOfFin_mem _ _ _
-  have hui (n : ℕ) : StrictMonoOn (u n) (Iic (k n)) := by
-    intro i hi j hj hij
-    apply (p n).orderEmbOfFin rfl |>.strictMono
-    simpa only [Fin.mk_lt_mk, min_eq_left (mem_Iic.mp hi), min_eq_left (mem_Iic.mp hj)] using hij
-  -- The saturated sorted enumeration has exactly the prescribed finite image.
-  have himage (n : ℕ) : u n '' Iic (k n) = (p n : Set ℝ) := by
-    apply Subset.antisymm
-    · rintro _ ⟨i, _, rfl⟩
-      exact hus n i
-    · intro x hx
-      obtain ⟨i, rfl⟩ := (Finset.range_orderEmbOfFin (p n) rfl).symm ▸ hx
-      refine ⟨i.val, ?_, ?_⟩
-      · have := i.isLt
-        dsimp [k]
-        exact mem_Iic.mpr (by omega)
-      · dsimp [u]
-        congr 2
-        exact min_eq_left (by have := i.isLt; dsimp [k]; omega)
+  have hui (n : ℕ) : StrictMonoOn (u n) (Iic (k n)) := hstrict n
   have hend (n : ℕ) : u n 0 = a ∧ u n (k n) = b := by
     have hmin := (p n).min'_le a (habp n).1
     have hmax := (p n).le_max' b (habp n).2
     have hminmem := hps n ((p n).min'_mem ⟨a, (habp n).1⟩)
     have hmaxmem := hps n ((p n).max'_mem ⟨a, (habp n).1⟩)
     constructor
-    · simpa [u, Finset.orderEmbOfFin_zero] using le_antisymm hmin hminmem.1
-    · simpa only [u, min_self, k] using
-        (Finset.orderEmbOfFin_last (s := p n) rfl (hcard n)).trans
-          (le_antisymm hmaxmem.2 hmax)
+    · exact (hzero n).trans (le_antisymm hmin hminmem.1)
+    · exact (hlast n).trans (le_antisymm hmaxmem.2 hmax)
   refine ⟨k, u, hum, hui, hend, fun n i ↦ hps n (hus n i), ?_, ?_, ?_⟩
   · intro n
     rw [himage, himage]
