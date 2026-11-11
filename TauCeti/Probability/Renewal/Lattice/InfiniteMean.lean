@@ -39,11 +39,8 @@ theorem IsLattice.tendsto_renewalFunction_add_sub_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ (F.renewalFunction (t + x)).toReal -
       (F.renewalFunction t).toReal) atTop (𝓝 0) := by
-  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1
+  have hzero := F.measure_singleton_zero_lt_one_of_lintegral_pos
     (hmean ▸ ENNReal.zero_lt_top)
-  have hzero : F {0} < 1 := by
-    simpa [Function.support] using prob_compl_lt_one_sub_of_lt_prob hpos
-      (measurableSet_support measurable_coe_nnreal_ennreal)
   obtain ⟨a, hmax⟩ := hF.exists_isGreatest_of_measure_zero_lt_one hzero
   have hgrid : Tendsto (fun n : ℕ ↦ (F.renewalFunction (a * (n + 1))).toReal -
       (F.renewalFunction (a * n)).toReal) atTop (𝓝 0) := by

@@ -224,6 +224,14 @@ namespace MeasureTheory.Measure
 
 variable (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
 
+/-- A probability law on the half-line with positive extended mean is not concentrated
+at zero. In particular, this applies to laws of infinite mean. -/
+theorem measure_singleton_zero_lt_one_of_lintegral_pos
+    (hmean : 0 < ∫⁻ u, (u : ℝ≥0∞) ∂μ) : μ {0} < 1 := by
+  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1 hmean
+  simpa [Function.support] using prob_compl_lt_one_sub_of_lt_prob hpos
+    (measurableSet_support measurable_coe_nnreal_ennreal)
+
 /-- **The renewal function is finite.** For a probability measure `μ` on `ℝ≥0` that is not the
 point mass at zero, the renewal function is finite at every time. No assumption is made on the
 mean of `μ`. -/

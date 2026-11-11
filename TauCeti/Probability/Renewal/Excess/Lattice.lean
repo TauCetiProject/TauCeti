@@ -44,12 +44,10 @@ theorem tendsto_measureReal_renewalExcess_le_of_isLattice_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hpos := (lintegral_pos_iff_support measurable_coe_nnreal_ennreal).1
+  have hF := (P.map (T 0)).measure_singleton_zero_lt_one_of_lintegral_pos
     (hmean ▸ ENNReal.zero_lt_top)
   have hzero : P {ω | T 0 ω = 0} < 1 := by
-    simpa [Function.support, Measure.map_apply (hT 0), Set.preimage_singleton] using
-      prob_compl_lt_one_sub_of_lt_prob hpos
-        (measurableSet_support measurable_coe_nnreal_ennreal)
+    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
     hT hindep hid hzero x
     (hlattice.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x)
