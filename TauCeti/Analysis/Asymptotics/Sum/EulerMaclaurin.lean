@@ -25,7 +25,7 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
 
 ## Main results
 
-* `TauCeti.intervalIntegrable_bernoulliFun_fract_smul`: the remainder integrands
+* `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
   family `g` with `g 0 = f` continuous on `[a, n]` up to order `k - 1`, each `g i` having
@@ -36,8 +36,9 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
   `C^{2m}` on `[a, n]`, with derivatives taken within `[a, n]`, and remainder
   `∫_a^n (B_{2m} - B_{2m}({x}))/(2m)! f^{(2m)}(x) dx`.
 
-The proof integrates by parts on each unit interval `[j, j + 1]`, where `Bₖ({x}) = Bₖ(x - j)`,
-using `Bₖ' = k Bₖ₋₁` (`hasDerivAt_bernoulliFun`), `Bₖ(1) = Bₖ(0) = Bₖ` for `k ≠ 1`
+The proof integrates by parts on each unit interval `[j, j + 1]`, on whose interior `(j, j + 1)`
+`Bₖ({x}) = Bₖ(x - j)` (the endpoints do not affect the integral), using `Bₖ' = k Bₖ₋₁`
+(`hasDerivAt_bernoulliFun`), `Bₖ(1) = Bₖ(0) = Bₖ` for `k ≠ 1`
 (`bernoulliFun_endpoints_eq_of_ne_one`) and the vanishing of the odd Bernoulli numbers beyond
 `B₁` (`bernoulli_eq_zero_of_odd`).
 
@@ -52,9 +53,24 @@ public section
 open Finset intervalIntegral MeasureTheory
 open scoped Nat
 
-namespace TauCeti
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+omit [CompleteSpace E] in
+/-- The product of an interval integrable function with the periodic Bernoulli function
+`Bₖ({x})`, where `{x} = x - ⌊x⌋`, is interval integrable, so the remainder integrals of the
+Euler–Maclaurin formula exist. -/
+theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
+    (hu : IntervalIntegrable u volume a b) (k : ℕ) :
+    IntervalIntegrable (fun x => bernoulliFun k (Int.fract x) • u x) volume a b := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (continuous_bernoulliFun k).continuousOn
+  rw [intervalIntegrable_iff] at hu ⊢
+  exact hu.bdd_smul C
+    ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x =>
+      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+
+namespace TauCeti
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
@@ -69,19 +85,13 @@ private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k :
   have hB : ∀ x, HasDerivAt (fun x => (k + 1 : ℝ)⁻¹ * bernoulliFun (k + 1) (x - t))
       (bernoulliFun k (x - t)) x := fun x => by
     simpa [div_eq_inv_mul] using (antideriv_bernoulliFun k (x - t)).comp_sub_const x t
-  have hsub : ∫ x in t..t + 1, bernoulliFun k (x - t) • u x =
-      (∫ x in t..t + 1, bernoulliFun k (x - t) • u x +
-        ((k + 1 : ℝ)⁻¹ * bernoulliFun (k + 1) (x - t)) • u' x) -
-      ∫ x in t..t + 1, ((k + 1 : ℝ)⁻¹ * bernoulliFun (k + 1) (x - t)) • u' x := by
-    rw [intervalIntegral.integral_add, add_sub_cancel_right]
-    · exact ((by fun_prop : Continuous fun x => bernoulliFun k (x - t)).intervalIntegrable
-        _ _).smul_continuousOn (by rwa [Set.uIcc_of_le ht])
-    · exact hint.continuousOn_smul (by fun_prop)
-  rw [hsub, integral_deriv_smul_eq_sub_of_hasDeriv_right (by fun_prop)
-    (by rwa [Set.uIcc_of_le ht]) (fun x _ => (hB x).hasDerivWithinAt)
-    (fun x hx => (hderiv x (by rwa [min_eq_left ht, max_eq_right ht] at hx)).hasDerivWithinAt)
-    ((by fun_prop : Continuous _).intervalIntegrable _ _) hint]
-  simp only [add_sub_cancel_left, sub_self, mul_smul, intervalIntegral.integral_smul]
+  have h := integral_smul_deriv_eq_deriv_smul_of_hasDerivAt (by fun_prop)
+    (by rwa [Set.uIcc_of_le ht]) (fun x _ => hB x)
+    (fun x hx => hderiv x (by rwa [min_eq_left ht, max_eq_right ht] at hx))
+    ((by fun_prop : Continuous _).intervalIntegrable _ _) hint
+  simp only [add_sub_cancel_left, sub_self, mul_smul, intervalIntegral.integral_smul] at h
+  rw [mul_smul, mul_smul, h]
+  abel
 
 /-- The Euler–Maclaurin formula of order `k ≥ 1` on one unit interval `[t, t + 1]`, with the
 remainder written against the shifted Bernoulli polynomial `Bₖ(x - t)`. -/
@@ -116,21 +126,6 @@ private theorem inv_two_smul_add_eq_eulerMaclaurin {g : ℕ → ℝ → E} {t : 
     push_cast
     linear_combination (norm := module)
       (-(k ! : ℝ)⁻¹ * (k + 1 : ℝ)⁻¹ * hB) • (g k (t + 1) - g k t)
-
-omit [CompleteSpace E] in
-/-- The product of an interval integrable function with the periodic Bernoulli function
-`Bₖ({x})`, where `{x} = x - ⌊x⌋`, is interval integrable, so the remainder integrals of the
-Euler–Maclaurin formula exist. -/
-theorem intervalIntegrable_bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
-    (hu : IntervalIntegrable u volume a b) (k : ℕ) :
-    IntervalIntegrable (fun x => bernoulliFun k (Int.fract x) • u x) volume a b := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
-  rw [intervalIntegrable_iff] at hu ⊢
-  exact hu.bdd_smul C
-    ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x =>
-      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
 
 /-- On `(n, n + 1)` the periodic Bernoulli function is the shifted Bernoulli polynomial. -/
 private theorem eqOn_bernoulliFun_fract (k : ℕ) (n : ℤ) :
@@ -187,8 +182,8 @@ theorem sum_Icc_eq_eulerMaclaurin_of_hasDerivAt {g : ℕ → ℝ → E} {a n : �
     rw [hsum, sum_insert (by simp), ih (fun i hi => (hcont i hi).mono (Set.uIcc_of_le ha ▸ h₁))
       (fun i hi x hx => hderiv i hi x ⟨hx.1, hx.2.trans (by linarith)⟩) hint₁,
       ← integral_add_adjacent_intervals hg₁ hg₂,
-      ← integral_add_adjacent_intervals (intervalIntegrable_bernoulliFun_fract_smul hint₁ k)
-        (intervalIntegrable_bernoulliFun_fract_smul hint₂ k)]
+      ← integral_add_adjacent_intervals (hint₁.bernoulliFun_fract_smul k)
+        (hint₂.bernoulliFun_fract_smul k)]
     have hlast : ((a + m + 1 : ℤ) : ℝ) = t + 1 := by push_cast; ring
     have hΔ : ∑ s ∈ Icc 2 k, (bernoulli s / s ! : ℝ) • (g (s - 1) (t + 1) - g (s - 1) a) =
         ∑ s ∈ Icc 2 k, (bernoulli s / s ! : ℝ) • (g (s - 1) t - g (s - 1) a) +
@@ -260,7 +255,7 @@ theorem sum_Icc_eq_eulerMaclaurin {f : ℝ → E} {a n : ℤ} (han : a ≤ n) {m
         volume a n := (hint _ le_rfl).smul _
     have h₂ : IntervalIntegrable (fun x => (1 / (2 * m)! : ℝ) •
         bernoulliFun (2 * m) (Int.fract x) • g (2 * m) x) volume a n :=
-      (intervalIntegrable_bernoulliFun_fract_smul (hint _ le_rfl) _).smul _
+      ((hint _ le_rfl).bernoulliFun_fract_smul _).smul _
     rw [← intervalIntegral.integral_smul, ← intervalIntegral.integral_smul,
       ← intervalIntegral.integral_sub h₁ h₂]
     exact integral_congr fun x _ => by module
