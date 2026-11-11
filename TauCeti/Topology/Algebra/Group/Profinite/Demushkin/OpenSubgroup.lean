@@ -216,7 +216,7 @@ theorem demushkinRank_openSubgroup_sub_two :
   have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by
     rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv]; exact pow_ne_zero _ hp.out.ne_zero)
   have hE := CohomologicalDimensionLE.one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG.isProP
-    hG.isTopologicallyFinitelyGenerated htriv hcd U
+    hG.isTopologicallyFinitelyGenerated hcd U
   rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, hG.finrank_cohomFp_two,
     ← (cohomFpLinearEquivH2 p U.toSubgroup htrivU).finrank_eq,
     hG.finrank_cohomFp_two_openSubgroup U] at hE

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
@@ -163,7 +164,6 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   have hC : 0 ≤ C := by
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
-  have hCd : 0 ≤ Cd := inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
   have hCn : 0 ≤ Cn := inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
     (volume_real_unitBall_pos n).le)
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
@@ -178,7 +178,8 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
   have hpow₁ := rpow_one_sub_le_two_mul_rpow_two_sub (by linarith : (1 : ℝ) ≤ n) hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
-    simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
+    rw [norm_gradient_eq_norm_fderiv]
+    exact hχ' x
   rw [(hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
   have hR₀x : R₀ < ‖x‖ := by linarith
@@ -259,7 +260,6 @@ private theorem tendsto_mul_rpow_mul_measureReal_closedBall_rpow (hn : 3 ≤ n) 
       rw [← Real.rpow_neg_one, ← Real.rpow_add hR, ← Real.rpow_add hR]
       congr 1
       ring
-    have h₂ : (0 : ℝ) < 2 ^ (2 - (n : ℝ)) := by positivity
     rw [h₁]
     field_simp
     simp only [c]

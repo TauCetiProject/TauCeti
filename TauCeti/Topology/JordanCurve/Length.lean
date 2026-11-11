@@ -78,7 +78,7 @@ theorem IsJordanCurve.two_mul_ediam_le_hausdorffMeasure (h : IsJordanCurve C) :
     rcases eq_or_ne p q with rfl | hpq
     · simp
     obtain ⟨A, B, -, hBc, hA, hB, hAB, hAB'⟩ :=
-      h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq hpq
+      h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq
     have hpA : p ∈ A ∧ p ∈ B := by simpa using hAB'.ge (mem_insert p {q})
     have hqA : q ∈ A ∧ q ∈ B := by simpa using hAB'.ge (mem_insert_of_mem p rfl)
     have hsum : μH[1] C = μH[1] A + μH[1] B := by
