@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Basic
-public import Mathlib.AlgebraicGeometry.Sites.BigZariski
+public import TauCeti.AlgebraicGeometry.Sites.ZariskiCoproduct
 
 /-!
 # Algebraic spaces from étale covers
@@ -14,12 +14,11 @@ public import Mathlib.AlgebraicGeometry.Sites.BigZariski
 An fppf sheaf `F` on schemes with representable diagonal, together with a family of étale
 morphisms `a i : h_{U i} ⟶ F` that is jointly surjective after every base change to a scheme, is
 an algebraic space: the morphisms glue to an étale atlas `h_{∐ U i} ⟶ F` (Stacks, Lemma 65.8.4
-(02WQ)).
+(02WQ)). The gluing uses `TauCeti.AlgebraicGeometry.exists_yoneda_sigma_desc`, since an fppf sheaf
+is a Zariski sheaf.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Spaces.exists_yoneda_sigma_desc`: morphisms `h_{U i} ⟶ F` to a
-  Zariski sheaf glue to a morphism `h_{∐ U i} ⟶ F`.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleAtlas.of_sigma`: a representable morphism
   `h_{∐ U i} ⟶ F` whose restrictions to the `h_{U i}` are étale and jointly surjective after every
   base change to a scheme is an étale atlas.
@@ -43,20 +42,6 @@ open _root_.AlgebraicGeometry
 universe u
 
 variable {F : SchemePresheaf.{u}} {ι : Type u} {U : ι → Scheme.{u}}
-
-/-- Morphisms `a i : h_{U i} ⟶ F` from schemes to a sheaf for the Zariski topology glue to a
-morphism `h_{∐ U i} ⟶ F` restricting to each `a i`. -/
-theorem exists_yoneda_sigma_desc (hF : Presieve.IsSheaf Scheme.zariskiTopology F)
-    (a : ∀ i, yoneda.obj (U i) ⟶ F) :
-    ∃ b : yoneda.obj (∐ U) ⟶ F, ∀ i, yoneda.map (Sigma.ι U i) ≫ b = a i := by
-  have := preservesLimitsOfShape_discrete_of_isSheaf_zariskiTopology (ι := ι) hF
-  let t := isLimitFanMkObjOfIsLimit F _ _ (Cofan.IsColimit.op (coproductIsCoproduct U))
-  let f i : PUnit.{u + 1} ⟶ F.obj (op (U i)) := TypeCat.ofHom fun _ ↦ yonedaEquiv (a i)
-  let x := Fan.IsLimit.lift t f PUnit.unit
-  refine ⟨yonedaEquiv.symm x, fun i ↦ ?_⟩
-  have h := ConcreteCategory.congr_hom (Fan.IsLimit.fac t f i) PUnit.unit
-  rw [yonedaEquiv_symm_naturality_left, Equiv.symm_apply_eq]
-  simpa [x, f] using h
 
 /-- A morphism `b : h_{∐ U i} ⟶ F` that is representable by schemes is an étale atlas if its
 restrictions `a i : h_{U i} ⟶ F` are representable by étale morphisms and are jointly surjective
