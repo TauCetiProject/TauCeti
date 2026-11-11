@@ -218,7 +218,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
   -- The product `w = ζ u ∈ W^{2,p}(Ω)`, with weak Hessian `ζ D²u + T`.
   obtain ⟨w, hwv⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 2 hζ hcpt u
   obtain ⟨T, hD, hTK, hTnorm, hζD⟩ :=
-    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
+    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hM₁ hM₂ hwv
   -- The equation `tr (A ∘ D²(ζ u)) = ζ f + tr (A ∘ T)` on `Ω`.
   obtain ⟨g, hg, hgnorm⟩ := exists_lp_traceCLM_comp_le hA_meas hAΛ T hTK
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) :=

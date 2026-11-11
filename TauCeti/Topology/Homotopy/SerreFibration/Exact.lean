@@ -73,6 +73,11 @@ In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
 and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
 (`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
 
+When the total space has trivial homotopy groups, as for a path fibration, exactness makes the
+boundary map surjective with trivial kernel
+(`TauCeti.TopCat.surjective_fibrationBoundary_of_subsingleton`,
+`TauCeti.TopCat.fibrationBoundary_eq_const_iff_of_subsingleton`).
+
 ## The sequence read in a model of the fibre
 
 In applications the fibre is identified with a known space `F` by a homeomorphism
@@ -710,5 +715,24 @@ theorem mem_range_homotopyGroupMap_of_homeomorph_iff (hp : serreFibrations p)
   exact mem_range_homotopyGroupMap_fiberι_iff hp
 
 end Model
+
+/-! ### Fibrations with a weakly contractible total space -/
+
+/-- If the homotopy group `π_{n+1}(E, e)` of the total space of a Serre fibration is trivial, then
+a class of `π_{n+1}(B, b)` has trivial boundary only if it is trivial itself. -/
+theorem fibrationBoundary_eq_const_iff_of_subsingleton (hp : serreFibrations p) [Finite N]
+    [Subsingleton (HomotopyGroup (Option N) E e.1)] {a : HomotopyGroup (Option N) B b} :
+    fibrationBoundary hp e a = ⟦GenLoop.const⟧ ↔ a = ⟦GenLoop.const⟧ := by
+  rw [← mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp]
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ⟨⟦GenLoop.const⟧, ?_⟩⟩
+  · rw [← hc, Subsingleton.elim c ⟦GenLoop.const⟧, HomotopyGroup.map_mk, GenLoop.map_const]
+  · rw [h, HomotopyGroup.map_mk, GenLoop.map_const]
+
+/-- If the homotopy group `π_n(E, e)` of the total space of a Serre fibration is trivial, then the
+boundary map `π_{n+1}(B, b) → π_n(F, e)` is surjective. -/
+theorem surjective_fibrationBoundary_of_subsingleton (hp : serreFibrations p) [Finite N]
+    [Subsingleton (HomotopyGroup N E e.1)] :
+    Function.Surjective (fibrationBoundary hp e (N := N)) := fun _ ↦
+  (mem_range_fibrationBoundary_iff hp).2 (Subsingleton.elim _ _)
 
 end TauCeti.TopCat

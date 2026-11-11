@@ -162,7 +162,7 @@ theorem lintegral_enorm_rpow_le_of_support_subset_Icc
         have hmu : (volume.restrict (Ioc a b)) Set.univ = ENNReal.ofReal (b - a) := by
           rw [Measure.restrict_apply_univ, Real.volume_Ioc]
         simpa only [hmu] using rpow_lintegral_le_measure_univ_rpow_mul
-          (μ := volume.restrict (Ioc a b)) hg'.enorm.measurable.aemeasurable hr
+          (μ := volume.restrict (Ioc a b)) hr
     _ = ENNReal.ofReal ((b - a) ^ r) * ∫⁻ s in Ioc a b, ‖g' s‖ₑ ^ r := by
         rw [mul_right_comm, hpow]
     _ ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖g' t‖ₑ ^ r :=
@@ -204,7 +204,7 @@ theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc
   · rw [Icc_eq_empty_of_lt hba, subset_empty_iff, Function.support_eq_empty_iff] at hsupp
     simp [hsupp]
   exact eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
-    (zero_lt_one.trans_le hp).ne' hp' hgc.aestronglyMeasurable
+    hp' hgc.aestronglyMeasurable
     (lintegral_enorm_rpow_le_of_support_subset_Icc hg hg' hsupp
       (by simpa using ENNReal.toReal_mono hp' hp))
 
@@ -337,7 +337,7 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (sub_nonneg.2 hab)
-    (zero_lt_one.trans_le hp).ne' hp' hu.continuous.aestronglyMeasurable ?_
+    hp' hu.continuous.aestronglyMeasurable ?_
   set r := p.toReal
   have hmu : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖u x‖ₑ ^ r :=
     (ENNReal.continuous_rpow_const.comp hu.continuous.enorm).measurable

@@ -12,7 +12,9 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.Minimizer
 import TauCeti.Analysis.PDE.Vortex.Regularity
+import TauCeti.Analysis.PDE.Vortex.Smoothness
 import TauCeti.Analysis.PDE.Vortex.Variational
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
 # Existence of plane vortices with prescribed zeros
@@ -30,7 +32,10 @@ smooth representative that solves the equation at every point of the plane
 (`TauCeti.Vortex.exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le`).
 The weak equation has the form treated in `TauCeti.Analysis.PDE.Vortex.Regularity`, with the
 smooth coefficients `TauCeti.Vortex.backgroundWeight` and `TauCeti.Vortex.backgroundSource` of
-`P`, whose smooth-regularity theorem applies.
+`P`, so `u` has a `C²` representative solving the equation classically
+(`TauCeti.Vortex.exists_contDiff_two_ae_eq_and_laplacian_eq`). That representative solves the
+equation in the sense of distributions, so it is smooth
+(`TauCeti.Vortex.contDiffOn_of_forall_integral_laplacian_mul_eq_reduced`).
 
 The smooth representative `w` lies in `L²(ℂ)`, because `u` does, so it tends to zero at infinity
 (`TauCeti.Vortex.tendsto_cocompact_of_memLp_of_laplacian_eq`). For monic `P`, the field
@@ -85,27 +90,32 @@ theorem exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctiona
         2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
   -- The weak Euler–Lagrange equation, written with the coefficients `h` and `k` of the reduced
   -- equation `Δw = h (exp (2w) - 1) / 8 + k`.
-  have hw : ∀ φ : 𝓓((⊤ : Opens ℂ), ℝ),
-      ∫ z in (⊤ : Opens ℂ), ⟪W1p.gradient u z, ∇ (φ : ℂ → ℝ) z⟫ =
-        -∫ z in (⊤ : Opens ℂ), (backgroundWeight P.eval z *
-          (Real.exp (2 * W1p.value u z) - 1) / 8 + backgroundSource P.eval z) * φ z := by
-    intro φ
-    have h := integral_inner_gradient_add_integral_mul_eq_zero hm hu
-      (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport
-    simp only [Opens.coe_top, Measure.restrict_univ]
-    rw [eq_neg_iff_add_eq_zero, ← h]
+  have hw : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      (∫ z, ⟪W1p.gradient u z, ∇ φ z⟫) +
+        ∫ z, (backgroundWeight P.eval z * (Real.exp (2 * W1p.value u z) - 1) / 8 +
+          backgroundSource P.eval z) * φ z = 0 := by
+    intro φ hφ hφc
+    rw [← integral_inner_gradient_add_integral_mul_eq_zero hm hu
+      (hφ.of_le (by exact_mod_cast le_top)) hφc]
     congr 1
     refine integral_congr_ae (ae_of_all _ fun z => ?_)
     simp only [backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
     ring
-  obtain ⟨g, hg, hug, hΔ⟩ :=
-    exists_contDiffOn_ae_eq_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg
-      Complex.finrank_real_complex (contDiff_backgroundWeight
-        ((P.differentiable.contDiff).restrict_scalars ℝ)).contDiffOn
-      (contDiff_backgroundSource P.differentiable).contDiffOn hw
-  refine ⟨g, contDiffOn_univ.1 (by simpa using hg), by simpa using hug, fun z => ?_⟩
-  rw [hΔ z (by simp), backgroundSource_def]
-  ring
+  -- A `C²` classical solution, which is then smooth by the planar semilinear bootstrap.
+  obtain ⟨w, hw2, huw, hΔ⟩ := exists_contDiff_two_ae_eq_and_laplacian_eq
+    Complex.finrank_real_complex (contDiff_backgroundWeight
+      ((P.differentiable.contDiff).restrict_scalars ℝ)) (contDiff_backgroundSource P.differentiable)
+    hw
+  have hΔ' : ∀ z, Δ w z = (Real.exp (2 * w z) * backgroundWeight P.eval z - 1) / 8 +
+      2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := fun z => by
+    rw [hΔ z, backgroundSource_def]
+    ring
+  have hws : ContDiffOn ℝ ∞ w (⊤ : Opens ℂ) :=
+    contDiffOn_of_forall_integral_laplacian_mul_eq_reduced
+      (fun z _ => P.differentiable.analyticAt z) hw2.continuous.continuousOn fun φ => by
+        simpa only [smul_eq_mul, hΔ'] using
+          hw2.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ
+  exact ⟨w, contDiffOn_univ.1 (by simpa using hws), huw, hΔ'⟩
 
 /-- **Existence of framed plane vortices with prescribed zeros.** Let `P` be a monic complex
 polynomial of degree `m ≥ 1` and let `u₀ = -log (1 + ‖P‖²) / 2` be its background amplitude. There

@@ -160,7 +160,8 @@ theorem normalCore_borelSubgroupOf : (borelSubgroupOf m).normalCore = ⊥ := by
   -- Hence `Z`, which is normal and normalizes `U`, commutes with `U`.
   have hcomm : unipotentSubgroupOf m ≤ Subgroup.centralizer (Z : Set (suzukiGroup m)) :=
     Subgroup.le_centralizer_iff.mp (le_centralizer_of_le_normalizer_of_inf_eq_bot
-      ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m)) hZU)
+      ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m))
+      Subgroup.le_normalizer_of_normal hZU)
   -- The centralizer of the normal subgroup `Z` is normal and contains `U`, so it is everything.
   have htop : Subgroup.centralizer (Z : Set (suzukiGroup m)) = ⊤ :=
     eq_top_iff.mpr ((normalClosure_unipotentSubgroupOf m).symm.le.trans
