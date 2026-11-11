@@ -188,6 +188,9 @@ theorem apply_eq_self_iff_exists_zsmul [T1Space α] (hx : ∃ t, ϕ t x ≠ x) :
     ϕ t x = x ↔ ∃ n : ℤ, n • ϕ.minimalPeriod x = t := by
   rw [← mem_periods, ϕ.periods_eq_zmultiples_minimalPeriod hx, AddSubgroup.mem_zmultiples_iff]
 
+/-- The minimal period is a return time, with no separation assumption on the space. It may be
+zero, in which case the statement is trivial: this happens when the positive periods have no
+minimum (the periods are dense) or when there are none. -/
 @[simp]
 theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
   by_cases hbot : ϕ.periods x = ⊥
