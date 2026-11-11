@@ -95,12 +95,11 @@ theorem _root_.Ideal.exists_monomials_annihilator_not_le (I : Ideal (MvPolynomia
       simp [Function.comp_def, hb]
     rw [Submodule.localized'_span, hr, b.span_eq]
     trivial
-  obtain ⟨m, hm, s, hms⟩ := (Submodule.mem_localized' _ _ _ _ _).mp hx
-  rw [IsLocalizedModule.mk'_eq_iff, Submonoid.smul_def, ← map_smul] at hms
-  obtain ⟨c, hc⟩ := IsLocalizedModule.exists_of_eq (S := p.asIdeal.primeCompl) hms
-  refine ⟨c * s, (c * s).2, ?_⟩
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, mul_smul,
-    ← Submonoid.smul_def, ← hc]
-  exact Submodule.smul_of_tower_mem _ c hm
+  let N := Submodule.span A (Set.range fun l ↦ Ideal.Quotient.mk I
+    (monomial ((a ∘ e) l) 1))
+  obtain ⟨m, hm⟩ := (IsLocalizedModule.eq_zero_iff p.asIdeal.primeCompl
+    (N.toLocalizedQuotient' (Localization.AtPrime p.asIdeal) p.asIdeal.primeCompl f)).mp
+      (by rw [Submodule.toLocalizedQuotient'_mk, Submodule.Quotient.mk_eq_zero]; exact hx)
+  exact ⟨m, m.2, hm⟩
 
 end MvPolynomial
