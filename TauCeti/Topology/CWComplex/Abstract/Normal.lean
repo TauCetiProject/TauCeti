@@ -41,15 +41,6 @@ open CategoryTheory Limits MorphismProperty Topology
 
 universe t u
 
-namespace TauCeti.TopCat
-
-/-- The `n`-dimensional Euclidean disk is a normal space, being homeomorphic to a closed ball in
-`Fin n → ℝ`. -/
-instance normalSpace_disk (n : ℕ) : NormalSpace (TopCat.disk.{u} n) :=
-  (TauCeti.diskHomeomorphClosedBall n).symm.normalSpace
-
-end TauCeti.TopCat
-
 namespace HomotopicalAlgebra
 
 variable {α : Type t} {A B : α → TopCat.{u}} {g : ∀ a, A a ⟶ B a} {X₁ X₂ : TopCat.{u}}

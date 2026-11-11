@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.Topology.Instances.AddCircle.Real
+public import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Jordan curves traced by paths
@@ -17,14 +16,10 @@ criterion needed to exclude those degeneracies. If a closed path has no repeated
 for its two endpoint parameters, its range is a Jordan curve
 (`TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints`).
 
-The proof uses the quotient model of the circle already in Mathlib. The extension of a path
-`γ : Path x x` to `ℝ` has equal values at `0` and `1`, so
-`AddCircle.liftIco 1 0 γ.extend` factors it through the additive circle `ℝ / ℤ`. The hypothesis on
-repetitions says precisely that this factor is injective, and its range is the range of `γ`. The
-additive circle is itself a Jordan curve, `AddCircle.homeomorphCircle` identifying it with
-`Circle`, so `TauCeti.IsJordanCurve.image` carries that along the factor: the compactness argument
-upgrading a continuous injection to a homeomorphism onto its image is already packaged there and is
-not repeated here.
+The proof is the unit-interval case of `TauCeti.isJordanCurve_image_Icc`. The extension
+`γ.extend : ℝ → X` of a path `γ : Path x x` is continuous, has equal values at `0` and `1`, and its
+image of `[0, 1]` is the range of `γ`. The hypothesis on repetitions says precisely that it is
+injective on `[0, 1)`, since representatives in `[0, 1)` cannot form the exceptional endpoint pair.
 
 The condition is stated directly rather than bundled as a new notion of simple closed path. This
 is the only operation needed here, and keeping it as a theorem hypothesis avoids introducing a
@@ -67,48 +62,27 @@ open Set
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {x : X}
 
-omit [T2Space X] in
-/-- **A simple closed path lifts injectively to the circle.** If equality `γ s = γ t` forces `s = t`
-or the unordered pair of parameters to be `{0, 1}`, then `AddCircle.liftIco 1 0 γ.extend` is
-injective. -/
-private theorem liftIco_extend_injective (γ : Path x x)
-    (hγ : ∀ ⦃s t : unitInterval⦄, γ s = γ t →
-      s = t ∨ (s = 0 ∧ t = 1) ∨ (s = 1 ∧ t = 0)) :
-    Function.Injective (AddCircle.liftIco 1 0 γ.extend) := by
-  intro q q' hqq'
-  -- representatives in `[0, 1)` cannot form the exceptional endpoint pair
-  obtain ⟨s, hs, rfl⟩ := AddCircle.eq_coe_Ico q
-  obtain ⟨t, ht, rfl⟩ := AddCircle.eq_coe_Ico q'
-  rw [(AddCircle.liftIco_zero_coe_apply hs).trans (γ.extend_extends' ⟨s, hs.1, hs.2.le⟩),
-    (AddCircle.liftIco_zero_coe_apply ht).trans (γ.extend_extends' ⟨t, ht.1, ht.2.le⟩)] at hqq'
-  rcases hγ hqq' with hst | hends | hends
-  · exact congrArg (fun u : unitInterval => ((u : ℝ) : AddCircle (1 : ℝ))) hst
-  · exact absurd (congrArg ((↑) : unitInterval → ℝ) hends.2) ht.2.ne
-  · exact absurd (congrArg ((↑) : unitInterval → ℝ) hends.1) hs.2.ne
-
 /-- **The range of a simple closed path is a Jordan curve.** Let `γ : Path x x` be a closed path.
 If equality `γ s = γ t` forces either `s = t` or the unordered pair of parameters to be `{0, 1}`,
 then `range γ` is homeomorphic to the circle.
 
 The disjunction records both orientations of the exceptional endpoint pair explicitly. No local
 injectivity or embedding hypothesis is needed, and no separation assumption on the ambient space
-beyond the Hausdorffness that `TauCeti.IsJordanCurve.image` asks for. -/
+beyond the Hausdorffness that `TauCeti.isJordanCurve_image_Icc` asks for. -/
 theorem isJordanCurve_range_of_eq_or_eq_endpoints (γ : Path x x)
     (hγ : ∀ ⦃s t : unitInterval⦄, γ s = γ t →
       s = t ∨ (s = 0 ∧ t = 1) ∨ (s = 1 ∧ t = 0)) :
     IsJordanCurve (range γ) := by
-  -- Factor the extended path through `[0, 1]` with its endpoints identified; the additive circle
-  -- is a Jordan curve, and the factor carries it onto the range of `γ`.
-  have hg0 : γ.extend 0 = γ.extend 1 := by rw [γ.extend_zero, γ.extend_one]
-  have hgc : Continuous (AddCircle.liftIco 1 0 γ.extend) :=
-    AddCircle.liftIco_zero_continuous hg0 γ.continuous_extend.continuousOn
-  have huniv : IsJordanCurve (univ : Set (AddCircle (1 : ℝ))) :=
-    isJordanCurve_iff.mpr
-      ⟨(Homeomorph.Set.univ (AddCircle (1 : ℝ))).trans (AddCircle.homeomorphCircle one_ne_zero)⟩
-  have himage := huniv.image hgc.continuousOn (liftIco_extend_injective γ hγ).injOn
-  -- present the lift as a quotient map off `[0, 1]` and read its range through the quotient
-  rwa [image_univ, AddCircle.liftIco_eq_lift_Icc (by simp), (Equiv.surjective _).range_comp,
-    Set.range_quot_lift, Set.range_domRestrict, γ.image_extend_of_subset (by norm_num)] at himage
+  -- Representatives in `[0, 1)` cannot form the exceptional endpoint pair.
+  have hinj : InjOn γ.extend (Ico 0 1) := by
+    intro s hs t ht hst
+    rw [γ.extend_extends' ⟨s, hs.1, hs.2.le⟩, γ.extend_extends' ⟨t, ht.1, ht.2.le⟩] at hst
+    rcases hγ hst with hst | hends | hends
+    · exact congrArg Subtype.val hst
+    · exact absurd (congrArg Subtype.val hends.2) ht.2.ne
+    · exact absurd (congrArg Subtype.val hends.1) hs.2.ne
+  rw [← γ.image_extend_of_subset subset_rfl]
+  exact isJordanCurve_image_Icc zero_lt_one γ.continuous_extend.continuousOn (by simp) hinj
 
 /-! ### Gluing two arcs along their endpoints -/
 

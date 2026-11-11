@@ -39,6 +39,8 @@ and the value is a Hahn series, so that a bilinear form produces a scalar series
   the support lies in the sum of the supports.
 * `HahnModule.convolutionAddMonoidHom_single_single`, `HahnModule.convolution_single_single`: the
   extension on monomials.
+* `HahnModule.convolutionAddMonoidHom_map_map`, `HahnModule.map_convolutionAddMonoidHom`: the
+  extension is natural in the coefficients of the arguments and of the values.
 
 The convolution bracket `HahnModule.instBracket` of Lie-valued series is the extension of the
 biadditive Lie bracket.
@@ -192,6 +194,39 @@ theorem convolutionAddMonoidHom_single_single (Φ : V →+ W →+ M) (a b : Γ) 
     obtain ⟨hi, hj, rfl⟩ := mem_antidiagonal.1 hij
     rw [HahnSeries.eq_of_mem_support_single hi, HahnSeries.eq_of_mem_support_single hj] at hc
     exact (hc rfl).elim
+
+/-- Naturality in the arguments: applying additive maps `g` and `h` to the coefficients of the
+arguments and then extending `Φ` is extending `(v, w) ↦ Φ (g v) (h w)`. -/
+theorem convolutionAddMonoidHom_map_map {V' W' F G : Type*} [AddCommMonoid V'] [AddCommMonoid W']
+    [SMul R V'] [SMul R W'] [FunLike F V V'] [AddMonoidHomClass F V V'] [FunLike G W W']
+    [AddMonoidHomClass G W W'] (Φ : V' →+ W' →+ M) (g : F) (h : G) (x : HahnModule Γ R V)
+    (y : HahnModule Γ R W) :
+    convolutionAddMonoidHom Γ R Φ (of R (((of R).symm x).map g)) (of R (((of R).symm y).map h)) =
+      convolutionAddMonoidHom Γ R ((Φ.comp (g : V →+ V')).compl₂ (h : W →+ W')) x y := by
+  ext c
+  simp only [coeff_convolutionAddMonoidHom, Equiv.symm_apply_apply, HahnSeries.map_coeff,
+    AddMonoidHom.compl₂_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass]
+  have hg := HahnSeries.support_map_subset ((of R).symm x) (g : ZeroHom V V')
+  have hh := HahnSeries.support_map_subset ((of R).symm y) (h : ZeroHom W W')
+  -- The terms outside the antidiagonal of the smaller supports vanish.
+  refine sum_subset ((antidiagonal_mono_left hg).trans (antidiagonal_mono_right hh))
+    fun ij hij hij' ↦ ?_
+  rw [mem_antidiagonal] at hij
+  by_cases hgi : g (((of R).symm x).coeff ij.1) = 0
+  · rw [hgi, map_zero, AddMonoidHom.zero_apply]
+  by_cases hhj : h (((of R).symm y).coeff ij.2) = 0
+  · rw [hhj, map_zero]
+  exact (hij' (mem_antidiagonal.2 ⟨hgi, hhj, hij.2.2⟩)).elim
+
+/-- Naturality in the values: applying an additive map `k` to the coefficients of the extension
+of `Φ` is extending `(v, w) ↦ k (Φ v w)`. -/
+theorem map_convolutionAddMonoidHom {M' F : Type*} [AddCommMonoid M'] [FunLike F M M']
+    [AddMonoidHomClass F M M'] (Φ : V →+ W →+ M) (k : F) (x : HahnModule Γ R V)
+    (y : HahnModule Γ R W) :
+    (convolutionAddMonoidHom Γ R Φ x y).map k =
+      convolutionAddMonoidHom Γ R (Φ.compr₂ (k : M →+ M')) x y := by
+  ext c
+  simp [coeff_convolutionAddMonoidHom]
 
 end AddMonoidHom
 

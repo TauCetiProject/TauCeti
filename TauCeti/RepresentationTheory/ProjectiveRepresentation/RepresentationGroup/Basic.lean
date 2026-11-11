@@ -110,6 +110,9 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
     simp [hd, h]
   let : NeZero (Monoid.exponent M : k) := ⟨hexpcast⟩
   let : MulDistribMulAction G M := trivialMulDistribMulAction G M
+  -- Use the same action for characters and transgression: otherwise bare scalar-action
+  -- inference on the function type M can select the pointwise Pi instance.
+  let : SMul G M := (inferInstance : MulDistribMulAction G M).toMulAction.toSMul
   let α : FactorSet G M :=
     { toFun p i := γ i p
       isMulCocycle₂' g h j := by

@@ -124,8 +124,9 @@ theorem mem_connectedComponent_mk_iff (x y : Σ i, X i) :
 
 variable [∀ i, Nonempty (X i)]
 
-/-- The glued curve is preconnected exactly when its dual graph is preconnected. Empty
-normalizations are allowed here. -/
+/-- The glued curve is preconnected exactly when its dual graph is preconnected. Every
+normalization component is assumed nonempty: an empty component contributes a vertex of the dual
+graph that no point of the glued curve lies over. -/
 theorem preconnectedSpace_gluedCurve_iff :
     PreconnectedSpace (GluedCurve d) ↔
       ∀ i j, Relation.EqvGen (fun i j ↦ ∃ f, d.fst f = i ∧ d.snd f = j) i j := by

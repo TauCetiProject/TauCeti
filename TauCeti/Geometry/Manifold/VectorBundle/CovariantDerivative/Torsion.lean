@@ -16,7 +16,9 @@ This file names the pointwise torsion-free condition for a covariant derivative 
 bundle.  When the bundled torsion tensor is available, `isTorsionFree_iff_torsion_eq_zero`
 identifies this condition with its vanishing. The condition is available without finite
 dimensionality or completeness, and supplies the torsion hypothesis for curvature identities
-such as the first Bianchi identity.
+such as the first Bianchi identity. `isTorsionFree_addOneForm` shows that adding a symmetric
+endomorphism-valued one-form to a torsion-free connection keeps it torsion-free, as used for the
+conformally changed Levi-Civita connection.
 -/
 
 public section
@@ -46,6 +48,18 @@ theorem isTorsionFree_iff
     cov.IsTorsionFree ↔ ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
       MDiffAt (T% X) x → MDiffAt (T% Y) x →
         cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x := Iff.rfl
+
+/-- Adding a symmetric endomorphism-valued one-form to a torsion-free covariant derivative on the
+tangent bundle keeps it torsion-free. -/
+theorem isTorsionFree_addOneForm
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
+    {A : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hA : ∀ (x : M) (v w : TangentSpace I x), A x v w = A x w v) :
+    (cov.addOneForm A).IsTorsionFree := by
+  intro X Y x hX hY
+  simp only [addOneForm, add_apply]
+  rw [← ht hX hY, hA x (Y x)]
+  abel
 
 section TorsionFree
 

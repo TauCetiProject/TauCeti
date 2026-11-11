@@ -57,8 +57,8 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset {f : M → V}
   have hzero : ∀ x, (x, (0 : V)) ∈ U := by
     intro x
     simpa [U] using hfO (mem_range_self x)
-  obtain ⟨r, hr, hrR, hdisc⟩ := hU.exists_contMDiffMap_closedBall_subset (I := I)
-    hzero R.continuous hR
+  obtain ⟨r, hr, hrR, hdisc⟩ := exists_contMDiffMap_closedBall_subset (I := I)
+    (fun x => hU.mem_nhds (hzero x)) R.continuous.lowerSemicontinuous hR
   refine ⟨r, hr, isOpenEmbedding_normalTubeOfRadius_of_le r.contMDiff.continuous
     (fun x => (hrR x).le) hemb, ?_⟩
   intro x v hv

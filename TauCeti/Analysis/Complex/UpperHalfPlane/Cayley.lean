@@ -297,7 +297,7 @@ theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one :
     Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[ball 0 1] 1)
       (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) :=
   tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
-      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_ball_of_norm_eq_one hζ norm_one),
+      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_of_not_mem hζ (by simp)),
     tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
       bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)⟩
 

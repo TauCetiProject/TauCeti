@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 import TauCeti.Probability.Distributions.Gamma.Poisson
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Negative-multinomial distributions
@@ -28,6 +28,27 @@ The mass calculation follows the scalar Gamma–Poisson calculation in
 `TauCeti.Probability.Distributions.Gamma.Poisson`: the Poisson product shifts the Gamma shape by
 the total count, while the weights' normalization makes the combined rate one.
 
+## Main definitions
+
+* `negativeMultinomialWeightReal` and `negativeMultinomialWeight`: the real and extended
+  nonnegative masses, given by the Gamma quotient at nonzero shape and by the indicator of the
+  zero count vector at shape zero.
+* `negativeMultinomialMeasure`: the law on count vectors `ι → ℕ`, totalized in the shape `r`, the
+  success weight `p₀` and the category weights `p`.
+
+## Main results
+
+* `isProbabilityMeasure_negativeMultinomialMeasure`: the law is a probability measure for
+  `0 ≤ r`, `0 < p₀` and `p₀ + ∑ i, p i = 1`.
+* `negativeMultinomialMeasure_singleton` and `negativeMultinomialMeasure_real_singleton`: its
+  singleton masses are the negative-multinomial masses.
+* `negativeMultinomialMeasure_eq_sum_dirac`: the law is the weighted sum of its Dirac masses.
+* `negativeMultinomialMeasure_singleton_ne_zero_iff`: its exact support, at positive shape the
+  count vectors vanishing on the zero-weight categories, at shape zero the zero count vector.
+* `negativeMultinomialMeasure_zero` and `negativeMultinomialMeasure_eq_zero_of_invalid`: shape
+  zero gives the point mass at zero, and parameters outside the range give the zero measure.
+* `measurable_negativeMultinomialMeasure`: the law is jointly measurable in all parameters.
+
 ## References
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley (1997).
@@ -44,7 +65,16 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The real negative-multinomial mass. At shape zero it is the mass of the zero vector. -/
+/-- The real negative-multinomial mass of the count vector `k`, for shape `r`, success weight `p₀`
+and category weights `p`. At nonzero shape it is the Gamma-quotient expression
+`Γ(r + ∑ i, k i) / (Γ(r) * ∏ i, (k i)!) * p₀ ^ r * ∏ i, p i ^ k i`, with a real power `p₀ ^ r`.
+At shape zero it is `1` at `k = 0` and `0` elsewhere: the mass function of the point mass at the
+zero count vector.
+
+For `0 ≤ r`, `0 < p₀` and `p₀ + ∑ i, p i = 1` it is the singleton mass of
+`negativeMultinomialMeasure r p₀ p` (`negativeMultinomialMeasure_real_singleton`). For other
+parameters it is given by the same two branches but is not a probability mass in general (for
+`r < 0` it can be negative), while the law is the zero measure there. -/
 def negativeMultinomialWeightReal (r p₀ : ℝ) (p : ι → ℝ≥0) (k : ι → ℕ) : ℝ :=
   if r = 0 then if k = 0 then 1 else 0
   else Real.Gamma (r + ∑ i, (k i : ℝ)) / (Real.Gamma r * ∏ i, ((k i).factorial : ℝ)) *
@@ -153,8 +183,8 @@ private lemma integral_prod_poissonMass_gammaMeasure {r p₀ : ℝ} (hr : 0 < r)
   rw [integral_gammaMeasure_eq_integral_Ioi hr hp₀]
   simp only [smul_eq_mul]
   -- Collect the Poisson factors; normalization of the weights makes the combined rate one.
-  have hcollect := fun x (hx : x ∈ Ioi (0 : ℝ)) =>
-    Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial p₀ r (fun i => (p i : ℝ)) k hx.ne'
+  have hcollect := fun x (_ : x ∈ Ioi (0 : ℝ)) =>
+    Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial p₀ r (fun i => (p i : ℝ)) k x
   rw [setIntegral_congr_fun measurableSet_Ioi hcollect, integral_const_mul,
     hp]
   -- Euler's Gamma integral evaluates the shifted shape, leaving the mass constants.
@@ -215,12 +245,17 @@ theorem negativeMultinomialMeasure_eq_sum_dirac {r p₀ : ℝ} (hr : 0 ≤ r) (h
   simp only [negativeMultinomialMeasure_singleton hr hp₀ hp]
 
 /-- At positive shape, a singleton has nonzero mass exactly when every zero-weight category
-has count zero. At shape zero, only the zero count vector has nonzero mass. -/
-theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ} (hr : 0 ≤ r)
+has count zero. At shape zero, only the zero count vector has nonzero mass. For negative shape
+the law is the zero measure and both sides fail. -/
+theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ}
     (hp₀ : 0 < p₀) {p : ι → ℝ≥0} (hp : p₀ + ∑ i, (p i : ℝ) = 1) (k : ι → ℕ) :
     negativeMultinomialMeasure r p₀ p {k} ≠ 0 ↔
       (r = 0 ∧ k = 0) ∨ (0 < r ∧ ∀ i, p i = 0 → k i = 0) := by
   classical
+  by_cases hr : 0 ≤ r
+  swap
+  · rw [negativeMultinomialMeasure_eq_zero_of_invalid fun h ↦ hr h.1]
+    simp [(not_le.mp hr).not_gt, (not_le.mp hr).ne]
   rcases hr.eq_or_lt with rfl | hr
   · rw [negativeMultinomialMeasure_singleton (le_refl 0) hp₀ hp]
     by_cases hk : k = 0 <;> simp [negativeMultinomialWeight, hk]
@@ -252,7 +287,7 @@ theorem negativeMultinomialMeasure_eq_dirac_of_successWeight_eq_one {r : ℝ} (h
       simp [negativeMultinomialWeight, hr.ne', (Real.Gamma_pos_of_pos hr).ne']
   · have hzero : negativeMultinomialMeasure r 1 (0 : ι → ℝ≥0) {k} = 0 := by
       by_contra h
-      have hsupport := (negativeMultinomialMeasure_singleton_ne_zero_iff hr zero_lt_one
+      have hsupport := (negativeMultinomialMeasure_singleton_ne_zero_iff zero_lt_one
         (p := (0 : ι → ℝ≥0)) (by simp) k).mp h
       rcases hsupport with ⟨_, h⟩ | ⟨_, h⟩
       · exact hk h

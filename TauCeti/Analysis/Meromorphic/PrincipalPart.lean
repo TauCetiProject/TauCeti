@@ -34,7 +34,7 @@ Uniqueness rests on the order computation `TauCeti.meromorphicOrderAt_eval_inv_s
 polynomial `P` in `(z - a)⁻¹` has order `-P.natDegree` at `a`, so when `P` has no constant term it
 has a pole at `a` and is not the germ of an analytic function. Hence the principal part depends
 only on the germ, not on the exponent `N`, the representative or the neighbourhood used to compute
-it, and it is additive.
+it, and it is linear over `𝕜`.
 
 Over `ℂ` the regular remainder is a germ of the holomorphic structure sheaf; that version of the
 splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
@@ -46,11 +46,13 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 * `TauCeti.meromorphicOrderAt_eval_inv_sub`: the order at `a` of `z ↦ P((z - a)⁻¹)`.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
-* `TauCeti.meromorphicGerms.principalPart`: the principal part, an additive map to polynomials.
+* `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
 * `TauCeti.meromorphicGerms.principalPart_eq_iff`: its characterization: `principalPart φ = P`
   exactly when `P` has no constant term and `φ - P((z - a)⁻¹)` has an analytic representative.
 * `TauCeti.meromorphicGerms.principalPart_eq_zero_iff`: the principal part vanishes exactly on the
   germs of analytic functions.
+* `TauCeti.meromorphicGerms.natDegree_principalPart_mk_le`: a pole bound bounds the degree of the
+  principal part.
 * `TauCeti.meromorphicGerms.principalPart_eq_sum_coeff`: the principal part of
   `(z - a)⁻ᴺ h z` through the Taylor coefficients of `h`.
 
@@ -184,13 +186,9 @@ private theorem eq_of_coe_sub_evalInvSub_eq {φ : meromorphicGerms 𝕜 a} {P Q 
 
 /-- The principal part of a meromorphic germ `φ` at `a`: the unique polynomial `P` without
 constant term such that `φ - P((z - a)⁻¹)` is the germ of a function analytic at `a`. It is
-additive in `φ`. -/
-def principalPart : meromorphicGerms 𝕜 a →+ 𝕜[X] where
+linear over `𝕜`. -/
+def principalPart : meromorphicGerms 𝕜 a →ₗ[𝕜] 𝕜[X] where
   toFun φ := (exists_principalPart φ).choose
-  map_zero' := by
-    obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (0 : meromorphicGerms 𝕜 a)).choose_spec
-    exact eq_of_coe_sub_evalInvSub_eq hP (coeff_zero 0) hg analyticAt_const hgφ
-      (by rw [map_zero, sub_zero, ZeroMemClass.coe_zero]; rfl)
   map_add' φ ψ := by
     obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (φ + ψ)).choose_spec
     obtain ⟨hP₁, g₁, hg₁, hgφ₁⟩ := (exists_principalPart φ).choose_spec
@@ -199,6 +197,19 @@ def principalPart : meromorphicGerms 𝕜 a →+ 𝕜[X] where
       (hg₁.add hg₂) hgφ ?_
     rw [map_add, add_sub_add_comm, AddMemClass.coe_add, hgφ₁, hgφ₂]
     rfl
+  map_smul' c φ := by
+    obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (c • φ)).choose_spec
+    obtain ⟨hP₁, g₁, hg₁, hgφ₁⟩ := (exists_principalPart φ).choose_spec
+    refine eq_of_coe_sub_evalInvSub_eq (Q := c • (exists_principalPart φ).choose)
+      hP (by rw [coeff_smul, hP₁, smul_zero]) hg (hg₁.const_smul (c := c)) hgφ ?_
+    have heval : evalInvSub a (c • (exists_principalPart φ).choose) =
+        c • evalInvSub a (exists_principalPart φ).choose := by
+      apply Subtype.ext
+      simp only [coe_evalInvSub, coe_smul, ← Germ.coe_smul]
+      congr 1
+      funext z
+      simp [Polynomial.smul_eq_C_mul]
+    rw [heval, ← smul_sub, coe_smul, hgφ₁, Germ.coe_smul]
 
 /-- The principal part has no constant term. -/
 @[simp]
@@ -246,9 +257,36 @@ theorem principalPart_eq_zero_iff {φ : meromorphicGerms 𝕜 a} :
 /-- The principal part of the germ of a function meromorphic at `a` vanishes exactly when the
 function has nonnegative order at `a`. -/
 theorem principalPart_mk_eq_zero_iff {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
-    principalPart (⟨f, coe_mem_meromorphicGerms.2 hf⟩ : meromorphicGerms 𝕜 a) = 0 ↔
+    principalPart (mk f hf) = 0 ↔
       0 ≤ meromorphicOrderAt f a := by
-  simp_rw [principalPart_eq_zero_iff, hf.meromorphicOrderAt_nonneg_iff, Germ.coe_eq]
+  simp_rw [principalPart_eq_zero_iff, coe_mk, hf.meromorphicOrderAt_nonneg_iff, Germ.coe_eq]
+
+/-- A pole bound bounds the degree of the principal part. The constant term of the principal
+part is zero, so a removable singularity contributes the zero polynomial. -/
+theorem natDegree_principalPart_mk_le {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) {N : ℕ}
+    (hN : ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f a) :
+    (principalPart (mk f hf)).natDegree ≤ N := by
+  let P := principalPart (mk f hf)
+  by_cases hP : P = 0
+  · simp [P, hP]
+  obtain ⟨g, hg, hfg⟩ := exists_analyticAt_coe_sub_evalInvSub_principalPart (mk f hf)
+  rw [AddSubgroupClass.coe_sub, coe_mk, coe_evalInvSub, ← Germ.coe_sub] at hfg
+  have hfg' : f =ᶠ[𝓝[≠] a] (fun z ↦ P.eval (z - a)⁻¹) + g := by
+    have := Germ.coe_eq.1 hfg
+    filter_upwards [this] with z hz
+    exact (sub_eq_iff_eq_add.mp hz).trans (add_comm _ _)
+  have hord : meromorphicOrderAt f a = ((-P.natDegree : ℤ) : WithTop ℤ) := by
+    rw [meromorphicOrderAt_congr hfg']
+    apply (meromorphicOrderAt_add_eq_left_of_lt hg.meromorphicAt ?_).trans
+      (meromorphicOrderAt_eval_inv_sub hP a)
+    rw [meromorphicOrderAt_eval_inv_sub hP a]
+    have hdeg : 0 < P.natDegree := Nat.pos_of_ne_zero fun h ↦ hP <| by
+      rw [Polynomial.eq_C_of_natDegree_eq_zero h]
+      simp [P]
+    exact lt_of_lt_of_le (by exact_mod_cast neg_neg_of_pos (Int.natCast_pos.mpr hdeg))
+      hg.meromorphicOrderAt_nonneg
+  rw [hord, WithTop.coe_le_coe] at hN
+  exact_mod_cast neg_le_neg_iff.mp hN
 
 /-- **The principal part through Taylor coefficients.** If `φ` is the germ of `(z - a)⁻ᴺ h z`,
 where `h` has the power series `p` at `a`, then the principal part of `φ` is

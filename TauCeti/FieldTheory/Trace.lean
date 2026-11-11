@@ -13,14 +13,14 @@ import TauCeti.FieldTheory.Minpoly
 /-!
 # Trace lemmas for field extensions
 
-This file collects reusable trace facts for finite field extensions.
+This file collects reusable trace facts for field extensions.
 
 ## Main results
 
 * `NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
   specialization saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
 * `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: the corresponding
-  trace-vanishing statement for any finite field extension.
+  trace-vanishing statement for any field extension.
 * `TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`: in a quadratic extension, the
   trace-form discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and
   `x ∉ F`.
@@ -41,12 +41,17 @@ namespace TauCeti
 
 namespace Algebra
 
-/-- In a finite field extension, an element outside the base field whose square lies in the
-base field has trace zero. -/
+/-- In a field extension, an element outside the base field whose square lies in the
+base field has trace zero (in an infinite-dimensional extension, every trace is zero). -/
 theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
-    [Algebra F L] [FiniteDimensional F L] {x : L} {r : F}
+    [Algebra F L] {x : L} {r : F}
     (hx2 : x ^ 2 = algebraMap F L r) (hx : x ∉ (algebraMap F L).range) :
     Algebra.trace F L x = 0 := by
+  by_cases hfd : FiniteDimensional F L
+  swap
+  · rw [Algebra.trace_eq_zero_of_not_exists_basis F ?_, LinearMap.zero_apply]
+    · rintro ⟨s, ⟨b⟩⟩
+      exact hfd (Module.Finite.of_basis b)
   have haeval : aeval x (X ^ 2 - C r : F[X]) = 0 := by simp [hx2]
   have hdvd : minpoly F x ∣ (X ^ 2 - C r) := minpoly.dvd F x haeval
   have hint : IsIntegral F x := Algebra.IsIntegral.isIntegral x
@@ -63,7 +68,7 @@ theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] 
       · exact hx (minpoly.natDegree_eq_one_iff.mp hh)
     omega
   have heq : minpoly F x = X ^ 2 - C r :=
-    minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hx2 hdeg2
+    minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq two_ne_zero hx2 hdeg2
   rw [trace_eq_finrank_mul_minpoly_nextCoeff, heq]
   have hnc : (X ^ 2 - C r : F[X]).nextCoeff = 0 := by
     rw [Polynomial.nextCoeff_of_natDegree_pos
@@ -71,13 +76,14 @@ theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] 
     simp [Polynomial.coeff_X_pow]
   rw [hnc]; simp
 
-variable {F L : Type*} [Field F] [Field L] [Algebra F L] [FiniteDimensional F L]
+variable {F L : Type*} [Field F] [Field L] [Algebra F L]
 
 /-- For a quadratic extension `L / F` and an element `x ∉ F` whose square is `a ∈ F`, the
 trace-form discriminant of the square-root basis `{1, x}` equals `4 a`. -/
 theorem discr_one_elem_eq_of_sq_algebraMap {x : L} {a : F} (hfin : finrank F L = 2)
     (hx2 : x ^ 2 = algebraMap F L a) (hx : x ∉ (algebraMap F L).range) :
     Algebra.discr F ![1, x] = 4 * a := by
+  have : FiniteDimensional F L := Module.finite_of_finrank_eq_succ hfin
   have htr0 : Algebra.trace F L x = 0 :=
     trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
   have hone : (1 : L) = algebraMap F L 1 := (map_one _).symm

@@ -295,6 +295,25 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hpair : ∀ (m : M) (x : N), fP (μ m x) = μ' (fM m) (fN x))
 
 include hpair in
+omit [ContinuousMul G] [ContinuousMul H] [ContinuousSMul G M] [ContinuousSMul G P]
+  [ContinuousSMul H M'] [ContinuousSMul H P'] in
+/-- Pullback of the explicit `(1,1)` cup cocycle is the cup cocycle of the pulled-back
+one-cocycles, for compatible pairs intertwining the coefficient pairings. -/
+theorem cocyclesMap2_cup11 (a : Z1 G M) (b : Z1 G N) :
+    cocyclesMap2 G P H P' φ fP hcP hfP
+        ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
+          cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩ =
+      ⟨fun q : H × H =>
+          μ' ((cocyclesMap1 G M H M' φ fM hcM hfM a : H → M') q.1)
+            (q.1 • (cocyclesMap1 G N H N' φ fN hcN hfN b : H → N') q.2),
+        cup11_mem_Z2 H M' N' P' μ' hμ' hequiv'
+          (cocyclesMap1 G M H M' φ fM hcM hfM a).2
+          (cocyclesMap1 G N H N' φ fN hcN hfN b).2⟩ := by
+  apply Subtype.ext
+  ext ⟨h, k⟩
+  simp [cocyclesMap1_coe, cocyclesMap2_coe, hpair, hfN]
+
+include hpair in
 /-- **Naturality of the `(1,1)` cup product in compatible pairs.** This is the only shape in
 which neither factor is invariant, so the cup is not a coefficient map. -/
 theorem explicitMap2_explicitCup11 (a : H1 G M) (b : H1 G N) :
@@ -308,9 +327,8 @@ theorem explicitMap2_explicitCup11 (a : H1 G M) (b : H1 G N) :
     | _ y =>
       simp only [explicitCup11_mk, explicitMap1_mk, explicitMap2_mk]
       exact congrArg (fun z : Z2 H P' => (z : H2 H P'))
-        (Subtype.ext (funext fun q => by
-          obtain ⟨h, k⟩ := q
-          simp [cocyclesMap1_coe, cocyclesMap2_coe, hpair, hfN]))
+        (cocyclesMap2_cup11 G M N P μ hμ hequiv H M' N' P' μ' hμ' hequiv'
+          φ fM fN fP hcM hcN hcP hfM hfN hfP hpair x y)
 
 end NaturalityOneOne
 

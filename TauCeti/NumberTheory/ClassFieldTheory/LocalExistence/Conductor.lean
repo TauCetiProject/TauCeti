@@ -105,7 +105,7 @@ theorem conductorExponent_localClassField_unitFiltrationSupZpowers_le_iff [CharZ
     conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).1) ≤ m ↔
       unitFiltration K m ≤ unitFiltration K n := by
   rw [conductorExponent_localClassField_le_iff, unitFiltrationSupZpowers_toSubgroup,
-    unitFiltration_le_unitFiltration_sup_zpowers_iff hϖ]
+    unitFiltration_le_unitFiltration_sup_zpowers_iff (by simp [hϖ])]
 
 /-- **The class field of `U(K,n) · ϖ ^ ℤ` has conductor exponent `n`.** The exception `n = 1`
 with a residue field of two elements is genuine: there `U(K,1) · ϖ ^ ℤ = Kˣ`

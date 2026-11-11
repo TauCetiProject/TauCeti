@@ -39,8 +39,9 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 
 * `TauCeti.binaryFormRep_op_mul_apply`: the action is on the right, `P ∣ (M * N) =
   (P ∣ M) ∣ N`.
-* `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`: negated and scalar matrices
-  act by `(-1)ʷ` and by the `w`th power of the scalar.
+* `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`,
+  `TauCeti.binaryFormRep_upperTriangular_X_one_pow`: negated, scalar, and upper-triangular
+  matrices act by `(-1)ʷ`, by the `w`th power of the scalar, and (on `Yʷ`) by `dʷ`.
 * `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
 * `TauCeti.binaryFormRep_parity_binaryFormMonomialBasis`,
   `TauCeti.binaryFormMonomialBasis_repr_binaryFormRep_parity`: the parity action
@@ -166,6 +167,15 @@ theorem binaryFormRep_op_scalar (a : ℤ) :
   intro P
   apply Subtype.ext
   simp [hmat, P.2.linearSubst_smul]
+
+/-- An upper-triangular `2 × 2` integer matrix `(a b; 0 d)` scales the monomial `Y^w` by `d^w`. -/
+theorem binaryFormRep_upperTriangular_X_one_pow {M : Matrix (Fin 2) (Fin 2) ℤ}
+    (hM : M 1 0 = 0) :
+    binaryFormRep R w (op M) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
+      (M 1 1 : R) ^ w • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
+  apply Subtype.ext
+  rw [Submodule.coe_smul, coe_binaryFormRep_apply]
+  simp [Fin.sum_univ_two, hM, Algebra.smul_def, mul_pow]
 
 /-! ### Binary forms attached to linear functionals -/
 

@@ -83,14 +83,7 @@ theorem exists_subsingleton_cohomologyOn_inf_basicOpen_of_le_isAffineOpen {U W :
   classical
   -- Cover `W` by finitely many basic opens of `U` contained in `W`.
   let ι := {f : Γ(X, U) // X.basicOpen f ≤ W}
-  obtain ⟨s, hs⟩ := hW.elim_finite_subcover (fun i : ι ↦ (X.basicOpen i.1 : Set X))
-    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
-      obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
-      exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
-  have hsW : s.sup (fun i : ι ↦ X.basicOpen i.1) = W := by
-    refine le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_
-    obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
-    exact (Finset.le_sup (f := fun i : ι ↦ X.basicOpen i.1) hi) hxi
+  obtain ⟨s, hsW⟩ := hU.exists_finset_sup_basicOpen_eq hW hWU
   rcases s.eq_empty_or_nonempty with rfl | hne
   · -- The empty open is affine.
     refine ⟨1, fun V _ g M _ n hn ↦ ?_⟩

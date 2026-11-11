@@ -111,6 +111,8 @@ orthogonal file consumes the pointwise `Matrix.piTensorProductMap_tprod_single` 
 * `TauCeti.commute_symplecticCupCap_tensorPower` and
   `TauCeti.commute_symplecticCrossing_tensorPower`: both generators commute with the diagonal
   action of the symplectic group.
+* `TauCeti.symplecticCrossing_mem_centralizer` and `TauCeti.symplecticCupCap_mem_centralizer`: both
+  generators lie in the commutant of the symplectic group on two strands.
 
 ## References
 
@@ -474,6 +476,26 @@ theorem commute_symplecticCrossing_tensorPower (g : Matrix.symplecticGroup (Fin 
   have h := LinearMap.congr_fun (commute_symplecticFlip_tensorPower k n g) x
   simp only [mul_apply_eq_comp] at h ⊢
   simp only [symplecticCrossing, LinearMap.neg_apply, map_neg, h]
+
+variable {k n}
+
+/-- The crossing commutes with the symplectic group, so it lies in the commutant of the symplectic
+group on two strands. -/
+theorem symplecticCrossing_mem_centralizer :
+    symplecticCrossing k n ∈
+      Subalgebra.centralizer k (Set.range ((stdSymplecticRep k n).tensorPower 2)) := by
+  rw [Subalgebra.mem_centralizer_iff]
+  rintro _ ⟨g, rfl⟩
+  exact (commute_symplecticCrossing_tensorPower k n g).symm.eq
+
+/-- The cap-cup diagram commutes with the symplectic group, so it lies in the commutant of the
+symplectic group on two strands. -/
+theorem symplecticCupCap_mem_centralizer :
+    symplecticCupCap k n ∈
+      Subalgebra.centralizer k (Set.range ((stdSymplecticRep k n).tensorPower 2)) := by
+  rw [Subalgebra.mem_centralizer_iff]
+  rintro _ ⟨g, rfl⟩
+  exact (commute_symplecticCupCap_tensorPower k n g).symm.eq
 
 end Group
 

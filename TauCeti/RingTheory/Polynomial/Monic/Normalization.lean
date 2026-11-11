@@ -37,7 +37,7 @@ open Polynomial
 
 namespace TauCeti.Polynomial
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {f : R[X]} {n : ℕ}
+variable {R : Type*} [CommSemiring R] {f : R[X]} {n : ℕ}
 
 /-- Integral normalization is the monic polynomial with its explicitly scaled lower
 coefficients. Keeping the degree parameter fixed in this expression permits specialization
@@ -46,6 +46,7 @@ theorem monicOfCoeff_mul_pow_eq_integralNormalization (hf : f ≠ 0)
     (hdeg : f.natDegree = n) :
     monicOfCoeff (fun i : Fin n ↦ f.coeff i * f.leadingCoeff ^ (n - 1 - i)) =
       f.integralNormalization := by
+  have : Nontrivial R := nontrivial_iff.mp ⟨⟨f, 0, hf⟩⟩
   rw [← monicOfCoeff_coeff (monic_integralNormalization hf)
     (by simpa only [natDegree_integralNormalization] using hdeg)]
   congr 1

@@ -16,7 +16,8 @@ isomorphic. The isomorphism acts on the tensor power by the base-group element c
 monomial embeddings. On a pure tensor, it applies the difference of the two chosen
 representatives at each coset to the corresponding factor. These comparisons are the identity
 for an unchanged transversal, compose through an intermediate transversal, and are natural in
-the representation being tensor-induced.
+the representation being tensor-induced. When the action preserves a grading of the module, they
+preserve and detect the total degree of the tensor power.
 
 The construction is algebraic and needs neither finite index nor topology. Its factorwise
 formula supplies the comparison of continuous tensor-induced actions for open subgroups.
@@ -112,6 +113,25 @@ theorem tensorInducedChangeTransversalLinearEquiv_trans (v : U.LeftTransversal) 
   have h := LinearEquiv.congr_fun
     (tensorInducedChangeTransversalLinearEquiv_trans U s t ρ s) z
   simpa using h.symm
+
+/-- If the action of `U` preserves the degrees of a grading of `M`, then changing the transversal
+preserves and detects the total degree of the tensor power. -/
+theorem tensorInducedChangeTransversalLinearEquiv_mem_totalDegreePiece_iff [Fintype (G ⧸ U)]
+    {A : Type*} [AddCommMonoid A] {ℳ : A → Submodule R M}
+    (hρ : ∀ u, TauCeti.LinearMap.IsHomogeneous (ρ u) ℳ ℳ 0) (n : A) (z : ⨂[R] _ : G ⧸ U, M) :
+    tensorInducedChangeTransversalLinearEquiv U s t ρ z ∈
+        TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n ↔
+      z ∈ TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n := by
+  have key (s t : U.LeftTransversal) (z : ⨂[R] _ : G ⧸ U, M)
+      (hz : z ∈ TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n) :
+      tensorInducedChangeTransversalLinearEquiv U s t ρ z ∈
+        TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n := by
+    rw [tensorInducedChangeTransversalLinearEquiv_apply]
+    simpa only [add_zero] using
+      (ρ.isHomogeneous_wreathTensor hρ (monomialChangeTransversal U s t)).map_mem hz
+  refine ⟨fun hz ↦ ?_, key s t z⟩
+  have h := key t s _ hz
+  rwa [← tensorInducedChangeTransversalLinearEquiv_symm, LinearEquiv.symm_apply_apply] at h
 
 /-- Changing the transversal yields an equivalence of tensor-induced representations. -/
 noncomputable def tensorInducedChangeTransversal :

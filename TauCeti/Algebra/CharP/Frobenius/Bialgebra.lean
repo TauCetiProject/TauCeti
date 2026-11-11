@@ -49,10 +49,8 @@ noncomputable def frobeniusBialgHom : S →ₐc[K] S :=
       simp only [AlgHom.comp_apply, FiniteField.coe_frobeniusAlgHom,
         map_pow, FiniteField.pow_card])
     (AlgHom.ext fun x => by
-      simpa only [AlgHom.comp_apply,
-        pow_one, FiniteField.coe_frobeniusAlgHom, map_pow] using
-        (tensorProductMap_frobeniusAlgHom_pow_apply K S S 1
-          ((Bialgebra.comulAlgHom K S) x)))
+      simpa only [AlgHom.comp_apply, pow_one, FiniteField.coe_frobeniusAlgHom, map_pow] using
+        congr($(tensorProductMap_frobeniusAlgHom_pow K S S 1) (Bialgebra.comulAlgHom K S x)))
 
 /-- The Frobenius bialgebra endomorphism raises an element to its `#K`-th power. -/
 @[simp]

@@ -80,7 +80,7 @@ theorem kummerFrame_apply {L : Type v} [Field L] [Algebra K L] (σ : L →ₐ[K]
 `c_j² = Tr_{L/K}(a y_j²)` with `c_j ≠ 0`, then the columns `φ(y_j) / c_j` are orthonormal for the
 unit form of `(Kˢ)²`. -/
 theorem kummerFrame_mem_orthogonalGroup {L : Type v} [Field L] [Algebra K L]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L] (σ : L →ₐ[K] SeparableClosure K)
+    [FiniteDimensional K L] (σ : L →ₐ[K] SeparableClosure K)
     (hdeg : Module.finrank K L = 2) (a : L) (r : SeparableClosure K) (hr : r ^ 2 = σ a)
     (s : AbsoluteGaloisGroup K) (hs : s ∉ galoisSubgroup K L σ) {y : Fin 2 → L}
     (hy : Algebra.trace K L (a * y 0 * y 1) = 0) {c : Fin 2 → SeparableClosure K}
@@ -140,7 +140,7 @@ theorem wreathSignedPerm_kummerInd_mul_map_kummerFrame {L : Type u}
 cocycle `ρ_a = wreathSignedPerm ∘ kummerInd` is cohomologous to the diagonal cocycle of the Kummer
 characters of `w₀` and `w₁`. -/
 theorem kummerFrame_conj {L : Type u} [Field L] [Algebra K L]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L] (σ : L →ₐ[K] SeparableClosure K)
+    [FiniteDimensional K L] (σ : L →ₐ[K] SeparableClosure K)
     (hdeg : Module.finrank K L = 2) (a : Lˣ) (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L))
     (s : AbsoluteGaloisGroup K) (hs : s ∉ galoisSubgroup K L σ) (y : Fin 2 → L)
     (hy : Algebra.trace K L ((a : L) * y 0 * y 1) = 0) (c : Fin 2 → SeparableClosure K)

@@ -129,24 +129,15 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     refine (mdifferentiableAt_iff_differentiableAt.1 ?_).hasDerivAt
     exact ((contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero).comp t
       (hKd.comp t ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero))
-  have hey : e x = - -y := by rw [hex, neg_neg]
   have hB := ((differentiableAt_sphereBoost (cosh_add_sinh_mul_inner_pos hy
     (by simp [γ]) a).ne').hasFDerivAt.comp_hasDerivAt t
       (e.toContinuousLinearEquiv.hasFDerivAt.comp_hasDerivAt t hγ)).congr_of_eventuallyEq
         (Filter.Eventually.of_forall hK')
   rw [hB.deriv]
-  have hperp : ⟪e v, -y⟫ = 0 := by
-    rw [inner_neg_right, ← hex, LinearIsometryEquiv.inner_map_map, real_inner_comm, hxv,
-      neg_zero]
-  have hev' : e v = ‖v‖ • ‖w‖⁻¹ • w := by
-    rw [← hev, ← LinearIsometryEquiv.map_smul, smul_inv_smul₀ (norm_ne_zero_iff.2 hv)]
   -- `hB` reads `e` through the continuous linear map it induces and the point as `(e ∘ γ) t`;
   -- these are `e v` and `e x` by definition.
   change fderiv ℝ (sphereBoost (-y) a) (e x) (e v) = w
-  rw [hey, fderiv_sphereBoost_neg_self_apply hy a hperp, hev', exp_log (by positivity),
-    smul_smul, smul_smul]
-  rw [show ‖w‖ / ‖v‖ * ‖v‖ * ‖w‖⁻¹ = 1 by
-    field_simp [norm_ne_zero_iff.2 hv, norm_ne_zero_iff.2 hw], one_smul]
+  exact e.toLinearIsometry.fderiv_sphereBoost_log_apply_eq hy hv hw hex hxv hev
 
 /-- **Isometries of the same determinant give ambient isotopic embeddings.** Moving a `C^k`
 embedding into the unit sphere `Sⁿ` by two linear isometries of `E` with the same determinant gives

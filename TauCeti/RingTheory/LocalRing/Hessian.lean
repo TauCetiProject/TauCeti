@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Nakayama
 public import TauCeti.RingTheory.Derivation.Ideal
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Derivation.Localization
 
 /-!
 # The Hessian of an element of a local ring
@@ -56,11 +58,18 @@ characteristic; the coordinates `s, t` need only lie in `𝔪` for this.
   determinant is a unit.
 * `TauCeti.span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian`: the same, in the form
   `(D₁ f, …, Dₙ f) = 𝔪`.
-* `TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`: for `f ∈ 𝔪`, the Jacobian
+* `TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`: the Jacobian
   ideal `(f, D₁ f, …, Dₙ f)` is `𝔪` exactly when `f ∈ 𝔪²` and the Hessian determinant is a unit.
 * `TauCeti.residue_hessian_sum_mul_mul`: modulo `𝔪`, the Hessian of `Σ Qₖₗ xₖ xₗ` is `Q + Qᵀ`.
 * `TauCeti.isUnit_det_hessian_iff_isUnit_discrim`: the Hessian of `a s² + b s t + c t²` has unit
   determinant exactly when `b² - 4ac` is a unit.
+* `TauCeti.exists_eq_unit_mul_quadratic_of_isUnit_discrim`: over a local ring, a binary quadratic
+  form with unit discriminant is, after a change of generators, a unit multiple of
+  `a' x² + b' x y + y²`, with `b'² - 4a'` a unit.
+
+* `TauCeti.algebraMap_residueField_det_hessian_ne_zero_iff`: the same at a prime `Q` of a ring
+  that need not be local, for coordinates `s, t ∈ Q`, with nonvanishing in `κ(Q)` in place of
+  being a unit; it follows by localizing at `Q`.
 
 ## References
 
@@ -114,15 +123,25 @@ theorem sub_sum_apply_mul_mem_maximalIdeal_sq [Fintype ι]
 
 /-- An element `f ∈ 𝔪` lies in `𝔪²` exactly when all its partial derivatives `Dᵢ f` lie in
 `𝔪`. -/
-theorem mem_maximalIdeal_sq_iff_forall_apply_mem [Finite ι]
+theorem mem_maximalIdeal_sq_iff_forall_apply_mem
     (hx : maximalIdeal P = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
     f ∈ maximalIdeal P ^ 2 ↔ ∀ i, D i f ∈ maximalIdeal P := by
-  have := Fintype.ofFinite ι
   refine ⟨fun h i ↦ (D i).apply_mem_of_mem_sq h, fun h ↦ ?_⟩
-  have hsum : ∑ i, D i f * x i ∈ maximalIdeal P ^ 2 := sum_mem fun i _ ↦
-    pow_two (maximalIdeal P) ▸ Ideal.mul_mem_mul (h i) (hx ▸ Ideal.subset_span ⟨i, rfl⟩)
-  simpa using add_mem (sub_sum_apply_mul_mem_maximalIdeal_sq hx hD hf) hsum
+  have hxm (i : ι) : x i ∈ maximalIdeal P := hx ▸ Ideal.subset_span ⟨i, rfl⟩
+  rw [hx, Finsupp.mem_span_range_iff_exists_finsupp] at hf
+  obtain ⟨c, rfl⟩ := hf
+  -- each coefficient `c j` is congruent to `D j f` modulo `𝔪`
+  have hc (j : ι) : c j ∈ maximalIdeal P := by
+    have hsum : D j (c.sum fun i a ↦ a • x i) = c.sum (fun i a ↦ x i * D j a) + c j := by
+      simp only [Finsupp.sum, map_sum, smul_eq_mul, Derivation.leibniz, hD, mul_ite, mul_one,
+        mul_zero]
+      rw [Finset.sum_add_distrib, Finset.sum_ite_eq, add_comm]
+      simp
+    have := h j
+    rw [hsum] at this
+    exact (Ideal.add_mem_iff_right _ (sum_mem fun i _ ↦ Ideal.mul_mem_right _ _ (hxm i))).mp this
+  exact sum_mem fun i _ ↦ pow_two (maximalIdeal P) ▸ Ideal.mul_mem_mul (hc i) (hxm i)
 
 variable [Fintype ι]
 
@@ -212,23 +231,24 @@ theorem span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian
       (ringJacobson_eq_maximalIdeal P).ge ?_
     simpa [smul_eq_mul, pow_two] using h
 
-/-- **The Jacobian ideal of a nondegenerate quadratic singularity.** For `f ∈ 𝔪`, the ideal
+/-- **The Jacobian ideal of a nondegenerate quadratic singularity.** The ideal
 `(f, D₁ f, …, Dₙ f)` is the maximal ideal exactly when `f ∈ 𝔪²` and the Hessian determinant of
 `f` is a unit. -/
 theorem span_range_apply_sup_span_singleton_eq_maximalIdeal_iff
     (hx : maximalIdeal P = Ideal.span (Set.range x))
-    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} :
     Ideal.span (Set.range fun j ↦ D j f) ⊔ Ideal.span {f} = maximalIdeal P ↔
       f ∈ maximalIdeal P ^ 2 ∧ IsUnit (hessian D f).det := by
   constructor
   · intro h
+    have hf : f ∈ maximalIdeal P := h ▸ Ideal.mem_sup_right (Ideal.mem_span_singleton_self f)
     have hf2 : f ∈ maximalIdeal P ^ 2 := (mem_maximalIdeal_sq_iff_forall_apply_mem hx hD hf).2
       fun j ↦ h ▸ Ideal.mem_sup_left (Ideal.subset_span ⟨j, rfl⟩)
     refine ⟨hf2, (maximalIdeal_le_span_range_apply_sup_iff_isUnit_det_hessian hx hD hf2).1 ?_⟩
     exact h.symm.le.trans (sup_le_sup_left ((Ideal.span_singleton_le_iff_mem _).2 hf2) _)
   · rintro ⟨hf2, hdet⟩
     rw [(span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian hx hD hf2).2 hdet]
-    exact sup_eq_left.2 ((Ideal.span_singleton_le_iff_mem _).2 hf)
+    exact sup_eq_left.2 ((Ideal.span_singleton_le_iff_mem _).2 (Ideal.pow_le_self two_ne_zero hf2))
 
 /-- **The Hessian of a quadratic form is its polar matrix.** Modulo the maximal ideal, the
 Hessian of `Σₖ Σₗ Qₖₗ xₖ xₗ` is `Q + Qᵀ`. -/
@@ -270,5 +290,83 @@ theorem isUnit_det_hessian_iff_isUnit_discrim {x : Fin 2 → P} {D : Fin 2 → D
   simp only [← residue_ne_zero_iff_isUnit, Matrix.det_fin_two, discrim, map_sub, map_mul, h00, h01,
     h10, h11, map_add, map_pow, map_ofNat]
   exact ⟨fun h hc ↦ h (by linear_combination -hc), fun h hc ↦ h (by linear_combination -hc)⟩
+
+/-- **Normal form of a binary quadratic form with unit discriminant.** Over a local ring, if
+`b² - 4ac` is a unit, then after replacing the generators `u, v` of the ideal `(u, v)` by suitable
+generators `x, y`, the form `a u² + b u v + c v²` becomes `e (a' x² + b' x y + y²)` for a unit `e`,
+with `b'² - 4a'` a unit. -/
+theorem exists_eq_unit_mul_quadratic_of_isUnit_discrim {u v a b c : P}
+    (hd : IsUnit (discrim a b c)) :
+    ∃ x y a' b' e : P, IsUnit e ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
+      a * u ^ 2 + b * u * v + c * v ^ 2 = e * (a' * x ^ 2 + b' * x * y + y ^ 2) ∧
+      IsUnit (discrim a' b' 1) := by
+  suffices h : ∃ x y a₁ b₁ c₁ : P, IsUnit c₁ ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
+      a * u ^ 2 + b * u * v + c * v ^ 2 = a₁ * x ^ 2 + b₁ * x * y + c₁ * y ^ 2 ∧
+      discrim a₁ b₁ c₁ = discrim a b c by
+    obtain ⟨x, y, a₁, b₁, _, ⟨e, rfl⟩, hxy, hf, hdisc⟩ := h
+    refine ⟨x, y, a₁ * ↑e⁻¹, b₁ * ↑e⁻¹, e, e.isUnit, hxy, ?_, ?_⟩
+    · rw [hf]
+      linear_combination (-(a₁ * x ^ 2 + b₁ * x * y)) * e.mul_inv
+    · have : discrim (a₁ * ↑e⁻¹) (b₁ * ↑e⁻¹) 1 = discrim a b c * ↑e⁻¹ ^ 2 := by
+        rw [← hdisc]
+        unfold discrim
+        linear_combination (4 * a₁ * ↑e⁻¹) * e.mul_inv
+      rw [this]
+      exact hd.mul (e⁻¹.isUnit.pow 2)
+  by_cases hc : IsUnit c
+  · exact ⟨u, v, a, b, c, hc, rfl, rfl, rfl⟩
+  by_cases ha : IsUnit a
+  · exact ⟨v, u, c, b, a, ha, Set.pair_comm _ _ ▸ rfl, by ring, by unfold discrim; ring⟩
+  -- Both `a` and `c` lie in `𝔪`, so `b` is a unit; the shear `u ↦ u + v` makes `a - b + c` the
+  -- new coefficient of the square of the second coordinate.
+  have ha' : a ∈ maximalIdeal P := (mem_maximalIdeal a).mpr ha
+  have hc' : c ∈ maximalIdeal P := (mem_maximalIdeal c).mpr hc
+  unfold discrim at hd
+  have hb : b ∉ maximalIdeal P := fun hb ↦ (mem_maximalIdeal _).mp
+    (sub_mem (pow_two b ▸ Ideal.mul_mem_left _ b hb)
+      (Ideal.mul_mem_right c _ (Ideal.mul_mem_left _ 4 ha'))) hd
+  refine ⟨u + v, v, a, b - 2 * a, a - b + c, ?_, ?_, by ring, by unfold discrim; ring⟩
+  · by_contra h
+    exact hb (by simpa using sub_mem (add_mem ha' hc') ((mem_maximalIdeal _).mpr h))
+  · exact Ideal.span_pair_add_right (x := u) (y := v)
+
+end TauCeti
+
+namespace TauCeti
+
+/-- **Nondegeneracy of a binary quadratic form at a prime.** Let `D₀, D₁` be derivations of `P`
+dual to elements `x₀, x₁` of a prime `Q`, so `Dᵢ xⱼ = δᵢⱼ`. The Hessian of
+`a x₀² + b x₀ x₁ + c x₁²` has determinant nonzero in the residue field `κ(Q)` exactly when the
+discriminant `b² - 4ac` is nonzero in `κ(Q)`. -/
+theorem algebraMap_residueField_det_hessian_ne_zero_iff {R P : Type*} [CommRing R] [CommRing P]
+    [Algebra R P] {Q : Ideal P} [Q.IsPrime] {x : Fin 2 → P} {D : Fin 2 → Derivation R P P}
+    (hx : ∀ i, x i ∈ Q) (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) (a b c : P) :
+    algebraMap P Q.ResidueField (hessian D (a * x 0 ^ 2 + b * x 0 * x 1 + c * x 1 ^ 2)).det ≠ 0 ↔
+      algebraMap P Q.ResidueField (discrim a b c) ≠ 0 := by
+  let L := Localization.AtPrime Q
+  -- The derivations `Dᵢ`, extended to the local ring `L = P_Q`.
+  let DL : Fin 2 → Derivation R L L := fun i ↦
+    ((Algebra.linearMap P L).compDer (D i)).extendOfIsLocalization Q.primeCompl
+  have hDL (i : Fin 2) (p : P) : DL i (algebraMap P L p) = algebraMap P L (D i p) := by
+    simp [DL]
+  have hunit (p : P) : IsUnit (algebraMap P L p) ↔ algebraMap P Q.ResidueField p ≠ 0 := by
+    rw [IsLocalization.AtPrime.isUnit_to_map_iff L Q, Ideal.mem_primeCompl_iff, Ne,
+      Ideal.algebraMap_residueField_eq_zero]
+  have hhess : algebraMap P L (hessian D (a * x 0 ^ 2 + b * x 0 * x 1 + c * x 1 ^ 2)).det =
+      (hessian DL (algebraMap P L a * algebraMap P L (x 0) ^ 2 +
+        algebraMap P L b * algebraMap P L (x 0) * algebraMap P L (x 1) +
+        algebraMap P L c * algebraMap P L (x 1) ^ 2)).det := by
+    rw [RingHom.map_det]
+    congr 1
+    ext i j
+    simp only [RingHom.mapMatrix_apply, Matrix.map_apply, hessian_apply, ← hDL, map_add, map_mul,
+      map_pow]
+  have hdisc : algebraMap P L (discrim a b c) =
+      discrim (algebraMap P L a) (algebraMap P L b) (algebraMap P L c) := by
+    simp [discrim, map_ofNat]
+  rw [← hunit, ← hunit, hhess, hdisc]
+  exact isUnit_det_hessian_iff_isUnit_discrim (x := fun i ↦ algebraMap P L (x i))
+    (fun i ↦ (IsLocalization.AtPrime.to_map_mem_maximal_iff L Q _).mpr (hx i))
+    (fun i j ↦ by simp [hDL, hD, apply_ite]) _ _ _
 
 end TauCeti

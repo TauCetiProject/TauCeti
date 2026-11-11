@@ -69,6 +69,9 @@ theory, the `Ω`-valued points of a finite product of fields are the points of i
 
 * `Algebra.Etale.tensorProductEquivPi K Ω A`: for an étale `K`-algebra `A` and a separably closed
   field `Ω`, the splitting `Ω ⊗[K] A ≃ₐ[Ω] ((A →ₐ[K] Ω) → Ω)`.
+* `Algebra.Etale.algHomTensorProductEquivPi K Ω A C`: for an `A`-algebra `C`, the induced
+  identification of the `A`-algebra maps `C → A ⊗[K] Ω` with the families, indexed by the points
+  `φ : A →ₐ[K] Ω`, of ring maps `C → Ω` extending `φ`.
 * `Algebra.Etale.algHomEquivMulActionHom Ω`: for a separable closure `Ω` of `K` and an étale
   `K`-algebra `B`, the identification of `A →ₐ[K] B` with the `Gal(Ω/K)`-equivariant maps
   `(B →ₐ[K] Ω) → (A →ₐ[K] Ω)`.
@@ -79,6 +82,8 @@ theory, the `Ω`-valued points of a finite product of fields are the points of i
 
 ## Main results
 
+* `Algebra.Etale.algHomTensorProductEquivPi_lTensor`: the action of `Gal(Ω/K)` on the scalar
+  factor permutes the components of `algHomTensorProductEquivPi`.
 * `Algebra.Etale.pi_id_injective`: the `Ω`-valued points of an étale `K`-algebra separate its
   elements.
 * `Algebra.Etale.mem_range_pi_id_iff`: a function on the `Ω`-valued points of an étale
@@ -182,6 +187,81 @@ theorem mem_range_pi_id_iff [IsSepClosed Ω] [IsGalois K Ω] [Algebra.Etale K A]
         fun σ ↦ (tensorProductEquivPi K Ω A).injective <| funext fun φ ↦ by
           rw [tensorProductEquivPi_map, hh, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
     exact ⟨a, funext fun φ ↦ by simp⟩
+
+/-- With the tensor factors in the order `A ⊗[K] Ω`, the splitting `tensorProductEquivPi` sends
+`t` to the function whose value at `φ` is the image of `t` under `a ⊗ ω ↦ φ a * ω`. -/
+theorem tensorProductEquivPi_comm [IsSepClosed Ω] [Algebra.Etale K A] (t : A ⊗[K] Ω)
+    (φ : A →ₐ[K] Ω) :
+    tensorProductEquivPi K Ω A (Algebra.TensorProduct.comm K A Ω t) φ =
+      Algebra.TensorProduct.productMap φ (AlgHom.id K Ω) t := by
+  induction t using _root_.TensorProduct.inductionOn with
+  | tmul a ω => simp [mul_comm]
+  | add x y hx hy => simp [hx, hy]
+
+variable (C : Type*) [CommRing C] [Algebra A C]
+
+variable (K Ω A) in
+/-- **`A`-algebra maps into `A ⊗[K] Ω` split over the points of `A`.** For an étale algebra `A`
+over a field `K`, a separably closed field `Ω` over `K` and an `A`-algebra `C`, an `A`-algebra map
+`g : C → A ⊗[K] Ω` amounts to a family, indexed by the `K`-algebra maps `φ : A → Ω`, of ring maps
+`f_φ : C → Ω` extending `φ`, that is, of `Ω`-valued points of `C` for the `A`-algebra structure of
+`Ω` given by `φ`. The `φ`-component of `g` is `g` followed by `a ⊗ ω ↦ φ a * ω`
+(`algHomTensorProductEquivPi_apply`); the inverse is characterized by
+`productMap_algHomTensorProductEquivPi_symm_apply`. -/
+noncomputable def algHomTensorProductEquivPi [IsSepClosed Ω] [Algebra.Etale K A] :
+    (C →ₐ[A] A ⊗[K] Ω) ≃ ((φ : A →ₐ[K] Ω) → {f : C →+* Ω // f.comp (algebraMap A C) = φ}) :=
+  -- the splitting with the tensor factors in the order `A ⊗[K] Ω`
+  let e : A ⊗[K] Ω ≃ₐ[K] ((A →ₐ[K] Ω) → Ω) :=
+    (Algebra.TensorProduct.comm K A Ω).trans ((tensorProductEquivPi K Ω A).restrictScalars K)
+  have he (t : A ⊗[K] Ω) (φ : A →ₐ[K] Ω) :
+      e t φ = Algebra.TensorProduct.productMap φ (AlgHom.id K Ω) t :=
+    tensorProductEquivPi_comm t φ
+  { toFun g φ := ⟨(Algebra.TensorProduct.productMap φ (AlgHom.id K Ω)).toRingHom.comp g.toRingHom,
+      RingHom.ext fun a ↦ by simp⟩
+    invFun f :=
+      { toRingHom := e.symm.toRingHom.comp (RingHom.pi fun φ ↦ (f φ).1)
+        commutes' a := e.symm_apply_eq.2 <| funext fun φ ↦ by
+          rw [he]
+          simpa using RingHom.congr_fun (f φ).2 a }
+    left_inv g := AlgHom.ext fun c ↦ e.symm_apply_eq.2 <| funext fun φ ↦ (he _ φ).symm
+    right_inv f := funext fun φ ↦ Subtype.ext <| RingHom.ext fun c ↦
+      (he _ φ).symm.trans (congrFun (e.apply_symm_apply fun φ ↦ (f φ).1 c) φ) }
+
+variable {C}
+
+/-- The `φ`-component of `algHomTensorProductEquivPi K Ω A C g` sends `c` to the image of `g c`
+under `a ⊗ ω ↦ φ a * ω`. -/
+@[simp]
+theorem algHomTensorProductEquivPi_apply [IsSepClosed Ω] [Algebra.Etale K A]
+    (g : C →ₐ[A] A ⊗[K] Ω) (φ : A →ₐ[K] Ω) (c : C) :
+    (algHomTensorProductEquivPi K Ω A C g φ : C →+* Ω) c =
+      Algebra.TensorProduct.productMap φ (AlgHom.id K Ω) (g c) :=
+  (rfl)
+
+/-- The `A`-algebra map attached to a family `f` of points has `φ`-component `f φ`: following it
+by `a ⊗ ω ↦ φ a * ω` gives `f φ`. -/
+@[simp]
+theorem productMap_algHomTensorProductEquivPi_symm_apply [IsSepClosed Ω] [Algebra.Etale K A]
+    (f : (φ : A →ₐ[K] Ω) → {f : C →+* Ω // f.comp (algebraMap A C) = φ}) (φ : A →ₐ[K] Ω)
+    (c : C) :
+    Algebra.TensorProduct.productMap φ (AlgHom.id K Ω)
+      ((algHomTensorProductEquivPi K Ω A C).symm f c) = (f φ : C →+* Ω) c := by
+  rw [← algHomTensorProductEquivPi_apply, Equiv.apply_symm_apply]
+
+/-- **Galois equivariance of the splitting.** Apply `σ ∈ Aut(Ω/K)` to the scalar factor of
+`A ⊗[K] Ω`. The `φ`-component of the image of an `A`-algebra map `g : C → A ⊗[K] Ω` is `σ`
+composed with the `σ⁻¹ • φ`-component of `g`. -/
+theorem algHomTensorProductEquivPi_lTensor [IsSepClosed Ω] [Algebra.Etale K A]
+    (σ : Ω ≃ₐ[K] Ω) (g : C →ₐ[A] A ⊗[K] Ω) (φ : A →ₐ[K] Ω) :
+    (algHomTensorProductEquivPi K Ω A C
+        ((Algebra.TensorProduct.lTensor A (σ : Ω →ₐ[K] Ω)).comp g) φ : C →+* Ω) =
+      (σ : Ω →+* Ω).comp (algHomTensorProductEquivPi K Ω A C g (σ⁻¹ • φ)) := by
+  ext c
+  simp only [algHomTensorProductEquivPi_apply, AlgHom.comp_apply, RingHom.coe_comp,
+    Function.comp_apply, RingHom.coe_coe]
+  induction g c using _root_.TensorProduct.inductionOn with
+  | tmul a ω => simp
+  | add x y hx hy => simp_all
 
 end CommRing
 

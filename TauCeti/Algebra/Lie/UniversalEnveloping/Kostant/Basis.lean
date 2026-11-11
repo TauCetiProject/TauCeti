@@ -24,6 +24,7 @@ identification with the classical all-root Kostant form requires a separate comp
 * `LieAlgebra.Basis.rootGenerator`: the combined raising and lowering generators.
 * `LieAlgebra.Basis.rootGeneratorWeight`: their weights against the Cartan generators.
 * `LieAlgebra.Basis.lie_h_rootGenerator`: the corresponding Cartan-action relation.
+* `LieAlgebra.Basis.isSl2Triple_rootGenerator`: the basis `sl₂` triples on the combined family.
 * `LieAlgebra.Basis.kostantForm`: the associated simple-generator Kostant form.
 * `LieAlgebra.Basis.kostantForm_le_iff`: its universal property.
 * `LieAlgebra.Basis.span_kostantForm_eq_top`: the form spans the enveloping algebra.
@@ -80,6 +81,12 @@ theorem lie_h_rootGenerator (i : ι ⊕ ι) (j : ι) :
     rw [rootGenerator_inl, rootGeneratorWeight_inl, b.lie_h_e, Int.cast_smul_eq_zsmul]
   | inr i =>
     rw [rootGenerator_inr, rootGeneratorWeight_inr, b.lie_h_f, Int.cast_smul_eq_zsmul]
+
+/-- The combined root generators at `i` form the basis `sl₂` triple `(hᵢ, eᵢ, fᵢ)`, read through
+the combined family. -/
+theorem isSl2Triple_rootGenerator (i : ι) :
+    IsSl2Triple (b.h i : L) (rootGenerator b (.inl i)) (rootGenerator b (.inr i)) :=
+  b.sl2 i
 
 /-- The combined root generators have the union of the raising and lowering ranges. -/
 theorem range_rootGenerator : range (rootGenerator b) = range b.e ∪ range b.f :=

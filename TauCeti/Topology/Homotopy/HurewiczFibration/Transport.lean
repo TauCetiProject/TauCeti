@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.Homotopy.HurewiczFibration.PathPullback
 public import TauCeti.Topology.Homotopy.MappingPath.LiftingFunction
 public import TauCeti.Topology.Homotopy.OpenBoxLifting

@@ -71,10 +71,11 @@ theorem isNilpotent_single_sub_one {g : G} (hgp : g ^ p = 1) :
 /-- **A monoid algebra with `p`-torsion is non-reduced in characteristic `p`.** If `R` has
 characteristic `p` and `G` has a nontrivial element `g` with `g ^ p = 1`, then `R[G]` is not
 reduced. -/
-theorem not_isReduced_monoidAlgebra [Nontrivial R] {g : G} (hg : g ≠ 1) (hgp : g ^ p = 1) :
+theorem not_isReduced_monoidAlgebra {g : G} (hg : g ≠ 1) (hgp : g ^ p = 1) :
     ¬ IsReduced (MonoidAlgebra R G) := by
   intro h
   have := h
+  have : Nontrivial R := CharP.nontrivial_of_char_ne_one hp.out.ne_one
   exact single_sub_one_ne_zero hg
     (isNilpotent_iff_eq_zero.mp (isNilpotent_single_sub_one (R := R) p hgp))
 

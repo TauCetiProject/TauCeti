@@ -78,6 +78,16 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+/-- If the ranks of all powers of `Y` are bounded by those of a nilpotent matrix `X`,
+then `Y` is nilpotent too. -/
+theorem isNilpotent_of_forall_rank_pow_le {K : Type*} [Field K] {X Y : Matrix n n K}
+    (hX : IsNilpotent X) (h : ∀ k, (Y ^ k).rank ≤ (X ^ k).rank) : IsNilpotent Y := by
+  obtain ⟨N, hN⟩ := hX
+  apply (isNilpotent_toLin'_iff Y).1
+  refine ⟨N, LinearMap.range_eq_bot.1 (Submodule.finrank_eq_zero.1 ?_)⟩
+  have := h N
+  rwa [hN, rank_zero, Nat.le_zero, rank, ← toLin'_apply', toLin'_pow] at this
+
 section Zariski
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
@@ -134,6 +144,7 @@ theorem rank_pow_add_smul_toMatrix'_joinEnds (c : Module.End.JordanChainBasis (t
   rw [rank, rank, ← toLin'_apply', ← toLin'_apply', toLin'_pow, toLin'_pow, map_add, map_smul,
     toLin'_toMatrix', c.finrank_range_add_smul_joinEnds_pow hij ht]
 
+omit [Finite ι] in
 /-- **Elementary degenerations lie in orbit closures.** Over a field with continuous ring
 operations in which `0` is not isolated, such as `ℂ`, a matrix `Y` lies in the closure of the
 conjugacy class of `Y + M`, where `M` is the matrix of `c.joinEnds i j` for distinct chains
@@ -143,6 +154,9 @@ theorem mem_closure_orbit_add_toMatrix'_joinEnds [TopologicalSpace K] [IsTopolog
     (hij : i ≠ j) :
     Y ∈ closure
       (MulAction.orbit (ConjAct (GL n K)) (Y + LinearMap.toMatrix' (c.joinEnds i j))) := by
+  have := Module.Finite.finite_basis c.basis
+  have : Finite ι := Finite.of_injective
+    (fun i : ι ↦ (⟨i, ⟨0, c.len_pos i⟩⟩ : Σ i, Fin (c.len i))) fun _ _ h ↦ congrArg Sigma.fst h
   have hcont : Continuous fun t : K => Y + t • LinearMap.toMatrix' (c.joinEnds i j) := by
     fun_prop
   have h := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
@@ -223,11 +237,8 @@ theorem mem_of_forall_rank_pow_le {X : Matrix n n K} (hX : IsNilpotent X)
   rintro Y rfl h
   have hXl : IsNilpotent (toLin' X) := (isNilpotent_toLin'_iff X).2 hX
   obtain ⟨κ, _, ⟨b⟩⟩ := Module.End.exists_jordanChainBasis hXl
-  have hYl : IsNilpotent (toLin' Y) := by
-    obtain ⟨N, hN⟩ := hX
-    refine ⟨N, LinearMap.range_eq_bot.1 (Submodule.finrank_eq_zero.1 ?_)⟩
-    have := h N
-    rwa [hN, rank_zero, Nat.le_zero, rank, ← toLin'_apply', toLin'_pow] at this
+  have hYl : IsNilpotent (toLin' Y) :=
+    (isNilpotent_toLin'_iff Y).2 (isNilpotent_of_forall_rank_pow_le hX h)
   obtain ⟨ι, _, ⟨c⟩⟩ := Module.End.exists_jordanChainBasis hYl
   by_cases heq : ∀ k, (Y ^ k).rank = (X ^ k).rank
   · -- Equal ranks of powers make `Y` conjugate to `X`.

@@ -22,8 +22,8 @@ norm `-1`, since both conditions say that `Cl⁺(K) → Cl(K)` is injective
 no such unit the narrow class number is exactly twice the class number
 (`TauCeti.NumberField.NarrowClassGroup.card_eq_two_mul_card_classGroup_of_forall_norm_ne_neg_one`).
 No unit has norm `-1` when a prime `p ≡ 3 (mod 4)` divides the radicand
-(`TauCeti.NumberField.norm_ne_neg_one_of_prime_dvd`); the simplest instance is `ℚ(√3)`
-(`TauCeti.NumberField.Sqrt3.not_surjective_unitSignature`).
+(`TauCeti.NumberField.norm_ne_neg_one_of_mod_four_eq_three_of_dvd`); the simplest instance is
+`ℚ(√3)` (`TauCeti.NumberField.Sqrt3.not_surjective_unitSignature`).
 
 ## Main results
 

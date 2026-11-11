@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Descent of rotation-invariant functions through `u ↦ u ^ m`
@@ -122,16 +123,9 @@ theorem differentiableAt_descendPow_pow [AddCommGroup E] [Module ℂ E] [Topolog
     (hf : ∀ᶠ v in 𝓝 u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • v) = f v) (hu : u ≠ 0)
     (hfu : DifferentiableAt ℂ f u) :
     DifferentiableAt ℂ (descendPow m f) (u ^ m) := by
-  have hw : u ^ m ≠ 0 := pow_ne_zero m hu
   -- A holomorphic branch `ρ` of the `m`-th root near `u ^ m`, with `ρ (u ^ m) = u`.
-  obtain ⟨ρ, hρdef⟩ : ∃ ρ : ℂ → ℂ, ρ = fun v ↦ u * (v / u ^ m) ^ (m⁻¹ : ℂ) := ⟨_, rfl⟩
-  have hρw : ρ (u ^ m) = u := by simp [hρdef, div_self hw]
-  have hρ : DifferentiableAt ℂ ρ (u ^ m) := by
-    rw [hρdef]
-    refine ((differentiableAt_id.div_const _).cpow_const ?_).const_mul u
-    simp [div_self hw]
-  have hρpow (v : ℂ) : ρ v ^ m = v := by
-    rw [hρdef, mul_pow, Complex.cpow_nat_inv_pow _ (NeZero.ne m), mul_div_cancel₀ _ hw]
+  obtain ⟨ρ, hρ, hρw, hρpow⟩ :=
+    exists_differentiableAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
   have hρt := hρ.continuousAt.tendsto
   rw [hρw] at hρt
   have heq : descendPow m f =ᶠ[𝓝 (u ^ m)] f ∘ ρ := (hρt.eventually hf).mono fun v hv ↦ by

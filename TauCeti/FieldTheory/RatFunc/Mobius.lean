@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.RatFunc.Automorphism
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 -- Non-public: finiteness and order of `PGL₂` over a finite field, read through
 -- `RatFunc.pglEquivAlgEquiv` in the proofs only.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Card
 
 /-!
 # Linear fractional transformations of the rational function field
@@ -385,41 +385,28 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   set c := f.denom.coeff 1 with hc
   set d := f.denom.coeff 0 with hd
   have hdet : a * d - b * c ≠ 0 := by
-    by_cases hc0 : c = 0
-    · -- the denominator is the constant `d ≠ 0`, so the numerator has degree one and `a ≠ 0`
-      have hdeg : f.denom.natDegree = 0 := by
-        refine Polynomial.natDegree_eq_zero_iff_degree_le_zero.mpr ?_
-        rw [hden, hc0, map_zero, zero_mul, zero_add]
-        exact Polynomial.degree_C_le
-      have hnum1 : f.num.natDegree = 1 := by
-        rw [hdeg] at hmax
-        simpa using hmax
-      have hane : a ≠ 0 := by
-        rw [ha, ← hnum1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at hnum1
-      have hdne : d ≠ 0 := by
-        intro h0
-        refine f.denom_ne_zero ?_
-        rw [hden, hc0, h0, map_zero, zero_mul, zero_add]
-      rw [hc0, mul_zero, sub_zero]
-      exact mul_ne_zero hane hdne
-    · -- otherwise the denominator would divide the numerator, against their coprimality
-      intro hzero
-      have hca : (Polynomial.C c * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C a := by
-        rw [← Polynomial.C_mul]
-        congr 1
-        field_simp
-      have hcb : (Polynomial.C d * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C b := by
-        rw [← Polynomial.C_mul]
-        congr 1
-        field_simp
-        linear_combination hzero
-      have hdvd : f.denom ∣ f.num := ⟨Polynomial.C (a * c⁻¹), by
-        rw [hnum, hden]
-        linear_combination (-(Polynomial.X : Polynomial K)) * hca - hcb⟩
-      have hunit := (isCoprime_num_denom f).isUnit_of_dvd' hdvd dvd_rfl
-      have hdeg0 := Polynomial.natDegree_eq_zero_of_isUnit hunit
-      have hle : 1 ≤ f.denom.natDegree := Polynomial.le_natDegree_of_ne_zero (hc ▸ hc0)
+    -- `a * d = b * c` gives `C c * num = C a * denom`, and coprimality then forces whichever of
+    -- `num`, `denom` has degree one to divide a nonzero constant
+    intro hzero
+    have hCz := congrArg Polynomial.C hzero
+    simp only [map_sub, map_mul, map_zero] at hCz
+    have hkey : Polynomial.C c * f.num = Polynomial.C a * f.denom := by
+      rw [hnum, hden]
+      linear_combination -hCz
+    rcases max_eq_iff.mp hmax with ⟨h1, -⟩ | ⟨h1, -⟩
+    · have hane : a ≠ 0 := by
+        rw [ha, ← h1]
+        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
+      have := Polynomial.natDegree_eq_zero_of_isUnit
+        ((isCoprime_num_denom f).isUnit_of_dvd' dvd_rfl
+          ((Polynomial.dvd_C_mul hane).mp ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩))
+      omega
+    · have hcne : c ≠ 0 := by
+        rw [hc, ← h1]
+        exact Polynomial.leadingCoeff_ne_zero.mpr f.denom_ne_zero
+      have := Polynomial.natDegree_eq_zero_of_isUnit
+        ((isCoprime_num_denom f).symm.isUnit_of_dvd' dvd_rfl
+          ((Polynomial.dvd_C_mul hcne).mp ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩))
       omega
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
