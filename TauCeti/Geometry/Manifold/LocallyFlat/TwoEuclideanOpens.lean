@@ -5,29 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.Boundary.BallExterior
-import Mathlib.Topology.Compactification.OnePoint.Sphere
-import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 import TauCeti.Geometry.Manifold.LocallyFlat.Separation
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.ConnectedComponents
-import TauCeti.Topology.Schoenflies.Disc
 
 /-!
-# A compact space covered by two Euclidean open sets is a sphere
+# A coordinate sphere in a compact space covered by two Euclidean open sets
 
 Let `X` be a compact Hausdorff space covered by two open sets `U` and `V`, with a homeomorphism
 `eU : U ≃ₜ E` onto a finite-dimensional real normed space. A space covered by two open sets each
-homeomorphic to `E`, of dimension `m > 0`, is homeomorphic to the sphere `Sᵐ` (Milnor 1959,
-Corollary 1; Rosen 1960, Lemma 1). This file proves it
-(`TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`), by bicollaring a coordinate sphere
-in `U ∩ V` and applying Brown's generalized Schoenflies theorem. It is the topological input of the
-recognition of the sphere from a smooth function with exactly two, possibly degenerate, critical
-points.
+homeomorphic to `E` is a sphere (Milnor 1959, Corollary 1; Rosen 1960, Lemma 1), and this file
+supplies the part of that argument which precedes Brown's generalized Schoenflies theorem.
 
 The compact set `X \ V` lies in `U`, so its coordinates are bounded: `‖eU x‖ < R` for some `R ≥ 0`
 (`TauCeti.exists_nonneg_forall_notMem_norm_lt`). Every point of `U` with coordinates of norm at
@@ -48,16 +40,14 @@ The closure of the first component is the image under `j` of the complement `C` 
 coordinate ball, its exterior `TauCeti.ballExterior` under `Subtype.val ∘ eU.symm`, a compact subset
 of `V` (`Homeomorph.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`).
 
-Brown's theorem (`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`),
-applied to the bicollar of `Σ` in `Sᵐ`, identifies that closure with a closed `m`-cell whose
-boundary sphere is `Σ`. The closed coordinate ball of radius `R + 1` is another closed `m`-cell
-with boundary the coordinate sphere, and `X` is the union of the two cells glued along their
-common boundary, which is a sphere by `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`.
+Brown's theorem, applied to the bicollar of `Σ` in `Sᵐ`, identifies that closure with a closed
+`m`-cell whose boundary sphere is `Σ`. The closed coordinate ball of radius `R + 1` is another
+closed `m`-cell with boundary the coordinate sphere, and `X` is the union of the two cells glued
+along their common boundary, which is a sphere by
+`TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`.
 
 ## Main declarations
 
-* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: the coordinates of the points of `U` outside `V`
-  are bounded.
 * `TauCeti.ballExterior_subset_of_forall_notMem_norm_lt`: the exterior of a coordinate ball
   containing those coordinates lies in `V`.
 * `Homeomorph.coordinateSphereBicollar`: the radial bicollar `(x, t) ↦ eU⁻¹ ((R + exp t) • x)`
@@ -69,8 +59,6 @@ common boundary, which is a sphere by `TauCeti.nonempty_homeomorph_sphere_of_uni
   connected components of the complement of the coordinate sphere in `Sᵐ`.
 * `Homeomorph.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`: the closure of the
   outer component is the image of the exterior of the open coordinate ball.
-* `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`: a compact Hausdorff space covered by
-  two open sets homeomorphic to `E`, with `dim E > 0`, is homeomorphic to the sphere `Sᵐ`.
 
 ## References
 
@@ -90,18 +78,6 @@ namespace TauCeti
 
 variable {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {U V : Set X} {R : ℝ}
-
-omit [NormedSpace ℝ E] in
-/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
-bounded coordinates in any homeomorphism `eU : U ≃ₜ E` with a normed space. -/
-theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] (hV : IsOpen V)
-    (hUV : U ∪ V = univ) (eU : U ≃ₜ E) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
-  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
-      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
-    exact hV.isClosed_compl.isCompact
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
-  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
 
 omit [NormedSpace ℝ E] in
 /-- In a space covered by `U` and `V`, if `r` bounds the coordinates of the points of `U` outside
@@ -354,112 +330,3 @@ theorem closure_connectedComponentIn_compl_range_coordinateSphereBicollar {y : s
 end Sphere
 
 end Homeomorph
-
-namespace TauCeti
-
-open Homeomorph
-
-variable {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [CompactSpace X] [T2Space X] {U V : Set X} {R : ℝ}
-
-/-- **The outer cell.** In a compact Hausdorff space covered by open sets `U ≃ₜ E` and `V ≃ₜ E`,
-with `dim E > 0` and `R ≥ 0` bounding the coordinates of the points of `U` outside `V`, the
-exterior of the open coordinate ball of radius `R + 1` is a closed disc whose boundary sphere is the
-coordinate sphere. This is Brown's generalized Schoenflies theorem, applied to the image of the
-coordinate sphere in the one-point compactification of `V`. -/
-private theorem exists_homeomorph_ballExterior_closedBall (hE : 0 < finrank ℝ E) (hU : IsOpen U)
-    (hV : IsOpen V) (hUV : U ∪ V = univ) (eU : U ≃ₜ E) (eV : V ≃ₜ E) (hR0 : 0 ≤ R)
-    (hR : ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R) :
-    ∃ e : ballExterior (Subtype.val ∘ eU.symm) (R + 1) ≃ₜ closedBall (0 : E) 1,
-      ∀ x, ‖(e x : E)‖ = 1 ↔ (x : X) ∈ (Subtype.val ∘ eU.symm) '' sphere (0 : E) (R + 1) := by
-  have : FiniteDimensional ℝ E := .of_finrank_pos hE
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos hE
-  -- Embed `V ≃ₜ E` openly in the sphere `Sᵐ`, as the complement of a point.
-  let Φ : OnePoint E ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 :=
-    onePointEquivSphereOfFinrankEq (by simp)
-  let j : V → sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 := Φ ∘ (↑) ∘ eV
-  have hj : IsOpenEmbedding j :=
-    Φ.isOpenEmbedding.comp (OnePoint.isOpenEmbedding_coe.comp eV.isOpenEmbedding)
-  have hEF : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1 := by simp
-  have hb := (isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp hj
-  -- A point `y` outside the closed coordinate ball lies off the image `Σ` of the coordinate sphere.
-  obtain ⟨x₀⟩ : Nonempty (sphere (0 : E) 1) :=
-    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-  set y := j (coordinateSphereBicollar eU hR (x₀, 1))
-  have hy : y ∈ j '' (Subtype.val ⁻¹'
-      ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ) :=
-    mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 (x₀, 1) one_pos)
-  have hyS : y ∉ range (j ∘ fun x ↦ coordinateSphereBicollar eU hR (x, 0)) := by
-    have hcompl := compl_range_coordinateSphereBicollar_eq_union eU hR hR0 hj.injective
-    exact (Set.ext_iff.1 hcompl y).2 (Or.inl hy)
-  obtain ⟨h, -, hh⟩ := hb.exists_homeomorph_closure_connectedComponentIn_compl_range hEF hE hyS
-  have hcl := closure_connectedComponentIn_compl_range_coordinateSphereBicollar eU hR hU hV hUV
-    hR0 hEF hj hy
-  -- The exterior `C` lies in `V`, and `j` carries it homeomorphically onto the closure of the
-  -- component of `y`.
-  set C := ballExterior (Subtype.val ∘ eU.symm) (R + 1)
-  have hCV : C ⊆ V :=
-    ballExterior_subset_of_forall_notMem_norm_lt hUV fun x hx ↦ (hR x hx).trans (by linarith)
-  have hK (c : C) : (j ∘ inclusion hCV) c ∈ closure (connectedComponentIn
-      (range (j ∘ fun x ↦ coordinateSphereBicollar eU hR (x, 0)))ᶜ y) :=
-    hcl ▸ mem_image_of_mem j (show inclusion hCV c ∈ Subtype.val ⁻¹' C from c.2)
-  have hψ := (hj.isEmbedding.comp (IsEmbedding.inclusion hCV)).codRestrict _ hK
-  have hsurj : Surjective (codRestrict _ _ hK) := fun z ↦ by
-    obtain ⟨v, hv, hvz⟩ : (z : sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) ∈
-        j '' (Subtype.val ⁻¹' C) := hcl ▸ z.2
-    exact ⟨⟨v, hv⟩, Subtype.ext hvz⟩
-  refine ⟨(hψ.toHomeomorphOfSurjective hsurj).trans h, fun c ↦ ?_⟩
-  rw [Homeomorph.trans_apply, IsEmbedding.toHomeomorphOfSurjective_apply,
-    ← mem_sphere_zero_iff_norm, hh, val_codRestrict_apply, comp_apply, range_comp,
-    hj.injective.mem_set_image, range_coordinateSphereBicollar_mk_zero eU hR hR0, mem_preimage,
-    coe_inclusion]
-
-/-- **A compact space covered by two Euclidean open sets is a sphere** (Milnor 1959, Corollary 1;
-Rosen 1960, Lemma 1). Let `X` be a compact Hausdorff space covered by two open sets `U` and `V`,
-each homeomorphic to a real normed space `E` of finite dimension `m > 0`. Then `X` is homeomorphic
-to the unit sphere `Sᵐ` of any real inner product space of dimension `m + 1`.
-
-The two homeomorphisms are arbitrary; in particular no compatibility on `U ∩ V` is assumed. The
-hypothesis `m > 0` cannot be dropped: a point is covered by two copies of `ℝ⁰` and is not `S⁰`. -/
-theorem nonempty_homeomorph_sphere_of_two_euclidean_opens {G : Type*} [NormedAddCommGroup G]
-    [InnerProductSpace ℝ G] (hE : 0 < finrank ℝ E) (hG : finrank ℝ G = finrank ℝ E + 1)
-    (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = univ) (eU : U ≃ₜ E) (eV : V ≃ₜ E) :
-    Nonempty (X ≃ₜ sphere (0 : G) 1) := by
-  have : FiniteDimensional ℝ E := .of_finrank_pos hE
-  obtain ⟨R, hR0, hR⟩ := exists_nonneg_forall_notMem_norm_lt hV hUV eU
-  set φ : E → X := Subtype.val ∘ eU.symm
-  obtain ⟨eC, heC⟩ := exists_homeomorph_ballExterior_closedBall hE hU hV hUV eU eV hR0 hR
-  have hφ : IsOpenEmbedding φ := hU.isOpenEmbedding_subtypeVal.comp eU.symm.isOpenEmbedding
-  -- The closed coordinate ball `D` of radius `R + 1` is the inner cell.
-  set D := φ '' closedBall (0 : E) (R + 1)
-  have hD (v : closedBall (0 : E) (R + 1)) : (φ ∘ Subtype.val) v ∈ D := mem_image_of_mem φ v.2
-  have hψ := (hφ.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict D hD
-  have hsurj : Surjective (codRestrict _ D hD) := fun ⟨_, v, hv, hvx⟩ ↦
-    ⟨⟨v, hv⟩, Subtype.ext hvx⟩
-  obtain ⟨S, hS⟩ := exists_homeomorph_closedBall_one_norm_eq (V := E)
-    (by linarith : (0 : ℝ) < R + 1)
-  -- Both cells are carried to the closed unit ball of a Euclidean space.
-  have hm : finrank ℝ E = finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E))) := by simp
-  let T := closedBallHomeomorphOfFinrankEq hm
-  have hT (v : closedBall (0 : E) 1) :
-      ‖(T v : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ = 1 ↔ ‖(v : E)‖ = 1 := by
-    simp [T]
-  refine nonempty_homeomorph_sphere_of_union_closedBall (by rw [hG, finrank_euclideanSpace_fin])
-    ((isCompact_closedBall _ _).image hφ.continuous).isClosed hφ.isClosed_ballExterior
-    (eq_univ_of_forall fun x ↦ ?_) (((hψ.toHomeomorphOfSurjective hsurj).symm.trans S).trans T)
-    (eC.trans T) (fun x ↦ ?_) (fun x ↦ ?_)
-  · by_cases hx : x ∈ φ '' ball (0 : E) (R + 1)
-    exacts [.inl (image_mono ball_subset_closedBall hx), .inr (mem_ballExterior.2 hx)]
-  · -- A point of `D` lies in the exterior exactly when its coordinates have norm `R + 1`.
-    obtain ⟨v, rfl⟩ := hsurj x
-    rw [← IsEmbedding.toHomeomorphOfSurjective_apply hψ hsurj, Homeomorph.trans_apply,
-      Homeomorph.trans_apply, Homeomorph.symm_apply_apply, hT, hS,
-      IsEmbedding.toHomeomorphOfSurjective_apply, val_codRestrict_apply, mem_ballExterior,
-      comp_apply, hφ.injective.mem_set_image, mem_ball_zero_iff, not_lt]
-    exact ⟨fun h ↦ le_antisymm (mem_closedBall_zero_iff.1 v.2) h, fun h ↦ h.ge⟩
-  · -- A point of the exterior lies in `D` exactly when it lies on the coordinate sphere.
-    rw [Homeomorph.trans_apply, hT, heC]
-    refine ⟨fun hxD ↦ by_contra fun hxS ↦ ?_, fun h ↦ image_mono sphere_subset_closedBall h⟩
-    exact (Set.ext_iff.1 (ballExterior_sdiff_image_sphere φ (R + 1)) x).1 ⟨x.2, hxS⟩ hxD
-
-end TauCeti

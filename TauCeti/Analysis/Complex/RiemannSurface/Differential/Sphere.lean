@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 
 /-!
