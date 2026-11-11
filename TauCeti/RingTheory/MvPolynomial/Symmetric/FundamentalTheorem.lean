@@ -81,7 +81,7 @@ theorem algebraicIndependent_esymm (R : Type*) [CommRing R] {σ : Type*} [Fintyp
   rw [algebraicIndependent_iff_injective_aeval]
   have h : (aeval fun i : Fin n => esymm σ R ((i : ℕ) + 1) :
       MvPolynomial (Fin n) R → MvPolynomial σ R) = Subtype.val ∘ esymmAlgHom σ R n :=
-    funext fun p => (esymmAlgHom_apply p).symm
+    _root_.funext fun p => (esymmAlgHom_apply p).symm
   rw [h]
   exact Subtype.val_injective.comp (esymmAlgHom_injective R hn)
 
