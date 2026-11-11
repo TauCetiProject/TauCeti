@@ -46,6 +46,9 @@ smooth partitions of unity. The target `M` is boundaryless.
   are `C^n` homotopic.
 * `ContinuousMap.exists_contMDiff_homotopicRel`, `ContinuousMap.exists_contMDiff_homotopic`,
   `ContinuousMap.Homotopic.exists_contMDiff_homotopy`: the same for a compact target.
+* `ContinuousMap.exists_contMDiff_homotopicRel_compl`: for a compact target, a map which is `C^n`
+  off a closed set `K` is homotopic, relative to the complement of an open set `O ⊇ K`, to a
+  `C^n` map.
 
 ## References
 
@@ -188,6 +191,17 @@ theorem exists_contMDiff_homotopicRel (n : ℕ∞) (f : C(N, M)) {S U : Set N} (
     ∃ g : C(N, M), ContMDiff I J n g ∧ f.HomotopicRel g S := by
   obtain ⟨_, ⟨e⟩⟩ := TauCeti.SmoothEmbedding.exists_nonempty_euclidean_of_compact (I := J) (M := M)
   exact e.exists_contMDiff_homotopicRel n f hS hU hfU
+
+/-- **Relative Whitney approximation off a closed set.** A continuous map `f` from a σ-compact
+Hausdorff manifold, possibly with corners, into a compact boundaryless manifold which is `C^n` off
+a closed set `K` is homotopic, relative to the complement of an open set `O ⊇ K`, to a `C^n` map
+`g`; in particular `g = f` off `O`. -/
+theorem exists_contMDiff_homotopicRel_compl (n : ℕ∞) (f : C(N, M)) {K O : Set N}
+    (hK : IsClosed K) (hO : IsOpen O) (hKO : K ⊆ O) (hf : ContMDiffOn I J n f Kᶜ) :
+    ∃ g : C(N, M), ContMDiff I J n g ∧ (∀ y ∉ O, g y = f y) ∧ f.HomotopicRel g Oᶜ := by
+  obtain ⟨g, hg, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel n hO.isClosed_compl
+    (hK.isOpen_compl.mem_nhdsSet.2 (compl_subset_compl.2 hKO)) hf
+  exact ⟨g, hg, fun _ hy ↦ (R.fst_eq_snd hy).symm, ⟨R⟩⟩
 
 /-- **Whitney approximation into a compact manifold.** Every continuous map from a σ-compact
 Hausdorff manifold, possibly with corners, into a compact boundaryless manifold is homotopic to a

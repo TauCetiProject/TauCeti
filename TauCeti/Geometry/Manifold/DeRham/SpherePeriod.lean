@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Topology.Homotopy.GenLoop.Square
-public import Mathlib.Topology.Homotopy.HomotopyGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.SmoothApprox
 import TauCeti.Topology.Homotopy.Cube.Basic
@@ -34,8 +33,8 @@ When `u` is `C²`, the integral of `φ` over the sphere is the integral
 
 * Every class has a smooth representative: a continuous map of the square constant near its
   boundary is homotopic, relative to that neighbourhood, to a smooth map by the Whitney
-  approximation theorem (`ContinuousMap.exists_contMDiff_homotopicRel`), which needs `M` to be a
-  compact, Hausdorff, boundaryless, finite-dimensional manifold.
+  approximation theorem (`ContinuousMap.exists_contMDiff_homotopicRel_compl`), which needs `M`
+  to be a compact, Hausdorff, boundaryless, finite-dimensional manifold.
 * Two homotopic `C²` representatives have the same integral
   (`TauCeti.rectangleIntegral_eq_of_homotopic`). A continuous homotopy between them is made
   smooth by Whitney approximation relative to the boundary and to the two ends, and the integral of
@@ -170,10 +169,7 @@ private theorem continuous_squeeze : Continuous squeeze :=
 /-- The segment from `s` to `squeeze s` stays in `[0, 1]` for `s ∈ [0, 1]`. -/
 private theorem add_mul_squeeze_sub_mem_Icc {s c : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
     (hc : c ∈ Icc (0 : ℝ) 1) : s + c * (squeeze s - s) ∈ Icc (0 : ℝ) 1 := by
-  have hq := squeeze_mem_Icc s
-  constructor <;> nlinarith [hs.1, hs.2, hc.1, hc.2, hq.1, hq.2, mul_nonneg hc.1 hq.1,
-    mul_nonneg (sub_nonneg.2 hc.2) hs.1, mul_nonneg hc.1 (sub_nonneg.2 hq.2),
-    mul_nonneg (sub_nonneg.2 hc.2) (sub_nonneg.2 hs.2)]
+  simpa only [smul_eq_mul] using (convex_Icc (0 : ℝ) 1).add_smul_sub_mem hs (squeeze_mem_Icc s) hc
 
 /-- The segment from `s` to `squeeze s` fixes the endpoints `0` and `1` of `[0, 1]`. -/
 private theorem add_mul_squeeze_sub_eq {s c : ℝ} (hs : s = 0 ∨ s = 1) :
@@ -189,8 +185,8 @@ private theorem MapsSquareBoundaryTo.squeezeHomotopy {u : ℝ × ℝ → M}
     (hx : MapsSquareBoundaryTo u x) {c : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) :
     MapsSquareBoundaryTo
       (fun z : ℝ × ℝ ↦ u (z.1 + c * (squeeze z.1 - z.1), z.2 + c * (squeeze z.2 - z.2))) x := by
-  intro s hs t ht h
-  refine hx _ (add_mul_squeeze_sub_mem_Icc hs hc) _ (add_mul_squeeze_sub_mem_Icc ht hc) ?_
+  refine mapsSquareBoundaryTo_iff.2 fun s hs t ht h ↦
+    hx.apply_eq (add_mul_squeeze_sub_mem_Icc hs hc) (add_mul_squeeze_sub_mem_Icc ht hc) ?_
   rcases h with h | h | h | h
   · exact Or.inl ((add_mul_squeeze_sub_eq (Or.inl h)).trans h)
   · exact Or.inr (Or.inl ((add_mul_squeeze_sub_eq (Or.inr h)).trans h))
@@ -206,18 +202,11 @@ private theorem notMem_middleSquare_iff {z : ℝ × ℝ} :
     z ∉ middleSquare ↔ z.1 ≤ 1 / 3 ∨ 2 / 3 ≤ z.1 ∨ z.2 ≤ 1 / 3 ∨ 2 / 3 ≤ z.2 := by
   simp only [middleSquare, mem_prod, mem_Ioo, not_and_or, not_lt, or_assoc]
 
-/-- A point of the boundary of the unit square lies off the open square `(a, b)²` for `0 ≤ a` and
-`b ≤ 1`. -/
-private theorem notMem_Ioo_prod_Ioo {a b s t : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1)
-    (h : s = 0 ∨ s = 1 ∨ t = 0 ∨ t = 1) : (s, t) ∉ Ioo a b ×ˢ Ioo a b := by
-  simp only [mem_prod, mem_Ioo, not_and_or, not_lt]
-  rcases h with rfl | rfl | rfl | rfl <;> simp [ha, hb]
-
 omit [TopologicalSpace M] in
 /-- A map equal to `x` off the middle square sends the boundary of the unit square to `x`. -/
 private theorem MapsSquareBoundaryTo.of_notMem_middleSquare {u : ℝ × ℝ → M}
     (hu : ∀ z ∉ middleSquare, u z = x) : MapsSquareBoundaryTo u x :=
-  fun _ _ _ _ h ↦ hu _ (notMem_Ioo_prod_Ioo (by norm_num) (by norm_num) h)
+  .of_forall_notMem (by norm_num) (by norm_num) hu
 
 /-- The closed square `[1/3, 2/3]²` lies in the open square `(1/4, 3/4)²`: the closed set off the
 latter, on which Whitney approximation keeps a squeezed map fixed, lies in the open set off the
@@ -230,7 +219,7 @@ omit [TopologicalSpace M] in
 coordinates, equals `x` off the middle square. -/
 private theorem comp_squeeze_eq {u : ℝ × ℝ → M} (hx : MapsSquareBoundaryTo u x) {z : ℝ × ℝ}
     (hz : z ∉ middleSquare) : (u ∘ Prod.map squeeze squeeze) z = x := by
-  refine hx _ (squeeze_mem_Icc _) _ (squeeze_mem_Icc _) ?_
+  refine hx.apply_eq (squeeze_mem_Icc _) (squeeze_mem_Icc _) ?_
   rcases notMem_middleSquare_iff.1 hz with h | h | h | h
   · exact Or.inl (squeeze_of_le h)
   · exact Or.inr (Or.inl (squeeze_of_ge h))
@@ -318,7 +307,7 @@ omit [TopologicalSpace M] in
 private theorem mapsSquareBoundaryTo_squareConcat {v u : ℝ × ℝ → M}
     (hv : ∀ z ∉ middleSquare, v z = x) (hu : ∀ z ∉ middleSquare, u z = x) :
     MapsSquareBoundaryTo (squareConcat v u) x := by
-  intro s _ t _ h
+  refine mapsSquareBoundaryTo_iff.2 fun s _ t _ h ↦ ?_
   simp only [squareConcat]
   split_ifs
   · exact hv _ (notMem_middleSquare_iff.2 (by rcases h with rfl | rfl | rfl | rfl <;> norm_num))
@@ -403,24 +392,6 @@ private theorem squeezeCube_mem_boundary {z : ℝ × ℝ} (hz : z ∉ middleSqua
   · exact ⟨1, Or.inl (Subtype.ext (squeeze_of_le h))⟩
   · exact ⟨1, Or.inr (Subtype.ext (squeeze_of_ge h))⟩
 
-omit [CompactSpace M] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
-/-- Evaluating a sphere at the squeezed point is the squeezed sphere. -/
-private theorem squareGenLoop_squeezeCube {u : ℝ × ℝ → M} (hu : Continuous u)
-    (hx : MapsSquareBoundaryTo u x) (z : ℝ × ℝ) :
-    squareGenLoop u hu hx (squeezeCube z) = (u ∘ Prod.map squeeze squeeze) z :=
-  squareGenLoop_apply u hu hx _
-
-/-- **Whitney approximation off a closed set.** On a closed manifold, a continuous map `f` of a
-finite-dimensional space which is `C^n` off a closed set `K` is homotopic, relative to the
-complement of an open set `O ⊇ K`, to a `C^n` map `g`; in particular `g = f` off `O`. -/
-private theorem exists_contMDiff_homotopicRel_compl {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [FiniteDimensional ℝ V] {n : ℕ∞} (f : C(V, M)) {K O : Set V}
-    (hK : IsClosed K) (hO : IsOpen O) (hKO : K ⊆ O) (hf : ContMDiffOn 𝓘(ℝ, V) I n f Kᶜ) :
-    ∃ g : C(V, M), ContMDiff 𝓘(ℝ, V) I n g ∧ (∀ w ∉ O, g w = f w) ∧ f.HomotopicRel g Oᶜ := by
-  obtain ⟨g, hg, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel n hO.isClosed_compl
-    (hK.isOpen_compl.mem_nhdsSet.2 (compl_subset_compl.2 hKO)) hf
-  exact ⟨g, hg, fun _ hw ↦ (R.fst_eq_snd hw).symm, ⟨R⟩⟩
-
 variable (I) in
 /-- **Smooth representatives.** On a closed manifold (compact, Hausdorff, boundaryless and
 finite-dimensional) every element of `π₂(M, x)` is the class of a smooth map of the plane sending
@@ -434,21 +405,23 @@ theorem exists_contMDiff_squareGenLoop (a : π_ 2 M x) :
   let f : C(ℝ × ℝ, M) := ⟨P ∘ Prod.map squeeze squeeze,
     hPc.comp (continuous_squeeze.prodMap continuous_squeeze)⟩
   have hf : ∀ z ∉ middleSquare, f z = x := fun _ ↦ comp_squeeze_eq hPx
-  obtain ⟨g, hg, hgf, ⟨R⟩⟩ := exists_contMDiff_homotopicRel_compl (I := I) (n := ⊤) f
-    (isClosed_Icc.prod isClosed_Icc) (isOpen_Ioo.prod isOpen_Ioo)
+  obtain ⟨g, hg, hgf, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel_compl (I := 𝓘(ℝ, ℝ × ℝ))
+    (J := I) ⊤ (isClosed_Icc.prod isClosed_Icc) (isOpen_Ioo.prod isOpen_Ioo)
     (prod_mono Icc_subset_Ioo_quarters Icc_subset_Ioo_quarters)
     ((contMDiffOn_const (c := x)).congr fun z hz ↦
       hf z fun hm ↦ hz (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hm))
-  -- The boundary of the square lies off `(1/4, 3/4)²`, where `g = f = x`.
+  -- Off `(1/4, 3/4)²`, which contains the middle square, `g = f = x`.
+  have hfO : ∀ z ∉ Ioo (1 / 4 : ℝ) (3 / 4) ×ˢ Ioo (1 / 4 : ℝ) (3 / 4), f z = x :=
+    fun z hz ↦ hf z fun hm ↦ hz (prod_mono (Ioo_subset_Ioo (by norm_num) (by norm_num))
+      (Ioo_subset_Ioo (by norm_num) (by norm_num)) hm)
   have hfx := MapsSquareBoundaryTo.of_notMem_middleSquare hf
-  have hRS {s t : ℝ} (h : s = 0 ∨ s = 1 ∨ t = 0 ∨ t = 1) :
-      (s, t) ∉ Ioo (1 / 4 : ℝ) (3 / 4) ×ˢ Ioo (1 / 4 : ℝ) (3 / 4) :=
-    notMem_Ioo_prod_Ioo (by norm_num) (by norm_num) h
-  refine ⟨g, hg, fun s hs t ht h ↦ (hgf _ (hRS h)).trans (hfx s hs t ht h), ?_⟩
+  refine ⟨g, hg, .of_forall_notMem (by norm_num) (by norm_num) fun z hz ↦
+    (hgf z hz).trans (hfO z hz), ?_⟩
   -- `g` is homotopic to `f` relative to the boundary, and `f` is the squeeze of `P`.
   refine (Quotient.sound (squareGenLoop_homotopic (hu₀ := f.continuous) (hx₀ := hfx)
     (Φ := fun q ↦ R q) R.continuous (fun z ↦ R.apply_zero z) (fun z ↦ R.apply_one z)
-    fun c s hs t ht h ↦ (R.eq_fst c (hRS h)).trans (hfx s hs t ht h))).symm.trans ?_
+    fun c ↦ .of_forall_notMem (by norm_num) (by norm_num) fun z hz ↦
+      (R.eq_fst c hz).trans (hfO z hz))).symm.trans ?_
   exact squareGenLoop_comp_squeeze hPc hPx
 
 /-- The squeeze `ρ c = squeeze c` of the homotopy parameter, as a point of the unit interval. -/
@@ -480,12 +453,12 @@ private theorem exists_contMDiff_homotopy_comp_squeeze {u₀ u₁ : ℝ × ℝ �
       G w = (u₀ ∘ Prod.map squeeze squeeze) w.1 := by
     have hc : squeezeInterval w.2 = 0 := Subtype.ext (squeeze_of_le hw)
     simp only [G, ContinuousMap.coe_mk, hc, ContinuousMap.HomotopyWith.apply_zero]
-    exact squareGenLoop_squeezeCube _ _ _
+    exact squareGenLoop_apply _ _ _ _
   have hG₁ {w : (ℝ × ℝ) × ℝ} (hw : 2 / 3 ≤ w.2) :
       G w = (u₁ ∘ Prod.map squeeze squeeze) w.1 := by
     have hc : squeezeInterval w.2 = 1 := Subtype.ext (squeeze_of_ge hw)
     simp only [G, ContinuousMap.coe_mk, hc, ContinuousMap.HomotopyWith.apply_one]
-    exact squareGenLoop_squeezeCube _ _ _
+    exact squareGenLoop_apply _ _ _ _
   have hGx {w : (ℝ × ℝ) × ℝ} (hw : w.1 ∉ middleSquare) : G w = x :=
     (K.eq_fst _ (squeezeCube_mem_boundary hw)).trans
       (GenLoop.boundary _ _ (squeezeCube_mem_boundary hw))
@@ -513,17 +486,18 @@ private theorem exists_contMDiff_homotopy_comp_squeeze {u₀ u₁ : ℝ × ℝ �
       · refine (hu₁.comp hsq w).congr_of_eventuallyEq ?_
         filter_upwards [(isOpen_lt continuous_const continuous_snd).mem_nhds h] with w' hw'
         exact hG₁ hw'.le
-  obtain ⟨Φ, hΦ, hΦG, -⟩ := exists_contMDiff_homotopicRel_compl (n := 2) G
+  obtain ⟨Φ, hΦ, hΦG, -⟩ := G.exists_contMDiff_homotopicRel_compl (J := I) 2
     ((isClosed_Icc.prod isClosed_Icc).prod isClosed_Icc)
     ((isOpen_Ioo.prod isOpen_Ioo).prod isOpen_Ioo)
     (prod_mono (prod_mono Icc_subset_Ioo_quarters Icc_subset_Ioo_quarters)
       Icc_subset_Ioo_quarters) hGU
   refine ⟨Φ, hΦ, fun z ↦ (hΦG _ fun hm ↦ absurd hm.2.1 (by norm_num)).trans (hG₀ (by norm_num)),
     fun z ↦ (hΦG _ fun hm ↦ absurd hm.2.2 (by norm_num)).trans (hG₁ (by norm_num)),
-    fun c s _ t _ h ↦ ?_⟩
-  -- The smooth homotopy `Φ` keeps every edge of the square at `x`.
-  exact (hΦG _ fun hm ↦ notMem_Ioo_prod_Ioo (by norm_num) (by norm_num) h hm.1).trans
-    (hGx (notMem_Ioo_prod_Ioo (by norm_num) (by norm_num) h))
+    fun c ↦ .of_forall_notMem (a := 1 / 4) (b := 3 / 4) (by norm_num) (by norm_num)
+      fun z hz ↦ ?_⟩
+  -- The smooth homotopy `Φ` keeps every edge of the square, off `(1/4, 3/4)²`, at `x`.
+  exact (hΦG _ fun hm ↦ hz hm.1).trans (hGx fun hm ↦ hz (prod_mono
+    (Ioo_subset_Ioo (by norm_num) (by norm_num)) (Ioo_subset_Ioo (by norm_num) (by norm_num)) hm))
 
 /-- **Homotopy invariance of the integral over a sphere.** On a closed manifold, two `C²` maps of
 the plane sending the boundary of the unit square to `x` which are homotopic as generalized loops
@@ -600,7 +574,8 @@ theorem spherePeriod_mul {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
 /-- The period of the identity of `π₂(M, x)`, the class of the constant sphere, vanishes. -/
 theorem spherePeriod_one {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) : spherePeriod φ x 1 = 0 := by
-  have hx : MapsSquareBoundaryTo (fun _ : ℝ × ℝ ↦ x) x := fun _ _ _ _ _ ↦ rfl
+  have hx : MapsSquareBoundaryTo (fun _ : ℝ × ℝ ↦ x) x :=
+    mapsSquareBoundaryTo_iff.2 fun _ _ _ _ _ ↦ rfl
   have h : (1 : π_ 2 M x) = ⟦squareGenLoop (fun _ ↦ x) continuous_const hx⟧ :=
     (congrArg Additive.toMul HomotopyGroup.ofMul_const).symm.trans
       (congrArg (fun l ↦ (⟦l⟧ : π_ 2 M x)) (GenLoop.ext _ _ fun _ ↦ by simp))

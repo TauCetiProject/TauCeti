@@ -21,7 +21,10 @@ analysis (reparametrizations, smooth approximations) can be compared in `π₂(X
 ## Main declarations
 
 * `TauCeti.MapsSquareBoundaryTo u x`: the map `u` of the plane sends the boundary of the unit
-  square to `x`. `TauCeti.MapsSquareBoundaryTo.edges` restates this as the constancy of `u` along
+  square to `x`. `TauCeti.MapsSquareBoundaryTo.apply_eq` and
+  `TauCeti.MapsSquareBoundaryTo.apply_eq_of_mem_boundary` evaluate `u` on the boundary,
+  `TauCeti.MapsSquareBoundaryTo.of_forall_notMem` deduces the condition from `u = x` off an open
+  subsquare, and `TauCeti.MapsSquareBoundaryTo.edges` restates it as the constancy of `u` along
   the edges of the square.
 * `TauCeti.squareGenLoop`: the generalized loop `I² → X` at `x` given by a map of the plane
   sending the boundary of the unit square to `x`.
@@ -40,8 +43,38 @@ namespace TauCeti
 variable {X : Type*} {x : X}
 
 /-- A map `u` of the plane sends the boundary of the unit square `[0, 1]²` to `x`. -/
-@[expose] def MapsSquareBoundaryTo (u : ℝ × ℝ → X) (x : X) : Prop :=
+def MapsSquareBoundaryTo (u : ℝ × ℝ → X) (x : X) : Prop :=
   ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc (0 : ℝ) 1, (s = 0 ∨ s = 1 ∨ t = 0 ∨ t = 1) → u (s, t) = x
+
+/-- The defining property of `TauCeti.MapsSquareBoundaryTo`. -/
+theorem mapsSquareBoundaryTo_iff {u : ℝ × ℝ → X} :
+    MapsSquareBoundaryTo u x ↔
+      ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc (0 : ℝ) 1, (s = 0 ∨ s = 1 ∨ t = 0 ∨ t = 1) → u (s, t) = x :=
+  Iff.rfl
+
+/-- A map sending the boundary of the unit square to `x` takes the value `x` at the points of the
+square with a coordinate equal to `0` or `1`. -/
+theorem MapsSquareBoundaryTo.apply_eq {u : ℝ × ℝ → X} (hx : MapsSquareBoundaryTo u x) {s t : ℝ}
+    (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) (h : s = 0 ∨ s = 1 ∨ t = 0 ∨ t = 1) :
+    u (s, t) = x :=
+  hx s hs t ht h
+
+/-- A map sending the boundary of the unit square to `x` takes the value `x` at the points of the
+boundary of the cube `I²`, read as points of the plane. -/
+theorem MapsSquareBoundaryTo.apply_eq_of_mem_boundary {u : ℝ × ℝ → X}
+    (hx : MapsSquareBoundaryTo u x) {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :
+    u ((y 0 : ℝ), (y 1 : ℝ)) = x :=
+  hx.apply_eq (Subtype.prop _) (Subtype.prop _) <| by
+    rcases Cube.boundary_fin_two_iff.1 hy with h | h | h | h <;> simp [h]
+
+/-- A map of the plane equal to `x` off an open square `(a, b)²` inside the unit square sends the
+boundary of the unit square to `x`. -/
+theorem MapsSquareBoundaryTo.of_forall_notMem {u : ℝ × ℝ → X} {a b : ℝ} (ha : 0 ≤ a)
+    (hb : b ≤ 1) (hu : ∀ z ∉ Ioo a b ×ˢ Ioo a b, u z = x) : MapsSquareBoundaryTo u x := by
+  intro s _ t _ h
+  refine hu _ ?_
+  simp only [mem_prod, mem_Ioo, not_and_or, not_lt]
+  rcases h with rfl | rfl | rfl | rfl <;> simp [ha, hb]
 
 /-- A map sending the boundary of the unit square to a point is constant along the left, the right
 and, from bottom to top, the horizontal edges of the square. -/
@@ -55,20 +88,12 @@ theorem MapsSquareBoundaryTo.edges {u : ℝ × ℝ → X} (hx : MapsSquareBounda
 
 variable [TopologicalSpace X]
 
-/-- A point of the boundary of the cube `I²`, read as a point of the unit square of the plane, has a
-coordinate equal to `0` or `1`. -/
-private theorem coe_eq_zero_or_eq_one_of_mem_boundary {y : Fin 2 → I}
-    (hy : y ∈ Cube.boundary (Fin 2)) :
-    (y 0 : ℝ) = 0 ∨ (y 0 : ℝ) = 1 ∨ (y 1 : ℝ) = 0 ∨ (y 1 : ℝ) = 1 := by
-  rcases Cube.boundary_fin_two_iff.1 hy with h | h | h | h <;> simp [h]
-
 /-- The generalized loop `I² → X` at `x` given by a continuous map `u` of the plane sending the
 boundary of the unit square to `x`, restricted to the square. Its class is an element of
 `π₂(X, x)`. -/
 def squareGenLoop (u : ℝ × ℝ → X) (hu : Continuous u) (hx : MapsSquareBoundaryTo u x) :
     Ω^ (Fin 2) X x :=
-  ⟨⟨fun y ↦ u ((y 0 : ℝ), (y 1 : ℝ)), by fun_prop⟩, fun _ hy ↦
-    hx _ (Subtype.prop _) _ (Subtype.prop _) (coe_eq_zero_or_eq_one_of_mem_boundary hy)⟩
+  ⟨⟨fun y ↦ u ((y 0 : ℝ), (y 1 : ℝ)), by fun_prop⟩, fun _ hy ↦ hx.apply_eq_of_mem_boundary hy⟩
 
 @[simp]
 theorem squareGenLoop_apply (u : ℝ × ℝ → X) (hu : Continuous u) (hx : MapsSquareBoundaryTo u x)
@@ -98,7 +123,6 @@ theorem squareGenLoop_homotopic {u₀ u₁ : ℝ × ℝ → X} {hu₀ : Continuo
     (h₁ : ∀ z, Φ (1, z) = u₁ z) (hΦx : ∀ c, MapsSquareBoundaryTo (fun z ↦ Φ (c, z)) x) :
     GenLoop.Homotopic (squareGenLoop u₀ hu₀ hx₀) (squareGenLoop u₁ hu₁ hx₁) :=
   GenLoop.homotopic_of_continuousMap ⟨fun p ↦ Φ (p.1, ((p.2 0 : ℝ), (p.2 1 : ℝ))), by fun_prop⟩
-    (fun _ ↦ h₀ _) (fun _ ↦ h₁ _) fun c _ hy ↦
-      hΦx c _ (Subtype.prop _) _ (Subtype.prop _) (coe_eq_zero_or_eq_one_of_mem_boundary hy)
+    (fun _ ↦ h₀ _) (fun _ ↦ h₁ _) fun c _ hy ↦ (hΦx c).apply_eq_of_mem_boundary hy
 
 end TauCeti
