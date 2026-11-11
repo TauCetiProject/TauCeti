@@ -125,3 +125,25 @@ theorem isLocalizingSequence_completion_iff {τ : ℕ → Ω → WithTop ι} :
       P.ae_completion.symm ▸ hτ.mono⟩
 
 end ProbabilityTheory
+
+namespace ProbabilityTheory.Locally
+
+open MeasureTheory
+
+variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+  [Zero E] [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
+  {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {p q : (ι → Ω → E) → Prop}
+
+/-- Pointwise-equivalent process properties have equivalent native locality statements
+across ambient completion, with the same localizers and positive-time indicators. -/
+theorem completion_iff (h : ∀ Y, p Y ↔ q Y) :
+    @Locally ι (NullMeasurableSpace Ω P) E _ _ _ _ _ _
+      p (ℱ.monoAmbient le_eventuallyMeasurableSpace) X P.completion ↔
+      Locally q ℱ X P := by
+  constructor
+  · rintro ⟨τ, hτ, hp⟩
+    exact ⟨τ, isLocalizingSequence_completion_iff.mp hτ, fun n ↦ (h _).mp (hp n)⟩
+  · rintro ⟨τ, hτ, hq⟩
+    exact ⟨τ, isLocalizingSequence_completion_iff.mpr hτ, fun n ↦ (h _).mpr (hq n)⟩
+
+end ProbabilityTheory.Locally

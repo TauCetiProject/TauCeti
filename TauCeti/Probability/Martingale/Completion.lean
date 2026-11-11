@@ -45,26 +45,34 @@ variable [Preorder ι] {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
 /-- Completing only the ambient space neither creates nor destroys martingales
 on the original time slices. Literal strong adaptation is the same on both sides. -/
 @[simp]
-theorem martingale_completion_iff [SigmaFiniteFiltration P ℱ] :
+theorem martingale_completion_iff :
     @Martingale (NullMeasurableSpace Ω P) E ι _ _ _ _
       X (ℱ.monoAmbient le_eventuallyMeasurableSpace) P.completion ↔
       Martingale X ℱ P := by
-  -- The carrier tag changes only the ambient measurable space; adaptation refers
-  -- to the unchanged raw time slices, as the characteristic lemma records.
+  have hce (s t : ι) (hf : AEStronglyMeasurable (X t) P) :
+      @condExp Ω E (ℱ s) (eventuallyMeasurableSpace mΩ (ae P)) _ _ P.completion (X t)
+        =ᵐ[P] P[X t | ℱ s] := by
+    by_cases hσ : SigmaFinite (P.trim (ℱ.le s))
+    · exact TauCeti.MeasureTheory.condExp_completion (ℱ.le s) hf
+    · have hσ' : ¬SigmaFinite (@Measure.trim Ω (ℱ s)
+          (eventuallyMeasurableSpace mΩ (ae P)) P.completion
+          ((ℱ.le s).trans le_eventuallyMeasurableSpace)) := by
+        rwa [P.trim_completion (ℱ.le s)]
+      rw [condExp_of_not_sigmaFinite ((ℱ.le s).trans le_eventuallyMeasurableSpace) hσ',
+        condExp_of_not_sigmaFinite (ℱ.le s) hσ]
+  -- Adaptation refers only to the unchanged raw time slices.
   constructor
   · intro hX
     have hraw := (stronglyAdapted_monoAmbient_iff _).mp hX.stronglyAdapted
     refine ⟨hraw, fun s t hst ↦ ?_⟩
     have hf : AEStronglyMeasurable (X t) P :=
       ((hraw t).mono (ℱ.le t)).aestronglyMeasurable
-    have hce := TauCeti.MeasureTheory.condExp_completion (μ := P) (ℱ.le s) hf
-    exact hce.symm.trans ((hX.condExp_ae_eq hst).filter_mono P.ae_completion.ge)
+    exact (hce s t hf).symm.trans ((hX.condExp_ae_eq hst).filter_mono P.ae_completion.ge)
   · intro hX
     refine ⟨(stronglyAdapted_monoAmbient_iff _).mpr hX.stronglyAdapted,
       fun s t hst ↦ ?_⟩
-    exact ((TauCeti.MeasureTheory.condExp_completion (ℱ.le s)
-      (hX.integrable t).aestronglyMeasurable).trans
-        (hX.condExp_ae_eq hst)).filter_mono P.ae_completion.le
+    exact ((hce s t (hX.integrable t).aestronglyMeasurable).trans
+      (hX.condExp_ae_eq hst)).filter_mono P.ae_completion.le
 
 end Preorder
 
@@ -75,7 +83,7 @@ namespace ProbabilityTheory.Locally
 variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
-  {ℱ : Filtration ι mΩ} {X : ι → Ω → E} [SigmaFiniteFiltration P ℱ]
+  {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
 
 /-- Native raw local martingales are invariant under completion of the ambient space.
 Both directions keep the witnessing localizers and their initial-time indicators.
@@ -85,15 +93,7 @@ theorem martingale_completion_iff :
     @Locally ι (NullMeasurableSpace Ω P) E _ _ _ _ _ _
       (fun Y ↦ Martingale Y (ℱ.monoAmbient le_eventuallyMeasurableSpace) P.completion)
       (ℱ.monoAmbient le_eventuallyMeasurableSpace) X P.completion ↔
-      Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P := by
-  -- Stopping and the initial-time indicator are pointwise operations independent
-  -- of the ambient sigma-algebra, so each stage is the same process on both sides.
-  constructor
-  · rintro ⟨τ, hτ, hM⟩
-    exact ⟨τ, isLocalizingSequence_completion_iff.mp hτ,
-      fun n ↦ (MeasureTheory.martingale_completion_iff (P := P) (ℱ := ℱ)).mp (hM n)⟩
-  · rintro ⟨τ, hτ, hM⟩
-    exact ⟨τ, isLocalizingSequence_completion_iff.mpr hτ,
-      fun n ↦ (MeasureTheory.martingale_completion_iff (P := P) (ℱ := ℱ)).mpr (hM n)⟩
+      Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P :=
+  completion_iff fun _ ↦ MeasureTheory.martingale_completion_iff
 
 end ProbabilityTheory.Locally
