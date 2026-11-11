@@ -39,6 +39,8 @@ finite set. The finiteness of the zero set itself on a compact is
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
+* `AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul`: a factorization
+  `(z - z₀) ^ n • u z` with `u` continuous at `z₀` forces order at least `n`.
 * `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta` and
   `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order `n`
   exactly when it is comparable to `(z - z₀) ^ n`, and infinite order exactly when it is
@@ -155,6 +157,22 @@ theorem _root_.AnalyticAt.analyticOrderAt_le_of_isBigO {E F : Type*} [NormedAddC
   exact ((eventually_nhdsWithin_of_forall (s := {z₀}ᶜ) fun z hz =>
     norm_ne_zero_iff.2 (pow_ne_zero _ (sub_ne_zero.2 hz))).frequently).filter_mono
       nhdsWithin_le_nhds
+
+/-- A function analytic at `z₀` that factors near `z₀` as `(z - z₀) ^ n • u z`, with `u` only
+continuous at `z₀`, vanishes to order at least `n` there. Mathlib's `natCast_le_analyticOrderAt`
+characterizes the order by such factorizations with an analytic factor `u`. -/
+theorem _root_.AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g u : 𝕜 → E} {n : ℕ} (hg : AnalyticAt 𝕜 g z₀)
+    (hu : ContinuousAt u z₀) (h : ∀ᶠ z in 𝓝 z₀, g z = (z - z₀) ^ n • u z) :
+    (n : ℕ∞) ≤ analyticOrderAt g z₀ := by
+  have hO : g =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n :=
+    Asymptotics.IsBigO.congr' (by
+      simpa only [smul_eq_mul, mul_one] using
+        (Asymptotics.isBigO_refl (fun z ↦ (z - z₀) ^ n) (𝓝 z₀)).smul
+          (hu.norm.isBoundedUnder_le.isBigO_one 𝕜 (f := u)))
+      (h.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
+  have hle := hg.analyticOrderAt_le_of_isBigO hO
+  rwa [← Pi.pow_def, analyticOrderAt_centeredMonomial] at hle
 
 /-- Two functions analytic at `z₀` that are equivalent up to constant factors near `z₀` vanish to
 the same order there. -/

@@ -36,8 +36,10 @@ solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kerne
 gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
 bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
 
-These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
-property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
+These are statements about weak solutions in `L²`. At a bounded field, weak solutions lie in `H¹`
+by the elliptic regularity of `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`, so `Q f ∈ H¹`
+there. The Fredholm property and the dimension of the kernel of the Sobolev realization of `L_x`
+are not proved here.
 
 ## Main results
 
