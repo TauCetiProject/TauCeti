@@ -44,6 +44,9 @@ The kernel argument specializes the compact-error estimate API from
 * `IsCompactOperator.isCompactOperator_one_sub_pow`: `1 - (1 - K) ^ n` is compact, so
   every power of `1 - K` is again a compact perturbation of the identity. This holds for any
   continuous endomorphism of a topological module.
+* `IsCompactOperator.finiteDimensional_ker_pow_one_sub`: `ker ((1 - K) ^ n)` is finite dimensional.
+* `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed; `X` need not be complete.
+* `IsCompactOperator.isClosed_range_pow_one_sub`: `range ((1 - K) ^ n)` is closed.
 * `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
