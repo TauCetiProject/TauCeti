@@ -81,7 +81,7 @@ theorem exists_eventually_strictMono_range_eq {B Y ι : Type*} [TopologicalSpace
   · rintro ⟨j, rfl⟩
     exact hm j
 
-/-- On a nonempty preconnected space, a finite set `G` of continuous functions into a linear
+/-- On a preconnected space, a finite set `G` of continuous functions into a linear
 order, no two of which take the same value at any point, can be listed as `θ₀, θ₁, …, θₖ₋₁`
 with `θ₀ x < θ₁ x < ⋯ < θₖ₋₁ x` at every point `x`. -/
 theorem exists_strictMono_range_eq {B Y : Type*} [TopologicalSpace B] [PreconnectedSpace B]

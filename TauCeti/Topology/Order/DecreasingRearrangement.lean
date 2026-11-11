@@ -60,7 +60,8 @@ private theorem bddAbove_rearrangementBounds (hr : BddAbove (Set.range r)) (n : 
 
 /-- For an unbounded family the supremum defining the rearrangement is junk, and every term is
 zero. -/
-private theorem decreasingRearrangement_eq_zero_of_not_bddAbove
+@[simp]
+theorem decreasingRearrangement_eq_zero_of_not_bddAbove
     (hr : ¬ BddAbove (Set.range r)) (n : ℕ) : decreasingRearrangement r n = 0 := by
   apply Real.sSup_of_not_bddAbove
   rintro ⟨M, hM⟩
@@ -68,9 +69,9 @@ private theorem decreasingRearrangement_eq_zero_of_not_bddAbove
   have hT : {i | M + 1 ≤ r i}.Finite := by
     by_contra hinf
     obtain ⟨s, hsT, hs⟩ := Set.Infinite.exists_subset_card_eq hinf (n + 1)
-    have := hM (show M + 1 ∈ rearrangementBounds r n from
-      Set.mem_insert_of_mem _ ⟨s, hs, fun i hi ↦ hsT hi⟩)
-    linarith
+    have hmem : M + 1 ∈ rearrangementBounds r n :=
+      Set.mem_insert_of_mem _ ⟨s, hs, fun i hi ↦ hsT hi⟩
+    linarith [hM hmem]
   obtain ⟨B, hB⟩ := (hT.image r).bddAbove
   refine ⟨max (M + 1) B, ?_⟩
   rintro _ ⟨i, rfl⟩
@@ -79,10 +80,8 @@ private theorem decreasingRearrangement_eq_zero_of_not_bddAbove
   · exact (not_le.1 hi).le.trans (le_max_left _ _)
 
 /-- Rearranged bounds are nonnegative, even when there are no indices. -/
-theorem decreasingRearrangement_nonneg (n : ℕ) : 0 ≤ decreasingRearrangement r n := by
-  by_cases hr : BddAbove (Set.range r)
-  · exact le_csSup (bddAbove_rearrangementBounds hr n) (Set.mem_insert _ _)
-  · rw [decreasingRearrangement_eq_zero_of_not_bddAbove hr]
+theorem decreasingRearrangement_nonneg (n : ℕ) : 0 ≤ decreasingRearrangement r n :=
+  Real.sSup_nonneg' ⟨0, Set.mem_insert _ _, le_rfl⟩
 
 /-- A lower bound on `n + 1` distinct entries is bounded by the `n`-th rearranged entry. -/
 theorem le_decreasingRearrangement (hr : BddAbove (Set.range r))
