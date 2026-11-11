@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.RingTheory.AdicCompletion.Pow
 public import TauCeti.RingTheory.Henselian.Basic
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Henselianity of nonarchimedean local fields
@@ -29,14 +27,11 @@ root congruent to it modulo `𝓂[K] ^ (n + 1)`.
 * `TauCeti.isAdicComplete_maximalIdeal_pow_succ`: the integer ring is complete for the adic
   topology of each positive power of its maximal ideal, hence Henselian at it through Mathlib's
   `IsAdicComplete.henselianRing`.
-* `TauCeti.adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit`: a root in any field extension of a
-  quadratic `X ^ 2 + b X + c` with `b` a unit and `c` in the maximal ideal already lies in `K`.
 -/
 
 public section
 
 open IsLocalRing ValuativeRel
-open scoped IntermediateField
 
 namespace TauCeti
 
@@ -66,34 +61,5 @@ instance isAdicComplete_maximalIdeal_pow_succ (n : ℕ) :
   let _ := IsTopologicalAddGroup.rightUniformSpace K
   let _ := isUniformAddGroup_of_addCommGroup (G := K)
   exact IsAdicComplete.pow n.succ_ne_zero
-
-variable {K}
-
-/-- If `b` is a unit and `c` lies in the maximal ideal, a root in any field extension of
-`X ^ 2 + b X + c` already lies in `K`: the reduction `X (X + b)` has the simple root `0`, which
-Hensel's lemma lifts to a root in `𝒪[K]`. -/
-theorem adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit {b c : 𝒪[K]} (hb : IsUnit b)
-    (hc : c ∈ 𝓂[K]) {L : Type*} [Field L] [Algebra K L] {x : L}
-    (hx : x ^ 2 + algebraMap K L b * x + algebraMap K L c = 0) :
-    K⟮x⟯ = ⊥ := by
-  have hd : IsUnit (b ^ 2 + 4 * -c) := by
-    rw [← IsLocalRing.notMem_maximalIdeal]
-    intro h
-    have h4 : 4 * -c ∈ 𝓂[K] := Ideal.mul_mem_left _ _ (neg_mem hc)
-    exact IsLocalRing.notMem_maximalIdeal.mpr (hb.pow 2) (by simpa using sub_mem h h4)
-  obtain ⟨s, hs, -, -⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
-    (a := b) (b := -c) (t := 0) hd (by simpa using hc)
-  have hs' : algebraMap K L s ^ 2 +
-      algebraMap K L b * algebraMap K L s +
-        algebraMap K L c = 0 := by
-    have := congrArg (fun y : 𝒪[K] ↦ algebraMap K L (y : K)) hs
-    simpa using this
-  have hfac : (x - algebraMap K L s) *
-      (x + algebraMap K L s + algebraMap K L b) = 0 := by
-    linear_combination hx - hs'
-  rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact ⟨s, (sub_eq_zero.mp h).symm⟩
-  · exact ⟨-(s : K) - b, by simp only [map_sub, map_neg]; linear_combination -h⟩
 
 end TauCeti
