@@ -9,58 +9,31 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Representation.GNS
+import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
 import TauCeti.MeasureTheory.Integral.PeakFunction
 
 /-!
 # Multiplier-valued covariant homomorphisms and their integrated forms
 
 A *covariant multiplier homomorphism* of a C⋆-dynamical system `(A, G, α)` into a possibly
-nonunital C⋆-algebra `B` consists of a ⋆-homomorphism `π : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` and a group
-homomorphism `u : G →* unitary 𝓜(ℂ, B)` whose left centralizers have norm-continuous orbits
-`r ↦ u_r b` for every `b : B` and which satisfy `u_r π(a) = π(α_r(a)) u_r`. On a topological group,
-right strict continuity `r ↦ b u_r` follows automatically from left strict continuity by taking
-adjoints.
+nonunital C⋆-algebra `B` consists of `π : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` and `u : G →* unitary 𝓜(ℂ, B)` with
+norm-continuous left orbits `r ↦ u_r b` and covariance `u_r π(a) = π(α_r(a)) u_r`. On a
+topological group, strict right continuity `r ↦ b u_r` follows by taking adjoints.
 
-Composing `(π, u)` with the multiplier extension of any nondegenerate Hilbert-space representation
-`ρ` of `B` yields a Hilbert-space `CovariantRepresentation`, and composing with the multiplier
-extension of any nondegenerate `ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)` pushes `(π, u)` forward to `C`.
+Composing `(π, u)` with the multiplier extension of a nondegenerate Hilbert-space representation of
+`B` yields a `CovariantRepresentation`, and composing with the multiplier extension of a
+nondegenerate `ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)` pushes `(π, u)` forward to `C`.
 
 For a measure `μ` finite on compact sets, every `f : C_c(G, A)` integrates strictly to a multiplier
-`CovariantMultiplierHom.integratedMultiplier` acting by the Bochner integrals
-`b ↦ ∫ r, (π(f r) u_r).fst b ∂μ` and `b ↦ ∫ r, (π(f r) u_r).snd b ∂μ` in `B`. Every nondegenerate
-Hilbert-space representation of `B` sends this multiplier to the vector-valued integrated operator
-of the induced covariant representation. Since nondegenerate representations separate points of
-`𝓜(ℂ, B)` (`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`), multiplicativity under
-twisted convolution, preservation of the twisted involution on a Haar measure, and functoriality
-under nondegenerate multiplier homomorphisms transfer directly from the Hilbert-space theory.
-
-Peak-function approximation at any group element `r₀` shows that the integrated multipliers
-generate the same closed essential subspace of `B` as `π`, and that nondegenerate covariant
-multiplier homomorphisms (as well as nondegenerate Hilbert-space covariant representations) are
-uniquely determined by their integrated forms.
-
-## Main definitions
-
-* `TauCeti.CStarAction.CovariantMultiplierHom`: covariant homomorphisms into `𝓜(ℂ, B)`.
-* `TauCeti.CStarAction.CovariantMultiplierHom.toCovariantRepresentation`: transport to a
-  Hilbert-space covariant representation along a nondegenerate representation of `B`.
-* `TauCeti.CStarAction.CovariantMultiplierHom.map` and
-  `TauCeti.CStarAction.CovariantMultiplierHom.comap`: pushforward along a nondegenerate multiplier
-  homomorphism and pullback along an equivariant coefficient homomorphism.
-* `TauCeti.CStarAction.CovariantMultiplierHom.integratedMultiplier` and
-  `TauCeti.CStarAction.CovariantMultiplierHom.integratedStarAlgHom`: the strict Bochner integrated
-  form on `C_c(G, A)` and as a ⋆-homomorphism on `ConvolutionAlgebra α μ`.
-
-## Main statements
-
-* `TauCeti.CStarAction.CovariantMultiplierHom.multiplierExtension_integratedMultiplier`:
-  compatibility with Hilbert-space vector integration.
-* `TauCeti.CStarAction.CovariantMultiplierHom.topologicalClosure_span_integratedMultiplier` and
-  `TauCeti.CStarAction.CovariantMultiplierHom.dense_span_integratedMultiplier_iff`: preservation
-  and reflection of multiplier nondegeneracy.
-* `TauCeti.CStarAction.CovariantMultiplierHom.eq_of_integratedMultiplier_eq` and
-  `TauCeti.CStarAction.CovariantRepresentation.eq_of_integratedOperator_eq`: uniqueness of
-  nondegenerate covariant pairs from their integrated forms.
+`CovariantMultiplierHom.integratedMultiplier` acting by `b ↦ ∫ r, (π(f r) u_r).fst b ∂μ` and
+`b ↦ ∫ r, (π(f r) u_r).snd b ∂μ`. Every nondegenerate representation of `B` sends this multiplier
+to the vector-valued integrated operator of the induced covariant representation, so
+`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq` transfers multiplicativity under twisted
+convolution, preservation of the twisted involution, functoriality, and uniqueness of nondegenerate
+covariant multiplier homomorphisms (`eq_of_integratedMultiplier_eq`) from the Hilbert-space theory.
+Peak-function approximation shows that the integrated multipliers generate the same closed essential
+subspace of `B` as `π` (`topologicalClosure_span_integratedMultiplier`,
+`dense_span_integratedMultiplier_iff`).
 
 ## References
 
@@ -354,9 +327,7 @@ private def integratedFst (f : C_c(G, A)) : B →L[ℂ] B :=
       map_add' b c := by
         simp_rw [map_add]
         exact integral_add (M.integrable_integrand_fst μ f b) (M.integrable_integrand_fst μ f c)
-      map_smul' z b := by
-        simp_rw [map_smul]
-        exact integral_smul z _ }
+      map_smul' z b := by simp_rw [map_smul]; exact integral_smul z _ }
     (∫ r, ‖f r‖ ∂μ) (M.norm_integral_fst_le μ f)
 
 private def integratedSnd (f : C_c(G, A)) : B →L[ℂ] B :=
@@ -365,9 +336,7 @@ private def integratedSnd (f : C_c(G, A)) : B →L[ℂ] B :=
       map_add' b c := by
         simp_rw [map_add]
         exact integral_add (M.integrable_integrand_snd μ f b) (M.integrable_integrand_snd μ f c)
-      map_smul' z b := by
-        simp_rw [map_smul]
-        exact integral_smul z _ }
+      map_smul' z b := by simp_rw [map_smul]; exact integral_smul z _ }
     (∫ r, ‖f r‖ ∂μ) (M.norm_integral_snd_le μ f)
 
 /-- The strict Bochner integrated form of a covariant multiplier homomorphism on `C_c(G, A)`. -/
@@ -531,7 +500,7 @@ theorem exists_norm_integratedMultiplier_fst_sub_le (r₀ : G) (a : A) (b : B) {
   have hbound := norm_integral_smul_sub_le (𝕜 := ℝ) (f := hφi.toL1 φ) (U := tsupport φ)
     (φ := ψ) (y := ψ r₀) ((integral_congr_ae hae).trans hφ1)
     (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
-    haesm (fun r hr => hφU hr)
+    haesm (.of_forall fun r hr => hφU hr)
   rwa [← hf_int, hnorm, mul_one] at hbound
 
 /-- The integrated multipliers on `C_c(G, A)` generate the exact same closed essential subspace of
@@ -587,160 +556,30 @@ end PeakApproximation
 
 end Integrated
 
-end CovariantMultiplierHom
-
-/-! ### Uniqueness of covariant pairs from their integrated forms -/
-
-namespace CovariantRepresentation
-
-section Uniqueness
-
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
-  [OpensMeasurableSpace G] [LocallyCompactSpace G] [R1Space G]
-  [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {α : CStarAction G A} {P Q : CovariantRepresentation α H}
-  (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
-
-omit [LocallyCompactSpace G] [R1Space G] [μ.IsOpenPosMeasure] in
-private theorem norm_integratedOperator_compLeft_sub_le (P : CovariantRepresentation α H)
-    (r₀ : G) (a : A) (v : H) {ε : ℝ} {φ : C_c(G, ℝ)} (hφ0 : 0 ≤ φ) (hφ1 : ∫ r, φ r ∂μ = 1)
-    (hφU : ∀ r ∈ tsupport φ,
-      ‖P.coefficient a (P.group r v) - P.coefficient a (P.group r₀ v)‖ ≤ ε) :
-    ‖P.integratedOperator μ (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ a)) v -
-      P.coefficient a (P.group r₀ v)‖ ≤ ε := by
-  set ψ : G → H := fun r => P.coefficient a (P.group r v)
-  have hψ : Continuous ψ := (P.coefficient a).continuous.comp (P.continuous_orbit v)
-  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-  have hae := hφi.coeFn_toL1
-  have hnorm : ‖hφi.toL1 φ‖ = 1 := by
-    rw [L1.norm_eq_integral_norm, ← hφ1]
-    exact integral_congr_ae (hae.mono fun r hr =>
-      (congrArg norm hr).trans (Real.norm_of_nonneg (hφ0 r)))
-  have hf_int :
-      P.integratedOperator μ (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ a)) v =
-        ∫ r, (hφi.toL1 φ) r • ψ r ∂μ := by
-    rw [integratedOperator_apply]
-    refine integral_congr_ae (hae.mono fun r hr => ?_)
-    have hfr : (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ a)) r = (φ r : ℂ) • a := by
-      simp [CompactlySupportedContinuousMap.compLeft_apply]
-    dsimp only [ψ]
-    rw [hfr, map_smul, smul_apply, hr]
-    simp
-  have haesm : AEStronglyMeasurable (fun r => (hφi.toL1 φ) r • ψ r) μ :=
-    ((((map_continuous φ).smul hψ).integrable_of_hasCompactSupport
-      φ.hasCompactSupport.smul_right).aestronglyMeasurable).congr
-        (hae.mono fun r hr => by dsimp only [Pi.smul_apply']; rw [hr])
-  have hbound := norm_integral_smul_sub_le (𝕜 := ℝ) (f := hφi.toL1 φ) (U := tsupport φ)
-    (φ := ψ) (y := ψ r₀) ((integral_congr_ae hae).trans hφ1)
-    (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
-    haesm hφU
-  rwa [← hf_int, hnorm, mul_one] at hbound
-
-/-- Two Hilbert-space covariant representations with the same integrated operators satisfy
-`P.coefficient a * P.group r = Q.coefficient a * Q.group r` for every `a` and `r`, without any
-nondegeneracy assumption. -/
-theorem coefficient_mul_group_eq_of_integratedOperator_eq
-    (h : ∀ f : C_c(G, A), P.integratedOperator μ f = Q.integratedOperator μ f)
-    (a : A) (r₀ : G) :
-    P.coefficient a * P.group r₀ = Q.coefficient a * Q.group r₀ := by
-  ext v
-  simp only [mul_apply_eq_comp]
-  refine eq_of_sub_eq_zero <| norm_le_zero_iff.1 <| le_of_forall_pos_le_add fun ε hε => ?_
-  rw [zero_add]
-  have hPcont : Continuous fun r => P.coefficient a (P.group r v) :=
-    (P.coefficient a).continuous.comp (P.continuous_orbit v)
-  have hQcont : Continuous fun r => Q.coefficient a (Q.group r v) :=
-    (Q.coefficient a).continuous.comp (Q.continuous_orbit v)
-  have hUP : {r : G | ‖P.coefficient a (P.group r v) - P.coefficient a (P.group r₀ v)‖ ≤ ε / 2} ∈
-      𝓝 r₀ :=
-    (continuous_norm.comp (hPcont.sub continuous_const)).continuousAt.preimage_mem_nhds
-      (ge_mem_nhds (by simpa using half_pos hε))
-  have hUQ : {r : G | ‖Q.coefficient a (Q.group r v) - Q.coefficient a (Q.group r₀ v)‖ ≤ ε / 2} ∈
-      𝓝 r₀ :=
-    (continuous_norm.comp (hQcont.sub continuous_const)).continuousAt.preimage_mem_nhds
-      (ge_mem_nhds (by simpa using half_pos hε))
-  obtain ⟨φ, hφ0, hφU, hφ1⟩ :=
-    exists_nonneg_tsupport_subset_integral_eq_one μ (Filter.inter_mem hUP hUQ)
-  set f : C_c(G, A) := φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ a)
-  have hbP := norm_integratedOperator_compLeft_sub_le μ P r₀ a v hφ0 hφ1 fun r hr => (hφU hr).1
-  have hbQ := norm_integratedOperator_compLeft_sub_le μ Q r₀ a v hφ0 hφ1 fun r hr => (hφU hr).2
-  have hPQ : P.integratedOperator μ f v = Q.integratedOperator μ f v := congr($(h f) v)
-  calc ‖P.coefficient a (P.group r₀ v) - Q.coefficient a (Q.group r₀ v)‖
-      ≤ ‖P.coefficient a (P.group r₀ v) - P.integratedOperator μ f v‖ +
-          ‖Q.integratedOperator μ f v - Q.coefficient a (Q.group r₀ v)‖ := by
-        rw [← hPQ]
-        exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ ε / 2 + ε / 2 := by
-        rw [norm_sub_rev]
-        exact add_le_add hbP hbQ
-    _ = ε := add_halves ε
-
-/-- Two covariant representations with the same integrated operators have the same coefficient
-representation. -/
-theorem coefficient_eq_of_integratedOperator_eq
-    (h : ∀ f : C_c(G, A), P.integratedOperator μ f = Q.integratedOperator μ f) :
-    P.coefficient = Q.coefficient := by
-  ext a v
-  simpa using congr($(coefficient_mul_group_eq_of_integratedOperator_eq μ h a 1) v)
-
-/-- Nondegenerate Hilbert-space covariant representations are uniquely determined by their
-integrated operators on `C_c(G, A)`. -/
-theorem eq_of_integratedOperator_eq (hP : P.coefficient.IsNondegenerate)
-    (h : ∀ f : C_c(G, A), P.integratedOperator μ f = Q.integratedOperator μ f) :
-    P = Q := by
-  have hcoef := coefficient_eq_of_integratedOperator_eq μ h
-  refine CovariantRepresentation.ext hcoef (DFunLike.ext _ _ fun r => ?_)
-  refine hP.ext fun a => ?_
-  rw [P.group_mul_coefficient, coefficient_mul_group_eq_of_integratedOperator_eq μ h (α r a) r,
-    ← Q.group_mul_coefficient, ← hcoef]
-
-end Uniqueness
-
-end CovariantRepresentation
-
-namespace CovariantMultiplierHom
-
 section Uniqueness
 
 variable {G A B : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] [LocallyCompactSpace G] [R1Space G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   {α : CStarAction G A} {M N : CovariantMultiplierHom α B}
-  (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
-
-/-- Two covariant multiplier homomorphisms with the same integrated multipliers satisfy
-`M.coefficient a * M.group r = N.coefficient a * N.group r` for every `a` and `r`. -/
-theorem coefficient_mul_group_eq_of_integratedMultiplier_eq
-    (h : ∀ f : C_c(G, A), M.integratedMultiplier μ f = N.integratedMultiplier μ f)
-    (a : A) (r : G) :
-    M.coefficient a * (M.group r : 𝓜(ℂ, B)) = N.coefficient a * (N.group r : 𝓜(ℂ, B)) := by
-  refine DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun H _ _ _ ρ hρ => ?_
-  have hint (f : C_c(G, A)) :
-      (M.toCovariantRepresentation hρ).integratedOperator μ f =
-        (N.toCovariantRepresentation hρ).integratedOperator μ f := by
-    rw [← M.multiplierExtension_integratedMultiplier μ hρ,
-      ← N.multiplierExtension_integratedMultiplier μ hρ, h f]
-  simpa [map_mul] using
-    CovariantRepresentation.coefficient_mul_group_eq_of_integratedOperator_eq μ hint a r
-
-/-- Two covariant multiplier homomorphisms with the same integrated multipliers have the same
-coefficient homomorphism. -/
-theorem coefficient_eq_of_integratedMultiplier_eq
-    (h : ∀ f : C_c(G, A), M.integratedMultiplier μ f = N.integratedMultiplier μ f) :
-    M.coefficient = N.coefficient := by
-  ext a : 1
-  simpa using coefficient_mul_group_eq_of_integratedMultiplier_eq μ h a 1
+  (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] [μ.IsOpenPosMeasure]
 
 /-- Nondegenerate covariant multiplier homomorphisms are uniquely determined by their strict
 integrated forms on `C_c(G, A)`. -/
 theorem eq_of_integratedMultiplier_eq (hM : M.coefficient.IsMultiplierNondegenerate)
     (h : ∀ f : C_c(G, A), M.integratedMultiplier μ f = N.integratedMultiplier μ f) :
     M = N := by
-  have hcoef := coefficient_eq_of_integratedMultiplier_eq μ h
-  refine ext hcoef ?_
-  ext r : 1
-  refine Subtype.ext (hM.ext_mul_left fun a => ?_)
-  rw [coefficient_mul_group_eq_of_integratedMultiplier_eq μ h a r, hcoef]
+  have hrep {H : Type _} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+      (ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hρ : ρ.IsNondegenerate) :
+      M.toCovariantRepresentation hρ = N.toCovariantRepresentation hρ :=
+    CovariantRepresentation.ext_integratedOperator μ (hρ.multiplierExtension_comp hM) fun f => by
+      rw [← M.multiplierExtension_integratedMultiplier μ hρ,
+        ← N.multiplierExtension_integratedMultiplier μ hρ, h f]
+  refine ext (NonUnitalStarAlgHom.ext fun a => ?_) (MonoidHom.ext fun r => Subtype.ext ?_)
+  · refine DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun H _ _ _ ρ hρ => ?_
+    exact congrArg (fun P => P.coefficient a) (hrep ρ hρ)
+  · refine DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun H _ _ _ ρ hρ => ?_
+    exact congrArg (fun P => P.group r) (hrep ρ hρ)
 
 end Uniqueness
 
@@ -780,20 +619,18 @@ theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖M.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
   simpa [ConvolutionAlgebra.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
 
-@[simp]
 theorem multiplierExtension_integratedStarAlgHom {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) (f : ConvolutionAlgebra α μ) :
     ρ.multiplierExtension hρ (M.integratedStarAlgHom μ f) =
       (M.toCovariantRepresentation hρ).integratedStarAlgHom μ f := by
-  simp [integratedStarAlgHom_apply]
+  simp
 
-@[simp]
 theorem extendToMultiplier_integratedStarAlgHom {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)}
     (hψ : ψ.IsMultiplierNondegenerate) (f : ConvolutionAlgebra α μ) :
     ψ.extendToMultiplier hψ (M.integratedStarAlgHom μ f) =
       (M.map hψ).integratedStarAlgHom μ f := by
-  simp [integratedStarAlgHom_apply]
+  simp
 
 theorem integratedStarAlgHom_comap {A' : Type*} [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'}
     (φ : Hom α' α) (f : ConvolutionAlgebra α' μ) :

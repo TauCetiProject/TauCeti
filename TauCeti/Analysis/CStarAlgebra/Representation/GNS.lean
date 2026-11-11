@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
-public import TauCeti.Analysis.CStarAlgebra.GNS
+public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -15,29 +15,17 @@ import Mathlib.Analysis.Normed.Module.HahnBanach
 # Nondegeneracy of GNS representations and norm recovery
 
 For every positive linear functional `f` on a possibly nonunital C⋆-algebra `A`, Mathlib's GNS
-representation `f.gnsNonUnitalStarAlgHom : A →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS)` is nondegenerate: the
-class map `f.toGNS` has dense range and `e * b → b` along an increasing approximate unit `e` of
-`A`. Its multiplier extension acts on classes `[b]` as `[m.fst b]`.
+representation `f.gnsNonUnitalStarAlgHom : A →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS)` is nondegenerate
+(`PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom`), and its multiplier extension acts on
+classes `[b]` as `[m.fst b]` (`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`).
 
-On a nontrivial unital C⋆-algebra, every nonnegative element `a` admits a state `ω` taking the
-value `‖a‖ ^ n` on each power `a ^ n` (constructed by extending a character on the generated
-commutative C⋆-subalgebra via Hahn–Banach). Applying the GNS representation to states pulled back
-from `𝓜(ℂ, A)` shows that nondegenerate representations in `A`'s own universe recover both the norm
-of every element of `A` and, via `multiplierExtension`, the norm of every multiplier in `𝓜(ℂ, A)`.
-
-## Main statements
-
-* `PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom`: the GNS representation of any
-  positive functional on a C⋆-algebra is nondegenerate.
-* `PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`: the multiplier extension
-  of the GNS representation sends `[b]` to `[m.fst b]`.
-* `TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`: existence of a
-  state attaining `‖a‖ ^ n` on `a ^ n` for `0 ≤ a` in a nontrivial unital C⋆-algebra.
-* `TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate` and
-  `DoubleCentralizer.norm_le_iff_forall_isNondegenerate`: norm bounds in `A` and `𝓜(ℂ, A)` are
-  tested on nondegenerate Hilbert-space representations in the same universe.
-* `DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`: nondegenerate representations separate
-  points of `𝓜(ℂ, A)`.
+On a nontrivial unital C⋆-algebra, every `0 ≤ a` admits a state taking `‖a‖ ^ n` on each `a ^ n`
+(`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`), constructed by
+extending a character on the generated commutative C⋆-subalgebra via Hahn–Banach. Pulling back
+states from `𝓜(ℂ, A)` shows that nondegenerate representations in `A`'s universe recover norms in
+`A` and `𝓜(ℂ, A)` (`TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate`,
+`DoubleCentralizer.norm_le_iff_forall_isNondegenerate`) and separate points of `𝓜(ℂ, A)`
+(`DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`).
 
 ## References
 
@@ -59,14 +47,13 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
   (f : A →ₚ[ℂ] ℂ)
 
 /-- The GNS representation acts on classes `f.toGNS b` by left multiplication. -/
-@[simp]
 theorem gnsNonUnitalStarAlgHom_toGNS (a b : A) :
     f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
-  simp [toGNS_apply]
+  simp
 
 /-- The norm of `f.toGNS b` in the GNS Hilbert space is `√‖f (star b * b)‖`. -/
 theorem norm_toGNS (b : A) : ‖f.toGNS b‖ = √‖f (star b * b)‖ := by
-  simp [toGNS_apply, preGNS_norm_def']
+  simp [preGNS_norm_def']
 
 /-- The GNS representation of any positive linear functional on a C⋆-algebra is nondegenerate. -/
 theorem isNondegenerate_gnsNonUnitalStarAlgHom : f.gnsNonUnitalStarAlgHom.IsNondegenerate := by
@@ -82,7 +69,6 @@ theorem isNondegenerate_gnsNonUnitalStarAlgHom : f.gnsNonUnitalStarAlgHom.IsNond
   exact dense_closure.1 (f.denseRange_toGNS.mono hrange)
 
 /-- The multiplier extension of the GNS representation sends `f.toGNS b` to `f.toGNS (m.fst b)`. -/
-@[simp]
 theorem multiplierExtension_gnsNonUnitalStarAlgHom_toGNS (m : 𝓜(ℂ, A)) (b : A) :
     f.gnsNonUnitalStarAlgHom.multiplierExtension f.isNondegenerate_gnsNonUnitalStarAlgHom m
       (f.toGNS b) = f.toGNS (m.fst b) := by
@@ -96,6 +82,12 @@ theorem multiplierExtension_gnsNonUnitalStarAlgHom_toGNS (m : 𝓜(ℂ, A)) (b :
     refine ((hcont.tendsto b).comp (hl.tendsto_mul_right b)).congr fun e => ?_
     simp [DoubleCentralizer.fst_mul]
   exact tendsto_nhds_unique h1 h2
+
+@[simp]
+theorem multiplierExtension_gnsNonUnitalStarAlgHom_apply_coe (m : 𝓜(ℂ, A)) (b : A) :
+    f.gnsNonUnitalStarAlgHom.multiplierExtension f.isNondegenerate_gnsNonUnitalStarAlgHom m
+      (f.toPreGNS b : f.GNS) = (f.toPreGNS (m.fst b) : f.GNS) := by
+  simpa only [toGNS_apply] using f.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS m b
 
 end PositiveLinearMap
 

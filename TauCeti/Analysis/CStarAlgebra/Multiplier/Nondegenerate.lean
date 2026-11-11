@@ -12,28 +12,16 @@ public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 
 A nonunital ⋆-homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` between C⋆-algebras is *nondegenerate*
 (`NonUnitalStarAlgHom.IsMultiplierNondegenerate`) when the elements `(φ a).fst b` span a dense
-subspace of `B`. Equivalently, `(φ e).fst b → b` for every `b : B` along an increasing approximate
-unit `e` of `A`.
+subspace of `B`, or equivalently `(φ e).fst b → b` along an increasing approximate unit `e` of `A`
+(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_tendsto_fst`).
 
-Every nondegenerate homomorphism `φ` extends uniquely to a unital ⋆-homomorphism
+Every nondegenerate `φ` extends uniquely to a unital ⋆-homomorphism
 `φ' := φ.extendToMultiplier hφ : 𝓜(ℂ, A) →⋆ₐ[ℂ] 𝓜(ℂ, B)`, characterized by
-`φ' m * φ a = φ (m.fst a)` for every `a : A`. On each `b : B`, `(φ' m).fst b` is the norm limit
-of `(φ (m.fst e)).fst b` along an increasing approximate unit `e` of `A`, and norm-bounded strictly
-continuous families in `𝓜(ℂ, A)` remain strictly continuous under `φ'`. Nondegenerate multiplier
-homomorphisms compose with one another and with nondegenerate Hilbert-space representations.
-
-## Main declarations
-
-* `DoubleCentralizer.continuous_toProd`: continuity of the centralizer-pair projection on `𝓜(𝕜, A)`.
-* `NonUnitalStarAlgHom.IsMultiplierNondegenerate`: density of the span of `(φ a).fst b` in `B`.
-* `NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_tendsto_fst`: characterization along an
-  increasing approximate unit.
-* `NonUnitalStarAlgHom.extendToMultiplier`: the unique unital extension `𝓜(ℂ, A) →⋆ₐ[ℂ] 𝓜(ℂ, B)`,
-  with `extendToMultiplier_mul_eq_fst`, `mul_extendToMultiplier_eq_snd`,
-  `eq_extendToMultiplier_of_apply_coe`, and `continuous_extendToMultiplier_fst_apply`.
-* `NonUnitalStarAlgHom.IsMultiplierNondegenerate.extendToMultiplier_comp` and
-  `NonUnitalStarAlgHom.IsNondegenerate.multiplierExtension_comp`: stability under composition with
-  nondegenerate multiplier and Hilbert-space homomorphisms.
+`φ' m * φ a = φ (m.fst a)` (`extendToMultiplier_mul_eq_fst`, `eq_extendToMultiplier_of_apply_coe`).
+Norm-bounded strictly continuous families remain strictly continuous under `φ'`
+(`continuous_extendToMultiplier_fst_apply`), and nondegenerate multiplier homomorphisms compose with
+one another and with nondegenerate Hilbert-space representations (`extendToMultiplier_comp`,
+`multiplierExtension_comp`). We also record norm continuity of `DoubleCentralizer.toProd`.
 
 ## References
 
@@ -236,46 +224,27 @@ private theorem star_extensionCLM_mul (hφ : φ.IsMultiplierNondegenerate) (m : 
     star (extensionCLM hφ (star m) x) * y = star x * extensionCLM hφ m y := by
   have hstar (q : A) (u w : B) : star ((φ q).fst u) * w = star u * (φ (star q)).fst w := by
     rw [← (φ (star q)).central, map_star φ, DoubleCentralizer.star_snd, star_star]
-  have hgen (a c : A) (u v : B) :
-      star (extensionCLM hφ (star m) ((φ a).fst u)) * (φ c).fst v =
-        star ((φ a).fst u) * extensionCLM hφ m ((φ c).fst v) := by
-    calc star (extensionCLM hφ (star m) ((φ a).fst u)) * (φ c).fst v
-        = star u * (φ (star ((star m).fst a))).fst ((φ c).fst v) := by
-          rw [extensionCLM_apply_fst, hstar]
-      _ = star u * (φ (star ((star m).fst a) * c)).fst v := by
-          rw [map_mul, DoubleCentralizer.mul_fst, mul_apply_eq_comp]
-      _ = star u * (φ (star a * m.fst c)).fst v := by
-          rw [DoubleCentralizer.star_fst, star_star, m.central]
-      _ = star u * (φ (star a)).fst ((φ (m.fst c)).fst v) := by
-          rw [map_mul, DoubleCentralizer.mul_fst, mul_apply_eq_comp]
-      _ = star ((φ a).fst u) * extensionCLM hφ m ((φ c).fst v) := by
-          rw [extensionCLM_apply_fst, hstar]
   have hy (a : A) (u : B) :
       star (extensionCLM hφ (star m) ((φ a).fst u)) * y =
         star ((φ a).fst u) * extensionCLM hφ m y := by
-    have hy_span : ∀ z ∈ Submodule.span ℂ (⋃ c, Set.range (φ c).fst),
-        star (extensionCLM hφ (star m) ((φ a).fst u)) * z =
-          star ((φ a).fst u) * extensionCLM hφ m z := by
-      intro z hz
-      induction hz using Submodule.span_induction with
-      | mem w hw =>
-        obtain ⟨c, v, rfl⟩ := Set.mem_iUnion.1 hw
-        exact hgen a c u v
-      | zero => simp
-      | add w₁ w₂ _ _ hw₁ hw₂ => simp [mul_add, hw₁, hw₂]
-      | smul r w _ hw => simp [mul_smul_comm, hw]
-    exact (isClosed_eq (by fun_prop) (by fun_prop)).closure_subset_iff.2 hy_span (hφ y)
-  have hx_span : ∀ z ∈ Submodule.span ℂ (⋃ a, Set.range (φ a).fst),
-      star (extensionCLM hφ (star m) z) * y = star z * extensionCLM hφ m y := by
-    intro z hz
-    induction hz using Submodule.span_induction with
-    | mem w hw =>
-      obtain ⟨a, u, rfl⟩ := Set.mem_iUnion.1 hw
-      exact hy a u
-    | zero => simp
-    | add w₁ w₂ _ _ hw₁ hw₂ => simp [add_mul, hw₁, hw₂]
-    | smul r w _ hw => simp [smul_mul_assoc, hw]
-  exact (isClosed_eq (by fun_prop) (by fun_prop)).closure_subset_iff.2 hx_span (hφ x)
+    refine congr($(ContinuousLinearMap.ext_on hφ
+      (f := ContinuousLinearMap.mul ℂ B (star (extensionCLM hφ (star m) ((φ a).fst u))))
+      (g := (ContinuousLinearMap.mul ℂ B (star ((φ a).fst u))).comp (extensionCLM hφ m))
+      fun _ hz => ?_) y)
+    obtain ⟨c, v, rfl⟩ := Set.mem_iUnion.1 hz
+    simp only [ContinuousLinearMap.mul_apply', ContinuousLinearMap.comp_apply,
+      extensionCLM_apply_fst, hstar]
+    rw [← mul_apply_eq_comp, ← DoubleCentralizer.mul_fst, ← map_mul, DoubleCentralizer.star_fst,
+      star_star, m.central, map_mul, DoubleCentralizer.mul_fst, mul_apply_eq_comp]
+  refine star_injective ?_
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply', star_mul,
+    star_star] using congr($(ContinuousLinearMap.ext_on hφ
+    (f := (ContinuousLinearMap.mul ℂ B (star y)).comp (extensionCLM hφ (star m)))
+    (g := ContinuousLinearMap.mul ℂ B (star (extensionCLM hφ m y)))
+    fun _ hz => by
+      obtain ⟨a, u, rfl⟩ := Set.mem_iUnion.1 hz
+      simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply', star_mul,
+        star_star] using congrArg star (hy a u)) x)
 
 private def extensionMultiplier (hφ : φ.IsMultiplierNondegenerate) (m : 𝓜(ℂ, A)) : 𝓜(ℂ, B) :=
   DoubleCentralizer.ofAdjoint (extensionCLM hφ m) (extensionCLM hφ (star m))
@@ -439,20 +408,14 @@ theorem IsMultiplierNondegenerate.extendToMultiplier_comp
   set S := Submodule.span ℂ
     (⋃ a, Set.range (((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ) a).fst)
   have hmem (b : B) (c : C) : (ψ b).fst c ∈ S.topologicalClosure := by
-    have hspan : ∀ y ∈ Submodule.span ℂ (⋃ a, Set.range (φ a).fst), (ψ y).fst c ∈ S := by
-      intro y hy
-      induction hy using Submodule.span_induction with
-      | mem z hz =>
-        obtain ⟨a, d, rfl⟩ := Set.mem_iUnion.1 hz
-        refine Submodule.subset_span <| Set.mem_iUnion.2 ⟨a, (ψ d).fst c, ?_⟩
-        simp
-      | zero => simp
-      | add y z _ _ hy hz => simpa [map_add] using S.add_mem hy hz
-      | smul r y _ hy => simpa [map_smul] using S.smul_mem r hy
-    have hclosed : IsClosed {y : B | (ψ y).fst c ∈ S.topologicalClosure} :=
-      S.isClosed_topologicalClosure.preimage (by fun_prop)
-    exact hclosed.closure_subset_iff.2
-      (fun y hy => Submodule.le_topologicalClosure S (hspan y hy)) (hφ b)
+    let f : B →ₗ[ℂ] C :=
+      { toFun y := (ψ y).fst c, map_add' _ _ := by simp, map_smul' _ _ := by simp }
+    have hf : Continuous f := show Continuous fun y => (ψ y).fst c by fun_prop
+    refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
+      (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
+    rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
+    exact Submodule.le_topologicalClosure S <| Submodule.subset_span <|
+      Set.mem_iUnion.2 ⟨a, (ψ d).fst c, by simp [f]⟩
   rw [eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top.1 hψ]
   refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
     S.isClosed_topologicalClosure
@@ -482,20 +445,14 @@ theorem IsNondegenerate.multiplierExtension_comp {H : Type*} [NormedAddCommGroup
   set S := Submodule.span ℂ
     (⋃ a, Set.range (((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ) a))
   have hmem (b : B) (ξ : H) : π b ξ ∈ S.topologicalClosure := by
-    have hspan : ∀ y ∈ Submodule.span ℂ (⋃ a, Set.range (φ a).fst), π y ξ ∈ S := by
-      intro y hy
-      induction hy using Submodule.span_induction with
-      | mem z hz =>
-        obtain ⟨a, d, rfl⟩ := Set.mem_iUnion.1 hz
-        refine Submodule.subset_span <| Set.mem_iUnion.2 ⟨a, π d ξ, ?_⟩
-        simp
-      | zero => simp
-      | add y z _ _ hy hz => simpa [map_add] using S.add_mem hy hz
-      | smul r y _ hy => simpa [map_smul] using S.smul_mem r hy
-    have hclosed : IsClosed {y : B | π y ξ ∈ S.topologicalClosure} :=
-      S.isClosed_topologicalClosure.preimage (by fun_prop)
-    exact hclosed.closure_subset_iff.2
-      (fun y hy => Submodule.le_topologicalClosure S (hspan y hy)) (hφ b)
+    let f : B →ₗ[ℂ] H :=
+      { toFun y := π y ξ, map_add' _ _ := by simp, map_smul' _ _ := by simp }
+    have hf : Continuous f := show Continuous fun y => π y ξ by fun_prop
+    refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
+      (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
+    rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
+    exact Submodule.le_topologicalClosure S <| Submodule.subset_span <|
+      Set.mem_iUnion.2 ⟨a, π d ξ, by simp [f]⟩
   rw [eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top.1
     (isNondegenerate_iff_dense.1 hπ)]
   refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
