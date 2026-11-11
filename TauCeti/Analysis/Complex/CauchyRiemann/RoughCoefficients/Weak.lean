@@ -274,7 +274,7 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
   have hJξ : HasWeakLineDerivOn volume Ω (fun z => J z (ξ z))
       (fun z => DJ z I (ξ z) + J z (Dξ z I)) I := by
     simpa using (hc.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_memLp
-      (r := (p⁻¹ + q⁻¹)⁻¹) (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq (hξ.hasWeakLineDerivOn I)
+      (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hp hq hq hpq hpq hpq (hξ.hasWeakLineDerivOn I)
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_coeff K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_derivI K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
