@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Change of variables: pushforward bounds, `Lᵖ` bounds and affine invariance of set integrals
@@ -60,8 +61,6 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 * `MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`,
   `MeasureTheory.LocallyIntegrableOn.comp_fderiv_contDiffOn_diffeo`: local integrability is
   preserved.
-* `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
-  linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
 -/
@@ -274,23 +273,6 @@ open MeasureTheory
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
-
-/-- A continuous affine self-map of a finite-dimensional real space whose linear part has
-determinant of absolute value `1` preserves an additive Haar measure. -/
-theorem measurePreserving_of_abs_det_eq_one (T : E →ᴬ[ℝ] E) (habs : |T.contLinear.det| = 1) :
-    MeasurePreserving T μ μ := by
-  have hdet : T.contLinear.det ≠ 0 := fun h ↦ by simp [h] at habs
-  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
-  have hL : μ.map T.contLinear = μ := by
-    have h := Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-    rw [ContinuousLinearMap.coe_coe] at h
-    have h1 : |(LinearMap.det (T.contLinear : E →ₗ[ℝ] E))⁻¹| = 1 := by
-      rw [abs_inv]; exact inv_eq_one.2 habs
-    rw [h, h1]
-    simp
-  refine ⟨T.continuous.measurable, ?_⟩
-  rw [hT0, ← Measure.map_map (measurable_add_const _) T.contLinear.continuous.measurable, hL,
-    map_add_right_eq_self]
 
 /-- **Integrals over a set are invariant under an affine self-map of it.** If a continuous affine
 map `T` carries a set `s` of finite measure onto itself, then
