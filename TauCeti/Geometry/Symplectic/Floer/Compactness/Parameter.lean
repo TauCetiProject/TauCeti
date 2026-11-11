@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -89,67 +88,6 @@ private theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le_of_parameter
     h).trans ?_
   have hXB : ‖ω.hamiltonianVectorField (Ks p z) (u z)‖ ≤ B := by simpa using hB _ hq
   gcongr
-
-omit [FiniteDimensional ℝ V] in
-/-- If `‖∂ₛu‖² ≤ A f + B` on an open set `Ω` of finite measure, where `f` is integrable on `Ω`, and
-`u` is `C¹` on `Ω`, then `‖∂ₛu‖²` is integrable on `Ω`. -/
-private theorem integrableOn_norm_fderiv_stdComplexLineReal_sq_of_le {u : ℝ × ℝ → V}
-    {f : ℝ × ℝ → ℝ} {Ω : Set (ℝ × ℝ)} {A B : ℝ} (hΩ : IsOpen Ω) (hΩfin : volume Ω ≠ ⊤)
-    (hu : ContDiffOn ℝ 1 u Ω) (hint : IntegrableOn f Ω)
-    (hle : ∀ z ∈ Ω, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * f z + B) :
-    IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) Ω :=
-  Integrable.mono' ((hint.const_mul A).fun_add (integrableOn_const (C := B) hΩfin))
-    ((((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).norm.pow 2).aestronglyMeasurable hΩ.measurableSet)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact hle z hz)
-
-omit [FiniteDimensional ℝ V] in
-/-- If `‖∂ₛu‖² ≤ A f + B` on a measurable set `S` of finite measure, with `A, B ≥ 0` and `f ≥ 0`,
-then `∫_S ‖∂ₛu‖² ≤ (A + B + 1)(|S| + ∫_S f)`. -/
-private theorem setIntegral_norm_fderiv_stdComplexLineReal_sq_le_of_le {u : ℝ × ℝ → V}
-    {f : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)} {A B : ℝ} (hS : MeasurableSet S) (hSfin : volume S ≠ ⊤)
-    (hA0 : 0 ≤ A) (hB0 : 0 ≤ B)
-    (hgint : IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) S)
-    (hint : IntegrableOn f S) (hf0 : ∀ z ∈ S, 0 ≤ f z)
-    (hle : ∀ z ∈ S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * f z + B) :
-    ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
-      (A + B + 1) * (volume.real S + ∫ z in S, f z) := by
-  have hint0 : 0 ≤ ∫ z in S, f z := setIntegral_nonneg hS hf0
-  have hm0 : 0 ≤ volume.real S := measureReal_nonneg
-  calc ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2
-      ≤ ∫ z in S, (A * f z + B) :=
-        setIntegral_mono_on hgint ((hint.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
-          hS hle
-    _ = A * (∫ z in S, f z) + B * volume.real S := by
-        rw [integral_add (hint.const_mul A) (integrableOn_const hSfin), integral_const_mul,
-          setIntegral_const, smul_eq_mul, mul_comm (volume.real S)]
-    _ ≤ (A + B + 1) * (volume.real S + ∫ z in S, f z) := by
-        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
-
-omit [FiniteDimensional ℝ V] in
-/-- `equivRealProdCLM` preserves volume, and in the complex coordinate the density `‖∂ₛw‖²` is
-`‖∂ₛ(w ∘ equivRealProdCLM)‖²`, so the two are integrable together. -/
-private theorem integrableOn_norm_fderiv_comp_equivRealProdCLM_one_sq_iff (w : ℝ × ℝ → V)
-    (S : Set (ℝ × ℝ)) :
-    IntegrableOn (fun y ↦ ‖fderiv ℝ (w ∘ equivRealProdCLM) y 1‖ ^ 2) (equivRealProdCLM ⁻¹' S) ↔
-      IntegrableOn (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S := by
-  simp only [fderiv_comp_equivRealProdCLM_one]
-  exact Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
-    equivRealProdCLM.toHomeomorph.measurableEmbedding
-    (f := fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) (s := S)
-
-omit [FiniteDimensional ℝ V] in
-/-- The energy `∫ ‖∂ₛw‖²` does not change in the complex coordinate `equivRealProdCLM`. -/
-private theorem setIntegral_norm_fderiv_comp_equivRealProdCLM_one_sq (w : ℝ × ℝ → V)
-    (S : Set (ℝ × ℝ)) :
-    ∫ y in equivRealProdCLM ⁻¹' S, ‖fderiv ℝ (w ∘ equivRealProdCLM) y 1‖ ^ 2 =
-      ∫ z in S, ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2 := by
-  simp only [fderiv_comp_equivRealProdCLM_one]
-  exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-    equivRealProdCLM.toHomeomorph.measurableEmbedding
-    (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S
 
 /-- `TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for
 solutions of the Floer equations `(du - X_{K_p})^{0,1} = 0` on the domain `ℝ × ℝ`, read through the
@@ -288,10 +226,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     ω.floerEnergyDensity_nonneg (hJt _ (hpC k) z (hΩD hz) _ (huK k hz)) (hfl k z hz)
   have hgle (k : ℕ) : ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B :=
     fun z hz ↦ hpt (hpC k) (hΩD hz) (huK k hz) (hfl k z hz)
-  have hgint (k : ℕ) := integrableOn_norm_fderiv_stdComplexLineReal_sq_of_le hΩ hΩfin
-    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
+  have hgint (k : ℕ) := integrableOn_of_le_mul_add
+    (g := fun z ↦ ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2) hΩm hΩfin
+    ((((hu k).continuousOn_fderiv_of_isOpen hΩ (by norm_num)).clm_apply
+      continuousOn_const).norm.pow 2 |>.aestronglyMeasurable hΩm) (hint k)
+    (fun _ _ ↦ by positivity) (hgle k)
   have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
-    setIntegral_norm_fderiv_stdComplexLineReal_sq_le_of_le hS
+    setIntegral_le_mul_measureReal_add_setIntegral_of_le hS
       (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
       ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
   obtain ⟨φ, p₀, Z, v, hφ, hp₀, hplim, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
