@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
 /-!
 # The positive roots of the `G₂` root datum
@@ -24,7 +23,6 @@ this height is positive.
 * `TauCeti.DynkinType.height_flip_g2SimplyConnectedBase`: the heights of the coroots.
 * `TauCeti.DynkinType.mem_posRoots_g2_iff`: the positive roots are the first six table entries.
 * `TauCeti.DynkinType.posRootsFinset_g2`: the positive roots of the pinned `G₂` datum.
-* `TauCeti.DynkinType.mem_posRoots_rational_g2_iff`: the same indices in the rational system.
 
 ## References
 
@@ -68,21 +66,6 @@ theorem posRootsFinset_g2 :
   ext k
   rw [mem_posRootsFinset, mem_posRoots_g2_iff]
   decide +revert
-
-/-- The positive roots of the rational `G₂` system are the first six entries of the native
-root table, just as for the integral datum. -/
-theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
-    k ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ (k : ℕ) < 6 := by
-  rw [mem_posRoots, Base.isPos_iff, height_rationalBase]
-  -- The uniform integral base is transported to the native G₂ datum by its assembly equation.
-  have hb := simplyConnectedBase_G2 ht
-  have h : ∀ i : Fin 12, 0 < g2SimplyConnectedBase.height i ↔ (i : ℕ) < 6 := by
-    intro i
-    simpa only [mem_posRoots, Base.isPos_iff] using mem_posRoots_g2_iff i
-  convert h k using 2
-  congr 1
-  · exact simplyConnectedRootDatum_G2 ht
-  · exact heq_of_eqRec_eq _ hb
 
 end DynkinType
 
