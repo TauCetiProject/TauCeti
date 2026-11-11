@@ -376,6 +376,7 @@ theorem fieldRange_le_hilbertClassField_iff (ι : L →ₐ[K] SeparableClosure K
   rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_one_iff]
 
 variable {K} in
+omit [NumberField L] in
 /-- An everywhere-unramified abelian extension whose degree equals the class number is the
 Hilbert class field, for every embedding into the separable closure of the base. -/
 theorem fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber
@@ -383,6 +384,9 @@ theorem fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber
     (hfin : ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
     (hinf : IsUnramifiedAtInfinitePlaces K L) (hdeg : Module.finrank K L = classNumber K) :
     ι.fieldRange = hilbertClassField K := by
+  have hpos : 0 < Module.finrank K L := hdeg ▸ NumberField.classNumber_pos K
+  have : Module.Finite K L := Module.finite_of_finrank_pos hpos
+  have : NumberField L := NumberField.of_module_finite K L
   apply IntermediateField.eq_of_le_of_finrank_eq
   · exact (fieldRange_le_hilbertClassField_iff ι).2 ⟨hfin, hinf⟩
   · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq, finrank_hilbertClassField, hdeg]

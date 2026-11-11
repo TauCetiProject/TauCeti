@@ -124,6 +124,11 @@ theorem apply_of_mem_boundary (p : RelGenLoop N X) (s : I) {t : I^N}
     (ht : t ∈ Cube.boundary N) : p (s, t) = X.pair.map X.basepoint :=
   p.2.2 s t (Or.inr ht)
 
+/-- A relative cube sends the faces `t j = 0` and `t j = 1` to the basepoint. -/
+theorem apply_update [DecidableEq N] (p : RelGenLoop N X) (s : I) (t : I^N) (j : N) {a : I}
+    (ha : a = 0 ∨ a = 1) : p (s, Function.update t j a) = X.pair.map X.basepoint :=
+  apply_of_mem_boundary p s ⟨j, by rwa [Function.update_self]⟩
+
 /-- The constant relative cube at the basepoint. -/
 def const : RelGenLoop N X :=
   ⟨ContinuousMap.const _ (X.pair.map X.basepoint), fun _ => ⟨_, rfl⟩, fun _ _ _ => rfl⟩

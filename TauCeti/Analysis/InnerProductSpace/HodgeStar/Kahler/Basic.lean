@@ -57,12 +57,14 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
-* `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
+* `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
+  (`norm_kahlerForm_sq_eq_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
 * `lieMap_lieMap_lieMap`: `D_J³ = -4 D_J`, so `η + D_J² η / 4` is `J`-invariant
   (`lieMap_add_smul_lieMap_lieMap`).
 * `inner_lieMap_lieMap_ιMulti`: `⟪D_J² η, u ∧ w⟫ = 2 (η(J u, J w) - η(u, w))`.
+* `norm_lieMap_lieMap_le`: `‖D_J² η‖ ≤ 4 ‖η‖` for an orthogonal `J`.
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
@@ -187,6 +189,11 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
 theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_kahlerForm_self hJ]
 
+/-- `‖ω‖² = 2` in dimension four. -/
+theorem norm_kahlerForm_sq_eq_two [Fact (finrank ℝ V = 4)] : ‖J.kahlerForm‖ ^ 2 = 2 := by
+  rw [norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
+  norm_num
+
 /-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
 norm. -/
 theorem norm_ιMulti_apply_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v‖ ^ 4 := by
@@ -210,6 +217,27 @@ theorem inner_lieMap_lieMap_ιMulti (η : ⋀[ℝ]^2 V) (u w : V) :
   rw [inner_lieMap_left (inner_apply_left hJ), inner_lieMap_left (inner_apply_left hJ), neg_neg,
     lieMap_lieMap_ιMulti, inner_sub_right, real_inner_smul_right, real_inner_smul_right]
   ring
+
+/-- **`D_J² / 4` has norm at most one**: `‖D_J² η‖ ≤ 4 ‖η‖` for an orthogonal `J`, so the
+anti-`J`-invariant part `-D_J² η / 4` of `η` is no longer than `η`. Since `D_J` is skew-adjoint
+and `D_J³ = -4 D_J`, `‖D_J² η‖ = 2 ‖D_J η‖` and `‖D_J η‖² = -⟪η, D_J² η⟫ ≤ 2 ‖η‖ ‖D_J η‖`. -/
+theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
+    ‖lieMap 2 J.toLinearMap (lieMap 2 J.toLinearMap η)‖ ≤ 4 * ‖η‖ := by
+  set D := lieMap 2 J.toLinearMap
+  have hskew (x y : ⋀[ℝ]^2 V) : ⟪D x, y⟫ = -⟪x, D y⟫ := inner_lieMap_left (inner_apply_left hJ) x y
+  -- `‖D² η‖² = 4 ‖D η‖²`.
+  have h₂ : ‖D (D η)‖ ^ 2 = 4 * ‖D η‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, hskew,
+      lieMap_lieMap_lieMap, inner_smul_right]
+    ring
+  -- `‖D η‖² ≤ ‖η‖ ‖D² η‖`.
+  have h₁ : ‖D η‖ ^ 2 ≤ ‖η‖ * ‖D (D η)‖ := by
+    rw [← real_inner_self_eq_norm_sq, hskew]
+    exact (neg_le_abs _).trans (abs_real_inner_le_norm _ _)
+  have h₂' : ‖D (D η)‖ = 2 * ‖D η‖ :=
+    (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 (by rw [h₂]; ring)
+  rw [h₂'] at h₁ ⊢
+  nlinarith [norm_nonneg (D η), norm_nonneg η]
 
 end Orthogonal
 

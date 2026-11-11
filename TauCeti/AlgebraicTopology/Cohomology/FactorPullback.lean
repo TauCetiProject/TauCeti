@@ -30,10 +30,10 @@ Over a hereditary ring such as `ℤ`, a monomorphism of coefficients `g : M ⟶ 
 (`TopCat.singularCohomology_coefficient_injective_zero`,
 `TopCat.singularCohomology_coefficient_injective_succ`), since `H₀(Y; k)` is free. The slant
 products of a class of degree `n ≤ 2` by classes of positive degree lie in these groups, and
-slant products commute with `g` (`TopCat.singularSlant_coefficient_naturality`). Hence in degrees
-`n ≤ 2` a class on `X × Y` whose image under `g` is pulled back from `Y` is itself pulled back from
-`Y` (`TopCat.exists_singularCohomologyMap_snd_eq_of_coefficient`). For `X = S¹`, `n = 2` and
-`g : ℤ ⟶ ℝ`: an integral class `l ∈ H²(S¹ × Y; ℤ)` whose real image is pulled back from `Y` is
+slant products commute with `g` (`TopCat.singularSlant_homologyMap_linearYonedaObjMap`). Hence in
+degrees `n ≤ 2` a class on `X × Y` whose image under `g` is pulled back from `Y` is itself pulled
+back from `Y` (`TopCat.exists_singularCohomologyMap_snd_eq_of_coefficient`). For `X = S¹`, `n = 2`
+and `g : ℤ ⟶ ℝ`: an integral class `l ∈ H²(S¹ × Y; ℤ)` whose real image is pulled back from `Y` is
 the pullback of an integral class of `Y`, torsion included. The bound `n ≤ 2` is sharp: for a
 nonzero torsion class `t ∈ H²(Y; ℤ)` and the generator `u ∈ H¹(S¹; ℤ)`, the cross product
 `u × t ∈ H³(S¹ × Y; ℤ)` has real image zero but slant product `t` by the fundamental class of
@@ -180,7 +180,7 @@ theorem exists_singularCohomologyMap_snd_eq_of_coefficient
   rw [exists_singularCohomologyMap_snd_eq_iff] at hφ ⊢
   intro p q h hp x
   have hgx := hφ p q h hp x
-  rw [singularSlant_coefficient_naturality] at hgx
+  rw [singularSlant_homologyMap_linearYonedaObjMap] at hgx
   -- the slant product lies in degree `q = n - p ≤ 1`
   rcases q with _ | _ | q
   · exact singularCohomology_coefficient_injective_zero Y k g (hgx.trans (map_zero _).symm)

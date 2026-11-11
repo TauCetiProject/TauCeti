@@ -21,6 +21,10 @@ Given representatives `r q` and generator images `f a`, an edge denotes
 word with its initial and final representatives. Concatenation and inversion agree with this
 rewriting at the level of signed lists, before passing to free groups.
 
+`TauCeti.Schreier.pathPerm` acts on a state and an accumulated edge value; `lift_pathPerm`
+identifies its word action with the trace and evaluated rewrite. This gives a permutation
+realization of the rewriting calculus for proving completeness of subgroup presentations.
+
 For a group action, use the permutations given by the inverses of the generators. If
 `(r q)⁻¹ • b = q`, these edges lie in the stabilizer of `b`. The theorem
 `coe_lift_stabilizerGenerator_rewrite` then gives an explicit word in stabilizer generators
@@ -160,6 +164,33 @@ theorem lift_rewrite (σ : α → Equiv.Perm Q) (f : α → G) (r : Q → G)
     · rw [← FreeGroup.lift_mk, ih]
       simp [generator, mul_assoc]
 
+/-- A labelled edge acts on a state and an accumulated group element. The inverse-generator
+convention makes the inverse of a lifted word follow the left-to-right Schreier scan. -/
+def pathPerm (σ : α → Equiv.Perm Q) (f : Q × α → G) (a : α) : Equiv.Perm (Q × G) :=
+  Equiv.prodShear (σ a) (fun q => Equiv.mulRight (f (q, a)))
+
+@[simp]
+theorem pathPerm_apply (σ : α → Equiv.Perm Q) (f : Q × α → G) (a : α) (q : Q) (h : G) :
+    pathPerm σ f a (q, h) = (σ a q, h * f (q, a)) := (rfl)
+
+@[simp]
+theorem pathPerm_symm_apply (σ : α → Equiv.Perm Q) (f : Q × α → G)
+    (a : α) (q : Q) (h : G) :
+    (pathPerm σ f a).symm (q, h) = ((σ a).symm q, h * (f ((σ a).symm q, a))⁻¹) := (rfl)
+
+/-- The permutation lift records both the endpoint and the evaluated rewritten word.
+In particular, relations among rewritten edges certify relations in this permutation action. -/
+theorem lift_pathPerm (σ : α → Equiv.Perm Q) (f : Q × α → G)
+    (q : Q) (h : G) (w : PresentationWord α) :
+    (FreeGroup.lift (fun a => (pathPerm σ f a)⁻¹) (FreeGroup.mk w))⁻¹ (q, h) =
+      (trace σ q w, h * FreeGroup.lift f (FreeGroup.mk (rewrite σ q w))) := by
+  induction w generalizing q h with
+  | nil => simp [FreeGroup.lift_mk]
+  | cons l w ih =>
+    rcases l with ⟨a, s⟩
+    simp [FreeGroup.lift_mk] at ih
+    cases s <;> simp [FreeGroup.lift_mk, Equiv.Perm.mul_apply, ih, mul_assoc]
+
 section Action
 
 variable [MulAction G Q]
@@ -220,6 +251,15 @@ theorem coe_stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
     (hr : ∀ q, (r q)⁻¹ • b = q) (e : Q × α) :
     (stabilizerGenerator f b r hr e : G) = generator (actionPerm f) f r e := (rfl)
 
+/-- Lifting stabilizer generators and then coercing agrees with lifting their ambient values. -/
+@[simp]
+theorem coe_lift_stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
+    (hr : ∀ q, (r q)⁻¹ • b = q) (v : FreeGroup (Q × α)) :
+    (FreeGroup.lift (stabilizerGenerator f b r hr) v : G) =
+      FreeGroup.lift (generator (actionPerm f) f r) v :=
+  FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
+    (FreeGroup.lift (stabilizerGenerator f b r hr))) (by intro e; simp)
+
 /-- A word fixing the base point rewrites to a word in its stabilizer generators denoting
 exactly the same element. This is an explicit word dictionary, not only a generation assertion. -/
 theorem coe_lift_stabilizerGenerator_rewrite (f : α → G) (b : Q) (r : Q → G)
@@ -231,12 +271,8 @@ theorem coe_lift_stabilizerGenerator_rewrite (f : α → G) (b : Q) (r : Q → G
   have hend : trace (actionPerm f) b w = b := by
     rw [trace_actionPerm]
     exact MulAction.mem_stabilizer_iff.mp ((MulAction.stabilizer G b).inv_mem hw)
-  calc
-    _ = FreeGroup.lift (generator (actionPerm f) f r)
-        (FreeGroup.mk (rewrite (actionPerm f) b w)) :=
-      FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
-        (FreeGroup.lift (stabilizerGenerator f b r hr))) (by intro e; simp)
-    _ = _ := by rw [lift_rewrite, hend, hb]; simp
+  rw [coe_lift_stabilizerGenerator, lift_rewrite, hend, hb]
+  simp
 
 end Action
 

@@ -17,9 +17,11 @@ needed, since an invertible derivative forces differentiability
 (`mdifferentiableAt_of_isInvertible_mfderiv`), and no finite-dimensionality or smoothness of the
 manifolds is assumed.
 
-Conversely, between manifolds modelled on finite-dimensional spaces of the same dimension over a
-complete field, if a composite of differentiable maps has invertible manifold derivative then so do
-both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
+Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
+field, an injective manifold derivative is invertible (`isInvertible_mfderiv_of_injective`).
+Conversely to the first statement, between such manifolds, if a composite of differentiable maps
+has invertible manifold derivative then so do both factors
+(`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
 
 If the source is modelled on a finite-dimensional space over a complete field and the derivative
 carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear equivalence mapping
@@ -52,6 +54,16 @@ theorem isInvertible_mfderiv_comp {f : M → M'} {g : M' → M''} {x : M}
   exact hdg.comp hdf
 
 /-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
+field, an injective manifold derivative is invertible. -/
+theorem isInvertible_mfderiv_of_injective [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 E'] {f : M → M'} {x : M}
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
+    (hinj : Function.Injective (mfderiv I I' f x)) : (mfderiv I I' f x).IsInvertible :=
+  ⟨(LinearEquiv.ofBijective (mfderiv I I' f x : TangentSpace I x →ₗ[𝕜] TangentSpace I' (f x))
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
+    ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
+
+/-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, if a composite of differentiable maps has invertible manifold derivative, then so do both
 factors. -/
 theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp [CompleteSpace 𝕜]
@@ -67,13 +79,8 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp [CompleteSpace 𝕜]
   -- bijective; between spaces of the same finite dimension either property gives bijectivity.
   have hinj : Function.Injective (mfderiv I I' f x) := .of_comp h.injective
   have hsurj : Function.Surjective (mfderiv I' I'' g (f x)) := .of_comp h.surjective
-  exact ⟨⟨(LinearEquiv.ofBijective (mfderiv I I' f x : TangentSpace I x →ₗ[𝕜] TangentSpace I' (f x))
-      ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
-      ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩,
-    ⟨(LinearEquiv.ofBijective
-      (mfderiv I' I'' g (f x) : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))
-      ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').2 hsurj, hsurj⟩
-      ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩⟩
+  exact ⟨isInvertible_mfderiv_of_injective hdim hinj, isInvertible_mfderiv_of_injective hdim'
+    ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').2 hsurj)⟩
 
 /-- If the source is modelled on a finite-dimensional space over a complete field and the
 derivative at `x` carries a basis `b` of the tangent space at `x` to a basis `b'` of the tangent
