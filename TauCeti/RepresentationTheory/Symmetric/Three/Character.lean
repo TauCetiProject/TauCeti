@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.FinThree.Dihedral
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Three
 public import TauCeti.RepresentationTheory.Symmetric.Three.SymmetricPower
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 import TauCeti.LinearAlgebra.SymmetricPower.Coordinates
 
 /-!
