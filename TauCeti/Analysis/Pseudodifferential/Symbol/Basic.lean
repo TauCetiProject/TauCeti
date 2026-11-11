@@ -336,7 +336,7 @@ instance : SMul ℂ (Symbol n V W m) where
       exists_bound := fun K hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
         exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x hx ξ =>
-          norm_mixedDeriv_smul_le a.contDiff_coefficient c (ha x hx ξ)⟩ }
+          norm_mixedDeriv_smul_le c (ha x hx ξ)⟩ }
 
 instance : Neg (Symbol n V W m) where
   neg a :=
@@ -417,7 +417,7 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha α β
   exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ =>
-    norm_mixedDeriv_smul_le a.contDiff_coefficient c (hCa x ξ)⟩
+    norm_mixedDeriv_smul_le c (hCa x ξ)⟩
 
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
@@ -521,8 +521,7 @@ def frequencyDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 1)
   map_smul' c a := by
     ext1
     funext p
-    exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _) c) p.2
+    exact congrFun (coordinateDeriv_const_smul [j] (fun η => a.coefficient (p.1, η)) c) p.2
 
 @[simp]
 theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
@@ -577,8 +576,7 @@ def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
   map_smul' c a := by
     ext1
     funext p
-    exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _) c) p.1
+    exact congrFun (coordinateDeriv_const_smul [j] (fun y => a.coefficient (y, p.2)) c) p.1
 
 @[simp]
 theorem coefficient_spatialDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :

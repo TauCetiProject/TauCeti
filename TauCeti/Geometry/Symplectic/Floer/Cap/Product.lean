@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import TauCeti.RingTheory.NovikovModule.Bilinear
+public import TauCeti.RingTheory.NovikovModule.Associativity
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Topology
 
@@ -63,6 +64,18 @@ on the completed capped modules. This file proves:
   one-dimensional moduli spaces, then the product obeys `d (a ⋆ b) = d a ⋆ b + (-1)^e a ⋆ d b`
   for `a` of cochain degree `e`
   (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add`).
+* **The associativity homotopy from the count identity.** The rigid elements of the
+  one-parameter family of four-punctured spheres between the two broken triple products are
+  counted by generating series `K` indexed by three input orbits and an output orbit; their
+  comparisons define a trilinear map on the completed capped modules
+  (`TauCeti.NovikovModule.novikovTrilinearOfMatrix`). Under the rigidity condition
+  `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) + μ₃(r₃) - 2n + 1` it lowers the cochain degree by one
+  (`TauCeti.Floer.novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`). If
+  the series obey the identity given by the ends of the one-dimensional moduli spaces of the
+  family, the two broken products and the cylinder breakings at the four ends, then
+  `(a ⋆ b) ⋆' c - a ⋆''' (b ⋆'' c) = d K(a, b, c) + K(d a, b, c) + (-1)^e₁ K(a, d b, c) +
+  (-1)^(e₁ + e₂) K(a, b, d c)` for `a`, `b` of cochain degrees `e₁`, `e₂`
+  (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add`).
 
 The energy, compactness, index and boundary-count hypotheses are the ones the geometric moduli
 spaces are to supply; no moduli space, orientation or count is constructed here.
@@ -88,6 +101,29 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+
+section Recapping
+
+variable {ι : Type*} {P : ι → Type*} [∀ i, AddTorsor (PeriodGroup ω c) (P i)]
+  {μ : (Σ i, P i) → ℤ} (hμ : ∀ i γ (D : P i), μ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ ⟨i, D⟩) (n : ℤ)
+
+include hμ
+
+/-- Recapping by `γ` changes the cochain degree `n - μ` by the even number `-2 c₁(γ)`. -/
+private theorem even_cochain_vadd_sub (i : ι) (γ : PeriodGroup ω c) (D : P i) :
+    Even (n - μ ⟨i, γ +ᵥ D⟩ - (n - μ ⟨i, D⟩)) := by
+  rw [hμ, show n - (degree ω c γ + μ ⟨i, D⟩) - (n - μ ⟨i, D⟩) = -degree ω c γ by ring]
+  exact (even_degree ω c γ).neg
+
+/-- Recapping by `γ` adds `f (-2 c₁(γ))` to any additive image `f` of the cochain degree. -/
+private theorem map_cochain_vadd {D : Type*} [AddCommMonoid D] (f : ℤ →+ D) (i : ι)
+    (γ : PeriodGroup ω c) (E : P i) :
+    f (n - μ ⟨i, γ +ᵥ E⟩) = (f.comp (-degree ω c)) γ + f (n - μ ⟨i, E⟩) := by
+  rw [hμ, AddMonoidHom.comp_apply, AddMonoidHom.neg_apply, ← map_add]
+  congr 1
+  ring
+
+end Recapping
 
 section Monoid
 
@@ -271,15 +307,150 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
           (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k))
             b) := by
   refine novikovMapOfMatrix_novikovProductOfMatrix_eq_add hF₁ hF₂ hF₀ r₁ r₂ r₀ _ _ _ _
-    (fun i γ D => ?_) (fun i j l => ?_) ha b
-  · rw [hμ₁, show n - (degree ω c γ + μ₁ ⟨i, D⟩) - (n - μ₁ ⟨i, D⟩) = -degree ω c γ by ring]
-    exact (even_degree ω c γ).neg
-  · have h := congrArg (coefficientComparison q hq) (hL i j l)
-    simp only [map_sum, map_add, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-      Units.smul_def, map_zsmul] at h ⊢
-    exact h
+    (even_cochain_vadd_sub hμ₁ n) (fun i j l => ?_) ha b
+  have h := congrArg (coefficientComparison q hq) (hL i j l)
+  simp only [map_sum, map_add, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
+    Units.smul_def, map_zsmul] at h ⊢
+  exact h
 
 end Leibniz
+
+section Associativity
+
+variable {ι₃ ι₁₂ ι₂₃ : Type*} {P₃ : ι₃ → Type*} {P₁₂ : ι₁₂ → Type*} {P₂₃ : ι₂₃ → Type*}
+  [∀ k, AddTorsor (PeriodGroup ω c) (P₃ k)] [∀ t, AddTorsor (PeriodGroup ω c) (P₁₂ t)]
+  [∀ u, AddTorsor (PeriodGroup ω c) (P₂₃ u)]
+  (r₃ : ∀ k, P₃ k) (r₁₂ : ∀ t, P₁₂ t) (r₂₃ : ∀ u, P₂₃ u)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Fintype ι₀] {F₁ : (Σ i, P₁ i) → ℝ}
+  {F₂ : (Σ j, P₂ j) → ℝ} {F₃ : (Σ k, P₃ k) → ℝ} {F₀ : (Σ l, P₀ l) → ℝ}
+  (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+  (hF₂ : ∀ j γ (D : P₂ j), F₂ ⟨j, γ +ᵥ D⟩ = F₂ ⟨j, D⟩ - (-area ω c) γ)
+  (hF₃ : ∀ k γ (D : P₃ k), F₃ ⟨k, γ +ᵥ D⟩ = F₃ ⟨k, D⟩ - (-area ω c) γ)
+  (hF₀ : ∀ l γ (D : P₀ l), F₀ ⟨l, γ +ᵥ D⟩ = F₀ ⟨l, D⟩ - (-area ω c) γ)
+  {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ}
+  (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+  (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
+
+section Degree
+
+variable [CommSemiring R] {μ₃ : (Σ k, P₃ k) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ}
+  (hμ₃ : ∀ k γ (D : P₃ k), μ₃ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₃ ⟨k, D⟩)
+  (hμ₀ : ∀ l γ (D : P₀ l), μ₀ ⟨l, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨l, D⟩)
+  {n : ℤ} (K : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R G ωG)
+  (hK : ∀ i j k l, ∀ A ∈ (K i j k l).support,
+    μ₀ ⟨l, r₀ l⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ + μ₃ ⟨k, r₃ k⟩ - 2 * n + 1)
+
+include hμ₁ hμ₂ hμ₃ hμ₀ hK
+
+/-- **The homotopy of rigid counts lowers cochain degree by one.** Let `K` be the generating
+series of the rigid elements of a one-parameter family of four-punctured spheres with three
+inputs, between reference capped orbits. If every class with nonzero count satisfies the rigidity
+condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) + μ₃(r₃) - 2n + 1`, and the gradings obey the
+recapping law, then the trilinear map of the counts on capped generators shifts every additive
+image `f` of the cochain degree `n - μ` by `f (-1)`. -/
+theorem novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy {D : Type*}
+    [AddCommGroup D] (f : ℤ →+ D) {e₁ e₂ e₃ : D} {x₁ : NovikovModule R F₁}
+    {x₂ : NovikovModule R F₂} {x₃ : NovikovModule R F₃}
+    (ha : x₁ ∈ gradeBy R F₁ (fun p => f (n - μ₁ p)) e₁)
+    (hb : x₂ ∈ gradeBy R F₂ (fun p => f (n - μ₂ p)) e₂)
+    (hc : x₃ ∈ gradeBy R F₃ (fun p => f (n - μ₃ p)) e₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂ x₃ ∈
+      gradeBy R F₀ (fun p => f (n - μ₀ p)) (e₁ + e₂ + e₃ + f (-1)) := by
+  refine novikovTrilinearOfMatrix_mem_gradeBy hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ _ (f.comp (-degree ω c))
+    (map_cochain_vadd hμ₁ n f) (map_cochain_vadd hμ₂ n f) (map_cochain_vadd hμ₃ n f)
+    (map_cochain_vadd hμ₀ n f) (fun i j k l => NovikovSeries.mem_gradeBy_iff.2 fun γ hγ => ?_)
+    ha hb hc
+  obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hq _ hγ
+  have hd : degree ω c (q A) = n - μ₁ ⟨i, r₁ i⟩ + (n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) + -1 -
+      (n - μ₀ ⟨l, r₀ l⟩) := by
+    linarith [hK i j k l A hA]
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, AddMonoidHom.comp_apply,
+    AddMonoidHom.neg_apply, map_neg, neg_neg, hd, map_sub, map_add]
+
+/-- The trilinear map of rigid homotopy counts has degree `-1` on capped generators regraded by
+the cochain degree `n - μ`. -/
+theorem novikovTrilinearOfMatrix_coefficientComparison_mem_cochain_gradeBy {e₁ e₂ e₃ : ℤ}
+    {x₁ : NovikovModule R F₁} {x₂ : NovikovModule R F₂} {x₃ : NovikovModule R F₃}
+    (ha : x₁ ∈ gradeBy R F₁ (fun p => n - μ₁ p) e₁) (hb : x₂ ∈ gradeBy R F₂ (fun p => n - μ₂ p) e₂)
+    (hc : x₃ ∈ gradeBy R F₃ (fun p => n - μ₃ p) e₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂ x₃ ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) (e₁ + e₂ + e₃ - 1) :=
+  novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy r₁ r₂ r₀ q hq r₃ hF₁ hF₂
+    hF₃ hF₀ hμ₁ hμ₂ hμ₃ hμ₀ K hK (AddMonoidHom.id ℤ) ha hb hc
+
+end Degree
+
+variable [CommRing R] [Fintype ι₁₂] [Fintype ι₂₃] {F₁₂ : (Σ t, P₁₂ t) → ℝ}
+  {F₂₃ : (Σ u, P₂₃ u) → ℝ}
+  (hF₁₂ : ∀ t γ (D : P₁₂ t), F₁₂ ⟨t, γ +ᵥ D⟩ = F₁₂ ⟨t, D⟩ - (-area ω c) γ)
+  (hF₂₃ : ∀ u γ (D : P₂₃ u), F₂₃ ⟨u, γ +ᵥ D⟩ = F₂₃ ⟨u, D⟩ - (-area ω c) γ)
+
+include hμ₁ hμ₂ in
+/-- **The associativity homotopy for class-indexed counts.** Let `Q`, `Q'` be the generating
+series of rigid pairs of pants for the products in `(x₁ ⋆ x₂) ⋆' x₃`, and `T`, `T'` those for the
+products in `x₁ ⋆''' (x₂ ⋆'' x₃)`. Let `D₁`, `D₂`, `D₃`, `D₀` be those of rigid Floer cylinders of
+the three inputs and the output, and `K` that of the rigid elements of the one-parameter family of
+four-punctured spheres between the two broken configurations, all between reference capped orbits
+and indexed by a common class group `G`. Suppose the series obey the identity
+
+`∑ₜ Qᵢⱼₜ Q'ₜₖₗ - ∑ᵤ Tⱼₖᵤ T'ᵢᵤₗ = ∑ₘ Kᵢⱼₖₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₖₗ +
+  (-1)^(n - μ₁(r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₖₗ + (-1)^((n - μ₁(r₁ i)) + (n - μ₂(r₂ j))) ∑ₘ D₃ₖₘ Kᵢⱼₘₗ`
+
+in `G`-indexed series, which is the count, class by class, of the ends of the one-dimensional
+moduli spaces of the family: the two broken products and the breaking of a Floer cylinder at one
+of the four ends. Then on the completed capped modules, with the first two inputs graded by the
+cochain degrees `n - μ₁` and `n - μ₂`, the trilinear map of `K` is a homotopy between the two
+products: `(x₁ ⋆ x₂) ⋆' x₃ - x₁ ⋆''' (x₂ ⋆'' x₃) = d₀ K(x₁, x₂, x₃) + K(d₁ x₁, x₂, x₃) +
+(-1)^e₁ K(x₁, d₂ x₂, x₃) + (-1)^(e₁ + e₂) K(x₁, x₂, d₃ x₃)` for `x₁` of degree `e₁` and `x₂` of
+degree `e₂`. The signs are constant on the capped generators of each orbit, because recapping
+changes the degree by the even number `2 c₁(γ)`. -/
+theorem novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add
+    (Q : ι₁ → ι₂ → ι₁₂ → NovikovSeries R G ωG) (Q' : ι₁₂ → ι₃ → ι₀ → NovikovSeries R G ωG)
+    (T : ι₂ → ι₃ → ι₂₃ → NovikovSeries R G ωG) (T' : ι₁ → ι₂₃ → ι₀ → NovikovSeries R G ωG)
+    (K : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
+    (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₃ : ι₃ → ι₃ → NovikovSeries R G ωG)
+    (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
+    (hA : ∀ i j k l, ∑ t, Q i j t * Q' t k l - ∑ u, T j k u * T' i u l =
+      ∑ m, K i j k m * D₀ m l + ∑ m, D₁ i m * K m j k l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * K i m k l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩ + (n - μ₂ ⟨j, r₂ j⟩)) • ∑ m, D₃ k m * K i j m l)
+    {e₁ e₂ : ℤ} {x₁ : NovikovModule R F₁} (ha : x₁ ∈ gradeBy R F₁ (fun p => n - μ₁ p) e₁)
+    {x₂ : NovikovModule R F₂} (hb : x₂ ∈ gradeBy R F₂ (fun p => n - μ₂ p) e₂)
+    (x₃ : NovikovModule R F₃) :
+    novikovProductOfMatrix hF₁₂ hF₃ hF₀ r₁₂ r₃ r₀
+          (fun t k l => coefficientComparison q hq (Q' t k l))
+          (novikovProductOfMatrix hF₁ hF₂ hF₁₂ r₁ r₂ r₁₂
+            (fun i j t => coefficientComparison q hq (Q i j t)) x₁ x₂) x₃ -
+        novikovProductOfMatrix hF₁ hF₂₃ hF₀ r₁ r₂₃ r₀
+          (fun i u l => coefficientComparison q hq (T' i u l)) x₁
+          (novikovProductOfMatrix hF₂ hF₃ hF₂₃ r₂ r₃ r₂₃
+            (fun j k u => coefficientComparison q hq (T j k u)) x₂ x₃) =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ (fun m l => coefficientComparison q hq (D₀ m l))
+          (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+            (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂ x₃) +
+        novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+          (fun i j k l => coefficientComparison q hq (K i j k l))
+          (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i m => coefficientComparison q hq (D₁ i m)) x₁)
+          x₂ x₃ +
+        negOnePowCast R e₁ • novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+          (fun i j k l => coefficientComparison q hq (K i j k l)) x₁
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j m => coefficientComparison q hq (D₂ j m)) x₂)
+          x₃ +
+        negOnePowCast R (e₁ + e₂) • novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+          (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂
+          (novikovMapOfMatrix hF₃ hF₃ r₃ r₃ (fun k m => coefficientComparison q hq (D₃ k m))
+            x₃) := by
+  refine novikovProductOfMatrix_assoc_sub_eq_add hF₁ hF₂ hF₃ hF₀ hF₁₂ hF₂₃ r₁ r₂ r₃ r₀ r₁₂ r₂₃
+    _ _ _ _ _ _ _ _ _ (even_cochain_vadd_sub hμ₁ n) (even_cochain_vadd_sub hμ₂ n)
+    (fun i j k l => ?_) ha hb x₃
+  have h := congrArg (coefficientComparison q hq) (hA i j k l)
+  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
+    Units.smul_def, map_zsmul] at h ⊢
+  exact h
+
+end Associativity
 
 end Monoid
 

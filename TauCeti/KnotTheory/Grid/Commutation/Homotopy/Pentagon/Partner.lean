@@ -390,7 +390,7 @@ private theorem exists_mixed_of_terminal_first
       (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) (by rwa [hbot])
       (fun c ha _ h => ha (hX c (Finset.mem_union_left _ h)))
       (fun c ha _ h => ha (hX c (Finset.mem_union_right _ h))) hPa
-      (Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hlow hup hs hXnext hXb)
+      (Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs hXnext hXb)
       (fun h => hXb (Grid.cIoo_subset_cIco_of_mem_cIco hs h)) (by rwa [hbot])
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨hrow, -, -, -, h2r, -, -, h2b, h2t⟩
@@ -398,7 +398,7 @@ private theorem exists_mixed_of_terminal_first
     · refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_second_terminal C _ (h2r.trans hr) ?_ ?_)).elim
       · rw [h2b, h2t]
-        exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow hrow hs
+        exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow hs
       · rw [h2t]
         exact hup
 
@@ -430,13 +430,13 @@ private theorem exists_mixed_of_initial_second
     · rw [hbot]
       exact Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)
     · rw [hbot]
-      exact Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hlow hup hs hXcol hXa
+      exact Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs hXcol hXa
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, h1l, -, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_first_initial C _ (h1l.trans hr) ?_ ?_)).elim
       · rw [h1b, h1t]
-        exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow hrow hs
+        exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow hs
       · rw [h1t]
         exact hup
     · exact (hs (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hlow hrow)).elim
@@ -465,7 +465,7 @@ private theorem exists_mixed_of_initial_first
     exact G.exists_initialTerminal C C' hcol hturn D h1 h2 hl hr hlow (by rwa [htop])
       (fun c _ hb h => hb (hX c (Finset.mem_union_left _ h)))
       (fun c _ hb h => hb (hX c (Finset.mem_union_right _ h)))
-      (Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hup hs hXcol hXa) hPb
+      (Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hs hXcol hXa) hPb
       (by rwa [htop])
       (fun h => hXa (Grid.cIco_subset_cIco_of_mem_cIco hs h))
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
@@ -474,7 +474,7 @@ private theorem exists_mixed_of_initial_first
         (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)))).elim
     · obtain ⟨hA, hB⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup
         (Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right
-          (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) hrow hs)
+          (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) hs)
       refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_second_initial C _ (h2l.trans hl) ?_ ?_)).elim
       · rw [h2b, h2t]
@@ -510,12 +510,12 @@ private theorem exists_mixed_of_terminal_second
     · rw [htop]
       exact hlow
     · rw [htop]
-      exact Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hup hs hXnext hXb
+      exact Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hs hXnext hXb
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, -, h1r, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · obtain ⟨hA, hB⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup
         (Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right
-          (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) hrow hs)
+          (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) hs)
       refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_first_terminal C _ (h1r.trans hl) ?_ ?_)).elim
       · rw [h1b, h1t]
@@ -573,9 +573,9 @@ private theorem exists_sameSide_of_initial_first
   obtain ⟨hX1, hX2⟩ := G.notMem_of_isRecut C hrecut hX
   obtain ⟨D', hD', hside, hD'E⟩ := G.exists_initialInitial C C' hcol hturn hXcol hXnext _
     hrecut.isEmpty_first hrecut.isEmpty_second (h1l.trans hl) (h2l.trans hl)
-    (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hB)
+    (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hB)
     (by rw [h1b, h1t]; exact hA)
-    (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
+    (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
   exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
@@ -612,9 +612,9 @@ private theorem exists_sameSide_of_terminal_second
     obtain ⟨hX1, hX2⟩ := G.notMem_of_isRecut C hrecut hX
     obtain ⟨D', hD', hside, hD'E⟩ := G.exists_terminalTerminal C C' hcol hturn hXcol hXnext _
       hrecut.isEmpty_first hrecut.isEmpty_second (h1r.trans hr) (h2r.trans hr)
-      (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hB)
+      (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hB)
       (by rw [h1b, h1t]; exact hA)
-      (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
+      (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
     exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_terminal C _ (h1r.trans hr) ?_ ?_)).elim
@@ -660,9 +660,9 @@ private theorem exists_sameSide_of_terminal_first
   obtain ⟨hX1, hX2⟩ := G.notMem_of_isRecut C hrecut hX
   obtain ⟨D', hD', hside, hD'E⟩ := G.exists_terminalTerminal C C' hcol hturn hXcol hXnext _
     hrecut.isEmpty_first hrecut.isEmpty_second (h1r.trans hr) (h2r.trans hr)
-    (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hB)
+    (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hB)
     (by rw [h1b, h1t]; exact hA)
-    (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
+    (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
   exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
@@ -699,9 +699,9 @@ private theorem exists_sameSide_of_initial_second
     obtain ⟨hX1, hX2⟩ := G.notMem_of_isRecut C hrecut hX
     obtain ⟨D', hD', hside, hD'E⟩ := G.exists_initialInitial C C' hcol hturn hXcol hXnext _
       hrecut.isEmpty_first hrecut.isEmpty_second (h1l.trans hl) (h2l.trans hl)
-      (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hB)
+      (by rw [h1b, h1t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hB)
       (by rw [h1b, h1t]; exact hA)
-      (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
+      (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
     exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_initial C _ (h1l.trans hl) ?_ ?_)).elim

@@ -220,7 +220,7 @@ theorem exists_littlewoodPaleyBlock_comp_eq_zero :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k →
       littlewoodPaleyBlock φ j ∘L littlewoodPaleyBlock φ k = 0 ∧
         littlewoodPaleyBlock φ k ∘L littlewoodPaleyBlock φ j = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨L, fun j k hjk ↦ ?_⟩
   have h : littlewoodPaleySymbol φ j * littlewoodPaleySymbol φ k = 0 := by
     ext n
