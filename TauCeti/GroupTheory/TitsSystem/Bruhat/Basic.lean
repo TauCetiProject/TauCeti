@@ -197,7 +197,8 @@ theorem subset_bruhatCell_mul_right (w s : T.WeylGroup) :
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   obtain ⟨m, rfl⟩ := QuotientGroup.mk_surjective s
   rw [← QuotientGroup.mk_mul, T.bruhatCell_mk, T.bruhatCell_mk, T.bruhatCell_mk]
-  exact DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB _ _
+  exact DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := G) T.subgroupB T.subgroupB
+    T.subgroupB T.subgroupB.one_mem _ _
 
 /-- **Multiplication by a simple Bruhat cell.** If `r` represents a simple reflection and `w`
 lies in `N`, then `(B r B)(B w B)` is either the adjacent cell `B (r w) B` or the union of that
@@ -233,8 +234,8 @@ private theorem mul_doubleCoset_eq_or_eq_union_of_mem_simple {s : T.WeylGroup}
   let D := DoubleCoset.doubleCoset (w : G) T.subgroupB T.subgroupB
   have hC : C ⊆ A := by
     simpa only [C, A, Subgroup.coe_mul] using
-      DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB
-        (r₀ : G) (w : G)
+      DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := G) T.subgroupB T.subgroupB
+        T.subgroupB T.subgroupB.one_mem (r₀ : G) (w : G)
   have hsubset' : A ⊆ C ∪ D := hsubset w
   by_cases hw : (w : G) ∈ A
   · right
@@ -310,7 +311,7 @@ theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈
         DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB := by
     rw [← hr_inv_cell]
     exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨b, b.property, 1, T.subgroupB.one_mem, by simp⟩
+      ⟨b, b.property, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp⟩
   have hx_rep : (r : G) * (b : G) * (r : G)⁻¹ ∈
       DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB *
         DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB := by
@@ -385,10 +386,10 @@ private theorem MultipliesBruhatCells.mul {q₁ q₂ : T.WeylGroup}
   let x₂ : G := (n₂ : G) * b₂
   have hx₁ : x₁ ∈ DoubleCoset.doubleCoset (n₁ : G) T.subgroupB T.subgroupB :=
     DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁, hb₁, 1, T.subgroupB.one_mem, by simp [x₁]⟩
+      ⟨b₁, hb₁, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp [x₁]⟩
   have hx₂ : x₂ ∈ DoubleCoset.doubleCoset (n₂ : G) T.subgroupB T.subgroupB :=
     DoubleCoset.mem_doubleCoset.mpr
-      ⟨1, T.subgroupB.one_mem, b₂, hb₂, by simp [x₂]⟩
+      ⟨1, (SetLike.mem_coe.2 T.subgroupB.one_mem), b₂, hb₂, by simp [x₂]⟩
   have hx₂y : x₂ * y ∈ T.bruhatCells :=
     hq₂ n₂ hn₂ w ⟨x₂, hx₂, y, hy, rfl⟩
   obtain ⟨v, hv⟩ := (T.mem_bruhatCells_iff (x₂ * y)).mp hx₂y
@@ -441,7 +442,7 @@ private theorem bruhatCells_inv_mem {x : G} (hx : x ∈ T.bruhatCells) :
     rintro g (hg | hg)
     · exact (T.mem_bruhatCells_iff g).mpr
         ⟨1, DoubleCoset.mem_doubleCoset.mpr
-          ⟨g, hg, 1, T.subgroupB.one_mem, by simp⟩⟩
+          ⟨g, hg, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp⟩⟩
     · exact (T.mem_bruhatCells_iff g).mpr
         ⟨⟨g, hg⟩, DoubleCoset.mem_doubleCoset_self T.subgroupB T.subgroupB g⟩
   have htop : C = ⊤ := by
