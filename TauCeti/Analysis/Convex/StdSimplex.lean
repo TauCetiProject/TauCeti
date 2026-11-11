@@ -166,7 +166,8 @@ theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
 
 end Boundary
 
-/-- A face of the barycentric simplex lies in the standard simplex. -/
+/-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
+consists of weight vectors of `Convexity.StdSimplex`. -/
 theorem convexHull_pi_single_subset_range_toFun_comp_weights [DecidableEq ι] (s : Set ι) :
     convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ⊆
       range fun t : StdSimplex ℝ ι => ⇑t.weights := by
@@ -178,7 +179,7 @@ theorem convexHull_pi_single_subset_range_toFun_comp_weights [DecidableEq ι] (s
 
 variable [Fintype ι]
 
-/-- Membership in a face of the barycentric simplex is nonnegativity, total mass one,
+/-- Membership in a face of the standard simplex is nonnegativity, total mass one,
 and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
 @[simp]
 theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → ℝ} :
@@ -208,7 +209,7 @@ section Faces
 
 variable [DecidableEq ι]
 
-/-- Two points of faces of the barycentric simplex are within distance one in the sup norm. -/
+/-- Two points of faces of the standard simplex are within distance one in the sup norm. -/
 theorem norm_sub_le_one_of_mem_convexHull_pi_single {s t : Set ι} {x y : ι → ℝ}
     (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s))
     (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' t)) :

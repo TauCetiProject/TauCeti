@@ -15,7 +15,7 @@ import Mathlib.Tactic.Linarith
 A union of closed coordinate faces of the standard simplex need not be convex, so the
 finite-closed-cover gluing of `TauCeti.Analysis.Convex.Lipschitz` does not apply to it. Still, a
 common Lipschitz bound on the faces gives a global bound for a map which takes one common value
-at the vertices (`TauCeti.lipschitzOnWith_iUnion_convexHull_pi_single`). The constant loses only
+at the vertices (`TauCeti.lipschitzOnWith_biUnion_convexHull_pi_single`). The constant loses only
 a factor depending on the number of ambient vertices, independently of the number and sizes of
 the faces. This applies to interpolation errors: the interpolant and the original map agree at
 vertices. In particular, it allows error estimates to cross the original faces of a complex.
@@ -61,7 +61,7 @@ private theorem dist_le_lipschitz_constant {Y : Type*} [PseudoMetricSpace Y]
 for maps taking the same value at all vertices. The loss depends only on the ambient vertex
 count, and the union need not be connected, pure, or closed under taking faces. This is useful
 for interpolation errors, whose vertex values are zero. -/
-theorem lipschitzOnWith_iUnion_convexHull_pi_single {Y : Type*} [PseudoMetricSpace Y]
+theorem lipschitzOnWith_biUnion_convexHull_pi_single {Y : Type*} [PseudoMetricSpace Y]
     {S : Set (Finset ι)} {f : (ι → ℝ) → Y} {C : ℝ≥0} {b : Y}
     (hf : ∀ σ ∈ S, LipschitzOnWith C f
       (convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (σ : Set ι))))
