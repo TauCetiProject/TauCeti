@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Convex.SchauderFixedPoint
-import TauCeti.Analysis.PDE.DirichletProblem.Interval
+public import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -42,6 +42,9 @@ problem.
 
 ## Main declarations
 
+* `TauCeti.PDE.isCompact_closure_range_intervalDirichletSolution`,
+  `TauCeti.PDE.continuous_intervalDirichletSolution`: the frozen-solution map
+  `v ↦ TauCeti.PDE.intervalDirichletSolution` has compact closure of range and is continuous.
 * `TauCeti.PDE.exists_intervalTraceL_eq_and_forall_integral_apply_value_mul_gradient_eq`: the
   quasilinear problem `-(A(x, u) u' + F)' = f` with prescribed endpoint values has a solution in
   `W^{1,p}(x₀, x₁)`.
@@ -63,109 +66,131 @@ open scoped ENNReal Distributions
 
 namespace TauCeti.PDE
 
-variable {x₀ x₁ lam M : ℝ} {G : ℝ → ℝ}
+variable {x₀ x₁ lam M : ℝ} {G : ℝ → ℝ} {g₀ g₁ : ℝ}
 
-/-- **The fixed point.** Let `a v` be a coefficient depending on `v ∈ C([x₀, x₁])`, with uniform
-bounds `λ ≤ a v ≤ M`, such that `a vₙ → a v` almost everywhere whenever `vₙ → v`. Then for some
-`ū ∈ C([x₀, x₁])`, `ū` is the solution of the linear problem with coefficient `a ū`. -/
-private theorem exists_eq_add_intervalIntegral_slope (hx : x₀ < x₁) (hlam : 0 < lam)
-    (g₀ g₁ : ℝ) {a : C(Icc x₀ x₁, ℝ) → ℝ → ℝ}
-    (ha : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)))
-    (haM : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t ∧ a v t ≤ M)
-    (hlim : ∀ (vn : ℕ → C(Icc x₀ x₁, ℝ)) (v : C(Icc x₀ x₁, ℝ)), Tendsto vn atTop (𝓝 v) →
-      ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => a (vn n) t) atTop (𝓝 (a v t)))
-    (hG : IntegrableOn G (Ioo x₀ x₁)) :
-    ∃ ū : C(Icc x₀ x₁, ℝ), ∀ y : Icc x₀ x₁,
-      ū y = g₀ + ∫ t in x₀..y, intervalDirichletSlope x₀ x₁ g₀ g₁ G (a ū) t := by
-  -- The derivatives of all the frozen solutions are dominated by one integrable function `H`.
+/-- **Compactness of the frozen-solution map.** Let `a i`, for `i ∈ ι`, be coefficients with
+uniform bounds `λ ≤ a i ≤ M`. The solutions of the linear problems with coefficients `a i` form a
+relatively compact subset of `C([x₀, x₁])`: their derivatives are all dominated by one integrable
+function, so they are uniformly bounded and equicontinuous. -/
+theorem isCompact_closure_range_intervalDirichletSolution {ι : Type*} (hx : x₀ < x₁)
+    (hlam : 0 < lam) {a : ι → ℝ → ℝ}
+    (ha : ∀ i, AEStronglyMeasurable (a i) (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ i, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a i t ∧ a i t ≤ M)
+    (hG : IntegrableOn G (Ioo x₀ x₁))
+    (hs : ∀ i, IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i)) (Ioo x₀ x₁)) :
+    IsCompact (closure (range fun i => intervalDirichletSolution hx.le g₀ g₁ (hs i))) := by
+  -- The derivatives of all the solutions are dominated by one integrable function `H`.
   set K := M / (x₁ - x₀) * (|g₁ - g₀| + (∫ t in Ioo x₀ x₁, |G t|) / lam)
   set H : ℝ → ℝ := fun t => lam⁻¹ * (K + |G t|)
   have hH : IntegrableOn H (Ioo x₀ x₁) := ((integrable_const K).add hG.abs).const_mul _
-  have hsH : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
-      |intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v) t| ≤ H t :=
-    fun v => ae_abs_intervalDirichletSlope_le hlam ((haM v).mono fun _ h => h.1)
-      (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ (ha v) (haM v) hG)
-  have hsi : ∀ v, IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v)) (Ioo x₀ x₁) := fun v =>
-    hH.mono' (aestronglyMeasurable_intervalDirichletSlope (ha v) hG)
-      ((hsH v).mono fun t ht => by rwa [Real.norm_eq_abs])
+  have hsH : ∀ i, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      |intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i) t| ≤ H t :=
+    fun i => ae_abs_intervalDirichletSlope_le hlam ((haM i).mono fun _ h => h.1)
+      (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ (ha i) (haM i) hG)
   have hIcc : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → IntegrableOn h (Icc x₀ x₁) :=
     fun hh => by rwa [IntegrableOn, ← restrict_Ioo_eq_restrict_Icc]
   have hII : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → ∀ y z : Icc x₀ x₁,
       IntervalIntegrable h volume y z := fun hh y z =>
     ((hIcc hh).mono_set (uIcc_subset_Icc y.2 z.2)).intervalIntegrable
   let x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
-  -- The solution map `T`.
-  have hTex : ∀ v : C(Icc x₀ x₁, ℝ), ∃ w : C(Icc x₀ x₁, ℝ), ∀ y : Icc x₀ x₁,
-      w y = g₀ + ∫ t in x₀..y, intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v) t := fun v =>
-    ⟨⟨fun y => g₀ + ∫ t in x₀..(y : ℝ), intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v) t,
-      (continuousOn_const.add
-        (intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo (hsi v)
-          (left_mem_Icc.2 hx.le))).domRestrict⟩, fun _ => rfl⟩
-  choose T hT using hTex
   -- The common modulus of continuity `Ψ = ∫_{x₀}^x H` and the common bound.
   set Ψ : ℝ → ℝ := fun y => ∫ t in x₀..y, H t with hΨdef
   have hΨc : ContinuousOn Ψ (Icc x₀ x₁) :=
     intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hH (left_mem_Icc.2 hx.le)
-  have hmod : ∀ v (y z : Icc x₀ x₁), |T v y - T v z| ≤ |Ψ y - Ψ z| := by
-    intro v y z
-    rw [hT, hT, add_sub_add_left_eq_sub, intervalIntegral.integral_interval_sub_left
-      (hII (hsi v) x₀' y) (hII (hsi v) x₀' z), hΨdef,
+  have hmod : ∀ i (y z : Icc x₀ x₁), |intervalDirichletSolution hx.le g₀ g₁ (hs i) y -
+      intervalDirichletSolution hx.le g₀ g₁ (hs i) z| ≤ |Ψ y - Ψ z| := by
+    intro i y z
+    rw [intervalDirichletSolution_apply, intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
+      intervalIntegral.integral_interval_sub_left (hII (hs i) x₀' y) (hII (hs i) x₀' z), hΨdef,
       intervalIntegral.integral_interval_sub_left (hII hH x₀' y) (hII hH x₀' z)]
     refine (Real.norm_eq_abs _).symm.trans_le
       (intervalIntegral.norm_integral_le_abs_of_norm_le ?_ (hII hH z y))
-    have h := hsH v
+    have h := hsH i
     rw [restrict_Ioo_eq_restrict_Icc] at h
     exact ae_restrict_of_ae_restrict_of_subset
       (uIoc_subset_uIcc.trans (uIcc_subset_Icc z.2 y.2))
       (h.mono fun t ht => by rwa [Real.norm_eq_abs])
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hΨc
-  have hR : 0 ≤ |g₀| + C :=
-    add_nonneg (abs_nonneg _) ((norm_nonneg _).trans (hC x₀ (left_mem_Icc.2 hx.le)))
-  have hTb : ∀ v (y : Icc x₀ x₁), |T v y| ≤ |g₀| + C := by
-    intro v y
-    have h := hmod v y x₀'
-    rw [hT v x₀'] at h
-    simp only [x₀', intervalIntegral.integral_same, add_zero, hΨdef, sub_zero] at h
-    calc |T v y| ≤ |T v y - g₀| + |g₀| := by simpa using abs_add_le (T v y - g₀) g₀
-      _ ≤ C + |g₀| := by
+  have hTb : ∀ i (y : Icc x₀ x₁), |intervalDirichletSolution hx.le g₀ g₁ (hs i) y| ≤ |g₀| + C := by
+    intro i y
+    have h := hmod i y x₀'
+    simp only [intervalDirichletSolution_apply, x₀', intervalIntegral.integral_same, add_zero,
+      hΨdef, sub_zero] at h ⊢
+    calc |g₀ + ∫ t in x₀..(y : ℝ), intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i) t|
+        ≤ |g₀| + |∫ t in x₀..(y : ℝ), intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i) t| :=
+          abs_add_le _ _
+      _ ≤ |g₀| + C := by
           gcongr
-          exact h.trans (Real.norm_eq_abs (Ψ y) ▸ hC y y.2)
-      _ = |g₀| + C := add_comm _ _
-  -- `T` is continuous, by dominated convergence.
-  have hTc : Continuous T := by
-    refine continuous_iff_seqContinuous.2 fun vn v hv => ?_
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_)
-      (tendsto_integral_abs_intervalDirichletSlope_sub hx hlam g₀ g₁ (fun n => ha (vn n))
-        (fun n => haM (vn n)) (ha v) (haM v) hG (hlim vn v hv))
-    refine (ContinuousMap.norm_le _ (integral_nonneg fun _ => abs_nonneg _)).2 fun y => ?_
-    rw [Function.comp_apply, ContinuousMap.sub_apply, hT, hT, add_sub_add_left_eq_sub,
-      ← intervalIntegral.integral_sub (hII (hsi _) x₀' y) (hII (hsi _) x₀' y),
-      Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
-    refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
-      (ae_of_all _ fun _ => abs_nonneg _)
-      (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallyLE)
-    exact (hIcc ((hsi _).sub (hsi _))).abs
-  -- The range of `T` has compact closure, by the Arzelà–Ascoli theorem.
-  have hcpt : IsCompact (closure (range T)) := by
-    refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y => ?_) fun y =>
-      ⟨closedBall 0 (|g₀| + C), isCompact_closedBall _ _, fun v => by
-        rw [mem_closedBall_zero_iff, Real.norm_eq_abs]
-        exact hTb v y⟩
-    have hlim : Tendsto (fun z : Icc x₀ x₁ => |Ψ z - Ψ y|) (𝓝 y) (𝓝 0) := by
-      simpa using ((hΨc.domRestrict.tendsto y).sub_const (Ψ y)).abs
-    refine Metric.equicontinuousAt_of_continuity_modulus _ hlim _
-      (Eventually.of_forall fun z v => ?_)
-    rw [Real.dist_eq, abs_sub_comm (Ψ z)]
-    exact hmod v y z
-  -- Schauder's fixed-point theorem on a large closed ball of `C([x₀, x₁])`.
+          simpa using h.trans (Real.norm_eq_abs (Ψ y) ▸ hC y y.2)
+  -- The Arzelà–Ascoli theorem.
+  refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y => ?_) fun y =>
+    ⟨closedBall 0 (|g₀| + C), isCompact_closedBall _ _, fun i => by
+      rw [mem_closedBall_zero_iff, Real.norm_eq_abs]
+      exact hTb i y⟩
+  have hlim : Tendsto (fun z : Icc x₀ x₁ => |Ψ z - Ψ y|) (𝓝 y) (𝓝 0) := by
+    simpa using ((hΨc.domRestrict.tendsto y).sub_const (Ψ y)).abs
+  refine Metric.equicontinuousAt_of_continuity_modulus _ hlim _
+    (Eventually.of_forall fun z i => ?_)
+  rw [Real.dist_eq, abs_sub_comm (Ψ z)]
+  exact hmod i y z
+
+/-- **Continuity of the frozen-solution map.** Let `a v`, for `v` in a sequential space `X`, be
+coefficients with uniform bounds `λ ≤ a v ≤ M`, such that `a vₙ → a v` almost everywhere whenever
+`vₙ → v`. Then the solution of the linear problem with coefficient `a v` depends continuously on
+`v` in `C([x₀, x₁])`, by dominated convergence. -/
+theorem continuous_intervalDirichletSolution {X : Type*} [TopologicalSpace X] [SequentialSpace X]
+    (hx : x₀ < x₁) (hlam : 0 < lam) {a : X → ℝ → ℝ}
+    (ha : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t ∧ a v t ≤ M)
+    (hlim : ∀ (vn : ℕ → X) (v : X), Tendsto vn atTop (𝓝 v) →
+      ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => a (vn n) t) atTop (𝓝 (a v t)))
+    (hG : IntegrableOn G (Ioo x₀ x₁))
+    (hs : ∀ v, IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v)) (Ioo x₀ x₁)) :
+    Continuous fun v => intervalDirichletSolution hx.le g₀ g₁ (hs v) := by
+  have hIcc : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → IntegrableOn h (Icc x₀ x₁) :=
+    fun hh => by rwa [IntegrableOn, ← restrict_Ioo_eq_restrict_Icc]
+  have hII : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → ∀ y : Icc x₀ x₁,
+      IntervalIntegrable h volume x₀ y := fun hh y =>
+    ((hIcc hh).mono_set (uIcc_subset_Icc (left_mem_Icc.2 hx.le) y.2)).intervalIntegrable
+  refine continuous_iff_seqContinuous.2 fun vn v hv => ?_
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_)
+    (tendsto_integral_abs_intervalDirichletSlope_sub hx hlam g₀ g₁ (fun n => ha (vn n))
+      (fun n => haM (vn n)) (ha v) (haM v) hG (hlim vn v hv))
+  refine (ContinuousMap.norm_le _ (integral_nonneg fun _ => abs_nonneg _)).2 fun y => ?_
+  rw [Function.comp_apply, ContinuousMap.sub_apply, intervalDirichletSolution_apply,
+    intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
+    ← intervalIntegral.integral_sub (hII (hs _) y) (hII (hs _) y),
+    Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
+  refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
+    (ae_of_all _ fun _ => abs_nonneg _)
+    (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallyLE)
+  exact (hIcc ((hs _).sub (hs _))).abs
+
+/-- **The fixed point.** Let `a v` be a coefficient depending on `v ∈ C([x₀, x₁])`, with uniform
+bounds `λ ≤ a v ≤ M`, such that `a vₙ → a v` almost everywhere whenever `vₙ → v`. Then for some
+`ū ∈ C([x₀, x₁])`, `ū` is the solution of the linear problem with coefficient `a ū`. -/
+private theorem exists_intervalDirichletSolution_eq_self (hx : x₀ < x₁) (hlam : 0 < lam)
+    {a : C(Icc x₀ x₁, ℝ) → ℝ → ℝ}
+    (ha : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t ∧ a v t ≤ M)
+    (hlim : ∀ (vn : ℕ → C(Icc x₀ x₁, ℝ)) (v : C(Icc x₀ x₁, ℝ)), Tendsto vn atTop (𝓝 v) →
+      ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => a (vn n) t) atTop (𝓝 (a v t)))
+    (hG : IntegrableOn G (Ioo x₀ x₁))
+    (hs : ∀ v, IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v)) (Ioo x₀ x₁)) :
+    ∃ ū, intervalDirichletSolution hx.le g₀ g₁ (hs ū) = ū := by
+  have hcpt := isCompact_closure_range_intervalDirichletSolution hx hlam ha haM hG hs
+  -- Schauder's fixed-point theorem on a closed ball of `C([x₀, x₁])` containing the range.
+  obtain ⟨R, hR⟩ := hcpt.isBounded.subset_closedBall 0
+  have hmem : ∀ v, intervalDirichletSolution hx.le g₀ g₁ (hs v) ∈ closedBall 0 R :=
+    fun v => hR (subset_closure (mem_range_self v))
   obtain ⟨ū, -, hū⟩ := schauderFixedPoint_closedConvex_continuousOn
-    (C := closedBall (0 : C(Icc x₀ x₁, ℝ)) (|g₀| + C)) isClosed_closedBall
-    (convex_closedBall _ _) (nonempty_closedBall.2 hR) hTc.continuousOn
-    (fun v _ => mem_closedBall_zero_iff.2 ((ContinuousMap.norm_le _ hR).2
-      fun y => by rw [Real.norm_eq_abs]; exact hTb v y))
-    (hcpt.of_isClosed_subset isClosed_closure (closure_mono (image_subset_range _ _)))
-  exact ⟨ū, fun y => by rw [← hT ū y, hū]⟩
+    (C := closedBall (0 : C(Icc x₀ x₁, ℝ)) R) isClosed_closedBall (convex_closedBall _ _)
+    (nonempty_closedBall.2 (dist_nonneg.trans (hmem 0)))
+    (continuous_intervalDirichletSolution hx hlam ha haM hlim hG hs).continuousOn
+    (fun v _ => hmem v) (hcpt.of_isClosed_subset isClosed_closure
+      (closure_mono (image_subset_range _ _)))
+  exact ⟨ū, hū⟩
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {f F : ℝ → ℝ}
 
@@ -203,13 +228,14 @@ theorem exists_intervalTraceL_eq_and_forall_integral_apply_value_mul_gradient_eq
         Ioo_subset_Icc_self p).integrable Fact.out).add (hF.integrable Fact.out)
   -- A fixed point `ū` of the solution map solves the linear problem with coefficient
   -- `A(x, ū(x))`, and is the continuous representative of that solution.
-  obtain ⟨ū, hū⟩ := exists_eq_add_intervalIntegral_slope hx hlam g₀ g₁ hcm hcM hlim hG
+  obtain ⟨ū, hū⟩ := exists_intervalDirichletSolution_eq_self hx hlam hcm hcM hlim hG fun v =>
+    integrableOn_intervalDirichletSlope hlam g₀ g₁ (hcm v) ((hcM v).mono fun _ h => h.1) hG
   obtain ⟨u, hrep, htr, hweak⟩ :=
     exists_w1p_intervalRepresentativeL_eq (p := p) hx hlam (hcm ū)
       ((hcM ū).mono fun _ h => h.1) hf hF g₀ g₁
   have hū' : W1p.intervalRepresentativeL hx u = ū := by
     ext y
-    exact (hrep y).trans (hū y).symm
+    rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   refine ⟨u, htr, fun φ => ?_⟩
   rw [← hweak φ]
   refine integral_congr_ae ?_

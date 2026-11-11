@@ -36,6 +36,8 @@ solve quasilinear problems by a fixed-point argument.
 
 * `TauCeti.PDE.intervalDirichletFluxConst`, `TauCeti.PDE.intervalDirichletSlope`: the flux
   constant `k` and the derivative `(k - G) / a` of the explicit solution.
+* `TauCeti.PDE.intervalDirichletSolution`: the explicit solution `g₀ + ∫_{x₀}^x (k - G) / a`, as a
+  continuous function on `[x₀, x₁]`.
 * `TauCeti.PDE.tendsto_integral_abs_intervalDirichletSlope_sub`: continuous dependence of the
   derivative on the coefficient.
 * `TauCeti.PDE.exists_w1p_intervalRepresentativeL_eq`: the explicit solution, with its continuous
@@ -139,6 +141,36 @@ theorem aestronglyMeasurable_intervalDirichletSlope {g₀ g₁ : ℝ}
     (hG : IntegrableOn G (Ioo x₀ x₁)) :
     AEStronglyMeasurable (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (volume.restrict (Ioo x₀ x₁)) :=
   ha.aemeasurable.inv.aestronglyMeasurable.mul (aestronglyMeasurable_const.sub hG.1)
+
+/-- For `λ ≤ a`, the derivative `(k - G) / a` is integrable on `(x₀, x₁)`. -/
+theorem integrableOn_intervalDirichletSlope (hlam : 0 < lam) (g₀ g₁ : ℝ)
+    (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t)
+    (hG : IntegrableOn G (Ioo x₀ x₁)) :
+    IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁) :=
+  (((integrable_const _).add hG.abs).const_mul lam⁻¹).mono'
+    (aestronglyMeasurable_intervalDirichletSlope ha hG)
+    ((ae_abs_intervalDirichletSlope_le hlam hla le_rfl).mono fun _ h => by
+      rwa [Real.norm_eq_abs])
+
+/-- The explicit solution `y ↦ g₀ + ∫_{x₀}^y (k - G) / a` of the linear problem
+`-(a u' + F)' = f` on `(x₀, x₁)` with endpoint values `g₀` and `g₁`, as a continuous function on
+`[x₀, x₁]`. Here `hs` is the integrability of its derivative `intervalDirichletSlope`, which
+holds whenever `λ ≤ a` (`integrableOn_intervalDirichletSlope`). -/
+def intervalDirichletSolution (hx : x₀ ≤ x₁) (g₀ g₁ : ℝ)
+    (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁)) :
+    C(Icc x₀ x₁, ℝ) :=
+  ⟨fun y => g₀ + ∫ t in x₀..(y : ℝ), intervalDirichletSlope x₀ x₁ g₀ g₁ G a t,
+    (continuousOn_const.add (intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo
+      hs (left_mem_Icc.2 hx))).domRestrict⟩
+
+/-- The values of `intervalDirichletSolution`. -/
+@[simp]
+theorem intervalDirichletSolution_apply (hx : x₀ ≤ x₁) (g₀ g₁ : ℝ)
+    (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁)) (y : Icc x₀ x₁) :
+    intervalDirichletSolution hx g₀ g₁ hs y =
+      g₀ + ∫ t in x₀..(y : ℝ), intervalDirichletSlope x₀ x₁ g₀ g₁ G a t :=
+  (rfl)
 
 /-- The solution of the linear problem has the prescribed increment `g₁ - g₀`. -/
 theorem integral_intervalDirichletSlope (hx : x₀ < x₁) (hlam : 0 < lam) (g₀ g₁ : ℝ)
