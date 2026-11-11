@@ -44,7 +44,12 @@ when the homology is projective: if `R` and every `Hₙ(X; R)` are projective, t
 complex is a complex of projective modules with projective homology, so its cycles are projective
 and split off (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the Kronecker map
 is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
-(`TopCat.singularKroneckerEquivOfProjectiveHomology`).
+(`TopCat.singularKroneckerEquivOfProjectiveHomology`).  Projective homology below a single degree
+`n` already makes the Kronecker map bijective in degree `n`
+(`TopCat.singularKronecker_bijective_of_projective_homology_lt`). As `H₀(X; k)` is free, this
+applies in degree `1` to every space, so a monomorphism of coefficients `M ⟶ N` induces an
+injection `H¹(X; k, M) ⟶ H¹(X; k, N)`, for instance `H¹(X; ℤ) ⟶ H¹(X; ℝ)`
+(`TopCat.singularCohomology_coefficient_injective_of_projective_homology_lt`).
 
 Over a hereditary ring, a single projective homology module already kills the `Ext¹` term next
 to it: if `Hₙ(X; R)` is projective, the Kronecker map is an isomorphism in degree `n + 1`
@@ -59,6 +64,11 @@ free in that degree and zero above it, while in the top degree it need not be to
 * `TopCat.singularKronecker_bijective_of_projective_homology` and
   `TopCat.singularKroneckerEquivOfProjectiveHomology`: over any commutative ring, the Kronecker
   map is an isomorphism when the coefficients and the homology are projective.
+* `TopCat.singularKronecker_bijective_of_projective_homology_lt`: over any commutative ring, the
+  Kronecker map is bijective in degree `n` when the homology is projective below `n`.
+* `TopCat.singularCohomology_coefficient_injective_of_projective_homology_lt`: over any commutative
+  ring, a monomorphism of coefficient modules induces an injection on `Hⁿ(X; R, -)` when the
+  homology is projective below `n`. For `n = 1` this applies to every space.
 * `TopPair.singularKronecker_bijective_of_projective_homology` and
   `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
   pair whose relative homology is projective.
@@ -71,9 +81,6 @@ free in that degree and zero above it, while in the top degree it need not be to
   `TopCat.isZero_singularCohomology_succ_of_projective_homology` and their `TopPair` versions: over
   a hereditary ring, the Kronecker map is bijective in degree `n + 1` when `Hₙ(X; R)` is
   projective, and cohomology vanishes in degree `n + 1` when moreover `Hₙ₊₁(X; R) = 0`.
-* `TopCat.singularCohomology_coefficient_injective_succ`: over a hereditary ring, a monomorphism
-  of coefficient modules induces an injection on `Hⁿ⁺¹(X; R, -)` when `Hₙ(X; R)` is projective.
-  For `n = 0` this applies to every space, so `H¹(X; ℤ) ⟶ H¹(X; ℝ)` is injective.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -102,6 +109,39 @@ open CategoryTheory Limits AlgebraicTopology Abelian
 universe w
 
 namespace TopCat
+
+section ProjectiveHomologyLT
+
+variable {k : Type w} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+
+/-- **The universal coefficient theorem below the first non-projective homology**, over any
+commutative ring `k`: for a projective coefficient module `R`, if the singular homology modules
+`Hⱼ(X; R)` are projective for `j < n`, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` is
+bijective, for every module `M`. As `H₀(X; k)` is free, this holds in degree `1` for every
+space. -/
+theorem singularKronecker_bijective_of_projective_homology_lt (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X)) :
+    Function.Bijective (X.singularKronecker (R := R) (M := M) k n) := by
+  rw [singularKronecker_def]
+  -- `Hⱼ(X; R)` is by definition the homology of the singular chain complex `C(X; R)`.
+  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt n h
+
+variable {M} in
+/-- **Coefficient injectivity below the first non-projective homology**, over any commutative ring:
+for a projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, a monomorphism
+`g : M ⟶ N` induces an injection `Hⁿ(X; R, M) ⟶ Hⁿ(X; R, N)`, since both are `Hom(Hₙ(X; R), -)` by
+the Kronecker map. As `H₀(X; k)` is free, `H¹(X; k, M) ⟶ H¹(X; k, N)` is injective for every
+space `X`, for instance `H¹(X; ℤ) ⟶ H¹(X; ℝ)`. -/
+theorem singularCohomology_coefficient_injective_of_projective_homology_lt (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    {N : ModuleCat.{w} k} (g : M ⟶ N) [Mono g] :
+    Function.Injective (HomologicalComplex.homologyMap
+      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n) :=
+  fun α β hαβ ↦ (X.singularKronecker_bijective_of_projective_homology_lt R M n h).1 <| by
+    rw [← cancel_mono g, ← singularKronecker_coefficient_naturality,
+      ← singularKronecker_coefficient_naturality, hαβ]
+
+end ProjectiveHomologyLT
 
 section ProjectiveHomology
 
@@ -287,21 +327,6 @@ theorem isZero_singularCohomology_succ_of_projective_homology (n : ℕ)
     ⟨h.eq_of_src⟩
   have := (X.singularKronecker_bijective_succ_of_projective_homology R M n).1.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
-
-variable {M} in
-/-- **Coefficient injectivity above a projective homology module**, over a hereditary commutative
-ring: for a projective coefficient module `R`, if `Hₙ(X; R)` is projective, a monomorphism
-`g : M ⟶ N` induces an injection `Hⁿ⁺¹(X; R, M) ⟶ Hⁿ⁺¹(X; R, N)`, since both are
-`Hom(Hₙ₊₁(X; R), -)` by the Kronecker map. As `H₀(X; ℤ)` is free, `H¹(X; ℤ) ⟶ H¹(X; ℝ)` is
-injective for every space `X`. -/
-theorem singularCohomology_coefficient_injective_succ (n : ℕ)
-    [Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
-    {N : ModuleCat.{w} k} (g : M ⟶ N) [Mono g] :
-    Function.Injective (HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) (n + 1)) :=
-  fun α β hαβ ↦ (X.singularKronecker_bijective_succ_of_projective_homology R M n).1 <| by
-    rw [← cancel_mono g, ← singularKronecker_coefficient_naturality,
-      ← singularKronecker_coefficient_naturality, hαβ]
 
 end Hereditary
 

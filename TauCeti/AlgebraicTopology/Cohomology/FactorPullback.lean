@@ -25,10 +25,11 @@ product by the fundamental class is the coordinate of `φ` in the summand
 `H¹(S¹) ⊗ Hⁿ⁻¹(Y) ≅ Hⁿ⁻¹(Y)` of the Künneth decomposition (`TopCat.singularCohomologyKunnethIso`),
 the quotient of `Hⁿ(S¹ × Y)` by the pulled-back classes.
 
-Over a hereditary ring such as `ℤ`, a monomorphism of coefficients `g : M ⟶ N` is injective on
+Over any commutative ring, a monomorphism of coefficients `g : M ⟶ N` is injective on
 `H⁰(Y; k, -)` and on `H¹(Y; k, -)` for every space `Y`
 (`TopCat.singularCohomology_coefficient_injective_zero`,
-`TopCat.singularCohomology_coefficient_injective_succ`), since `H₀(Y; k)` is free. The slant
+`TopCat.singularCohomology_coefficient_injective_of_projective_homology_lt`), since `H₀(Y; k)` is
+free. The slant
 products of a class of degree `n ≤ 2` by classes of positive degree lie in these groups, and
 slant products commute with `g` (`TopCat.singularSlant_homologyMap_linearYonedaObjMap`). Hence in
 degrees `n ≤ 2` a class on `X × Y` whose image under `g` is pulled back from `Y` is itself pulled
@@ -69,55 +70,6 @@ namespace TopCat
 
 variable {k : Type w} [CommRing k] (X Y : TopCat.{w}) (M : ModuleCat.{w} k)
 
-/-- On a path-connected space, the zeroth homology `H₀(X; k)` is spanned by the class of the
-singular `0`-cycle of any point `x₀`, with coefficient `1`: every class `x` is `ε(x) • [x₀]` for
-the augmentation `ε`. -/
-private lemma exists_cycles_zero_forall_eq_smul [PathConnectedSpace X] (x₀ : X) :
-    ∃ z : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).cycles 0,
-      ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).iCycles 0 z =
-        (toSSet.obj X).ιChainComplex (R := 𝟙_ (ModuleCat.{w} k)) (toSSetObj₀Equiv.symm x₀) 1 ∧
-      ∃ x₁ : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ (ModuleCat.{w} k))).obj X,
-        x₁ = ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 0 z ∧
-        ∀ x, x = (X.singularHomology₀ε (𝟙_ (ModuleCat.{w} k)) x : k) • x₁ := by
-  let C := (toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))
-  let z := C.liftCycles ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0
-    (by simp) (by simp) (1 : k)
-  let x₁ : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ (ModuleCat.{w} k))).obj X :=
-    C.homologyπ 0 z
-  refine ⟨z, (ConcreteCategory.comp_apply _ _ _).symm.trans
-    (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) _), x₁, rfl, fun x ↦ ?_⟩
-  -- the augmentation is injective on a path-connected space and sends `[x₀]` to `1`
-  apply (ConcreteCategory.bijective_of_isIso (X.singularHomology₀ε (𝟙_ (ModuleCat.{w} k)))).1
-  rw [(X.singularHomology₀ε (𝟙_ (ModuleCat.{w} k))).hom.map_smul]
-  refine (mul_one _).symm.trans (congrArg (_ * ·) ?_)
-  exact (ConcreteCategory.congr_hom (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε
-    (toSSet.obj X) (𝟙_ (ModuleCat.{w} k)) (toSSetObj₀Equiv.symm x₀)) (1 : k)).symm
-
-/-- Changing the coefficients of `β ∈ Hⁿ(Y; k, M)` along `k ⊗ k ⟶ k` and then back along
-`k ⟶ k ⊗ k`, the two halves of the unitor `k ⊗ k ≅ k`, returns `β`. -/
-private lemma homologyMap_leftUnitor_inv_homologyMap_leftUnitor_hom {n : ℕ}
-    (β : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
-    homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-      (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app
-        (toSSet.obj Y)).op) n
-      (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-        (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
-          (toSSet.obj Y)).op) n β) = β := by
-  have hc : ((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app
-      (toSSet.obj Y) ≫ ((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
-        (toSSet.obj Y) = 𝟙 _ := by
-    rw [← NatTrans.comp_app, ← Functor.map_comp, Iso.inv_hom_id]
-    simp
-  have hcomp := ConcreteCategory.congr_hom (homologyMap_comp
-    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-      (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj Y)).op)
-    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-      (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app
-        (toSSet.obj Y)).op) n) β
-  rw [← CategoryTheory.Functor.map_comp, ← op_comp, hc, op_id, CategoryTheory.Functor.map_id,
-    homologyMap_id] at hcomp
-  exact hcomp.symm
-
 /-- **Classes pulled back from the second factor**: let `X` be path-connected with projective
 singular homology `Hₚ(X; k)` in every degree. A class `φ ∈ Hⁿ(X × Y; k, M)` is the pullback
 `pr₂^* b` of a class `b` of `Y` if and only if its slant products `φ / x` by all classes
@@ -133,39 +85,51 @@ theorem exists_singularCohomologyMap_snd_eq_iff [PathConnectedSpace X]
     exact singularSlant_singularCohomologyMap_snd_eq_zero M X Y _ p q n h hp x b
   intro hφ
   obtain ⟨x₀⟩ := (inferInstance : Nonempty X)
-  obtain ⟨z, hz, x₁, hx₁, hx⟩ := exists_cycles_zero_forall_eq_smul (k := k) X x₀
-  -- `b` is the slant product `φ / [x₀]`, with its coefficients changed along `k ⊗ k ⟶ k`
-  let β := singularSlant k M X Y (𝟙 _) 0 n n (zero_add n)
-    (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 0 z) φ
-  let b := homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-    (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
-      (toSSet.obj Y)).op) n β
-  have hb : singularSlant k M X Y (𝟙 _) 0 n n (zero_add n)
-      (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 0 z)
-      (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) n b) = β :=
-    (singularSlant_homologyπ_singularCohomologyMap_snd M X Y (𝟙 _) n z
-      (toSSetObj₀Equiv.symm x₀) (1 : k) hz (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-      (fun s ↦ by simp [ModuleCat.MonoidalCategory.leftUnitor_inv_apply]) b).trans
-      (homologyMap_leftUnitor_inv_homologyMap_leftUnitor_hom Y M β)
+  -- the class `[x₀] ∈ H₀(X; k)` of a point spans `H₀(X; k)`
+  let x₁ := TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k)
+  have hx (x : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+      x = (X.singularHomology₀ε (𝟙_ (ModuleCat.{w} k)) x : k) • x₁ :=
+    TauCeti.singularHomology₀_eq_smul_singularHomology₀Section x₀ x
+  let z := ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).liftCycles
+    ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) (1 : k)
+  have hx₁ : x₁ = ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 0 z := by
+    change TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k) = _
+    rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def]
+    -- the class of the vertex is the composite `liftCycles ≫ homologyπ` applied to `1`
+    rfl
+  -- `b` is the slant product `φ / [x₀]`, with its coefficients changed along the unitor
+  -- `e : C(Y; k ⊗ k) ≅ C(Y; k)`
+  let e := ((SSet.chainComplexFunctor _).mapIso (λ_ (𝟙_ (ModuleCat.{w} k)))).app (toSSet.obj Y)
+  let β := singularSlant k M X Y (𝟙 _) 0 n n (zero_add n) x₁ φ
+  let b := homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map e.hom.op) n β
+  have hb : singularSlant k M X Y (𝟙 _) 0 n n (zero_add n) x₁
+      (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) n b) = β := by
+    rw [hx₁, singularSlant_homologyπ_singularCohomologyMap_snd M X Y (𝟙 _) n z
+      (toSSetObj₀Equiv.symm x₀) (1 : k) (ConcreteCategory.congr_hom
+        (HomologicalComplex.liftCycles_i ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k)))
+          ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) (1 : k))
+      (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+      (fun s ↦ by simp [ModuleCat.MonoidalCategory.leftUnitor_inv_apply]) b]
+    exact Iso.hom_inv_id_apply ((homologyFunctor _ _ n).mapIso
+      ((TauCeti.ChainComplex.linearYonedaFunctor k M).mapIso e.op)) β
   -- `φ - pr₂^* b` has no slant products, so it vanishes
   refine ⟨b, (sub_eq_zero.1 ?_).symm⟩
   refine eq_zero_of_forall_singularSlant_eq_zero M X Y _ fun p q h x ↦ ?_
   rcases p with _ | p
   · obtain rfl : q = n := by omega
-    rw [hx x, map_smul, LinearMap.smul_apply, map_sub, hx₁, hb, sub_self, smul_zero]
+    rw [hx x, map_smul, LinearMap.smul_apply, map_sub, hb, sub_self, smul_zero]
   · rw [map_sub, hφ _ _ h p.succ_ne_zero, zero_sub, neg_eq_zero]
     exact singularSlant_singularCohomologyMap_snd_eq_zero M X Y _ _ _ n h p.succ_ne_zero x b
 
 /-- **Pulled-back classes in degree at most two descend along injective coefficient maps**: over
-a hereditary commutative ring `k` such as `ℤ`, let `X` be path-connected with projective singular
+a commutative ring `k`, for instance `ℤ`, let `X` be path-connected with projective singular
 homology `Hₚ(X; k)`, for instance `X = S¹`, and let `g : M ⟶ N` be a monomorphism of coefficient
 modules. If `n ≤ 2` and the image of `φ ∈ Hⁿ(X × Y; k, M)` under `g` is pulled back from `Y`, then
 so is `φ`. For `X = S¹`, `n = 2` and `g : ℤ ⟶ ℝ`: an integral class on `S¹ × Y` whose real image is
 pulled back from `Y` is the pullback of an integral class of `Y`. The slant products of `φ` by
 classes of positive degree lie in `H⁰(Y; k, M)` and `H¹(Y; k, M)`, on which `g` is injective since
 `H₀(Y; k)` is free; in degree `3` torsion classes of `H²(Y; k, M)` give counterexamples. -/
-theorem exists_singularCohomologyMap_snd_eq_of_coefficient
-    [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] [PathConnectedSpace X]
+theorem exists_singularCohomologyMap_snd_eq_of_coefficient [PathConnectedSpace X]
     [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj X)] {N : ModuleCat.{w} k} (g : M ⟶ N) [Mono g] {n : ℕ}
     (hn : n ≤ 2)
@@ -174,9 +138,10 @@ theorem exists_singularCohomologyMap_snd_eq_of_coefficient
       homologyMap (((toSSet.obj (X ⊗ Y)).chainComplex
         (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k))).linearYonedaObjMap k g) n φ) :
     ∃ b, TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) n b = φ := by
-  have : Projective (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj
-      (𝟙_ (ModuleCat.{w} k))).obj Y) :=
-    Projective.of_iso (Y.singularHomology₀Iso _).symm inferInstance
+  have hY : ∀ j < 1, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj
+      (𝟙_ (ModuleCat.{w} k))).obj Y) := fun j hj ↦ by
+    obtain rfl : j = 0 := by omega
+    exact Projective.of_iso (Y.singularHomology₀Iso _).symm inferInstance
   rw [exists_singularCohomologyMap_snd_eq_iff] at hφ ⊢
   intro p q h hp x
   have hgx := hφ p q h hp x
@@ -184,7 +149,7 @@ theorem exists_singularCohomologyMap_snd_eq_of_coefficient
   -- the slant product lies in degree `q = n - p ≤ 1`
   rcases q with _ | _ | q
   · exact singularCohomology_coefficient_injective_zero Y k g (hgx.trans (map_zero _).symm)
-  · exact singularCohomology_coefficient_injective_succ Y (𝟙_ _) 0 g
+  · exact singularCohomology_coefficient_injective_of_projective_homology_lt Y (𝟙_ _) 1 hY g
       (hgx.trans (map_zero _).symm)
   · omega
 
