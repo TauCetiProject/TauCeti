@@ -167,6 +167,12 @@ monoid objects of almost modules to commutative `V`-algebras. The product of `A_
 noncomputable def elements : Algebra S ⥤ CommAlgCat.{u} V :=
   (Module.elements S).mapCommMon ⋙ ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor
 
+/-- The underlying type of the algebra `A_*` of almost elements is `Hom(V^a, A)`. -/
+@[simp]
+theorem elements_obj_carrier (A : Algebra S) :
+    ((elements S).obj A : Type u) = ((Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) :=
+  (rfl)
+
 /-- A morphism `f : A ⟶ B` of almost algebras acts on almost elements by composition. -/
 @[simp]
 theorem elements_map_apply {A B : Algebra S} (f : A ⟶ B) (x : (elements S).obj A) :
@@ -279,16 +285,20 @@ theorem homEquiv_apply {A B : Algebra S} (f : A ⟶ B) :
     homEquiv S A B f = ((elements S).map f).hom :=
   (rfl)
 
+/-- The morphism of almost algebras corresponding to an algebra map `g : A_* →ₐ[V] B_*` acts on
+almost elements by `g`. -/
+@[simp]
+theorem elements_map_homEquiv_symm_apply {A B : Algebra S}
+    (g : (elements S).obj A →ₐ[V] (elements S).obj B) :
+    (elements S).map ((homEquiv S A B).symm g) = CommAlgCat.ofHom g := by
+  ext1
+  rw [← homEquiv_apply, Equiv.apply_symm_apply, CommAlgCat.hom_ofHom]
+
 /-- For every commutative `V`-algebra `R`, the unit `R → (R^a)_*` is an almost isomorphism. -/
 theorem isAlmostIso_adj_unit_app (R : CommAlgCat.{u} V) :
     S.IsAlmostIso ((adj S).unit.app R).hom.toLinearMap := by
   rw [← isIso_toAlmost_map_iff]
-  -- By the triangle identity, `((adj S).unit.app R)^a` is a section of the isomorphism
-  -- `(adj S).counit.app R^a`.
-  have : IsIso ((toAlmost S).map ((adj S).unit.app R) ≫ (adj S).counit.app _) := by
-    rw [(adj S).left_triangle_components R]
-    exact IsIso.id _
-  exact IsIso.of_isIso_comp_right _ ((adj S).counit.app _)
+  infer_instance
 
 /-- For the classical setup `(V, V)`, almostification of algebras is an equivalence of
 categories. -/
