@@ -316,6 +316,21 @@ private theorem mapOfEq_projectiveLineLoopMap_expLoop :
       FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (projectiveLineDoubleLoop v w hvw)) :=
   Circle.mapOfEq_toCircle_expLoop _
 
+/-- The loop-space shift of `j_*` sends the generator of `π₁(S¹)` to the class of the
+projective-line double loop in `π₂(CPⁿ)`. -/
+private theorem fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap_ofAdd_one :
+    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+        (FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw) (projectiveLineLoopMap_one hvw)
+          ((Circle.fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1))) =
+      (⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ :
+        π_ 2 (ComplexProjectiveSpace n) (mk n v)) := by
+  -- The final `rfl` of `rw` identifies the two sides, the same class typed once as an element of
+  -- `π_ 2` and once as an element of the underlying quotient.
+  rw [(Circle.fundamentalGroupMulEquiv 1).symm_apply_eq.2
+      Circle.fundamentalGroupMulEquiv_expLoop.symm,
+    mapOfEq_projectiveLineLoopMap_expLoop,
+    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk]
+
 /-- **The adjoint map `j : S¹ → Ω CPⁿ` has degree one**: it induces a bijection
 `π₁(S¹, 1) → π₁(Ω CPⁿ, refl)`. Composed with the loop-space shift `π₁(Ω CPⁿ) ≅ π₂(CPⁿ)` and the
 Hopf boundary `π₂(CPⁿ) ≅ π₁(S¹)`, it sends the counterclockwise loop to the counterclockwise
@@ -338,32 +353,30 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
     HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans
       (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere Circle.homeomorphSphere_one)
   let F := Circle.fundamentalGroupMulEquiv 1
-  have hF : F.symm (Multiplicative.ofAdd 1) =
-      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop) :=
-    F.symm_apply_eq.2 Circle.fundamentalGroupMulEquiv_expLoop.symm
   -- Both `Φ ∘ j_*` and `Ψ` send the counterclockwise loop to the counterclockwise loop, and this
   -- loop generates `π₁(S¹)`.
   have key :
       (Φ.toMonoidHom.comp (FundamentalGroup.mapOfEq _ (projectiveLineLoopMap_one hvw))).comp
         F.symm.toMonoidHom = Ψ.toMonoidHom.comp F.symm.toMonoidHom := by
     refine MonoidHom.ext_mint ?_
-    have hΦ : Φ (FundamentalGroup.fromPath
-        (Path.Homotopic.Quotient.mk (projectiveLineDoubleLoop v w hvw))) =
+    have hΦ : Φ (FundamentalGroup.mapOfEq _ (projectiveLineLoopMap_one hvw)
+        (F.symm (Multiplicative.ofAdd 1))) =
           ⟦GenLoop.map ⟨Circle.homeomorphSphere, Circle.homeomorphSphere.continuous⟩
             Circle.homeomorphSphere_one ((genLoopEquivOfUnique (Fin 1)).symm Circle.expLoop)⟧ := by
       rw [MulEquiv.trans_apply, MulEquiv.trans_apply, HomotopyGroup.congrMulEquiv_apply,
-        hopfBoundaryMulEquiv_apply, HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk]
+        hopfBoundaryMulEquiv_apply,
+        fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap_ofAdd_one]
       exact hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop hvw
-    have hΨ : Ψ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)) =
+    have hΨ : Ψ (F.symm (Multiplicative.ofAdd 1)) =
         ⟦GenLoop.map ⟨Circle.homeomorphSphere, Circle.homeomorphSphere.continuous⟩
-          Circle.homeomorphSphere_one ((genLoopEquivOfUnique (Fin 1)).symm Circle.expLoop)⟧ :=
+          Circle.homeomorphSphere_one ((genLoopEquivOfUnique (Fin 1)).symm Circle.expLoop)⟧ := by
+      rw [F.symm_apply_eq.2 Circle.fundamentalGroupMulEquiv_expLoop.symm]
       -- Mathlib's `pi1MulEquivFundamentalGroup.symm` sends the class of a loop to the class of the
       -- corresponding one-dimensional generalized loop by definition, and
       -- `homeomorphMulEquivOfEq` is `HomotopyGroup.map`.
-      HomotopyGroup.map_mk _ _ _
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hF,
-      mapOfEq_projectiveLineLoopMap_expLoop, hΦ]
-    exact hΨ.symm
+      exact HomotopyGroup.map_mk _ _ _
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+    exact hΦ.trans hΨ.symm
   have hj : ⇑(FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
       (projectiveLineLoopMap_one hvw)) = Φ.symm ∘ Ψ := by
     funext x
@@ -386,15 +399,8 @@ theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop :
       ((bijective_mapOfEq_projectiveLineLoopMap hvw).2.comp
         (Circle.fundamentalGroupMulEquiv 1).symm.surjective)
   have h1 : f (Multiplicative.ofAdd 1) =
-      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ := by
-    simp only [f, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      (Circle.fundamentalGroupMulEquiv 1).symm_apply_eq.2
-        Circle.fundamentalGroupMulEquiv_expLoop.symm,
-      mapOfEq_projectiveLineLoopMap_expLoop,
-      HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk]
-    -- The two sides are the same class, typed once as an element of `π_ 2` and once as an element
-    -- of the underlying quotient.
-    rfl
+      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ :=
+    fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap_ofAdd_one hvw
   have htop : Subgroup.zpowers (Multiplicative.ofAdd (1 : ℤ)) = ⊤ :=
     Subgroup.eq_top_iff' _ |>.2 fun x ↦ Subgroup.mem_zpowers_iff.2
       ⟨x.toAdd, by simp [← ofAdd_zsmul]⟩
