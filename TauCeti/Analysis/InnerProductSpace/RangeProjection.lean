@@ -37,6 +37,8 @@ hence the normal spaces, of an immersed submanifold vary smoothly.
   complement of the range of an injective operator.
 * `Submodule.starProjection_inverse_apply`: if the compression to `W` of the orthogonal projection
   onto `K` is invertible, it inverts the projection from `W` onto `K`.
+* `LinearIsometry.starProjection_range_comp_comm`: the projection onto the range of an operator
+  commutes with a linear isometry.
 * `ContDiffAt.starProjection_range`, `ContDiffAt.starProjection_orthogonal_range`: the orthogonal
   projections onto the range of a `C^n` family of injective operators, and onto its orthogonal
   complement, are `C^n`.
@@ -171,6 +173,28 @@ theorem Submodule.starProjection_inverse_apply {K W : Submodule 𝕜 V}
 
 end Submodule
 
+section LinearIsometry
+
+variable {𝕜 E V W : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W]
+
+/-- The orthogonal projection onto the range of an operator commutes with a linear isometry:
+projecting onto the range of `f ∘L A` after applying `f` is applying `f` after projecting onto the
+range of `A`. -/
+theorem LinearIsometry.starProjection_range_comp_comm (f : V →ₗᵢ[𝕜] W) (A : E →L[𝕜] V)
+    [A.range.HasOrthogonalProjection]
+    [(f.toContinuousLinearMap ∘L A).range.HasOrthogonalProjection] :
+    (f.toContinuousLinearMap ∘L A).range.starProjection ∘L f.toContinuousLinearMap =
+      f.toContinuousLinearMap ∘L A.range.starProjection := by
+  ext v
+  have hrange : (f.toContinuousLinearMap ∘L A).range = A.range.map f.toLinearMap :=
+    LinearMap.range_comp _ _
+  have : (A.range.map f.toLinearMap).HasOrthogonalProjection := hrange ▸ inferInstance
+  refine Eq.symm ((f.map_starProjection A.range v).trans ?_)
+  simp only [hrange, ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap]
+
+end LinearIsometry
+
 section ContinuousAt
 
 variable {𝕜 X E V : Type*} [RCLike 𝕜] [TopologicalSpace X]
@@ -222,20 +246,17 @@ theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
   have hB : ContinuousAt (fun y ↦ ι ∘L A y) x := continuousAt_const.clm_comp hA
   have hproj := continuousAt_starProjection_range_of_completeSpace (A := fun y ↦ ι ∘L A y) hB
     (hι.injective.comp hinj)
-  -- Compare the projections after embedding the target into the completion.
+  -- Compare the projections after embedding the target into the completion. `postcomp` has no
+  -- `_apply` lemma: its underlying function is `fun T ↦ ι ∘L T` by definition, which is the form
+  -- of `hΦ`.
   have hΦ : Isometry (fun T : V →L[𝕜] V ↦ ι ∘L T) :=
     (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).postcomp.isometry
   refine (hΦ.isEmbedding.isInducing.continuousAt_iff).mpr ?_
   have hcomp : ContinuousAt (fun y ↦ (ι ∘L A y).range.starProjection ∘L ι) x :=
     (hproj.clm_comp continuousAt_const)
-  refine hcomp.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ ?_)
-  ext v
-  have hrange : (ι ∘L A y).range =
-      (A y).range.map (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).toLinearMap :=
-    LinearMap.range_comp _ _
-  refine ((UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).map_starProjection
-    (A y).range v).trans ?_
-  simp only [hrange, ContinuousLinearMap.comp_apply, ι, LinearIsometry.coe_toContinuousLinearMap]
+  exact hcomp.congr_of_eventuallyEq (Eventually.of_forall fun y ↦
+    (LinearIsometry.starProjection_range_comp_comm
+      (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)) (A y)).symm)
 
 end ContinuousAt
 
