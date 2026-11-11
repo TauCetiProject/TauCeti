@@ -39,9 +39,7 @@ vacuum. The generic Kostant root-subgroup criterion then makes the coordinate ma
 * J. E. Humphreys, *Linear Algebraic Groups*, Section 26.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 7.1.
 
-This supplies the closed-root-subgroup component of the type-`D` pinning required by Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its downstream consumer is milestone L0 of the
-CFSGStatement roadmap.
+This supplies the closed-root-subgroup component of a type-`D` pinning.
 -/
 
 public section
