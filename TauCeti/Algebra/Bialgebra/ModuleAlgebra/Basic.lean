@@ -111,6 +111,13 @@ theorem restrict_action (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H) (h :
     (μ.restrict f).action h a = μ.action (f h) a :=
   (rfl)
 
+/-- Restriction preserves the trivial module algebra action. -/
+@[simp]
+theorem restrict_trivial (f : K →ₐc[R] H) :
+    (trivial (R := R) (H := H) (A := A)).restrict f = trivial := by
+  ext
+  simp [CoalgHomClass.counit_comp_apply]
+
 @[simp]
 theorem restrict_id (μ : LeftModuleAlgebra R H A) : μ.restrict (BialgHom.id R H) = μ := by
   ext
