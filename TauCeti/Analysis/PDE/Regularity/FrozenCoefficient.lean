@@ -204,15 +204,6 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
     exact (norm_sub_rev (matrixBilinearForm A) (matrixBilinearForm (a x))).trans_le (haA x hxB)
   linarith
 
-/-- Squaring the energy estimate `λ E ≤ X + Y` of a frozen replacement, with `X² = I` and
-`Y² ≤ J`. -/
-private theorem sq_le_two_div_sq_mul_add {lam E X Y I J : ℝ} (hlam : 0 < lam) (hE : 0 ≤ E)
-    (hest : lam * E ≤ X + Y) (hXI : X ^ 2 = I) (hYJ : Y ^ 2 ≤ J) :
-    E ^ 2 ≤ 2 / lam ^ 2 * (J + I) := by
-  have h1 : (lam * E) ^ 2 ≤ (X + Y) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
-  rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity), ← hXI]
-  nlinarith [sq_nonneg (X - Y)]
-
 /-- **Comparison with the frozen problem, with a variable coefficient deviation.** Let
 `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly on `Ω`, tested against test functions, let
 `B ⊆ Ω` be open, and let `A` be a constant matrix, uniformly elliptic with lower constant `λ`, such
@@ -280,8 +271,13 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     exact integral_mono_ae ((Lp.memLp hD.toLp).integrable_norm_pow two_ne_zero)
       ((hgradB.integrable_norm_pow two_ne_zero).bdd_mul (hθm.pow 2) hθb) hDx
-  rw [W1p.setIntegral_norm_gradient_sub_sq_eq hB u w]
-  exact sq_le_two_div_sq_mul_add hlam (norm_nonneg _) hest hG2 hD2
+  -- Square the energy estimate `λ ‖∇(u - w)‖ ≤ ‖G - c‖ + ‖(A - a) ∇u‖`.
+  rw [W1p.setIntegral_norm_gradient_sub_sq_eq hB u w, div_mul_eq_mul_div,
+    le_div_iff₀ (by positivity)]
+  calc _ = (lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖) ^ 2 := by ring
+    _ ≤ (‖hGc.toLp‖ + ‖hD.toLp‖) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
+    _ ≤ 2 * (‖hGc.toLp‖ ^ 2 + ‖hD.toLp‖ ^ 2) := add_sq_le
+    _ ≤ _ := by linarith
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly
 on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with `B ⊆ B(x₀, r)`, and let

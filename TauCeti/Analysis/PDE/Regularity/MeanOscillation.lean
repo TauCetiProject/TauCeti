@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Mean oscillation of the gradient for divergence-form equations
@@ -55,7 +56,8 @@ frozen equation with the field `G - c + (A - a) ∇u`, that distance is at most
 `(2 / λ²) (∫_{B_r} θ² ‖∇u‖² + ∫_{B_r} ‖G - c‖²)`
 (`TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`). For the averaged form,
 Hölder's inequality with exponents `q'` and `q` bounds `∫ θ² ‖∇u‖²` by
-`(∫ θ^(2q'))^(1/q') (∫ ‖∇u‖^(2q))^(1/q)`, and `θ^(2q') ≤ K^(2q' - 1) θ` because `0 ≤ θ ≤ K`.
+`(∫ θ^(2q'))^(1/q') (∫ ‖∇u‖^(2q))^(1/q)`, and `θ^(2q') ≤ K^(2q' - 1) θ` because `0 ≤ θ ≤ K`
+(`TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`).
 
 ## References
 
@@ -202,47 +204,12 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
-  have hθi : Integrable θ μr := Integrable.of_bound hθm K (hθ.mono fun x hx => by
-    rw [Real.norm_of_nonneg hx.1]
-    exact hx.2)
   -- Hölder's inequality with exponents `q'` and `q` bounds the coefficient term `∫ θ² ‖∇u‖²` of
   -- the frozen comparison.
-  have hg2 : MemLp (fun x => ‖g x‖ ^ 2) (ENNReal.ofReal q) μr := by
-    have h := hgq.norm_rpow_div (ENNReal.ofReal 2)
-    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
-      show 2 * q / 2 = q by ring] at h
-    simpa only [Real.rpow_two] using h
-  have hθ2 : MemLp (fun x => θ x ^ 2) (ENNReal.ofReal q') μr :=
-    MemLp.of_bound (hθm.pow 2) (K ^ 2) (hθ.mono fun x hx => by
-      rw [Real.norm_of_nonneg (sq_nonneg _)]
-      exact pow_le_pow_left₀ hx.1 hx.2 2)
-  have hHolder := integral_mul_le_Lp_mul_Lq_of_nonneg hq.symm
-    (ae_of_all _ fun x => sq_nonneg (θ x)) (ae_of_all _ fun x => sq_nonneg ‖g x‖) hθ2 hg2
-  -- Since `0 ≤ θ ≤ K`, `(θ²)^q' = θ^(2q' - 1) θ ≤ K^(2q' - 1) θ`.
-  have hθq : ∫ x in ball x₀ r, (θ x ^ 2) ^ q' ≤ K ^ (2 * q' - 1) * ∫ x in ball x₀ r, θ x := by
-    rw [← integral_const_mul]
-    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) (hθi.const_mul _)
-      (hθ.mono fun x hx => ?_)
-    have h1 : 0 < 2 * q' - 1 := by linarith [hq.symm.lt]
-    calc (θ x ^ 2) ^ q' = θ x ^ (2 * q' - 1) * θ x := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hx.1, ← Real.rpow_add_one' hx.1 (by linarith)]
-          norm_num
-      _ ≤ K ^ (2 * q' - 1) * θ x :=
-          mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 h1.le) hx.1
-  have hgq' : ∫ x in ball x₀ r, (‖g x‖ ^ 2) ^ q = ∫ x in ball x₀ r, ‖g x‖ ^ (2 * q) := by
-    refine integral_congr_ae (ae_of_all _ fun x => ?_)
-    simp only
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-    norm_num
+  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hgq
   set Iθ := ∫ x in ball x₀ r, θ x
   set Ig := ∫ x in ball x₀ r, ‖g x‖ ^ (2 * q)
   have hIg : 0 ≤ Ig := integral_nonneg fun x => by positivity
-  have hΘ : ∫ x in ball x₀ r, θ x ^ 2 * ‖g x‖ ^ 2 ≤
-      (K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹ := by
-    refine hHolder.trans ?_
-    rw [hgq', one_div, one_div]
-    exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
-      hθq hq.symm.inv_nonneg) (Real.rpow_nonneg hIg _)
   have key :=
     setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_norm_matrixBilinearForm_sub_le
       hA ha haK hu hball hGc hρ hρr
