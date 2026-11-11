@@ -23,6 +23,8 @@ of measures.
 
 ## Main results
 
+* `MeasureTheory.Measure.measurable_sum` — countable superposition is measurable for the
+  evaluation sigma-algebra on measures.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on a fixed increasing exhaustion by π-system sets, without
   finite total mass.
@@ -55,6 +57,17 @@ noncomputable section
 open MeasureTheory
 
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Countable superposition is measurable for the evaluation sigma-algebra on measures. -/
+@[fun_prop] theorem measurable_sum {ι X : Type*} [Countable ι] [MeasurableSpace X] :
+    Measurable (Measure.sum : (ι → Measure X) → Measure X) := by
+  refine measurable_of_measurable_coe _ fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (measurable_coe hs).comp (measurable_pi_apply i)
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
