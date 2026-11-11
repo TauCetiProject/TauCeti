@@ -92,6 +92,13 @@ def crFormalAdjoint (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V �
   -fderiv ℝ φ z 1 - ContinuousLinearMap.adjoint (J z) (fderiv ℝ φ z I) -
     ContinuousLinearMap.adjoint (DJ z I) (φ z) + ContinuousLinearMap.adjoint (S z) (φ z)
 
+/-- The pointwise defining equation of `TauCeti.crFormalAdjoint`. -/
+theorem crFormalAdjoint_def (φ : ℂ → V) (z : ℂ) :
+    crFormalAdjoint J DJ S φ z =
+      -fderiv ℝ φ z 1 - ContinuousLinearMap.adjoint (J z) (fderiv ℝ φ z I) -
+        ContinuousLinearMap.adjoint (DJ z I) (φ z) +
+          ContinuousLinearMap.adjoint (S z) (φ z) := (rfl)
+
 /-- Pairing the formal adjoint with a vector moves every adjoint to the other side. -/
 theorem inner_crFormalAdjoint (φ : ℂ → V) (z : ℂ) (w : V) :
     ⟪crFormalAdjoint J DJ S φ z, w⟫_ℝ =
