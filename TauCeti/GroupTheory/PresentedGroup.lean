@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.PresentedGroup
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
@@ -23,6 +24,7 @@ presented groups, preserving the image of every word.
 ## Main results
 
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
+* A group presented on finitely many generators is finitely generated.
 -/
 
 public section
@@ -72,6 +74,11 @@ theorem equivPresentedGroup_mk {α β : Type*} (S : Set (FreeGroup α)) (e : α 
     (w : FreeGroup α) :
     equivPresentedGroup S e (mk S w) = mk _ (FreeGroup.freeGroupCongr e w) :=
   (rfl)
+
+/-- A group presented on finitely many generators is finitely generated, whatever the
+relators. -/
+instance {α : Type*} [Finite α] (rels : Set (FreeGroup α)) : Group.FG (PresentedGroup rels) :=
+  Group.fg_of_surjective (mk_surjective rels)
 
 /-- The image of a word in a presented group is the product of the images of its signed
 letters. -/
