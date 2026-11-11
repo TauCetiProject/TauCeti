@@ -38,9 +38,9 @@ support of `φ`, then `⟨Δ_t φ, φ⟩ ≥ (t² c - |t| C) ‖φ‖²`
 **The harmonic-oscillator model.** For the diagonal quadratic function `f = ∑ᵢ aᵢ xᵢ² / 2`
 (`TauCeti.diagonalQuadratic`) the coefficient of `dx^s` is acted on by `∑ᵢ (-∂ᵢ² + t² aᵢ² xᵢ²)`
 shifted by `t ∑ᵢ ±aᵢ` (`TauCeti.euclideanWittenLaplacian_diagonalQuadratic_apply`). The
-uncertainty inequality `∫ (∂ᵢ g)² + ω² xᵢ² g² ≥ |ω| ∫ g²`
-(`TauCeti.abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add`) bounds each
-oscillator below by its ground state energy, so for `t ≥ 0`
+uncertainty inequality `∫ (∂ᵢ g)² + ω² xᵢ² g² ≥ |ω| ∫ g²`, in the form
+`TauCeti.abs_mul_integral_sq_le_integral_neg_fderiv_fderiv_apply_mul_add`, bounds each
+oscillator below by its ground state energy `|t aᵢ| ≥ t |aᵢ|`, so for every real `t`
 
 `⟨Δ_t φ, φ⟩ ≥ ∑ s, μ(0, s) ∫ φ_s²`
 
@@ -91,73 +91,43 @@ variable {ι : Type*} [Fintype ι] {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeas
 
 section Integrability
 
-/-- The bilinear form `(y, z) ↦ y s * z s` on coordinate vectors, which pairs the coefficients of
-`dx^s`. -/
-private def coeffPairing (s : Finset ι) : (Finset ι → ℝ) →L[ℝ] (Finset ι → ℝ) →L[ℝ] ℝ :=
-  (ContinuousLinearMap.mul ℝ ℝ).bilinearComp (ContinuousLinearMap.proj s)
-    (ContinuousLinearMap.proj s)
-
-private theorem coeffPairing_apply (s : Finset ι) (y z : Finset ι → ℝ) :
-    coeffPairing s y z = y s * z s :=
-  (rfl)
-
-omit [Fintype ι] in
-/-- A continuous function vanishing off the support of a compactly supported form is integrable. -/
-private theorem integrable_of_eq_zero_of_notMem_tsupport [Finite ι] (hφc : HasCompactSupport φ)
-    {F : (ι → ℝ) → ℝ} (hF : Continuous F) (hF0 : ∀ x ∉ tsupport φ, F x = 0) :
-    Integrable F μ :=
-  hF.integrable_of_hasCompactSupport (HasCompactSupport.intro hφc hF0)
-
-private theorem continuous_fderiv_apply_apply (hφ : ContDiff ℝ 2 φ) (v : ι → ℝ) (s : Finset ι) :
-    Continuous fun x ↦ fderiv ℝ φ x v s :=
-  (continuous_apply s).comp ((hφ.continuous_fderiv (by norm_num)).clm_apply continuous_const)
-
-private theorem continuous_fderiv_fderiv_apply_apply (hφ : ContDiff ℝ 2 φ) (v w : ι → ℝ)
-    (s : Finset ι) : Continuous fun x ↦ fderiv ℝ (fderiv ℝ φ) x v w s :=
-  (continuous_apply s).comp ((((hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
-    one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)
+/-! The integrands below are continuous and vanish off the support of the compactly supported
+form `φ`, so Mathlib's `Continuous.integrable_of_hasCompactSupport` applies to each of them. -/
 
 private theorem integrable_sum_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     Integrable (fun x ↦ ∑ s, φ x s ^ 2) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc
-    (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2)
-    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2)
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
 private theorem integrable_neg_fderiv_fderiv_apply_apply_mul (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ) (v : ι → ℝ) (s : Finset ι) :
     Integrable (fun x ↦ -fderiv ℝ (fderiv ℝ φ) x v v s * φ x s) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc
-    ((continuous_fderiv_fderiv_apply_apply hφ _ _ s).neg.mul
-      ((continuous_apply s).comp hφ.continuous))
-    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  ((continuous_apply s).comp ((((hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
+    one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)).neg.mul
+      ((continuous_apply s).comp hφ.continuous)
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
 private theorem integrable_fderiv_apply_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     (v : ι → ℝ) (s : Finset ι) : Integrable (fun x ↦ fderiv ℝ φ x v s ^ 2) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc ((continuous_fderiv_apply_apply hφ _ s).pow 2)
-    fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx]
+  ((continuous_apply s).comp ((hφ.continuous_fderiv (by norm_num)).clm_apply
+    continuous_const)).pow 2
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx]
 
 private theorem integrable_mul_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     {g : (ι → ℝ) → ℝ} (hg : Continuous g) (s : Finset ι) :
     Integrable (fun x ↦ g x * φ x s ^ 2) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc
-    (hg.mul (((continuous_apply s).comp hφ.continuous).pow 2))
-    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  (hg.mul (((continuous_apply s).comp hφ.continuous).pow 2))
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
 private theorem integrable_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     (s : Finset ι) : Integrable (fun x ↦ φ x s ^ 2) μ := by
   simpa using integrable_mul_apply_sq (μ := μ) hφ hφc continuous_const (g := fun _ ↦ (1 : ℝ)) s
 
 end Integrability
-
-/-- Integration by parts in the direction `v`: the pairing of the coefficient of `-∂ᵥ² φ` with that
-of `φ` integrates to the integral of the square of the coefficient of `∂ᵥ φ`. -/
-private theorem integral_neg_fderiv_fderiv_apply_apply_mul (hφ : ContDiff ℝ 2 φ)
-    (hφc : HasCompactSupport φ) (v : ι → ℝ) (s : Finset ι) :
-    ∫ x, -fderiv ℝ (fderiv ℝ φ) x v v s * φ x s ∂μ = ∫ x, fderiv ℝ φ x v s ^ 2 ∂μ := by
-  have h := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ)
-    (coeffPairing s) hφ hφc v v
-  simp only [coeffPairing_apply] at h
-  simp only [sq, h, neg_mul, integral_neg]
 
 variable [LinearOrder ι]
 
@@ -166,11 +136,11 @@ section General
 private theorem integrable_sum_fderiv_sq_mul_sum_sq (hf : ContDiff ℝ 2 f) (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ) :
     Integrable (fun x ↦ (∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc
-    ((continuous_finsetSum _ fun i _ ↦
-      ((hf.continuous_fderiv (by norm_num)).clm_apply continuous_const).pow 2).mul
-      (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2))
-    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  ((continuous_finsetSum _ fun i _ ↦
+    ((hf.continuous_fderiv (by norm_num)).clm_apply continuous_const).pow 2).mul
+    (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2))
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
 private theorem integrable_sum_hessian_lie_apply_mul (hf : ContDiff ℝ 2 f)
     (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
@@ -178,14 +148,14 @@ private theorem integrable_sum_hessian_lie_apply_mul (hf : ContDiff ℝ 2 f)
       fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
         ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
           (φ x)) s * φ x s) μ :=
-  integrable_of_eq_zero_of_notMem_tsupport hφc
-    (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp
-      (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
-        ((((hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero).clm_apply
-          continuous_const).clm_apply continuous_const).smul
-          (LinearMap.continuous_of_finiteDimensional _ |>.comp hφ.continuous))).mul
-      ((continuous_apply s).comp hφ.continuous))
-    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp
+    (continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦
+      ((((hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero).clm_apply
+        continuous_const).clm_apply continuous_const).smul
+        (LinearMap.continuous_of_finiteDimensional _ |>.comp hφ.continuous))).mul
+    ((continuous_apply s).comp hφ.continuous))
+    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
+      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
 /-- Witten's frame formula, paired pointwise with the form itself. -/
 private theorem sum_euclideanWittenLaplacian_apply_mul (hf : ContDiff ℝ 2 f)
@@ -242,7 +212,9 @@ theorem integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff ℝ 2 f) (hφ :
   congr 2
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [integral_finsetSum _ fun s _ ↦ hA i s, integral_finsetSum _ fun s _ ↦ hA' i s]
-  exact Finset.sum_congr rfl fun s _ ↦ integral_neg_fderiv_fderiv_apply_apply_mul hφ hφc _ s
+  exact Finset.sum_congr rfl fun s _ ↦ by
+    simpa using integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq (μ := μ)
+      (ContinuousLinearMap.proj s) hφ hφc (Pi.single i 1)
 
 /-- **Localization away from the critical points.** If, on the support of a compactly supported
 `C²` form `φ`, the gradient of a `C²` function `f` satisfies `c ≤ |df|²` and its Hessian satisfies
@@ -312,30 +284,13 @@ private theorem sum_euclideanWittenLaplacian_diagonalQuadratic_apply_mul (hφ : 
     ring
   · ring
 
-/-- The oscillator `-∂ᵢ² + t² aᵢ² xᵢ²` on the coefficient of `dx^s` is bounded below by its ground
-state energy `t |aᵢ|`. -/
-private theorem mul_integral_le_integral_neg_fderiv_fderiv_add (hφ : ContDiff ℝ 2 φ)
-    (hφc : HasCompactSupport φ) {t : ℝ} (ht : 0 ≤ t) (i : ι) (s : Finset ι) :
-    t * |a i| * ∫ x, φ x s ^ 2 ∂μ ≤
-      ∫ x, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s ∂μ +
-        t ^ 2 * a i ^ 2 * ∫ x, x i ^ 2 * φ x s ^ 2 ∂μ := by
-  have h := abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add (μ := μ)
-    (B := coeffPairing s) (ℓ := ContinuousLinearMap.proj i) (v := Pi.single i 1)
-    (fun y z ↦ by simp only [coeffPairing_apply, mul_comm])
-    (fun y ↦ by simpa only [coeffPairing_apply] using mul_self_nonneg (y s)) (by simp)
-    (hφ.of_le (by norm_num)) hφc (t * a i)
-  simp only [coeffPairing_apply, ContinuousLinearMap.proj_apply, ← sq] at h
-  rw [integral_neg_fderiv_fderiv_apply_apply_mul hφ hφc,
-    show t * |a i| = |t * a i| by rw [abs_mul, abs_of_nonneg ht]]
-  rw [mul_pow] at h
-  linarith
-
 /-- **The harmonic-oscillator lower bound.** For the diagonal quadratic function
-`f = ∑ᵢ aᵢ xᵢ² / 2`, `t ≥ 0` and a compactly supported `C²` form `φ`, the quadratic form of the
+`f = ∑ᵢ aᵢ xᵢ² / 2`, a real `t` and a compactly supported `C²` form `φ`, the quadratic form of the
 Witten Laplacian is at least `∑ s, μ(0, s) ∫ φ_s²`, where `φ_s` is the coefficient of `dx^s` and
-`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)` is the eigenvalue of the Gaussian ground state in degree `s`. -/
+`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)` is the eigenvalue of the Gaussian ground state in degree `s`. The
+bound is informative for `t ≥ 0`, where every `μ(0, s)` is nonnegative. -/
 theorem sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul
-    (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+    (a : ι → ℝ) (t : ℝ) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∑ s, diagonalQuadraticWittenEigenvalue a t 0 s * ∫ x, φ x s ^ 2 ∂μ ≤
       ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
   have hA := fun i s ↦ integrable_neg_fderiv_fderiv_apply_apply_mul (μ := μ) hφ hφc
@@ -365,16 +320,38 @@ theorem sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadra
     Finset.sum_add_distrib, mul_add, add_mul, Finset.mul_sum, Finset.sum_mul]
   gcongr with i
   rw [integral_add (hA i s) ((hX i s).const_mul _), integral_const_mul]
-  exact mul_integral_le_integral_neg_fderiv_fderiv_add hφ hφc ht i s
+  -- the oscillator `-∂ᵢ² + t² aᵢ² xᵢ²` on `φ_s` is at least `|t aᵢ| ≥ t |aᵢ|` times `‖φ_s‖²`
+  have h := abs_mul_integral_sq_le_integral_neg_fderiv_fderiv_apply_mul_add (μ := μ)
+    (ContinuousLinearMap.proj s) (ℓ := ContinuousLinearMap.proj i) (v := Pi.single i 1)
+    (by simp) hφ hφc (t * a i)
+  simp only [ContinuousLinearMap.proj_apply, mul_pow] at h
+  have ht : t * |a i| * ∫ x, φ x s ^ 2 ∂μ ≤ |t * a i| * ∫ x, φ x s ^ 2 ∂μ :=
+    mul_le_mul_of_nonneg_right (by rw [abs_mul]; gcongr; exact le_abs_self t)
+      (integral_nonneg fun _ ↦ sq_nonneg _)
+  linarith
 
 /-- The quadratic form of the Witten Laplacian of a diagonal quadratic function is nonnegative
-on compactly supported `C²` forms, for `t ≥ 0`. -/
-theorem integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul_nonneg (a : ι → ℝ) {t : ℝ}
-    (ht : 0 ≤ t) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    0 ≤ ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ :=
-  (Finset.sum_nonneg fun s _ ↦ mul_nonneg (diagonalQuadraticWittenEigenvalue_nonneg a ht 0 s)
-    (integral_nonneg fun _ ↦ sq_nonneg _)).trans
-    (sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul a ht hφ hφc)
+on compactly supported `C²` forms, for every real `t`. For `t ≥ 0` every ground-state eigenvalue
+`μ(0, s)` is nonnegative; for `t ≤ 0` the quadratic form is that of `-a` with parameter `-t`. -/
+theorem integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul_nonneg (a : ι → ℝ) (t : ℝ)
+    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+    0 ≤ ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
+  have key : ∀ (a : ι → ℝ) {t : ℝ}, 0 ≤ t →
+      0 ≤ ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ :=
+    fun a t ht ↦ (Finset.sum_nonneg fun s _ ↦ mul_nonneg
+      (diagonalQuadraticWittenEigenvalue_nonneg a ht 0 s)
+      (integral_nonneg fun _ ↦ sq_nonneg _)).trans
+      (sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul a t hφ hφc)
+  rcases le_total 0 t with ht | ht
+  · exact key a ht
+  · convert key (-a) (neg_nonneg.2 ht) using 3 with x
+    simp only [sum_euclideanWittenLaplacian_diagonalQuadratic_apply_mul hφ, Pi.neg_apply,
+      neg_sq, neg_neg]
+    refine Finset.sum_congr rfl fun s _ ↦ ?_
+    congr 1
+    rw [neg_mul, ← mul_neg, ← Finset.sum_neg_distrib]
+    congr 2
+    exact Finset.sum_congr rfl fun i _ ↦ by split_ifs <;> simp
 
 /-- **The gap of the harmonic-oscillator model.** If `c ≤ |aᵢ|` for every `i` and `t ≥ 0`, the
 part of a compactly supported `C²` form `φ` outside the degree `s₀ = {i | aᵢ < 0}` of the Morse
@@ -387,7 +364,7 @@ theorem two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQu
         ∫ x, ∑ s ∈ Finset.univ.erase (Finset.univ.filter fun i ↦ a i < 0), φ x s ^ 2 ∂μ ≤
       ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
   refine le_trans ?_
-    (sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul a ht hφ hφc)
+    (sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul a t hφ hφc)
   have hN := fun s ↦ integrable_apply_sq (μ := μ) hφ hφc s
   rw [integral_finsetSum _ fun s _ ↦ hN s, Finset.mul_sum,
     ← Finset.sum_erase_add _ _ (Finset.mem_univ (Finset.univ.filter fun i ↦ a i < 0)),

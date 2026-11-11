@@ -53,6 +53,8 @@ Lipschitz test function.
 
 * `TauCeti.integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply`:
   `∫ B (∂_v u) (∂_w u) = -∫ B (∂_w ∂_v u) u`.
+* `TauCeti.integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq`: for a continuous linear
+  functional `L`, `∫ -L (∂_v² u) * L u = ∫ L (∂_v u) ^ 2`.
 * `TauCeti.integral_bilinear_fderiv_apply_comm`: the integral of `B (∂_v u) (∂_w u)` is symmetric
   in the two directions, and `TauCeti.integral_bilinForm_fderiv_apply_comm` its form for a
   bilinear form on a finite-dimensional space.
@@ -66,7 +68,9 @@ Lipschitz test function.
   `TauCeti.integrable_fderiv_apply_of_hasCompactSupport` records the integrability.
 * `TauCeti.abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add`: the uncertainty
   inequality, with `TauCeti.integral_mul_bilinear_fderiv_apply_eq_neg_integral_div_two` the
-  integration by parts behind it.
+  integration by parts behind it, and
+  `TauCeti.abs_mul_integral_sq_le_integral_neg_fderiv_fderiv_apply_mul_add` its consequence for
+  the harmonic oscillator `-∂_v² + ω² ℓ²` acting on a coordinate `L u`.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -132,6 +136,17 @@ theorem integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply
     (fun x _ ↦ ((hu'.differentiable (by norm_num) x).clm_apply (differentiableAt_const v)))
     (fun x _ ↦ hu.differentiable (by norm_num) x)
   simpa only [hsnd] using this
+
+/-- **Integration by parts for a coordinate of a second derivative.** For a compactly supported
+`C²` map `u` and a continuous linear functional `L`, the pairing of `-L (∂_v² u)` with `L u`
+integrates to the integral of `L (∂_v u) ^ 2`. -/
+theorem integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq (L : V →L[ℝ] ℝ)
+    (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v : E) :
+    ∫ x, -L (fderiv ℝ (fderiv ℝ u) x v v) * L (u x) ∂μ = ∫ x, L (fderiv ℝ u x v) ^ 2 ∂μ := by
+  have h := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ)
+    ((ContinuousLinearMap.mul ℝ ℝ).bilinearComp L L) hu hsupp v v
+  simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.mul_apply'] at h
+  simp only [sq, h, neg_mul, integral_neg]
 
 /-- Exchanging the two differentiation directions does not change the integral of a continuous
 bilinear pairing of two directional derivatives of a compactly supported `C²` map. -/
@@ -288,6 +303,21 @@ theorem abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add
     exact key ω
   · rw [h, ← neg_sq ω]
     simpa using key (-ω)
+
+/-- **The harmonic-oscillator lower bound** for a coordinate of a compactly supported `C²` map
+`u`. For a continuous linear functional `L`, a continuous linear functional `ℓ` with `ℓ v = 1` and
+every real `ω`, `⟨(-∂_v² + ω² ℓ²) L u, L u⟩ ≥ |ω| ‖L u‖²`: the uncertainty inequality for the
+form `(y, z) ↦ L y * L z`, with the derivative term integrated by parts. -/
+theorem abs_mul_integral_sq_le_integral_neg_fderiv_fderiv_apply_mul_add (L : V →L[ℝ] ℝ)
+    (hv : ℓ v = 1) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (ω : ℝ) :
+    |ω| * ∫ x, L (u x) ^ 2 ∂μ ≤
+      ∫ x, -L (fderiv ℝ (fderiv ℝ u) x v v) * L (u x) ∂μ +
+        ω ^ 2 * ∫ x, ℓ x ^ 2 * L (u x) ^ 2 ∂μ := by
+  rw [integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq L hu hsupp]
+  have h := abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add (μ := μ)
+    (B := (ContinuousLinearMap.mul ℝ ℝ).bilinearComp L L) (fun y z ↦ by simp [mul_comm])
+    (fun y ↦ by simpa using mul_self_nonneg (L y)) hv (hu.of_le (by norm_num)) hsupp ω
+  simpa only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.mul_apply', ← sq] using h
 
 end Uncertainty
 
