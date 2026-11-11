@@ -21,9 +21,7 @@ is read off from the existence half of the Krull-Schmidt theorem,
 `TauCeti.exists_indecomposable_iso_biproduct`, inside `FGModuleCat A`. The summand is recorded by
 morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which needs no
 biproducts in `FGModuleCat A`. By Fitting's lemma, a finitely generated indecomposable module of
-finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_indecomposable`). A
-local ring, as a module over itself, has a local endomorphism ring without any finiteness
-assumption, that ring being the opposite of the ring.
+finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_indecomposable`).
 -/
 
 public section
@@ -70,14 +68,5 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
     (TauCeti.indecomposable_iff_isLocalRing_end X.obj hfl).mp hX
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
-
-/-- A local ring, as a finitely generated module over itself, has a local endomorphism ring: that
-ring is the opposite of the ring. -/
-instance [IsLocalRing A] : IsLocalRing (End (FGModuleCat.of A A)) := by
-  have : IsLocalRing (Module.End A A) := (RingEquiv.moduleEndSelf A).isLocalRing
-  have : IsLocalRing (Module.End A (FGModuleCat.of A A).obj) := ‹IsLocalRing (Module.End A A)›
-  have : IsLocalRing (End ((ObjectProperty.ι _).obj (FGModuleCat.of A A))) :=
-    (ModuleCat.endRingEquiv (FGModuleCat.of A A).obj).symm.isLocalRing
-  exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd (FGModuleCat.of A A)).symm.isLocalRing
 
 end FGModuleCat

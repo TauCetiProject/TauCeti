@@ -11,7 +11,7 @@ public import TauCeti.Examples.CategoryTheory.Exact.AlmostSplit
 -- itself, the zero-object criterion, the irreducibility of the maps of an almost-split sequence,
 -- the maximal ideal of `ℤ/p²ℤ` and the nilpotence of `p` in `ℤ/p²ℤ` are used only inside proofs.
 import TauCeti.Algebra.Category.FGModuleCat.Basic
-import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
+import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Zero
 import TauCeti.CategoryTheory.AlmostSplit.Components
 import TauCeti.Data.ZMod.LocalRing
