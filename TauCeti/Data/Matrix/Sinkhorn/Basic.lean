@@ -274,13 +274,14 @@ projective metric. -/
 theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_le {P K : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
     (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i)
-    (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     hilbertProjectiveDist ((K.sinkhornStep a b)^[n] u₀) u ≤
       tanh (K.projectiveDiameter / 4) ^ (2 * n) * hilbertProjectiveDist u₀ u := by
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
   · simp [hilbertProjectiveDist_def]
   have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
   have : Nonempty ι := ⟨i⟩
+  have hu : ∀ i, 0 < u i := hP.pos_left ((hasMarginals_def P a b).1 hPm).1 hK ha hv
   have hb : ∀ j, 0 < b j := fun j ↦ ((hasMarginals_def P a b).1 hPm).2 j ▸ hP.sum_col_pos hK hu hv j
   have h := Matrix.hilbertProjectiveDist_sinkhornStep_iterate_le hK ha hb hu₀ hu n
   rwa [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)] at h
@@ -293,7 +294,7 @@ initial distance of the row factors `u₀` from `u`. -/
 theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le {P K : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
     (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (hb : ∀ j, 0 < b j)
-    (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hu : ∀ i, 0 < u i) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     hilbertProjectiveDist (Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u₀)) v ≤
       tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u := by
   rcases isEmpty_or_nonempty κ with hκ | hκ
@@ -302,9 +303,11 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le {P K :
         (hilbertProjectiveDist_nonneg u₀ u))
   obtain ⟨j⟩ := id hκ
   have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
+  have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
+  have hv : ∀ j, 0 < v j :=
+    hP.transpose.pos_left (fun j ↦ by simpa using ((hasMarginals_def P a b).1 hPm).2 j) hKt hb hu
   have ha : ∀ i, 0 < a i := fun i ↦ ((hasMarginals_def P a b).1 hPm).1 i ▸ hP.sum_row_pos hK hu hv i
   rw [hasMarginals_def] at hPm
-  have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
   have hcol := hilbertProjectiveDist_sinkhornUpdate_le hKt (a := b)
     (sinkhornStep_iterate_pos hK ha hb hu₀ n) hu
   rw [projectiveDiameter_transpose, hP.sinkhornUpdate_transpose_eq hPm.2 hK hu] at hcol
@@ -312,7 +315,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le {P K :
     _ ≤ tanh (K.projectiveDiameter / 4) *
           (tanh (K.projectiveDiameter / 4) ^ (2 * n) * hilbertProjectiveDist u₀ u) :=
         mul_le_mul_of_nonneg_left (hP.hilbertProjectiveDist_sinkhornStep_iterate_le
-          ((hasMarginals_def P a b).2 hPm) hK ha hu hv hu₀ n)
+          ((hasMarginals_def P a b).2 hPm) hK ha hv hu₀ n)
           (tanh_projectiveDiameter_div_four_nonneg K)
     _ = _ := by ring
 
@@ -404,7 +407,7 @@ theorem sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : ∀ i
   refine (hP.sinkhornPlan_apply_le_exp_mul hK (fun i ↦ (ha i).le) hb
     ((hasMarginals_def P a b).1 hPm).1 hv (sinkhornStep_iterate_pos hK ha hb hu₀ n) i j).trans ?_
   exact mul_le_mul_of_nonneg_right
-    (exp_le_exp.2 (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK hb hu hv hu₀ n))
+    (exp_le_exp.2 (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK hb hu hu₀ n))
     (hP.pos hK hu hv i j).le
 
 /-- **Linear convergence of the Sinkhorn iteration**, lower bound: in the setting of
@@ -427,7 +430,7 @@ theorem le_exp_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i
   refine (hP.le_exp_mul_sinkhornPlan_apply hK hb ((hasMarginals_def P a b).1 hPm).1
     (fun i ↦ (hu i).le) hv hun i j).trans ?_
   exact mul_le_mul_of_nonneg_right
-    (exp_le_exp.2 (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK hb hu hv hu₀ n))
+    (exp_le_exp.2 (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK hb hu hu₀ n))
     ((isDiagonalScaling_sinkhornPlan K a b _).pos hK (sinkhornStep_pos hK ha hb hun)
       (sinkhornUpdate_pos (fun j i ↦ by simpa using hK i j) hb hun) i j).le
 
