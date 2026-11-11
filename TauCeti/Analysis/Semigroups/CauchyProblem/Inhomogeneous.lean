@@ -20,8 +20,8 @@ the forcing `F : ℝ → X` be locally integrable on `[0, ∞)`. The **Duhamel i
 
 (`TauCeti.Semigroups.StronglyContinuousSemigroup.duhamel`) solves `u' = A u + F`, `u(0) = 0`, in
 the mild sense. A mild solution of `u' = A u + F`, `u(0) = x`
-(`TauCeti.Semigroups.IsForcedMildSolution`) is a continuous `u` whose time integrals lie in the
-domain of `A`, with
+(`TauCeti.Semigroups.IsForcedMildSolution`), for `F` locally integrable on `[0, ∞)`, is a
+continuous `u` whose time integrals lie in the domain of `A`, with
 
 `A (∫_{(0,t]} u) = u t - x - ∫_{(0,t]} F`
 
@@ -84,16 +84,18 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 /-- A mild solution of the inhomogeneous Cauchy problem `u' = A u + F`, `u(0) = x`, on `[0, ∞)`:
 a continuous `u` whose time integrals lie in the domain of `A`, with
 `A (∫_{(0,t]} u) = u t - x - ∫_{(0,t]} F` for every `t ≥ 0`. As for `IsMildSolution`, the
-predicate requires `X` to be complete, so that the integrals are not default values. -/
+predicate requires `X` to be complete, and it requires `F` to be locally integrable on `[0, ∞)`,
+so that the integrals are not default values. -/
 def IsForcedMildSolution (A : X →ₗ.[ℝ] X) (F : ℝ → X) (x : X) (u : ℝ → X) : Prop :=
-  CompleteSpace X ∧ ContinuousOn u (Ici 0) ∧ u 0 = x ∧
+  CompleteSpace X ∧ LocallyIntegrableOn F (Ici 0) ∧ ContinuousOn u (Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Ioc 0 t, u s) ∈ A.domain,
       A ⟨∫ s in Ioc 0 t, u s, hut⟩ = u t - x - ∫ s in Ioc 0 t, F s
 
-/-- Characterization of a mild solution of `u' = A u + F` by completeness, continuity, its
-initial value and its integrated equation. -/
+/-- Characterization of a mild solution of `u' = A u + F` by completeness, local integrability of
+the forcing, continuity, its initial value and its integrated equation. -/
 theorem isForcedMildSolution_iff {A : X →ₗ.[ℝ] X} {F : ℝ → X} {x : X} {u : ℝ → X} :
-    IsForcedMildSolution A F x u ↔ CompleteSpace X ∧ ContinuousOn u (Ici 0) ∧ u 0 = x ∧
+    IsForcedMildSolution A F x u ↔ CompleteSpace X ∧ LocallyIntegrableOn F (Ici 0) ∧
+      ContinuousOn u (Ici 0) ∧ u 0 = x ∧
       ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Ioc 0 t, u s) ∈ A.domain,
         A ⟨∫ s in Ioc 0 t, u s, hut⟩ = u t - x - ∫ s in Ioc 0 t, F s :=
   Iff.rfl
@@ -102,36 +104,43 @@ theorem isForcedMildSolution_iff {A : X →ₗ.[ℝ] X} {F : ℝ → X} {x : X} 
 @[simp]
 theorem isForcedMildSolution_zero_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
     IsForcedMildSolution A 0 x u ↔ IsMildSolution A x u := by
-  simp [isForcedMildSolution_iff, isMildSolution_iff]
+  have h0 : LocallyIntegrableOn (0 : ℝ → X) (Ici 0) := locallyIntegrableOn_zero
+  simp [isForcedMildSolution_iff, isMildSolution_iff, h0]
 
 namespace IsForcedMildSolution
 
 variable {A : X →ₗ.[ℝ] X} {F : ℝ → X} {x : X} {u : ℝ → X}
 
+/-- The forcing term of a mild solution is locally integrable on the nonnegative half-line. -/
+theorem locallyIntegrableOn (hu : IsForcedMildSolution A F x u) :
+    LocallyIntegrableOn F (Ici 0) :=
+  hu.2.1
+
 /-- A mild solution is continuous on the nonnegative half-line. -/
 theorem continuousOn (hu : IsForcedMildSolution A F x u) : ContinuousOn u (Ici 0) :=
-  hu.2.1
+  hu.2.2.1
 
 /-- A mild solution takes its prescribed initial value at time zero. -/
 theorem apply_zero (hu : IsForcedMildSolution A F x u) : u 0 = x :=
-  hu.2.2.1
+  hu.2.2.2.1
 
 /-- The time integral of a mild solution belongs to the operator domain. -/
 theorem integral_mem_domain (hu : IsForcedMildSolution A F x u) {t : ℝ} (ht : 0 ≤ t) :
     (∫ s in Ioc 0 t, u s) ∈ A.domain :=
-  (hu.2.2.2 t ht).choose
+  (hu.2.2.2.2 t ht).choose
 
 /-- The integrated equation satisfied by a mild solution of `u' = A u + F`. -/
 theorem map_integral_eq_sub (hu : IsForcedMildSolution A F x u) {t : ℝ} (ht : 0 ≤ t) :
     A ⟨∫ s in Ioc 0 t, u s, hu.integral_mem_domain ht⟩ = u t - x - ∫ s in Ioc 0 t, F s :=
-  (hu.2.2.2 t ht).choose_spec
+  (hu.2.2.2.2 t ht).choose_spec
 
 /-- Being a mild solution only depends on the values on `[0, ∞)`. -/
 theorem congr (hu : IsForcedMildSolution A F x u) {v : ℝ → X} (huv : EqOn u v (Ici 0)) :
     IsForcedMildSolution A F x v := by
   have hint (t : ℝ) : ∫ s in Ioc 0 t, u s = ∫ s in Ioc 0 t, v s :=
     setIntegral_congr_fun measurableSet_Ioc fun s hs => huv (mem_Ici.2 hs.1.le)
-  refine ⟨hu.1, hu.continuousOn.congr huv.symm, (huv self_mem_Ici).symm.trans hu.apply_zero,
+  refine ⟨hu.1, hu.locallyIntegrableOn, hu.continuousOn.congr huv.symm,
+    (huv self_mem_Ici).symm.trans hu.apply_zero,
     fun t ht => ⟨hint t ▸ hu.integral_mem_domain ht, ?_⟩⟩
   rw [← huv (mem_Ici.2 ht), ← hu.map_integral_eq_sub ht]
   congr 2
@@ -456,7 +465,7 @@ theorem generator_integral_duhamel (hF : IntegrableOn F (Ioc 0 t)) :
 theorem isForcedMildSolution_realOperator_add_duhamel (hF : LocallyIntegrableOn F (Ici 0))
     (x : X) :
     IsForcedMildSolution S.generator F x (fun t => S.realOperator t x + S.duhamel F t) := by
-  refine ⟨inferInstance, (S.realOperator_continuousOn_Ici x).add
+  refine ⟨inferInstance, hF, (S.realOperator_continuousOn_Ici x).add
     (S.continuous_duhamel hF).continuousOn, by simp, fun t ht => ?_⟩
   have hFt : IntegrableOn F (Ioc 0 t) :=
     (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
@@ -485,12 +494,10 @@ namespace IsForcedMildSolution
 variable [CompleteSpace X] {S : StronglyContinuousSemigroup X} {F : ℝ → X} {x : X} {u : ℝ → X}
 
 /-- **Uniqueness of mild solutions.** A mild solution of `u' = A u + F`, `u(0) = x`, for the
-generator `A` of `S` and a forcing term `F` locally integrable on `[0, ∞)`, is given by Duhamel's
-formula at every nonnegative time. -/
-theorem eq_realOperator_add_duhamel (hu : IsForcedMildSolution S.generator F x u)
-    (hF : LocallyIntegrableOn F (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
-    u t = S.realOperator t x + S.duhamel F t := by
-  have hv := S.isForcedMildSolution_realOperator_add_duhamel hF x
+generator `A` of `S`, is given by Duhamel's formula at every nonnegative time. -/
+theorem eq_realOperator_add_duhamel (hu : IsForcedMildSolution S.generator F x u) {t : ℝ}
+    (ht : 0 ≤ t) : u t = S.realOperator t x + S.duhamel F t := by
+  have hv := S.isForcedMildSolution_realOperator_add_duhamel hu.locallyIntegrableOn x
   set v : ℝ → X := fun t => S.realOperator t x + S.duhamel F t with hv_def
   have hint {w : ℝ → X} (hw : ContinuousOn w (Ici 0)) (t : ℝ) : IntegrableOn w (Ioc 0 t) :=
     ((hw.mono Icc_subset_Ici_self).integrableOn_Icc).mono_set Ioc_subset_Icc_self
@@ -516,9 +523,8 @@ theorem eq_realOperator_add_duhamel (hu : IsForcedMildSolution S.generator F x u
 
 /-- Two mild solutions of `u' = A u + F` with the same initial value agree on `[0, ∞)`. -/
 theorem unique {v : ℝ → X} (hu : IsForcedMildSolution S.generator F x u)
-    (hv : IsForcedMildSolution S.generator F x v) (hF : LocallyIntegrableOn F (Ici 0)) {t : ℝ}
-    (ht : 0 ≤ t) : u t = v t :=
-  (hu.eq_realOperator_add_duhamel hF ht).trans (hv.eq_realOperator_add_duhamel hF ht).symm
+    (hv : IsForcedMildSolution S.generator F x v) {t : ℝ} (ht : 0 ≤ t) : u t = v t :=
+  (hu.eq_realOperator_add_duhamel ht).trans (hv.eq_realOperator_add_duhamel ht).symm
 
 end IsForcedMildSolution
 

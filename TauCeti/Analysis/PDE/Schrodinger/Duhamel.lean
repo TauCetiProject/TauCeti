@@ -154,9 +154,10 @@ theorem isForcedMildSolution_schrodingerDuhamel (f : Lp F 2 (volume : Measure E)
 Duhamel's formula at every nonnegative time. -/
 theorem Semigroups.IsForcedMildSolution.eq_schrodingerDuhamel {u : ℝ → Lp F 2 (volume : Measure E)}
     (hu : Semigroups.IsForcedMildSolution (phaseGroup E F laplacianSymbol).toSemigroup.generator
-      ((-Complex.I) • G) f u)
-    (hG : LocallyIntegrableOn G (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
-    u t = schrodingerDuhamel f G t :=
-  hu.unique (isForcedMildSolution_schrodingerDuhamel f hG) (hG.smul (-Complex.I)) ht
+      ((-Complex.I) • G) f u) {t : ℝ} (ht : 0 ≤ t) :
+    u t = schrodingerDuhamel f G t := by
+  have hG : LocallyIntegrableOn G (Ici 0) := by
+    simpa [smul_smul] using hu.locallyIntegrableOn.smul Complex.I
+  exact hu.unique (isForcedMildSolution_schrodingerDuhamel f hG) ht
 
 end TauCeti
