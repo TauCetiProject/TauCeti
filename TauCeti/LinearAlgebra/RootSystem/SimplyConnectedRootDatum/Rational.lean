@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
@@ -111,6 +112,24 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
   simp only [funext_iff, Pi.add_apply, Pi.smul_apply, root_rationalRootSystem,
     smul_eq_mul, ← Int.cast_mul, ← Int.cast_add, Int.cast_inj]
 
+/-- Rational base change preserves and reflects root-string relations with natural coefficients,
+with the multiple of the first root written first. -/
+theorem root_rationalRootSystem_eq_nsmul_add_iff (α β γ : Fin t.numRoots) (n : ℕ) :
+    (t.rationalRootSystem ht).root γ =
+        n • (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β ↔
+      (t.simplyConnectedRootDatum ht).root γ =
+        n • (t.simplyConnectedRootDatum ht).root α +
+          (t.simplyConnectedRootDatum ht).root β := by
+  simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul, add_comm] using
+    t.root_rationalRootSystem_eq_add_zsmul_iff ht α β γ n
+
+/-- Rational base change preserves and reflects opposite-root relations. -/
+theorem root_rationalRootSystem_eq_neg_iff (α β : Fin t.numRoots) :
+    (t.rationalRootSystem ht).root α = -(t.rationalRootSystem ht).root β ↔
+      (t.simplyConnectedRootDatum ht).root α =
+        -(t.simplyConnectedRootDatum ht).root β := by
+  simp only [funext_iff, Pi.neg_apply, root_rationalRootSystem, ← Int.cast_neg, Int.cast_inj]
+
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]
@@ -207,6 +226,27 @@ theorem hasCartanType_rationalRootSystem :
 which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
+
+/-- The rational root systems of types B and C have no G₂ root strings. -/
+theorem isNotG2_rationalRootSystem_of_typeBC (hBC : ∃ n, t = B n ∨ t = C n) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  have hbound (a c : Fin t.numRoots) :
+      |(t.simplyConnectedRootDatum ht).pairing a c| ≤ 2 := by
+    obtain ⟨n, rfl | rfl⟩ := hBC
+    · rw [simplyConnectedRootDatum_B]
+      exact abs_pairing_typeBSimplyConnectedRootDatum_le_two a c
+    · rw [simplyConnectedRootDatum_C]
+      exact abs_pairing_typeCSimplyConnectedRootDatum_le_two a c
+  refine ⟨fun a c => ?_⟩
+  have h := hbound a c
+  rw [abs_le] at h
+  have heq : (t.rationalRootSystem ht).pairingIn ℤ a c =
+      (t.simplyConnectedRootDatum ht).pairing a c := by
+    rw [pairingIn_rationalRootSystem]
+    exact (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ a c
+  rw [heq]
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  omega
 
 /-! ## The Bourbaki numbering of the base support -/
 
