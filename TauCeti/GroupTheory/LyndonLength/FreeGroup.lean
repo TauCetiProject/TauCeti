@@ -24,6 +24,14 @@ square of a nontrivial element exceeds its own length because its cyclically red
 nonempty, which gives (L5); and the common prefix itself is a common initial segment of the
 required length, which gives (L6).
 
+The restriction of word length to a subgroup `H` is again a free Lyndon length function, but it
+need not be regular: for finitely generated `H` it is regular exactly when `H` has a basis `U`
+such that any two distinct elements of `U ∪ U⁻¹` have different initial letters (this criterion
+is not proved here). For letters `b ≠ c` the subgroup `⟨ab, ac⟩`
+is a counterexample, since the Gromov product of `ab` and `ac` is `1` and every element of the
+subgroup has even length. Together with the zero length function, which is regular and not free
+on a nontrivial group, this shows that freeness and regularity are independent.
+
 ## Main definitions
 
 * `TauCeti.LyndonLength.freeGroupNorm α`: word length on `FreeGroup α` as a Lyndon length function.
@@ -34,12 +42,16 @@ required length, which gives (L6).
   common prefix length of reduced words.
 * `TauCeti.LyndonLength.isFree_freeGroupNorm`, `TauCeti.LyndonLength.isRegular_freeGroupNorm`:
   word length is a free regular Lyndon length function.
+* `TauCeti.LyndonLength.isFree_freeGroupNorm_comap_subtype`: the restriction of word length to a
+  subgroup is free.
+* `TauCeti.LyndonLength.not_isRegular_freeGroupNorm_comap_closure`: the restriction of word length
+  to `⟨ab, ac⟩` is not regular.
 
 ## References
 
 * R. C. Lyndon, *Length functions in groups*, Math. Scand. 12 (1963), 209–234.
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Groups with free regular length
-  functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), 2847–2882, §2.2, Example 1.
+  functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), 2847–2882, §2.2, Examples 1 and 2.
 -/
 
 public section
@@ -120,5 +132,28 @@ theorem isRegular_freeGroupNorm : (freeGroupNorm α).IsRegular := by
     omega
   · rw [gromovProduct_freeGroupNorm, freeGroupNorm_apply,
       hnorm (.inl (List.take_prefix _ _).isInfix), List.length_take, ← hk, min_eq_left hgk]
+
+/-! ### Restriction to a subgroup -/
+
+/-- The restriction of word length to a subgroup of a free group is a free Lyndon length
+function. -/
+theorem isFree_freeGroupNorm_comap_subtype (H : Subgroup (FreeGroup α)) :
+    ((freeGroupNorm α).comap H.subtype).IsFree :=
+  isFree_freeGroupNorm.comap H.subtype_injective
+
+/-- Regularity is not inherited by subgroups: for letters `b ≠ c`, the restriction of word length
+to the subgroup `⟨ab, ac⟩` of a free group is not regular. The Gromov product of `ab` and `ac`
+is `1`, while every element of the subgroup has even length. -/
+theorem not_isRegular_freeGroupNorm_comap_closure {a b c : α} (hbc : b ≠ c) :
+    ¬((freeGroupNorm α).comap (Subgroup.closure {of a * of b, of a * of c}).subtype).IsRegular := by
+  intro h
+  obtain ⟨u, -, -, -, -, -, -, hu⟩ := (isRegular_iff _).1 h
+    ⟨of a * of b, Subgroup.subset_closure (by simp)⟩
+    ⟨of a * of c, Subgroup.subset_closure (by simp)⟩
+  have heven : Even (norm (u : FreeGroup α)) :=
+    even_norm_of_mem_closure (by rintro _ (rfl | rfl) <;> simp [even_norm_mul_iff]) u.2
+  have hu' : norm (u : FreeGroup α) = 1 := by
+    simpa [toWord_mul, reduce.cons, List.commonPrefixLength_cons_cons, hbc] using hu
+  simp [hu'] at heven
 
 end TauCeti.LyndonLength
