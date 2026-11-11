@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import Mathlib.Data.ZMod.Coprime
 
 /-!
 # Integers of the shape `(x² - D y²) / 4` modulo a divisor of `D`
@@ -46,10 +47,8 @@ theorem jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq {b : ℕ} {D n x y 
     rw [jacobiSym.mul_right' n hp.ne_zero ha,
       ih (dvd_of_mul_left_dvd hbD) (Int.gcd_eq_one_of_gcd_mul_right_eq_one_right hbn), mul_one]
     have : Fact p.Prime := ⟨hp⟩
-    have hn0 : (n : ZMod p) ≠ 0 := by
-      rw [ne_eq, ← legendreSym.eq_zero_iff, jacobiSym.legendreSym.to_jacobiSym,
-        jacobiSym.eq_zero_iff_not_coprime, not_not]
-      exact Int.gcd_eq_one_of_gcd_mul_right_eq_one_left hbn
+    have hn0 : (n : ZMod p) ≠ 0 :=
+      ZMod.ne_zero_of_gcd_eq_one hp (Int.gcd_eq_one_of_gcd_mul_right_eq_one_left hbn)
     rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p hn0]
     rcases eq_or_ne p 2 with rfl | hp2
     · exact key _ hn0
