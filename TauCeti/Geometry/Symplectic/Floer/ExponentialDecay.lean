@@ -277,7 +277,7 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
   -- The `L¹` norm of the defect is at most its `L²` norm.
   have hN0 : 0 ≤ N := integral_nonneg zero_le_one fun _ _ ↦ norm_nonneg _
   have hN2 : N ^ 2 ≤ ∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2 := by
-    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg (η t))
+    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
       ((hηc.norm.pow 2).intervalIntegrable _ _)
     rw [sub_zero, Real.sqrt_one, one_mul] at h
     calc N ^ 2 ≤ √(∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2) ^ 2 := by gcongr
@@ -406,7 +406,7 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
       (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).norm.congr fun t ↦ by
         rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
-  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg _)
+  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
     ((hηc.pow 2).intervalIntegrable 0 1)
   rw [sub_zero, Real.sqrt_one, one_mul] at hCS
   have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
@@ -523,7 +523,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
-  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn hKpos (by norm_num)
+  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn (by norm_num)
     (by norm_num) hfanti (hf0 s₀ hs₀a) hstep hs
   set κ : ℝ := Real.log 2 / K
   refine ⟨κ, div_pos (Real.log_pos one_lt_two) hKpos, 2 * f s₀ * Real.exp (κ * s₀),

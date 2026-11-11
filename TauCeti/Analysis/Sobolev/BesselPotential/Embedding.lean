@@ -84,6 +84,10 @@ spaces.
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
+* `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
+  `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
+  `H^s`, `2s > n + 2k`, is `C^k`.
 * `TemperedDistribution.MemSobolev.integrable_norm_pow_mul_norm`,
   `TemperedDistribution.MemSobolev.integral_norm_pow_mul_norm_le`: the moments
   `∫ ‖ξ‖ ^ j ‖v ξ‖ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-(s - j) / 2)‖₂ ‖f‖_{H^s}` of `v = 𝓕 f`, `2 (s - j) > n`.
@@ -104,9 +108,9 @@ spaces.
 
 ## References
 
-* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embedding `H_s ⊆ C₀` for
-  `s > n / 2`, proved by showing that the Fourier transform is integrable, and its corollary
-  `H_s ⊆ C^k` for `s > k + n / 2`).
+* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embeddings `H_s ⊆ C₀` for
+  `s > n / 2` and `H_s ⊆ C^k` for `s > k + n / 2`, proved by showing that the Fourier transform,
+  weighted by `|ξ|^j` for `j ≤ k`, is integrable).
 * M. Taylor, *Partial Differential Equations I*, Chapter 4, §1.
 -/
 
@@ -395,6 +399,30 @@ theorem MemSobolev.contDiff_of_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E < 2
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
   rw [eq_fourierInv_of_ae_eq hv hg hug]
   exact hu.contDiff_fourierInv hs hv
+
+/-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
+`H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function. -/
+theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
+    {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))) :
+    ∃ g : E → F, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
+  obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [k.cast_nonneg (α := ℝ)])
+  exact ⟨𝓕⁻ (v : E → F), hu.contDiff_fourierInv (by linarith) hv,
+    Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
+
+/-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
+`s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
+`C^k` representative given by `MemSobolev.exists_contDiff_ae_eq`. -/
+theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
+    ContDiff ℝ k f := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
+  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
+    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
+  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
+  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
+  exact hf ▸ Complex.reCLM.contDiff.comp hg
 
 /-- **Derivatives of Sobolev functions vanish at infinity.** For a continuous representative `g`
 of an `L²` function in `H^s` and `s > j + dim E / 2`, the `j`-th derivative of `g` tends to zero

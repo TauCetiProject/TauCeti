@@ -221,6 +221,7 @@ theorem W1p.exists_sobolevEmbeddingL_of_isCompact_closure (hpstar : pstar ≠ �
     ae_restrict_of_ae_restrict_of_subset hVW hTW] with x h1 h2 h3
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, h3]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The interior Sobolev inequality.** If `V` has compact closure contained in the open set
 `Ω`, `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, then for every `q ≤ p⋆` there is a constant
 `C` with `‖u‖_{L^q(V)} ≤ C ‖u‖_{W^{1,p}(Ω)}` for all `u ∈ W^{1,p}(Ω)`. The full Sobolev norm is
@@ -231,11 +232,18 @@ theorem W1p.exists_eLpNorm_value_le_of_isCompact_closure (hpstar : pstar ≠ ∞
     ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
       eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu) (Omega := Omega)
-    (p := p) hpstar hexp hVc hVO
-  exact W1p.exists_eLpNorm_value_le_of_ae_eq
-    (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne) hq S hS
+  by_cases hfin : FiniteDimensional ℝ E
+  · obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isCompact_closure (mu := mu)
+      (Omega := Omega) (p := p) hpstar hexp hVc hVO
+    exact W1p.exists_eLpNorm_value_le_of_ae_eq
+      (measure_ne_top_of_subset subset_closure hVc.measure_lt_top.ne) hq S hS
+  · -- Without finite dimension `finrank = 0`, so the exponent relation is impossible.
+    rw [Module.finrank_of_infinite_dimensional hfin, Nat.cast_zero, ENNReal.inv_zero,
+      add_top] at hexp
+    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+    simp [ENNReal.inv_eq_top.1 hexp.symm] at h1
 
+omit [FiniteDimensional ℝ E] in
 /-- **Interior integrability.** If `V` has compact closure contained in the open set `Ω`, every
 `u ∈ W^{1,p}(Ω)` lies in `L^q(V)` for every `q ≤ p⋆`, where `1/p⋆ + 1/n = 1/p` and `p⋆ < ∞`. -/
 theorem W1p.memLp_value_of_isCompact_closure (hpstar : pstar ≠ ∞)
@@ -261,6 +269,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {q s : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
+omit [Nontrivial E] in
 /-- Interior Sobolev embedding with any finite subcritical gain, including when the source
 exponent equals or exceeds the dimension. -/
 theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
@@ -268,6 +277,14 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
       eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In a trivial space `finrank = 0`, so the gap condition is impossible.
+    have h0 : (0 : ℝ) ≤ (q : ℝ)⁻¹ - (s : ℝ)⁻¹ := by
+      rw [sub_nonneg]
+      have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
+      exact inv_anti₀ (by positivity) (by exact_mod_cast hqs)
+    simp [Module.finrank_zero_of_subsingleton] at hgap
+    linarith
   obtain ⟨U, hUf, hVU, T, hTrep⟩ :=
     W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
       ENNReal.coe_ne_top hVc hVΩ
@@ -295,6 +312,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
+omit [Nontrivial E] in
 /-- A bounded linear interior Sobolev inclusion for every finite subcritical gain. -/
 theorem W1p.exists_sobolevEmbeddingL_of_subcritical_gain [Fact (1 ≤ (s : ℝ≥0∞))]
     (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹)
