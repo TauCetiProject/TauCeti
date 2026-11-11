@@ -5,6 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
@@ -14,7 +15,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 
 For operator curves satisfying `J' = V` and `V' = -K ∘ J`, the logarithmic derivative
 `V ∘ J⁻¹` satisfies the Riccati equation wherever `J` is invertible. If `K` is symmetric,
-the mutual Wronskian is constant; when `J` vanishes at an initial point this makes
+the mutual Wronskian is constant; when it vanishes at an initial point this makes
 `V ∘ J⁻¹` symmetric. The Wronskian statements apply on arbitrary convex parameter sets,
 including closed intervals, without finite dimensionality or completeness.
 
@@ -26,10 +27,11 @@ The native covariant Jacobi-field Wronskian is in
 
 ## Main results
 
-* `TauCeti.hasDerivAt_jacobi_logarithmicDerivative`: the operator Riccati equation.
+* `TauCeti.hasDerivAt_jacobi_logDeriv`: the operator Riccati equation.
 * `TauCeti.hasDerivWithinAt_jacobi_wronskian`: the Wronskian has zero derivative.
+* `TauCeti.jacobi_wronskian_eq`: conservation of the mutual Wronskian.
 * `TauCeti.jacobi_wronskian_eq_zero`: initial vanishing on a convex set gives zero Wronskian.
-* `TauCeti.isSymmetric_jacobi_logarithmicDerivative`: symmetry before singularity.
+* `TauCeti.isSymmetric_jacobi_logDeriv`: symmetry before singularity.
 
 ## References
 
@@ -50,7 +52,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The logarithmic derivative of a nonsingular Jacobi operator satisfies
 the Riccati equation, with the curvature sign inherited from `J'' = -K J`. -/
-theorem hasDerivAt_jacobi_logarithmicDerivative
+theorem hasDerivAt_jacobi_logDeriv
     {J V : 𝕜 → E →L[𝕜] E} {K : E →L[𝕜] E} {t : 𝕜}
     (hJ : HasDerivAt J (V t) t)
     (hV : HasDerivAt V (-(K.comp (J t))) t)
@@ -58,17 +60,7 @@ theorem hasDerivAt_jacobi_logarithmicDerivative
     HasDerivAt (fun s ↦ (V s).comp (J s).inverse)
       (-(((V t).comp (J t).inverse).comp ((V t).comp (J t).inverse)) - K) t := by
   have hcancel := hinv.self_apply_inverse
-  obtain ⟨e, he⟩ := hinv
-  have hd := (hasFDerivAt_ringInverse (𝕜 := 𝕜) e.toUnit).comp_hasDerivAt_of_eq t hJ he
-  -- Evaluate the native left/right multiplication derivative at V t; the inverse unit is e.symm.
-  change HasDerivAt (fun s ↦ Ring.inverse (J s))
-    (-((e.symm : E →L[𝕜] E) * V t * (e.symm : E →L[𝕜] E))) t at hd
-  have hi : (J t).inverse = (e.symm : E →L[𝕜] E) := by
-    rw [← he, ContinuousLinearMap.inverse_equiv]
-  have hdi : HasDerivAt (fun s ↦ (J s).inverse)
-      (-((J t).inverse.comp ((V t).comp (J t).inverse))) t := by
-    simpa only [ContinuousLinearMap.ringInverse_eq_inverse, hi,
-      ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc] using hd
+  have hdi := hJ.clm_inverse_of_completeSpace hinv
   convert hV.clm_comp hdi using 1
   ext x
   simp only [add_apply, sub_apply,
@@ -107,6 +99,21 @@ theorem hasDerivWithinAt_jacobi_wronskian
     ring
   exact hz ▸ HasDerivWithinAt.sub (hJu.inner ℝ hVv) (hVu.inner ℝ hJv)
 
+/-- The mutual Wronskian of a Jacobi operator is constant on a convex parameter set. -/
+theorem jacobi_wronskian_eq
+    {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
+    (hJ : ∀ r ∈ s, HasDerivWithinAt J (V r) s r)
+    (hV : ∀ r ∈ s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
+    (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
+    (hs : Convex ℝ s) (ha : a ∈ s) (ht : t ∈ s) (u v : E) :
+    inner ℝ (J t u) (V t v) - inner ℝ (V t u) (J t v) =
+      inner ℝ (J a u) (V a v) - inner ℝ (V a u) (J a v) := by
+  have hh := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun r hr ↦ hasDerivWithinAt_jacobi_wronskian (hJ r hr) (hV r hr)
+      (hK r hr) u v)
+    (C := 0) (fun _ _ ↦ by simp) hs ha ht
+  simpa only [zero_mul, norm_le_zero_iff, sub_eq_zero] using hh
+
 /-- Jacobi fields vanishing initially have vanishing mutual Wronskian. -/
 theorem jacobi_wronskian_eq_zero
     {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
@@ -115,26 +122,26 @@ theorem jacobi_wronskian_eq_zero
     (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
     (hs : Convex ℝ s) (ha : a ∈ s) (hzero : J a = 0) (ht : t ∈ s) (u v : E) :
     inner ℝ (J t u) (V t v) - inner ℝ (V t u) (J t v) = 0 := by
-  have hh := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (fun r hr ↦ hasDerivWithinAt_jacobi_wronskian (hJ r hr) (hV r hr)
-      (hK r hr) u v)
-    (C := 0) (fun _ _ ↦ by simp) hs ha ht
-  simpa [hzero] using hh
+  simpa only [hzero, ContinuousLinearMap.zero_apply, inner_zero_left, inner_zero_right, sub_self]
+    using jacobi_wronskian_eq hJ hV hK hs ha ht u v
 
-/-- Before singularity, a Jacobi operator initially zero has symmetric
+/-- Before singularity, a Jacobi operator with initially vanishing Wronskian has symmetric
 logarithmic derivative. -/
-theorem isSymmetric_jacobi_logarithmicDerivative
+theorem isSymmetric_jacobi_logDeriv
     {J V K : ℝ → E →L[ℝ] E} {s : Set ℝ} {a t : ℝ}
     (hJ : ∀ r ∈ s, HasDerivWithinAt J (V r) s r)
     (hV : ∀ r ∈ s, HasDerivWithinAt V (-((K r).comp (J r))) s r)
     (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
-    (hs : Convex ℝ s) (ha : a ∈ s) (hzero : J a = 0) (ht : t ∈ s) (hinv : (J t).IsInvertible) :
+    (hs : Convex ℝ s) (ha : a ∈ s)
+    (hW : ∀ u v, inner ℝ (J a u) (V a v) - inner ℝ (V a u) (J a v) = 0)
+    (ht : t ∈ s) (hinv : (J t).IsInvertible) :
     LinearMap.IsSymmetric ((V t).comp (J t).inverse).toLinearMap := by
   intro x y
   -- Evaluate the underlying linear map and its composition in the symmetry condition.
   change inner ℝ (V t ((J t).inverse x)) y = inner ℝ x (V t ((J t).inverse y))
-  have hw := jacobi_wronskian_eq_zero hJ hV hK hs ha hzero ht
+  have hw := jacobi_wronskian_eq hJ hV hK hs ha ht
     ((J t).inverse x) ((J t).inverse y)
+  rw [hW] at hw
   simpa only [hinv.self_apply_inverse] using (sub_eq_zero.mp hw).symm
 
 end InnerProduct
