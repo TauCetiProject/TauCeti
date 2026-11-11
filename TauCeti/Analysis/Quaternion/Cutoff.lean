@@ -26,7 +26,9 @@ total mass and integrability.
   everywhere, with gradient `ε⁻¹ ψ'(‖q - q₀‖ / ε) (q - q₀) / ‖q - q₀‖`.
 * `Quaternion.cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff`: hence
   `G(q - q₀) * ∑ᵢ (∂ᵢψ) eᵢ = ε⁻¹ ψ'(‖q - q₀‖ / ε) ‖q - q₀‖⁻³`, a real density supported on the
-  annulus `ε / 2 ≤ ‖q - q₀‖ ≤ ε`.
+  annulus `ε / 2 ≤ ‖q - q₀‖ ≤ ε`. The mirror
+  `Quaternion.sum_fderiv_cauchyFueterCutoff_mul_cauchyFueterKernel` gives the same density for
+  `(∑ᵢ (∂ᵢψ) eᵢ) * G(q - q₀)`, the factor occurring for the right field `f q * eᵢ * G(q - q₀)`.
 * `Quaternion.integral_cauchyFueterCutoff_density`: the density above has total mass `2π²` for
   every `ε > 0` and `q₀`, the reciprocal of the normalization `1 / (2π²)` of the
   Cauchy–Fueter formula. It is computed with the polar formula
@@ -203,6 +205,24 @@ theorem _root_.Quaternion.cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff (
     FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, mul_smul,
     ← Finset.smul_sum, _root_.Quaternion.sum_inner_dq_single_smul, mul_smul_comm,
     _root_.Quaternion.cauchyFueterKernel_mul_sub, ← _root_.Quaternion.coe_smul]
+  congr 1
+  ring
+
+/-- The gradient of the cutoff, multiplied on the right by the kernel, is the same real density
+`ε⁻¹ ψ'(‖q - q₀‖ / ε) ‖q - q₀‖⁻³`, since also `r * G(r) = ‖r‖⁻²`. This is the factor in the
+divergence of the cut-off right kernel-weighted field `f q * eᵢ * G(q - q₀) * ψ(‖q - q₀‖ / ε)`
+that does not involve the derivative of `f`. -/
+theorem _root_.Quaternion.sum_fderiv_cauchyFueterCutoff_mul_cauchyFueterKernel
+    (q q₀ : ℍ) (ε : ℝ) :
+    (∑ i : Fin 4,
+        fderiv ℝ (fun p ↦ cauchyFueterCutoff (‖p - q₀‖ / ε)) q (dq (Pi.single i 1)) •
+          dq (Pi.single i 1)) * cauchyFueterKernel q q₀ =
+      (cauchyFueterCutoffDensity ε q q₀ : ℍ) := by
+  simp only [cauchyFueterCutoffDensity_apply,
+    (_root_.Quaternion.hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).fderiv,
+    FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, mul_smul,
+    ← Finset.smul_sum, _root_.Quaternion.sum_inner_dq_single_smul, smul_mul_assoc,
+    _root_.Quaternion.sub_mul_cauchyFueterKernel, ← _root_.Quaternion.coe_smul]
   congr 1
   ring
 
