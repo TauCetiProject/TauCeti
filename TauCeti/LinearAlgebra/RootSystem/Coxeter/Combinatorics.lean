@@ -94,7 +94,7 @@ theorem length_weylCoxeterSystem_longestElement :
 
 /-- **The longest element of the Weyl group is a longest element of the Weyl Coxeter system**:
 `ℓ (w * w₀) + ℓ w = ℓ w₀` for every `w`. -/
-theorem isLongest_longestElement [P.IsRootSystem] :
+theorem isLongest_longestElement :
     (weylCoxeterSystem P b).IsLongest (longestElement P b) := by
   simp only [CoxeterSystem.isLongest_iff, length_weylCoxeterSystem_eq, inversions_longestElement]
   exact ncard_inversions_mul_longestElement_add_ncard_inversions P b
