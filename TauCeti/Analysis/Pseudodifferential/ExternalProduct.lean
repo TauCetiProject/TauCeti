@@ -533,7 +533,7 @@ theorem le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq (χ : ConicCuto
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖(a.externalProductHomotopy χ b t ((x, y), (ξ, η))).adjoint w‖ ^ 2 := by
   rw [norm_apply_sq_of_adjoint_comp_eq_smul (by
-    rw [adjoint_adjoint]
+    rw [ContinuousLinearMap.adjoint_adjoint]
     exact externalProductHomotopy_comp_adjoint χ t x y ξ η ha ha' hb hb') w, ← mul_assoc]
   gcongr
   exact χ.add_le_two_mul_lineMap (by positivity) (by positivity) ht

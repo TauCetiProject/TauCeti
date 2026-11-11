@@ -15,10 +15,11 @@ Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects e
 the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
 by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
 recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
-monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`),
-and at a zero the divided difference `dslope f a` has order one less than `f`. The order is
-finite at a point with a punctured neighbourhood free of zeros, in particular wherever the zeros
-nearby are confined to a finite set. The finiteness of the zero set itself on a compact is
+monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`)
+and characterized by comparison with the powers `(z - z₀) ^ n`, and at a zero the divided
+difference `dslope f a` has order one less than `f`. The order is finite at a point with a
+punctured neighbourhood free of zeros, in particular wherever the zeros nearby are confined to a
+finite set. The finiteness of the zero set itself on a compact is
 `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
@@ -38,6 +39,12 @@ nearby are confined to a finite set. The finiteness of the zero set itself on a 
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
+* `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta` and
+  `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order `n`
+  exactly when it is comparable to `(z - z₀) ^ n`, and infinite order exactly when it is
+  `O((z - z₀) ^ n)` for every `n`.
+* `TauCeti.isTheta_pow_sub_pow_sub_iff`: powers of `z - z₀` of different exponents are not
+  comparable near `z₀`.
 * `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
   `dslope f a` has order one less than `f` at `a`.
 * `TauCeti.analyticOrderAt_ne_top_of_forall_ne_zero`: a function with no zero in a punctured
@@ -156,6 +163,38 @@ theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAdd
     (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
     analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
   le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
+
+/-- A function analytic at `z₀` has order `n` there exactly when its size is comparable to
+`‖z - z₀‖ ^ n` near `z₀`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f z₀) {n : ℕ} :
+    analyticOrderAt f z₀ = n ↔ f =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have htop : analyticOrderAt f z₀ ≠ ⊤ := by simp [h]
+    have hn : analyticOrderNatAt f z₀ = n := by
+      exact_mod_cast (Nat.cast_analyticOrderNatAt htop).trans h
+    simpa [hn] using hf.isTheta_pow_sub htop
+  · rw [hf.analyticOrderAt_eq_of_isTheta (by fun_prop) h]
+    exact analyticOrderAt_centeredMonomial
+
+/-- A function analytic at `z₀` vanishes identically near `z₀` exactly when it is `O(‖z - z₀‖ⁿ)`
+near `z₀` for every `n`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f z₀) :
+    analyticOrderAt f z₀ = ⊤ ↔ ∀ n : ℕ, f =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
+  refine ⟨fun h n ↦ ?_, fun h ↦ ?_⟩
+  · have h0 : ∀ᶠ z in 𝓝 z₀, f z = 0 := analyticOrderAt_eq_top.1 h
+    exact (Asymptotics.isBigO_zero _ _).congr' (h0.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
+  · refine ENat.eq_top_iff_forall_ge.2 fun n ↦ ?_
+    have hn : analyticOrderAt (fun z ↦ (z - z₀) ^ n) z₀ = n := analyticOrderAt_centeredMonomial
+    exact hn ▸ hf.analyticOrderAt_le_of_isBigO (h n)
+
+/-- Powers of `z - z₀` of different exponents are not comparable near `z₀`. -/
+theorem isTheta_pow_sub_pow_sub_iff {m n : ℕ} :
+    ((fun z ↦ (z - z₀) ^ m) =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ n) ↔ m = n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Asymptotics.isTheta_refl _ _⟩
+  exact_mod_cast ((analyticAt_id.sub analyticAt_const).pow m).analyticOrderAt_eq_natCast_iff_isTheta
+    |>.2 h |>.symm.trans analyticOrderAt_centeredMonomial |>.symm
 
 /-- At a zero `a` of an analytic function `f`, the divided difference `dslope f a` vanishes to
 order one less than `f` at `a`. -/

@@ -178,15 +178,15 @@ theorem prod_map_sort_eq_of_ne_one (s t : Finset ι) (f : ι → M)
     (s.sort.map f).prod = (t.sort.map f).prod := by
   classical
   have hs : (s.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
-    apply prod_map_sort_subset Finset.subset_union_left
+    apply prod_map_sort_subset subset_union_left
     intro i hi his
     by_contra hfi
-    exact his ((h i hfi).mpr ((Finset.mem_union.mp hi).resolve_left his))
+    exact his ((h i hfi).mpr ((mem_union.mp hi).resolve_left his))
   have ht : (t.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
-    apply prod_map_sort_subset Finset.subset_union_right
+    apply prod_map_sort_subset subset_union_right
     intro i hi hit
     by_contra hfi
-    exact hit ((h i hfi).mp ((Finset.mem_union.mp hi).resolve_right hit))
+    exact hit ((h i hfi).mp ((mem_union.mp hi).resolve_right hit))
   exact hs.trans ht.symm
 
 /-- Swapping two consecutive indices in a finite increasing product preserves it
@@ -348,10 +348,10 @@ theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
   let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  apply Finset.orderEmbOfFin_unique
+  apply orderEmbOfFin_unique
   · intro j
-    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-      Finset.orderEmbOfFin_mem s hsCard _⟩
+    exact mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      orderEmbOfFin_mem s hsCard _⟩
   · exact e.strictMono.comp (Fin.strictMono_succAbove k)
 
 end LinearOrder

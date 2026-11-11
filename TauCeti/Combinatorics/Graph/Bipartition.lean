@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
-public import TauCeti.Combinatorics.Graph.Incidence
-public import TauCeti.Combinatorics.Graph.VertexCover
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
+public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
 /-!
 # Bipartitions of multigraphs

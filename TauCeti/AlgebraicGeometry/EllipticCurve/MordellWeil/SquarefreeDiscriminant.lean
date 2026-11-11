@@ -195,7 +195,7 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
   -- the pairs `i = (q, w')` of a field factor and a prime above `v`, with `w` among them
   let i₀ : W.PrimesAboveFactors R v := ⟨p, w, inferInstance⟩
   have hv (i : W.PrimesAboveFactors R v) : HeightOneSpectrum.under R i.2.1 = v :=
-    HeightOneSpectrum.under_eq_of_liesOver i.2.2
+    HeightOneSpectrum.under_eq_iff_liesOver.mpr i.2.2
   have he (i : W.PrimesAboveFactors R v) : 1 ≤ i.2.1.asIdeal.inertiaDeg R :=
     Ideal.inertiaDeg_pos i.2.1.asIdeal R
   -- `f' θ` is a unit at every pair but `i₀`, which has inertia degree `1`
