@@ -295,8 +295,8 @@ private theorem isHomeomorph_structureSheafIso_of_continuous (hI : IsAdic I) (hJ
   let isoU : (structureSheaf hI).obj.obj (op U) ≅ (structureSheaf hJ).obj.obj (op U) :=
     ((sheafToPresheaf _ CommRingCat).mapIso (structureSheafIso hI hJ)).app (op U)
   have hJI' : Continuous isoU.inv := by
-    change Continuous ((structureSheafIso hI hJ).inv.hom.app (op U))
-    rwa [structureSheafIso_inv]
+    simpa only [isoU, Iso.app_inv, Functor.mapIso_inv, ObjectProperty.ι_map,
+      structureSheafIso_inv] using hJI
   exact (Homeomorph.mk isoU.commRingCatIsoToRingEquiv.toEquiv hIJ hJI').isHomeomorph
 
 /-- For two ideals of definition `I` and `J`, `(structureSheafIso hI hJ).hom` is a homeomorphism

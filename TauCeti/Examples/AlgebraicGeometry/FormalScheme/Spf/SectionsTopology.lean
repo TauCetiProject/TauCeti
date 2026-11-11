@@ -33,9 +33,9 @@ We verify the behaviour of `sectionsTopology` and `quotientSectionsTopology` on 
 
 ## References
 
-* [Grothendieck, *Éléments de géométrie algébrique* I][ega1], Chapter 0, §3.8.1 and Chapter I,
-  §10.1.1–10.1.4.
-* [The Stacks Project Authors, *Stacks Project*][stacks-project], Tag 0AHY.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §3.8 (3.8.1) and
+  Ch. I, §10.1 (10.1.1–10.1.4).
+* [Stacks Project, Tag 0AHY](https://stacks.math.columbia.edu/tag/0AHY).
 -/
 
 public section
@@ -67,9 +67,7 @@ example :
       quotientSectionsTopology hI ⊤ = ⊥ ∧ @DiscreteTopology _ (quotientSectionsTopology hI ⊤) := by
   let _ : TopologicalSpace ℤ := ⊥
   have : DiscreteTopology ℤ := discreteTopology_bot ℤ
-  have hI : IsAdic (⊥ : Ideal ℤ) := isAdic_iff.mpr
-    ⟨fun _ ↦ isOpen_discrete _, fun s hs ↦
-      ⟨1, by simpa [pow_one] using Set.singleton_subset_iff.mpr (mem_of_mem_nhds hs)⟩⟩
+  have hI : IsAdic (⊥ : Ideal ℤ) := is_bot_adic_iff.mpr inferInstance
   have heq : quotientSectionsTopology hI ⊤ = ⊥ :=
     (quotientSectionsTopology_top hI).trans (sectionsTopology_eq_bot_of_isAdic_bot hI ⊤)
   exact ⟨hI, heq, heq ▸ discreteTopology_bot _⟩
@@ -162,8 +160,7 @@ private theorem coordIdem_mul_of_ne {n m : ℕ} (hnm : n ≠ m) :
   · rw [Pi.single_eq_of_ne hi, zero_mul]
 
 private theorem isAdic_bot_pi : IsAdic (⊥ : Ideal (ℕ → k)) :=
-  isAdic_iff.mpr ⟨fun _ ↦ isOpen_discrete _, fun s hs ↦
-    ⟨1, by simpa [pow_one] using Set.singleton_subset_iff.mpr (mem_of_mem_nhds hs)⟩⟩
+  is_bot_adic_iff.mpr inferInstance
 
 /-- The `n`-th coordinate kernel `ker (eval n)` as an open prime point of `Spf (ℕ → k)`. -/
 private noncomputable def coordPoint (n : ℕ) : carrier (ℕ → k) :=
@@ -324,6 +321,14 @@ private noncomputable def basicOpenCoordIdemHomeomorph (n : ℕ) :
   exact Homeomorph.mk (basicOpenCoordIdemRingEquiv k n).toEquiv
     (by rw [hbot]; exact continuous_bot) continuous_bot
 
+@[simp]
+private theorem basicOpenCoordIdemHomeomorph_apply (n : ℕ)
+    (x : (structureSheaf (isAdic_bot_pi k)).obj.obj (op (basicOpen (coordIdem k n)))) :
+    letI := quotientSectionsTopology (isAdic_bot_pi k) (basicOpen (coordIdem k n))
+    letI : TopologicalSpace k := ⊥
+    basicOpenCoordIdemHomeomorph k n x = basicOpenCoordIdemRingEquiv k n x :=
+  rfl
+
 /-- `sectionsInfiniteUnionRingEquiv k` is a homeomorphism from `quotientSectionsTopology` onto
 `ℕ → k` equipped with the product of discrete topologies. -/
 private theorem isHomeomorph_sectionsInfiniteUnionRingEquiv :
@@ -348,9 +353,11 @@ private theorem isHomeomorph_sectionsInfiniteUnionRingEquiv :
     (quotientSectionsTopology hI U)
     (@Pi.topologicalSpace ℕ _ fun n ↦ quotientSectionsTopology hI (basicOpen (coordIdem k n)))
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo₁ hhomeo₂
-  have heq : (sectionsInfiniteUnionRingEquiv k : _ → _) = hhomeo.toFun := by
+  have heq : (sectionsInfiniteUnionRingEquiv k : _ → _) = ⇑hhomeo := by
     ext s n
-    exact sectionsInfiniteUnionRingEquiv_apply k s n
+    simp only [hhomeo, Homeomorph.trans_apply, hhomeo₂, Homeomorph.piCongrRight_apply,
+      hhomeo₁, Topology.IsEmbedding.toHomeomorphOfSurjective_apply]
+    rw [sectionsInfiniteUnionRingEquiv_apply, basicOpenCoordIdemHomeomorph_apply]
   have hh := @Homeomorph.isHomeomorph _ _
     (quotientSectionsTopology hI U)
     (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo

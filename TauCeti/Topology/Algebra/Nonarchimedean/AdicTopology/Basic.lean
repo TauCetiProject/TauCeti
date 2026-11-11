@@ -398,14 +398,10 @@ theorem adicTopology_eq_iInf_induced_pow (I : Ideal R) :
   refine le_antisymm (le_iInf fun n ↦ ?_) (le_iInf fun n ↦ iInf_le _ (n + 1))
   cases n with
   | zero =>
-    have hsub : Subsingleton (R ⧸ I ^ 0) :=
+    have : Subsingleton (R ⧸ I ^ 0) :=
       ⟨fun a b ↦ Quotient.inductionOn₂' a b fun _ _ ↦ Ideal.Quotient.eq.mpr (by simp [pow_zero])⟩
-    have htop : TopologicalSpace.induced (Ideal.Quotient.mk (I ^ 0)) ⊥ = ⊤ := by
-      refine TopologicalSpace.ext_nhds fun x ↦ ?_
-      have hpre : Ideal.Quotient.mk (I ^ 0) ⁻¹' {Ideal.Quotient.mk (I ^ 0) x} = Set.univ :=
-        Set.eq_univ_of_forall fun _ ↦ Subsingleton.elim _ _
-      rw [TauCeti.nhds_induced_bot, hpre, principal_univ, nhds_top]
-    exact htop ▸ le_top
+    rw [Subsingleton.elim (⊥ : TopologicalSpace (R ⧸ I ^ 0)) ⊤, induced_top]
+    exact le_top
   | succ n => exact iInf_le _ n
 
 end Ideal
