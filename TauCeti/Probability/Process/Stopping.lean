@@ -12,7 +12,7 @@ public import Mathlib.Probability.Process.Stopping
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-both the stopping-time property and countable range.
+the stopping-time property.
 
 Stopping preserves right continuity at each time, including when the stopping time is infinite.
 This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
@@ -36,21 +36,16 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
 
 end MeasureTheory.IsStoppingTime
 
-/-- The finite supremum of countable-range stopping times is a countable-range stopping time.
+/-- The finite supremum of stopping times is a stopping time.
 The empty supremum is the constant bottom time. -/
-theorem Finset.isStoppingTime_sup_of_countable_range {κ ι Ω : Type*}
+theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
     [LinearOrder ι] [OrderBot ι] {mΩ : MeasurableSpace Ω} {ℱ : MeasureTheory.Filtration ι mΩ}
     (s : Finset κ) {τ : κ → Ω → WithTop ι}
-    (hτ : ∀ j ∈ s, MeasureTheory.IsStoppingTime ℱ (τ j) ∧ (Set.range (τ j)).Countable) :
-    MeasureTheory.IsStoppingTime ℱ (fun ω ↦ s.sup (fun j ↦ τ j ω)) ∧
-      (Set.range (fun ω ↦ s.sup (fun j ↦ τ j ω))).Countable := by
+    (hτ : ∀ j ∈ s, MeasureTheory.IsStoppingTime ℱ (τ j)) :
+    MeasureTheory.IsStoppingTime ℱ (fun ω ↦ s.sup (fun j ↦ τ j ω)) := by
   have h := Finset.sup_induction
-    (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ ∧ (Set.range σ).Countable)
-    ⟨MeasureTheory.isStoppingTime_const ℱ ⊥,
-      (Set.countable_singleton (⊥ : WithTop ι)).mono (by simp)⟩
-    (fun a ha b hb ↦ ⟨ha.1.max hb.1, (ha.2.image2 hb.2 max).mono (by
-      rintro _ ⟨ω, rfl⟩
-      exact ⟨a ω, ⟨ω, rfl⟩, b ω, ⟨ω, rfl⟩, rfl⟩)⟩) hτ
+    (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ)
+    (MeasureTheory.isStoppingTime_const ℱ ⊥) (fun _ ha _ hb ↦ ha.max hb) hτ
   have heq : s.sup τ = fun ω ↦ s.sup (fun j ↦ τ j ω) := funext (s.sup_apply τ)
   exact heq ▸ h
 

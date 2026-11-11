@@ -11,6 +11,7 @@ public import TauCeti.Probability.Process.HittingTime.Grid
 public import TauCeti.Probability.Process.ExitExhaustion
 public import Mathlib.Probability.Process.LocalProperty
 import Mathlib.MeasureTheory.Measure.WithDensityFinite
+import TauCeti.Data.Set.Countable
 import TauCeti.Probability.Process.HittingTime
 import TauCeti.Probability.Process.Stopping
 
@@ -47,9 +48,9 @@ namespace MeasureTheory.StronglyAdapted
 variable {Ω : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} [SFinite P]
   {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → ℝ}
 
-/-- A countable-range raw stopping time lies between the continuous-path hits of half a
-positive level and that level. Path continuity is only almost sure; no stopping-time
-property of the comparison hits is asserted. -/
+/-- There is a countable-range stopping time on the raw filtration which, almost surely,
+lies between the continuous-path hits of half a positive level and that level. Path continuity
+is only almost sure; no stopping-time property of the comparison hits is asserted. -/
 theorem exists_countable_range_isStoppingTime_between_level_hits
     (hX : StronglyAdapted ℱ X) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
     {C : ℝ} (hC : 0 < C) :
@@ -114,9 +115,8 @@ private theorem exists_monotone_level_stopping_times
   let ρ (n : ℕ) (ω : Ω) := (Finset.range (n + 1)).sup (fun j ↦ η j ω)
   have hmono (ω : Ω) : Monotone (ρ · ω) := fun i j hij ↦
     Finset.sup_mono (Finset.range_mono (Nat.add_le_add_right hij 1))
-  have hsup (n : ℕ) := (Finset.range (n + 1)).isStoppingTime_sup_of_countable_range
-    (fun j _ ↦ ⟨hη j, hcount j⟩)
-  refine ⟨ρ, fun n ↦ (hsup n).1, fun n ↦ (hsup n).2, hmono, ?_⟩
+  refine ⟨ρ, fun n ↦ (Finset.range (n + 1)).isStoppingTime_sup (fun j _ ↦ hη j),
+    fun n ↦ (Finset.range (n + 1)).countable_range_sup (fun j _ ↦ hcount j), hmono, ?_⟩
   filter_upwards [ae_all_iff.mpr hbounds] with ω hω n
   refine ⟨(hω n).1.trans (Finset.le_sup (f := fun j ↦ η j ω)
     (Finset.mem_range.mpr (Nat.lt_succ_self n))), ?_⟩
