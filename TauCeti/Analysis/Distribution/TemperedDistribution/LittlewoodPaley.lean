@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -29,8 +31,12 @@ is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) 
 functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
-`|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
-growth, in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
+`|j - k| ≥ L`. A block whose annulus lies beyond the spectrum of `u` vanishes: if `𝓕 u` vanishes
+outside the closed ball of radius `r < 2^k φ.rIn`, then `Δ_{k+1} u = 0`; in particular there is
+`L`, depending on `R`, such that `Δₖ u = 0` for `k ≥ j + L` whenever the spectrum of `u` lies in the
+ball of radius `2^j R`. Being Fourier
+multipliers, the blocks commute with every Fourier multiplier of temperate growth, in particular
+with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
 
 The blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`: there is `C`, depending only
 on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `f ∈ Lᵖ`. The kernel `𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz
@@ -50,6 +56,9 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality.
+* `TemperedDistribution.littlewoodPaleyBlock_succ_eq_zero_of_isVanishingOn`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn`: the blocks beyond a
+  ball carrying the spectrum vanish.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
@@ -233,6 +242,35 @@ theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite [CompleteSpace F] 
   split_ifs
   · rw [FourierTransform.fourierInv_fourier_eq]
   · simp
+
+/-- **Blocks beyond the spectrum vanish.** If the Fourier transform of `u` vanishes outside the
+closed ball of radius `r` and `r < 2^k φ.rIn`, then the block `Δ_{k+1} u` vanishes, since its
+symbol `ψ_{k+1}` is supported where `2^k φ.rIn ≤ ‖ξ‖`. -/
+theorem littlewoodPaleyBlock_succ_eq_zero_of_isVanishingOn {u : 𝓢'(E, F)} {r : ℝ}
+    (hu : Distribution.IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.closedBall 0 r)ᶜ) {k : ℕ}
+    (hk : r < 2 ^ k * φ.rIn) : littlewoodPaleyBlock F φ (k + 1) u = 0 := by
+  rw [littlewoodPaleyBlock_apply]
+  refine fourierMultiplierCLM_eq_zero_of_isVanishingOn hu <|
+    (tsupport_comp_subset Complex.ofReal_zero _).trans <|
+      (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset k).trans fun ξ hξ ↦ ?_
+  simpa using hk.trans_le hξ.1
+
+/-- **Blocks far beyond a dyadic ball vanish.** For every `R` there is `L`, depending only on `φ`
+and `R`, such that if the Fourier transform of `u` vanishes outside the closed ball of radius
+`2^j R`, then `Δₖ u = 0` for every `k ≥ j + L`. -/
+theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn (R : ℝ) :
+    ∃ L : ℕ, ∀ (j k : ℕ) (u : 𝓢'(E, F)),
+      Distribution.IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.closedBall 0 (2 ^ j * R))ᶜ →
+        j + L ≤ k → littlewoodPaleyBlock F φ k u = 0 := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (R / φ.rIn) one_lt_two
+  rw [div_lt_iff₀ φ.rIn_pos] at hN
+  refine ⟨N + 1, fun j k u hu hjk ↦ ?_⟩
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  refine littlewoodPaleyBlock_succ_eq_zero_of_isVanishingOn φ hu ?_
+  calc 2 ^ j * R < 2 ^ j * (2 ^ N * φ.rIn) := mul_lt_mul_of_pos_left hN (by positivity)
+    _ = 2 ^ (j + N) * φ.rIn := by ring
+    _ ≤ 2 ^ k * φ.rIn :=
+        mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
 
 section Lp
 
