@@ -515,6 +515,14 @@ theorem IsOfType.mapCoeff_of_map_smul_conj {L : F →L[ℝ] G}
 
 end SmoothForm
 
+/-- A complex-linear coefficient map preserves the submodule of forms of type `(p,q)`. -/
+theorem SmoothAlmostComplexStructure.mapCoeff_mem_typeForms
+    (J : SmoothAlmostComplexStructure I M) {L : F →L[ℝ] G}
+    (hL : ∀ (c : ℂ) v, L (c • v) = c • L v) {p q : ℕ}
+    {φ : SmoothForm I M F (p + q)} (hφ : φ ∈ J.typeForms p q) :
+    SmoothForm.mapCoeff L φ ∈ J.typeForms p q :=
+  (J.mem_typeForms p q _).2 (((J.mem_typeForms p q _).1 hφ).mapCoeff hL)
+
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
   {J : SmoothAlmostComplexStructure I M} {J' : SmoothAlmostComplexStructure I' M'} {u : M → M'}

@@ -111,7 +111,7 @@ noncomputable def equivPiFactors (hf : f ≠ 0) (hsq : Squarefree f) :
     AdjoinRoot f ≃ₐ[K] ((p : f.Factors) → AdjoinRoot (p : K[X])) :=
   have : Finite f.Factors := Factors.finite hf
   AlgEquiv.ofRingEquiv (f :=
-    (Ideal.quotEquivOfEq (Factors.span_eq_iInf_span hf hsq)).trans <|
+    (Ideal.quotEquivOfEq (Factors.span_eq_iInf_span hsq)).trans <|
       Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hpq ↦ Factors.isCoprime_span hpq)
     fun _ ↦ rfl
 

@@ -86,6 +86,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
+* `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
+  the orthonormal directions `1` and `I`.
 * `ContDiffAt.laplacian_fderiv`, `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and
   `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
@@ -195,6 +197,15 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+open Complex in
+/-- The Laplacian on the complex plane is the sum of the second directional derivatives in the
+orthonormal directions `1` and `I`, when `fderiv ℝ f` is differentiable at the point. -/
+theorem laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I {f : ℂ → F} {z : ℂ}
+    (hf : DifferentiableAt ℝ (fderiv ℝ f) z) :
+    Δ f z = fderiv ℝ (fun w ↦ fderiv ℝ f w 1) z 1 + fderiv ℝ (fun w ↦ fderiv ℝ f w I) z I := by
+  rw [laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hf]
+  simp [Fin.sum_univ_two]
 
 /-- **The Laplacian commutes with the derivative.** For a map of class `C³` at `x`,
 `Δ (Df) x = D (Δ f) x`: both sides are traces of the third derivative, which is symmetric. -/

@@ -272,7 +272,7 @@ one, where `1 / t = Re w / s`, whenever `u` has `Lˢ` norm at most one. -/
 private theorem eLpNorm_map_powSign_le_one (u : SimpleFunc γ ℂ) {s t : ℝ≥0∞} {w : ℂ}
     (hw : 0 ≤ w.re) (ht : t⁻¹ = ENNReal.ofReal w.re * s⁻¹) (hu : eLpNorm u s ρ ≤ 1) :
     eLpNorm (u.map (powSign w)) t ρ ≤ 1 :=
-  (eLpNorm_le_eLpNorm_rpow hw u.aestronglyMeasurable (u.map _).aestronglyMeasurable ht
+  (eLpNorm_le_eLpNorm_rpow hw (u.map _).aestronglyMeasurable ht
     (ae_of_all _ fun x => norm_powSign_le w (u x))).trans (ENNReal.rpow_le_one hu hw)
 
 /-- A fibre indicator of a simple function is in `Lᵗ` as soon as some member `u_w` of the
@@ -654,14 +654,14 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
     · rw [hU g hg]
       exact (h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hg)).trans_eq
         (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
-    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top one_ne_zero
-        ENNReal.one_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₀)]
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp one_ne_zero ENNReal.one_ne_top hg,
+        ENNReal.mul_top (by exact_mod_cast hM₀)]
       exact le_top
   · by_cases hg : MemLp g 2 μ
     · rw [hU g hg]
       exact (eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
-    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top two_ne_zero
-        ENNReal.ofNat_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₁)]
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top hg,
+        ENNReal.mul_top (by exact_mod_cast hM₁)]
       exact le_top
 
 /-- **Interpolation between the `L¹ → L^∞` and `L² → L²` bounds.** Let `T` be a bounded operator

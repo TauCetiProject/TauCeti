@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPri
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Exponential decay of subsolutions of `-Δ + c²` outside a ball
@@ -127,10 +128,9 @@ theorem le_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {R c M : ℝ} (hR : 0 <
     simpa using hy.2
   -- Frontier points of the annulus lie on the outer or the inner sphere.
   have hfront : ∀ ⦃y : E⦄, y ∈ frontier K → ‖y‖ = R' ∨ ‖y‖ = R := fun y hy ↦ by
-    rcases frontier_inter_subset _ _ hy with ⟨hy₁, -⟩ | ⟨-, hy₂⟩
-    · exact .inl (by simpa using frontier_closedBall_subset_sphere hy₁)
-    · rw [frontier_compl, frontier_ball 0 hR.ne'] at hy₂
-      exact .inr (by simpa using hy₂)
+    rcases frontier_closedBall_sdiff_ball_subset (0 : E) R R' (by rwa [sdiff_eq]) with hy | hy
+    · exact .inl (by simpa using hy)
+    · exact .inr (by simpa using hy)
   have hyne : ∀ ⦃y : E⦄, y ∈ interior K → y ≠ 0 := fun y hy ↦
     norm_pos_iff.mp (hR.trans (hint hy))
   refine le_of_mul_le_laplacian_le_of_le_frontier (c := V)
