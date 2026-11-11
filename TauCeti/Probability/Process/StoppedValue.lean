@@ -30,10 +30,10 @@ preimage decomposition `MeasureTheory.stoppedValue_preimage_eq`. This file prove
 These are the measurability facts needed to state the strong Markov property of a chain with values
 in an arbitrary measurable space.
 
-Even for uncountable time, a stopping time with countable range permits
-strongly measurable gluing, without any topology on time or separability assumption on the
-values. Capping such a time at each deterministic horizon shows that a strongly adapted
-process remains strongly adapted after stopping, including on a raw filtration.
+Even for uncountable time, a stopping time with countable range permits strongly measurable
+gluing, without any topology on time and without a separability assumption or any algebraic
+structure on the values. Capping such a time at each deterministic horizon shows that a strongly
+adapted process remains strongly adapted after stopping, including on a raw filtration.
 -/
 
 public section
@@ -120,11 +120,15 @@ may take the value `⊤`, where the stopped value is the process at the junk ind
 `(⊤ : WithTop ι).untopA`. The countability assumption is on the range of the time, not on all
 times. -/
 theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
-    {E : Type*} [TopologicalSpace E] [Zero E] [PartialOrder ι]
+    {E : Type*} [TopologicalSpace E] [PartialOrder ι]
     {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
     (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) :
     StronglyMeasurable[hτ.measurableSpace] (stoppedValue X τ) := by
   classical
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω₀⟩⟩
+  · exact .of_subsingleton_dom
+  -- the gluing below uses indicator functions; any value of the process serves as their zero
+  let : Zero E := ⟨X (Classical.arbitrary ι) ω₀⟩
   have := hc.to_subtype
   -- each level set of `τ` is measurable for the stopping sigma algebra, by transport of the slice
   have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
@@ -185,7 +189,7 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
 the stopping time. Each deterministic horizon caps the time at a finite value. -/
 theorem StronglyAdapted.stoppedProcess_of_countable_range
-    {E : Type*} [TopologicalSpace E] [Zero E] [LinearOrder ι]
+    {E : Type*} [TopologicalSpace E] [LinearOrder ι]
     {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
     (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) :
     StronglyAdapted ℱ (MeasureTheory.stoppedProcess X τ) := by
