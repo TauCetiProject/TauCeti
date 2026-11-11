@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.Order.LeftRight
 import Mathlib.Topology.Order.AtTopBotIxx
 
@@ -40,6 +41,9 @@ longer windows linearly in their length, and so makes the measure locally finite
   function continuous, even in the presence of immediate right-hand explosion.
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
+* `MeasureTheory.Measure.tendsto_measureReal_Ioi_atTop`,
+  `MeasureTheory.Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos`: the right tail of a finite
+  real measure tends to `0`, also after weighting by `x ^ α` for `α ≤ 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
 * `MeasureTheory.Measure.measure_Iic_eq_measure_Ioi_neg`,
   `MeasureTheory.Measure.measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant measure on
@@ -210,6 +214,31 @@ theorem Measure.tendsto_measureReal_Icc_neg_mul_atTop (μ : Measure ℝ) [IsFini
   rw [hcover] at hm
   exact ((ENNReal.tendsto_toReal (measure_ne_top μ univ)).comp hm).comp
     (tendsto_id.const_mul_atTop hδ)
+
+/-- The real mass of the open right tail `(x, ∞)` of a finite measure on `ℝ` tends to `0`. -/
+theorem Measure.tendsto_measureReal_Ioi_atTop (μ : Measure ℝ) [IsFiniteMeasure μ] :
+    Tendsto (fun x : ℝ ↦ μ.real (Ioi x)) atTop (𝓝 0) := by
+  have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun x : ℝ ↦ Ioi x)
+    (fun _ ↦ measurableSet_Ioi.nullMeasurableSet) (fun _ _ hab ↦ Ioi_subset_Ioi hab)
+    ⟨0, measure_ne_top _ _⟩
+  rw [Set.eq_empty_of_forall_notMem (s := ⋂ x : ℝ, Ioi x) fun y hy ↦
+    lt_irrefl y (mem_iInter.1 hy y), measure_empty] at h
+  simpa [measureReal_def, Function.comp_def] using
+    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
+
+/-- For a nonpositive exponent `α`, the weighted right tail `x ^ α * μ (Ioi x)` of a finite
+measure on `ℝ` tends to `0`. -/
+theorem Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {α : ℝ} (hα : α ≤ 0) :
+    Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 0) := by
+  refine squeeze_zero' ?_ ?_ (μ.tendsto_measureReal_Ioi_atTop)
+  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    exact mul_nonneg (Real.rpow_nonneg hx α) measureReal_nonneg
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+    calc x ^ α * μ.real (Ioi x) ≤ 1 * μ.real (Ioi x) := by
+          gcongr
+          exact Real.rpow_le_one_of_one_le_of_nonpos hx hα
+      _ = μ.real (Ioi x) := one_mul _
 
 namespace Measure
 
