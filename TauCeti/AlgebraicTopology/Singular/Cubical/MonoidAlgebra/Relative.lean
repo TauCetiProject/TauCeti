@@ -181,8 +181,7 @@ theorem IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add {n : ℕ}
       (c - c' + NormalizedCubicalChain.map k (ContinuousMap.subtypeVal A) n b) = 0 := by
     rcases n with _ | m
     · rw [HomologicalComplex.shape _ 0 (0 - 1) (by simp)]
-      -- The zero morphism of modules sends every element to zero.
-      rfl
+      exact LinearMap.zero_apply _
     · rw [cubicalChainDifferential_lof_succ] at hc
       exact (normalizedCubicalChainComplex_obj_d_apply X m _).trans
         (DirectSum.of_injective (β := fun i ↦ NormalizedCubicalChain X k i) m

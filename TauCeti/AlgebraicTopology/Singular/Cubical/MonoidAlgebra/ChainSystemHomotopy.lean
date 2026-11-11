@@ -308,54 +308,24 @@ theorem IsRepresenting.exists_homotopy (hS : S.IsRepresenting A μ) (hS' : S'.Is
       (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (A x y)).map))
         (ind x - ind y - 1).toNat).hom) :
     Nonempty (S.Homotopy S') := by
-  -- Induction on the largest index difference at which the homotopy equation holds.
-  have key (d : ℕ) : ∃ h : ∀ x y, normalizedCubicalChainAlgebra (M x y) k,
-      (∀ x y, h x y ∈ cubicalChainGrading (M x y) k (ind y - ind x)) ∧
-      ∀ x y, ind x - ind y ≤ d → cubicalChainDifferential (M x y) k (h x y) =
-        S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
-    induction d with
-    | zero =>
-      -- At the pairs with `ind x ≤ ind y` all terms vanish for degree reasons.
-      refine ⟨0, fun _ _ ↦ zero_mem _, fun x y hxy ↦ ?_⟩
-      rw [S.chain_eq_zero_of_le (x := x) (y := y) (by omega),
-        S'.chain_eq_zero_of_le (x := x) (y := y) (by omega),
-        continuationChainSum_eq_zero_of_le (ν := 0) S.mem_graded S'.mem_graded
-          (fun _ _ ↦ zero_mem _) (by omega)]
-      simp
-    | succ d ih =>
-      obtain ⟨h, hh, hd⟩ := ih
-      have hnew (x y : P) (hxy : ind x - ind y = d + 1) :=
-        exists_chain_of_sub_eq hS hS' hι hA hinj hh hxy hd
-      classical
-      let h' : ∀ x y, normalizedCubicalChainAlgebra (M x y) k := fun x y ↦
-        if hxy : ind x - ind y = d + 1 then (hnew x y hxy).choose else h x y
-      have hh' (x y : P) : h' x y ∈ cubicalChainGrading (M x y) k (ind y - ind x) := by
-        by_cases hxy : ind x - ind y = d + 1
-        · simpa only [h', hxy, ↓reduceDIte] using (hnew x y hxy).choose_spec.1
-        · simpa only [h', hxy, ↓reduceDIte] using hh x y
-      -- The new chains only change the pairs of index difference `d + 1`, which do not enter
-      -- the continuation sums of the pairs of index difference at most `d + 1`.
-      have hsum (x y : P) (hxy : ind x - ind y ≤ d + 1) :
-          continuationChainSum ind ind ι ι k S.chain S'.chain h' x y =
-            continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
-        refine continuationChainSum_congr S.mem_graded S'.mem_graded (fun z hzx ↦ ?_)
-          fun z hyz ↦ ?_
-        · have hzy : ind z - ind y ≠ d + 1 := by omega
-          simp only [h', hzy, ↓reduceDIte]
-        · have hxz : ind x - ind z ≠ d + 1 := by omega
-          simp only [h', hxz, ↓reduceDIte]
-      refine ⟨h', hh', fun x y hxy ↦ ?_⟩
-      rw [hsum x y hxy]
-      by_cases hxy' : ind x - ind y = d + 1
-      · simpa only [h', hxy', ↓reduceDIte] using (hnew x y hxy').choose_spec.2
-      · simpa only [h', hxy', ↓reduceDIte] using hd x y (by omega)
-  -- The index differences of the finitely many pairs are bounded.
-  obtain ⟨h, hh, hd⟩ := key (Finset.univ.sup fun p : P × P ↦ (ind p.1 - ind p.2).toNat)
-  have hbound (x y : P) :
-      ind x - ind y ≤ ((Finset.univ.sup fun p : P × P ↦ (ind p.1 - ind p.2).toNat : ℕ) : ℤ) :=
-    (Int.self_le_toNat _).trans (Int.ofNat_le.2
-      (Finset.le_sup (f := fun p : P × P ↦ (ind p.1 - ind p.2).toNat) (Finset.mem_univ (x, y))))
-  exact ⟨⟨h, hh, fun x y ↦ hd x y (hbound x y)⟩⟩
+  -- Induction on the index difference.
+  refine (exists_forall_of_forall_level_lt (fun x y ↦ (ind x - ind y).toNat)
+    (fun x y a ↦ a ∈ cubicalChainGrading (M x y) k (ind y - ind x))
+    (fun h x y ↦ cubicalChainDifferential (M x y) k (h x y) =
+      S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y)
+    ⟨0, fun _ _ ↦ zero_mem _⟩ fun h hh x y hlt ↦ ?_).elim fun h ⟨hh, hd⟩ ↦ ⟨⟨h, hh, hd⟩⟩
+  by_cases hxy : ind x ≤ ind y
+  · -- At the pairs with `ind x ≤ ind y` all terms vanish for degree reasons.
+    refine ⟨0, zero_mem _, fun h' hh' _ hh'0 ↦ ?_⟩
+    rw [hh'0, S.chain_eq_zero_of_le hxy, S'.chain_eq_zero_of_le hxy,
+      continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hh' hxy]
+    simp
+  · obtain ⟨e, he, hde⟩ := exists_chain_of_sub_eq hS hS' hι hA hinj hh (x := x) (y := y)
+      (d := (ind x - ind y - 1).toNat) (by omega) fun x' y' h ↦ hlt x' y' (by omega)
+    -- The continuation sum only depends on the chains of the pairs of smaller index difference.
+    refine ⟨e, he, fun h' hh' hhh' hh'e ↦ ?_⟩
+    rw [hh'e, hde, continuationChainSum_congr S.mem_graded S'.mem_graded
+      (fun z hzx ↦ (hhh' z y (by omega)).symm) fun z hyz ↦ (hhh' x z (by omega)).symm]
 
 end TwistingChainSystem
 

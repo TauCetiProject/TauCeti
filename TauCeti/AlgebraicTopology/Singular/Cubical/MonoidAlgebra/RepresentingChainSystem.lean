@@ -131,54 +131,6 @@ private theorem exists_chain_of_sub_eq (s : ∀ x y, normalizedCubicalChainAlgeb
   · obtain ⟨a, ha, hda⟩ := (hglue m (by omega)).exists_isRepresentingChain
     exact ⟨a, hdeg ▸ ha.mem_cubicalChainGrading, hda, ha⟩
 
-/-- The inductive step: a family of chains satisfying the twisting equation and representing the
-classes on the pairs of index difference at most `d` is modified on the pairs of index
-difference `d + 1` to satisfy both there too. -/
-private theorem exists_succ (d : ℕ)
-    (hglue : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) k) (x y : P) (m : ℕ)
-      (hm : ind x - ind y = m + 2),
-      (∀ x y, s x y ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1)) →
-      (∀ x' y', ind x' - ind y' < ind x - ind y →
-        cubicalChainDifferential (M x' y') k (s x' y') = twistingChainSum ind ι k s x' y' ∧
-          (ind y' < ind x' → IsRepresentingChain (s x' y') (μ x' y'))) →
-      IsRepresentingCycle (twistingChainSum ind ι k s x y)
-        (((TopPair.ofSubset (A x y)).cubicalHomologyδ k (ind x - ind y - 1).toNat m).hom
-          (μ x y)))
-    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) k)
-    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1))
-    (hd : ∀ x y, ind x - ind y ≤ d →
-      cubicalChainDifferential (M x y) k (s x y) = twistingChainSum ind ι k s x y ∧
-        (ind y < ind x → IsRepresentingChain (s x y) (μ x y))) :
-    ∃ s' : ∀ x y, normalizedCubicalChainAlgebra (M x y) k,
-      (∀ x y, s' x y ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1)) ∧
-      ∀ x y, ind x - ind y ≤ d + 1 →
-        cubicalChainDifferential (M x y) k (s' x y) = twistingChainSum ind ι k s' x y ∧
-          (ind y < ind x → IsRepresentingChain (s' x y) (μ x y)) := by
-  have hnew (x y : P) (hxy : ind x - ind y = d + 1) := exists_chain_of_sub_eq s hs hxy
-    fun m hm ↦ hglue s x y m hm hs fun x' y' h ↦ hd x' y' (by omega)
-  classical
-  let s' : ∀ x y, normalizedCubicalChainAlgebra (M x y) k := fun x y ↦
-    if hxy : ind x - ind y = d + 1 then (hnew x y hxy).choose else s x y
-  have hs' (x y : P) : s' x y ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1) := by
-    by_cases hxy : ind x - ind y = d + 1
-    · simpa only [s', hxy, ↓reduceDIte] using (hnew x y hxy).choose_spec.1
-    · simpa only [s', hxy, ↓reduceDIte] using hs x y
-  -- The new chains only change the pairs of index difference `d + 1`, which do not enter the
-  -- twisting sums of the pairs of index difference at most `d + 1`.
-  have hsum (x y : P) (hxy : ind x - ind y ≤ d + 1) :
-      twistingChainSum ind ι k s' x y = twistingChainSum ind ι k s x y :=
-    twistingChainSum_congr hs' hs fun z h₁ h₂ ↦ by
-      have hxz : ind x - ind z ≠ d + 1 := by omega
-      have hzy : ind z - ind y ≠ d + 1 := by omega
-      simp only [s', hxz, hzy, ↓reduceDIte, and_self]
-  refine ⟨s', hs', fun x y hxy ↦ ?_⟩
-  rw [hsum x y hxy]
-  by_cases hxy' : ind x - ind y = d + 1
-  · simp only [s', hxy', ↓reduceDIte]
-    exact ⟨(hnew x y hxy').choose_spec.2.1, fun _ ↦ (hnew x y hxy').choose_spec.2.2⟩
-  · simp only [s', hxy', ↓reduceDIte]
-    exact hd x y (by omega)
-
 /-- **Existence of representing chain systems.** Let `μ x y` be classes of the relative cubical
 homology `H_{ind x - ind y - 1}(M x y, A x y)` satisfying the **gluing condition**: whenever a
 family of chains `s` of the cohomological degrees `ind y - ind x + 1` satisfies the twisting
@@ -204,26 +156,24 @@ theorem TwistingChainSystem.exists_isRepresenting
         (((TopPair.ofSubset (A x y)).cubicalHomologyδ k (ind x - ind y - 1).toNat m).hom
           (μ x y))) :
     ∃ S : TwistingChainSystem ind ι k, S.IsRepresenting A μ := by
-  -- Induction on the largest index difference at which the conditions hold.
-  have key (d : ℕ) : ∃ s : ∀ x y, normalizedCubicalChainAlgebra (M x y) k,
-      (∀ x y, s x y ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1)) ∧
-      ∀ x y, ind x - ind y ≤ d →
-        cubicalChainDifferential (M x y) k (s x y) = twistingChainSum ind ι k s x y ∧
-          (ind y < ind x → IsRepresentingChain (s x y) (μ x y)) := by
-    induction d with
-    | zero =>
-      refine ⟨0, fun _ _ ↦ zero_mem _, fun x y hxy ↦ ⟨?_, fun h ↦ by omega⟩⟩
-      simp [twistingChainSum_def]
-    | succ d ih =>
-      obtain ⟨s, hs, hd⟩ := ih
-      exact exists_succ d hglue s hs hd
-  -- The index differences of the finitely many pairs are bounded.
-  obtain ⟨s, hs, h⟩ := key (Finset.univ.sup fun p : P × P ↦ (ind p.1 - ind p.2).toNat)
-  have hbound (x y : P) :
-      ind x - ind y ≤ ((Finset.univ.sup fun p : P × P ↦ (ind p.1 - ind p.2).toNat : ℕ) : ℤ) :=
-    (Int.self_le_toNat _).trans (Int.ofNat_le.2
-      (Finset.le_sup (f := fun p : P × P ↦ (ind p.1 - ind p.2).toNat) (Finset.mem_univ (x, y))))
-  exact ⟨⟨s, hs, fun x y ↦ (h x y (hbound x y)).1⟩, fun x y ↦ (h x y (hbound x y)).2⟩
+  -- Induction on the index difference.
+  refine (exists_forall_of_forall_level_lt (fun x y ↦ (ind x - ind y).toNat)
+    (fun x y a ↦ a ∈ cubicalChainGrading (M x y) k (ind y - ind x + 1))
+    (fun s x y ↦ cubicalChainDifferential (M x y) k (s x y) = twistingChainSum ind ι k s x y ∧
+      (ind y < ind x → IsRepresentingChain (s x y) (μ x y)))
+    ⟨0, fun _ _ ↦ zero_mem _⟩ fun s hs x y hlt ↦ ?_).elim
+    fun s ⟨hs, h⟩ ↦ ⟨⟨s, hs, fun x y ↦ (h x y).1⟩, fun x y ↦ (h x y).2⟩
+  by_cases hxy : ind x ≤ ind y
+  · -- At the pairs with `ind x ≤ ind y` all terms vanish for degree reasons.
+    refine ⟨0, zero_mem _, fun s' hs' _ hs'0 ↦ ⟨?_, fun h ↦ by omega⟩⟩
+    rw [hs'0, map_zero, twistingChainSum_eq_zero_of_le hs' hxy]
+  · obtain ⟨a, ha, hda, hrep⟩ := exists_chain_of_sub_eq (A := A) s hs
+      (d := (ind x - ind y - 1).toNat) (by omega)
+      fun m hm ↦ hglue s x y m hm hs fun x' y' h ↦ hlt x' y' (by omega)
+    -- The twisting sum only depends on the chains of the pairs of smaller index difference.
+    refine ⟨a, ha, fun s' hs' hss' hs'a ↦ ⟨?_, fun _ ↦ hs'a ▸ hrep⟩⟩
+    rw [hs'a, hda, twistingChainSum_congr hs hs' fun z h₁ h₂ ↦
+      ⟨(hss' x z (by omega)).symm, (hss' z y (by omega)).symm⟩]
 
 /-- When all index differences are at most one, every family of classes of
 `H₀(M x y, A x y)` is represented by a twisting chain system: the gluing condition is vacuous. -/

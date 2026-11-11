@@ -250,14 +250,12 @@ theorem exists_boundary_eq_sub_add_map_of_injective (n : ℕ)
     refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
     have ha : π.f n (NormalizedCubicalChain.map k P.map.hom n a) = 0 :=
       congrArg (fun f ↦ f.hom a) (cubicalChainComplex_condition_f k P n)
-    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hw, map_add, map_sub, map_add,
-      map_sub, normalizedCubicalChainComplexXEquiv_symm_apply,
-      normalizedCubicalChainComplexXEquiv_symm_apply,
-      normalizedCubicalChainComplexXEquiv_symm_apply, ha, add_zero, hs, hs', map_sub]
-  have hnat : (HomologicalComplex.homologyMap π n).hom (K.homologyπ n w) =
-      ((P.cubicalChainComplex k).homologyπ n).hom (HomologicalComplex.cyclesMap π n w) := by
-    rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality]
-  have hw₀ : K.homologyπ n w = 0 := hinj (by rw [hnat, hπw, map_sub, hr, sub_self, map_zero])
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hw]
+    simp only [map_add, map_sub]
+    simp only [normalizedCubicalChainComplexXEquiv_symm_apply, ha, add_zero, hs, hs']
+  have hw₀ : K.homologyπ n w = 0 := hinj (by
+    rw [HomologicalComplex.moduleCat_homologyMap_homologyπ π n w, hπw, map_sub, hr, sub_self,
+      map_zero])
   obtain ⟨b, hb⟩ := (K.moduleCat_homologyπ_eq_zero_iff (m := n + 1) (by simp) w).1 hw₀
   refine ⟨normalizedCubicalChainComplexXEquiv P.fst (n + 1) b, ?_⟩
   rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply,
