@@ -25,7 +25,7 @@ properties shows that they are stable under cobase change, coproducts and transf
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
 disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
 disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`), and so does an
-embedding whose range has the homotopy extension property
+inducing map whose range has the homotopy extension property
 (`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
@@ -185,16 +185,19 @@ theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [Top
   · ext x
     simp [hmN, hρm]
 
-/-- **An embedding whose image has the homotopy extension property extends disjoint open sets.**
-A retraction `r` of `[0, 1] × Y` onto `{0} × Y ∪ [0, 1] × range m` sends the open neighbourhood
-`{y | 0 < (r (1, y)).1}` of `range m` into `[0, 1] × range m`, so `y ↦ (r (1, y)).2` is a continuous
-retraction of that neighbourhood onto `range m`. -/
+/-- **An inducing map whose image has the homotopy extension property extends disjoint open
+sets.** If `m : X ⟶ Y` is inducing and `range m` has the homotopy extension property in `Y`, then
+any two disjoint open subsets of `X` are the preimages under `m` of two disjoint open subsets
+of `Y`. -/
 theorem extendsDisjointOpens_of_hasHomotopyExtensionProperty {X Y : TopCat.{u}}
-    (m : X ⟶ Y) (hm : IsEmbedding m) (h : HasHomotopyExtensionProperty (Set.range m)) :
+    (m : X ⟶ Y) (hm : IsInducing m) (h : HasHomotopyExtensionProperty (Set.range m)) :
     extendsDisjointOpens m := by
+  -- A retraction `r` of `[0, 1] × Y` onto `{0} × Y ∪ [0, 1] × range m` sends the open
+  -- neighbourhood `{y | 0 < (r (1, y)).1}` of `range m` into `[0, 1] × range m`, so
+  -- `y ↦ (r (1, y)).2` is a continuous retraction of that neighbourhood onto `range m`.
   obtain ⟨r, hr, hr'⟩ := h.exists_retraction
   have hrm (x : X) : r (1, m x) = (1, m x) := hr' _ (mem_cylinderExtensionDomain_of_mem ⟨x, rfl⟩)
-  refine extendsDisjointOpens_of_continuousOn m hm.isInducing (N := {y | 0 < (r (1, y)).1})
+  refine extendsDisjointOpens_of_continuousOn m hm (N := {y | 0 < (r (1, y)).1})
     (isOpen_lt continuous_const (by fun_prop)) (ρ := fun y ↦ (r (1, y)).2)
     (by fun_prop : Continuous fun y ↦ (r (1, y)).2).continuousOn (fun x ↦ ?_) (fun y hy ↦ ?_)
     (fun x ↦ by simp [hrm])

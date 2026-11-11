@@ -48,18 +48,12 @@ def copy : CWComplex C' :=
     source_eq := hsource
     continuousOn n i := (RelCWComplex.continuousOn n i).congr (hφ n i)
     continuousOn_symm n i := by
-      have ht : (φ n i).target = (map n i).target := by
-        rw [← (φ n i).image_source_eq_target, ← (map n i).image_source_eq_target, hsource,
-          source_eq, hball]
-      rw [ht]
-      -- On the open cell both inverses invert the same injective map on the open ball.
-      refine (RelCWComplex.continuousOn_symm n i).congr fun y hy ↦ ?_
-      have hy' : y ∈ (φ n i).target := ht ▸ hy
-      have hx : (φ n i).symm y ∈ ball 0 1 := hsource n i ▸ (φ n i).map_target hy'
-      calc (φ n i).symm y = (map n i).symm (map n i ((φ n i).symm y)) := by
-            rw [(map n i).left_inv (by rwa [source_eq])]
-        _ = (map n i).symm y := by
-            rw [← hφ n i (ball_subset_closedBall hx), (φ n i).right_inv hy']
+      -- `φ n i` and `map n i` agree on their common source, so their inverses agree on the
+      -- common target.
+      have h : φ n i ≈ map n i := ⟨by rw [hsource, source_eq],
+        hsource n i ▸ (hφ n i).mono ball_subset_closedBall⟩
+      rw [h.target_eq]
+      exact (RelCWComplex.continuousOn_symm n i).congr (h.target_eq ▸ h.symm_eqOn)
     pairwiseDisjoint' := by
       simpa only [openCell, hball] using RelCWComplex.pairwiseDisjoint (C := C)
     mapsTo' n i := by

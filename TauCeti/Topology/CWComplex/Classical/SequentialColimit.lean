@@ -243,7 +243,7 @@ theorem exists_cwComplex_homotopyEquiv_of_tower (hA : Monotone A) (hAY : ⋃ k, 
       hc k
   have hT2 : T2Space c.pt := TopCat.t2Space_of_isColimit_nat (fun k ↦ by
     rw [hFmap]
-    exact TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty _ (hj k).isEmbedding (hjH k))
+    exact TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty _ (hj k).isInducing (hjH k))
     hc
   -- The images `V k` of the stages form an increasing sequence exhausting `X`, which carries the
   -- topology coherent with it.
