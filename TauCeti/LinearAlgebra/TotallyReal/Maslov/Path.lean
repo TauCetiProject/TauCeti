@@ -39,7 +39,8 @@ The relative index has the formal properties of the Robbin--Salamon Maslov index
 
 The paths are given, like loops, by continuous frames of complex-linear automorphisms acting on
 one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`), catenation
-(`TauCeti.TotallyRealPath.trans`) and the pointwise image under a path of automorphisms
+(`TauCeti.TotallyRealPath.trans`), restriction to a segment of times
+(`TauCeti.TotallyRealPath.subpath`) and the pointwise image under a path of automorphisms
 (`TauCeti.TotallyRealPath.map`) are constructed on such frames. These basic path constructions
 are defined for complex seminormed spaces; the Maslov phase and index theory below uses
 finite-dimensional complex normed spaces.
@@ -52,8 +53,10 @@ homotopy and direct-sum properties are those of the Robbin--Salamon Maslov index
 
 * `TauCeti.TotallyRealPath`: paths of maximal totally real subspaces.
 * `TauCeti.TotallyRealPath.symm`, `TauCeti.TotallyRealPath.trans`: reversal and catenation.
+* `TauCeti.TotallyRealPath.subpath`: the restriction of a path to the segment between two times.
 * `TauCeti.TotallyRealPath.map`: the pointwise image under a path of automorphisms.
 * `TauCeti.TotallyRealLoop.toTotallyRealPath`: a loop, read as a path.
+* `TauCeti.TotallyRealPath.toTotallyRealLoop`: a path with equal endpoints, read as a loop.
 * `TauCeti.TotallyRealPath.relativeMaslovPhasePath`: the loop `t ↦ ρ(Γ t, Λ t)`.
 * `TauCeti.TotallyRealPath.relativeMaslovIndex`: its degree.
 * `TauCeti.TotallyRealPath.relativeMaslovIndex_eq_degree`: the relative index is the degree of
@@ -193,6 +196,29 @@ theorem trans_one (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : Λ.trans Γ h 
   · congr 1
     ext
     norm_num
+
+/-- The restriction of a path of maximal totally real subspaces to the segment from time `a` to
+time `b`, reparametrized by `[0, 1]`: `t ↦ Λ ((1 - t) a + t b)`. -/
+def subpath (Λ : TotallyRealPath E) (a b : I) : TotallyRealPath E where
+  toFun t := Λ (Set.Icc.convexComb a b t)
+  exists_frame := by
+    obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
+    exact ⟨L₀, hL₀, fun t => A (Set.Icc.convexComb a b t),
+      hAc.comp (Set.Icc.continuous_convexComb a b), fun t => hA (Set.Icc.convexComb a b t)⟩
+
+theorem subpath_apply (Λ : TotallyRealPath E) (a b t : I) :
+    Λ.subpath a b t = Λ (Set.Icc.convexComb a b t) :=
+  (rfl)
+
+/-- The restriction of a path to `[a, b]` starts at `Λ a`. -/
+@[simp]
+theorem subpath_zero (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 0 = Λ a :=
+  congrArg Λ (Set.Icc.convexComb_zero a b)
+
+/-- The restriction of a path to `[a, b]` ends at `Λ b`. -/
+@[simp]
+theorem subpath_one (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 1 = Λ b :=
+  congrArg Λ (Set.Icc.convexComb_one a b)
 
 /-- The pointwise image `t ↦ B t (Λ t)` of a path of maximal totally real subspaces under a
 continuous path `B` of complex-linear automorphisms. -/
@@ -460,6 +486,38 @@ theorem toTotallyRealPath_apply (Λ : TotallyRealLoop E) (t : I) : Λ.toTotallyR
   (rfl)
 
 end
+
+end TotallyRealLoop
+
+namespace TotallyRealPath
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- A path of maximal totally real subspaces whose endpoints agree, read as a loop. -/
+def toTotallyRealLoop (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) : TotallyRealLoop E :=
+  ⟨Λ.toFun, Λ.exists_frame, h⟩
+
+@[simp]
+theorem toTotallyRealLoop_apply (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) (t : I) :
+    Λ.toTotallyRealLoop h t = Λ t :=
+  (rfl)
+
+/-- Reading a loop as a path and back gives the loop. -/
+@[simp]
+theorem _root_.TauCeti.TotallyRealLoop.toTotallyRealPath_toTotallyRealLoop
+    (Λ : TotallyRealLoop E) :
+    Λ.toTotallyRealPath.toTotallyRealLoop (by simpa using Λ.toFun_zero_eq_toFun_one) = Λ :=
+  TotallyRealLoop.ext fun t => by simp
+
+/-- Reading a closed path as a loop and back gives the path. -/
+@[simp]
+theorem toTotallyRealLoop_toTotallyRealPath (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) :
+    (Λ.toTotallyRealLoop h).toTotallyRealPath = Λ :=
+  ext fun t => by simp
+
+end TotallyRealPath
+
+namespace TotallyRealLoop
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 

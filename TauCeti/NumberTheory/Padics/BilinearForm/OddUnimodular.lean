@@ -95,7 +95,7 @@ private theorem Equivalent.isSquare_prod_mul_prod_and_eight_dvd {B : BilinForm �
     IsSquare ((∏ i, B (b i) (b i)) * ∏ i, C (c i) (c i)) ∧
       (8 : ℤ_[2]) ∣ ∑ i, C (c i) (c i) - ∑ i, B (b i) (b i) := by
   have hbdet : IsUnit (B.toMatrix b).det := hb.isUnit_det_toMatrix hbu
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hbdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hbdet
   refine ⟨?_, h.eight_dvd_sum_apply_self_sub_sum_apply_self PadicInt.two_dvd_sq_sub_self hb hc⟩
   simpa [hb.toMatrix_eq_diagonal, hc.toMatrix_eq_diagonal] using h.isSquare_det_mul_det b c
 
@@ -415,8 +415,8 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det_and_eight_dvd_of_odd {B : Bil
     hCodd
   have : Free ℤ_[2] M := .of_basis b
   have : Free ℤ_[2] N := .of_basis c
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hBdet
-  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det C hCdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hBdet
+  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det c C hCdet
   have hb'det : (B.toMatrix b').det = ∏ i, B (b' i) (b' i) := hb'.det_toMatrix
   have hc'det : (C.toMatrix c').det = ∏ i, C (c' i) (c' i) := hc'.det_toMatrix
   have hb'P := IsUnit.prod_univ_iff.mpr hb'u

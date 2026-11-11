@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 
 Mathlib's `MvPolynomial.basisRestrictSupport R s` is the basis of `MvPolynomial.restrictSupport R s`
 indexed by `s`. This file records its coordinates (the coefficients) and its basis vectors (the
-monomials with coefficient `1`).
+monomials with coefficient `1`), and that a polynomial of degree below `d` in the variable `n`
+lies in `restrictSupport` of the exponents `μ` with `μ n < d`.
 -/
 
 public section
@@ -38,5 +39,11 @@ theorem basisRestrictSupport_apply_coe (c : s) :
   suffices basisRestrictSupport R s c = ⟨_, hc⟩ from congrArg Subtype.val this
   refine (basisRestrictSupport R s).repr.injective (Finsupp.ext fun d ↦ ?_)
   simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
+
+/-- A polynomial of `n`-degree below `d` is supported on the exponents `μ` with `μ n < d`. -/
+theorem mem_restrictSupport_of_degreeOf_lt {n : σ} {d : ℕ} {F : MvPolynomial σ R}
+    (hF : F.degreeOf n < d) : F ∈ restrictSupport R {μ : σ →₀ ℕ | μ n < d} :=
+  (mem_restrictSupport_iff (R := R)).mpr fun μ hμ ↦
+    (degreeOf_lt_iff ((Nat.zero_le _).trans_lt hF)).mp hF μ hμ
 
 end MvPolynomial
