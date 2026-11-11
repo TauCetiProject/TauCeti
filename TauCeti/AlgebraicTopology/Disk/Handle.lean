@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Category.TopCat.Pushout
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 
 /-!
 # A handle attachment deformation retracts onto the attachment of its cores
@@ -27,12 +29,12 @@ Attaching handles along maps `α i : ∂D^{k i} × D^{l i} → X` therefore defo
 relative to `X`, onto `X` with the cores attached along the restrictions of `α i` to the core
 spheres `∂D^{k i} × {0}`: the comparison map from this cell attachment to the handle attachment
 has a left inverse `g`, and its composite with `g` is homotopic to the identity relative to its
-image (`TauCeti.TopCat.exists_coreAttachment_deformation`). So a space obtained by attaching
-handles is homotopy equivalent, relative to `X`, to the space obtained by attaching cells of the
-same indices along the core spheres. This is how a handle decomposition, for instance the one
-given by a Morse function across a critical level, yields a cell decomposition. The handles may be
-infinitely many and of any indices; a handle of index `0` has an empty attaching region and its
-core is a disk attached along the empty sphere.
+image (`CategoryTheory.IsPushout.exists_coreAttachment_deformation`). So a space obtained by
+attaching handles is homotopy equivalent, relative to `X`, to the space obtained by attaching
+cells of the same indices along the core spheres. This is how a handle decomposition, for instance
+the one given by a Morse function across a critical level, yields a cell decomposition. The
+handles may be infinitely many and of any indices; a handle of index `0` has an empty attaching
+region and its core is a disk attached along the empty sphere.
 
 ## Main declarations
 
@@ -42,8 +44,9 @@ core is a disk attached along the empty sphere.
   `TauCeti.TopCat.handleCoreRetraction_mem`: it fixes that union and lands in it.
 * `TauCeti.TopCat.handleCoreHomotopy`: the straight-line homotopy from the identity to the
   retraction, relative to the union.
-* `TauCeti.TopCat.exists_coreAttachment_deformation`: a handle attachment deformation retracts,
-  relative to the attached space, onto the attachment of the cores along the core spheres.
+* `CategoryTheory.IsPushout.exists_coreAttachment_deformation`: a handle attachment deformation
+  retracts, relative to the attached space, onto the attachment of the cores along the core
+  spheres.
 
 ## References
 
@@ -67,29 +70,6 @@ namespace TauCeti.TopCat
 section Retraction
 
 variable {k l : ℕ}
-
-/-- The norm of `(τ / ‖y‖) • y` is at most `τ`, for `0 ≤ τ`. -/
-private lemma norm_div_norm_smul_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (y : F)
-    {τ : ℝ} (hτ : 0 ≤ τ) : ‖(τ / ‖y‖) • y‖ ≤ τ := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simpa using hτ
-  · rw [norm_smul, Real.norm_of_nonneg (div_nonneg hτ (norm_nonneg _)),
-      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hy)]
-
-/-- The map `p ↦ (τ p / ‖y p‖) • y p` is continuous when `0 ≤ τ p ≤ ‖y p‖`, including where `y`
-vanishes, since there its norm is at most `‖y p‖`. -/
-private lemma continuous_div_norm_smul {X F : Type*} [TopologicalSpace X] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {τ : X → ℝ} {y : X → F} (hτ : Continuous τ) (hy : Continuous y)
-    (h0 : ∀ p, 0 ≤ τ p) (hle : ∀ p, τ p ≤ ‖y p‖) :
-    Continuous fun p ↦ (τ p / ‖y p‖) • y p := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rcases eq_or_ne (y p) 0 with hp | hp
-  · have hlim : Filter.Tendsto (fun q ↦ (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) :=
-      squeeze_zero_norm (fun q ↦ (norm_div_norm_smul_le (y q) (h0 q)).trans (hle q))
-        (by simpa [hp] using hy.norm.tendsto p)
-    simpa [ContinuousAt, hp] using hlim
-  · exact (hτ.continuousAt.div (continuous_norm.comp hy).continuousAt
-      (norm_ne_zero_iff.2 hp)).smul hy.continuousAt
 
 /-- The point `(‖y‖, x)` of the cylinder `[0, 1] × D^k` over the first factor, read off a point
 `(x, y)` of the handle `D^k × D^l`. -/
@@ -307,28 +287,15 @@ private lemma continuousOn_coreAttachmentValue {Q : Type*} [TopologicalSpace Q]
     obtain rfl : y = diskCenter l := hp
     exact coreAttachmentValue_diskCenter hac x
 
-/-- The map `I × ⨆ᵢ D i → W` which is `F i` on the cylinder over the `i`-th summand. -/
-private def sigmaCylinderDesc {ι : Type u} {D : ι → _root_.TopCat.{u}} {W : _root_.TopCat.{u}}
-    (F : ∀ i, C(I × D i, W)) : C(I × (∐ D : _root_.TopCat.{u}), W) :=
-  (Sigma.desc fun i ↦ _root_.TopCat.ofHom ((F i).comp ContinuousMap.prodSwap).curry :
-    (∐ D) ⟶ _root_.TopCat.of C(I, W)).hom.uncurry.comp ContinuousMap.prodSwap
+end Attachment
 
-private lemma sigmaCylinderDesc_ι {ι : Type u} {D : ι → _root_.TopCat.{u}} {W : _root_.TopCat.{u}}
-    (F : ∀ i, C(I × D i, W)) (t : I) (i : ι) (x : D i) :
-    sigmaCylinderDesc F (t, Sigma.ι D i x) = F i (t, x) := by
-  have hx : (Sigma.desc fun i ↦ _root_.TopCat.ofHom ((F i).comp ContinuousMap.prodSwap).curry :
-      (∐ D) ⟶ _root_.TopCat.of C(I, W)) (Sigma.ι D i x) =
-        ((F i).comp ContinuousMap.prodSwap).curry x :=
-    ConcreteCategory.congr_hom (Sigma.ι_comp_desc
-      (fun i ↦ _root_.TopCat.ofHom ((F i).comp ContinuousMap.prodSwap).curry) i) x
-  exact congrArg (fun g : C(I, W) ↦ g t) hx
+end TauCeti.TopCat
 
-/-- Every point of a coproduct `⨆ᵢ D i` in `TopCat` lies in one of the summands. -/
-private lemma exists_sigma_ι_eq {ι : Type u} {D : ι → _root_.TopCat.{u}}
-    (z : (∐ D : _root_.TopCat.{u})) :
-    ∃ i x, Sigma.ι D i x = z :=
-  let ⟨⟨i⟩, x, hx⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z
-  ⟨i, x, hx⟩
+namespace CategoryTheory.IsPushout
+
+open TauCeti TauCeti.TopCat
+
+section HandleAttachment
 
 variable {ι : Type u} {k l : ι → ℕ} {X P Q : _root_.TopCat.{u}}
   {α : ∀ i, _root_.TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (l i)) ⟶ X}
@@ -502,6 +469,6 @@ theorem exists_coreAttachment_deformation
     · have hx : Sigma.desc χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i x) = χ' i x := by simp
       rw [hx, hΦχ, hKχ, handleCoreHomotopy_diskCenter]
 
-end Attachment
+end HandleAttachment
 
-end TauCeti.TopCat
+end CategoryTheory.IsPushout
