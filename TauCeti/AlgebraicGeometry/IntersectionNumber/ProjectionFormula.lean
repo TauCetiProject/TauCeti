@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.DegreePullback
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 
 /-!
