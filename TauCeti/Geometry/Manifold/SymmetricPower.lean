@@ -31,7 +31,7 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
   `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`Sym.isOpenEmbedding_sumSubtype`);
 * each factor is an open subspace of affine space, charted by the elementary symmetric functions
   of its points read in the ambient coordinate
-  (`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and the factors regroup into `Fin n → K`
+  (`Sym.isOpenEmbedding_coeffEquiv_comp_map`), and the factors regroup into `Fin n → K`
   because the multiplicities add up to `n` (`TauCeti.piSigmaConstHomeomorph`).
 
 The charts so obtained depend on choices — of the separating neighbourhoods, and of the regrouping
@@ -352,7 +352,7 @@ requires suitable countability hypotheses, which are not assumed here; the Hausd
 already supplied by `Sym.instT2Space`.
 
 Deliberately not an instance: when `α := K`, a later canonical single-chart structure built from
-`TauCeti.Sym.coeffHomeomorph` would have the same instance key. -/
+`Sym.coeffHomeomorph` would have the same instance key. -/
 @[instance_reducible]
 noncomputable def symChartedSpace : ChartedSpace (Fin n → K) (Sym α n) where
   atlas := Set.range (symChartAt (K := K))

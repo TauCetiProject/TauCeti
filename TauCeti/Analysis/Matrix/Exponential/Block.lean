@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Data.Matrix.Block
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Topology.Algebra.Module.Matrix
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 
 /-!
@@ -120,31 +121,13 @@ section Real
 
 variable [NormedAlgebra ℝ R]
 
-omit [CompleteSpace R] [DecidableEq m] [DecidableEq n] in
-/-- Insert a rectangular matrix into the upper-right block of a square matrix. -/
-private def upperRightCLM : Matrix m n R →L[ℝ] Matrix (m ⊕ n) (m ⊕ n) R :=
-  { toLinearMap :=
-      { toFun := fun X ↦ fromBlocks 0 X 0 0
-        map_add' := fun X Y ↦ by simp only [fromBlocks_add, zero_add]
-        map_smul' := fun c X ↦ by simp only [fromBlocks_smul, smul_zero, RingHom.id_apply] }
-    cont := continuous_matrix fun i j ↦ by
-      cases i <;> cases j
-      · exact continuous_const
-      · exact continuous_id.matrix_elem _ _
-      · exact continuous_const
-      · exact continuous_const }
-
-omit [CompleteSpace R] [DecidableEq m] [DecidableEq n] [Fintype m] [Fintype n] in
-@[simp] private theorem upperRightCLM_apply (X : Matrix m n R) :
-    upperRightCLM X = fromBlocks 0 X 0 0 := rfl
-
 /-- The exponential of an upper two-block matrix. The off-diagonal block is an integral of the
 left and right diagonal exponential weights, with no commutation hypotheses. -/
 theorem exp_fromBlocks_zero₂₁ (A : Matrix m m R) (B : Matrix m n R) (D : Matrix n n R) :
     exp (fromBlocks A B 0 D) =
       fromBlocks (exp A)
         (∫ t in (0 : ℝ)..1, exp ((1 - t) • A) * B * exp (t • D)) 0 (exp D) := by
-  let E := upperRightCLM (R := R) (m := m) (n := n)
+  let E := fromBlocks₁₂CLM ℝ (R := R) (m := m) (n := n) (l := m) (o := n)
   let x := fromBlocks A (0 : Matrix m n R) 0 D
   let h := fromBlocks (0 : Matrix m m R) B 0 (0 : Matrix n n R)
   have hsum : x + h = fromBlocks A B 0 D := by simp [x, h, fromBlocks_add]
@@ -153,7 +136,7 @@ theorem exp_fromBlocks_zero₂₁ (A : Matrix m m R) (B : Matrix m n R) (D : Mat
     simp only [hsum, x, h, fromBlocks_smul, smul_zero]
     rw [exp_fromBlocks_zero₂₁_eq_fromBlocks, exp_fromBlocks_diagonal]
     simp only [fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, zero_add, add_zero,
-      E, upperRightCLM_apply]
+      E, fromBlocks₁₂CLM_apply]
   -- Select the norm-induced extended norm: the rectangular matrix default can follow
   -- a different instance path from the operator norm used by the integral.
   let _ : ENormedAddMonoid (Matrix m n R) := NormedAddGroup.toENormedAddMonoid
@@ -171,7 +154,7 @@ theorem exp_fromBlocks_zero₂₁ (A : Matrix m m R) (B : Matrix m n R) (D : Mat
   rw [hsum] at hd
   simp only [x, exp_fromBlocks_diagonal] at hd
   have heq := sub_eq_iff_eq_add.mp hd
-  simpa only [E, upperRightCLM_apply, fromBlocks_add, zero_add, add_zero] using heq
+  simpa only [E, fromBlocks₁₂CLM_apply, fromBlocks_add, zero_add, add_zero] using heq
 
 /-- The upper-right block of the exponential is the integral of its diagonal exponential weights
 acting on the original upper-right block. -/

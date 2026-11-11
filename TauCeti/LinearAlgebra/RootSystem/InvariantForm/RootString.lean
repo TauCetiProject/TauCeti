@@ -75,7 +75,7 @@ end
 
 section
 
-variable {I M N : Type*} [AddCommGroup M] [Module ℤ M] [AddCommGroup N] [Module ℤ N]
+variable {I M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
 /-- A symmetrizing integer-valued length function is quadratic along integral root relations. -/
 theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
@@ -338,20 +338,33 @@ theorem exists_short_midpoint_of_long_add_two_short
   have hδtop := P.chainTopCoeff_of_add hlin hδ
   exact ⟨δ, hδ, hδshort, hbot, htop, by omega, by omega⟩
 
-/-- A root edge whose source and target have the same positive length has no descending root
-when every possible predecessor has length at most two. -/
+/-- A root edge from a root of positive length whose source and target have the same length has no
+descending root when every possible predecessor has length at most two. -/
 theorem chainBotCoeff_eq_zero_of_add_of_length_eq
     [Finite I] [P.IsCrystallographic]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hαpos : 0 < length α)
     (hminus : ∀ δ, P.root δ = P.root β + (-1 : ℤ) • P.root α → length δ ≤ 2)
-    (hβpos : 0 < length β) (hβγ : length β = length γ)
+    (hβγ : length β = length γ)
     (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 0 := by
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ 1 (by simpa only [one_zsmul] using h)
   have hpair : P.pairing β α = -1 := by
     rw [← hβγ] at hlen
     norm_num at hlen
+    nlinarith
+  have hβpos : 0 < length β := by
+    have hx : P.pairingIn ℤ β α = -1 := by
+      have h := P.algebraMap_pairingIn ℤ β α
+      rw [hpair] at h
+      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using h
+    have hy : P.pairingIn ℤ α β = P.pairing α β := by
+      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using P.algebraMap_pairingIn ℤ α β
+    have hneg : P.pairing α β < 0 := by
+      rw [← hy]
+      exact (P.pairingIn_lt_zero_iff ℤ).mpr (by omega)
+    have hs := hsym α β
+    rw [hpair] at hs
     nlinarith
   rw [P.chainBotCoeff_eq_zero_iff]
   right
@@ -363,6 +376,22 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
   rw [hpair] at hδlen
   norm_num at hδlen
   nlinarith [hβpos]
+
+end
+
+section
+
+variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing I R M N} [P.IsCrystallographic]
+
+/-- The root string through `j` in direction `i` has no descending root exactly when the string
+through `i` in direction `j` has none. -/
+theorem chainBotCoeff_eq_zero_comm {i j : I} :
+    P.chainBotCoeff i j = 0 ↔ P.chainBotCoeff j i = 0 := by
+  rw [P.chainBotCoeff_eq_zero_iff, P.chainBotCoeff_eq_zero_iff,
+    LinearIndependent.pair_symm_iff, ← P.neg_mem_range_root_iff (x := P.root i - P.root j),
+    neg_sub]
 
 end
 
@@ -389,16 +418,7 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   have htop_le : P.chainTopCoeff i j ≤ 3 := by omega
   have htop'_le : P.chainTopCoeff j i ≤ 3 := by omega
   have hbot : 1 ≤ P.chainBotCoeff i j ↔ 1 ≤ P.chainBotCoeff j i := by
-    rw [← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hij,
-      ← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hji]
-    simp only [one_smul]
-    constructor
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root j - P.root i)).2 h
-      simpa only [neg_sub] using hn
-    · intro h
-      have hn := (P.neg_mem_range_root_iff (x := P.root i - P.root j)).2 h
-      simpa only [neg_sub] using hn
+    rw [Nat.one_le_iff_ne_zero, Nat.one_le_iff_ne_zero, Ne, Ne, P.chainBotCoeff_eq_zero_comm]
   have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed i j
   have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
   have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
@@ -406,32 +426,30 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
 
+omit [P.IsReduced] in
 /-- If the `i`-string through `j` starts at `j` and has two further roots, the reverse
 `j`-string through `i` has top coefficient one. -/
 theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two {i j : I}
     (hbot : P.chainBotCoeff i j = 0) (htop : P.chainTopCoeff i j = 2) :
     P.chainTopCoeff j i = 1 := by
-  have hadd : P.root i + P.root j ∈ range P.root := by
+  have hli : LinearIndependent R ![P.root i, P.root j] := by
     by_contra h
-    have := P.chainTopCoeff_eq_zero_iff.mpr (Or.inr (by simpa only [add_comm] using h))
+    have := P.chainTopCoeff_of_not_linearIndependent h
     omega
-  have hli := P.linearIndependent_of_add_mem_range_root' hadd
   have hli' := LinearIndependent.pair_symm_iff.mp hli
-  have hbot' : P.chainBotCoeff j i = 0 :=
-    (P.chainBotCoeff_comm_of_root_add_mem hadd).symm.trans hbot
-  have hne : P.root i ≠ P.root j := by
-    intro h
-    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
-  have hneg : P.root i ≠ -P.root j := by
-    intro h
-    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
-  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j hne hneg
+  have hbot' : P.chainBotCoeff j i = 0 := P.chainBotCoeff_eq_zero_comm.mp hbot
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystallographic i j
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have hw : P.coxeterWeightIn ℤ i j ≠ 4 :=
+    (P.linearIndependent_iff_coxeterWeightIn_ne_four ℤ).mp hli
   have hp := P.chainBotCoeff_sub_chainTopCoeff hli
   have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
+  unfold coxeterWeightIn at hw
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
   rw [hbot, htop] at hp
   rw [hbot'] at hp'
-  omega
+  rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    rcases h with ⟨h, h'⟩ <;> simp only [h, h'] at hw <;> omega
 
 /-- The possible root-string coefficients of two roots whose sum is a root: either the top
 coefficient is one more than the bottom one, or one of four explicit exceptional configurations

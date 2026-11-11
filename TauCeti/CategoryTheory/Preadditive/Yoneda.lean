@@ -239,12 +239,15 @@ namespace Functor.CorepresentableBy
 variable {G : C ⥤ AddCommGrpCat.{t}} [G.Additive]
   {P : C} (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
 
-/-- The corepresentation of an additive functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
+omit [G.Additive] in
+/-- The corepresentation of a functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
 lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = (0 : G.obj X) := by
-  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
-  rfl
+  have h := R.homEquiv_comp (0 : X ⟶ X) (R.homEquiv.symm (0 : G.obj X))
+  rw [comp_zero, Equiv.apply_symm_apply] at h
+  exact h.trans (map_zero (G.map (0 : X ⟶ X)).hom)
 
-/-- The inverse of the corepresentation of an additive functor `G : C ⥤ Ab` sends zero to the zero
+omit [G.Additive] in
+/-- The inverse of the corepresentation of a functor `G : C ⥤ Ab` sends zero to the zero
 morphism. -/
 lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
   R.homEquiv.symm_apply_eq.2 R.homEquiv_zero.symm
