@@ -84,7 +84,7 @@ variable {H : ℝ → M → ℝ} {c a : ℂ}
 `v ↦ K((w - c) / a)(v / a)` along the affine map `w ↦ c + a w` of the positive plane datum `K` of
 `H`, the pair-of-pants datum whose only nonzero Hamiltonian is `H`, at the input `0`. Its end lift
 is `z ↦ c + a φ₀(z)`, where `φ₀` is the end lift of the input `0`, and in the coordinates `(s, t)`
-of that end lift it is `β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_of_pos`). -/
+of that end lift it is `β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_apply`). -/
 def inputEndPerturbation (c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
   (positivePlanePerturbation H ((w - c) / a) x).comp (ContinuousLinearMap.mul ℝ ℂ a⁻¹)
 
@@ -113,14 +113,14 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
 
-/-- **The input end datum on its end.** On the part `s > 0` of the moved end, the pullback of the
-datum along its end lift `z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
-theorem inputEndPerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) (ha : a ≠ 0) {z : ℂ}
-    (hz : 0 < z.re) (x : M) (v : ℂ) :
+/-- **The input end datum on its end.** The pullback of the datum along its end lift
+`z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
+theorem inputEndPerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (ha : a ≠ 0) (z : ℂ)
+    (x : M) (v : ℂ) :
     inputEndPerturbation c a H (c + a * zero.cylindricalEndLift z) x
         (a * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H z.im x) := by
-  rw [inputEndPerturbation_add_mul ha, positivePlanePerturbation_cylindricalEndLift_of_pos hH hz]
+  rw [inputEndPerturbation_add_mul ha, positivePlanePerturbation_cylindricalEndLift_apply hH]
 
 end InputEnd
 
@@ -244,7 +244,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
       Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
     nlinarith [norm_pos_iff.2 ha]
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
-    inputEndPerturbation_cylindricalEndLift_of_pos hH ha hz]
+    inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
 /-- **The datum is `H i(t) dt` far out on each input end.** Under the hypotheses of
 `puncturedSpherePerturbation_cylindricalEndLift_of_pos`, on the part `s ≥ 2` of the input end `i`
@@ -275,7 +275,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     gcongr
     nlinarith [Real.pi_pos]
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
-    negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith)]
+    negativePlanePerturbation_cylindricalEndLift_apply hH]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
   nlinarith [hout i, norm_nonneg (a i), exp_neg_two_pi_lt_one]
 

@@ -12,6 +12,11 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 /-!
 # Martingale closure properties, division by a process, norms, and submartingale bounds
 
+`MeasureTheory.StronglyAdapted.martingale_iff_setIntegral_eq` characterizes martingales
+among adapted integrable processes by equality of set integrals at two dates. This is useful
+for transporting martingales between measures without comparing conditional-expectation
+representatives.
+
 Closure properties of martingales, including building blocks of the elementary stochastic
 integral:
 
@@ -49,6 +54,21 @@ open Filter
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- An adapted integrable process is a martingale exactly when its integrals on every
+event known at an earlier date are unchanged between the two dates. -/
+theorem StronglyAdapted.martingale_iff_setIntegral_eq {Ω ι E : Type*}
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {ℱ : Filtration ι mΩ} [SigmaFiniteFiltration μ ℱ] {X : ι → Ω → E}
+    (hX : StronglyAdapted ℱ X) (hint : ∀ t, Integrable (X t) μ) :
+    Martingale X ℱ μ ↔ ∀ s t, s ≤ t → ∀ A, MeasurableSet[ℱ s] A →
+      ∫ ω in A, X s ω ∂μ = ∫ ω in A, X t ω ∂μ := by
+  refine ⟨fun h s t hst A hA ↦ h.setIntegral_eq hst hA, fun h ↦ ⟨hX, ?_⟩⟩
+  intro s t hst
+  exact (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s) (hint t)
+    (fun _ _ _ ↦ (hint s).integrableOn) (fun A hA _ ↦ h s t hst A hA)
+    (hX s).aestronglyMeasurable).symm
 
 section Div
 
@@ -141,16 +161,23 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearO
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
 
+omit [CompleteSpace E] in
 /-- A martingale frozen at a fixed date `w`, `t ↦ X (min w t)`, is a martingale. -/
 theorem Martingale.const_min [SigmaFiniteFiltration μ ℱ] (hX : Martingale X ℱ μ) (w : ι) :
     Martingale (fun t ↦ X (min w t)) ℱ μ := by
+  -- `X w` is integrable: otherwise its conditional expectation would vanish, forcing `X w = 0`
+  have hint : Integrable (X w) μ := by
+    by_contra h
+    have h0 := hX.condExp_ae_eq (le_refl w)
+    rw [condExp_of_not_integrable h] at h0
+    exact h ((integrable_zero _ _ _).congr h0)
   refine ⟨fun t ↦ hX.stronglyAdapted.stronglyMeasurable_le (min_le_right _ _),
     fun s t hst ↦ ?_⟩
   beta_reduce
   rcases le_or_gt w s with hws | hsw
   · rw [min_eq_left (hws.trans hst), min_eq_left hws,
       condExp_of_stronglyMeasurable (ℱ.le s) ((hX.stronglyAdapted w).mono (ℱ.mono hws))
-        (hX.integrable w)]
+        hint]
   · rw [min_eq_right hsw.le]
     exact hX.condExp_ae_eq (le_min hsw.le hst)
 

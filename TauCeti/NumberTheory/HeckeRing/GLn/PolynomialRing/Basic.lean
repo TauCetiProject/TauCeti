@@ -225,7 +225,7 @@ lemma heckeGen_zero_eq_heckeTDiag (p : ℕ) (hp : 0 < p) :
   rw [heckeGen_def]
   have h : heckeGenDiag 2 p (0 : Fin 2) = ![1, p] := by
     funext i; simp only [heckeGenDiag_apply]; fin_cases i <;> simp
-  rw [h, heckeTDiag_eq_diagElem Nat.one_pos hp (one_dvd _)]
+  rw [h, heckeTDiag_eq_diagElem hp (one_dvd _)]
 
 /-- `heckeGen 2 p 1 = heckeTScalar p`: the second generator is the diamond operator.
 

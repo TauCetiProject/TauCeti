@@ -157,7 +157,7 @@ theorem frobeniusPrimeSet_subset_compl_ramifiedPrimes (C : ConjClasses (L ≃ₐ
 theorem mem_frobeniusPrimeSet_mk_of_isArithFrobAt {𝔭 : HeightOneSpectrum (𝓞 K)}
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] {σ : L ≃ₐ[K] L}
+    (Q : Ideal (𝓞 L)) [Q.LiesOver 𝔭.asIdeal] {σ : L ≃ₐ[K] L}
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=
   ⟨hur, artinSymbol_eq_mk_of_isArithFrobAt 𝔭.asIdeal hur Q σ hσ⟩

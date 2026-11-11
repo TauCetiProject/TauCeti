@@ -17,6 +17,9 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import Mathlib.CategoryTheory.Yoneda
 
+import Mathlib.Algebra.Category.Grp.Limits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+
 /-!
 # The preadditive Yoneda and coYoneda functors
 
@@ -72,6 +75,7 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
   transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
 * `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
+* `CategoryTheory.preservesLimitsOfShape_preadditiveYoneda`: the embedding preserves small limits.
 * `CategoryTheory.Functor.CorepresentableBy.homEquiv_zero` and
   `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_zero`: the corepresentation and its
   inverse preserve zero.
@@ -234,17 +238,32 @@ theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤
   rw [← ShortComplex.exact_iff_isZero_homology]
   exact (key V.unop).2 (@H V.unop)
 
+/-- The Yoneda embedding `X ↦ (-, X)` into additive presheaves preserves small limits. -/
+instance preservesLimitsOfShape_preadditiveYoneda (J : Type*) [Category* J] [Small.{v} J] :
+    PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) := by
+  -- Forgetting the group structure of the values gives the Yoneda embedding into presheaves of
+  -- sets, and the forgetful functor reflects small limits.
+  have : PreservesLimitsOfShape J ((preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) ⋙
+      (Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat)) := by
+    rw [whiskering_preadditiveYoneda]
+    infer_instance
+  exact preservesLimitsOfShape_of_reflects_of_preserves _
+    ((Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat))
+
 namespace Functor.CorepresentableBy
 
 variable {G : C ⥤ AddCommGrpCat.{t}} [G.Additive]
   {P : C} (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
 
-/-- The corepresentation of an additive functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
+omit [G.Additive] in
+/-- The corepresentation of a functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
 lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = (0 : G.obj X) := by
-  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
-  rfl
+  have h := R.homEquiv_comp (0 : X ⟶ X) (R.homEquiv.symm (0 : G.obj X))
+  rw [comp_zero, Equiv.apply_symm_apply] at h
+  exact h.trans (map_zero (G.map (0 : X ⟶ X)).hom)
 
-/-- The inverse of the corepresentation of an additive functor `G : C ⥤ Ab` sends zero to the zero
+omit [G.Additive] in
+/-- The inverse of the corepresentation of a functor `G : C ⥤ Ab` sends zero to the zero
 morphism. -/
 lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
   R.homEquiv.symm_apply_eq.2 R.homEquiv_zero.symm
