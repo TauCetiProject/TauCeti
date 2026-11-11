@@ -135,6 +135,14 @@ lemma weightedG2_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
       ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a * ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) :=
   (rfl)
 
+/-- The single-residue series is the corresponding Weierstrass division value divided by `N²`.
+-/
+theorem weightedG2_single_apply (a : Fin 2 → ZMod N) (z : ℍ) :
+    weightedG2 (Pi.single a (1 : ℂ)) z =
+      ((N : ℂ) ^ 2)⁻¹ * ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) := by
+  classical
+  simp [weightedG2_def, Pi.single_apply]
+
 /-- The series is linear in the weight: the zero weight. -/
 lemma weightedG2_zero : weightedG2 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   ext z
@@ -319,6 +327,17 @@ theorem weightedG2_comp_neg (W : (Fin 2 → ZMod N) → ℂ) :
   simp only [hres] at h
   rw [← h]
   simp
+
+/-- Opposite residues give the same single-residue weight-two series. -/
+@[simp]
+theorem weightedG2_single_neg (a : Fin 2 → ZMod N) :
+    weightedG2 (Pi.single (-a) (1 : ℂ)) = weightedG2 (Pi.single a (1 : ℂ)) := by
+  classical
+  have h : (fun b : Fin 2 → ZMod N ↦ (Pi.single a (1 : ℂ) : (Fin 2 → ZMod N) → ℂ) (-b)) =
+      Pi.single (-a) 1 := by
+    ext b
+    simp [Pi.single_apply, neg_eq_iff_eq_neg]
+  rw [← h, weightedG2_comp_neg]
 
 /-! ### Holomorphy -/
 

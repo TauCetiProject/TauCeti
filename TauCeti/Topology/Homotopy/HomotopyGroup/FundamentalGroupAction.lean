@@ -250,7 +250,6 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
   induction a using Quotient.inductionOn with
   | h f =>
     rw [homotopyGroupTransportQuotient_mk, homotopyGroupTransport_mk]
-    let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
     let r : Path x x :=
       _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
     have hqr := genLoopEquivOfUnique_trans_homotopic_transport p f

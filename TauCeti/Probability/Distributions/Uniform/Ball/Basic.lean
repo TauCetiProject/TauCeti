@@ -497,7 +497,6 @@ theorem HasLaw.indepFun_sphereDirection_norm_uniformBallMeasure
   have : Nontrivial E := ⟨⟨e, 0, ne_zero_of_mem_sphere one_ne_zero e⟩⟩
   have := isProbabilityMeasure_uniformBallMeasure (c := c) hr.le
   have := hX.isProbabilityMeasure
-  have hdir : Measurable (sphereDirection e) := measurable_sphereDirection e
   refine (indepFun_iff_hasLaw_prodMk_prod (hX.sphereDirection_uniformBallMeasure hr e)
     (hX.norm_sub_div_uniformBallMeasure hr)).2 ?_
   exact HasLaw.comp ⟨(by fun_prop), map_sphereDirection_prod_uniformBallMeasure e c hr⟩ hX
