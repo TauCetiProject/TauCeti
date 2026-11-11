@@ -41,6 +41,9 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
 
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`: the energy estimate
   `λ ‖∇(u - w)‖ ≤ ‖G‖` for the replacement relative to a general elliptic `a`.
+* `TauCeti.PDE.W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero`: a function of
+  `H¹(Ω)` whose gradient is `L²`-orthogonal to the gradients of test functions is weakly
+  harmonic, in any finite-dimensional real inner product space.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
 * `TauCeti.PDE.W1p.exists_harmonicOnNhd_ae_eq_gradient`: so does its weak gradient, since the
@@ -70,6 +73,33 @@ open scoped Distributions Gradient InnerProductSpace
 namespace TauCeti
 
 namespace PDE
+
+/-- Cauchy–Schwarz turns the bound `c ‖x‖² ≤ ⟪g, x⟫` into `c ‖x‖ ≤ ‖g‖`. -/
+private theorem mul_norm_le_norm_of_mul_norm_sq_le_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {c : ℝ} {g x : V} (h : c * ‖x‖ ^ 2 ≤ ⟪g, x⟫_ℝ) : c * ‖x‖ ≤ ‖g‖ := by
+  rcases (norm_nonneg x).eq_or_lt with h0 | hpos
+  · rw [← h0, mul_zero]
+    exact norm_nonneg g
+  · exact le_of_mul_le_mul_right (by nlinarith [real_inner_le_norm g x]) hpos
+
+/-- **Sobolev functions orthogonal to the gradients of test functions are weakly harmonic.** If
+`w ∈ H¹(Ω)`, for an open `Ω` in a finite-dimensional real inner product space, satisfies
+`⟪∇w, ∇φ⟫_{L²(Ω)} = 0` for every test function `φ` on `Ω`, then the value of `w` is weakly
+harmonic on `Ω`: `∫ Δφ • w = -∫ ⟪∇φ, ∇w⟫ = 0`. -/
+theorem W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {mu : Measure F} [mu.IsAddHaarMeasure] {Omega : Opens F}
+    {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
+      ⟪W1p.gradient w, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ = 0) :
+    WeaklyHarmonicOn mu Omega (W1p.value w) := by
+  refine weaklyHarmonicOn_iff.2 ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩
+  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero]
+  simp_rw [real_inner_comm (W1p.gradient w _)]
+  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset, ← hw φ,
+    L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega) 2 φ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx]
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -107,11 +137,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
     (gamma := 0) h ha aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
     (fun _ _ => le_rfl) (u - w)
   rw [henergy] at hlower
-  have hCS := (real_inner_le_norm G (W1p.gradient (u - w))).trans_eq (mul_comm _ _)
-  rcases (norm_nonneg (W1p.gradient (u - w))).eq_or_lt with hzero | hpos
-  · rw [← hzero, mul_zero]
-    exact norm_nonneg G
-  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+  exact mul_norm_le_norm_of_mul_norm_sq_le_inner hlower
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
@@ -122,16 +148,12 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero [DecidableEq �
       energyFormH1 (fun _ => 1) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 φ) = 0) :
     ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
       (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h := by
-  refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
-    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
-  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_zero_zero_eq_setIntegral]
-  simp_rw [real_inner_comm (W1p.gradient w _)]
-  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
-  refine integral_congr_ae ?_
-  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-  rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-  exact EuclideanSpace.inner_eq_star_dotProduct _ _
+  refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq
+    (W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero fun φ => (Eq.trans ?_ (hw φ)))
+  rw [energyFormH1_zero_zero_eq_setIntegral, L2.inner_def]
+  congr 1
+  funext x
+  rw [matrixBilinearForm_one_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
 
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
 `w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost
@@ -234,8 +256,9 @@ private theorem exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero_aux [
   · have h : energyFormH1 (fun _ => 1) 0 0 w
         (W1p.compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hVU v) = 0 :=
       hw0 ⟨_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule e.symm.toAffineIsometryEquiv hVU hv⟩
-    rw [← hcomp v, W1p.inner_gradient_compAffineIsometryEquivL]
-    refine Eq.trans ?_ h
+    rw [← hcomp v]
+    refine (W1p.inner_gradient_compAffineIsometryEquivL e.toAffineIsometryEquiv hUV w _).trans
+      (Eq.trans ?_ h)
     rw [energyFormH1_zero_zero_eq_setIntegral, L2.inner_def]
     congr 1
     funext x
@@ -265,11 +288,9 @@ theorem exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero [Nontrivial F
     rw [← real_inner_self_eq_norm_sq]
     nth_rw 1 [W1p.gradient_sub]
     rw [inner_sub_left, hG _ huw, hw _ huw, sub_zero]
-  have hCS := real_inner_le_norm G (W1p.gradient (u - w))
-  rcases (norm_nonneg (W1p.gradient (u - w))).eq_or_lt with h0 | hpos
-  · rw [← h0]
-    exact norm_nonneg G
-  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+  have h := mul_norm_le_norm_of_mul_norm_sq_le_inner (c := 1) (g := G)
+    (x := W1p.gradient (u - w)) (by rw [one_mul, hsq])
+  rwa [one_mul] at h
 
 end InnerProductSpace
 

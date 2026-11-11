@@ -14,7 +14,6 @@ import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -57,7 +56,7 @@ zero divergence, `u` solves `-Δu = -div (G - c)` against `H¹₀(B_r⁺)` for `
 
 where `ω` is the volume of the unit ball. On `ball x₀ r`, the function equal to `u` minus the zero
 extension of `u - w` vanishes off `H` and is weakly harmonic on `B_r⁺`, where it agrees with `w`; so
-by the Schwarz reflection principle its gradient agrees on `B_r⁺` with a harmonic field `K` odd
+by the Schwarz reflection principle its gradient agrees on `B_r⁺` with a harmonic field `V` odd
 under the reflection in the hyperplane
 (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq`). The half-ball decay of such fields
 (`InnerProductSpace.HarmonicOnNhd.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le_add`)
@@ -97,57 +96,9 @@ namespace PDE
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-section InnerProductSpace
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-  [MeasurableSpace F] [BorelSpace F]
-
-/-- **Gluing a replacement to a function vanishing off a set.** Let `Ω ⊆ B ⊆ U` be open with
-`Ω = B ∩ S`, let `u ∈ H¹(U)` vanish almost everywhere on `B` off `S`, and let `w ∈ H¹(Ω)` have the
-boundary values of `u`, `u - w ∈ H¹₀(Ω)`. Then `u` minus the zero extension of `u - w` is an
-element `W ∈ H¹(B)` vanishing almost everywhere off `S` whose restriction to `Ω` is `w`. -/
-private theorem exists_w1p_restrictL_eq {U B Ω : Opens F} {S : Set F} (hBU : B ≤ U) (hΩB : Ω ≤ B)
-    (hΩ : (Ω : Set F) = (B : Set F) ∩ S) {u : W1p volume U 2}
-    (hu0 : ∀ᵐ x ∂volume.restrict B, x ∉ S → W1p.value u x = 0) {w : W1p volume Ω 2}
-    (huw : W1p.restrictL (hΩB.trans hBU) u - w ∈ w1p0Submodule volume Ω 2) :
-    ∃ W : W1p volume B 2, (∀ᵐ x ∂volume.restrict B, x ∉ S → W1p.value W x = 0) ∧
-      W1p.restrictL hΩB W = w := by
-  have hΩm : MeasurableSet (Ω : Set F) := Ω.isOpen.measurableSet
-  have hΩBs : (Ω : Set F) ⊆ B := hΩB
-  obtain ⟨v, hv⟩ : ∃ v : W1p0 volume Ω 2,
-      (v : W1p volume Ω 2) = W1p.restrictL (hΩB.trans hBU) u - w :=
-    ⟨⟨_, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw⟩, rfl⟩
-  have hext : (W1p.value (W1p0.extendByZeroL hΩB v : W1p volume B 2) : F → ℝ)
-      =ᵐ[volume.restrict B] (Ω : Set F).indicator (W1p.value (v : W1p volume Ω 2)) := by
-    rw [W1p0.value_extendByZeroL]
-    exact coeFn_extendByZeroLpₗᵢ ℝ hΩm _ _
-  have hWval : (W1p.value (W1p.restrictL hBU u - (W1p0.extendByZeroL hΩB v : W1p volume B 2)) :
-      F → ℝ) =ᵐ[volume.restrict B]
-        fun x => W1p.value u x - W1p.value (W1p0.extendByZeroL hΩB v : W1p volume B 2) x := by
-    filter_upwards [W1p.value_sub_ae (W1p.restrictL hBU u)
-      (W1p0.extendByZeroL hΩB v : W1p volume B 2), W1p.value_restrictL_ae hBU u] with x h1 h2
-    rw [h1, Pi.sub_apply, h2]
-  have hvval : (W1p.value (v : W1p volume Ω 2) : F → ℝ) =ᵐ[volume.restrict Ω]
-      fun x => W1p.value u x - W1p.value w x := by
-    rw [hv]
-    filter_upwards [W1p.value_sub_ae (W1p.restrictL (hΩB.trans hBU) u) w,
-      W1p.value_restrictL_ae (hΩB.trans hBU) u] with x h1 h2
-    rw [h1, Pi.sub_apply, h2]
-  refine ⟨W1p.restrictL hBU u - (W1p0.extendByZeroL hΩB v : W1p volume B 2), ?_, ?_⟩
-  · filter_upwards [hWval, hext, hu0] with x h1 h2 h3 hx
-    rw [h1, h2, indicator_of_notMem fun hxΩ => hx (hΩ.subset hxΩ).2, h3 hx, sub_zero]
-  · refine W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hΩB _).trans ?_))
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hΩBs hWval,
-      ae_restrict_of_ae_restrict_of_subset hΩBs hext, hvval, ae_restrict_mem hΩm] with
-      x h1 h2 h3 hx
-    rw [h1, h2, indicator_of_mem hx, h3]
-    ring
-
-end InnerProductSpace
-
 /-- **Reflection of a harmonic replacement on a half-ball.** Let `x₀` lie on the hyperplane
 `{a} × E`, let `u ∈ H¹(U)` vanish off `H` with `ball x₀ r ⊆ U`, and let `w` be weakly harmonic on
-`Ω = B_r⁺` with the boundary values of `u`. Then there is a harmonic field `K` on `ball x₀ r`,
+`Ω = B_r⁺` with the boundary values of `u`. Then there is a harmonic field `V` on `ball x₀ r`,
 odd under the reflection in the hyperplane, whose square distance from `∇u` on `B_r⁺` is the
 energy of `u - w`. -/
 private theorem exists_harmonicOnNhd_ball_setIntegral_norm_gradient_sub_sq_eq {a : ℝ}
@@ -158,10 +109,10 @@ private theorem exists_harmonicOnNhd_ball_setIntegral_norm_gradient_sub_sq_eq {a
     (hΩU : Ω ≤ U) {w : W1p volume Ω 2}
     (huw : W1p.restrictL hΩU u - w ∈ w1p0Submodule volume Ω 2)
     (hw : ∀ v ∈ w1p0Submodule volume Ω 2, ⟪W1p.gradient w, W1p.gradient v⟫_ℝ = 0) :
-    ∃ K : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E), HarmonicOnNhd K (ball x₀ r) ∧
-      (∀ x ∈ ball x₀ r, K (normalReflection E a x) = -normalLinearReflection E (K x)) ∧
-      MemLp K 2 (volume.restrict (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _))) ∧
-      ∫ x in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), ‖W1p.gradient u x - K x‖ ^ 2 =
+    ∃ V : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E), HarmonicOnNhd V (ball x₀ r) ∧
+      (∀ x ∈ ball x₀ r, V (normalReflection E a x) = -normalLinearReflection E (V x)) ∧
+      MemLp V 2 (volume.restrict (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _))) ∧
+      ∫ x in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), ‖W1p.gradient u x - V x‖ ^ 2 =
         ‖W1p.gradient (W1p.restrictL hΩU u - w)‖ ^ 2 := by
   obtain ⟨B, hB⟩ : ∃ B : Opens (WithLp 2 (ℝ × E)), (B : Set (WithLp 2 (ℝ × E))) = ball x₀ r :=
     ⟨⟨ball x₀ r, isOpen_ball⟩, rfl⟩
@@ -174,41 +125,103 @@ private theorem exists_harmonicOnNhd_ball_setIntegral_norm_gradient_sub_sq_eq {a
   have hΩeq : B ⊓ normalHalfSpace a = Ω := SetLike.coe_injective (by rw [Opens.coe_inf, hB, hΩ])
   have hΩm : MeasurableSet (Ω : Set (WithLp 2 (ℝ × E))) := Ω.isOpen.measurableSet
   -- `W = u - (u - w)₀` on `B` vanishes off `H` and restricts to `w` on `Ω`.
-  obtain ⟨W, hW0, hWres⟩ := exists_w1p_restrictL_eq (S := normalHalfSpace (E := E) a) hBU hΩB
-    (by rw [hΩ, hB]) (ae_restrict_of_ae_restrict_of_subset hBs hu0) huw
+  obtain ⟨W, hW0, hWres⟩ := W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule hΩB hBU
+    (S := normalHalfSpace (E := E) a) (hΩ ▸ inter_subset_right)
+    (ae_restrict_of_ae_restrict_of_subset hBs hu0) huw
   have hG0 : ∀ᵐ x ∂volume.restrict B, x ∉ normalHalfSpace (E := E) a →
       W1p.gradient W x = 0 := by
     filter_upwards [hW0, W1p.gradient_ae_eq_zero_on_level_set (by norm_num) W 0] with x h1 h2 hx
     exact h2 (h1 hx)
   -- `w`, hence `W`, is weakly harmonic on `Ω`.
-  have hwh : WeaklyHarmonicOn volume Ω (W1p.value w) := by
-    refine weaklyHarmonicOn_iff.2 ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩
-    rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero]
-    simp_rw [real_inner_comm (W1p.gradient w _)]
-    rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset,
-      ← hw _ (W1p.ofTestFunctionₗ_mem_w1p0Submodule φ), L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω) 2 φ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx]
+  have hwh : WeaklyHarmonicOn volume Ω (W1p.value w) :=
+    W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero fun φ =>
+      hw _ (W1p.ofTestFunctionₗ_mem_w1p0Submodule φ)
   have hWw : (W1p.value w : WithLp 2 (ℝ × E) → ℝ) =ᵐ[volume.restrict Ω] W1p.value W := by
     have h := W1p.value_restrictL_ae hΩB W
     rw [hWres] at h
     exact h
-  -- By reflection, `∇W` agrees on `B_r⁺` with a harmonic field `K` odd under the reflection.
-  obtain ⟨K, hK, hodd, hKW⟩ := WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq (U := B)
+  -- By reflection, `∇W` agrees on `B_r⁺` with a harmonic field `V` odd under the reflection.
+  obtain ⟨V, hV, hodd, hVW⟩ := WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq (U := B)
     (hΩeq ▸ hwh.congr_ae hWw) (by rw [hB]; exact mapsTo_normalReflection_ball hx₀ r)
     (W1p.hasWeakFDerivOn W) hG0 hW0 hB.symm.subset
-  refine ⟨K, hK, hodd, ((Lp.memLp (W1p.gradient W)).mono_measure
-    (Measure.restrict_mono (hB.symm ▸ inter_subset_left) le_rfl)).ae_eq hKW.symm, ?_⟩
-  -- On `B_r⁺`, `∇u - K = ∇u - ∇w`.
-  rw [← hΩ] at hKW
-  rw [← hΩ, ← Lp.integral_norm_sq_eq_norm_sq]
+  refine ⟨V, hV, hodd, ((Lp.memLp (W1p.gradient W)).mono_measure
+    (Measure.restrict_mono (hB.symm ▸ inter_subset_left) le_rfl)).ae_eq hVW.symm, ?_⟩
+  -- On `B_r⁺`, `∇u - V = ∇u - ∇w`.
+  rw [← hΩ] at hVW
+  rw [← hΩ, ← W1p.setIntegral_norm_gradient_sub_sq_eq hΩU u w]
   refine integral_congr_ae ?_
   have hgW := W1p.gradient_restrictL_ae hΩB W
   rw [hWres] at hgW
-  filter_upwards [hKW, hgW, W1p.gradient_restrictL_ae hΩU u,
-    Lp.coeFn_sub (W1p.gradient (W1p.restrictL hΩU u)) (W1p.gradient w)] with x h1 h2 h3 h4
-  rw [W1p.gradient_sub, h4, Pi.sub_apply, h1, ← h2, h3]
+  filter_upwards [hVW, hgW] with x h1 h2
+  rw [h1, ← h2]
+
+/-- **The `L²` oscillation of a Hölder field on a half-ball.** Let `x₀` lie on the hyperplane
+`{a} × E` and let `G` be `α`-Hölder with constant `K` on `Ω = B_r⁺`, `r > 0`. Then for some point
+`y`, `G - G y` is square integrable on `Ω` and `‖G - G y‖²_{L²(Ω)} ≤ 2^(2α) ω K² r^(n + 2α)`, where
+`ω` is the volume of the unit ball and `n` is the dimension of `ℝ × E`. -/
+private theorem exists_memLp_sub_norm_toLp_sq_le {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {K α : ℝ≥0} {x₀ : WithLp 2 (ℝ × E)} {r : ℝ}
+    (hα : 0 < α) (hG : HolderOnWith K α G (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _)))
+    (hx₀ : x₀.fst = a) (hr : 0 < r) {Ω : Opens (WithLp 2 (ℝ × E))}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))) = ball x₀ r ∩ normalHalfSpace (E := E) a) :
+    ∃ y : WithLp 2 (ℝ × E), ∃ hGc : MemLp (fun x => G x - G y) 2 (volume.restrict Ω),
+      ‖hGc.toLp‖ ^ 2 ≤
+        2 ^ (2 * (α : ℝ)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) * (K : ℝ) ^ 2 *
+          r ^ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) + 2 * α) := by
+  -- On `Ω`, `G` stays within `K (2 r)^α` of its value at a point `y ∈ Ω`.
+  set y : WithLp 2 (ℝ × E) := x₀ + WithLp.toLp 2 (r / 2, 0)
+  have hyB : y ∈ ball x₀ r := by
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, WithLp.prod_norm_eq_of_L2]
+    simp only [WithLp.toLp_fst, WithLp.toLp_snd, Real.norm_eq_abs, sq_abs, norm_zero]
+    rw [zero_pow two_ne_zero, add_zero, Real.sqrt_sq (by linarith)]
+    linarith
+  have hyH : y ∈ (normalHalfSpace (E := E) a : Set _) := by
+    rw [SetLike.mem_coe, mem_normalHalfSpace]
+    simp [y, ← hx₀]
+    linarith
+  have hGbd : ∀ x ∈ (Ω : Set (WithLp 2 (ℝ × E))), ‖G x - G y‖ ≤ K * (2 * r) ^ (α : ℝ) :=
+    fun x hx => by
+      rw [hΩ] at hx
+      rw [← dist_eq_norm]
+      refine (hG.dist_le hx ⟨hyB, hyH⟩).trans (mul_le_mul_of_nonneg_left
+        (Real.rpow_le_rpow dist_nonneg ?_ α.2) K.2)
+      linarith [dist_triangle_right x y x₀, mem_ball.1 hx.1, mem_ball.1 hyB]
+  have hΩm : MeasurableSet (Ω : Set (WithLp 2 (ℝ × E))) := Ω.isOpen.measurableSet
+  have hΩfin : volume (Ω : Set (WithLp 2 (ℝ × E))) ≠ ⊤ := by
+    rw [hΩ]
+    exact ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
+  have hGc : MemLp (fun x => G x - G y) 2 (volume.restrict Ω) := by
+    have : IsFiniteMeasure (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
+      isFiniteMeasure_restrict.2 hΩfin
+    exact MemLp.of_bound ((((hG.continuousOn hα).mono hΩ.subset).aestronglyMeasurable hΩm).sub
+      aestronglyMeasurable_const) _ ((ae_restrict_iff' hΩm).2 (ae_of_all _ hGbd))
+  refine ⟨y, hGc, ?_⟩
+  have hGn := hGc.norm_toLp_le_measureReal_rpow_mul (by norm_num) hΩfin
+    ((ae_restrict_iff' hΩm).2 (ae_of_all _ hGbd))
+  rw [ENNReal.toReal_ofNat, ← one_div, ← Real.sqrt_eq_rpow] at hGn
+  have hvol : volume.real (Ω : Set (WithLp 2 (ℝ × E))) ≤
+      r ^ finrank ℝ (WithLp 2 (ℝ × E)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) := by
+    rw [hΩ, ← (volume : Measure (WithLp 2 (ℝ × E))).addHaar_real_ball_of_pos x₀ hr]
+    exact measureReal_mono inter_subset_left measure_ball_lt_top.ne
+  have h2 : ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 =
+      2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ)) := by
+    have h : ((2 * r) ^ (α : ℝ)) ^ 2 = 2 ^ (2 * (α : ℝ)) * r ^ (2 * (α : ℝ)) := by
+      rw [← Real.rpow_natCast ((2 * r) ^ (α : ℝ)) 2, ← Real.rpow_mul (by linarith),
+        Real.mul_rpow (by norm_num) hr.le]
+      push_cast
+      ring_nf
+    rw [mul_pow, h]
+    ring
+  have h3 : r ^ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) + 2 * α) =
+      r ^ finrank ℝ (WithLp 2 (ℝ × E)) * r ^ (2 * (α : ℝ)) := by
+    rw [Real.rpow_add hr, Real.rpow_natCast]
+  refine (pow_le_pow_left₀ (norm_nonneg _) hGn 2).trans ?_
+  rw [mul_pow, Real.sq_sqrt measureReal_nonneg, h2, h3]
+  calc volume.real (Ω : Set (WithLp 2 (ℝ × E))) *
+        (2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ)))
+      ≤ r ^ finrank ℝ (WithLp 2 (ℝ × E)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) *
+        (2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ))) := by gcongr
+    _ = _ := by ring
 
 /-- **One comparison step at a flat boundary.** Let `x₀` lie on the hyperplane `{a} × E`, let
 `u ∈ H¹(U)` vanish off `H` and solve `-Δu = -div G` weakly on `U ∩ H`, with `G` `α`-Hölder with
@@ -252,24 +265,6 @@ private theorem setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le_a
   have hΩV : Ω ≤ U ⊓ normalHalfSpace a := SetLike.coe_subset_coe.1 (by
     rw [hΩ, Opens.coe_inf]
     exact inter_subset_inter_left _ hball)
-  -- On `Ω`, `G` stays within `K (2 r)^α` of its value at a point `y ∈ Ω`.
-  set y : WithLp 2 (ℝ × E) := x₀ + WithLp.toLp 2 (r / 2, 0)
-  have hyB : y ∈ ball x₀ r := by
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, WithLp.prod_norm_eq_of_L2]
-    simp only [WithLp.toLp_fst, WithLp.toLp_snd, Real.norm_eq_abs, sq_abs, norm_zero]
-    rw [zero_pow two_ne_zero, add_zero, Real.sqrt_sq (by linarith)]
-    linarith
-  have hyH : y ∈ (normalHalfSpace (E := E) a : Set _) := by
-    rw [SetLike.mem_coe, mem_normalHalfSpace]
-    simp [y, ← hx₀]
-    linarith
-  have hGbd : ∀ x ∈ (Ω : Set (WithLp 2 (ℝ × E))), ‖G x - G y‖ ≤ K * (2 * r) ^ (α : ℝ) :=
-    fun x hx => by
-      rw [hΩ] at hx
-      rw [← dist_eq_norm]
-      refine (hG.dist_le hx ⟨hyB, hyH⟩).trans (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow dist_nonneg ?_ α.2) K.2)
-      linarith [dist_triangle_right x y x₀, mem_ball.1 hx.1, mem_ball.1 hyB]
   -- The harmonic replacement `w` of `u` on `Ω` and its energy estimate.
   have hUH : U ⊓ normalHalfSpace a ≤ U := inf_le_left
   have hu₁ : ∀ φ : 𝓓(U ⊓ normalHalfSpace a, ℝ),
@@ -281,62 +276,32 @@ private theorem setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le_a
     refine integral_congr_ae ?_
     filter_upwards [W1p.gradient_restrictL_ae hUH u] with x hx
     rw [hx]
-  have hΩm : MeasurableSet (Ω : Set (WithLp 2 (ℝ × E))) := Ω.isOpen.measurableSet
   have hΩb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))) := by
     rw [hΩ]
     exact isBounded_ball.subset inter_subset_left
-  have hΩfin : volume (Ω : Set (WithLp 2 (ℝ × E))) ≠ ⊤ := hΩb.measure_lt_top.ne
-  have hGc : MemLp (fun x => G x - G y) 2 (volume.restrict Ω) := by
-    have : IsFiniteMeasure (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
-      isFiniteMeasure_restrict.2 hΩfin
-    exact MemLp.of_bound ((((hG.continuousOn hα).mono hΩ.subset).aestronglyMeasurable hΩm).sub
-      aestronglyMeasurable_const) _ ((ae_restrict_iff' hΩm).2 (ae_of_all _ hGbd))
+  -- On `Ω`, `G` is `L²`-close to a constant.
+  obtain ⟨y, hGc, hGn⟩ := exists_memLp_sub_norm_toLp_sq_le hα hG hx₀ hr hΩ
   obtain ⟨w, huw, hw, hE⟩ :=
     exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero hΩb (W1p.restrictL (hΩV.trans hUH) u)
   -- Constants have zero divergence, so `u` solves `-Δu = -div (G - G y)` against `H¹₀(Ω)`.
   have hE' := hE hGc.toLp fun v hv => by
     have h := inner_gradient_restrictL_eq_inner_toLp hΩV hu₁ hGc hv
     rwa [W1p.restrictL_restrictL] at h
-  have hGn := hGc.norm_toLp_le_measureReal_rpow_mul (by norm_num) hΩfin
-    ((ae_restrict_iff' hΩm).2 (ae_of_all _ hGbd))
-  rw [ENNReal.toReal_ofNat, ← one_div, ← Real.sqrt_eq_rpow] at hGn
-  obtain ⟨Kf, hK, hodd, hKm, herr⟩ :=
+  obtain ⟨V, hV, hodd, hVm, herr⟩ :=
     exists_harmonicOnNhd_ball_setIntegral_norm_gradient_sub_sq_eq hu0 hx₀ hball hΩ
       (hΩV.trans hUH) huw hw
   have hf : MemLp (W1p.gradient u : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)) 2
       (volume.restrict (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _))) :=
     (Lp.memLp (W1p.gradient u)).mono_measure
       (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
-  have hcmp := hK.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le_add hx₀ hodd hf hKm ht.le
+  have hcmp := hV.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le_add hx₀ hodd hf hVm ht.le
     htr
   rw [herr] at hcmp
   -- The energy of `u - w` is at most `2^(2α) ω K² r^(n + 2α)`.
-  have hvol : volume.real (Ω : Set (WithLp 2 (ℝ × E))) ≤
-      r ^ finrank ℝ (WithLp 2 (ℝ × E)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) := by
-    rw [hΩ, ← (volume : Measure (WithLp 2 (ℝ × E))).addHaar_real_ball_of_pos x₀ hr]
-    exact measureReal_mono inter_subset_left measure_ball_lt_top.ne
-  have h2 : ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 =
-      2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ)) := by
-    have h : ((2 * r) ^ (α : ℝ)) ^ 2 = 2 ^ (2 * (α : ℝ)) * r ^ (2 * (α : ℝ)) := by
-      rw [← Real.rpow_natCast ((2 * r) ^ (α : ℝ)) 2, ← Real.rpow_mul (by linarith),
-        Real.mul_rpow (by norm_num) hr.le]
-      push_cast
-      ring_nf
-    rw [mul_pow, h]
-    ring
-  have h3 : r ^ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) + 2 * α) =
-      r ^ finrank ℝ (WithLp 2 (ℝ × E)) * r ^ (2 * (α : ℝ)) := by
-    rw [Real.rpow_add hr, Real.rpow_natCast]
   have hdata : ‖W1p.gradient (W1p.restrictL (hΩV.trans hUH) u - w)‖ ^ 2 ≤
       2 ^ (2 * (α : ℝ)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) * (K : ℝ) ^ 2 *
-        r ^ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) + 2 * α) := by
-    refine (pow_le_pow_left₀ (norm_nonneg _) (hE'.trans hGn) 2).trans ?_
-    rw [mul_pow, Real.sq_sqrt measureReal_nonneg, h2, h3]
-    calc volume.real (Ω : Set (WithLp 2 (ℝ × E))) *
-          (2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ)))
-        ≤ r ^ finrank ℝ (WithLp 2 (ℝ × E)) * volume.real (ball (0 : WithLp 2 (ℝ × E)) 1) *
-          (2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ))) := by gcongr
-      _ = _ := by ring
+        r ^ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) + 2 * α) :=
+    (pow_le_pow_left₀ (norm_nonneg _) hE' 2).trans hGn
   refine hcmp.trans ?_
   gcongr
 

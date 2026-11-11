@@ -54,6 +54,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
+* `TauCeti.W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule`: if `u` vanishes off `S` and `w`
+  has the boundary values of `u` on `Ω ⊆ S`, then `u` minus the zero extension of `u - w` vanishes
+  off `S` and restricts to `w` on `Ω`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -319,6 +322,32 @@ theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omeg
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hsub _).trans (by
     rw [W1p0.value_extendByZeroL]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
+
+/-- **Gluing a function with prescribed boundary values into one vanishing off a set.** Let
+`Ω ⊆ Ω' ⊆ Ω''` be open with `Ω ⊆ S`, let `u ∈ W^{1,p}(Ω'')` vanish almost everywhere on `Ω'` off
+`S`, and let `w ∈ W^{1,p}(Ω)` have the boundary values of `u`, `u - w ∈ W^{1,p}_0(Ω)`. Then `u`
+minus the zero extension of `u - w` is an element `W ∈ W^{1,p}(Ω')` that vanishes almost
+everywhere off `S` and restricts to `w` on `Ω`. -/
+theorem W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule (hsub : Omega ≤ Omega')
+    (hsub' : Omega' ≤ Omega'') {S : Set E} (hS : (Omega : Set E) ⊆ S) {u : W1p mu Omega'' p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value u x = 0) {w : W1p mu Omega p}
+    (huw : W1p.restrictL (hsub.trans hsub') u - w ∈ w1p0Submodule mu Omega p) :
+    ∃ W : W1p mu Omega' p, (∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value W x = 0) ∧
+      W1p.restrictL hsub W = w := by
+  obtain ⟨v, hv⟩ : ∃ v : W1p0 mu Omega p,
+      (v : W1p mu Omega p) = W1p.restrictL (hsub.trans hsub') u - w :=
+    ⟨⟨_, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw⟩, rfl⟩
+  refine ⟨W1p.restrictL hsub' u - (W1p0.extendByZeroL hsub v : W1p mu Omega' p), ?_, ?_⟩
+  · have hext : (W1p.value (W1p0.extendByZeroL hsub v : W1p mu Omega' p) : E → ℝ)
+        =ᵐ[mu.restrict Omega'] (Omega : Set E).indicator (W1p.value (v : W1p mu Omega p)) := by
+      rw [W1p0.value_extendByZeroL]
+      exact coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet _ _
+    filter_upwards [W1p.value_sub_ae (W1p.restrictL hsub' u)
+      (W1p0.extendByZeroL hsub v : W1p mu Omega' p), W1p.value_restrictL_ae hsub' u, hext, hu]
+      with x h1 h2 h3 h4 hx
+    rw [h1, Pi.sub_apply, h2, h3, Set.indicator_of_notMem fun hxΩ => hx (hS hxΩ), h4 hx,
+      sub_zero]
+  · rw [map_sub, W1p.restrictL_restrictL, W1p0.restrictL_extendByZeroL, hv, sub_sub_cancel]
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the
