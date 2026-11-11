@@ -378,6 +378,40 @@ lemma twistedChainComplexMap_mem_smallTwistedChains (r : ι → κ)
     ContinuousMap.coe_comp, Set.range_comp]
   exact ⟨r i, ((hf i).mono_left hi).image_subset⟩
 
+/-- Along an injective map `f`, a chain is supported in `f ⁻¹' S` exactly when its pushforward is
+supported in `S`. -/
+lemma twistedChainComplexMap_f_mem_smallTwistedChains_iff [Mono f] {n : ℕ} {S : Set Y}
+    {c : ((pullback f.hom).obj M).twistedChainComplex.X n} :
+    ((twistedChainComplexMap f M).f n).hom c ∈ smallTwistedChains M (fun _ : Unit ↦ S) n ↔
+      c ∈ smallTwistedChains ((pullback f.hom).obj M) (fun _ : Unit ↦ f ⁻¹' S) n := by
+  refine ⟨fun hc ↦ ?_, twistedChainComplexMap_mem_smallTwistedChains _ _ f M id
+    (fun _ ↦ Set.mapsTo_preimage f S)⟩
+  rw [mem_smallTwistedChains_iff] at hc ⊢
+  intro τ hτ
+  rw [← twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
+  refine hc _ fun h ↦ hτ ?_
+  simp only [TopCat.mem_smallSingularSubcomplex_iff, exists_const,
+    TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp] at h ⊢
+  exact Set.image_subset_iff.1 h
+
+/-- Along an inducing map, the pushforwards of twisted chains are exactly the chains supported in
+its range. -/
+lemma range_twistedChainComplexMap_f (hf : Topology.IsInducing f) (n : ℕ) :
+    LinearMap.range ((twistedChainComplexMap f M).f n).hom =
+      smallTwistedChains M (fun _ : Unit ↦ Set.range f) n := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨c, rfl⟩
+    refine twistedChainComplexMap_mem_smallTwistedChains (fun _ : Unit ↦ Set.univ) _ f M id
+      (fun _ x _ ↦ Set.mem_range_self x) ?_
+    rw [mem_smallTwistedChains_iff]
+    intro σ hσ
+    exact (hσ ((TopCat.mem_smallSingularSubcomplex_iff _ _ σ).2 ⟨(), Set.subset_univ _⟩)).elim
+  · simpa only [Submodule.comap_id] using smallTwistedChains_le_comap M _ LinearMap.id
+      (LinearMap.range ((twistedChainComplexMap f M).f n).hom) fun σ hσ x ↦ by
+        obtain ⟨_, hσ⟩ := (TopCat.mem_smallSingularSubcomplex_iff Y _ σ).1 hσ
+        obtain ⟨τ, rfl⟩ := (hf.mem_range_toSSet_map_app_iff _ σ).2 hσ
+        exact ⟨(ιTwistedChainComplex _ n τ).hom x, twistedChainComplexMap_f_ι_apply f M n τ x⟩
+
 end Naturality
 
 section Inclusion
