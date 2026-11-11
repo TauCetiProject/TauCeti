@@ -202,11 +202,13 @@ theorem qExpansion_thetaSeries_coeff_zero {h : ℝ} (hh : 0 < h)
     valueAtInfty_thetaSeries]
 
 variable {L} in
+omit [DiscreteTopology L] in
 /-- For an even lattice, the constant term of the `q`-expansion of `Θ_L` in
 `q = exp (2 π i τ)` is `1`. -/
 theorem IsEven.qExpansion_thetaSeries_coeff_zero (hL : IsEven L) :
-    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
+    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
 
 end Normed
 
@@ -215,11 +217,13 @@ section InnerProduct
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L]
 
+omit [DiscreteTopology L] in
 /-- For an integral lattice, the constant term of the `q`-expansion of `Θ_L` with period `2`, in
 `exp (π i τ)`, is `1`. -/
 theorem IsIntegral.qExpansion_two_thetaSeries_coeff_zero (hL : IsIntegral L) :
-    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
+    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
 
 end InnerProduct
 

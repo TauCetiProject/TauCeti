@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Conjugating subgroups and joining with a normalizing subgroup
@@ -29,6 +30,7 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 ## Main statements
 
 * `TauCeti.mem_conj_smul`: membership in `sHs⁻¹` is `s⁻¹ * x * s ∈ H`.
+* `TauCeti.card_conj_smul_eq`: conjugation preserves the number of elements of a subgroup.
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
@@ -57,6 +59,11 @@ theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
     H.map (MulAut.conj s : G →* G) = MulAut.conj s • H :=
   -- The pointwise action of `MulAut G` on subgroups is defined as `Subgroup.map`.
   (rfl)
+
+/-- Conjugation preserves the number of elements of a subgroup. -/
+theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
+    Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
+  Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
 
 end TauCeti
 

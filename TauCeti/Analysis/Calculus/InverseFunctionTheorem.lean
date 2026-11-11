@@ -37,6 +37,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 
 * `ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`: on a set where `f` approximates `L` with
   constant `c`, every derivative of `f` at an interior point is within `c` of `L`.
+* `HasStrictFDerivAt.exists_mem_nhds_injOn`: a map with an invertible strict derivative at a point
+  is injective near it, without completeness.
 * `HasStrictFDerivAt.approximatesLinearOn_toOpenPartialHomeomorph_source`: the source of the
   inverse function theorem's homeomorphism carries the approximation estimate its construction
   chose.
@@ -85,6 +87,15 @@ theorem ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt {f : E → F} {L A : E �
   exact (hA.sub L.hasFDerivAt).le_of_lipschitzOn hs hf.lipschitzOnWith
 
 namespace HasStrictFDerivAt
+
+/-- **Local injectivity from a strict derivative.** A map whose strict derivative at `a` is a
+continuous linear equivalence is injective on a neighbourhood of `a`; no completeness is needed,
+since `ApproximatesLinearOn.injOn` only uses the approximation estimate. -/
+theorem exists_mem_nhds_injOn {f : E → F} {L : E ≃L[𝕜] F} {a : E}
+    (hf : HasStrictFDerivAt f (L : E →L[𝕜] F) a) : ∃ s ∈ 𝓝 a, InjOn f s := by
+  obtain ⟨s, has, hso, happ⟩ := hf.approximates_deriv_on_open_nhds
+  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnnorm_symm_pos.imp id
+    fun h => NNReal.half_lt_self (inv_pos.2 h).ne')⟩
 
 variable [CompleteSpace E] {f : E → F} {L : E ≃L[𝕜] F} {a : E}
 
