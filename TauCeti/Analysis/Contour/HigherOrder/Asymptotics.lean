@@ -84,6 +84,12 @@ theorem hasDerivAt_antiderivative_pow_inv {s : ℂ} {k : ℕ} (hk : 2 ≤ k) {z 
     field_simp
   exact hval ▸ h_const
 
+/-- For `k < 2` the antiderivative of the order-`k` pole integrand is `0`. -/
+private theorem antiderivative_eq_zero_of_lt_two {k : ℕ} (hk : k < 2) (z : ℂ) :
+    -(↑(k - 1) : ℂ)⁻¹ * (z ^ (k - 1))⁻¹ = 0 := by
+  have hk1 : k - 1 = 0 := by omega
+  simp [hk1]
+
 /-- **Mean-value bound for the antiderivative along a segment.** When the segment from `z₁` to
 `z₂` stays at distance `≥ ε` from `s`, the antiderivative difference satisfies
 `‖F(z₂) - F(z₁)‖ ≤ ‖z₂ - z₁‖ / ε^k`. For `k < 2` the antiderivative is `0`. -/
@@ -94,8 +100,7 @@ theorem norm_antiderivative_diff_le_segment_bound
       (-(↑(k - 1) : ℂ)⁻¹ * ((z₁ - s) ^ (k - 1))⁻¹)‖ ≤
       (1 / ε ^ k) * ‖z₂ - z₁‖ := by
   rcases lt_or_ge k 2 with hk | hk
-  · have hk1 : k - 1 = 0 := by omega
-    simp only [hk1, Nat.cast_zero, inv_zero, neg_zero, zero_mul, sub_self, norm_zero]
+  · simp only [antiderivative_eq_zero_of_lt_two hk, sub_self, norm_zero]
     positivity
   have h_deriv : ∀ z ∈ segment ℝ z₁ z₂,
       HasDerivWithinAt (fun w => -(↑(k - 1) : ℂ)⁻¹ * ((w - s) ^ (k - 1))⁻¹)
@@ -261,6 +266,57 @@ private theorem tendsto_div_pow_zero_of_isLittleO {chord d : ℝ → ℝ} {l : F
     _ ≤ ε / 2 * 1 := by gcongr
     _ < ε := by linarith
 
+/-- The nondegenerate case of `antiderivative_diff_at_tangent_target_tendsto_zero`: the chord
+bound and the eventual inequality `γ t ≠ s` give the vanishing of the antiderivative difference. -/
+private theorem tendsto_antiderivative_diff_of_eventually_ne
+    {γ : ℝ → ℂ} {s : ℂ} {l : Filter ℝ} {T : ℂ} {n k : ℕ} (hk : 2 ≤ k) (hkn : k ≤ n) (hT : T ≠ 0)
+    (h_ne : ∀ᶠ t in l, γ t ≠ s)
+    (h_chord : (fun t => ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖) =o[l]
+      fun t => ‖γ t - s‖ ^ n)
+    (h_to : Tendsto γ l (𝓝 s)) :
+    Tendsto (fun t =>
+      ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
+        (-(↑(k - 1) : ℂ)⁻¹ *
+          (((s + (‖γ t - s‖ / ‖T‖ : ℝ) • T) - s) ^ (k - 1))⁻¹)‖)
+      l (𝓝 0) := by
+  have h_d_to_zero : Tendsto (fun t => ‖γ t - s‖) l (𝓝 0) := by
+    simpa using (h_to.sub_const s).norm
+  have h_d_pos : ∀ᶠ t in l, 0 < ‖γ t - s‖ := by
+    filter_upwards [h_ne] with t h
+    exact norm_pos_iff.mpr (sub_ne_zero.mpr h)
+  have h_const_ratio : Tendsto
+      (fun t => 2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k))
+      l (𝓝 0) := by
+    simpa using
+      (tendsto_div_pow_zero_of_isLittleO h_chord h_d_to_zero h_d_pos hkn).const_mul
+        (2 ^ k : ℝ)
+  have h_chord_le_d : ∀ᶠ t in l,
+      ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ ≤ ‖γ t - s‖ := by
+    filter_upwards [h_chord.bound one_pos,
+      h_d_to_zero.eventually (Iic_mem_nhds (by norm_num : (0 : ℝ) < 1)),
+      h_d_pos] with t hb hd _
+    calc ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖
+        ≤ ‖γ t - s‖ ^ n := by simpa using hb
+      _ ≤ ‖γ t - s‖ ^ 1 := pow_le_pow_of_le_one (norm_nonneg _) hd (by omega : 1 ≤ n)
+      _ = ‖γ t - s‖ := pow_one _
+  have h_F_diff_le : ∀ᶠ t in l,
+      ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
+        (-(↑(k - 1) : ℂ)⁻¹ *
+          (((s + (‖γ t - s‖ / ‖T‖ : ℝ) • T) - s) ^ (k - 1))⁻¹)‖ ≤
+      2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k) := by
+    filter_upwards [h_ne, h_chord_le_d] with t h_ne hcd
+    have hcd' : ‖γ t - (s + (‖γ t - s‖ / ‖T‖ : ℝ) • T)‖ ≤ ‖γ t - s‖ := by
+      rwa [sub_add_eq_sub_sub]
+    have h_bound := norm_antiderivative_diff_at_tangent_target_le (k := k) hT h_ne hcd'
+    rw [sub_add_eq_sub_sub] at h_bound
+    calc ‖_‖
+        ≤ (1 : ℝ) / (‖γ t - s‖ / 2) ^ k *
+            ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ := h_bound
+      _ = 2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k) := by
+          rw [div_pow]; field_simp
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_const_ratio
+    (Eventually.of_forall fun _ => norm_nonneg _) h_F_diff_le
+
 /-- **The antiderivative difference to the tangent target vanishes (parametrised core).** If the
 chord to the `+T` tangent target is `o(‖γ t - s‖ ^ n)` along `l`, `γ → s` along `l`, and
 `k ≤ n`, then `F(γ t) - F(target)` tends to `0` along `l`, for the antiderivative `F` of the
@@ -279,8 +335,7 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero
   have h_d_to_zero : Tendsto (fun t => ‖γ t - s‖) l (𝓝 0) := by
     simpa using (h_to.sub_const s).norm
   rcases lt_or_ge k 2 with hk | hk
-  · have hk1 : k - 1 = 0 := by omega
-    simp only [hk1, Nat.cast_zero, inv_zero, neg_zero, zero_mul, sub_self, norm_zero]
+  · simp only [antiderivative_eq_zero_of_lt_two hk, sub_self, norm_zero]
     exact tendsto_const_nhds
   by_cases hT : T = 0
   · subst hT
@@ -295,58 +350,16 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [h_eq] with t ht
     simp [ht]
-  have core : ∀ l' ≤ l, (∀ᶠ t in l', γ t ≠ s) →
-      Tendsto (fun t =>
-        ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
-          (-(↑(k - 1) : ℂ)⁻¹ *
-            (((s + (‖γ t - s‖ / ‖T‖ : ℝ) • T) - s) ^ (k - 1))⁻¹)‖)
-        l' (𝓝 0) := by
-    intro l' hl' h_ne
-    have h_chord := h_chord.mono hl'
-    have h_d_to_zero := h_d_to_zero.mono_left hl'
-    have h_d_pos : ∀ᶠ t in l', 0 < ‖γ t - s‖ := by
-      filter_upwards [h_ne] with t h
-      exact norm_pos_iff.mpr (sub_ne_zero.mpr h)
-    have h_const_ratio : Tendsto
-        (fun t => 2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k))
-        l' (𝓝 0) := by
-      simpa using
-        (tendsto_div_pow_zero_of_isLittleO h_chord h_d_to_zero h_d_pos hkn).const_mul
-          (2 ^ k : ℝ)
-    have h_chord_le_d : ∀ᶠ t in l',
-        ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ ≤ ‖γ t - s‖ := by
-      filter_upwards [h_chord.bound one_pos,
-        h_d_to_zero.eventually (Iic_mem_nhds (by norm_num : (0 : ℝ) < 1)),
-        h_d_pos] with t hb hd _
-      calc ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖
-          ≤ ‖γ t - s‖ ^ n := by simpa using hb
-        _ ≤ ‖γ t - s‖ ^ 1 := pow_le_pow_of_le_one (norm_nonneg _) hd (by omega : 1 ≤ n)
-        _ = ‖γ t - s‖ := pow_one _
-    have h_F_diff_le : ∀ᶠ t in l',
-        ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
-          (-(↑(k - 1) : ℂ)⁻¹ *
-            (((s + (‖γ t - s‖ / ‖T‖ : ℝ) • T) - s) ^ (k - 1))⁻¹)‖ ≤
-        2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k) := by
-      filter_upwards [h_ne, h_chord_le_d] with t h_ne hcd
-      have hcd' : ‖γ t - (s + (‖γ t - s‖ / ‖T‖ : ℝ) • T)‖ ≤ ‖γ t - s‖ := by
-        rwa [sub_add_eq_sub_sub]
-      have h_bound := norm_antiderivative_diff_at_tangent_target_le (k := k) hT h_ne hcd'
-      rw [sub_add_eq_sub_sub] at h_bound
-      calc ‖_‖
-          ≤ (1 : ℝ) / (‖γ t - s‖ / 2) ^ k *
-              ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ := h_bound
-        _ = 2 ^ k * (‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ / ‖γ t - s‖ ^ k) := by
-            rw [div_pow]; field_simp
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_const_ratio
-      (Eventually.of_forall fun _ => norm_nonneg _) h_F_diff_le
-  have h_split : l ⊓ 𝓟 {t | γ t ≠ s} ⊔ l ⊓ 𝓟 {t | γ t ≠ s}ᶜ = l := by
-    rw [← inf_sup_left, sup_principal, Set.union_compl_self, principal_univ, inf_top_eq]
-  rw [← h_split]
-  refine (core _ inf_le_left (eventually_inf_principal.mpr
-    (Eventually.of_forall fun t ht => ht))).sup (tendsto_const_nhds.congr' ?_)
-  refine eventually_inf_principal.mpr (Eventually.of_forall fun t ht => ?_)
-  have ht' : γ t = s := not_not.mp ht
-  simp [ht']
+  have h0 := tendsto_antiderivative_diff_of_eventually_ne (k := k) hk hkn hT
+    (l := l ⊓ 𝓟 {t | γ t ≠ s}) (eventually_inf_principal.mpr (Eventually.of_forall fun _ h => h))
+    (h_chord.mono inf_le_left) (h_to.mono_left inf_le_left)
+  refine (Tendsto.if (p := fun t => γ t ≠ s) h0
+    (g := fun _ => (0 : ℝ)) (tendsto_const_nhds.congr' ?_)).congr fun t => ?_
+  · refine eventually_inf_principal.mpr (Eventually.of_forall fun t ht => ?_)
+    simp
+  · split_ifs with h
+    · rfl
+    · simp [not_not.mp h]
 
 /-- **The right-branch antiderivative asymptotics**: with one-sided derivative `L ≠ 0` from the
 right at `t₀` and perpendicular deviation `o(‖γ t - s‖ ^ n)` against `L`, the antiderivative
