@@ -67,6 +67,21 @@ theorem LocallyBoundedVariationOn.naturalParameterization_zero {α E : Type*}
     naturalParameterization f s a 0 = f a := by
   simpa only [variationOnFromTo.self] using hf.naturalParameterization_variationOnFromTo ha ha
 
+/-- A map that is not of bounded variation on `s` has infinite variation on `s`. -/
+theorem eVariationOn_eq_top_of_not_boundedVariationOn {α E : Type*} [LinearOrder α]
+    [PseudoEMetricSpace E] {f : α → E} {s : Set α} (h : ¬BoundedVariationOn f s) :
+    eVariationOn f s = ⊤ := by
+  simpa [BoundedVariationOn] using h
+
+/-- The length `(eVariationOn γ (Icc a b)).toReal` of a curve is `0` unless the curve is of
+bounded variation on `[a, b]` with `a ≤ b`. -/
+theorem toReal_eVariationOn_Icc_eq_zero_of_not {E : Type*} [PseudoEMetricSpace E] {γ : ℝ → E}
+    {a b : ℝ} (h : ¬(BoundedVariationOn γ (Icc a b) ∧ a ≤ b)) :
+    (eVariationOn γ (Icc a b)).toReal = 0 := by
+  by_cases hab : a ≤ b
+  · simp [eVariationOn_eq_top_of_not_boundedVariationOn fun hγ ↦ h ⟨hγ, hab⟩]
+  · simp [Icc_eq_empty hab]
+
 namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
@@ -94,9 +109,7 @@ theorem _root_.naturalParameterization_zero_eq_naturalParameterization_toReal_eV
         (left_mem_Icc.mpr hab)).trans
         (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
     · simp [Icc_eq_empty hab]
-  · -- `BoundedVariationOn` unfolds to `eVariationOn ≠ ⊤`
-    have htop : eVariationOn γ (Icc a b) = ⊤ := by simpa [BoundedVariationOn] using hγ
-    simp [htop]
+  · simp [eVariationOn_eq_top_of_not_boundedVariationOn hγ]
 
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
@@ -201,14 +214,7 @@ theorem _root_.ContinuousOn.hasUnitSpeedOn_naturalParameterization
   · rw [← h.1.image_variationOnFromTo_Icc hcont h.2]
     exact has_unit_speed_naturalParameterization γ h.1.locallyBoundedVariationOn
       (left_mem_Icc.2 h.2)
-  · have h0 : (eVariationOn γ (Icc a b)).toReal = 0 := by
-      by_cases hab : a ≤ b
-      · -- `BoundedVariationOn` unfolds to `eVariationOn ≠ ⊤`
-        have htop : eVariationOn γ (Icc a b) = ⊤ := by
-          simpa [BoundedVariationOn] using fun hγ ↦ h ⟨hγ, hab⟩
-        simp [htop]
-      · simp [Icc_eq_empty hab]
-    rw [h0, Icc_self]
+  · rw [toReal_eVariationOn_Icc_eq_zero_of_not h, Icc_self]
     exact hasConstantSpeedOnWith_of_subsingleton (naturalParameterization γ (Icc a b) a)
       subsingleton_singleton 1
 
