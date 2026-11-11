@@ -14,7 +14,7 @@ public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 A spanning tree bases any path at a chosen vertex by adjoining the tree paths to its
 endpoints. In particular, the loop through a dart follows the tree to its source, crosses
 the dart, and returns through the tree. Basing respects concatenation and reversal, and
-paths contained in the tree give the identity. The reduced path group of a tree is trivial.
+paths contained in the tree give the identity.
 
 The comparison with spanning-tree presentations and free groups is developed in
 `TauCeti.GroupTheory.GraphOfGroups.PathGroup`.
@@ -108,15 +108,3 @@ theorem basedPath_eq_one {a b : Γ.V} (p : Γ.Path a b)
 
 end
 end TauCeti.SerreGraph.SpanningTree
-
-namespace TauCeti.SerreGraph
-
-/-- The reduced path group of a tree is trivial: the only reduced closed path is the empty
-one. -/
-theorem IsTree.subsingleton_pathGroup {Γ : SerreGraph} (h : Γ.IsTree) (v : Γ.V) :
-    Subsingleton (PathGroup Γ v) :=
-  ⟨fun p q => PathGroup.ext <|
-    (h.eq_nil_of_isReduced Γ p.toPath p.isReduced).trans
-      (h.eq_nil_of_isReduced Γ q.toPath q.isReduced).symm⟩
-
-end TauCeti.SerreGraph

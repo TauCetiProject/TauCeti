@@ -50,8 +50,8 @@ generators.
   of the positive darts outside `T`.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
-* `TauCeti.SerreGraph.IsTree.subsingleton_graphPresentation`: a tree has trivial fundamental
-  group.
+* `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: an acyclic graph has trivial
+  fundamental group.
 
 ## References
 
@@ -262,10 +262,10 @@ theorem graphPresentation_reducedLoop_bijective :
 
 end SpanningTree
 
-/-- A tree has trivial fundamental group, relative to any spanning tree. -/
-theorem IsTree.subsingleton_graphPresentation {Γ : SerreGraph.{u, w}} (h : Γ.IsTree)
+/-- An acyclic graph has trivial fundamental group, relative to any spanning tree. -/
+theorem IsAcyclic.subsingleton_graphPresentation {Γ : SerreGraph.{u, w}} (h : Γ.IsAcyclic)
     (T : Γ.SpanningTree) : Subsingleton (Γ.GraphPresentation T.darts) := by
-  obtain ⟨v⟩ := (Γ.connected_iff.mp h.connected).1
+  obtain ⟨v⟩ := (Γ.connected_iff.mp (Γ.nonempty_spanningTree_iff.mp ⟨T⟩)).1
   have := h.subsingleton_pathGroup v
   exact (T.pathGroupEquivGraphPresentation v).symm.injective.subsingleton
 
