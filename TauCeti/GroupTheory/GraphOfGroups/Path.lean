@@ -39,7 +39,9 @@ vertex group `A_a`.
 
 An edge path of `Γ` is an `𝔸`-path with no vertex group letters, and backtrack homotopic edge
 paths are homotopic `𝔸`-paths. Hence reading reduced closed edge paths as `𝔸`-paths is a
-homomorphism from the reduced path group of `Γ` at `a` to `π₁(𝔸, a)`.
+homomorphism from the reduced path group of `Γ` at `a` to `π₁(𝔸, a)`. It is injective, and
+bijective when all vertex groups are trivial: then `π₁(𝔸, a)` is the free group of reduced closed
+edge paths of `Γ` at `a`.
 
 ## Main definitions
 
@@ -52,6 +54,9 @@ homomorphism from the reduced path group of `Γ` at `a` to `π₁(𝔸, a)`.
 * `TauCeti.GraphOfGroups.dartPrefunctor`: edge paths of `Γ` as `𝔸`-paths.
 * `TauCeti.GraphOfGroups.π₁.ofPathGroup`: the homomorphism from the reduced path group of `Γ`
   at `a` to `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.Path.edgePath`: the underlying edge path of an `𝔸`-path.
+* `TauCeti.GraphOfGroups.π₁.pathGroupEquiv`: with trivial vertex groups, the reduced path group
+  of `Γ` at `a` is `π₁(𝔸, a)`.
 
 ## Main results
 
@@ -560,6 +565,105 @@ dart generators. -/
       SerreGraph.PathGroup.lift (π₁Tree.edge T) π₁Tree.edge_rev g := by
   induction g using SerreGraph.PathGroup.induction_on with
   | h p => simp
+
+end π₁
+
+/-! ### The edge path of an `𝔸`-path -/
+
+namespace Path
+
+/-- The underlying edge path of an `𝔸`-path: forget the vertex group letters. -/
+def edgePath : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Path x y → Γ.Path x.as y.as
+  | _, _, .nil => .nil
+  | _, _, .cons p (.vertex _) => edgePath p
+  | _, _, .cons p (.dart e) => (edgePath p).cons e
+
+@[simp] theorem edgePath_nil {x : 𝔸.LetterVertex} :
+    edgePath (Quiver.Path.nil : 𝔸.Path x x) = .nil := by
+  rw [edgePath]
+
+@[simp] theorem edgePath_cons_vertex {x : 𝔸.LetterVertex} {a : Γ.V} (p : 𝔸.Path x ⟨a⟩)
+    (g : 𝔸.vertexGroup a) : edgePath (p.cons (Letter.vertex g)) = edgePath p := by
+  rw [edgePath]
+
+@[simp] theorem edgePath_cons_dart {x : 𝔸.LetterVertex} {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩)
+    (e : a ⟶ b) : edgePath (p.cons (Letter.dart e)) = (edgePath p).cons e := by
+  rw [edgePath]
+
+/-- An edge path of `Γ`, read as an `𝔸`-path, has itself as underlying edge path. -/
+@[simp] theorem edgePath_mapPath_dartPrefunctor {a b : Γ.V} (p : Γ.Path a b) :
+    edgePath ((dartPrefunctor 𝔸).mapPath p) = p := by
+  induction p with
+  | nil => exact edgePath_nil
+  | cons p e ih => simp [ih]
+
+/-- Homotopic `𝔸`-paths have backtrack homotopic underlying edge paths. -/
+theorem Homotopic.edgePath {x y : 𝔸.LetterVertex} {p q : 𝔸.Path x y} (h : p.Homotopic q) :
+    SerreGraph.Path.Homotopic Γ p.edgePath q.edgePath := by
+  induction h with
+  | refl => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ l ih =>
+    cases l with
+    | vertex g => simpa using ih
+    | dart e => simpa using ih.cons e
+  | mul p g h => simpa using .refl _
+  | one p => simpa using .refl _
+  | dart_reverse p e => simpa using .backtrack _ e
+  | dart_ω e c p => simpa using .refl _
+
+/-- Two edge paths of `Γ` are homotopic as `𝔸`-paths exactly when they are backtrack
+homotopic. -/
+theorem homotopic_mapPath_dartPrefunctor_iff {a b : Γ.V} {p q : Γ.Path a b} :
+    Homotopic ((dartPrefunctor 𝔸).mapPath p) ((dartPrefunctor 𝔸).mapPath q) ↔
+      SerreGraph.Path.Homotopic Γ p q :=
+  ⟨fun h => by simpa using h.edgePath, fun h => h.mapPath_dartPrefunctor 𝔸⟩
+
+/-- When all vertex groups are trivial, an `𝔸`-path is homotopic to its underlying edge path. -/
+theorem homotopic_mapPath_edgePath [∀ a, Subsingleton (𝔸.vertexGroup a)] :
+    ∀ {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y),
+      p.Homotopic ((dartPrefunctor 𝔸).mapPath p.edgePath)
+  | _, _, .nil => by simpa using .refl _
+  | _, _, .cons p (.vertex g) => by
+    rw [Subsingleton.elim g 1, edgePath_cons_vertex]
+    exact (Homotopic.one p).trans (homotopic_mapPath_edgePath p)
+  | _, _, .cons p (.dart e) => by
+    rw [edgePath_cons_dart, Prefunctor.mapPath_cons]
+    exact (homotopic_mapPath_edgePath p).cons _
+
+end Path
+
+namespace π₁
+
+variable (𝔸) (a : Γ.V)
+
+/-- Reading reduced closed edge paths as `𝔸`-paths is injective: the reduced path group of the
+underlying graph embeds in `π₁(𝔸, a)`. -/
+theorem ofPathGroup_injective : Function.Injective (ofPathGroup 𝔸 a) := fun g h hgh => by
+  rw [ofPathGroup_apply, ofPathGroup_apply, mk_eq_mk_iff,
+    Path.homotopic_mapPath_dartPrefunctor_iff, ← SerreGraph.PathGroup.ofPath_eq_iff_homotopic,
+    SerreGraph.PathGroup.ofPath_toPath, SerreGraph.PathGroup.ofPath_toPath] at hgh
+  exact hgh
+
+variable [∀ b, Subsingleton (𝔸.vertexGroup b)]
+
+/-- With trivial vertex groups, reading reduced closed edge paths as `𝔸`-paths is bijective. -/
+theorem ofPathGroup_bijective : Function.Bijective (ofPathGroup 𝔸 a) :=
+  ⟨ofPathGroup_injective 𝔸 a, fun g => induction_on g fun p =>
+    ⟨SerreGraph.PathGroup.ofPath p.edgePath, by
+      rw [ofPathGroup_ofPath, mk_eq_mk_iff]
+      exact (Path.homotopic_mapPath_edgePath p).symm⟩⟩
+
+/-- With trivial vertex groups, the fundamental group `π₁(𝔸, a)` is the reduced path group of
+the underlying graph `Γ` at `a`, a free group: a reduced closed edge path is read as an
+`𝔸`-path. -/
+noncomputable def pathGroupEquiv : SerreGraph.PathGroup Γ a ≃* π₁ 𝔸 a :=
+  MulEquiv.ofBijective (ofPathGroup 𝔸 a) (ofPathGroup_bijective 𝔸 a)
+
+@[simp] theorem pathGroupEquiv_apply (g : SerreGraph.PathGroup Γ a) :
+    pathGroupEquiv 𝔸 a g = ofPathGroup 𝔸 a g :=
+  (rfl)
 
 end π₁
 

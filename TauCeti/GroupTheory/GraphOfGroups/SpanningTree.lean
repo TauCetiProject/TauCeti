@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Path
-public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
+public import TauCeti.Combinatorics.Graph.Serre.Path.SpanningTree
 
 /-!
 # The fundamental group of a graph of groups via a spanning tree
@@ -19,14 +19,9 @@ the generator of a dart `e` to the class of the loop `[v₀, src e]_T e [tgt e, 
 classes generate `π₁(𝔸, v₀)`, and more precisely the inverse reads any `𝔸`-path `p` from `a`
 to `b` as the class of `[v₀, a]_T p [b, v₀]_T`.
 
-When all vertex groups are trivial, this identifies `π₁(𝔸, v₀)` with the reduced path group of
-the underlying connected graph, which is free.
-
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.π₁Equiv`: the isomorphism `π₁(𝔸, v₀) ≃* π₁(𝔸, T)`.
-* `TauCeti.GraphOfGroups.π₁.pathGroupEquiv`: with trivial vertex groups over a connected graph,
-  the reduced path group of the graph is `π₁(𝔸, v₀)`.
 
 ## Main results
 
@@ -193,36 +188,5 @@ theorem π₁Equiv_symm_toπ₁Tree {a b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
       π₁.mk ((((dartPrefunctor 𝔸).mapPath (T.path v₀ a)).comp p).comp
         ((dartPrefunctor 𝔸).mapPath (T.path b v₀))) :=
   ofπ₁Tree_toπ₁Tree 𝔸 v₀ T p
-
-/-! ### Trivial vertex groups -/
-
-namespace π₁
-
-variable [∀ a, Subsingleton (𝔸.vertexGroup a)]
-
-/-- With trivial vertex groups over a connected graph, reading reduced closed edge paths as
-`𝔸`-paths is bijective. -/
-theorem ofPathGroup_bijective (hΓ : Γ.Connected) : Function.Bijective (ofPathGroup 𝔸 v₀) := by
-  obtain ⟨T⟩ := Γ.exists_spanningTree hΓ
-  have h : ⇑(ofPathGroup 𝔸 v₀) =
-      (π₁Equiv 𝔸 v₀ T).symm ∘ T.pathGroupEquivTreePresentation v₀ 𝔸 := by
-    funext g
-    rw [Function.comp_apply, MulEquiv.eq_symm_apply, π₁Equiv_apply, toπ₁Tree_ofPathGroup]
-    induction g using PathGroup.induction_on with
-    | h p => simp
-  rw [h]
-  exact (π₁Equiv 𝔸 v₀ T).symm.bijective.comp (T.pathGroupEquivTreePresentation v₀ 𝔸).bijective
-
-/-- With trivial vertex groups over a connected graph `Γ`, the fundamental group `π₁(𝔸, v₀)` is
-the reduced path group of `Γ` at `v₀`, a free group: a reduced closed edge path is read as an
-`𝔸`-path. -/
-noncomputable def pathGroupEquiv (hΓ : Γ.Connected) : PathGroup Γ v₀ ≃* π₁ 𝔸 v₀ :=
-  MulEquiv.ofBijective (ofPathGroup 𝔸 v₀) (ofPathGroup_bijective 𝔸 v₀ hΓ)
-
-@[simp] theorem pathGroupEquiv_apply (hΓ : Γ.Connected) (g : PathGroup Γ v₀) :
-    pathGroupEquiv 𝔸 v₀ hΓ g = ofPathGroup 𝔸 v₀ g :=
-  (rfl)
-
-end π₁
 
 end TauCeti.GraphOfGroups
