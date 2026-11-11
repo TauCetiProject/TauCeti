@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import TauCeti.RingTheory.NovikovModule.Associativity
+public import TauCeti.RingTheory.NovikovModule.Continuation
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Topology
 
@@ -76,6 +77,16 @@ on the completed capped modules. This file proves:
   `(a ⋆ b) ⋆' c - a ⋆''' (b ⋆'' c) = d K(a, b, c) + K(d a, b, c) + (-1)^e₁ K(a, d b, c) +
   (-1)^(e₁ + e₂) K(a, b, d c)` for `a`, `b` of cochain degrees `e₁`, `e₂`
   (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add`).
+* **The continuation homotopy from the count identity.** For a second product `⋆'` with other
+  end data, the rigid continuation cylinders from each end of `⋆` to the matching end of `⋆'` are
+  counted by generating series `Φ₁`, `Φ₂`, `Φ₀`, and the rigid elements of the one-parameter family
+  of pairs of pants interpolating between the two end data by generating series `K` indexed by
+  the input orbits of `⋆` and the output orbits of `⋆'`. If the series obey the identity given by
+  the ends of the one-dimensional moduli spaces of the family, the two broken composites and the
+  cylinder breakings at the three ends, then
+  `Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b = d K(a, b) + K(d a, b) + (-1)^e K(a, d b)` for `a` of cochain
+  degree `e`
+  (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`).
 
 The energy, compactness, index and boundary-count hypotheses are the ones the geometric moduli
 spaces are to supply; no moduli space, orientation or count is constructed here.
@@ -451,6 +462,83 @@ theorem novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add
   exact h
 
 end Associativity
+
+section Continuation
+
+variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
+  {κ₁ κ₂ κ₀ : Type*} {P₁' : κ₁ → Type*} {P₂' : κ₂ → Type*} {P₀' : κ₀ → Type*}
+  [∀ s, AddTorsor (PeriodGroup ω c) (P₁' s)] [∀ t, AddTorsor (PeriodGroup ω c) (P₂' t)]
+  [∀ l, AddTorsor (PeriodGroup ω c) (P₀' l)]
+  (r₁' : ∀ s, P₁' s) (r₂' : ∀ t, P₂' t) (r₀' : ∀ l, P₀' l)
+  [Fintype κ₁] [Fintype κ₂] [Fintype κ₀]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {F₁' : (Σ s, P₁' s) → ℝ} {F₂' : (Σ t, P₂' t) → ℝ} {F₀' : (Σ l, P₀' l) → ℝ}
+  (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+  (hF₂ : ∀ j γ (D : P₂ j), F₂ ⟨j, γ +ᵥ D⟩ = F₂ ⟨j, D⟩ - (-area ω c) γ)
+  (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+  (hF₁' : ∀ s γ (D : P₁' s), F₁' ⟨s, γ +ᵥ D⟩ = F₁' ⟨s, D⟩ - (-area ω c) γ)
+  (hF₂' : ∀ t γ (D : P₂' t), F₂' ⟨t, γ +ᵥ D⟩ = F₂' ⟨t, D⟩ - (-area ω c) γ)
+  (hF₀' : ∀ l γ (D : P₀' l), F₀' ⟨l, γ +ᵥ D⟩ = F₀' ⟨l, D⟩ - (-area ω c) γ)
+  {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+
+include hμ₁ in
+/-- **The continuation homotopy for class-indexed counts.** Let `Q` be the generating series of
+rigid pairs of pants for a product `⋆`, and `Q'` that for a product `⋆'` with other end data. Let
+`Φ₁`, `Φ₂`, `Φ₀` be those of rigid continuation cylinders from each end of `⋆` to the matching end
+of `⋆'`, let `D₁`, `D₂` be those of rigid Floer cylinders of the inputs of `⋆` and `D₀` that of the
+output of `⋆'`, and let `K` be that of the rigid elements of the one-parameter family of pairs of
+pants interpolating between the two end data, all between reference capped orbits and indexed by
+a common class group `G`. Suppose the series obey the identity
+
+`∑ₖ Qᵢⱼₖ Φ₀ₖₗ - ∑ₛ ∑ₜ Φ₁ᵢₛ Φ₂ⱼₜ Q'ₛₜₗ =
+  ∑ₘ Kᵢⱼₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₗ + (-1)^(n - μ₁(r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₗ`
+
+in `G`-indexed series, which is the count, class by class, of the ends of the one-dimensional
+moduli spaces of the family: the two broken composites, a pair of pants followed by a
+continuation cylinder at the output or preceded by continuation cylinders at both inputs, and the
+breaking of a Floer cylinder at one of the three ends. Then on the completed capped modules, with
+the first input of `⋆` graded by the cochain degree `n - μ₁`, the product of `K` is a homotopy
+between the two composites: `Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b = d₀ K(a, b) + K(d₁ a, b) +
+(-1)^e K(a, d₂ b)` for `a` of degree `e`. The sign is constant on the capped generators of each
+orbit, because recapping changes the degree by the even number `2 c₁(γ)`. -/
+theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (Q' : κ₁ → κ₂ → κ₀ → NovikovSeries R G ωG)
+    (Φ₁ : ι₁ → κ₁ → NovikovSeries R G ωG) (Φ₂ : ι₂ → κ₂ → NovikovSeries R G ωG)
+    (Φ₀ : ι₀ → κ₀ → NovikovSeries R G ωG) (K : ι₁ → ι₂ → κ₀ → NovikovSeries R G ωG)
+    (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG) (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG)
+    (D₀ : κ₀ → κ₀ → NovikovSeries R G ωG) (n : ℤ)
+    (hC : ∀ i j l, ∑ k, Q i j k * Φ₀ k l - ∑ s, ∑ t, Φ₁ i s * Φ₂ j t * Q' s t l =
+      ∑ m, K i j m * D₀ m l + ∑ m, D₁ i m * K m j l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * K i m l)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e)
+    (b : NovikovModule R F₂) :
+    novikovMapOfMatrix hF₀ hF₀' r₀ r₀' (fun k l => coefficientComparison q hq (Φ₀ k l))
+          (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+            (fun i j k => coefficientComparison q hq (Q i j k)) a b) -
+        novikovProductOfMatrix hF₁' hF₂' hF₀' r₁' r₂' r₀'
+          (fun s t l => coefficientComparison q hq (Q' s t l))
+          (novikovMapOfMatrix hF₁ hF₁' r₁ r₁' (fun i s => coefficientComparison q hq (Φ₁ i s)) a)
+          (novikovMapOfMatrix hF₂ hF₂' r₂ r₂' (fun j t => coefficientComparison q hq (Φ₂ j t))
+            b) =
+      novikovMapOfMatrix hF₀' hF₀' r₀' r₀' (fun m l => coefficientComparison q hq (D₀ m l))
+          (novikovProductOfMatrix hF₁ hF₂ hF₀' r₁ r₂ r₀'
+            (fun i j l => coefficientComparison q hq (K i j l)) a b) +
+        novikovProductOfMatrix hF₁ hF₂ hF₀' r₁ r₂ r₀'
+          (fun i j l => coefficientComparison q hq (K i j l))
+          (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i m => coefficientComparison q hq (D₁ i m)) a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀' r₁ r₂ r₀'
+          (fun i j l => coefficientComparison q hq (K i j l)) a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j m => coefficientComparison q hq (D₂ j m))
+            b) := by
+  refine novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_eq_add hF₁ hF₂ hF₀
+    hF₁' hF₂' hF₀' r₁ r₂ r₀ r₁' r₂' r₀' _ _ _ _ _ _ _ _ _ (even_cochain_vadd_sub hμ₁ n)
+    (fun i j l => ?_) ha b
+  have h := congrArg (coefficientComparison q hq) (hC i j l)
+  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
+    Units.smul_def, map_zsmul] at h ⊢
+  exact h
+
+end Continuation
 
 end Monoid
 
