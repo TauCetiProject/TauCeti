@@ -113,10 +113,6 @@ private theorem hasDerivAt_compContinuousLinearMap_fderiv_contactMoser
   have h₀ := hα₀ z hmem
   have h₁ := hα₁ z hmem
   have hω : DifferentiableAt ℝ (fun p : ℝ × V ↦ (1 - p.1) • α₀ p.2 + p.1 • α₁ p.2) (t, z) := by
-    have h₀' : DifferentiableAt ℝ (fun p : ℝ × V ↦ α₀ p.2) (t, z) :=
-      h₀.comp (t, z) differentiableAt_snd
-    have h₁' : DifferentiableAt ℝ (fun p : ℝ × V ↦ α₁ p.2) (t, z) :=
-      h₁.comp (t, z) differentiableAt_snd
     fun_prop
   have h := hasDerivAt_compContinuousLinearMap_fderiv
     (ω := fun s y ↦ (1 - s) • α₀ y + s • α₁ y) hω hψ hDψ
@@ -157,7 +153,7 @@ has, on an open time neighbourhood `T` of `[0, 1]` and an open neighbourhood `U`
 `C^r` field `Yₜ` and a continuous factor `σₜ` with `αₜ(Yₜ) = 0` and
 `ι_{Yₜ} dαₜ = -(α₁ - α₀) - σₜ αₜ`. The field vanishes wherever `α₀` and `α₁` agree. -/
 private theorem exists_contDiffOn_contactMoserField
-    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r)
+    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (_ : 1 ≤ r)
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα₀ : ContDiffOn ℝ (r + 1) α₀ W)
     (hα₁ : ContDiffOn ℝ (r + 1) α₁ W) (heq : α₁ x₀ = α₀ x₀)
     (hdeq : extDeriv α₁ x₀ = extDeriv α₀ x₀) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α₁ x₀) :
@@ -168,7 +164,6 @@ private theorem exists_contDiffOn_contactMoserField
       (∀ t ∈ T, ∀ y ∈ U, ((1 - t) • extDeriv α₀ y + t • extDeriv α₁ y).curryLeft (Y t y) =
         -(α₁ y - α₀ y) - σ t y • ((1 - t) • α₀ y + t • α₁ y)) ∧
       (∀ t ∈ T, ∀ y ∈ U, α₁ y = α₀ y → Y t y = 0) := by
-  have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have hrle : (r : WithTop ℕ∞) ≤ r + 1 := le_self_add
   -- The symplectization forms of `α₀` and `α₁`, on `ℝ × V`, and the right-hand side `α₁ - α₀`.
   let B₀ : ℝ × V → ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
