@@ -47,6 +47,8 @@ maps on a domain with further punctures outside `S_R`.
 * `TauCeti.ThricePuncturedSphere.contDiffOn_truncationCompression`: it is smooth on `S`.
 * `TauCeti.ThricePuncturedSphere.exists_pos_truncation_add_subset`: every open neighbourhood of
   `S_R` contains some `S_{R + ε}`, so the compression applies to maps defined near `S_R`.
+* `TauCeti.ThricePuncturedSphere.exists_compression_real`: in real coordinates, every open
+  neighbourhood of `S_R` receives a `C¹` map of `S` which is the identity near `S_R`.
 -/
 
 public noncomputable section
@@ -268,5 +270,30 @@ theorem exists_pos_truncation_add_subset {U : Set ℂ} (hU : IsOpen U) (hRU : tr
   obtain ⟨n, hn⟩ := exists_subset_nhds_of_isCompact hanti.directed_ge
     (fun n ↦ isCompact_truncation _) (hU.mem_nhdsSet.2 hsub)
   exact ⟨1 / (n + 1), by positivity, hn⟩
+
+/-- **Compression into a neighbourhood of a truncation, in real coordinates.** An open neighbourhood
+`U` of the truncation `S_R`, `R ≥ 0`, in the real coordinates `ℝ × ℝ ≃ ℂ`, receives a `C¹` map of
+`S = ℂ ∖ {0, 1}` which is the identity near `S_R`: the compression of `S` into a truncation
+`S_{R + ε} ⊆ U`. -/
+theorem exists_compression_real {U : Set (ℝ × ℝ)} (hR : 0 ≤ R) (hU : IsOpen U)
+    (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ U) :
+    ∃ c : ℝ × ℝ → ℝ × ℝ,
+      ContDiffOn ℝ 1 c
+        {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} ∧
+      MapsTo c {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
+        U ∧
+      ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, c =ᶠ[𝓝 z] id := by
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_truncation_add_subset
+    (hU.preimage Complex.equivRealProdCLM.continuous) fun w hw ↦
+      hTU (by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply])
+  refine ⟨fun z ↦ Complex.equivRealProdCLM
+    (truncationCompression R ε (Complex.equivRealProdCLM.symm z)), ?_, fun z hz ↦
+      hεU (truncationCompression_mem_truncation hR hε hz), fun z hz ↦ ?_⟩
+  · exact Complex.equivRealProdCLM.contDiff.comp_contDiffOn
+      ((contDiffOn_truncationCompression (n := 1) hR hε).comp
+        Complex.equivRealProdCLM.symm.contDiff.contDiffOn fun _ hz ↦ hz)
+  · filter_upwards [(Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
+      (truncationCompression_eventuallyEq hε hz)] with z' hz'
+    rw [hz', id, ContinuousLinearEquiv.apply_symm_apply, id]
 
 end TauCeti.ThricePuncturedSphere

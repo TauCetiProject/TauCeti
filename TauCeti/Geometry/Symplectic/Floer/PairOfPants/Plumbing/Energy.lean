@@ -278,11 +278,7 @@ private theorem setIntegral_floerEnergyDensity_inserted (hq : q ≠ inf)
   · have h := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hT hinj
       (fun w _ ↦ hφ w) (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
       (fun w hw ↦ hud hw) (fun _ _ ↦ mdifferentiableAt_const) (fun _ _ ↦ mdifferentiableAt_const)
-    have h₀ (v : ℝ × ℝ) : perturbationPullback (realChart (q.plumbingMap L))
-        (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
-      funext w x
-      simp [perturbationPullback_apply]
-    simpa only [h₀, floerEnergyDensity_zero] using h
+    simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using h
 
 end TauCeti.SmoothTwoForm
 

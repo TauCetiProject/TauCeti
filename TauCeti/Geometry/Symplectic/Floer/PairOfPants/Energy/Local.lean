@@ -29,9 +29,10 @@ far out on one of its ends.
 The neighbourhood `U` contains some truncation `S_{R + ε}` with `ε > 0`
 (`TauCeti.ThricePuncturedSphere.exists_pos_truncation_add_subset`). The compression
 `TauCeti.ThricePuncturedSphere.truncationCompression R ε` is a smooth map of `S` into `S_{R + ε}`
-which is the identity near `S_R`. So `u` composed with the compression is `C¹` on all of `S` and
-agrees with `u` near `S_R`, and the identity for it is the identity for `u`. The energy density
-at a point only depends on the germ of the map there
+which is the identity near `S_R` (in real coordinates,
+`TauCeti.ThricePuncturedSphere.exists_compression_real`). So `u` composed with the compression
+is `C¹` on all of `S` and agrees with `u` near `S_R`, and the identity for it is the identity for
+`u`. The energy density at a point only depends on the germ of the map there
 (`SmoothTwoForm.floerEnergyDensity_congr_of_eventuallyEq`).
 
 ## References
@@ -53,27 +54,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {H : Puncture → ℝ → M → ℝ} {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} {R : ℝ}
 
-/-- An open neighbourhood `U` of the truncation `S_R`, `R ≥ 0`, in real coordinates, receives a
-`C¹` map of `S` which is the identity near `S_R`: the compression of `S` into a truncation
-`S_{R + ε} ⊆ U`. -/
-private theorem exists_compression (hR : 0 ≤ R) (hU : IsOpen U)
-    (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ U) :
-    ∃ c : ℝ × ℝ → ℝ × ℝ, ContDiffOn ℝ 1 c thricePuncturedSphereReal ∧
-      MapsTo c thricePuncturedSphereReal U ∧
-      ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, c =ᶠ[𝓝 z] id := by
-  obtain ⟨ε, hε, hεU⟩ := exists_pos_truncation_add_subset
-    (hU.preimage Complex.equivRealProdCLM.continuous) fun w hw ↦
-      hTU (by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply])
-  refine ⟨fun z ↦ Complex.equivRealProdCLM
-    (truncationCompression R ε (Complex.equivRealProdCLM.symm z)), ?_, fun z hz ↦
-      hεU (truncationCompression_mem_truncation hR hε hz), fun z hz ↦ ?_⟩
-  · exact Complex.equivRealProdCLM.contDiff.comp_contDiffOn
-      ((contDiffOn_truncationCompression (n := 1) hR hε).comp
-        Complex.equivRealProdCLM.symm.contDiff.contDiffOn fun _ hz ↦ hz)
-  · filter_upwards [(Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-      (truncationCompression_eventuallyEq hε hz)] with z' hz'
-    rw [hz', id, ContinuousLinearEquiv.apply_symm_apply, id]
-
 /-- **The curvature is integrable over a truncation, along a map continuous near it.** Along a map
 `u` which is continuous on an open neighbourhood `U` of the truncation `S_R`, `R ≥ 0`, the
 curvature of the pair-of-pants perturbation of period-one `C¹` Hamiltonians on a manifold is
@@ -87,7 +67,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)) (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
-  obtain ⟨c, hc, hcU, hcid⟩ := exists_compression hR hU hTU
+  obtain ⟨c, hc, hcU, hcid⟩ := exists_compression_real hR hU hTU
   refine ((integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     (hu.comp hc.continuousOn hcU)).mono_set fun z hz ↦ ?_).congr_fun (fun z hz ↦ ?_)
       (measurableSet_preimage_truncation R)
@@ -125,7 +105,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  obtain ⟨c, hc, hcU, hcid⟩ := exists_compression (by linarith) hU hTU
+  obtain ⟨c, hc, hcU, hcid⟩ := exists_compression_real (by linarith) hU hTU
   have hT := measurableSet_preimage_truncation R
   -- Composed with the compression, `u` is `C¹` on `S` and agrees with `u` near `S_R`.
   have hv : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, u ∘ c =ᶠ[𝓝 z] u :=
