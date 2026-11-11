@@ -194,6 +194,13 @@ theorem compatibleConfigurations_eq_of_forall_support_subset (hts : t ⊆ s)
     compatibleConfigurations r cls t A = compatibleConfigurations r cls s A :=
   (compatibleConfigurations_mono hts).antisymm fun l hl ↦ ⟨h l hl, hl.2⟩
 
+/-- The class of a configuration is the sum of the classes of its components, counted with
+multiplicity, indexed by the support. -/
+theorem sum_support_smul_eq_of_mem_compatibleConfigurations
+    (hl : l ∈ compatibleConfigurations r cls s A) :
+    ∑ c : l.support, l c • cls c = A := by
+  rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, ← Finset.sum_coe_sort l.support]
+
 section Area
 
 variable {ω : H →+ ℝ}

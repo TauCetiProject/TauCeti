@@ -129,6 +129,14 @@ theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (background
   rw [hh]
   exact (hf.norm.pow 2).div (continuous_const.add (hf.norm.pow 2)) fun z ↦ by positivity
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is as smooth as `f`. -/
+theorem contDiff_backgroundWeight {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n (backgroundWeight f) := by
+  have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
+    funext (backgroundWeight_def f)
+  rw [hh]
+  exact (hf.norm_sq ℝ).div (contDiff_const.add (hf.norm_sq ℝ)) fun z ↦ by positivity
+
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
     ContDiff ℝ n (backgroundAmplitude f) := by

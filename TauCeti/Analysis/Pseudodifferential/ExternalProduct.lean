@@ -393,8 +393,8 @@ theorem le_two_mul_norm_adjoint_coefficient_externalProduct_apply_sq (χ : Conic
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint w‖ ^ 2 := by
   rw [norm_apply_sq_of_adjoint_comp_eq_smul (by
-    rw [adjoint_adjoint]; exact coefficient_externalProduct_comp_adjoint χ x y ξ η ha ha' hb hb') w,
-    ← mul_assoc]
+    rw [ContinuousLinearMap.adjoint_adjoint]
+    exact coefficient_externalProduct_comp_adjoint χ x y ξ η ha ha' hb hb') w, ← mul_assoc]
   gcongr
   exact χ.add_le_two_mul (by positivity) (by positivity)
 
