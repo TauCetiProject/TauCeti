@@ -10,6 +10,7 @@ public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import TauCeti.Topology.UnitInterval
+public import Mathlib.Topology.Homotopy.Product
 -- Private: `Path.Homotopic.map_trans_evalAt` is used only in the proof of
 -- `map_nullhomotopic_of_nullhomotopic` below, so this import is not re-exported.
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
@@ -65,6 +66,12 @@ endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
 `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
 pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+
+Pointwise products of homotopic paths are homotopic (`Path.Homotopic.mul`), and in a topological
+monoid the pointwise product of a loop `φ` at `1` with a path `ψ` from `1` is
+homotopic to the concatenation of `φ` and `ψ` (`Path.mul_homotopic_trans`). This is how the
+Conley–Zehnder index of a path of symplectic matrices changes under a loop of changes of
+symplectic trivialization, in `Analysis/Matrix/SymplecticGroup/ConleyZehnder.lean`.
 -/
 
 public section
@@ -608,3 +615,30 @@ theorem Path.Homotopic.trans_of_subpath_trans {x y x' y' : X}
   exact h_last.symm.trans ((h_chain (Fin.last n)).trans h_zero)
 
 end Pasting
+
+section Mul
+
+variable {M : Type*} [TopologicalSpace M]
+
+/-- Pointwise products of homotopic paths are homotopic. -/
+theorem Path.Homotopic.mul [Mul M] [ContinuousMul M] {a₁ b₁ a₂ b₂ : M} {γ₁ γ₁' : Path a₁ b₁}
+    {γ₂ γ₂' : Path a₂ b₂} (h₁ : γ₁.Homotopic γ₁') (h₂ : γ₂.Homotopic γ₂') :
+    (γ₁.mul γ₂).Homotopic (γ₁'.mul γ₂') := by
+  have h : (γ₁.prod γ₂).Homotopic (γ₁'.prod γ₂') := Nonempty.map2 Homotopic.prodHomotopy h₁ h₂
+  exact h.map ⟨_, continuous_mul⟩
+
+/-- In a topological monoid, the pointwise product of a loop `φ` at `1` and a path `ψ` from `1` is
+homotopic, relative to its endpoints, to the concatenation of `φ` and `ψ`. -/
+theorem Path.mul_homotopic_trans [MulOneClass M] [ContinuousMul M] {a : M} (φ : Path (1 : M) 1)
+    (ψ : Path 1 a) :
+    (φ.mul ψ).Homotopic ((φ.trans ψ).cast (mul_one 1) (one_mul a)) := by
+  -- Pointwise, `φ ⬝ refl` times `refl ⬝ ψ` is `φ ⬝ ψ`.
+  have h : (φ.trans (Path.refl 1)).mul ((Path.refl 1).trans ψ) =
+      (φ.trans ψ).cast (mul_one 1) (one_mul a) := by
+    ext t
+    simp only [Path.mul_apply, Path.cast_coe, Path.trans_apply, Path.refl_apply]
+    split_ifs <;> simp
+  rw [← h]
+  exact Homotopic.mul ⟨(Homotopy.transRefl φ).symm⟩ ⟨(Homotopy.reflTrans ψ).symm⟩
+
+end Mul

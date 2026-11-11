@@ -35,7 +35,16 @@ index of loops of totally real subspaces (`TauCeti.TotallyRealLoop.maslovIndex`)
 determinant phase `det / conj det` of a frame. This fixes the factor two between the Maslov index of
 a loop of symplectic matrices, which measures the winding of a symplectic trivialization along a
 loop, and the Maslov index of its graph. Graphs relative to the diagonal are also how the
-Conley–Zehnder index of symplectic paths is expressed as a Robbin–Salamon index.
+Conley–Zehnder index of symplectic paths is expressed as a Robbin–Salamon index, in
+`TauCeti/Analysis/Matrix/SymplecticGroup/ConleyZehnder.lean`.
+
+The Gram matrix of the graph frame is
+`(graphFrame A)ᴴ (graphFrame A) = (1 + Aᵀ A) + i (J - Aᵀ J A)`
+(`Matrix.conjTranspose_graphFrame_mul_graphFrame`). Its imaginary part `J - Aᵀ J A` measures the
+failure of `A` to preserve the standard symplectic form, so for a symplectic matrix the Gram matrix
+is the real matrix `1 + Aᵀ A` (`Matrix.conjTranspose_graphFrame_mul_graphFrame_of_mem`): the graph
+is Lagrangian. The graph frames of the identity and of a realified complex matrix have explicit
+block forms (`Matrix.graphFrame_one`, `Matrix.graphFrame_realify`).
 
 ## Proof
 
@@ -155,6 +164,52 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
     toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.of_apply] <;>
   fun_prop
 
+omit [Fintype n] in
+/-- The graph frame of the identity, whose columns frame the diagonal. -/
+theorem graphFrame_one :
+    graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      fromBlocks 1 (-(Complex.I • 1)) 1 (Complex.I • 1) := by
+  have h : (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = fromBlocks 1 0 0 1 := fromBlocks_one.symm
+  rw [graphFrame, h]
+  simp only [toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₁,
+    toBlocks_fromBlocks₂₂]
+  simp
+
+omit [Fintype n] in
+/-- The graph frame of the realification of a complex matrix `V`. -/
+theorem graphFrame_realify (V : Matrix n n ℂ) :
+    graphFrame V.realify = fromBlocks 1 (-(Complex.I • 1)) V (Complex.I • V) := by
+  ext (i | i) (j | j) <;> apply Complex.ext <;>
+    simp [graphFrame, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.one_apply]
+
+/-- The frames of the diagonal satisfy `F Fᴴ = 2` for `F = graphFrame 1`. -/
+theorem graphFrame_one_mul_conjTranspose :
+    graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) * (graphFrame 1)ᴴ = (2 : ℂ) • 1 := by
+  rw [graphFrame_one, fromBlocks_conjTranspose, fromBlocks_multiply, ← fromBlocks_one,
+    fromBlocks_smul]
+  simp only [conjTranspose_one, conjTranspose_neg, conjTranspose_smul, star_def, conj_I]
+  congr 1 <;> simp [smul_smul, two_smul]
+
+/-- **The Gram matrix of the graph frame**: `(graphFrame A)ᴴ (graphFrame A)` is
+`(1 + Aᵀ A) + i (J - Aᵀ J A)`. Its imaginary part vanishes exactly when `Aᵀ J A = J`. -/
+theorem conjTranspose_graphFrame_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A)ᴴ * graphFrame A =
+      (1 + Aᵀ * A).map (↑) + Complex.I • (J n ℝ - Aᵀ * J n ℝ * A).map (↑) := by
+  ext (i | i) (j | j) <;>
+  apply Complex.ext <;>
+  simp [graphFrame, J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, toBlocks₁₁,
+      toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Finset.sum_add_distrib] <;>
+  by_cases h : i = j <;> simp [h, eq_comm] <;> ring
+
+/-- **The graph of a symplectic matrix is Lagrangian**: its graph frame has the real Gram matrix
+`1 + Aᵀ A`. -/
+theorem conjTranspose_graphFrame_mul_graphFrame_of_mem {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    (graphFrame A)ᴴ * graphFrame A = (1 + Aᵀ * A).map (↑) := by
+  have h : Aᵀ * J n ℝ * A = J n ℝ := by
+    simpa using SymplecticGroup.mem_iff.1 (SymplecticGroup.transpose_mem hA)
+  simp [conjTranspose_graphFrame_mul_graphFrame, h]
+
 /-! ### The graph subspace -/
 
 /-- The **graph** of a real matrix `A` on `ℝ^{n ⊕ n}`, as a real subspace of
@@ -163,6 +218,11 @@ is, the set of `(conj (φ x), φ (A x))` (`Matrix.mem_graphSubspace_iff`). -/
 noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Submodule ℝ (EuclideanSpace ℂ (n ⊕ n)) :=
   (graphFrame A).realImage
+
+/-- The graph of `A` is the image of the real points under the graph frame. -/
+theorem graphSubspace_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphSubspace A = (graphFrame A).realImage :=
+  (rfl)
 
 /-- A vector of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` lies on the graph of `A` exactly when it is
 `(conj (φ x), φ (A x))` for a real vector `x`, where `φ (x, y) = x + i y`. -/
@@ -345,5 +405,13 @@ theorem maslovIndex_graphLoop {A : GLSymplectic n ℝ} (γ : Path A A) :
     hunit, Circle.degree_mul, Circle.degree_refl, Circle.degree_map_pow, maslovIndex_def]
   push_cast
   ring
+
+/-- The graph phase along a loop of symplectic matrices has degree twice the Maslov index of the
+loop. -/
+theorem degree_map_graphPhase {A : GLSymplectic n ℝ} (γ : Path A A) :
+    Circle.degree (γ.map continuous_graphPhase) = 2 * maslovIndex γ := by
+  rw [← maslovIndex_graphLoop γ,
+    (graphLoop γ).maslovIndex_eq_degree isMaximalTotallyReal_realSubspace
+      (γ.map continuous_graphPhase) fun t ↦ coe_graphPhase_eq_maslovPhase (γ t)]
 
 end TauCeti.GLSymplectic
