@@ -22,13 +22,16 @@ with smooth maps `a : C → L₁` and `b : C → L₂` landing in the fibre prod
 `h c = ((f (a c)).1, (g (b c)).2)`. The tangent hypothesis is that `(da, db)` maps `T_c C` onto
 the linear fibre product of tangent spaces: every pair `(u, w)` with `(df u).2 = (dg w).1` is
 `(da ξ, db ξ)` for some `ξ`. This is the tangent property of the manifold structure on a
-transverse or clean fibre product. The transverse fibre-product manifold is used in
-`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse`. Under the tangent hypothesis,
-the tangent image of `h` at `c` is the composite of the linear canonical relations `df(T L₁)`
-and `dg(T L₂)` (`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
+transverse or clean fibre product. The transverse case, on the actual fibre-product manifold, is
+in `TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse`. Under the tangent hypothesis,
+the tangent image of `h` at `c` is the composite of the linear canonical relations `df(T L₁)` and
+`dg(T L₂)`
+(`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
 `TauCeti.SymplecticForm.IsLagrangian.relComp`. The matching condition on tangent vectors,
 `(df (da ξ)).2 = (dg (db ξ)).1`, is the derivative of the fibre-product condition
-(`MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence
+(`MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp`), and the differential of
+`h` reads off the outer coordinates of `df (da ξ)` and `dg (db ξ)`
+(`MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply`). Hence
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp`: the composite map is
 Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and is not an immersion.
 Transversality removes the excess: if `f` and `g` are isotropic with injective differentials,
@@ -119,41 +122,6 @@ variable {EL₁ HL₁ L₁ EL₂ HL₂ L₂ EC HC C : Type*}
   {KC : ModelWithCorners ℝ EC HC} [TopologicalSpace C] [ChartedSpace HC C]
   {f : L₁ → M₁ × M₂} {g : L₂ → M₂ × M₃} {a : C → L₁} {b : C → L₂}
 
-omit [FiniteDimensional ℝ E₁] [IsManifold I₁ ∞ M₁] [FiniteDimensional ℝ E₂] [IsManifold I₂ ∞ M₂]
-  [FiniteDimensional ℝ E₃] [IsManifold I₃ ∞ M₃] in
-/-- The tangent map of the composite `c ↦ ((f (a c)).1, (g (b c)).2)` reads off the outer
-coordinates of `df (da ξ)` and `dg (db ξ)`. -/
-private theorem mfderiv_relComp_apply {c : C} (hf : MDifferentiableAt K₁ (I₁.prod I₂) f (a c))
-    (hg : MDifferentiableAt K₂ (I₂.prod I₃) g (b c)) (ha : MDifferentiableAt KC K₁ a c)
-    (hb : MDifferentiableAt KC K₂ b c) (ξ : TangentSpace KC c) :
-    (mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c ξ).1 =
-        (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).1 ∧
-      (mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c ξ).2 =
-        (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).2 := by
-  have hfa : MDifferentiableAt KC (I₁.prod I₂) (f ∘ a) c := hf.comp c ha
-  have hgb : MDifferentiableAt KC (I₂.prod I₃) (g ∘ b) c := hg.comp c hb
-  have hh : MDifferentiableAt KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c :=
-    hfa.fst.prodMk hgb.snd
-  constructor
-  · rw [← hh.mfderiv_fst_apply, ← mfderiv_comp_apply c hf ha]
-    exact hfa.mfderiv_fst_apply ξ
-  · rw [← hh.mfderiv_snd_apply, ← mfderiv_comp_apply c hg hb]
-    exact hgb.mfderiv_snd_apply ξ
-
-omit [FiniteDimensional ℝ E₁] [IsManifold I₁ ∞ M₁] [FiniteDimensional ℝ E₂] [IsManifold I₂ ∞ M₂]
-  [FiniteDimensional ℝ E₃] [IsManifold I₃ ∞ M₃] in
-/-- The matching condition on tangent vectors of the fibre product: the derivative of
-`(f (a c)).2 = (g (b c)).1`. -/
-private theorem mfderiv_relComp_snd_eq_fst {c : C}
-    (hf : MDifferentiableAt K₁ (I₁.prod I₂) f (a c))
-    (hg : MDifferentiableAt K₂ (I₂.prod I₃) g (b c)) (ha : MDifferentiableAt KC K₁ a c)
-    (hb : MDifferentiableAt KC K₂ b c) (hab : ∀ c, (f (a c)).2 = (g (b c)).1)
-    (ξ : TangentSpace KC c) :
-    (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).2 =
-      (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).1 := by
-  rw [← mfderiv_comp_apply c hf ha, ← mfderiv_comp_apply c hg hb]
-  exact (hf.comp c ha).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hg.comp c hb) hab ξ
-
 /-- **Composition of Lagrangian correspondences.** Let `f : L₁ → M₁ × M₂` and
 `g : L₂ → M₂ × M₃` be Lagrangian maps for the twisted products, and let `a : C → L₁`,
 `b : C → L₂` land in their fibre product, `(f (a c)).2 = (g (b c)).1`. If `(da, db)` maps each
@@ -190,16 +158,15 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
       (LinearMap.fst ℝ _ _ ∘ₗ A ∘ₗ (mfderiv KC K₁ a c).toLinearMap).prod
         (LinearMap.snd ℝ _ _ ∘ₗ B ∘ₗ (mfderiv KC K₂ b c).toLinearMap) := by
     ext ξ
-    · simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
-        ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hA]
-      -- `LinearMap.fst` is the projection by definition, but `LinearMap.fst_apply` does not
-      -- rewrite here: it acts on the product of the coordinate tangent spaces, which is the
-      -- tangent space of the product only by definition.
-      exact (mfderiv_relComp_apply (hf (a c)) (hg (b c)) (ha c) (hb c) ξ).1
-    · simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
-        ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hB]
-      -- As above, `LinearMap.snd_apply` only applies up to definitional unfolding.
-      exact (mfderiv_relComp_apply (hf (a c)) (hg (b c)) (ha c) (hb c) ξ).2
+    all_goals
+      simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
+        ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hA, hB]
+      rw [(hf (a c)).mfderiv_prodMk_fst_snd_comp_apply (hg (b c)) (ha c) (hb c)]
+      -- `LinearMap.fst` and `LinearMap.snd` are the projections by definition, but
+      -- `LinearMap.fst_apply` and `LinearMap.snd_apply` do not rewrite here: they act on the
+      -- product of the coordinate tangent spaces, which is the tangent space of the product only
+      -- by definition.
+      rfl
   rw [hd]
   -- The tangent image is the composite of the tangent relations of `f` and `g`.
   refine isLagrangian_range_prod_of_eq (hσ₂ := hσ₂) (hab c)
@@ -207,7 +174,7 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
     ((isLagrangianMap_twistedProd_iff_forall hσ₂ hσ₃).mp hgL (b c)) (fun ξ ↦ ?_)
     (fun u w h ↦ hfib c u w ?_)
   · rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, hA, hB]
-    exact mfderiv_relComp_snd_eq_fst (hf (a c)) (hg (b c)) (ha c) (hb c) hab ξ
+    exact (hf (a c)).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp (hg (b c)) (ha c) (hb c) hab ξ
   · rwa [hA, hB] at h
 
 omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [FiniteDimensional ℝ E₃] in
@@ -235,9 +202,9 @@ theorem IsIsotropicMap.injective_mfderiv_relComp
   set w := mfderiv KC K₂ b c ξ
   -- The outer coordinates of `df u` and `dg w` are those of `dh ξ = 0`, and the middle
   -- coordinates match.
-  obtain ⟨h₁, h₂⟩ := mfderiv_relComp_apply hf hg ha hb ξ
+  obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 (hf.mfderiv_prodMk_fst_snd_comp_apply hg ha hb ξ)
   rw [hξ] at h₁ h₂
-  have h₃ := mfderiv_relComp_snd_eq_fst hf hg ha hb hab ξ
+  have h₃ := hf.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp hg ha hb hab ξ
   let A := (Manifold.tangentSpaceProdEquiv (f (a c))).toLinearEquiv.toLinearMap ∘ₗ
     (mfderiv K₁ (I₁.prod I₂) f (a c)).toLinearMap
   let B := (Manifold.tangentSpaceProdEquiv (g (b c))).toLinearEquiv.toLinearMap ∘ₗ
