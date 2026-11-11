@@ -48,8 +48,10 @@ structure LeftModuleAlgebra where
   action_one : ∀ h, action h 1 = counit (R := R) h • (1 : A)
   /-- Multiplication is equivariant for the diagonal action. -/
   action_mul : ∀ h a b, action h (a * b) =
-    TensorProduct.lift ((LinearMap.mul R A).compl₁₂
-      (action.toLinearMap.flip a) (action.toLinearMap.flip b)) (comul h)
+    LinearMap.mul' R A
+      (((Module.endTensorEndAlgHom (R := R) (S := R) (A := R)).comp
+        (Algebra.TensorProduct.map action action)).comp
+          (Bialgebra.comulAlgHom R H) h (a ⊗ₜ[R] b))
 
 namespace LeftModuleAlgebra
 
@@ -71,22 +73,18 @@ attribute [simp] action_one
 theorem action_mul_eq_sum (μ : LeftModuleAlgebra R H A) {h : H} {ι : Type*}
     (r : Coalgebra.Repr R h ι) (a b : A) :
     μ.action h (a * b) = ∑ i ∈ r.index, μ.action (r.left i) a * μ.action (r.right i) b := by
-  rw [μ.action_mul, ← r.eq]
-  simp
+  rw [μ.action_mul]
+  simp [AlgHom.comp_apply, ← r.eq, Module.endTensorEndAlgHom_apply]
 
 /-- The trivial module algebra action factors through the counit. -/
 def trivial : LeftModuleAlgebra R H A where
   action := (Algebra.lsmul R R A).comp (Bialgebra.counitAlgHom R H)
   action_one _ := rfl
   action_mul h a b := by
-    let f := TensorProduct.lift ((LinearMap.mul R A).compl₁₂
-      (((Algebra.lsmul R R A).comp (Bialgebra.counitAlgHom R H)).toLinearMap.flip a)
-      (((Algebra.lsmul R R A).comp (Bialgebra.counitAlgHom R H)).toLinearMap.flip b))
-    have hf : f = (LinearMap.smulRight (counit (R := R)) (a * b)).comp
-        ((TensorProduct.lid R H).toLinearMap.comp ((counit (R := R)).rTensor H)) := by
-      ext x y
-      simp [f, smul_smul, mul_comm]
-    simpa [f] using (DFunLike.congr_fun hf (comul h)).symm
+    have hc := congrArg (counit (R := R)) (sum_counit_smul (ℛ R h))
+    simpa [AlgHom.comp_apply, ← (ℛ R h).eq, Module.endTensorEndAlgHom_apply,
+      smul_mul_smul_comm, smul_smul, mul_comm, ← Finset.sum_smul, map_sum] using
+      (congrArg (fun c : R => c • (a * b)) hc).symm
 
 @[simp]
 theorem trivial_action (h : H) (a : A) :
@@ -102,17 +100,11 @@ def restrict (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H) :
   action_one h := by simp
   action_mul h a b := by
     simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom]
-    rw [μ.action_mul, ← CoalgHomClass.map_comp_comul_apply f]
-    have he :
-        (TensorProduct.lift ((LinearMap.mul R A).compl₁₂
-          (μ.action.toLinearMap.flip a) (μ.action.toLinearMap.flip b))).comp
-            (TensorProduct.map f.toLinearMap f.toLinearMap) =
-        TensorProduct.lift ((LinearMap.mul R A).compl₁₂
-          ((μ.action.comp f.toAlgHom).toLinearMap.flip a)
-          ((μ.action.comp f.toAlgHom).toLinearMap.flip b)) := by
-      ext x y
-      simp [BialgHom.toCoalgHom_apply]
-    exact DFunLike.congr_fun he (comul h)
+    rw [μ.action_mul]
+    simp only [Algebra.TensorProduct.map_comp, AlgHom.comp_apply]
+    have hc := DFunLike.congr_fun f.map_comp_comulAlgHom h
+    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom] at hc
+    rw [hc]
 
 @[simp]
 theorem restrict_action (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H) (h : K) (a : A) :
@@ -159,7 +151,7 @@ theorem invariants_trivial :
   simp
 
 /-- Restriction can only enlarge the invariant subalgebra. -/
-theorem invariants_le_restrict (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H) :
+theorem invariants_le_invariants_restrict (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H) :
     μ.invariants ≤ (μ.restrict f).invariants := by
   intro a ha h
   simpa using ha (f h)
@@ -167,7 +159,7 @@ theorem invariants_le_restrict (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] 
 /-- Surjective restriction does not change the invariant subalgebra. -/
 theorem invariants_restrict_eq (μ : LeftModuleAlgebra R H A) (f : K →ₐc[R] H)
     (hf : Function.Surjective f) : (μ.restrict f).invariants = μ.invariants := by
-  apply le_antisymm ?_ (μ.invariants_le_restrict f)
+  apply le_antisymm ?_ (μ.invariants_le_invariants_restrict f)
   intro a ha h
   obtain ⟨k, rfl⟩ := hf h
   simpa using ha k
@@ -184,18 +176,19 @@ namespace Hom
 
 variable {μ : LeftModuleAlgebra R H A} {ν : LeftModuleAlgebra R H B}
 
-/-- Equivariant algebra maps are determined by their underlying algebra maps. -/
-@[ext]
-theorem ext {f g : Hom μ ν} (h : ∀ a, f.toAlgHom a = g.toAlgHom a) : f = g := by
-  have he : f.toAlgHom = g.toAlgHom := AlgHom.ext h
-  cases f
-  cases g
-  cases he
-  rfl
-
 instance : FunLike (Hom μ ν) A B where
   coe f := f.toAlgHom
-  coe_injective _ _ h := ext (congrFun h)
+  coe_injective f g h := by
+    have he : f.toAlgHom = g.toAlgHom := DFunLike.coe_injective h
+    cases f
+    cases g
+    cases he
+    rfl
+
+/-- Equivariant algebra maps are determined by their values. -/
+@[ext]
+theorem ext {f g : Hom μ ν} (h : ∀ a, f a = g a) : f = g :=
+  DFunLike.ext _ _ h
 
 instance : AlgHomClass (Hom μ ν) R A B where
   map_add f := f.toAlgHom.map_add
@@ -206,6 +199,10 @@ instance : AlgHomClass (Hom μ ν) R A B where
 
 @[simp]
 theorem coe_toAlgHom (f : Hom μ ν) : ⇑f.toAlgHom = f :=
+  (rfl)
+
+@[simp]
+theorem coe_mk (φ : A →ₐ[R] B) (hφ) : ⇑(⟨φ, hφ⟩ : Hom μ ν) = φ :=
   (rfl)
 
 /-- An equivariant algebra map commutes with the bialgebra action. -/
@@ -259,25 +256,25 @@ theorem map_mem_invariants (f : Hom μ ν) {a : A} (ha : a ∈ μ.invariants) :
   rw [← f.map_action, ha h, map_smul]
 
 /-- Restrict an equivariant algebra map to the invariant subalgebras. -/
-def invariantsMap (f : Hom μ ν) : μ.invariants →ₐ[R] ν.invariants :=
+def mapInvariants (f : Hom μ ν) : μ.invariants →ₐ[R] ν.invariants :=
   (f.toAlgHom.comp μ.invariants.val).codRestrict ν.invariants fun a =>
     f.map_mem_invariants a.property
 
 @[simp]
-theorem coe_invariantsMap (f : Hom μ ν) (a : μ.invariants) :
-    (f.invariantsMap a : B) = f (a : A) :=
+theorem coe_mapInvariants (f : Hom μ ν) (a : μ.invariants) :
+    (f.mapInvariants a : B) = f (a : A) :=
   (rfl)
 
 @[simp]
-theorem invariantsMap_id (μ : LeftModuleAlgebra R H A) :
-    (id μ).invariantsMap = AlgHom.id R μ.invariants := by
+theorem mapInvariants_id (μ : LeftModuleAlgebra R H A) :
+    (id μ).mapInvariants = AlgHom.id R μ.invariants := by
   ext
   rfl
 
 @[simp]
-theorem invariantsMap_comp {C : Type*} [Semiring C] [Algebra R C]
+theorem mapInvariants_comp {C : Type*} [Semiring C] [Algebra R C]
     {ξ : LeftModuleAlgebra R H C} (g : Hom ν ξ) (f : Hom μ ν) :
-    (g.comp f).invariantsMap = g.invariantsMap.comp f.invariantsMap := by
+    (g.comp f).mapInvariants = g.mapInvariants.comp f.mapInvariants := by
   ext
   rfl
 
