@@ -19,8 +19,9 @@ topology on compact sources used for spaces of almost complex structures in symp
 
 As for sections, the topology is supplied explicitly, since the frame domains of `End(TM)` are
 parameters. For a covering frame system the topology is Hausdorff, the endomorphism section is a
-closed embedding (the identity `J² = -1` is a closed condition on sections), and the topology does
-not depend on the covering frames. Point evaluation is continuous.
+closed embedding (the identity `J² = -1` is a closed condition on sections), and, for a locally
+compact model space (in particular a finite-dimensional one), the topology does not depend on the
+covering frames. Point evaluation is continuous.
 
 For a smooth two-form `ω`, the spaces of `ω`-tame and of `ω`-compatible smooth almost complex
 structures are the subtypes `{J // ω.Tames J}` and `{J // ω.Compatible J}` with the subspace
@@ -35,8 +36,8 @@ nondegenerate form is `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible`.
   structures in specified frames of `End(TM)`.
 * `TauCeti.SmoothAlmostComplexStructure.isClosedEmbedding_toEndomorphism_frameTopology`: for a
   covering frame system, the endomorphism section is a closed embedding.
-* `TauCeti.SmoothAlmostComplexStructure.frameTopology_eq_of_covers`: independence of the covering
-  frames.
+* `TauCeti.SmoothAlmostComplexStructure.frameTopology_eq_of_covers`: for a locally compact model
+  space, independence of the covering frames.
 * `TauCeti.SmoothTwoForm.isClosed_setOf_invariant_frameTopology`: invariance of a smooth two-form
   is a closed condition.
 * `TauCeti.SmoothTwoForm.isClosed_setOf_invariant_tames_frameTopology`: compatible structures
@@ -150,8 +151,8 @@ theorem t2Space_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
   let _ := ContMDiffSection.t2Space_frameTopology (I := I) (n := ∞) e U hU hcover
   exact (isEmbedding_toEndomorphism_frameTopology e U hU).t2Space
 
-/-- The `C^∞` topology on smooth almost complex structures does not depend on the covering
-frames of `End(TM)`. -/
+/-- For a locally compact model space `E` (in particular a finite-dimensional one), the `C^∞`
+topology on smooth almost complex structures does not depend on the covering frames of `End(TM)`. -/
 theorem frameTopology_eq_of_covers [LocallyCompactSpace E] (hcover : ∀ x, ∃ i, x ∈ U i)
     {κ : Type*}
     (e' : κ → Trivialization (E →L[ℝ] E)
