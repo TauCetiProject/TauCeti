@@ -665,14 +665,16 @@ theorem HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg {u u' : E → V}
   let b := stdOrthonormalBasis ℝ V
   let ψ : Fin (Module.finrank ℝ V) → 𝓓(Ω, ℝ) := fun i =>
     TestFunction.postcompCLM (innerSL ℝ (b i)) φ
-  have hψ (i) (x : E) : (ψ i : E → ℝ) x = ⟪b i, (φ : E → V) x⟫_ℝ := rfl
+  have hψ (i) : (ψ i : E → ℝ) = innerSL ℝ (b i) ∘ (φ : E → V) :=
+    TestFunction.postcompCLM_apply _ φ
   have hφd : Differentiable ℝ (φ : E → V) := φ.contDiff.differentiable (by simp)
   have hψd (i) (x : E) :
       lineDeriv ℝ (ψ i : E → ℝ) x v = ⟪b i, lineDeriv ℝ (φ : E → V) x v⟫_ℝ := by
-    have h₁ : HasFDerivAt (ψ i : E → ℝ) ((innerSL ℝ (b i)).comp (fderiv ℝ (φ : E → V) x)) x :=
+    have h₁ : HasFDerivAt (innerSL ℝ (b i) ∘ (φ : E → V))
+        ((innerSL ℝ (b i)).comp (fderiv ℝ (φ : E → V) x)) x :=
       (innerSL ℝ (b i)).hasFDerivAt.comp x (hφd x).hasFDerivAt
-    rw [h₁.hasLineDerivAt v |>.lineDeriv, (hφd x).lineDeriv_eq_fderiv]
-    rfl
+    rw [hψ, h₁.hasLineDerivAt v |>.lineDeriv, (hφd x).lineDeriv_eq_fderiv]
+    simp [ContinuousLinearMap.comp_apply, innerSL_apply_apply]
   have hw (i) := h.clm_comp (innerSL ℝ (b i))
   calc ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, u x⟫_ℝ ∂μ
       = ∫ x, ∑ i, lineDeriv ℝ (ψ i : E → ℝ) x v • ⟪b i, u x⟫_ℝ ∂μ := by
@@ -698,7 +700,7 @@ theorem HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg {u u' : E → V}
         dsimp only
         rw [← b.sum_inner_mul_inner]
         refine Finset.sum_congr rfl fun i _ => ?_
-        rw [hψ, smul_eq_mul, real_inner_comm (b i)]
+        rw [hψ, Function.comp_apply, innerSL_apply_apply, smul_eq_mul, real_inner_comm (b i)]
 
 end Inner
 

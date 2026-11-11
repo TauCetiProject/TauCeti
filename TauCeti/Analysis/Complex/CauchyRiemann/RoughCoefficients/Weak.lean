@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -50,11 +51,15 @@ for the statements here.
   at the Hölder triple `(p, q, r)`.
 * `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_iff_ae`: for such `ξ`, the weak equation
   holds exactly when `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
+* `TauCeti.IsSobolevCRCoefficients.isWeakLinearCauchyRiemannOn_iff`: the solutions of the linear
+  equation in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn` are exactly the continuous weak
+  solutions of the homogeneous weak equation with a locally `L^q` weak derivative.
 * `TauCeti.isWeakCRSolution_iff_of_contDiffOn`: for `C¹` coefficients `J`, continuous `S`, `C¹`
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
   `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`) and invariance under changes of
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), lowering the exponent
+  (`TauCeti.IsWeakCRSolution.mono_exponent`) and invariance under changes of
   `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω` (`TauCeti.isWeakCRSolution_congr_ae`).
 
 The proofs test against vector-valued test functions through the inner-product form of the weak
@@ -77,7 +82,7 @@ namespace TauCeti
 /-! ### The formal adjoint and the weak equation -/
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  {Ω Ω' : Opens ℂ} {p q : ℝ≥0∞}
+  {Ω Ω' : Opens ℂ} {p q r : ℝ≥0∞}
   {J J' S S' : ℂ → V →L[ℝ] V} {DJ DJ' : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ ξ' η η' : ℂ → V}
 
 /-- The **formal adjoint** of the real Cauchy–Riemann operator `∂_s + J ∂_t + S`, whose
@@ -162,6 +167,11 @@ theorem mono (h : IsWeakCRSolution q Ω J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
   ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ =>
     h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
+/-- A weak solution for the exponent `q` is a weak solution for every smaller exponent. -/
+theorem mono_exponent (h : IsWeakCRSolution q Ω J DJ S ξ η) (hrq : r ≤ q) :
+    IsWeakCRSolution r Ω J DJ S ξ η :=
+  ⟨h.memLpLoc.mono_exponent hrq, h.locallyIntegrableOn, h.2.2⟩
+
 /-- The weak equation is homogeneous in `(ξ, η)`. -/
 theorem const_smul (h : IsWeakCRSolution q Ω J DJ S ξ η) (c : ℝ) :
     IsWeakCRSolution q Ω J DJ S (c • ξ) (c • η) := by
@@ -231,21 +241,44 @@ private theorem IsSobolevCRCoefficients.memLpLoc_derivI
     (hc : IsSobolevCRCoefficients p Ω J DJ S) : MemLpLoc p Ω (fun z => DJ z I) :=
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
 
+omit [CompleteSpace V] in
+/-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are
+integrable under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`. -/
+private theorem IsSobolevCRCoefficients.integrable_crFormalAdjoint_terms
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
+    Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) ∧
+      Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) ∧
+      Integrable (fun z => ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) ∧
+      Integrable (fun z => ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ) := by
+  have hloc := Ω.isOpen.isLocallyClosed
+  exact ⟨φ.integrable_inner_fderiv
+      (hξ.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1,
+    φ.integrable_inner_fderiv (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξ hpq hloc) I,
+    φ.integrable_inner (hc.memLpLoc_derivI.locallyIntegrableOn_clm_apply hξ hpq hloc),
+    φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ hpq hloc)⟩
+
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the pairing
 `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. -/
 theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have h₁ := φ.integrable_inner_fderiv
-    (hξ.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1
-  have h₂ := φ.integrable_inner_fderiv
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξ hpq hloc) I
-  have h₃ := φ.integrable_inner (hc.memLpLoc_derivI.locallyIntegrableOn_clm_apply hξ hpq hloc)
-  have h₄ := φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ hpq hloc)
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
   simp only [inner_crFormalAdjoint]
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
+
+/-- The integral of `⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
+private theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
+    ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
+      -(∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) - (∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) -
+        (∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
+  simp only [inner_crFormalAdjoint]
+  rw [integral_add _ h₄, integral_sub _ h₃, integral_sub _ h₂, integral_neg]
+  exacts [h₁.neg, h₁.neg.sub h₂, (h₁.neg.sub h₂).sub h₃]
 
 /-- **Green's formula** for the real Cauchy–Riemann operator with Sobolev coefficients. If `ξ`
 has weak derivative `Dξ` on `Ω`, with `ξ` and `Dξ` locally `L^q`, and `1/p + 1/q ≤ 1` with
@@ -279,13 +312,9 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_derivI K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hDξI K hKΩ hK)
-  have hA := φ.integrable_inner (hc.memLpLoc_derivI.locallyIntegrableOn_clm_apply hξq hpq hloc)
+  obtain ⟨-, -, hA, hC⟩ := hc.integrable_crFormalAdjoint_terms hpq hξq φ
   have hB := φ.integrable_inner (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hDξI hpq hloc)
-  have hC := φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξq hpq hloc)
   have hD := φ.integrable_inner (hDξ1.locallyIntegrableOn hq1 hloc)
-  have h₁ := φ.integrable_inner_fderiv (hξq.locallyIntegrableOn hq1 hloc) 1
-  have h₂ := φ.integrable_inner_fderiv
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξq hpq hloc) I
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
     have h := (hξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg φ
     simp only [TestFunction.lineDeriv_eq_fderiv] at h
@@ -304,17 +333,7 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
         ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
     simp only [inner_add_right]
     rw [integral_add hDB hC, integral_add hD hB]
-  have e₁ : Integrable (fun z => -⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) := h₁.neg
-  have e₂ : Integrable (fun z => -⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ -
-      ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) := e₁.sub h₂
-  have e₃ : Integrable (fun z => -⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ -
-      ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ - ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) := e₂.sub hA
-  have hlhs : ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
-      -(∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) - (∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) -
-        (∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
-    simp only [inner_crFormalAdjoint]
-    rw [integral_add e₃ hC, integral_sub e₂ hA, integral_sub e₁ h₂, integral_neg]
-  rw [hlhs, hrhs, hξ1, hJξI]
+  rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq hξq φ, hrhs, hξ1, hJξI]
   ring
 
 /-- **Weak solutions with a weak derivative.** If `ξ` has weak derivative `Dξ` on `Ω`, with `ξ`
@@ -341,6 +360,26 @@ theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V
   by_cases hzΩ : z ∈ (Ω : Set ℂ)
   · rw [hz hzΩ]
   · simp [image_eq_zero_of_notMem_tsupport fun h' => hzΩ (φ.tsupport_subset h')]
+
+/-- **Comparison with `TauCeti.IsWeakLinearCauchyRiemannOn`.** Under Sobolev coefficients,
+`1/p + 1/q ≤ 1` and finite `p, q`, a field `ξ` solves the linear equation
+`∂_s ξ + J ∂_t ξ + S ξ = 0` in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn` exactly when it
+is continuous on `Ω`, is a weak solution of the homogeneous weak equation, and has a locally `L^q`
+weak derivative on `Ω`. -/
+theorem IsSobolevCRCoefficients.isWeakLinearCauchyRiemannOn_iff [FiniteDimensional ℝ V]
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp : p ≠ ⊤) (hq : q ≠ ⊤) :
+    IsWeakLinearCauchyRiemannOn q Ω J S ξ ↔ ContinuousOn ξ Ω ∧
+      IsWeakCRSolution q Ω J DJ S ξ 0 ∧
+        ∃ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume Ω ξ D ∧ MemLpLoc q Ω D := by
+  rw [TauCeti.isWeakLinearCauchyRiemannOn_iff, Opens.interior_coe, Ω.isOpen.interior_eq]
+  constructor
+  · rintro ⟨hcont, hξq, D, hD, hDq, hae⟩
+    exact ⟨hcont, (hc.isWeakCRSolution_iff_ae hpq hp hq hD hξq hDq locallyIntegrableOn_zero).2
+      (by simpa using hae), D, hD, hDq⟩
+  · rintro ⟨hcont, hsol, D, hD, hDq⟩
+    exact ⟨hcont, hsol.memLpLoc, D, hD, hDq, by
+      simpa using (hc.isWeakCRSolution_iff_ae hpq hp hq hD hsol.memLpLoc hDq
+        locallyIntegrableOn_zero).1 hsol⟩
 
 end Holder
 
