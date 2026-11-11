@@ -124,12 +124,15 @@ theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
 derivative of `f`. -/
 theorem inner_iteratedGradientChain_one_apply (f : F → ℝ) (x v w : F) :
     ⟪iteratedGradientChain f 1 x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
-  have h : iteratedGradientChain f 1 x =
+  rw [iteratedGradientChain_succ, iteratedGradientChain_zero]
+  -- `gradient f` is by definition `(toDual ℝ F).symm ∘ fderiv ℝ f`, and
+  -- `continuousLinearMapOfBilin B` is by definition `(toDual ℝ F).symm ∘L B`, so the chain rule
+  -- for the linear equivalence `(toDual ℝ F).symm` identifies the two.
+  have h : fderiv ℝ (gradient f) x =
       InnerProductSpace.continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) :=
     (InnerProductSpace.toDual ℝ F).symm.toContinuousLinearEquiv.comp_fderiv
       (f := fderiv ℝ f) (x := x)
-  rw [h]
-  exact InnerProductSpace.continuousLinearMapOfBilin_apply _ _ _
+  rw [h, InnerProductSpace.continuousLinearMapOfBilin_apply]
 
 /-- Scalar functions that agree near a point have iterated-gradient fields that agree near that
 point, at every order. -/
