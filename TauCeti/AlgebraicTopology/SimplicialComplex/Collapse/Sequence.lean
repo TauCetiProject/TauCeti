@@ -148,17 +148,10 @@ theorem CollapsesTo.contractibleSpace_realization {L : AbstractSimplicialComplex
   have hLT : L ≤ T := le_top
   have := hK.contractibleSpace hKT
   obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hKT
-  have hri : r.comp (ContinuousMap.inclusion fun _ hx => h.le hx) = ContinuousMap.id _ :=
-    ContinuousMap.ext hr
-  -- The retraction and the inclusion are mutually inverse homotopy equivalences.
-  let e : ContinuousMap.HomotopyEquiv
-      {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex}
-      {x : Realization T | x.1.support ∈ K} :=
-    { toFun := ContinuousMap.inclusion fun _ hx => h.le hx
-      invFun := r
-      left_inv := hri ▸ ContinuousMap.Homotopic.refl _
-      right_inv := hR.homotopic.symm }
-  have := e.contractibleSpace
+  have := (ContinuousMap.HomotopyEquiv.ofRetraction
+    (A := {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex})
+    (B := {x : Realization T | x.1.support ∈ K})
+    (fun _ hx => h.le hx) r hr hR.homotopic.symm.some).contractibleSpace
   have hrange : range (realizationMap hLT) =
       {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex} := by
     ext x
