@@ -111,7 +111,8 @@ theorem hasFDerivAt_neckSmoothingMap (hp : DifferentiableAt ℂ p (0, t)) :
     simp [neckSmoothingMap, Function.comp_def]
   · ext w <;> simp [neckSmoothingLinearEquiv_apply, mul_comm]
 
-private theorem hasStrictFDerivAt_neckSmoothingMap (hp : AnalyticAt ℂ p (0, t)) :
+/-- Holomorphic moving data give the same strict derivative at the zero smoothing coordinate. -/
+theorem hasStrictFDerivAt_neckSmoothingMap (hp : AnalyticAt ℂ p (0, t)) :
     HasStrictFDerivAt (neckSmoothingMap p)
       (neckSmoothingLinearEquiv (A := A) (p (0, t)) : (ℂ × A) →L[ℂ] (ℂ × A)) (0, t) :=
   (hasFDerivAt_neckSmoothingMap hp.differentiableAt).fderiv ▸
@@ -198,6 +199,16 @@ theorem neckSmoothingChart_symm_node (hp : AnalyticAt ℂ p (0, t)) :
   simpa only [neckSmoothingChart, HasStrictFDerivAt.localInverse_def,
     neckSmoothingMap_apply, zero_mul] using
     (hasStrictFDerivAt_neckSmoothingMap hp).localInverse_apply_image
+
+/-- The inverse chart scales the smoothing direction by the reciprocal exponential and fixes
+parameter directions at the node. -/
+theorem hasStrictFDerivAt_neckSmoothingChart_symm (hp : AnalyticAt ℂ p (0, t)) :
+    HasStrictFDerivAt (neckSmoothingChart hp).symm
+      ((neckSmoothingLinearEquiv (A := A) (p (0, t))).symm : (ℂ × A) →L[ℂ] (ℂ × A))
+      (0, t) := by
+  simpa only [neckSmoothingChart, HasStrictFDerivAt.localInverse_def,
+    neckSmoothingMap_apply, zero_mul] using
+    (hasStrictFDerivAt_neckSmoothingMap hp).to_localInverse
 
 /-- The inverse smoothing coordinate is jointly holomorphic. -/
 theorem analyticAt_neckSmoothingChart_symm (hp : AnalyticAt ℂ p (0, t)) :
