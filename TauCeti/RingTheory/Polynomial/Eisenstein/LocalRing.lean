@@ -25,7 +25,7 @@ open IsLocalRing
 
 namespace Polynomial.IsEisensteinAt
 
-variable {R : Type*} [CommRing R] [IsLocalRing R] {S : Type*} [CommRing S] [Algebra R S]
+variable {R : Type*} [CommSemiring R] [IsLocalRing R] {S : Type*} [Semiring S] [Algebra R S]
   {f : R[X]} {x : S}
 
 /-- Over a local ring, an Eisenstein polynomial at the maximal ideal has a unit leading
