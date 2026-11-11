@@ -118,7 +118,6 @@ theorem unitCandidateEliminationCertificate_one_add_sqrt_two (hmin : minpoly ℤ
   rw [heval]
   have hA : 0 < (1 + √2 - x) * (x - 1 + √2) := mul_pos (by linarith) (by linarith)
   have hB : 0 < (x - 1) * (1 + √2 - x) := mul_pos (by linarith) (by linarith)
-  have hC : 0 < x - 1 := by linarith
   interval_cases m <;> rcases h0 with h0 | h0 <;> rw [h0] <;> push_cast <;>
     first | (exfalso; exact hbad ⟨rfl, h0⟩) | nlinarith
 

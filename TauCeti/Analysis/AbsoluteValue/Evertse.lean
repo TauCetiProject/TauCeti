@@ -118,8 +118,7 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
       simp only [hx', sub_add_cancel] at hmem
       exact hmem
     have hM' (j : Fin n) (r : ρ) : v (L r (x' j)) ≤ ν r * (c * M j.succ) := by
-      have h := apply_sub_div_mul_le (zero_le_one.trans hc) hv (hν r) (hν r₀) hpos (hM j.succ r)
-        (hM j.succ r₀) (hr₀ r)
+      have h := apply_sub_div_mul_le hv (hν r) (hM j.succ r) (hM j.succ r₀) (hr₀ r)
       simp only [hx', ht, map_sub, map_smul, smul_eq_mul]
       linarith
     obtain ⟨z', π', hz', hzero', hpiv', hbd'⟩ :=
