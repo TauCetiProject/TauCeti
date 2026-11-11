@@ -5,7 +5,9 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import Mathlib.RingTheory.TensorProduct.Quotient
+public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.Algebra.BigOperators.Finsupp.Basic
@@ -274,6 +276,14 @@ theorem quotientBasisCoord_eq_zero_of_mem (hv : ∀ x ∈ quotientBasisRelations
   simp [map_sub, map_sum, quotientBasisCoord_C_mul,
     quotientBasisCoord_monomial, quotientBasisCoord_map_eq_ite_of_relations w v hv]
 
+/-- Under the coordinate relations, membership in the universal ideal is coordinate vanishing. -/
+@[simp] theorem mem_quotientBasisIdealOf_iff
+    (hv : ∀ x ∈ quotientBasisRelations w, aeval v x = 0) {g : MvPolynomial n A} :
+    g ∈ quotientBasisIdealOf w v ↔ quotientBasisCoord v g = 0 := by
+  refine ⟨quotientBasisCoord_eq_zero_of_mem w v hv, fun hg ↦ ?_⟩
+  simpa only [hg, Pi.zero_apply, map_zero, zero_mul, Finset.sum_const_zero, sub_zero] using
+    sub_sum_mem_quotientBasisIdealOf w v g
+
 /-- **Key lemma.** If `v` satisfies the relations of `quotientBasisRelations w`, then
 `quotientBasisIdealOf w v` is `w`-adapted. -/
 theorem isQuotientBasis_quotientBasisIdealOf
@@ -437,19 +447,32 @@ theorem quotientBasisEquiv_comp {source target : Type*} [CommRing source] [CommR
     (map_map classifier.toRingHom scalarMap.toRingHom polynomial).symm
 
 omit [Fintype ι] [DecidableEq ι] in
-/-- A finite prescribed polynomial basis remains a basis after extension of scalars.
-This finite-index form is the base-change law for the classifier `quotientBasisEquiv`;
-its coordinate relations use finite sums over the prescribed basis. -/
-theorem IsQuotientBasis.map [Finite ι] {source target : Type*} [CommRing source] [CommRing target]
+/-- A prescribed polynomial basis remains a basis after extension of scalars. -/
+theorem IsQuotientBasis.map {source target : Type*} [CommRing source] [CommRing target]
     [Algebra R source] [Algebra R target] {ideal : Ideal (MvPolynomial n source)}
     (basis : IsQuotientBasis w ideal) (scalarMap : source →ₐ[R] target) :
     IsQuotientBasis w (ideal.map (map scalarMap.toRingHom)) := by
-  classical
-  let := Fintype.ofFinite ι
-  obtain ⟨classifier, equality⟩ := (quotientBasisEquiv w source).surjective ⟨ideal, basis⟩
-  have idealEquality : (quotientBasisEquiv w source classifier).1 = ideal :=
-    congrArg Subtype.val equality
-  rw [← idealEquality, ← quotientBasisEquiv_comp]
-  exact (quotientBasisEquiv w target (scalarMap.comp classifier)).2
+  letI := scalarMap.toRingHom.toAlgebra
+  let e := (Algebra.TensorProduct.tensorQuotientEquiv target (MvPolynomial n source)
+    target ideal).trans (Ideal.quotientEquivAlg _ _ (algebraTensorAlgEquiv source target) (by
+      -- Identify the transported ideal by composing its two public coefficient maps.
+      change ideal.map (map (algebraMap source target)) =
+        (ideal.map (Algebra.TensorProduct.includeRight
+          (A := target) (R := source)).toRingHom).map
+            (algebraTensorAlgEquiv source target).toAlgHom.toRingHom
+      rw [Ideal.map_map]
+      congr 1
+      exact RingHom.ext fun p ↦ by simp))
+  let b := (basis.basis.baseChange target).map e.toLinearEquiv
+  have hb (i : ι) : b i =
+      Ideal.Quotient.mk (ideal.map (map scalarMap.toRingHom))
+        (map (algebraMap R target) (w i)) := by
+    simp only [b, Module.Basis.map_apply, Module.Basis.baseChange_apply,
+      basis_apply, e, AlgEquiv.toLinearEquiv_apply, AlgEquiv.trans_apply,
+      Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
+      algebraTensorAlgEquiv_tmul, one_smul, map_map, ← IsScalarTower.algebraMap_eq]
+  have heq : (fun i ↦ Ideal.Quotient.mk (ideal.map (map scalarMap.toRingHom))
+      (map (algebraMap R target) (w i))) = b := (funext hb).symm
+  exact ⟨heq.symm ▸ b.linearIndependent, heq.symm ▸ b.span_eq⟩
 
 end TauCeti.PolynomialQuotient
