@@ -73,6 +73,9 @@ residue field as `A`; to use the residue-field API, first install
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
 * For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
+* `TauCeti.IsFiniteProductOfStandardTameCovers.finite`,
+  `TauCeti.IsFiniteProductOfStandardTameCovers.free`: a finite product of standard covers is
+  finite free over `A`, including the empty product and the zero base ring.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
 * `TauCeti.isFiniteProductOfStandardTameCovers_standardTameCover`: a single standard cover with

@@ -11,10 +11,11 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 /-!
 # Normalization in products of standard tame covers
 
-A finite product of standard tame covers is finite free over the base. If `f` is a
-nonzerodivisor and `A/(f)` is reduced, the product is also the integral closure of `A` in
-its localization at `f`. Thus normalization does not change the standard local models,
-and their structural morphisms are finite locally free.
+This file proves that, if `f` is a nonzerodivisor and `A/(f)` is reduced, a finite product
+of standard tame covers is the integral closure of `A` in its localization at `f`.
+Thus normalization does not change the standard local models. Their finiteness and freeness
+over the base are proved in `TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic`, as
+`IsFiniteProductOfStandardTameCovers.finite` and `IsFiniteProductOfStandardTameCovers.free`.
 
 The normalization assertion does not require the base to be normal, regular, or
 Noetherian. It uses the reduced inverse image of `(f)`: its ideal has a nonzerodivisor

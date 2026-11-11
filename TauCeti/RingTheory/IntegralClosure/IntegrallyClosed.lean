@@ -7,8 +7,8 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Integrally closed algebras and subrings
@@ -169,26 +169,8 @@ theorem of_isLocalization_away_of_radical_eq_span {R A : Type*} [CommRing R] [Co
   have hxg : g ∣ x := Ideal.mem_span_singleton.mp <|
     h ▸ Ideal.le_radical (Ideal.mem_span_singleton_self x)
   obtain ⟨n, hn⟩ := (h ▸ Ideal.mem_span_singleton_self g : g ∈ (Ideal.span {x}).radical)
-  have hgA : IsUnit (algebraMap R A g) :=
-    IsLocalization.Away.isUnit_of_dvd x hxg
-  let B := Localization.Away g
-  have hxB : IsUnit (algebraMap R B x) :=
-    (IsLocalization.Away.algebraMap_isUnit_iff (S := B) g).mpr
-      ⟨n, Ideal.mem_span_singleton.mp hn⟩
-  -- Inverting `x`, `g`, or both gives the same localization, because each divides a
-  -- power of the other.
-  let M := Submonoid.powers x ⊔ Submonoid.powers g
-  have hMA : M ≤ (IsUnit.submonoid A).comap (algebraMap R A) :=
-    sup_le (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit x))
-      (Submonoid.powers_le.mpr hgA)
-  have hMB : M ≤ (IsUnit.submonoid B).comap (algebraMap R B) :=
-    sup_le (Submonoid.powers_le.mpr hxB)
-      (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit g))
-  have : IsLocalization M A := IsLocalization.of_le (Submonoid.powers x) M le_sup_left hMA
-  have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   have : IsLocalization.Away g A :=
-    (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
-      inferInstance
+    IsLocalization.Away.of_dvd_of_dvd_pow hxg (Ideal.mem_span_singleton.mp hn)
   have : IsReduced (R ⧸ Ideal.span {g}) :=
     (Ideal.isRadical_iff_quotient_reduced _).mp (h ▸ Ideal.radical_isRadical _)
   exact of_isLocalization_away hg
