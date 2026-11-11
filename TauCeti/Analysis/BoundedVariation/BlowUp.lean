@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Distribution.TestFunction.Dilation
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
@@ -88,6 +89,18 @@ Giorgi's structure theorem: the blow-ups converge locally in measure to the half
 * `TauCeti.hasDensityAt_of_mem_reducedBoundary`: in dimension `n ≥ 2`, `s` has density one half at
   every point of its reduced boundary, the density of the half-space at the origin.
 
+* `TauCeti.tendsto_perimeter_ball_zero_preimage_add_smul`: in dimension `n ≥ 2`, the perimeters
+  of the blow-ups converge to that of the half-space,
+  `P(s_{x,r}; ball 0 R) → P({y | ⟪y, ν⟫ < 0}; ball 0 R)` for every `R > 0`. Lower semicontinuity
+  gives the lower bound. For the upper bound, a cutoff multiple `φ` of `ν` equal to `ν` on
+  `ball 0 R` has `P(s_{x,r}; ball 0 R) ≤ ∫_{s_{x,r}} div φ + o(1)` by the concentration of the
+  normal, and the right side converges to `∫_{y | ⟪y, ν⟫ < 0} div φ`, at most the perimeter of the
+  half-space in a slightly larger ball.
+* `TauCeti.tendsto_ofReal_div_pow_mul_perimeter_ball`: equivalently,
+  `P(s; ball x r) / r ^ (n - 1) → P({y | ⟪y, ν⟫ < 0}; ball 0 1)`, the density of the perimeter
+  measure at points of the reduced boundary. For Lebesgue measure the limit is the volume
+  `ω_{n-1}` of the unit ball of `ℝ^(n-1)`.
+
 No finite perimeter or measurability of `s` is assumed: a point of the reduced boundary forces
 `s` to have locally finite perimeter in `Ω`.
 
@@ -96,7 +109,7 @@ No finite perimeter or measurability of `s` is assumed: a point of the reduced b
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15
   (blow-ups at points of the reduced boundary).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
-  §5.7.2 (blow-up of the reduced boundary).
+  §5.7.2 (blow-up of the reduced boundary, and its Corollary 1 on the density of the perimeter).
 -/
 
 public section
@@ -251,21 +264,17 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
         refine mul_le_mul_of_nonneg_left (h1.trans ?_) (le_max_right _ _)
         exact mul_le_mul_of_nonneg_left hlamS (by positivity)
 
-/-- **Blow-up limits at the reduced boundary have outer normal `ν`.** Against an additive Haar
-measure, let `x` be a point of the reduced boundary of `s` in `Ω`, with outer normal `ν = ν_s x`.
-If the blow-ups `(fun y => x + r i • y) ⁻¹' s`, along radii `r i → 0⁺`, converge locally in
-measure to a null-measurable set `F`, then
-
-`0 ≤ ∫_F div φ dμ`
-
-for every test vector field `φ` on `E` with `⟪φ, ν⟫ ≥ 0` pointwise. -/
-theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_inter
-    (hx : x ∈ reducedBoundary μ Ω s) {ι : Type*} {l : Filter ι} [l.NeBot] {r : ι → ℝ}
+/-- If the blow-ups `(fun y => x + r i • y) ⁻¹' s` at a point of the reduced boundary converge
+locally in measure to a null-measurable set `F`, then their pairings with the divergence of every
+test vector field `φ` on `E` converge: `∫_{s_{x,r i}} div φ dμ → ∫_F div φ dμ`. -/
+private theorem tendsto_integral_divergenceCLM_mul_indicator_of_tendsto_measure_symmDiff_inter
+    (hx : x ∈ reducedBoundary μ Ω s) {ι : Type*} {l : Filter ι} {r : ι → ℝ}
     (hr : Tendsto r l (𝓝[>] 0)) {F : Set E} (hF : NullMeasurableSet F μ)
     (hconv : ∀ K, IsCompact K →
       Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
-    (φ : 𝓓((⊤ : Opens E), E)) (hφ : ∀ y, 0 ≤ ⟪φ y, outerNormal μ Ω s x⟫) :
-    0 ≤ ∫ y, divergenceCLM φ y * F.indicator 1 y ∂μ := by
+    (φ : 𝓓((⊤ : Opens E), E)) :
+    Tendsto (fun i => ∫ y, divergenceCLM φ y * ((fun y => x + r i • y) ⁻¹' s).indicator 1 y ∂μ)
+      l (𝓝 (∫ y, divergenceCLM φ y * F.indicator 1 y ∂μ)) := by
   obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   set g := divergenceCLM φ
   set S : ι → Set E := fun i => (fun y => x + r i • y) ⁻¹' s
@@ -281,28 +290,44 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
     simp [Pi.one_def]
   -- The pairings converge, since `|∫ g (χ_{S i} - χ_F)| ≤ C μ ((S i ∆ F) ∩ tsupport g)`.
   obtain ⟨C, hC⟩ := g.hasCompactSupport.exists_bound_of_continuous g.continuous
-  have hlim : Tendsto (fun i => ∫ y, g y * (S i).indicator 1 y ∂μ) l
-      (𝓝 (∫ y, g y * F.indicator 1 y ∂μ)) := by
-    rw [tendsto_iff_edist_tendsto_0]
-    have hK := ENNReal.Tendsto.const_mul (a := ‖C‖ₑ)
-      (hconv _ g.hasCompactSupport.isCompact) (.inr enorm_ne_top)
-    rw [mul_zero] at hK
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK
-      (.of_forall fun _ => zero_le) (hint.mono fun i hi => ?_)
-    rw [edist_eq_enorm_sub, ← integral_sub hi hJ]
-    refine (enorm_integral_le_lintegral_enorm _).trans <|
-      ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ enorm_ne_top)).trans
-        (mul_le_mul_right (lintegral_indicator_one_le _) _)
-    rw [← mul_sub, enorm_mul]
-    by_cases hy : y ∈ tsupport g
-    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := enorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
-      by_cases h₁ : x + r i • y ∈ s <;> by_cases h₂ : y ∈ F <;>
-        simp [S, mem_symmDiff, h₁, h₂, hy, hgy]
-    · simp [image_eq_zero_of_notMem_tsupport hy]
+  rw [tendsto_iff_edist_tendsto_0]
+  have hK := ENNReal.Tendsto.const_mul (a := ‖C‖ₑ)
+    (hconv _ g.hasCompactSupport.isCompact) (.inr enorm_ne_top)
+  rw [mul_zero] at hK
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK
+    (.of_forall fun _ => zero_le) (hint.mono fun i hi => ?_)
+  rw [edist_eq_enorm_sub, ← integral_sub hi hJ]
+  refine (enorm_integral_le_lintegral_enorm _).trans <|
+    ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ enorm_ne_top)).trans
+      (mul_le_mul_right (lintegral_indicator_one_le _) _)
+  rw [← mul_sub, enorm_mul]
+  by_cases hy : y ∈ tsupport g
+  · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := enorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
+    by_cases h₁ : x + r i • y ∈ s <;> by_cases h₂ : y ∈ F <;>
+      simp [S, mem_symmDiff, h₁, h₂, hy, hgy]
+  · simp [image_eq_zero_of_notMem_tsupport hy]
+
+/-- **Blow-up limits at the reduced boundary have outer normal `ν`.** Against an additive Haar
+measure, let `x` be a point of the reduced boundary of `s` in `Ω`, with outer normal `ν = ν_s x`.
+If the blow-ups `(fun y => x + r i • y) ⁻¹' s`, along radii `r i → 0⁺`, converge locally in
+measure to a null-measurable set `F`, then
+
+`0 ≤ ∫_F div φ dμ`
+
+for every test vector field `φ` on `E` with `⟪φ, ν⟫ ≥ 0` pointwise. -/
+theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_inter
+    (hx : x ∈ reducedBoundary μ Ω s) {ι : Type*} {l : Filter ι} [l.NeBot] {r : ι → ℝ}
+    (hr : Tendsto r l (𝓝[>] 0)) {F : Set E} (hF : NullMeasurableSet F μ)
+    (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
+    (φ : 𝓓((⊤ : Opens E), E)) (hφ : ∀ y, 0 ≤ ⟪φ y, outerNormal μ Ω s x⟫) :
+    0 ≤ ∫ y, divergenceCLM φ y * F.indicator 1 y ∂μ := by
   refine le_of_forall_pos_le_add fun ε hε => ?_
   rw [← neg_le_iff_add_nonneg]
-  exact ge_of_tendsto hlim (hr.eventually
-    (eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage hx φ hφ hε))
+  exact ge_of_tendsto
+    (tendsto_integral_divergenceCLM_mul_indicator_of_tendsto_measure_symmDiff_inter hx hr hF hconv
+      φ)
+    (hr.eventually (eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage hx φ hφ hε))
 
 /-! ### Perimeter and volume of the blow-ups -/
 
@@ -683,5 +708,290 @@ theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
     Measure.addHaar_preimage_add_smul_inter_closedBall μ x hr.ne', abs_of_pos hr, mul_one,
     ← ENNReal.mul_div_mul_left _ _ (left_ne_zero_of_mul_eq_one hc) ENNReal.ofReal_ne_top]
   rw [← mul_assoc, hc, one_mul]
+
+/-! ### Convergence of the perimeter of the blow-ups -/
+
+omit [μ.IsAddHaarMeasure] in
+/-- The perimeter measure of a set `B ⊆ S` is at most the pairing of `Dχ_s` with a field `ψ` that
+is a multiple `a • ν`, `0 ≤ a ≤ 1`, of `ν = ν_s x`, equals `ν` on `B` and vanishes off `S`, plus
+the error `∫_S ‖ν_s - ν‖ d|Dχ_s|`. -/
+private theorem measureReal_le_integral_inner_outerNormal_add {ψ : 𝓓(Ω, E)} {B S : Set Ω}
+    (hBm : MeasurableSet B) (hSm : MeasurableSet S) (hBS : B ⊆ S)
+    (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞)
+    (hψ : ∀ y, ∃ a ∈ Icc (0 : ℝ) 1, ψ y = a • outerNormal μ Ω s x)
+    (hψB : ∀ y : Ω, y ∈ B → ψ y = outerNormal μ Ω s x) (hψS : ∀ y : Ω, y ∉ S → ψ y = 0)
+    (hν : ‖outerNormal μ Ω s x‖ = 1) :
+    (variationMeasure μ Ω (s.indicator 1)).real B ≤
+      ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) +
+        ∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖
+          ∂variationMeasure μ Ω (s.indicator 1) := by
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set ν := outerNormal μ Ω s x
+  have hBfin : lam B ≠ ∞ := ne_top_of_le_ne_top hSfin (measure_mono hBS)
+  have hint : Integrable (fun y : Ω => ⟪ψ y, outerNormal μ Ω s y⟫) lam :=
+    (integrable_inner_polarDensity ψ.continuous ψ.hasCompactSupport ψ.tsupport_subset).neg.congr
+      (by filter_upwards [ae_outerNormal_eq] with y hy; simp [hy, inner_neg_right])
+  have hg : IntegrableOn (fun y : Ω => ‖outerNormal μ Ω s y - ν‖) S lam :=
+    ((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm
+  rw [← integral_indicator hSm, ← integral_add hint (hg.integrable_indicator hSm),
+    ← integral_indicator_one hBm]
+  refine integral_mono_ae ((integrable_indicator_iff hBm).2 (integrableOn_const hBfin))
+    (hint.add (hg.integrable_indicator hSm)) ?_
+  filter_upwards [ae_mem_reducedBoundary] with y hy
+  have hνy : ‖outerNormal μ Ω s y‖ = 1 := norm_outerNormal hy
+  -- For unit vectors, `⟪a • ν, ν_s⟫ + ‖ν_s - ν‖ ≥ a`, since `⟪ν, ν_s⟫ ≥ 1 - ‖ν_s - ν‖`.
+  have hkey : 1 - ‖outerNormal μ Ω s y - ν‖ ≤ ⟪ν, outerNormal μ Ω s y⟫ := by
+    have h := abs_real_inner_le_norm ν (outerNormal μ Ω s y - ν)
+    have h' : ⟪ν, outerNormal μ Ω s y⟫ = 1 + ⟪ν, outerNormal μ Ω s y - ν⟫ := by
+      rw [inner_sub_right, real_inner_self_eq_norm_sq, hν]
+      ring
+    rw [hν, one_mul] at h
+    linarith [neg_abs_le ⟪ν, outerNormal μ Ω s y - ν⟫]
+  have hnorm := norm_nonneg (outerNormal μ Ω s y - ν)
+  obtain ⟨a, ⟨ha0, ha1⟩, hψa⟩ := hψ y
+  by_cases hyB : y ∈ B
+  · rw [indicator_of_mem hyB, indicator_of_mem (hBS hyB), hψB y hyB, Pi.one_apply]
+    linarith
+  rw [indicator_of_notMem hyB]
+  by_cases hyS : y ∈ S
+  · rw [indicator_of_mem hyS, hψa, real_inner_smul_left]
+    nlinarith
+  · simp [indicator_of_notMem hyS, hψS y hyS]
+
+/-- The key estimate for the upper bound on the perimeter of the blow-ups. Let `x` be a point of
+the reduced boundary of `s` in `Ω`, with outer normal `ν`, let `0 < R` and let `φ` be a test
+vector field that is a multiple `a • ν`, `0 ≤ a ≤ 1`, of `ν`, equals `ν` on `ball 0 R` and has
+support in `closedBall 0 R'`, `R ≤ R'`. Then for every `ε > 0` and every small `r > 0`,
+
+`P(s_{x,r}; ball 0 R) ≤ ∫_{s_{x,r}} div φ dμ + ε`. -/
+private theorem eventually_perimeter_ball_zero_preimage_add_smul_le_integral
+    (hx : x ∈ reducedBoundary μ Ω s) {R R' : ℝ} (hR : 0 < R) (hRR' : R ≤ R')
+    (φ : 𝓓((⊤ : Opens E), E))
+    (hφ : ∀ y, ∃ a ∈ Icc (0 : ℝ) 1, φ y = a • outerNormal μ Ω s x)
+    (hφR : ∀ y ∈ ball (0 : E) R, φ y = outerNormal μ Ω s x)
+    (hφR' : tsupport φ ⊆ closedBall 0 R') {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ r in 𝓝[>] (0 : ℝ), perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) ≤
+      ENNReal.ofReal
+        (∫ y, divergenceCLM φ y * ((fun y => x + r • y) ⁻¹' s).indicator 1 y ∂μ + ε) := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set ν := outerNormal μ Ω s x
+  set n := finrank ℝ E
+  have hν1 : ‖ν‖ = 1 := norm_outerNormal hx
+  have : Nontrivial E := ⟨⟨ν, 0, fun h => by simp [h] at hν1⟩⟩
+  obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, (Nat.sub_add_cancel finrank_pos).symm⟩
+  have hR' : 0 < R' := hR.trans_le hRR'
+  set ω := μ.real (ball 0 1)
+  set A := 4 * n * ω * R' ^ m with hAdef
+  have hA : 0 ≤ A := by positivity
+  set η := ε / (A + 1)
+  have hη : 0 < η := div_pos hε (by positivity)
+  obtain ⟨δ, hδ, hδΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  have hRr : Tendsto (fun r => R' * r) (𝓝[>] 0) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.2 ⟨((continuous_const.mul continuous_id).tendsto' 0 0
+      (mul_zero R')).mono_left nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun r (hr : 0 < r) => mul_pos hR' hr⟩
+  filter_upwards [hRr.eventually ((eventually_setIntegral_norm_outerNormal_sub_le hx hη).and
+      (eventually_variationMeasure_closedBall_le hx (t := 2) (by norm_num))),
+    eventually_forall_tsupport_add_smul_mem (reducedBoundary_subset hx) φ,
+    Ioo_mem_nhdsGT (div_pos hδ hR)] with r ⟨⟨_, h1⟩, h2⟩ hΩ hr
+  have hr0 : 0 < r := hr.1
+  have hballΩ : ball x (r * R) ⊆ Ω := (ball_subset_ball ((lt_div_iff₀ hR).1 hr.2).le).trans hδΩ
+  set B := ((↑) : Ω → E) ⁻¹' ball x (r * R)
+  set S := ((↑) : Ω → E) ⁻¹' closedBall x (R' * r)
+  obtain ⟨ψ, hψ, hdiv⟩ := TestFunction.exists_eq_comp φ hr0.ne' hΩ
+  rw [(integrable_and_integral_divergenceCLM_mul_indicator_preimage hu hfin φ hr0 hdiv).2,
+    perimeter_ball_zero_preimage_add_smul hr0, perimeter_def,
+    ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x (r * R), isOpen_ball⟩) hballΩ]
+  -- The rescaled field `ψ` equals `ν` on `B` and vanishes off `S`.
+  have hψB (y : Ω) (hy : y ∈ B) : ψ y = ν := by
+    rw [hψ]
+    refine hφR _ ?_
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr0.le),
+      inv_mul_lt_iff₀ hr0, ← dist_eq_norm]
+    exact hy
+  have hψS (y : Ω) (hy : y ∉ S) : ψ y = 0 := by
+    rw [hψ]
+    refine image_eq_zero_of_notMem_tsupport fun h => hy ?_
+    have h' := mem_closedBall_zero_iff.1 (hφR' h)
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr0.le), inv_mul_le_iff₀ hr0] at h'
+    rw [mem_preimage, mem_closedBall, dist_eq_norm]
+    linarith
+  have hSm : MeasurableSet S := (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+  have hBm : MeasurableSet B := (isOpen_ball.preimage continuous_subtype_val).measurableSet
+  have hBS : B ⊆ S := fun y hy => by
+    have hy' : dist (y : E) x < r * R := hy
+    have : r * R ≤ R' * r := by rw [mul_comm]; exact mul_le_mul_of_nonneg_right hRR' hr0.le
+    exact le_of_lt (hy'.trans_le this)
+  -- The perimeter measure of `S` is bounded by the upper density estimate.
+  have hSfin : lam S ≠ ∞ := ne_top_of_le_ne_top (by finiteness) h2
+  have hBfin : lam B ≠ ∞ := ne_top_of_le_ne_top hSfin (measure_mono hBS)
+  have hlamS : lam.real S ≤ 2 * (n * (R' * r) ^ (n - 1) * ω) := by
+    have h := ENNReal.toReal_mono (by finiteness) h2
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)] at h
+  have hmain := measureReal_le_integral_inner_outerNormal_add hBm hSm hBS hSfin
+    (fun y => by rw [hψ]; exact hφ _) hψB hψS hν1
+  have hrn : r / r ^ n * (R' * r) ^ (n - 1) = R' ^ m := by
+    rw [hm, Nat.add_sub_cancel, pow_succ, mul_pow]
+    field_simp
+  have herr : r / r ^ n * ∫ y in S, ‖outerNormal μ Ω s y - ν‖ ∂lam ≤ ε := by
+    calc r / r ^ n * ∫ y in S, ‖outerNormal μ Ω s y - ν‖ ∂lam
+        ≤ r / r ^ n * (2 * η * (2 * (n * (R' * r) ^ (n - 1) * ω))) :=
+          mul_le_mul_of_nonneg_left
+            (h1.trans (mul_le_mul_of_nonneg_left hlamS (by positivity))) (by positivity)
+      _ = A * η := by
+          rw [show r / r ^ n * (2 * η * (2 * (n * (R' * r) ^ (n - 1) * ω))) =
+            4 * n * ω * η * (r / r ^ n * (R' * r) ^ (n - 1)) by ring, hrn, hAdef]
+          ring
+      _ ≤ ε := by
+          rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+          nlinarith
+  change ENNReal.ofReal (r / r ^ n) * lam B ≤ _
+  rw [← ofReal_measureReal hBfin, ← ENNReal.ofReal_mul (by positivity)]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have := mul_le_mul_of_nonneg_left hmain (by positivity : (0 : ℝ) ≤ r / r ^ n)
+  rw [mul_add] at this
+  linarith
+
+/-- The half-space `{y | ⟪y, ν⟫ < 0}` is a cone, so its perimeter in `ball 0 (t * R)` is
+`t ^ (n - 1)` times its perimeter in `ball 0 R`, `n = dim E`. -/
+private theorem perimeter_ball_zero_mul_setOf_inner_lt [Nontrivial E] (ν : E) {t : ℝ} (ht : 0 < t)
+    (R : ℝ) :
+    perimeter μ ⟨ball 0 (t * R), isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} =
+      ENNReal.ofReal (t ^ (finrank ℝ E - 1)) *
+        perimeter μ ⟨ball 0 R, isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} := by
+  have hpre : (fun y => (0 : E) + t • y) ⁻¹' {y : E | ⟪y, ν⟫ < 0} = {y | ⟪y, ν⟫ < 0} := by
+    ext y
+    simp only [zero_add, mem_preimage, mem_ofPred_eq, real_inner_smul_left]
+    exact ⟨fun h => neg_of_mul_neg_right h ht.le, fun h => mul_neg_of_pos_of_neg ht h⟩
+  have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := {y : E | ⟪y, ν⟫ < 0})
+    (x := 0) ht R
+  rw [hpre] at h
+  obtain ⟨m, hm⟩ : ∃ m, finrank ℝ E = m + 1 := ⟨_, (Nat.sub_add_cancel finrank_pos).symm⟩
+  rw [h, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hm, Nat.add_sub_cancel,
+    show t ^ m * (t / t ^ (m + 1)) = 1 by field_simp; ring, ENNReal.ofReal_one, one_mul]
+
+/-- **The perimeter of the blow-ups converges to that of the half-space.** Let `E` have dimension
+`n ≥ 2`, let `μ` be an additive Haar measure, and let `x` be a point of the reduced boundary of `s`
+in `Ω`, with outer normal `ν = ν_s x`. For every `R > 0`, as `r → 0⁺`,
+
+`P(s_{x,r}; ball 0 R) → P({y | ⟪y, ν⟫ < 0}; ball 0 R)`.
+
+Lower semicontinuity of the perimeter along the blow-up theorem gives the lower bound. For the
+upper bound, test `Dχ_{s_{x,r}}` with a cutoff multiple of `ν` that equals `ν` on `ball 0 R`: the
+concentration of the outer normal at `x` makes the pairing almost equal to the perimeter of
+`s_{x,r}` in `ball 0 R`, and the pairing converges to that of the half-space. -/
+theorem tendsto_perimeter_ball_zero_preimage_add_smul (hn : 2 ≤ finrank ℝ E)
+    (hx : x ∈ reducedBoundary μ Ω s) {R : ℝ} (hR : 0 < R) :
+    Tendsto (fun r : ℝ => perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s))
+      (𝓝[>] 0)
+      (𝓝 (perimeter μ ⟨ball 0 R, isOpen_ball⟩ {y | ⟪y, outerNormal μ Ω s x⟫ < 0})) := by
+  set ν := outerNormal μ Ω s x
+  set H := {y : E | ⟪y, ν⟫ < 0}
+  set P : ℝ → ℝ≥0∞ := fun r =>
+    perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s)
+  have hν1 : ‖ν‖ = 1 := norm_outerNormal hx
+  have : Nontrivial E := ⟨⟨ν, 0, fun h => by simp [h] at hν1⟩⟩
+  have hHm : MeasurableSet H := measurableSet_lt (by fun_prop) measurable_const
+  have hconv (K : Set E) (hK : IsCompact K) :=
+    tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK
+  have hr : Tendsto (fun r : ℝ => r) (𝓝[>] 0) (𝓝[>] 0) := tendsto_id
+  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
+  · -- Lower semicontinuity, after replacing `s` by the null-measurable set `s ∩ Ω`.
+    obtain ⟨δ, hδ, hδΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+    have hsΩ : NullMeasurableSet (s ∩ Ω) μ := nullMeasurableSet_inter_of_mem_reducedBoundary hx
+    have hagree : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < r ∧ s ∩ Ω ∩ ball x (r * R) = s ∩ ball x (r * R) := by
+      filter_upwards [Ioo_mem_nhdsGT (div_pos hδ hR)] with r hr
+      refine ⟨hr.1, ?_⟩
+      rw [inter_assoc, inter_eq_right.2
+        ((ball_subset_ball ((lt_div_iff₀ hR).1 hr.2).le).trans hδΩ)]
+    calc perimeter μ ⟨ball 0 R, isOpen_ball⟩ H
+        ≤ liminf (fun r => perimeter μ ⟨ball 0 R, isOpen_ball⟩
+            ((fun y => x + r • y) ⁻¹' (s ∩ Ω))) (𝓝[>] 0) :=
+          perimeter_le_liminf (eventually_nhdsWithin_of_forall fun r (hr : 0 < r) =>
+            hsΩ.preimage (μ.quasiMeasurePreserving_add_smul x hr.ne')) hHm.nullMeasurableSet
+            fun K hK hKR => (hconv K hK).congr' (hagree.mono fun r hr =>
+              congrArg μ (preimage_add_smul_symmDiff_inter_eq hr.1 hr.2.symm hKR))
+      _ = liminf P (𝓝[>] 0) :=
+          liminf_congr (hagree.mono fun r hr => perimeter_congr_of_inter_eq
+            (Ω := ⟨ball 0 R, isOpen_ball⟩) (preimage_add_smul_inter_ball_eq hr.1 hr.2))
+  -- The upper bound `P(H; ball 0 (t R))` for every `t > 1`.
+  have hPH (t : ℝ) (ht : 1 < t) : limsup P (𝓝[>] 0) ≤
+      ENNReal.ofReal (t ^ (finrank ℝ E - 1)) * perimeter μ ⟨ball 0 R, isOpen_ball⟩ H := by
+    rw [← perimeter_ball_zero_mul_setOf_inner_lt ν (by linarith) R]
+    set R' := t * R
+    have hRR' : R < R' := by simp only [R']; nlinarith
+    refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+    have hε' : (0 : ℝ) < ε := hε
+    -- A cutoff multiple of `ν`, equal to `ν` on `closedBall 0 R`, with support in `ball 0 R'`.
+    obtain ⟨χ, hχ1, hχ01⟩ := exists_eventually_eq_one (n := ⊤)
+      (Ω := ⟨ball (0 : E) R', isOpen_ball⟩) (isCompact_closedBall 0 R)
+      (closedBall_subset_ball hRR')
+    have hsupp : tsupport (fun y => χ y • ν) ⊆ ball 0 R' :=
+      (tsupport_smul_subset_left _ _).trans χ.tsupport_subset
+    let φ' : 𝓓((⟨ball (0 : E) R', isOpen_ball⟩ : Opens E), E) :=
+      ⟨fun y => χ y • ν, χ.contDiff.smul contDiff_const, χ.hasCompactSupport.smul_right, hsupp⟩
+    let φ : 𝓓((⊤ : Opens E), E) :=
+      ⟨fun y => χ y • ν, χ.contDiff.smul contDiff_const, χ.hasCompactSupport.smul_right,
+        by simp⟩
+    have hφ (y : E) : ∃ a ∈ Icc (0 : ℝ) 1, φ y = a • ν := ⟨χ y, hχ01 y, rfl⟩
+    have hφR (y : E) (hy : y ∈ ball (0 : E) R) : φ y = ν := by
+      simp [φ, hχ1.self_of_nhdsSet y (ball_subset_closedBall hy)]
+    have hlim := tendsto_integral_divergenceCLM_mul_indicator_of_tendsto_measure_symmDiff_inter
+      hx hr hHm.nullMeasurableSet hconv φ
+    -- The pairing with the half-space is at most its perimeter in `ball 0 R'`.
+    have hHle : ENNReal.ofReal (∫ y, divergenceCLM φ y * H.indicator 1 y ∂μ) ≤
+        perimeter μ ⟨ball 0 R', isOpen_ball⟩ H := by
+      rw [perimeter_eq_iSup hHm.nullMeasurableSet]
+      refine le_iSup₂_of_le (f := fun (ψ : 𝓓((⟨ball (0 : E) R', isOpen_ball⟩ : Opens E), E))
+        (_ : ∀ y, ‖ψ y‖ ≤ 1) => ENNReal.ofReal (∫ y in H, divergenceCLM ψ y ∂μ)) φ'
+        (fun y => ?_) (le_of_eq ?_)
+      · simp only [φ', coe_mk, norm_smul, hν1, mul_one, Real.norm_eq_abs,
+          abs_of_nonneg (hχ01 y).1]
+        exact (hχ01 y).2
+      · congr 1
+        rw [← integral_indicator hHm]
+        congr 1 with y
+        by_cases hy : y ∈ H <;> simp [hy, divergenceCLM_apply, φ, φ']
+    calc limsup P (𝓝[>] 0)
+        ≤ limsup (fun r => ENNReal.ofReal
+            (∫ y, divergenceCLM φ y * ((fun y => x + r • y) ⁻¹' s).indicator 1 y ∂μ + ε))
+            (𝓝[>] 0) :=
+          limsup_le_limsup (eventually_perimeter_ball_zero_preimage_add_smul_le_integral hx hR
+            hRR'.le φ hφ hφR ((tsupport_smul_subset_left _ _).trans
+              (χ.tsupport_subset.trans ball_subset_closedBall)) hε')
+      _ = ENNReal.ofReal (∫ y, divergenceCLM φ y * H.indicator 1 y ∂μ + ε) :=
+          ((ENNReal.continuous_ofReal.tendsto _).comp (hlim.add_const _)).limsup_eq
+      _ ≤ ENNReal.ofReal (∫ y, divergenceCLM φ y * H.indicator 1 y ∂μ) + ε := by
+          refine ENNReal.ofReal_add_le.trans_eq ?_
+          rw [ENNReal.ofReal_coe_nnreal]
+      _ ≤ perimeter μ ⟨ball 0 R', isOpen_ball⟩ H + ε := by gcongr
+  have hT : Tendsto (fun t : ℝ => ENNReal.ofReal (t ^ (finrank ℝ E - 1)) *
+      perimeter μ ⟨ball 0 R, isOpen_ball⟩ H) (𝓝[>] 1)
+      (𝓝 (perimeter μ ⟨ball 0 R, isOpen_ball⟩ H)) := by
+    have h1 : Tendsto (fun t : ℝ => ENNReal.ofReal (t ^ (finrank ℝ E - 1))) (𝓝[>] 1) (𝓝 1) := by
+      simpa [Function.comp_def] using
+        ((ENNReal.continuous_ofReal.comp (continuous_pow _)).tendsto 1).mono_left
+          nhdsWithin_le_nhds
+    simpa using ENNReal.Tendsto.mul_const h1 (.inl one_ne_zero)
+  exact ge_of_tendsto hT (eventually_nhdsWithin_of_forall fun t ht => hPH t ht)
+
+/-- **The density of the perimeter at the reduced boundary.** Let `E` have dimension `n ≥ 2`, let
+`μ` be an additive Haar measure, and let `x` be a point of the reduced boundary of `s` in `Ω`, with
+outer normal `ν = ν_s x`. As `r → 0⁺`,
+
+`P(s; ball x r) / r ^ (n - 1) → P({y | ⟪y, ν⟫ < 0}; ball 0 1)`,
+
+the perimeter of the half-space in the unit ball. For Lebesgue measure this constant is the volume
+`ω_{n-1}` of the unit ball of `ℝ^(n-1)`, by the computation of the perimeter of a half-space in
+`TauCeti.Analysis.BoundedVariation.Hyperplane`. -/
+theorem tendsto_ofReal_div_pow_mul_perimeter_ball (hn : 2 ≤ finrank ℝ E)
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    Tendsto (fun r : ℝ => ENNReal.ofReal (r / r ^ finrank ℝ E) *
+        perimeter μ ⟨ball x r, isOpen_ball⟩ s) (𝓝[>] 0)
+      (𝓝 (perimeter μ ⟨ball 0 1, isOpen_ball⟩ {y | ⟪y, outerNormal μ Ω s x⟫ < 0})) := by
+  refine (tendsto_perimeter_ball_zero_preimage_add_smul hn hx one_pos).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
+  rw [perimeter_ball_zero_preimage_add_smul hr, mul_one]
 
 end TauCeti
