@@ -442,15 +442,15 @@ private theorem contDiffOn_uncurry_comp_realChart (hf : ContDiff ℂ 2 f)
 
 /-- The energy identity of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_image_realChart_Icc_prod_Ico` in the coordinates
-of `f`: for the pulled-back datum, which is `g(s) G(t) dt` on the rectangle
-`[α, β] × [-1/2, 1/2)`. -/
+of `f`: for the pulled-back datum, which is `g(s) G(t) dt` on the closed rectangle
+`[α, β] × [-1/2, 1/2]`. -/
 private theorem integral_floerEnergyDensity_comp_realChart_Icc_prod_Ico (ω : SymplecticForm V)
     (hf : ContDiff ℂ 2 f) {α β : ℝ} (hαβ : α ≤ β) (hΩ : IsOpen Ω)
-    (hfΩ : ∀ z : ℝ × ℝ, z.1 ∈ Icc α β → realChart f z ∈ Ω)
+    (hfΩ : ∀ z ∈ Icc α β ×ˢ Icc (-1 / 2 : ℝ) (1 / 2), realChart f z ∈ Ω)
     (hP : ContDiffOn ℝ 1 (fun p : (ℝ × ℝ) × V ↦ P (Complex.equivRealProdCLM.symm p.1) p.2)
       (Ω ×ˢ univ))
     {u : ℝ × ℝ → V} (hu : ContDiffOn ℝ 1 u Ω) {g : ℝ → ℝ} {G : ℝ → V → ℝ}
-    (hPf : ∀ z : ℝ × ℝ, z.1 ∈ Icc α β → ∀ x v,
+    (hPf : ∀ z ∈ Icc α β ×ˢ Icc (-1 / 2 : ℝ) (1 / 2), ∀ x v,
       P (f (Complex.equivRealProdCLM.symm z)) x (deriv f (Complex.equivRealProdCLM.symm z) * v) =
         v.im * (g z.1 * G z.2 x)) :
     ∫ w in Icc α β ×ˢ Ico (-1 / 2 : ℝ) (1 / 2), ω.floerEnergyDensity
@@ -477,45 +477,47 @@ private theorem integral_floerEnergyDensity_comp_realChart_Icc_prod_Ico (ω : Sy
   simp only [setIntegral_congr_set hae]
   have hIccU : Icc ((α, -1 / 2) : ℝ × ℝ) (β, 1 / 2) ⊆ realChart f ⁻¹' Ω := fun z hz ↦ hfΩ z (by
     rw [Icc_prod_eq] at hz
-    exact hz.1)
+    exact hz)
   rw [ω.integral_floerEnergyDensity (hΩ.preimage hφ.continuous)
     (hu.comp hφ.contDiffOn fun _ hw ↦ hw) (contDiffOn_uncurry_comp_realChart hf hP 1)
     (contDiffOn_uncurry_comp_realChart hf hP Complex.I) (Prod.mk_le_mk.2 ⟨hαβ, by norm_num⟩)
     hIccU]
   -- The `ds` components vanish and the `dt` components are `g(s) G(t)` on the rectangle.
-  have hs₀ (t₀ : ℝ) : ∫ s in α..β, P (f (Complex.equivRealProdCLM.symm (s, t₀)))
-      ((u ∘ realChart f) (s, t₀)) (deriv f (Complex.equivRealProdCLM.symm (s, t₀)) * 1) = 0 := by
+  have hs₀ {t₀ : ℝ} (ht₀ : t₀ ∈ Icc (-1 / 2 : ℝ) (1 / 2)) :
+      ∫ s in α..β, P (f (Complex.equivRealProdCLM.symm (s, t₀))) ((u ∘ realChart f) (s, t₀))
+        (deriv f (Complex.equivRealProdCLM.symm (s, t₀)) * 1) = 0 := by
     rw [intervalIntegral.integral_congr (g := fun _ ↦ 0) fun s hs ↦ ?_,
       intervalIntegral.integral_zero]
     rw [uIcc_of_le hαβ] at hs
-    rw [hPf (s, t₀) hs, Complex.one_im, zero_mul]
+    rw [hPf (s, t₀) ⟨hs, ht₀⟩, Complex.one_im, zero_mul]
   have ht {s₀ : ℝ} (hs₀ : s₀ ∈ Icc α β) :
       ∫ t in (-1 / 2 : ℝ)..1 / 2, P (f (Complex.equivRealProdCLM.symm (s₀, t)))
           ((u ∘ realChart f) (s₀, t))
           (deriv f (Complex.equivRealProdCLM.symm (s₀, t)) * Complex.I) =
         g s₀ * ∫ t in (-1 / 2 : ℝ)..1 / 2, G t (u (realChart f (s₀, t))) := by
     rw [← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr fun t _ ↦ ?_
-    rw [hPf (s₀, t) hs₀, Complex.I_im, one_mul, comp_apply]
-  rw [hs₀, hs₀, ht ⟨le_rfl, hαβ⟩, ht ⟨hαβ, le_rfl⟩]
+    refine intervalIntegral.integral_congr fun t ht ↦ ?_
+    rw [uIcc_of_le (by norm_num)] at ht
+    rw [hPf (s₀, t) ⟨hs₀, ht⟩, Complex.I_im, one_mul, comp_apply]
+  rw [hs₀ (by norm_num), hs₀ (by norm_num), ht ⟨le_rfl, hαβ⟩, ht ⟨hαβ, le_rfl⟩]
   simp only [comp_apply]
   ring
 
 /-- **The energy identity on the image of a rectangle of an end.** Let `f` be a `C²` holomorphic
 map, such as the end lift of a cylindrical end, whose real chart is injective on the rectangle
-`[α, β] × [-1/2, 1/2)` and maps the band `α ≤ s ≤ β` into an open set `Ω`. Let the datum `P` and
-the map `u` be `C¹` on `Ω`, and suppose that in the coordinates of `f` the datum is `g(s) G(t) dt`
-on that band. Then over the image of the rectangle the Floer energy is the symplectic area, plus
-`g(β)` times the integral of `G` along the image of the side `s = β`, minus `g(α)` times that along
-the side `s = α`, minus the integrated curvature. -/
+`[α, β] × [-1/2, 1/2)` and maps the closed rectangle `[α, β] × [-1/2, 1/2]` into an open set `Ω`.
+Let the datum `P` and the map `u` be `C¹` on `Ω`, and suppose that in the coordinates of `f` the
+datum is `g(s) G(t) dt` on that closed rectangle. Then over the image of the rectangle the Floer
+energy is the symplectic area, plus `g(β)` times the integral of `G` along the image of the side
+`s = β`, minus `g(α)` times that along the side `s = α`, minus the integrated curvature. -/
 theorem integral_floerEnergyDensity_image_realChart_Icc_prod_Ico (ω : SymplecticForm V)
     (hf : ContDiff ℂ 2 f) {α β : ℝ} (hαβ : α ≤ β)
     (hinj : InjOn (realChart f) (Icc α β ×ˢ Ico (-1 / 2) (1 / 2)))
-    (hΩ : IsOpen Ω) (hfΩ : ∀ z : ℝ × ℝ, z.1 ∈ Icc α β → realChart f z ∈ Ω)
+    (hΩ : IsOpen Ω) (hfΩ : ∀ z ∈ Icc α β ×ˢ Icc (-1 / 2 : ℝ) (1 / 2), realChart f z ∈ Ω)
     (hP : ContDiffOn ℝ 1 (fun p : (ℝ × ℝ) × V ↦ P (Complex.equivRealProdCLM.symm p.1) p.2)
       (Ω ×ˢ univ))
     {u : ℝ × ℝ → V} (hu : ContDiffOn ℝ 1 u Ω) {g : ℝ → ℝ} {G : ℝ → V → ℝ}
-    (hPf : ∀ z : ℝ × ℝ, z.1 ∈ Icc α β → ∀ x v,
+    (hPf : ∀ z ∈ Icc α β ×ˢ Icc (-1 / 2 : ℝ) (1 / 2), ∀ x v,
       P (f (Complex.equivRealProdCLM.symm z)) x (deriv f (Complex.equivRealProdCLM.symm z) * v) =
         v.im * (g z.1 * G z.2 x)) :
     ∫ z in realChart f '' (Icc α β ×ˢ Ico (-1 / 2) (1 / 2)), ω.floerEnergyDensity
@@ -535,13 +537,14 @@ theorem integral_floerEnergyDensity_image_realChart_Icc_prod_Ico (ω : Symplecti
   have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
   have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det :=
     TauCeti.Complex.det_fderiv_realChart_nonneg (hf.differentiable (by norm_num) _).hasDerivAt
+  have hsΩ {w : ℝ × ℝ} (hw : w ∈ s) : φ w ∈ Ω := hfΩ w ⟨hw.1, Ico_subset_Icc_self hw.2⟩
   have hud {w : ℝ × ℝ} (hw : w ∈ s) : DifferentiableAt ℝ u (φ w) :=
-    (hu.differentiableOn one_ne_zero _ (hfΩ w hw.1)).differentiableAt (hΩ.mem_nhds (hfΩ w hw.1))
+    (hu.differentiableOn one_ne_zero _ (hsΩ hw)).differentiableAt (hΩ.mem_nhds (hsΩ hw))
   have hPd {w : ℝ × ℝ} (hw : w ∈ s) (x : V) :
       DifferentiableAt ℝ (fun p : (ℝ × ℝ) × V ↦ P (Complex.equivRealProdCLM.symm p.1) p.2)
         (φ w, x) :=
-    (hP.differentiableOn one_ne_zero _ ⟨hfΩ w hw.1, mem_univ x⟩).differentiableAt
-      ((hΩ.prod isOpen_univ).mem_nhds ⟨hfΩ w hw.1, mem_univ x⟩)
+    (hP.differentiableOn one_ne_zero _ ⟨hsΩ hw, mem_univ x⟩).differentiableAt
+      ((hΩ.prod isOpen_univ).mem_nhds ⟨hsΩ hw, mem_univ x⟩)
   have hdom {w : ℝ × ℝ} (hw : w ∈ s) (x : V) (v : ℂ) :=
     ((hPd hw x).comp (f := fun z' : ℝ × ℝ ↦ (z', x)) (φ w)
       (differentiableAt_id.prodMk (differentiableAt_const x))).clm_apply (differentiableAt_const v)

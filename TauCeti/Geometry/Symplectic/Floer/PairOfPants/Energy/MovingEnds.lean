@@ -266,30 +266,7 @@ private theorem injOn_realChart_cylindricalEndLift_inf (α β : ℝ) :
   exact Complex.equivRealProdCLM.symm.injective (injOn_cylindricalEndLift inf (-1 / 2)
     (mem_im_Ico_of_mem hx) (mem_im_Ico_of_mem hy) (Complex.equivRealProdCLM.injective hxy))
 
-/-- By periodicity, the integral of a period-one Hamiltonian along the image of a side
-`s = s₀` of a rectangle may be taken over `[0, 1]` instead of `[-1/2, 1/2]`. -/
-private theorem intervalIntegral_realChart_eq {X : Type*} {f : ℂ → ℂ}
-    (hf : ∀ s : ℝ, Periodic (fun t : ℝ => f (s + t * Complex.I)) 1) {G : ℝ → X → ℝ}
-    (hG : Periodic G 1) (u : ℝ × ℝ → X) (s : ℝ) :
-    ∫ t in (-1 / 2 : ℝ)..1 / 2, G t (u (realChart f (s, t))) =
-      ∫ t in (0 : ℝ)..1, G t (u (Complex.equivRealProdCLM (f (s + t * Complex.I)))) := by
-  have hper : Periodic (fun t : ℝ => G t (u (Complex.equivRealProdCLM (f (s + t * Complex.I)))))
-      1 := fun t => by
-    have h' : f (s + ((t + 1 : ℝ) : ℂ) * Complex.I) = f (s + t * Complex.I) := hf s t
-    simp only [hG t, h']
-  have h := Function.Periodic.intervalIntegral_add_eq hper (-1 / 2) 0
-  norm_num at h
-  simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-  convert h using 1 <;> norm_num
-
 /-! ### The end pieces of the truncation -/
-
-/-- The complement of the input punctures, in real coordinates, is open. -/
-private theorem isOpen_setOf_forall_ne [Finite ι] :
-    IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-  simp only [ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦
-    isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
 
 /-- The part `1 ≤ s ≤ R` of the input end with center `c` and scale `a`, over one period of the
 angular coordinate. -/
@@ -483,7 +460,7 @@ theorem integrableOn_puncturedSphereTruncation_puncturedSpherePerturbation (ω :
             Complex.I) z (u z))
         (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) := by
   have hΩ : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
-    isOpen_setOf_forall_ne
+    isOpen_setOf_forall_equivRealProdCLM_symm_ne c
   have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_puncturedSphereTruncation c a R)
@@ -540,17 +517,17 @@ private theorem integral_floerEnergyDensity_inputEndPiece (ω : SymplecticForm V
     (injOn_realChart_inputEndLift (ha i) 1 R) _
     (fun z hz ↦ ne_of_mem_puncturedSphereTruncation ha (by
       rw [equivRealProdCLM_symm_realChart]
-      exact inputEndLift_mem_puncturedSphereTruncation hsep hout (by simpa using hz.1)
-        (by simpa using hz.2)))
+      exact inputEndLift_mem_puncturedSphereTruncation hsep hout (by simpa using hz.1.1)
+        (by simpa using hz.1.2)))
     (contDiffOn_puncturedSpherePerturbation hH hHs hHout hHouts ha) hu
     (g := fun s ↦ smoothTransition (s - 1)) (G := H i) fun z hz x v ↦ ?_,
-    intervalIntegral_realChart_eq hper (hH i)]
+    intervalIntegral_realChart_eq_of_periodic hper (hH i)]
   · simp only [sub_self, smoothTransition.zero, zero_mul, sub_zero]
-  · exact isOpen_setOf_forall_ne
+  · exact isOpen_setOf_forall_equivRealProdCLM_symm_ne c
   · rw [hd, mul_assoc]
     have hz₀ : 0 < (Complex.equivRealProdCLM.symm z).re := by
       rw [Complex.equivRealProdCLM_symm_apply_re]
-      linarith [hz.1]
+      linarith [hz.1.1]
     have h := puncturedSpherePerturbation_cylindricalEndLift_of_pos (Hout := Hout) hsep hout
       (hH i) (ha i) hz₀ x v
     rwa [Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im] at h
@@ -580,17 +557,17 @@ private theorem integral_floerEnergyDensity_outputEndPiece (ω : SymplecticForm 
     (injOn_realChart_cylindricalEndLift_inf (-R) (-1)) _
     (fun z hz ↦ ne_of_mem_puncturedSphereTruncation ha (by
       rw [equivRealProdCLM_symm_realChart]
-      exact cylindricalEndLift_inf_mem_puncturedSphereTruncation hout (by simpa using hz.1)
-        (by simpa using hz.2)))
+      exact cylindricalEndLift_inf_mem_puncturedSphereTruncation hout (by simpa using hz.1.1)
+        (by simpa using hz.1.2)))
     (contDiffOn_puncturedSpherePerturbation hH hHs hHout hHouts ha) hu
     (g := fun s ↦ smoothTransition (-s - 1)) (G := Hout) fun z hz x v ↦ ?_,
-    intervalIntegral_realChart_eq (periodic_cylindricalEndLift inf) hHout u (-R)]
+    intervalIntegral_realChart_eq_of_periodic (periodic_cylindricalEndLift inf) hHout u (-R)]
   · simp only [neg_neg, sub_self, smoothTransition.zero, zero_mul, zero_sub]
     ring
-  · exact isOpen_setOf_forall_ne
+  · exact isOpen_setOf_forall_equivRealProdCLM_symm_ne c
   · have hz₀ : (Complex.equivRealProdCLM.symm z).re ≤ -1 := by
       rw [Complex.equivRealProdCLM_symm_apply_re]
-      exact hz.2
+      exact hz.1.2
     have h := puncturedSpherePerturbation_cylindricalEndLift_inf_of_le (H := H) hout hHout hz₀ x v
     rwa [Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im] at h
 
