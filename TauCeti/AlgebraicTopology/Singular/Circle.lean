@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 public import TauCeti.Topology.Sphere.StandardCircle
 
@@ -15,12 +16,20 @@ The circle `S¹ ⊆ ℝ²`, with the basepoint `(1, 0)`, is oriented by the stan
 `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`). Its fundamental class in singular homology with
 coefficients in an object `A` of an abelian category with coproducts is the class of that loop.
 
+The standard loop is also a generalized loop `TauCeti.circleGenLoop` at `(1, 0)`. Its Hurewicz
+class is minus the fundamental class (`TauCeti.hurewicz_circleGenLoop`): the Hurewicz map reads
+a loop through the generator of `H₁(I¹, ∂I¹; A)`, which is the class of the singular simplex running
+from `1` to `0` (`TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`), while the fundamental
+class reads the standard loop along the simplex running from `0` to `1`.
+
 ## Main declarations
 
 * `TauCeti.circlePair`: the circle with its basepoint, as a topological pair.
 * `TauCeti.circleLoopPairHom`: the standard loop as a map of pairs `(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`.
 * `TauCeti.circleFundamentalClass`: the fundamental class `A ⟶ H₁(S¹; A)` of the unit circle in
   `ℝ²`, the class of the standard loop.
+* `TauCeti.circleGenLoop`: the standard loop as a generalized loop at `(1, 0)`.
+* `TauCeti.hurewicz_circleGenLoop`: its Hurewicz class is minus the fundamental class.
 -/
 
 public section
@@ -28,6 +37,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Metric
+open scoped Topology.Homotopy
 
 namespace TauCeti
 
@@ -73,5 +83,33 @@ theorem circleFundamentalClass_def :
       cubeRelClass A ≫ TopPair.singularHomologyMap circleLoopPairHom A 1 ≫
         (singularHomologyIsoOfSubsetSingleton A 0 Sphere1.east).inv := by
   rw [circleFundamentalClass]
+
+/-- The standard loop `t ↦ (cos 2πt, sin 2πt)` as a generalized loop `I¹ → S¹` at `(1, 0)`. -/
+def circleGenLoop : Ω^ (Fin 1) Sphere1 Sphere1.east :=
+  ⟨circleLoop, fun t ht => (circleLoop_eq_east_iff t).2 ht⟩
+
+@[simp]
+theorem circleGenLoop_apply (t : Fin 1 → unitInterval) : circleGenLoop t = circleLoop t :=
+  (rfl)
+
+/-- The map of pairs of the generalized loop `TauCeti.circleGenLoop` is the standard loop pair map
+`TauCeti.circleLoopPairHom`. -/
+theorem toCubeBoundaryPairHom_circleGenLoop :
+    GenLoop.toCubeBoundaryPairHom circleGenLoop = circleLoopPairHom := by
+  apply TopPair.hom_ext_of_fst
+  ext t
+  exact (GenLoop.toCubeBoundaryPairHom_fst_apply circleGenLoop t).trans
+    (circleLoopPairHom_fst_apply t).symm
+
+/-- **The Hurewicz class of the standard loop is minus the fundamental class of the circle.** The
+Hurewicz map reads the loop through the generator of `H₁(I¹, ∂I¹; A)`, the class of the singular
+simplex from `1` to `0`, and the fundamental class reads it through the simplex from `0` to `1`. -/
+theorem hurewicz_circleGenLoop :
+    GenLoop.hurewicz A circleGenLoop = -circleFundamentalClass A := by
+  rw [← cancel_mono (singularHomologyIsoOfSubsetSingleton A 0 Sphere1.east).hom,
+    GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom,
+    singularHomologyCubeBoundaryPairIso_one_inv, toCubeBoundaryPairHom_circleGenLoop,
+    circleFundamentalClass_def, Preadditive.neg_comp, Preadditive.neg_comp, Category.assoc,
+    Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 end TauCeti
