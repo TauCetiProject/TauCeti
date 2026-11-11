@@ -27,6 +27,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
 
 ## Main results
 
+* `TemperedDistribution.smulLeftCLM_eq_zero_of_not_hasTemperateGrowth`: for a symbol without
+  temperate growth, `smulLeftCLM` is the junk value `0`.
 * `TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq`: multiplication by `g` on
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
@@ -39,6 +41,22 @@ namespace TemperedDistribution
 
 open MeasureTheory
 open scoped SchwartzMap LineDeriv
+
+section TVS
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [AddCommGroup F] [Module ℂ F]
+  [TopologicalSpace F] [IsTopologicalAddGroup F] [ContinuousConstSMul ℂ F]
+
+/-- Multiplication by a function without temperate growth is the junk value `0`, because
+`SchwartzMap.smulLeftCLM` is `0` for such a function. -/
+@[simp]
+theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
+    (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  ext f'
+  simp [SchwartzMap.smulLeftCLM, hg]
+
+end TVS
 
 section Deriv
 
@@ -58,15 +76,17 @@ end Deriv
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Multiplication by a function of temperate growth on tempered distributions extends the
-pointwise multiplication of Schwartz functions, for the embedding of Schwartz functions against
-any measure of temperate growth. -/
+/-- Multiplication by a function on tempered distributions extends the pointwise multiplication of
+Schwartz functions, for the embedding of Schwartz functions against any measure of temperate
+growth. (If `g` is not of temperate growth, both multiplications are zero.) -/
 theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTemperateGrowth]
-    {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
+    {g : E → ℂ} (f : 𝓢(E, F)) :
     smulLeftCLM F g (SchwartzMap.toTemperedDistributionCLM E F μ f) =
       SchwartzMap.toTemperedDistributionCLM E F μ (SchwartzMap.smulLeftCLM F g f) := by
   ext u
-  simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
-    SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
+  by_cases hg : g.HasTemperateGrowth
+  · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
+      SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
+  · simp [SchwartzMap.smulLeftCLM, hg]
 
 end TemperedDistribution
