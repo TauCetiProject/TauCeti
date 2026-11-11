@@ -138,9 +138,8 @@ theorem completedCoordinate_unique
   all_goals rw [AlgHom.comp_apply, ← levelCoordinate_X hp n, ← towerProj_completedCoordinate]
   rw [hφ, completedCoordinate_X]
 
-/-- Over a noetherian `O`, the completed coordinate is injective: the level coordinates separate
-the points of `O⟦T⟧`. -/
-theorem completedCoordinate_injective [IsNoetherianRing O] :
+/-- The completed coordinate is injective: the level coordinates separate the points of `O⟦T⟧`. -/
+theorem completedCoordinate_injective :
     Function.Injective (completedCoordinate hp) := fun F G h ↦
   iwasawaCoordinate_injective hp <| funext fun n ↦ by
     simpa using congrArg (towerProj O (FiniteQuotientTower.padicTower p) n) h

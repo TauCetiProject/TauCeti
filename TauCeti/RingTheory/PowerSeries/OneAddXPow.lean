@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
-public import Mathlib.RingTheory.Noetherian.Defs
+public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
 import Mathlib.Algebra.CharP.Algebra
@@ -25,8 +25,9 @@ For a prime `p`, the power series `ω_n = (1 + X) ^ pⁿ - 1` over a commutative
 finite levels of the Iwasawa algebra `O⟦X⟧`. This file collects facts about them that do not
 depend on the level maps. In characteristic `p` the Frobenius identity gives `ω_n = X ^ pⁿ`. Over
 a local ring in which `p` is not a unit, `ω_n` lies in the `(n + 1)`-st power of the maximal ideal
-of `O⟦X⟧`, so over a noetherian such ring the principal ideals `(ω_n)` meet in zero by Krull's
-intersection theorem. Over a local domain with a prime `ϖ`, every `(1 + X) ^ N - 1` with `N ≠ 0`
+of `O⟦X⟧`, so when `O⟦X⟧` is Hausdorff for its maximal ideal (for instance by Krull's
+intersection theorem over a noetherian such ring) the principal ideals `(ω_n)` meet in zero. Over a
+local domain with a prime `ϖ`, every `(1 + X) ^ N - 1` with `N ≠ 0`
 acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 
 The polynomial counterparts, in particular that `(1 + X) ^ pⁿ - 1` is distinguished at every ideal
@@ -39,8 +40,9 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
   local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_maximalIdeal_pow`: `ω_n` lies in the `(n + 1)`-st power
   of the maximal ideal of `O⟦X⟧` when `p` is not a unit of the local ring `O`.
-* `PowerSeries.iInf_span_one_add_X_pow_sub_one_eq_bot`: over a noetherian local ring in which `p`
-  is not a unit, `⋂ₙ (ω_n) = 0`.
+* `PowerSeries.iInf_span_one_add_X_pow_sub_one_eq_bot`: over a local ring in which `p` is not a
+  unit and `O⟦X⟧` is Hausdorff for its maximal ideal (for instance when `O` is noetherian or
+  complete), `⋂ₙ (ω_n) = 0`.
 -/
 
 public section
@@ -87,13 +89,13 @@ theorem one_add_X_pow_sub_one_mem_maximalIdeal_pow (n : ℕ) :
     rw [TauCeti.PowerSeries.maximalIdeal_eq_comap_constantCoeff, Ideal.mem_comap]
     simpa using hp
 
-/-- **The ideals `(ω_n)` meet in zero.** Over a noetherian local ring `O` in which `p` is not a
-unit, no nonzero element of `O⟦X⟧` is divisible by every `ω_n = (1 + X) ^ pⁿ - 1`, since `ω_n`
-lies in the `(n + 1)`-st power of the maximal ideal of the noetherian local ring `O⟦X⟧`. -/
-theorem iInf_span_one_add_X_pow_sub_one_eq_bot [IsNoetherianRing O] :
+/-- **The ideals `(ω_n)` meet in zero.** Over a local ring `O` in which `p` is not a unit, if `O⟦X⟧`
+is Hausdorff for its maximal ideal, no nonzero element of `O⟦X⟧` is divisible by every
+`ω_n = (1 + X) ^ pⁿ - 1`, since `ω_n` lies in the `(n + 1)`-st power of the maximal ideal. -/
+theorem iInf_span_one_add_X_pow_sub_one_eq_bot [IsHausdorff (maximalIdeal O⟦X⟧) O⟦X⟧] :
     ⨅ n : ℕ, Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} = ⊥ := by
   refine eq_bot_iff.mpr <| (le_iInf fun n ↦ ?_).trans
-    (Ideal.iInf_pow_eq_bot_of_isLocalRing (maximalIdeal O⟦X⟧) (maximalIdeal.isMaximal _).ne_top).le
+    (by simpa using (IsHausdorff.iInf_pow_smul (I := maximalIdeal O⟦X⟧) (M := O⟦X⟧) ‹_›).le)
   refine (iInf_le _ n).trans ?_
   rw [Ideal.span_singleton_le_iff_mem]
   exact Ideal.pow_le_pow_right n.le_succ (one_add_X_pow_sub_one_mem_maximalIdeal_pow hp n)
