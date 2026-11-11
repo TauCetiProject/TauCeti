@@ -36,6 +36,10 @@ For `p = 2` and a complex Hilbert space `F`, the pairing of `H^s(E, F)` with `H^
 operators to distributions by transposition. The pairing is bilinear, not sesquilinear: no complex
 conjugation is involved, and the identification is complex-linear.
 
+The sesquilinear counterpart is the `L²` inner product: for Schwartz functions `a` and `b` with
+values in a complex Hilbert space, the inner product of the `L²` parts of `a ∈ H^{-r}` and
+`b ∈ H^r` is `∫ ⟪a, b⟫`, so `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.besselPotentialPairing B s p q`: the density pairing
@@ -52,6 +56,9 @@ conjugation is involved, and the identification is complex-linear.
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
   `BesselPotentialSpace.dualEquiv_toBesselPotentialSpaceCLM`.
+* `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`, `SchwartzMap.norm_integral_inner_le`:
+  the `L²` pairing of `H^{-r}` and `H^r` on Schwartz functions, and
+  `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
 
 ## References
 
@@ -274,3 +281,41 @@ theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (ψ : 𝓢(E, StrongDual �
 end Dual
 
 end BesselPotentialSpace
+
+namespace SchwartzMap
+
+section L2Pairing
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The `L²` pairing of `H^{-r}` and `H^r`.** For Schwartz functions `a` and `b`, the `L²` inner
+product of the `L²` parts of `a ∈ H^{-r}` and `b ∈ H^r` is `∫ ⟪a, b⟫`, for every real `r`. -/
+theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
+    ⟪(toBesselPotentialSpaceCLM (-r) 2 a).toLp, (toBesselPotentialSpaceCLM r 2 b).toLp⟫_ℂ =
+      ∫ x, ⟪a x, b x⟫_ℂ := by
+  rw [toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM,
+    inner_toL2_toL2_eq _ _ volume, ← integral_inner_fourier_fourier,
+    ← integral_inner_fourier_fourier a b]
+  congr 1
+  funext ξ
+  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply, fourier_fourierInv_eq,
+    fourier_fourierInv_eq, smulLeftCLM_apply_apply (by fun_prop),
+    smulLeftCLM_apply_apply (by fun_prop), inner_smul_left, inner_smul_right, ← mul_assoc,
+    Complex.conj_ofReal, ← Complex.ofReal_mul, ← Real.rpow_add h1, neg_div, neg_add_cancel,
+    Real.rpow_zero, Complex.ofReal_one, one_mul]
+
+/-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
+`|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/
+theorem norm_integral_inner_le (r : ℝ) (a b : 𝓢(E, F)) :
+    ‖∫ x, ⟪a x, b x⟫_ℂ‖ ≤
+      ‖toBesselPotentialSpaceCLM (-r) 2 a‖ * ‖toBesselPotentialSpaceCLM r 2 b‖ := by
+  rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, ← BesselPotentialSpace.norm_toLp_eq,
+    ← BesselPotentialSpace.norm_toLp_eq (toBesselPotentialSpaceCLM r 2 b)]
+  exact norm_inner_le_norm _ _
+
+end L2Pairing
+
+end SchwartzMap

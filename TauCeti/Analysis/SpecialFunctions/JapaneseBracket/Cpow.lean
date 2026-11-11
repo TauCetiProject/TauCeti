@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
@@ -17,10 +18,11 @@ import TauCeti.Analysis.Distribution.TemperateGrowth
 # Complex powers of the Japanese bracket
 
 On a real normed space `E`, write `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)` for the Japanese bracket. For a
-complex number `z` its complex power is
+complex number `z` its complex power is Mathlib's complex power of the positive real
+`1 + ‖x‖ ^ 2`,
 
-`⟨x⟩ ^ z = exp (z log ⟨x⟩) = exp (z log (1 + ‖x‖ ^ 2) / 2)`
-(`TauCeti.japaneseBracketCpow z x`).
+`⟨x⟩ ^ z = (1 + ‖x‖ ^ 2) ^ (z / 2) = exp (z log (1 + ‖x‖ ^ 2) / 2)`
+(`TauCeti.japaneseBracketCpow z x`). Naming it lets it be passed as a Fourier symbol.
 
 For real `z = s` this is the real power `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the symbol of the Bessel
 potential of order `s`. In general its modulus is the real power of order `re z`, so an
@@ -32,7 +34,8 @@ interpolate operators between Bessel-potential spaces.
 
 ## Main declarations
 
-* `TauCeti.japaneseBracketCpow z x`: the complex power `⟨x⟩ ^ z`.
+* `TauCeti.japaneseBracketCpow z x`: the complex power `⟨x⟩ ^ z`, with its exponential form
+  `TauCeti.japaneseBracketCpow_eq_exp`.
 * `TauCeti.japaneseBracketCpow_ofReal`: for real `s` it is `(1 + ‖x‖ ^ 2) ^ (s / 2)`.
 * `TauCeti.norm_japaneseBracketCpow`: `‖⟨x⟩ ^ z‖ = (1 + ‖x‖ ^ 2) ^ (re z / 2)`.
 * `TauCeti.japaneseBracketCpow_add`: `⟨x⟩ ^ (z + w) = ⟨x⟩ ^ z ⟨x⟩ ^ w`.
@@ -52,41 +55,55 @@ open Complex
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-/-- The complex power `⟨x⟩ ^ z = exp (z log (1 + ‖x‖ ^ 2) / 2)` of the Japanese bracket
-`⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`. -/
+/-- The complex power `⟨x⟩ ^ z = (1 + ‖x‖ ^ 2) ^ (z / 2)` of the Japanese bracket
+`⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, as Mathlib's complex power `Complex.cpow` of the positive real
+`1 + ‖x‖ ^ 2`. -/
 def japaneseBracketCpow (z : ℂ) (x : E) : ℂ :=
-  exp (z * (Real.log (1 + ‖x‖ ^ 2) / 2 : ℝ))
+  ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ^ (z / 2)
 
 theorem japaneseBracketCpow_def (z : ℂ) (x : E) :
-    japaneseBracketCpow z x = exp (z * (Real.log (1 + ‖x‖ ^ 2) / 2 : ℝ)) := (rfl)
+    japaneseBracketCpow z x = ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ^ (z / 2) := (rfl)
+
+/-- Since the base is a positive real, `⟨x⟩ ^ z = exp (z log (1 + ‖x‖ ^ 2) / 2)`. -/
+theorem japaneseBracketCpow_eq_exp (z : ℂ) (x : E) :
+    japaneseBracketCpow z x = exp (z * (Real.log (1 + ‖x‖ ^ 2) / 2 : ℝ)) := by
+  rw [japaneseBracketCpow, cpow_def_of_ne_zero (ofReal_ne_zero.2 (by positivity)),
+    ← ofReal_log (by positivity)]
+  push_cast
+  ring_nf
 
 /-- For a real exponent `s`, the complex power is the real power `(1 + ‖x‖ ^ 2) ^ (s / 2)`. -/
 theorem japaneseBracketCpow_ofReal (s : ℝ) (x : E) :
     japaneseBracketCpow (s : ℂ) x = (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := by
-  rw [japaneseBracketCpow, Real.rpow_def_of_pos (by positivity), ← ofReal_mul, ← ofReal_exp]
-  ring_nf
+  rw [japaneseBracketCpow, ofReal_cpow (by positivity)]
+  push_cast
+  rfl
 
 @[simp]
 theorem japaneseBracketCpow_zero (x : E) : japaneseBracketCpow 0 x = 1 := by
-  simp [japaneseBracketCpow]
+  rw [japaneseBracketCpow, zero_div, cpow_zero]
 
 /-- The modulus of `⟨x⟩ ^ z` is the real power of order `re z`. -/
 theorem norm_japaneseBracketCpow (z : ℂ) (x : E) :
     ‖japaneseBracketCpow z x‖ = (1 + ‖x‖ ^ 2) ^ (z.re / 2) := by
-  rw [japaneseBracketCpow, norm_exp, re_mul_ofReal, Real.rpow_def_of_pos (by positivity)]
-  ring_nf
+  rw [japaneseBracketCpow, norm_cpow_eq_rpow_re_of_pos (by positivity), div_ofNat_re]
 
 /-- The complex powers are multiplicative in the exponent. -/
 theorem japaneseBracketCpow_add (z w : ℂ) (x : E) :
     japaneseBracketCpow (z + w) x = japaneseBracketCpow z x * japaneseBracketCpow w x := by
-  simp only [japaneseBracketCpow, add_mul, exp_add]
+  rw [japaneseBracketCpow, add_div, cpow_add _ _ (ofReal_ne_zero.2 (by positivity))]
+  rfl
 
 /-- The derivative of `z ↦ ⟨x⟩ ^ z` is `⟨x⟩ ^ z log ⟨x⟩`, with `log ⟨x⟩ = log (1 + ‖x‖ ^ 2) / 2`. -/
 theorem hasDerivAt_japaneseBracketCpow (z : ℂ) (x : E) :
     HasDerivAt (fun w ↦ japaneseBracketCpow w x)
       (japaneseBracketCpow z x * (Real.log (1 + ‖x‖ ^ 2) / 2 : ℝ)) z := by
-  simpa [japaneseBracketCpow] using ((hasDerivAt_id z).mul_const
-    ((Real.log (1 + ‖x‖ ^ 2) / 2 : ℝ) : ℂ)).cexp
+  convert ((hasDerivAt_id z).div_const 2).const_cpow
+    (.inl (ofReal_ne_zero.2 (by positivity : (1 + ‖x‖ ^ 2 : ℝ) ≠ 0))) using 1
+  · rfl
+  · rw [japaneseBracketCpow, id, ← ofReal_log (by positivity)]
+    push_cast
+    ring
 
 /-- The second-order remainder of `w ↦ ⟨x⟩ ^ w` at `z` is bounded uniformly in `x` by a
 bracket power: for `‖h‖ ≤ 1`,
@@ -116,7 +133,7 @@ theorem norm_japaneseBracketCpow_add_sub_sub_le (z : ℂ) {h : ℂ} (hh : ‖h�
       h * (japaneseBracketCpow z x * (L : ℂ)) =
       japaneseBracketCpow z x *
         (exp (h * L) - ∑ m ∈ Finset.range 2, (h * L) ^ m / m.factorial) := by
-    simp [japaneseBracketCpow, hy_def, hL_def, Finset.sum_range_succ, add_mul, exp_add]
+    simp [japaneseBracketCpow_eq_exp, hy_def, hL_def, Finset.sum_range_succ, add_mul, exp_add]
     ring
   have hrem := Complex.norm_exp_sub_sum_le_norm_mul_exp (h * (L : ℂ)) 2
   have hhL : ‖h * (L : ℂ)‖ = ‖h‖ * L := by
@@ -177,7 +194,7 @@ theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
     rw [Pi.mul_apply, Function.comp_apply, ← hre]
     conv_lhs => rw [← re_add_im z]
     rw [japaneseBracketCpow_add]
-    simp only [japaneseBracketCpow]
+    simp only [japaneseBracketCpow_eq_exp]
     push_cast
     ring_nf
   rw [h]
