@@ -26,7 +26,7 @@ approximating a linear equivalence on a closed ball:
 
 A map on a convex set whose derivative stays close to a linear map `A` with a left inverse `P`
 is injective there, with injective derivative: `P` of the map approximates the identity
-(`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`).
+(`Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le`).
 
 If the derivative of a function `g` is approximated by a bilinear map `L` near `x`, a critical point
 `y` of `g` near `x` has a value within `(‖L‖ + κ) * (2 * ρ) * ρ` of that at `x`
@@ -138,13 +138,15 @@ theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
 end ApproximatesLinearOn
 
 /-- **A map whose derivative is close to an injective linear map is injective on a convex set.**
-If `P` is a left inverse of `A` and the derivative of `h` stays within `1 / (2 ‖P‖)` of `A` on a
-convex set `S`, then `h` is injective on `S`, and its derivative is injective there. -/
-theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {𝕜 E F : Type*}
+If `P` is a left inverse of `A` and the derivative `h'` of `h` within a convex set `S` stays within
+`1 / (2 ‖P‖)` of `A` on `S`, then `h` is injective on `S`, and `h' u` is injective for every
+`u ∈ S`. -/
+theorem Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le {𝕜 E F : Type*}
     [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {S : Set E} (hS : Convex ℝ S) {h : E → F} {h' : E → E →L[𝕜] F} {A : E →L[𝕜] F}
-    {P : F →L[𝕜] E} (hPA : Function.LeftInverse P A) (hh : ∀ u ∈ S, HasFDerivAt h (h' u) u)
+    {P : F →L[𝕜] E} (hPA : Function.LeftInverse P A)
+    (hh : ∀ u ∈ S, HasFDerivWithinAt h (h' u) S u)
     (hh' : ∀ u ∈ S, ‖P‖ * ‖h' u - A‖ ≤ 1 / 2) :
     InjOn h S ∧ ∀ u ∈ S, Function.Injective (h' u) := by
   have hPA' : P.comp A = ContinuousLinearMap.id 𝕜 E := ContinuousLinearMap.ext hPA
@@ -158,7 +160,7 @@ theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {𝕜 E F : Type*}
         (ContinuousLinearEquiv.refl 𝕜 E : E →L[𝕜] E) S (1 / 2) := by
       intro x hx y hy
       simpa using hS.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun v => P (h v))
-        (fun v hv => (P.hasFDerivAt.comp v (hh v hv)).hasFDerivWithinAt)
+        (fun v hv => P.hasFDerivAt.comp_hasFDerivWithinAt v (hh v hv))
         (fun v hv => (hclose v hv).trans_eq (by simp)) hy hx
     refine InjOn.of_comp (g := ⇑P) <| happ.injOn <|
       (subsingleton_or_nontrivial E).imp id fun (_ : Nontrivial E) ↦ ?_
