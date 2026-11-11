@@ -324,6 +324,37 @@ theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × �
       ((hK p hp).contDiffAt (hW.mem_nhds hp))).contDiffWithinAt
   exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
 
+/-- On an open set of `P × ((ℝ × ℝ) × V)`, the Hamiltonian one-form of a perturbation depending
+jointly `C^(n+1)` on a parameter `p ∈ P`, the domain point and the target point is `C^n` jointly in
+all three. -/
+theorem contDiffOn_hamiltonianOneForm_parameter {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (ω : SymplecticForm V) {Ks Kt : P → ℝ × ℝ → V → ℝ}
+    {W : Set (P × ((ℝ × ℝ) × V))} {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ Ks q.1 q.2.1 q.2.2) W)
+    (hKt : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ Kt q.1 q.2.1 q.2.2) W) :
+    ContDiffOn ℝ n
+      (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianOneForm (Ks q.1) (Kt q.1) q.2.1 q.2.2) W := by
+  have hX {K : P → ℝ × ℝ → V → ℝ}
+      (hK : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ K q.1 q.2.1 q.2.2) W) :
+      ContDiffOn ℝ n
+        (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2) W := by
+    intro q hq
+    -- Group the parameter with the domain point, as the variable of the Hamiltonian.
+    have hK' : ContDiffAt ℝ (n + 1) (uncurry fun (a : P × (ℝ × ℝ)) (x : V) ↦ K a.1 a.2 x)
+        ((q.1, q.2.1), q.2.2) := by
+      have h := ((hK q hq).contDiffAt (hW.mem_nhds hq)).comp ((q.1, q.2.1), q.2.2)
+        (f := fun a : (P × (ℝ × ℝ)) × V ↦ (a.1.1, (a.1.2, a.2)))
+        (contDiff_fst.fst.prodMk (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+      exact h
+    have h := (ω.contDiffAt_hamiltonianVectorField_uncurry hK').comp q
+      (f := fun a : P × ((ℝ × ℝ) × V) ↦ ((a.1, a.2.1), a.2.2))
+      ((contDiff_fst.prodMk contDiff_snd.fst).prodMk contDiff_snd.snd).contDiffAt
+    exact h.contDiffWithinAt
+  refine (((contDiffOn_const (c := ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight (hX hKs)).add
+    ((contDiffOn_const (c := ContinuousLinearMap.snd ℝ ℝ ℝ)).smulRight (hX hKt))).congr
+    fun q _ ↦ ?_
+  ext <;> simp [hamiltonianOneForm_apply]
+
 /-- The perturbed derivative is `du - X_K(u)`. -/
 theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
     (z : ℝ × ℝ) :
