@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.IsBaseChange
 public import TauCeti.RingTheory.Adjoin.EqLocus
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Equalizers of ring homomorphisms under flat base change
@@ -110,12 +111,14 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
   -- the invariants are the kernels of `a ↦ s a - t a` and `a' ↦ s' a' - t' a'`
   set g := diff ht
   set g' := diff ht₂
+  have hg (x : A) : x ∈ (algebraMap A B).eqLocus t ↔ x ∈ LinearMap.ker g := by
+    rw [mem_eqLocus, LinearMap.mem_ker, diff_apply, sub_eq_zero]
   have hg' (x : A') : x ∈ (algebraMap A' B').eqLocus t' ↔ x ∈ LinearMap.ker g' := by
     rw [mem_eqLocus, LinearMap.mem_ker, diff_apply, sub_eq_zero]
   -- base change carries the kernel of `g` to the kernel of `g'`, by flatness
   let h₁ : LinearMap.ker g →ₗ[R] LinearMap.ker g' :=
     { toFun x := ⟨algebraMap A A' x, by
-        have hx : algebraMap A B x = t x := sub_eq_zero.mp x.2
+        have hx : algebraMap A B x = t x := mem_eqLocus.mp ((hg x).mpr x.2)
         rw [LinearMap.mem_ker, diff_apply, ht₁', ← hx, ← IsScalarTower.algebraMap_apply,
           ← IsScalarTower.algebraMap_apply, sub_self]⟩
       map_add' x y := by ext; simp
@@ -132,13 +135,11 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
   rw [Subalgebra.mem_toSubring]
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · -- every element of the kernel of `g'` is an `R'`-combination of images of invariants
-    suffices ∀ n : LinearMap.ker g', (n : A') ∈ adjoin R' (algebraMap A A' '' eqLocus _ t) from
-      this ⟨x, (hg' x).mp hx⟩
-    intro n
-    induction n using hbc.inductionOn with
-    | tmul a => exact subset_adjoin ⟨a, sub_eq_zero.mp a.2, rfl⟩
-    | smul r n hn => exact Subalgebra.smul_mem _ hn r
-    | add n₁ n₂ h₁ h₂ => exact Subalgebra.add_mem _ h₁ h₂
+    have hx' : (⟨x, (hg' x).mp hx⟩ : LinearMap.ker g') ∈ Submodule.span R' (Set.range h₁) :=
+      hbc.span_range_eq_top ▸ Submodule.mem_top
+    have := Submodule.apply_mem_span_image_of_mem_span (LinearMap.ker g').subtype hx'
+    exact adjoin_mono (by rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩; exact ⟨a, (hg a).mpr a.2, rfl⟩)
+      (Algebra.span_le_adjoin R' _ this)
   · -- the images of the invariants of `A` and of `R'` are invariants of `A'`
     refine adjoin_image_eqLocus_subset (ψ := algebraMap B B') ?_ ht₁ ht₂.symm hx
     ext a

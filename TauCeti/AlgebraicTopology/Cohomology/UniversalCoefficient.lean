@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # The universal coefficient theorem for singular cohomology
@@ -44,12 +45,7 @@ when the homology is projective: if `R` and every `Hₙ(X; R)` are projective, t
 complex is a complex of projective modules with projective homology, so its cycles are projective
 and split off (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the Kronecker map
 is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
-(`TopCat.singularKroneckerEquivOfProjectiveHomology`).  Projective homology below a single degree
-`n` already makes the Kronecker map bijective in degree `n`
-(`TopCat.singularKronecker_bijective_of_projective_homology_lt`). As `H₀(X; k)` is free, this
-applies in degree `1` to every space, so a monomorphism of coefficients `M ⟶ N` induces an
-injection `H¹(X; k, M) ⟶ H¹(X; k, N)`, for instance `H¹(X; ℤ) ⟶ H¹(X; ℝ)`
-(`TopCat.singularCohomology_coefficient_injective_of_projective_homology_lt`).
+(`TopCat.singularKroneckerEquivOfProjectiveHomology`).
 
 Over a hereditary ring, a single projective homology module already kills the `Ext¹` term next
 to it: if `Hₙ(X; R)` is projective, the Kronecker map is an isomorphism in degree `n + 1`
@@ -64,14 +60,15 @@ free in that degree and zero above it, while in the top degree it need not be to
 * `TopCat.singularKronecker_bijective_of_projective_homology` and
   `TopCat.singularKroneckerEquivOfProjectiveHomology`: over any commutative ring, the Kronecker
   map is an isomorphism when the coefficients and the homology are projective.
-* `TopCat.singularKronecker_bijective_of_projective_homology_lt`: over any commutative ring, the
-  Kronecker map is bijective in degree `n` when the homology is projective below `n`.
-* `TopCat.singularCohomology_coefficient_injective_of_projective_homology_lt`: over any commutative
-  ring, a monomorphism of coefficient modules induces an injection on `Hⁿ(X; R, -)` when the
-  homology is projective below `n`. For `n = 1` this applies to every space.
 * `TopPair.singularKronecker_bijective_of_projective_homology` and
   `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
   pair whose relative homology is projective.
+* `TopCat.singularKronecker_bijective_of_projective_homology_lt` and
+  `TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`: the Kronecker map
+  is bijective in degree `n` when the homology is projective below `n`, so that an injective map
+  of coefficient modules is injective on cohomology in degree `n`.
+* `TopCat.injective_homologyMap_linearYonedaObjMap_one`: an injective map of coefficient modules
+  is injective on `H¹` of every space.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -110,38 +107,52 @@ universe w
 
 namespace TopCat
 
-section ProjectiveHomologyLT
+section ProjectiveHomologyBelow
 
-variable {k : Type w} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+variable {k : Type w} [CommRing k] (X : TopCat.{w}) {R : ModuleCat.{w} k} [Module.Projective k R]
 
 /-- **The universal coefficient theorem below the first non-projective homology**, over any
 commutative ring `k`: for a projective coefficient module `R`, if the singular homology modules
 `Hⱼ(X; R)` are projective for `j < n`, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` is
-bijective, for every module `M`. As `H₀(X; k)` is free, this holds in degree `1` for every
-space. -/
-theorem singularKronecker_bijective_of_projective_homology_lt (n : ℕ)
+bijective, for every module `M`. For `n = 1` the hypothesis is that `H₀(X; R)` is projective, which
+holds for free `R` (`ModuleCat.free_singularHomology_zero`). -/
+theorem singularKronecker_bijective_of_projective_homology_lt (M : ModuleCat.{w} k) (n : ℕ)
     (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X)) :
     Function.Bijective (X.singularKronecker (R := R) (M := M) k n) := by
   rw [singularKronecker_def]
   -- `Hⱼ(X; R)` is by definition the homology of the singular chain complex `C(X; R)`.
   exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt n h
 
-variable {M} in
-/-- **Coefficient injectivity below the first non-projective homology**, over any commutative ring:
-for a projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, a monomorphism
-`g : M ⟶ N` induces an injection `Hⁿ(X; R, M) ⟶ Hⁿ(X; R, N)`, since both are `Hom(Hₙ(X; R), -)` by
-the Kronecker map. As `H₀(X; k)` is free, `H¹(X; k, M) ⟶ H¹(X; k, N)` is injective for every
-space `X`, for instance `H¹(X; ℤ) ⟶ H¹(X; ℝ)`. -/
-theorem singularCohomology_coefficient_injective_of_projective_homology_lt (n : ℕ)
-    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
-    {N : ModuleCat.{w} k} (g : M ⟶ N) [Mono g] :
-    Function.Injective (HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n) :=
-  fun α β hαβ ↦ (X.singularKronecker_bijective_of_projective_homology_lt R M n h).1 <| by
-    rw [← cancel_mono g, ← singularKronecker_coefficient_naturality,
-      ← singularKronecker_coefficient_naturality, hαβ]
+/-- **Injective coefficient maps are injective on cohomology below the first non-projective
+homology**: for a projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, an
+injective map `g : M ⟶ M'` of coefficient modules induces an injective map
+`Hⁿ(X; R, M) → Hⁿ(X; R, M')`, because both are `Hom(Hₙ(X; R), -)`. For `n = 1` and `R = ℤ` this
+makes `H¹(X; ℤ) → H¹(X; ℝ)` injective, so `H¹(X; ℤ)` is torsion-free. -/
+theorem injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt
+    {M M' : ModuleCat.{w} k} (g : M ⟶ M') (hg : Function.Injective g) (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X)) :
+    Function.Injective
+      (HomologicalComplex.homologyMap
+        (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n) := by
+  have : Mono g := (ModuleCat.mono_iff_injective g).2 hg
+  intro α β hαβ
+  refine (X.singularKronecker_bijective_of_projective_homology_lt M n h).1 ((cancel_mono g).1 ?_)
+  rw [← singularKronecker_coefficient_naturality, ← singularKronecker_coefficient_naturality, hαβ]
 
-end ProjectiveHomologyLT
+/-- **Injective coefficient maps are injective on `H¹`**: for a free coefficient module `R`, an
+injective map `g : M ⟶ M'` of coefficient modules induces an injective map
+`H¹(X; R, M) → H¹(X; R, M')` for every space `X`, because `H₀(X; R)` is free
+(`ModuleCat.free_singularHomology_zero`). For instance `H¹(X; ℤ) → H¹(X; ℝ)` is injective. -/
+theorem injective_homologyMap_linearYonedaObjMap_one [Module.Free k R] {M M' : ModuleCat.{w} k}
+    (g : M ⟶ M') (hg : Function.Injective g) :
+    Function.Injective
+      (HomologicalComplex.homologyMap
+        (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) 1) :=
+  X.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt g hg 1 fun j hj ↦ by
+    obtain rfl : j = 0 := by omega
+    exact ModuleCat.projective_of_free (Module.Free.chooseBasis k _)
+
+end ProjectiveHomologyBelow
 
 section ProjectiveHomology
 
@@ -154,11 +165,8 @@ projective, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` is bi
 for every module `M`.  The singular chain modules are projective, so the cycles split off and the
 `Ext¹` term of the universal coefficient sequence vanishes. -/
 theorem singularKronecker_bijective_of_projective_homology (n : ℕ) :
-    Function.Bijective (X.singularKronecker (R := R) (M := M) k n) := by
-  -- `Hₙ(X; R)` is by definition the homology of the singular chain complex `C(X; R)`.
-  have (n : ℕ) : Projective (((toSSet.obj X).chainComplex R).homology n) := hX n
-  rw [singularKronecker_def]
-  exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology n
+    Function.Bijective (X.singularKronecker (R := R) (M := M) k n) :=
+  X.singularKronecker_bijective_of_projective_homology_lt M n fun j _ ↦ hX j
 
 /-- **The universal coefficient isomorphism with projective homology**: over any commutative ring,
 for a projective coefficient module `R` such that every `Hₙ(X; R)` is projective, the Kronecker
