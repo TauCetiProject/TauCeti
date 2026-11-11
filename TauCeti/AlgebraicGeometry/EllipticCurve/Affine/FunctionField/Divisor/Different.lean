@@ -337,7 +337,7 @@ theorem different_eq_sum_of_card_eq_four {S : Finset W.Point}
     Divisor.different F W.FunctionField (IsFunctionField.ratFunc F) =
       ∑ T ∈ S, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).1 := by
   classical
-  have h2 := Point.two_ne_zero_of_card_eq_four hS hcard
+  have h2 := Point.two_ne_zero_of_two_lt_card hS (by omega)
   -- The affine points of `S` give at most `3` zeros of `2y + a₁x + a₃`, counted with degree.
   have hle := sum_ofPoint_le_zeros (A := S.erase 0) (Finset.notMem_erase 0 S)
     fun T hT ↦ hS T (Finset.mem_of_mem_erase hT)
@@ -415,7 +415,7 @@ theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four
     rw [← map_natCast (algebraMap F _), _root_.map_ne_zero]
     interval_cases Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1
     · simp
-    · exact_mod_cast Point.two_ne_zero_of_card_eq_four hS hcard
+    · exact_mod_cast Point.two_ne_zero_of_two_lt_card hS (by omega)
   rw [(Place.ramificationIdx_eq_differentExponent_add_one_iff _ _ _).mpr htame,
     differentExponent_pointEquivDegreeOnePlace_of_card_eq_four hS hcard hT]
 

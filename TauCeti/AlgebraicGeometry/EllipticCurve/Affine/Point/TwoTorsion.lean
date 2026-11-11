@@ -46,8 +46,8 @@ of multiplication by `2` (Silverman X.1.4).
 * `WeierstrassCurve.Affine.Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div`: the square root
   `((x - e)² - c_T) / ψ₂` of `x(2P) - e` is fixed by translation by `O` and `T`, and changes sign
   under translation by the other two points of order two.
-* `WeierstrassCurve.Affine.Point.two_ne_zero_of_card_eq_four`: four points of order dividing two
-  force `2 ≠ 0` (for an elliptic curve).
+* `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card`: more than two points of order
+  dividing two force `2 ≠ 0` (for an elliptic curve).
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
   of order two sends `x - e` to `±(x - e)`, with the same signs.
 
@@ -235,10 +235,10 @@ theorem Point.xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalE
     linear_combination hA - hC + hx2
 
 omit [DecidableEq F] in
-/-- Four points of order dividing two force `2 ≠ 0`: in characteristic two the affine points of
-order dividing two lie on `a₁x + a₃ = 0`, and there is at most one of them. -/
-theorem Point.two_ne_zero_of_card_eq_four [W.IsElliptic] {S : Finset W.Point}
-    (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) : (2 : F) ≠ 0 := by
+/-- More than two points of order dividing two force `2 ≠ 0`: in characteristic two the affine
+points of order dividing two lie on `a₁x + a₃ = 0`, and there is at most one of them. -/
+theorem Point.two_ne_zero_of_two_lt_card [W.IsElliptic] {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : 2 < S.card) : (2 : F) ≠ 0 := by
   classical
   intro h2
   let _ : CharP F 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).mpr h2
@@ -267,11 +267,11 @@ theorem Point.two_ne_zero_of_card_eq_four [W.IsElliptic] {S : Finset W.Point}
       exact W.isUnit_Δ.ne_zero (by simp [W.Δ_of_char_two, h1, h3])
     have hxx : x = x' := mul_left_cancel₀ ha1 (by linear_combination hx - hx')
     subst hxx
-    have e := (equation_iff x y).mp h.left
-    have e' := (equation_iff x y').mp h'.left
-    have hyy : (y - y') ^ 2 = 0 := by
-      linear_combination e - e' - (y - y') * hx - y' * (y - y') * h2
-    obtain rfl : y = y' := sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hyy)
+    have hn : W.negY x y' = y' := by
+      have h := hS _ hbS
+      rw [Point.neg_some, Point.some.injEq] at h
+      exact h.2
+    obtain rfl : y = y' := (Y_eq_of_X_eq h.left h'.left rfl).elim id (·.trans hn)
     rfl
   have := Finset.pred_card_le_card_erase (s := S) (a := 0)
   omega
