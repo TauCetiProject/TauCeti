@@ -844,33 +844,36 @@ theorem range_isotypicProjector (χ : Multiplicative (ZMod 2) × Multiplicative 
   symmetryRep.range_asAlgebraHom_charIdempotent (Nat.cast_ne_zero.2 Nat.card_pos.ne').isUnit
     χ.toHomUnits
 
-/-- A projector `u ↦ ((v ⬝ᵥ u) / 2) v` with `v ⬝ᵥ v = 2` has image the line through `v`. -/
-private theorem range_eq_span_singleton {P : Module.End ℝ (Fin 4 → ℝ)} {v : Fin 4 → ℝ}
-    (hP : ∀ u, P u = ((v ⬝ᵥ u) / 2) • v) (hv : v ⬝ᵥ v = 2) :
-    LinearMap.range P = ℝ ∙ v := by
-  refine le_antisymm ?_ ((Submodule.span_singleton_le_iff_mem _ _).2 ⟨v, by simp [hP, hv]⟩)
-  rintro _ ⟨u, rfl⟩
-  rw [hP]
-  exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)
-
 /-- The **trivial isotypic component**, on which both reflections act trivially, is the stretching
 line through `(1, 0, -1, 0)`. -/
 theorem iInf_eigenspace_symmetryRep_one :
     ⨅ g, Module.End.eigenspace (symmetryRep g)
         ((1 : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) =
       ℝ ∙ ![1, 0, -1, 0] := by
-  rw [← range_isotypicProjector]
-  exact range_eq_span_singleton isotypicProjector_one_apply
-    (by simp [dotProduct, Fin.sum_univ_four]; norm_num)
+  have hP : isotypicProjector 1 =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, -1, 0]).smulRight ![1, 0, -1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_one_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, -1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- The isotypic component of the sign of the first factor, reversed by the axis reflection and
 fixed by the bisector reflection, is the line of vertical translations through `(0, 1, 0, 1)`. -/
 theorem iInf_eigenspace_symmetryRep_comp_fst :
     ⨅ g, Module.End.eigenspace (symmetryRep g)
         ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) g) = ℝ ∙ ![0, 1, 0, 1] := by
-  rw [← range_isotypicProjector]
-  exact range_eq_span_singleton isotypicProjector_comp_fst_apply
-    (by simp [dotProduct, Fin.sum_univ_four]; norm_num)
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, 1]).smulRight ![0, 1, 0, 1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_fst_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, 1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- The isotypic component of the sign of the second factor, fixed by the axis reflection and
 reversed by the bisector reflection, is the line of horizontal translations through
@@ -878,9 +881,15 @@ reversed by the bisector reflection, is the line of horizontal translations thro
 theorem iInf_eigenspace_symmetryRep_comp_snd :
     ⨅ g, Module.End.eigenspace (symmetryRep g)
         ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) g) = ℝ ∙ ![1, 0, 1, 0] := by
-  rw [← range_isotypicProjector]
-  exact range_eq_span_singleton isotypicProjector_comp_snd_apply
-    (by simp [dotProduct, Fin.sum_univ_four]; norm_num)
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, 1, 0]).smulRight ![1, 0, 1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_snd_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, 1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- The isotypic component of the product of the two signs, reversed by both reflections, is the
 line of the transverse mode `(0, 1, 0, -1)`. -/
@@ -888,9 +897,16 @@ theorem iInf_eigenspace_symmetryRep_mul :
     ⨅ g, Module.End.eigenspace (symmetryRep g)
         (((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) :
           Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) = ℝ ∙ ![0, 1, 0, -1] := by
-  rw [← range_isotypicProjector]
-  exact range_eq_span_singleton isotypicProjector_mul_apply
-    (by simp [dotProduct, Fin.sum_univ_four]; norm_num)
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) *
+        (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, -1]).smulRight ![0, 1, 0, -1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_mul_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, -1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- **The spectral decomposition of `H`**: the force matrix is `-2` times the projector of the
 trivial character, so its eigenvalue is `-2` on the stretching mode and `0` on the other three
