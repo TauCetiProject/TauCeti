@@ -277,20 +277,8 @@ theorem coacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
     [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)] :
-    coacyclic R h ≤ Q ↔ totalizations R h ≤ Q := by
-  -- Isomorphism closure follows from closure under the colimit of a one-object diagram.
-  have : Q.IsClosedUnderIsomorphisms :=
-    ⟨fun {X Y} e hX ↦
-      have p : Q.ColimitOfShape (Discrete PUnit.{u + 1}) Y :=
-        { diag := (Functor.const _).obj X
-          ι := { app _ := e.hom }
-          isColimit :=
-            { desc s := e.inv ≫ s.ι.app ⟨PUnit.unit⟩
-              fac s j := by rcases j with ⟨⟨⟩⟩; simp
-              uniq s m hm := by simp [← hm ⟨PUnit.unit⟩] }
-          prop_diag_obj _ := hX }
-      p.prop⟩
-  exact (totalizations R h).localizingClosure_le_iff
+    coacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
+  (totalizations R h).localizingClosure_le_iff
 
 /-- The universal property of the contraacyclic class: it is contained in every
 triangulated subcategory of the curved homotopy category containing all
@@ -299,20 +287,8 @@ theorem contraacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
     [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
-    contraacyclic R h ≤ Q ↔ totalizations R h ≤ Q := by
-  -- Isomorphism closure follows from closure under the limit of a one-object diagram.
-  have : Q.IsClosedUnderIsomorphisms :=
-    ⟨fun {X Y} e hX ↦
-      have p : Q.LimitOfShape (Discrete PUnit.{u + 1}) Y :=
-        { diag := (Functor.const _).obj X
-          π := { app _ := e.inv }
-          isLimit :=
-            { lift s := s.π.app ⟨PUnit.unit⟩ ≫ e.hom
-              fac s j := by rcases j with ⟨⟨⟩⟩; simp
-              uniq s m hm := by simp [← hm ⟨PUnit.unit⟩] }
-          prop_diag_obj _ := hX }
-      p.prop⟩
-  exact (totalizations R h).colocalizingClosure_le_iff
+    contraacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
+  (totalizations R h).colocalizingClosure_le_iff
 
 variable (R h) in
 /-- Every absolutely acyclic curved module is coacyclic: the curved homotopy category has countable
