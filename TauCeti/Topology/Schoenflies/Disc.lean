@@ -199,7 +199,7 @@ theorem IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range
       ∀ z, (h z : E) ∈ sphere (0 : E) 1 ↔ (z : sphere (0 : F) 1) ∈ range σ := by
   by_cases hE1 : finrank ℝ E = 1
   · exact exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq_one
-      hb.injective hE1 (by omega) hy
+      hEF hE1 hb.injective hy
   · exact hb.exists_homeomorph_closure_connectedComponentIn_compl_range_of_one_lt hEF (by omega) hy
 
 end TauCeti

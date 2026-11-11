@@ -291,8 +291,6 @@ theorem continuous_latitude {X : Type*} [TopologicalSpace X]
     {u : X → sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t : X → ℝ} (hu : Continuous u) (ht : Continuous t) :
     Continuous fun x ↦ latitude p (u x) (t x) := by
   refine Continuous.subtype_mk ?_ _
-  have hs : Continuous fun x ↦ (projIcc (-1 : ℝ) 1 (by norm_num) (t x) : ℝ) :=
-    continuous_subtype_val.comp (continuous_projIcc.comp ht)
   fun_prop
 
 /-- For `t ∈ [-1, 1]`, the latitude map is `√(1 - t²) • u + t • p`. -/

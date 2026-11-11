@@ -140,10 +140,6 @@ theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ]
     rw [← hmean]
     exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
       (((integrable_const _).sub hfi).const_mul t) (hexpi x)
-  have hf1 : AEMeasurable (fun p : Ω × Ω ↦ f p.1) (μ.prod μ) :=
-    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
-  have hf2 : AEMeasurable (fun p : Ω × Ω ↦ f p.2) (μ.prod μ) :=
-    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
   have hF : AEMeasurable (fun p : Ω × Ω ↦ ENNReal.ofReal (exp (t * (f p.1 - f p.2)))) (μ.prod μ) :=
     ENNReal.measurable_ofReal.comp_aemeasurable (by fun_prop)
   rw [mgf]
