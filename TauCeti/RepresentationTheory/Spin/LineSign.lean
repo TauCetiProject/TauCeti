@@ -63,8 +63,6 @@ labelled by the two signs of the line coordinate.
 * `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension, for finite-dimensional
   `V` over a field of characteristic not two, the combined Fock action is bijective, so the
   direct sum of the two spinor modules is faithful.
-* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension, for
-  finite-dimensional `V` over any field, a single Fock action is not faithful.
 
 ## References
 
@@ -268,23 +266,6 @@ theorem cliffordEquivEndProd_apply (hodd : Odd (finrank F V)) (x : CliffordAlgeb
     P.cliffordEquivEndProd hodd x = (spinAction Q P x, spinAction Q P.negLineCoordinate x) :=
   -- `(rfl)`, not `rfl`: the body of `cliffordEquivEndProd` is not `@[expose]`d.
   (rfl)
-
-omit [NeZero (2 : F)] in
-/-- **A single Fock action is not faithful in odd dimension**: the Clifford algebra has dimension
-`2 ^ (2 * l + 1)`, while the operator algebra of the spinor module has dimension `(2 ^ l) ^ 2`. -/
-theorem not_injective_spinAction_of_odd_finrank (hodd : Odd (finrank F V)) :
-    ¬ Function.Injective (spinAction Q P) := by
-  intro hinj
-  obtain ⟨l, hV⟩ := hodd
-  have hS := P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV
-  have : Module.Finite F (ExteriorAlgebra F P.W) :=
-    Module.finite_of_finrank_pos (by rw [hS]; positivity)
-  have hle := LinearMap.finrank_le_finrank_of_injective (f := (spinAction Q P).toLinearMap) hinj
-  rw [CliffordAlgebra.finrank_eq_two_pow, Module.finrank_linearMap, hS, hV] at hle
-  have h2 : 2 ^ (2 * l + 1) = 2 * (2 ^ l * 2 ^ l) := by ring
-  have h0 : 0 < 2 ^ l * 2 ^ l := by positivity
-  rw [h2] at hle
-  omega
 
 end Field
 
