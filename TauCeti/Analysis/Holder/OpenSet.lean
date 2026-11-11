@@ -134,75 +134,36 @@ iterated Fréchet derivatives through order `k` bounded on `U` and `k`-th iterat
 
 namespace CkHolderSpaceOn
 
+open CkHolderJet
+
 variable {k α U F}
-
-variable (k α U F) in
-/-- The ambient jet space: bounded continuous derivative fields on `U` of orders below `k`, with
-the `ℓ¹` norm, together with a bounded Hölder field of order `k`. -/
-private abbrev Jet := WithLp 1
-  ((PiLp 1 fun i : Fin k ↦ U →ᵇ (E [×i]→L[ℝ] F)) × HolderSpace α U (E [×k]→L[ℝ] F))
-
-/-- The derivative field of order `i ≤ k` of a jet; this is the map `field` in the definition of
-`CkHolderSpaceOn`. -/
-private def fieldL (i : Fin (k + 1)) : Jet k α U F →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F)) :=
-  Fin.lastCases (motive := fun i : Fin (k + 1) ↦ Jet k α U F →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F)))
-    (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)) i
-
-private theorem fieldL_castSucc (j : Fin k) (J : Jet k α U F) :
-    fieldL j.castSucc J = J.ofLp.1 j :=
-  congrArg (· J) (Fin.lastCases_castSucc (motive := fun i : Fin (k + 1) ↦
-    Jet k α U F →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F))) j)
-
-private theorem fieldL_last (J : Jet k α U F) :
-    fieldL (Fin.last k) J = J.ofLp.2.toBoundedContinuousFunction :=
-  (congrArg (· J) (Fin.lastCases_last (motive := fun i : Fin (k + 1) ↦
-    Jet k α U F →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F)))
-    (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
-
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-private def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
-
-private theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
-
-omit [NormedSpace ℝ E] in
-/-- The extension by zero of a function on `U` takes its values on `U`. -/
-private theorem extend_val_apply {G : Type*} [Zero G] (g : U → G) (x : U) :
-    Function.extend Subtype.val g 0 (x : E) = g x :=
-  Subtype.val_injective.extend_apply g 0 x
 
 /-- The derivative identities of a jet: each field below order `k`, extended by zero, has the
 next field, curried on the left, as its Fréchet derivative at every point of `U`. -/
-private def IsJetGraph (J : Jet k α U F) : Prop :=
+private def IsJetGraph (J : CkHolderJet k α U E F) : Prop :=
   ∀ (j : Fin k) (x : U),
     HasFDerivAt (Function.extend Subtype.val (fieldL j.castSucc J : U → E [×j]→L[ℝ] F) 0)
       (curryLeftL E F j (fieldL j.succ J x)) x
 
 /-- Elements are the jets satisfying the derivative identities. This is the identity map: the
-carrier of `CkHolderSpaceOn` states the identities through its local `field`, which is `fieldL`,
-and through `continuousMultilinearCurryLeftEquiv`, whose underlying continuous linear map is
-`curryLeftL`. -/
-private def equivSubtype : CkHolderSpaceOn k α U F ≃ {J : Jet k α U F // IsJetGraph J} :=
+carrier of `CkHolderSpaceOn` states the identities through its local `field`, which is
+`CkHolderJet.fieldL`, and through `continuousMultilinearCurryLeftEquiv`, whose underlying
+continuous linear map is `CkHolderJet.curryLeftL`. -/
+private def equivSubtype : CkHolderSpaceOn k α U F ≃ {J : CkHolderJet k α U E F // IsJetGraph J} :=
   Equiv.refl _
 
 /-- The underlying jet of an element. -/
-private def toJet (f : CkHolderSpaceOn k α U F) : Jet k α U F := (equivSubtype f).1
+private def toJet (f : CkHolderSpaceOn k α U F) : CkHolderJet k α U E F := (equivSubtype f).1
 
 /-- An element from a jet satisfying the derivative identities. -/
-private def mk (J : Jet k α U F) (hJ : IsJetGraph J) : CkHolderSpaceOn k α U F :=
+private def mk (J : CkHolderJet k α U E F) (hJ : IsJetGraph J) : CkHolderSpaceOn k α U F :=
   equivSubtype.symm ⟨J, hJ⟩
 
 private theorem toJet_injective :
     Function.Injective (toJet (k := k) (α := α) (U := U) (F := F)) :=
   fun _ _ h ↦ equivSubtype.injective (Subtype.ext h)
 
-private theorem toJet_mk (J : Jet k α U F) (hJ) : toJet (mk J hJ) = J := by
+private theorem toJet_mk (J : CkHolderJet k α U E F) (hJ) : toJet (mk J hJ) = J := by
   rw [toJet, mk, Equiv.apply_symm_apply]
 
 private theorem hasFDerivAt_fieldL (f : CkHolderSpaceOn k α U F) (j : Fin k) (x : U) :
@@ -223,7 +184,7 @@ private theorem norm_toJet (f : CkHolderSpaceOn k α U F) : ‖toJet f‖ = ‖f
 
 /-- The underlying jet, as a continuous linear map: the inclusion of the submodule
 `CkHolderSpaceOn` into the jet space. -/
-private def toJetL : CkHolderSpaceOn k α U F →L[ℝ] Jet k α U F := by
+private def toJetL : CkHolderSpaceOn k α U F →L[ℝ] CkHolderJet k α U E F := by
   unfold CkHolderSpaceOn
   exact Submodule.subtypeL _
 
@@ -261,15 +222,15 @@ function. -/
 private theorem hasFTaylorSeriesUpToOn (f : CkHolderSpaceOn k α U F) :
     HasFTaylorSeriesUpToOn k f.toFun (series f) U where
   zero_eq x hx := by
-    rw [series_of_lt f x k.succ_pos, toFun, extend_val_apply _ ⟨x, hx⟩,
-      extend_val_apply _ ⟨x, hx⟩]
+    rw [series_of_lt f x k.succ_pos, toFun, Function.extend_val_apply (SetLike.mem_coe.1 hx),
+      Function.extend_val_apply (SetLike.mem_coe.1 hx)]
     rfl
   fderivWithin m hm x hx := by
     have hmk : m < k := by exact_mod_cast hm
     have hfun : (fun y ↦ series f y m) = Function.extend Subtype.val
         (fieldL (⟨m, hmk⟩ : Fin k).castSucc (toJet f) : U → E [×m]→L[ℝ] F) 0 :=
       funext fun y ↦ series_of_lt f y (by omega)
-    rw [hfun, series_of_lt f x (by omega), extend_val_apply _ ⟨x, hx⟩,
+    rw [hfun, series_of_lt f x (by omega), Function.extend_val_apply (SetLike.mem_coe.1 hx),
       ← curryLeftL_apply]
     exact (hasFDerivAt_fieldL f ⟨m, hmk⟩ ⟨x, hx⟩).hasFDerivWithinAt
   cont m hm := by
@@ -281,7 +242,7 @@ private theorem hasFTaylorSeriesUpToOn (f : CkHolderSpaceOn k α U F) :
       funext fun y ↦ series_of_lt f y hmk
     have hrestrict : (U : Set E).domRestrict (Function.extend Subtype.val
         (f.iteratedFDeriv ⟨m, hmk⟩ : U → E [×m]→L[ℝ] F) 0) = f.iteratedFDeriv ⟨m, hmk⟩ :=
-      funext fun y ↦ extend_val_apply _ y
+      funext fun y ↦ Function.extend_val_apply y.2
     rw [hfun, continuousOn_iff_continuous_domRestrict, hrestrict]
     exact (f.iteratedFDeriv ⟨m, hmk⟩).continuous
 
@@ -290,7 +251,7 @@ private theorem iteratedFDeriv_toFun (f : CkHolderSpaceOn k α U F) (i : Fin (k 
   rw [← iteratedFDerivWithin_of_isOpen i U.isOpen x.2,
     ← (hasFTaylorSeriesUpToOn f).eq_iteratedFDerivWithin_of_uniqueDiffOn
       (by exact_mod_cast i.is_le) U.isOpen.uniqueDiffOn x.2,
-    series_of_lt f x i.2, extend_val_apply]
+    series_of_lt f x i.2, Function.extend_val_apply x.2]
 
 private theorem toFun_apply_of_notMem (f : CkHolderSpaceOn k α U F) {x : E} (hx : x ∉ U) :
     f.toFun x = 0 :=
@@ -481,7 +442,7 @@ theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpaceOn k α U F) :
 /-- On `U`, the underlying function is the order-zero derivative field. -/
 private theorem apply_eq_iteratedFDeriv_zero (f : CkHolderSpaceOn k α U F) {x : E} (hx : x ∈ U) :
     f x = (f.iteratedFDeriv 0 ⟨x, hx⟩).curry0 :=
-  extend_val_apply (fun y : U ↦ (f.iteratedFDeriv 0 y).curry0) ⟨x, hx⟩
+  Function.extend_val_apply (g := fun y : U ↦ (f.iteratedFDeriv 0 y).curry0) hx
 
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpaceOn k α U F) = 0 := by
@@ -533,7 +494,7 @@ private theorem bcfOf_apply {G : Type*} [NormedAddCommGroup G] (g : E → G)
 through order `k` on `U` and `α`-Hölder `k`-th derivative on `U`. -/
 private def jetOf (f : E → F) (hf : ContDiffOn ℝ k f U)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x ∈ U, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
-    (hholder : ∃ C, HolderOnWith C α (_root_.iteratedFDeriv ℝ k f) U) : Jet k α U F :=
+    (hholder : ∃ C, HolderOnWith C α (_root_.iteratedFDeriv ℝ k f) U) : CkHolderJet k α U E F :=
   WithLp.toLp 1
     (WithLp.toLp 1 fun j : Fin k ↦ bcfOf (_root_.iteratedFDeriv ℝ j f)
         ((hf.continuousOn_iteratedFDerivWithin (by exact_mod_cast j.2.le)
@@ -570,7 +531,8 @@ private theorem isJetGraph_jetOf (f : E → F) (hf : ContDiffOn ℝ k f U)
   rw [fderiv_iteratedFDeriv, Function.comp_apply] at h
   rw [fieldL_jetOf]
   exact h.congr_of_eventuallyEq (eventuallyEq_of_mem (U.isOpen.mem_nhds x.2) fun y hy ↦
-    (extend_val_apply _ ⟨y, hy⟩).trans (fieldL_jetOf f hf hbdd hholder _ ⟨y, hy⟩))
+    (Function.extend_val_apply (SetLike.mem_coe.1 hy)).trans
+      (fieldL_jetOf f hf hbdd hholder _ ⟨y, hy⟩))
 
 /-- Build a `C^{k,α}` map on `U` from a function that is `C^k` on `U`, whose iterated derivatives
 through order `k` are bounded on `U`, and whose `k`-th iterated derivative is `α`-Hölder on `U`.
@@ -596,23 +558,23 @@ theorem coe_ofContDiffOn (f : E → F) (hf : ContDiffOn ℝ k f U)
   · rw [indicator_of_notMem hx, toFun_apply_of_notMem _ hx]
 
 /-- The derivative identities are closed under uniform convergence of the fields on `U`. -/
-private theorem isClosed_isJetGraph : IsClosed {J : Jet k α U F | IsJetGraph J} := by
+private theorem isClosed_isJetGraph : IsClosed {J : CkHolderJet k α U E F | IsJetGraph J} := by
   rw [← isSeqClosed_iff_isClosed]
   intro J j hJ hjlim m x
   have hconv (i : Fin (k + 1)) : TendstoUniformlyOn
       (fun n ↦ Function.extend Subtype.val (fieldL i (J n) : U → E [×i]→L[ℝ] F) 0)
       (Function.extend Subtype.val (fieldL i j : U → E [×i]→L[ℝ] F) 0) atTop U := by
     have h := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
-      (((fieldL (k := k) (α := α) (U := U) (F := F) i).continuous.tendsto j).comp hjlim)
+      (((fieldL (k := k) (α := α) (X := U) (E := E) (F := F) i).continuous.tendsto j).comp hjlim)
     rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
-    simp only [Function.comp_def, extend_val_apply]
+    simp only [Function.comp_def, Function.extend_val_apply, SetLike.coe_mem]
     exact h
   have hderiv (n : ℕ) (y : E) (hy : y ∈ U) : HasFDerivAt
       (Function.extend Subtype.val (fieldL m.castSucc (J n) : U → E [×m]→L[ℝ] F) 0)
       (curryLeftL E F m
         (Function.extend Subtype.val (fieldL m.succ (J n) : U → E [×m + 1]→L[ℝ] F) 0 y)) y := by
     have h : IsJetGraph (J n) := hJ n
-    rw [extend_val_apply _ ⟨y, hy⟩]
+    rw [Function.extend_val_apply (SetLike.mem_coe.1 hy)]
     exact h m ⟨y, hy⟩
   have h := hasFDerivAt_of_tendstoUniformlyOn (l := atTop) U.isOpen
     (g := Function.extend Subtype.val (fieldL m.castSucc j : U → E [×m]→L[ℝ] F) 0)
@@ -620,7 +582,7 @@ private theorem isClosed_isJetGraph : IsClosed {J : Jet k α U F | IsJetGraph J}
       (Function.extend Subtype.val (fieldL m.succ j : U → E [×m + 1]→L[ℝ] F) 0 y))
     ((curryLeftL E F m).uniformContinuous.comp_tendstoUniformlyOn (hconv m.succ)) hderiv
     (fun y hy ↦ (hconv m.castSucc).tendsto_at hy) x.2
-  rwa [extend_val_apply] at h
+  rwa [Function.extend_val_apply x.2] at h
 
 /-- `C^{k,α}` maps on an open set into a Banach space form a Banach space. -/
 instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceOn k α U F) := by
