@@ -43,7 +43,10 @@ for the `{α + β, 2α + β}` scheme relation see `RootSubgroup/Scheme/MultiplyL
 
 public section
 
+open TauCeti.AdditiveGroup (gaPointsMulEquiv)
+open Multiplicative (ofAdd toAdd)
 open TensorProduct WithConv
+open _root_.UniversalEnvelopingAlgebra (ι)
 open scoped commutatorElement
 
 namespace TauCeti.UniversalEnvelopingAlgebra
@@ -94,10 +97,7 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq
   rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv p), hp,
     ← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv q), hq]
   exact commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hij hiij hil hjk
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM i)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM j)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hi hj hk hl _ _
+    _ _ _ _ hi hj hk hl _ _
 
 /-- The multiply-laced Chevalley commutator relation with the two output points written out at
 parameters `c t u` and `d t² u`. -/
@@ -129,9 +129,6 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
-open AdditiveGroup (gaPointsMulEquiv) in
-open Multiplicative (ofAdd toAdd) in
-open _root_.UniversalEnvelopingAlgebra (ι) in
 /-- **Steinberg's reversed multiply-laced Chevalley commutator relation for Kostant root-subgroup
 actions.** For `e i, e j, e k, e l` corresponding to `α, β, α + β, α + 2β` with
 `⁅e i, e j⁆ = c • e k`, `⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l`, and `⁅e j, e l⁆ = ⁅e i, e k⁆ = 0`, if
@@ -153,14 +150,8 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq {i j k l :
   simp only [map_commutatorElement, map_mul, generalLinearEquiv_kostantRootSubgroupPoints]
   rw [← ofAdd_toAdd (gaPointsMulEquiv p), hp, ← ofAdd_toAdd (gaPointsMulEquiv q), hq]
   exact commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq ρ M hij hjji hjl hik
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM i)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM j)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
-    (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hi hj hk hl _ _
+    _ _ _ _ hi hj hk hl _ _
 
-open AdditiveGroup (gaPointsMulEquiv) in
-open Multiplicative (ofAdd toAdd) in
-open _root_.UniversalEnvelopingAlgebra (ι) in
 /-- The reversed multiply-laced Chevalley commutator relation with both output points written out
 at parameters `c t u` and `-d t u²`. -/
 theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq' {i j k l : I} {c d : ℤ}
@@ -244,9 +235,6 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq'
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
 
-open AdditiveGroup (gaPointsMulEquiv) in
-open Multiplicative (ofAdd toAdd) in
-open _root_.UniversalEnvelopingAlgebra (ι) in
 /-- **Steinberg's reversed multiply-laced Chevalley commutator relation in an integral basis.** For
 `e i, e j, e k, e l` corresponding to `α, β, α + β, α + 2β` with `⁅e i, e j⁆ = c • e k`,
 `⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l`, and `⁅e j, e l⁆ = ⁅e i, e k⁆ = 0`, if `p` and `q` have
@@ -270,9 +258,6 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq {i j k l :
       (commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq e h ρ M hM
         hij hjji hjl hik hi hj hk hl f g p q hp hq)
 
-open AdditiveGroup (gaPointsMulEquiv) in
-open Multiplicative (ofAdd toAdd) in
-open _root_.UniversalEnvelopingAlgebra (ι) in
 /-- The reversed multiply-laced matrix commutator relation with both output points written out. -/
 theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq' {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)

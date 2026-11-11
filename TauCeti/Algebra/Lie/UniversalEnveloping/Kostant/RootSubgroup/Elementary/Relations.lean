@@ -47,9 +47,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 universe u v w
 
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L] {I : Type*} {κ : Type*}
-variable {V : Type v} [AddCommGroup V] [Module ℚ V] (e : I → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
+  {V : Type v} [AddCommGroup V] [Module ℚ V] (e : I → L) (h : κ → L)
+  (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
+  (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
 
 attribute [local instance high] Algebra.toModule
 

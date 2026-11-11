@@ -77,8 +77,7 @@ theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
     (fun i => matrixIntCastLieHom ℚ (E i)) Empty.elim (representation ℚ (Matrix n n ℚ) (n → ℚ))
     (wt := fun _ => Empty.elim) 3 (fun i => pow_three_representation_matrix_eq_zero (hcube i))
     (fun i m hm w hw => ?_) (fun a => (isCartanWeightVector_iff Empty.elim _).mpr Empty.rec) hu hv
-  have hm' : m = 0 ∨ m = 1 ∨ m = 2 := by omega
-  rcases hm' with rfl | rfl | rfl
+  obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
   · simpa using hw
   · rw [Associative.dividedPower_one, representation_ι_apply, Matrix.lie_apply]
     exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (E i) hw
