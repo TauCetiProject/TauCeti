@@ -142,14 +142,7 @@ theorem augmentation_le_degreeFiltration_one (hpos : ∀ n, d n ≤ 0 → ℒ n 
 theorem augmentation_pow_le_degreeFiltration (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) (k : ℕ) :
     (TauCeti.HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L)).toIdeal ^ k ≤
       (degreeFiltration ℒ d (fun n hn => hpos n hn.le)).ideal k := by
-  have hneg : ∀ n, d n < 0 → ℒ n = ⊥ := fun n hn => hpos n hn.le
-  induction k with
-  | zero => simp only [Submodule.pow_zero, Ideal.one_eq_top, TauCeti.AlgFiltration.ideal_zero,
-      le_refl]
-  | succ k ih =>
-    rw [Ideal.IsTwoSided.pow_succ, Ideal.mul_le]
-    intro x hx y hy
-    simpa only [Nat.add_comm 1 k] using (degreeFiltration ℒ d hneg).mul_mem
-      (augmentation_le_degreeFiltration_one ℒ d hpos hx) (ih hy)
+  exact (Ideal.pow_right_mono (augmentation_le_degreeFiltration_one ℒ d hpos) k).trans
+    ((degreeFiltration ℒ d (fun n hn => hpos n hn.le)).ideal_one_pow_le k)
 
 end TauCeti.UniversalEnvelopingAlgebra
