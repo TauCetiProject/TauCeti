@@ -308,7 +308,7 @@ theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
   have hP (e : ℝ × ℝ) := ω.tendsto_perturbedMFDeriv (u := fun _ ↦ u) tendsto_id hD
     (hXs.continuousAt hUM) (hXt.continuousAt hUM) e
   simp only [id_eq] at hP
-  refine (ω.isSmoothForm.tendsto_apply (hu.contMDiffAt hzU).continuousAt
+  refine ((ω.isSmoothForm.of_le (by simp)).tendsto_apply (hu.contMDiffAt hzU).continuousAt
     (Fin.forall_fin_two.2 ⟨?_, ?_⟩)).mono_left nhdsWithin_le_nhds
   -- The limit in `hP` is the perturbed derivative of `u` at `z`, unfolded by
   -- `perturbedMFDeriv_apply`; `convert` matches the two up to the tangent-space instances that the
