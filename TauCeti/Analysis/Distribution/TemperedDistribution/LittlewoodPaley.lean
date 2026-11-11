@@ -58,6 +58,11 @@ blocks `Δⱼ u`.
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
   `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
+* `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock_succ`: for `j ≥ 1` the Fourier
+  transform of `Δⱼ u` vanishes outside the `j`-th dyadic annulus.
+* `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
+  `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
+  derivatives.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
   between the blocks of two bump functions.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
@@ -85,7 +90,7 @@ public section
 
 open Filter Topology
 open FourierTransform
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -169,6 +174,36 @@ theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
   refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
   rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
     (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
+
+open Distribution in
+/-- **The spectrum of a dyadic block.** For `j ≥ 1` the Fourier transform of `Δⱼ u` vanishes
+outside the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`, which carries the piece `ψⱼ`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock_succ (j : ℕ) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ (j + 1) u) : 𝓢'(E, F))
+      (Metric.ball 0 (2 ^ j * φ.rIn) ∪ (Metric.closedBall 0 (2 ^ (j + 1) * φ.rOut))ᶜ) := by
+  rw [littlewoodPaleyBlock_apply]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
+  rcases hξ with hξ | hξ
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
+      (mem_ball_zero_iff.1 hξ).le, Complex.ofReal_zero]
+  · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
+      (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
+
+/-- The Littlewood–Paley blocks commute with directional derivatives. -/
+theorem littlewoodPaleyBlock_lineDerivOp (j : ℕ) (m : E) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂_{m} u) = ∂_{m} (littlewoodPaleyBlock F φ j u) := by
+  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, lineDerivOp_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- The Littlewood–Paley blocks commute with iterated directional derivatives. -/
+theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k → E)
+    (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂^{m} u) = ∂^{m} (littlewoodPaleyBlock F φ j u) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
+      littlewoodPaleyBlock_lineDerivOp, ih]
 
 /-- The composition of the Littlewood–Paley blocks of two bump functions is the Fourier
 multiplier by the product of the two pieces. -/
