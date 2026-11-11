@@ -29,8 +29,12 @@ is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) 
 functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
-`|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
-growth, in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
+`|j - k| ≥ L`. The same holds between the blocks `Δⱼ` and `Δ'ₖ` built from two bump functions
+`φ` and `φ'`, and so, applying `Δ'ⱼ` to the reconstruction of `u`, each block of `φ'` is a sum of
+boundedly many blocks of `φ` composed with it: `Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u`. This
+is how a dyadic description of a function space is shown not to depend on the bump function.
+Being Fourier multipliers, the blocks commute with every Fourier multiplier of temperate growth,
+in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
 
 The blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`: there is `C`, depending only
 on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `f ∈ Lᵖ`. The kernel `𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz
@@ -51,9 +55,12 @@ blocks `Δⱼ u`.
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`), and it is
   the finite sum of its blocks when only finitely many are nonzero
   (`sum_littlewoodPaleyBlock_eq_self`).
-* `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, and
+* `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
+  between the blocks of two bump functions, and
   `TemperedDistribution.exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock`, its form for the
   low-pass truncations.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
+  is a sum of boundedly many blocks of another, composed with it.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
@@ -150,35 +157,58 @@ theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
   tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) <| by
     simpa only [h] using tendsto_sum_littlewoodPaleyBlock φ v
 
-/-- The composition of two Littlewood–Paley blocks is the Fourier multiplier by the product of
-the two pieces. -/
-theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (j k : ℕ) :
-    littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k =
+/-- The composition of the Littlewood–Paley blocks of two bump functions is the Fourier
+multiplier by the product of the two pieces. -/
+theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (φ' : ContDiffBump (0 : E)) (j k : ℕ) :
+    littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ' k =
       fourierMultiplierCLM F fun ξ ↦
-        ((φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
+        ((φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
   rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM, littlewoodPaleyBlock_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_compL_fourierMultiplierCLM
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
+      (φ'.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
   congr 1
   funext ξ
   simp [mul_comm]
 
-/-- **Almost orthogonality of the Littlewood–Paley blocks.** There is `L`, depending only on `φ`,
-such that `Δⱼ Δₖ = Δₖ Δⱼ = 0` whenever `j + L ≤ k`. -/
-theorem exists_littlewoodPaleyBlock_compL_eq_zero :
+/-- **Almost orthogonality of the Littlewood–Paley blocks.** For two bump functions `φ` and `φ'`,
+there is `L` such that `Δⱼ Δ'ₖ = Δ'ₖ Δⱼ = 0` whenever `j + L ≤ k`, where `Δ` and `Δ'` are the
+blocks built from `φ` and `φ'`. For `φ' = φ` this is the almost orthogonality of the blocks of a
+single partition. -/
+theorem exists_littlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k →
-      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 ∧
-        littlewoodPaleyBlock F φ k ∘L littlewoodPaleyBlock F φ j = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
-  have hzero {j k : ℕ} (hjk : j + L ≤ k) :
-      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k = 0 := by
-    simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
+      littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ' k = 0 ∧
+        littlewoodPaleyBlock F φ' k ∘L littlewoodPaleyBlock F φ j = 0 := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ'
+  refine ⟨L, fun j k hjk ↦ ⟨?_, ?_⟩⟩
+  · simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
-  refine ⟨L, fun j k hjk ↦ ⟨hzero hjk, ?_⟩⟩
-  rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock]
-  simp_rw [mul_comm (φ.inhomogeneousLittlewoodPaley k _),
-    ← littlewoodPaleyBlock_compL_littlewoodPaleyBlock, hzero hjk]
+  · simp_rw [littlewoodPaleyBlock_compL_littlewoodPaleyBlock,
+      mul_comm _ (φ.inhomogeneousLittlewoodPaley j _), hL j k hjk, Complex.ofReal_zero,
+      fourierMultiplierCLM_const, zero_smul]
+
+/-- **Change of bump function.** The blocks `Δⱼ` and `Δ'ₖ` built from two bump functions `φ` and
+`φ'` interact only at nearby indices: there is `L`, depending only on `φ` and `φ'`, such that
+`Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u` for every `j` and every tempered distribution `u`. -/
+theorem exists_littlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ (j : ℕ) (u : 𝓢'(E, F)), littlewoodPaleyBlock F φ' j u =
+      ∑ k ∈ Finset.Ico (j - L) (j + L),
+        littlewoodPaleyBlock F φ' j (littlewoodPaleyBlock F φ k u) := by
+  obtain ⟨L₁, hL₁⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ'
+  obtain ⟨L₂, hL₂⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ' φ
+  refine ⟨max L₁ L₂, fun j u ↦ ?_⟩
+  -- Apply `Δ'ⱼ` to the reconstruction `u = ∑ₖ Δₖ u`: the partial sums are eventually constant.
+  have h := ((map_continuous (littlewoodPaleyBlock F φ' j)).tendsto u).comp
+    (tendsto_sum_littlewoodPaleyBlock φ u)
+  refine tendsto_nhds_unique h (tendsto_const_nhds.congr' ?_)
+  filter_upwards [eventually_ge_atTop (j + max L₁ L₂)] with N hN
+  simp only [Function.comp_apply, map_sum]
+  refine Finset.sum_subset (fun k hk ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hk).2.trans_le hN))
+    fun k _ hk ↦ ?_
+  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+  rcases hk with hk | hk
+  · exact congr($((hL₁ k j (by omega)).2) u)
+  · exact congr($((hL₂ j k (by omega)).1) u)
 
 /-- **A distribution with finitely many blocks is their sum.** If `Δⱼ u = 0` for every `j > N`,
 then `u = ∑_{j ≤ N} Δⱼ u`. -/
@@ -203,7 +233,7 @@ theorem exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock :
       (N + L ≤ k → ∀ u : 𝓢'(E, F),
         littlewoodPaleyBlock F φ k (∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j u) =
           0) := by
-  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ
   refine ⟨L, fun k N ↦ ⟨fun hkN u ↦ ?_, fun hNk u ↦ ?_⟩⟩
   · exact sum_littlewoodPaleyBlock_eq_self φ fun j hj ↦ by
       simpa using DFunLike.congr_fun (hL k j (by omega)).2 u
