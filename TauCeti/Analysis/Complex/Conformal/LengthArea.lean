@@ -319,7 +319,7 @@ theorem edist_comp_le_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ 
       ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp t hγt
     rw [h.deriv, smul_eq_mul, eNorm_mul]
   calc edist (f (γ a)) (f (γ b))
-      = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, edist_eq_enorm_sub]
+      = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, eDist_eq_eNorm_sub]
     _ ≤ ∫⁻ t in Icc a b, ‖deriv (fun t => f (γ t)) t‖ₑ :=
         eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
     _ = ∫⁻ t in Ioo a b, ‖deriv (fun t => f (γ t)) t‖ₑ := by rw [restrict_Ioo_eq_restrict_Icc]

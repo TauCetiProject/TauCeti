@@ -598,7 +598,7 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
       (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
   set n := Module.finrank ℝ E
   have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-    simpa only [edist_eq_enorm_sub] using edist_triangle u v w
+    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
   have hstep : ∀ ρ : ℝ, 0 < ρ →
       ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤ 2 ^ n * bmoSeminorm b μ :=
     fun ρ hρ => by
@@ -620,7 +620,7 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
       calc ‖(⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ
           ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
               ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
-            rw [enorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
+            rw [eNorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
             exact htri _ _ _
         _ ≤ 2 ^ n * bmoSeminorm b μ + j * 2 ^ n * bmoSeminorm b μ := by
             gcongr

@@ -427,8 +427,8 @@ private theorem setLAverage_enorm_smul_sub_sub_setAverage_le {F : Type*} [Normed
       abel
     rw [heq]
     calc ‖(b y - a) • T f y - T h₁ y - (T h₂ y - A₀)‖ₑ
-        ≤ ‖(b y - a) • T f y - T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := enorm_sub_le
-      _ ≤ ‖(b y - a) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := by gcongr; exact enorm_sub_le
+        ≤ ‖(b y - a) • T f y - T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := eNorm_sub_le
+      _ ≤ ‖(b y - a) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := by gcongr; exact eNorm_sub_le
       _ ≤ _ := by rw [eNorm_smul]; gcongr
   -- The three parts.
   have hI : ∫⁻ y in B, ‖b y - a‖ₑ * ‖T f y‖ₑ ≤

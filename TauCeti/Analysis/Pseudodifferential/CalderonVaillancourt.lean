@@ -181,7 +181,7 @@ private theorem ae_lintegral_enorm_le_of_cell {n : ℕ} {Y Z : Type*} [NormedAdd
       (fun _ ↦ (closedBall (latticePoint k) √n).indicator (fun _ ↦ (c : ℝ≥0∞)) y) x := by
     intro x y
     by_cases hK : K x y = 0
-    · rw [hK, eNorm_eq_nnNorm, nnnorm_zero, ENNReal.coe_zero]
+    · rw [hK, eNorm_eq_nnNorm, nnNorm_zero, ENNReal.coe_zero]
       exact zero_le
     obtain ⟨hx, hy⟩ := hsupp x y hK
     simpa [hx, hy, eNorm_le_coe, ← NNReal.coe_le_coe] using hc x y
