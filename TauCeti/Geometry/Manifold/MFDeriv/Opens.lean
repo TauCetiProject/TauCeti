@@ -18,6 +18,10 @@ source, or following a map into an open target by the inclusion, does not change
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
 assumption.
+
+A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
+every open subset of the chart's source where `g` is differentiable at the chart image
+(`TauCeti.Manifold.mdifferentiable_restrict_comp_chart`).
 -/
 
 public section
@@ -104,5 +108,15 @@ theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U}
   simp only [ContinuousLinearMap.ext_iff, zero_apply, mfderiv_comp_subtype_val_apply]
   -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
   exact Iff.rfl
+
+/-- A map read in the coordinate of a chart `e` of the maximal atlas, `x ↦ g (e x)`, is
+differentiable on every open subset `W` of the chart's source on which `g` is differentiable at the
+chart image of each point. -/
+theorem mdifferentiable_restrict_comp_chart {e : OpenPartialHomeomorph N H'}
+    (he : e ∈ IsManifold.maximalAtlas J 1 N) {W : Opens N} (hW : (W : Set N) ⊆ e.source)
+    {g : H' → M} (hg : ∀ x ∈ W, MDifferentiableAt J I g (e x)) :
+    MDifferentiable J I fun x : W ↦ g (e x) := fun x ↦
+  mdifferentiableAt_comp_subtype_val_iff.2
+    ((hg x x.2).comp (x : N) (mdifferentiableAt_of_mem_maximalAtlas he (hW x.2)))
 
 end TauCeti.Manifold

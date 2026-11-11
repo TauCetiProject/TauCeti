@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Prod
@@ -16,8 +15,8 @@ public import Mathlib.LinearAlgebra.Prod
 Mathlib builds the product `e₁.prodCongr e₂` of two linear equivalences, acting on `M₁ × M₂`
 componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, records the
 determinants of such a product and of a block triangular `skewProd` automorphism, and records
-that scalar multiplication on a product of complex modules is the product map of the two scalar
-multiplications.
+that scalar multiplication on a product of modules, read as a linear map over the base of a
+scalar tower, is the product map of the two scalar multiplications.
 
 The characterization needs only containment: an automorphism `g` of `M₁ × M₂` that maps
 `M₁ × 0` into `M₁ × 0` and `0 × M₂` into `0 × M₂` already acts componentwise, and each component
@@ -65,7 +64,7 @@ quadratic forms with the subgroup preserving both summands.
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
-  complex modules is the product map of the two multiplications.
+  modules, read over the base of a scalar tower, is the product map of the two multiplications.
 -/
 
 public section
@@ -207,8 +206,9 @@ end LinearEquiv
 namespace LinearMap
 
 /-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
-theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
-    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid M₂] [Module R M₂] (f : M →ₗ[R] M₂) :
+    Module.finrank R (graph f) = Module.finrank R M := by
   rw [graph_eq_range_prod, finrank_range_of_inj]
   intro x y h
   exact congr(($h).1)
@@ -563,20 +563,18 @@ namespace TauCeti
 
 namespace LinearMap
 
-variable {E E' : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
-  [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
+variable {R S E E' : Type*} [Semiring R] [CommSemiring S] [SMul R S] [AddCommMonoid E]
+  [Module R E] [Module S E] [IsScalarTower R S E] [AddCommMonoid E'] [Module R E'] [Module S E']
+  [IsScalarTower R S E']
 
-/-- **Multiplication by a scalar on a product of complex modules is carried out blockwise.** Read
-as a real-linear map, multiplication by `c` on `E × E'` is the `LinearMap.prodMap` of the
+/-- **Multiplication by a scalar on a product of modules is carried out blockwise.** Read as an
+`R`-linear map, multiplication by `c : S` on `E × E'` is the `LinearMap.prodMap` of the
 multiplications by `c` on the two factors. -/
-theorem lsmul_restrictScalars_prodMap (c : ℂ) :
-    (LinearMap.lsmul ℂ (E × E') c).restrictScalars ℝ =
-      LinearMap.prodMap ((LinearMap.lsmul ℂ E c).restrictScalars ℝ)
-        ((LinearMap.lsmul ℂ E' c).restrictScalars ℝ) := by
-  apply LinearMap.ext (R := ℝ)
-  intro x
-  rcases x with ⟨x, y⟩
-  simp [LinearMap.lsmul_apply, LinearMap.prodMap_apply]
+theorem lsmul_restrictScalars_prodMap (c : S) :
+    (LinearMap.lsmul S (E × E') c).restrictScalars R =
+      LinearMap.prodMap ((LinearMap.lsmul S E c).restrictScalars R)
+        ((LinearMap.lsmul S E' c).restrictScalars R) := by
+  ext <;> simp
 
 end LinearMap
 

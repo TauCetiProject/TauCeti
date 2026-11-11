@@ -81,17 +81,12 @@ carrier's root datum, or any finiteness or simplicity statement.
   weight-torus matrix from
   `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Frobenius`.
 
-## Roadmap
+## Applications
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points", whose "the
-`q`-power Frobenius is the case a consumer asks for first", in Layer 9, "pinned
-Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`. Its
-consumer is milestone L1, "ordinary and graph Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose Steinberg map for the twisted family `²E₆(q)` is
-`γ₂ ∘ Frob_q` on the points of a carrier for the `E₆` diagram over an algebraic closure of
-`ZMod p`; the identification of this carrier with the pinned simply connected Chevalley--Demazure
-group that milestone requires remains pending.
+The Steinberg map of the twisted family `²E₆(q)` is `γ ∘ Frob_q`, the graph automorphism `γ` after
+the `q`-power Frobenius, on the points of a carrier for the `E₆` diagram over an algebraic closure
+of `ZMod p`. This file does not identify the carrier with the pinned simply connected
+Chevalley--Demazure group.
 -/
 
 public section
