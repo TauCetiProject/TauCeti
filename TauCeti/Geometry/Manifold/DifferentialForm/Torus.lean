@@ -153,7 +153,7 @@ theorem isLocalFrameOn_torusTimeForm :
       rw [SmoothForm.degreeOneEquiv_apply_apply, torusTimeForm_apply]
       -- The `i`-th vector of the dual basis is the `i`-th coordinate functional.
       exact ((fun w : ι → ℝ ↦ show b i w = w i by simp [b]) v).symm
-  refine isLocalFrameOn_degreeOneEquiv_univ_iff.2 fun x ↦ ?_
+  refine isLocalFrameOn_degreeOneEquiv_iff.2 fun x _ ↦ ?_
   simp only [hb]
   exact ⟨b.linearIndependent, b.span_eq.ge⟩
 

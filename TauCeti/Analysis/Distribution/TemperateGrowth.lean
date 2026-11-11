@@ -24,6 +24,8 @@ derivatives of `Df` are those of `f` shifted by one order. So does each directio
 `x ↦ Df(x) v`. These are the coefficients that appear when the Leibniz rule is applied to the
 product of a Schwartz function or a tempered distribution with `f`.
 
+A measure of temperate growth is finite on compact sets.
+
 ## Main results
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
@@ -32,8 +34,11 @@ product of a Schwartz function or a tempered distribution with `f`.
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
   temperate growth.
+* `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
+  growth is finite on compact sets.
 -/
 
 public section
@@ -96,4 +101,29 @@ theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
 
+/-- An even power `y ↦ ‖x - y‖ ^ (2N)` of the distance to a point has temperate growth. -/
+theorem hasTemperateGrowth_norm_sub_pow (x : H) (N : ℕ) :
+    (fun y : H ↦ ‖x - y‖ ^ (2 * N)).HasTemperateGrowth := by
+  have h : (fun y : H ↦ ‖x - y‖ ^ (2 * N)) = ((fun z : H ↦ ‖z‖ ^ 2) ∘ fun y ↦ x - y) ^ N := by
+    funext y
+    simp [pow_mul]
+  rw [h]
+  exact ((hasTemperateGrowth_norm_sq H).comp (by fun_prop)).pow N
+
 end Function
+
+open MeasureTheory
+
+/-- A measure of temperate growth is finite on compact sets: `(1 + ‖x‖) ^ (-n)` is integrable and
+bounded below by a positive constant on any bounded set. -/
+theorem MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
+    [h : μ.HasTemperateGrowth] : IsFiniteMeasureOnCompacts μ := by
+  obtain ⟨n, hn⟩ := h.exists_integrable
+  refine ⟨fun K hK => ?_⟩
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall (0 : E)
+  have hε : 0 < (1 + max R 0) ^ (-(n : ℝ)) := by positivity
+  refine lt_of_le_of_lt (measure_mono fun x hx => ?_) (hn.measure_norm_ge_lt_top hε)
+  have hx' : ‖x‖ ≤ max R 0 := by simpa using (hR hx).trans (le_max_left R 0)
+  rw [Set.mem_ofPred_eq, Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by simp)

@@ -18,6 +18,10 @@ source, or following a map into an open target by the inclusion, does not change
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
 assumption.
+
+A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
+every open subset of the chart's source where `g` is differentiable at the chart image
+(`TauCeti.Manifold.mdifferentiable_restrict_comp_chart`).
 -/
 
 public section
@@ -34,6 +38,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- A map is differentiable at a point of an open subset exactly when its restriction to that
+subset is. -/
+@[simp]
+theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
+    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+
+/-- A map into an open subset is differentiable at a point exactly when its composition with the
+inclusion is. -/
+@[simp]
+theorem mdifferentiableAt_subtype_val_comp_iff {U : Opens M} {f : N → U} {x : N} :
+    MDifferentiableAt J I ((Subtype.val : U → M) ∘ f) x ↔ MDifferentiableAt J I f x :=
+  ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x
 
 /-- Restricting a differentiable map to an open source preserves its tangent image. -/
 theorem range_mfderiv_comp_subtype_val {U : Opens N} {f : N → M} (x : U)
@@ -57,29 +75,29 @@ theorem range_mfderiv_subtype_val_comp {U : Opens M} {f : N → U} (x : N)
   -- Both projections of the continuous linear equivalence use its underlying linear map.
   rfl
 
-/-- Restricting a differentiable map to an open source does not change its differential. -/
+/-- Restricting a map to an open source does not change its differential. -/
 theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
-    (hf : MDifferentiableAt J I f (x : N)) (v : TangentSpace J x) :
+    (v : TangentSpace J x) :
     mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
-  rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
-    ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-    tangentSpaceOpenEquiv_apply]
+  by_cases hf : MDifferentiableAt J I f (x : N)
+  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      tangentSpaceOpenEquiv_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
+    rfl
 
-/-- Following a differentiable map into an open target by the inclusion does not change its
-differential. -/
+/-- Following a map into an open target by the inclusion does not change its differential. -/
 theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
-    (hf : MDifferentiableAt J I f x) (v : TangentSpace J x) :
+    (v : TangentSpace J x) :
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
-  rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
-    ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-  exact tangentSpaceOpenEquiv_apply _ _
-
-/-- A map is differentiable at a point of an open subset exactly when its restriction to that
-subset is. -/
-@[simp]
-theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
-    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
-  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+  by_cases hf : MDifferentiableAt J I f x
+  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
+    exact tangentSpaceOpenEquiv_apply _ _
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
+    rfl
 
 /-- The differential of a map vanishes at a point of an open subset exactly when the differential
 of its restriction to that subset does. No differentiability is assumed: where the map is not
@@ -87,13 +105,18 @@ differentiable, neither is its restriction, and both differentials are zero by c
 @[simp]
 theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U} :
     mfderiv J I (f ∘ (Subtype.val : U → N)) x = 0 ↔ mfderiv J I f (x : N) = 0 := by
-  by_cases hf : MDifferentiableAt J I f (x : N)
-  · simp only [ContinuousLinearMap.ext_iff, zero_apply,
-      mfderiv_comp_subtype_val_apply hf]
-    -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
-    exact Iff.rfl
-  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
-    simp
+  simp only [ContinuousLinearMap.ext_iff, zero_apply, mfderiv_comp_subtype_val_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
+  exact Iff.rfl
+
+/-- A map read in the coordinate of a chart `e` of the maximal atlas, `x ↦ g (e x)`, is
+differentiable on every open subset `W` of the chart's source on which `g` is differentiable at the
+chart image of each point. -/
+theorem mdifferentiable_restrict_comp_chart {e : OpenPartialHomeomorph N H'}
+    (he : e ∈ IsManifold.maximalAtlas J 1 N) {W : Opens N} (hW : (W : Set N) ⊆ e.source)
+    {g : H' → M} (hg : ∀ x ∈ W, MDifferentiableAt J I g (e x)) :
+    MDifferentiable J I fun x : W ↦ g (e x) := fun x ↦
+  mdifferentiableAt_comp_subtype_val_iff.2
+    ((hg x x.2).comp (x : N) (mdifferentiableAt_of_mem_maximalAtlas he (hW x.2)))
 
 end TauCeti.Manifold
