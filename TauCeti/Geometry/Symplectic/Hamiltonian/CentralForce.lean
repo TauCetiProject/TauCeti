@@ -440,9 +440,8 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
     have hz : ⟪z, ⟪z, u⟫_ℝ • w - ⟪z, w⟫_ℝ • u⟫_ℝ = 0 := by
       simp only [inner_sub_right, real_inner_smul_right]
       ring
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real, norm_add_sq_real,
-      real_inner_smul_right, real_inner_smul_right, hz, norm_smul, norm_smul]
-    simp
+    rw [neg_smul, ← sub_eq_add_neg,
+      norm_sub_eq_norm_add (𝕜 := ℝ) (by rw [real_inner_smul_left, real_inner_comm, hz, mul_zero])]
   simp only [centralForceHamiltonian, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd]
   rw [hrot x.1, hrot x.2]
 
