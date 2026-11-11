@@ -73,11 +73,8 @@ theorem spectralPVM_proj_preimage_singleton_eq_zero {μ : ℂ}
 measure assigns mass zero to `{μ}`. -/
 theorem spectralPVM_diag_preimage_singleton_eq_zero {μ : ℂ}
     (hμ : ∀ x : H, a x = μ • x → x = 0) (ξ : H) :
-    a.spectralPVM.diag ξ (Subtype.val ⁻¹' {μ}) = 0 := by
-  have h := a.spectralPVM.norm_sq_proj_apply _ (measurable_subtype_coe
-    (measurableSet_singleton μ)) ξ
-  rw [a.spectralPVM_proj_preimage_singleton_eq_zero hμ, zero_apply,
-    norm_zero, zero_pow two_ne_zero, eq_comm, ENNReal.toReal_eq_zero_iff] at h
-  exact h.resolve_right (measure_ne_top _ _)
+    a.spectralPVM.diag ξ (Subtype.val ⁻¹' {μ}) = 0 :=
+  (a.spectralPVM.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _).1
+    (a.spectralPVM_proj_preimage_singleton_eq_zero hμ) ξ
 
 end ContinuousLinearMap

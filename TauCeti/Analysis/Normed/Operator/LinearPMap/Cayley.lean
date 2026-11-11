@@ -25,7 +25,7 @@ intertwines two partial linear maps having `-i` as a resolvent point exactly whe
 their Cayley transforms.
 
 The isometry and unitarity of the Cayley transform of a symmetric or self-adjoint operator are in
-`TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley`.
+`TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic`.
 
 ## Main definitions
 

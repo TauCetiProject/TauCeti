@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.PointMass
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 
 /-!
 # The spectral measure of the Cayley transform at its singular point
