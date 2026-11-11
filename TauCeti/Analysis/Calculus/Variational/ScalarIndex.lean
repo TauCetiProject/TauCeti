@@ -126,6 +126,72 @@ theorem scalarMixedIndex_comm (B C : ℝ → ℝ) (c : ℝ) (f g : ℝ → ℝ) 
     scalarMixedIndex B C c f 0 = 0 := by
   simp [scalarMixedIndex]
 
+/-- The mixed density is additive in its first weight at differentiability points. -/
+theorem scalarMixedIndexDensity_add_left (B C f g h : ℝ → ℝ) (s : ℝ)
+    (hf : DifferentiableAt ℝ f s) (hg : DifferentiableAt ℝ g s) :
+    scalarMixedIndexDensity B C (f + g) h s =
+      scalarMixedIndexDensity B C f h s + scalarMixedIndexDensity B C g h s := by
+  simp only [scalarMixedIndexDensity_def, Pi.add_apply, deriv_add hf hg]
+  ring
+
+/-- The mixed density is additive in its second weight at differentiability points. -/
+theorem scalarMixedIndexDensity_add_right (B C f g h : ℝ → ℝ) (s : ℝ)
+    (hg : DifferentiableAt ℝ g s) (hh : DifferentiableAt ℝ h s) :
+    scalarMixedIndexDensity B C f (g + h) s =
+      scalarMixedIndexDensity B C f g s + scalarMixedIndexDensity B C f h s := by
+  rw [scalarMixedIndexDensity_comm B C f, scalarMixedIndexDensity_add_left B C g h f s hg hh,
+    scalarMixedIndexDensity_comm B C g, scalarMixedIndexDensity_comm B C h]
+
+/-- Scalar multiplication in the first weight factors out of the mixed density. -/
+theorem scalarMixedIndexDensity_smul_left (B C f g : ℝ → ℝ) (s a : ℝ) :
+    scalarMixedIndexDensity B C (a • f) g s = a * scalarMixedIndexDensity B C f g s := by
+  simp only [scalarMixedIndexDensity_def, Pi.smul_apply, smul_eq_mul, deriv_const_mul_field]
+  ring
+
+/-- Scalar multiplication in the second weight factors out of the mixed density. -/
+theorem scalarMixedIndexDensity_smul_right (B C f g : ℝ → ℝ) (s a : ℝ) :
+    scalarMixedIndexDensity B C f (a • g) s = a * scalarMixedIndexDensity B C f g s := by
+  rw [scalarMixedIndexDensity_comm B C f, scalarMixedIndexDensity_smul_left,
+    scalarMixedIndexDensity_comm B C g]
+
+/-- The mixed index is additive in its first weight when the summands are integrable. -/
+theorem scalarMixedIndex_add_left (B C f g h : ℝ → ℝ) (c : ℝ)
+    (hf : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ f s)
+    (hg : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ g s)
+    (hfi : IntervalIntegrable (scalarMixedIndexDensity B C f h) MeasureTheory.volume 0 c)
+    (hgi : IntervalIntegrable (scalarMixedIndexDensity B C g h) MeasureTheory.volume 0 c) :
+    scalarMixedIndex B C c (f + g) h =
+      scalarMixedIndex B C c f h + scalarMixedIndex B C c g h := by
+  simp only [scalarMixedIndex_def]
+  rw [intervalIntegral.integral_congr (fun s hs ↦
+    scalarMixedIndexDensity_add_left B C f g h s (hf s hs) (hg s hs)),
+    intervalIntegral.integral_add hfi hgi]
+
+/-- The mixed index is additive in its second weight when the summands are integrable. -/
+theorem scalarMixedIndex_add_right (B C f g h : ℝ → ℝ) (c : ℝ)
+    (hg : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ g s)
+    (hh : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ h s)
+    (hgi : IntervalIntegrable (scalarMixedIndexDensity B C f g) MeasureTheory.volume 0 c)
+    (hhi : IntervalIntegrable (scalarMixedIndexDensity B C f h) MeasureTheory.volume 0 c) :
+    scalarMixedIndex B C c f (g + h) =
+      scalarMixedIndex B C c f g + scalarMixedIndex B C c f h := by
+  rw [scalarMixedIndex_comm B C c f, scalarMixedIndex_add_left B C g h f c hg hh
+    (by simpa only [scalarMixedIndexDensity_comm B C g f] using hgi)
+    (by simpa only [scalarMixedIndexDensity_comm B C h f] using hhi),
+    scalarMixedIndex_comm B C c g, scalarMixedIndex_comm B C c h]
+
+/-- Scalar multiplication in the first weight factors out of the mixed index. -/
+theorem scalarMixedIndex_smul_left (B C f g : ℝ → ℝ) (c a : ℝ) :
+    scalarMixedIndex B C c (a • f) g = a * scalarMixedIndex B C c f g := by
+  simp only [scalarMixedIndex_def, scalarMixedIndexDensity_smul_left,
+    intervalIntegral.integral_const_mul]
+
+/-- Scalar multiplication in the second weight factors out of the mixed index. -/
+theorem scalarMixedIndex_smul_right (B C f g : ℝ → ℝ) (c a : ℝ) :
+    scalarMixedIndex B C c f (a • g) = a * scalarMixedIndex B C c f g := by
+  rw [scalarMixedIndex_comm B C c f, scalarMixedIndex_smul_left,
+    scalarMixedIndex_comm B C c g]
+
 /-- C¹ weights and continuous coefficients give a continuous scalar index density on an open
 interval. -/
 theorem continuousOn_scalarIndexDensity (B C f : ℝ → ℝ) (U : Set ℝ)
