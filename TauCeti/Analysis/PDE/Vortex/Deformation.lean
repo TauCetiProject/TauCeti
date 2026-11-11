@@ -101,6 +101,13 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
 
+/-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
+theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * ‖x z‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), sq_norm_sectionValue, mul_pow,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
+
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
 theorem sectionValue_eq_zero_iff (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -189,6 +196,25 @@ theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {
   rw [sectionValue_eq_ofRealCLM]
   exact (differentiableAt_const _).mul ((ofRealCLM.differentiableAt.comp z hp).add
     ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
+
+/-- The section of a field differentiable at a point is differentiable there. -/
+theorem differentiableAt_sectionValue_of_differentiableAt
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : DifferentiableAt ℝ x z) :
+    DifferentiableAt ℝ (sectionValue x) z :=
+  differentiableAt_sectionValue
+    ((EuclideanSpace.proj (𝕜 := ℝ) (2 : Fin 4)).differentiableAt.comp z hx :)
+    ((EuclideanSpace.proj (𝕜 := ℝ) (3 : Fin 4)).differentiableAt.comp z hx :)
+
+/-- The section of a field `C^n` at a point is `C^n` there. -/
+theorem contDiffAt_sectionValue_of_contDiffAt {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiffAt ℝ n x z) : ContDiffAt ℝ n (sectionValue x) z := by
+  have hi (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ ((x w i : ℝ) : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z
+      ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.contDiffAt.comp z hx :)
+  have h : sectionValue x = fun w ↦ 2 * (((x w 2 : ℝ) : ℂ) + ((x w 3 : ℝ) : ℂ) * I) :=
+    funext (sectionValue_apply x)
+  rw [h]
+  exact contDiffAt_const.mul ((hi 2).add ((hi 3).mul contDiffAt_const))
 
 /-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
 theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}

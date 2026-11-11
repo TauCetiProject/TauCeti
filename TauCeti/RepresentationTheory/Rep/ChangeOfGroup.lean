@@ -17,7 +17,7 @@ monoid. For a homomorphism `f : G →* H`, a linear map intertwining `ρ : Repre
 `M ⟶ Res(f)(N)`, and, when `f` is an isomorphism, also as a morphism `Res(f⁻¹)(M) ⟶ N` of
 `H`-representations. This file supplies those two adapters, the identity, composition and
 inversion lemmas for intertwining maps along a homomorphism of monoids, and the compatibility of
-such a map with the norm `∑ g, ρ g` of a finite group.
+such a map along an isomorphism of finite groups with the norms `∑ g, ρ g`.
 
 These are the general representation-theoretic inputs of a change-of-group map in group homology
 and cohomology: `groupHomology.chainsMap` consumes the first adapter and
@@ -59,9 +59,10 @@ and restriction along a monoid isomorphism is an equivalence of representation c
   homomorphism of monoids.
 * `Rep.isIntertwiningMap_trivial`: the identity intertwines trivial representations along any
   homomorphism of monoids.
-* `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
-  map is intertwining along the identity isomorphism of the monoid, and along `f` between a
-  restricted representation and the representation it restricts.
+* `Representation.isIntertwiningMap_id`: the identity map of a representation is intertwining
+  along the identity isomorphism of its monoid.
+* `Rep.isIntertwiningMap_res`: the identity map is intertwining along `f` between a restricted
+  representation and the representation it restricts.
 * `Rep.isIntertwiningMap_res_res` and `Rep.isIntertwiningMap_res_res_toRes_naturality`: the identity
   map is intertwining between the restrictions along two factorisations of one homomorphism,
   naturally in the representation.
@@ -111,6 +112,12 @@ theorem symm {e' : V ≃ₗ[R] W}
 
 end IsIntertwiningMap
 
+/-- The identity map of a representation is intertwining along the identity isomorphism of its
+monoid. -/
+theorem isIntertwiningMap_id (ρ : Representation R G V) :
+    ρ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) LinearMap.id :=
+  ⟨fun g v ↦ by simp⟩
+
 /-- The restriction of a trivial representation along a homomorphism of monoids is trivial. -/
 instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H) :
     Representation.IsTrivial (σ.comp f) :=
@@ -156,13 +163,7 @@ variable {R : Type u} {G : Type uG} {H : Type uH} [Semiring R] [Monoid G] [Monoi
 
 namespace Rep
 
-/-- The identity map of a representation is intertwining along the identity isomorphism of its
-monoid. -/
-theorem isIntertwiningMap_id (M : Rep.{uV} R G) :
-    M.ρ.IsIntertwiningMap (M.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
-      (LinearMap.id : M.V →ₗ[R] M.V) := ⟨fun g v ↦ by simp⟩
-
-/-- Restricting the coefficients along `f` and comparing back by the identity is an intertwining
+/-- The identity of `N`, read as a map from the restriction `Res(f)(N)` to `N`, is an intertwining
 map along `f`. -/
 theorem isIntertwiningMap_res (N : Rep.{uV} R H) (f : G →* H) :
     (Rep.res f N).ρ.IsIntertwiningMap (N.ρ.comp f)

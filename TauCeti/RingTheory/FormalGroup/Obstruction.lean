@@ -394,15 +394,22 @@ theorem exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle
 /-- **The obstruction in degree `pᵏ` is read off the `p`-series.** Let `p` be a prime with
 `p = 0` in `R`, let `F` and `G` be commutative formal group laws over `R`, and let `f` be a power
 series without constant term whose homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` vanishes below
-degree `n = pᵏ`, `k ≥ 1`. Then the degree-`n` part of the defect is `c C_n`, where `c` is the
+degree `n = pᵏ`. Then the degree-`n` part of the defect is `c C_n`, where `c` is the
 coefficient of `Xⁿ` in `[p]_G(f(X)) - f([p]_F(X))`. In particular the defect vanishes in degree
 `n` exactly when `f` commutes with multiplication by `p` up to degree `n`. -/
 theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
     (hf : PowerSeries.constantCoeff f = 0) {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0) {k : ℕ}
-    (hk : k ≠ 0) (h : ((p ^ k : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
+    (h : ((p ^ k : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
     homogeneousComponent (p ^ k) (F.homDefect G f) =
       ↑(PowerSeries.coeff (p ^ k) (PowerSeries.subst f (G.nsmulSeries p) -
           PowerSeries.subst (F.nsmulSeries p) f) • TauCeti.lazardCocycle (p ^ k) R) := by
+  by_cases hk : k = 0
+  · -- in degree `1` both sides vanish, since `C₁ = 0`
+    subst hk
+    rw [pow_zero] at h ⊢
+    obtain ⟨c, hc⟩ := exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle (F := F)
+      hf one_ne_zero h
+    rw [hc, TauCeti.lazardCocycle_eq_zero_of_lt_two one_lt_two, smul_zero, smul_zero]
   have hn : p ^ k ≠ 0 := pow_ne_zero k hp.ne_zero
   obtain ⟨hΨ, he⟩ := le_order_defectPoint_coord hf hn h
   obtain ⟨c, hc⟩ := exists_homogeneousComponent_defectPoint hf hn hΨ

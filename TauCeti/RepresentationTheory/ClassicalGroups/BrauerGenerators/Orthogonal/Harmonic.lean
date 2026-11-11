@@ -221,7 +221,8 @@ theorem harmonicTensors_inf_range_orthogonalCupCapAt [Invertible (n : k)] {i j :
     harmonicTensors k n d ⊓ LinearMap.range (orthogonalCupCapAt k n d i j) = ⊥ := by
   refine le_antisymm (fun x hx => ?_) bot_le
   obtain ⟨hharm, y, rfl⟩ := hx
-  have hself := LinearMap.congr_fun (orthogonalCupCapAt_mul_self (k := k) (n := n) (d := d) hij) y
+  have hself := LinearMap.congr_fun
+    (orthogonalCupCapAt_mul_self (k := k) (n := n) (d := d) (i := i) (j := j)) y
   rw [mul_apply_eq_comp, LinearMap.smul_apply] at hself
   have hzero : (n : k) • orthogonalCupCapAt k n d i j y = 0 := by
     rw [← hself]

@@ -26,6 +26,12 @@ imaginary part to points of positive imaginary part, by
 `ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid` applied through
 `borderedHolomorphicGroupoid_le_contDiffGroupoid`.
 
+The real derivative, within the closed upper half-plane, of a member is complex linear at every
+point of its source, real boundary points included: in the interior this is complex
+differentiability, and at a boundary point the derivative is a limit of interior derivatives,
+since the member is smooth up to the boundary. Consequently the tangent coordinate changes of a
+Riemann surface with boundary are complex linear.
+
 The translation `z ↦ z + 1` and the dilation `z ↦ 2z` are members. The reflection `z ↦ -conj z`
 preserves the closed upper half-plane and the real axis but is not a member, since it is
 antiholomorphic. The translation `z ↦ z + I` is not even the restriction of an open partial
@@ -49,6 +55,10 @@ the points of imaginary part less than one.
   `TauCeti.closedUnderRestriction_borderedHolomorphicGroupoid`: the groupoid contains the
   restrictions of the identity to open sets, so it is closed under restriction and open subsets
   of a Riemann surface with boundary are again Riemann surfaces with boundary.
+* `TauCeti.ClosedUpperHalfPlane.fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid`: the
+  derivative of a member is complex linear, also at boundary points.
+* `TauCeti.ClosedUpperHalfPlane.tangentCoordChange_smul`: the tangent coordinate changes of a
+  Riemann surface with boundary are complex linear.
 * `TauCeti.ClosedUpperHalfPlane.toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid`: a
   homeomorphism given by entire functions in both directions is a member.
 
@@ -199,6 +209,90 @@ instance closedUnderRestriction_borderedHolomorphicGroupoid :
   exact borderedHolomorphicGroupoid.mem_of_eqOnSource (ofSet_mem_borderedHolomorphicGroupoid hs) hes
 
 namespace ClosedUpperHalfPlane
+
+/-- Members of the bordered holomorphic groupoid send real points, and only those, to real
+points. -/
+theorem preservesRealAxis_of_mem_borderedHolomorphicGroupoid
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid) : PreservesRealAxis e :=
+  preservesRealAxis_of_mem_contDiffGroupoid (borderedHolomorphicGroupoid_le_contDiffGroupoid he)
+    (by simp)
+
+/-! ### Complex linearity of the derivatives -/
+
+/-- The real derivative, within the closed upper half-plane, of a member of the bordered
+holomorphic groupoid is complex linear at every point of its source, including the real boundary
+points. -/
+theorem fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid) {z : ℂ}
+    (hz : z ∈ closedUpperHalfPlaneModel.symm ⁻¹' e.source ∩ range closedUpperHalfPlaneModel)
+    (c v : ℂ) :
+    fderivWithin ℝ (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
+        (range closedUpperHalfPlaneModel) z (c • v) =
+      c • fderivWithin ℝ (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
+        (range closedUpperHalfPlaneModel) z v := by
+  set f := closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm
+  set U := closedUpperHalfPlaneModel.symm ⁻¹' e.source
+  set S := U ∩ range closedUpperHalfPlaneModel
+  have hU : IsOpen U := e.open_source.preimage closedUpperHalfPlaneModel.continuous_symm
+  obtain ⟨⟨hc, -⟩, hd, -⟩ := mem_borderedHolomorphicGroupoid_iff.1 he
+  have hcd : ContDiffOn ℝ ∞ f S := hc
+  have hS : UniqueDiffOn ℝ S := closedUpperHalfPlaneModel.uniqueDiffOn_preimage e.open_source
+  -- The maps commuting with multiplication by `c` form a closed set.
+  let P : Set (ℂ →L[ℝ] ℂ) := {L | ∀ w, L (c • w) = c • L w}
+  have hP : IsClosed P := by
+    simp only [P, ofPred_forall]
+    exact isClosed_iInter fun w ↦
+      isClosed_eq (by fun_prop) (by fun_prop)
+  -- At points of positive imaginary part, the derivative is complex linear.
+  have hint : fderivWithin ℝ f S '' (U ∩ {w | 0 < w.im}) ⊆ P := by
+    rintro _ ⟨w, hw, rfl⟩ u
+    have hopen : IsOpen (U ∩ {w : ℂ | 0 < w.im}) :=
+      hU.inter (isOpen_lt continuous_const continuous_im)
+    have hSw : S ∈ 𝓝 w := mem_of_superset (hopen.mem_nhds hw) fun y hy ↦
+      ⟨hy.1, by simpa using le_of_lt hy.2⟩
+    have hdw : DifferentiableAt ℂ f w := hd.differentiableAt (hopen.mem_nhds hw)
+    rw [fderivWithin_of_mem_nhds hSw, hdw.fderiv_restrictScalars ℝ,
+      ContinuousLinearMap.coe_restrictScalars', map_smul]
+  -- Every point of the source is a limit of points of positive imaginary part.
+  have hcl : z ∈ closure (U ∩ {w | 0 < w.im}) :=
+    hU.inter_closure ⟨hz.1, by simpa using hz.2⟩
+  have hcont : ContinuousWithinAt (fderivWithin ℝ f S) (U ∩ {w | 0 < w.im}) z :=
+    ((hcd.continuousOn_fderivWithin hS (by simp)) z hz).mono fun y hy ↦
+      ⟨hy.1, by simpa using le_of_lt hy.2⟩
+  have hmem : fderivWithin ℝ f S z ∈ P :=
+    hP.closure_subset_iff.2 hint (hcont.mem_closure_image hcl)
+  have hfd : fderivWithin ℝ f (range closedUpperHalfPlaneModel) z = fderivWithin ℝ f S z := by
+    rw [show S = range closedUpperHalfPlaneModel ∩ U from inter_comm _ _,
+      fderivWithin_inter (hU.mem_nhds hz.1)]
+  rw [hfd]
+  exact hmem v
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+  [HasGroupoid M borderedHolomorphicGroupoid]
+
+/-- On a Riemann surface with boundary, the tangent coordinate changes are complex linear, also
+at boundary points. -/
+theorem tangentCoordChange_smul {x y z : M}
+    (h : z ∈ (chartAt ClosedUpperHalfPlane x).source ∩ (chartAt ClosedUpperHalfPlane y).source)
+    (c v : ℂ) :
+    tangentCoordChange closedUpperHalfPlaneModel x y z (c • v) =
+      c • tangentCoordChange closedUpperHalfPlaneModel x y z v := by
+  have he : (chartAt ClosedUpperHalfPlane x).symm.trans (chartAt ClosedUpperHalfPlane y) ∈
+      borderedHolomorphicGroupoid :=
+    HasGroupoid.compatible (chart_mem_atlas _ x) (chart_mem_atlas _ y)
+  have hz : extChartAt closedUpperHalfPlaneModel x z ∈
+      closedUpperHalfPlaneModel.symm ⁻¹'
+          ((chartAt ClosedUpperHalfPlane x).symm.trans (chartAt ClosedUpperHalfPlane y)).source ∩
+        range closedUpperHalfPlaneModel := by
+    refine ⟨?_, mem_range_self _⟩
+    simp only [mem_preimage, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      ModelWithCorners.left_inv, OpenPartialHomeomorph.trans_source, mem_inter_iff,
+      OpenPartialHomeomorph.symm_source]
+    exact ⟨(chartAt _ x).map_source h.1, by simpa [(chartAt _ x).left_inv h.1] using h.2⟩
+  exact fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid he hz c v
+
 
 /-! ### Examples -/
 

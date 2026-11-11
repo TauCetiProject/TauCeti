@@ -174,12 +174,15 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of
 the pulled-back contact form to the original Reeb field. -/
 theorem IsContactForm.mfderiv_reebVectorField_mpullback
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    [FiniteDimensional ℝ E]
     {α : SmoothForm J N ℝ 1} (hα : α.IsContactForm)
     (f : M → N) (hf : ContMDiff I J ∞ f)
     (hdf : ∀ x, Function.Bijective (mfderiv I J f x)) (x : M) :
     mfderiv I J f x ((SmoothForm.mpullback f hf α).reebVectorField x) =
       α.reebVectorField (f x) := by
+  have : FiniteDimensional ℝ F := LinearEquiv.finiteDimensional
+    (LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap (hdf x) :
+      TangentSpace I x ≃ₗ[ℝ] TangentSpace J (f x))
   have hβ := hα.mpullback f hf hdf
   apply hα.eq_reebVectorField_iff.mpr
   constructor
