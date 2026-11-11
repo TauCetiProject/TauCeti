@@ -72,7 +72,7 @@ theorem puncturedMetric_inner
         (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
   rw [puncturedMetric, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
 
-/-- Scalar curvature of the punctured standard cap, with `Δ = div grad`.
+/-- Scalar curvature of the punctured standard cap, using ordinary radial derivatives.
 For a two-dimensional sphere fibre the two terms are
 `2(1-f'²)/f² - 4f''/f`. -/
 theorem scalarCurvature_puncturedMetric
@@ -81,7 +81,7 @@ theorem scalarCurvature_puncturedMetric
       (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 -
         2 * n * deriv (deriv f) p.1 / f p.1 := by
   rw [puncturedMetric]
-  exact scalarCurvature_warpedProd_real_sphere standardCapRadialDomain
+  exact scalarCurvature_warpedProdTangentSpace_real_sphere standardCapRadialDomain
     (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
     (fun r ↦ (hf.apply_pos r.property).ne') p
 

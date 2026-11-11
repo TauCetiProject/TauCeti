@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.NormedSpace
-import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # Radial calculus on open subsets of the real line
@@ -26,27 +25,27 @@ namespace TauCeti.Manifold
 
 /-- The Laplace–Beltrami operator of the restricted Euclidean metric on an open
 subset of `ℝ` is the ordinary second derivative. -/
-theorem laplaceBeltrami_restrictOpen_real_eq_deriv_deriv
+theorem laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv
     (U : Opens ℝ) {f : ℝ → ℝ} {x : U} (hf : ContDiffAt ℝ 2 f (x : ℝ)) :
     let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
     let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
       ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
     laplaceBeltrami 𝓘(ℝ) (fun r : U ↦ f r) x = deriv (deriv f) x := by
   dsimp only
-  rw [laplaceBeltrami_restrictOpen_eq_laplacian U hf,
+  rw [laplaceBeltrami_restrictOpenTangentSpace_eq_laplacian U hf,
     InnerProductSpace.laplacian_eq_iteratedDeriv_real]
   simp [iteratedDeriv_succ]
 
 /-- The squared gradient norm for the restricted Euclidean metric on an open
 subset of `ℝ` is the square of the ordinary derivative. -/
-theorem norm_mgradient_restrictOpen_real_sq
+theorem sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv
     (U : Opens ℝ) {f : ℝ → ℝ} {x : U} (hf : DifferentiableAt ℝ f (x : ℝ)) :
     let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
     let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
       ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
     ‖mgradient 𝓘(ℝ) (fun r : U ↦ f r) x‖ ^ 2 = deriv f x ^ 2 := by
   dsimp only
-  rw [norm_mgradient_restrictOpen_eq_norm_gradient U hf,
+  rw [norm_mgradient_restrictOpenTangentSpace_eq_norm_gradient U hf,
     gradient_eq_deriv', Real.norm_eq_abs, sq_abs]
 
 end TauCeti.Manifold

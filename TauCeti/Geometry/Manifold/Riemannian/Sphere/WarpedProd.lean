@@ -36,7 +36,7 @@ namespace TauCeti
 /-- Scalar curvature of `dr² + f(r)² g_(Sⁿ)` on an arbitrary open subset of
 `ℝ` times the unit sphere. Smoothness and nonvanishing are required only on the
 open set; the sign of `f` is irrelevant. -/
-theorem scalarCurvature_warpedProd_real_sphere
+theorem scalarCurvature_warpedProdTangentSpace_real_sphere
     (U : Opens ℝ) {f : ℝ → ℝ}
     (hf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (fun r : U ↦ f r))
     (hf₀ : ∀ r : U, f r ≠ 0)
@@ -59,8 +59,9 @@ theorem scalarCurvature_warpedProd_real_sphere
   rw [ContMDiffRiemannianMetric.scalarCurvature_warpedProdTangentSpace,
     ContMDiffRiemannianMetric.scalarCurvature_restrictOpenTangentSpace,
     scalarCurvature_sphereRoundMetric_ofLE, hg,
-    laplaceBeltrami_restrictOpen_real_eq_deriv_deriv U hf₂,
-    norm_mgradient_restrictOpen_real_sq U (hf₂.differentiableAt (by norm_num))]
+    laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf₂,
+    sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv U
+      (hf₂.differentiableAt (by norm_num))]
   simp only [finrank_euclideanSpace_fin]
   ring
 

@@ -35,7 +35,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- The Laplace–Beltrami operator of the restricted Euclidean metric on an open
 subset of a finite-dimensional real inner product space is the flat Laplacian. -/
-theorem laplaceBeltrami_restrictOpen_eq_laplacian
+theorem laplaceBeltrami_restrictOpenTangentSpace_eq_laplacian
     (U : Opens F) {f : F → ℝ} {x : U} (hf : ContDiffAt ℝ 2 f (x : F)) :
     let g := (riemannianMetricVectorSpace F).ofLE (m := ∞) le_top
     let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ, F) r) :=
@@ -57,7 +57,7 @@ theorem laplaceBeltrami_restrictOpen_eq_laplacian
 
 /-- Restricting the Euclidean metric to an open subset of a finite-dimensional
 real inner product space preserves the norm of the gradient. -/
-theorem norm_mgradient_restrictOpen_eq_norm_gradient
+theorem norm_mgradient_restrictOpenTangentSpace_eq_norm_gradient
     (U : Opens F) {f : F → ℝ} {x : U} (hf : DifferentiableAt ℝ f (x : F)) :
     let g := (riemannianMetricVectorSpace F).ofLE (m := ∞) le_top
     let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ, F) r) :=
