@@ -237,6 +237,17 @@ theorem hessianAverage_comp_continuousLinearEquiv_apply {G : Type*} [NormedAddCo
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   simp only [e.fderiv_fderiv_comp_right_apply_apply, map_add, map_smul]
 
+omit [CompleteSpace F] in
+/-- **The averaged Hessian is local near the segment.** If `f₁` and `f₂` agree near every point
+of the segment from `x` to `x + v`, they have the same averaged Hessian at `x` in the direction
+`v`. No differentiability is needed. -/
+theorem hessianAverage_congr_of_eventuallyEq {f₁ f₂ : E → F} {v : E}
+    (h : ∀ t ∈ Set.Icc (0 : ℝ) 1, f₁ =ᶠ[𝓝 (x + t • v)] f₂) :
+    hessianAverage f₁ x v = hessianAverage f₂ x v := by
+  simp only [hessianAverage_eq_integral_Icc]
+  refine setIntegral_congr_fun measurableSet_Icc fun t ht ↦ ?_
+  rw [(h t ht).fderiv.fderiv_eq]
+
 /-- **Taylor's formula to second order**, with the remainder written as the averaged Hessian
 evaluated twice on the increment. -/
 theorem map_add_eq_add_hessianAverage (hf : ContDiff ℝ 2 f) (x v : E) :

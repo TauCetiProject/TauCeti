@@ -135,14 +135,14 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
     hf hpq hyu hys
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_zero hn0 (isSliceChart_iff.2 hS₁) hy₁
-      ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
+      he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
         (Submodule.closed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
         (Submodule.closed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
         (Submodule.closed_of_finiteDimensional _)),
-    span_tangentConeAt_inter_preimage_zero hn0 (isSliceChart_iff.2 hS₁) hy₁ ⟨hyu, hys⟩ he₁
+    span_tangentConeAt_inter_preimage_zero hn0 (isSliceChart_iff.2 hS₁) hy₁ he₁
       hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
         (Submodule.closed_of_finiteDimensional _))
