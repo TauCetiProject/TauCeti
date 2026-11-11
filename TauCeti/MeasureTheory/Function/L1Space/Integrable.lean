@@ -22,7 +22,8 @@ power even on a seminormed group. On the real line, positive-order `Lᵖ` member
 equivalent to integrability of the corresponding absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
-(`MeasureTheory.integrable_finset_sup'`).
+(`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
+integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`).
 -/
 
 public section
@@ -94,6 +95,13 @@ theorem integrable_finset_sup' {X β κ : Type*} [MeasurableSpace X] [NormedAddC
     Integrable (fun x ↦ s.sup' hs fun i ↦ f i x) μ := by
   simpa only [← Finset.sup'_apply] using
     Finset.sup'_induction (p := fun h ↦ Integrable h μ) hs f (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf
+
+/-- A function that is nonzero at an atom of infinite mass is not integrable. -/
+theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] {ν : Measure α} {f : α → E} {x : α}
+    (hx : ν {x} = ⊤) (hf : f x ≠ 0) : ¬ Integrable f ν := fun hint ↦ by
+  have h := (integrableOn_singleton_iff (μ := ν)).1 hint.integrableOn
+  simp [hx, hf] at h
 
 /-- For a positive real order `p`, if `g` lies in `Lᵖ` then `g ^ p` is integrable. -/
 theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {g : X → ℝ}
