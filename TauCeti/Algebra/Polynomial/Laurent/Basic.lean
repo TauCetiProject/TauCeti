@@ -154,7 +154,6 @@ lemma laurentEval_T (u : Aˣ) (n : ℤ) : laurentEval (R := R) u (T n) = ((u ^ n
   simp only [LaurentPolynomial.T, AddMonoidAlgebra.lift_single, one_smul]
   rfl
 
-@[simp]
 lemma laurentEval_C (u : Aˣ) (r : R) : laurentEval u (C r) = algebraMap R A r := by
   rw [C_eq_algebraMap]
   exact (laurentEval u).commutes r
@@ -172,6 +171,7 @@ theorem laurentEval_unique (u : Aˣ) (f : R[T;T⁻¹] →ₐ[R] A) (hf : f (T 1)
       exact hf.trans (laurentEval_T_one u).symm
 
 /-- An `R`-algebra map out of `R[T;T⁻¹]` sends a constant `C x` to `algebraMap R A x`. -/
+@[simp]
 theorem _root_.AlgHom.apply_laurentPolynomial_C (φ : R[T;T⁻¹] →ₐ[R] A) (x : R) :
     φ (C x) = algebraMap R A x := by
   rw [C_eq_algebraMap, AlgHom.commutes]
@@ -446,7 +446,6 @@ theorem rescale_T (c : Aˣ) (n : ℤ) : rescale A c (T n) = C ((c ^ n : Aˣ) : A
     Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 /-- Rescaling fixes the constants. -/
-@[simp]
 theorem rescale_C (c : Aˣ) (a : A) : rescale A c (C a) = C a := by
   rw [C_eq_algebraMap, AlgHom.commutes]
 
