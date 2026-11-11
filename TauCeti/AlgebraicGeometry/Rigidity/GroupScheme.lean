@@ -95,7 +95,7 @@ homomorphisms.** Let `A` be a monoid scheme over `S` whose structure morphism is
 geometrically integral with `A.hom_* 𝒪_A = 𝒪_S`, and let `B` be a separated locally finite type
 group scheme over `S`. Every morphism `f : A ⟶ B` over `S` carrying the identity section of `A` to
 that of `B` is a homomorphism of monoid schemes. -/
-theorem isMonHom_of_one_hom_of_flat {A B : Over S} [MonObj A] [GrpObj B]
+theorem isMonHom_of_one_hom_of_flat {A B : Over S} [mA : MonObj A] [gB : GrpObj B]
     [IsProper A.hom] [Flat A.hom] [GeometricallyIntegral A.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.hom.app V))
     [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
@@ -126,11 +126,10 @@ theorem monObj_eq_of_one_eq_of_flat {G : Over S}
     (hG : ∀ V : S.affineOpens, IsIso (G.hom.app V))
     (m : MonObj G) (g : GrpObj G) (hone : m.one = g.one) :
     m = g.toMonObj := by
-  have hid : @IsMonHom _ _ _ G G m g.toMonObj (𝟙 G) :=
-    @isMonHom_of_one_hom_of_flat S G G m g _ _ _ hG _ _ (𝟙 G) (by rw [Category.comp_id]; exact hone)
+  have hid := isMonHom_of_one_hom_of_flat (mA := m) (gB := g) hG (𝟙 G)
+    (by rw [Category.comp_id]; exact hone)
   apply MonObj.ext
-  have hmul := @IsMonHom.mul_hom _ _ _ G G m g.toMonObj (𝟙 G) hid
-  simpa only [tensorHom_id, id_whiskerRight, Category.id_comp, Category.comp_id] using hmul
+  simpa only [tensorHom_id, id_whiskerRight, Category.id_comp, Category.comp_id] using hid.mul_hom
 
 /-- **Uniqueness of the group structure for a given identity section.** Let `G` be a proper, flat,
 geometrically integral scheme over `S` with `G.hom_* 𝒪_G = 𝒪_S`. Any two group-object structures on
@@ -185,6 +184,27 @@ noncomputable def commGrpHomEquivPointed (A B : CommGrp (Over S))
   invFun f := commGrpHomOfOneHom hA f.1 f.2
   left_inv _ := CommGrp.hom_ext _ _ (commGrpHomOfOneHom_hom_hom_hom hA _ _)
   right_inv _ := Subtype.ext (commGrpHomOfOneHom_hom_hom_hom hA _ _)
+
+/-- The pointed morphism over `S` underlying `commGrpHomEquivPointed A B hA F` is
+`F.hom.hom.hom`. -/
+@[simp]
+theorem coe_commGrpHomEquivPointed_apply {A B : CommGrp (Over S)}
+    [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
+    (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
+    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom] (F : A ⟶ B) :
+    (commGrpHomEquivPointed A B hA F : A.X ⟶ B.X) = F.hom.hom.hom := by
+  simp [commGrpHomEquivPointed]
+
+/-- Applying `(commGrpHomEquivPointed A B hA).symm` to a pointed morphism over `S` constructs the
+corresponding homomorphism via `commGrpHomOfOneHom`. -/
+@[simp]
+theorem commGrpHomEquivPointed_symm_apply {A B : CommGrp (Over S)}
+    [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
+    (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
+    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
+    (f : {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]}) :
+    (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.1 f.2 := by
+  simp [commGrpHomEquivPointed]
 
 end Relative
 

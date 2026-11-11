@@ -27,8 +27,10 @@ field `K`, it follows that `E.carrier` is an integral scheme.
 
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.geometricallyIntegral_toBase`: the structure
   morphism of a pointed Weierstrass chart is geometrically integral.
-* `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass.geometricallyIntegral`: any morphism satisfying
-  the local Weierstrass model condition is geometrically integral.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.geometricallyIntegral` and
+  `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass.geometricallyIntegral`: any morphism admitting a
+  pointed Weierstrass atlas (equivalently, satisfying the local Weierstrass model condition) is
+  geometrically integral.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.geometricallyIntegral_structureMap`: the structure
   morphism of an elliptic curve over a scheme is geometrically integral.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isIntegral_carrier`: an elliptic curve over `Spec K`
@@ -64,21 +66,17 @@ instance geometricallyIntegral_toBase (c : PointedWeierstrassChart π zero) :
 
 end PointedWeierstrassChart
 
+/-- A morphism with a pointed Weierstrass atlas is geometrically integral. -/
+theorem PointedWeierstrassAtlas.geometricallyIntegral {X S : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X}
+    (A : PointedWeierstrassAtlas π zero) : GeometricallyIntegral π :=
+  A.of_projModelOver @GeometricallyIntegral fun _ ↦ inferInstance
+
 /-- **Morphisms locally modelled on Weierstrass curves are geometrically integral.** -/
 theorem IsLocallyWeierstrass.geometricallyIntegral {X S : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X}
     {hzero : zero ≫ π = 𝟙 S} (h : IsLocallyWeierstrass π zero hzero) :
-    GeometricallyIntegral π := by
-  refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict fun s ↦ ?_
-  obtain ⟨U, hsU, W, -, e, hover, -⟩ := (isLocallyWeierstrass_iff hzero).mp h s
-  refine ⟨U.1, hsU, ?_⟩
-  have hres : π ∣_ U.1 =
-      ((isPullback_morphismRestrict π U.1).flip.isoPullback.hom ≫ e.hom) ≫
-        W.projModelOver ≫ U.2.isoSpec.inv := by
-    rw [Category.assoc, ← Category.assoc e.hom, hover, Category.assoc, Iso.hom_inv_id,
-      Category.comp_id, IsPullback.isoPullback_hom_snd]
-  rw [hres, MorphismProperty.cancel_left_of_respectsIso @GeometricallyIntegral,
-    MorphismProperty.cancel_right_of_respectsIso @GeometricallyIntegral]
-  infer_instance
+    GeometricallyIntegral π :=
+  ((nonempty_pointedWeierstrassAtlas_iff hzero).mpr h).elim
+    PointedWeierstrassAtlas.geometricallyIntegral
 
 namespace EllipticCurveGeom
 
@@ -86,7 +84,7 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 
 /-- **The structure morphism of an elliptic curve over a scheme is geometrically integral.** -/
 instance geometricallyIntegral_structureMap : GeometricallyIntegral E.structureMap :=
-  E.isLocallyWeierstrass.geometricallyIntegral
+  E.localModel.elim PointedWeierstrassAtlas.geometricallyIntegral
 
 /-- **An elliptic curve over a field is an integral scheme.** -/
 instance isIntegral_carrier {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K))) :

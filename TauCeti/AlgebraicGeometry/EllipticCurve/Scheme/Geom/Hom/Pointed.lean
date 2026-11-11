@@ -82,46 +82,15 @@ namespace EllipticCurveGeom
 
 variable {S : Scheme.{u}} {E E' E'' : EllipticCurveGeom S}
 
-/-! ### Underlying scheme identities for homomorphisms -/
+private instance (E : EllipticCurveGeom S) : Smooth (Over.mk E.structureMap).hom :=
+  SmoothOfRelativeDimension.smooth 1 E.structureMap
 
-/-- A homomorphism of elliptic curves over `S` carries the zero section of the source to that of
-the target. -/
-@[reassoc (attr := simp)]
-theorem zero_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
-    E.zero ≫ F.hom.hom.hom.left = E'.zero := by
-  have h := congrArg Over.Hom.left (IsMonHom.one_hom F.hom.hom.hom)
-  simpa only [Over.comp_left, one_left] using h
+private instance (E : EllipticCurveGeom S) : IsProper (Over.mk E.structureMap).hom :=
+  inferInstanceAs (IsProper E.structureMap)
 
-/-- A homomorphism of elliptic curves over `S` intertwines the addition morphisms on underlying
-schemes. -/
-@[reassoc]
-theorem addition_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
-    E.addition ≫ F.hom.hom.hom.left =
-      pullback.map E.structureMap E.structureMap E'.structureMap E'.structureMap
-        F.hom.hom.hom.left F.hom.hom.hom.left (𝟙 S)
-        (by simp [hom_hom_hom_left_comp_structureMap])
-        (by simp [hom_hom_hom_left_comp_structureMap]) ≫ E'.addition := by
-  have h := congrArg Over.Hom.left (IsMonHom.mul_hom F.hom.hom.hom)
-  simp only [Over.comp_left, mul_left] at h
-  rw [h]
-  congr 1
-
-/-- A homomorphism of elliptic curves over `S` intertwines the negation morphisms on underlying
-schemes. -/
-@[reassoc]
-theorem neg_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
-    E.neg ≫ F.hom.hom.hom.left = F.hom.hom.hom.left ≫ E'.neg := by
-  have h := congrArg Over.Hom.left (GrpObj.inv_hom F.hom.hom.hom)
-  simpa only [Over.comp_left, inv_left] using h
-
-/-- A homomorphism of elliptic curves over `S` commutes with multiplication by any integer `n` on
-underlying schemes. -/
-@[reassoc]
-theorem mulBy_left_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) (n : ℤ) :
-    (E.mulBy n).left ≫ F.hom.hom.hom.left = F.hom.hom.hom.left ≫ (E'.mulBy n).left := by
-  have h : E.mulBy n ≫ F.hom.hom.hom = F.hom.hom.hom ≫ E'.mulBy n := by
-    rw [mulBy_eq_zpow, GrpObj.zpow_comp, Category.id_comp, comp_mulBy]
-  exact congrArg Over.Hom.left h
+private instance (E : EllipticCurveGeom S) :
+    GeometricallyIntegral (Over.mk E.structureMap).hom :=
+  inferInstanceAs (GeometricallyIntegral E.structureMap)
 
 /-! ### Katz–Mazur 2.5.1: pointed morphisms are homomorphisms -/
 
@@ -132,12 +101,8 @@ is a homomorphism of group schemes. -/
 theorem isMonHom_of_zero_comp {B : Over S} [GrpObj B]
     [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
     (f : Over.mk E.structureMap ⟶ B) (h0 : E.zero ≫ f.left = η[B].left) :
-    IsMonHom f := by
-  have : Smooth (Over.mk E.structureMap).hom := SmoothOfRelativeDimension.smooth 1 E.structureMap
-  have : IsProper (Over.mk E.structureMap).hom := inferInstanceAs (IsProper E.structureMap)
-  have : GeometricallyIntegral (Over.mk E.structureMap).hom :=
-    inferInstanceAs (GeometricallyIntegral E.structureMap)
-  exact isMonHom_of_one_hom_of_flat (fun V ↦ E.isIso_structureMap_app V.1) f
+    IsMonHom f :=
+  isMonHom_of_one_hom_of_flat (fun V ↦ E.isIso_structureMap_app V.1) f
     (Over.OverMorphism.ext (by simpa only [Over.comp_left, one_left] using h0))
 
 /-- **Katz–Mazur Theorem 2.5.1.** Every morphism of schemes `f : E.carrier ⟶ E'.carrier` over `S`
@@ -145,12 +110,8 @@ carrying the zero section of `E` to the zero section of `E'` is a homomorphism o
 `S`. -/
 theorem isMonHom_homMk_of_mapsZero (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
-    IsMonHom (Over.homMk f hf : Over.mk E.structureMap ⟶ Over.mk E'.structureMap) := by
-  have : Smooth E'.structureMap := SmoothOfRelativeDimension.smooth 1 E'.structureMap
-  have : IsSeparated (Over.mk E'.structureMap).hom := inferInstanceAs (IsSeparated E'.structureMap)
-  have : LocallyOfFiniteType (Over.mk E'.structureMap).hom :=
-    inferInstanceAs (LocallyOfFiniteType E'.structureMap)
-  exact isMonHom_of_zero_comp (E := E) (B := Over.mk E'.structureMap) (Over.homMk f hf) h0
+    IsMonHom (Over.homMk f hf : Over.mk E.structureMap ⟶ Over.mk E'.structureMap) :=
+  isMonHom_of_zero_comp (E := E) (B := Over.mk E'.structureMap) (Over.homMk f hf) h0
 
 /-- **Katz–Mazur 2.5.1, packaged as a homomorphism in `CommGrp (Over S)`.** Given a morphism of
 schemes `f : E.carrier ⟶ E'.carrier` over `S` carrying `E.zero` to `E'.zero`, this is the
@@ -158,31 +119,28 @@ corresponding homomorphism `E.toCommGrp ⟶ E'.toCommGrp` of elliptic curves ove
 noncomputable def homOfMapsZero (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     E.toCommGrp ⟶ E'.toCommGrp :=
-  have : IsMonHom (Over.homMk f hf : Over.mk E.structureMap ⟶ Over.mk E'.structureMap) :=
-    isMonHom_homMk_of_mapsZero f hf h0
-  CommGrp.homMk (Over.homMk f hf)
+  commGrpHomOfOneHom (A := E.toCommGrp) (B := E'.toCommGrp)
+    (fun V ↦ E.isIso_structureMap_app V.1) (Over.homMk f hf)
+    (Over.OverMorphism.ext (by simp [h0]))
 
 @[simp]
 theorem homOfMapsZero_hom_hom_hom (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     (homOfMapsZero f hf h0).hom.hom.hom = Over.homMk f hf :=
-  have : IsMonHom (Over.homMk f hf : Over.mk E.structureMap ⟶ Over.mk E'.structureMap) :=
-    isMonHom_homMk_of_mapsZero f hf h0
-  CommGrp.homMk_hom_hom_hom _
+  commGrpHomOfOneHom_hom_hom_hom _ _ _
 
-theorem homOfMapsZero_left (f : E.carrier ⟶ E'.carrier)
+theorem homOfMapsZero_hom_hom_hom_left (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     (homOfMapsZero f hf h0).hom.hom.hom.left = f := by
-  rw [homOfMapsZero_hom_hom_hom]
-  rfl
+  simp [homOfMapsZero_hom_hom_hom]
 
 /-- **Katz–Mazur 2.5.1, unique lifting.** Every pointed morphism of schemes `f : E ⟶ E'` over `S`
 underlies a unique homomorphism `E.toCommGrp ⟶ E'.toCommGrp` of elliptic curves over `S`. -/
 theorem existsUnique_hom_of_mapsZero (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     ∃! F : E.toCommGrp ⟶ E'.toCommGrp, F.hom.hom.hom.left = f :=
-  ⟨homOfMapsZero f hf h0, homOfMapsZero_left f hf h0,
-    fun _ hF ↦ hom_ext_left _ (hF.trans (homOfMapsZero_left f hf h0).symm)⟩
+  ⟨homOfMapsZero f hf h0, homOfMapsZero_hom_hom_hom_left f hf h0,
+    fun _ hF ↦ hom_ext_left _ (hF.trans (homOfMapsZero_hom_hom_hom_left f hf h0).symm)⟩
 
 /-- A pointed morphism of elliptic curves over `S` intertwines their addition morphisms. -/
 @[reassoc]
@@ -191,14 +149,16 @@ theorem addition_comp_of_mapsZero {f : E.carrier ⟶ E'.carrier}
     E.addition ≫ f =
       pullback.map E.structureMap E.structureMap E'.structureMap E'.structureMap f f (𝟙 S)
         (by simp [hf]) (by simp [hf]) ≫ E'.addition := by
-  simpa only [homOfMapsZero_left] using addition_comp_hom_hom_hom_left (homOfMapsZero f hf h0)
+  simpa only [homOfMapsZero_hom_hom_hom_left] using
+    addition_comp_hom_hom_hom_left (homOfMapsZero f hf h0)
 
 /-- A pointed morphism of elliptic curves over `S` intertwines their negation morphisms. -/
 @[reassoc]
 theorem neg_comp_of_mapsZero {f : E.carrier ⟶ E'.carrier}
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     E.neg ≫ f = f ≫ E'.neg := by
-  simpa only [homOfMapsZero_left] using neg_comp_hom_hom_hom_left (homOfMapsZero f hf h0)
+  simpa only [homOfMapsZero_hom_hom_hom_left] using
+    neg_comp_hom_hom_hom_left (homOfMapsZero f hf h0)
 
 /-- A pointed morphism of elliptic curves over `S` commutes with multiplication by any integer
 `n`. -/
@@ -206,13 +166,14 @@ theorem neg_comp_of_mapsZero {f : E.carrier ⟶ E'.carrier}
 theorem mulBy_left_comp_of_mapsZero {f : E.carrier ⟶ E'.carrier}
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) (n : ℤ) :
     (E.mulBy n).left ≫ f = f ≫ (E'.mulBy n).left := by
-  simpa only [homOfMapsZero_left] using mulBy_left_comp_hom_hom_hom_left (homOfMapsZero f hf h0) n
+  simpa only [homOfMapsZero_hom_hom_hom_left] using
+    mulBy_left_comp_hom_hom_hom_left (homOfMapsZero f hf h0) n
 
 @[simp]
-theorem homOfMapsZero_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
+theorem homOfMapsZero_eta (F : E.toCommGrp ⟶ E'.toCommGrp) :
     homOfMapsZero F.hom.hom.hom.left (hom_hom_hom_left_comp_structureMap F)
         (zero_comp_hom_hom_hom_left F) = F :=
-  hom_ext_left _ (homOfMapsZero_left _ _ _)
+  hom_ext_left _ (homOfMapsZero_hom_hom_hom_left _ _ _)
 
 @[simp]
 theorem homOfMapsZero_id (E : EllipticCurveGeom S) :
@@ -233,36 +194,46 @@ theorem homOfMapsZero_comp {f : E.carrier ⟶ E'.carrier}
 theorem homOfMapsZero_zero (E E' : EllipticCurveGeom S) :
     homOfMapsZero (E.structureMap ≫ E'.zero) (by simp) (by simp) =
       (0 : E.toCommGrp ⟶ E'.toCommGrp) :=
-  hom_ext_left _ ((homOfMapsZero_left _ _ _).trans (zero_hom_hom_hom_left E).symm)
+  hom_ext_left _ ((homOfMapsZero_hom_hom_hom_left _ _ _).trans (zero_hom_hom_hom_left E).symm)
 
 @[simp]
 theorem homOfMapsZero_neg (E : EllipticCurveGeom S) :
     homOfMapsZero E.neg E.neg_structureMap E.zero_neg = -𝟙 E.toCommGrp :=
-  hom_ext_left _ <| by rw [homOfMapsZero_left, neg_hom_hom_hom_left]; simp
+  hom_ext_left _ <| by rw [homOfMapsZero_hom_hom_hom_left, neg_hom_hom_hom_left]; simp
 
 /-- **Homomorphisms of elliptic curves over `S` are equivalent to pointed morphisms of schemes over
 `S` (Katz–Mazur 2.5.1).** -/
 noncomputable def homEquivPointed (E E' : EllipticCurveGeom S) :
     (E.toCommGrp ⟶ E'.toCommGrp) ≃
       {f : E.carrier ⟶ E'.carrier //
-        f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero} where
-  toFun F := ⟨F.hom.hom.hom.left, hom_hom_hom_left_comp_structureMap F,
-    zero_comp_hom_hom_hom_left F⟩
-  invFun f := homOfMapsZero f.1 f.2.1 f.2.2
-  left_inv _ := hom_ext_left _ (homOfMapsZero_left _ _ _)
-  right_inv _ := Subtype.ext (homOfMapsZero_left _ _ _)
+        f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero} :=
+  (commGrpHomEquivPointed E.toCommGrp E'.toCommGrp (fun V ↦ E.isIso_structureMap_app V.1)).trans
+    { toFun g := ⟨g.1.left, Over.w g.1,
+        by simpa only [Over.comp_left, one_left] using congrArg Over.Hom.left g.2⟩
+      invFun f := ⟨Over.homMk f.1 f.2.1, Over.OverMorphism.ext (by simp [f.2.2])⟩
+      left_inv _ := Subtype.ext (Over.OverMorphism.ext rfl)
+      right_inv _ := Subtype.ext rfl }
 
 @[simp]
 theorem coe_homEquivPointed_apply (F : E.toCommGrp ⟶ E'.toCommGrp) :
-    (homEquivPointed E E' F : E.carrier ⟶ E'.carrier) = F.hom.hom.hom.left :=
-  (rfl)
+    (homEquivPointed E E' F : E.carrier ⟶ E'.carrier) = F.hom.hom.hom.left := by
+  simp [homEquivPointed,
+    coe_commGrpHomEquivPointed_apply (A := E.toCommGrp) (B := E'.toCommGrp)]
 
 @[simp]
-theorem homEquivPointed_symm_left
+theorem homEquivPointed_symm_apply
     (f : {f : E.carrier ⟶ E'.carrier //
       f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero}) :
-    ((homEquivPointed E E').symm f).hom.hom.hom.left = f.1 :=
-  homOfMapsZero_left f.1 f.2.1 f.2.2
+    (homEquivPointed E E').symm f = homOfMapsZero f.1 f.2.1 f.2.2 :=
+  hom_ext_left _ (by
+    simp [homEquivPointed,
+      commGrpHomEquivPointed_symm_apply (A := E.toCommGrp) (B := E'.toCommGrp)])
+
+theorem homEquivPointed_symm_apply_hom_hom_hom_left
+    (f : {f : E.carrier ⟶ E'.carrier //
+      f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero}) :
+    ((homEquivPointed E E').symm f).hom.hom.hom.left = f.1 := by
+  rw [homEquivPointed_symm_apply, homOfMapsZero_hom_hom_hom_left]
 
 /-! ### Pointed isomorphisms -/
 
@@ -279,16 +250,28 @@ noncomputable def isoOfPointedIso (e : E.carrier ≅ E'.carrier)
   inv_hom_id := hom_ext_left _ <| by simp
 
 @[simp]
-theorem isoOfPointedIso_hom_left (e : E.carrier ≅ E'.carrier)
+theorem isoOfPointedIso_hom (e : E.carrier ≅ E'.carrier)
     (he : e.hom ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ e.hom = E'.zero) :
-    (isoOfPointedIso e he h0).hom.hom.hom.hom.left = e.hom :=
-  homOfMapsZero_left e.hom he h0
+    (isoOfPointedIso e he h0).hom = homOfMapsZero e.hom he h0 := by
+  simp [isoOfPointedIso]
 
 @[simp]
-theorem isoOfPointedIso_inv_left (e : E.carrier ≅ E'.carrier)
+theorem isoOfPointedIso_inv (e : E.carrier ≅ E'.carrier)
+    (he : e.hom ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ e.hom = E'.zero) :
+    (isoOfPointedIso e he h0).inv =
+      homOfMapsZero e.inv (by rw [Iso.inv_comp_eq, he])
+        (by rw [← h0, Category.assoc, e.hom_inv_id, Category.comp_id]) := by
+  simp [isoOfPointedIso]
+
+theorem isoOfPointedIso_hom_hom_hom_hom_left (e : E.carrier ≅ E'.carrier)
+    (he : e.hom ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ e.hom = E'.zero) :
+    (isoOfPointedIso e he h0).hom.hom.hom.hom.left = e.hom :=
+  homOfMapsZero_hom_hom_hom_left e.hom he h0
+
+theorem isoOfPointedIso_inv_hom_hom_hom_left (e : E.carrier ≅ E'.carrier)
     (he : e.hom ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ e.hom = E'.zero) :
     (isoOfPointedIso e he h0).inv.hom.hom.hom.left = e.inv := by
-  simp [isoOfPointedIso]
+  simp
 
 /-- **Isomorphisms of elliptic curves as commutative group schemes over `S` are equivalent to
 pointed scheme isomorphisms over `S`.** -/
@@ -302,8 +285,27 @@ noncomputable def isoEquivPointed (E E' : EllipticCurveGeom S) :
       hom_hom_hom_left_comp_structureMap e.hom,
       zero_comp_hom_hom_hom_left e.hom⟩
   invFun e := isoOfPointedIso e.1 e.2.1 e.2.2
-  left_inv _ := by ext1; exact hom_ext_left _ (isoOfPointedIso_hom_left _ _ _)
-  right_inv _ := by ext1; exact Iso.ext (isoOfPointedIso_hom_left _ _ _)
+  left_inv _ := by ext1; exact hom_ext_left _ (isoOfPointedIso_hom_hom_hom_hom_left _ _ _)
+  right_inv _ := by ext1; exact Iso.ext (isoOfPointedIso_hom_hom_hom_hom_left _ _ _)
+
+@[simp]
+theorem coe_isoEquivPointed_apply_hom (e : E.toCommGrp ≅ E'.toCommGrp) :
+    (isoEquivPointed E E' e : E.carrier ≅ E'.carrier).hom = e.hom.hom.hom.hom.left := by
+  simp [isoEquivPointed]
+  rfl
+
+@[simp]
+theorem coe_isoEquivPointed_apply_inv (e : E.toCommGrp ≅ E'.toCommGrp) :
+    (isoEquivPointed E E' e : E.carrier ≅ E'.carrier).inv = e.inv.hom.hom.hom.left := by
+  simp [isoEquivPointed]
+  rfl
+
+@[simp]
+theorem isoEquivPointed_symm_apply
+    (e : {e : E.carrier ≅ E'.carrier //
+      e.hom ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ e.hom = E'.zero}) :
+    (isoEquivPointed E E').symm e = isoOfPointedIso e.1 e.2.1 e.2.2 := by
+  simp [isoEquivPointed]
 
 /-! ### Uniqueness of the group law -/
 
@@ -316,12 +318,8 @@ on `Over.mk E.structureMap` whose identity morphism has underlying scheme morphi
 `E.grpObj.toMonObj`; in particular its multiplication morphism is `E.addition`. -/
 theorem monObj_eq_of_one_left_eq (m : MonObj (Over.mk E.structureMap))
     (h0 : m.one.left = E.zero) :
-    m = E.grpObj.toMonObj := by
-  have : Smooth (Over.mk E.structureMap).hom := SmoothOfRelativeDimension.smooth 1 E.structureMap
-  have : IsProper (Over.mk E.structureMap).hom := inferInstanceAs (IsProper E.structureMap)
-  have : GeometricallyIntegral (Over.mk E.structureMap).hom :=
-    inferInstanceAs (GeometricallyIntegral E.structureMap)
-  exact monObj_eq_of_one_eq_of_flat (fun V ↦ E.isIso_structureMap_app V.1) m E.grpObj
+    m = E.grpObj.toMonObj :=
+  monObj_eq_of_one_eq_of_flat (fun V ↦ E.isIso_structureMap_app V.1) m E.grpObj
     (Over.OverMorphism.ext h0)
 
 /-- **Uniqueness of the group law on an elliptic curve over a scheme.** Any group-object structure

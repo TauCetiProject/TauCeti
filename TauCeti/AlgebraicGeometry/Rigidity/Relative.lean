@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Rigidity.Basic
 import TauCeti.AlgebraicGeometry.Descent.GeometricFibers
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
 # The relative rigidity lemma over an arbitrary base scheme
@@ -36,7 +38,8 @@ the rigidity lemma over algebraically closed fields
 2. By `AlgebraicGeometry.Scheme.Hom.factorsThrough_iff_forall_isAlgClosed_subsingleton_range`, to
    descend `f` uniquely along `c` it suffices to show that for every algebraically closed field `K`
    and every `K`-valued point `y : Spec K ⟶ Y`, the restriction of `f` to the geometric fibre of
-   `c` over `y` has at most one image point.
+   `c` over `y` has at most one image point (`factorsThrough_snd_left_of_isProper`, which needs
+   neither flatness of `Y ⟶ S` nor `X.hom_* 𝒪_X = 𝒪_S`).
 3. Base-changing `X`, `Y`, `Z`, and `f` to `Spec K` along `y ≫ Y.hom` produces a proper
    geometrically integral scheme `X_K` over the algebraically closed field `K` (which has a
    `K`-rational point by Hilbert's Nullstellensatz) and an integral product `X_K ×_K Y_K`. Applying
@@ -44,10 +47,13 @@ the rigidity lemma over algebraically closed fields
    its restriction to the fibre over `y` factors through the one-point scheme `Spec K`.
 
 Over a field `K`, flatness of `Y` and `X.hom_* 𝒪_X = 𝒪_{Spec K}` hold automatically, yielding the
-section-free specialization `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq`.
+section-free specialization `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq` as well as
+`TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.factorsThrough_snd_left_of_isProper`: set-theoretic constancy of `f`
+  along the fibres of `X ×_S Y ⟶ Y` (without flatness or structure-sheaf hypotheses).
 * `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq_of_flat`: the relative rigidity lemma over an
   arbitrary scheme `S`, without requiring a section of `X ⟶ S`.
 * `TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp_of_flat`: the explicit factorization
@@ -55,8 +61,9 @@ section-free specialization `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq`
 * `TauCeti.AlgebraicGeometry.existsUnique_fst_comp_eq_of_flat` and
   `TauCeti.AlgebraicGeometry.eq_fst_comp_lift_comp_of_flat`: the symmetric statements factoring
   through the first projection `X ×_S Y ⟶ X`.
-* `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq`: the section-free rigidity lemma over an
-  arbitrary field `K`.
+* `TauCeti.AlgebraicGeometry.existsUnique_snd_comp_eq` and
+  `TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp`: the section-free and pointed rigidity lemmas
+  over an arbitrary field `K`.
 
 ## References
 
@@ -81,52 +88,55 @@ section Relative
 
 variable {S : Scheme.{u}}
 
-/-- If the base change of `f : X ⊗ Y ⟶ Z` along `s = y ≫ Y.hom` factors through the second
-projection in `Over R`, then the restriction of `f.left` to the fibre of `pullback.snd X.hom Y.hom`
-over `y : R ⟶ Y.left` factors through `pullback.snd _ y : _ ⟶ R`. -/
-private theorem exists_pullback_snd_comp_eq_of_pullback {X Y Z : Over S} (f : X ⊗ Y ⟶ Z)
-    {R : Scheme.{u}} (y : R ⟶ Y.left)
-    {gR : (Over.pullback (y ≫ Y.hom)).obj Y ⟶ (Over.pullback (y ≫ Y.hom)).obj Z}
-    (hgR : Functor.LaxMonoidal.μ (Over.pullback (y ≫ Y.hom)) X Y ≫
-      (Over.pullback (y ≫ Y.hom)).map f = snd _ _ ≫ gR) :
-    ∃ h : R ⟶ Z.left,
-      pullback.fst (pullback.snd X.hom Y.hom) y ≫ f.left =
-        pullback.snd (pullback.snd X.hom Y.hom) y ≫ h := by
-  let c := pullback.snd X.hom Y.hom
-  let s := y ≫ Y.hom
-  let F : Over S ⥤ Over R := Over.pullback s
-  let wX : pullback c y ⟶ (F.obj X).left :=
-    pullback.lift (pullback.fst c y ≫ pullback.fst X.hom Y.hom) (pullback.snd c y)
-      (by rw [Category.assoc, pullback.condition, pullback.condition_assoc])
-  let yR : R ⟶ (F.obj Y).left := pullback.lift y (𝟙 R) (by simp [s])
-  let φ : pullback c y ⟶ pullback (F.obj X).hom (F.obj Y).hom :=
-    pullback.lift wX (pullback.snd c y ≫ yR) (by simp [F, wX, yR])
-  have hμ : φ ≫ (Functor.LaxMonoidal.μ F X Y).left ≫ pullback.fst (X ⊗ Y).hom s =
-      pullback.fst c y := by
-    apply pullback.hom_ext
-    · have h1 := congrArg Over.Hom.left (Functor.Monoidal.μ_fst F X Y) =≫ pullback.fst X.hom s
-      simp only [Over.comp_left, Over.fst_left, Category.assoc] at h1
-      have h1' : (F.map (fst X Y)).left ≫ pullback.fst X.hom s =
-          pullback.fst (X ⊗ Y).hom s ≫ pullback.fst X.hom Y.hom := by simp [F]
-      rw [h1'] at h1
-      rw [Category.assoc φ, Category.assoc _ _ (pullback.fst X.hom Y.hom), h1]
-      simp [φ, F, wX]
-    · have h2 := congrArg Over.Hom.left (Functor.Monoidal.μ_snd F X Y) =≫ pullback.fst Y.hom s
-      simp only [Over.comp_left, Over.snd_left, Category.assoc] at h2
-      have h2' : (F.map (snd X Y)).left ≫ pullback.fst Y.hom s =
-          pullback.fst (X ⊗ Y).hom s ≫ pullback.snd X.hom Y.hom := by simp [F]
-      rw [h2'] at h2
-      rw [Category.assoc φ, Category.assoc _ _ (pullback.snd X.hom Y.hom), h2]
-      simp [φ, F, yR, c, pullback.condition]
-  have hmap : (F.map f).left ≫ pullback.fst Z.hom s = pullback.fst (X ⊗ Y).hom s ≫ f.left := by
-    simp [F]
-  refine ⟨yR ≫ gR.left ≫ pullback.fst Z.hom s, ?_⟩
-  calc pullback.fst c y ≫ f.left
-    _ = φ ≫ (Functor.LaxMonoidal.μ F X Y ≫ F.map f).left ≫ pullback.fst Z.hom s := by
-      rw [Over.comp_left, Category.assoc, hmap, ← Category.assoc _ _ f.left, ← Category.assoc φ, hμ]
-    _ = pullback.snd c y ≫ yR ≫ gR.left ≫ pullback.fst Z.hom s := by
-      rw [hgR, Over.comp_left]
-      simp [φ, F, s, Category.assoc]
+/-- Let `X`, `Y`, `Z` be schemes over `S`, with `X` proper and geometrically integral over `S`, `Y`
+locally of finite type and geometrically integral over `S`, and `Z` separated and locally of finite
+type over `S`. If `f : X ×_S Y ⟶ Z` collapses the slice `X ×_S {y₀}` along a section `y₀` of `Y`
+to a section `z₀` of `Z`, then the underlying continuous map of `f` is constant on the fibres of the
+second projection `X ×_S Y ⟶ Y`. Neither flatness of `Y ⟶ S` nor `X.hom_* 𝒪_X = 𝒪_S` is needed for
+this set-theoretic factorization. -/
+theorem factorsThrough_snd_left_of_isProper {X Y Z : Over S}
+    [IsProper X.hom] [GeometricallyIntegral X.hom]
+    [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
+    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    (f : X ⊗ Y ⟶ Z) (y₀ : 𝟙_ (Over S) ⟶ Y) (z₀ : 𝟙_ (Over S) ⟶ Z)
+    (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
+    Function.FactorsThrough f.left (snd X Y).left := by
+  rw [Scheme.Hom.factorsThrough_iff_forall_isAlgClosed_subsingleton_range, Over.snd_left]
+  intro K _ _ y
+  let F : Over S ⥤ Over (Spec (.of K)) := Over.pullback (y ≫ Y.hom)
+  have : IsProper (F.obj X).hom := by dsimp [F]; infer_instance
+  have : GeometricallyIntegral (F.obj X).hom := by dsimp [F]; infer_instance
+  have : IsIntegral (F.obj X).left :=
+    GeometricallyIntegral.isIntegral_of_subsingleton (F.obj X).hom
+  have : LocallyOfFiniteType (F.obj X).hom := by dsimp [F]; infer_instance
+  have : JacobsonSpace (F.obj X).left := LocallyOfFiniteType.jacobsonSpace (F.obj X).hom
+  have : LocallyOfFiniteType (F.obj Y).hom := by dsimp [F]; infer_instance
+  have : GeometricallyIntegral (F.obj Y).hom := by dsimp [F]; infer_instance
+  have : IsIntegral (F.obj Y).left :=
+    GeometricallyIntegral.isIntegral_of_subsingleton (F.obj Y).hom
+  have : IsLocallyNoetherian (F.obj Y).left := by dsimp [F]; infer_instance
+  have : IsIntegral (F.obj X ⊗ F.obj Y).left :=
+    GeometricallyIntegral.isIntegral_of_isLocallyNoetherian
+      (pullback.snd (F.obj X).hom (F.obj Y).hom)
+  have : IsSeparated (F.obj Z).hom := by dsimp [F]; infer_instance
+  have : LocallyOfFiniteType (F.obj Z).hom := by dsimp [F]; infer_instance
+  obtain ⟨pt, -, hpt⟩ := nonempty_inter_closedPoints (X := (F.obj X).left) Set.univ_nonempty
+    isOpen_univ.isLocallyClosed
+  let x₀ : 𝟙_ (Over (Spec (.of K))) ⟶ F.obj X :=
+    Over.homMk (pointOfClosedPoint (F.obj X).hom pt hpt)
+      (by dsimp; exact pointOfClosedPoint_comp (F.obj X).hom pt hpt)
+  have H := eq_snd_comp_lift_comp_of_isAlgClosed
+    (Functor.LaxMonoidal.μ F X Y ≫ F.map f) x₀
+    (Functor.LaxMonoidal.ε F ≫ F.map y₀) (Functor.LaxMonoidal.ε F ≫ F.map z₀) (by
+      rw [← Category.assoc, ← F.map_id, Functor.Monoidal.toUnit_ε_assoc, ← F.map_comp,
+        Functor.Monoidal.lift_μ, ← F.map_comp, hf, F.map_comp,
+        Functor.Monoidal.toUnit_ε_assoc])
+  obtain ⟨h, hfactor⟩ := TauCeti.CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback f y H
+  rw [hfactor]
+  rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
+  simp only [Scheme.Hom.comp_apply,
+    Subsingleton.elim (pullback.snd (pullback.snd X.hom Y.hom) y a)
+      (pullback.snd (pullback.snd X.hom Y.hom) y b)]
 
 /-- **The relative rigidity lemma.** Let `X`, `Y`, `Z` be schemes over an arbitrary base scheme `S`,
 with `X` proper and geometrically integral over `S` satisfying `X.hom_* 𝒪_X = 𝒪_S`, `Y` flat,
@@ -149,45 +159,7 @@ theorem existsUnique_snd_comp_eq_of_flat {X Y Z : Over S}
   have hq : Topology.IsQuotientMap c := c.isClosedMap.isQuotientMap c.continuous c.surjective
   have hc : ∀ U : Y.left.Opens, IsIso (c.app U) := fun U ↦ by
     rw [hc_eq]; exact isIso_app_pullback_snd_of_flat X.hom Y.hom hX U
-  -- Check constancy on geometric fibres by pulling back along any point `y : Spec K ⟶ Y`
-  -- with `K` algebraically closed and applying the rigidity lemma over `Spec K`.
-  have hconst : Function.FactorsThrough f.left c := by
-    rw [c.factorsThrough_iff_forall_isAlgClosed_subsingleton_range f.left, hc_eq]
-    intro K _ _ y
-    let F : Over S ⥤ Over (Spec (.of K)) := Over.pullback (y ≫ Y.hom)
-    have : IsProper (F.obj X).hom := by dsimp [F]; infer_instance
-    have : GeometricallyIntegral (F.obj X).hom := by dsimp [F]; infer_instance
-    have : IsIntegral (F.obj X).left :=
-      GeometricallyIntegral.isIntegral_of_subsingleton (F.obj X).hom
-    have : LocallyOfFiniteType (F.obj X).hom := by dsimp [F]; infer_instance
-    have : JacobsonSpace (F.obj X).left := LocallyOfFiniteType.jacobsonSpace (F.obj X).hom
-    have : LocallyOfFiniteType (F.obj Y).hom := by dsimp [F]; infer_instance
-    have : GeometricallyIntegral (F.obj Y).hom := by dsimp [F]; infer_instance
-    have : IsIntegral (F.obj Y).left :=
-      GeometricallyIntegral.isIntegral_of_subsingleton (F.obj Y).hom
-    have : IsLocallyNoetherian (F.obj Y).left := by dsimp [F]; infer_instance
-    have : IsIntegral (F.obj X ⊗ F.obj Y).left :=
-      GeometricallyIntegral.isIntegral_of_isLocallyNoetherian
-        (pullback.snd (F.obj X).hom (F.obj Y).hom)
-    have : IsSeparated (F.obj Z).hom := by dsimp [F]; infer_instance
-    have : LocallyOfFiniteType (F.obj Z).hom := by dsimp [F]; infer_instance
-    obtain ⟨pt, -, hpt⟩ := nonempty_inter_closedPoints (X := (F.obj X).left) Set.univ_nonempty
-      isOpen_univ.isLocallyClosed
-    let x₀ : 𝟙_ (Over (Spec (.of K))) ⟶ F.obj X :=
-      Over.homMk (pointOfClosedPoint (F.obj X).hom pt hpt)
-        (by dsimp; exact pointOfClosedPoint_comp (F.obj X).hom pt hpt)
-    have H := eq_snd_comp_lift_comp_of_isAlgClosed
-      (Functor.LaxMonoidal.μ F X Y ≫ F.map f) x₀
-      (Functor.LaxMonoidal.ε F ≫ F.map y₀) (Functor.LaxMonoidal.ε F ≫ F.map z₀) (by
-        rw [← Category.assoc, ← F.map_id, Functor.Monoidal.toUnit_ε_assoc, ← F.map_comp,
-          Functor.Monoidal.lift_μ, ← F.map_comp, hf, F.map_comp,
-          Functor.Monoidal.toUnit_ε_assoc])
-    obtain ⟨h, hfactor⟩ := exists_pullback_snd_comp_eq_of_pullback f y H
-    rw [hfactor]
-    rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
-    simp only [Scheme.Hom.comp_apply,
-      Subsingleton.elim (pullback.snd (pullback.snd X.hom Y.hom) y a)
-        (pullback.snd (pullback.snd X.hom Y.hom) y b)]
+  have hconst := factorsThrough_snd_left_of_isProper f y₀ z₀ hf
   refine ⟨Over.homMk (c.descOfIsQuotientMap hq hc f.left hconst)
       (c.descOfIsQuotientMap_comp_eq hq hc f.left hconst
         ((Over.w f).trans (Over.w (snd X Y)).symm)),
@@ -269,6 +241,21 @@ theorem existsUnique_snd_comp_eq {X Y Z : Over (Spec (.of K))}
     ∃! g : Y ⟶ Z, snd X Y ≫ g = f :=
   existsUnique_snd_comp_eq_of_flat
     (fun V ↦ X.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f y₀ z₀ hf
+
+/-- **The rigidity lemma over a field.** Let `X` be proper and geometrically integral over a field
+`K`, `Y` geometrically integral and locally of finite type over `K`, and `Z` separated and locally
+of finite type over `K`. If `f : X ×_K Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of
+`Y` to a single `K`-point `z₀` of `Z`, then `f` factors through the projection to `Y`:
+`f (x, y) = f (x₀, y)` for any `K`-point `x₀` of `X`. -/
+theorem eq_snd_comp_lift_comp {X Y Z : Over (Spec (.of K))}
+    [IsProper X.hom] [GeometricallyIntegral X.hom]
+    [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
+    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ _ ⟶ X) (y₀ : 𝟙_ _ ⟶ Y) (z₀ : 𝟙_ _ ⟶ Z)
+    (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
+    f = snd X Y ≫ lift (toUnit Y ≫ x₀) (𝟙 Y) ≫ f :=
+  eq_snd_comp_lift_comp_of_flat
+    (fun V ↦ X.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f x₀ y₀ z₀ hf
 
 end Field
 
