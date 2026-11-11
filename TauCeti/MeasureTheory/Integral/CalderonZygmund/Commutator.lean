@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.JohnNirenberg
+public import TauCeti.MeasureTheory.Integral.JohnNirenberg.Cube
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.Average
