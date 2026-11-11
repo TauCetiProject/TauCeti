@@ -37,6 +37,8 @@ the list, a position of higher priority than the attending requirement.
   every record of strictly higher priority unchanged.
 * `TauCeti.Priority.Update.getElem?_apply_of_gt`: after an update, no record of strictly lower
   priority remains.
+* `TauCeti.Priority.disjoint_attentionStages`: distinct requirements have disjoint attention
+  stages.
 * `TauCeti.Priority.finite_attentionStages_of_local`: if each requirement receives attention
   finitely often whenever every higher-priority requirement does, then every requirement receives
   attention finitely often.
@@ -187,6 +189,14 @@ def attentionStages (action : ℕ → Option ℕ) (e : ℕ) : Set ℕ :=
 theorem mem_attentionStages {action : ℕ → Option ℕ} {e t : ℕ} :
     t ∈ attentionStages action e ↔ ∃ s, t = s + 1 ∧ action s = some e :=
   Iff.rfl
+
+/-- Distinct requirements have disjoint attention stages. -/
+theorem disjoint_attentionStages {action : ℕ → Option ℕ} {d e : ℕ} (h : d ≠ e) :
+    Disjoint (attentionStages action d) (attentionStages action e) :=
+  Set.disjoint_left.mpr fun _ hd he => by
+    obtain ⟨s, rfl, hsd⟩ := mem_attentionStages.mp hd
+    obtain ⟨t, ht, hte⟩ := mem_attentionStages.mp he
+    exact h <| Option.some.inj <| hsd.symm.trans (Nat.succ.inj ht ▸ hte)
 
 /-- **Priority induction.** If each requirement receives attention finitely often whenever every
 higher-priority requirement does, then every requirement receives attention finitely often. -/

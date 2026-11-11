@@ -109,7 +109,7 @@ private theorem isJacobsonRing_option {σ : Type*} [Finite σ] [IsJacobsonRing (
       Tate (Option σ))) ▸ hg) (Φ.symm z)).map Φ
   · -- Make `f` distinguished in `Y`; then `S ⧸ (Φ (e f))` is finite over `R`.
     obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
-    have := hd.finite_quotient zero_lt_one hu
+    have := (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
     have : Algebra.IsIntegral R (S ⧸ Ideal.span {Φ (e f)}) := Algebra.IsIntegral.of_finite R _
     have : IsJacobsonRing (S ⧸ Ideal.span {Φ (e f)}) :=
       isJacobsonRing_of_isIntegral (R := R)

@@ -28,7 +28,9 @@ Dually to Mathlib's `isClosedImmersion_equalizer_ι_left` for separated targets,
 two morphisms over `S` into a scheme formally unramified and locally of finite type over `S` is an
 open subscheme of their source (`isOpenImmersion_equalizer_ι_left`): it is a base change of the
 diagonal, which is an open immersion by Mathlib's `FormallyUnramified.isOpenImmersion_diagonal`.
-In particular two sections of an unramified morphism agree on an open subscheme.
+In particular two sections of an unramified morphism agree on an open subscheme, and two
+morphisms into an unramified scheme that agree after a surjective morphism are equal
+(`ext_of_surjective_of_formallyUnramified`).
 
 If the target is also separated, two morphisms that agree after a dominant morphism are
 equal (`ext_of_isDominant_of_isSeparated_of_formallyUnramified`). Unlike Mathlib's
@@ -40,18 +42,11 @@ exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
 
-For `f` formally unramified and locally of finite type, every residue field extension
-`κ(f x) → κ(x)` is finite (`AlgebraicGeometry.FormallyUnramified.finite_residueField`): this is
-Stacks, Lemma 00UW (2), applied to the stalk map of `f` at `x`. It complements Mathlib's instance
-that these extensions are separable, whose proof it adapts.
-
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
 * The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
   monomorphism).
-* The Stacks Project, Tag 00UW (2) (residue field extensions of an unramified ring map are
-  finite).
 -/
 
 public section
@@ -176,6 +171,29 @@ theorem ext_of_isDominant_of_isSeparated_of_formallyUnramified {W Z : Scheme.{u}
   rw [← cancel_epi (equalizer.ι f' g').left]
   exact congrArg (fun k ↦ k.left) (equalizer.condition f' g')
 
+/-- Morphisms into an unramified scheme agree if they agree after precomposition with a
+surjective morphism. Neither a reduced source nor a separated target is needed. -/
+theorem ext_of_surjective_of_formallyUnramified {W Z : Scheme.{u}} {f g : X ⟶ Y} (s : Y ⟶ Z)
+    [FormallyUnramified s] [LocallyOfFiniteType s] (h : f ≫ s = g ≫ s)
+    (ι : W ⟶ X) [Surjective ι] (hU : ι ≫ f = ι ≫ g) : f = g := by
+  let X' : Over Z := Over.mk (f ≫ s)
+  let Y' : Over Z := Over.mk s
+  let U' : Over Z := Over.mk (ι ≫ f ≫ s)
+  let f' : X' ⟶ Y' := Over.homMk f
+  let g' : X' ⟶ Y' := Over.homMk g h.symm
+  let ι' : U' ⟶ X' := Over.homMk ι
+  have : FormallyUnramified Y'.hom := ‹FormallyUnramified s›
+  have : LocallyOfFiniteType Y'.hom := ‹LocallyOfFiniteType s›
+  let e := equalizer.lift ι' (f := f') (g := g') (by ext1; exact hU)
+  have : Surjective (e.left ≫ (equalizer.ι f' g').left) := by
+    simpa only [← Over.comp_left, e, equalizer.lift_ι, ι', Over.homMk_left] using
+      (inferInstance : Surjective ι)
+  have : Surjective (equalizer.ι f' g').left := Surjective.of_comp e.left _
+  have : IsIso (equalizer.ι f' g').left :=
+    (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, inferInstance⟩
+  rw [← cancel_epi (equalizer.ι f' g').left]
+  exact congrArg (fun k ↦ k.left) (equalizer.condition f' g')
+
 /-- **An unramified morphism is a monomorphism exactly when it is universally injective.**
 Stacks, Tag 05VH. -/
 theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [FormallyUnramified f]
@@ -184,29 +202,5 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
   -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
   rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
   exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
-
-/-- **Residue field extensions of an unramified morphism are finite.** If `f` is formally
-unramified and locally of finite type, then `κ(x)` is a finite extension of `κ(f x)` at every
-point `x`. This is Stacks, Lemma 00UW (2), at the stalks of `f`; Mathlib provides the
-separability of these extensions. The proof is adapted from that of Mathlib's `Algebra.IsSeparable`
-instance for `f.residueFieldMap x` in `Mathlib/AlgebraicGeometry/Morphisms/FormallyUnramified.lean`,
-with finiteness of the residue field extension in place of separability. -/
-instance FormallyUnramified.finite_residueField (f : X ⟶ Y) [FormallyUnramified f]
-    [LocallyOfFiniteType f] (x : X) :
-    letI := (f.residueFieldMap x).hom.toAlgebra
-    Module.Finite (Y.residueField (f x)) (X.residueField x) := by
-  algebraize [(f.stalkMap x).hom]
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
-    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
-  have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact LocallyOfFiniteType.stalkMap f x
-  have : Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.formallyUnramified_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact FormallyUnramified.stalkMap f x
-  -- `κ(f x) ⟶ κ(x)` is the map of residue fields of the local homomorphism of stalks.
-  exact RingHom.finite_algebraMap.mpr (inferInstance : Module.Finite
-    (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
-    (IsLocalRing.ResidueField <| X.presheaf.stalk x))
 
 end AlgebraicGeometry

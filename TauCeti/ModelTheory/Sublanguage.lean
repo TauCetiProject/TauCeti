@@ -13,8 +13,8 @@ public import TauCeti.ModelTheory.Term.Symbols
 For a set `F` of function symbols and a set `R` of relation symbols of a language `L`, each
 tagged by its arity, `symbSublang F R` is the sublanguage of `L` whose symbols are exactly the
 members of `F` and `R`, and `symbSublangIncl F R` is its inclusion into `L`. The inclusion is
-injective, and the sublanguage has countably many symbols of each sort when `F` and `R` are
-countable.
+injective, the sublanguage has countably many symbols of each sort when `F` and `R` are
+countable, and it is relational whenever `L` is relational or `F` is empty.
 
 A term of `L` whose function symbols lie in `F` restricts to the sublanguage
 (`Term.restrictSymbols`), and translating the restriction back along the inclusion recovers the
@@ -109,6 +109,14 @@ instance countable_relations_symbSublang [Countable R] :
     rintro ⟨n, r, hr⟩ ⟨m, r', hr'⟩ h
     cases congrArg Subtype.val h
     rfl
+
+/-- Any symbol sublanguage of a relational language is relational. -/
+instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelational :=
+  fun _ => ⟨fun f => isEmptyElim f.1⟩
+
+/-- A symbol sublanguage with an empty set of function symbols is relational. -/
+instance isRelational_symbSublang_of_isEmpty [IsEmpty F] : (symbSublang F R).IsRelational :=
+  fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.1⟩, f.2⟩ : F)⟩
 
 namespace Term
 

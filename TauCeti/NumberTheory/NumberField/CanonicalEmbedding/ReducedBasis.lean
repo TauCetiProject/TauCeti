@@ -7,24 +7,22 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-import Mathlib.Topology.MetricSpace.ProperSpace.Real
-import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IntegerLattice
 
 /-!
 # An integral basis of bounded house
 
-For a number field `K` of degree `d = [K : ℚ]`, the norm on `mixedSpace K` at `mixedEmbedding K x`
-is the house of `x` (`TauCeti.NumberField.norm_mixedEmbedding`), so the closed unit ball of
-`mixedSpace K` (`ConvexBody.closedBall 0 1 zero_le_one`) cuts out the elements of `K` whose
-conjugates all have modulus at most `1`. Every nonzero algebraic integer has house at least `1`, so
-every successive minimum of `mixedEmbedding.integerLattice K` with respect to the unit ball is at
-least `1`. Minkowski's second theorem
-(`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`) bounds the product of those
-minima by `√|discr K|`, and `ZLattice.exists_basis_mem_smul_successiveMin` turns the minima into a
-`ℤ`-basis `TauCeti.NumberField.reducedIntegralBasis K` of `𝓞 K` whose `i`-th element has house at
-most `max 1 ((i + 1) / 2) * √|discr K|`.
+For a number field `K` of degree `d = [K : ℚ]`, each successive minimum of
+`mixedEmbedding.integerLattice K` with respect to the closed unit ball of `mixedSpace K` is bounded
+between `1` and `√|discr K|`
+(`TauCeti.NumberField.mixedEmbedding.one_le_successiveMin_integerLattice` and
+`TauCeti.NumberField.mixedEmbedding.successiveMin_integerLattice_le`). Applying
+`ZLattice.exists_basis_mem_smul_successiveMin` on `ConvexBody.closedBall 0 1 zero_le_one` and
+pulling back along `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K` turns those minima
+into a `ℤ`-basis `TauCeti.NumberField.reducedIntegralBasis K` of `𝓞 K` whose `i`-th element has
+house at most `max 1 ((i + 1) / 2) * √|discr K|`.
 
 Its largest house `TauCeti.NumberField.integralBasisHouse K` satisfies `1 ≤ integralBasisHouse K`
 and `integralBasisHouse K ≤ max 1 (d / 2) * √|discr K|`, with `integralBasisHouse ℚ = 1`; it bounds
@@ -60,7 +58,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Module NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+open Module NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   TauCeti.NumberField.mixedEmbedding
 open scoped Pointwise
 
@@ -71,64 +69,6 @@ variable {K : Type*} [Field K] [NumberField K]
 section Construction
 
 variable (K)
-
-open scoped Classical in
-/-- Every successive minimum of `mixedEmbedding.integerLattice K` with respect to the unit ball is
-at least `1`, because every nonzero algebraic integer has house at least `1`. -/
-private theorem one_le_successiveMin_integerLattice
-    (i : Fin (finrank ℝ (mixedSpace K))) :
-    1 ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := by
-  obtain ⟨⟨ht, v, hv, hvL⟩, -⟩ := ZLattice.successiveMin_isLeast
-    (mixedEmbedding.integerLattice K)
-    (ConvexBody.mem_interior_closedBall_self (0 : mixedSpace K) zero_lt_one) i
-  obtain ⟨α, hα⟩ := (hvL 0).1
-  replace hα : mixedEmbedding K (α : K) = v 0 := by simpa using hα
-  have hα0 : (α : K) ≠ 0 := by
-    intro h0
-    exact hv.ne_zero 0 (by simpa [h0] using hα.symm)
-  have hv0 : ‖v 0‖ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := by
-    have hz := (hvL 0).2
-    rwa [ConvexBody.coe_closedBall, smul_unitClosedBall_of_nonneg ht,
-      mem_closedBall_zero_iff] at hz
-  calc (1 : ℝ) ≤ house (α : K) := one_le_house_of_isIntegral α.2 hα0
-    _ = ‖v 0‖ := by rw [← hα, norm_mixedEmbedding]
-    _ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := hv0
-
-open scoped Classical in
-/-- The product of the successive minima of `mixedEmbedding.integerLattice K` with respect to the
-unit ball of `mixedSpace K` is at most `√|discr K|`. -/
-private theorem prod_successiveMin_integerLattice_le :
-    ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i ≤
-      √|(discr K : ℝ)| := by
-  have hmink := ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
-    (K := ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one)
-    (mixedEmbedding.integerLattice K) volume (fun _ hz ↦ by simpa using hz)
-  have hdim : finrank ℝ (mixedSpace K) = nrRealPlaces K + 2 * nrComplexPlaces K := by
-    rw [mixedEmbedding.finrank, ← card_add_two_mul_card_eq_rank]
-  have hprod_nn : 0 ≤
-      ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-        (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i :=
-    Finset.prod_nonneg fun i _ ↦ ZLattice.successiveMin_nonneg _ _ i
-  set C : ℝ := 2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K
-  have hC : 0 < C := by positivity
-  rw [← mul_le_mul_iff_left₀ hC]
-  calc (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i) * C
-      ≤ (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
-          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i) *
-          volume.real (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one :
-            Set (mixedSpace K)) := by
-        rw [ConvexBody.coe_closedBall]
-        exact mul_le_mul_of_nonneg_left (two_pow_mul_two_pow_le_volume_real_closedBall K) hprod_nn
-    _ ≤ 2 ^ finrank ℝ (mixedSpace K) * ZLattice.covolume (mixedEmbedding.integerLattice K) := hmink
-    _ = √|(discr K : ℝ)| * C := by
-        rw [hdim, covolume_integerLattice, two_mul, pow_add, pow_add, inv_pow]
-        dsimp [C]
-        field_simp
 
 /-- **Existence of an integral basis of bounded house.** Every number field `K` has a `ℤ`-basis
 `b` of `𝓞 K` indexed by `Fin (finrank ℚ K)` such that `b i` has house at most
@@ -151,7 +91,6 @@ theorem exists_basis_ringOfIntegers_house_le :
     (bL.map (integerLatticeEquiv K).symm).reindex eIdx
   have hb_img (i : Fin (finrank ℚ K)) :
       mixedEmbedding K (b i : K) = (bL (eIdx.symm i) : mixedSpace K) := by
-    rw [← coe_integerLatticeEquiv]
     simp [b]
   refine ⟨b, ?_, fun i ↦ ?_⟩
   · have hR := (bL.ofZLatticeBasis ℝ (mixedEmbedding.integerLattice K)).linearIndependent.comp
@@ -170,17 +109,9 @@ theorem exists_basis_ringOfIntegers_house_le :
       rw [ConvexBody.coe_closedBall, smul_unitClosedBall_of_nonneg hc,
         mem_closedBall_zero_iff] at hz
       rwa [← norm_mixedEmbedding, hb_img]
-    have hrest : 1 ≤ ∏ k ∈ Finset.univ.erase j,
-        ZLattice.successiveMin (mixedEmbedding.integerLattice K) U k :=
-      Finset.prod_induction _ (1 ≤ ·) (fun _ _ ha hb ↦ one_le_mul_of_one_le_of_one_le ha hb)
-        le_rfl (fun k _ ↦ one_le_successiveMin_integerLattice K k)
-    have hlam : ZLattice.successiveMin (mixedEmbedding.integerLattice K) U j ≤
-        √|(discr K : ℝ)| := by
-      refine (le_mul_of_one_le_right (ZLattice.successiveMin_nonneg _ _ j) hrest).trans ?_
-      rw [Finset.mul_prod_erase _ _ (Finset.mem_univ j)]
-      exact prod_successiveMin_integerLattice_le K
     rw [← hj_val]
-    exact hnorm.trans (mul_le_mul_of_nonneg_left hlam (le_trans zero_le_one (le_max_left _ _)))
+    exact hnorm.trans (mul_le_mul_of_nonneg_left (successiveMin_integerLattice_le K j)
+      (le_trans zero_le_one (le_max_left _ _)))
 
 /-- **An integral basis of bounded house** of `𝓞 K`, indexed by `Fin (finrank ℚ K)`, constructed
 from successive minima so that its `i`-th element has house at most
@@ -276,3 +207,4 @@ theorem integralBasisHouse_rat : integralBasisHouse ℚ = 1 := by
   norm_num
 
 end TauCeti.NumberField
+end

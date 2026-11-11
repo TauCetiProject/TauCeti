@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.Analysis.Normed.Module.Essential
-public import TauCeti.Analysis.Normed.Module.Unitization
+public import TauCeti.Analysis.Normed.Module.Unitization.Basic
 public import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
@@ -64,7 +64,102 @@ namespace TauCeti.CohenHewitt
 variable {𝕜 A E : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- The algebraic identity behind one Cohen–Hewitt step: in the `ℓ¹` unitization,
+`(1 - τ) s + (f + τ s e) = (1 - w) (s + f) + τ (f - e f)` with `w = τ - τ e`. -/
+private lemma toLp_inl_add_eq_one_sub_mul_add (τ s : 𝕜) (f e : A) :
+    toLp 1 (inl ((1 - τ) * s) + ((f + (τ * s) • e : A) : Unitization 𝕜 A)) =
+      (1 - toLp 1 (inl τ + ((-(τ • e) : A) : Unitization 𝕜 A))) *
+          toLp 1 (inl s + (f : Unitization 𝕜 A)) +
+        toLp 1 ((τ • (f - e * f) : A) : Unitization 𝕜 A) := by
+  set ι : Unitization 𝕜 A ≃ₐ[𝕜] WithLp 1 (Unitization 𝕜 A) := (unitizationAlgEquiv 𝕜).symm
+  have hι : ∀ u, toLp 1 u = ι u := fun u ↦ (unitizationAlgEquiv_symm_apply 𝕜 u).symm
+  simp only [hι, ← map_one ι, ← map_sub, ← map_mul, ← map_add]
+  congr 1
+  ext
+  · simp
+  · simp [smul_mul_assoc]
+    module
+
+/-- The increment of one Cohen–Hewitt step. Let `a` and `a'` be units of the `ℓ¹` unitization
+with `a - a' = c (1 - e)`, `‖c‖ ≤ 1` and `‖a'⁻¹‖ ≤ M`, and put `y = a⁻¹ · x`. Then
+`a'⁻¹ · x - y = a'⁻¹ · c (y - e · y)`, so `a'⁻¹ · x` is within `δ` of `y` once `e` nearly
+fixes `y`. -/
+private lemma dist_unitizationAction_inverse_le (L : A →L[𝕜] E →L[𝕜] E)
+    (hL : ∀ a b z, L (a * b) z = L a (L b z)) {a a' : WithLp 1 (Unitization 𝕜 A)}
+    (ha : IsUnit a) (ha' : IsUnit a') {c : 𝕜} (hc : ‖c‖ ≤ 1) {e : A}
+    (haa' : a - a' = toLp 1 (c • (1 - (e : Unitization 𝕜 A)))) {M δ : ℝ}
+    (hM : ‖Ring.inverse a'‖ ≤ M) (hδ : 0 < δ) {x : E}
+    (he : ‖L.unitizationAction hL (Ring.inverse a) x -
+      L e (L.unitizationAction hL (Ring.inverse a) x)‖ < δ / ((1 + ‖L‖) * M + 1)) :
+    dist (L.unitizationAction hL (Ring.inverse a) x)
+      (L.unitizationAction hL (Ring.inverse a') x) ≤ δ := by
+  set Φ := L.unitizationAction hL
+  set y := Φ (Ring.inverse a) x
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
+  have hK : 0 < 1 + ‖L‖ := by positivity
+  have hinv : Ring.inverse a' - Ring.inverse a = Ring.inverse a' * (a - a') * Ring.inverse a :=
+    Ring.inverse_sub_inverse ⟨fun _ ↦ ha, fun _ ↦ ha'⟩
+  have hincr : Φ (Ring.inverse a') x - y = Φ (Ring.inverse a') (c • (y - L e y)) := by
+    calc Φ (Ring.inverse a') x - y = Φ (Ring.inverse a' - Ring.inverse a) x := by simp [y]
+      _ = Φ (Ring.inverse a') (Φ (a - a') y) := by simp [hinv, y, mul_apply_eq_comp]
+      _ = Φ (Ring.inverse a') (c • (y - L e y)) := by
+        rw [haa']
+        congr 1
+        simp [Φ, smul_sub]
+  rw [dist_comm, dist_eq_norm, hincr]
+  calc ‖Φ (Ring.inverse a') (c • (y - L e y))‖
+      ≤ (1 + ‖L‖) * ‖Ring.inverse a'‖ * ‖c • (y - L e y)‖ :=
+        L.norm_unitizationAction_apply_le hL _ _
+    _ ≤ (1 + ‖L‖) * M * (1 * (δ / ((1 + ‖L‖) * M + 1))) := by
+        rw [norm_smul]
+        gcongr
+    _ ≤ δ := by
+        rw [one_mul, ← mul_div_assoc, div_le_iff₀ (by positivity)]
+        nlinarith [mul_nonneg hK.le hM0]
+
+/-- If `s + f` is a unit of the `ℓ¹` unitization, then `y = (s + f)⁻¹ · x` solves
+`s • y + f · y = x`. -/
+private lemma smul_add_apply_unitizationAction_inverse (L : A →L[𝕜] E →L[𝕜] E)
+    (hL : ∀ a b z, L (a * b) z = L a (L b z)) {s : 𝕜} {f : A}
+    (hu : IsUnit (toLp 1 (inl s + (f : Unitization 𝕜 A)))) (x : E) :
+    s • L.unitizationAction hL (Ring.inverse (toLp 1 (inl s + (f : Unitization 𝕜 A)))) x +
+      L f (L.unitizationAction hL (Ring.inverse (toLp 1 (inl s + (f : Unitization 𝕜 A)))) x) =
+      x := by
+  have := congr(L.unitizationAction hL $(Ring.mul_inverse_cancel _ hu) x)
+  rw [map_mul, mul_apply_eq_comp, ContinuousLinearMap.unitizationAction_apply] at this
+  simpa using this
+
 variable [CompleteSpace A]
+
+/-- The unit part of one Cohen–Hewitt step. Suppose `a = s + f` is a unit of the `ℓ¹`
+unitization with `‖a⁻¹‖ ≤ M`, and `‖τ‖ * (1 + C) ≤ 1 / 2`. If `‖e‖ ≤ C` and `e` nearly fixes `f`,
+then `a' = (1 - τ) s + (f + τ s e)` is again a unit, with `‖a'⁻¹‖ ≤ 4 M`. -/
+private lemma isUnit_and_norm_inverse_le_step {τ s : 𝕜} {C M : ℝ} (hτ : ‖τ‖ * (1 + C) ≤ 1 / 2)
+    {f e : A} (heC : ‖e‖ ≤ C) (he : ‖f - e * f‖ < 1 / (4 * ‖τ‖ * M + 1))
+    (hu : IsUnit (toLp 1 (inl s + (f : Unitization 𝕜 A))))
+    (hM : ‖Ring.inverse (toLp 1 (inl s + (f : Unitization 𝕜 A)))‖ ≤ M) :
+    IsUnit (toLp 1 (inl ((1 - τ) * s) + ((f + (τ * s) • e : A) : Unitization 𝕜 A))) ∧
+      ‖Ring.inverse (toLp 1 (inl ((1 - τ) * s) + ((f + (τ * s) • e : A) : Unitization 𝕜 A)))‖ ≤
+        4 * M := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
+  /- `a'` is a small perturbation `(1 - w) * a + d` of the unit `(1 - w) * a`, where
+  `‖w‖ ≤ 1 / 2` and `‖d‖ * (2 * M) ≤ 1 / 2`. -/
+  set w := toLp 1 (inl τ + ((-(τ • e) : A) : Unitization 𝕜 A))
+  set d := toLp 1 ((τ • (f - e * f) : A) : Unitization 𝕜 A)
+  have hw : ‖w‖ ≤ 1 / 2 := by
+    simp [w, unitization_norm_def, norm_smul]
+    nlinarith [norm_nonneg τ]
+  have hd : ‖d‖ * (2 * M) ≤ 1 / 2 := by
+    rw [unitization_norm_inr, norm_smul]
+    rw [lt_div_iff₀ (by positivity)] at he
+    nlinarith [norm_nonneg τ, norm_nonneg (f - e * f),
+      mul_nonneg (norm_nonneg τ) (norm_nonneg (f - e * f))]
+  obtain ⟨ha', hM'⟩ := NormedRing.isUnit_one_sub_mul_add_and_norm_inverse_le (w := w) (d := d)
+    hu hM (by linarith) (by linarith)
+  rw [toLp_inl_add_eq_one_sub_mul_add]
+  refine ⟨ha', hM'.trans ?_⟩
+  rw [div_le_iff₀ (by linarith)]
+  nlinarith
 
 /-- One step of the Cohen–Hewitt construction. Suppose `a = s + f` is a unit of the `ℓ¹`
 unitization with `‖a⁻¹‖ ≤ M`, and `‖τ‖ * (1 + C) ≤ 1 / 2`. Choosing `e` from the approximate
@@ -84,71 +179,54 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
       dist (L.unitizationAction hL (Ring.inverse (toLp 1 (inl s + (f : Unitization 𝕜 A)))) x)
         (L.unitizationAction hL (Ring.inverse
           (toLp 1 (inl ((1 - τ) * s) + ((f + (τ * s) • e : A) : Unitization 𝕜 A)))) x) ≤ δ := by
-  set ι : Unitization 𝕜 A ≃ₐ[𝕜] WithLp 1 (Unitization 𝕜 A) := (unitizationAlgEquiv 𝕜).symm
-  have hι : ∀ u, toLp 1 u = ι u := fun u ↦ (unitizationAlgEquiv_symm_apply 𝕜 u).symm
-  set Φ := L.unitizationAction hL
-  set a := toLp 1 (inl s + (f : Unitization 𝕜 A))
-  set y := Φ (Ring.inverse a) x
+  set y := L.unitizationAction hL (Ring.inverse (toLp 1 (inl s + (f : Unitization 𝕜 A)))) x
   have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
-  have hK : 0 < 1 + ‖L‖ := by positivity
-  have hη₁ : 0 < 1 / (4 * ‖τ‖ * M + 1) := by positivity
-  have hη₂ : 0 < δ / ((1 + ‖L‖) * (4 * M) + 1) := by positivity
   have h₁ : ∀ᶠ e in l, ‖f - e * f‖ < 1 / (4 * ‖τ‖ * M + 1) := by
-    simpa [dist_eq_norm, norm_sub_rev] using Metric.tendsto_nhds.mp (hl f) _ hη₁
+    simpa [dist_eq_norm, norm_sub_rev] using
+      Metric.tendsto_nhds.mp (hl f) _ (by positivity : 0 < 1 / (4 * ‖τ‖ * M + 1))
   have h₂ : ∀ᶠ e in l, ‖y - L e y‖ < δ / ((1 + ‖L‖) * (4 * M) + 1) :=
-    (Metric.tendsto_nhds.mp (L.tendsto_apply_unitizationAction hL hl hlx (Ring.inverse a)) _
-      hη₂).mono fun e he ↦ by rwa [dist_eq_norm, norm_sub_rev] at he
+    (Metric.tendsto_nhds.mp (L.tendsto_apply_unitizationAction hL hl hlx _) _
+      (by positivity : 0 < δ / ((1 + ‖L‖) * (4 * M) + 1))).mono fun e he ↦ by
+        rwa [dist_eq_norm, norm_sub_rev] at he
   obtain ⟨e, heC, he₁, he₂⟩ := (hC.and (h₁.and h₂)).exists
-  set a' := toLp 1 (inl ((1 - τ) * s) + ((f + (τ * s) • e : A) : Unitization 𝕜 A))
-  /- `a'` is a small perturbation of the unit `(1 - w) * a`, where `‖w‖ ≤ 1 / 2`. -/
-  set w := toLp 1 (inl τ + ((-(τ • e) : A) : Unitization 𝕜 A))
-  have hkey : a' = (1 - w) * a + toLp 1 ((τ • (f - e * f) : A) : Unitization 𝕜 A) := by
-    simp only [a', a, w, hι, ← map_one ι, ← map_sub, ← map_mul, ← map_add]
-    congr 1
-    ext
-    · simp
-    · simp [smul_mul_assoc]
-      module
-  have hw : ‖w‖ ≤ 1 / 2 := by
-    simp [w, unitization_norm_def, norm_smul]
-    nlinarith [norm_nonneg τ]
-  have hd : ‖toLp 1 ((τ • (f - e * f) : A) : Unitization 𝕜 A)‖ * (2 * M) ≤ 1 / 2 := by
-    rw [unitization_norm_inr, norm_smul]
-    rw [lt_div_iff₀ (by positivity)] at he₁
-    nlinarith [norm_nonneg τ, norm_nonneg (f - e * f),
-      mul_nonneg (norm_nonneg τ) (norm_nonneg (f - e * f))]
-  obtain ⟨ha', hM'⟩ := hkey ▸
-    NormedRing.isUnit_one_sub_mul_add_and_norm_inverse_le hu hM (by linarith) (by linarith)
-  have hM'' : ‖Ring.inverse a'‖ ≤ 4 * M := by
-    refine hM'.trans ?_
-    rw [div_le_iff₀ (by linarith)]
-    nlinarith
-  refine ⟨e, heC, ha', hM'', ?_⟩
-  /- The increment `a'⁻¹ · x - a⁻¹ · x` is `a'⁻¹ · (τ s (y - e · y))`. -/
-  have hinv : Ring.inverse a' - Ring.inverse a = Ring.inverse a' * (a - a') * Ring.inverse a :=
-    Ring.inverse_sub_inverse ⟨fun _ ↦ hu, fun _ ↦ ha'⟩
-  have hdiff : a - a' = toLp 1 ((τ * s) • (1 - (e : Unitization 𝕜 A))) := by
-    simp only [a', a, hι, ← map_sub]
-    congr 1
-    ext
-    · simp
-      ring
-    · simp
-  have hincr : Φ (Ring.inverse a') x - y = Φ (Ring.inverse a') ((τ * s) • (y - L e y)) := by
-    calc Φ (Ring.inverse a') x - y = Φ (Ring.inverse a' - Ring.inverse a) x := by simp [y]
-      _ = Φ (Ring.inverse a') (Φ (a - a') y) := by simp [hinv, y, mul_apply_eq_comp]
-      _ = Φ (Ring.inverse a') ((τ * s) • (y - L e y)) := by
-        simp [Φ, hdiff, sub_eq_add_neg]
-  rw [dist_comm, dist_eq_norm, hincr]
-  calc ‖Φ (Ring.inverse a') ((τ * s) • (y - L e y))‖
-      ≤ (1 + ‖L‖) * ‖Ring.inverse a'‖ * ‖(τ * s) • (y - L e y)‖ :=
-        L.norm_unitizationAction_apply_le hL _ _
-    _ ≤ (1 + ‖L‖) * (4 * M) * (1 * (δ / ((1 + ‖L‖) * (4 * M) + 1))) := by
-        rw [norm_smul]
-        gcongr
-    _ ≤ δ := by
-        rw [one_mul, ← mul_div_assoc, div_le_iff₀ (by positivity)]
-        nlinarith [mul_nonneg hK.le hM0]
+  obtain ⟨ha', hM'⟩ := isUnit_and_norm_inverse_le_step hτ heC he₁ hu hM
+  refine ⟨e, heC, ha', hM', dist_unitizationAction_inverse_le L hL hu ha' hs ?_ hM' hδ he₂⟩
+  /- `a - a' = τ s (1 - e)`. -/
+  rw [← toLp_sub]
+  congr 1
+  ext
+  · simp
+    ring
+  · simp
+
+/-- `exists_step` at stage `n` of the recursion, with `s = (1 - τ) ^ n`, `M = 4 ^ n` and
+`δ = ε / 2 / 2 / 2 ^ n`. It is stated for every `f`, so that `choose` can build the sequence: the
+conclusion is only claimed when `(1 - τ) ^ n + f` is a unit with inverse of norm at most
+`4 ^ n`, which the recursion maintains. -/
+private lemma exists_step_pow (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a * b) z = L a (L b z))
+    {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {x : E} (hlx : Tendsto (fun e ↦ L e x) l (𝓝 x))
+    {τ : 𝕜} (hτ : ‖τ‖ * (1 + C) ≤ 1 / 2) {n : ℕ} (hτ₁ : ‖τ * (1 - τ) ^ n‖ ≤ 1) {ε : ℝ}
+    (hε : 0 < ε) (f : A) :
+    ∃ e : A, ‖e‖ ≤ C ∧ (IsUnit (toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A))) →
+      ‖Ring.inverse (toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A)))‖ ≤ 4 ^ n →
+      IsUnit (toLp 1 (inl ((1 - τ) ^ (n + 1)) +
+        ((f + (τ * (1 - τ) ^ n) • e : A) : Unitization 𝕜 A))) ∧
+      ‖Ring.inverse (toLp 1 (inl ((1 - τ) ^ (n + 1)) +
+        ((f + (τ * (1 - τ) ^ n) • e : A) : Unitization 𝕜 A)))‖ ≤ 4 ^ (n + 1) ∧
+      dist (L.unitizationAction hL
+          (Ring.inverse (toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A)))) x)
+        (L.unitizationAction hL (Ring.inverse (toLp 1 (inl ((1 - τ) ^ (n + 1)) +
+          ((f + (τ * (1 - τ) ^ n) • e : A) : Unitization 𝕜 A)))) x) ≤ ε / 2 / 2 / 2 ^ n) := by
+  by_cases h : IsUnit (toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A))) ∧
+      ‖Ring.inverse (toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A)))‖ ≤ 4 ^ n
+  · obtain ⟨e, he, h₁, h₂, h₃⟩ := exists_step L hL hC hl hlx (M := 4 ^ n)
+      (δ := ε / 2 / 2 / 2 ^ n) hτ hτ₁ (by positivity) h.1 h.2
+    /- `exists_step` states its conclusion with `(1 - τ) * (1 - τ) ^ n` and `4 * 4 ^ n`. -/
+    simp only [pow_succ' (1 - τ), pow_succ' (4 : ℝ)]
+    exact ⟨e, he, fun _ _ ↦ ⟨h₁, h₂, h₃⟩⟩
+  · obtain ⟨e, he⟩ := hC.exists
+    exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
 
 /-- The recursive part of the Cohen–Hewitt construction. Iterating `exists_step` with
 `s = (1 - τ) ^ n`, starting from `f 0 = 0`, produces `A`-parts `f n` whose increments are
@@ -164,27 +242,11 @@ private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a
       (∀ n, dist (y n) (y (n + 1)) ≤ ε / 2 / 2 / 2 ^ n) ∧
       (∀ n, (1 - τ) ^ n • y n + L (f n) (y n) = x) ∧
       ∀ n, y n ∈ closure (Set.range fun b ↦ L b x) := by
-  set Φ := L.unitizationAction hL
   /- `a n f = (1 - τ) ^ n + f` in the unitization, and `yy n f = (a n f)⁻¹ · x`. -/
   let a : ℕ → A → WithLp 1 (Unitization 𝕜 A) := fun n f ↦
     toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A))
-  let yy : ℕ → A → E := fun n f ↦ Φ (Ring.inverse (a n f)) x
-  /- Choose the next approximate-identity element for every `n` and `f`; the conclusion is only
-  needed when `a n f` is a unit with `‖(a n f)⁻¹‖ ≤ 4 ^ n`, which the recursion maintains. -/
-  have step : ∀ n f, ∃ e : A, ‖e‖ ≤ C ∧ (IsUnit (a n f) → ‖Ring.inverse (a n f)‖ ≤ 4 ^ n →
-      IsUnit (a (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ∧
-      ‖Ring.inverse (a (n + 1) (f + (τ * (1 - τ) ^ n) • e))‖ ≤ 4 ^ (n + 1) ∧
-      dist (yy n f) (yy (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ≤ ε / 2 / 2 / 2 ^ n) := by
-    intro n f
-    by_cases h : IsUnit (a n f) ∧ ‖Ring.inverse (a n f)‖ ≤ 4 ^ n
-    · obtain ⟨e, he, h₁, h₂, h₃⟩ := exists_step L hL hC hl hlx (M := 4 ^ n)
-        (δ := ε / 2 / 2 / 2 ^ n) hτ (hτ₁ n) (by positivity) h.1 h.2
-      /- `exists_step` states its conclusion with `(1 - τ) * (1 - τ) ^ n` and `4 * 4 ^ n`. -/
-      simp only [a, yy, pow_succ' (1 - τ), pow_succ' (4 : ℝ)]
-      exact ⟨e, he, fun _ _ ↦ ⟨h₁, h₂, h₃⟩⟩
-    · obtain ⟨e, he⟩ := hC.exists
-      exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
-  choose E' hE'C hE' using step
+  let yy : ℕ → A → E := fun n f ↦ L.unitizationAction hL (Ring.inverse (a n f)) x
+  choose E' hE'C hE' using fun n ↦ exists_step_pow L hL hC hl hlx hτ (hτ₁ n) hε
   /- The recursive sequence of `A`-parts `f n = ∑_{k < n} τ (1 - τ) ^ k E' k (f k)`. -/
   obtain ⟨f, hf0, hfs⟩ : ∃ f : ℕ → A, f 0 = 0 ∧
       ∀ n, f (n + 1) = f n + (τ * (1 - τ) ^ n) • E' n (f n) :=
@@ -197,18 +259,14 @@ private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a
       obtain ⟨h₁, h₂, -⟩ := hE' n (f n) ih.1 ih.2
       rw [hfs]
       exact ⟨h₁, h₂⟩
-  refine ⟨f, fun n ↦ yy n (f n), hf0, by simp [yy, a, hf0], fun n ↦ ?_, fun n ↦ ?_, fun n ↦ ?_,
+  refine ⟨f, fun n ↦ yy n (f n), hf0, by simp [yy, a, hf0], fun n ↦ ?_, fun n ↦ ?_,
+    fun n ↦ smul_add_apply_unitizationAction_inverse L hL (hinv n).1 x,
     fun n ↦ L.unitizationAction_apply_mem_closure hL hlx _⟩
   · rw [hfs, dist_self_add_right, norm_smul]
     exact mul_le_mul_of_nonneg_left (hE'C n (f n)) (norm_nonneg _)
   · dsimp only
     rw [hfs]
     exact (hE' n (f n) (hinv n).1 (hinv n).2).2.2
-  · /- Apply `Φ (a n (f n))` to `yy n (f n) = (a n (f n))⁻¹ · x`. -/
-    have : Φ (a n (f n)) (yy n (f n)) = x := by
-      simpa [yy, mul_apply_eq_comp] using congr(Φ $(Ring.mul_inverse_cancel _ (hinv n).1) x)
-    rw [ContinuousLinearMap.unitizationAction_apply] at this
-    simpa [a] using this
 
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
 /-- The limit step of the Cohen–Hewitt construction. If `f n → a` in `A` and `y n → y₀` in `E`

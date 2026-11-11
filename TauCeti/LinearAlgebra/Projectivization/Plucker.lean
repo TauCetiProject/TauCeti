@@ -9,8 +9,6 @@ public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 
-import TauCeti.Algebra.Module.Submodule.Map
-
 /-!
 # The Plücker point of a subspace
 
@@ -107,9 +105,8 @@ private theorem mk_plucker_basis_eq_iff {W : Submodule K (ι → K)} {n : ℕ} (
       Projectivization.mk K (plucker fun i ↦ (b' i : ι → K))
         ((plucker_ne_zero_iff _).2 b'.linearIndependent_coe_basis) ↔ U = W := by
   have span_coe_basis (X : Submodule K (ι → K)) (c : Basis (Fin n) K X) :
-      span K (range fun i ↦ (c i : ι → K)) = X := by
-    simpa only [LinearMap.id_apply, Submodule.map_id] using
-      (Submodule.map_eq_span_basis X c LinearMap.id).symm
+      span K (range fun i ↦ (c i : ι → K)) = X :=
+    (Submodule.span_range_subtype_eq_top_iff X fun i ↦ (c i).2).1 c.span_eq
   rw [mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis
     b'.linearIndependent_coe_basis, span_coe_basis U b, span_coe_basis W b']
 

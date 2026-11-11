@@ -15,6 +15,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.CategoryTheory.Sites.CommRingCat
 
 /-!
 # The structure sheaf of the big fpqc site and the sheaves `𝔾_a`, `𝔾_m`, `μ_n`
@@ -37,8 +38,9 @@ every `n`, not only for `n` invertible on `S`.
 ## Main declarations
 
 * `CategoryTheory.GrothendieckTopology.isSheaf_Γ`: `Γ` is a sheaf for every subcanonical topology.
-* `AlgebraicGeometry.Scheme.bigStructureSheaf`: the sheaf of rings `T ↦ Γ(T, O_T)` on the big
-  fpqc site over `S`.
+* `AlgebraicGeometry.Scheme.bigStructureSheaf`: the sheaf of commutative rings `T ↦ Γ(T, O_T)`
+  on the big fpqc site over `S`, and `AlgebraicGeometry.Scheme.bigRingCatSheaf`, the same sheaf
+  as a sheaf of rings, over which sheaves of modules on the big site are defined.
 * `AlgebraicGeometry.Scheme.Ga`, `AlgebraicGeometry.Scheme.Gm`, `AlgebraicGeometry.Scheme.mu`:
   the sheaves `𝔾_a`, `𝔾_m` and `μ_n`.
 * `AlgebraicGeometry.Scheme.powHom`: the `n`-th power map of `𝔾_m`.
@@ -91,6 +93,21 @@ lemma bigStructureSheaf_obj (T : Over S) :
 @[simp]
 lemma bigStructureSheaf_map {T T' : Over S} (f : T ⟶ T') :
     (bigStructureSheaf S).obj.map f.op = f.left.appTop := rfl
+
+/-- The structure sheaf `T ↦ Γ(T, O_T)` of the big fpqc site over `S`, as a sheaf of rings. This is
+the ring over which sheaves of modules on the big site are defined. -/
+@[expose]
+noncomputable def bigRingCatSheaf : Sheaf (fpqcTopology.over S) RingCat.{u} :=
+  (sheafCompose (fpqcTopology.over S) (forget₂ CommRingCat.{u} RingCat.{u})).obj
+    (bigStructureSheaf S)
+
+lemma bigRingCatSheaf_obj (T : Over S) :
+    (bigRingCatSheaf S).obj.obj (op T) = (forget₂ CommRingCat RingCat).obj Γ(T.left, ⊤) :=
+  rfl
+
+lemma bigRingCatSheaf_map {T T' : Over S} (f : T ⟶ T') :
+    (bigRingCatSheaf S).obj.map f.op = (forget₂ CommRingCat RingCat).map f.left.appTop :=
+  rfl
 
 /-- The value of the big structure sheaf on an affine `S`-scheme `Spec R` is the ring `R`. -/
 noncomputable def bigStructureSheafObjSpecIso (R : CommRingCat.{u}) (h : Spec R ⟶ S) :

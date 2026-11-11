@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -32,18 +33,20 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 
 * `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
   `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
-* `NumberField.mixedEmbedding.finrank_pi_mixedSpace`: `finrank ℝ (ι → mixedSpace K) =
-  finrank ℚ K * Fintype.card ι`, with index-bound corollaries `lt_finrank_pi_mixedSpace`,
-  `mul_lt_finrank_pi_mixedSpace`, and `mul_succ_sub_one_lt_finrank_pi_mixedSpace`.
+* `NumberField.mixedEmbedding.mem_span_pi_fractionalIdealLatticeBasis`: the same for products of
+  the lattice bases of invertible fractional ideals `J i`, with the coefficients in `J i`.
+* `NumberField.mixedEmbedding.finrank_pi`, `NumberField.mixedEmbedding.linearIndependent_pi`:
+  `ι → mixedSpace K` has real dimension `[K : ℚ] * #ι`, and tuples independent over `ℚ` have
+  coordinatewise mixed embeddings independent over `ℝ`.
 * `NumberField.mixedEmbedding.sum_mixedEmbedding_mul_mixedEmbedding`: a `K`-linear form on
   `ι → K`, acting on `ι → mixedSpace K` through its coefficients as `z ↦ ∑ j, l eⱼ * zⱼ`, sends the
   image of `x` to the image of `l x`; `sum_mixedEmbedding_mul_sum_smul`,
   `sum_mixedEmbedding_sum_smul_mul`, and `sum_mixedEmbedding_proj_mul` record that this action
   commutes with finite `ℝ`-linear combinations of embedded vectors, is linear in the form, and reads
   off coordinates on coordinate forms.
-* `NumberField.mixedEmbedding.linearIndependent_real_mixedEmbedding_mul` and
-  `NumberField.mixedEmbedding.linearIndependent_real_mixedEmbedding`: `K`-linear independence of
-  vectors in `ι → K` lifts to `ℝ`-linear independence in `ι → mixedSpace K`.
+* `NumberField.mixedEmbedding.linearIndependent_real_mixedEmbedding_mul`: `K`-linear independence of
+  vectors in `ι → K` lifts to `ℝ`-linear independence of their scalar multiples by any family in `K`
+  with `ℝ`-linearly independent mixed embeddings.
 * `Submodule.discreteTopology_mixedImage_iff`: the mixed image is discrete exactly when the
   module is finitely generated; the instance form takes `[Module.Finite (𝓞 K) Λ]`.
 * `Submodule.span_real_mixedImage_eq_top_iff`: the mixed image spans `ι → mixedSpace K` over `ℝ`
@@ -72,19 +75,16 @@ and a discrete subgroup of a finite-dimensional real space is finitely generated
 public section
 
 open Module NumberField NumberField.mixedEmbedding
+open scoped nonZeroDivisors
 
 variable {K : Type*} [Field K] {ι : Type*}
 
 namespace NumberField.mixedEmbedding
 
-section Fintype
-
-variable [Fintype ι]
-
 /-- The `ℤ`-span of the basis `Pi.basis fun _ ↦ latticeBasis K` of `ι → mixedSpace K` is the image
 of `ι → 𝓞 K` under the mixed embedding applied in every coordinate; the coordinatewise form of
 `NumberField.mixedEmbedding.mem_span_latticeBasis`. -/
-theorem mem_span_pi_latticeBasis [NumberField K] {z : ι → mixedSpace K} :
+theorem mem_span_pi_latticeBasis [NumberField K] [Fintype ι] {z : ι → mixedSpace K} :
     z ∈ Submodule.span ℤ (Set.range (Pi.basis fun _ : ι ↦ latticeBasis K)) ↔
       ∃ x : ι → 𝓞 K, (fun i ↦ mixedEmbedding K (x i)) = z := by
   rw [(Pi.basis fun _ : ι ↦ latticeBasis K).mem_span_iff_repr_mem ℤ]
@@ -94,35 +94,54 @@ theorem mem_span_pi_latticeBasis [NumberField K] {z : ι → mixedSpace K} :
   choose x hx using h
   exact ⟨x, funext fun i ↦ by simpa using hx i⟩
 
-/-- The real dimension of `ι → mixedSpace K` is `[K : ℚ] * card ι`. -/
-@[simp]
-theorem finrank_pi_mixedSpace [NumberField K] :
+open scoped Classical in
+/-- The `ℤ`-span of the product of the lattice bases of invertible fractional ideals `J i` consists
+of the images `(mixedEmbedding K (c i))ᵢ` of the families `c` with `c i ∈ J i`; the coordinatewise
+form of `NumberField.mixedEmbedding.mem_span_fractionalIdealLatticeBasis`. -/
+theorem mem_span_pi_fractionalIdealLatticeBasis [NumberField K] [Fintype ι]
+    {J : ι → (FractionalIdeal (𝓞 K)⁰ K)ˣ} (z : ι → mixedSpace K) :
+    z ∈ Submodule.span ℤ (Set.range (Pi.basis fun i ↦ fractionalIdealLatticeBasis K (J i))) ↔
+      ∃ c : ι → K, (∀ i, c i ∈ (J i : Set K)) ∧ (fun i ↦ mixedEmbedding K (c i)) = z := by
+  have hU (i : ι) (x : mixedSpace K) :
+      (∀ k, (fractionalIdealLatticeBasis K (J i)).repr x k ∈ Set.range (algebraMap ℤ ℝ)) ↔
+        ∃ c ∈ (J i : Set K), mixedEmbedding K c = x := by
+    rw [← Basis.mem_span_iff_repr_mem, mem_span_fractionalIdealLatticeBasis]
+    simp
+  rw [(Pi.basis fun i ↦ fractionalIdealLatticeBasis K (J i)).mem_span_iff_repr_mem ℤ]
+  simp only [Pi.basis_repr, Sigma.forall, hU]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · choose c hc hcz using h
+    exact ⟨c, hc, funext hcz⟩
+  · rintro ⟨c, hc, rfl⟩ i
+    exact ⟨c i, hc i, rfl⟩
+
+/-- The real dimension of `ι → mixedSpace K` is `[K : ℚ] * #ι`. -/
+theorem finrank_pi [NumberField K] [Fintype ι] :
     finrank ℝ (ι → mixedSpace K) = finrank ℚ K * Fintype.card ι := by
+  rw [Module.finrank_pi_fintype, Finset.sum_const, mixedEmbedding.finrank, Finset.card_univ,
+    smul_eq_mul, mul_comm]
+
+/-- **Tuples independent over `ℚ` have mixed embeddings independent over `ℝ`.** -/
+theorem linearIndependent_pi [NumberField K] [Finite ι] {κ : Type*} {x : κ → ι → K}
+    (hx : LinearIndependent ℚ x) :
+    LinearIndependent ℝ fun k j ↦ mixedEmbedding K (x k j) := by
   classical
-  rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_comm,
-    mixedEmbedding.finrank]
+  cases nonempty_fintype ι
+  -- In the coordinates of `P`, the mixed embedding of a tuple has the rational coordinates of the
+  -- tuple in `Q` (`latticeBasis_repr_apply`), and rational vectors independent over `ℚ` are
+  -- independent over `ℝ`.
+  set P := Pi.basis fun _ : ι ↦ latticeBasis K
+  set Q := Pi.basis fun _ : ι ↦ integralBasis K
+  have hQ : LinearIndependent ℚ fun k ↦ Q.equivFun (x k) :=
+    hx.map' Q.equivFun.toLinearMap Q.equivFun.ker
+  refine LinearIndependent.of_comp P.equivFun.toLinearMap ?_
+  convert (linearIndependent_algebraMap_comp_iff (S := ℝ)).2 hQ using 1
+  ext k ⟨j, r⟩
+  simp [P, Q, latticeBasis_repr_apply]
 
-/-- An index `l < Fintype.card ι` is strictly below `finrank ℝ (ι → mixedSpace K)`. -/
-theorem lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ} (hl : l < Fintype.card ι) :
-    l < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  exact hl.trans_le (Nat.le_mul_of_pos_left _ Module.finrank_pos)
+section Fintype
 
-/-- For `l < Fintype.card ι`, `finrank ℚ K * l < finrank ℝ (ι → mixedSpace K)`. -/
-theorem mul_lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ} (hl : l < Fintype.card ι) :
-    finrank ℚ K * l < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  exact Nat.mul_lt_mul_of_pos_left hl Module.finrank_pos
-
-/-- For `l < Fintype.card ι`, `finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K)`. -/
-theorem mul_succ_sub_one_lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ}
-    (hl : l < Fintype.card ι) :
-    finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  have hpos : 0 < finrank ℚ K * (l + 1) := Nat.mul_pos Module.finrank_pos (Nat.succ_pos l)
-  have hle : finrank ℚ K * (l + 1) ≤ finrank ℚ K * Fintype.card ι :=
-    Nat.mul_le_mul_left _ hl
-  omega
+variable [Fintype ι]
 
 /-- A `K`-linear form on `ι → K` acting through its coefficients on the coordinatewise mixed
 embedding of a point is the mixed embedding of its value there. -/
@@ -198,17 +217,6 @@ theorem linearIndependent_real_mixedEmbedding_mul [Finite ι] {α κ : Type*}
   have ha₀ : a₀ ∈ s₀.image Prod.fst :=
     Finset.mem_image.2 ⟨(a₀, j₀), Finset.mem_filter.2 ⟨hp₀, rfl⟩, rfl⟩
   exact linearIndependent_iff'.1 hω (s₀.image Prod.fst) (fun a ↦ c (a, j₀)) hω_rel a₀ ha₀
-
-/-- Vectors in `ι → K` that are linearly independent over `K` have `ℝ`-linearly independent
-coordinatewise mixed embeddings in `ι → mixedSpace K`. -/
-theorem linearIndependent_real_mixedEmbedding [NumberField K] [Finite ι] {κ : Type*}
-    {v : κ → ι → K} (hv : LinearIndependent K v) :
-    LinearIndependent ℝ fun j i ↦ mixedEmbedding K (v j i) := by
-  have h1 : LinearIndependent ℝ fun _ : Unit ↦ mixedEmbedding K (1 : K) :=
-    .of_subsingleton () (by simp)
-  have h := (linearIndependent_real_mixedEmbedding_mul h1 hv).comp
-    (Equiv.punitProd κ).symm (Equiv.punitProd κ).symm.injective
-  simpa [Function.comp_def] using h
 
 end NumberField.mixedEmbedding
 

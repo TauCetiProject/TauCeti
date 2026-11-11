@@ -247,19 +247,15 @@ end ContRepresentation
 
 namespace OpenPartialHomeomorph
 
-section AverageChart
-
-variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
-  [Invertible (Fintype.card G : 𝕜)] [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {χ : OpenPartialHomeomorph X E} {ρ : ContRepresentation 𝕜 G F} {c : X → F}
-  {D : E ≃L[𝕜] F} {z : E} {Θ : OpenPartialHomeomorph E F}
-  (hΘ : EqOn Θ (ρ.bochnerAverage c ∘ χ.symm) Θ.source)
-
 section Equivariance
 
+variable {𝕜 G X E F : Type*} [CommRing 𝕜] [Group G] [Fintype G]
+  [Invertible (Fintype.card G : 𝕜)] [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
+  [TopologicalSpace E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  {χ : OpenPartialHomeomorph X E} {ρ : ContRepresentation 𝕜 G F} {c : X → F}
+  {Θ : OpenPartialHomeomorph E F} (hΘ : EqOn Θ (ρ.bochnerAverage c ∘ χ.symm) Θ.source)
+
 include hΘ
-omit [NormedSpace 𝕜 E]
 
 /-- On its domain, the Bochner chart is the Bochner average. -/
 theorem bochnerChart_apply {y : X} (hy : y ∈ ((χ.trans Θ).restrInvariant G).source) :
@@ -294,6 +290,15 @@ theorem bochnerChart_symm_map {w : F} (hw : w ∈ ((χ.trans Θ).restrInvariant 
     e.left_inv ((χ.trans Θ).smul_mem_restrInvariant_source (e.map_target hw) g)]
 
 end Equivariance
+
+section AverageChart
+
+variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
+  [Invertible (Fintype.card G : 𝕜)] [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {χ : OpenPartialHomeomorph X E} {ρ : ContRepresentation 𝕜 G F} {c : X → F}
+  {D : E ≃L[𝕜] F} {z : E} {Θ : OpenPartialHomeomorph E F}
+  (hΘ : EqOn Θ (ρ.bochnerAverage c ∘ χ.symm) Θ.source)
 
 /-- In the coordinates of `χ`, the Bochner chart has strict derivative `D` at the base point. -/
 theorem hasStrictFDerivAt_bochnerChart_comp_symm [CompleteSpace E]
@@ -353,7 +358,7 @@ namespace TauCeti
 
 section Isotropy
 
-variable {𝕜 G X E : Type*} [NontriviallyNormedField 𝕜] [Group G] [TopologicalSpace X]
+variable {𝕜 G X E : Type*} [NontriviallyNormedField 𝕜] [Monoid G] [TopologicalSpace X]
   [MulAction G X] [ContinuousConstSMul G X] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {χ : OpenPartialHomeomorph X E} {x : X}
 

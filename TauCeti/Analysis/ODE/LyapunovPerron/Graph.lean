@@ -97,6 +97,16 @@ theorem lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap (ξ : X) :
   rw [lyapunovPerronGraphMap]
   abel
 
+/-- The Lyapunov--Perron graph map is evaluation at zero of its bounded forward solution,
+minus the stable projection of the parameter. -/
+theorem lyapunovPerronGraphMap_eq_evalCLM_sub :
+    lyapunovPerronGraphMap A P N hs hu hα hN hsmall =
+      fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
+        (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ := by
+  funext ξ
+  rw [BoundedContinuousFunction.evalCLM_apply,
+    lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
+
 /-- The graph displacement is the value at time `0` of the integral terms of the Lyapunov--Perron
 equation: at time `0` the homogeneous term contributes exactly `P ξ`. -/
 theorem lyapunovPerronGraphMap_eq_lyapunovPerronIntegral (ξ : X) :
@@ -181,6 +191,17 @@ theorem norm_lyapunovPerronGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
   have h := (lipschitzWith_lyapunovPerronGraphMap hs hu hα hN hsmall).dist_le_mul ξ 0
   rwa [lyapunovPerronGraphMap_zero hs hu hα hN hsmall hN0, dist_zero_right, dist_zero_right] at h
 
+/-- The coefficient bound in the flatness estimate: for `d = c α / (2 (k + 1) b)` one has
+`2 k (d b) / α ≤ c`. -/
+private theorem two_mul_mul_div_le {k a b c : ℝ} (hk : 0 ≤ k) (ha : 0 < a) (hb : 0 < b)
+    (hc : 0 < c) : 2 * k * (c * a / (2 * (k + 1) * b) * b) / a ≤ c := by
+  have hkden : 0 < k + 1 := by positivity
+  have heq : 2 * k * (c * a / (2 * (k + 1) * b) * b) / a = c * k / (k + 1) := by
+    field_simp
+  rw [heq]
+  apply (div_le_iff₀ hkden).2
+  nlinarith
+
 /-- **The Lyapunov--Perron graph map is flat at the equilibrium.** If the nonlinearity fixes the
 origin and has derivative zero there, then the graph map also has derivative zero at the origin. -/
 theorem hasFDerivAt_lyapunovPerronGraphMap_zero (hN0 : N 0 = 0)
@@ -205,14 +226,8 @@ theorem hasFDerivAt_lyapunovPerronGraphMap_zero (hN0 : N 0 = 0)
     have hd : 0 < d := by
       dsimp only [d]
       positivity
-    have hcoefficient : 2 * (K : ℝ) * (d * B) / α ≤ c := by
-      have hKden : (0 : ℝ) < (K : ℝ) + 1 := by positivity
-      have heq : 2 * (K : ℝ) * (d * B) / α = c * K / (K + 1) := by
-        dsimp only [d]
-        field_simp
-      rw [heq]
-      apply (div_le_iff₀ hKden).2
-      nlinarith [K.coe_nonneg]
+    have hcoefficient : 2 * (K : ℝ) * (d * B) / α ≤ c :=
+      two_mul_mul_div_le K.coe_nonneg hα' hBpos hc
     obtain ⟨q, hq, hqsub⟩ := Metric.mem_nhds_iff.1 (hNlittle.def hd)
     filter_upwards [eventually_norm_sub_lt (0 : X) (div_pos hq hBpos)] with ξ hξ
     simp only [sub_zero] at hξ

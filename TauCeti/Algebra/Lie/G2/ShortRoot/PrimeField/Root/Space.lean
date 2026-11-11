@@ -461,8 +461,7 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 2 →₀ ℤ))
       (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal) =
         (GeneralLinear.weightTorusCoordinateMap (R := ZMod 3) weight).hom := by
     rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp,
-      CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
-      GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+      carrierQuotient_comp_weightTorusCoordinateMap]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus _ weight _ hπ α x
 
 /-- For an integral weight, the carrier weight-space criterion is support on that exact

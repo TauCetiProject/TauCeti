@@ -207,7 +207,7 @@ theorem degreeZero_eq_span_unimodular :
         simpa [H] using neg_mem h1
       · simp [H]
     rw [degreeZero, toSubmodule_augmentationSubrepresentation,
-      MonoidAlgebra.ker_sumCoords_basis_eq_span R (OnePoint ℚ) ∞, Submodule.span_le]
+      (MonoidAlgebra.basis (OnePoint ℚ) R).ker_sumCoords_eq_span ∞, Submodule.span_le]
     rintro _ ⟨x, rfl⟩
     obtain ⟨g, rfl⟩ := OnePoint.exists_mem_SL2 ℤ x
     exact (hH ▸ Subgroup.mem_top g : g ∈ H)

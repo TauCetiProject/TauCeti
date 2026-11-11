@@ -69,10 +69,6 @@ structure IsTubularNeighborhood (f : B → N) (U : Set (TotalSpace F E))
   continuous_radial : Continuous (fun p : Icc (0 : ℝ) 1 × U =>
     (⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩ : TotalSpace F E))
 
-namespace IsTubularNeighborhood
-
-variable {f : B → N} {U : Set (TotalSpace F E)} {toFun : U → N}
-
 /-- The canonical zero-section model on the whole total space.
 
 The continuity hypothesis records the vector-bundle topology needed by the
@@ -84,27 +80,29 @@ theorem isTubularNeighborhood_zeroSection
     IsTubularNeighborhood (zeroSection F E) (Set.univ : Set (TotalSpace F E))
       (fun x : (Set.univ : Set (TotalSpace F E)) => x.1) where
   isOpen := isOpen_univ
-  zero_mem := fun _ => mem_univ _
-  fiberwise_starConvex := by
-    intro x
-    simpa using (starConvex_univ (𝕜 := ℝ) (0 : E x))
+  zero_mem _ := mem_univ _
+  fiberwise_starConvex x := by simpa using starConvex_univ (𝕜 := ℝ) (0 : E x)
   isOpenEmbedding := isOpen_univ.isOpenEmbedding_subtypeVal
   isEmbedding_f := hzero
-  map_zeroSection := by
-    intro x
-    rfl
-  continuous_radial := by
-    convert hradial.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)) using 1
-    rfl
+  map_zeroSection _ := rfl
+  continuous_radial :=
+    hradial.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+
+namespace IsTubularNeighborhood
+
+variable {f : B → N} {U : Set (TotalSpace F E)} {toFun : U → N}
 
 /-- The radial contraction of a tubular neighborhood, with its image kept in
 the tubular domain by `fiberwise_starConvex`. -/
 def radialContraction (T : IsTubularNeighborhood f U toFun) : Icc (0 : ℝ) 1 × U → U :=
   fun p => ⟨⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩,
-    by
-      simpa using (T.fiberwise_starConvex p.2.1.1).smul_mem p.2.property
-        p.1.2.1 p.1.2.2⟩
+    (T.fiberwise_starConvex p.2.1.1).smul_mem p.2.2 p.1.2.1 p.1.2.2⟩
+
+/-- The underlying total-space point of the radial contraction. -/
+@[simp] theorem coe_radialContraction (T : IsTubularNeighborhood f U toFun)
+    (p : Icc (0 : ℝ) 1 × U) :
+    (T.radialContraction p : TotalSpace F E) = ⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩ :=
+  (rfl)
 
 /-- The radial contraction supplied by tubular-neighborhood data is continuous. -/
 theorem continuous_radialContraction (T : IsTubularNeighborhood f U toFun) :
@@ -113,25 +111,13 @@ theorem continuous_radialContraction (T : IsTubularNeighborhood f U toFun) :
 
 /-- At time one, radial contraction is the identity. -/
 @[simp] theorem radialContraction_one (T : IsTubularNeighborhood f U toFun) (u : U) :
-    T.radialContraction ⟨1, u⟩ = u := by
-  rcases u with ⟨⟨x, v⟩, hu⟩
-  apply Subtype.ext
-  simp [radialContraction]
+    T.radialContraction ⟨1, u⟩ = u :=
+  Subtype.ext (by simp)
 
 /-- At time zero, radial contraction lands on the zero section. -/
 @[simp] theorem radialContraction_zero (T : IsTubularNeighborhood f U toFun) (u : U) :
-    T.radialContraction ⟨0, u⟩ = ⟨zeroSection F E u.1.1, T.zero_mem u.1.1⟩ := by
-  rcases u with ⟨⟨x, v⟩, hu⟩
-  apply Subtype.ext
-  simp [radialContraction, zeroSection]
-
-/-- The underlying total-space point of the radial contraction. -/
-@[simp] theorem coe_radialContraction (T : IsTubularNeighborhood f U toFun)
-    (p : Icc (0 : ℝ) 1 × U) :
-    (T.radialContraction p : TotalSpace F E) =
-      ⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩ :=
-  by
-    simp [radialContraction]
+    T.radialContraction ⟨0, u⟩ = ⟨zeroSection F E u.1.1, T.zero_mem u.1.1⟩ :=
+  Subtype.ext (by simp [zeroSection])
 
 end IsTubularNeighborhood
 

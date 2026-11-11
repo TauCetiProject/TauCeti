@@ -6,9 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.CoordinateRotation
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import Mathlib.Algebra.Ring.Parity
-import Mathlib.Data.Int.GCD
 
 /-!
 # The center of the special orthogonal matrix group

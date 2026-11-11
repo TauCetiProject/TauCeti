@@ -65,8 +65,7 @@ private theorem CohomologicalDimensionLE.nsmul_eq_zero {n : ℕ}
     exact ⟨g • m, smul_comm c g m⟩
   let := K.restrictDistribMulAction hK
   have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
-  have hKp : IsPPrimaryTorsion p K := by
-    rw [isPPrimaryTorsion_iff]
+  have hKp : IsAddPGroup p K := by
     rintro ⟨_, m, rfl⟩
     obtain ⟨k, hk⟩ := hc m
     exact ⟨k, Subtype.ext hk⟩
@@ -120,9 +119,9 @@ theorem cohomologicalDimensionLE_iff_torsion (hp : p.Prime) {n : ℕ} :
     exact (nsmul_eq_zero_iff_of_coprime ((hp.coprime_iff_not_dvd.2 hc).pow_left k)).1 ⟨hk, hcx⟩
   · -- a `p`-primary module is torsion, and its cohomology is `p`-primary
     refine cohomologicalDimensionLE_iff.2 fun M _ _ _ _ _ hM i hi ↦ ?_
-    have hH := isPPrimaryTorsion_continuousCohomology (ofDiscreteModule ℤ G M) hM i
-    exact subsingleton_of_forall_eq 0 fun x ↦
-      AddSubgroup.mem_bot.1 (h M (hM.isAddTorsion hp.ne_zero) i hi ▸ hH.mem x)
+    have hH := isAddPGroup_continuousCohomology (ofDiscreteModule ℤ G M) hM i
+    exact subsingleton_of_forall_eq 0 fun x ↦ AddSubgroup.mem_bot.1
+      (h M (hM.isAddTorsion hp.ne_zero) i hi ▸ AddCommGroup.mem_primaryComponent.2 (hH x))
 
 /-- **The torsion interface for the `p`-cohomological dimension** (NSW (3.3.1)). For a compact
 group `G` and a prime `p`, `cd_p G ≤ n` exactly when the `p`-primary component of `Hⁱ(G, M)`

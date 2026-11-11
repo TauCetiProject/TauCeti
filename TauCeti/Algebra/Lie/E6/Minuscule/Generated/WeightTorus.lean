@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.Basic
+import TauCeti.Algebra.Lie.E6.Minuscule.Generated.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 import TauCeti.Algebra.Lie.E6.Minuscule.WeightTorus

@@ -18,18 +18,19 @@ The construction reuses Mathlib's change of generator and the elementary splitti
 
 When `2` is invertible and `a` is the square of a unit `u`, the roots of
 `QuadraticAlgebra R a 0` are `u` and `-u`. Its inverse splitting uses the half-sum and
-rescaled half-difference. None of these maps requires a field hypothesis on `R`.
+rescaled half-difference. None of these maps requires a field hypothesis on `R`. Under this
+splitting the norm and trace become the product and sum of the two coordinates, and the
+quadratic involution exchanges them.
 -/
 
 public section
 
-open QuadraticAlgebra
+namespace QuadraticAlgebra
 
-namespace TauCeti.QuadraticAlgebra
+variable {R : Type*} [CommRing R]
 
 /-- The quadratic algebra with an idempotent generator is the product algebra. -/
-def algEquivProdOfIdempotent {R : Type*} [CommRing R] :
-    QuadraticAlgebra R 0 1 ≃ₐ[R] R × R where
+def algEquivProdOfIdempotent : QuadraticAlgebra R 0 1 ≃ₐ[R] R × R where
   toFun z := (z.re + z.im, z.re)
   invFun z := ⟨z.2, z.1 - z.2⟩
   left_inv z := by ext <;> simp
@@ -44,56 +45,46 @@ def algEquivProdOfIdempotent {R : Type*} [CommRing R] :
 
 /-- Evaluation of the idempotent-generator algebra at the roots `1` and `0`. -/
 @[simp]
-theorem _root_.QuadraticAlgebra.algEquivProdOfIdempotent_apply {R : Type*} [CommRing R]
-    (z : QuadraticAlgebra R 0 1) :
+theorem algEquivProdOfIdempotent_apply (z : QuadraticAlgebra R 0 1) :
     algEquivProdOfIdempotent z = (z.re + z.im, z.re) := by
   simp [algEquivProdOfIdempotent]
 
 /-- The inverse idempotent splitting recovers the constant and generator coefficients. -/
 @[simp]
-theorem algEquivProdOfIdempotent_symm_apply {R : Type*} [CommRing R] (z : R × R) :
+theorem algEquivProdOfIdempotent_symm_apply (z : R × R) :
     (algEquivProdOfIdempotent (R := R)).symm z = ⟨z.2, z.1 - z.2⟩ := by
   simp [algEquivProdOfIdempotent]
 
 /-- A quadratic algebra splits by evaluation at two roots whose difference is a unit. -/
-noncomputable def algEquivProdOfRoots {R : Type*} [CommRing R] {a b : R} (r s : R)
+noncomputable def algEquivProdOfRoots {a b : R} (r s : R)
     (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s) :
     QuadraticAlgebra R a b ≃ₐ[R] R × R :=
   (changeGeneratorEquiv 0 1 h.unit s
     (by rw [h.unit_spec, ha]; ring) (by rw [h.unit_spec, hb]; ring)).trans
     algEquivProdOfIdempotent
 
-private theorem algEquivProdOfRoots_omega {R : Type*} [CommRing R] {a b : R} (r s : R)
-    (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s) :
-    algEquivProdOfRoots r s h ha hb ω = (r, s) := by
-  ext <;> simp [algEquivProdOfRoots, Algebra.smul_def]
-
 /-- Splitting evaluates each element at the two roots. -/
 @[simp]
-theorem _root_.QuadraticAlgebra.algEquivProdOfRoots_apply
-    {R : Type*} [CommRing R] {a b : R} (r s : R)
-    (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s)
-    (z : QuadraticAlgebra R a b) :
+theorem algEquivProdOfRoots_apply {a b : R} (r s : R)
+    (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s) (z : QuadraticAlgebra R a b) :
     algEquivProdOfRoots r s h ha hb z = (z.re + r * z.im, z.re + s * z.im) := by
-  conv_lhs => rw [← re_smul_add_im_smul z]
-  ext <;> simp [algEquivProdOfRoots_omega, Algebra.smul_def, mul_comm]
+  ext <;> simp [algEquivProdOfRoots] <;> ring
 
 /-- The inverse splitting divides the coordinate difference and interpolation numerator by
 the unit root difference. -/
 @[simp]
-theorem algEquivProdOfRoots_symm_apply {R : Type*} [CommRing R] {a b : R} (r s : R)
+theorem algEquivProdOfRoots_symm_apply {a b : R} (r s : R)
     (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s) (z : R × R) :
     (algEquivProdOfRoots r s h ha hb).symm z =
       ⟨(r * z.2 - s * z.1) * (h.unit⁻¹ : Rˣ), (z.1 - z.2) * (h.unit⁻¹ : Rˣ)⟩ := by
-  apply (algEquivProdOfRoots r s h ha hb).injective
-  rw [AlgEquiv.apply_symm_apply, algEquivProdOfRoots_apply]
-  ext <;> dsimp
+  rw [AlgEquiv.symm_apply_eq, algEquivProdOfRoots_apply]
+  ext
   · linear_combination -z.1 * h.mul_val_inv
   · linear_combination -z.2 * h.mul_val_inv
 
 /-- With `2` invertible, `QuadraticAlgebra R a 0` with `a = u²` for a unit `u` splits by
 sending its square-root generator to `(u, -u)`. -/
-noncomputable def algEquivProdOfSq {R : Type*} [CommRing R] [Invertible (2 : R)] {a : R}
+noncomputable def algEquivProdOfSq [Invertible (2 : R)] {a : R}
     (u : Rˣ) (ha : a = (u : R) ^ 2) : QuadraticAlgebra R a 0 ≃ₐ[R] R × R :=
   algEquivProdOfRoots (u : R) (-(u : R))
     (by convert (isUnit_of_invertible (2 : R)).mul u.isUnit using 1; ring)
@@ -101,24 +92,41 @@ noncomputable def algEquivProdOfSq {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 /-- The unit-square specialization evaluates at the two opposite square roots. -/
 @[simp]
-theorem _root_.QuadraticAlgebra.algEquivProdOfSq_apply
-    {R : Type*} [CommRing R] [Invertible (2 : R)] {a : R}
-    (u : Rˣ) (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+theorem algEquivProdOfSq_apply [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
     algEquivProdOfSq u ha z = (z.re + (u : R) * z.im, z.re - (u : R) * z.im) := by
   simp [algEquivProdOfSq, sub_eq_add_neg]
 
 /-- The inverse splitting map recovers the half-sum and rescaled half-difference. -/
 @[simp]
-theorem algEquivProdOfSq_symm_apply {R : Type*} [CommRing R] [Invertible (2 : R)]
-    {a : R} (u : Rˣ) (ha : a = (u : R) ^ 2) (z : R × R) :
+theorem algEquivProdOfSq_symm_apply [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : R × R) :
     (algEquivProdOfSq u ha).symm z =
       ⟨⅟(2 : R) * (z.1 + z.2), (u⁻¹ : Rˣ) * ⅟(2 : R) * (z.1 - z.2)⟩ := by
-  apply (algEquivProdOfSq u ha).injective
-  rw [AlgEquiv.apply_symm_apply, algEquivProdOfSq_apply]
-  ext <;> dsimp
-  · simp only [mul_assoc, Units.mul_inv_cancel_left]
-    linear_combination -z.1 * (invOf_mul_self (2 : R))
-  · simp only [mul_assoc, Units.mul_inv_cancel_left]
-    linear_combination -z.2 * (invOf_mul_self (2 : R))
+  rw [AlgEquiv.symm_apply_eq, algEquivProdOfSq_apply]
+  ext <;> simp only [mul_assoc, Units.mul_inv_cancel_left]
+  · linear_combination -z.1 * invOf_mul_self (2 : R)
+  · linear_combination -z.2 * invOf_mul_self (2 : R)
 
-end TauCeti.QuadraticAlgebra
+/-- In the unit-square splitting, the norm is the product of the two coordinates. -/
+theorem norm_eq_fst_mul_snd_algEquivProdOfSq [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    norm z = (algEquivProdOfSq u ha z).1 * (algEquivProdOfSq u ha z).2 := by
+  rw [algEquivProdOfSq_apply, norm_def]
+  linear_combination (-z.im * z.im) * ha
+
+/-- In the unit-square splitting, the trace is the sum of the two coordinates. -/
+theorem trace_eq_fst_add_snd_algEquivProdOfSq [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    trace z = (algEquivProdOfSq u ha z).1 + (algEquivProdOfSq u ha z).2 := by
+  rw [algEquivProdOfSq_apply, trace_def]
+  ring
+
+/-- The unit-square splitting turns the quadratic involution into the exchange of the two
+factors. -/
+theorem algEquivProdOfSq_star [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    algEquivProdOfSq u ha (star z) = (algEquivProdOfSq u ha z).swap := by
+  ext <;> simp [sub_eq_add_neg]
+
+end QuadraticAlgebra

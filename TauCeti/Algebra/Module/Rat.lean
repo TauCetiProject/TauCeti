@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 
 /-!
-# Restricting scalars from rational to nonnegative-rational modules
+# Rational modules: restriction to `ℚ≥0` and division by natural numbers
 
 Every module over `ℚ` is a module over `ℚ≥0` by restriction of scalars along
 `algebraMap ℚ≥0 ℚ`. This is deliberately not a global instance: Mathlib already builds
@@ -20,9 +20,16 @@ Consumers activate it where they need it with
 `BinomialRing` instance — which is stated for a `Module ℚ≥0` — on a possibly noncommutative
 `ℚ`-algebra such as a universal enveloping algebra, so that `Ring.choose` elaborates there.
 
+Over a semiring that is a `ℚ`-module, scaling by `(n : ℚ)⁻¹` undoes multiplication by a nonzero
+natural number `n`.
+
 ## Main definitions
 
 * `TauCeti.moduleNNRat`: the `ℚ≥0`-module structure on a `ℚ`-module.
+
+## Main statements
+
+* `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
 -/
 
 public section
@@ -33,5 +40,11 @@ namespace TauCeti
 @[instance_reducible]
 def moduleNNRat {A : Type*} [AddCommMonoid A] [Module ℚ A] : Module ℚ≥0 A :=
   Module.compHom _ (algebraMap ℚ≥0 ℚ)
+
+/-- Over a semiring that is a `ℚ`-module, `(n : ℚ)⁻¹ •` undoes multiplication by a nonzero natural
+number `n`. -/
+theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n : ℕ} (hn : n ≠ 0)
+    (x : A) : (n : ℚ)⁻¹ • ((n : A) * x) = x := by
+  rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
 
 end TauCeti

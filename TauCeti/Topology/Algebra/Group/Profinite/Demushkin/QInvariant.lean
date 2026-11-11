@@ -247,7 +247,7 @@ private theorem torsion_spec :
     have := PadicInt.finite_quotient_span hq
     have := PadicInt.isAddCyclic_quotient_span hq
     have hQ := demushkinQ_eq_pow_valuation_of_mulEquiv hG e.toMulEquiv hpq hq
-    refine ⟨isCyclic_torsion_of_mulEquiv isAddTorsion_of_finite e.toMulEquiv, ?_, ?_⟩
+    refine ⟨isCyclic_torsion_of_mulEquiv e.toMulEquiv, ?_, ?_⟩
     · rw [hQ]
       exact dvd_pow_self p (Nat.one_le_iff_ne_zero.1 (PadicInt.one_le_valuation_of_dvd hq hpq))
     · rw [hQ, Nat.cast_pow, ← PadicInt.span_singleton_eq_span_pow_valuation hq]

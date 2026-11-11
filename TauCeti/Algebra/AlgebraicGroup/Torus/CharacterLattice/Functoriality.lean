@@ -52,12 +52,10 @@ private theorem characterLatticeFunctor_mem (T : TorusCommHopfAlgCat k) :
           CommHopfAlgCat.geometricCharacterFunctor).obj T) := by
   simp only [Functor.comp_obj, ObjectProperty.ι_obj,
     CommHopfAlgCat.geometricCharacterFunctor_obj]
-  let _ : Module.Free ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-    characterLattice_module_free_of_torus k T.obj T.property
-  let _ : Module.Finite ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-    characterLattice_module_finite_of_torus k T.obj T.property
-  exact galoisLatticeProperty_ofMulDistribMulAction k
-    (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) CommHopfAlgCat.stabilizer_groupLike_isOpen
+  exact (galoisLatticeProperty_ofMulDistribMulAction_iff k _).mpr
+    ⟨⟨characterLattice_module_free_of_torus k T.obj T.property,
+      characterLattice_module_finite_of_torus k T.obj T.property⟩,
+      CommHopfAlgCat.stabilizer_groupLike_isOpen⟩
 
 /-- The character-lattice functor from coordinate Hopf algebras of tori to continuous integral
 Galois lattices. On the corresponding affine group schemes this functor is contravariant. -/

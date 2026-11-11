@@ -225,6 +225,68 @@ namespace TauCeti.GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- If the recut rectangle ends where the recut pentagon starts, the recut of a rectangle--pentagon
+domain whose empty pieces share their initial side is of the second mixed kind: its rectangle ends
+where the pentagon starts, the pentagon's bottom row lying strictly between the rectangle's bottom
+row and the pentagon's top row. -/
+private theorem pentagonRectangle_sides_of_rectangle_end_eq_pentagon_start
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    {E : GridPentagonRectangleDecomposition a s x z}
+    (hrow : D.rectangle.top ∈ Grid.cIoo D.rectangle.bottom D.pentagon.top)
+    (hctop : D.pentagon.top = x D.pentagon.right)
+    (hEPright : E.pentagon.right = D.pentagon.right)
+    (hErright : E.rectangle.right = D.rectangle.right)
+    (hEPleft : E.pentagon.left = D.rectangle.right)
+    (hErleft : E.rectangle.left = D.rectangle.left) :
+    E.rectangle.right = E.pentagon.left ∧ E.rectangle.left ≠ E.pentagon.right ∧
+      E.pentagon.bottom ∈ Grid.cIoo E.rectangle.bottom E.pentagon.top := by
+  refine ⟨hErright.trans hEPleft.symm, ?_, ?_⟩
+  · rw [hErleft, hEPright, hcommon]
+    exact D.pentagon.left_ne_right
+  · have hErbottom : E.rectangle.bottom = D.rectangle.bottom := by
+      rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hErleft,
+        E.pentagon.map_of_ne _ (by rw [hEPleft]; exact D.rectangle.left_ne_right)
+          (by rw [hEPright, hcommon]; exact D.pentagon.left_ne_right)]
+    have hEPbottom : E.pentagon.bottom = D.rectangle.top := by
+      rw [GridRectangleBetween.bottom_def, hEPleft, ← GridRectangleBetween.top_def]
+    have hEPtop : E.pentagon.top = D.pentagon.top := by
+      rw [GridRectangleBetween.top_def, hEPright, ← hctop]
+    rw [hErbottom, hEPbottom, hEPtop]
+    exact hrow
+
+/-- If the recut rectangle starts where the recut pentagon ends, the recut of a rectangle--pentagon
+domain whose empty pieces share their initial side is of the first mixed kind: its rectangle
+starts on the replaced line, avoiding the turn row. -/
+private theorem pentagonRectangle_sides_of_rectangle_start_eq_pentagon_end
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    {E : GridPentagonRectangleDecomposition a s x z}
+    (hright : D.rectangle.right ≠ D.pentagon.right)
+    (hrow : D.rectangle.top ∈ Grid.cIoo D.rectangle.bottom D.pentagon.top)
+    (hEPright : E.pentagon.right = D.pentagon.right)
+    (hErright : E.rectangle.right = D.rectangle.right)
+    (hEPleft : E.pentagon.left = D.rectangle.left)
+    (hErleft : E.rectangle.left = D.pentagon.right) :
+    E.rectangle.left = E.pentagon.right ∧ E.rectangle.right ≠ E.pentagon.left ∧
+      s ∉ Grid.cIco E.rectangle.bottom E.rectangle.top := by
+  refine ⟨hErleft.trans hEPright.symm, ?_, ?_⟩
+  · rw [hErright, hEPleft]
+    exact D.rectangle.left_ne_right.symm
+  · have hErbottom : E.rectangle.bottom = D.rectangle.bottom := by
+      rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hErleft,
+        ← hEPright, E.pentagon.map_right, hEPleft]
+    have hErtop : E.rectangle.top = D.rectangle.top := by
+      rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hErright,
+        E.pentagon.map_of_ne _ (by rw [hEPleft]; exact D.rectangle.left_ne_right.symm)
+          (by rw [hEPright]; exact hright)]
+    have hturn : s ∈ Grid.cIco D.rectangle.top D.pentagon.top := by
+      have h := D.pentagon.turn_mem_cIco_bottom_top
+      rwa [GridRectangleBetween.bottom_def, ← hcommon, D.rectangle.map_left,
+        ← GridRectangleBetween.top_def] at h
+    rw [hErbottom, hErtop]
+    exact Finset.disjoint_right.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn
+
 /-- The recut of a rectangle--pentagon domain whose two empty pieces share their initial side and
 no other side, read as a pentagon followed by a rectangle, is of one of two mixed kinds: its
 rectangle starts on the replaced line, avoiding the turn row, or it ends where the pentagon starts,
@@ -261,20 +323,7 @@ private theorem pentagonRectangle_sides_of_isRecut_of_left_eq_left
     simp only [GridRectangleBetween.sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right, hcommon, h]
-  -- Emptiness puts the rectangle's top row strictly between its bottom row and the pentagon's
-  -- top row.
-  have hrow : D.rectangle.top ∈ Grid.cIoo D.rectangle.bottom D.pentagon.top := by
-    simpa only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-      toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right, toRectangleDecomposition_middle] using
-      (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon'
-        (by simpa only [toRectangleDecomposition_first_right,
-          toRectangleDecomposition_second_right] using hright)
-        (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).2
+  have hrow := top_mem_cIoo_of_isEmpty_of_left_eq_left D hcommon' hright hrectangle hpentagon
   -- The source state keeps its row on the pentagon's terminal side across the rectangle.
   have hctop : D.pentagon.top = x D.pentagon.right := by
     rw [GridRectangleBetween.top_def,
@@ -290,40 +339,15 @@ private theorem pentagonRectangle_sides_of_isRecut_of_left_eq_left
     simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
       toRectangleDecomposition_first_left, toRectangleDecomposition_first_right] at hEPleft hErleft
-    refine Or.inr ⟨hErright.trans hEPleft.symm, ?_, ?_⟩
-    · rw [hErleft, hEPright, hcommon]
-      exact D.pentagon.left_ne_right
-    · have hErbottom : E.rectangle.bottom = D.rectangle.bottom := by
-        rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hErleft,
-          E.pentagon.map_of_ne _ (by rw [hEPleft]; exact D.rectangle.left_ne_right)
-            (by rw [hEPright, hcommon]; exact D.pentagon.left_ne_right)]
-      have hEPbottom : E.pentagon.bottom = D.rectangle.top := by
-        rw [GridRectangleBetween.bottom_def, hEPleft, ← GridRectangleBetween.top_def]
-      have hEPtop : E.pentagon.top = D.pentagon.top := by
-        rw [GridRectangleBetween.top_def, hEPright, ← hctop]
-      rw [hErbottom, hEPbottom, hEPtop]
-      exact hrow
+    exact Or.inr (pentagonRectangle_sides_of_rectangle_end_eq_pentagon_start D hcommon hrow
+      hctop hEPright hErright hEPleft hErleft)
   · -- The replaced line lies between the common side and the rectangle's terminal side: the
     -- recut rectangle starts where the recut pentagon ends, in the rows of the original rectangle.
     simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
       toRectangleDecomposition_first_left, toRectangleDecomposition_second_right] at hEPleft hErleft
-    refine Or.inl ⟨hErleft.trans hEPright.symm, ?_, ?_⟩
-    · rw [hErright, hEPleft]
-      exact D.rectangle.left_ne_right.symm
-    · have hErbottom : E.rectangle.bottom = D.rectangle.bottom := by
-        rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hErleft,
-          ← hEPright, E.pentagon.map_right, hEPleft]
-      have hErtop : E.rectangle.top = D.rectangle.top := by
-        rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hErright,
-          E.pentagon.map_of_ne _ (by rw [hEPleft]; exact D.rectangle.left_ne_right.symm)
-            (by rw [hEPright]; exact hright)]
-      have hturn : s ∈ Grid.cIco D.rectangle.top D.pentagon.top := by
-        have h := D.pentagon.turn_mem_cIco_bottom_top
-        rwa [GridRectangleBetween.bottom_def, ← hcommon, D.rectangle.map_left,
-          ← GridRectangleBetween.top_def] at h
-      rw [hErbottom, hErtop]
-      exact Finset.disjoint_right.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn
+    exact Or.inl (pentagonRectangle_sides_of_rectangle_start_eq_pentagon_end D hcommon hright
+      hrow hEPright hErright hEPleft hErleft)
 
 end TauCeti.GridRectanglePentagonDecomposition
 
@@ -367,7 +391,7 @@ private theorem mem_initialOverlapPartners_of_recut
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hcounted : D ∈ G.rectanglePentagonDecompositions C x z :=
     G.mem_rectanglePentagonDecompositions_of_val_add_val_eq_pentagonRectangle C hE
       (D.isEmpty_rectangle_of_isRecut hrecut) (D.isEmpty_pentagon_of_isRecut hrecut)
@@ -375,8 +399,7 @@ private theorem mem_initialOverlapPartners_of_recut
         (by simpa only [D, GridRectanglePentagonDecomposition.pentagon,
           GridPentagonBetween.ofRightEq_bottom] using hcol))
   refine (G.mem_initialOverlapPartners C E).2 ⟨D, (G.mem_initialOverlapSources C D).2
-    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)⟩, hback⟩
+    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback⟩, hback⟩
   simpa only [D, GridRectanglePentagonDecomposition.rectangle,
     GridRectanglePentagonDecomposition.pentagon, GridPentagonBetween.ofRightEq_left] using
     x.toPerm.injective hleft

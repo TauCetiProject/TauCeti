@@ -56,12 +56,8 @@ theorem reindex_resolutionMergeMap
   have hmap := funext (es.resolvedCircleCongr_saddleResolvedCircleMap et hhalf hisolated
     hst hst' (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs)
       (D'.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst' hc' hs'))
-  simp only [resolutionMergeMap_def]
-  simp only [← LinearEquiv.coe_coe, ← toLinearMap_fiberwiseMul_equiv,
-    AlgHom.toLinearMap_apply]
-  rw [← AlgHom.comp_apply, fiberwiseMul_comp,
-    ← AlgHom.comp_apply, fiberwiseMul_comp]
-  exact congrArg (fun f ↦ fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f x) hmap
+  rw [resolutionMergeMap_def, resolutionMergeMap_def]
+  exact reindex_fiberwiseMul _ _ hmap x
 
 /-- Reindexing the source and target circles commutes with an actual resolution split.
 This uses the same endpoint transports as the reverse merge. -/
@@ -77,26 +73,7 @@ theorem reindex_resolutionSplitMap
     (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two (fun j hj ↦ (hst j hj).symm) hc.symm ht)
     (D'.card_circlesAt_eq_one_of_card_circlesAt_eq_two
       (fun j hj ↦ (hst' j hj).symm) hc'.symm ht')
-  have hcomp :
-      D.saddleResolvedCircleMap (fun j hj ↦ (hst j hj).symm)
-          (D.card_circlesAt_eq_one_of_card_circlesAt_eq_two
-            (fun j hj ↦ (hst j hj).symm) hc.symm ht) ∘ et.resolvedCircleCongr.symm =
-        es.resolvedCircleCongr.symm ∘
-          D'.saddleResolvedCircleMap (fun j hj ↦ (hst' j hj).symm)
-            (D'.card_circlesAt_eq_one_of_card_circlesAt_eq_two
-              (fun j hj ↦ (hst' j hj).symm) hc'.symm ht') := by
-    funext C
-    exact es.resolvedCircleCongr.injective (by simpa using hmap (et.resolvedCircleCongr.symm C))
-  have he : (reindex R (fun _ ↦ R[ε]) es.resolvedCircleCongr).toLinearMap =
-      Khovanov.fiberwiseSplit (R := R) es.resolvedCircleCongr.symm := by
-    simpa only [Equiv.symm_symm] using
-      (Khovanov.fiberwiseSplit_equiv (R := R) es.resolvedCircleCongr.symm).symm
-  have htidx : (reindex R (fun _ ↦ R[ε]) et.resolvedCircleCongr).toLinearMap =
-      Khovanov.fiberwiseSplit (R := R) et.resolvedCircleCongr.symm := by
-    simpa only [Equiv.symm_symm] using
-      (Khovanov.fiberwiseSplit_equiv (R := R) et.resolvedCircleCongr.symm).symm
-  simp only [resolutionSplitMap_def, ← LinearEquiv.coe_coe, he, htidx]
-  rw [← LinearMap.comp_apply, Khovanov.fiberwiseSplit_comp, hcomp,
-    ← Khovanov.fiberwiseSplit_comp, LinearMap.comp_apply]
+  rw [resolutionSplitMap_def, resolutionSplitMap_def]
+  exact Khovanov.reindex_fiberwiseSplit _ _ (funext hmap) x
 
 end TauCeti.PDCode.SmoothingEquiv

@@ -53,6 +53,8 @@ class-two formula is the case `d k = y⁽ⁿ⁻ᵏ⁾ z⁽ᵏ⁾`, truncated to 
   against an arbitrary divided-power series for the inner derivation.
 * `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq`: the coefficient-one
   normal-ordering formula for two divided powers with central commutator.
+* `TauCeti.Associative.dividedPower_mul_dividedPower_of_commutator_eq_nsmul`: normal ordering
+  when the commutator is a natural-number multiple of a commuting element.
 
 ## References
 
@@ -263,5 +265,17 @@ theorem dividedPower_mul_dividedPower_of_commutator_eq {x y z : A}
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   rw [Finset.mem_range, Nat.lt_succ_iff] at hk
   rw [classTwoSeries_eq_of_le (le_trans hk (min_le_right m n))]
+
+/-- **Normal ordering with a natural-multiple central commutator.** If
+`x * y = y * x + c • z`, with `z` commuting with both `x` and `y`, then crossing the two
+divided powers releases `z⁽ᵏ⁾` with natural coefficient `c ^ k`. -/
+theorem dividedPower_mul_dividedPower_of_commutator_eq_nsmul {x y z : A} {c : ℕ}
+    (hxy : x * y = y * x + c • z) (hxz : Commute x z) (hyz : Commute y z) (m n : ℕ) :
+    dividedPower m x * dividedPower n y =
+      ∑ k ∈ range (min m n + 1),
+        (c ^ k) • (dividedPower (n - k) y * dividedPower k z * dividedPower (m - k) x) := by
+  rw [dividedPower_mul_dividedPower_of_commutator_eq hxy (hxz.smul_right c) (hyz.smul_right c)]
+  refine sum_congr rfl fun k _ => ?_
+  simp only [dividedPower_nsmul, mul_smul_comm, smul_mul_assoc]
 
 end TauCeti.Associative

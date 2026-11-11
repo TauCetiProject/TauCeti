@@ -74,7 +74,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed
   rw [← Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField] at this
   have : IsFinite (Spec.map (f.residueFieldMap x)) :=
     IsFinite.of_comp _ (Y.fromSpecResidueField (f x))
-  exact (residueDegree_ne_zero_iff f x).mpr ((IsFinite.SpecMap_iff _).mp this)
+  exact (f.residueDegree_ne_zero_iff x).mpr ((IsFinite.SpecMap_iff _).mp this)
 
 end AlgebraicGeometry
 

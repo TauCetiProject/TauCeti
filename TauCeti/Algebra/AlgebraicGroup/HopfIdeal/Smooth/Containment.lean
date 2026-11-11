@@ -61,7 +61,7 @@ space at the identity vanishes.
 Equivalently, a smooth connected closed affine subgroup whose differential is surjective is the
 whole ambient group. -/
 theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
-    [Algebra.FiniteType k H] (f : H →ₐc[k] K) (hf : Function.Surjective f)
+    (f : H →ₐc[k] K) (hf : Function.Surjective f)
     (hH_smooth : smoothCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H))
     (hH_connected : ConnectedSpace (PrimeSpectrum H))
     (hK_smooth : smoothCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k K))

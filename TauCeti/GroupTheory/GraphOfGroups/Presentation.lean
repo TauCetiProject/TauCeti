@@ -222,6 +222,18 @@ def homEquiv :
 
 section isEmpty
 
+/-- Over a graph without edges, the vertex groups embed in `π₁(𝔸, T)`: there are no
+relations. -/
+theorem of_injective_of_isEmpty [IsEmpty Γ.E] (v : Γ.V) :
+    Function.Injective (of T v : 𝔸.vertexGroup v →* π₁Tree 𝔸 T) := by
+  have hrels : 𝔸.π₁TreeRels T = ∅ := by
+    ext
+    simp [π₁TreeRels]
+  have hmk : Function.Injective (mk : 𝔸.π₁TreeCover →* π₁Tree 𝔸 T) :=
+    (injective_iff_map_eq_one _).2 fun r hr => by
+      rwa [mk_eq_one_iff, hrels, Subgroup.normalClosure_empty, Subgroup.mem_bot] at hr
+  exact hmk.comp (Monoid.Coprod.inl_injective.comp (Monoid.CoprodI.of_injective v))
+
 variable [Unique Γ.V] [IsEmpty Γ.E]
 
 variable (𝔸 T) in

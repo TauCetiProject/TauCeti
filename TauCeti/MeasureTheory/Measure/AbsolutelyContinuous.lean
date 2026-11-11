@@ -53,15 +53,10 @@ variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
 /-- A measure positive on every singleton dominates every measure: a null set cannot contain
 any point. No finiteness or countability assumption is needed. -/
 theorem absolutelyContinuous_of_forall_singleton_ne_zero
-    (hν : ∀ x : α, ν {x} ≠ 0) : μ ≪ ν := by
-  refine Measure.AbsolutelyContinuous.mk fun s _ hs ↦ ?_
-  have hempty : s = ∅ := by
-    apply Set.Subset.antisymm _ (Set.empty_subset s)
-    intro y hy
-    have hzero : ν {y} = 0 :=
-      le_zero_iff.mp ((measure_mono (Set.singleton_subset_iff.mpr hy)).trans_eq hs)
-    exact hν y hzero
-  simp [hempty]
+    (hν : ∀ x : α, ν {x} ≠ 0) : μ ≪ ν := fun s hs ↦ by
+  obtain rfl : s = ∅ := eq_empty_of_forall_notMem fun y hy ↦
+    hν y (measure_mono_null (singleton_subset_iff.2 hy) hs)
+  exact measure_empty
 
 end TauCeti
 
@@ -88,23 +83,21 @@ theorem exists_pos_measure_lt_of_measure_lt [IsFiniteMeasure ν] (h : ν ≪ μ)
     (hε : ε ≠ 0) : ∃ δ > 0, ∀ s, μ s < δ → ν s < ε := by
   by_contra! H
   -- Otherwise there are sets of `μ`-measure below `2⁻ⁿ` and `ν`-measure at least `ε`.
-  choose s hμs hνs using fun n : ℕ ↦ H ((2⁻¹ : ℝ≥0∞) ^ n) (ENNReal.pow_pos (by simp) n)
+  choose s hμs hνs using fun n : ℕ ↦ H (2⁻¹ ^ n) (ENNReal.pow_pos (by simp) n)
   set t := fun n ↦ toMeasurable μ (s n)
-  have hsum : ∑' n, μ (t n) ≠ ∞ := by
-    refine ne_top_of_le_ne_top (b := ∑' n : ℕ, (2⁻¹ : ℝ≥0∞) ^ n) (by simp)
-      (_root_.tsum_le_tsum fun n ↦ ?_)
-    simpa [t, measure_toMeasurable] using (hμs n).le
-  -- By Borel–Cantelli their `limsup` is `μ`-null, hence `ν`-null.
-  have hzero : ν (limsup t atTop) = 0 := h (measure_limsup_atTop_eq_zero hsum)
+  have hsum : ∑' n, μ (t n) ≠ ∞ :=
+    ne_top_of_le_ne_top (b := ∑' n : ℕ, 2⁻¹ ^ n) (by simp)
+      (tsum_le_tsum fun n ↦ by simpa [t] using (hμs n).le)
   have hanti : Antitone fun n ↦ ⋃ i ≥ n, t i :=
     fun _ _ hmn ↦ iUnion₂_mono' fun i hi ↦ ⟨i, hmn.trans hi, subset_rfl⟩
-  rw [limsup_eq_iInf_iSup_of_nat, iInf_eq_iInter] at hzero
-  simp only [iSup_eq_iUnion] at hzero
-  -- Continuity from above of the finite measure `ν` gives the contradiction `ε ≤ 0`.
-  rw [hanti.measure_iInter
-    (fun _ ↦ (MeasurableSet.iUnion fun i ↦ MeasurableSet.iUnion fun _ ↦
-      measurableSet_toMeasurable μ (s i)).nullMeasurableSet) ⟨0, measure_ne_top _ _⟩] at hzero
-  refine hε (le_zero_iff.mp (hzero ▸ le_iInf fun n ↦ (hνs n).trans (measure_mono ?_)))
-  exact (subset_toMeasurable μ (s n)).trans (subset_iUnion₂_of_subset n le_rfl subset_rfl)
+  -- By Borel–Cantelli their `limsup` is `μ`-null, hence `ν`-null; by continuity from above of
+  -- the finite measure `ν`, the `ν`-measures of the tails `⋃ i ≥ n, t i` decrease to `0`.
+  have hzero : ⨅ n, ν (⋃ i ≥ n, t i) = 0 := by
+    rw [← hanti.measure_iInter (fun _ ↦ (MeasurableSet.iUnion fun i ↦ .iUnion fun _ ↦
+      measurableSet_toMeasurable μ (s i)).nullMeasurableSet) ⟨0, measure_ne_top _ _⟩]
+    simpa [limsup_eq_iInf_iSup_of_nat] using h (measure_limsup_atTop_eq_zero hsum)
+  -- But every tail has `ν`-measure at least `ε`.
+  exact hε (le_zero_iff.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
+    (subset_toMeasurable μ (s n)).trans <| subset_iUnion₂_of_subset n le_rfl subset_rfl)
 
 end MeasureTheory.Measure.AbsolutelyContinuous

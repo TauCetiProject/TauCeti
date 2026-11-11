@@ -311,8 +311,8 @@ theorem gibbsExtension_expectation {Λ'' : Finset L} (Φ : Interaction ℂ L S) 
 the Gibbs state of `Λ` to `Λ''` restricts on `A_Λ'` to its extension to `Λ'`. -/
 @[simp]
 theorem gibbsExtension_inclusion_of_subset {Λ'' : Finset L} (Φ : Interaction ℂ L S) (β : ℝ)
-    (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (h : Λ ⊆ Λ'') (X : Matrix (Λ' → S) (Λ' → S) ℂ) :
-    Φ.gibbsExtension β h (inclusion h₂ X) = Φ.gibbsExtension β h₁ X := by
+    (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (X : Matrix (Λ' → S) (Λ' → S) ℂ) :
+    Φ.gibbsExtension β (h₁.trans h₂) (inclusion h₂ X) = Φ.gibbsExtension β h₁ X := by
   rw [← gibbsExtension_expectation Φ β h₁ h₂, expectation_inclusion]
 
 /-- **The extended Gibbs state is a Gibbs state.** The extension of the Gibbs state of `Λ` to a

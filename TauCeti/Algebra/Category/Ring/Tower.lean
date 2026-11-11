@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.Ring.Constructions
 public import TauCeti.RingTheory.LocalRing.RingHom
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+import Mathlib.RingTheory.Jacobson.Ideal
 
 /-!
 # Units and residue fields of inverse limits of rings
@@ -65,11 +66,11 @@ theorem IsLimit.isLocalHom_π_app_zero_of_isLocalHom_map (hc : IsLimit c)
 
 /-- The kernel of stage-zero projection is in the Jacobson radical when all successive
 transitions reflect units. -/
-theorem IsLimit.ker_π_app_zero_le_jacobson_bot_of_isLocalHom_map (hc : IsLimit c)
+theorem IsLimit.ker_π_app_zero_le_jacobson_of_isLocalHom_map (hc : IsLimit c)
     (hF : ∀ n, IsLocalHom (F.map (homOfLE (Nat.le_succ n)).op).hom) :
-    RingHom.ker (c.π.app (Opposite.op 0)).hom ≤ Ideal.jacobson (⊥ : Ideal c.pt) := by
+    RingHom.ker (c.π.app (Opposite.op 0)).hom ≤ Ring.jacobson c.pt := by
   have := hc.isLocalHom_π_app_zero_of_isLocalHom_map hF
-  exact (c.π.app (Opposite.op 0)).hom.ker_le_jacobson_bot
+  exact (c.π.app (Opposite.op 0)).hom.ker_le_jacobson_of_isLocalHom
 
 /-- For surjective transitions with elementwise nilpotent kernels, the projection from the
 limit to stage zero reflects units. Each kernel may have unbounded nilpotence exponents. -/
@@ -83,12 +84,12 @@ theorem IsLimit.isLocalHom_π_app_zero_of_isNilpotent_ker (hc : IsLimit c)
 
 /-- The stage-zero projection of a tower with surjective transitions and locally nilpotent
 kernels has kernel contained in the Jacobson radical of the limit ring. -/
-theorem IsLimit.ker_π_app_zero_le_jacobson_bot_of_isNilpotent_ker (hc : IsLimit c)
+theorem IsLimit.ker_π_app_zero_le_jacobson_of_isNilpotent_ker (hc : IsLimit c)
     (hsurj : ∀ n, Function.Surjective (F.map (homOfLE (Nat.le_succ n)).op))
     (hnil : ∀ n x, (F.map (homOfLE (Nat.le_succ n)).op) x = 0 → IsNilpotent x) :
-    RingHom.ker (c.π.app (Opposite.op 0)).hom ≤ Ideal.jacobson (⊥ : Ideal c.pt) := by
+    RingHom.ker (c.π.app (Opposite.op 0)).hom ≤ Ring.jacobson c.pt := by
   have := hc.isLocalHom_π_app_zero_of_isNilpotent_ker hsurj hnil
-  exact (c.π.app (Opposite.op 0)).hom.ker_le_jacobson_bot
+  exact (c.π.app (Opposite.op 0)).hom.ker_le_jacobson_of_isLocalHom
 
 /-- Every residue field of the limit of a surjective ring tower whose transitions reflect
 units is uniquely a quotient of stage zero, compatibly with the original residue map. -/
@@ -101,8 +102,8 @@ theorem IsLimit.existsUnique_comp_π_app_zero_eq_quotientMk_of_isLocalHom_map (h
   have hπ := Concrete.surjective_π_app_zero_of_surjective_map hc hsurj
   have hker : RingHom.ker (c.π.app (Opposite.op 0)).hom ≤ RingHom.ker (Ideal.Quotient.mk m) := by
     rw [Ideal.mk_ker]
-    exact (hc.ker_π_app_zero_le_jacobson_bot_of_isLocalHom_map hF).trans
-      ((Ideal.jacobson_mono bot_le).trans (le_of_eq (Ideal.jacobson_eq_self_of_isMaximal (I := m))))
+    exact (hc.ker_π_app_zero_le_jacobson_of_isLocalHom_map hF).trans
+      (Ring.jacobson_le_of_isMaximal m)
   refine ⟨(c.π.app (Opposite.op 0)).hom.liftOfSurjective hπ ⟨Ideal.Quotient.mk m, hker⟩,
     RingHom.liftOfSurjective_comp _ _ _, ?_⟩
   exact fun f hf ↦ (c.π.app (Opposite.op 0)).hom.eq_liftOfSurjective hπ _ hker f hf

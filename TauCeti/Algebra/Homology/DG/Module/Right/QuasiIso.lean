@@ -17,6 +17,11 @@ bijection on cohomology.  A morphism with an inverse up to homotopy, where the i
 homotopies need only be linear over the ground ring and the inverse commute with the
 differentials, is a quasi-isomorphism (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`):
 this is the form in which chain homotopy equivalences of underlying complexes are used.
+Equivalently, a morphism `f` is a quasi-isomorphism exactly when every relative cycle `(x, y)`,
+with `dM x = 0` and `f x = dN y`, is a relative boundary `(dM u, f u + dN v)`
+(`TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`): this is the acyclicity of the
+mapping cone of `f`, written on elements, and it is the form in which a quasi-isomorphism is
+propagated along a filtration.
 
 The quasi-isomorphisms form the morphism property `TauCeti.DGRightModuleCat.quasiIsos`, so that
 roofs `M ← P → N` are Mathlib's right fractions for it.
@@ -35,6 +40,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   cohomology.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`: a morphism with a homotopy inverse
   over the ground ring is a quasi-isomorphism.
+* `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
+  whose relative cycles are relative boundaries.
 
 ## References
 
@@ -143,6 +150,57 @@ theorem isQuasiIso_of_homotopyInverse (f : DGRightModuleHom hM hN) (g : N →ₗ
     refine ⟨L w, ?_⟩
     rw [Submodule.coe_sub, cyclesMap_apply_coe, hL, hw, map_zero, add_zero]
     abel
+
+/-- **Quasi-isomorphisms on elements.** A morphism `f` of DG right modules is a
+quasi-isomorphism exactly when every relative cycle is a relative boundary: whenever `dM x = 0`
+and `f x = dN y`, there are `u` and `v` with `dM u = x` and `f u + dN v = y`. This is the
+acyclicity of the mapping cone of `f`, written without constructing the cone. -/
+theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
+    f.IsQuasiIso ↔ ∀ x y, dM x = 0 → f x = dN y → ∃ u v, dM u = x ∧ f u + dN v = y := by
+  rw [isQuasiIso_iff]
+  constructor
+  · rintro ⟨hinj, hsurj⟩ x y hx hfx
+    -- The cycle `x` has a boundary as image, so it is itself a boundary `dM u₀`.
+    have hb : (⟨x, hM.mem_cycles.mpr hx⟩ : hM.cycles) ∈ hM.boundaries := by
+      rw [← hM.quotientMk_eq_zero_iff]
+      apply hinj
+      rw [cohomologyMap_mk, map_zero, hN.quotientMk_eq_zero_iff, hN.mem_boundaries,
+        cyclesMap_apply_coe]
+      exact ⟨y, hfx.symm⟩
+    obtain ⟨u₀, hu₀⟩ := hM.mem_boundaries.mp hb
+    have hu₀' : dM u₀ = x := hu₀
+    -- Then `y - f u₀` is a cycle, so it is `f c + dN v` for a cycle `c`.
+    have hy : y - f u₀ ∈ hN.cycles := by
+      rw [hN.mem_cycles, map_sub, map_d, hu₀', hfx, sub_self]
+    obtain ⟨c, hc⟩ := hsurj (Submodule.Quotient.mk ⟨y - f u₀, hy⟩)
+    obtain ⟨c, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+    rw [cohomologyMap_mk, Submodule.Quotient.eq, hN.mem_boundaries] at hc
+    obtain ⟨v, hv⟩ := hc
+    rw [Submodule.coe_sub, cyclesMap_apply_coe] at hv
+    have hv' : dN v = f c - (y - f u₀) := hv
+    refine ⟨u₀ + c, -v, ?_, ?_⟩
+    · rw [map_add, hu₀', hM.mem_cycles.mp c.2, add_zero]
+    · rw [map_add, map_neg, hv']
+      abel
+  · intro H
+    constructor
+    · rw [injective_iff_map_eq_zero]
+      intro z hz
+      obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+      rw [cohomologyMap_mk, hN.quotientMk_eq_zero_iff, hN.mem_boundaries, cyclesMap_apply_coe]
+        at hz
+      obtain ⟨y, hy⟩ := hz
+      obtain ⟨u, -, hu, -⟩ := H z y (hM.mem_cycles.mp z.2) hy.symm
+      rw [hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
+      exact ⟨u, hu⟩
+    · intro w
+      obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective _ w
+      obtain ⟨u, v, hu, huv⟩ := H 0 w (map_zero dM) (by rw [map_zero, hN.mem_cycles.mp w.2])
+      refine ⟨Submodule.Quotient.mk ⟨u, hM.mem_cycles.mpr hu⟩, ?_⟩
+      rw [cohomologyMap_mk, Submodule.Quotient.eq, hN.mem_boundaries]
+      refine ⟨-v, ?_⟩
+      rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
+      exact (sub_add_cancel_left _ _).symm
 
 end DGRightModuleHom
 

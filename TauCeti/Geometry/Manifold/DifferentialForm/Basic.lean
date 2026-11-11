@@ -57,6 +57,15 @@ theorem RoughForm.ofFunction_apply {I : ModelWithCorners ℝ E H} {M : Type*} [T
     (f : M → F) (x : M) (v : Fin 0 → TangentSpace I x) :
     RoughForm.ofFunction I f x v = f x := (rfl)
 
+/-- The `0`-form of a function at a point is the constant alternating map of degree zero with
+value `f x`. -/
+theorem RoughForm.ofFunction_apply_eq_constOfIsEmpty {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] (f : M → F) (x : M) :
+    RoughForm.ofFunction I f x =
+      ContinuousAlternatingMap.constOfIsEmpty ℝ (TangentSpace I x) (Fin 0) (f x) :=
+  (rfl)
+
 /-- The `0`-form of a scalar multiple of a function is the scalar multiple of its `0`-form. -/
 @[simp]
 theorem RoughForm.ofFunction_smul {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
@@ -80,18 +89,30 @@ variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [Charte
 
 namespace RoughForm
 
+/-- The linear functional `v ↦ α_x (v)` of a one-form `α` at a point `x`. -/
+noncomputable def eval (α : RoughForm I M ℝ 1) (x : M) : TangentSpace I x →ₗ[ℝ] ℝ :=
+  ((ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)).symm (α x) :
+    TangentSpace I x →L[ℝ] ℝ)
+
+@[simp]
+theorem eval_apply (α : RoughForm I M ℝ 1) (x : M) (v : TangentSpace I x) :
+    α.eval x v = α x ![v] := by
+  rw [eval, ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply,
+    Matrix.vec_single_eq_const]
+
 /-- The kernel distribution of a one-form `α`: at each point `x`, the subspace of tangent vectors
 `v` with `α_x (v) = 0`. -/
 noncomputable def ker (α : RoughForm I M ℝ 1) (x : M) : Submodule ℝ (TangentSpace I x) :=
-  LinearMap.ker
-    ((ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)).symm (α x) :
-      TangentSpace I x →ₗ[ℝ] ℝ)
+  LinearMap.ker (α.eval x)
+
+/-- The kernel of a one-form at `x` is the kernel of its linear functional at `x`. -/
+theorem ker_eq_ker_eval (α : RoughForm I M ℝ 1) (x : M) : α.ker x = LinearMap.ker (α.eval x) :=
+  (rfl)
 
 @[simp]
 theorem mem_ker {α : RoughForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
     v ∈ α.ker x ↔ α x ![v] = 0 := by
-  rw [ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, Matrix.vec_single_eq_const]
+  rw [ker, LinearMap.mem_ker, eval_apply]
 
 /-- The kernel of a one-form at `x` is the whole tangent space exactly when the form vanishes
 at `x`. -/
@@ -101,6 +122,12 @@ theorem ker_eq_top_iff {α : RoughForm I M ℝ 1} {x : M} : α.ker x = ⊤ ↔ �
   · have hv : ![v 0] = v := funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
     simpa [hv] using mem_ker.1 (h ▸ Submodule.mem_top : v 0 ∈ α.ker x)
   · simp [h]
+
+/-- A one-form which does not vanish at `x` takes a nonzero value on some tangent vector at `x`. -/
+theorem exists_apply_ne_zero {α : RoughForm I M ℝ 1} {x : M} (hα : α x ≠ 0) :
+    ∃ v : TangentSpace I x, α x ![v] ≠ 0 := by
+  by_contra! h
+  exact hα (ker_eq_top_iff.1 (eq_top_iff.2 fun v _ ↦ mem_ker.2 (h v)))
 
 /-- Rescaling a one-form by a function that does not vanish at `x` does not change its kernel
 at `x`. -/

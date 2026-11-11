@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
 public import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
 # Bounded perturbations of C⋆-dynamics
@@ -30,6 +32,11 @@ continuous real action on `A`, the perturbed dynamics. Its generator is `δ + i[
 domain of the generator `δ` of `τ`; in particular the perturbation does not change the
 domain. Perturbing `τ^P` by `-P` recovers `τ`, its cocycle being `Γ t⋆`.
 
+When `A` is unital and `τ = Ad exp(ith)` is the inner dynamics of a self-adjoint `h`, the
+cocycle is `Γ t = exp (it(h + P)) exp (-ith)`, and for self-adjoint `P` the perturbed dynamics is
+the inner dynamics `Ad exp(it(h + P))`: adding the bounded energy `P` to the Hamiltonian `h` adds
+`i[P, ·]` to the generator.
+
 A multiplier-valued cocycle is used so that `A` need not be unital; the path itself is
 norm-continuous because `P` lies in `A`. Since `A` is an ideal in `𝓜(ℂ, A)`, conjugation by the
 unitary `Γ t` maps `A` to itself.
@@ -46,6 +53,9 @@ unitary `Γ t` maps `A` to itself.
 * `TauCeti.CStarAction.generator_perturbed`: its generator is `δ + i[P, ·]`.
 * `TauCeti.CStarAction.perturbed_perturbed_neg`: perturbing `τ^P` by `-P` gives back `τ`.
 * `TauCeti.CStarAction.perturbed_zero`: perturbing by `0` gives back `τ`.
+* `selfAdjoint.perturbationCocycle_cstarAction`: the cocycle of an inner dynamics.
+* `selfAdjoint.perturbed_cstarAction`: perturbing the inner dynamics of `h` by `P` gives the
+  inner dynamics of `h + P`.
 
 ## References
 
@@ -281,3 +291,60 @@ theorem perturbed_zero : α.perturbed (IsSelfAdjoint.zero A) = α := by
 end Perturbed
 
 end TauCeti.CStarAction
+
+namespace selfAdjoint
+
+open Complex NormedSpace TauCeti.CStarAction
+
+-- Mathlib's lemmas on `exp` in a Banach algebra are stated for normed `ℚ`-algebras.
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+variable {A : Type*} [CStarAlgebra A] (h : selfAdjoint A) {P : A}
+
+/-- The perturbation cocycle of `P` for the inner dynamics of a self-adjoint `h` is
+`Γ t = exp (it(h + P)) exp (-ith)`. -/
+theorem perturbationCocycle_cstarAction (P : A) (t : ℝ) :
+    (cstarAction h).perturbationCocycle P t =
+      ((exp ((I * t) • ((h : A) + P)) * exp (-(I * t) • (h : A)) : A) : 𝓜(ℂ, A)) := by
+  refine (congrFun ((cstarAction h).eq_perturbationCocycle P (f := fun s =>
+    ((exp ((I * s) • ((h : A) + P)) * exp (-(I * s) • (h : A)) : A) : 𝓜(ℂ, A)))
+    (by simp) fun s => ?_) t).symm
+  simp only [cstarAction_apply, toAdd_ofAdd, ← DoubleCentralizer.coe_smul,
+    ← DoubleCentralizer.coe_mul, DoubleCentralizer.hasDerivAt_coe_iff]
+  -- In real time the candidate is `exp (s x) exp (-s y)` with `x = i(h + P)` and `y = ih`, so its
+  -- derivative is `exp (s x) (x - y) exp (-s y)`, and `x - y = iP`.
+  have hreal (r : ℝ) (z : A) : exp ((I * r) • z) = exp (r • (I • z)) := by
+    simp only [← Complex.coe_smul, smul_smul, mul_comm I]
+  have hreal' (r : ℝ) (z : A) : exp (-(I * r) • z) = exp (r • -(I • z)) := by
+    rw [neg_smul, ← smul_neg, hreal, smul_neg, smul_neg]
+  simp only [hreal, hreal']
+  convert (hasDerivAt_exp_smul_const (I • ((h : A) + P)) s).mul
+    (hasDerivAt_exp_smul_const' (-(I • (h : A))) s) using 1
+  have hcancel (y : A) : exp (s • -(I • (h : A))) * (exp (s • (I • (h : A))) * y) = y := by
+    rw [← mul_assoc, smul_neg, ← exp_add_of_commute (Commute.refl _).neg_left, neg_add_cancel,
+      NormedSpace.exp_zero, one_mul]
+  simp only [smul_add, mul_add, add_mul, mul_neg, neg_mul, mul_smul_comm, smul_mul_assoc,
+    mul_assoc, hcancel]
+  abel
+
+/-- **Bounded perturbations of inner dynamics are inner.** Perturbing the inner dynamics of a
+self-adjoint `h` by a self-adjoint `P` gives the inner dynamics of `h + P`. In particular the
+perturbed dynamics has generator `i [h + P, ·] = δ + i [P, ·]`. -/
+@[simp]
+theorem perturbed_cstarAction (hP : IsSelfAdjoint P) :
+    (cstarAction h).perturbed hP = cstarAction (h + ⟨P, hP⟩) := by
+  ext t a
+  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+  rw [coe_perturbed_apply, perturbationCocycle_cstarAction, ← DoubleCentralizer.coe_star,
+    ← DoubleCentralizer.coe_mul, ← DoubleCentralizer.coe_mul, DoubleCentralizer.coe_inj]
+  simp only [cstarAction_apply, star_mul, star_exp, star_smul, star_neg, h.2.star_eq, hP.star_eq,
+    star_add, Complex.star_def, conj_I, conj_ofReal, AddSubgroup.coe_add]
+  -- The middle factors `exp (-ith) exp (ith)` cancel.
+  have hconj : (t.toAdd : ℂ) * -I = -(I * t.toAdd) := by ring
+  have hcancel (y : A) :
+      exp (-(I * t.toAdd) • (h : A)) * (exp ((I * t.toAdd) • (h : A)) * y) = y := by
+    rw [← mul_assoc, neg_smul, ← exp_add_of_commute (Commute.refl _).neg_left, neg_add_cancel,
+      NormedSpace.exp_zero, one_mul]
+  simp only [hconj, neg_neg, mul_assoc, hcancel]
+
+end selfAdjoint

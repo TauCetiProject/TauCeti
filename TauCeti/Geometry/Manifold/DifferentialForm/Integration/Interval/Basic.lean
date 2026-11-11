@@ -112,6 +112,24 @@ private theorem integrable_interval_pullback_coefficient
   by_cases hα : (α : ℝ) < b <;> simp only [g, hα, ↓reduceIte]
   <;> rfl
 
+/-- On the target of the bottom chart of `[a,b]`, the increasing-basis coefficient of the actual
+pullback of a real one-form is the real coefficient of the form evaluated at `z 0 + a`. -/
+private theorem signedInChartAt_pullback_subtypeVal_bot_eqOn (ω : RoughForm 𝓘(ℝ) ℝ ℝ 1) :
+    EqOn ((mpullback (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc a b → ℝ) ω).signedInChartAt
+      (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis (⊥ : Icc a b) (fun _ ↦ 1))
+      (fun z : EuclideanSpace ℝ (Fin 1) ↦ ω (z 0 + a) (fun _ ↦ 1))
+      (extChartAt (𝓡∂ 1) (⊥ : Icc a b)).target := by
+  intro z hz
+  rw [RoughForm.signedInChartAt_apply, dite_eq_left hz]
+  simp only [Units.val_one, Int.cast_one, one_mul]
+  rw [inChartAt_mpullback_subtypeVal_Icc ω _ hz]
+  -- Identify the bottom-chart coefficient with the local real coefficient before rewriting.
+  change (if ((⊥ : Icc a b) : ℝ) < b then (1 : ℝ) else -1) *
+    ω ((extChartAt (𝓡∂ 1) (⊥ : Icc a b)).symm z : ℝ) (fun _ ↦ 1) = ω (z 0 + a) (fun _ ↦ 1)
+  rw [subtypeVal_extChartAt_Icc_symm _ hz]
+  simp only [Icc.coe_bot, hab.out, ↓reduceIte, one_mul]
+  exact congrArg (fun t ↦ ω t (fun _ ↦ 1)) (ite_eq_left hab.out)
+
 /-- Actual pullback of an interval-integrable real one-form is intrinsically integrable,
 and its canonical increasing-orientation integral is the ordinary interval integral. -/
 theorem integralTopForm_mpullback_subtypeVal_Icc
@@ -155,18 +173,8 @@ theorem integralTopForm_mpullback_subtypeVal_Icc
     (setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
       rw [RoughForm.signedInChartAt_apply, dite_eq_right hz]).symm
   rw [hrestrict]
-  have he : EqOn (φ.signedInChartAt B α (fun _ ↦ 1))
-      (fun z : EuclideanSpace ℝ (Fin 1) ↦ f (z 0 + a)) (extChartAt (𝓡∂ 1) α).target := by
-    intro z hz
-    rw [RoughForm.signedInChartAt_apply, dite_eq_left hz]
-    simp only [Units.val_one, Int.cast_one, one_mul]
-    rw [inChartAt_mpullback_subtypeVal_Icc ω α hz]
-    -- Identify the bottom-chart coefficient with the local real coefficient f before rewriting.
-    change (if (α : ℝ) < b then (1 : ℝ) else -1) *
-      f ((extChartAt (𝓡∂ 1) α).symm z : ℝ) = f (z 0 + a)
-    rw [subtypeVal_extChartAt_Icc_symm α hz]
-    simp only [α, Icc.coe_bot, hab.out, ↓reduceIte, one_mul]
-  rw [setIntegral_congr_fun (measurableSet_extChartAt_target α) he,
+  rw [setIntegral_congr_fun (measurableSet_extChartAt_target α)
+      (signedInChartAt_pullback_subtypeVal_bot_eqOn ω),
     (EuclideanSpace.basisFun (Fin 1) ℝ).addHaar_eq_volume, extChartAt_Icc_target]
   -- Present the chart target and coordinate function through the same projection for transport.
   change (∫ z in (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Ico 0 (b - a),

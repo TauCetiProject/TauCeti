@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
+import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.Sobolev.W1p.Localization
+import TauCeti.MeasureTheory.Measure.OpenPos
+
 /-!
 # The borderline Sobolev embedding `p = n` and Trudinger's inequality
 
@@ -52,6 +56,8 @@ most `e (k + 1) 2 ^ (-k) μ(Ω)`. The finitely many terms with `k < n - 1` are b
   with an upper bound for `‖Du‖_{Lⁿ}` in place of the norm itself.
 * `TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le`: Trudinger's inequality on
   `W^{1,n}_0(Ω)`.
+* `TauCeti.W1p.integrableOn_exp_mul_abs_value`: its local form on `W^{1,n}(Ω)`, without boundary
+  condition: `exp (c |u|)` is integrable on every compact subset of `Ω`, for every `c`.
 
 ## References
 
@@ -285,12 +291,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω : Set E}
 
 /-- **The borderline Sobolev inequality for compactly supported functions.** Let `n` be the
-dimension and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a measurable set `Ω`,
+dimension and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a set `Ω`,
 then for every `q ≥ n`,
 
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) (q (1 - 1/n) + 1) ^ (1 - 1/n + 1/q) μ(Ω) ^ (1/q) ‖Du‖_{Lⁿ}`. -/
 theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω) {q : ℝ≥0}
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω) {q : ℝ≥0}
     (hq : (finrank ℝ E : ℝ≥0) ≤ q) :
     eLpNorm u q μ ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -300,7 +306,8 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
   have hn0 : (n : ℝ) ≠ 0 := by have : 0 < n := finrank_pos; positivity
   have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by have : 0 < n := finrank_pos; positivity)
     (by exact_mod_cast hq : (n : ℝ) ≤ q)
-  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u hΩ hsupp
+  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u
+    (measurableSet_toMeasurable μ Ω) (hsupp.trans (subset_toMeasurable μ Ω))
     (p := n) (by exact_mod_cast finrank_pos) hq (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp)
     (by linarith [inv_pos.2 hq0])
   -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
@@ -309,17 +316,17 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
     field_simp [hn0]
     ring
   rwa [hbase, sub_sub_cancel, show 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ by
-    ring, ENNReal.coe_natCast] at h
+    ring, ENNReal.coe_natCast, measure_toMeasurable] at h
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality for compactly supported functions.** Let `n ≥ 2` be the dimension
-and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a measurable set `Ω`, then
+and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a set `Ω`, then
 
 `∫_Ω exp ((‖u‖ / (c ‖Du‖_{Lⁿ})) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 
 where `c = (2e) ^ (1 - 1/n) n⁻¹ ω ^ (-1/n)`. -/
 theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasCompactSupport u)
-    (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω) (hn : 2 ≤ finrank ℝ E) :
+    (hsupp : tsupport u ⊆ Ω) (hn : 2 ≤ finrank ℝ E) :
     ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
         ((2 * Real.exp 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * (finrank ℝ E : ℝ)⁻¹ *
           μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -334,7 +341,7 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
     hu.continuous.aestronglyMeasurable hn fun q hq => by
       rw [eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
         ((subset_tsupport _).trans hsupp), Measure.restrict_apply_univ]
-      refine (eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv hu h2u hΩ hsupp hq).trans_eq ?_
+      refine (eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv hu h2u hsupp hq).trans_eq ?_
       rw [ENNReal.ofReal_mul (by positivity)]
       ring
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK] at h
@@ -342,15 +349,14 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality with a bound on the derivative.** Let `n ≥ 2` be the dimension. If
-`u` is `C¹` with compact support inside a measurable set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some
-`A > 0`, then
+`u` is `C¹` with compact support inside a set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some `A > 0`, then
 
 `∫_Ω exp ((‖u‖ / (c A)) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 
 with `c` as in `TauCeti.setLIntegral_exp_norm_div_rpow_le`. Since the bound `A` need not be the
 norm of `Du` itself, a single exponent serves a whole family of functions. -/
 theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω)
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω)
     (hn : 2 ≤ finrank ℝ E) {A : ℝ} (hA : 0 < A)
     (hDu : eLpNorm (fderiv ℝ u) (finrank ℝ E) μ ≤ ENNReal.ofReal A) :
     ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
@@ -364,13 +370,13 @@ theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff �
     μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
   have hc : 0 < c := by
     have : 0 < μ.real (ball 0 1) :=
-      ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+      Metric.measureReal_ball_pos μ 0 one_pos
     positivity
   have hq : 0 ≤ (finrank ℝ E : ℝ) / (finrank ℝ E - 1) := div_nonneg (by linarith) (by linarith)
   have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=
     ENNReal.toReal_le_of_le_ofReal hA.le hDu
-  refine (setLIntegral_mono' hΩ fun x _ ↦ ?_).trans
-    (setLIntegral_exp_norm_div_rpow_le hu h2u hΩ hsupp hn)
+  refine (lintegral_mono fun x ↦ ?_).trans
+    (setLIntegral_exp_norm_div_rpow_le hu h2u hsupp hn)
   gcongr ENNReal.ofReal (Real.exp ?_)
   rcases ENNReal.toReal_nonneg.eq_or_lt with hS0 | hSpos
   · -- If `Du` vanishes in `Lⁿ`, it vanishes identically, so the compactly supported `u` is zero.
@@ -457,6 +463,80 @@ theorem W1p.setLIntegral_exp_abs_value_div_rpow_le (hp : p = finrank ℝ E)
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK,
     toReal_enorm] at h
   simpa only [K, Real.norm_eq_abs, mul_assoc] using h
+
+/-- **Local exponential integrability of `W^{1,n}(Ω)`.** Let `n ≥ 2` be the dimension. For every
+`u ∈ W^{1,n}(Ω)`, every compact `K ⊆ Ω` and every real `c`, the function `exp (c |u|)` is
+integrable on `K`. No boundary condition on `u` and no regularity of `Ω` is assumed.
+
+This is the local form of Trudinger's inequality
+`TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le`: a cutoff of `u` lies in `W^{1,n}_0(U)` for
+an open `U ⊇ K` of finite measure, and by Young's inequality `exp (c |u|)` is bounded by a constant
+times `exp ((|u| / A) ^ (n / (n - 1)))` for every rate `c`, because `n / (n - 1) > 1`. -/
+theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ finrank ℝ E)
+    (u : W1p mu Omega p) {K : Set E} (hK : IsCompact K) (hKO : K ⊆ Omega) (c : ℝ) :
+    IntegrableOn (fun x ↦ Real.exp (c * |W1p.value u x|)) K mu := by
+  set n := finrank ℝ E
+  have hp' : p ≠ ∞ := hp ▸ ENNReal.natCast_ne_top n
+  have hn1 : (1 : ℝ) < n := by exact_mod_cast hn
+  obtain ⟨U, hU, hKU, T, hT⟩ := W1p.exists_zeroBoundaryLocalization (μ := mu) hp' (V := K)
+    (by rwa [hK.isClosed.closure_eq]) (by rwa [hK.isClosed.closure_eq])
+  set v : W1p mu U p := (T u : W1p mu U p)
+  have hv0 : v ∈ w1p0Submodule mu U p := (T u).2
+  have hKU' : mu.restrict K ≤ mu.restrict U := Measure.restrict_mono hKU le_rfl
+  have hum : AEStronglyMeasurable (W1p.value u : E → ℝ) (mu.restrict K) :=
+    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hKO le_rfl)
+  refine ⟨Real.continuous_exp.comp_aestronglyMeasurable
+    ((continuous_abs.comp_aestronglyMeasurable hum).const_mul c), ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (Real.exp_pos _).le)]
+  -- On `K` the value of `u` is that of its cutoff `v ∈ W^{1,n}_0(U)`.
+  calc ∫⁻ x in K, ENNReal.ofReal (Real.exp (c * |W1p.value u x|)) ∂mu
+      = ∫⁻ x in K, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu :=
+        lintegral_congr_ae (hT u |>.mono fun x hx ↦ by simp only [v, hx])
+    _ ≤ ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu :=
+        lintegral_mono' hKU' le_rfl
+    _ < ∞ := ?_
+  rcases (norm_nonneg (W1p.gradient v)).eq_or_lt with hG | hG
+  · -- If `∇v = 0`, the borderline Sobolev inequality forces `v = 0`.
+    have h0 : eLpNorm (W1p.value v : E → ℝ) (n : ℝ≥0) (mu.restrict U) = 0 := by
+      refine le_antisymm ((W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient hp hU
+        le_rfl hv0).trans_eq ?_) bot_le
+      rw [← ofReal_norm, ← hG, ENNReal.ofReal_zero, mul_zero]
+    have hv : (W1p.value v : E → ℝ) =ᵐ[mu.restrict U] 0 :=
+      (eLpNorm_eq_zero_iff (by simp; omega)).1 h0
+    calc ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu
+        = ∫⁻ _ in U, 1 ∂mu := lintegral_congr_ae (hv.mono fun x hx ↦ by simp [hx])
+      _ < ∞ := by rw [setLIntegral_one]; exact hU.lt_top
+  · -- Otherwise Young's inequality reduces to Trudinger's inequality for `v`.
+    set A := (2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * (n : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-(n : ℝ)⁻¹) *
+      ‖W1p.gradient v‖
+    have hA : 0 < A := by
+      have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < n)
+      have := measureReal_ball_pos mu (0 : E) one_pos
+      positivity
+    have hsq : ((n : ℝ) / (n - 1)).HolderConjugate n :=
+      (Real.HolderConjugate.conjExponent hn1).symm
+    -- Young's inequality: `c t ≤ (t / A) ^ (n / (n - 1)) + (|c| A) ^ n` for `t ≥ 0`.
+    have hyoung (t : ℝ) (ht : 0 ≤ t) :
+        c * t ≤ (t / A) ^ ((n : ℝ) / (n - 1)) + (|c| * A) ^ (n : ℝ) :=
+      calc c * t ≤ |c| * t := mul_le_mul_of_nonneg_right (le_abs_self c) ht
+        _ = t / A * (|c| * A) := by field_simp
+        _ ≤ (t / A) ^ ((n : ℝ) / (n - 1)) / ((n : ℝ) / (n - 1)) + (|c| * A) ^ (n : ℝ) / n :=
+          Real.young_inequality_of_nonneg (by positivity) (by positivity) hsq
+        _ ≤ _ := add_le_add (div_le_self (by positivity) hsq.lt.le)
+          (div_le_self (by positivity) hsq.symm.lt.le)
+    have htr := W1p.setLIntegral_exp_abs_value_div_rpow_le hp hn hv0
+    calc ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu
+        ≤ ∫⁻ x in U, ENNReal.ofReal (Real.exp ((|c| * A) ^ (n : ℝ))) *
+            ENNReal.ofReal (Real.exp ((|W1p.value v x| / A) ^ ((n : ℝ) / (n - 1)))) ∂mu := by
+          refine lintegral_mono fun x ↦ ?_
+          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, add_comm]
+          gcongr
+          exact hyoung _ (abs_nonneg _)
+      _ = ENNReal.ofReal (Real.exp ((|c| * A) ^ (n : ℝ))) *
+            ∫⁻ x in U, ENNReal.ofReal (Real.exp ((|W1p.value v x| / A) ^ ((n : ℝ) / (n - 1))))
+              ∂mu := lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top (htr.trans_lt
+          (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hU.lt_top))
 
 end W1p0
 

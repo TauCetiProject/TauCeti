@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.RingTheory.Extension.SquareZero
+public import TauCeti.RingTheory.Extension.SquareZero.Basic
 
 /-!
 # A nonsplit square-zero extension

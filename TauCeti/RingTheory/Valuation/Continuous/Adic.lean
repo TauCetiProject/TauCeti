@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Basic.NNReal.Basic
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import TauCeti.RingTheory.Valuation.SpanPow
 

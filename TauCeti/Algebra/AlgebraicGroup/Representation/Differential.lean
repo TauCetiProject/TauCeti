@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
+public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction

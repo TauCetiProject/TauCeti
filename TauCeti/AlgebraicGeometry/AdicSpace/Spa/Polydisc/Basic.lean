@@ -75,8 +75,9 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   monomials of `f`.
 * `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous valuation that bounds every
   monomial of `f` by `f`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, bounds `f(T + a)` by `f`.
-* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: if moreover each `Tᵢ - aᵢ` is bounded by
-  `Tᵢ`, the valuation is invariant under translation by `a`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: a continuous valuation that bounds every
+  monomial of every series `g` by `g`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, is invariant
+  under translation by `a`.
 * `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
@@ -295,9 +296,11 @@ theorem classicalPoint_injective_of_isField (hA : IsField A) (x : spa (powerBoun
 
 /-- **A point with trivial support is not classical**: the classical point at `a` kills
 `T₀ - a₀`, which is nonzero. -/
-theorem ne_classicalPoint_of_supp_eq_bot [Nontrivial A] [NeZero k] (p : closedPolydisc k A)
+theorem ne_classicalPoint_of_supp_eq_bot [NeZero k] (p : closedPolydisc k A)
     (hp : p.1.supp = ⊥) (x : spa (powerBoundedSubring A)) (a : Fin k → A)
     (ha : ∀ i, IsPowerBounded (a i)) : p ≠ classicalPoint x a ha := by
+  -- `Spv A` is empty when `A` is trivial, and `x` is a point of it
+  have : Nontrivial A := not_subsingleton_iff_nontrivial.mp fun h ↦ IsEmpty.false x.1
   rintro rfl
   have hmem : weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
       weightedC _ isWeightFamily_one_weight (a 0) ∈ (classicalPoint x a ha).1.supp := by
@@ -379,7 +382,7 @@ theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
     rcases eq_or_ne (v f) 0 with h0 | h0
     · have hsupp : SetLike.coe (v.leAddSubgroup (v f)) = v.supp :=
         Set.ext fun g ↦ by simp [h0]
-      exact hsupp ▸ isClosed_supp_of_isContinuous hv
+      exact hsupp ▸ hv.isClosed_supp
     · exact AddSubgroup.isClosed_of_isOpen _ (hv.isOpen_le h0)
   refine hclosed.mem_of_tendsto (hasSum_taylorHom a ha f)
     (Filter.Eventually.of_forall fun _ ↦ (v.leAddSubgroup (v f)).sum_mem fun ν _ ↦ ?_)
@@ -443,22 +446,28 @@ theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a
 
 /-- **A continuous valuation bounded on monomials is invariant under translation.** Let `v` be a
 continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `gν Tν` of every series `g` by
-`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
-`v (f(T + a)) = v f` for every series `f`. -/
+`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` for every `i`. Then `v (f(T + a)) = v f` for every series `f`. -/
 theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
     (hX : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
       weightedC _ isWeightFamily_one_weight (a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
-    (hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
-      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
     (hmono : ∀ (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) (ν : Fin k →₀ ℕ), v (weightedC _ isWeightFamily_one_weight
         (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
       ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     v (taylorHom a ha f) = v f := by
+  have hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i) :=
+    fun i ↦ by
+      -- the constant term of `Tᵢ + aᵢ` is `aᵢ`, so `v aᵢ ≤ v (Tᵢ + aᵢ) ≤ v Tᵢ`
+      have hC := hmono (weightedX _ isWeightFamily_one_weight i +
+        weightedC _ isWeightFamily_one_weight (a i)) 0
+      simp [coe_weightedX, coe_weightedC] at hC
+      rw [map_neg, ← sub_eq_add_neg]
+      exact (Valuation.map_sub _ _ _).trans (max_le le_rfl (hC.trans (hX i)))
   refine le_antisymm (valuation_taylorHom_le a ha hv hX (hmono f)) ?_
   simpa only [taylorHom_neg_taylorHom] using
     valuation_taylorHom_le (-a) (fun i ↦ (ha i).neg) hv hX' (hmono (taylorHom a ha f))
@@ -531,6 +540,19 @@ theorem comap_taylorHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : 
 
 end Translation
 
+section FieldConstants
+
+variable {K : Type*} [Field K] [TopologicalSpace K] [NonarchimedeanRing K]
+
+/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+@[simp]
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 :=
+  (v.1.valuation.comap (weightedC _ isWeightFamily_one_weight)).zero_iff
+
+end FieldConstants
+
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
@@ -565,14 +587,6 @@ theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPo
       v.1.valuation (weightedC _ isWeightFamily_one_weight y) :=
   le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
     ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
-
-/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
-@[simp]
-theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
-      x = 0 := by
-  rw [← le_zero_iff, ← map_zero v.1.valuation, ← map_zero (weightedC _ _),
-    closedPolydisc_valuation_weightedC_le_iff, norm_zero, norm_le_zero_iff]
 
 /-- The larger of the values of two constants at a point of the closed polydisc is the value of
 the one of larger norm. -/
