@@ -216,19 +216,37 @@ theorem coe_morseAnnulusFamilyMap_apply (s : I) (p : P) (θ : TopCat.diskBoundar
 
 /-- The inner seam of the family of annuli is the reparametrized characteristic circle of width
 `ε * d²`. -/
+@[simp]
 theorem coe_morseAnnulusFamilyMap_zero (p : P) (θ : TopCat.diskBoundary.{u} k) :
     (morseAnnulusFamilyMap ψ hk hε hball hf hs g hg d (0, p, θ) : M) =
       (ψ p).morseCellMap hk (ε * (d : ℝ) ^ 2) (g p θ.down.1) := by
   rw [coe_morseAnnulusFamilyMap_apply, Set.Icc.coe_zero, mul_zero, add_zero, map_smul,
     OpenPartialHomeomorph.morseCellMap_smul hk d.2.1]
 
+/-- The outer seam of the family of annuli is the attaching map of `ψ p`, reparametrized by
+`g p`. -/
+@[simp]
+theorem coe_morseAnnulusFamilyMap_one (p : P) (θ : TopCat.diskBoundary.{u} k) :
+    (morseAnnulusFamilyMap ψ hk hε hball hf hs g hg d (1, p, θ) : M) =
+      ((ψ p).morseAttachingMap hk hε (hball p) (hf p) ((g p).diskBoundaryMap θ) : M) := by
+  rw [coe_morseAnnulusFamilyMap_apply, Set.Icc.coe_one, mul_one, add_sub_cancel, one_smul,
+    OpenPartialHomeomorph.coe_morseAttachingMap_apply,
+    LinearIsometryEquiv.coe_diskBoundaryMap_apply_down]
+
+/-- The function decreases quadratically with the radial coordinate of the family of annuli. -/
+theorem apply_morseAnnulusFamilyMap (s : I) (p : P) (θ : TopCat.diskBoundary.{u} k) :
+    f (morseAnnulusFamilyMap ψ hk hε hball hf hs g hg d (s, p, θ)) =
+      c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
+  have hr := norm_morseAnnulusFamilyPoint d s θ
+  rw [coe_morseAnnulusFamilyMap_apply, (ψ p).apply_morseCellMap_eq_sub_mul_norm_sq (hball p)
+    (hf p) hk hε (by rw [LinearIsometryEquiv.norm_map, hr]; exact
+      morseAnnulusFamilyRadius_le_one d s), LinearIsometryEquiv.norm_map, hr]
+
 /-- The outer seam of the family of annuli lies in the lower sublevel `M_{c-ε}`. -/
 theorem apply_morseAnnulusFamilyMap_one_le (p : P) (θ : TopCat.diskBoundary.{u} k) :
     f (morseAnnulusFamilyMap ψ hk hε hball hf hs g hg d (1, p, θ)) ≤ c - ε := by
-  rw [coe_morseAnnulusFamilyMap_apply, Set.Icc.coe_one, mul_one, add_sub_cancel, one_smul,
-    (ψ p).apply_morseCellMap_eq_sub_mul_norm_sq (hball p) (hf p) hk hε
-      (by rw [LinearIsometryEquiv.norm_map, mem_sphere_zero_iff_norm.1 θ.down.2]),
-    LinearIsometryEquiv.norm_map, mem_sphere_zero_iff_norm.1 θ.down.2, one_pow, mul_one]
+  rw [coe_morseAnnulusFamilyMap_one]
+  exact ((ψ p).morseAttachingMap hk hε (hball p) (hf p) ((g p).diskBoundaryMap θ)).property
 
 end Family
 
