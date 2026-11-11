@@ -212,13 +212,13 @@ theorem chevalleyRootSubgroup_eq_one_of_apply_eq_zero (γ : Fin t.numRoots)
     baseChangeExp_of_pow_eq_zero _ M _ (k := 1) (by simpa only [pow_one] using hγ)]
   simp
 
-/-- The all-root Kostant parameter is the Chevalley root subgroup on any lattice stable under
-both Kostant forms. -/
+/-- The all-root Kostant parameter is the Chevalley root subgroup on any Kostant-stable lattice
+with nilpotent simple root generators; stability under the all-root form is automatic
+(`TauCeti.DynkinType.kostantForm_chevalleySystem_smul_mem`). -/
 theorem kostantRootSubgroupParam_chevalleySystem
-    (hAll : ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
-      ∀ v ∈ M, ρ u v ∈ M)
     (γ : Fin t.numRoots) (A : CommAlgCat ℤ) :
-    kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hAll γ
+    kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) A =
       chevalleyRootSubgroup ρ M hM hnil γ A := by
   refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_

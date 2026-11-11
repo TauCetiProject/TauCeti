@@ -239,8 +239,7 @@ theorem lt_cutNorm_adjacency_sub_coarseAvg :
       integral_weights_prod]
     norm_num [Set.indicator_of_mem, Set.indicator_of_notMem, adjacency_apply, coarseAvg_apply]
   have hbound := abs_rectIntegral_le_cutNorm weights
-    (adjacency.toSymmKernel - coarseAvg.toSymmKernel)
-    (MeasurableSet.singleton 0) (MeasurableSet.singleton 1)
+    (adjacency.toSymmKernel - coarseAvg.toSymmKernel) {0} {1}
   rw [hrect] at hbound
   exact lt_of_lt_of_le (by norm_num) hbound
 
