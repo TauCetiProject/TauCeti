@@ -368,11 +368,8 @@ theorem RepresentsLaplaceFourier.spatialSlice_real_univ (h : RepresentsLaplaceFo
     (t : ℝ≥0) : (spatialSlice μ t).real univ = (F (t, 0)).re := by
   have hrep := h.eq_laplaceFourierTransform (t, 0)
   rw [spatialSlice_real_apply μ t MeasurableSet.univ, preimage_univ, Measure.restrict_univ,
-    hrep, laplaceFourierTransform_apply]
-  have hatom (y : ℝ≥0 × V) : laplaceAtom (t, (0 : V)).1 y.1 * fourierAtom (t, (0 : V)).2 y.2 =
-      ((Real.exp (-(t : ℝ) * (y.1 : ℝ)) : ℝ) : ℂ) := by
-    rw [fourierAtom_zero_left, mul_one, laplaceAtom_comm, laplaceAtom_def]
-  simp_rw [hatom]
+    hrep, laplaceFourierTransform_apply_exp μ t 0]
+  simp only [inner_zero_left, Complex.ofReal_zero, mul_zero, Complex.exp_zero, mul_one]
   rw [integral_complex_ofReal, Complex.ofReal_re]
 
 /-- **The Bochner measures of the time slices have Laplace-transform masses.** Reading
