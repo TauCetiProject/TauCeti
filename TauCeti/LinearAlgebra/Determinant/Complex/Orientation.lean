@@ -57,6 +57,13 @@ operators, such as a complex Dirac operator or the complex-linear part of the an
 deformation operator of an almost Hermitian four-manifold, by the complex orientations of its
 fibres.
 
+Complex-linear isomorphisms preserve complex positivity
+(`TauCeti.isComplexPositive_detLineCongr_iff`). By contrast, a real-linear isomorphism `g`
+anticommuting with `I`, that is, a conjugate-linear isomorphism, sends the pair `bᵢ, I • bᵢ` of a
+complex basis `b` to `g bᵢ, -(I • g bᵢ)`, so it multiplies the complex orientation of `det E` by
+`(-1) ^ n`, `n = finrank ℂ E` (`TauCeti.IsComplexPositive.neg_one_pow_smul_detLineCongr`);
+likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
+
 ## Main definitions
 
 * `TauCeti.IsComplexPositive`, `TauCeti.IsComplexPositiveDual`,
@@ -75,6 +82,10 @@ fibres.
   `TauCeti.isComplexPositiveDual_comp_detLineCongr_iff`,
   `TauCeti.isComplexPositiveTMulDual_congr_detLineCongr_iff`: complex positivity is invariant under
   the isomorphisms of determinant lines induced by complex-linear isomorphisms.
+* `TauCeti.IsComplexPositive.neg_one_pow_smul_detLineCongr`,
+  `TauCeti.IsComplexPositiveDual.neg_one_pow_smul_comp_detLineCongr`,
+  `TauCeti.IsComplexPositiveTMulDual.neg_one_pow_smul_congr_detLineCongr`: conjugate-linear
+  isomorphisms multiply complex orientations by `(-1)` to the complex dimension.
 * `TauCeti.isComplexPositive_detLineShortExactEquiv_tmul`: compatibility with short exact
   sequences.
 * `TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`: compatibility with four-term exact
@@ -490,6 +501,88 @@ theorem isComplexPositiveTMulDual_congr_detLineCongr_iff (e₁ : E ≃ₗ[ℂ] E
     using h.congr_detLineCongr e₁.symm e₂.symm
 
 end Congr
+
+/-! ### Transport along conjugate-linear isomorphisms -/
+
+section Conj
+
+variable {n : ℕ}
+
+omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
+/-- A real-linear map anticommuting with `I` maps the real family `(v₀, I • v₀, v₁, …)` underlying
+`v` to that underlying `g ∘ v` with every second vector negated, so it maps the exterior product of
+the first to `(-1) ^ n` times that of the second. -/
+private theorem map_ιMulti_complexToRealFamily_of_map_I_smul (g : E →ₗ[ℝ] F)
+    (hg : ∀ x, g (Complex.I • x) = -(Complex.I • g x)) (v : Fin n → E) :
+    ExteriorAlgebra.map g (ExteriorAlgebra.ιMulti ℝ (2 * n) (complexToRealFamily v)) =
+      (-1 : ℝ) ^ n • ExteriorAlgebra.ιMulti ℝ (2 * n) (complexToRealFamily (g ∘ v)) := by
+  set s : Fin (2 * n) → ℝ := fun j ↦ if ((complexRealIndexEquiv n).symm j).2 = 0 then 1 else -1
+  have hv : g ∘ complexToRealFamily v = fun j ↦ s j • complexToRealFamily (g ∘ v) j := by
+    funext j
+    obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv n).surjective j
+    fin_cases k <;> simp [s, hg]
+  have hs : ∏ j, s j = (-1) ^ n := by
+    rw [← (complexRealIndexEquiv n).prod_comp, Fintype.prod_prod_type]
+    simp [s, Fin.prod_univ_two]
+  rw [ExteriorAlgebra.map_apply_ιMulti, hv, AlternatingMap.map_smul_univ, hs]
+
+/-- **A conjugate-linear isomorphism reverses the complex orientation `(-1) ^ n` times**: the
+isomorphism of real determinant lines induced by a real-linear isomorphism `g` anticommuting with
+`I` maps a complex positive element to `(-1) ^ n` times a complex positive element,
+`n = finrank ℂ E`. -/
+theorem IsComplexPositive.neg_one_pow_smul_detLineCongr [FiniteDimensional ℂ E]
+    {x : detLine ℝ E} (hx : IsComplexPositive x) (g : E ≃ₗ[ℝ] F)
+    (hg : ∀ x, g (Complex.I • x) = -(Complex.I • g x)) :
+    IsComplexPositive ((-1 : ℝ) ^ finrank ℂ E • LinearEquiv.detLineCongr g x) := by
+  set b := finBasis ℂ E
+  obtain ⟨c, hc, hx⟩ := (isComplexPositive_iff b).1 hx
+  obtain ⟨b', hb'⟩ := g.exists_basis_coe_eq_comp_of_map_I_smul hg b
+  refine (isComplexPositive_iff b').2 ⟨c, hc, ?_⟩
+  have hmap := map_ιMulti_complexToRealFamily_of_map_I_smul g.toLinearMap hg b
+  rw [LinearEquiv.coe_coe, ← hb'] at hmap
+  rw [Submodule.coe_smul, LinearEquiv.coe_detLineCongr, hx, map_smul, hmap, smul_comm c, smul_smul,
+    ← mul_pow]
+  simp
+
+/-- Pulling a complex positive functional back along the isomorphism of real determinant lines
+induced by a conjugate-linear isomorphism `g` gives `(-1) ^ n` times a complex positive functional,
+`n = finrank ℂ F`. -/
+theorem IsComplexPositiveDual.neg_one_pow_smul_comp_detLineCongr [FiniteDimensional ℂ F]
+    {φ : Dual ℝ (detLine ℝ E)} (hφ : IsComplexPositiveDual φ) (g : F ≃ₗ[ℝ] E)
+    (hg : ∀ x, g (Complex.I • x) = -(Complex.I • g x)) :
+    IsComplexPositiveDual
+      ((-1 : ℝ) ^ finrank ℂ F • φ ∘ₗ (LinearEquiv.detLineCongr g).toLinearMap) := by
+  obtain ⟨y, hy⟩ := exists_isComplexPositive (E := F)
+  rw [hy.isComplexPositiveDual_iff, LinearMap.smul_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, ← map_smul]
+  exact (hy.neg_one_pow_smul_detLineCongr g hg).isComplexPositiveDual_iff.1 hφ
+
+/-- The isomorphism `det E ⊗ (det F)^* ≃ det E' ⊗ (det F')^*` induced by conjugate-linear
+isomorphisms `e₁ : E ≃ E'` and `e₂ : F ≃ F'`, the shape of `LinearMap.detLineCongr`, maps a
+complex positive element to `(-1) ^ (m + n)` times a complex positive element, where `m` and `n`
+are the complex dimensions of `E` and `F`. -/
+theorem IsComplexPositiveTMulDual.neg_one_pow_smul_congr_detLineCongr {E' F' : Type*}
+    [AddCommGroup E'] [Module ℂ E'] [Module ℝ E'] [IsScalarTower ℝ ℂ E']
+    [AddCommGroup F'] [Module ℂ F'] [Module ℝ F'] [IsScalarTower ℝ ℂ F']
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] {t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)}
+    (ht : IsComplexPositiveTMulDual t) (e₁ : E ≃ₗ[ℝ] E') (e₂ : F ≃ₗ[ℝ] F')
+    (he₁ : ∀ x, e₁ (Complex.I • x) = -(Complex.I • e₁ x))
+    (he₂ : ∀ y, e₂ (Complex.I • y) = -(Complex.I • e₂ y)) :
+    IsComplexPositiveTMulDual ((-1 : ℝ) ^ (finrank ℂ E + finrank ℂ F) •
+      TensorProduct.congr (LinearEquiv.detLineCongr e₁)
+        (LinearEquiv.detLineCongr e₂).symm.dualMap t) := by
+  have := e₂.finiteDimensional_complex
+  obtain ⟨x, hx⟩ := exists_isComplexPositive (E := E)
+  obtain ⟨φ, hφ⟩ := exists_isComplexPositiveDual (E := F)
+  obtain ⟨c, hc, rfl⟩ := (hx.isComplexPositiveTMulDual_tmul hφ).exists_pos_smul_eq ht
+  have he₂' (y : F') : e₂.symm (Complex.I • y) = -(Complex.I • e₂.symm y) := by
+    rw [LinearEquiv.symm_apply_eq, map_neg, he₂, LinearEquiv.apply_symm_apply, neg_neg]
+  have hφ' := hφ.neg_one_pow_smul_comp_detLineCongr e₂.symm he₂'
+  rw [e₂.symm.finrank_complex_eq, ← LinearEquiv.detLineCongr_symm] at hφ'
+  rw [map_smul, smul_comm, TensorProduct.congr_tmul, pow_add, ← smul_tmul_smul]
+  exact ((hx.neg_one_pow_smul_detLineCongr e₁ he₁).isComplexPositiveTMulDual_tmul hφ').smul hc
+
+end Conj
 
 /-! ### Exact sequences of complex vector spaces -/
 
