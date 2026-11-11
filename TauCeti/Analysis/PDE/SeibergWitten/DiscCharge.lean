@@ -262,10 +262,7 @@ theorem integral_cutoffCurrent_closedBall_congr_cutoff {χ' : ℝ → ℝ} {α :
 its integrals over the `Dᵢ`.
 
 The cutoff current itself need not vanish between the subdiscs, where `χ(|α|²)` may be smaller
-than `1`. The proof replaces `χ` by a cutoff that is `1` wherever `|α|²` is at least the minimum
-of `|α|²` over the region between the subdiscs, which does not change any of the charges
-(`integral_cutoffCurrent_closedBall_congr_cutoff`), and whose cutoff current vanishes on that
-region. -/
+than `1`. -/
 theorem integral_cutoffCurrent_closedBall_eq_sum {ι : Type*} {α : ℂ → ℂ}
     {b : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {z₀ : ℂ} {r : ℝ} {s : Finset ι} {c : ι → ℂ} {ρ : ι → ℝ}
     (hr : 0 ≤ r) (hρ : ∀ i ∈ s, 0 ≤ ρ i) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
