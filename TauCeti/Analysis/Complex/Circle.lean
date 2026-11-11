@@ -72,6 +72,10 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
 
+/-- The homeomorphism `Circle ≃ₜ sphere (0 : ℂ) 1` sends `1` to the unit `1` of the sphere. -/
+theorem homeomorphSphere_one : homeomorphSphere 1 = (1 : sphere (0 : ℂ) 1) :=
+  Subtype.ext (by simp)
+
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
