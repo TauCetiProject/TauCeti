@@ -66,7 +66,7 @@ theorem moved_one : moved (1 : S3) = 0 := by decide
 /-- The **gauge distance** of a cochain: the minimum of `cost α β` over every gauge
 `β : Fin k → Sym(3)`. This is the paper's `D` (Section 1), the Hamming distance of `α` from
 the `Sym(3)`-valued coboundaries. -/
-@[expose] def gaugeDist (α : Fin k → Fin k → S3) : ℕ :=
+def gaugeDist (α : Fin k → Fin k → S3) : ℕ :=
   Finset.univ.inf' Finset.univ_nonempty (cost α)
 
 /-- No gauge costs less than the gauge distance. -/
@@ -126,28 +126,35 @@ theorem defect_eq_sum (α : Fin k → Fin k → S3) :
   sum_triangles fun u v w => moved (hol α u v w)
 
 /-- Reading a bare function through `val` changes neither its defect nor its gauge distance. -/
-theorem defect_val (f : Fin k → Fin k → S3) : defect (fun i j => val f i j) = defect f := by
+theorem val_congr {f g : Fin k → Fin k → S3} (h : ∀ u v, u < v → f u v = g u v) {u v : Fin k}
+    (huv : u ≠ v) : val f u v = val g u v := by
+  rcases huv.lt_or_gt with huv | huv <;> simp [val, huv, not_lt.mpr huv.le, h]
+
+/-- The defect only reads the values on `u < v`. -/
+theorem defect_congr {f g : Fin k → Fin k → S3} (h : ∀ u v, u < v → f u v = g u v) :
+    defect f = defect g := by
   rw [defect_eq_sum, defect_eq_sum]
   refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
     Finset.sum_congr rfl fun w _ => ?_
-  split_ifs with h
-  · obtain ⟨huv, hvw⟩ := h
-    have huw : u < w := huv.trans hvw
-    simp [hol, val, huv, hvw, huw, not_lt.mpr huw.le]
+  split_ifs with h'
+  · obtain ⟨huv, hvw⟩ := h'
+    simp only [hol, val_congr h huv.ne, val_congr h hvw.ne, val_congr h (huv.trans hvw).ne']
   · rfl
 
-theorem cost_val (f : Fin k → Fin k → S3) (β : Fin k → S3) :
-    cost (fun i j => val f i j) β = cost f β := by
+/-- The costs only read the values on `u < v`. -/
+theorem cost_congr {f g : Fin k → Fin k → S3} (h : ∀ u v, u < v → f u v = g u v) (β : Fin k → S3) :
+    cost f β = cost g β := by
   rw [cost_eq_sum, cost_eq_sum]
   refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
-  split_ifs with h
-  · simp [val, h]
+  split_ifs with h'
+  · rw [h u v h']
   · rfl
 
-theorem gaugeDist_val (f : Fin k → Fin k → S3) :
-    gaugeDist (fun i j => val f i j) = gaugeDist f := by
+/-- The gauge distance only reads the values on `u < v`. -/
+theorem gaugeDist_congr {f g : Fin k → Fin k → S3} (h : ∀ u v, u < v → f u v = g u v) :
+    gaugeDist f = gaugeDist g := by
   unfold gaugeDist
-  simp only [cost_val]
+  simp only [cost_congr h]
 
 /-! ### What `gaugeDist α = 0` means -/
 
@@ -263,7 +270,7 @@ theorem moved_hol_swap (α : Fin k → Fin k → S3) {a b c : Fin k} (hab : a �
   (moved_hol_rot α c b a).trans ((moved_hol_rev α hca hab hbc).trans (moved_hol_rot α c a b).symm)
 
 /-- The **star gauge** at `x`: `β(x) = 1` and `β(u) = α(u,x)` (oriented) otherwise. -/
-@[expose] def starGauge (α : Fin k → Fin k → S3) (x u : Fin k) : S3 :=
+def starGauge (α : Fin k → Fin k → S3) (x u : Fin k) : S3 :=
   if u = x then 1 else val α u x
 
 /-- Away from `x`, the star-gauge term of an edge is the holonomy of its triangle with `x`. -/

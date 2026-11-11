@@ -11,10 +11,11 @@ public import TauCeti.GroupTheory.Perm.ParityRetract
 /-!
 # Staircase seeds for `Sym(3)`, and `h₁(K_k) = k/3` for every `k ≥ 3`
 
-Attribution: the seeds are Kozlov's staircase graphs [D. N. Kozlov, arXiv:1610.07136, Def. 3.2
-and §3.1]; the cut-minimality bound is proved directly here, following [Kozlov, Lemma 3.8 and
-Cor. 3.13] (triangle count after [Kozlov, Lemma 3.10]); the `Sym(3)` transfer (parity retraction)
-and the `k/3` theorem are [Beasley, Cor. 7, Thm. 8].
+Attribution: the seeds are Kozlov's staircase graphs [D. N. Kozlov, arXiv:1610.07136, Def. 3.2,
+§3.1, Cor. 4.5, giving Thm. 4.2 and Cor. 4.3]; the cut-minimality bound is proved directly here,
+following [Kozlov, Lemma 3.8 and Cor. 3.13] (triangle count after [Kozlov, Lemma 3.10]); the
+`Sym(3)` transfer (parity retraction) and the `k/3` theorem for `k ≥ 4` are
+[Beasley, Cor. 7, Thm. 8]; the case `k = 3` is proved here.
 
 The seeds are the staircase graphs of D. N. Kozlov (arXiv:1610.07136), built from the partition
 `(t, t-1, …, 1)`: on `m = 2t + 1` vertices `u, v₁, …, v_t, y₁, …, y_t`, join `vᵢ` to `y_j`
@@ -158,15 +159,7 @@ private theorem stEdge_of_even (p q : ℕ) (hq : q % 2 = 0) : stEdge p q = decid
 `range v`. -/
 private theorem st_sum_lt (n v : ℕ) (hv : v ≤ n) (f : ℕ → ℕ) :
     (∑ u ∈ range n, if u < v then f u else 0) = ∑ u ∈ range v, f u := by
-  rw [← Finset.sum_filter]
-  congr 1
-  ext u
-  simp only [Finset.mem_filter, Finset.mem_range]
-  constructor
-  · intro h
-    exact h.2
-  · intro h
-    exact ⟨lt_of_lt_of_le h hv, h⟩
+  rw [← Finset.sum_filter]; congr 1; ext u; simp only [mem_filter, mem_range]; omega
 
 /-- A sum over the edges `u < v` of `K_n`, as a sum over `range`. -/
 private theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :

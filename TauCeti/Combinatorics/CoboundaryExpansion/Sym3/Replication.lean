@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Constant
 public import Mathlib.Tactic.GCongr
+public import Mathlib.Algebra.Module.BigOperators
 
 /-!
 # Balanced replication for `Sym(3)` cochains on `K_k`
@@ -45,10 +46,10 @@ variable {k : ℕ}
 of cluster `i` are the contiguous block `q * i, …, q * i + q - 1`. -/
 
 /-- The cluster of a vertex of `K_{kq}`. -/
-@[expose] def clus (q : ℕ) (x : Fin (k * q)) : Fin k := (finProdFinEquiv.symm x).1
+def clus (q : ℕ) (x : Fin (k * q)) : Fin k := (finProdFinEquiv.symm x).1
 
 /-- Vertex `a` of cluster `i`. -/
-@[expose] def vert (q : ℕ) (i : Fin k) (a : Fin q) : Fin (k * q) := finProdFinEquiv (i, a)
+def vert (q : ℕ) (i : Fin k) (a : Fin q) : Fin (k * q) := finProdFinEquiv (i, a)
 
 @[simp] theorem clus_vert (q : ℕ) (i : Fin k) (a : Fin q) : clus q (vert q i a) = i := by
   simp [clus, vert]
@@ -61,25 +62,9 @@ private theorem sum_blocks {q : ℕ} (F : Fin (k * q) → ℕ) : ∑ x, F x = �
 private theorem block_lt (a b i j q : ℕ) (ha : a < q) (hb : b < q) :
     a + q * i < b + q * j ↔ i < j ∨ (i = j ∧ a < b) := by
   rcases lt_trichotomy i j with h | rfl | h
-  · have h' : q * (i + 1) ≤ q * j := Nat.mul_le_mul_left q h
-    rw [Nat.mul_add, Nat.mul_one] at h'
-    generalize q * i = X at *
-    generalize q * j = Y at *
-    constructor
-    · intro; exact Or.inl h
-    · intro; omega
-  · constructor
-    · intro hh; right; exact ⟨rfl, by omega⟩
-    · rintro (hh | ⟨_, hh⟩)
-      · exact absurd hh (lt_irrefl _)
-      · omega
-  · have h' : q * (j + 1) ≤ q * i := Nat.mul_le_mul_left q h
-    rw [Nat.mul_add, Nat.mul_one] at h'
-    generalize q * i = X at *
-    generalize q * j = Y at *
-    constructor
-    · intro; omega
-    · rintro (hh | ⟨hh, _⟩) <;> omega
+  · have := Nat.mul_le_mul_left q h; rw [Nat.mul_succ] at this; omega
+  · omega
+  · have := Nat.mul_le_mul_left q h; rw [Nat.mul_succ] at this; omega
 
 /-- Vertices are ordered cluster first, then position. -/
 private theorem vert_lt_iff {q : ℕ} (i j : Fin k) (a b : Fin q) :
@@ -92,7 +77,7 @@ private theorem vert_lt_iff {q : ℕ} (i j : Fin k) (a b : Fin q) :
 
 /-- The replicated cochain on `K_{kq}`: the identity inside a cluster, the seed value between
 clusters. -/
-@[expose] def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
+def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
   fun x y => if clus q x = clus q y then 1 else val α (clus q x) (clus q y)
 
 /-- A triangle across three clusters carries the seed holonomy; any other triangle closes. -/
@@ -164,16 +149,6 @@ private theorem rep_edge_lower {q : ℕ} (α : Fin k → Fin k → S3) (γ : Fin
 
 /-! ## Sections -/
 
-/-- Fixing one coordinate of a function `ι → Fin q` leaves `q ^ (|ι| - 1)` functions. -/
-private theorem sum_one_coord {ι : Type*} [Fintype ι] [DecidableEq ι] {q : ℕ} (j : ι)
-    (H : Fin q → ℕ) :
-    ∑ s : ι → Fin q, H (s j) = q ^ (Fintype.card ι - 1) * ∑ b, H b := by
-  rw [← Equiv.sum_comp (Equiv.funSplitAt j (Fin q)).symm, Fintype.sum_prod_type]
-  simp only [ne_eq, Equiv.funSplitAt_symm_apply, ↓reduceDIte, sum_const, card_univ,
-    Fintype.card_pi, Fintype.card_fin, prod_const, Fintype.card_subtype_compl,
-    Fintype.card_unique, smul_eq_mul]
-  rw [Finset.mul_sum]
-
 /-- Fixing two coordinates leaves `q ^ (k - 2)` functions. -/
 private theorem sum_two_coords {q : ℕ} (i j : Fin k) (hij : i ≠ j) (G : Fin q → Fin q → ℕ) :
     ∑ s : Fin k → Fin q, G (s i) (s j) = q ^ (k - 2) * ∑ a, ∑ b, G a b := by
@@ -190,10 +165,10 @@ private theorem sum_two_coords {q : ℕ} (i j : Fin k) (hij : i ≠ j) (G : Fin 
       intro s'
       simp [Equiv.funSplitAt, Equiv.piSplitAt, hj]
     simp only [e]
-    rw [sum_one_coord (ι := {x // x ≠ i}) ⟨j, hj⟩ (G a)]
+    rw [← Fintype.piFinset_univ, Fintype.sum_piFinset_apply (G a) univ (⟨j, hj⟩ : {x // x ≠ i}),
+      smul_eq_mul]
+    simp only [Fintype.card_subtype_compl, Fintype.card_subtype_eq, card_univ, Fintype.card_fin]
     congr 2
-    simp
-    omega
   simp only [key, ← Finset.mul_sum]
 
 /-- **The lower bound.** Every gauge of the replicated cochain, constant on clusters or not,

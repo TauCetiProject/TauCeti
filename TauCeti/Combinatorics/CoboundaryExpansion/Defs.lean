@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.GroupTheory.Perm.Support
-public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex
+public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
 
 /-!
@@ -34,13 +34,15 @@ namespace TauCeti.CoboundaryExpansion
 variable {V : Type*} [Fintype V] [LinearOrder V]
 variable {G : Type*} [Group G]
 
-/-- A `G`-valued 1-cochain: a value on each oriented edge, inverted by reversing it. Values off
-the edges are not constrained and are never read by `defect`, `cost`, or `gaugeDist`. -/
+/-- A `G`-valued 1-cochain: a value on each oriented edge, inverted by reversing it, and `1` off
+the edges, so that a cochain is determined by its values on edges. -/
 structure Cochain (X : TauCeti.TwoComplex V) (G : Type*) [Group G] where
   /-- The value on the oriented edge `(u, v)`. -/
   toFun : V → V → G
   /-- Reversing an edge inverts the value. -/
   inv_symm : ∀ u v, ({u, v} : Finset V) ∈ X.edges → toFun v u = (toFun u v)⁻¹
+  /-- Off the edges the value is `1`. -/
+  one_of_not_mem : ∀ u v, ({u, v} : Finset V) ∉ X.edges → toFun u v = 1
 
 namespace Cochain
 

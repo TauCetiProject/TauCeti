@@ -76,6 +76,12 @@ theorem edges_ofHypergraphComplex (C : HypergraphComplex 3 V) :
 theorem triangles_ofHypergraphComplex (C : HypergraphComplex 3 V) :
     (ofHypergraphComplex C).triangles = C.faces 3 (by decide) := (rfl)
 
+/-- The two endpoints of an edge are distinct. -/
+theorem ne_of_pair_mem_edges [DecidableEq V] {X : TwoComplex V} {u v : V}
+    (h : ({u, v} : Finset V) ∈ X.edges) : u ≠ v := by
+  rintro rfl
+  simpa using X.edge_card _ h
+
 section FiniteVertices
 
 variable [Fintype V]
@@ -179,6 +185,14 @@ theorem mem_triangles_complete (t : Finset V) :
     t ∈ (complete V).triangles ↔ t.card = 3 := by
   classical
   simp [complete, mem_powersetCard]
+
+theorem pair_mem_edges_complete [DecidableEq V] {u v : V} (h : u ≠ v) :
+    ({u, v} : Finset V) ∈ (complete V).edges :=
+  (mem_edges_complete _).2 (card_pair h)
+
+theorem triple_mem_triangles_complete [DecidableEq V] {u v w : V} (huv : u ≠ v) (huw : u ≠ w)
+    (hvw : v ≠ w) : ({u, v, w} : Finset V) ∈ (complete V).triangles :=
+  (mem_triangles_complete _).2 (card_eq_three.2 ⟨u, v, w, huv, huw, hvw, rfl⟩)
 
 /-- The complete complex has one edge for each two-element subset. -/
 @[simp]

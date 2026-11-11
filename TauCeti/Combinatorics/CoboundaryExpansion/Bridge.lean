@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.Defs
+public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Constant
 public import Mathlib.Data.Finset.Sort
 
@@ -36,32 +36,22 @@ namespace TauCeti.CoboundaryExpansion.Bridge
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
-private theorem pair_mem_edges {u v : V} (h : u ≠ v) : ({u, v} : Finset V) ∈ (complete V).edges :=
-  (mem_edges_complete _).2 (Finset.card_pair h)
-
-theorem ne_of_pair_mem_edges {u v : V} (h : ({u, v} : Finset V) ∈ (complete V).edges) : u ≠ v := by
-  rintro rfl
-  have := (mem_edges_complete _).1 h
-  simp at this
-
-private theorem triple_mem_triangles {u v w : V} (h1 : u < v) (h2 : v < w) :
-    ({u, v, w} : Finset V) ∈ (complete V).triangles :=
-  (mem_triangles_complete _).2
-    (Finset.card_eq_three.mpr ⟨u, v, w, h1.ne, (h1.trans h2).ne, h2.ne, rfl⟩)
-
 variable {k : ℕ}
 
 /-- The pullback of a cochain to `Fin k`. -/
-@[expose] def toFin (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
+def toFin (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
     Fin k → Fin k → Sym3.S3 :=
   fun i j => α.toFun (e i) (e j)
 
-/-- A bare function on `Fin k`, read on `u < v` and inverted on `u > v`, as a cochain. -/
-@[expose] def ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
+/-- A bare function on `Fin k`, read on `u < v`, inverted on `u > v` and `1` on the diagonal, as
+a cochain. -/
+def ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     Cochain (complete V) (Perm (Fin 3)) where
-  toFun u v := Sym3.val f (e.symm u) (e.symm v)
-  inv_symm _ _ h :=
-    Sym3.val_swap f (fun huv => ne_of_pair_mem_edges h (e.symm.injective huv))
+  toFun u v := if u = v then 1 else Sym3.val f (e.symm u) (e.symm v)
+  inv_symm _ _ h := by
+    have huv := TwoComplex.ne_of_pair_mem_edges h
+    rw [ite_eq_right huv, ite_eq_right huv.symm, Sym3.val_swap f (e.symm.injective.ne huv)]
+  one_of_not_mem u v h := ite_eq_left (not_not.1 fun huv => h (pair_mem_edges_complete huv))
 
 theorem defect_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
     α.defect (movedNorm (Fin 3)) = (Sym3.defect (toFin e α) : ℝ) := by
@@ -72,7 +62,8 @@ theorem defect_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) 
       univ.filter fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2 := by
     apply Finset.filter_congr
     intro p _
-    exact ⟨fun h => ⟨h.1, h.2.1⟩, fun h => ⟨h.1, h.2, triple_mem_triangles h.1 h.2⟩⟩
+    exact ⟨fun h => ⟨h.1, h.2.1⟩, fun h =>
+      ⟨h.1, h.2, triple_mem_triangles_complete h.1.ne (h.1.trans h.2).ne h.2.ne⟩⟩
   rw [hfilt, Finset.sum_filter, Fintype.sum_prod_type]
   simp only [Fintype.sum_prod_type]
   push_cast
@@ -86,7 +77,8 @@ theorem defect_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) 
   split_ifs with h
   · obtain ⟨huv, hvw⟩ := h
     have huw : u < w := huv.trans hvw
-    rw [← Sym3.moved_eq_movedNorm, α.inv_symm (e u) (e w) (pair_mem_edges (e.injective.ne huw.ne))]
+    rw [← Sym3.moved_eq_movedNorm,
+      α.inv_symm (e u) (e w) (pair_mem_edges_complete (e.injective.ne huw.ne))]
     simp [Sym3.hol, Sym3.val, toFin, huv, hvw, not_lt.mpr huw.le]
   · rfl
 
@@ -99,7 +91,7 @@ theorem cost_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) (�
       univ.filter fun p : V × V => p.1 < p.2 := by
     apply Finset.filter_congr
     intro p _
-    exact ⟨fun h => h.1, fun h => ⟨h, pair_mem_edges h.ne⟩⟩
+    exact ⟨fun h => h.1, fun h => ⟨h, pair_mem_edges_complete h.ne⟩⟩
   rw [hfilt, Finset.sum_filter, Fintype.sum_prod_type]
   push_cast
   rw [← e.toEquiv.sum_comp]
@@ -111,37 +103,27 @@ theorem cost_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) (�
   · rw [← Sym3.moved_eq_movedNorm]; rfl
   · rfl
 
-private theorem cost_nonneg (α : Cochain (complete V) (Perm (Fin 3))) (β : V → Perm (Fin 3)) :
-    0 ≤ α.cost (movedNorm (Fin 3)) β :=
-  Finset.sum_nonneg fun _ _ => apply_nonneg _ _
-
 theorem gaugeDist_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
     α.gaugeDist (movedNorm (Fin 3)) = (Sym3.gaugeDist (toFin e α) : ℝ) := by
-  unfold Cochain.gaugeDist
   apply le_antisymm
   · obtain ⟨β₀, hβ₀⟩ := Sym3.exists_cost_eq_gaugeDist (toFin e α)
-    refine (ciInf_le ⟨0, ?_⟩ (β₀ ∘ e.symm)).trans ?_
-    · rintro _ ⟨β, rfl⟩
-      exact cost_nonneg α β
-    · rw [cost_eq e, ← hβ₀]
-      have : (β₀ ∘ e.symm) ∘ e = β₀ := by funext i; simp
-      rw [this]
-  · refine le_ciInf fun β => ?_
-    rw [cost_eq e]
-    exact_mod_cast Sym3.gaugeDist_le _ _
+    refine (α.gaugeDist_le_cost _ (β₀ ∘ e.symm)).trans_eq ?_
+    rw [cost_eq e, ← hβ₀]
+    congr 2
+    funext i; simp
+  · exact le_ciInf fun β => by rw [cost_eq e]; exact_mod_cast Sym3.gaugeDist_le _ _
 
-theorem toFin_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
-    toFin e (ofFin e f) = fun i j => Sym3.val f i j := by
-  funext i j
-  simp [toFin, ofFin]
+theorem toFin_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) {i j : Fin k} (h : i < j) :
+    toFin e (ofFin e f) i j = f i j := by
+  simp [toFin, ofFin, h.ne, Sym3.val, h]
 
 theorem defect_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     (ofFin e f).defect (movedNorm (Fin 3)) = (Sym3.defect f : ℝ) := by
-  rw [defect_eq e, toFin_ofFin, Sym3.defect_val]
+  rw [defect_eq e, Sym3.defect_congr fun _ _ => toFin_ofFin e f]
 
 theorem gaugeDist_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     (ofFin e f).gaugeDist (movedNorm (Fin 3)) = (Sym3.gaugeDist f : ℝ) := by
-  rw [gaugeDist_eq e, toFin_ofFin, Sym3.gaugeDist_val]
+  rw [gaugeDist_eq e, Sym3.gaugeDist_congr fun _ _ => toFin_ofFin e f]
 
 /-- **The bridge.** The `Sym(3)` constant of `complete V` is the `Fin k` constant of
 `Sym3` at `k = card V` (any order isomorphism `Fin k ≃o V` witnesses this). -/
