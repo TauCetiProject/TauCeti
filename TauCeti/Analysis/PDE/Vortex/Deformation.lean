@@ -76,6 +76,18 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
 
+/-- The section of a sum of fields is the sum of their sections. -/
+theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x + y) z = sectionValue x z + sectionValue y z := by
+  simp only [sectionValue_apply, Pi.add_apply, PiLp.add_apply, ofReal_add]
+  ring
+
+/-- The section of a real multiple of a field is the multiple of its section. -/
+theorem sectionValue_smul (c : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (c • x) z = c * sectionValue x z := by
+  simp only [sectionValue_apply, Pi.smul_apply, PiLp.smul_apply, smul_eq_mul, ofReal_mul]
+  ring
+
 /-- Two fields agree at a point when their connection coordinates and their sections agree
 there. -/
 theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
