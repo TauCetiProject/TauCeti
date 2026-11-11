@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -36,11 +38,16 @@ of `exp` at two values of `ℓ`, hence at least `4 c²` outside a large disc
 gradient bounds `|F| ≤ C |h| |k| exp (-2 c₁ |z|)`, and the comparison principle with forcing
 (`TauCeti.le_mul_exp_of_mul_sub_le_laplacian`) bounds `|D|` by `C' |h| |k| exp (-c |z|)` for every
 `c < c₁`. Letting `k → 0` bounds the differences `‖Dℓ (w + h) - Dℓ (w)‖ ≤ C' |h| exp (-c |z|)`,
-and letting `h → 0` bounds the second derivative. Only `C²` regularity of the section is used: no
-third derivative and no commutation of `Δ` with a derivative is needed.
+and letting `h → 0` bounds the second derivative
+(`TauCeti.norm_fderiv_fderiv_le_of_norm_mixedDifference_le`). Only `C²` regularity of the section
+is used: no third derivative and no commutation of `Δ` with a derivative is needed.
 
 ## Main results
 
+* `TauCeti.Vortex.laplacian_mixedDifference`: where `ℓ` solves `Δ ℓ = (exp ℓ - 1) / 4`, the
+  Laplacian of a mixed second difference of `ℓ` is the mixed second difference of `exp ℓ / 4`.
+* `TauCeti.Vortex.abs_mixedDifference_le_mul_exp`: exterior exponential decay of the mixed second
+  differences of a solution of `Δ ℓ = (exp ℓ - 1) / 4` whose first differences decay.
 * `TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`: outside a compact
   set, `‖D² log |α|²‖ ≤ K exp (-c |z|)` for every `c < 1 / 2`.
 
@@ -66,7 +73,7 @@ variable {ℓ : ℂ → ℝ}
 
 /-- Where `Δ ℓ = (exp ℓ - 1) / 4` at the four corners, the Laplacian of the mixed second
 difference of `ℓ` is the mixed second difference of `exp ℓ / 4`. -/
-private theorem laplacian_mixedDifference {w h k : ℂ}
+theorem laplacian_mixedDifference {w h k : ℂ}
     (hcd : ∀ v ∈ ({0, h, k, h + k} : Set ℂ), ContDiffAt ℝ 2 ℓ (w + v))
     (hΔ : ∀ v ∈ ({0, h, k, h + k} : Set ℂ), Δ ℓ (w + v) = (Real.exp (ℓ (w + v)) - 1) / 4) :
     Δ (fun y ↦ ℓ (y + (h + k)) - ℓ (y + h) - ℓ (y + k) + ℓ y) w =
@@ -97,7 +104,7 @@ private theorem laplacian_mixedDifference {w h k : ℂ}
 `K |v| exp (-c₁ |y|)` near `|y| ≥ R`; and that its mixed second differences are bounded by
 `L |h| |k|` on the circle `|z| = R`. Then for `0 < c < c₁`, `|k| ≤ |h| ≤ 1` and `|w| ≥ R`, the mixed
 second difference at `w` is at most `(L + 3 K² / (4 (c₁² - c²))) |h| |k| exp (-c (|w| - R))`. -/
-private theorem abs_mixedDifference_le_mul_exp {R c c₁ K L : ℝ} (hR : 0 < R) (hc : 0 < c)
+theorem abs_mixedDifference_le_mul_exp {R c c₁ K L : ℝ} (hR : 0 < R) (hc : 0 < c)
     (hcc₁ : c < c₁) (hK : 0 ≤ K) (hL : 0 ≤ L)
     (hcd : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 2 ℓ w)
     (hΔ : ∀ w : ℂ, R - 2 ≤ ‖w‖ → Δ ℓ w = (Real.exp (ℓ w) - 1) / 4)
@@ -217,131 +224,6 @@ private theorem abs_mixedDifference_le_mul_exp {R c c₁ K L : ℝ} (hR : 0 < R)
   simp only [Pi.neg_apply] at hdown
   exact abs_le.mpr ⟨by linarith, hup⟩
 
-/-- Bounds `|ℓ (w + h + k) - ℓ (w + h) - ℓ (w + k) + ℓ w| ≤ C |h| |k|` for `|k| ≤ |h| ≤ 1` bound the
-second derivative at `w` by `C`: letting `k → 0` bounds `‖Dℓ (w + h) - Dℓ w‖ ≤ C |h|`, and letting
-`h → 0` bounds `‖D² ℓ (w)‖`. -/
-private theorem norm_fderiv_fderiv_le_of_abs_mixedDifference_le {w : ℂ} {C : ℝ} (hC : 0 ≤ C)
-    (hd : ∀ v : ℂ, ‖v‖ ≤ 1 → DifferentiableAt ℝ ℓ (w + v))
-    (hd2 : DifferentiableAt ℝ (fderiv ℝ ℓ) w)
-    (hmixed : ∀ h k : ℂ, ‖h‖ ≤ 1 → ‖k‖ ≤ ‖h‖ →
-      |ℓ (w + (h + k)) - ℓ (w + h) - ℓ (w + k) + ℓ w| ≤ C * ‖h‖ * ‖k‖) :
-    ‖fderiv ℝ (fderiv ℝ ℓ) w‖ ≤ C := by
-  -- The gradient differences: `y ↦ ℓ (y + h) - ℓ y` is `C |h|`-Lipschitz on the ball of radius
-  -- `|h|` about `w`.
-  have hlip : ∀ h : ℂ, ‖h‖ ≤ 1 → ‖fderiv ℝ ℓ (w + h) - fderiv ℝ ℓ w‖ ≤ C * ‖h‖ := by
-    intro h hh
-    rcases eq_or_ne h 0 with rfl | hh₀
-    · simp
-    have hg : HasFDerivAt (fun y ↦ ℓ (y + h) - ℓ y) (fderiv ℝ ℓ (w + h) - fderiv ℝ ℓ w) w :=
-      ((hasFDerivAt_comp_add_right h).mpr (hd h hh).hasFDerivAt).sub
-        (by simpa using (hd 0 (by simp)).hasFDerivAt)
-    refine hg.le_of_lip' (by positivity) ?_
-    filter_upwards [ball_mem_nhds w (norm_pos_iff.mpr hh₀)] with y hy
-    rw [mem_ball, dist_eq_norm] at hy
-    have h' := hmixed h (y - w) hh hy.le
-    rw [show w + (h + (y - w)) = y + h by abel, show w + (y - w) = y by abel] at h'
-    rw [Real.norm_eq_abs]
-    calc |ℓ (y + h) - ℓ y - (ℓ (w + h) - ℓ w)| = |ℓ (y + h) - ℓ (w + h) - ℓ y + ℓ w| := by
-          ring_nf
-      _ ≤ C * ‖h‖ * ‖y - w‖ := h'
-  -- The gradient is `C`-Lipschitz near `w`.
-  refine hd2.hasFDerivAt.le_of_lip' hC ?_
-  filter_upwards [closedBall_mem_nhds w one_pos] with y hy
-  rw [mem_closedBall, dist_eq_norm] at hy
-  simpa using hlip (y - w) hy
-
-/-- **First differences from the gradient.** If `ℓ` is `C²` outside the disc of radius `R - 2`
-with `‖Dℓ (w)‖ ≤ K₀ exp (-c₁ |w|)` there, then near `|y| ≥ R` its first differences satisfy
-`|ℓ (y + u + v) - ℓ (y + u)| ≤ K₀ exp (2 c₁) |v| exp (-c₁ |y|)` for `|u|, |v| ≤ 1`. -/
-private theorem abs_sub_le_mul_exp_of_norm_fderiv_le {R c₁ K₀ : ℝ} (hc₁ : 0 ≤ c₁) (hK₀ : 0 ≤ K₀)
-    (hcd : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 2 ℓ w)
-    (hgrad : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ‖fderiv ℝ ℓ w‖ ≤ K₀ * Real.exp (-(c₁ * ‖w‖)))
-    {y u v : ℂ} (hy : R ≤ ‖y‖) (hu : ‖u‖ ≤ 1) (hv : ‖v‖ ≤ 1) :
-    |ℓ (y + u + v) - ℓ (y + u)| ≤ K₀ * Real.exp (2 * c₁) * ‖v‖ * Real.exp (-(c₁ * ‖y‖)) := by
-  -- Points of the unit ball about `y + u` lie within distance `2` of `y`.
-  have hnear : ∀ p ∈ closedBall (y + u) 1, ‖y‖ - 2 ≤ ‖p‖ := fun p hp ↦ by
-    rw [mem_closedBall, dist_eq_norm] at hp
-    have h₁ : ‖p - y‖ ≤ 2 := by
-      calc ‖p - y‖ = ‖(p - (y + u)) + u‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith)
-    have h₂ := norm_sub_norm_le y p
-    rw [norm_sub_rev] at h₂
-    linarith
-  have hbound : ∀ p ∈ closedBall (y + u) 1,
-      ‖fderiv ℝ ℓ p‖ ≤ K₀ * Real.exp (2 * c₁) * Real.exp (-(c₁ * ‖y‖)) := fun p hp ↦ by
-    have hpy := hnear p hp
-    calc ‖fderiv ℝ ℓ p‖ ≤ K₀ * Real.exp (-(c₁ * ‖p‖)) := hgrad p (by linarith)
-      _ ≤ K₀ * Real.exp (-(c₁ * (‖y‖ - 2))) := by gcongr
-      _ = K₀ * Real.exp (2 * c₁) * Real.exp (-(c₁ * ‖y‖)) := by
-          rw [mul_assoc, ← Real.exp_add]
-          ring_nf
-  have h := (convex_closedBall (y + u) 1).norm_image_sub_le_of_norm_fderiv_le (f := ℓ)
-    (fun p hp ↦ (hcd p (by linarith [hnear p hp])).differentiableAt (by norm_num)) hbound
-    (mem_closedBall_self zero_le_one)
-    (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : y + u + v ∈ closedBall (y + u) 1)
-  rw [add_sub_cancel_left, Real.norm_eq_abs] at h
-  linarith
-
-/-- **Mixed second differences on a circle.** If `ℓ` is `C²` outside the disc of radius `R - 2`,
-its mixed second differences at points of the circle `|z| = R` are bounded by `L |h| |k|` for
-`|h|, |k| ≤ 1`, where `L` bounds the second derivative on the annulus `R - 2 ≤ |w| ≤ R + 2`. -/
-private theorem exists_abs_mixedDifference_le_of_norm_eq {R : ℝ}
-    (hcd : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 2 ℓ w) :
-    ∃ L, 0 ≤ L ∧ ∀ z h k : ℂ, ‖z‖ = R → ‖h‖ ≤ 1 → ‖k‖ ≤ 1 →
-      |ℓ (z + (h + k)) - ℓ (z + h) - ℓ (z + k) + ℓ z| ≤ L * ‖h‖ * ‖k‖ := by
-  set A : Set ℂ := closedBall 0 (R + 2) ∩ {w | R - 2 ≤ ‖w‖}
-  have hAc : IsCompact A := (isCompact_closedBall 0 (R + 2)).inter_right
-    (isClosed_le continuous_const continuous_norm)
-  have hd2 : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 1 (fderiv ℝ ℓ) w := fun w hw ↦
-    (hcd w hw).fderiv_right (m := 1) (by norm_num)
-  obtain ⟨L₀, hL₀⟩ := hAc.exists_bound_of_continuousOn (f := fun w ↦ fderiv ℝ (fderiv ℝ ℓ) w)
-    fun w hw ↦ ((hd2 w hw.2).fderiv_right (m := 0) (by norm_num)).continuousAt.continuousWithinAt
-  set L := max L₀ 0
-  refine ⟨L, le_max_right _ _, fun z h k hz hh hk ↦ ?_⟩
-  -- Points within distance `2` of the circle lie in the annulus.
-  have hA : ∀ p, ‖p - z‖ ≤ 2 → p ∈ A := fun p hp ↦ by
-    have := abs_norm_sub_norm_le p z
-    rw [abs_le] at this
-    exact ⟨mem_closedBall_zero_iff.mpr (by linarith), show R - 2 ≤ ‖p‖ by linarith⟩
-  -- The gradient differences `Dℓ (y + h) - Dℓ y` are bounded by `L |h|` for `|y - z| ≤ 1`.
-  have hg : ∀ y ∈ closedBall z 1, ‖fderiv ℝ ℓ (y + h) - fderiv ℝ ℓ y‖ ≤ L * ‖h‖ := by
-    intro y hy
-    rw [mem_closedBall, dist_eq_norm] at hy
-    have hsub : closedBall y 1 ⊆ A := fun p hp ↦ by
-      rw [mem_closedBall, dist_eq_norm] at hp
-      refine hA p ?_
-      calc ‖p - z‖ = ‖(p - y) + (y - z)‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith)
-    have hmv := (convex_closedBall y 1).norm_image_sub_le_of_norm_fderiv_le (f := fderiv ℝ ℓ)
-      (C := L) (fun p hp ↦ (hd2 p (hsub hp).2).differentiableAt (by norm_num))
-      (fun p hp ↦ (hL₀ p (hsub hp)).trans (le_max_left L₀ 0))
-      (mem_closedBall_self zero_le_one)
-      (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : y + h ∈ closedBall y 1)
-    rwa [add_sub_cancel_left] at hmv
-  have hgd : ∀ y ∈ closedBall z 1, HasFDerivAt (fun y ↦ ℓ (y + h) - ℓ y)
-      (fderiv ℝ ℓ (y + h) - fderiv ℝ ℓ y) y := by
-    intro y hy
-    rw [mem_closedBall, dist_eq_norm] at hy
-    have hy₁ : R - 2 ≤ ‖y‖ := (hA y (by linarith)).2
-    have hy₂ : R - 2 ≤ ‖y + h‖ := (hA (y + h) (by
-      calc ‖y + h - z‖ = ‖(y - z) + h‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith))).2
-    exact ((hasFDerivAt_comp_add_right h).mpr
-      ((hcd _ hy₂).differentiableAt (by norm_num)).hasFDerivAt).sub
-      ((hcd y hy₁).differentiableAt (by norm_num)).hasFDerivAt
-  -- The mean value inequality for `y ↦ ℓ (y + h) - ℓ y` along `[z, z + k]`.
-  have hmv := (convex_closedBall z 1).norm_image_sub_le_of_norm_fderiv_le
-    (f := fun y ↦ ℓ (y + h) - ℓ y)
-    (fun y hy ↦ (hgd y hy).differentiableAt)
-    (fun y hy ↦ (hgd y hy).fderiv ▸ hg y hy)
-    (mem_closedBall_self zero_le_one)
-    (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : z + k ∈ closedBall z 1)
-  rw [add_sub_cancel_left, Real.norm_eq_abs] at hmv
-  rw [show z + (h + k) = z + k + h by abel]
-  calc |ℓ (z + k + h) - ℓ (z + h) - ℓ (z + k) + ℓ z| =
-        |ℓ (z + k + h) - ℓ (z + k) - (ℓ (z + h) - ℓ z)| := by ring_nf
-    _ ≤ L * ‖h‖ * ‖k‖ := hmv
-
 /-! ### Decay of the second derivatives of `log |α|²` -/
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -404,10 +286,11 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
   have hK₀' : 0 ≤ K := by positivity
   have hdiff : ∀ y u v : ℂ, R ≤ ‖y‖ → ‖u‖ ≤ 1 → ‖v‖ ≤ 1 →
       |ℓ (y + u + v) - ℓ (y + u)| ≤ K * ‖v‖ * Real.exp (-(c₁ * ‖y‖)) := fun y u v hy hu hv ↦
-    abs_sub_le_mul_exp_of_norm_fderiv_le (by linarith) (le_max_right _ _) hℓcd
+    Real.norm_eq_abs _ ▸ norm_sub_le_mul_exp_of_norm_fderiv_le (by linarith) (le_max_right _ _)
+      (fun w hw ↦ (hℓcd w hw).differentiableAt (by norm_num))
       (fun w hw ↦ (hR₁ (hRR₁ w hw)).trans
         (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)) hy hu hv
-  obtain ⟨L, hL, hbdry⟩ := exists_abs_mixedDifference_le_of_norm_eq hℓcd
+  obtain ⟨L, hL, hbdry⟩ := exists_norm_mixedDifference_le_of_norm_eq hℓcd
   have hd2 : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 1 (fderiv ℝ ℓ) w := fun w hw ↦
     (hℓcd w hw).fderiv_right (m := 1) (by norm_num)
   -- Combine the mixed-difference decay with the two limiting arguments.
@@ -421,14 +304,14 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
   set E := Real.exp (-(c * (‖w‖ - R)))
   have hmixed := fun (h k : ℂ) (hh : ‖h‖ ≤ 1) (hkh : ‖k‖ ≤ ‖h‖) ↦
     abs_mixedDifference_le_mul_exp hR₀ hc₀ hcc₁ hK₀' hL hℓcd hΔ hge hle hmass
-      hℓlim hdiff hbdry hh hkh hw
+      hℓlim hdiff (fun z h k hz hh hk ↦ Real.norm_eq_abs _ ▸ hbdry z h k hz hh hk) hh hkh hw
   have hdv : ∀ v : ℂ, ‖v‖ ≤ 1 → DifferentiableAt ℝ ℓ (w + v) := fun v hv ↦ by
     have := norm_sub_norm_le w (-v)
     rw [norm_neg, sub_neg_eq_add] at this
     exact (hℓcd _ (by linarith)).differentiableAt (by norm_num)
-  have h2 := norm_fderiv_fderiv_le_of_abs_mixedDifference_le (C := C * E) (by positivity) hdv
+  have h2 := norm_fderiv_fderiv_le_of_norm_mixedDifference_le (C := C * E) (by positivity) hdv
     ((hd2 w (by linarith)).differentiableAt (by norm_num))
-    (fun h k hh hkh ↦ (hmixed h k hh hkh).trans_eq (by ring))
+    (fun h k hh hkh ↦ (Real.norm_eq_abs _).trans_le ((hmixed h k hh hkh).trans_eq (by ring)))
   calc ‖fderiv ℝ (fderiv ℝ ℓ) w‖ ≤ C * E := h2
     _ = C * Real.exp (c * R) * Real.exp (-(c * ‖w‖)) := by
         rw [mul_assoc, ← exp_neg_mul_sub]
