@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
-import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Basic
+import TauCeti.RingTheory.MvPolynomial.GCDMonoid
 
 /-!
 # Lazard content and multiplicity reconstruction from squarefree bases

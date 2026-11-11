@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.Algebra.MvPolynomial.Equiv
+import TauCeti.RingTheory.MvPolynomial.GCDMonoid
 
 /-!
 # Reconstructing ambient orders from a squarefree basis
@@ -32,18 +33,6 @@ Springer (1998), 242–268, Sections 2–3 (basis preprocessing and order-invari
 public section
 
 open MvPolynomial Polynomial
-
-namespace MvPolynomial
-
-/-- A nontrivial coefficient ring is a domain as soon as the polynomial ring over it is a
-normalized GCD monoid. -/
-theorem isDomain_of_normalizedGCDMonoid {σ R : Type*} [CommRing R] [Nontrivial R]
-    [NormalizedGCDMonoid (MvPolynomial σ R)] : IsDomain R := by
-  have : NoZeroDivisors R :=
-    (C_injective σ R).noZeroDivisors C (map_zero _) (map_mul C)
-  exact NoZeroDivisors.to_isDomain R
-
-end MvPolynomial
 
 namespace Finset.IsSquarefreeBasis
 
