@@ -24,6 +24,8 @@ by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
 (`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
 operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
 (`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
+On real Hilbert spaces the Riesz isomorphisms carry the adjoint to the transpose
+`ContinuousLinearMap.precomp` on continuous duals (`ContinuousLinearMap.precomp_comp_toDual`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -43,6 +45,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between complex
   Hilbert spaces as a real-linear continuous map.
+* `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
+  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
 ## Further results
 
@@ -135,6 +139,24 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
 
 end Inverse
 
+section RealDual
+
+open InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- The Riesz isomorphisms carry the Hilbert adjoint of `T` to its transpose:
+`T' ∘ toDual F = toDual E ∘ T†`. -/
+theorem precomp_comp_toDual (T : E →L[ℝ] F) :
+    ((precomp ℝ T : StrongDual ℝ F →L[ℝ] StrongDual ℝ E) : StrongDual ℝ F →ₗ[ℝ] StrongDual ℝ E) ∘ₗ
+        (toDual ℝ F).toLinearEquiv.toLinearMap =
+      (toDual ℝ E).toLinearEquiv.toLinearMap ∘ₗ (T† : F →ₗ[ℝ] E) := by
+  ext y x
+  simp [adjoint_inner_left]
+
+end RealDual
+
 section RealAdjoint
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
@@ -151,6 +173,30 @@ theorem adjointRealCLM_apply (T : V →L[ℂ] W) : adjointRealCLM T = adjoint T 
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The real-bilinear map `(S, T) ↦ S† ∘ T` on operators between complex Hilbert spaces. -/
+noncomputable def adjointCompL : (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] V) :=
+  (bilinearRestrictScalars ℝ (compL ℂ V W V)).comp adjointRealCLM
+
+@[simp]
+theorem adjointCompL_apply (S T : V →L[ℂ] W) : adjointCompL S T = adjoint S ∘L T := by
+  simp [adjointCompL]
+
+theorem norm_adjointCompL_apply_le (S T : V →L[ℂ] W) : ‖adjointCompL S T‖ ≤ ‖S‖ * ‖T‖ := by
+  rw [adjointCompL_apply, ← LinearIsometryEquiv.norm_map adjoint S]
+  exact opNorm_comp_le _ _
+
+/-- The real-bilinear map `(T, S) ↦ S ∘ T†` on operators between complex Hilbert spaces. -/
+noncomputable def compAdjointL : (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] W) :=
+  (bilinearRestrictScalars ℝ (compL ℂ W V W)).flip.comp adjointRealCLM
+
+@[simp]
+theorem compAdjointL_apply (T S : V →L[ℂ] W) : compAdjointL T S = S ∘L adjoint T := by
+  simp [compAdjointL]
+
+theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S‖ ≤ ‖T‖ * ‖S‖ := by
+  rw [compAdjointL_apply, mul_comm, ← LinearIsometryEquiv.norm_map adjoint T]
+  exact opNorm_comp_le _ _
 
 end RealAdjoint
 
