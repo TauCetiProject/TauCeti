@@ -19,6 +19,7 @@ import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
 import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Primitives from vanishing contour integrals, and logarithms on sets without holes
@@ -77,14 +78,6 @@ open Set Filter Topology MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {U : Set ℂ} {f : ℂ → E}
 
-/-- Reflecting a curve about the midpoint of its parameter interval keeps it in `U`. -/
-private theorem mapsTo_comp_const_sub {γ : ℝ → ℂ} {a b : ℝ} (h : MapsTo γ (uIcc a b) U) :
-    MapsTo (fun t => γ (a + b - t)) (uIcc b a) U := fun t ht => h <| by
-  simp only [mem_uIcc] at ht ⊢
-  rcases ht with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · exact Or.inr ⟨by linarith, by linarith⟩
-  · exact Or.inl ⟨by linarith, by linarith⟩
-
 /-- **Path independence.** If the contour integral of a continuous `f` vanishes along every closed
 piecewise-`C¹` curve in `U`, then its contour integrals along two piecewise-`C¹` curves in `U` with
 the same endpoints agree. -/
@@ -100,7 +93,7 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
   · have hba : b ≤ a := (not_le.mp hab).le
     have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
       (by simpa using hγ.comp_const_sub (a + b))
-      (mapsTo_comp_const_sub hγU)
+      hγU.comp_const_sub_uIcc
       (by simpa using hstart) (by simpa using hend) hba
     rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
       add_sub_cancel_left] at this
@@ -108,7 +101,7 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
   · have hdc : d ≤ c := (not_le.mp hcd).le
     have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
       (by simpa using hδ.comp_const_sub (c + d))
-      (mapsTo_comp_const_sub hδU)
+      hδU.comp_const_sub_uIcc
       (by simpa using hstart) (by simpa using hend) hdc
     rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
       add_sub_cancel_left] at this

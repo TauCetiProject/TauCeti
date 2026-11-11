@@ -235,12 +235,12 @@ private theorem remainder_differentiableAt_mem {f : ℂ → ℂ} {S : Finset ℂ
 
 namespace PolarPartDecomposition
 
-/-- **A polar decomposition makes `f` meromorphic at each point of `S`.** Near `s ∈ S` the
-function `f` is the analytic remainder plus finitely many Laurent tails. -/
+/-- **A polar decomposition makes `f` meromorphic at each point of the open set `U`.** Near
+`s ∈ U` the function `f` is the analytic remainder plus finitely many Laurent tails. -/
 theorem meromorphicAt {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (decomp : PolarPartDecomposition f S U)
-    (hU : IsOpen U) (hSU : (S : Set ℂ) ⊆ U) {s : ℂ} (hs : s ∈ S) : MeromorphicAt f s := by
+    (hU : IsOpen U) {s : ℂ} (hsU : s ∈ U) : MeromorphicAt f s := by
   have h_rem : MeromorphicAt decomp.analyticRemainder s :=
-    (decomp.analyticRemainder_differentiableOn.analyticAt (hU.mem_nhds (hSU hs))).meromorphicAt
+    (decomp.analyticRemainder_differentiableOn.analyticAt (hU.mem_nhds hsU)).meromorphicAt
   have h_pol : ∀ s' : S, MeromorphicAt (decomp.polarPart s') s := fun s' ↦ by
     rw [show decomp.polarPart s' = fun z ↦ ∑ k : Fin (decomp.order s'),
       decomp.coeff s' k / (z - (s' : ℂ)) ^ (k.val + 1) from funext (decomp.polarPart_eq s')]
@@ -251,7 +251,7 @@ theorem meromorphicAt {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (decomp :
     h_rem.add (MeromorphicAt.fun_sum fun s' _ ↦ h_pol s')
   refine h_sum.congr ?_
   filter_upwards [eventually_notMem_nhdsNE S s,
-    eventually_nhdsWithin_of_eventually_nhds (hU.mem_nhds (hSU hs))] with z hz hzU
+    eventually_nhdsWithin_of_eventually_nhds (hU.mem_nhds hsU)] with z hz hzU
   exact (decomp.f_eq z ⟨hzU, hz⟩).symm
 
 /-- **The decomposition of a meromorphic integrand.** From `f` differentiable on `U \ S` and

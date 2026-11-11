@@ -19,6 +19,7 @@ import TauCeti.Analysis.Contour.ConditionDischarge
 import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.Residue.Assembly
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import TauCeti.Analysis.Meromorphic.Order
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.FlatnessOne
@@ -97,7 +98,7 @@ theorem PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_
       ((∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t))
         + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s) := by
   classical
-  have hmero : ∀ s ∈ S, MeromorphicAt f s := fun s hs ↦ decomp.meromorphicAt hU hSU hs
+  have hmero : ∀ s ∈ S, MeromorphicAt f s := fun s hs ↦ decomp.meromorphicAt hU (hSU hs)
   -- The oriented case: instantiate the null-homology-free splitting of the polar decomposition,
   -- discharging conditions (A′) and (B) into its per-pole hypotheses.
   have core : ∀ c d : ℝ, c ≤ d → IsPwC1ImmersionOn γ c d → γ c = γ d → γ c ∉ (S : Set ℂ) →
@@ -210,20 +211,6 @@ case, "`C` only contains singularities of `f` which are poles of order `1`"), an
 the argument principle and the valence formula consume: a logarithmic derivative has only
 simple poles. -/
 
-/-- Everywhere on `U`, the order of `f` is at least `-1`: at the prescribed singularities in `U` by
-hypothesis, elsewhere by analyticity on the open complement. -/
-private theorem neg_one_le_meromorphicOrderAt {f : ℂ → ℂ} {U : Set ℂ} {S : Finset ℂ}
-    (hU : IsOpen U) (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
-    ∀ w ∈ U, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f w := by
-  intro w hw
-  by_cases hwS : w ∈ S
-  · exact h_simple w hwS hw
-  · have h_an : AnalyticAt ℂ f w :=
-      hf.analyticOnNhd (hU.sdiff S.finite_toSet.isClosed) w ⟨hw, hwS⟩
-    exact le_trans (by exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0))
-      h_an.meromorphicOrderAt_nonneg
-
 /-- **Condition (A′) is automatic at simple poles.** The only pole order the interior clause can
 meet is `1`, discharged by the first-order flatness of the immersion, and the basepoint
 `γ (min a b)` is off the singularities.
@@ -266,7 +253,7 @@ theorem conditionB_of_simple_poles {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
     (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     ConditionB γ a b f := by
-  have h_ge := neg_one_le_meromorphicOrderAt hU hf h_simple
+  have h_ge := hf.neg_one_le_meromorphicOrderAt hU S.finite_toSet h_simple
   refine ⟨fun t₀ ht₀ h_lt => absurd h_lt (not_lt.mpr
       (h_ge (γ t₀) (hγU t₀ (by rw [← Set.Icc_min_max]; exact Set.Ioo_subset_Icc_self ht₀)))),
     fun h_lt => absurd h_lt (not_lt.mpr (h_ge (γ (min a b))
