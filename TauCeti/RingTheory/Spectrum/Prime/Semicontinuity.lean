@@ -127,11 +127,11 @@ theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂]
   let S : Finset M₃ := T.biUnion fun x ↦ (s (g x)).support
   have hrange : ∀ x, s (g x) ∈ Finsupp.supported R R (S : Set M₃) := fun x ↦ by
     have hx : x ∈ Submodule.span R (T : Set M₂) := by rw [hT]; trivial
-    refine Submodule.span_induction (p := fun x _ ↦ s (g x) ∈ Finsupp.supported R R (S : Set M₃))
-      (fun y hy ↦ ?_) (by simp) (fun y z _ _ hy hz ↦ by simpa using add_mem hy hz)
-      (fun a y _ hy ↦ by simpa using Submodule.smul_mem _ a hy) hx
-    exact (Finsupp.mem_supported R _).mpr fun i hi ↦
-      Finset.mem_biUnion.mpr ⟨y, hy, hi⟩
+    refine (Submodule.span_le.mpr ?_ :
+      Submodule.span R ((s ∘ₗ g) '' (T : Set M₂)) ≤ Finsupp.supported R R (S : Set M₃))
+      (Submodule.apply_mem_span_image_of_mem_span (s ∘ₗ g) hx)
+    rintro _ ⟨y, hy, rfl⟩
+    exact (Finsupp.mem_supported R _).mpr fun i hi ↦ Finset.mem_biUnion.mpr ⟨y, hy, hi⟩
   let L := Finsupp.supported R R (S : Set M₃)
   have : Module.Finite R L :=
     Module.Finite.equiv (Finsupp.supportedEquivFinsupp (M := R) (R := R) (S : Set M₃)).symm
@@ -140,9 +140,9 @@ theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂]
   let a : L →ₗ[R] M₃ := π ∘ₗ L.subtype
   let b : M₃ →ₗ[R] L := Finsupp.restrictDom R R (S : Set M₃) ∘ₗ s
   have hab : (a ∘ₗ b) ∘ₗ g = g := LinearMap.ext fun x ↦ by
-    have : (Finsupp.restrictDom R R (S : Set M₃) (s (g x)) : M₃ →₀ R) = s (g x) := by
-      rw [Finsupp.restrictDom_apply, Finsupp.filter_eq_self_iff]
-      exact fun i hi ↦ (Finsupp.mem_supported R _).mp (hrange x) (Finsupp.mem_support_iff.mpr hi)
+    have : (Finsupp.restrictDom R R (S : Set M₃) (s (g x)) : M₃ →₀ R) = s (g x) :=
+      congrArg Subtype.val (LinearMap.congr_fun (Finsupp.restrictDom_comp_subtype (S : Set M₃))
+        ⟨s (g x), hrange x⟩)
     simp only [LinearMap.comp_apply, a, b, Submodule.subtype_apply, this]
     exact LinearMap.congr_fun hπ (g x)
   have hker (q : PrimeSpectrum R) : ker ((b ∘ₗ g).baseChange q.asIdeal.ResidueField) =
