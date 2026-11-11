@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Data.Finset.Inversions
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Basic.Finite.Prod
+import Mathlib.Order.Interval.Finset.Basic
 import Mathlib.Data.Fintype.Option
 
 /-!
@@ -40,6 +43,7 @@ product is associative in the form needed for the associativity of the strands a
 * `TauCeti.StrandDiagram.endpoint`, `TauCeti.StrandDiagram.startpoint`: the end point of the
   strand from a point, and the starting point of the strand to a point.
 * `TauCeti.StrandDiagram.inversions`, `TauCeti.StrandDiagram.inversionCount`: the crossings.
+* `TauCeti.StrandDiagram.length`: the total length of the strands.
 * `TauCeti.StrandDiagram.Composable`: the target of `φ` is the source of `ψ` and the inversion
   counts add, `inv (φ.trans ψ) = inv φ + inv ψ`; this is when the product of `φ` and `ψ` in the
   strands algebra is nonzero.
@@ -51,6 +55,10 @@ product is associative in the form needed for the associativity of the strands a
   product are nonzero under the same condition.
 * `TauCeti.StrandDiagram.composable_idOn_left_iff`, `TauCeti.StrandDiagram.idOn_trans_of_eq_source`
   and their right-hand versions: the identity diagrams are the units of composition.
+* `TauCeti.StrandDiagram.length_trans_of_target_eq`, `TauCeti.StrandDiagram.length_eq_zero_iff`:
+  the length is additive under concatenation and vanishes exactly on the identity diagrams, so
+  (`TauCeti.StrandDiagram.composable_and_trans_eq_idOn_iff`) a concatenation is an identity diagram
+  only when both factors are.
 
 ## References
 
@@ -540,6 +548,94 @@ theorem composable_idOn_right_iff {s : Finset α} {φ : StrandDiagram α} :
     φ.Composable (idOn s) ↔ φ.target = s := by
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩
   rw [trans_idOn_of_target_eq h, inversionCount_idOn, add_zero]
+
+/-! ### The length of a diagram -/
+
+/-- A diagram is an identity diagram exactly when each of its strands is horizontal. -/
+theorem eq_idOn_source_iff {φ : StrandDiagram α} :
+    φ = idOn φ.source ↔ ∀ x ∈ φ.source, φ.endpoint x = x := by
+  refine ⟨fun h x hx ↦ endpoint_eq_of_mem ?_, fun h ↦ ext fun i ↦ ?_⟩
+  · rw [h]
+    exact mem_idOn.2 ⟨rfl, hx⟩
+  · rw [idOn_apply]
+    split_ifs with hi
+    · have hmem := endpoint_mem hi
+      rwa [h i hi] at hmem
+    · exact apply_eq_none_of_notMem_source hi
+
+/-- The **length** of a strand diagram: the sum over its strands `x ↦ y` of the number of points
+`z` with `x ≤ z < y`. For the points `{1, …, n}` a strand from `i` to `j` has length `j - i`. The
+length is additive under concatenation (`TauCeti.StrandDiagram.length_trans_of_target_eq`) and
+vanishes exactly on the identity diagrams (`TauCeti.StrandDiagram.length_eq_zero_iff`); in the
+strands algebra this makes an idempotent without identity terms vanish
+(`TauCeti.StrandsAlgebra.eq_zero_of_isIdempotentElem_of_forall_repr_idOn_eq_zero`). -/
+def length (φ : StrandDiagram α) : ℕ :=
+  ∑ x ∈ φ.source, #{z | x ≤ z ∧ z < φ.endpoint x}
+
+theorem length_def (φ : StrandDiagram α) :
+    φ.length = ∑ x ∈ φ.source, #{z | x ≤ z ∧ z < φ.endpoint x} :=
+  (rfl)
+
+/-- **A diagram has length zero exactly when it is an identity diagram.** -/
+theorem length_eq_zero_iff {φ : StrandDiagram α} : φ.length = 0 ↔ φ = idOn φ.source := by
+  rw [eq_idOn_source_iff, length_def, sum_eq_zero_iff]
+  refine forall₂_congr fun x hx ↦ ?_
+  have hle : x ≤ φ.endpoint x := φ.le_of_mem (endpoint_mem hx)
+  rw [card_eq_zero, filter_eq_empty_iff]
+  exact ⟨fun h ↦ hle.antisymm' (not_lt.1 fun hlt ↦ h (mem_univ x) ⟨le_rfl, hlt⟩),
+    fun h z _ hz ↦ (h ▸ hz.1.trans_lt hz.2).false⟩
+
+@[simp]
+theorem length_idOn (s : Finset α) : (idOn s).length = 0 :=
+  length_eq_zero_iff.2 (by rw [source_idOn])
+
+/-- A diagram has positive length exactly when it is not an identity diagram. -/
+theorem length_pos_iff {φ : StrandDiagram α} : 0 < φ.length ↔ φ ≠ idOn φ.source := by
+  rw [Nat.pos_iff_ne_zero, Ne, length_eq_zero_iff]
+
+/-- The strand of a concatenation starting at `x` ends where the strand of `ψ` starting at the end
+point of the strand of `φ` from `x` does. -/
+theorem endpoint_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) {x : α}
+    (hx : x ∈ φ.source) : (φ.trans ψ).endpoint x = ψ.endpoint (φ.endpoint x) :=
+  endpoint_eq_of_mem (mem_trans.2 ⟨_, endpoint_mem hx, endpoint_mem (h ▸ endpoint_mem_target hx)⟩)
+
+/-- **The length is additive under concatenation.** -/
+theorem length_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
+    (φ.trans ψ).length = φ.length + ψ.length := by
+  have hψ : ψ.length = ∑ x ∈ φ.source,
+      #{z | φ.endpoint x ≤ z ∧ z < ψ.endpoint (φ.endpoint x)} := by
+    rw [length_def, ← h, target_eq_image, sum_image φ.injOn_getD]
+    simp only [← endpoint_def]
+  rw [hψ, length_def, length_def, source_trans_of_target_eq h, ← sum_add_distrib]
+  refine sum_congr rfl fun x hx ↦ ?_
+  have hy : φ.endpoint x ∈ ψ.source := h ▸ endpoint_mem_target hx
+  -- The points counted form intervals of `α`; the interval of the composite strand splits at the
+  -- end point of the strand of `φ`.
+  let := Fintype.toLocallyFiniteOrder (α := α)
+  have hIco (a b : α) : #{z | a ≤ z ∧ z < b} = #(Ico a b) := by
+    congr 1
+    ext z
+    simp
+  rw [endpoint_trans_of_target_eq h hx, hIco, hIco, hIco,
+    ← card_union_of_disjoint (Ico_disjoint_Ico_consecutive _ _ _),
+    Ico_union_Ico_eq_Ico (φ.le_of_mem (endpoint_mem hx)) (ψ.le_of_mem (endpoint_mem hy))]
+
+/-- **A concatenation is an identity diagram only when both factors are.** The product of two
+basis elements of the strands algebra is the idempotent `I(s)` exactly when both are `I(s)`. -/
+theorem composable_and_trans_eq_idOn_iff {φ ψ : StrandDiagram α} {s : Finset α} :
+    φ.Composable ψ ∧ φ.trans ψ = idOn s ↔ φ = idOn s ∧ ψ = idOn s := by
+  constructor
+  · rintro ⟨hc, hs⟩
+    have hlen := length_trans_of_target_eq hc.target_eq
+    rw [hs, length_idOn] at hlen
+    have hφ : φ = idOn φ.source := length_eq_zero_iff.1 (by omega)
+    have hψ : ψ = idOn ψ.source := length_eq_zero_iff.1 (by omega)
+    have hφs : φ.source = s := by
+      rw [← source_trans_of_target_eq hc.target_eq, hs, source_idOn]
+    refine ⟨by rw [← hφs]; exact hφ, ?_⟩
+    rw [hψ, ← hc.target_eq, hφ, target_idOn, hφs]
+  · rintro ⟨rfl, rfl⟩
+    exact ⟨composable_idOn_left_iff.2 (source_idOn s).symm, idOn_trans_of_eq_source (by simp)⟩
 
 /-! ### Diagrams with at most one strand -/
 

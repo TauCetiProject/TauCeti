@@ -1083,7 +1083,7 @@ private theorem swapHorizontal_mem_image_addHorizontal_iff (hρ : IsMatchedGener
     hρ.swapHorizontal_mem_image_addHorizontal hab.symm hφ.swapHorizontal h'
 
 /-- Any two summands of `a(ρ, h)` are related by moving horizontal strands to matched points. -/
-private theorem matchedSetoid_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U V : Finset α}
+theorem matchedSetoid_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U V : Finset α}
     (hU : U ∈ matchedChoices M h) (hV : V ∈ matchedChoices M h) :
     matchedSetoid M (ρ.addHorizontal U) (ρ.addHorizontal V) := by
   -- Move the horizontal strands of `U` outside `V` to `V` one at a time.

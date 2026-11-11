@@ -49,6 +49,11 @@ comes from the subadditivity of inversion counts
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
 * `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
   multiplicative once it is multiplicative on basis elements.
+* `TauCeti.StrandsAlgebra.repr_mul_apply_idOn`: the coefficient of an identity diagram is
+  multiplicative.
+* `TauCeti.StrandsAlgebra.eq_zero_of_isIdempotentElem_of_forall_repr_idOn_eq_zero`: an idempotent
+  with no identity terms vanishes, since the diagrams which are not identities have positive
+  length.
 
 ## References
 
@@ -327,6 +332,42 @@ theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagr
   rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
   obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
   exact ⟨φ, ψ, hc, rfl, left_ne_zero_of_mul hψ, right_ne_zero_of_mul hψ⟩
+
+/-! ### Identity coefficients and idempotents -/
+
+/-- **The coefficient of an identity diagram is multiplicative.** A concatenation is the identity
+diagram on `s` only when both factors are, so the coefficient of `I(s)` in a product is the
+product of its coefficients in the factors. -/
+@[simp]
+theorem repr_mul_apply_idOn (x y : StrandsAlgebra R α) (s : Finset α) :
+    (basis R α).repr (x * y) (StrandDiagram.idOn s) =
+      (basis R α).repr x (StrandDiagram.idOn s) * (basis R α).repr y (StrandDiagram.idOn s) := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  simp [repr_mul_apply, StrandDiagram.composable_and_trans_eq_idOn_iff, ite_and]
+
+/-- **An idempotent with no identity terms vanishes.** If the coefficients of an idempotent of the
+strands algebra on all identity diagrams vanish, it is zero: the diagrams which are not identities
+have positive length (`TauCeti.StrandDiagram.length`), which adds up under concatenation, so a
+diagram in `x * x` is longer than any factor that is not an identity. -/
+theorem eq_zero_of_isIdempotentElem_of_forall_repr_idOn_eq_zero {x : StrandsAlgebra R α}
+    (hx : IsIdempotentElem x) (h : ∀ s, (basis R α).repr x (StrandDiagram.idOn s) = 0) :
+    x = 0 := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  refine (basis R α).ext_elem fun φ ↦ ?_
+  rw [map_zero, Finsupp.zero_apply]
+  -- By strong induction on the length of `φ`, every coefficient of `x = x * x` vanishes.
+  induction hn : φ.length using Nat.strong_induction_on generalizing φ with
+  | _ n ih =>
+    by_cases hφ : φ = StrandDiagram.idOn φ.source
+    · rw [hφ, h]
+    rw [← hx.eq, repr_mul_apply]
+    refine Finset.sum_eq_zero fun ψ _ ↦ Finset.sum_eq_zero fun χ _ ↦
+      ite_eq_right_iff.2 fun ⟨hc, hψχ⟩ ↦ ?_
+    by_cases hψ : ψ = StrandDiagram.idOn ψ.source
+    · rw [hψ, h, zero_mul]
+    have hlen := StrandDiagram.length_trans_of_target_eq hc.target_eq
+    rw [hψχ, hn] at hlen
+    rw [ih χ.length (by have := StrandDiagram.length_pos_iff.2 hψ; omega) χ rfl, mul_zero]
 
 end StrandsAlgebra
 
