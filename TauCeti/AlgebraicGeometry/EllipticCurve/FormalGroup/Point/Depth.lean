@@ -14,9 +14,10 @@ import TauCeti.Algebra.Group.Equiv.Pow
 Let `C` be a Weierstrass curve over the ring of integers `O_u` of the completion `F_u` of the
 fraction field of a Dedekind domain at a height-one prime `u`, elliptic over `F_u`. The formal
 parametrisation `Ê(𝔪_u) → E(F_u)` (`WeierstrassCurve.formalPointHomAdicCompletion`) carries the
-level `Ê(𝔪_u ^ k)` of the formal group, the parameters in `𝔪_u ^ k`, to a subgroup `E_k(F_u)` of
-the points over `F_u`; for `k = 1` it is the kernel of reduction. This file describes `E_k(F_u)`
-by the valuation of the `x`-coordinate: for `k ≥ 1`,
+level `Ê(𝔪_u ^ k)` of the formal group, the parameters in `𝔪_u ^ k`, to the subgroup
+`C.formalPointFiltration u k`, written `E_k(F_u)`, of the points over `F_u`; for `k = 1` it is
+the kernel of reduction. This file describes `E_k(F_u)` by the valuation of the `x`-coordinate:
+for `k ≥ 1`,
 
 `P ∈ E_k(F_u) ↔ P = 0 ∨ exp k ^ 2 ≤ v(x(P))`.
 
@@ -33,10 +34,10 @@ The formal-group statements on multiplication by `n` carry over to these levels:
 
 ## Main results
 
-* `WeierstrassCurve.mem_map_filtration_formalPointHomAdicCompletion_iff`: the description of
+* `WeierstrassCurve.mem_formalPointFiltration_iff_valuation_xCoord`: the description of
   `E_k(F_u)` above.
-* `WeierstrassCurve.map_nsmulAddMonoidHom_map_filtration`: `n E_k(F_u) = E_(k+e)(F_u)`.
-* `WeierstrassCurve.injective_nsmul_map_filtration`: `E_k(F_u)` has no nonzero `n`-torsion.
+* `WeierstrassCurve.map_nsmul_formalPointFiltration`: `n E_k(F_u) = E_(k+e)(F_u)`.
+* `WeierstrassCurve.nsmul_formalPointFiltration_injective`: `E_k(F_u)` has no nonzero `n`-torsion.
 
 ## References
 
@@ -71,14 +72,69 @@ variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
 open scoped Classical in
+/-- The image in the local point group of formal parameters in `𝔪_u ^ k`. For `k ≥ 1` this
+is the usual `E_k(F_u)`. Levels zero and one both equal the kernel of reduction. -/
+noncomputable def formalPointFiltration (k : ℕ) : AddSubgroup (C.baseChange F_u).toAffine.Point :=
+  (FormalGroupPoint.filtration C m_u k).map (C.formalPointHomAdicCompletion u)
+
+open scoped Classical in
+/-- A formal level is the image of the corresponding parameter subgroup. -/
+theorem formalPointFiltration_def (k : ℕ) :
+    C.formalPointFiltration u k =
+      (FormalGroupPoint.filtration C m_u k).map (C.formalPointHomAdicCompletion u) := (rfl)
+
+open scoped Classical in
+/-- Membership in a formal level means having a formal parameter in that ideal power. -/
+theorem mem_formalPointFiltration_iff (k : ℕ) (P : (C.baseChange F_u).toAffine.Point) :
+    P ∈ C.formalPointFiltration u k ↔
+      ∃ t : FormalGroupPoint C m_u, (t : O_u) ∈ m_u ^ k ∧
+        C.formalPointHomAdicCompletion u t = P := by
+  simp only [formalPointFiltration, AddSubgroup.mem_map, FormalGroupPoint.mem_filtration]
+
+open scoped Classical in
+/-- The formal parametrisation preserves and reflects the depth of a parameter. -/
+@[simp]
+theorem formalPoint_mem_formalPointFiltration_iff (k : ℕ)
+    (t : FormalGroupPoint C m_u) :
+    C.formalPoint (K := F_u) (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) t.property ∈
+        C.formalPointFiltration u k ↔ (t : O_u) ∈ m_u ^ k := by
+  rw [← C.formalPointHomAdicCompletion_apply u t, C.mem_formalPointFiltration_iff u]
+  simp only [(C.formalPointHomAdicCompletion_injective u).eq_iff, exists_eq_right]
+
+open scoped Classical in
+/-- Formal levels decrease as their depth increases. -/
+theorem formalPointFiltration_antitone : Antitone (C.formalPointFiltration u) :=
+  fun _ _ hjk ↦ AddSubgroup.map_mono (FormalGroupPoint.filtration_antitone hjk)
+
+open scoped Classical in
+@[simp]
+theorem formalPointFiltration_zero : C.formalPointFiltration u 0 = C.kerReduction u := by
+  rw [formalPointFiltration, FormalGroupPoint.filtration_zero, AddSubgroup.map_top,
+    range_formalPointHomAdicCompletion_eq_kerReduction]
+
+open scoped Classical in
+@[simp]
+theorem formalPointFiltration_one : C.formalPointFiltration u 1 = C.kerReduction u := by
+  rw [formalPointFiltration, FormalGroupPoint.filtration_one, AddSubgroup.map_top,
+    range_formalPointHomAdicCompletion_eq_kerReduction]
+
+open scoped Classical in
+/-- Every formal level is contained in the kernel of reduction. -/
+theorem formalPointFiltration_le_kerReduction (k : ℕ) :
+    C.formalPointFiltration u k ≤ C.kerReduction u := by
+  rw [← C.formalPointFiltration_zero u]
+  exact C.formalPointFiltration_antitone u (Nat.zero_le k)
+
+open scoped Classical in
 /-- **The level `k` of the formal group in `E(F_u)`, by the valuation of `x`**: for `k ≥ 1`, a
 point of `C` over `F_u` comes from a parameter in `𝔪_u ^ k` exactly when it is the point at
 infinity or its `x`-coordinate has valuation at least `exp k ^ 2`, a pole of order at least
 `2 k`. -/
-theorem mem_map_filtration_formalPointHomAdicCompletion_iff {k : ℕ} (hk : k ≠ 0)
+theorem mem_formalPointFiltration_iff_valuation_xCoord {k : ℕ} (hk : k ≠ 0)
     {P : (C.baseChange F_u).toAffine.Point} :
-    P ∈ (FormalGroupPoint.filtration C m_u k).map (C.formalPointHomAdicCompletion u) ↔
+    P ∈ C.formalPointFiltration u k ↔
       P = 0 ∨ exp (k : ℤ) ^ 2 ≤ Valued.v (Affine.Point.xCoord P) := by
+  rw [formalPointFiltration]
   have hexp : exp (k : ℤ) ^ 2 * exp (-(k : ℤ)) ^ 2 = 1 := by
     rw [← mul_pow, ← exp_add, add_neg_cancel, exp_zero, one_pow]
   constructor
@@ -123,11 +179,11 @@ theorem mem_map_filtration_formalPointHomAdicCompletion_iff {k : ℕ} (hk : k �
 open scoped Classical in
 /-- **Multiplication by `n` on the levels of `E(F_u)`**: if `n O_u = 𝔪_u ^ e` with `e < k`, then
 `n E_k(F_u) = E_(k+e)(F_u)`, the image of `n Ê(𝔪_u ^ k) = Ê(𝔪_u ^ (k + e))`. -/
-theorem map_nsmulAddMonoidHom_map_filtration {n e k : ℕ}
+theorem map_nsmul_formalPointFiltration {n e k : ℕ}
     (hn : Ideal.span {(n : O_u)} = m_u ^ e) (hek : e < k) :
-    ((FormalGroupPoint.filtration C m_u k).map (C.formalPointHomAdicCompletion u)).map
-        (nsmulAddMonoidHom n) =
-      (FormalGroupPoint.filtration C m_u (k + e)).map (C.formalPointHomAdicCompletion u) := by
+    (C.formalPointFiltration u k).map (nsmulAddMonoidHom n) =
+      C.formalPointFiltration u (k + e) := by
+  simp only [formalPointFiltration]
   have hcomm : (nsmulAddMonoidHom n).comp (C.formalPointHomAdicCompletion u) =
       (C.formalPointHomAdicCompletion u).comp (nsmulAddMonoidHom n) :=
     AddMonoidHom.ext fun P ↦ by
@@ -138,11 +194,11 @@ theorem map_nsmulAddMonoidHom_map_filtration {n e k : ℕ}
 open scoped Classical in
 /-- **The levels of `E(F_u)` below `n` have no `n`-torsion**: if `n O_u = 𝔪_u ^ e` with `e < k`,
 then multiplication by `n` is injective on `E_k(F_u)`. -/
-theorem injective_nsmul_map_filtration {n e k : ℕ}
+theorem nsmul_formalPointFiltration_injective {n e k : ℕ}
     (hn : Ideal.span {(n : O_u)} = m_u ^ e) (hek : e < k) :
-    Function.Injective (fun P : (FormalGroupPoint.filtration C m_u k).map
-      (C.formalPointHomAdicCompletion u) ↦ n • P) :=
-  ((AddSubgroup.equivMapOfInjective _ _
+    Function.Injective (fun P : C.formalPointFiltration u k ↦ n • P) := by
+  rw [formalPointFiltration]
+  exact ((AddSubgroup.equivMapOfInjective _ _
     (C.formalPointHomAdicCompletion_injective u)).injective_nsmul_iff n).mp
       (FormalGroupPoint.nsmul_filtration_injective hn hek)
 

@@ -112,15 +112,11 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
   let V := FormalGroupPoint.filtration C m_u (e + 1)
   let ι := C.formalPointHomAdicCompletion u
   have hι : Function.Injective ι := C.formalPointHomAdicCompletion_injective u
-  have hmap : V.map ι = C.formalPointFiltration u (e + 1) := by
-    ext P
-    simp only [V, ι, AddSubgroup.mem_map, FormalGroupPoint.mem_filtration,
-      C.mem_formalPointFiltration_iff u]
-  let φ : V ≃+ C.formalPointFiltration u (e + 1) :=
-    (V.equivMapOfInjective ι hι).trans (AddEquiv.addSubgroupCongr hmap)
+  let φ : V ≃+ C.formalPointFiltration u (e + 1) := by
+    rw [formalPointFiltration_def]
+    exact V.equivMapOfInjective ι hι
   refine ⟨C.formalPointFiltration u (e + 1), inferInstance, ?_, ?_⟩
-  · rw [← hmap]
-    exact injective_nsmul_map_filtration u C hne (Nat.lt_succ_self e)
+  · exact nsmul_formalPointFiltration_injective u C hne (Nat.lt_succ_self e)
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
       FormalGroupPoint.index_range_nsmul_filtration hne (Nat.lt_succ_self e), hne,
       TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]

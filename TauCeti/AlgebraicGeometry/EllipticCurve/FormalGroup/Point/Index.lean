@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Depth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Local
 -- Proof-only: the reduced curve over a finite residue field has finitely many points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
@@ -79,59 +79,11 @@ private local instance [IsMinimal O_u (C.baseChange F_u)] :
   inferInstanceAs (IsMinimal O_u (C.baseChange F_u))
 
 open scoped Classical in
-/-- The image in the local point group of formal parameters in `𝔪_u ^ k`. For `k ≥ 1` this
-is the usual `E_k(F_u)`. Levels zero and one both equal the kernel of reduction. -/
-noncomputable def formalPointFiltration (k : ℕ) : AddSubgroup (C.baseChange F_u).toAffine.Point :=
-  (FormalGroupPoint.filtration C m_u k).map (C.formalPointHomAdicCompletion u)
-
-open scoped Classical in
-/-- Membership in a formal level means having a formal parameter in that ideal power. -/
-theorem mem_formalPointFiltration_iff (k : ℕ) (P : (C.baseChange F_u).toAffine.Point) :
-    P ∈ C.formalPointFiltration u k ↔
-      ∃ t : FormalGroupPoint C m_u, (t : O_u) ∈ m_u ^ k ∧
-        C.formalPointHomAdicCompletion u t = P := by
-  simp only [formalPointFiltration, AddSubgroup.mem_map, FormalGroupPoint.mem_filtration]
-
-open scoped Classical in
-/-- The formal parametrisation preserves and reflects the depth of a parameter. -/
-@[simp]
-theorem formalPoint_mem_formalPointFiltration_iff (k : ℕ)
-    (t : FormalGroupPoint C m_u) :
-    C.formalPoint (K := F_u) (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) t.property ∈
-        C.formalPointFiltration u k ↔ (t : O_u) ∈ m_u ^ k := by
-  rw [← C.formalPointHomAdicCompletion_apply u t, C.mem_formalPointFiltration_iff u]
-  simp only [(C.formalPointHomAdicCompletion_injective u).eq_iff, exists_eq_right]
-
-open scoped Classical in
-/-- Formal levels decrease as their depth increases. -/
-theorem formalPointFiltration_antitone : Antitone (C.formalPointFiltration u) :=
-  fun _ _ hjk ↦ AddSubgroup.map_mono (FormalGroupPoint.filtration_antitone hjk)
-
-open scoped Classical in
-@[simp]
-theorem formalPointFiltration_zero : C.formalPointFiltration u 0 = C.kerReduction u := by
-  rw [formalPointFiltration, FormalGroupPoint.filtration_zero, AddSubgroup.map_top,
-    range_formalPointHomAdicCompletion_eq_kerReduction]
-
-open scoped Classical in
-@[simp]
-theorem formalPointFiltration_one : C.formalPointFiltration u 1 = C.kerReduction u := by
-  rw [formalPointFiltration, FormalGroupPoint.filtration_one, AddSubgroup.map_top,
-    range_formalPointHomAdicCompletion_eq_kerReduction]
-
-open scoped Classical in
-/-- Every formal level is contained in the kernel of reduction. -/
-theorem formalPointFiltration_le_kerReduction (k : ℕ) :
-    C.formalPointFiltration u k ≤ C.kerReduction u := by
-  rw [← C.formalPointFiltration_zero u]
-  exact C.formalPointFiltration_antitone u (Nat.zero_le k)
-
-open scoped Classical in
 /-- The relative index of two positive formal levels is a power of the residue cardinality. -/
 theorem relIndex_formalPointFiltration {j : ℕ} (hj : j ≠ 0) (k : ℕ) :
     (C.formalPointFiltration u (j + k)).relIndex (C.formalPointFiltration u j) =
       Nat.card (ResidueField O_u) ^ k := by
-  rw [formalPointFiltration, formalPointFiltration,
+  rw [formalPointFiltration_def, formalPointFiltration_def,
     AddSubgroup.relIndex_map_map_of_injective _ _ (C.formalPointHomAdicCompletion_injective u),
     FormalGroupPoint.relIndex_filtration hj (Nat.le_add_right j k),
     TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add]
