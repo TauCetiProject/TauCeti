@@ -12,10 +12,11 @@ public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 # Finite-order filtration-raising Lie actions
 
 A filtration-raising action of a positively graded Lie algebra on a filtered module descends
-to the finite-order coefficient modules. The order-`k` action factors through the order-`k`
-Lie truncation, every acting endomorphism has `(k + 1)`st power zero, and the quotient
-transitions intertwine the actions. These are the finite-order representations needed for
-exponentiating actions on completed coefficient modules.
+to the finite-order coefficient modules for any decreasing coefficient filtration, and the
+quotient transitions intertwine the actions. If `F 0 = ⊤`, the order-`k` action also factors
+through the order-`k` Lie truncation and every acting endomorphism has `(k + 1)`st power zero.
+These are the finite-order representations needed for exponentiating actions on completed
+coefficient modules.
 
 The quotient representation uses Mathlib's `LieSubmodule.Quotient.actionAsEndoMap`.
 Nilpotence uses Mathlib's `Submodule.mapQ_pow` and the existing
