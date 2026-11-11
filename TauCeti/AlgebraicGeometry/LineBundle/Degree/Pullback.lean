@@ -106,13 +106,22 @@ private lemma eulerDegree_pullback_inv_mk_mul_mk {d : ℕ} (hf : ∀ y, f.finran
         d * (I.subschemeι ≫ Y ↘ Spec (.of k)).finrank s := by
     rw [← comp_over f (Spec (.of k))]
     exact I.finrank_comap_subschemeι_comp _ f hf s
-  rw [pullback_mul, pullback_inv, hI₁.pullback_mk_toInvertibleSheaf hJ₁,
-    hI₂.pullback_mk_toInvertibleSheaf hJ₂, mul_comm,
-    hJ₁.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf k _ hJ₂.toInvertibleSheaf,
-    hJ₁.eulerDegree_toInvertibleSheaf k _ s, hJ₂.eulerDegree_toInvertibleSheaf k _ s, hrank,
-    hrank]
-  push_cast
-  ring
+  -- `f^* (𝒪_Y(D₁) ⊗ 𝒪_Y(-D₂)) = 𝒪_X(-f⁻¹ D₂) ⊗ 𝒪_X(f⁻¹ D₁)`.
+  have hpull : pullback f ((mk hI₁.toInvertibleSheaf)⁻¹ * mk hI₂.toInvertibleSheaf) =
+      mk hJ₂.toInvertibleSheaf * (mk hJ₁.toInvertibleSheaf)⁻¹ := by
+    rw [pullback_mul, pullback_inv, hI₁.pullback_mk_toInvertibleSheaf hJ₁,
+      hI₂.pullback_mk_toInvertibleSheaf hJ₂, mul_comm]
+  calc eulerDegree k (pullback f ((mk hI₁.toInvertibleSheaf)⁻¹ * mk hI₂.toInvertibleSheaf))
+      = hJ₂.toInvertibleSheaf.eulerDegree k - hJ₁.toInvertibleSheaf.eulerDegree k := by
+        rw [hpull, hJ₁.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf k _ hJ₂.toInvertibleSheaf]
+    _ = ((I₁.comap f).subschemeι ≫ X ↘ Spec (.of k)).finrank s -
+          ((I₂.comap f).subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+        rw [hJ₁.eulerDegree_toInvertibleSheaf k _ s, hJ₂.eulerDegree_toInvertibleSheaf k _ s]
+        ring
+    _ = _ := by
+        rw [hrank, hrank]
+        push_cast
+        ring
 
 variable [IsIntegral Y] [IsProper (Y ↘ Spec (.of k))] [RelativeDimensionLE 1 (Y ↘ Spec (.of k))]
   [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial Y).obj 0)]
@@ -137,10 +146,18 @@ theorem eulerDegree_pullback_of_finrank_eq {d : ℕ} (hf : ∀ y, f.finrank y = 
   have : IsFinite (hF.sectionsIdealSheaf.subschemeι ≫ Y ↘ Spec (.of k)) :=
     hIF.isFinite_subschemeι_comp
   -- On `Y`, `deg (𝒪_Y(E) ⊗ 𝒪_Y(F)⁻¹) = deg E - deg F`.
-  rw [eulerDegree_mul_of_isIntegral, eulerDegree_inv_of_isIntegral,
-    hE.eulerDegree_toLineBundleClass k default, hF.eulerDegree_toLineBundleClass k default,
-    ← sub_eq_add_neg, ← inv_inv E.toLineBundleClass, ← hE.mk_toInvertibleSheaf_sectionsIdealSheaf,
-    ← hF.mk_toInvertibleSheaf_sectionsIdealSheaf]
+  have hdeg : eulerDegree k (E.toLineBundleClass * F.toLineBundleClass⁻¹) =
+      ((hE.sectionsIdealSheaf.subschemeι ≫ Y ↘ Spec (.of k)).finrank default : ℤ) -
+        (hF.sectionsIdealSheaf.subschemeι ≫ Y ↘ Spec (.of k)).finrank default := by
+    rw [eulerDegree_mul_of_isIntegral, eulerDegree_inv_of_isIntegral,
+      hE.eulerDegree_toLineBundleClass k default, hF.eulerDegree_toLineBundleClass k default,
+      sub_eq_add_neg]
+  -- In terms of ideal sheaves, `𝒪_Y(E) ⊗ 𝒪_Y(F)⁻¹ = 𝒪_Y(-E)⁻¹ ⊗ 𝒪_Y(-F)`.
+  have hcls : E.toLineBundleClass * F.toLineBundleClass⁻¹ =
+      (mk hIE.toInvertibleSheaf)⁻¹ * mk hIF.toInvertibleSheaf := by
+    rw [hE.mk_toInvertibleSheaf_sectionsIdealSheaf, hF.mk_toInvertibleSheaf_sectionsIdealSheaf,
+      inv_inv]
+  rw [hdeg, hcls]
   exact eulerDegree_pullback_inv_mk_mul_mk k hf hIE hIF default
 
 /-- **The degree under pullback is multiplied by the degree of the function-field extension.**

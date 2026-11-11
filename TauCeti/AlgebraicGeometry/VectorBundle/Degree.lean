@@ -396,14 +396,14 @@ one on `Y`. -/
 theorem vectorBundleDegree_pullback_of_finrank_eq {d : ℕ} (hf : ∀ y, f.finrank y = d)
     (E : FixedRank Y 1) :
     vectorBundleDegree k ((pullback f).obj E) = d * vectorBundleDegree k E := by
-  rw [vectorBundleDegree_eq_eulerDegree_toInvertible,
-    vectorBundleDegree_eq_eulerDegree_toInvertible, ← LineBundleClass.eulerDegree_mk,
-    ← LineBundleClass.eulerDegree_mk,
-    ← LineBundleClass.eulerDegree_pullback_of_finrank_eq k hf, LineBundleClass.pullback_mk]
   -- Both line bundles have underlying sheaf `f^* E`.
-  exact congrArg _ (LineBundleClass.mk_eq_mk_iff.mpr ⟨eqToIso (by
-    rw [toInvertible_obj_obj, pullback_obj_obj, FiniteLocallyFreeSheaf.pullback_obj_obj,
-      InvertibleSheaf.pullback_obj_obj, toInvertible_obj_obj])⟩)
+  have hpull : LineBundleClass.mk ((toInvertible X).obj ((pullback f).obj E)) =
+      LineBundleClass.pullback f (LineBundleClass.mk ((toInvertible Y).obj E)) := by
+    rw [LineBundleClass.pullback_mk]
+    exact LineBundleClass.mk_eq_mk_iff.mpr ⟨eqToIso (by simp only [toInvertible_obj_obj,
+      pullback_obj_obj, FiniteLocallyFreeSheaf.pullback_obj_obj, InvertibleSheaf.pullback_obj_obj])⟩
+  simpa only [vectorBundleDegree_eq_eulerDegree_toInvertible, ← LineBundleClass.eulerDegree_mk,
+    hpull] using LineBundleClass.eulerDegree_pullback_of_finrank_eq k hf _
 
 /-- **The degree of a rank-one bundle under pullback along a finite flat dominant morphism.** Let
 `f : X ⟶ Y` be a finite flat dominant morphism of integral schemes over `k`, where `Y` is proper
