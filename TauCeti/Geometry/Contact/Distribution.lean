@@ -143,13 +143,12 @@ theorem odd_finrank [Nonempty M] (hD : IsContactDistribution I n D) : Odd (finra
 /-- **A contact structure is not involutive** in dimension at least three: its Levi form, which
 measures the failure of involutivity, is nondegenerate on nonzero hyperplanes. -/
 theorem not_isInvolutiveDistribution [Nonempty M] (hD : IsContactDistribution I n D)
-    (hn : 1 ≤ n) (hE : 1 < finrank ℝ E) : ¬IsInvolutiveDistribution I D := by
+    (hE : 1 < finrank ℝ E) : ¬IsInvolutiveDistribution I D := by
   obtain ⟨x⟩ := ‹Nonempty M›
-  rw [isInvolutiveDistribution_iff_distributionLeviForm_eq_zero hD.isContMDiffDistribution hn]
-  intro h
+  intro hinv
   -- A bijective zero map has trivial domain, so the hyperplane `D x` would be zero.
   have hinj := (hD.bijective_distributionLeviForm x).injective
-  rw [h x] at hinj
+  rw [hinv.distributionLeviForm_eq_zero x] at hinj
   have : Subsingleton (D x) := ⟨fun u v ↦ hinj (by simp)⟩
   have := hD.finrank_add_one x
   rw [finrank_zero_of_subsingleton] at this

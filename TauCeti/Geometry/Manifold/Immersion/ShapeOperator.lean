@@ -614,4 +614,3 @@ end SquaredDistance
 end TauCeti
 
 end
-

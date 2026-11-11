@@ -543,8 +543,6 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
       fderivWithin_univ] using
       eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
   -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
-  have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
-    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
   have hzero : fderiv ℝ g (ψ x) = 0 := by
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
   rw [criticalHessian_def, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
