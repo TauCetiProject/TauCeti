@@ -245,23 +245,9 @@ theorem map_eq_self_of_eq_span_singleton_mul_prod (hK : finrank ℚ K = 2)
     Ideal.map σ (span {(m : 𝓞 K)} * ∏ p ∈ s, Q p) =
       span {(m : 𝓞 K)} * ∏ p ∈ s, Q p := by
   classical
-  -- `Q q` divides `q 𝓞 K = 𝔭 ^ 2`, hence is a power of the unique prime `𝔭` above `q`
-  have hfix : ∀ q ∈ ramifiedPrimes K, Ideal.map σ (Q q) = Q q := by
-    intro q hq
-    have hqp := prime_of_mem_ramifiedPrimes hq
-    have := Fact.mk hqp
+  have hfix : ∀ q ∈ ramifiedPrimes K, Ideal.map σ (Q q) = Q q := fun q hq ↦ by
     have := hover q hq
-    obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(q : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
-    have hne : (span {(q : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-      simpa using Int.natCast_ne_zero.mpr hqp.ne_zero
-    have h𝔭 : Prime 𝔭 :=
-      Ideal.prime_of_isPrime (Ideal.ne_bot_of_liesOver_of_ne_bot hne 𝔭) inferInstance
-    have hle : 𝔭 ^ 2 ≤ Q q := by
-      rw [← map_span_eq_sq_of_mem_ramifiedPrimes hK hq 𝔭, Ideal.map_le_iff_le_comap]
-      exact (Ideal.LiesOver.over (p := span {(q : ℤ)}) (P := Q q)).le
-    obtain ⟨i, -, hi⟩ := (dvd_prime_pow h𝔭 2).1 (Ideal.dvd_iff_le.2 hle)
-    rw [associated_iff_eq.1 hi, Ideal.map_pow,
-      map_eq_self_of_mem_ramifiedPrimes hK hq 𝔭 σ]
+    exact map_eq_self_of_liesOver_of_mem_ramifiedPrimes hK hq (Q q) σ
   have hprod : ∀ t : Finset ℕ, ↑t ⊆ ramifiedPrimes K →
       Ideal.map σ (∏ p ∈ t, Q p) = ∏ p ∈ t, Q p := by
     intro t
