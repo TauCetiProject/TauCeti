@@ -15,6 +15,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 # Completed Dirichlet L-functions
 
 These results supplement Mathlib's continued Dirichlet functions with meromorphy and conjugation.
+For a nonprincipal character the two polar terms of Mathlib's Hurwitz decomposition cancel, so the
+completed function is Mathlib's entire periodic completion `ZMod.completedLFunction₀`.
 The functions themselves are Mathlib's, without any change of representative. The conjugation
 comparison is asserted only away from the possible poles at zero and one.
 
@@ -80,6 +82,17 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   unfold completedLFunction
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
+
+/-- For a nonprincipal character the polar terms cancel: `χ 0 = 0` since the level exceeds one,
+and the character values sum to zero. Hence the completed function is the entire periodic
+completion. -/
+theorem completedLFunction_eq_completedLFunction₀ (hχ : χ ≠ 1) :
+    χ.completedLFunction = ZMod.completedLFunction₀ (χ ·) := by
+  ext s
+  have hN : N ≠ 1 := fun h ↦ hχ (level_one' χ h)
+  rw [completedLFunction, ZMod.completedLFunction_eq, χ.map_zero' hN,
+    χ.sum_eq_zero_of_ne_one hχ]
+  simp
 
 /-- The completed L-function is analytic except possibly at zero at level one, and at one
 for the principal character. No primitivity assumption is needed. -/

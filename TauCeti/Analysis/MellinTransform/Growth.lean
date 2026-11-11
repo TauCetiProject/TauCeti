@@ -18,6 +18,8 @@ The tail over `(1, ∞)` of `u^R exp(-c u^α) du/u` converges for every real `R`
 `c, α > 0`, and is bounded by the positive Gamma moment at `(R+1)/α` when `R > -1`.
 In particular this bound remains finite at `R = 0`. These estimates provide the quantitative
 ingredient for the split Mellin method of proving order-one growth for completed L-functions.
+On a half-plane `Re s ≤ R` the upper Mellin integral is bounded by the tail at the fixed
+exponent `R`, independently of `Im s`; this gives boundedness on vertical strips.
 
 ## References
 
@@ -126,6 +128,28 @@ theorem norm_integral_cpow_smul_le_mul_Gamma {f : ℝ → E} {C₀ c α : ℝ}
     _ = C₀ * ∫ u in Ioi 1, u ^ ‖s‖ * exp (-c * u ^ α) / u := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left
       (integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma (by linarith [norm_nonneg s]) hc hα) hC₀
+
+/-- On the half-plane `Re s ≤ R`, the upper Mellin integral of an exponentially decaying kernel
+is bounded by the tail moment at the fixed exponent `R`, uniformly in `Im s`. -/
+theorem norm_integral_cpow_smul_le_of_re_le {f : ℝ → E} {C₀ c α R : ℝ}
+    (hc : 0 < c) (hα : 0 < α)
+    (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) {s : ℂ} (hs : s.re ≤ R) :
+    ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤
+      C₀ * ∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u := by
+  rw [← integral_const_mul]
+  apply norm_integral_le_of_norm_le
+    ((integrableOn_rpow_mul_exp_neg_mul_rpow_div (R := R) hc hα).const_mul C₀)
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+  have hu0 : 0 < u := zero_lt_one.trans hu
+  have hC₀ : 0 ≤ C₀ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound u hu))
+    (exp_pos _)
+  rw [norm_smul, Complex.norm_cpow_eq_rpow_re_of_pos hu0, Complex.sub_re, Complex.one_re,
+    rpow_sub hu0, rpow_one]
+  calc
+    u ^ s.re / u * ‖f u‖ ≤ (u ^ R / u) * (C₀ * exp (-c * u ^ α)) := by
+      apply mul_le_mul _ (hbound u hu) (norm_nonneg _) (by positivity)
+      exact div_le_div_of_nonneg_right (rpow_le_rpow_of_exponent_le hu.le hs) hu0.le
+    _ = _ := by ring
 
 /-- An exponentially decaying kernel gives logarithmic-exponential growth of its upper Mellin
 integral, uniformly over the whole complex plane. -/
