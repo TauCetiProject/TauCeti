@@ -25,8 +25,9 @@ morphisms between finite-type schemes, Chevalley's theorem therefore detects
 image inclusions and surjectivity on rational points. These comparisons allow rational orbit
 calculations to control the full constructible image of an algebraic orbit morphism.
 
-The proofs use Mathlib's `pointEquivClosedPoint`, `pointOfClosedPoint` and Chevalley theorem,
-and `Scheme.Hom.image_closedPoints_eq_range_inter_closedPoints` for closed-point lifting.
+The proofs use Mathlib's `pointEquivClosedPoint`, `pointOfClosedPoint` and Chevalley theorem.
+Lifting a rational point along a morphism locally of finite type rests on the fact that a nonempty
+fibre locally of finite type over an algebraically closed field has a rational point.
 
 ## References
 
@@ -55,15 +56,12 @@ theorem _root_.IsLocallyClosed.exists_rationalPoint_mem {s : Set Y} (hs : IsLoca
   exact ⟨pointOfClosedPoint π y hyclosed, pointOfClosedPoint_comp π y hyclosed,
     (pointOfClosedPoint_apply π y hyclosed _).symm ▸ hys⟩
 
-/-- A rational point in the image of a morphism whose composite with a morphism to the spectrum of
-an algebraically closed field is locally of finite type lifts to a rational point. Any lift is
-automatically over the base, since its composite with the morphism is the specified rational
-point. -/
-theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
-    [LocallyOfFiniteType (f ≫ π)]
-    (p : Spec (.of k) ⟶ Y) (hp : p ≫ π = 𝟙 _) :
+/-- A point `p : Spec k ⟶ Y` of a locally finite-type scheme over an algebraically closed field `k`
+that lies in the image of a morphism `f` locally of finite type lifts to a rational point of the
+source. A fibre that is nonempty and locally of finite type over `k` has a `k`-point. -/
+theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) [LocallyOfFiniteType f]
+    (p : Spec (.of k) ⟶ Y) :
     (∃ q : Spec (.of k) ⟶ X, q ≫ f = p) ↔ p (IsLocalRing.closedPoint k) ∈ Set.range f := by
-  let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
   constructor
   · rintro ⟨q, rfl⟩
     exact ⟨q (IsLocalRing.closedPoint k), (q.comp_apply f _).symm⟩
@@ -129,7 +127,7 @@ theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
         (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image g.continuous)
   rw [hf.subset_iff_forall_rationalPoint π hg]
   exact forall_congr' fun p ↦ forall_congr' fun hp ↦ by
-    rw [f.exists_comp_eq_iff_mem_range π p hp, g.exists_comp_eq_iff_mem_range π p hp]
+    rw [f.exists_comp_eq_iff_mem_range p, g.exists_comp_eq_iff_mem_range p]
 
 variable [CompactSpace Y] in
 /-- A morphism between finite-type schemes over an algebraically closed field is
@@ -139,7 +137,8 @@ theorem surjective_iff_forall_rationalPoint :
       ∃ q : Spec (.of k) ⟶ X, q ≫ f = p := by
   constructor
   · intro hf p hp
-    exact (f.exists_comp_eq_iff_mem_range π p hp).mpr (hf _)
+    let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
+    exact (f.exists_comp_eq_iff_mem_range p).mpr (hf _)
   · intro h y
     exact ((𝟙 Y : Y ⟶ Y).range_subset_range_iff_forall_rationalPoint π f).mpr
       (fun p hp _ ↦ h p hp) ⟨y, rfl⟩
