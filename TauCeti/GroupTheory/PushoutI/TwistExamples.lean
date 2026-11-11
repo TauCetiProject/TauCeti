@@ -158,7 +158,7 @@ def twist (z : FreeGroup (Fin 2)) : MulAut (Monoid.PushoutI boundary) :=
 
 /-- The twists by elements of the first factor compose in the order opposite to multiplication
 of the parameters. -/
-theorem twist_mul (z w : FreeGroup (Fin 2)) : twist (z * w) = twist w * twist z :=
+@[simp] theorem twist_mul (z w : FreeGroup (Fin 2)) : twist (z * w) = twist w * twist z :=
   leftDehnTwist_mul boundary ⟨z, mem_centralizer z⟩ ⟨w, mem_centralizer w⟩
 
 /-- In `F(a, b) ∗ F(c, d)`, applying the twist by `b` and then the twist by `a` sends `c` to

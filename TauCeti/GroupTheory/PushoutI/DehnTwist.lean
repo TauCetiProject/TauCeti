@@ -261,7 +261,7 @@ def leftDehnTwist (z : Subgroup.centralizer (Set.range (φ false))) : MulAut (Pu
 
 /-- Twists by parameters of the left factor compose in the order opposite to multiplication of
 the parameters. -/
-theorem leftDehnTwist_mul (z w : Subgroup.centralizer (Set.range (φ false))) :
+@[simp] theorem leftDehnTwist_mul (z w : Subgroup.centralizer (Set.range (φ false))) :
     leftDehnTwist φ (z * w) = leftDehnTwist φ w * leftDehnTwist φ z :=
   MulEquiv.toMonoidHom_injective (leftHom_comp φ w z).symm
 
