@@ -127,6 +127,7 @@ section Compact
 
 variable [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
+omit [T2Space X] in
 /-- Pullback of divisors reverses composition of finite holomorphic maps. -/
 @[simp]
 theorem divisorPullback_comp [TopologicalSpace Z] [ChartedSpace ℂ Z]

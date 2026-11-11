@@ -69,10 +69,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {U R K : Set 𝕜}
 
-/-- A meromorphic divisor has finite support on any subset of a compact set in its domain. -/
+/-- A meromorphic divisor has finite support on any subset of a compact set in its domain. For `f`
+not meromorphic on `U` the divisor is zero. -/
 theorem MeromorphicOn.divisor_finite_inter_support_of_isCompact
-    (hf : MeromorphicOn f U) (hK : IsCompact K) (hKU : K ⊆ U) (hRK : R ⊆ K) :
+    (hK : IsCompact K) (hKU : K ⊆ U) (hRK : R ⊆ K) :
     (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite := by
+  by_cases hf : MeromorphicOn f U
+  swap
+  · have : Function.support (MeromorphicOn.divisor f U) = ∅ := by
+      ext z
+      simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hf]
+    simp [this]
   apply ((MeromorphicOn.divisor f K).finiteSupport hK).subset
   intro z hz
   simpa only [Function.mem_support, hf.divisor_apply (hKU (hRK hz.1)),
@@ -80,6 +87,6 @@ theorem MeromorphicOn.divisor_finite_inter_support_of_isCompact
 
 /-- A bounded region has finite divisor support when its closure is in the meromorphic domain. -/
 theorem MeromorphicOn.divisor_finite_inter_support [ProperSpace 𝕜]
-    (hf : MeromorphicOn f U) (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
+    (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
     (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
-  hf.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure
+  MeromorphicOn.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure

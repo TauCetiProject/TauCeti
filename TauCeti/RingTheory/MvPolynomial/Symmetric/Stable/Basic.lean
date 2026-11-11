@@ -100,6 +100,12 @@ theorem stableSymmetricProj_apply (d : ℕ) (f : stableSymmetricSubmodule R n) :
     stableSymmetricProj R n d f = (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n) d :=
   (rfl)
 
+/-- The projection to `d` variables of a compatible family given by its members. -/
+@[simp]
+theorem stableSymmetricProj_mk (d : ℕ) (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n)
+    (hf : f ∈ stableSymmetricSubmodule R n) : stableSymmetricProj R n d ⟨f, hf⟩ = f d :=
+  (rfl)
+
 /-- Setting the last variable to zero in the projection to `d + 1` variables gives the projection
 to `d` variables.
 
