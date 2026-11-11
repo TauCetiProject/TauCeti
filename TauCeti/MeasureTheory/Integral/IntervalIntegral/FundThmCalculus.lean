@@ -23,12 +23,16 @@ integral equation `x(t) - x(0) = ∫₀ᵗ Y` over a single period `[0, T]`, whe
 
 It also records that along a loop `f` (with `f a = f b`) the integral of `B (f x) (f' x)` for a
 continuous bilinear map `B` is unchanged by subtracting a constant from `f`, because `∫ f' = 0`.
+Along a path that is not closed, subtracting the midpoint `m` of the endpoints changes it by
+`B m (f b - f a)`, and the remaining integral is at most `‖B‖ / 2` times the squared length of the
+path.
 
 ## Main declarations
 
 * `TauCeti.intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg`
 * `TauCeti.hasDerivAt_of_periodic_of_sub_eq_integral`
 * `ContinuousLinearMap.intervalIntegral_apply_apply_eq_sub_const`
+* `ContinuousLinearMap.norm_intervalIntegral_apply_apply_sub_apply_midpoint_le`
 -/
 
 public section
@@ -116,5 +120,84 @@ theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGr
     have hfint : ¬ IntervalIntegrable (fun x => B (f x) (f' x)) volume a b := fun h =>
       hint (by simpa [map_sub] using h.sub hBm)
     rw [intervalIntegral.integral_undef hint, intervalIntegral.integral_undef hfint]
+
+/-- Along a path `f` on `[a, b]` with integrable derivative `f'`, the integral of
+`B (f x) (f' x)` for a continuous bilinear map `B` differs from `B m (f b - f a)`, where `m` is the
+midpoint of the endpoints, by at most `‖B‖ / 2` times the square of the length `∫ ‖f'‖`. Every
+point of the path lies within half its length of `m`. For a loop the correction term vanishes, and
+for a skew form `B m (f b - f a) = B (f a) (f b)`. -/
+theorem norm_intervalIntegral_apply_apply_sub_apply_midpoint_le {V G : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) {a b : ℝ} (hab : a ≤ b)
+    {f f' : ℝ → V} (hf : ∀ x ∈ Icc a b, HasDerivAt f (f' x) x)
+    (hf' : IntervalIntegrable f' volume a b) :
+    ‖(∫ x in a..b, B (f x) (f' x)) - B (midpoint ℝ (f a) (f b)) (f b - f a)‖ ≤
+      ‖B‖ / 2 * (∫ x in a..b, ‖f' x‖) ^ 2 := by
+  set m := midpoint ℝ (f a) (f b)
+  set ℓ := ∫ x in a..b, ‖f' x‖
+  have hfc : ContinuousOn f (Icc a b) := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
+  have hsub {x y : ℝ} (hx : a ≤ x) (hxy : x ≤ y) (hy : y ≤ b) :
+      f y - f x = ∫ t in x..y, f' t := by
+    refine (_root_.intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t ht ↦ hf t ?_)
+      (hf'.mono_set ?_)).symm
+    · rw [uIcc_of_le hxy] at ht
+      exact ⟨hx.trans ht.1, ht.2.trans hy⟩
+    · rw [uIcc_of_le hxy, uIcc_of_le hab]
+      exact Icc_subset_Icc hx hy
+  have hnorm {x y : ℝ} (hx : a ≤ x) (hxy : x ≤ y) (hy : y ≤ b) :
+      ‖f y - f x‖ ≤ ∫ t in x..y, ‖f' t‖ := by
+    rw [hsub hx hxy hy]
+    exact _root_.intervalIntegral.norm_integral_le_integral_norm hxy
+  -- Every point of the path lies within half its length of the midpoint of its endpoints.
+  have hdist (x : ℝ) (hx : x ∈ Icc a b) : ‖f x - m‖ ≤ ℓ / 2 := by
+    have hax : uIcc a x ⊆ uIcc a b := by
+      rw [uIcc_of_le hx.1, uIcc_of_le hab]
+      exact Icc_subset_Icc le_rfl hx.2
+    have hxb : uIcc x b ⊆ uIcc a b := by
+      rw [uIcc_of_le hx.2, uIcc_of_le hab]
+      exact Icc_subset_Icc hx.1 le_rfl
+    have hsplit : (∫ t in a..x, ‖f' t‖) + ∫ t in x..b, ‖f' t‖ = ℓ :=
+      _root_.intervalIntegral.integral_add_adjacent_intervals (hf'.norm.mono_set hax)
+        (hf'.norm.mono_set hxb)
+    have hmid : f x - m = (1 / 2 : ℝ) • (f x - f a) - (1 / 2 : ℝ) • (f b - f x) := by
+      have hm : m = (1 / 2 : ℝ) • (f a + f b) := by
+        simp only [m, midpoint_eq_smul_add, invOf_eq_inv, one_div]
+      rw [hm]
+      module
+    calc ‖f x - m‖ ≤ (1 / 2 : ℝ) * ‖f x - f a‖ + (1 / 2 : ℝ) * ‖f b - f x‖ := by
+          rw [hmid]
+          refine (norm_sub_le _ _).trans ?_
+          simp only [norm_smul, Real.norm_eq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2),
+            le_refl]
+      _ ≤ (1 / 2 : ℝ) * (∫ t in a..x, ‖f' t‖) + (1 / 2 : ℝ) * ∫ t in x..b, ‖f' t‖ := by
+          gcongr
+          · exact hnorm le_rfl hx.1 hx.2
+          · exact hnorm hx.1 hx.2 le_rfl
+      _ = ℓ / 2 := by rw [← hsplit]; ring
+  have hℓ : 0 ≤ ℓ := _root_.intervalIntegral.integral_nonneg hab fun _ _ ↦ norm_nonneg _
+  have hbound : IntervalIntegrable (fun x ↦ ‖B‖ * (ℓ / 2) * ‖f' x‖) volume a b :=
+    hf'.norm.const_mul _
+  have hpt (x : ℝ) (hx : x ∈ Icc a b) : ‖B (f x - m) (f' x)‖ ≤ ‖B‖ * (ℓ / 2) * ‖f' x‖ :=
+    (B.le_opNorm₂ _ _).trans (by gcongr; exact hdist x hx)
+  have hint : IntervalIntegrable (fun x ↦ B (f x - m) (f' x)) volume a b := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hab] at hbound hf' ⊢
+    refine hbound.mono' (B.aestronglyMeasurable_comp₂
+      (((hfc.mono Ioc_subset_Icc_self).sub continuousOn_const).aestronglyMeasurable
+        measurableSet_Ioc) hf'.aestronglyMeasurable) ?_
+    exact (ae_restrict_iff' measurableSet_Ioc).mpr
+      (Filter.Eventually.of_forall fun x hx ↦ hpt x (Ioc_subset_Icc_self hx))
+  have hBm : IntervalIntegrable (fun x ↦ B m (f' x)) volume a b :=
+    ⟨(B m).integrable_comp hf'.1, (B m).integrable_comp hf'.2⟩
+  -- Splitting off the constant `m` leaves the integral of `B m f' = B m (f b - f a)`.
+  have hsplit : (∫ x in a..b, B (f x) (f' x)) - B m (f b - f a) =
+      ∫ x in a..b, B (f x - m) (f' x) := by
+    rw [hsub le_rfl hab le_rfl, ← (B m).intervalIntegral_comp_comm hf',
+      ← _root_.intervalIntegral.integral_sub (by simpa [map_sub] using hint.add hBm) hBm]
+    simp [map_sub]
+  rw [hsplit]
+  refine (_root_.intervalIntegral.norm_integral_le_of_norm_le hab
+    (Filter.Eventually.of_forall fun x hx ↦ hpt x (Ioc_subset_Icc_self hx)) hbound).trans_eq ?_
+  rw [_root_.intervalIntegral.integral_const_mul]
+  ring
 
 end ContinuousLinearMap
