@@ -39,7 +39,8 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   output end recentred at `c`
   (`TauCeti.Floer.cappedExchangePerturbation_add_cylindricalEndLift_inf`);
 * it is jointly `C^n` in `c`, the point of the capped domain `ℂ ∖ {1}` and the target point
-  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`);
+  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`), and for a normed target `C¹` in real
+  coordinates (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
 * for a symplectic vector space target and `|H_q| ≤ B_q`, its integrated curvature along any map
   is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`).
@@ -53,7 +54,9 @@ coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder d
 exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it. The energy identity and
+the action bounds of every member of the family, uniform in `c` and in the neck length, are in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping`.
 
 ## References
 
@@ -276,6 +279,46 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
   -- The plane part is the smooth plane datum composed with the translation by the parameter.
   exact (hcap.comp (c, (w, x)) contMDiffAt_snd).add
     (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
+
+section VectorSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+
+/-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed space
+and neck length `L > 4`, the member `c` of the family is `C¹` jointly in the domain point of the
+capped domain `ℂ ∖ {1}`, in real coordinates, and the target point. -/
+theorem contDiffAt_uncurry_cappedExchangePerturbation (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L) (c : ℝ) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (x : V) (v : ℂ) :
+    ContDiffAt ℝ 1
+      (uncurry fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) := by
+  have hz' : Complex.equivRealProdCLM.symm z = zero.endCenter ∨
+      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 := by
+    rcases eq_or_ne (Complex.equivRealProdCLM.symm z) 0 with h | h
+    · exact Or.inl (h.trans endCenter_zero.symm)
+    · exact Or.inr ⟨h, hz⟩
+  -- The capped part, which does not depend on `c`.
+  have hin := contDiffAt_uncurry_plumbedPerturbation_single_inf (q := zero)
+    (Hb := update H inf 0) (by decide)
+    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
+      ⟨contDiff_const, fun q _ => hHs q⟩) hL hz' x v
+  rw [update_inf_zero] at hin
+  -- The output part, the negative plane datum translated by `c`.
+  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
+      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
+      (z, x) :=
+    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
+      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
+  have he (z : ℝ × ℝ) :
+      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
+    apply Complex.ext <;> simp
+  simp only [he] at hpl
+  exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
+    simp [cappedExchangePerturbation_def, uncurry])
+
+end VectorSpace
 
 end TauCeti.Floer
 
