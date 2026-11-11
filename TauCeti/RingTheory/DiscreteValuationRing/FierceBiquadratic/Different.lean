@@ -10,8 +10,8 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 import TauCeti.FieldTheory.Separable.SimpleRoot
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
-import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 import TauCeti.RingTheory.DedekindDomain.Different.Length
+import TauCeti.RingTheory.Trace.Length
 
 /-!
 # The different of a fierce biquadratic extension
@@ -189,8 +189,11 @@ theorem ord_discr_ringYZ {ι : Type*} [Fintype ι] [DecidableEq ι]
   have hred := irreducible_map_residue_quadratic ((mem_maximalIdeal t).mpr ht.not_isUnit) hs
   have : IsDomain (RingY t s) := (monic_quadratic t s).isDomain_adjoinRoot hred
   have := isSeparable_fractionRing_ringYZ (s := s) (u := u) ht.ne_zero
-  rw [← TauCeti.length_traceDual_quotient_eq_ord_discr (K := FractionRing A)
-    (L := FractionRing (RingYZ t s u)) b]
+  have : FiniteDimensional (FractionRing A) (FractionRing (RingYZ t s u)) :=
+    Module.Finite.of_isLocalization A (RingYZ t s u) A⁰
+  rw [← b.length_traceDual_quotient_eq_ord_discr (K := FractionRing A)
+      (L := FractionRing (RingYZ t s u)),
+    ← b.length_traceDual_quotient_eq_length_quotient_range_algebraToTraceDual]
   exact length_traceDual_quotient_ringYZ ht hs hu
 
 omit [IsDomain (RingYZ t s u)] in
