@@ -27,6 +27,9 @@ real valued `g`. The complementary operator `∂ σ = dσ - ∂bar σ = (dσ)^{1
   linear real Cauchy–Riemann operator on the trivial bundle.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction`: the operator `σ ↦ (dσ)^{1,0}` on
   `F`-valued functions.
+* `TauCeti.SmoothAlmostComplexStructure.delFunction_add_dbarFunction`,
+  `TauCeti.SmoothAlmostComplexStructure.delFunction_apply_apply`: `dσ = ∂ σ + ∂bar σ`, and
+  `∂ σ` is a `(1,0)`-form.
 
 ## References
 
@@ -98,6 +101,22 @@ def delFunction (σ : M → F) (x : M) : TangentSpace I x →L[ℝ] F :=
 theorem delFunction_apply (σ : M → F) (x : M) (v : E) :
     j.delFunction σ x v = mvfderiv I σ x v - j.dbarFunction σ x v :=
   sub_apply _ _ v
+
+/-- The differential splits as `dσ = ∂ σ + ∂bar σ`. -/
+theorem delFunction_add_dbarFunction (σ : M → F) (x : M) :
+    j.delFunction σ x + j.dbarFunction σ x = mvfderiv I σ x :=
+  sub_add_cancel _ _
+
+/-- `∂ σ` is a `(1,0)`-form: it is complex linear, `∂ σ (j v) = i • ∂ σ (v)`. -/
+theorem delFunction_apply_apply (σ : M → F) (x : M) (v : TangentSpace I x) :
+    j.delFunction σ x (j x v) = Complex.I • j.delFunction σ x v := by
+  have hjj : j x (j x v) = -v := by
+    simp [← ContinuousLinearMap.comp_apply, j.square_neg x]
+  rw [delFunction, dbarFunction, sub_apply, sub_apply, zeroOnePart_apply, zeroOnePart_apply, hjj,
+    map_neg, smul_neg]
+  simp only [smul_sub, smul_add, smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I,
+    Complex.I_mul_I, neg_one_smul]
+  module
 
 end SmoothAlmostComplexStructure
 
