@@ -113,12 +113,14 @@ theorem compatible_continuationAlmostComplex (h₀ : ω.Compatible J₀)
     (sub_nonneg.2 (smoothTransition.le_one _)) (smoothTransition.nonneg _) (sub_add_cancel _ _)
 
 /-- The continuation homotopy is `J₁ t x` for `s ≤ 0`. -/
+@[simp]
 theorem continuationAlmostComplex_of_nonpos (h₀ : ω.Compatible J₀) {z : ℝ × ℝ} (hz : z.1 ≤ 0)
     (x : M) : continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x = J₁ z.2 x :=
   h₀.eq_of_cayley_eq (tames_continuationAlmostComplex h₀ z x) (hJ₁ z.2 x) (by
     simp [smoothTransition.zero_of_nonpos hz])
 
 /-- The continuation homotopy is `J₂ t x` for `s ≥ 1`. -/
+@[simp]
 theorem continuationAlmostComplex_of_one_le (h₀ : ω.Compatible J₀) {z : ℝ × ℝ} (hz : 1 ≤ z.1)
     (x : M) : continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x = J₂ z.2 x :=
   h₀.eq_of_cayley_eq (tames_continuationAlmostComplex h₀ z x) (hJ₂ z.2 x) (by

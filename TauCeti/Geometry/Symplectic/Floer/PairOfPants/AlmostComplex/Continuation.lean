@@ -65,8 +65,8 @@ point (for a vector space target, `M = V`).
   `TauCeti.Floer.pairOfPantsContinuationAlmostComplex_self`: comparison with the pair-of-pants
   structures of the inner and outer families.
 * `TauCeti.Floer.pairOfPantsContinuationAlmostComplex_eq_continuationAlmostComplex`,
-  `TauCeti.Floer.pairOfPantsContinuationAlmostComplex_eq_endStructure`: the structure on the necks
-  and beyond them.
+  `TauCeti.Floer.pairOfPantsContinuationAlmostComplex_eq_endStructure`: the structure far out on
+  the ends (on the necks when `L q ≥ 2`) and beyond the necks.
 * `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationAlmostComplex`: joint smoothness in the neck
   positions, the domain point and the external point.
 
@@ -211,9 +211,10 @@ theorem cayley_pairOfPantsContinuationAlmostComplex_cylindricalEndLift_of_pos
     cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos h₀ hp hz,
     re_endCoord_cylindricalEndLift]
 
-/-- **The structure on the neck.** On the part `±s ≥ 2` of the end `q`, the structure at `w` is
-the continuation homotopy from `J₁ q` to `J₂ q` at `(σ_q - L q, t_q)`: the neck carries the
-structure of a continuation cylinder, translated to the neck position. No periodicity is needed. -/
+/-- **The structure far out on an end.** On the part `±s ≥ 2` of the end `q`, the structure at
+`w` is the continuation homotopy from `J₁ q` to `J₂ q` at `(σ_q - L q, t_q)`. So for `L q ≥ 2`
+the neck `L q ≤ σ_q ≤ L q + 1` carries the structure of a continuation cylinder, translated to the
+neck position. No periodicity is needed. -/
 theorem pairOfPantsContinuationAlmostComplex_eq_continuationAlmostComplex
     (h₀ : ω.Compatible J₀) {w : ℂ} (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
     pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ L w x =
