@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.Matrix.Realify
-public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
+public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -282,51 +282,13 @@ private theorem star_graphFrameUnit_mul_self (A : GLSymplectic n ℝ) :
   rw [coe_graphFrameUnit, star_eq_conjTranspose,
     conjTranspose_symplecticGraphFrame_mul_self (mem_iff_mem_symplecticGroup.1 A.2)]
 
-/-- The positive polar factor of the graph frame is an invertible real matrix. -/
-private theorem exists_sqrt_star_graphFrameUnit_mul_self_eq (A : GLSymplectic n ℝ) :
-    ∃ r : Matrix (n ⊕ n) (n ⊕ n) ℝ, IsUnit r ∧
-      CFC.sqrt (star (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) *
-        (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ)) = r.map ((↑) : ℝ → ℂ) := by
-  set a := graphFrameUnit A
-  set q := CFC.sqrt (star (a : Matrix (n ⊕ n) (n ⊕ n) ℂ) * (a : Matrix (n ⊕ n) (n ⊕ n) ℂ))
-    with hq
-  have hS : star (a : Matrix (n ⊕ n) (n ⊕ n) ℂ) * (a : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      (star (a : Matrix (n ⊕ n) (n ⊕ n) ℂ) * (a : Matrix (n ⊕ n) (n ⊕ n) ℂ))ᵀ := by
-    rw [star_graphFrameUnit_mul_self, ← transpose_map, transpose_add, transpose_one,
-      transpose_mul, transpose_transpose]
-  have hq0 : 0 ≤ q := CFC.sqrt_nonneg _
-  -- `qᵀ` is a nonnegative square root of the same real symmetric matrix, so it is `q`.
-  have hqT : qᵀ = q := by
-    refine (CFC.sqrt_unique ?_ ?_).symm
-    · rw [← transpose_mul, hq, CFC.sqrt_mul_sqrt_self _ (star_mul_self_nonneg _), ← hS]
-    · rw [nonneg_iff_posSemidef, posSemidef_transpose_iff, ← nonneg_iff_posSemidef]
-      exact hq0
-  -- A Hermitian symmetric matrix is real.
-  have hreal : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) := by
-    ext i j
-    have h1 : star (q j i) = q i j := by
-      rw [← conjTranspose_apply, ← star_eq_conjTranspose, hq0.isSelfAdjoint.star_eq]
-    have h2 : q j i = q i j := by rw [← transpose_apply q i j, hqT]
-    rw [h2] at h1
-    simp only [map_apply]
-    exact (Complex.conj_eq_iff_re.1 h1).symm
-  refine ⟨q.map Complex.re, ?_, hreal⟩
-  have hu : IsUnit q := (Units.isStrictlyPositive_sqrt_star_mul a).isUnit
-  have hd : ((q.map Complex.re).map ((↑) : ℝ → ℂ)).det = ((q.map Complex.re).det : ℂ) :=
-    (Complex.ofRealHom.map_det _).symm
-  rw [hreal, isUnit_iff_isUnit_det, hd] at hu
-  rw [isUnit_iff_isUnit_det]
-  exact (isUnit_map_iff Complex.ofRealHom _).1 hu
-
 /-- The unitary graph frame of `A` frames the image of the graph of `A`: it carries `ℝ^(n ⊕ n)`
 to the same Lagrangian subspace as the graph frame `N(A)`. -/
 theorem realImage_graphFrame (A : GLSymplectic n ℝ) :
     (graphFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
       (symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
-  obtain ⟨r, hr, hq⟩ := exists_sqrt_star_graphFrameUnit_mul_self_eq A
-  have h := Units.polarUnitary_mul_sqrt_star_mul (graphFrameUnit A)
-  rw [hq, coe_graphFrameUnit] at h
-  rw [graphFrame, ← h, realImage_mul_map_ofReal _ hr]
+  rw [graphFrame, realImage_polarUnitary _ (by rw [← star_eq_conjTranspose,
+    star_graphFrameUnit_mul_self]), coe_graphFrameUnit]
 
 /-- For an orthogonal symplectic matrix `A`, the graph frame `N(A)` is `√2` times a unitary
 matrix, which is therefore the unitary graph frame. -/

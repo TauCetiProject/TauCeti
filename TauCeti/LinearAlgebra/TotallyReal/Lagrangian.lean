@@ -40,6 +40,11 @@ contraction of `M` need not close up.
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
   real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+* `Matrix.GeneralLinearGroup.realImage_polarUnitary`: when the Gram matrix `Mᴴ M` is real, as
+  for a frame of a Lagrangian subspace, the positive polar factor `√(Mᴴ M)` is real and
+  invertible
+  (`Matrix.GeneralLinearGroup.exists_sqrt_conjTranspose_mul_self_eq_map_ofReal`), so the unitary
+  polar factor of `M` spans the same real subspace as `M`.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -133,6 +138,60 @@ theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X �
     (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
       hG fun x ↦ isStrictlyPositive_iff_posDef.1 (isStrictlyPositive_map_re (M x))
   exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
+
+/-! ### Polar factors of frames with a real Gram matrix -/
+
+/-- If the Gram matrix `Mᴴ M` of an invertible complex matrix `M` is real, then so is its square
+root, the positive polar factor `√(Mᴴ M)` of `M`, and it is invertible. -/
+theorem exists_sqrt_conjTranspose_mul_self_eq_map_ofReal (M : GL n ℂ) {G : Matrix n n ℝ}
+    (hG : (M : Matrix n n ℂ)ᴴ * M = G.map ((↑) : ℝ → ℂ)) :
+    ∃ r : Matrix n n ℝ, IsUnit r ∧
+      CFC.sqrt ((M : Matrix n n ℂ)ᴴ * M) = r.map ((↑) : ℝ → ℂ) := by
+  set q := CFC.sqrt ((M : Matrix n n ℂ)ᴴ * M) with hq
+  -- A real Hermitian matrix is symmetric.
+  have hS : (M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ) =
+      ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ))ᵀ := by
+    conv_lhs => rw [← (isHermitian_conjTranspose_mul_self (M : Matrix n n ℂ)).eq]
+    rw [hG]
+    ext i j
+    simp
+  have hq0 : 0 ≤ q := CFC.sqrt_nonneg _
+  -- `qᵀ` is a nonnegative square root of the same real symmetric matrix, so it is `q`.
+  have hqT : qᵀ = q := by
+    refine (CFC.sqrt_unique ?_ ?_).symm
+    · rw [← transpose_mul, hq, CFC.sqrt_mul_sqrt_self _ (by
+        simpa only [star_eq_conjTranspose] using star_mul_self_nonneg (M : Matrix n n ℂ)), ← hS]
+    · rw [nonneg_iff_posSemidef, posSemidef_transpose_iff, ← nonneg_iff_posSemidef]
+      exact hq0
+  -- A Hermitian symmetric matrix is real.
+  have hreal : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) := by
+    ext i j
+    have h1 : star (q j i) = q i j := by
+      rw [← conjTranspose_apply, ← star_eq_conjTranspose, hq0.isSelfAdjoint.star_eq]
+    have h2 : q j i = q i j := by rw [← transpose_apply q i j, hqT]
+    rw [h2] at h1
+    simp only [map_apply]
+    exact (Complex.conj_eq_iff_re.1 h1).symm
+  refine ⟨q.map Complex.re, ?_, hreal⟩
+  have hu : IsUnit q := by
+    simpa only [hq, star_eq_conjTranspose] using (Units.isStrictlyPositive_sqrt_star_mul M).isUnit
+  have hd : ((q.map Complex.re).map ((↑) : ℝ → ℂ)).det = ((q.map Complex.re).det : ℂ) :=
+    (Complex.ofRealHom.map_det _).symm
+  rw [hreal, isUnit_iff_isUnit_det, hd] at hu
+  rw [isUnit_iff_isUnit_det]
+  exact (isUnit_map_iff Complex.ofRealHom _).1 hu
+
+/-- If the Gram matrix `Mᴴ M` of an invertible complex matrix `M` is real, for example when `M`
+frames a Lagrangian subspace, then the unitary polar factor of `M` spans the same real subspace
+`M ℝⁿ` as `M`. -/
+theorem realImage_polarUnitary (M : GL n ℂ) {G : Matrix n n ℝ}
+    (hG : (M : Matrix n n ℂ)ᴴ * M = G.map ((↑) : ℝ → ℂ)) :
+    ((M.polarUnitary : unitaryGroup n ℂ) : Matrix n n ℂ).realImage =
+      (M : Matrix n n ℂ).realImage := by
+  obtain ⟨r, hr, hq⟩ := exists_sqrt_conjTranspose_mul_self_eq_map_ofReal M hG
+  have h := Units.polarUnitary_mul_sqrt_star_mul M
+  rw [star_eq_conjTranspose, hq] at h
+  rw [← h, realImage_mul_map_ofReal _ hr]
 
 end Matrix.GeneralLinearGroup
 
