@@ -302,8 +302,8 @@ theorem weightPartition_partWeight (ν : n.Partition)
       (by rwa [YoungDiagram.colLen_zero_ofPartition, ← not_le])
     have hdeg : (partWeight σ ν).degree = (rowLenWeight (Fintype.card σ)
         (YoungDiagram.ofPartition ν)).degree := by
-      simp only [Finsupp.degree_eq_sum, partWeight_apply, rowLenWeight_apply]
-      exact Equiv.sum_comp (Fintype.equivFin σ) fun i ↦ (YoungDiagram.ofPartition ν).rowLen i
+      simpa only [partWeight_eq_mapDomain] using Finsupp.degree_mapDomain (Fintype.equivFin σ).symm
+        (rowLenWeight (Fintype.card σ) (YoungDiagram.ofPartition ν))
     rw [YoungDiagram.card_ofPartition, ← hdeg] at hlt'
     exact hlt'.ne h
   refine Nat.Partition.ext ?_

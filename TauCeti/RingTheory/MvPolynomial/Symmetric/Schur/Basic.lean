@@ -405,6 +405,13 @@ theorem schurPoly_eq_rename (μ : n.Partition) :
 noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partition) : σ →₀ ℕ :=
   Finsupp.mapDomain (Fintype.equivFin σ).symm (rowLenWeight (Fintype.card σ) (ofPartition ν))
 
+/-- `TauCeti.partWeight σ ν` is the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`
+under the reindexing `(Fintype.equivFin σ).symm`. -/
+theorem partWeight_eq_mapDomain (ν : n.Partition) :
+    partWeight σ ν = Finsupp.mapDomain (Fintype.equivFin σ).symm
+      (rowLenWeight (Fintype.card σ) (ofPartition ν)) := by
+  rw [partWeight]
+
 @[simp]
 theorem partWeight_apply (ν : n.Partition) (x : σ) :
     partWeight σ ν x = (ofPartition ν).rowLen (Fintype.equivFin σ x) := by
