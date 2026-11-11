@@ -178,6 +178,17 @@ theorem exists_hom_of_toGraph_isLink {u v : Γ.V} {q : Γ.Edge}
     subst v
     exact ⟨Quiver.reverse (Γ.dart d), by simp⟩
 
+/-- Two vertices are adjacent in the multigraph of reversal pairs exactly when some dart joins
+them. -/
+theorem toGraph_adj (x y : Γ.V) :
+    Γ.toGraph.Adj x y ↔ ∃ e, Γ.src e = x ∧ Γ.tgt e = y := by
+  constructor
+  · rintro ⟨q, hq⟩
+    obtain ⟨e, -⟩ := Γ.exists_hom_of_toGraph_isLink hq
+    exact ⟨e.1, e.2⟩
+  · rintro ⟨e, rfl, rfl⟩
+    exact ⟨Γ.edge e, by simp⟩
+
 /-- Every walk between vertices lifts to a directed Serre path. -/
 theorem exists_path_toWalk {u v : Γ.V} (p : Γ.toGraph.Walk u v) :
     ∃ q : Γ.Path u v, q.toWalk = p := by
