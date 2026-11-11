@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -28,6 +29,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
   structures is continuity of their endomorphisms in the operator norm.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_mul_self`: in the operator-norm algebra a
   complex structure squares to `-1`.
+* `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
+  Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
@@ -70,6 +73,23 @@ theorem toContinuousLinearMap_mul_self (J : AlmostComplexStructure V) :
       -1 := by
   ext v
   simp
+
+/-- In operator-norm coordinates, the Cayley transform is the rational expression
+`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`, with the junk
+inverse `0` when `1 - J₀ J₁` is not invertible on either side. -/
+theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B : V →L[ℝ] V}
+    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
+    LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
+  apply ContinuousLinearMap.coe_injective
+  have : IsLocalHom (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V)) :=
+    ⟨fun _ h ↦ ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr h⟩
+  have hinv := map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V))
+    (1 - A * B)
+  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
+  rw [cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
+    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
+    ContinuousLinearMap.toLinearMap_mul, hinv]
+  simp [hA, hB]
 
 end AlmostComplexStructure
 

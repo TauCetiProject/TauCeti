@@ -401,24 +401,6 @@ theorem Tames.isUnit_one_sub_mul_of_toLinearMap (h₀ : ω.Tames J₀) (h₁ : �
   rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
   simpa [hA, hB] using h₀.isUnit_one_sub_mul h₁
 
-variable (J₀ J₁) in
-/-- In operator-norm coordinates, the Cayley transform is the rational expression
-`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`, with the junk
-inverse `0` when `1 - J₀ J₁` is not invertible on either side. -/
-theorem _root_.TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
-  apply ContinuousLinearMap.coe_injective
-  have : IsLocalHom (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V)) :=
-    ⟨fun _ h ↦ ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr h⟩
-  have hinv := map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V))
-    (1 - A * B)
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [AlmostComplexStructure.cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
-    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
-    ContinuousLinearMap.toLinearMap_mul, hinv]
-  simp [hA, hB]
-
 /-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
 that of a tame `J₁`, for `|b| ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
 coordinate of `J₁`. -/
