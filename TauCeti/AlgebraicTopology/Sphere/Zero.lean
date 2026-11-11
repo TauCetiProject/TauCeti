@@ -24,6 +24,8 @@ the base case of the induction on dimension through the suspension isomorphism.
 
 * `TauCeti.sphere_eq_pair_of_finrank_eq_one`: a sphere centered at zero containing `p` is `{p, -p}`.
 * `TauCeti.finite_sphere_of_finrank_eq_one`: every sphere is finite.
+* `TauCeti.finiteDimensional_of_injective_sphere`: if the unit sphere of `E` injects into the unit
+  sphere of a space of dimension `dim E + 1`, then `E` is finite-dimensional.
 * `TauCeti.discreteTopology_sphere_of_finrank_eq_one`: every sphere is discrete.
 * `TauCeti.zerothHomotopySphereUnique`: the path component of `-p` is the unique path component
   other than that of `p`.
@@ -64,6 +66,17 @@ theorem finite_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) (x : E) (r : ℝ
   have ht : ⇑(IsometryEquiv.addLeft x) '' sphere (0 : E) r = sphere x r := by simp
   rw [← ht]
   exact hs.image _
+
+/-- If the unit sphere of a real normed space `E` injects into the unit sphere of a real normed
+space of dimension `dim E + 1`, then `E` is finite-dimensional: otherwise the target has dimension
+`1`, so its sphere is finite, while the sphere of an infinite-dimensional space is infinite. -/
+theorem finiteDimensional_of_injective_sphere {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : sphere (0 : E) 1 → sphere (0 : F) 1}
+    (hEF : finrank ℝ F = finrank ℝ E + 1) (hf : Function.Injective f) : FiniteDimensional ℝ E := by
+  by_contra hE
+  rw [Module.finrank_of_not_finite hE, zero_add] at hEF
+  have := finite_sphere_of_finrank_eq_one hEF (0 : F) 1
+  exact hE (finiteDimensional_of_finite_sphere (.of_injective f hf))
 
 /-- Every sphere in a one-dimensional real normed space is discrete. -/
 theorem discreteTopology_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) (x : E) (r : ℝ) :

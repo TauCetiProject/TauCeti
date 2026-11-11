@@ -58,6 +58,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
+* `HolderOnWith.comp_const_smul`: precomposing with a rescaling `z ↦ a • z` multiplies the Hölder
+  constant by `‖a‖ ^ r`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
@@ -227,6 +229,16 @@ theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
   simpa using HolderOnWith.of_le_of_dist_le (K := L) (β := 1)
     (fun x hx y hy _ => by simpa using h.dist_le_mul x hx y hy) hdiam hα
     (by norm_num : (0 : ℝ≥0) < 1)
+
+/-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
+`z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/
+theorem HolderOnWith.comp_const_smul {𝕜 E X : Type*} [SeminormedRing 𝕜] [SeminormedAddGroup E]
+    [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] [PseudoMetricSpace X] {g : E → X} {C r : ℝ≥0}
+    {s t : Set E} (hg : HolderOnWith C r g t) (a : 𝕜) (hst : MapsTo (a • ·) s t) :
+    HolderOnWith (C * ‖a‖₊ ^ (r : ℝ)) r (fun z ↦ g (a • z)) s := by
+  have h := hg.comp ((lipschitzWith_smul a).holderWith.holderOnWith s) hst
+  rw [mul_one] at h
+  exact h
 
 /-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
 constants. -/

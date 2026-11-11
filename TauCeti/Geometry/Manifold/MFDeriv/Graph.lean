@@ -46,9 +46,15 @@ theorem mfderiv_graph_fst_apply {f : M → N} {x : M} (hf : MDifferentiableAt I 
 
 /-- The differential of the graph `y ↦ (y, f y)` has second coordinate `df v`. -/
 @[simp]
-theorem mfderiv_graph_snd_apply {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
-    (v : TangentSpace I x) :
+theorem mfderiv_graph_snd_apply {f : M → N} {x : M} (v : TangentSpace I x) :
     (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x v).2 = mfderiv I J f x v := by
+  by_cases hf : MDifferentiableAt I J f x
+  swap
+  · -- Neither the graph nor `f` is differentiable at `x`, so both differentials are `0`.
+    have hg : ¬ MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x :=
+      fun hg ↦ hf (mdifferentiableAt_snd.comp x hg)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hf]
+    rfl
   have hg : MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := mdifferentiableAt_id.prodMk hf
   exact (hg.mfderiv_snd_apply v).symm
 
