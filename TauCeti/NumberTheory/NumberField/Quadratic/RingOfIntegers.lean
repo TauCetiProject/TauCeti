@@ -513,7 +513,7 @@ theorem isSquare_neg_one_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d
   have hp1 : ¬ (p : ℤ) ∣ -1 := by
     rw [Int.dvd_neg, Int.natCast_dvd_ofNat, Nat.dvd_one]
     exact (Fact.out : p.Prime).ne_one
-  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq Fact.out hp2 hpd hp1
+  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq Fact.out hpd hp1
     (by rw [hAB, hzℤ])
   rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p (by simp)] at h
   exact_mod_cast h
