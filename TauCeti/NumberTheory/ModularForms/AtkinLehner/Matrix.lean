@@ -352,6 +352,26 @@ private lemma IsAtkinLehnerMatrix.eq_of_eq_zero (hQ : Q = 0) (hN : N = 0)
   ext i j
   fin_cases i <;> fin_cases j <;> simp [h00, h10, h11]
 
+/-- At level `N = 0` and `Q = 0`, an Atkin–Lehner matrix `W` and an element `γ` of `Γ₀(0)` satisfy
+both `W γ = δ W` and `γ W = W δ` for `δ ∈ Γ₀(0)` the element obtained by swapping the diagonal
+entries of `γ`. -/
+private lemma IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (hN : N = 0)
+    (h : IsAtkinLehnerMatrix N 0 M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
+      M * (γ : Matrix (Fin 2) (Fin 2) ℤ) = (δ : Matrix (Fin 2) (Fin 2) ℤ) * M ∧
+      (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ) := by
+  subst hN
+  have h10 : γ 1 0 = 0 := mem_Gamma0_zero_iff.mp hγ
+  have hdet : γ 1 1 * γ 0 0 - 0 * 0 = 1 := by
+    have := Matrix.SpecialLinearGroup.det_coe γ
+    rw [Matrix.det_fin_two, h10] at this
+    linear_combination this
+  refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩,
+    mem_Gamma0_zero_iff.mpr rfl, ?_, ?_⟩ <;>
+  · rw [h.eq_of_eq_zero rfl rfl]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10, mul_comm]
+
 /-- **An Atkin–Lehner matrix intertwines `Γ₀(N)` with itself**: `W γ = δ W` with `δ ∈ Γ₀(N)`.
 For `Q ≠ 0` (an invertible `W`) this says that `W` normalizes `Γ₀(N)`, which turns the weight-`k`
 slash by `W` into an operator on `M_k(Γ₀(N))`; for `Q = 0` the matrix `W` is singular and only the
@@ -361,16 +381,8 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_left (hQN : Q ∣ N)
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       M * (γ : Matrix (Fin 2) (Fin 2) ℤ) = (δ : Matrix (Fin 2) (Fin 2) ℤ) * M := by
   obtain rfl | hQ := eq_or_ne Q 0
-  · have hN : N = 0 := zero_dvd_iff.mp hQN
-    obtain ⟨δ, hδ, hδ'⟩ := exists_mem_Gamma0_eq_diag_swap hN hγ
-    have h10 : γ 1 0 = 0 := by
-      subst hN
-      simpa [mem_Gamma0_iff_dvd] using hγ
-    refine ⟨δ, hδ, ?_⟩
-    rw [h.eq_of_eq_zero rfl hN, hδ']
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10]
-    ring
+  · obtain ⟨δ, hδ, hδ', -⟩ := h.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (zero_dvd_iff.mp hQN) hγ
+    exact ⟨δ, hδ, hδ'⟩
   · exact h.exists_mem_Gamma0_eq_mul_left hQ hQN (h.mul_right hQN hγ)
 
 /-- **An Atkin–Lehner matrix intertwines `Γ₀(N)` with itself, read the other way**:
@@ -380,16 +392,8 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right (hQN : Q ∣ N)
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ) := by
   obtain rfl | hQ := eq_or_ne Q 0
-  · have hN : N = 0 := zero_dvd_iff.mp hQN
-    obtain ⟨δ, hδ, hδ'⟩ := exists_mem_Gamma0_eq_diag_swap hN hγ
-    have h10 : γ 1 0 = 0 := by
-      subst hN
-      simpa [mem_Gamma0_iff_dvd] using hγ
-    refine ⟨δ, hδ, ?_⟩
-    rw [h.eq_of_eq_zero rfl hN, hδ']
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10]
-    ring
+  · obtain ⟨δ, hδ, -, hδ'⟩ := h.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (zero_dvd_iff.mp hQN) hγ
+    exact ⟨δ, hδ, hδ'⟩
   · exact h.exists_mem_Gamma0_eq_mul_right hQ hQN (h.mul_left hQN hγ)
 
 /-- **The square of an Atkin–Lehner matrix is `Q` times an element of `Γ₀(N)`.** Since a scalar
@@ -411,13 +415,15 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨(a + d) * c, by rw [hG]; simp [hc]; ring⟩
   refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, hG]
-  all_goals simp only [ha, hd]
-  · linear_combination (-1 : ℤ) * hdet
-  · ring
-  · ring
-  · linear_combination (-1 : ℤ) * hdet
+  fin_cases i <;> fin_cases j
+  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
+    linear_combination (-1 : ℤ) * hdet
+  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
+    ring
+  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
+    ring
+  · simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
+    linear_combination (-1 : ℤ) * hdet
 
 /-- **Multiplicativity of the family.** As soon as `Q * R` divides the level, an Atkin–Lehner
 matrix for `Q` times one for `R` is an Atkin–Lehner matrix for `Q * R`. Coprime exact divisors
