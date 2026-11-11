@@ -91,7 +91,7 @@ theorem integral_laplacian_smul_re_cauchyTransform {h : ℂ → ℂ} (hh : Integ
     (hc.fderiv_apply ℝ v).comp_left ofReal_zero
   have hψc : HasCompactSupport ψ := (hcline 1).sub ((hcline I).mul_left)
   have hcw (w : ℂ) : conjWirtingerDeriv ψ w 1 = (2 : ℂ)⁻¹ * (Δ φ w : ℂ) :=
-    conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one hφ w
+    conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one hφ.contDiffAt
   have key := integral_conjWirtingerDeriv_smul_cauchyTransform hh hψc hψ
   simp only [hcw, smul_eq_mul] at key
   have hΔ : Continuous fun w ↦ (2 : ℂ)⁻¹ * (Δ φ w : ℂ) :=
