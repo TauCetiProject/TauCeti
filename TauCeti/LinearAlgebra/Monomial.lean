@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Tactic.Ring
 
@@ -17,11 +18,11 @@ A monomial equivalence rescales coordinates by units and then relabels them alon
 equivalence of index types. These transformations form the monomial subgroup of the group of
 linear automorphisms. Coordinate permutations form a subgroup, equal to the monomial subgroup
 when the coefficient semiring has only one unit. The construction allows infinite coordinate
-sets; only the dot-product statements require finite coordinates.
+sets; only the dot-product and matrix statements require finite coordinates.
 
-The application, composition, inverse and support formulas provide the coordinate description
-used to compare monomial linear automorphisms with monomial matrices. In particular these
-subgroups make sense over small fields where the normalizer of the rational points of a
+The application, composition, inverse, support and matrix formulas provide the coordinate
+description used to compare monomial linear automorphisms with monomial matrices. In particular
+these subgroups make sense over small fields where the normalizer of the rational points of a
 diagonal torus need not be the monomial subgroup.
 
 The code-specific invariants and automorphism groups are developed in
@@ -132,6 +133,17 @@ theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
       _ = x i * y i := by rw [h i]; simp
 
 end DotProduct
+
+/-- The matrix of a monomial equivalence: its column `i` is `u i` times the standard basis
+vector of the coordinate `e i`. -/
+theorem toMatrix'_monomialEquiv [Fintype ι] [DecidableEq ι] [DecidableEq κ] (u : ι → Rˣ)
+    (e : ι ≃ κ) (k : κ) (i : ι) :
+    LinearMap.toMatrix' (monomialEquiv u e : (ι → R) →ₗ[R] κ → R) k i =
+      if e i = k then (u i : R) else 0 := by
+  rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, monomialEquiv_apply]
+  obtain rfl | h := eq_or_ne (e i) k
+  · simp
+  · simp [h, Equiv.symm_apply_eq, Ne.symm h]
 
 end Monomial
 
