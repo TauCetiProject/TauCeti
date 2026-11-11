@@ -55,15 +55,6 @@ private theorem ae_mem_Icc_semicircleReal_zero_one :
     ∀ᵐ y ∂semicircleReal 0 1, y ∈ Icc (-2 : ℝ) 2 := by
   simpa using ae_mem_Icc_semicircleReal 0 1
 
-private theorem restrict_Icc_semicircleReal_eq (a : ℝ) (v : ℝ≥0) :
-    (semicircleReal a v).restrict (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) =
-      semicircleReal a v :=
-  restrict_Icc_semicircleReal a v
-
-private theorem restrict_Icc_semicircleReal_zero_one :
-    (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
-  simpa using restrict_Icc_semicircleReal_eq 0 1
-
 private theorem ae_ne_semicircleReal_zero_one (x : ℝ) :
     ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
   let := nullSingletonClass_semicircleReal 0 one_pos
@@ -88,7 +79,7 @@ theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
         (ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹ • volume.restrict (Icc l u)) :=
       hint.smul_measure ENNReal.ofReal_ne_top
     have hrestr : (semicircleReal a v).restrict (Icc l u) = semicircleReal a v :=
-      restrict_Icc_semicircleReal_eq a v
+      restrict_Icc_semicircleReal a v
     rw [← hrestr]
     refine h1.mono_measure ?_
     rw [← Measure.restrict_smul]
@@ -154,7 +145,9 @@ private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     Integrable (fun y : ℝ ↦ Complex.log (w - y)) (semicircleReal 0 1) := by
   have h : IntegrableOn (fun y : ℝ ↦ Complex.log (w - y)) (Icc (-2) 2) (semicircleReal 0 1) :=
     (continuous_log_sub hw).continuousOn.integrableOn_compact isCompact_Icc
-  rwa [IntegrableOn, restrict_Icc_semicircleReal_zero_one] at h
+  have hrestrict : (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
+    simpa using restrict_Icc_semicircleReal 0 1
+  rwa [IntegrableOn, hrestrict] at h
 
 private theorem not_mem_range_ofReal_of_im_pos {z : ℂ} (hz : 0 < z.im) :
     z ∉ Set.range (algebraMap ℝ ℂ) := by
