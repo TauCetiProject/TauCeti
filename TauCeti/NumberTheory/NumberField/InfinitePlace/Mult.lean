@@ -57,10 +57,7 @@ the multiplicity of `v` times `[L : K]`. -/
 theorem sum_mult_eq_mult_mul_finrank (v : InfinitePlace K) :
     ∑ w ∈ v.placesOver L, w.mult = v.mult * finrank K L := by
   have : CharZero K := (algebraMap K L).charZero
-  have : FiniteDimensional ℚ K :=
-    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
-      (algebraMap K L).injective
-  have : NumberField K := ⟨⟩
+  have : NumberField K := NumberField.of_tower ℚ L K
   rw [← sum_inertiaDeg_eq_finrank K L v, Finset.mul_sum]
   refine Finset.sum_congr rfl fun w hw ↦ ?_
   have : w.LiesOver v := by simpa using hw
