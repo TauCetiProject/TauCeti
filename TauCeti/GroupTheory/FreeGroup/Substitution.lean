@@ -50,6 +50,7 @@ theorem flatMap_substituteLetter_congr {f g : α → List (β × Bool)} {w : Lis
 
 /-- Renaming the generators of a word along `g` and then substituting `f` is substituting
 `f ∘ g`. -/
+@[simp]
 theorem flatMap_substituteLetter_map {γ : Type*} (f : α → List (β × Bool)) (g : γ → α)
     (w : List (γ × Bool)) :
     (w.map (Prod.map g id)).flatMap (substituteLetter f) =

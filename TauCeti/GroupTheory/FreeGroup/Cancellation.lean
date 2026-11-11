@@ -89,6 +89,8 @@ structure CancellationPieces (ws : List (List (α × Bool))) (Z : Type*) where
   pairwise_subsingleton : patterns.Pairwise fun v v' =>
     {z | z ∈ v.map Prod.fst ∧ z ∈ v'.map Prod.fst}.Subsingleton
 
+attribute [simp] CancellationPieces.map_flatMap_patterns CancellationPieces.mk_flatten_patterns
+
 namespace CancellationPieces
 
 variable {ws : List (List (α × Bool))} (P : CancellationPieces ws Z)
@@ -96,9 +98,10 @@ variable {ws : List (List (α × Bool))} (P : CancellationPieces ws Z)
 /-- There is one word over `Z^{±1}` for each block. -/
 @[simp]
 theorem length_patterns : P.patterns.length = ws.length := by
-  simpa using congrArg List.length P.map_flatMap_patterns
+  simpa only [List.length_map] using congrArg List.length P.map_flatMap_patterns
 
 /-- The `j`-th block is the substitution of the pieces into the `j`-th word over `Z^{±1}`. -/
+@[simp]
 theorem flatMap_getElem_patterns {j : ℕ} (hj : j < P.patterns.length) :
     P.patterns[j].flatMap (substituteLetter P.piece) = ws[j]'(P.length_patterns ▸ hj) := by
   have h : j < (P.patterns.map fun v => v.flatMap (substituteLetter P.piece)).length := by
@@ -110,6 +113,7 @@ theorem isReduced_of_mem_patterns {v : List (Z × Bool)} (hv : v ∈ P.patterns)
   isReduced_of_nodup_map_fst (P.nodup_map_fst v hv)
 
 /-- Every signed letter of `Z^{±1}` occurs exactly once in `V₀ ⋯ V_{l-1}`. -/
+@[simp]
 theorem count_flatten_patterns [DecidableEq Z] (z : Z) (b : Bool) :
     P.patterns.flatten.count (z, b) = 1 :=
   List.count_eq_one_of_mem P.nodup_flatten_patterns (P.mem_flatten_patterns z b)
@@ -393,7 +397,7 @@ private theorem map_flatMap_insertPiece {f : Z → Z'} {n : Z'} {u : Z → List 
           Vpost.map (·.flatMap (substituteLetter u))) := by
   have hx : invRev [(x, e)] = [(x, !e)] := by simp [invRev]
   subst hu
-  simp [insertPiece, Function.comp_def, flatMap_substituteLetter_map, hn, hx]
+  simp [insertPiece, Function.comp_def, hn, hx]
 
 /-- After starting a new piece `Fin.last p`, every signed letter of `Fin (p + 1)` occurs in the
 patterns if every signed letter of `Fin p` occurred before. -/
