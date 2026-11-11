@@ -6,9 +6,9 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
-public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.FractionRing
+public import TauCeti.RingTheory.Flat.NonZeroDivisors
 
 /-!
 # Integral closedness descends along faithfully flat maps
@@ -26,7 +26,9 @@ and `a / b ∈ A`.
 
 ## References
 
-* [Stacks Project, Lemma 10.164.3](https://stacks.math.columbia.edu/tag/033G).
+* [Stacks Project, Lemma 10.164.3](https://stacks.math.columbia.edu/tag/033G), of which
+  `TauCeti.IsIntegrallyClosed.of_faithfullyFlat` is a variant for integral closedness in the total
+  ring of fractions.
 -/
 
 public section
@@ -38,13 +40,13 @@ open scoped nonZeroDivisors
 variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B] [Module.FaithfullyFlat A B]
 
 /-- **Integral closedness descends along faithfully flat maps.** If `B` is integrally closed and
-faithfully flat over `A`, then `A` is integrally closed. Stacks, Lemma 10.164.3 (033G). -/
-@[stacks 033G]
+faithfully flat over `A`, then `A` is integrally closed. This is a variant of Stacks,
+Lemma 10.164.3 (033G), with `normal ring` replaced by integral closedness in the total ring of
+fractions. -/
+@[stacks 033G "with integrally closed in the total ring of fractions in place of normal"]
 theorem IsIntegrallyClosed.of_faithfullyFlat [IsIntegrallyClosed B] : IsIntegrallyClosed A := by
-  have hreg : A⁰ ≤ B⁰.comap (algebraMap A B) := fun b hb ↦
-    mem_nonZeroDivisors_iff_right.mpr fun c hc ↦
-      Module.Flat.isSMulRegular_of_nonZeroDivisors (M := B) hb
-        (by simpa [Algebra.smul_def, mul_comm] using hc)
+  have hreg : A⁰ ≤ B⁰.comap (algebraMap A B) := fun _ hb ↦
+    Module.Flat.algebraMap_mem_nonZeroDivisors hb
   let f := IsLocalization.map (S := FractionRing A) (FractionRing B) (algebraMap A B)
     (M := A⁰) (T := B⁰) hreg
   let : Algebra (FractionRing A) (FractionRing B) := f.toAlgebra
