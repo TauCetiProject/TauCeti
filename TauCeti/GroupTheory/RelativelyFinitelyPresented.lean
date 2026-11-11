@@ -105,9 +105,11 @@ subgroups in the family. -/
 private theorem closure_generators :
     Subgroup.closure ((Coprod.inl '' Set.range FreeGroup.of : Set (RelFreeProduct α ℋ)) ∪
       Set.range Coprod.inr) = ⊤ := by
-  rw [Subgroup.closure_union, ← MonoidHom.map_closure, FreeGroup.closure_range_of,
-    ← MonoidHom.range_eq_map, ← MonoidHom.coe_range, Subgroup.closure_eq,
-    Coprod.range_inl_sup_range_inr]
+  rw [eq_top_iff, ← Coprod.closure_range_inl_union_inr, Subgroup.closure_le]
+  rintro _ (⟨x, rfl⟩ | ⟨y, rfl⟩)
+  · refine Subgroup.closure_mono Set.subset_union_left ?_
+    simp [← MonoidHom.map_closure, FreeGroup.closure_range_of]
+  · exact Subgroup.subset_closure (.inr ⟨y, rfl⟩)
 
 /-- The free product of a finitely generated free group and finitely many finitely generated
 subgroups is finitely generated. -/
@@ -162,7 +164,7 @@ theorem IsFinitelyPresentedRel.isFinitelyNormallyGenerated_ker [Finite α]
 
 /-- A finite relative generating family whose natural homomorphism has a finitely normally
 generated kernel exhibits `G` as finitely presented relative to `ℋ`. -/
-theorem IsFinitelyPresentedRel.of_surjective [Finite α] {ψ : FreeGroup α →* G}
+theorem IsFinitelyPresentedRel.of_isFinitelyNormallyGenerated_ker [Finite α] {ψ : FreeGroup α →* G}
     (hψ : Surjective (relPresentationHom ψ ℋ))
     (hker : (relPresentationHom ψ ℋ).ker.IsFinitelyNormallyGenerated) :
     IsFinitelyPresentedRel ℋ := by
@@ -181,7 +183,7 @@ when the kernel of the natural homomorphism is the normal closure of a finite se
 theorem isFinitelyPresentedRel_iff_of_surjective [Finite α] {ψ : FreeGroup α →* G}
     (hψ : Surjective (relPresentationHom ψ ℋ)) :
     IsFinitelyPresentedRel ℋ ↔ (relPresentationHom ψ ℋ).ker.IsFinitelyNormallyGenerated :=
-  ⟨fun h => h.isFinitelyNormallyGenerated_ker hψ, .of_surjective hψ⟩
+  ⟨fun h => h.isFinitelyNormallyGenerated_ker hψ, .of_isFinitelyNormallyGenerated_ker hψ⟩
 
 /-- A finitely presented group is finitely presented relative to every finite family of finitely
 generated subgroups. -/
