@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Coherent
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
@@ -36,6 +37,13 @@ sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ 
 compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤ b}`, on which `f`
 is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
 (`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
+
+Along levels `a i` unbounded above, the sublevels `{f ≤ a i}` cover the space
+(`TauCeti.iUnion_sublevel_eq_univ`), and when `f` is continuous each point lies in the open
+sublevel `{f < a i}` for some `i`, so the space carries the topology coherent with the sublevels
+(`TauCeti.isCoherentWith_range_sublevel`). This is what lets maps and homotopies defined on an
+exhausting sequence of sublevels, such as the regular sublevels of a proper function, be glued
+into maps and homotopies of the whole space.
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -185,6 +193,25 @@ theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
     Monotone fun a : β ↦ {x | f x ≤ a} :=
   fun _ _ hab ↦ ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab
 
+/-- Along a family of levels `a` that is unbounded above, the sublevels `{f ≤ a i}` cover `X`. -/
+theorem iUnion_sublevel_eq_univ {X β ι : Type*} [LinearOrder β] (f : X → β) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : ⋃ i, {x | f x ≤ a i} = univ := by
+  refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
+  obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
+  exact ⟨i, hi.le⟩
+
+/-- Along a family of levels `a` that is unbounded above, every point has a neighbourhood which is
+one of the sublevels `{f ≤ a i}` of a continuous function `f`, namely one with `f x < a i`. So `X`
+carries the topology coherent with these sublevels: a set is open as soon as it meets each of them
+in a relatively open set. -/
+theorem isCoherentWith_range_sublevel {X β ι : Type*} [TopologicalSpace X] [LinearOrder β]
+    [TopologicalSpace β] [OrderClosedTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : Topology.IsCoherentWith (range fun i ↦ {x | f x ≤ a i}) := by
+  refine .of_nhds fun x ↦ ?_
+  obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
+  exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_lt hf continuous_const).mem_nhds hi)
+    fun _ hy ↦ le_of_lt hy⟩
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
     (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
@@ -203,6 +230,13 @@ theorem sublevelInclusion_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     sublevelInclusion f b c hbc (sublevelInclusion f a b hab x) =
       sublevelInclusion f a c (hab.trans hbc) x :=
   Subtype.ext (rfl)
+
+/-- The image of `{f ≤ a}` in `{f ≤ b}` is the set of points of `{f ≤ b}` at which `f ≤ a`. -/
+@[simp]
+theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) :
+    range (sublevelInclusion f a b hab) = (↑) ⁻¹' {x | f x ≤ a} :=
+  Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, Subtype.ext (rfl)⟩⟩
 
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
 theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
