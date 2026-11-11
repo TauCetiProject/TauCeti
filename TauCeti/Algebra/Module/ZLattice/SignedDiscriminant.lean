@@ -227,18 +227,7 @@ theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     signedDiscr L =
       (-1) ^ (finrank ℝ E / 2) * (LinearMap.BilinForm.toMatrix b h.integralForm).det := by
-  -- A finite `ℤ`-basis of a lattice spanning `E` over `ℝ` makes `E` finite dimensional.
-  have hspan : span ℤ (Set.range fun i ↦ (b i : E)) = L := by
-    rw [Set.range_comp' Subtype.val b, ← L.coe_subtype, span_image, b.span_eq, map_subtype_top]
-  have : FiniteDimensional ℝ E := by
-    have hs : span ℝ (Set.range fun i ↦ (b i : E)) = ⊤ := by
-      refine eq_top_iff.2 ?_
-      rw [← IsZLattice.span_top (K := ℝ) (L := L)]
-      exact span_le.2 fun x hx ↦
-        span_le_restrictScalars ℤ ℝ _ (hspan.symm ▸ hx : x ∈ span ℤ (Set.range fun i ↦ (b i : E)))
-    have := FiniteDimensional.span_of_finite ℝ (Set.finite_range fun i ↦ (b i : E))
-    rw [hs] at this
-    exact Module.Finite.equiv Submodule.topEquiv
+  have := finiteDimensional_of_basis b
   rw [signedDiscr_def, h.det_toMatrix_integralForm b]
 
 /-- **An even unimodular full lattice has signed discriminant `1`**, since its rank is divisible
@@ -257,8 +246,7 @@ theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} :
   rcases eq_or_ne m 0 with rfl | hm
   · rcases subsingleton_or_nontrivial E with _ | _
     · simp [signedDiscr_of_subsingleton, Module.finrank_zero_of_subsingleton]
-    · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot, signedDiscr_bot,
-        Nat.cast_zero, zero_pow Module.finrank_pos.ne', zero_mul]
+    · simp [Module.finrank_pos.ne']
   rw [signedDiscr_def, signedDiscr_def, h.card_discriminantGroup_sqrt_smul hm]
   push_cast
   ring
@@ -425,6 +413,7 @@ theorem IsIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero (h : IsIntegral L) :
   have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
   exact isIntegral_sqrt_level_smul_dual.signedDiscr_ne_zero
 
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In even ambient dimension, the signed discriminant of the Fricke partner `√(level L) • L^∨` of
 a full lattice is congruent to `0` or `1` modulo `4`. -/
 theorem signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one (hE : Even (finrank ℝ E)) :
@@ -433,8 +422,7 @@ theorem signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one (hE : Even (finrank �
   rcases (level L).eq_zero_or_pos with h0 | hpos
   · rcases subsingleton_or_nontrivial E with _ | _
     · simp [signedDiscr_of_subsingleton]
-    · rw [h0, Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot, signedDiscr_bot]
-      exact .inl rfl
+    · simp [h0]
   have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr hpos)⟩
   exact (isEven_sqrt_level_smul_dual L).signedDiscr_modEq_zero_or_one hE
 
