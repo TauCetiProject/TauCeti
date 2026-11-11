@@ -60,6 +60,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_mfderiv_riemannianLog`: the
   differentials of the logarithm and the exponential map are mutually inverse.
+* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply`: the differential of the
+  logarithm at the base point is the identity.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -411,6 +413,15 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
     riemannianLog I M p U p = 0 := by
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
+
+/-- The differential of the logarithm at the base point is the identity. -/
+theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U) (v : TangentSpace I p) :
+    mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) p v = v := by
+  have hcomp := DFunLike.congr_fun
+    (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp h.zero_mem) v
+  change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
+  rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
 
 end IsNormalDomain
 

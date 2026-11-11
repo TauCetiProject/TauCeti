@@ -39,9 +39,10 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   open-ball containment.
 * `pathELength_riemannianExp_smul_eq_edist`: the radial geodesic segment realizes the distance
   between its endpoints.
-* `edist_eq_enorm_riemannianLog`: the distance from `p` is the norm of the logarithm.
+* `edist_eq_enorm_riemannianLog`: the distance from `p` is the norm of the logarithm, and
+  `dist_eq_norm_riemannianLog` its version for an ordinary metric on an open ball.
 * `image_riemannianExp_ball` and `image_riemannianExp_closedBall`: geodesic balls are metric
-  balls.
+  balls, and `image_riemannianExp_ball_eq_ball` its version for an ordinary metric.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
 
@@ -278,7 +279,21 @@ variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M]
-  {p : M} {U : Set (TangentSpace I p)} {r : ℝ} {v : TangentSpace I p}
+  {p : M} {U : Set (TangentSpace I p)} {r : ℝ} {v : TangentSpace I p} {q : M}
+
+/-- **Geodesic balls are metric balls.** If the open tangent ball of radius `r` lies in a normal
+domain at `p`, then its exponential image is the open metric ball of radius `r` about `p`; see
+`image_riemannianExp_ball`. -/
+theorem IsNormalDomain.image_riemannianExp_ball_eq_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) : riemannianExp I M p '' Metric.ball 0 r = Metric.ball p r := by
+  rw [h.image_riemannianExp_ball hU, Metric.eball_ofReal]
+
+/-- On an open normal ball, the distance from the centre is the norm of the logarithm. -/
+theorem IsNormalDomain.dist_eq_norm_riemannianLog (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) (hq : q ∈ Metric.ball p r) :
+    dist p q = ‖riemannianLog I M p U q‖ := by
+  rw [← h.image_riemannianExp_ball_eq_ball hU] at hq
+  rw [dist_edist, h.edist_eq_enorm_riemannianLog_of_mem_ball hU hq, toReal_enorm]
 
 /-- If the closed tangent ball of radius `r` lies in a normal domain at `p`, then the distance
 from `p` to `exp_p v` is `‖v‖` for every `v` in that ball; see `edist_riemannianExp_eq`. -/
