@@ -30,6 +30,9 @@ of factorials `(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4
 ## References
 
 * NIST Digital Library of Mathematical Functions, §9.4, <https://dlmf.nist.gov/9.4>.
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Airy/Basic/Maclaurin.lean`.
 -/
 
 public section
