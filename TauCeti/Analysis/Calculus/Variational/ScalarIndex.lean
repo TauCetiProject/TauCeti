@@ -212,9 +212,38 @@ theorem continuousOn_scalarMixedIndexDensity (B C f g : ℝ → ℝ) (U : Set �
     ((hdf.mul hg.continuousOn).add (hf.continuousOn.mul hdg)))).add
       ((hC.mul hf.continuousOn).mul hg.continuousOn)
 
-/-- Polarization expands the scalar index of a real linear perturbation, with all integrals on the
-same compact interval. -/
-theorem scalarIndex_add_mul (B C f g : ℝ → ℝ) (c : ℝ) (hc : 0 ≤ c)
+/-- Polarization expands the scalar index for differentiable weights with integrable
+quadratic and mixed densities, with either orientation of the interval. -/
+theorem scalarIndex_add_mul (B C f g : ℝ → ℝ) (c : ℝ)
+    (hf : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ f s)
+    (hg : ∀ s ∈ Set.uIcc 0 c, DifferentiableAt ℝ g s)
+    (hfi : IntervalIntegrable (scalarIndexDensity B C f) MeasureTheory.volume 0 c)
+    (hgi : IntervalIntegrable (scalarIndexDensity B C g) MeasureTheory.volume 0 c)
+    (hmi : IntervalIntegrable (scalarMixedIndexDensity B C f g) MeasureTheory.volume 0 c)
+    (t : ℝ) :
+    scalarIndex B C c (fun s ↦ f s + t * g s) = scalarIndex B C c f +
+      (2 * t) * scalarMixedIndex B C c f g + t ^ 2 * scalarIndex B C c g := by
+  unfold scalarIndex scalarMixedIndex
+  calc
+    (∫ s in 0..c, scalarIndexDensity B C (fun r ↦ f r + t * g r) s) =
+        ∫ s in 0..c, scalarIndexDensity B C f s +
+          (2 * t) * scalarMixedIndexDensity B C f g s + t ^ 2 * scalarIndexDensity B C g s := by
+      apply intervalIntegral.integral_congr
+      intro s hs
+      have hfd := (hf s hs).hasDerivAt
+      have hgd := (hg s hs).hasDerivAt
+      have hd : deriv (fun r ↦ f r + t * g r) s = deriv f s + t * deriv g s := by
+        simpa only [Pi.add_def] using (hfd.add (hgd.const_mul t)).deriv
+      dsimp only [scalarIndexDensity, scalarMixedIndexDensity]
+      rw [hd]
+      ring
+    _ = _ := by
+      rw [intervalIntegral.integral_add (hfi.add (hmi.const_mul _)) (hgi.const_mul _),
+        intervalIntegral.integral_add hfi (hmi.const_mul _),
+        intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul]
+
+/-- Continuous coefficients and `C¹` weights give the polarization identity. -/
+theorem scalarIndex_add_mul_of_contDiffOn (B C f g : ℝ → ℝ) (c : ℝ) (hc : 0 ≤ c)
     (U : Set ℝ) (hU : IsOpen U) (hKU : Set.Icc 0 c ⊆ U)
     (hB : ContinuousOn B U) (hC : ContinuousOn C U)
     (hf : ContDiffOn ℝ 1 f U) (hg : ContDiffOn ℝ 1 g U) (t : ℝ) :
@@ -227,25 +256,12 @@ theorem scalarIndex_add_mul (B C f g : ℝ → ℝ) (c : ℝ) (hc : 0 ≤ c)
   have hmi : IntervalIntegrable (scalarMixedIndexDensity B C f g) MeasureTheory.volume 0 c :=
     ((continuousOn_scalarMixedIndexDensity B C f g U hU hB hC hf hg).mono hKU)
       |>.intervalIntegrable_of_Icc hc
-  unfold scalarIndex scalarMixedIndex
-  calc
-    (∫ s in 0..c, scalarIndexDensity B C (fun r ↦ f r + t * g r) s) =
-        ∫ s in 0..c, scalarIndexDensity B C f s +
-          (2 * t) * scalarMixedIndexDensity B C f g s + t ^ 2 * scalarIndexDensity B C g s := by
-      apply intervalIntegral.integral_congr
-      intro s hs
-      have hsU := hKU (by simpa only [Set.uIcc_of_le hc] using hs)
-      have hfd := ((hf.contDiffAt (hU.mem_nhds hsU)).differentiableAt (by simp)).hasDerivAt
-      have hgd := ((hg.contDiffAt (hU.mem_nhds hsU)).differentiableAt (by simp)).hasDerivAt
-      have hd : deriv (fun r ↦ f r + t * g r) s = deriv f s + t * deriv g s := by
-        simpa only [Pi.add_def] using (hfd.add (hgd.const_mul t)).deriv
-      dsimp only [scalarIndexDensity, scalarMixedIndexDensity]
-      rw [hd]
-      ring
-    _ = _ := by
-      rw [intervalIntegral.integral_add (hfi.add (hmi.const_mul _)) (hgi.const_mul _),
-        intervalIntegral.integral_add hfi (hmi.const_mul _),
-        intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul]
+  exact scalarIndex_add_mul B C f g c
+    (fun s hs ↦ (hf.contDiffAt (hU.mem_nhds (hKU (by
+      simpa only [Set.uIcc_of_le hc] using hs)))).differentiableAt (by simp))
+    (fun s hs ↦ (hg.contDiffAt (hU.mem_nhds (hKU (by
+      simpa only [Set.uIcc_of_le hc] using hs)))).differentiableAt (by simp))
+    hfi hgi hmi t
 
 /-- Equality in a universal scalar index lower bound makes the linear weight stationary against
 every smooth weight vanishing at zero. -/
@@ -263,7 +279,7 @@ theorem scalarIndex_stationary (B C : ℝ → ℝ) (c : ℝ) (hc : 0 < c)
         (scalarIndex B C c w - d * w c ^ 2) * t ^ 2 := by
     have h := hcompare (fun s ↦ s / c + t * w s)
       (hy.add (contDiffOn_const.mul hw)) (by simp [hw0])
-    rw [scalarIndex_add_mul B C _ w c hc.le U hU hKU hB hC
+    rw [scalarIndex_add_mul_of_contDiffOn B C _ w c hc.le U hU hKU hB hC
       (hy.of_le (by simp)) (hw.of_le (by simp)) t, heq] at h
     have hcc : c / c = 1 := div_self hc.ne'
     rw [hcc] at h
