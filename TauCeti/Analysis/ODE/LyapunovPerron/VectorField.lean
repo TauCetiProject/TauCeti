@@ -139,7 +139,7 @@ theorem exists_localStableGraph_of_contDiffAt :
   let g := localStableGraphMap A P N r hs hu hr.le hN hsmall
   refine ⟨r, hr, ρ, hρ, g, _, lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall,
     localStableGraphMap_zero hs hu hr.le hN hsmall hN0,
-    hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hr hN0 hN',
+    hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hN0 hN',
     fun z hz ↦ contDiffAt_localStableGraphMap_of_uniformContDiffOn hs hu hr.le hN hsmall
       hN0 hNn (hball z hz),
     apply_localStableGraphMap hs hu hr.le hN hsmall hP hAP,
@@ -148,7 +148,7 @@ theorem exists_localStableGraph_of_contDiffAt :
       hsmall hN0 hP hAP hρbound.le
     rwa [hfield] at hset
   · intro y hy hmaps
-    exact tendsto_of_isIntegralCurveOn_mapsTo_closedBall hs hu hr.le hN hsmall hN0 hP hAP
+    exact tendsto_of_isIntegralCurveOn_mapsTo_closedBall hs hu hN hsmall hN0 hP hAP
       (hfield ▸ hy) hmaps
 
 /-- **Local unstable graph for a `C^n` vector field.** At the same equilibrium as in the
@@ -177,7 +177,7 @@ theorem exists_localUnstableGraph_of_contDiffAt :
   let g := localUnstableGraphMap A P N r hs hu hr.le hN hsmall
   refine ⟨r, hr, ρ, hρ, g, _, lipschitzWith_localUnstableGraphMap hs hu hr.le hN hsmall,
     localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0,
-    hasFDerivAt_localUnstableGraphMap_zero hs hu hr.le hN hsmall hr hN0 hN',
+    hasFDerivAt_localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0 hN',
     fun z hz ↦ contDiffAt_localUnstableGraphMap_of_uniformContDiffOn hs hu hr.le hN hsmall
       hN0 hNn (hball z hz), ?_,
     localUnstableGraphMap_sub_map hs hu hr.le hN hsmall hP, ?_, ?_⟩
@@ -188,7 +188,7 @@ theorem exists_localUnstableGraph_of_contDiffAt :
       hsmall hN0 hP hAP hρbound.le
     rwa [hfield] at hset
   · intro y hy hmaps
-    exact tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall hs hu hr.le hN hsmall hN0 hP hAP
+    exact tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall hs hu hN hsmall hN0 hP hAP
       (hfield ▸ hy) hmaps
 
 end ContinuousLinearMap

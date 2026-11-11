@@ -67,7 +67,8 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
     fun d c ↦ (Nat.gcd c.val d.val : ℂ) ^ 2 / d.val
   have hv : LinearIndependent ℂ v := by
     have hG := Matrix.linearIndependent_cols_of_isUnit
-      (Matrix.posDef_gcd_pow_divisors (𝕜 := ℂ) N (by omega : 0 < 2)).isUnit
+      (Matrix.posDef_gcd_pow (𝕜 := ℂ) (f := fun d : N.divisors ↦ d.val) Subtype.val_injective
+        (fun d ↦ (Nat.pos_of_mem_divisors d.property).ne') two_ne_zero).isUnit
     let u : N.divisors → ℂˣ := fun d ↦
       (Units.mk0 (d.val : ℂ) (Nat.cast_ne_zero.mpr
         (Nat.pos_of_mem_divisors d.property).ne'))⁻¹

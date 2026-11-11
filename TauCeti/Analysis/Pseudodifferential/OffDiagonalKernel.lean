@@ -38,12 +38,11 @@ convergent kernel itself.
   `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` for every `N` with `m - 2N < -n`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
-* `TauCeti.Symbol.continuousOn_offDiagonalKernel`: the kernel is continuous off the diagonal.
+* `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
+  the kernel is continuous, and indeed smooth, off the diagonal.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
-* `TauCeti.Symbol.IsUniform.exists_norm_offDiagonalKernel_le`: the same bound for all `x`, when the
-  symbol estimates are uniform in the position.
 
 ## References
 
@@ -166,21 +165,39 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
 
-/-- The decay of the off-diagonal kernel at a position `x` from a bound on the frequency slice of
-`Δ_ξ^N a` at `x`: if `‖Δ_ξ^N a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - 2N)` for every `ξ`, where `m - 2N < -n`, then
-`‖K(x, y)‖ ≤ (2π)⁻ⁿ C I ‖x - y‖^(-2N)` with `I = ∫ ⟨ξ⟩^(m - 2N) dξ`. -/
-private theorem norm_offDiagonalKernel_le_of_forall_norm_le (a : Symbol n V W m) {N : ℕ}
-    (hN : m - 2 * N < -n) {x : CoordinateSpace n} {C : ℝ} (hC0 : 0 ≤ C)
-    (hC : ∀ ξ, ‖(frequencyLaplacianPow N a).coefficient (x, ξ)‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)) (y : CoordinateSpace n) :
-    ‖offDiagonalKernel a x y‖ ≤ ((2 * π) ^ n)⁻¹ * (C *
-      ∫ ξ : CoordinateSpace n, (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)) / ‖x - y‖ ^ (2 * N) := by
+/-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
+each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
+(`TauCeti.Symbol.contDiff_quantizationKernel`). -/
+theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
+    ContDiffOn ℝ ∞ (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
+  refine contDiffOn_infty.2 fun k ↦ ?_
+  have hN := sub_two_mul_floor_lt (m + k) n
+  set N := ⌊(m + k + n) / 2⌋₊ + 1
+  have hk : (0 : ℝ) ≤ k := Nat.cast_nonneg k
+  have hd : ContDiff ℝ k fun p : CoordinateSpace n × CoordinateSpace n ↦ ‖p.1 - p.2‖ ^ (2 * N) := by
+    simp_rw [pow_mul]
+    exact ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N
+  have hs : ContDiffOn ℝ k (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} :=
+    contDiffOn_const.div hd.contDiffOn fun p hp ↦
+      pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
+  have hK := ((frequencyLaplacianPow N a).contDiff_quantizationKernel k
+    (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
+  exact (hs.smul hK).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
+
+/-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
+positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/
+theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) {N : ℕ} (hN : m - 2 * N < -n) :
+    ∃ C, ∀ x ∈ K, ∀ y, ‖offDiagonalKernel a x y‖ ≤ C / ‖x - y‖ ^ (2 * N) := by
   set b := frequencyLaplacianPow N a
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound_coefficient K hK
   have hweight : Integrable (fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)) := by
     have h := integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure (CoordinateSpace n)))
       (r := -(m - 2 * N)) (by simp only [finrank_euclideanSpace_fin]; linarith)
     simpa only [neg_neg, neg_div] using h
   set I := ∫ ξ : CoordinateSpace n, (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)
+  refine ⟨((2 * π) ^ n)⁻¹ * (C * I), fun x hx y ↦ ?_⟩
   have hD : 0 ≤ ((2 * π) ^ n)⁻¹ * (C * I) :=
     mul_nonneg (by positivity) (mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity))
   rcases eq_or_ne x y with rfl | hxy
@@ -188,7 +205,7 @@ private theorem norm_offDiagonalKernel_le_of_forall_norm_le (a : Symbol n V W m)
     exact div_nonneg hD (by positivity)
   have hint : ∫ ξ, ‖b.coefficient (x, ξ)‖ ≤ C * I := by
     rw [← integral_const_mul]
-    exact integral_mono (b.integrable_coefficient hN x).norm (hweight.const_mul C) hC
+    exact integral_mono (b.integrable_coefficient hN x).norm (hweight.const_mul C) (hC x hx)
   have hk := norm_quantizationKernel_le b.coefficient x y
   rw [finrank_euclideanSpace_fin] at hk
   rw [offDiagonalKernel_eq a hN hxy]
@@ -196,24 +213,6 @@ private theorem norm_offDiagonalKernel_le_of_forall_norm_le (a : Symbol n V W m)
     one_div_mul_eq_div]
   gcongr
   exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
-
-/-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
-positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/
-theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) {N : ℕ} (hN : m - 2 * N < -n) :
-    ∃ C, ∀ x ∈ K, ∀ y, ‖offDiagonalKernel a x y‖ ≤ C / ‖x - y‖ ^ (2 * N) := by
-  obtain ⟨C, hC0, hC⟩ := (frequencyLaplacianPow N a).exists_bound_coefficient K hK
-  exact ⟨_, fun x hx ↦ norm_offDiagonalKernel_le_of_forall_norm_le a hN hC0 (hC x hx)⟩
-
-/-- **Uniform decay off the diagonal.** For a symbol whose estimates are uniform in the position
-and every `N` with `m - 2N < -n`, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for all `x` and `y`. -/
-theorem IsUniform.exists_norm_offDiagonalKernel_le {a : Symbol n V W m} (ha : a.IsUniform)
-    {N : ℕ} (hN : m - 2 * N < -n) :
-    ∃ C, 0 ≤ C ∧ ∀ x y, ‖offDiagonalKernel a x y‖ ≤ C / ‖x - y‖ ^ (2 * N) := by
-  obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 (ha.frequencyLaplacianPow N) [] []
-  refine ⟨_, mul_nonneg (by positivity) (mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity)),
-    fun x ↦ norm_offDiagonalKernel_le_of_forall_norm_le a hN hC0 fun ξ ↦ ?_⟩
-  simpa using hC x ξ
 
 end Symbol
 

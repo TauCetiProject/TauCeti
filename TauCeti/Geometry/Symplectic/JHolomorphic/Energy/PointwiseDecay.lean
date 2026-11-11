@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic

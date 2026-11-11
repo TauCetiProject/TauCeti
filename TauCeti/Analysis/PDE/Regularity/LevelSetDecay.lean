@@ -270,7 +270,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
     (Q := (2 * Lam / lam) ^ 2 * c ^ 2 * 2 ^ n) hR ((ball_subset_ball (by linarith)).trans hball)
     hkM hθ hwLp (fun l hkl hlM hl => ?_) hθk j).trans ?_
   · -- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - l)⁺ ≤ M - l` on `B_{2R}`.
-    have henergy := hcacc hl h ha hu hR (by linarith : R < 2 * R) hball
+    have henergy := hcacc hl h ha hu (by linarith : R < 2 * R) hball
     rw [(by ring : 2 * R - R = R)] at henergy
     refine (le_mul_sq_div_sq_mul_measureReal_ball_of_le_mul_setIntegral hR (by positivity) hlM.le
       hM henergy).trans_eq ?_
@@ -326,7 +326,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder {θ : ℝ
     (W1p.memLp_posPartAbove hk u) (fun l hkl hlM hl => ?_) hθk j).trans ?_
   · -- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - l)⁺ ≤ M - l` on `B_{2R}`.
     have hl0 : 0 ≤ l := hk.trans hkl
-    have henergy := hcacc hl0 h ha hb hc hb_bound hc_bound hc_nonneg hu hR
+    have henergy := hcacc hl0 h ha hb hc hb_bound hc_bound hc_nonneg hu
       (by linarith : R < 2 * R) hball
     rw [(by ring : 2 * R - R = R),
       W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hl0 u hl |>.symm] at henergy

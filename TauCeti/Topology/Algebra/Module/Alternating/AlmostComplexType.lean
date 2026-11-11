@@ -648,11 +648,9 @@ end TypeProjection
 
 section Decomposition
 
-variable [ContinuousConstSMul ℝ F]
-
 section Interior
 
-variable {n : ℕ}
+variable [ContinuousConstSMul ℝ F] {n : ℕ}
 
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
@@ -699,6 +697,8 @@ private lemma interior_add_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : 
 end Interior
 
 section Nodal
+
+variable [ContinuousConstSMul ℝ F]
 
 /-- The derivation of an almost complex structure on `k`-forms is annihilated by the nodal
 polynomial of the type eigenvalues. -/
@@ -762,6 +762,7 @@ annihilates the derivation induced by `J` on complex-valued `k`-forms. -/
 theorem aeval_alternatingDerivation_eq_zero (hJ : ∀ v, J (J v) = -v) {g : ℂ[X]}
     (hg : ∀ p q, p + q = k → g.eval (((p : ℂ) - q) * I) = 0) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g = 0 := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
   obtain ⟨h, rfl⟩ := nodal_dvd fun pq hpq ↦ hg pq.1 pq.2 (Finset.mem_antidiagonal.1 hpq)
   rw [map_mul, aeval_alternatingDerivation_nodal hJ, zero_mul]
 

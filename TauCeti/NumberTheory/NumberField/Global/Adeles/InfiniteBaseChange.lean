@@ -119,17 +119,19 @@ theorem infiniteAdelePiLiesOverEquiv_symm_apply
       a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩ :=
   (rfl)
 
-variable [NumberField K] [NumberField L]
+section
+
+variable [NumberField L]
 
 open scoped Classical in
-private def baseChangeLinearEquiv :
+private def baseChangeLinearEquiv [NumberField K] :
     InfiniteAdeleRing K ⊗[K] L ≃ₗ[K] InfiniteAdeleRing L :=
   (TensorProduct.piLeft K L (fun v : InfinitePlace K ↦ v.Completion)).trans
     ((LinearEquiv.piCongrRight fun v ↦
       (infiniteSemilocalEquiv L v).toLinearEquiv.restrictScalars K).trans
         ((infiniteAdelePiLiesOverEquiv K L).toAddEquiv.toLinearEquiv fun _ _ ↦ rfl).symm)
 
-private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
+private theorem baseChangeLinearEquiv_apply [NumberField K] (t : InfiniteAdeleRing K ⊗[K] L) :
     baseChangeLinearEquiv K L t = infiniteAdeleBaseChangeHom K L t := by
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
@@ -150,6 +152,12 @@ private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
 /-- The archimedean semilocal decompositions assemble to a bijective base-change map. -/
 theorem infiniteAdeleBaseChangeHom_bijective :
     Function.Bijective (infiniteAdeleBaseChangeHom K L) := by
+  -- `K` embeds in the number field `L`, so it is a number field
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   have h : ⇑(baseChangeLinearEquiv K L) = ⇑(infiniteAdeleBaseChangeHom K L) :=
     funext (baseChangeLinearEquiv_apply K L)
   rw [← h]
@@ -176,7 +184,9 @@ theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
   simp [infiniteAdeleBaseChangeAlgEquiv]
 
-variable [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
+end
+
+variable [NumberField K] [NumberField L] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
   [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] L)]
 
 /-- Base change of infinite adeles is a continuous algebra equivalence over the infinite adele

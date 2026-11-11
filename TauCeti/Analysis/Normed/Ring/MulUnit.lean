@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Multiplicative units of normed rings
@@ -104,12 +105,8 @@ theorem isNormMulUnit_one_add [HasSummableGeomSeries A] [IsUltrametricDist A] {a
     rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using ha.ne'),
       norm_one, max_eq_left ha.le]
   intro x
-  rw [hnorm, one_mul, add_mul, one_mul]
-  by_cases hx : x = 0
-  · simp [hx]
-  have hax : ‖a * x‖ < ‖x‖ :=
-    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right ha (norm_pos_iff.mpr hx))
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hax.ne', max_eq_left hax.le]
+  rw [hnorm, one_mul]
+  exact norm_one_add_mul_of_norm_lt_one ha x
 
 /-- The factorization `f = u * (1 - u⁻¹ * (u - f))` behind the Neumann series criterion. -/
 private theorem eq_units_mul_one_sub (u : Aˣ) (f : A) :
