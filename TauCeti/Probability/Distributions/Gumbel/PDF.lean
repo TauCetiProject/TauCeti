@@ -95,7 +95,6 @@ theorem gumbelPDF_of_nonpos (hs : s ≤ 0) (m x : ℝ) : gumbelPDF m s x = 0 := 
 
 /-- The `ℝ≥0∞`-valued Gumbel density has its classical formula, at every scale: for nonpositive
 scale the density and the right-hand side both vanish. -/
-@[simp]
 theorem gumbelPDF_eq_ofReal_exp_mul_exp_div (m s x : ℝ) :
     gumbelPDF m s x = ENNReal.ofReal
       (Real.exp (-((x - m) / s)) * Real.exp (-Real.exp (-((x - m) / s))) / s) := by
