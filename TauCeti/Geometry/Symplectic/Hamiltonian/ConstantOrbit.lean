@@ -54,7 +54,10 @@ generators. That the constant orbits are the only one-periodic orbits is a separ
 The evolution is the global time-dependent Hamiltonian flow
 `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`, so a globally Lipschitz Hamiltonian vector
 field is assumed, as for that flow. The target is a symplectic vector space, the local model of a
-symplectic manifold at a critical point; the manifold statement is not proved here.
+symplectic manifold at a critical point. The manifold statement, for a nondegenerate two-form on a
+closed manifold, is
+`isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul_iff` in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`.
 
 ## Main results
 

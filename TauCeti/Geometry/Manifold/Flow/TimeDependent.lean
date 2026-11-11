@@ -373,6 +373,20 @@ theorem contMDiffOn_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
     (ht.sub hs).prodMk (hs.prodMk contMDiff_snd)
   exact contMDiff_snd.comp_contMDiffOn (hflow.comp hg.contMDiffOn fun _ hp ↦ hp)
 
+/-- In finite dimensions, each time map of the time-dependent flow of a `C¹` field is
+differentiable at every point of the flow domain. -/
+theorem mdifferentiableAt_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    MDifferentiableAt I I (timeDependentFlowOf X s t) x := by
+  have hflow := (contMDiffOn_timeDependentFlowOf le_rfl hX).contMDiffAt
+    ((isOpen_timeDependentFlowDomain hX).mem_nhds h)
+  have hι : ContMDiffAt I ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) 1 (fun y : M ↦ ((s, t), y)) x :=
+    contMDiffAt_const.prodMk contMDiffAt_id
+  exact (hflow.comp x hι).mdifferentiableAt one_ne_zero
+
 section Complete
 
 variable [CompleteSpace E] [IsManifold I 1 M] [BoundarylessManifold I M]

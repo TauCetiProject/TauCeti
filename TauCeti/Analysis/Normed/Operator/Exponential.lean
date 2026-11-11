@@ -37,6 +37,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
+* `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt_Icc`: a solution of `z' = A z` on
+  `[0, T]` is `exp (t • A) (z 0)`.
 * `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
   the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
@@ -197,6 +199,21 @@ theorem exp_smul_apply_sub_eq_intervalIntegral
     (hcont.intervalIntegrable 0 t)]
   simp
 
+/-- A continuous function on `[0, T]` with right derivative `A (z t)` at every `t ∈ [0, T)` is the
+linear flow `t ↦ exp (t • A) (z 0)` of its initial value on `[0, T]`, by uniqueness for the linear
+equation. -/
+theorem eq_exp_smul_apply_of_hasDerivWithinAt_Icc {A : X →L[ℝ] X} {z : ℝ → X} {T : ℝ}
+    (hz_cont : ContinuousOn z (Set.Icc 0 T))
+    (hz : ∀ t ∈ Set.Ico (0 : ℝ) T, HasDerivWithinAt z (A (z t)) (Set.Ici t) t)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 T) :
+    z t = exp (t • A) (z 0) :=
+  ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ Set.univ)
+    (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith) hz_cont hz (fun _ _ ↦ Set.mem_univ _)
+    (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
+    (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
+      (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
+    (fun _ _ ↦ Set.mem_univ _) (by simp) ht
+
 /-- A continuous function on `[0, ∞)` with right derivative `A (z t)` at every `t ≥ 0` is the linear
 flow `t ↦ exp (t • A) (z 0)` of its initial value, by uniqueness for the linear equation. -/
 theorem eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
@@ -204,13 +221,8 @@ theorem eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
     (hz : ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt z (A (z t)) (Set.Ici t) t)
     {t : ℝ} (ht : 0 ≤ t) :
     z t = exp (t • A) (z 0) :=
-  ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ Set.univ)
-    (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
-    (hz_cont.mono Set.Icc_subset_Ici_self) (fun t ht ↦ hz t ht.1) (fun _ _ ↦ Set.mem_univ _)
-    (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
-    (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
-      (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
-    (fun _ _ ↦ Set.mem_univ _) (by simp) ⟨ht, le_rfl⟩
+  eq_exp_smul_apply_of_hasDerivWithinAt_Icc (hz_cont.mono Set.Icc_subset_Ici_self)
+    (fun s hs ↦ hz s hs.1) ⟨ht, le_rfl⟩
 
 end Real
 

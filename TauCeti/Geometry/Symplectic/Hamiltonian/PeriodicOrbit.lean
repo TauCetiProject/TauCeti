@@ -6,10 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Periodic
+public import TauCeti.Geometry.Manifold.Flow.RestPoint
+public import TauCeti.Geometry.Manifold.Morse.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Analysis.Calculus.Morse.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Flow.ShortPeriod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
 # One-periodic orbits of time-dependent Hamiltonians on manifolds
@@ -46,6 +54,17 @@ manifold are constant by Yorke's theorem
 (`TauCeti.exists_pos_forall_isMIntegralCurve_eq_const_of_periodic`). This is the starting point of
 the comparison of the Floer homology of a `C²`-small Morse function with its Morse homology.
 
+These constant orbits are nondegenerate when `F` is Morse. Read in the extended chart `φ` at a
+critical point `p`, the linearization `L` of `X_F` at `p` (`TauCeti.chartLinearization`) satisfies
+`σ_p(L u, w) = d²(F ∘ φ⁻¹)(u, w)`
+(`SmoothTwoForm.IsNondegenerate.apply_chartLinearization_hamiltonianVectorField`), so `L` has the
+kernel of the Hessian. The derivative at `p` of the time-one map of `ε F` is `exp (ε L)`
+(`TauCeti.mfderiv_timeDependentFlowOf_eq_exp`), which fixes no nonzero vector exactly when `L` is
+injective, once `ε ‖L‖ < log 2`. Hence a nondegenerate constant orbit always sits at a nondegenerate
+critical point, and for small `ε` every nondegenerate critical point gives a nondegenerate constant
+orbit. A `C²` function with only nondegenerate critical points on a closed manifold has finitely
+many of them, so for all small `ε > 0` every `1`-periodic orbit of `ε F` is nondegenerate.
+
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
@@ -57,11 +76,23 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose contractible 1-periodic orbits are all
   nondegenerate has finitely many contractible 1-periodic orbits.
+* `SmoothTwoForm.IsNondegenerate.isManifoldNondegenerateCriticalPoint_of_isNondegenerateFixedPt`:
+  a nondegenerate constant orbit of `ε F` sits at a nondegenerate critical point of `F`.
+* `isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul_iff`
+  (in `TauCeti.SmoothTwoForm.IsNondegenerate`): for `ε` small relative to the linearization at a
+  critical point `p`, the constant orbit at `p` is nondegenerate exactly when `p` is a
+  nondegenerate critical point.
+* `exists_pos_forall_isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul`
+  (in `TauCeti.SmoothTwoForm.IsNondegenerate`): on a closed manifold, if every critical point of
+  `F` is nondegenerate, then for small `ε > 0` every `1`-periodic orbit of `ε F` is nondegenerate.
 
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
-  Math. Ser. 7 (1999), Lecture 1 (nondegenerate 1-periodic orbits).
+  Math. Ser. 7 (1999), Lecture 1 (nondegenerate 1-periodic orbits, and the Hamiltonian `εF` of a
+  Morse function `F`).
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
+  575–611, on `C²`-small Hamiltonians whose one-periodic orbits are the critical points.
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 11.1.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -71,7 +102,7 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 public section
 
 open Function
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -143,6 +174,225 @@ theorem finite_contractiblePeriodicSolutions_hamiltonianVectorField [CompactSpac
   finite_contractiblePeriodicSolutions (h.contMDiff_hamiltonianVectorField_uncurry (n := 1)
     (by simp) (hH.of_le (by norm_num))) (fun t ↦ by rw [hP t]) one_pos 0
     (by simpa only [zero_add] using hnd)
+
+section SmallMorse
+
+variable {F : M → ℝ} {p : M}
+
+omit [T2Space M] in
+/-- **The linearized Hamiltonian vector field at a critical point.** Let `p` be a critical point of
+a `C²` function `F`. Read in the extended chart `φ` at `p`, the linearization of `X_F` at `p`
+followed by `σ_p` is the Hessian of the coordinate expression `F ∘ φ⁻¹` at `φ p`:
+`σ_p(L u, w) = d²(F ∘ φ⁻¹)(u, w)`. The derivative of `σ` does not contribute, because `X_F`
+vanishes at `p`. -/
+theorem apply_chartLinearization_hamiltonianVectorField (h : σ.IsNondegenerate)
+    (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F) (u w : E) :
+    σ.1 p ![chartLinearization I (σ.hamiltonianVectorField F) p u, w] =
+      fderiv ℝ (fderiv ℝ (F ∘ (extChartAt I p).symm)) (extChartAt I p p) u w := by
+  -- Read `ι_{X_F} σ = dF` in the chart near `φ p` and differentiate it at `φ p`.
+  set φ := extChartAt I p with hφ
+  set x₀ := φ p with hx₀def
+  set X := σ.hamiltonianVectorField F
+  set g : E → E := fun z ↦ tangentCoordChange I (φ.symm z) p (φ.symm z) (X (φ.symm z)) with hg
+  set Ω : E → E →L[ℝ] E →L[ℝ] ℝ :=
+    fun z ↦ ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt σ.1 p z)
+  have hrange : Set.range I ∈ 𝓝 x₀ :=
+    range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint
+  have htarget : φ.target ∈ 𝓝 x₀ := by
+    rw [← nhdsWithin_eq_nhds.2 hrange]
+    exact extChartAt_target_mem_nhdsWithin p
+  -- Near `φ p`, `σ` read in the chart pairs the coordinate field `g` of `X_F` with a vector as
+  -- the derivative of `F ∘ φ⁻¹`: this is `ι_{X_F} σ = dF` in coordinates.
+  have hid : (fun z ↦ Ω z (g z)) =ᶠ[𝓝 x₀] fderiv ℝ (F ∘ φ.symm) := by
+    filter_upwards [eventually_mem_nhds_iff.2 hrange, htarget] with z hzr hzt
+    have hq : φ.symm z ∈ φ.source := φ.map_target hzt
+    have hz : φ (φ.symm z) = z := φ.right_inv hzt
+    have hinv : tangentCoordChange I p (φ.symm z) (φ.symm z) (g z) = X (φ.symm z) := by
+      have hcomp (w : E) : tangentCoordChange I p (φ.symm z) (φ.symm z)
+          (tangentCoordChange I (φ.symm z) p (φ.symm z) w) = w := by
+        rw [tangentCoordChange_comp ⟨⟨mem_extChartAt_source _, hq⟩, mem_extChartAt_source _⟩,
+          tangentCoordChange_self (mem_extChartAt_source _)]
+      exact hcomp _
+    ext w
+    have hderiv := (hF (φ.symm z)).mdifferentiableAt two_ne_zero
+      |>.fderivWithin_comp_extChartAt_symm p hq
+    rw [hz, fderivWithin_of_mem_nhds hzr] at hderiv
+    simp only [Ω, ContinuousAlternatingMap.flatL_apply_apply]
+    conv_lhs => rw [← hz]
+    rw [RoughForm.inChartAt_chart_apply _ _ hq, hderiv]
+    have hvec : (fun i ↦ tangentCoordChange I p (φ.symm z) (φ.symm z) (![g (φ (φ.symm z)), w] i)) =
+        ![X (φ.symm z), tangentCoordChange I p (φ.symm z) (φ.symm z) w] := by
+      funext i
+      fin_cases i
+      · simpa [hz] using hinv
+      · rfl
+    rw [hvec]
+    exact h.apply_hamiltonianVectorField F _ _
+  -- Differentiating at `φ p`, where `g` vanishes, only the derivative of `g` survives.
+  have hgc : ContDiffAt ℝ 1 g x₀ :=
+    ((contMDiffAt_iff.mp (h.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (hF.of_le (by norm_num)) p)).2.contDiffAt hrange).snd
+  have hg₀ : g x₀ = 0 := by
+    have hX : X p = 0 := (h.hamiltonianVectorField_eq_zero_iff).2 (mem_criticalPoints.1 hp)
+    have h' : g x₀ = tangentCoordChange I p p p (X p) :=
+      congrArg (fun q' : M ↦ (tangentCoordChange I q' p q' (X q') : E))
+        (φ.left_inv (mem_extChartAt_source p))
+    rw [h', hX]
+    exact map_zero _
+  have hx₀ : x₀ ∈ interior φ.target := mem_interior_iff_mem_nhds.2 htarget
+  have : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by norm_num)
+  have hσc : ContDiffOn ℝ 1 (RoughForm.inChartAt σ.1 p) (interior φ.target) :=
+    ((SmoothForm.isSmoothForm σ).of_le (by norm_num)).contDiffOn_inChartAt_interior_target p
+  have hΩ : DifferentiableAt ℝ Ω x₀ :=
+    (ContinuousAlternatingMap.flatL ℝ E ℝ).differentiableAt.comp x₀
+      ((hσc.differentiableOn one_ne_zero x₀ hx₀).differentiableAt (isOpen_interior.mem_nhds hx₀))
+  have hprod := hΩ.hasFDerivAt.clm_apply ((hgc.differentiableAt one_ne_zero).hasFDerivAt)
+  rw [hg₀, map_zero, add_zero] at hprod
+  have hf2 : ContDiffAt ℝ 2 (F ∘ φ.symm) x₀ :=
+    (hF p).contDiffAt_comp_extChartAt_symm_of_isInteriorPoint BoundarylessManifold.isInteriorPoint
+  have hhess : HasFDerivAt (fderiv ℝ (F ∘ φ.symm)) (fderiv ℝ (fderiv ℝ (F ∘ φ.symm)) x₀) x₀ :=
+    ((hf2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt
+  have hD := congrArg (fun T : E →L[ℝ] E →L[ℝ] ℝ ↦ T u w)
+    ((hprod.congr_of_eventuallyEq hid.symm).unique hhess)
+  simp only [ContinuousLinearMap.comp_apply, Ω, ContinuousAlternatingMap.flatL_apply_apply] at hD
+  rw [hx₀def, hφ, RoughForm.inChartAt_extChartAt_self] at hD
+  rw [chartLinearization_def]
+  exact hD
+
+omit [T2Space M] in
+/-- At a critical point `p` of a `C²` function `F`, the kernel of the linearization of `X_F` in the
+chart `φ` at `p` is the kernel of the Hessian of `F ∘ φ⁻¹` at `φ p`. -/
+theorem chartLinearization_hamiltonianVectorField_apply_eq_zero_iff (h : σ.IsNondegenerate)
+    (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F) (u : E) :
+    chartLinearization I (σ.hamiltonianVectorField F) p u = 0 ↔
+      ∀ w, fderiv ℝ (fderiv ℝ (F ∘ (extChartAt I p).symm)) (extChartAt I p p) u w = 0 := by
+  simp_rw [← h.apply_chartLinearization_hamiltonianVectorField hF hp u]
+  set L := chartLinearization I (σ.hamiltonianVectorField F) p
+  refine ⟨fun hu w ↦ (σ.1 p).map_coord_zero 0 (by simp only [hu]; rfl),
+    fun hw ↦ ?_⟩
+  -- `σ_p(v, ·)` is the flat map of `σ` at `p`, which is injective.
+  have hflat (v w : E) : σ.1 p ![v, w] = σ.flat p v w :=
+    (SmoothBundleForm.eval₂_apply σ p v w).symm.trans (flat_apply σ p v w).symm
+  obtain ⟨e, he⟩ := h.isInvertible_flat p
+  have h0 : σ.flat p (L u) = 0 :=
+    ContinuousLinearMap.ext fun w ↦ (hflat (L u) w).symm.trans (hw w)
+  exact e.injective ((DFunLike.congr_fun he (L u)).trans (h0.trans e.map_zero.symm))
+
+omit [T2Space M] in
+/-- At a critical point `p` of a `C²` function `F`, nondegeneracy of `p` reads: no nonzero vector
+is in the kernel of the linearization of `X_F` in the chart at `p`. -/
+private theorem isManifoldNondegenerateCriticalPoint_iff_chartLinearization
+    (h : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F) :
+    IsManifoldNondegenerateCriticalPoint I F p ↔
+      ∀ u, chartLinearization I (σ.hamiltonianVectorField F) p u = 0 → u = 0 := by
+  have hf2 : ContDiffAt ℝ 2 (F ∘ (extChartAt I p).symm) (extChartAt I p p) :=
+    (hF p).contDiffAt_comp_extChartAt_symm_of_isInteriorPoint BoundarylessManifold.isInteriorPoint
+  have hcrit : fderiv ℝ (F ∘ (extChartAt I p).symm) (extChartAt I p p) = 0 :=
+    (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero (mem_extChartAt_source p)
+      (hf2.differentiableAt two_ne_zero)).1 (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp)
+  rw [isManifoldNondegenerateCriticalPoint_iff, isNondegenerateCriticalPoint_iff_separatingLeft,
+    and_iff_right hf2, and_iff_right hcrit]
+  exact forall_congr' fun u ↦ by
+    rw [h.chartLinearization_hamiltonianVectorField_apply_eq_zero_iff hF hp u]
+    rfl
+
+omit [T2Space M] [BoundarylessManifold I M] in
+/-- At a critical point the field `ε X_F` vanishes, and for a `C²` function it is `C¹`. -/
+private theorem contMDiff_smul_hamiltonianVectorField_and_eq_zero (h : σ.IsNondegenerate)
+    (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F) (ε : ℝ) :
+    CMDiff 1 (fun y ↦ (⟨y, (ε • σ.hamiltonianVectorField F) y⟩ : TangentBundle I M)) ∧
+      (ε • σ.hamiltonianVectorField F) p = 0 := by
+  refine ⟨(h.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+    (hF.of_le (by norm_num))).const_smul_section, ?_⟩
+  rw [Pi.smul_apply,
+    (h.hamiltonianVectorField_eq_zero_iff).2 (mem_criticalPoints.1 hp), smul_zero]
+
+/-- **A nondegenerate constant orbit sits at a nondegenerate critical point.** Let `p` be a critical
+point of a `C²` function `F`. If `p` is a nondegenerate fixed point of the time map from `s` to `t`
+of the Hamiltonian flow of `ε F`, for some `ε`, `s` and `t`, then `p` is a nondegenerate critical
+point of `F`. No smallness is needed: a vector in the kernel of the Hessian is in the kernel of the
+linearization of `X_F`, and is fixed by its exponential. -/
+theorem isManifoldNondegenerateCriticalPoint_of_isNondegenerateFixedPt (h : σ.IsNondegenerate)
+    (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F) {ε s t : ℝ}
+    (hnd : IsNondegenerateFixedPt I
+      (timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) s t) p) :
+    IsManifoldNondegenerateCriticalPoint I F p := by
+  obtain ⟨hv, hp0⟩ := h.contMDiff_smul_hamiltonianVectorField_and_eq_zero hF hp ε
+  -- The Hamiltonian vector field of `ε F` is `ε X_F`.
+  rw [show σ.hamiltonianVectorField (ε • F) = ε • σ.hamiltonianVectorField F from
+      funext fun x ↦ hamiltonianVectorField_const_smul ε x,
+    isNondegenerateFixedPt_timeDependentFlowOf_iff hv hp0, chartLinearization_smul] at hnd
+  refine (h.isManifoldNondegenerateCriticalPoint_iff_chartLinearization hF hp).2 fun u hu ↦
+    hnd u (ContinuousLinearMap.exp_apply_of_apply_eq_zero ?_)
+  rw [_root_.smul_apply, _root_.smul_apply, hu, smul_zero, smul_zero]
+
+/-- **Constant orbits of small Hamiltonians on a manifold.** Let `p` be a critical point of a `C²`
+function `F`, with `L` the linearization of `X_F` at `p` in the chart at `p`, and let
+`ε (t - s) ≠ 0` with `|ε (t - s)| ‖L‖ < log 2`. Then `p` is a nondegenerate fixed point of the time
+map from `s` to `t` of the Hamiltonian flow of `ε F` exactly when `p` is a nondegenerate critical
+point of `F`. -/
+theorem isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul_iff
+    (h : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) 2 F) (hp : p ∈ criticalPoints I F)
+    {ε s t : ℝ} (hε : ε * (t - s) ≠ 0)
+    (hsmall : |ε * (t - s)| * ‖chartLinearization I (σ.hamiltonianVectorField F) p‖ <
+      Real.log 2) :
+    IsNondegenerateFixedPt I
+        (timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) s t) p ↔
+      IsManifoldNondegenerateCriticalPoint I F p := by
+  obtain ⟨hv, hp0⟩ := h.contMDiff_smul_hamiltonianVectorField_and_eq_zero hF hp ε
+  have hε0 : ε ≠ 0 := left_ne_zero_of_mul hε
+  have hst : t ≠ s := sub_ne_zero.1 (right_ne_zero_of_mul hε)
+  have hsmall' : |t - s| * ‖chartLinearization I (ε • σ.hamiltonianVectorField F) p‖ <
+      Real.log 2 := by
+    rwa [chartLinearization_smul, norm_smul, Real.norm_eq_abs, ← mul_assoc, ← abs_mul,
+      mul_comm (t - s)]
+  -- The Hamiltonian vector field of `ε F` is `ε X_F`.
+  rw [show σ.hamiltonianVectorField (ε • F) = ε • σ.hamiltonianVectorField F from
+      funext fun x ↦ hamiltonianVectorField_const_smul ε x,
+    isNondegenerateFixedPt_timeDependentFlowOf_iff_of_abs_mul_norm_lt hv hp0 hst hsmall',
+    h.isManifoldNondegenerateCriticalPoint_iff_chartLinearization hF hp]
+  exact forall_congr' fun u ↦ by
+    rw [chartLinearization_smul, _root_.smul_apply, smul_eq_zero, or_iff_right hε0]
+
+/-- **Small multiples of a Morse function are nondegenerate Hamiltonians.** Let `σ` be a
+nondegenerate two-form on a compact boundaryless manifold modelled on a finite-dimensional space,
+and `F` a `C²` function all of whose critical points are nondegenerate. There is `ε₀ > 0` such that
+for `0 < ε ≤ ε₀` every `1`-periodic orbit `γ` of the autonomous Hamiltonian `ε F` is
+nondegenerate: `γ 0` is a nondegenerate fixed point of the time-one map. These orbits are the
+constant curves at the critical points of `F`
+(`exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints`), and
+there are finitely many of them. -/
+theorem exists_pos_forall_isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul
+    [CompactSpace M] (h : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) 2 F)
+    (hnd : ∀ p ∈ criticalPoints I F, IsManifoldNondegenerateCriticalPoint I F p) :
+    ∃ ε₀ > (0 : ℝ), ∀ ε, 0 < ε → ε ≤ ε₀ →
+      ∀ γ ∈ periodicSolutions (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 1,
+        IsNondegenerateFixedPt I
+          (timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 0 1) (γ 0) := by
+  -- The critical points are finitely many, so the norms of the linearizations are bounded.
+  have hfin : (criticalPoints I F).Finite := by
+    simpa using finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+      (hF.of_le one_le_two) isCompact_univ fun x hx ↦ hnd x hx.1
+  obtain ⟨C, hC⟩ := (hfin.image fun p ↦ ‖chartLinearization I (σ.hamiltonianVectorField F) p‖)
+    |>.bddAbove
+  obtain ⟨ε₁, hε₁, hconst⟩ :=
+    exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints h hF
+  have hlog : 0 < Real.log 2 := Real.log_pos one_lt_two
+  set C' := max C 0
+  refine ⟨min ε₁ (Real.log 2 / (C' + 1)), lt_min hε₁ (by positivity), fun ε hε hεε₀ γ hγ ↦ ?_⟩
+  rw [hconst ε hε (hεε₀.trans (min_le_left _ _))] at hγ
+  obtain ⟨p, hp, rfl⟩ := hγ
+  refine (h.isNondegenerateFixedPt_timeDependentFlowOf_hamiltonianVectorField_smul_iff hF hp
+    (by simpa using hε.ne') ?_).2 (hnd p hp)
+  -- `ε ‖L‖ ≤ ε C' < ε (C' + 1) ≤ log 2`.
+  have hLC : ‖chartLinearization I (σ.hamiltonianVectorField F) p‖ ≤ C' :=
+    (hC ⟨p, hp, rfl⟩).trans (le_max_left _ _)
+  have hεC : ε * (C' + 1) ≤ Real.log 2 :=
+    (le_div_iff₀ (by positivity)).1 (hεε₀.trans (min_le_right _ _))
+  rw [sub_zero, mul_one, abs_of_pos hε]
+  nlinarith
+
+end SmallMorse
 
 end SmoothTwoForm.IsNondegenerate
 
